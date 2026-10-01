@@ -38,6 +38,12 @@ int armorerReductionPercent(int value)
 	return std::clamp(value, 0, 3) * 5;
 }
 
+int formationFightingReductionPercent(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(ARMORER_SKILL_ID), std::string(FORMATION_FIGHTING_PERK_ID))
+		? FORMATION_FIGHTING_REDUCTION_PERCENT : 0;
+}
+
 bool isOrdinaryCreatureAttacker(const battle::Unit * attacker)
 {
 	return attacker && !attacker->isTurret()

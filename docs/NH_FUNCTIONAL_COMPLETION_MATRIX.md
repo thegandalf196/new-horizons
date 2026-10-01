@@ -14,6 +14,22 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-077 Formation Fighting is source/native verified. Shared current-controller
+and projected-footprint adjacency prevents Shroud damage/retaliation and Flank
+melee/history, retaining Combined Arms ranged benefits. Independent10% physical
+reduction composes within the existing cap. Owner-scoped detached predictions
+and authoritative melee hits agree; rank loss, ally control/movement/death and
+two-hex self aliases have focused evidence. Final both-target74477 passes;
+native61868 passes18/18, zero skips, in4.465s, reports
+`UP077-focused-final.log`/`.xml`. Data/inventory19/19 pass. Coverage134→135/310
+active perks, planned176→175; Armorer4/6→5/5, ranks84/93 and spells60/67
+unchanged. Phase2 retains other allies' multi-blow projected state, hidden
+opponent perk uncertainty and the recorded Encirclement repeated-hit assertion.
+No art, rendered acceptance or playable promotion is claimed.
+UP-076 deterministic Diplomacy still awaits the authored free-join exception
+decision already recorded in UP-048. Existing raw Army Value and full-stack
+pricing paths are mapped; the nine missing ranks are not silently activated.
+
 UP-075 Estate Network and Quick Study are source/native verified. Estate
 Network grants exact Wood/Ore per current owned towns and active Advanced
 holder at week start, including the initial week, after ordinary income/AI
@@ -412,7 +428,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 134/310 | 176 planned; Estate Network and Quick Study are the newest source/native-verified activations. Active status alone does not certify every mechanic. |
+| Skill perks active | 135/310 | 175 planned; Formation Fighting is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -439,8 +455,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 134
-active perks, leaving nine ranks and 176 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 135
+active perks, leaving nine ranks and 175 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-10-01; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -545,7 +561,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Skill | Active/planned ranks | Active/planned perks | Immediate state |
 |---|---:|---:|---|
 | Offense | 3/0 | 10/0 | Evidence audit required |
-| Armorer | 3/0 | 4/6 | Six perks missing |
+| Armorer | 3/0 | 5/5 | Formation Fighting has focused live/detached geometry and damage evidence. Five perks missing. |
 | Archery | 3/0 | 10/0 | All ten perks are active; focused evidence pending |
 | Battlecraft | 3/0 | 1/9 | Nine perks missing |
 | War Machines | 3/0 | 0/10 | Progression blocked |

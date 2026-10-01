@@ -96,6 +96,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int newHorizonsArcheryDamagePercent = 0;
 	/// Canonical New Horizons Armorer reduction for this physical creature blow.
 	int newHorizonsArmorerReductionPercent = 0;
+	/// Independent Formation Fighting reduction while the defender is in formation.
+	int formationFightingReductionPercent = 0;
 	/// Independent Pavise reduction for a ranged physical hit against a Defending stack.
 	int paviseDamageReductionPercent = 0;
 	/// One-shot physical premium earned by Waiting under Battlecraft.
@@ -189,6 +191,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Canonical New Horizons Archery ranged damage premium.");
 		s("newHorizonsArmorerReductionPercent", newHorizonsArmorerReductionPercent,
 			"Canonical New Horizons Armorer physical creature damage reduction.");
+		s("formationFightingReductionPercent", formationFightingReductionPercent,
+			"Independent physical reduction supplied by Formation Fighting while the defender is adjacent to a friendly stack.");
 		s("paviseDamageReductionPercent", paviseDamageReductionPercent,
 			"Independent ranged physical reduction from Pavise against a Defending target.");
 		s("battlecraftWaitDamagePercent", battlecraftWaitDamagePercent,

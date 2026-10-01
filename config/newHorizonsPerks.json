@@ -215,7 +215,7 @@
 					"requires": "advanced",
 					"description": "A stack adjacent to at least one friendly stack cannot be flanked and receives an additional 10% physical damage reduction.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "A stack adjacent to at least one friendly stack cannot be flanked and receives an additional 10% physical damage reduction."
 					}
 				},

@@ -3079,13 +3079,14 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 		const auto * target = battle.battleGetUnitByID(targetIds.front());
 		if(!target || !target->alive() || battle.battleGetOwner(target) == battle.sideToPlayer(side))
 			return 0.0f;
+		const bool targetCanBeFlanked = !battle.battleHasFormationFightingProtection(target);
 		// Estimate the immediate opportunity from allied melee stacks that have not
 		// acted yet. The authoritative attack path records exact sides as attacks
 		// resolve; this projection reads current contacts only and never mutates them.
 		uint8_t availableSides = 0;
 		for(const auto * unit : ownUnits)
 		{
-			if(!unit->isMeleeAttacker() || !unit->willMove(0))
+			if(!targetCanBeFlanked || !unit->isMeleeAttacker() || !unit->willMove(0))
 				continue;
 			availableSides |= battle.battleHeroOrderFlankSide(unit, target);
 		}
@@ -3094,8 +3095,9 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 			++distinctSides;
 		const int additionalSides = std::max(0, distinctSides - 1);
 		const int additionalSidePercent = battle.battleHeroOrderFlankAdditionalSidePercent(side, warcastingBonus);
-		const auto meleeOrderValue = bestOwnMeleeDamage(target)
-			* (flankDamage + additionalSides * additionalSidePercent) / 100.0f;
+		const auto meleeOrderValue = targetCanBeFlanked
+			? bestOwnMeleeDamage(target) * (flankDamage + additionalSides * additionalSidePercent) / 100.0f
+			: 0.0f;
 		if(combinedArmsRangedPercent <= 0.0f)
 			return meleeOrderValue;
 

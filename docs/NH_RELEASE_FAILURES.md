@@ -2,6 +2,36 @@
 
 ## Purpose
 
+### 2026-10-01 Formation Fighting — inventory columns
+
+Initial UP-077 offline check runs19 tests,18 pass. Root reverses the CSV
+Implementation/Art fields for the activated perk and accidentally marks the
+neutral fallback art Provisional. Restore Implementation=Provisional and
+Art=Not done; the existing inventory guard correctly rejects that claim.
+No artwork or runtime failure is implied. The repaired19-test gate passes.
+
+Client57962, native prerequisite84365 and both-target60326 compile. Native
+12147 runs19 cases with zero skips;15 pass and4 fail. Preserve
+`UP077-focused.log`/`.xml`. Three new fixture failures concern opponent-hidden
+hero ranks in a player0 detached view and purported isolation of stacks in a
+starter-army battle roster; diagnose and repair fixtures without bypassing
+visibility or relaxing adjacency rules. An existing Encirclement repeated-hit
+assertion also fails; do not claim it repaired or certified. The no-perk gate
+and existing Shroud/Pavise/Flank cases pass. Final retry remains pending.
+
+Both-target14193 passes after starter-unit isolation and defender-owned AI view
+repairs. Native25832 passes17/18: only the new combined Shroud fixture's
+post-attack geometry assertions fail. Move the same support-away/restoration
+assertions before combat advances state, then retain the authoritative protected
+hit assertion; do not relax the assertions. Both-target74477 passes and
+native61868 passes18/18, zero skips, in4.465s; first succeeding reports
+`UP077-focused-final.log`/`.xml`. Independent repair review passes. Original
+`UP077-focused-repaired.log`/`.xml` remain failure evidence. The excluded
+Encirclement repeated-hit case remains a separate Phase2 finding: damage changes
+4897 versus5900 after real execution; no Formation Fighting perk is selected
+and its gate is inactive, so do not attribute that assertion to this perk or
+claim the wider suite fully healthy.
+
 ### 2026-10-01 Estate Network / Quick Study — early CMake registration
 
 Client build attempt fails during CMake regeneration because the root registers

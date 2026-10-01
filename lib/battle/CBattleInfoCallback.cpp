@@ -69,15 +69,18 @@ LuckRollRules battleLuckRules(const IBattleInfo & battle)
 /// Order targeting is based on occupied hexes, not a unit's primary position.
 /// This matters for double-wide stacks: their rear hex may be the one actually
 /// touching the ward or presenting a flank.
-bool orderUnitsAdjacent(const battle::Unit * first, const battle::Unit * second)
+bool orderUnitsAdjacent(const battle::Unit * first, const battle::Unit * second,
+	const BattleHex & firstPosition = BattleHex::INVALID, const BattleHex & secondPosition = BattleHex::INVALID)
 {
 	if(!first || !second)
 		return false;
-	for(const auto & firstHex : first->getHexes())
+	const auto & firstHexes = firstPosition.isValid() ? first->getHexes(firstPosition) : first->getHexes();
+	const auto & secondHexes = secondPosition.isValid() ? second->getHexes(secondPosition) : second->getHexes();
+	for(const auto & firstHex : firstHexes)
 	{
 		if(!firstHex.isValid())
 			continue;
-		for(const auto & secondHex : second->getHexes())
+		for(const auto & secondHex : secondHexes)
 			if(secondHex.isValid() && BattleHex::getDistance(firstHex, secondHex) == 1)
 				return true;
 	}
@@ -615,6 +618,8 @@ bool CBattleInfoCallback::battleIsShroudFlankingAttack(const BattleAttackInfo & 
 		return false;
 	const auto attackerHex = attack.attackerPos.isValid() ? attack.attackerPos : attack.attacker->getPosition();
 	const auto defenderHex = attack.defenderPos.isValid() ? attack.defenderPos : attack.defender->getPosition();
+	if(battleHasFormationFightingProtection(attack.defender, defenderHex))
+		return false;
 	const auto adjacent = std::ranges::any_of(attack.attacker->getHexes(attackerHex), [&](const BattleHex & first)
 	{
 		return first.isValid() && std::ranges::any_of(attack.defender->getHexes(defenderHex), [&](const BattleHex & second)
@@ -625,6 +630,31 @@ bool CBattleInfoCallback::battleIsShroudFlankingAttack(const BattleAttackInfo & 
 	if(!adjacent)
 		return false;
 	return isToReverse(attack.attacker, attack.defender, attackerHex, defenderHex);
+}
+
+bool CBattleInfoCallback::battleHasFormationFightingProtection(const battle::Unit * defender,
+	const BattleHex & assumedPosition) const
+{
+	if(!getBattle() || !defender || !defender->alive() || defender->isGhost()
+		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defender))
+		return false;
+
+	const auto owner = battleGetOwner(defender);
+	if(playerToSide(owner) == BattleSide::NONE
+		|| newHorizonsCombatSkills::formationFightingReductionPercent(battleGetOwnerHero(defender)) == 0)
+		return false;
+
+	for(const auto * friendly : battleAliveUnits())
+	{
+		if(friendly->unitId() == defender->unitId() || !friendly->alive() || friendly->isGhost()
+			|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(friendly)
+			|| battleGetOwner(friendly) != owner)
+			continue;
+
+		if(orderUnitsAdjacent(defender, friendly, assumedPosition))
+			return true;
+	}
+	return false;
 }
 
 bool CBattleInfoCallback::battleShroudDeniesRetaliation(const BattleAttackInfo & attack) const
@@ -815,6 +845,8 @@ uint8_t CBattleInfoCallback::battleHeroOrderFlankSide(const battle::Unit * attac
 	const battle::Unit * defender) const
 {
 	if(!attacker || !defender || !attacker->getPosition().isValid() || !defender->getPosition().isValid())
+		return 0;
+	if(battleHasFormationFightingProtection(defender))
 		return 0;
 	return orderContactingSideMask(attacker, defender);
 }
@@ -2208,6 +2240,9 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		if(ordinaryCreatureAttack)
 			payload.newHorizonsArmorerReductionPercent = newHorizonsCombatSkills::armorerReductionPercent(
 				newHorizonsCombatSkills::armorerRank(battleGetOwnerHero(info.defender)));
+		if(info.defender && battleHasFormationFightingProtection(info.defender, info.defenderPos))
+			payload.formationFightingReductionPercent = newHorizonsCombatSkills::formationFightingReductionPercent(
+				battleGetOwnerHero(info.defender));
 		if(ordinaryCreatureAttack && info.defender && info.defender->defended())
 		{
 			payload.battlecraftDefendReductionPercent = newHorizonsBattlecraft::defendReductionPercent(
@@ -2337,7 +2372,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				if(eligibleOrderUnit(info.attacker)
 					&& attackerState->primaryTargetUnitId == info.defender->unitId())
 				{
-					if(!info.shooting)
+					if(!info.shooting
+						&& !battleHasFormationFightingProtection(info.defender, info.defenderPos))
 					{
 						const auto sideMask = battleHeroOrderFlankSide(info.attacker, info.defender);
 						if(const auto * flank = attackerState->flankFor(info.defender->unitId()))
@@ -2355,7 +2391,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 								attackerOrderCause = HeroCommand::FLANK;
 						}
 					}
-					else if(info.physicalDamage && info.defender->alive()
+					else if(info.shooting && info.physicalDamage && info.defender->alive()
 						&& battleGetOwner(info.attacker) != battleGetOwner(info.defender)
 						&& newHorizonsArchery::isOrdinaryPhysicalShooter(info.attacker)
 						&& attackerState->flankFor(info.defender->unitId()))

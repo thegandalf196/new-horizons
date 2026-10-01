@@ -107,6 +107,7 @@ ACTIVE_PERKS = {
     "new-horizons:armorer.ironDiscipline",
     "new-horizons:armorer.countercharge",
     "new-horizons:armorer.pavise",
+    "new-horizons:armorer.formationFighting",
     "new-horizons:sorceryMagic.overcharger",
     "new-horizons:sorceryMagic.matterShaper",
     "new-horizons:sorceryMagic.selectiveDispel",

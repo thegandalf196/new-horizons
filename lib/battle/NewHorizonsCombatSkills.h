@@ -17,11 +17,15 @@ namespace newHorizonsCombatSkills
 {
 constexpr std::string_view ARMORER_SKILL_ID = "new-horizons:armorer";
 constexpr std::string_view COUNTERCHARGE_PERK_ID = "new-horizons:armorer.countercharge";
+constexpr std::string_view FORMATION_FIGHTING_PERK_ID = "new-horizons:armorer.formationFighting";
 constexpr std::string_view PAVISE_PERK_ID = "new-horizons:armorer.pavise";
 constexpr int PAVISE_REDUCTION_PERCENT = 25;
+constexpr int FORMATION_FIGHTING_REDUCTION_PERCENT = 10;
 
 DLL_LINKAGE int armorerRank(const CGHeroInstance * hero);
 DLL_LINKAGE int armorerReductionPercent(int rank);
+/// Independent physical reduction while adjacent to a living friendly creature stack.
+DLL_LINKAGE int formationFightingReductionPercent(const CGHeroInstance * hero);
 /// Whether an attacker qualifies for ordinary creature-attack skill hit modifiers.
 DLL_LINKAGE bool isOrdinaryCreatureAttacker(const battle::Unit * attacker);
 /// Independent ranged-physical reduction while the target is Defending.

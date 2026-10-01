@@ -179,6 +179,7 @@ local function getPhysicalDamageReductionFactor(info)
 	end
 
 	table.insert(reductions, { info.newHorizonsArmorerReductionPercent or 0, 100 })
+	table.insert(reductions, { info.formationFightingReductionPercent or 0, 100 })
 	table.insert(reductions, { info.paviseDamageReductionPercent or 0, 100 })
 	table.insert(reductions, { info.battlecraftDefendReductionPercent or 0, 100 })
 	table.insert(reductions, { info.bulwarkDamageReductionBasisPoints or 0, 10000 })
