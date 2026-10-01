@@ -7,6 +7,7 @@
 #include <set>
 #include <algorithm>
 #include <cstdint>
+#include <optional>
 #include <stdexcept>
 #include <vector>
 #include "../serializer/ESerializationVersion.h"
@@ -53,9 +54,16 @@ struct DLL_LINKAGE SylvanLuckState
 	bool secondChanceUsed = false;
 	bool gambler = false;
 	bool gamblerAttackUsedThisRound = false;
+	bool chainOfFortune = false;
+	bool chainTriggeredThisRound = false;
+	std::optional<uint32_t> chainSourceUnitId;
 
-	bool active() const { return serendipity || naturesProvidence || fortunateAim || extendedActive() || perfectMoment || secondChance || gambler; }
+	bool active() const { return serendipity || naturesProvidence || fortunateAim || extendedActive() || perfectMoment || secondChance || gambler || chainOfFortune; }
 	bool gamblerAttackAvailable() const { return gambler && !gamblerAttackUsedThisRound; }
+	bool chainFortuneAvailable(uint32_t unitId) const
+	{
+		return chainOfFortune && chainSourceUnitId && *chainSourceUnitId != unitId;
+	}
 	bool canIgnoreNegativeLuck(bool secondChanceEligible = true) const
 	{
 		return (naturesProvidence && !negativeLuckIgnored)
@@ -79,7 +87,7 @@ struct DLL_LINKAGE SylvanLuckState
 	{
 		return baseLuck + (serendipity && !positiveLuckUnits.contains(unitId) ? 1 : 0)
 			+ (fortunateAim && focusFireShot ? 1 : 0) + temporaryLuck(unitId)
-			+ (gamblerAttackAvailable() ? 3 : 0);
+			+ (gamblerAttackAvailable() ? 3 : 0) + (chainFortuneAvailable(unitId) ? 1 : 0);
 	}
 	/// Returns whether a rolled bad-luck result is suppressed. Positive and
 	/// negative outcomes are mutually exclusive and applied once per strike.
@@ -91,6 +99,17 @@ struct DLL_LINKAGE SylvanLuckState
 		// prevented, or has no positive/negative result.
 		if(gamblerAttackAvailable())
 			gamblerAttackUsedThisRound = true;
+		// Consume the previous gift before this strike can start a new chain.
+		// Same-stack follow-up strikes leave it waiting for another stack.
+		if(chainFortuneAvailable(unitId))
+			chainSourceUnitId.reset();
+		if(positive && chainOfFortune && !chainTriggeredThisRound)
+		{
+			chainTriggeredThisRound = true;
+			// A carried gift remains one +1 benefit, not a stack of round tokens.
+			if(!chainSourceUnitId)
+				chainSourceUnitId = unitId;
+		}
 		if(positive && positiveLuckUnits.insert(unitId).second && forestsFavor)
 			speedUnits.insert(unitId);
 		bool ignored = false;
@@ -136,12 +155,16 @@ struct DLL_LINKAGE SylvanLuckState
 	{
 		negativeLuckIgnored = false;
 		gamblerAttackUsedThisRound = false;
+		chainTriggeredThisRound = false;
 		endActivation();
 	}
 	bool operator==(const SylvanLuckState &) const = default;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !h.hasFeature(ESerializationVersion::NEW_HORIZONS_CHAIN_OF_FORTUNE)
+			&& (chainOfFortune || chainTriggeredThisRound || chainSourceUnitId))
+			throw std::runtime_error("Cannot downgrade Chain of Fortune state");
 		if(h.saving && !h.hasFeature(ESerializationVersion::NEW_HORIZONS_GAMBLER) && (gambler || gamblerAttackUsedThisRound))
 			throw std::runtime_error("Cannot downgrade Gambler state");
 		if(h.saving && !h.hasFeature(ESerializationVersion::NEW_HORIZONS_SECOND_CHANCE) && (secondChance || secondChanceUsed))
@@ -194,6 +217,22 @@ struct DLL_LINKAGE SylvanLuckState
 		}
 		else if(!h.saving)
 			gambler = gamblerAttackUsedThisRound = false;
+		if(h.hasFeature(ESerializationVersion::NEW_HORIZONS_CHAIN_OF_FORTUNE))
+		{
+			h & chainOfFortune;
+			h & chainTriggeredThisRound;
+			h & chainSourceUnitId;
+		}
+		else if(!h.saving)
+		{
+			chainOfFortune = chainTriggeredThisRound = false;
+			chainSourceUnitId.reset();
+		}
+		if(!h.saving && !chainOfFortune && (chainTriggeredThisRound || chainSourceUnitId))
+			throw std::runtime_error("Chain of Fortune history without perk");
+		if(!h.saving && ((chainSourceUnitId && !positiveLuckUnits.contains(*chainSourceUnitId))
+			|| (chainTriggeredThisRound && positiveLuckUnits.empty())))
+			throw std::runtime_error("Chain of Fortune gift without a positive trigger");
 		if(!h.saving && gamblerAttackUsedThisRound && !gambler)
 			throw std::runtime_error("Gambler expenditure without perk");
 		if(!h.saving && secondChanceUsed && !secondChance)

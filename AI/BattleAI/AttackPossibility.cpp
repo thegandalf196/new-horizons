@@ -264,13 +264,16 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	// IDs alone cannot key a target/controller/round-sensitive premium. Preserve
 	// original-damage snapshots for comparison, but recompute current v2 damage.
 	// Remember marked targets so expiry/Dispel cannot revive a cached premium.
-	// Relentless Assault depends on the hero-side streak and target; never let an
-	// ID-only cache reuse damage from another hypothetical chain tier.
+	// Relentless Assault depends on the hero-side streak and target, while Chain
+	// of Fortune can change side Luck after a strike. Never let an ID-only cache
+	// reuse damage across either projected state. The Chain bypass remains active
+	// after its once-per-round trigger because a pending gift can still be spent.
 	if(heroCommands::supportedByRules(hb->getBattle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE)
 		|| newHorizonsBattlecraft::rank(hb->battleGetOwnerHero(attacker)) > 0
 		|| hasRelentlessAssault
 		|| hasSecondChance
 		|| fortune.gambler
+		|| fortune.chainOfFortune
 		|| hasGamblerPenalty
 		|| tracksRangedMarks(defender->unitId()))
 	{
@@ -622,6 +625,10 @@ AttackPossibility AttackPossibility::evaluate(
 		const bool projectsGambler = state->getBattle()
 			&& (state->getBattle()->getSylvanLuckState(BattleSide::ATTACKER).gamblerAttackAvailable()
 				|| state->getBattle()->getSylvanLuckState(BattleSide::DEFENDER).gamblerAttackAvailable());
+		// Keep the branch snapshot even after the current gift or round trigger is spent.
+		const bool projectsChainOfFortune = state->getBattle()
+			&& (state->getBattle()->getSylvanLuckState(BattleSide::ATTACKER).chainOfFortune
+				|| state->getBattle()->getSylvanLuckState(BattleSide::DEFENDER).chainOfFortune);
 		const auto hasSecondChanceFor = [&state](const battle::Unit * unit, bool physicalDamage)
 		{
 			if(!unit || !state->getBattle()
@@ -692,16 +699,16 @@ AttackPossibility AttackPossibility::evaluate(
 			|| projectsImmovable || projectsSwampRenewal || projectsMireGrip;
 		if(ap.perfectMoment || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 				|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
-				|| projectsBulwarkEffects || projectsSecondChance || projectsGambler)
+				|| projectsBulwarkEffects || projectsSecondChance || projectsGambler || projectsChainOfFortune)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
 	if(projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
-			|| projectsBulwarkEffects || projectsSecondChance || projectsGambler)
+			|| projectsBulwarkEffects || projectsSecondChance || projectsGambler || projectsChainOfFortune)
 			ap.effectPreview = fortunePreview;
 	const CBattleInfoCallback & luckState = fortunePreview
 		? static_cast<const CBattleInfoCallback &>(*fortunePreview) : *state;
-	const auto projectCertainLuckOrGamblerStrike = [&fortunePreview](const BattleAttackInfo & attack,
+	const auto captureAndProjectFortuneStrike = [&fortunePreview](const BattleAttackInfo & attack,
 		const std::vector<std::pair<uint32_t, int64_t>> & hits,
 		battle::CUnitState * attackerState, std::optional<ProjectedLuckOutcome> & resolvedLuck)
 	{
@@ -710,15 +717,22 @@ AttackPossibility AttackPossibility::evaluate(
 		const auto side = fortunePreview->playerToSide(fortunePreview->battleGetOwner(attack.attacker));
 		const bool gamblerAvailable = (side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
 			&& fortunePreview->getSylvanLuckState(side).gamblerAttackAvailable();
+		const auto fortune = side == BattleSide::ATTACKER || side == BattleSide::DEFENDER
+			? fortunePreview->getSylvanLuckState(side) : SylvanLuckState{};
+		const bool chainEnabled = fortune.chainOfFortune;
+		const bool chainAvailable = chainEnabled && fortune.chainFortuneAvailable(attack.attacker->unitId());
 		const auto outcome = fortunePreview->captureFortuneStrikeOutcome(attack);
 		resolvedLuck = outcome;
 		const bool certainNegative = outcome == ProjectedLuckOutcome::NEGATIVE;
-		if(!certainNegative && !gamblerAvailable)
+		const bool knownPositiveChainTrigger = chainEnabled && outcome == ProjectedLuckOutcome::POSITIVE;
+		if(!certainNegative && !gamblerAvailable && !chainAvailable && !knownPositiveChainTrigger)
 			return false;
 
-		// Capture Luck while Gambler's +3 is still present, then consume only the
-		// detached round window here. The selected replay applies positive Luck
+		// Capture Luck before one-strike bonuses are consumed, then update only
+		// this detached side history. The selected replay applies positive Luck
 		// aftermath once, after its projected hit damage has been replayed.
+		// An unresolved eligible Chain strike consumes the gift without arming
+		// another one; only the known positive result can arm a pending source.
 		fortunePreview->projectFortuneStrike(attack, hits, attackerState, false,
 			resolvedLuck, false);
 		return true;
@@ -892,7 +906,7 @@ AttackPossibility AttackPossibility::evaluate(
 						preemptiveStrike.damageProvenance = preemptiveProvenance;
 						preemptiveStrike.hits.emplace_back(ap.attackerState->unitId(), requestedPreemptiveDamage);
 						preemptiveStrike.resolvedHits.emplace_back(ap.attackerState->unitId(), appliedPreemptiveDamage);
-						projectCertainLuckOrGamblerStrike(preemptive, preemptiveStrike.hits,
+						captureAndProjectFortuneStrike(preemptive, preemptiveStrike.hits,
 							strikeDefenderState->second.get(), preemptiveStrike.resolvedLuck);
 						// Preserve the reaction's position in the resolved sequence for the
 						// detached branch replay, including a zero-damage Luck result.
@@ -1122,7 +1136,7 @@ AttackPossibility AttackPossibility::evaluate(
 			projectedStrikeAttack.unluckyStrike = attackInfo.unluckyStrike;
 			projectedStrikeAttack.attackerPos = ap.attackerState->getPosition();
 			projectedStrikeAttack.defenderPos = strikeDefenderState->second->getPosition();
-			const bool projectedFortuneStrike = projectCertainLuckOrGamblerStrike(
+			const bool projectedFortuneStrike = captureAndProjectFortuneStrike(
 				projectedStrikeAttack, strike.hits, ap.attackerState.get(), strike.resolvedLuck);
 			if(ap.perfectMoment && i == 0)
 				perfectMomentStrikeRecorded = projectedFortuneStrike;
@@ -1259,7 +1273,7 @@ AttackPossibility AttackPossibility::evaluate(
 						counterfireStrike.damageProvenance = counterfireProvenance;
 						counterfireStrike.hits.emplace_back(ap.attackerState->unitId(), requestedCounterfireDamage);
 						counterfireStrike.resolvedHits.emplace_back(ap.attackerState->unitId(), counterfireDamage);
-						projectCertainLuckOrGamblerStrike(counterfire, counterfireStrike.hits,
+						captureAndProjectFortuneStrike(counterfire, counterfireStrike.hits,
 							counterShooter.get(), counterfireStrike.resolvedLuck);
 						counterfireStrikes.push_back(std::move(counterfireStrike));
 					}
@@ -1377,7 +1391,7 @@ AttackPossibility AttackPossibility::evaluate(
 					cleave->hits.emplace_back(targetState->unitId(), cleaveDamage);
 					targetState->damage(cleaveDamage, false, cleave->damageProvenance);
 					cleave->resolvedHits.emplace_back(targetState->unitId(), cleaveDamage);
-					projectCertainLuckOrGamblerStrike(cleaveAttack, cleave->hits,
+					captureAndProjectFortuneStrike(cleaveAttack, cleave->hits,
 						ap.attackerState.get(), cleave->resolvedLuck);
 					if(cleaveDamage > 0 && state->battleCanTriggerNoQuarter(cleaveAttack) && !targetState->isTimeStopped()
 						&& state->battleMatchOwner(ap.attackerState.get(), targetState.get())
@@ -1464,7 +1478,7 @@ AttackPossibility AttackPossibility::evaluate(
 				retaliationAttack.retaliation = true;
 				retaliationAttack.attackerPos = retaliatorState->getPosition();
 				retaliationAttack.defenderPos = retaliationTarget->getPosition();
-				projectCertainLuckOrGamblerStrike(retaliationAttack, retaliation->hits,
+				captureAndProjectFortuneStrike(retaliationAttack, retaliation->hits,
 					retaliatorState.get(), retaliation->resolvedLuck);
 			}
 

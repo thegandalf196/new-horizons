@@ -3211,15 +3211,38 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	const auto luckSide = battle.playerToSide(battle.battleGetOwner(attacker));
 	bool secondChanceWasAvailable = false;
 	bool gamblerAttackWasAvailable = false;
+	SylvanLuckState fortuneBeforeAttack;
 	if(luckSide == BattleSide::ATTACKER || luckSide == BattleSide::DEFENDER)
 	{
-		const auto fortuneBeforeAttack = battle.getBattle()->getSylvanLuckState(luckSide);
+		fortuneBeforeAttack = battle.getBattle()->getSylvanLuckState(luckSide);
 		secondChanceWasAvailable = fortuneBeforeAttack.secondChance && !fortuneBeforeAttack.secondChanceUsed;
 		gamblerAttackWasAvailable = fortuneBeforeAttack.gamblerAttackAvailable();
 	}
+	const bool chainFortuneWasAvailable = fortuneBeforeAttack.chainFortuneAvailable(attacker->unitId());
 	rollAttackFlags(battle, attacker, defender, bat, perfectMoment);
 	const bool gamblerAttackWindowUsed = gamblerAttackWasAvailable && bat.fortuneState
 		&& bat.fortuneState->gamblerAttackUsedThisRound;
+	const bool chainFortuneConsumed = chainFortuneWasAvailable && bat.fortuneState
+		&& !bat.fortuneState->chainFortuneAvailable(attacker->unitId());
+	const bool chainFortuneArmed = bat.fortuneState && !fortuneBeforeAttack.chainTriggeredThisRound
+		&& bat.fortuneState->chainTriggeredThisRound && bat.fortuneState->chainOfFortune
+		&& bat.fortuneState->chainSourceUnitId && *bat.fortuneState->chainSourceUnitId == attacker->unitId()
+		&& (!fortuneBeforeAttack.chainSourceUnitId
+			|| *fortuneBeforeAttack.chainSourceUnitId != *bat.fortuneState->chainSourceUnitId);
+	if(chainFortuneConsumed)
+	{
+		MetaString line;
+		line.appendRawString("Chain of Fortune's +1 Luck is consumed by %s's attack (normal Luck limits and immunity apply).");
+		attacker->addNameReplacement(line, attacker->getCount());
+		combatFeedbackLogLines.push_back(std::move(line));
+	}
+	if(chainFortuneArmed)
+	{
+		MetaString line;
+		line.appendRawString("Positive Luck from %s arms Chain of Fortune: the next different friendly stack's attack receives +1 Luck (normal Luck limits and immunity apply).");
+		attacker->addNameReplacement(line, attacker->getCount());
+		combatFeedbackLogLines.push_back(std::move(line));
+	}
 	if(gamblerAttackWindowUsed)
 	{
 		MetaString line;

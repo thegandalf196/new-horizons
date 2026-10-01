@@ -2,6 +2,29 @@
 
 ## Purpose
 
+### 2026-10-01 Chain of Fortune — first native gate
+
+Both-target build74505 passes (`UP087-build.log`). Native99946 passes24/26,
+zero skips in7.422s (`UP087-focused.log`/`.xml`), failing the round-carry and
+controlled-reaction fixture cases. The round case changes the live probability
+table after combat setup but still receives positive Luck; the reaction case
+emits only the initiating attack. A bounded fixture worker is tracing whether
+setup or production is responsible. Preserve the failed evidence and do not
+count Chain as completed until the repaired principal gate passes.
+
+The live Luck randomizer reads game settings, not the battle forecast table.
+Use No Luck on the round recipient after verifying its carried+1 entitlement,
+keeping the actual100% curve for the later fresh trigger. The reaction fixture
+also attached BLOCKS_RETALIATION to its initiating attacker, which explicitly
+prevents the target's counterattack in BattleActionProcessor. Remove that
+fixture bonus rather than weakening production retaliation validation.
+
+Repaired both-target3912 exits0 (`UP087-repaired-build.log`). Native73716 passes
+26/26 with zero skips in6.779s (`UP087-verified.log`/`.xml`); all six Chain
+cases and20 Luck regressions pass. Independent fixture-repair review has no
+blocker. The initial failed report remains retained; no production rules were
+relaxed. Coverage may now count Chain, but playable acceptance remains separate.
+
 ### 2026-10-01 Gambler — fixture probability-field visibility
 
 Both-target build49572 exits1 while compiling NewHorizonsGamblerTest.cpp.

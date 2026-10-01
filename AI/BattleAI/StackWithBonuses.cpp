@@ -722,21 +722,24 @@ void HypotheticBattle::projectFortuneStrike(const BattleAttackInfo & attack,
 
 	const auto rules = getLuckRollRules();
 	const bool gamblerAttackAvailable = fortune.gamblerAttackAvailable();
+	const bool chainFortuneAvailable = fortune.chainFortuneAvailable(attack.attacker->unitId());
 	// Resolve this attack with the pre-consumption Luck snapshot. Candidate
-	// metadata can carry that result through replay after Gambler has expired.
+	// metadata carries that result through replay after one-strike bonuses expire.
 	const auto outcome = resolvedLuck ? *resolvedLuck : captureFortuneStrikeOutcome(attack);
 	const bool positive = outcome == ProjectedLuckOutcome::POSITIVE;
 	const bool negative = outcome == ProjectedLuckOutcome::NEGATIVE;
 	const bool guaranteedNonPositive = outcome == ProjectedLuckOutcome::NEGATIVE
 		|| outcome == ProjectedLuckOutcome::NEUTRAL;
-	if(!positive && !negative && !gamblerAttackAvailable)
+	// Chain consumes its carried benefit on the next different friendly stack's
+	// attack, even when the pre-consumption Luck outcome is still stochastic.
+	if(!positive && !negative && !gamblerAttackAvailable && !chainFortuneAvailable)
 		return;
 
 	// Negative Providence history is committed as well, but it has no
 	// aftermath to project.  recordStrike returns true when that bad result was
 	// suppressed by Providence, exactly as it does in the authoritative path.
-	// Gambler also records an unresolved strike here: candidate and committed
-	// branches consume their one round-long first-attack window without guessing
+	// Gambler and an eligible Chain gift also record unresolved strikes so the
+	// candidate and committed branches consume their windows without guessing
 	// the stochastic Luck result.
 	const bool ignoredNegative = fortune.recordStrike(attack.attacker->unitId(), positive, negative,
 		newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attack.attacker, attack.physicalDamage));

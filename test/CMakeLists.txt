@@ -293,6 +293,7 @@ set(test_SRCS
 		server/battles/NewHorizonsLuckyAimTest.cpp
 		server/battles/NewHorizonsSecondChanceTest.cpp
 		server/battles/NewHorizonsGamblerTest.cpp
+		server/battles/NewHorizonsChainOfFortuneTest.cpp
 		server/battles/NewHorizonsLandMineTest.cpp
 		server/battles/NewHorizonsQuicksandTest.cpp
 		server/battles/NewHorizonsFireWallTest.cpp

@@ -1,7 +1,7 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-01
-Canonical source SHA-256: `ab4331d9c0557b9dc69954ada098e9583d29492d62115940ccdc82753903c122`
+Canonical source SHA-256: `e6352a6106686f9701d33efd15df80be97b3b9777aa1c4fb6ce0513c32f798cb`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
 completion separately from catalogue presence and artwork. An `active` data row,
@@ -13,6 +13,21 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+UP-087 Chain of Fortune is source/native verified. A positive friendly strike
+arms one+1 Luck benefit for the next different friendly stack's attack. Same
+source follow-ups retain it; unused benefits carry across rounds. Consumption
+precedes rearming and respects caps/No Luck. Current-controller reactions,
+append-only save/strike-packet state and detached certain/UNKNOWN AI candidate
+and selected replay are verified. Both-target3912 exits0
+(`UP087-repaired-build.log`); native73716 passes26/26, zero skips in6.779s
+(`UP087-verified.log`/`.xml`), including six Chain cases and20 Luck regressions.
+Binary SHA-256 `9a0a233a0abb92f6eb1ca9ad570568301bc8e1d30fa784e4ecde484a599a180e`.
+Data/inventory19/19 pass; independent review has no blocker. Coverage140→141
+active perks, planned170→169; Luck5/5. Ranks84/93 and combat60/67 unchanged.
+Phase2 retains broader reaction/perk matrices and playable combat-log acceptance.
+Purpose-made art Not done; no playable promotion. Twist of Fate's approved
+adverse-roll scope is canonical and is the next implementation slice.
 
 UP-086 Gambler is source/native verified. The first friendly attack each round
 receives+3 Luck through the shared capped/immunity-aware callback and spends
