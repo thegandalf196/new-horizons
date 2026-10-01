@@ -329,4 +329,5 @@ void registerTypes(Serializer &s)
 	s.template registerType<SetNewHorizonsLearningMentorState>(286);
 	s.template registerType<BattleAdverseRerollStateChanged>(287);
 	s.template registerType<BattleMoraleSuppressionStateChanged>(288);
+	s.template registerType<BattleReducedExtraActivationStateChanged>(289);
 }

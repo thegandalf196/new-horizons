@@ -274,6 +274,7 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	});
 	const bool hasGamblerPenalty = attacker->hasBonus(gamblerPenaltySelector);
 	const bool hasRangedFollowUp = shooting && hasPendingRangedFollowUp(attacker);
+	const bool hasReducedExtraActivation = hb->battleGetActivationOutputPercent(attacker) < 100;
 	// IDs alone cannot key a target/controller/round-sensitive premium. Preserve
 	// original-damage snapshots for comparison, but recompute current v2 damage.
 	// Remember marked targets so expiry/Dispel cannot revive a cached premium.
@@ -284,6 +285,7 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	if(heroCommands::supportedByRules(hb->getBattle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE)
 		|| newHorizonsBattlecraft::rank(hb->battleGetOwnerHero(attacker)) > 0
 		|| hasRangedFollowUp
+		|| hasReducedExtraActivation
 		|| hasRelentlessAssault
 		|| hasSecondChance
 		|| fortune.gambler

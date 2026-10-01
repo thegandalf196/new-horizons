@@ -23,6 +23,7 @@
 #include "../../lib/battle/BattleProxy.h"
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/HeroActionAllowanceState.h"
+#include "../../lib/battle/ReducedExtraActivationState.h"
 
 class HypotheticBattle;
 class CSpell;
@@ -176,6 +177,8 @@ public:
 	std::shared_ptr<StackWithBonuses> getForUpdate(uint32_t id);
 
 	BattleID getBattleID() const override;
+	const ReducedExtraActivationState & getReducedExtraActivationState(BattleSide side) const override;
+	void setReducedExtraActivationState(BattleSide side, const ReducedExtraActivationState & state) override;
 	std::optional<HeroOrderState> getHeroOrderState(BattleSide side) const override;
 	std::optional<HeroOrderState> battleGetHeroOrderState(BattleSide side) const override;
 	const RelentlessAssaultState & battleGetRelentlessAssaultState(BattleSide side) const override;
@@ -391,6 +394,7 @@ public:
 	const scripting::Pool & getScriptContextPool() const override;
 
 private:
+	BattleSideArray<ReducedExtraActivationState> reducedExtraActivationStates;
 	BattleSideArray<std::optional<HeroOrderState>> heroOrderStates;
 	BattleSideArray<AlternatingHeroActionState> warcastingStates;
 	BattleSideArray<HeroActionAllowanceState> heroActionAllowances;

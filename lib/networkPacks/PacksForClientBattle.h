@@ -19,6 +19,7 @@
 #include "../battle/BattleAction.h"
 #include "../battle/AdverseCombatRerollState.h"
 #include "../battle/MoraleSuppressionState.h"
+#include "../battle/ReducedExtraActivationState.h"
 #include "../battle/BattleInfo.h"
 #include "../battle/BattleHexArray.h"
 #include "../battle/BattleUnitTurnReason.h"
@@ -208,6 +209,42 @@ struct DLL_LINKAGE BattleMoraleSuppressionStateChanged : public CPackForClient
 	}
 };
 
+/// Replicates Quartermaster's once-per-combat expenditure and active reduced-output identity.
+struct DLL_LINKAGE BattleReducedExtraActivationStateChanged : public CPackForClient
+{
+	BattleID battleID = BattleID::NONE;
+	BattleSide side = BattleSide::NONE;
+	ReducedExtraActivationState state;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	void validateShape() const
+	{
+		if(battleID == BattleID::NONE || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+			throw std::runtime_error("Invalid reduced extra activation state update");
+		state.validateShape();
+	}
+
+	void validateTransitionFrom(const ReducedExtraActivationState & previous) const
+	{
+		validateShape();
+		state.validateTransitionFrom(previous);
+	}
+
+	template <typename Handler>
+	void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_REDUCED_EXTRA_ACTIVATION))
+			throw std::runtime_error(h.saving
+				? "Cannot serialize reduced extra activation update to an older format"
+				: "Cannot deserialize reduced extra activation update from an older format");
+		h & battleID;
+		h & side;
+		h & state;
+		validateShape();
+	}
+};
+
 struct DLL_LINKAGE BattleSetActiveStack : public CPackForClient
 {
 	BattleID battleID = BattleID::NONE;
@@ -224,6 +261,9 @@ struct DLL_LINKAGE BattleSetActiveStack : public CPackForClient
 		if(h.saving && reason == BattleUnitTurnReason::RANGED_ATTACK_CONTINUATION
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_RANGED_FOLLOW_UP))
 			throw std::runtime_error("Can not serialize a ranged attack continuation to an older format");
+		if(reason == BattleUnitTurnReason::REDUCED_EXTRA_ACTIVATION
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_REDUCED_EXTRA_ACTIVATION))
+			throw std::runtime_error("Can not serialize a reduced extra activation to an older format");
 		h & battleID;
 		h & stack;
 		h & reason;

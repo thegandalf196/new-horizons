@@ -57,6 +57,24 @@ constexpr int BREAKTHROUGH_DAMAGE_REDUCTION_IGNORE_PERCENT = 50;
 constexpr int PIERCING_BOLTS_DEFENSE_IGNORE_PERCENT = 50;
 constexpr int FORTIFICATION_ENGINEER_SIEGE_PERCENT = 125;
 
+int64_t scaledBattleOutput(int64_t base, int32_t outputPercent)
+{
+	if(base <= 0 || outputPercent <= 0)
+		return 0;
+	return (base / 100) * outputPercent + ((base % 100) * outputPercent) / 100;
+}
+
+int64_t firstAidHealingBase(const CGHeroInstance * owner)
+{
+	if(!owner)
+		return 0;
+	if(const auto siege = owner->getSiegeCapabilities();
+		siege && owner->getCapabilityRules()["rulesetVersion"].Integer() >= 3)
+		return siege->firstAidHealing;
+	return owner->valOfBonuses(BonusType::MANUAL_CONTROL,
+		BonusSubtypeID(CreatureID(CreatureID::FIRST_AID_TENT)));
+}
+
 LuckRollRules battleLuckRules(const IBattleInfo & battle)
 {
 	auto rules = battle.getLuckRollRules();
@@ -150,6 +168,57 @@ bool CBattleInfoCallback::battleHasPendingRangedFollowUp(const battle::Unit * un
 
 	const auto * state = dynamic_cast<const battle::CUnitState *>(unit);
 	return state && state->rangedFollowUpDamagePercent > 0 && state->rangedFollowUpDamagePercent <= 100;
+}
+
+ReducedExtraActivationState CBattleInfoCallback::battleGetReducedExtraActivationState(BattleSide side) const
+{
+	const auto * battle = getBattle();
+	if(!battle || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+		return {};
+	return battle->getReducedExtraActivationState(side);
+}
+
+int32_t CBattleInfoCallback::battleGetActivationOutputPercent(const battle::Unit * unit) const
+{
+	const auto * battle = getBattle();
+	if(!battle || !unit)
+		return 100;
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto & state = battle->getReducedExtraActivationState(side);
+		if(state.activeUnitId == unit->unitId())
+			return state.outputPercent;
+	}
+	return 100;
+}
+
+int64_t CBattleInfoCallback::battleGetFirstAidHealingOutput(const battle::Unit * healer) const
+{
+	if(!healer || !healer->isFirstAidTent())
+		return 0;
+	return scaledBattleOutput(firstAidHealingBase(battleGetOwnerHero(healer)),
+		battleGetActivationOutputPercent(healer));
+}
+
+int32_t CBattleInfoCallback::battleGetCatapultStructuralDamage(
+	const battle::Unit * attacker, int32_t hitQuality) const
+{
+	// This callback is called at the catapult boundary, where the machine type
+	// is already known. Some legacy adapters provide a lightweight Unit proxy
+	// without creature identity, so do not rediscover its type here.
+	if(!attacker || hitQuality <= 0)
+		return 0;
+
+	int64_t structuralOutput = std::min<int32_t>(hitQuality, 2);
+	if(const auto * hero = battleGetOwnerHero(attacker);
+		hero && hero->getCapabilityRules()["rulesetVersion"].Integer() >= 3)
+	{
+		if(const auto siege = hero->getSiegeCapabilities())
+			structuralOutput *= std::max(0, siege->catapultStructuralDamage);
+	}
+	structuralOutput = scaledBattleOutput(structuralOutput, battleGetActivationOutputPercent(attacker));
+	return static_cast<int32_t>(std::clamp<int64_t>(structuralOutput, 0,
+		std::numeric_limits<int32_t>::max()));
 }
 
 bool CBattleInfoCallback::battleCanTakeRangedFollowUp(const battle::Unit * unit) const
@@ -2210,6 +2279,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	payload.chargeDistance = info.chargeDistance;
 	payload.shooting = info.shooting;
 	payload.physicalDamage = info.physicalDamage;
+	payload.activationOutputPercent = battleGetActivationOutputPercent(info.attacker);
 	payload.archeryRangedDamageMultiplierPercent = info.archeryRangedDamageMultiplierPercent;
 	if(info.shooting && info.physicalDamage && info.attacker && info.attacker->isBallista())
 		payload.rangedFollowUpDamagePercent = battleGetRangedFollowUpDamagePercent(info.attacker);
@@ -2663,12 +2733,10 @@ int64_t CBattleInfoCallback::getFirstAidHealValue(const CGHeroInstance * owner, 
 	if(!owner || !target)
 		return 0;
 
-	int64_t base = 0;
-	if(const auto siege = owner->getSiegeCapabilities();
-		siege && owner->getCapabilityRules()["rulesetVersion"].Integer() >= 3)
-		base = siege->firstAidHealing;
-	else
-		base = owner->valOfBonuses(BonusType::MANUAL_CONTROL, BonusSubtypeID(CreatureID(CreatureID::FIRST_AID_TENT)));
+	int64_t base = firstAidHealingBase(owner);
+	if(const auto * activeHealer = battleActiveUnit(); activeHealer && activeHealer->isFirstAidTent()
+		&& battleGetOwnerHero(activeHealer) == owner)
+		base = battleGetFirstAidHealingOutput(activeHealer);
 
 	if(base <= 0)
 		return 0;

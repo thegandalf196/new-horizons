@@ -135,6 +135,7 @@ public:
 	void visitBattleDemonicGatingStateChanged(BattleDemonicGatingStateChanged & pack) override;
 	void visitBattleAdverseRerollStateChanged(BattleAdverseRerollStateChanged & pack) override;
 	void visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack) override;
+	void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) override;
 	void visitSetRewardableConfiguration(SetRewardableConfiguration & pack) override;
 	void visitBattleSetStackProperty(BattleSetStackProperty & pack) override;
 	void visitBattleNextRound(BattleNextRound & pack) override;
@@ -162,4 +163,5 @@ public:
 	void visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack) override;
 	void visitBattleAdverseRerollStateChanged(BattleAdverseRerollStateChanged & pack) override;
 	void visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack) override;
+	void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) override;
 };

@@ -19,6 +19,7 @@
 #include "SylvanLuckState.h"
 #include "AdverseCombatRerollState.h"
 #include "MoraleSuppressionState.h"
+#include "ReducedExtraActivationState.h"
 #include "AlternatingHeroActionState.h"
 #include "HeroActionAllowanceState.h"
 #include "RelentlessAssaultState.h"
@@ -158,6 +159,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	AdverseCombatRerollState adverseCombatReroll;
 	// Discipline's Rally cancels the first negative Morale trigger for this side.
 	MoraleSuppressionState moraleSuppression;
+	// Quartermaster's once-per-combat expenditure and reduced activation identity.
+	ReducedExtraActivationState reducedExtraActivation;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);
@@ -406,6 +409,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			acceptedHeroManaSpent = 0;
 		h & adverseCombatReroll;
 		h & moraleSuppression;
+		h & reducedExtraActivation;
 	}
 
 	void clearMetamagicSequence()

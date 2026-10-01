@@ -512,15 +512,9 @@ void ServerCallbackProxy::catapultAttack(ServerCallback & object, const IBattleI
 	// proxies used by legacy effects may not carry a Creature instance, so do
 	// not dereference unitType() merely to rediscover that fact here.
 	if(damageDealt > 0 && attacker && battle.getWallStructuralHP(attackedPart) > 0)
-	{
-		const auto * concreteBattle = dynamic_cast<const CBattleInfoCallback *>(&battle);
-		if(const auto * hero = concreteBattle ? concreteBattle->battleGetOwnerHero(attacker) : nullptr;
-			hero && hero->getCapabilityRules()["rulesetVersion"].Integer() >= 3)
-		{
-			if(const auto siege = hero->getSiegeCapabilities())
-				structuralDamage = static_cast<ui16>(std::clamp<int32_t>(damageDealt * siege->catapultStructuralDamage, 0, 65535));
-		}
-	}
+		if(const auto * concreteBattle = dynamic_cast<const CBattleInfoCallback *>(&battle))
+			structuralDamage = static_cast<ui16>(std::clamp<int32_t>(
+				concreteBattle->battleGetCatapultStructuralDamage(attacker, damageDealt), 0, 65535));
 
 	CatapultAttack ca;
 	ca.battleID = battle.getBattle()->getBattleID();

@@ -224,6 +224,91 @@ namespace
 
 	void applyStartOfActivationEffects(CGameHandler * gameHandler,
 		const CBattleInfoCallback & battle, const battle::Unit * stack);
+
+	std::optional<BattleSide> quartermasterActiveSide(const CBattleInfoCallback & battle, uint32_t unitId)
+	{
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			if(battle.battleGetReducedExtraActivationState(side).activeUnitId == unitId)
+				return side;
+		return std::nullopt;
+	}
+
+	void clearQuartermasterActivation(CGameHandler * gameHandler,
+		const CBattleInfoCallback & battle, uint32_t unitId)
+	{
+		const auto side = quartermasterActiveSide(battle, unitId);
+		if(!side)
+			return;
+
+		auto state = battle.battleGetReducedExtraActivationState(*side);
+		state.activeUnitId = ReducedExtraActivationState::INVALID_UNIT_ID;
+		state.outputPercent = 100;
+		BattleReducedExtraActivationStateChanged update;
+		update.battleID = battle.getBattle()->getBattleID();
+		update.side = *side;
+		update.state = state;
+		gameHandler->sendAndApply(update);
+	}
+
+	void clearUnusableQuartermasterActivations(CGameHandler * gameHandler,
+		const CBattleInfoCallback & battle)
+	{
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			const auto state = battle.battleGetReducedExtraActivationState(side);
+			if(!state.hasActiveUnit())
+				continue;
+			const auto * unit = battle.battleGetStackByID(state.activeUnitId, false);
+			if(!unit || !unit->alive() || unit->isGhost() || unit->isTimeStopped())
+				clearQuartermasterActivation(gameHandler, battle, state.activeUnitId);
+		}
+	}
+
+	bool spendQuartermasterAllowance(CGameHandler * gameHandler,
+		const CBattleInfoCallback & battle, const battle::Unit * unit)
+	{
+		if(!unit || !unit->alive() || unit->isGhost() || unit->isTimeStopped()
+			|| !(unit->isBallista() || unit->isCatapult() || unit->isFirstAidTent()))
+			return false;
+
+		const auto controllerSide = battle.playerToSide(battle.battleGetOwner(unit));
+		if(controllerSide != BattleSide::ATTACKER && controllerSide != BattleSide::DEFENDER)
+			return false;
+		const auto * hero = battle.battleGetOwnerHero(unit);
+		if(!hero || !hero->hasActivePerk("new-horizons:warMachines", "new-horizons:warMachines.quartermaster"))
+			return false;
+
+		auto state = battle.battleGetReducedExtraActivationState(controllerSide);
+		if(!state.enabled || state.used || state.hasActiveUnit())
+			return false;
+
+		const auto ammoCarts = battle.battleGetUnitsIf([&battle, unit](const battle::Unit * candidate)
+		{
+			return candidate && candidate->isAmmoCart() && candidate->alive()
+				&& battle.battleMatchOwner(unit, candidate, true);
+		});
+		if(ammoCarts.empty())
+			return false;
+
+		state.used = true;
+		state.activeUnitId = unit->unitId();
+		state.outputPercent = 50;
+		BattleReducedExtraActivationStateChanged update;
+		update.battleID = battle.getBattle()->getBattleID();
+		update.side = controllerSide;
+		update.state = state;
+		gameHandler->sendAndApply(update);
+
+		BattleLogMessage feedback;
+		feedback.battleID = update.battleID;
+		MetaString line;
+		line.appendTextID(hero->getNameTextID());
+		line.appendRawString(" uses Quartermaster: %s receives an additional activation at 50% effectiveness.");
+		unit->addNameReplacement(line, unit->getCount());
+		feedback.lines.push_back(std::move(line));
+		gameHandler->sendAndApply(feedback);
+		return true;
+	}
 }
 
 BattleFlowProcessor::BattleFlowProcessor(BattleProcessor * owner, CGameHandler * newGameHandler)
@@ -813,6 +898,12 @@ void BattleFlowProcessor::activateNextStack(const CBattleInfoCallback & battle)
 	// Find next stack that requires manual control
 	for (;;)
 	{
+		// A reduced extra activation can be waiting behind other queue entries.
+		// Reconcile only the two saved active identities at queue boundaries so
+		// an absent/dead/ghost/stopped machine cannot leave a stale 50% output
+		// marker, while a live waiting machine keeps its earned activation.
+		clearUnusableQuartermasterActivations(gameHandler, battle);
+
 		// battle has ended
 		if (owner->checkBattleStateChanges(battle))
 			return;
@@ -1575,6 +1666,32 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 {
 	const auto * actedStack = battle.battleGetStackByID(ba.stackNumber, false);
 	const auto * activeStack = battle.battleActiveUnit();
+	const auto startReducedExtraActivation = [this, &battle](const battle::Unit * unit)
+	{
+		if(!spendQuartermasterAllowance(gameHandler, battle, unit))
+			return false;
+
+		setActiveStack(battle, unit, BattleUnitTurnReason::REDUCED_EXTRA_ACTIVATION);
+		const bool terminalActivation = !unit->alive() || unit->isTimeStopped();
+		if(terminalActivation)
+			clearQuartermasterActivation(gameHandler, battle, unit->unitId());
+		if(owner->checkBattleStateChanges(battle))
+			return true;
+		if(terminalActivation)
+			activateNextStack(battle);
+		return true;
+	};
+	const auto completeAcceptedActivation = [this, &battle, &ba, &startReducedExtraActivation](const battle::Unit * unit)
+	{
+		if(!unit || ba.actionType == EActionType::WAIT)
+			return false;
+		if(quartermasterActiveSide(battle, unit->unitId()))
+		{
+			clearQuartermasterActivation(gameHandler, battle, unit->unitId());
+			return false;
+		}
+		return startReducedExtraActivation(unit);
+	};
 	if (ba.actionType == EActionType::END_TACTIC_PHASE)
 	{
 		onTacticsEnded(battle);
@@ -1609,7 +1726,8 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 				update.changedStacks.push_back(std::move(change));
 				gameHandler->sendAndApply(update);
 			}
-			activateNextStack(battle);
+			if(!completeAcceptedActivation(actedStack ? actedStack : activeStack))
+				activateNextStack(battle);
 		}
 		return;
 	}
@@ -1634,7 +1752,8 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 		line.appendRawString("The Master Gunner follow-up is no longer usable.");
 		message.lines.push_back(std::move(line));
 		gameHandler->sendAndApply(message);
-		activateNextStack(battle);
+		if(!completeAcceptedActivation(followUpStack))
+			activateNextStack(battle);
 		return;
 	}
 
@@ -1643,7 +1762,10 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 		if(actedStack && activeStack == actedStack && actedStack->alive() && !actedStack->isTimeStopped())
 			setActiveStack(battle, actedStack, BattleUnitTurnReason::MASTER_GATE_CONTINUATION);
 		else
-			activateNextStack(battle);
+		{
+			if(!(ba.isUnitAction() && completeAcceptedActivation(actedStack)))
+				activateNextStack(battle);
+		}
 		return;
 	}
 
@@ -1653,7 +1775,10 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 			&& !actedStack->isTimeStopped() && actedStack->pursuitMovementRemaining > 0)
 			setActiveStack(battle, actedStack, BattleUnitTurnReason::PURSUIT_CONTINUATION);
 		else
-			activateNextStack(battle);
+		{
+			if(!(ba.isUnitAction() && completeAcceptedActivation(actedStack)))
+				activateNextStack(battle);
+		}
 		return;
 	}
 
@@ -1665,7 +1790,11 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 		if(activeStack && activeStack->alive() && !activeStack->isTimeStopped())
 			setActiveStack(battle, activeStack, BattleUnitTurnReason::HERO_COMMAND);
 		else
+		{
+			if(activeStack)
+				clearQuartermasterActivation(gameHandler, battle, activeStack->unitId());
 			activateNextStack(battle);
+		}
 		return;
 	}
 
@@ -1716,6 +1845,7 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 		{
 			// The automatic no-op only advances the queue.  Do not grant morale,
 			// Orders, or any other second activation to a stopped stack.
+			clearQuartermasterActivation(gameHandler, battle, actedStack->unitId());
 			activateNextStack(battle);
 			return;
 		}
@@ -1742,12 +1872,14 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 				return;
 			if(!actedStack->alive())
 			{
+				clearQuartermasterActivation(gameHandler, battle, actedStack->unitId());
 				activateNextStack(battle);
 				return;
 			}
 		}
 
-		if (rollGoodMorale(battle, actedStack))
+		const bool reducedExtraActivation = quartermasterActiveSide(battle, actedStack->unitId()).has_value();
+		if (!reducedExtraActivation && rollGoodMorale(battle, actedStack))
 		{
 			// Good morale - same stack makes 2nd turn
 			setActiveStack(battle, actedStack, BattleUnitTurnReason::MORALE);
@@ -1758,6 +1890,8 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 				activateNextStack(battle);
 			return;
 		}
+		if(ba.actionType != EActionType::WAIT && completeAcceptedActivation(actedStack))
+			return;
 	}
 	else
 	{
@@ -1796,6 +1930,8 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 				return;
 			}
 		}
+		if(activeStack && (!activeStack->alive() || activeStack->isTimeStopped() || !activeStack->canMove()))
+			clearQuartermasterActivation(gameHandler, battle, activeStack->unitId());
 	}
 
 	activateNextStack(battle);
@@ -2020,7 +2156,8 @@ void BattleFlowProcessor::setActiveStack(const CBattleInfoCallback & battle, con
 		}
 	}
 	if(!stack->isTimeStopped()
-		&& (reason == BattleUnitTurnReason::TURN_QUEUE || reason == BattleUnitTurnReason::MORALE || secondWindActivation)
+		&& (reason == BattleUnitTurnReason::TURN_QUEUE || reason == BattleUnitTurnReason::MORALE
+			|| reason == BattleUnitTurnReason::REDUCED_EXTRA_ACTIVATION || secondWindActivation)
 		&& canonicalFireWallCoversUnit(battle, *stack))
 		battle.handleObstacleTriggersForUnit(*gameHandler->spellEnv, *stack);
 }

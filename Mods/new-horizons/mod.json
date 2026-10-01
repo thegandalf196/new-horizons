@@ -3530,7 +3530,7 @@
 								"requires": "basic",
 								"description": "Once per combat, while the Ammo Cart survives, the first allied war machine other than the Ammo Cart to complete an activation immediately receives one additional activation at 50% effectiveness.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Once per combat, while the Ammo Cart survives, the first allied war machine other than the Ammo Cart to complete an activation immediately receives one additional activation at 50% effectiveness."
 								}
 							},

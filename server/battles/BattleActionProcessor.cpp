@@ -2134,8 +2134,7 @@ bool BattleActionProcessor::doHealAction(const CBattleInfoCallback & battle, con
 			if(tentOwner && tentOwner->getCapabilityRules()["rulesetVersion"].Integer() >= 3
 				&& battle.battleMatchOwner(stack, destStack, true)
 				&& destCreatureStack && destCreatureStack->canBeHealed())
-				if(const auto siege = tentOwner->getSiegeCapabilities())
-					parameters.setEffectValue(siege->firstAidHealing);
+				parameters.setEffectValue(battle.battleGetFirstAidHealingOutput(stack));
 		}
 		auto dest = battle::Destination(destStack, target.at(0).hexValue);
 		parameters.setSpellLevel(0);

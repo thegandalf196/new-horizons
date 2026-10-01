@@ -16,6 +16,7 @@
 #include "FocusFireState.h"
 #include "AdverseCombatRerollState.h"
 #include "MoraleSuppressionState.h"
+#include "ReducedExtraActivationState.h"
 #include "SylvanLuckState.h"
 #include "HeroActionAllowanceState.h"
 #include "AlternatingHeroActionState.h"
@@ -135,6 +136,12 @@ public:
 	virtual SylvanLuckState getSylvanLuckState(BattleSide side) const { return {}; }
 	virtual AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const { (void)side; return {}; }
 	virtual MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const { (void)side; return {}; }
+	virtual const ReducedExtraActivationState & getReducedExtraActivationState(BattleSide side) const
+	{
+		(void)side;
+		static const ReducedExtraActivationState empty;
+		return empty;
+	}
 	virtual LuckRollRules getLuckRollRules() const { return {}; }
 	virtual const std::map<CreatureID, TQuantity> & getDemonicReserve(BattleSide side) const
 	{
@@ -196,4 +203,5 @@ public:
 	virtual void recordRelentlessAssaultAttack(BattleSide, uint32_t) {}
 	virtual void setAdverseCombatRerollState(BattleSide, const AdverseCombatRerollState &) {}
 	virtual void setMoraleSuppressionState(BattleSide, const MoraleSuppressionState &) {}
+	virtual void setReducedExtraActivationState(BattleSide, const ReducedExtraActivationState &) {}
 };

@@ -2,6 +2,46 @@
 
 ## Purpose
 
+### 2026-10-01 Quartermaster — terminal battle lifetime review
+
+Before compilation, independent review identified a new use-after-free risk:
+cleanup used the incoming BattleInfo callback after checkBattleStateChanges
+returned true. The terminal path can synchronously run setBattleResult,
+endBattleConfirm, battle-query removal, battleFinalize and BattleEnded, which
+erases the owning currentBattles entry for no-dialog AI battles. An empty
+allowance does not make accessing the old callback safe. Preserve the existing
+immediate-return terminal contract, or re-fetch by a previously captured BattleID
+and operate only on a still-present state. Never infer lifetime merely from the
+body of checkBattleStateChanges without tracing the result-finalization calls.
+Repair requested before build; no failing native execution is claimed.
+The runtime restores immediate return on terminal checks; repaired-source review
+has no remaining blocker. The same review also repaired a new Catapult helper's
+dereference of lightweight proxies without creature identity, and added the new
+genuine turn reason to Fire Wall's activation whitelist. Build88648 is running;
+source review alone is not a native pass.
+Both-target88648 exits1 (`UP101-build.log`): AI target forecasting passes const
+raw output to CUnitState::heal, whose amount argument is a mutable reference.
+Use a fresh mutable copy for each candidate, not one shared mutable amount across
+the target loop (heal may consume/change it). The subsequent pair construction
+diagnostic is cascading from that call. Root repairs this API mismatch without
+changing output formulas or weakening the six-case fixture. Retry is pending.
+Repaired log reaches both executable links; after the original session handle
+was lost, its same CMake/Ninja processes were monitored to exit. A fresh target-
+freshness check exits0. Principal73624 exits1: five of six cases pass, zero skips;
+the fortified-town Catapult fixture cannot advance to its intended active unit
+and fails before its structural-output assertions. A bounded Luna fixture owner
+is diagnosing setup versus runtime admission; retain UP101-principal.log/.xml
+and do not activate Quartermaster or weaken its half-output assertions.
+Fixture repair: the tiny map's one-Pikeman armies are not viable against the
+opening automatic Citadel tower shots. Turrets queue before the Catapult;
+siege weapons do not keep a defeated army in combat. The bounded owner adds
+durable troop stacks before combat begins, retaining legal offers, accepted
+Catapult actions and exact half-output assertions. Minimal rebuild21374 is
+running; repaired native evidence remains pending.
+Repaired fixture build21374 exits0. Principal47670 passes6/6 in2.277s;
+activated88418 passes22/22 in8.107s, zero skips; data/inventory19/19 pass. This
+confirms the bounded fixture repair while retaining the failed run's evidence.
+
 ### 2026-10-01 Master Gunner — callback Unit contract
 
 Both-target76640 exits1 (`UP099-build.log`): two continuation cleanup branches

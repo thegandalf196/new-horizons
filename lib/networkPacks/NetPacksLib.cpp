@@ -512,6 +512,11 @@ void BattleMoraleSuppressionStateChanged::visitTyped(ICPackVisitor & visitor)
 	visitor.visitBattleMoraleSuppressionStateChanged(*this);
 }
 
+void BattleReducedExtraActivationStateChanged::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitBattleReducedExtraActivationStateChanged(*this);
+}
+
 void EndAction::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitEndAction(*this);

@@ -34,5 +34,7 @@ enum class BattleUnitTurnReason : int8_t
 	PURSUIT_CONTINUATION,
 	/// Master Gunner offers the earned second Ballista shot within this activation.
 	/// This does not begin a new activation or expire activation-scoped state.
-	RANGED_ATTACK_CONTINUATION
+	RANGED_ATTACK_CONTINUATION,
+	/// Quartermaster grants a genuine second activation with reduced output.
+	REDUCED_EXTRA_ACTIVATION
 };

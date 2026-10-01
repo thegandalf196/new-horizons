@@ -84,44 +84,110 @@ void CBattleAI::initBattleInterface(std::shared_ptr<Environment> ENV, std::share
 BattleAction CBattleAI::useHealingTent(const BattleID & battleID, const CStack *stack)
 {
 	const auto battle = cb->getBattle(battleID);
-	auto healingTargets = battle->battleGetStacks(CBattleInfoEssentials::ONLY_MINE);
-	const auto * tentOwner = battle->battleGetOwnerHero(stack);
-	const bool surgeon = stack->isFirstAidTent() && tentOwner && tentOwner->hasActivePerk(
-		"new-horizons:warMachines", "new-horizons:warMachines.surgeon");
-	std::map<int, const CStack*> woundHpToStack;
-	for(const auto * target : healingTargets)
+	const auto currentControllerSide = battle->playerToSide(battle->battleGetOwner(stack));
+	const auto makeActionForCurrentController = [currentControllerSide](BattleAction action)
 	{
-		if(auto woundHp = target->getMaxHealth() - target->getFirstHPleft())
-			woundHpToStack[woundHp] = target;
+		action.side = currentControllerSide;
+		return action;
+	};
+	const auto defend = [&]()
+	{
+		return makeActionForCurrentController(BattleAction::makeDefend(stack));
+	};
+	if(!stack->isFirstAidTent())
+	{
+		const auto healingTargets = battle->battleGetStacks(CBattleInfoEssentials::ONLY_MINE);
+		std::map<int, const CStack *> woundHpToStack;
+		for(const auto * target : healingTargets)
+			if(const auto woundHp = target->getMaxHealth() - target->getFirstHPleft())
+				woundHpToStack[woundHp] = target;
+		if(woundHpToStack.empty())
+			return defend();
+		return makeActionForCurrentController(BattleAction::makeHeal(stack, woundHpToStack.rbegin()->second));
 	}
 
-	if(surgeon)
+	const auto * tentOwner = battle->battleGetOwnerHero(stack);
+	const bool surgeon = tentOwner && tentOwner->hasActivePerk(
+		"new-horizons:warMachines", "new-horizons:warMachines.surgeon");
+	const bool canonicalSiegeRules = tentOwner
+		&& tentOwner->getCapabilityRules()["rulesetVersion"].Integer() >= 3;
+	if(!canonicalSiegeRules)
 	{
-		std::map<int, const CStack*> controllerWoundHpToStack;
-		std::map<int, const CStack*> afflictionWoundHpToStack;
-		for(const auto * target : battle->battleGetStacks(CBattleInfoEssentials::MINE_AND_ENEMY))
-		{
-			if(!target->alive() || !target->canBeHealed() || !battle->battleMatchOwner(stack, target, true))
-				continue;
+		std::map<int, const CStack *> woundHpToStack;
+		for(const auto * target : battle->battleGetStacks(CBattleInfoEssentials::ONLY_MINE))
+			if(const auto woundHp = target->getMaxHealth() - target->getFirstHPleft())
+				woundHpToStack[woundHp] = target;
 
-			if(auto woundHp = target->getMaxHealth() - target->getFirstHPleft())
+		if(surgeon)
+		{
+			std::map<int, const CStack *> controllerWoundHpToStack;
+			std::map<int, const CStack *> afflictionWoundHpToStack;
+			for(const auto * target : battle->battleGetStacks(CBattleInfoEssentials::MINE_AND_ENEMY))
 			{
-				controllerWoundHpToStack[woundHp] = target;
-				if(physicalAfflictions::first(*target))
-					afflictionWoundHpToStack[woundHp] = target;
+				if(!target->alive() || !target->canBeHealed()
+					|| !battle->battleMatchOwner(stack, target, true))
+					continue;
+
+				if(const auto woundHp = target->getMaxHealth() - target->getFirstHPleft())
+				{
+					controllerWoundHpToStack[woundHp] = target;
+					if(physicalAfflictions::first(*target))
+						afflictionWoundHpToStack[woundHp] = target;
+				}
 			}
+
+			if(!afflictionWoundHpToStack.empty())
+				return makeActionForCurrentController(
+					BattleAction::makeHeal(stack, afflictionWoundHpToStack.rbegin()->second));
+			if(!controllerWoundHpToStack.empty())
+				return makeActionForCurrentController(
+					BattleAction::makeHeal(stack, controllerWoundHpToStack.rbegin()->second));
+			return defend();
 		}
 
-		if(!afflictionWoundHpToStack.empty())
-			return BattleAction::makeHeal(stack, afflictionWoundHpToStack.rbegin()->second);
-		if(!controllerWoundHpToStack.empty())
-			return BattleAction::makeHeal(stack, controllerWoundHpToStack.rbegin()->second);
-		return BattleAction::makeDefend(stack);
+		if(woundHpToStack.empty())
+			return defend();
+		return makeActionForCurrentController(
+			BattleAction::makeHeal(stack, woundHpToStack.rbegin()->second));
 	}
 
-	if(woundHpToStack.empty())
-		return BattleAction::makeDefend(stack);
-	return BattleAction::makeHeal(stack, woundHpToStack.rbegin()->second); //last element of the woundHpToStack is the most wounded stack
+	const auto healingOutput = battle->battleGetFirstAidHealingOutput(stack);
+	if(healingOutput <= 0
+		|| (currentControllerSide != BattleSide::ATTACKER && currentControllerSide != BattleSide::DEFENDER))
+		return defend();
+
+	using HealingRank = std::pair<int64_t, int64_t>;
+	std::optional<std::pair<HealingRank, const CStack *>> bestControllerTarget;
+	std::optional<std::pair<HealingRank, const CStack *>> bestAfflictionTarget;
+	for(const auto * unit : battle->battleGetAllUnits(false))
+	{
+		const auto * target = dynamic_cast<const CStack *>(unit);
+		if(!target || !target->alive() || !target->canBeHealed()
+			|| !battle->battleMatchOwner(stack, target, true))
+			continue;
+
+		auto projectedTarget = target->acquireState();
+		auto healingAmount = healingOutput;
+		const auto healing = projectedTarget->heal(healingAmount, EHealLevel::HEAL,
+			EHealPower::PERMANENT).healedHealthPoints;
+		if(healing <= 0)
+			continue;
+
+		const auto missingHealth = std::max<int64_t>(0,
+			target->getMaxHealth() - target->getFirstHPleft());
+		const HealingRank rank{healing, missingHealth};
+		const auto candidate = std::pair{rank, target};
+		if(!bestControllerTarget || candidate.first > bestControllerTarget->first)
+			bestControllerTarget = candidate;
+		if(surgeon && physicalAfflictions::first(*target)
+			&& (!bestAfflictionTarget || candidate.first > bestAfflictionTarget->first))
+			bestAfflictionTarget = candidate;
+	}
+
+	const auto selected = bestAfflictionTarget ? bestAfflictionTarget : bestControllerTarget;
+	if(!selected)
+		return defend();
+	return makeActionForCurrentController(BattleAction::makeHeal(stack, selected->second));
 }
 
 void CBattleAI::yourTacticPhase(const BattleID & battleID, int distance)
@@ -459,12 +525,16 @@ BattleAction CBattleAI::useCatapult(const BattleID & battleID, const CStack * st
 {
 	BattleAction attack;
 	BattleHex targetHex = BattleHex::INVALID;
+	const auto battle = cb->getBattle(battleID);
+	const auto currentControllerSide = battle->playerToSide(battle->battleGetOwner(stack));
 
-	if(cb->getBattle(battleID)->battleGetGateState() == EGateState::CLOSED)
+	if(battle->battleGetGateState() == EGateState::CLOSED)
 	{
-		targetHex = cb->getBattle(battleID)->wallPartToBattleHex(EWallPart::GATE);
+		const auto gateHex = battle->wallPartToBattleHex(EWallPart::GATE);
+		if(gateHex.isValid() && battle->isWallPartAttackable(EWallPart::GATE))
+			targetHex = gateHex;
 	}
-	else
+	if(!targetHex.isValid())
 	{
 		std::array wallParts {
 			EWallPart::KEEP,
@@ -476,26 +546,38 @@ BattleAction CBattleAI::useCatapult(const BattleID & battleID, const CStack * st
 			EWallPart::UPPER_WALL
 		};
 
+		const auto structuralOutput = std::max<int32_t>(0, battle->battleGetCatapultStructuralDamage(stack, 1));
+		int32_t bestDamage = -1;
 		for(auto wallPart : wallParts)
 		{
-			auto wallState = cb->getBattle(battleID)->battleGetWallState(wallPart);
+			if(!battle->isWallPartAttackable(wallPart))
+				continue;
 
-			if(wallState != EWallState::NONE && wallState != EWallState::DESTROYED)
+			const auto candidateHex = battle->wallPartToBattleHex(wallPart);
+			if(!candidateHex.isValid())
+				continue;
+
+			const auto wallHp = std::max<int32_t>(0, battle->getWallStructuralHP(wallPart));
+			const auto predictedDamage = wallHp > 0 && structuralOutput > 0
+				? std::min(wallHp, structuralOutput) : 0;
+			if(!targetHex.isValid() || predictedDamage > bestDamage)
 			{
-				targetHex = cb->getBattle(battleID)->wallPartToBattleHex(wallPart);
-				break;
+				targetHex = candidateHex;
+				bestDamage = predictedDamage;
 			}
 		}
 	}
 
 	if(!targetHex.isValid())
 	{
-		return BattleAction::makeDefend(stack);
+		auto defend = BattleAction::makeDefend(stack);
+		defend.side = currentControllerSide;
+		return defend;
 	}
 
 	attack.aimToHex(targetHex);
 	attack.actionType = EActionType::CATAPULT;
-	attack.side = side;
+	attack.side = currentControllerSide;
 	attack.stackNumber = stack->unitId();
 
 	movesSkippedByDefense = 0;

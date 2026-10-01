@@ -14,6 +14,28 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+Current verified checkpoint: UP-101 Quartermaster is active. Ballista/Tent/
+Catapult accepted actions prove the genuine50% extra activation, once/cart guards,
+versioned state and shared detached forecasts; a production Tent AI action is
+submitted authoritatively. Final both-target21374 exits0; principal47670 passes
+6/6 in2.277s; activated88418 passes22/22 in8.107s, zero skips. Data/inventory19/19
+pass. Coverage151→152/310, planned159→158; War Machines5active/5planned. Binary:
+`c0cad3f2435ba0886c286ce5bb311170cbec7a58b06af60fa2d57e96e3ade5d8`.
+Independent review has no blocker. Phase2 retains future activation consumption,
+low-output Catapult fallback, broader Wait/Order/controller interactions and
+full binary battle-save evidence. Art Not done; no GUI or playable promotion.
+
+UP-101 Quartermaster is now in production source with required output, authority,
+persistence, AI and hover/log feedback. The isolated six-case fixture is frozen;
+independent review has no remaining blocker after its bounded repairs. Initial
+build88648 failed; the repaired build completes both targets. Principal73624
+passes five of six cases with zero skips; Catapult activation setup fails before
+structural-output assertions and is being diagnosed by a bounded fixture owner.
+No active-count increase is claimed yet.
+Registration remains planned. Phase2 retains future AI activation-state
+consumption and the low-output Catapult legacy-fallback edge; no GUI/promoted
+playable evidence exists for this candidate.
+
 Current next-item audit: UP-101 Quartermaster is being mapped as an independent
 unblocked candidate. Required coverage is an immediate genuine extra activation
 with half output, not a same-activation second attack. Runtime and consumer maps
@@ -771,7 +793,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 151/310 | 159 planned; Master Gunner is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 152/310 | 158 planned; Quartermaster is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -798,8 +820,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 151
-active perks, leaving nine ranks and 159 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 152
+active perks, leaving nine ranks and 158 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-10-01; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -907,7 +929,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Armorer | 3/0 | 6/4 | Formation Fighting and Veteran have focused live/detached damage evidence. Four perks missing; Last Stand awaits design choices. |
 | Archery | 3/0 | 10/0 | All ten perks are active; focused evidence pending |
 | Battlecraft | 3/0 | 2/8 | Entrench and Reserve active. Reserve has focused real delayed movement, expiry, save/packet and branch-local AI evidence. Eight perks remain planned. |
-| War Machines | 3/0 | 4/6 | Surgeon and Piercing Bolts have focused live/detached evidence; Fortification Engineer has real fortified-town manual-shot evidence; Master Gunner has accepted independently targeted second-shot evidence. Six perks remain planned. Battlefield Medic persistence awaits clarification. |
+| War Machines | 3/0 | 5/5 | Surgeon and Piercing Bolts have focused live/detached evidence; Fortification Engineer has real fortified-town manual-shot evidence; Master Gunner has accepted independently targeted second-shot evidence; Quartermaster has accepted half-output Ballista/Tent/Catapult extra-activation evidence. Five perks remain planned. Battlefield Medic persistence awaits clarification. |
 | Discipline | 3/0 | 5/5 | Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless active with focused authoritative and detached evidence. Five perks remain planned; Esprit de Corps composition scope, Heroic Spirit activation timing and Veteran Cohesion HP reference await clarification. |
 | Recruitment | 3/0 | 4/6 | Six perks missing |
 | Command | 3/0 | 4/6 | Aggressive/Defensive, Veteran and Combined Arms have focused runtime/AI evidence; ordinary Advanced/Expert progression opens. Six perks remain planned. |

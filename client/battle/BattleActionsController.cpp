@@ -3299,7 +3299,27 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 		}
 
 		case PossiblePlayerBattleAction::CATAPULT:
-			return ""; // TODO
+		{
+			const auto * catapult = owner.stacksController->getActiveStack();
+			const auto battle = owner.getBattle();
+			if(!catapult || !catapult->isCatapult() || !battle)
+				return {};
+
+			const auto wallPart = battle->battleHexToWallPart(targetHex);
+			if(!battle->isWallPartAttackable(wallPart))
+				return {};
+
+			const auto wallHp = std::max<int32_t>(0, battle->getWallStructuralHP(wallPart));
+			if(wallHp <= 0)
+				return {};
+
+			const auto rawDamage = std::max<int32_t>(0,
+				battle->battleGetCatapultStructuralDamage(catapult, 1));
+			const auto predictedDamage = std::min(wallHp, rawDamage);
+			return "Catapult on a normal hit: " + formatPlural(predictedDamage,
+				"vcmi.battleWindow.damageEstimation.damage")
+				+ " structural HP damage; wall currently has " + std::to_string(wallHp) + " HP.";
+		}
 
 		case PossiblePlayerBattleAction::CREATURE_INFO:
 			return formatWithStackName("core.genrltxt.297", targetStack); //View %s info.

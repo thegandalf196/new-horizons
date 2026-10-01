@@ -2341,6 +2341,14 @@ void CUnitState::afterGetsTurn(BattleUnitTurnReason reason)
 		castSpellThisTurn = false;
 		movedThisRound = false;
 	}
+	else if(reason == BattleUnitTurnReason::REDUCED_EXTRA_ACTIVATION)
+	{
+		// Quartermaster creates a fresh action window, but it is not Morale and
+		// does not consume or refresh per-round waiting benefits.
+		castSpellThisTurn = false;
+		movedThisRound = false;
+		waiting = false;
+	}
 }
 
 void CUnitState::makeGhost()

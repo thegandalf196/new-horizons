@@ -685,6 +685,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	nextId = 0x00F00000;
 	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
+		reducedExtraActivationStates[side] = realBattle->getBattle()->getReducedExtraActivationState(side);
 		heroOrderStates[side] = realBattle->getBattle()->getHeroOrderState(side);
 		relentlessAssaultStates[side] = realBattle->getBattle()->getRelentlessAssaultState(side);
 		warcastingStates[side] = realBattle->getBattle()->getWarcastingState(side);
@@ -899,6 +900,20 @@ battle::Units HypotheticBattle::getUnitsIf(const battle::UnitFilter & predicate)
 BattleID HypotheticBattle::getBattleID() const
 {
 	return subject->getBattle()->getBattleID();
+}
+
+const ReducedExtraActivationState & HypotheticBattle::getReducedExtraActivationState(BattleSide side) const
+{
+	return reducedExtraActivationStates.at(side);
+}
+
+void HypotheticBattle::setReducedExtraActivationState(BattleSide side,
+	const ReducedExtraActivationState & state)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::invalid_argument("Invalid hypothetical reduced extra activation side");
+	state.validateShape();
+	reducedExtraActivationStates.at(side) = state;
 }
 
 std::optional<HeroOrderState> HypotheticBattle::getHeroOrderState(BattleSide side) const

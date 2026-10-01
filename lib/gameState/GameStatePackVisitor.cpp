@@ -2241,6 +2241,15 @@ void GameStatePackVisitor::visitBattleMoraleSuppressionStateChanged(BattleMorale
 	battle->setMoraleSuppressionState(pack.side, pack.state);
 }
 
+void GameStatePackVisitor::visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack)
+{
+	auto * battle = gs.getBattle(pack.battleID);
+	if(!battle)
+		throw std::runtime_error("Missing battle for reduced extra activation state update");
+	pack.validateTransitionFrom(battle->getReducedExtraActivationState(pack.side));
+	battle->setReducedExtraActivationState(pack.side, pack.state);
+}
+
 void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 {
 	if(pack.paidHeroManaCost < 0 || pack.paidCounterspellManaCost < 0
@@ -2773,6 +2782,14 @@ void BattleStatePackVisitor::visitBattleMoraleSuppressionStateChanged(BattleMora
 	pack.validateShape();
 	pack.validateTransitionFrom(battleState.getMoraleSuppressionState(pack.side));
 	battleState.setMoraleSuppressionState(pack.side, pack.state);
+}
+
+void BattleStatePackVisitor::visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack)
+{
+	if(pack.battleID != battleState.getBattleID())
+		throw std::runtime_error("Reduced extra activation state update targets another battle");
+	pack.validateTransitionFrom(battleState.getReducedExtraActivationState(pack.side));
+	battleState.setReducedExtraActivationState(pack.side, pack.state);
 }
 
 void BattleStatePackVisitor::visitCatapultAttack(CatapultAttack & pack)

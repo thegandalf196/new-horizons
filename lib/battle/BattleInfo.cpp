@@ -137,6 +137,14 @@ void BattleInfo::setMoraleSuppressionState(BattleSide side, const MoraleSuppress
 	sides.at(side).moraleSuppression = state;
 }
 
+void BattleInfo::setReducedExtraActivationState(BattleSide side, const ReducedExtraActivationState & state)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::invalid_argument("Invalid side for reduced extra activation state");
+	state.validateShape();
+	sides.at(side).reducedExtraActivation = state;
+}
+
 const AlternatingHeroActionState & BattleInfo::getWarcastingState(BattleSide side) const
 {
 	static const AlternatingHeroActionState empty;
@@ -424,6 +432,8 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 				"new-horizons:luck", "new-horizons:luck.twistOfFate");
 			currentBattle->sides[i].moraleSuppression.enabled = heroes[i]->hasActivePerk(
 				"new-horizons:discipline", "new-horizons:discipline.rally");
+			currentBattle->sides[i].reducedExtraActivation.enabled = heroes[i]->hasActivePerk(
+				"new-horizons:warMachines", "new-horizons:warMachines.quartermaster");
 			auto & fortune = currentBattle->sides[i].sylvanLuck;
 			fortune.secondChance = heroes[i]->hasActivePerk("new-horizons:luck", "new-horizons:luck.secondChance");
 			fortune.gambler = heroes[i]->hasActivePerk("new-horizons:luck", "new-horizons:luck.gambler");
@@ -1028,6 +1038,10 @@ void BattleInfo::nextRound()
 {
 	for(auto i : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
+		auto extraActivation = sides.at(i).reducedExtraActivation;
+		extraActivation.activeUnitId = ReducedExtraActivationState::INVALID_UNIT_ID;
+		extraActivation.outputPercent = 100;
+		sides.at(i).reducedExtraActivation = extraActivation;
 		sides.at(i).sylvanLuck.nextRound();
 		sides.at(i).castSpellsCount = 0;
 		sides.at(i).heroCommandUsed = false;
@@ -1383,6 +1397,18 @@ void BattleInfo::updateUnit(uint32_t id, const JsonNode & data, int64_t healthDe
 				s->cloneID = -1;
 		}
 	}
+	if(!changedStack->alive())
+	{
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			auto extraActivation = sides.at(side).reducedExtraActivation;
+			if(extraActivation.activeUnitId != id)
+				continue;
+			extraActivation.activeUnitId = ReducedExtraActivationState::INVALID_UNIT_ID;
+			extraActivation.outputPercent = 100;
+			sides.at(side).reducedExtraActivation = extraActivation;
+		}
+	}
 }
 
 void BattleInfo::removeUnit(uint32_t id)
@@ -1423,6 +1449,15 @@ void BattleInfo::removeUnit(uint32_t id)
 		}
 
 		ids.erase(toRemoveId);
+	}
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		auto extraActivation = sides.at(side).reducedExtraActivation;
+		if(extraActivation.activeUnitId != id)
+			continue;
+		extraActivation.activeUnitId = ReducedExtraActivationState::INVALID_UNIT_ID;
+		extraActivation.outputPercent = 100;
+		sides.at(side).reducedExtraActivation = extraActivation;
 	}
 	expireSeparatedHeroOrderProtect();
 }
@@ -1871,6 +1906,19 @@ void BattleInfo::postDeserialize()
 {
 	for (const auto & unit : stacks)
 		unit->postDeserialize(getSideArmy(unit->unitSide()));
+
+	std::set<uint32_t> activeQuartermasterUnits;
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto & state = sides.at(side).reducedExtraActivation;
+		state.validateShape();
+		if(!state.hasActiveUnit())
+			continue;
+		const auto * unit = getStack(state.activeUnitId, false);
+		if(!unit || !unit->alive() || !(unit->isBallista() || unit->isCatapult() || unit->isFirstAidTent())
+			|| !activeQuartermasterUnits.insert(state.activeUnitId).second)
+			throw std::runtime_error("Invalid restored reduced extra activation identity");
+	}
 
 	uint32_t pendingFollowUps = 0;
 	for(const auto & unit : stacks)

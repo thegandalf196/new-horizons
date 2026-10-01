@@ -72,6 +72,14 @@ public:
 		return sides.at(side).moraleSuppression;
 	}
 	void setMoraleSuppressionState(BattleSide side, const MoraleSuppressionState & state) override;
+	const ReducedExtraActivationState & getReducedExtraActivationState(BattleSide side) const override
+	{
+		static const ReducedExtraActivationState empty;
+		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			return empty;
+		return sides.at(side).reducedExtraActivation;
+	}
+	void setReducedExtraActivationState(BattleSide side, const ReducedExtraActivationState & state) override;
 	LuckRollRules getLuckRollRules() const override { return luckRollRules; }
 	const std::map<CreatureID, TQuantity> & getDemonicReserve(BattleSide side) const override
 	{

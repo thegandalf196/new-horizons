@@ -17,6 +17,7 @@
 #include "HeroCommand.h"
 #include "FocusFireState.h"
 #include "BattleUnitTurnReason.h"
+#include "ReducedExtraActivationState.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
 class CGHeroInstance;
@@ -78,6 +79,14 @@ public:
 	bool battleCanUseFortificationEngineer(const battle::Unit * turret) const;
 	/// Whether this active Ballista has an earned ranged follow-up allowance.
 	bool battleHasPendingRangedFollowUp(const battle::Unit * unit) const;
+	/// Snapshot of one side's once-per-combat reduced activation allowance.
+	ReducedExtraActivationState battleGetReducedExtraActivationState(BattleSide side) const;
+	/// Output percentage for the unit currently carrying a reduced activation identity.
+	int32_t battleGetActivationOutputPercent(const battle::Unit * unit) const;
+	/// First Aid Tent raw healing after activation output modifiers, before target HP caps.
+	int64_t battleGetFirstAidHealingOutput(const battle::Unit * healer) const;
+	/// Raw Catapult structural output after activation modifiers, before wall HP caps.
+	int32_t battleGetCatapultStructuralDamage(const battle::Unit * attacker, int32_t hitQuality = 1) const;
 	/// Whether the earned shot can currently be used against at least one legal enemy.
 	bool battleCanTakeRangedFollowUp(const battle::Unit * unit) const;
 	/// Saved final damage multiplier for a pending Ballista shot, or 100 when none applies.
