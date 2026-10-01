@@ -14,6 +14,17 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-066 expected-outcome AI dependency is source/native verified. Runtime and AI
+share the complete typed uniform form pool and nearest-legal landing positions;
+AI averages signed detached offensive profile changes, not a single RNGStub draw.
+Accepted-action validation remains active. Both-target build `52390` passes;
+native `31943` passes 69/69, zero skips, including mixed favorable/harmful forms,
+independent mean, midpoint distinction, live state/RNG preservation and a real
+selected/accepted cast. Reports `UP066-UP068-focused-repaired.log`/`.xml`.
+No new spell identity: Polymorph remains inactive pending Phantom composition
+and exceptional expiry design/lifecycle work. Current-board two-round offensive
+forecasts, hazard costs and effective-ownership interactions remain Phase 2.
+
 Mana Conservation is source/native verified: the accepted-cost ledger records
 gross hero spell and successful Counterspell ward payments, excluding rejected
 actions, creature casts and hostile drains. Post-result recovery restores

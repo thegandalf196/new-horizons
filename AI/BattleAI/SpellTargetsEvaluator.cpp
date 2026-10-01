@@ -16,8 +16,11 @@
 #include "../../lib/battle/NewHorizonsShadowGift.h"
 #include "../../lib/battle/NewHorizonsSoulChain.h"
 #include "AttackPossibility.h"
+#include "PotentialTargets.h"
+#include "StackWithBonuses.h"
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/spells/effects/BattleForm.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
@@ -2325,6 +2328,109 @@ SpellTargetEvaluator::handOfFateExpectedDamageValue(const Mechanics * spellMecha
 	result.hostileDamageValue += expectedHostileSpillValue * primaryHitProbability;
 	result.friendlyDamageValue += expectedFriendlySpillValue * primaryHitProbability;
 	return result;
+}
+
+std::optional<float> SpellTargetEvaluator::battleFormExpectedOffensiveValue(
+	const Mechanics * spellMechanics,
+	const spells::effects::BattleFormEffect * battleFormEffect,
+	const Target & target,
+	const Environment * environment,
+	std::shared_ptr<CBattleInfoCallback> battleState)
+{
+	if(!spellMechanics || !battleFormEffect || !environment || target.size() != 1
+		|| !target.front().unitValue)
+		return std::nullopt;
+
+	const auto * callback = spellMechanics->battle();
+	if(!callback)
+		return std::nullopt;
+
+	if(!battleState)
+		battleState = std::shared_ptr<CBattleInfoCallback>(
+			const_cast<CBattleInfoCallback *>(callback), [](CBattleInfoCallback *) {});
+
+	const auto * originalTarget = target.front().unitValue;
+	if(!originalTarget->alive() || !originalTarget->getPosition().isValid()
+		|| (spellMechanics->getCasterSide() != BattleSide::ATTACKER
+			&& spellMechanics->getCasterSide() != BattleSide::DEFENDER)
+		|| originalTarget->unitSide() == spellMechanics->getCasterSide())
+		return std::nullopt;
+
+	detail::ProblemImpl problem;
+	if(!spellMechanics->canBeCastAt(target, problem))
+		return std::nullopt;
+
+	const auto forms = battleFormEffect->formsForTarget(spellMechanics, originalTarget);
+	if(forms.empty())
+		return std::nullopt;
+
+	// Polymorph's canonical duration is two rounds. Longer custom battle-form
+	// durations keep their runtime lifetime, but valuation stays bounded to two
+	// projected activations so candidate scoring remains predictable.
+	constexpr int32_t MAX_FORECAST_ROUNDS = 2;
+	const auto forecastRounds = std::clamp(battleFormEffect->getDuration(), 0, MAX_FORECAST_ROUNDS);
+	if(forecastRounds == 0)
+		return 0.0f;
+
+	const auto unitId = originalTarget->unitId();
+	const auto offensivePressure = [&](const std::shared_ptr<HypotheticBattle> & projectedBattle,
+		DamageCache & damageCache) -> float
+	{
+		const auto * projectedTarget = projectedBattle->battleGetUnitByID(unitId);
+		if(!projectedTarget || !projectedTarget->alive() || projectedTarget->getCount() <= 0
+			|| projectedTarget->isGhost() || projectedTarget->isTurret())
+			return 0.0f;
+
+		// PotentialTargets uses this detached board's actual footprint, firing
+		// line, movement range, and legal melee positions. Its attack value is in
+		// AttackPossibility's damage-reduction units, including the real attack
+		// count and counter/collateral outcomes for the chosen action.
+		PotentialTargets actions(projectedTarget, damageCache, projectedBattle);
+		const float actionValue = actions.berserk
+			? actions.expectedBerserkActionValue()
+			: (actions.possibleAttacks.empty() ? 0.0f : actions.possibleAttacks.front().attackValue());
+
+		float value = 0.0f;
+		for(int turn = 0; turn < forecastRounds; ++turn)
+			if(projectedTarget->willMove(turn))
+				value += actionValue;
+		return value;
+	};
+
+	// DamageCache keys by unit ID; never share one across form outcomes because
+	// each candidate changes effective creature bonuses, count, and attack stats.
+	// Leave each cache lazy: buildDamageCache eagerly scores every obstacle against
+	// every stack and every army pair, which is unnecessary for this scoped attack
+	// forecast and would multiply that work by the size of the form pool.
+	auto baselineBattle = std::make_shared<HypotheticBattle>(environment, battleState);
+	auto baselineTarget = baselineBattle->getForUpdate(unitId);
+	DamageCache baselineDamage;
+	const float baselinePressure = offensivePressure(baselineBattle, baselineDamage);
+
+	double signedPressureReduction = 0.0;
+	for(const auto & candidate : forms)
+	{
+		auto projectedBattle = std::make_shared<HypotheticBattle>(environment, battleState);
+		auto projectedTarget = projectedBattle->getForUpdate(unitId);
+		try
+		{
+			projectedTarget->beginBattleForm(candidate.creature, battleFormEffect->getDuration());
+			projectedTarget->setPosition(candidate.landing);
+		}
+		catch(const std::exception &)
+		{
+			return std::nullopt;
+		}
+
+		DamageCache projectedDamage;
+		const float candidatePressure = offensivePressure(projectedBattle, projectedDamage);
+		// Preserve both weakening rewards and strengthening penalties. In
+		// particular, do not clamp an unfavorable random form before averaging.
+		signedPressureReduction += static_cast<double>(baselinePressure - candidatePressure);
+	}
+
+	const auto applicationChance = spellApplicationChance(spellMechanics, originalTarget);
+	return static_cast<float>(signedPressureReduction / static_cast<double>(forms.size())) * applicationChance;
 }
 
 std::vector<Target> SpellTargetEvaluator::creaturePairTargets(const spells::Mechanics * spellMechanics)

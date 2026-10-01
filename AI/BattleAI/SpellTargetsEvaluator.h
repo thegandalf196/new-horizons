@@ -15,6 +15,14 @@
 #include <optional>
 #include <utility>
 
+class Environment;
+class CBattleInfoCallback;
+
+namespace spells::effects
+{
+class BattleFormEffect;
+}
+
 class SpellTargetEvaluator
 {
 public:
@@ -93,6 +101,16 @@ public:
 		const spells::Mechanics * spellMechanics,
 		const spells::Target & target,
 		PlayerColor scoringPlayer,
+		std::shared_ptr<CBattleInfoCallback> battleState = {});
+	/// Scores a battle-form cast as the signed mean reduction in the target's
+	/// reachable offensive pressure across the complete shared candidate pool.
+	/// Every outcome is projected on a detached battle with a fresh damage cache;
+	/// only the forecast horizon is capped, never the number of candidate forms.
+	static std::optional<float> battleFormExpectedOffensiveValue(
+		const spells::Mechanics * spellMechanics,
+		const spells::effects::BattleFormEffect * battleFormEffect,
+		const spells::Target & target,
+		const Environment * environment,
 		std::shared_ptr<CBattleInfoCallback> battleState = {});
 
 private:

@@ -25,6 +25,7 @@
 
 #include <cmath>
 #include <limits>
+#include <optional>
 #include <stdexcept>
 
 namespace spells
@@ -165,11 +166,47 @@ bool BattleFormEffect::hasLegalPlacementForEveryForm(const Mechanics * mechanics
 		&& (!needsDoubleWide || accessibility.nearestLegalPosition(origin, true, side).has_value());
 }
 
-bool BattleFormEffect::isSupportedTarget(const Mechanics * mechanics, const battle::Unit * unit) const
+std::vector<BattleFormEffect::BattleFormCandidate> BattleFormEffect::formsForTarget(
+	const Mechanics * mechanics, const battle::Unit * unit) const
 {
-	return isBasicTarget(mechanics, unit)
-		&& !isUnsupportedPhantomProfile(unit)
-		&& hasLegalPlacementForEveryForm(mechanics, unit);
+	if(!isBasicTarget(mechanics, unit) || isUnsupportedPhantomProfile(unit))
+		return {};
+
+	const auto forms = getForms(mechanics, unit);
+	if(forms.empty())
+		return {};
+
+	// Resolve each required footprint once. Every form of the same width then
+	// carries the same nearest legal landing in the returned complete pool.
+	const auto accessibility = mechanics->battle()->getAccessibility(unit);
+	const bool needsSingleWide = std::ranges::any_of(forms, [](const Creature * form)
+	{
+		return !form->isDoubleWide();
+	});
+	const bool needsDoubleWide = std::ranges::any_of(forms, [](const Creature * form)
+	{
+		return form->isDoubleWide();
+	});
+	const auto origin = unit->getPosition();
+	const auto side = unit->unitSide();
+
+	std::optional<BattleHex> singleWideLanding;
+	std::optional<BattleHex> doubleWideLanding;
+	if(needsSingleWide)
+		singleWideLanding = accessibility.nearestLegalPosition(origin, false, side);
+	if(needsDoubleWide)
+		doubleWideLanding = accessibility.nearestLegalPosition(origin, true, side);
+	if((needsSingleWide && !singleWideLanding) || (needsDoubleWide && !doubleWideLanding))
+		return {};
+
+	std::vector<BattleFormCandidate> result;
+	result.reserve(forms.size());
+	for(const auto * form : forms)
+	{
+		const auto & landing = form->isDoubleWide() ? doubleWideLanding : singleWideLanding;
+		result.push_back({form->getId(), *landing});
+	}
+	return result;
 }
 
 bool BattleFormEffect::applicableGeneral(Problem & problem, const Mechanics * mechanics) const
@@ -259,22 +296,11 @@ void BattleFormEffect::apply(ServerCallback * server, const Mechanics * mechanic
 	for(const auto & destination : target)
 	{
 		const auto * unit = destination.unitValue;
-		if(!isSupportedTarget(mechanics, unit))
+		auto candidates = formsForTarget(mechanics, unit);
+		if(candidates.empty())
 			continue;
 
-		auto forms = getForms(mechanics, unit);
-		if(forms.empty())
-			continue;
-
-		const auto accessibility = mechanics->battle()->getAccessibility(unit);
-		const auto * selectedForm = *RandomGeneratorUtil::nextItem(forms, *rng);
-		const auto newPosition = accessibility.nearestLegalPosition(
-			unit->getPosition(), selectedForm->isDoubleWide(), unit->unitSide());
-		if(!newPosition)
-		{
-			server->complain("Battle-form effect found no legal position after target validation");
-			continue;
-		}
+		const auto & selectedCandidate = *RandomGeneratorUtil::nextItem(candidates, *rng);
 
 		auto state = unit->acquireState();
 		if(!state || state->getPhantomInitialIntegrity() > 0 || !state->alive())
@@ -287,8 +313,8 @@ void BattleFormEffect::apply(ServerCallback * server, const Mechanics * mechanic
 
 		try
 		{
-			state->beginBattleForm(selectedForm->getId(), duration);
-			state->setPosition(*newPosition);
+			state->beginBattleForm(selectedCandidate.creature, duration);
+			state->setPosition(selectedCandidate.landing);
 		}
 		catch(const std::exception & error)
 		{

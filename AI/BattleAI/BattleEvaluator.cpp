@@ -28,6 +28,7 @@
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsBlink.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
+#include "../../lib/spells/effects/BattleForm.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/battle/BattleStateInfoForRetreat.h"
@@ -4195,6 +4196,15 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 								- 4.0f * expectedDamage->friendlyDamageValue
 									* scoreEvaluator.getNegativeEffectMultiplier();
 						}
+						if(const auto * battleFormEffect = candidateMechanics->findEffect<spells::effects::BattleFormEffect>())
+						{
+							const auto expectedValue = SpellTargetEvaluator::battleFormExpectedOffensiveValue(
+								candidateMechanics.get(), battleFormEffect, ps.dest, env.get(), cb->getBattle(battleID));
+							if(!expectedValue)
+								continue;
+							ps.spellBattleFormExpectedValue = *expectedValue
+								* scoreEvaluator.getPositiveEffectMultiplier();
+						}
 						if(isCanonicalLandMine(*cb->getBattle(battleID), spell))
 							ps.spellPlacementHeuristicValue = SpellTargetEvaluator::landMinePlacementValue(
 								candidateMechanics.get(), ps.dest, cb->getBattle(battleID));
@@ -4668,6 +4678,26 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + *ps.spellHandOfFateExpectedValue;
+					continue;
+				}
+				// Battle-form identity is an effect mechanic, not a registered spell
+				// ID. Its signed expectation covers the full shared form pool; skip the
+				// generic castEval projection so RNGStub cannot replace it with one form.
+				if(ps.command == HeroCommand::NONE && ps.spellBattleFormExpectedValue.has_value())
+				{
+					if(ps.dest.size() != 1 || !ps.dest.front().unitValue)
+					{
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
+					targetId = ps.dest.front().unitValue->unitId();
+					if(counterspellNegated
+						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
+							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
+							counterspellNegated, *spellAllowance))
+						ps.value = std::numeric_limits<float>::lowest();
+					else
+						ps.value = baseline + *ps.spellBattleFormExpectedValue;
 					continue;
 				}
 				// Sanctuary has no immediate health delta. Price only direct enemy

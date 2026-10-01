@@ -715,9 +715,13 @@ and reserved Demonic Gate footprints cannot be overlapped; the selected form is
 not rerolled solely because it does not fit at the original anchor.
 
 This is an engine foundation, not activation of the New Horizons Polymorph spell.
-Round-expiry placement, temporary clone/Phantom profile support, random-outcome
-AI valuation and client presentation must be completed before enabling that
-spell. Admission currently fails closed when any possible footprint has no
+Round-expiry/Dispel placement, Phantom profile support and complete accepted
+hero casting must be completed before enabling that spell. Ordinary clones
+retain their one-hit destruction rule while transformed. The shared
+`BattleFormEffect::formsForTarget` API exposes the complete uniform pool and
+its nearest-legal landing positions without drawing RNG; authoritative
+selection consumes that same pool. AI callers must value the full pool rather
+than one detached random draw. Admission currently fails closed when any possible footprint has no
 legal destination anywhere, before drawing a form or spending casting resources.
 That is a temporary safety guard, not an added canonical targeting rule. It
 does not exclude a form from the pool, reroll or permit overlapping stacks.

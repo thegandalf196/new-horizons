@@ -70,6 +70,10 @@ public:
 	/// not score RNGStub's single hypothetical recipient as though it were the
 	/// authoritative random result.
 	std::optional<float> spellHandOfFateExpectedValue;
+	/// Signed expected offensive pressure reduction for battle-form effects.
+	/// This is precomputed over the effect's full uniform form pool so generic
+	/// castEval does not value RNGStub's midpoint form as the random outcome.
+	std::optional<float> spellBattleFormExpectedValue;
 	/// Marginal three-activation physical Poison value for canonical Nature
 	/// Poison, whose immediate cast does not change health.
 	float spellNaturePoisonValue = 0.0f;

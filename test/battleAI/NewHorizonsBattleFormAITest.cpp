@@ -9,15 +9,49 @@
  */
 #include "StdInc.h"
 
-#include "../server/battles/BattleTestFixture.h"
+#include "../server/battles/HeroCommandFixture.h"
+#include "../SpellPointTestUtils.h"
+#include "../../AI/BattleAI/BattleEvaluator.h"
+#include "../../AI/BattleAI/PotentialTargets.h"
+#include "../../AI/BattleAI/SpellTargetsEvaluator.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
+#include "../../lib/CStack.h"
+#include "../../lib/CRandomGenerator.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/bonuses/Limiters.h"
+#include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/mapObjects/army/CStackInstance.h"
+#include "../../lib/modding/CModHandler.h"
+#include "../../lib/networkPacks/PacksForClientBattle.h"
+#include "../../lib/spells/BattleSpellMechanics.h"
+#include "../../lib/spells/CSpell.h"
+#include "../../lib/spells/effects/BattleForm.h"
 
 namespace
 {
+struct RandomStateArchive
+{
+	bool saving = true;
+	std::string state;
+	void operator&(std::string & value) { state = value; }
+};
+
+class ScopeExit final
+{
+	std::function<void()> callback;
+
+public:
+	explicit ScopeExit(std::function<void()> callback_)
+		: callback(std::move(callback_))
+	{}
+
+	~ScopeExit()
+	{
+		callback();
+	}
+};
+
 class BattleFormEnvironment final : public Environment
 {
 	std::shared_ptr<CGameState> state;
@@ -31,6 +65,21 @@ public:
 	const Services * services() const override { return LIBRARY; }
 	const BattleCb * battle(const BattleID & id) const override { return state->getBattle(id); }
 	const GameCb * game() const override { return state.get(); }
+};
+
+class BattleFormAITestCallback final : public CBattleCallback
+{
+public:
+	std::vector<BattleAction> submitted;
+
+	BattleFormAITestCallback()
+		: CBattleCallback(PlayerColor(0), nullptr)
+	{}
+
+	void battleMakeSpellAction(const BattleID &, const BattleAction & action) override
+	{
+		submitted.push_back(action);
+	}
 };
 
 CSelector creatureNativeSelector(CreatureID creature)
@@ -126,13 +175,69 @@ public:
 		stack->nodeHasChanged();
 	}
 };
+
+float projectedOffensivePressure(const Environment * environment,
+	const std::shared_ptr<CBattleInfoCallback> & battleState,
+	uint32_t unitId,
+	int32_t duration,
+	const spells::effects::BattleFormEffect::BattleFormCandidate * candidate)
+{
+	auto projectedBattle = std::make_shared<HypotheticBattle>(environment, battleState);
+	auto projectedTarget = projectedBattle->getForUpdate(unitId);
+	if(candidate)
+	{
+		projectedTarget->beginBattleForm(candidate->creature, duration);
+		projectedTarget->setPosition(candidate->landing);
+	}
+
+	DamageCache damageCache;
+	PotentialTargets actions(projectedTarget.get(), damageCache, projectedBattle);
+	const float actionValue = actions.berserk
+		? actions.expectedBerserkActionValue()
+		: (actions.possibleAttacks.empty() ? 0.0f : actions.possibleAttacks.front().attackValue());
+
+	float total = 0.0f;
+	for(int turn = 0; turn < std::min(duration, 2); ++turn)
+		if(projectedTarget->willMove(turn))
+			total += actionValue;
+	return total;
+}
 }
 
-class NewHorizonsBattleFormAITest : public BattleTestFixture
+class NewHorizonsBattleFormAITest : public HeroCommandFixture
 {
 protected:
 	std::shared_ptr<BattleFormEnvironment> environment;
-	std::shared_ptr<CPlayerBattleCallback> callback;
+	std::shared_ptr<BattleFormAITestCallback> callback;
+	CStack * active = nullptr;
+	CStack * target = nullptr;
+
+	void SetUp() override
+	{
+		HeroCommandFixture::SetUp();
+		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			GTEST_SKIP() << "Requires the New Horizons content module";
+	}
+
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		const JsonNode combatRules(JsonPath::builtin("config/newHorizonsCombat"));
+		JsonNode commandRules = combatRules["combat"]["heroCommands"];
+		// Keep the real Hero Action/Order allowance path active while isolating the
+		// battle-form cast from independent command-scoring heuristics.
+		for(auto & command : commandRules["commands"].Struct())
+			for(auto & effect : command.second["effects"].Struct())
+			{
+				effect.second["base"].Float() = 0;
+				effect.second["attack"].Float() = 0;
+				effect.second["defense"].Float() = 0;
+			}
+		heroCommands::validateRules(commandRules);
+		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, commandRules);
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
+			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+	}
 
 	CStack * prepareBattleStack()
 	{
@@ -144,8 +249,89 @@ protected:
 			return nullptr;
 		beginCombat();
 		environment = std::make_shared<BattleFormEnvironment>(gameState());
-		callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+		callback = std::make_shared<BattleFormAITestCallback>();
+		callback->onBattleStarted(battle());
 		return stack;
+	}
+
+	bool advanceUntilNextActivation(const CStack * wanted)
+	{
+		for(int attempt = 0; attempt < 32; ++attempt)
+		{
+			const auto * current = battle()->battleActiveUnit();
+			if(!current)
+				return false;
+			if(current == wanted)
+				return true;
+			const auto player = battle()->sideToPlayer(current->unitSide());
+			if(!gameHandler->battles->makePlayerBattleAction(BattleID(0), player,
+				BattleAction::makeDefend(current)))
+				return false;
+		}
+		return false;
+	}
+
+	void prepareSelectionBattle()
+	{
+		startGame();
+		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+		for(const auto known : attackerSideHero->getSpellsInSpellbook())
+			attackerSideHero->removeSpellFromSpellbook(known);
+		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::MAGIC_ARROW));
+		setTestSpellPointTotal(attackerSideHero, 1000);
+
+		startBattle();
+		BattleUnitsChanged remove;
+		remove.battleID = BattleID(0);
+		for(const auto * unit : battle()->battleGetAllUnits(false))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+		gameHandler->sendAndApply(remove);
+
+		active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex - 1), 100000);
+		target = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(rightHex), 1);
+		ASSERT_NE(active, nullptr);
+		ASSERT_NE(target, nullptr);
+		active->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+			BonusType::NO_RETALIATION, BonusSource::OTHER, 1, BonusSourceID()));
+
+		Bonus immobilized;
+		immobilized.type = BonusType::STACKS_SPEED;
+		immobilized.duration = BonusDuration::ONE_BATTLE;
+		immobilized.val = -static_cast<int32_t>(active->getMovementRange());
+		active->addNewBonus(std::make_shared<Bonus>(immobilized));
+
+		beginCombat();
+		ASSERT_TRUE(advanceUntilNextActivation(active));
+		callback = std::make_shared<BattleFormAITestCallback>();
+		callback->onBattleStarted(battle());
+		environment = std::make_shared<BattleFormEnvironment>(gameState());
+	}
+
+	template<typename Callback>
+	void withBattleFormMagicArrow(Callback && testBody)
+	{
+		auto * spell = const_cast<CSpell *>(SpellID(SpellID::MAGIC_ARROW).toSpell());
+		ASSERT_NE(spell, nullptr);
+
+		std::array<JsonNode, GameConstants::SPELL_SCHOOL_LEVELS> originalBattleEffects;
+		for(int32_t level = 0; level < GameConstants::SPELL_SCHOOL_LEVELS; ++level)
+			originalBattleEffects[level] = spell->getLevelInfo(level).battleEffects;
+
+		ScopeExit restore([&]
+		{
+			for(int32_t level = 0; level < GameConstants::SPELL_SCHOOL_LEVELS; ++level)
+				const_cast<CSpell::LevelInfo &>(spell->getLevelInfo(level)).battleEffects = originalBattleEffects[level];
+			spell->setupMechanics();
+		});
+
+		JsonNode testBattleEffects;
+		testBattleEffects["battleForm"]["type"] = JsonNode("core:battleForm");
+		testBattleEffects["battleForm"]["duration"] = JsonNode(2);
+		for(int32_t level = 0; level < GameConstants::SPELL_SCHOOL_LEVELS; ++level)
+			const_cast<CSpell::LevelInfo &>(spell->getLevelInfo(level)).battleEffects = testBattleEffects;
+		spell->setupMechanics();
+
+		std::forward<Callback>(testBody)(spell);
 	}
 };
 
@@ -209,7 +395,7 @@ TEST_F(NewHorizonsBattleFormAITest, AuthoritativeAndDetachedViewsReplaceNestedNa
 		// Give the real stack a synthetic rank context so nested projections prove
 		// that effective native RankRangeLimiters still see its original rank.
 		ScopedStackRank rankContext(stack, original, 1);
-		auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback);
+		auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
 		auto projectedFirst = parent->getForUpdate(stackId);
 		const auto initialTreeVersion = projectedFirst->getTreeVersion();
 		projectedFirst->beginBattleForm(firstForm, 2);
@@ -249,4 +435,112 @@ TEST_F(NewHorizonsBattleFormAITest, AuthoritativeAndDetachedViewsReplaceNestedNa
 	EXPECT_TRUE(stack->getBonuses(creatureNativeSelector(firstForm))->empty());
 	EXPECT_TRUE(stack->getBonuses(creatureNativeSelector(secondForm))->empty());
 	stack->endBattleForm();
+}
+
+TEST_F(NewHorizonsBattleFormAITest, ExpectedValueUsesSignedMeanOfFullPoolAndEvaluatorSelectsTheInjectedEffect)
+{
+	const auto ogre = creatureByName("core:ogre");
+	const auto cyclopKing = creatureByName("core:cyclopKing");
+	ScopedCreatureBonus nativeOgreDamage(const_cast<CCreature *>(ogre.toCreature()),
+		Bonus(BonusDuration::PERMANENT, BonusType::CREATURE_DAMAGE, BonusSource::CREATURE_ABILITY,
+			10000, BonusSourceID(ogre), BonusCustomSubtype::creatureDamageBoth));
+	ScopedCreatureBonus nativeCyclopKingDamage(const_cast<CCreature *>(cyclopKing.toCreature()),
+		Bonus(BonusDuration::PERMANENT, BonusType::CREATURE_DAMAGE, BonusSource::CREATURE_ABILITY,
+			50000, BonusSourceID(cyclopKing), BonusCustomSubtype::creatureDamageBoth));
+	// These synthetic native abilities must be present when the fixture stacks are
+	// constructed. Adding a prototype bonus afterward can make the first baseline
+	// view stale until a later same-species battle-form projection refreshes it.
+	prepareSelectionBattle();
+
+	withBattleFormMagicArrow([&](CSpell * spell)
+	{
+		const auto liveStateBefore = target->save();
+		RandomStateArchive randomBefore;
+		auto * liveRng = dynamic_cast<CRandomGenerator *>(&gameHandler->getRandomGenerator());
+		ASSERT_NE(liveRng, nullptr);
+		liveRng->serialize(randomBefore);
+		const auto battleCallback = callback->getBattle(BattleID(0));
+		spells::BattleCast cast(battleCallback.get(), attackerSideHero, spells::Mode::HERO, spell);
+		const auto mechanics = spell->battleMechanics(&cast);
+		const auto * battleForm = mechanics->findEffect<spells::effects::BattleFormEffect>();
+		ASSERT_NE(battleForm, nullptr);
+		ASSERT_EQ(mechanics->getTargetTypes(), (std::vector<spells::AimType>{spells::AimType::CREATURE}));
+
+		const auto viableTargets = SpellTargetEvaluator::getViableTargets(mechanics.get());
+		ASSERT_EQ(viableTargets.size(), 1u);
+		ASSERT_EQ(viableTargets.front().size(), 1u);
+		ASSERT_EQ(viableTargets.front().front().unitValue, target);
+		const auto targetSnapshot = spells::Target{spells::Destination(target)};
+
+		const auto candidates = battleForm->formsForTarget(mechanics.get(), target);
+		ASSERT_GT(candidates.size(), 2u);
+		ASSERT_TRUE(vstd::contains_if(candidates, [ogre](const auto & candidate)
+		{
+			return candidate.creature == ogre;
+		}));
+		ASSERT_TRUE(vstd::contains_if(candidates, [cyclopKing](const auto & candidate)
+		{
+			return candidate.creature == cyclopKing;
+		}));
+
+		const float baselinePressure = projectedOffensivePressure(environment.get(), battleCallback,
+			target->unitId(), battleForm->getDuration(), nullptr);
+		double signedMean = 0.0;
+		std::vector<float> signedDeltas;
+		signedDeltas.reserve(candidates.size());
+		int beneficialOutcomes = 0;
+		int harmfulOutcomes = 0;
+		for(const auto & candidate : candidates)
+		{
+			const float pressure = projectedOffensivePressure(environment.get(), battleCallback,
+				target->unitId(), battleForm->getDuration(), &candidate);
+			const float delta = baselinePressure - pressure;
+			signedDeltas.push_back(delta);
+			signedMean += delta;
+			beneficialOutcomes += delta > 0.01f;
+			harmfulOutcomes += delta < -0.01f;
+		}
+		ASSERT_GT(beneficialOutcomes, 0);
+		ASSERT_GT(harmfulOutcomes, 0)
+			<< "The overpowered Cyclop King form must remain a signed penalty in the mean";
+		const float mean = static_cast<float>(signedMean / candidates.size());
+		const float applicationChance = 1.0f - static_cast<float>(target->magicResistance()) / 100.0f;
+		const auto expectedScore = mean * applicationChance;
+		const auto actualScore = SpellTargetEvaluator::battleFormExpectedOffensiveValue(
+			mechanics.get(), battleForm, targetSnapshot, environment.get(), battleCallback);
+		ASSERT_TRUE(actualScore);
+		EXPECT_NEAR(*actualScore, expectedScore, 0.02f);
+		EXPECT_GT(expectedScore, 0.0f)
+			<< "The uniformly sampled pool should be favorable on average in this fixture";
+		RNGStub midpointGenerator;
+		const auto midpointIndex = midpointGenerator.nextInt64(0, candidates.size() - 1);
+		EXPECT_GT(std::abs(expectedScore - signedDeltas[midpointIndex] * applicationChance), 0.1f)
+			<< "The expected value must not collapse to RNGStub's midpoint sample";
+
+		EXPECT_EQ(target->unitType()->getId(), ogre);
+		EXPECT_EQ(target->getPosition(), BattleHex(rightHex));
+
+		BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+			BattleSide::ATTACKER, 1.0f, 2);
+		evaluator.selectStackAction(active);
+		ASSERT_TRUE(evaluator.canCastSpell());
+		ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+		ASSERT_EQ(callback->submitted.size(), 1u);
+		const auto action = callback->submitted.front();
+		ASSERT_EQ(action.actionType, EActionType::HERO_SPELL);
+		EXPECT_EQ(action.spell, SpellID(SpellID::MAGIC_ARROW));
+		const auto selectedTarget = action.getTarget(battleCallback.get());
+		ASSERT_EQ(selectedTarget.size(), 1u);
+		EXPECT_EQ(selectedTarget.front().unitValue, target);
+		EXPECT_EQ(target->save(), liveStateBefore);
+		RandomStateArchive randomAfter;
+		liveRng->serialize(randomAfter);
+		EXPECT_EQ(randomAfter.state, randomBefore.state);
+
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+		EXPECT_TRUE(vstd::contains_if(candidates, [this](const auto & candidate)
+		{
+			return candidate.creature == target->unitType()->getId();
+		})) << "The temporarily injected effect must resolve to a member of the shared runtime pool";
+	});
 }

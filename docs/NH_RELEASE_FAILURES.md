@@ -27,6 +27,31 @@ reports `UP068-mana-conservation.log`/`.xml`. Test binary SHA-256:
 `b76baa1a39c38c1e61e71215ea2f6ced5131d7fda0329a5fa647c38652dc82e8`.
 This certifies the independent perk, not the still-failing random-form AI slice.
 
+AI-only original-binary run `89456` reproduces the same failure, excluding
+cross-test ordering as the cause. Diagnostic both-target build `40205` passes;
+AI-only native `15212` still fails. Its per-form traces agree with the oracle
+and confirm identical callback/detached pointers, but baseline pressure differs
+before transformation. Preserve `UP066-AI-isolated-before-repair.log` and
+`UP066-AI-diagnostic.log`; temporary diagnostic prints must be removed before
+final verification/commit. Mana Conservation is committed/pushed separately
+as `266c2c175`; the random-form AI slice remains uncommitted and uncertified.
+
+Diagnostic cause: the fixture adds synthetic native creature bonuses after
+constructing its live Ogre, leaving the initial baseline stale; install scoped
+prototype bonuses before stack construction. Separately, blockRetaliation adds
+BLOCKS_RETALIATION (prevents opponents countering its attacks), not NO_RETALIATION
+(prevents the unit countering). The supposedly non-retaliating 100,000 Pikemen
+therefore invalidated the favorable-pool setup. Use explicit ONE_BATTLE
+NO_RETALIATION on that fixture defender. No production scoring formula changed;
+all mean, harmful-outcome, selection and live-state/RNG assertions remain.
+Temporary diagnostics are removed; independent repair review has no blocker.
+Both-target repair build `52390` passes. Final native `31943` passes 69/69,
+zero skips, in 17.000s, including the unchanged signed-mean and accepted-cast
+assertions. Reports `UP066-UP068-build-repaired.log` and
+`UP066-UP068-focused-repaired.log`/`.xml`. Verified test binary SHA-256:
+`c298ce41d5703153814efbd98aa522a0b4b94f83536093c36942e369b6dc2f79`.
+No playable promotion occurred.
+
 ### 2026-09-30 battle-form clone/presentation checkpoint — fixture includes
 
 Both-target compiler probe `95666` fails in the new real-clone fixture:

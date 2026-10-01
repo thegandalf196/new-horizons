@@ -171,6 +171,8 @@ TEST_F(BattleFormEffectCastTest, UsesUniformCapturedCategoryPoolAndRelocatesWith
 	LIBRARY->creatures()->forEach([&](const Creature * creature, bool & stop)
 	{
 		(void)stop;
+		if(!creature || creature->getBaseHitPoints() <= 0)
+			return;
 		const auto category = battle()->battleGetCreatureCategory(creature->getId());
 		if(category && category->category == sourceCategory->category)
 			candidatePool.push_back(creature);
@@ -206,6 +208,30 @@ TEST_F(BattleFormEffectCastTest, UsesUniformCapturedCategoryPoolAndRelocatesWith
 	ASSERT_TRUE(expectedLargeFormPosition);
 	ASSERT_NE(*expectedLargeFormPosition, origin)
 		<< "The cross-faction Griffin form must not be discarded just because its footprint cannot fit at the source anchor";
+	const auto expectedSmallFormPosition = sourceAccessibility.nearestLegalPosition(
+		origin, false, target->unitSide());
+	ASSERT_TRUE(expectedSmallFormPosition);
+
+	spells::MechanicsMock mechanics;
+	ON_CALL(mechanics, battle()).WillByDefault(Return(battle()));
+	ON_CALL(mechanics, creatures()).WillByDefault(Return(LIBRARY->creatures()));
+	ON_CALL(mechanics, isReceptive(_)).WillByDefault(Return(true));
+	ON_CALL(mechanics, isSmart()).WillByDefault(Return(false));
+	ON_CALL(mechanics, isNegativeSpell()).WillByDefault(Return(true));
+	ON_CALL(mechanics, getBattleID()).WillByDefault(Return(BattleID(0)));
+
+	spells::effects::BattleFormEffect effect;
+	effect.init(battleFormEffectConfig()); // omitted duration defaults to two rounds
+	EXPECT_EQ(effect.getDuration(), 2);
+	const auto candidates = effect.formsForTarget(&mechanics, target);
+	ASSERT_EQ(candidates.size(), candidatePool.size());
+	for(size_t index = 0; index < candidatePool.size(); ++index)
+	{
+		const auto * expectedCreature = candidatePool[index];
+		EXPECT_EQ(candidates[index].creature, expectedCreature->getId());
+		EXPECT_EQ(candidates[index].landing,
+			expectedCreature->isDoubleWide() ? *expectedLargeFormPosition : *expectedSmallFormPosition);
+	}
 
 	int selectedSeed = 0;
 	const Creature * expectedForm = nullptr;
@@ -222,17 +248,6 @@ TEST_F(BattleFormEffectCastTest, UsesUniformCapturedCategoryPoolAndRelocatesWith
 	ASSERT_NE(expectedForm, nullptr);
 	ASSERT_GT(selectedSeed, 0);
 	gameHandler->randomizer->setSeed(selectedSeed);
-
-	spells::MechanicsMock mechanics;
-	ON_CALL(mechanics, battle()).WillByDefault(Return(battle()));
-	ON_CALL(mechanics, creatures()).WillByDefault(Return(LIBRARY->creatures()));
-	ON_CALL(mechanics, isReceptive(_)).WillByDefault(Return(true));
-	ON_CALL(mechanics, isSmart()).WillByDefault(Return(false));
-	ON_CALL(mechanics, isNegativeSpell()).WillByDefault(Return(true));
-	ON_CALL(mechanics, getBattleID()).WillByDefault(Return(BattleID(0)));
-
-	spells::effects::BattleFormEffect effect;
-	effect.init(battleFormEffectConfig()); // omitted duration defaults to two rounds
 	spells::Target selectedTarget;
 	selectedTarget.emplace_back(target);
 	spells::detail::ProblemImpl problem;
@@ -361,4 +376,5 @@ TEST(BattleFormEffectConfigTest, RejectsUnknownParametersAndInvalidDurations)
 
 	auto validDuration = battleFormEffectConfig(true);
 	EXPECT_NO_THROW(effect.init(validDuration));
+	EXPECT_EQ(effect.getDuration(), 3);
 }

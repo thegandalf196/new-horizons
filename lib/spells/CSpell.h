@@ -208,6 +208,7 @@ public:
 	friend class CSpellHandler;
 	friend class Graphics;
 	friend class test::CSpellTest;
+	friend class NewHorizonsBattleFormAITest;
 public:
 	///internal interface (for callbacks)
 

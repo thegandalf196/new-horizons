@@ -12,6 +12,10 @@
 
 #include "Effect.h"
 
+#include "../../battle/BattleHex.h"
+
+#include <vector>
+
 namespace spells
 {
 namespace effects
@@ -24,9 +28,17 @@ class DLL_LINKAGE BattleFormEffect final : public Effect
 
 	bool hasUsableForms(const Mechanics * mechanics, const battle::Unit * unit) const;
 	bool hasLegalPlacementForEveryForm(const Mechanics * mechanics, const battle::Unit * unit) const;
-	bool isSupportedTarget(const Mechanics * mechanics, const battle::Unit * unit) const;
 
 public:
+	struct DLL_LINKAGE BattleFormCandidate
+	{
+		CreatureID creature;
+		BattleHex landing;
+	};
+
+	std::vector<BattleFormCandidate> formsForTarget(const Mechanics * mechanics, const battle::Unit * unit) const;
+	int32_t getDuration() const { return duration; }
+
 	void adjustAffectedHexes(BattleHexArray & hexes, const Mechanics * mechanics, const Target & spellTarget) const override;
 	bool applicableGeneral(Problem & problem, const Mechanics * mechanics) const override;
 	bool applicableTarget(Problem & problem, const Mechanics * mechanics, const Target & target) const override;
