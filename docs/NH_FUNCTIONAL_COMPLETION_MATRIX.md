@@ -14,6 +14,20 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+Current verified checkpoint: Twist of Fate is active and Phase1 complete.
+Independent side allowance, save/packet transition, current-controller adverse
+Luck/Morale/procs/resistance, one final redraw, scripted binomial result and
+minimum branch-local AI hooks are implemented. Late Hand of Fate collateral
+uses its actual chosen recipient's final MR decision without replacement.
+Both-target31690 exits0; native95364 passes43/43, zero skips in12.421s
+(`UP089-activated-verified.log`/`.xml`); binary SHA-256
+`67ba01cfdc050aade2741bee5187d9e2d870ba93b06ffe13c3aaa4bf7b6d3d19`.
+Data/inventory19/19 pass; independent Astra activation review has no blocker.
+Coverage141→142/310 active, planned169→168; Luck6active/4planned. Ranks84/93,
+combat60/67 unchanged. Broader reflection/control-change/cross-category ordering,
+full attack-script dispatch and conditional AI valuation remain Phase2. Art
+Not done; playable delivery unpromoted. The earlier checkpoints below are history.
+
 UP-089 Twist of Fate infrastructure is source/native verified, not a completed
 perk. Independent side allowance, append-only save/packet287, monotonic state
 application, authoritative one-final-redraw resolver, spell callback bridge and

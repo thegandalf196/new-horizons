@@ -2206,6 +2206,30 @@ Remaining gate and next action:
 
 ### UP-089 scripted hostile-proc compile gate
 
+Late-collateral fixture build fails at its new include: `PacksForServerBattle.h`
+does not exist. Preserve `UP089-collateral-build.log`. Root replaces the guessed
+header with the actual `battle/BattleAction.h` declaration; no production change
+or assertion is weakened. Retry build/native result remains pending.
+
+Retry36367 builds both targets. Principal native run fails before the cast:
+the fixture hypnotized its only attacker-side stack, so every active unit is
+currently controlled by the defender and Player0's hero action is correctly
+rejected by the authoritative current-owner check. Preserve
+`UP089-collateral-principal.log`/`.xml`. Add one genuine attacker-controlled
+escort with explicit initiative so ordinary turn flow supplies a legal casting
+window; include it in the seeded collateral pool and assert its HP unchanged.
+Do not override the active stack or bypass player/hero validation.
+
+Retry31690 builds and the repaired principal native case passes (703 ms total).
+Activation data gate then catches the still-planned UI inventory row (18/19).
+Update that row to Active while preserving art Not done and neutral fallback;
+do not treat activation as artwork/visual approval. Repeat the data gate and
+the focused native filter on the activated candidate.
+
+The first inventory repair transposed its UI/Art columns, so the neutral-fallback
+guard correctly still fails18/19. Root corrects the column order (UI Provisional,
+Art Not done). Preserve the distinction; do not relax the guard.
+
 Both-target build18304 fails in `ServerSpellCastEnvironment`: the new bridge
 calls `playerToSide` / `battleGetOwner` on the narrower `IBattleInfoCallback`,
 and uses Lua-facing `isAlive` rather than the C++ Unit's `alive` method.

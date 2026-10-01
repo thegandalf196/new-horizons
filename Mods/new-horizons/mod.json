@@ -5824,7 +5824,7 @@
 								"requires": "expert",
 								"description": "The first random combat roll each combat that produces a negative result for the hero's army is automatically rerolled once. Deterministic effects cannot be rerolled.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The first random combat roll each combat that produces a negative result for the hero's army is automatically rerolled once. Deterministic effects cannot be rerolled."
 								}
 							},

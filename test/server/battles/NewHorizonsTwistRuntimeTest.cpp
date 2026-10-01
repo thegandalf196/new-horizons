@@ -21,6 +21,7 @@
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/modding/CModHandler.h"
+#include "../../../lib/battle/BattleAction.h"
 #include "../../../include/vcmi/ServerCallback.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
@@ -362,4 +363,161 @@ TEST_F(NewHorizonsTwistRuntimeTest, HostileDeathBlowSpendsTheRecipientsAllowance
 		ASSERT_TRUE(attack(attacker, defender->getPosition()));
 	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).used);
 	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available());
+}
+
+namespace
+{
+constexpr auto handOfFateSpellKey = "new-horizons:handOfFate";
+
+SpellID handOfFateSpell()
+{
+	return SpellID(SpellID::decode(handOfFateSpellKey));
+}
+
+class NewHorizonsTwistHandOfFateRuntimeTest : public NewHorizonsTwistRuntimeTest
+{
+protected:
+	CStack * friendly = nullptr;
+	CStack * primary = nullptr;
+	CStack * enemyCollateral = nullptr;
+	CStack * castingEscort = nullptr;
+	SpellID spell = SpellID::NONE;
+
+	void mapLoaded(CMap * loaded) override
+	{
+		NewHorizonsTwistRuntimeTest::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
+			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
+			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
+	}
+
+	void removeDeployedUnits()
+	{
+		BattleUnitsChanged remove;
+		remove.battleID = BattleID(0);
+		for(const auto * unit : battle()->battleGetAllUnits(false))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+		gameHandler->sendAndApply(remove);
+	}
+
+	void prepareHandOfFateBattle()
+	{
+		startGame();
+		selectTwistOfFate(attackerSideHero);
+		selectTwistOfFate(defenderSideHero);
+
+		spell = handOfFateSpell();
+		ASSERT_NE(spell, SpellID::NONE);
+		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+		attackerSideHero->addSpellToSpellbook(spell);
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+		setTestSpellPointTotal(attackerSideHero, 1000);
+
+		startBattle();
+		ASSERT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).enabled);
+		ASSERT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).enabled);
+		removeDeployedUnits();
+
+		friendly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1000);
+		primary = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 5), 1000);
+		enemyCollateral = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 2), 1000);
+		castingEscort = addStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(3, 2), 1000);
+		ASSERT_NE(friendly, nullptr);
+		ASSERT_NE(primary, nullptr);
+		ASSERT_NE(enemyCollateral, nullptr);
+		ASSERT_NE(castingEscort, nullptr);
+		// Keep one genuinely controlled caster-side stack and let normal initiative
+		// make its activation the legal window for the attacking hero's spell.
+		castingEscort->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::STACKS_INITIATIVE_FLAT, BonusSource::OTHER, 100, BonusSourceID()));
+
+		// Keep the selected stack's original army separate from the controller
+		// whose Twist allowance should pay for its hostile resistance reroll.
+		friendly->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID()));
+		ASSERT_EQ(friendly->unitSide(), BattleSide::ATTACKER);
+		ASSERT_EQ(battle()->battleGetOwner(friendly), PlayerColor(1));
+		ASSERT_EQ(battle()->playerToSide(battle()->battleGetOwner(friendly)), BattleSide::DEFENDER);
+		friendly->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::MAGIC_RESISTANCE, BonusSource::OTHER, 1, BonusSourceID()));
+		ASSERT_EQ(friendly->magicResistance(), 1);
+
+		beginCombat();
+		ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+		ASSERT_EQ(battle()->battleGetOwner(battle()->battleActiveUnit()), PlayerColor(0));
+	}
+
+	std::optional<int> seedLateCollateralResistance(const CStack * selected,
+		const std::vector<CStack *> & candidates) const
+	{
+		const auto selectedPosition = std::find(candidates.begin(), candidates.end(), selected);
+		if(selectedPosition == candidates.end())
+			return std::nullopt;
+		const int selectedIndex = static_cast<int>(std::distance(candidates.begin(), selectedPosition));
+		const auto units = battle()->battleGetAllUnits(false);
+
+		for(int seed = 1; seed < 100000; ++seed)
+		{
+			CRandomGenerator expected(seed);
+			int firstResistanceDraw = -1;
+			for(const auto * unit : units)
+			{
+				const int draw = expected.nextInt(0, 99);
+				if(unit->unitId() == selected->unitId())
+					firstResistanceDraw = draw;
+			}
+
+			const int selectedCollateral = expected.nextInt(1, static_cast<int>(candidates.size())) - 1;
+			const int lateResistanceDraw = expected.nextInt(0, 99);
+			const int hypotheticalReplacement = expected.nextInt(1, static_cast<int>(candidates.size())) - 1;
+			if(firstResistanceDraw >= 1 && selectedCollateral == selectedIndex
+				&& lateResistanceDraw == 0 && hypotheticalReplacement != selectedIndex)
+				return seed;
+		}
+		return std::nullopt;
+	}
+
+	BattleAction handOfFateAction() const
+	{
+		BattleAction action;
+		action.actionType = EActionType::HERO_SPELL;
+		action.side = BattleSide::ATTACKER;
+		action.spell = spell;
+		action.aimToUnit(primary);
+		return action;
+	}
+};
+}
+
+TEST_F(NewHorizonsTwistHandOfFateRuntimeTest, LateCollateralResistanceRerollsForItsCurrentControllerWithoutChangingTheChoice)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareHandOfFateBattle());
+	ASSERT_NE(enemyCollateral, nullptr);
+	const std::vector<CStack *> candidates{friendly, enemyCollateral, castingEscort};
+	const auto seed = seedLateCollateralResistance(friendly, candidates);
+	ASSERT_TRUE(seed.has_value()) << "Could not find a fixed failed-resistance / late-resist / replacement-choice sequence";
+
+	const auto primaryBefore = primary->getAvailableHealth();
+	const auto selectedBefore = friendly->getAvailableHealth();
+	const auto otherCandidateBefore = enemyCollateral->getAvailableHealth();
+	const auto escortBefore = castingEscort->getAvailableHealth();
+	gameHandler->randomizer->setSeed(*seed);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(
+		BattleID(0), PlayerColor(0), handOfFateAction()));
+
+	EXPECT_EQ(primaryBefore - primary->getAvailableHealth(), 320)
+		<< "The primary spell damage remains intact when late collateral resists";
+	EXPECT_EQ(selectedBefore - friendly->getAvailableHealth(), 0)
+		<< "The selected stack's final resistance redraw must prevent collateral damage";
+	EXPECT_EQ(otherCandidateBefore - enemyCollateral->getAvailableHealth(), 0)
+		<< "A resisted late recipient does not cause Hand of Fate to choose another stack";
+	EXPECT_EQ(escortBefore - castingEscort->getAvailableHealth(), 0);
+	ASSERT_EQ(server.castsOf(spell).size(), 1u);
+	EXPECT_EQ(server.castsOf(spell).front().damage, 320);
+	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::DEFENDER).used)
+		<< "The hypnotized recipient is currently controlled by the defender, whose allowance is spent";
+	EXPECT_TRUE(battle()->getAdverseCombatRerollState(BattleSide::ATTACKER).available())
+		<< "Its original unitSide does not determine who pays for the reroll";
 }
