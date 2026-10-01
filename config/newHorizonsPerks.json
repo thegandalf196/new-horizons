@@ -2621,7 +2621,7 @@
 					"requires": "advanced",
 					"description": "At the start of each week, gain +1 Wood and +1 Ore for every three owned towns, rounded down, minimum 1 if at least one town is owned.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "At the start of each week, gain +1 Wood and +1 Ore for every three owned towns, rounded down, minimum 1 if at least one town is owned."
 					}
 				},
@@ -2733,7 +2733,7 @@
 					"requires": "advanced",
 					"description": "At every fifth hero level, the initial level-up offer is automatically rerolled once before the choices are shown to the player.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "At every fifth hero level, the initial level-up offer is automatically rerolled once before the choices are shown to the player."
 					}
 				},

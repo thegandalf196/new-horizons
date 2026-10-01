@@ -2,6 +2,32 @@
 
 ## Purpose
 
+### 2026-10-01 Estate Network / Quick Study — early CMake registration
+
+Client build attempt fails during CMake regeneration because the root registers
+NewHorizonsQuickStudyTest.cpp before the worker has created it. Preserve
+`UP075-client-build.log`; defer registration until that real fixture exists
+(no empty placeholder). Retry the client target while the fixture is written,
+then register it before native compilation. No gameplay failure is implied.
+
+Client retry51396 and isolated Quick Study7306 / economy49783 compiles pass.
+Both-target83432 fails in the Estate AI Environment adapter: converting
+BattleInfo* to BattleCb* needs BattleInfo's complete definition. Add the direct
+BattleInfo.h include; preserve `UP075-final-build.log`. Focused execution remains
+pending; this is a fixture include repair, not a production change.
+
+Repair build65084 passes. Native18122 runs29 tests with zero skips;28 pass.
+The AI choice fixture receives a legal mixed offer and correctly chooses its
+existing Inspirational Leader preference, contradicting the fixture's demand
+for Estate Network. Isolate the new perk's legal offer while retaining its
+selected Tax Collector prerequisite and canonical registry structure; keep
+comparative AI valuation deferred. Preserve `UP075-focused.log`/`.xml`.
+
+Fixture repair82666 and final style-only rebuild20329 pass both targets.
+Focused native80431 passes29/29 without skips in10.865s; first succeeding
+reports `UP075-focused-repaired.log`/`.xml`. Independent review approves the
+isolated offer repair. No production formula/AI valuation repair was needed.
+
 ### 2026-10-01 Learning Mentor — fixture query header
 
 Native build `85716` fails because the new server fixture calls

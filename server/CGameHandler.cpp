@@ -263,9 +263,12 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero)
 	hlu.primaryGains = gains;
 	hlu.artilleryExpertBeforeGain = artilleryExpertBeforeGain;
 	hlu.logisticsExpertBeforeGain = logisticsExpertBeforeGain;
-	hlu.skills = randomizer->rollSecondarySkills(hero);
-	if(newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
+	auto prepareChoices = [this, hero, &hlu]()
 	{
+		hlu.skills = randomizer->rollSecondarySkills(hero);
+		if(!newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
+			return;
+
 		const auto & perkState = hero->getPerkState();
 		std::erase_if(hlu.skills, [hero, &perkState](SecondarySkill skill)
 		{
@@ -273,15 +276,21 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero)
 			return !definition || !perkState.canAdvanceSkillNormally(definition->getJsonKey(),
 				hero->getSecSkillLevel(skill));
 		});
-		const size_t maxSkillChoices = static_cast<size_t>(hero->getPerkState().rules["maxSkillChoices"].Integer());
+		const size_t maxSkillChoices = static_cast<size_t>(perkState.rules["maxSkillChoices"].Integer());
 		if(hlu.skills.size() > maxSkillChoices)
 			hlu.skills.resize(maxSkillChoices);
 		hlu.perkOfferSeed = static_cast<uint32_t>(randomizer->getDefault().nextInt());
-		hlu.perks = hero->getPerkState().prepareOffer([hero](const std::string & skillId)
+		hlu.perks = perkState.prepareOffer([hero](const std::string & skillId)
 		{
 			return hero->getPerkSkillRank(skillId);
 		}, hlu.perkOfferSeed);
-	}
+	};
+	prepareChoices();
+
+	const int reachedLevel = hero->level + 1;
+	if(reachedLevel % 5 == 0
+		&& hero->hasActivePerk("new-horizons:learning", "new-horizons:learning.quickStudy"))
+		prepareChoices();
 
 	if (!hero->getOwner().isValidPlayer())
 	{

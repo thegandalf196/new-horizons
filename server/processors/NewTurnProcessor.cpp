@@ -42,6 +42,24 @@
 
 #include <vstd/RNG.h>
 
+namespace
+{
+int estateNetworkWeeklyIncome(const PlayerState & state)
+{
+	const size_t ownedTownCount = state.getTowns().size();
+	if(ownedTownCount == 0)
+		return 0;
+
+	const int resourcesPerHolder = ownedTownCount < 3 ? 1 : static_cast<int>(ownedTownCount / 3);
+	int activeHolders = 0;
+	for(const auto * hero : state.getHeroes())
+		if(hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.estateNetwork"))
+			++activeHolders;
+
+	return resourcesPerHolder * activeHolders;
+}
+}
+
 NewTurnProcessor::NewTurnProcessor(CGameHandler * gameHandler)
 	:gameHandler(gameHandler)
 {
@@ -810,6 +828,23 @@ NewTurn NewTurnProcessor::generateNewTurnPack()
 	{
 		for (const auto & player : gameHandler->gameState().players)
 			n.playerIncome[player.first] = generatePlayerIncome(player.first, newWeek, n.newHorizonsMysticPondResults);
+	}
+
+	// Estate Network is a fixed weekly resource grant. Apply it after regular
+	// income, handicap, and AI income adjustments so the perk's amount is exact.
+	// The initial turn skips ordinary daily income, but day zero -> one is still
+	// the start of the first week and must receive this weekly effect.
+	if(newWeek)
+	{
+		for(const auto & [playerID, state] : gameHandler->gameState().players)
+		{
+			const int weeklyResources = estateNetworkWeeklyIncome(state);
+			if(weeklyResources == 0)
+				continue;
+
+			n.playerIncome[playerID][EGameResID::WOOD] += weeklyResources;
+			n.playerIncome[playerID][EGameResID::ORE] += weeklyResources;
+		}
 	}
 
 	if (newWeek && !firstTurn)

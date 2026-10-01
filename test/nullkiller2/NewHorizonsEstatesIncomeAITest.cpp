@@ -5,20 +5,76 @@
  */
 #include "StdInc.h"
 
+#include <algorithm>
+#include <chrono>
+#include <future>
+
 #include "AI/Nullkiller2/Analyzers/BuildAnalyzer.h"
 #include "lib/CSkillHandler.h"
 #include "lib/GameConstants.h"
 #include "lib/GameLibrary.h"
 #include "lib/IGameSettings.h"
 #include "lib/CPlayerState.h"
+#include "lib/battle/BattleInfo.h"
+#include "lib/callback/AIFactory.h"
+#include "lib/callback/CCallback.h"
+#include "lib/callback/CGlobalAI.h"
+#include "lib/callback/IClient.h"
+#include "lib/entities/hero/CHeroHandler.h"
+#include "lib/entities/hero/NewHorizonsPerkState.h"
+#include "lib/gameState/CGameState.h"
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/mapObjects/CGTownInstance.h"
 #include "lib/modding/CModHandler.h"
+#include "lib/networkPacks/PacksForServer.h"
+#include "mock/GameHandlerTestServer.h"
 #include "nullkiller2/NullkillerTest.h"
+#include "server/CGameHandler.h"
 
 namespace
 {
 const PlayerColor PLAYER(0);
+constexpr auto ESTATES_SKILL = "new-horizons:estates";
+constexpr auto TAX_COLLECTOR = "new-horizons:estates.taxCollector";
+constexpr auto ESTATE_NETWORK = "new-horizons:estates.estateNetwork";
+
+class EstateNetworkAIEnvironment final : public Environment
+{
+	std::shared_ptr<CGameState> state;
+
+public:
+	explicit EstateNetworkAIEnvironment(std::shared_ptr<CGameState> state)
+		: state(std::move(state))
+	{}
+
+	const Services * services() const override { return LIBRARY; }
+	const BattleCb * battle(const BattleID & id) const override { return state->getBattle(id); }
+	const GameCb * game() const override { return state.get(); }
+};
+
+class EstateNetworkAIChoiceClient final : public IClient
+{
+public:
+	std::promise<int> completed;
+
+	std::optional<BattleAction> makeSurrenderRetreatDecision(
+		PlayerColor,
+		const BattleID &,
+		const BattleStateInfoForRetreat &) override
+	{
+		return std::nullopt;
+	}
+
+	int sendRequest(const CPackForServer & request, PlayerColor player, bool) override
+	{
+		const auto * reply = dynamic_cast<const QueryReply *>(&request);
+		if(!reply || player != PLAYER || !reply->reply.has_value())
+			throw std::runtime_error("Nullkiller submitted an unexpected Estate Network level-up reply");
+
+		completed.set_value(*reply->reply);
+		return 1;
+	}
+};
 
 class NewHorizonsEstatesIncomeAITest : public NullkillerTest
 {
@@ -81,4 +137,79 @@ TEST_F(NewHorizonsEstatesIncomeAITest, BuildAnalyzerUsesTheSharedCappedIncomeFor
 	for(const auto * town : playerState->getTowns())
 		townIncome += town->dailyIncome()[EGameResID::GOLD];
 	EXPECT_EQ(forecast[EGameResID::GOLD], townIncome + 2 * 625);
+}
+
+TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerSelectsTheOfferedAdvancedEstateNetworkPerk)
+{
+	startGame();
+	const int estatesSkill = SecondarySkill::decode(ESTATES_SKILL);
+	ASSERT_GE(estatesSkill, 0);
+	firstHero->setSecSkillLevel(SecondarySkill(estatesSkill), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	firstHero->applyPerkSelection({ESTATES_SKILL, TAX_COLLECTOR});
+
+	// Isolate legal selection of this new perk, not comparative valuation
+	// against unrelated faction/morale perks. Retain the selected prerequisite.
+	auto & perkState = const_cast<newHorizonsHeroes::PerkState &>(firstHero->getPerkState());
+	for(auto & skill : perkState.rules["skills"].Struct())
+	{
+		for(auto & perk : skill.second["perks"].Vector())
+			if(perk["id"].String() != TAX_COLLECTOR && perk["id"].String() != ESTATE_NETWORK)
+				perk["effect"]["status"].String() = "planned";
+	}
+	perkState.validate();
+
+	const auto rankLookup = [this](const std::string & skillId)
+	{
+		return firstHero->getPerkSkillRank(skillId);
+	};
+	const auto offer = firstHero->getPerkState().prepareOffer(rankLookup, 0);
+	ASSERT_EQ(offer.size(), 1u);
+	const auto networkOffer = std::ranges::find_if(offer, [](const auto & candidate)
+	{
+		return candidate.selection.perkId == ESTATE_NETWORK;
+	});
+	ASSERT_NE(networkOffer, offer.end());
+	ASSERT_EQ(networkOffer->requiredRank, MasteryLevel::ADVANCED);
+
+	const auto ai = AIFactory::createAdventureAI("Nullkiller2");
+	ASSERT_NE(ai, nullptr);
+	auto transport = std::make_shared<EstateNetworkAIChoiceClient>();
+	const auto callback = makeCallback(PLAYER, transport.get());
+	ai->initGameInterface(std::make_shared<EstateNetworkAIEnvironment>(gameState()), callback);
+	auto answer = transport->completed.get_future();
+	std::vector<SecondarySkill> skills;
+	ai->heroGotLevel(firstHero, PrimarySkill::ATTACK, skills, offer, QueryID(42));
+	const auto ready = answer.wait_for(std::chrono::seconds(10));
+	ai->finish();
+	ASSERT_EQ(ready, std::future_status::ready);
+	const int selected = answer.get();
+	ASSERT_GE(selected, 0);
+	ASSERT_LT(static_cast<size_t>(selected), offer.size());
+	EXPECT_EQ(offer[static_cast<size_t>(selected)].selection.perkId, ESTATE_NETWORK);
+}
+
+TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerResourceViewIncludesTheAuthoritativeWeekStartGrant)
+{
+	startGame();
+	const int estatesSkill = SecondarySkill::decode(ESTATES_SKILL);
+	ASSERT_GE(estatesSkill, 0);
+	firstHero->setSecSkillLevel(SecondarySkill(estatesSkill), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	firstHero->applyPerkSelection({ESTATES_SKILL, TAX_COLLECTOR});
+	firstHero->applyPerkSelection({ESTATES_SKILL, ESTATE_NETWORK});
+	ASSERT_TRUE(firstHero->hasActivePerk(ESTATES_SKILL, ESTATE_NETWORK));
+
+	auto * playerState = gameState()->getPlayerState(PLAYER);
+	playerState->resources[EGameResID::WOOD] = 0;
+	playerState->resources[EGameResID::ORE] = 0;
+	GameHandlerTestServer server(gameState(), PLAYER);
+	CGameHandler handler(server, gameState());
+	handler.onNewTurn(); // Initial week-start grant is applied before AI planning.
+	EXPECT_EQ(gameState()->day, 1u);
+	EXPECT_EQ(playerState->resources[EGameResID::WOOD], 3);
+	EXPECT_EQ(playerState->resources[EGameResID::ORE], 3);
+
+	const auto gateway = makeGateway(PLAYER);
+	const auto freeResources = gateway->nullkiller->getFreeResources();
+	EXPECT_EQ(freeResources[EGameResID::WOOD], 3);
+	EXPECT_EQ(freeResources[EGameResID::ORE], 3);
 }

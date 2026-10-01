@@ -14,6 +14,24 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-075 Estate Network and Quick Study are source/native verified. Estate
+Network grants exact Wood/Ore per current owned towns and active Advanced
+holder at week start, including the initial week, after ordinary income/AI
+adjustments. Garrison holders, ownership changes, resource caps and reload
+consume the existing NewTurn/calendar lifecycle without a new counter.
+Quick Study rerolls the complete initial skill/perk offer once at reached
+levels5/10/etc, preserving one primary growth award and the existing saved RNG
+streams/final query seed. Query re-exposure consumes no extra draws. Human and
+AI use the same server-authored candidates; real Nullkiller selects the isolated
+legal Estate Network offer and sees the authoritative weekly resources.
+Both-target20329 passes; focused80431 passes29/29, zero skips, in10.865s;
+reports `UP075-focused-repaired.log`/`.xml`. Data/inventory19/19 pass.
+Perks132→134/310, planned178→176; Estates1/9→2/8 and Learning1/9→2/8.
+Ranks84/93, faction ranks/perks and combat identities60/67 are unchanged.
+Comparative economic perk valuation, pending-query/crash-recovery handling and
+broader scripted/custom-calendar interactions remain Phase2. Purpose-made art
+is Not done; no rendered acceptance or playable promotion is claimed.
+
 UP-073 Mentor is source/native verified. The first strictly lower-level allied
 hero met each absolute week receives250×the mentor's captured level, composed
 with the recipient's ordinary Learning. Both field and town visitor/garrison
@@ -394,7 +412,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 132/310 | 178 planned; Mentor is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 134/310 | 176 planned; Estate Network and Quick Study are the newest source/native-verified activations. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -421,8 +439,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 132
-active perks, leaving nine ranks and 178 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 134
+active perks, leaving nine ranks and 176 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-10-01; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -545,8 +563,8 @@ interactions, and rendered/playable acceptance remain separate.
 | Warcasting | 3/0 | 4/6 | Six perks missing |
 | Logistics | 3/0 | 3/7 | Seven perks missing |
 | Diplomacy | 0/3 | 0/10 | Ranks and progression missing |
-| Estates | 3/0 | 1/9 | Tax Collector supplies the first working Basic perk; Advanced perks remain missing. Shared daily payout and AI income forecast are native verified. |
-| Learning | 3/0 | 1/9 | Mentor supplies the first working Basic perk and opens ordinary Advanced-rank progression. Field/town awards, weekly persistence and AI selection are native verified; Academic Study is mapped next. |
+| Estates | 3/0 | 2/8 | Tax Collector and Estate Network supply working Basic/Advanced perks and open ordinary Expert-rank progression. Daily income, weekly Wood/Ore and AI receipt/selection are native verified. |
+| Learning | 3/0 | 2/8 | Mentor and Quick Study supply working Basic/Advanced perks and open ordinary Expert-rank progression. Meetings, weekly persistence, initial offer reroll and query/RNG parity are native verified. Academic Study awaits first-visit timing. |
 | Luck | 3/0 | 0/10 | Progression blocked |
 | Divine Mandate | 0/3 | 0/10 | Ranks and progression missing |
 | Sylvan Luck | 3/0 | 10/0 | Evidence audit required |

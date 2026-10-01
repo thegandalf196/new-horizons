@@ -296,6 +296,7 @@ set(test_SRCS
 		server/battles/NewHorizonsHeroFixtureExportTest.cpp
 		server/queries/QueriesProcessorTest.cpp
 		server/queries/NewHorizonsPerkVerticalSliceTest.cpp
+		server/queries/NewHorizonsQuickStudyTest.cpp
 		server/queries/NewHorizonsUniqueBuildingTrainingTest.cpp
 		server/queries/NewHorizonsMagicUniversityTest.cpp
 		server/queries/NewHorizonsAdventureSpellUnlockTest.cpp
