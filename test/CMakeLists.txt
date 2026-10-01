@@ -272,6 +272,7 @@ set(test_SRCS
 		server/battles/NewHorizonsCommandEfficiencyTest.cpp
 		server/battles/NewHorizonsCombinedArmsTest.cpp
 		server/battles/NewHorizonsPreparedCasterTest.cpp
+		server/battles/NewHorizonsManaConservationTest.cpp
 		server/battles/NewHorizonsMagicalDamageReductionTest.cpp
 		server/battles/NewHorizonsStormOfDaggersTest.cpp
 		server/battles/NewHorizonsSanctuaryTest.cpp

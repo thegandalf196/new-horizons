@@ -569,6 +569,8 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 	bool metamagicGrand = false; // authoritative automatic Grand activation on this accepted follow-up
 	uint32_t metamagicTargetUnitId = std::numeric_limits<uint32_t>::max(); // primary target used by sequence perks
 	int32_t metamagicManaRefund = 0; // Formula Reserve refund published with the final additional cast
+	int32_t paidHeroManaCost = 0; // gross cost paid by the hero for this accepted cast
+	int32_t paidCounterspellManaCost = 0; // ward cost paid by counterspellSide for this accepted cast
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
@@ -582,6 +584,9 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 		if(h.saving && (metamagicFollowup || metamagicGrand || metamagicTargetUnitId != std::numeric_limits<uint32_t>::max()
 			|| metamagicManaRefund != 0) && !h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
 			throw std::runtime_error("Cannot serialize Metamagic cast metadata to an older protocol");
+		if(h.saving && (paidHeroManaCost != 0 || paidCounterspellManaCost != 0)
+			&& !h.hasFeature(Handler::Version::BATTLE_HERO_MANA_EXPENDITURE))
+			throw std::runtime_error("Cannot serialize hero Mana expenditure to an older protocol");
 		h & battleID;
 		h & side;
 		h & spellID;
@@ -624,6 +629,25 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 			metamagicGrand = false;
 			metamagicTargetUnitId = std::numeric_limits<uint32_t>::max();
 			metamagicManaRefund = 0;
+		}
+		if(h.hasFeature(Handler::Version::BATTLE_HERO_MANA_EXPENDITURE))
+		{
+			h & paidHeroManaCost;
+			h & paidCounterspellManaCost;
+			if(!h.saving && (paidHeroManaCost < 0 || paidCounterspellManaCost < 0
+				|| (paidHeroManaCost > 0 && (!castByHero || !activeCast
+					|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)))
+				|| (paidCounterspellManaCost > 0
+					&& (!castByHero || !activeCast || !counterspellNegated
+						|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+						|| (counterspellSide != BattleSide::ATTACKER && counterspellSide != BattleSide::DEFENDER)
+						|| counterspellSide == side))))
+				throw std::runtime_error("Invalid accepted hero Mana expenditure metadata");
+		}
+		else if(!h.saving)
+		{
+			paidHeroManaCost = 0;
+			paidCounterspellManaCost = 0;
 		}
 		assert(battleID != BattleID::NONE);
 	}

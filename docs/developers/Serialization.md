@@ -1,5 +1,19 @@
 # Serialization
 
+## New Horizons battle Mana expenditure
+
+`BATTLE_HERO_MANA_EXPENDITURE` adds accepted hero spell costs and paid opposing
+Counterspell ward costs to `BattleSpellCast`, and the cumulative gross payment
+ledger to each `SideInBattle`. Old records load zero; nonzero expenditure may
+not be down-saved to a format that cannot represent it. Negative amounts and
+inconsistent caster/ward metadata are rejected. Separate restoration, Buffer
+grants and hostile drains do not reconstruct or alter this ledger.
+
+Mana Conservation consumes the ledger at authoritative battle finalization and
+restores only Normal Spell Points after ordinary result cleanup. This state
+extension does not certify full battle-form binary save support; that separate
+state still fails closed rather than losing creature-form provenance.
+
 ## Introduction
 
 The serializer translates between objects living in our code (like int or CGameState\*) and stream of bytes. Having objects represented as a stream of bytes is useful. Such bytes can send through the network connection (so client and server can communicate) or written to the disk (savegames).

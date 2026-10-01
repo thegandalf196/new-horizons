@@ -124,12 +124,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_CREATURE_PROBABILITY_MODIFIERS, // timed final Luck ceiling and favorable creature proc multiplier
 	NEW_HORIZONS_SHIELD_OF_CHAOS_PHYSICAL_REDUCTION, // timed fractional physical damage reduction bonus type
 	BATTLE_UNIT_FORM_STATE, // battle-local creature forms and original-species HP provenance
+	BATTLE_HERO_MANA_EXPENDITURE, // accepted hero spell and Counterspell costs spent during combat
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = BATTLE_UNIT_FORM_STATE,
+	CURRENT = BATTLE_HERO_MANA_EXPENDITURE,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");

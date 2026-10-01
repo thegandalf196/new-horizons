@@ -1106,7 +1106,8 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 			counteringHero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.countermage"),
 			battle.battleMetamagicCountersequenceArmed(counteringSide));
 		counterspellNegated = counteringHero->getManaAvailable() >= counterspellCost;
-		parameters.setCounterspell(counteringSide, counterspellNegated);
+		parameters.setCounterspell(counteringSide, counterspellNegated,
+			counterspellNegated ? counterspellCost : 0);
 	}
 
 	const auto * shadowGiftRecipient = s->getJsonKey() == newHorizonsShadowGift::SPELL_ID

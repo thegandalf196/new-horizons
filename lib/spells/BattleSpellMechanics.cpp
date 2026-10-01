@@ -1352,6 +1352,11 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		spellCost = 1;
 		sc.activeCast = true;
 	}
+	// Publish the exact resolved hero cost with the accepted-cast packet. This
+	// includes all cost modifiers and is independent of later mana refunds.
+	sc.paidHeroManaCost = mode == Mode::HERO && sc.activeCast ? spellCost : 0;
+	sc.paidCounterspellManaCost = mode == Mode::HERO && sc.activeCast
+		? getCounterspellManaSpent() : 0;
 
 	// Capture eligibility before the accepted BattleSpellCast packet consumes
 	// the selected action allowance and Order-to-Spell readiness. Hypothetical

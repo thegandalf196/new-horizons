@@ -36,6 +36,9 @@
 
 namespace
 {
+constexpr auto wisdomSkillId = "new-horizons:wisdom";
+constexpr auto manaConservationPerkId = "new-horizons:wisdom.manaConservation";
+
 struct RaisedArmyAddition
 {
 	SlotID slot;
@@ -722,6 +725,8 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 
 	const auto attackerHero = (*battle)->battleGetFightingHero(BattleSide::ATTACKER);
 	const auto defenderHero = (*battle)->battleGetFightingHero(BattleSide::DEFENDER);
+	const int64_t attackerHeroManaSpent = (*battle)->getSide(BattleSide::ATTACKER).acceptedHeroManaSpent;
+	const int64_t defenderHeroManaSpent = (*battle)->getSide(BattleSide::DEFENDER).acceptedHeroManaSpent;
 	const auto attackerSide = (*battle)->getSidePlayer(BattleSide::ATTACKER);
 	const auto defenderSide = (*battle)->getSidePlayer(BattleSide::DEFENDER);
 	bool winnerHasUnitsLeft = true;
@@ -1010,6 +1015,53 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 		gameHandler->sendAndApply(metamagicRewards);
 	if(resumingNecromancy)
 		pendingNecromancy.erase(battleID);
+
+	// Mana Conservation is ordinary Normal-pool recovery. Apply it only after
+	// BattleResultsApplied has finished its Buffer cleanup and result restorations,
+	// then before any surviving hero is removed into the hero pool.
+	BattleLogMessage manaConservationRewards;
+	manaConservationRewards.battleID = battleID;
+	const auto recoverManaConservation = [this, &manaConservationRewards](const CGHeroInstance * hero,
+		int64_t spent, bool eligible)
+	{
+		if(!eligible || !hero || spent <= 0
+			|| !newHorizonsMagic::spellPointRulesActive(hero->getMagicRules())
+			|| !hero->hasActivePerk(wisdomSkillId, manaConservationPerkId))
+			return;
+		const int64_t requested = std::min<int64_t>(20, spent / 5);
+		const int32_t recoverable = static_cast<int32_t>(std::min<int64_t>(requested,
+			std::max<int64_t>(0, static_cast<int64_t>(hero->manaLimit()) - hero->getNormalSpellPoints())));
+		if(recoverable <= 0)
+			return;
+		const int32_t before = hero->getNormalSpellPoints();
+		gameHandler->restoreSpellPoints(hero->id, recoverable);
+		const int32_t restored = hero->getNormalSpellPoints() - before;
+		if(restored <= 0)
+			return;
+		MetaString line = MetaString::createFromTextID(hero->getNameTextID());
+		line.appendRawString(": Mana Conservation restores ");
+		line.appendNumber(restored);
+		line.appendRawString(" Normal Spell Points after combat.");
+		manaConservationRewards.lines.push_back(std::move(line));
+	};
+	const bool drawHeroesRetreat = finishingBattle->isDraw()
+		&& gameHandler->gameInfo().getSettings().getBoolean(EGameSettings::HEROES_RETREAT_ON_WIN_WITHOUT_TROOPS);
+	const bool attackerIsWinner = !finishingBattle->isDraw()
+		&& finishingBattle->winnerSide == BattleSide::ATTACKER;
+	const bool defenderIsWinner = !finishingBattle->isDraw()
+		&& finishingBattle->winnerSide == BattleSide::DEFENDER;
+	const bool attackerEscapes = !finishingBattle->isDraw()
+		&& finishingBattle->winnerSide != BattleSide::ATTACKER
+		&& (result.result == EBattleResult::ESCAPE || result.result == EBattleResult::SURRENDER);
+	const bool defenderEscapes = !finishingBattle->isDraw()
+		&& finishingBattle->winnerSide != BattleSide::DEFENDER
+		&& (result.result == EBattleResult::ESCAPE || result.result == EBattleResult::SURRENDER);
+	recoverManaConservation(attackerHero, attackerHeroManaSpent,
+		attackerIsWinner || attackerEscapes || (drawHeroesRetreat && attackerHero));
+	recoverManaConservation(defenderHero, defenderHeroManaSpent,
+		defenderIsWinner || defenderEscapes || (drawHeroesRetreat && defenderHero));
+	if(!manaConservationRewards.lines.empty())
+		gameHandler->sendAndApply(manaConservationRewards);
 
 	// Remove beaten hero
 	if(loserHero)

@@ -1,6 +1,6 @@
 # New Horizons functional completion matrix
 
-Updated: 2026-09-30
+Updated: 2026-10-01
 Canonical source SHA-256: `c39881d1bb9dc6bd9a37650a596ff6939af6bdd548d56133ca37f862cd04d0ec`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
@@ -13,6 +13,17 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+Mana Conservation is source/native verified: the accepted-cost ledger records
+gross hero spell and successful Counterspell ward payments, excluding rejected
+actions, creature casts and hostile drains. Post-result recovery restores
+floor(20% of expenditure), capped at 20, to Normal Spell Points only, preserving
+Buffer and current capacity. Build `66640` passes both targets; native `65013`
+passes all ten new perk tests, including packet/state round-trip and lossy-old
+protocol rejection. Overall run is 68/69: the separate random-form AI fixture
+remains under repair, not certified. Active perks advance 128→129/310, planned
+182→181, Wisdom 7/3→8/2. Retreat/surrender/draw reward paths remain source-reviewed
+Phase 2 cases. No playable promotion or artwork acceptance is claimed.
 
 UP-066 clone/presentation slice is source/native verified as a partial dependency.
 Ordinary clones are admitted without losing one-hit destruction; source form is
@@ -338,7 +349,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 128/310 | 182 planned; Arcane Focus is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 129/310 | 181 planned; Mana Conservation is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -365,8 +376,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 128
-active perks, leaving nine ranks and 182 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 129
+active perks, leaving nine ranks and 181 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-09-30; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -485,7 +496,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
 | Chaos Magic | 3/0 | 3/7 | Blinkmaster, Weaver and Paradox Shield are active with focused evidence recorded above; seven perks remain planned. |
 | Spellcraft | 3/0 | 3/7 | Arcane Focus scales the first accepted hero spell's SP term; Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold. Basic/Advanced/Expert efficiency is 110/120/130% under saved v3 rules. |
-| Wisdom | 3/0 | 7/3 | Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. Two other perks remain missing. Broader interactions and playable acceptance remain open. |
+| Wisdom | 3/0 | 8/2 | Mana Conservation post-combat Normal recovery, Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. One other perk remains missing. Broader interactions and playable acceptance remain open. |
 | Warcasting | 3/0 | 4/6 | Six perks missing |
 | Logistics | 3/0 | 3/7 | Seven perks missing |
 | Diplomacy | 0/3 | 0/10 | Ranks and progression missing |

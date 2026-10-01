@@ -498,6 +498,11 @@ bool BattleCast::isCounterspellNegated() const
 	return counterspellNegated;
 }
 
+int32_t BattleCast::getCounterspellManaSpent() const
+{
+	return counterspellManaSpent;
+}
+
 bool BattleCast::isForceMassive() const
 {
 	return forceMassive;
@@ -573,10 +578,11 @@ void BattleCast::setEffectValue(BattleCast::Value64 value)
 	effectValue = std::make_optional(value);
 }
 
-void BattleCast::setCounterspell(BattleSide wardSide, bool negated)
+void BattleCast::setCounterspell(BattleSide wardSide, bool negated, int32_t manaSpent)
 {
 	counterspellSide = wardSide;
 	counterspellNegated = negated;
+	counterspellManaSpent = manaSpent;
 }
 
 void BattleCast::applyEffects(ServerCallback * server, const Target & target, bool indirect, bool ignoreImmunity) const
@@ -823,6 +829,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	cureAffliction = event->getCureAffliction();
 	counterspellSide = event->getCounterspellSide();
 	counterspellNegated = event->isCounterspellNegated();
+	counterspellManaSpent = event->getCounterspellManaSpent();
 	selectiveDispel = event->getSelectiveDispel();
 	metamagicGrand = event->isMetamagicGrand();
 	metamagicTargetUnitId = event->getMetamagicTargetUnitId();
@@ -1372,6 +1379,11 @@ BattleSide BaseMechanics::getCounterspellSide() const
 bool BaseMechanics::isCounterspellNegated() const
 {
 	return counterspellNegated;
+}
+
+int32_t BaseMechanics::getCounterspellManaSpent() const
+{
+	return counterspellManaSpent;
 }
 
 bool BaseMechanics::isSelectiveDispel() const

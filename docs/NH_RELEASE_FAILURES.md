@@ -2,6 +2,31 @@
 
 ## Purpose
 
+### 2026-10-01 random-form AI / Mana Conservation — fixture include
+
+Client build `53309` succeeds. Test build `71345` fails because the new AI
+fixture queries `CModHandler::getActiveMods()` without its complete header.
+Preserve `UP066-UP068-test-build.log`; add the direct CModHandler include rather
+than relying on transitive headers. Production behavior is not changed by this
+repair. Review also corrects the fixture's even-pool midpoint comparison to use
+RNGStub's actual draw and adds pre-cast live JSON/RNG snapshots. Both-target
+retry `77609` also fails: the root's RNG snapshot helper was passed the entire
+GameRandomizer instead of its CRandomGenerator. Preserve
+`UP066-UP068-build-retry.log`; obtain the generator through getRandomGenerator,
+check its concrete type and serialize that generator only. Both-target repair
+build `66640` passes. Native `65013` executes 69 tests with zero skips: 68 pass,
+including all ten Mana Conservation tests; the injected random-form AI fixture
+fails because production score (-11483.907) differs from its independently
+computed mean (-3.906), and the supposedly favorable pool is negative. Preserve
+`UP066-UP068-focused.log`/`.xml`; investigate forecast/fixture parity without
+weakening the signed full-pool or actual evaluator-selection assertions. No
+promotion or complete Polymorph coverage is claimed.
+
+Isolated Mana Conservation run `36603` passes 10/10, zero skips, in 2.823s;
+reports `UP068-mana-conservation.log`/`.xml`. Test binary SHA-256:
+`b76baa1a39c38c1e61e71215ea2f6ced5131d7fda0329a5fa647c38652dc82e8`.
+This certifies the independent perk, not the still-failing random-form AI slice.
+
 ### 2026-09-30 battle-form clone/presentation checkpoint — fixture includes
 
 Both-target compiler probe `95666` fails in the new real-clone fixture:

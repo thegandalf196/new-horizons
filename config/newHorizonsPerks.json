@@ -2083,7 +2083,7 @@
 					"requires": "advanced",
 					"description": "After combat, recover 20% of the Mana spent during that combat, up to 20 Mana.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "After combat, recover 20% of the Mana spent during that combat, up to 20 Mana."
 					}
 				},

@@ -148,6 +148,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	// level completed during this battle. Only the five ordinary spell levels
 	// are tracked; creature spells do not enter this history.
 	uint8_t completedHeroSpellLevels = 0;
+	// Gross Mana paid for accepted hero spells and accepted Counterspell wards.
+	// Separate Mana refunds and drains do not change this battle-long ledger.
+	int64_t acceptedHeroManaSpent = 0;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);
@@ -384,6 +387,16 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		}
 		else if(!h.saving)
 			completedHeroSpellLevels = 0;
+		if(h.hasFeature(Handler::Version::BATTLE_HERO_MANA_EXPENDITURE))
+		{
+			h & acceptedHeroManaSpent;
+			if(!h.saving && acceptedHeroManaSpent < 0)
+				throw std::runtime_error("Invalid saved hero Mana expenditure");
+		}
+		else if(h.saving && acceptedHeroManaSpent != 0)
+			throw std::runtime_error("Cannot discard battle hero Mana expenditure");
+		else if(!h.saving)
+			acceptedHeroManaSpent = 0;
 	}
 
 	void clearMetamagicSequence()

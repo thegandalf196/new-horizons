@@ -129,6 +129,8 @@ public:
 	/// hero spell consumes or collapses an armed Counterspell.
 	virtual BattleSide getCounterspellSide() const { return BattleSide::NONE; }
 	virtual bool isCounterspellNegated() const { return false; }
+	/// Exact Mana paid by the armed opposing ward for this accepted cast.
+	virtual int32_t getCounterspellManaSpent() const { return 0; }
 
 	virtual bool isForceMassive() const = 0;
 };
@@ -168,6 +170,7 @@ public:
 	OptionalValue64 getEffectValue() const override;
 	BattleSide getCounterspellSide() const override;
 	bool isCounterspellNegated() const override;
+	int32_t getCounterspellManaSpent() const override;
 
 	bool isForceMassive() const override;
 
@@ -187,7 +190,7 @@ public:
 	void setMetamagicManaRefund(int32_t value);
 
 	void setEffectValue(Value64 value);
-	void setCounterspell(BattleSide wardSide, bool negated);
+	void setCounterspell(BattleSide wardSide, bool negated, int32_t manaSpent = 0);
 
 	///only apply effects to specified targets
 	void applyEffects(ServerCallback * server, const Target & target, bool indirect = false, bool ignoreImmunity = false) const;
@@ -226,6 +229,7 @@ private:
 	int32_t metamagicManaRefund = 0;
 	BattleSide counterspellSide = BattleSide::NONE;
 	bool counterspellNegated = false;
+	int32_t counterspellManaSpent = 0;
 
 	Mode mode;
 	const CSpell * spell;
@@ -455,6 +459,7 @@ public:
 	SpellID getCureAffliction() const override;
 	BattleSide getCounterspellSide() const;
 	bool isCounterspellNegated() const;
+	int32_t getCounterspellManaSpent() const;
 	bool isSelectiveDispel() const override;
 	bool isNewHorizonsCure() const override;
 	bool isMassSlow() const override;
@@ -537,6 +542,7 @@ private:
 	SpellID cureAffliction = SpellID::NONE;
 	BattleSide counterspellSide = BattleSide::NONE;
 	bool counterspellNegated = false;
+	int32_t counterspellManaSpent = 0;
 	bool selectiveDispel = false;
 	bool massSlow = false;
 	int32_t shadowGiftSacrificePercent = 0;

@@ -2210,11 +2210,27 @@ void GameStatePackVisitor::visitBattleDemonicGatingStateChanged(BattleDemonicGat
 
 void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 {
+	if(pack.paidHeroManaCost < 0 || pack.paidCounterspellManaCost < 0
+		|| (pack.paidHeroManaCost > 0 && (!pack.castByHero || !pack.activeCast
+			|| (pack.side != BattleSide::ATTACKER && pack.side != BattleSide::DEFENDER)))
+		|| (pack.paidCounterspellManaCost > 0
+			&& (!pack.castByHero || !pack.activeCast || !pack.counterspellNegated
+				|| (pack.side != BattleSide::ATTACKER && pack.side != BattleSide::DEFENDER)
+				|| (pack.counterspellSide != BattleSide::ATTACKER && pack.counterspellSide != BattleSide::DEFENDER)
+				|| pack.counterspellSide == pack.side)))
+		throw std::runtime_error("Invalid accepted hero Mana expenditure metadata");
+
 	if(pack.castByHero && pack.side != BattleSide::NONE)
 	{
 		auto * battle = gs.getBattle(pack.battleID);
+		if(!battle)
+			throw std::runtime_error("Accepted hero Mana expenditure references a missing battle");
 		auto & casterSide = battle->getSide(pack.side);
 		const auto * hero = battle->battleGetFightingHero(pack.side);
+		if(pack.paidHeroManaCost > 0 && !hero)
+			throw std::runtime_error("Accepted hero Mana expenditure has no fighting hero");
+		if(pack.paidCounterspellManaCost > 0 && !battle->battleGetFightingHero(pack.counterspellSide))
+			throw std::runtime_error("Accepted Counterspell Mana expenditure has no fighting hero");
 		const bool sharedActionBudget = heroCommands::supportedByRules(
 			battle->getHeroCommandRules(), HeroCommand::CHARGE);
 		std::optional<HeroSpellAllowanceTransition::Result> spellTransition;
@@ -2356,6 +2372,18 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 				newHorizonsWarcasting::readinessLifetimeRounds(hero));
 			casterSide.warcastingState = std::move(next);
 		}
+		const auto addManaSpent = [](SideInBattle & side, int32_t amount)
+		{
+			if(amount <= 0)
+				return;
+			if(side.acceptedHeroManaSpent > std::numeric_limits<int64_t>::max() - amount)
+				side.acceptedHeroManaSpent = std::numeric_limits<int64_t>::max();
+			else
+				side.acceptedHeroManaSpent += amount;
+		};
+		addManaSpent(casterSide, pack.paidHeroManaCost);
+		if(pack.paidCounterspellManaCost > 0)
+			addManaSpent(battle->getSide(pack.counterspellSide), pack.paidCounterspellManaCost);
 		// This marker is set only after every accepted-cast validation above has
 		// succeeded; creature casts and rejected hero requests never consume it.
 		casterSide.heroSpellCastCompleted = true;

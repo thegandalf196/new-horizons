@@ -18,6 +18,7 @@ ACTIVE_PERKS = {
     "new-horizons:spellcraft.arcaneFocus",
     "new-horizons:chaosMagic.paradoxShield",
     "new-horizons:wisdom.meditation",
+    "new-horizons:wisdom.manaConservation",
     "new-horizons:wisdom.deepKnowledge",
     "new-horizons:wisdom.preparedCaster",
     "new-horizons:wisdom.archmage",
