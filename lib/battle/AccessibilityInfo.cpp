@@ -63,6 +63,8 @@ std::optional<BattleHex> AccessibilityInfo::nearestLegalPosition(const BattleHex
 	// must already be vacant at the moment of relocation.
 	AccessibilityInfo placement = *this;
 	placement.destructibleEnemyTurns.reset();
+	if(placement.accessible(origin, doubleWide, side))
+		return origin;
 	std::optional<BattleHex> nearest;
 	int nearestDistance = std::numeric_limits<int>::max();
 	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)

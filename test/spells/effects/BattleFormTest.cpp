@@ -1,0 +1,285 @@
+/*
+ * BattleFormTest.cpp, part of VCMI engine
+ *
+ * Authors: listed in file AUTHORS in main folder
+ *
+ * License: GNU General Public License v2.0 or later
+ * Full text of license available in license.txt file, in main folder
+ *
+ */
+#include "StdInc.h"
+
+#include "../../server/battles/BattleTestFixture.h"
+#include "../../../server/CGameHandler.h"
+
+#include "../../../lib/CCreatureHandler.h"
+#include "../../../lib/CRandomGenerator.h"
+#include "../../../lib/GameLibrary.h"
+#include "../../../lib/GameSettings.h"
+#include "../../../lib/callback/GameRandomizer.h"
+#include "../../../lib/battle/AccessibilityInfo.h"
+#include "../../../lib/battle/CUnitState.h"
+#include "../../../lib/battle/Unit.h"
+#include "../../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
+#include "../../../lib/spells/ISpellMechanics.h"
+#include "../../../lib/spells/Problem.h"
+#include "../../../lib/spells/effects/BattleForm.h"
+
+#include "../../mock/mock_spells_Mechanics.h"
+
+#include <vstd/RNG.h>
+
+using namespace ::testing;
+
+namespace
+{
+JsonNode battleFormCategoryRules()
+{
+	JsonNode rules;
+	rules["schemaVersion"].Integer() = 1;
+	rules["rulesetVersion"].Integer() = newHorizonsCreatures::CREATURE_CATEGORY_RULESET_VERSION;
+	rules["sourceRulesetId"].String() = "new-horizons:battleFormTest";
+	for(const std::string name : {"core", "elite", "champion"})
+	{
+		rules["categories"][name]["nameTextId"].String() = "new-horizons.category." + name + ".name";
+		rules["categories"][name]["descriptionTextId"].String() = "new-horizons.category." + name + ".description";
+	}
+	// These two elite creatures deliberately come from different factions and have
+	// different battlefield footprints. This is test data only, not an activated roster.
+	rules["creatures"]["core:ogre"].String() = "elite";
+	rules["creatures"]["core:griffin"].String() = "elite";
+	rules["growthLines"]["core:ogre"]["weeklyBaseGrowth"].Integer() = 4;
+	rules["growthLines"]["core:ogre"]["members"].Vector().emplace_back("core:ogre");
+	rules["growthLines"]["core:griffin"]["weeklyBaseGrowth"].Integer() = 3;
+	rules["growthLines"]["core:griffin"]["members"].Vector().emplace_back("core:griffin");
+	return rules;
+}
+
+class InstalledCategoryOverride
+{
+	std::unique_ptr<GameSettings> previous;
+
+public:
+	explicit InstalledCategoryOverride(const JsonNode & rules)
+	{
+		auto config = LIBRARY->settingsHandler->getFullConfig();
+		config["creatures"]["newHorizonsCategories"] = rules;
+		auto replacement = std::make_unique<GameSettings>();
+		replacement->loadBase(config);
+		previous = std::move(LIBRARY->settingsHandler);
+		LIBRARY->settingsHandler = std::move(replacement);
+	}
+
+	~InstalledCategoryOverride()	{ LIBRARY->settingsHandler = std::move(previous); }
+};
+
+JsonNode battleFormEffectConfig(bool includeDuration = false)
+{
+	JsonNode config;
+	config["type"].String() = "core:battleForm";
+	if(includeDuration)
+		config["duration"].Integer() = 3;
+	return config;
+}
+
+class BattleFormEffectCastTest : public BattleTestFixture
+{
+protected:
+	void prepareBattle()
+	{
+		InstalledCategoryOverride rules(battleFormCategoryRules());
+		startGame();
+		startBattle();
+
+		BattleUnitsChanged remove;
+		remove.battleID = BattleID(0);
+		for(const auto * unit : battle()->battleGetAllUnits(false))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+		gameHandler->sendAndApply(remove);
+
+		const auto origin = BattleHex(8, 5);
+		target = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), origin, 4);
+		const auto blockedTail = battle::Unit::occupiedHex(origin, true, BattleSide::DEFENDER);
+		ASSERT_TRUE(blockedTail.isAvailable());
+		blocker = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), blockedTail, 1);
+		ASSERT_NE(target, nullptr);
+		ASSERT_NE(blocker, nullptr);
+		beginCombat();
+	}
+
+	void saveState(CStack * stack, const std::function<void(battle::CUnitState &)> & mutate)
+	{
+		auto state = stack->acquireState();
+		mutate(*state);
+
+		BattleUnitsChanged update;
+		update.battleID = BattleID(0);
+		UnitChanges change(stack->unitId(), UnitChanges::EOperation::UPDATE);
+		change.data = state->save();
+		update.changedStacks.push_back(std::move(change));
+		gameHandler->sendAndApply(update);
+	}
+
+	CStack * target = nullptr;
+	CStack * blocker = nullptr;
+};
+}
+
+TEST_F(BattleFormEffectCastTest, UsesUniformCapturedCategoryPoolAndRelocatesWithoutChangingHealthOrIdentity)
+{
+	prepareBattle();
+	ASSERT_NE(target, nullptr);
+	ASSERT_NE(blocker, nullptr);
+
+	const auto sourceCreature = target->creatureId();
+	const auto sourceCategory = battle()->battleGetCreatureCategory(sourceCreature);
+	ASSERT_TRUE(sourceCategory);
+	ASSERT_EQ(sourceCategory->category, newHorizonsCreatures::CreatureCategory::ELITE);
+
+	std::vector<const Creature *> candidatePool;
+	LIBRARY->creatures()->forEach([&](const Creature * creature, bool & stop)
+	{
+		(void)stop;
+		const auto category = battle()->battleGetCreatureCategory(creature->getId());
+		if(category && category->category == sourceCategory->category)
+			candidatePool.push_back(creature);
+	});
+	ASSERT_EQ(candidatePool.size(), 2u);
+	const auto griffin = creatureByName("core:griffin");
+	ASSERT_TRUE(std::ranges::any_of(candidatePool, [griffin](const Creature * creature)
+	{
+		return creature->getId() == griffin;
+	}));
+
+	const auto originalUnitId = target->unitId();
+	const auto originalOwner = target->unitOwner();
+	const auto originalSide = target->unitSide();
+	const auto originalInitiative = target->getInitiative();
+	int64_t damage = 19;
+	auto injured = target->acquireState();
+	injured->damage(damage);
+	ASSERT_EQ(damage, 19);
+	const auto sourceHealth = injured->health.getCreatureHealthAvailable();
+	ASSERT_GT(sourceHealth, 0);
+	BattleUnitsChanged injury;
+	injury.battleID = BattleID(0);
+	UnitChanges injuryChange(target->unitId(), UnitChanges::EOperation::UPDATE);
+	injuryChange.data = injured->save();
+	injury.changedStacks.push_back(std::move(injuryChange));
+	gameHandler->sendAndApply(injury);
+
+	const auto origin = target->getPosition();
+	const auto sourceAccessibility = battle()->getAccessibility(target);
+	const auto expectedLargeFormPosition = sourceAccessibility.nearestLegalPosition(
+		origin, true, target->unitSide());
+	ASSERT_TRUE(expectedLargeFormPosition);
+	ASSERT_NE(*expectedLargeFormPosition, origin)
+		<< "The cross-faction Griffin form must not be discarded just because its footprint cannot fit at the source anchor";
+
+	int selectedSeed = 0;
+	const Creature * expectedForm = nullptr;
+	for(int seed = 1; seed < 10000 && expectedForm == nullptr; ++seed)
+	{
+		CRandomGenerator expectedRandom(seed);
+		const auto * candidate = *RandomGeneratorUtil::nextItem(candidatePool, expectedRandom);
+		if(candidate->getId() == griffin)
+		{
+			selectedSeed = seed;
+			expectedForm = candidate;
+		}
+	}
+	ASSERT_NE(expectedForm, nullptr);
+	ASSERT_GT(selectedSeed, 0);
+	gameHandler->randomizer->setSeed(selectedSeed);
+
+	spells::MechanicsMock mechanics;
+	ON_CALL(mechanics, battle()).WillByDefault(Return(battle()));
+	ON_CALL(mechanics, creatures()).WillByDefault(Return(LIBRARY->creatures()));
+	ON_CALL(mechanics, isReceptive(_)).WillByDefault(Return(true));
+	ON_CALL(mechanics, isSmart()).WillByDefault(Return(false));
+	ON_CALL(mechanics, isNegativeSpell()).WillByDefault(Return(true));
+	ON_CALL(mechanics, getBattleID()).WillByDefault(Return(BattleID(0)));
+
+	spells::effects::BattleFormEffect effect;
+	effect.init(battleFormEffectConfig()); // omitted duration defaults to two rounds
+	spells::Target selectedTarget;
+	selectedTarget.emplace_back(target);
+	spells::detail::ProblemImpl problem;
+	ASSERT_TRUE(effect.applicableTarget(problem, &mechanics, selectedTarget));
+	effect.apply(gameHandler->spellcastEnvironment(), &mechanics, selectedTarget);
+
+	EXPECT_EQ(target->unitId(), originalUnitId);
+	EXPECT_EQ(target->unitOwner(), originalOwner);
+	EXPECT_EQ(target->unitSide(), originalSide);
+	EXPECT_EQ(target->getInitiative(), originalInitiative);
+	EXPECT_EQ(target->creatureId(), expectedForm->getId());
+	EXPECT_EQ(target->getPosition(), *expectedLargeFormPosition);
+	const auto transformed = target->acquireState();
+	EXPECT_TRUE(transformed->hasBattleForm());
+	EXPECT_EQ(transformed->battleFormOriginalCreature(), sourceCreature);
+	EXPECT_EQ(transformed->battleFormCreature(), expectedForm->getId());
+	EXPECT_EQ(transformed->health.getCreatureHealthAvailable(), sourceHealth);
+	EXPECT_EQ(transformed->save()["state"]["battleFormRoundsRemaining"].Integer(), 2);
+}
+
+TEST_F(BattleFormEffectCastTest, KeepsUnsupportedProfilesInTargetFlowAndRejectsThemExplicitly)
+{
+	prepareBattle();
+	ASSERT_NE(target, nullptr);
+
+	spells::MechanicsMock mechanics;
+	ON_CALL(mechanics, battle()).WillByDefault(Return(battle()));
+	ON_CALL(mechanics, creatures()).WillByDefault(Return(LIBRARY->creatures()));
+	ON_CALL(mechanics, isReceptive(_)).WillByDefault(Return(true));
+	ON_CALL(mechanics, isSmart()).WillByDefault(Return(false));
+	ON_CALL(mechanics, isNegativeSpell()).WillByDefault(Return(true));
+
+	spells::effects::BattleFormEffect effect;
+	effect.init(battleFormEffectConfig(true));
+	spells::Target target;
+	target.emplace_back(this->target);
+
+	const auto verifyRejected = [&](const std::string & profileName)
+	{
+		spells::detail::ProblemImpl problem;
+		const auto filtered = effect.filterTarget(&mechanics, target);
+		ASSERT_EQ(filtered.size(), 1u) << profileName << " target must reach applicability for an explicit rejection";
+		EXPECT_FALSE(effect.applicableTarget(problem, &mechanics, filtered)) << profileName;
+		std::vector<std::string> messages;
+		problem.getAll(messages);
+		ASSERT_EQ(messages.size(), 1u);
+		EXPECT_NE(messages.front().find("cannot currently affect Clone or Phantom Army stacks"), std::string::npos);
+	};
+
+	saveState(this->target, [](battle::CUnitState & state)
+	{
+		state.cloned = true;
+	});
+	verifyRejected("Clone");
+
+	saveState(this->target, [](battle::CUnitState & state)
+	{
+		state.cloned = false;
+		state.summoned = true;
+		state.initializePhantomProfile(state.getAvailableHealth(), 2);
+	});
+	verifyRejected("Phantom Army");
+}
+
+TEST(BattleFormEffectConfigTest, RejectsUnknownParametersAndInvalidDurations)
+{
+	spells::effects::BattleFormEffect effect;
+	auto invalid = battleFormEffectConfig();
+	invalid["unsupported"].Bool() = true;
+	EXPECT_THROW(effect.init(invalid), std::runtime_error);
+
+	for(const auto duration : {0.0, -1.0, 1.5, 2147483648.0})
+	{
+		auto config = battleFormEffectConfig();
+		config["duration"].Float() = duration;
+		EXPECT_THROW(effect.init(config), std::runtime_error);
+	}
+
+	auto validDuration = battleFormEffectConfig(true);
+	EXPECT_NO_THROW(effect.init(validDuration));
+}

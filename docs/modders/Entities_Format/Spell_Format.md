@@ -691,6 +691,37 @@ Effect instantly moves unit from its current location to targeted tile
 }
 ```
 
+### Battle form (native foundation)
+
+`core:battleForm` replaces a target's battle-local creature view with a random
+creature in the same captured Core/Elite/Champion category, from any faction.
+It does not use the legacy creature level as a category or modify the permanent
+army species. Selection uses the supplied cast callback's RNG; detached casts
+must supply their own non-live RNG.
+
+```json
+"form": {
+	"type": "core:battleForm",
+	"duration": 2
+}
+```
+
+`duration` defaults to 2 and must be a positive integral 32-bit value. The common
+`indirect` and `optional` flags are supported; unknown parameters are rejected.
+Creature HP is repartitioned without healing, with temporary HP kept separate.
+Placement retains the current hex when possible, otherwise uses the nearest
+legal footprint (stable battlefield order breaks ties). Other stacks, obstacles
+and reserved Demonic Gate footprints cannot be overlapped; the selected form is
+not rerolled solely because it does not fit at the original anchor.
+
+This is an engine foundation, not activation of the New Horizons Polymorph spell.
+Round-expiry placement, temporary clone/Phantom profile support, random-outcome
+AI valuation and client presentation must be completed before enabling that
+spell. Admission currently fails closed when any possible footprint has no
+legal destination anywhere, before drawing a form or spending casting resources.
+That is a temporary safety guard, not an added canonical targeting rule. It
+does not exclude a form from the pool, reroll or permit overlapping stacks.
+
 ### Timed
 
 Timed effect gives affected units specified bonuses for duration of the spell.

@@ -2,6 +2,34 @@
 
 ## Purpose
 
+### 2026-09-30 battle-form cast/result checkpoint — fixture admission
+
+Both-target build `70446` passes. First focused native run `54234` executes
+28 cases with zero skips: 25 pass and three new fixtures fail. Binary SHA-256
+`4dc1d1030b365fcc46ab217fec65c3e3954710fb608dcffe8c8847fe505249f0`.
+Preserve `UP066-cast-result-focused.log`/`.xml` and the successful build log.
+Both cast fixtures fail before the effect executes because their synthetic
+creature-category v2 snapshot omits mandatory explicit growth lines. Add valid
+Ogre/Griffin growth rows; do not relax production validation. The early-result
+fixture obtains no captured BattleResult: its base fixture publishes BattleStart
+directly without creating the CBattleQuery required by endBattle. Add the normal
+query lifecycle in the fixture without weakening species/Necromancy/gated-count
+assertions or changing production admission. The direct survivor
+projection, safe reversion and existing health/native-view guards pass. No spell
+activation or playable promotion is claimed. Final retry evidence is pending.
+
+Fixture repair rebuild `32737` passes both targets; native retry `13545` passes
+28/28, zero skips, in 1.996 seconds. Binary SHA-256
+`0bff72dc620bb2d687e2bd5badd1c6ef4ff15f437eab1d2342b3c1f28a32d2c7`.
+Retain `UP066-cast-result-build-retry.log` and
+`UP066-cast-result-focused-retry.log`/`.xml`. The repaired fixtures supply valid
+v2 growth rows and the production CBattleQuery lifecycle; production validation
+and all behavior assertions remain intact. Source/repair review and module/diff
+checks pass. A non-blocking dangling-else warning around the fixture's GTest
+assertion remains, alongside existing compiler warnings; no test failed or
+skipped. This certifies the bounded cast/result foundation, not spell activation
+or GUI/playable acceptance.
+
 ### 2026-09-30 battle-form foundation — first compiler probe
 
 Both-target Linux compiler probe `21374` (twelve jobs) fails in

@@ -195,7 +195,19 @@
 					"type" : "string",
 				}
 			},
-			"additionalProperties" : true // validated separately as part of spell effect loading
+			"additionalProperties" : true, // script parameters are validated during loading
+			"allOf" : [{
+				"if" : { "properties" : { "type" : { "const" : "core:battleForm" } } },
+				"then" : {
+					"properties" : {
+						"type" : {},
+						"indirect" : { "type" : "boolean" },
+						"optional" : { "type" : "boolean" },
+						"duration" : { "type" : "integer", "minimum" : 1, "maximum" : 2147483647, "default" : 2 }
+					},
+					"additionalProperties" : false
+				}
+			}]
 		},
 		"flags" : {
 			"type" : "object",

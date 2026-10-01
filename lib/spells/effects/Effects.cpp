@@ -10,6 +10,7 @@
 #include "StdInc.h"
 
 #include "Effects.h"
+#include "BattleForm.h"
 
 #include <vcmi/spells/Caster.h>
 
@@ -605,29 +606,36 @@ Effects::EffectsMap Effects::loadJson(const JsonNode & effectMap, const std::str
 
 	for(const auto & [name, raw] : effectMap.Struct())
 	{
-		auto identifier = LIBRARY->identifiers()->getIdentifier("script", raw["type"]);
-
-		if(!identifier.has_value())
-		{
-			logMod->error("Spell '%s:%s' uses unknown script '%s' as effect '%s'!", spellScope, spellIdentifier, raw["type"].String(), name);
-			continue;
-		}
-
-		ScriptID effectID(*identifier);
-
-		if(LIBRARY->scriptTypes()->getById(effectID).kind != ScriptKind::SPELL_EFFECT)
-		{
-			logMod->error("Spell '%s:%s' uses script '%s' as effect '%s', but that script is not a spell effect!", spellScope, spellIdentifier, raw["type"].String(), name);
-			continue;
-		}
-
+		const auto rawType = raw["type"].String();
 		JsonNode data = raw;
-		LIBRARY->scriptTypes()->prepareParameters(effectID, data, TextIdentifier("spell", spellScope, spellIdentifier, name));
+		std::shared_ptr<Effect> effect;
+		if(rawType == "core:battleForm")
+			effect = std::make_shared<BattleFormEffect>();
+		else
+		{
+			auto identifier = LIBRARY->identifiers()->getIdentifier("script", raw["type"]);
 
-		auto effect = LIBRARY->scriptTypes()->createSpellEffect(effectID);
+			if(!identifier.has_value())
+			{
+				logMod->error("Spell '%s:%s' uses unknown script '%s' as effect '%s'!", spellScope, spellIdentifier, rawType, name);
+				continue;
+			}
 
-		if(!effect)
-			continue; // reported by the handler
+			ScriptID effectID(*identifier);
+
+			if(LIBRARY->scriptTypes()->getById(effectID).kind != ScriptKind::SPELL_EFFECT)
+			{
+				logMod->error("Spell '%s:%s' uses script '%s' as effect '%s', but that script is not a spell effect!", spellScope, spellIdentifier, rawType, name);
+				continue;
+			}
+
+			LIBRARY->scriptTypes()->prepareParameters(effectID, data, TextIdentifier("spell", spellScope, spellIdentifier, name));
+
+			effect = LIBRARY->scriptTypes()->createSpellEffect(effectID);
+
+			if(!effect)
+				continue; // reported by the handler
+		}
 
 		effect->name = name;
 		effect->spellScope = spellScope;

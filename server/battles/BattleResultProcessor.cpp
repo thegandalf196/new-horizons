@@ -45,6 +45,19 @@ struct RaisedArmyAddition
 
 using RaisedArmyPlan = std::vector<RaisedArmyAddition>;
 
+/// Return a detached source-species view for post-battle accounting while a
+/// replacement form is active. Result projection must not change the live
+/// battle stack's form or health.
+std::shared_ptr<battle::CUnitState> acquireOriginalFormState(const CStack & stack)
+{
+	if(!stack.hasBattleForm())
+		return {};
+
+	auto state = stack.acquireState();
+	state->endBattleForm();
+	return state;
+}
+
 // Resolve every output against one projected army before emitting any packs.
 // A matching stack may be full even though another slot can admit the reward.
 std::optional<RaisedArmyPlan> planRaisedArmy(const CGHeroInstance & hero,
@@ -147,11 +160,15 @@ CasualtiesAfterBattle::CasualtiesAfterBattle(const CBattleInfoCallback & battle,
 
 	for(const CStack * stConst : allStacks)
 	{
-		// Use const cast - in order to call non-const "takeResurrected" for proper calculation of casualties
-		// TODO: better solution
-		auto * st = const_cast<CStack*>(stConst);
+		// Keep the historical cleanup path for ordinary stacks. For active forms,
+		// project source-species casualties on a detached state so result
+		// accounting cannot alter the live battle unit.
+		auto originalFormState = acquireOriginalFormState(*stConst);
+		battle::CUnitState * st = originalFormState.get();
+		if(!st)
+			st = const_cast<CStack *>(stConst);
 
-		logGlobal->debug("Calculating casualties for %s", st->nodeName());
+		logGlobal->debug("Calculating casualties for %s", stConst->nodeName());
 
 		st->health.takeResurrected();
 
@@ -161,7 +178,7 @@ CasualtiesAfterBattle::CasualtiesAfterBattle(const CBattleInfoCallback & battle,
 
 			if(warMachine == ArtifactID::NONE)
 			{
-				logGlobal->error("Invalid creature in war machine virtual slot. Stack: %s", st->nodeName());
+				logGlobal->error("Invalid creature in war machine virtual slot. Stack: %s", stConst->nodeName());
 			}
 			//catapult artifact remain even if "creature" killed in siege
 			else if(warMachine != ArtifactID::CATAPULT && st->getCount() <= 0)
@@ -185,13 +202,13 @@ CasualtiesAfterBattle::CasualtiesAfterBattle(const CBattleInfoCallback & battle,
 		}
 		else if(st->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER)
 		{
-			if (nullptr == st->base)
+			if (nullptr == stConst->base)
 			{
-				logGlobal->error("Stack with no base in commander slot. Stack: %s", st->nodeName());
+				logGlobal->error("Stack with no base in commander slot. Stack: %s", stConst->nodeName());
 			}
 			else
 			{
-				auto c = dynamic_cast <const CCommanderInstance *>(st->base);
+				auto c = dynamic_cast <const CCommanderInstance *>(stConst->base);
 				if(c)
 				{
 					auto h = dynamic_cast <const CGHeroInstance *>(army);
@@ -202,10 +219,10 @@ CasualtiesAfterBattle::CasualtiesAfterBattle(const CBattleInfoCallback & battle,
 					}
 				}
 				else
-					logGlobal->error("Stack with invalid instance in commander slot. Stack: %s", st->nodeName());
+					logGlobal->error("Stack with invalid instance in commander slot. Stack: %s", stConst->nodeName());
 			}
 		}
-		else if(st->base && !army->slotEmpty(st->unitSlot()))
+		else if(stConst->base && !army->slotEmpty(st->unitSlot()))
 		{
 			logGlobal->debug("Count: %d; base count: %d", st->getCount(), army->getStackCount(st->unitSlot()));
 			if(st->getCount() == 0 || !st->alive())
@@ -223,7 +240,7 @@ CasualtiesAfterBattle::CasualtiesAfterBattle(const CBattleInfoCallback & battle,
 		}
 		else
 		{
-			logGlobal->warn("Unable to process stack: %s", st->nodeName());
+			logGlobal->warn("Unable to process stack: %s", stConst->nodeName());
 		}
 	}
 }
@@ -454,7 +471,13 @@ void BattleResultProcessor::endBattleConfirm(const CBattleInfoCallback & battle)
 			for(const auto & gated : side.gatedDemonicStacks)
 			{
 				const auto * stack = battle.battleGetStackByID(gated.unitId, false);
-				const TQuantity survivors = stack && stack->alive() ? stack->getCount() : 0;
+				auto originalFormState = stack ? acquireOriginalFormState(*stack) : nullptr;
+				if(originalFormState)
+					originalFormState->health.takeResurrected();
+				const battle::CUnitState * resultState = originalFormState.get();
+				if(!resultState)
+					resultState = stack;
+				const TQuantity survivors = resultState && resultState->alive() ? resultState->getCount() : 0;
 				if(survivors > 0)
 					reserve[gated.creature] += survivors;
 				if(endlessLegion)
@@ -1079,25 +1102,31 @@ void BattleResultProcessor::setBattleResult(const CBattleInfoCallback & battle, 
 
 	for(const auto & st : allStacks) //setting casualties
 	{
-		si32 killed = st->getKilled();
+		auto originalFormState = acquireOriginalFormState(*st);
+		const battle::CUnitState * resultState = originalFormState.get();
+		if(!resultState)
+			resultState = st;
+		const CreatureID resultCreature = resultState->creatureId();
+		const CCreature * resultCreatureType = resultState->unitType();
+		si32 killed = resultState->getKilled();
 		if(killed > 0)
 		{
-			battleResult->casualties[st->unitSide()][st->creatureId()] += killed;
+			battleResult->casualties[st->unitSide()][resultCreature] += killed;
 			// New Horizons uses an explicit provenance-compatible corpse snapshot.
 			// Temporary summons, clones, legacy DISINTEGRATE stacks, undead and
 			// other nonliving creatures never enter the living-casualty pool.
 			// Ordinary weapon and magical damage do, while a New Horizons direct
 			// damage effect subtracts only the casualties recorded in its remains
 			// ledger.
-			const si32 unusableRemains = std::min(killed, st->getUnusableRemains());
+			const si32 unusableRemains = std::min(killed, resultState->getUnusableRemains());
 			const si32 eligibleCasualties = killed - unusableRemains;
 			if(eligibleCasualties > 0
 				&& !st->summoned && !st->isClone()
 				&& !st->hasBonusOfType(BonusType::DISINTEGRATE)
-				&& !st->unitType()->hasBonusOfType(BonusType::UNDEAD)
-				&& !st->unitType()->hasBonusOfType(BonusType::NON_LIVING)
-				&& !st->unitType()->hasBonusOfType(BonusType::MECHANICAL))
-				battleResult->necromancyEligibleCasualties[st->unitSide()][st->creatureId()] += eligibleCasualties;
+				&& !resultCreatureType->hasBonusOfType(BonusType::UNDEAD)
+				&& !resultCreatureType->hasBonusOfType(BonusType::NON_LIVING)
+				&& !resultCreatureType->hasBonusOfType(BonusType::MECHANICAL))
+				battleResult->necromancyEligibleCasualties[st->unitSide()][resultCreature] += eligibleCasualties;
 		}
 	}
 	battleResult->necromancyEligibilityCaptured = true;

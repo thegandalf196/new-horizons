@@ -48,6 +48,7 @@ set(lib_MAIN_SRCS
 	filesystem/SavegamePath.cpp
 
 	battle/AccessibilityInfo.cpp
+	battle/BattleForm.cpp
 	battle/BattleAction.cpp
 	battle/BattleAttackInfo.cpp
 	battle/BattleHex.cpp
@@ -335,6 +336,7 @@ set(lib_MAIN_SRCS
 	scripting/ScriptHandler.cpp
 
 	spells/effects/Effect.cpp
+	spells/effects/BattleForm.cpp
 	spells/effects/Effects.cpp
 	spells/effects/LocationEffect.cpp
 
@@ -484,6 +486,7 @@ set(lib_MAIN_HEADERS
 	../include/vcmi/Team.h
 
 	battle/AccessibilityInfo.h
+	battle/BattleForm.h
 	battle/AutocombatPreferences.h
 	battle/BattleAction.h
 	battle/BattleAttackInfo.h
@@ -862,6 +865,7 @@ set(lib_MAIN_HEADERS
 	scripting/ScriptTypeDescription.h
 
 	spells/effects/Effect.h
+	spells/effects/BattleForm.h
 	spells/effects/Effects.h
 	spells/effects/EffectsFwd.h
 	spells/effects/LocationEffect.h

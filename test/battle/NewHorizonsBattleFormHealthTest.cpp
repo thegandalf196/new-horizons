@@ -14,6 +14,8 @@
 #include "mock/mock_UnitInfo.h"
 #include "../../lib/CStack.h"
 #include "../../lib/battle/CUnitState.h"
+#include "../../lib/battle/AccessibilityInfo.h"
+#include "../../lib/battle/BattleForm.h"
 #include "../../lib/mapObjects/army/CStackBasicDescriptor.h"
 #include "../../lib/json/JsonNode.h"
 #include "../../lib/serializer/JsonSerializeFormat.h"
@@ -296,4 +298,60 @@ TEST(NewHorizonsBattleFormHealthTest, AcquiredCStackStateUsesReplacementNativeBo
 	EXPECT_FALSE(restored->getAllBonuses(CSelector(nativeForSource))->empty());
 	EXPECT_TRUE(restored->getAllBonuses(CSelector(nativeForForm))->empty());
 	EXPECT_EQ(liveStack.unitType(), sourceCreature);
+}
+
+TEST(NewHorizonsBattleFormHealthTest, ReversionRelocatesOriginalFootprintWithoutChangingHealthOrLiveStack)
+{
+	const CreatureID original = CreatureID::decode("core:archangel");
+	const CreatureID replacement = CreatureID::decode("core:imp");
+	ASSERT_TRUE(original.toCreature()->isDoubleWide());
+	ASSERT_FALSE(replacement.toCreature()->isDoubleWide());
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		CStackBasicDescriptor descriptor(original, STACK_SIZE);
+		CStack live(&descriptor, PlayerColor::NEUTRAL, 17, side, SlotID(0), true);
+		live.attachToSource(*original.toCreature());
+		live.health.init();
+		const BattleHex anchor(8, 5);
+		live.setPosition(anchor);
+		auto state = live.acquireState();
+		int64_t damage = 1;
+		state->damage(damage);
+		const auto hp = state->health.getCreatureHealthAvailable();
+		state->beginBattleForm(replacement, 2);
+		AccessibilityInfo field;
+		field.fill(EAccessibility::ACCESSIBLE);
+		const auto blocked = battle::Unit::occupiedHex(anchor, true, side);
+		field[blocked.toInt()] = EAccessibility::ALIVE_STACK;
+		const auto expected = field.nearestLegalPosition(anchor, true, side);
+		ASSERT_TRUE(expected);
+		ASSERT_NE(*expected, anchor);
+		ASSERT_TRUE(battle::endBattleFormAtNearestLegalPosition(*state, field));
+		EXPECT_FALSE(state->hasBattleForm());
+		EXPECT_EQ(state->getPosition(), *expected);
+		EXPECT_TRUE(field.accessible(state->getPosition(), true, side));
+		EXPECT_EQ(state->health.getCreatureHealthAvailable(), hp);
+		EXPECT_EQ(state->getCount(), STACK_SIZE);
+		EXPECT_EQ(live.getPosition(), anchor);
+		EXPECT_FALSE(live.hasBattleForm());
+		EXPECT_EQ(field[blocked.toInt()], EAccessibility::ALIVE_STACK);
+	}
+}
+
+TEST(NewHorizonsBattleFormHealthTest, ImpossibleReversionDoesNotMutateTheStack)
+{
+	const CreatureID original = CreatureID::decode("core:archangel");
+	const CreatureID replacement = CreatureID::decode("core:imp");
+	CStackBasicDescriptor descriptor(original, STACK_SIZE);
+	CStack live(&descriptor, PlayerColor::NEUTRAL, 17, BattleSide::ATTACKER, SlotID(0), true);
+	live.attachToSource(*original.toCreature());
+	live.health.init();
+	live.setPosition(BattleHex(8, 5));
+	auto state = live.acquireState();
+	state->beginBattleForm(replacement, 2);
+	const auto before = state->save();
+	AccessibilityInfo field;
+	field.fill(EAccessibility::OBSTACLE);
+	EXPECT_FALSE(battle::endBattleFormAtNearestLegalPosition(*state, field));
+	EXPECT_EQ(state->save(), before);
 }

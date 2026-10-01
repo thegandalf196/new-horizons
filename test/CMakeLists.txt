@@ -140,6 +140,7 @@ set(test_SRCS
  		spells/TargetConditionTest.cpp
 
 		spells/effects/EffectFixture.cpp
+		spells/effects/BattleFormTest.cpp
  		spells/effects/CatapultTest.cpp
  		spells/effects/CloneTest.cpp
  		spells/effects/DamageTest.cpp
@@ -298,6 +299,7 @@ set(test_SRCS
 		server/NewHorizonsEconomyTest.cpp
 		server/NewHorizonsAstrologyTest.cpp
 		server/NewHorizonsLeadershipAdmissionTest.cpp
+		server/NewHorizonsBattleFormResultTest.cpp
 		server/NewHorizonsRecruitmentMusterTest.cpp
 		server/NewHorizonsDemonicReserveTest.cpp
 		server/RandomArtifactPoolExclusionsTest.cpp

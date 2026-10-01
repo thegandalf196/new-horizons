@@ -14,6 +14,21 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-066 cast/result follow-up is source/native verified, not full Polymorph
+activation. The native `core:battleForm` effect draws from the complete captured
+category and publishes same-ID state with strict nearest-legal relocation and
+exact creature HP. Safe reversion reports no legal footprint without mutation.
+Detached original-form result views preserve campaign counts, casualty and
+Necromancy species, and gated reserve survivors at early battle end. Both-target
+build `70446` and fixture-repair rebuild `32737` pass; native retry `13545`
+passes 28/28, zero skips, with independent source/repair review and module/diff
+checks. Reports `UP066-cast-result-focused-retry.log`/`.xml`; binary SHA-256
+`0bff72dc620bb2d687e2bd5badd1c6ef4ff15f437eab1d2342b3c1f28a32d2c7`.
+The real packet-path cast fixture uses mocked mechanics; accepted hero-cast
+resources, temporary profiles, expiry/Dispel/Time Stop lifecycle, expected random
+AI outcomes and client presentation remain Phase 1 activation dependencies.
+No spell/perk/rank count or playable-delivery change is claimed.
+
 UP-066 shared form/HP foundation is source/native verified, not a completed
 Polymorph identity. Original army species/count stay immutable; shared state
 replaces effective creature abilities through evaluated native sources, keeps
