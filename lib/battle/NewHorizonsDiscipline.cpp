@@ -23,6 +23,11 @@ BonusSourceID disciplineSkillSource()
 
 namespace newHorizonsDiscipline
 {
+bool hasSteadfast(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(SKILL), std::string(STEADFAST));
+}
+
 bool hasHoldFast(const CGHeroInstance * hero)
 {
 	return hero && hero->hasActivePerk(std::string(SKILL), std::string(HOLD_FAST));

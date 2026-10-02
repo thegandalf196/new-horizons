@@ -128,7 +128,8 @@ DLL_LINKAGE TConstBonusListPtr getBattleFormNativeBonuses(
 	const battle::CUnitState & formState,
 	const CStack * sourceStack,
 	const CArmedInstance * fallbackArmy,
-	const CSelector & selector);
+	const CSelector & selector,
+	bool unstacked = false);
 
 /// True for a creature-owned native bonus whose source identity is that creature.
 DLL_LINKAGE bool isBattleFormNativeBonus(const Bonus * bonus, CreatureID creature);

@@ -14,6 +14,20 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-140 Steadfast principal native verification passes14/14, zero skips in3.155s.
+Its prerequisite exposes cached limiter-applied bonuses before same-key
+stacking, so reducing hostile penalties does not discard stronger friendly
+penalties. Application-time enemy provenance is binary/JSON versioned;
+propagated creature auras retain dynamic ownership. Runtime, AI and focused
+fixture lanes are independent. Both Linux targets rebuild76129 successfully;
+friendly/enemy added native auras now have correct stack-owner provenance.
+Activation advances173->174/310,137->136 planned; Discipline6->7/10. Ranks
+remain84/93. Activated data36/36, module drift, both-target build and final
+native23/23 in5.834s pass; zero skips and no blocking review finding. Adjacent9/10
+pass; the full-battle No Quarter roundtrip rejects existing Veteran damage
+history because CStack's binary payload omits CUnitState. Retain that Phase2
+finding, not a claim of broad save acceptance. No graphical/playable delivery.
+
 UP-139 structural foundation verified: both-target4772 builds; principal35313
 passes10/10 and adjacent27391 passes6/6, zero skips. Focused data36/36 and
 module drift pass; independent review has no blocker. Ordinary-scenery and
@@ -1181,7 +1195,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 173/310 | 137 planned; Bastion is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 174/310 | 136 planned; Steadfast is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -1209,8 +1223,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 173
-active perks, leaving nine ranks and 137 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 174
+active perks, leaving nine ranks and 136 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-10-02; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -1319,7 +1333,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Archery | 3/0 | 10/0 | All ten perks are active; focused evidence pending |
 | Battlecraft | 3/0 | 2/8 | Entrench and Reserve active. Reserve has focused real delayed movement, expiry, save/packet and branch-local AI evidence. Eight perks remain planned. |
 | War Machines | 3/0 | 5/5 | Surgeon and Piercing Bolts have focused live/detached evidence; Fortification Engineer has real fortified-town manual-shot evidence; Master Gunner has accepted independently targeted second-shot evidence; Quartermaster has accepted half-output Ballista/Tent/Catapult extra-activation evidence. Five perks remain planned. Battlefield Medic persistence awaits clarification. |
-| Discipline | 3/0 | 6/4 | Unbreakable joins Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless with focused authoritative and detached evidence. Four perks remain planned; Esprit de Corps composition scope, Heroic Spirit activation timing and Veteran Cohesion HP reference await clarification. |
+| Discipline | 3/0 | 7/3 | Steadfast joins Unbreakable, Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless with focused authoritative and detached evidence. Three perks remain planned; Esprit de Corps composition scope, Heroic Spirit activation timing and Veteran Cohesion HP reference await clarification. |
 | Recruitment | 3/0 | 6/4 | Four perks missing |
 | Command | 3/0 | 4/6 | Aggressive/Defensive, Veteran and Combined Arms have focused runtime/AI evidence; ordinary Advanced/Expert progression opens. Six perks remain planned. |
 | Light Magic | 3/0 | 9/1 | Sanctuary Keeper's linked Morale lifetime and actual AI cast are native verified; Litany grants distinct Mass Bless, alongside Benediction, Healer, Guardian, Aegis, Purifier, Retributionist and Crusader. Miracle Worker remains planned. |

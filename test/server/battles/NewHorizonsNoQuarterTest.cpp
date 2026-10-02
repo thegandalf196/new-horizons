@@ -50,13 +50,21 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perkRules);
 	}
 
-	void enableNoQuarter(BattleSide side)
+	void enableNoQuarter(BattleSide side,
+		const char * advancedPrerequisite = newHorizonsOffense::VENGEANCE)
 	{
 		auto * hero = side == BattleSide::ATTACKER ? attackerSideHero : defenderSideHero;
 		const int decodedOffense = SecondarySkill::decode(newHorizonsOffense::SKILL);
 		ASSERT_GE(decodedOffense, 0);
-		hero->setSecSkillLevel(SecondarySkill(decodedOffense), MasteryLevel::EXPERT,
+		const SecondarySkill offense(decodedOffense);
+		hero->setSecSkillLevel(offense, MasteryLevel::BASIC,
 			ChangeValueMode::ABSOLUTE);
+		hero->applyPerkSelection({newHorizonsOffense::SKILL, "new-horizons:offense.shockAssault"});
+		ASSERT_TRUE(hero->hasActivePerk(newHorizonsOffense::SKILL, "new-horizons:offense.shockAssault"));
+		hero->setSecSkillLevel(offense, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+		hero->applyPerkSelection({newHorizonsOffense::SKILL, advancedPrerequisite});
+		ASSERT_TRUE(hero->hasActivePerk(newHorizonsOffense::SKILL, advancedPrerequisite));
+		hero->setSecSkillLevel(offense, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 		hero->applyPerkSelection({newHorizonsOffense::SKILL, newHorizonsOffense::NO_QUARTER});
 		ASSERT_TRUE(hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::NO_QUARTER));
 	}
@@ -439,8 +447,7 @@ TEST_F(NewHorizonsNoQuarterTest, PhantomIntegrityDefinesTheMaximumHealthThreshol
 TEST_F(NewHorizonsNoQuarterTest, CleaveHitCanTriggerNoQuarter)
 {
 	startGame();
-	enableNoQuarter(BattleSide::ATTACKER);
-	attackerSideHero->applyPerkSelection({newHorizonsOffense::SKILL, newHorizonsOffense::CLEAVE});
+	enableNoQuarter(BattleSide::ATTACKER, newHorizonsOffense::CLEAVE);
 	ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::CLEAVE));
 	startBattle();
 	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(92), 100);

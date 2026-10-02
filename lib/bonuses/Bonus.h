@@ -63,6 +63,9 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 	ImagePath customIconPath;
 	MetaString description;
 	PlayerColor bonusOwner = PlayerColor::CANNOT_DETERMINE;
+	// Target-relative provenance captured when an effect is applied. Unlike
+	// bonusOwner (dynamic aura ownership), this survives control changes.
+	bool appliedByEnemy = false;
 
 	bool hidden = false;
 
@@ -74,6 +77,9 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && appliedByEnemy
+			&& !h.hasFeature(Handler::Version::BONUS_EFFECT_HOSTILITY))
+			throw std::runtime_error("Cannot discard bonus effect hostility provenance");
 		// TIME_STOP is a new serialized bonus type.  Never emit it through an
 		// older handler: doing so would shift/interpret the enum differently in a
 		// legacy reader.  A battle without this marker remains fully loadable by
@@ -129,6 +135,10 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 		h & updater;
 		h & propagationUpdater;
 		h & targetSourceType;
+		if(h.hasFeature(Handler::Version::BONUS_EFFECT_HOSTILITY))
+			h & appliedByEnemy;
+		else if(!h.saving)
+			appliedByEnemy = false;
 
 		//old saves stored BATTLE_NO_FLEEING in the slot now used by BATTLE_CAN_FLEE, it blocked retreating unconditionally
 		if(!h.saving && !h.hasFeature(Handler::Version::RETREAT_PERMISSION_BONUSES) && type == BonusType::BATTLE_CAN_FLEE)

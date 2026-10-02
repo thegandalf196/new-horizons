@@ -17,6 +17,7 @@ class UnitMock : public battle::Unit
 {
 public:
 	MOCK_CONST_METHOD2(getAllBonuses, TConstBonusListPtr(const CSelector &, const std::string &));
+	MOCK_CONST_METHOD1(getUnstackedBonuses, TConstBonusListPtr(const CSelector &));
 	MOCK_CONST_METHOD0(getTreeVersion, int32_t());
 
 	MOCK_CONST_METHOD0(getCasterUnitId, int32_t());
@@ -101,4 +102,3 @@ public:
 	MOCK_METHOD1(damage, void(int64_t &));
 	MOCK_METHOD3(heal, battle::HealInfo(int64_t &, EHealLevel, EHealPower));
 };
-

@@ -2440,6 +2440,44 @@ TConstBonusListPtr CUnitStateDetached::getAllBonuses(const CSelector & selector,
 	return result;
 }
 
+TConstBonusListPtr CUnitStateDetached::getUnstackedBonuses(const CSelector & selector) const
+{
+	if(!hasBattleFormState())
+		return bonus->getUnstackedBonuses(selector);
+
+	const CreatureID sourceCreature = unit->unitType()->getId();
+	const CreatureID effectiveCreature = battleFormCreature();
+	TConstBonusListPtr originalBonuses = bonus->getUnstackedBonuses(selector);
+	if(effectiveCreature == sourceCreature)
+		return originalBonuses;
+
+	auto result = std::make_shared<BonusList>();
+	for(const auto & bonus : *originalBonuses)
+	{
+		if(isBattleFormNativeBonus(bonus.get(), battleFormOriginalCreature())
+			|| isBattleFormNativeBonus(bonus.get(), sourceCreature))
+			continue;
+		result->push_back(bonus);
+	}
+
+	const IUnitInfo * sourceUnitInfo = unit;
+	while(const auto * detached = dynamic_cast<const CUnitStateDetached *>(sourceUnitInfo))
+		sourceUnitInfo = detached->unit;
+	const IBonusBearer * sourceBonusBearer = bonus;
+	while(const auto * detached = dynamic_cast<const CUnitStateDetached *>(sourceBonusBearer))
+		sourceBonusBearer = detached->bonus;
+	const auto * sourceStack = dynamic_cast<const CStack *>(sourceUnitInfo);
+	if(!sourceStack)
+		sourceStack = dynamic_cast<const CStack *>(sourceBonusBearer);
+	const auto * fallbackArmy = dynamic_cast<const CArmedInstance *>(sourceBonusBearer);
+	if(!fallbackArmy)
+		fallbackArmy = dynamic_cast<const CArmedInstance *>(sourceUnitInfo);
+	const auto effectiveNativeBonuses = getBattleFormNativeBonuses(*this, sourceStack, fallbackArmy, selector, true);
+	for(const auto & nativeBonus : *effectiveNativeBonuses)
+		result->push_back(nativeBonus);
+	return result;
+}
+
 int32_t CUnitStateDetached::getTreeVersion() const
 {
 	return bonus->getTreeVersion() + getBattleFormViewRevision();

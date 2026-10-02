@@ -12,6 +12,7 @@
 
 #include <vcmi/scripting/Service.h>
 #include <vstd/RNG.h>
+#include <unordered_map>
 
 #include "../CStack.h"
 #include "BattleInfo.h"
@@ -840,23 +841,61 @@ int CBattleInfoCallback::battleGetMorale(const battle::Unit * unit) const
 		return unit->moraleVal();
 
 	const auto * hero = battleGetOwnerHero(unit);
-	if(!hero || !hero->hasActivePerk("new-horizons:discipline", "new-horizons:discipline.standardBearer"))
-		return unit->moraleVal();
-
-	const auto owner = battleGetOwner(unit);
-	for(const auto * supporter : battleGetUnitsIf([](const battle::Unit * candidate)
-		{
-			return candidate->alive() && !candidate->isGhost();
-		}))
+	int32_t additionalMorale = 0;
+	if(hero && hero->hasActivePerk("new-horizons:discipline", "new-horizons:discipline.standardBearer"))
 	{
-		if(supporter->unitId() == unit->unitId() || battleGetOwner(supporter) != owner)
-			continue;
+		const auto owner = battleGetOwner(unit);
+		for(const auto * supporter : battleGetUnitsIf([](const battle::Unit * candidate)
+			{
+				return candidate->alive() && !candidate->isGhost();
+			}))
+		{
+			if(supporter->unitId() == unit->unitId() || battleGetOwner(supporter) != owner)
+				continue;
 
-		if(orderUnitsAdjacent(unit, supporter))
-			return unit->moraleValWithBonus(1);
+			if(orderUnitsAdjacent(unit, supporter))
+			{
+				additionalMorale = 1;
+				break;
+			}
+		}
 	}
 
-	return unit->moraleVal();
+	if(!newHorizonsDiscipline::hasSteadfast(hero))
+		return additionalMorale == 0 ? unit->moraleVal() : unit->moraleValWithBonus(additionalMorale);
+
+	const auto moraleBonuses = unit->getUnstackedBonuses(Selector::type()(BonusType::MORALE));
+	BonusList adjustedMoraleBonuses;
+	std::unordered_map<const Bonus *, std::shared_ptr<Bonus>> adjustedByOriginal;
+	const PlayerColor targetAuraOwner = unit->unitOwner() == PlayerColor::UNFLAGGABLE
+		? PlayerColor::NEUTRAL : unit->unitOwner();
+	for(const auto & bonus : *moraleBonuses)
+	{
+		const bool hostileCreatureAura = bonus->source == BonusSource::CREATURE_ABILITY
+			&& bonus->bonusOwner != PlayerColor::CANNOT_DETERMINE
+			&& bonus->bonusOwner != targetAuraOwner;
+		if(bonus->val < 0 && (bonus->appliedByEnemy || hostileCreatureAura))
+		{
+			auto & adjusted = adjustedByOriginal[bonus.get()];
+			if(!adjusted)
+			{
+				adjusted = std::make_shared<Bonus>(*bonus);
+				++adjusted->val;
+			}
+			adjustedMoraleBonuses.push_back(adjusted);
+		}
+		else
+			adjustedMoraleBonuses.push_back(bonus);
+	}
+	adjustedMoraleBonuses.stackBonuses();
+
+	const auto currentMoraleBonuses = unit->getBonusesOfType(BonusType::MORALE);
+	const int64_t moraleDelta = static_cast<int64_t>(adjustedMoraleBonuses.totalValue())
+		- static_cast<int64_t>(currentMoraleBonuses->totalValue());
+	const int64_t totalAdditionalMorale = moraleDelta + additionalMorale;
+	const auto boundedAdditionalMorale = static_cast<int32_t>(std::clamp<int64_t>(totalAdditionalMorale,
+		std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
+	return unit->moraleValWithBonus(boundedAdditionalMorale);
 }
 
 int CBattleInfoCallback::battleGetFearChance(const battle::Unit * affected) const

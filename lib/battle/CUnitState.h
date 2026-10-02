@@ -499,6 +499,7 @@ public:
 	CUnitStateDetached & operator= (const CUnitState & other);
 
 	TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr = "") const override;
+	TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override;
 
 	int32_t getTreeVersion() const override;
 

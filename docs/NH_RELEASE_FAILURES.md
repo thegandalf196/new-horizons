@@ -2,6 +2,41 @@
 
 ## Purpose
 
+### 2026-10-02 UP-140 — native fixture assumptions
+
+First principal run13 has9pass/4fail; adjacent9 has4pass/5fail, zero skips.
+Three principal expectations exceed the active global Morale cap despite
+map-local chance overrides; native aura owner assertion also needs tracing.
+No Quarter fixtures fail during outdated direct Expert-perk acquisition, before
+exercising their mechanics. Preserve both logs/XML, repair bounded fixture
+assumptions without weakening production validation, then rebuild/retest.
+Independent tracing finds a real added-stack aura defect: base-null localInit
+attaches army before creature, letting OwnerUpdater run from the neutral
+creature definition. Original-army initialization has an owned context. Attach
+the creature source before the army, allowing owned-stack propagation into the
+battle graph. Require friendly/enemy added Bone Dragon tests; never redefine
+neutral ownership as an enemy guess to make the fixture pass.
+Both-target rebuild76129 exits0; principal retry14/14 passes in3.155s, zero
+skips. Adjacent retry9/10 passes in3.314s: the remaining No Quarter whole-battle
+roundtrip hits the pre-existing unconditional BattleInfo::hasVeteranDamageHistory
+guard. CStack's binary payload omits CUnitState, so no whole-battle current-format
+roundtrip is claimed. Retain that broader representation gap for Phase2; Bonus
+hostility binary/JSON and detached state have their own passing principal checks.
+Activation data36/36 and both-target build pass. The first inventory attempt
+reversed CSV Implementation/Art cells; corrected them to Provisional/Not done,
+without changing the guard against calling a neutral fallback purpose-made art.
+
+### 2026-10-02 UP-140 — spell attribution callback contract
+
+Both-target build9276 stops at BattleSpellMechanics.cpp:515: the recorder stored
+`IBattleInfoCallback`, which does not expose current-controller `battleGetOwner`.
+Actual and projected spell mechanics already supply `CBattleInfoCallback`.
+Narrow the recorder's constructor/member to that existing callback rather than
+guessing ownership from unitOwner or duplicating Hypnotize rules. Build retry
+and principal native acceptance remain required. Preserve UP140-build.log.
+Retry29668 reaches both executable links; repair rebuild76129 exits0 and
+principal14/14 passes. Earlier failure remains retained, not overwritten.
+
 ### 2026-10-02 UP-139 — Havoc structural targeting review
 
 Final both-target retry4772 exits0. Native retry35313 passes10/10 in2.669s,

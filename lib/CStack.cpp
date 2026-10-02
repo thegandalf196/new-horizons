@@ -73,8 +73,10 @@ void CStack::localInit(BattleInfo * battleInfo)
 	{
 		CArmedInstance * army = battle->battleGetArmyObject(side);
 		assert(army);
-		attachTo(*army);
 		attachToSource(*typeID.toCreature());
+		// Attach native sources before entering the battle graph so propagated
+		// auras use this owned stack, not the ownerless creature definition.
+		attachTo(*army);
 	}
 	CUnitState::localInit(this); //it causes execution of the CStack::isOnNativeTerrain where nativeTerrain will be considered
 	position = initialPosition;
@@ -368,7 +370,8 @@ TConstBonusListPtr getBattleFormNativeBonuses(
 	const battle::CUnitState & formState,
 	const CStack * sourceStack,
 	const CArmedInstance * fallbackArmy,
-	const CSelector & selector)
+	const CSelector & selector,
+	bool unstacked)
 {
 	const CreatureID originalCreature = formState.battleFormOriginalCreature();
 	const CreatureID effectiveCreature = formState.battleFormCreature();
@@ -418,7 +421,8 @@ TConstBonusListPtr getBattleFormNativeBonuses(
 	{
 		return isBattleFormNativeBonus(bonus, effectiveCreature) && selector(bonus);
 	});
-	return evaluator.getAllBonuses(nativeSelector);
+	return unstacked ? evaluator.getUnstackedBonuses(nativeSelector)
+		: evaluator.getAllBonuses(nativeSelector);
 }
 
 int32_t CStack::unitBaseAmount() const

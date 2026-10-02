@@ -63,6 +63,11 @@ Implementation is Final only when the intended UI behavior and its presentation 
 
 ## Current status summary
 
+UP-140 Steadfast: generic legal offer/name/help presentation is Provisional;
+purpose-made art remains Not done with NH_perk_neutral fallback. Source/native
+principal14/14 passes, registration174/310 active and136 planned. No new art,
+graphical acceptance or immutable playable snapshot is claimed.
+
 UP-120 Spellward source/native checkpoint: generic offer/name/help presentation
 is active with22/22 focused damage/ownership checks. `NH_perk_neutral` remains
 the fallback, so bespoke art is Not done and UI presentation Provisional.

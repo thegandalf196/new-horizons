@@ -1,5 +1,14 @@
 # Serialization
 
+## Bonus effect hostility
+
+`BONUS_EFFECT_HOSTILITY` appends `Bonus::appliedByEnemy`, a target-relative
+application-time provenance flag. Current binary and bonus JSON snapshots
+preserve it. Older readers cannot represent a populated flag, so down-saving
+one is rejected before the bonus is written. Old records load false: their
+unrecorded caster allegiance is not inferred. Dynamic propagated aura ownership
+continues to use the existing owner updater and limiter, not this field.
+
 ## New Horizons Land Surveyor weekly allowance
 
 `NEW_HORIZONS_LAND_SURVEYOR` appends a hero's last successful rewarded mine-

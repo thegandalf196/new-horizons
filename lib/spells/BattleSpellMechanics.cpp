@@ -224,9 +224,13 @@ public:
 		int32_t phantomDuration;
 	};
 
-	EffectPacketRecorder(ServerCallback & delegate, const IBattleInfoCallback & battle)
+	EffectPacketRecorder(ServerCallback & delegate, const CBattleInfoCallback & battle,
+		PlayerColor casterOwner, SpellID castSpellId, SpellID effectSpellId)
 		: delegate(delegate)
 		, battle(battle)
+		, casterOwner(casterOwner)
+		, castSpellId(castSpellId)
+		, effectSpellId(effectSpellId)
 	{
 	}
 
@@ -340,7 +344,10 @@ public:
 
 private:
 	ServerCallback & delegate;
-	const IBattleInfoCallback & battle;
+	const CBattleInfoCallback & battle;
+	PlayerColor casterOwner;
+	SpellID castSpellId;
+	SpellID effectSpellId;
 	std::vector<BattleStackAttacked> recordedInjuries;
 	std::vector<HealingChange> recordedHealingChanges;
 	std::vector<uint32_t> addedUnitIds;
@@ -431,7 +438,8 @@ private:
 		return left.toJsonNode() == right.toJsonNode()
 			&& samePropagationUpdater()
 			&& left.customIconPath == right.customIconPath
-			&& left.bonusOwner == right.bonusOwner;
+			&& left.bonusOwner == right.bonusOwner
+			&& left.appliedByEnemy == right.appliedByEnemy;
 	}
 
 	static bool sameEffectState(const EffectState & left, const EffectState & right)
@@ -495,6 +503,34 @@ private:
 	void record(SetStackEffect & pack)
 	{
 		stackEffectsTouched = true;
+		if(casterOwner != PlayerColor::CANNOT_DETERMINE)
+		{
+			const auto stampHostility = [&](auto & changes)
+			{
+				for(auto & [unitId, bonuses] : changes)
+				{
+					const auto * recipient = battle.battleGetUnitByID(unitId);
+					if(!recipient)
+						continue;
+					const auto recipientOwner = battle.battleGetOwner(recipient);
+					if(recipientOwner == PlayerColor::CANNOT_DETERMINE)
+						continue;
+					const bool appliedByEnemy = casterOwner != recipientOwner;
+					for(auto & bonus : bonuses)
+					{
+						if(bonus.type != BonusType::MORALE || bonus.val >= 0
+							|| bonus.source != BonusSource::SPELL_EFFECT
+							|| (bonus.sid != BonusSourceID(castSpellId)
+								&& bonus.sid != BonusSourceID(effectSpellId)))
+							continue;
+						bonus.appliedByEnemy = appliedByEnemy;
+					}
+				}
+			};
+			stampHostility(pack.toAdd);
+			stampHostility(pack.toUpdate);
+		}
+
 		std::vector<uint32_t> touched;
 		const auto collect = [&touched](const auto & changes)
 		{
@@ -1526,7 +1562,14 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		break;
 	}
 
-	EffectPacketRecorder effectRecorder(*server, *battle());
+	const auto acceptedSpellId = owner->getId();
+	const auto effectSpellId = newHorizonsMagic::spellVariantBase(
+		battle()->getBattle()->getMagicRules(), acceptedSpellId);
+	// Magic Mirror resolves from the reflecting side, although caster still identifies
+	// the original spell caster; use the effective side for application provenance.
+	const auto effectCasterOwner = battle()->sideToPlayer(effectiveCasterSide());
+	EffectPacketRecorder effectRecorder(*server, *battle(), effectCasterOwner,
+		acceptedSpellId, effectSpellId);
 	if(!isCounterspellNegated())
 		doRemoveEffects(&effectRecorder, affectedUnits, std::bind(&BattleSpellMechanics::counteringSelector, this, _1));
 
@@ -2225,13 +2268,28 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 	auto selector = std::bind(&BattleSpellMechanics::counteringSelector, this, _1);
 
 	std::copy(std::begin(unitTargets), std::end(unitTargets), std::back_inserter(affectedUnits));
-	doRemoveEffects(server, affectedUnits, selector);
+
+	std::optional<EffectPacketRecorder> effectRecorder;
+	ServerCallback * effectServer = server;
+	if(server)
+	{
+		const auto acceptedSpellId = owner->getId();
+		const auto effectSpellId = newHorizonsMagic::spellVariantBase(
+			battle()->getBattle()->getMagicRules(), acceptedSpellId);
+		// Keep hypothetical/reflected casts aligned with the live effective source.
+		const auto effectCasterOwner = battle()->sideToPlayer(effectiveCasterSide());
+		effectRecorder.emplace(*server, *battle(), effectCasterOwner,
+			acceptedSpellId, effectSpellId);
+		effectServer = &*effectRecorder;
+	}
+
+	doRemoveEffects(effectServer, affectedUnits, selector);
 
 	for(auto & p : effectsToApply)
-		p.first->apply(server, this, p.second);
+		p.first->apply(effectServer, this, p.second);
 
 	if(newHorizonsRegeneration && mode == Mode::HERO && getHeroCaster())
-		applyRegenerationRateSnapshot(server, battle(), affectedUnits, newHorizonsRegenerationRate(*this));
+		applyRegenerationRateSnapshot(effectServer, battle(), affectedUnits, newHorizonsRegenerationRate(*this));
 
 	if(completedHeroProjection)
 		server->recordCompletedHeroSpellCast(casterSide, battle()->battleGetSpellLevel(getSpellId()));

@@ -59,8 +59,17 @@ protected:
 		startGame();
 		const int decodedOffense = SecondarySkill::decode(newHorizonsOffense::SKILL);
 		ASSERT_GE(decodedOffense, 0);
-		attackerSideHero->setSecSkillLevel(SecondarySkill(decodedOffense), MasteryLevel::EXPERT,
+		const SecondarySkill offense(decodedOffense);
+		attackerSideHero->setSecSkillLevel(offense, MasteryLevel::BASIC,
 			ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({newHorizonsOffense::SKILL, "new-horizons:offense.shockAssault"});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(
+			newHorizonsOffense::SKILL, "new-horizons:offense.shockAssault"));
+		attackerSideHero->setSecSkillLevel(offense, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(
+			newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE));
+		attackerSideHero->setSecSkillLevel(offense, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 		attackerSideHero->applyPerkSelection({newHorizonsOffense::SKILL, newHorizonsOffense::NO_QUARTER});
 		ASSERT_TRUE(attackerSideHero->hasActivePerk(
 			newHorizonsOffense::SKILL, newHorizonsOffense::NO_QUARTER));

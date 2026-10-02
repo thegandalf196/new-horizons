@@ -111,6 +111,7 @@ public:
 
 	///IBonusBearer
 	TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr = "") const override;
+	TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override;
 
 	int32_t getTreeVersion() const override;
 
@@ -121,7 +122,7 @@ public:
 	bool applyPurifySelection(const std::vector<SpellID> & spellEffectGroups, bool clearPhysicalPoison);
 
 	void removeUnitBonus(const CSelector & selector);
-	void applyNoQuarter(int32_t moraleActivationsRemaining);
+	void applyNoQuarter(int32_t moraleActivationsRemaining, bool appliedByEnemy = false);
 	void consumeNoQuarterActivation();
 	void clearNoQuarterRoundBlocker();
 	void advanceTimedRound();
@@ -130,12 +131,18 @@ public:
 	std::string getDescription() const override;
 
 private:
+	TConstBonusListPtr mergeBonuses(const CSelector & selector, const std::string & cachingStr,
+		bool unstacked) const;
 	void setOriginalBearer(const IBonusBearer * bearer);
 	void onBattleFormChanged() override;
 
 	// Value snapshots survive nested models whose bonus queries create fresh pointers.
 	// Include spell/command effects and captured affliction groups; only N_TURNS are aged.
 	std::optional<std::vector<Bonus>> projectedEffects;
+	// Preserve the historical stacked snapshot above while retaining every
+	// source bonus and its shared identity for source-sensitive mechanics in
+	// getUnstackedBonuses.
+	std::optional<std::vector<std::shared_ptr<Bonus>>> projectedUnstackedEffects;
 	// Branch-local history: once a marked source/sid group is captured, remember
 	// its identity even if the marker is removed or expires. This is only for
 	// retaining detached projections; it does not make the group an affliction.

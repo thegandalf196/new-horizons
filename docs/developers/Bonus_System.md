@@ -53,6 +53,20 @@ Note that only *propagated* bonuses need to be handled when nodes are added or r
 
 ## Limiters
 
+`getUnstackedBonuses(selector)` exposes limiter-applied, updater-processed
+effects before same-key stacking selection. Consumers that transform individual
+effects must transform copies, then call `stackBonuses()` and `totalValue()`;
+never mutate shared cached bonuses. The ordinary `getAllBonuses` query retains
+its existing stacking semantics. Both views share the existing tree-version
+cache invalidation, rather than introducing a periodic graph scan.
+
+`Bonus::appliedByEnemy` records target-relative hostility at effect application.
+It is not the dynamically computed `bonusOwner` used by propagated auras.
+Duration-only refresh preserves the original effect value and provenance;
+restoration preserves copied provenance, and later control changes do not
+rewrite it. Missing legacy provenance defaults to false (unclassified), not a
+guess based on negative values or the spell's polarity.
+
 If multiple limiters are specified for a bonus, a child inherits the bonus only if all limiters say that it should.
 
 So e.g. a list of multiple creature type limiters (with different creatures) would ensure that no creature inherits the bonus. In such a case, the solution is to use one bonus per creature.

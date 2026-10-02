@@ -1127,7 +1127,7 @@ AttackPossibility AttackPossibility::evaluate(
 				}
 				if(appliesNoQuarter && defenderState->alive())
 				{
-					fortunePreview->getForUpdate(u->unitId())->applyNoQuarter(moraleActivations);
+					fortunePreview->getForUpdate(u->unitId())->applyNoQuarter(moraleActivations, true);
 					strike.noQuarterTargets.emplace_back(u->unitId(), moraleActivations);
 				}
 
@@ -1471,7 +1471,7 @@ AttackPossibility AttackPossibility::evaluate(
 							targetState->getAvailableHealth(), battle::getMaximumHealth(*targetState)))
 					{
 						const int32_t moraleActivations = noQuarterMoraleActivations(*state, targetState->unitId());
-						fortunePreview->getForUpdate(targetState->unitId())->applyNoQuarter(moraleActivations);
+						fortunePreview->getForUpdate(targetState->unitId())->applyNoQuarter(moraleActivations, true);
 						cleave->noQuarterTargets.emplace_back(targetState->unitId(), moraleActivations);
 					}
 					if(targetState->unitId() == defender->unitId())
@@ -1594,7 +1594,7 @@ AttackPossibility AttackPossibility::evaluate(
 							targetState->getAvailableHealth(), battle::getMaximumHealth(*targetState)))
 					{
 						const int32_t moraleActivations = noQuarterMoraleActivations(*state, targetState->unitId());
-						fortunePreview->getForUpdate(targetState->unitId())->applyNoQuarter(moraleActivations);
+						fortunePreview->getForUpdate(targetState->unitId())->applyNoQuarter(moraleActivations, true);
 						retaliation->noQuarterTargets.emplace_back(targetState->unitId(), moraleActivations);
 					}
 				}

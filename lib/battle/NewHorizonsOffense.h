@@ -27,13 +27,14 @@ inline Bonus noQuarterRetaliationBonus()
 	return bonus;
 }
 
-inline Bonus noQuarterMoralePenalty()
+inline Bonus noQuarterMoralePenalty(bool appliedByEnemy = false)
 {
 	Bonus bonus(BonusDuration::STACK_ACTIVATION, BonusType::MORALE,
 		BonusSource::OTHER, NO_QUARTER_MORALE_PENALTY,
 		BonusSourceID(BonusCustomSource::newHorizonsNoQuarter));
 	bonus.stacking = NO_QUARTER;
 	bonus.description.appendRawString("No Quarter");
+	bonus.appliedByEnemy = appliedByEnemy;
 	return bonus;
 }
 

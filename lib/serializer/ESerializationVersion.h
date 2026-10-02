@@ -141,15 +141,18 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_OBSTACLE_MOVEMENT_COST, // spell-created terrain surcharge per newly entered hex
 	NEW_HORIZONS_BROAD_MUSTER, // optional second destination and first-row amount in Recruitment Muster requests
 	NEW_HORIZONS_UNBREAKABLE, // independent per-round negative Morale suppression
+	BONUS_EFFECT_HOSTILITY, // target-relative enemy-applied bonus provenance
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_UNBREAKABLE,
+	CURRENT = BONUS_EFFECT_HOSTILITY,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
+static_assert(ESerializationVersion::BONUS_EFFECT_HOSTILITY > ESerializationVersion::NEW_HORIZONS_UNBREAKABLE,
+	"Bonus effect hostility must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_OBSTACLE_MOVEMENT_COST > ESerializationVersion::NEW_HORIZONS_LAND_SURVEYOR,
 	"Obstacle movement cost must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_BROAD_MUSTER > ESerializationVersion::NEW_HORIZONS_OBSTACLE_MOVEMENT_COST,

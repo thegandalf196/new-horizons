@@ -930,6 +930,14 @@ bool JsonUtils::parseBonus(const JsonNode &ability, Bonus *b, const TextIdentifi
 	if (!value->isNull())
 		b->targetSourceType = static_cast<BonusSource>(parseByMapN(bonusSourceMap, value, "target type "));
 
+	value = &ability["appliedByEnemy"];
+	if(!value->isNull())
+	{
+		if(value->getType() != JsonNode::JsonType::DATA_BOOL)
+			throw std::runtime_error("Bonus appliedByEnemy provenance must be boolean");
+		b->appliedByEnemy = value->Bool();
+	}
+
 	value = &ability["limiters"];
 	if (!value->isNull())
 		b->limiter = parseLimiter(*value);

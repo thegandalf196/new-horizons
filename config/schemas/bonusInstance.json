@@ -543,6 +543,10 @@
 			"enum" : [ "ARTIFACT", "ARTIFACT_INSTANCE", "OBJECT_TYPE", "OBJECT_INSTANCE", "CREATURE_ABILITY", "TERRAIN_NATIVE", "TERRAIN_OVERLAY", "SPELL_EFFECT", "TOWN_STRUCTURE", "HERO_BASE_SKILL", "SECONDARY_SKILL", "HERO_SPECIAL", "ARMY", "CAMPAIGN_BONUS", "STACK_EXPERIENCE", "COMMANDER", "GLOBAL", "OTHER" ],
 			"description" : "targetSourceType"
 		},
+		"appliedByEnemy" : {
+			"type" : "boolean",
+			"description" : "Runtime provenance: effect was applied by an enemy of its recipient at application time."
+		},
 		"propagator" : {
 			"description" : "propagator",
 			"type" : "string",

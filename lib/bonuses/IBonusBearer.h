@@ -19,6 +19,8 @@ public:
 	IBonusBearer() = default;
 	virtual ~IBonusBearer() = default;
 	virtual TConstBonusListPtr getAllBonuses(const CSelector &selector, const std::string &cachingStr = {}) const = 0;
+	/// Returns every selected, updated and limited bonus before identical bonuses are stacked.
+	virtual TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const = 0;
 	int valOfBonuses(const CSelector &selector, const std::string &cachingStr = {}, int baseValue = 0) const;
 	bool hasBonus(const CSelector &selector, const std::string &cachingStr = {}) const;
 	TConstBonusListPtr getBonuses(const CSelector &selector, const std::string &cachingStr = {}) const;

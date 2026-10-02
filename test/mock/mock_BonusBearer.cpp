@@ -29,12 +29,33 @@ TConstBonusListPtr BonusBearerMock::getAllBonuses(const CSelector & selector, co
 {
 	if(cachedLast != treeVersion)
 	{
-		bonuses.stackBonuses();
+		cachedUnstackedBonuses.clear();
+		bonuses.getAllBonuses(cachedUnstackedBonuses);
+		cachedBonuses.clear();
+		cachedUnstackedBonuses.getAllBonuses(cachedBonuses);
+		cachedBonuses.stackBonuses();
 		cachedLast = treeVersion;
 	}
 
 	auto ret = std::make_shared<BonusList>();
-	bonuses.getBonuses(*ret, selector);
+	cachedBonuses.getBonuses(*ret, selector);
+	return ret;
+}
+
+TConstBonusListPtr BonusBearerMock::getUnstackedBonuses(const CSelector & selector) const
+{
+	if(cachedLast != treeVersion)
+	{
+		cachedUnstackedBonuses.clear();
+		bonuses.getAllBonuses(cachedUnstackedBonuses);
+		cachedBonuses.clear();
+		cachedUnstackedBonuses.getAllBonuses(cachedBonuses);
+		cachedBonuses.stackBonuses();
+		cachedLast = treeVersion;
+	}
+
+	auto ret = std::make_shared<BonusList>();
+	cachedUnstackedBonuses.getBonuses(*ret, selector);
 	return ret;
 }
 
@@ -42,5 +63,4 @@ int32_t BonusBearerMock::getTreeVersion() const
 {
 	return treeVersion;
 }
-
 

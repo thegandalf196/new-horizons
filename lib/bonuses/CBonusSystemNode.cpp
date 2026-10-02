@@ -123,14 +123,7 @@ TConstBonusListPtr CBonusSystemNode::getAllBonuses(const CSelector &selector, co
 			else
 			{
 				// Cached bonuses may be outdated - regenerate them
-				BonusList allBonuses;
-
-				cachedBonuses.clear();
-
-				getAllBonusesRec(allBonuses);
-				limitBonuses(allBonuses, cachedBonuses);
-				cachedBonuses.stackBonuses();
-				cachedLast = nodeChanged;
+				rebuildBonusCache();
 				cachedBonuses.getBonuses(*ret, selector);
 			}
 		}
@@ -156,6 +149,33 @@ TConstBonusListPtr CBonusSystemNode::getAllBonuses(const CSelector &selector, co
 	}
 }
 
+TConstBonusListPtr CBonusSystemNode::getUnstackedBonuses(const CSelector & selector) const
+{
+	auto ret = std::make_shared<BonusList>();
+	if(cachingEnabled)
+	{
+		if(cachedLast == nodeChanged)
+		{
+			std::shared_lock lock(sync);
+			cachedUnstackedBonuses.getBonuses(*ret, selector);
+		}
+		else
+		{
+			std::lock_guard lock(sync);
+			if(cachedLast == nodeChanged)
+				cachedUnstackedBonuses.getBonuses(*ret, selector);
+			else
+			{
+				rebuildBonusCache();
+				cachedUnstackedBonuses.getBonuses(*ret, selector);
+			}
+		}
+		return ret;
+	}
+
+	return getUnstackedBonusesWithoutCaching(selector);
+}
+
 TConstBonusListPtr CBonusSystemNode::getAllBonusesWithoutCaching(const CSelector &selector) const
 {
 	auto ret = std::make_shared<BonusList>();
@@ -168,6 +188,29 @@ TConstBonusListPtr CBonusSystemNode::getAllBonusesWithoutCaching(const CSelector
 	afterLimiting.getBonuses(*ret, selector);
 	ret->stackBonuses();
 	return ret;
+}
+
+TConstBonusListPtr CBonusSystemNode::getUnstackedBonusesWithoutCaching(const CSelector & selector) const
+{
+	BonusList allBonuses;
+	BonusList limitedBonuses;
+	getAllBonusesRec(allBonuses);
+	limitBonuses(allBonuses, limitedBonuses);
+	auto ret = std::make_shared<BonusList>();
+	limitedBonuses.getBonuses(*ret, selector);
+	return ret;
+}
+
+void CBonusSystemNode::rebuildBonusCache() const
+{
+	BonusList allBonuses;
+	cachedBonuses.clear();
+	cachedUnstackedBonuses.clear();
+	getAllBonusesRec(allBonuses);
+	limitBonuses(allBonuses, cachedUnstackedBonuses);
+	cachedUnstackedBonuses.getAllBonuses(cachedBonuses);
+	cachedBonuses.stackBonuses();
+	cachedLast = nodeChanged;
 }
 
 std::shared_ptr<Bonus> CBonusSystemNode::getUpdatedBonus(const std::shared_ptr<Bonus> & b, const TUpdaterPtr & updater) const

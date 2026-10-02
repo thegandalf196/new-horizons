@@ -100,6 +100,8 @@ std::string Bonus::Description(const IGameInfoCallback * cb, std::optional<si32>
 JsonNode Bonus::toJsonNode() const
 {
 	JsonNode root;
+	if(appliedByEnemy)
+		root["appliedByEnemy"].Bool() = true;
 	// only add values that might reasonably be found in config files
 	root["type"].String() = LIBRARY->bth->bonusToString(type);
 	if(subtype != BonusSubtypeID())

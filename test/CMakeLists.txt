@@ -49,6 +49,7 @@ set(test_SRCS
 		battle/battle_UnitTest.cpp
 
 		bonus/BonusSystemTest.cpp
+		bonus/NewHorizonsUnstackedBonusTest.cpp
 		bonus/NewHorizonsCreatureProbabilityTest.cpp
 
 		combatScripts/CombatScriptDescriptionTest.cpp
@@ -317,6 +318,7 @@ set(test_SRCS
 		server/battles/NewHorizonsUnbreakableTest.cpp
 		server/battles/NewHorizonsReserveTest.cpp
 		server/battles/NewHorizonsStandardBearerTest.cpp
+		server/battles/NewHorizonsSteadfastTest.cpp
 		server/battles/NewHorizonsHoldFastTest.cpp
 		server/battles/NewHorizonsFearlessTest.cpp
 		server/battles/NewHorizonsSurgeonTest.cpp

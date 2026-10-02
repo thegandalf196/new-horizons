@@ -34,6 +34,8 @@
 
 #include <vcmi/events/EventBus.h>
 
+#include <unordered_map>
+
 #include "../../lib/battle/BattleLayout.h"
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/CStack.h"
@@ -200,6 +202,7 @@ int newHorizonsHexOfPainAI::effectRounds(const battle::Unit * unit)
 
 void actualizeEffect(TBonusListPtr target, const Bonus & ef)
 {
+	std::unordered_map<const Bonus *, std::shared_ptr<Bonus>> updatedCopies;
 	for(auto & bonus : *target) //TODO: optimize
 	{
 		if(bonus->source == ef.source && bonus->sid == ef.sid && bonus->type == ef.type
@@ -207,9 +210,13 @@ void actualizeEffect(TBonusListPtr target, const Bonus & ef)
 		{
 			if(bonus->turnsRemain < ef.turnsRemain)
 			{
-				bonus.reset(new Bonus(*bonus));
-
-				bonus->turnsRemain = ef.turnsRemain;
+				auto [copy, inserted] = updatedCopies.try_emplace(bonus.get());
+				if(inserted)
+				{
+					copy->second = std::make_shared<Bonus>(*bonus);
+					copy->second->turnsRemain = ef.turnsRemain;
+				}
+				bonus = copy->second;
 			}
 		}
 	}
@@ -341,19 +348,34 @@ SlotID StackWithBonuses::unitSlot() const
 
 TConstBonusListPtr StackWithBonuses::getAllBonuses(const CSelector & selector, const std::string & cachingStr) const
 {
+	return mergeBonuses(selector, cachingStr, false);
+}
+
+TConstBonusListPtr StackWithBonuses::getUnstackedBonuses(const CSelector & selector) const
+{
+	return mergeBonuses(selector, {}, true);
+}
+
+TConstBonusListPtr StackWithBonuses::mergeBonuses(const CSelector & selector,
+	const std::string & cachingStr, bool unstacked) const
+{
 	auto ret = std::make_shared<BonusList>();
 	const CreatureID effectiveCreature = battleFormCreature();
 	const bool replaceNativeCreatureBonuses = effectiveCreature != sourceCreatureType;
 	// Refresh changes duration, not value. Filtering before merging can hide the
 	// existing identity and incorrectly turn a refresh into a new effect.
 	const auto & mergeSelector = bonusesToUpdate.empty() ? selector : Selector::all;
-	TConstBonusListPtr originalList = origBearer->getAllBonuses(mergeSelector,
-		bonusesToUpdate.empty() ? cachingStr : std::string());
+	TConstBonusListPtr originalList = unstacked
+		? origBearer->getUnstackedBonuses(mergeSelector)
+		: origBearer->getAllBonuses(mergeSelector,
+			bonusesToUpdate.empty() ? cachingStr : std::string());
+	const bool hasProjectionSnapshot = unstacked
+		? projectedUnstackedEffects.has_value() : projectedEffects.has_value();
 
-	vstd::copy_if(*originalList, std::back_inserter(*ret), [this](const std::shared_ptr<Bonus> & b)
+	vstd::copy_if(*originalList, std::back_inserter(*ret), [this, hasProjectionSnapshot](const std::shared_ptr<Bonus> & b)
 	{
 		return !vstd::contains(bonusesToRemove, b)
-			&& !(projectedEffects && isCapturedProjectionEffect(b.get(), capturedPhysicalAfflictionGroups));
+			&& !(hasProjectionSnapshot && isCapturedProjectionEffect(b.get(), capturedPhysicalAfflictionGroups));
 	});
 	if(replaceNativeCreatureBonuses)
 		ret->remove_if(CSelector([this](const Bonus * bonus)
@@ -362,7 +384,14 @@ TConstBonusListPtr StackWithBonuses::getAllBonuses(const CSelector & selector, c
 				|| isBattleFormNativeBonus(bonus, sourceCreatureType);
 		}));
 
-	if(projectedEffects)
+	if(unstacked)
+	{
+		if(projectedUnstackedEffects)
+			for(const auto & bonus : *projectedUnstackedEffects)
+				if(bonus && mergeSelector(bonus.get()))
+					ret->push_back(bonus);
+	}
+	else if(projectedEffects)
 		for(const auto & bonus : *projectedEffects)
 			if(mergeSelector(&bonus))
 				ret->push_back(std::make_shared<Bonus>(bonus));
@@ -403,10 +432,12 @@ TConstBonusListPtr StackWithBonuses::getAllBonuses(const CSelector & selector, c
 		if(!sourceStack)
 			sourceStack = ownedBearer.get();
 		const CArmedInstance * fallbackArmy = owner ? owner->getSideArmy(side) : nullptr;
-		const auto effectiveBonuses = getBattleFormNativeBonuses(*this, sourceStack, fallbackArmy, mergeSelector);
+		const auto effectiveBonuses = getBattleFormNativeBonuses(
+			*this, sourceStack, fallbackArmy, mergeSelector, unstacked);
 		for(const auto & bonus : *effectiveBonuses)
 			ret->push_back(std::make_shared<Bonus>(*bonus));
-		ret->stackBonuses();
+		if(!unstacked)
+			ret->stackBonuses();
 	}
 	if(!bonusesToUpdate.empty())
 		ret->remove_if([&](const Bonus * bonus){ return !selector(bonus); });
@@ -525,12 +556,17 @@ void StackWithBonuses::removeUnitBonus(const CSelector & selector)
 	vstd::erase_if(bonusesToUpdate, [&](const Bonus & b){return selector(&b);});
 	if(projectedEffects)
 		vstd::erase_if(*projectedEffects, [&](const Bonus & b){return selector(&b);});
+	if(projectedUnstackedEffects)
+		vstd::erase_if(*projectedUnstackedEffects, [&](const std::shared_ptr<Bonus> & b)
+		{
+			return !b || selector(b.get());
+		});
 	++treeVersionLocal;
 	if(removesGuardianSpirit)
 		restoreGuardianSpiritFromExistingBonuses(*this);
 }
 
-void StackWithBonuses::applyNoQuarter(int32_t moraleActivationsRemaining)
+void StackWithBonuses::applyNoQuarter(int32_t moraleActivationsRemaining, bool appliedByEnemy)
 {
 	if(moraleActivationsRemaining <= 0 || moraleActivationsRemaining > 2)
 		throw std::invalid_argument("No Quarter morale duration must be one or two activations");
@@ -541,7 +577,7 @@ void StackWithBonuses::applyNoQuarter(int32_t moraleActivationsRemaining)
 	}));
 	addUnitBonus({
 		newHorizonsOffense::noQuarterRetaliationBonus(),
-		newHorizonsOffense::noQuarterMoralePenalty()});
+		newHorizonsOffense::noQuarterMoralePenalty(appliedByEnemy)});
 	noQuarterMoraleActivationsRemaining = moraleActivationsRemaining;
 }
 
@@ -572,8 +608,10 @@ void StackWithBonuses::captureEffects()
 	// command effects, explicitly marked affliction groups may use non-spell
 	// sources; capture only those exact source/sid groups, not unrelated stats.
 	const auto effects = getAllBonuses(Selector::all);
+	const auto unstackedEffects = getUnstackedBonuses(Selector::all);
 	projectedEffects.emplace();
-	for(const auto & bonus : *effects)
+	projectedUnstackedEffects.emplace();
+	for(const auto & bonus : *unstackedEffects)
 		if(bonus && bonus->type == BonusType::PHYSICAL_AFFLICTION)
 		{
 			physicalAfflictions::markerMetadata(*bonus);
@@ -582,6 +620,15 @@ void StackWithBonuses::captureEffects()
 	for(const auto & bonus : *effects)
 		if(bonus && isCapturedProjectionEffect(bonus.get(), capturedPhysicalAfflictionGroups))
 			projectedEffects->push_back(*bonus);
+	std::unordered_map<const Bonus *, std::shared_ptr<Bonus>> rawCopies;
+	for(const auto & bonus : *unstackedEffects)
+		if(bonus && isCapturedProjectionEffect(bonus.get(), capturedPhysicalAfflictionGroups))
+		{
+			auto [copy, inserted] = rawCopies.try_emplace(bonus.get());
+			if(inserted)
+				copy->second = std::make_shared<Bonus>(*bonus);
+			projectedUnstackedEffects->push_back(copy->second);
+		}
 	vstd::erase_if(bonusesToAdd, [this](const Bonus & bonus)
 	{
 		return isCapturedProjectionEffect(&bonus, capturedPhysicalAfflictionGroups);
@@ -614,6 +661,31 @@ void StackWithBonuses::advanceTimedRound()
 		});
 	};
 	age(*projectedEffects);
+	if(projectedUnstackedEffects)
+	{
+		// Raw snapshots may contain the same inherited Bonus pointer multiple
+		// times. Clone each expiring identity once, reconnect all aliases, and age
+		// that branch-local clone once so parent/sibling projections stay intact.
+		std::unordered_map<const Bonus *, std::shared_ptr<Bonus>> branchCopies;
+		for(auto & bonus : *projectedUnstackedEffects)
+		{
+			if(!bonus || !timedProjectionEffect(bonus.get(), capturedPhysicalAfflictionGroups)
+				|| bonus->turnsRemain <= 0)
+				continue;
+			auto [copy, inserted] = branchCopies.try_emplace(bonus.get());
+			if(inserted)
+				copy->second = std::make_shared<Bonus>(*bonus);
+			bonus = copy->second;
+		}
+		for(const auto & copy : branchCopies)
+			if(copy.second->turnsRemain > 0)
+				--copy.second->turnsRemain;
+		vstd::erase_if(*projectedUnstackedEffects, [this](const std::shared_ptr<Bonus> & bonus)
+		{
+			return !bonus || (timedProjectionEffect(bonus.get(), capturedPhysicalAfflictionGroups)
+				&& bonus->turnsRemain <= 0);
+		});
+	}
 	age(bonusesToAdd);
 	age(bonusesToUpdate);
 	++treeVersionLocal;

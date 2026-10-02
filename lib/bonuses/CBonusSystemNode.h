@@ -40,6 +40,10 @@ private:
 	/// List of bonuses that affect this node, whether local, or propagated to this node
 	BonusList bonuses;
 
+	/// All accepted, updater-processed bonuses before stacking. Kept beside the
+	/// stacked cache and guarded by the same tree version and lock.
+	mutable BonusList cachedUnstackedBonuses;
+
 	/// List of bonuses that ar ecoming from this node.
 	/// Also includes nodes that are propagated away from this node, and might not affect this node itself
 	BonusList exportedBonuses;
@@ -66,6 +70,8 @@ private:
 
 	void getAllBonusesRec(BonusList &out, bool inherited = false) const;
 	TConstBonusListPtr getAllBonusesWithoutCaching(const CSelector &selector) const;
+	TConstBonusListPtr getUnstackedBonusesWithoutCaching(const CSelector & selector) const;
+	void rebuildBonusCache() const;
 	std::shared_ptr<Bonus> getUpdatedBonus(const std::shared_ptr<Bonus> & b, const TUpdaterPtr & updater) const;
 	void limitBonuses(const BonusList &allBonuses, BonusList &out) const; //out will bo populed with bonuses that are not limited here
 
@@ -97,6 +103,7 @@ public:
 	virtual ~CBonusSystemNode();
 
 	TConstBonusListPtr getAllBonuses(const CSelector &selector, const std::string &cachingStr = "") const override;
+	TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override;
 	void getDirectParents(TCNodes &out) const;  //retrieves list of parent nodes (nodes to inherit bonuses from),
 
 	/// Returns first bonus matching selector

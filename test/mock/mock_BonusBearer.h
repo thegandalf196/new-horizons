@@ -24,10 +24,13 @@ public:
 	void addNewBonus(const std::shared_ptr<Bonus> & b);
 
 	TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr = "") const override;
+	TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override;
 
 	int32_t getTreeVersion() const override;
 private:
-	mutable BonusList bonuses;
+	BonusList bonuses;
+	mutable BonusList cachedBonuses;
+	mutable BonusList cachedUnstackedBonuses;
 
 	mutable int32_t cachedLast;
 	int32_t treeVersion;

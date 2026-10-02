@@ -713,7 +713,7 @@
 					"requires": "basic",
 					"description": "Morale penalties applied by enemy effects are reduced by 1, to a minimum penalty of 0.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Morale penalties applied by enemy effects are reduced by 1, to a minimum penalty of 0."
 					}
 				},

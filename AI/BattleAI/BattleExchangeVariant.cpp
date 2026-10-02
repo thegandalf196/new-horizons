@@ -34,7 +34,7 @@ bool projectNoQuarterAfterHit(const CBattleInfoCallback & battle, const BattleAt
 
 	const int32_t moraleActivations = battle.getBattle()->getActiveStackID()
 		== static_cast<int32_t>(target.unitId()) ? 2 : 1;
-	target.applyNoQuarter(moraleActivations);
+	target.applyNoQuarter(moraleActivations, true);
 	return true;
 }
 
@@ -165,7 +165,7 @@ float BattleExchangeVariant::trackAttack(
 				{
 					for(const auto & [noQuarterTargetId, moraleActivations] : strike.noQuarterTargets)
 						if(noQuarterTargetId == unitId)
-							target->applyNoQuarter(moraleActivations);
+							target->applyNoQuarter(moraleActivations, true);
 					hb->recordBloodrageTransition(target, wasAlive);
 					const bool luckAffectedTarget = unitId == strike.defenderId
 						|| hb->getLuckRollRules().affectsAllTargets;

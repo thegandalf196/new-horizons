@@ -3993,7 +3993,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			}
 			effects.toAdd.emplace_back(target->unitId(), std::vector<Bonus>{
 				newHorizonsOffense::noQuarterRetaliationBonus(),
-				newHorizonsOffense::noQuarterMoralePenalty()});
+				newHorizonsOffense::noQuarterMoralePenalty(true)});
 			gameHandler->sendAndApply(effects);
 
 			auto state = target->acquireState();

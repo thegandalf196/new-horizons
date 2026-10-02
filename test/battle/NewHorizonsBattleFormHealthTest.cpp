@@ -81,6 +81,12 @@ public:
 		}
 		return result;
 	}
+
+	TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override
+	{
+		// This fixture constructs its source list without stacking.
+		return getAllBonuses(selector, {});
+	}
 };
 
 class FormTestUnitState final : public CUnitState
@@ -99,6 +105,11 @@ public:
 	TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr = {}) const override
 	{
 		return bonus->getAllBonuses(selector, cachingStr);
+	}
+
+	TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override
+	{
+		return bonus->getUnstackedBonuses(selector);
 	}
 
 	int32_t getTreeVersion() const override
@@ -313,6 +324,8 @@ TEST(NewHorizonsBattleFormHealthTest, AcquiredCStackStateUsesReplacementNativeBo
 	};
 	EXPECT_FALSE(state->getAllBonuses(CSelector(nativeForForm))->empty());
 	EXPECT_TRUE(state->getAllBonuses(CSelector(nativeForSource))->empty());
+	EXPECT_FALSE(state->getUnstackedBonuses(CSelector(nativeForForm))->empty());
+	EXPECT_TRUE(state->getUnstackedBonuses(CSelector(nativeForSource))->empty());
 
 	const JsonNode saved = state->save();
 	auto restored = liveStack.acquireState();
@@ -322,6 +335,7 @@ TEST(NewHorizonsBattleFormHealthTest, AcquiredCStackStateUsesReplacementNativeBo
 	EXPECT_EQ(restored->getMaxHealth(), formCreature->getMaxHealth());
 	EXPECT_EQ(restored->health.getCreatureHealthAvailable(), originalHP);
 	EXPECT_FALSE(restored->getAllBonuses(CSelector(nativeForForm))->empty());
+	EXPECT_FALSE(restored->getUnstackedBonuses(CSelector(nativeForForm))->empty());
 
 	restored->endBattleForm();
 	EXPECT_FALSE(restored->hasBattleForm());
@@ -330,6 +344,8 @@ TEST(NewHorizonsBattleFormHealthTest, AcquiredCStackStateUsesReplacementNativeBo
 	EXPECT_EQ(restored->health.getCreatureHealthAvailable(), originalHP);
 	EXPECT_FALSE(restored->getAllBonuses(CSelector(nativeForSource))->empty());
 	EXPECT_TRUE(restored->getAllBonuses(CSelector(nativeForForm))->empty());
+	EXPECT_FALSE(restored->getUnstackedBonuses(CSelector(nativeForSource))->empty());
+	EXPECT_TRUE(restored->getUnstackedBonuses(CSelector(nativeForForm))->empty());
 	EXPECT_EQ(liveStack.unitType(), sourceCreature);
 }
 
