@@ -138,15 +138,18 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_RANGED_FOLLOW_UP, // saved same-activation selectable ranged shot continuation
 	NEW_HORIZONS_REDUCED_EXTRA_ACTIVATION, // saved side allowance and reduced-output genuine activation
 	NEW_HORIZONS_LAND_SURVEYOR, // per-hero weekly successful mine-capture allowance
+	NEW_HORIZONS_OBSTACLE_MOVEMENT_COST, // spell-created terrain surcharge per newly entered hex
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_LAND_SURVEYOR,
+	CURRENT = NEW_HORIZONS_OBSTACLE_MOVEMENT_COST,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
+static_assert(ESerializationVersion::NEW_HORIZONS_OBSTACLE_MOVEMENT_COST > ESerializationVersion::NEW_HORIZONS_LAND_SURVEYOR,
+	"Obstacle movement cost must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_CHAIN_OF_FORTUNE > ESerializationVersion::NEW_HORIZONS_GAMBLER,
 	"Chain of Fortune state must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_ADVERSE_COMBAT_REROLL > ESerializationVersion::NEW_HORIZONS_CHAIN_OF_FORTUNE,

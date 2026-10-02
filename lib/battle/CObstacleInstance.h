@@ -76,7 +76,11 @@ struct DLL_LINKAGE CObstacleInstance : public Serializeable, public scripting::A
 
 struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 {
+	static constexpr int32_t MAX_MOVEMENT_COST = 1000;
+
 	int32_t turnsRemaining;
+	/// Additional movement cost paid for each affected hex newly entered by a walking stack.
+	int32_t movementCost = 0;
 	int32_t casterSpellPower;
 	int32_t casterPowerDivisor = 1;
 	int32_t spellLevel;
@@ -130,6 +134,10 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_OBSTACLE_MOVEMENT_COST)
+			&& movementCost != 0)
+			throw std::runtime_error("Cannot discard spell obstacle movement cost in an older protocol");
+
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_LAND_MINE)
 			&& (removeOnTrigger || revealed || damageSnapshot))
 			throw std::runtime_error("Cannot discard obstacle trigger state in an older protocol");
@@ -179,5 +187,12 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 		}
 
 		h & customSize;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_OBSTACLE_MOVEMENT_COST))
+			h & movementCost;
+		else if(!h.saving)
+			movementCost = 0;
+
+		if(movementCost < 0 || movementCost > MAX_MOVEMENT_COST)
+			throw std::runtime_error("Invalid spell obstacle movement cost");
 	}
 };

@@ -14,6 +14,21 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-118 foundation checkpoint, 2026-10-02: spell-created movement-cost terrain
+has native evidence for exact weighted costs, cheaper detours, new double-wide
+footprint cells, flying exclusion, overlap maximum, expiry, packet/JSON state
+and append-only binary compatibility. Client54585, test92767 and focused82811
+exit0; native72881 passes12/12 in3.287s, zero skips, including five existing
+detached-obstacle guards. Service rejected an additional reviewer; root reviewed
+the bounded diff directly. This prerequisite is not a completed Earthquake or
+Geomancer. Counts remain166/310 perks and60/67 canonical spell identities plus
+five Mass variants. Before activating consumers, implement field creation and
+feedback, selected-area structural damage and separate movement cost from actual
+travel for Charge/Pursuit. No GUI or playable promotion. Broader terrain/order/
+save interactions remain unverified; no Phase1 completion credit is inferred.
+Native binary SHA-256:
+`044cc3be01db86403e48f6968201d8886cc19a7f70ee44a41e2310e6dfe11fd0`.
+
 UP-115/116 Sanctuary Keeper and Venomancer are active and native verified.
 Keeper adds exact-source marker-limited+2 Morale, refreshes without stacking,
 cleans non-perk recasts and removes siblings when Sanctuary breaks. Poison

@@ -2,6 +2,22 @@
 
 ## Purpose
 
+### 2026-10-02 UP-118 — weighted movement pre-build correction
+
+Root diff review found that the first terrain implementation added the surcharge
+when computing the candidate distance and again when storing that distance.
+Store the already-complete candidate once; focused fixtures must assert exact
+weighted distances, not merely that terrain makes movement more expensive.
+Skip per-edge footprint work when no movement-cost terrain exists. This was a
+pre-execution correction, not a failed build or a user-played regression.
+An independent reviewer spawn was service-rejected; root performed direct
+review. Earthquake remains unactivated pending its own runtime implementation.
+Client54585, test92767 and focused82811 exit0; native72881 passes12/12 in3.287s,
+zero skips, including exact-cost, state compatibility and detached guards.
+Pre-run fixture review also corrected the attacker tail to head-1 via
+occupiedHex(destination), and explicitly set a non-triggering terrain spell ID.
+These corrections preserve the intended assertions rather than weakening them.
+
 ### 2026-10-02 UP-115/116 — pre-build source/fixture corrections
 
 Independent review found that Sanctuary Keeper's narrow negative-Morale AI

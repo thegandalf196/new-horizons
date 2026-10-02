@@ -198,6 +198,9 @@ void SpellCreatedObstacle::serializeJson(JsonSerializeFormat & handler)
 	pos = posValue;
 
 	handler.serializeInt("turnsRemaining", turnsRemaining);
+	handler.serializeInt("movementCost", movementCost, 0);
+	if(movementCost < 0 || movementCost > MAX_MOVEMENT_COST)
+		throw std::runtime_error("Invalid spell obstacle movement cost");
 	handler.serializeInt("casterSpellPower", casterSpellPower);
 	handler.serializeInt("casterPowerDivisor", casterPowerDivisor, 1);
 	if(casterPowerDivisor <= 0)

@@ -3145,6 +3145,8 @@ ReachabilityInfo CBattleInfoCallback::makeBFS(const AccessibilityInfo & accessib
 	ret.distances[params.startPosition.toInt()] = 0;
 
 	std::array<bool, GameConstants::BFIELD_SIZE> accessibleCache{};
+	std::array<int32_t, GameConstants::BFIELD_SIZE> movementCostByHex{};
+	bool hasMovementCost = false;
 	auto traversalAccessibility = accessibility;
 	if(params.ghostWalk)
 	{
@@ -3157,6 +3159,23 @@ ReachabilityInfo CBattleInfoCallback::makeBFS(const AccessibilityInfo & accessib
 	for(int hex = 0; hex < GameConstants::BFIELD_SIZE; hex++)
 		accessibleCache[hex] = traversalAccessibility.accessible(hex, params.doubleWide, params.side);
 
+	for(const auto & obstacle : battleGetAllObstacles(params.perspective))
+	{
+		const auto * spellObstacle = dynamic_cast<const SpellCreatedObstacle *>(obstacle.get());
+		if(!spellObstacle || spellObstacle->turnsRemaining == 0 || spellObstacle->movementCost <= 0)
+			continue;
+
+		for(const auto & hex : spellObstacle->getAffectedTiles())
+		{
+			if(!hex.isValid())
+				continue;
+
+			auto & movementCost = movementCostByHex[hex.toInt()];
+			movementCost = std::max(movementCost, spellObstacle->movementCost);
+			hasMovementCost = true;
+		}
+	}
+
 	while(!hexq.empty()) //bfs loop
 	{
 		const BattleHex curHex = hexq.front();
@@ -3166,28 +3185,35 @@ ReachabilityInfo CBattleInfoCallback::makeBFS(const AccessibilityInfo & accessib
 		if(isInObstacle(curHex, obstacles, checkParams))
 			continue;
 
-		const int costToNeighbour = ret.distances.at(curHex.toInt()) + 1;
-
 		for(const BattleHex & neighbour : curHex.getNeighbouringTiles())
 		{
-			auto additionalCost = 0;
+			int additionalCost = 0;
+			if(hasMovementCost)
+			{
+				const auto & currentFootprint = battle::Unit::getHexes(curHex, params.doubleWide, params.side);
+				const auto & neighbourFootprint = battle::Unit::getHexes(neighbour, params.doubleWide, params.side);
+				for(const auto & hex : neighbourFootprint)
+					if(hex.isValid() && !currentFootprint.contains(hex))
+						additionalCost += movementCostByHex[hex.toInt()];
+			}
 
 			if(params.bypassEnemyStacks)
 			{
 				auto enemyToBypass = params.destructibleEnemyTurns.at(neighbour.toInt());
 
 				if(enemyToBypass >= 0)
-				{
-					additionalCost = enemyToBypass;
-				}
+					additionalCost += enemyToBypass;
 			}
 
-			const int costFoundSoFar = ret.distances[neighbour.toInt()];
+			const uint32_t costToNeighbour = ret.distances.at(curHex.toInt())
+				+ static_cast<uint32_t>(1 + additionalCost);
 
-			if(accessibleCache[neighbour.toInt()] && costToNeighbour + additionalCost < costFoundSoFar)
+			const uint32_t costFoundSoFar = ret.distances[neighbour.toInt()];
+
+			if(accessibleCache[neighbour.toInt()] && costToNeighbour < costFoundSoFar)
 			{
 				hexq.push(neighbour);
-				ret.distances[neighbour.toInt()] = costToNeighbour + additionalCost;
+				ret.distances[neighbour.toInt()] = costToNeighbour;
 				ret.predecessors[neighbour.toInt()] = curHex;
 			}
 		}
