@@ -26,6 +26,9 @@ Vengeance cases fail at an unchanged earlier-perk setup and remain explicit Phas
 fixture work. Review reports no remaining blocking issue. No action allowance is
 granted by storage and Double Command remains planned pending its actual trigger.
 Perk/rank counts remain180/310 and84/93; no playable delivery is inferred.
+Source commitf57f58a84c8d82d49c9b5f555b12eb08f62e4585 is pushed to
+origin/definitive-mvp. Notice preflight37060224004 is live; no new Windows
+package or launcher snapshot is claimed yet.
 Phase2 deferrals for this slice: uncapped compound-reduction numeric fixtures,
 broader Order/perk/control/save matrices, and pre-existing hidden-enemy-hero
 coefficient behavior. Multiplication is source-reviewed; the bounded capped
