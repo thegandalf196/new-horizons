@@ -81,10 +81,12 @@ public:
 	bool isLimited() const override;
 	int32_t total() const override;
 	void reset() override;
+	void setEnv(const IUnitEnvironment * env_);
 
 	void serializeJson(JsonSerializeFormat & handler) override;
 private:
 	mutable int32_t totalCache;
+	const IUnitEnvironment * env;
 
 	BonusValueCache noRetaliation;
 	BonusValueCache unlimited;

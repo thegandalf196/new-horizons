@@ -143,15 +143,18 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_UNBREAKABLE, // independent per-round negative Morale suppression
 	BONUS_EFFECT_HOSTILITY, // target-relative enemy-applied bonus provenance
 	NEW_HORIZONS_BLOODRAGE_CAP, // resolved per-side Bloodrage maximum including cap perks
+	NEW_HORIZONS_BLOODRAGE_THRESHOLD_BONUSES, // resolved per-side Speed and retaliation threshold benefits
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_BLOODRAGE_CAP,
+	CURRENT = NEW_HORIZONS_BLOODRAGE_THRESHOLD_BONUSES,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
+static_assert(ESerializationVersion::NEW_HORIZONS_BLOODRAGE_THRESHOLD_BONUSES > ESerializationVersion::NEW_HORIZONS_BLOODRAGE_CAP,
+	"Bloodrage threshold benefits must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_BLOODRAGE_CAP > ESerializationVersion::BONUS_EFFECT_HOSTILITY,
 	"Bloodrage cap snapshots must remain append-only");
 static_assert(ESerializationVersion::BONUS_EFFECT_HOSTILITY > ESerializationVersion::NEW_HORIZONS_UNBREAKABLE,

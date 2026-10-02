@@ -14,6 +14,20 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-143 Unrelenting and Berserker are active and native-verified. Speed and
+retaliation bonuses follow half the current saved cap and current controller;
+explicit Initiative remains independent, and retaliation usage is not refunded.
+Authoritative per-side resolved bonuses make enemy-side AI prediction independent
+of hidden hero inventories. Current binary saves preserve them; older writes
+reject their loss and older loads default them to0. Both Linux targets build.
+Principal retry7/7 and activated focused31/31 pass with zero skips; data36/36,
+module drift and the existing UI source guard pass. Coverage177->179/310 active,
+planned133->131; faction46->48/90; Bloodrage3->5/10; ranks84/93 unchanged.
+First Blood, Blood Scent, Rage Through Pain, Slayer and Avatar of Rage remain
+missing. Broader control/status/save interactions and pre-existing hidden-enemy
+hero gaps are Phase2 findings. Purpose-made art remains Not done, generic UI
+Provisional. No rendered or immutable playable promotion is inferred.
+
 UP-143/144 Fury Unbound and Endless Bloodshed are implemented and active after
 principal66256 passes4/4, zero skips in1.559s. Legal War Drums->Fury->Endless
 offers open ordinary Advanced/Expert progression. Fury floors negative Morale
@@ -1225,9 +1239,9 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 177/310 | 133 planned; Fury Unbound and Endless Bloodshed are the newest source/native-verified activations. Active status alone does not certify every mechanic. |
+| Skill perks active | 179/310 | 131 planned; Unrelenting and Berserker are the newest source/native-verified activations. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
-| Faction perks active | 46/90 | 44 planned perks; Fury Unbound and Endless Bloodshed now open Bloodrage's Advanced/Expert progression. |
+| Faction perks active | 48/90 | 42 planned perks; Unrelenting and Berserker have live/detached threshold evidence. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
@@ -1253,8 +1267,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 177
-active perks, leaving nine ranks and 133 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 179
+active perks, leaving nine ranks and 131 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-10-02; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -1386,7 +1400,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Shroud of Malassa | 3/0 | 1/9 | Basic Backstab is active; the other nine perks remain planned. |
 | Demonic Gating | 3/0 | 10/0 | Evidence audit required |
 | Necromancy | 3/0 | 3/7 | Seven perks missing; one inert hook |
-| Bloodrage | 3/0 | 3/7 | War Drums, Fury Unbound and Endless Bloodshed have focused live/AI evidence and legal progression; seven perks remain missing. |
+| Bloodrage | 3/0 | 5/5 | War Drums, Fury Unbound, Endless Bloodshed, Unrelenting and Berserker have focused live/AI evidence and legal progression; five perks remain missing. |
 | Bulwark of the Mire | 3/0 | 9/1 | Nine perks are active in committed source; 53/53 native regressions pass; persistent Poison status builds and passes focused tests; Deep Bulwark and rendered/playable evidence remain open |
 | Elemental Rebirth | 0/3 | 0/10 | Ranks and progression missing |
 

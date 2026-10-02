@@ -24,6 +24,8 @@ DLL_LINKAGE int capForHero(const CGHeroInstance * hero);
 DLL_LINKAGE bool hasWarDrums(const CGHeroInstance * hero);
 DLL_LINKAGE bool hasFuryUnbound(const CGHeroInstance * hero);
 DLL_LINKAGE bool hasEndlessBloodshed(const CGHeroInstance * hero);
+DLL_LINKAGE bool hasUnrelenting(const CGHeroInstance * hero);
+DLL_LINKAGE bool hasBerserker(const CGHeroInstance * hero);
 DLL_LINKAGE int initialDamagePercent(const CGHeroInstance * hero);
 DLL_LINKAGE int advanceDamagePercent(const CGHeroInstance * hero, int currentPercent);
 }

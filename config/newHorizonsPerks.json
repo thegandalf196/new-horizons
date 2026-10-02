@@ -3789,7 +3789,7 @@
 					"requires": "advanced",
 					"description": "At half of the current Bloodrage cap or higher, friendly stacks gain +1 Speed.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "At half of the current Bloodrage cap or higher, friendly stacks gain +1 Speed."
 					}
 				},
@@ -3799,7 +3799,7 @@
 					"requires": "advanced",
 					"description": "At half of the current Bloodrage cap or higher, friendly stacks gain one additional retaliation.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "At half of the current Bloodrage cap or higher, friendly stacks gain one additional retaliation."
 					}
 				},

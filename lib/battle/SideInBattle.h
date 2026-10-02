@@ -163,6 +163,10 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	ReducedExtraActivationState reducedExtraActivation;
 	// Bloodrage's cap is resolved from the hero's saved skill/perks at battle setup.
 	int32_t bloodrageCapPercent = 0;
+	// Threshold perks are saved snapshots so player-scoped callbacks and detached AI
+	// can evaluate both sides without reading hidden enemy hero inventories.
+	int32_t bloodrageSpeedBonus = 0;
+	int32_t bloodrageAdditionalRetaliations = 0;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);

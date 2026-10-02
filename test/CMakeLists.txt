@@ -242,6 +242,7 @@ set(test_SRCS
 		server/battles/NewHorizonsNecromancyTest.cpp
 		server/battles/NewHorizonsBloodrageTest.cpp
 		server/battles/NewHorizonsBloodragePerksTest.cpp
+		server/battles/NewHorizonsBloodrageThresholdTest.cpp
 		server/battles/NewHorizonsDemonicGatingTest.cpp
 		server/battles/NewHorizonsBulwarkRulesTest.cpp
 		server/battles/NewHorizonsBulwarkRuntimeTest.cpp

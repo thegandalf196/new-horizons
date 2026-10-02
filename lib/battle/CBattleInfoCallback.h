@@ -120,6 +120,9 @@ public:
 	const battle::Unit * battleSelectCleaveTarget(const battle::Unit * attacker,
 		const battle::Unit * destroyed) const;
 	int battleFortuneSpeed(const battle::Unit * unit) const;
+	/// Threshold-based Bloodrage Speed and retaliation bonuses for the current controller.
+	int battleBloodrageSpeed(const battle::Unit * unit) const;
+	int battleBloodrageRetaliations(const battle::Unit * unit) const;
 	bool battleBeginsActivation(const battle::Unit * unit, BattleUnitTurnReason reason) const;
 	std::vector<uint32_t> battleFortuneAdjacentFriends(const battle::Unit * unit) const;
 	/// Expected luck damage used by the AI, without consuming RNG.

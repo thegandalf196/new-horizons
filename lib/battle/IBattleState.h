@@ -134,6 +134,8 @@ public:
 	virtual int32_t getBloodrageDamagePercent(BattleSide side) const { return 0; }
 	virtual int32_t getBloodrageRank(BattleSide side) const { return 0; }
 	virtual int32_t getBloodrageCapPercent(BattleSide side) const { return 0; }
+	virtual int32_t getBloodrageSpeedBonus(BattleSide side) const { return 0; }
+	virtual int32_t getBloodrageAdditionalRetaliations(BattleSide side) const { return 0; }
 	virtual SylvanLuckState getSylvanLuckState(BattleSide side) const { return {}; }
 	virtual AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const { (void)side; return {}; }
 	virtual MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const { (void)side; return {}; }

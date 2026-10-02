@@ -27,6 +27,8 @@ public:
 
 	virtual PlayerColor unitEffectiveOwner(const Unit * unit) const = 0;
 	virtual int unitFortuneSpeed(const Unit *) const { return 0; }
+	virtual int unitSpeedBonus(const Unit *) const { return 0; }
+	virtual int unitAdditionalRetaliations(const Unit *) const { return 0; }
 };
 
 class DLL_LINKAGE IUnitInfo

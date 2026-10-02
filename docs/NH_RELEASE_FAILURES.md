@@ -2,6 +2,32 @@
 
 ## Purpose
 
+### 2026-10-02 UP-143 — threshold fixture pre-build review
+
+Independent review caught the new threshold fixture using EGameSettings values
+without directly including GameSettings.h. Root adds that include before test
+registration. Preserve the existing direct-include convention rather than
+depending on transitive declarations. No failed native run is claimed from this
+source-only finding; build/native results are pending.
+Both-target fixture build54931 succeeds. Principal30137 runs6 cases:5 pass,
+1 fails, zero skips (`UP143-threshold-principal.log`/`.xml`). The detached
+casualty case reaches24 Bloodrage on both sides but the defender's Berserker
+query returns0 and allowance1 instead of1/2. Preserve the assertion and failure
+artifacts; investigate player-scoped proxy hero visibility before activation.
+Confirmed cause: BattleProxy's player-visible fighting-hero query returns null
+for the enemy side. Do not fix this by changing the test to a spectator or by
+exposing hidden heroes globally. Snapshot only resolved per-side threshold
+Speed/retaliation values and copy them through the battle-state interface.
+Current control still selects the benefiting side. Add explicit binary fields,
+bounded validation, lossy-downgrade rejection, and zero legacy defaults.
+Frozen repair rebuild46666 is live; first succeeding native rerun is pending.
+Rebuild46666 exits0 at635/635, linking both targets. First principal retry64160
+passes7/7 in2.554s, zero skips, including the unchanged enemy-AI case and new
+savecase. After activation, data36/36/module/UI source guard and both-target
+build pass; focused70764 passes31/31 in6.987s with zero skips. Original failure
+artifacts remain preserved. Broader enemy-hero visibility gaps are deferred,
+not globally bypassed by this repair.
+
 ### 2026-10-02 UP-143/144 — focused Bloodrage fixture review
 
 Before compilation, review catches an active-War-Drums baseline mistakenly

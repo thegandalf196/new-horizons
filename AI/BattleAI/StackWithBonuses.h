@@ -180,6 +180,11 @@ public:
 	bool unitHasAmmoCart(const battle::Unit * unit) const override;
 	PlayerColor unitEffectiveOwner(const battle::Unit * unit) const override;
 	int unitFortuneSpeed(const battle::Unit * unit) const override { return battleFortuneSpeed(unit); }
+	int unitSpeedBonus(const battle::Unit * unit) const override { return battleBloodrageSpeed(unit); }
+	int unitAdditionalRetaliations(const battle::Unit * unit) const override
+	{
+		return battleBloodrageRetaliations(unit);
+	}
 
 	std::shared_ptr<StackWithBonuses> getForUpdate(uint32_t id);
 
@@ -302,6 +307,8 @@ public:
 	int32_t getRound() const override;
 	int32_t getBloodrageDamagePercent(BattleSide side) const override;
 	int32_t getBloodrageCapPercent(BattleSide side) const override;
+	int32_t getBloodrageSpeedBonus(BattleSide side) const override;
+	int32_t getBloodrageAdditionalRetaliations(BattleSide side) const override;
 	SylvanLuckState getSylvanLuckState(BattleSide side) const override { return fortuneStates.at(side); }
 	void setSylvanLuckState(BattleSide side, const SylvanLuckState & state) { fortuneStates.at(side) = state; }
 	AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override
@@ -427,6 +434,8 @@ private:
 	BattleSideArray<int32_t> bloodrageRanks;
 	BattleSideArray<int32_t> bloodrageDamagePercents;
 	BattleSideArray<int32_t> bloodrageCaps;
+	BattleSideArray<int32_t> bloodrageSpeedBonuses;
+	BattleSideArray<int32_t> bloodrageAdditionalRetaliations;
 	std::set<uint32_t> bloodrageDestroyedUnits;
 	BattleSideArray<SylvanLuckState> fortuneStates;
 	BattleSideArray<AdverseCombatRerollState> adverseRerollStates;

@@ -450,6 +450,16 @@ int CStack::unitFortuneSpeed(const battle::Unit * unit) const
 	return battle->battleFortuneSpeed(unit);
 }
 
+int CStack::unitSpeedBonus(const battle::Unit * unit) const
+{
+	return battle->battleBloodrageSpeed(unit);
+}
+
+int CStack::unitAdditionalRetaliations(const battle::Unit * unit) const
+{
+	return battle->battleBloodrageRetaliations(unit);
+}
+
 uint32_t CStack::unitId() const
 {
 	return ID;

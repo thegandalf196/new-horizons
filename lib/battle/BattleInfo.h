@@ -63,6 +63,11 @@ public:
 	int32_t getBloodrageDamagePercent(BattleSide side) const override { return sides.at(side).bloodrageDamagePercent; }
 	int32_t getBloodrageRank(BattleSide side) const override { return sides.at(side).bloodrageRank; }
 	int32_t getBloodrageCapPercent(BattleSide side) const override { return sides.at(side).bloodrageCapPercent; }
+	int32_t getBloodrageSpeedBonus(BattleSide side) const override { return sides.at(side).bloodrageSpeedBonus; }
+	int32_t getBloodrageAdditionalRetaliations(BattleSide side) const override
+	{
+		return sides.at(side).bloodrageAdditionalRetaliations;
+	}
 	SylvanLuckState getSylvanLuckState(BattleSide side) const override { return sides.at(side).sylvanLuck; }
 	AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override
 	{
@@ -163,7 +168,11 @@ public:
 		const auto validBloodrageSnapshot = [](const SideInBattle & side)
 		{
 			if(side.bloodrageRank < 0 || side.bloodrageRank > 3
-				|| side.bloodrageDamagePercent < 0)
+				|| side.bloodrageDamagePercent < 0
+				|| side.bloodrageSpeedBonus < 0 || side.bloodrageSpeedBonus > 1
+				|| side.bloodrageAdditionalRetaliations < 0 || side.bloodrageAdditionalRetaliations > 1
+				|| (side.bloodrageRank < 2
+					&& (side.bloodrageSpeedBonus != 0 || side.bloodrageAdditionalRetaliations != 0)))
 				return false;
 			const auto baseCap = newHorizonsBloodrage::capForRank(side.bloodrageRank);
 			const auto extendedCap = newHorizonsBloodrage::capForRank(side.bloodrageRank, true);
@@ -238,6 +247,12 @@ public:
 					|| sides[BattleSide::DEFENDER].bloodrageCapPercent
 					!= newHorizonsBloodrage::capForRank(sides[BattleSide::DEFENDER].bloodrageRank)))
 				throw std::runtime_error("Cannot discard non-base Bloodrage cap in an older format");
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_BLOODRAGE_THRESHOLD_BONUSES)
+				&& (sides[BattleSide::ATTACKER].bloodrageSpeedBonus != 0
+					|| sides[BattleSide::DEFENDER].bloodrageSpeedBonus != 0
+					|| sides[BattleSide::ATTACKER].bloodrageAdditionalRetaliations != 0
+					|| sides[BattleSide::DEFENDER].bloodrageAdditionalRetaliations != 0))
+				throw std::runtime_error("Cannot discard Bloodrage threshold bonuses in an older format");
 		}
 		h & battleID;
 		h & sides;
@@ -264,6 +279,23 @@ public:
 				sides[BattleSide::DEFENDER].bloodrageCapPercent =
 					newHorizonsBloodrage::capForRank(sides[BattleSide::DEFENDER].bloodrageRank);
 			}
+			if(h.hasFeature(Handler::Version::NEW_HORIZONS_BLOODRAGE_THRESHOLD_BONUSES))
+			{
+				h & sides[BattleSide::ATTACKER].bloodrageSpeedBonus;
+				h & sides[BattleSide::DEFENDER].bloodrageSpeedBonus;
+				h & sides[BattleSide::ATTACKER].bloodrageAdditionalRetaliations;
+				h & sides[BattleSide::DEFENDER].bloodrageAdditionalRetaliations;
+			}
+			else if(!h.saving)
+			{
+				// Older formats predate these active mechanics. Preserve their behavior
+				// rather than reconstructing new benefits from current content settings.
+				for(auto & side : sides)
+				{
+					side.bloodrageSpeedBonus = 0;
+					side.bloodrageAdditionalRetaliations = 0;
+				}
+			}
 			if(!h.saving && (!validBloodrageSnapshot(sides[BattleSide::ATTACKER])
 				|| !validBloodrageSnapshot(sides[BattleSide::DEFENDER])))
 				throw std::runtime_error("Invalid saved Bloodrage rank, cap, or damage state");
@@ -276,6 +308,11 @@ public:
 			sides[BattleSide::DEFENDER].bloodrageRank = 0;
 			sides[BattleSide::ATTACKER].bloodrageCapPercent = 0;
 			sides[BattleSide::DEFENDER].bloodrageCapPercent = 0;
+			for(auto & side : sides)
+			{
+				side.bloodrageSpeedBonus = 0;
+				side.bloodrageAdditionalRetaliations = 0;
+			}
 			bloodrageDestroyedUnits.clear();
 		}
 		h & round;

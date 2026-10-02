@@ -546,6 +546,32 @@ int CBattleInfoCallback::battleFortuneSpeed(const battle::Unit * unit) const
 		? getBattle()->getSylvanLuckState(side).speedBonus(unit->unitId()) : 0;
 }
 
+int CBattleInfoCallback::battleBloodrageSpeed(const battle::Unit * unit) const
+{
+	if(!getBattle() || !unit || !unit->alive() || unit->isGhost())
+		return 0;
+	const auto side = playerToSide(battleGetOwner(unit));
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return 0;
+	const int cap = getBattle()->getBloodrageCapPercent(side);
+	const int damage = std::max(0, getBattle()->getBloodrageDamagePercent(side));
+	const int bonus = std::max(0, getBattle()->getBloodrageSpeedBonus(side));
+	return cap > 0 && static_cast<int64_t>(damage) * 2 >= cap ? bonus : 0;
+}
+
+int CBattleInfoCallback::battleBloodrageRetaliations(const battle::Unit * unit) const
+{
+	if(!getBattle() || !unit || !unit->alive() || unit->isGhost())
+		return 0;
+	const auto side = playerToSide(battleGetOwner(unit));
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return 0;
+	const int cap = getBattle()->getBloodrageCapPercent(side);
+	const int damage = std::max(0, getBattle()->getBloodrageDamagePercent(side));
+	const int bonus = std::max(0, getBattle()->getBloodrageAdditionalRetaliations(side));
+	return cap > 0 && static_cast<int64_t>(damage) * 2 >= cap ? bonus : 0;
+}
+
 bool CBattleInfoCallback::battleBeginsActivation(const battle::Unit * unit, BattleUnitTurnReason reason) const
 {
 	if(!unit || unit->isTimeStopped() || reason == BattleUnitTurnReason::ACTION_REJECTED

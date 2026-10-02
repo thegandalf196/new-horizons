@@ -145,6 +145,7 @@ CCasts::CCasts(const battle::Unit * Owner):
 CRetaliations::CRetaliations(const battle::Unit * Owner)
 	: CAmmo(Owner, Selector::type()(BonusType::ADDITIONAL_RETALIATION)),
 	totalCache(0),
+	env(nullptr),
 	noRetaliation(Owner, Selector::type()(BonusType::SIEGE_WEAPON).Or(Selector::type()(BonusType::NO_RETALIATION))),
 	unlimited(Owner, Selector::type()(BonusType::UNLIMITED_RETALIATIONS))
 {
@@ -163,7 +164,11 @@ int32_t CRetaliations::total() const
 	//after dispel bonus should remain during current round
 	int32_t val = 1 + totalProxy.getValue();
 	vstd::amax(totalCache, val);
-	return totalCache;
+	// Keep the ordinary, cached allowance separate so a live controller or
+	// Bloodrage threshold change can remove the derived retaliation immediately.
+	const auto additionalRetaliations = env ? env->unitAdditionalRetaliations(owner) : 0;
+	return static_cast<int32_t>(std::min<int64_t>(std::numeric_limits<int32_t>::max(),
+		static_cast<int64_t>(totalCache) + additionalRetaliations));
 }
 
 CRetaliations & CRetaliations::operator=(const CRetaliations & other)
@@ -178,6 +183,11 @@ void CRetaliations::reset()
 {
 	CAmmo::reset();
 	totalCache = 0;
+}
+
+void CRetaliations::setEnv(const IUnitEnvironment * env_)
+{
+	env = env_;
 }
 
 void CRetaliations::serializeJson(JsonSerializeFormat & handler)
@@ -1469,7 +1479,9 @@ int32_t CUnitState::getInitiative(int turn) const
 {
 	if(turn == 0 && hasBattleForm() && battleFormInitiativeSnapshotActive)
 		return battleFormInitiativeSnapshot;
-	const int64_t speed = stackSpeedPerTurn.getValue(turn) + (turn == 0 && env ? env->unitFortuneSpeed(this) : 0);
+	const int64_t speed = stackSpeedPerTurn.getValue(turn)
+		+ (turn == 0 && env ? env->unitFortuneSpeed(this) : 0)
+		+ (env ? env->unitSpeedBonus(this) : 0);
 	const int64_t baseInitiative = initiativeBasePresencePerTurn.getValue(turn)
 		? initiativeBasePerTurn.getValue(turn)
 		: speed;
@@ -1487,6 +1499,7 @@ ui32 CUnitState::getMovementRange(int turn) const
 
 	const int64_t movementRange = stackSpeedPerTurn.getValue(0) + movementRangePerTurn.getValue(0)
 		+ (env ? env->unitFortuneSpeed(this) : 0)
+		+ (env ? env->unitSpeedBonus(this) : 0)
 		+ (turn == 0 ? activationMovementBonus : 0);
 	return static_cast<ui32>(std::max<int64_t>(0, movementRange));
 }
@@ -1852,6 +1865,7 @@ void CUnitState::localInit(const IUnitEnvironment * env_)
 	env = env_;
 
 	shots.setEnv(env);
+	counterAttacks.setEnv(env);
 	reset();
 	health.init();
 }
