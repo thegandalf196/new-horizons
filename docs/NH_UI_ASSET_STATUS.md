@@ -46,9 +46,15 @@ referenced, not extracted, and remain Provisional pending in-game review.
 Litany's generic neutral fallback is Not done art. Mass Regeneration now reuses
 the purpose-made base Regeneration icon and its existing sound/animation refs;
 this is Provisional variant art, not a newly authored Mass icon. Communion's
-generic perk fallback remains Not done art. Distinct Mass Slow remains missing;
-no GUI or playable promotion is claimed. Current settings contain105 entries,
-101 enabled; this supersedes the104/100 source count in the earlier audit.
+generic perk fallback remains Not done art. Distinct Mass Slow now uses classic
+Slow icons, animation and sound by reference, with its distinct selectable name.
+Temporal Field's purpose-made Provisional icon remains bound. The old toggle
+dialog is suppressed only for profiles with the distinct entry; historical
+profiles retain it. Native grant/cast/AI evidence passes; actual selection and
+legibility still need in-game review. No GUI or playable promotion is claimed.
+Current settings contain106 entries,102 enabled; this supersedes the104/100
+source count in the earlier audit. Mass Slow art is Provisional, not new authored
+or approved variant art; no extracted original resources are redistributed.
 
 UP-064 main-menu branding: eight bounded HoMM3-skill reference-based subtitle
 patches cover the available Complete/Armageddon's Blade main, scenario-selection

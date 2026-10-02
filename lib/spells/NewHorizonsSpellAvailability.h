@@ -43,6 +43,11 @@ DLL_LINKAGE bool spellAllowedByBattleRoster(const CBattleInfoCallback & battle, 
 /// Older snapshots, inactive entries and entries without saved variant metadata
 /// retain their own identity; installed spell data never supplies a fallback.
 DLL_LINKAGE SpellID spellVariantBase(const JsonNode & rules, SpellID spell);
+/// Saved, validated variant magnitude; ordinary/old-profile spells return100.
+DLL_LINKAGE int spellVariantPowerPercent(const JsonNode & rules, SpellID spell);
+/// True only when the saved profile enables the distinct perk-granted Mass Slow.
+/// Profiles without that row retain the historical Temporal Field toggle.
+DLL_LINKAGE bool hasDistinctMassSlow(const JsonNode & rules);
 /// A variant is granted only by its saved active perk mapping and a physical
 /// Spellbook, with the corresponding base spell active in the saved roster.
 DLL_LINKAGE bool variantGrantAvailable(const JsonNode & rules,

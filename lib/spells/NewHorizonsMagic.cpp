@@ -679,7 +679,7 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		return {};
 
 	std::string result = spell->getDescriptionTranslated(schoolLevel);
-	if(hero && spell->getId() == SpellID::SLOW
+	if(hero && spellVariantBase(hero->getMagicRules(), spell->getId()) == SpellID::SLOW
 		&& rulesActive(hero->getMagicRules())
 		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
 		&& spellAllowedBySavedRoster(hero->getMagicRules(), spell->getId()))
@@ -694,20 +694,27 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		const int64_t powerReduction = spellPower * combinedCoefficientBasisPoints
 			/ (5LL * SPELL_POWER_COEFFICIENT_BASIS_POINTS);
 		const int initiativeReduction = std::min(50, 20 + static_cast<int>(powerReduction));
+		const int variantPower = spellVariantPowerPercent(rules, spell->getId());
+		const int displayedReduction = initiativeReduction * variantPower / 100;
 		constexpr std::array<std::string_view, 4> rankNames{"No rank", "Basic", "Advanced", "Expert"};
 		const auto rankName = rankNames.at(static_cast<size_t>(std::clamp(schoolRank,
 			static_cast<int>(MasteryLevel::NONE), static_cast<int>(MasteryLevel::EXPERT))));
 
-		result = "Target one enemy stack. Reduces Initiative only, not Speed or movement. Fixed base duration: "
+		result = std::string(variantPower == 60 ? "Affects every eligible enemy stack. " : "Target one enemy stack. ")
+			+ "Reduces Initiative only, not Speed or movement. Fixed base duration: "
 			+ std::to_string(SLOW_BASE_DURATION_ROUNDS) + " rounds before Temporalist, other Spell Duration bonuses, "
 			"and eligible cast-specific extensions. Current Sorcery rank: "
 			+ std::string(rankName) + " (School factor " + std::to_string(schoolCoefficientPercent)
 			+ "%, combined School and Spellcraft factor " + percentFromBasisPoints(combinedCoefficientBasisPoints)
 			+ "). Initiative reduction = min(50%, 20% + floor(Spell Power x combined coefficient / 5)); "
 			"current reduction before target-specific specialties at Spell Power "
-			+ std::to_string(spellPower) + ": " + std::to_string(initiativeReduction)
+			+ std::to_string(spellPower) + ": " + std::to_string(displayedReduction)
 			+ "%. This estimate excludes battle-only Warcasting and the Inferno defender's Brimstone Stormclouds "
 			"+20 Spell Power bonus, which can further affect the battle cast.";
+		if(variantPower == 60)
+			result += " Mass Slow applies 60% of the final ordinary Slow reduction after its cap and target-specific "
+				"specialties, rounded toward zero; duration is unchanged. Temporal Field grants this distinct spell, "
+				"without a once-per-combat limit. Its listed Mana cost is three times Slow before Wisdom.";
 	}
 	else if(hero && spell->getId() == SpellID::MISFORTUNE
 		&& rulesActive(hero->getMagicRules())
@@ -1155,7 +1162,9 @@ void validateRules(const JsonNode & rules)
 				"scoped variant Skill");
 			require(variant["perk"].isString() && variant["perk"].String().starts_with(variant["skill"].String() + '.'),
 				"variant perk belongs to Skill");
-			require(integer(variant["powerPercent"], 100, 100), "full-strength variant power percentage");
+			require(integer(variant["powerPercent"], 100, 100)
+				|| (integer(variant["powerPercent"], 60, 60) && variant["base"].String() == "core:slow"),
+				"full-strength variant or sixty-percent Slow power");
 			require(data["ordinaryAcquisition"].isBool() && !data["ordinaryAcquisition"].Bool(),
 				"perk variants cannot be ordinarily acquired");
 			const auto & base = rules["spells"][variant["base"].String()];

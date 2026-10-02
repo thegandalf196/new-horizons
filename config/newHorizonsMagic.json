@@ -938,6 +938,19 @@
 				3
 			]
 		},
+		"new-horizons:massSlow": {
+			"schools": ["new-horizons:sorcery"],
+			"level": 1,
+			"costs": [12, 12, 9, 9],
+			"active": true,
+			"ordinaryAcquisition": false,
+			"variant": {
+				"base": "core:slow",
+				"skill": "new-horizons:sorceryMagic",
+				"perk": "new-horizons:sorceryMagic.temporalField",
+				"powerPercent": 60
+			}
+		},
 		"core:sorrow": {
 			"schools": [
 				"new-horizons:shadow"

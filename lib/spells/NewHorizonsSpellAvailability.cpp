@@ -28,6 +28,7 @@ struct SavedSpellVariant
 	SpellID base;
 	std::string skill;
 	std::string perk;
+	int powerPercent;
 };
 
 const CSpell * commonHeroSpell(SpellID spell)
@@ -102,7 +103,8 @@ std::optional<SavedSpellVariant> savedV3ActiveVariant(const JsonNode & rules, Sp
 		|| perk == data.Struct().end() || !perk->second.isString()
 		|| powerPercent == data.Struct().end()
 		|| powerPercent->second.getType() != JsonNode::JsonType::DATA_INTEGER
-		|| powerPercent->second.Integer() != 100)
+		|| (powerPercent->second.Integer() != 100
+			&& !(powerPercent->second.Integer() == 60 && base->second.String() == "core:slow")))
 		return std::nullopt;
 
 	const auto & baseIdentity = base->second.String();
@@ -130,7 +132,8 @@ std::optional<SavedSpellVariant> savedV3ActiveVariant(const JsonNode & rules, Sp
 	if(!baseRow || !savedSpellRowIsActive(*baseRow) || baseRow->Struct().contains("variant"))
 		return std::nullopt;
 
-	return SavedSpellVariant{baseSpell, skillIdentity, perkIdentity};
+	return SavedSpellVariant{baseSpell, skillIdentity, perkIdentity,
+		static_cast<int>(powerPercent->second.Integer())};
 }
 }
 
@@ -224,6 +227,19 @@ SpellID spellVariantBase(const JsonNode & rules, SpellID spell)
 {
 	const auto variant = savedV3ActiveVariant(rules, spell);
 	return variant ? variant->base : spell;
+}
+
+int spellVariantPowerPercent(const JsonNode & rules, SpellID spell)
+{
+	const auto variant = savedV3ActiveVariant(rules, spell);
+	return variant ? variant->powerPercent : 100;
+}
+
+bool hasDistinctMassSlow(const JsonNode & rules)
+{
+	const SpellID spell(SpellID::decode("new-horizons:massSlow"));
+	const auto variant = savedV3ActiveVariant(rules, spell);
+	return variant && variant->base == SpellID::SLOW && variant->powerPercent == 60;
 }
 
 bool variantGrantAvailable(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell)

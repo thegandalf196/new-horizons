@@ -803,7 +803,8 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	if(selectiveDispel && (mode != Mode::HERO || owner->getId() != SpellID::DISPEL || !castingHero
 		|| !castingHero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.selectiveDispel")))
 		return adaptGenericProblem(problem);
-	if(massSlow && (mode != Mode::HERO || owner->getId() != SpellID::SLOW || !castingHero
+	if(massSlow && (newHorizonsMagic::hasDistinctMassSlow(savedRules)
+		|| mode != Mode::HERO || owner->getId() != SpellID::SLOW || !castingHero
 		|| !castingHero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalField")
 		|| casterSide == BattleSide::NONE || battle()->battleWasTemporalFieldUsed(casterSide)))
 		return adaptGenericProblem(problem);

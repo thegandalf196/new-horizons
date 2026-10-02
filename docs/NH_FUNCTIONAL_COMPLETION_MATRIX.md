@@ -14,6 +14,23 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-114's final distinct entry, Mass Slow, is active and native verified.
+Temporal Field grants the virtual entry without durable learning or a legacy
+once-per-combat limit. Saved-v3 Slow-family resolution covers60% post-cap/
+specialty magnitude, unchanged duration, triple listed cost before Wisdom and
+single-status refresh in both directions. Book/rank revocation, acquisition
+exclusion, immunity/Spell Lock, repeated casts and detached/live state pass.
+Client33547 and final both-target53442 exit0. Principal7002 passes22/22 in5.821s;
+activated47843 passes36/36 in9.512s, zero skips, including actual AI selection/
+accepted cast, legacy budget guards, Communion and Heavenly Gale. Data/schema/
+inventory34/34 and module check pass. Independent review has no blocker.
+Distinct variants4->5/5; active perks remain164/310 (Temporal Field already
+active); canonical combat identities remain60/67. No new persisted state or
+polling. Phase2 retains broader save/modifier and rendered interactions.
+No GUI or playable promotion. Next: Basic Light Sanctuary Keeper.
+Verified native binary SHA-256:
+`f1560bbd876638dbcaa94853ccdde671bfa558caf9d97955ceef90620a1eb765`.
+
 UP-114 Mass Regeneration/Verdant Communion is active and native verified.
 Virtual physical-book sources, living ally exclusions, triple costs, School
 rate snapshots, future-wound survivor healing, family refresh and already-mutated
@@ -942,7 +959,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
-| Distinct perk-granted Mass spell entries | 4/5 | Mass Curse/Sorrow, Bless and Regeneration have focused native evidence. Distinct Slow remains missing and its existing toggle is not a distinct spell entry. These five variants are additional to the 67 school-roster identities. |
+| Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |

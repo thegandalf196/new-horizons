@@ -181,11 +181,15 @@
 					"type": "object",
 					"required": ["base", "skill", "perk", "powerPercent"],
 					"additionalProperties": false,
+					"oneOf": [
+						{"properties": {"powerPercent": {"enum": [100]}}},
+						{"properties": {"powerPercent": {"enum": [60]}, "base": {"enum": ["core:slow"]}}}
+					],
 					"properties": {
 						"base": {"type": "string", "minLength": 1},
 						"skill": {"type": "string", "minLength": 1},
 						"perk": {"type": "string", "minLength": 1},
-						"powerPercent": {"type": "integer", "enum": [100]}
+						"powerPercent": {"type": "integer", "enum": [60, 100]}
 					}
 				}
 			}

@@ -255,6 +255,7 @@ set(test_SRCS
 		server/battles/NewHorizonsMassShadowTest.cpp
 		server/battles/NewHorizonsMassBlessTest.cpp
 		server/battles/NewHorizonsMassRegenerationTest.cpp
+		server/battles/NewHorizonsMassSlowTest.cpp
 		server/battles/NewHorizonsLifeDrainTest.cpp
 		server/battles/NewHorizonsVampirismTest.cpp
 		server/battles/NewHorizonsReanimateTest.cpp

@@ -203,13 +203,16 @@ function Script:convertBonuses(mechanics)
 end
 
 function Script:applyTemporalFieldScale(mechanics, buffer, spellKey)
-	if not mechanics:isMassSlow() or spellKey ~= SLOW_SPELL then return end
+	if spellKey ~= SLOW_SPELL then return end
+	local powerPercent = mechanics:isMassSlow() and 60 or mechanics:getVariantPowerPercent()
+	if powerPercent >= 100 then return end
 	for _, nb in pairs(buffer) do
-		-- Apply after every target-specific hero specialty so Temporal Field is
-		-- exactly 60% of the ordinary Slow magnitude that target would receive.
-		-- Slow values are negative; ceil preserves the sign while rounding the
-		-- reduced magnitude toward zero.
-		nb.val = math.ceil((nb.val or 0) * 60 / 100)
+		if nb.type == "STACKS_INITIATIVE" and (nb.val or 0) < 0 then
+			-- Apply after every target-specific hero specialty so Mass Slow is the
+			-- saved variant percentage of the ordinary Initiative penalty for this
+			-- target. Ceil rounds a negative reduction toward zero.
+			nb.val = math.ceil(nb.val * powerPercent / 100)
+		end
 	end
 end
 
@@ -582,6 +585,11 @@ function Script:apply(mechanics, server, target)
 		local refreshedType = nil
 		if spellKey == DIVINE_RETRIBUTION_SPELL then
 			refreshedType = "DIVINE_RETRIBUTION"
+		elseif spellKey == SLOW_SPELL and mechanics:usesNewHorizonsMagicV3() then
+			-- Ordinary Slow and its distinct Mass entry share one saved-v3
+			-- Initiative penalty. Replace the family marker for live and detached
+			-- AI units; v1/v2 profiles retain their existing refresh behavior.
+			refreshedType = "STACKS_INITIATIVE"
 		elseif spellKey == "core:bless" and mechanics:usesNewHorizonsMagicV3() then
 			-- Ordinary Bless and its perk-granted Mass entry share one status.
 			-- Replace the family marker explicitly, including detached AI units.

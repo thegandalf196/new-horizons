@@ -58,6 +58,7 @@
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/effects/Effect.h"
@@ -721,6 +722,8 @@ void BattleInterface::installTemporalFieldUI()
 			if(!callback || !callback->getBattle() || !hero || !spell
 				|| !hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalField"))
 				return std::nullopt;
+			if(newHorizonsMagic::hasDistinctMassSlow(callback->getBattle()->getMagicRules()))
+				return std::nullopt;
 
 			const auto casterSide = callback->battleGetMySide();
 			if(casterSide == BattleSide::NONE)
@@ -788,6 +791,8 @@ void BattleInterface::installTemporalFieldUI()
 				const auto * hero = currentHero();
 				if(!callback || !callback->getBattle() || !hero || !spell
 					|| !hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalField"))
+					return false;
+				if(newHorizonsMagic::hasDistinctMassSlow(callback->getBattle()->getMagicRules()))
 					return false;
 
 				const auto side = callback->battleGetMySide();

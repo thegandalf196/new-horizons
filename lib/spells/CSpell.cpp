@@ -15,11 +15,13 @@
 #include "SpellSchoolHandler.h"
 #include "ISpellMechanics.h"
 #include "NewHorizonsMagic.h"
+#include "NewHorizonsSpellAvailability.h"
 #include "NewHorizonsSorcery.h"
 #include "MagicalDamageReduction.h"
 
 #include "../CBonusTypeHandler.h"
 #include "../battle/CBattleInfoCallback.h"
+#include "../battle/IBattleState.h"
 #include "../battle/Unit.h"
 #include "../bonuses/BonusSelector.h"
 #include "../GameLibrary.h"
@@ -146,6 +148,7 @@ spells::BattleCast event(cb, caster, mode, this);
 	// targeting finds no valid stack (for example, only an enemy buff exists).
 	const auto * hero = mode == spells::Mode::HERO ? caster->getHeroCaster() : nullptr;
 	if(id == SpellID::SLOW && hero
+		&& cb->getBattle() && !newHorizonsMagic::hasDistinctMassSlow(cb->getBattle()->getMagicRules())
 		&& hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalField"))
 	{
 		spells::BattleCast massEvent(cb, caster, mode, this);

@@ -2,6 +2,50 @@
 
 ## Purpose
 
+### 2026-10-02 UP-114 Mass Slow — pre-native family refresh correction
+
+Root inspection and independent review found that generic timed refresh updated
+only duration, retaining the previous Slow magnitude. This would preserve a
+full-strength penalty after Mass Slow or a weakened penalty after ordinary Slow.
+Added explicit saved-v3 `STACKS_INITIATIVE` family replacement. V1/v2 refresh
+is unchanged; historical v3 profiles retain their toggle and budget but also
+receive the magnitude-refresh fix. Require detached and authoritative evidence in both
+directions before activation. Client33547 exits0; data/schema/inventory34/34 pass.
+These gates alone do not establish native or playable acceptance.
+Both-target64419 exits0. Principal26295 completes17/22 in5.891s, zero skips.
+Five new actual-cast assertions reject (including base Slow and the historical
+toggle); detached magnitude and targeting checks pass, and all eleven existing
+legacy fixture cases pass. Diagnose the new fixture's active-player/roster setup
+before attributing this to the variant runtime. Activation remains gated.
+The fastest defender Griffin owned the active turn; BattleActionProcessor's
+owner gate correctly rejected attacker Hero Actions. Fixture now activates and
+asserts its friendly owner after combat start and one-packet round advances.
+No production validation was weakened, and rejection tests use the same setup.
+Repaired both-target38775 exits0; native35996 completes21/22 in5.841s.
+Only reverse refresh's detached assertions fail (-36/2 instead of -60/3);
+the actual accepted cast restores -60/3 correctly. Check whether the fixture
+retained the live unit pointer before detached cast materialization. Do not
+weaken the forecast expectation or activate until its actual state is verified.
+Forecast build46894 exits0; principal7002 passes22/22 in5.821s after querying
+the post-cast detached units by ID. Activated build63474 exits0; native7462
+passes27/30 in8.003s. Two historical AI fixtures omitted Basic Temporalist;
+repair their prerequisites without weakening progression. The new AI cannot
+select Mass Slow because two Initiative valuation checks still use the base ID,
+and only the legacy toggle normalizes empty forecast targets. Resolve the saved
+family for Slow valuation and use massive mechanics for the no-location sentinel.
+Require real AI selection and accepted server cast before coverage closure.
+Independent review caught a normalization interaction before the final run:
+Heavenly Gale's untargeted admission checked the normalized destination vector,
+which is now nonempty by protocol. It now checks the original candidate target;
+include its focused AI test in the activated gate. Other destination checks
+were inspected and remain valid. Preserve this finding rather than silently
+claiming broad compatibility from the Mass Slow-only fixture.
+Final both-target53442 exits0. Activated47843 passes36/36 in9.512s, zero skips,
+including real distinct Mass Slow selection/server acceptance, historical AI,
+Communion and all five Heavenly Gale AI guards. Principal7002 passes22/22.
+Independent final review has no remaining blocker. Data/schema/inventory34/34
+and module drift check pass. Source/native evidence only; no GUI or promotion.
+
 ### 2026-10-02 UP-114 Mass Regeneration — pre-build correction
 
 Independent review caught an escaped apostrophe in the new AI fixture's

@@ -333,6 +333,7 @@ class NewHorizonsMagicAITest : public HeroCommandFixture
 {
 protected:
 	bool useCurrentMagicRules = false;
+	bool useLegacyTemporalField = false;
 	bool useLegacyMagicRules = false;
 	bool useRealHeroScale = false;
 	bool neutralizeCommandEffects = false;
@@ -353,9 +354,11 @@ protected:
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, legacyMagicRules(savedMagicRulesVersion));
 		else if(useSavedV3Formula)
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, savedV3FormulaRules());
-		else if(useCurrentMagicRules)
+		else if(useCurrentMagicRules || useLegacyTemporalField)
 		{
 			JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+			if(useLegacyTemporalField)
+				rules["spells"].Struct().erase("new-horizons:massSlow");
 			if(historicalCounterspell)
 				rules["spells"]["new-horizons:counterspell"].Struct().erase("active");
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
@@ -3211,6 +3214,7 @@ TEST_F(NewHorizonsMagicAITest, SelectiveDispelPreservesBeneficialEffectWhenFullD
 TEST_F(NewHorizonsMagicAITest, TemporalFieldAIChoosesMassSlowWithoutMutatingLiveBattle)
 {
 	useCommands = false;
+	useLegacyTemporalField = true;
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
 	for(const auto spell : knownSpells)
@@ -3218,6 +3222,8 @@ TEST_F(NewHorizonsMagicAITest, TemporalFieldAIChoosesMassSlowWithoutMutatingLive
 	attackerSideHero->addSpellToSpellbook(SpellID::SLOW);
 	const auto sorcery = SecondarySkill::decode("new-horizons:sorceryMagic");
 	ASSERT_GE(sorcery, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalist"});
 	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), 2, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->applyPerkSelection({
 		"new-horizons:sorceryMagic",
@@ -3278,6 +3284,75 @@ TEST_F(NewHorizonsMagicAITest, TemporalFieldAIChoosesMassSlowWithoutMutatingLive
 	EXPECT_FALSE(enemyB->hasBonus(slowEffect));
 	EXPECT_FALSE(enemyC->hasBonus(slowEffect));
 	EXPECT_FALSE(enemyD->hasBonus(slowEffect));
+}
+
+TEST_F(NewHorizonsMagicAITest, TemporalFieldAISelectsDistinctMassSlowAndServerAcceptsIt)
+{
+	useCurrentMagicRules = true;
+	useSavedPerkRules = true;
+	neutralizeCommandEffects = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const SpellID massSlow(SpellID::decode("new-horizons:massSlow"));
+	ASSERT_NE(massSlow, SpellID::NONE);
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	const auto sorcery = SecondarySkill::decode("new-horizons:sorceryMagic");
+	ASSERT_GE(sorcery, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalist"});
+	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalField"});
+	ASSERT_TRUE(attackerSideHero->canCastThisSpell(massSlow.toSpell()));
+	setTestSpellPointTotal(attackerSideHero, 1000);
+
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(2, 5), 1);
+	std::vector<CStack *> enemies;
+	for(const auto hex : {BattleHex(10, 5), BattleHex(12, 5), BattleHex(14, 5), BattleHex(10, 7)})
+		enemies.push_back(addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), hex, 1000));
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -active->getMovementRange();
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed = true;
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	const auto slowEffect = Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::SLOW)));
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto action = callback->submitted.front();
+	EXPECT_EQ(action.actionType, EActionType::HERO_SPELL);
+	EXPECT_EQ(action.spell, massSlow);
+	EXPECT_FALSE(action.spellMassSlow);
+	ASSERT_EQ(action.target.size(), 1u);
+	EXPECT_FALSE(action.target.front().hexValue.isValid());
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(massSlow));
+	for(const auto * enemy : enemies)
+		EXPECT_FALSE(enemy->hasBonus(slowEffect));
+	const auto expectedCost = battle()->battleGetSpellCost(massSlow.toSpell(), attackerSideHero);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - expectedCost);
+	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed);
+	for(const auto * enemy : enemies)
+		EXPECT_TRUE(enemy->hasBonus(slowEffect));
+	EXPECT_FALSE(active->hasBonus(slowEffect));
 }
 
 TEST_F(NewHorizonsMagicAITest, CureAISelectsAndSubmitsAValidAfflictionThroughHypotheticalCastEvaluation)
@@ -3681,6 +3756,7 @@ TEST_F(NewHorizonsMagicAITest, RegenerationForecastConsumesMarksOnceAndSkipsDeni
 TEST_F(NewHorizonsMagicAITest, TemporalFieldAIRespectsConsumedBudget)
 {
 	useCommands = false;
+	useLegacyTemporalField = true;
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
 	for(const auto spell : knownSpells)
@@ -3688,6 +3764,8 @@ TEST_F(NewHorizonsMagicAITest, TemporalFieldAIRespectsConsumedBudget)
 	attackerSideHero->addSpellToSpellbook(SpellID::SLOW);
 	const auto sorcery = SecondarySkill::decode("new-horizons:sorceryMagic");
 	ASSERT_GE(sorcery, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalist"});
 	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), 2, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->applyPerkSelection({
 		"new-horizons:sorceryMagic",

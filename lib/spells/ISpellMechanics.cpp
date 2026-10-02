@@ -759,7 +759,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 				? newHorizonsMagic::spellVariantBase(battleState->getMagicRules(), owner->getId())
 				: owner->getId();
 			const bool v3Slow = mode == Mode::HERO && heroCaster && battleState
-				&& owner->getId() == SpellID::SLOW
+				&& familyID == SpellID::SLOW
 				&& newHorizonsMagic::rulesActive(battleState->getMagicRules())
 				&& battleState->getMagicRules()["rulesetVersion"].Integer()
 					== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;

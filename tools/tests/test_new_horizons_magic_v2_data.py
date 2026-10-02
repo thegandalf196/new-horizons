@@ -60,15 +60,17 @@ class MagicV2DataTest(unittest.TestCase):
 
     def test_mass_variants_preserve_base_school_level_and_triple_cost(self):
         validator = Draft4Validator(self.v3, registry=self.registry)
-        for variant_id, base_id, skill_id, perk_id, active in (
+        for variant_id, base_id, skill_id, perk_id, active, power_percent in (
                 ('new-horizons:massBless', 'core:bless',
-                 'new-horizons:lightMagic', 'new-horizons:lightMagic.litany', True),
+                 'new-horizons:lightMagic', 'new-horizons:lightMagic.litany', True, 100),
                 ('new-horizons:massCurse', 'core:curse',
-                 'new-horizons:shadowMagic', 'new-horizons:shadowMagic.grandMalediction', True),
+                 'new-horizons:shadowMagic', 'new-horizons:shadowMagic.grandMalediction', True, 100),
                 ('new-horizons:massSorrow', 'core:sorrow',
-                 'new-horizons:shadowMagic', 'new-horizons:shadowMagic.grandMalediction', True),
+                 'new-horizons:shadowMagic', 'new-horizons:shadowMagic.grandMalediction', True, 100),
                 ('new-horizons:massRegeneration', 'new-horizons:regeneration',
-                 'new-horizons:natureMagic', 'new-horizons:natureMagic.verdantCommunion', True)):
+                 'new-horizons:natureMagic', 'new-horizons:natureMagic.verdantCommunion', True, 100),
+                ('new-horizons:massSlow', 'core:slow',
+                 'new-horizons:sorceryMagic', 'new-horizons:sorceryMagic.temporalField', True, 60)):
             with self.subTest(variant=variant_id):
                 row = self.v3_rules['spells'][variant_id]
                 base = self.v3_rules['spells'][base_id]
@@ -79,12 +81,57 @@ class MagicV2DataTest(unittest.TestCase):
                 self.assertFalse(row['ordinaryAcquisition'])
                 self.assertEqual(row['variant'], {
                     'base': base_id, 'skill': skill_id,
-                    'perk': perk_id, 'powerPercent': 100,
+                    'perk': perk_id, 'powerPercent': power_percent,
                 })
-                for invalid in (None, 60, 101, '100'):
+                for invalid in (None, 101, '100', True):
                     changed = copy.deepcopy(self.v3_rules)
                     changed['spells'][variant_id]['variant']['powerPercent'] = invalid
                     self.assertFalse(validator.is_valid(changed))
+                changed = copy.deepcopy(self.v3_rules)
+                if variant_id == 'new-horizons:massSlow':
+                    changed['spells'][variant_id]['variant']['base'] = 'core:bless'
+                else:
+                    changed['spells'][variant_id]['variant']['powerPercent'] = 60
+                self.assertFalse(validator.is_valid(changed))
+
+    def test_mass_slow_reuses_base_slow_effects_and_art(self):
+        variants = load('Mods/new-horizons/Content/config/spells/massVariants.json')
+        timed_spells = load('config/spells/timed.json')
+        mass_slow = variants['massSlow']
+        slow = timed_spells['slow']
+
+        self.assertEqual(mass_slow['animation'], slow['animation'])
+        self.assertEqual(mass_slow['sounds'], slow['sounds'])
+        self.assertEqual(mass_slow['graphics'], {
+            'iconBook': 'SPELLS.def:0:54',
+            'iconScroll': 'SPELLSCR.def:0:54',
+            'iconEffect': 'SPELLINT.def:0:55',
+            'iconImmune': 'SPELLINT.def:0:55',
+            'iconScenarioBonus': 'SPELLBON.def:0:54',
+        })
+        self.assertEqual(mass_slow['counters'], slow['counters'])
+        self.assertEqual(mass_slow['flags'], slow['flags'])
+        self.assertEqual(mass_slow['targetCondition'], slow['targetCondition'])
+
+        for rank, source_rank, cost in (
+                ('none', 'base', 12), ('basic', 'base', 12),
+                ('advanced', 'advanced', 9), ('expert', 'expert', 9)):
+            with self.subTest(rank=rank):
+                level = mass_slow['levels'][rank]
+                expected_effects = copy.deepcopy(slow['levels']['base']['effects'])
+                for effect_name, patch in slow['levels'][source_rank].get('effects', {}).items():
+                    expected_effects[effect_name].update(patch)
+                self.assertEqual(level['range'], 'X')
+                self.assertEqual(level['cost'], cost)
+                self.assertEqual(level['effects'], expected_effects)
+                self.assertEqual(level['targetModifier'], {'smart': True})
+                self.assertIn('60% of the final Initiative reduction ordinary Slow produces',
+                              level['description'])
+                self.assertIn('after rank, caps, and specialties', level['description'])
+                self.assertIn('duration is unchanged', level['description'])
+                self.assertIn('Granted only by Temporal Field', level['description'])
+                self.assertIn('three times Slow\'s listed Mana before Wisdom',
+                              level['description'])
 
     def test_mass_regeneration_reuses_base_effect_and_resources(self):
         variants = load('Mods/new-horizons/Content/config/spells/massVariants.json')

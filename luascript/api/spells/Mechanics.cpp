@@ -140,6 +140,17 @@ int32_t MechanicsProxy::getBattleRound(const spells::Mechanics & m)
 	return battle ? battle->battleGetRound() : -1;
 }
 
+int MechanicsProxy::getVariantPowerPercent(const spells::Mechanics & m)
+{
+	const auto * callback = m.battle();
+	const auto * battleState = callback ? callback->getBattle() : nullptr;
+	if(!battleState)
+		return 100;
+
+	return newHorizonsMagic::spellVariantPowerPercent(
+		battleState->getMagicRules(), m.getSpellId());
+}
+
 int MechanicsProxy::getBlinkPreview(lua_State * L)
 {
 	LuaStack S(L);
@@ -227,6 +238,8 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"Returns the rounded raw Storm of Daggers total before target-specific resistance or mitigation.");
 	R.method<&Mechanics::getEffectDuration>("getEffectDuration", {},
 		"Returns the effect duration in turns.");
+	R.function<&MechanicsProxy::getVariantPowerPercent>("getVariantPowerPercent", {},
+		"Returns the saved power percentage for this cast's validated Spell variant, or 100% for ordinary and legacy spells.");
 	R.function<&MechanicsProxy::getBattleRound>("getBattleRound", {},
 		"Returns the current battle round, or -1 when the cast has no battle context.");
 	R.cfunction<&MechanicsProxy::getBlinkPreview>("getBlinkPreview",

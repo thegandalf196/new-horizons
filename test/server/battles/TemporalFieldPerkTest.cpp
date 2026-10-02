@@ -37,8 +37,9 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
-		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		JsonNode legacyMagicRules(JsonPath::builtin("config/newHorizonsMagic"));
+		legacyMagicRules["spells"].Struct().erase("new-horizons:massSlow");
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, legacyMagicRules);
 	}
 
 	void prepare(bool selectPerk, int mana = 100, int rank = 2, int spellPower = 50)

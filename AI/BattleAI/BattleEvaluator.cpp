@@ -4162,6 +4162,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		const bool canUseSelectiveDispel = spell->getId() == SpellID::DISPEL
 			&& hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.selectiveDispel");
 		const bool canUseTemporalField = spell->getId() == SpellID::SLOW
+			&& !newHorizonsMagic::hasDistinctMassSlow(cb->getBattle(battleID)->getBattle()->getMagicRules())
 			&& hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalField")
 			&& !cb->getBattle(battleID)->battleWasTemporalFieldUsed(side);
 		std::vector<SpellID> cureAfflictionChoices{SpellID::NONE};
@@ -4228,7 +4229,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						// cast too: BattleSpellMechanics::castEval intentionally rejects
 						// an entirely empty aim, while mass effects use the invalid
 						// destination to collect every eligible unit.
-						if(massSlow && ps.dest.empty())
+						if(candidateMechanics->isMassive() && ps.dest.empty())
 							ps.dest.emplace_back(BattleHex::INVALID);
 						ps.spell = spell;
 						ps.metamagicFollowup = metamagicFollowup;
@@ -4395,7 +4396,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 								|| ps.dest.front().unitValue->unitSide() != side)
 								continue;
 						}
-						if(isCanonicalHeavenlyGale(spell) && !ps.dest.empty())
+						if(isCanonicalHeavenlyGale(spell) && !target.empty())
 							continue;
 						if(isCanonicalGuardianSpirit(spell)
 							&& (ps.dest.size() != 1 || !ps.dest.front().unitValue
@@ -5107,6 +5108,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				const bool phantomArmy = isPhantomArmy(ps.spell);
 				const bool summonTrolls = isCanonicalSummonTrolls(ps.spell);
 				const bool verdantPrison = isCanonicalVerdantPrison(ps.spell);
+				const bool slowFamily = ps.spell
+					&& newHorizonsMagic::spellVariantBase(state->getMagicRules(), ps.spell->getId()) == SpellID::SLOW;
 
 				auto needFullEval = ps.command == HeroCommand::FOCUS_FIRE
 					|| state->hasObstacleChanges() || state->hasWallChanges()
@@ -5116,7 +5119,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						return !original || u->getMovementRange() != original->getMovementRange()
 							|| (u->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)
 								!= original->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE))
-							|| (ps.spell && ps.spell->getId() == SpellID::SLOW
+							|| (slowFamily
 								&& u->getInitiative() != original->getInitiative())
 							|| u->getPosition() != original->getPosition()
 							|| u->alive() != original->alive() || u->isGhost() != original->isGhost();
@@ -5374,7 +5377,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 								/ static_cast<float>(maxHealth);
 						}
 					}
-					if(ps.spell && ps.spell->getId() == SpellID::SLOW
+					if(slowFamily
 						&& original && original->alive() && unit->alive())
 					{
 						const int oldInitiative = std::max(1, original->getInitiative());
