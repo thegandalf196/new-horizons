@@ -2,6 +2,18 @@
 
 ## Purpose
 
+### 2026-10-02 UP-124 and Windows36994237037 — build gates
+
+UP-124 local build exited1 before compilation: CMake's curated Muster text
+allowlist omitted the three new external-dwelling keys, although the generator
+correctly included them. Add the same keys to the CMake comparison; do not
+disable drift validation. Principal build/native evidence remains pending.
+Windows full run36994237037 on6ca967db6 passed preflight but failed compiling
+NewHorizonsDiscipline.cpp: MSVC parsed the parenthesized static BonusSourceID
+declaration as a function (C2751/C2267). Use brace initialization to remove
+the ambiguity without changing the bonus source identity. No Windows package
+was produced. A succeeding target run is still required; retain this failure.
+
 ### 2026-10-02 UP-120 — Spellward pre-build integration corrections
 
 Read-only mapping rejected static original-army bonus inheritance: Hypnotize

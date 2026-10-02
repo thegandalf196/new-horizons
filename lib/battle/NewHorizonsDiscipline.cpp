@@ -15,8 +15,8 @@ namespace
 {
 BonusSourceID disciplineSkillSource()
 {
-	static const BonusSourceID source(SecondarySkill(SecondarySkill::decode(
-		std::string(newHorizonsDiscipline::SKILL))));
+	static const BonusSourceID source{SecondarySkill{SecondarySkill::decode(
+		std::string(newHorizonsDiscipline::SKILL))}};
 	return source;
 }
 }
