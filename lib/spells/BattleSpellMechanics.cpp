@@ -59,10 +59,22 @@ bool isLivingPhysicalPoisonTarget(const battle::Unit * unit)
 	return isLivingCureTarget(unit);
 }
 
+SpellID newHorizonsRegenerationSpellId()
+{
+	static const SpellID regenerationSpell(SpellID::decode(std::string(newHorizonsMagic::NATURE_REGENERATION_SPELL)));
+	return regenerationSpell;
+}
+
 bool isNewHorizonsRegenerationSpell(const CSpell * spell, const JsonNode & savedRules)
 {
-	return spell && spell->getJsonKey() == newHorizonsMagic::NATURE_REGENERATION_SPELL
+	return spell && newHorizonsMagic::spellVariantBase(savedRules, spell->getId()) == newHorizonsRegenerationSpellId()
 		&& newHorizonsMagic::spellAllowedBySavedRoster(savedRules, spell->getId());
+}
+
+bool isNewHorizonsMassRegenerationSpell(const CSpell * spell, const JsonNode & savedRules)
+{
+	return isNewHorizonsRegenerationSpell(spell, savedRules)
+		&& newHorizonsMagic::spellVariantBase(savedRules, spell->getId()) != spell->getId();
 }
 
 bool isNewHorizonsLifeDrainSpell(const CSpell * spell, const JsonNode & savedRules)
@@ -96,9 +108,50 @@ bool hasRegenerationMarker(const battle::Unit * unit)
 {
 	if(!unit)
 		return false;
-	static const SpellID regenerationSpell(SpellID::decode(std::string(newHorizonsMagic::NATURE_REGENERATION_SPELL)));
-	return unit->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(regenerationSpell))
+	return unit->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(newHorizonsRegenerationSpellId()))
 		.And(Selector::type()(BonusType::HP_REGENERATION)));
+}
+
+int32_t newHorizonsRegenerationRate(const BattleSpellMechanics & mechanics)
+{
+	const auto * hero = mechanics.getHeroCaster();
+	const bool herbalist = hero && hero->hasActivePerk(
+		std::string(newHorizonsMagic::NATURE_MAGIC_SKILL),
+		std::string(newHorizonsMagic::NATURE_HERBALIST));
+	return newHorizonsMagic::regenerationRateMillionthsBasisPoints(
+		std::max<int32_t>(0, mechanics.getEffectPower()), mechanics.getSpellPowerCoefficientBasisPoints(),
+		herbalist, mechanics.getWarcastingBonusPercent(), mechanics.getEmpowerSpellBonusPercent());
+}
+
+void applyRegenerationRateSnapshot(ServerCallback * server, const CBattleInfoCallback * battle,
+	const battle::Units & affectedUnits, const int32_t regenerationRate)
+{
+	if(!server || !battle)
+		return;
+
+	std::set<uint32_t> affectedUnitIds;
+	for(const auto * unit : affectedUnits)
+		if(unit)
+			affectedUnitIds.insert(unit->unitId());
+
+	for(const auto unitId : affectedUnitIds)
+	{
+		const auto * unit = battle->battleGetUnitByID(unitId);
+		if(!unit || !hasRegenerationMarker(unit))
+			continue;
+
+		auto state = unit->acquireState();
+		if(!state)
+			continue;
+		state->regenerationRateMillionths = regenerationRate;
+
+		UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
+		update.data = state->save();
+		BattleUnitsChanged changed;
+		changed.battleID = battle->getBattle()->getBattleID();
+		changed.changedStacks.push_back(std::move(update));
+		server->apply(changed);
+	}
 }
 
 bool isSpellLocked(const battle::Unit * unit)
@@ -113,6 +166,15 @@ bool isSpellLocked(const battle::Unit * unit)
 		return bonus && bonus->type == BonusType::MAGIC_RESISTANCE
 			&& Bonus::NTurns(bonus.get()) && bonus->turnsRemain > 0;
 	});
+}
+
+void filterMassRegenerationTargets(effects::Effects::EffectsToApply & effectsToApply)
+{
+	for(auto & effect : effectsToApply)
+		vstd::erase_if(effect.second, [](const Destination & destination)
+		{
+			return !isRegenerationTarget(destination.unitValue);
+		});
 }
 
 class EffectPacketRecorder final : public ServerCallback
@@ -620,6 +682,13 @@ BattleSpellMechanics::~BattleSpellMechanics() = default;
 void BattleSpellMechanics::applyEffects(ServerCallback * server, const Target & targets, bool indirect, bool ignoreImmunity) const
 {
 	Target unlockedTargets = targets;
+	const auto * battleState = battle() ? battle()->getBattle() : nullptr;
+	if(battleState && isNewHorizonsMassRegenerationSpell(owner, battleState->getMagicRules()))
+		vstd::erase_if(unlockedTargets, [](const Destination & destination)
+		{
+			return !isRegenerationTarget(destination.unitValue);
+		});
+
 	if(isMagicalEffect())
 	{
 		const auto targetTypes = getTargetTypes();
@@ -996,6 +1065,8 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		&& newHorizonsMagic::physicalPoisonEnabled(battle()->getBattle()->getMagicRules(), owner->getId());
 	const bool newHorizonsRegeneration = isNewHorizonsRegenerationSpell(owner,
 		battle()->getBattle()->getMagicRules());
+	const bool newHorizonsMassRegeneration = isNewHorizonsMassRegenerationSpell(owner,
+		battle()->getBattle()->getMagicRules());
 	const bool newHorizonsLifeDrain = isNewHorizonsLifeDrainSpell(owner,
 		battle()->getBattle()->getMagicRules());
 	const bool newHorizonsBlink = isNewHorizonsBlinkSpell(owner);
@@ -1167,7 +1238,11 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 	}
 	if(newHorizonsRegeneration)
 	{
-		if(mode != Mode::HERO || target.size() != 1 || spellTarget.size() != 1)
+		if(mode != Mode::HERO)
+			return false;
+		if(newHorizonsMassRegeneration)
+			return isMassive() && !target.empty();
+		if(target.size() != 1 || spellTarget.size() != 1)
 			return false;
 		const auto * regenerationTarget = spellTarget.front().unitValue;
 		if(!isRegenerationTarget(regenerationTarget)
@@ -1233,6 +1308,8 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 std::vector<const CStack *> BattleSpellMechanics::getAffectedStacks(const Target & target) const
 {
 	Target spellTarget = transformSpellTarget(target);
+	const bool newHorizonsMassRegeneration = isNewHorizonsMassRegenerationSpell(owner,
+		battle()->getBattle()->getMagicRules());
 
 	Target all;
 
@@ -1246,6 +1323,8 @@ std::vector<const CStack *> BattleSpellMechanics::getAffectedStacks(const Target
 
 	for(const Destination & dest : all)
 	{
+		if(newHorizonsMassRegeneration && !isRegenerationTarget(dest.unitValue))
+			continue;
 		if(dest.unitValue && !dest.unitValue->isInvincible()
 			&& (!isMagicalEffect() || !isSpellLocked(dest.unitValue)))
 		{
@@ -1479,32 +1558,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 			p.first->apply(&effectRecorder, this, p.second);
 	}
 	if(newHorizonsRegeneration && !isCounterspellNegated())
-	{
-		const auto * hero = getHeroCaster();
-		const bool herbalist = hero && hero->hasActivePerk(
-			std::string(newHorizonsMagic::NATURE_MAGIC_SKILL),
-			std::string(newHorizonsMagic::NATURE_HERBALIST));
-		const int32_t regenerationRate = newHorizonsMagic::regenerationRateMillionthsBasisPoints(
-			std::max<int32_t>(0, getEffectPower()), getSpellPowerCoefficientBasisPoints(),
-			herbalist, getWarcastingBonusPercent(), getEmpowerSpellBonusPercent());
-		for(const auto * unit : affectedUnits)
-		{
-			if(!unit || !hasRegenerationMarker(unit))
-				continue;
-			const auto * stack = battle()->battleGetStackByID(unit->unitId(), false);
-			if(!stack)
-				continue;
-			auto state = stack->acquireState();
-			state->regenerationRateMillionths = regenerationRate;
-
-			UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
-			update.data = state->save();
-			BattleUnitsChanged changed;
-			changed.battleID = battle()->getBattle()->getBattleID();
-			changed.changedStacks.push_back(std::move(update));
-			effectRecorder.apply(changed);
-		}
-	}
+		applyRegenerationRateSnapshot(&effectRecorder, battle(), affectedUnits, newHorizonsRegenerationRate(*this));
 
 	if(logMetamagicFollowup)
 	{
@@ -1899,6 +1953,8 @@ BattleSide BattleSpellMechanics::effectiveCasterSide() const
 void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const Target & target)
 {
 	affectedUnits.clear();
+	const bool newHorizonsMassRegeneration = isNewHorizonsMassRegenerationSpell(owner,
+		battle()->getBattle()->getMagicRules());
 	const bool newHorizonsSoulChain = isNewHorizonsSoulChainSpell(owner,
 		battle()->getBattle()->getMagicRules());
 
@@ -1968,6 +2024,8 @@ void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast &
 	//prepare targets
 	effectsToApply = effects->prepare(this, target, spellTarget);
 	const auto spellLockedUnits = filterSpellLockedEffects(target);
+	if(newHorizonsMassRegeneration)
+		filterMassRegenerationTargets(effectsToApply);
 
 	auto unitTargets = collectTargets();
 
@@ -2139,6 +2197,10 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 	activeResistanceServer = nullptr;
 	activeResistanceRng = nullptr;
 
+	const bool newHorizonsRegeneration = isNewHorizonsRegenerationSpell(owner,
+		battle()->getBattle()->getMagicRules());
+	const bool newHorizonsMassRegeneration = isNewHorizonsMassRegenerationSpell(owner,
+		battle()->getBattle()->getMagicRules());
 	affectedUnits.clear();
 	//TODO: evaluate caster updates (mana usage etc.)
 	//TODO: evaluate random values
@@ -2154,6 +2216,8 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 
 	effectsToApply = effects->prepare(this, target, spellTarget);
 	filterSpellLockedEffects(target);
+	if(newHorizonsMassRegeneration)
+		filterMassRegenerationTargets(effectsToApply);
 
 	auto unitTargets = collectTargets();
 
@@ -2164,6 +2228,9 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 
 	for(auto & p : effectsToApply)
 		p.first->apply(server, this, p.second);
+
+	if(newHorizonsRegeneration && mode == Mode::HERO && getHeroCaster())
+		applyRegenerationRateSnapshot(server, battle(), affectedUnits, newHorizonsRegenerationRate(*this));
 
 	if(completedHeroProjection)
 		server->recordCompletedHeroSpellCast(casterSide, battle()->battleGetSpellLevel(getSpellId()));

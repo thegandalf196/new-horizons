@@ -1013,6 +1013,26 @@
 							4
 						]
 					},
+					"new-horizons:massRegeneration": {
+						"schools": [
+							"new-horizons:nature"
+						],
+						"level": 1,
+						"costs": [
+							12,
+							12,
+							12,
+							12
+						],
+						"active": true,
+						"ordinaryAcquisition": false,
+						"variant": {
+							"base": "new-horizons:regeneration",
+							"skill": "new-horizons:natureMagic",
+							"perk": "new-horizons:natureMagic.verdantCommunion",
+							"powerPercent": 100
+						}
+					},
 					"core:counterstrike": {
 						"schools": [
 							"new-horizons:light"
@@ -4422,7 +4442,7 @@
 								"requires": "advanced",
 								"description": "Grants Mass Regeneration.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Grants Mass Regeneration."
 								}
 							},

@@ -26,6 +26,7 @@
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/CSpellHandler.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/spells/NewHorizonsBlink.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/effects/BattleForm.h"
@@ -154,9 +155,10 @@ bool isPhantomArmy(const CSpell * spell)
 	return spell && spell->getJsonKey() == newHorizonsSorcery::PHANTOM_ARMY_SPELL;
 }
 
-bool isCanonicalRegeneration(const CSpell * spell)
+bool isCanonicalRegeneration(const CSpell * spell, const JsonNode & rules)
 {
-	return spell && spell->getJsonKey() == newHorizonsMagic::NATURE_REGENERATION_SPELL;
+	return spell && newHorizonsMagic::spellVariantBase(rules, spell->getId()).toSpell()->getJsonKey()
+		== newHorizonsMagic::NATURE_REGENERATION_SPELL;
 }
 
 bool isCanonicalHydrasVitality(const CSpell * spell)
@@ -911,29 +913,30 @@ void projectRegenerationRateSnapshot(HypotheticBattle & projectedBattle,
 	const spells::Mechanics & mechanics, const CSpell * spell,
 	const spells::Target & acceptedTarget)
 {
-	if(!isCanonicalRegeneration(spell) || acceptedTarget.size() != 1
-		|| !acceptedTarget.front().unitValue)
-		return;
-
 	const auto & savedRules = projectedBattle.getBattle()->getMagicRules();
-	if(!newHorizonsMagic::rulesActive(savedRules))
+	if(!isCanonicalRegeneration(spell, savedRules) || !newHorizonsMagic::rulesActive(savedRules))
 		return;
 
-	const auto targetId = acceptedTarget.front().unitValue->unitId();
-	auto targetState = projectedBattle.getForUpdate(targetId);
 	const auto regenerationMarker = Selector::source(BonusSource::SPELL_EFFECT,
-		BonusSourceID(spell->getId())).And(Selector::type()(BonusType::HP_REGENERATION));
-	if(!targetState->alive() || !targetState->hasBonus(regenerationMarker))
-		return;
+		BonusSourceID(newHorizonsMagic::spellVariantBase(savedRules, spell->getId())))
+		.And(Selector::type()(BonusType::HP_REGENERATION));
 
 	const auto * hero = mechanics.getHeroCaster();
 	const bool herbalist = hero && hero->hasActivePerk(
 		std::string(newHorizonsMagic::NATURE_MAGIC_SKILL),
 		std::string(newHorizonsMagic::NATURE_HERBALIST));
-	targetState->regenerationRateMillionths = newHorizonsMagic::regenerationRateMillionthsBasisPoints(
+	const auto rate = newHorizonsMagic::regenerationRateMillionthsBasisPoints(
 		std::max<int32_t>(0, mechanics.getEffectPower()),
 		mechanics.getSpellPowerCoefficientBasisPoints(), herbalist,
-		mechanics.getWarcastingBonusPercent());
+		mechanics.getWarcastingBonusPercent(), mechanics.getEmpowerSpellBonusPercent());
+	for(const auto * unit : mechanics.getAffectedStacks(acceptedTarget))
+	{
+		if(!unit)
+			continue;
+		auto targetState = projectedBattle.getForUpdate(unit->unitId());
+		if(targetState->alive() && targetState->hasBonus(regenerationMarker))
+			targetState->regenerationRateMillionths = rate;
+	}
 }
 
 int regenerationEffectRounds(const battle::Unit * unit, SpellID spell)
@@ -4496,9 +4499,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	if(possibleCasts.empty())
 		return false;
 	if(!regenerationTurnOrderPrepared && std::any_of(possibleCasts.begin(), possibleCasts.end(),
-		[](const PossibleSpellcast & candidate)
+		[&](const PossibleSpellcast & candidate)
 		{
-			return isCanonicalRegeneration(candidate.spell);
+			return isCanonicalRegeneration(candidate.spell, battleCallback->getBattle()->getMagicRules());
 		}))
 		getRegenerationTurnOrder();
 
@@ -5156,10 +5159,11 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				float initiativeEffectScore = 0;
 				float projectedDebuffScore = 0;
 				float projectedCrusadeBonusScore = 0;
-				if(isCanonicalRegeneration(ps.spell))
+				if(isCanonicalRegeneration(ps.spell, state->getBattle()->getMagicRules()))
 				{
 					const auto targets = improvedRegenerationTargets(
-						*state, *cb->getBattle(battleID), ps.spell->getId());
+						*state, *cb->getBattle(battleID),
+						newHorizonsMagic::spellVariantBase(state->getBattle()->getMagicRules(), ps.spell->getId()));
 					const auto regenerationValue = projectedRegenerationValue(env.get(), cb->getBattle(battleID), state,
 						regenerationTurnOrder, targets, innerCache, side, playerID,
 						scoreEvaluator.getPositiveEffectMultiplier());
@@ -5590,7 +5594,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			spellcast.spellFireWallDirection = castToPerform.spellFireWallDirection;
 		}
 		else if(isCanonicalHeavenlyGale(castToPerform.spell)
-			|| isCanonicalCrusade(castToPerform.spell))
+			|| isCanonicalCrusade(castToPerform.spell) || castToPerform.dest.empty())
 			// Mass spells use AimType::NOTHING in mechanics and are enumerated as
 			// an empty candidate. The action protocol still requires one destination
 			// entry; INVALID is the shared NO_LOCATION sentinel, not a unit target.

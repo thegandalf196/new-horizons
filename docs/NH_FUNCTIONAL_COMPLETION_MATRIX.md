@@ -1,6 +1,6 @@
 # New Horizons functional completion matrix
 
-Updated: 2026-10-01
+Updated: 2026-10-02
 Canonical source SHA-256: `e6352a6106686f9701d33efd15df80be97b3b9777aa1c4fb6ce0513c32f798cb`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
@@ -13,6 +13,20 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+UP-114 Mass Regeneration/Verdant Communion is active and native verified.
+Virtual physical-book sources, living ally exclusions, triple costs, School
+rate snapshots, future-wound survivor healing, family refresh and already-mutated
+detached state pass. The real AI selects the variant and its submitted action
+is accepted after no-target candidates receive the protocol sentinel. Final
+both-target55569 exits0; principal79005 passes26/26 in7.453s and activated81701
+passes30/30 in8.697s, zero skips. Data/schema/inventory33/33 and module check
+pass; independent review has no blocker. Binary SHA-256:
+`34be6e07935a7f4a1d617004d906aba0a5dcbc07e358cea2b14fc662f86c2ba5`.
+Coverage163->164/310, planned147->146, Nature5/5, distinct variants3->4/5.
+Phase2 retains broad save/modifier interactions and the synthetic eligibility
+roster's round-advance diagnostic; bounded minimal refresh passes. No GUI or
+playable promotion. Next: distinct Mass Slow/Temporal Field.
 
 UP-114 Mass Bless/Litany is active and native verified. Advanced Litany grants
 a distinct perk-only virtual spell while physical-book removal and rank loss
@@ -924,11 +938,11 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 163/310 | 147 planned; Litany is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 164/310 | 146 planned; Verdant Communion is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
-| Distinct perk-granted Mass spell entries | 2/5 | Mass Curse/Sorrow and Grand Malediction have focused native evidence. Mass Bless, Regeneration and distinct Slow remain missing; the existing Slow toggle is not a distinct spell entry. These five variants are additional to the 67 school-roster identities. |
+| Distinct perk-granted Mass spell entries | 4/5 | Mass Curse/Sorrow, Bless and Regeneration have focused native evidence. Distinct Slow remains missing and its existing toggle is not a distinct spell entry. These five variants are additional to the 67 school-roster identities. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -1067,7 +1081,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Command | 3/0 | 4/6 | Aggressive/Defensive, Veteran and Combined Arms have focused runtime/AI evidence; ordinary Advanced/Expert progression opens. Six perks remain planned. |
 | Light Magic | 3/0 | 8/2 | Litany grants distinct Mass Bless with native cast/forecast evidence, alongside Benediction, Healer, Guardian, Aegis, Purifier, Retributionist and Crusader. Sanctuary Keeper and Miracle Worker remain planned. |
 | Shadow Magic | 3/0 | 9/1 | Grand Malediction now grants distinct Mass Curse/Sorrow with native cast/forecast evidence, alongside the eight earlier perks. Plaguebearer awaits its normal-limit definition. |
-| Nature Magic | 3/0 | 4/6 | Herbalist, Rootcaller, Beastcaller and Verdant Warden active; six perks missing. |
+| Nature Magic | 3/0 | 5/5 | Herbalist, Rootcaller, Beastcaller, Verdant Warden and Verdant Communion active; five perks missing. |
 | Havoc Magic | 3/0 | 6/4 | Four perks missing; Pyromancer, Cryomancer and Controlled Blast are native verified |
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
 | Chaos Magic | 3/0 | 3/7 | Blinkmaster, Weaver and Paradox Shield are active with focused evidence recorded above; seven perks remain planned. |

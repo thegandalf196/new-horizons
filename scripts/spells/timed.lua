@@ -586,6 +586,9 @@ function Script:apply(mechanics, server, target)
 			-- Ordinary Bless and its perk-granted Mass entry share one status.
 			-- Replace the family marker explicitly, including detached AI units.
 			refreshedType = "ALWAYS_MAXIMUM_DAMAGE"
+		elseif spellKey == "new-horizons:regeneration" and mechanics:usesNewHorizonsMagicV3() then
+			-- Keep normal and Mass Regeneration on one wound-tracking marker.
+			refreshedType = "HP_REGENERATION"
 		end
 		if refreshedType then
 			local previous = unit:getBonuses({ type = refreshedType }):filter(function(bonus)

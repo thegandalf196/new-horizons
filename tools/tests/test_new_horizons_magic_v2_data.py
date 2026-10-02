@@ -60,19 +60,22 @@ class MagicV2DataTest(unittest.TestCase):
 
     def test_mass_variants_preserve_base_school_level_and_triple_cost(self):
         validator = Draft4Validator(self.v3, registry=self.registry)
-        for variant_id, base_id, skill_id, perk_id in (
+        for variant_id, base_id, skill_id, perk_id, active in (
                 ('new-horizons:massBless', 'core:bless',
-                 'new-horizons:lightMagic', 'new-horizons:lightMagic.litany'),
+                 'new-horizons:lightMagic', 'new-horizons:lightMagic.litany', True),
                 ('new-horizons:massCurse', 'core:curse',
-                 'new-horizons:shadowMagic', 'new-horizons:shadowMagic.grandMalediction'),
+                 'new-horizons:shadowMagic', 'new-horizons:shadowMagic.grandMalediction', True),
                 ('new-horizons:massSorrow', 'core:sorrow',
-                 'new-horizons:shadowMagic', 'new-horizons:shadowMagic.grandMalediction')):
+                 'new-horizons:shadowMagic', 'new-horizons:shadowMagic.grandMalediction', True),
+                ('new-horizons:massRegeneration', 'new-horizons:regeneration',
+                 'new-horizons:natureMagic', 'new-horizons:natureMagic.verdantCommunion', True)):
             with self.subTest(variant=variant_id):
                 row = self.v3_rules['spells'][variant_id]
                 base = self.v3_rules['spells'][base_id]
                 self.assertEqual(row['schools'], base['schools'])
                 self.assertEqual(row['level'], base['level'])
                 self.assertEqual(row['costs'], [3 * cost for cost in base['costs']])
+                self.assertIs(row.get('active', True), active)
                 self.assertFalse(row['ordinaryAcquisition'])
                 self.assertEqual(row['variant'], {
                     'base': base_id, 'skill': skill_id,
@@ -82,6 +85,39 @@ class MagicV2DataTest(unittest.TestCase):
                     changed = copy.deepcopy(self.v3_rules)
                     changed['spells'][variant_id]['variant']['powerPercent'] = invalid
                     self.assertFalse(validator.is_valid(changed))
+
+    def test_mass_regeneration_reuses_base_effect_and_resources(self):
+        variants = load('Mods/new-horizons/Content/config/spells/massVariants.json')
+        spells = load('Mods/new-horizons/Content/config/spells/newHorizons.json')
+        mass_regeneration = variants['massRegeneration']
+        regeneration = spells['regeneration']
+
+        self.assertEqual(mass_regeneration['school'], regeneration['school'])
+        self.assertEqual(mass_regeneration['level'], regeneration['level'])
+        self.assertEqual(mass_regeneration['graphics'], regeneration['graphics'])
+        self.assertEqual(mass_regeneration['animation'], regeneration['animation'])
+        self.assertEqual(mass_regeneration['sounds'], regeneration['sounds'])
+        self.assertTrue(mass_regeneration['flags']['positive'])
+        self.assertEqual(mass_regeneration['targetCondition']['noneOf'], {
+            'bonus.NON_LIVING': 'absolute',
+            'bonus.MECHANICAL': 'absolute',
+            'bonus.SIEGE_WEAPON': 'absolute',
+            'bonus.UNDEAD': 'absolute',
+        })
+
+        for rank in ('none', 'basic', 'advanced', 'expert'):
+            with self.subTest(rank=rank):
+                level = mass_regeneration['levels'][rank]
+                base_level = regeneration['levels'][rank]
+                self.assertEqual(level['range'], 'X')
+                self.assertEqual(level['cost'], 3 * base_level['cost'])
+                self.assertEqual(level['battleEffects'], base_level['battleEffects'])
+                self.assertEqual(level['targetModifier'], {'smart': True})
+                self.assertIn('Nature Magic rank scales only the Spell Power term',
+                              level['description'])
+                self.assertIn('Herbalist adds 10 percentage points before the cap',
+                              level['description'])
+                self.assertIn('Granted only by Verdant Communion', level['description'])
 
     def test_v3_requires_exact_school_rank_coefficients_and_v2_rejects_them(self):
         v3_validator = Draft4Validator(self.v3, registry=self.registry)

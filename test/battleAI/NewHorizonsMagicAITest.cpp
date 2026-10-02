@@ -3457,6 +3457,93 @@ TEST_F(NewHorizonsMagicAITest, HerbalistRegenerationAIValuesProjectedWoundsWitho
 	EXPECT_TRUE(selected->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(regeneration))));
 }
 
+TEST_F(NewHorizonsMagicAITest, VerdantCommunionAISelectsTheDistinctMassSpellAndSnapshotsAllies)
+{
+	useCurrentMagicRules = true;
+	useSavedPerkRules = true;
+	fixtureActivePerkIds = {"new-horizons:natureMagic.verdantCommunion"};
+	neutralizeCommandEffects = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+
+	const SpellID regeneration(SpellID::decode("new-horizons:massRegeneration"));
+	const SpellID family(SpellID::decode(std::string(newHorizonsMagic::NATURE_REGENERATION_SPELL)));
+	ASSERT_NE(regeneration, SpellID::NONE);
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto knownSpell : knownSpells)
+		attackerSideHero->removeSpellFromSpellbook(knownSpell);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
+	const auto natureMagic = SecondarySkill::decode(std::string(newHorizonsMagic::NATURE_MAGIC_SKILL));
+	ASSERT_GE(natureMagic, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(natureMagic), MasteryLevel::BASIC,
+		ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({
+		std::string(newHorizonsMagic::NATURE_MAGIC_SKILL),
+		std::string(newHorizonsMagic::NATURE_HERBALIST)});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(
+		std::string(newHorizonsMagic::NATURE_MAGIC_SKILL),
+		std::string(newHorizonsMagic::NATURE_HERBALIST)));
+	attackerSideHero->setSecSkillLevel(SecondarySkill(natureMagic), MasteryLevel::ADVANCED,
+		ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({std::string(newHorizonsMagic::NATURE_MAGIC_SKILL),
+		"new-horizons:natureMagic.verdantCommunion"});
+	ASSERT_TRUE(attackerSideHero->canCastThisSpell(regeneration.toSpell()));
+	setTestSpellPointTotal(attackerSideHero, 1000);
+
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(2, 5), 1);
+	auto * selected = addStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(7, 5), 1);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(8, 5), 10);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(selected, nullptr);
+	ASSERT_NE(enemy, nullptr);
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -active->getMovementRange();
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	const auto healthBeforeEvaluation = selected->getAvailableHealth();
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active))
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	ASSERT_EQ(callback->submitted.size(), 1u)
+		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
+	const auto action = callback->submitted.front();
+	EXPECT_EQ(action.spell, regeneration);
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(regeneration));
+	ASSERT_EQ(action.target.size(), 1u)
+		<< "Untargeted mass spells still require the protocol's NO_LOCATION destination";
+	EXPECT_EQ(selected->getAvailableHealth(), healthBeforeEvaluation)
+		<< "AI valuation must project future wounds; evaluating the spell cannot heal live battle state";
+	EXPECT_EQ(selected->regenerationRateMillionths, 0);
+	EXPECT_FALSE(selected->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(family))));
+
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(selected->getAvailableHealth(), healthBeforeEvaluation)
+		<< "Regeneration marks damage for the next activation instead of curing current wounds";
+	EXPECT_EQ(selected->regenerationRateMillionths, 350'000)
+		<< "Herbalist adds ten percentage points to the 25% base rate at zero Spell Power";
+	EXPECT_EQ(active->regenerationRateMillionths, 350'000);
+	EXPECT_EQ(enemy->regenerationRateMillionths, 0);
+	EXPECT_TRUE(selected->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(family))));
+}
+
 TEST_F(NewHorizonsMagicAITest, RegenerationAIDoesNotTreatExistingWoundsAsImmediateHealing)
 {
 	useCurrentMagicRules = true;

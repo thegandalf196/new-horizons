@@ -2,6 +2,50 @@
 
 ## Purpose
 
+### 2026-10-02 UP-114 Mass Regeneration — pre-build correction
+
+Independent review caught an escaped apostrophe in the new AI fixture's
+integer literal. Corrected to the standard C++ digit separator before building.
+This is a fixture compile correction, not native acceptance of the mechanic.
+Review also found that generic massive timed targeting did not inherit base
+Regeneration's clone/phantom exclusions. Require the shared eligibility filter
+in live, detached and affected-target paths, with explicit native exclusions.
+Strengthen the forecast fixture by mutating the detached unit before casting;
+copying a wounded live battle alone does not establish materialized-state parity.
+Activation remains gated on the repair and focused native evidence.
+Client37281 and both-target18607 exit0. Principal8366 passes21/26 in9.741s,
+zero skips: all existing family/base tests pass, but five new fixture cases
+omit the required Basic Nature perk before Advanced Communion. The offer
+search cannot offer an illegal tier and direct selections throw the expected
+earlier-tier validation error. Repair fixture progression with Basic Rootcaller
+(not Herbalist, so rate assertions retain their intended formula). Do not weaken
+production progression or activate the perk before the repaired native gate.
+Repaired build52222 exits0. Native24363 passes the first three new cases,
+then spins in the refresh fixture for over80s; root terminated that owned
+process (exit143), preserving the log. No full passing result is claimed.
+The fixture uses unbounded endRound with synthetic excluded siege/clone/phantom
+stacks; isolate refresh from those eligibility-only actors and bound its round
+advance. Keep the independent eligibility assertions intact. Debugger attach
+was denied by ptrace restrictions; no OS policy was changed. Treat the spin's
+precise cause as unproven until the bounded fixture supplies evidence.
+Bounded build29708 exits0; native35545 completes25/26 in7.574s. The remaining
+fixture assertion incorrectly interprets CUnitState::damage's reference as
+unspent damage; it reports actual damage, which is2 here. Assert2 and exact
+two-HP loss instead, keeping materialized pending-wound preservation checks.
+The bounded round now advances correctly; the broader eligibility-roster
+round-advance interaction remains a Phase2 diagnostic, not a proven repair.
+Final build88628 exits0; principal79005 passes26/26 in7.453s, zero skips.
+Activated57857 passes29/30 in8.580s: AI selects the right distinct spell but
+submits an empty wire target, rejected by authoritative validation. The existing
+NO_LOCATION sentinel conversion covers only two named mass spells. Extend it
+to empty accepted candidate destinations generally; retain server validation
+and assert the actual emitted wire destination in the AI regression.
+Final both-target55569 exits0. Activated81701 passes30/30 in8.697s, zero
+skips, including actual AI cast acceptance. Data/schema/inventory33/33 and
+module drift check pass; independent review has no remaining material blocker.
+The fixture spin remains a separate Phase2 interaction diagnostic, not a claim
+that every round-advance interaction is repaired. No GUI/playable promotion.
+
 ### 2026-10-01 UP-114 Mass Bless — data fixture correction
 
 The first bounded data assertion still assumed every Mass entry belonged to

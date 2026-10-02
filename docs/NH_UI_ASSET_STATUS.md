@@ -1,6 +1,6 @@
 # New Horizons UI and asset status register
 
-Last audited: 2026-10-01
+Last audited: 2026-10-02
 
 This is the maintained UI/art status index for the current New Horizons working tree. It records live bindings and remaining visual/UI work. It does not replace gameplay specs, source configs, runtime manifests, or acceptance records. The row-level index is [NH_UI_ASSET_INVENTORY.csv](NH_UI_ASSET_INVENTORY.csv).
 
@@ -43,8 +43,12 @@ and Litany are now active with55/55 focused native checks, including capped and
 uncapped School duration, Benediction, prior-family refresh, Curse removal,
 both immunities and paid-cost/forecast parity. Bless resources are likewise
 referenced, not extracted, and remain Provisional pending in-game review.
-Litany's generic neutral fallback is Not done art. Mass Regeneration and distinct
-Mass Slow remain missing; no GUI or playable promotion is claimed.
+Litany's generic neutral fallback is Not done art. Mass Regeneration now reuses
+the purpose-made base Regeneration icon and its existing sound/animation refs;
+this is Provisional variant art, not a newly authored Mass icon. Communion's
+generic perk fallback remains Not done art. Distinct Mass Slow remains missing;
+no GUI or playable promotion is claimed. Current settings contain105 entries,
+101 enabled; this supersedes the104/100 source count in the earlier audit.
 
 UP-064 main-menu branding: eight bounded HoMM3-skill reference-based subtitle
 patches cover the available Complete/Armageddon's Blade main, scenario-selection

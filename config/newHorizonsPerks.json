@@ -1433,7 +1433,7 @@
 					"requires": "advanced",
 					"description": "Grants Mass Regeneration.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Grants Mass Regeneration."
 					}
 				},
