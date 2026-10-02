@@ -1406,9 +1406,15 @@ struct DLL_LINKAGE SetObjectProperty : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && what == ObjProperty::NEW_HORIZONS_LAND_SURVEYOR_LAST_WEEK
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_LAND_SURVEYOR))
+			throw std::runtime_error("New Horizons Land Surveyor property requires the new wire format");
 		h & id;
 		h & what;
 		h & identifier;
+		if(what == ObjProperty::NEW_HORIZONS_LAND_SURVEYOR_LAST_WEEK
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_LAND_SURVEYOR))
+			throw std::runtime_error("New Horizons Land Surveyor property requires the new wire format");
 	}
 };
 

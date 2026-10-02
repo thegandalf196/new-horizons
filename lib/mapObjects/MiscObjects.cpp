@@ -19,6 +19,7 @@
 #include "../entities/artifact/ArtifactUtils.h"
 #include "../entities/artifact/CArtifact.h"
 #include "../entities/ResourceTypeHandler.h"
+#include "../entities/creature/NewHorizonsMusterRules.h"
 #include "../CConfigHandler.h"
 #include "../texts/CGeneralTextHandler.h"
 #include "../CSkillHandler.h"
@@ -109,7 +110,7 @@ void CGMine::onHeroVisit(IGameEventCallback & gameEvents, const CGHeroInstance *
 		return;
 	}
 
-	flagMine(gameEvents, h->tempOwner);
+	flagMine(gameEvents, h);
 }
 
 void CGMine::initObj(IGameRandomizer & gameRandomizer)
@@ -207,10 +208,23 @@ MetaString CGMine::getHoverText(PlayerColor player) const
 	return hoverName;
 }
 
-void CGMine::flagMine(IGameEventCallback & gameEvents, const PlayerColor & player) const
+void CGMine::flagMine(IGameEventCallback & gameEvents, const CGHeroInstance * capturingHero) const
 {
+	const PlayerColor player = capturingHero->tempOwner;
 	assert(tempOwner != player);
 	gameEvents.setOwner(this, player); //not ours? flag it!
+
+	ResourceSet landSurveyorProduction;
+	const auto calendar = cb->getCalendar();
+	const int week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+	const bool landSurveyorTriggered = capturingHero->hasActivePerk("new-horizons:estates", "new-horizons:estates.landSurveyor")
+		&& !capturingHero->hasUsedNewHorizonsLandSurveyor(week);
+	if(landSurveyorTriggered)
+	{
+		gameEvents.setObjPropertyValue(capturingHero->id, ObjProperty::NEW_HORIZONS_LAND_SURVEYOR_LAST_WEEK, week);
+		landSurveyorProduction = dailyIncome() * 3;
+		gameEvents.giveResources(player, landSurveyorProduction);
+	}
 
 	InfoWindow iw;
 	iw.type = EInfoWindowMode::AUTO;
@@ -221,6 +235,14 @@ void CGMine::flagMine(IGameEventCallback & gameEvents, const PlayerColor & playe
 		iw.text.appendTextID("core.mineevnt", producedResource.getNum());
 	iw.player = player;
 	iw.components.emplace_back(ComponentType::RESOURCE_PER_DAY, producedResource, getProducedQuantity());
+	if(landSurveyorTriggered)
+	{
+		iw.text.appendEOL();
+		iw.text.appendRawString("Land Surveyor: the mine immediately produced three days of output.");
+		for(const auto resource : LIBRARY->resourceTypeHandler->getAllObjects())
+			if(landSurveyorProduction[resource] != 0)
+				iw.components.emplace_back(ComponentType::RESOURCE, resource, landSurveyorProduction[resource]);
+	}
 	gameEvents.showInfoDialog(&iw);
 }
 
@@ -265,7 +287,7 @@ void CGMine::battleFinished(IGameEventCallback & gameEvents, const CGHeroInstanc
 				gameEvents.showInfoDialog(&iw);
 			}
 		}
-		flagMine(gameEvents, hero->tempOwner);
+		flagMine(gameEvents, hero);
 	}
 }
 

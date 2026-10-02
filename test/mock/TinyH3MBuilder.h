@@ -189,6 +189,9 @@ public:
 	/// Fixed creature dwelling owned by `owner`.
 	TinyH3MBuilder & dwelling(const int3 & pos, MapObjectSubID type, PlayerColor owner);
 
+	/// Normal mine owned by `owner`. `type` is the H3 mine subID (0..6).
+	TinyH3MBuilder & mine(const int3 & pos, MapObjectSubID type, PlayerColor owner);
+
 	// ---- quest objects -------------------------------------------------
 
 	/// Keymaster Tent. Subid encodes the keymaster colour (0..7).

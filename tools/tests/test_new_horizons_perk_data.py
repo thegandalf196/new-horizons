@@ -25,6 +25,7 @@ ACTIVE_PERKS = {
     "new-horizons:estates.taxCollector",
     "new-horizons:estates.estateNetwork",
     "new-horizons:estates.financier",
+    "new-horizons:estates.landSurveyor",
     "new-horizons:learning.mentor",
     "new-horizons:learning.quickStudy",
     "new-horizons:chaosMagic.paradoxShield",

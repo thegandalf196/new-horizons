@@ -157,7 +157,7 @@ private:
 	void battleFinished(IGameEventCallback & gameEvents, const CGHeroInstance *hero, const BattleResult &result) const override;
 	void blockingDialogAnswered(IGameEventCallback & gameEvents, const CGHeroInstance *hero, int32_t answer) const override;
 
-	void flagMine(IGameEventCallback & gameEvents, const PlayerColor & player) const;
+	void flagMine(IGameEventCallback & gameEvents, const CGHeroInstance * capturingHero) const;
 	void initObj(IGameRandomizer & gameRandomizer) override;
 
 	MetaString getObjectName() const override;

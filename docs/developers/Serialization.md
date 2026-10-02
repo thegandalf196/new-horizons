@@ -1,5 +1,16 @@
 # Serialization
 
+## New Horizons Land Surveyor weekly allowance
+
+`NEW_HORIZONS_LAND_SURVEYOR` appends a hero's last successful rewarded mine-
+capture absolute week. Older hero records default to -1 (unused); a spent
+marker cannot be down-saved to a format unable to retain it. The authoritative
+capture path replicates the marker through the existing `SetObjectProperty`
+packet's appended `NEW_HORIZONS_LAND_SURVEYOR_LAST_WEEK` property. That property
+is rejected under an older wire version rather than silently discarded. Mine
+ownership and resource grants continue through their ordinary packets; there is
+no periodic allowance-reset scan and no new packet type registration.
+
 ## New Horizons battle Mana expenditure
 
 `BATTLE_HERO_MANA_EXPENDITURE` adds accepted hero spell costs and paid opposing

@@ -387,6 +387,19 @@ TinyH3MBuilder & TinyH3MBuilder::dwelling(const int3 & pos, MapObjectSubID type,
 	return *this;
 }
 
+TinyH3MBuilder & TinyH3MBuilder::mine(const int3 & pos, MapObjectSubID type, PlayerColor owner)
+{
+	assert(type.getNum() >= 0 && type.getNum() < GameConstants::RESOURCE_QUANTITY);
+	ObjectSpec spec;
+	spec.id            = Obj::MINE;
+	spec.subid         = type;
+	spec.position      = pos;
+	spec.owner         = owner;
+	spec.templateIndex = registerTemplate(spec.id, spec.subid);
+	registerObject(std::move(spec));
+	return *this;
+}
+
 TinyH3MBuilder & TinyH3MBuilder::keymaster(const int3 & pos, int color)
 {
 	ObjectSpec spec;
@@ -1064,6 +1077,12 @@ void TinyH3MBuilder::writeObjects(TinyH3MWriter & w) const
 				break;
 
 			case Obj::CREATURE_GENERATOR1:
+				w.writePlayer32(obj.owner);
+				break;
+
+			case Obj::MINE:
+				// Normal mines carry only a 32-bit owner field. Abandoned mines have
+				// a different body and are intentionally outside this fixture helper.
 				w.writePlayer32(obj.owner);
 				break;
 

@@ -5490,7 +5490,7 @@
 								"requires": "basic",
 								"description": "The first mine captured by this hero each week immediately produces three days of its normal output.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The first mine captured by this hero each week immediately produces three days of its normal output."
 								}
 							},

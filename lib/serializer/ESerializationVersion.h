@@ -137,12 +137,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_PHYSICAL_AFFLICTIONS, // effect-neutral physical-affliction identity and application order markers
 	NEW_HORIZONS_RANGED_FOLLOW_UP, // saved same-activation selectable ranged shot continuation
 	NEW_HORIZONS_REDUCED_EXTRA_ACTIVATION, // saved side allowance and reduced-output genuine activation
+	NEW_HORIZONS_LAND_SURVEYOR, // per-hero weekly successful mine-capture allowance
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_REDUCED_EXTRA_ACTIVATION,
+	CURRENT = NEW_HORIZONS_LAND_SURVEYOR,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
