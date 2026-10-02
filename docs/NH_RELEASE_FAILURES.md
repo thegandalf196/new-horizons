@@ -50,6 +50,11 @@ retry 30525 passes 6/6 in 99.078s and activated focused 99320 passes 47/47 in
 StartAction count unchanged under grant-ID exhaustion. Data/client 30/30 and
 module drift pass after correcting the inventory row category from `Perk` to
 the established `Active perk`. Original build/native failures remain preserved.
+CI dispatch lesson: use `new-horizons-windows-notices.yml` for the cheap notice
+gate. Sending `preflight_only=true` to the full build workflow also installs the
+toolchain and resolves dependencies. Accidental run 37071223589 was cancelled
+before compilation; intended notice run 37071300435 uses source 51340a3d4.
+Do not start another full job until cancellation is terminal and notice succeeds.
 
 ### 2026-10-02 UP-146 — sibling-Order packet integrity
 

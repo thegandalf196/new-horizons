@@ -30,6 +30,10 @@ simultaneous Orders, packet persistence and action/spell allowances. Data/client
 full midbattle save/resume. Rendered chooser QA, broad interaction matrices and
 generic hypothetical packet replay remain Phase 2. UI is Provisional, bespoke
 art Not done; no immutable playable promotion. Next missing item: Battle Plan.
+Source is pushed as 51340a3d48607a096acd1dcf2975bafdcfc03ef7. Notice
+37071300435 succeeded; full Windows build 37071436091 is in progress on that
+source. This is source/native delivery, not a Windows graphical acceptance or
+an updated local launcher snapshot.
 
 UP-146 simultaneous different Orders foundation is implemented/native-verified.
 One authoritative per-side collection preserves independent targets, consumption
