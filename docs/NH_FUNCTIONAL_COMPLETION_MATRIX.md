@@ -26,6 +26,9 @@ and independent source review pass. Coverage181->182/310 perks,129->128 planned;
 Command6->7/10, ranks84/93 and faction perks49/90 unchanged. Rendered chooser QA,
 broader opening interactions and exhausted-ID preflight hardening remain Phase2.
 No full midbattle save/resume or immutable playable promotion is claimed.
+Source is committed/pushed as52c4f89a636923260ea0ac8d4e1a2c79aab76bda.
+Windows notice37076319236 is running on that commit; earlier full Windows
+37071436091 remains running on51340a3d4, not this feature.
 
 UP-147 Double Command is implemented and active. The first accepted HERO-paid
 Order once per combat grants an immediate different Order, with a dedicated
