@@ -43,6 +43,15 @@ correct once-rounded result and differ by1HP. The spell-like gate also loses
 its next melee actor to the Lich's collateral damage. Fixture-only repairs must
 preserve exact protected predictions and meaningful70% bounds, alive actors,
 accepted-action checks and round renewal. Bastion remains planned.
+Final fixture rebuild92361 exits0. Native45892 passes8/8 in2.618s, zero skips.
+The protected multiplier applies before the final floor, so the fixture bounds
+its comparison to a separately rounded baseline by1HP. The spell-like test
+asserts living follow-up actors and exact pre-hit prediction, avoiding collateral
+casualty assumptions. Independent final review has no blocker. Production rules
+were not weakened; activation and its final gates follow this passing result.
+Activated both-target28218 exits0. Combined native67346 passes18/18 in5.197s,
+zero skips; registration/data/inventory35/35 and generated module checks pass.
+Earlier failures remain historical lessons, not current blockers.
 
 ### 2026-10-02 UP-131 — Unbreakable principal fixture
 

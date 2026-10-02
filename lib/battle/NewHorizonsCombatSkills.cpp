@@ -71,10 +71,15 @@ bool isOrdinaryCreatureAttacker(const battle::Unit * attacker)
 		&& attacker->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER;
 }
 
-bool isPhysicalCreatureLuckAttack(const battle::Unit * attacker, bool physicalDamage)
+bool isPhysicalCreatureAttack(const battle::Unit * attacker, bool physicalDamage)
 {
 	return physicalDamage && isOrdinaryCreatureAttacker(attacker)
 		&& attacker->unitSlot() != SlotID::WAR_MACHINES_SLOT;
+}
+
+bool isPhysicalCreatureLuckAttack(const battle::Unit * attacker, bool physicalDamage)
+{
+	return isPhysicalCreatureAttack(attacker, physicalDamage);
 }
 
 int paviseReductionPercent(const CGHeroInstance * hero)

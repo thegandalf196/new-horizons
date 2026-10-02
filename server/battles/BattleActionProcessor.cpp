@@ -3865,6 +3865,19 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 				immovableTriggered.push_back(target);
 		}
 	}
+	const bool physicalDamage = !bat.spellLike()
+		&& !(attack.ranged && attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
+	std::vector<const battle::Unit *> armorerBastionTriggered;
+	if(newHorizonsCombatSkills::isPhysicalCreatureAttack(attacker, physicalDamage))
+	{
+		for(const auto & hit : bat.bsa)
+		{
+			const auto * target = battle.battleGetUnitByID(hit.stackAttacked);
+			if(target && battle.battleHasBastionProtection(target)
+				&& !vstd::contains(armorerBastionTriggered, target))
+				armorerBastionTriggered.push_back(target);
+		}
+	}
 	gameHandler->sendAndApply(bat);
 	if(gamblerAttackWindowUsed && !bat.lucky() && attacker->alive())
 	{
@@ -3892,6 +3905,16 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		message.battleID = battle.getBattle()->getBattleID();
 		MetaString line;
 		line.appendRawString("Immovable reduces the first physical creature attack against %s by 25% while Defending.");
+		target->addNameReplacement(line, target->getCount());
+		message.lines.push_back(std::move(line));
+		gameHandler->sendAndApply(message);
+	}
+	for(const auto * target : armorerBastionTriggered)
+	{
+		BattleLogMessage message;
+		message.battleID = battle.getBattle()->getBattleID();
+		MetaString line;
+		line.appendRawString("Armorer Bastion reduces the first physical creature attack against %s by 30% while Defending or under Hold the Line.");
 		target->addNameReplacement(line, target->getCount());
 		message.lines.push_back(std::move(line));
 		gameHandler->sendAndApply(message);
@@ -4412,7 +4435,9 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 	bai.relentlessAssaultDamagePercent = relentlessAssaultDamagePercent;
 	bai.archeryRangedDamageMultiplierPercent = archeryRangedDamageMultiplierPercent;
 	bai.protectIntercepted = protectIntercepted;
-	bai.physicalDamage = !bat.spellLike();
+	// Preserve BattleAttackInfo's ranged SPELL_LIKE_ATTACK classification even
+	// when the presentation flag has not yet been marked on the attack packet.
+	bai.physicalDamage = bai.physicalDamage && !bat.spellLike();
 	bai.deathBlow = bat.deathBlow();
 	bai.doubleDamage = bat.ballistaDoubleDmg();
 	// SoD: lucky strike only affects creature that was directly attacked; HotA: affects every target of a multi-target attack
@@ -4430,6 +4455,8 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 			&& !attackerState->isTurret()
 			&& !attackerState->hasBonusOfType(BonusType::SIEGE_WEAPON)
 			&& attackerState->unitSlot() != SlotID::WAR_MACHINES_SLOT;
+		const bool bastionProtectionConsumed = newHorizonsCombatSkills::isPhysicalCreatureAttack(
+			attackerState.get(), bai.physicalDamage) && battle.battleHasBastionProtection(def);
 		const auto damageProvenance = !bai.physicalDamage
 			? battle::DamageProvenance::SPELL
 			: physicalCreatureAttack ? battle::DamageProvenance::PHYSICAL_CREATURE
@@ -4452,6 +4479,11 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 			&& defenderState->bulwarkImmovableRound != battle.battleGetRound())
 		{
 			defenderState->bulwarkImmovableRound = battle.battleGetRound();
+			defenderStateChanged = true;
+		}
+		if(bastionProtectionConsumed)
+		{
+			defenderState->armorerBastionRound = battle.battleGetRound();
 			defenderStateChanged = true;
 		}
 		if(bsa.damageAmount > 0 && !bat.spellLike() && def->defended()

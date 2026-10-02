@@ -15,6 +15,7 @@
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
+#include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
 
@@ -145,11 +146,16 @@ float BattleExchangeVariant::trackAttack(
 			{
 				auto target = hb->getForUpdate(unitId);
 				auto appliedDamage = std::max<int64_t>(0, damage);
+				const bool consumesBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
+					projectedAttacker.get(), strike.damageProvenance == battle::DamageProvenance::PHYSICAL_CREATURE)
+					&& hb->battleHasBastionProtection(target.get());
 				const auto wasAlive = target->alive();
 				const auto healthBefore = target->getAvailableHealth();
 				const auto projectedDamage = battleAIProjectDamage(target.get(), appliedDamage,
 					strike.damageProvenance);
 				target->damage(appliedDamage, false, strike.damageProvenance);
+				if(consumesBastion)
+					target->armorerBastionRound = hb->battleGetRound();
 				const auto healthLoss = std::max<int64_t>(0,
 					healthBefore - target->getAvailableHealth());
 				if(unitId == attacker->unitId())
@@ -262,6 +268,7 @@ float BattleExchangeVariant::trackAttack(
 		unitToUpdate->bulwarkMireGripApplied = affectedUnit->bulwarkMireGripApplied;
 		unitToUpdate->bulwarkDefendPhysicalDamage = affectedUnit->bulwarkDefendPhysicalDamage;
 		unitToUpdate->bulwarkImmovableRound = affectedUnit->bulwarkImmovableRound;
+		unitToUpdate->armorerBastionRound = affectedUnit->armorerBastionRound;
 		unitToUpdate->bulwarkToxicSpinesRound = affectedUnit->bulwarkToxicSpinesRound;
 		unitToUpdate->physicalPoisonBaseDamage = affectedUnit->physicalPoisonBaseDamage;
 		unitToUpdate->physicalPoisonActivationsRemaining = affectedUnit->physicalPoisonActivationsRemaining;
@@ -383,6 +390,9 @@ float BattleExchangeVariant::trackAttack(
 	int64_t attackDamage = damageCache.getDamage(attacker.get(), defender.get(), hb);
 	const auto attackDamageProvenance = battleAIDamageProvenance(
 		attacker.get(), projectedAttack.physicalDamage);
+	const bool consumesBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
+		projectedAttack.attacker, projectedAttack.physicalDamage)
+		&& hb->battleHasBastionProtection(defender.get());
 	const auto projectedAttackDamage = battleAIProjectDamage(
 		defender.get(), attackDamage, attackDamageProvenance);
 	const int64_t actualDamage = projectedAttackDamage.appliedDamage;
@@ -418,6 +428,8 @@ float BattleExchangeVariant::trackAttack(
 			dpsScore.ourDamageReduce += defenderDamageReduce;
 
 		defender->damage(attackDamage, false, attackDamageProvenance);
+		if(consumesBastion)
+			defender->armorerBastionRound = hb->battleGetRound();
 		if(actualDamage > 0)
 			projectNoQuarterAfterHit(*hb, projectedAttack, *defender);
 		hb->recordBloodrageTransition(defender, defenderWasAlive);
@@ -491,6 +503,9 @@ float BattleExchangeVariant::trackAttack(
 			cleaveAttack.cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
 			const auto cleaveProvenance = battleAIDamageProvenance(
 				projectedAttacker.get(), cleaveAttack.physicalDamage);
+			const bool consumesCleaveBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
+				cleaveAttack.attacker, cleaveAttack.physicalDamage)
+				&& hb->battleHasBastionProtection(targetUnit);
 			projectedAttacker->cleaveUsedThisActivation = true;
 
 			int64_t cleaveDamage = hb->battleExpectedLuckDamage(cleaveAttack);
@@ -513,6 +528,8 @@ float BattleExchangeVariant::trackAttack(
 
 				const bool targetWasAlive = target->alive();
 				target->damage(cleaveDamage, false, cleaveProvenance);
+				if(consumesCleaveBastion)
+					target->armorerBastionRound = hb->battleGetRound();
 				resolvedCleaveDamage = cleaveDamage;
 				if(resolvedCleaveDamage > 0)
 					projectNoQuarterAfterHit(*hb, cleaveAttack, *target);
@@ -536,6 +553,9 @@ float BattleExchangeVariant::trackAttack(
 		BattleAttackInfo retaliationAttack(defender.get(), attacker.get(), 0, false);
 		retaliationAttack.retaliation = true;
 		auto retaliationDamage = hb->battleExpectedLuckDamage(retaliationAttack);
+		const bool consumesRetaliationBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
+			retaliationAttack.attacker, retaliationAttack.physicalDamage)
+			&& hb->battleHasBastionProtection(attacker.get());
 		const auto retaliationProvenance = battleAIDamageProvenance(
 			defender.get(), retaliationAttack.physicalDamage);
 		const auto projectedRetaliationDamage = battleAIProjectDamage(
@@ -566,6 +586,8 @@ float BattleExchangeVariant::trackAttack(
 		const int64_t actualDamage = projectedRetaliationDamage.appliedDamage;
 		const bool attackerWasAlive = attacker->alive();
 		attacker->damage(retaliationDamage, false, retaliationProvenance);
+		if(consumesRetaliationBastion)
+			attacker->armorerBastionRound = hb->battleGetRound();
 		if(actualDamage > 0)
 			projectNoQuarterAfterHit(*hb, retaliationAttack, *attacker);
 		hb->recordBloodrageTransition(attacker, attackerWasAlive);

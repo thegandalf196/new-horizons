@@ -805,6 +805,32 @@ bool CBattleInfoCallback::battleHasFormationFightingProtection(const battle::Uni
 	return false;
 }
 
+bool CBattleInfoCallback::battleHasBastionProtection(const battle::Unit * defender) const
+{
+	if(!getBattle() || !defender || !defender->alive()
+		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defender)
+		|| defender->unitSlot() == SlotID::WAR_MACHINES_SLOT)
+		return false;
+
+	const auto * controllerHero = battleGetOwnerHero(defender);
+	if(!controllerHero || !controllerHero->hasActivePerk(
+		std::string(newHorizonsCombatSkills::ARMORER_SKILL_ID),
+		std::string(newHorizonsCombatSkills::BASTION_PERK_ID)))
+		return false;
+
+	const auto defenderState = defender->acquireState();
+	if(!defenderState || defenderState->armorerBastionRound == battleGetRound())
+		return false;
+	if(defender->defended())
+		return true;
+
+	const auto side = playerToSide(battleGetOwner(defender));
+	if(side == BattleSide::NONE)
+		return false;
+	const auto orderState = battleGetHeroOrderState(side);
+	return orderState && battleIsHoldTheLineRecipient(*orderState, defender);
+}
+
 int CBattleInfoCallback::battleGetMorale(const battle::Unit * unit) const
 {
 	if(!unit)
@@ -2492,6 +2518,9 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				payload.paviseDamageReductionPercent = newHorizonsCombatSkills::paviseReductionPercent(
 					battleGetOwnerHero(info.defender));
 		}
+		if(newHorizonsCombatSkills::isPhysicalCreatureAttack(info.attacker, info.physicalDamage)
+			&& battleHasBastionProtection(info.defender))
+			payload.armorerBastionFinalDamageMultiplier = newHorizonsCombatSkills::BASTION_FINAL_DAMAGE_MULTIPLIER;
 		if(battleIsShroudFlankingAttack(info))
 		{
 			const auto * attackerHero = battleGetOwnerHero(info.attacker);

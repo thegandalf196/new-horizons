@@ -133,6 +133,8 @@ public:
 	/// attack's projected defender position (or its current position when omitted).
 	bool battleHasFormationFightingProtection(const battle::Unit * defender,
 		const BattleHex & assumedPosition = BattleHex::INVALID) const;
+	/// Whether Armorer Bastion can reduce the next physical creature attack against this unit.
+	bool battleHasBastionProtection(const battle::Unit * defender) const;
 	/// Expert Shroud flanks deny the defender's normal retaliation.
 	bool battleShroudDeniesRetaliation(const BattleAttackInfo & attack) const;
 	/// Validates target coverage and snapshots all transient state for a canonical Order.

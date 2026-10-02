@@ -3313,7 +3313,7 @@
 								"requires": "expert",
 								"description": "While Defending or under Hold the Line!, the first physical creature attack received each round deals 30% less final damage.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "While Defending or under Hold the Line!, the first physical creature attack received each round deals 30% less final damage."
 								}
 							}

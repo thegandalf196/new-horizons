@@ -260,6 +260,10 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	const auto raSide = hb->playerToSide(hb->battleGetOwner(attacker));
 	const auto * raHero = raSide == BattleSide::ATTACKER || raSide == BattleSide::DEFENDER
 		? hb->battleGetFightingHero(raSide) : nullptr;
+	const auto * defenderHero = hb->battleGetOwnerHero(defender);
+	const bool hasBastion = defenderHero && defenderHero->hasActivePerk(
+		std::string(newHorizonsCombatSkills::ARMORER_SKILL_ID),
+		std::string(newHorizonsCombatSkills::BASTION_PERK_ID));
 	const bool hasRelentlessAssault = raHero
 		&& raHero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT);
 	const bool shooting = hb->battleCanShoot(attacker, defender->getPosition());
@@ -287,6 +291,7 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 		|| hasRangedFollowUp
 		|| hasReducedExtraActivation
 		|| hasRelentlessAssault
+		|| hasBastion
 		|| hasSecondChance
 		|| fortune.gambler
 		|| fortune.chainOfFortune
@@ -671,6 +676,58 @@ AttackPossibility AttackPossibility::evaluate(
 		|| (!attackInfo.shooting && newHorizonsHexOfPainAI::hasEffect(defender));
 		const bool projectsProtect = !attackInfo.shooting
 			&& defender->unitId() != requestedDefender->unitId();
+		battle::Units defenderUnits;
+		battle::Units requestedDefenderUnits;
+		battle::Units retaliatedUnits = {attacker};
+		if(attackInfo.shooting)
+			defenderUnits = state->getAttackedBattleUnits(attacker, defender, defHex, true, hex, defender->getPosition());
+		else
+		{
+			defenderUnits = state->getAttackedBattleUnits(attacker, defender, defHex, false, hex, defender->getPosition());
+			requestedDefenderUnits = state->getAttackedBattleUnits(attacker, requestedDefender, defHex,
+				false, hex, requestedDefender->getPosition());
+			retaliatedUnits = state->getAttackedBattleUnits(defender, attacker, hex, false, defender->getPosition(), hex);
+
+			vstd::erase_if(defenderUnits, [attacker](const battle::Unit * unit) { return unit->unitId() == attacker->unitId(); });
+			vstd::erase_if(requestedDefenderUnits, [attacker](const battle::Unit * unit) { return unit->unitId() == attacker->unitId(); });
+			if(!vstd::contains_if(retaliatedUnits, [attacker](const battle::Unit * unit)
+				{ return unit->unitId() == attacker->unitId(); }))
+				retaliatedUnits.push_back(attacker);
+		}
+		if(projectsProtect && !vstd::contains_if(requestedDefenderUnits, [requestedDefender](const battle::Unit * unit)
+			{ return unit->unitId() == requestedDefender->unitId(); }))
+			requestedDefenderUnits.push_back(requestedDefender);
+		if(!vstd::contains_if(defenderUnits, [defender](const battle::Unit * unit)
+			{ return unit->unitId() == defender->unitId(); }))
+			defenderUnits.push_back(defender);
+		const auto hasBastionTarget = [&state](const battle::Units & targets)
+		{
+			return std::ranges::any_of(targets, [&state](const battle::Unit * target)
+				{ return state->battleHasBastionProtection(target); });
+		};
+		const bool physicalCreatureAttack = newHorizonsCombatSkills::isPhysicalCreatureAttack(
+			attacker, attackInfo.physicalDamage);
+		const bool projectsBastionOnAttack = physicalCreatureAttack
+			&& (hasBastionTarget(defenderUnits)
+				|| (projectsProtect && hasBastionTarget(requestedDefenderUnits)));
+		const bool physicalCreatureRetaliation = newHorizonsCombatSkills::isPhysicalCreatureAttack(
+			defender, potentialRetaliation.physicalDamage);
+		const bool projectsBastionOnRetaliation = physicalCreatureRetaliation
+			&& hasBastionTarget(retaliatedUnits);
+		const bool projectsBastionOnCounterfire = attackInfo.shooting && physicalCreatureAttack
+			&& state->battleHasBastionProtection(attacker)
+			&& std::ranges::any_of(defenderUnits, [&state, attacker, currentRound](const battle::Unit * counterShooter)
+			{
+				const auto counterShooterState = counterShooter->acquireState();
+				const auto * counterHero = state->battleGetFightingHero(counterShooter->unitSide());
+				if(!counterShooterState || !newHorizonsArchery::canUseCounterfire(counterHero, counterShooter)
+					|| counterShooterState->archeryCounterfireRound == currentRound
+					|| !state->battleCanShoot(counterShooter, attacker->getPosition()))
+					return false;
+				const BattleAttackInfo counterfire(counterShooter, attacker, 0, true);
+				return newHorizonsCombatSkills::isPhysicalCreatureAttack(
+					counterfire.attacker, counterfire.physicalDamage);
+			});
 		const bool ordinaryAttacker = newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attacker);
 		const bool mayReceiveBulwarkReaction = ordinaryAttacker && attackInfo.physicalDamage
 			&& !attackInfo.shooting && !attackInfo.retaliation
@@ -713,16 +770,18 @@ AttackPossibility AttackPossibility::evaluate(
 		const bool projectsMireGrip = attackInfo.physicalDamage && !attackInfo.shooting
 			&& ordinaryAttacker && mireGripTargetCanBeHit && attackerInitialState
 			&& !attackerInitialState->bulwarkMireGripApplied;
+		const bool projectsBastion = projectsBastionOnAttack || projectsBastionOnRetaliation
+			|| projectsBastionOnCounterfire;
 		const bool projectsBulwarkEffects = mayReceiveBulwarkReaction || mayReflectBulwarkDamage
 			|| projectsImmovable || projectsSwampRenewal || projectsMireGrip;
 		if(ap.perfectMoment || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 				|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
-				|| projectsBulwarkEffects || projectsSecondChance || projectsGambler || projectsChainOfFortune)
+				|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
 	if(projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
-			|| projectsBulwarkEffects || projectsSecondChance || projectsGambler || projectsChainOfFortune)
+			|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune)
 			ap.effectPreview = fortunePreview;
 	const CBattleInfoCallback & luckState = fortunePreview
 		? static_cast<const CBattleInfoCallback &>(*fortunePreview) : *state;
@@ -777,32 +836,10 @@ AttackPossibility AttackPossibility::evaluate(
 		if(!attackInfo.shooting || projectsSkirmisher)
 			ap.attackerState->setPosition(hex);
 
-		battle::Units defenderUnits;
-		battle::Units requestedDefenderUnits;
-		battle::Units retaliatedUnits = {attacker};
 		battle::Units affectedUnits;
 
-		if (attackInfo.shooting)
-			defenderUnits = state->getAttackedBattleUnits(attacker, defender, defHex, true, hex, defender->getPosition());
-		else
+		if(!attackInfo.shooting)
 		{
-			defenderUnits = state->getAttackedBattleUnits(attacker, defender, defHex, false, hex, defender->getPosition());
-			// Keep the originally requested footprint even when Protect has already
-			// spent its allowance (or is broken/unavailable). Later strikes then
-			// correctly fall back to the Ward instead of evaluating an empty target set.
-			requestedDefenderUnits = state->getAttackedBattleUnits(attacker, requestedDefender, defHex,
-				false, hex, requestedDefender->getPosition());
-			retaliatedUnits = state->getAttackedBattleUnits(defender, attacker, hex, false, defender->getPosition(), hex);
-
-			// attacker can not melle-attack itself but still can hit that place where it was before moving
-			vstd::erase_if(defenderUnits, [attacker](const battle::Unit * u) -> bool { return u->unitId() == attacker->unitId(); });
-			vstd::erase_if(requestedDefenderUnits, [attacker](const battle::Unit * u) -> bool { return u->unitId() == attacker->unitId(); });
-
-			if(!vstd::contains_if(retaliatedUnits, [attacker](const battle::Unit * u) -> bool { return u->unitId() == attacker->unitId(); }))
-			{
-				retaliatedUnits.push_back(attacker);
-			}
-
 			auto obstacleDamage = damageCache.getObstacleDamage(hex, attacker);
 
 			if(obstacleDamage > 0)
@@ -813,16 +850,6 @@ AttackPossibility AttackPossibility::evaluate(
 				ap.preAttackDamage += obstacleDamage;
 			}
 		}
-		if(projectsProtect && !vstd::contains_if(requestedDefenderUnits, [requestedDefender](const battle::Unit * unit)
-			{ return unit->unitId() == requestedDefender->unitId(); }))
-			requestedDefenderUnits.push_back(requestedDefender);
-
-		// ensure the defender is also affected
-		if(!vstd::contains_if(defenderUnits, [defender](const battle::Unit * u) -> bool { return u->unitId() == defender->unitId(); }))
-		{
-			defenderUnits.push_back(defender);
-		}
-
 		affectedUnits = defenderUnits;
 		for(const auto * unit : requestedDefenderUnits)
 			if(!vstd::contains_if(affectedUnits, [unit](const battle::Unit * value)
@@ -905,6 +932,9 @@ AttackPossibility AttackPossibility::evaluate(
 					preemptive.attackerPos = strikeDefenderState->second->getPosition();
 					preemptive.defenderPos = ap.attackerState->getPosition();
 					auto preemptiveDamage = luckState.battleExpectedLuckDamage(preemptive);
+					const bool consumesBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
+						preemptive.attacker, preemptive.physicalDamage)
+						&& luckState.battleHasBastionProtection(ap.attackerState.get());
 					const auto preemptiveProvenance = battleAIDamageProvenance(
 						strikeDefenderState->second.get(), preemptive.physicalDamage);
 					const auto requestedPreemptiveDamage = preemptiveDamage;
@@ -915,6 +945,8 @@ AttackPossibility AttackPossibility::evaluate(
 						ap.attackerState.get(), projectedPreemptiveDamage.healthLoss, damageCache, state);
 					ap.attackerState->damage(appliedPreemptiveDamage, false,
 						preemptiveProvenance);
+					if(consumesBastion)
+						ap.attackerState->armorerBastionRound = currentRound;
 					if(fortunePreview)
 					{
 						FortuneStrikeProjection preemptiveStrike;
@@ -1027,6 +1059,9 @@ AttackPossibility AttackPossibility::evaluate(
 				else
 					damageDealt = luckState.battleExpectedLuckDamage(victimAttack);
 				const auto incomingDamage = damageDealt;
+				const bool consumesBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
+					victimAttack.attacker, victimAttack.physicalDamage)
+					&& luckState.battleHasBastionProtection(defenderState.get());
 				const auto damageProvenance = battleAIDamageProvenance(
 					victimAttack.attacker, victimAttack.physicalDamage);
 				const auto projectedDamage = battleAIProjectDamage(
@@ -1068,6 +1103,8 @@ AttackPossibility AttackPossibility::evaluate(
 				defenderState->damage(damageDealt, false,
 					damageProvenance);
 				strike.resolvedHits.emplace_back(u->unitId(), damageDealt);
+				if(consumesBastion)
+					defenderState->armorerBastionRound = currentRound;
 				if(victimAttack.physicalDamage && ordinaryAttacker && defenderState->defended()
 					&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defenderState.get())
 					&& newHorizonsBulwark::hasImmovable(targetHero)
@@ -1103,7 +1140,10 @@ AttackPossibility AttackPossibility::evaluate(
 					retaliation->attackerId = retaliatorState->unitId();
 					retaliation->defenderId = attacker->unitId();
 					retaliation->retaliation = true;
-					retaliation->damageProvenance = battleAIDamageProvenance(retaliatorState.get(), true);
+					BattleAttackInfo retaliationAttack(retaliatorState.get(), ap.attackerState.get(), 0, false);
+					retaliationAttack.retaliation = true;
+					retaliation->damageProvenance = battleAIDamageProvenance(
+						retaliatorState.get(), retaliationAttack.physicalDamage);
 					retaliation->attackIndex = 0;
 					for(auto retaliated : retaliatedUnits)
 					{
@@ -1279,12 +1319,17 @@ AttackPossibility AttackPossibility::evaluate(
 						counterShooter->archeryDeadeyeRound = currentRound;
 					const auto counterfireProvenance = battleAIDamageProvenance(
 						counterShooter.get(), counterfire.physicalDamage);
+					const bool consumesBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
+						counterfire.attacker, counterfire.physicalDamage)
+						&& luckState.battleHasBastionProtection(ap.attackerState.get());
 					const auto projectedCounterfireDamage = battleAIProjectDamage(
 						ap.attackerState.get(), counterfireDamage, counterfireProvenance);
 					ap.attackerDamageReduce += calculateDamageReduce(counterShooter.get(), ap.attackerState.get(),
 						projectedCounterfireDamage.healthLoss, damageCache, state);
 					ap.attackerState->damage(counterfireDamage, false,
 						counterfireProvenance);
+					if(consumesBastion)
+						ap.attackerState->armorerBastionRound = currentRound;
 					if(fortunePreview)
 					{
 						FortuneStrikeProjection counterfireStrike;
@@ -1398,6 +1443,9 @@ AttackPossibility AttackPossibility::evaluate(
 					int64_t cleaveDamage = luckState.battleExpectedLuckDamage(cleaveAttack);
 					const auto cleaveProvenance = battleAIDamageProvenance(
 						ap.attackerState.get(), cleaveAttack.physicalDamage);
+					const bool consumesBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
+						cleaveAttack.attacker, cleaveAttack.physicalDamage)
+						&& luckState.battleHasBastionProtection(targetState.get());
 					const auto projectedCleaveDamage = battleAIProjectDamage(
 						targetState.get(), cleaveDamage, cleaveProvenance);
 					ap.defenderDamageReduce += calculateDamageReduce(ap.attackerState.get(), targetState.get(),
@@ -1411,6 +1459,8 @@ AttackPossibility AttackPossibility::evaluate(
 					cleave->cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
 					cleave->hits.emplace_back(targetState->unitId(), cleaveDamage);
 					targetState->damage(cleaveDamage, false, cleave->damageProvenance);
+					if(consumesBastion)
+						targetState->armorerBastionRound = currentRound;
 					cleave->resolvedHits.emplace_back(targetState->unitId(), cleaveDamage);
 					captureAndProjectFortuneStrike(cleaveAttack, cleave->hits,
 						ap.attackerState.get(), cleave->resolvedLuck);
@@ -1514,8 +1564,21 @@ AttackPossibility AttackPossibility::evaluate(
 			for(auto & [targetState, rawDamage] : pendingRetaliationDamage)
 			{
 				auto actualDamage = rawDamage;
+				bool consumesBastion = false;
+				if(retaliation)
+				{
+					auto retaliatorState = defenderStates.at(retaliation->attackerId);
+					BattleAttackInfo retaliationAttack(retaliatorState.get(), targetState.get(), 0, false);
+					retaliationAttack.retaliation = true;
+					retaliationAttack.secondaryAttack = targetState->unitId() != attacker->unitId();
+					consumesBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
+						retaliationAttack.attacker, retaliationAttack.physicalDamage)
+						&& luckState.battleHasBastionProtection(targetState.get());
+				}
 				targetState->damage(actualDamage, false,
 					retaliation ? retaliation->damageProvenance : battle::DamageProvenance::OTHER);
+				if(consumesBastion)
+					targetState->armorerBastionRound = currentRound;
 				retaliationActualHits.emplace_back(targetState->unitId(), actualDamage);
 				if(retaliation)
 					retaliation->resolvedHits.emplace_back(targetState->unitId(), actualDamage);

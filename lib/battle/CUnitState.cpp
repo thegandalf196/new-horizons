@@ -910,6 +910,7 @@ CUnitState::CUnitState():
 	bulwarkMireGripApplied(false),
 	bulwarkDefendPhysicalDamage(0),
 	bulwarkImmovableRound(-1),
+	armorerBastionRound(-1),
 	bulwarkToxicSpinesRound(-1),
 	physicalPoisonBaseDamage(0),
 	physicalPoisonActivationsRemaining(0),
@@ -974,6 +975,7 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	bulwarkDefendPhysicalDamage = other.bulwarkDefendPhysicalDamage;
 	veteranPhysicalDamageSinceActivation = other.veteranPhysicalDamageSinceActivation;
 	bulwarkImmovableRound = other.bulwarkImmovableRound;
+	armorerBastionRound = other.armorerBastionRound;
 	bulwarkToxicSpinesRound = other.bulwarkToxicSpinesRound;
 	physicalPoisonBaseDamage = other.physicalPoisonBaseDamage;
 	physicalPoisonActivationsRemaining = other.physicalPoisonActivationsRemaining;
@@ -1767,6 +1769,9 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeInt("bulwarkImmovableRound", bulwarkImmovableRound, -1);
 	if(bulwarkImmovableRound < -1)
 		throw std::runtime_error("Invalid Bulwark perk round marker");
+	handler.serializeInt("armorerBastionRound", armorerBastionRound, -1);
+	if(armorerBastionRound < -1)
+		throw std::runtime_error("Invalid Armorer Bastion round marker");
 	handler.serializeInt("bulwarkToxicSpinesRound", bulwarkToxicSpinesRound, -1);
 	if(bulwarkToxicSpinesRound < -1)
 		throw std::runtime_error("Invalid Toxic Spines round marker");
@@ -1881,6 +1886,7 @@ void CUnitState::reset()
 	bulwarkDefendPhysicalDamage = 0;
 	veteranPhysicalDamageSinceActivation = 0;
 	bulwarkImmovableRound = -1;
+	armorerBastionRound = -1;
 	bulwarkToxicSpinesRound = -1;
 	physicalPoisonBaseDamage = 0;
 	physicalPoisonActivationsRemaining = 0;

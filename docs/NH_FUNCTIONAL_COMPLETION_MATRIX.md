@@ -14,6 +14,22 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-135 Bastion verified checkpoint: client and test targets build; final
+fixture build92361 exits0 and native45892 passes8/8 in2.618s, zero skips.
+Legal perk offers, actual Defend/Hold the Line reduction, first-hit expenditure,
+real next-round renewal, spell-like exclusion, detached branch/live isolation
+and compatible JSON/copy defaults pass. Registration changes172->173/310,
+138->137 planned; Armorer6->7/10. Activated gates remain next. Generic UI
+Provisional, purpose-made artwork Not done; no GUI/playable promotion.
+Phase2 retains absorbed/lethal/current-control/Immovable combinations, populated
+AI cache assertions and Hold the Line Defend-heuristic baseline valuation.
+This checkpoint supersedes earlier in-progress counts below.
+Activated both-target build28218 exits0. Combined native67346 passes18/18
+in5.197s, zero skips (Bastion8 plus Mine Layer10). Data/schema/inventory35/35
+and generated-module drift pass; independent frozen reviews have no blocking
+findings. Frozen pre-commit test SHA-256:
+`794af3ccffdbbde1d3b4a4829561589600f81811c5cc955197bfacb66a5860c4`.
+
 UP-139 structural audit: canonical Meteor Shower/Armageddon currently damage
 units but lack their scenery/fortification clauses. Demolitionist has no eligible
 Havoc structural producer yet; Earthquake is Nature and must not be substituted.
@@ -1146,7 +1162,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 172/310 | 138 planned; Mine Layer is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 173/310 | 137 planned; Bastion is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -1174,8 +1190,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 172
-active perks, leaving nine ranks and 138 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 173
+active perks, leaving nine ranks and 137 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-10-02; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -1280,7 +1296,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Skill | Active/planned ranks | Active/planned perks | Immediate state |
 |---|---:|---:|---|
 | Offense | 3/0 | 10/0 | Evidence audit required |
-| Armorer | 3/0 | 6/4 | Formation Fighting and Veteran have focused live/detached damage evidence. Four perks missing; Last Stand awaits design choices. |
+| Armorer | 3/0 | 7/3 | Bastion, Formation Fighting and Veteran have focused live/detached damage evidence. Three perks missing; Last Stand and Defiant await design choices. |
 | Archery | 3/0 | 10/0 | All ten perks are active; focused evidence pending |
 | Battlecraft | 3/0 | 2/8 | Entrench and Reserve active. Reserve has focused real delayed movement, expiry, save/packet and branch-local AI evidence. Eight perks remain planned. |
 | War Machines | 3/0 | 5/5 | Surgeon and Piercing Bolts have focused live/detached evidence; Fortification Engineer has real fortified-town manual-shot evidence; Master Gunner has accepted independently targeted second-shot evidence; Quartermaster has accepted half-output Ballista/Tent/Catapult extra-activation evidence. Five perks remain planned. Battlefield Medic persistence awaits clarification. |

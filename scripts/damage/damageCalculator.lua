@@ -618,6 +618,7 @@ function Script:calculate(battle, info)
 	local activationOutputMultiplier = math.max(0, (info.activationOutputPercent or 100) / 100)
 	local phantomDamageMultiplier = self:getPhantomDamageMultiplier(info)
 	local bulwarkImmovableMultiplier = math.max(0, (info.bulwarkImmovableFinalDamageMultiplier or 100) / 100)
+	local armorerBastionMultiplier = math.max(0, (info.armorerBastionFinalDamageMultiplier or 100) / 100)
 	local physicalDamageReductionMultiplier = usesPhysicalDamageReductionStage
 		and getPhysicalDamageReductionFactor(info) or 1.0
 
@@ -653,6 +654,7 @@ function Script:calculate(battle, info)
 		* heroOrderMultiplier * cleaveMultiplier * archeryRangedMultiplier * rangedFollowUpMultiplier
 		* activationOutputMultiplier * phantomDamageMultiplier
 		* bulwarkImmovableMultiplier
+		* armorerBastionMultiplier
 	local stabilizePdrRounding = usesPhysicalDamageReductionStage and physicalDamageReductionMultiplier < 1
 	local damageMin = apply(baseMin, damageFactor, stabilizePdrRounding)
 	local damageMax = apply(baseMax, damageFactor, stabilizePdrRounding)

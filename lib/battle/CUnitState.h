@@ -260,6 +260,8 @@ public:
 	int64_t veteranPhysicalDamageSinceActivation = 0;
 	/// Round in which this stack first received Immovable's Defend reduction.
 	int32_t bulwarkImmovableRound;
+	/// Round in which this stack first received Armorer Bastion's physical-attack reduction.
+	int32_t armorerBastionRound;
 	/// Round in which this Defending stack first reflected a melee hit for Toxic Spines.
 	int32_t bulwarkToxicSpinesRound;
 	/// Saved physical Poison potency and remaining real-activation ticks (not SPELL_EFFECT bonuses).

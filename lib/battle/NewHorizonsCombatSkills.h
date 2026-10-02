@@ -28,7 +28,9 @@ constexpr std::string_view COUNTERCHARGE_PERK_ID = "new-horizons:armorer.counter
 constexpr std::string_view FORMATION_FIGHTING_PERK_ID = "new-horizons:armorer.formationFighting";
 constexpr std::string_view PAVISE_PERK_ID = "new-horizons:armorer.pavise";
 constexpr std::string_view VETERAN_PERK_ID = "new-horizons:armorer.veteran";
+constexpr std::string_view BASTION_PERK_ID = "new-horizons:armorer.bastion";
 constexpr int PAVISE_REDUCTION_PERCENT = 25;
+constexpr int BASTION_FINAL_DAMAGE_MULTIPLIER = 70;
 constexpr int FORMATION_FIGHTING_REDUCTION_PERCENT = 10;
 constexpr int VETERAN_RECOVERY_PERCENT = 15;
 
@@ -38,6 +40,8 @@ DLL_LINKAGE int armorerReductionPercent(int rank);
 DLL_LINKAGE int formationFightingReductionPercent(const CGHeroInstance * hero);
 /// Whether an attacker qualifies for ordinary creature-attack skill hit modifiers.
 DLL_LINKAGE bool isOrdinaryCreatureAttacker(const battle::Unit * attacker);
+/// Whether an attack is physical damage from an ordinary creature stack (not a war machine).
+DLL_LINKAGE bool isPhysicalCreatureAttack(const battle::Unit * attacker, bool physicalDamage);
 /// Whether an attack can trigger creature Luck perks that require a physical creature attack.
 DLL_LINKAGE bool isPhysicalCreatureLuckAttack(const battle::Unit * attacker, bool physicalDamage);
 /// Independent ranged-physical reduction while the target is Defending.

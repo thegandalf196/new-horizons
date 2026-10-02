@@ -10,6 +10,11 @@ This is a binding inventory, not a full visual audit or a product completion cla
 
 ## Status meanings
 
+Bastion source/native checkpoint (UP-135): named first-hit combat feedback and
+shared Defend/Hold the Line eligibility have focused live/detached8/8 evidence.
+Registry173/310 active,137 planned. Generic UI Provisional; purpose-made art
+Not done. No rendered or playable acceptance is claimed.
+
 Mine Layer source/native checkpoint (UP-137): shared count and server validation
 support the additional mine, including five-mine AI placement. Principal10/10
 passes; active registry coverage is172/310,138 planned. Generic perk UI is

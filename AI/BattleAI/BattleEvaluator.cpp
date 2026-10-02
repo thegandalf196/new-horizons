@@ -3300,7 +3300,10 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 	const int bulwarkRank = newHorizonsBulwark::rank(hero);
 	const int paviseReduction = newHorizonsCombatSkills::paviseReductionPercent(hero);
 	const bool hasHoldFast = newHorizonsDiscipline::hasHoldFast(hero);
-	if(bulwarkRank == 0 && paviseReduction == 0 && !hasHoldFast)
+	const bool hasBastion = hero && hero->hasActivePerk(
+		std::string(newHorizonsCombatSkills::ARMORER_SKILL_ID),
+		std::string(newHorizonsCombatSkills::BASTION_PERK_ID));
+	if(bulwarkRank == 0 && paviseReduction == 0 && !hasHoldFast && !hasBastion)
 		return false;
 
 	auto defendedPreview = std::make_shared<HypotheticBattle>(environment, battle);
@@ -3308,6 +3311,7 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 	if(!projectedTarget)
 		return false;
 	projectedTarget->defending = true;
+	bool bastionForecastAvailable = defendedPreview->battleHasBastionProtection(projectedTarget.get());
 	float holdFastMoraleValue = 0.0f;
 	if(hasHoldFast && !stack->unaffectedByMorale() && battle->battleGetMorale(stack) < 0)
 	{
@@ -3326,6 +3330,8 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 		float afterFirstPerAttack = 0.0f;
 		float afterPerAttack = 0.0f;
 		std::optional<int32_t> immovableRoundBefore;
+		std::optional<int32_t> bastionRoundBefore;
+		bool bastionPhysicalDamage = false;
 	};
 	std::vector<IncomingThreat> threats;
 	struct SharedCoverThreat
@@ -3334,6 +3340,7 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 		float beforeTotal = 0.0f;
 		float afterTotal = 0.0f;
 		bool immovableAvailable = false;
+		bool bastionAvailable = false;
 	};
 	std::vector<SharedCoverThreat> sharedCoverThreats;
 	if(newHorizonsBulwark::hasSharedCover(hero))
@@ -3346,7 +3353,8 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 				const auto allyState = ally->acquireState();
 				const bool immovableAvailable = newHorizonsBulwark::hasImmovable(allyHero) && allyState
 					&& allyState->bulwarkImmovableRound != battle->battleGetRound();
-				sharedCoverThreats.push_back({ally, 0.0f, 0.0f, immovableAvailable});
+				const bool bastionAvailable = battle->battleHasBastionProtection(ally);
+				sharedCoverThreats.push_back({ally, 0.0f, 0.0f, immovableAvailable, bastionAvailable});
 			}
 	}
 	const auto enemies = battle->battleGetUnitsIf([&](const battle::Unit * enemy)
@@ -3396,7 +3404,11 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 				continue;
 			IncomingThreat candidate{enemy, shooting,
 				!shooting || !enemy->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK), count,
-				before, after, after, std::nullopt};
+				before, after, after, std::nullopt, std::nullopt, false};
+			const auto * projectedEnemy = defendedPreview->battleGetUnitByID(enemy->unitId());
+			const BattleAttackInfo bastionAttack(projectedEnemy, projectedTarget.get(), 0, shooting);
+			candidate.bastionPhysicalDamage = newHorizonsCombatSkills::isPhysicalCreatureAttack(
+				projectedEnemy, bastionAttack.physicalDamage);
 			if(!selected || candidate.beforePerAttack * candidate.attackCount
 				> selected->beforePerAttack * selected->attackCount)
 				selected = candidate;
@@ -3405,17 +3417,28 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 		{
 			threats.push_back(*selected);
 			auto & threat = threats.back();
-			if(immovableForecastAvailable && threat.physicalDamage)
+			const bool forecastsImmovable = immovableForecastAvailable && threat.physicalDamage;
+			const bool forecastsBastion = bastionForecastAvailable && threat.bastionPhysicalDamage;
+			if(forecastsImmovable || forecastsBastion)
 			{
-				// Keep the first hit at the enhanced value, then consume Immovable
-				// in this detached round projection before estimating follow-up hits.
-				threat.immovableRoundBefore = projectedTarget->bulwarkImmovableRound;
-				projectedTarget->bulwarkImmovableRound = battle->battleGetRound();
+				// The first physical hit receives each available per-round reduction;
+				// estimate the remaining attacks after spending those allowances.
+				if(forecastsImmovable)
+				{
+					threat.immovableRoundBefore = projectedTarget->bulwarkImmovableRound;
+					projectedTarget->bulwarkImmovableRound = battle->battleGetRound();
+					immovableForecastAvailable = false;
+				}
+				if(forecastsBastion)
+				{
+					threat.bastionRoundBefore = projectedTarget->armorerBastionRound;
+					projectedTarget->armorerBastionRound = battle->battleGetRound();
+					bastionForecastAvailable = false;
+				}
 				const auto * projectedEnemy = defendedPreview->battleGetUnitByID(enemy->unitId());
 				const BattleAttackInfo subsequentAttack(projectedEnemy, projectedTarget.get(), 0, threat.shooting);
 				threat.afterPerAttack = averageOrderDamage(
 					defendedPreview->battleEstimateDamage(subsequentAttack));
-				immovableForecastAvailable = false;
 			}
 		}
 
@@ -3456,7 +3479,9 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 				IncomingThreat candidate{enemy, shooting,
 					!shooting || !enemy->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK), count,
 					averageOrderDamage(battle->battleEstimateDamage(beforeAttack)),
-					after, after, std::nullopt};
+					after, after, std::nullopt, std::nullopt, false};
+				candidate.bastionPhysicalDamage = newHorizonsCombatSkills::isPhysicalCreatureAttack(
+					projectedEnemy, afterAttack.physicalDamage);
 				if(!allyThreat || candidate.beforePerAttack * candidate.attackCount
 					> allyThreat->beforePerAttack * allyThreat->attackCount)
 					allyThreat = candidate;
@@ -3464,10 +3489,21 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 			if(allyThreat)
 			{
 				sharedThreat.beforeTotal += allyThreat->beforePerAttack * allyThreat->attackCount;
-				if(sharedThreat.immovableAvailable && allyThreat->physicalDamage)
+				const bool forecastsImmovable = sharedThreat.immovableAvailable && allyThreat->physicalDamage;
+				const bool forecastsBastion = sharedThreat.bastionAvailable && allyThreat->bastionPhysicalDamage;
+				if(forecastsImmovable || forecastsBastion)
 				{
 					auto projectedAlly = defendedPreview->getForUpdate(sharedThreat.ally->unitId());
-					projectedAlly->bulwarkImmovableRound = battle->battleGetRound();
+					if(forecastsImmovable)
+					{
+						projectedAlly->bulwarkImmovableRound = battle->battleGetRound();
+						sharedThreat.immovableAvailable = false;
+					}
+					if(forecastsBastion)
+					{
+						projectedAlly->armorerBastionRound = battle->battleGetRound();
+						sharedThreat.bastionAvailable = false;
+					}
 					const auto * projectedEnemy = defendedPreview->battleGetUnitByID(enemy->unitId());
 					const BattleAttackInfo subsequentAttack(projectedEnemy, projectedAlly.get(), 0,
 						allyThreat->shooting);
@@ -3475,7 +3511,6 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 						defendedPreview->battleEstimateDamage(subsequentAttack));
 					sharedThreat.afterTotal += allyThreat->afterFirstPerAttack
 						+ afterPerAttack * std::max(0, allyThreat->attackCount - 1);
-					sharedThreat.immovableAvailable = false;
 				}
 				else
 					sharedThreat.afterTotal += allyThreat->afterFirstPerAttack
@@ -3533,14 +3568,19 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 				const float afterPerAttack = averageOrderDamage(
 					defendedPreview->battleEstimateDamage(afterReaction));
 				float afterFirstPerAttack = afterPerAttack;
-				if(threat.immovableRoundBefore)
+				if(threat.immovableRoundBefore || threat.bastionRoundBefore)
 				{
 					const auto consumedRound = projectedTarget->bulwarkImmovableRound;
-					projectedTarget->bulwarkImmovableRound = *threat.immovableRoundBefore;
+					const auto consumedBastionRound = projectedTarget->armorerBastionRound;
+					if(threat.immovableRoundBefore)
+						projectedTarget->bulwarkImmovableRound = *threat.immovableRoundBefore;
+					if(threat.bastionRoundBefore)
+						projectedTarget->armorerBastionRound = *threat.bastionRoundBefore;
 					BattleAttackInfo firstAfterReaction(projectedEnemy.get(), projectedTarget.get(), 0, false);
 					afterFirstPerAttack = averageOrderDamage(
 						defendedPreview->battleEstimateDamage(firstAfterReaction));
 					projectedTarget->bulwarkImmovableRound = consumedRound;
+					projectedTarget->armorerBastionRound = consumedBastionRound;
 				}
 				// The attacker's damage count may change after the reaction, which
 				// also changes how much physical damage can be reflected.

@@ -115,6 +115,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int bulwarkDamageReductionBasisPoints = 0;
 	/// Immovable's post-reduction physical damage multiplier; 100 is neutral.
 	int bulwarkImmovableFinalDamageMultiplier = 100;
+	/// Armorer Bastion's once-per-round post-reduction physical damage multiplier; 100 is neutral.
+	int armorerBastionFinalDamageMultiplier = 100;
 	/// Fraction of the explicit Defend-state defense contribution ignored by a melee blow.
 	int defensiveStanceDamageReductionIgnorePercent = 0;
 	/// Defend's temporary Creature Defense contribution, before Breakthrough applies its
@@ -215,6 +217,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Bulwark physical damage reduction in basis points.");
 		s("bulwarkImmovableFinalDamageMultiplier", bulwarkImmovableFinalDamageMultiplier,
 			"Immovable final physical damage multiplier; 100 is neutral.");
+		s("armorerBastionFinalDamageMultiplier", armorerBastionFinalDamageMultiplier,
+			"Armorer Bastion final physical damage multiplier; 100 is neutral.");
 		s("defensiveStanceDamageReductionIgnorePercent", defensiveStanceDamageReductionIgnorePercent,
 			"Percentage of the explicit Defend-state defense contribution ignored by this melee attack.");
 		s("defensiveStanceDefenseBonus", defensiveStanceDefenseBonus,
