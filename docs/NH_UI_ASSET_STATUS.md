@@ -10,6 +10,11 @@ This is a binding inventory, not a full visual audit or a product completion cla
 
 ## Status meanings
 
+Mine Layer source/native checkpoint (UP-137): shared count and server validation
+support the additional mine, including five-mine AI placement. Principal10/10
+passes; active registry coverage is172/310,138 planned. Generic perk UI is
+Provisional, purpose-made art Not done; no rendered/playable acceptance claimed.
+
 Unbreakable source/native checkpoint (UP-131): named combat feedback identifies
 the first negative-Morale suppression each round, separate from Rally. Native
 10/10 and data/inventory35/35 pass with production registration enabled. Registry

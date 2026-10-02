@@ -323,6 +323,7 @@ set(test_SRCS
 		server/battles/NewHorizonsQuartermasterTest.cpp
 		server/battles/NewHorizonsTwistScriptedTest.cpp
 		server/battles/NewHorizonsLandMineTest.cpp
+		server/battles/NewHorizonsMineLayerTest.cpp
 		server/battles/NewHorizonsQuicksandTest.cpp
 		server/battles/NewHorizonsFireWallTest.cpp
 		server/battles/NewHorizonsTimeStopTest.cpp

@@ -45,6 +45,9 @@ namespace spells
 
 namespace
 {
+constexpr std::string_view HAVOC_MINE_LAYER_PERK_ID = "new-horizons:havocMagic.mineLayer";
+constexpr int HAVOC_MINE_LAYER_ADDITIONAL_MINES = 1;
+
 int64_t multiplyDivideFloor(int64_t value, uint64_t multiplier, int64_t divisor)
 {
 	// value is smaller than divisor. This bitwise quotient/remainder loop avoids
@@ -232,7 +235,14 @@ int32_t Mechanics::getNewHorizonsLandMinePatchCount() const
 	if(!usesNewHorizonsMagic() || !newHorizonsMagic::isLandMine(getSpellId()))
 		return 0;
 
-	return newHorizonsMagic::landMineHexCount(getEffectPower(), getSpellPowerCoefficientBasisPoints());
+	const int32_t count = newHorizonsMagic::landMineHexCount(
+		getEffectPower(), getSpellPowerCoefficientBasisPoints());
+	const auto * hero = getHeroCaster();
+	if(hero && hero->hasActivePerk(std::string(newHorizonsMagic::HAVOC_MAGIC_SKILL),
+		std::string(HAVOC_MINE_LAYER_PERK_ID)))
+		return count + HAVOC_MINE_LAYER_ADDITIONAL_MINES;
+
+	return count;
 }
 
 bool Mechanics::usesNewHorizonsEarthquake() const

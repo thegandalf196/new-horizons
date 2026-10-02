@@ -2,6 +2,48 @@
 
 ## Purpose
 
+### 2026-10-02 UP-135 — Bastion AI compilation
+
+Client build92791 exits1: AttackPossibility's new Counterfire branch gate reads
+archeryCounterfireRound directly from battle::Unit, whose interface exposes
+that marker through acquireState instead. Preserve the gate and inspect the
+copied state; do not remove Counterfire projection to pass compilation.
+Retry and focused native acceptance remain pending. New aggregate optional
+marker fields also need explicit initialization to avoid added warnings.
+Both-target retry79589 builds successfully. Principal64640 runs8 cases in2.607s
+with zero skips:4 pass,4 new fixture cases fail. Repeated accepted-action setup
+returns false, post-spell Defend eligibility disappears, and initial detached
+eligibility is false. Diagnose action lifecycle and saved/local perk gates before
+changing production; the fixture owner is repairing only evidenced setup errors.
+The wrapper tails the log, so its exit0 is not the test exit status; the native
+GoogleTest report explicitly records4 failures. Subsequent wrappers must preserve
+the test process exit code as well as checking the report.
+Detached eligibility failure is a fixture visibility error: PlayerColor0's
+callback intentionally hides the defending hero, so it cannot inspect that
+hero's perk. Use an all-knowing test view for this deterministic parity assertion;
+never relax production visibility to make a fixture pass.
+
+Repaired-fixture build72269 exits0. Retry48708 passes6/8 in2.622s, zero
+skips. Two failures remain: baseline prediction after an already-spent actor
+reports1 against actual3825, and a next-round attack is rejected. Keep the
+production rules frozen while diagnosing the fixture; do not activate Bastion
+from the passing subset. This wrapper preserves the native exit1 correctly.
+The baseline fixture used the spent first actor: its activation-output factor
+correctly reduced the hypothetical damage to the floor. Forecast from the
+still-unspent second actor instead. Round renewal must use accepted actions
+through endRound rather than only emitting BattleNextRound. Rebuild49426 is
+running with these fixture-only repairs; production remains unchanged.
+Rebuild49426 exits0, but independent review catches a fixture blocker before
+native execution: the second attacker pair reuses occupied hexes, and the
+double-wide footprints were not checked. Repair legal placement before accepting
+any test result; no passing result is inferred from this build.
+Legal-footprint build48454 exits0. Native46941 runs8 in2.653s:4 pass;
+three cases compare floor(70% of an already-rounded baseline) against the
+correct once-rounded result and differ by1HP. The spell-like gate also loses
+its next melee actor to the Lich's collateral damage. Fixture-only repairs must
+preserve exact protected predictions and meaningful70% bounds, alive actors,
+accepted-action checks and round renewal. Bastion remains planned.
+
 ### 2026-10-02 UP-131 — Unbreakable principal fixture
 
 Client52523 and test10838 exit0. Principal30730 runs10 cases with zero skips:

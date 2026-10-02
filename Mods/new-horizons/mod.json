@@ -4583,7 +4583,7 @@
 								"requires": "advanced",
 								"description": "Land Mine creates one additional mine.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Land Mine creates one additional mine."
 								}
 							},

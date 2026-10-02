@@ -514,7 +514,7 @@ static MetaString heroOrderLogLine(const CBattleInfoCallback & battle, BattleSid
 static bool validateCanonicalLandMineTargets(const CBattleInfoCallback & battle,
 	const spells::Mechanics & mechanics, const battle::Target & target)
 {
-	const int required = newHorizonsMagic::landMineHexCount(mechanics.getEffectPower());
+	const int required = mechanics.getNewHorizonsLandMinePatchCount();
 	if(static_cast<int>(target.size()) != required)
 		return false;
 

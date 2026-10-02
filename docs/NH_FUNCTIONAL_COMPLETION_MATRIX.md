@@ -14,6 +14,46 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-139 structural audit: canonical Meteor Shower/Armageddon currently damage
+units but lack their scenery/fortification clauses. Demolitionist has no eligible
+Havoc structural producer yet; Earthquake is Nature and must not be substituted.
+These partial spell effects are foundational Phase1 work, not balance-only
+polish. Perk registration remains planned until actual structural paths exist.
+
+UP-137 Mine Layer principal51245 passes10/10 in2.899s, zero skips after
+client27766/test22177 successful builds. The shared coefficient-aware count
+adds one after the base cap (3/4/5); UI, obstacle creation, AI and both server
+checks consume it. Legal Advanced acquisition, detached AI and accepted/rejected
+placement paths are verified. Registration changes171->172/310 active,
+139->138 planned; Havoc6->7/10. Activated data/native gates remain pending.
+Activated retry70019 passes10/10 in2.919s, zero skips. Client activation build
+exits0; data/schema/inventory35/35, module drift and independent activation
+review pass. This checkpoint supersedes the older counts below.
+No new state/polling, artwork approval or playable promotion is claimed.
+Phase2 retains broader GUI/placement and explicit unselected legacy guards.
+Windows37008135705 completed successfully on8c5f5ec87, including Broad Muster
+and Unbreakable, but not the newer Precise Casting/Bastion/Mine Layer source.
+
+UP-135 Bastion is being implemented with a distinct per-stack round marker,
+shared current-controller Defend/Hold the Line eligibility, final physical
+damage factor and detached AI spending. It remains planned until build and
+principal verification; counts remain171/310 active and139 planned. No polling,
+playable delivery or new artwork approval is claimed from implementation work.
+UP-135 architecture review found an inherited Phase2 integration concern:
+Immovable's accepted-hit consumption uses !bat.spellLike while its damage gate
+also excludes ranged SPELL_LIKE_ATTACK. Bastion must use matching actual physical
+provenance in reduction, consumption, logging and AI instead of copying that
+mismatch. This finding is recorded, not used to broaden the Bastion slice.
+Frozen runtime/AI reviews find no blocker. Client92791 exits1 on a new
+Counterfire state-interface read; corrected acquireState access is reviewed.
+Both-target retry79589 exits0. Principal64640 runs8 cases in2.607s, zero skips:
+four pass and four fixture setups fail. Repeated/spent action lifecycle and a
+player0 AI view hiding the defender hero are being repaired without weakening
+production validation or information visibility. Activation remains planned.
+Phase2 retains absorbed/lethal/current-control/Immovable assertions and the
+Defend heuristic's repeated baseline discount when Hold the Line already grants
+Bastion. This heuristic limitation does not alter authoritative combat.
+
 UP-133 Precise Casting's bounded three-damage-area path is in source and verified:
 client48085/test18427 and new fixture90773 build; principal96284 passes7/7
 in2.238s, zero skips. Legal Basic/Advanced offers, accepted live/detached Fireball,
@@ -1106,7 +1146,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 170/310 | 140 planned; Broad Muster is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 172/310 | 138 planned; Mine Layer is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -1134,8 +1174,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 170
-active perks, leaving nine ranks and 140 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 172
+active perks, leaving nine ranks and 138 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-10-02; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -1250,7 +1290,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Light Magic | 3/0 | 9/1 | Sanctuary Keeper's linked Morale lifetime and actual AI cast are native verified; Litany grants distinct Mass Bless, alongside Benediction, Healer, Guardian, Aegis, Purifier, Retributionist and Crusader. Miracle Worker remains planned. |
 | Shadow Magic | 3/0 | 9/1 | Grand Malediction now grants distinct Mass Curse/Sorrow with native cast/forecast evidence, alongside the eight earlier perks. Plaguebearer awaits its normal-limit definition. |
 | Nature Magic | 3/0 | 7/3 | Geomancer's structural/terrain effects and actual AI cast are native verified alongside Venomancer's whole-Base snapshot and independent Toxic Spines. Herbalist, Rootcaller, Beastcaller, Verdant Warden and Verdant Communion active. Mire Shaper, Worldroot and Elemental Conjurer remain planned. |
-| Havoc Magic | 3/0 | 6/4 | Four perks missing; Pyromancer, Cryomancer and Controlled Blast are native verified |
+| Havoc Magic | 3/0 | 7/3 | Three perks missing; Mine Layer has focused live/detached placement evidence |
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
 | Chaos Magic | 3/0 | 3/7 | Blinkmaster, Weaver and Paradox Shield are active with focused evidence recorded above; seven perks remain planned. |
 | Spellcraft | 3/0 | 4/6 | Grand Formula scales the first accepted Level 4-or-5 hero spell's SP term by 150%; Arcane Focus, Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold. Basic/Advanced/Expert efficiency is 110/120/130% under saved v3 rules. |
