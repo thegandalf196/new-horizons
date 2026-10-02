@@ -6,5 +6,8 @@
 	"new-horizons.muster.masterAvailable": "Muster available this week",
 	"new-horizons.muster.chooseRow": "Choose a dwelling row.",
 	"new-horizons.muster.noTargets": "No legal Core, Elite, or Champion dwelling row is available in this town.",
-	"new-horizons.muster.rankOnlyNote": "Choose one town dwelling to reinforce."
+	"new-horizons.muster.rankOnlyNote": "Choose one town dwelling to reinforce.",
+	"new-horizons.muster.externalTargetUsed": "Muster already used at this dwelling",
+	"new-horizons.muster.externalRecruiterNote": "Choose one owned external Core dwelling to reinforce.",
+	"new-horizons.muster.noExternalTargets": "No legal Core recruit is available in this external dwelling."
 }

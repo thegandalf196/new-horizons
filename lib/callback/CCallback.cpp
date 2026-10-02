@@ -85,12 +85,12 @@ void CCallback::recruitCreatures(const CGDwelling * obj, const CArmedInstance * 
 	sendRequest(pack);
 }
 
-void CCallback::musterCreatures(const CGHeroInstance * hero, const CGTownInstance * town, CreatureID creature)
+void CCallback::musterCreatures(const CGHeroInstance * hero, const CGDwelling * dwelling, CreatureID creature)
 {
-	if(!hero || !town || !getPlayerID() || *getPlayerID() != hero->getOwner())
+	if(!hero || !dwelling || !getPlayerID() || *getPlayerID() != hero->getOwner())
 		return;
 
-	MusterCreatures pack(hero->id, town->id, creature);
+	MusterCreatures pack(hero->id, dwelling->id, creature);
 	sendRequest(pack);
 }
 

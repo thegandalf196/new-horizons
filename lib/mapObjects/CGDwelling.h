@@ -13,6 +13,7 @@
 #include "IOwnableObject.h"
 
 #include "army/CArmedInstance.h"
+#include "../ResourceSet.h"
 
 class CGDwelling;
 
@@ -38,9 +39,7 @@ public:
 	std::optional<CGDwellingRandomizationInfo> randomizationInfo; //random dwelling options; not serialized
 	TCreaturesSet creatures; //creatures[level] -> <vector of alternative ids (base creature and upgrades, creatures amount>
 	/// Absolute week in which New Horizons Recruitment Muster last affected this
-	/// dwelling.  The marker lives on every CGDwelling so the serialized object
-	/// model remains ready for future external-dwelling Muster rules; the current
-	/// playable slice authorizes only town targets.
+	/// dwelling. Towns and eligible external dwellings share this target marker.
 	int32_t newHorizonsMusterLastWeek = -1;
 
 	CGDwelling(IGameInfoCallback *cb, BonusNodeType nodeType);
@@ -50,6 +49,10 @@ public:
 	const IOwnableObject * asOwnable() const final;
 	ResourceSet dailyIncome() const override;
 	std::vector<CreatureID> providedCreatures() const override;
+	/// Per-creature recruitment cost at this dwelling. Original external level-1
+	/// creature generators provide recruits for free; all other sources use the
+	/// creature's normal cost.
+	TResources getRecruitmentCost(CreatureID creature) const;
 	int32_t getNewHorizonsMusterLastWeek() const { return newHorizonsMusterLastWeek; }
 	void markNewHorizonsMusterUsed(int32_t week) { newHorizonsMusterLastWeek = week; }
 	AnimationPath getKingdomOverviewImage() const;

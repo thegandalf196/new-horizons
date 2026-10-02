@@ -184,8 +184,13 @@ public:
 	/// only reads the town roster and sends the authoritative callback request;
 	/// it never edits the replicated recruitment pool locally.
 	void tryMusterCreatures(const CGHeroInstance * hero, const CGTownInstance * town);
-	bool hasPendingMuster(const CGHeroInstance * hero, const CGTownInstance * town) const;
-	bool hasPendingMuster(const CGTownInstance * town) const;
+	/// Try External Recruiter during its eligible external-dwelling visit query.
+	void tryExternalMusterCreatures(const CGHeroInstance * hero, const CGDwelling * dwelling);
+	bool hasPendingMuster(const CGHeroInstance * hero, const CGDwelling * dwelling) const;
+	bool hasPendingMuster(const CGDwelling * dwelling) const;
+	bool reserveMuster(const CGHeroInstance * hero, const CGDwelling * dwelling,
+		int week, int usedThisWeek, int maximumUses);
+	void releasePendingMuster(const CGHeroInstance * hero, const CGDwelling * dwelling, int week);
 	void clearReplicatedMusters();
 	void pickBestCreatures(const CArmedInstance * army, const CArmedInstance * source); //called when we can't find a slot for new stack
 

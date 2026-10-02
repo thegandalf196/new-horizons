@@ -17,6 +17,7 @@
 
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/entities/hero/NewHorizonsPerkRules.h"
+#include "../../lib/constants/EntityIdentifiers.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/CCreatureHandler.h"
@@ -42,6 +43,11 @@ const CGHeroInstance * townHero(const CGTownInstance * town)
 	if(!town)
 		return nullptr;
 	return town->getVisitingHero() ? town->getVisitingHero() : town->getGarrisonHero();
+}
+
+bool isExternalRecruiterDwelling(const CGDwelling * dwelling)
+{
+	return dwelling && (dwelling->ID == Obj::CREATURE_GENERATOR1 || dwelling->ID == Obj::CREATURE_GENERATOR4);
 }
 
 int currentWeek()
@@ -99,12 +105,13 @@ std::string rankSummary(const int rank, const ::newHorizonsMuster::PerkModifiers
 
 } // namespace
 
-std::optional<Offer> offerFor(const CGTownInstance * town)
+std::optional<Offer> offerFor(const CGDwelling * dwelling, const CGHeroInstance * destinationHero)
 {
-	if(!town || !GAME || !GAME->interface() || !GAME->interface()->cb)
+	if(!dwelling || !GAME || !GAME->interface() || !GAME->interface()->cb)
 		return std::nullopt;
 
-	const auto * hero = townHero(town);
+	const auto * town = dynamic_cast<const CGTownInstance *>(dwelling);
+	const auto * hero = town ? townHero(town) : destinationHero;
 	if(!hero || !newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
 		return std::nullopt;
 
@@ -112,7 +119,12 @@ std::optional<Offer> offerFor(const CGTownInstance * town)
 	if(rank < 1 || rank > 3)
 		return std::nullopt;
 
-	if(town->tempOwner != hero->tempOwner)
+	if(dwelling->tempOwner != hero->tempOwner)
+		return std::nullopt;
+
+	const bool externalDwelling = isExternalRecruiterDwelling(dwelling);
+	if(!town && (!externalDwelling || !hero->hasActivePerk(std::string(::newHorizonsMuster::RECRUITMENT_SKILL),
+		std::string(::newHorizonsMuster::EXTERNAL_RECRUITER_PERK))))
 		return std::nullopt;
 
 	const int week = currentWeek();
@@ -127,20 +139,21 @@ std::optional<Offer> offerFor(const CGTownInstance * town)
 		std::string(::newHorizonsMuster::MASTER_RECRUITER_PERK));
 	const int usesThisWeek = hero->getNewHorizonsMusterUsesThisWeek(week);
 	const int maximumUses = ::newHorizonsMuster::maximumUsesPerWeek(modifiers);
-	const bool targetUsedThisWeek = town->getNewHorizonsMusterLastWeek() == week;
-	return Offer{town, hero, rank, week,
-		usesThisWeek >= maximumUses || targetUsedThisWeek, targetUsedThisWeek, usesThisWeek, maximumUses, modifiers};
+	const bool targetUsedThisWeek = dwelling->getNewHorizonsMusterLastWeek() == week;
+	return Offer{dwelling, hero, rank, week,
+		usesThisWeek >= maximumUses || targetUsedThisWeek, targetUsedThisWeek, usesThisWeek, maximumUses,
+		externalDwelling, modifiers};
 }
 
 std::vector<Target> targetsFor(const Offer & offer)
 {
 	std::vector<Target> result;
-	if(!offer.town || !GAME || !GAME->interface() || !GAME->interface()->cb || offer.usedThisWeek)
+	if(!offer.dwelling || !GAME || !GAME->interface() || !GAME->interface()->cb || offer.usedThisWeek)
 		return result;
 
-	for(size_t row = 0; row < offer.town->creatures.size(); ++row)
+	for(size_t row = 0; row < offer.dwelling->creatures.size(); ++row)
 	{
-		const auto & choices = offer.town->creatures[row].second;
+		const auto & choices = offer.dwelling->creatures[row].second;
 		if(choices.empty())
 			continue;
 
@@ -152,8 +165,14 @@ std::vector<Target> targetsFor(const Offer & offer)
 		if(!category)
 			continue;
 
-		const auto amount = ::newHorizonsMuster::amountForCategory(offer.recruitmentRank, category->category,
-			offer.modifiers);
+		if(offer.externalDwelling && category->category != newHorizonsCreatures::CreatureCategory::CORE)
+			continue;
+
+		// External Recruiter contributes its fixed amount regardless of rank;
+		// it is separate from the town Core row and Volunteer Network modifiers.
+		const auto amount = offer.externalDwelling
+			? ::newHorizonsMuster::amountForExternalCategory(offer.recruitmentRank, category->category, true)
+			: ::newHorizonsMuster::amountForCategory(offer.recruitmentRank, category->category, offer.modifiers);
 		if(!amount)
 			continue;
 
@@ -167,9 +186,9 @@ std::vector<Target> targetsFor(const Offer & offer)
 	return result;
 }
 
-bool isEligible(const CGTownInstance * town)
+bool isEligible(const CGDwelling * dwelling, const CGHeroInstance * destinationHero)
 {
-	return offerFor(town).has_value();
+	return offerFor(dwelling, destinationHero).has_value();
 }
 
 std::string status(const Offer & offer)
@@ -177,22 +196,24 @@ std::string status(const Offer & offer)
 	if(offer.usesThisWeek >= offer.maximumUses)
 		return translate("new-horizons.muster.used", "Muster used this week");
 	if(offer.targetUsedThisWeek)
-		return translate("new-horizons.muster.targetUsed", "Muster already used in this town");
+		return translate(offer.externalDwelling ? "new-horizons.muster.externalTargetUsed" : "new-horizons.muster.targetUsed",
+			offer.externalDwelling ? "Muster already used at this dwelling" : "Muster already used in this town");
 	if(offer.maximumUses > 1)
 		return translate("new-horizons.muster.masterAvailable", "Muster available this week")
 			+ " (" + std::to_string(offer.usesThisWeek) + "/" + std::to_string(offer.maximumUses) + ")";
 	return translate("new-horizons.muster.available", "Muster available this week");
 }
 
-void open(const CGTownInstance * town)
+void open(const CGDwelling * dwelling, const CGHeroInstance * destinationHero)
 {
-	const auto offer = offerFor(town);
+	const auto offer = offerFor(dwelling, destinationHero);
 	if(!offer)
 		return;
 
 	const auto targets = targetsFor(*offer);
-	const std::string unavailableNote = translate("new-horizons.muster.rankOnlyNote",
-		"Choose one town dwelling to reinforce.");
+	const std::string unavailableNote = offer->externalDwelling
+		? translate("new-horizons.muster.externalRecruiterNote", "Choose one owned external Core dwelling to reinforce.")
+		: translate("new-horizons.muster.rankOnlyNote", "Choose one town dwelling to reinforce.");
 	const std::string heading = translate("new-horizons.muster.title", "Muster");
 
 	if(offer->usedThisWeek)
@@ -204,7 +225,9 @@ void open(const CGTownInstance * town)
 	if(targets.empty())
 	{
 		GAME->interface()->showInfoDialog(heading + "\n\n"
-			+ translate("new-horizons.muster.noTargets", "No legal Core, Elite, or Champion dwelling row is available in this town.")
+			+ (offer->externalDwelling
+				? translate("new-horizons.muster.noExternalTargets", "No legal Core recruit is available in this external dwelling.")
+				: translate("new-horizons.muster.noTargets", "No legal Core, Elite, or Champion dwelling row is available in this town."))
 			+ "\n" + unavailableNote);
 		return;
 	}
@@ -218,17 +241,21 @@ void open(const CGTownInstance * town)
 			+ "  +" + std::to_string(target.amount));
 	}
 
-	const std::string description = status(*offer) + ": " + rankSummary(offer->recruitmentRank, offer->modifiers)
+	const std::string amountSummary = offer->externalDwelling
+		? "+" + std::to_string(*::newHorizonsMuster::amountForExternalCategory(offer->recruitmentRank,
+			newHorizonsCreatures::CreatureCategory::CORE, true)) + " Core"
+		: rankSummary(offer->recruitmentRank, offer->modifiers);
+	const std::string description = status(*offer) + ": " + amountSummary
 		+ ". " + translate("new-horizons.muster.chooseRow", "Choose a dwelling row.")
 		+ "\n" + unavailableNote;
 	ENGINE->windows().pushWindow(std::make_shared<CObjectListWindow>(entries, nullptr, heading, description,
-		[hero = offer->hero, targetTown = offer->town, targets](const int index)
+		[hero = offer->hero, targetDwelling = offer->dwelling, targets](const int index)
 		{
 			if(index < 0 || static_cast<size_t>(index) >= targets.size() || !GAME || !GAME->interface()
 				|| !GAME->interface()->cb)
 				return;
 
-			GAME->interface()->cb->musterCreatures(hero, targetTown, targets[index].creature);
+			GAME->interface()->cb->musterCreatures(hero, targetDwelling, targets[index].creature);
 		}));
 }
 

@@ -18,6 +18,7 @@ inline constexpr std::string_view VOLUNTEER_NETWORK_PERK = "new-horizons:recruit
 inline constexpr std::string_view ELITE_DRAFT_PERK = "new-horizons:recruitment.eliteDraft";
 inline constexpr std::string_view CHAMPIONS_CALL_PERK = "new-horizons:recruitment.championSCall";
 inline constexpr std::string_view MASTER_RECRUITER_PERK = "new-horizons:recruitment.masterRecruiter";
+inline constexpr std::string_view EXTERNAL_RECRUITER_PERK = "new-horizons:recruitment.externalRecruiter";
 
 struct PerkModifiers
 {
@@ -75,6 +76,18 @@ inline std::optional<int> amountForCategory(const int recruitmentRank,
 inline int maximumUsesPerWeek(const PerkModifiers & modifiers)
 {
 	return modifiers.masterRecruiter ? 2 : 1;
+}
+
+/// External Recruiter adds a fixed two Core recruits regardless of Recruitment rank.
+/// It is a separate target entitlement from the town rank table above.
+inline std::optional<int> amountForExternalCategory(const int recruitmentRank,
+	const newHorizonsCreatures::CreatureCategory category, const bool externalRecruiterActive)
+{
+	if(recruitmentRank < 1 || recruitmentRank > 3
+		|| category != newHorizonsCreatures::CreatureCategory::CORE || !externalRecruiterActive)
+		return std::nullopt;
+
+	return 2;
 }
 
 /// Convert the engine's one-based day counter into the zero-based absolute

@@ -1,8 +1,8 @@
 /*
  * NewHorizonsMuster.h, part of VCMI engine
  *
- * New Horizons town Muster selection used by Nullkiller2.  This helper only
- * reads the replicated town/creature/category state; the authoritative
+ * New Horizons Muster selection used by Nullkiller2. This helper only
+ * reads replicated dwelling/creature/category state; the authoritative
  * request is sent through CCallback::musterCreatures.
  */
 #pragma once
@@ -28,6 +28,16 @@ namespace NK2AI::newHorizonsMuster
 std::optional<int> amountMultiplier(int recruitmentRank,
 	newHorizonsCreatures::CreatureCategory category, const ::newHorizonsMuster::PerkModifiers & modifiers = {});
 
+/// External Recruiter always adds exactly two saved-Core recruits. Keep the
+/// ordinary Recruitment rank domain bounded to the canonical three ranks.
+inline std::optional<int> externalAmountMultiplier(int recruitmentRank,
+	newHorizonsCreatures::CreatureCategory category, bool externalRecruiterActive)
+{
+	if(recruitmentRank < 1 || recruitmentRank > 3)
+		return std::nullopt;
+	return ::newHorizonsMuster::amountForExternalCategory(recruitmentRank, category, externalRecruiterActive);
+}
+
 struct Candidate
 {
 	CreatureID creature = CreatureID::NONE;
@@ -50,5 +60,12 @@ std::optional<Candidate> chooseTownCandidate(const CGDwelling & town,
 	const IGameInfoCallback & callback,
 	int recruitmentRank,
 	const ::newHorizonsMuster::PerkModifiers & modifiers = {});
+
+/// Choose the most valuable saved-Core row at a currently eligible external
+/// dwelling. Empty pools are valid targets because Muster replenishes stock.
+std::optional<Candidate> chooseExternalCandidate(const CGDwelling & dwelling,
+	const IGameInfoCallback & callback,
+	int recruitmentRank,
+	bool externalRecruiterActive);
 
 } // namespace NK2AI::newHorizonsMuster

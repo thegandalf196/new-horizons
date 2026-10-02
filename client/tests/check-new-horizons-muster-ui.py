@@ -38,7 +38,7 @@ require(UI, 'maximumUsesPerWeek(modifiers)',
 require(UI, 'getCreatureCategory(creature)',
         "targets use the saved Core/Elite/Champion mapping")
 require(UI, 'amountForCategory', "rank and active Recruitment perk amounts are explicit")
-require(UI, 'musterCreatures(hero, targetTown, targets[index].creature)',
+require(UI, 'musterCreatures(hero, targetDwelling, targets[index].creature)',
         "confirmed row selection sends the authoritative callback")
 require(UI, 'Choose one town dwelling to reinforce.',
 		"Muster instructions use player-facing Heroes III language")
@@ -46,8 +46,11 @@ require(UI_HEADER, 'std::vector<Target> targetsFor',
         "UI exposes legal dwelling-row targets")
 require(RECRUITMENT, '#include "NewHorizonsMusterUI.h"',
         "standard recruitment flow includes Muster")
-require(RECRUITMENT, 'newHorizonsMusterUI::open(town)',
+require(RECRUITMENT, 'newHorizonsMusterUI::open(Dwelling, destinationHero)',
         "standard recruitment flow opens Muster")
+require(UI, 'amountForExternalCategory', "external Core Muster uses the fixed shared amount")
+require(UI, 'EXTERNAL_RECRUITER_PERK', "external offer requires the active perk")
+require(RECRUITMENT, 'getRecruitmentCost', "price presentation uses authoritative dwelling costs")
 require(QUICK, '#include "NewHorizonsMusterUI.h"',
         "quick recruitment flow includes Muster")
 require(QUICK, 'newHorizonsMusterUI::open(town)',
@@ -63,6 +66,9 @@ for key in (
     'new-horizons.muster.chooseRow',
     'new-horizons.muster.noTargets',
     'new-horizons.muster.rankOnlyNote',
+    'new-horizons.muster.externalTargetUsed',
+    'new-horizons.muster.externalRecruiterNote',
+    'new-horizons.muster.noExternalTargets',
 ):
     require(TEXTS, key, f"Muster translation {key}")
 

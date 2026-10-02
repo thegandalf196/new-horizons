@@ -10,6 +10,13 @@ This is a binding inventory, not a full visual audit or a product completion cla
 
 ## Status meanings
 
+External Recruiter source/native checkpoint (UP-124): native recruitment controls
+reuse the existing Muster button and dialog for owned external Core dwellings.
+Fixed+2, weekly status and shared free-tier-one costs are wired; both targets
+build and activated focused native11/11 passes with zero skips. Registry coverage
+is169/310 active,141 planned. The neutral perk icon is Not done art, generic UI
+is Provisional, and no rendered/playable acceptance or promotion is claimed.
+
 Blink source/native checkpoint: a purpose-made Provisional knight/echo icon
 has retained master, exact prompt, provenance and 44/32/30-pixel exports under
 `assets/new-horizons/art-source/blink-v1/`. Source registration and the shared

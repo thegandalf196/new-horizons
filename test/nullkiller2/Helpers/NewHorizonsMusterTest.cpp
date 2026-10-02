@@ -7,6 +7,7 @@
 
 using newHorizonsCreatures::CreatureCategory;
 using NK2AI::newHorizonsMuster::amountMultiplier;
+using NK2AI::newHorizonsMuster::externalAmountMultiplier;
 
 namespace
 {
@@ -65,4 +66,15 @@ TEST(Nullkiller2_Helpers_NewHorizonsMuster, masterRecruiterDoublesUsesWithoutCha
 	EXPECT_EQ(::newHorizonsMuster::absoluteWeek(0, 7), 0);
 	EXPECT_EQ(::newHorizonsMuster::absoluteWeek(1, 7), 0);
 	EXPECT_EQ(::newHorizonsMuster::absoluteWeek(8, 7), 1);
+}
+
+TEST(Nullkiller2_Helpers_NewHorizonsMuster, externalRecruiterAddsFixedTwoOnlyForCoreAndValidRank)
+{
+	EXPECT_EQ(externalAmountMultiplier(1, CreatureCategory::CORE, true), std::optional<int>(2));
+	EXPECT_EQ(externalAmountMultiplier(3, CreatureCategory::CORE, true), std::optional<int>(2));
+	EXPECT_FALSE(externalAmountMultiplier(0, CreatureCategory::CORE, true));
+	EXPECT_FALSE(externalAmountMultiplier(4, CreatureCategory::CORE, true));
+	EXPECT_FALSE(externalAmountMultiplier(1, CreatureCategory::CORE, false));
+	EXPECT_FALSE(externalAmountMultiplier(1, CreatureCategory::ELITE, true));
+	EXPECT_FALSE(externalAmountMultiplier(1, CreatureCategory::CHAMPION, true));
 }

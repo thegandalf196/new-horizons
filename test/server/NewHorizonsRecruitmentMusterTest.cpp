@@ -7,14 +7,23 @@
 
 #include <gtest/gtest.h>
 
+#include <limits>
+
 #include "../../lib/GameConstants.h"
+#include "../../lib/CPlayerState.h"
 #include "../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
+#include "../../lib/entities/hero/NewHorizonsPerkState.h"
+#include "../../lib/mapObjects/CGDwelling.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/networkPacks/PacksForClient.h"
+#include "../../lib/networkPacks/PacksForServer.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include "../../server/CGameHandler.h"
+#include "../../server/queries/MapQueries.h"
+#include "../../server/queries/QueriesProcessor.h"
+#include "../../server/queries/VisitQueries.h"
 #include "../mock/GameHandlerTestServer.h"
 #include "../mock/TinyH3MBuilder.h"
 #include "../mock/TinyMapGameTest.h"
@@ -38,8 +47,22 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
 			JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
+		if(externalRecruiterFixture)
+		{
+			bool found = false;
+			for(auto & perk : perkRules["skills"]["new-horizons:recruitment"]["perks"].Vector())
+				if(perk["id"].String() == "new-horizons:recruitment.externalRecruiter")
+				{
+					if(perk["effect"]["status"].String() == "planned")
+						perk["effect"]["status"].String() = "active";
+					else
+						EXPECT_EQ(perk["effect"]["status"].String(), "active");
+					found = true;
+				}
+			EXPECT_TRUE(found) << "External Recruiter must have an authored perk-rule entry";
+		}
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
 		loaded->overrideGameSetting(EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES,
 			JsonNode(JsonPath::builtin("config/newHorizonsCreatureCategories")));
 	}
@@ -52,6 +75,8 @@ protected:
 			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:christian")), PlayerColor(0));
 		if(withSecondTown)
 			builder.town({22, 22, 0}, FactionID(FactionID::decode("core:castle")), PlayerColor(0));
+		if(externalRecruiterFixture)
+			builder.dwelling({8, 8, 0}, MapObjectSubID(56), PlayerColor(0));
 		startWithMap(std::move(builder));
 
 		town = findFirst<CGTownInstance>();
@@ -76,7 +101,8 @@ protected:
 		if(town2)
 			town2->creatures = town->creatures;
 		recruitment = SecondarySkill(SecondarySkill::decode("new-horizons:recruitment"));
-		hero->setSecSkillLevel(recruitment, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		if(!externalRecruiterFixture)
+			hero->setSecSkillLevel(recruitment, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	}
 
 	void clearPerks()
@@ -84,9 +110,27 @@ protected:
 		const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).selected.clear();
 	}
 
-	void selectPerk(const char * perk)
+	static bool selectOfferedPerk(CGameHandler & handler, CGHeroInstance * candidate,
+		const char * perkId, MasteryLevel::Type requiredRank)
 	{
-		hero->applyPerkSelection({"new-horizons:recruitment", perk});
+		const auto rankLookup = [candidate](const std::string & skillId)
+		{
+			return candidate->getPerkSkillRank(skillId);
+		};
+		for(uint64_t seed = 0; seed < 10000; ++seed)
+		{
+			const auto offer = candidate->getPerkState().prepareOffer(rankLookup, seed);
+			for(size_t index = 0; index < offer.size(); ++index)
+			{
+				if(offer[index].selection.perkId != perkId)
+					continue;
+				if(offer[index].requiredRank != requiredRank)
+					return false;
+				handler.levelUpHero(candidate, offer, index, seed, false);
+				return true;
+			}
+		}
+		return false;
 	}
 
 	void resetMusterMarker()
@@ -107,7 +151,141 @@ protected:
 	CGTownInstance * town2 = nullptr;
 	CGHeroInstance * hero = nullptr;
 	SecondarySkill recruitment;
+	bool externalRecruiterFixture = false;
 };
+}
+
+TEST_F(NewHorizonsRecruitmentMusterTest, ExternalMusterUsesExactVisitAndSharedAllowanceWithoutGrantingAnArmy)
+{
+	externalRecruiterFixture = true;
+	startGame();
+	auto * dwelling = expectAt<CGDwelling>({8, 8, 0});
+	ASSERT_NE(dwelling, nullptr);
+	const auto pikeman = creature("core:pikeman");
+	ASSERT_EQ(dwelling->ID, Obj::CREATURE_GENERATOR1);
+	ASSERT_FALSE(dwelling->creatures.empty());
+	ASSERT_FALSE(dwelling->creatures.front().second.empty());
+	EXPECT_EQ(dwelling->creatures.front().second.front(), pikeman);
+	const auto pikemanCategory = gameState()->getCreatureCategory(pikeman);
+	ASSERT_TRUE(pikemanCategory);
+	EXPECT_EQ(pikemanCategory->category, newHorizonsCreatures::CreatureCategory::CORE);
+	hero->clearSlots();
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, 1));
+	dwelling->creatures.front().first = 0;
+	GameHandlerTestServer server(gameState(), PlayerColor(0));
+	CGameHandler handler(server, gameState());
+	const auto muster = [&] { return handler.musterCreatures(hero->id, dwelling->id, pikeman, PlayerColor(0)); };
+	const auto untouched = [&]
+	{
+		EXPECT_EQ(dwelling->creatures[0].first, 0u);
+		EXPECT_EQ(dwelling->getNewHorizonsMusterLastWeek(), -1);
+		EXPECT_EQ(hero->getNewHorizonsMusterUsesThisWeek(0), 0);
+	};
+	const char * externalRecruiter = "new-horizons:recruitment.externalRecruiter";
+	// Use the authoritative rank-up and seeded perk offer paths for the Basic
+	// acquisition. Only this fixture's saved perk rules activate the planned perk.
+	handler.changeSecSkill(hero, recruitment, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	ASSERT_EQ(hero->getPerkSkillRank("new-horizons:recruitment"), 0);
+	handler.levelUpHero(hero, recruitment, false);
+	ASSERT_EQ(hero->getSecSkillLevel(recruitment), MasteryLevel::BASIC);
+	ASSERT_TRUE(selectOfferedPerk(handler, hero, externalRecruiter, MasteryLevel::BASIC));
+	ASSERT_TRUE(hero->getPerkState().hasSelection("new-horizons:recruitment", externalRecruiter));
+
+	// Ownership alone is never permission to Muster a remote dwelling.
+	ASSERT_TRUE(hero->hasActivePerk("new-horizons:recruitment", externalRecruiter));
+	EXPECT_FALSE(muster());
+	untouched();
+	EXPECT_FALSE(handler.musterCreatures(hero->id, hero->id, pikeman, PlayerColor(0)));
+	untouched();
+	handler.queries->addQuery(std::make_shared<MapObjectVisitQuery>(&handler, dwelling, hero));
+	EXPECT_EQ(handler.getVisitingObject(hero), dwelling);
+	OpenWindowQuery recruitWindow(&handler, hero, EOpenWindowMode::RECRUITMENT_FIRST);
+	MusterCreatures request;
+	EXPECT_FALSE(recruitWindow.blocksPack(&request));
+	OpenWindowQuery unrelatedWindow(&handler, hero, EOpenWindowMode::UNIVERSITY_WINDOW);
+	EXPECT_TRUE(unrelatedWindow.blocksPack(&request));
+
+	clearPerks();
+	EXPECT_FALSE(muster());
+	untouched();
+	ASSERT_TRUE(selectOfferedPerk(handler, hero, externalRecruiter, MasteryLevel::BASIC));
+	dwelling->creatures = {{0, {creature("core:griffin")}}};
+	EXPECT_FALSE(handler.musterCreatures(hero->id, dwelling->id, creature("core:griffin"), PlayerColor(0)));
+	untouched();
+	dwelling->creatures = {{0, {pikeman}}};
+	EXPECT_FALSE(handler.musterCreatures(hero->id, dwelling->id, pikeman, PlayerColor(1)));
+	untouched();
+
+	const auto armyBefore = hero->getStackCount(SlotID(0));
+	ASSERT_TRUE(muster());
+	EXPECT_EQ(dwelling->creatures[0].first, 2u);
+	EXPECT_EQ(dwelling->getNewHorizonsMusterLastWeek(), 0);
+	EXPECT_EQ(hero->getNewHorizonsMusterUsesThisWeek(0), 1);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), armyBefore);
+	EXPECT_FALSE(muster());
+	EXPECT_FALSE(handler.musterCreatures(hero->id, town->id, pikeman, PlayerColor(0)));
+	EXPECT_EQ(town->creatures[0].first, 0u);
+
+	// Higher Recruitment ranks still produce exactly two outside towns.
+	gameState()->day = 8;
+	handler.levelUpHero(hero, recruitment, false);
+	ASSERT_EQ(hero->getSecSkillLevel(recruitment), MasteryLevel::ADVANCED);
+	ASSERT_TRUE(selectOfferedPerk(handler, hero, "new-horizons:recruitment.eliteDraft", MasteryLevel::ADVANCED));
+	handler.levelUpHero(hero, recruitment, false);
+	ASSERT_EQ(hero->getSecSkillLevel(recruitment), MasteryLevel::EXPERT);
+	ASSERT_TRUE(selectOfferedPerk(handler, hero, "new-horizons:recruitment.masterRecruiter", MasteryLevel::EXPERT));
+	ASSERT_TRUE(muster());
+	EXPECT_EQ(dwelling->creatures[0].first, 4u);
+	ASSERT_TRUE(handler.musterCreatures(hero->id, town->id, pikeman, PlayerColor(0)));
+	EXPECT_EQ(town->creatures[0].first, 6u);
+	EXPECT_EQ(hero->getNewHorizonsMusterUsesThisWeek(1), 2);
+	EXPECT_FALSE(muster());
+
+	// The free tier-one visit remains free when exposed through native controls.
+	EXPECT_TRUE(dwelling->getRecruitmentCost(pikeman).empty());
+	EXPECT_FALSE(town->getRecruitmentCost(pikeman).empty());
+	const ResourceSet zeroResources;
+	handler.giveResources(PlayerColor(0), zeroResources
+		- gameState()->getPlayerState(PlayerColor(0))->resources);
+	EXPECT_TRUE(gameState()->getPlayerState(PlayerColor(0))->resources.empty());
+	const auto resourcesBefore = gameState()->getPlayerState(PlayerColor(0))->resources;
+	ASSERT_TRUE(handler.recruitCreatures(dwelling->id, hero->id, pikeman, 1, 0, PlayerColor(0)));
+	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, resourcesBefore);
+	EXPECT_EQ(dwelling->creatures[0].first, 3u);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), armyBefore + 1);
+
+	// Free external recruitment remains subject to ordinary Leadership
+	// admission. A rejected recruit must preserve stock, army and resources.
+	const auto capacity = hero->getLeadershipSlotCapacity(pikeman);
+	ASSERT_TRUE(capacity);
+	ASSERT_GT(capacity->maximum, 0);
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, capacity->maximum));
+	const auto cappedStock = dwelling->creatures[0].first;
+	const auto cappedResources = gameState()->getPlayerState(PlayerColor(0))->resources;
+	EXPECT_FALSE(handler.recruitCreatures(dwelling->id, hero->id, pikeman, 1, 0, PlayerColor(0)));
+	EXPECT_EQ(dwelling->creatures[0].first, cappedStock);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
+	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, cappedResources);
+
+	// Overflow is rejected before either the stock or once-per-week markers move.
+	gameState()->day = 15; // a fresh absolute week, with no prior external use
+	const auto overflowStock = std::numeric_limits<ui32>::max() - 1;
+	dwelling->creatures[0].first = overflowStock;
+	EXPECT_FALSE(muster());
+	EXPECT_EQ(dwelling->creatures[0].first, overflowStock);
+	EXPECT_EQ(dwelling->getNewHorizonsMusterLastWeek(), 1);
+	EXPECT_EQ(hero->getNewHorizonsMusterLastWeek(), 1);
+	EXPECT_EQ(hero->getNewHorizonsMusterUsesThisWeek(2), 0);
+
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	const auto * restoredDwelling = dynamic_cast<const CGDwelling *>(restored.getObj(dwelling->id));
+	ASSERT_NE(restoredDwelling, nullptr);
+	EXPECT_EQ(restoredDwelling->getNewHorizonsMusterLastWeek(), 1);
+	EXPECT_EQ(restoredDwelling->creatures[0].first, overflowStock);
+	EXPECT_EQ(restored.getHero(hero->id)->getNewHorizonsMusterUsesThisWeek(1), 2);
 }
 
 TEST_F(NewHorizonsRecruitmentMusterTest, RankAmountsAndWeeklyGuardsAreAuthoritativeAndAtomic)
@@ -210,31 +388,41 @@ TEST_F(NewHorizonsRecruitmentMusterTest, FourRecruitmentPerksModifyOnlyAuthorita
 	};
 
 	clearPerks();
-	selectPerk("new-horizons:recruitment.volunteerNetwork");
+	ASSERT_TRUE(selectOfferedPerk(gameHandler, hero, "new-horizons:recruitment.volunteerNetwork", MasteryLevel::BASIC));
 	ASSERT_TRUE(muster(town, creature("core:pikeman")));
 	EXPECT_EQ(town->creatures.at(0).first, 4u);
 	reset(town);
 
 	clearPerks();
-	hero->setSecSkillLevel(recruitment, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-	selectPerk("new-horizons:recruitment.eliteDraft");
+	ASSERT_TRUE(selectOfferedPerk(gameHandler, hero, "new-horizons:recruitment.volunteerNetwork", MasteryLevel::BASIC));
+	gameHandler.levelUpHero(hero, recruitment, false);
+	ASSERT_EQ(hero->getSecSkillLevel(recruitment), MasteryLevel::ADVANCED);
+	ASSERT_TRUE(selectOfferedPerk(gameHandler, hero, "new-horizons:recruitment.eliteDraft", MasteryLevel::ADVANCED));
 	ASSERT_TRUE(muster(town, creature("core:griffin")));
 	EXPECT_EQ(town->creatures.at(1).first, 2u);
 	reset(town);
 
 	clearPerks();
-	hero->setSecSkillLevel(recruitment, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
-	selectPerk("new-horizons:recruitment.championSCall");
+	ASSERT_TRUE(selectOfferedPerk(gameHandler, hero, "new-horizons:recruitment.volunteerNetwork", MasteryLevel::BASIC));
+	ASSERT_TRUE(selectOfferedPerk(gameHandler, hero, "new-horizons:recruitment.eliteDraft", MasteryLevel::ADVANCED));
+	gameHandler.levelUpHero(hero, recruitment, false);
+	ASSERT_EQ(hero->getSecSkillLevel(recruitment), MasteryLevel::EXPERT);
+	ASSERT_TRUE(selectOfferedPerk(gameHandler, hero, "new-horizons:recruitment.championSCall", MasteryLevel::EXPERT));
 	ASSERT_TRUE(muster(town, creature("core:angel")));
 	EXPECT_EQ(town->creatures.at(2).first, 2u);
 	reset(town);
 
 	clearPerks();
-	selectPerk("new-horizons:recruitment.masterRecruiter");
+	ASSERT_TRUE(selectOfferedPerk(gameHandler, hero, "new-horizons:recruitment.volunteerNetwork", MasteryLevel::BASIC));
+	ASSERT_TRUE(selectOfferedPerk(gameHandler, hero, "new-horizons:recruitment.eliteDraft", MasteryLevel::ADVANCED));
+	ASSERT_TRUE(selectOfferedPerk(gameHandler, hero, "new-horizons:recruitment.masterRecruiter", MasteryLevel::EXPERT));
 	ASSERT_TRUE(town2);
+	const auto coreStockBeforeMaster = town->creatures.at(0).first;
+	EXPECT_EQ(coreStockBeforeMaster, 4u); // The first Basic Muster's recruits remain.
 	ASSERT_TRUE(muster(town, creature("core:pikeman")));
 	EXPECT_EQ(hero->getNewHorizonsMusterUsesThisWeek(0), 1);
 	const auto firstTownStock = town->creatures.at(0).first;
+	EXPECT_EQ(firstTownStock, coreStockBeforeMaster + 8u); // Expert six plus Volunteer Network's two.
 	EXPECT_FALSE(muster(town, creature("core:pikeman")));
 	EXPECT_EQ(town->creatures.at(0).first, firstTownStock);
 
@@ -243,7 +431,7 @@ TEST_F(NewHorizonsRecruitmentMusterTest, FourRecruitmentPerksModifyOnlyAuthorita
 	town2->setVisitingHero(hero);
 	ASSERT_TRUE(muster(town2, creature("core:pikeman")));
 	EXPECT_EQ(hero->getNewHorizonsMusterUsesThisWeek(0), 2);
-	EXPECT_EQ(town2->creatures.at(0).first, 6u);
+	EXPECT_EQ(town2->creatures.at(0).first, 8u);
 
 	const auto savedAfterSecondUse = gameState()->saveToMemory();
 	CGameState restoredAfterSecondUse;

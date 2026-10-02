@@ -21,6 +21,7 @@
 #include "../mapObjectConstructors/DwellingInstanceConstructor.h"
 #include "CGHeroInstance.h"
 #include "CGTownInstance.h"
+#include "../entities/creature/NewHorizonsMusterRules.h"
 #include "../networkPacks/StackLocation.h"
 #include "../networkPacks/PacksForClient.h"
 #include "../networkPacks/PacksForClientBattle.h"
@@ -441,6 +442,23 @@ void CGDwelling::heroAcceptsCreatures(IGameEventCallback & gameEvents, const CGH
 	auto *crs = crid.toCreature();
 	TQuantity count = creatures[0].first;
 
+	const bool externalDwelling = ID == Obj::CREATURE_GENERATOR1 || ID == Obj::CREATURE_GENERATOR4;
+	const int recruitmentRank = h->getPerkSkillRank(std::string(newHorizonsMuster::RECRUITMENT_SKILL));
+	const bool externalRecruiterActive = h->hasActivePerk(std::string(newHorizonsMuster::RECRUITMENT_SKILL),
+		std::string(newHorizonsMuster::EXTERNAL_RECRUITER_PERK));
+	if(externalDwelling && crs->getLevel() == 1 && getOwner() == h->getOwner())
+	{
+		if(const auto category = cb->getCreatureCategory(crid);
+			category && newHorizonsMuster::amountForExternalCategory(recruitmentRank, category->category, externalRecruiterActive))
+		{
+			const auto windowMode = ID == Obj::CREATURE_GENERATOR1
+				? EOpenWindowMode::RECRUITMENT_FIRST
+				: EOpenWindowMode::RECRUITMENT_ALL;
+			gameEvents.showObjectWindow(this, windowMode, h, true);
+			return;
+		}
+	}
+
 	if(crs->getLevel() == 1  &&  ID != Obj::REFUGEE_CAMP) //first level - creatures are for free
 	{
 		if(count) //there are available creatures
@@ -630,4 +648,16 @@ std::vector<CreatureID> CGDwelling::providedCreatures() const
 		result.insert(result.end(), level.second.begin(), level.second.end());
 
 	return result;
+}
+
+TResources CGDwelling::getRecruitmentCost(CreatureID creatureId) const
+{
+	const auto * creature = creatureId.toCreature();
+	if(!creature)
+		return {};
+
+	if((ID == Obj::CREATURE_GENERATOR1 || ID == Obj::CREATURE_GENERATOR4) && creature->getLevel() == 1)
+		return {};
+
+	return creature->getFullRecruitCost();
 }

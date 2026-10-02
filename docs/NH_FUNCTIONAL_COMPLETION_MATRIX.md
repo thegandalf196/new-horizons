@@ -14,6 +14,25 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-124 External Recruiter is active and native verified. Owned external saved-Core
+dwelling Muster adds exactly two recruits at every Recruitment rank, shares the
+hero's weekly town allowance and target lock, and requires the exact active visit.
+Native recruitment controls expose the action; AI issues it before purchase and
+waits for authoritative realization. Shared cost handling preserves free original
+tier-one external recruits without bypassing Leadership. Existing markers/packets
+suffice; no saved fields or polling are added. Both Linux targets build; repaired
+principal15376 passes11/11 in2.877s and activated81048 passes11/11 in2.899s,
+zero skips. Legal progression, invalid contexts/perks/categories/requesters,
+shared Master Recruiter allowance, zero-resource free purchase, Leadership,
+overflow and saved markers are covered. Data/schema/inventory35/35, module drift
+and Muster UI wiring pass; independent Astra source/fixture reviews have no
+blocking finding. Coverage168->169/310 active,142->141 planned; Recruitment5/10.
+Ranks84/93 and combat identities60/67 plus five Mass variants are unchanged.
+Phase2 retains full natural visit/window/AI execution, full-army merge behavior,
+mixed-row dwellings and restored in-progress queries. Bespoke icon Not done,
+generic UI Provisional; no GUI or playable promotion. Frozen candidate test SHA:
+`8862d77812f157de4fe9c8b243d658521d6c64724b5f086999055bdee24a0223`.
+
 UP-120 Spellward is active and native verified. Current-controller protection
 supplies an independent10% magical reduction before the shared95% cap and
 penetration, without adding resistance or reducing physical/nondamaging effects.
@@ -1027,7 +1046,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 168/310 | 142 planned; Spellward is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 169/310 | 141 planned; External Recruiter is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -1038,7 +1057,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Creature base-line Leadership requirements | 64/64 | Data coverage only; individual creature mechanics remain unaudited. |
 | Creature category forms | 126/126 | 50 Core, 58 Elite, 18 Champion are registered; this is not creature-ability coverage. |
 | Siege output formula families | 4/4 | Ballista, Catapult, Tent and defensive tower outputs have data; universal Blacksmith access and Ballista Yard's weekly Siege effect are implemented with focused native tests. Rendered/playable acceptance remains open. |
-| Recruitment perks active | 4/10 | Six planned; Muster has server and AI paths. |
+| Recruitment perks active | 5/10 | Five planned; external and town Muster have server and AI paths. |
 | Diplomacy ranks/perks active | 0/3 ranks, 0/10 perks | Deterministic Diplomacy and its UI remain missing. |
 
 Additional canonical breadth not yet reducible to a defensible completion
@@ -1055,9 +1074,9 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 159
-active perks, leaving nine ranks and 151 perks planned. These counts were
-rechecked directly from `config/newHorizonsPerks.json` on 2026-10-01; they are
+requirements in total. The current registry has 84 active rank effects and 169
+active perks, leaving nine ranks and 141 perks planned. These counts were
+rechecked directly from `config/newHorizonsPerks.json` on 2026-10-02; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
 `40628d29d92ab0d47282321fd411f5d079f38844` passed Windows build run
@@ -1166,7 +1185,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Battlecraft | 3/0 | 2/8 | Entrench and Reserve active. Reserve has focused real delayed movement, expiry, save/packet and branch-local AI evidence. Eight perks remain planned. |
 | War Machines | 3/0 | 5/5 | Surgeon and Piercing Bolts have focused live/detached evidence; Fortification Engineer has real fortified-town manual-shot evidence; Master Gunner has accepted independently targeted second-shot evidence; Quartermaster has accepted half-output Ballista/Tent/Catapult extra-activation evidence. Five perks remain planned. Battlefield Medic persistence awaits clarification. |
 | Discipline | 3/0 | 5/5 | Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless active with focused authoritative and detached evidence. Five perks remain planned; Esprit de Corps composition scope, Heroic Spirit activation timing and Veteran Cohesion HP reference await clarification. |
-| Recruitment | 3/0 | 4/6 | Six perks missing |
+| Recruitment | 3/0 | 5/5 | Five perks missing |
 | Command | 3/0 | 4/6 | Aggressive/Defensive, Veteran and Combined Arms have focused runtime/AI evidence; ordinary Advanced/Expert progression opens. Six perks remain planned. |
 | Light Magic | 3/0 | 9/1 | Sanctuary Keeper's linked Morale lifetime and actual AI cast are native verified; Litany grants distinct Mass Bless, alongside Benediction, Healer, Guardian, Aegis, Purifier, Retributionist and Crusader. Miracle Worker remains planned. |
 | Shadow Magic | 3/0 | 9/1 | Grand Malediction now grants distinct Mass Curse/Sorrow with native cast/forecast evidence, alongside the eight earlier perks. Plaguebearer awaits its normal-limit definition. |

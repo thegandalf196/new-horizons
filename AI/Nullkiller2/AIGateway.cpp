@@ -380,6 +380,8 @@ void AIGateway::showRecruitmentDialog(const CGDwelling * dwelling, const CArmedI
 	status.addQuery(queryID, "RecruitmentDialog");
 
 	executeActionAsync("showRecruitmentDialog", [this, dwelling, dst, queryID](){
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(dst))
+			tryExternalMusterCreatures(hero, dwelling);
 		recruitCreatures(dwelling, dst);
 		answerQuery(queryID, 0);
 	});
@@ -1239,9 +1241,9 @@ void AIGateway::moveCreaturesToHero(const CGTownInstance * t)
 	}
 }
 
-bool AIGateway::hasPendingMuster(const CGHeroInstance * hero, const CGTownInstance * town) const
+bool AIGateway::hasPendingMuster(const CGHeroInstance * hero, const CGDwelling * dwelling) const
 {
-	if(!hero || !town)
+	if(!hero || !dwelling)
 		return false;
 
 	// The marker packets can arrive after requestRealized.  Reconcile before
@@ -1263,13 +1265,13 @@ bool AIGateway::hasPendingMuster(const CGHeroInstance * hero, const CGTownInstan
 
 	return std::any_of(pendingMusters.begin(), pendingMusters.end(), [&](const PendingMuster & pending)
 	{
-		return pending.hero == hero->id && pending.target == town->id && pending.week == currentWeek;
+		return pending.hero == hero->id && pending.target == dwelling->id && pending.week == currentWeek;
 	});
 }
 
-bool AIGateway::hasPendingMuster(const CGTownInstance * town) const
+bool AIGateway::hasPendingMuster(const CGDwelling * dwelling) const
 {
-	if(!town)
+	if(!dwelling)
 		return false;
 
 	const_cast<AIGateway *>(this)->clearReplicatedMusters();
@@ -1278,7 +1280,41 @@ bool AIGateway::hasPendingMuster(const CGTownInstance * town) const
 	std::lock_guard lock(musterMutex);
 	return std::any_of(pendingMusters.begin(), pendingMusters.end(), [&](const PendingMuster & pending)
 	{
-		return pending.target == town->id && pending.week == currentWeek;
+		return pending.target == dwelling->id && pending.week == currentWeek;
+	});
+}
+
+bool AIGateway::reserveMuster(const CGHeroInstance * hero, const CGDwelling * dwelling,
+	const int week, const int usedThisWeek, const int maximumUses)
+{
+	if(!hero || !dwelling || maximumUses <= 0)
+		return false;
+
+	std::lock_guard lock(musterMutex);
+	const bool targetAlreadyPending = std::any_of(pendingMusters.begin(), pendingMusters.end(), [&](const PendingMuster & pending)
+	{
+		return pending.target == dwelling->id && pending.week == week;
+	});
+	const auto pendingUses = std::count_if(pendingMusters.begin(), pendingMusters.end(), [&](const PendingMuster & pending)
+	{
+		return pending.hero == hero->id && pending.week == week;
+	});
+	if(targetAlreadyPending || usedThisWeek + pendingUses >= maximumUses)
+		return false;
+
+	pendingMusters.push_back({hero->id, dwelling->id, week});
+	return true;
+}
+
+void AIGateway::releasePendingMuster(const CGHeroInstance * hero, const CGDwelling * dwelling, const int week)
+{
+	if(!hero || !dwelling)
+		return;
+
+	std::lock_guard lock(musterMutex);
+	std::erase_if(pendingMusters, [&](const PendingMuster & pending)
+	{
+		return pending.hero == hero->id && pending.target == dwelling->id && pending.week == week;
 	});
 }
 
@@ -1316,8 +1352,9 @@ void AIGateway::tryMusterCreatures(const CGHeroInstance * hero, const CGTownInst
 		std::string(::newHorizonsMuster::CHAMPIONS_CALL_PERK));
 	modifiers.masterRecruiter = hero->hasActivePerk(std::string(::newHorizonsMuster::RECRUITMENT_SKILL),
 		std::string(::newHorizonsMuster::MASTER_RECRUITER_PERK));
+	const int maximumUses = ::newHorizonsMuster::maximumUsesPerWeek(modifiers);
 	if(recruitmentRank <= 0 || hasPendingMuster(hero, town)
-		|| hero->getNewHorizonsMusterUsesThisWeek(currentWeek) >= ::newHorizonsMuster::maximumUsesPerWeek(modifiers)
+		|| hero->getNewHorizonsMusterUsesThisWeek(currentWeek) >= maximumUses
 		|| town->getNewHorizonsMusterLastWeek() == currentWeek)
 		return;
 
@@ -1325,16 +1362,9 @@ void AIGateway::tryMusterCreatures(const CGHeroInstance * hero, const CGTownInst
 	if(!candidate)
 		return; // No category snapshot means legacy/no-category; do not Muster.
 
-	{
-		std::lock_guard lock(musterMutex);
-		const auto duplicate = std::any_of(pendingMusters.begin(), pendingMusters.end(), [&](const PendingMuster & pending)
-		{
-			return pending.hero == hero->id && pending.target == town->id && pending.week == currentWeek;
-		});
-		if(duplicate)
-			return;
-		pendingMusters.push_back({hero->id, town->id, currentWeek});
-	}
+	const int usesBefore = hero->getNewHorizonsMusterUsesThisWeek(currentWeek);
+	if(!reserveMuster(hero, town, currentWeek, usesBefore, maximumUses))
+		return;
 
 	logAi->debug("Hero %s musters %d %s from town %s (rank %d, category amount %d, weighted army value %lld)",
 		hero->getNameTextID(), candidate->amount, candidate->creature.toCreature()->getNamePluralTranslated(),
@@ -1344,6 +1374,59 @@ void AIGateway::tryMusterCreatures(const CGHeroInstance * hero, const CGTownInst
 	// weekly uses and the target row; this AI-side pending guard prevents a
 	// second request before the resulting pool update is replicated.
 	cc->musterCreatures(hero, town, candidate->creature);
+	const bool accepted = hero->getNewHorizonsMusterUsesThisWeek(currentWeek) > usesBefore
+		&& town->getNewHorizonsMusterLastWeek() == currentWeek;
+	if(accepted)
+		clearReplicatedMusters();
+	else
+		releasePendingMuster(hero, town, currentWeek);
+}
+
+void AIGateway::tryExternalMusterCreatures(const CGHeroInstance * hero, const CGDwelling * dwelling)
+{
+	if(!hero || !dwelling || hero->tempOwner != playerID || dwelling->tempOwner != playerID
+		|| (dwelling->ID != Obj::CREATURE_GENERATOR1 && dwelling->ID != Obj::CREATURE_GENERATOR4))
+		return;
+
+	const int recruitmentRank = hero->getPerkSkillRank(std::string(::newHorizonsMuster::RECRUITMENT_SKILL));
+	const bool externalRecruiterActive = hero->hasActivePerk(std::string(::newHorizonsMuster::RECRUITMENT_SKILL),
+		std::string(::newHorizonsMuster::EXTERNAL_RECRUITER_PERK));
+	if(!newHorizonsMuster::externalAmountMultiplier(recruitmentRank,
+		newHorizonsCreatures::CreatureCategory::CORE, externalRecruiterActive))
+		return;
+
+	const auto & calendar = cc->getCalendar();
+	const int currentWeek = ::newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+	::newHorizonsMuster::PerkModifiers modifiers;
+	modifiers.masterRecruiter = hero->hasActivePerk(std::string(::newHorizonsMuster::RECRUITMENT_SKILL),
+		std::string(::newHorizonsMuster::MASTER_RECRUITER_PERK));
+	const int maximumUses = ::newHorizonsMuster::maximumUsesPerWeek(modifiers);
+	const int usesBefore = hero->getNewHorizonsMusterUsesThisWeek(currentWeek);
+	if(hasPendingMuster(hero, dwelling) || usesBefore >= maximumUses
+		|| dwelling->getNewHorizonsMusterLastWeek() == currentWeek)
+		return;
+
+	const auto candidate = newHorizonsMuster::chooseExternalCandidate(
+		*dwelling, *cc, recruitmentRank, externalRecruiterActive);
+	if(!candidate)
+		return; // Missing saved Core category means this is not an eligible New Horizons target.
+
+	if(!reserveMuster(hero, dwelling, currentWeek, usesBefore, maximumUses))
+		return;
+
+	logAi->debug("Hero %s externally musters %d %s from dwelling %s (rank %d, weighted army value %lld)",
+		hero->getNameTextID(), candidate->amount, candidate->creature.toCreature()->getNamePluralTranslated(),
+		dwelling->getObjectNameTextID(), recruitmentRank, static_cast<long long>(candidate->armyValue));
+
+	// AIGateway's callback waits for PackageApplied; accepted Muster markers and
+	// stock are therefore replicated before this recruitment query buys anything.
+	cc->musterCreatures(hero, dwelling, candidate->creature);
+	const bool accepted = hero->getNewHorizonsMusterUsesThisWeek(currentWeek) > usesBefore
+		&& dwelling->getNewHorizonsMusterLastWeek() == currentWeek;
+	if(accepted)
+		clearReplicatedMusters();
+	else
+		releasePendingMuster(hero, dwelling, currentWeek);
 }
 
 void AIGateway::swapGarrisonHero(const CGTownInstance * town)
@@ -1526,13 +1609,10 @@ void AIGateway::pickBestCreatures(const CArmedInstance * destinationArmy, const 
 void AIGateway::recruitCreatures(const CGDwelling * d, const CArmedInstance * recruiter)
 {
 	//now used only for visited dwellings / towns, not BuyArmy goal
-	if(const auto * town = dynamic_cast<const CGTownInstance *>(d))
+	if(hasPendingMuster(d))
 	{
-		if(hasPendingMuster(town))
-		{
-			logAi->debug("Deferring recruitment from town %s until its Muster result is replicated", town->getNameTextID());
-			return;
-		}
+		logAi->debug("Deferring recruitment from dwelling %s until its Muster result is replicated", d->getObjectNameTextID());
+		return;
 	}
 	for(int i = 0; i < d->creatures.size(); i++)
 	{
@@ -1567,7 +1647,7 @@ void AIGateway::recruitCreatures(const CGDwelling * d, const CArmedInstance * re
 			}
 		}
 
-		vstd::amin(count, cc->getResourceAmount() / creID.toCreature()->getFullRecruitCost());
+		vstd::amin(count, cc->getResourceAmount() / d->getRecruitmentCost(creID));
 		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(recruiter))
 		{
 			if(const auto capacity = hero->getLeadershipSlotCapacity(creID))

@@ -3235,6 +3235,7 @@ bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst
 	const auto * hero = dynamic_cast<const CGHeroInstance *>(gameInfo().getObj(dstid));
 	const auto * c = crid.toCreature();
 
+	COMPLAIN_RET_FALSE_IF(!c, "Cannot recruit: invalid creature!");
 	const bool warMachine = c->warMachine != ArtifactID::NONE;
 
 	//TODO: check if hero is actually visiting object
@@ -3275,9 +3276,17 @@ bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst
 		}
 	}
 	SlotID slot = army->getSlotFor(crid);
+	const auto costPerCreature = dwelling->getRecruitmentCost(crid);
+	const auto & resources = gameInfo().getPlayerState(army->tempOwner)->resources;
+	int32_t maxAffordableAmount = std::numeric_limits<int32_t>::max();
+	for(size_t resource = 0; resource < std::min(resources.size(), costPerCreature.size()); ++resource)
+	{
+		if(costPerCreature[resource] > 0)
+			maxAffordableAmount = std::min(maxAffordableAmount, resources[resource] / costPerCreature[resource]);
+	}
 
 	if((!found && complain("Cannot recruit: no such creatures!"))
-		|| (cram > LIBRARY->creh->objects.at(crid)->maxAmount(gameInfo().getPlayerState(army->tempOwner)->resources) && complain("Cannot recruit: lack of resources!"))
+		|| (cram > maxAffordableAmount && complain("Cannot recruit: lack of resources!"))
 		|| (cram <= 0 && complain("Cannot recruit: cram <= 0!"))
 		|| (!slot.validSlot() && !warMachine && complain("Cannot recruit: no available slot!")))
 	{
@@ -3291,7 +3300,7 @@ bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst
 	}
 
 	//recruit
-	TResources cost = (c->getFullRecruitCost() * cram);
+	TResources cost = costPerCreature * cram;
 	giveResources(army->tempOwner, -cost);
 	statistics->getPlayerAccumulator(army->tempOwner).spentResourcesForArmy += cost;
 
@@ -3333,13 +3342,24 @@ bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst
 bool CGameHandler::musterCreatures(ObjectInstanceID heroId, ObjectInstanceID targetId, CreatureID creatureId, PlayerColor player)
 {
 	const auto * hero = gameInfo().getHero(heroId);
-	const auto * town = gameInfo().getTown(targetId);
+	const auto * dwelling = dynamic_cast<const CGDwelling *>(gameInfo().getObj(targetId));
+	const auto * town = dynamic_cast<const CGTownInstance *>(dwelling);
 
-	COMPLAIN_RET_FALSE_IF(!hero || !town, "Cannot Muster: invalid hero or town!");
-	COMPLAIN_RET_FALSE_IF(hero->getOwner() != player || town->getOwner() != player,
-		"Cannot Muster: hero and town must belong to the requesting player!");
-	COMPLAIN_RET_FALSE_IF(hero != town->getVisitingHero() && hero != town->getGarrisonHero(),
-		"Cannot Muster: hero must be visiting or garrisoned in the town!");
+	COMPLAIN_RET_FALSE_IF(!hero || !dwelling, "Cannot Muster: invalid hero or dwelling!");
+	const bool externalDwelling = dwelling->ID == Obj::CREATURE_GENERATOR1 || dwelling->ID == Obj::CREATURE_GENERATOR4;
+	COMPLAIN_RET_FALSE_IF(!town && !externalDwelling, "Cannot Muster: target must be a town or external creature dwelling!");
+	COMPLAIN_RET_FALSE_IF(hero->getOwner() != player || dwelling->getOwner() != player,
+		"Cannot Muster: hero and target dwelling must belong to the requesting player!");
+	if(town)
+	{
+		COMPLAIN_RET_FALSE_IF(hero != town->getVisitingHero() && hero != town->getGarrisonHero(),
+			"Cannot Muster: hero must be visiting or garrisoned in the town!");
+	}
+	else
+	{
+		COMPLAIN_RET_FALSE_IF(getVisitingObject(hero) != dwelling,
+			"Cannot Muster: hero must be actively visiting the target dwelling!");
+	}
 
 	const int rank = hero->getPerkSkillRank(std::string(newHorizonsMuster::RECRUITMENT_SKILL));
 	COMPLAIN_RET_FALSE_IF(rank <= 0, "Cannot Muster: hero does not have Recruitment!");
@@ -3352,10 +3372,14 @@ bool CGameHandler::musterCreatures(ObjectInstanceID heroId, ObjectInstanceID tar
 		std::string(newHorizonsMuster::CHAMPIONS_CALL_PERK));
 	modifiers.masterRecruiter = hero->hasActivePerk(std::string(newHorizonsMuster::RECRUITMENT_SKILL),
 		std::string(newHorizonsMuster::MASTER_RECRUITER_PERK));
+	const bool externalRecruiterActive = hero->hasActivePerk(std::string(newHorizonsMuster::RECRUITMENT_SKILL),
+		std::string(newHorizonsMuster::EXTERNAL_RECRUITER_PERK));
 
 	const auto category = gameInfo().getCreatureCategory(creatureId);
 	COMPLAIN_RET_FALSE_IF(!category, "Cannot Muster: creature has no saved New Horizons category!");
-	const auto amount = newHorizonsMuster::amountForCategory(rank, category->category, modifiers);
+	const auto amount = town
+		? newHorizonsMuster::amountForCategory(rank, category->category, modifiers)
+		: newHorizonsMuster::amountForExternalCategory(rank, category->category, externalRecruiterActive);
 	COMPLAIN_RET_FALSE_IF(!amount, "Cannot Muster: Recruitment rank cannot Muster this creature category!");
 
 	const int week = newHorizonsMuster::absoluteWeek(gameInfo().getCalendar().getCurrentDay(),
@@ -3363,27 +3387,27 @@ bool CGameHandler::musterCreatures(ObjectInstanceID heroId, ObjectInstanceID tar
 	const int usesThisWeek = hero->getNewHorizonsMusterUsesThisWeek(week);
 	COMPLAIN_RET_FALSE_IF(usesThisWeek >= newHorizonsMuster::maximumUsesPerWeek(modifiers),
 		"Cannot Muster: this hero has no Muster uses remaining this week!");
-	COMPLAIN_RET_FALSE_IF(town->getNewHorizonsMusterLastWeek() == week,
-		"Cannot Muster: this town has already received Muster this week!");
+	COMPLAIN_RET_FALSE_IF(dwelling->getNewHorizonsMusterLastWeek() == week,
+		"Cannot Muster: this dwelling has already received Muster this week!");
 
 	int row = -1;
-	for(size_t index = 0; index < town->creatures.size(); ++index)
+	for(size_t index = 0; index < dwelling->creatures.size(); ++index)
 	{
-		const auto & entry = town->creatures[index];
+		const auto & entry = dwelling->creatures[index];
 		if(vstd::contains(entry.second, creatureId))
 		{
 			row = static_cast<int>(index);
 			break;
 		}
 	}
-	COMPLAIN_RET_FALSE_IF(row < 0, "Cannot Muster: creature is not available from this town!");
+	COMPLAIN_RET_FALSE_IF(row < 0, "Cannot Muster: creature is not available from this dwelling!");
 
 	// All checks are complete before either authoritative mutation is emitted.
 	// SetAvailableCreatures carries the actual stock change, while the marker
 	// packet mirrors the once-per-week use on both hero and target dwelling.
 	SetAvailableCreatures stock;
-	stock.tid = town->id;
-	stock.creatures = town->creatures;
+	stock.tid = dwelling->id;
+	stock.creatures = dwelling->creatures;
 	if(std::numeric_limits<ui32>::max() - stock.creatures.at(row).first < *amount)
 	{
 		complain("Cannot Muster: dwelling recruitment stock overflow!");
@@ -3391,7 +3415,7 @@ bool CGameHandler::musterCreatures(ObjectInstanceID heroId, ObjectInstanceID tar
 	}
 	SetNewHorizonsMusterState state;
 	state.heroId = hero->id;
-	state.targetId = town->id;
+	state.targetId = dwelling->id;
 	state.lastUseWeek = week;
 	state.usesThisWeek = usesThisWeek + 1;
 	sendAndApply(state);

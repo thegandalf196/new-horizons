@@ -13,6 +13,28 @@ NewHorizonsDiscipline.cpp: MSVC parsed the parenthesized static BonusSourceID
 declaration as a function (C2751/C2267). Use brace initialization to remove
 the ambiguity without changing the bonus source identity. No Windows package
 was produced. A succeeding target run is still required; retain this failure.
+Local retry29673 compiled the production changes but exited1 in the new
+fixture: accessing PlayerState resources requires CPlayerState.h, not only a
+forward declaration. Add the explicit include and retry the same client/test
+targets. Do not run the stale test binary or remove the resource assertions.
+Final build44293 exits0 for both Linux targets. Principal37505 runs11 cases
+in1.700s:9 pass, two fail with "Earlier New Horizons perk tier is still required".
+Both fixtures select Advanced/Expert Recruitment perks without earlier perk
+tiers. Repair legal prerequisite acquisition and retain production enforcement;
+combined Volunteer Network/Master Recruiter town amounts must include both
+effects. The free recruitment case must actually empty resources before purchase,
+not merely compare unchanged positive resources. Do not activate until retry passes.
+Fixture rebuild47067 exits0; retry21396 passes10/11 in2.904s, including the
+complete External Recruiter principal case. The older town test retains the
+first Basic Muster's four recruits when only weekly markers are reset. Its
+Master phase must assert an eight-recruit delta from that existing stock,
+not a total of eight. Assert the prior four and the exact delta; do not change
+production arithmetic or erase stock merely to pass the test.
+Rebuild8494 exits0 and principal15376 passes11/11 in2.877s. Production-enabled
+build exits0 and activated81048 passes11/11 in2.899s, zero skips. A combined
+Python invocation initially lacked tools/tests on PYTHONPATH and failed to
+import the legacy-schema helper; the corrected invocation passes35/35.
+Generated-module and UI wiring checks also pass. Windows acceptance is separate.
 
 ### 2026-10-02 UP-120 — Spellward pre-build integration corrections
 

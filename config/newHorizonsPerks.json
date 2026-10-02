@@ -845,7 +845,7 @@
 					"requires": "basic",
 					"description": "The hero may spend the weekly Muster use at an owned external Core dwelling instead of a town, adding 2 Core recruits there.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The hero may spend the weekly Muster use at an owned external Core dwelling instead of a town, adding 2 Core recruits there."
 					}
 				},

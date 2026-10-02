@@ -41,9 +41,10 @@ public:
 	virtual bool buildBuilding(const CGTownInstance *town, BuildingID buildingID)=0;
 	virtual bool visitTownBuilding(const CGTownInstance *town, BuildingID buildingID)=0;
 	virtual void recruitCreatures(const CGDwelling *obj, const CArmedInstance * dst, CreatureID ID, ui32 amount, si32 level=-1)=0;
-	/// Requests one New Horizons Recruitment Muster operation.  The server
-	/// derives amount/category eligibility and validates weekly use markers.
-	virtual void musterCreatures(const CGHeroInstance *hero, const CGTownInstance *town, CreatureID creature) {}
+	/// Requests one New Horizons Recruitment Muster operation at a town or
+	/// eligible external dwelling. The server derives amount/category eligibility
+	/// and validates target context and weekly use markers.
+	virtual void musterCreatures(const CGHeroInstance *hero, const CGDwelling *dwelling, CreatureID creature) {}
 	virtual void arrangeDemonicReserve(const CGHeroInstance * hero, SlotID activeSlot,
 		CreatureID creature, int32_t amount, bool toReserve) {}
 	/// Requests that the server unlock the Adventure Spell for this town Guild tier.

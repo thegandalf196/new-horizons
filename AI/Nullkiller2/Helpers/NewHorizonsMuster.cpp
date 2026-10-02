@@ -66,4 +66,49 @@ std::optional<Candidate> chooseTownCandidate(const CGDwelling & town,
 	return best;
 }
 
+std::optional<Candidate> chooseExternalCandidate(const CGDwelling & dwelling,
+	const IGameInfoCallback & callback,
+	const int recruitmentRank,
+	const bool externalRecruiterActive)
+{
+	if(dwelling.ID != Obj::CREATURE_GENERATOR1 && dwelling.ID != Obj::CREATURE_GENERATOR4)
+		return std::nullopt;
+
+	std::optional<Candidate> best;
+	for(size_t row = 0; row < dwelling.creatures.size(); ++row)
+	{
+		const auto & [available, choices] = dwelling.creatures[row];
+		static_cast<void>(available); // Empty pools are valid Muster targets.
+		if(choices.empty())
+			continue;
+
+		const CreatureID creature = choices.back();
+		const auto category = callback.getCreatureCategory(creature);
+		if(!category)
+			continue;
+
+		const auto amount = externalAmountMultiplier(recruitmentRank, category->category,
+			externalRecruiterActive);
+		if(!amount)
+			continue;
+
+		const auto * creatureType = creature.toCreature();
+		if(!creatureType)
+			continue;
+
+		Candidate candidate;
+		candidate.creature = creature;
+		candidate.category = category->category;
+		candidate.amount = *amount;
+		candidate.armyValue = static_cast<int64_t>(creatureType->getAIValue()) * *amount;
+		candidate.row = static_cast<int>(row);
+
+		if(!best || candidate.armyValue > best->armyValue
+			|| (candidate.armyValue == best->armyValue && candidate.row < best->row))
+			best = candidate;
+	}
+
+	return best;
+}
+
 } // namespace NK2AI::newHorizonsMuster

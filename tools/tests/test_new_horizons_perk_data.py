@@ -177,6 +177,7 @@ ACTIVE_PERKS = {
     "new-horizons:metamagic.perfectSequence",
     "new-horizons:battlecraft.entrench",
     "new-horizons:recruitment.volunteerNetwork",
+    "new-horizons:recruitment.externalRecruiter",
     "new-horizons:recruitment.eliteDraft",
     "new-horizons:recruitment.championSCall",
     "new-horizons:recruitment.masterRecruiter",

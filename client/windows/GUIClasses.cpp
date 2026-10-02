@@ -79,11 +79,26 @@
 #include "../../lib/CSoundBase.h"
 #include "../../lib/constants/EntityIdentifiers.h"
 
+#include <limits>
+
 static std::optional<newHorizonsCreatures::CreatureCategoryView> currentCreatureCategory(const CCreature * creature)
 {
 	if(!creature || !GAME || !GAME->interface() || !GAME->interface()->cb)
 		return std::nullopt;
 	return GAME->interface()->cb->getCreatureCategory(creature->getId());
+}
+
+static si32 maxRecruitableAmount(const CGDwelling * dwelling, const CCreature * creature, const TResources & resources)
+{
+	const auto cost = dwelling->getRecruitmentCost(creature->getId());
+	si32 result = std::numeric_limits<si32>::max() - 2;
+	const size_t resourceCount = std::min(cost.size(), resources.size());
+	for(size_t resource = 0; resource < resourceCount; ++resource)
+	{
+		if(cost[resource] > 0)
+			result = std::min(result, static_cast<si32>(resources[resource] / cost[resource]));
+	}
+	return result;
 }
 
 static ImagePath splitDialogBackgroundImage()
@@ -245,7 +260,8 @@ void CRecruitmentWindow::select(std::shared_ptr<CCreatureCard> card)
 
 	if(card)
 	{
-		si32 maxAmount = card->creature->maxAmount(GAME->interface()->cb->getResourceAmount());
+		const auto recruitmentCost = dwelling->getRecruitmentCost(card->creature->getId());
+		si32 maxAmount = maxRecruitableAmount(dwelling, card->creature, GAME->interface()->cb->getResourceAmount());
 
 		vstd::amin(maxAmount, card->amount);
 		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(dst))
@@ -271,11 +287,11 @@ void CRecruitmentWindow::select(std::shared_ptr<CCreatureCard> card)
 		else // if slider already at 0 - emulate call to sliderMoved()
 			sliderMoved(maxAmount);
 
-		costPerTroopValue->createItems(card->creature->getFullRecruitCost());
-		totalCostValue->createItems(card->creature->getFullRecruitCost());
+		costPerTroopValue->createItems(recruitmentCost);
+		totalCostValue->createItems(recruitmentCost);
 
-		costPerTroopValue->set(card->creature->getFullRecruitCost());
-		totalCostValue->set(card->creature->getFullRecruitCost() * maxAmount);
+		costPerTroopValue->set(recruitmentCost);
+		totalCostValue->set(recruitmentCost * maxAmount);
 
 		//Recruit %s
 		MetaString recruitText;
@@ -412,13 +428,14 @@ CRecruitmentWindow::CRecruitmentWindow(const CGDwelling * Dwelling, int Level, c
 	slider = std::make_shared<CSlider>(Point(173 + layoutOffsetX, 280), 138, std::bind(&CRecruitmentWindow::sliderMoved, this, _1), 0, 0, 0, Orientation::HORIZONTAL);
 
 	maxButton = std::make_shared<CButton>(Point(134 + layoutOffsetX, 313), AnimationPath::builtin("IRCBTNS.DEF"), LIBRARY->generaltexth->zelp[553], std::bind(&CSlider::scrollToMax, slider), EShortcut::RECRUITMENT_MAX);
-	if(const auto * town = dynamic_cast<const CGTownInstance *>(Dwelling); newHorizonsMusterUI::isEligible(town))
+	const auto * destinationHero = dynamic_cast<const CGHeroInstance *>(Dst);
+	if(newHorizonsMusterUI::isEligible(Dwelling, destinationHero))
 	{
 		musterButton = std::make_shared<CButton>(Point(368 + layoutOffsetX, 313), AnimationPath::builtin("IRCBTNS.DEF"),
-			CButton::tooltip("Muster", "Reinforce one town dwelling."),
-			[town](){ newHorizonsMusterUI::open(town); });
+			CButton::tooltip("Muster", "Reinforce one eligible dwelling."),
+			[Dwelling, destinationHero](){ newHorizonsMusterUI::open(Dwelling, destinationHero); });
 		musterButton->setTextOverlay("M", FONT_SMALL, Colors::WHITE);
-		if(const auto offer = newHorizonsMusterUI::offerFor(town))
+		if(const auto offer = newHorizonsMusterUI::offerFor(Dwelling, destinationHero))
 		{
 			musterButton->addHoverText(EButtonState::NORMAL, newHorizonsMusterUI::status(*offer));
 			musterButton->block(!GAME->interface()->makingTurn || offer->usedThisWeek || newHorizonsMusterUI::targetsFor(*offer).empty());
@@ -448,7 +465,7 @@ void CRecruitmentWindow::availableCreaturesChanged()
 	categoryHeaders.fill(nullptr);
 	if(musterButton)
 	{
-		if(const auto offer = newHorizonsMusterUI::offerFor(dynamic_cast<const CGTownInstance *>(dwelling)))
+		if(const auto offer = newHorizonsMusterUI::offerFor(dwelling, dynamic_cast<const CGHeroInstance *>(dst)))
 		{
 			musterButton->addHoverText(EButtonState::NORMAL, newHorizonsMusterUI::status(*offer));
 			musterButton->block(!GAME->interface()->makingTurn || offer->usedThisWeek
@@ -567,11 +584,13 @@ void CRecruitmentWindow::sliderMoved(int to)
 	if(!selected)
 		return;
 
-	buyButton->block(!to || !GAME->interface()->makingTurn);
+	const auto recruitmentCost = dwelling->getRecruitmentCost(selected->creature->getId());
+	const bool canAfford = GAME->interface()->cb->getResourceAmount().canAfford(recruitmentCost * to);
+	buyButton->block(!to || !canAfford || !GAME->interface()->makingTurn);
 	availableValue->setText(std::to_string(selected->amount - to));
 	toRecruitValue->setText(std::to_string(to));
 
-	totalCostValue->set(selected->creature->getFullRecruitCost() * to);
+	totalCostValue->set(recruitmentCost * to);
 }
 
 CSplitWindow::CSplitWindow(const CCreature * creature, std::function<void(int, int)> callback_, int leftMin_, int rightMin_,
