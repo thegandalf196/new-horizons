@@ -29,6 +29,9 @@ No full midbattle save/resume or immutable playable promotion is claimed.
 Source is committed/pushed as52c4f89a636923260ea0ac8d4e1a2c79aab76bda.
 Windows notice37076319236 is running on that commit; earlier full Windows
 37071436091 remains running on51340a3d4, not this feature.
+That older full run subsequently succeeds. Battle Plan notice37076319236 also
+succeeds; full Windows37077420212 is now in_progress on37dd359b8, containing
+the same Battle Plan source. This is not yet compile/package acceptance.
 
 UP-147 Double Command is implemented and active. The first accepted HERO-paid
 Order once per combat grants an immediate different Order, with a dedicated
