@@ -301,6 +301,7 @@ public:
 	int32_t getActiveStackID() const override;
 	int32_t getRound() const override;
 	int32_t getBloodrageDamagePercent(BattleSide side) const override;
+	int32_t getBloodrageCapPercent(BattleSide side) const override;
 	SylvanLuckState getSylvanLuckState(BattleSide side) const override { return fortuneStates.at(side); }
 	void setSylvanLuckState(BattleSide side, const SylvanLuckState & state) { fortuneStates.at(side) = state; }
 	AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override
@@ -425,6 +426,7 @@ private:
 	BattleSideArray<RelentlessAssaultState> relentlessAssaultStates;
 	BattleSideArray<int32_t> bloodrageRanks;
 	BattleSideArray<int32_t> bloodrageDamagePercents;
+	BattleSideArray<int32_t> bloodrageCaps;
 	std::set<uint32_t> bloodrageDestroyedUnits;
 	BattleSideArray<SylvanLuckState> fortuneStates;
 	BattleSideArray<AdverseCombatRerollState> adverseRerollStates;

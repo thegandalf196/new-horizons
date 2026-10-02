@@ -25,6 +25,7 @@
 #include "NewHorizonsOffense.h"
 #include "NewHorizonsShroud.h"
 #include "NewHorizonsWarcasting.h"
+#include "NewHorizonsBloodrage.h"
 #include "NewHorizonsDiscipline.h"
 #include "IGameSettings.h"
 #include "PossiblePlayerBattleAction.h"
@@ -717,7 +718,7 @@ int CBattleInfoCallback::battleGetBloodrageDamagePercent(const battle::Unit * un
 {
 	if(!getBattle() || !unit || !unit->alive() || unit->isGhost())
 		return 0;
-	const auto side = unit->unitSide();
+	const auto side = playerToSide(battleGetOwner(unit));
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return 0;
 	return std::max(0, getBattle()->getBloodrageDamagePercent(side));
@@ -943,12 +944,17 @@ int CBattleInfoCallback::battleGetMorale(const battle::Unit * unit) const
 		}
 	}
 
-	const auto applyCommandingPresence = [this, unit](int morale)
+	const auto applyMoraleFloor = [this, unit, hero](int morale)
 	{
-		return morale < 0 && battleHasCommandingPresence(unit) ? 0 : morale;
+		if(morale >= 0)
+			return morale;
+		if(battleHasCommandingPresence(unit))
+			return 0;
+		return newHorizonsBloodrage::hasFuryUnbound(hero)
+			&& battleGetBloodrageDamagePercent(unit) > 0 ? 0 : morale;
 	};
 	if(!newHorizonsDiscipline::hasSteadfast(hero))
-		return applyCommandingPresence(additionalMorale == 0
+		return applyMoraleFloor(additionalMorale == 0
 			? unit->moraleVal() : unit->moraleValWithBonus(additionalMorale));
 
 	const auto moraleBonuses = unit->getUnstackedBonuses(Selector::type()(BonusType::MORALE));
@@ -982,7 +988,7 @@ int CBattleInfoCallback::battleGetMorale(const battle::Unit * unit) const
 	const int64_t totalAdditionalMorale = moraleDelta + additionalMorale;
 	const auto boundedAdditionalMorale = static_cast<int32_t>(std::clamp<int64_t>(totalAdditionalMorale,
 		std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
-	return applyCommandingPresence(unit->moraleValWithBonus(boundedAdditionalMorale));
+	return applyMoraleFloor(unit->moraleValWithBonus(boundedAdditionalMorale));
 }
 
 int CBattleInfoCallback::battleGetFearChance(const battle::Unit * affected) const

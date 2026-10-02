@@ -119,6 +119,19 @@ public:
 class BloodrageCompatibilityTest : public BattleTestFixture
 {
 protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		TinyMapGameTest::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, JsonNode());
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
+		auto magicRules = LIBRARY->settingsHandler->getValue(EGameSettings::MAGIC_NEW_HORIZONS);
+		if(!magicRules.isNull())
+		{
+			magicRules["warcasting"] = JsonNode(false);
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, std::move(magicRules));
+		}
+	}
+
 	void SetUp() override
 	{
 		BattleTestFixture::SetUp();

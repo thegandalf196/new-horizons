@@ -97,6 +97,10 @@ public:
 	{
 		return subject->getBattle()->getBloodrageRank(side);
 	}
+	int32_t getBloodrageCapPercent(BattleSide side) const override
+	{
+		return subject->getBattle()->getBloodrageCapPercent(side);
+	}
 	std::vector<PendingDemonicGateFootprint> getPendingDemonicGateFootprints(BattleSide side) const override
 	{
 		return subject->getBattle()->getPendingDemonicGateFootprints(side);

@@ -161,6 +161,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	MoraleSuppressionState moraleSuppression;
 	// Quartermaster's once-per-combat expenditure and reduced activation identity.
 	ReducedExtraActivationState reducedExtraActivation;
+	// Bloodrage's cap is resolved from the hero's saved skill/perks at battle setup.
+	int32_t bloodrageCapPercent = 0;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);

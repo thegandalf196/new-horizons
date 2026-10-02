@@ -977,7 +977,7 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 				}
 				case CSkill::CombatStatusProvider::BLOODRAGE_DAMAGE:
 				{
-					const int cap = newHorizonsBloodrage::capForRank(battle->getBloodrageRank(side));
+					const int cap = battle->getBloodrageCapPercent(side);
 					if(cap <= 0)
 						continue;
 					const int current = std::clamp(battle->getBloodrageDamagePercent(side), 0, cap);

@@ -14,6 +14,8 @@ namespace
 {
 constexpr std::string_view SKILL = "new-horizons:bloodrage";
 constexpr std::string_view WAR_DRUMS = "new-horizons:bloodrage.warDrums";
+constexpr std::string_view FURY_UNBOUND = "new-horizons:bloodrage.furyUnbound";
+constexpr std::string_view ENDLESS_BLOODSHED = "new-horizons:bloodrage.endlessBloodshed";
 }
 
 int rank(const CGHeroInstance * hero)
@@ -42,15 +44,30 @@ int incrementForRank(int value)
 	}
 }
 
-int capForRank(int value)
+int capForRank(int value, bool endlessBloodshed)
 {
 	switch(value)
 	{
 		case 1: return BASIC_CAP;
 		case 2: return ADVANCED_CAP;
-		case 3: return EXPERT_CAP;
+		case 3: return EXPERT_CAP + (endlessBloodshed ? ENDLESS_BLOODSHED_CAP_BONUS : 0);
 		default: return 0;
 	}
+}
+
+bool hasFuryUnbound(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(SKILL), std::string(FURY_UNBOUND));
+}
+
+bool hasEndlessBloodshed(const CGHeroInstance * hero)
+{
+	return rank(hero) == 3 && hero && hero->hasActivePerk(std::string(SKILL), std::string(ENDLESS_BLOODSHED));
+}
+
+int capForHero(const CGHeroInstance * hero)
+{
+	return capForRank(rank(hero), hasEndlessBloodshed(hero));
 }
 
 bool hasWarDrums(const CGHeroInstance * hero)
@@ -67,6 +84,6 @@ int initialDamagePercent(const CGHeroInstance * hero)
 int advanceDamagePercent(const CGHeroInstance * hero, int currentPercent)
 {
 	const int heroRank = rank(hero);
-	return std::min(capForRank(heroRank), std::max(0, currentPercent) + incrementForRank(heroRank));
+	return std::min(capForHero(hero), std::max(0, currentPercent) + incrementForRank(heroRank));
 }
 }

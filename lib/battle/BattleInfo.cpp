@@ -196,7 +196,7 @@ void BattleInfo::recordBloodrageStackDeath(uint32_t unitId)
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		auto & state = sides.at(side);
-		state.bloodrageDamagePercent = std::min(newHorizonsBloodrage::capForRank(state.bloodrageRank),
+		state.bloodrageDamagePercent = std::min(state.bloodrageCapPercent,
 			state.bloodrageDamagePercent + newHorizonsBloodrage::incrementForRank(state.bloodrageRank));
 	}
 }
@@ -449,6 +449,7 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 			fortune.cascadingFortune = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.cascadingFortune");
 		}
 		currentBattle->sides[i].bloodrageRank = newHorizonsBloodrage::rank(heroes[i]);
+		currentBattle->sides[i].bloodrageCapPercent = newHorizonsBloodrage::capForHero(heroes[i]);
 		currentBattle->sides[i].bloodrageDamagePercent = newHorizonsBloodrage::initialDamagePercent(heroes[i]);
 	}
 

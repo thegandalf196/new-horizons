@@ -15,6 +15,8 @@ from jsonschema import Draft4Validator
 ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
+    "new-horizons:bloodrage.furyUnbound",
+    "new-horizons:bloodrage.endlessBloodshed",
     "new-horizons:command.commandingPresence",
     "new-horizons:discipline.steadfast",
     "new-horizons:armorer.bastion",

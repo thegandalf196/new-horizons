@@ -783,6 +783,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 		moraleSuppressionStates[side] = realBattle->getBattle()->getMoraleSuppressionState(side);
 		bloodrageRanks[side] = realBattle->getBattle()->getBloodrageRank(side);
 		bloodrageDamagePercents[side] = realBattle->getBattle()->getBloodrageDamagePercent(side);
+		bloodrageCaps[side] = realBattle->getBattle()->getBloodrageCapPercent(side);
 	}
 
 	localEnvironment.reset(new HypotheticEnvironment(this, env));
@@ -1481,6 +1482,11 @@ int32_t HypotheticBattle::getBloodrageDamagePercent(BattleSide side) const
 	return bloodrageDamagePercents.at(side);
 }
 
+int32_t HypotheticBattle::getBloodrageCapPercent(BattleSide side) const
+{
+	return bloodrageCaps.at(side);
+}
+
 IBattleInfo::ObstacleCList HypotheticBattle::getAllObstacles() const
 {
 	return projectedObstacles;
@@ -1755,7 +1761,7 @@ void HypotheticBattle::recordBloodrageTransition(const std::shared_ptr<StackWith
 	if(!wasAlive || unit->summoned || unit->isClone() || !bloodrageDestroyedUnits.insert(unit->unitId()).second)
 		return;
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-		bloodrageDamagePercents[side] = std::min(newHorizonsBloodrage::capForRank(bloodrageRanks[side]),
+		bloodrageDamagePercents[side] = std::min(bloodrageCaps[side],
 			bloodrageDamagePercents[side] + newHorizonsBloodrage::incrementForRank(bloodrageRanks[side]));
 }
 

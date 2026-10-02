@@ -15,6 +15,7 @@
 #include "SiegeInfo.h"
 #include "NewHorizonsWarcasting.h"
 #include "NewHorizonsOffense.h"
+#include "NewHorizonsBloodrage.h"
 
 #include "../callback/GameCallbackHolder.h"
 #include "../bonuses/Bonus.h"
@@ -61,6 +62,7 @@ public:
 	bool getHeroCommandUsed(BattleSide side) const override { return sides.at(side).heroCommandUsed; }
 	int32_t getBloodrageDamagePercent(BattleSide side) const override { return sides.at(side).bloodrageDamagePercent; }
 	int32_t getBloodrageRank(BattleSide side) const override { return sides.at(side).bloodrageRank; }
+	int32_t getBloodrageCapPercent(BattleSide side) const override { return sides.at(side).bloodrageCapPercent; }
 	SylvanLuckState getSylvanLuckState(BattleSide side) const override { return sides.at(side).sylvanLuck; }
 	AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override
 	{
@@ -158,6 +160,16 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		const auto validBloodrageSnapshot = [](const SideInBattle & side)
+		{
+			if(side.bloodrageRank < 0 || side.bloodrageRank > 3
+				|| side.bloodrageDamagePercent < 0)
+				return false;
+			const auto baseCap = newHorizonsBloodrage::capForRank(side.bloodrageRank);
+			const auto extendedCap = newHorizonsBloodrage::capForRank(side.bloodrageRank, true);
+			return (side.bloodrageCapPercent == baseCap || side.bloodrageCapPercent == extendedCap)
+				&& side.bloodrageDamagePercent <= side.bloodrageCapPercent;
+		};
 		if(h.saving)
 		{
 			// CStack's binary payload deliberately omits CUnitState. Form state
@@ -215,6 +227,18 @@ public:
 					|| !bloodrageDestroyedUnits.empty()))
 				throw std::runtime_error("Cannot discard Bloodrage battle state");
 		}
+		if(h.saving)
+		{
+			if(!validBloodrageSnapshot(sides[BattleSide::ATTACKER])
+				|| !validBloodrageSnapshot(sides[BattleSide::DEFENDER]))
+				throw std::runtime_error("Invalid Bloodrage battle state");
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_BLOODRAGE_CAP)
+				&& (sides[BattleSide::ATTACKER].bloodrageCapPercent
+					!= newHorizonsBloodrage::capForRank(sides[BattleSide::ATTACKER].bloodrageRank)
+					|| sides[BattleSide::DEFENDER].bloodrageCapPercent
+					!= newHorizonsBloodrage::capForRank(sides[BattleSide::DEFENDER].bloodrageRank)))
+				throw std::runtime_error("Cannot discard non-base Bloodrage cap in an older format");
+		}
 		h & battleID;
 		h & sides;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_LUCK))
@@ -228,15 +252,21 @@ public:
 			h & sides[BattleSide::ATTACKER].bloodrageRank;
 			h & sides[BattleSide::DEFENDER].bloodrageRank;
 			h & bloodrageDestroyedUnits;
-			if(!h.saving && (sides[BattleSide::ATTACKER].bloodrageDamagePercent < 0
-				|| sides[BattleSide::ATTACKER].bloodrageDamagePercent > 60
-				|| sides[BattleSide::DEFENDER].bloodrageDamagePercent < 0
-				|| sides[BattleSide::DEFENDER].bloodrageDamagePercent > 60
-				|| sides[BattleSide::ATTACKER].bloodrageRank < 0
-				|| sides[BattleSide::ATTACKER].bloodrageRank > 3
-				|| sides[BattleSide::DEFENDER].bloodrageRank < 0
-				|| sides[BattleSide::DEFENDER].bloodrageRank > 3))
-				throw std::runtime_error("Invalid saved Bloodrage battle state");
+			if(h.hasFeature(Handler::Version::NEW_HORIZONS_BLOODRAGE_CAP))
+			{
+				h & sides[BattleSide::ATTACKER].bloodrageCapPercent;
+				h & sides[BattleSide::DEFENDER].bloodrageCapPercent;
+			}
+			else if(!h.saving)
+			{
+				sides[BattleSide::ATTACKER].bloodrageCapPercent =
+					newHorizonsBloodrage::capForRank(sides[BattleSide::ATTACKER].bloodrageRank);
+				sides[BattleSide::DEFENDER].bloodrageCapPercent =
+					newHorizonsBloodrage::capForRank(sides[BattleSide::DEFENDER].bloodrageRank);
+			}
+			if(!h.saving && (!validBloodrageSnapshot(sides[BattleSide::ATTACKER])
+				|| !validBloodrageSnapshot(sides[BattleSide::DEFENDER])))
+				throw std::runtime_error("Invalid saved Bloodrage rank, cap, or damage state");
 		}
 		else if(!h.saving)
 		{
@@ -244,6 +274,8 @@ public:
 			sides[BattleSide::DEFENDER].bloodrageDamagePercent = 0;
 			sides[BattleSide::ATTACKER].bloodrageRank = 0;
 			sides[BattleSide::DEFENDER].bloodrageRank = 0;
+			sides[BattleSide::ATTACKER].bloodrageCapPercent = 0;
+			sides[BattleSide::DEFENDER].bloodrageCapPercent = 0;
 			bloodrageDestroyedUnits.clear();
 		}
 		h & round;

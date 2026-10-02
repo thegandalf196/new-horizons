@@ -2,6 +2,33 @@
 
 ## Purpose
 
+### 2026-10-02 UP-143/144 — focused Bloodrage fixture review
+
+Before compilation, review catches an active-War-Drums baseline mistakenly
+asserted negative under Fury, cleanup removals that themselves grant Bloodrage,
+a temporary passed to the AI damage API requiring an lvalue and a planned-only
+registry guard that would fail after activation. The existing public projected
+Bloodrage transition seam is valid; do not misclassify it as private. Use
+explicit setup boundaries, public projected state updates,
+and planned/active fixture override support; do not alter working production
+death counting or progression to accommodate setup. Verify projected kills
+above60 actually reach80, not merely that the UI/getter advertises80. Older-cap
+serialization checks must isolate unrelated newer-feature downgrade guards.
+Source/runtime and client build pass; native acceptance remains pending.
+Frozen fixture and test build68195 pass. Principal66256 passes4/4, zero skips
+in1.559s after these pre-build repairs; no native failure was concealed. Source
+review has no blocker. Activation data36/36, module drift, UI source guard and
+both-target18196 pass; adjacent native gate is separate.
+Activated native69374 runs41 cases:40 pass,1 fails, zero skips. The rankless
+legacy compatibility fixture inherits typed Hero Actions from the NH profile,
+so its ancient writer correctly rejects those unrelated budgets before testing
+Bloodrage cleanliness. Isolate that fixture's legacy Commands/attributes and
+Warcasting settings, preserving its original format, assertions and rankless
+death event. Do not loosen the production downgrade guard. Retain
+UP144-activated.log/XML. Exact-source rebuild6389 exits0 and activated retry20229
+passes41/41 in29.684s, zero skips (`UP144-activated-retry.log`/`.xml`). The repair
+changes only the old fixture's profile, not assertions or production save guards.
+
 ### 2026-10-02 UP-142 — canonical perk-description synchronization
 
 First data check after lifetime integration failed because registry help shortened

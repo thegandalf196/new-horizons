@@ -3809,7 +3809,7 @@
 					"requires": "advanced",
 					"description": "While at least one Bloodrage increment is active, friendly stacks treat negative Morale as 0.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "While at least one Bloodrage increment is active, friendly stacks treat negative Morale as 0."
 					}
 				},
@@ -3829,7 +3829,7 @@
 					"requires": "expert",
 					"description": "Increase Bloodrage's maximum damage cap by 20 percentage points.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Increase Bloodrage's maximum damage cap by 20 percentage points."
 					}
 				}

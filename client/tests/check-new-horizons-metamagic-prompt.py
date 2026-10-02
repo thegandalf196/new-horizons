@@ -127,7 +127,7 @@ assert "if(total <= 0)" in refresh
 assert "battleCallback->battleMetamagicUsesConsumed(side)" in refresh
 assert "std::clamp(battleCallback->battleMetamagicUsesConsumed(side), 0, total)" in refresh
 assert 'std::to_string(total - consumed) + " / " + std::to_string(total)' in refresh
-assert "newHorizonsBloodrage::capForRank(battle->getBloodrageRank(side))" in refresh
+assert "battle->getBloodrageCapPercent(side)" in refresh
 assert "battle->getBloodrageDamagePercent(side)" in refresh
 assert '"/" + std::to_string(cap) + "%"' in refresh
 assert refresh.index("switch(skill->getCombatStatusProvider())") < refresh.index(
