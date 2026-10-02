@@ -72,6 +72,7 @@ ACTIVE_PERKS = {
     "new-horizons:lightMagic.healer",
     "new-horizons:lightMagic.guardian",
     "new-horizons:lightMagic.aegis",
+    "new-horizons:lightMagic.litany",
     "new-horizons:lightMagic.purifier",
     "new-horizons:lightMagic.retributionist",
     "new-horizons:lightMagic.crusader",

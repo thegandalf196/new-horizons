@@ -58,10 +58,15 @@ class MagicV2DataTest(unittest.TestCase):
         self.assertFalse(self.old_validator.is_valid(self.rules))
         self.assertFalse(self.validator.is_valid(self.old_rules))
 
-    def test_mass_shadow_variants_preserve_base_school_level_and_triple_cost(self):
+    def test_mass_variants_preserve_base_school_level_and_triple_cost(self):
         validator = Draft4Validator(self.v3, registry=self.registry)
-        for variant_id, base_id in (('new-horizons:massCurse', 'core:curse'),
-                                    ('new-horizons:massSorrow', 'core:sorrow')):
+        for variant_id, base_id, skill_id, perk_id in (
+                ('new-horizons:massBless', 'core:bless',
+                 'new-horizons:lightMagic', 'new-horizons:lightMagic.litany'),
+                ('new-horizons:massCurse', 'core:curse',
+                 'new-horizons:shadowMagic', 'new-horizons:shadowMagic.grandMalediction'),
+                ('new-horizons:massSorrow', 'core:sorrow',
+                 'new-horizons:shadowMagic', 'new-horizons:shadowMagic.grandMalediction')):
             with self.subTest(variant=variant_id):
                 row = self.v3_rules['spells'][variant_id]
                 base = self.v3_rules['spells'][base_id]
@@ -70,8 +75,8 @@ class MagicV2DataTest(unittest.TestCase):
                 self.assertEqual(row['costs'], [3 * cost for cost in base['costs']])
                 self.assertFalse(row['ordinaryAcquisition'])
                 self.assertEqual(row['variant'], {
-                    'base': base_id, 'skill': 'new-horizons:shadowMagic',
-                    'perk': 'new-horizons:shadowMagic.grandMalediction', 'powerPercent': 100,
+                    'base': base_id, 'skill': skill_id,
+                    'perk': perk_id, 'powerPercent': 100,
                 })
                 for invalid in (None, 60, 101, '100'):
                     changed = copy.deepcopy(self.v3_rules)

@@ -1149,7 +1149,7 @@
 					"requires": "advanced",
 					"description": "Grants Mass Bless.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Grants Mass Bless."
 					}
 				},

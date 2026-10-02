@@ -2,6 +2,41 @@
 
 ## Purpose
 
+### 2026-10-01 UP-114 Mass Bless — data fixture correction
+
+The first bounded data assertion still assumed every Mass entry belonged to
+Shadow/Grand Malediction. Adding Light/Litany exposed that fixture assumption;
+the worker generalized the explicit expected grant mapping. Spell activation
+remains dormant until focused native verification. The Mass Shadow old-v2
+fixture now removes every variant row, not just its two original entries, so
+new installed content cannot leak v3-only metadata into the synthetic old save.
+The previously deferred Bless description assertion is reconciled to the
+existing combined Spell Power coefficient wording while this family is under
+focused verification; no gameplay value is changed by that assertion repair.
+Client build23367 exits0 (`UP114-bless-client-build.log`). Dormant data/schema/
+inventory validation passes32/32. Static fixture review caught an old snapshot
+retaining other Mass metadata, a selection helper restoring Advanced instead of
+the requested Expert rank, and a clean forecast mislabeled already-materialized.
+Repair these before the first native build/run; add focused uncapped School
+duration and Curse-counter cases rather than relying only on capped values.
+Both-target build20799 exits0. Principal72787 passes53/55 in9.033s, zero
+skips (`UP114-bless-principal` log/XML). The offer fixture's fixed seed did
+not select either requested perk from the larger active Light pool; search a
+bounded deterministic seed range instead of assuming one random offer.
+The materialized Bless forecast retained its old family marker alongside the
+new one. Explicitly replace the saved-v3 Bless family status in the shared timed
+Lua path before adding its new marker; test ordinary/Mass authoritative refresh
+as well. A helper returned a raw Bonus pointer from a temporary filtered list;
+retain shared ownership when inspecting computed forecast bonuses. Activation
+remains pending the repaired native gate.
+Repaired both-target28088 exits0 (`UP114-bless-repaired-build.log`). Repaired
+31806 passes55/55 in10.977s and activated5126 passes55/55 in11.867s, zero skips.
+Both native runs include the repaired Bless description assertion. Data/schema/
+inventory32/32 and module check pass. Litany and Mass Bless are active only after
+this focused gate; independent final source/fixture review has no blocker.
+Broad save/load, AI selection and modifier interactions remain Phase2; this is
+not graphical acceptance or playable promotion.
+
 ### 2026-10-01 UP-114 Mass foundation — pre-build/data corrections
 
 Independent production review found that the draft powerPercent metadata

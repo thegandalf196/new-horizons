@@ -264,7 +264,7 @@ TEST_F(NewHorizonsBlessTest, DurationBonusesAndBenedictionApplyAfterTheOrdinaryC
 
 	const auto description = newHorizonsMagic::spellDescriptionForHero(attackerSideHero, bless, 0);
 	EXPECT_NE(description.find("Current ordinary duration: 4 rounds"), std::string::npos);
-	EXPECT_NE(description.find("Light School coefficient: 115%"), std::string::npos);
+	EXPECT_NE(description.find("combined Spell Power coefficient: 115%"), std::string::npos);
 	EXPECT_NE(description.find("Current total before battle-only adjustments: 8 rounds"), std::string::npos);
 	EXPECT_NE(description.find("Benediction adds 1 round"), std::string::npos);
 }

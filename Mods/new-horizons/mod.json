@@ -532,6 +532,26 @@
 							3
 						]
 					},
+					"new-horizons:massBless": {
+						"schools": [
+							"new-horizons:light"
+						],
+						"level": 1,
+						"costs": [
+							12,
+							12,
+							9,
+							9
+						],
+						"active": true,
+						"ordinaryAcquisition": false,
+						"variant": {
+							"base": "core:bless",
+							"skill": "new-horizons:lightMagic",
+							"perk": "new-horizons:lightMagic.litany",
+							"powerPercent": 100
+						}
+					},
 					"core:blind": {
 						"schools": [
 							"new-horizons:shadow",
@@ -4118,7 +4138,7 @@
 								"requires": "advanced",
 								"description": "Grants Mass Bless.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Grants Mass Bless."
 								}
 							},

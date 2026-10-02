@@ -14,6 +14,24 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-114 Mass Bless/Litany is active and native verified. Advanced Litany grants
+a distinct perk-only virtual spell while physical-book removal and rank loss
+revoke it. Saved-v3 family handling preserves Bless's capped School-scaled
+duration and Benediction; ordinary Expert Bless stays single-target. Explicit
+family refresh fixes the materialized detached duplicate found by the principal
+fixture. Uncapped duration, natural maximum-damage endpoint, ally eligibility,
+both spell immunities, Curse removal, prior Bless replacement, real paid Mana,
+three-times listed costs before Wisdom and ordinary-acquisition exclusion pass.
+Client23367 and both-target20799/28088 exit0. Repaired31806 passes55/55 in10.977s;
+activated5126 passes55/55 in11.867s, zero skips. Data/schema/inventory32/32 and
+module check pass. Binary SHA-256:
+`8f92162d77e59a5e67d9971419e8e04a9d8858a4c0a633111be0ce08ffde6088`.
+Coverage162->163/310, planned148->147, Light8/2, distinct variants2->3/5.
+Independent final review has no material blocker. The earlier stale Bless text
+assertion is repaired and included in the passing gate. Phase2 retains broad
+save/load, AI selection and modifier interactions; no GUI/playable promotion.
+Mass Regeneration/Verdant Communion is next, then distinct Mass Slow.
+
 UP-114 first slice is active and native verified: two distinct Mass Curse/Sorrow
 entries plus Expert Grand Malediction, with saved-profile perk-only virtual
 grants and base-family status refresh. Physical-book removal and rank loss revoke
@@ -906,7 +924,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 162/310 | 148 planned; Grand Malediction is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 163/310 | 147 planned; Litany is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -1047,7 +1065,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Discipline | 3/0 | 5/5 | Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless active with focused authoritative and detached evidence. Five perks remain planned; Esprit de Corps composition scope, Heroic Spirit activation timing and Veteran Cohesion HP reference await clarification. |
 | Recruitment | 3/0 | 4/6 | Six perks missing |
 | Command | 3/0 | 4/6 | Aggressive/Defensive, Veteran and Combined Arms have focused runtime/AI evidence; ordinary Advanced/Expert progression opens. Six perks remain planned. |
-| Light Magic | 3/0 | 7/3 | Benediction, Healer, Guardian, Aegis, Purifier, Retributionist, and Crusader active; Sanctuary Keeper, Litany and Miracle Worker remain planned. Crusader has focused native evidence. |
+| Light Magic | 3/0 | 8/2 | Litany grants distinct Mass Bless with native cast/forecast evidence, alongside Benediction, Healer, Guardian, Aegis, Purifier, Retributionist and Crusader. Sanctuary Keeper and Miracle Worker remain planned. |
 | Shadow Magic | 3/0 | 9/1 | Grand Malediction now grants distinct Mass Curse/Sorrow with native cast/forecast evidence, alongside the eight earlier perks. Plaguebearer awaits its normal-limit definition. |
 | Nature Magic | 3/0 | 4/6 | Herbalist, Rootcaller, Beastcaller and Verdant Warden active; six perks missing. |
 | Havoc Magic | 3/0 | 6/4 | Four perks missing; Pyromancer, Cryomancer and Controlled Blast are native verified |

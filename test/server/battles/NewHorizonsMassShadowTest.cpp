@@ -63,8 +63,13 @@ JsonNode olderMagicSnapshotWithoutMassVariants()
 		if(row.isStruct())
 			row.Struct().erase("selectedPlacement");
 	}
-	rules["spells"].Struct().erase(massCurseKey);
-	rules["spells"].Struct().erase(massSorrowKey);
+	for(auto it = rules["spells"].Struct().begin(); it != rules["spells"].Struct().end();)
+	{
+		if(it->second.Struct().contains("variant"))
+			it = rules["spells"].Struct().erase(it);
+		else
+			++it;
+	}
 	return rules;
 }
 

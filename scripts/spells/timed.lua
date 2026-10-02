@@ -579,8 +579,16 @@ function Script:apply(mechanics, server, target)
 			end
 		end
 
+		local refreshedType = nil
 		if spellKey == DIVINE_RETRIBUTION_SPELL then
-			local previous = unit:getBonuses({ type = "DIVINE_RETRIBUTION" }):filter(function(bonus)
+			refreshedType = "DIVINE_RETRIBUTION"
+		elseif spellKey == "core:bless" and mechanics:usesNewHorizonsMagicV3() then
+			-- Ordinary Bless and its perk-granted Mass entry share one status.
+			-- Replace the family marker explicitly, including detached AI units.
+			refreshedType = "ALWAYS_MAXIMUM_DAMAGE"
+		end
+		if refreshedType then
+			local previous = unit:getBonuses({ type = refreshedType }):filter(function(bonus)
 				return bonus:getSource() == ENUM.BonusSource.spellEffect
 					and bonus:getSourceID() == spellKey
 			end)

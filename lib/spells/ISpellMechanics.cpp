@@ -755,6 +755,9 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 			const auto * heroCaster = caster->getHeroCaster();
 			const auto * defendedTown = cb->battleGetDefendedTown();
 			const auto * battleState = cb->getBattle();
+			const SpellID familyID = battleState
+				? newHorizonsMagic::spellVariantBase(battleState->getMagicRules(), owner->getId())
+				: owner->getId();
 			const bool v3Slow = mode == Mode::HERO && heroCaster && battleState
 				&& owner->getId() == SpellID::SLOW
 				&& newHorizonsMagic::rulesActive(battleState->getMagicRules())
@@ -780,7 +783,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 				effectDuration = static_cast<decltype(effectDuration)>(std::clamp<int64_t>(duration, 0,
 					std::numeric_limits<decltype(effectDuration)>::max()));
 			}
-			const bool v3Bless = mode == Mode::HERO && heroCaster && owner->getId() == SpellID::BLESS
+			const bool v3Bless = mode == Mode::HERO && heroCaster && familyID == SpellID::BLESS
 				&& cb->getBattle() && newHorizonsMagic::rulesActive(cb->getBattle()->getMagicRules())
 				&& cb->getBattle()->getMagicRules()["rulesetVersion"].Integer()
 					== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
@@ -790,9 +793,6 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 				&& defendedTown->hasBuilt(BuildingID::SPECIAL_2)
 				&& cb->battleGetFightingHero(BattleSide::DEFENDER) == heroCaster;
 
-			const SpellID familyID = battleState
-				? newHorizonsMagic::spellVariantBase(battleState->getMagicRules(), owner->getId())
-				: owner->getId();
 			const int bonus = newHorizonsMagic::spellDurationBonus(
 				dynamic_cast<const CGHeroInstance *>(caster), familyID);
 			if(v3Slow)

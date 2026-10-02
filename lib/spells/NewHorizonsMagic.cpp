@@ -878,7 +878,7 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 
 	if(hero && rulesActive(hero->getMagicRules())
 		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
-		&& spell->getId() == SpellID::BLESS)
+		&& spellVariantBase(hero->getMagicRules(), spell->getId()) == SpellID::BLESS)
 	{
 		const auto & rules = hero->getMagicRules();
 		const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
