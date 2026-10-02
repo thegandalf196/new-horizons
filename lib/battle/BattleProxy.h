@@ -39,6 +39,7 @@ public:
 	PlayerColor getSidePlayer(BattleSide side) const override;
 	const CArmedInstance * getSideArmy(BattleSide side) const override;
 	const CGHeroInstance * getSideHero(BattleSide side) const override;
+	int battleGetPerkMagicalReductionBasisPoints(const battle::Unit * unit) const override;
 
 	ui8 getTacticDist() const override;
 	BattleSide getTacticsSide() const override;

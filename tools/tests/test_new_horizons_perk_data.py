@@ -94,6 +94,7 @@ ACTIVE_PERKS = {
     "new-horizons:shadowMagic.grandMalediction",
     "new-horizons:warcasting.martialChanneling",
     "new-horizons:warcasting.arcaneChanneling",
+    "new-horizons:warcasting.spellward",
     "new-horizons:warcasting.tacticalWeaving",
     "new-horizons:warcasting.battleMeditation",
     "new-horizons:archery.targetCaller",

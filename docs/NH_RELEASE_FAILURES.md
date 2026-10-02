@@ -2,6 +2,51 @@
 
 ## Purpose
 
+### 2026-10-02 UP-120 — Spellward pre-build integration corrections
+
+Read-only mapping rejected static original-army bonus inheritance: Hypnotize
+must change the protecting hero, and summons/gates must not require an original
+army bonus node. Use the existing current-controller callback on damage paths,
+with a separate independent reduction source before the shared cap/penetration.
+No new state or polling is needed. Root pre-build review repaired the native
+fixture's missing skills registry level; independent Astra review identified a
+redundant final brace and an explicit IBattleState include required by the Lua
+proxy. Both were repaired before compilation. Strict legacy-MDR fixture adapters
+strip current-v3-only placement/Earthquake/Mass metadata rather than relaxing
+old schemas. These are pre-build corrections, not played regressions.
+Two reviewer service calls were rejected at the thread limit; after the runtime
+worker completed, a fresh Astra reviewer succeeded and found no remaining
+production blocker. Both-target build34789 is running with12 jobs. Perk remains
+planned until focused actual casts pass. Wider magical-ability/save interactions
+and Fire Shield's existing reduction-immunity shortcut are Phase2 findings.
+
+Build34789 exits1 in the new fixture: BattleCast requires CBattleInfoCallback,
+not its virtual IBattleInfoCallback base alias. Use the concrete callback type
+in the forecast helper; do not cast around the API or change production types.
+Production files compiled before this test-only failure. Retry must finish both
+targets before native execution or activation.
+
+Retry79021 exits0 for client and test targets. Focused native21882 completes
+21 cases in5.775s:20 pass and one fails, zero skips. Live Spellward prediction
+and paid damage agree at198, but detached AI prediction and castEval both return
+220. Do not activate the perk or weaken the parity assertions until the proxy
+path is corrected. Existing MDR, Plague and Soul Chain checks pass.
+Read-only Luna diagnosis confirms BattleProxy::getSideHero uses the filtered
+player callback, hiding the opposing hero. Its computed-defense override now
+forwards the projected unit to the subject callback; it does not expose the
+hero or relax visibility checks. Projected Hypnotize remains the ownership
+input. Build80192 validates this repair and stronger combined/cap assertions.
+Independent Astra proxy review finds no blocking issue. Phase2 retains a
+detached-only Hypnotize fixture in which projected ownership differs from live
+ownership; current tests cover live control changes and ordinary detached
+parity separately. No validation or playable delivery is implied by review.
+Subsequent activation closes that specific fixture gap: projected-only control
+flips now verify both directions and unchanged live ownership. Repair build80192
+exits0; principal24023 passes21/21 in5.858s, zero skips. Activated build12348
+exits0 and native60120 passes22/22 in6.000s, zero skips. Data/schema/inventory
+35/35 and module drift check pass. Independent Astra activation review finds
+no blocker. Wider save/ability interactions remain Phase2. No GUI/promotion.
+
 ### 2026-10-02 UP-118 — weighted movement pre-build correction
 
 Root diff review found that the first terrain implementation added the surcharge

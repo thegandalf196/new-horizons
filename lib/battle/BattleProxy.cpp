@@ -78,6 +78,11 @@ const CGHeroInstance * BattleProxy::getSideHero(BattleSide side) const
 	return subject->battleGetFightingHero(side);
 }
 
+int BattleProxy::battleGetPerkMagicalReductionBasisPoints(const battle::Unit * unit) const
+{
+	return subject->battleGetPerkMagicalReductionBasisPoints(unit);
+}
+
 ui8 BattleProxy::getTacticDist() const
 {
 	return subject->battleTacticDist();

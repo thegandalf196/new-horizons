@@ -46,6 +46,17 @@ protected:
 			rules["rulesetVersion"].Integer() = rulesetVersion;
 			rules.Struct().erase("schoolRankPowerCoefficientPercent");
 			rules.Struct().erase("spellcraftEfficiencyPercent");
+			for(auto & [name, spell] : rules["spells"].Struct())
+			{
+				(void)name;
+				spell.Struct().erase("selectedPlacement");
+				spell.Struct().erase("earthquake");
+				if(spell.Struct().contains("variant"))
+				{
+					spell.Struct().erase("variant");
+					spell["active"].Bool() = false;
+				}
+			}
 		}
 		if(!includeHolyArmorRosterRow)
 			rules["spells"].Struct().erase(holyArmorRosterKey);

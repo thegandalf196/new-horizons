@@ -436,7 +436,8 @@ void CSpell::getEffects(std::vector<Bonus> & lst, const int schoolLevel, const b
 int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Unit * affectedCreature, int64_t rawDamage,
 	int ignoreSpellDamageReductionPercent, int magicalDamageReductionBasisPoints,
 	int finalDamageMultiplierPercent, bool useIndependentMagicalDamageReduction,
-	bool useFractionalMagicalDamageReduction, bool applyCasterBonuses) const
+	bool useFractionalMagicalDamageReduction, bool applyCasterBonuses,
+	int perkMagicalDamageReductionBasisPoints) const
 {
 	auto ret = rawDamage;
 	ignoreSpellDamageReductionPercent = std::clamp(ignoreSpellDamageReductionPercent, 0, 100);
@@ -507,6 +508,12 @@ int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Uni
 			// reduction. Keep its fractional percentage points exact.
 			if(magicalDamageReductionBasisPoints > 0)
 				reductionSourcesBasisPoints.push_back(std::clamp(magicalDamageReductionBasisPoints, 0, 10000));
+
+			// Spellward is resolved from the target's current controller by the
+			// battle callback, then supplied here as its own multiplicative source.
+			if(perkMagicalDamageReductionBasisPoints > 0)
+				reductionSourcesBasisPoints.push_back(
+					std::clamp(perkMagicalDamageReductionBasisPoints, 0, 10000));
 
 			ret = spells::calculateMagicalDamageReductionBasisPoints(
 				ret, reductionSourcesBasisPoints, ignoreSpellDamageReductionPercent).damageWithPenetration;

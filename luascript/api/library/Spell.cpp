@@ -20,6 +20,8 @@
 #include "../../../lib/battle/Unit.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/battle/IBattleState.h"
 
 namespace scripting::api
 {
@@ -93,8 +95,17 @@ int64_t SpellProxy::adjustDamage(const Spell & spell, const IBattleInfoCallback 
 	if(!caster)
 		caster = &actor;
 
+	const auto * battleState = cb->getBattle();
+	const bool useFractionalMagicalDamageReduction = battleState
+		&& newHorizonsMagic::rulesActive(battleState->getMagicRules())
+		&& battleState->getMagicRules()["rulesetVersion"].Integer()
+			== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
+	const int perkReductionBasisPoints = owner->isMagical()
+		? cb->battleGetPerkMagicalReductionBasisPoints(&target) : 0;
 	return owner->adjustRawDamage(caster, &target, rawDamage, 0,
-		cb->battleGetHoldTheLineMagicalReductionBasisPoints(&target));
+		cb->battleGetHoldTheLineMagicalReductionBasisPoints(&target), 100,
+		cb->battleUsesNewHorizonsMultiplicativeMDR(), useFractionalMagicalDamageReduction, true,
+		perkReductionBasisPoints);
 }
 
 std::vector<const spells::SpellSchoolType *> SpellProxy::getSchools(const Spell & spell)

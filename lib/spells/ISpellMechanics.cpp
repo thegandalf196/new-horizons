@@ -45,8 +45,6 @@ namespace spells
 
 namespace
 {
-constexpr auto HOLY_ARMOR_SAVED_ROSTER_KEY = "new-horizons:holyArmor";
-
 int64_t multiplyDivideFloor(int64_t value, uint64_t multiplier, int64_t divisor)
 {
 	// value is smaller than divisor. This bitwise quotient/remainder loop avoids
@@ -1227,9 +1225,11 @@ int64_t Mechanics::adjustRecipientDamage(const battle::Unit * target, int64_t ra
 	const auto * callback = battle();
 	const int holdReductionBasisPoints = callback && spell->isMagical()
 		? callback->battleGetHoldTheLineMagicalReductionBasisPoints(target) : 0;
+	const int perkReductionBasisPoints = callback && spell->isMagical()
+		? callback->battleGetPerkMagicalReductionBasisPoints(target) : 0;
 	return spell->adjustRawDamage(caster, target, rawDamage, 0,
 		holdReductionBasisPoints, 100, usesNewHorizonsMultiplicativeMDR(),
-		usesNewHorizonsMagicV3(), false);
+		usesNewHorizonsMagicV3(), false, perkReductionBasisPoints);
 }
 
 int64_t BaseMechanics::adjustEffectValue(const battle::Unit * target) const
@@ -1259,6 +1259,8 @@ int64_t BaseMechanics::adjustEffectValueImpl(const battle::Unit * target, const 
 		spellPenetration ? 20 : 0);
 	const int holdReductionBasisPoints = cb && owner->isMagical() && target
 		? cb->battleGetHoldTheLineMagicalReductionBasisPoints(target) : 0;
+	const int perkReductionBasisPoints = cb && owner->isMagical() && target
+		? cb->battleGetPerkMagicalReductionBasisPoints(target) : 0;
 	const auto * battleState = cb ? cb->getBattle() : nullptr;
 	const bool useIndependentMagicalDamageReduction = usesNewHorizonsMultiplicativeMDR();
 	int finalDamageMultiplierPercent = 100;
@@ -1294,7 +1296,7 @@ int64_t BaseMechanics::adjustEffectValueImpl(const battle::Unit * target, const 
 	}
 	int64_t adjustedDamage = owner->adjustRawDamage(caster, target, rawDamage, ignoreReduction,
 		holdReductionBasisPoints, finalDamageMultiplierPercent, useIndependentMagicalDamageReduction,
-		usesNewHorizonsMagicV3());
+		usesNewHorizonsMagicV3(), true, perkReductionBasisPoints);
 	if(applyExecution && target && battleState && newHorizonsMagic::soulReaperEnabled(
 		battleState->getMagicRules(), owner->getId()))
 		adjustedDamage = newHorizonsMagic::soulReaperDamageAfterExecution(
@@ -1585,13 +1587,7 @@ bool BaseMechanics::usesNewHorizonsQuicksandSelectedPlacement() const
 
 bool BaseMechanics::usesNewHorizonsMultiplicativeMDR() const
 {
-	const auto * battleState = cb ? cb->getBattle() : nullptr;
-	if(!battleState)
-		return false;
-	const auto & magicRules = battleState->getMagicRules();
-	return newHorizonsMagic::rulesActive(magicRules)
-		&& magicRules["spells"].isStruct()
-		&& magicRules["spells"].Struct().contains(HOLY_ARMOR_SAVED_ROSTER_KEY);
+	return cb && cb->battleUsesNewHorizonsMultiplicativeMDR();
 }
 
 bool BaseMechanics::isMagicMirror() const

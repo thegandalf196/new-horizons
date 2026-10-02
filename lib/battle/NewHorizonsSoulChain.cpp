@@ -178,6 +178,7 @@ int64_t adjustedEchoDamage(const CBattleInfoCallback & battle, const BattleSide 
 		battle.battleGetHoldTheLineMagicalReductionBasisPoints(primary), 100, true,
 		newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
 			&& battle.getBattle()->getMagicRules()["rulesetVersion"].Integer()
-				== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION);
+				== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
+		true, battle.battleGetPerkMagicalReductionBasisPoints(primary));
 }
 }

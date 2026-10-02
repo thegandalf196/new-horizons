@@ -5223,7 +5223,7 @@
 								"requires": "basic",
 								"description": "Friendly stacks receive 10% less magical damage. This is the successor to the old Resistance secondary skill.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Friendly stacks receive 10% less magical damage. This is the successor to the old Resistance secondary skill."
 								}
 							},

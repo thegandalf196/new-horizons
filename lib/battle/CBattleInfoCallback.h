@@ -148,6 +148,11 @@ public:
 	bool battleIsHoldTheLineRecipient(const HeroOrderState & state, const battle::Unit * unit) const;
 	/// Saved Iron Discipline reduction for an anchored, unbroken Hold recipient.
 	int battleGetHoldTheLineMagicalReductionBasisPoints(const battle::Unit * unit) const;
+	/// Independent Magical Damage Reduction supplied by the target's current controlling hero.
+	/// Returns zero outside the saved New Horizons multiplicative-MDR profile.
+	virtual int battleGetPerkMagicalReductionBasisPoints(const battle::Unit * unit) const;
+	/// Whether this saved battle uses the New Horizons multiplicative magical-damage rules.
+	bool battleUsesNewHorizonsMultiplicativeMDR() const;
 	/// Returns whether Brace is armed for this defender and this qualifying incoming attack.
 	bool battleCanTriggerHeroOrderBrace(const battle::Unit * attacker, const battle::Unit * defender,
 		int movementDistance, bool shooting, bool counter) const;

@@ -56,6 +56,10 @@ constexpr int ARMOR_PIERCER_DEFENSE_IGNORE_PERCENT = 20;
 constexpr int BREAKTHROUGH_DAMAGE_REDUCTION_IGNORE_PERCENT = 50;
 constexpr int PIERCING_BOLTS_DEFENSE_IGNORE_PERCENT = 50;
 constexpr int FORTIFICATION_ENGINEER_SIEGE_PERCENT = 125;
+constexpr auto HOLY_ARMOR_SAVED_ROSTER_KEY = "new-horizons:holyArmor";
+constexpr auto WARCASTING_SKILL_ID = "new-horizons:warcasting";
+constexpr auto SPELLWARD_PERK_ID = "new-horizons:warcasting.spellward";
+constexpr int SPELLWARD_REDUCTION_BASIS_POINTS = 1000;
 
 int64_t scaledBattleOutput(int64_t base, int32_t outputPercent)
 {
@@ -1016,6 +1020,31 @@ int CBattleInfoCallback::battleGetHoldTheLineMagicalReductionBasisPoints(const b
 	const auto state = battleGetHeroOrderState(side);
 	return state && battleIsHoldTheLineRecipient(*state, unit)
 		? state->holdMagicalReductionBasisPoints : 0;
+}
+
+bool CBattleInfoCallback::battleUsesNewHorizonsMultiplicativeMDR() const
+{
+	const auto * battleState = getBattle();
+	if(!battleState)
+		return false;
+
+	const auto & magicRules = battleState->getMagicRules();
+	return newHorizonsMagic::rulesActive(magicRules)
+		&& magicRules["spells"].isStruct()
+		&& magicRules["spells"].Struct().contains(HOLY_ARMOR_SAVED_ROSTER_KEY);
+}
+
+int CBattleInfoCallback::battleGetPerkMagicalReductionBasisPoints(const battle::Unit * unit) const
+{
+	if(!unit || !battleUsesNewHorizonsMultiplicativeMDR())
+		return 0;
+
+	// Resolve ownership now, rather than relying on the stack's original army
+	// inheritance. Mind control, summoned stacks, gated stacks, and detached AI
+	// units all use the same current-controller query.
+	const auto * controllerHero = battleGetOwnerHero(unit);
+	return controllerHero && controllerHero->hasActivePerk(WARCASTING_SKILL_ID, SPELLWARD_PERK_ID)
+		? SPELLWARD_REDUCTION_BASIS_POINTS : 0;
 }
 
 bool CBattleInfoCallback::battleCanTriggerHeroOrderBrace(const battle::Unit * attacker,

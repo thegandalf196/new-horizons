@@ -133,6 +133,7 @@ int64_t adjustedTickDamage(const CBattleInfoCallback & battle, BattleSide caster
 		battle.battleGetHoldTheLineMagicalReductionBasisPoints(target), 100, true,
 		newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
 			&& battle.getBattle()->getMagicRules()["rulesetVersion"].Integer()
-				== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION);
+				== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
+		true, battle.battleGetPerkMagicalReductionBasisPoints(target));
 }
 }

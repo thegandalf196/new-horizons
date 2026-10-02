@@ -14,6 +14,23 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-120 Spellward is active and native verified. Current-controller protection
+supplies an independent10% magical reduction before the shared95% cap and
+penetration, without adding resistance or reducing physical/nondamaging effects.
+Paid damage,50% independent combination, cap, rank loss/reacquisition, inactive
+offers and detached forecast/castEval pass. A computed-defense proxy override
+preserves hidden hero information and projected-only Hypnotize ownership.
+Repaired build80192 exits0 and principal24023 passes21/21 in5.858s; activated
+build12348 exits0 and native60120 passes22/22 in6.000s, zero skips.
+Data/schema/inventory35/35 and module drift check pass; independent Astra review
+has no blocker. Coverage167->168/310 active,143->142 planned; Warcasting5/10.
+Ranks remain84/93 and combat identities60/67 plus five Mass variants. No new
+saved state or polling. Wider magical-ability/save interactions remain Phase2.
+Neutral fallback art is Not done, generic UI Provisional; no GUI/promotion.
+Native binary SHA-256:
+`ef7f9e187c5221e80b99a73a6cdd20e713b5434ab64910f9c3c5c4c4a24e7c32`.
+Combat Casting, Mire Shaper and Enchanted Command are separately design-blocked.
+
 UP-118 consumer checkpoint, 2026-10-02: Earthquake's selected-area siege and
 radius2 field modes are native verified; Advanced Geomancer is active. Field
 damage uses30+0.8×scaled raw Spell Power, both grounded sides, immunity-aware
@@ -1010,7 +1027,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 167/310 | 143 planned; Geomancer is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 168/310 | 142 planned; Spellward is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -1159,7 +1176,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Chaos Magic | 3/0 | 3/7 | Blinkmaster, Weaver and Paradox Shield are active with focused evidence recorded above; seven perks remain planned. |
 | Spellcraft | 3/0 | 4/6 | Grand Formula scales the first accepted Level 4-or-5 hero spell's SP term by 150%; Arcane Focus, Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold. Basic/Advanced/Expert efficiency is 110/120/130% under saved v3 rules. |
 | Wisdom | 3/0 | 8/2 | Mana Conservation post-combat Normal recovery, Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. One other perk remains missing. Broader interactions and playable acceptance remain open. |
-| Warcasting | 3/0 | 4/6 | Six perks missing |
+| Warcasting | 3/0 | 5/5 | Spellward has focused live/detached/current-controller damage evidence. Five perks missing; Combat Casting and Enchanted Command await shared rule decisions. |
 | Logistics | 3/0 | 5/5 | Five perks missing; Roadmaster/Wayfarer native verified |
 | Diplomacy | 0/3 | 0/10 | Ranks and progression missing |
 | Estates | 3/0 | 4/6 | Land Surveyor, Tax Collector, Estate Network and Financier supply working Basic/Advanced/Expert perks. Accepted mine-capture grants, daily income, weekly Wood/Ore, weekly treasury interest and AI resource receipt/selection are native verified. |

@@ -32,6 +32,12 @@ Implementation is Final only when the intended UI behavior and its presentation 
 
 ## Current status summary
 
+UP-120 Spellward source/native checkpoint: generic offer/name/help presentation
+is active with22/22 focused damage/ownership checks. `NH_perk_neutral` remains
+the fallback, so bespoke art is Not done and UI presentation Provisional.
+Current perk coverage is168/310 active,142 planned. No new artwork was generated,
+no GUI was launched and no playable snapshot was promoted.
+
 UP-118 source/native checkpoint: Earthquake and Geomancer have authoritative
 field/siege, targeting, feedback and AI evidence. Fractured Ground borrows
 Quicksand's external animation reference, not newly authored terrain art;
