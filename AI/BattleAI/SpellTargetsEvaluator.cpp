@@ -34,6 +34,7 @@
 #include <vcmi/spells/Spell.h>
 
 #include <set>
+#include <tuple>
 
 using namespace spells;
 
@@ -1209,6 +1210,9 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMech
 		return canonicalFireWallTargets(spellMechanics);
 	if(isCanonicalLandMine(spellMechanics))
 		return canonicalLandMineTargets(spellMechanics);
+	if(spellMechanics && spellMechanics->usesNewHorizonsHavocStructures()
+		&& spellMechanics->getTargetTypes() == std::vector<AimType>{AimType::LOCATION})
+		return canonicalHavocStructureTargets(spellMechanics);
 	if(spellMechanics && spellMechanics->usesNewHorizonsEarthquake())
 		return canonicalEarthquakeTargets(spellMechanics);
 	if(isSelectedQuicksand(spellMechanics))
@@ -1273,6 +1277,99 @@ std::vector<Target> SpellTargetEvaluator::canonicalEarthquakeTargets(const Mecha
 		if(spellMechanics->canBeCastAt(target, problem))
 			result.push_back(std::move(target));
 	}
+	return result;
+}
+
+std::vector<Target> SpellTargetEvaluator::canonicalHavocStructureTargets(const Mechanics * spellMechanics)
+{
+	std::vector<Target> result;
+	if(!spellMechanics || !spellMechanics->usesNewHorizonsHavocStructures()
+		|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::LOCATION})
+		return result;
+
+	const auto * battle = spellMechanics->battle();
+	if(!battle)
+		return result;
+
+	// Preserve the existing creature-damage optimums, then add only geometry
+	// signatures that change the affected units, live fortification sections, or
+	// ordinary-scene obstacles. This avoids detached castEval for every hex.
+	result = theBestLocationCasts(spellMechanics);
+	using GeometrySignature = std::tuple<std::vector<uint32_t>, std::vector<int>, std::vector<int32_t>>;
+	std::set<GeometrySignature> structuralSignatures;
+	std::set<BattleHex> selectedHexes;
+
+	auto signatureFor = [&](const Target & target)
+	{
+		GeometrySignature signature;
+		bool hasStructure = false;
+		if(target.size() != 1 || !target.front().hexValue.isValid())
+			return std::pair{signature, hasStructure};
+
+		std::set<uint32_t> affectedUnits;
+		for(const auto * unit : spellMechanics->getAffectedStacks(target))
+			if(unit)
+				affectedUnits.insert(unit->unitId());
+		std::get<0>(signature).assign(affectedUnits.begin(), affectedUnits.end());
+
+		const auto affectedHexes = spellMechanics->rangeInHexes(target.front().hexValue);
+		std::set<int> affectedWallParts;
+		for(int index = 0; index < static_cast<int>(EWallPart::PARTS_COUNT); ++index)
+		{
+			const auto wallPart = static_cast<EWallPart>(index);
+			const auto wallHex = battle->wallPartToBattleHex(wallPart);
+			if(battle->isWallPartAttackable(wallPart) && battle->getWallStructuralHP(wallPart) > 0
+				&& wallHex.isValid() && affectedHexes.contains(wallHex))
+				affectedWallParts.insert(static_cast<int>(wallPart));
+		}
+		std::get<1>(signature).assign(affectedWallParts.begin(), affectedWallParts.end());
+
+		std::set<int32_t> affectedObstacles;
+		for(const auto & obstacle : battle->battleGetAllObstacles())
+		{
+			if(!obstacle || obstacle->obstacleType != CObstacleInstance::USUAL)
+				continue;
+			for(const auto & hex : obstacle->getAffectedTiles())
+				if(affectedHexes.contains(hex))
+				{
+					affectedObstacles.insert(obstacle->uniqueID);
+					break;
+				}
+		}
+		std::get<2>(signature).assign(affectedObstacles.begin(), affectedObstacles.end());
+		hasStructure = !affectedWallParts.empty() || !affectedObstacles.empty();
+		return std::pair{std::move(signature), hasStructure};
+	};
+
+	for(const auto & target : result)
+	{
+		if(target.size() != 1 || !target.front().hexValue.isValid())
+			continue;
+		selectedHexes.insert(target.front().hexValue);
+		auto [signature, hasStructure] = signatureFor(target);
+		if(hasStructure)
+			structuralSignatures.insert(std::move(signature));
+	}
+
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		const BattleHex hex(index);
+		if(!hex.isValid() || selectedHexes.contains(hex))
+			continue;
+
+		Target target{Destination(hex)};
+		detail::ProblemImpl problem;
+		if(!spellMechanics->canBeCastAt(target, problem))
+			continue;
+
+		auto [signature, hasStructure] = signatureFor(target);
+		if(hasStructure && structuralSignatures.insert(std::move(signature)).second)
+		{
+			selectedHexes.insert(hex);
+			result.push_back(std::move(target));
+		}
+	}
+
 	return result;
 }
 
@@ -1355,6 +1452,70 @@ std::optional<float> SpellTargetEvaluator::earthquakeStructuralHPValue(
 	// Fortifications belong to the defending side: structural progress advances
 	// the attacker and weakens the defender. Keep this a distinct structure score
 	// rather than disguising wall HP as creature health or scoring the wrong side.
+	return casterSide == BattleSide::ATTACKER ? structuralValue : -structuralValue;
+}
+
+std::optional<float> SpellTargetEvaluator::havocStructuralHPValue(
+	const Mechanics * spellMechanics,
+	const Target & target)
+{
+	if(!spellMechanics || !spellMechanics->usesNewHorizonsHavocStructures())
+		return std::nullopt;
+
+	const auto * callback = spellMechanics->battle();
+	if(!callback || !callback->hasFortifications())
+		return 0.0f;
+
+	const auto casterSide = spellMechanics->getCasterSide();
+	if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
+		return std::nullopt;
+
+	std::set<EWallPart> affectedParts;
+	if(spellMechanics->isMassive())
+	{
+		for(int index = 0; index < static_cast<int>(EWallPart::PARTS_COUNT); ++index)
+		{
+			const auto part = static_cast<EWallPart>(index);
+			if(callback->isWallPartAttackable(part) && callback->getWallStructuralHP(part) > 0
+				&& callback->wallPartToBattleHex(part).isValid())
+				affectedParts.insert(part);
+		}
+	}
+	else
+	{
+		if(target.size() != 1 || !target.front().hexValue.isValid())
+			return 0.0f;
+		detail::ProblemImpl problem;
+		if(!spellMechanics->canBeCastAt(target, problem))
+			return 0.0f;
+
+		const auto affectedHexes = spellMechanics->rangeInHexes(target.front().hexValue);
+		for(int index = 0; index < static_cast<int>(EWallPart::PARTS_COUNT); ++index)
+		{
+			const auto part = static_cast<EWallPart>(index);
+			const auto wallHex = callback->wallPartToBattleHex(part);
+			if(callback->isWallPartAttackable(part) && callback->getWallStructuralHP(part) > 0
+				&& wallHex.isValid() && affectedHexes.contains(wallHex))
+				affectedParts.insert(part);
+		}
+	}
+
+	const int32_t structuralDamage = spellMechanics->getNewHorizonsHavocStructuralDamage();
+	if(structuralDamage <= 0)
+		return 0.0f;
+
+	float structuralValue = 0.0f;
+	for(const auto part : affectedParts)
+	{
+		const auto currentHP = std::max(0, callback->getWallStructuralHP(part));
+		if(currentHP <= 0)
+			continue;
+		const auto actualDamage = std::min(currentHP, structuralDamage);
+		structuralValue += static_cast<float>(actualDamage) / static_cast<float>(currentHP);
+	}
+
+	// Fortifications are the defender's property, regardless of the side
+	// currently considering the cast.
 	return casterSide == BattleSide::ATTACKER ? structuralValue : -structuralValue;
 }
 

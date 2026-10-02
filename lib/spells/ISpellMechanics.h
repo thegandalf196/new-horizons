@@ -322,6 +322,10 @@ public:
 	bool usesNewHorizonsEarthquake() const;
 	int32_t getNewHorizonsEarthquakeParameter(const std::string & name) const;
 	int32_t getNewHorizonsEarthquakeSectionCount() const;
+	/// Saved-v3 Meteor Shower/Armageddon structural effect gate.
+	bool usesNewHorizonsHavocStructures() const;
+	/// Exact coefficient-aware structural damage to fortifications, capped to packet range.
+	int32_t getNewHorizonsHavocStructuralDamage() const;
 	/// New Horizons Land Mine's authoritative selected-hex count, or zero
 	/// outside the New Horizons Land Mine profile. Pre-v3 snapshots retain raw
 	/// Spell Power; v3 uses the composed saved coefficient.

@@ -289,6 +289,10 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"Returns a parameter from the saved Earthquake row, or zero outside the opted-in profile.");
 	R.method<&Mechanics::getNewHorizonsEarthquakeSectionCount>("getNewHorizonsEarthquakeSectionCount", {},
 		"Returns the saved Earthquake section count with composed Spell Power scaling and its cap.");
+	R.method<&Mechanics::usesNewHorizonsHavocStructures>("usesNewHorizonsHavocStructures", {},
+		"True only when saved-v3 rules enable Meteor Shower or Armageddon structural effects.");
+	R.method<&Mechanics::getNewHorizonsHavocStructuralDamage>("getNewHorizonsHavocStructuralDamage", {},
+		"Returns the coefficient-aware fortification damage for Meteor Shower or Armageddon, capped to the authoritative packet range.");
 	R.method<&Mechanics::usesNewHorizonsQuicksandSelectedPlacement>("usesNewHorizonsQuicksandSelectedPlacement", {},
 		"True when the saved battle rules enable exact caster-selected Quicksand placement.");
 	R.method<&Mechanics::usesNewHorizonsMultiplicativeMDR>("usesNewHorizonsMultiplicativeMDR", {},

@@ -2,6 +2,49 @@
 
 ## Purpose
 
+### 2026-10-02 UP-139 — Havoc structural targeting review
+
+Final both-target retry4772 exits0. Native retry35313 passes10/10 in2.669s,
+zero skips; adjacent27391 passes6/6 in1.369s. Typed parser mismatch and legal
+AI fixture setup are repaired without weakening casting or immunity. Final
+independent review has no blocker; retain the earlier failures below as lessons.
+
+Both-target builds20497/48092 and repaired-AI rebuild43129 exit0. Principal81936
+runs10 in2.661s with zero skips: all6 runtime cases pass; typed parser1 and
+AI3 fail. Integer-valued Float50.0 passed validation while the runtime helper
+required DATA_INTEGER; repair the narrow structural validator to match its
+reader, not the test. AI returns empty structural candidate sets in two cases
+and selects an Order instead of Meteor in the paid-cast scenario. Diagnose the
+actual target-type/lifecycle/scoring paths before adjusting fixture or production;
+do not claim AI coverage from runtime success. Retained UP139-principal.log/xml.
+Read-only diagnosis proves the first two AI cases enumerate before beginCombat:
+their Hero Action allowance has not been initialized, so rejection is correct.
+Initialize a real round before enumeration. The paid-choice case selects a
+valid Order; use a validated test-local zero-effect Order profile to isolate
+spell ranking while preserving enabled Orders and all normal action gates.
+This does not establish ordinary-profile tactical preference for Meteor.
+
+Supplemental Python content inventory runs59 cases:56 pass, one fails and two
+error because its pre-existing NEW_HORIZONS_SPELLS set omits the five implemented
+Mass identities. This is unrelated to the structural payload; preserve the
+finding for Phase2 inventory cleanup rather than weakening roster validation
+or blocking the structural principal gates. The focused36 data checks pass.
+Final static review catches an AI fixture demanding an immune creature in
+getAffectedStacks, which correctly excludes unreceptive recipients. Assert
+geometric footprint intersection separately from the filtered creature set;
+do not weaken production immunity. Re-run the test build after its repair if
+the current build already consumed the file.
+
+Pre-build review found Meteor metadata deduplicated against creature positions.
+Resistance or Spell Lock could remove the creature and its structural hex;
+double-wide primary positions could also extend the area beyond the blast.
+The Lua producer now preserves independent pure-hex impact metadata, excludes
+unit-bearing aim entries, and leaves creature targets unchanged. Focused native
+verification is pending; do not infer acceptance from this static repair.
+The new fixture also constructed a base obstacle tagged MOAT, whose footprint
+asserts. Mirror the engine's SpellCreatedObstacle/customSize moat representation;
+do not weaken production obstacle queries to accommodate an invalid fixture.
+
 ### 2026-10-02 UP-135 — Bastion AI compilation
 
 Client build92791 exits1: AttackPossibility's new Counterfire branch gate reads

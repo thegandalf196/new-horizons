@@ -55,6 +55,7 @@ public:
 	static bool hasNativeStack(const IBattleInfoCallback & object, BattleSide side);
 	static BattleHexArray getAllPossibleHexes(const IBattleInfoCallback & object);
 	static std::optional<EWallState> getWallState(const IBattleInfoCallback & object, EWallPart part);
+	static int32_t getWallStructuralHP(const IBattleInfoCallback & object, EWallPart part);
 	static bool isWallPartAttackable(const IBattleInfoCallback & object, EWallPart part);
 	static BattleHex wallPartToBattleHex(const IBattleInfoCallback & object, EWallPart part);
 	static EWallPart hexToWallPart(const IBattleInfoCallback & object, BattleHex hex);

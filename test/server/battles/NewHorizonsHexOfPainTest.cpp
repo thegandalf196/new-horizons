@@ -99,6 +99,7 @@ protected:
 				(void)name;
 				spellRow.Struct().erase("selectedPlacement");
 				spellRow.Struct().erase("earthquake");
+				spellRow.Struct().erase("structures");
 				if(spellRow.Struct().contains("variant"))
 				{
 					spellRow.Struct().erase("variant");

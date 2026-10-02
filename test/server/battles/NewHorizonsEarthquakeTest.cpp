@@ -56,6 +56,7 @@ JsonNode magicRulesForFixture(const bool savedV2, const bool removeEarthquakeRow
 		{
 			(void)name;
 			spell.Struct().erase("earthquake");
+			spell.Struct().erase("structures");
 			spell.Struct().erase("selectedPlacement");
 			if(spell.Struct().contains("variant"))
 			{

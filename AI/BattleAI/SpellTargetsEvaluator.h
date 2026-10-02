@@ -44,6 +44,9 @@ public:
 	/// equal creature footprints. Siege aims are the attackable fortification
 	/// section hexes; field aims retain distinct area centers.
 	static std::vector<spells::Target> canonicalEarthquakeTargets(const spells::Mechanics * spellMechanics);
+	/// Enumerates the ordinary nondominated creature targets plus distinct legal
+	/// Meteor Shower centers whose area reaches fortifications or ordinary scenery.
+	static std::vector<spells::Target> canonicalHavocStructureTargets(const spells::Mechanics * spellMechanics);
 	/// Counts physical travel hexes along the reachability predecessor path.
 	/// Flyers use geometric hex distance; invalid or unreachable destinations
 	/// return -1. Movement-cost distance remains available on ReachabilityInfo.
@@ -57,6 +60,11 @@ public:
 		const spells::Target & target,
 		const Environment * environment,
 		std::shared_ptr<CBattleInfoCallback> battleState = {});
+	/// Returns signed per-section current-HP fractions for an active canonical
+	/// Havoc structural cast. Binary obstacle removal is projected separately.
+	static std::optional<float> havocStructuralHPValue(
+		const spells::Mechanics * spellMechanics,
+		const spells::Target & target);
 	/// Selects the most valuable legal negative source groups for each friendly
 	/// stack around a canonical Purify center. The result is a read-only snapshot.
 	static PurifySelection purifySelection(const spells::Mechanics * spellMechanics,

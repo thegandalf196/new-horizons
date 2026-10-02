@@ -177,6 +177,16 @@
 					"items": {"type": "string", "enum": ["core:poison", "core:disease"]}
 				},
 				"selectedPlacement": {"type": "boolean", "enum": [true]},
+				"structures": {
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["fortificationDamagePercent", "destroyOrdinaryObstacles"],
+					"properties": {
+						"fortificationDamagePercent": {"type": "integer", "minimum": 1, "maximum": 10000},
+						"destroyOrdinaryObstacles": {"type": "boolean", "enum": [true]}
+					},
+					"description": "Optional saved-v3 Havoc structural effects. Omission preserves older saved spell behavior; percentages are tunable prototype values."
+				},
 				"earthquake": {
 					"type": "object",
 					"additionalProperties": false,

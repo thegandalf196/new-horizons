@@ -253,6 +253,10 @@ DLL_LINKAGE std::string spellDescriptionForHero(const CGHeroInstance * hero,
 DLL_LINKAGE std::optional<DirectDamageFormula> spellDirectDamage(const JsonNode & rules, const std::string & scopedIdentity);
 /// Explicit saved-v3 opt-in to selected-section and field Earthquake behavior.
 DLL_LINKAGE bool earthquakeRulesEnabled(const JsonNode & rules, SpellID spell);
+/// Saved-v3 opt-in to the canonical Meteor Shower / Armageddon structural effects.
+DLL_LINKAGE bool havocStructuresEnabled(const JsonNode & rules, SpellID spell);
+/// Returns the configured raw-spell-damage percentage for fortifications, or zero when disabled.
+DLL_LINKAGE int32_t havocFortificationDamagePercent(const JsonNode & rules, SpellID spell);
 /// Call only after checking explicit event overrides (including zero) and legacy
 /// nonzero caster overrides. This accessor does not choose override precedence.
 DLL_LINKAGE std::optional<int64_t> directDamageValue(const JsonNode & rules, const std::string & scopedIdentity,

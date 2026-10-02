@@ -42,6 +42,7 @@ JsonNode v1Rules()
 		spell.Struct().erase("cureAfflictions");
 		spell.Struct().erase("selectedPlacement");
 		spell.Struct().erase("earthquake");
+		spell.Struct().erase("structures");
 		if(spell.Struct().contains("variant"))
 		{
 			spell.Struct().erase("variant");
@@ -62,6 +63,7 @@ JsonNode v2Rules()
 		(void)name;
 		spell.Struct().erase("selectedPlacement");
 		spell.Struct().erase("earthquake");
+		spell.Struct().erase("structures");
 		if(spell.Struct().contains("variant"))
 		{
 			spell.Struct().erase("variant");

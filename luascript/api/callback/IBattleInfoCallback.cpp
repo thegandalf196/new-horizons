@@ -140,6 +140,9 @@ void IBattleInfoCallbackProxy::registerMethods(MethodRegistrar & R)
 	R.function<&IBattleInfoCallbackProxy::getWallState>("getWallState",
 		{{"part", "Wall section to query."}}, {},
 		"Returns the current state of the given wall section, or nil if absent.");
+	R.function<&IBattleInfoCallbackProxy::getWallStructuralHP>("getWallStructuralHP",
+		{{"part", "Wall section whose structural hit points are queried."}}, {},
+		"Returns the current structural hit points of the given wall section, or zero when it has no structural HP.");
 	R.function<&IBattleInfoCallbackProxy::isWallPartAttackable>("isWallPartAttackable",
 		{{"part", "Wall section to test."}}, {},
 		"True if the given wall section can be targeted by an attack.");
@@ -281,6 +284,11 @@ std::optional<EWallState> IBattleInfoCallbackProxy::getWallState(const IBattleIn
 	if(state == EWallState::NONE)
 		return std::nullopt;
 	return state;
+}
+
+int32_t IBattleInfoCallbackProxy::getWallStructuralHP(const IBattleInfoCallback & object, EWallPart part)
+{
+	return object.getWallStructuralHP(part);
 }
 
 bool IBattleInfoCallbackProxy::isWallPartAttackable(const IBattleInfoCallback & object, EWallPart part)

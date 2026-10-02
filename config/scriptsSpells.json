@@ -76,6 +76,19 @@
 			"additionalProperties" : false
 		}
 	},
+	"havocStructures" : {
+		"implements" : "spellEffect",
+		"script" : "spells/havocStructures",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {}
+			},
+			"additionalProperties" : false
+		}
+	},
 	"demonSummon" : {
 		"implements" : "spellEffect",
 		"script" : "spells/demonSummon",

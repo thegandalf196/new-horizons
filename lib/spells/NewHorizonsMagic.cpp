@@ -1166,7 +1166,22 @@ void validateRules(const JsonNode & rules)
 		else if(version < SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "ordinaryAcquisition"});
 		else
-			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "ordinaryAcquisition", "variant", "earthquake"});
+			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "ordinaryAcquisition", "variant", "earthquake", "structures"});
+		if(data.Struct().contains("structures"))
+		{
+			require(name == "core:meteorShower" || name == "core:armageddon",
+				"structural effects require a canonical Meteor Shower or Armageddon row");
+			require(version == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
+				"structural effects require saved magic rules v3");
+			const auto & structures = data["structures"];
+			fields(structures, {"fortificationDamagePercent", "destroyOrdinaryObstacles"});
+			require(structures["fortificationDamagePercent"].getType() == JsonNode::JsonType::DATA_INTEGER
+				&& integer(structures["fortificationDamagePercent"], 1, 10000),
+				"structural fortification damage percentage must be in [1,10000]");
+			require(structures["destroyOrdinaryObstacles"].isBool()
+				&& structures["destroyOrdinaryObstacles"].Bool(),
+				"structural effects must explicitly destroy ordinary obstacles");
+		}
 		if(data.Struct().contains("earthquake"))
 		{
 			require(name == "core:earthquake" && version == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
@@ -1374,6 +1389,35 @@ bool earthquakeRulesEnabled(const JsonNode & rules, const SpellID spell)
 		&& rules["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
 		&& spellAllowedBySavedRoster(rules, spell)
 		&& rules["spells"]["core:earthquake"]["earthquake"].isStruct();
+}
+
+bool havocStructuresEnabled(const JsonNode & rules, const SpellID spell)
+{
+	if((spell != SpellID(SpellID::METEOR_SHOWER) && spell != SpellID(SpellID::ARMAGEDDON))
+		|| !rulesActive(rules)
+		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		|| !spellAllowedBySavedRoster(rules, spell))
+		return false;
+
+	const auto * definition = spell.toSpell();
+	if(!definition)
+		return false;
+	const auto & structures = rules["spells"][definition->getJsonKey()]["structures"];
+	return structures.isStruct()
+		&& structures["fortificationDamagePercent"].getType() == JsonNode::JsonType::DATA_INTEGER
+		&& integer(structures["fortificationDamagePercent"], 1, 10000)
+		&& structures["destroyOrdinaryObstacles"].isBool()
+		&& structures["destroyOrdinaryObstacles"].Bool();
+}
+
+int32_t havocFortificationDamagePercent(const JsonNode & rules, const SpellID spell)
+{
+	if(!havocStructuresEnabled(rules, spell))
+		return 0;
+	const auto * definition = spell.toSpell();
+	if(!definition)
+		return 0;
+	return static_cast<int32_t>(rules["spells"][definition->getJsonKey()]["structures"]["fortificationDamagePercent"].Integer());
 }
 
 int schoolRankPowerCoefficientPercent(const JsonNode & rules, int schoolRank)

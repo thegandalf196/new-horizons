@@ -271,6 +271,32 @@ int32_t Mechanics::getNewHorizonsEarthquakeSectionCount() const
 		getNewHorizonsEarthquakeParameter("maxSections") - getNewHorizonsEarthquakeParameter("baseSections")));
 }
 
+bool Mechanics::usesNewHorizonsHavocStructures() const
+{
+	const auto * state = battle() ? battle()->getBattle() : nullptr;
+	return state && newHorizonsMagic::havocStructuresEnabled(state->getMagicRules(), getSpellId());
+}
+
+int32_t Mechanics::getNewHorizonsHavocStructuralDamage() const
+{
+	if(!usesNewHorizonsHavocStructures())
+		return 0;
+
+	const int64_t rawDamage = std::max<int64_t>(0, getEffectValue());
+	const int64_t percentage = newHorizonsMagic::havocFortificationDamagePercent(
+		battle()->getBattle()->getMagicRules(), getSpellId());
+	if(rawDamage == 0 || percentage <= 0)
+		return 0;
+
+	constexpr int64_t MAX_STRUCTURAL_DAMAGE = std::numeric_limits<ui16>::max();
+	const int64_t wholeHundreds = rawDamage / 100;
+	if(wholeHundreds > MAX_STRUCTURAL_DAMAGE / percentage)
+		return static_cast<int32_t>(MAX_STRUCTURAL_DAMAGE);
+
+	const int64_t scaled = wholeHundreds * percentage + (rawDamage % 100) * percentage / 100;
+	return static_cast<int32_t>(std::min<int64_t>(scaled, MAX_STRUCTURAL_DAMAGE));
+}
+
 int32_t Mechanics::getShadowGiftSacrificeCostBasisPoints() const
 {
 	const auto * battleCallback = battle();

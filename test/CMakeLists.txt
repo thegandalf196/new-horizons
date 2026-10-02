@@ -293,6 +293,8 @@ set(test_SRCS
 		server/battles/NewHorizonsObstacleMovementCostTest.cpp
 		server/battles/NewHorizonsEarthquakeTest.cpp
 		battleAI/NewHorizonsEarthquakeAITest.cpp
+		server/battles/NewHorizonsHavocStructuresTest.cpp
+		battleAI/NewHorizonsHavocStructuresAITest.cpp
 		server/battles/NewHorizonsVenomancerTest.cpp
 		server/battles/NewHorizonsRegenerationTest.cpp
 		server/battles/NewHorizonsBerserkProfileTest.cpp

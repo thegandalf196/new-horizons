@@ -79,6 +79,7 @@ JsonNode legacyV2MagicRules()
 	{
 		(void)name;
 		spell.Struct().erase("earthquake");
+		spell.Struct().erase("structures");
 		spell.Struct().erase("selectedPlacement");
 		if(spell.Struct().contains("variant"))
 		{

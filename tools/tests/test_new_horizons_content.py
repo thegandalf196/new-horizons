@@ -141,6 +141,7 @@ def legacy_rules(rules):
             spell.pop('cureAfflictions', None)
             spell.pop('selectedPlacement', None)
             spell.pop('earthquake', None)
+            spell.pop('structures', None)
     return result
 
 

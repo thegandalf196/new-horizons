@@ -129,6 +129,10 @@
 			"directDamage": {
 				"base": 150,
 				"powerCoefficient": 18
+			},
+			"structures": {
+				"fortificationDamagePercent": 100,
+				"destroyOrdinaryObstacles": true
 			}
 		},
 		"core:berserk": {
@@ -817,6 +821,10 @@
 			"directDamage": {
 				"base": 110,
 				"powerCoefficient": 15
+			},
+			"structures": {
+				"fortificationDamagePercent": 50,
+				"destroyOrdinaryObstacles": true
 			}
 		},
 		"core:mirth": {

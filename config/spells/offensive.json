@@ -269,7 +269,7 @@
 			"base":{
 				"range" : "0,1",
 				"battleEffects" : {
-					"directDamage" : {"type":"damage"}
+					"directDamage" : {"type":"havocStructures"}
 				},
 				"targetModifier":{"smart":false}
 			}
@@ -356,7 +356,7 @@
 			"base":{
 				"range" : "X",
 				"battleEffects" : {
-					"directDamage" : {"type":"damage"}
+					"directDamage" : {"type":"havocStructures"}
 				},
 				"targetModifier":{"smart":false}
 			}

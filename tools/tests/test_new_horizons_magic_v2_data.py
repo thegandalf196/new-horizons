@@ -44,6 +44,8 @@ class MagicV2DataTest(unittest.TestCase):
         self.rules.pop('spellcraftEfficiencyPercent')
         self.rules['spells']['core:quicksand'].pop('selectedPlacement')
         self.rules['spells']['core:earthquake'].pop('earthquake')
+        for row in self.rules['spells'].values():
+            row.pop('structures', None)
         self.rules['spells'] = {key: row for key, row in self.rules['spells'].items()
                                 if 'variant' not in row}
         self.old_rules = legacy_rules(self.rules)
@@ -81,6 +83,26 @@ class MagicV2DataTest(unittest.TestCase):
         legacy = copy.deepcopy(self.rules)
         legacy['spells']['core:earthquake']['earthquake'] = row['earthquake']
         self.assertFalse(self.validator.is_valid(legacy))
+
+    def test_havoc_structure_v3_parameters_are_bounded_and_absent_from_legacy(self):
+        validator = Draft4Validator(self.v3, registry=self.registry)
+        for spell, percent in (('core:meteorShower', 50), ('core:armageddon', 100)):
+            parameters = self.v3_rules['spells'][spell]['structures']
+            self.assertEqual(parameters, {
+                'fortificationDamagePercent': percent,
+                'destroyOrdinaryObstacles': True,
+            })
+            for field, invalid in (('fortificationDamagePercent', 0),
+                                   ('destroyOrdinaryObstacles', False)):
+                changed = copy.deepcopy(self.v3_rules)
+                changed['spells'][spell]['structures'][field] = invalid
+                self.assertFalse(validator.is_valid(changed))
+            markerless = copy.deepcopy(self.v3_rules)
+            markerless['spells'][spell].pop('structures')
+            self.assertTrue(validator.is_valid(markerless))
+            legacy = copy.deepcopy(self.rules)
+            legacy['spells'][spell]['structures'] = parameters
+            self.assertFalse(self.validator.is_valid(legacy))
 
     def test_mass_variants_preserve_base_school_level_and_triple_cost(self):
         validator = Draft4Validator(self.v3, registry=self.registry)

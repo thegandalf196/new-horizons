@@ -168,6 +168,14 @@ Returns the current state of the given wall section, or nil if absent.
 
 - returns `integer?`
 
+### getWallStructuralHP
+
+Returns the current structural hit points of the given wall section, or zero when it has no structural HP.
+
+- param `part`: [`WallPart`](WallPart.md) — Wall section whose structural hit points are queried.
+
+- returns `integer`
+
 ### isWallPartAttackable
 
 True if the given wall section can be targeted by an attack.

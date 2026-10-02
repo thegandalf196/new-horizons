@@ -55,6 +55,7 @@ JsonNode legacyRules()
 		spell.Struct().erase("cureAfflictions");
 		spell.Struct().erase("selectedPlacement");
 		spell.Struct().erase("earthquake");
+		spell.Struct().erase("structures");
 		if(spell.Struct().contains("variant"))
 		{
 			spell.Struct().erase("variant");
@@ -76,6 +77,7 @@ JsonNode formulaRules()
 	for(auto & [name, spell] : rules["spells"].Struct())
 	{
 		(void)name;
+		spell.Struct().erase("structures");
 		if(spell.Struct().contains("variant"))
 		{
 			spell.Struct().erase("variant");
@@ -112,6 +114,36 @@ TEST(NewHorizonsMagicV2RulesTest, ActualV1AndV2DecodeWithoutChangingExistingScho
 	EXPECT_EQ(newHorizonsMagic::spellLevel(current, arrow), newHorizonsMagic::spellLevel(old, arrow));
 	for(int rank = 0; rank <= 3; ++rank)
 		EXPECT_EQ(newHorizonsMagic::spellCost(current, arrow, rank), newHorizonsMagic::spellCost(old, arrow, rank));
+}
+
+TEST(NewHorizonsMagicV3RulesTest, HavocStructuresRequireCanonicalTypedOptInAndPreserveOlderProfiles)
+{
+	const auto current = originalRules();
+	const SpellID meteor(SpellID::METEOR_SHOWER);
+	const SpellID armageddon(SpellID::ARMAGEDDON);
+	EXPECT_NO_THROW(newHorizonsMagic::validateRules(current));
+	EXPECT_TRUE(newHorizonsMagic::havocStructuresEnabled(current, meteor));
+	EXPECT_EQ(newHorizonsMagic::havocFortificationDamagePercent(current, meteor), 50);
+	EXPECT_EQ(newHorizonsMagic::havocFortificationDamagePercent(current, armageddon), 100);
+	auto missing = current;
+	missing["spells"]["core:meteorShower"].Struct().erase("structures");
+	EXPECT_NO_THROW(newHorizonsMagic::validateRules(missing));
+	EXPECT_FALSE(newHorizonsMagic::havocStructuresEnabled(missing, meteor));
+	EXPECT_EQ(newHorizonsMagic::havocFortificationDamagePercent(missing, meteor), 0);
+	EXPECT_FALSE(newHorizonsMagic::havocStructuresEnabled(formulaRules(), meteor));
+
+	auto malformed = current;
+	malformed["spells"][arrowKey]["structures"] = current["spells"]["core:meteorShower"]["structures"];
+	EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
+	malformed = current;
+	malformed["spells"]["core:meteorShower"]["structures"]["fortificationDamagePercent"].Float() = 50.0;
+	EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
+	malformed = current;
+	malformed["spells"]["core:meteorShower"]["structures"]["destroyOrdinaryObstacles"].Bool() = false;
+	EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
+	malformed = formulaRules();
+	malformed["spells"]["core:meteorShower"]["structures"] = current["spells"]["core:meteorShower"]["structures"];
+	EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
 }
 
 TEST(NewHorizonsMagicV2RulesTest, V1StillRejectsFormulaAndUnsupportedEnvelopeFails)

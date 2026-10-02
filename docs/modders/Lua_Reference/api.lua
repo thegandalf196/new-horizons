@@ -314,6 +314,11 @@ function Battle:getAllPossibleHexes() end
 ---@return integer?
 function Battle:getWallState(part) end
 
+---Returns the current structural hit points of the given wall section, or zero when it has no structural HP.
+---@param part WallPart # Wall section whose structural hit points are queried.
+---@return integer
+function Battle:getWallStructuralHP(part) end
+
 ---True if the given wall section can be targeted by an attack.
 ---@param part WallPart # Wall section to test.
 ---@return boolean

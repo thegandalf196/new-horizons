@@ -14,6 +14,25 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-139 structural foundation verified: both-target4772 builds; principal35313
+passes10/10 and adjacent27391 passes6/6, zero skips. Focused data36/36 and
+module drift pass; independent review has no blocker. Ordinary-scenery and
+fortification execution clauses now have source/native evidence for Meteor
+Shower and Armageddon. This adds behavior coverage, not new spell identities
+or active perks:173/310 remains unchanged. Absolute-landmark classification
+and structural-perk stacking remain Phase1 design questions. Phase2 retains
+normal-profile AI tactical choices, obstacle-removal utility, localization and
+broader interaction coverage. No graphical/playable delivery is claimed.
+
+UP-139 structural foundation is in progress: data-driven saved-v3 opt-in adds
+Meteor Shower's impacted ordinary scenery/fortification path and Armageddon's
+battlefield-wide equivalent. Prototype fort output is50%/100% of raw
+coefficient-aware spell damage; old snapshots omit the opt-in and keep prior
+behavior. Runtime, bounded geometry-aware AI and focused fixtures have separate
+owners. No activation or coverage increase from intermediate source/data.
+Fixed absolute landmarks and combined structural-perk stacking await the user;
+do not treat an engine placement category as proof of destructibility.
+
 UP-135 Bastion verified checkpoint: client and test targets build; final
 fixture build92361 exits0 and native45892 passes8/8 in2.618s, zero skips.
 Legal perk offers, actual Defend/Hold the Line reduction, first-hit expenditure,

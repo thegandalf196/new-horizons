@@ -65,6 +65,7 @@ protected:
 			for(auto & [identity, row] : rules["spells"].Struct())
 			{
 				(void)identity;
+				row.Struct().erase("structures");
 				if(row.Struct().contains("variant"))
 				{
 					row.Struct().erase("variant");

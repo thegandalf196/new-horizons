@@ -85,6 +85,7 @@ JsonNode savedV2MagicRulesWithoutPoison()
 		{
 			it->second.Struct().erase("selectedPlacement");
 			it->second.Struct().erase("earthquake");
+			it->second.Struct().erase("structures");
 			++it;
 		}
 	}

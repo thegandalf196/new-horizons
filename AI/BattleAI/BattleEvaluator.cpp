@@ -107,6 +107,11 @@ bool isCounterspell(const CSpell * spell)
 	return newHorizonsMagic::isCounterspell(spell);
 }
 
+bool isHavocStructuralSpell(const CSpell * spell)
+{
+	return spell && (spell->getId() == SpellID::METEOR_SHOWER || spell->getId() == SpellID::ARMAGEDDON);
+}
+
 bool isCanonicalLandMine(const CBattleInfoCallback & battle, const CSpell * spell)
 {
 	return spell
@@ -4402,6 +4407,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 								continue;
 							ps.spellPlacementHeuristicValue = *structuralValue;
 						}
+						if(const auto structuralValue = SpellTargetEvaluator::havocStructuralHPValue(
+							candidateMechanics.get(), ps.dest))
+							ps.spellPlacementHeuristicValue = *structuralValue;
 						if(isCanonicalLandMine(*cb->getBattle(battleID), spell))
 							ps.spellPlacementHeuristicValue = SpellTargetEvaluator::landMinePlacementValue(
 								candidateMechanics.get(), ps.dest, cb->getBattle(battleID));
@@ -5058,7 +5066,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				// have no immediate unit-health delta. Keep their deterministic
 				// live-snapshot value instead of allowing the generic hypothetical cast
 				// path to collapse a legal delayed effect to zero before it triggers.
-				if(ps.command == HeroCommand::NONE && ps.spellPlacementHeuristicValue > 0.0f)
+				if(ps.command == HeroCommand::NONE && ps.spellPlacementHeuristicValue > 0.0f
+					&& !isHavocStructuralSpell(ps.spell))
 				{
 					// A delayed spell still consumes the hero exchange; preserve the
 					// same best-attack baseline used by contextual Orders so its
@@ -5639,6 +5648,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				{
 				ps.value = stackActionScore + damageToFriendliesScore + damageToHostilesScore + initiativeEffectScore;
 				}
+				if(!counterspellNegated && ps.command == HeroCommand::NONE && isHavocStructuralSpell(ps.spell))
+					ps.value += ps.spellPlacementHeuristicValue;
 #if BATTLE_TRACE_LEVEL >= 1
 				logAi->trace("Total score for %s: %2f (action: %2f, friedly damage: %2f, hostile damage: %2f)", ps.name(), ps.value, stackActionScore, damageToFriendliesScore, damageToHostilesScore);
 #endif
