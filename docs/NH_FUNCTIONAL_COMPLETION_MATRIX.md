@@ -14,6 +14,19 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-148 Battle Plan is implemented and active after both-target builds and
+principal native5/5 in13.180s, zero skips. Its saved pre-combat opportunity and
+dedicated BATTLE_PLAN receipt run after tactics but before any Creature Activation,
+preserving HERO, allowing both sides to choose and never triggering Double Command.
+The existing painted Orders chooser is reused; actual bookless AI submission
+and authoritative acceptance pass. Production-registry activated acceptance
+passes30/30 in45.567s, zero skips; fixtures no longer force activation.
+Data/client34/34, module drift
+and independent source review pass. Coverage181->182/310 perks,129->128 planned;
+Command6->7/10, ranks84/93 and faction perks49/90 unchanged. Rendered chooser QA,
+broader opening interactions and exhausted-ID preflight hardening remain Phase2.
+No full midbattle save/resume or immutable playable promotion is claimed.
+
 UP-147 Double Command is implemented and active. The first accepted HERO-paid
 Order once per combat grants an immediate different Order, with a dedicated
 typed receipt, saved continuation metadata, authoritative no-choice exhaustion,
@@ -1299,7 +1312,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 181/310 | 129 planned; Double Command is the newest source/native-verified activation. Command is 6/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 182/310 | 128 planned; Battle Plan is the newest source/native-verified activation. Command is 7/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 49/90 | 41 planned perks; Blood Scent has attack-local live/detached evidence. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |

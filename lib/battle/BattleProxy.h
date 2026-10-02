@@ -26,6 +26,7 @@ public:
 	std::optional<PlayerColor> getPlayerID() const override;
 
 	int32_t getActiveStackID() const override;
+	int32_t getActivationSerial() const override { return subject->getBattle()->getActivationSerial(); }
 
 	TStacks getStacksIf(const TStackFilter & predicate) const override;
 
@@ -71,6 +72,10 @@ public:
 	const DoubleCommandState & getDoubleCommandState(BattleSide side) const override
 	{
 		return subject->getBattle()->getDoubleCommandState(side);
+	}
+	const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override
+	{
+		return subject->getBattle()->getPreCombatOrderState(side);
 	}
 	const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const override { return subject->getBattle()->getCreatureCategoryRules(); }
 	bool getHeroCommandUsed(BattleSide side) const override { return subject->getBattle()->getHeroCommandUsed(side); }

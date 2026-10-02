@@ -147,15 +147,18 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_BLOOD_SCENT, // resolved attack-local low-health Bloodrage increment
 	NEW_HORIZONS_MULTIPLE_ORDERS, // independent per-command Order snapshots and preservation-aware packets
 	NEW_HORIZONS_DOUBLE_COMMAND, // immediate contextual Order continuation and combat usage
+	NEW_HORIZONS_BATTLE_PLAN, // typed pre-combat Order opportunity before the first activation
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_DOUBLE_COMMAND,
+	CURRENT = NEW_HORIZONS_BATTLE_PLAN,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
+static_assert(ESerializationVersion::NEW_HORIZONS_BATTLE_PLAN > ESerializationVersion::NEW_HORIZONS_DOUBLE_COMMAND,
+	"Pre-combat Order state must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_DOUBLE_COMMAND > ESerializationVersion::NEW_HORIZONS_MULTIPLE_ORDERS,
 	"Immediate Order continuation state must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_MULTIPLE_ORDERS > ESerializationVersion::NEW_HORIZONS_BLOOD_SCENT,

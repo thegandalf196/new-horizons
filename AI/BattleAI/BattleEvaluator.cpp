@@ -4134,7 +4134,8 @@ BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const Battl
 bool BattleEvaluator::canCastSpell()
 {
 	const auto battleView = cb->getBattle(battleID);
-	if(battleView->battleHasPendingDoubleCommand(side))
+	if(battleView->battleHasPendingDoubleCommand(side)
+		|| battleView->battleHasPendingPreCombatOrder(side))
 		return true;
 	auto hero = battleView->battleGetMyHero();
 	if(!hero)
@@ -4158,14 +4159,16 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 {
 	const auto battleView = cb->getBattle(battleID);
 	const bool mandatoryDoubleCommand = battleView->battleHasPendingDoubleCommand(side);
+	const bool mandatoryPreCombatOrder = battleView->battleHasPendingPreCombatOrder(side);
+	const bool mandatoryOrder = mandatoryDoubleCommand || mandatoryPreCombatOrder;
 	auto hero = battleView->battleGetMyHero();
 	if(!hero)
 		return false;
 
 	LOGL("Casting spells sounds like fun. Let's see...");
-	// A pending Double Command continuation is an Order-only mandatory choice;
-	// it cannot be replaced by a Metamagic continuation or ordinary spell.
-	const bool metamagicFollowup = !mandatoryDoubleCommand
+	// Double Command and Battle Plan both require an Order before any ordinary
+	// spell or creature action. Battle Plan's typed grant is not a HERO action.
+	const bool metamagicFollowup = !mandatoryOrder
 		&& battleView->battleCanUseMetamagicFollowup(side);
 	const bool activatesGrand = HeroSpellAllowanceTransition::activatesGrand(metamagicFollowup,
 		cb->getBattle(battleID)->battleMetamagicPendingCount(side),
@@ -4185,7 +4188,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	std::vector<SpellOption> possibleSpells;
 
 	for(auto const & s : LIBRARY->spellh->objects)
-		if(allowSpells && !mandatoryDoubleCommand
+		if(allowSpells && !mandatoryOrder
 			&& s->canBeCast(battleView.get(), spells::Mode::HERO, hero, activatesGrand))
 			possibleSpells.push_back({s.get(), activatesGrand});
 
@@ -4575,7 +4578,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			{
 				candidate.commandHeuristicValue = canonicalOrderHeuristic(
 					*battleView, side, command, {}, std::nullopt, env.get(), damageCache, battleView);
-				if(!mandatoryDoubleCommand && candidate.commandHeuristicValue <= 0.0f)
+				if(!mandatoryOrder && candidate.commandHeuristicValue <= 0.0f)
 					continue;
 			}
 			possibleCasts.push_back(candidate);
@@ -4625,14 +4628,14 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				candidate.commandHeuristicValue = canonicalOrderHeuristic(
 					*battleView, side, command, targetIds, candidate.focusFire->rangedDamagePercent,
 					env.get(), damageCache, battleView);
-				if(!mandatoryDoubleCommand && candidate.commandHeuristicValue <= 0.0f)
+				if(!mandatoryOrder && candidate.commandHeuristicValue <= 0.0f)
 					continue;
 			}
 			else
 			{
 				candidate.commandHeuristicValue = canonicalOrderHeuristic(
 					*battleView, side, command, targetIds, std::nullopt, env.get(), damageCache, battleView);
-				if(!mandatoryDoubleCommand && candidate.commandHeuristicValue <= 0.0f)
+				if(!mandatoryOrder && candidate.commandHeuristicValue <= 0.0f)
 					continue;
 			}
 			possibleCasts.push_back(std::move(candidate));
@@ -4789,7 +4792,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	cb->getBattle(battleID)->battleGetTurnOrder(vampirismTurnOrder, 0,
 		newHorizonsMagic::VAMPIRISM_BASE_DURATION_ROUNDS);
 
-	if(!mandatoryDoubleCommand)
+	const auto * battleState = battleView->getBattle();
+	const bool unresolvedPreCombatOrder = battleState->getPreCombatOrderState(BattleSide::ATTACKER).isUnresolved()
+		|| battleState->getPreCombatOrderState(BattleSide::DEFENDER).isUnresolved();
+	if(!mandatoryOrder && !unresolvedPreCombatOrder)
 	{
 		bool enemyHadTurn = false;
 
@@ -5124,7 +5130,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				// authoritative legal target set.  Keep that score intact so they
 				// still compete with spells and normal attacks.
 				if(ps.command != HeroCommand::NONE
-					&& (ps.commandHeuristicValue > 0.0f || mandatoryDoubleCommand))
+					&& (ps.commandHeuristicValue > 0.0f || mandatoryOrder))
 				{
 					// An Order consumes the hero's exchange but does not replace the
 					// unit action that follows it.  Keep the normal best-action score
@@ -5684,7 +5690,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		{
 			return ps.value;
 		});
-	if(!mandatoryDoubleCommand && metamagicFollowup
+	if(!mandatoryOrder && metamagicFollowup
 		&& (castToPerform.value < noCastBaseline
 			|| vstd::isAlmostEqual(castToPerform.value, noCastBaseline)))
 	{
@@ -5695,7 +5701,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		LOGL("No beneficial hero action; retaining the Spell Action for this round.");
 		return false;
 	}
-	if(mandatoryDoubleCommand || metamagicFollowup
+	if(mandatoryOrder || metamagicFollowup
 		|| (castToPerform.value > noCastBaseline && !vstd::isAlmostEqual(castToPerform.value, noCastBaseline)))
 	{
 		LOGFL("Best hero action is %s (value %d). Will perform.", castToPerform.name() % castToPerform.value);

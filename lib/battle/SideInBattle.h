@@ -177,6 +177,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	int32_t bloodrageLowHealthIncrement = 0;
 	// Double Command is a contextual immediate continuation and one combat use.
 	DoubleCommandState doubleCommandState;
+	// Battle Plan is a once-per-combat round-one Order choice, resolved before
+	// the first ordinary Creature Activation.
+	PreCombatOrderState preCombatOrderState;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);
@@ -280,6 +283,23 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			throw std::runtime_error("Stale Double Command Second Wind continuation");
 	}
 
+	void validatePreCombatOrderState() const
+	{
+		preCombatOrderState.validateShape();
+		heroActionAllowances.validateShape();
+		if(preCombatOrderState.phase == PreCombatOrderState::Phase::ORDER_REQUIRED)
+		{
+			if(preCombatOrderState.issuedRound != 1 || heroActionAllowances.currentRound != 1
+				|| heroActionAllowances.countBattlePlanOrderGrants(preCombatOrderState.issuedRound) != 1)
+				throw std::runtime_error("Battle Plan continuation and allowance grant are inconsistent");
+		}
+		else if(heroActionAllowances.countBattlePlanOrderGrants(1) != 0)
+			throw std::runtime_error("Orphaned Battle Plan allowance grant");
+		if(preCombatOrderState.phase == PreCombatOrderState::Phase::AVAILABLE
+			&& heroActionAllowances.currentRound > 1)
+			throw std::runtime_error("Unresolved Battle Plan state is stale");
+	}
+
 	static uint8_t completedHeroSpellLevelBit(int32_t level)
 	{
 		if(level < 1 || level > GameConstants::SPELL_LEVELS)
@@ -319,6 +339,13 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 					return grant.source == HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND;
 				})))
 			throw std::runtime_error("Cannot discard Double Command battle state");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLE_PLAN)
+			&& (preCombatOrderState != PreCombatOrderState{}
+				|| std::any_of(heroActionAllowances.grants.begin(), heroActionAllowances.grants.end(), [](const auto & grant)
+				{
+					return grant.source == HeroActionAllowanceState::GrantSource::BATTLE_PLAN;
+				})))
+			throw std::runtime_error("Cannot discard Battle Plan battle state");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS)
 			&& orderStates.size() > 1)
 			throw std::runtime_error("Cannot discard simultaneous Hero Orders in an older format");
@@ -326,6 +353,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		{
 			validateOrderStates();
 			validateDoubleCommandState();
+			validatePreCombatOrderState();
 		}
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE) && hasChainGateState())
 			throw std::runtime_error("Cannot discard Chain Gate battle state");
@@ -573,8 +601,15 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			h & doubleCommandState;
 		else if(!h.saving)
 			doubleCommandState = {};
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLE_PLAN))
+			h & preCombatOrderState;
+		else if(!h.saving)
+			preCombatOrderState = {};
 		if(!h.saving)
+		{
 			validateDoubleCommandState();
+			validatePreCombatOrderState();
+		}
 	}
 
 	void clearMetamagicSequence()

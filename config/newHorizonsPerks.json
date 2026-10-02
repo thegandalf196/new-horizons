@@ -997,7 +997,7 @@
 					"requires": "basic",
 					"description": "Once per combat, immediately before the first Creature Activation of round 1, issue one Order without consuming the hero's Hero Action for that round.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Once per combat, immediately before the first Creature Activation of round 1, issue one Order without consuming the hero's Hero Action for that round."
 					}
 				},

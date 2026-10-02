@@ -331,7 +331,8 @@ void BattleHeroActionWindow::cancelSelection()
 	if(auto owner = currentBattle())
 	{
 		const auto callback = owner->getBattle();
-		if(callback->battleHasPendingDoubleCommand(callback->battleGetMySide()))
+		if(callback->battleHasPendingDoubleCommand(callback->battleGetMySide())
+			|| callback->battleHasPendingPreCombatOrder(callback->battleGetMySide()))
 			return;
 		owner->clearPerfectMoment();
 	}
@@ -385,8 +386,11 @@ void BattleHeroActionWindow::refreshEffects(const CGHeroInstance & hero, const J
 void BattleHeroActionWindow::refresh()
 {
 	auto owner = currentBattle();
-	const bool pendingOrder = owner && owner->getBattle()->battleHasPendingDoubleCommand(
+	const bool pendingDoubleCommand = owner && owner->getBattle()->battleHasPendingDoubleCommand(
 		owner->getBattle()->battleGetMySide());
+	const bool pendingPreCombatOrder = owner && owner->getBattle()->battleHasPendingPreCombatOrder(
+		owner->getBattle()->battleGetMySide());
+	const bool pendingOrder = pendingDoubleCommand || pendingPreCombatOrder;
 	const bool perfectMomentAvailable = owner && owner->canArmPerfectMoment() && !pendingOrder;
 	if(cancel)
 		cancel->block(pendingOrder);
@@ -592,7 +596,9 @@ void BattleHeroActionWindow::refresh()
 		else
 			availability = anyCommand ? "Order available" : "No Order currently available";
 	}
-	setStateText(pendingOrder
+	setStateText(pendingPreCombatOrder
+		? "Battle Plan: choose a free opening Order now"
+		: pendingDoubleCommand
 		? "Double Command: choose a different Order now"
 		: "Order: " + HeroCommandUI::name(order) + " | " + availability);
 }

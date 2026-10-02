@@ -4301,7 +4301,8 @@ void BattleActionsController::onHexRightClicked(const BattleHex & clickedHex)
 	if(heroOrderTargetingModeActive())
 	{
 		cancelHeroOrderTargeting();
-		if(owner.getBattle()->battleHasPendingDoubleCommand(owner.getBattle()->battleGetMySide()))
+		if(owner.getBattle()->battleHasPendingDoubleCommand(owner.getBattle()->battleGetMySide())
+			|| owner.getBattle()->battleHasPendingPreCombatOrder(owner.getBattle()->battleGetMySide()))
 		{
 			owner.presentPendingHeroOrderChoice();
 			return;

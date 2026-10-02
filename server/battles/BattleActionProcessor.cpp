@@ -2613,6 +2613,47 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 	if((ba.side == BattleSide::ATTACKER || ba.side == BattleSide::DEFENDER)
 		&& !ba.isBattleEndAction())
 	{
+		if(battle.battleGetRound() == 1 && !battle.battleGetTacticDist()
+			&& battle.getBattle()->getActivationSerial() == 0)
+		{
+			std::optional<BattleSide> pendingSide;
+			bool availableOpening = false;
+			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			{
+				const auto & state = battle.getBattle()->getPreCombatOrderState(side);
+				availableOpening = availableOpening || state.phase == PreCombatOrderState::Phase::AVAILABLE;
+				if(state.orderPending())
+				{
+					if(pendingSide || !battle.battleHasPendingPreCombatOrder(side))
+					{
+						gameHandler->complain("Battle Plan opening state has no valid active anchor");
+						return false;
+					}
+					pendingSide = side;
+				}
+			}
+			if((pendingSide && (*pendingSide != ba.side || ba.actionType != EActionType::HERO_COMMAND))
+				|| (!pendingSide && availableOpening))
+			{
+				gameHandler->complain("Battle Plan opening Orders must resolve before creature actions");
+				return false;
+			}
+		}
+		const auto & preCombatOrder = battle.getBattle()->getPreCombatOrderState(ba.side);
+		if(preCombatOrder.orderPending()
+			&& (ba.actionType != EActionType::HERO_COMMAND
+				|| !battle.battleHasPendingPreCombatOrder(ba.side)))
+		{
+			gameHandler->complain("Battle Plan requires its pending opening Order");
+			return false;
+		}
+		if(preCombatOrder.phase == PreCombatOrderState::Phase::AVAILABLE
+			&& battle.battleGetRound() == 1 && !battle.battleGetTacticDist()
+			&& battle.getBattle()->getActivationSerial() == 0)
+		{
+			gameHandler->complain("Battle Plan opening Order must be resolved before creature actions");
+			return false;
+		}
 		const auto & doubleCommand = battle.getBattle()->getDoubleCommandState(ba.side);
 		if(doubleCommand.orderPending())
 		{
@@ -2719,6 +2760,7 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 	std::optional<FocusFireState> preparedFocusFire;
 	std::optional<HeroOrderState> preparedOrderState;
 	std::optional<DoubleCommandState> preparedDoubleCommandState;
+	std::optional<PreCombatOrderState> preparedPreCombatOrderState;
 	if(ba.actionType == EActionType::HERO_COMMAND)
 	{
 		const bool canonical = heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules());
@@ -2762,10 +2804,24 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		}
 		if(canonical)
 		{
+			const auto & preCombatOrder = battle.getBattle()->getPreCombatOrderState(ba.side);
 			const auto & currentDoubleCommand = battle.getBattle()->getDoubleCommandState(ba.side);
 			const auto & allowances = battle.getBattle()->getHeroActionAllowances(ba.side);
 			const auto selected = allowances.eligibleAllowance(
 				HeroActionAllowanceState::ActionKind::ORDER, battle.battleGetRound());
+			if(preCombatOrder.orderPending())
+			{
+				if(!battle.battleHasPendingPreCombatOrder(ba.side) || !selected
+					|| selected->source != HeroActionAllowanceState::GrantSource::BATTLE_PLAN
+					|| !preparedOrderState)
+				{
+					gameHandler->complain("Battle Plan opening Order has no matching typed allowance");
+					return false;
+				}
+				auto next = preCombatOrder;
+				next.complete();
+				preparedPreCombatOrderState = std::move(next);
+			}
 			if(currentDoubleCommand.orderPending())
 			{
 				if(!selected || selected->source != HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND
@@ -2862,6 +2918,7 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		startAction.focusFire = preparedFocusFire;
 		startAction.orderState = preparedOrderState;
 		startAction.doubleCommandState = preparedDoubleCommandState;
+		startAction.preCombatOrderState = preparedPreCombatOrderState;
 		if(ba.actionType == EActionType::HERO_COMMAND
 			&& heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules()))
 			startAction.preserveOtherOrders = !battle.getBattle()->getHeroOrderStates(ba.side).empty();

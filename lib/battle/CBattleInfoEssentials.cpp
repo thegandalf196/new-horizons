@@ -279,6 +279,23 @@ bool CBattleInfoEssentials::battleHasPendingDoubleCommand(BattleSide side) const
 		&& battleGetOwner(active) == sideToPlayer(side);
 }
 
+bool CBattleInfoEssentials::battleHasPendingPreCombatOrder(BattleSide side) const
+{
+	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+		return false;
+	const auto & state = getBattle()->getPreCombatOrderState(side);
+	if(!state.orderPending() || state.issuedRound != 1 || battleGetRound() != 1
+		|| getBattle()->getActivationSerial() != 0)
+		return false;
+	const auto * active = battleActiveUnit();
+	return active && active->alive() && !active->isGhost() && !active->isTurret()
+		&& !active->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		&& active->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
+		&& active->unitSlot() != SlotID::WAR_MACHINES_SLOT
+		&& active->unitId() == state.anchorStackId
+		&& battleGetOwner(active) == sideToPlayer(side);
+}
+
 uint32_t CBattleInfoEssentials::battleNextUnitId() const
 {
 	return getBattle()->nextUnitId();

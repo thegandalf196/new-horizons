@@ -763,6 +763,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 		warcastingStates[side] = realBattle->getBattle()->getWarcastingState(side);
 		heroActionAllowances[side] = realBattle->getBattle()->getHeroActionAllowances(side);
 		doubleCommandStates[side] = realBattle->getBattle()->getDoubleCommandState(side);
+		preCombatOrderStates[side] = realBattle->getBattle()->getPreCombatOrderState(side);
 		heroSpellCastCompletedStates[side] = realBattle->getBattle()->hasCompletedHeroSpellCast(side);
 		completedHeroSpellLevelMasks[side] = 0;
 		for(int32_t level = 1; level <= GameConstants::SPELL_LEVELS; ++level)
@@ -991,6 +992,14 @@ void HypotheticBattle::setReducedExtraActivationState(BattleSide side,
 		throw std::invalid_argument("Invalid hypothetical reduced extra activation side");
 	state.validateShape();
 	reducedExtraActivationStates.at(side) = state;
+}
+
+void HypotheticBattle::setPreCombatOrderState(BattleSide side, const PreCombatOrderState & state)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::invalid_argument("Invalid hypothetical Battle Plan side");
+	state.validateShape();
+	preCombatOrderStates.at(side) = state;
 }
 
 std::vector<HeroOrderState> HypotheticBattle::getHeroOrderStates(BattleSide side) const
@@ -1385,7 +1394,31 @@ bool HypotheticBattle::projectAcceptedHeroOrder(BattleSide side, HeroCommand com
 	if(projectingCommand && !heroCommands::isActive(command))
 		return false;
 	auto & doubleCommand = doubleCommandStates.at(side);
+	auto & preCombatOrder = preCombatOrderStates.at(side);
 	const bool resolvingDoubleCommand = doubleCommand.orderPending();
+	const bool resolvingPreCombatOrder = preCombatOrder.orderPending();
+	if(resolvingDoubleCommand && resolvingPreCombatOrder)
+		return false;
+	if(resolvingPreCombatOrder)
+	{
+		const auto * active = activeUnitId >= 0
+			? battleGetUnitByID(static_cast<uint32_t>(activeUnitId)) : nullptr;
+		if(!projectingCommand || !prepared.action.typedLedger
+			|| action.receipt.source != HeroActionAllowanceState::GrantSource::BATTLE_PLAN
+			|| !active || !active->alive() || active->isGhost() || active->isTurret()
+			|| active->hasBonusOfType(BonusType::SIEGE_WEAPON)
+			|| active->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
+			|| active->unitSlot() == SlotID::WAR_MACHINES_SLOT
+			|| preCombatOrder.issuedRound != projectedRound || projectedRound != 1
+			|| preCombatOrder.anchorStackId != active->unitId()
+			|| battleGetOwner(active) != sideToPlayer(side))
+			return false;
+		auto completed = preCombatOrder;
+		completed.complete();
+		completed.validateTransitionFrom(preCombatOrder);
+	}
+	else if(action.receipt.source == HeroActionAllowanceState::GrantSource::BATTLE_PLAN)
+		return false;
 	if(resolvingDoubleCommand)
 	{
 		const auto * active = activeUnitId >= 0
@@ -1410,7 +1443,9 @@ bool HypotheticBattle::projectAcceptedHeroOrder(BattleSide side, HeroCommand com
 			projectedRound, newHorizonsWarcasting::empowerment(hero, AlternatingHeroActionState::Action::ORDER),
 			newHorizonsWarcasting::readinessLifetimeRounds(hero));
 	}
-	if(resolvingDoubleCommand)
+	if(resolvingPreCombatOrder)
+		preCombatOrder.complete();
+	else if(resolvingDoubleCommand)
 		doubleCommand.completeFollowup(command);
 	else if(projectingCommand && action.typedLedger && action.isHeroAction())
 	{
@@ -1642,6 +1677,9 @@ IBattleInfo::ObstacleCList HypotheticBattle::getAllObstacles() const
 
 void HypotheticBattle::nextRound()
 {
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		if(preCombatOrderStates.at(side).isUnresolved())
+			throw std::runtime_error("Cannot advance a battle round with unresolved Battle Plan choice");
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		if(doubleCommandStates.at(side).orderPending()
 			|| doubleCommandStates.at(side).secondWindReady())

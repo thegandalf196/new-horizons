@@ -374,6 +374,9 @@ bool CBattleInfoCallback::battleHeroCommandCommonAvailable(BattleSide side, Hero
 		&& (!battleHasPendingDoubleCommand(side) || command == doubleCommand.firstOrder))
 		|| doubleCommand.secondWindReady())
 		return false;
+	const auto & preCombatOrder = getBattle()->getPreCombatOrderState(side);
+	if(preCombatOrder.orderPending() && !battleHasPendingPreCombatOrder(side))
+		return false;
 	const bool canonical = heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules());
 	const auto sameOrder = canonical ? battleGetHeroOrderState(side, command) : std::nullopt;
 	const bool alreadyIssued = canonical
@@ -386,8 +389,11 @@ bool CBattleInfoCallback::battleHeroCommandCommonAvailable(BattleSide side, Hero
 	{
 		const auto round = battleGetRound();
 		const auto & allowances = getBattle()->getHeroActionAllowances(side);
-		if(round < 0 || allowances.currentRound != round || !allowances.eligibleAllowance(
-			HeroActionAllowanceState::ActionKind::ORDER, round))
+		const auto selected = round >= 0 && allowances.currentRound == round
+			? allowances.eligibleAllowance(HeroActionAllowanceState::ActionKind::ORDER, round)
+			: std::optional<HeroActionAllowanceState::Selection>();
+		if(!selected || (preCombatOrder.orderPending()
+			&& selected->source != HeroActionAllowanceState::GrantSource::BATTLE_PLAN))
 			return false;
 	}
 	else if(getBattle()->getHeroCommandUsed(side) || battleCastSpells(side) != 0)
@@ -1393,6 +1399,8 @@ ESpellCastProblem CBattleInfoCallback::battleCanCastSpell(const spells::Caster *
 	{
 		const auto * hero = caster->getHeroCaster();
 		const bool metamagicFollowup = battleCanUseMetamagicFollowup(side);
+		if(getBattle()->getPreCombatOrderState(side).isUnresolved())
+			return ESpellCastProblem::CASTS_PER_TURN_LIMIT;
 
 		if(!hero)
 			return ESpellCastProblem::NO_HERO_TO_CAST_SPELL;

@@ -62,6 +62,8 @@ public:
 	const battle::Unit * battleActiveUnit() const override;
 	/// True while the anchored acting stack owes the immediate Double Command Order.
 	bool battleHasPendingDoubleCommand(BattleSide side) const;
+	/// True while the anchored ordinary stack owes the round-one Battle Plan Order.
+	bool battleHasPendingPreCombatOrder(BattleSide side) const;
 
 	uint32_t battleNextUnitId() const override;
 

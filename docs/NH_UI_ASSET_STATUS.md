@@ -10,6 +10,14 @@ This is a binding inventory, not a full visual audit or a product completion cla
 
 ## Status meanings
 
+Battle Plan interaction (UP-148): implemented with source/native evidence. The existing
+painted Orders panel names the free opening choice, disables decline/Perfect
+Moment while pending, and returns to the chooser after target cancellation.
+Four focused source guards pass; the interaction is Provisional pending rendered
+acceptance. The perk is active after both-target builds and principal5/5 native
+acceptance; production-registry final checks pass30/30. Its neutral fallback
+is Not done art, and no new artwork or playable promotion is claimed.
+
 Double Command interaction (UP-147): implemented with source/native evidence.
 The ordinary
 Orders panel supplies the mandatory immediate choice and names its source;

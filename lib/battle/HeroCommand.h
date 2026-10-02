@@ -325,6 +325,8 @@ DLL_LINKAGE int secondWindPercent(const CGHeroInstance & hero);
 DLL_LINKAGE int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent);
 /// True when the hero currently has the active Expert Command Double Command perk.
 DLL_LINKAGE bool hasDoubleCommand(const CGHeroInstance * hero);
+/// True when the hero currently has the active Basic Command Battle Plan perk.
+DLL_LINKAGE bool hasBattlePlan(const CGHeroInstance * hero);
 /// True when the hero currently has the active Advanced Command perk.
 DLL_LINKAGE bool hasCombinedArms(const CGHeroInstance * hero);
 /// Half of Focus Fire's snapshotted Order bonus, preserving a half percentage point.

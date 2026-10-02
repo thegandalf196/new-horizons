@@ -2,6 +2,24 @@
 
 ## Purpose
 
+### 2026-10-02 UP-148 — prospective read-only battle adapters
+
+Build95660 fails because BattleProxy is intentionally abstract: a prospective
+Order-choice view must supply the remaining IBattleInfo accessors and pure
+IBattleState operations. Do not instantiate a partial adapter or mutate the
+real active stack to work around preflight legality. The local adapter forwards
+read-only queries and explicitly rejects mutation. Retry43682 then fails because
+its by-value BattleLayout accessor requires the defining BattleLayout header,
+not a forward declaration. Root adds the include. Preserve both failed logs;
+retry26167 is running and native acceptance/registration remain pending.
+Retry26167 subsequently passes both targets. Principal99345 passes5/5 in13.180s;
+activated build75589 and production-registry native40531 pass30/30 in45.567s,
+zero skips. Both fixtures now use real production registration, not local
+activation overrides. The preserved failures are compile-time adapter/include
+requirements, not grounds to weaken authoritative opening validation.
+Independent source review records exhausted grant-ID preflight handling for
+Phase2: the candidate ledger throws without mutating the authoritative state.
+
 ### 2026-10-02 UP-147 — mandatory Order AI forecast boundary
 
 Root source review found that BattleEvaluator's ordinary pre-candidate queue

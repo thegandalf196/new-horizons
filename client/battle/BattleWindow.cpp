@@ -454,7 +454,8 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 	addShortcut(EShortcut::GLOBAL_CANCEL, [this]()
 	{
 		if(this->owner.actionsController->heroOrderTargetingModeActive()
-			&& this->owner.getBattle()->battleHasPendingDoubleCommand(this->owner.getBattle()->battleGetMySide()))
+			&& (this->owner.getBattle()->battleHasPendingDoubleCommand(this->owner.getBattle()->battleGetMySide())
+				|| this->owner.getBattle()->battleHasPendingPreCombatOrder(this->owner.getBattle()->battleGetMySide())))
 		{
 			this->owner.actionsController->cancelHeroOrderTargeting();
 			this->owner.presentPendingHeroOrderChoice();

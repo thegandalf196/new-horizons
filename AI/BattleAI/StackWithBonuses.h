@@ -211,6 +211,11 @@ public:
 	{
 		return doubleCommandStates.at(side);
 	}
+	const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override
+	{
+		return preCombatOrderStates.at(side);
+	}
+	void setPreCombatOrderState(BattleSide side, const PreCombatOrderState & state) override;
 	bool hasCompletedHeroSpellCast(BattleSide side) const override { return heroSpellCastCompletedStates.at(side); }
 	bool hasCompletedHeroSpellLevel(BattleSide side, int32_t level) const override;
 	bool getCounterspellArmed(BattleSide side) const override { return counterspellArmedStates.at(side); }
@@ -428,6 +433,7 @@ private:
 	BattleSideArray<AlternatingHeroActionState> warcastingStates;
 	BattleSideArray<HeroActionAllowanceState> heroActionAllowances;
 	BattleSideArray<DoubleCommandState> doubleCommandStates;
+	BattleSideArray<PreCombatOrderState> preCombatOrderStates;
 	BattleSideArray<bool> heroSpellCastCompletedStates;
 	BattleSideArray<std::uint8_t> completedHeroSpellLevelMasks;
 	BattleSideArray<bool> counterspellArmedStates;

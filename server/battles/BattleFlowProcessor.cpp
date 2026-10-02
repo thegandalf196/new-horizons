@@ -17,7 +17,9 @@
 
 #include "../../lib/CStack.h"
 #include "../../lib/battle/BattleInfo.h"
+#include "../../lib/battle/BattleLayout.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
+#include "../../lib/battle/BattleProxy.h"
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsDiscipline.h"
@@ -43,6 +45,70 @@
 
 namespace
 {
+	class ProspectiveBattlePlanProxy final : public BattleProxy
+	{
+	public:
+		ProspectiveBattlePlanProxy(Subject subject, BattleSide side, uint32_t anchorStackId,
+			PreCombatOrderState state, HeroActionAllowanceState allowances)
+			: BattleProxy(std::move(subject)), candidateSide(side), candidateAnchorStackId(anchorStackId),
+				candidateState(std::move(state)), candidateAllowances(std::move(allowances))
+		{}
+
+		int32_t getActiveStackID() const override
+		{
+			return static_cast<int32_t>(candidateAnchorStackId);
+		}
+
+		BattleID getBattleID() const override { return subject->getBattle()->getBattleID(); }
+		const scripting::Pool & getScriptContextPool() const override { return subject->getBattle()->getScriptContextPool(); }
+		std::vector<SpellID> getUsedSpells(BattleSide side) const override
+		{
+			return subject->getBattle()->getUsedSpells(side);
+		}
+		uint32_t nextUnitId() const override { return subject->getBattle()->nextUnitId(); }
+		int64_t getActualDamage(const DamageRange & damage, int32_t attackerCount, vstd::RNG & rng) const override
+		{
+			return subject->getBattle()->getActualDamage(damage, attackerCount, rng);
+		}
+		int3 getLocation() const override { return subject->getBattle()->getLocation(); }
+		BattleLayout getLayout() const override { return subject->getBattle()->getLayout(); }
+
+		void nextRound() override { rejectMutation(); }
+		void nextTurn(uint32_t, BattleUnitTurnReason) override { rejectMutation(); }
+		void addUnit(uint32_t, const JsonNode &) override { rejectMutation(); }
+		void updateUnit(uint32_t, const JsonNode &, int64_t) override { rejectMutation(); }
+		void moveUnit(uint32_t, const BattleHex &) override { rejectMutation(); }
+		void removeUnit(uint32_t) override { rejectMutation(); }
+		void addUnitBonus(uint32_t, const std::vector<Bonus> &) override { rejectMutation(); }
+		void updateUnitBonus(uint32_t, const std::vector<Bonus> &) override { rejectMutation(); }
+		void removeUnitBonus(uint32_t, const std::vector<Bonus> &) override { rejectMutation(); }
+		void setWallState(EWallPart, EWallState) override { rejectMutation(); }
+		void addObstacle(const ObstacleChanges &) override { rejectMutation(); }
+		void updateObstacle(const ObstacleChanges &) override { rejectMutation(); }
+		void removeObstacle(uint32_t) override { rejectMutation(); }
+
+		const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override
+		{
+			return side == candidateSide ? candidateState : BattleProxy::getPreCombatOrderState(side);
+		}
+
+		const HeroActionAllowanceState & getHeroActionAllowances(BattleSide side) const override
+		{
+			return side == candidateSide ? candidateAllowances : BattleProxy::getHeroActionAllowances(side);
+		}
+
+	private:
+		[[noreturn]] static void rejectMutation()
+		{
+			throw std::logic_error("Prospective Battle Plan view is read-only");
+		}
+
+		BattleSide candidateSide;
+		uint32_t candidateAnchorStackId;
+		PreCombatOrderState candidateState;
+		HeroActionAllowanceState candidateAllowances;
+	};
+
 	std::optional<bool> canonicalWarMachineControl(const CGHeroInstance * hero, CreatureID machine)
 	{
 		if(!hero || !newHorizonsHeroes::usesRules(hero->getCapabilityRules())
@@ -416,7 +482,92 @@ void BattleFlowProcessor::onTacticsEnded(const CBattleInfoCallback & battle)
 		return;
 
 	startNextRound(battle, true);
+	if(tryStartPreCombatOrder(battle))
+		return;
 	activateNextStack(battle);
+}
+
+bool BattleFlowProcessor::tryStartPreCombatOrder(const CBattleInfoCallback & battle)
+{
+	if(!battle.getBattle() || battle.battleGetRound() != 1
+		|| battle.getBattle()->getActivationSerial() != 0)
+		return false;
+
+	const auto publishState = [this, &battle](BattleSide side, const PreCombatOrderState & next)
+	{
+		BattleHeroOrderStateChanged update;
+		update.battleID = battle.getBattle()->getBattleID();
+		update.side = side;
+		update.states = battle.getBattle()->getHeroOrderStates(side);
+		if(!update.states->empty())
+			update.state = update.states->back();
+		update.preCombatOrderState = next;
+		gameHandler->sendAndApply(update);
+	};
+
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto & current = battle.getBattle()->getPreCombatOrderState(side);
+		if(current.phase != PreCombatOrderState::Phase::AVAILABLE)
+			continue;
+
+		const CStack * anchor = nullptr;
+		for(const auto * stack : battle.battleGetAllStacks(true))
+		{
+			if(!stack || !stack->alive() || stack->isGhost() || stack->isTurret()
+				|| stack->hasBonusOfType(BonusType::SIEGE_WEAPON)
+				|| stack->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
+				|| stack->unitSlot() == SlotID::WAR_MACHINES_SLOT
+				|| battle.battleGetOwner(stack) != battle.sideToPlayer(side))
+				continue;
+			if(!anchor || stack->unitId() < anchor->unitId())
+				anchor = stack;
+		}
+
+		bool hasLegalOrder = false;
+		if(anchor)
+		{
+			auto candidateState = current;
+			candidateState.beginOrderRequired(1, anchor->unitId());
+			auto candidateAllowances = battle.getBattle()->getHeroActionAllowances(side);
+			candidateAllowances.grantAllowance(HeroActionAllowanceState::AllowanceKind::ORDER,
+				HeroActionAllowanceState::GrantSource::BATTLE_PLAN, 1);
+
+			auto subject = std::shared_ptr<CBattleInfoCallback>(
+				const_cast<CBattleInfoCallback *>(&battle), [](CBattleInfoCallback *) {});
+			ProspectiveBattlePlanProxy prospective(subject, side, anchor->unitId(),
+				std::move(candidateState), std::move(candidateAllowances));
+			hasLegalOrder = std::any_of(heroCommands::CANONICAL_COMMANDS.begin(),
+				heroCommands::CANONICAL_COMMANDS.end(), [&prospective, side](HeroCommand command)
+				{
+					return prospective.battleCanBeginHeroCommand(side, command);
+				});
+		}
+
+		if(!anchor || !hasLegalOrder)
+		{
+			auto completed = current;
+			completed.complete();
+			publishState(side, completed);
+
+			BattleLogMessage message;
+			message.battleID = battle.getBattle()->getBattleID();
+			MetaString line;
+			line.appendRawString(!anchor
+				? "Battle Plan ends: no eligible stack can anchor an opening Order."
+				: "Battle Plan ends: no legal opening Order remains.");
+			message.lines.push_back(std::move(line));
+			gameHandler->sendAndApply(message);
+			continue;
+		}
+
+		auto pending = current;
+		pending.beginOrderRequired(1, anchor->unitId());
+		publishState(side, pending);
+		setActiveStack(battle, anchor, BattleUnitTurnReason::HERO_COMMAND);
+		return true;
+	}
+	return false;
 }
 
 void BattleFlowProcessor::startNextRound(const CBattleInfoCallback & battle, bool isFirstRound)
@@ -1714,6 +1865,20 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 	// tactics - next stack will be selected by player
 	if(battle.battleGetTacticDist() != 0)
 		return;
+
+	// Battle Plan Orders are issued through a temporary HERO_COMMAND anchor
+	// without beginning a creature activation. After an accepted opening Order,
+	// offer the next eligible side before the ordinary turn queue advances.
+	if(battle.battleGetRound() == 1 && battle.getBattle()->getActivationSerial() == 0)
+	{
+		if(tryStartPreCombatOrder(battle))
+			return;
+		if(ba.actionType == EActionType::HERO_COMMAND)
+		{
+			activateNextStack(battle);
+			return;
+		}
+	}
 
 	std::optional<uint32_t> deferredDoubleCommandSecondWind;
 	if(ba.side == BattleSide::ATTACKER || ba.side == BattleSide::DEFENDER)

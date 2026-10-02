@@ -310,6 +310,45 @@ void BattleInfo::validateDoubleCommandContexts() const
 	}
 }
 
+void BattleInfo::validatePreCombatOrderStructure() const
+{
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto & sideState = sides.at(side);
+		sideState.validatePreCombatOrderState();
+		const auto & opening = sideState.preCombatOrderState;
+		if(opening.phase == PreCombatOrderState::Phase::AVAILABLE
+			&& (round < 0 || round > 1 || activationSerial != 0))
+			throw std::runtime_error("Unresolved Battle Plan state is outside its opening window");
+		if(!opening.orderPending())
+			continue;
+		if(opening.issuedRound != round || round != 1 || activationSerial != 0)
+			throw std::runtime_error("Battle Plan continuation is outside the round-one opening window");
+		const auto * anchor = battleGetStackByID(opening.anchorStackId, false);
+		const auto activeStackId = getActiveStackID();
+		if(!anchor || activeStackId < 0 || static_cast<uint32_t>(activeStackId) != opening.anchorStackId)
+			throw std::runtime_error("Battle Plan continuation has no matching active anchor descriptor");
+	}
+}
+
+void BattleInfo::validatePreCombatOrderContexts() const
+{
+	validatePreCombatOrderStructure();
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto & opening = sides.at(side).preCombatOrderState;
+		if(!opening.orderPending())
+			continue;
+		const auto * anchor = battleGetStackByID(opening.anchorStackId, false);
+		if(!anchor || !anchor->alive() || anchor->isGhost() || anchor->isTurret()
+			|| anchor->hasBonusOfType(BonusType::SIEGE_WEAPON)
+			|| anchor->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
+			|| anchor->unitSlot() == SlotID::WAR_MACHINES_SLOT
+			|| playerToSide(battleGetOwner(anchor)) != side)
+			throw std::runtime_error("Battle Plan continuation has no legal live anchor");
+	}
+}
+
 void BattleInfo::setHeroOrderStates(BattleSide side, const std::vector<HeroOrderState> & states)
 {
 	auto & sideState = sides.at(side);
@@ -342,6 +381,42 @@ void BattleInfo::setDoubleCommandState(BattleSide side, const DoubleCommandState
 			return grant.source == HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND;
 		});
 	sideState.doubleCommandState = state;
+}
+
+void BattleInfo::setPreCombatOrderState(BattleSide side, const PreCombatOrderState & state)
+{
+	auto & sideState = sides.at(side);
+	const auto & previous = sideState.preCombatOrderState;
+	state.validateTransitionFrom(previous);
+	auto nextAllowances = sideState.heroActionAllowances;
+	if(previous.phase == PreCombatOrderState::Phase::AVAILABLE && state.orderPending())
+	{
+		if(nextAllowances.currentRound != 1)
+			throw std::runtime_error("Battle Plan grant requires round one");
+		nextAllowances.grantAllowance(HeroActionAllowanceState::AllowanceKind::ORDER,
+			HeroActionAllowanceState::GrantSource::BATTLE_PLAN, 1);
+	}
+	else if(previous.orderPending() && !state.orderPending())
+	{
+		std::erase_if(nextAllowances.grants, [](const auto & grant)
+		{
+			return grant.source == HeroActionAllowanceState::GrantSource::BATTLE_PLAN;
+		});
+	}
+	nextAllowances.validateShape();
+	if(state.orderPending())
+	{
+		if(nextAllowances.currentRound != 1 || nextAllowances.countBattlePlanOrderGrants(1) != 1)
+			throw std::runtime_error("Battle Plan continuation requires its typed Order grant");
+	}
+	else if(nextAllowances.countBattlePlanOrderGrants(1) != 0)
+		throw std::runtime_error("Orphaned Battle Plan Order grant");
+	if(state.phase == PreCombatOrderState::Phase::AVAILABLE && nextAllowances.currentRound > 1)
+		throw std::runtime_error("Unresolved Battle Plan state is stale");
+
+	sideState.heroActionAllowances = std::move(nextAllowances);
+	sideState.preCombatOrderState = state;
+	sideState.validatePreCombatOrderState();
 }
 
 void BattleInfo::expireSeparatedHeroOrderProtect()
@@ -508,6 +583,8 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 	for(auto i : { BattleSide::LEFT_SIDE, BattleSide::RIGHT_SIDE})
 	{
 		currentBattle->sides[i].init(heroes[i], armies[i], i == BattleSide::RIGHT_SIDE ? town : nullptr);
+		if(heroCommands::hasBattlePlan(heroes[i]))
+			currentBattle->sides[i].preCombatOrderState.phase = PreCombatOrderState::Phase::AVAILABLE;
 		if(heroes[i])
 		{
 			currentBattle->sides[i].adverseCombatReroll.enabled = heroes[i]->hasActivePerk(
@@ -1126,9 +1203,13 @@ std::vector<SpellID> BattleInfo::getUsedSpells(BattleSide side) const
 void BattleInfo::nextRound()
 {
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
 		if(sides.at(side).doubleCommandState.orderPending()
 			|| sides.at(side).doubleCommandState.secondWindReady())
 			throw std::runtime_error("Cannot advance a battle round with unresolved Double Command continuation");
+		if(round >= 1 && sides.at(side).preCombatOrderState.isUnresolved())
+			throw std::runtime_error("Cannot advance a battle round with unresolved Battle Plan Order");
+	}
 	for(auto i : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		auto extraActivation = sides.at(i).reducedExtraActivation;

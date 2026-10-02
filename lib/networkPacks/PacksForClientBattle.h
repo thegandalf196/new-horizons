@@ -618,6 +618,8 @@ struct DLL_LINKAGE StartAction : public CPackForClient
 	bool preserveOtherOrders = false;
 	/// Server-derived Double Command transition for this accepted Order, when any.
 	std::optional<DoubleCommandState> doubleCommandState;
+	/// Server-derived Battle Plan completion for its accepted opening Order.
+	std::optional<PreCombatOrderState> preCombatOrderState;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
@@ -629,6 +631,9 @@ struct DLL_LINKAGE StartAction : public CPackForClient
 		if(h.saving && doubleCommandState
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_COMMAND))
 			throw std::runtime_error("Cannot discard Double Command StartAction state");
+		if(h.saving && preCombatOrderState
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLE_PLAN))
+			throw std::runtime_error("Cannot discard Battle Plan StartAction state");
 		h & battleID;
 		h & ba;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS))
@@ -667,6 +672,10 @@ struct DLL_LINKAGE StartAction : public CPackForClient
 			h & doubleCommandState;
 		else if(!h.saving)
 			doubleCommandState.reset();
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLE_PLAN))
+			h & preCombatOrderState;
+		else if(!h.saving)
+			preCombatOrderState.reset();
 		assert(battleID != BattleID::NONE);
 	}
 };
@@ -685,6 +694,8 @@ struct DLL_LINKAGE BattleHeroOrderStateChanged : public CPackForClient
 	std::optional<std::vector<HeroOrderState>> states;
 	/// Authoritative Double Command phase transition, if this update changes it.
 	std::optional<DoubleCommandState> doubleCommandState;
+	/// Authoritative Battle Plan opening phase transition, if this update changes it.
+	std::optional<PreCombatOrderState> preCombatOrderState;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
@@ -693,6 +704,11 @@ struct DLL_LINKAGE BattleHeroOrderStateChanged : public CPackForClient
 		if(h.saving && doubleCommandState
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_COMMAND))
 			throw std::runtime_error("Cannot discard Double Command state update");
+		if(h.saving && preCombatOrderState
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLE_PLAN))
+			throw std::runtime_error("Cannot discard Battle Plan state update");
+		if(h.saving && preCombatOrderState)
+			preCombatOrderState->validateShape();
 		if(h.saving)
 		{
 			if(states)
@@ -758,6 +774,10 @@ struct DLL_LINKAGE BattleHeroOrderStateChanged : public CPackForClient
 			h & doubleCommandState;
 		else if(!h.saving)
 			doubleCommandState.reset();
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLE_PLAN))
+			h & preCombatOrderState;
+		else if(!h.saving)
+			preCombatOrderState.reset();
 		assert(battleID != BattleID::NONE);
 		assert(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER);
 	}

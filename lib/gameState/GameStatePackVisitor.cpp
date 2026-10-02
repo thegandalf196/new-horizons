@@ -1774,6 +1774,7 @@ void GameStatePackVisitor::visitBattleStart(BattleStart & pack)
 	// BattleStart may arrive in-process without passing through binary decoding,
 	// so reject malformed continuation references before unit initialization too.
 	pack.info->validateDoubleCommandStructure();
+	pack.info->validatePreCombatOrderStructure();
 	assert(pack.battleID == gs.nextBattleID);
 
 	pack.info->battleID = gs.nextBattleID;
@@ -1781,6 +1782,7 @@ void GameStatePackVisitor::visitBattleStart(BattleStart & pack)
 	// The stack descriptors omit CUnitState. Only now are alive/ghost/controller
 	// checks meaningful for a continuation received in this BattleStart packet.
 	pack.info->validateDoubleCommandContexts();
+	pack.info->validatePreCombatOrderContexts();
 
 	if (pack.info->getDefendedTown() && pack.info->getSide(BattleSide::DEFENDER).heroID.hasValue())
 	{
@@ -1994,11 +1996,53 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		throw std::runtime_error(targeted ? "Missing targeted StartAction battle context" : "Missing StartAction battle context");
 	if(pack.ba.metamagicDecline)
 		throw std::runtime_error("Retired Metamagic decline StartAction");
+	if(pack.preCombatOrderState
+		&& pack.ba.side != BattleSide::ATTACKER && pack.ba.side != BattleSide::DEFENDER)
+		throw std::runtime_error("Battle Plan StartAction has an invalid side");
 	const bool canonicalOrder = pack.ba.actionType == EActionType::HERO_COMMAND
 		&& heroCommands::isCanonicalRules(battleContext->getHeroCommandRules());
 	std::optional<DoubleCommandState> acceptedDoubleCommandState;
+	std::optional<PreCombatOrderState> acceptedPreCombatOrderState;
 	if(pack.ba.side == BattleSide::ATTACKER || pack.ba.side == BattleSide::DEFENDER)
 	{
+		if(battleContext->getRound() == 1 && !battleContext->battleTacticDist()
+			&& battleContext->getActivationSerial() == 0)
+		{
+			std::optional<BattleSide> pendingSide;
+			bool availableOpening = false;
+			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			{
+				const auto & state = battleContext->getPreCombatOrderState(side);
+				availableOpening = availableOpening || state.phase == PreCombatOrderState::Phase::AVAILABLE;
+				if(state.orderPending())
+				{
+					if(pendingSide || !battleContext->battleHasPendingPreCombatOrder(side))
+						throw std::runtime_error("Battle Plan opening state has no valid active anchor");
+					pendingSide = side;
+				}
+			}
+			if((pendingSide && (*pendingSide != pack.ba.side || pack.ba.actionType != EActionType::HERO_COMMAND))
+				|| (!pendingSide && availableOpening))
+				throw std::runtime_error("Battle Plan opening Orders must resolve before creature actions");
+		}
+		const auto & opening = battleContext->getPreCombatOrderState(pack.ba.side);
+		if(opening.orderPending())
+		{
+			if(!canonicalOrder || !battleContext->battleHasPendingPreCombatOrder(pack.ba.side))
+				throw std::runtime_error("StartAction cannot interrupt a required Battle Plan Order");
+			auto completed = opening;
+			completed.complete();
+			if(pack.preCombatOrderState != completed)
+				throw std::runtime_error("Battle Plan StartAction has an invalid completion state");
+			acceptedPreCombatOrderState = std::move(completed);
+		}
+		else if(pack.preCombatOrderState)
+			throw std::runtime_error("Battle Plan StartAction has no pending opening Order");
+		if(opening.phase == PreCombatOrderState::Phase::AVAILABLE
+			&& battleContext->getRound() == 1 && !battleContext->battleTacticDist()
+			&& battleContext->getActivationSerial() == 0)
+			throw std::runtime_error("Battle Plan opening Order must precede creature actions");
+
 		const auto & continuation = battleContext->getDoubleCommandState(pack.ba.side);
 		if(continuation.orderPending()
 			&& (!canonicalOrder || pack.ba.command == continuation.firstOrder
@@ -2144,6 +2188,10 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 				HeroActionAllowanceState::ActionKind::ORDER, commandBattle->getRound());
 			if(!selected)
 				throw std::runtime_error("Accepted Order has no eligible action allowance");
+			if(acceptedPreCombatOrderState
+				&& (selected->allowance != HeroActionAllowanceState::AllowanceKind::ORDER
+					|| selected->source != HeroActionAllowanceState::GrantSource::BATTLE_PLAN))
+				throw std::runtime_error("Battle Plan Order has no selected dedicated allowance");
 			orderReceipt = side.heroActionAllowances.consumeAllowance(selected->grantId,
 				HeroActionAllowanceState::ActionKind::ORDER, commandBattle->getRound());
 			if(!orderReceipt)
@@ -2164,6 +2212,8 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 			commandBattle->setDoubleCommandState(pack.ba.side, *acceptedDoubleCommandState);
 			side.validateDoubleCommandState();
 		}
+		if(acceptedPreCombatOrderState && !orderReceipt)
+			throw std::runtime_error("Battle Plan Order did not consume its dedicated allowance");
 		const bool spendsHeroAction = sharedActionBudget
 			? orderReceipt && orderReceipt->allowance == HeroActionAllowanceState::AllowanceKind::HERO
 			: true;
@@ -2202,6 +2252,8 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 			else
 				commandBattle->setHeroOrderStates(pack.ba.side,
 					pack.orderState ? std::vector<HeroOrderState>{*pack.orderState} : std::vector<HeroOrderState>{});
+			if(acceptedPreCombatOrderState)
+				commandBattle->setPreCombatOrderState(pack.ba.side, *acceptedPreCombatOrderState);
 		}
 		else
 		{
@@ -2376,9 +2428,48 @@ void GameStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderState
 				throw std::runtime_error("Cannot exhaust Double Command while a distinct Order remains available");
 		}
 	}
+	if(pack.doubleCommandState && pack.preCombatOrderState)
+		throw std::runtime_error("One Hero Order state update cannot change both continuations");
+	if(pack.preCombatOrderState)
+	{
+		const auto & previous = battle->getPreCombatOrderState(pack.side);
+		pack.preCombatOrderState->validateTransitionFrom(previous);
+		if(*pack.preCombatOrderState != previous)
+		{
+			if(previous.phase == PreCombatOrderState::Phase::AVAILABLE
+				&& pack.preCombatOrderState->orderPending())
+			{
+				if(battle->getRound() != 1 || battle->getActivationSerial() != 0
+					|| (pack.side == BattleSide::DEFENDER
+						&& battle->getPreCombatOrderState(BattleSide::ATTACKER).isUnresolved()))
+					throw std::runtime_error("Battle Plan opening Order is outside its deterministic opening window");
+				const auto anchorId = pack.preCombatOrderState->anchorStackId;
+				const auto * anchor = battle->battleGetStackByID(anchorId, false);
+				if(battle->getSide(pack.side).heroActionAllowances.nextGrantId
+					== std::numeric_limits<uint32_t>::max())
+					throw std::runtime_error("Battle Plan allowance grant IDs are exhausted");
+				if(!anchor || !anchor->alive() || anchor->isGhost() || anchor->isTurret()
+					|| anchor->hasBonusOfType(BonusType::SIEGE_WEAPON)
+					|| anchor->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
+					|| anchor->unitSlot() == SlotID::WAR_MACHINES_SLOT
+					|| battle->playerToSide(battle->battleGetOwner(anchor)) != pack.side)
+					throw std::runtime_error("Battle Plan opening Order has no legal stack anchor");
+			}
+			else if(previous.phase == PreCombatOrderState::Phase::AVAILABLE
+				&& pack.preCombatOrderState->phase == PreCombatOrderState::Phase::COMPLETED)
+			{
+				if(battle->getRound() != 1 || battle->getActivationSerial() != 0)
+					throw std::runtime_error("Battle Plan exhaustion is outside its opening window");
+			}
+			else
+				throw std::runtime_error("Battle Plan state updates cannot complete a pending Order");
+		}
+	}
 	battle->setHeroOrderStates(pack.side, *pack.states);
 	if(pack.doubleCommandState)
 		battle->setDoubleCommandState(pack.side, *pack.doubleCommandState);
+	if(pack.preCombatOrderState)
+		battle->setPreCombatOrderState(pack.side, *pack.preCombatOrderState);
 	battle->getSide(pack.side).validateDoubleCommandState();
 }
 
@@ -3006,9 +3097,51 @@ void BattleStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderSta
 			}
 		}
 	}
+	if(pack.doubleCommandState && pack.preCombatOrderState)
+		throw std::runtime_error("One Hero Order state update cannot change both continuations");
+	if(pack.preCombatOrderState)
+	{
+		const auto & previous = battleState.getPreCombatOrderState(pack.side);
+		pack.preCombatOrderState->validateTransitionFrom(previous);
+		if(*pack.preCombatOrderState != previous)
+		{
+			if(previous.phase == PreCombatOrderState::Phase::AVAILABLE
+				&& pack.preCombatOrderState->orderPending())
+			{
+				if(battleState.getRound() != 1 || battleState.getActivationSerial() != 0
+					|| (pack.side == BattleSide::DEFENDER
+						&& battleState.getPreCombatOrderState(BattleSide::ATTACKER).isUnresolved()))
+					throw std::runtime_error("Battle Plan opening Order is outside its deterministic opening window");
+				const auto anchorId = pack.preCombatOrderState->anchorStackId;
+				const auto anchors = battleState.getUnitsIf([anchorId](const battle::Unit * unit)
+				{
+					return unit && unit->unitId() == anchorId;
+				});
+				if(anchors.size() != 1 || !anchors.front()->alive() || anchors.front()->isGhost()
+					|| anchors.front()->isTurret()
+					|| anchors.front()->hasBonusOfType(BonusType::SIEGE_WEAPON)
+					|| anchors.front()->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
+					|| anchors.front()->unitSlot() == SlotID::WAR_MACHINES_SLOT)
+					throw std::runtime_error("Battle Plan opening Order has no legal stack anchor");
+				if(const auto * callback = dynamic_cast<const CBattleInfoCallback *>(&battleState);
+					callback && callback->playerToSide(callback->battleGetOwner(anchors.front())) != pack.side)
+					throw std::runtime_error("Battle Plan opening Order anchor is controlled by the wrong side");
+			}
+			else if(previous.phase == PreCombatOrderState::Phase::AVAILABLE
+				&& pack.preCombatOrderState->phase == PreCombatOrderState::Phase::COMPLETED)
+			{
+				if(battleState.getRound() != 1 || battleState.getActivationSerial() != 0)
+					throw std::runtime_error("Battle Plan exhaustion is outside its opening window");
+			}
+			else
+				throw std::runtime_error("Battle Plan state updates cannot complete a pending Order");
+		}
+	}
 	battleState.setHeroOrderStates(pack.side, *pack.states);
 	if(pack.doubleCommandState)
 		battleState.setDoubleCommandState(pack.side, *pack.doubleCommandState);
+	if(pack.preCombatOrderState)
+		battleState.setPreCombatOrderState(pack.side, *pack.preCombatOrderState);
 }
 
 void BattleStatePackVisitor::visitBattleAdverseRerollStateChanged(BattleAdverseRerollStateChanged & pack)

@@ -1496,7 +1496,8 @@ void BattleInterface::presentPendingHeroOrderChoice()
 		|| actionsController->heroSpellcastingModeActive())
 		return;
 	const auto callback = getBattle();
-	if(!callback->battleHasPendingDoubleCommand(callback->battleGetMySide())
+	if((!callback->battleHasPendingDoubleCommand(callback->battleGetMySide())
+		&& !callback->battleHasPendingPreCombatOrder(callback->battleGetMySide()))
 		|| !ENGINE->windows().findWindows<BattleHeroActionWindow>().empty())
 		return;
 	clearPerfectMoment();

@@ -98,6 +98,12 @@ public:
 		static const DoubleCommandState empty;
 		return empty;
 	}
+	virtual const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const
+	{
+		(void)side;
+		static const PreCombatOrderState empty;
+		return empty;
+	}
 	virtual const AlternatingHeroActionState & getWarcastingState(BattleSide side) const
 	{
 		(void)side;
@@ -215,6 +221,11 @@ class DLL_LINKAGE IBattleState : public IBattleInfo
 public:
 	virtual void nextRound() = 0;
 	virtual void nextTurn(uint32_t unitId, BattleUnitTurnReason reason) = 0;
+	virtual void setPreCombatOrderState(BattleSide side, const PreCombatOrderState & state)
+	{
+		(void)side;
+		(void)state;
+	}
 
 	virtual void addUnit(uint32_t id, const JsonNode & data) = 0;
 	virtual void updateUnit(uint32_t id, const JsonNode & data, int64_t healthDelta) = 0;

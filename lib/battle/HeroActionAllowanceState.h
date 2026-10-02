@@ -48,7 +48,8 @@ struct DLL_LINKAGE HeroActionAllowanceState
 		PERK,
 		ARTIFACT,
 		OTHER,
-		DOUBLE_COMMAND
+		DOUBLE_COMMAND,
+		BATTLE_PLAN
 	};
 
 	struct DLL_LINKAGE Grant
@@ -66,6 +67,9 @@ struct DLL_LINKAGE HeroActionAllowanceState
 			if(h.saving && source == GrantSource::DOUBLE_COMMAND
 				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_COMMAND))
 				throw std::runtime_error("Cannot discard Double Command allowance grant");
+			if(h.saving && source == GrantSource::BATTLE_PLAN
+				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLE_PLAN))
+				throw std::runtime_error("Cannot discard Battle Plan allowance grant");
 			if(h.saving)
 				validateShape();
 			h & id;
@@ -86,7 +90,9 @@ struct DLL_LINKAGE HeroActionAllowanceState
 				|| ((source == GrantSource::METAMAGIC || source == GrantSource::METAMAGIC_GRAND)
 					&& allowance != AllowanceKind::SPELL)
 				|| (source == GrantSource::DOUBLE_COMMAND
-					&& (allowance != AllowanceKind::ORDER || expiryRound != grantedRound)))
+					&& (allowance != AllowanceKind::ORDER || expiryRound != grantedRound))
+				|| (source == GrantSource::BATTLE_PLAN
+					&& (allowance != AllowanceKind::ORDER || grantedRound != 1 || expiryRound != 1)))
 				throw std::runtime_error("Invalid Hero Action allowance grant shape");
 		}
 	};
@@ -273,6 +279,12 @@ struct DLL_LINKAGE HeroActionAllowanceState
 				return grant.source == GrantSource::DOUBLE_COMMAND;
 			}))
 			throw std::runtime_error("Cannot discard Double Command allowance grant");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLE_PLAN)
+			&& std::any_of(grants.begin(), grants.end(), [](const Grant & grant)
+			{
+				return grant.source == GrantSource::BATTLE_PLAN;
+			}))
+			throw std::runtime_error("Cannot discard Battle Plan allowance grant");
 		if(h.saving)
 			validateShape();
 		h & currentRound;
@@ -295,6 +307,19 @@ struct DLL_LINKAGE HeroActionAllowanceState
 		}));
 	}
 
+	uint32_t countBattlePlanOrderGrants(int32_t round) const
+	{
+		validateShape();
+		if(round < 0 || currentRound != round)
+			return 0;
+		return static_cast<uint32_t>(std::count_if(grants.begin(), grants.end(), [round](const Grant & grant)
+		{
+			return grant.source == GrantSource::BATTLE_PLAN
+				&& grant.allowance == AllowanceKind::ORDER
+				&& grant.grantedRound == round && grant.expiryRound == round;
+		}));
+	}
+
 private:
 	static bool isValid(ActionKind value)
 	{
@@ -311,7 +336,7 @@ private:
 		return value == GrantSource::ROUND || value == GrantSource::METAMAGIC
 			|| value == GrantSource::METAMAGIC_GRAND || value == GrantSource::PERK
 			|| value == GrantSource::ARTIFACT || value == GrantSource::OTHER
-			|| value == GrantSource::DOUBLE_COMMAND;
+			|| value == GrantSource::DOUBLE_COMMAND || value == GrantSource::BATTLE_PLAN;
 	}
 
 	static bool canPay(AllowanceKind allowance, ActionKind action)
@@ -323,9 +348,10 @@ private:
 
 	static std::tuple<uint8_t, int32_t, uint32_t> selectionKey(const Grant & grant, ActionKind action)
 	{
-		const bool doubleCommand = action == ActionKind::ORDER && grant.source == GrantSource::DOUBLE_COMMAND;
+		const bool immediateOrder = action == ActionKind::ORDER
+			&& (grant.source == GrantSource::DOUBLE_COMMAND || grant.source == GrantSource::BATTLE_PLAN);
 		const bool specialized = grant.allowance != AllowanceKind::HERO;
-		return std::tuple(doubleCommand ? uint8_t{0} : specialized ? uint8_t{1} : uint8_t{2},
+		return std::tuple(immediateOrder ? uint8_t{0} : specialized ? uint8_t{1} : uint8_t{2},
 			grant.expiryRound, grant.id);
 	}
 
@@ -527,6 +553,115 @@ private:
 		issuedRound = -1;
 		anchorStackId = INVALID_UNIT_ID;
 		deferredSecondWindTargetUnitId = INVALID_UNIT_ID;
+	}
+};
+
+/// Saved state for the once-per-combat Battle Plan opening choice. The
+/// one-time availability is resolved from the selected perk during battle setup;
+/// an outstanding choice is bound to its non-activation stack anchor.
+struct DLL_LINKAGE PreCombatOrderState
+{
+	static constexpr uint32_t INVALID_UNIT_ID = HeroOrderState::INVALID_UNIT_ID;
+
+	enum class Phase : uint8_t
+	{
+		NOT_GRANTED,
+		AVAILABLE,
+		ORDER_REQUIRED,
+		COMPLETED
+	};
+
+	Phase phase = Phase::NOT_GRANTED;
+	int32_t issuedRound = -1;
+	uint32_t anchorStackId = INVALID_UNIT_ID;
+
+	bool operator==(const PreCombatOrderState &) const = default;
+	bool orderPending() const { return phase == Phase::ORDER_REQUIRED; }
+	bool isUnresolved() const { return phase == Phase::AVAILABLE || orderPending(); }
+
+	void beginOrderRequired(int32_t round, uint32_t anchor)
+	{
+		validateShape();
+		if(phase != Phase::AVAILABLE || round != 1 || anchor == INVALID_UNIT_ID)
+			throw std::invalid_argument("Invalid Battle Plan opening Order");
+		phase = Phase::ORDER_REQUIRED;
+		issuedRound = round;
+		anchorStackId = anchor;
+		validateShape();
+	}
+
+	void complete()
+	{
+		validateShape();
+		if(phase != Phase::AVAILABLE && phase != Phase::ORDER_REQUIRED)
+			throw std::invalid_argument("Battle Plan is not available to complete");
+		phase = Phase::COMPLETED;
+		issuedRound = -1;
+		anchorStackId = INVALID_UNIT_ID;
+		validateShape();
+	}
+
+	void validateShape() const
+	{
+		const bool noContext = issuedRound == -1 && anchorStackId == INVALID_UNIT_ID;
+		if(phase == Phase::NOT_GRANTED || phase == Phase::AVAILABLE || phase == Phase::COMPLETED)
+		{
+			if(!noContext)
+				throw std::runtime_error("Invalid inactive Battle Plan state");
+			return;
+		}
+		if(phase == Phase::ORDER_REQUIRED && issuedRound == 1 && anchorStackId != INVALID_UNIT_ID)
+			return;
+		throw std::runtime_error("Invalid pending Battle Plan state");
+	}
+
+	void validateTransitionFrom(const PreCombatOrderState & previous) const
+	{
+		previous.validateShape();
+		validateShape();
+		if(*this == previous)
+			return;
+		if(previous.phase == Phase::AVAILABLE)
+		{
+			auto expected = previous;
+			if(phase == Phase::ORDER_REQUIRED)
+			{
+				expected.beginOrderRequired(issuedRound, anchorStackId);
+				if(*this == expected)
+					return;
+			}
+			expected = previous;
+			expected.complete();
+			if(*this == expected)
+				return;
+		}
+		else if(previous.phase == Phase::ORDER_REQUIRED)
+		{
+			auto expected = previous;
+			expected.complete();
+			if(*this == expected)
+				return;
+		}
+		throw std::runtime_error("Invalid Battle Plan state transition");
+	}
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(h.saving && *this != PreCombatOrderState{}
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLE_PLAN))
+			throw std::runtime_error("Cannot discard Battle Plan state");
+		if(h.saving)
+			validateShape();
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLE_PLAN))
+		{
+			h & phase;
+			h & issuedRound;
+			h & anchorStackId;
+			if(!h.saving)
+				validateShape();
+		}
+		else if(!h.saving)
+			*this = {};
 	}
 };
 

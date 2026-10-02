@@ -25,6 +25,7 @@ constexpr char DEFENSIVE_COMMANDER_PERK[] = "new-horizons:command.defensiveComma
 constexpr char VETERAN_COMMANDER_PERK[] = "new-horizons:command.veteranCommander";
 constexpr char COMBINED_ARMS_PERK[] = "new-horizons:command.combinedArms";
 constexpr char DOUBLE_COMMAND_PERK[] = "new-horizons:command.doubleCommand";
+constexpr char BATTLE_PLAN_PERK[] = "new-horizons:command.battlePlan";
 constexpr int BASIC_COMMANDER_EFFICIENCY_BONUS_PERCENT = 20;
 constexpr int VETERAN_COMMANDER_EFFICIENCY_BONUS_PERCENT = 25;
 
@@ -484,6 +485,11 @@ bool hasCombinedArms(const CGHeroInstance * hero)
 bool hasDoubleCommand(const CGHeroInstance * hero)
 {
 	return hero && hero->hasActivePerk(COMMAND_SKILL, DOUBLE_COMMAND_PERK);
+}
+
+bool hasBattlePlan(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(COMMAND_SKILL, BATTLE_PLAN_PERK);
 }
 
 double combinedArmsFocusFirePercent(int rangedDamagePercent, const CGHeroInstance & hero)
