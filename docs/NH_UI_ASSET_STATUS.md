@@ -32,6 +32,14 @@ Implementation is Final only when the intended UI behavior and its presentation 
 
 ## Current status summary
 
+UP-115/116 source/native checkpoint: Sanctuary Keeper and Venomancer are
+active with generic perk offer/name/help presentation. Their exact lifetime
+and Poison snapshot effects, detached forecasts and actual AI casts have
+focused native evidence. Both still bind `NH_perk_neutral`: bespoke art is
+Not done, and UI implementation is Provisional until rendered/playable review.
+Coverage is166/310 active perks,144 planned. No new artwork was generated,
+no GUI was launched and no playable snapshot was promoted in this cycle.
+
 UP-114 first-slice source binding: distinct Mass Curse and Mass Sorrow entries
 reuse their own base spell's exact classic icons, sound and affected-stack
 animation by reference; no extracted art is redistributed. The distinct names

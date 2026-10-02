@@ -1583,6 +1583,12 @@ bool physicalPoisonEnabled(const JsonNode & rules, SpellID spell)
 		&& spellAllowedBySavedRoster(rules, spell);
 }
 
+int poisonBaseBonusPercent(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(NATURE_MAGIC_SKILL), std::string(NATURE_VENOMANCER))
+		? 20 : 0;
+}
+
 int64_t poisonBaseDamage(const int32_t spellPower, const int schoolRankCoefficientPercent)
 {
 	if(spellPower < 0 || schoolRankCoefficientPercent < 0 || schoolRankCoefficientPercent > 1000)
@@ -1591,13 +1597,15 @@ int64_t poisonBaseDamage(const int32_t spellPower, const int schoolRankCoefficie
 }
 
 int64_t poisonBaseDamageBasisPoints(const int32_t spellPower, const int coefficientBasisPoints,
-	const int empowerSpellBonusPercent)
+	const int empowerSpellBonusPercent, const int wholeBaseBonusPercent)
 {
 	if(spellPower < 0 || coefficientBasisPoints < 0 || coefficientBasisPoints > 100'000
-		|| empowerSpellBonusPercent < 0 || empowerSpellBonusPercent > 1000)
+		|| empowerSpellBonusPercent < 0 || empowerSpellBonusPercent > 1000
+		|| wholeBaseBonusPercent < 0 || wholeBaseBonusPercent > 1000)
 		throw std::invalid_argument("Invalid Poison basis-point inputs");
-	return 20 + static_cast<int64_t>(spellPower) * coefficientBasisPoints
+	const int64_t baseDamage = 20 + static_cast<int64_t>(spellPower) * coefficientBasisPoints
 		* (100 + empowerSpellBonusPercent) / 2'000'000;
+	return baseDamage * (100 + wholeBaseBonusPercent) / 100;
 }
 
 std::vector<SpellID> cureAfflictions(const JsonNode & rules, const battle::Unit * unit)

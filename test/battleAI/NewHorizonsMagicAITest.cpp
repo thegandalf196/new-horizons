@@ -2535,6 +2535,8 @@ TEST_F(NewHorizonsMagicAITest, V3NaturePoisonAIValuesRankScaledMarginalTicksAgai
 	neutralizeCommandEffects = true;
 	useCurrentMagicRules = true;
 	useRealHeroScale = true;
+	useSavedPerkRules = true;
+	fixtureActivePerkIds = {std::string(newHorizonsMagic::NATURE_VENOMANCER)};
 	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
 
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
@@ -2589,6 +2591,18 @@ TEST_F(NewHorizonsMagicAITest, V3NaturePoisonAIValuesRankScaledMarginalTicksAgai
 	EXPECT_GT(rankValues[1], rankValues[0]);
 	EXPECT_GT(rankValues[2], rankValues[1]);
 	EXPECT_GT(rankValues[3], rankValues[2]);
+	attackerSideHero->setSecSkillLevel(nature, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({std::string(newHorizonsMagic::NATURE_MAGIC_SKILL),
+		std::string(newHorizonsMagic::NATURE_VENOMANCER)});
+	ASSERT_EQ(newHorizonsMagic::poisonBaseBonusPercent(attackerSideHero), 20);
+	attackerSideHero->setSecSkillLevel(nature, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	spells::BattleCast boostedCast(battle(), attackerSideHero, spells::Mode::HERO, poison.toSpell());
+	const auto boostedMechanics = poison.toSpell()->battleMechanics(&boostedCast);
+	EXPECT_GT(SpellTargetEvaluator::naturePoisonPlacementValue(boostedMechanics.get(),
+		{spells::Destination(enemy)}), rankValues.back())
+		<< "Venomancer's larger stored Base must improve the same legal three-tick forecast";
+	EXPECT_EQ(enemy->physicalPoisonBaseDamage, 0);
+	EXPECT_EQ(enemy->physicalPoisonActivationsRemaining, 0);
 
 	// A weaker cast must not receive value while a stronger physical affliction
 	// remains active. The read-only evaluator preserves the live status fields.
@@ -2623,6 +2637,16 @@ TEST_F(NewHorizonsMagicAITest, V3NaturePoisonAIValuesRankScaledMarginalTicksAgai
 	EXPECT_EQ(selectedTarget.front().unitValue, enemy);
 	EXPECT_EQ(enemy->physicalPoisonBaseDamage, 0);
 	EXPECT_EQ(enemy->physicalPoisonActivationsRemaining, 0);
+	const auto manaBeforeCast = attackerSideHero->getManaAvailable();
+	const auto healthBeforeCast = enemy->getAvailableHealth();
+	const auto expectedCost = battle()->battleGetSpellCost(poison.toSpell(), attackerSideHero);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeCast - expectedCost);
+	EXPECT_EQ(enemy->getAvailableHealth(), healthBeforeCast);
+	EXPECT_EQ(enemy->physicalPoisonBaseDamage, newHorizonsMagic::poisonBaseDamageBasisPoints(
+		boostedMechanics->getEffectPower(), boostedMechanics->getSpellPowerCoefficientBasisPoints(),
+		boostedMechanics->getEmpowerSpellBonusPercent(), 20));
+	EXPECT_EQ(enemy->physicalPoisonActivationsRemaining, 3);
 }
 
 TEST_F(NewHorizonsMagicAITest, V3PlagueAIValuesRawSpellPowerSpreadFriendlyFireAndLegalGenericTargets)
@@ -5948,7 +5972,16 @@ TEST_F(NewHorizonsMagicAITest, SanctuaryAIValuesDirectThreatOnPassiveAllyAndExcl
 {
 	useCommands = false;
 	useCurrentMagicRules = true;
+	useSavedPerkRules = true;
+	fixtureActivePerkIds = {"new-horizons:lightMagic.sanctuaryKeeper"};
 	ASSERT_NO_FATAL_FAILURE(prepareSanctuaryCaster());
+	const SecondarySkill light(SecondarySkill::decode("new-horizons:lightMagic"));
+	ASSERT_TRUE(light.hasValue());
+	attackerSideHero->setSecSkillLevel(light, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:lightMagic",
+		"new-horizons:lightMagic.sanctuaryKeeper"});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:lightMagic",
+		"new-horizons:lightMagic.sanctuaryKeeper"));
 	ASSERT_NO_FATAL_FAILURE(startBattle());
 	ASSERT_NO_FATAL_FAILURE(beginCombat());
 
@@ -6017,10 +6050,13 @@ TEST_F(NewHorizonsMagicAITest, SanctuaryAIValuesDirectThreatOnPassiveAllyAndExcl
 	PotentialTargets unprotectedTargets(projectedShooter, unprotectedDamage, unprotectedModel);
 	EXPECT_TRUE(hasPrimaryTarget(unprotectedTargets));
 
-	const auto sanctuary = sanctuarySpell();
-	Bonus sanctified(BonusDuration::ONE_BATTLE, BonusType::SANCTIFIED,
-		BonusSource::SPELL_EFFECT, 1, BonusSourceID(sanctuary));
-	passiveAlly->addNewBonus(std::make_shared<Bonus>(sanctified));
+	const auto moraleBeforeCast = passiveAlly->valOfBonuses(BonusType::MORALE);
+	const auto manaBeforeCast = attackerSideHero->getManaAvailable();
+	const auto expectedCost = battle()->battleGetSpellCost(sanctuarySpell().toSpell(), attackerSideHero);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeCast - expectedCost);
+	EXPECT_TRUE(passiveAlly->hasBonusOfType(BonusType::SANCTIFIED));
+	EXPECT_EQ(passiveAlly->valOfBonuses(BonusType::MORALE), moraleBeforeCast + 2);
 	auto protectedModel = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
 	DamageCache protectedDamage;
 	protectedDamage.buildDamageCache(protectedModel, BattleSide::DEFENDER);

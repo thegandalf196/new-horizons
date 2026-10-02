@@ -14,6 +14,25 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-115/116 Sanctuary Keeper and Venomancer are active and native verified.
+Keeper adds exact-source marker-limited+2 Morale, refreshes without stacking,
+cleans non-perk recasts and removes siblings when Sanctuary breaks. Poison
+stores Venomancer's20% whole-Base boost once, with exact92/138/184 ticks at
+Basic SP100. Toxic Spines remains independent. Legal Basic acquisition,
+inactive/legacy guards, materialized detached/live parity and both actual
+AI-selected paid server casts pass. Client90317 and final both-target10531
+exit0; principal20512 passes25/25 in6.559s, activated76413 passes30/30 in7.833s,
+zero skips. Data/schema/inventory34/34 and module check pass. Independent
+review has no remaining blocker. Coverage164->166/310, planned146->144;
+Light8->9/10, Nature5->6/10. Spell identity coverage remains60/67 plus five
+distinct Mass variants. No new saved state or polling. Phase2 retains broader
+Morale/specialty/save/modifier interactions and dedicated negative-Morale-only
+AI selection. Generic UI Provisional, bespoke art Not done; no GUI/promotion.
+Binary SHA-256: `5af0f580afc5743f828334ddf00d50e8cd25c924ed0bbf71c1b9e63b990a5449`.
+Nature's Wrath map is retained in UP-117 awaiting range/conduction/resistance
+answers. Next unblocked missing-content audit: Earthquake/Fractured Ground
+and Advanced Nature Geomancer.
+
 UP-114's final distinct entry, Mass Slow, is active and native verified.
 Temporal Field grants the virtual entry without durable learning or a legacy
 once-per-combat limit. Saved-v3 Slow-family resolution covers60% post-cap/
@@ -955,7 +974,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 164/310 | 146 planned; Verdant Communion is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 166/310 | 144 planned; Sanctuary Keeper and Venomancer are the newest source/native-verified activations. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -1096,9 +1115,9 @@ interactions, and rendered/playable acceptance remain separate.
 | Discipline | 3/0 | 5/5 | Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless active with focused authoritative and detached evidence. Five perks remain planned; Esprit de Corps composition scope, Heroic Spirit activation timing and Veteran Cohesion HP reference await clarification. |
 | Recruitment | 3/0 | 4/6 | Six perks missing |
 | Command | 3/0 | 4/6 | Aggressive/Defensive, Veteran and Combined Arms have focused runtime/AI evidence; ordinary Advanced/Expert progression opens. Six perks remain planned. |
-| Light Magic | 3/0 | 8/2 | Litany grants distinct Mass Bless with native cast/forecast evidence, alongside Benediction, Healer, Guardian, Aegis, Purifier, Retributionist and Crusader. Sanctuary Keeper and Miracle Worker remain planned. |
+| Light Magic | 3/0 | 9/1 | Sanctuary Keeper's linked Morale lifetime and actual AI cast are native verified; Litany grants distinct Mass Bless, alongside Benediction, Healer, Guardian, Aegis, Purifier, Retributionist and Crusader. Miracle Worker remains planned. |
 | Shadow Magic | 3/0 | 9/1 | Grand Malediction now grants distinct Mass Curse/Sorrow with native cast/forecast evidence, alongside the eight earlier perks. Plaguebearer awaits its normal-limit definition. |
-| Nature Magic | 3/0 | 5/5 | Herbalist, Rootcaller, Beastcaller, Verdant Warden and Verdant Communion active; five perks missing. |
+| Nature Magic | 3/0 | 6/4 | Venomancer's whole-Base snapshot, independent Toxic Spines and actual AI cast are native verified; Herbalist, Rootcaller, Beastcaller, Verdant Warden and Verdant Communion active. Four perks remain planned. |
 | Havoc Magic | 3/0 | 6/4 | Four perks missing; Pyromancer, Cryomancer and Controlled Blast are native verified |
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
 | Chaos Magic | 3/0 | 3/7 | Blinkmaster, Weaver and Paradox Shield are active with focused evidence recorded above; seven perks remain planned. |

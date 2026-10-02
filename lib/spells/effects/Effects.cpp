@@ -176,14 +176,17 @@ public:
 
 		const int64_t baseDamage = newHorizonsMagic::poisonBaseDamageBasisPoints(
 			mechanics->getEffectPower(), mechanics->getSpellPowerCoefficientBasisPoints(),
-			mechanics->getEmpowerSpellBonusPercent());
+			mechanics->getEmpowerSpellBonusPercent(),
+			newHorizonsMagic::poisonBaseBonusPercent(mechanics->getHeroCaster()));
 		for(const auto & destination : target)
 		{
-			const auto * stack = dynamic_cast<const CStack *>(destination.unitValue);
-			if(!stack || !isLivingPhysicalTarget(stack))
+			const auto * unit = destination.unitValue;
+			if(!isLivingPhysicalTarget(unit))
 				continue;
 
-			auto state = stack->acquireState();
+			auto state = unit->acquireState();
+			if(!state)
+				continue;
 			const bool applied = newHorizonsBulwark::applyPhysicalPoison(state.get(), baseDamage, -1);
 			if(applied)
 			{
@@ -206,7 +209,7 @@ public:
 			}
 			else
 				line.appendRawString("A stronger physical Poison already affects %s.");
-			stack->addNameReplacement(line, stack->getCount());
+			unit->addNameReplacement(line, unit->getCount());
 			message.lines.push_back(std::move(line));
 			server->apply(message);
 		}

@@ -7,6 +7,7 @@ local HEAVENLY_GALE_SPELL = "new-horizons:heavenlyGale"
 local GUARDIAN_SPIRIT_SPELL = "new-horizons:guardianSpirit"
 local DIVINE_RETRIBUTION_SPELL = "new-horizons:divineRetribution"
 local CRUSADE_SPELL = "new-horizons:crusade"
+local SANCTUARY_SPELL = "new-horizons:sanctuary"
 local ENTANGLE_SPELL = "new-horizons:entangle"
 local VENGEFUL_VINES_SPELL = "new-horizons:vengefulVines"
 local MISFORTUNE_SPELL = "core:misfortune"
@@ -16,6 +17,7 @@ local GUARDIAN_PERK = "new-horizons:lightMagic.guardian"
 local AEGIS_PERK = "new-horizons:lightMagic.aegis"
 local RETRIBUTIONIST_PERK = "new-horizons:lightMagic.retributionist"
 local CRUSADER_PERK = "new-horizons:lightMagic.crusader"
+local SANCTUARY_KEEPER_PERK = "new-horizons:lightMagic.sanctuaryKeeper"
 local NATURE_MAGIC_SKILL = "new-horizons:natureMagic"
 local ROOTCALLER_PERK = "new-horizons:natureMagic.rootcaller"
 local CHAOS_MAGIC_SKILL = "new-horizons:chaosMagic"
@@ -548,9 +550,38 @@ function Script:apply(mechanics, server, target)
 		local unit = dest.unit
 		if not unit or not unit:isAlive() then goto continue end
 
+		if spellKey == SANCTUARY_SPELL then
+			-- Recasting Sanctuary replaces its Keeper morale sibling even when the
+			-- new cast is not made by a Keeper. This prevents an older +2 from
+			-- becoming active again on a later non-Keeper Sanctuary cast.
+			local previousMorale = unit:getBonuses({ type = "MORALE" }):filter(function(bonus)
+				return bonus:getSource() == ENUM.BonusSource.spellEffect
+					and bonus:getSourceID() == spellKey
+			end)
+			if previousMorale:size() > 0 then
+				server:removeUnitBonuses(battle, unit, previousMorale)
+			end
+		end
+
 		local buffer = {}
 		for name, nb in pairs(converted) do
 			buffer[name] = self:deepCopyBonus(nb)
+		end
+
+		local hero = mechanics:getHeroCaster()
+		if spellKey == SANCTUARY_SPELL and mechanics:usesNewHorizonsMagicV3()
+			and hero and hero:hasActivePerk(LIGHT_MAGIC_SKILL, SANCTUARY_KEEPER_PERK) then
+			buffer.sanctuaryKeeperMorale = {
+				type = "MORALE",
+				val = 2,
+				duration = ENUM.BonusDuration.oneBattle,
+				sourceType = ENUM.BonusSource.spellEffect,
+				sourceID = spellKey,
+				limiters = {
+					{ type = "HAS_ANOTHER_BONUS_LIMITER", bonusType = "SANCTIFIED",
+						bonusSourceType = "SPELL_EFFECT", bonusSourceID = spellKey }
+				}
+			}
 		end
 
 		self:applyHeroSpecialty(mechanics, buffer, unit)

@@ -2808,7 +2808,30 @@ void BattleActionProcessor::breakSanctuary(const CBattleInfoCallback & battle, c
 	const auto markers = stack->getBonusesOfType(BonusType::SANCTIFIED);
 	if(markers->empty())
 		return;
-	removeBonuses(battle, stack, *markers);
+
+	// SANCTUARY-source Spell Effect bonuses are siblings of the marker. Remove
+	// them in the same update so a timed, limiter-gated Keeper bonus cannot be
+	// left dormant after the stack loses Sanctuary.
+	BonusList bonusesToRemove = *markers;
+	std::vector<BonusSourceID> sanctuarySources;
+	for(const auto & marker : *markers)
+	{
+		if(!marker || marker->source != BonusSource::SPELL_EFFECT)
+			continue;
+		if(std::find(sanctuarySources.begin(), sanctuarySources.end(), marker->sid) == sanctuarySources.end())
+			sanctuarySources.push_back(marker->sid);
+	}
+
+	for(const auto & sourceID : sanctuarySources)
+	{
+		const auto siblings = stack->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, sourceID));
+		if(!siblings)
+			continue;
+		for(const auto & sibling : *siblings)
+			if(sibling && std::find(bonusesToRemove.begin(), bonusesToRemove.end(), sibling) == bonusesToRemove.end())
+				bonusesToRemove.push_back(sibling);
+	}
+	removeBonuses(battle, stack, std::move(bonusesToRemove));
 
 	BattleLogMessage message;
 	message.battleID = battle.getBattle()->getBattleID();

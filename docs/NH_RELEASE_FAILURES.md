@@ -2,6 +2,43 @@
 
 ## Purpose
 
+### 2026-10-02 UP-115/116 — pre-build source/fixture corrections
+
+Independent review found that Sanctuary Keeper's narrow negative-Morale AI
+utility initially credited the already-active stack, whose pre-activation roll
+had already occurred. Exclude that stack from this prospective benefit; do not
+invent post-action positive Morale after an attack breaks Sanctuary. Frozen
+production review has no remaining blocker; compilation/native evidence pending.
+
+Pre-build fixture inspection found fabricated SANCTIFIED markers being used to
+expect Keeper's cast-time grant, and a rank-toggle assertion assuming live perk
+polling. Replace these with real casts and a non-perk recast that cleans the
+previous snapshot. A stored effect remains until its source lifetime ends.
+Legacy-profile fixtures must strip every v3 variant row/metadata, not merely
+change the version number. These are pre-execution corrections, not failed runs.
+
+Both-target build60415 exits1: the new fixtures omitted
+`NewHorizonsSpellAvailability.h`, which declares `spellAllowedBySavedRoster`;
+Keeper also omitted `AI/BattleAI/StackWithBonuses.h` for `HypotheticBattle`.
+The resulting target-construction errors are cascades, not production failures.
+Add the explicit declaring headers to both fixtures and rebuild before native
+execution. The client target already passed90317; neither perk is activated.
+
+Retry both-target96409 exits0. Principal90439 completes24/25 in6.529s,
+zero skips. All Sanctuary Keeper, shared formula, ordinary Sanctuary and real
+Sanctuary/Poison AI casts pass. Only the new Toxic Spines exclusion fixture
+observes zero reflected loss: it selected Basic Bulwark, whose reflection is
+zero. After legally selecting Basic Toxic Spines, advance Bulwark to Advanced
+as the existing reflected-damage fixture does. Preserve the positive reflection
+assertion and exclusion expectation; no production change is needed.
+
+Repaired both-target48358 exits0; principal20512 passes25/25 in6.559s,
+zero skips. Activated both-target10531 exits0 and native76413 passes30/30
+in7.833s, zero skips, including ordinary Poison and Toxic Spines guards.
+Data/schema/inventory34/34 and generated module check pass. Both new perks
+are active; no remaining blocker was found by independent review. Broad
+interaction coverage remains Phase2; no GUI or playable promotion occurred.
+
 ### 2026-10-02 UP-114 Mass Slow — pre-native family refresh correction
 
 Root inspection and independent review found that generic timed refresh updated

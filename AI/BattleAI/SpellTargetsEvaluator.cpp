@@ -1893,7 +1893,9 @@ float SpellTargetEvaluator::naturePoisonPlacementValue(const Mechanics * spellMe
 
 	const int64_t baseDamage = newHorizonsMagic::poisonBaseDamageBasisPoints(
 		std::max(0, spellMechanics->getEffectPower()),
-		spellMechanics->getSpellPowerCoefficientBasisPoints());
+		spellMechanics->getSpellPowerCoefficientBasisPoints(),
+		spellMechanics->getEmpowerSpellBonusPercent(),
+		newHorizonsMagic::poisonBaseBonusPercent(spellMechanics->getHeroCaster()));
 	if(baseDamage <= 0)
 		return 0.0f;
 

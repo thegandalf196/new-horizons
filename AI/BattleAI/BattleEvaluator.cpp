@@ -219,12 +219,8 @@ bool isHexOfPainTriggerBonus(const Bonus * bonus)
 	return bonus->subtype.toString() == newHorizonsHexOfPainAI::TRIGGER_ID;
 }
 
-float expectedMoraleActivationChange(const CBattleInfoCallback & battle, const battle::Unit * unit)
+float expectedMoraleActivationChange(int morale)
 {
-	if(!unit || !unit->alive() || unit->unaffectedByMorale())
-		return 0.0f;
-
-	const int morale = battle.battleGetMorale(unit);
 	if(morale == 0)
 		return 0.0f;
 
@@ -240,6 +236,14 @@ float expectedMoraleActivationChange(const CBattleInfoCallback & battle, const b
 	const auto chance = std::max<int64_t>(0, chanceByMorale[chanceIndex]);
 	const auto sign = morale > 0 ? 1.0f : -1.0f;
 	return sign * static_cast<float>(chance) / static_cast<float>(diceSize);
+}
+
+float expectedMoraleActivationChange(const CBattleInfoCallback & battle, const battle::Unit * unit)
+{
+	if(!unit || !unit->alive() || unit->unaffectedByMorale())
+		return 0.0f;
+
+	return expectedMoraleActivationChange(battle.battleGetMorale(unit));
 }
 
 int timedSpellEffectRounds(const battle::Unit * unit, SpellID spell, BonusType effectType)
@@ -990,6 +994,24 @@ void applyProjectedBestAction(HypotheticBattle & state, const battle::Unit * liv
 	}
 	if(action.attackerDamageReduce > 0)
 		attackerState->removeUnitBonus(Bonus::UntilBeingAttacked);
+
+	// Accepted movement/attack actions break Sanctuary before resolving. Keep
+	// the detached actor used by later morale forecasts in the same state.
+	const auto sanctuaryMarkers = attackerState->getBonusesOfType(BonusType::SANCTIFIED);
+	if(sanctuaryMarkers && !sanctuaryMarkers->empty())
+	{
+		std::vector<BonusSourceID> sanctuarySources;
+		for(const auto & marker : *sanctuaryMarkers)
+		{
+			if(!marker || marker->source != BonusSource::SPELL_EFFECT)
+				continue;
+			if(std::find(sanctuarySources.begin(), sanctuarySources.end(), marker->sid) == sanctuarySources.end())
+				sanctuarySources.push_back(marker->sid);
+		}
+		for(const auto & sourceID : sanctuarySources)
+			attackerState->removeUnitBonus(Selector::source(BonusSource::SPELL_EFFECT, sourceID));
+		attackerState->removeUnitBonus(Selector::type()(BonusType::SANCTIFIED));
+	}
 
 	for(const auto & affected : action.affectedUnits)
 	{
@@ -2839,6 +2861,61 @@ float sanctuaryDirectAttackValue(uint32_t targetUnitId, DamageCache & damageCach
 
 	return AttackPossibility::calculateDamageReduce(nullptr, target,
 		static_cast<uint64_t>(incomingDirectDamage), damageCache, battleState);
+}
+
+float sanctuaryKeeperMoraleValue(uint32_t targetUnitId, BattleSide casterSide,
+	const CBattleInfoCallback & liveBattle, DamageCache & damageCache,
+	const std::shared_ptr<HypotheticBattle> & projectedBattle)
+{
+	if(!projectedBattle || !liveBattle.getBattle())
+		return 0.0f;
+
+	const auto & magicRules = liveBattle.getBattle()->getMagicRules();
+	const auto * hero = liveBattle.getBattle()->getSideHero(casterSide);
+	if(!newHorizonsMagic::rulesActive(magicRules)
+		|| magicRules["rulesetVersion"].Integer() != newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		|| !hero || !hero->hasActivePerk("new-horizons:lightMagic", "new-horizons:lightMagic.sanctuaryKeeper"))
+		return 0.0f;
+
+	const auto * original = liveBattle.battleGetUnitByID(targetUnitId);
+	const auto * projected = projectedBattle->battleGetUnitByID(targetUnitId);
+	if(!original || !projected || !original->alive() || !projected->alive()
+		|| original->unitSide() != casterSide || projected->unitSide() != casterSide
+		|| original->unaffectedByMorale() || projected->unaffectedByMorale())
+		return 0.0f;
+
+	const auto sanctuaryMarkers = projected->getBonusesOfType(BonusType::SANCTIFIED);
+	const bool hasCurrentSanctuaryMarker = sanctuaryMarkers
+		&& std::any_of(sanctuaryMarkers->begin(), sanctuaryMarkers->end(), [](const auto & bonus)
+		{
+			return bonus && bonus->source == BonusSource::SPELL_EFFECT
+				&& bonus->sid.toString() == "new-horizons:sanctuary";
+		});
+	const auto existingMorale = projected->getBonuses(Selector::type()(BonusType::MORALE));
+	const bool alreadyHasKeeperMorale = hasCurrentSanctuaryMarker && existingMorale
+		&& std::any_of(existingMorale->begin(), existingMorale->end(), [](const auto & bonus)
+		{
+			return bonus && bonus->source == BonusSource::SPELL_EFFECT
+				&& bonus->sid.toString() == "new-horizons:sanctuary";
+		});
+	if(alreadyHasKeeperMorale)
+		return 0.0f;
+
+	const int morale = liveBattle.battleGetMorale(original);
+	if(morale >= 0)
+		return 0.0f;
+
+	// Sanctuary breaks before the protected stack resolves its action, so this
+	// perk can only prevent a bad-Morale penalty before the next activation.
+	// In particular, do not price a good-Morale bonus after that action.
+	const float before = expectedMoraleActivationChange(morale);
+	const float after = expectedMoraleActivationChange(std::min(0, morale + 2));
+	const float preventedBadMorale = projectedBattle->projectMoraleActivationDelta(
+		original, projected, before, after, 1.0f);
+	if(preventedBadMorale <= 0.0f)
+		return 0.0f;
+
+	return preventedBadMorale * expectedTargetActivationValue(projected, damageCache, projectedBattle);
 }
 }
 
@@ -4774,9 +4851,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.value = baseline + *ps.spellBattleFormExpectedValue;
 					continue;
 				}
-				// Sanctuary has no immediate health delta. Price only direct enemy
-				// attacks on this primary target; the attack projection keeps its
-				// normal collateral/area effects, which Sanctuary does not stop.
+				// Sanctuary has no immediate health delta. Price direct attacks on
+				// this primary target and, for an active Keeper, only the bad-Morale
+				// penalty avoided before Sanctuary breaks on the next action.
 				if(ps.command == HeroCommand::NONE && isCanonicalSanctuary(ps.spell))
 				{
 					if(ps.dest.size() != 1 || !ps.dest.front().unitValue)
@@ -4789,14 +4866,19 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					DamageCache sanctuaryDamageCache(&damageCache);
 					const auto protectionValue = sanctuaryDirectAttackValue(
 						targetId, sanctuaryDamageCache, state);
-					if(protectionValue <= 0.0f
+					const auto moraleValue = activeStack && activeStack->unitId() == targetId
+						? 0.0f
+						: sanctuaryKeeperMoraleValue(targetId, side,
+							*battleCallback, sanctuaryDamageCache, state);
+					const auto sanctuaryValue = protectionValue + moraleValue;
+					if(sanctuaryValue <= 0.0f
 						|| counterspellNegated
 						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
 							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
 							counterspellNegated, *spellAllowance))
 						ps.value = std::numeric_limits<float>::lowest();
 					else
-						ps.value = baseline + protectionValue * scoreEvaluator.getPositiveEffectMultiplier();
+						ps.value = baseline + sanctuaryValue * scoreEvaluator.getPositiveEffectMultiplier();
 					continue;
 				}
 				// Purify's selected source groups are action metadata rather than a

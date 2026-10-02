@@ -119,6 +119,7 @@ inline constexpr std::string_view SHADOW_DARK_GIFT_PERK = "new-horizons:shadowMa
 inline constexpr std::string_view SHADOW_NIGHT_FEEDER_PERK = "new-horizons:shadowMagic.nightFeeder";
 inline constexpr std::string_view NATURE_MAGIC_SKILL = "new-horizons:natureMagic";
 inline constexpr std::string_view NATURE_HERBALIST = "new-horizons:natureMagic.herbalist";
+inline constexpr std::string_view NATURE_VENOMANCER = "new-horizons:natureMagic.venomancer";
 inline constexpr std::string_view STORM_OF_DAGGERS_SPELL = "new-horizons:stormOfDaggers";
 constexpr int REGENERATION_MARK_SCALE = 1'000'000;
 constexpr int REGENERATION_BASE_RATE_MILLIONTHS = 250'000;
@@ -317,13 +318,15 @@ DLL_LINKAGE bool cureEnabled(const JsonNode & rules, SpellID spell);
 /// True only for the saved v3 New Horizons hero Poison row. It applies the
 /// shared physical-affliction state; the core creature ability is unchanged.
 DLL_LINKAGE bool physicalPoisonEnabled(const JsonNode & rules, SpellID spell);
+/// Venomancer's whole-Base Poison bonus for an active hero perk selection.
+DLL_LINKAGE int poisonBaseBonusPercent(const CGHeroInstance * hero);
 /// Poison's fixed 20 base plus half of the saved-rank-scaled Spell Power term.
 /// Integer damage truncates fractional health down, matching the combat damage pipeline.
 DLL_LINKAGE int64_t poisonBaseDamage(int32_t spellPower, int schoolRankCoefficientPercent);
 /// Basis-point counterpart preserving fractional School × Spellcraft products
-/// until Poison's final integer damage floor.
+/// until Poison's normal integer Base floor, then applying any whole-Base bonus.
 DLL_LINKAGE int64_t poisonBaseDamageBasisPoints(int32_t spellPower, int coefficientBasisPoints,
-	int empowerSpellBonusPercent = 0);
+	int empowerSpellBonusPercent = 0, int wholeBaseBonusPercent = 0);
 /// Saved Cure source identities whose complete SPELL_EFFECT source groups are
 /// currently present on this unit. Results are sorted by SpellID for stable UI
 /// and AI enumeration; legacy/unspecified Cure profiles return no candidates.

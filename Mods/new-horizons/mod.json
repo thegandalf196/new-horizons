@@ -4148,7 +4148,7 @@
 								"requires": "basic",
 								"description": "A friendly stack protected by Sanctuary also gains +2 Morale while Sanctuary remains active.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "A friendly stack protected by Sanctuary also gains +2 Morale while Sanctuary remains active."
 								}
 							},
@@ -4412,7 +4412,7 @@
 								"requires": "basic",
 								"description": "Poison's Base Poison value is increased by 20%.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Poison's Base Poison value is increased by 20%."
 								}
 							},

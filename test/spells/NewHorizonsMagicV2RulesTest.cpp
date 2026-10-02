@@ -351,6 +351,19 @@ TEST(NewHorizonsMagicV2RulesTest, BasisPointSpellPowerTermsKeepFractionalFactors
 		<< "Poison preserves the combined fractional factor until final integer damage";
 }
 
+TEST(NewHorizonsMagicV2RulesTest, VenomancerScalesTheWholeStoredBaseAfterItsNormalIntegerFloor)
+{
+	EXPECT_EQ(newHorizonsMagic::poisonBaseDamageBasisPoints(0, 11'500, 0, 20), 24)
+		<< "The fixed twenty-point Base is part of Venomancer's whole-Base bonus";
+	EXPECT_EQ(newHorizonsMagic::poisonBaseDamageBasisPoints(100, 11'500), 77);
+	EXPECT_EQ(newHorizonsMagic::poisonBaseDamageBasisPoints(100, 11'500, 0, 20), 92);
+	EXPECT_EQ(newHorizonsMagic::poisonBaseDamageBasisPoints(100, 12'650, 0, 20), 99);
+	EXPECT_EQ(newHorizonsMagic::poisonBaseDamageBasisPoints(100, 12'650, 20, 20), 114)
+		<< "Empower changes only the SP term before the whole calculated Base is boosted";
+	EXPECT_THROW(newHorizonsMagic::poisonBaseDamageBasisPoints(100, 11'500, 0, -1), std::invalid_argument);
+	EXPECT_THROW(newHorizonsMagic::poisonBaseDamageBasisPoints(100, 11'500, 0, 1001), std::invalid_argument);
+}
+
 TEST(NewHorizonsMagicV2RulesTest, ExpertMassRangeOverrideIsSavedV3AndSpellSpecific)
 {
 	const auto v1 = legacyRules();

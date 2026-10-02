@@ -285,6 +285,8 @@ set(test_SRCS
 		server/battles/NewHorizonsMagicalDamageReductionTest.cpp
 		server/battles/NewHorizonsStormOfDaggersTest.cpp
 		server/battles/NewHorizonsSanctuaryTest.cpp
+		server/battles/NewHorizonsSanctuaryKeeperTest.cpp
+		server/battles/NewHorizonsVenomancerTest.cpp
 		server/battles/NewHorizonsRegenerationTest.cpp
 		server/battles/NewHorizonsBerserkProfileTest.cpp
 		server/battles/NewHorizonsBerserkActivationTest.cpp
