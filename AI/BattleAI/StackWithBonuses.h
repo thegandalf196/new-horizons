@@ -15,6 +15,7 @@
 #include <optional>
 #include <set>
 #include <utility>
+#include <vector>
 
 #include <vcmi/Environment.h>
 #include <vcmi/ServerCallback.h>
@@ -191,8 +192,13 @@ public:
 	BattleID getBattleID() const override;
 	const ReducedExtraActivationState & getReducedExtraActivationState(BattleSide side) const override;
 	void setReducedExtraActivationState(BattleSide side, const ReducedExtraActivationState & state) override;
+	std::vector<HeroOrderState> getHeroOrderStates(BattleSide side) const override;
+	std::optional<HeroOrderState> getHeroOrderState(BattleSide side, HeroCommand command) const override;
 	std::optional<HeroOrderState> getHeroOrderState(BattleSide side) const override;
+	std::vector<HeroOrderState> battleGetHeroOrderStates(BattleSide side) const override;
+	std::optional<HeroOrderState> battleGetHeroOrderState(BattleSide side, HeroCommand command) const override;
 	std::optional<HeroOrderState> battleGetHeroOrderState(BattleSide side) const override;
+	HeroCommand getActiveOrder(BattleSide side) const override;
 	const RelentlessAssaultState & battleGetRelentlessAssaultState(BattleSide side) const override;
 	const RelentlessAssaultState & getRelentlessAssaultState(BattleSide side) const override;
 	void setRelentlessAssaultState(BattleSide side, const RelentlessAssaultState & state) override;
@@ -293,6 +299,7 @@ public:
 	bool projectHeroOrderAllowance(BattleSide side);
 	void expireProjectedTimeStops(BattleSide casterSide);
 	ui8 getProjectedPendingTimeStopHeroActionSides() const { return pendingTimeStopHeroActionSides; }
+	void setHeroOrderStates(BattleSide side, const std::vector<HeroOrderState> & states) override;
 	void setHeroOrderState(BattleSide side, const std::optional<HeroOrderState> & state) override;
 	std::optional<FocusFireState> getFocusFireState(BattleSide side) const override;
 	void setFocusFireState(BattleSide side, const FocusFireState & state);
@@ -410,7 +417,8 @@ public:
 
 private:
 	BattleSideArray<ReducedExtraActivationState> reducedExtraActivationStates;
-	BattleSideArray<std::optional<HeroOrderState>> heroOrderStates;
+	/// Newest Order is last; updates by command preserve this issuance order.
+	BattleSideArray<std::vector<HeroOrderState>> heroOrderStates;
 	BattleSideArray<AlternatingHeroActionState> warcastingStates;
 	BattleSideArray<HeroActionAllowanceState> heroActionAllowances;
 	BattleSideArray<bool> heroSpellCastCompletedStates;

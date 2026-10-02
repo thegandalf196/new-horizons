@@ -54,6 +54,85 @@ SideInBattle * findBattleSide(CGameState & gs, ObjectInstanceID heroID)
 	return nullptr;
 }
 
+bool hasSameHeroOrderIssuance(const HeroOrderState & previous, const HeroOrderState & next)
+{
+	return previous.command == next.command
+		&& previous.issuedRound == next.issuedRound
+		&& previous.primaryTargetUnitId == next.primaryTargetUnitId
+		&& previous.secondaryTargetUnitId == next.secondaryTargetUnitId
+		&& previous.protectInterceptionLimit == next.protectInterceptionLimit
+		&& previous.anchors == next.anchors
+		&& previous.warcastingBonusPercent == next.warcastingBonusPercent
+		&& previous.holdMagicalReductionBasisPoints == next.holdMagicalReductionBasisPoints;
+}
+
+void validateHeroOrderStateMutation(const IBattleInfo & battle, BattleSide side,
+	const std::vector<HeroOrderState> & updated)
+{
+	const auto previous = battle.getHeroOrderStates(side);
+	if(previous.size() != updated.size())
+		throw std::runtime_error("Canonical Hero Order state update cannot add or remove issued Orders");
+
+	std::set<uint32_t> referencedUnitIds;
+	const auto addReference = [&referencedUnitIds](uint32_t unitId)
+	{
+		if(unitId != HeroOrderState::INVALID_UNIT_ID)
+			referencedUnitIds.insert(unitId);
+	};
+	for(size_t index = 0; index < previous.size(); ++index)
+	{
+		const auto & before = previous[index];
+		const auto & after = updated[index];
+		if(!hasSameHeroOrderIssuance(before, after))
+			throw std::runtime_error("Canonical Hero Order state update changed its issuance snapshot");
+		const auto preservesProgress = [](const auto & nextProgress, const auto & previousProgress)
+		{
+			return std::includes(nextProgress.begin(), nextProgress.end(),
+				previousProgress.begin(), previousProgress.end());
+		};
+		if(!preservesProgress(after.consumedUnitIds, before.consumedUnitIds)
+			|| !preservesProgress(after.braceTriggeredUnitIds, before.braceTriggeredUnitIds)
+			|| !preservesProgress(after.holdBrokenUnitIds, before.holdBrokenUnitIds)
+			|| after.protectInterceptionsConsumed < before.protectInterceptionsConsumed
+			|| (before.protectBroken && !after.protectBroken)
+			|| after.flankTargets.size() != before.flankTargets.size())
+			throw std::runtime_error("Canonical Hero Order state update reversed or discarded spent progress");
+		for(size_t targetIndex = 0; targetIndex < before.flankTargets.size(); ++targetIndex)
+		{
+			const auto & oldTarget = before.flankTargets[targetIndex];
+			const auto & newTarget = after.flankTargets[targetIndex];
+			if(oldTarget.unitId != newTarget.unitId
+				|| (newTarget.sideMask & oldTarget.sideMask) != oldTarget.sideMask)
+				throw std::runtime_error("Canonical Flank update changed its target or discarded side progress");
+		}
+
+		addReference(after.primaryTargetUnitId);
+		addReference(after.secondaryTargetUnitId);
+		for(const auto unitId : after.consumedUnitIds)
+			addReference(unitId);
+		for(const auto unitId : after.braceTriggeredUnitIds)
+			addReference(unitId);
+		for(const auto unitId : after.holdBrokenUnitIds)
+			addReference(unitId);
+		for(const auto & anchor : after.anchors)
+			addReference(anchor.unitId);
+		for(const auto & target : after.flankTargets)
+			addReference(target.unitId);
+	}
+
+	if(referencedUnitIds.empty())
+		return;
+	std::set<uint32_t> existingUnitIds;
+	for(const auto * unit : battle.getUnitsIf([&referencedUnitIds](const battle::Unit * candidate)
+		{
+			return candidate && referencedUnitIds.contains(candidate->unitId());
+		}))
+		if(unit)
+			existingUnitIds.insert(unit->unitId());
+	if(existingUnitIds != referencedUnitIds)
+		throw std::runtime_error("Canonical Hero Order state update references a missing battle unit");
+}
+
 void validateBattleSpellPointSnapshots(const BattleInfo & battle)
 {
 	for(const auto sideID : {BattleSide::ATTACKER, BattleSide::DEFENDER})
@@ -1910,6 +1989,8 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		throw std::runtime_error("Retired Metamagic decline StartAction");
 	const bool canonicalOrder = pack.ba.actionType == EActionType::HERO_COMMAND
 		&& heroCommands::isCanonicalRules(battleContext->getHeroCommandRules());
+	if(pack.preserveOtherOrders && !canonicalOrder)
+		throw std::runtime_error("Non-Order StartAction cannot preserve canonical Hero Orders");
 	if(pack.orderState.has_value() != canonicalOrder)
 		throw std::runtime_error("Inconsistent canonical Order StartAction payload");
 	if(canonicalOrder)
@@ -1926,6 +2007,14 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		const auto expected = battleContext->battlePrepareHeroOrderState(pack.ba.side, pack.ba.command, targetUnitIds);
 		if(!expected || expected != pack.orderState)
 			throw std::runtime_error("Invalid canonical Order StartAction snapshot");
+		const auto existingOrders = battleContext->getHeroOrderStates(pack.ba.side);
+		if(pack.preserveOtherOrders != !existingOrders.empty())
+			throw std::runtime_error("Canonical Order StartAction has an invalid preserve-existing-orders mode");
+		if(pack.preserveOtherOrders && std::ranges::any_of(existingOrders, [&pack](const HeroOrderState & order)
+			{
+				return order.command == pack.ba.command;
+			}))
+			throw std::runtime_error("Canonical Order StartAction cannot duplicate an active Order");
 	}
 	if(pack.focusFire.has_value() != targeted)
 		throw std::runtime_error("Inconsistent targeted StartAction payload");
@@ -2028,11 +2117,17 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		if(targeted)
 			side.focusFire = pack.focusFire;
 		if(canonicalOrder)
-			side.orderState = pack.orderState;
+		{
+			if(pack.preserveOtherOrders)
+				commandBattle->setHeroOrderState(pack.ba.side, pack.orderState);
+			else
+				commandBattle->setHeroOrderStates(pack.ba.side,
+					pack.orderState ? std::vector<HeroOrderState>{*pack.orderState} : std::vector<HeroOrderState>{});
+		}
 		else
-			side.orderState.reset();
-		side.activeDoctrine = HeroCommand::NONE;
-		side.activeOrder = pack.ba.command;
+		{
+			commandBattle->setHeroOrderStates(pack.ba.side, {});
+		}
 		return;
 	}
 	CStack *st = gs.getBattle(pack.battleID)->getStack(pack.ba.stackNumber);
@@ -2162,19 +2257,30 @@ void GameStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderState
 		throw std::runtime_error("Canonical Hero Order state update in a legacy battle");
 	if(pack.side != BattleSide::ATTACKER && pack.side != BattleSide::DEFENDER)
 		throw std::runtime_error("Invalid side in canonical Hero Order state update");
-	if(pack.state)
+	if(!pack.states)
+		throw std::runtime_error("Canonical Hero Order update has no full collection");
+	const auto projection = pack.states->empty()
+		? std::optional<HeroOrderState>() : std::optional<HeroOrderState>(pack.states->back());
+	if(pack.state != projection)
+		throw std::runtime_error("Canonical Hero Order update has an invalid latest-order projection");
+	if(!pack.states->empty())
 	{
-		pack.state->validateShape();
-		if(pack.state->command != battle->getActiveOrder(pack.side)
-			|| pack.state->issuedRound != battle->getRound()
-			|| !heroCommands::supportedByRules(battle->getHeroCommandRules(), pack.state->command))
-			throw std::runtime_error("Canonical Hero Order state update does not match battle context");
+		for(const auto & order : *pack.states)
+		{
+			order.validateShape();
+			if(order.issuedRound != battle->getRound()
+				|| !heroCommands::supportedByRules(battle->getHeroCommandRules(), order.command))
+				throw std::runtime_error("Canonical Hero Order state update does not match battle context");
+		}
+		if(pack.state->command != battle->getActiveOrder(pack.side))
+			throw std::runtime_error("Canonical Hero Order state update does not match latest issued Order");
 	}
 	else if(battle->getActiveOrder(pack.side) != HeroCommand::NONE)
 	{
 		throw std::runtime_error("Canonical Hero Order state update would clear an active Order");
 	}
-	battle->setHeroOrderState(pack.side, pack.state);
+	validateHeroOrderStateMutation(*battle, pack.side, *pack.states);
+	battle->setHeroOrderStates(pack.side, *pack.states);
 }
 
 void GameStatePackVisitor::visitBattleDemonicGatingStateChanged(BattleDemonicGatingStateChanged & pack)
@@ -2761,11 +2867,25 @@ void BattleStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderSta
 		throw std::runtime_error("Canonical Hero Order state update targets another battle");
 	if(pack.side != BattleSide::ATTACKER && pack.side != BattleSide::DEFENDER)
 		throw std::runtime_error("Invalid side in canonical Hero Order state update");
-	if(pack.state)
-		pack.state->validateShape();
-	else if(battleState.getActiveOrder(pack.side) != HeroCommand::NONE)
+	if(!pack.states)
+		throw std::runtime_error("Canonical Hero Order update has no full collection");
+	const auto projection = pack.states->empty()
+		? std::optional<HeroOrderState>() : std::optional<HeroOrderState>(pack.states->back());
+	if(pack.state != projection)
+		throw std::runtime_error("Canonical Hero Order update has an invalid latest-order projection");
+	for(const auto & order : *pack.states)
+	{
+		order.validateShape();
+		if(order.issuedRound != battleState.getRound()
+			|| !heroCommands::supportedByRules(battleState.getHeroCommandRules(), order.command))
+			throw std::runtime_error("Canonical Hero Order state update does not match battle context");
+	}
+	if(!pack.states->empty() && pack.state->command != battleState.getActiveOrder(pack.side))
+		throw std::runtime_error("Canonical Hero Order state update does not match latest issued Order");
+	if(pack.states->empty() && battleState.getActiveOrder(pack.side) != HeroCommand::NONE)
 		throw std::runtime_error("Canonical Hero Order state update would clear an active Order");
-	battleState.setHeroOrderState(pack.side, pack.state);
+	validateHeroOrderStateMutation(battleState, pack.side, *pack.states);
+	battleState.setHeroOrderStates(pack.side, *pack.states);
 }
 
 void BattleStatePackVisitor::visitBattleAdverseRerollStateChanged(BattleAdverseRerollStateChanged & pack)

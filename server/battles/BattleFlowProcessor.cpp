@@ -325,7 +325,9 @@ void BattleFlowProcessor::publishHeroOrderState(const CBattleInfoCallback & batt
 	BattleHeroOrderStateChanged update;
 	update.battleID = battle.getBattle()->getBattleID();
 	update.side = side;
-	update.state = battle.battleGetHeroOrderState(side);
+	update.states = battle.getBattle()->getHeroOrderStates(side);
+	update.state = update.states->empty()
+		? std::optional<HeroOrderState>() : std::optional<HeroOrderState>(update.states->back());
 	gameHandler->sendAndApply(update);
 }
 
@@ -1821,7 +1823,7 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 	// being processed so its direct-damage penalty is applied authoritatively.
 	if(ba.actionType == EActionType::HERO_COMMAND && ba.command == HeroCommand::SECOND_WIND)
 	{
-		const auto state = battle.battleGetHeroOrderState(ba.side);
+		const auto state = battle.getBattle()->getHeroOrderState(ba.side, HeroCommand::SECOND_WIND);
 		const auto * target = state && state->primaryTargetUnitId != HeroOrderState::INVALID_UNIT_ID
 			? battle.battleGetStackByID(state->primaryTargetUnitId, false) : nullptr;
 		if(const auto * stateInfo = dynamic_cast<const BattleInfo *>(battle.getBattle());
@@ -1857,8 +1859,8 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 		const auto controllerSide = battle.playerToSide(battle.battleGetOwner(actedStack));
 		if(controllerSide == BattleSide::ATTACKER || controllerSide == BattleSide::DEFENDER)
 		{
-			if(const auto state = battle.battleGetHeroOrderState(controllerSide);
-				state && state->command == HeroCommand::SECOND_WIND && state->secondWindActive
+			if(const auto state = battle.getBattle()->getHeroOrderState(controllerSide, HeroCommand::SECOND_WIND);
+				state && state->secondWindActive
 				&& state->primaryTargetUnitId == actedStack->unitId())
 			{
 				if(const auto * stateInfo = dynamic_cast<const BattleInfo *>(battle.getBattle()))
@@ -2152,9 +2154,8 @@ void BattleFlowProcessor::setActiveStack(const CBattleInfoCallback & battle, con
 		const auto controllerSide = battle.playerToSide(battle.battleGetOwner(stack));
 		if(controllerSide == BattleSide::ATTACKER || controllerSide == BattleSide::DEFENDER)
 		{
-			const auto state = battle.battleGetHeroOrderState(controllerSide);
+			const auto state = battle.getBattle()->getHeroOrderState(controllerSide, HeroCommand::SECOND_WIND);
 			secondWindActivation = state
-				&& state->command == HeroCommand::SECOND_WIND
 				&& state->secondWindActive
 				&& state->primaryTargetUnitId == stack->unitId();
 		}

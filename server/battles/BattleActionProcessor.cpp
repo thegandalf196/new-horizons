@@ -365,15 +365,36 @@ static void appendHeroOrderCauseName(MetaString & line, const CBattleInfoCallbac
 	line.appendRawString(heroOrderDisplayName(command));
 }
 
+static void appendHeroOrderCauseNames(MetaString & line, const CBattleInfoCallback & battle,
+	const battle::Unit * unit, const std::vector<HeroCommand> & commands)
+{
+	for(size_t index = 0; index < commands.size(); ++index)
+	{
+		if(index != 0)
+			line.appendRawString(index + 1 == commands.size() ? " and " : ", ");
+		appendHeroOrderCauseName(line, battle, unit, commands[index]);
+	}
+}
+
+static std::vector<HeroCommand> damageOrderCauses(const DamageEstimation & estimation, bool attacker)
+{
+	const auto & causes = attacker ? estimation.attackerOrderCauses : estimation.defenderOrderCauses;
+	if(!causes.empty())
+		return causes;
+	const auto legacyCause = attacker ? estimation.attackerOrderCause : estimation.defenderOrderCause;
+	return legacyCause == HeroCommand::NONE ? std::vector<HeroCommand>{} : std::vector<HeroCommand>{legacyCause};
+}
+
 static MetaString orderDamageLogLine(const CBattleInfoCallback & battle, const CStack * attacker,
 	const battle::Unit * target, const BattleStackAttacked & hit,
-	HeroCommand attackerOrderCause, HeroCommand defenderOrderCause)
+	const std::vector<HeroCommand> & attackerOrderCauses,
+	const std::vector<HeroCommand> & defenderOrderCauses)
 {
 	MetaString line;
-	if(attackerOrderCause != HeroCommand::NONE)
+	if(!attackerOrderCauses.empty())
 	{
-		appendHeroOrderCauseName(line, battle, attacker, attackerOrderCause);
-		if(attackerOrderCause == HeroCommand::SECOND_WIND)
+		appendHeroOrderCauseNames(line, battle, attacker, attackerOrderCauses);
+		if(attackerOrderCauses.size() == 1 && attackerOrderCauses.front() == HeroCommand::SECOND_WIND)
 		{
 			line.appendRawString(" gave %s a reduced-strength follow-up against %s: ");
 			attacker->addNameReplacement(line, attacker->getCount());
@@ -381,7 +402,11 @@ static MetaString orderDamageLogLine(const CBattleInfoCallback & battle, const C
 		}
 		else
 		{
-			line.appendRawString(": %s struck %s for ");
+			line.appendRawString(attackerOrderCauses.size() > 1
+				? " jointly modified the strike: "
+				: ": %s struck %s for ");
+			if(attackerOrderCauses.size() > 1)
+				line.appendRawString("%s struck %s for ");
 			attacker->addNameReplacement(line, attacker->getCount());
 			target->addNameReplacement(line, target->getCount());
 		}
@@ -390,18 +415,18 @@ static MetaString orderDamageLogLine(const CBattleInfoCallback & battle, const C
 		line.appendNumber(hit.killedAmount);
 		line.appendRawString(" killed)");
 
-		if(defenderOrderCause != HeroCommand::NONE)
+		if(!defenderOrderCauses.empty())
 		{
 			line.appendRawString("; ");
-			appendHeroOrderCauseName(line, battle, target, defenderOrderCause);
+			appendHeroOrderCauseNames(line, battle, target, defenderOrderCauses);
 			line.appendRawString(" reduced the damage to %s");
 			target->addNameReplacement(line, target->getCount());
 		}
 		line.appendRawString(".");
 	}
-	else if(defenderOrderCause != HeroCommand::NONE)
+	else if(!defenderOrderCauses.empty())
 	{
-		appendHeroOrderCauseName(line, battle, target, defenderOrderCause);
+		appendHeroOrderCauseNames(line, battle, target, defenderOrderCauses);
 		line.appendRawString(" reduced the damage to %s: ");
 		target->addNameReplacement(line, target->getCount());
 		line.appendNumber(hit.damageAmount);
@@ -765,7 +790,9 @@ void BattleActionProcessor::publishHeroOrderState(const CBattleInfoCallback & ba
 	BattleHeroOrderStateChanged update;
 	update.battleID = battle.getBattle()->getBattleID();
 	update.side = side;
-	update.state = battle.battleGetHeroOrderState(side);
+	update.states = battle.getBattle()->getHeroOrderStates(side);
+	update.state = update.states->empty()
+		? std::optional<HeroOrderState>() : std::optional<HeroOrderState>(update.states->back());
 	gameHandler->sendAndApply(update);
 }
 
@@ -2490,7 +2517,7 @@ bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & batt
 	// unconditional bonuses and would lose their one-shot trigger state.
 	if(heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules()))
 	{
-		const auto state = battle.battleGetHeroOrderState(ba.side);
+		const auto state = battle.getBattle()->getHeroOrderState(ba.side, ba.command);
 		if(!state || state->command != ba.command)
 			return false;
 		size_t holdFastRecipientCount = 0;
@@ -2762,6 +2789,9 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		startAction.battleID = battle.getBattle()->getBattleID();
 		startAction.focusFire = preparedFocusFire;
 		startAction.orderState = preparedOrderState;
+		if(ba.actionType == EActionType::HERO_COMMAND
+			&& heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules()))
+			startAction.preserveOtherOrders = !battle.getBattle()->getHeroOrderStates(ba.side).empty();
 		gameHandler->sendAndApply(startAction);
 	}
 
@@ -2864,8 +2894,8 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 	auto start = currentUnit->getPosition();
 	if (start == dest)
 		return {};
-	const auto orderStateBeforeAttacker = battle.battleGetHeroOrderState(BattleSide::ATTACKER);
-	const auto orderStateBeforeDefender = battle.battleGetHeroOrderState(BattleSide::DEFENDER);
+	const auto orderStatesBeforeAttacker = battle.getBattle()->getHeroOrderStates(BattleSide::ATTACKER);
+	const auto orderStatesBeforeDefender = battle.getBattle()->getHeroOrderStates(BattleSide::DEFENDER);
 
 	//initing necessary tables
 	auto accessibility = battle.getAccessibility(currentUnit);
@@ -3180,9 +3210,9 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 		passed.clear();	//Just empty passed, obstacles will handled automatically
 	//handling obstacle on the final field (separate, because it affects both flying and walking stacks)
 	movementSuccess &= battle.handleObstacleTriggersForUnit(*gameHandler->spellEnv, *currentUnit, passed);
-	if(orderStateBeforeAttacker != battle.battleGetHeroOrderState(BattleSide::ATTACKER))
+	if(orderStatesBeforeAttacker != battle.getBattle()->getHeroOrderStates(BattleSide::ATTACKER))
 		publishHeroOrderState(battle, BattleSide::ATTACKER);
-	if(orderStateBeforeDefender != battle.battleGetHeroOrderState(BattleSide::DEFENDER))
+	if(orderStatesBeforeDefender != battle.getBattle()->getHeroOrderStates(BattleSide::DEFENDER))
 		publishHeroOrderState(battle, BattleSide::DEFENDER);
 
 	result.obstacleHit = !movementSuccess;
@@ -3348,8 +3378,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut,
 	RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows)
 {
-	std::optional<HeroOrderState> orderStateBeforeAttacker = battle.battleGetHeroOrderState(BattleSide::ATTACKER);
-	std::optional<HeroOrderState> orderStateBeforeDefender = battle.battleGetHeroOrderState(BattleSide::DEFENDER);
+	std::vector<HeroOrderState> orderStatesBeforeAttacker = battle.getBattle()->getHeroOrderStates(BattleSide::ATTACKER);
+	std::vector<HeroOrderState> orderStatesBeforeDefender = battle.getBattle()->getHeroOrderStates(BattleSide::DEFENDER);
 	bool protectIntercepted = attack.protectIntercepted;
 	// Protect redirects each qualifying melee blow until this saved Order's
 	// snapshot-aware interception allowance is consumed. Resolve and consume the
@@ -3367,9 +3397,9 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 				{
 					publishHeroOrderState(battle, side);
 					if(side == BattleSide::ATTACKER)
-						orderStateBeforeAttacker = battle.battleGetHeroOrderState(side);
+						orderStatesBeforeAttacker = battle.getBattle()->getHeroOrderStates(side);
 					else
-						orderStateBeforeDefender = battle.battleGetHeroOrderState(side);
+						orderStatesBeforeDefender = battle.getBattle()->getHeroOrderStates(side);
 				}
 			}
 			if(const auto * redirectedStack = dynamic_cast<const CStack *>(redirected))
@@ -3437,8 +3467,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	struct ResolvedOrderCauses
 	{
 		uint32_t targetUnitId;
-		HeroCommand attacker = HeroCommand::NONE;
-		HeroCommand defender = HeroCommand::NONE;
+		std::vector<HeroCommand> attacker;
+		std::vector<HeroCommand> defender;
 	};
 	std::vector<ResolvedOrderCauses> resolvedOrderCauses;
 	std::vector<MetaString> combatFeedbackLogLines;
@@ -3640,22 +3670,25 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 				relentlessAssault->lastRecordedTargetUnitId = defender->unitId();
 			}
 		}
-		if(estimation.attackerOrderCause != HeroCommand::NONE || estimation.defenderOrderCause != HeroCommand::NONE)
-			resolvedOrderCauses.push_back({defender->unitId(), estimation.attackerOrderCause, estimation.defenderOrderCause});
+		const auto attackerOrderCauses = damageOrderCauses(estimation, true);
+		const auto defenderOrderCauses = damageOrderCauses(estimation, false);
+		if(!attackerOrderCauses.empty() || !defenderOrderCauses.empty())
+			resolvedOrderCauses.push_back({defender->unitId(), attackerOrderCauses, defenderOrderCauses});
 		if(!attack.ranged && !attack.counter)
 		{
 			if(const auto * state = dynamic_cast<const BattleInfo *>(battle.getBattle()))
 			{
 				auto * mutableState = const_cast<BattleInfo *>(state);
 				const auto side = battle.playerToSide(battle.battleGetOwner(attacker));
-				const auto order = battle.battleGetHeroOrderState(side);
+				const auto chargeOrder = battle.getBattle()->getHeroOrderState(side, HeroCommand::CHARGE);
+				const auto flankOrder = battle.getBattle()->getHeroOrderState(side, HeroCommand::FLANK);
 				const bool eligibleOrderUnit = !attacker->isGhost() && !attacker->isTurret()
 					&& !attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
 					&& attacker->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER;
-				if(order && order->command == HeroCommand::CHARGE && eligibleOrderUnit && attack.distance >= 3)
+				if(chargeOrder && eligibleOrderUnit && attack.distance >= 3)
 					mutableState->consumeHeroOrderUnit(side, attacker->unitId());
-				if(order && order->command == HeroCommand::FLANK && eligibleOrderUnit
-					&& order->primaryTargetUnitId == defender->unitId())
+				if(flankOrder && eligibleOrderUnit
+					&& flankOrder->primaryTargetUnitId == defender->unitId())
 					mutableState->recordHeroOrderFlankSide(side, defender->unitId(), battle.battleHeroOrderFlankSide(attacker, defender));
 			}
 		}
@@ -3674,8 +3707,10 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			attack.archeryRangedDamageMultiplierPercent);
 		appendArcheryFeedback(estimation, unit);
 		appendGuardianSpiritFeedback(estimation, unit);
-		if(estimation.attackerOrderCause != HeroCommand::NONE || estimation.defenderOrderCause != HeroCommand::NONE)
-			resolvedOrderCauses.push_back({unit->unitId(), estimation.attackerOrderCause, estimation.defenderOrderCause});
+		const auto attackerOrderCauses = damageOrderCauses(estimation, true);
+		const auto defenderOrderCauses = damageOrderCauses(estimation, false);
+		if(!attackerOrderCauses.empty() || !defenderOrderCauses.empty())
+			resolvedOrderCauses.push_back({unit->unitId(), attackerOrderCauses, defenderOrderCauses});
 		if(!unit->isTimeStopped())
 			removeBonuses(battle, unit, *unit->getAllBonuses(Bonus::UntilTakingIndirectDamage));
 	}
@@ -3804,10 +3839,10 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			braceLogLine.appendRawString(" killed)");
 			const auto cause = std::ranges::find(resolvedOrderCauses, hit.stackAttacked,
 				&ResolvedOrderCauses::targetUnitId);
-			if(cause != resolvedOrderCauses.end() && cause->defender != HeroCommand::NONE)
+			if(cause != resolvedOrderCauses.end() && !cause->defender.empty())
 			{
 				braceLogLine.appendRawString(" despite ");
-				appendHeroOrderCauseName(braceLogLine, battle, target, cause->defender);
+				appendHeroOrderCauseNames(braceLogLine, battle, target, cause->defender);
 				braceLogLine.appendRawString(" reducing the damage");
 			}
 			wroteTarget = true;
@@ -3830,7 +3865,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 				continue;
 			auto line = orderDamageLogLine(battle, attacker, target, *hit, cause.attacker, cause.defender);
 			const auto * hero = battle.battleGetOwnerHero(attacker);
-			if(cause.attacker == HeroCommand::FOCUS_FIRE && attack.ranged && !bat.spellLike()
+			if(vstd::contains(cause.attacker, HeroCommand::FOCUS_FIRE) && attack.ranged && !bat.spellLike()
 				&& newHorizonsArchery::hasTargetCaller(hero))
 				line.appendRawString(" Target Caller adds +5 percentage points and ignores all obstacle penalties.");
 			orderDamageLogLines.push_back(std::move(line));
@@ -4093,9 +4128,9 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	// BattleStackAttacked updates are applied (for example, killing the protector).
 	// Publish every state transition made by the complete attack, including those
 	// updates, so remote battle snapshots cannot retain an armed pair.
-	if(orderStateBeforeAttacker != battle.battleGetHeroOrderState(BattleSide::ATTACKER))
+	if(orderStatesBeforeAttacker != battle.getBattle()->getHeroOrderStates(BattleSide::ATTACKER))
 		publishHeroOrderState(battle, BattleSide::ATTACKER);
-	if(orderStateBeforeDefender != battle.battleGetHeroOrderState(BattleSide::DEFENDER))
+	if(orderStatesBeforeDefender != battle.getBattle()->getHeroOrderStates(BattleSide::DEFENDER))
 		publishHeroOrderState(battle, BattleSide::DEFENDER);
 
 	{

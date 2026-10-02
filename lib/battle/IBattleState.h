@@ -9,6 +9,7 @@
  */
 
 #pragma once
+#include <algorithm>
 #include <limits>
 #include "CBattleInfoEssentials.h"
 #include "BattleUnitTurnReason.h"
@@ -105,7 +106,33 @@ public:
 	}
 	virtual HeroCommand getActiveDoctrine(BattleSide side) const { return HeroCommand::NONE; }
 	virtual HeroCommand getActiveOrder(BattleSide side) const { return HeroCommand::NONE; }
-	virtual std::optional<HeroOrderState> getHeroOrderState(BattleSide side) const { return {}; }
+	/// Returns all independent canonical Order snapshots, oldest issue first.
+	virtual std::vector<HeroOrderState> getHeroOrderStates(BattleSide side) const
+	{
+		(void)side;
+		return {};
+	}
+	/// Compatibility view of the latest issued Order.
+	virtual std::optional<HeroOrderState> getHeroOrderState(BattleSide side) const
+	{
+		const auto orders = getHeroOrderStates(side);
+		if(orders.empty())
+			return {};
+		return orders.back();
+	}
+	/// Looks up an Order by its stable command identifier, regardless of which
+	/// command was issued most recently.
+	virtual std::optional<HeroOrderState> getHeroOrderState(BattleSide side, HeroCommand command) const
+	{
+		const auto orders = getHeroOrderStates(side);
+		const auto found = std::find_if(orders.begin(), orders.end(), [command](const HeroOrderState & order)
+		{
+			return order.command == command;
+		});
+		if(found == orders.end())
+			return {};
+		return *found;
+	}
 	virtual std::optional<FocusFireState> getFocusFireState(BattleSide side) const { return {}; }
 	virtual bool hasCompletedHeroSpellCast(BattleSide side) const { (void)side; return false; }
 	virtual bool hasCompletedHeroSpellLevel(BattleSide side, int32_t level) const
@@ -199,10 +226,29 @@ public:
 	virtual void updateObstacle(const ObstacleChanges & changes) = 0;
 	virtual void removeObstacle(uint32_t id) = 0;
 
-	/// Applies an authoritative snapshot of transient canonical Order state.
-	/// The default keeps lightweight callback proxies and test doubles source
-	/// compatible; concrete battle state stores it.
-	virtual void setHeroOrderState(BattleSide, const std::optional<HeroOrderState> &) {}
+	/// Applies an authoritative full snapshot of transient canonical Order state.
+	virtual void setHeroOrderStates(BattleSide, const std::vector<HeroOrderState> &) {}
+	/// Updates one command in place without replacing its sibling Orders.
+	/// A null state clears the collection; issuance authorization is separate.
+	virtual void setHeroOrderState(BattleSide side, const std::optional<HeroOrderState> & state)
+	{
+		if(!state)
+		{
+			setHeroOrderStates(side, {});
+			return;
+		}
+		state->validateShape();
+		auto orders = getHeroOrderStates(side);
+		const auto existing = std::find_if(orders.begin(), orders.end(), [&state](const HeroOrderState & order)
+		{
+			return order.command == state->command;
+		});
+		if(existing == orders.end())
+			orders.push_back(*state);
+		else
+			*existing = *state;
+		setHeroOrderStates(side, orders);
+	}
 	virtual void setRelentlessAssaultState(BattleSide, const RelentlessAssaultState &) {}
 	virtual void recordRelentlessAssaultAttack(BattleSide, uint32_t) {}
 	virtual void setAdverseCombatRerollState(BattleSide, const AdverseCombatRerollState &) {}

@@ -129,7 +129,7 @@ public:
 		const auto command = sides.at(side).activeOrder;
 		return heroCommands::isActive(command) ? command : HeroCommand::NONE;
 	}
-	std::optional<HeroOrderState> getHeroOrderState(BattleSide side) const override { return sides.at(side).orderState; }
+	std::vector<HeroOrderState> getHeroOrderStates(BattleSide side) const override;
 	std::optional<FocusFireState> getFocusFireState(BattleSide side) const override { return sides.at(side).focusFire; }
 	/// Drop decode-only legacy Doctrine state and its battle-long bonuses.
 	/// Round Order bonuses are intentionally preserved.
@@ -188,6 +188,13 @@ public:
 		};
 		if(h.saving)
 		{
+			for(const auto & side : sides)
+			{
+				side.validateOrderStates();
+				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS)
+					&& side.orderStates.size() > 1)
+					throw std::runtime_error("Cannot discard simultaneous Hero Orders in an older format");
+			}
 			// CStack's binary payload deliberately omits CUnitState. Form state
 			// round-trips through UnitChanges JSON, but cannot silently survive a
 			// binary battle snapshot until that broader contract is implemented.
@@ -409,7 +416,7 @@ public:
 				}
 				const bool noPreRoundActionHistory = !side.heroCommandUsed && side.castSpellsCount == 0
 					&& side.metamagicPendingCount == 0 && side.metamagicUsesConsumed == 0
-					&& side.activeOrder == HeroCommand::NONE && !side.orderState && !side.focusFire
+					&& side.activeOrder == HeroCommand::NONE && side.orderStates.empty() && !side.focusFire
 					&& side.metamagicSequenceSpells.empty();
 				const bool cleanUninitializedLedger = allowances == HeroActionAllowanceState{};
 
@@ -487,8 +494,10 @@ public:
 			// carries readiness while its saved rules opt out is inconsistent.
 			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 			{
-				if(sides.at(side).warcastingState != AlternatingHeroActionState{}
-					|| (sides.at(side).orderState && sides.at(side).orderState->warcastingBonusPercent != 0))
+				const auto & orders = sides.at(side).orderStates;
+				const bool empoweredOrder = std::any_of(orders.begin(), orders.end(),
+					[](const HeroOrderState & order) { return order.warcastingBonusPercent != 0; });
+				if(sides.at(side).warcastingState != AlternatingHeroActionState{} || empoweredOrder)
 					throw std::runtime_error("Saved Warcasting state requires the opt-in magic rules");
 			}
 		}
@@ -541,7 +550,8 @@ public:
 		{
 			// Reject null/ambiguous unit references before postDeserialize dereferences
 			// units and resolves their army bindings. Validation does not need those bindings.
-			normalizeLegacyHeroCommandState();
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS))
+				normalizeLegacyHeroCommandState();
 			validateFocusFireStates();
 			validateRelentlessAssaultStates();
 			postDeserialize();
@@ -653,6 +663,7 @@ public:
 	void addObstacle(const ObstacleChanges & changes) override;
 	void updateObstacle(const ObstacleChanges& changes) override;
 	void removeObstacle(uint32_t id) override;
+	void setHeroOrderStates(BattleSide side, const std::vector<HeroOrderState> & states) override;
 	void setHeroOrderState(BattleSide side, const std::optional<HeroOrderState> & state) override;
 	void setRelentlessAssaultState(BattleSide side, const RelentlessAssaultState & state) override
 	{

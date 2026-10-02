@@ -1547,10 +1547,11 @@ void BattleInterface::presentAcceptedHeroOrder(const BattleAction & action)
 		|| pending->side != action.side || pending->command != action.command
 		|| pendingHeroOrderRound != getBattle()->battleGetRound()
 		|| !getBattle()->getBattle()->getHeroCommandUsed(action.side)
-		|| getBattle()->getBattle()->getActiveOrder(action.side) != action.command)
+		|| (getBattle()->getBattle()->getActiveOrder(action.side) != action.command
+			&& !getBattle()->battleGetHeroOrderState(action.side, action.command)))
 		return;
 
-	const auto state = getBattle()->battleGetHeroOrderState(action.side);
+	const auto state = getBattle()->battleGetHeroOrderState(action.side, action.command);
 	if(heroCommands::isCanonicalRules(getBattle()->getBattle()->getHeroCommandRules())
 		&& (!state || state->command != action.command || state->issuedRound != pendingHeroOrderRound))
 		return;

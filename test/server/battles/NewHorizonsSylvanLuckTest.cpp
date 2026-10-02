@@ -457,9 +457,10 @@ TEST_F(NewHorizonsSylvanLuckTest, GenuineActivationAndHypotheticalCopiesConsumeO
 	source->removeBonus(stopped);
 	HeroOrderState order;
 	order.command = HeroCommand::SECOND_WIND;
+	order.issuedRound = battle()->battleGetRound();
 	order.secondWindActive = true;
 	order.primaryTargetUnitId = source->unitId();
-	battle()->getSide(BattleSide::ATTACKER).orderState = order;
+	battle()->getSide(BattleSide::ATTACKER).upsertOrder(order);
 	battle()->nextTurn(source->unitId(), BattleUnitTurnReason::HERO_COMMAND);
 	EXPECT_FALSE(fortune.cascadingPending);
 	EXPECT_EQ(fortune.temporaryLuck(source->unitId()), 3);

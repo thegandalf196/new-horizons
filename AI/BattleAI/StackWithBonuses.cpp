@@ -758,7 +758,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		reducedExtraActivationStates[side] = realBattle->getBattle()->getReducedExtraActivationState(side);
-		heroOrderStates[side] = realBattle->getBattle()->getHeroOrderState(side);
+		heroOrderStates[side] = realBattle->getBattle()->getHeroOrderStates(side);
 		relentlessAssaultStates[side] = realBattle->getBattle()->getRelentlessAssaultState(side);
 		warcastingStates[side] = realBattle->getBattle()->getWarcastingState(side);
 		heroActionAllowances[side] = realBattle->getBattle()->getHeroActionAllowances(side);
@@ -992,14 +992,49 @@ void HypotheticBattle::setReducedExtraActivationState(BattleSide side,
 	reducedExtraActivationStates.at(side) = state;
 }
 
-std::optional<HeroOrderState> HypotheticBattle::getHeroOrderState(BattleSide side) const
+std::vector<HeroOrderState> HypotheticBattle::getHeroOrderStates(BattleSide side) const
 {
 	return heroOrderStates.at(side);
 }
 
+std::optional<HeroOrderState> HypotheticBattle::getHeroOrderState(BattleSide side, HeroCommand command) const
+{
+	const auto & states = heroOrderStates.at(side);
+	const auto found = std::find_if(states.begin(), states.end(), [command](const HeroOrderState & state)
+	{
+		return state.command == command;
+	});
+	return found == states.end() ? std::optional<HeroOrderState>() : *found;
+}
+
+std::optional<HeroOrderState> HypotheticBattle::getHeroOrderState(BattleSide side) const
+{
+	const auto & states = heroOrderStates.at(side);
+	return states.empty() ? std::optional<HeroOrderState>() : states.back();
+}
+
+std::vector<HeroOrderState> HypotheticBattle::battleGetHeroOrderStates(BattleSide side) const
+{
+	return getHeroOrderStates(side);
+}
+
+std::optional<HeroOrderState> HypotheticBattle::battleGetHeroOrderState(BattleSide side,
+	HeroCommand command) const
+{
+	return getHeroOrderState(side, command);
+}
+
 std::optional<HeroOrderState> HypotheticBattle::battleGetHeroOrderState(BattleSide side) const
 {
-	return heroOrderStates.at(side);
+	return getHeroOrderState(side);
+}
+
+HeroCommand HypotheticBattle::getActiveOrder(BattleSide side) const
+{
+	if(!heroCommands::isCanonicalRules(getHeroCommandRules()))
+		return BattleProxy::getActiveOrder(side);
+	const auto & states = heroOrderStates.at(side);
+	return states.empty() ? HeroCommand::NONE : states.back().command;
 }
 
 const RelentlessAssaultState & HypotheticBattle::battleGetRelentlessAssaultState(BattleSide side) const
@@ -1405,14 +1440,39 @@ bool HypotheticBattle::projectHeroOrderAllowance(BattleSide side)
 	return projectAcceptedHeroOrder(side, *prepared);
 }
 
+void HypotheticBattle::setHeroOrderStates(BattleSide side, const std::vector<HeroOrderState> & states)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::invalid_argument("Invalid hypothetical Hero Order side");
+	SideInBattle::validateOrderCollection(states);
+	if(heroOrderStates.at(side) == states)
+		return;
+	heroOrderStates.at(side) = states;
+	++bonusTreeVersion;
+}
+
 void HypotheticBattle::setHeroOrderState(BattleSide side, const std::optional<HeroOrderState> & state)
 {
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		throw std::invalid_argument("Invalid hypothetical Hero Order side");
-	if(state)
-		state->validateShape();
-	heroOrderStates.at(side) = state;
-	++bonusTreeVersion;
+	if(!state)
+	{
+		setHeroOrderStates(side, {});
+		return;
+	}
+	state->validateShape();
+	auto states = heroOrderStates.at(side);
+	const auto found = std::find_if(states.begin(), states.end(), [&](const HeroOrderState & current)
+	{
+		return current.command == state->command;
+	});
+	if(found == states.end())
+		states.push_back(*state);
+	else if(*found == *state)
+		return;
+	else
+		*found = *state;
+	setHeroOrderStates(side, states);
 }
 
 bool HypotheticBattle::consumeHeroOrderProtectInterception(uint32_t wardUnitId, uint32_t protectorUnitId)
@@ -1421,8 +1481,8 @@ bool HypotheticBattle::consumeHeroOrderProtectInterception(uint32_t wardUnitId, 
 	if(!ward)
 		return false;
 	const auto side = ward->unitSide();
-	auto state = battleGetHeroOrderState(side);
-	if(!state || state->command != HeroCommand::PROTECT || state->issuedRound != battleGetRound()
+	auto state = battleGetHeroOrderState(side, HeroCommand::PROTECT);
+	if(!state || state->issuedRound != battleGetRound()
 		|| state->secondaryTargetUnitId != wardUnitId || state->primaryTargetUnitId != protectorUnitId
 		|| state->protectBroken
 		|| state->protectInterceptionsConsumed >= battleHeroOrderProtectInterceptionLimit(side))
@@ -1516,6 +1576,7 @@ void HypotheticBattle::nextRound()
 	{
 		fortuneStates[side].nextRound();
 		moraleSuppressionStates[side].nextRound();
+		heroOrderStates[side].clear();
 	}
 	for(auto & [side, state] : focusFireStates)
 		state.reset();
@@ -1643,9 +1704,8 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 			const auto controllerSide = playerToSide(battleGetOwner(unit.get()));
 			if(controllerSide == BattleSide::ATTACKER || controllerSide == BattleSide::DEFENDER)
 			{
-				const auto orderState = getHeroOrderState(controllerSide);
+				const auto orderState = getHeroOrderState(controllerSide, HeroCommand::SECOND_WIND);
 				newActivation = orderState
-					&& orderState->command == HeroCommand::SECOND_WIND
 					&& orderState->secondWindActive
 					&& orderState->primaryTargetUnitId == unitId;
 			}
@@ -1686,10 +1746,9 @@ void HypotheticBattle::addUnit(uint32_t id, const JsonNode & data)
 	info.load(id, data);
 	auto newUnit = std::make_shared<StackWithBonuses>(this, info);
 	stackStates[newUnit->unitId()] = newUnit;
-	const auto & orderState = heroOrderStates.at(info.side);
+	const auto orderState = getHeroOrderState(info.side, HeroCommand::RIPOSTE);
 	const auto * hero = battleGetFightingHero(info.side);
-	if(orderState && orderState->command == HeroCommand::RIPOSTE
-		&& orderState->issuedRound == projectedRound
+	if(orderState && orderState->issuedRound == projectedRound
 		&& hero && hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE)
 		&& newUnit->alive() && !newUnit->isGhost() && !newUnit->isTurret()
 		&& !newUnit->hasBonusOfType(BonusType::SIEGE_WEAPON)
@@ -1701,13 +1760,57 @@ void HypotheticBattle::addUnit(uint32_t id, const JsonNode & data)
 void HypotheticBattle::moveUnit(uint32_t id, const BattleHex & destination)
 {
 	std::shared_ptr<StackWithBonuses> changed = getForUpdate(id);
-	if(changed->position != destination && changed->hasBonusOfType(BonusType::BIND_EFFECT))
+	const bool moved = changed->position != destination;
+	if(moved && changed->hasBonusOfType(BonusType::BIND_EFFECT))
 	{
 		if(const auto entangleSpell = entangleSpellId())
 			changed->removeUnitBonus(Selector::type()(BonusType::BIND_EFFECT)
 				.And(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(*entangleSpell))));
 	}
 	changed->position = destination;
+	if(!moved)
+		return;
+
+	const auto unitsAdjacent = [](const battle::Unit * first, const battle::Unit * second)
+	{
+		if(!first || !second)
+			return false;
+		for(const auto & firstHex : first->getHexes())
+		{
+			if(!firstHex.isValid())
+				continue;
+			for(const auto & secondHex : second->getHexes())
+				if(secondHex.isValid() && BattleHex::getDistance(firstHex, secondHex) == 1)
+					return true;
+		}
+		return false;
+	};
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		if(auto state = getHeroOrderState(side, HeroCommand::HOLD_THE_LINE);
+			state && !state->containsHoldBroken(id))
+		{
+			const auto * anchor = state->anchorFor(id);
+			if(anchor && anchor->position != destination.toInt())
+			{
+				state->holdBrokenUnitIds.insert(std::lower_bound(
+					state->holdBrokenUnitIds.begin(), state->holdBrokenUnitIds.end(), id), id);
+				setHeroOrderState(side, state);
+			}
+		}
+
+		if(auto state = getHeroOrderState(side, HeroCommand::PROTECT); state && !state->protectBroken)
+		{
+			const auto * protector = battleGetUnitByID(state->primaryTargetUnitId);
+			const auto * ward = battleGetUnitByID(state->secondaryTargetUnitId);
+			if(!protector || !ward || !protector->alive() || !ward->alive()
+				|| !unitsAdjacent(protector, ward))
+			{
+				state->protectBroken = true;
+				setHeroOrderState(side, state);
+			}
+		}
+	}
 }
 
 void HypotheticBattle::updateUnit(uint32_t id, const JsonNode & data, int64_t healthDelta)

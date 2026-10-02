@@ -183,7 +183,15 @@ local function getPhysicalDamageReductionFactor(info)
 	table.insert(reductions, { info.paviseDamageReductionPercent or 0, 100 })
 	table.insert(reductions, { info.battlecraftDefendReductionPercent or 0, 100 })
 	table.insert(reductions, { info.bulwarkDamageReductionBasisPoints or 0, 10000 })
-	table.insert(reductions, { info.heroOrderDamageReductionPercent or 0, 100 })
+	local orderReductions = info.heroOrderDamageReductionPercents or {}
+	if #orderReductions > 0 then
+		for _, value in ipairs(orderReductions) do
+			table.insert(reductions, { value, 100 })
+		end
+	else
+		-- Older callers may still provide the original single-reduction field.
+		table.insert(reductions, { info.heroOrderDamageReductionPercent or 0, 100 })
+	end
 
 	local remainingDamage = 1.0
 	for _, reduction in ipairs(reductions) do
@@ -611,7 +619,17 @@ function Script:calculate(battle, info)
 	-- Order-specific final multipliers are deliberately outside the additive
 	-- Offense/Archery factor. This keeps Brace and Second Wind penalties from
 	-- being cancelled by ordinary attack bonuses.
-	local heroOrderMultiplier = math.max(0, (info.heroOrderFinalDamageMultiplier or 100) / 100)
+	local heroOrderMultipliers = info.heroOrderFinalDamageMultipliers or {}
+	local heroOrderMultiplier = 1.0
+	if #heroOrderMultipliers > 0 then
+		for _, value in ipairs(heroOrderMultipliers) do
+			heroOrderMultiplier = heroOrderMultiplier * math.max(0, value / 100)
+		end
+	else
+		-- Older callers may still provide the original single-Order multiplier.
+		heroOrderMultiplier = math.max(0, (info.heroOrderFinalDamageMultiplier or 100) / 100)
+	end
+	local preemptiveDamageMultiplier = math.max(0, (info.preemptiveDamageMultiplier or 100) / 100)
 	local cleaveMultiplier = math.max(0, (info.cleaveFinalDamageMultiplier or 100) / 100)
 	local archeryRangedMultiplier = math.max(0, (info.archeryRangedDamageMultiplierPercent or 100) / 100)
 	local rangedFollowUpMultiplier = math.max(0, (info.rangedFollowUpDamagePercent or 100) / 100)
@@ -651,7 +669,7 @@ function Script:calculate(battle, info)
 	end
 
 	local damageFactor = raising * lowering * physicalDamageReductionMultiplier
-		* heroOrderMultiplier * cleaveMultiplier * archeryRangedMultiplier * rangedFollowUpMultiplier
+		* heroOrderMultiplier * preemptiveDamageMultiplier * cleaveMultiplier * archeryRangedMultiplier * rangedFollowUpMultiplier
 		* activationOutputMultiplier * phantomDamageMultiplier
 		* bulwarkImmovableMultiplier
 		* armorerBastionMultiplier
@@ -666,7 +684,7 @@ function Script:calculate(battle, info)
 		kills = { min = killsMin, max = killsMax },
 		-- what the blow would have been worth had the target no defences at all, which is what an
 		-- ability reflecting a strike works from
-		damageBeforeDefense = { min = apply(baseMin, raising * heroOrderMultiplier * cleaveMultiplier * rangedFollowUpMultiplier * activationOutputMultiplier), max = apply(baseMax, raising * heroOrderMultiplier * cleaveMultiplier * rangedFollowUpMultiplier * activationOutputMultiplier) }
+		damageBeforeDefense = { min = apply(baseMin, raising * heroOrderMultiplier * preemptiveDamageMultiplier * cleaveMultiplier * rangedFollowUpMultiplier * activationOutputMultiplier), max = apply(baseMax, raising * heroOrderMultiplier * preemptiveDamageMultiplier * cleaveMultiplier * rangedFollowUpMultiplier * activationOutputMultiplier) }
 	}
 end
 

@@ -382,9 +382,10 @@ TEST_F(NewHorizonsGamblerTest, NonPositiveFirstArrowAppliesPenaltyBeforeSecondAr
 
 	HeroOrderState secondWind;
 	secondWind.command = HeroCommand::SECOND_WIND;
+	secondWind.issuedRound = battle()->battleGetRound();
 	secondWind.secondWindActive = true;
 	secondWind.primaryTargetUnitId = shooter->unitId();
-	battle()->getSide(BattleSide::ATTACKER).orderState = secondWind;
+	battle()->getSide(BattleSide::ATTACKER).upsertOrder(secondWind);
 	activate(shooter, BattleUnitTurnReason::HERO_COMMAND);
 	EXPECT_EQ(gamblerPenalty(shooter), nullptr)
 		<< "Second Wind is a genuine activation even though its transition is HERO_COMMAND";

@@ -268,9 +268,10 @@ TEST_F(NewHorizonsReserveTest, OnlyAnOwningHeroDelayedQueueActivationQualifies)
 	EXPECT_EQ(skilled->getActivationMovementBonus(), 0);
 	HeroOrderState secondWind;
 	secondWind.command = HeroCommand::SECOND_WIND;
+	secondWind.issuedRound = battle()->battleGetRound();
 	secondWind.secondWindActive = true;
 	secondWind.primaryTargetUnitId = skilled->unitId();
-	battle()->getSide(BattleSide::DEFENDER).orderState = secondWind;
+	battle()->getSide(BattleSide::DEFENDER).upsertOrder(secondWind);
 	activate(skilled, BattleUnitTurnReason::HERO_COMMAND);
 	EXPECT_EQ(skilled->getActivationMovementBonus(), 0)
 		<< "Second Wind does not re-grant Reserve movement";

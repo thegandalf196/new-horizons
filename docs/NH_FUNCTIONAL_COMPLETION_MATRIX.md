@@ -14,6 +14,25 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-146 simultaneous different Orders foundation is implemented/native-verified.
+One authoritative per-side collection preserves independent targets, consumption
+and shared live/AI effects; typed consumers replace latest-only gameplay reads.
+Required existing UI hooks enumerate the collection and observe the action ledger.
+Append-only saves retain it, migrate older singleton records, and reject lossy
+downgrades before bytes. Packet mutations preserve issuance and forward progress.
+Both Linux targets build; principal retry75974 passes20/20 in31.867s, zero skips.
+The bounded adjacent Order/Iron Discipline/persistence suites pass37/37; eight
+Vengeance cases fail at an unchanged earlier-perk setup and remain explicit Phase2
+fixture work. Review reports no remaining blocking issue. No action allowance is
+granted by storage and Double Command remains planned pending its actual trigger.
+Perk/rank counts remain180/310 and84/93; no playable delivery is inferred.
+Phase2 deferrals for this slice: uncapped compound-reduction numeric fixtures,
+broader Order/perk/control/save matrices, and pre-existing hidden-enemy-hero
+coefficient behavior. Multiplication is source-reviewed; the bounded capped
+native fixture alone cannot distinguish additive from multiplicative reductions
+once either reaches the cap. Existing UI source guard passes7/7; rendered
+multi-indicator layout remains unverified and must not be described as final art.
+
 UP-145 Blood Scent is implemented and active after principal retry91133 passes
 5/5 in1.713s, zero skips. The shared physical attack payload treats Bloodrage as
 one rank-sized increment higher against an enemy strictly below half maximum
@@ -1257,7 +1276,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
-| Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
+| Orders registered | 8/8 | Config and `HeroCommand::isActive` agree. UP-146 adds native-verified independent simultaneous state/effects and action/AI/UI hooks; broader per-Order interaction coverage remains Phase2. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
 | Creature base-line Leadership requirements | 64/64 | Data coverage only; individual creature mechanics remain unaudited. |
 | Creature category forms | 126/126 | 50 Core, 58 Elite, 18 Champion are registered; this is not creature-ability coverage. |

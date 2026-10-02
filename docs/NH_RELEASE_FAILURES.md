@@ -2,6 +2,40 @@
 
 ## Purpose
 
+### 2026-10-02 UP-146 — sibling-Order packet integrity
+
+Pre-build review found that a full state-update packet could retain the newest
+Order while silently dropping an earlier sibling. Shape/round/latest validation
+alone is insufficient. Issuance belongs to StartAction and round expiry to the
+round transition; consumption updates must preserve the issued command sequence
+and immutable issue-time fields, and reject missing unit references before
+mutating state. Retained dead/ghost/changed-controller references are valid.
+Repair and atomic-rejection native fixtures are pending; no failed build or
+native pass is claimed from this source-review finding.
+Fixture build42111 subsequently fails because standalone SideInBattle instances
+require an explicit GameCallbackHolder argument. Root gives both isolated
+serialization-test instances a null callback; this test serializes IDs/state
+without dereferencing a game context. Preserve the original build log and
+rebuild before running native tests; production/default constructors are not
+changed to accommodate a fixture.
+Retry96338 builds successfully. Principal13014 runs20 cases:19pass/1fail,
+zero skips,32.516s; UP146-principal.log/.xml retain the result. The client-visitor
+fixture reuses an isolated wire helper's BattleID7 against live battle0, so even
+its valid progress is rejected. Root binds all three contextual packets to the
+live battle ID. Keep the valid-progress assertion and the production identity
+check; rebuild/retry must establish the intended mutation checks, not merely
+accept rejection caused by an unrelated packet field.
+Rebuild62682 succeeds; principal retry75974 passes20/20, zero skips,31.867s.
+Adjacent87780 passes38/46 in12.558s, zero skips. Eight unchanged Vengeance
+fixtures stop before their Order execution path with "Earlier New Horizons perk
+tier is still required": their prepare helper directly selects Advanced
+Vengeance without a Basic Offense perk. Preserve UP146-adjacent.log/.xml;
+repair those acquisition fixtures in Phase2, without relaxing production
+progression. Order, Iron Discipline and persistence suites in that filter pass.
+The capped-reduction fixture does not independently prove uncapped multiplicative
+arithmetic; that additional numeric matrix is deferred, while production Lua's
+independent multiplication is reviewed directly. No broad-suite pass is claimed.
+
 ### 2026-10-02 UP-145 — Blood Scent principal fixture reference
 
 Both Linux targets compile. First principal61899 passes3/5, zero skips,1.740s;

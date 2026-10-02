@@ -127,6 +127,11 @@ public:
 	std::vector<uint32_t> battleFortuneAdjacentFriends(const battle::Unit * unit) const;
 	/// Expected luck damage used by the AI, without consuming RNG.
 	int64_t battleExpectedLuckDamage(const BattleAttackInfo & attack) const;
+	/// All active Order snapshots for the side, newest issued last.
+	virtual std::vector<HeroOrderState> battleGetHeroOrderStates(BattleSide side) const;
+	/// One active Order snapshot by command identity.
+	virtual std::optional<HeroOrderState> battleGetHeroOrderState(BattleSide side, HeroCommand command) const;
+	/// Compatibility projection of the newest active Order snapshot.
 	virtual std::optional<HeroOrderState> battleGetHeroOrderState(BattleSide side) const;
 	/// Current cumulative physical creature damage percentage for the unit's side.
 	int battleGetBloodrageDamagePercent(const battle::Unit * unit) const;

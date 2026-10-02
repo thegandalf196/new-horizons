@@ -57,6 +57,9 @@ struct DLL_LINKAGE DamageEstimation
 	/// Order whose defensive effect contributed to this estimate, if any.
 	/// Kept separately because both sides can have an active Order for the same hit.
 	HeroCommand defenderOrderCause = HeroCommand::NONE;
+	/// All contributing simultaneous Orders, in issue order; transient feedback only.
+	std::vector<HeroCommand> attackerOrderCauses;
+	std::vector<HeroCommand> defenderOrderCauses;
 	/// Transient Archery explanation data for combat feedback and forecasts.
 	int archeryDefenseIgnorePercent = 0;
 	int archeryCrossfireDamagePercent = 0;

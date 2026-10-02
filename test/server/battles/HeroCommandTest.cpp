@@ -401,6 +401,7 @@ TEST_F(HeroCommandTest, HeroOrderStatePacketRoundTripsThroughClientPackPointer)
 	state.protectInterceptionsConsumed = 2;
 	state.protectInterceptionLimit = 2;
 	outgoing.state = state;
+	outgoing.states = std::vector<HeroOrderState>{state};
 
 	const CPackForClient & base = outgoing;
 	auto polymorphic = CMemorySerializer::deepCopy(base);
@@ -455,6 +456,7 @@ TEST_F(HeroCommandTest, FlankSideMaskRoundTripsThroughClientPackPointer)
 	state.primaryTargetUnitId = 11;
 	state.flankTargets.push_back({11, 0b100101});
 	outgoing.state = state;
+	outgoing.states = std::vector<HeroOrderState>{state};
 
 	const CPackForClient & base = outgoing;
 	auto polymorphic = CMemorySerializer::deepCopy(base);
@@ -649,7 +651,7 @@ TEST_F(IronDisciplineTest, HoldTheLineCapturesHalfClampedPhysicalReductionInclud
 
 	const BattleAttackInfo incoming(enemy, held, 0, false);
 	const auto physicalWithPerk = battle()->calculateDmgRange(incoming).damage;
-	auto & savedState = *battle()->getSide(BattleSide::ATTACKER).orderState;
+	auto & savedState = *battle()->getSide(BattleSide::ATTACKER).findOrder(HeroCommand::HOLD_THE_LINE);
 	savedState.holdMagicalReductionBasisPoints = 0;
 	const auto physicalWithoutMagicalComponent = battle()->calculateDmgRange(incoming).damage;
 	EXPECT_EQ(physicalWithPerk.min, physicalWithoutMagicalComponent.min);
@@ -675,7 +677,7 @@ TEST_F(IronDisciplineTest, HoldTheLineMagicalReductionRequiresAnAnchoredUnbroken
 
 	const BattleAttackInfo incoming(enemy, held, 0, false);
 	const auto heldDamage = battle()->calculateDmgRange(incoming).damage.min;
-	auto & order = *battle()->getSide(BattleSide::ATTACKER).orderState;
+	auto & order = *battle()->getSide(BattleSide::ATTACKER).findOrder(HeroCommand::HOLD_THE_LINE);
 	order.holdBrokenUnitIds.push_back(held->unitId());
 	EXPECT_EQ(battle()->battleGetHoldTheLineMagicalReductionBasisPoints(held), 0);
 	EXPECT_GT(battle()->calculateDmgRange(incoming).damage.min, heldDamage)
@@ -748,7 +750,7 @@ TEST_F(IronDisciplineTest, MagicalReductionStacksWithOrdinaryReductionAndMatches
 	const auto mechanics = spell->battleMechanics(&event);
 	const auto savedStateBeforeForecast = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
 	ASSERT_TRUE(savedStateBeforeForecast);
-	auto & savedState = *battle()->getSide(BattleSide::ATTACKER).orderState;
+	auto & savedState = *battle()->getSide(BattleSide::ATTACKER).findOrder(HeroCommand::HOLD_THE_LINE);
 	const int reductionBasisPoints = savedState.holdMagicalReductionBasisPoints;
 	savedState.holdMagicalReductionBasisPoints = 0;
 	const int64_t ordinaryMagicalReductionDamage = mechanics->adjustEffectValue(held);

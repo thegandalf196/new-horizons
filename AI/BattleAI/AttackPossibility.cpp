@@ -876,7 +876,8 @@ AttackPossibility AttackPossibility::evaluate(
 			defenderStates[u->unitId()] = defenderState;
 		}
 		const auto protectSide = requestedDefender->unitSide();
-		auto protectOrder = projectsProtect ? state->battleGetHeroOrderState(protectSide) : std::nullopt;
+		auto protectOrder = projectsProtect
+			? state->battleGetHeroOrderState(protectSide, HeroCommand::PROTECT) : std::nullopt;
 		uint8_t projectedProtectInterceptionsConsumed = protectOrder
 			? protectOrder->protectInterceptionsConsumed : 0;
 		int64_t projectedRainPrimaryDamage = 0;
@@ -991,9 +992,8 @@ AttackPossibility AttackPossibility::evaluate(
 			{
 				if(fortunePreview)
 				{
-					auto order = fortunePreview->battleGetHeroOrderState(protectSide);
-					if(order && order->command == HeroCommand::PROTECT
-						&& order->secondaryTargetUnitId == requestedDefender->unitId()
+					auto order = fortunePreview->battleGetHeroOrderState(protectSide, HeroCommand::PROTECT);
+					if(order && order->secondaryTargetUnitId == requestedDefender->unitId()
 						&& order->primaryTargetUnitId == strikeDefender->unitId()
 						&& order->protectInterceptionsConsumed
 							< fortunePreview->battleHeroOrderProtectInterceptionLimit(protectSide)

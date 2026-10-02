@@ -295,7 +295,7 @@ void BattleHeroActionWindow::createOrdersLayout()
 	targetReadback = std::make_shared<CMultiLineLabel>(Rect(16, 378, 516, 30), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "");
 	labels.push_back(targetReadback);
 	orderInstructions = std::make_shared<CMultiLineLabel>(Rect(16, 412, 516, 45), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
-		"Targeted Orders select stacks directly on the battlefield. Protect uses two clicks: Protector, then adjacent Ward.\nRight-click/Escape cancels without spending the shared hero action.");
+		"Targeted Orders select stacks directly on the battlefield. Protect uses two clicks: Protector, then adjacent Ward.\nRight-click/Escape cancels without spending an action.");
 	labels.push_back(std::make_shared<CLabel>(320, 463, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "Orders end with this round"));
 	cancel = std::make_shared<CButton>(Point(548, 443), AnimationPath::builtin("NH_cancel_button"),
 		CButton::tooltip("Cancel", "Return to battle and clear any Perfect Moment declaration without spending an action."), [this] { cancelSelection(); }, EShortcut::GLOBAL_CANCEL);
@@ -423,6 +423,17 @@ void BattleHeroActionWindow::refresh()
 	if(spellButton)
 		spellButton->block(!canAct || !canSpell);
 	bool anyCommand = false;
+	const auto orderBudgetSpent = [&]
+	{
+		if(callback->battleUsesHeroCommands())
+		{
+			const auto round = callback->battleGetRound();
+			const auto & allowances = callback->getBattle()->getHeroActionAllowances(side);
+			return round < 0 || allowances.currentRound != round
+				|| !allowances.eligibleAllowance(HeroActionAllowanceState::ActionKind::ORDER, round);
+		}
+		return callback->getBattle()->getHeroCommandUsed(side) || callback->battleCastSpells(side) != 0;
+	};
 	const auto commonReason = [&]
 	{
 		if(!callback->battleUsesHeroCommands())
@@ -437,8 +448,8 @@ void BattleHeroActionWindow::refresh()
 			return std::string("Finish or cancel spell targeting first.");
 		if(!owner->makingTurn())
 			return std::string("It is not your turn.");
-		if(callback->getBattle()->getHeroCommandUsed(side) || callback->battleCastSpells(side) != 0)
-			return std::string("The shared hero action has already been spent.");
+		if(orderBudgetSpent())
+			return std::string("No Hero or Order action is available.");
 		return std::string();
 	};
 	for(size_t i = 0; i < commands.size(); ++i)
@@ -478,10 +489,10 @@ void BattleHeroActionWindow::refresh()
 		entry.second->setHelp(CButton::tooltip(display.name,
 			std::string(display.description) + (reason.empty() ? "\n\nReady: choose this Order." : "\n\nDisabled: " + reason)
 			+ combinedArmsHelp(rules, entry.first, hero)
-			+ "\nOne shared hero action; no mana."));
+			+ "\nSpends an available Hero or Order action; no mana."));
 		if(protectPairUnavailable)
 			entry.second->setBorderColor(Colors::ORANGE);
-		else if(entry.first == callback->battleGetActiveOrder(side))
+		else if(callback->battleGetHeroOrderState(side, entry.first))
 			entry.second->setBorderColor(Colors::YELLOW);
 		else
 			entry.second->setBorderColor(std::nullopt);
@@ -490,9 +501,15 @@ void BattleHeroActionWindow::refresh()
 	if(targetReadback)
 	{
 		std::string readback = "Targeted Orders: Focus Fire/Flank choose an enemy; Protect chooses Protector then Ward; Second Wind chooses a spent friendly activation.";
-		if(const auto active = callback->battleGetHeroOrderState(side))
+		const auto activeOrders = callback->battleGetHeroOrderStates(side);
+		if(!activeOrders.empty())
+			readback.clear();
+		for(const auto & activeOrder : activeOrders)
 		{
-			readback = "Active Order: " + HeroCommandUI::name(active->command) + " (round " + std::to_string(active->issuedRound) + ")";
+			const auto * active = &activeOrder;
+			if(!readback.empty())
+				readback += "\n";
+			readback += "Active Order: " + HeroCommandUI::name(active->command) + " (round " + std::to_string(active->issuedRound) + ")";
 			if(active->command == HeroCommand::HOLD_THE_LINE)
 			{
 				readback += " | anchored stacks: " + std::to_string(active->anchors.size());
@@ -526,8 +543,20 @@ void BattleHeroActionWindow::refresh()
 				readback += " | stack " + std::to_string(active->primaryTargetUnitId)
 					+ (active->secondWindActive ? " | extra activation active" : " | pending activation");
 		}
-		else if(order != HeroCommand::NONE)
+		if(activeOrders.empty() && order != HeroCommand::NONE)
 			readback = "Active Order: " + HeroCommandUI::name(order) + ". Targeted effects remain subject to current unit state.";
+		if(activeOrders.size() > 1)
+		{
+			// Keep the fixed-height readback economical; detailed recipient effects
+			// remain available on the stack's individual Order indicators.
+			readback = "Active Orders: ";
+			for(size_t index = 0; index < activeOrders.size(); ++index)
+			{
+				if(index != 0)
+					readback += ", ";
+				readback += HeroCommandUI::name(activeOrders[index].command);
+			}
+		}
 		if(targetReadback->getText() != readback)
 			targetReadback->setText(readback);
 	}
@@ -549,8 +578,8 @@ void BattleHeroActionWindow::refresh()
 			availability = "Finish or cancel spell targeting";
 		else if(!owner->makingTurn())
 			availability = "Not your turn";
-		else if(callback->getBattle()->getHeroCommandUsed(side) || callback->battleCastSpells(side) != 0)
-			availability = "Shared hero action spent";
+		else if(orderBudgetSpent())
+			availability = "No Hero or Order action available";
 		else
 			availability = anyCommand ? "Order available" : "No Order currently available";
 	}

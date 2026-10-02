@@ -15,6 +15,8 @@
 
 #include <vcmi/scripting/ApiTags.h>
 
+#include <vector>
+
 class CBattleInfoCallback;
 
 namespace battle
@@ -110,6 +112,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int battlecraftDefendReductionPercent = 0;
 	/// Physical damage reduction supplied by the defending stack's canonical Order.
 	int heroOrderDamageReductionPercent = 0;
+	/// Independent canonical Order reductions, each multiplied before the shared cap.
+	std::vector<int> heroOrderDamageReductionPercents;
 	/// Bulwark reduction in basis points (one hundredth of one percentage point).
 	/// This preserves Advanced's half-percent base and 0.15% Defense coefficient.
 	int bulwarkDamageReductionBasisPoints = 0;
@@ -126,6 +130,11 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	/// after normal additive attack/defense factors so a penalty cannot be
 	/// cancelled by Offense/Archery bonuses. 100 is neutral.
 	int heroOrderFinalDamageMultiplier = 100;
+	/// Independent final multipliers supplied by all applicable canonical Orders.
+	std::vector<int> heroOrderFinalDamageMultipliers;
+	/// Final multiplier for a non-Order pre-emptive attack such as Bulwark.
+	/// Kept separate from Order multipliers so neither source overwrites the other.
+	int preemptiveDamageMultiplier = 100;
 	/// Independent final multiplier for an automatic Cleave strike. This composes
 	/// with Orders instead of overwriting their explicit final multiplier.
 	int cleaveFinalDamageMultiplier = 100;
@@ -213,6 +222,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Independent physical reduction while Defending under Battlecraft.");
 		s("heroOrderDamageReductionPercent", heroOrderDamageReductionPercent,
 			"Physical damage reduction supplied by the defending canonical Order.");
+		s("heroOrderDamageReductionPercents", heroOrderDamageReductionPercents,
+			"Independent physical damage reductions supplied by all applicable canonical Orders.");
 		s("bulwarkDamageReductionBasisPoints", bulwarkDamageReductionBasisPoints,
 			"Bulwark physical damage reduction in basis points.");
 		s("bulwarkImmovableFinalDamageMultiplier", bulwarkImmovableFinalDamageMultiplier,
@@ -225,6 +236,10 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Defend's temporary Creature Defense contribution available to Breakthrough.");
 		s("heroOrderFinalDamageMultiplier", heroOrderFinalDamageMultiplier,
 			"Final multiplicative damage percentage supplied by the active canonical Order; 100 is neutral.");
+		s("heroOrderFinalDamageMultipliers", heroOrderFinalDamageMultipliers,
+			"Independent final damage percentages supplied by all applicable canonical Orders.");
+		s("preemptiveDamageMultiplier", preemptiveDamageMultiplier,
+			"Final multiplier for a non-Order pre-emptive attack, independent of Order effects.");
 		s("cleaveFinalDamageMultiplier", cleaveFinalDamageMultiplier,
 			"Final multiplicative percentage for an automatic Cleave strike; 100 is neutral.");
 		s("archeryRangedDamageMultiplierPercent", archeryRangedDamageMultiplierPercent,

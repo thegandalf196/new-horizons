@@ -208,8 +208,8 @@ void BattleInfo::clearBloodrageStackDeath(uint32_t unitId)
 
 bool BattleInfo::consumeHeroOrderUnit(BattleSide side, uint32_t unitId)
 {
-	auto & state = sides.at(side).orderState;
-	if(!state || state->command != HeroCommand::CHARGE || state->containsConsumed(unitId))
+	auto * state = sides.at(side).findOrder(HeroCommand::CHARGE);
+	if(!state || state->containsConsumed(unitId))
 		return false;
 	state->consumedUnitIds.insert(std::lower_bound(state->consumedUnitIds.begin(), state->consumedUnitIds.end(), unitId), unitId);
 	return true;
@@ -217,20 +217,20 @@ bool BattleInfo::consumeHeroOrderUnit(BattleSide side, uint32_t unitId)
 
 bool BattleInfo::triggerHeroOrderBrace(BattleSide side, uint32_t unitId)
 {
-	auto & state = sides.at(side).orderState;
+	const auto * state = sides.at(side).findOrder(HeroCommand::BRACE);
 	// Brace is a reaction to every qualifying incoming melee attack, not a
 	// once-per-unit/round charge. Keep the old entry point for callers while
 	// making the trigger itself stateless and therefore deterministic on clients.
 	(void)unitId;
-	return state && state->command == HeroCommand::BRACE;
+	return state != nullptr;
 }
 
 bool BattleInfo::breakHeroOrderHold(uint32_t unitId)
 {
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
-		auto & state = sides.at(side).orderState;
-		if(!state || state->command != HeroCommand::HOLD_THE_LINE || state->containsHoldBroken(unitId))
+		auto * state = sides.at(side).findOrder(HeroCommand::HOLD_THE_LINE);
+		if(!state || state->containsHoldBroken(unitId))
 			continue;
 		const auto * anchor = state->anchorFor(unitId);
 		const auto * unit = battleGetUnitByID(unitId);
@@ -245,8 +245,8 @@ bool BattleInfo::breakHeroOrderHold(uint32_t unitId)
 
 bool BattleInfo::interceptHeroOrderProtect(BattleSide side)
 {
-	auto & state = sides.at(side).orderState;
-	if(!state || state->command != HeroCommand::PROTECT || state->issuedRound != getRound()
+	auto * state = sides.at(side).findOrder(HeroCommand::PROTECT);
+	if(!state || state->issuedRound != getRound()
 		|| state->protectInterceptionsConsumed >= battleHeroOrderProtectInterceptionLimit(side)
 		|| state->protectBroken)
 		return false;
@@ -254,19 +254,39 @@ bool BattleInfo::interceptHeroOrderProtect(BattleSide side)
 	return true;
 }
 
+std::vector<HeroOrderState> BattleInfo::getHeroOrderStates(BattleSide side) const
+{
+	return sides.at(side).orderStates;
+}
+
+void BattleInfo::setHeroOrderStates(BattleSide side, const std::vector<HeroOrderState> & states)
+{
+	auto & sideState = sides.at(side);
+	sideState.replaceOrders(states);
+	sideState.activeOrder = sideState.orderStates.empty() ? HeroCommand::NONE : sideState.orderStates.back().command;
+}
+
 void BattleInfo::setHeroOrderState(BattleSide side, const std::optional<HeroOrderState> & state)
 {
+	auto & sideState = sides.at(side);
 	if(state)
-		state->validateShape();
-	sides.at(side).orderState = state;
+	{
+		sideState.upsertOrder(*state);
+		sideState.activeOrder = sideState.orderStates.back().command;
+	}
+	else
+	{
+		sideState.orderStates.clear();
+		sideState.activeOrder = HeroCommand::NONE;
+	}
 }
 
 void BattleInfo::expireSeparatedHeroOrderProtect()
 {
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
-		auto & state = sides.at(side).orderState;
-		if(!state || state->command != HeroCommand::PROTECT || state->protectBroken)
+		auto * state = sides.at(side).findOrder(HeroCommand::PROTECT);
+		if(!state || state->protectBroken)
 			continue;
 		const auto * protector = getStack(static_cast<int>(state->primaryTargetUnitId), false);
 		const auto * ward = getStack(static_cast<int>(state->secondaryTargetUnitId), false);
@@ -277,8 +297,8 @@ void BattleInfo::expireSeparatedHeroOrderProtect()
 
 bool BattleInfo::recordHeroOrderFlankSide(BattleSide side, uint32_t targetUnitId, uint8_t sideMask)
 {
-	auto & state = sides.at(side).orderState;
-	if(!state || state->command != HeroCommand::FLANK || sideMask == 0 || sideMask > 0x3f)
+	auto * state = sides.at(side).findOrder(HeroCommand::FLANK);
+	if(!state || sideMask == 0 || sideMask > 0x3f)
 		return false;
 	auto * target = state->flankFor(targetUnitId);
 	if(!target || (target->sideMask & sideMask) == sideMask)
@@ -289,8 +309,8 @@ bool BattleInfo::recordHeroOrderFlankSide(BattleSide side, uint32_t targetUnitId
 
 bool BattleInfo::setHeroOrderSecondWindActive(BattleSide side, bool active)
 {
-	auto & state = sides.at(side).orderState;
-	if(!state || state->command != HeroCommand::SECOND_WIND)
+	auto * state = sides.at(side).findOrder(HeroCommand::SECOND_WIND);
+	if(!state)
 		return false;
 	state->secondWindActive = active;
 	return true;
@@ -1053,7 +1073,7 @@ void BattleInfo::nextRound()
 		sides.at(i).moraleSuppression.nextRound();
 		sides.at(i).heroCommandUsed = false;
 		sides.at(i).activeOrder = HeroCommand::NONE;
-		sides.at(i).orderState.reset();
+		sides.at(i).orderStates.clear();
 		sides.at(i).focusFire.reset();
 		// Unspent round-long Metamagic Spell grants expire below; the per-combat
 		// Metamagic and Grand/Formula budgets remain.
@@ -1152,9 +1172,8 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 			const auto controllerSide = playerToSide(battleGetOwner(st));
 			if(controllerSide == BattleSide::ATTACKER || controllerSide == BattleSide::DEFENDER)
 			{
-				const auto & orderState = sides.at(controllerSide).orderState;
+				const auto * orderState = sides.at(controllerSide).findOrder(HeroCommand::SECOND_WIND);
 				newActivation = orderState
-					&& orderState->command == HeroCommand::SECOND_WIND
 					&& orderState->secondWindActive
 					&& orderState->primaryTargetUnitId == unitId;
 			}
@@ -1260,9 +1279,9 @@ void BattleInfo::addUnit(uint32_t id, const JsonNode & data)
 	stacks.back()->natureSummoned = info.natureSummoned;
 	if(info.phantomIntegrity > 0)
 		stacks.back()->initializePhantomProfile(info.phantomIntegrity, info.phantomDuration);
-	const auto & orderState = sides.at(info.side).orderState;
+	const auto * orderState = sides.at(info.side).findOrder(HeroCommand::RIPOSTE);
 	const auto * hero = battleGetFightingHero(info.side);
-	if(orderState && orderState->command == HeroCommand::RIPOSTE && orderState->issuedRound == round
+	if(orderState && orderState->issuedRound == round
 		&& hero && hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE))
 	{
 		auto * addedUnit = stacks.back().get();
@@ -1302,8 +1321,8 @@ void BattleInfo::moveUnit(uint32_t id, const BattleHex & destination)
 
 		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		{
-			auto & state = sides.at(side).orderState;
-			if(!state || state->command != HeroCommand::HOLD_THE_LINE || state->containsHoldBroken(id))
+			auto * state = sides.at(side).findOrder(HeroCommand::HOLD_THE_LINE);
+			if(!state || state->containsHoldBroken(id))
 				continue;
 			if(const auto * anchor = state->anchorFor(id); anchor && anchor->position != destination.toInt())
 			{
@@ -1801,6 +1820,8 @@ void BattleInfo::validateFocusFireStates() const
 	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		const auto & state = sides.at(side);
+		state.validateOrderStates();
+		const bool canonicalOrderRules = heroCommands::isCanonicalRules(heroCommandRules);
 		// In legacy saves the spell count doubled as an action-budget marker.
 		// Once the typed ledger is initialized for this round, spell history is
 		// descriptive only and must not invalidate a later Order.
@@ -1815,28 +1836,34 @@ void BattleInfo::validateFocusFireStates() const
 					|| !heroCommands::supportedByRules(heroCommandRules, state.activeOrder)
 					|| !state.heroCommandUsed || legacySpellHistoryBlocksOrder)))
 			throw std::runtime_error("Invalid New Horizons saved command state");
-		if(state.orderState)
+		if(!state.orderStates.empty())
 		{
-			state.orderState->validateShape();
-			if(!heroCommands::isCanonicalRules(heroCommandRules)
-				|| state.orderState->command != state.activeOrder
-				|| state.orderState->issuedRound != round
-				|| !state.heroCommandUsed || legacySpellHistoryBlocksOrder
-				|| !heroCommands::supportedByRules(heroCommandRules, state.orderState->command))
+			if(!canonicalOrderRules
+				|| state.orderStates.back().command != state.activeOrder
+				|| !state.heroCommandUsed || legacySpellHistoryBlocksOrder)
 				throw std::runtime_error("Invalid New Horizons canonical Order context");
-			if(state.orderState->primaryTargetUnitId != HeroOrderState::INVALID_UNIT_ID
-				&& !battleGetUnitByID(state.orderState->primaryTargetUnitId))
-				throw std::runtime_error("Invalid New Horizons canonical Order target");
-			if(state.orderState->secondaryTargetUnitId != HeroOrderState::INVALID_UNIT_ID
-				&& !battleGetUnitByID(state.orderState->secondaryTargetUnitId))
-				throw std::runtime_error("Invalid New Horizons canonical Order secondary target");
-			if(state.orderState->command == HeroCommand::PROTECT
-				&& state.orderState->protectInterceptionsConsumed > battleHeroOrderProtectInterceptionLimit(side))
-				throw std::runtime_error("Shield Master Protect interception count exceeds the saved hero perk limit");
+			for(const auto & order : state.orderStates)
+			{
+				if(order.issuedRound != round
+					|| !heroCommands::supportedByRules(heroCommandRules, order.command))
+					throw std::runtime_error("Invalid New Horizons canonical Order context");
+				if(order.primaryTargetUnitId != HeroOrderState::INVALID_UNIT_ID
+					&& !battleGetUnitByID(order.primaryTargetUnitId))
+					throw std::runtime_error("Invalid New Horizons canonical Order target");
+				if(order.secondaryTargetUnitId != HeroOrderState::INVALID_UNIT_ID
+					&& !battleGetUnitByID(order.secondaryTargetUnitId))
+					throw std::runtime_error("Invalid New Horizons canonical Order secondary target");
+				if(order.command == HeroCommand::PROTECT
+					&& order.protectInterceptionsConsumed > battleHeroOrderProtectInterceptionLimit(side))
+					throw std::runtime_error("Shield Master Protect interception count exceeds the saved hero perk limit");
+			}
 		}
-		else if(heroCommands::isCanonicalRules(heroCommandRules) && state.activeOrder != HeroCommand::NONE)
+		else if(canonicalOrderRules && state.activeOrder != HeroCommand::NONE)
 			throw std::runtime_error("Missing New Horizons canonical Order state");
-		if(state.focusFire.has_value() != (state.activeOrder == HeroCommand::FOCUS_FIRE))
+		const bool focusFireOrderExists = state.findOrder(HeroCommand::FOCUS_FIRE) != nullptr;
+		const bool focusFireOrderExpected = canonicalOrderRules
+			? focusFireOrderExists : state.activeOrder == HeroCommand::FOCUS_FIRE;
+		if(state.focusFire.has_value() != focusFireOrderExpected)
 			throw std::runtime_error("Inconsistent New Horizons Focus Fire order state");
 		if(!state.focusFire)
 			continue;
@@ -1886,9 +1913,10 @@ void BattleInfo::normalizeLegacyHeroCommandState()
 			&& !heroCommands::isActive(sides.at(side).activeOrder);
 		if(invalidLegacyOrder)
 			sides.at(side).activeOrder = HeroCommand::NONE;
-		if(sides.at(side).orderState && (!heroCommands::isCanonicalRules(heroCommandRules)
-			|| sides.at(side).orderState->command != sides.at(side).activeOrder))
-			sides.at(side).orderState.reset();
+		const auto & orders = sides.at(side).orderStates;
+		if(!orders.empty() && (!heroCommands::isCanonicalRules(heroCommandRules)
+			|| orders.back().command != sides.at(side).activeOrder))
+			sides.at(side).orderStates.clear();
 		if(invalidLegacyOrder)
 		{
 			const auto legacyRoundOrder = Selector::sourceTypeSel(BonusSource::HERO_COMMAND)

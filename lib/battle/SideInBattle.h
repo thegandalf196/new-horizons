@@ -10,7 +10,11 @@
 #pragma once
 
 #include <algorithm>
+#include <cstddef>
 #include <limits>
+#include <stdexcept>
+#include <utility>
+#include <vector>
 
 #include "../GameConstants.h"
 #include "BattleHex.h"
@@ -94,7 +98,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	// wire position while loading.
 	HeroCommand activeDoctrine = HeroCommand::NONE;
 	HeroCommand activeOrder = HeroCommand::NONE;
-	std::optional<HeroOrderState> orderState;
+	/// Independent round-long snapshots, in issue order. `activeOrder` remains
+	/// the latest-command compatibility projection for older callers and saves.
+	std::vector<HeroOrderState> orderStates;
 	std::optional<FocusFireState> focusFire;
 	uint32_t castSpellsCount = 0; //how many spells each side has been cast this turn
 	bool temporalFieldUsed = false; // saved once-per-combat Sorcery Mass Slow budget
@@ -172,6 +178,83 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);
+	static constexpr std::size_t MAX_ORDER_STATES = 8;
+
+	HeroOrderState * findOrder(HeroCommand command)
+	{
+		const auto it = std::find_if(orderStates.begin(), orderStates.end(), [command](const HeroOrderState & order)
+		{
+			return order.command == command;
+		});
+		return it == orderStates.end() ? nullptr : &*it;
+	}
+
+	const HeroOrderState * findOrder(HeroCommand command) const
+	{
+		const auto it = std::find_if(orderStates.begin(), orderStates.end(), [command](const HeroOrderState & order)
+		{
+			return order.command == command;
+		});
+		return it == orderStates.end() ? nullptr : &*it;
+	}
+
+	std::optional<HeroOrderState> lastOrder() const
+	{
+		if(orderStates.empty())
+			return std::nullopt;
+		return orderStates.back();
+	}
+
+	static void validateOrderCollection(const std::vector<HeroOrderState> & orders)
+	{
+		if(orders.size() > MAX_ORDER_STATES)
+			throw std::runtime_error("Too many simultaneous New Horizons Hero Orders");
+		for(std::size_t index = 0; index < orders.size(); ++index)
+		{
+			const auto & order = orders[index];
+			order.validateShape();
+			if(!heroCommands::isActive(order.command))
+				throw std::runtime_error("Unsupported command in New Horizons Hero Order collection");
+			for(std::size_t previous = 0; previous < index; ++previous)
+				if(orders[previous].command == order.command)
+					throw std::runtime_error("Duplicate command in New Horizons Hero Order collection");
+		}
+	}
+
+	void validateOrderStates() const
+	{
+		validateOrderCollection(orderStates);
+	}
+
+	/// Replace the same command's snapshot in place so state-only mutations do
+	/// not change issue order. New commands append as the newest issued Order.
+	void upsertOrder(const HeroOrderState & order)
+	{
+		order.validateShape();
+		if(!heroCommands::isActive(order.command))
+			throw std::runtime_error("Unsupported command in New Horizons Hero Order collection");
+		auto updated = orderStates;
+		const auto existing = std::find_if(updated.begin(), updated.end(), [&order](const HeroOrderState & current)
+		{
+			return current.command == order.command;
+		});
+		if(existing != updated.end())
+			*existing = order;
+		else
+		{
+			if(updated.size() >= MAX_ORDER_STATES)
+				throw std::runtime_error("Too many simultaneous New Horizons Hero Orders");
+			updated.push_back(order);
+		}
+		validateOrderCollection(updated);
+		orderStates = std::move(updated);
+	}
+
+	void replaceOrders(const std::vector<HeroOrderState> & orders)
+	{
+		validateOrderCollection(orders);
+		orderStates = orders;
+	}
 
 	static uint8_t completedHeroSpellLevelBit(int32_t level)
 	{
@@ -205,6 +288,11 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS)
+			&& orderStates.size() > 1)
+			throw std::runtime_error("Cannot discard simultaneous Hero Orders in an older format");
+		if(h.saving)
+			validateOrderStates();
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE) && hasChainGateState())
 			throw std::runtime_error("Cannot discard Chain Gate battle state");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_WARCASTING)
@@ -246,7 +334,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS)
 			&& (focusFire || activeOrder == HeroCommand::FOCUS_FIRE))
 			throw std::runtime_error("Cannot discard New Horizons targeted command state");
-		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_CANONICAL_ORDERS) && orderState)
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_CANONICAL_ORDERS) && !orderStates.empty())
 			throw std::runtime_error("Cannot discard New Horizons canonical Order state");
 		h & color;
 		h & heroID;
@@ -331,13 +419,26 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		{
 			focusFire.reset();
 		}
+		std::optional<HeroOrderState> legacyOrderProjection;
+		if(h.saving)
+			legacyOrderProjection = lastOrder();
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CANONICAL_ORDERS))
 		{
-			h & orderState;
+			// Preserve this historical optional slot unchanged. Multiple-order
+			// saves append the authoritative collection at the end of this record.
+			h & legacyOrderProjection;
+			if(!h.saving)
+			{
+				orderStates.clear();
+				if(legacyOrderProjection)
+					orderStates.push_back(*legacyOrderProjection);
+				validateOrderStates();
+			}
 		}
 		else if(!h.saving)
 		{
-			orderState.reset();
+			orderStates.clear();
+			legacyOrderProjection.reset();
 		}
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_DEMONIC_RESERVE))
 		{
@@ -418,6 +519,22 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		h & adverseCombatReroll;
 		h & moraleSuppression;
 		h & reducedExtraActivation;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS))
+		{
+			std::vector<HeroOrderState> serializedOrders;
+			if(h.saving)
+				serializedOrders = orderStates;
+			h & serializedOrders;
+			if(!h.saving)
+			{
+				validateOrderCollection(serializedOrders);
+				const std::optional<HeroOrderState> collectionProjection = serializedOrders.empty()
+					? std::optional<HeroOrderState>() : std::optional<HeroOrderState>(serializedOrders.back());
+				if(collectionProjection != legacyOrderProjection)
+					throw std::runtime_error("Inconsistent latest Hero Order projection");
+				orderStates = std::move(serializedOrders);
+			}
+		}
 	}
 
 	void clearMetamagicSequence()

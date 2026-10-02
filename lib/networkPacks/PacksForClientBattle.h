@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <limits>
 #include <optional>
+#include <set>
+#include <vector>
 
 #include "NetPacksBase.h"
 #include "BattleChanges.h"
@@ -611,11 +613,17 @@ struct DLL_LINKAGE StartAction : public CPackForClient
 	BattleAction ba;
 	std::optional<FocusFireState> focusFire;
 	std::optional<HeroOrderState> orderState;
+	/// When true, the accepted canonical Order is upserted without replacing
+	/// other same-side Orders. Legacy writes cannot represent that intent.
+	bool preserveOtherOrders = false;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && preserveOtherOrders
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS))
+			throw std::runtime_error("Cannot discard multi-Order StartAction upsert intent in an older format");
 		h & battleID;
 		h & ba;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS))
@@ -642,6 +650,14 @@ struct DLL_LINKAGE StartAction : public CPackForClient
 		{
 			orderState.reset();
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS))
+		{
+			h & preserveOtherOrders;
+		}
+		else if(!h.saving)
+		{
+			preserveOtherOrders = false;
+		}
 		assert(battleID != BattleID::NONE);
 	}
 };
@@ -654,12 +670,38 @@ struct DLL_LINKAGE BattleHeroOrderStateChanged : public CPackForClient
 {
 	BattleID battleID = BattleID::NONE;
 	BattleSide side = BattleSide::NONE;
+	/// Legacy projection of the most recently issued Order.
 	std::optional<HeroOrderState> state;
+	/// Authoritative full same-side Order collection in the multiple-Order format.
+	std::optional<std::vector<HeroOrderState>> states;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+		{
+			if(states)
+			{
+				std::set<HeroCommand> commands;
+				for(const auto & order : *states)
+				{
+					order.validateShape();
+					if(!heroCommands::isActive(order.command) || !commands.insert(order.command).second)
+						throw std::runtime_error("Invalid or duplicate Order in battle state update");
+				}
+				const auto projection = states->empty()
+					? std::optional<HeroOrderState>() : std::optional<HeroOrderState>(states->back());
+				if(state != projection)
+					throw std::runtime_error("Legacy Hero Order state is not the latest collection projection");
+				if(states->size() > 1 && !h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS))
+					throw std::runtime_error("Cannot discard multiple active Hero Orders in an older format");
+			}
+			else if(h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS))
+			{
+				throw std::runtime_error("Missing full Hero Order collection in a multi-Order state update");
+			}
+		}
 		h & battleID;
 		h & side;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CANONICAL_ORDERS))
@@ -673,6 +715,30 @@ struct DLL_LINKAGE BattleHeroOrderStateChanged : public CPackForClient
 		else if(!h.saving)
 		{
 			state.reset();
+		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS))
+		{
+			h & states;
+			if(!h.saving)
+			{
+				if(!states)
+					throw std::runtime_error("Missing full Hero Order collection in a multi-Order state update");
+				std::set<HeroCommand> commands;
+				for(const auto & order : *states)
+				{
+					order.validateShape();
+					if(!heroCommands::isActive(order.command) || !commands.insert(order.command).second)
+						throw std::runtime_error("Invalid or duplicate Order in battle state update");
+				}
+				const auto projection = states->empty()
+					? std::optional<HeroOrderState>() : std::optional<HeroOrderState>(states->back());
+				if(state != projection)
+					throw std::runtime_error("Legacy Hero Order state is not the latest collection projection");
+			}
+		}
+		else if(!h.saving)
+		{
+			states = state ? std::vector<HeroOrderState>{*state} : std::vector<HeroOrderState>{};
 		}
 		assert(battleID != BattleID::NONE);
 		assert(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER);

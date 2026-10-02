@@ -364,9 +364,10 @@ std::vector<OrderIndicator> activeOrderIndicators(const CStack * stack)
 
 	const auto * battle = stack->getBattle();
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	for(const auto & order : battle->battleGetHeroOrderStates(side))
 	{
-		const auto state = battle->battleGetHeroOrderState(side);
-		if(!state || state->issuedRound != battle->battleGetRound())
+		const auto * state = &order;
+		if(state->issuedRound != battle->battleGetRound())
 			continue;
 
 		const bool own = battle->playerToSide(battle->battleGetOwner(stack)) == side;
@@ -450,15 +451,17 @@ CStackWindow::OrderIndicatorsSection::OrderIndicatorsSection(CStackWindow * owne
 		return;
 
 	pos.w = owner->pos.w;
-	pos.h = 53;
+	const size_t columns = std::max<size_t>(1, static_cast<size_t>(std::max(0, pos.w - 12)) / 58);
+	pos.h = static_cast<int>((indicators.size() + columns - 1) / columns) * 53;
 	for(size_t index = 0; index < indicators.size(); ++index)
 	{
-		const int x = 6 + static_cast<int>(index) * 58;
+		const int x = 6 + static_cast<int>(index % columns) * 58;
+		const int y = static_cast<int>(index / columns) * 53;
 		const auto & indicator = indicators[index];
-		orderIcons.push_back(std::make_shared<CPicture>(ImagePath::builtin("NH_orders_gauntlet_normal.png"), x, 0));
-		clickableAreas.push_back(std::make_shared<LRClickableAreaWText>(Rect(x, 0, 48, 36),
+		orderIcons.push_back(std::make_shared<CPicture>(ImagePath::builtin("NH_orders_gauntlet_normal.png"), x, y));
+		clickableAreas.push_back(std::make_shared<LRClickableAreaWText>(Rect(x, y, 48, 36),
 			indicator.description, indicator.description));
-		labels.push_back(std::make_shared<CLabel>(x + 24, 47, FONT_TINY, ETextAlignment::BOTTOMCENTER,
+		labels.push_back(std::make_shared<CLabel>(x + 24, y + 47, FONT_TINY, ETextAlignment::BOTTOMCENTER,
 			Colors::YELLOW, indicator.label));
 	}
 }
