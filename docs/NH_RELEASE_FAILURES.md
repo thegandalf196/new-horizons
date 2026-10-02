@@ -28,7 +28,12 @@ Windows full run36994237037 on6ca967db6 passed preflight but failed compiling
 NewHorizonsDiscipline.cpp: MSVC parsed the parenthesized static BonusSourceID
 declaration as a function (C2751/C2267). Use brace initialization to remove
 the ambiguity without changing the bonus source identity. No Windows package
-was produced. A succeeding target run is still required; retain this failure.
+was produced. Follow-up full run37000555568 on7331e1056 now completes
+successfully: Windows x64 compile, recursive dependency/source/license package
+and upload all pass. The nonexpired preview artifact is751939717 bytes.
+This confirms the brace-initialization correction; retain the original failure.
+It does not establish Windows graphical acceptance or include later Broad Muster
+and Unbreakable commits.
 Local retry29673 compiled the production changes but exited1 in the new
 fixture: accessing PlayerState resources requires CPlayerState.h, not only a
 forward declaration. Add the explicit include and retry the same client/test

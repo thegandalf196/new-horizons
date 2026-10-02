@@ -14,6 +14,14 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-133 Precise Casting is being mapped for implementation. Controlled Blast
+already has shared Lua center-identity filtering and live/AI fixtures, but this
+does not prove Precise Casting's broader effect scope. Counts remain171/310
+active and139 planned; no new mechanic is called complete from mapping.
+Windows full37000555568 passes compile/package/upload on7331e1056, an older
+source containing External Recruiter and Spellward. Newer Broad Muster and
+Unbreakable Windows compile/package evidence remains pending.
+
 UP-131 verified checkpoint: Unbreakable is active. Client52523 and test10838
 build; fixture repair52313 exits0. Principal retry10314 passes10/10 in3.330s;
 activated both-target98579 and native69637 pass10/10 in3.303s, zero skips.
