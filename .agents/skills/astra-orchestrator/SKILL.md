@@ -63,7 +63,9 @@ If `spawn_agent` is unavailable or fails, explicitly report that failure.
 
 Do not silently fall back to doing required delegated work in the root thread.
 
-For every delegated task, spawn at least one subagent.
+For every delegated task, spawn at least one subagent, or assign it to an
+existing idle/completed subagent through `followup_task` under the capacity
+reuse policy below. Reuse is actual delegation, not root-only fallback.
 
 Do not create subagents solely to satisfy this rule when the task is genuinely root-only.
 
@@ -107,7 +109,7 @@ The root keeps the Pro profile configuration from `.codex/config.toml`: GPT-6 As
 
 For every delegated task:
 
-1. call `spawn_agent`
+1. call `spawn_agent`, or `followup_task` when reusing an allocated agent
 2. give the agent a descriptive task name using underscores
 3. explicitly specify the intended model
 4. give the subagent a bounded delegation contract
@@ -203,6 +205,18 @@ Use `researcher` for:
 ## Parallelism
 
 Run independent tasks in parallel.
+
+For this repository, the user authorizes up to four concurrent subagents,
+excluding the root. Reviewers, testers and explorers share this capacity with
+implementation workers; they are not additional slots. Use independent work
+with bounded file ownership, not filler tasks to occupy all four slots.
+
+The local Codex setting is `[agents].max_concurrent_threads_per_session = 4`.
+Do not increase it beyond the user's four-worker authorization. If a fresh spawn
+fails, inspect the team and reuse a completed agent with `followup_task` when
+appropriate: completed threads may still occupy allocated slots. Report the
+actual service error, and distinguish configured capacity from observed running
+agents. Do not claim a lower worker limit solely because one fresh spawn failed.
 
 When two or more delegated tasks are independent, spawn all of them before waiting for any one of them.
 
@@ -368,7 +382,7 @@ If a required worker fails repeatedly, the root may continue directly when reaso
 
 Before producing the final answer for a delegated task, confirm that:
 
-- every required subagent was actually spawned
+- every required subagent was actually spawned or assigned through follow-up
 - every required subagent either completed or explicitly failed
 - material findings were integrated
 - conflicting findings were resolved
