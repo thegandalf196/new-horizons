@@ -34,6 +34,7 @@ struct Offer
 	int maximumUses = 1;
 	bool externalDwelling = false;
 	::newHorizonsMuster::PerkModifiers modifiers;
+	bool broadMuster = false;
 };
 
 struct Target

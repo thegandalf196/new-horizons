@@ -48,6 +48,21 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
 			JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
 		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
+		if(broadMusterFixture)
+		{
+			bool found = false;
+			for(auto & perk : perkRules["skills"]["new-horizons:recruitment"]["perks"].Vector())
+			{
+				if(perk["id"].String() != "new-horizons:recruitment.broadMuster")
+					continue;
+				if(perk["effect"]["status"].String() == "planned")
+					perk["effect"]["status"].String() = "active";
+				else
+					EXPECT_EQ(perk["effect"]["status"].String(), "active");
+				found = true;
+			}
+			EXPECT_TRUE(found);
+		}
 		if(externalRecruiterFixture)
 		{
 			bool found = false;
@@ -75,7 +90,7 @@ protected:
 			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:christian")), PlayerColor(0));
 		if(withSecondTown)
 			builder.town({22, 22, 0}, FactionID(FactionID::decode("core:castle")), PlayerColor(0));
-		if(externalRecruiterFixture)
+		if(externalRecruiterFixture || broadMusterFixture)
 			builder.dwelling({8, 8, 0}, MapObjectSubID(56), PlayerColor(0));
 		startWithMap(std::move(builder));
 
@@ -152,7 +167,112 @@ protected:
 	CGHeroInstance * hero = nullptr;
 	SecondarySkill recruitment;
 	bool externalRecruiterFixture = false;
+	bool broadMusterFixture = false;
 };
+}
+
+TEST_F(NewHorizonsRecruitmentMusterTest, BroadMusterSplitsOneUseAtomicallyBetweenDistinctCoreRows)
+{
+	broadMusterFixture = true;
+	startGame(true);
+	const auto pikeman = creature("core:pikeman");
+	const auto archer = creature("core:archer");
+	const auto halberdier = creature("core:halberdier");
+	const auto griffin = creature("core:griffin");
+	const auto archerCategory = gameState()->getCreatureCategory(archer);
+	ASSERT_TRUE(archerCategory);
+	ASSERT_EQ(archerCategory->category, newHorizonsCreatures::CreatureCategory::CORE);
+	town->creatures.at(0).second.push_back(halberdier);
+	town->creatures.push_back({0, {archer}});
+	town2->creatures = town->creatures;
+	const auto armyBefore = hero->getStackCount(SlotID(0));
+	GameHandlerTestServer server(gameState(), PlayerColor(0));
+	CGameHandler handler(server, gameState());
+	const auto split = [&](CreatureID second, int firstAmount)
+	{
+		return handler.musterCreatures(hero->id, town->id, pikeman, PlayerColor(0), second, firstAmount);
+	};
+	const auto untouched = [&]
+	{
+		EXPECT_EQ(town->creatures.at(0).first, 0u);
+		EXPECT_EQ(town->creatures.at(3).first, 0u);
+		EXPECT_EQ(town->getNewHorizonsMusterLastWeek(), -1);
+		EXPECT_EQ(hero->getNewHorizonsMusterUsesThisWeek(0), 0);
+	};
+	EXPECT_FALSE(split(archer, 1)); // Rank alone never enables the split perk.
+	untouched();
+	handler.changeSecSkill(hero, recruitment, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	handler.levelUpHero(hero, recruitment, false);
+	ASSERT_TRUE(selectOfferedPerk(handler, hero, "new-horizons:recruitment.broadMuster", MasteryLevel::BASIC));
+	ASSERT_TRUE(hero->hasActivePerk("new-horizons:recruitment", "new-horizons:recruitment.broadMuster"));
+	for(const int amount : {-1, 0, 2, 3})
+	{
+		EXPECT_FALSE(split(archer, amount));
+		untouched();
+	}
+	for(const auto second : {pikeman, halberdier, griffin, creature("core:stoneGargoyle")})
+	{
+		EXPECT_FALSE(split(second, 1));
+		untouched();
+	}
+	EXPECT_FALSE(split(CreatureID::NONE, 1)); // Malformed solo allocation is not ignored.
+	untouched();
+	EXPECT_FALSE(handler.musterCreatures(hero->id, town->id, pikeman, PlayerColor(1), archer, 1));
+	untouched();
+	town->setVisitingHero(nullptr);
+	EXPECT_FALSE(split(archer, 1));
+	town->setVisitingHero(hero);
+	untouched();
+	const auto * external = expectAt<CGDwelling>({8, 8, 0});
+	ASSERT_NE(external, nullptr);
+	EXPECT_FALSE(handler.musterCreatures(hero->id, external->id, pikeman, PlayerColor(0), archer, 1));
+	untouched();
+	for(const size_t overflowingRow : {size_t(0), size_t(3)})
+	{
+		town->creatures.at(overflowingRow).first = std::numeric_limits<ui32>::max();
+		const auto stockBefore = town->creatures;
+		EXPECT_FALSE(split(archer, 1));
+		EXPECT_EQ(town->creatures, stockBefore);
+		EXPECT_EQ(town->getNewHorizonsMusterLastWeek(), -1);
+		EXPECT_EQ(hero->getNewHorizonsMusterUsesThisWeek(0), 0);
+		town->creatures.at(overflowingRow).first = 0;
+	}
+	ASSERT_TRUE(split(archer, 1));
+	EXPECT_EQ(town->creatures.at(0).first, 1u);
+	EXPECT_EQ(town->creatures.at(3).first, 1u);
+	EXPECT_EQ(hero->getNewHorizonsMusterUsesThisWeek(0), 1);
+	EXPECT_EQ(town->getNewHorizonsMusterLastWeek(), 0);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), armyBefore);
+	EXPECT_FALSE(split(archer, 1));
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	ASSERT_NE(restored.getHero(hero->id), nullptr);
+	ASSERT_NE(restored.getTown(town->id), nullptr);
+	EXPECT_EQ(restored.getHero(hero->id)->getNewHorizonsMusterUsesThisWeek(0), 1);
+	EXPECT_EQ(restored.getTown(town->id)->creatures.at(0).first, 1u);
+	EXPECT_EQ(restored.getTown(town->id)->creatures.at(3).first, 1u);
+
+	gameState()->day = 8;
+	handler.levelUpHero(hero, recruitment, false);
+	ASSERT_TRUE(selectOfferedPerk(handler, hero, "new-horizons:recruitment.eliteDraft", MasteryLevel::ADVANCED));
+	ASSERT_TRUE(split(archer, 1));
+	EXPECT_EQ(town->creatures.at(0).first, 2u);
+	EXPECT_EQ(town->creatures.at(3).first, 4u); // Advanced four split 1/3.
+	gameState()->day = 15;
+	handler.levelUpHero(hero, recruitment, false);
+	ASSERT_TRUE(selectOfferedPerk(handler, hero, "new-horizons:recruitment.masterRecruiter", MasteryLevel::EXPERT));
+	ASSERT_TRUE(split(archer, 2));
+	EXPECT_EQ(town->creatures.at(0).first, 4u);
+	EXPECT_EQ(town->creatures.at(3).first, 8u); // Expert six split 2/4.
+	EXPECT_FALSE(split(archer, 2)); // A second use cannot revisit this town.
+	town->setVisitingHero(nullptr);
+	town2->setVisitingHero(hero);
+	ASSERT_TRUE(handler.musterCreatures(hero->id, town2->id, pikeman, PlayerColor(0), archer, 3));
+	EXPECT_EQ(town2->creatures.at(0).first, 3u);
+	EXPECT_EQ(town2->creatures.at(3).first, 3u);
+	EXPECT_EQ(hero->getNewHorizonsMusterUsesThisWeek(2), 2);
 }
 
 TEST_F(NewHorizonsRecruitmentMusterTest, ExternalMusterUsesExactVisitAndSharedAllowanceWithoutGrantingAnArmy)
@@ -489,4 +609,36 @@ TEST(NewHorizonsRecruitmentMusterWire, StateRoundTripsAndOlderSavesRejectAuthore
 	// object-level save gates below are what protect the actual hero/dwelling
 	// marker when writing a legacy save.
 	EXPECT_GT(static_cast<int>(ESerializationVersion::CURRENT), static_cast<int>(ESerializationVersion::NEW_HORIZONS_MUSTER));
+}
+
+TEST(NewHorizonsRecruitmentMusterWire, SplitRequestRoundTripsAndLegacySoloRemainsCompatible)
+{
+	MusterCreatures outgoing(ObjectInstanceID(42), ObjectInstanceID(77), CreatureID(0), CreatureID(2), 1);
+	CMemorySerializer wire;
+	wire.oser.version = ESerializationVersion::CURRENT;
+	wire.iser.version = ESerializationVersion::CURRENT;
+	wire.oser & outgoing;
+	MusterCreatures incoming;
+	wire.iser & incoming;
+	EXPECT_EQ(incoming.heroId, outgoing.heroId);
+	EXPECT_EQ(incoming.targetId, outgoing.targetId);
+	EXPECT_EQ(incoming.creatureId, outgoing.creatureId);
+	EXPECT_EQ(incoming.secondCreatureId, outgoing.secondCreatureId);
+	EXPECT_EQ(incoming.firstAmount, 1);
+
+	MusterCreatures solo(ObjectInstanceID(42), ObjectInstanceID(77), CreatureID(0));
+	CMemorySerializer oldWire;
+	oldWire.oser.version = ESerializationVersion::NEW_HORIZONS_OBSTACLE_MOVEMENT_COST;
+	oldWire.iser.version = ESerializationVersion::NEW_HORIZONS_OBSTACLE_MOVEMENT_COST;
+	oldWire.oser & solo;
+	MusterCreatures oldIncoming;
+	oldIncoming.secondCreatureId = CreatureID(2);
+	oldIncoming.firstAmount = 9;
+	oldWire.iser & oldIncoming;
+	EXPECT_EQ(oldIncoming.creatureId, solo.creatureId);
+	EXPECT_EQ(oldIncoming.secondCreatureId, CreatureID::NONE);
+	EXPECT_EQ(oldIncoming.firstAmount, 0);
+	CMemorySerializer forbidden;
+	forbidden.oser.version = ESerializationVersion::NEW_HORIZONS_OBSTACLE_MOVEMENT_COST;
+	EXPECT_THROW(forbidden.oser & outgoing, std::runtime_error);
 }

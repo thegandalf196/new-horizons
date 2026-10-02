@@ -22,8 +22,8 @@
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/CCreatureHandler.h"
 
-#include <algorithm>
 #include <string_view>
+#include <utility>
 
 namespace newHorizonsMusterUI
 {
@@ -103,6 +103,50 @@ std::string rankSummary(const int rank, const ::newHorizonsMuster::PerkModifiers
 	}
 }
 
+struct Choice
+{
+	size_t firstTarget = 0;
+	std::optional<size_t> secondTarget;
+	int firstAmount = 0;
+};
+
+std::vector<Choice> choicesFor(const Offer & offer, const std::vector<Target> & targets)
+{
+	std::vector<Choice> result;
+	result.reserve(targets.size());
+	for(size_t i = 0; i < targets.size(); ++i)
+		result.push_back(Choice{i, std::nullopt, 0});
+
+	if(!offer.broadMuster || offer.externalDwelling || !dynamic_cast<const CGTownInstance *>(offer.dwelling))
+		return result;
+
+	for(size_t first = 0; first < targets.size(); ++first)
+	{
+		const auto & firstTarget = targets[first];
+		if(firstTarget.category != newHorizonsCreatures::CreatureCategory::CORE)
+			continue;
+
+		for(size_t second = first + 1; second < targets.size(); ++second)
+		{
+			const auto & secondTarget = targets[second];
+			if(secondTarget.category != newHorizonsCreatures::CreatureCategory::CORE
+				|| firstTarget.row == secondTarget.row || firstTarget.creature == secondTarget.creature)
+				continue;
+
+			const int totalAmount = firstTarget.amount;
+			if(totalAmount <= 1 || secondTarget.amount != totalAmount)
+				continue;
+
+			// Enumerate only exact, positive-integer allocations of this offer's
+			// generated Core total across two distinct town rows.
+			for(int firstAmount = 1; firstAmount < totalAmount; ++firstAmount)
+				result.push_back(Choice{first, second, firstAmount});
+		}
+	}
+
+	return result;
+}
+
 } // namespace
 
 std::optional<Offer> offerFor(const CGDwelling * dwelling, const CGHeroInstance * destinationHero)
@@ -140,9 +184,11 @@ std::optional<Offer> offerFor(const CGDwelling * dwelling, const CGHeroInstance 
 	const int usesThisWeek = hero->getNewHorizonsMusterUsesThisWeek(week);
 	const int maximumUses = ::newHorizonsMuster::maximumUsesPerWeek(modifiers);
 	const bool targetUsedThisWeek = dwelling->getNewHorizonsMusterLastWeek() == week;
+	const bool broadMuster = town && hero->hasActivePerk(std::string(::newHorizonsMuster::RECRUITMENT_SKILL),
+		std::string(::newHorizonsMuster::BROAD_MUSTER_PERK));
 	return Offer{dwelling, hero, rank, week,
 		usesThisWeek >= maximumUses || targetUsedThisWeek, targetUsedThisWeek, usesThisWeek, maximumUses,
-		externalDwelling, modifiers};
+		externalDwelling, modifiers, broadMuster};
 }
 
 std::vector<Target> targetsFor(const Offer & offer)
@@ -213,7 +259,9 @@ void open(const CGDwelling * dwelling, const CGHeroInstance * destinationHero)
 	const auto targets = targetsFor(*offer);
 	const std::string unavailableNote = offer->externalDwelling
 		? translate("new-horizons.muster.externalRecruiterNote", "Choose one owned external Core dwelling to reinforce.")
-		: translate("new-horizons.muster.rankOnlyNote", "Choose one town dwelling to reinforce.");
+		: (offer->broadMuster
+			? translate("new-horizons.muster.broadMusterNote", "Choose one dwelling, or split the Core recruits between two Core dwellings.")
+			: translate("new-horizons.muster.rankOnlyNote", "Choose one town dwelling to reinforce."));
 	const std::string heading = translate("new-horizons.muster.title", "Muster");
 
 	if(offer->usedThisWeek)
@@ -232,13 +280,24 @@ void open(const CGDwelling * dwelling, const CGHeroInstance * destinationHero)
 		return;
 	}
 
+	const auto choices = choicesFor(*offer, targets);
 	std::vector<std::string> entries;
-	entries.reserve(targets.size());
-	for(const auto & target : targets)
+	entries.reserve(choices.size());
+	for(const auto & choice : choices)
 	{
-		const auto category = categoryName(GAME->interface()->cb->getCreatureCategory(target.creature), target.category);
-		entries.push_back("[" + category + "] " + target.creatureType->getNamePluralTranslated()
-			+ "  +" + std::to_string(target.amount));
+		const auto & first = targets[choice.firstTarget];
+		const auto firstCategory = categoryName(GAME->interface()->cb->getCreatureCategory(first.creature), first.category);
+		if(!choice.secondTarget)
+		{
+			entries.push_back("[" + firstCategory + "] " + first.creatureType->getNamePluralTranslated()
+				+ "  +" + std::to_string(first.amount));
+			continue;
+		}
+
+		const auto & second = targets[*choice.secondTarget];
+		const int secondAmount = first.amount - choice.firstAmount;
+		entries.push_back(first.creatureType->getNamePluralTranslated() + " +" + std::to_string(choice.firstAmount)
+			+ " / " + second.creatureType->getNamePluralTranslated() + " +" + std::to_string(secondAmount));
 	}
 
 	const std::string amountSummary = offer->externalDwelling
@@ -249,13 +308,22 @@ void open(const CGDwelling * dwelling, const CGHeroInstance * destinationHero)
 		+ ". " + translate("new-horizons.muster.chooseRow", "Choose a dwelling row.")
 		+ "\n" + unavailableNote;
 	ENGINE->windows().pushWindow(std::make_shared<CObjectListWindow>(entries, nullptr, heading, description,
-		[hero = offer->hero, targetDwelling = offer->dwelling, targets](const int index)
+		[hero = offer->hero, targetDwelling = offer->dwelling, targets, choices](const int index)
 		{
-			if(index < 0 || static_cast<size_t>(index) >= targets.size() || !GAME || !GAME->interface()
+			if(index < 0 || static_cast<size_t>(index) >= choices.size() || !GAME || !GAME->interface()
 				|| !GAME->interface()->cb)
 				return;
 
-			GAME->interface()->cb->musterCreatures(hero, targetDwelling, targets[index].creature);
+			const auto & choice = choices[index];
+			if(choice.secondTarget)
+			{
+				GAME->interface()->cb->musterCreatures(hero, targetDwelling,
+					targets[choice.firstTarget].creature, targets[*choice.secondTarget].creature, choice.firstAmount);
+			}
+			else
+			{
+				GAME->interface()->cb->musterCreatures(hero, targetDwelling, targets[choice.firstTarget].creature);
+			}
 		}));
 }
 

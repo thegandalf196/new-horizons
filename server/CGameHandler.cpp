@@ -3339,7 +3339,8 @@ bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst
 	return true;
 }
 
-bool CGameHandler::musterCreatures(ObjectInstanceID heroId, ObjectInstanceID targetId, CreatureID creatureId, PlayerColor player)
+bool CGameHandler::musterCreatures(ObjectInstanceID heroId, ObjectInstanceID targetId, CreatureID creatureId,
+	PlayerColor player, CreatureID secondCreatureId, int32_t firstAmount)
 {
 	const auto * hero = gameInfo().getHero(heroId);
 	const auto * dwelling = dynamic_cast<const CGDwelling *>(gameInfo().getObj(targetId));
@@ -3382,6 +3383,16 @@ bool CGameHandler::musterCreatures(ObjectInstanceID heroId, ObjectInstanceID tar
 		: newHorizonsMuster::amountForExternalCategory(rank, category->category, externalRecruiterActive);
 	COMPLAIN_RET_FALSE_IF(!amount, "Cannot Muster: Recruitment rank cannot Muster this creature category!");
 
+	const bool splitRequest = secondCreatureId != CreatureID::NONE;
+	COMPLAIN_RET_FALSE_IF(!splitRequest && firstAmount != 0,
+		"Cannot Muster: first-row amount is only valid for a split allocation!");
+	COMPLAIN_RET_FALSE_IF(splitRequest && (!town
+		|| !hero->hasActivePerk(std::string(newHorizonsMuster::RECRUITMENT_SKILL),
+			std::string(newHorizonsMuster::BROAD_MUSTER_PERK))),
+		"Cannot Muster: splitting requires Broad Muster in a town!");
+	COMPLAIN_RET_FALSE_IF(splitRequest && category->category != newHorizonsCreatures::CreatureCategory::CORE,
+		"Cannot Muster: Broad Muster can only split Core recruits!");
+
 	const int week = newHorizonsMuster::absoluteWeek(gameInfo().getCalendar().getCurrentDay(),
 		gameInfo().getCalendar().getDaysInWeek());
 	const int usesThisWeek = hero->getNewHorizonsMusterUsesThisWeek(week);
@@ -3390,17 +3401,41 @@ bool CGameHandler::musterCreatures(ObjectInstanceID heroId, ObjectInstanceID tar
 	COMPLAIN_RET_FALSE_IF(dwelling->getNewHorizonsMusterLastWeek() == week,
 		"Cannot Muster: this dwelling has already received Muster this week!");
 
-	int row = -1;
+	int firstRow = -1;
 	for(size_t index = 0; index < dwelling->creatures.size(); ++index)
 	{
 		const auto & entry = dwelling->creatures[index];
 		if(vstd::contains(entry.second, creatureId))
 		{
-			row = static_cast<int>(index);
+			firstRow = static_cast<int>(index);
 			break;
 		}
 	}
-	COMPLAIN_RET_FALSE_IF(row < 0, "Cannot Muster: creature is not available from this dwelling!");
+	COMPLAIN_RET_FALSE_IF(firstRow < 0, "Cannot Muster: creature is not available from this dwelling!");
+
+	int secondRow = -1;
+	int secondAmount = 0;
+	if(splitRequest)
+	{
+		const auto secondCategory = gameInfo().getCreatureCategory(secondCreatureId);
+		COMPLAIN_RET_FALSE_IF(!secondCategory || secondCategory->category != newHorizonsCreatures::CreatureCategory::CORE,
+			"Cannot Muster: second split target is not a saved Core creature!");
+
+		for(size_t index = 0; index < dwelling->creatures.size(); ++index)
+		{
+			if(static_cast<int>(index) != firstRow
+				&& vstd::contains(dwelling->creatures[index].second, secondCreatureId))
+			{
+				secondRow = static_cast<int>(index);
+				break;
+			}
+		}
+		COMPLAIN_RET_FALSE_IF(secondRow < 0,
+			"Cannot Muster: split targets must be two distinct Core dwelling rows in the same town!");
+		COMPLAIN_RET_FALSE_IF(firstAmount <= 0 || firstAmount >= *amount,
+			"Cannot Muster: split amounts must be positive and add up to the generated total!");
+		secondAmount = *amount - firstAmount;
+	}
 
 	// All checks are complete before either authoritative mutation is emitted.
 	// SetAvailableCreatures carries the actual stock change, while the marker
@@ -3408,7 +3443,10 @@ bool CGameHandler::musterCreatures(ObjectInstanceID heroId, ObjectInstanceID tar
 	SetAvailableCreatures stock;
 	stock.tid = dwelling->id;
 	stock.creatures = dwelling->creatures;
-	if(std::numeric_limits<ui32>::max() - stock.creatures.at(row).first < *amount)
+	const ui32 firstRecruits = static_cast<ui32>(splitRequest ? firstAmount : *amount);
+	const ui32 secondRecruits = static_cast<ui32>(secondAmount);
+	if(std::numeric_limits<ui32>::max() - stock.creatures.at(firstRow).first < firstRecruits
+		|| (splitRequest && std::numeric_limits<ui32>::max() - stock.creatures.at(secondRow).first < secondRecruits))
 	{
 		complain("Cannot Muster: dwelling recruitment stock overflow!");
 		return false;
@@ -3423,7 +3461,9 @@ bool CGameHandler::musterCreatures(ObjectInstanceID heroId, ObjectInstanceID tar
 	// Replicate the marker before the stock event. Client recruitment windows
 	// refresh in response to SetAvailableCreatures and must observe the final
 	// used-this-week state when they update the action button.
-	stock.creatures.at(row).first += *amount;
+	stock.creatures.at(firstRow).first += firstRecruits;
+	if(splitRequest)
+		stock.creatures.at(secondRow).first += secondRecruits;
 	sendAndApply(stock);
 	return true;
 }

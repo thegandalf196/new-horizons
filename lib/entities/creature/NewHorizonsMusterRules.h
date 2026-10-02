@@ -15,6 +15,7 @@ namespace newHorizonsMuster
 {
 inline constexpr std::string_view RECRUITMENT_SKILL = "new-horizons:recruitment";
 inline constexpr std::string_view VOLUNTEER_NETWORK_PERK = "new-horizons:recruitment.volunteerNetwork";
+inline constexpr std::string_view BROAD_MUSTER_PERK = "new-horizons:recruitment.broadMuster";
 inline constexpr std::string_view ELITE_DRAFT_PERK = "new-horizons:recruitment.eliteDraft";
 inline constexpr std::string_view CHAMPIONS_CALL_PERK = "new-horizons:recruitment.championSCall";
 inline constexpr std::string_view MASTER_RECRUITER_PERK = "new-horizons:recruitment.masterRecruiter";

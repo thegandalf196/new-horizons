@@ -255,7 +255,8 @@ public:
 	bool garrisonSwap(ObjectInstanceID tid);
 	bool upgradeCreature( ObjectInstanceID objid, SlotID pos, CreatureID upgID );
 	bool recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst, CreatureID crid, int32_t cram, int32_t level, PlayerColor player);
-	bool musterCreatures(ObjectInstanceID heroId, ObjectInstanceID targetId, CreatureID creatureId, PlayerColor player);
+	bool musterCreatures(ObjectInstanceID heroId, ObjectInstanceID targetId, CreatureID creatureId, PlayerColor player,
+		CreatureID secondCreatureId = CreatureID::NONE, int32_t firstAmount = 0);
 	bool arrangeDemonicReserve(ObjectInstanceID heroId, SlotID activeSlot, CreatureID creatureId,
 		TQuantity amount, bool toReserve, PlayerColor player);
 	bool buildStructure(ObjectInstanceID tid, BuildingID bid, bool force=false);//force - for events: no cost, no checkings

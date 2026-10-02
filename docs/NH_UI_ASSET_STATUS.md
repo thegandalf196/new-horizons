@@ -10,6 +10,14 @@ This is a binding inventory, not a full visual audit or a product completion cla
 
 ## Status meanings
 
+Broad Muster source/native checkpoint (UP-128): the existing native scrollable
+Muster picker retains solo choices and adds exact positive allocations naming
+both Core dwelling destinations. Localization and static wiring pass; both
+Linux targets build and activated native18/18 passes, zero skips. Registry
+coverage is170/310 active,140 planned. Purpose-made perk art is Not done (neutral
+fallback), generic UI is Provisional. Long labels need native-resolution review;
+no GUI acceptance or playable promotion is inferred from these checks.
+
 External Recruiter source/native checkpoint (UP-124): native recruitment controls
 reuse the existing Muster button and dialog for owned external Core dwellings.
 Fixed+2, weekly status and shared free-tier-one costs are wired; both targets

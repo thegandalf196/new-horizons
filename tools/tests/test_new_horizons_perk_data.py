@@ -178,6 +178,7 @@ ACTIVE_PERKS = {
     "new-horizons:battlecraft.entrench",
     "new-horizons:recruitment.volunteerNetwork",
     "new-horizons:recruitment.externalRecruiter",
+    "new-horizons:recruitment.broadMuster",
     "new-horizons:recruitment.eliteDraft",
     "new-horizons:recruitment.championSCall",
     "new-horizons:recruitment.masterRecruiter",

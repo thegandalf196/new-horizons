@@ -373,22 +373,28 @@ struct DLL_LINKAGE RecruitCreatures : public CPackForServer
 	}
 };
 
-/// Request one authoritative Recruitment Muster operation.  The server derives
-/// the amount, allowed category and source dwelling row from the hero's saved
-/// Recruitment rank and the saved world category mapping.
+/// Request one authoritative Recruitment Muster operation. The server derives
+/// the recruit total and allowed categories from the hero's saved Recruitment
+/// rank and the saved world category mapping. Optional Broad Muster parameters
+/// specify a second target creature and the amount allocated to the first.
 struct DLL_LINKAGE MusterCreatures : public CPackForServer
 {
 	MusterCreatures() = default;
-	MusterCreatures(const ObjectInstanceID & hero, const ObjectInstanceID & target, const CreatureID & creature)
+	MusterCreatures(const ObjectInstanceID & hero, const ObjectInstanceID & target, const CreatureID & creature,
+		const CreatureID & secondCreature = CreatureID::NONE, int32_t firstAmount = 0)
 		: heroId(hero)
 		, targetId(target)
 		, creatureId(creature)
+		, secondCreatureId(secondCreature)
+		, firstAmount(firstAmount)
 	{
 	}
 
 	ObjectInstanceID heroId;
 	ObjectInstanceID targetId;
 	CreatureID creatureId;
+	CreatureID secondCreatureId = CreatureID::NONE;
+	int32_t firstAmount = 0;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
@@ -398,6 +404,18 @@ struct DLL_LINKAGE MusterCreatures : public CPackForServer
 		h & heroId;
 		h & targetId;
 		h & creatureId;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_BROAD_MUSTER))
+		{
+			h & secondCreatureId;
+			h & firstAmount;
+		}
+		else if(h.saving && (secondCreatureId != CreatureID::NONE || firstAmount != 0))
+			throw std::runtime_error("Broad Muster request requires the new wire format");
+		else if(!h.saving)
+		{
+			secondCreatureId = CreatureID::NONE;
+			firstAmount = 0;
+		}
 	}
 };
 

@@ -1352,13 +1352,16 @@ void AIGateway::tryMusterCreatures(const CGHeroInstance * hero, const CGTownInst
 		std::string(::newHorizonsMuster::CHAMPIONS_CALL_PERK));
 	modifiers.masterRecruiter = hero->hasActivePerk(std::string(::newHorizonsMuster::RECRUITMENT_SKILL),
 		std::string(::newHorizonsMuster::MASTER_RECRUITER_PERK));
+	const bool broadMusterActive = hero->hasActivePerk(std::string(::newHorizonsMuster::RECRUITMENT_SKILL),
+		std::string(::newHorizonsMuster::BROAD_MUSTER_PERK));
 	const int maximumUses = ::newHorizonsMuster::maximumUsesPerWeek(modifiers);
 	if(recruitmentRank <= 0 || hasPendingMuster(hero, town)
 		|| hero->getNewHorizonsMusterUsesThisWeek(currentWeek) >= maximumUses
 		|| town->getNewHorizonsMusterLastWeek() == currentWeek)
 		return;
 
-	const auto candidate = newHorizonsMuster::chooseTownCandidate(*town, *cc, recruitmentRank, modifiers);
+	const auto candidate = newHorizonsMuster::chooseTownCandidate(
+		*town, *cc, recruitmentRank, modifiers, hero, broadMusterActive);
 	if(!candidate)
 		return; // No category snapshot means legacy/no-category; do not Muster.
 
@@ -1366,14 +1369,28 @@ void AIGateway::tryMusterCreatures(const CGHeroInstance * hero, const CGTownInst
 	if(!reserveMuster(hero, town, currentWeek, usesBefore, maximumUses))
 		return;
 
-	logAi->debug("Hero %s musters %d %s from town %s (rank %d, category amount %d, weighted army value %lld)",
-		hero->getNameTextID(), candidate->amount, candidate->creature.toCreature()->getNamePluralTranslated(),
-		town->getNameTextID(), recruitmentRank, candidate->amount, static_cast<long long>(candidate->armyValue));
+	if(candidate->isSplit())
+	{
+		logAi->debug("Hero %s uses Broad Muster for %d %s and %d %s in town %s (rank %d, total %d, Leadership-admitted army value %lld)",
+			hero->getNameTextID(), candidate->firstAmount, candidate->creature.toCreature()->getNamePluralTranslated(),
+			candidate->secondAmount, candidate->secondCreature.toCreature()->getNamePluralTranslated(),
+			town->getNameTextID(), recruitmentRank, candidate->amount,
+			static_cast<long long>(candidate->recruitableArmyValue));
+	}
+	else
+	{
+		logAi->debug("Hero %s musters %d %s from town %s (rank %d, category amount %d, weighted army value %lld)",
+			hero->getNameTextID(), candidate->amount, candidate->creature.toCreature()->getNamePluralTranslated(),
+			town->getNameTextID(), recruitmentRank, candidate->amount, static_cast<long long>(candidate->armyValue));
+	}
 
 	// The callback is the only legal mutation path.  The server validates both
 	// weekly uses and the target row; this AI-side pending guard prevents a
 	// second request before the resulting pool update is replicated.
-	cc->musterCreatures(hero, town, candidate->creature);
+	if(candidate->isSplit())
+		cc->musterCreatures(hero, town, candidate->creature, candidate->secondCreature, candidate->firstAmount);
+	else
+		cc->musterCreatures(hero, town, candidate->creature);
 	const bool accepted = hero->getNewHorizonsMusterUsesThisWeek(currentWeek) > usesBefore
 		&& town->getNewHorizonsMusterLastWeek() == currentWeek;
 	if(accepted)

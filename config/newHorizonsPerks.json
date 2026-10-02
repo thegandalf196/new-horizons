@@ -865,7 +865,7 @@
 					"requires": "basic",
 					"description": "When Muster targets Core creatures, its generated recruits may be split between two Core dwellings in the same town.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "When Muster targets Core creatures, its generated recruits may be split between two Core dwellings in the same town."
 					}
 				},
