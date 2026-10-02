@@ -2,6 +2,45 @@
 
 ## Purpose
 
+### 2026-10-01 Shadow perks — pre-build fixture corrections
+
+Root review repaired Hex's fixture-local perk lookup to use the nested
+`rules["skills"][skillId]` registry. Life Drain's existing no-rank baseline
+was preserved; explicit Basic cases compare the same232 damage with139 versus
+174 healing. Selected fixtures must reserve enough missing survivor HP for
+the intended healing, rather than accidentally testing the ordinary-heal cap.
+An AI draft wounded20 Pikemen by100 HP, killing ten and leaving no repairable
+survivor injury. The owner switches to a high-HP recipient before compilation.
+Ordinary healing cannot restore casualties: aggregate missing army HP is not
+the same as repairable survivor HP. These were source-review catches; no failed
+native execution is claimed.
+Both-target99778 exits1 (`UP112-principal-build.log`): the AI fixture passed
+an rvalue and a const value to CUnitState::damage, which requires a mutable
+int64_t reference and may update the amount to actual damage. Root uses named
+mutable wound variables. Client linked successfully; no native pass or perk
+activation is claimed. Confirm mutating damage API signatures when adding
+detached unit-state fixtures. Repaired both-target96988 exits0.
+Principal57470 (`UP112-principal` log/XML) passes20/23, zero skips in6.372s.
+The new Hex attack fixture attached BLOCKS_RETALIATION to its victim, although
+that bonus belongs on the attacker; the victim retaliated and killed the
+cursed stack. The reactive injury packet itself already matched53. Root
+corrects the fixture, not the production mechanic. Both new AI cases failed
+at strategic spell choice before running any projection assertions. The
+bounded Phase1 checks use the existing legal-target enumeration and shared
+detached forecast/value seams, retaining exact authoritative parity and live
+immutability assertions. Strategic nonselection is deferred to Phase2 rather
+than tuning AI valuations in this perk slice. No activation is claimed yet.
+Fixture-repaired both-target16858 exits0; principal77901 passes23/23, zero
+skips in6.320s. Independent review subsequently requires a background enemy
+in Blood Drinker to avoid battle-result finalization invalidating pointers
+used for accepted/projection parity. This retains the exact20 damage/15 heal
+assertions and does not exercise or bypass battle-result handling. Final
+build/native evidence follows before activation.
+Final both-target68123 exits0; final principal6616 passes23/23, zero skips in
+6.246s. Activated33834 passes29/29, zero skips in7.838s; data/inventory19/19
+and module drift check pass. All reported build/fixture failures are repaired;
+strategic AI nonselection remains explicitly deferred, not claimed fixed.
+
 ### 2026-10-01 Havoc perks — saved fixture profile review
 
 Before the test build, independent review found the new Pyromancer/Cryomancer

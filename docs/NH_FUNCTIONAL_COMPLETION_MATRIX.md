@@ -14,6 +14,25 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-112 Blood Drinker and Painweaver are active and focused native verified.
+Blood Drinker heals75% of actual clipped Life Drain damage, rather than60%,
+using ordinary survivor-only healing. Painweaver adds20% to Hex's cast-time
+Spell Power term only; fixed15 and the10% actual-attack share are unchanged.
+The existing bonus snapshot serves authority, replication and detached AI;
+there is no new state or polling. Final both-target68123 exits0; final
+principal6616 passes23/23 in6.246s and activated33834 passes29/29 in7.838s,
+zero skips. Legal Basic offers, exact damage/healing, overkill, reduction,
+no resurrection, zero-SP and v2 guards, stored-once injury and detached/live
+parity pass. Data/inventory19/19 and module drift check pass. Binary SHA-256:
+`43ee01b00ff7225a21c263560f215cb457a835fc11dd765a1e315f0b4fb22db2`.
+Coverage159->161/310; planned151->149; Shadow8active/2planned. Independent
+review has no remaining blocker. Phase2 retains strategic AI nonselection
+observed in the first fixtures, reflected Life Drain paired-target semantics,
+recipient-healing preview and wider modifier/save interactions. Generic UI
+provisional, authored art Not done; no GUI or playable promotion. UP-113's
+normal propagation limit awaits clarification. UP-114 maps the missing distinct
+Mass-entry foundation, including family-aware effects and saved-profile grants.
+
 UP-109 Controlled Blast and UP-110 Pyromancer/Cryomancer are active and focused
 native verified. The shared Lua range-target filter excludes only the friendly
 original center stack for Fireball, Inferno and Meteor Shower, using current
@@ -865,10 +884,11 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 159/310 | 151 planned; Controlled Blast, Pyromancer and Cryomancer are the newest source/native-verified activations. Active status alone does not certify every mechanic. |
+| Skill perks active | 161/310 | 149 planned; Blood Drinker and Painweaver are the newest source/native-verified activations. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
+| Distinct perk-granted Mass spell entries | 0/5 | Canonical variants section separately specifies Mass Bless, Mass Curse, Mass Sorrow, Mass Regeneration and Mass Slow. Existing Mass Slow toggle is partial behavior, not a distinct spell entry. These five variants are additional to the 67 school-roster identities; UP-114 maps the shared foundation before dependent perk activation. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree; action/AI/UI integration still needs an item-level audit. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
@@ -1006,7 +1026,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Recruitment | 3/0 | 4/6 | Six perks missing |
 | Command | 3/0 | 4/6 | Aggressive/Defensive, Veteran and Combined Arms have focused runtime/AI evidence; ordinary Advanced/Expert progression opens. Six perks remain planned. |
 | Light Magic | 3/0 | 7/3 | Benediction, Healer, Guardian, Aegis, Purifier, Retributionist, and Crusader active; Sanctuary Keeper, Litany and Miracle Worker remain planned. Crusader has focused native evidence. |
-| Shadow Magic | 3/0 | 6/4 | Malediction, Withering Touch, Soul Binder, Dark Gift, Night Feeder, and Reanimator are active. Reanimator's casualty-only pool has focused authoritative evidence; four perks remain planned. |
+| Shadow Magic | 3/0 | 8/2 | Blood Drinker and Painweaver now have focused authoritative and detached forecast evidence, alongside Malediction, Withering Touch, Soul Binder, Dark Gift, Night Feeder and Reanimator. Plaguebearer awaits its normal-limit definition; Grand Malediction needs distinct Mass entries. |
 | Nature Magic | 3/0 | 4/6 | Herbalist, Rootcaller, Beastcaller and Verdant Warden active; six perks missing. |
 | Havoc Magic | 3/0 | 6/4 | Four perks missing; Pyromancer, Cryomancer and Controlled Blast are native verified |
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |

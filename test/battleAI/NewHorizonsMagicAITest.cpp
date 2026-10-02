@@ -105,6 +105,9 @@ namespace
 constexpr auto transfigureMatterKey = "new-horizons:transfigureMatter";
 constexpr auto matterShaperPerk = "new-horizons:sorceryMagic.matterShaper";
 constexpr auto stormOfDaggersKey = "new-horizons:stormOfDaggers";
+constexpr auto shadowMagicSkill = "new-horizons:shadowMagic";
+constexpr auto bloodDrinkerPerk = "new-horizons:shadowMagic.bloodDrinker";
+constexpr auto painweaverPerk = "new-horizons:shadowMagic.painweaver";
 
 SpellID transfigureMatterSpell()
 {
@@ -139,6 +142,16 @@ SpellID reanimateSpell()
 SpellID soulReaperSpell()
 {
 	return SpellID(SpellID::decode(std::string(newHorizonsMagic::SHADOW_SOUL_REAPER_SPELL)));
+}
+
+SpellID lifeDrainSpell()
+{
+	return SpellID(SpellID::decode(std::string(newHorizonsMagic::SHADOW_LIFE_DRAIN_SPELL)));
+}
+
+SpellID hexOfPainSpell()
+{
+	return SpellID(SpellID::decode(std::string(newHorizonsHexOfPainAI::SPELL_ID)));
 }
 
 SpellID doomSpell()
@@ -213,6 +226,47 @@ const Bonus * curseMinimumDamageBonus(const battle::Unit * unit)
 	return bonuses && !bonuses->empty() ? bonuses->front().get() : nullptr;
 }
 
+const Bonus * hexOfPainDamageBonus(const battle::Unit * unit)
+{
+	if(!unit)
+		return nullptr;
+	const auto bonuses = unit->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
+	for(const auto & bonus : *bonuses)
+		if(bonus && bonus->source == BonusSource::SPELL_EFFECT
+			&& bonus->sid.toString() == newHorizonsHexOfPainAI::SPELL_ID
+			&& bonus->subtype.toString() == newHorizonsHexOfPainAI::TRIGGER_ID)
+			return bonus.get();
+	return nullptr;
+}
+
+JsonNode savedV3FormulaRules()
+{
+	// Use the complete saved-v3 schema. A v2 snapshot with just a v3 directDamage
+	// row is a hybrid fixture and cannot exercise school-scaled spell components.
+	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	rules["rulesetVersion"].Integer() = newHorizonsMagic::CURRENT_RULESET_VERSION;
+	newHorizonsMagic::validateRules(rules);
+	return rules;
+}
+
+bool activateFixturePerkRows(JsonNode & rules, const std::vector<std::string> & perkIds)
+{
+	std::vector<std::string> pending = perkIds;
+	for(auto & [skillId, skill] : rules["skills"].Struct())
+	{
+		(void)skillId;
+		for(auto & perk : skill["perks"].Vector())
+		{
+			const auto found = std::find(pending.begin(), pending.end(), perk["id"].String());
+			if(found == pending.end())
+				continue;
+			perk["effect"]["status"].String() = "active";
+			pending.erase(found);
+		}
+	}
+	return pending.empty();
+}
+
 JsonNode legacyMagicRules(int version)
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
@@ -278,10 +332,12 @@ protected:
 	bool useRealHeroScale = false;
 	bool neutralizeCommandEffects = false;
 	bool useSavedPerkRules = false;
+	bool useSavedV3Formula = false;
 	bool useControlledBlast = false;
 	bool useFocusMagic = false;
 	bool historicalCounterspell = false;
 	int savedMagicRulesVersion = 0;
+	std::vector<std::string> fixtureActivePerkIds;
 
 	void mapLoaded(CMap * loaded) override
 	{
@@ -290,6 +346,8 @@ protected:
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
 		else if(savedMagicRulesVersion > 0)
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, legacyMagicRules(savedMagicRulesVersion));
+		else if(useSavedV3Formula)
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, savedV3FormulaRules());
 		else if(useCurrentMagicRules)
 		{
 			JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
@@ -306,9 +364,13 @@ protected:
 			newHorizonsMagic::validateRules(rules);
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
 		}
-		if(useSavedPerkRules || useControlledBlast)
+		if(useSavedPerkRules || useControlledBlast || !fixtureActivePerkIds.empty())
 		{
 			JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+			if(!fixtureActivePerkIds.empty())
+			{
+				ASSERT_TRUE(activateFixturePerkRows(perks, fixtureActivePerkIds));
+			}
 			if(useControlledBlast)
 				for(auto & perk : perks["skills"]["new-horizons:havocMagic"]["perks"].Vector())
 					if(perk["id"].String() == "new-horizons:havocMagic.controlledBlast")
@@ -414,6 +476,31 @@ protected:
 		attackerSideHero->addSpellToSpellbook(guardianSpirit);
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
 		setTestSpellPointTotal(attackerSideHero, 1000);
+	}
+
+	bool selectShadowMagicPerkThroughLegalOffer(const std::string & perkId)
+	{
+		const auto rankLookup = [this](const std::string & skillId)
+		{
+			return attackerSideHero->getPerkSkillRank(skillId);
+		};
+
+		for(uint64_t seed = 0; seed < 4096; ++seed)
+		{
+			const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto selected = std::find_if(offer.begin(), offer.end(), [&](const auto & candidate)
+			{
+				return candidate.selection.skillId == shadowMagicSkill
+					&& candidate.selection.perkId == perkId;
+			});
+			if(selected == offer.end())
+				continue;
+
+			const auto choice = static_cast<size_t>(std::distance(offer.begin(), selected));
+			gameHandler->levelUpHero(attackerSideHero, offer, choice, seed, false);
+			return attackerSideHero->hasActivePerk(shadowMagicSkill, perkId);
+		}
+		return false;
 	}
 };
 
@@ -4679,6 +4766,145 @@ TEST_F(NewHorizonsMagicAITest, HexOfPainLowersProjectedAttackValueAndMakesItsCas
 		<< "The hypothetical cast and its AI valuation must not mutate the live battle";
 }
 
+TEST_F(NewHorizonsMagicAITest, PainweaverAICastSnapshotsBoostedHexAndProjectsAfterAttackInjury)
+{
+	useCommands = false;
+	useSavedV3Formula = true;
+	fixtureActivePerkIds = {painweaverPerk};
+	ASSERT_NO_FATAL_FAILURE(startGame());
+
+	const auto shadowMagic = SecondarySkill(SecondarySkill::decode(shadowMagicSkill));
+	ASSERT_TRUE(shadowMagic.hasValue());
+	attackerSideHero->setSecSkillLevel(shadowMagic, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(selectShadowMagicPerkThroughLegalOffer(painweaverPerk));
+	const auto spell = hexOfPainSpell();
+	ASSERT_NE(spell, SpellID::NONE);
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	attackerSideHero->removeAllSpells();
+	attackerSideHero->addSpellToSpellbook(spell);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 10, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(2, 5), 1);
+	auto * threatenedAlly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(10, 5), 100);
+	auto * hostile = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(11, 5), 20);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(threatenedAlly, nullptr);
+	ASSERT_NE(hostile, nullptr);
+	blockRetaliation(hostile);
+	forceMaximumDamage(hostile);
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -active->getMovementRange();
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	spells::BattleCast liveCast(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	const auto liveMechanics = spell.toSpell()->battleMechanics(&liveCast);
+	const auto liveTargets = SpellTargetEvaluator::getViableTargets(liveMechanics.get());
+	const auto selectedLiveTarget = std::find_if(liveTargets.begin(), liveTargets.end(),
+		[&](const auto & target)
+		{
+			return target.size() == 1 && target.front().unitValue
+				&& target.front().unitValue->unitId() == hostile->unitId();
+		});
+	ASSERT_NE(selectedLiveTarget, liveTargets.end());
+	ASSERT_TRUE(liveMechanics->canBeCastAt(*selectedLiveTarget));
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell;
+	action.setTarget(*selectedLiveTarget);
+	EXPECT_EQ(battle()->getMagicRules()["rulesetVersion"].Integer(),
+		newHorizonsMagic::CURRENT_RULESET_VERSION);
+
+	const auto liveHostileHealth = hostile->getAvailableHealth();
+	const auto liveAllyHealth = threatenedAlly->getAvailableHealth();
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto selected = action.getTarget(projected.get());
+	ASSERT_EQ(selected.size(), 1u);
+	ASSERT_NE(selected.front().unitValue, nullptr);
+	EXPECT_EQ(selected.front().unitValue->unitId(), hostile->unitId());
+	spells::BattleCast cast(projected.get(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	const auto mechanics = spell.toSpell()->battleMechanics(&cast);
+	ASSERT_TRUE(mechanics->canBeCastAt(selected));
+	mechanics->castEval(projected->getServerCallback(), selected);
+	const auto * projectedHostile = projected->battleGetUnitByID(hostile->unitId());
+	const auto * projectedAlly = projected->battleGetUnitByID(threatenedAlly->unitId());
+	ASSERT_NE(projectedHostile, nullptr);
+	ASSERT_NE(projectedAlly, nullptr);
+	const auto * projectedHex = hexOfPainDamageBonus(projectedHostile);
+	ASSERT_NE(projectedHex, nullptr);
+	// At 10 Spell Power, Basic Shadow's 115% coefficient and Painweaver's
+	// additional 20% produce floor(7 * 1.15 * 1.20) = 9; fixed base stays 15.
+	EXPECT_EQ(projectedHex->val, 24);
+	ASSERT_NE(projectedHex->parameters, nullptr);
+	const auto hexParameters = projectedHex->parameters->toCustom<JsonNode>();
+	EXPECT_EQ(hexParameters["damageSharePercent"].Integer(), 10)
+		<< "Painweaver scales only the cast-time Spell Power component";
+	EXPECT_EQ(newHorizonsHexOfPainAI::effectRounds(projectedHostile), 3);
+	EXPECT_EQ(projectedHostile->getAvailableHealth(), liveHostileHealth);
+	EXPECT_EQ(projectedAlly->getAvailableHealth(), liveAllyHealth);
+	EXPECT_EQ(hexOfPainDamageBonus(hostile), nullptr)
+		<< "Casting and valuing in the detached battle must not alter the live target";
+	const auto castBenefit = BattleEvaluator::estimateProjectedHexOfPainTargetValue(
+		hostile, projectedHostile, projected);
+	EXPECT_GT(castBenefit, 0.0f)
+		<< "The shared AI projection assigns positive future value to the cast-time snapshot";
+
+	DamageCache projectedDamage;
+	projectedDamage.buildDamageCache(projected, BattleSide::DEFENDER);
+	const BattleAttackInfo attackInfo(projectedHostile, projectedAlly, 0, false);
+	auto forecast = AttackPossibility::evaluate(attackInfo, projectedHostile->getPosition(),
+		projectedDamage, projected);
+	ASSERT_NE(forecast.attackerState, nullptr);
+	const auto projectedHostileHealthAfterAttack = forecast.attackerState->getAvailableHealth();
+	EXPECT_LT(projectedHostileHealthAfterAttack, liveHostileHealth)
+		<< "The detached AttackPossibility forecast must execute Hex of Pain AFTER_ATTACK";
+	const auto projectedAllyState = std::find_if(forecast.affectedUnits.begin(), forecast.affectedUnits.end(),
+		[&](const auto & state) { return state && state->unitId() == threatenedAlly->unitId(); });
+	ASSERT_NE(projectedAllyState, forecast.affectedUnits.end());
+	const auto projectedStrikeDamage = liveAllyHealth - (*projectedAllyState)->getAvailableHealth();
+	ASSERT_GT(projectedStrikeDamage, 0);
+	EXPECT_EQ(liveHostileHealth - projectedHostileHealthAfterAttack,
+		projectedHex->val + projectedStrikeDamage / 10);
+
+	EXPECT_EQ(hostile->getAvailableHealth(), liveHostileHealth);
+	EXPECT_EQ(threatenedAlly->getAvailableHealth(), liveAllyHealth);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	const auto * acceptedHex = hexOfPainDamageBonus(hostile);
+	ASSERT_NE(acceptedHex, nullptr);
+	EXPECT_EQ(acceptedHex->val, projectedHex->val)
+		<< "The accepted cast must snapshot the same Painweaver-adjusted value";
+	const auto acceptedHostileHealth = hostile->getAvailableHealth();
+	const auto acceptedAllyHealth = threatenedAlly->getAvailableHealth();
+	ASSERT_TRUE(attack(hostile, threatenedAlly->getPosition()));
+	const auto acceptedStrikeDamage = acceptedAllyHealth - threatenedAlly->getAvailableHealth();
+	const auto acceptedHexInjury = acceptedHostileHealth - hostile->getAvailableHealth();
+	EXPECT_GT(acceptedStrikeDamage, 0);
+	EXPECT_EQ(acceptedHexInjury, acceptedHex->val + acceptedStrikeDamage / 10);
+	EXPECT_EQ(acceptedHexInjury, liveHostileHealth - projectedHostileHealthAfterAttack)
+		<< "The AI's detached post-attack injury matches the authoritative combat event";
+}
+
 TEST_F(NewHorizonsMagicAITest, DoomValuesProjectedAttacksAndAppliesPartialResistanceOnce)
 {
 	useCommands = true;
@@ -5959,6 +6185,136 @@ TEST_F(NewHorizonsMagicAITest, VampirismAIDoesNotCastForFullHealthTargetsWithout
 	EXPECT_TRUE(callback->submitted.empty());
 	EXPECT_EQ(active->getAvailableHealth(), healthBefore);
 	EXPECT_EQ(vampirismStatus(active), nullptr);
+}
+
+TEST_F(NewHorizonsMagicAITest, BloodDrinkerAICastHealsSeventyFivePercentOfActualDetachedDamage)
+{
+	useCommands = false;
+	useSavedV3Formula = true;
+	fixtureActivePerkIds = {bloodDrinkerPerk};
+	ASSERT_NO_FATAL_FAILURE(startGame());
+
+	const auto shadowMagic = SecondarySkill(SecondarySkill::decode(shadowMagicSkill));
+	ASSERT_TRUE(shadowMagic.hasValue());
+	attackerSideHero->setSecSkillLevel(shadowMagic, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(selectShadowMagicPerkThroughLegalOffer(bloodDrinkerPerk));
+	const auto spell = lifeDrainSpell();
+	ASSERT_NE(spell, SpellID::NONE);
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	attackerSideHero->removeAllSpells();
+	attackerSideHero->addSpellToSpellbook(spell);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 10, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+
+	ASSERT_NO_FATAL_FAILURE(startBattle());
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(2, 5), 1);
+	auto * woundedAlly = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(3, 7), 2);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 5), 5);
+	// Keep the accepted overkill cast out of battle-result finalization: this
+	// fixture compares live stack pointers with a still-owned detached battle.
+	auto * backgroundEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(14, 8), 1000);
+	ASSERT_NE(active, nullptr);
+	ASSERT_NE(woundedAlly, nullptr);
+	ASSERT_NE(enemy, nullptr);
+	ASSERT_NE(backgroundEnemy, nullptr);
+	spells::BattleCast damageProbe(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	const auto theoreticalDamage = spell.toSpell()->battleMechanics(&damageProbe)->getEffectValue();
+	ASSERT_GT(theoreticalDamage, 20);
+	auto enemyState = enemy->acquireState();
+	int64_t enemyWound = enemy->getAvailableHealth() - 20;
+	enemyState->damage(enemyWound);
+	BattleUnitsChanged enemyInjury;
+	enemyInjury.battleID = BattleID(0);
+	enemyInjury.changedStacks.emplace_back(enemy->unitId(), UnitChanges::EOperation::UPDATE);
+	enemyInjury.changedStacks.back().data = enemyState->save();
+	enemyInjury.changedStacks.back().healthDelta = 20 - enemy->getAvailableHealth();
+	gameHandler->sendAndApply(enemyInjury);
+	const auto woundedBefore = woundedAlly->getAvailableHealth();
+	int64_t wound = 100;
+	ASSERT_GT(woundedBefore, wound);
+	auto woundedState = woundedAlly->acquireState();
+	woundedState->damage(wound);
+	BattleUnitsChanged injury;
+	injury.battleID = BattleID(0);
+	injury.changedStacks.emplace_back(woundedAlly->unitId(), UnitChanges::EOperation::UPDATE);
+	injury.changedStacks.back().data = woundedState->save();
+	injury.changedStacks.back().healthDelta = -wound;
+	gameHandler->sendAndApply(injury);
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -active->getMovementRange();
+	active->addNewBonus(std::make_shared<Bonus>(immobilized));
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+
+	const auto liveEnemyHealth = enemy->getAvailableHealth();
+	const auto liveWoundedHealth = woundedAlly->getAvailableHealth();
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	spells::BattleCast liveCast(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	const auto liveMechanics = spell.toSpell()->battleMechanics(&liveCast);
+	const auto liveTargets = SpellTargetEvaluator::getViableTargets(liveMechanics.get());
+	const auto selectedLiveTarget = std::find_if(liveTargets.begin(), liveTargets.end(),
+		[&](const auto & target)
+		{
+			return target.size() == 2 && target[0].unitValue && target[1].unitValue
+				&& target[0].unitValue->unitId() == enemy->unitId()
+				&& target[1].unitValue->unitId() == woundedAlly->unitId();
+		});
+	ASSERT_NE(selectedLiveTarget, liveTargets.end());
+	ASSERT_TRUE(liveMechanics->canBeCastAt(*selectedLiveTarget));
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell;
+	action.setTarget(*selectedLiveTarget);
+	EXPECT_EQ(battle()->getMagicRules()["rulesetVersion"].Integer(),
+		newHorizonsMagic::CURRENT_RULESET_VERSION);
+
+	auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto selected = action.getTarget(projected.get());
+	ASSERT_EQ(selected.size(), 2u);
+	ASSERT_NE(selected[0].unitValue, nullptr);
+	ASSERT_NE(selected[1].unitValue, nullptr);
+	EXPECT_EQ(selected[0].unitValue->unitId(), enemy->unitId());
+	EXPECT_EQ(selected[1].unitValue->unitId(), woundedAlly->unitId());
+	spells::BattleCast cast(projected.get(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	const auto mechanics = spell.toSpell()->battleMechanics(&cast);
+	ASSERT_TRUE(mechanics->canBeCastAt(selected));
+	mechanics->castEval(projected->getServerCallback(), selected);
+	const auto * projectedEnemy = projected->battleGetUnitByID(enemy->unitId());
+	const auto * projectedAlly = projected->battleGetUnitByID(woundedAlly->unitId());
+	ASSERT_NE(projectedEnemy, nullptr);
+	ASSERT_NE(projectedAlly, nullptr);
+	const auto actualDamage = liveEnemyHealth - projectedEnemy->getAvailableHealth();
+	const auto projectedHealing = projectedAlly->getAvailableHealth() - liveWoundedHealth;
+	ASSERT_GT(actualDamage, 0);
+	EXPECT_EQ(actualDamage, 20)
+		<< "The direct-damage spell overkills the wounded 20-HP stack, so healing must use clipped damage";
+	EXPECT_EQ(projectedHealing, actualDamage * 75 / 100);
+	EXPECT_NE(projectedHealing, actualDamage * 60 / 100)
+		<< "Blood Drinker uses 75% of damage actually clipped to the enemy's remaining health";
+	EXPECT_EQ(enemy->getAvailableHealth(), liveEnemyHealth);
+	EXPECT_EQ(woundedAlly->getAvailableHealth(), liveWoundedHealth);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(liveEnemyHealth - enemy->getAvailableHealth(), actualDamage);
+	EXPECT_EQ(woundedAlly->getAvailableHealth() - liveWoundedHealth, projectedHealing)
+		<< "The accepted Life Drain action matches the detached AI cast";
 }
 
 TEST_F(NewHorizonsMagicAITest, VampirismAIAvoidsRefreshingAnAlreadyFullDurationStatus)

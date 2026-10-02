@@ -23,6 +23,7 @@
 #include "../../../lib/spells/NewHorizonsMagic.h"
 
 #include <algorithm>
+#include <stdexcept>
 
 namespace
 {
@@ -30,10 +31,25 @@ constexpr auto spellKey = "new-horizons:hexOfPain";
 constexpr auto combatEventKey = "core:hexOfPain";
 constexpr auto spellEffectKey = "core:hexOfPainEffect";
 constexpr auto shadowMagicSkillKey = "new-horizons:shadowMagic";
+constexpr auto painweaverPerkKey = "new-horizons:shadowMagic.painweaver";
 
 SpellID hexOfPainSpell()
 {
 	return SpellID(SpellID::decode(spellKey));
+}
+
+bool activatePainweaverInFixture(JsonNode & rules)
+{
+	auto & perks = rules["skills"][shadowMagicSkillKey]["perks"].Vector();
+	const auto found = std::find_if(perks.begin(), perks.end(), [](const JsonNode & perk)
+	{
+		return perk["id"].String() == painweaverPerkKey;
+	});
+	if(found == perks.end())
+		return false;
+
+	(*found)["effect"]["status"].String() = "active";
+	return true;
 }
 
 class NewHorizonsHexOfPainTest : public HeroCommandFixture
@@ -66,8 +82,10 @@ protected:
 	{
 		HeroCommandFixture::mapLoaded(map);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, testHeroRules());
-		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
+		if(!activatePainweaverInFixture(perkRules))
+			throw std::runtime_error("Missing Painweaver from the New Horizons perk registry");
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
 
 		auto magicRules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
 		ASSERT_FALSE(magicRules["spells"][spellKey].isNull());
@@ -102,6 +120,32 @@ protected:
 		hero->addSpellToSpellbook(spell);
 		setTestSpellPointTotal(hero, 1000);
 		return true;
+	}
+
+	void acceptPainweaverFromBasicOffer(CGHeroInstance * hero)
+	{
+		const auto rankLookup = [hero](const std::string & skillId)
+		{
+			return hero->getPerkSkillRank(skillId);
+		};
+		for(uint64_t seed = 0; seed < 4096; ++seed)
+		{
+			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto selected = std::find_if(offers.begin(), offers.end(), [](const auto & offer)
+			{
+				return offer.selection.skillId == shadowMagicSkillKey
+					&& offer.selection.perkId == painweaverPerkKey;
+			});
+			if(selected == offers.end())
+				continue;
+
+			ASSERT_EQ(selected->requiredRank, static_cast<int>(MasteryLevel::BASIC));
+			const auto choice = static_cast<size_t>(std::distance(offers.begin(), selected));
+			gameHandler->levelUpHero(hero, offers, choice, seed, false);
+			ASSERT_TRUE(hero->hasActivePerk(shadowMagicSkillKey, painweaverPerkKey));
+			return;
+		}
+		FAIL() << "Painweaver was not available as a Basic New Horizons perk offer";
 	}
 
 	std::vector<const Bonus *> hexBonuses(const CStack * unit) const
@@ -155,6 +199,87 @@ TEST_F(NewHorizonsHexOfPainTest, V3SnapshotsSchoolAndSpellcraftScalingOnThePower
 	EXPECT_TRUE(hexBonuses(friendly).empty());
 }
 
+TEST_F(NewHorizonsHexOfPainTest, UnselectedPainweaverLeavesTheV3PowerTermUnchanged)
+{
+	startGame();
+	ASSERT_TRUE(configureCaster(attackerSideHero, 10, MasteryLevel::BASIC));
+	ASSERT_FALSE(attackerSideHero->hasActivePerk(shadowMagicSkillKey, painweaverPerkKey));
+	startBattle();
+	auto * cursed = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 100);
+	ASSERT_NE(cursed, nullptr);
+	battle()->nextRound();
+
+	ASSERT_TRUE(castOn(attackerSideHero, spell, cursed));
+	expectHex(cursed, 23, BattleSide::ATTACKER);
+}
+
+TEST_F(NewHorizonsHexOfPainTest, AcceptedBasicOfferScalesTheV3PowerTermOnceAndKeepsTheTenPercentShare)
+{
+	startGame();
+	ASSERT_TRUE(configureCaster(defenderSideHero, 10, MasteryLevel::BASIC));
+	acceptPainweaverFromBasicOffer(defenderSideHero);
+	startBattle();
+	auto * cursed = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex), 100);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 1000);
+	ASSERT_NE(cursed, nullptr);
+	ASSERT_NE(target, nullptr);
+	blockRetaliation(cursed);
+	battle()->nextRound();
+
+	ASSERT_TRUE(castOn(defenderSideHero, spell, cursed));
+	// Basic Shadow Magic contributes 115%; Painweaver adds 20% to that component:
+	// floor(0.7 * 10 * 115% * 120%) = 9, added to the fixed 15-point base.
+	expectHex(cursed, 24, BattleSide::DEFENDER);
+	const int64_t storedSnapshot = hexBonuses(cursed).front()->val;
+	ASSERT_EQ(storedSnapshot, 24);
+
+	defenderSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	const auto targetBefore = target->getAvailableHealth();
+	const auto cursedBefore = cursed->getAvailableHealth();
+	server.attacks.clear();
+	server.injuries.clear();
+	forceMaximumDamage(cursed);
+	ASSERT_TRUE(attack(cursed, target->getPosition()));
+
+	const auto attackResult = std::find_if(server.attacks.begin(), server.attacks.end(), [cursed](const auto & result)
+	{
+		return result.stackAttacking == cursed->unitId() && !result.counter();
+	});
+	ASSERT_NE(attackResult, server.attacks.end());
+	int64_t actualDamage = 0;
+	for(const auto & hit : attackResult->bsa)
+		if(hit.stackAttacked == target->unitId())
+			actualDamage += hit.damageAmount;
+	ASSERT_GT(actualDamage, 10);
+	EXPECT_EQ(targetBefore - target->getAvailableHealth(), actualDamage);
+
+	int64_t reactiveDamage = -1;
+	for(const auto & injury : server.injuries)
+	{
+		for(const auto & stack : injury.stacks)
+		{
+			if(stack.stackAttacked == cursed->unitId() && stack.attackerID == target->unitId())
+				reactiveDamage = stack.damageAmount;
+		}
+	}
+	EXPECT_EQ(reactiveDamage, storedSnapshot + actualDamage / 10);
+	EXPECT_EQ(cursedBefore - cursed->getAvailableHealth(), reactiveDamage);
+}
+
+TEST_F(NewHorizonsHexOfPainTest, PainweaverDoesNotIncreaseTheFixedBaseAtZeroSpellPower)
+{
+	startGame();
+	ASSERT_TRUE(configureCaster(attackerSideHero, 0, MasteryLevel::BASIC));
+	acceptPainweaverFromBasicOffer(attackerSideHero);
+	startBattle();
+	auto * cursed = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 100);
+	ASSERT_NE(cursed, nullptr);
+	battle()->nextRound();
+
+	ASSERT_TRUE(castOn(attackerSideHero, spell, cursed));
+	expectHex(cursed, 15, BattleSide::ATTACKER);
+}
+
 TEST_F(NewHorizonsHexOfPainTest, SavedV2UsesTheUnrankedSpellPowerCoefficient)
 {
 	useV2MagicRules = true;
@@ -169,6 +294,23 @@ TEST_F(NewHorizonsHexOfPainTest, SavedV2UsesTheUnrankedSpellPowerCoefficient)
 	EXPECT_EQ(battle()->getMagicRules()["rulesetVersion"].Integer(),
 		newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION);
 	EXPECT_FALSE(battle()->getMagicRules().Struct().contains("schoolRankPowerCoefficientPercent"));
+	expectHex(cursed, 22, BattleSide::ATTACKER);
+}
+
+TEST_F(NewHorizonsHexOfPainTest, SelectedPainweaverIsIgnoredBySavedV2Rules)
+{
+	useV2MagicRules = true;
+	startGame();
+	ASSERT_TRUE(configureCaster(attackerSideHero, 10, MasteryLevel::BASIC));
+	acceptPainweaverFromBasicOffer(attackerSideHero);
+	startBattle();
+	auto * cursed = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 100);
+	ASSERT_NE(cursed, nullptr);
+	battle()->nextRound();
+
+	ASSERT_TRUE(castOn(attackerSideHero, spell, cursed));
+	EXPECT_EQ(battle()->getMagicRules()["rulesetVersion"].Integer(),
+		newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION);
 	expectHex(cursed, 22, BattleSide::ATTACKER);
 }
 

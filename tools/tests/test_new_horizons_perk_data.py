@@ -79,6 +79,8 @@ ACTIVE_PERKS = {
     "new-horizons:natureMagic.beastcaller",
     "new-horizons:natureMagic.verdantWarden",
     "new-horizons:shadowMagic.malediction",
+    "new-horizons:shadowMagic.bloodDrinker",
+    "new-horizons:shadowMagic.painweaver",
     "new-horizons:shadowMagic.witheringTouch",
     "new-horizons:shadowMagic.soulBinder",
     "new-horizons:shadowMagic.darkGift",

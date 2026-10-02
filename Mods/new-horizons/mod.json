@@ -4170,7 +4170,7 @@
 								"requires": "basic",
 								"description": "Life Drain heals the friendly target for 75% of actual damage dealt instead of 60%.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Life Drain heals the friendly target for 75% of actual damage dealt instead of 60%."
 								}
 							},
@@ -4180,7 +4180,7 @@
 								"requires": "basic",
 								"description": "Hex of Pain receives +20% to its Spell Power-derived damage component.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Hex of Pain receives +20% to its Spell Power-derived damage component."
 								}
 							},
