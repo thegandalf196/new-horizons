@@ -790,8 +790,11 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 				&& defendedTown->hasBuilt(BuildingID::SPECIAL_2)
 				&& cb->battleGetFightingHero(BattleSide::DEFENDER) == heroCaster;
 
+			const SpellID familyID = battleState
+				? newHorizonsMagic::spellVariantBase(battleState->getMagicRules(), owner->getId())
+				: owner->getId();
 			const int bonus = newHorizonsMagic::spellDurationBonus(
-				dynamic_cast<const CGHeroInstance *>(caster), owner->getId());
+				dynamic_cast<const CGHeroInstance *>(caster), familyID);
 			if(v3Slow)
 			{
 				int64_t duration = newHorizonsMagic::SLOW_BASE_DURATION_ROUNDS;

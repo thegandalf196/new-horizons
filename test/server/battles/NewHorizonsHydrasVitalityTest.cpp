@@ -52,6 +52,15 @@ protected:
 			rules.Struct().erase("spellcraftEfficiencyPercent");
 			if(savedMagicVersion < newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 				rules["spells"]["core:quicksand"].Struct().erase("selectedPlacement");
+			for(auto & [identity, row] : rules["spells"].Struct())
+			{
+				(void)identity;
+				if(row.Struct().contains("variant"))
+				{
+					row.Struct().erase("variant");
+					row["active"].Bool() = false;
+				}
+			}
 		}
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,

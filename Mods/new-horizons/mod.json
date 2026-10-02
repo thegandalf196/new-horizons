@@ -1026,6 +1026,46 @@
 							3
 						]
 					},
+					"new-horizons:massCurse": {
+						"schools": [
+							"new-horizons:shadow"
+						],
+						"level": 1,
+						"costs": [
+							12,
+							12,
+							9,
+							9
+						],
+						"active": true,
+						"ordinaryAcquisition": false,
+						"variant": {
+							"base": "core:curse",
+							"skill": "new-horizons:shadowMagic",
+							"perk": "new-horizons:shadowMagic.grandMalediction",
+							"powerPercent": 100
+						}
+					},
+					"new-horizons:massSorrow": {
+						"schools": [
+							"new-horizons:shadow"
+						],
+						"level": 1,
+						"costs": [
+							12,
+							12,
+							12,
+							12
+						],
+						"active": true,
+						"ordinaryAcquisition": false,
+						"variant": {
+							"base": "core:sorrow",
+							"skill": "new-horizons:shadowMagic",
+							"perk": "new-horizons:shadowMagic.grandMalediction",
+							"powerPercent": 100
+						}
+					},
 					"core:deathRipple": {
 						"schools": [
 							"new-horizons:shadow"
@@ -4250,7 +4290,7 @@
 								"requires": "expert",
 								"description": "Grants Mass Curse and Mass Sorrow.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Grants Mass Curse and Mass Sorrow."
 								}
 							}
@@ -7065,7 +7105,8 @@
 	],
 	"spells": [
 		"config/spells/newHorizons.json",
-		"config/spells/iceBolt.json"
+		"config/spells/iceBolt.json",
+		"config/spells/massVariants.json"
 	],
 	"spellSchools": {
 		"light": {

@@ -176,7 +176,18 @@
 					"uniqueItems": true,
 					"items": {"type": "string", "enum": ["core:poison", "core:disease"]}
 				},
-				"selectedPlacement": {"type": "boolean", "enum": [true]}
+				"selectedPlacement": {"type": "boolean", "enum": [true]},
+				"variant": {
+					"type": "object",
+					"required": ["base", "skill", "perk", "powerPercent"],
+					"additionalProperties": false,
+					"properties": {
+						"base": {"type": "string", "minLength": 1},
+						"skill": {"type": "string", "minLength": 1},
+						"perk": {"type": "string", "minLength": 1},
+						"powerPercent": {"type": "integer", "enum": [100]}
+					}
+				}
 			}
 		},
 		"directDamage": {

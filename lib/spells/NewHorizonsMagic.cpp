@@ -289,7 +289,7 @@ bool sorrowRulesEnabled(const JsonNode & rules, const SpellID spell)
 {
 	constexpr std::array<int, 4> expectedCosts{4, 4, 4, 4};
 	return canonicalShadowStatusSpellRulesEnabled(
-		rules, spell, SpellID(SpellID::SORROW), "core:sorrow", expectedCosts);
+		rules, spellVariantBase(rules, spell), SpellID(SpellID::SORROW), "core:sorrow", expectedCosts);
 }
 
 bool shadowGiftEnabled(const JsonNode & rules, const SpellID spell)
@@ -543,7 +543,7 @@ bool curseRulesEnabled(const JsonNode & rules, const SpellID spell)
 {
 	constexpr std::array<int, 4> expectedCosts{4, 4, 3, 3};
 	return canonicalShadowStatusSpellRulesEnabled(
-		rules, spell, SpellID(SpellID::CURSE), "core:curse", expectedCosts);
+		rules, spellVariantBase(rules, spell), SpellID(SpellID::CURSE), "core:curse", expectedCosts);
 }
 
 std::optional<int> curseDurationRounds(const JsonNode & rules, const CGHeroInstance * hero, const SpellID spell)
@@ -757,11 +757,14 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 	{
 		const auto duration = curseDurationRounds(hero->getMagicRules(), hero, spell->getId())
 			.value_or(CURSE_BASE_DURATION_ROUNDS);
-		result = "Targets one enemy stack for " + std::to_string(duration)
+		const bool mass = spellVariantBase(hero->getMagicRules(), spell->getId()) != spell->getId();
+		result = std::string(mass ? "Targets every eligible enemy stack for " : "Targets one enemy stack for ") + std::to_string(duration)
 			+ (duration == 1 ? " round. " : " rounds. ")
 			+ "It always rolls the minimum value of its normal creature damage range and changes no other statistic.";
 		if(duration > CURSE_BASE_DURATION_ROUNDS)
 			result += " Malediction extends the duration by one round.";
+		if(mass)
+			result += " Granted by Grand Malediction; costs three times Curse before Mana reductions.";
 	}
 	else if(hero && sorrowRulesEnabled(hero->getMagicRules(), spell->getId()))
 	{
@@ -773,18 +776,22 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 			.value_or(SORROW_BASE_MORALE_PENALTY);
 		const auto duration = sorrowDurationRounds(rules, hero, spell->getId())
 			.value_or(SORROW_BASE_DURATION_ROUNDS);
-		result = "Targets one enemy stack for " + std::to_string(duration)
+		const bool mass = spellVariantBase(rules, spell->getId()) != spell->getId();
+		result = std::string(mass ? "Targets every eligible enemy stack for " : "Targets one enemy stack for ") + std::to_string(duration)
 			+ (duration == 1 ? " round. " : " rounds. ")
 			+ "Morale penalty = min(3, 1 + floor(scaled raw Hero Spell Power / 70)). "
 			"Saved v3 Shadow rank scales the Spell Power term by 100% / 115% / 130% / 145% at no rank / Basic / "
-			"Advanced / Expert; Spellcraft efficiency multiplies the School factor. The ordinary cast is single-target "
-			"at every rank. Current Shadow School factor: "
+			"Advanced / Expert; Spellcraft efficiency multiplies the School factor. "
+			+ std::string(mass ? "The Mass cast affects every eligible enemy stack. " : "The ordinary cast is single-target at every rank. ")
+			+ "Current Shadow School factor: "
 			+ std::to_string(schoolCoefficient) + "%; combined School and Spellcraft factor: "
 			+ percentFromBasisPoints(combinedCoefficient) + ". At Spell Power " + std::to_string(spellPower)
 			+ ", the ordinary penalty is -" + std::to_string(penalty) + " Morale before battle-only Warcasting. "
 			"Morale remains subject to the global legal range.";
 		if(duration > SORROW_BASE_DURATION_ROUNDS)
 			result += " Malediction extends the duration by one round.";
+		if(mass)
+			result += " Granted by Grand Malediction; costs three times Sorrow before Mana reductions.";
 	}
 
 	if(hero && spell->getId() == SpellID(SpellID::QUICKSAND)
@@ -1138,7 +1145,30 @@ void validateRules(const JsonNode & rules)
 		else if(version < SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "ordinaryAcquisition"});
 		else
-			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "ordinaryAcquisition"});
+			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "ordinaryAcquisition", "variant"});
+		if(data.Struct().contains("variant"))
+		{
+			const auto & variant = data["variant"];
+			fields(variant, {"base", "skill", "perk", "powerPercent"});
+			require(variant["base"].isString() && variant["base"].String() != name, "distinct variant base");
+			require(variant["skill"].isString() && variant["skill"].String().find(':') != std::string::npos,
+				"scoped variant Skill");
+			require(variant["perk"].isString() && variant["perk"].String().starts_with(variant["skill"].String() + '.'),
+				"variant perk belongs to Skill");
+			require(integer(variant["powerPercent"], 100, 100), "full-strength variant power percentage");
+			require(data["ordinaryAcquisition"].isBool() && !data["ordinaryAcquisition"].Bool(),
+				"perk variants cannot be ordinarily acquired");
+			const auto & base = rules["spells"][variant["base"].String()];
+			require(base.isStruct() && !base.Struct().contains("variant"), "nonrecursive saved variant base");
+			require(data["schools"] == base["schools"] && data["level"] == base["level"],
+				"variant preserves base school and level");
+			require(base["costs"].isVector() && base["costs"].Vector().size() == 4
+				&& data["costs"].isVector() && data["costs"].Vector().size() == 4, "variant mastery costs");
+			for(size_t index = 0; index < 4; ++index)
+				require(integer(data["costs"].Vector()[index], 0, 1000000)
+					&& data["costs"].Vector()[index].Integer() == 3 * base["costs"].Vector()[index].Integer(),
+					"variant costs three times base before reductions");
+		}
 		if(data.Struct().contains("ordinaryAcquisition"))
 			require(data["ordinaryAcquisition"].isBool(), "ordinaryAcquisition spell flag");
 		if(data.Struct().contains("selectedPlacement"))
@@ -1176,6 +1206,8 @@ void validateRules(const JsonNode & rules)
 		const auto * definition = SpellID(id).toSpell();
 		require(definition->getJsonKey() == name, "canonical spell identity required");
 		require(definition->isCommonHeroSpell(), "ability cannot be reclassified as hero spell");
+		if(data.Struct().contains("variant"))
+			require(definition->isCombat(), "perk variant must be a combat spell");
 		if(name.starts_with(GameConstants::NEW_HORIZONS_MOD_SCOPE + ':'))
 			require(version >= DIRECT_DAMAGE_RULESET_VERSION, "NH common spells require ruleset version 2 or later");
 		if(version >= DIRECT_DAMAGE_RULESET_VERSION && name == "core:magicArrow")

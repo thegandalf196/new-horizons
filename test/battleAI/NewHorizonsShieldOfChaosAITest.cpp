@@ -41,6 +41,11 @@ JsonNode savedV2MagicRulesWithCurrentSpellRoster()
 	{
 		(void)name;
 		spell.Struct().erase("selectedPlacement");
+		if(spell.Struct().contains("variant"))
+		{
+			spell.Struct().erase("variant");
+			spell["active"].Bool() = false;
+		}
 	}
 	if(newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION
 		< newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)

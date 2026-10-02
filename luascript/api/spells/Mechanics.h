@@ -30,6 +30,7 @@ namespace scripting::api
 		static bool ownerMatchesUnit(const ::spells::Mechanics & m, const battle::Unit & unit);
 		static bool ownerIsSameAsUnit(const ::spells::Mechanics & m, const battle::Unit & unit);
 		static bool isProtectedAreaCenter(const ::spells::Mechanics & m, const battle::Unit & unit, BattleHex centerHex);
+		static const ::spells::Spell * getEffectSpell(const ::spells::Mechanics & m);
 		static bool isNatureSpell(const ::spells::Mechanics & m);
 		static std::string getPluralFormTextID(const ::spells::Mechanics & m, const std::string & baseTextID, int32_t count);
 		static std::string getCureAfflictionSource(const ::spells::Mechanics & m);

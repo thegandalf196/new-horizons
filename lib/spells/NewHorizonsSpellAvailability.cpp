@@ -9,16 +9,131 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsSpellAvailability.h"
+#include "NewHorizonsMagic.h"
 #include "../constants/StringConstants.h"
 #include "../GameLibrary.h"
 #include "../callback/IGameInfoCallback.h"
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/IBattleState.h"
+#include "../mapObjects/CGHeroInstance.h"
 #include "CSpell.h"
 #include "CSpellHandler.h"
 
 namespace newHorizonsMagic
 {
+namespace
+{
+struct SavedSpellVariant
+{
+	SpellID base;
+	std::string skill;
+	std::string perk;
+};
+
+const CSpell * commonHeroSpell(SpellID spell)
+{
+	const auto id = spell.getNum();
+	if(id < 0 || !LIBRARY || !LIBRARY->spellh
+		|| static_cast<size_t>(id) >= LIBRARY->spellh->objects.size())
+		return nullptr;
+
+	const auto & definition = LIBRARY->spellh->objects.at(id);
+	if(!definition || !definition->isCommonHeroSpell())
+		return nullptr;
+
+	return definition.get();
+}
+
+const JsonNode * savedSpellRow(const JsonNode & rules, const std::string & identity)
+{
+	if(!rules.isStruct() || !rules["spells"].isStruct())
+		return nullptr;
+
+	const auto found = rules["spells"].Struct().find(identity);
+	if(found == rules["spells"].Struct().end() || !found->second.isStruct())
+		return nullptr;
+
+	return &found->second;
+}
+
+bool savedSpellRowIsActive(const JsonNode & row)
+{
+	if(!row.isStruct())
+		return false;
+
+	const auto active = row.Struct().find("active");
+	if(active == row.Struct().end())
+		return true; // Rows without a marker retain the saved roster's default-active semantics.
+
+	return active->second.isBool() && active->second.Bool();
+}
+
+std::optional<SavedSpellVariant> savedV3ActiveVariant(const JsonNode & rules, SpellID spell)
+{
+	if(!rules.isStruct()
+		|| rules["rulesetVersion"].getType() != JsonNode::JsonType::DATA_INTEGER
+		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+		return std::nullopt;
+
+	const auto * definition = commonHeroSpell(spell);
+	if(!definition)
+		return std::nullopt;
+
+	const auto * row = savedSpellRow(rules, definition->getJsonKey());
+	if(!row)
+		return std::nullopt;
+
+	const auto active = row->Struct().find("active");
+	const auto ordinaryAcquisition = row->Struct().find("ordinaryAcquisition");
+	const auto variant = row->Struct().find("variant");
+	if(active == row->Struct().end() || !active->second.isBool() || !active->second.Bool()
+		|| ordinaryAcquisition == row->Struct().end() || !ordinaryAcquisition->second.isBool()
+		|| ordinaryAcquisition->second.Bool()
+		|| variant == row->Struct().end() || !variant->second.isStruct())
+		return std::nullopt;
+
+	const auto & data = variant->second;
+	const auto base = data.Struct().find("base");
+	const auto skill = data.Struct().find("skill");
+	const auto perk = data.Struct().find("perk");
+	const auto powerPercent = data.Struct().find("powerPercent");
+	if(base == data.Struct().end() || !base->second.isString()
+		|| skill == data.Struct().end() || !skill->second.isString()
+		|| perk == data.Struct().end() || !perk->second.isString()
+		|| powerPercent == data.Struct().end()
+		|| powerPercent->second.getType() != JsonNode::JsonType::DATA_INTEGER
+		|| powerPercent->second.Integer() != 100)
+		return std::nullopt;
+
+	const auto & baseIdentity = base->second.String();
+	const auto & skillIdentity = skill->second.String();
+	const auto & perkIdentity = perk->second.String();
+	const auto baseSeparator = baseIdentity.find(':');
+	const auto skillSeparator = skillIdentity.find(':');
+	const auto perkSeparator = perkIdentity.find(':');
+	if(baseSeparator == std::string::npos || baseSeparator == 0 || baseSeparator + 1 == baseIdentity.size()
+		|| skillSeparator == std::string::npos || skillSeparator == 0 || skillSeparator + 1 == skillIdentity.size()
+		|| perkSeparator == std::string::npos || perkSeparator == 0 || perkSeparator + 1 == perkIdentity.size()
+		|| !perkIdentity.starts_with(skillIdentity + '.')
+		|| perkIdentity.size() == skillIdentity.size() + 1)
+		return std::nullopt;
+
+	const auto skillId = SecondarySkill::decode(skillIdentity);
+	if(skillId < 0)
+		return std::nullopt;
+
+	const SpellID baseSpell(SpellID::decode(baseIdentity));
+	const auto * baseDefinition = commonHeroSpell(baseSpell);
+	if(!baseDefinition || baseSpell == spell || baseDefinition->getJsonKey() != baseIdentity)
+		return std::nullopt;
+	const auto * baseRow = savedSpellRow(rules, baseDefinition->getJsonKey());
+	if(!baseRow || !savedSpellRowIsActive(*baseRow) || baseRow->Struct().contains("variant"))
+		return std::nullopt;
+
+	return SavedSpellVariant{baseSpell, skillIdentity, perkIdentity};
+}
+}
+
 bool spellBelongsToRules(const JsonNode & rules, const std::string & scopedIdentity, bool commonHeroSpell)
 {
 	if(!commonHeroSpell)
@@ -103,5 +218,23 @@ bool spellAllowedByBattleRoster(const CBattleInfoCallback & battle, SpellID spel
 {
 	const auto * state = battle.getBattle();
 	return state && spellAllowedBySavedRoster(state->getMagicRules(), spell);
+}
+
+SpellID spellVariantBase(const JsonNode & rules, SpellID spell)
+{
+	const auto variant = savedV3ActiveVariant(rules, spell);
+	return variant ? variant->base : spell;
+}
+
+bool variantGrantAvailable(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell)
+{
+	if(!hero || !hero->hasSpellbook())
+		return false;
+
+	const auto variant = savedV3ActiveVariant(rules, spell);
+	if(!variant)
+		return false;
+
+	return hero->hasActivePerk(variant->skill, variant->perk);
 }
 }

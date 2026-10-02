@@ -10,10 +10,12 @@
 #include "StdInc.h"
 
 #include "TargetCondition.h"
+#include "NewHorizonsSpellAvailability.h"
 
 #include "../GameConstants.h"
 #include "../CBonusTypeHandler.h"
 #include "../battle/CBattleInfoCallback.h"
+#include "../battle/IBattleState.h"
 #include "../battle/Unit.h"
 #include "../bonuses/BonusList.h"
 #include "../bonuses/BonusParameters.h"
@@ -28,6 +30,17 @@
 
 namespace spells
 {
+
+namespace
+{
+SpellID savedEffectFamily(const Mechanics * mechanics)
+{
+	const auto * callback = mechanics->battle();
+	const auto * state = callback ? callback->getBattle() : nullptr;
+	return state ? newHorizonsMagic::spellVariantBase(state->getMagicRules(), mechanics->getSpellId())
+		: mechanics->getSpellId();
+}
+}
 
 class TargetConditionItemBase : public TargetConditionItem
 {
@@ -164,7 +177,10 @@ public:
 protected:
 	bool check(const Mechanics * m, const battle::Unit * target) const override
 	{
-		return !target->hasAbsoluteImmunity(m->getSpellId());
+		const auto spell = m->getSpellId();
+		const auto family = savedEffectFamily(m);
+		return !target->hasAbsoluteImmunity(spell)
+			&& (family == spell || !target->hasAbsoluteImmunity(family));
 	}
 };
 
@@ -241,7 +257,9 @@ public:
 protected:
 	bool check(const Mechanics * m, const battle::Unit * target) const override
 	{
-		return !target->hasImmunity(m->getSpellId());
+		const auto spell = m->getSpellId();
+		const auto family = savedEffectFamily(m);
+		return !target->hasImmunity(spell) && (family == spell || !target->hasImmunity(family));
 	}
 };
 

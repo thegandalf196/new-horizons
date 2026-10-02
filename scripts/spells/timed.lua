@@ -70,7 +70,7 @@ function Script:deepCopyBonus(b)
 end
 
 function Script:convertBonuses(mechanics)
-	local spellKey = mechanics:getSpell():getJsonKey()
+	local spellKey = mechanics:getEffectSpell():getJsonKey()
 	local duration = nil
 	local crusadeDuration = nil
 	local entangleDuration = nil
@@ -278,7 +278,7 @@ function Script:applyHeroSpecialty(mechanics, buffer, unit)
 	local hero = mechanics:getHeroCaster()
 	if not hero then return end
 
-	local spellKey = mechanics:getSpell():getJsonKey()
+	local spellKey = mechanics:getEffectSpell():getJsonKey()
 	-- These New Horizons effects have authored power terms and no configured
 	-- spell specialty that should rewrite their fixed or derived components.
 	if spellKey == HOLY_ARMOR_SPELL or spellKey == HEAVENLY_GALE_SPELL
@@ -532,7 +532,7 @@ end
 function Script:apply(mechanics, server, target)
 	local battle   = mechanics:getBattle()
 	local describe = server:describeChanges()
-	local spellKey = mechanics:getSpell():getJsonKey()
+	local spellKey = mechanics:getEffectSpell():getJsonKey()
 	if spellKey == CRUSADE_SPELL and not mechanics:usesNewHorizonsMagicV3() then return end
 	if spellKey == SHIELD_OF_CHAOS_SPELL and not mechanics:usesNewHorizonsMagicV3() then return end
 	if spellKey == ENTANGLE_SPELL and not mechanics:usesNewHorizonsMagicV3() then return end
@@ -551,13 +551,13 @@ function Script:apply(mechanics, server, target)
 		end
 
 		self:applyHeroSpecialty(mechanics, buffer, unit)
-		self:applyHolyArmorPower(mechanics, buffer, mechanics:getSpell():getJsonKey())
-		self:applyHeavenlyGalePower(mechanics, buffer, mechanics:getSpell():getJsonKey())
-		self:applyShieldOfChaosPower(mechanics, buffer, mechanics:getSpell():getJsonKey())
-		self:applyGuardianSpiritPower(mechanics, buffer, mechanics:getSpell():getJsonKey())
-		self:applyDivineRetributionPower(mechanics, buffer, mechanics:getSpell():getJsonKey())
+		self:applyHolyArmorPower(mechanics, buffer, spellKey)
+		self:applyHeavenlyGalePower(mechanics, buffer, spellKey)
+		self:applyShieldOfChaosPower(mechanics, buffer, spellKey)
+		self:applyGuardianSpiritPower(mechanics, buffer, spellKey)
+		self:applyDivineRetributionPower(mechanics, buffer, spellKey)
 		self:applyCrusadePower(mechanics, buffer, spellKey)
-		self:applyTemporalFieldScale(mechanics, buffer, mechanics:getSpell():getJsonKey())
+		self:applyTemporalFieldScale(mechanics, buffer, spellKey)
 
 		if describe then
 			if spellKey == CRUSADE_SPELL then

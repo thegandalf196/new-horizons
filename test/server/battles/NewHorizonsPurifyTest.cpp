@@ -61,6 +61,15 @@ protected:
 			rules.Struct().erase("schoolRankPowerCoefficientPercent");
 			rules.Struct().erase("spellcraftEfficiencyPercent");
 			rules["spells"]["core:quicksand"].Struct().erase("selectedPlacement");
+			for(auto & [identity, row] : rules["spells"].Struct())
+			{
+				(void)identity;
+				if(row.Struct().contains("variant"))
+				{
+					row.Struct().erase("variant");
+					row["active"].Bool() = false;
+				}
+			}
 		}
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
 	}

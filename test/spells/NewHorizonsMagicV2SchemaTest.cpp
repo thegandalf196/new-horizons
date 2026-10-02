@@ -41,6 +41,10 @@ JsonNode v1Rules()
 		spell.Struct().erase("directDamage");
 		spell.Struct().erase("cureAfflictions");
 		spell.Struct().erase("selectedPlacement");
+		if(spell.Struct().contains("variant"))
+		{
+			spell.Struct().erase("variant");
+		}
 	}
 	rules.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
 	return rules;
@@ -56,6 +60,11 @@ JsonNode v2Rules()
 	{
 		(void)name;
 		spell.Struct().erase("selectedPlacement");
+		if(spell.Struct().contains("variant"))
+		{
+			spell.Struct().erase("variant");
+			spell["active"].Bool() = false;
+		}
 	}
 	rules.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
 	return rules;

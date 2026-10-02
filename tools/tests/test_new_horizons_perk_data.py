@@ -86,6 +86,7 @@ ACTIVE_PERKS = {
     "new-horizons:shadowMagic.darkGift",
     "new-horizons:shadowMagic.nightFeeder",
     "new-horizons:shadowMagic.reanimator",
+    "new-horizons:shadowMagic.grandMalediction",
     "new-horizons:warcasting.martialChanneling",
     "new-horizons:warcasting.arcaneChanneling",
     "new-horizons:warcasting.tacticalWeaving",

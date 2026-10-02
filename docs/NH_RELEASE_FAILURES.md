@@ -2,6 +2,54 @@
 
 ## Purpose
 
+### 2026-10-01 UP-114 Mass foundation — pre-build/data corrections
+
+Independent production review found that the draft powerPercent metadata
+accepted1..100 without an implemented magnitude consumer. Restrict schema,
+native validator and saved-row helper to100 for the first Curse/Sorrow slice;
+Mass Slow's60% requires its own consumer before the contract can widen.
+The first Python invocation omitted tools/tests from PYTHONPATH and could not
+import test_new_horizons_content. The repaired invocation then found six v2
+schema errors because its synthetic downgrade retained the new v3-only variant
+rows. Remove those rows from that old-profile fixture; native fixture adapters
+also strip variant declarations during their explicit v1/v2 downgrades.
+Repaired scoped data/inventory/schema validation passes31/31. These are fixture
+and metadata corrections, not native execution or playable acceptance.
+The additional variant contract case raises the focused data total to32/32.
+Client build40655 exits1: the new Lua proxy returned CSpell* even though
+Mechanics::getSpell exposes the spells::Spell interface, and used IBattleInfo
+without its defining header. Return the interface type expected by SpellProxy
+and include IBattleState.h. Root also corrects the custom Curse/Sorrow hero
+descriptions to name mass targeting rather than overriding them with the old
+single-target text. Native validation and activation remain pending.
+Repaired client89090 and both-target84160 exit0. Initial principal12488
+passes6/7, zero skips in2.330s (`UP114-initial` log/XML). Its only failure
+incorrectly expected hasSchoolProficiency(Curse) to be false at no Shadow rank:
+Curse is Level1 and is ordinarily accessible at that rank. Verify the actual
+zero rank rather than asserting an inapplicable acquisition restriction.
+Review also found the existing Curse/Sorrow CStack-only effect application
+could skip already-mutated StackWithBonuses targets in detached predictions.
+Use the battle::Unit interface and materialize projected state in the focused
+regression. Base-family spell immunity is now checked alongside variant immunity;
+ordinary nonvariant immunity avoids duplicate checks. Final rebuilt validation
+and activation remain pending; the clean first forecast is not proof against
+the previously-mutated projection defect.
+Compatibility-initial74707 passes40/41, zero skips in5.045s. The only failure
+is Bless's previously stale description substring: it expects "Light School
+coefficient:115%" while the existing production description reports the
+combined Spell Power coefficient. Its duration/effect assertions pass and this
+slice does not change that Bless description. Record the assertion reconciliation
+for Phase2; do not alter Bless gameplay or silently report41/41. The remaining
+availability/schema, Sorrow and legacy/v3 Bless guards pass.
+Final both-target37060 exits0 after the Unit-interface/projection fixes.
+Principal99435 passes48/48 in7.091s and activated21991 passes48/48 in7.326s,
+zero skips, with the stale Bless text assertion explicitly excluded. The new
+eight-case suite includes pre-materialized projected state and one family
+replacement, real scroll sources, physical-book removal, both immunity IDs,
+tooltip scope and accepted cost/effect parity. Data/inventory/schema32/32 and
+module drift check pass. Grand Malediction and both entries are active only
+after this gate; source/native verification does not imply playable promotion.
+
 ### 2026-10-01 Shadow perks — pre-build fixture corrections
 
 Root review repaired Hex's fixture-local perk lookup to use the nested

@@ -14,6 +14,7 @@
 
 class IGameInfoCallback;
 class CBattleInfoCallback;
+class CGHeroInstance;
 
 namespace newHorizonsMagic
 {
@@ -38,4 +39,12 @@ DLL_LINKAGE bool spellAllowedByWorldRoster(const IGameInfoCallback & world, Spel
 /// No actual battle returns false. An actual absent battle roster uses legacy
 /// admission, never the world or installed rules.
 DLL_LINKAGE bool spellAllowedByBattleRoster(const CBattleInfoCallback & battle, SpellID spell);
+/// Returns the saved v3 family base for an active, well-formed variant row.
+/// Older snapshots, inactive entries and entries without saved variant metadata
+/// retain their own identity; installed spell data never supplies a fallback.
+DLL_LINKAGE SpellID spellVariantBase(const JsonNode & rules, SpellID spell);
+/// A variant is granted only by its saved active perk mapping and a physical
+/// Spellbook, with the corresponding base spell active in the saved roster.
+DLL_LINKAGE bool variantGrantAvailable(const JsonNode & rules,
+	const CGHeroInstance * hero, SpellID spell);
 }

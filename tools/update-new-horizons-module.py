@@ -155,6 +155,7 @@ def main():
         'spells': [
             'config/spells/newHorizons.json',
             'config/spells/iceBolt.json',
+            'config/spells/massVariants.json',
         ],
         'spellSchools': schools,
         'skills': skills,

@@ -98,6 +98,11 @@ protected:
 			{
 				(void)name;
 				spellRow.Struct().erase("selectedPlacement");
+				if(spellRow.Struct().contains("variant"))
+				{
+					spellRow.Struct().erase("variant");
+					spellRow["active"].Bool() = false;
+				}
 			}
 		}
 		newHorizonsMagic::validateRules(magicRules);

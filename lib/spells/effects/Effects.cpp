@@ -16,6 +16,7 @@
 
 #include "../ISpellMechanics.h"
 #include "../NewHorizonsMagic.h"
+#include "../NewHorizonsSpellAvailability.h"
 
 #include "../../GameLibrary.h"
 #include "../../CStack.h"
@@ -288,6 +289,7 @@ public:
 
 		const auto * battle = mechanics->battle();
 		const auto * hero = mechanics->getHeroCaster();
+		const auto family = newHorizonsMagic::spellVariantBase(battle->getBattle()->getMagicRules(), mechanics->getSpellId());
 		const auto duration = newHorizonsMagic::curseDurationRounds(
 			battle->getBattle()->getMagicRules(), hero, mechanics->getSpellId());
 		if(!duration)
@@ -298,19 +300,19 @@ public:
 
 		for(const auto & destination : target)
 		{
-			const auto * stack = dynamic_cast<const CStack *>(destination.unitValue);
+			const auto * stack = destination.unitValue;
 			if(!stack || !stack->alive())
 				continue;
 
 			Bonus curse(BonusDuration::N_TURNS, BonusType::ALWAYS_MINIMUM_DAMAGE, BonusSource::SPELL_EFFECT,
-				0, BonusSourceID(mechanics->getSpellId()));
+				0, BonusSourceID(family));
 			curse.turnsRemain = *duration;
 			curse.description.appendRawString("Shadow's Curse");
 
 			SetStackEffect effects;
 			effects.battleID = mechanics->getBattleID();
 			const auto previousCurse = stack->getBonuses(Selector::source(
-				BonusSource::SPELL_EFFECT, BonusSourceID(mechanics->getSpellId()))
+				BonusSource::SPELL_EFFECT, BonusSourceID(family))
 				.And(Selector::type()(BonusType::ALWAYS_MINIMUM_DAMAGE)));
 			if(previousCurse && !previousCurse->empty())
 			{
@@ -413,6 +415,7 @@ public:
 
 		const auto * battle = mechanics->battle();
 		const auto * hero = mechanics->getHeroCaster();
+		const auto family = newHorizonsMagic::spellVariantBase(battle->getBattle()->getMagicRules(), mechanics->getSpellId());
 		const auto penalty = newHorizonsMagic::sorrowMoralePenalty(
 			battle->getBattle()->getMagicRules(), hero, mechanics->getSpellId(), mechanics->getEffectPower(),
 			mechanics->getWarcastingBonusPercent(), mechanics->getEmpowerSpellBonusPercent(),
@@ -424,19 +427,19 @@ public:
 
 		for(const auto & destination : target)
 		{
-			const auto * stack = dynamic_cast<const CStack *>(destination.unitValue);
+			const auto * stack = destination.unitValue;
 			if(!stack || !stack->alive())
 				continue;
 
 			Bonus morale(BonusDuration::N_TURNS, BonusType::MORALE, BonusSource::SPELL_EFFECT,
-				-*penalty, BonusSourceID(mechanics->getSpellId()));
+				-*penalty, BonusSourceID(family));
 			morale.turnsRemain = *duration;
 			morale.description.appendRawString("Shadow's Sorrow");
 
 			SetStackEffect effects;
 			effects.battleID = mechanics->getBattleID();
 			const auto previousSorrow = stack->getBonuses(Selector::source(
-				BonusSource::SPELL_EFFECT, BonusSourceID(mechanics->getSpellId()))
+				BonusSource::SPELL_EFFECT, BonusSourceID(family))
 				.And(Selector::type()(BonusType::MORALE)));
 			if(previousSorrow && !previousSorrow->empty())
 			{
@@ -645,10 +648,12 @@ Effects::EffectsMap Effects::loadJson(const JsonNode & effectMap, const std::str
 			effect = std::make_shared<LegacyIceBoltSpeedEffect>(std::move(effect));
 		else if(spellScope == "new-horizons" && spellIdentifier == "poison" && name == "poisoning")
 			effect = std::make_shared<NewHorizonsPhysicalPoisonEffect>(std::move(effect));
-		else if(spellScope == "core" && spellIdentifier == "curse"
+		else if(((spellScope == "core" && spellIdentifier == "curse")
+			|| (spellScope == "new-horizons" && spellIdentifier == "massCurse"))
 			&& (name == "timed" || name == "alwaysMinimumDamage"))
 			effect = std::make_shared<NewHorizonsCurseEffect>(std::move(effect));
-		else if(spellScope == "core" && spellIdentifier == "sorrow"
+		else if(((spellScope == "core" && spellIdentifier == "sorrow")
+			|| (spellScope == "new-horizons" && spellIdentifier == "massSorrow"))
 			&& (name == "morale" || name == "timed"))
 			effect = std::make_shared<NewHorizonsSorrowEffect>(std::move(effect));
 

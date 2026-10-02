@@ -54,6 +54,11 @@ JsonNode legacyRules()
 		spell.Struct().erase("directDamage");
 		spell.Struct().erase("cureAfflictions");
 		spell.Struct().erase("selectedPlacement");
+		if(spell.Struct().contains("variant"))
+		{
+			spell.Struct().erase("variant");
+			spell["active"].Bool() = false;
+		}
 		++it;
 	}
 	return rules;

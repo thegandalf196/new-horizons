@@ -36,6 +36,11 @@ JsonNode legacyMagicRules(int version)
 	{
 		(void)name;
 		spell.Struct().erase("selectedPlacement");
+		if(spell.Struct().contains("variant"))
+		{
+			spell.Struct().erase("variant");
+			spell["active"].Bool() = false;
+		}
 	}
 	if(version == newHorizonsMagic::RULESET_VERSION)
 	{

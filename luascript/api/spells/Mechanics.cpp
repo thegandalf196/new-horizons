@@ -21,9 +21,11 @@
 #include "../library/Spell.h"
 
 #include "../../../lib/battle/CBattleInfoCallback.h"
+#include "../../../lib/battle/IBattleState.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/NewHorizonsBlink.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../../lib/spells/NewHorizonsSorcery.h"
 #include "../../../lib/battle/Unit.h"
 #include "../../../lib/spells/Problem.h"
@@ -75,6 +77,23 @@ bool MechanicsProxy::isProtectedAreaCenter(const Mechanics & m, const battle::Un
 
 	const auto controllingSide = battle->playerToSide(battle->battleGetOwner(centerUnit));
 	return controllingSide == m.getCasterSide();
+}
+
+const ::spells::Spell * MechanicsProxy::getEffectSpell(const Mechanics & m)
+{
+	const auto * castSpell = m.getSpell();
+	if(!castSpell)
+		return nullptr;
+
+	const auto * callback = m.battle();
+	const auto * battleState = callback ? callback->getBattle() : nullptr;
+	if(!battleState)
+		return castSpell;
+
+	const SpellID familyID = newHorizonsMagic::spellVariantBase(
+		battleState->getMagicRules(), castSpell->getId());
+	const auto * effectSpell = familyID.toSpell();
+	return effectSpell ? effectSpell : castSpell;
 }
 
 bool MechanicsProxy::isNatureSpell(const Mechanics & m)
@@ -329,6 +348,8 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		{{"unit", "Unit whose identity is compared with the original area center."},
 		 {"centerHex", "Original targeted hex used to resolve the area center."}}, {},
 		"True when saved New Horizons Controlled Blast rules exclude this friendly center unit from Fireball, Inferno, or Meteor Shower damage.");
+	R.function<&MechanicsProxy::getEffectSpell>("getEffectSpell", {},
+		"Returns the saved-rules spell family used for effect formulas and source grouping. The actual cast Spell remains available from getSpell().");
 	R.method<&Mechanics::getSpell>("getSpell", {},
 		"Returns the Spell being cast.");
 	R.method<&Mechanics::adjustEffectValue>("adjustEffectValue",

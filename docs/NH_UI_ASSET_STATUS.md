@@ -4,7 +4,7 @@ Last audited: 2026-10-01
 
 This is the maintained UI/art status index for the current New Horizons working tree. It records live bindings and remaining visual/UI work. It does not replace gameplay specs, source configs, runtime manifests, or acceptance records. The row-level index is [NH_UI_ASSET_INVENTORY.csv](NH_UI_ASSET_INVENTORY.csv).
 
-The audit used canonical registries and current source bindings rather than counting files. The current combat-spell settings contain 100 entries, 96 enabled; Animate Dead, Clone, Weakness and Counterspell are inactive rows. These include noncanonical compatibility identities; the canonical identity coverage is separately tracked as 60/67 in the functional matrix. The five Neutral Adventure Spells are tracked separately. It also covers all 31 registered secondary skills, all 310 perk definitions, all eight Order bindings, and the scoped hero, spellbook, convenience, creature-info, and ranked-recruitment UI surfaces below. Active means enabled in source configuration, not necessarily promoted to the playable build. Unregistered Magic Missile is noted separately as non-live; Spell Lock is registered and has an active-profile native consumer test. The row-level CSV's spell bindings still need a fresh full reconciliation before being used as current totals; its perk activation labels are checked against the current registry.
+The audit used canonical registries and current source bindings rather than counting files. The current combat-spell settings contain 103 entries, 99 enabled; Animate Dead, Clone, Weakness and Counterspell are inactive rows. These include noncanonical compatibility identities; the canonical identity coverage is separately tracked as 60/67 in the functional matrix. The five Neutral Adventure Spells are tracked separately. It also covers all 31 registered secondary skills, all 310 perk definitions, all eight Order bindings, and the scoped hero, spellbook, convenience, creature-info, and ranked-recruitment UI surfaces below. Active means enabled in source configuration, not necessarily promoted to the playable build. Unregistered Magic Missile is noted separately as non-live; Spell Lock is registered and has an active-profile native consumer test. The row-level CSV's spell bindings still need a fresh full reconciliation before being used as current totals; its perk activation labels are checked against the current registry.
 
 This is a binding inventory, not a full visual audit or a product completion claim. No game was launched and no GUI review was performed for this register. A resource path, generated manifest, native-size file, or implemented code path does not by itself establish final art or accepted UI. `tools.tests.test_new_horizons_ui_perk_inventory` now checks all 310 perk rows against the current activation registry and ensures active neutral fallbacks remain classified as Not done art.
 
@@ -31,6 +31,14 @@ Every row has separate Implementation and Art columns. Each column uses only the
 Implementation is Final only when the intended UI behavior and its presentation have been accepted. The CSV's Remaining field explains each classification and points to current sources.
 
 ## Current status summary
+
+UP-114 first-slice source binding: distinct Mass Curse and Mass Sorrow entries
+reuse their own base spell's exact classic icons, sound and affected-stack
+animation by reference; no extracted art is redistributed. The distinct names
+and normal spell selection distinguish the variants. Both source rows and
+Grand Malediction are active with48/48 focused native checks. These bindings are Provisional
+until in-game legibility and selection are reviewed, not new commissioned or
+approved Mass artwork. Mass Bless, Regeneration and Slow entries remain missing.
 
 UP-064 main-menu branding: eight bounded HoMM3-skill reference-based subtitle
 patches cover the available Complete/Armageddon's Blade main, scenario-selection

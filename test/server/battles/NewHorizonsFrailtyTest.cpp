@@ -45,6 +45,11 @@ JsonNode savedV2RulesBeforeFrailty()
 	{
 		(void)name;
 		spell.Struct().erase("selectedPlacement");
+		if(spell.Struct().contains("variant"))
+		{
+			spell.Struct().erase("variant");
+			spell["active"].Bool() = false;
+		}
 	}
 	newHorizonsMagic::validateRules(rules);
 	return rules;

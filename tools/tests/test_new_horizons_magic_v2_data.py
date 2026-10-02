@@ -43,6 +43,8 @@ class MagicV2DataTest(unittest.TestCase):
         self.rules.pop('schoolRankPowerCoefficientPercent')
         self.rules.pop('spellcraftEfficiencyPercent')
         self.rules['spells']['core:quicksand'].pop('selectedPlacement')
+        self.rules['spells'] = {key: row for key, row in self.rules['spells'].items()
+                                if 'variant' not in row}
         self.old_rules = legacy_rules(self.rules)
         self.formula_spell = 'core:magicArrow'
 
@@ -55,6 +57,26 @@ class MagicV2DataTest(unittest.TestCase):
         self.old_validator.validate(self.old_rules)
         self.assertFalse(self.old_validator.is_valid(self.rules))
         self.assertFalse(self.validator.is_valid(self.old_rules))
+
+    def test_mass_shadow_variants_preserve_base_school_level_and_triple_cost(self):
+        validator = Draft4Validator(self.v3, registry=self.registry)
+        for variant_id, base_id in (('new-horizons:massCurse', 'core:curse'),
+                                    ('new-horizons:massSorrow', 'core:sorrow')):
+            with self.subTest(variant=variant_id):
+                row = self.v3_rules['spells'][variant_id]
+                base = self.v3_rules['spells'][base_id]
+                self.assertEqual(row['schools'], base['schools'])
+                self.assertEqual(row['level'], base['level'])
+                self.assertEqual(row['costs'], [3 * cost for cost in base['costs']])
+                self.assertFalse(row['ordinaryAcquisition'])
+                self.assertEqual(row['variant'], {
+                    'base': base_id, 'skill': 'new-horizons:shadowMagic',
+                    'perk': 'new-horizons:shadowMagic.grandMalediction', 'powerPercent': 100,
+                })
+                for invalid in (None, 60, 101, '100'):
+                    changed = copy.deepcopy(self.v3_rules)
+                    changed['spells'][variant_id]['variant']['powerPercent'] = invalid
+                    self.assertFalse(validator.is_valid(changed))
 
     def test_v3_requires_exact_school_rank_coefficients_and_v2_rejects_them(self):
         v3_validator = Draft4Validator(self.v3, registry=self.registry)

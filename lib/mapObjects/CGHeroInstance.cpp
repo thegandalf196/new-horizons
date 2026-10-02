@@ -75,6 +75,40 @@ bool isSpellbindersHatLevelGrant(const Bonus & bonus)
 	return bonus.source == BonusSource::ARTIFACT
 		&& bonus.sid == BonusSourceID(spellbindersHatArtifactID());
 }
+
+bool hasSavedV3VariantDeclaration(const JsonNode & rules, SpellID spellId)
+{
+	if(!rules.isStruct()
+		|| rules["rulesetVersion"].getType() != JsonNode::JsonType::DATA_INTEGER
+		|| rules["rulesetVersion"].Integer() != newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+		return false;
+
+	const auto * spell = spellId.toSpell();
+	if(!spell || !spell->isCommonHeroSpell() || !rules["spells"].isStruct())
+		return false;
+
+	const auto found = rules["spells"].Struct().find(spell->getJsonKey());
+	return found != rules["spells"].Struct().end()
+		&& found->second.isStruct()
+		&& found->second.Struct().contains("variant");
+}
+
+void appendSavedVariantGrants(const CGHeroInstance & hero, std::set<SpellID> & result)
+{
+	const auto & rules = hero.getMagicRules();
+	if(!rules.isStruct() || !rules["spells"].isStruct())
+		return;
+
+	for(const auto & [identity, row] : rules["spells"].Struct())
+	{
+		if(!row.isStruct() || !row.Struct().contains("variant"))
+			continue;
+
+		const SpellID spell(SpellID::decode(identity));
+		if(spell.getNum() >= 0 && hero.isSpellInscribedForCasting(spell))
+			result.insert(spell);
+	}
+}
 }
 
 const ui32 CGHeroInstance::NO_PATROLLING = std::numeric_limits<ui32>::max();
@@ -1782,6 +1816,10 @@ bool CGHeroInstance::spellbookContainsSpell(const SpellID & spell) const
 
 bool CGHeroInstance::isSpellInscribedForCasting(const SpellID & spellId) const
 {
+	if(hasSavedV3VariantDeclaration(getMagicRules(), spellId))
+		return cb && cb->isAllowed(spellId) && !isNewHorizonsSpellExcluded(spellId)
+			&& newHorizonsMagic::variantGrantAvailable(getMagicRules(), this, spellId);
+
 	return spellbookContainsSpell(spellId) || isSpellbinderHatGrantEligible(spellId);
 }
 
@@ -1807,7 +1845,15 @@ bool CGHeroInstance::isSpellbinderHatGrantEligible(const SpellID & spellId) cons
 
 std::set<SpellID> CGHeroInstance::getInscribedSpellsForCasting() const
 {
-	auto result = spells;
+	std::set<SpellID> result;
+	for(const auto & spell : spells)
+	{
+		if(!hasSavedV3VariantDeclaration(getMagicRules(), spell)
+			|| isSpellInscribedForCasting(spell))
+			result.insert(spell);
+	}
+	appendSavedVariantGrants(*this, result);
+
 	if(!newHorizonsMagic::rulesActive(getMagicRules()) || !cb || !LIBRARY || !LIBRARY->spellh)
 		return result;
 	const auto * head = getArt(ArtifactPosition::HEAD);
@@ -1828,6 +1874,19 @@ std::vector<BonusSourceID> CGHeroInstance::getSourcesForSpell(const SpellID & sp
 		return sources;
 	if(isNewHorizonsSpellExcluded(spellId))
 		return sources;
+	if(hasSavedV3VariantDeclaration(getMagicRules(), spellId))
+	{
+		if(cb && cb->isAllowed(spellId) && newHorizonsMagic::variantGrantAvailable(getMagicRules(), this, spellId))
+		{
+			const auto * spell = spellId.toSpell();
+			const auto & row = getMagicRules()["spells"][spell->getJsonKey()];
+			const auto & skillIdentity = row["variant"]["skill"].String();
+			const auto skillId = SecondarySkill::decode(skillIdentity);
+			if(skillId >= 0)
+				sources.emplace_back(SecondarySkill(skillId));
+		}
+		return sources;
+	}
 
 	if(hasSpellbook() && spellbookContainsSpell(spellId))
 		sources.emplace_back(getArt(ArtifactPosition::SPELLBOOK)->getId());
@@ -1906,9 +1965,19 @@ void CGHeroInstance::removeAllSpells()
 	spells.clear();
 }
 
-const std::set<SpellID> & CGHeroInstance::getSpellsInSpellbook() const
+std::set<SpellID> CGHeroInstance::getSpellsInSpellbook() const
 {
-	return spells;
+	std::set<SpellID> result;
+	for(const auto & spell : spells)
+	{
+		if(!hasSavedV3VariantDeclaration(getMagicRules(), spell))
+			result.insert(spell);
+		else if(isSpellInscribedForCasting(spell))
+			result.insert(spell);
+	}
+	appendSavedVariantGrants(*this, result);
+
+	return result;
 }
 
 int CGHeroInstance::maxSpellLevel() const

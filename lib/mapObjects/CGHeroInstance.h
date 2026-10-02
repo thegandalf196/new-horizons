@@ -192,16 +192,18 @@ public:
 	int maxSpellLevel() const;
 	void addSpellToSpellbook(const SpellID & spell);
 	void removeSpellFromSpellbook(const SpellID & spell);
-	/// True for durable knowledge or eligible temporary spellbook access supplied by equipped effects.
-	/// This does not supply a physical Spellbook artifact or bypass other casting rules.
+	/// True for durable knowledge, eligible temporary inscriptions, or an active
+	/// perk-granted variant. Variant grants still require a physical Spellbook.
 	bool isSpellInscribedForCasting(const SpellID & spell) const;
-	/// Durable spellbook entries plus temporary eligible inscriptions for cast-selection consumers.
+	/// Durable entries plus eligible temporary or perk-granted entries for casting consumers.
 	std::set<SpellID> getInscribedSpellsForCasting() const;
 	bool spellbookContainsSpell(const SpellID & spell) const;
 	std::vector<BonusSourceID> getSourcesForSpell(const SpellID & spell) const;
 	void removeSpellbook();
 	void removeAllSpells();
-	const std::set<SpellID> & getSpellsInSpellbook() const;
+	/// Durable spellbook entries plus active perk-granted variants. This is a
+	/// derived view; only the underlying `spells` set is serialized.
+	std::set<SpellID> getSpellsInSpellbook() const;
 	EAlignment getAlignment() const;
 	bool needsLastStack()const override;
 

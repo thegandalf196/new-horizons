@@ -80,6 +80,11 @@ protected:
 			{
 				(void)spellId;
 				spellRow.Struct().erase("selectedPlacement");
+				if(spellRow.Struct().contains("variant"))
+				{
+					spellRow.Struct().erase("variant");
+					spellRow["active"].Bool() = false;
+				}
 			}
 		}
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
