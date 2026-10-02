@@ -102,11 +102,16 @@ end
 --- Mirrors C++ UnitEffect::transformTargetByRange.
 function Script:transformByRange(mechanics, aimPoint, spellTarget)
 	local battle = mechanics:getBattle()
+	local function isProtectedCenter(unit)
+		if #aimPoint == 0 or not aimPoint[1].hex then return false end
+		return mechanics:isProtectedAreaCenter(unit, aimPoint[1].hex)
+	end
 
 	local function mainFilter(unit)
 		if not self:isValidTarget(mechanics, unit) then return false end
 		if not self:isReceptive(mechanics, unit) then return false end
 		if mechanics:isSmart() and not mechanics:ownerMatches(unit) then return false end
+		if isProtectedCenter(unit) then return false end
 		return true
 	end
 
@@ -161,7 +166,8 @@ function Script:transformByRange(mechanics, aimPoint, spellTarget)
 		end
 	end
 
-	if mechanics:alwaysHitFirstTarget() and #aimPoint > 0 and aimPoint[1].unit then
+	if mechanics:alwaysHitFirstTarget() and #aimPoint > 0 and aimPoint[1].unit
+		and not isProtectedCenter(aimPoint[1].unit) then
 		addUnit(aimPoint[1].unit)
 	end
 

@@ -449,6 +449,39 @@ TEST(NewHorizonsPerkState, OfferIsDeterministicBoundedAndUsesOnlyLearnedEligible
 	EXPECT_TRUE(saved.prepareOffer([](const std::string &) { return 0; }, 42).empty());
 }
 
+TEST(NewHorizonsPerkState, HavocDamagePerksAreAcceptedBasicChoices)
+{
+	constexpr auto havoc = "new-horizons:havocMagic";
+	for(const auto * perk : {"new-horizons:havocMagic.pyromancer", "new-horizons:havocMagic.cryomancer"})
+	{
+		SCOPED_TRACE(perk);
+		auto saved = state();
+		for(auto & candidate : saved.rules["skills"][havoc]["perks"].Vector())
+			if(candidate["id"].String() == perk)
+				candidate["effect"]["status"].String() = "active";
+		const auto rank = [](const std::string & skillId)
+		{
+			return skillId == "new-horizons:havocMagic" ? 1 : 0;
+		};
+		bool accepted = false;
+		for(uint32_t seed = 0; seed < 64 && !accepted; ++seed)
+		{
+			const auto offer = saved.prepareOffer(rank, seed);
+			for(size_t index = 0; index < offer.size(); ++index)
+				if(offer[index].selection.perkId == perk)
+				{
+					EXPECT_EQ(offer[index].requiredRank, 1);
+					saved.acceptOffer(offer, index, rank, seed);
+					accepted = true;
+					break;
+				}
+		}
+		ASSERT_TRUE(accepted);
+		EXPECT_TRUE(saved.hasSelection(havoc, perk));
+		EXPECT_TRUE(saved.canAdvanceSkillNormally(havoc, 1));
+	}
+}
+
 TEST(NewHorizonsPerkState, ExpertHavocWithBasicStormcallerOffersOnlyAdvancedTier)
 {
 	auto saved = state();

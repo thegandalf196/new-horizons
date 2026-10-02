@@ -899,7 +899,16 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 			? newHorizonsMagic::spellPowerCoefficientBasisPoints(
 				battle->getMagicRules(), caster->getHeroCaster(), owner->getId(), getCastSpellPowerComponentBonusPercent())
 			: 10000;
-		const int damageCoefficientBasisPoints = owner->isDamage() ? spellPowerCoefficientBasisPoints : 10000;
+		const auto * heroCaster = caster->getHeroCaster();
+		const int damagePerkBonusPercent = battle && owner->isDamage()
+			? newHorizonsMagic::spellPowerDamagePerkBonusPercent(battle->getMagicRules(), heroCaster, owner)
+			: 0;
+		const int damageCoefficientBasisPoints = owner->isDamage()
+			? spellPowerCoefficientBasisPoints * (100 + damagePerkBonusPercent) / 100
+			: 10000;
+		const int effectPowerCoefficientBasisPoints = owner->isDamage()
+			? damageCoefficientBasisPoints
+			: spellPowerCoefficientBasisPoints;
 			const int empowerBonusPercent = battle
 				? newHorizonsMagic::empowerSpellBonusPercent(
 					battle->getMagicRules(), caster->getHeroCaster(), owner->getId(), isMassSlow() ? 3 : 1)
@@ -984,13 +993,13 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 					effectValue = *magicArrowValue;
 				else if(savedValue)
 					effectValue = *savedValue;
-				else if(warcastingBonusPercent > 0 || spellPowerCoefficientBasisPoints != 10000
+				else if(warcastingBonusPercent > 0 || effectPowerCoefficientBasisPoints != 10000
 					|| empowerBonusPercent > 0)
 				{
 					const int64_t powerNumerator = static_cast<int64_t>(owner->getBasePower()) * effectPower;
 					effectValue = owner->getLevelPower(effectLevel)
 						+ scaleSpellPowerComponentWithCoefficientBasisPoints(
-							powerNumerator, getEffectPowerDivisor(), spellPowerCoefficientBasisPoints);
+							powerNumerator, getEffectPowerDivisor(), effectPowerCoefficientBasisPoints);
 				}
 				else
 					effectValue = owner->calculateRawEffectValue(effectLevel, effectPower, 1, getEffectPowerDivisor());

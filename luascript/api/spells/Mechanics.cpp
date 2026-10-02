@@ -48,6 +48,35 @@ bool MechanicsProxy::ownerIsSameAsUnit(const Mechanics & m, const battle::Unit &
 	return m.ownerMatches(&unit, true);
 }
 
+bool MechanicsProxy::isProtectedAreaCenter(const Mechanics & m, const battle::Unit & unit, BattleHex centerHex)
+{
+	if(!m.usesNewHorizonsMagic() || !centerHex.isValid())
+		return false;
+
+	const auto * spell = m.getSpell();
+	if(!spell)
+		return false;
+
+	const auto & spellKey = spell->getJsonKey();
+	if(spellKey != "core:fireball" && spellKey != "core:inferno" && spellKey != "core:meteorShower")
+		return false;
+
+	const auto * hero = m.getHeroCaster();
+	if(!hero || !hero->hasActivePerk("new-horizons:havocMagic", "new-horizons:havocMagic.controlledBlast"))
+		return false;
+
+	const auto * battle = m.battle();
+	if(!battle)
+		return false;
+
+	const auto * centerUnit = battle->battleGetUnitByPos(centerHex, true);
+	if(!centerUnit || centerUnit->unitId() != unit.unitId())
+		return false;
+
+	const auto controllingSide = battle->playerToSide(battle->battleGetOwner(centerUnit));
+	return controllingSide == m.getCasterSide();
+}
+
 bool MechanicsProxy::isNatureSpell(const Mechanics & m)
 {
 	const auto * battle = m.battle();
@@ -296,6 +325,10 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 	R.function<&ownerIsSameAsUnit>("ownerIsSameAs",
 		{{"unit", "Unit whose ownership is being compared against the caster's."}}, {},
 		"True if the given unit is owned by the same player as the caster, independent of spell polarity.");
+	R.function<&MechanicsProxy::isProtectedAreaCenter>("isProtectedAreaCenter",
+		{{"unit", "Unit whose identity is compared with the original area center."},
+		 {"centerHex", "Original targeted hex used to resolve the area center."}}, {},
+		"True when saved New Horizons Controlled Blast rules exclude this friendly center unit from Fireball, Inferno, or Meteor Shower damage.");
 	R.method<&Mechanics::getSpell>("getSpell", {},
 		"Returns the Spell being cast.");
 	R.method<&Mechanics::adjustEffectValue>("adjustEffectValue",

@@ -1968,6 +1968,25 @@ bool hasMetamagicPerk(const CGHeroInstance * hero, std::string_view perkId)
 	return hero && hero->hasActivePerk(std::string(METAMAGIC_SKILL), std::string(perkId));
 }
 
+int spellPowerDamagePerkBonusPercent(const JsonNode & rules, const CGHeroInstance * hero,
+	const spells::Spell * spell)
+{
+	if(!hero || !spell || !rulesActive(rules)
+		|| rules["rulesetVersion"].Integer() < SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		|| !spell->isCommonHeroSpell() || !spellAllowedBySavedRoster(rules, spell->getId())
+		|| isAdventureSpell(rules, spell->getId()))
+		return 0;
+
+	const auto & spellKey = spell->getJsonKey();
+	if((spellKey == "core:fireball" || spellKey == "core:fireWall" || spellKey == "core:inferno")
+		&& hero->hasActivePerk(std::string(HAVOC_MAGIC_SKILL), std::string(HAVOC_PYROMANCER)))
+		return HAVOC_PYROMANCER_DAMAGE_BONUS_PERCENT;
+	if((spellKey == "core:iceBolt" || spellKey == "core:frostRing")
+		&& hero->hasActivePerk(std::string(HAVOC_MAGIC_SKILL), std::string(HAVOC_CRYOMANCER)))
+		return HAVOC_CRYOMANCER_DAMAGE_BONUS_PERCENT;
+	return 0;
+}
+
 bool hasStormcallerPerk(const CGHeroInstance * hero, const spells::Spell * spell)
 {
 	if(!hero || !spell || !rulesActive(hero->getMagicRules())

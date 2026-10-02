@@ -89,8 +89,13 @@ inline constexpr std::string_view METAMAGIC_SPELL_ECHO = "new-horizons:metamagic
 inline constexpr std::string_view METAMAGIC_GRAND = "new-horizons:metamagic.grandMetamagic";
 inline constexpr std::string_view METAMAGIC_PERFECT_SEQUENCE = "new-horizons:metamagic.perfectSequence";
 inline constexpr std::string_view HAVOC_STORMCALLER = "new-horizons:havocMagic.stormcaller";
+inline constexpr std::string_view HAVOC_MAGIC_SKILL = "new-horizons:havocMagic";
+inline constexpr std::string_view HAVOC_PYROMANCER = "new-horizons:havocMagic.pyromancer";
+inline constexpr std::string_view HAVOC_CRYOMANCER = "new-horizons:havocMagic.cryomancer";
 inline constexpr std::string_view HAVOC_CONDUCTOR = "new-horizons:havocMagic.conductor";
 inline constexpr std::string_view HAVOC_ANNIHILATOR = "new-horizons:havocMagic.annihilator";
+constexpr int HAVOC_PYROMANCER_DAMAGE_BONUS_PERCENT = 15;
+constexpr int HAVOC_CRYOMANCER_DAMAGE_BONUS_PERCENT = 20;
 inline constexpr std::string_view LIGHT_MAGIC_SKILL = "new-horizons:lightMagic";
 inline constexpr std::string_view LIGHT_BENEDICTION = "new-horizons:lightMagic.benediction";
 inline constexpr std::string_view SPELLCRAFT_SKILL = "new-horizons:spellcraft";
@@ -415,6 +420,11 @@ DLL_LINKAGE int counterspellCost(int listedCost, bool countermage, bool counters
 /// the same rank/perk gates.
 DLL_LINKAGE int metamagicRank(const CGHeroInstance * hero);
 DLL_LINKAGE bool hasMetamagicPerk(const CGHeroInstance * hero, std::string_view perkId);
+/// Saved-v3 Pyromancer / Cryomancer coefficient bonus for their canonical
+/// combat damage spells. Returns 15 or 20 only for an active selected perk;
+/// fixed damage bases, durations, and creature casts are excluded.
+DLL_LINKAGE int spellPowerDamagePerkBonusPercent(const JsonNode & rules, const CGHeroInstance * hero,
+	const spells::Spell * spell);
 /// Stormcaller enhances only the Spell Power-derived part of Lightning Bolt,
 /// Chain Lightning, and Master Chain Lightning. The saved-rules/perk check
 /// keeps legacy Solmyr and legacy spell damage unchanged.

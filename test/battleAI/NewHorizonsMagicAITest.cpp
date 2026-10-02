@@ -278,6 +278,7 @@ protected:
 	bool useRealHeroScale = false;
 	bool neutralizeCommandEffects = false;
 	bool useSavedPerkRules = false;
+	bool useControlledBlast = false;
 	bool useFocusMagic = false;
 	bool historicalCounterspell = false;
 	int savedMagicRulesVersion = 0;
@@ -305,9 +306,15 @@ protected:
 			newHorizonsMagic::validateRules(rules);
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
 		}
-		if(useSavedPerkRules)
-			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-				JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		if(useSavedPerkRules || useControlledBlast)
+		{
+			JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+			if(useControlledBlast)
+				for(auto & perk : perks["skills"]["new-horizons:havocMagic"]["perks"].Vector())
+					if(perk["id"].String() == "new-horizons:havocMagic.controlledBlast")
+						perk["effect"]["status"].String() = "active";
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
+		}
 		if(neutralizeCommandEffects)
 		{
 			const JsonNode combatRules(JsonPath::builtin("config/newHorizonsCombat"));
@@ -3797,6 +3804,63 @@ TEST_F(NewHorizonsMagicAITest, CanonicalFireballIsPreferredForClusterWithoutMuta
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), castsBefore);
 	EXPECT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
+}
+
+TEST_F(NewHorizonsMagicAITest, ControlledBlastAIUsesFriendlyCenterAndProjectionMatchesAcceptedCast)
+{
+	useCurrentMagicRules = true;
+	useControlledBlast = true;
+	neutralizeCommandEffects = true;
+	prepareCommands(true);
+	const auto initialSpells = attackerSideHero->getSpellsInSpellbook();
+	for(const auto spell : initialSpells)
+		attackerSideHero->removeSpellFromSpellbook(spell);
+	const SpellID fireball(SpellID::FIREBALL);
+	attackerSideHero->addSpellToSpellbook(fireball);
+	attackerSideHero->setSecSkillLevel(
+		SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic")), 2, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:havocMagic", "new-horizons:havocMagic.stormcaller"});
+	attackerSideHero->applyPerkSelection({"new-horizons:havocMagic", "new-horizons:havocMagic.controlledBlast"});
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 200, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 100);
+	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(70), 1);
+	auto * center = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(75), 200);
+	auto * first = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(74), 200);
+	auto * second = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(76), 200);
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = active->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	const auto centerHealth = center->getAvailableHealth();
+	const auto firstHealth = first->getAvailableHealth();
+	const auto secondHealth = second->getAvailableHealth();
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto action = callback->submitted.front();
+	ASSERT_EQ(action.spell, fireball);
+	ASSERT_EQ(action.target.size(), 1u);
+	EXPECT_EQ(action.target.front().hexValue, center->getPosition());
+	auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	spells::BattleCast cast(projected.get(), attackerSideHero, spells::Mode::HERO, fireball.toSpell());
+	cast.castEval(projected->getServerCallback(), action.getTarget(projected.get()));
+	const auto projectedFirst = projected->battleGetUnitByID(first->unitId())->getAvailableHealth();
+	const auto projectedSecond = projected->battleGetUnitByID(second->unitId())->getAvailableHealth();
+	EXPECT_EQ(projected->battleGetUnitByID(center->unitId())->getAvailableHealth(), centerHealth);
+	EXPECT_LT(projectedFirst, firstHealth);
+	EXPECT_LT(projectedSecond, secondHealth);
+	EXPECT_EQ(center->getAvailableHealth(), centerHealth);
+	EXPECT_EQ(first->getAvailableHealth(), firstHealth);
+	EXPECT_EQ(second->getAvailableHealth(), secondHealth);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(center->getAvailableHealth(), centerHealth);
+	EXPECT_EQ(first->getAvailableHealth(), projectedFirst);
+	EXPECT_EQ(second->getAvailableHealth(), projectedSecond);
 }
 
 TEST_F(NewHorizonsMagicAITest, CanonicalFrostRingUsesSafeFriendlyCenter)

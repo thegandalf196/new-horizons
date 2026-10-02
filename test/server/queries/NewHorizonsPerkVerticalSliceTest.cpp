@@ -31,10 +31,15 @@ constexpr auto sorceryMagicId = "new-horizons:sorceryMagic";
 constexpr auto overchargerId = "new-horizons:sorceryMagic.overcharger";
 constexpr auto disciplineId = "new-horizons:discipline";
 constexpr auto inspirationalLeaderId = "new-horizons:discipline.inspirationalLeader";
+constexpr auto havocMagicId = "new-horizons:havocMagic";
+constexpr auto stormcallerId = "new-horizons:havocMagic.stormcaller";
+constexpr auto controlledBlastId = "new-horizons:havocMagic.controlledBlast";
 
 class NewHorizonsPerkVerticalSliceTest : public TinyMapGameTest
 {
 protected:
+	bool activateControlledBlastOfferFixture = false;
+
 	void SetUp() override
 	{
 		TinyMapGameTest::SetUp();
@@ -50,8 +55,23 @@ protected:
 			combat["combat"]["heroCommands"]);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
+		if(activateControlledBlastOfferFixture)
+		{
+			bool found = false;
+			for(auto & [skillId, skill] : perkRules["skills"].Struct())
+			{
+				(void)skillId;
+				for(auto & perk : skill["perks"].Vector())
+					if(perk["id"].String() == controlledBlastId)
+					{
+						perk["effect"]["status"].String() = "active";
+						found = true;
+					}
+			}
+			EXPECT_TRUE(found) << "Controlled Blast must remain locally offerable without changing the global planned registry";
+		}
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perkRules);
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 	}
@@ -82,6 +102,114 @@ protected:
 		});
 	}
 };
+}
+
+TEST_F(NewHorizonsPerkVerticalSliceTest, ControlledBlastIsAcceptedThroughAdvancedHavocOfferAndSurvivesSaveLoad)
+{
+	activateControlledBlastOfferFixture = true;
+	startGame();
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	const auto havoc = skill(havocMagicId);
+
+	GameHandlerTestServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	gameHandler.changeSecSkill(hero, havoc, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	ASSERT_EQ(hero->getSecSkillLevel(havoc), MasteryLevel::BASIC);
+	EXPECT_FALSE(hero->getPerkState().canAdvanceSkillNormally(havocMagicId, MasteryLevel::BASIC));
+	const auto rankLookup = [hero](const std::string & skillId)
+	{
+		return hero->getPerkSkillRank(skillId);
+	};
+
+	// On its first level-up this hero consumes a per-hero skill RNG seed before
+	// the server-authored offer seed. That per-hero stream remains initialized,
+	// so later level-ups consume only the offer seed from the reset global RNG.
+	auto findRootSeedForOffer = [&](const char * perkId, bool heroSkillSeedInitialized)
+	{
+		for(int candidateSeed = 1; candidateSeed < 10000; ++candidateSeed)
+		{
+			CRandomGenerator probe(candidateSeed);
+			if(!heroSkillSeedInitialized)
+				probe.nextInt();
+			const auto offerSeed = static_cast<uint64_t>(static_cast<uint32_t>(probe.nextInt()));
+			if(offerContains(hero->getPerkState().prepareOffer(rankLookup, offerSeed), perkId))
+				return candidateSeed;
+		}
+		return 0;
+	};
+
+	const int stormcallerRootSeed = findRootSeedForOffer(stormcallerId, false);
+	ASSERT_NE(stormcallerRootSeed, 0);
+	gameHandler.randomizer->setSeed(stormcallerRootSeed);
+	gameHandler.onAdvInterfaceReady(hero->getOwner());
+
+	const auto firstLevel = hero->level;
+	hero->setExperience(LIBRARY->heroh->reqExp(firstLevel + 1), ChangeValueMode::ABSOLUTE);
+	gameHandler.levelUpHero(hero);
+	auto firstQuery = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(
+		gameHandler.queries->topQuery(hero->getOwner()));
+	ASSERT_NE(firstQuery, nullptr);
+	EXPECT_TRUE(std::none_of(firstQuery->hlu.perks.begin(), firstQuery->hlu.perks.end(), [](const auto & candidate)
+	{
+		return candidate.selection.perkId == controlledBlastId;
+	})) << "Controlled Blast is not a legal offer before Havoc reaches Advanced";
+	const auto stormcaller = std::find_if(firstQuery->hlu.perks.begin(), firstQuery->hlu.perks.end(), [](const auto & candidate)
+	{
+		return candidate.selection.perkId == stormcallerId;
+	});
+	ASSERT_NE(stormcaller, firstQuery->hlu.perks.end());
+	const auto stormcallerChoice = static_cast<int>(firstQuery->hlu.skills.size()
+		+ std::distance(firstQuery->hlu.perks.begin(), stormcaller));
+	ASSERT_TRUE(firstQuery->isValidReply(stormcallerChoice));
+	ASSERT_TRUE(gameHandler.queryReply(firstQuery->queryID, stormcallerChoice, hero->getOwner()));
+	EXPECT_TRUE(hero->getPerkState().hasSelection(havocMagicId, stormcallerId));
+	EXPECT_TRUE(hero->hasActivePerk(havocMagicId, stormcallerId));
+	EXPECT_TRUE(hero->getPerkState().canAdvanceSkillNormally(havocMagicId, MasteryLevel::BASIC));
+
+	// Exercise the normal server-validated rank advancement after Stormcaller,
+	// rather than manufacturing an Advanced rank in the saved hero.
+	gameHandler.levelUpHero(hero, havoc, false);
+	ASSERT_EQ(hero->getSecSkillLevel(havoc), MasteryLevel::ADVANCED);
+
+	const int controlledBlastRootSeed = findRootSeedForOffer(controlledBlastId, true);
+	ASSERT_NE(controlledBlastRootSeed, 0);
+	gameHandler.randomizer->setSeed(controlledBlastRootSeed);
+	const auto secondLevel = hero->level;
+	hero->setExperience(LIBRARY->heroh->reqExp(secondLevel + 1), ChangeValueMode::ABSOLUTE);
+	gameHandler.levelUpHero(hero);
+	auto secondQuery = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(
+		gameHandler.queries->topQuery(hero->getOwner()));
+	ASSERT_NE(secondQuery, nullptr);
+	const auto controlledBlast = std::find_if(secondQuery->hlu.perks.begin(), secondQuery->hlu.perks.end(), [](const auto & candidate)
+	{
+		return candidate.selection.perkId == controlledBlastId;
+	});
+	ASSERT_NE(controlledBlast, secondQuery->hlu.perks.end());
+	const auto controlledBlastChoice = static_cast<int>(secondQuery->hlu.skills.size()
+		+ std::distance(secondQuery->hlu.perks.begin(), controlledBlast));
+	ASSERT_TRUE(secondQuery->isValidReply(controlledBlastChoice));
+	ASSERT_TRUE(gameHandler.queryReply(secondQuery->queryID, controlledBlastChoice, hero->getOwner()));
+
+	EXPECT_EQ(hero->level, secondLevel + 1);
+	EXPECT_TRUE(hero->getPerkState().hasSelection(havocMagicId, controlledBlastId));
+	EXPECT_TRUE(hero->hasActivePerk(havocMagicId, controlledBlastId));
+	const auto definition = newHorizonsHeroes::perkDefinition(hero->getPerkState().rules,
+		havocMagicId, controlledBlastId);
+	ASSERT_TRUE(definition.has_value());
+	EXPECT_EQ(definition->effect["status"].String(), "active");
+
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	const auto * restoredHero = restored.getHero(hero->id);
+	ASSERT_NE(restoredHero, nullptr);
+	EXPECT_EQ(restoredHero->getSecSkillLevel(havoc), MasteryLevel::ADVANCED);
+	EXPECT_TRUE(restoredHero->getPerkState().hasSelection(havocMagicId, stormcallerId));
+	EXPECT_TRUE(restoredHero->hasActivePerk(havocMagicId, stormcallerId));
+	EXPECT_TRUE(restoredHero->getPerkState().hasSelection(havocMagicId, controlledBlastId));
+	EXPECT_TRUE(restoredHero->hasActivePerk(havocMagicId, controlledBlastId));
 }
 
 TEST_F(NewHorizonsPerkVerticalSliceTest, ScoutingImmediatelyRevealsExpandedSightAndSurvivesSaveLoad)

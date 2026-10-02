@@ -14,6 +14,28 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-109 Controlled Blast and UP-110 Pyromancer/Cryomancer are active and focused
+native verified. The shared Lua range-target filter excludes only the friendly
+original center stack for Fireball, Inferno and Meteor Shower, using current
+control and either double-wide footprint. Actual casts, detached forecasts and
+hover predictions agree; the empty-target fallback remains Cure-only. Shared
+damage coefficients add15% for Pyromancer and20% for Cryomancer only to the
+Spell Power term, preserving flat bases and other spell effects. Fire Wall
+stores the boosted cast-time damage and does not apply it again at contact.
+Client38230, repaired both-target48589 and v3-fixture10278 exit0. Principal5598
+passes20/20 in5.977s; activated19887 passes28/28 in8.153s, zero skips. Legal
+offers, Advanced query/save-load, exact damage, inactive guards, current control,
+double-wide protection, adjacent collateral, hover and accepted AI parity pass.
+Data/inventory19/19 and module drift check pass. Binary SHA-256:
+`ae8f67495a2784184afbeea8091117051dceda435a0cfd16bc1203c777e198b4`.
+Coverage156->159/310; planned154->151; Havoc6active/4planned. Independent source
+and fixture reviews have no remaining blocker. Phase2 retains broad defense/
+coefficient interactions, proxy/reflection cases and the older hybrid v2 fixture
+audit. Art Not done and generic UI provisional; no GUI/playable promotion.
+UP-111 Cataclysm is mapped but not implemented: baseline Armageddon also lacks
+specified physical-obstacle cleanup, and the ordinary magical-obstacle filter
+awaits a recorded item-level clarification. Fortification damage is separate.
+
 UP-107 Land Surveyor is active and focused native verified. First successful
 mine capture per hero per absolute week grants three times the mine's normal
 dailyIncome after ownership changes; ordinary bonuses and handicap follow that
@@ -843,7 +865,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 156/310 | 154 planned; Land Surveyor is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 159/310 | 151 planned; Controlled Blast, Pyromancer and Cryomancer are the newest source/native-verified activations. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -870,8 +892,8 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 156
-active perks, leaving nine ranks and 154 perks planned. These counts were
+requirements in total. The current registry has 84 active rank effects and 159
+active perks, leaving nine ranks and 151 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-10-01; they are
 registration coverage, not proof that every active mechanic has the whole
 UP-023 evidence chain. The Basic Bulwark source head
@@ -986,7 +1008,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Light Magic | 3/0 | 7/3 | Benediction, Healer, Guardian, Aegis, Purifier, Retributionist, and Crusader active; Sanctuary Keeper, Litany and Miracle Worker remain planned. Crusader has focused native evidence. |
 | Shadow Magic | 3/0 | 6/4 | Malediction, Withering Touch, Soul Binder, Dark Gift, Night Feeder, and Reanimator are active. Reanimator's casualty-only pool has focused authoritative evidence; four perks remain planned. |
 | Nature Magic | 3/0 | 4/6 | Herbalist, Rootcaller, Beastcaller and Verdant Warden active; six perks missing. |
-| Havoc Magic | 3/0 | 3/7 | Seven perks missing |
+| Havoc Magic | 3/0 | 6/4 | Four perks missing; Pyromancer, Cryomancer and Controlled Blast are native verified |
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
 | Chaos Magic | 3/0 | 3/7 | Blinkmaster, Weaver and Paradox Shield are active with focused evidence recorded above; seven perks remain planned. |
 | Spellcraft | 3/0 | 4/6 | Grand Formula scales the first accepted Level 4-or-5 hero spell's SP term by 150%; Arcane Focus, Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold. Basic/Advanced/Expert efficiency is 110/120/130% under saved v3 rules. |

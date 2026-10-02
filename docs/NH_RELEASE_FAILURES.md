@@ -2,6 +2,38 @@
 
 ## Purpose
 
+### 2026-10-01 Havoc perks — saved fixture profile review
+
+Before the test build, independent review found the new Pyromancer/Cryomancer
+parameter fixture inherited saved v2 magic rules, although these new damage
+perks deliberately use the current v3 coefficient model. The owner explicitly
+selects savedV3Formula before preparing the game. Review also corrected the
+Fire Wall fixture's nested skills registry lookup and expected damage to include
+both Basic Havoc and Pyromancer (40 + floor(43 x 1.15 x 1.15) = 96).
+No failing native execution is claimed: these were repaired before compilation.
+New fixtures must explicitly select the saved ruleset they intend to exercise;
+real-hero scaling alone does not switch a legacy magic snapshot to v3.
+Both-target12189 exits1 (`UP109-fixture-build.log`): the root-owned AI parity
+fixture passed serialized BattleAction DestinationInfo records directly to
+castEval, which requires resolved battle Destinations. Root uses the existing
+action.getTarget(projected.get()) conversion against the detached callback.
+Production/client compilation remains successful; no native pass or activation
+is claimed. Resolve action targets in the destination battle before evaluation,
+never cast serialized records or bind them to live-unit pointers.
+Repaired both-target48589 exits0. Principal73570 exits1: 13/17 pass, zero
+skips in4.325s. All four Controlled Blast cases fail before behavior because
+the inherited v2 fixture retains current-v3 selectedPlacement fields. The
+bounded owner explicitly selects savedV3Formula for these new/modified feature
+setups, keeping all damage/target assertions. Eight damage-perk cases, both
+Fire Wall cases, legal offer/save-load and actual AI parity already pass.
+Retain UP109-principal.log/.xml; no Controlled Blast activation is claimed.
+The older hybrid v2 helper's broader uses are a separate Phase 2 fixture audit,
+not reason to weaken legacy validation or consume this Phase 1 slice.
+V3-fixture build10278 exits0. Repaired principal5598 passes20/20 in5.977s;
+activated19887 passes28/28 in8.153s, zero skips. Data/inventory19/19 and module
+check pass. All assertions are retained; the three perks are active. This is
+source/native evidence, not graphical acceptance or playable snapshot delivery.
+
 ### 2026-10-01 Financier — mastery namespace in fixture signature
 
 Both-target25033 exits1 (`UP106-fixture-build.log`): the new fixture uses

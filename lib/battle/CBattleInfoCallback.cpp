@@ -2773,7 +2773,7 @@ SpellEffectValUptr CBattleInfoCallback::getSpellEffectValue(
 	mech->forEachEffect([&](const spells::effects::Effect &e){
 		auto effTarget = e.transformTarget(mech.get(), aim, spellTarget);
 		// Cure-specific safety net: if empty, but hovering a healable friendly unit, evaluate just that unit
-		if(effTarget.empty() && hoveredUnit)
+		if(effTarget.empty() && hoveredUnit && spell->getId() == SpellID::CURE)
 		{
 			spells::Target single;
 			single.emplace_back(spells::Destination(hoveredUnit));

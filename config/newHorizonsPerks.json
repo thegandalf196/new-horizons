@@ -1495,7 +1495,7 @@
 					"requires": "basic",
 					"description": "Fireball, Fire Wall, and Inferno receive +15% to their Spell Power-derived damage components.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Fireball, Fire Wall, and Inferno receive +15% to their Spell Power-derived damage components."
 					}
 				},
@@ -1505,7 +1505,7 @@
 					"requires": "basic",
 					"description": "Ice Bolt and Frost Ring receive +20% to their Spell Power-derived damage components.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Ice Bolt and Frost Ring receive +20% to their Spell Power-derived damage components."
 					}
 				},
@@ -1565,7 +1565,7 @@
 					"requires": "advanced",
 					"description": "When Fireball, Inferno, or Meteor Shower is centered on a hex occupied by a friendly stack, that stack is excluded from the spell's damage. Frost Ring already has a safe center. Armageddon remains explicitly indiscriminate.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "When Fireball, Inferno, or Meteor Shower is centered on a hex occupied by a friendly stack, that stack is excluded from the spell's damage. Frost Ring already has a safe center. Armageddon remains explicitly indiscriminate."
 					}
 				},

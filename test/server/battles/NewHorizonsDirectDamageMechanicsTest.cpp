@@ -41,6 +41,43 @@ namespace
 {
 constexpr auto arrowKey = "core:magicArrow";
 constexpr auto slowKey = "core:slow";
+constexpr auto havocMagicKey = "new-horizons:havocMagic";
+constexpr auto stormcallerPerkKey = "new-horizons:havocMagic.stormcaller";
+constexpr auto pyromancerPerkKey = "new-horizons:havocMagic.pyromancer";
+constexpr auto cryomancerPerkKey = "new-horizons:havocMagic.cryomancer";
+constexpr auto controlledBlastPerkKey = "new-horizons:havocMagic.controlledBlast";
+
+struct ControlledBlastSpellCase
+{
+	const char * spellId;
+	const char * centerCreatureId;
+	bool centerIsHypnotized;
+	bool centerIsDoubleWide;
+	int64_t flatBase;
+	const char * name;
+};
+
+struct HavocDamagePerkCase
+{
+	const char * spellId;
+	const char * perkId;
+	int additionalCoefficientPercent;
+	int flatBase;
+	int powerCoefficient;
+	int rawSpellPower;
+	const char * name;
+};
+
+void activateFixturePerks(JsonNode & rules, const std::vector<std::string> & perkIds)
+{
+	for(auto & [skillId, skill] : rules["skills"].Struct())
+	{
+		(void)skillId;
+		for(auto & perk : skill["perks"].Vector())
+			if(vstd::contains(perkIds, perk["id"].String()))
+				perk["effect"]["status"].String() = "active";
+	}
+}
 JsonNode savedFormula(int base = 20, int coefficient = 20)
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
@@ -339,6 +376,8 @@ protected:
 	bool savedEnabled = true;
 	bool forceRealHeroScale = false;
 	bool usePerks = false;
+	bool omitDefaultTarget = false;
+	std::vector<std::string> fixtureActivePerkIds;
 	JsonNode authoredRules;
 	std::string selectedSpellKey = arrowKey;
 	CStack * target = nullptr;
@@ -358,8 +397,11 @@ protected:
 		if(forceRealHeroScale)
 			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, testHeroRules());
 		if(usePerks)
-			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-				JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		{
+			JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
+			activateFixturePerks(perkRules, fixtureActivePerkIds);
+			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
+		}
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, savedEnabled ? authoredRules : JsonNode());
 	}
 
@@ -371,8 +413,56 @@ protected:
 		attackerSideHero->addSpellToSpellbook(spell->getId());
 		setTestSpellPointTotal(attackerSideHero, 100);
 		startBattle();
-		target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 1000);
+		if(!omitDefaultTarget)
+			target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 1000);
 		beginCombat();
+	}
+
+	void prepareControlledBlastSpell(const std::string & spellId)
+	{
+		forceRealHeroScale = true;
+		usePerks = true;
+		omitDefaultTarget = true;
+		fixtureActivePerkIds = {controlledBlastPerkKey};
+		selectedSpellKey = spellId;
+		authoredRules = savedV3Formula();
+		prepare();
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
+		const auto havoc = SecondarySkill(SecondarySkill::decode(havocMagicKey));
+		ASSERT_TRUE(havoc.hasValue());
+		attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	}
+
+	void selectControlledBlast()
+	{
+		attackerSideHero->applyPerkSelection({havocMagicKey, stormcallerPerkKey});
+		attackerSideHero->applyPerkSelection({havocMagicKey, controlledBlastPerkKey});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(havocMagicKey, stormcallerPerkKey));
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(havocMagicKey, controlledBlastPerkKey));
+	}
+
+	std::map<uint32_t, int64_t> previewAreaDamageAtHex(const BattleHex & aimHex)
+	{
+		auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+		DamageEnvironment environment(gameState(), nullptr);
+		HypotheticBattle predicted(&environment, callback);
+		spells::Target aim{spells::Destination(aimHex)};
+		spells::BattleCast preview(&predicted, attackerSideHero, spells::Mode::HERO, spell);
+		auto mechanics = spell->battleMechanics(&preview);
+		spells::detail::ProblemImpl problem;
+		EXPECT_TRUE(mechanics->canBeCast(problem));
+		EXPECT_TRUE(mechanics->canBeCastAt(aim, problem));
+		mechanics->castEval(predicted.getServerCallback(), aim);
+
+		std::map<uint32_t, int64_t> damage;
+		for(const auto * original : battle()->battleGetAllStacks())
+		{
+			const auto * projected = predicted.battleGetUnitByID(original->unitId());
+			if(projected)
+				damage.emplace(original->unitId(),
+					original->getAvailableHealth() - projected->getAvailableHealth());
+		}
+		return damage;
 	}
 
 	void prepareSlow(int magicVersion, int sorceryRank, int spellPower, bool selectTemporalist = false)
@@ -624,6 +714,14 @@ class NewHorizonsSlowLegacyProfileTest : public NewHorizonsDirectDamageMechanics
 	public ::testing::WithParamInterface<SlowLegacyCase>
 {};
 
+class NewHorizonsControlledBlastDamageTest : public NewHorizonsDirectDamageMechanicsTest,
+	public ::testing::WithParamInterface<ControlledBlastSpellCase>
+{};
+
+class NewHorizonsHavocDamagePerkTest : public NewHorizonsDirectDamageMechanicsTest,
+	public ::testing::WithParamInterface<HavocDamagePerkCase>
+{};
+
 INSTANTIATE_TEST_SUITE_P(V3SchoolRank, NewHorizonsSlowRankTest,
 	::testing::Values(
 		SlowRankCase{0, 100, -30, "NoSchoolRank"},
@@ -640,6 +738,31 @@ INSTANTIATE_TEST_SUITE_P(SavedLegacyRules, NewHorizonsSlowLegacyProfileTest,
 		SlowLegacyCase{newHorizonsMagic::RULESET_VERSION, "V1"},
 		SlowLegacyCase{newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION, "V2"}),
 	[](const ::testing::TestParamInfo<SlowLegacyCase> & info)
+	{
+		return std::string(info.param.name);
+	});
+
+INSTANTIATE_TEST_SUITE_P(CenteredSpell, NewHorizonsControlledBlastDamageTest,
+	::testing::Values(
+		ControlledBlastSpellCase{"core:fireball", "core:pikeman", false, false, 25, "Fireball"},
+		ControlledBlastSpellCase{"core:inferno", "core:pikeman", true, false, 70, "HypnotizedFriendlyInferno"},
+		ControlledBlastSpellCase{"core:meteorShower", "core:archangel", false, true, 110, "DoubleWideMeteorShower"}),
+	[](const ::testing::TestParamInfo<ControlledBlastSpellCase> & info)
+	{
+		return std::string(info.param.name);
+	});
+
+INSTANTIATE_TEST_SUITE_P(ActiveHavocPerk, NewHorizonsHavocDamagePerkTest,
+	::testing::Values(
+		HavocDamagePerkCase{"core:fireball", pyromancerPerkKey, 15, 25, 8, 0, "PyromancerFireballAtZero"},
+		HavocDamagePerkCase{"core:fireball", pyromancerPerkKey, 15, 25, 8, 20, "PyromancerFireballWithPower"},
+		HavocDamagePerkCase{"core:inferno", pyromancerPerkKey, 15, 70, 12, 0, "PyromancerInfernoAtZero"},
+		HavocDamagePerkCase{"core:inferno", pyromancerPerkKey, 15, 70, 12, 20, "PyromancerInfernoWithPower"},
+		HavocDamagePerkCase{"core:iceBolt", cryomancerPerkKey, 20, 45, 10, 0, "CryomancerIceBoltAtZero"},
+		HavocDamagePerkCase{"core:iceBolt", cryomancerPerkKey, 20, 45, 10, 20, "CryomancerIceBoltWithPower"},
+		HavocDamagePerkCase{"core:frostRing", cryomancerPerkKey, 20, 55, 11, 0, "CryomancerFrostRingAtZero"},
+		HavocDamagePerkCase{"core:frostRing", cryomancerPerkKey, 20, 55, 11, 20, "CryomancerFrostRingWithPower"}),
+	[](const ::testing::TestParamInfo<HavocDamagePerkCase> & info)
 	{
 		return std::string(info.param.name);
 	});
@@ -1093,9 +1216,16 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, FireballAppliesCanonicalDamageToTar
 TEST_F(NewHorizonsDirectDamageMechanicsTest, FrostRingLeavesCenterSafeAndDamagesOnlyTheSurroundingRing)
 {
 	forceRealHeroScale = true;
+	usePerks = true;
+	fixtureActivePerkIds = {controlledBlastPerkKey};
 	selectedSpellKey = "core:frostRing";
+	authoredRules = savedV3Formula();
 	prepare();
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 20, ChangeValueMode::ABSOLUTE);
+	const auto havoc = SecondarySkill(SecondarySkill::decode(havocMagicKey));
+	ASSERT_TRUE(havoc.hasValue());
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	selectControlledBlast();
 	std::vector<CStack *> ring;
 	for(const auto hex : BattleHexArray::getNeighbouringTiles(target->getPosition()))
 		ring.push_back(addStack(ring.size() % 2 == 0 ? BattleSide::ATTACKER : BattleSide::DEFENDER,
@@ -1103,6 +1233,8 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, FrostRingLeavesCenterSafeAndDamages
 	ASSERT_EQ(ring.size(), 6u);
 	auto * distant = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex + 2), 1000);
 	const auto centerBefore = target->getAvailableHealth();
+	const auto expectedDamage = spell->calculateDamage(attackerSideHero);
+	ASSERT_GT(expectedDamage, 0);
 	std::vector<int64_t> ringBefore;
 	for(const auto * stack : ring)
 		ringBefore.push_back(stack->getAvailableHealth());
@@ -1116,7 +1248,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, FrostRingLeavesCenterSafeAndDamages
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(target->getAvailableHealth(), centerBefore);
 	for(size_t index = 0; index < ring.size(); ++index)
-		EXPECT_EQ(ringBefore[index] - ring[index]->getAvailableHealth(), 77) << "ring index " << index;
+		EXPECT_EQ(ringBefore[index] - ring[index]->getAvailableHealth(), expectedDamage) << "ring index " << index;
 	EXPECT_EQ(distant->getAvailableHealth(), distantBefore);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 8);
 }
@@ -1146,6 +1278,220 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, InfernoDamagesItsBroadRadiusWithCan
 	EXPECT_EQ(outerBefore - outer->getAvailableHealth(), 94);
 	EXPECT_EQ(distant->getAvailableHealth(), distantBefore);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 13);
+}
+
+TEST_P(NewHorizonsControlledBlastDamageTest, AcceptedCenteredCastSpareOnlyItsFriendlyCenter)
+{
+	const auto & testCase = GetParam();
+	prepareControlledBlastSpell(testCase.spellId);
+	const auto centerSide = testCase.centerIsHypnotized ? BattleSide::DEFENDER : BattleSide::ATTACKER;
+	auto * center = addStack(centerSide, creatureByName(testCase.centerCreatureId), BattleHex(rightHex), 1000);
+	ASSERT_NE(center, nullptr);
+	if(testCase.centerIsHypnotized)
+		center->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID()));
+	ASSERT_EQ(battle()->battleGetOwner(center), attackerSideHero->getOwner())
+		<< "Controlled Blast follows current control rather than the stack's original side";
+	if(testCase.centerIsDoubleWide)
+		ASSERT_TRUE(center->doubleWide());
+	else
+		ASSERT_FALSE(center->doubleWide());
+
+	BattleHex aimHex = center->getPosition();
+	if(testCase.centerIsDoubleWide)
+	{
+		ASSERT_EQ(center->getHexes().size(), 2u);
+		aimHex = center->getHexes()[1];
+	}
+	ASSERT_TRUE(center->getHexes().contains(aimHex));
+	const auto formula = newHorizonsMagic::spellDirectDamage(battle()->getMagicRules(), spell->getJsonKey());
+	ASSERT_TRUE(formula.has_value());
+	EXPECT_EQ(formula->base, testCase.flatBase);
+	const auto ordinaryDamage = spell->calculateDamage(attackerSideHero);
+	EXPECT_EQ(ordinaryDamage, testCase.flatBase)
+		<< "At zero Spell Power the school coefficient and Controlled Blast leave the authored base intact";
+
+	BattleHex firstAdjacent = BattleHex::INVALID;
+	BattleHex secondAdjacent = BattleHex::INVALID;
+	for(const auto hex : BattleHexArray::getNeighbouringTiles(aimHex))
+	{
+		if(center->getHexes().contains(hex))
+			continue;
+		if(!firstAdjacent.isValid())
+			firstAdjacent = hex;
+		else
+		{
+			secondAdjacent = hex;
+			break;
+		}
+	}
+	ASSERT_TRUE(firstAdjacent.isValid());
+	ASSERT_TRUE(secondAdjacent.isValid());
+	auto * adjacentAlly = addStack(BattleSide::ATTACKER,
+		creatureByName("core:pikeman"), firstAdjacent, 1000);
+	auto * adjacentEnemy = addStack(BattleSide::DEFENDER,
+		creatureByName("core:pikeman"), secondAdjacent, 1000);
+	auto * distant = addStack(BattleSide::DEFENDER,
+		creatureByName("core:pikeman"), BattleHex(8, 0), 1000);
+	ASSERT_NE(adjacentAlly, nullptr);
+	ASSERT_NE(adjacentEnemy, nullptr);
+	ASSERT_NE(distant, nullptr);
+	ASSERT_TRUE(vstd::contains(BattleHexArray::getNeighbouringTiles(aimHex), firstAdjacent));
+	ASSERT_TRUE(vstd::contains(BattleHexArray::getNeighbouringTiles(aimHex), secondAdjacent));
+
+	// With the fixture's saved perk rule active but no selected perk, the same
+	// accepted spell geometry still damages its friendly center.
+	const auto unselectedPreview = previewAreaDamageAtHex(aimHex);
+	ASSERT_TRUE(unselectedPreview.contains(center->unitId()));
+	EXPECT_EQ(unselectedPreview.at(center->unitId()), testCase.flatBase);
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(havocMagicKey, controlledBlastPerkKey));
+
+	selectControlledBlast();
+	const auto selectedPreview = previewAreaDamageAtHex(aimHex);
+	ASSERT_TRUE(selectedPreview.contains(center->unitId()));
+	ASSERT_TRUE(selectedPreview.contains(adjacentAlly->unitId()));
+	ASSERT_TRUE(selectedPreview.contains(adjacentEnemy->unitId()));
+	ASSERT_TRUE(selectedPreview.contains(distant->unitId()));
+	EXPECT_EQ(selectedPreview.at(center->unitId()), 0);
+	EXPECT_EQ(selectedPreview.at(adjacentAlly->unitId()), testCase.flatBase);
+	EXPECT_EQ(selectedPreview.at(adjacentEnemy->unitId()), testCase.flatBase);
+	EXPECT_EQ(selectedPreview.at(distant->unitId()), 0);
+	if(testCase.centerIsDoubleWide)
+	{
+		const auto otherFootprintPreview = previewAreaDamageAtHex(center->getHexes()[0]);
+		ASSERT_TRUE(otherFootprintPreview.contains(center->unitId()));
+		EXPECT_EQ(otherFootprintPreview.at(center->unitId()), 0)
+			<< "Either occupied footprint can be used as the controlled center";
+	}
+
+	if(std::string_view(testCase.spellId) == "core:fireball")
+	{
+		auto * isolatedCenter = addStack(BattleSide::ATTACKER,
+			creatureByName("core:pikeman"), BattleHex(10, 1), 1000);
+		ASSERT_NE(isolatedCenter, nullptr);
+		for(const auto neighbor : BattleHexArray::getNeighbouringTiles(isolatedCenter->getPosition()))
+			EXPECT_EQ(battle()->battleGetUnitByPos(neighbor, false), nullptr)
+				<< "isolated hover center must have no neighboring stacks";
+		const auto hover = battle()->getSpellEffectValue(spell, attackerSideHero,
+			spells::Mode::HERO, isolatedCenter->getPosition());
+		ASSERT_NE(hover, nullptr);
+		EXPECT_EQ(hover->hpDelta, 0)
+			<< "An isolated protected center must have zero hover damage";
+	}
+
+	const auto centerBefore = center->getAvailableHealth();
+	const auto allyBefore = adjacentAlly->getAvailableHealth();
+	const auto enemyBefore = adjacentEnemy->getAvailableHealth();
+	const auto distantBefore = distant->getAvailableHealth();
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell->getId();
+	action.aimToHex(aimHex);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(centerBefore - center->getAvailableHealth(), 0);
+	EXPECT_EQ(allyBefore - adjacentAlly->getAvailableHealth(), testCase.flatBase);
+	EXPECT_EQ(enemyBefore - adjacentEnemy->getAvailableHealth(), testCase.flatBase);
+	EXPECT_EQ(distant->getAvailableHealth(), distantBefore);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, ActiveControlledBlastDoesNotExemptArmageddon)
+{
+	forceRealHeroScale = true;
+	usePerks = true;
+	fixtureActivePerkIds = {controlledBlastPerkKey};
+	selectedSpellKey = "core:armageddon";
+	authoredRules = savedV3Formula();
+	prepare();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
+	const auto havoc = SecondarySkill(SecondarySkill::decode(havocMagicKey));
+	ASSERT_TRUE(havoc.hasValue());
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	selectControlledBlast();
+	auto * friendly = addStack(BattleSide::ATTACKER,
+		creatureByName("core:pikeman"), BattleHex(8, 7), 1000);
+	ASSERT_NE(friendly, nullptr);
+	const auto friendlyBefore = friendly->getAvailableHealth();
+	const auto enemyBefore = target->getAvailableHealth();
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell->getId();
+	action.stackNumber = -1;
+	action.aimToHex(BattleHex::INVALID);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(friendlyBefore - friendly->getAvailableHealth(), 150);
+	EXPECT_EQ(enemyBefore - target->getAvailableHealth(), 150);
+}
+
+TEST_P(NewHorizonsHavocDamagePerkTest, ScalesOnlySpellPowerDamageAndMatchesAcceptedCast)
+{
+	const auto & testCase = GetParam();
+	forceRealHeroScale = true;
+	usePerks = true;
+	fixtureActivePerkIds = {testCase.perkId};
+	authoredRules = savedV3Formula();
+	selectedSpellKey = testCase.spellId;
+	prepare();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER,
+		testCase.rawSpellPower, ChangeValueMode::ABSOLUTE);
+	const auto havoc = SecondarySkill(SecondarySkill::decode(havocMagicKey));
+	ASSERT_TRUE(havoc.hasValue());
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	ASSERT_FALSE(attackerSideHero->hasActivePerk(havocMagicKey, testCase.perkId));
+
+	const auto formula = newHorizonsMagic::spellDirectDamage(battle()->getMagicRules(), spell->getJsonKey());
+	ASSERT_TRUE(formula.has_value());
+	ASSERT_EQ(formula->base, testCase.flatBase);
+	ASSERT_EQ(formula->powerCoefficient, testCase.powerCoefficient);
+	const int ordinaryCoefficient = newHorizonsMagic::spellPowerCoefficientBasisPoints(
+		battle()->getMagicRules(), attackerSideHero, spell->getId());
+	const int ordinaryDamage = static_cast<int>(formula->evaluateBasisPoints(
+		attackerSideHero->getEffectPower(spell), attackerSideHero->getEffectPowerDivisor(spell),
+		ordinaryCoefficient));
+	EXPECT_EQ(spell->calculateDamage(attackerSideHero), ordinaryDamage)
+		<< "Active saved rules do not apply Havoc bonuses before the perk is selected";
+
+	attackerSideHero->applyPerkSelection({havocMagicKey, testCase.perkId});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(havocMagicKey, testCase.perkId));
+	const int perkCoefficient = newHorizonsMagic::spellPowerCoefficientBasisPoints(
+		battle()->getMagicRules(), attackerSideHero, spell->getId(),
+		testCase.additionalCoefficientPercent);
+	EXPECT_EQ(perkCoefficient,
+		ordinaryCoefficient * (100 + testCase.additionalCoefficientPercent) / 100);
+	const int64_t expectedDamage = formula->evaluateBasisPoints(
+		attackerSideHero->getEffectPower(spell), attackerSideHero->getEffectPowerDivisor(spell),
+		perkCoefficient);
+	if(testCase.rawSpellPower == 0)
+		EXPECT_EQ(expectedDamage, testCase.flatBase)
+			<< "The perk scales only the Spell Power-derived component";
+	else
+		EXPECT_GT(expectedDamage, ordinaryDamage)
+			<< "The selected perk increases the existing school-scaled power component";
+	EXPECT_EQ(spell->calculateDamage(attackerSideHero), expectedDamage);
+
+	CStack * damageTarget = target;
+	BattleHex aimHex = target->getPosition();
+	if(std::string_view(testCase.spellId) == "core:frostRing")
+	{
+		damageTarget = addStack(BattleSide::DEFENDER,
+			creatureByName("core:pikeman"), BattleHex(rightHex + 1), 1000);
+		ASSERT_NE(damageTarget, nullptr);
+	}
+	const auto before = damageTarget->getAvailableHealth();
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	EXPECT_EQ(spell->battleMechanics(&cast)->getEffectValue(), expectedDamage);
+
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell->getId();
+	if(std::string_view(testCase.spellId) == "core:iceBolt")
+		action.aimToUnit(damageTarget);
+	else
+		action.aimToHex(aimHex);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(before - damageTarget->getAvailableHealth(), expectedDamage);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeUsesTheSamePredictionAndAuthoritativeManaPath)

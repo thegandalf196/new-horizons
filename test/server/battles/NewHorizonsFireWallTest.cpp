@@ -13,8 +13,32 @@
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/spells/ObstacleCasterProxy.h"
 
+#include <algorithm>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <utility>
+
 namespace
 {
+constexpr auto havocMagicSkillId = "new-horizons:havocMagic";
+constexpr auto pyromancerPerkId = "new-horizons:havocMagic.pyromancer";
+constexpr auto cryomancerPerkId = "new-horizons:havocMagic.cryomancer";
+
+bool setPerkActive(JsonNode & rules, std::string_view skillId, std::string_view perkId)
+{
+	auto & perks = rules["skills"][std::string(skillId)]["perks"].Vector();
+	const auto found = std::find_if(perks.begin(), perks.end(), [perkId](const JsonNode & perk)
+	{
+		return perk["id"].String() == perkId;
+	});
+	if(found == perks.end())
+		return false;
+
+	(*found)["effect"]["status"].String() = "active";
+	return true;
+}
+
 class NewHorizonsFireWallRuntimeTest : public HeroCommandFixture
 {
 protected:
@@ -24,12 +48,26 @@ protected:
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, testHeroRules());
+		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
+		if(!setPerkActive(perkRules, havocMagicSkillId, pyromancerPerkId)
+			|| !setPerkActive(perkRules, havocMagicSkillId, cryomancerPerkId))
+			throw std::runtime_error("Missing Pyromancer or Cryomancer from the New Horizons perk registry");
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
 	}
 
-	void prepareFireWall(int32_t spellPower = 43)
+	void prepareFireWall(int32_t spellPower = 43, bool selectPyromancer = false)
 	{
 		prepareCommands(true);
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, spellPower, ChangeValueMode::ABSOLUTE);
+		if(selectPyromancer)
+		{
+			const int havocMagic = SecondarySkill::decode(havocMagicSkillId);
+			ASSERT_GE(havocMagic, 0);
+			attackerSideHero->setSecSkillLevel(SecondarySkill(havocMagic), MasteryLevel::BASIC,
+				ChangeValueMode::ABSOLUTE);
+			attackerSideHero->applyPerkSelection({havocMagicSkillId, pyromancerPerkId});
+			ASSERT_TRUE(attackerSideHero->hasActivePerk(havocMagicSkillId, pyromancerPerkId));
+		}
 		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
 		setTestSpellPointTotal(attackerSideHero, attackerSideHero->manaLimit());
 		attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
@@ -116,6 +154,7 @@ TEST(NewHorizonsFireWallTest, TriggerProxyUsesTheCastTimeSnapshotExactly)
 TEST_F(NewHorizonsFireWallRuntimeTest, ServerBuildsThreeHexLineAndRejectsInvalidPlacements)
 {
 	prepareFireWall();
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(havocMagicSkillId, pyromancerPerkId));
 	const auto mana = attackerSideHero->getManaAvailable();
 
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
@@ -134,6 +173,36 @@ TEST_F(NewHorizonsFireWallRuntimeTest, ServerBuildsThreeHexLineAndRejectsInvalid
 
 	// Canonical New Horizons Fire Wall is level 3 and costs 12 mana.
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 12);
+}
+
+TEST_F(NewHorizonsFireWallRuntimeTest, PyromancerDamageIsLatchedForLaterFireWallTriggers)
+{
+	prepareFireWall(43, true);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		fireWallAction(BattleHex(70), BattleHex::RIGHT)));
+	ASSERT_EQ(battle()->obstacles.size(), 1u);
+	const auto * wall = dynamic_cast<const SpellCreatedObstacle *>(battle()->obstacles.front().get());
+	ASSERT_NE(wall, nullptr);
+	EXPECT_EQ(wall->minimalDamage, 96); // 40 + floor(43 * 1.15 Havoc * 1.15 Pyromancer)
+	EXPECT_TRUE(wall->damageSnapshot);
+
+	auto * foe = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(70), 100);
+	ASSERT_NE(foe, nullptr);
+	const auto healthBefore = foe->getAvailableHealth();
+	ASSERT_TRUE(battle()->handleObstacleTriggersForUnit(*gameHandler->spellEnv, *foe));
+	EXPECT_EQ(healthBefore - foe->getAvailableHealth(), 96)
+		<< "The stored cast-time value must not receive Pyromancer again at the later trigger";
+}
+
+TEST_F(NewHorizonsFireWallRuntimeTest, PyromancerLeavesFireWallBaseUnscaledAtZeroSpellPower)
+{
+	prepareFireWall(0, true);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		fireWallAction(BattleHex(70), BattleHex::RIGHT)));
+	ASSERT_EQ(battle()->obstacles.size(), 1u);
+	const auto * wall = dynamic_cast<const SpellCreatedObstacle *>(battle()->obstacles.front().get());
+	ASSERT_NE(wall, nullptr);
+	EXPECT_EQ(wall->minimalDamage, 40);
 }
 
 TEST_F(NewHorizonsFireWallRuntimeTest, ServerRejectsMissingDirectionBoundaryAndOccupiedLineAtomically)
