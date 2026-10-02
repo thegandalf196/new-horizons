@@ -14,10 +14,16 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
-UP-133 Precise Casting is being mapped for implementation. Controlled Blast
-already has shared Lua center-identity filtering and live/AI fixtures, but this
-does not prove Precise Casting's broader effect scope. Counts remain171/310
-active and139 planned; no new mechanic is called complete from mapping.
+UP-133 Precise Casting's bounded three-damage-area path is in source and verified:
+client48085/test18427 and new fixture90773 build; principal96284 passes7/7
+in2.238s, zero skips. Legal Basic/Advanced offers, accepted live/detached Fireball,
+unselected/planned gates, current-control double-wide Meteor Shower, Armageddon
+and BattleAI viable central targets pass. Shared Controlled Blast regression89309
+also passes6/6. This does not prove the broader effect scope: Time Stop/Earthquake
+await the user. Keep registration planned,171/310 active and139 planned.
+Independent fixture review has no blocker. Phase2 retains Precise Casting-specific
+Inferno/hover assertions and actual AI utility ranking; shared regression and
+candidate generation are not claims of full chooser or visual acceptance.
 Windows full37000555568 passes compile/package/upload on7331e1056, an older
 source containing External Recruiter and Spellward. Newer Broad Muster and
 Unbreakable Windows compile/package evidence remains pending.

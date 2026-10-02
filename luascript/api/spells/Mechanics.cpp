@@ -64,7 +64,13 @@ bool MechanicsProxy::isProtectedAreaCenter(const Mechanics & m, const battle::Un
 		return false;
 
 	const auto * hero = m.getHeroCaster();
-	if(!hero || !hero->hasActivePerk("new-horizons:havocMagic", "new-horizons:havocMagic.controlledBlast"))
+	if(!hero)
+		return false;
+	const bool hasControlledBlast = hero->hasActivePerk(
+		"new-horizons:havocMagic", "new-horizons:havocMagic.controlledBlast");
+	const bool hasPreciseCasting = hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
+		"new-horizons:spellcraft.preciseCasting");
+	if(!hasControlledBlast && !hasPreciseCasting)
 		return false;
 
 	const auto * battle = m.battle();
@@ -367,7 +373,7 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 	R.function<&MechanicsProxy::isProtectedAreaCenter>("isProtectedAreaCenter",
 		{{"unit", "Unit whose identity is compared with the original area center."},
 		 {"centerHex", "Original targeted hex used to resolve the area center."}}, {},
-		"True when saved New Horizons Controlled Blast rules exclude this friendly center unit from Fireball, Inferno, or Meteor Shower damage.");
+		"True when active New Horizons Controlled Blast or Precise Casting rules exclude this friendly center unit from Fireball, Inferno, or Meteor Shower.");
 	R.function<&MechanicsProxy::getEffectSpell>("getEffectSpell", {},
 		"Returns the saved-rules spell family used for effect formulas and source grouping. The actual cast Spell remains available from getSpell().");
 	R.method<&Mechanics::getSpell>("getSpell", {},
