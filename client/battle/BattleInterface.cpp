@@ -1486,6 +1486,21 @@ void BattleInterface::activateStack()
 	fieldController->redrawBackgroundWithHexes();
 	actionsController->activateStack();
 	ENGINE->fakeMouseMove();
+	presentPendingHeroOrderChoice();
+}
+
+void BattleInterface::presentPendingHeroOrderChoice()
+{
+	if(!curInt || curInt->isAutoFightOn || !makingTurn() || isInTacticsMode()
+		|| actionsController->heroOrderTargetingModeActive()
+		|| actionsController->heroSpellcastingModeActive())
+		return;
+	const auto callback = getBattle();
+	if(!callback->battleHasPendingDoubleCommand(callback->battleGetMySide())
+		|| !ENGINE->windows().findWindows<BattleHeroActionWindow>().empty())
+		return;
+	clearPerfectMoment();
+	ENGINE->windows().createAndPushWindow<BattleHeroActionWindow>(CPlayerInterface::battleInt, true);
 }
 
 bool BattleInterface::makingTurn() const

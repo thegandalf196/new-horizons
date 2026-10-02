@@ -1,5 +1,20 @@
 # Serialization
 
+## New Horizons immediate Double Command continuation
+
+`NEW_HORIZONS_DOUBLE_COMMAND` appends a per-side combat-used marker and contextual
+Order/Second Wind continuation, plus an ORDER-only allowance source. Accepted
+`StartAction` and `BattleHeroOrderStateChanged` packets carry validated optional
+transitions. Older records default to unused; writers targeting an older format
+reject populated state or grants before writing bytes rather than dropping them.
+
+Battle descriptors validate ledger, round, Order and unit references on decode.
+Alive, ghost and current-controller checks require initialized unit state and run
+after `BattleStart::localInit` and before writes. This does not add midbattle
+save/resume: binary stack descriptors omit `CUnitState`, and ordinary game saves
+do not serialize ongoing battles. Descriptor roundtrip tests must not initialize
+fresh health and present that as restored combat state.
+
 ## Bonus effect hostility
 
 `BONUS_EFFECT_HOSTILITY` appends `Bonus::appliedByEnemy`, a target-relative

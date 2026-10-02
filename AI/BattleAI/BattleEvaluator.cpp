@@ -4133,32 +4133,40 @@ BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const Battl
 
 bool BattleEvaluator::canCastSpell()
 {
-	auto hero = cb->getBattle(battleID)->battleGetMyHero();
+	const auto battleView = cb->getBattle(battleID);
+	if(battleView->battleHasPendingDoubleCommand(side))
+		return true;
+	auto hero = battleView->battleGetMyHero();
 	if(!hero)
 		return false;
 
-	if(cb->getBattle(battleID)->battleCanCastSpell(hero, spells::Mode::HERO) == ESpellCastProblem::OK)
+	if(battleView->battleCanCastSpell(hero, spells::Mode::HERO) == ESpellCastProblem::OK)
 		return true;
 	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE,
 		riposteCommand(), braceCommand()})
 	{
-		if(cb->getBattle(battleID)->battleCanUseHeroCommand(side, command))
+		if(battleView->battleCanUseHeroCommand(side, command))
 			return true;
 	}
 	for(auto command : {HeroCommand::FOCUS_FIRE, protectCommand(), flankCommand(), secondWindCommand()})
-		if(cb->getBattle(battleID)->battleCanBeginHeroCommand(side, command))
+		if(battleView->battleCanBeginHeroCommand(side, command))
 			return true;
 	return false;
 }
 
 bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells)
 {
-	auto hero = cb->getBattle(battleID)->battleGetMyHero();
+	const auto battleView = cb->getBattle(battleID);
+	const bool mandatoryDoubleCommand = battleView->battleHasPendingDoubleCommand(side);
+	auto hero = battleView->battleGetMyHero();
 	if(!hero)
 		return false;
 
 	LOGL("Casting spells sounds like fun. Let's see...");
-	const bool metamagicFollowup = cb->getBattle(battleID)->battleCanUseMetamagicFollowup(side);
+	// A pending Double Command continuation is an Order-only mandatory choice;
+	// it cannot be replaced by a Metamagic continuation or ordinary spell.
+	const bool metamagicFollowup = !mandatoryDoubleCommand
+		&& battleView->battleCanUseMetamagicFollowup(side);
 	const bool activatesGrand = HeroSpellAllowanceTransition::activatesGrand(metamagicFollowup,
 		cb->getBattle(battleID)->battleMetamagicPendingCount(side),
 		cb->getBattle(battleID)->battleMetamagicSequenceSpells(side).size(),
@@ -4177,12 +4185,13 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	std::vector<SpellOption> possibleSpells;
 
 	for(auto const & s : LIBRARY->spellh->objects)
-		if(allowSpells && s->canBeCast(cb->getBattle(battleID).get(), spells::Mode::HERO, hero, activatesGrand))
+		if(allowSpells && !mandatoryDoubleCommand
+			&& s->canBeCast(battleView.get(), spells::Mode::HERO, hero, activatesGrand))
 			possibleSpells.push_back({s.get(), activatesGrand});
 
 	LOGFL("I can cast %d spells.", possibleSpells.size());
 
-	const auto battleCallback = cb->getBattle(battleID);
+	const auto battleCallback = battleView;
 	vstd::erase_if(possibleSpells, [&](const SpellOption & option)
 	{
 		if(spellType(option.spell) != SpellTypes::BATTLE && !isCounterspell(option.spell))
@@ -4566,7 +4575,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			{
 				candidate.commandHeuristicValue = canonicalOrderHeuristic(
 					*battleView, side, command, {}, std::nullopt, env.get(), damageCache, battleView);
-				if(candidate.commandHeuristicValue <= 0.0f)
+				if(!mandatoryDoubleCommand && candidate.commandHeuristicValue <= 0.0f)
 					continue;
 			}
 			possibleCasts.push_back(candidate);
@@ -4616,14 +4625,14 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				candidate.commandHeuristicValue = canonicalOrderHeuristic(
 					*battleView, side, command, targetIds, candidate.focusFire->rangedDamagePercent,
 					env.get(), damageCache, battleView);
-				if(candidate.commandHeuristicValue <= 0.0f)
+				if(!mandatoryDoubleCommand && candidate.commandHeuristicValue <= 0.0f)
 					continue;
 			}
 			else
 			{
 				candidate.commandHeuristicValue = canonicalOrderHeuristic(
 					*battleView, side, command, targetIds, std::nullopt, env.get(), damageCache, battleView);
-				if(candidate.commandHeuristicValue <= 0.0f)
+				if(!mandatoryDoubleCommand && candidate.commandHeuristicValue <= 0.0f)
 					continue;
 			}
 			possibleCasts.push_back(std::move(candidate));
@@ -4780,6 +4789,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	cb->getBattle(battleID)->battleGetTurnOrder(vampirismTurnOrder, 0,
 		newHorizonsMagic::VAMPIRISM_BASE_DURATION_ROUNDS);
 
+	if(!mandatoryDoubleCommand)
 	{
 		bool enemyHadTurn = false;
 
@@ -5113,14 +5123,15 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				// deterministic read-only value was computed while enumerating the
 				// authoritative legal target set.  Keep that score intact so they
 				// still compete with spells and normal attacks.
-				if(ps.command != HeroCommand::NONE && ps.commandHeuristicValue > 0.0f)
+				if(ps.command != HeroCommand::NONE
+					&& (ps.commandHeuristicValue > 0.0f || mandatoryDoubleCommand))
 				{
 					// An Order consumes the hero's exchange but does not replace the
 					// unit action that follows it.  Keep the normal best-action score
 					// in the candidate value so contextual Orders compete on the same
 					// scale as spells and ordinary attacks rather than being treated as
 					// a small, standalone bonus.
-					if(!state->projectAcceptedHeroOrder(side, *orderAllowance))
+					if(!state->projectAcceptedHeroOrder(side, ps.command, ps.commandTargets, *orderAllowance))
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + ps.commandHeuristicValue;
@@ -5235,7 +5246,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					}
 				}
 
-				if(ps.command != HeroCommand::NONE && !state->projectAcceptedHeroOrder(side, *orderAllowance))
+				if(ps.command != HeroCommand::NONE
+					&& !state->projectAcceptedHeroOrder(side, ps.command, ps.commandTargets, *orderAllowance))
 				{
 					ps.value = std::numeric_limits<float>::lowest();
 					continue;
@@ -5672,7 +5684,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		{
 			return ps.value;
 		});
-	if(metamagicFollowup
+	if(!mandatoryDoubleCommand && metamagicFollowup
 		&& (castToPerform.value < noCastBaseline
 			|| vstd::isAlmostEqual(castToPerform.value, noCastBaseline)))
 	{
@@ -5683,7 +5695,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		LOGL("No beneficial hero action; retaining the Spell Action for this round.");
 		return false;
 	}
-	if(metamagicFollowup || (castToPerform.value > noCastBaseline && !vstd::isAlmostEqual(castToPerform.value, noCastBaseline)))
+	if(mandatoryDoubleCommand || metamagicFollowup
+		|| (castToPerform.value > noCastBaseline && !vstd::isAlmostEqual(castToPerform.value, noCastBaseline)))
 	{
 		LOGFL("Best hero action is %s (value %d). Will perform.", castToPerform.name() % castToPerform.value);
 		if(castToPerform.command != HeroCommand::NONE)

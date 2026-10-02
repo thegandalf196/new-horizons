@@ -12,6 +12,7 @@
 #include "../json/JsonNode.h"
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <limits>
 #include <stdexcept>
@@ -284,6 +285,15 @@ constexpr int TARGETED_RULESET_VERSION = 2;
 /// readable because they are embedded in existing saves and battle snapshots.
 constexpr int ORDERS_ONLY_RULESET_VERSION = 3;
 constexpr int CURRENT_RULESET_VERSION = ORDERS_ONLY_RULESET_VERSION;
+inline constexpr std::array<HeroCommand, 8> CANONICAL_COMMANDS{
+	HeroCommand::CHARGE,
+	HeroCommand::HOLD_THE_LINE,
+	HeroCommand::FOCUS_FIRE,
+	HeroCommand::RIPOSTE,
+	HeroCommand::BRACE,
+	HeroCommand::PROTECT,
+	HeroCommand::FLANK,
+	HeroCommand::SECOND_WIND};
 constexpr int MIN_EFFECT_PERCENT = -90;
 constexpr int MAX_EFFECT_PERCENT = 200;
 /// Basic Offense Encirclement value for each additional distinct Flank side.
@@ -313,6 +323,8 @@ DLL_LINKAGE int secondWindPercent(const CGHeroInstance & hero);
 /// Warcasting scales only Second Wind's Leadership-derived part; its base 50%
 /// damage component remains flat.
 DLL_LINKAGE int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent);
+/// True when the hero currently has the active Expert Command Double Command perk.
+DLL_LINKAGE bool hasDoubleCommand(const CGHeroInstance * hero);
 /// True when the hero currently has the active Advanced Command perk.
 DLL_LINKAGE bool hasCombinedArms(const CGHeroInstance * hero);
 /// Half of Focus Fire's snapshotted Order bonus, preserving a half percentage point.

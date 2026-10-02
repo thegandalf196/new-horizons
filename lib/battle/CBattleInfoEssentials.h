@@ -60,6 +60,8 @@ public:
 
 	const battle::Unit * battleGetUnitByID(uint32_t ID) const override;
 	const battle::Unit * battleActiveUnit() const override;
+	/// True while the anchored acting stack owes the immediate Double Command Order.
+	bool battleHasPendingDoubleCommand(BattleSide side) const;
 
 	uint32_t battleNextUnitId() const override;
 

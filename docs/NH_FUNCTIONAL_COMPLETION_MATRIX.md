@@ -14,6 +14,23 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-147 Double Command is implemented and active. The first accepted HERO-paid
+Order once per combat grants an immediate different Order, with a dedicated
+typed receipt, saved continuation metadata, authoritative no-choice exhaustion,
+and deferred first-Order Second Wind activation. The existing Orders chooser
+opens automatically; target cancellation returns to it without declining or
+spending the opportunity. Actual AI submission and detached projections use
+the same mandatory choice and do not enter ordinary-action forecasts.
+Both Linux targets build. Principal retry 30525 passes 6/6 in 99.078s; activated
+focused 99320 passes 47/47 in 134.777s, zero skips, including Commanding Presence,
+simultaneous Orders, packet persistence and action/spell allowances. Data/client
+30/30, generated-module drift and independent source review pass. Counts advance
+180 -> 181/310 active perks and 130 -> 129 planned; Command is 6/10. Ranks remain
+84/93 and faction perks 49/90. Descriptor roundtrip evidence does not certify
+full midbattle save/resume. Rendered chooser QA, broad interaction matrices and
+generic hypothetical packet replay remain Phase 2. UI is Provisional, bespoke
+art Not done; no immutable playable promotion. Next missing item: Battle Plan.
+
 UP-146 simultaneous different Orders foundation is implemented/native-verified.
 One authoritative per-side collection preserves independent targets, consumption
 and shared live/AI effects; typed consumers replace latest-only gameplay reads.
@@ -31,6 +48,9 @@ origin/definitive-mvp. Notice preflight37060224004 is live; no new Windows
 package or launcher snapshot is claimed yet. The notice preflight subsequently
 succeeds; full Windows37060422101 is live on doc-only checkpoint7a90085cb,
 which includes the same gameplay implementation. Poll that exact run to terminal.
+Full run 37060422101 subsequently succeeded at 2026-10-02T21:29:11Z, including
+compilation and packaging on 7a90085cb0d96a9b379bf4afc83a2fe66354bf41.
+It does not include UP-147, which remains uncommitted and unactivated here.
 Phase2 deferrals for this slice: uncapped compound-reduction numeric fixtures,
 broader Order/perk/control/save matrices, and pre-existing hidden-enemy-hero
 coefficient behavior. Multiplication is source-reviewed; the bounded capped
@@ -1275,7 +1295,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 180/310 | 130 planned; Blood Scent is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
+| Skill perks active | 181/310 | 129 planned; Double Command is the newest source/native-verified activation. Command is 6/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 49/90 | 41 planned perks; Blood Scent has attack-local live/detached evidence. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |

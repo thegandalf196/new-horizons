@@ -92,6 +92,12 @@ public:
 		static const HeroActionAllowanceState empty;
 		return empty;
 	}
+	virtual const DoubleCommandState & getDoubleCommandState(BattleSide side) const
+	{
+		(void)side;
+		static const DoubleCommandState empty;
+		return empty;
+	}
 	virtual const AlternatingHeroActionState & getWarcastingState(BattleSide side) const
 	{
 		(void)side;
@@ -249,6 +255,8 @@ public:
 			*existing = *state;
 		setHeroOrderStates(side, orders);
 	}
+	/// Applies an authoritative Double Command phase snapshot.
+	virtual void setDoubleCommandState(BattleSide, const DoubleCommandState &) {}
 	virtual void setRelentlessAssaultState(BattleSide, const RelentlessAssaultState &) {}
 	virtual void recordRelentlessAssaultAttack(BattleSide, uint32_t) {}
 	virtual void setAdverseCombatRerollState(BattleSide, const AdverseCombatRerollState &) {}

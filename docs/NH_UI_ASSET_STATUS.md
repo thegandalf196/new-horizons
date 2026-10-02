@@ -10,6 +10,16 @@ This is a binding inventory, not a full visual audit or a product completion cla
 
 ## Status meanings
 
+Double Command interaction (UP-147): implemented with source/native evidence.
+The ordinary
+Orders panel supplies the mandatory immediate choice and names its source;
+target cancellation returns to the chooser without spending the opportunity.
+Existing painted panel/buttons are reused, with no new artwork. The interaction
+is Provisional pending rendered review. Double Command is active after both-target
+builds, principal 6/6 and activated focused 47/47 native acceptance. The four
+focused client source guards pass; they do not prove graphical behavior. The
+neutral fallback remains Not done artwork, and no playable promotion is inferred.
+
 Bastion source/native checkpoint (UP-135): named first-hit combat feedback and
 shared Defend/Hold the Line eligibility have focused live/detached8/8 evidence.
 Registry173/310 active,137 planned. Generic UI Provisional; purpose-made art

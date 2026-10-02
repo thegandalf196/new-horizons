@@ -2610,6 +2610,26 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 {
 	if(masterGateActivationContinuationOut)
 		*masterGateActivationContinuationOut = false;
+	if((ba.side == BattleSide::ATTACKER || ba.side == BattleSide::DEFENDER)
+		&& !ba.isBattleEndAction())
+	{
+		const auto & doubleCommand = battle.getBattle()->getDoubleCommandState(ba.side);
+		if(doubleCommand.orderPending())
+		{
+			if(ba.actionType != EActionType::HERO_COMMAND
+				|| ba.command == doubleCommand.firstOrder
+				|| !battle.battleHasPendingDoubleCommand(ba.side))
+			{
+				gameHandler->complain("A different Order is required to complete Double Command");
+				return false;
+			}
+		}
+		else if(doubleCommand.secondWindReady())
+		{
+			gameHandler->complain("Double Command Second Wind continuation is being resolved");
+			return false;
+		}
+	}
 	const auto * demonicBattle = dynamic_cast<const BattleInfo *>(battle.getBattle());
 	const bool validMasterGateSide = ba.side == BattleSide::ATTACKER || ba.side == BattleSide::DEFENDER;
 	const auto * masterGateHero = ba.actionType == EActionType::DEMONIC_GATING && validMasterGateSide
@@ -2698,6 +2718,7 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 	BattleAction effectiveAction = ba;
 	std::optional<FocusFireState> preparedFocusFire;
 	std::optional<HeroOrderState> preparedOrderState;
+	std::optional<DoubleCommandState> preparedDoubleCommandState;
 	if(ba.actionType == EActionType::HERO_COMMAND)
 	{
 		const bool canonical = heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules());
@@ -2738,6 +2759,57 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		{
 			gameHandler->complain("Hero command unavailable: ruleset, ownership, target, or round action budget");
 			return false;
+		}
+		if(canonical)
+		{
+			const auto & currentDoubleCommand = battle.getBattle()->getDoubleCommandState(ba.side);
+			const auto & allowances = battle.getBattle()->getHeroActionAllowances(ba.side);
+			const auto selected = allowances.eligibleAllowance(
+				HeroActionAllowanceState::ActionKind::ORDER, battle.battleGetRound());
+			if(currentDoubleCommand.orderPending())
+			{
+				if(!selected || selected->source != HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND
+					|| !preparedOrderState)
+				{
+					gameHandler->complain("Double Command follow-up has no matching continuation grant");
+					return false;
+				}
+				auto next = currentDoubleCommand;
+				try
+				{
+					next.completeFollowup(ba.command);
+				}
+				catch(const std::exception &)
+				{
+					gameHandler->complain("Double Command follow-up Order is invalid");
+					return false;
+				}
+				preparedDoubleCommandState = std::move(next);
+			}
+			else if(!currentDoubleCommand.used && selected
+				&& selected->allowance == HeroActionAllowanceState::AllowanceKind::HERO
+				&& heroCommands::hasDoubleCommand(battle.battleGetFightingHero(ba.side)))
+			{
+				if(allowances.nextGrantId == std::numeric_limits<uint32_t>::max())
+				{
+					gameHandler->complain("Double Command allowance grant IDs are exhausted");
+					return false;
+				}
+				const auto * anchor = battle.battleActiveUnit();
+				if(!anchor || !preparedOrderState)
+				{
+					gameHandler->complain("Double Command has no accepted acting stack");
+					return false;
+				}
+				const HeroActionAllowanceState::Receipt receipt{selected->grantId,
+					HeroActionAllowanceState::ActionKind::ORDER, selected->allowance, selected->source,
+					battle.battleGetRound()};
+				auto next = currentDoubleCommand;
+				const auto deferredTarget = ba.command == HeroCommand::SECOND_WIND
+					? preparedOrderState->primaryTargetUnitId : DoubleCommandState::INVALID_UNIT_ID;
+				if(next.begin(receipt, true, ba.command, battle.battleGetRound(), anchor->unitId(), deferredTarget))
+					preparedDoubleCommandState = std::move(next);
+			}
 		}
 	}
 	// Hero spell mechanics validate their final target inside the dispatcher.
@@ -2789,6 +2861,7 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		startAction.battleID = battle.getBattle()->getBattleID();
 		startAction.focusFire = preparedFocusFire;
 		startAction.orderState = preparedOrderState;
+		startAction.doubleCommandState = preparedDoubleCommandState;
 		if(ba.actionType == EActionType::HERO_COMMAND
 			&& heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules()))
 			startAction.preserveOtherOrders = !battle.getBattle()->getHeroOrderStates(ba.side).empty();
@@ -2796,6 +2869,17 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 	}
 
 	bool result = dispatchBattleAction(battle, effectiveAction, masterGateActivationContinuationOut != nullptr);
+	if(result && preparedDoubleCommandState)
+	{
+		BattleLogMessage message;
+		message.battleID = battle.getBattle()->getBattleID();
+		MetaString line;
+		line.appendRawString(preparedDoubleCommandState->orderPending()
+			? "Double Command grants an immediate different Order."
+			: "The additional Order uses Double Command, not another Hero Action.");
+		message.lines.push_back(std::move(line));
+		gameHandler->sendAndApply(message);
+	}
 	if(masterGateActivationContinuationOut && result && masterGateWasUnused)
 	{
 		const auto * updatedBattle = gameHandler->gs->getBattle(battle.getBattle()->getBattleID());

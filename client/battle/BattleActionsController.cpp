@@ -4301,6 +4301,11 @@ void BattleActionsController::onHexRightClicked(const BattleHex & clickedHex)
 	if(heroOrderTargetingModeActive())
 	{
 		cancelHeroOrderTargeting();
+		if(owner.getBattle()->battleHasPendingDoubleCommand(owner.getBattle()->battleGetMySide()))
+		{
+			owner.presentPendingHeroOrderChoice();
+			return;
+		}
 		CRClickPopup::createAndPush("Order target selection cancelled.");
 		return;
 	}

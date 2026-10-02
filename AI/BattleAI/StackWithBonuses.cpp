@@ -762,6 +762,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 		relentlessAssaultStates[side] = realBattle->getBattle()->getRelentlessAssaultState(side);
 		warcastingStates[side] = realBattle->getBattle()->getWarcastingState(side);
 		heroActionAllowances[side] = realBattle->getBattle()->getHeroActionAllowances(side);
+		doubleCommandStates[side] = realBattle->getBattle()->getDoubleCommandState(side);
 		heroSpellCastCompletedStates[side] = realBattle->getBattle()->hasCompletedHeroSpellCast(side);
 		completedHeroSpellLevelMasks[side] = 0;
 		for(int32_t level = 1; level <= GameConstants::SPELL_LEVELS; ++level)
@@ -1172,6 +1173,11 @@ std::optional<HypotheticBattle::ProjectedOrderAllowance> HypotheticBattle::prepa
 		const auto selection = nextLedger.eligibleAllowance(HeroActionAllowanceState::ActionKind::ORDER, projectedRound);
 		if(!selection)
 			return {};
+		if(selection->allowance == HeroActionAllowanceState::AllowanceKind::HERO
+			&& nextLedger.nextGrantId == std::numeric_limits<uint32_t>::max()
+			&& !doubleCommandStates.at(side).used
+			&& heroCommands::hasDoubleCommand(battleGetFightingHero(side)))
+			return {};
 		const auto receipt = nextLedger.consumeAllowance(selection->grantId,
 			HeroActionAllowanceState::ActionKind::ORDER, projectedRound);
 		if(!receipt)
@@ -1365,9 +1371,35 @@ bool HypotheticBattle::projectAcceptedHeroSpell(BattleSide side, SpellID spell, 
 
 bool HypotheticBattle::projectAcceptedHeroOrder(BattleSide side, const ProjectedOrderAllowance & prepared)
 {
+	return projectAcceptedHeroOrder(side, HeroCommand::NONE, {}, prepared);
+}
+
+bool HypotheticBattle::projectAcceptedHeroOrder(BattleSide side, HeroCommand command,
+	const std::vector<uint32_t> & commandTargets, const ProjectedOrderAllowance & prepared)
+{
 	const auto & action = prepared.action;
 	if(action.receipt.action != HeroActionAllowanceState::ActionKind::ORDER
 		|| !isCurrentPreparedOrderAction(side, prepared, true))
+		return false;
+	const bool projectingCommand = command != HeroCommand::NONE;
+	if(projectingCommand && !heroCommands::isActive(command))
+		return false;
+	auto & doubleCommand = doubleCommandStates.at(side);
+	const bool resolvingDoubleCommand = doubleCommand.orderPending();
+	if(resolvingDoubleCommand)
+	{
+		const auto * active = activeUnitId >= 0
+			? battleGetUnitByID(static_cast<uint32_t>(activeUnitId)) : nullptr;
+		if(!projectingCommand || !prepared.action.typedLedger
+			|| action.receipt.source != HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND
+			|| !active || !active->alive() || active->isGhost()
+			|| doubleCommand.issuedRound != projectedRound
+			|| doubleCommand.anchorStackId != active->unitId()
+			|| battleGetOwner(active) != sideToPlayer(side)
+			|| command == doubleCommand.firstOrder)
+			return false;
+	}
+	else if(projectingCommand && action.receipt.source == HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND)
 		return false;
 	if(action.typedLedger)
 		heroActionAllowances.at(side) = prepared.allowancesAfter;
@@ -1377,6 +1409,44 @@ bool HypotheticBattle::projectAcceptedHeroOrder(BattleSide side, const Projected
 		warcastingStates.at(side).recordAcceptedAction(AlternatingHeroActionState::Action::ORDER,
 			projectedRound, newHorizonsWarcasting::empowerment(hero, AlternatingHeroActionState::Action::ORDER),
 			newHorizonsWarcasting::readinessLifetimeRounds(hero));
+	}
+	if(resolvingDoubleCommand)
+		doubleCommand.completeFollowup(command);
+	else if(projectingCommand && action.typedLedger && action.isHeroAction())
+	{
+		const auto * hero = battleGetFightingHero(side);
+		const auto * active = activeUnitId >= 0
+			? battleGetUnitByID(static_cast<uint32_t>(activeUnitId)) : nullptr;
+		const auto anchor = active && active->alive() && !active->isGhost()
+			&& battleGetOwner(active) == sideToPlayer(side)
+			? active->unitId() : DoubleCommandState::INVALID_UNIT_ID;
+		const uint32_t deferredTarget = command == HeroCommand::SECOND_WIND && commandTargets.size() == 1
+			? commandTargets.front() : DoubleCommandState::INVALID_UNIT_ID;
+		if(doubleCommand.begin(action.receipt, heroCommands::hasDoubleCommand(hero), command,
+			projectedRound, anchor, deferredTarget))
+		{
+			auto & allowances = heroActionAllowances.at(side);
+			allowances.grantAllowance(HeroActionAllowanceState::AllowanceKind::ORDER,
+				HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND, projectedRound);
+
+			// Match the authoritative no-alternative path: do not leave an orphaned
+			// grant or a pending phase when the primary Order exhausted every other
+			// legal Order for this battle state.
+			const bool hasDistinctAlternative = std::any_of(heroCommands::CANONICAL_COMMANDS.begin(),
+				heroCommands::CANONICAL_COMMANDS.end(), [this, side, command](HeroCommand candidate)
+				{
+					return candidate != command && battleCanBeginHeroCommand(side, candidate);
+				});
+			if(!hasDistinctAlternative)
+			{
+				doubleCommand.exhaustPendingOrder();
+				std::erase_if(allowances.grants, [this](const HeroActionAllowanceState::Grant & grant)
+				{
+					return grant.source == HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND
+						&& grant.grantedRound == projectedRound;
+				});
+			}
+		}
 	}
 	finishProjectedHeroAction(side, prepared);
 	return true;
@@ -1572,6 +1642,10 @@ IBattleInfo::ObstacleCList HypotheticBattle::getAllObstacles() const
 
 void HypotheticBattle::nextRound()
 {
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		if(doubleCommandStates.at(side).orderPending()
+			|| doubleCommandStates.at(side).secondWindReady())
+			throw std::runtime_error("Cannot advance a battle round with unresolved Double Command continuation");
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		fortuneStates[side].nextRound();

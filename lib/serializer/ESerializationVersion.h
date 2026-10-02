@@ -146,15 +146,18 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_BLOODRAGE_THRESHOLD_BONUSES, // resolved per-side Speed and retaliation threshold benefits
 	NEW_HORIZONS_BLOOD_SCENT, // resolved attack-local low-health Bloodrage increment
 	NEW_HORIZONS_MULTIPLE_ORDERS, // independent per-command Order snapshots and preservation-aware packets
+	NEW_HORIZONS_DOUBLE_COMMAND, // immediate contextual Order continuation and combat usage
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_MULTIPLE_ORDERS,
+	CURRENT = NEW_HORIZONS_DOUBLE_COMMAND,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
+static_assert(ESerializationVersion::NEW_HORIZONS_DOUBLE_COMMAND > ESerializationVersion::NEW_HORIZONS_MULTIPLE_ORDERS,
+	"Immediate Order continuation state must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_MULTIPLE_ORDERS > ESerializationVersion::NEW_HORIZONS_BLOOD_SCENT,
 	"Multiple Order snapshots must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_BLOOD_SCENT > ESerializationVersion::NEW_HORIZONS_BLOODRAGE_THRESHOLD_BONUSES,

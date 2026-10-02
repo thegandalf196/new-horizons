@@ -68,6 +68,10 @@ public:
 	{
 		return subject->getBattle()->getHeroActionAllowances(side);
 	}
+	const DoubleCommandState & getDoubleCommandState(BattleSide side) const override
+	{
+		return subject->getBattle()->getDoubleCommandState(side);
+	}
 	const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const override { return subject->getBattle()->getCreatureCategoryRules(); }
 	bool getHeroCommandUsed(BattleSide side) const override { return subject->getBattle()->getHeroCommandUsed(side); }
 	HeroCommand getActiveDoctrine(BattleSide side) const override { return subject->getBattle()->getActiveDoctrine(side); }

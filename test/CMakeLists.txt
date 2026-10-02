@@ -195,6 +195,7 @@ set(test_SRCS
 		server/battles/HeroCommandTest.cpp
 		server/battles/NewHorizonsMultipleOrderPacketsTest.cpp
 		server/battles/NewHorizonsMultipleOrdersTest.cpp
+		server/battles/NewHorizonsDoubleCommandTest.cpp
 		server/battles/NewHorizonsOffenseRankTest.cpp
 		server/battles/NewHorizonsVengeanceTest.cpp
 		server/battles/NewHorizonsCleaveTest.cpp
@@ -418,6 +419,7 @@ if(ENABLE_BATTLE_AI)
 	list(APPEND test_SRCS
 		${BATTLE_AI_TEST_SRCS}
 		battleAI/HeroCommandAITest.cpp
+		battleAI/NewHorizonsDoubleCommandAITest.cpp
 		battleAI/AttackResourceProjectionTest.cpp
 		battleAI/DamageReductionControlTest.cpp
 		battleAI/FocusFireAITest.cpp

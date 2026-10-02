@@ -134,6 +134,8 @@ class BattleInterface
 	void installPurifyUI();
 	void installTemporalFieldUI();
 public:
+	/// Show an authoritative immediate Order continuation through the ordinary chooser.
+	void presentPendingHeroOrderChoice();
 	/// copy of initial armies (for result window)
 	const CCreatureSet *army1;
 	const CCreatureSet *army2;

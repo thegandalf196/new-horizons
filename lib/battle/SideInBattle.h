@@ -175,6 +175,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	int32_t bloodrageAdditionalRetaliations = 0;
 	// Blood Scent's target-sensitive increment is resolved from the saved skill rank/perk.
 	int32_t bloodrageLowHealthIncrement = 0;
+	// Double Command is a contextual immediate continuation and one combat use.
+	DoubleCommandState doubleCommandState;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);
@@ -256,6 +258,28 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		orderStates = orders;
 	}
 
+	void validateDoubleCommandState() const
+	{
+		doubleCommandState.validateShape();
+		heroActionAllowances.validateShape();
+		const auto doubleGrants = static_cast<uint32_t>(std::count_if(
+			heroActionAllowances.grants.begin(), heroActionAllowances.grants.end(), [](const auto & grant)
+			{
+				return grant.source == HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND;
+			}));
+		if(doubleCommandState.orderPending())
+		{
+			if(!doubleCommandState.used || doubleCommandState.issuedRound != heroActionAllowances.currentRound
+				|| doubleGrants != 1 || heroActionAllowances.countDoubleCommandOrderGrants(doubleCommandState.issuedRound) != 1)
+				throw std::runtime_error("Double Command continuation and allowance grant are inconsistent");
+		}
+		else if(doubleGrants != 0)
+			throw std::runtime_error("Orphaned Double Command allowance grant");
+		if(doubleCommandState.secondWindReady()
+			&& doubleCommandState.issuedRound != heroActionAllowances.currentRound)
+			throw std::runtime_error("Stale Double Command Second Wind continuation");
+	}
+
 	static uint8_t completedHeroSpellLevelBit(int32_t level)
 	{
 		if(level < 1 || level > GameConstants::SPELL_LEVELS)
@@ -288,11 +312,21 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_COMMAND)
+			&& (doubleCommandState != DoubleCommandState{}
+				|| std::any_of(heroActionAllowances.grants.begin(), heroActionAllowances.grants.end(), [](const auto & grant)
+				{
+					return grant.source == HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND;
+				})))
+			throw std::runtime_error("Cannot discard Double Command battle state");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS)
 			&& orderStates.size() > 1)
 			throw std::runtime_error("Cannot discard simultaneous Hero Orders in an older format");
 		if(h.saving)
+		{
 			validateOrderStates();
+			validateDoubleCommandState();
+		}
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE) && hasChainGateState())
 			throw std::runtime_error("Cannot discard Chain Gate battle state");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_WARCASTING)
@@ -535,6 +569,12 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 				orderStates = std::move(serializedOrders);
 			}
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_COMMAND))
+			h & doubleCommandState;
+		else if(!h.saving)
+			doubleCommandState = {};
+		if(!h.saving)
+			validateDoubleCommandState();
 	}
 
 	void clearMetamagicSequence()

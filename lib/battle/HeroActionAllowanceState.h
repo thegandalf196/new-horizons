@@ -19,6 +19,8 @@
 #include <utility>
 #include <vector>
 
+#include "HeroCommand.h"
+
 /// Value-only ledger for the flexible Hero Action and typed Spell/Order actions.
 /// Creature activations are deliberately outside this ledger.
 /// Action-kind eligibility is represented here; payload-specific restrictions
@@ -45,7 +47,8 @@ struct DLL_LINKAGE HeroActionAllowanceState
 		METAMAGIC_GRAND,
 		PERK,
 		ARTIFACT,
-		OTHER
+		OTHER,
+		DOUBLE_COMMAND
 	};
 
 	struct DLL_LINKAGE Grant
@@ -60,6 +63,9 @@ struct DLL_LINKAGE HeroActionAllowanceState
 
 		template <typename Handler> void serialize(Handler & h)
 		{
+			if(h.saving && source == GrantSource::DOUBLE_COMMAND
+				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_COMMAND))
+				throw std::runtime_error("Cannot discard Double Command allowance grant");
 			if(h.saving)
 				validateShape();
 			h & id;
@@ -78,7 +84,9 @@ struct DLL_LINKAGE HeroActionAllowanceState
 				|| (source == GrantSource::ROUND
 					&& (allowance != AllowanceKind::HERO || expiryRound != grantedRound))
 				|| ((source == GrantSource::METAMAGIC || source == GrantSource::METAMAGIC_GRAND)
-					&& allowance != AllowanceKind::SPELL))
+					&& allowance != AllowanceKind::SPELL)
+				|| (source == GrantSource::DOUBLE_COMMAND
+					&& (allowance != AllowanceKind::ORDER || expiryRound != grantedRound)))
 				throw std::runtime_error("Invalid Hero Action allowance grant shape");
 		}
 	};
@@ -172,7 +180,7 @@ struct DLL_LINKAGE HeroActionAllowanceState
 		{
 			if(grant.expiryRound < round || !canPay(grant.allowance, action))
 				continue;
-			if(!selected || selectionKey(grant) < selectionKey(*selected))
+			if(!selected || selectionKey(grant, action) < selectionKey(*selected, action))
 				selected = &grant;
 		}
 		if(!selected)
@@ -259,6 +267,12 @@ struct DLL_LINKAGE HeroActionAllowanceState
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_COMMAND)
+			&& std::any_of(grants.begin(), grants.end(), [](const Grant & grant)
+			{
+				return grant.source == GrantSource::DOUBLE_COMMAND;
+			}))
+			throw std::runtime_error("Cannot discard Double Command allowance grant");
 		if(h.saving)
 			validateShape();
 		h & currentRound;
@@ -266,6 +280,19 @@ struct DLL_LINKAGE HeroActionAllowanceState
 		h & grants;
 		if(!h.saving)
 			validateShape();
+	}
+
+	uint32_t countDoubleCommandOrderGrants(int32_t round) const
+	{
+		validateShape();
+		if(round < 0 || currentRound != round)
+			return 0;
+		return static_cast<uint32_t>(std::count_if(grants.begin(), grants.end(), [round](const Grant & grant)
+		{
+			return grant.source == GrantSource::DOUBLE_COMMAND
+				&& grant.allowance == AllowanceKind::ORDER
+				&& grant.grantedRound == round && grant.expiryRound == round;
+		}));
 	}
 
 private:
@@ -283,7 +310,8 @@ private:
 	{
 		return value == GrantSource::ROUND || value == GrantSource::METAMAGIC
 			|| value == GrantSource::METAMAGIC_GRAND || value == GrantSource::PERK
-			|| value == GrantSource::ARTIFACT || value == GrantSource::OTHER;
+			|| value == GrantSource::ARTIFACT || value == GrantSource::OTHER
+			|| value == GrantSource::DOUBLE_COMMAND;
 	}
 
 	static bool canPay(AllowanceKind allowance, ActionKind action)
@@ -293,10 +321,12 @@ private:
 			|| (allowance == AllowanceKind::ORDER && action == ActionKind::ORDER);
 	}
 
-	static std::tuple<bool, int32_t, uint32_t> selectionKey(const Grant & grant)
+	static std::tuple<uint8_t, int32_t, uint32_t> selectionKey(const Grant & grant, ActionKind action)
 	{
+		const bool doubleCommand = action == ActionKind::ORDER && grant.source == GrantSource::DOUBLE_COMMAND;
 		const bool specialized = grant.allowance != AllowanceKind::HERO;
-		return std::tuple(!specialized, grant.expiryRound, grant.id);
+		return std::tuple(doubleCommand ? uint8_t{0} : specialized ? uint8_t{1} : uint8_t{2},
+			grant.expiryRound, grant.id);
 	}
 
 	static void validateQuery(ActionKind action, int32_t round)
@@ -319,6 +349,184 @@ private:
 		grants.push_back(grant);
 		++nextGrantId;
 		return grant.id;
+	}
+};
+
+/// Contextual continuation granted by Double Command. This is separate from
+/// ordinary round-long allowances because the extra Order must be issued
+/// immediately after the triggering Hero Order; a primary Second Wind stores
+/// its creature activation until the continuation has resolved.
+struct DLL_LINKAGE DoubleCommandState
+{
+	static constexpr uint32_t INVALID_UNIT_ID = HeroOrderState::INVALID_UNIT_ID;
+
+	enum class Phase : uint8_t
+	{
+		NONE,
+		ORDER_REQUIRED,
+		SECOND_WIND_READY
+	};
+
+	bool used = false;
+	Phase phase = Phase::NONE;
+	HeroCommand firstOrder = HeroCommand::NONE;
+	int32_t issuedRound = -1;
+	uint32_t anchorStackId = INVALID_UNIT_ID;
+	uint32_t deferredSecondWindTargetUnitId = INVALID_UNIT_ID;
+
+	bool orderPending() const { return phase == Phase::ORDER_REQUIRED; }
+	bool secondWindReady() const { return phase == Phase::SECOND_WIND_READY; }
+
+	bool operator==(const DoubleCommandState &) const = default;
+
+	/// Starts only for an accepted flexible-Hero Order receipt. Caller supplies
+	/// the server-authoritative perk snapshot and the active stack/target IDs.
+	bool begin(
+		const HeroActionAllowanceState::Receipt & receipt,
+		bool activePerk,
+		HeroCommand order,
+		int32_t round,
+		uint32_t anchor,
+		uint32_t deferredSecondWindTarget = INVALID_UNIT_ID)
+	{
+		validateShape();
+		if(!activePerk || used || phase != Phase::NONE
+			|| receipt.action != HeroActionAllowanceState::ActionKind::ORDER
+			|| receipt.allowance != HeroActionAllowanceState::AllowanceKind::HERO
+			|| receipt.round != round || round < 0 || !heroCommands::isActive(order)
+			|| anchor == INVALID_UNIT_ID
+			|| (order == HeroCommand::SECOND_WIND) == (deferredSecondWindTarget == INVALID_UNIT_ID))
+			return false;
+
+		used = true;
+		phase = Phase::ORDER_REQUIRED;
+		firstOrder = order;
+		issuedRound = round;
+		anchorStackId = anchor;
+		deferredSecondWindTargetUnitId = deferredSecondWindTarget;
+		return true;
+	}
+
+	/// Resolves the mandatory distinct Order. A Second Wind primary leaves a
+	/// short-lived continuation phase so the original activation can resume.
+	void completeFollowup(HeroCommand secondOrder)
+	{
+		validateShape();
+		if(phase != Phase::ORDER_REQUIRED || !heroCommands::isActive(secondOrder)
+			|| secondOrder == firstOrder)
+			throw std::invalid_argument("Invalid Double Command follow-up Order");
+		if(firstOrder == HeroCommand::SECOND_WIND)
+			phase = Phase::SECOND_WIND_READY;
+		else
+			clearContext();
+		validateShape();
+	}
+
+	/// Exhausts the mandatory continuation when no distinct legal Order remains.
+	void exhaustPendingOrder()
+	{
+		validateShape();
+		if(phase != Phase::ORDER_REQUIRED)
+			throw std::invalid_argument("No Double Command Order is pending");
+		if(firstOrder == HeroCommand::SECOND_WIND)
+			phase = Phase::SECOND_WIND_READY;
+		else
+			clearContext();
+		validateShape();
+	}
+
+	/// Returns the held Second Wind target and clears its continuation context.
+	std::optional<uint32_t> consumeSecondWindContinuation()
+	{
+		validateShape();
+		if(phase != Phase::SECOND_WIND_READY)
+			return {};
+		const auto target = deferredSecondWindTargetUnitId;
+		clearContext();
+		validateShape();
+		return target;
+	}
+
+	void validateShape() const
+	{
+		const bool contextClear = firstOrder == HeroCommand::NONE && issuedRound == -1
+			&& anchorStackId == INVALID_UNIT_ID && deferredSecondWindTargetUnitId == INVALID_UNIT_ID;
+		if(phase == Phase::NONE)
+		{
+			if(!contextClear)
+				throw std::runtime_error("Invalid cleared Double Command state");
+			return;
+		}
+		if(!used || !heroCommands::isActive(firstOrder) || issuedRound < 0
+			|| anchorStackId == INVALID_UNIT_ID)
+			throw std::runtime_error("Invalid active Double Command state");
+		if(phase == Phase::ORDER_REQUIRED)
+		{
+			if((firstOrder == HeroCommand::SECOND_WIND)
+				!= (deferredSecondWindTargetUnitId != INVALID_UNIT_ID))
+				throw std::runtime_error("Invalid pending Double Command target");
+			return;
+		}
+		if(phase == Phase::SECOND_WIND_READY && firstOrder == HeroCommand::SECOND_WIND
+			&& deferredSecondWindTargetUnitId != INVALID_UNIT_ID)
+			return;
+		throw std::runtime_error("Invalid Double Command phase");
+	}
+
+	/// Verifies the bounded follow-up/exhaustion/Second Wind-clear transitions
+	/// used by state-change packets. Starting a continuation belongs to StartAction.
+	void validateTransitionFrom(const DoubleCommandState & previous) const
+	{
+		previous.validateShape();
+		validateShape();
+		if(*this == previous)
+			return;
+		if(previous.orderPending())
+		{
+			auto expected = previous;
+			expected.exhaustPendingOrder();
+			if(*this == expected)
+				return;
+		}
+		else if(previous.secondWindReady())
+		{
+			auto expected = previous;
+			if(expected.consumeSecondWindContinuation() && *this == expected)
+				return;
+		}
+		throw std::runtime_error("Invalid Double Command state transition");
+	}
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(h.saving && *this != DoubleCommandState{}
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_COMMAND))
+			throw std::runtime_error("Cannot discard Double Command state");
+		if(h.saving)
+			validateShape();
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_COMMAND))
+		{
+			h & used;
+			h & phase;
+			h & firstOrder;
+			h & issuedRound;
+			h & anchorStackId;
+			h & deferredSecondWindTargetUnitId;
+			if(!h.saving)
+				validateShape();
+		}
+		else if(!h.saving)
+			*this = {};
+	}
+
+private:
+	void clearContext()
+	{
+		phase = Phase::NONE;
+		firstOrder = HeroCommand::NONE;
+		issuedRound = -1;
+		anchorStackId = INVALID_UNIT_ID;
+		deferredSecondWindTargetUnitId = INVALID_UNIT_ID;
 	}
 };
 

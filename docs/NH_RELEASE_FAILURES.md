@@ -2,6 +2,55 @@
 
 ## Purpose
 
+### 2026-10-02 UP-147 — mandatory Order AI forecast boundary
+
+Root source review found that BattleEvaluator's ordinary pre-candidate queue
+forecast still runs while Double Command requires an immediate different Order.
+Its projected nextRound correctly rejects unresolved continuation, so the
+forecast can throw; its imminent-victory shortcut can also decline the mandatory
+choice. Do not weaken the round-integrity guard. Skip that ordinary forecast and
+its early decline only in mandatory-Order mode, preserving legal candidate
+ranking and receipt-backed projection. Build37865 remains frozen/running;
+repair and a focused actual-AI-choice fixture follow its terminal result.
+No observed native failure or activation is claimed from source inspection.
+Build37865 exits1 at the new server fixture: its save/snapshot calls passed the
+read-only IBattleInfo interface instead of the concrete BattleInfo fixture, and
+two assertions referenced an absent act helper. Preserve UP147-build.log; use
+the actual concrete fixture and validated server action entry point rather than
+adding permissive production overloads. Separate workers now repair that fixture,
+the one-file AI forecast guard and one focused actual evaluator submission case.
+Do not execute the stale binary before the retry builds successfully.
+Phase 2 replay gap, independently reviewed: HypotheticBattle does not override
+IBattleState::setDoubleCommandState. Current production uses its explicit copied
+Order projection; only authoritative server paths produce the optional state
+packet, and hypothetical generic apply does not dispatch it. Therefore this does
+not block the current principal AI path, but future generic packet replay must
+apply the continuation and remove its grant rather than inherit a no-op setter.
+Retry build 68259 passes both targets. Principal 86481 passes 3/6 with zero
+skips: legal acquisition, no-choice exhaustion and actual AI submit/server accept
+pass. Two rejected-target fixtures incorrectly use UINT32_MAX, outside the action
+factory's signed target range; use a representable nonexistent ID, retaining the
+server rejection and unchanged-budget assertions. The third failure exposes
+load-time live validation before CStack descriptor initialization. Decode must
+check references/round/Order/ledger structure; alive, ghost and effective owner
+checks run only after unit initialization, and remain mandatory before writes.
+Do not compare immutable unit side with current controller or remove liveness
+guards. The binary descriptor is not a full midbattle restore: runtime unit state
+is omitted and CGameState does not serialize ongoing battles. Preserve the failed
+principal log/XML and test descriptor roundtrips without inventing resume support.
+Post-freeze review identified one additional atomicity boundary: grant-ID
+exhaustion is checked after the primary HERO allowance is consumed. Move that
+rejection into pre-mutation validation, including the authoritative preparation
+path; retain receipt checks and add an unchanged-state fixture assertion. Build
+47418 remains frozen and must terminate before edits/rebuild. This is a repair
+of a material partial-application risk, not a broad interaction-test detour.
+Repairs are verified: builds 47418/82381/47633 pass both targets; principal
+retry 30525 passes 6/6 in 99.078s and activated focused 99320 passes 47/47 in
+134.777s, zero skips. Server rejection leaves ledger, continuation, Orders and
+StartAction count unchanged under grant-ID exhaustion. Data/client 30/30 and
+module drift pass after correcting the inventory row category from `Perk` to
+the established `Active perk`. Original build/native failures remain preserved.
+
 ### 2026-10-02 UP-146 — sibling-Order packet integrity
 
 Pre-build review found that a full state-update packet could retain the newest

@@ -355,6 +355,27 @@ BattleAction CBattleAI::choosePursuitMovement(const std::shared_ptr<CBattleInfoC
 void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 {
 	LOG_TRACE_PARAMS(logAi, "stack: %s", stack->nodeName());
+	const auto battleCallback = cb->getBattle(battleID);
+	if(battleCallback->battleHasPendingDoubleCommand(side))
+	{
+		// This immediate Order sequence takes precedence over every creature action,
+		// including the special siege, gating, and healing-tent paths below. The
+		// evaluator is in mandatory-continuation mode and chooses a legal distinct
+		// Order even when its ordinary heuristic is nonpositive.
+		BattleEvaluator evaluator(
+			env, cb, stack, playerID, battleID, side,
+			getStrengthRatio(battleCallback, side),
+			getSimulationTurnsCount(env->game()->getStartInfo()));
+		if(evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage))
+			return;
+		if(battleCallback->battleHasPendingDoubleCommand(side))
+		{
+			// The authority exhausts a pending sequence with no distinct legal Order.
+			// If one remains here, never substitute an ordinary creature action.
+			logAi->error("BattleAI could not resolve a pending Double Command Order");
+			return;
+		}
+	}
 
 	auto timeElapsed = [](std::chrono::time_point<std::chrono::high_resolution_clock> start) -> uint64_t
 	{

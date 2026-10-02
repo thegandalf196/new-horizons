@@ -58,6 +58,10 @@ public:
 	{
 		return sides.at(side).heroActionAllowances;
 	}
+	const DoubleCommandState & getDoubleCommandState(BattleSide side) const override
+	{
+		return sides.at(side).doubleCommandState;
+	}
 	const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const override { return creatureCategoryRules; }
 	bool getHeroCommandUsed(BattleSide side) const override { return sides.at(side).heroCommandUsed; }
 	int32_t getBloodrageDamagePercent(BattleSide side) const override { return sides.at(side).bloodrageDamagePercent; }
@@ -136,6 +140,11 @@ public:
 	void normalizeLegacyHeroCommandState();
 	void validateFocusFireStates() const;
 	void validateRelentlessAssaultStates() const;
+	/// Validates serialized continuation references without consulting unit state,
+	/// which is not present in the BattleInfo binary stack descriptors.
+	void validateDoubleCommandStructure() const;
+	/// Validates continuation references and their live stack/controller state.
+	void validateDoubleCommandContexts() const;
 	BattleID battleID = BattleID(0);
 
 	si32 activeStack;
@@ -191,10 +200,15 @@ public:
 			for(const auto & side : sides)
 			{
 				side.validateOrderStates();
+				side.validateDoubleCommandState();
 				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS)
 					&& side.orderStates.size() > 1)
 					throw std::runtime_error("Cannot discard simultaneous Hero Orders in an older format");
+				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_COMMAND)
+					&& side.doubleCommandState != DoubleCommandState{})
+					throw std::runtime_error("Cannot discard Double Command battle state");
 			}
+			validateDoubleCommandContexts();
 			// CStack's binary payload deliberately omits CUnitState. Form state
 			// round-trips through UnitChanges JSON, but cannot silently survive a
 			// binary battle snapshot until that broader contract is implemented.
@@ -502,6 +516,18 @@ public:
 			}
 		}
 
+		if(!h.saving)
+		{
+			for(const auto sideId : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			{
+				const auto & side = sides.at(sideId);
+				side.validateDoubleCommandState();
+				if((side.doubleCommandState.orderPending() || side.doubleCommandState.secondWindReady())
+					&& side.doubleCommandState.issuedRound != round)
+					throw std::runtime_error("Double Command continuation does not match battle round");
+			}
+		}
+
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CREATURE_CATEGORIES))
 		{
 			if(h.saving)
@@ -555,6 +581,7 @@ public:
 			validateFocusFireStates();
 			validateRelentlessAssaultStates();
 			postDeserialize();
+			validateDoubleCommandStructure();
 		}
 	}
 
@@ -665,6 +692,7 @@ public:
 	void removeObstacle(uint32_t id) override;
 	void setHeroOrderStates(BattleSide side, const std::vector<HeroOrderState> & states) override;
 	void setHeroOrderState(BattleSide side, const std::optional<HeroOrderState> & state) override;
+	void setDoubleCommandState(BattleSide side, const DoubleCommandState & state) override;
 	void setRelentlessAssaultState(BattleSide side, const RelentlessAssaultState & state) override
 	{
 		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)

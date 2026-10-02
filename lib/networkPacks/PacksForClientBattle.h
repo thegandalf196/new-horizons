@@ -616,6 +616,8 @@ struct DLL_LINKAGE StartAction : public CPackForClient
 	/// When true, the accepted canonical Order is upserted without replacing
 	/// other same-side Orders. Legacy writes cannot represent that intent.
 	bool preserveOtherOrders = false;
+	/// Server-derived Double Command transition for this accepted Order, when any.
+	std::optional<DoubleCommandState> doubleCommandState;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
@@ -624,6 +626,9 @@ struct DLL_LINKAGE StartAction : public CPackForClient
 		if(h.saving && preserveOtherOrders
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS))
 			throw std::runtime_error("Cannot discard multi-Order StartAction upsert intent in an older format");
+		if(h.saving && doubleCommandState
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_COMMAND))
+			throw std::runtime_error("Cannot discard Double Command StartAction state");
 		h & battleID;
 		h & ba;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS))
@@ -658,6 +663,10 @@ struct DLL_LINKAGE StartAction : public CPackForClient
 		{
 			preserveOtherOrders = false;
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_COMMAND))
+			h & doubleCommandState;
+		else if(!h.saving)
+			doubleCommandState.reset();
 		assert(battleID != BattleID::NONE);
 	}
 };
@@ -674,11 +683,16 @@ struct DLL_LINKAGE BattleHeroOrderStateChanged : public CPackForClient
 	std::optional<HeroOrderState> state;
 	/// Authoritative full same-side Order collection in the multiple-Order format.
 	std::optional<std::vector<HeroOrderState>> states;
+	/// Authoritative Double Command phase transition, if this update changes it.
+	std::optional<DoubleCommandState> doubleCommandState;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && doubleCommandState
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_COMMAND))
+			throw std::runtime_error("Cannot discard Double Command state update");
 		if(h.saving)
 		{
 			if(states)
@@ -740,6 +754,10 @@ struct DLL_LINKAGE BattleHeroOrderStateChanged : public CPackForClient
 		{
 			states = state ? std::vector<HeroOrderState>{*state} : std::vector<HeroOrderState>{};
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_COMMAND))
+			h & doubleCommandState;
+		else if(!h.saving)
+			doubleCommandState.reset();
 		assert(battleID != BattleID::NONE);
 		assert(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER);
 	}

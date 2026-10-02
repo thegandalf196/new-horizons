@@ -11,6 +11,7 @@
 #include "GameStatePackVisitor.h"
 
 #include "CGameState.h"
+#include "../battle/CBattleInfoCallback.h"
 #include "../battle/NewHorizonsOffense.h"
 #include "../battle/NewHorizonsWarcasting.h"
 #include "../spells/NewHorizonsMagic.h"
@@ -1770,10 +1771,16 @@ void GameStatePackVisitor::visitBattleStart(BattleStart & pack)
 	heroCommands::validateRules(pack.info->getHeroCommandRules());
 	pack.info->normalizeLegacyHeroCommandState();
 	pack.info->validateFocusFireStates();
+	// BattleStart may arrive in-process without passing through binary decoding,
+	// so reject malformed continuation references before unit initialization too.
+	pack.info->validateDoubleCommandStructure();
 	assert(pack.battleID == gs.nextBattleID);
 
 	pack.info->battleID = gs.nextBattleID;
 	pack.info->localInit();
+	// The stack descriptors omit CUnitState. Only now are alive/ghost/controller
+	// checks meaningful for a continuation received in this BattleStart packet.
+	pack.info->validateDoubleCommandContexts();
 
 	if (pack.info->getDefendedTown() && pack.info->getSide(BattleSide::DEFENDER).heroID.hasValue())
 	{
@@ -1989,6 +1996,19 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		throw std::runtime_error("Retired Metamagic decline StartAction");
 	const bool canonicalOrder = pack.ba.actionType == EActionType::HERO_COMMAND
 		&& heroCommands::isCanonicalRules(battleContext->getHeroCommandRules());
+	std::optional<DoubleCommandState> acceptedDoubleCommandState;
+	if(pack.ba.side == BattleSide::ATTACKER || pack.ba.side == BattleSide::DEFENDER)
+	{
+		const auto & continuation = battleContext->getDoubleCommandState(pack.ba.side);
+		if(continuation.orderPending()
+			&& (!canonicalOrder || pack.ba.command == continuation.firstOrder
+				|| !battleContext->battleHasPendingDoubleCommand(pack.ba.side)))
+			throw std::runtime_error("StartAction cannot interrupt a required Double Command Order");
+		if(continuation.secondWindReady())
+			throw std::runtime_error("StartAction cannot interrupt a ready Double Command Second Wind");
+	}
+	if(pack.doubleCommandState && !canonicalOrder)
+		throw std::runtime_error("Double Command StartAction state requires a canonical Hero Order");
 	if(pack.preserveOtherOrders && !canonicalOrder)
 		throw std::runtime_error("Non-Order StartAction cannot preserve canonical Hero Orders");
 	if(pack.orderState.has_value() != canonicalOrder)
@@ -2015,6 +2035,50 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 				return order.command == pack.ba.command;
 			}))
 			throw std::runtime_error("Canonical Order StartAction cannot duplicate an active Order");
+
+		const auto & side = battleContext->getSide(pack.ba.side);
+		const auto & previousDoubleCommand = side.doubleCommandState;
+		std::optional<DoubleCommandState> expectedDoubleCommand;
+		if(previousDoubleCommand.secondWindReady())
+			throw std::runtime_error("StartAction cannot interrupt a ready Double Command Second Wind");
+		if(previousDoubleCommand.orderPending())
+		{
+			const auto firstOrder = battleContext->getHeroOrderState(pack.ba.side, previousDoubleCommand.firstOrder);
+			const auto selected = side.heroActionAllowances.eligibleAllowance(
+				HeroActionAllowanceState::ActionKind::ORDER, battleContext->getRound());
+			if(!battleContext->battleHasPendingDoubleCommand(pack.ba.side) || !firstOrder
+				|| firstOrder->issuedRound != previousDoubleCommand.issuedRound
+				|| pack.ba.command == previousDoubleCommand.firstOrder
+				|| !selected || selected->source != HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND)
+				throw std::runtime_error("Canonical Order does not satisfy the pending Double Command continuation");
+			auto next = previousDoubleCommand;
+			next.completeFollowup(pack.ba.command);
+			expectedDoubleCommand = std::move(next);
+		}
+		else if(pack.doubleCommandState)
+		{
+			const auto selected = side.heroActionAllowances.eligibleAllowance(
+				HeroActionAllowanceState::ActionKind::ORDER, battleContext->getRound());
+			const auto * anchor = battleContext->battleActiveUnit();
+			if(!selected || selected->allowance != HeroActionAllowanceState::AllowanceKind::HERO
+				|| !anchor || !pack.orderState)
+				throw std::runtime_error("Double Command requires an accepted flexible-Hero Order action");
+			// Reject allocation failure before consuming the primary Hero Action.
+			if(side.heroActionAllowances.nextGrantId == std::numeric_limits<uint32_t>::max())
+				throw std::runtime_error("Double Command allowance grant IDs are exhausted");
+			const HeroActionAllowanceState::Receipt receipt{selected->grantId,
+				HeroActionAllowanceState::ActionKind::ORDER, selected->allowance, selected->source,
+				battleContext->getRound()};
+			auto next = previousDoubleCommand;
+			const auto deferredTarget = pack.ba.command == HeroCommand::SECOND_WIND
+				? pack.orderState->primaryTargetUnitId : DoubleCommandState::INVALID_UNIT_ID;
+			if(!next.begin(receipt, true, pack.ba.command, battleContext->getRound(), anchor->unitId(), deferredTarget))
+				throw std::runtime_error("Invalid Double Command primary Order transition");
+			expectedDoubleCommand = std::move(next);
+		}
+		if(pack.doubleCommandState != expectedDoubleCommand)
+			throw std::runtime_error("StartAction Double Command transition does not match its action receipt");
+		acceptedDoubleCommandState = std::move(expectedDoubleCommand);
 	}
 	if(pack.focusFire.has_value() != targeted)
 		throw std::runtime_error("Inconsistent targeted StartAction payload");
@@ -2084,6 +2148,21 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 				HeroActionAllowanceState::ActionKind::ORDER, commandBattle->getRound());
 			if(!orderReceipt)
 				throw std::runtime_error("Could not commit accepted Order action allowance");
+		}
+		if(acceptedDoubleCommandState)
+		{
+			if(!side.doubleCommandState.orderPending())
+			{
+				if(!orderReceipt || orderReceipt->allowance != HeroActionAllowanceState::AllowanceKind::HERO
+					|| side.heroActionAllowances.nextGrantId == std::numeric_limits<uint32_t>::max())
+					throw std::runtime_error("Invalid Double Command primary Order receipt");
+				side.heroActionAllowances.grantAllowance(HeroActionAllowanceState::AllowanceKind::ORDER,
+					HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND, commandBattle->getRound());
+			}
+			else if(!orderReceipt || orderReceipt->source != HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND)
+				throw std::runtime_error("Double Command follow-up did not consume its grant");
+			commandBattle->setDoubleCommandState(pack.ba.side, *acceptedDoubleCommandState);
+			side.validateDoubleCommandState();
 		}
 		const bool spendsHeroAction = sharedActionBudget
 			? orderReceipt && orderReceipt->allowance == HeroActionAllowanceState::AllowanceKind::HERO
@@ -2280,7 +2359,27 @@ void GameStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderState
 		throw std::runtime_error("Canonical Hero Order state update would clear an active Order");
 	}
 	validateHeroOrderStateMutation(*battle, pack.side, *pack.states);
+	if(pack.doubleCommandState)
+	{
+		auto & side = battle->getSide(pack.side);
+		pack.doubleCommandState->validateTransitionFrom(side.doubleCommandState);
+		if(side.doubleCommandState.orderPending()
+			&& !pack.doubleCommandState->orderPending())
+		{
+			const bool anotherLegalOrderExists = std::ranges::any_of(heroCommands::CANONICAL_COMMANDS,
+				[&](HeroCommand command)
+				{
+					return command != side.doubleCommandState.firstOrder
+						&& battle->battleCanBeginHeroCommand(pack.side, command);
+				});
+			if(anotherLegalOrderExists)
+				throw std::runtime_error("Cannot exhaust Double Command while a distinct Order remains available");
+		}
+	}
 	battle->setHeroOrderStates(pack.side, *pack.states);
+	if(pack.doubleCommandState)
+		battle->setDoubleCommandState(pack.side, *pack.doubleCommandState);
+	battle->getSide(pack.side).validateDoubleCommandState();
 }
 
 void GameStatePackVisitor::visitBattleDemonicGatingStateChanged(BattleDemonicGatingStateChanged & pack)
@@ -2885,7 +2984,31 @@ void BattleStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderSta
 	if(pack.states->empty() && battleState.getActiveOrder(pack.side) != HeroCommand::NONE)
 		throw std::runtime_error("Canonical Hero Order state update would clear an active Order");
 	validateHeroOrderStateMutation(battleState, pack.side, *pack.states);
+	if(pack.doubleCommandState)
+	{
+		const auto & previous = battleState.getDoubleCommandState(pack.side);
+		pack.doubleCommandState->validateTransitionFrom(previous);
+		if(previous.orderPending() && !pack.doubleCommandState->orderPending())
+		{
+			// BattleInfo has the live legality callback. Detached IBattleState
+			// projections do not necessarily have one, so they still validate the
+			// represented state transition while authoritative receipt checks stay
+			// in GameStatePackVisitor.
+			if(const auto * callback = dynamic_cast<const CBattleInfoCallback *>(&battleState))
+			{
+				const bool anotherLegalOrderExists = std::ranges::any_of(heroCommands::CANONICAL_COMMANDS,
+					[&](HeroCommand command)
+					{
+						return command != previous.firstOrder && callback->battleCanBeginHeroCommand(pack.side, command);
+					});
+				if(anotherLegalOrderExists)
+					throw std::runtime_error("Cannot exhaust Double Command while a distinct Order remains available");
+			}
+		}
+	}
 	battleState.setHeroOrderStates(pack.side, *pack.states);
+	if(pack.doubleCommandState)
+		battleState.setDoubleCommandState(pack.side, *pack.doubleCommandState);
 }
 
 void BattleStatePackVisitor::visitBattleAdverseRerollStateChanged(BattleAdverseRerollStateChanged & pack)

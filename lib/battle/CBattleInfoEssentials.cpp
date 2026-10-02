@@ -266,6 +266,19 @@ const battle::Unit * CBattleInfoEssentials::battleActiveUnit() const
 		return nullptr;
 }
 
+bool CBattleInfoEssentials::battleHasPendingDoubleCommand(BattleSide side) const
+{
+	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+		return false;
+	const auto & state = getBattle()->getDoubleCommandState(side);
+	if(!state.orderPending() || state.issuedRound != getBattle()->getRound())
+		return false;
+	const auto * active = battleActiveUnit();
+	return active && active->alive() && !active->isGhost()
+		&& active->unitId() == state.anchorStackId
+		&& battleGetOwner(active) == sideToPlayer(side);
+}
+
 uint32_t CBattleInfoEssentials::battleNextUnitId() const
 {
 	return getBattle()->nextUnitId();

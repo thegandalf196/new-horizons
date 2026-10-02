@@ -369,6 +369,11 @@ bool CBattleInfoCallback::battleHeroCommandCommonAvailable(BattleSide side, Hero
 	if(!getBattle() || !heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), command)
 		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
 		return false;
+	const auto & doubleCommand = getBattle()->getDoubleCommandState(side);
+	if((doubleCommand.orderPending()
+		&& (!battleHasPendingDoubleCommand(side) || command == doubleCommand.firstOrder))
+		|| doubleCommand.secondWindReady())
+		return false;
 	const bool canonical = heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules());
 	const auto sameOrder = canonical ? battleGetHeroOrderState(side, command) : std::nullopt;
 	const bool alreadyIssued = canonical

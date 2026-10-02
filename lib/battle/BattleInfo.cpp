@@ -259,6 +259,57 @@ std::vector<HeroOrderState> BattleInfo::getHeroOrderStates(BattleSide side) cons
 	return sides.at(side).orderStates;
 }
 
+void BattleInfo::validateDoubleCommandStructure() const
+{
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto & sideState = sides.at(side);
+		sideState.validateDoubleCommandState();
+		const auto & continuation = sideState.doubleCommandState;
+		if(!continuation.orderPending() && !continuation.secondWindReady())
+			continue;
+		if(continuation.issuedRound != round)
+			throw std::runtime_error("Double Command continuation does not match battle round");
+		const auto order = getHeroOrderState(side, continuation.firstOrder);
+		if(!order || order->issuedRound != continuation.issuedRound)
+			throw std::runtime_error("Double Command continuation has no matching issued Order");
+		const auto activeStackId = getActiveStackID();
+		const auto * anchor = battleGetStackByID(continuation.anchorStackId, false);
+		if(!anchor || activeStackId < 0 || static_cast<uint32_t>(activeStackId) != continuation.anchorStackId)
+			throw std::runtime_error("Double Command continuation has no matching active anchor descriptor");
+		if(continuation.firstOrder == HeroCommand::SECOND_WIND)
+		{
+			const auto * target = battleGetStackByID(continuation.deferredSecondWindTargetUnitId, false);
+			if(!target
+				|| order->primaryTargetUnitId != continuation.deferredSecondWindTargetUnitId
+				|| order->secondWindActive)
+				throw std::runtime_error("Double Command Second Wind continuation has no matching stored target");
+		}
+	}
+}
+
+void BattleInfo::validateDoubleCommandContexts() const
+{
+	validateDoubleCommandStructure();
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto & continuation = sides.at(side).doubleCommandState;
+		if(!continuation.orderPending() && !continuation.secondWindReady())
+			continue;
+		const auto * anchor = battleGetStackByID(continuation.anchorStackId, false);
+		if(!anchor || !anchor->alive() || anchor->isGhost()
+			|| playerToSide(battleGetOwner(anchor)) != side)
+			throw std::runtime_error("Double Command continuation has no legal active anchor");
+		if(continuation.firstOrder == HeroCommand::SECOND_WIND)
+		{
+			const auto * target = battleGetStackByID(continuation.deferredSecondWindTargetUnitId, false);
+			if(!target || !target->alive() || target->isGhost()
+				|| playerToSide(battleGetOwner(target)) != side)
+				throw std::runtime_error("Double Command Second Wind continuation has no legal stored target");
+		}
+	}
+}
+
 void BattleInfo::setHeroOrderStates(BattleSide side, const std::vector<HeroOrderState> & states)
 {
 	auto & sideState = sides.at(side);
@@ -279,6 +330,18 @@ void BattleInfo::setHeroOrderState(BattleSide side, const std::optional<HeroOrde
 		sideState.orderStates.clear();
 		sideState.activeOrder = HeroCommand::NONE;
 	}
+}
+
+void BattleInfo::setDoubleCommandState(BattleSide side, const DoubleCommandState & state)
+{
+	state.validateShape();
+	auto & sideState = sides.at(side);
+	if(sideState.doubleCommandState.orderPending() && !state.orderPending())
+		std::erase_if(sideState.heroActionAllowances.grants, [](const auto & grant)
+		{
+			return grant.source == HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND;
+		});
+	sideState.doubleCommandState = state;
 }
 
 void BattleInfo::expireSeparatedHeroOrderProtect()
@@ -1062,6 +1125,10 @@ std::vector<SpellID> BattleInfo::getUsedSpells(BattleSide side) const
 
 void BattleInfo::nextRound()
 {
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		if(sides.at(side).doubleCommandState.orderPending()
+			|| sides.at(side).doubleCommandState.secondWindReady())
+			throw std::runtime_error("Cannot advance a battle round with unresolved Double Command continuation");
 	for(auto i : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		auto extraActivation = sides.at(i).reducedExtraActivation;

@@ -1715,6 +1715,80 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 	if(battle.battleGetTacticDist() != 0)
 		return;
 
+	std::optional<uint32_t> deferredDoubleCommandSecondWind;
+	if(ba.side == BattleSide::ATTACKER || ba.side == BattleSide::DEFENDER)
+	{
+		const auto publishContinuation = [this, &battle, &ba](const DoubleCommandState & next)
+		{
+			BattleHeroOrderStateChanged update;
+			update.battleID = battle.getBattle()->getBattleID();
+			update.side = ba.side;
+			update.states = battle.getBattle()->getHeroOrderStates(ba.side);
+			if(!update.states->empty())
+				update.state = update.states->back();
+			update.doubleCommandState = next;
+			gameHandler->sendAndApply(update);
+		};
+		auto continuation = battle.getBattle()->getDoubleCommandState(ba.side);
+		if(continuation.orderPending())
+		{
+			// This bounded choice check runs only at the accepted action boundary,
+			// never during rendering, movement, or ordinary battle updates.
+			const bool legalChoice = std::any_of(
+				heroCommands::CANONICAL_COMMANDS.begin(), heroCommands::CANONICAL_COMMANDS.end(),
+				[&battle, &ba](const auto command)
+				{
+					return battle.battleCanUseHeroCommand(ba.side, command)
+						|| battle.battleCanBeginHeroCommand(ba.side, command);
+				});
+			if(legalChoice)
+			{
+				const auto * anchor = battle.battleGetStackByID(continuation.anchorStackId, false);
+				if(!anchor || !anchor->alive())
+					throw std::runtime_error("Double Command lost its active choice anchor");
+				setActiveStack(battle, anchor, BattleUnitTurnReason::HERO_COMMAND);
+				return;
+			}
+			continuation.exhaustPendingOrder();
+			publishContinuation(continuation);
+			BattleLogMessage message;
+			message.battleID = battle.getBattle()->getBattleID();
+			MetaString line;
+			line.appendRawString("Double Command ends: no different legal Order remains.");
+			message.lines.push_back(std::move(line));
+			gameHandler->sendAndApply(message);
+		}
+		if(continuation.secondWindReady())
+		{
+			deferredDoubleCommandSecondWind = continuation.consumeSecondWindContinuation();
+			publishContinuation(continuation);
+		}
+	}
+
+	// Resolve the deferred activation before unrelated creature continuations.
+	// Otherwise a ranged follow-up could return after consuming the saved target.
+	if((ba.actionType == EActionType::HERO_COMMAND && ba.command == HeroCommand::SECOND_WIND)
+		|| deferredDoubleCommandSecondWind)
+	{
+		const auto state = battle.getBattle()->getHeroOrderState(ba.side, HeroCommand::SECOND_WIND);
+		const auto targetId = deferredDoubleCommandSecondWind.value_or(
+			state ? state->primaryTargetUnitId : HeroOrderState::INVALID_UNIT_ID);
+		const auto * target = state && targetId == state->primaryTargetUnitId
+			&& targetId != HeroOrderState::INVALID_UNIT_ID
+			? battle.battleGetStackByID(targetId, false) : nullptr;
+		if(const auto * stateInfo = dynamic_cast<const BattleInfo *>(battle.getBattle());
+			target && target->alive() && stateInfo
+			&& const_cast<BattleInfo *>(stateInfo)->setHeroOrderSecondWindActive(ba.side, true))
+		{
+			publishHeroOrderState(battle, ba.side);
+			setActiveStack(battle, target, BattleUnitTurnReason::HERO_COMMAND);
+			// A lethal start-of-activation Fire Wall must not leave a dead anchor.
+			if(!target->alive())
+				activateNextStack(battle);
+			return;
+		}
+	}
+
 	if(rangedAttackContinuation)
 	{
 		if(activeStack && activeStack->alive() && battle.battleCanTakeRangedFollowUp(activeStack))
@@ -1814,30 +1888,6 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 		if(actedStack->castSpellThisTurn && ba.spell.hasValue() && ba.spell.toSpell()->canCastWithoutSkip())
 		{
 			setActiveStack(battle, actedStack, BattleUnitTurnReason::UNIT_SPELLCAST);
-			return;
-		}
-	}
-
-	// Second Wind grants one immediate extra activation to a stack that has
-	// already acted. Keep the transient state active while that activation is
-	// being processed so its direct-damage penalty is applied authoritatively.
-	if(ba.actionType == EActionType::HERO_COMMAND && ba.command == HeroCommand::SECOND_WIND)
-	{
-		const auto state = battle.getBattle()->getHeroOrderState(ba.side, HeroCommand::SECOND_WIND);
-		const auto * target = state && state->primaryTargetUnitId != HeroOrderState::INVALID_UNIT_ID
-			? battle.battleGetStackByID(state->primaryTargetUnitId, false) : nullptr;
-		if(const auto * stateInfo = dynamic_cast<const BattleInfo *>(battle.getBattle());
-			target && target->alive() && stateInfo
-			&& const_cast<BattleInfo *>(stateInfo)->setHeroOrderSecondWindActive(ba.side, true))
-		{
-			publishHeroOrderState(battle, ba.side);
-			setActiveStack(battle, target, BattleUnitTurnReason::HERO_COMMAND);
-			// Fire Wall is checked at the start of a genuine Second Wind
-			// activation. A lethal trigger must immediately hand flow back to
-			// the queue (or finish the battle), rather than leaving a dead stack
-			// as the active unit with no request outstanding.
-			if(!target->alive())
-				activateNextStack(battle);
 			return;
 		}
 	}

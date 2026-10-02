@@ -4103,7 +4103,7 @@
 								"requires": "expert",
 								"description": "The first time each combat the hero uses the Hero Action to issue an Order, immediately issue one additional different Order. The same Order cannot be issued twice in that sequence.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The first time each combat the hero uses the Hero Action to issue an Order, immediately issue one additional different Order. The same Order cannot be issued twice in that sequence."
 								}
 							},

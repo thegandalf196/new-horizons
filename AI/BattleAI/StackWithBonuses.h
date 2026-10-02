@@ -207,6 +207,10 @@ public:
 	bool consumeHeroOrderProtectInterception(uint32_t wardUnitId, uint32_t protectorUnitId);
 	const AlternatingHeroActionState & getWarcastingState(BattleSide side) const override;
 	const HeroActionAllowanceState & getHeroActionAllowances(BattleSide side) const override;
+	const DoubleCommandState & getDoubleCommandState(BattleSide side) const override
+	{
+		return doubleCommandStates.at(side);
+	}
 	bool hasCompletedHeroSpellCast(BattleSide side) const override { return heroSpellCastCompletedStates.at(side); }
 	bool hasCompletedHeroSpellLevel(BattleSide side, int32_t level) const override;
 	bool getCounterspellArmed(BattleSide side) const override { return counterspellArmedStates.at(side); }
@@ -293,6 +297,8 @@ public:
 		bool metamagicFollowup, bool grand, bool counterspellWardActive, bool counterspellNegated,
 		const ProjectedSpellAllowance & prepared);
 	bool projectAcceptedHeroOrder(BattleSide side, const ProjectedOrderAllowance & prepared);
+	bool projectAcceptedHeroOrder(BattleSide side, HeroCommand command,
+		const std::vector<uint32_t> & commandTargets, const ProjectedOrderAllowance & prepared);
 	ProjectedCounterspellOutcome resolveProjectedCounterspell(BattleSide casterSide, const CSpell * spell) const;
 	bool projectHeroSpellAllowance(BattleSide side, SpellID spell, uint32_t target,
 		bool metamagicFollowup, bool grand);
@@ -421,6 +427,7 @@ private:
 	BattleSideArray<std::vector<HeroOrderState>> heroOrderStates;
 	BattleSideArray<AlternatingHeroActionState> warcastingStates;
 	BattleSideArray<HeroActionAllowanceState> heroActionAllowances;
+	BattleSideArray<DoubleCommandState> doubleCommandStates;
 	BattleSideArray<bool> heroSpellCastCompletedStates;
 	BattleSideArray<std::uint8_t> completedHeroSpellLevelMasks;
 	BattleSideArray<bool> counterspellArmedStates;
