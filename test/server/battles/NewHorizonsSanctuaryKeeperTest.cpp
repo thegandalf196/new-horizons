@@ -62,6 +62,7 @@ JsonNode savedV2MagicRules()
 		else
 		{
 			it->second.Struct().erase("selectedPlacement");
+			it->second.Struct().erase("earthquake");
 			++it;
 		}
 	}

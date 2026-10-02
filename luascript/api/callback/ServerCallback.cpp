@@ -27,7 +27,6 @@
 #include "../library/Spell.h"
 
 #include "../../LuaStack.h"
-#include "../../../lib/battle/SiegeInfo.h"
 #include "../../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/battle/Unit.h"
@@ -40,6 +39,7 @@
 #include "../../../lib/battle/CUnitState.h"
 #include "../../../lib/battle/CBattleInfoCallback.h"
 #include "../../../lib/battle/Destination.h"
+#include "../../../lib/battle/SiegeInfo.h"
 #include "../../../lib/entities/hero/NewHorizonsCapabilityRules.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/spells/CSpellHandler.h"
@@ -52,6 +52,7 @@
 #include <vstd/RNG.h>
 
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 
 namespace scripting::api
@@ -165,6 +166,13 @@ void ServerCallbackProxy::registerMethods(MethodRegistrar & R)
 			{"damageDealt",  "Damage to apply to the wall section."}
 		}, {},
 		"Performs a catapult attack against the given wall section, dealing the supplied damage.");
+	R.function<&ServerCallbackProxy::damageFortification>("damageFortification",
+		{
+			{"battle",         "Battle in which the structural damage happens."},
+			{"attackedPart",   "Fortification section to damage."},
+			{"absoluteDamage", "Absolute structural hit points to remove from the section."}
+		}, {},
+		"Applies an exact structural-damage value through the authoritative CatapultAttack packet, without Catapult output multipliers.");
 	R.function<&ServerCallbackProxy::rngInt>("rngInt",
 		{
 			{"low",  "Inclusive lower bound."},
@@ -542,6 +550,45 @@ void ServerCallbackProxy::catapultAttack(ServerCallback & object, const IBattleI
 	}
 
 	object.apply(ca);
+}
+
+void ServerCallbackProxy::damageFortification(ServerCallback & object, const IBattleInfoCallback & battle, EWallPart attackedPart, int32_t absoluteDamage)
+{
+	if(absoluteDamage < 0 || absoluteDamage > std::numeric_limits<ui16>::max())
+		throw std::runtime_error("Invalid absolute fortification damage");
+	if(absoluteDamage == 0 || !battle.hasFortifications() || !battle.isWallPartAttackable(attackedPart))
+		return;
+
+	const BattleHex destination = battle.wallPartToBattleHex(attackedPart);
+	const int32_t structuralHP = battle.getWallStructuralHP(attackedPart);
+	// This API is for canonical New Horizons structural HP only. Passing an
+	// absolute spell value through legacy wall-state steps would reinterpret HP
+	// as visual states and corrupt the old siege rule.
+	if(!destination.isValid() || structuralHP <= 0)
+		return;
+
+	CatapultAttack attack;
+	attack.battleID = battle.getBattle()->getBattleID();
+	attack.attacker = -1;
+	attack.attackedPart = attackedPart;
+	attack.destinationTile = destination.toInt();
+	attack.damageDealt = 1; // Nonzero selects the existing spell-caused impact animation.
+	attack.structuralDamage = static_cast<ui16>(absoluteDamage);
+	attack.killedTowerShooter = -1;
+
+	if(attackedPart == EWallPart::KEEP || attackedPart == EWallPart::BOTTOM_TOWER || attackedPart == EWallPart::UPPER_TOWER)
+	{
+		const EWallState stateAfter = SiegeInfo::stateFromStructuralHP(attackedPart, structuralHP - absoluteDamage);
+		if(stateAfter == EWallState::DESTROYED)
+		{
+			const BattleHex towerHex = battle.getTowerShooterHex(attackedPart);
+			const battle::Unit * shooter = battle.battleGetUnitByPos(towerHex, false);
+			if(shooter && !shooter->isGhost())
+				attack.killedTowerShooter = shooter->unitId();
+		}
+	}
+
+	object.apply(attack);
 }
 
 int ServerCallbackProxy::rngInt(ServerCallback & object, int low, int high)

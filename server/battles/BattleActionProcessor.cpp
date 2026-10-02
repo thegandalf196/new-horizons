@@ -1453,7 +1453,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 		}
 	}
 	const auto movementResult = moveStack(battle, ba.stackNumber, attackPos);
-	int movementSpent = movementResult.distance;
+	int movementSpent = movementResult.movementCost;
 
 	logGlobal->trace("%s will attack %s", stack->nodeName(), destinationStack->nodeName());
 
@@ -1624,12 +1624,18 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 		assert(stack->unitId() == ba.stackNumber);
 		int afterAttackSpeed = stack->getMovementRange(0);
 		std::pair<BattleHexArray, int> path = battle.getPath(stack->getPosition(), startingPos, stack);
-		size_t maxReachbleIndex = std::max(0, beforeAttackSpeed - afterAttackSpeed);
-		if(maxReachbleIndex < path.first.size())
+		const auto returnReachability = battle.getReachability(stack);
+		const auto returnDestination = std::find_if(path.first.begin(), path.first.end(),
+			[&](const BattleHex & hex)
+			{
+				return returnReachability.isReachable(hex)
+					&& returnReachability.distances[hex.toInt()] <= static_cast<uint32_t>(std::max(0, afterAttackSpeed));
+			});
+		if(returnDestination != path.first.end())
 		{
-			const auto returnResult = moveStack(battle, ba.stackNumber, path.first[maxReachbleIndex]);
+			const auto returnResult = moveStack(battle, ba.stackNumber, *returnDestination);
 			if(!returnResult.invalidRequest)
-				movementSpent += returnResult.distance;
+				movementSpent += returnResult.movementCost;
 		}
 	}
 
@@ -2857,7 +2863,7 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 
 	auto start = currentUnit->getPosition();
 	if (start == dest)
-		return { 0, false, false };
+		return {};
 	const auto orderStateBeforeAttacker = battle.battleGetHeroOrderState(BattleSide::ATTACKER);
 	const auto orderStateBeforeDefender = battle.battleGetHeroOrderState(BattleSide::DEFENDER);
 
@@ -2882,7 +2888,7 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 	if((stackAtEnd && stackAtEnd!=currentUnit && stackAtEnd->alive()) || !accessibility.accessible(dest, currentUnit))
 	{
 		gameHandler->complain("Given destination is not accessible!");
-		return { 0, false, true };
+		return { 0, 0, false, true };
 	}
 
 	bool canUseGate = false;
@@ -2894,7 +2900,21 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 		canUseGate = true;
 	}
 
-	auto [unitPath, pathDistance] = battle.getPath(start, dest, currentUnit);
+	const auto reachability = battle.getReachability(currentUnit);
+	BattleHexArray unitPath;
+	int pathDistance = 0;
+	if(dest.isValid() && reachability.isReachable(dest)
+		&& reachability.predecessors[dest.toInt()] != BattleHex::INVALID)
+	{
+		BattleHex pathHex = dest;
+		while(pathHex != start)
+		{
+			unitPath.insert(pathHex);
+			pathHex = reachability.predecessors[pathHex.toInt()];
+		}
+		pathDistance = static_cast<int>(reachability.distances[dest.toInt()]);
+	}
+	MovementResult result;
 	bool movementSuccess = true;
 
 	int unitMovementRange = currentUnit->getMovementRange(0);
@@ -2907,7 +2927,7 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 	if (pathDistance > unitMovementRange)
 	{
 		gameHandler->complain("Given destination is not reachable!");
-		return { 0, false, true };
+		return { 0, 0, false, true };
 	}
 
 	bool hasWideMoat = vstd::contains_if(battle.battleGetAllObstaclesOnPos(BattleHex(BattleHex::GATE_BRIDGE), false), [](const std::shared_ptr<const CObstacleInstance> & obst)
@@ -2966,11 +2986,14 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 			sm.teleporting = false;
 			breakSanctuary(battle, currentUnit);
 			gameHandler->sendAndApply(sm);
+			result.distance = pathDistance;
+			result.movementCost = pathDistance;
 		}
 	}
 	else //for non-flying creatures
 	{
 		BattleHexArray tiles;
+		BattleHex lastCommittedPosition = start;
 		const int tilesToMove = std::max<int>(unitPath.size() - unitMovementRange, 0);
 		int movementsLeft = static_cast<int>(unitPath.size())-1;
 		unitPath.insert(start);
@@ -3083,7 +3106,16 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 				BattleStackMoved sm;
 				sm.battleID = battle.getBattle()->getBattleID();
 				sm.stack = currentUnit->unitId();
-				sm.distance = pathDistance;
+				int segmentDistance = 0;
+				for(const auto & hex : tiles)
+				{
+					if(hex == lastCommittedPosition)
+						continue;
+					++segmentDistance;
+					lastCommittedPosition = hex;
+				}
+				result.distance += segmentDistance;
+				sm.distance = segmentDistance;
 				sm.teleporting = false;
 				sm.tilesToMove = tiles;
 				breakSanctuary(battle, currentUnit);
@@ -3128,6 +3160,14 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 				break;
 			}
 		}
+		const BattleHex committedPosition = currentUnit->getPosition();
+		if(committedPosition.isValid())
+		{
+			const auto committedCost = reachability.distances[committedPosition.toInt()];
+			result.movementCost = committedCost < ReachabilityInfo::INFINITE_DIST
+				? static_cast<int>(committedCost)
+				: result.distance;
+		}
 	}
 	//handle last hex separately for deviation
 	if (gameHandler->gameInfo().getSettings().getBoolean(EGameSettings::COMBAT_ONE_HEX_TRIGGERS_OBSTACLES))
@@ -3145,7 +3185,8 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 	if(orderStateBeforeDefender != battle.battleGetHeroOrderState(BattleSide::DEFENDER))
 		publishHeroOrderState(battle, BattleSide::DEFENDER);
 
-	return { static_cast<int16_t>(pathDistance), !movementSuccess, false };
+	result.obstacleHit = !movementSuccess;
+	return result;
 }
 
 void BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, BattleAttack & bat, bool perfectMoment) const

@@ -177,6 +177,23 @@
 					"items": {"type": "string", "enum": ["core:poison", "core:disease"]}
 				},
 				"selectedPlacement": {"type": "boolean", "enum": [true]},
+				"earthquake": {
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["radius", "duration", "movementCost", "structuralDamage", "baseSections", "maxSections", "powerPerSection", "baseDamage", "powerNumerator", "powerDivisor"],
+					"properties": {
+						"radius": {"type": "integer", "enum": [2]},
+						"duration": {"type": "integer", "enum": [3]},
+						"movementCost": {"type": "integer", "enum": [1]},
+						"structuralDamage": {"type": "integer", "minimum": 1, "maximum": 10000},
+						"baseSections": {"type": "integer", "enum": [2]},
+						"maxSections": {"type": "integer", "enum": [4]},
+						"powerPerSection": {"type": "integer", "enum": [80]},
+						"baseDamage": {"type": "integer", "enum": [30]},
+						"powerNumerator": {"type": "integer", "enum": [4]},
+						"powerDivisor": {"type": "integer", "enum": [5]}
+					}
+				},
 				"variant": {
 					"type": "object",
 					"required": ["base", "skill", "perk", "powerPercent"],

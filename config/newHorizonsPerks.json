@@ -1413,7 +1413,7 @@
 					"requires": "advanced",
 					"description": "Earthquake deals 25% more structural damage and Fractured Ground lasts 1 additional round.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Earthquake deals 25% more structural damage and Fractured Ground lasts 1 additional round."
 					}
 				},

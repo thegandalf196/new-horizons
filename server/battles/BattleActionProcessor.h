@@ -37,12 +37,14 @@ class BattleActionProcessor : boost::noncopyable
 {
 	struct MovementResult
 	{
-		/// number of tiles unit moved through, unset for flying units
-		int16_t distance;
+		/// Number of hexes actually traversed, including a committed partial move.
+		int distance = 0;
+		/// Movement points spent along the committed path. Flying keeps geometric cost.
+		int movementCost = 0;
 		/// Unit failed to complete movement due to stepping into obstacle
-		bool obstacleHit;
+		bool obstacleHit = false;
 		/// Unit was unable to move to destination, e.g. invalid request
-		bool invalidRequest;
+		bool invalidRequest = false;
 	};
 
 	/// Per-action snapshot shared by an attack's multistrikes. It is local to
@@ -123,7 +125,7 @@ class BattleActionProcessor : boost::noncopyable
 		int64_t actualPrimaryDamage = 0;
 	};
 
-	MovementResult moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest); //returned value - travelled distance
+	MovementResult moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest);
 	void breakSanctuary(const CBattleInfoCallback & battle, const battle::Unit * stack);
 	void makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender,
 		const AttackDescriptor & attack, bool * destroyedEnemyOut = nullptr,

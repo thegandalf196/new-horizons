@@ -251,6 +251,8 @@ DLL_LINKAGE std::string spellDescriptionForHero(const CGHeroInstance * hero,
 /// Read only the supplied saved roster using the spell's canonical scoped key.
 /// Absent snapshots/rows/formulas return null; no installed definition fallback.
 DLL_LINKAGE std::optional<DirectDamageFormula> spellDirectDamage(const JsonNode & rules, const std::string & scopedIdentity);
+/// Explicit saved-v3 opt-in to selected-section and field Earthquake behavior.
+DLL_LINKAGE bool earthquakeRulesEnabled(const JsonNode & rules, SpellID spell);
 /// Call only after checking explicit event overrides (including zero) and legacy
 /// nonzero caster overrides. This accessor does not choose override precedence.
 DLL_LINKAGE std::optional<int64_t> directDamageValue(const JsonNode & rules, const std::string & scopedIdentity,

@@ -9,7 +9,9 @@
  */
 #include "StdInc.h"
 #include "PotentialTargets.h"
+#include "SpellTargetsEvaluator.h"
 #include "../../lib/CStack.h"//todo: remove
+#include "../../lib/battle/ReachabilityInfo.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 
@@ -50,7 +52,9 @@ PotentialTargets::PotentialTargets(
 
 		auto GenerateAttackInfo = [&](bool shooting, const BattleHex & hex) -> AttackPossibility
 		{
-			int distance = hex.isValid() ? reachability.distances[hex.toInt()] : 0;
+			const int distance = hex.isValid()
+				? std::max(0, SpellTargetEvaluator::physicalTravelDistance(reachability, hex))
+				: 0;
 			auto bai = BattleAttackInfo(attackerInfo, defender, distance, shooting);
 			if(shooting && hex.isValid() && hex != attackerInfo->getPosition()
 				&& newHorizonsArchery::canUseSkirmisher(state->battleGetFightingHero(attackerInfo->unitSide()), attackerInfo))

@@ -2313,6 +2313,8 @@ BattleHexArray BattleSpellMechanics::spellRangeInHexes(const BattleHex & central
 
 Target BattleSpellMechanics::transformSpellTarget(const Target & aimPoint) const
 {
+	if(usesNewHorizonsEarthquake())
+		return aimPoint.size() == 1 && aimPoint.front().hexValue.isValid() ? aimPoint : Target{};
 	Target spellTarget;
 	if(battle() && battle()->getBattle()
 		&& isNewHorizonsVengefulVinesSpell(owner, battle()->getBattle()->getMagicRules()))

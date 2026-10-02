@@ -1,4 +1,23 @@
 {
+	"earthquake" : {
+		"implements" : "spellEffect",
+		"script" : "spells/earthquake",
+		"patches" : [],
+		"schema" : {
+			"properties" : {
+				"type" : {}, "indirect" : {}, "optional" : {},
+				"targetsToAttack" : {"type" : "number"},
+				"chanceToHitKeep" : {"type" : "number"},
+				"chanceToHitGate" : {"type" : "number"},
+				"chanceToHitTower" : {"type" : "number"},
+				"chanceToHitWall" : {"type" : "number"},
+				"chanceToNormalHit" : {"type" : "number"},
+				"chanceToCrit" : {"type" : "number"},
+				"animation" : {"type" : "string"}
+			},
+			"additionalProperties" : false
+		}
+	},
 	"catapult" : {
 		"implements" : "spellEffect",
 		"script" : "spells/catapult",

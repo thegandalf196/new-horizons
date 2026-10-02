@@ -370,7 +370,8 @@
 				"targetModifier":{"smart":true},
 				"battleEffects":{
 					"catapult":{
-						"type":"catapult",
+						"type":"earthquake",
+						"animation": "C17SPE1",
 						"targetsToAttack": 2,
 						"chanceToCrit" : 0,
 						"chanceToNormalHit" : 100

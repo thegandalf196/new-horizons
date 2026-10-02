@@ -573,7 +573,21 @@
 		"core:earthquake": {
 			"schools": [
 				"new-horizons:nature"
-			]
+			],
+			"level": 3,
+			"costs": [12, 12, 12, 12],
+			"earthquake": {
+				"radius": 2,
+				"duration": 3,
+				"movementCost": 1,
+				"structuralDamage": 100,
+				"baseSections": 2,
+				"maxSections": 4,
+				"powerPerSection": 80,
+				"baseDamage": 30,
+				"powerNumerator": 4,
+				"powerDivisor": 5
+			}
 		},
 		"core:fireElemental": {
 			"schools": [

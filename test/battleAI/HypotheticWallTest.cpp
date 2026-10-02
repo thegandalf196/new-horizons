@@ -258,10 +258,14 @@ TEST_F(HypotheticWallTest, RealEarthquakeCanDestroyTheLastGateInModelAndAuthorit
 	std::vector<std::string> castProblems;
 	castProblem.getAll(castProblems);
 	ASSERT_TRUE(canCast) << testing::PrintToString(castProblems);
-	ASSERT_TRUE(mechanics->canBeCastAt({}));
+	const bool selectedEarthquake = mechanics->usesNewHorizonsEarthquake();
+	const spells::Target aim = selectedEarthquake
+		? spells::Target{spells::Destination(battle()->wallPartToBattleHex(EWallPart::GATE))}
+		: spells::Target{};
+	ASSERT_TRUE(mechanics->canBeCastAt(aim));
 	HypotheticBattle model(environment.get(), callback);
 	spells::BattleCast projected(&model, attackerSideHero, spells::Mode::HERO, spell);
-	projected.castEval(model.getServerCallback(), {});
+	projected.castEval(model.getServerCallback(), aim);
 	EXPECT_EQ(model.battleGetWallState(EWallPart::GATE), EWallState::DESTROYED);
 	EXPECT_EQ(model.battleGetGateState(), EGateState::DESTROYED);
 	EXPECT_TRUE(model.hasWallChanges());
@@ -274,7 +278,7 @@ TEST_F(HypotheticWallTest, RealEarthquakeCanDestroyTheLastGateInModelAndAuthorit
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
 	action.spell = SpellID::EARTHQUAKE;
-	action.aimToHex(BattleHex::INVALID);
+	action.aimToHex(selectedEarthquake ? aim.front().hexValue : BattleHex::INVALID);
 	const auto cost = attackerSideHero->getSpellCost(spell);
 	const auto * active = battle()->battleActiveUnit();
 	ASSERT_NE(active, nullptr);

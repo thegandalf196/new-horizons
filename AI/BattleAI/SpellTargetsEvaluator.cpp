@@ -12,6 +12,7 @@
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/CUnitState.h"
+#include "../../lib/battle/ReachabilityInfo.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsShadowGift.h"
 #include "../../lib/battle/NewHorizonsSoulChain.h"
@@ -1208,6 +1209,8 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMech
 		return canonicalFireWallTargets(spellMechanics);
 	if(isCanonicalLandMine(spellMechanics))
 		return canonicalLandMineTargets(spellMechanics);
+	if(spellMechanics && spellMechanics->usesNewHorizonsEarthquake())
+		return canonicalEarthquakeTargets(spellMechanics);
 	if(isSelectedQuicksand(spellMechanics))
 		return canonicalQuicksandTargets(spellMechanics);
 
@@ -1245,6 +1248,114 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMech
 		default:
 			return result;
 	}
+}
+
+std::vector<Target> SpellTargetEvaluator::canonicalEarthquakeTargets(const Mechanics * spellMechanics)
+{
+	std::vector<Target> result;
+	if(!spellMechanics || !spellMechanics->usesNewHorizonsEarthquake()
+		|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::LOCATION})
+		return result;
+
+	// A location candidate is the selected center for field mode and the
+	// selected wall section for siege mode. Keep every geometrically distinct
+	// legal hex: terrain footprints can differ even when the creature victims do
+	// not, and an empty unit footprint is still meaningful in siege mode.
+	result.reserve(GameConstants::BFIELD_SIZE);
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		const BattleHex hex(index);
+		if(!hex.isValid())
+			continue;
+
+		Target target{Destination(hex)};
+		detail::ProblemImpl problem;
+		if(spellMechanics->canBeCastAt(target, problem))
+			result.push_back(std::move(target));
+	}
+	return result;
+}
+
+int SpellTargetEvaluator::physicalTravelDistance(const ReachabilityInfo & reachability, BattleHex destination)
+{
+	const auto start = reachability.params.startPosition;
+	if(!start.isValid() || !destination.isValid() || !reachability.isReachable(destination))
+		return -1;
+
+	if(reachability.params.flying)
+		return BattleHex::getDistance(start, destination);
+
+	int distance = 0;
+	BattleHex current = destination;
+	while(current != start && distance < GameConstants::BFIELD_SIZE)
+	{
+		current = reachability.predecessors[current.toInt()];
+		if(!current.isValid())
+			return -1;
+		++distance;
+	}
+	return current == start ? distance : -1;
+}
+
+std::optional<float> SpellTargetEvaluator::earthquakeStructuralHPValue(
+	const Mechanics * spellMechanics,
+	const Target & target,
+	const Environment * environment,
+	std::shared_ptr<CBattleInfoCallback> battleState)
+{
+	if(!spellMechanics || !spellMechanics->usesNewHorizonsEarthquake()
+		|| spellMechanics->getUnitCaster() != nullptr || target.size() != 1
+		|| target.front().unitValue || !target.front().hexValue.isValid())
+		return std::nullopt;
+
+	const auto * callback = spellMechanics->battle();
+	const auto * spell = dynamic_cast<const CSpell *>(spellMechanics->getSpell());
+	if(!callback || !spell || !environment)
+		return std::nullopt;
+	if(!battleState)
+		battleState = std::shared_ptr<CBattleInfoCallback>(
+			const_cast<CBattleInfoCallback *>(callback), [](CBattleInfoCallback *) {});
+	if(!battleState->hasFortifications())
+		return std::nullopt;
+
+	detail::ProblemImpl problem;
+	if(!spellMechanics->canBeCastAt(target, problem))
+		return 0.0f;
+
+	const auto casterSide = spellMechanics->getCasterSide();
+	if((casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
+		|| !spellMechanics->getHeroCaster())
+		return std::nullopt;
+
+	// Re-resolve the same scripted spell against a detached battle. This leaves
+	// section selection, nearest-section ordering, Geomancer scaling and actual
+	// structural damage in the Lua/runtime implementation instead of duplicating
+	// an Earthquake planner in the AI.
+	HypotheticBattle projectedBattle(environment, battleState);
+	BattleCast projectedCast(&projectedBattle, spellMechanics->getHeroCaster(), Mode::HERO, spell);
+	auto projectedMechanics = spell->battleMechanics(&projectedCast);
+	detail::ProblemImpl projectedProblem;
+	if(!projectedMechanics->canBeCastAt(target, projectedProblem))
+		return 0.0f;
+	projectedMechanics->castEval(projectedBattle.getServerCallback(), target);
+
+	float structuralValue = 0.0f;
+	for(int index = 0; index < static_cast<int>(EWallPart::PARTS_COUNT); ++index)
+	{
+		const auto part = static_cast<EWallPart>(index);
+		const auto before = std::max(0, battleState->getWallStructuralHP(part));
+		const auto after = std::max(0, projectedBattle.getWallStructuralHP(part));
+		if(before <= 0 || after >= before)
+			continue;
+
+		const auto actualDamage = std::min(before, before - after);
+		structuralValue += static_cast<float>(actualDamage) / static_cast<float>(before);
+	}
+
+	// Fortifications belong to the defending side: structural progress advances
+	// the attacker and weakens the defender. Keep this a distinct structure score
+	// rather than disguising wall HP as creature health or scoring the wrong side.
+	return casterSide == BattleSide::ATTACKER ? structuralValue : -structuralValue;
 }
 
 SpellTargetEvaluator::PurifySelection SpellTargetEvaluator::purifySelection(

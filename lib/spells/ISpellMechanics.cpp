@@ -237,6 +237,32 @@ int32_t Mechanics::getNewHorizonsLandMinePatchCount() const
 	return newHorizonsMagic::landMineHexCount(getEffectPower(), getSpellPowerCoefficientBasisPoints());
 }
 
+bool Mechanics::usesNewHorizonsEarthquake() const
+{
+	const auto * state = battle() ? battle()->getBattle() : nullptr;
+	return state && newHorizonsMagic::earthquakeRulesEnabled(state->getMagicRules(), getSpellId());
+}
+
+int32_t Mechanics::getNewHorizonsEarthquakeParameter(const std::string & name) const
+{
+	if(!usesNewHorizonsEarthquake())
+		return 0;
+	const auto & terrain = battle()->getBattle()->getMagicRules()["spells"]["core:earthquake"]["earthquake"];
+	const auto found = terrain.Struct().find(name);
+	return found == terrain.Struct().end() ? 0 : static_cast<int32_t>(found->second.Integer());
+}
+
+int32_t Mechanics::getNewHorizonsEarthquakeSectionCount() const
+{
+	if(!usesNewHorizonsEarthquake())
+		return 0;
+	const auto divisor = getNewHorizonsEarthquakeParameter("powerPerSection");
+	const auto extra = scaleSpellPowerComponentWithCoefficientBasisPoints(
+		std::max<int64_t>(0, getEffectPower()), divisor, getSpellPowerCoefficientBasisPoints());
+	return getNewHorizonsEarthquakeParameter("baseSections") + static_cast<int32_t>(std::min<int64_t>(extra,
+		getNewHorizonsEarthquakeParameter("maxSections") - getNewHorizonsEarthquakeParameter("baseSections")));
+}
+
 int32_t Mechanics::getShadowGiftSacrificeCostBasisPoints() const
 {
 	const auto * battleCallback = battle();
@@ -903,20 +929,29 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 				battle->getMagicRules(), caster->getHeroCaster(), owner->getId(), getCastSpellPowerComponentBonusPercent())
 			: 10000;
 		const auto * heroCaster = caster->getHeroCaster();
-		const int damagePerkBonusPercent = battle && owner->isDamage()
+		const bool damageSpell = owner->isDamage() || usesNewHorizonsEarthquake();
+		const int damagePerkBonusPercent = battle && damageSpell
 			? newHorizonsMagic::spellPowerDamagePerkBonusPercent(battle->getMagicRules(), heroCaster, owner)
 			: 0;
-		const int damageCoefficientBasisPoints = owner->isDamage()
+		const int damageCoefficientBasisPoints = damageSpell
 			? spellPowerCoefficientBasisPoints * (100 + damagePerkBonusPercent) / 100
 			: 10000;
-		const int effectPowerCoefficientBasisPoints = owner->isDamage()
+		const int effectPowerCoefficientBasisPoints = damageSpell
 			? damageCoefficientBasisPoints
 			: spellPowerCoefficientBasisPoints;
 			const int empowerBonusPercent = battle
 				? newHorizonsMagic::empowerSpellBonusPercent(
 					battle->getMagicRules(), caster->getHeroCaster(), owner->getId(), isMassSlow() ? 3 : 1)
 				: 0;
-			if(battle && owner->getJsonKey() == "new-horizons:hydrasVitality"
+			if(usesNewHorizonsEarthquake())
+			{
+				effectValue = getNewHorizonsEarthquakeParameter("baseDamage")
+					+ scaleSpellPowerComponentWithCoefficientBasisPoints(
+						static_cast<int64_t>(getNewHorizonsEarthquakeParameter("powerNumerator")) * effectPower,
+						getNewHorizonsEarthquakeParameter("powerDivisor"),
+						damageCoefficientBasisPoints);
+			}
+			else if(battle && owner->getJsonKey() == "new-horizons:hydrasVitality"
 				&& newHorizonsMagic::rulesActive(battle->getMagicRules())
 				&& battle->getMagicRules()["rulesetVersion"].Integer()
 					>= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
@@ -1113,6 +1148,8 @@ int32_t BaseMechanics::getSpellLevel() const
 
 bool BaseMechanics::isSmart() const
 {
+	if(usesNewHorizonsEarthquake())
+		return false;
 	if(isNewHorizonsCure())
 		return true;
 
@@ -1137,7 +1174,7 @@ bool BaseMechanics::isSmart() const
 
 bool BaseMechanics::isMassive() const
 {
-	if(isNewHorizonsCure() || usesNewHorizonsBerserkTargeting())
+	if(isNewHorizonsCure() || usesNewHorizonsBerserkTargeting() || usesNewHorizonsEarthquake())
 		return false;
 
 	if(forceMassive || isMassSlow())
@@ -1160,6 +1197,8 @@ bool BaseMechanics::alwaysHitFirstTarget() const
 
 bool BaseMechanics::isNegativeSpell() const
 {
+	if(usesNewHorizonsEarthquake())
+		return true;
 	return owner->isNegative();
 }
 
@@ -1170,6 +1209,8 @@ bool BaseMechanics::isPositiveSpell() const
 
 bool BaseMechanics::isNeutralSpell() const
 {
+	if(usesNewHorizonsEarthquake())
+		return false;
 	return owner->isNeutral();
 }
 
@@ -1577,6 +1618,8 @@ const battle::Unit * BaseMechanics::getUnitCaster() const
 
 std::vector<AimType> BaseMechanics::getTargetTypes() const
 {
+	if(usesNewHorizonsEarthquake())
+		return {AimType::LOCATION};
 	std::vector<AimType> ret;
 
 	auto spellTargetType = usesNewHorizonsBerserkTargeting()

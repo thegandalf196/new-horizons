@@ -276,6 +276,13 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"True when the battle uses a saved New Horizons magic-rules snapshot.");
 	R.method<&Mechanics::usesNewHorizonsMagicV3>("usesNewHorizonsMagicV3", {},
 		"True when the battle uses a saved New Horizons magic-rules v3 snapshot.");
+	R.method<&Mechanics::usesNewHorizonsEarthquake>("usesNewHorizonsEarthquake", {},
+		"True only when the saved-v3 Earthquake row explicitly enables its selected-area and field rules.");
+	R.method<&Mechanics::getNewHorizonsEarthquakeParameter>("getNewHorizonsEarthquakeParameter",
+		{{"name", "Validated saved Earthquake parameter name."}}, {},
+		"Returns a parameter from the saved Earthquake row, or zero outside the opted-in profile.");
+	R.method<&Mechanics::getNewHorizonsEarthquakeSectionCount>("getNewHorizonsEarthquakeSectionCount", {},
+		"Returns the saved Earthquake section count with composed Spell Power scaling and its cap.");
 	R.method<&Mechanics::usesNewHorizonsQuicksandSelectedPlacement>("usesNewHorizonsQuicksandSelectedPlacement", {},
 		"True when the saved battle rules enable exact caster-selected Quicksand placement.");
 	R.method<&Mechanics::usesNewHorizonsMultiplicativeMDR>("usesNewHorizonsMultiplicativeMDR", {},

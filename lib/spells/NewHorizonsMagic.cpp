@@ -679,7 +679,21 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		return {};
 
 	std::string result = spell->getDescriptionTranslated(schoolLevel);
-	if(hero && spellVariantBase(hero->getMagicRules(), spell->getId()) == SpellID::SLOW
+	if(hero && earthquakeRulesEnabled(hero->getMagicRules(), spell->getId()))
+	{
+		const bool geomancer = hero->hasActivePerk("new-horizons:natureMagic", "new-horizons:natureMagic.geomancer");
+		const auto & parameters = hero->getMagicRules()["spells"]["core:earthquake"]["earthquake"];
+		const int structuralDamage = parameters["structuralDamage"].Integer() * (geomancer ? 125 : 100) / 100;
+		result = "Siege: select an intact fortification section. Damages that section and the nearest eligible "
+			"wall, gate or tower sections, up to min(4, 2 + floor(scaled Spell Power / 80)). Each loses "
+			+ std::to_string(structuralDamage) + " structural HP. Field combat: select a radius-2 area. "
+			"Grounded stacks on either side take 30 + 0.8 x scaled Spell Power damage before defenses. "
+			"Fractured Ground lasts " + std::to_string(geomancer ? 4 : 3)
+			+ " rounds before eligible duration extensions; each entered hex costs one extra movement point. "
+			"Flying travel ignores this cost. No Initiative, Attack, Defense or retaliation penalty. "
+			"School rank, Spellcraft, Warcasting and Empower scale only Spell Power terms, not fixed bases or caps.";
+	}
+	else if(hero && spellVariantBase(hero->getMagicRules(), spell->getId()) == SpellID::SLOW
 		&& rulesActive(hero->getMagicRules())
 		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
 		&& spellAllowedBySavedRoster(hero->getMagicRules(), spell->getId()))
@@ -1152,7 +1166,23 @@ void validateRules(const JsonNode & rules)
 		else if(version < SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "ordinaryAcquisition"});
 		else
-			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "ordinaryAcquisition", "variant"});
+			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "ordinaryAcquisition", "variant", "earthquake"});
+		if(data.Struct().contains("earthquake"))
+		{
+			require(name == "core:earthquake" && version == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
+				"Earthquake field rules require the saved-v3 Earthquake identity");
+			const auto & terrain = data["earthquake"];
+			fields(terrain, {"radius", "duration", "movementCost", "structuralDamage", "baseSections", "maxSections",
+				"powerPerSection", "baseDamage", "powerNumerator", "powerDivisor"});
+			require(integer(data["level"], 3, 3), "Earthquake level");
+			require(integer(terrain["radius"], 2, 2) && integer(terrain["duration"], 3, 3)
+				&& integer(terrain["movementCost"], 1, 1), "Earthquake terrain geometry/lifetime/cost");
+			require(integer(terrain["structuralDamage"], 1, 10000), "Earthquake prototype structural damage");
+			require(integer(terrain["baseSections"], 2, 2) && integer(terrain["maxSections"], 4, 4)
+				&& integer(terrain["powerPerSection"], 80, 80), "Earthquake section-count formula");
+			require(integer(terrain["baseDamage"], 30, 30) && integer(terrain["powerNumerator"], 4, 4)
+				&& integer(terrain["powerDivisor"], 5, 5), "Earthquake field damage formula");
+		}
 		if(data.Struct().contains("variant"))
 		{
 			const auto & variant = data["variant"];
@@ -1336,6 +1366,14 @@ std::optional<int64_t> directDamageValue(const JsonNode & rules, const std::stri
 	if(!formula)
 		return std::nullopt;
 	return formula->evaluate(effectPower, divisor, coefficientPercent);
+}
+
+bool earthquakeRulesEnabled(const JsonNode & rules, const SpellID spell)
+{
+	return spell == SpellID(SpellID::EARTHQUAKE) && rulesActive(rules)
+		&& rules["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		&& spellAllowedBySavedRoster(rules, spell)
+		&& rules["spells"]["core:earthquake"]["earthquake"].isStruct();
 }
 
 int schoolRankPowerCoefficientPercent(const JsonNode & rules, int schoolRank)

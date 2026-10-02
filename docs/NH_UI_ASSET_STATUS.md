@@ -32,6 +32,13 @@ Implementation is Final only when the intended UI behavior and its presentation 
 
 ## Current status summary
 
+UP-118 source/native checkpoint: Earthquake and Geomancer have authoritative
+field/siege, targeting, feedback and AI evidence. Fractured Ground borrows
+Quicksand's external animation reference, not newly authored terrain art;
+purpose-made art is Not done. Geomancer still uses the neutral perk fallback
+(Not done art). Generic presentation remains Provisional until rendered review.
+Current perk coverage is167/310 active,143 planned. No GUI or playable promotion.
+
 UP-115/116 source/native checkpoint: Sanctuary Keeper and Venomancer are
 active with generic perk offer/name/help presentation. Their exact lifetime
 and Poison snapshot effects, detached forecasts and actual AI casts have

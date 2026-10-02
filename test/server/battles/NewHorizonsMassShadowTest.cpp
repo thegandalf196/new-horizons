@@ -62,6 +62,7 @@ JsonNode olderMagicSnapshotWithoutMassVariants()
 		(void)identity;
 		if(row.isStruct())
 			row.Struct().erase("selectedPlacement");
+			row.Struct().erase("earthquake");
 	}
 	for(auto it = rules["spells"].Struct().begin(); it != rules["spells"].Struct().end();)
 	{

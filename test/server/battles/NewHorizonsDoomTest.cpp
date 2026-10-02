@@ -37,6 +37,7 @@ JsonNode savedV2RulesContainingDoom()
 	{
 		(void)name;
 		row.Struct().erase("selectedPlacement");
+		row.Struct().erase("earthquake");
 		if(row.Struct().contains("variant"))
 		{
 			row.Struct().erase("variant");

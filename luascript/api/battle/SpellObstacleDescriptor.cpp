@@ -22,6 +22,8 @@ SpellCreatedObstacle SpellObstacleDescriptor::toObstacle() const
 {
 	if(casterPowerDivisor <= 0)
 		throw std::runtime_error("Invalid spell obstacle power divisor");
+	if(movementCost < 0 || movementCost > SpellCreatedObstacle::MAX_MOVEMENT_COST)
+		throw std::runtime_error("Invalid spell obstacle movement cost");
 
 	SpellCreatedObstacle obstacle;
 	obstacle.pos              = pos;
@@ -33,6 +35,7 @@ SpellCreatedObstacle SpellObstacleDescriptor::toObstacle() const
 	obstacle.spellLevel       = spellLevel;
 	obstacle.casterSide       = casterSide;
 	obstacle.minimalDamage    = minimalDamage;
+	obstacle.movementCost     = movementCost;
 
 	obstacle.hidden          = hidden;
 	obstacle.passable        = passable;

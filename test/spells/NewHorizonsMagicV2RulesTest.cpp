@@ -54,6 +54,7 @@ JsonNode legacyRules()
 		spell.Struct().erase("directDamage");
 		spell.Struct().erase("cureAfflictions");
 		spell.Struct().erase("selectedPlacement");
+		spell.Struct().erase("earthquake");
 		if(spell.Struct().contains("variant"))
 		{
 			spell.Struct().erase("variant");
@@ -71,6 +72,16 @@ JsonNode formulaRules()
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules.Struct().erase("spellcraftEfficiencyPercent");
 	rules["spells"][quicksandKey].Struct().erase("selectedPlacement");
+	rules["spells"]["core:earthquake"].Struct().erase("earthquake");
+	for(auto & [name, spell] : rules["spells"].Struct())
+	{
+		(void)name;
+		if(spell.Struct().contains("variant"))
+		{
+			spell.Struct().erase("variant");
+			spell["active"].Bool() = false;
+		}
+	}
 	// Existing registered identity for rules-only tests; this does not alter the
 	// installed spell or activate the proposed new Magic Missile definition.
 	rules["spells"][arrowKey]["directDamage"]["base"].Integer() = 20;

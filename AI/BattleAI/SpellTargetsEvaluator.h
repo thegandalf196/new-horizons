@@ -17,6 +17,7 @@
 
 class Environment;
 class CBattleInfoCallback;
+struct ReachabilityInfo;
 
 namespace spells::effects
 {
@@ -39,6 +40,23 @@ public:
 	};
 
 	static std::vector<spells::Target> getViableTargets(spells::Mechanics * spellMechanics);
+	/// Enumerates canonical Earthquake's full legal location set without merging
+	/// equal creature footprints. Siege aims are the attackable fortification
+	/// section hexes; field aims retain distinct area centers.
+	static std::vector<spells::Target> canonicalEarthquakeTargets(const spells::Mechanics * spellMechanics);
+	/// Counts physical travel hexes along the reachability predecessor path.
+	/// Flyers use geometric hex distance; invalid or unreachable destinations
+	/// return -1. Movement-cost distance remains available on ReachabilityInfo.
+	static int physicalTravelDistance(const ReachabilityInfo & reachability, BattleHex destination);
+	/// Projects canonical siege Earthquake through the real spell effects and
+	/// returns signed structural HP damage as a sum of per-section current-HP
+	/// fractions (attacker-positive, defender-negative). Field damage is scored by
+	/// the ordinary hypothetical cast path; nullopt means this is not a siege cast.
+	static std::optional<float> earthquakeStructuralHPValue(
+		const spells::Mechanics * spellMechanics,
+		const spells::Target & target,
+		const Environment * environment,
+		std::shared_ptr<CBattleInfoCallback> battleState = {});
 	/// Selects the most valuable legal negative source groups for each friendly
 	/// stack around a canonical Purify center. The result is a read-only snapshot.
 	static PurifySelection purifySelection(const spells::Mechanics * spellMechanics,

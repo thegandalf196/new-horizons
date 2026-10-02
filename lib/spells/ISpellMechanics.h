@@ -319,6 +319,9 @@ public:
 	/// Saved-v3 Quicksand's authoritative patch count, or zero for legacy rules
 	/// and every other spell.
 	int32_t getNewHorizonsQuicksandPatchCount() const;
+	bool usesNewHorizonsEarthquake() const;
+	int32_t getNewHorizonsEarthquakeParameter(const std::string & name) const;
+	int32_t getNewHorizonsEarthquakeSectionCount() const;
 	/// New Horizons Land Mine's authoritative selected-hex count, or zero
 	/// outside the New Horizons Land Mine profile. Pre-v3 snapshots retain raw
 	/// Spell Power; v3 uses the composed saved coefficient.

@@ -1758,8 +1758,9 @@ float entangleMovementThreatValue(const battle::Unit * liveTarget,
 				if(movementDistance >= ReachabilityInfo::INFINITE_DIST)
 					continue;
 
+				const auto travelDistance = SpellTargetEvaluator::physicalTravelDistance(reachability, attackFrom);
 				BattleAttackInfo attack(liveTarget, friendly,
-					static_cast<int>(movementDistance), false);
+					std::max(0, travelDistance), false);
 				attack.attackerPos = attackFrom;
 				attack.defenderPos = defenderHex;
 				bestDamage = std::max(bestDamage,
@@ -4353,6 +4354,13 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 								continue;
 							ps.spellBattleFormExpectedValue = *expectedValue
 								* scoreEvaluator.getPositiveEffectMultiplier();
+						}
+						if(const auto structuralValue = SpellTargetEvaluator::earthquakeStructuralHPValue(
+							candidateMechanics.get(), ps.dest, env.get(), cb->getBattle(battleID)))
+						{
+							if(*structuralValue <= 0.0f)
+								continue;
+							ps.spellPlacementHeuristicValue = *structuralValue;
 						}
 						if(isCanonicalLandMine(*cb->getBattle(battleID), spell))
 							ps.spellPlacementHeuristicValue = SpellTargetEvaluator::landMinePlacementValue(

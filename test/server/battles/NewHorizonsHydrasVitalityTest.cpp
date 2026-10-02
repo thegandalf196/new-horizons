@@ -52,6 +52,7 @@ protected:
 			rules.Struct().erase("spellcraftEfficiencyPercent");
 			if(savedMagicVersion < newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 				rules["spells"]["core:quicksand"].Struct().erase("selectedPlacement");
+				rules["spells"]["core:earthquake"].Struct().erase("earthquake");
 			for(auto & [identity, row] : rules["spells"].Struct())
 			{
 				(void)identity;

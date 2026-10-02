@@ -61,6 +61,7 @@ protected:
 			rules.Struct().erase("schoolRankPowerCoefficientPercent");
 			rules.Struct().erase("spellcraftEfficiencyPercent");
 			rules["spells"]["core:quicksand"].Struct().erase("selectedPlacement");
+			rules["spells"]["core:earthquake"].Struct().erase("earthquake");
 			for(auto & [identity, row] : rules["spells"].Struct())
 			{
 				(void)identity;

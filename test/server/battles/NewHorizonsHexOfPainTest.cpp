@@ -98,6 +98,7 @@ protected:
 			{
 				(void)name;
 				spellRow.Struct().erase("selectedPlacement");
+				spellRow.Struct().erase("earthquake");
 				if(spellRow.Struct().contains("variant"))
 				{
 					spellRow.Struct().erase("variant");

@@ -44,6 +44,7 @@ struct SpellObstacleDescriptor final : ApiSerializable<SpellObstacleDescriptor>
 	int32_t spellLevel = 0;
 	BattleSide casterSide = BattleSide::ATTACKER;
 	int32_t minimalDamage = 0;
+	int32_t movementCost = 0;
 
 	bool hidden = false;
 	bool passable = false;
@@ -75,6 +76,7 @@ struct SpellObstacleDescriptor final : ApiSerializable<SpellObstacleDescriptor>
 		s("spellLevel",       spellLevel,       "Spell skill level (0–3) the obstacle was cast at.");
 		s("casterSide",       casterSide,       "Which battle side cast it; relevant for native-visibility and friendly-fire rules.");
 		s("minimalDamage",    minimalDamage,    "Floor for the damage the obstacle inflicts on trigger.");
+		s("movementCost",     movementCost,     "Additional movement points paid for each newly entered affected hex; valid range is 0–1000.");
 		s("hidden",           hidden,           "If true, the obstacle is invisible to the opposing side until triggered.");
 		s("passable",         passable,         "If true, units may step onto the obstacle's hexes (e.g. trap obstacles).");
 		s("trap",             trap,             "If true, behaves as a trap: triggers on enter rather than blocking movement.");

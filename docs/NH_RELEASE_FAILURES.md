@@ -2780,6 +2780,62 @@ No production failure is inferred from those fixture compile errors. The actual
 Surgeon fixture's callback type and custom-source declaration were independently
 repaired before registration. Both fixtures are frozen for the next combined build.
 
+### UP-118 Earthquake legacy-fixture conversion gate
+
+Both-target build86453 exits1: the AI helper calls a nonexistent Mechanics
+getMode accessor. Use the declared cast-mode member/API and rerun the compile
+gate; this is an interface integration failure, not accepted AI behavior.
+
+Retry11522 reaches the new actual-cast fixture but fails compilation: SPEED is
+not a registered BonusType, battleGetSpellCost takes a Spell pointer rather than
+an ID, and HypotheticBattle exposes obstacles via its callback rather than a
+public vector. Repair those test API uses with their real declarations and
+preserve the assertions. Native acceptance is pending; no coverage is added.
+
+Retry17282 builds both targets successfully. Principal38004 runs58 cases in
+7.090s:51 pass,7 fail. Five old v2-rule fixture cases still inherit v3 Mass
+variant metadata, a prior synthetic-conversion omission. Two Earthquake field
+cases assume unranked damage38 while their hero has Basic115% School scaling
+(actual39). The field case also reports an allegedly immune friendly stack
+taking damage; establish the bonus/level/receptivity preconditions before
+classifying or repairing it. All siege/Geomancer and terrain foundation guards
+pass. Do not activate Geomancer until the repaired principal gate passes.
+
+Diagnostic82464 runs31 in3.499s:29 pass. Its new preconditions prove the friendly
+stack has level3 immunity and is non-receptive, but the cast still damages it.
+Root traced Effects::prepare: custom transformTarget must apply receptivity;
+filterTarget is not automatically invoked there. Fix only the Earthquake
+transform while preserving its terrain anchor. The AI signed-projection case
+also sees defender value0; verify defender's legal casting preconditions before
+changing AI side semantics. Actual AI-selected paid siege cast already passes.
+
+Repaired60626 passes58/58 in7.056s, including the now-proven immune-target
+exclusion with terrain preserved. Final build22190 exits0. Activated98184 runs
+63 in8.383s:62 pass; the defender structural-projection fixture still reports0
+despite a legal live target. Investigate the projected callback's player
+perspective/hero state and do not weaken the signed-value assertion. All actual
+casts, Geomancer, AI-selected paid siege, saved-profile and terrain guards pass.
+
+Read-only trace identifies the remaining fixture error: HypotheticBattle
+inherits its subject's player perspective; a Player0 callback cannot preflight
+a Defender cast. Use a Player1 subject for that forecast, assert detached side
+and legal target, and keep the negative structural-value assertion. No
+production permission boundary is relaxed.
+
+Final perspective-fixture rebuild80978 exits0. Activated retry91000 passes
+63/63 in8.411s, zero skips; the signed Defender projection now uses its own
+player perspective. Actual AI-selected paid cast remains green. Python data,
+schema and inventory35/35 and generated-module drift check pass. Independent
+Astra review has no blocking finding; special Metamagic-event forecast modifiers
+are deferred to Phase2. Verified native binary SHA-256:
+`fd3227d571340042be8ee857c94891c7f97942ea775f783f2dea3ad25a0e9191`.
+
+The first focused Python gate ran34 tests with6 errors: synthetic v2 snapshots
+retained the newly added v3-only earthquake object and were correctly rejected
+by the strict v2 schema. Strip that field when deriving legacy fixtures, including
+native fixture adapters; do not relax the old schema. Production v3 validation
+and actual spell acceptance remain separate gates.
+
 No credentials, workstation paths, purchaser content or raw research dumps in
 these notes. Keep historical failures even after repair, but label their scope.
 Do not claim the pipeline is future-proof: tests reduce recurrence and catch more

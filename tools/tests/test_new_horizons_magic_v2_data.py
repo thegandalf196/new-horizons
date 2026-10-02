@@ -43,6 +43,7 @@ class MagicV2DataTest(unittest.TestCase):
         self.rules.pop('schoolRankPowerCoefficientPercent')
         self.rules.pop('spellcraftEfficiencyPercent')
         self.rules['spells']['core:quicksand'].pop('selectedPlacement')
+        self.rules['spells']['core:earthquake'].pop('earthquake')
         self.rules['spells'] = {key: row for key, row in self.rules['spells'].items()
                                 if 'variant' not in row}
         self.old_rules = legacy_rules(self.rules)
@@ -57,6 +58,29 @@ class MagicV2DataTest(unittest.TestCase):
         self.old_validator.validate(self.old_rules)
         self.assertFalse(self.old_validator.is_valid(self.rules))
         self.assertFalse(self.validator.is_valid(self.old_rules))
+
+    def test_earthquake_v3_parameters_are_bounded_and_absent_from_legacy(self):
+        validator = Draft4Validator(self.v3, registry=self.registry)
+        row = self.v3_rules['spells']['core:earthquake']
+        self.assertEqual(row['level'], 3)
+        self.assertEqual(row['costs'], [12] * 4)
+        self.assertEqual(row['earthquake'], {
+            'radius': 2, 'duration': 3, 'movementCost': 1,
+            'structuralDamage': 100, 'baseSections': 2, 'maxSections': 4,
+            'powerPerSection': 80, 'baseDamage': 30,
+            'powerNumerator': 4, 'powerDivisor': 5,
+        })
+        for field, invalid in (('radius', 3), ('duration', 0),
+                               ('structuralDamage', 0), ('movementCost', 2)):
+            changed = copy.deepcopy(self.v3_rules)
+            changed['spells']['core:earthquake']['earthquake'][field] = invalid
+            self.assertFalse(validator.is_valid(changed))
+        markerless = copy.deepcopy(self.v3_rules)
+        markerless['spells']['core:earthquake'].pop('earthquake')
+        self.assertTrue(validator.is_valid(markerless))
+        legacy = copy.deepcopy(self.rules)
+        legacy['spells']['core:earthquake']['earthquake'] = row['earthquake']
+        self.assertFalse(self.validator.is_valid(legacy))
 
     def test_mass_variants_preserve_base_school_level_and_triple_cost(self):
         validator = Draft4Validator(self.v3, registry=self.registry)

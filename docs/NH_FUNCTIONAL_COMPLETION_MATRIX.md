@@ -14,6 +14,27 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-118 consumer checkpoint, 2026-10-02: Earthquake's selected-area siege and
+radius2 field modes are native verified; Advanced Geomancer is active. Field
+damage uses30+0.8×scaled raw Spell Power, both grounded sides, immunity-aware
+targets and three-round Fractured Ground. Geomancer adds one terrain round and
+25% structural damage. Structural HP is an explicit Phase1 tunable100/125 per
+section because the canonical text supplies no absolute amount. Weighted
+movement budgets are distinct from physical Charge travel in server and AI;
+return movement checks affordability. Legacy profiles retain Catapult behavior.
+Both targets build; final80978 exits0. Native91000 passes63/63 in8.411s, zero
+skips, including actual AI-selected paid siege, detached forecasts, immune
+field targets, saved profiles and terrain guards. Data/schema/inventory35/35
+and module check pass; independent Astra review has no blocker. Coverage
+166->167/310 active,144->143 planned; Nature7/10. Combat identities remain60/67
+plus five Mass variants, not an identity-count increase. Phase2 retains wider
+save/movement interactions, special Metamagic-event projection modifiers and
+optional scenery destruction. Borrowed Quicksand terrain art is Not done;
+generic UI Provisional. No GUI or playable promotion. Next unblocked candidate:
+Advanced Nature Mire Shaper's additional Quicksand patch.
+Native binary SHA-256:
+`fd3227d571340042be8ee857c94891c7f97942ea775f783f2dea3ad25a0e9191`.
+
 UP-118 foundation checkpoint, 2026-10-02: spell-created movement-cost terrain
 has native evidence for exact weighted costs, cheaper detours, new double-wide
 footprint cells, flying exclusion, overlap maximum, expiry, packet/JSON state
@@ -989,7 +1010,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 166/310 | 144 planned; Sanctuary Keeper and Venomancer are the newest source/native-verified activations. Active status alone does not certify every mechanic. |
+| Skill perks active | 167/310 | 143 planned; Geomancer is the newest source/native-verified activation. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 44/90 | 46 planned perks; Backstab is the first active Shroud perk. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |

@@ -55,6 +55,7 @@ public:
 	static void addBattleBonus(ServerCallback & object, const IBattleInfoCallback & battle, const BonusDescriptor & data);
 	static void addObstacle(ServerCallback & object, const IBattleInfoCallback & battle, const SpellObstacleDescriptor & descriptor);
 	static void catapultAttack(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit * attacker, EWallPart attackedPart, int32_t damageDealt);
+	static void damageFortification(ServerCallback & object, const IBattleInfoCallback & battle, EWallPart attackedPart, int32_t absoluteDamage);
 	static bool rollCombatAbility(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit & actor, int percentageChance);
 	static bool rollHostileCombatAbility(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit & actor, const battle::Unit & recipient, int percentageChance);
 	static int rollHostileCombatAbilityCount(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit & actor, const battle::Unit & recipient, int trials, double chance, int cap);

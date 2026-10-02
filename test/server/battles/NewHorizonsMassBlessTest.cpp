@@ -53,6 +53,7 @@ JsonNode olderMagicSnapshotWithoutMassBless()
 		if(it->second.isStruct())
 		{
 			it->second.Struct().erase("selectedPlacement");
+			it->second.Struct().erase("earthquake");
 			if(it->second.Struct().contains("variant"))
 			{
 				it = spells.erase(it);
