@@ -18,6 +18,7 @@ constexpr std::string_view FURY_UNBOUND = "new-horizons:bloodrage.furyUnbound";
 constexpr std::string_view ENDLESS_BLOODSHED = "new-horizons:bloodrage.endlessBloodshed";
 constexpr std::string_view UNRELENTING = "new-horizons:bloodrage.unrelenting";
 constexpr std::string_view BERSERKER = "new-horizons:bloodrage.berserker";
+constexpr std::string_view BLOOD_SCENT = "new-horizons:bloodrage.bloodScent";
 }
 
 int rank(const CGHeroInstance * hero)
@@ -75,6 +76,11 @@ bool hasUnrelenting(const CGHeroInstance * hero)
 bool hasBerserker(const CGHeroInstance * hero)
 {
 	return hero && hero->hasActivePerk(std::string(SKILL), std::string(BERSERKER));
+}
+
+bool hasBloodScent(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(SKILL), std::string(BLOOD_SCENT));
 }
 
 int capForHero(const CGHeroInstance * hero)

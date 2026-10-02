@@ -453,6 +453,8 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 		currentBattle->sides[i].bloodrageDamagePercent = newHorizonsBloodrage::initialDamagePercent(heroes[i]);
 		currentBattle->sides[i].bloodrageSpeedBonus = newHorizonsBloodrage::hasUnrelenting(heroes[i]) ? 1 : 0;
 		currentBattle->sides[i].bloodrageAdditionalRetaliations = newHorizonsBloodrage::hasBerserker(heroes[i]) ? 1 : 0;
+		currentBattle->sides[i].bloodrageLowHealthIncrement = newHorizonsBloodrage::hasBloodScent(heroes[i])
+			? newHorizonsBloodrage::incrementForRank(currentBattle->sides[i].bloodrageRank) : 0;
 	}
 
 	currentBattle->tile = tile;

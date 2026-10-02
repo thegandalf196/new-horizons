@@ -130,6 +130,8 @@ public:
 	virtual std::optional<HeroOrderState> battleGetHeroOrderState(BattleSide side) const;
 	/// Current cumulative physical creature damage percentage for the unit's side.
 	int battleGetBloodrageDamagePercent(const battle::Unit * unit) const;
+	/// Bloodrage attack damage, including Blood Scent when this target is below half maximum HP.
+	int battleGetBloodrageDamagePercent(const battle::Unit * attacker, const battle::Unit * defender) const;
 	/// Projectable side-local Relentless Assault state; hypothetical battles override this view.
 	virtual const RelentlessAssaultState & battleGetRelentlessAssaultState(BattleSide side) const;
 	/// Additive Expert Offense streak damage for an ordinary primary target.

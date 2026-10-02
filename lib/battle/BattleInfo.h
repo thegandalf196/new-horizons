@@ -68,6 +68,10 @@ public:
 	{
 		return sides.at(side).bloodrageAdditionalRetaliations;
 	}
+	int32_t getBloodrageLowHealthIncrement(BattleSide side) const override
+	{
+		return sides.at(side).bloodrageLowHealthIncrement;
+	}
 	SylvanLuckState getSylvanLuckState(BattleSide side) const override { return sides.at(side).sylvanLuck; }
 	AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override
 	{
@@ -171,6 +175,9 @@ public:
 				|| side.bloodrageDamagePercent < 0
 				|| side.bloodrageSpeedBonus < 0 || side.bloodrageSpeedBonus > 1
 				|| side.bloodrageAdditionalRetaliations < 0 || side.bloodrageAdditionalRetaliations > 1
+				|| (side.bloodrageLowHealthIncrement != 0
+					&& (side.bloodrageRank == 0 || side.bloodrageLowHealthIncrement
+						!= newHorizonsBloodrage::incrementForRank(side.bloodrageRank)))
 				|| (side.bloodrageRank < 2
 					&& (side.bloodrageSpeedBonus != 0 || side.bloodrageAdditionalRetaliations != 0)))
 				return false;
@@ -253,6 +260,10 @@ public:
 					|| sides[BattleSide::ATTACKER].bloodrageAdditionalRetaliations != 0
 					|| sides[BattleSide::DEFENDER].bloodrageAdditionalRetaliations != 0))
 				throw std::runtime_error("Cannot discard Bloodrage threshold bonuses in an older format");
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_BLOOD_SCENT)
+				&& (sides[BattleSide::ATTACKER].bloodrageLowHealthIncrement != 0
+					|| sides[BattleSide::DEFENDER].bloodrageLowHealthIncrement != 0))
+				throw std::runtime_error("Cannot discard Blood Scent in an older format");
 		}
 		h & battleID;
 		h & sides;
@@ -296,6 +307,16 @@ public:
 					side.bloodrageAdditionalRetaliations = 0;
 				}
 			}
+			if(h.hasFeature(Handler::Version::NEW_HORIZONS_BLOOD_SCENT))
+			{
+				h & sides[BattleSide::ATTACKER].bloodrageLowHealthIncrement;
+				h & sides[BattleSide::DEFENDER].bloodrageLowHealthIncrement;
+			}
+			else if(!h.saving)
+			{
+				for(auto & side : sides)
+					side.bloodrageLowHealthIncrement = 0;
+			}
 			if(!h.saving && (!validBloodrageSnapshot(sides[BattleSide::ATTACKER])
 				|| !validBloodrageSnapshot(sides[BattleSide::DEFENDER])))
 				throw std::runtime_error("Invalid saved Bloodrage rank, cap, or damage state");
@@ -314,6 +335,8 @@ public:
 				side.bloodrageAdditionalRetaliations = 0;
 			}
 			bloodrageDestroyedUnits.clear();
+			for(auto & side : sides)
+				side.bloodrageLowHealthIncrement = 0;
 		}
 		h & round;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_FIRE_WALL))

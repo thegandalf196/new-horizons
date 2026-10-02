@@ -3749,7 +3749,7 @@
 					"requires": "basic",
 					"description": "When attacking an enemy below 50% maximum HP, treat Bloodrage as one increment higher for that attack.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "When attacking an enemy below 50% maximum HP, treat Bloodrage as one increment higher for that attack."
 					}
 				},

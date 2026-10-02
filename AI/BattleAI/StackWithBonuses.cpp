@@ -786,6 +786,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 		bloodrageCaps[side] = realBattle->getBattle()->getBloodrageCapPercent(side);
 		bloodrageSpeedBonuses[side] = realBattle->getBattle()->getBloodrageSpeedBonus(side);
 		bloodrageAdditionalRetaliations[side] = realBattle->getBattle()->getBloodrageAdditionalRetaliations(side);
+		bloodrageLowHealthIncrements[side] = realBattle->getBattle()->getBloodrageLowHealthIncrement(side);
 	}
 
 	localEnvironment.reset(new HypotheticEnvironment(this, env));
@@ -1497,6 +1498,11 @@ int32_t HypotheticBattle::getBloodrageSpeedBonus(BattleSide side) const
 int32_t HypotheticBattle::getBloodrageAdditionalRetaliations(BattleSide side) const
 {
 	return bloodrageAdditionalRetaliations.at(side);
+}
+
+int32_t HypotheticBattle::getBloodrageLowHealthIncrement(BattleSide side) const
+{
+	return bloodrageLowHealthIncrements.at(side);
 }
 
 IBattleInfo::ObstacleCList HypotheticBattle::getAllObstacles() const

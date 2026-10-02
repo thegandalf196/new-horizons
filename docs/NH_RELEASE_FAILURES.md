@@ -2,6 +2,22 @@
 
 ## Purpose
 
+### 2026-10-02 UP-145 — Blood Scent principal fixture reference
+
+Both Linux targets compile. First principal61899 passes3/5, zero skips,1.740s;
+`UP145-blood-scent-principal.log`/`.xml` retain both failures. Boundary/cap,
+rank snapshots and versioned-save checks pass. Physical payload assertions
+incorrectly scale the already attribute-raised damage by1.05. Existing Lua
+adds Bloodrage to the raising factor alongside other percentages, so these are
+not equivalent. Verify the corrected reference against the ordinary Bloodrage
+payload with an equivalent capped counter and no low-health snapshot, restoring
+state afterward. Do not change production math or discard payload parity to
+force acceptance. Registration remains planned until rebuilt native evidence.
+Repair rebuild84207 succeeds; principal retry91133 passes5/5 in1.713s, zero
+skips. Equivalent ordinary-counter damage and explicit increase assertions pass
+without altering production damage. Activated focused62923 passes36/36 in8.312s,
+zero skips; data36/36/drift/both-target build pass. Original logs/XML retained.
+
 ### 2026-10-02 UP-143 — threshold fixture pre-build review
 
 Independent review caught the new threshold fixture using EGameSettings values

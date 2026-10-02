@@ -167,6 +167,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	// can evaluate both sides without reading hidden enemy hero inventories.
 	int32_t bloodrageSpeedBonus = 0;
 	int32_t bloodrageAdditionalRetaliations = 0;
+	// Blood Scent's target-sensitive increment is resolved from the saved skill rank/perk.
+	int32_t bloodrageLowHealthIncrement = 0;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);

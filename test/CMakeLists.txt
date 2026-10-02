@@ -322,6 +322,7 @@ set(test_SRCS
 		server/battles/NewHorizonsStandardBearerTest.cpp
 		server/battles/NewHorizonsSteadfastTest.cpp
 		server/battles/NewHorizonsCommandingPresenceTest.cpp
+		server/battles/NewHorizonsBloodScentTest.cpp
 		server/battles/NewHorizonsHoldFastTest.cpp
 		server/battles/NewHorizonsFearlessTest.cpp
 		server/battles/NewHorizonsSurgeonTest.cpp

@@ -750,6 +750,35 @@ int CBattleInfoCallback::battleGetBloodrageDamagePercent(const battle::Unit * un
 	return std::max(0, getBattle()->getBloodrageDamagePercent(side));
 }
 
+int CBattleInfoCallback::battleGetBloodrageDamagePercent(const battle::Unit * attacker,
+	const battle::Unit * defender) const
+{
+	const int currentDamagePercent = battleGetBloodrageDamagePercent(attacker);
+	if(!getBattle() || !attacker || !attacker->alive() || attacker->isGhost()
+		|| !defender || !defender->alive() || defender->isGhost()
+		|| battleGetOwner(attacker) == battleGetOwner(defender))
+		return currentDamagePercent;
+
+	const auto side = playerToSide(battleGetOwner(attacker));
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return currentDamagePercent;
+	const int increment = std::max(0, getBattle()->getBloodrageLowHealthIncrement(side));
+	const int cap = std::max(0, getBattle()->getBloodrageCapPercent(side));
+	const int64_t maximumHealth = battle::getMaximumHealth(*defender);
+	const int64_t currentHealth = defender->getAvailableHealth();
+	if(increment == 0 || cap == 0 || maximumHealth <= 0 || currentHealth <= 0)
+		return currentDamagePercent;
+
+	// “Below half” is strict. Comparing with ceil(maximum / 2) avoids overflow
+	// from multiplying the current and maximum HP values by two or one hundred.
+	const int64_t halfHealthCeiling = maximumHealth / 2 + maximumHealth % 2;
+	if(currentHealth >= halfHealthCeiling)
+		return currentDamagePercent;
+
+	return static_cast<int>(std::min<int64_t>(cap,
+		static_cast<int64_t>(currentDamagePercent) + increment));
+}
+
 const RelentlessAssaultState & CBattleInfoCallback::battleGetRelentlessAssaultState(BattleSide side) const
 {
 	static const RelentlessAssaultState empty;
@@ -2654,7 +2683,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	}
 	if(info.physicalDamage)
 	{
-		payload.bloodrageDamagePercent = battleGetBloodrageDamagePercent(info.attacker);
+		payload.bloodrageDamagePercent = battleGetBloodrageDamagePercent(info.attacker, info.defender);
 		const bool ordinaryCreatureAttack = newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.attacker);
 		if(info.shooting && ordinaryCreatureAttack)
 			payload.newHorizonsArcheryDamagePercent = newHorizonsCombatSkills::archeryDamagePercent(
