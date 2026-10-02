@@ -2,7 +2,7 @@
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
 	"sourceDocument": "docs/design-sources/New Horizons.md",
-	"sourceSha256": "e6352a6106686f9701d33efd15df80be97b3b9777aa1c4fb6ce0513c32f798cb",
+	"sourceSha256": "ccaa84fcd322b1e011ab5cac8094195f198b499026f5f78005b1a1a4eab93d21",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -1025,10 +1025,10 @@
 					"id": "new-horizons:command.commandingPresence",
 					"name": "Commanding Presence",
 					"requires": "advanced",
-					"description": "Friendly stacks currently affected by one of the hero's Orders treat negative Morale as 0 for the Order's duration.",
+					"description": "Friendly stacks currently affected by one of the hero's Orders treat negative Morale as 0 while that stack's Order benefit remains active. The floor ends immediately when its benefit is spent or broken, even if the Order snapshot remains until round end; examples include a consumed Charge, a broken or exhausted Protect pair, and the end of Second Wind's extra activation.",
 					"effect": {
-						"status": "planned",
-						"description": "Friendly stacks currently affected by one of the hero's Orders treat negative Morale as 0 for the Order's duration."
+						"status": "active",
+						"description": "Friendly stacks currently affected by one of the hero's Orders treat negative Morale as 0 while that stack's Order benefit remains active. The floor ends immediately when its benefit is spent or broken, even if the Order snapshot remains until round end; examples include a consumed Charge, a broken or exhausted Protect pair, and the end of Second Wind's extra activation."
 					}
 				},
 				{

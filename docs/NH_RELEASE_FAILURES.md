@@ -2,6 +2,34 @@
 
 ## Purpose
 
+### 2026-10-02 UP-142 — canonical perk-description synchronization
+
+First data check after lifetime integration failed because registry help shortened
+the approved canonical row while the existing source-contract test requires the
+full effect wording. Copy the complete approved wording into both description
+fields and refresh the canonical SHA/module; do not weaken the source-equality
+guard. Focused data36/36 passes after correction. Runtime acceptance is separate.
+Pre-build review also finds Combined Arms Focus Fire's melee recipient branch
+must exclude SPELL_LIKE_ATTACK, matching actual damage eligibility. Reuse the
+existing shooter predicate and add a focused nonrecipient check; do not grant a
+Morale floor from cohort presence alone when its benefit cannot apply.
+Fixture review catches two incorrect assumptions before native execution:
+the generic attack helper requests no movement, so cannot prove Charge's
+three-hex movement consumption; ordinary shooters remain melee-capable Flank
+recipients. Repair legal action geometry and expectations, not production
+eligibility. Confirm activation ordering where enemy Angels are faster.
+First native56838 runs9 cases:2 pass,7 fail, zero skips. Added-1 penalties do
+not establish net-1 under existing Angel/army Morale bonuses. Explicitly
+normalize the fixture baseline and retain assertions of suppression and expiry;
+do not change ordinary Morale calculation to satisfy the test. Log/XML remain
+UP142-principal; activation awaits the repaired exact-source retry.
+Fixture rebuild15520 and native retry18653 pass:9/9, zero skips in21.568s.
+Synthetic-100 ordinary Morale is checked against the configured lower cap;
+the enemy control is living rather than NO_MORALE. Activation's first inventory
+check also catches an invalid "Skill perk" category; repair it to the existing
+"Active perk" schema. Data36/36, generated-module drift and both-target21780
+then pass. Never weaken inventory category/neutral-art guards to pass activation.
+
 ### 2026-10-02 UP-140 — native fixture assumptions
 
 First principal run13 has9pass/4fail; adjacent9 has4pass/5fail, zero skips.

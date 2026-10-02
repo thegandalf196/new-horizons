@@ -832,6 +832,88 @@ bool CBattleInfoCallback::battleHasBastionProtection(const battle::Unit * defend
 	return orderState && battleIsHoldTheLineRecipient(*orderState, defender);
 }
 
+bool CBattleInfoCallback::battleOrderBenefitAppliesTo(const HeroOrderState & state, BattleSide side,
+	const battle::Unit * unit) const
+{
+	if(!getBattle() || !unit || !unit->alive() || unit->isGhost()
+		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| !heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
+		|| !heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), state.command)
+		|| state.issuedRound != battleGetRound()
+		|| battleGetOwner(unit) != sideToPlayer(side)
+		|| unit->isTurret() || unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| unit->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER)
+		return false;
+
+	switch(state.command)
+	{
+	case HeroCommand::CHARGE:
+		return !state.containsConsumed(unit->unitId());
+	case HeroCommand::FOCUS_FIRE:
+	{
+		const auto mark = battleGetFocusFireState(side);
+		const auto * hero = battleGetFightingHero(side);
+		const bool eligibleFocusAttacker = battleIsFocusFireRecipient(unit, side)
+			|| (heroCommands::hasCombinedArms(hero) && unit->isMeleeAttacker()
+				&& !unit->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
+		return eligibleFocusAttacker && battleIsFocusFireTargetActive(side) && mark
+			&& mark->issuedRound == state.issuedRound
+			&& mark->targetUnitId == state.primaryTargetUnitId
+			&& std::binary_search(mark->recipientUnitIds.begin(), mark->recipientUnitIds.end(), unit->unitId());
+	}
+	case HeroCommand::RIPOSTE:
+	case HeroCommand::BRACE:
+		return true;
+	case HeroCommand::HOLD_THE_LINE:
+		return battleIsHoldTheLineRecipient(state, unit);
+	case HeroCommand::PROTECT:
+	{
+		if(state.protectBroken || state.protectInterceptionsConsumed >= state.protectInterceptionLimit)
+			return false;
+		const auto * protector = battleGetUnitByID(state.primaryTargetUnitId);
+		const auto * ward = battleGetUnitByID(state.secondaryTargetUnitId);
+		if(!protector || !ward || !protector->alive() || !ward->alive()
+			|| protector->isGhost() || ward->isGhost()
+			|| battleGetOwner(protector) != sideToPlayer(side)
+			|| battleGetOwner(ward) != sideToPlayer(side)
+			|| !orderUnitsAdjacent(protector, ward))
+			return false;
+		return unit->unitId() == protector->unitId() || unit->unitId() == ward->unitId();
+	}
+	case HeroCommand::FLANK:
+	{
+		const auto * target = battleGetUnitByID(state.primaryTargetUnitId);
+		if(!target || !target->alive() || target->isGhost() || target->isTurret()
+			|| battleGetOwner(target) == sideToPlayer(side) || !state.flankFor(target->unitId()))
+			return false;
+		if(unit->isMeleeAttacker())
+			return true;
+		const auto * hero = battleGetFightingHero(side);
+		return heroCommands::hasCombinedArms(hero) && newHorizonsArchery::isOrdinaryPhysicalShooter(unit);
+	}
+	case HeroCommand::SECOND_WIND:
+		return state.secondWindActive && state.primaryTargetUnitId == unit->unitId();
+	default:
+		return false;
+	}
+}
+
+bool CBattleInfoCallback::battleHasCommandingPresence(const battle::Unit * unit) const
+{
+	if(!getBattle() || !unit || !unit->alive() || unit->isGhost()
+		|| !heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules()))
+		return false;
+	const auto side = playerToSide(battleGetOwner(unit));
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return false;
+	const auto * controllerHero = battleGetOwnerHero(unit);
+	if(!controllerHero || !controllerHero->hasActivePerk(
+		"new-horizons:command", "new-horizons:command.commandingPresence"))
+		return false;
+	const auto orderState = battleGetHeroOrderState(side);
+	return orderState && battleOrderBenefitAppliesTo(*orderState, side, unit);
+}
+
 int CBattleInfoCallback::battleGetMorale(const battle::Unit * unit) const
 {
 	if(!unit)
@@ -861,8 +943,13 @@ int CBattleInfoCallback::battleGetMorale(const battle::Unit * unit) const
 		}
 	}
 
+	const auto applyCommandingPresence = [this, unit](int morale)
+	{
+		return morale < 0 && battleHasCommandingPresence(unit) ? 0 : morale;
+	};
 	if(!newHorizonsDiscipline::hasSteadfast(hero))
-		return additionalMorale == 0 ? unit->moraleVal() : unit->moraleValWithBonus(additionalMorale);
+		return applyCommandingPresence(additionalMorale == 0
+			? unit->moraleVal() : unit->moraleValWithBonus(additionalMorale));
 
 	const auto moraleBonuses = unit->getUnstackedBonuses(Selector::type()(BonusType::MORALE));
 	BonusList adjustedMoraleBonuses;
@@ -895,7 +982,7 @@ int CBattleInfoCallback::battleGetMorale(const battle::Unit * unit) const
 	const int64_t totalAdditionalMorale = moraleDelta + additionalMorale;
 	const auto boundedAdditionalMorale = static_cast<int32_t>(std::clamp<int64_t>(totalAdditionalMorale,
 		std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
-	return unit->moraleValWithBonus(boundedAdditionalMorale);
+	return applyCommandingPresence(unit->moraleValWithBonus(boundedAdditionalMorale));
 }
 
 int CBattleInfoCallback::battleGetFearChance(const battle::Unit * affected) const

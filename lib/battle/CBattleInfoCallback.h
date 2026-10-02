@@ -101,6 +101,11 @@ public:
 	bool battleUnitHasAmmoCart(const battle::Unit * unit) const;
 	/// Effective Morale for the current battle, including dynamic Standard Bearer adjacency.
 	int battleGetMorale(const battle::Unit * unit) const;
+	/// Whether one saved Order state still benefits this living unit, independent of its perk provider.
+	bool battleOrderBenefitAppliesTo(const HeroOrderState & state, BattleSide side,
+		const battle::Unit * unit) const;
+	/// Whether the current controller's Commanding Presence currently floors this unit's Morale.
+	bool battleHasCommandingPresence(const battle::Unit * unit) const;
 	/// Effective turn-start FEARFUL chance after the current controller's Fearless protection.
 	int battleGetFearChance(const battle::Unit * affected) const;
 	bool battleCanConfirmHeroCommand(BattleSide side, HeroCommand command, uint32_t targetUnitId) const;
