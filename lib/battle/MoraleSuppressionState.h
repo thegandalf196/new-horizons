@@ -13,21 +13,50 @@
 
 #include "../serializer/ESerializationVersion.h"
 
-/// Per-side, battle-long allowance to cancel one negative Morale trigger.
+/// Per-side Morale-trigger suppression allowances: Unbreakable once per round,
+/// followed by Rally once per battle.
 struct DLL_LINKAGE MoraleSuppressionState
 {
 	bool enabled = false;
 	bool used = false;
+	bool roundEnabled = false;
+	bool roundUsed = false;
 
 	bool available() const
 	{
 		return enabled && !used;
 	}
 
-	/// Consumes the allowance only when a negative Morale trigger is realized.
+	bool roundAvailable() const
+	{
+		return roundEnabled && !roundUsed;
+	}
+
+	void nextRound()
+	{
+		roundUsed = false;
+	}
+
+	void validate() const
+	{
+		if(used && !enabled)
+			throw std::runtime_error("Rally Morale suppression used without an enabled perk");
+		if(roundUsed && !roundEnabled)
+			throw std::runtime_error("Unbreakable Morale suppression used without an enabled perk");
+	}
+
+	/// Consumes at most one allowance for a realized negative Morale trigger.
+	/// Unbreakable takes precedence over Rally when both are available.
 	bool consume(bool negative)
 	{
-		if(!negative || !available())
+		if(!negative)
+			return false;
+		if(roundAvailable())
+		{
+			roundUsed = true;
+			return true;
+		}
+		if(!available())
 			return false;
 		used = true;
 		return true;
@@ -40,7 +69,7 @@ struct DLL_LINKAGE MoraleSuppressionState
 	{
 		const auto feature = Handler::Version::NEW_HORIZONS_RALLY;
 		if(h.saving && !h.hasFeature(feature) && *this != MoraleSuppressionState{})
-			throw std::runtime_error("Cannot downgrade Rally Morale suppression state");
+			throw std::runtime_error("Cannot downgrade Morale suppression state");
 
 		if(h.hasFeature(feature))
 		{
@@ -52,7 +81,20 @@ struct DLL_LINKAGE MoraleSuppressionState
 			*this = {};
 		}
 
-		if(!h.saving && used && !enabled)
-			throw std::runtime_error("Rally Morale suppression used without an enabled perk");
+		const auto roundFeature = Handler::Version::NEW_HORIZONS_UNBREAKABLE;
+		if(h.hasFeature(roundFeature))
+		{
+			h & roundEnabled;
+			h & roundUsed;
+		}
+		else if(h.saving && (roundEnabled || roundUsed))
+			throw std::runtime_error("Cannot downgrade Unbreakable Morale suppression state");
+		else if(!h.saving)
+		{
+			roundEnabled = false;
+			roundUsed = false;
+		}
+
+		validate();
 	}
 };

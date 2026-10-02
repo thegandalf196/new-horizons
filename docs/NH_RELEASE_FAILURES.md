@@ -2,6 +2,22 @@
 
 ## Purpose
 
+### 2026-10-02 UP-131 — Unbreakable principal fixture
+
+Client52523 and test10838 exit0. Principal30730 runs10 cases with zero skips:
+9 pass and the positive-Morale/immunity fixture fails to observe its expected
+Morale activation. Actual negative-trigger suppression, renewal, Rally
+coexistence, controller ownership, wire and detached cases pass. Investigate
+the positive-action fixture before changing production or weakening assertions;
+Unbreakable remains planned until the repaired principal run passes.
+The helper used Defend for every action, but rollGoodMorale explicitly excludes
+Defending stacks. Use a validated ordinary movement for the positive stack,
+then retain the actual Morale-activation and unused-Unbreakable assertions.
+This repairs the fixture's action choice, not the production Morale rule.
+Fixture rebuild52313 exits0; retry10314 passes10/10 in3.330s. Activated
+both-target98579 and native69637 pass10/10 in3.303s, zero skips. Retain the
+failed principal evidence and Defend exclusion lesson for future Morale tests.
+
 ### 2026-10-02 UP-124 and Windows36994237037 — build gates
 
 UP-124 local build exited1 before compilation: CMake's curated Muster text

@@ -14,6 +14,31 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-131 verified checkpoint: Unbreakable is active. Client52523 and test10838
+build; fixture repair52313 exits0. Principal retry10314 passes10/10 in3.330s;
+activated both-target98579 and native69637 pass10/10 in3.303s, zero skips.
+Legal Expert acquisition, actual per-round renewal, separate Rally expenditure,
+current-controller ownership, positive/immunity and unselected gates, old/current
+wire, packet and detached branch/reset cases pass. Data/schema/inventory35/35,
+module drift and independent frozen review pass. Coverage170->171/310 active,
+140->139 planned; Discipline5->6/10. Ranks84/93 and combat identities60/67 plus
+five Mass variants remain unchanged. Phase2 retains multi-round AI valuation
+and broader stochastic reroll interactions; purpose-made art Not done, generic
+UI Provisional. No GUI or playable promotion. Frozen pre-commit test SHA:
+`b4928cbfefc56a763e20109c35ed89ea1bca84d043065e31355d0e6111695a3c`.
+
+UP-131 in-source checkpoint, 2026-10-02: Unbreakable extends the shared Morale
+suppression state with an independent round allowance, captured from the saved
+Expert perk. Live and detached round events renew that allowance without
+resetting Rally. The authoritative first negative draw spends one allowance,
+round-first, before the existing Twist path; named feedback distinguishes the
+perks. Packet validation accepts one exact legal expenditure or an idempotent
+spent snapshot, not an enable/reset/double spend. Added state is append-only,
+old-format loads default it off and lossy downgrade writes are rejected.
+Source review has no provisional blocker; build and principal native evidence
+remain pending. Registration stays planned. Counts remain170/310 active and
+140 planned; no GUI, artwork approval or playable promotion is inferred.
+
 UP-128 Broad Muster is active and native verified. One optional split request
 allocates the generated Core total between two distinct town rows, validating
 positive amounts, eligibility and both overflow bounds before one shared weekly
@@ -1205,7 +1230,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Archery | 3/0 | 10/0 | All ten perks are active; focused evidence pending |
 | Battlecraft | 3/0 | 2/8 | Entrench and Reserve active. Reserve has focused real delayed movement, expiry, save/packet and branch-local AI evidence. Eight perks remain planned. |
 | War Machines | 3/0 | 5/5 | Surgeon and Piercing Bolts have focused live/detached evidence; Fortification Engineer has real fortified-town manual-shot evidence; Master Gunner has accepted independently targeted second-shot evidence; Quartermaster has accepted half-output Ballista/Tent/Catapult extra-activation evidence. Five perks remain planned. Battlefield Medic persistence awaits clarification. |
-| Discipline | 3/0 | 5/5 | Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless active with focused authoritative and detached evidence. Five perks remain planned; Esprit de Corps composition scope, Heroic Spirit activation timing and Veteran Cohesion HP reference await clarification. |
+| Discipline | 3/0 | 6/4 | Unbreakable joins Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless with focused authoritative and detached evidence. Four perks remain planned; Esprit de Corps composition scope, Heroic Spirit activation timing and Veteran Cohesion HP reference await clarification. |
 | Recruitment | 3/0 | 6/4 | Four perks missing |
 | Command | 3/0 | 4/6 | Aggressive/Defensive, Veteran and Combined Arms have focused runtime/AI evidence; ordinary Advanced/Expert progression opens. Six perks remain planned. |
 | Light Magic | 3/0 | 9/1 | Sanctuary Keeper's linked Morale lifetime and actual AI cast are native verified; Litany grants distinct Mass Bless, alongside Benediction, Healer, Guardian, Aegis, Purifier, Retributionist and Crusader. Miracle Worker remains planned. |

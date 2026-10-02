@@ -1417,7 +1417,10 @@ IBattleInfo::ObstacleCList HypotheticBattle::getAllObstacles() const
 void HypotheticBattle::nextRound()
 {
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
 		fortuneStates[side].nextRound();
+		moraleSuppressionStates[side].nextRound();
+	}
 	for(auto & [side, state] : focusFireStates)
 		state.reset();
 	++bonusTreeVersion;

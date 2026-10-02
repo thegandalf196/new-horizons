@@ -323,11 +323,10 @@ public:
 	}
 	void setMoraleSuppressionState(BattleSide side, const MoraleSuppressionState & state) override
 	{
-		if(state.used && !state.enabled)
-			throw std::runtime_error("Morale suppression expenditure without an enabled perk");
+		state.validate();
 		moraleSuppressionStates.at(side) = state;
 	}
-	/// Bounded expected activation delta: Rally protects one prospective event,
+	/// Bounded expected activation delta: the first available suppression protects one prospective event,
 	/// not every stack or every round in the evaluated spell's duration.
 	float projectMoraleActivationDelta(const battle::Unit * original, const battle::Unit * projected,
 		float before, float after, float horizon);

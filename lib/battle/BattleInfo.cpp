@@ -132,8 +132,7 @@ void BattleInfo::setAdverseCombatRerollState(BattleSide side, const AdverseComba
 
 void BattleInfo::setMoraleSuppressionState(BattleSide side, const MoraleSuppressionState & state)
 {
-	if(state.used && !state.enabled)
-		throw std::runtime_error("Rally Morale suppression used without an enabled perk");
+	state.validate();
 	sides.at(side).moraleSuppression = state;
 }
 
@@ -432,6 +431,8 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 				"new-horizons:luck", "new-horizons:luck.twistOfFate");
 			currentBattle->sides[i].moraleSuppression.enabled = heroes[i]->hasActivePerk(
 				"new-horizons:discipline", "new-horizons:discipline.rally");
+			currentBattle->sides[i].moraleSuppression.roundEnabled = heroes[i]->hasActivePerk(
+				"new-horizons:discipline", "new-horizons:discipline.unbreakable");
 			currentBattle->sides[i].reducedExtraActivation.enabled = heroes[i]->hasActivePerk(
 				"new-horizons:warMachines", "new-horizons:warMachines.quartermaster");
 			auto & fortune = currentBattle->sides[i].sylvanLuck;
@@ -1044,6 +1045,7 @@ void BattleInfo::nextRound()
 		sides.at(i).reducedExtraActivation = extraActivation;
 		sides.at(i).sylvanLuck.nextRound();
 		sides.at(i).castSpellsCount = 0;
+		sides.at(i).moraleSuppression.nextRound();
 		sides.at(i).heroCommandUsed = false;
 		sides.at(i).activeOrder = HeroCommand::NONE;
 		sides.at(i).orderState.reset();

@@ -1020,6 +1020,7 @@ bool BattleFlowProcessor::tryActivateMoralePenalty(const CBattleInfoCallback & b
 		if(affectedSide == BattleSide::ATTACKER || affectedSide == BattleSide::DEFENDER)
 		{
 			auto suppression = battle.getBattle()->getMoraleSuppressionState(affectedSide);
+			const bool unbreakableAvailable = suppression.roundAvailable();
 			if(suppression.consume(firstBadMorale))
 			{
 				BattleMoraleSuppressionStateChanged changed;
@@ -1036,7 +1037,10 @@ bool BattleFlowProcessor::tryActivateMoralePenalty(const CBattleInfoCallback & b
 					line.appendTextID(hero->getNameTextID());
 					line.appendRawString(": ");
 				}
-				line.appendRawString("Rally cancels the first negative Morale trigger this combat. The stack acts normally.");
+				if(unbreakableAvailable)
+					line.appendRawString("Unbreakable ignores the first negative Morale trigger this round. The stack acts normally.");
+				else
+					line.appendRawString("Rally cancels the first negative Morale trigger this combat. The stack acts normally.");
 				feedback.lines.push_back(std::move(line));
 				gameHandler->sendAndApply(feedback);
 				return false;

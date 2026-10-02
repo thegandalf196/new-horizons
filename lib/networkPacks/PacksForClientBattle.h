@@ -183,17 +183,25 @@ struct DLL_LINKAGE BattleMoraleSuppressionStateChanged : public CPackForClient
 	void validateShape() const
 	{
 		if(battleID == BattleID::NONE || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-			|| !state.enabled || !state.used)
-			throw std::runtime_error("Invalid Rally Morale suppression state update");
+			|| (!state.used && !state.roundUsed))
+			throw std::runtime_error("Invalid Morale suppression state update");
+		state.validate();
 	}
 
 	void validateTransitionFrom(const MoraleSuppressionState & previous) const
 	{
 		validateShape();
-		// The only valid transition starts with Rally enabled; repeated spent
-		// snapshots remain idempotent while disabled/reset states are rejected.
-		if(!previous.enabled)
-			throw std::runtime_error("Rally Morale suppression update enables or resets its allowance");
+		previous.validate();
+		// Replayed spent snapshots are harmless; any new update must equal the
+		// exact result of one negative trigger, which spends round Unbreakable
+		// before battle-long Rally and cannot enable or reset either allowance.
+		if(state == previous)
+			return;
+
+		auto expected = previous;
+		expected.consume(true);
+		if(state != expected)
+			throw std::runtime_error("Morale suppression update is not a legal single-trigger transition");
 	}
 
 	template <typename Handler> void serialize(Handler & h)

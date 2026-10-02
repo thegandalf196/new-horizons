@@ -10,6 +10,12 @@ This is a binding inventory, not a full visual audit or a product completion cla
 
 ## Status meanings
 
+Unbreakable source/native checkpoint (UP-131): named combat feedback identifies
+the first negative-Morale suppression each round, separate from Rally. Native
+10/10 and data/inventory35/35 pass with production registration enabled. Registry
+coverage is171/310 active,139 planned. Generic UI is Provisional; the neutral
+fallback is Not done artwork. No rendered or playable acceptance is claimed.
+
 Broad Muster source/native checkpoint (UP-128): the existing native scrollable
 Muster picker retains solo choices and adds exact positive allocations naming
 both Core dwelling destinations. Localization and static wiring pass; both
