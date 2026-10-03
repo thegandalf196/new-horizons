@@ -489,7 +489,7 @@
 					"requires": "advanced",
 					"description": "After both armies complete initial deployment, this hero's normal deployment interface remains open for one final relocation of a friendly stack to another legal deployment hex before the first Creature Activation. No separate perk action is created.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "After both armies complete initial deployment, this hero's normal deployment interface remains open for one final relocation of a friendly stack to another legal deployment hex before the first Creature Activation. No separate perk action is created."
 					}
 				},

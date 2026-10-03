@@ -301,6 +301,7 @@ set(test_SRCS
 		server/battles/NewHorizonsObstacleMovementCostTest.cpp
 		server/battles/NewHorizonsPassingLinesTest.cpp
 		server/battles/NewHorizonsTacticsDeploymentTest.cpp
+		server/battles/NewHorizonsRedeploymentTest.cpp
 		server/battles/NewHorizonsEarthquakeTest.cpp
 		battleAI/NewHorizonsEarthquakeAITest.cpp
 		server/battles/NewHorizonsHavocStructuresTest.cpp

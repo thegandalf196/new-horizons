@@ -21,8 +21,10 @@ struct DLL_LINKAGE BattleDeploymentState
 	bool independent = false;
 	BattleSideArray<uint8_t> distances{};
 	BattleSideArray<bool> completed{};
+	BattleSideArray<uint8_t> finalRelocationDistances{};
+	BattleSideArray<bool> finalRelocationCompleted{};
 
-	BattleSide activeSide() const
+	BattleSide initialActiveSide() const
 	{
 		if(independent)
 			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
@@ -31,18 +33,54 @@ struct DLL_LINKAGE BattleDeploymentState
 		return BattleSide::NONE;
 	}
 
+	BattleSide activeSide() const
+	{
+		const auto initialSide = initialActiveSide();
+		if(initialSide != BattleSide::NONE)
+			return initialSide;
+		if(independent)
+			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+				if(finalRelocationDistances[side] > 0 && !finalRelocationCompleted[side])
+					return side;
+		return BattleSide::NONE;
+	}
+
+	bool isFinalRelocation() const
+	{
+		return initialActiveSide() == BattleSide::NONE && activeSide() != BattleSide::NONE;
+	}
+
+	uint8_t activeDistance() const
+	{
+		const auto side = activeSide();
+		if(side == BattleSide::NONE)
+			return 0;
+		return isFinalRelocation() ? finalRelocationDistances[side] : distances[side];
+	}
+
+	bool hasFinalRelocationState() const
+	{
+		return finalRelocationDistances[BattleSide::ATTACKER] != 0
+			|| finalRelocationDistances[BattleSide::DEFENDER] != 0
+			|| finalRelocationCompleted[BattleSide::ATTACKER]
+			|| finalRelocationCompleted[BattleSide::DEFENDER];
+	}
+
 	void complete(BattleSide side)
 	{
 		validateShape();
 		if(side == BattleSide::NONE || side != activeSide())
 			throw std::runtime_error("Deployment completion does not match the active side");
-		completed[side] = true;
+		if(isFinalRelocation())
+			finalRelocationCompleted[side] = true;
+		else
+			completed[side] = true;
 	}
 
 	void validateShape() const
 	{
 		if(independent && distances[BattleSide::ATTACKER] == 0
-			&& distances[BattleSide::DEFENDER] == 0)
+			&& distances[BattleSide::DEFENDER] == 0 && !hasFinalRelocationState())
 			throw std::runtime_error("Independent deployment has no resolved opportunity");
 		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		{
@@ -50,12 +88,23 @@ struct DLL_LINKAGE BattleDeploymentState
 				throw std::runtime_error("Deployment area exceeds the battlefield");
 			if(completed[side] && distances[side] == 0)
 				throw std::runtime_error("Deployment completed without an opportunity");
-			if(!independent && (distances[side] != 0 || completed[side]))
+			if(finalRelocationDistances[side] > GameConstants::BFIELD_WIDTH - 2)
+				throw std::runtime_error("Final relocation area exceeds the battlefield");
+			if(finalRelocationCompleted[side] && finalRelocationDistances[side] == 0)
+				throw std::runtime_error("Final relocation completed without an opportunity");
+			if(finalRelocationCompleted[side] && initialActiveSide() != BattleSide::NONE)
+				throw std::runtime_error("Final relocation precedes initial deployment completion");
+			if(!independent && (distances[side] != 0 || completed[side]
+				|| finalRelocationDistances[side] != 0 || finalRelocationCompleted[side]))
 				throw std::runtime_error("Independent deployment state is disabled");
 		}
 		if(distances[BattleSide::ATTACKER] > 0 && !completed[BattleSide::ATTACKER]
 			&& completed[BattleSide::DEFENDER])
 			throw std::runtime_error("Deployment phases completed out of sequence");
+		if(finalRelocationDistances[BattleSide::ATTACKER] > 0
+			&& !finalRelocationCompleted[BattleSide::ATTACKER]
+			&& finalRelocationCompleted[BattleSide::DEFENDER])
+			throw std::runtime_error("Final relocation phases completed out of sequence");
 	}
 
 	bool operator==(const BattleDeploymentState &) const = default;
@@ -68,7 +117,8 @@ struct DLL_LINKAGE BattleDeploymentState
 		previous.validateShape();
 		if(*this == previous)
 			return;
-		if(!previous.independent || !independent || distances != previous.distances)
+		if(!previous.independent || !independent || distances != previous.distances
+			|| finalRelocationDistances != previous.finalRelocationDistances)
 			throw std::runtime_error("Deployment update changes resolved opportunities");
 		auto expected = previous;
 		expected.complete(previous.activeSide());
@@ -85,6 +135,8 @@ struct DLL_LINKAGE BattleDeploymentState
 			validateShape();
 			if(!h.hasFeature(feature) && *this != BattleDeploymentState{})
 				throw std::runtime_error("Cannot discard independent deployment state");
+			if(!h.hasFeature(Handler::Version::BATTLE_FINAL_RELOCATION) && hasFinalRelocationState())
+				throw std::runtime_error("Cannot discard final relocation state");
 		}
 		if(h.hasFeature(feature))
 		{
@@ -97,6 +149,19 @@ struct DLL_LINKAGE BattleDeploymentState
 		}
 		else if(!h.saving)
 			*this = {};
+		if(h.hasFeature(Handler::Version::BATTLE_FINAL_RELOCATION))
+		{
+			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			{
+				h & finalRelocationDistances[side];
+				h & finalRelocationCompleted[side];
+			}
+		}
+		else if(!h.saving)
+		{
+			finalRelocationDistances = {};
+			finalRelocationCompleted = {};
+		}
 		validateShape();
 	}
 };

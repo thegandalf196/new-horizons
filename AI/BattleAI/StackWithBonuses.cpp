@@ -985,8 +985,7 @@ ui8 HypotheticBattle::getTacticDist() const
 {
 	if(deploymentState.independent)
 	{
-		const auto side = deploymentState.activeSide();
-		return side == BattleSide::NONE ? 0 : deploymentState.distances[side];
+		return deploymentState.activeDistance();
 	}
 	return BattleProxy::getTacticDist();
 }

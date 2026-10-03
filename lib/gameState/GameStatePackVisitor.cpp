@@ -1776,7 +1776,7 @@ void GameStatePackVisitor::visitBattleStart(BattleStart & pack)
 	if(deploymentState.independent)
 	{
 		const auto activeSide = deploymentState.activeSide();
-		const auto expectedDistance = activeSide == BattleSide::NONE ? 0 : deploymentState.distances[activeSide];
+		const auto expectedDistance = deploymentState.activeDistance();
 		if(pack.info->tacticsSide != activeSide || pack.info->tacticDistance != expectedDistance)
 			throw std::runtime_error("Independent BattleStart deployment state has an invalid tactics projection");
 	}

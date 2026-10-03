@@ -2,6 +2,20 @@
 
 ## Purpose
 
+### 2026-10-02 UP-158 — Redeployment direct interface include
+
+Combined12-job build95627 terminates with exit1: TacticsHandler.cpp calls
+getDeploymentState on a forward-declared IBattleInfo. Add its direct defining
+header; no mechanic/assertion change is justified. Preserve UP158-redeployment-
+build.log and require the serialized retry before executing native acceptance.
+Data/inventory19/19, generated-module drift and package preflight91/91 pass,
+but none of those prove the C++ build or Redeployment's principal path.
+Retry56408 builds both targets successfully. Native principal15/15 and activated
+4/4 pass with zero skips; final incremental build and data/package gates pass.
+Activation required updating the explicit test allowlist and the inventory's
+Implementation/Art columns correctly; their failed intermediate checks were
+not C++ mechanic failures and were repaired without weakening assertions.
+
 ### 2026-10-02 UP-154 — Windows deployment source-guard drift
 
 Full Windows run37086471771 on b954d071 terminates in failure before compilation.

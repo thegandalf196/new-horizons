@@ -502,12 +502,17 @@ void CClient::battleStarted(const BattleID & battleID)
 		}
 	}
 
-	if(info->tacticDistance)
+	const auto & initialDeployment = info->getDeploymentState();
+	const auto activeDeploymentSide = initialDeployment.independent
+		? initialDeployment.activeSide() : info->tacticsSide;
+	const auto activeDeploymentDistance = initialDeployment.independent
+		? initialDeployment.activeDistance() : info->tacticDistance;
+	if(activeDeploymentSide != BattleSide::NONE && activeDeploymentDistance > 0)
 	{
-		auto tacticianColor = info->getSide(info->tacticsSide).color;
+		auto tacticianColor = info->getSide(activeDeploymentSide).color;
 
-		if (vstd::contains(battleints, tacticianColor))
-			battleints[tacticianColor]->yourTacticPhase(info->battleID, info->tacticDistance);
+		if(vstd::contains(battleints, tacticianColor))
+			battleints[tacticianColor]->yourTacticPhase(info->battleID, activeDeploymentDistance);
 	}
 }
 
@@ -543,7 +548,7 @@ void CClient::battleDeploymentPhaseChanged(const BattleID & battleID)
 	if(side != BattleSide::NONE)
 	{
 		const auto color = info->getSide(side).color;
-		const auto distance = deployment.distances[side];
+		const auto distance = deployment.activeDistance();
 		if(distance > 0)
 		{
 			if(const auto active = battleints.find(color); active != battleints.end())

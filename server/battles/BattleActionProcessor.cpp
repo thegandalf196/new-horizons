@@ -84,7 +84,7 @@ bool isDeploymentPositionLegal(const CBattleInfoCallback & battle, const battle:
 	const auto & deployment = state->getDeploymentState();
 	const auto * battleState = dynamic_cast<const IBattleState *>(state);
 	const auto distance = deployment.independent
-		? (side == deployment.activeSide() ? deployment.distances[side] : 0)
+		? (side == deployment.activeSide() ? deployment.activeDistance() : 0)
 		: (battleState && side == battleState->getTacticsSide() ? battleState->getTacticDist() : 0);
 	if(distance == 0)
 		return false;
@@ -1337,6 +1337,10 @@ bool BattleActionProcessor::doWalkAction(const CBattleInfoCallback & battle, con
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
 	battle::Target target = ba.getTarget(&battle);
 	const bool pursuitContinuation = stack && stack->pursuitMovementRemaining > 0;
+	const auto & deployment = battle.getBattle()->getDeploymentState();
+	const bool finalRelocation = deployment.independent && deployment.isFinalRelocation()
+		&& ba.side == deployment.activeSide();
+	const auto startingPosition = stack ? stack->getPosition() : BattleHex::INVALID;
 
 	if (!canStackAct(battle, stack))
 		return false;
@@ -1354,6 +1358,15 @@ bool BattleActionProcessor::doWalkAction(const CBattleInfoCallback & battle, con
 	{
 		gameHandler->complain("Stack failed movement!");
 		return false;
+	}
+	if(finalRelocation)
+	{
+		const auto * movedStack = battle.battleGetStackByID(ba.stackNumber, false);
+		if(movedStack && movedStack->alive() && movedStack->getPosition() == startingPosition)
+		{
+			gameHandler->complain("Final deployment relocation did not change the stack's position!");
+			return false;
+		}
 	}
 	if(pursuitContinuation)
 	{
@@ -2709,6 +2722,7 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 
 		if(ba.actionType == EActionType::WALK)
 		{
+			const auto & deployment = battle.getBattle()->getDeploymentState();
 			const auto * unit = battle.battleGetStackByID(ba.stackNumber, false);
 			if(!unit || ba.target.size() != 1 || ba.target.front().unitValue >= 0
 				|| !ba.target.front().hexValue.isValid())
@@ -2718,6 +2732,11 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 			}
 
 			const auto destination = resolveMovementDestination(battle, *unit, ba.target.front().hexValue);
+			if(deployment.isFinalRelocation() && destination == unit->getPosition())
+			{
+				gameHandler->complain("Final deployment relocation must change the stack's position!");
+				return false;
+			}
 			const auto * destinationUnit = battle.battleGetStackByPos(destination);
 			const auto accessibility = battle.getAccessibility(unit);
 			if(!isDeploymentPositionLegal(battle, *unit, destination, deploymentSide))
@@ -2729,6 +2748,11 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 				|| !accessibility.accessible(destination, unit))
 			{
 				gameHandler->complain("Given deployment destination is not accessible!");
+				return false;
+			}
+			if(deployment.isFinalRelocation() && !battle.getReachability(unit).isReachable(destination))
+			{
+				gameHandler->complain("Final deployment relocation destination is not reachable!");
 				return false;
 			}
 		}

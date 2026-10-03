@@ -48,7 +48,9 @@ private:
 	const Settings settings;
 
 	Phase phase = Phase::INACTIVE;
+	bool finalRelocationThisPhase = false;
 	const CStack * movingStack = nullptr;
+	std::optional<BattleHex> requestStartPosition;
 	std::vector<const CStack *> vips;
 	std::vector<const CStack *> guards;
 	std::vector<const CStack *> vipsToMove;

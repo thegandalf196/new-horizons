@@ -894,7 +894,7 @@ void BattleInterface::deploymentPhaseChanged()
 	// action controllers exist. Initial blocking is performed by our constructor.
 	if(!tacticianInterface)
 		windowObject->blockUI(true);
-	if(tacticianInterface && controllerChanged && !openingPlaying())
+	if(tacticianInterface && !stacksController->getActiveStack() && !openingPlaying())
 		tacticNextStack(nullptr);
 }
 

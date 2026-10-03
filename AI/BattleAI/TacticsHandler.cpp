@@ -15,6 +15,7 @@
 #include "CStack.h"
 #include "battle/BattleAction.h"
 #include "battle/BattleHex.h"
+#include "battle/IBattleState.h"
 
 namespace
 {
@@ -143,6 +144,10 @@ bool TacticsHandler::canHandle() const
 void TacticsHandler::end()
 {
 	info("Ending tactics");
+	phase = Phase::INACTIVE;
+	movingStack = nullptr;
+	requestStartPosition.reset();
+	finalRelocationThisPhase = false;
 	cb->battleMakeTacticAction(bid, BattleAction::makeEndOFTacticPhase(battle->battleGetMySide()));
 };
 
@@ -474,9 +479,21 @@ TacticsHandler::SpecialHexes TacticsHandler::getSpecialHexes() const
 
 void TacticsHandler::onTacticsStarted()
 {
+	const auto & deployment = battle->getBattle()->getDeploymentState();
+	finalRelocationThisPhase = deployment.independent && deployment.isFinalRelocation()
+		&& deployment.activeSide() == battle->battleGetMySide();
+	movingStack = nullptr;
+	requestStartPosition.reset();
+	phase = Phase::INACTIVE;
+	if(deployment.independent && deployment.activeSide() != battle->battleGetMySide())
+	{
+		finalRelocationThisPhase = false;
+		return;
+	}
+
 	if (battle->battleGetTacticDist() == 0)
 	{
-		phase = Phase::INACTIVE;
+		finalRelocationThisPhase = false;
 		return;
 	}
 
@@ -494,6 +511,7 @@ void TacticsHandler::tacticMove(const CStack * cstack, const BattleHex & bh)
 {
 	logAi->debug("[Tactics] Moving to hex %d", bh.toInt());
 	movingStack = cstack;
+	requestStartPosition = cstack->getPosition();
 	cb->battleMakeUnitAction(bid, BattleAction::makeMove(cstack, bh));
 }
 
@@ -551,7 +569,8 @@ bool TacticsHandler::moveNextGuardAwayFromCorners()
 		const auto reachability = battle->getReachability(guard);
 		for(const auto & hex : specialHexes.tempHexes)
 		{
-			if(reachability.isReachable(hex) && battle->isInTacticRange(hex, *guard))
+			if(hex != guard->getPosition() && reachability.isReachable(hex)
+				&& battle->isInTacticRange(hex, *guard))
 			{
 				tacticMove(guard, hex);
 				return true;
@@ -582,7 +601,8 @@ bool TacticsHandler::moveNextVipToCorner()
 
 		for(const auto & hex : destinations)
 		{
-			if(reachability.isReachable(hex) && battle->isInTacticRange(hex, *vip))
+			if(hex != vip->getPosition() && reachability.isReachable(hex)
+				&& battle->isInTacticRange(hex, *vip))
 			{
 				tacticMove(vip, hex);
 				return true;
@@ -638,7 +658,7 @@ std::optional<BattleHex> TacticsHandler::findGuardDestination(const CStack * gua
 	for(const auto hex : hexes)
 	{
 		if(guard->getPosition() == hex)
-			break;
+			continue;
 
 		if(reachability.isReachable(hex) && cb->getBattle(bid)->isInTacticRange(hex, *guard))
 			return hex;
@@ -653,6 +673,9 @@ void TacticsHandler::onActionFinished(const BattleAction & action)
 	if (battle->battleGetTacticDist() == 0)
 	{
 		phase = Phase::INACTIVE;
+		movingStack = nullptr;
+		requestStartPosition.reset();
+		finalRelocationThisPhase = false;
 		return;
 	}
 
@@ -660,6 +683,28 @@ void TacticsHandler::onActionFinished(const BattleAction & action)
 		return;
 
 	logAi->debug("[Tactics] Move finished");
+	const auto * movedStack = battle->battleGetStackByID(action.stackNumber);
+	const bool requestLeftStackInPlace = movedStack && requestStartPosition
+		&& movedStack->getPosition() == *requestStartPosition;
 	movingStack = nullptr;
+	requestStartPosition.reset();
+	if(finalRelocationThisPhase)
+	{
+		if(requestLeftStackInPlace)
+		{
+			// A legal final move that leaves the surviving stack where it started
+			// does not spend the one-move opportunity. Pass explicitly instead of
+			// retrying the same destination or leaving the phase pending.
+			end();
+			return;
+		}
+
+		// An accepted final relocation completes its state-machine phase on the
+		// authority. Do not continue the ordinary multi-move tactics heuristic or
+		// send a stale END_TACTIC_PHASE for the already completed opportunity.
+		phase = Phase::INACTIVE;
+		finalRelocationThisPhase = false;
+		return;
+	}
 	advance();
 }

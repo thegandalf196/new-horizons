@@ -895,18 +895,25 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 			{
 				const auto * hero = heroes[side];
-				if(hero && hero->tacticFormationEnabled
-					&& hero->hasActivePerk("new-horizons:battlecraft", "new-horizons:battlecraft.tactics"))
+				const bool hasTactics = hero && hero->tacticFormationEnabled
+					&& hero->hasActivePerk("new-horizons:battlecraft", "new-horizons:battlecraft.tactics");
+				if(hasTactics)
 					deployment.distances[side] = 3; // Base row plus the two canonical Tactics rows.
+
+			if(hero && hero->tacticFormationEnabled
+				&& hero->hasActivePerk("new-horizons:battlecraft", "new-horizons:battlecraft.redeployment"))
+					deployment.finalRelocationDistances[side] = hasTactics ? 3 : 1;
 			}
-			if(deployment.distances[BattleSide::ATTACKER] > 0 || deployment.distances[BattleSide::DEFENDER] > 0)
+			if(deployment.distances[BattleSide::ATTACKER] > 0 || deployment.distances[BattleSide::DEFENDER] > 0
+				|| deployment.finalRelocationDistances[BattleSide::ATTACKER] > 0
+				|| deployment.finalRelocationDistances[BattleSide::DEFENDER] > 0)
 				deployment.independent = true;
 			currentBattle->deploymentState = deployment; // Initial setup is unpublished, not a live phase transition.
 			const auto activeSide = deployment.activeSide();
 			if(activeSide != BattleSide::NONE)
 			{
 				currentBattle->tacticsSide = activeSide;
-				currentBattle->tacticDistance = deployment.distances[activeSide];
+				currentBattle->tacticDistance = deployment.activeDistance();
 			}
 		}
 		else
@@ -1093,7 +1100,7 @@ void BattleInfo::setDeploymentState(const BattleDeploymentState & state)
 	deploymentState = state;
 	const auto activeSide = deploymentState.activeSide();
 	tacticsSide = activeSide;
-	tacticDistance = activeSide == BattleSide::NONE ? 0 : deploymentState.distances[activeSide];
+	tacticDistance = deploymentState.activeDistance();
 }
 
 int32_t BattleInfo::getRound() const

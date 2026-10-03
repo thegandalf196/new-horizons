@@ -1871,8 +1871,8 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 			update.state = nextDeployment;
 			gameHandler->sendAndApply(update);
 
-			// The other entitled side receives the next deployment opportunity before
-			// any battle-start trigger, opening spell, round transition, or activation.
+			// The next entitled side/phase resolves before any battle-start trigger,
+			// opening spell, round transition, or activation.
 			if(nextDeployment.activeSide() != BattleSide::NONE)
 				return;
 		}
@@ -1886,6 +1886,35 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 	// check whether action has ended the battle
 	if(owner->checkBattleStateChanges(battle))
 		return;
+
+	// Redeployment uses the ordinary deployment WALK action. The action processor
+	// rejects unchanged destinations before publishing StartAction and only calls
+	// this method after an accepted move, so this event consumes exactly one
+	// final-relocation opportunity.
+	const auto & deploymentAfterAction = battle.getBattle()->getDeploymentState();
+	if(deploymentAfterAction.independent && deploymentAfterAction.isFinalRelocation()
+		&& ba.actionType == EActionType::WALK)
+	{
+		const auto activeSide = deploymentAfterAction.activeSide();
+		if(activeSide == BattleSide::NONE || ba.side != activeSide)
+		{
+			logGlobal->error("Accepted final deployment move does not match the active side.");
+			return;
+		}
+
+		auto nextDeployment = deploymentAfterAction;
+		nextDeployment.complete(activeSide);
+		BattleDeploymentPhaseChanged update;
+		update.battleID = battle.getBattle()->getBattleID();
+		update.state = nextDeployment;
+		gameHandler->sendAndApply(update);
+
+		if(nextDeployment.activeSide() != BattleSide::NONE)
+			return;
+
+		onTacticsEnded(battle);
+		return;
+	}
 
 	// tactics - next stack will be selected by player
 	const auto & deployment = battle.getBattle()->getDeploymentState();

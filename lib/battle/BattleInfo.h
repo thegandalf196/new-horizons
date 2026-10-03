@@ -192,10 +192,13 @@ public:
 			if(deploymentState.independent)
 			{
 				const auto activeSide = deploymentState.activeSide();
-				const auto expectedDistance = activeSide == BattleSide::NONE ? 0 : deploymentState.distances[activeSide];
+				const auto expectedDistance = deploymentState.activeDistance();
 				if(tacticsSide != activeSide || tacticDistance != expectedDistance)
 					throw std::runtime_error("Independent deployment state does not match its tactics projection");
 			}
+			if(!h.hasFeature(Handler::Version::BATTLE_FINAL_RELOCATION)
+				&& deploymentState.hasFinalRelocationState())
+				throw std::runtime_error("Cannot discard final relocation state");
 			if(!h.hasFeature(Handler::Version::BATTLE_DEPLOYMENT_PHASES)
 				&& hasIndependentDeploymentState())
 				throw std::runtime_error("Cannot discard independent deployment state");
@@ -607,7 +610,7 @@ public:
 			if(!h.saving && deploymentState.independent)
 			{
 				const auto activeSide = deploymentState.activeSide();
-				const auto expectedDistance = activeSide == BattleSide::NONE ? 0 : deploymentState.distances[activeSide];
+				const auto expectedDistance = deploymentState.activeDistance();
 				if(tacticsSide != activeSide || tacticDistance != expectedDistance)
 					throw std::runtime_error("Independent deployment state does not match its tactics projection");
 			}
