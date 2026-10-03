@@ -28,6 +28,10 @@ Coverage192/310 active perks,118 planned; faction54/90,36 planned; Shroud5/10;
 ranks84/93 unchanged. Broader control/form/clone, whole-combat saves and rendered
 delivery remain Phase2. Generic UI Provisional, purpose-made art Not done;
 no immutable playable promotion is claimed.
+Shadow Assault source is committed/pushed asbc979fdcd. Matching notice37105388534
+is dispatched; the older full Windows37102336709 still excludes this source.
+The next Deep Flank map flags a positional-contact versus accepted-hit-history
+ambiguity, recorded asUP174 without an implementation or coverage claim.
 
 UP172 Ambusher is source/native verified and active. A per-stack battle-long
 spent Bonus marker drives the first qualifying flanking strike's20-percentage-
