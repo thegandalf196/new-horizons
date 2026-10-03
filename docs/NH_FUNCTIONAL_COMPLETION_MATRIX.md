@@ -21,7 +21,9 @@ is activated after this gate. Coverage184->185/310 perks,126->125 planned;
 Battlecraft4->5/10. Ranks84/93 and faction49/90 are unchanged. Final module/data
 checks pass: data/inventory19/19, module drift and package91/91. Activated native
 gate passes4/4 in1.564s, zero skips; the incremental both-target build exits0.
-Independent activation review finds no blocker. Commit follows. Rendered/actual
+Independent activation review finds no blocker. Source is committed/pushed as
+`27ae52f378984c8be70bf0dbf0b4ac483f92a0db`. Notice37090616619 is queued on
+that source; full Windows37087488369 remains live on older0721ee12b. Rendered/actual
 AI handoff, full midbattle resume
 and rare trap/death interactions remain Phase2; no playable promotion.
 Native binary SHA-256:
