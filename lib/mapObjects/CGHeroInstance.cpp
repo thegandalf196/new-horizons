@@ -2599,6 +2599,17 @@ bool CGHeroInstance::isCampaignGem() const
 
 ResourceSet CGHeroInstance::dailyIncome() const
 {
+	return dailyIncomeWithInvestorGold(getNewHorizonsInvestorDailyGold());
+}
+
+ResourceSet CGHeroInstance::dailyIncomeWithInvestorGold(int32_t investorDailyGold) const
+{
+	static constexpr int32_t goldPerInvestorStep = 50;
+	static constexpr int32_t maximumInvestorDailyGold = 250;
+	if(investorDailyGold < 0 || investorDailyGold > maximumInvestorDailyGold
+		|| investorDailyGold % goldPerInvestorStep != 0)
+		throw std::runtime_error("Invalid New Horizons Investor daily Gold snapshot");
+
 	ResourceSet income;
 
 	for (GameResID k : LIBRARY->resourceTypeHandler->getAllObjects())
@@ -2616,6 +2627,8 @@ ResourceSet CGHeroInstance::dailyIncome() const
 			income[EGameResID::GOLD] += static_cast<int>(townsForThisPerk) * goldPerTown;
 		}
 	}
+	if(hasActivePerk("new-horizons:estates", "new-horizons:estates.investor"))
+		income[EGameResID::GOLD] += investorDailyGold;
 
 	const auto & playerSettings = cb->getPlayerSettings(getOwner());
 	income.applyHandicap(playerSettings->handicap.percentIncome);

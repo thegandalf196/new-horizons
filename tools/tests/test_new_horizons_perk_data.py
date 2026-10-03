@@ -43,6 +43,7 @@ ACTIVE_PERKS = {
     "new-horizons:spellcraft.arcaneFocus",
     "new-horizons:spellcraft.grandFormula",
     "new-horizons:estates.taxCollector",
+    "new-horizons:estates.investor",
     "new-horizons:estates.estateNetwork",
     "new-horizons:estates.financier",
     "new-horizons:estates.landSurveyor",

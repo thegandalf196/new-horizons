@@ -1364,11 +1364,25 @@ struct DLL_LINKAGE NewTurn : public CPackForClient
 	/// at the following week boundary; clients use it only for an owned
 	/// Astronomy Tower preview.
 	AstrologyWeek nextAstrologyWeek;
+	/// Changed per-hero Investor daily-Gold snapshots authored at week start.
+	std::map<ObjectInstanceID, int32_t> newHorizonsInvestorDailyGold;
 
 	NewTurn() = default;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		static constexpr int32_t goldPerInvestorStep = 50;
+		static constexpr int32_t maximumInvestorDailyGold = 250;
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_INVESTOR_INCOME)
+			&& !newHorizonsInvestorDailyGold.empty())
+			throw std::runtime_error("Cannot write New Horizons Investor snapshots to an older format");
+		if(h.saving)
+		{
+			for(const auto & entry : newHorizonsInvestorDailyGold)
+				if(entry.second < 0 || entry.second > maximumInvestorDailyGold || entry.second % goldPerInvestorStep != 0)
+					throw std::runtime_error("Invalid New Horizons Investor daily Gold snapshot");
+		}
+
 		h & day;
 		h & creatureid;
 		h & specialWeek;
@@ -1390,6 +1404,15 @@ struct DLL_LINKAGE NewTurn : public CPackForClient
 			throw std::runtime_error("Cannot write New Horizons Astrology preview to an older format");
 		else if(!h.saving)
 			nextAstrologyWeek = AstrologyWeek();
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_INVESTOR_INCOME))
+		{
+			h & newHorizonsInvestorDailyGold;
+			for(const auto & entry : newHorizonsInvestorDailyGold)
+				if(entry.second < 0 || entry.second > maximumInvestorDailyGold || entry.second % goldPerInvestorStep != 0)
+					throw std::runtime_error("Invalid New Horizons Investor daily Gold snapshot");
+		}
+		else if(!h.saving)
+			newHorizonsInvestorDailyGold.clear();
 	}
 };
 

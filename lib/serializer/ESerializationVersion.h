@@ -150,15 +150,18 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_BATTLE_PLAN, // typed pre-combat Order opportunity before the first activation
 	BATTLE_DEPLOYMENT_PHASES, // independent per-army deployment opportunities and phase progression
 	BATTLE_FINAL_RELOCATION, // final one-move deployment opportunities after initial deployment
+	NEW_HORIZONS_INVESTOR_INCOME, // saved weekly per-hero Investor daily-income snapshots
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = BATTLE_FINAL_RELOCATION,
+	CURRENT = NEW_HORIZONS_INVESTOR_INCOME,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
+static_assert(ESerializationVersion::NEW_HORIZONS_INVESTOR_INCOME > ESerializationVersion::BATTLE_FINAL_RELOCATION,
+	"Investor income snapshots must remain append-only");
 static_assert(ESerializationVersion::BATTLE_FINAL_RELOCATION > ESerializationVersion::BATTLE_DEPLOYMENT_PHASES,
 	"Final relocation state must remain append-only");
 static_assert(ESerializationVersion::BATTLE_DEPLOYMENT_PHASES > ESerializationVersion::NEW_HORIZONS_BATTLE_PLAN,

@@ -1,6 +1,6 @@
 # New Horizons functional completion matrix
 
-Updated: 2026-10-02
+Updated: 2026-10-03
 Canonical source SHA-256: `ccaa84fcd322b1e011ab5cac8094195f198b499026f5f78005b1a1a4eab93d21`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
@@ -13,6 +13,29 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+UP160 Investor's server-authored weekly snapshot feeds normal daily receipts
+and shared AI income:50 Gold/full5,000 pre-income treasury, capped250 daily
+Gold. Midweek treasury changes do not recalculate it. First-week seeding,
+new-week prospective receipts and pooled expiry are explicit. Combined client
+and native-test retry2/retry3 and activated builds exit0. The principal14-case
+gate passes13 with one standalone-copy fixture failure; its bounded correction
+passes1/1 on retry,zero skips. The copied hero uses its own bonus-graph baseline,
+not a claim of full-game restoration. Registry/module activation,19/19 data
+and inventory checks, module drift and91/91 package checks pass. Independent
+final review finds no blocker. Activated five-case gate passes5/5,zero skips
+in68.870s. Native binary SHA-256:
+`7a5a3e4681a9f0ab231f94a2f8a55e5d559a86aabee048b78fe52b64d7532d9f`.
+Source commit/push is the next delivery checkpoint; no playable promotion.
+Coverage is186/310 active perks,124 planned,84/93 ranks; Estates5/10.
+Full-game resume, unusual ownership/rehire transitions, comparative AI valuation
+and rendered/playable delivery remain Phase2. The generic icon remains Not done.
+
+Full Windows37087488369 succeeds on older0721ee12b (Tactics source). It does
+not verify Defend's later repair or Redeployment. Notice37091288150 is queued
+on213b4a35e, the Redeployment source plus delivery notes, before next full build.
+Notice37091288150 succeeds; full Windows37091363403 is now queued on that
+exact committed source. Dirty Investor implementation is excluded.
 
 UP158 Redeployment's combined retry56408 builds both client and test targets.
 Principal native gate passes15/15 in25.735s with zero skips: four Redeployment,
@@ -1407,7 +1430,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 185/310 | 125 planned; Redeployment is the newest source/native-verified activation. Battlecraft is 5/10; Command is 7/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 186/310 | 124 planned; Investor is the newest source/native-verified activation. Estates is 5/10; Battlecraft is 5/10; Command is 7/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 49/90 | 41 planned perks; Blood Scent has attack-local live/detached evidence. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |

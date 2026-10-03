@@ -1571,9 +1571,28 @@ void GameStatePackVisitor::visitSetNewHorizonsAdventureSpellUnlock(SetNewHorizon
 
 void GameStatePackVisitor::visitNewTurn(NewTurn & pack)
 {
+	static constexpr int32_t goldPerInvestorStep = 50;
+	static constexpr int32_t maximumInvestorDailyGold = 250;
+	for(const auto & [heroID, investorDailyGold] : pack.newHorizonsInvestorDailyGold)
+	{
+		if(investorDailyGold < 0 || investorDailyGold > maximumInvestorDailyGold
+			|| investorDailyGold % goldPerInvestorStep != 0)
+		{
+			logNetwork->error("Invalid New Horizons Investor snapshot for hero %d", heroID.getNum());
+			return;
+		}
+		if(!gs.getHero(heroID))
+		{
+			logNetwork->error("Wrong New Horizons Investor hero id %d", heroID.getNum());
+			return;
+		}
+	}
+
 	spellPointBonusGraphChanged = true;
 	gs.day = pack.day;
 	gs.nextAstrologyWeek = pack.nextAstrologyWeek;
+	for(const auto & [heroID, investorDailyGold] : pack.newHorizonsInvestorDailyGold)
+		gs.getHero(heroID)->setNewHorizonsInvestorDailyGold(investorDailyGold);
 	if(newHorizonsMagic::adventureSpellRulesActive(gs.getMagicRules()))
 	{
 		for(auto * hero : gs.getMap().getObjects<CGHeroInstance>())

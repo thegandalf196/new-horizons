@@ -208,6 +208,9 @@ public:
 	bool needsLastStack()const override;
 
 	ResourceSet dailyIncome() const override;
+	/// Shared New Horizons daily-income quote with a prospective Investor snapshot.
+	/// The current hero rules still determine whether the Investor amount applies.
+	ResourceSet dailyIncomeWithInvestorGold(int32_t investorDailyGold) const;
 	std::vector<CreatureID> providedCreatures() const override;
 	const IOwnableObject * asOwnable() const final;
 
@@ -253,6 +256,15 @@ public:
 	const JsonNode & getCapabilityRules() const { return capabilityRules; }
 	const newHorizonsHeroes::MasteryState & getMasteryState() const { return masteryState; }
 	const newHorizonsHeroes::PerkState & getPerkState() const { return perkState; }
+	int32_t getNewHorizonsInvestorDailyGold() const { return newHorizonsInvestorDailyGold; }
+	void setNewHorizonsInvestorDailyGold(int32_t value)
+	{
+		static constexpr int32_t goldPerInvestorStep = 50;
+		static constexpr int32_t maximumInvestorDailyGold = 250;
+		if(value < 0 || value > maximumInvestorDailyGold || value % goldPerInvestorStep != 0)
+			throw std::runtime_error("Invalid New Horizons Investor daily Gold snapshot");
+		newHorizonsInvestorDailyGold = value;
+	}
 	using DemonicReserve = std::map<CreatureID, TQuantity>;
 	const DemonicReserve & getDemonicReserve() const { return demonicReserve; }
 	TQuantity getDemonicReserveCount(CreatureID creature) const
@@ -455,6 +467,8 @@ private:
 	newHorizonsHeroes::MasteryState masteryState;
 	bool perkRulesCaptured = false;
 	newHorizonsHeroes::PerkState perkState;
+	/// Investor's fixed per-day bonus captured from the owner's treasury at week start.
+	int32_t newHorizonsInvestorDailyGold = 0;
 	bool primaryGrowthCaptured = false;
 	JsonNode primaryGrowthRules;
 	newHorizonsMagic::AdventureSpellState newHorizonsAdventureSpellState;
@@ -477,6 +491,11 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && (!h.hasFeature(Handler::Version::NEW_HORIZONS_INVESTOR_INCOME)
+			&& newHorizonsInvestorDailyGold != 0))
+			throw std::runtime_error("New Horizons Investor state requires the new save format");
+		if(h.saving)
+			setNewHorizonsInvestorDailyGold(newHorizonsInvestorDailyGold);
 		if(!h.saving)
 			spellPointCapacityRevision.reset();
 		h & static_cast<CArmedInstance&>(*this);
@@ -625,6 +644,15 @@ public:
 			if(!h.saving)
 				perkState = newHorizonsHeroes::PerkState();
 		}
+
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_INVESTOR_INCOME))
+		{
+			h & newHorizonsInvestorDailyGold;
+			if(!h.saving)
+				setNewHorizonsInvestorDailyGold(newHorizonsInvestorDailyGold);
+		}
+		else if(!h.saving)
+			newHorizonsInvestorDailyGold = 0;
 
 		if(!h.saving)
 		{

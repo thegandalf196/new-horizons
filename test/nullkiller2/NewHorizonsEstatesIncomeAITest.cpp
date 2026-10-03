@@ -37,13 +37,14 @@ const PlayerColor PLAYER(0);
 constexpr auto ESTATES_SKILL = "new-horizons:estates";
 constexpr auto TAX_COLLECTOR = "new-horizons:estates.taxCollector";
 constexpr auto ESTATE_NETWORK = "new-horizons:estates.estateNetwork";
+constexpr auto INVESTOR = "new-horizons:estates.investor";
 
-class EstateNetworkAIEnvironment final : public Environment
+class EstatesAIEnvironment final : public Environment
 {
 	std::shared_ptr<CGameState> state;
 
 public:
-	explicit EstateNetworkAIEnvironment(std::shared_ptr<CGameState> state)
+	explicit EstatesAIEnvironment(std::shared_ptr<CGameState> state)
 		: state(std::move(state))
 	{}
 
@@ -52,7 +53,7 @@ public:
 	const GameCb * game() const override { return state.get(); }
 };
 
-class EstateNetworkAIChoiceClient final : public IClient
+class EstatesAIChoiceClient final : public IClient
 {
 public:
 	std::promise<int> completed;
@@ -69,12 +70,56 @@ public:
 	{
 		const auto * reply = dynamic_cast<const QueryReply *>(&request);
 		if(!reply || player != PLAYER || !reply->reply.has_value())
-			throw std::runtime_error("Nullkiller submitted an unexpected Estate Network level-up reply");
+			throw std::runtime_error("Nullkiller submitted an unexpected Estates level-up reply");
 
 		completed.set_value(*reply->reply);
 		return 1;
 	}
 };
+
+void activatePlannedInvestorForFixture(CGHeroInstance * hero)
+{
+	auto & perkState = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
+	for(auto & skill : perkState.rules["skills"].Struct())
+	{
+		for(auto & perk : skill.second["perks"].Vector())
+		{
+			if(perk["id"].String() == INVESTOR)
+				perk["effect"]["status"].String() = "active";
+		}
+	}
+	perkState.validate();
+}
+
+void prepareInvestorOfferForFixture(CGHeroInstance * hero)
+{
+	const auto estatesSkill = SecondarySkill(SecondarySkill::decode(ESTATES_SKILL));
+	hero->setSecSkillLevel(estatesSkill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	hero->applyPerkSelection({ESTATES_SKILL, TAX_COLLECTOR});
+	hero->setSecSkillLevel(estatesSkill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	activatePlannedInvestorForFixture(hero);
+}
+
+void selectInvestorForFixture(CGHeroInstance * hero)
+{
+	prepareInvestorOfferForFixture(hero);
+	hero->applyPerkSelection({ESTATES_SKILL, INVESTOR});
+}
+
+void restrictFixturePerkOffersToInvestor(CGHeroInstance * hero)
+{
+	auto & perkState = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
+	for(auto & skill : perkState.rules["skills"].Struct())
+	{
+		for(auto & perk : skill.second["perks"].Vector())
+		{
+			const auto id = perk["id"].String();
+			if(id != TAX_COLLECTOR && id != INVESTOR)
+				perk["effect"]["status"].String() = "planned";
+		}
+	}
+	perkState.validate();
+}
 
 class NewHorizonsEstatesIncomeAITest : public NullkillerTest
 {
@@ -173,9 +218,9 @@ TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerSelectsTheOfferedAdvancedEstate
 
 	const auto ai = AIFactory::createAdventureAI("Nullkiller2");
 	ASSERT_NE(ai, nullptr);
-	auto transport = std::make_shared<EstateNetworkAIChoiceClient>();
+	auto transport = std::make_shared<EstatesAIChoiceClient>();
 	const auto callback = makeCallback(PLAYER, transport.get());
-	ai->initGameInterface(std::make_shared<EstateNetworkAIEnvironment>(gameState()), callback);
+	ai->initGameInterface(std::make_shared<EstatesAIEnvironment>(gameState()), callback);
 	auto answer = transport->completed.get_future();
 	std::vector<SecondarySkill> skills;
 	ai->heroGotLevel(firstHero, PrimarySkill::ATTACK, skills, offer, QueryID(42));
@@ -186,6 +231,104 @@ TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerSelectsTheOfferedAdvancedEstate
 	ASSERT_GE(selected, 0);
 	ASSERT_LT(static_cast<size_t>(selected), offer.size());
 	EXPECT_EQ(offer[static_cast<size_t>(selected)].selection.perkId, ESTATE_NETWORK);
+}
+
+TEST_F(NewHorizonsEstatesIncomeAITest, PublishedInvestorIncomeFeedsTheSharedForecastAndStaysFixedMidweek)
+{
+	startGame();
+	for(auto * hero : {firstHero, secondHero})
+		selectInvestorForFixture(hero);
+
+	auto * mutablePlayerState = gameState()->getPlayerState(PLAYER);
+	const auto * constPlayerState = mutablePlayerState;
+	mutablePlayerState->resources[EGameResID::GOLD] = 10000;
+	const int firstHeroIncomeBeforePublication = firstHero->dailyIncome()[EGameResID::GOLD];
+	const int secondHeroIncomeBeforePublication = secondHero->dailyIncome()[EGameResID::GOLD];
+	const auto forecastBeforePublication = NK2AI::BuildAnalyzer::calculateDailyIncome(
+		constPlayerState->getOwnedObjects(), constPlayerState->getTowns());
+
+	GameHandlerTestServer server(gameState(), PLAYER);
+	CGameHandler handler(server, gameState());
+	handler.onNewTurn(); // Day zero -> one publishes the weekly Investor snapshot.
+	ASSERT_EQ(gameState()->day, 1u);
+	EXPECT_EQ(firstHero->getNewHorizonsInvestorDailyGold(), 100);
+	EXPECT_EQ(secondHero->getNewHorizonsInvestorDailyGold(), 100);
+	EXPECT_EQ(firstHero->dailyIncome()[EGameResID::GOLD], firstHeroIncomeBeforePublication + 100);
+	EXPECT_EQ(secondHero->dailyIncome()[EGameResID::GOLD], secondHeroIncomeBeforePublication + 100);
+
+	const auto forecastAfterPublication = NK2AI::BuildAnalyzer::calculateDailyIncome(
+		constPlayerState->getOwnedObjects(), constPlayerState->getTowns());
+	EXPECT_EQ(forecastAfterPublication[EGameResID::GOLD], forecastBeforePublication[EGameResID::GOLD] + 200);
+
+	// The treasury can change midweek, but it cannot re-quote the saved snapshot.
+	mutablePlayerState->resources[EGameResID::GOLD] = 25000;
+	handler.onNewTurn();
+	ASSERT_EQ(gameState()->day, 2u);
+	EXPECT_EQ(firstHero->getNewHorizonsInvestorDailyGold(), 100);
+	EXPECT_EQ(secondHero->getNewHorizonsInvestorDailyGold(), 100);
+	const auto forecastMidweek = NK2AI::BuildAnalyzer::calculateDailyIncome(
+		constPlayerState->getOwnedObjects(), constPlayerState->getTowns());
+	EXPECT_EQ(forecastMidweek[EGameResID::GOLD], forecastAfterPublication[EGameResID::GOLD]);
+}
+
+TEST_F(NewHorizonsEstatesIncomeAITest, InvestorRefreshesNextWeekAndClearsWhenHolderFallsBelowAdvanced)
+{
+	startGame();
+	selectInvestorForFixture(firstHero);
+	selectInvestorForFixture(secondHero);
+
+	auto * playerState = gameState()->getPlayerState(PLAYER);
+	playerState->resources[EGameResID::GOLD] = 5000;
+	GameHandlerTestServer server(gameState(), PLAYER);
+	CGameHandler handler(server, gameState());
+	handler.onNewTurn(); // Day zero -> one captures exactly one full treasury tranche.
+	ASSERT_EQ(gameState()->day, 1u);
+	EXPECT_EQ(firstHero->getNewHorizonsInvestorDailyGold(), 50);
+	EXPECT_EQ(secondHero->getNewHorizonsInvestorDailyGold(), 50);
+
+	firstHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(ESTATES_SKILL)),
+		MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	for(int day = 0; day < 6; ++day)
+		handler.onNewTurn(); // Reach day seven without refreshing the weekly snapshot.
+	ASSERT_EQ(gameState()->day, 7u);
+
+	playerState->resources[EGameResID::GOLD] = 25000;
+	handler.onNewTurn(); // Day eight applies the capped next-week snapshot.
+	ASSERT_EQ(gameState()->day, 8u);
+	EXPECT_EQ(firstHero->getNewHorizonsInvestorDailyGold(), 0);
+	EXPECT_EQ(secondHero->getNewHorizonsInvestorDailyGold(), 250);
+}
+
+TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerSelectsTheOfferedAdvancedInvestorPerk)
+{
+	startGame();
+	prepareInvestorOfferForFixture(firstHero);
+	restrictFixturePerkOffersToInvestor(firstHero);
+
+	const auto rankLookup = [this](const std::string & skillId)
+	{
+		return firstHero->getPerkSkillRank(skillId);
+	};
+	const auto offer = firstHero->getPerkState().prepareOffer(rankLookup, 0);
+	ASSERT_EQ(offer.size(), 1u);
+	ASSERT_EQ(offer.front().selection.perkId, INVESTOR);
+	ASSERT_EQ(offer.front().requiredRank, MasteryLevel::ADVANCED);
+
+	const auto ai = AIFactory::createAdventureAI("Nullkiller2");
+	ASSERT_NE(ai, nullptr);
+	auto transport = std::make_shared<EstatesAIChoiceClient>();
+	const auto callback = makeCallback(PLAYER, transport.get());
+	ai->initGameInterface(std::make_shared<EstatesAIEnvironment>(gameState()), callback);
+	auto answer = transport->completed.get_future();
+	std::vector<SecondarySkill> skills;
+	ai->heroGotLevel(firstHero, PrimarySkill::ATTACK, skills, offer, QueryID(43));
+	const auto ready = answer.wait_for(std::chrono::seconds(10));
+	ai->finish();
+	ASSERT_EQ(ready, std::future_status::ready);
+	const int selected = answer.get();
+	ASSERT_GE(selected, 0);
+	ASSERT_LT(static_cast<size_t>(selected), offer.size());
+	EXPECT_EQ(offer[static_cast<size_t>(selected)].selection.perkId, INVESTOR);
 }
 
 TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerResourceViewIncludesTheAuthoritativeWeekStartGrant)

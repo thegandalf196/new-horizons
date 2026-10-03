@@ -249,7 +249,8 @@ void NewTurnProcessor::onPlayerTurnEnded(PlayerColor which)
 }
 
 ResourceSet NewTurnProcessor::generatePlayerIncome(PlayerColor playerID, bool newWeek,
-	std::map<ObjectInstanceID, std::vector<GameResID>> & mysticPondResults)
+	std::map<ObjectInstanceID, std::vector<GameResID>> & mysticPondResults,
+	const std::map<ObjectInstanceID, int32_t> & investorDailyGold)
 {
 	const auto & playerSettings = gameHandler->gameInfo().getPlayerSettings(playerID);
 	const PlayerState & state = gameHandler->gameState().players.at(playerID);
@@ -331,8 +332,15 @@ ResourceSet NewTurnProcessor::generatePlayerIncome(PlayerColor playerID, bool ne
 	TResources incomeHandicapped = income;
 	incomeHandicapped.applyHandicap(playerSettings->handicap.percentIncome);
 
-	for (const auto * obj :	state.getOwnedObjects())
-		incomeHandicapped += obj->asOwnable()->dailyIncome();
+	for (const auto * obj : state.getOwnedObjects())
+	{
+		const auto * hero = dynamic_cast<const CGHeroInstance *>(obj);
+		const auto investorSnapshot = hero && newWeek ? investorDailyGold.find(hero->id) : investorDailyGold.end();
+		if(investorSnapshot != investorDailyGold.end())
+			incomeHandicapped += hero->dailyIncomeWithInvestorGold(investorSnapshot->second);
+		else
+			incomeHandicapped += obj->asOwnable()->dailyIncome();
+	}
 
 	if (!state.isHuman())
 	{
@@ -835,11 +843,39 @@ NewTurn NewTurnProcessor::generateNewTurnPack()
 		n.nextAstrologyWeek = AstrologyWeek();
 
 	int additionalGrowth = 0;
+	std::map<ObjectInstanceID, int32_t> investorDailyGold;
+
+	if(newWeek)
+	{
+		static constexpr int64_t treasuryGoldPerInvestorTier = 5000;
+		static constexpr int32_t dailyGoldPerInvestorTier = 50;
+		static constexpr int32_t maximumInvestorDailyGold = 250;
+		static constexpr int64_t maximumInvestorTiers = maximumInvestorDailyGold / dailyGoldPerInvestorTier;
+
+		const auto & gameState = gameHandler->gameState();
+		for(const auto * hero : gameState.getMap().getObjects<CGHeroInstance>())
+		{
+			int32_t snapshot = 0;
+			auto owner = gameState.players.find(hero->getOwner());
+			if(owner != gameState.players.end()
+				&& hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.investor"))
+			{
+				const int64_t ownerGold = std::max<int64_t>(0, owner->second.resources[EGameResID::GOLD]);
+				const int64_t fullTiers = std::min<int64_t>(ownerGold / treasuryGoldPerInvestorTier, maximumInvestorTiers);
+				snapshot = static_cast<int32_t>(fullTiers * dailyGoldPerInvestorTier);
+			}
+
+			investorDailyGold.emplace(hero->id, snapshot);
+			if(snapshot != hero->getNewHorizonsInvestorDailyGold())
+				n.newHorizonsInvestorDailyGold.emplace(hero->id, snapshot);
+		}
+	}
 
 	if (!firstTurn)
 	{
 		for (const auto & player : gameHandler->gameState().players)
-			n.playerIncome[player.first] = generatePlayerIncome(player.first, newWeek, n.newHorizonsMysticPondResults);
+			n.playerIncome[player.first] = generatePlayerIncome(player.first, newWeek,
+				n.newHorizonsMysticPondResults, investorDailyGold);
 	}
 
 	// Estate Network and Financier are fixed weekly grants. Apply them after

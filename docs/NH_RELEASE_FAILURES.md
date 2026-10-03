@@ -2,6 +2,40 @@
 
 ## Purpose
 
+### 2026-10-03 UP-160 — Pointer metadata versus object serialization guards
+
+Pre-native review catches an incorrect fixture expectation: writing a hero
+pointer emits pointer nullness/ID/type metadata before invoking the hero's
+payload guard. A zero-byte payload test must serialize the hero by value/reference
+(*firstHero), not its pointer. Preserve the separate pointer roundtrip; do not
+weaken the guard or claim whole-object-graph atomic writes. Build81506 is live
+when this is found; repair the fixture after it terminates and rebuild before
+native acceptance. No failed native run or production serialization failure is
+claimed from this source review finding.
+Combined81506 terminates with exit1 in the new Investor fixture: redundant
+namespace close at458 and incomplete ObjectTemplate/bonus updater/propagator
+types while instantiating direct hero serialization. Repair fixture structure
+and direct defining includes using existing hero-roundtrip patterns; do not
+remove persistence assertions or alter production serializers to make it compile.
+No native acceptance was executed. Retain UP160-investor-build.log and require
+one serialized retry after the bounded fixture repair.
+Retry45920 terminates with exit1 in the new Estates AI fixture: mutable
+PlayerState::getTowns returns vector<CGTownInstance*>, while BuildAnalyzer's
+read-only quote requires vector<const CGTownInstance*>. Use a const PlayerState
+view for forecast calls; do not loosen the production quote API. The repaired
+server fixture compiles. Preserve the retry log; native execution remains held.
+Retry2 40823 exits0. The focused14-case native gate then passes13 and fails
+one copied-hero income assertion,zero skips. A standalone CMemorySerializer
+copy does not rebuild the complete bonus graph; compare its income against its
+own zero-Investor baseline, with explicit active-perk and saved snapshot checks.
+Do not claim full-game income/save acceptance from isolated object copying.
+Preserve UP160-investor-native.log/XML and rebuild the repaired fixture before
+rerunning its principal gate.
+Resolution: retry3 both-target build exits0; repaired serialization case passes
+1/1,zero skips. After production activation, all5 Investor cases pass,zero
+skips. Other13 cases from the earlier principal gate passed unchanged. Final
+independent review finds no blocking runtime or fixture issue.
+
 ### 2026-10-02 UP-158 — Redeployment direct interface include
 
 Combined12-job build95627 terminates with exit1: TacticsHandler.cpp calls

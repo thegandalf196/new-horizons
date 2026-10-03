@@ -2601,7 +2601,7 @@
 					"requires": "advanced",
 					"description": "At the start of each week, this hero's Estates daily income for that week increases by +50 Gold for each full 5,000 Gold currently in the treasury, capped at +250 Gold per day.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "At the start of each week, this hero's Estates daily income for that week increases by +50 Gold for each full 5,000 Gold currently in the treasury, capped at +250 Gold per day."
 					}
 				},

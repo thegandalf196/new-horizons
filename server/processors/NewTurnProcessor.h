@@ -14,6 +14,9 @@
 #include "../../lib/gameState/NewHorizonsAstrology.h"
 #include "../../lib/gameState/RumorState.h"
 
+#include <cstdint>
+#include <map>
+
 class CGTownInstance;
 class ResourceSet;
 struct SetAvailableCreatures;
@@ -47,7 +50,8 @@ class NewTurnProcessor : boost::noncopyable
 	std::vector<SetMovePoints> updateHeroesMovementPoints();
 
 	ResourceSet generatePlayerIncome(PlayerColor playerID, bool newWeek,
-		std::map<ObjectInstanceID, std::vector<GameResID>> & mysticPondResults);
+		std::map<ObjectInstanceID, std::vector<GameResID>> & mysticPondResults,
+		const std::map<ObjectInstanceID, int32_t> & investorDailyGold);
 	SetAvailableCreatures generateTownGrowth(const CGTownInstance * town, EWeekType weekType, CreatureID creatureWeek, bool firstDay, int additionalGrowth);
 	RumorState pickNewRumor();
 	InfoWindow createInfoWindow(EWeekType weekType, CreatureID creatureWeek, bool newMonth, int additionalGrowth);

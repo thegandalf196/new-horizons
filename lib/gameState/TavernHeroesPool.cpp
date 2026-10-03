@@ -12,6 +12,8 @@
 
 #include "CGameState.h"
 
+#include "../callback/Calendar.h"
+
 #include "../mapObjects/CGHeroInstance.h"
 #include "../mapping/CMap.h"
 
@@ -121,6 +123,7 @@ std::shared_ptr<CGHeroInstance> TavernHeroesPool::takeHeroFromPool(HeroTypeID he
 void TavernHeroesPool::onNewDay(bool completedDay)
 {
 	auto unusedHeroes = unusedHeroesFromPool();
+	const bool newWeek = owner->getCalendar().getDayOfWeek() == 1;
 
 	for(auto & heroID : heroesPool)
 	{
@@ -136,6 +139,10 @@ void TavernHeroesPool::onNewDay(bool completedDay)
 		// rules, so clearing it unconditionally is safe and prevents a dismissed
 		// New Horizons hero from carrying yesterday's cast into a later hire.
 		heroPtr->resetNewHorizonsAdventureSpellCastToday();
+		// A pooled hero receives no owned weekly income snapshot. Do not retain
+		// last week's Investor amount for a later midweek rehire.
+		if(newWeek)
+			heroPtr->setNewHorizonsInvestorDailyGold(0);
 
 		heroPtr->removeBonusesRecursive(Bonus::OneDay);
 		heroPtr->reduceBonusDurations(Bonus::NDays);
