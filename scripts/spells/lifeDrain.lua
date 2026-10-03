@@ -138,7 +138,7 @@ function Script:apply(mechanics, server, target)
 	local friendly = target[2].unit
 	local battle = mechanics:getBattle()
 	local damage, killed = server:damageUnit(
-		battle, enemy, mechanics:adjustEffectValue(enemy), false, mechanics:getUnitCaster())
+		battle, enemy, mechanics:adjustEffectValue(enemy), false, mechanics:getUnitCaster(), true)
 	local healing = math.floor(damage * healPercent(mechanics) / 100)
 	local healedHP = 0
 	if healing > 0 then

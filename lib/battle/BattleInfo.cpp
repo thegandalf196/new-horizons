@@ -1464,6 +1464,14 @@ bool BattleInfo::hasRageThroughPainState() const
 	});
 }
 
+bool BattleInfo::hasCasualtyProvenanceState() const
+{
+	return std::ranges::any_of(stacks, [](const auto & stack)
+	{
+		return stack && stack->hasCasualtyProvenanceState();
+	});
+}
+
 void BattleInfo::addUnit(uint32_t id, const JsonNode & data)
 {
 	if(heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE) && id != nextUnitId())

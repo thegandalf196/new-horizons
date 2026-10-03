@@ -14,6 +14,25 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP183 Corpse Preservation is active and source/native verified. Ordinary magical
+casualties require the perk; destroyed remains remain excluded. Ordered usable
+health cohorts preserve cause and temporary restoration identity; permanent
+Resurrection restores newest usable bodies first. Explicit Lua ingress and the
+authority's captured eligibility feed actual Necromancy rewards. Overheal surplus
+does not fabricate original corpses. Original Battle Form health owns the ledger.
+Core1826/client18663/test50692 pass; frozen77992 passes after the reviewed legacy
+null-field repair. Initial principal4/9 exposed fixture setup errors, retained
+in UP183-principal.log/XML. Fixture repair34931's getter compile error is fixed;
+retry48299 passes. Principal retry9/9 and adjacent15/15 pass, zero skips,
+1.751s/1.740s. Active build passes; production-active9/9 passes1.794s with all five
+XML properties active and no fixture override. Binary SHA-256:
+001072515cdc1f22f068c038ffc242c304cfb4b84fe780c3128b37bd4650a77a.
+Data/inventory19/19, module drift and independent review pass. Perks196->197/310,
+planned114->113; Necromancy3->4/10 and faction55->56/90. Ranks84/93 and spells60/67
+remain unchanged. Generic perk UI is Provisional, purpose-made art Not done.
+Full midbattle persistence, wider restoration/form interactions and rendered
+acceptance remain deferred; no local playable snapshot promotion is claimed.
+
 UP181 Mountaineer and UP182 Grand Tactics are active and source/native verified.
 Accepted rules: Rough/Subterranean cost exemptions with
 Rock still blocked; unique Grand Tactics holder deploys after the opponent's
@@ -30,11 +49,6 @@ planned116->114; Battlecraft5->6/10, Logistics5->6/10. Ranks84/93 and combat
 spells60/67 are unchanged. Rendered deployment handoff, actual full AI deployment,
 broader interactions and purpose-made icons remain Phase2/visual work. No local
 playable snapshot promotion is claimed.
-UP183 Corpse Preservation's baseline decision is canonical: magical casualties
-are excluded without the perk, Disintegrate always excluded. Runtime remains
-planned pending saved provenance. The user resolved partial Resurrection to
-most recent usable casualties first; ordered saved accounting is required.
-This documentation does not count Corpse Preservation as implemented.
 
 UP177 Portal of Summoning is source/native verified. Authority stores
 one owned external source identity and last-selection absolute week per town;
@@ -1628,9 +1642,9 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 196/310 | 114 planned; Grand Tactics and Mountaineer are the newest source/native-verified activations. Learning is 3/10; Estates is 5/10; Battlecraft is 6/10; Logistics is 6/10; Command is 7/10; Warcasting is 6/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 197/310 | 113 planned; Corpse Preservation is the newest source/native-verified activation. Necromancy is 4/10; Learning 3/10; Estates 5/10; Battlecraft 6/10; Logistics 6/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
-| Faction perks active | 55/90 | 35 planned perks; Night Prowler has committed hostile transit, first-strike consumption, unused expiry and isolated AI route/replay evidence. |
+| Faction perks active | 56/90 | 34 planned perks; Corpse Preservation has real cast, filtered reward, ordered restoration and health-state evidence. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
@@ -1788,7 +1802,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Metamagic | 3/0 | 10/0 | Evidence audit required |
 | Shroud of Malassa | 3/0 | 6/4 | Basic Backstab/Ambusher/Shadow Assault and Advanced No Escape/Evasive Shroud/Night Prowler are active; four perks remain planned. Night Prowler has live/AI crossing, first-strike and unused-expiry evidence; its flying negative is predicate-only. |
 | Demonic Gating | 3/0 | 10/0 | Evidence audit required |
-| Necromancy | 3/0 | 3/7 | Seven perks missing; one inert hook |
+| Necromancy | 3/0 | 4/6 | Corpse Preservation joins Bone Collector, Dark Conversion and Black Harvest. Real spell/physical damage, destroyed remains, LIFO restoration and filtered raising pass focused native checks; six perks remain planned. |
 | Bloodrage | 3/0 | 7/3 | War Drums, Fury Unbound, Endless Bloodshed, Unrelenting, Berserker, Blood Scent and Rage Through Pain have focused live/AI evidence and legal progression; First Blood, Slayer and Avatar of Rage remain planned. |
 | Bulwark of the Mire | 3/0 | 9/1 | Nine perks are active in committed source; 53/53 native regressions pass; persistent Poison status builds and passes focused tests; Deep Bulwark and rendered/playable evidence remain open |
 | Elemental Rebirth | 0/3 | 0/10 | Ranks and progression missing |

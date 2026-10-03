@@ -40,12 +40,13 @@ Damages the unit, returning the actual damage dealt and the number of killed cre
 - param `damage`: `integer` — Damage points to deal (will be clamped to remaining health).
 - param `destroyRemains`: `boolean?` — Optional: casualties killed by this hit leave no usable remains.
 - param `source`: [`Unit`](Unit.md)? — Optional creature credited with this damage. It must belong to `battle`; omit it for unattributed damage.
+- param `magicalDamage`: `boolean?` — Optional final argument, default false. Set true for actual magical damage; this records SPELL casualty provenance. Caster identity and animation do not determine damage nature. Destroyed remains remain independently excluded.
 
 - returns `integer, integer` — Damage actually dealt, and the count of killed creatures.
 
 ### damageUnitAsSpell
 
-Damages a unit and marks the injury packet with the spell identity. The caller
+Damages a unit, records SPELL damage provenance, and marks the injury packet with the spell identity. The caller
 must apply the spell's damage modifiers before calling this method.
 
 - param `battle`: [`Battle`](Battle.md) — Battle in which spell damage is dealt.

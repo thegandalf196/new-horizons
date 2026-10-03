@@ -6673,7 +6673,7 @@
 								"requires": "basic",
 								"description": "Casualties caused by ordinary magical damage become eligible for Necromancy. Without this perk, ordinary magical casualties are excluded. Effects that explicitly destroy or invalidate remains, such as Disintegrate, remain excluded even with the perk.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Casualties caused by ordinary magical damage become eligible for Necromancy. Without this perk, ordinary magical casualties are excluded. Effects that explicitly destroy or invalidate remains, such as Disintegrate, remain excluded even with the perk."
 								}
 							},

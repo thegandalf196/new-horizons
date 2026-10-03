@@ -22,6 +22,7 @@
 #include "../bonuses/BonusParameters.h"
 #include "../spells/NewHorizonsMagic.h"
 #include "../spells/NewHorizonsSorcery.h"
+#include "../json/JsonNode.h"
 #include "../serializer/JsonDeserializer.h"
 #include "../serializer/JsonSerializer.h"
 
@@ -29,6 +30,69 @@ namespace battle
 {
 namespace
 {
+const JsonNode * findJsonField(const JsonNode & object, const std::string & name)
+{
+	if(!object.isStruct())
+		return nullptr;
+	const auto & fields = object.Struct();
+	const auto it = fields.find(name);
+	return it == fields.end() ? nullptr : &it->second;
+}
+
+bool validDamageProvenance(const int64_t value)
+{
+	return value >= static_cast<int64_t>(DamageProvenance::OTHER)
+		&& value <= static_cast<int64_t>(DamageProvenance::SPELL);
+}
+
+bool inspectCasualtyProvenanceJson(const JsonNode & healthNode)
+{
+	// Older unit snapshots may omit optional original-form health entirely.
+	if(healthNode.isNull())
+		return false;
+	if(!healthNode.isStruct())
+		throw std::runtime_error("Invalid health snapshot for casualty provenance");
+
+	const auto * initializedNode = findJsonField(healthNode, "casualtyProvenanceInitialized");
+	const auto * cohortsNode = findJsonField(healthNode, "casualtyProvenance");
+	if(initializedNode && !initializedNode->isBool())
+		throw std::runtime_error("Invalid casualty provenance initialization marker");
+	if(cohortsNode && !cohortsNode->isVector())
+		throw std::runtime_error("Invalid casualty provenance cohort list");
+
+	const bool initialized = initializedNode && initializedNode->Bool();
+	if(initialized && !cohortsNode)
+		throw std::runtime_error("Initialized casualty provenance is missing its cohorts");
+	if(cohortsNode && !initialized && !cohortsNode->Vector().empty())
+		throw std::runtime_error("Uninitialized casualty provenance has saved cohorts");
+
+	bool hasMagicalCasualty = false;
+	if(cohortsNode)
+	{
+		for(const auto & cohort : cohortsNode->Vector())
+		{
+			if(!cohort.isStruct())
+				throw std::runtime_error("Invalid casualty provenance cohort");
+			const auto * count = findJsonField(cohort, "count");
+			const auto * provenance = findJsonField(cohort, "provenance");
+			const auto * temporary = findJsonField(cohort, "temporarilyRestored");
+			if(!count || count->getType() != JsonNode::JsonType::DATA_INTEGER
+				|| !provenance || provenance->getType() != JsonNode::JsonType::DATA_INTEGER
+				|| !temporary || temporary->getType() != JsonNode::JsonType::DATA_INTEGER)
+				throw std::runtime_error("Casualty provenance cohort fields must be integers");
+			const int64_t countValue = count->Integer();
+			const int64_t provenanceValue = provenance->Integer();
+			const int64_t temporaryValue = temporary->Integer();
+			if(countValue <= 0 || countValue > std::numeric_limits<int32_t>::max()
+				|| !validDamageProvenance(provenanceValue)
+				|| temporaryValue < 0 || temporaryValue > countValue)
+				throw std::runtime_error("Invalid casualty provenance cohort values");
+			hasMagicalCasualty |= provenanceValue == static_cast<int64_t>(DamageProvenance::SPELL);
+		}
+	}
+	return initialized && hasMagicalCasualty;
+}
+
 void addCapacityCount(int32_t & current, const int32_t amount)
 {
 	if(amount < 0 || static_cast<int64_t>(current) + amount > std::numeric_limits<int32_t>::max())
@@ -43,6 +107,26 @@ int32_t checkedHealthCapacity(const battle::Unit * unit)
 		throw std::runtime_error("Creature health capacity is outside the supported range");
 	return static_cast<int32_t>(maximum);
 }
+}
+
+bool hasCasualtyProvenanceState(const JsonNode & unitSnapshot)
+{
+	if(!unitSnapshot.isStruct())
+		return false;
+	const auto * state = findJsonField(unitSnapshot, "state");
+	if(!state)
+		return false;
+	if(!state->isStruct())
+		throw std::runtime_error("Invalid serialized unit state");
+
+	bool hasMagicalCasualties = false;
+	for(const auto * field : {"health", "battleFormOriginalHealth"})
+	{
+		const auto * health = findJsonField(*state, field);
+		if(health)
+			hasMagicalCasualties |= inspectCasualtyProvenanceJson(*health);
+	}
+	return hasMagicalCasualties;
 }
 
 ///CAmmo
@@ -219,6 +303,8 @@ CHealth & CHealth::operator=(const CHealth & other)
 	capacityHealthMaxFixed = other.capacityHealthMaxFixed;
 	totalHealthOverride = other.totalHealthOverride;
 	capacityHealthCohorts = other.capacityHealthCohorts;
+	casualtyProvenance = other.casualtyProvenance;
+	casualtyProvenanceInitialized = other.casualtyProvenanceInitialized;
 	return *this;
 }
 
@@ -242,6 +328,135 @@ void CHealth::addUnusableRemains(int32_t amount)
 
 	unusableRemains += amount;
 	vstd::abetween(unusableRemains, 0, owner->unitBaseAmount());
+}
+
+int32_t CHealth::casualtyLedgerCount() const
+{
+	int64_t result = 0;
+	for(const auto & cohort : casualtyProvenance)
+		result += cohort.count;
+	if(result > std::numeric_limits<int32_t>::max())
+		throw std::runtime_error("Casualty provenance count overflow");
+	return static_cast<int32_t>(result);
+}
+
+int32_t CHealth::temporarilyRestoredCasualtyCount() const
+{
+	int64_t result = 0;
+	for(const auto & cohort : casualtyProvenance)
+		result += cohort.temporarilyRestored;
+	if(result > std::numeric_limits<int32_t>::max())
+		throw std::runtime_error("Temporary casualty provenance count overflow");
+	return static_cast<int32_t>(result);
+}
+
+int32_t CHealth::usableCasualtyDebt() const
+{
+	const int64_t casualties = static_cast<int64_t>(owner->unitBaseAmount()) - getCount() + resurrected;
+	const int64_t usable = std::max<int64_t>(0, casualties - unusableRemains);
+	if(usable > std::numeric_limits<int32_t>::max())
+		throw std::runtime_error("Usable casualty count overflow");
+	return static_cast<int32_t>(usable);
+}
+
+void CHealth::validateCasualtyProvenanceLedger() const
+{
+	if(!casualtyProvenanceInitialized)
+	{
+		if(!casualtyProvenance.empty())
+			throw std::runtime_error("Uninitialized casualty provenance has saved cohorts");
+		return;
+	}
+
+	int64_t temporaryCount = 0;
+	for(const auto & cohort : casualtyProvenance)
+	{
+		const auto rawProvenance = static_cast<int64_t>(cohort.provenance);
+		if(cohort.count <= 0 || cohort.temporarilyRestored < 0
+			|| cohort.temporarilyRestored > cohort.count || !validDamageProvenance(rawProvenance))
+			throw std::runtime_error("Invalid casualty provenance cohort state");
+		temporaryCount += cohort.temporarilyRestored;
+	}
+	if(casualtyLedgerCount() != usableCasualtyDebt()
+		|| temporaryCount > resurrected)
+		throw std::runtime_error("Casualty provenance does not match health state");
+}
+
+void CHealth::ensureCasualtyProvenanceLedger()
+{
+	if(casualtyProvenanceInitialized)
+		return;
+	if(!casualtyProvenance.empty())
+		throw std::logic_error("Uninitialized casualty provenance has saved cohorts");
+
+	// Legacy snapshots have no cause history. Preserve their former behavior by
+	// treating every still-usable old casualty as OTHER, including temporary
+	// Resurrection casualties that will return to the casualty pool on expiry.
+	const int32_t usableCount = usableCasualtyDebt();
+	if(usableCount > 0)
+		casualtyProvenance.push_back({usableCount, DamageProvenance::OTHER,
+			std::min(usableCount, resurrected)});
+	casualtyProvenanceInitialized = true;
+}
+
+int32_t CHealth::removeNewestUsableCasualties(const int32_t amount, const bool temporary,
+	const bool allowNonCasualtySurplus)
+{
+	if(amount <= 0)
+		return 0;
+	ensureCasualtyProvenanceLedger();
+	int32_t remaining = amount;
+	for(size_t index = casualtyProvenance.size(); index > 0 && remaining > 0; --index)
+	{
+		auto & cohort = casualtyProvenance[index - 1];
+		const int32_t available = cohort.count - cohort.temporarilyRestored;
+		const int32_t selected = std::min(remaining, available);
+		if(temporary)
+			cohort.temporarilyRestored += selected;
+		else
+			cohort.count -= selected;
+		remaining -= selected;
+	}
+	std::erase_if(casualtyProvenance, [](const auto & cohort)
+	{
+		return cohort.count == 0;
+	});
+	if(remaining != 0 && !allowNonCasualtySurplus)
+		throw std::logic_error("Resurrection exceeds usable casualty provenance");
+	return amount - remaining;
+}
+
+void CHealth::replaceNewestTemporaryCasualties(const int32_t amount,
+	const DamageProvenance provenance, const bool destroyRemains)
+{
+	if(amount <= 0)
+		return;
+	ensureCasualtyProvenanceLedger();
+	int32_t remaining = amount;
+	for(size_t index = casualtyProvenance.size(); index > 0 && remaining > 0; --index)
+	{
+		auto & cohort = casualtyProvenance[index - 1];
+		const int32_t selected = std::min(remaining, cohort.temporarilyRestored);
+		cohort.temporarilyRestored -= selected;
+		cohort.count -= selected;
+		remaining -= selected;
+	}
+	std::erase_if(casualtyProvenance, [](const auto & cohort)
+	{
+		return cohort.count == 0;
+	});
+	if(remaining != 0)
+		throw std::logic_error("Damage exceeded temporarily restored casualty provenance");
+	if(destroyRemains)
+		return;
+
+	// A raised creature that dies again is a new casualty at the newest end of
+	// the order, with the cause of this death rather than its previous death.
+	if(!casualtyProvenance.empty() && casualtyProvenance.back().provenance == provenance
+		&& casualtyProvenance.back().temporarilyRestored == 0)
+		casualtyProvenance.back().count += amount;
+	else
+		casualtyProvenance.push_back({amount, provenance, 0});
 }
 
 int64_t CHealth::available() const
@@ -276,17 +491,24 @@ int32_t CHealth::maximumPerCreature() const
 
 void CHealth::damage(int64_t & amount)
 {
-	damage(amount, false, false);
+	damage(amount, false, false, DamageProvenance::OTHER, true);
 }
 
 void CHealth::damage(int64_t & amount, const bool destroyRemains)
 {
-	damage(amount, destroyRemains, false);
+	damage(amount, destroyRemains, false, DamageProvenance::OTHER, true);
 }
 
-void CHealth::damage(int64_t & amount, const bool destroyRemains, const bool bypassTemporaryHitPoints)
+void CHealth::damage(int64_t & amount, const bool destroyRemains, const bool bypassTemporaryHitPoints,
+	const DamageProvenance provenance, const bool trackCasualtyProvenance)
 {
+	if(trackCasualtyProvenance)
+		ensureCasualtyProvenanceLedger();
 	const int32_t oldCount = getCount();
+	const int32_t oldResurrected = resurrected;
+	const int32_t oldUsableDebt = trackCasualtyProvenance ? usableCasualtyDebt() : 0;
+	const int32_t oldTemporaryCasualties = trackCasualtyProvenance
+		? temporarilyRestoredCasualtyCount() : 0;
 	const int64_t eligibleHealth = bypassTemporaryHitPoints ? creatureHealthAvailable() : available();
 	amount = std::clamp<int64_t>(amount, 0, eligibleHealth);
 	const int64_t absorbed = bypassTemporaryHitPoints ? 0 : std::min(amount, temporaryHitPoints);
@@ -316,13 +538,41 @@ void CHealth::damage(int64_t & amount, const bool destroyRemains, const bool byp
 	}
 
 	addResurrected(getCount() - oldCount);
-
-	if(destroyRemains)
-		addUnusableRemains(oldCount - getCount());
+	const int32_t killed = std::max(0, oldCount - getCount());
+	if(trackCasualtyProvenance && killed > 0)
+	{
+		// OVERHEAL may temporarily add units above the base amount. Those added
+		// units have no corpse provenance. Their one-battle portion is included in
+		// the legacy resurrected counter, so consume it before changing marked
+		// restored corpses (the same ordering used by the casualty debt).
+		const int32_t untrackedResurrected = std::max(0, oldResurrected - oldTemporaryCasualties);
+		const int32_t resurrectedLoss = std::max(0, oldResurrected - resurrected);
+		const int32_t reKilledTemporary = std::min(oldTemporaryCasualties,
+			std::max(0, resurrectedLoss - untrackedResurrected));
+		const int32_t newDebt = usableCasualtyDebt();
+		const int32_t newCasualties = std::max(0, newDebt - oldUsableDebt);
+		replaceNewestTemporaryCasualties(reKilledTemporary, provenance, destroyRemains);
+		if(!destroyRemains && newCasualties > 0)
+		{
+			if(!casualtyProvenance.empty() && casualtyProvenance.back().provenance == provenance
+				&& casualtyProvenance.back().temporarilyRestored == 0)
+				casualtyProvenance.back().count += newCasualties;
+			else
+				casualtyProvenance.push_back({newCasualties, provenance, 0});
+		}
+		if(destroyRemains)
+			addUnusableRemains(reKilledTemporary + newCasualties);
+		validateCasualtyProvenanceLedger();
+	}
+	else if(destroyRemains)
+		addUnusableRemains(killed);
 }
 
-HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power)
+HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power,
+	const bool trackCasualtyProvenance)
 {
+	if(trackCasualtyProvenance && level != EHealLevel::HEAL)
+		ensureCasualtyProvenanceLedger();
 	const int32_t unitHealth = maximumPerCreature();
 	const int32_t oldCount = getCount();
 
@@ -358,10 +608,21 @@ HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power)
 	if(capacityHealthTracking)
 	{
 		healCapacityHealth(amount, level);
+		const int32_t restored = std::max(0, getCount() - oldCount);
 		if(power == EHealPower::ONE_BATTLE)
-			addResurrected(getCount() - oldCount);
+		{
+			addResurrected(restored);
+			if(trackCasualtyProvenance && level != EHealLevel::HEAL && restored > 0)
+				removeNewestUsableCasualties(restored, true, level == EHealLevel::OVERHEAL);
+		}
 		else
+		{
+			if(trackCasualtyProvenance && level != EHealLevel::HEAL && restored > 0)
+				removeNewestUsableCasualties(restored, false, level == EHealLevel::OVERHEAL);
 			assert(power == EHealPower::PERMANENT);
+		}
+		if(trackCasualtyProvenance)
+			validateCasualtyProvenanceLedger();
 		return HealInfo(amount, getCount() - oldCount);
 	}
 
@@ -369,11 +630,22 @@ HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power)
 
 	availableHealth	+= amount;
 	setFromTotal(availableHealth);
+	const int32_t restored = std::max(0, getCount() - oldCount);
 
 	if(power == EHealPower::ONE_BATTLE)
-		addResurrected(getCount() - oldCount);
+	{
+		addResurrected(restored);
+		if(trackCasualtyProvenance && level != EHealLevel::HEAL && restored > 0)
+			removeNewestUsableCasualties(restored, true, level == EHealLevel::OVERHEAL);
+	}
 	else
+	{
+		if(trackCasualtyProvenance && level != EHealLevel::HEAL && restored > 0)
+			removeNewestUsableCasualties(restored, false, level == EHealLevel::OVERHEAL);
 		assert(power == EHealPower::PERMANENT);
+	}
+	if(trackCasualtyProvenance)
+		validateCasualtyProvenanceLedger();
 
 	return HealInfo(amount, getCount() - oldCount);
 }
@@ -404,6 +676,18 @@ void CHealth::reset(bool clearUnusableRemains)
 	totalHealthOverride = 0;
 	capacityHealthCohorts.clear();
 	if(clearUnusableRemains)
+	{
+		casualtyProvenance.clear();
+		casualtyProvenanceInitialized = false;
+	}
+	else
+	{
+		// The stack is being removed after death. Any remaining temporary
+		// Resurrection cohort has now expired, but its original death cause stays.
+		for(auto & cohort : casualtyProvenance)
+			cohort.temporarilyRestored = 0;
+	}
+	if(clearUnusableRemains)
 		unusableRemains = 0;
 }
 
@@ -430,6 +714,22 @@ int32_t CHealth::getResurrected() const
 int32_t CHealth::getUnusableRemains() const
 {
 	return unusableRemains;
+}
+
+int32_t CHealth::getCasualtyCount(const DamageProvenance provenance) const
+{
+	int64_t result = 0;
+	for(const auto & cohort : casualtyProvenance)
+		if(cohort.provenance == provenance)
+			result += cohort.count;
+	if(result > std::numeric_limits<int32_t>::max())
+		throw std::runtime_error("Casualty provenance count overflow");
+	return static_cast<int32_t>(result);
+}
+
+bool CHealth::hasCasualtyProvenanceState() const
+{
+	return getCasualtyCount(DamageProvenance::SPELL) > 0;
 }
 
 int64_t CHealth::getTemporaryHitPoints() const
@@ -477,6 +777,8 @@ void CHealth::repartitionForBattleForm(const int32_t newMaximum, const int64_t o
 	capacityHealthMax = 0;
 	capacityHealthMaxFixed = false;
 	capacityHealthCohorts.clear();
+	casualtyProvenance.clear();
+	casualtyProvenanceInitialized = false;
 	shadowGiftMaximumHealthLost = 0;
 	unusableRemains = 0;
 	resurrected = 0;
@@ -538,6 +840,7 @@ void CHealth::takeResurrected()
 {
 	if(resurrected != 0)
 	{
+		ensureCasualtyProvenanceLedger();
 		if(capacityHealthTracking)
 		{
 			int32_t toRemove = std::min(resurrected, getCount());
@@ -570,6 +873,9 @@ void CHealth::takeResurrected()
 			setFromTotal(totalHealth);
 		}
 		resurrected = 0;
+		for(auto & cohort : casualtyProvenance)
+			cohort.temporarilyRestored = 0;
+		validateCasualtyProvenanceLedger();
 	}
 }
 
@@ -845,6 +1151,8 @@ void CHealth::healCapacityHealth(int64_t & amount, const EHealLevel level)
 
 void CHealth::serializeJson(JsonSerializeFormat & handler)
 {
+	if(!handler.saving)
+		inspectCasualtyProvenanceJson(handler.getCurrent());
 	handler.serializeInt("firstHPleft", firstHPleft, 0);
 	handler.serializeInt("fullUnits", fullUnits, 0);
 	handler.serializeInt("resurrected", resurrected, 0);
@@ -856,6 +1164,8 @@ void CHealth::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeBool("capacityHealthMaxFixed", capacityHealthMaxFixed, false);
 	handler.serializeInt("totalHealthOverride", totalHealthOverride, 0);
 	handler.enterArray("capacityHealthCohorts").serializeStruct(capacityHealthCohorts);
+	handler.serializeBool("casualtyProvenanceInitialized", casualtyProvenanceInitialized, false);
+	handler.enterArray("casualtyProvenance").serializeStruct(casualtyProvenance);
 	const int64_t originalMaximum = totalHealthOverride > 0
 		? totalHealthOverride + shadowGiftMaximumHealthLost
 		: static_cast<int64_t>(maximumPerCreature()) * owner->unitBaseAmount();
@@ -889,6 +1199,19 @@ void CHealth::serializeJson(JsonSerializeFormat & handler)
 		|| (capacityHealthTracking && firstHPleft == 0 && expectedCount > 0)
 		|| expectedCount > std::numeric_limits<int32_t>::max())
 		throw std::runtime_error("Invalid capacity health count state");
+	validateCasualtyProvenanceLedger();
+}
+
+void CHealth::CasualtyProvenanceCohort::serializeJson(JsonSerializeFormat & handler)
+{
+	handler.serializeInt("count", count);
+	int32_t rawProvenance = static_cast<int32_t>(provenance);
+	handler.serializeInt("provenance", rawProvenance);
+	handler.serializeInt("temporarilyRestored", temporarilyRestored);
+	if(rawProvenance < static_cast<int32_t>(DamageProvenance::OTHER)
+		|| rawProvenance > static_cast<int32_t>(DamageProvenance::SPELL))
+		throw std::runtime_error("Invalid casualty provenance kind");
+	provenance = static_cast<DamageProvenance>(rawProvenance);
 }
 
 ///CUnitState
@@ -1214,6 +1537,22 @@ int32_t CUnitState::getKilled() const
 	int32_t res = unitBaseAmount() - provenanceHealth.getCount() + provenanceHealth.getResurrected();
 	vstd::amax(res, 0);
 	return res;
+}
+
+int32_t CUnitState::getMagicalCasualties() const
+{
+	const auto & provenanceHealth = battleFormOriginalHealth.isBattleFormProvenance()
+		? battleFormOriginalHealth
+		: health;
+	return provenanceHealth.getCasualtyCount(DamageProvenance::SPELL);
+}
+
+bool CUnitState::hasCasualtyProvenanceState() const
+{
+	const auto & provenanceHealth = battleFormOriginalHealth.isBattleFormProvenance()
+		? battleFormOriginalHealth
+		: health;
+	return provenanceHealth.hasCasualtyProvenanceState();
 }
 
 int32_t CUnitState::getCount() const
@@ -2101,7 +2440,8 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 	{
 		const int64_t creatureHealthBefore = health.getCreatureHealthAvailable();
 		const bool activeBattleForm = battleFormOriginalHealth.isBattleFormProvenance();
-		health.damage(amount, activeBattleForm ? false : destroyRemains, bypassTemporaryHitPoints);
+		health.damage(amount, activeBattleForm ? false : destroyRemains, bypassTemporaryHitPoints,
+			provenance, !activeBattleForm);
 		normalizeCapacityHealth();
 		const int64_t creatureHealthAfter = health.getCreatureHealthAvailable();
 		if(activeBattleForm)
@@ -2109,7 +2449,7 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 			if(creatureHealthAfter < creatureHealthBefore)
 			{
 				int64_t provenanceDamage = creatureHealthBefore - creatureHealthAfter;
-				battleFormOriginalHealth.damage(provenanceDamage, destroyRemains, true);
+				battleFormOriginalHealth.damage(provenanceDamage, destroyRemains, true, provenance, true);
 				if(provenanceDamage != creatureHealthBefore - creatureHealthAfter)
 					throw std::logic_error("Battle-form source HP provenance rejected applied damage");
 			}
@@ -2286,16 +2626,16 @@ HealInfo CUnitState::heal(int64_t & amount, EHealLevel level, EHealPower power)
 			CHealth effectiveProbe = health;
 			int64_t sourceAllowed = amount;
 			int64_t effectiveAllowed = amount;
-			sourceProbe.heal(sourceAllowed, level, power);
-			effectiveProbe.heal(effectiveAllowed, level, power);
+			sourceProbe.heal(sourceAllowed, level, power, true);
+			effectiveProbe.heal(effectiveAllowed, level, power, false);
 			const int64_t accepted = std::min(sourceAllowed, effectiveAllowed);
 
 			CHealth nextSource = battleFormOriginalHealth;
 			CHealth nextEffective = health;
 			int64_t sourceAmount = accepted;
 			int64_t effectiveAmount = accepted;
-			nextSource.heal(sourceAmount, level, power);
-			const HealInfo result = nextEffective.heal(effectiveAmount, level, power);
+			nextSource.heal(sourceAmount, level, power, true);
+			const HealInfo result = nextEffective.heal(effectiveAmount, level, power, false);
 			if(sourceAmount != accepted || effectiveAmount != accepted)
 				throw std::logic_error("Battle-form health ledgers disagree on accepted healing");
 

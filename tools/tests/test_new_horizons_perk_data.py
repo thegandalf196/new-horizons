@@ -188,6 +188,7 @@ ACTIVE_PERKS = {
     "new-horizons:sylvanLuck.perfectMoment",
     "new-horizons:sylvanLuck.cascadingFortune",
     "new-horizons:necromancy.boneCollector",
+    "new-horizons:necromancy.corpsePreservation",
     "new-horizons:necromancy.darkConversion",
     "new-horizons:necromancy.blackHarvest",
     "new-horizons:bloodrage.warDrums",

@@ -17,6 +17,7 @@
 #include <vector>
 
 class JsonSerializeFormat;
+class JsonNode;
 class UnitChanges;
 
 namespace vstd
@@ -105,6 +106,17 @@ public:
 
 		void serializeJson(JsonSerializeFormat & handler);
 	};
+	/// A run of usable casualties with the same death provenance, ordered from
+	/// oldest to newest. Temporary one-battle Resurrection keeps the original
+	/// run and marks which members are currently restored.
+	struct DLL_LINKAGE CasualtyProvenanceCohort
+	{
+		int32_t count = 0;
+		DamageProvenance provenance = DamageProvenance::OTHER;
+		int32_t temporarilyRestored = 0;
+
+		void serializeJson(JsonSerializeFormat & handler);
+	};
 
 	explicit CHealth(const battle::Unit * Owner);
 	CHealth(const CHealth & other) = default;
@@ -116,19 +128,22 @@ public:
 
 	void damage(int64_t & amount);
 	/// Deal damage while marking the creatures killed by this hit as leaving no
-	/// usable remains.  The default damage path intentionally keeps the legacy
-	/// behaviour and does not mark the new ledger.
+	/// usable remains. The default provenance is OTHER for legacy, nonmagical
+	/// damage callers.
 	void damage(int64_t & amount, bool destroyRemains);
 	/// Shadow Gift sacrifices creature HP directly and cannot be absorbed by
 	/// temporary hit points. Other damage paths retain their normal semantics.
-	void damage(int64_t & amount, bool destroyRemains, bool bypassTemporaryHitPoints);
-	HealInfo heal(int64_t & amount, EHealLevel level, EHealPower power);
+	void damage(int64_t & amount, bool destroyRemains, bool bypassTemporaryHitPoints,
+		DamageProvenance provenance = DamageProvenance::OTHER, bool trackCasualtyProvenance = true);
+	HealInfo heal(int64_t & amount, EHealLevel level, EHealPower power, bool trackCasualtyProvenance = true);
 
 	int32_t getCount() const;
 	int32_t getFirstHPleft() const;
 	int32_t getResurrected() const;
 	/// Number of casualties whose remains cannot be restored or harvested.
 	int32_t getUnusableRemains() const;
+	int32_t getCasualtyCount(DamageProvenance provenance) const;
+	bool hasCasualtyProvenanceState() const;
 	/// Battle-only hit points consumed before the stack's creature health.
 	int64_t getTemporaryHitPoints() const;
 	void addTemporaryHitPoints(int64_t amount);
@@ -165,6 +180,13 @@ public:
 private:
 	void addResurrected(int32_t amount);
 	void addUnusableRemains(int32_t amount);
+	void ensureCasualtyProvenanceLedger();
+	int32_t removeNewestUsableCasualties(int32_t amount, bool temporary, bool allowNonCasualtySurplus);
+	void replaceNewestTemporaryCasualties(int32_t amount, DamageProvenance provenance, bool destroyRemains);
+	int32_t casualtyLedgerCount() const;
+	int32_t temporarilyRestoredCasualtyCount() const;
+	int32_t usableCasualtyDebt() const;
+	void validateCasualtyProvenanceLedger() const;
 	int64_t creatureHealthAvailable() const;
 	void setFromTotal(const int64_t totalHealth);
 	void damageCapacityHealth(int64_t amount);
@@ -187,6 +209,8 @@ private:
 	bool capacityHealthMaxFixed = false;
 	int64_t totalHealthOverride = 0;
 	std::vector<CapacityHealthCohort> capacityHealthCohorts;
+	std::vector<CasualtyProvenanceCohort> casualtyProvenance;
+	bool casualtyProvenanceInitialized = false;
 };
 
 class DLL_LINKAGE CUnitState : public Unit
@@ -342,6 +366,10 @@ public:
 	bool isShooter() const override;
 
 	int32_t getKilled() const override;
+	/// Magical casualties that remain part of the casualty total, including
+	/// those temporarily restored for one battle.
+	int32_t getMagicalCasualties() const;
+	bool hasCasualtyProvenanceState() const;
 	int32_t getCount() const override;
 	int32_t getFirstHPleft() const override;
 	int32_t getUnusableRemains() const override;
@@ -495,6 +523,10 @@ private:
 
 	void reset();
 };
+
+/// Check a serialized Unit::save() snapshot for nonlegacy magical casualty
+/// provenance before forwarding it through an older wire format.
+DLL_LINKAGE bool hasCasualtyProvenanceState(const JsonNode & unitSnapshot);
 
 class DLL_LINKAGE CUnitStateDetached final : public CUnitState
 {

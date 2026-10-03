@@ -1,5 +1,26 @@
 # Serialization
 
+## Ordered usable casualty provenance
+
+`BATTLE_CASUALTY_PROVENANCE` identifies state updates retaining ordered usable
+casualty cohorts in each health JSON snapshot. Cohorts carry count, actual damage
+nature and temporary-restoration identity. Resurrection selects newest usable
+casualties first; temporary expiry preserves the prior death cause, while a new
+death takes its new cause. Destroyed remains stay separate and non-restorable.
+The original Battle Form health ledger owns provenance while a form is active.
+
+Old snapshots with no recorded causes retain unknown prior deaths as OTHER;
+they must not fabricate magical casualty history. New events record explicit
+damage nature. UnitChanges, injury, attack and health-change packets reject
+lossy older-format writes before their payload. Current JSON state snapshots
+preserve matching health and ordered provenance together.
+
+This does not add ongoing-battle save/resume. Binary CStack/BattleInfo/BattleStart
+descriptors still omit general CUnitState; a casualty-only sidecar cannot restore
+matching health or temporary resurrection. These descriptors reject nonlegacy
+casualty provenance even in the current format rather than misrepresenting it.
+Ordinary adventure saves do not contain ongoing battles and remain supported.
+
 ## Resolved initial deployment ordering
 
 `BATTLE_INITIAL_DEPLOYMENT_ORDER` appends the resolved first side to the generic

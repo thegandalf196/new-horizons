@@ -129,6 +129,7 @@ public:
 	bool hasCleaveState() const;
 	bool hasNoQuarterState() const;
 	bool hasRageThroughPainState() const;
+	bool hasCasualtyProvenanceState() const;
 	bool hasRelentlessAssaultState() const
 	{
 		return sides[BattleSide::ATTACKER].relentlessAssault.hasState()
@@ -193,6 +194,8 @@ public:
 	{
 		if(h.saving)
 		{
+			if(hasCasualtyProvenanceState())
+				throw std::runtime_error("Binary battle descriptors cannot preserve casualty health provenance");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RAGE_THROUGH_PAIN)
 				&& hasRageThroughPainState())
 				throw std::runtime_error("Cannot discard Rage Through Pain battle state");

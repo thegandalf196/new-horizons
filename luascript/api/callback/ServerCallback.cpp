@@ -89,10 +89,11 @@ void ServerCallbackProxy::registerMethods(MethodRegistrar & R)
 			{"unit",   "Unit",    "Target unit."},
 			{"damage", "integer", "Damage points to deal (will be clamped to remaining health)."},
 			{"destroyRemains", "boolean?", "Optional: casualties killed by this hit leave no usable remains."},
-			{"source", "Unit?", "Optional creature credited with this damage; it must belong to this battle. Omit for unattributed damage."}
+			{"source", "Unit?", "Optional creature credited with this damage; it must belong to this battle. Omit for unattributed damage."},
+			{"magicalDamage", "boolean?", "Optional: classify this hit as magical spell damage instead of its default non-magical/other origin."}
 		},
 		{"integer, integer", "Damage actually dealt, and the count of killed creatures."},
-		"Damages the unit, returning the actual damage dealt and the number of killed creatures. An optional source unit attributes the hit to that unit; omitted damage remains unattributed.");
+		"Damages the unit, returning the actual damage dealt and the number of killed creatures. An optional source unit attributes the hit to that unit; omitted damage remains unattributed. Damage nature defaults to OTHER unless magicalDamage is explicitly true.");
 	R.cfunction<&ServerCallbackProxy::damageUnitAsSpell>("damageUnitAsSpell",
 		{
 			{"battle", "Battle", "Battle in which spell damage is dealt."},
@@ -102,7 +103,7 @@ void ServerCallbackProxy::registerMethods(MethodRegistrar & R)
 			{"source", "Unit", "Unit credited with this spell damage; it must belong to this battle."}
 		},
 		{"integer, integer", "Damage actually dealt, and the count of killed creatures."},
-		"Damages the unit and marks the injury as damage from the given spell. The caller is responsible for applying the spell's damage modifiers first.");
+		"Damages the unit, records SPELL damage provenance, and marks the injury with the given spell identity. The caller is responsible for applying the spell's damage modifiers first.");
 	R.function<&ServerCallbackProxy::removeUnit>("removeUnit",
 		{
 			{"battle", "Battle the unit belongs to."},
@@ -669,6 +670,9 @@ int ServerCallbackProxy::damageUnit(lua_State * L)
 	const battle::Unit * source = nullptr;
 	if(S.stackSize() >= 6)
 		S.get(6, source);
+	bool magicalDamage = false;
+	if(S.stackSize() >= 7)
+		S.get(7, magicalDamage);
 	if(source)
 	{
 		const auto * sourceInBattle = battle->battleGetUnitByID(source->unitId());
@@ -681,7 +685,8 @@ int ServerCallbackProxy::damageUnit(lua_State * L)
 	bsa.stackAttacked = unit->unitId();
 	bsa.attackerID = source ? source->unitId() : -1;
 	auto newState = unit->acquireState();
-	CStack::prepareAttacked(bsa, *object->getRNG(), newState, destroyRemains);
+	const auto provenance = magicalDamage ? battle::DamageProvenance::SPELL : battle::DamageProvenance::OTHER;
+	CStack::prepareAttacked(bsa, *object->getRNG(), newState, destroyRemains, false, provenance);
 
 	StacksInjured si;
 	si.battleID = battle->getBattle()->getBattleID();
@@ -724,7 +729,7 @@ int ServerCallbackProxy::damageUnitAsSpell(lua_State * L)
 	bsa.stackAttacked = unit->unitId();
 	bsa.attackerID = source->unitId();
 	auto newState = unit->acquireState();
-	CStack::prepareAttacked(bsa, *object->getRNG(), newState);
+	CStack::prepareAttacked(bsa, *object->getRNG(), newState, false, false, battle::DamageProvenance::SPELL);
 	bsa.flags |= BattleStackAttacked::SPELL_EFFECT;
 	bsa.spellID = spell->getId();
 

@@ -47,6 +47,8 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && info && info->hasCasualtyProvenanceState())
+			throw std::runtime_error("Binary BattleStart descriptors cannot preserve casualty health provenance");
 		if(h.saving && info && !h.hasFeature(Handler::Version::BATTLE_DEPLOYMENT_PHASES)
 			&& info->hasIndependentDeploymentState())
 			throw std::runtime_error("Cannot discard independent deployment state from BattleStart");
@@ -458,6 +460,10 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_CASUALTY_PROVENANCE)
+			&& std::ranges::any_of(changedStacks, [](const UnitChanges & change)
+				{ return change.hasCasualtyProvenanceState(); }))
+			throw std::runtime_error("Cannot discard casualty provenance unit state update");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_RANGED_FOLLOW_UP)
 			&& std::ranges::any_of(changedStacks, [](const UnitChanges & change)
 			{
@@ -522,6 +528,9 @@ struct BattleStackAttacked
 	template <typename Handler> void serialize(Handler & h)
 	{
 		const auto & followUpPercent = newState.data["state"]["rangedFollowUpDamagePercent"];
+		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_CASUALTY_PROVENANCE)
+			&& newState.hasCasualtyProvenanceState())
+			throw std::runtime_error("Cannot discard casualty provenance attack state update");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_RANGED_FOLLOW_UP)
 			&& followUpPercent.isNumber() && followUpPercent.Float() != 0)
 			throw std::runtime_error("Cannot discard ranged follow-up attack state update");
@@ -607,6 +616,12 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 		{
 			return change.hasRageThroughPainState();
 		};
+		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_CASUALTY_PROVENANCE)
+			&& (std::ranges::any_of(attackerChanges.changedStacks, [](const UnitChanges & change)
+					{ return change.hasCasualtyProvenanceState(); })
+				|| std::ranges::any_of(bsa, [](const BattleStackAttacked & hit)
+					{ return hit.newState.hasCasualtyProvenanceState(); })))
+			throw std::runtime_error("Cannot discard casualty provenance attack state");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_RAGE_THROUGH_PAIN)
 			&& (std::ranges::any_of(attackerChanges.changedStacks, hasPersonalBloodrage)
 				|| std::ranges::any_of(bsa, [](const BattleStackAttacked & hit)
@@ -979,6 +994,10 @@ struct DLL_LINKAGE StacksInjured : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_CASUALTY_PROVENANCE)
+			&& std::ranges::any_of(stacks, [](const BattleStackAttacked & hit)
+				{ return hit.newState.hasCasualtyProvenanceState(); }))
+			throw std::runtime_error("Cannot discard casualty provenance injury state in an older format");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_RAGE_THROUGH_PAIN)
 			&& std::ranges::any_of(stacks, [](const BattleStackAttacked & hit)
 				{ return hit.newState.hasRageThroughPainState(); }))

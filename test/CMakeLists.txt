@@ -34,6 +34,7 @@ set(test_SRCS
 		battle/AutocombatPreferencesTest.cpp
 		battle/AlternatingHeroActionStateTest.cpp
 		battle/BattleDeploymentOrderTest.cpp
+		battle/CasualtyProvenanceTest.cpp
 		battle/HeroActionAllowanceStateTest.cpp
 		battle/HeroSpellAllowanceTransitionTest.cpp
  		battle/BattleHexTest.cpp
@@ -303,6 +304,7 @@ set(test_SRCS
 		server/battles/NewHorizonsPassingLinesTest.cpp
 		server/battles/NewHorizonsTacticsDeploymentTest.cpp
 		server/battles/NewHorizonsDeploymentOrderRuntimeTest.cpp
+		server/battles/NewHorizonsCorpsePreservationTest.cpp
 		server/battles/NewHorizonsRedeploymentTest.cpp
 		server/battles/NewHorizonsEarthquakeTest.cpp
 		battleAI/NewHorizonsEarthquakeAITest.cpp

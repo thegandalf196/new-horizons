@@ -10,6 +10,7 @@
 #pragma once
 
 #include "../json/JsonNode.h"
+#include "../battle/CUnitState.h"
 
 class BattleChanges
 {
@@ -56,8 +57,16 @@ public:
 		return increment.isNumber() && increment.Float() != 0.0;
 	}
 
+	bool hasCasualtyProvenanceState() const
+	{
+		return battle::hasCasualtyProvenanceState(data);
+	}
+
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_CASUALTY_PROVENANCE)
+			&& hasCasualtyProvenanceState())
+			throw std::runtime_error("Cannot discard casualty provenance in an older unit update format");
 		const auto & veteranDamage = data["state"]["veteranPhysicalDamageSinceActivation"];
 		const auto & activationMovementBonus = data["state"]["activationMovementBonus"];
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_ARMORER_VETERAN)

@@ -1160,6 +1160,11 @@ void BattleResultProcessor::setBattleResult(const CBattleInfoCallback & battle, 
 	battleResult->result = resultType;
 	battleResult->winner = victoriusSide; //surrendering side loses
 	battleResult->attacker = battle.getBattle()->getSidePlayer(BattleSide::ATTACKER);
+	const auto * winnerHero = victoriusSide == BattleSide::NONE
+		? nullptr : battle.battleGetFightingHero(victoriusSide);
+	const bool excludeMagicalCasualties = winnerHero && winnerHero->usesNewHorizonsNecromancy()
+		&& !winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+			newHorizonsNecromancy::CORPSE_PRESERVATION_ID);
 
 	auto allStacks = battle.battleGetStacksIf([](const CStack * stack){
 
@@ -1187,11 +1192,14 @@ void BattleResultProcessor::setBattleResult(const CBattleInfoCallback & battle, 
 			// New Horizons uses an explicit provenance-compatible corpse snapshot.
 			// Temporary summons, clones, legacy DISINTEGRATE stacks, undead and
 			// other nonliving creatures never enter the living-casualty pool.
-			// Ordinary weapon and magical damage do, while a New Horizons direct
-			// damage effect subtracts only the casualties recorded in its remains
-			// ledger.
+			// Destroyed remains are never eligible. Ordinary magical casualties
+			// additionally require the winner's active Corpse Preservation perk.
+			// Resolve this once for both the Necromancy choice and its application.
 			const si32 unusableRemains = std::min(killed, resultState->getUnusableRemains());
-			const si32 eligibleCasualties = killed - unusableRemains;
+			const si32 usableCasualties = killed - unusableRemains;
+			const si32 excludedMagical = excludeMagicalCasualties
+				? std::clamp<si32>(resultState->getMagicalCasualties(), 0, usableCasualties) : 0;
+			const si32 eligibleCasualties = usableCasualties - excludedMagical;
 			if(eligibleCasualties > 0
 				&& !st->summoned && !st->isClone()
 				&& !st->hasBonusOfType(BonusType::DISINTEGRATE)

@@ -169,7 +169,7 @@ local function applyHandOfFateCollateral(self, mechanics, server, battle, primar
 		return 0, 0
 	end
 	local actualDamage, killed = server:damageUnit(battle, recipient, adjustedDamage, self.destroyRemains == true,
-		mechanics:getUnitCaster())
+		mechanics:getUnitCaster(), true)
 	server:appendLog(battle, {
 		append = { HAND_OF_FATE_COLLATERAL_TEXT },
 		replaceStrings = { recipientName },
@@ -209,7 +209,7 @@ function Script:apply(mechanics, server, target)
 			-- Creature casts expose their battle Unit; hero and environmental casts return nil and
 			-- intentionally remain unattributed.
 			local dmg, killed = server:damageUnit(
-				battle, unit, amount, self.destroyRemains == true, mechanics:getUnitCaster())
+				battle, unit, amount, self.destroyRemains == true, mechanics:getUnitCaster(), true)
 			local collateralDamage, collateralKilled = 0, 0
 			if self.handOfFate then
 				collateralDamage, collateralKilled = applyHandOfFateCollateral(

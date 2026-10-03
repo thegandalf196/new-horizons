@@ -65,7 +65,7 @@ function Script:onAfterAttacked(server, battle, unit, other, payload)
 	-- deferred so that the flames and the flinch of the burned attacker start on the same frame
 	server:showBattleAnimation(battle, { { unit = unit } }, ANIMATION, SOUND, 1.0, true)
 
-	local dealt, killed = server:damageUnit(battle, other, damage, false, unit)
+	local dealt, killed = server:damageUnit(battle, other, damage, false, unit, true)
 
 	BattleLog.spellDamage(server, battle, spell, other, dealt, killed)
 end

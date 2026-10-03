@@ -43,7 +43,7 @@ function Script:onAfterAttack(server, battle, unit, other, payload)
 	if damage <= 0 then return end
 
 	-- damageUnit emits an authoritative injury pack and does not start another attack event.
-	local dealt, killed = server:damageUnit(battle, unit, damage, false, source)
+	local dealt, killed = server:damageUnit(battle, unit, damage, false, source, true)
 	BattleLog.spellDamage(server, battle, spell, unit, dealt, killed)
 end
 
