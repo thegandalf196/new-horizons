@@ -390,6 +390,8 @@ struct DLL_LINKAGE BattleResult : public Query
 	BattleSideArray<std::map<CreatureID, si32>> necromancyNonlivingEligibleCasualties;
 	BattleSideArray<std::map<CreatureID, si32>> necromancyUndeadEligibleCasualties;
 	bool necromancySpecialEligibilityCaptured = false;
+	/// Snapshot from the original losing-army roster, captured before casualties are applied.
+	bool necromancyDefeatedArmyHadLivingChampion = false;
 
 	bool hasSpecialNecromancyCasualties() const
 	{
@@ -424,6 +426,9 @@ struct DLL_LINKAGE BattleResult : public Query
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && necromancyDefeatedArmyHadLivingChampion
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_LORD_OF_DEAD))
+			throw std::runtime_error("Cannot write Necromancy Champion qualification to an older format");
 		if(h.saving && !isSpecialNecromancyCaptureValid())
 			throw std::runtime_error("Invalid Necromancy special casualty capture");
 		if(h.saving && hasSpecialNecromancyCasualties()
@@ -461,6 +466,10 @@ struct DLL_LINKAGE BattleResult : public Query
 			necromancyUndeadEligibleCasualties = {};
 			necromancySpecialEligibilityCaptured = false;
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_LORD_OF_DEAD))
+			h & necromancyDefeatedArmyHadLivingChampion;
+		else if(!h.saving)
+			necromancyDefeatedArmyHadLivingChampion = false;
 		if(!isSpecialNecromancyCaptureValid())
 			throw std::runtime_error("Invalid Necromancy special casualty capture");
 		assert(battleID != BattleID::NONE);
@@ -1075,6 +1084,11 @@ struct DLL_LINKAGE BattleResultsApplied : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !necromancy.isLordOfDeadSummaryValid())
+			throw std::runtime_error("Invalid Necromancy Lord of the Dead summary");
+		if(h.saving && necromancy.hasLordOfDeadSummary()
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_LORD_OF_DEAD))
+			throw std::runtime_error("Cannot write Necromancy Lord of the Dead summary to an older format");
 		if(h.saving && !necromancy.isSkeletonOutputValid())
 			throw std::runtime_error("Invalid Necromancy Skeleton output form");
 		if(h.saving && !necromancy.isOssuaryDestinationValid())

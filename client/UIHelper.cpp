@@ -75,12 +75,15 @@ std::vector<Component> UIHelper::getNewHorizonsNecromancyComponents(const newHor
 		: CreatureID(CreatureID::decode("core:skeleton"));
 	const auto zombie = CreatureID(CreatureID::decode("core:zombie"));
 	const auto wight = CreatureID(CreatureID::decode("core:wight"));
+	const auto boneDragon = CreatureID(CreatureID::decode("core:boneDragon"));
 	if(result.skeletonsRaised > 0)
 		components.emplace_back(ComponentType::CREATURE, skeleton, result.skeletonsRaised);
 	if(result.zombiesRaised > 0)
 		components.emplace_back(ComponentType::CREATURE, zombie, result.zombiesRaised);
 	if(result.wightsRaised > 0)
 		components.emplace_back(ComponentType::CREATURE, wight, result.wightsRaised);
+	if(result.boneDragonsRaised > 0)
+		components.emplace_back(ComponentType::CREATURE, boneDragon, result.boneDragonsRaised);
 	return components;
 }
 
@@ -92,6 +95,7 @@ std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNe
 	const auto baseSkeleton = CreatureID(CreatureID::decode("core:skeleton"));
 	const auto zombie = CreatureID(CreatureID::decode("core:zombie"));
 	const auto wight = CreatureID(CreatureID::decode("core:wight"));
+	const auto boneDragon = CreatureID(CreatureID::decode("core:boneDragon"));
 	const CGTownInstance * ossuaryTown = nullptr;
 	if(result.ossuaryTown != ObjectInstanceID::NONE && GAME->interface() && GAME->interface()->cb)
 		ossuaryTown = GAME->interface()->cb->getTown(result.ossuaryTown);
@@ -143,6 +147,19 @@ std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNe
 		text.appendRawString("\n");
 	}
 
+	if(result.lordOfDeadSkeletonsConsumed > 0 || result.boneDragonsRaised > 0)
+	{
+		text.appendRawString("Lord of the Dead: ");
+		text.appendNumber(result.lordOfDeadSkeletonsConsumed);
+		text.appendRawString(" base ");
+		text.appendName(baseSkeleton, 1);
+		text.appendRawString(" equivalents -> ");
+		text.appendNumber(result.boneDragonsRaised);
+		text.appendRawString(" ");
+		text.appendName(boneDragon, result.boneDragonsRaised);
+		text.appendRawString("\n");
+	}
+
 	if(result.darkConversionChosen && result.zombiesRaised > 0)
 	{
 		text.appendRawString("Converted: ");
@@ -165,7 +182,11 @@ std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNe
 		text.appendRawString(" per Wight)\n");
 	}
 
-	if(result.skeletonsRaised > 0 || result.zombiesRaised > 0 || result.wightsRaised > 0)
+	const bool hasNecromancyOutput = result.skeletonsRaised > 0
+		|| result.zombiesRaised > 0
+		|| result.wightsRaised > 0
+		|| result.boneDragonsRaised > 0;
+	if(hasNecromancyOutput)
 	{
 		if(result.ossuaryTown != ObjectInstanceID::NONE)
 		{
@@ -202,6 +223,15 @@ std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNe
 			text.appendNumber(result.wightsRaised);
 			text.appendRawString(" ");
 			text.appendName(wight, result.wightsRaised);
+			hasOutput = true;
+		}
+		if(result.boneDragonsRaised > 0)
+		{
+			if(hasOutput)
+				text.appendRawString(" and ");
+			text.appendNumber(result.boneDragonsRaised);
+			text.appendRawString(" ");
+			text.appendName(boneDragon, result.boneDragonsRaised);
 		}
 		text.appendRawString("\n");
 	}

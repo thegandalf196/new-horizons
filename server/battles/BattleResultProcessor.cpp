@@ -29,6 +29,7 @@
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/mapping/CMap.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
+#include "../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/entities/hero/NewHorizonsNecromancy.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
@@ -105,6 +106,32 @@ CreatureID availableNecropolisSkeletonUpgrade(const PlayerState * ownerState)
 		}
 	}
 	return CreatureID::NONE;
+}
+
+bool originalArmyContainsLivingChampion(const CArmedInstance * army,
+	const newHorizonsCreatures::CreatureCategoryRules & categoryRules)
+{
+	if(!army)
+		return false;
+
+	for(const auto & entry : army->Slots())
+	{
+		const auto & stack = entry.second;
+		if(!stack || stack->getCount() <= 0)
+			continue;
+
+		const auto creatureId = stack->getCreatureID();
+		const auto * creature = creatureId.toCreature();
+		if(!creature || creature->hasBonusOfType(BonusType::UNDEAD)
+			|| creature->hasBonusOfType(BonusType::NON_LIVING)
+			|| creature->hasBonusOfType(BonusType::MECHANICAL))
+			continue;
+
+		const auto category = newHorizonsCreatures::creatureCategoryView(categoryRules, creatureId);
+		if(category && category->category == newHorizonsCreatures::CreatureCategory::CHAMPION)
+			return true;
+	}
+	return false;
 }
 
 /// Select the nearest currently owned Necropolis by the same squared-distance
@@ -702,6 +729,7 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 	const auto skeleton = CreatureID(CreatureID::decode("core:skeleton"));
 	const auto zombie = CreatureID(CreatureID::decode("core:zombie"));
 	const auto wight = CreatureID(CreatureID::decode("core:wight"));
+	const auto boneDragon = CreatureID(CreatureID::decode("core:boneDragon"));
 	const auto losingSide = CBattleInfoEssentials::otherSide(result.winner);
 	const auto & eligible = result.necromancyEligibilityCaptured
 		? result.necromancyEligibleCasualties[losingSide]
@@ -726,6 +754,8 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 		newHorizonsNecromancy::MASTER_OF_BONES_ID);
 	const bool ossuary = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 		newHorizonsNecromancy::OSSUARY_ID);
+	const bool lordOfTheDead = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+		newHorizonsNecromancy::LORD_OF_THE_DEAD_ID);
 	const bool blackHarvest = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 		newHorizonsNecromancy::BLACK_HARVEST_ID);
 	const auto * ownerState = masterOfBones || ossuary
@@ -757,7 +787,8 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 		boneCollector, corpsePreservation, darkConversion,
 		true, true, postBattleMana,
 		blackHarvest ? winnerHero->manaLimit() : postBattleMana, eligibleEliteCount, soulHarvester, true, skeletonOutput,
-		nonlivingCasualties, undeadCasualties);
+		nonlivingCasualties, undeadCasualties, lordOfTheDead,
+		result.necromancyDefeatedArmyHadLivingChampion, true);
 	if(!summary.active)
 		return false;
 
@@ -765,12 +796,14 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 	const std::vector<std::pair<CreatureID, int64_t>> outputs = {
 		{raisedSkeleton, summary.skeletonsRaised},
 		{zombie, summary.zombiesRaised},
-		{wight, summary.wightsRaised}};
+		{wight, summary.wightsRaised},
+		{boneDragon, summary.boneDragonsRaised}};
 	if(!validRaisedArmyOutputs(outputs))
 		throw std::runtime_error("Invalid Necromancy army output");
 	if(!validRaisedArmyState(*winnerHero))
 		throw std::runtime_error("Invalid winner army state during Necromancy resolution");
-	const bool hasRaisedOutput = summary.skeletonsRaised > 0 || summary.zombiesRaised > 0 || summary.wightsRaised > 0;
+	const bool hasRaisedOutput = summary.skeletonsRaised > 0 || summary.zombiesRaised > 0
+		|| summary.wightsRaised > 0 || summary.boneDragonsRaised > 0;
 
 	auto acceptedPlan = planRaisedArmy(*winnerHero, outputs);
 	const CArmedInstance * receivingArmy = winnerHero;
@@ -804,6 +837,8 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 		summary.skeletonsRaised = 0;
 		summary.zombiesRaised = 0;
 		summary.wightsRaised = 0;
+		summary.lordOfDeadSkeletonsConsumed = 0;
+		summary.boneDragonsRaised = 0;
 		summary.skeletonCreature = CreatureID::NONE;
 		summary.darkConversionChosen = false;
 		summary.manaRecovered = 0;
@@ -815,19 +850,26 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 
 	applyRaisedArmy(*gameHandler, *receivingArmy, *acceptedPlan);
 	if(destinationTown
-		&& (summary.skeletonsRaised > 0 || summary.zombiesRaised > 0 || summary.wightsRaised > 0))
+		&& (summary.skeletonsRaised > 0 || summary.zombiesRaised > 0
+			|| summary.wightsRaised > 0 || summary.boneDragonsRaised > 0))
 		summary.ossuaryTown = destinationTown->id;
 
 	// Keep the legacy descriptor useful for clients when there is one output
 	// kind. Combined conversions may produce multiple output stacks; leaving the
 	// legacy single-stack field empty avoids a misleading partial popup while
 	// New Horizons clients consume the complete summary below.
-	if(summary.skeletonsRaised > 0 && summary.zombiesRaised == 0 && summary.wightsRaised == 0)
+	if(summary.skeletonsRaised > 0 && summary.zombiesRaised == 0 && summary.wightsRaised == 0
+		&& summary.boneDragonsRaised == 0)
 		resultsApplied.raisedStack = CStackBasicDescriptor(raisedSkeleton, summary.skeletonsRaised);
-	else if(summary.zombiesRaised > 0 && summary.skeletonsRaised == 0 && summary.wightsRaised == 0)
+	else if(summary.zombiesRaised > 0 && summary.skeletonsRaised == 0 && summary.wightsRaised == 0
+		&& summary.boneDragonsRaised == 0)
 		resultsApplied.raisedStack = CStackBasicDescriptor(zombie, summary.zombiesRaised);
-	else if(summary.wightsRaised > 0 && summary.skeletonsRaised == 0 && summary.zombiesRaised == 0)
+	else if(summary.wightsRaised > 0 && summary.skeletonsRaised == 0 && summary.zombiesRaised == 0
+		&& summary.boneDragonsRaised == 0)
 		resultsApplied.raisedStack = CStackBasicDescriptor(wight, summary.wightsRaised);
+	else if(summary.boneDragonsRaised > 0 && summary.skeletonsRaised == 0
+		&& summary.zombiesRaised == 0 && summary.wightsRaised == 0)
+		resultsApplied.raisedStack = CStackBasicDescriptor(boneDragon, summary.boneDragonsRaised);
 	resultsApplied.necromancy = summary;
 	return true;
 }
@@ -1200,6 +1242,13 @@ void BattleResultProcessor::setBattleResult(const CBattleInfoCallback & battle, 
 	const bool graveKnowledge = winnerHero && winnerHero->usesNewHorizonsNecromancy()
 		&& winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 			newHorizonsNecromancy::GRAVE_KNOWLEDGE_ID);
+	const bool lordOfTheDead = winnerHero && winnerHero->usesNewHorizonsNecromancy()
+		&& winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+			newHorizonsNecromancy::LORD_OF_THE_DEAD_ID);
+	if(lordOfTheDead)
+		battleResult->necromancyDefeatedArmyHadLivingChampion = originalArmyContainsLivingChampion(
+			battle.battleGetArmyObject(CBattleInfoEssentials::otherSide(victoriusSide)),
+			battle.getBattle()->getCreatureCategoryRules());
 
 	auto allStacks = battle.battleGetStacksIf([](const CStack * stack){
 

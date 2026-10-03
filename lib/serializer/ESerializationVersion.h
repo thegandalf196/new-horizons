@@ -161,12 +161,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_NECROMANCY_SKELETON_FORM, // explicit upgraded Skeleton output in mixed Necromancy summaries
 	NEW_HORIZONS_NECROMANCY_SPECIAL_CASUALTIES, // captured special corpse pools and weighted conversion summaries
 	NEW_HORIZONS_NECROMANCY_OSSUARY, // authoritative town destination for redirected raised armies
+	NEW_HORIZONS_NECROMANCY_LORD_OF_DEAD, // pre-conversion Bone Dragon result and defeated Champion snapshot
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_NECROMANCY_OSSUARY,
+	CURRENT = NEW_HORIZONS_NECROMANCY_LORD_OF_DEAD,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -222,6 +223,8 @@ static_assert(ESerializationVersion::NEW_HORIZONS_ARMORER_VETERAN > ESerializati
 	"Veteran damage history must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_LEARNING_MENTOR > ESerializationVersion::BATTLE_HERO_MANA_EXPENDITURE,
 	"Mentor weekly state must remain append-only");
+static_assert(ESerializationVersion::NEW_HORIZONS_NECROMANCY_LORD_OF_DEAD > ESerializationVersion::NEW_HORIZONS_NECROMANCY_OSSUARY,
+	"Lord of the Dead results must remain append-only");
 static_assert(ESerializationVersion::CURRENT >= ESerializationVersion::NEW_HORIZONS_MASTERIES);
 static_assert(ESerializationVersion::NEW_HORIZONS_CASTLE_GATE > ESerializationVersion::NEW_HORIZONS_HOUSE_OF_WISDOM);
 static_assert(ESerializationVersion::NEW_HORIZONS_MUSTER > ESerializationVersion::NEW_HORIZONS_CASTLE_GATE);

@@ -3697,7 +3697,7 @@
 					"requires": "expert",
 					"description": "After defeating an army containing at least one Champion-tier living creature, if the base Necromancy result contains at least 12 Skeletons, 12 are automatically replaced with 1 Bone Dragon, once per combat. This conversion resolves before other Necromancy conversion perks. Consume the 12 Skeleton equivalents from Champion/unclassified contributions first, then Elite contributions, then Core contributions; only remaining contributions may fund the later conversions.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "After defeating an army containing at least one Champion-tier living creature, if the base Necromancy result contains at least 12 Skeletons, 12 are automatically replaced with 1 Bone Dragon, once per combat. This conversion resolves before other Necromancy conversion perks. Consume the 12 Skeleton equivalents from Champion/unclassified contributions first, then Elite contributions, then Core contributions; only remaining contributions may fund the later conversions."
 					}
 				}

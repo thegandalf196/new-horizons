@@ -31,6 +31,7 @@ inline constexpr const char * DEATH_LORD_ID = "new-horizons:necromancy.deathLord
 inline constexpr const char * GRAVE_KNOWLEDGE_ID = "new-horizons:necromancy.graveKnowledge";
 inline constexpr const char * MASTER_OF_BONES_ID = "new-horizons:necromancy.masterOfBones";
 inline constexpr const char * OSSUARY_ID = "new-horizons:necromancy.ossuary";
+inline constexpr const char * LORD_OF_THE_DEAD_ID = "new-horizons:necromancy.lordOfTheDead";
 
 /// The post-battle payload is deliberately explicit.  The client must be able
 /// to explain what the authoritative server actually raised, including a
@@ -67,12 +68,21 @@ struct DLL_LINKAGE NecromancyResult
 	CreatureID raisedCreature = CreatureID::NONE;
 	/// Set only when Ossuary successfully delivered the complete output batch to this town's upper army.
 	ObjectInstanceID ossuaryTown = ObjectInstanceID::NONE;
+	/// Base Skeleton equivalents consumed before Dark Conversion and Soul Harvester.
+	int32_t lordOfDeadSkeletonsConsumed = 0;
+	/// Bone Dragons actually delivered by Lord of the Dead (zero or one).
+	int32_t boneDragonsRaised = 0;
 
 	template <typename Handler>
 	void serialize(Handler & h)
 	{
 		if(h.saving && !isOssuaryDestinationValid())
 			throw std::runtime_error("Invalid Necromancy Ossuary destination");
+		if(h.saving && !isLordOfDeadSummaryValid())
+			throw std::runtime_error("Invalid Necromancy Lord of the Dead summary");
+		if(h.saving && hasLordOfDeadSummary()
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_LORD_OF_DEAD))
+			throw std::runtime_error("Cannot write Necromancy Lord of the Dead summary to an older format");
 		if(h.saving && ossuaryTown != ObjectInstanceID::NONE
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_OSSUARY))
 			throw std::runtime_error("Cannot write Necromancy Ossuary destination to an older format");
@@ -150,15 +160,42 @@ struct DLL_LINKAGE NecromancyResult
 		{
 			ossuaryTown = ObjectInstanceID::NONE;
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_LORD_OF_DEAD))
+		{
+			h & lordOfDeadSkeletonsConsumed;
+			h & boneDragonsRaised;
+		}
+		else if(!h.saving)
+		{
+			lordOfDeadSkeletonsConsumed = 0;
+			boneDragonsRaised = 0;
+		}
+		if(!isLordOfDeadSummaryValid())
+			throw std::runtime_error("Invalid Necromancy Lord of the Dead summary");
 		if(!isOssuaryDestinationValid())
 			throw std::runtime_error("Invalid Necromancy Ossuary destination");
+	}
+
+	bool hasLordOfDeadSummary() const
+	{
+		return lordOfDeadSkeletonsConsumed != 0 || boneDragonsRaised != 0;
+	}
+
+	bool isLordOfDeadSummaryValid() const
+	{
+		if(lordOfDeadSkeletonsConsumed < 0 || (boneDragonsRaised != 0 && boneDragonsRaised != 1))
+			return false;
+		if(lordOfDeadSkeletonsConsumed == 0 && boneDragonsRaised == 0)
+			return true;
+		return lordOfDeadSkeletonsConsumed == 12 && boneDragonsRaised == 1
+			&& skeletonsOffered >= 12 && active && applied && !blockedByArmyCapacity;
 	}
 
 	bool isOssuaryDestinationValid() const
 	{
 		return ossuaryTown == ObjectInstanceID::NONE || (ossuaryTown.hasValue()
 			&& active && applied && !blockedByArmyCapacity
-			&& (skeletonsRaised > 0 || zombiesRaised > 0 || wightsRaised > 0));
+			&& (skeletonsRaised > 0 || zombiesRaised > 0 || wightsRaised > 0 || boneDragonsRaised > 0));
 	}
 
 	bool isSpecialCasualtySummaryValid() const
@@ -186,7 +223,7 @@ struct DLL_LINKAGE NecromancyResult
 			&& skeletonsOffered == 0 && skeletonsRaised == 0 && zombiesRaised == 0
 			&& wightsRaised == 0 && manaRecovered == 0 && raisedCreature == CreatureID::NONE
 			&& skeletonCreature == CreatureID::NONE && !hasSpecialCasualtySummary()
-			&& ossuaryTown == ObjectInstanceID::NONE;
+			&& ossuaryTown == ObjectInstanceID::NONE && !hasLordOfDeadSummary();
 	}
 };
 
@@ -237,16 +274,19 @@ DLL_LINKAGE SpecialCasualtyCounts countEligibleUndeadCasualties(
 	const std::map<CreatureID, si32> & casualties,
 	const newHorizonsCreatures::CreatureCategoryRules & categoryRules);
 
-/// Resolve base Necromancy once over all eligible casualties; Dark Conversion
-/// consumes complete groups of three Skeletons attributable to Core casualties,
-/// while Soul Harvester consumes complete groups of six attributable to Elite
-/// casualties. Each category is independently floored for its conversion gate,
-/// while every remainder from global base rounding remains Skeletons. Slot
-/// booleans preflight all output stacks atomically before state mutation.
+/// Resolve base Necromancy once over all eligible casualties. Lord of the Dead
+/// first consumes up to twelve base Skeleton equivalents from Champion/unclassified,
+/// then Elite, then Core contributions. Dark Conversion and Soul Harvester then
+/// consume complete groups attributable to the remaining Core and Elite pools.
+/// Each category is independently floored for its conversion gate, while every
+/// remainder from global base rounding remains Skeletons. Slot booleans preflight
+/// all output stacks atomically before state mutation.
 DLL_LINKAGE NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleCoreCasualties,
 	bool boneCollector, bool corpsePreservation, bool darkConversionAvailable,
 	bool skeletonSlotAvailable, bool zombieSlotAvailable, int32_t currentMana, int32_t manaLimit,
 	int32_t eligibleEliteCasualties = 0, bool soulHarvester = false, bool wightSlotAvailable = true,
 	CreatureID skeletonOutput = CreatureID::NONE,
-	SpecialCasualtyCounts nonliving = {}, SpecialCasualtyCounts undead = {});
+	SpecialCasualtyCounts nonliving = {}, SpecialCasualtyCounts undead = {},
+	bool lordOfTheDead = false, bool defeatedArmyHadLivingChampion = false,
+	bool boneDragonSlotAvailable = true);
 }

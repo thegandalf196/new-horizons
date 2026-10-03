@@ -196,6 +196,7 @@ ACTIVE_PERKS = {
     "new-horizons:necromancy.deathLord",
     "new-horizons:necromancy.graveKnowledge",
     "new-horizons:necromancy.ossuary",
+    "new-horizons:necromancy.lordOfTheDead",
     "new-horizons:bloodrage.warDrums",
     "new-horizons:metamagic.spellSequencing",
     "new-horizons:metamagic.arcaneEconomy",

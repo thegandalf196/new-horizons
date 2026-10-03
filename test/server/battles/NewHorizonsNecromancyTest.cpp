@@ -213,6 +213,73 @@ TEST(NewHorizonsNecromancy, MasterOfBonesKeepsItsFormAcrossMixedOutputsAndAtomic
 	EXPECT_TRUE(blocked.isSkeletonOutputValid());
 }
 
+TEST(NewHorizonsNecromancy, LordOfTheDeadConsumesTwelveBeforeCategoryConversions)
+{
+	const auto championArmy = resolve(3, 40, 40, false, false, true, true, true, 0, 0,
+		0, false, true, CreatureID::NONE, {}, {}, true, true, true);
+	EXPECT_EQ(championArmy.skeletonsOffered, 12);
+	EXPECT_EQ(championArmy.lordOfDeadSkeletonsConsumed, 12);
+	EXPECT_EQ(championArmy.boneDragonsRaised, 1);
+	EXPECT_EQ(championArmy.zombiesRaised, 0);
+	EXPECT_EQ(championArmy.wightsRaised, 0);
+	EXPECT_EQ(championArmy.skeletonsRaised, 0);
+	EXPECT_EQ(championArmy.raisedCreature, creature("core:boneDragon"));
+	EXPECT_TRUE(championArmy.applied);
+
+	// At Expert, 50 total casualties with 20 Core + 20 Elite produce 15
+	// Skeletons: 3 unclassified, then 6 Elite, then 3 Core are consumed. Only
+	// the final 3 Core contributions remain to form a Zombie afterward.
+	const auto orderedConsumption = resolve(3, 50, 20, false, false, true, true, true, 0, 0,
+		20, true, true, CreatureID::NONE, {}, {}, true, true, true);
+	EXPECT_EQ(orderedConsumption.skeletonsOffered, 15);
+	EXPECT_EQ(orderedConsumption.lordOfDeadSkeletonsConsumed, 12);
+	EXPECT_EQ(orderedConsumption.boneDragonsRaised, 1);
+	EXPECT_EQ(orderedConsumption.zombiesRaised, 1);
+	EXPECT_EQ(orderedConsumption.wightsRaised, 0);
+	EXPECT_EQ(orderedConsumption.skeletonsRaised, 0);
+	EXPECT_TRUE(orderedConsumption.applied);
+
+	// Bone Dragon admission is part of the same atomic preflight as later
+	// category conversions; rejecting it clears the whole mixed result.
+	const auto blockedDragon = resolve(3, 50, 20, false, false, true, true, true, 0, 0,
+		20, true, true, CreatureID::NONE, {}, {}, true, true, false);
+	EXPECT_EQ(blockedDragon.skeletonsOffered, 15);
+	EXPECT_TRUE(blockedDragon.blockedByArmyCapacity);
+	EXPECT_FALSE(blockedDragon.applied);
+	EXPECT_EQ(blockedDragon.lordOfDeadSkeletonsConsumed, 0);
+	EXPECT_EQ(blockedDragon.boneDragonsRaised, 0);
+	EXPECT_EQ(blockedDragon.zombiesRaised, 0);
+	EXPECT_EQ(blockedDragon.wightsRaised, 0);
+	EXPECT_EQ(blockedDragon.skeletonsRaised, 0);
+}
+
+TEST(NewHorizonsNecromancy, LordOfTheDeadRequiresTwelveSkeletonsAndAQualifiedArmy)
+{
+	const auto belowThreshold = resolve(3, 39, 39, false, false, true, true, true, 0, 0,
+		0, false, true, CreatureID::NONE, {}, {}, true, true, true);
+	EXPECT_EQ(belowThreshold.skeletonsOffered, 11);
+	EXPECT_EQ(belowThreshold.lordOfDeadSkeletonsConsumed, 0);
+	EXPECT_EQ(belowThreshold.boneDragonsRaised, 0);
+	EXPECT_EQ(belowThreshold.zombiesRaised, 3);
+	EXPECT_EQ(belowThreshold.skeletonsRaised, 2);
+
+	const auto noLivingChampion = resolve(3, 40, 40, false, false, true, true, true, 0, 0,
+		0, false, true, CreatureID::NONE, {}, {}, true, false, true);
+	EXPECT_EQ(noLivingChampion.skeletonsOffered, 12);
+	EXPECT_EQ(noLivingChampion.lordOfDeadSkeletonsConsumed, 0);
+	EXPECT_EQ(noLivingChampion.boneDragonsRaised, 0);
+	EXPECT_EQ(noLivingChampion.zombiesRaised, 4);
+	EXPECT_EQ(noLivingChampion.skeletonsRaised, 0);
+
+	const auto inactivePerk = resolve(3, 40, 40, false, false, true, true, true, 0, 0,
+		0, false, true, CreatureID::NONE, {}, {}, false, true, true);
+	EXPECT_EQ(inactivePerk.skeletonsOffered, 12);
+	EXPECT_EQ(inactivePerk.lordOfDeadSkeletonsConsumed, 0);
+	EXPECT_EQ(inactivePerk.boneDragonsRaised, 0);
+	EXPECT_EQ(inactivePerk.zombiesRaised, 4);
+	EXPECT_EQ(inactivePerk.skeletonsRaised, 0);
+}
+
 TEST(NewHorizonsNecromancy, DeathLordAndGraveKnowledgeUseIndependentFlooredRates)
 {
 	const auto deathLordBelowThreshold = resolve(2, 0, 0, false, false, false, true, true, 0, 0,
@@ -1384,6 +1451,115 @@ public:
 	}
 };
 
+class NewHorizonsNecromancyLordOfTheDeadAdmissionAITest
+	: public NewHorizonsNecromancyOssuaryAdmissionAITest
+{
+public:
+	NewHorizonsNecromancyLordOfTheDeadAdmissionAITest()
+	{
+		skeletonDwellingScenario = SkeletonDwellingScenario::OWNED_UPGRADE_BUILT;
+	}
+
+protected:
+	void assertLordOfTheDeadRegistryRow()
+	{
+		const auto & perks = attackerSideHero->getPerkState().rules
+			["skills"][newHorizonsNecromancy::SKILL_ID]["perks"].Vector();
+		const auto lordOfTheDead = std::find_if(perks.begin(), perks.end(), [](const auto & perk)
+		{
+			return perk["id"].String() == newHorizonsNecromancy::LORD_OF_THE_DEAD_ID;
+		});
+		ASSERT_NE(lordOfTheDead, perks.end());
+		EXPECT_EQ((*lordOfTheDead)["name"].String(), "Lord of the Dead");
+		EXPECT_EQ((*lordOfTheDead)["requires"].String(), "expert");
+		EXPECT_EQ((*lordOfTheDead)["effect"]["status"].String(), "active");
+		RecordProperty("lord_of_the_dead_registry_id", (*lordOfTheDead)["id"].String());
+		RecordProperty("lord_of_the_dead_registry_name", (*lordOfTheDead)["name"].String());
+		RecordProperty("lord_of_the_dead_registry_required_rank", (*lordOfTheDead)["requires"].String());
+		RecordProperty("lord_of_the_dead_registry_effect_status", (*lordOfTheDead)["effect"]["status"].String());
+	}
+
+	void prepareExpertLordOfTheDeadNecromancer()
+	{
+		prepareAdvancedOssuaryNecromancer(newHorizonsNecromancy::DARK_CONVERSION_ID);
+		const int necromancyIndex = SecondarySkill::decode(newHorizonsNecromancy::SKILL_ID);
+		ASSERT_GE(necromancyIndex, 0);
+		const SecondarySkill necromancy(necromancyIndex);
+		gameHandler->levelUpHero(attackerSideHero, necromancy, false);
+		ASSERT_EQ(attackerSideHero->getSecSkillLevel(necromancy), MasteryLevel::EXPERT);
+		assertLordOfTheDeadRegistryRow();
+		ASSERT_TRUE(selectPerkThroughNormalOffer(attackerSideHero,
+			newHorizonsNecromancy::LORD_OF_THE_DEAD_ID, MasteryLevel::EXPERT));
+		ASSERT_TRUE(attackerSideHero->getPerkState().hasSelection(newHorizonsNecromancy::SKILL_ID,
+			newHorizonsNecromancy::LORD_OF_THE_DEAD_ID));
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+			newHorizonsNecromancy::LORD_OF_THE_DEAD_ID));
+
+		RecordProperty("lord_of_the_dead_activation_override_applied", "false");
+		RecordProperty("lord_of_the_dead_skill_rank", "expert");
+		RecordProperty("lord_of_the_dead_selected", "true");
+		RecordProperty("lord_of_the_dead_selected_perk", newHorizonsNecromancy::LORD_OF_THE_DEAD_ID);
+		RecordProperty("lord_of_the_dead_basic_perk", newHorizonsNecromancy::DARK_CONVERSION_ID);
+		RecordProperty("lord_of_the_dead_advanced_perk", newHorizonsNecromancy::OSSUARY_ID);
+	}
+};
+
+TEST_F(NewHorizonsNecromancyLordOfTheDeadAdmissionAITest,
+	ExpertOfferConsumesCoreShareForBoneDragonAndDeliversAtomicOssuaryOutput)
+{
+	ASSERT_NE(attackerSideHero, nullptr);
+	ASSERT_NE(defenderSideHero, nullptr);
+	ASSERT_NE(skeletonDwellingTown, nullptr);
+	ASSERT_EQ(skeletonDwellingTown->getOwner(), PlayerColor(0));
+	ASSERT_EQ(skeletonDwellingTown->getUpperArmy(), skeletonDwellingTown);
+	prepareExpertLordOfTheDeadNecromancer();
+	fillFillerSlots(1, GameConstants::ARMY_SIZE - 1);
+	ASSERT_TRUE(attackerSideHero->getFreeSlots().empty());
+
+	const auto pikeman = creature("core:pikeman");
+	const auto champion = creature("core:archangel");
+	const auto pikemanCategory = gameState()->getCreatureCategory(pikeman);
+	const auto championCategory = gameState()->getCreatureCategory(champion);
+	ASSERT_TRUE(pikemanCategory);
+	ASSERT_TRUE(championCategory);
+	EXPECT_EQ(pikemanCategory->category, newHorizonsCreatures::CreatureCategory::CORE);
+	EXPECT_EQ(championCategory->category, newHorizonsCreatures::CreatureCategory::CHAMPION);
+	ASSERT_TRUE(champion.toCreature());
+	EXPECT_FALSE(champion.toCreature()->hasBonusOfType(BonusType::UNDEAD));
+	EXPECT_FALSE(champion.toCreature()->hasBonusOfType(BonusType::NON_LIVING));
+	EXPECT_FALSE(champion.toCreature()->hasBonusOfType(BonusType::MECHANICAL));
+	defenderSideHero->clearSlots();
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), pikeman, 50));
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(1), champion, 1));
+
+	const auto heroBefore = snapshotArmy(*attackerSideHero);
+	ASSERT_EQ(skeletonDwellingTown->stacksCount(), 0);
+	resolveOssuaryBattle();
+
+	const auto & result = recordingServer->battleResults.back().necromancy;
+	ASSERT_TRUE(result.active);
+	EXPECT_EQ(result.rank, MasteryLevel::EXPERT);
+	EXPECT_EQ(result.eligibleCasualties, 51);
+	EXPECT_EQ(result.skeletonsOffered, 15);
+	EXPECT_EQ(result.lordOfDeadSkeletonsConsumed, 12);
+	EXPECT_EQ(result.boneDragonsRaised, 1);
+	EXPECT_EQ(result.zombiesRaised, 1);
+	EXPECT_EQ(result.wightsRaised, 0);
+	EXPECT_EQ(result.skeletonsRaised, 0);
+	EXPECT_EQ(result.raisedCreature, CreatureID::NONE)
+		<< "The mixed Bone Dragon and Zombie batch has no single legacy creature descriptor";
+	EXPECT_TRUE(result.applied);
+	EXPECT_FALSE(result.blockedByArmyCapacity);
+	EXPECT_EQ(result.ossuaryTown, skeletonDwellingTown->id);
+	EXPECT_EQ(snapshotArmy(*attackerSideHero), heroBefore)
+		<< "The full hero army must not receive a partial conversion before Ossuary";
+	EXPECT_EQ(armyCreatureCount(*skeletonDwellingTown, creature("core:boneDragon")), 1);
+	EXPECT_EQ(armyCreatureCount(*skeletonDwellingTown, creature("core:zombie")), 1);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, creature("core:boneDragon")), 0);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, creature("core:zombie")), 0);
+	EXPECT_EQ(recordingServer->systemMessages, 0);
+}
+
 TEST_F(NewHorizonsNecromancyOssuaryForeignNearestAdmissionAITest,
 	PostBattleSlotsFailureDeliversMixedOutputsToOwnedTownUpperArmy)
 {
@@ -2236,6 +2412,8 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	outgoing.necromancy.raisedCreature = creature("core:zombie");
 	outgoing.necromancy.skeletonCreature = creature("core:skeletonWarrior");
 	outgoing.necromancy.ossuaryTown = ObjectInstanceID(23);
+	outgoing.necromancy.lordOfDeadSkeletonsConsumed = 12;
+	outgoing.necromancy.boneDragonsRaised = 1;
 
 	CMemorySerializer wire;
 	wire.oser & outgoing;
@@ -2252,6 +2430,8 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	EXPECT_EQ(incoming.necromancy.manaRecovered, 10);
 	EXPECT_EQ(incoming.necromancy.skeletonCreature, creature("core:skeletonWarrior"));
 	EXPECT_EQ(incoming.necromancy.ossuaryTown, ObjectInstanceID(23));
+	EXPECT_EQ(incoming.necromancy.lordOfDeadSkeletonsConsumed, 12);
+	EXPECT_EQ(incoming.necromancy.boneDragonsRaised, 1);
 
 	CMemorySerializer directWire;
 	directWire.oser & outgoing.necromancy;
@@ -2264,6 +2444,39 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	EXPECT_EQ(directIncoming.graveKnowledgeSkeletons, 5);
 	EXPECT_EQ(directIncoming.skeletonCreature, creature("core:skeletonWarrior"));
 	EXPECT_EQ(directIncoming.ossuaryTown, ObjectInstanceID(23));
+	EXPECT_EQ(directIncoming.lordOfDeadSkeletonsConsumed, 12);
+	EXPECT_EQ(directIncoming.boneDragonsRaised, 1);
+
+	// A town-delivered Dragon may be the only creature output. This exercises
+	// destination validation after the appended Lord of the Dead fields.
+	newHorizonsNecromancy::NecromancyResult dragonOnly;
+	dragonOnly.active = true;
+	dragonOnly.rank = MasteryLevel::EXPERT;
+	dragonOnly.applied = true;
+	dragonOnly.skeletonsOffered = 12;
+	dragonOnly.raisedCreature = creature("core:boneDragon");
+	dragonOnly.ossuaryTown = ObjectInstanceID(24);
+	dragonOnly.lordOfDeadSkeletonsConsumed = 12;
+	dragonOnly.boneDragonsRaised = 1;
+	CMemorySerializer dragonOnlyDirectWire;
+	dragonOnlyDirectWire.oser & dragonOnly;
+	newHorizonsNecromancy::NecromancyResult dragonOnlyDirectDecoded;
+	dragonOnlyDirectWire.iser & dragonOnlyDirectDecoded;
+	EXPECT_EQ(dragonOnlyDirectDecoded.ossuaryTown, ObjectInstanceID(24));
+	EXPECT_EQ(dragonOnlyDirectDecoded.lordOfDeadSkeletonsConsumed, 12);
+	EXPECT_EQ(dragonOnlyDirectDecoded.boneDragonsRaised, 1);
+	EXPECT_EQ(dragonOnlyDirectDecoded.raisedCreature, creature("core:boneDragon"));
+
+	BattleResultsApplied dragonOnlyOuter;
+	dragonOnlyOuter.battleID = BattleID(12);
+	dragonOnlyOuter.necromancy = dragonOnly;
+	CMemorySerializer dragonOnlyOuterWire;
+	dragonOnlyOuterWire.oser & dragonOnlyOuter;
+	BattleResultsApplied dragonOnlyOuterDecoded;
+	dragonOnlyOuterWire.iser & dragonOnlyOuterDecoded;
+	EXPECT_EQ(dragonOnlyOuterDecoded.necromancy.ossuaryTown, ObjectInstanceID(24));
+	EXPECT_EQ(dragonOnlyOuterDecoded.necromancy.lordOfDeadSkeletonsConsumed, 12);
+	EXPECT_EQ(dragonOnlyOuterDecoded.necromancy.boneDragonsRaised, 1);
 
 	const auto necromancyWithoutWightsVersion = ESerializationVersion::NEW_HORIZONS_NECROMANCY;
 	newHorizonsNecromancy::NecromancyResult legacyResult = outgoing.necromancy;
@@ -2274,6 +2487,8 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacyResult.graveKnowledgeSkeletons = 0;
 	legacyResult.skeletonCreature = CreatureID::NONE;
 	legacyResult.ossuaryTown = ObjectInstanceID::NONE;
+	legacyResult.lordOfDeadSkeletonsConsumed = 0;
+	legacyResult.boneDragonsRaised = 0;
 	CMemorySerializer legacyResultWire;
 	legacyResultWire.oser.version = necromancyWithoutWightsVersion;
 	legacyResultWire.oser & legacyResult;
@@ -2286,6 +2501,8 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacyResultIncoming.graveKnowledgeSkeletons = 5;
 	legacyResultIncoming.skeletonCreature = creature("core:skeletonWarrior");
 	legacyResultIncoming.ossuaryTown = ObjectInstanceID(77);
+	legacyResultIncoming.lordOfDeadSkeletonsConsumed = 12;
+	legacyResultIncoming.boneDragonsRaised = 1;
 	legacyResultWire.iser & legacyResultIncoming;
 	EXPECT_EQ(legacyResultIncoming.wightsRaised, 0);
 	EXPECT_EQ(legacyResultIncoming.deathLordCasualties, 0);
@@ -2294,6 +2511,8 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	EXPECT_EQ(legacyResultIncoming.graveKnowledgeSkeletons, 0);
 	EXPECT_EQ(legacyResultIncoming.skeletonCreature, CreatureID::NONE);
 	EXPECT_EQ(legacyResultIncoming.ossuaryTown, ObjectInstanceID::NONE);
+	EXPECT_EQ(legacyResultIncoming.lordOfDeadSkeletonsConsumed, 0);
+	EXPECT_EQ(legacyResultIncoming.boneDragonsRaised, 0);
 
 	CMemorySerializer legacyOuterWire;
 	legacyOuterWire.oser.version = necromancyWithoutWightsVersion;
@@ -2305,6 +2524,8 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacyOuter.necromancy.graveKnowledgeSkeletons = 0;
 	legacyOuter.necromancy.skeletonCreature = CreatureID::NONE;
 	legacyOuter.necromancy.ossuaryTown = ObjectInstanceID::NONE;
+	legacyOuter.necromancy.lordOfDeadSkeletonsConsumed = 0;
+	legacyOuter.necromancy.boneDragonsRaised = 0;
 	legacyOuterWire.oser & legacyOuter;
 	legacyOuterWire.iser.version = necromancyWithoutWightsVersion;
 	BattleResultsApplied legacyOuterIncoming;
@@ -2315,6 +2536,8 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacyOuterIncoming.necromancy.graveKnowledgeSkeletons = 5;
 	legacyOuterIncoming.necromancy.skeletonCreature = creature("core:skeletonWarrior");
 	legacyOuterIncoming.necromancy.ossuaryTown = ObjectInstanceID(77);
+	legacyOuterIncoming.necromancy.lordOfDeadSkeletonsConsumed = 12;
+	legacyOuterIncoming.necromancy.boneDragonsRaised = 1;
 	legacyOuterWire.iser & legacyOuterIncoming;
 	EXPECT_EQ(legacyOuterIncoming.necromancy.wightsRaised, 0);
 	EXPECT_EQ(legacyOuterIncoming.necromancy.deathLordCasualties, 0);
@@ -2323,6 +2546,8 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	EXPECT_EQ(legacyOuterIncoming.necromancy.graveKnowledgeSkeletons, 0);
 	EXPECT_EQ(legacyOuterIncoming.necromancy.skeletonCreature, CreatureID::NONE);
 	EXPECT_EQ(legacyOuterIncoming.necromancy.ossuaryTown, ObjectInstanceID::NONE);
+	EXPECT_EQ(legacyOuterIncoming.necromancy.lordOfDeadSkeletonsConsumed, 0);
+	EXPECT_EQ(legacyOuterIncoming.necromancy.boneDragonsRaised, 0);
 
 	const auto necromancyWithoutSkeletonFormVersion = ESerializationVersion::NEW_HORIZONS_NECROMANCY_WIGHTS;
 	newHorizonsNecromancy::NecromancyResult legacySkeletonResult = outgoing.necromancy;
@@ -2332,6 +2557,8 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacySkeletonResult.deathLordSkeletons = 0;
 	legacySkeletonResult.graveKnowledgeSkeletons = 0;
 	legacySkeletonResult.ossuaryTown = ObjectInstanceID::NONE;
+	legacySkeletonResult.lordOfDeadSkeletonsConsumed = 0;
+	legacySkeletonResult.boneDragonsRaised = 0;
 	CMemorySerializer legacySkeletonResultWire;
 	legacySkeletonResultWire.oser.version = necromancyWithoutSkeletonFormVersion;
 	legacySkeletonResultWire.oser & legacySkeletonResult;
@@ -2351,6 +2578,8 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacySkeletonOuter.necromancy.deathLordSkeletons = 0;
 	legacySkeletonOuter.necromancy.graveKnowledgeSkeletons = 0;
 	legacySkeletonOuter.necromancy.ossuaryTown = ObjectInstanceID::NONE;
+	legacySkeletonOuter.necromancy.lordOfDeadSkeletonsConsumed = 0;
+	legacySkeletonOuter.necromancy.boneDragonsRaised = 0;
 	legacySkeletonOuterWire.oser & legacySkeletonOuter;
 	legacySkeletonOuterWire.iser.version = necromancyWithoutSkeletonFormVersion;
 	BattleResultsApplied legacySkeletonOuterIncoming;
@@ -2366,6 +2595,8 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacySpecialResult.deathLordSkeletons = 0;
 	legacySpecialResult.graveKnowledgeSkeletons = 0;
 	legacySpecialResult.ossuaryTown = ObjectInstanceID::NONE;
+	legacySpecialResult.lordOfDeadSkeletonsConsumed = 0;
+	legacySpecialResult.boneDragonsRaised = 0;
 	CMemorySerializer legacySpecialResultWire;
 	legacySpecialResultWire.oser.version = necromancyWithoutSpecialCasualtiesVersion;
 	legacySpecialResultWire.oser & legacySpecialResult;
@@ -2376,12 +2607,16 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacySpecialResultIncoming.deathLordSkeletons = 8;
 	legacySpecialResultIncoming.graveKnowledgeSkeletons = 5;
 	legacySpecialResultIncoming.ossuaryTown = ObjectInstanceID(77);
+	legacySpecialResultIncoming.lordOfDeadSkeletonsConsumed = 12;
+	legacySpecialResultIncoming.boneDragonsRaised = 1;
 	legacySpecialResultWire.iser & legacySpecialResultIncoming;
 	EXPECT_EQ(legacySpecialResultIncoming.deathLordCasualties, 0);
 	EXPECT_EQ(legacySpecialResultIncoming.graveKnowledgeCasualties, 0);
 	EXPECT_EQ(legacySpecialResultIncoming.deathLordSkeletons, 0);
 	EXPECT_EQ(legacySpecialResultIncoming.graveKnowledgeSkeletons, 0);
 	EXPECT_EQ(legacySpecialResultIncoming.ossuaryTown, ObjectInstanceID::NONE);
+	EXPECT_EQ(legacySpecialResultIncoming.lordOfDeadSkeletonsConsumed, 0);
+	EXPECT_EQ(legacySpecialResultIncoming.boneDragonsRaised, 0);
 
 	CMemorySerializer legacySpecialOuterWire;
 	legacySpecialOuterWire.oser.version = necromancyWithoutSpecialCasualtiesVersion;
@@ -2391,6 +2626,8 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacySpecialOuter.necromancy.deathLordSkeletons = 0;
 	legacySpecialOuter.necromancy.graveKnowledgeSkeletons = 0;
 	legacySpecialOuter.necromancy.ossuaryTown = ObjectInstanceID::NONE;
+	legacySpecialOuter.necromancy.lordOfDeadSkeletonsConsumed = 0;
+	legacySpecialOuter.necromancy.boneDragonsRaised = 0;
 	legacySpecialOuterWire.oser & legacySpecialOuter;
 	legacySpecialOuterWire.iser.version = necromancyWithoutSpecialCasualtiesVersion;
 	BattleResultsApplied legacySpecialOuterIncoming;
@@ -2399,12 +2636,16 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacySpecialOuterIncoming.necromancy.deathLordSkeletons = 8;
 	legacySpecialOuterIncoming.necromancy.graveKnowledgeSkeletons = 5;
 	legacySpecialOuterIncoming.necromancy.ossuaryTown = ObjectInstanceID(77);
+	legacySpecialOuterIncoming.necromancy.lordOfDeadSkeletonsConsumed = 12;
+	legacySpecialOuterIncoming.necromancy.boneDragonsRaised = 1;
 	legacySpecialOuterWire.iser & legacySpecialOuterIncoming;
 	EXPECT_EQ(legacySpecialOuterIncoming.necromancy.deathLordCasualties, 0);
 	EXPECT_EQ(legacySpecialOuterIncoming.necromancy.graveKnowledgeCasualties, 0);
 	EXPECT_EQ(legacySpecialOuterIncoming.necromancy.deathLordSkeletons, 0);
 	EXPECT_EQ(legacySpecialOuterIncoming.necromancy.graveKnowledgeSkeletons, 0);
 	EXPECT_EQ(legacySpecialOuterIncoming.necromancy.ossuaryTown, ObjectInstanceID::NONE);
+	EXPECT_EQ(legacySpecialOuterIncoming.necromancy.lordOfDeadSkeletonsConsumed, 0);
+	EXPECT_EQ(legacySpecialOuterIncoming.necromancy.boneDragonsRaised, 0);
 
 	newHorizonsNecromancy::NecromancyResult unsupportedDirect;
 	unsupportedDirect.wightsRaised = 1;
@@ -2543,6 +2784,7 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	BattleResult result;
 	result.battleID = BattleID(2);
 	result.necromancyEligibilityCaptured = true;
+	result.necromancyDefeatedArmyHadLivingChampion = true;
 	result.necromancyEligibleCasualties[BattleSide::DEFENDER][creature("core:pikeman")] = 7;
 	result.necromancySpecialEligibilityCaptured = true;
 	result.necromancyNonlivingEligibleCasualties[BattleSide::DEFENDER][creature("core:ironGolem")] = 13;
@@ -2552,6 +2794,7 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	BattleResult resultDecoded;
 	resultWire.iser & resultDecoded;
 	EXPECT_TRUE(resultDecoded.necromancyEligibilityCaptured);
+	EXPECT_TRUE(resultDecoded.necromancyDefeatedArmyHadLivingChampion);
 	EXPECT_EQ(resultDecoded.necromancyEligibleCasualties[BattleSide::DEFENDER][creature("core:pikeman")], 7);
 	EXPECT_TRUE(resultDecoded.necromancySpecialEligibilityCaptured);
 	EXPECT_EQ(resultDecoded.necromancyNonlivingEligibleCasualties[BattleSide::DEFENDER]
@@ -2563,18 +2806,21 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacySpecialCapture.necromancySpecialEligibilityCaptured = false;
 	legacySpecialCapture.necromancyNonlivingEligibleCasualties = {};
 	legacySpecialCapture.necromancyUndeadEligibleCasualties = {};
+	legacySpecialCapture.necromancyDefeatedArmyHadLivingChampion = false;
 	CMemorySerializer legacySpecialCaptureWire;
 	legacySpecialCaptureWire.oser.version = necromancyWithoutSpecialCasualtiesVersion;
 	legacySpecialCaptureWire.oser & legacySpecialCapture;
 	legacySpecialCaptureWire.iser.version = necromancyWithoutSpecialCasualtiesVersion;
 	BattleResult legacySpecialCaptureDecoded;
 	legacySpecialCaptureDecoded.necromancySpecialEligibilityCaptured = true;
+	legacySpecialCaptureDecoded.necromancyDefeatedArmyHadLivingChampion = true;
 	legacySpecialCaptureDecoded.necromancyNonlivingEligibleCasualties[BattleSide::ATTACKER]
 		[creature("core:ironGolem")] = 99;
 	legacySpecialCaptureDecoded.necromancyUndeadEligibleCasualties[BattleSide::ATTACKER]
 		[creature("core:vampire")] = 99;
 	legacySpecialCaptureWire.iser & legacySpecialCaptureDecoded;
 	EXPECT_FALSE(legacySpecialCaptureDecoded.necromancySpecialEligibilityCaptured);
+	EXPECT_FALSE(legacySpecialCaptureDecoded.necromancyDefeatedArmyHadLivingChampion);
 	EXPECT_TRUE(legacySpecialCaptureDecoded.necromancyNonlivingEligibleCasualties[BattleSide::ATTACKER].empty());
 	EXPECT_TRUE(legacySpecialCaptureDecoded.necromancyUndeadEligibleCasualties[BattleSide::ATTACKER].empty());
 	EXPECT_TRUE(legacySpecialCaptureDecoded.necromancyNonlivingEligibleCasualties[BattleSide::DEFENDER].empty());
@@ -2592,6 +2838,52 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	EXPECT_THROW(unsupportedSpecialCaptureWire.oser & unsupportedSpecialCapture, std::runtime_error);
 	EXPECT_TRUE(unsupportedSpecialCaptureWire.extractBuffer().empty())
 		<< "An older BattleResult writer must reject special casualty capture before writing bytes";
+
+	const auto necromancyWithoutLordOfTheDeadVersion = ESerializationVersion::NEW_HORIZONS_NECROMANCY_OSSUARY;
+	newHorizonsNecromancy::NecromancyResult unsupportedLordOfTheDeadDirect;
+	unsupportedLordOfTheDeadDirect.active = true;
+	unsupportedLordOfTheDeadDirect.applied = true;
+	unsupportedLordOfTheDeadDirect.skeletonsOffered = 12;
+	unsupportedLordOfTheDeadDirect.lordOfDeadSkeletonsConsumed = 12;
+	unsupportedLordOfTheDeadDirect.boneDragonsRaised = 1;
+	CMemorySerializer unsupportedLordOfTheDeadDirectWire;
+	unsupportedLordOfTheDeadDirectWire.oser.version = necromancyWithoutLordOfTheDeadVersion;
+	EXPECT_THROW(unsupportedLordOfTheDeadDirectWire.oser & unsupportedLordOfTheDeadDirect, std::runtime_error);
+	EXPECT_TRUE(unsupportedLordOfTheDeadDirectWire.extractBuffer().empty())
+		<< "An older direct result writer must reject Lord of the Dead output before writing bytes";
+
+	BattleResultsApplied unsupportedLordOfTheDeadOuter;
+	unsupportedLordOfTheDeadOuter.battleID = BattleID(13);
+	unsupportedLordOfTheDeadOuter.necromancy.active = true;
+	unsupportedLordOfTheDeadOuter.necromancy.applied = true;
+	unsupportedLordOfTheDeadOuter.necromancy.skeletonsOffered = 12;
+	unsupportedLordOfTheDeadOuter.necromancy.lordOfDeadSkeletonsConsumed = 12;
+	unsupportedLordOfTheDeadOuter.necromancy.boneDragonsRaised = 1;
+	CMemorySerializer unsupportedLordOfTheDeadOuterWire;
+	unsupportedLordOfTheDeadOuterWire.oser.version = necromancyWithoutLordOfTheDeadVersion;
+	EXPECT_THROW(unsupportedLordOfTheDeadOuterWire.oser & unsupportedLordOfTheDeadOuter, std::runtime_error);
+	EXPECT_TRUE(unsupportedLordOfTheDeadOuterWire.extractBuffer().empty())
+		<< "An older outer result writer must reject Lord of the Dead output before writing bytes";
+
+	BattleResult unsupportedLordOfTheDeadCapture;
+	unsupportedLordOfTheDeadCapture.battleID = BattleID(14);
+	unsupportedLordOfTheDeadCapture.necromancyDefeatedArmyHadLivingChampion = true;
+	CMemorySerializer unsupportedLordOfTheDeadCaptureWire;
+	unsupportedLordOfTheDeadCaptureWire.oser.version = necromancyWithoutLordOfTheDeadVersion;
+	EXPECT_THROW(unsupportedLordOfTheDeadCaptureWire.oser & unsupportedLordOfTheDeadCapture, std::runtime_error);
+	EXPECT_TRUE(unsupportedLordOfTheDeadCaptureWire.extractBuffer().empty())
+		<< "An older BattleResult writer must reject Champion qualification before writing bytes";
+
+	BattleResult legacyLordCapture = result;
+	legacyLordCapture.necromancyDefeatedArmyHadLivingChampion = false;
+	CMemorySerializer legacyLordCaptureWire;
+	legacyLordCaptureWire.oser.version = necromancyWithoutLordOfTheDeadVersion;
+	legacyLordCaptureWire.oser & legacyLordCapture;
+	legacyLordCaptureWire.iser.version = necromancyWithoutLordOfTheDeadVersion;
+	BattleResult legacyLordCaptureDecoded;
+	legacyLordCaptureDecoded.necromancyDefeatedArmyHadLivingChampion = true;
+	legacyLordCaptureWire.iser & legacyLordCaptureDecoded;
+	EXPECT_FALSE(legacyLordCaptureDecoded.necromancyDefeatedArmyHadLivingChampion);
 }
 
 TEST_F(NewHorizonsNecromancyRuntimeTest, LegacyHeroDoesNotEnterNewHorizonsResolver)

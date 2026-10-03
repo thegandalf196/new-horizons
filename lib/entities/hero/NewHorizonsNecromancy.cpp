@@ -165,7 +165,8 @@ NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleC
 	bool boneCollector, bool corpsePreservation, bool darkConversionAvailable,
 	bool skeletonSlotAvailable, bool zombieSlotAvailable, int32_t currentMana, int32_t manaLimit,
 	int32_t eligibleEliteCasualties, bool soulHarvester, bool wightSlotAvailable, CreatureID skeletonOutput,
-	SpecialCasualtyCounts nonliving, SpecialCasualtyCounts undead)
+	SpecialCasualtyCounts nonliving, SpecialCasualtyCounts undead,
+	bool lordOfTheDead, bool defeatedArmyHadLivingChampion, bool boneDragonSlotAvailable)
 {
 	NecromancyResult result;
 	result.active = rank >= 1 && rank <= 3;
@@ -198,17 +199,42 @@ NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleC
 	const auto coreCasualties = std::clamp(eligibleCoreCasualties, 0, result.eligibleCasualties);
 	const auto eliteCasualties = std::clamp(eligibleEliteCasualties, 0,
 		result.eligibleCasualties - coreCasualties);
-	const int64_t coreSkeletons = static_cast<int64_t>(coreCasualties) * result.percentage / 100
+	int64_t coreSkeletons = static_cast<int64_t>(coreCasualties) * result.percentage / 100
 		+ static_cast<int64_t>(nonliving.core) * result.percentage / 400
 		+ static_cast<int64_t>(undead.core) * 20 / 100;
-	const int64_t eliteSkeletons = static_cast<int64_t>(eliteCasualties) * result.percentage / 100
+	int64_t eliteSkeletons = static_cast<int64_t>(eliteCasualties) * result.percentage / 100
 		+ static_cast<int64_t>(nonliving.elite) * result.percentage / 400
 		+ static_cast<int64_t>(undead.elite) * 20 / 100;
+	// Keep all conversion inputs disjoint and bounded by the gross generated
+	// Skeleton pool even when independently saturated casualty counts disagree.
+	coreSkeletons = std::clamp<int64_t>(coreSkeletons, 0, result.skeletonsOffered);
+	eliteSkeletons = std::clamp<int64_t>(eliteSkeletons, 0,
+		static_cast<int64_t>(result.skeletonsOffered) - coreSkeletons);
+	int64_t unclassifiedSkeletons = static_cast<int64_t>(result.skeletonsOffered)
+		- coreSkeletons - eliteSkeletons;
+	if(lordOfTheDead && defeatedArmyHadLivingChampion && result.skeletonsOffered >= 12)
+	{
+		int64_t remainingCost = 12;
+		const int64_t fromUnclassified = std::min(unclassifiedSkeletons, remainingCost);
+		remainingCost -= fromUnclassified;
+		const int64_t fromElite = std::min(eliteSkeletons, remainingCost);
+		eliteSkeletons -= fromElite;
+		remainingCost -= fromElite;
+		const int64_t fromCore = std::min(coreSkeletons, remainingCost);
+		coreSkeletons -= fromCore;
+		remainingCost -= fromCore;
+		if(remainingCost == 0)
+		{
+			result.lordOfDeadSkeletonsConsumed = 12;
+			result.boneDragonsRaised = 1;
+		}
+	}
 	if(darkConversionAvailable)
 		result.zombiesRaised = clampCount(coreSkeletons / 3);
 	if(soulHarvester)
 		result.wightsRaised = clampCount(eliteSkeletons / 6);
-	const int64_t convertedSkeletons = static_cast<int64_t>(result.zombiesRaised) * 3
+	const int64_t convertedSkeletons = static_cast<int64_t>(result.boneDragonsRaised) * 12
+		+ static_cast<int64_t>(result.zombiesRaised) * 3
 		+ static_cast<int64_t>(result.wightsRaised) * 6;
 	result.skeletonsRaised = clampCount(static_cast<int64_t>(result.skeletonsOffered) - convertedSkeletons);
 	result.darkConversionChosen = result.zombiesRaised > 0;
@@ -217,11 +243,14 @@ NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleC
 	const bool skeletonsFit = result.skeletonsRaised == 0 || skeletonSlotAvailable;
 	const bool zombiesFit = result.zombiesRaised == 0 || zombieSlotAvailable;
 	const bool wightsFit = result.wightsRaised == 0 || wightSlotAvailable;
-	if(!skeletonsFit || !zombiesFit || !wightsFit)
+	const bool boneDragonsFit = result.boneDragonsRaised == 0 || boneDragonSlotAvailable;
+	if(!skeletonsFit || !zombiesFit || !wightsFit || !boneDragonsFit)
 	{
 		result.skeletonsRaised = 0;
 		result.zombiesRaised = 0;
 		result.wightsRaised = 0;
+		result.lordOfDeadSkeletonsConsumed = 0;
+		result.boneDragonsRaised = 0;
 		result.skeletonCreature = CreatureID::NONE;
 		result.darkConversionChosen = false;
 		result.blockedByArmyCapacity = true;
@@ -233,15 +262,19 @@ NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleC
 	if(result.skeletonsRaised > 0 && skeletonOutput.hasValue() && skeletonOutput != baseSkeleton)
 		result.skeletonCreature = skeletonOutput;
 
-	const int outputKinds = (result.skeletonsRaised > 0) + (result.zombiesRaised > 0) + (result.wightsRaised > 0);
+	const int outputKinds = (result.skeletonsRaised > 0) + (result.zombiesRaised > 0)
+		+ (result.wightsRaised > 0) + (result.boneDragonsRaised > 0);
 	if(outputKinds == 1 && result.zombiesRaised > 0)
 		result.raisedCreature = CreatureID(CreatureID::decode("core:zombie"));
 	else if(outputKinds == 1 && result.wightsRaised > 0)
 		result.raisedCreature = CreatureID(CreatureID::decode("core:wight"));
+	else if(outputKinds == 1 && result.boneDragonsRaised > 0)
+		result.raisedCreature = CreatureID(CreatureID::decode("core:boneDragon"));
 	else if(outputKinds == 1 && result.skeletonsRaised > 0)
 		result.raisedCreature = result.skeletonCreature.hasValue() ? result.skeletonCreature : baseSkeleton;
 
-	const int32_t totalRaised = result.skeletonsRaised + result.zombiesRaised + result.wightsRaised;
+	const int32_t totalRaised = result.skeletonsRaised + result.zombiesRaised
+		+ result.wightsRaised + result.boneDragonsRaised;
 	if(totalRaised >= 10)
 	{
 		const int32_t available = std::max(0, manaLimit - currentMana);

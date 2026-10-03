@@ -4,9 +4,10 @@
 The server owns eligibility, conversion, capacity and mana calculations.  This
 small client contract only proves that the packet summary is rendered from
 those authoritative fields, that final Skeleton-form/Zombie counts get creature
-components, Death Lord and Grave Knowledge pools are explained from packet
-counts, Ossuary delivery names its destination when available, and legacy
-Necromancy feedback remains the fallback for old result packets.
+components, Lord of the Dead's Bone Dragon conversion and component use packet
+counts, Death Lord and Grave Knowledge pools are explained from packet counts,
+Ossuary delivery names its destination when available, and legacy Necromancy
+feedback remains the fallback for old result packets.
 """
 
 import re
@@ -46,6 +47,8 @@ def main() -> None:
         "graveKnowledgeCasualties",
         "deathLordSkeletons",
         "graveKnowledgeSkeletons",
+        "lordOfDeadSkeletonsConsumed",
+        "boneDragonsRaised",
         "skeletonsOffered",
         "skeletonsRaised",
         "zombiesRaised",
@@ -59,6 +62,10 @@ def main() -> None:
 
     require(HELPER, '"Generated: "', "generated count")
     require(HELPER, '"Converted: "', "conversion count")
+    if "#if defined(NEW_HORIZONS_NECROMANCY_LORD_OF_DEAD)" in HELPER:
+        raise AssertionError(
+            "NEW_HORIZONS_NECROMANCY_LORD_OF_DEAD is an enum, not a preprocessor symbol"
+        )
     component_builder = function_body(
         HELPER,
         "UIHelper::getNewHorizonsNecromancyComponents(",
@@ -84,6 +91,15 @@ def main() -> None:
     require(component_builder,
             "ComponentType::CREATURE, skeleton, result.skeletonsRaised",
             "selected Skeleton result component")
+    require(component_builder,
+            "CreatureID::decode(\"core:boneDragon\")",
+            "canonical Bone Dragon component binding")
+    require(component_builder,
+            "if(result.boneDragonsRaised > 0)",
+            "Bone Dragon component gate")
+    require(component_builder,
+            "ComponentType::CREATURE, boneDragon, result.boneDragonsRaised",
+            "authoritative Bone Dragon result component")
     require(summary_builder,
             "text.appendName(baseSkeleton, result.skeletonsOffered)",
             "base Skeleton-equivalent generated count")
@@ -162,6 +178,27 @@ def main() -> None:
             "\t\ttext.appendName(baseSkeleton, 6);\n"
             '\t\ttext.appendRawString(" per Wight)\\n");',
             "Elite-casualty Wight explanation using base Skeleton equivalents")
+    require(summary_builder,
+            "CreatureID::decode(\"core:boneDragon\")",
+            "canonical Bone Dragon summary binding")
+    require(summary_builder,
+            "if(result.lordOfDeadSkeletonsConsumed > 0 || result.boneDragonsRaised > 0)",
+            "Lord of the Dead conversion result gate")
+    require(summary_builder, 'text.appendRawString("Lord of the Dead: ");',
+            "Lord of the Dead conversion label")
+    require(summary_builder,
+            "text.appendNumber(result.lordOfDeadSkeletonsConsumed)",
+            "authoritative consumed Skeleton-equivalent count")
+    require(summary_builder, "text.appendName(baseSkeleton, 1)",
+            "localized base Skeleton-equivalent name")
+    require(summary_builder, 'text.appendRawString(" equivalents -> ");',
+            "Lord of the Dead conversion relationship")
+    require(summary_builder,
+            "text.appendNumber(result.boneDragonsRaised)",
+            "authoritative Bone Dragon output count")
+    require(summary_builder,
+            "text.appendName(boneDragon, result.boneDragonsRaised)",
+            "localized Bone Dragon output name")
     hardcoded_skeleton_labels = [
         value for value in re.findall(r'"((?:\\.|[^"\\])*)"', HELPER, re.IGNORECASE)
         if "skeleton" in value.lower() and value != "core:skeleton"
@@ -180,6 +217,26 @@ def main() -> None:
     require(HELPER, 'ComponentType::CREATURE, zombie', "Zombie result component")
     require(HELPER, 'CreatureID::decode("core:wight")', "Wight creature binding")
     require(HELPER, 'ComponentType::CREATURE, wight', "Wight result component")
+    require(summary_builder,
+            "const bool hasNecromancyOutput = result.skeletonsRaised > 0\n"
+            "\t\t|| result.zombiesRaised > 0\n"
+            "\t\t|| result.wightsRaised > 0\n"
+            "\t\t|| result.boneDragonsRaised > 0;\n"
+            "\tif(hasNecromancyOutput)",
+            "all four creature outputs in the delivery summary gate")
+    require(component_builder,
+            "ComponentType::CREATURE, boneDragon, result.boneDragonsRaised",
+            "fourth creature output component")
+    require(summary_builder,
+            'if(result.boneDragonsRaised > 0)\n'
+            '\t\t{\n'
+            '\t\t\tif(hasOutput)\n'
+            '\t\t\t\ttext.appendRawString(" and ");\n'
+            '\t\t\ttext.appendNumber(result.boneDragonsRaised);\n'
+            '\t\t\ttext.appendRawString(" ");\n'
+            '\t\t\ttext.appendName(boneDragon, result.boneDragonsRaised);\n'
+            '\t\t}',
+            "Bone Dragon delivery name")
     require(HEADER, "getNewHorizonsNecromancyInfoWindowText", "summary text API")
     require(HEADER, "getNewHorizonsNecromancyComponents", "summary component API")
 

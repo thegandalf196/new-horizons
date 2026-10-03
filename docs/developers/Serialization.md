@@ -10,6 +10,20 @@ and enclosing writes reject before payload bytes. Actual destination validation
 and whole-batch army admission happen at post-battle authority time; the UI
 consumes the selected destination without recalculating nearest towns.
 
+## Necromancy Lord of the Dead
+
+`NEW_HORIZONS_NECROMANCY_LORD_OF_DEAD` appends a snapshot flag to
+`BattleResult` recording whether the original defeated army contained a living
+Champion-tier creature, plus two post-battle summary counts: Skeleton equivalents
+consumed and Bone Dragons actually raised. The flag is captured before ordinary
+casualty mutation and uses the battle's explicit creature-category snapshot.
+Older reads default the flag and counts to false/zero. A true flag or nonzero
+Lord of the Dead summary cannot be written to an older format; both the direct
+result and enclosing `BattleResultsApplied` validate and reject unsupported
+writes before payload bytes. A Dragon result is valid only as exactly one Dragon
+consuming exactly 12 offered Skeleton equivalents in an applied, nonblocked
+summary.
+
 ## Special Necromancy casualty pools
 
 `NEW_HORIZONS_NECROMANCY_SPECIAL_CASUALTIES` appends captured nonliving and

@@ -14,6 +14,18 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP189 Lord of the Dead is source/native verified in the203/310 accepted
+snapshot. Original-army living-Champion
+capture, ordered pre-conversion12-equivalent consumption, exact Bone Dragon,
+atomic Hero/Ossuary delivery and packet feedback are frozen. Data/inventory19/19,
+module/UI source guards and independent production/fixture reviews pass.
+Root client94998 and test27283 exit0. Principal40/40 passes9.199s and
+adjacent12/12 passes2.615s, zero skips. Normal Expert selection/no override,
+actual Bone Dragon+Zombie Ossuary output and unchanged full Hero army pass;
+ordered resolver and guarded current/older wire are verified. Coverage202->203,
+108->107 planned; Necromancy9->10/10; faction61->62/90. No playable or rendered
+acceptance is inferred. Broader Champion/form/AI interactions remain Phase2.
+
 UP188 Ossuary is source/native verified and included in accepted coverage.
 Hero-first projected admission falls back only on
 whole-batch capacity failure to one nearest currently owned Necropolis's normal
@@ -1748,9 +1760,9 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 202/310 | 108 planned; Ossuary is the newest source/native-verified activation. Necromancy is 9/10; Learning 3/10; Estates 5/10; Battlecraft 6/10; Logistics 6/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 203/310 | 107 planned; Lord of the Dead is the newest source/native-verified activation. Necromancy is 10/10; Learning 3/10; Estates 5/10; Battlecraft 6/10; Logistics 6/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
-| Faction perks active | 61/90 | 29 planned perks; Ossuary has normal Advanced selection, actual atomic town-delivery and guarded destination evidence. |
+| Faction perks active | 62/90 | 28 planned perks; Lord of the Dead has normal Expert selection, ordered conversion and actual atomic Bone Dragon town-delivery evidence. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
