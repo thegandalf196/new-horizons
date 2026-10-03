@@ -584,6 +584,16 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 	for(auto i : { BattleSide::LEFT_SIDE, BattleSide::RIGHT_SIDE})
 	{
 		currentBattle->sides[i].init(heroes[i], armies[i], i == BattleSide::RIGHT_SIDE ? town : nullptr);
+		if(const auto * army = armies[i])
+		{
+			currentBattle->sides[i].initialArmyValue = army->getArmyStrength();
+			currentBattle->sides[i].initialArmyIsWandering = army->ID == Obj::MONSTER;
+		}
+		else
+		{
+			currentBattle->sides[i].initialArmyValue.reset();
+			currentBattle->sides[i].initialArmyIsWandering = false;
+		}
 		if(heroCommands::hasBattlePlan(heroes[i]))
 			currentBattle->sides[i].preCombatOrderState.phase = PreCombatOrderState::Phase::AVAILABLE;
 		if(heroes[i])

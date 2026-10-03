@@ -352,6 +352,7 @@ public:
 
 	ui64 getTotalStrength() const; // includes fighting strength and army strength
 	TExpType calculateXp(TExpType exp) const; //apply learning skill
+	TExpType calculateXp(TExpType exp, int32_t additionalPercent) const;
 	int getBasePrimarySkillValue(PrimarySkill which) const; //the value of a base-skill without items or temporary bonuses
 
 	CStackBasicDescriptor calculateNecromancy (const BattleResult &battleResult) const;

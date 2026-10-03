@@ -49,6 +49,7 @@ ACTIVE_PERKS = {
     "new-horizons:estates.landSurveyor",
     "new-horizons:learning.mentor",
     "new-horizons:learning.quickStudy",
+    "new-horizons:learning.fieldStudy",
     "new-horizons:chaosMagic.paradoxShield",
     "new-horizons:wisdom.meditation",
     "new-horizons:wisdom.manaConservation",

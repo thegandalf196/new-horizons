@@ -5799,7 +5799,7 @@
 								"requires": "advanced",
 								"description": "Gain +25% additional Experience from defeating enemy heroes or wandering armies whose Army Value exceeded your army's at battle start.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Gain +25% additional Experience from defeating enemy heroes or wandering armies whose Army Value exceeded your army's at battle start."
 								}
 							},

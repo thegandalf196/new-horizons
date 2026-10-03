@@ -10,8 +10,11 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
+#include <optional>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -180,6 +183,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	// Battle Plan is a once-per-combat round-one Order choice, resolved before
 	// the first ordinary Creature Activation.
 	PreCombatOrderState preCombatOrderState;
+	// Raw Army Value and opponent kind captured before battle mutations begin.
+	std::optional<uint64_t> initialArmyValue;
+	bool initialArmyIsWandering = false;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);
@@ -332,6 +338,11 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && initialArmyIsWandering && !initialArmyValue)
+			throw std::runtime_error("Wandering battle army has no initial Army Value snapshot");
+		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_INITIAL_ARMY_VALUE)
+			&& (initialArmyValue.has_value() || initialArmyIsWandering))
+			throw std::runtime_error("Cannot discard initial battle Army Value snapshot");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_COMMAND)
 			&& (doubleCommandState != DoubleCommandState{}
 				|| std::any_of(heroActionAllowances.grants.begin(), heroActionAllowances.grants.end(), [](const auto & grant)
@@ -605,6 +616,33 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			h & preCombatOrderState;
 		else if(!h.saving)
 			preCombatOrderState = {};
+		if(h.hasFeature(Handler::Version::BATTLE_INITIAL_ARMY_VALUE))
+		{
+			// BinaryDeserializer supports 32-bit integral values, so preserve the
+			// complete runtime uint64_t domain as two explicit wire words.
+			std::optional<std::array<uint32_t, 2>> wireInitialArmyValue;
+			if(h.saving && initialArmyValue)
+				wireInitialArmyValue = std::array<uint32_t, 2>{
+					static_cast<uint32_t>(*initialArmyValue),
+					static_cast<uint32_t>(*initialArmyValue >> 32)};
+			h & wireInitialArmyValue;
+			h & initialArmyIsWandering;
+			if(!h.saving)
+			{
+				if(wireInitialArmyValue)
+					initialArmyValue = static_cast<uint64_t>((*wireInitialArmyValue)[0])
+						| (static_cast<uint64_t>((*wireInitialArmyValue)[1]) << 32);
+				else
+					initialArmyValue.reset();
+				if(initialArmyIsWandering && !initialArmyValue)
+					throw std::runtime_error("Wandering battle army has no initial Army Value snapshot");
+			}
+		}
+		else if(!h.saving)
+		{
+			initialArmyValue.reset();
+			initialArmyIsWandering = false;
+		}
 		if(!h.saving)
 		{
 			validateDoubleCommandState();

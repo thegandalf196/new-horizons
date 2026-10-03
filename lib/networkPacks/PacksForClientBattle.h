@@ -50,6 +50,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info && !h.hasFeature(Handler::Version::BATTLE_DEPLOYMENT_PHASES)
 			&& info->hasIndependentDeploymentState())
 			throw std::runtime_error("Cannot discard independent deployment state from BattleStart");
+		if(h.saving && info && !h.hasFeature(Handler::Version::BATTLE_INITIAL_ARMY_VALUE)
+			&& info->hasInitialArmyValueState())
+			throw std::runtime_error("Cannot discard initial Army Value snapshot from BattleStart");
 		if(h.saving && info && !h.hasFeature(Handler::Version::BATTLE_FINAL_RELOCATION)
 			&& info->getDeploymentState().hasFinalRelocationState())
 			throw std::runtime_error("Cannot discard final relocation state from BattleStart");

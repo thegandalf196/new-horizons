@@ -188,6 +188,8 @@ public:
 	{
 		if(h.saving)
 		{
+			if(!h.hasFeature(Handler::Version::BATTLE_INITIAL_ARMY_VALUE) && hasInitialArmyValueState())
+				throw std::runtime_error("Cannot discard initial battle Army Value snapshot");
 			deploymentState.validateShape();
 			if(deploymentState.independent)
 			{
@@ -666,6 +668,13 @@ public:
 	const BattleDeploymentState & getDeploymentState() const override { return deploymentState; }
 	void setDeploymentState(const BattleDeploymentState & state) override;
 	bool hasIndependentDeploymentState() const { return deploymentState != BattleDeploymentState{}; }
+	bool hasInitialArmyValueState() const
+	{
+		return std::any_of(sides.begin(), sides.end(), [](const SideInBattle & side)
+		{
+			return side.initialArmyValue.has_value() || side.initialArmyIsWandering;
+		});
+	}
 	int32_t getRound() const override;
 	int32_t getActivationSerial() const override { return activationSerial; }
 

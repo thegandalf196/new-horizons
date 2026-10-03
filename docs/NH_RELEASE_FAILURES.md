@@ -2,6 +2,37 @@
 
 ## Purpose
 
+### 2026-10-03 UP-161 — Unsigned 64-bit battle snapshot encoding
+
+Core-only build29456 exits1: BinaryDeserializer deliberately rejects direct
+uint64_t serialization. Preserve raw starting Army Value as optional uint64_t
+in memory, but encode a present value as two supported uint32_t low/high words.
+Do not loosen the serializer, truncate strength or replace unknown with zero.
+Retain testing/UP161-field-study-core-build.log; require a frozen-source retry
+and current roundtrips including present zero and UINT64_MAX before activation.
+Core retry6495 exits0 and baseline client/test57072 exits0. Registered fixture
+build16347 exits1 on fixture-only errors: queryAs returns a raw query pointer,
+an unused neutralization helper needs an incomplete CHero definition, and
+stackAt belongs to the reference fixture rather than its shared base. Repair
+with dynamic_pointer_cast of the owning query, remove the unused helper and
+reuse the small stack lookup locally. No production contract change is needed.
+Retain UP161-field-study-fixture-build.log; no stale native run is acceptance.
+Fixture retry48428 exits0. Principal11-case native gate exits139 after two
+hero-victory cases pass, while the wandering-army case runs. No XML is emitted;
+retain UP161-field-study-native.log. Activation is held. Diagnose only that
+case with a batch backtrace and repair the actual failing path before retrying;
+do not misreport the crash as a skipped or completed remaining matrix.
+Isolated debugger identifies a test lifetime error: neutral battle completion
+removes the battle synchronously before expectWinnerXp reads it. Hero-vs-hero
+dialogs happened to retain it. Capture independent expected inputs before the
+terminal action and keep actual awarded-XP checks; do not change production
+cleanup to accommodate the fixture. Backtrace retained as
+UP161-field-study-monster-backtrace.log; repaired native acceptance is pending.
+Resolution: fixture-only precompletion context capture removes the dangling
+BattleInfo access. Both-target rebuild31335 exits0; isolated retry1/1 and full
+principal11/11 pass with zero skips. Keep original failure/backtrace as evidence,
+not a production crash claim. Actual published-to-awarded XP check still passes.
+
 ### 2026-10-03 UP-160 — Pointer metadata versus object serialization guards
 
 Pre-native review catches an incorrect fixture expectation: writing a hero

@@ -14,6 +14,28 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP161 Field Study is source/native verified and activated: generic battle-start raw Army
+Value snapshots and wandering-army classification feed a winner-only conditional
+25-percentage-point XP contribution. Existing Learning rank bonuses compose
+once before the normal rounding; equal/weaker and unrelated guards do not
+qualify. Unknown legacy snapshots never reconstruct strength from survivors.
+Core29456 fails on unsupported uint64_t direct decoding; the bounded wire repair
+uses optional low/high uint32_t words, retaining the complete runtime domain.
+Core retry6495 and both client/test builds pass. The principal gate crashes after
+two passing hero-victory cases: the neutral battle fixture reads battle state
+after synchronous cleanup. Isolated debugger establishes the fixture lifetime
+error; the fixture-only repair is independently reviewed. Both-target
+rebuild31335 passes, isolated wandering retry1/1 and full principal11/11 pass
+in4.059s with zero skips, including actual awarded XP and legal AI acquisition.
+Registration/module/inventory activation follows acceptance; data19/19 and
+module drift pass, activated both-target build exits0. Final activated native
+gate passes11/11 in3.697s with zero skips and independent review finds no blocker.
+Binary SHA-256:84b396ec5c21d9abc9ecb1a8209a4494aad37f92af1f2a6cb9f735500e996605.
+Coverage187/310 perks,123 planned; Learning3/10. No playable
+promotion or purpose-made icon is claimed.
+Full-game resume, unusual result/ownership transitions and comparative AI XP
+valuation will be tracked for Phase2 after principal acceptance.
+
 UP160 Investor's server-authored weekly snapshot feeds normal daily receipts
 and shared AI income:50 Gold/full5,000 pre-income treasury, capped250 daily
 Gold. Midweek treasury changes do not recalculate it. First-week seeding,
@@ -26,7 +48,9 @@ and inventory checks, module drift and91/91 package checks pass. Independent
 final review finds no blocker. Activated five-case gate passes5/5,zero skips
 in68.870s. Native binary SHA-256:
 `7a5a3e4681a9f0ab231f94a2f8a55e5d559a86aabee048b78fe52b64d7532d9f`.
-Source commit/push is the next delivery checkpoint; no playable promotion.
+Source is committed/pushed as21dbb224b; no playable promotion. Notice37093465685
+passes and full Windows37094808848 remains running on that exact Investor source,
+excluding dirty Field Study.
 Coverage is186/310 active perks,124 planned,84/93 ranks; Estates5/10.
 Full-game resume, unusual ownership/rehire transitions, comparative AI valuation
 and rendered/playable delivery remain Phase2. The generic icon remains Not done.
@@ -1430,7 +1454,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 186/310 | 124 planned; Investor is the newest source/native-verified activation. Estates is 5/10; Battlecraft is 5/10; Command is 7/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 187/310 | 123 planned; Field Study is the newest source/native-verified activation. Learning is 3/10; Estates is 5/10; Battlecraft is 5/10; Command is 7/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 49/90 | 41 planned perks; Blood Scent has attack-local live/detached evidence. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -1458,7 +1482,7 @@ remain separately tracked rather than silently assumed.
 ## Skills and perks baseline
 
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
-requirements in total. The current registry has 84 active rank effects and 180
+requirements in total. The historical 2026-10-02 registry had 84 active rank effects and 180
 active perks, leaving nine ranks and 130 perks planned. These counts were
 rechecked directly from `config/newHorizonsPerks.json` on 2026-10-02; they are
 registration coverage, not proof that every active mechanic has the whole

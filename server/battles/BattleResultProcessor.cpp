@@ -352,10 +352,30 @@ void BattleResultProcessor::endBattle(const CBattleInfoCallback & battle)
 	if (defendedTown && battleResult->winner == BattleSide::ATTACKER)
 		battleResult->exp[BattleSide::ATTACKER] += 500;
 
+	const auto * concreteBattle = dynamic_cast<const BattleInfo *>(battle.getBattle());
+	const auto fieldStudyAdditionalPercent = [&battle, battleResult, concreteBattle](
+		BattleSide side, const CGHeroInstance * hero) -> int32_t
+	{
+		if(!hero || battleResult->winner != side
+			|| !hero->hasActivePerk("new-horizons:learning", "new-horizons:learning.fieldStudy")
+			|| !concreteBattle)
+			return 0;
+
+		const auto & heroArmy = concreteBattle->getSide(side);
+		const auto & opponentArmy = concreteBattle->getSide(battle.otherSide(side));
+		if(!heroArmy.initialArmyValue || !opponentArmy.initialArmyValue
+			|| !(opponentArmy.heroID.hasValue() || opponentArmy.initialArmyIsWandering))
+			return 0;
+
+		return *opponentArmy.initialArmyValue > *heroArmy.initialArmyValue ? 25 : 0;
+	};
+
 	if(heroAttacker)
-		battleResult->exp[BattleSide::ATTACKER] = heroAttacker->calculateXp(battleResult->exp[BattleSide::ATTACKER]);//scholar skill
+		battleResult->exp[BattleSide::ATTACKER] = heroAttacker->calculateXp(
+			battleResult->exp[BattleSide::ATTACKER], fieldStudyAdditionalPercent(BattleSide::ATTACKER, heroAttacker));
 	if(heroDefender)
-		battleResult->exp[BattleSide::DEFENDER] = heroDefender->calculateXp(battleResult->exp[BattleSide::DEFENDER]);
+		battleResult->exp[BattleSide::DEFENDER] = heroDefender->calculateXp(
+			battleResult->exp[BattleSide::DEFENDER], fieldStudyAdditionalPercent(BattleSide::DEFENDER, heroDefender));
 
 	auto attackerQuery = gameHandler->queries->topQuery(battle.sideToPlayer(BattleSide::ATTACKER));
 
