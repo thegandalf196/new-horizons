@@ -429,7 +429,10 @@ void BattleFlowProcessor::onBattleStarted(const CBattleInfoCallback & battle)
 
 	gameHandler->turnTimerHandler->onBattleStart(battle.getBattle()->getBattleID());
 
-	if (battle.battleGetTacticDist() == 0)
+	const auto & deployment = battle.getBattle()->getDeploymentState();
+	const auto * battleState = dynamic_cast<const IBattleState *>(battle.getBattle());
+	if(deployment.independent ? deployment.activeSide() == BattleSide::NONE
+		: (!battleState || battleState->getTacticDist() == 0))
 		onTacticsEnded(battle);
 }
 
@@ -1851,6 +1854,28 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 	};
 	if (ba.actionType == EActionType::END_TACTIC_PHASE)
 	{
+		const auto & deployment = battle.getBattle()->getDeploymentState();
+		if(deployment.independent)
+		{
+			const auto activeSide = deployment.activeSide();
+			if(activeSide == BattleSide::NONE || ba.side != activeSide)
+			{
+				logGlobal->error("Rejected stale or out-of-order deployment completion.");
+				return;
+			}
+
+			auto nextDeployment = deployment;
+			nextDeployment.complete(activeSide);
+			BattleDeploymentPhaseChanged update;
+			update.battleID = battle.getBattle()->getBattleID();
+			update.state = nextDeployment;
+			gameHandler->sendAndApply(update);
+
+			// The other entitled side receives the next deployment opportunity before
+			// any battle-start trigger, opening spell, round transition, or activation.
+			if(nextDeployment.activeSide() != BattleSide::NONE)
+				return;
+		}
 		onTacticsEnded(battle);
 		return;
 	}
@@ -1863,7 +1888,10 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 		return;
 
 	// tactics - next stack will be selected by player
-	if(battle.battleGetTacticDist() != 0)
+	const auto & deployment = battle.getBattle()->getDeploymentState();
+	const auto * battleState = dynamic_cast<const IBattleState *>(battle.getBattle());
+	if(deployment.independent ? deployment.activeSide() != BattleSide::NONE
+		: (battleState && battleState->getTacticDist() != 0))
 		return;
 
 	// Battle Plan Orders are issued through a temporary HERO_COMMAND anchor

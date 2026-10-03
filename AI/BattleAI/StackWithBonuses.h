@@ -190,6 +190,10 @@ public:
 	std::shared_ptr<StackWithBonuses> getForUpdate(uint32_t id);
 
 	BattleID getBattleID() const override;
+	ui8 getTacticDist() const override;
+	BattleSide getTacticsSide() const override;
+	const BattleDeploymentState & getDeploymentState() const override { return deploymentState; }
+	void setDeploymentState(const BattleDeploymentState & state) override;
 	const ReducedExtraActivationState & getReducedExtraActivationState(BattleSide side) const override;
 	void setReducedExtraActivationState(BattleSide side, const ReducedExtraActivationState & state) override;
 	std::vector<HeroOrderState> getHeroOrderStates(BattleSide side) const override;
@@ -427,6 +431,7 @@ public:
 	const scripting::Pool & getScriptContextPool() const override;
 
 private:
+	BattleDeploymentState deploymentState;
 	BattleSideArray<ReducedExtraActivationState> reducedExtraActivationStates;
 	/// Newest Order is last; updates by command preserve this issuance order.
 	BattleSideArray<std::vector<HeroOrderState>> heroOrderStates;

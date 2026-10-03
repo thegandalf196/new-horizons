@@ -1996,7 +1996,7 @@ BattleHexArray CBattleInfoCallback::battleGetAvailableHexes(const ReachabilityIn
 		if(tacticsPhase && !obtainMovementRange) // if obtainMovementRange requested do not return tactics range
 		{
 			// Stack has to perform tactic-phase movement -> can enter any reachable tile within given range
-			if(!isInTacticRange(i))
+			if(!isInTacticRange(i, *unit))
 				continue;
 		}
 		else
@@ -3864,6 +3864,8 @@ si8 CBattleInfoCallback::battleGetTacticDist() const
 bool CBattleInfoCallback::isInTacticRange(const BattleHex & dest) const
 {
 	RETURN_IF_NOT_BATTLE(false);
+	if(!dest.isAvailable())
+		return false;
 	auto side = battleGetTacticsSide();
 	auto dist = battleGetTacticDist();
 
@@ -3874,6 +3876,17 @@ bool CBattleInfoCallback::isInTacticRange(const BattleHex & dest) const
 		return true;
 
 	return false;
+}
+
+bool CBattleInfoCallback::isInTacticRange(const BattleHex & dest, const battle::Unit & unit) const
+{
+	if(unit.unitSide() != battleGetTacticsSide() || !dest.isAvailable())
+		return false;
+	const auto footprint = unit.getHexes(dest);
+	return !footprint.empty() && std::ranges::all_of(footprint, [this](const BattleHex & hex)
+	{
+		return isInTacticRange(hex);
+	});
 }
 
 ReachabilityInfo CBattleInfoCallback::getReachability(const battle::Unit * unit) const

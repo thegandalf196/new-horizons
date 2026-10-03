@@ -29,6 +29,7 @@
 #include "../lib/battle/CPlayerBattleCallback.h"
 #include "../lib/callback/CCallback.h"
 #include "../lib/callback/AIFactory.h"
+#include "../lib/callback/CBattleGameInterface.h"
 #include "../lib/callback/CGlobalAI.h"
 #include "../lib/callback/IGameInfoCallback.h"
 #include "../lib/filesystem/Filesystem.h"
@@ -520,6 +521,47 @@ void CClient::battleFinished(const BattleID & battleID)
 
 	if(settings["session"]["spectate"].Bool() && !settings["session"]["spectate-skip-battle"].Bool())
 		battleCallbacks[PlayerColor::SPECTATOR]->onBattleEnded(battleID);
+}
+
+void CClient::battleDeploymentPhaseChanged(const BattleID & battleID)
+{
+	const auto * info = gameState().getBattle(battleID);
+	if(!info)
+	{
+		logNetwork->error("Deployment phase update references missing battle %d", battleID.getNum());
+		return;
+	}
+
+	const auto & deployment = info->getDeploymentState();
+	if(!deployment.independent)
+	{
+		logNetwork->error("Deployment phase update references non-independent battle %d", battleID.getNum());
+		return;
+	}
+
+	const auto side = deployment.activeSide();
+	if(side != BattleSide::NONE)
+	{
+		const auto color = info->getSide(side).color;
+		const auto distance = deployment.distances[side];
+		if(distance > 0)
+		{
+			if(const auto active = battleints.find(color); active != battleints.end())
+				active->second->yourTacticPhase(battleID, distance);
+
+			// Quick-combat AIs are registered as additional battle interfaces
+			// behind their human owner; normal AIs live directly in battleints.
+			if(const auto additional = additionalBattleInts.find(color); additional != additionalBattleInts.end())
+			{
+				for(const auto & receiver : additional->second)
+					if(const auto battleInterface = std::dynamic_pointer_cast<CBattleGameInterface>(receiver))
+						battleInterface->yourTacticPhase(battleID, distance);
+			}
+		}
+	}
+
+	if(CPlayerInterface::battleInt && CPlayerInterface::battleInt->getBattleID() == battleID)
+		CPlayerInterface::battleInt->deploymentPhaseChanged();
 }
 
 void CClient::startPlayerBattleAction(const BattleID & battleID, PlayerColor color)

@@ -201,6 +201,8 @@ public:
 
 	void tacticNextStack(const CStack *current);
 	void tacticPhaseEnd();
+	void deploymentPhaseChanged();
+	bool isDeploymentPhase() const;
 
 	void setBattleQueueVisibility(bool visible);
 	void setStickyHeroWindowsVisibility(bool visible);

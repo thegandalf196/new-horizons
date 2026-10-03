@@ -848,6 +848,11 @@ void ApplyClientNetPackVisitor::visitBattleStart(BattleStart & pack)
 	cl.battleStarted(pack.battleID);
 }
 
+void ApplyClientNetPackVisitor::visitBattleDeploymentPhaseChanged(BattleDeploymentPhaseChanged & pack)
+{
+	cl.battleDeploymentPhaseChanged(pack.battleID);
+}
+
 void ApplyFirstClientNetPackVisitor::visitBattleNextRound(BattleNextRound & pack)
 {
 	callBattleInterfaceIfPresentForBothSides(cl, pack.battleID, &IBattleEventsReceiver::battleNewRoundFirst, pack.battleID);

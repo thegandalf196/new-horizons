@@ -2,6 +2,45 @@
 
 ## Purpose
 
+### 2026-10-02 UP-154 — focused data-gate command correction
+
+Root review found an additional blocking construction-order defect while
+baseline build42019 was running: BattleWindow's constructor invokes
+`tacticPhaseStarted(false)` for AI-only deployment, whose new `blockUI(true)`
+call dereferences stacksController before BattleInterface creates it. Astra
+confirmed the missed path. After42019 is terminal, move that blocking call to
+the inactive-local branch of deploymentPhaseChanged; initial blocking already
+runs after controller construction. Preserve the live build; do not execute its
+binary as accepted native evidence before the repair is recompiled.
+Baseline42019 then ends with exit143 at386/542, no reported compiler error;
+process inspection confirms no surviving build children. Its termination cause
+is not established. Repair moves the call after controller initialization, and
+the frozen fixture is registered for incremental retry10000, logUP154-fixture-build.
+Do not reuse an incomplete or stale binary as native acceptance.
+Repaired build10000 passes both targets. Principal35799 runs8 cases:
+7pass/1fail, zero skips,23.519s. All state/acquisition/phase/compatibility cases
+pass. The movement case passes its rejection assertions, then finds no reachable
+legal endpoint for its acceptance assertion atline462. Diagnose the fixture's
+first-free placement and added blockers before changing production movement;
+do not remove the required accepted-move assertion. Preserve UP154-principal.log
+and XML. Fixture owner is assigned the bounded geometry repair; counts unchanged.
+The fixture now proves an accepted move before adding blockers and retains all
+rejected-move assertions plus the real END request. Adjacent11237 passes10/10
+in17.054s, zero skips. Fixture-only retry build39337 passes both targets; the
+principal retry must pass before accepted coverage increases.
+Principal retry24146 passes8/8 in23.514s, zero skips. No production rule was
+weakened to pass the fixture. Tactics source/native acceptance now advances
+coverage to184/310; broader UI/AI rendering/execution remains Phase2.
+
+The first data-gate invocation named the nonexistent Python module
+`tools.tests.test_nh_ui_asset_inventory`; the perk tests passed but unittest
+reported one import error. Discover the actual module with `rg --files`:
+`tools.tests.test_new_horizons_ui_perk_inventory`. The corrected paired gate
+passes19/19, and generated-module drift validation passes. No production code
+or assertions were weakened. Native deployment acceptance remains pending.
+Interim Astra review found no shared-state/server blocker; defensive rejection
+of pending deployment attached to a post-opening round is Phase2 hardening.
+
 ### 2026-10-02 UP-153 — detached views and activation-token assertions
 
 Both-target build9087 succeeds. First principal native32568 runs6 tests:

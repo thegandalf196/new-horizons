@@ -56,6 +56,78 @@ namespace
 {
 constexpr int MASTER_GUNNER_FOLLOW_UP_DAMAGE_PERCENT = 60;
 
+BattleSide activeDeploymentSide(const CBattleInfoCallback & battle)
+{
+	const auto * state = battle.getBattle();
+	if(!state)
+		return BattleSide::NONE;
+
+	const auto & deployment = state->getDeploymentState();
+	if(deployment.independent)
+		return deployment.activeSide();
+
+	const auto * battleState = dynamic_cast<const IBattleState *>(state);
+	if(!battleState || battleState->getTacticDist() == 0)
+		return BattleSide::NONE;
+
+	return battleState->getTacticsSide();
+}
+
+bool isDeploymentPositionLegal(const CBattleInfoCallback & battle, const battle::Unit & unit,
+	const BattleHex & position, BattleSide side)
+{
+	const auto * state = battle.getBattle();
+	if(!state || !position.isValid()
+		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+		return false;
+
+	const auto & deployment = state->getDeploymentState();
+	const auto * battleState = dynamic_cast<const IBattleState *>(state);
+	const auto distance = deployment.independent
+		? (side == deployment.activeSide() ? deployment.distances[side] : 0)
+		: (battleState && side == battleState->getTacticsSide() ? battleState->getTacticDist() : 0);
+	if(distance == 0)
+		return false;
+
+	const auto withinArea = [side, distance](const BattleHex & hex)
+	{
+		if(!hex.isAvailable())
+			return false;
+
+		if(side == BattleSide::ATTACKER)
+			return hex.getX() > 0 && hex.getX() <= distance;
+
+		if(side == BattleSide::DEFENDER)
+			return hex.getX() < GameConstants::BFIELD_WIDTH - 1
+				&& hex.getX() >= GameConstants::BFIELD_WIDTH - static_cast<int>(distance) - 1;
+
+		return false;
+	};
+
+	const auto footprint = unit.getHexes(position);
+	return !footprint.empty()
+		&& std::ranges::all_of(footprint, withinArea);
+}
+
+BattleHex resolveMovementDestination(const CBattleInfoCallback & battle, const battle::Unit & unit,
+	const BattleHex & requested)
+{
+	if(!requested.isValid())
+		return BattleHex::INVALID;
+
+	if(!battle.battleGetStackByPos(requested) && unit.doubleWide())
+	{
+		const auto accessibility = battle.getAccessibility(&unit);
+		if(!accessibility.accessible(requested, &unit))
+		{
+			const BattleHex shifted = requested.cloneInDirection(unit.headDirection(), false);
+			if(accessibility.accessible(shifted, &unit))
+				return shifted;
+		}
+	}
+	return requested;
+}
+
 bool hasLegalHostileBallistaShot(const CBattleInfoCallback & battle, const battle::Unit * shooter)
 {
 	if(!shooter || !shooter->alive() || shooter->isGhost() || shooter->isTimeStopped() || !shooter->canMove()
@@ -2610,10 +2682,61 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 {
 	if(masterGateActivationContinuationOut)
 		*masterGateActivationContinuationOut = false;
+	const BattleSide deploymentSide = activeDeploymentSide(battle);
+	if(ba.actionType == EActionType::END_TACTIC_PHASE
+		&& (deploymentSide == BattleSide::NONE || ba.side != deploymentSide))
+	{
+		gameHandler->complain("Can not end a deployment phase that is not currently active!");
+		return false;
+	}
+	if(deploymentSide != BattleSide::NONE)
+	{
+		if(!ba.isTacticsAction() || ba.side != deploymentSide)
+		{
+			gameHandler->complain("Only the current deployment side may act during deployment!");
+			return false;
+		}
+
+		if(ba.isUnitAction())
+		{
+			const auto * unit = battle.battleGetStackByID(ba.stackNumber, false);
+			if(!unit || unit->unitSide() != deploymentSide)
+			{
+				gameHandler->complain("Only a stack belonging to the current deployment side may move!");
+				return false;
+			}
+		}
+
+		if(ba.actionType == EActionType::WALK)
+		{
+			const auto * unit = battle.battleGetStackByID(ba.stackNumber, false);
+			if(!unit || ba.target.size() != 1 || ba.target.front().unitValue >= 0
+				|| !ba.target.front().hexValue.isValid())
+			{
+				gameHandler->complain("Invalid deployment movement destination!");
+				return false;
+			}
+
+			const auto destination = resolveMovementDestination(battle, *unit, ba.target.front().hexValue);
+			const auto * destinationUnit = battle.battleGetStackByPos(destination);
+			const auto accessibility = battle.getAccessibility(unit);
+			if(!isDeploymentPositionLegal(battle, *unit, destination, deploymentSide))
+			{
+				gameHandler->complain("Given destination is outside the current deployment area!");
+				return false;
+			}
+			if((destinationUnit && destinationUnit != unit && destinationUnit->alive())
+				|| !accessibility.accessible(destination, unit))
+			{
+				gameHandler->complain("Given deployment destination is not accessible!");
+				return false;
+			}
+		}
+	}
 	if((ba.side == BattleSide::ATTACKER || ba.side == BattleSide::DEFENDER)
 		&& !ba.isBattleEndAction())
 	{
-		if(battle.battleGetRound() == 1 && !battle.battleGetTacticDist()
+		if(battle.battleGetRound() == 1 && deploymentSide == BattleSide::NONE
 			&& battle.getBattle()->getActivationSerial() == 0)
 		{
 			std::optional<BattleSide> pendingSide;
@@ -2648,7 +2771,7 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 			return false;
 		}
 		if(preCombatOrder.phase == PreCombatOrderState::Phase::AVAILABLE
-			&& battle.battleGetRound() == 1 && !battle.battleGetTacticDist()
+			&& battle.battleGetRound() == 1 && deploymentSide == BattleSide::NONE
 			&& battle.getBattle()->getActivationSerial() == 0)
 		{
 			gameHandler->complain("Battle Plan opening Order must be resolved before creature actions");
@@ -3022,15 +3145,26 @@ void BattleActionProcessor::breakSanctuary(const CBattleInfoCallback & battle, c
 BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest)
 {
 	const CStack *currentUnit = battle.battleGetStackByID(stack);
-	const CStack *stackAtEnd = battle.battleGetStackByPos(dest);
-
-	assert(currentUnit);
-	assert(dest < GameConstants::BFIELD_SIZE);
-
-	if (battle.battleGetTacticDist())
+	if(!currentUnit || !dest.isValid())
 	{
-		assert(battle.isInTacticRange(dest));
+		gameHandler->complain("Given movement destination is invalid!");
+		return { 0, 0, false, true };
 	}
+
+	const BattleSide deploymentSide = activeDeploymentSide(battle);
+	if(deploymentSide != BattleSide::NONE && currentUnit->unitSide() != deploymentSide)
+	{
+		gameHandler->complain("Only a stack belonging to the current deployment side may move!");
+		return { 0, 0, false, true };
+	}
+	dest = resolveMovementDestination(battle, *currentUnit, dest);
+	if(deploymentSide != BattleSide::NONE
+		&& !isDeploymentPositionLegal(battle, *currentUnit, dest, deploymentSide))
+	{
+		gameHandler->complain("Given destination is outside the current deployment area!");
+		return { 0, 0, false, true };
+	}
+	const CStack *stackAtEnd = battle.battleGetStackByPos(dest);
 
 	auto start = currentUnit->getPosition();
 	if (start == dest)
@@ -3046,15 +3180,6 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 	passed.insert(currentUnit->getPosition());
 	if(currentUnit->doubleWide())
 		passed.insert(currentUnit->occupiedHex());
-
-	//shifting destination (if we have double wide stack and we can occupy dest but not be exactly there)
-	if(!stackAtEnd && currentUnit->doubleWide() && !accessibility.accessible(dest, currentUnit))
-	{
-		BattleHex shifted = dest.cloneInDirection(currentUnit->headDirection(), false);
-
-		if(accessibility.accessible(shifted, currentUnit))
-			dest = shifted;
-	}
 
 	if((stackAtEnd && stackAtEnd!=currentUnit && stackAtEnd->alive()) || !accessibility.accessible(dest, currentUnit))
 	{
@@ -3092,7 +3217,7 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 	if(currentUnit->pursuitMovementRemaining > 0)
 		unitMovementRange = std::min(unitMovementRange, currentUnit->pursuitMovementRemaining);
 
-	if (battle.battleGetTacticDist() > 0 && unitMovementRange > 0)
+	if (deploymentSide != BattleSide::NONE && unitMovementRange > 0)
 		unitMovementRange = GameConstants::BFIELD_SIZE;
 
 	if (pathDistance > unitMovementRange)
@@ -4890,18 +5015,24 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 		gameHandler->complain("Purify selections are only valid for the Purify Hero Spell action");
 		return false;
 	}
+	const BattleSide deploymentSide = activeDeploymentSide(battle);
+	if(ba.actionType == EActionType::END_TACTIC_PHASE && deploymentSide == BattleSide::NONE)
+	{
+		gameHandler->complain("There is no active deployment phase to end!");
+		return false;
+	}
 
-	if(battle.battleGetTacticDist() != 0)
+	if(deploymentSide != BattleSide::NONE)
 	{
 		if(!ba.isTacticsAction())
 		{
-			gameHandler->complain("Can not make actions while in tactics mode!");
+			gameHandler->complain("Can not make actions while in deployment mode!");
 			return false;
 		}
 
-		if(player != battle.sideToPlayer(ba.side))
+		if(ba.side != deploymentSide || player != battle.sideToPlayer(deploymentSide))
 		{
-			gameHandler->complain("Can not make actions in battles you are not part of!");
+			gameHandler->complain("Can not make actions for a battle side that is not in deployment!");
 			return false;
 		}
 	}

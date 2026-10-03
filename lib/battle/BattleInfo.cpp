@@ -27,6 +27,7 @@
 #include "../callback/IGameInfoCallback.h"
 #include "../entities/artifact/CArtifact.h"
 #include "../entities/building/TownFortifications.h"
+#include "../entities/hero/NewHorizonsPerkRules.h"
 #include "../filesystem/Filesystem.h"
 #include "../GameLibrary.h"
 #include "../modding/IdentifierStorage.h"
@@ -888,22 +889,45 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 
 	if(layout.tacticsAllowed)
 	{
-		if(tacticsSkillDiffAttacker > 0 && tacticsSkillDiffDefender > 0)
-			logGlobal->warn("Double tactics is not implemented, only attacker will have tactics!");
-		if(tacticsSkillDiffAttacker > 0)
+		if(newHorizonsHeroes::usesPerkRules(cb->getHeroPerkRules()))
 		{
-			currentBattle->tacticsSide = BattleSide::ATTACKER;
-			//bonus specifies distance you can move beyond base row; this allows 100% compatibility with HMM3 mechanics
-			currentBattle->tacticDistance = 1 + tacticsSkillDiffAttacker;
-		}
-		else if(tacticsSkillDiffDefender > 0)
-		{
-			currentBattle->tacticsSide = BattleSide::DEFENDER;
-			//bonus specifies distance you can move beyond base row; this allows 100% compatibility with HMM3 mechanics
-			currentBattle->tacticDistance = 1 + tacticsSkillDiffDefender;
+			BattleDeploymentState deployment;
+			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			{
+				const auto * hero = heroes[side];
+				if(hero && hero->tacticFormationEnabled
+					&& hero->hasActivePerk("new-horizons:battlecraft", "new-horizons:battlecraft.tactics"))
+					deployment.distances[side] = 3; // Base row plus the two canonical Tactics rows.
+			}
+			if(deployment.distances[BattleSide::ATTACKER] > 0 || deployment.distances[BattleSide::DEFENDER] > 0)
+				deployment.independent = true;
+			currentBattle->deploymentState = deployment; // Initial setup is unpublished, not a live phase transition.
+			const auto activeSide = deployment.activeSide();
+			if(activeSide != BattleSide::NONE)
+			{
+				currentBattle->tacticsSide = activeSide;
+				currentBattle->tacticDistance = deployment.distances[activeSide];
+			}
 		}
 		else
-			currentBattle->tacticDistance = 0;
+		{
+			if(tacticsSkillDiffAttacker > 0 && tacticsSkillDiffDefender > 0)
+				logGlobal->warn("Double tactics is not implemented, only attacker will have tactics!");
+			if(tacticsSkillDiffAttacker > 0)
+			{
+				currentBattle->tacticsSide = BattleSide::ATTACKER;
+				//bonus specifies distance you can move beyond base row; this allows 100% compatibility with HMM3 mechanics
+				currentBattle->tacticDistance = 1 + tacticsSkillDiffAttacker;
+			}
+			else if(tacticsSkillDiffDefender > 0)
+			{
+				currentBattle->tacticsSide = BattleSide::DEFENDER;
+				//bonus specifies distance you can move beyond base row; this allows 100% compatibility with HMM3 mechanics
+				currentBattle->tacticDistance = 1 + tacticsSkillDiffDefender;
+			}
+			else
+				currentBattle->tacticDistance = 0;
+		}
 	}
 
 	return currentBattle;
@@ -1061,6 +1085,15 @@ uint8_t BattleInfo::getTacticDist() const
 BattleSide BattleInfo::getTacticsSide() const
 {
 	return tacticsSide;
+}
+
+void BattleInfo::setDeploymentState(const BattleDeploymentState & state)
+{
+	state.validateTransitionFrom(deploymentState);
+	deploymentState = state;
+	const auto activeSide = deploymentState.activeSide();
+	tacticsSide = activeSide;
+	tacticDistance = activeSide == BattleSide::NONE ? 0 : deploymentState.distances[activeSide];
 }
 
 int32_t BattleInfo::getRound() const

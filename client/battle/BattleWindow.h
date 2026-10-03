@@ -167,7 +167,7 @@ public:
 	void onScreenResize() override;
 
 	/// Toggle UI to displaying tactics phase
-	void tacticPhaseStarted();
+	void tacticPhaseStarted(bool localController = true);
 
 	/// Toggle UI to displaying battle log in place of tactics UI
 	void tacticPhaseEnded();

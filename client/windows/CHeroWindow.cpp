@@ -974,7 +974,8 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 
 	dismissButton->block(noDismiss);
 
-	if(curHero->valOfBonuses(BonusType::BEFORE_BATTLE_REPOSITION) == 0)
+	const bool hasBattlecraftTactics = curHero->hasActivePerk("new-horizons:battlecraft", "new-horizons:battlecraft.tactics");
+	if(curHero->valOfBonuses(BonusType::BEFORE_BATTLE_REPOSITION) == 0 && !hasBattlecraftTactics)
 	{
 		tacticsButton->block(true);
 	}

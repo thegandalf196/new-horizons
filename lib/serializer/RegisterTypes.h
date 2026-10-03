@@ -330,4 +330,5 @@ void registerTypes(Serializer &s)
 	s.template registerType<BattleAdverseRerollStateChanged>(287);
 	s.template registerType<BattleMoraleSuppressionStateChanged>(288);
 	s.template registerType<BattleReducedExtraActivationStateChanged>(289);
+	s.template registerType<BattleDeploymentPhaseChanged>(290);
 }

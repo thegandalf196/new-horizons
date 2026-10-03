@@ -93,6 +93,11 @@ BattleSide BattleProxy::getTacticsSide() const
 	return subject->battleGetTacticsSide();
 }
 
+const BattleDeploymentState & BattleProxy::getDeploymentState() const
+{
+	return subject->getBattle()->getDeploymentState();
+}
+
 int32_t BattleProxy::getRound() const
 {
 	return subject->battleGetRound();

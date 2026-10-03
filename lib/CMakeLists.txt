@@ -506,6 +506,7 @@ set(lib_MAIN_HEADERS
 	battle/TimeStopState.h
 	battle/NewHorizonsWarcasting.h
 	battle/BattleInfo.h
+	battle/BattleDeploymentState.h
 	battle/PhysicalAffliction.h
 	battle/NewHorizonsBloodrage.h
 	battle/NewHorizonsBulwark.h

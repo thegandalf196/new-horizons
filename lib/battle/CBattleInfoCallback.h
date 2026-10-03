@@ -299,6 +299,7 @@ public:
 
 	//convenience methods using the ones above
 	bool isInTacticRange(const BattleHex & dest) const;
+	bool isInTacticRange(const BattleHex & dest, const battle::Unit & unit) const;
 	si8 battleGetTacticDist() const; //returns tactic distance for calling player or 0 if this player is not in tactic phase (for ALL_KNOWING actual distance for tactic side)
 
 	AttackableTiles getPotentiallyAttackableHexes(

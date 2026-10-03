@@ -490,7 +490,7 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 				reason = "Battle context is no longer available.";
 			else if(owner.curInt->isAutoFightOn)
 				reason = "Autofight currently controls this battle.";
-			else if(owner.isInTacticsMode())
+			else if(owner.isDeploymentPhase())
 				reason = "Orders are unavailable during tactics.";
 			else if(!owner.currentHero())
 				reason = "No commanding hero is available.";
@@ -526,8 +526,8 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 	createStickyHeroInfoWindows();
 	createTimerInfoWindows();
 
-	if ( owner.isInTacticsMode() )
-		tacticPhaseStarted();
+	if (owner.isDeploymentPhase())
+		tacticPhaseStarted(owner.isInTacticsMode());
 	else
 		tacticPhaseEnded();
 
@@ -717,7 +717,7 @@ void BattleWindow::useSpellIfPossible(int slot)
 {
 	// Revalidate at activation, not only when the shortcut/button was last blocked.
 	if(CPlayerInterface::battleInt.get() != &owner || !owner.curInt || owner.curInt->isAutoFightOn
-		|| owner.isInTacticsMode() || !owner.makingTurn() || !quickSpellWindow)
+		|| owner.isDeploymentPhase() || !owner.makingTurn() || !quickSpellWindow)
 		return;
 
 	const auto quickSpells = quickSpellWindow->getSpells();
@@ -1145,7 +1145,7 @@ void BattleWindow::clickPressed(const Point & cursorPosition)
 	InterfaceObjectConfigurable::clickPressed(cursorPosition);
 }
 
-void BattleWindow::tacticPhaseStarted()
+void BattleWindow::tacticPhaseStarted(bool localController)
 {
 	auto menuBattle = widget<CIntObject>("menuBattle");
 	auto console = widget<CIntObject>("console");
@@ -1162,9 +1162,18 @@ void BattleWindow::tacticPhaseStarted()
 		setShortcutBlocked(EShortcut::BATTLE_OPEN_ORDERS, true);
 	}
 
-	menuTactics->enable();
-	tacticNext->enable();
-	tacticEnd->enable();
+	if(localController)
+	{
+		menuTactics->enable();
+		tacticNext->enable();
+		tacticEnd->enable();
+	}
+	else
+	{
+		menuTactics->disable();
+		tacticNext->disable();
+		tacticEnd->disable();
+	}
 
 	redraw();
 }
@@ -1397,7 +1406,7 @@ void BattleWindow::bAutofightf()
 
 void BattleWindow::bSpellf()
 {
-	if(CPlayerInterface::battleInt.get() != &owner || !owner.curInt || owner.curInt->isAutoFightOn || owner.isInTacticsMode())
+	if(CPlayerInterface::battleInt.get() != &owner || !owner.curInt || owner.curInt->isAutoFightOn || owner.isDeploymentPhase())
 		return;
 	openSpellbook();
 }
@@ -1407,7 +1416,7 @@ void BattleWindow::bOrdersf()
 	if(CPlayerInterface::battleInt.get() != &owner || !owner.curInt || owner.curInt->isAutoFightOn)
 		return;
 	if(!owner.getBattle()->battleUsesHeroCommands() || owner.actionsController->heroSpellcastingModeActive()
-		|| !owner.makingTurn() || owner.isInTacticsMode() || !owner.currentHero())
+		|| !owner.makingTurn() || owner.isDeploymentPhase() || !owner.currentHero())
 		return;
 	owner.actionsController->cancelHeroOrderTargeting();
 	ENGINE->windows().createAndPushWindow<BattleHeroActionWindow>(CPlayerInterface::battleInt, true);
@@ -1538,7 +1547,7 @@ void BattleWindow::blockUI(bool on)
 	if(ordersButton)
 	{
 		const bool ordersBlocked = on || !owner.curInt || owner.curInt->isAutoFightOn
-			|| owner.isInTacticsMode() || !owner.currentHero() || owner.actionsController->heroSpellcastingModeActive();
+			|| owner.isDeploymentPhase() || !owner.currentHero() || owner.actionsController->heroSpellcastingModeActive();
 		ordersButton->block(ordersBlocked);
 		// Disabled issuance must not hide read-only help. Do not restore click/key events.
 		ordersButton->addUsedEvents(SHOW_POPUP);
@@ -1550,26 +1559,31 @@ void BattleWindow::blockUI(bool on)
 	const auto activeStackState = activeStack ? activeStack->acquireState() : nullptr;
 	const bool rangedFollowUpPending = activeStackState
 		&& activeStackState->rangedFollowUpDamagePercent > 0;
-	bool tacticsMode = owner.isInTacticsMode();
+	const bool deploymentPhase = owner.isDeploymentPhase();
+	const bool localTacticsMode = owner.isInTacticsMode();
 
 	setShortcutBlocked(EShortcut::GLOBAL_OPTIONS, on);
 	setShortcutBlocked(EShortcut::BATTLE_OPEN_ACTIVE_UNIT, on);
 	setShortcutBlocked(EShortcut::BATTLE_OPEN_HOVERED_UNIT, on);
-	setShortcutBlocked(EShortcut::BATTLE_RETREAT, on || !owner.getBattle()->battleCanFlee());
-	setShortcutBlocked(EShortcut::BATTLE_SURRENDER, on || owner.getBattle()->battleGetSurrenderCost() < 0);
-	setShortcutBlocked(EShortcut::BATTLE_CAST_SPELL, on || tacticsMode || !canCastSpells);
-	setShortcutBlocked(EShortcut::BATTLE_WAIT, on || tacticsMode || !canWait || rangedFollowUpPending);
-	setShortcutBlocked(EShortcut::BATTLE_DEFEND, on || tacticsMode);
-	setShortcutBlocked(EShortcut::BATTLE_AUTOCOMBAT, (settings["battle"]["endWithAutocombat"].Bool() && onlyOnePlayerHuman) ? on || tacticsMode || owner.actionsController->heroSpellcastingModeActive() : owner.actionsController->heroSpellcastingModeActive());
-	setShortcutBlocked(EShortcut::BATTLE_END_WITH_AUTOCOMBAT, on || !onlyOnePlayerHuman || owner.actionsController->heroSpellcastingModeActive());
-	setShortcutBlocked(EShortcut::BATTLE_TACTICS_END, on || !tacticsMode);
-	setShortcutBlocked(EShortcut::BATTLE_TACTICS_NEXT, on || !tacticsMode);
-	setShortcutBlocked(EShortcut::BATTLE_CONSOLE_DOWN, on && !tacticsMode);
-	setShortcutBlocked(EShortcut::BATTLE_CONSOLE_UP, on && !tacticsMode);
+	setShortcutBlocked(EShortcut::BATTLE_RETREAT, on || deploymentPhase || !owner.getBattle()->battleCanFlee());
+	setShortcutBlocked(EShortcut::BATTLE_SURRENDER, on || deploymentPhase || owner.getBattle()->battleGetSurrenderCost() < 0);
+	setShortcutBlocked(EShortcut::BATTLE_CAST_SPELL, on || deploymentPhase || !canCastSpells);
+	setShortcutBlocked(EShortcut::BATTLE_WAIT, on || deploymentPhase || !canWait || rangedFollowUpPending);
+	setShortcutBlocked(EShortcut::BATTLE_DEFEND, on || deploymentPhase);
+	const bool autoCombatShortcutDisabled = settings["battle"]["endWithAutocombat"].Bool() && onlyOnePlayerHuman;
+	setShortcutBlocked(EShortcut::BATTLE_AUTOCOMBAT, deploymentPhase
+		|| (autoCombatShortcutDisabled ? on || owner.actionsController->heroSpellcastingModeActive()
+			: owner.actionsController->heroSpellcastingModeActive()));
+	setShortcutBlocked(EShortcut::BATTLE_END_WITH_AUTOCOMBAT,
+		on || deploymentPhase || !onlyOnePlayerHuman || owner.actionsController->heroSpellcastingModeActive());
+	setShortcutBlocked(EShortcut::BATTLE_TACTICS_END, on || !localTacticsMode);
+	setShortcutBlocked(EShortcut::BATTLE_TACTICS_NEXT, on || !localTacticsMode);
+	setShortcutBlocked(EShortcut::BATTLE_CONSOLE_DOWN, on && !localTacticsMode);
+	setShortcutBlocked(EShortcut::BATTLE_CONSOLE_UP, on && !localTacticsMode);
 	updateBattleTargetSelectionControls();
 
-	quickSpellWindow->setInputEnabled(!on);
-	unitActionWindow->setInputEnabled(!on);
+	quickSpellWindow->setInputEnabled(!on && !deploymentPhase);
+	unitActionWindow->setInputEnabled(!on && !deploymentPhase);
 }
 
 void BattleWindow::updateBattleTargetSelectionControls()

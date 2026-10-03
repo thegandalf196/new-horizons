@@ -179,13 +179,27 @@ public:
 
 	BattleSide tacticsSide; //which side is requested to play tactics phase
 	ui8 tacticDistance; //how many hexes we can go forward (1 = only hexes adjacent to margin line)
-	// Keeping this at the end avoids shifting preceding offsets, but every facade
-	// and consumer still requires a synchronized rebuild when BattleInfo changes.
 	std::set<uint32_t> bloodrageDestroyedUnits;
 	LuckRollRules luckRollRules;
+	// Append new transient snapshot fields to preserve preceding BattleInfo offsets.
+	BattleDeploymentState deploymentState;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+		{
+			deploymentState.validateShape();
+			if(deploymentState.independent)
+			{
+				const auto activeSide = deploymentState.activeSide();
+				const auto expectedDistance = activeSide == BattleSide::NONE ? 0 : deploymentState.distances[activeSide];
+				if(tacticsSide != activeSide || tacticDistance != expectedDistance)
+					throw std::runtime_error("Independent deployment state does not match its tactics projection");
+			}
+			if(!h.hasFeature(Handler::Version::BATTLE_DEPLOYMENT_PHASES)
+				&& hasIndependentDeploymentState())
+				throw std::runtime_error("Cannot discard independent deployment state");
+		}
 		const auto validBloodrageSnapshot = [](const SideInBattle & side)
 		{
 			if(side.bloodrageRank < 0 || side.bloodrageRank > 3
@@ -585,6 +599,22 @@ public:
 		else if(!h.saving)
 			restoreRangedFollowUps({});
 
+		// Append independent deployment state to preserve all previous BattleInfo
+		// layouts. Legacy reads retain their existing scalar tactics projection.
+		if(h.hasFeature(Handler::Version::BATTLE_DEPLOYMENT_PHASES))
+		{
+			h & deploymentState;
+			if(!h.saving && deploymentState.independent)
+			{
+				const auto activeSide = deploymentState.activeSide();
+				const auto expectedDistance = activeSide == BattleSide::NONE ? 0 : deploymentState.distances[activeSide];
+				if(tacticsSide != activeSide || tacticDistance != expectedDistance)
+					throw std::runtime_error("Independent deployment state does not match its tactics projection");
+			}
+		}
+		else if(!h.saving)
+			deploymentState = {};
+
 		if(!h.saving)
 		{
 			// Reject null/ambiguous unit references before postDeserialize dereferences
@@ -630,6 +660,9 @@ public:
 
 	ui8 getTacticDist() const override;
 	BattleSide getTacticsSide() const override;
+	const BattleDeploymentState & getDeploymentState() const override { return deploymentState; }
+	void setDeploymentState(const BattleDeploymentState & state) override;
+	bool hasIndependentDeploymentState() const { return deploymentState != BattleDeploymentState{}; }
 	int32_t getRound() const override;
 	int32_t getActivationSerial() const override { return activationSerial; }
 

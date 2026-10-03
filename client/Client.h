@@ -183,6 +183,7 @@ public:
 	std::optional<BattleAction> makeSurrenderRetreatDecision(PlayerColor player, const BattleID & battleID, const BattleStateInfoForRetreat & battleState) override;
 
 	void battleStarted(const BattleID & battle);
+	void battleDeploymentPhaseChanged(const BattleID & battle);
 	void battleFinished(const BattleID & battleID);
 	void startPlayerBattleAction(const BattleID & battleID, PlayerColor color);
 

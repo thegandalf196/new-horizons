@@ -110,6 +110,7 @@ public:
 	virtual void visitMapObjectSelectDialog(MapObjectSelectDialog & pack) {}
 	virtual void visitBattleStart(BattleStart & pack) {}
 	virtual void visitBattleNextRound(BattleNextRound & pack) {}
+	virtual void visitBattleDeploymentPhaseChanged(BattleDeploymentPhaseChanged & pack) {}
 	virtual void visitBattleSetActiveStack(BattleSetActiveStack & pack) {}
 	virtual void visitBattleResult(BattleResult & pack) {}
 	virtual void visitBattleLogMessage(BattleLogMessage & pack) {}

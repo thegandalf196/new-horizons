@@ -80,6 +80,7 @@ public:
 	void visitTeleportDialog(TeleportDialog & pack) override;
 	void visitMapObjectSelectDialog(MapObjectSelectDialog & pack) override;
 	void visitBattleStart(BattleStart & pack) override;
+	void visitBattleDeploymentPhaseChanged(BattleDeploymentPhaseChanged & pack) override;
 	void visitBattleNextRound(BattleNextRound & pack) override;
 	void visitBattleSetActiveStack(BattleSetActiveStack & pack) override;
 	void visitBattleLogMessage(BattleLogMessage & pack) override;

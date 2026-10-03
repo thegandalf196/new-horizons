@@ -439,7 +439,7 @@
 					"requires": "basic",
 					"description": "The army's deployment area extends two additional battlefield rows forward, subject to scenario and siege restrictions.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The army's deployment area extends two additional battlefield rows forward, subject to scenario and siege restrictions."
 					}
 				},

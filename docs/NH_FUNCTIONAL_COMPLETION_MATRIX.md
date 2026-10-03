@@ -14,6 +14,32 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-154 Tactics is now active and source/native verified. Both armies receive
+independent base-plus-two-row deployment, sequential phase packets and strict
+pre-action side/whole-footprint/occupancy validation. Opening effects and round1
+begin only after the last entitled side. Existing human controls and AI handler
+receive phase switches, with global ordinary-action blocking and branch-local
+deployment projections. Core37002 and repaired both-target10000/39337 pass;
+principal retry24146 passes8/8 in23.514s, adjacent11237 passes10/10 in17.054s,
+zero skips. Data/inventory19/19, module drift and source review pass. Coverage
+183->184/310 perks,127->126 planned; Battlecraft3->4/10. Ranks84/93 and
+faction49/90 are unchanged. Preserve the interrupted build and7/8 fixture logs.
+Descriptor/packet persistence is not full midbattle resume. Rendered/actualAI
+handoff, broader siege layouts and malformed post-opening phases remain Phase2.
+No playable snapshot is promoted. Binary SHA-256:
+`ab5cb64908b58d203ed9233a88749960d01789655a68d34297c27ca7a560a6d1`.
+
+UP-154 Tactics is source-staged with independent range3 deployment for each
+entitled army, saved phase progression, authoritative side/whole-footprint guards
+and existing human/AI phase handoff. Core build37002 passes; baseline42019 was
+interrupted with143 before completion. Root/reviewer repaired a constructor-order
+UI crash before native use. Repaired combined build10000 is live with the eight
+registered principal cases. Registry activation is staged for real acquisition
+tests, not yet accepted coverage; verified counts remain183/310. Data/inventory
+19/19 and module drift pass. Rendered/actualAI handoff, broader siege layouts and
+post-opening malformed-phase hardening remain Phase2. UP-155 Overwatch has a
+read-only map and awaits the Teleport/Blink scope clarification.
+
 UP-153 Passing Lines is active and source/native verified. Shared movement permits
 friendly occupied transit but rejects occupied endpoints, including controlled
 double-wide footprints. The authoritative path preserves occupied Fire Wall
@@ -1335,7 +1361,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 183/310 | 127 planned; Passing Lines is the newest source/native-verified activation. Battlecraft is 3/10; Command is 7/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 184/310 | 126 planned; Tactics is the newest source/native-verified activation. Battlecraft is 4/10; Command is 7/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 49/90 | 41 planned perks; Blood Scent has attack-local live/detached evidence. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -1471,7 +1497,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Offense | 3/0 | 10/0 | Evidence audit required |
 | Armorer | 3/0 | 7/3 | Bastion, Formation Fighting and Veteran have focused live/detached damage evidence. Three perks missing; Last Stand and Defiant await design choices. |
 | Archery | 3/0 | 10/0 | All ten perks are active; focused evidence pending |
-| Battlecraft | 3/0 | 2/8 | Entrench and Reserve active. Reserve has focused real delayed movement, expiry, save/packet and branch-local AI evidence. Eight perks remain planned. |
+| Battlecraft | 3/0 | 4/6 | Entrench, Reserve, Passing Lines and Tactics active. Focused native evidence covers delayed movement, friendly transit and independent deployment; rendered/actualAI deployment execution remains Phase2. Six perks remain planned. |
 | War Machines | 3/0 | 5/5 | Surgeon and Piercing Bolts have focused live/detached evidence; Fortification Engineer has real fortified-town manual-shot evidence; Master Gunner has accepted independently targeted second-shot evidence; Quartermaster has accepted half-output Ballista/Tent/Catapult extra-activation evidence. Five perks remain planned. Battlefield Medic persistence awaits clarification. |
 | Discipline | 3/0 | 7/3 | Steadfast joins Unbreakable, Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless with focused authoritative and detached evidence. Three perks remain planned; Esprit de Corps composition scope, Heroic Spirit activation timing and Veteran Cohesion HP reference await clarification. |
 | Recruitment | 3/0 | 6/4 | Four perks missing |

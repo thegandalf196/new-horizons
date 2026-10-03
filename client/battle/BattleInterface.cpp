@@ -93,6 +93,8 @@ BattleInterface::BattleInterface(const BattleID & battleID, const CCreatureSet *
 		tacticianInterface = attackerInt;
 	else if(defenderInt && defenderInt->cb->getBattle(getBattleID())->battleGetTacticDist())
 		tacticianInterface = defenderInt;
+	if(tacticianInterface)
+		trySetActivePlayer(tacticianInterface->playerID);
 
 	//initializing armies
 	this->army1 = army1;
@@ -836,6 +838,66 @@ bool BattleInterface::isInTacticsMode()
 	return tacticianInterface && tacticianInterface->cb->getBattle(getBattleID())->battleGetTacticDist() > 0;
 }
 
+bool BattleInterface::isDeploymentPhase() const
+{
+	if(!curInt || !curInt->cb)
+		return false;
+	const auto callback = curInt->cb->getBattle(getBattleID());
+	if(!callback || !callback->getBattle())
+		return false;
+	const auto * info = callback->getBattle();
+	const auto & deployment = info->getDeploymentState();
+	if(deployment.independent)
+		return deployment.activeSide() != BattleSide::NONE;
+	return info->getTacticDist() > 0;
+}
+
+void BattleInterface::deploymentPhaseChanged()
+{
+	if(!windowObject || !curInt || !curInt->cb)
+		return;
+	const auto callback = curInt->cb->getBattle(getBattleID());
+	if(!callback || !callback->getBattle())
+		return;
+	const auto * info = callback->getBattle();
+	const auto & deployment = info->getDeploymentState();
+	const BattleSide activeSide = deployment.independent
+		? deployment.activeSide()
+		: (info->getTacticDist() > 0 ? info->getTacticsSide() : BattleSide::NONE);
+
+	std::shared_ptr<CPlayerInterface> nextTactician;
+	if(activeSide != BattleSide::NONE)
+	{
+		const auto activePlayer = info->getSidePlayer(activeSide);
+		if(attackerInt && attackerInt->playerID == activePlayer && !attackerInt->isAutoFightOn)
+			nextTactician = attackerInt;
+		else if(defenderInt && defenderInt->playerID == activePlayer && !defenderInt->isAutoFightOn)
+			nextTactician = defenderInt;
+	}
+
+	const bool controllerChanged = tacticianInterface != nextTactician;
+	if(controllerChanged)
+		stacksController->setActiveStack(nullptr);
+	tacticianInterface = std::move(nextTactician);
+
+	if(tacticianInterface)
+		trySetActivePlayer(tacticianInterface->playerID);
+
+	if(activeSide == BattleSide::NONE)
+	{
+		windowObject->tacticPhaseEnded();
+		return;
+	}
+
+	windowObject->tacticPhaseStarted(tacticianInterface != nullptr);
+	// Unlike BattleWindow construction, a phase update runs after the stack and
+	// action controllers exist. Initial blocking is performed by our constructor.
+	if(!tacticianInterface)
+		windowObject->blockUI(true);
+	if(tacticianInterface && controllerChanged && !openingPlaying())
+		tacticNextStack(nullptr);
+}
+
 void BattleInterface::playIntroSoundAndUnlockInterface()
 {
 	auto onIntroPlayed = [this]()
@@ -1084,7 +1146,7 @@ void BattleInterface::giveCommand(EActionType action, const std::vector<BattleHe
 bool BattleInterface::canArmPerfectMoment()
 {
 	const auto * active = stacksController->getActiveStack();
-	return active && curInt && !curInt->isAutoFightOn && !isInTacticsMode()
+	return active && curInt && !curInt->isAutoFightOn && !isDeploymentPhase()
 		&& !actionsController->heroSpellcastingModeActive()
 		&& !actionsController->creatureSpellcastingModeActive()
 		&& getBattle()->battleCanUsePerfectMoment(active);
@@ -1110,6 +1172,14 @@ void BattleInterface::clearPerfectMoment()
 
 void BattleInterface::sendCommand(BattleAction command, const CStack * actor)
 {
+	if(isDeploymentPhase())
+	{
+		// The deployment window permits only the active human's movement
+		// commands; ordinary creature and hero actions stay unavailable until
+		// every entitled side has completed deployment.
+		if(!isInTacticsMode() || command.actionType != EActionType::WALK)
+			return;
+	}
 	if(actionsController)
 		actionsController->cancelHeroOrderTargeting();
 	command.stackNumber = actor ? actor->unitId() : ((command.side == BattleSide::ATTACKER) ? -1 : -2);
@@ -1211,7 +1281,7 @@ void BattleInterface::spellCast(const BattleSpellCast * sc)
 
 	// Do not deactivate anything in tactics mode
 	// This is battlefield setup spells
-	if(!isInTacticsMode())
+	if(!isDeploymentPhase())
 	{
 		windowObject->blockUI(true);
 
@@ -1491,7 +1561,7 @@ void BattleInterface::activateStack()
 
 void BattleInterface::presentPendingHeroOrderChoice()
 {
-	if(!curInt || curInt->isAutoFightOn || !makingTurn() || isInTacticsMode()
+	if(!curInt || curInt->isAutoFightOn || !makingTurn() || isDeploymentPhase()
 		|| actionsController->heroOrderTargetingModeActive()
 		|| actionsController->heroSpellcastingModeActive())
 		return;
@@ -1527,6 +1597,8 @@ void BattleInterface::endAction(const BattleAction &action)
 
 	// it is possible that tactics mode ended while opening music is still playing
 	waitForAnimations();
+	if(action.actionType == EActionType::END_TACTIC_PHASE)
+		return; // the authoritative phase snapshot selects the next controller
 
 	presentAcceptedHeroOrder(action);
 	waitForAnimations();
@@ -1645,7 +1717,24 @@ void BattleInterface::startAction(const BattleAction & action)
 
 	if(action.actionType == EActionType::END_TACTIC_PHASE)
 	{
-		windowObject->tacticPhaseEnded();
+		const auto & deployment = getBattle()->getBattle()->getDeploymentState();
+		if(deployment.independent)
+		{
+			// Keep normal actions blocked until the server publishes the next
+			// side's phase or the final completion snapshot.
+			if(tacticianInterface
+				&& tacticianInterface->cb->getBattle(battleID)->playerToSide(tacticianInterface->playerID) == action.side)
+			{
+				windowObject->tacticPhaseStarted(false);
+				stacksController->setActiveStack(nullptr);
+			}
+		}
+		else
+		{
+			tacticianInterface.reset();
+			stacksController->setActiveStack(nullptr);
+			windowObject->tacticPhaseEnded();
+		}
 		return;
 	}
 
@@ -1661,6 +1750,8 @@ void BattleInterface::startAction(const BattleAction & action)
 
 void BattleInterface::tacticPhaseEnd()
 {
+	if(!tacticianInterface || !isInTacticsMode())
+		return;
 	stacksController->setActiveStack(nullptr);
 
 	auto side = tacticianInterface->cb->getBattle(battleID)->playerToSide(tacticianInterface->playerID);
@@ -1676,6 +1767,8 @@ static bool immobile(const CStack *s)
 
 void BattleInterface::tacticNextStack(const CStack * current)
 {
+	if(!tacticianInterface || !isInTacticsMode())
+		return;
 	if (!current)
 		current = stacksController->getActiveStack();
 

@@ -474,7 +474,7 @@ TacticsHandler::SpecialHexes TacticsHandler::getSpecialHexes() const
 
 void TacticsHandler::onTacticsStarted()
 {
-	if (battle->battleTacticDist() == 0)
+	if (battle->battleGetTacticDist() == 0)
 	{
 		phase = Phase::INACTIVE;
 		return;
@@ -551,7 +551,7 @@ bool TacticsHandler::moveNextGuardAwayFromCorners()
 		const auto reachability = battle->getReachability(guard);
 		for(const auto & hex : specialHexes.tempHexes)
 		{
-			if(reachability.isReachable(hex))
+			if(reachability.isReachable(hex) && battle->isInTacticRange(hex, *guard))
 			{
 				tacticMove(guard, hex);
 				return true;
@@ -582,7 +582,7 @@ bool TacticsHandler::moveNextVipToCorner()
 
 		for(const auto & hex : destinations)
 		{
-			if(reachability.isReachable(hex))
+			if(reachability.isReachable(hex) && battle->isInTacticRange(hex, *vip))
 			{
 				tacticMove(vip, hex);
 				return true;
@@ -640,7 +640,7 @@ std::optional<BattleHex> TacticsHandler::findGuardDestination(const CStack * gua
 		if(guard->getPosition() == hex)
 			break;
 
-		if(reachability.isReachable(hex) && cb->getBattle(bid)->isInTacticRange(hex))
+		if(reachability.isReachable(hex) && cb->getBattle(bid)->isInTacticRange(hex, *guard))
 			return hex;
 	}
 
@@ -650,7 +650,7 @@ std::optional<BattleHex> TacticsHandler::findGuardDestination(const CStack * gua
 
 void TacticsHandler::onActionFinished(const BattleAction & action)
 {
-	if (battle->battleTacticDist() == 0)
+	if (battle->battleGetTacticDist() == 0)
 	{
 		phase = Phase::INACTIVE;
 		return;

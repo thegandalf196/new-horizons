@@ -457,6 +457,11 @@ void BattleNextRound::visitTyped(ICPackVisitor & visitor)
 	visitor.visitBattleNextRound(*this);
 }
 
+void BattleDeploymentPhaseChanged::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitBattleDeploymentPhaseChanged(*this);
+}
+
 void BattleSetActiveStack::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitBattleSetActiveStack(*this);

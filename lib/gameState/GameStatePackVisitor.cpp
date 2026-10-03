@@ -1771,6 +1771,15 @@ void GameStatePackVisitor::visitBattleStart(BattleStart & pack)
 	heroCommands::validateRules(pack.info->getHeroCommandRules());
 	pack.info->normalizeLegacyHeroCommandState();
 	pack.info->validateFocusFireStates();
+	const auto & deploymentState = pack.info->getDeploymentState();
+	deploymentState.validateShape();
+	if(deploymentState.independent)
+	{
+		const auto activeSide = deploymentState.activeSide();
+		const auto expectedDistance = activeSide == BattleSide::NONE ? 0 : deploymentState.distances[activeSide];
+		if(pack.info->tacticsSide != activeSide || pack.info->tacticDistance != expectedDistance)
+			throw std::runtime_error("Independent BattleStart deployment state has an invalid tactics projection");
+	}
 	// BattleStart may arrive in-process without passing through binary decoding,
 	// so reject malformed continuation references before unit initialization too.
 	pack.info->validateDoubleCommandStructure();
@@ -1840,6 +1849,18 @@ void GameStatePackVisitor::visitBattleNextRound(BattleNextRound & pack)
 		applySpellBufferRoundExpiryReward(*battle, sideID);
 	}
 	battle->nextRound();
+}
+
+void GameStatePackVisitor::visitBattleDeploymentPhaseChanged(BattleDeploymentPhaseChanged & pack)
+{
+	auto * battle = gs.getBattle(pack.battleID);
+	if(!battle)
+		throw std::runtime_error("Deployment phase update references a missing battle");
+	const auto & previous = battle->getDeploymentState();
+	if(!previous.independent || !pack.state.independent)
+		throw std::runtime_error("Deployment phase update does not target an independent deployment");
+	pack.state.validateTransitionFrom(previous);
+	battle->setDeploymentState(pack.state);
 }
 
 void GameStatePackVisitor::visitBattleSetActiveStack(BattleSetActiveStack & pack)
@@ -2265,7 +2286,9 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 
 	if(pack.ba.actionType == EActionType::END_TACTIC_PHASE)
 	{
-		gs.getBattle(pack.battleID)->tacticDistance = 0;
+		auto * battle = gs.getBattle(pack.battleID);
+		if(!battle->getDeploymentState().independent)
+			battle->tacticDistance = 0;
 		return;
 	}
 
@@ -3142,6 +3165,17 @@ void BattleStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderSta
 		battleState.setDoubleCommandState(pack.side, *pack.doubleCommandState);
 	if(pack.preCombatOrderState)
 		battleState.setPreCombatOrderState(pack.side, *pack.preCombatOrderState);
+}
+
+void BattleStatePackVisitor::visitBattleDeploymentPhaseChanged(BattleDeploymentPhaseChanged & pack)
+{
+	if(pack.battleID != battleState.getBattleID())
+		throw std::runtime_error("Deployment phase update targets another battle");
+	const auto & previous = battleState.getDeploymentState();
+	if(!previous.independent || !pack.state.independent)
+		throw std::runtime_error("Deployment phase update does not target an independent deployment");
+	pack.state.validateTransitionFrom(previous);
+	battleState.setDeploymentState(pack.state);
 }
 
 void BattleStatePackVisitor::visitBattleAdverseRerollStateChanged(BattleAdverseRerollStateChanged & pack)

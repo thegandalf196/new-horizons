@@ -231,7 +231,10 @@ void BattleTestFixture::startBattle(const CGTownInstance * town)
 
 	ASSERT_EQ(gameState()->currentBattles.size(), 1u);
 
-	battle()->tacticDistance = 0;
+	// Ordinary fixtures skip legacy deployment, but independent deployment tests
+	// must retain the real setup snapshot and its synchronized scalar projection.
+	if(!battle()->getDeploymentState().independent)
+		battle()->tacticDistance = 0;
 
 	// the layout scatters obstacles at random, and a mine under a unit would show up as damage
 	battle()->obstacles.clear();

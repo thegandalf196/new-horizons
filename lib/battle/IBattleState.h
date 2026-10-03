@@ -22,6 +22,7 @@
 #include "HeroActionAllowanceState.h"
 #include "AlternatingHeroActionState.h"
 #include "RelentlessAssaultState.h"
+#include "BattleDeploymentState.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
 class ObstacleChanges;
@@ -102,6 +103,11 @@ public:
 	{
 		(void)side;
 		static const PreCombatOrderState empty;
+		return empty;
+	}
+	virtual const BattleDeploymentState & getDeploymentState() const
+	{
+		static const BattleDeploymentState empty;
 		return empty;
 	}
 	virtual const AlternatingHeroActionState & getWarcastingState(BattleSide side) const
@@ -225,6 +231,11 @@ public:
 	{
 		(void)side;
 		(void)state;
+	}
+	virtual void setDeploymentState(const BattleDeploymentState & state)
+	{
+		(void)state;
+		throw std::runtime_error("Battle state does not support deployment phase updates");
 	}
 
 	virtual void addUnit(uint32_t id, const JsonNode & data) = 0;

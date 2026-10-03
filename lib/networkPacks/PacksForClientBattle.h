@@ -23,6 +23,7 @@
 #include "../battle/MoraleSuppressionState.h"
 #include "../battle/ReducedExtraActivationState.h"
 #include "../battle/BattleInfo.h"
+#include "../battle/BattleDeploymentState.h"
 #include "../battle/BattleHexArray.h"
 #include "../battle/BattleUnitTurnReason.h"
 #include "../filesystem/ResourcePath.h"
@@ -46,6 +47,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && info && !h.hasFeature(Handler::Version::BATTLE_DEPLOYMENT_PHASES)
+			&& info->hasIndependentDeploymentState())
+			throw std::runtime_error("Cannot discard independent deployment state from BattleStart");
 		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_RANGED_FOLLOW_UP)
 			&& info->hasRangedFollowUpState())
 			throw std::runtime_error("Cannot discard ranged follow-up battle start state");
@@ -80,6 +84,30 @@ struct DLL_LINKAGE BattleNextRound : public CPackForClient
 	{
 		h & battleID;
 		assert(battleID != BattleID::NONE);
+	}
+};
+
+/// Publishes the authoritative completion of one independent deployment phase.
+struct DLL_LINKAGE BattleDeploymentPhaseChanged : public CPackForClient
+{
+	BattleID battleID = BattleID::NONE;
+	BattleDeploymentState state;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::BATTLE_DEPLOYMENT_PHASES))
+			throw std::runtime_error("Deployment phase updates require the current save/network format");
+		if(h.saving && (battleID == BattleID::NONE || !state.independent))
+			throw std::runtime_error("Invalid independent deployment phase update");
+		if(h.saving)
+			state.validateShape();
+		h & battleID;
+		h & state;
+		if(battleID == BattleID::NONE || !state.independent)
+			throw std::runtime_error("Invalid independent deployment phase update");
+		state.validateShape();
 	}
 };
 

@@ -734,6 +734,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	auto activeUnit = realBattle->battleActiveUnit();
 	activeUnitId = activeUnit ? activeUnit->unitId() : -1;
 	projectedRound = realBattle->battleGetRound();
+	deploymentState = realBattle->getBattle()->getDeploymentState();
 	fortuneRollRules = realBattle->getBattle()->getLuckRollRules();
 	if(const auto * concreteBattle = dynamic_cast<const BattleInfo *>(realBattle->getBattle()))
 		pendingTimeStopHeroActionSides = concreteBattle->getPendingTimeStopHeroActionSides();
@@ -978,6 +979,29 @@ battle::Units HypotheticBattle::getUnitsIf(const battle::UnitFilter & predicate)
 BattleID HypotheticBattle::getBattleID() const
 {
 	return subject->getBattle()->getBattleID();
+}
+
+ui8 HypotheticBattle::getTacticDist() const
+{
+	if(deploymentState.independent)
+	{
+		const auto side = deploymentState.activeSide();
+		return side == BattleSide::NONE ? 0 : deploymentState.distances[side];
+	}
+	return BattleProxy::getTacticDist();
+}
+
+BattleSide HypotheticBattle::getTacticsSide() const
+{
+	if(deploymentState.independent)
+		return deploymentState.activeSide();
+	return BattleProxy::getTacticsSide();
+}
+
+void HypotheticBattle::setDeploymentState(const BattleDeploymentState & state)
+{
+	state.validateTransitionFrom(deploymentState);
+	deploymentState = state;
 }
 
 const ReducedExtraActivationState & HypotheticBattle::getReducedExtraActivationState(BattleSide side) const
@@ -1677,6 +1701,8 @@ IBattleInfo::ObstacleCList HypotheticBattle::getAllObstacles() const
 
 void HypotheticBattle::nextRound()
 {
+	if(deploymentState.independent && deploymentState.activeSide() != BattleSide::NONE)
+		throw std::runtime_error("Cannot advance a battle round with unresolved deployment phase");
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		if(preCombatOrderStates.at(side).isUnresolved())
 			throw std::runtime_error("Cannot advance a battle round with unresolved Battle Plan choice");
