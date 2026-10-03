@@ -18,6 +18,16 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP179 Reality Warp remains missing as a complete combat spell (60/67 unchanged).
+Its required stable caster-provenance representation and detached reciprocal
+bundle planner exist in production sources, with Guardian/Regeneration/Hydra
+fractional payload preservation. Client8019/test45423 and independent source
+review pass; UP179-prerequisite-principal.log/XML passes9/9 from2 suites in
+1.201s, zero skips. This accepts prerequisites only. Live stack discovery,
+recipient descriptors, authoritative exchange, paired human targeting and AI
+scoring remain required before activation. A beneficiary-side transposition
+question is pending for Focus Magic/Arcane Breach. No playable promotion.
+
 UP129 Recruitment Pact is source/native verified. Successful positive neutral
 admission arms an inclusive day+7 entitlement; the next neutral contact uses
 an exact 15% Army Value discount and consumes it. Gold price is unchanged;

@@ -505,6 +505,25 @@ private:
 		stackEffectsTouched = true;
 		if(casterOwner != PlayerColor::CANNOT_DETERMINE)
 		{
+			// Stamp incoming copies. Generic updates may only extend the old timer,
+			// but special refreshable statuses such as Guardian Spirit replace their marker.
+			const auto stampSpellCaster = [this](auto & changes)
+			{
+				for(auto & change : changes)
+				{
+					for(auto & bonus : change.second)
+					{
+						if(bonus.source != BonusSource::SPELL_EFFECT
+							|| (bonus.sid != BonusSourceID(castSpellId)
+								&& bonus.sid != BonusSourceID(effectSpellId)))
+							continue;
+						bonus.spellCasterOwner = casterOwner;
+					}
+				}
+			};
+			stampSpellCaster(pack.toAdd);
+			stampSpellCaster(pack.toUpdate);
+
 			const auto stampHostility = [&](auto & changes)
 			{
 				for(auto & [unitId, bonuses] : changes)

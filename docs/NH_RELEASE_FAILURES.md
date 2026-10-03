@@ -2,6 +2,24 @@
 
 ## Purpose
 
+### 2026-10-03 UP-179 — Verify coordinator termination before resuming
+
+Retry15193 exits143 after179/320 without a compiler error. Root inspects process
+state: coordinator is absent, transient remaining compiler children finish, then
+no cmake/ninja/compiler remains. Cause is unestablished. Resume retained objects
+under a new retry log only after that check; never equate a polling timeout with
+termination or start a second build while an orphaned coordinator is live.
+
+### 2026-10-03 UP-179 — Complete Bonus serialization types
+
+Client8019 passes. Test94692 fails in NewHorizonsRealityWarpPlannerTest.cpp:
+instantiating Bonus serialization requires complete BonusParameters, limiter,
+propagator and updater types, not only Bonus.h forward declarations. Add their
+defining test headers; do not alter engine interfaces or remove wire assertions.
+Retain UP179-prerequisite-test-build.log and reuse compiled objects in a distinct
+retry. Earlier invented enum names/member lambda captures were corrected by
+source review before the build. No native prerequisite acceptance is claimed.
+
 ### 2026-10-03 UP-129 Pact — Respect fixture skill progression
 
 Test build retry passes, but fresh UP129-pact-principal.log/XML records23/27:

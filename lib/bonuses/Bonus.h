@@ -66,6 +66,15 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 	// Target-relative provenance captured when an effect is applied. Unlike
 	// bonusOwner (dynamic aura ownership), this survives control changes.
 	bool appliedByEnemy = false;
+	// Stable owner of the side that applied a spell effect. Unlike
+	// appliedByEnemy, this can be compared with a new recipient after an effect
+	// moves between units. Unknown legacy and non-spell bonuses use the sentinel.
+	PlayerColor spellCasterOwner = PlayerColor::CANNOT_DETERMINE;
+	static bool isValidSpellCasterOwner(PlayerColor owner)
+	{
+		return owner.isValidPlayer() || owner == PlayerColor::CANNOT_DETERMINE
+			|| owner == PlayerColor::UNFLAGGABLE || owner == PlayerColor::NEUTRAL;
+	}
 
 	bool hidden = false;
 
@@ -77,9 +86,14 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && !isValidSpellCasterOwner(spellCasterOwner))
+			throw std::runtime_error("Invalid bonus spell caster owner provenance");
 		if(h.saving && appliedByEnemy
 			&& !h.hasFeature(Handler::Version::BONUS_EFFECT_HOSTILITY))
 			throw std::runtime_error("Cannot discard bonus effect hostility provenance");
+		if(h.saving && spellCasterOwner != PlayerColor::CANNOT_DETERMINE
+			&& !h.hasFeature(Handler::Version::BONUS_SPELL_CASTER_OWNER))
+			throw std::runtime_error("Cannot discard bonus spell caster owner provenance");
 		// TIME_STOP is a new serialized bonus type.  Never emit it through an
 		// older handler: doing so would shift/interpret the enum differently in a
 		// legacy reader.  A battle without this marker remains fully loadable by
@@ -139,6 +153,14 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 			h & appliedByEnemy;
 		else if(!h.saving)
 			appliedByEnemy = false;
+		if(h.hasFeature(Handler::Version::BONUS_SPELL_CASTER_OWNER))
+		{
+			h & spellCasterOwner;
+			if(!h.saving && !isValidSpellCasterOwner(spellCasterOwner))
+				throw std::runtime_error("Invalid bonus spell caster owner provenance");
+		}
+		else if(!h.saving)
+			spellCasterOwner = PlayerColor::CANNOT_DETERMINE;
 
 		//old saves stored BATTLE_NO_FLEEING in the slot now used by BATTLE_CAN_FLEE, it blocked retreating unconditionally
 		if(!h.saving && !h.hasFeature(Handler::Version::RETREAT_PERMISSION_BONUSES) && type == BonusType::BATTLE_CAN_FLEE)

@@ -67,6 +67,15 @@ restoration preserves copied provenance, and later control changes do not
 rewrite it. Missing legacy provenance defaults to false (unclassified), not a
 guess based on negative values or the spell's polarity.
 
+`Bonus::spellCasterOwner` separately records the stable owner of the effective
+side that applied a spell effect. It is not inferred from `appliedByEnemy` or
+the dynamic `bonusOwner`. When a spell effect is transferred to another target,
+its origin remains unchanged and target-relative hostility can be recalculated
+for the new recipient. Unknown legacy provenance remains
+`PlayerColor::CANNOT_DETERMINE`. Ordinary duration-only refreshes retain the
+stored owner; an effect-specific refresh that replaces its marker records the
+new application owner.
+
 If multiple limiters are specified for a bonus, a child inherits the bonus only if all limiters say that it should.
 
 So e.g. a list of multiple creature type limiters (with different creatures) would ensure that no creature inherits the bonus. In such a case, the solution is to use one bonus per creature.

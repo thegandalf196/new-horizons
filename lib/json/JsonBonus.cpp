@@ -938,6 +938,19 @@ bool JsonUtils::parseBonus(const JsonNode &ability, Bonus *b, const TextIdentifi
 		b->appliedByEnemy = value->Bool();
 	}
 
+	value = &ability["spellCasterOwner"];
+	if(!value->isNull())
+	{
+		if(value->getType() != JsonNode::JsonType::DATA_INTEGER)
+			throw std::runtime_error("Bonus spellCasterOwner provenance must be an integer player-color ID");
+		const auto ownerValue = value->Integer();
+		if(ownerValue < PlayerColor::CANNOT_DETERMINE.getNum()
+			|| ownerValue >= PlayerColor::PLAYER_LIMIT_I
+			|| !Bonus::isValidSpellCasterOwner(PlayerColor(static_cast<si32>(ownerValue))))
+			throw std::runtime_error("Bonus spellCasterOwner provenance is not a supported player color");
+		b->spellCasterOwner = PlayerColor(static_cast<si32>(ownerValue));
+	}
+
 	value = &ability["limiters"];
 	if (!value->isNull())
 		b->limiter = parseLimiter(*value);

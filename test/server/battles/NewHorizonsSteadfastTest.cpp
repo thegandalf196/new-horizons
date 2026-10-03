@@ -10,6 +10,7 @@
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/bonuses/Bonus.h"
+#include "../../../lib/bonuses/BonusSelector.h"
 #include "../../../lib/bonuses/CBonusSystemNode.h"
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/json/JsonBonus.h"
@@ -393,6 +394,7 @@ TEST_F(NewHorizonsSteadfastTest, HostileSorrowCastIsStampedAndReducesTheActualEf
 	ASSERT_NE(applied, nullptr);
 	EXPECT_EQ(applied->val, -3);
 	EXPECT_TRUE(applied->appliedByEnemy);
+	EXPECT_EQ(applied->spellCasterOwner, attackerSideHero->tempOwner);
 	EXPECT_EQ(battle()->battleGetMorale(target), -2);
 }
 
@@ -420,6 +422,17 @@ TEST_F(NewHorizonsSteadfastTest, FriendlyShieldOfChaosPenaltyIsNotAttenuated)
 	ASSERT_NE(applied, nullptr);
 	EXPECT_EQ(applied->val, -10);
 	EXPECT_FALSE(applied->appliedByEnemy);
+	const PlayerColor expectedCaster = attackerSideHero->tempOwner;
+	EXPECT_EQ(applied->spellCasterOwner, expectedCaster);
+	const auto allBonuses = target->getAllBonuses(Selector::source(
+		BonusSource::SPELL_EFFECT, BonusSourceID(spell)));
+	ASSERT_NE(allBonuses, nullptr);
+	EXPECT_TRUE(std::any_of(allBonuses->begin(), allBonuses->end(), [expectedCaster](const auto & bonus)
+	{
+		return bonus
+			&& bonus->type != BonusType::MORALE
+			&& bonus->spellCasterOwner == expectedCaster;
+	})) << "Every Shield of Chaos effect bonus, not only its Morale penalty, records caster ownership";
 	EXPECT_EQ(battle()->battleGetMorale(target), minimumMorale());
 }
 
@@ -451,27 +464,38 @@ TEST_F(NewHorizonsSteadfastTest, ProvenanceRoundTripsThroughBinaryAndJsonAndCann
 	Bonus source(BonusDuration::N_TURNS, BonusType::MORALE, BonusSource::OTHER, -3, BonusSourceID());
 	source.turnsRemain = 2;
 	source.appliedByEnemy = true;
+	source.spellCasterOwner = PlayerColor(1);
+
+	Bonus copied = source;
+	EXPECT_EQ(copied.spellCasterOwner, PlayerColor(1))
+		<< "Ordinary Bonus copies retain stable spell-caster provenance";
 
 	CMemorySerializer wire;
+	wire.oser.version = ESerializationVersion::CURRENT;
+	wire.iser.version = ESerializationVersion::CURRENT;
 	wire.oser & source;
 	Bonus restored;
-	wire.iser.version = ESerializationVersion::CURRENT;
 	wire.iser & restored;
 	EXPECT_TRUE(restored.appliedByEnemy);
+	EXPECT_EQ(restored.spellCasterOwner, PlayerColor(1));
 	EXPECT_EQ(restored.val, -3);
 	EXPECT_EQ(restored.turnsRemain, 2);
 
 	const JsonNode json = source.toJsonNode();
 	ASSERT_TRUE(json["appliedByEnemy"].Bool());
+	ASSERT_EQ(json["spellCasterOwner"].Integer(), 1);
 	const auto parsed = JsonUtils::parseBonus(json);
 	ASSERT_NE(parsed, nullptr);
 	EXPECT_TRUE(parsed->appliedByEnemy);
+	EXPECT_EQ(parsed->spellCasterOwner, PlayerColor(1));
 	EXPECT_EQ(parsed->val, -3);
 
 	Bonus defaultFriendly(BonusDuration::PERMANENT, BonusType::MORALE,
 		BonusSource::OTHER, -1, BonusSourceID());
 	EXPECT_TRUE(defaultFriendly.toJsonNode()["appliedByEnemy"].isNull());
 	EXPECT_FALSE(JsonUtils::parseBonus(defaultFriendly.toJsonNode())->appliedByEnemy);
+	EXPECT_TRUE(defaultFriendly.toJsonNode()["spellCasterOwner"].isNull());
+	EXPECT_EQ(JsonUtils::parseBonus(defaultFriendly.toJsonNode())->spellCasterOwner, PlayerColor::CANNOT_DETERMINE);
 
 	auto invalidString = json;
 	invalidString["appliedByEnemy"] = JsonNode("true");
@@ -479,6 +503,12 @@ TEST_F(NewHorizonsSteadfastTest, ProvenanceRoundTripsThroughBinaryAndJsonAndCann
 	auto invalidInteger = json;
 	invalidInteger["appliedByEnemy"] = JsonNode(1);
 	EXPECT_THROW(JsonUtils::parseBonus(invalidInteger), std::runtime_error);
+	auto invalidOwnerString = json;
+	invalidOwnerString["spellCasterOwner"] = JsonNode("red");
+	EXPECT_THROW(JsonUtils::parseBonus(invalidOwnerString), std::runtime_error);
+	auto invalidOwnerInteger = json;
+	invalidOwnerInteger["spellCasterOwner"] = JsonNode(static_cast<int32_t>(PlayerColor::PLAYER_LIMIT_I));
+	EXPECT_THROW(JsonUtils::parseBonus(invalidOwnerInteger), std::runtime_error);
 
 	CMemorySerializer oldWriter;
 	oldWriter.oser.version = ESerializationVersion::NEW_HORIZONS_UNBREAKABLE;

@@ -547,6 +547,11 @@
 			"type" : "boolean",
 			"description" : "Runtime provenance: effect was applied by an enemy of its recipient at application time."
 		},
+		"spellCasterOwner" : {
+			"type" : "integer",
+			"enum" : [ -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7 ],
+			"description" : "Runtime provenance: stable owner ID of the side that applied the spell effect; -3 means unknown."
+		},
 		"propagator" : {
 			"description" : "propagator",
 			"type" : "string",

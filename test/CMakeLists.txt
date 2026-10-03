@@ -143,6 +143,7 @@ set(test_SRCS
 		spells/NewHorizonsModCompatibilityTest.cpp
 		spells/NewHorizonsSorceryTest.cpp
 		spells/NewHorizonsRegenerationTest.cpp
+		spells/NewHorizonsRealityWarpPlannerTest.cpp
  		spells/TargetConditionTest.cpp
 
 		spells/effects/EffectFixture.cpp

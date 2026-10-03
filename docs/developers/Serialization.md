@@ -135,6 +135,19 @@ one is rejected before the bonus is written. Old records load false: their
 unrecorded caster allegiance is not inferred. Dynamic propagated aura ownership
 continues to use the existing owner updater and limiter, not this field.
 
+## Bonus spell-caster owner
+
+`BONUS_SPELL_CASTER_OWNER` appends `Bonus::spellCasterOwner` after the
+target-relative hostility flag. Actual spell-effect applications record the
+effective caster-side owner when known; copied bonuses preserve it, while
+non-spell and legacy bonuses default to `CANNOT_DETERMINE`. This stable origin
+lets a later effect transfer recompute `appliedByEnemy` for the new recipient
+without attributing the effect to the transferring spell. Older readers cannot
+retain a known caster owner, so down-saving it is rejected before the bonus
+payload. Bonus JSON snapshots use the numeric PlayerColor ID, accepting player
+IDs 0–7 and the supported `NEUTRAL`, `UNFLAGGABLE`, and `CANNOT_DETERMINE`
+sentinels; old JSON without the property remains unknown.
+
 ## New Horizons Land Surveyor weekly allowance
 
 `NEW_HORIZONS_LAND_SURVEYOR` appends a hero's last successful rewarded mine-
