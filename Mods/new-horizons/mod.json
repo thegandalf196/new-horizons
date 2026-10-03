@@ -6429,7 +6429,7 @@
 								"requires": "basic",
 								"description": "The first flanking attack against each enemy stack ignores 25% Creature Defense.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The first flanking attack against each enemy stack ignores 25% Creature Defense."
 								}
 							},

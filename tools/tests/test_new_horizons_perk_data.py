@@ -70,6 +70,7 @@ ACTIVE_PERKS = {
     "new-horizons:chaosMagic.misfortuneWeaver",
     "new-horizons:shroudOfMalassa.backstab",
     "new-horizons:shroudOfMalassa.ambusher",
+    "new-horizons:shroudOfMalassa.shadowAssault",
     "new-horizons:shroudOfMalassa.noEscape",
     "new-horizons:shroudOfMalassa.evasiveShroud",
     "new-horizons:spellcraft.empowerSpell",

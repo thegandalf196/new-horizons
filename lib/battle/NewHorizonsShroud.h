@@ -5,6 +5,8 @@
  */
 #pragma once
 
+#include "BattleSide.h"
+
 #include <string_view>
 
 class CGHeroInstance;
@@ -20,9 +22,11 @@ namespace newHorizonsShroud
 constexpr std::string_view SKILL_ID = "new-horizons:shroudOfMalassa";
 constexpr std::string_view BACKSTAB_PERK_ID = "new-horizons:shroudOfMalassa.backstab";
 constexpr std::string_view AMBUSHER_PERK_ID = "new-horizons:shroudOfMalassa.ambusher";
+constexpr std::string_view SHADOW_ASSAULT_PERK_ID = "new-horizons:shroudOfMalassa.shadowAssault";
 constexpr std::string_view NO_ESCAPE_PERK_ID = "new-horizons:shroudOfMalassa.noEscape";
 constexpr std::string_view EVASIVE_SHROUD_PERK_ID = "new-horizons:shroudOfMalassa.evasiveShroud";
 constexpr std::string_view AMBUSHER_STACKING_KEY = "new-horizons:shroudOfMalassa.ambusherSpent";
+constexpr int SHADOW_ASSAULT_DEFENSE_IGNORE_PERCENT = 25;
 constexpr std::string_view NO_ESCAPE_STACKING_KEY = "new-horizons:shroudOfMalassa.noEscape";
 constexpr std::string_view EVASIVE_SHROUD_STACKING_KEY = "new-horizons:shroudOfMalassa.evasiveShroud";
 constexpr int BACKSTAB_DAMAGE_PERCENT = 15;
@@ -37,6 +41,11 @@ DLL_LINKAGE bool hasAmbusher(const CGHeroInstance * hero);
 DLL_LINKAGE int ambusherDamagePercent(const CGHeroInstance * hero, const battle::Unit * unit);
 DLL_LINKAGE Bonus ambusherSpentMarker();
 DLL_LINKAGE bool isAmbusherSpentMarker(const Bonus * bonus);
+DLL_LINKAGE bool hasShadowAssault(const CGHeroInstance * hero);
+DLL_LINKAGE int shadowAssaultDefenseIgnorePercent(const CGHeroInstance * hero,
+	const battle::Unit * target, BattleSide attackingSide);
+DLL_LINKAGE Bonus shadowAssaultSpentMarker(BattleSide attackingSide);
+DLL_LINKAGE bool isShadowAssaultSpentMarker(const Bonus * bonus, BattleSide attackingSide);
 DLL_LINKAGE bool hasNoEscape(const CGHeroInstance * hero);
 DLL_LINKAGE Bonus noEscapeSpeedPenalty();
 DLL_LINKAGE bool isNoEscapeSpeedPenalty(const Bonus * bonus);

@@ -14,6 +14,21 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP173 Shadow Assault is source/native verified and active. A target-carried,
+attacking-side-specific battle-long Bonus gates the first qualifying flank's
+25-percentage-point Creature-Defense ignore. Accepted hits consume it even on
+zero damage or a dead target; prediction reads do not consume it. Live and AI
+candidate/replay paths share classification, and ID-only cache history bypass
+survives side changes. Client10661, combined99818 and activated both-target
+build pass. Principal1/1 (0.358s) and production-active1/1 (0.353s) pass with zero
+skips; the latter bypasses the planned-only fixture override. Data/inventory19/19
+and module drift pass; independent final review finds no blocker. Binary SHA-256:
+eb13b6ef7f9c69e416031ce74750cb7e7960eea303c1a551ade54c19dd84add1.
+Coverage192/310 active perks,118 planned; faction54/90,36 planned; Shroud5/10;
+ranks84/93 unchanged. Broader control/form/clone, whole-combat saves and rendered
+delivery remain Phase2. Generic UI Provisional, purpose-made art Not done;
+no immutable playable promotion is claimed.
+
 UP172 Ambusher is source/native verified and active. A per-stack battle-long
 spent Bonus marker drives the first qualifying flanking strike's20-percentage-
 point damage premium. Shared live/detached damage reads do not consume it;
@@ -29,6 +44,7 @@ ranks84/93 unchanged. Full combat-save restoration, broader control/ordering
 and form/clone identity remain Phase2. Generic UI Provisional, purpose-made art
 Not done; no rendered acceptance or immutable playable promotion is claimed.
 Final independent activation review finds no blocker and confirms the recount.
+Ambusher source is pushed asdb96e718b; no immutable playable promotion.
 
 UP171 Evasive Shroud is source/native verified and active. Accepted direct
 rear melee grants the surviving attacker nonstacking15% physical reduction
@@ -1532,9 +1548,9 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 191/310 | 119 planned; Ambusher is the newest source/native-verified activation. Learning is 3/10; Estates is 5/10; Battlecraft is 5/10; Command is 7/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 192/310 | 118 planned; Shadow Assault is the newest source/native-verified activation. Learning is 3/10; Estates is 5/10; Battlecraft is 5/10; Command is 7/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
-| Faction perks active | 53/90 | 37 planned perks; Ambusher has focused first/repeat accepted-strike, per-stack consumption, live/AI branch and narrow Bonus persistence evidence. |
+| Faction perks active | 54/90 | 36 planned perks; Shadow Assault has first/repeat/fresh-target accepted-strike, side-specific consumption, live/AI branch and narrow Bonus persistence evidence. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
@@ -1690,7 +1706,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Divine Mandate | 0/3 | 0/10 | Ranks and progression missing |
 | Sylvan Luck | 3/0 | 10/0 | Evidence audit required |
 | Metamagic | 3/0 | 10/0 | Evidence audit required |
-| Shroud of Malassa | 3/0 | 4/6 | Basic Backstab/Ambusher and Advanced No Escape/Evasive Shroud are active; six perks remain planned. Ambusher has first/repeat accepted-hit and independent-stack evidence; Evasive has live retaliation and real expiry evidence. |
+| Shroud of Malassa | 3/0 | 5/5 | Basic Backstab/Ambusher/Shadow Assault and Advanced No Escape/Evasive Shroud are active; five perks remain planned. Shadow Assault has per-target/per-side accepted-hit evidence; Evasive has live retaliation and real expiry evidence. |
 | Demonic Gating | 3/0 | 10/0 | Evidence audit required |
 | Necromancy | 3/0 | 3/7 | Seven perks missing; one inert hook |
 | Bloodrage | 3/0 | 7/3 | War Drums, Fury Unbound, Endless Bloodshed, Unrelenting, Berserker, Blood Scent and Rage Through Pain have focused live/AI evidence and legal progression; First Blood, Slayer and Avatar of Rage remain planned. |

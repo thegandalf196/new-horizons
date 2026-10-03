@@ -13,6 +13,26 @@
 
 namespace
 {
+constexpr std::string_view SHADOW_ASSAULT_ATTACKER_STACKING_KEY =
+	"new-horizons:shroudOfMalassa.shadowAssaultSpent.attacker";
+constexpr std::string_view SHADOW_ASSAULT_DEFENDER_STACKING_KEY =
+	"new-horizons:shroudOfMalassa.shadowAssaultSpent.defender";
+
+bool isValidShadowAssaultSide(BattleSide side)
+{
+	return side == BattleSide::ATTACKER || side == BattleSide::DEFENDER;
+}
+
+std::string_view shadowAssaultStackingKey(BattleSide side)
+{
+	switch(side)
+	{
+		case BattleSide::ATTACKER: return SHADOW_ASSAULT_ATTACKER_STACKING_KEY;
+		case BattleSide::DEFENDER: return SHADOW_ASSAULT_DEFENDER_STACKING_KEY;
+		default: throw std::invalid_argument("Shadow Assault marker requires an attacking battle side");
+	}
+}
+
 BonusSourceID shroudSkillSource()
 {
 	static const BonusSourceID source{SecondarySkill{SecondarySkill::decode(
@@ -84,6 +104,41 @@ int ambusherDamagePercent(const CGHeroInstance * hero, const battle::Unit * unit
 		return isAmbusherSpentMarker(bonus);
 	}));
 	return alreadySpent ? 0 : AMBUSHER_DAMAGE_PERCENT;
+}
+
+bool hasShadowAssault(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(SKILL_ID), std::string(SHADOW_ASSAULT_PERK_ID));
+}
+
+Bonus shadowAssaultSpentMarker(BattleSide attackingSide)
+{
+	Bonus bonus(BonusDuration::ONE_BATTLE, BonusType::NONE, BonusSource::SECONDARY_SKILL,
+		0, shroudSkillSource());
+	bonus.stacking = std::string(shadowAssaultStackingKey(attackingSide));
+	bonus.hidden = true;
+	return bonus;
+}
+
+bool isShadowAssaultSpentMarker(const Bonus * bonus, BattleSide attackingSide)
+{
+	return bonus && isValidShadowAssaultSide(attackingSide)
+		&& bonus->duration == BonusDuration::ONE_BATTLE && bonus->type == BonusType::NONE
+		&& bonus->val == 0 && bonus->source == BonusSource::SECONDARY_SKILL
+		&& bonus->sid == shroudSkillSource()
+		&& bonus->stacking == shadowAssaultStackingKey(attackingSide);
+}
+
+int shadowAssaultDefenseIgnorePercent(const CGHeroInstance * hero, const battle::Unit * target,
+	BattleSide attackingSide)
+{
+	if(!hasShadowAssault(hero) || !target || !isValidShadowAssaultSide(attackingSide))
+		return 0;
+	const bool alreadySpent = target->hasBonus(CSelector([attackingSide](const Bonus * bonus)
+	{
+		return isShadowAssaultSpentMarker(bonus, attackingSide);
+	}));
+	return alreadySpent ? 0 : SHADOW_ASSAULT_DEFENSE_IGNORE_PERCENT;
 }
 
 bool hasNoEscape(const CGHeroInstance * hero)

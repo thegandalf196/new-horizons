@@ -4334,7 +4334,10 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	bool noEscapeTriggered = false;
 	bool evasiveShroudTriggered = false;
 	bool ambusherTriggered = false;
+	bool shadowAssaultTriggered = false;
 	int32_t ambusherAttackerCount = 0;
+	int32_t shadowAssaultTargetCount = 0;
+	BattleSide shadowAssaultAttackingSide = BattleSide::NONE;
 	if(defender)
 	{
 		const auto primaryHit = std::ranges::find_if(bat.bsa, [defender](const BattleStackAttacked & hit)
@@ -4352,8 +4355,14 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			evasiveShroudTriggered = newHorizonsShroud::hasEvasiveShroud(attackingHero) && flankingAttack;
 			ambusherTriggered = flankingAttack
 				&& newHorizonsShroud::ambusherDamagePercent(attackingHero, attacker) > 0;
+			shadowAssaultAttackingSide = battle.playerToSide(battle.battleGetOwner(attacker));
+			shadowAssaultTriggered = flankingAttack
+				&& newHorizonsShroud::shadowAssaultDefenseIgnorePercent(
+					attackingHero, defender, shadowAssaultAttackingSide) > 0;
 			if(ambusherTriggered)
 				ambusherAttackerCount = attacker->getCount();
+			if(shadowAssaultTriggered)
+				shadowAssaultTargetCount = defender->getCount();
 		}
 	}
 	gameHandler->sendAndApply(bat);
@@ -4372,6 +4381,24 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		line.appendNumber(newHorizonsShroud::AMBUSHER_DAMAGE_PERCENT);
 		line.appendRawString("% damage on its first flanking attack this combat.");
 		attacker->addNameReplacement(line, ambusherAttackerCount);
+		message.lines.push_back(std::move(line));
+		gameHandler->sendAndApply(message);
+	}
+	if(shadowAssaultTriggered)
+	{
+		SetStackEffect shadowAssaultSpent;
+		shadowAssaultSpent.battleID = battle.getBattle()->getBattleID();
+		shadowAssaultSpent.toAdd.emplace_back(defender->unitId(),
+			std::vector<Bonus>{newHorizonsShroud::shadowAssaultSpentMarker(shadowAssaultAttackingSide)});
+		gameHandler->sendAndApply(shadowAssaultSpent);
+
+		BattleLogMessage message;
+		message.battleID = battle.getBattle()->getBattleID();
+		MetaString line;
+		line.appendRawString("Shadow Assault ignores ");
+		line.appendNumber(newHorizonsShroud::SHADOW_ASSAULT_DEFENSE_IGNORE_PERCENT);
+		line.appendRawString("% of %s's Creature Defense on the first flanking attack this combat.");
+		defender->addNameReplacement(line, shadowAssaultTargetCount);
 		message.lines.push_back(std::move(line));
 		gameHandler->sendAndApply(message);
 	}

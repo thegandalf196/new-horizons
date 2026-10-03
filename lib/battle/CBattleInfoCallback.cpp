@@ -2779,6 +2779,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				newHorizonsShroud::rank(attackerHero))
 				+ newHorizonsShroud::backstabDamagePercent(attackerHero)
 				+ newHorizonsShroud::ambusherDamagePercent(attackerHero, info.attacker);
+			payload.meleeDefenseIgnorePercent += newHorizonsShroud::shadowAssaultDefenseIgnorePercent(
+				attackerHero, info.defender, playerToSide(battleGetOwner(info.attacker)));
 		}
 		if(info.defender && info.defender->defended() && ordinaryCreatureAttack
 			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.defender)

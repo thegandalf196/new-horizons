@@ -52,6 +52,13 @@ bool hasRangedMarkEffect(const battle::Unit * unit, const char * source)
 	return false;
 }
 
+bool hasShadowAssaultSpentMarker(const battle::Unit * unit, BattleSide attackingSide)
+{
+	return unit && (attackingSide == BattleSide::ATTACKER || attackingSide == BattleSide::DEFENDER)
+		&& unit->hasBonus(CSelector([attackingSide](const Bonus * bonus)
+			{ return newHorizonsShroud::isShadowAssaultSpentMarker(bonus, attackingSide); }));
+}
+
 int bulwarkPreemptivePercent(const battle::Unit * defender, const CBattleInfoCallback & state)
 {
 	if(!defender || !defender->defended()
@@ -148,6 +155,10 @@ void DamageCache::cacheDamage(const battle::Unit * attacker, const battle::Unit 
 		? hb->battleGetFightingHero(attackerSide) : nullptr;
 	if(newHorizonsShroud::hasAmbusher(attackerHero))
 		ambusherAttackers.insert(attacker->unitId());
+	if((attackerSide == BattleSide::ATTACKER || attackerSide == BattleSide::DEFENDER)
+		&& (newHorizonsShroud::hasShadowAssault(attackerHero)
+			|| hasShadowAssaultSpentMarker(defender, attackerSide)))
+		shadowAssaultTargetSides.emplace(defender->unitId(), attackerSide);
 
 	// A continuation allowance is per-action state, not part of the ID-keyed
 	// baseline damage cache. Its shared callback forecast is intentionally
@@ -278,6 +289,15 @@ bool DamageCache::tracksAmbusher(uint32_t attackerId) const
 	return false;
 }
 
+bool DamageCache::tracksShadowAssault(uint32_t defenderId) const
+{
+	for(const auto * cache = this; cache; cache = cache->parent)
+		for(const auto & targetAndSide : cache->shadowAssaultTargetSides)
+			if(targetAndSide.first == defenderId)
+				return true;
+	return false;
+}
+
 int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)
 {
 	if(hasRangedMarkEffect(defender, newHorizonsSorcery::ARCANE_BREACH_EFFECT))
@@ -290,6 +310,10 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	const bool hasAmbusher = newHorizonsShroud::hasAmbusher(raHero);
 	if(hasAmbusher)
 		ambusherAttackers.insert(attacker->unitId());
+	const bool hasShadowAssault = newHorizonsShroud::hasShadowAssault(raHero);
+	if((raSide == BattleSide::ATTACKER || raSide == BattleSide::DEFENDER)
+		&& (hasShadowAssault || hasShadowAssaultSpentMarker(defender, raSide)))
+		shadowAssaultTargetSides.emplace(defender->unitId(), raSide);
 	const auto * defenderHero = hb->battleGetOwnerHero(defender);
 	const bool hasBastion = defenderHero && defenderHero->hasActivePerk(
 		std::string(newHorizonsCombatSkills::ARMORER_SKILL_ID),
@@ -337,6 +361,8 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 		|| hasGamblerPenalty
 		|| hasBloodragePain
 		|| hasAmbusher
+		|| hasShadowAssault
+		|| tracksShadowAssault(defender->unitId())
 		|| tracksAmbusher(attacker->unitId())
 		|| tracksEvasiveShroud(defender->unitId())
 		|| tracksRangedMarks(defender->unitId()))
@@ -657,6 +683,8 @@ AttackPossibility AttackPossibility::evaluate(
 			|| newHorizonsShroud::hasEvasiveShroud(defenderHero);
 		const bool projectsAmbusher = newHorizonsShroud::hasAmbusher(raHero)
 			|| newHorizonsShroud::hasAmbusher(defenderHero);
+		const bool projectsShadowAssault = newHorizonsShroud::hasShadowAssault(raHero)
+			|| newHorizonsShroud::hasShadowAssault(defenderHero);
 		const bool ordinaryArcheryShooter = newHorizonsArchery::isOrdinaryPhysicalShooter(attacker);
 		const auto currentRound = state->battleGetRound();
 		const auto currentActivationSerial = static_cast<int32_t>(state->getBattle()->getActivationSerial());
@@ -837,13 +865,13 @@ AttackPossibility AttackPossibility::evaluate(
 		if(ap.perfectMoment || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 				|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 				|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune
-				|| projectsNoEscape || projectsEvasiveShroud || projectsAmbusher || projectsBloodragePain)
+				|| projectsNoEscape || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault || projectsBloodragePain)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
 	if(projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 			|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune
-			|| projectsNoEscape || projectsEvasiveShroud || projectsAmbusher || projectsBloodragePain)
+			|| projectsNoEscape || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault || projectsBloodragePain)
 			ap.effectPreview = fortunePreview;
 	const CBattleInfoCallback & luckState = fortunePreview
 		? static_cast<const CBattleInfoCallback &>(*fortunePreview) : *state;
@@ -894,6 +922,27 @@ AttackPossibility AttackPossibility::evaluate(
 	{
 		auto attacker = fortunePreview->getForUpdate(attackerUnitId);
 		attacker->addUnitBonus({newHorizonsShroud::ambusherSpentMarker()});
+	};
+	const auto qualifyingShadowAssaultSide = [&fortunePreview](const BattleAttackInfo & projectedAttack)
+		-> std::optional<BattleSide>
+	{
+		if(!fortunePreview || !fortunePreview->battleIsShroudFlankingAttack(projectedAttack))
+			return {};
+		const auto side = fortunePreview->playerToSide(
+			fortunePreview->battleGetOwner(projectedAttack.attacker));
+		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			return {};
+		if(newHorizonsShroud::shadowAssaultDefenseIgnorePercent(
+			fortunePreview->battleGetFightingHero(side), projectedAttack.defender, side) <= 0)
+			return {};
+		return side;
+	};
+	const auto spendShadowAssault = [&fortunePreview](uint32_t targetUnitId, BattleSide attackingSide)
+	{
+		if(!fortunePreview || (attackingSide != BattleSide::ATTACKER && attackingSide != BattleSide::DEFENDER))
+			return;
+		if(auto target = fortunePreview->getForUpdate(targetUnitId))
+			target->addUnitBonus({newHorizonsShroud::shadowAssaultSpentMarker(attackingSide)});
 	};
 	const auto captureAndProjectFortuneStrike = [&fortunePreview](const BattleAttackInfo & attack,
 		const std::vector<std::pair<uint32_t, int64_t>> & hits,
@@ -1044,6 +1093,7 @@ AttackPossibility AttackPossibility::evaluate(
 					preemptive.defenderPos = ap.attackerState->getPosition();
 					const bool triggersEvasiveShroud = qualifiesForEvasiveShroud(preemptive);
 					const bool triggersAmbusher = qualifiesForAmbusher(preemptive);
+					const auto shadowAssaultSide = qualifyingShadowAssaultSide(preemptive);
 					auto preemptiveDamage = luckState.battleExpectedLuckDamage(preemptive);
 					const bool consumesBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
 						preemptive.attacker, preemptive.physicalDamage)
@@ -1060,6 +1110,8 @@ AttackPossibility AttackPossibility::evaluate(
 						preemptiveProvenance);
 					if(triggersAmbusher)
 						spendAmbusher(strikeDefenderState->second->unitId());
+					if(shadowAssaultSide)
+						spendShadowAssault(ap.attackerState->unitId(), *shadowAssaultSide);
 					if(triggersEvasiveShroud && strikeDefenderState->second->alive())
 						refreshEvasiveShroud(strikeDefenderState->second->unitId());
 					if(consumesBastion)
@@ -1168,6 +1220,7 @@ AttackPossibility AttackPossibility::evaluate(
 				const bool triggersNoEscape = qualifiesForNoEscape(victimAttack);
 				const bool triggersEvasiveShroud = qualifiesForEvasiveShroud(victimAttack);
 				const bool triggersAmbusher = qualifiesForAmbusher(victimAttack);
+				const auto shadowAssaultSide = qualifyingShadowAssaultSide(victimAttack);
 				if(strike.perfectMoment)
 				{
 					// Non-lucky collateral of a forced positive strike is neutral,
@@ -1224,6 +1277,8 @@ AttackPossibility AttackPossibility::evaluate(
 				strike.resolvedHits.emplace_back(u->unitId(), damageDealt);
 				if(triggersAmbusher)
 					spendAmbusher(ap.attackerState->unitId());
+				if(shadowAssaultSide)
+					spendShadowAssault(u->unitId(), *shadowAssaultSide);
 				if(triggersNoEscape && defenderState->alive())
 					refreshNoEscapePenalty(defenderState->unitId());
 				if(triggersEvasiveShroud && ap.attackerState->alive())
@@ -1567,6 +1622,7 @@ AttackPossibility AttackPossibility::evaluate(
 					cleaveAttack.cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
 					const bool triggersEvasiveShroud = qualifiesForEvasiveShroud(cleaveAttack);
 					const bool triggersAmbusher = qualifiesForAmbusher(cleaveAttack);
+					const auto shadowAssaultSide = qualifyingShadowAssaultSide(cleaveAttack);
 					int64_t cleaveDamage = luckState.battleExpectedLuckDamage(cleaveAttack);
 					const auto cleaveProvenance = battleAIDamageProvenance(
 						ap.attackerState.get(), cleaveAttack.physicalDamage);
@@ -1588,6 +1644,8 @@ AttackPossibility AttackPossibility::evaluate(
 					targetState->damage(cleaveDamage, false, cleave->damageProvenance);
 					if(triggersAmbusher)
 						spendAmbusher(ap.attackerState->unitId());
+					if(shadowAssaultSide)
+						spendShadowAssault(targetState->unitId(), *shadowAssaultSide);
 					if(triggersEvasiveShroud && ap.attackerState->alive())
 						refreshEvasiveShroud(ap.attackerState->unitId());
 					if(consumesBastion)
@@ -1699,6 +1757,7 @@ AttackPossibility AttackPossibility::evaluate(
 				bool triggersNoEscape = false;
 				bool triggersEvasiveShroud = false;
 				bool triggersAmbusher = false;
+				std::optional<BattleSide> shadowAssaultSide;
 				if(retaliation)
 				{
 					auto retaliatorState = defenderStates.at(retaliation->attackerId);
@@ -1710,6 +1769,7 @@ AttackPossibility AttackPossibility::evaluate(
 					triggersNoEscape = qualifiesForNoEscape(retaliationAttack);
 					triggersEvasiveShroud = qualifiesForEvasiveShroud(retaliationAttack);
 					triggersAmbusher = qualifiesForAmbusher(retaliationAttack);
+					shadowAssaultSide = qualifyingShadowAssaultSide(retaliationAttack);
 					consumesBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
 						retaliationAttack.attacker, retaliationAttack.physicalDamage)
 						&& luckState.battleHasBastionProtection(targetState.get());
@@ -1718,6 +1778,8 @@ AttackPossibility AttackPossibility::evaluate(
 					retaliation ? retaliation->damageProvenance : battle::DamageProvenance::OTHER);
 				if(triggersAmbusher && retaliation)
 					spendAmbusher(retaliation->attackerId);
+				if(shadowAssaultSide && retaliation)
+					spendShadowAssault(targetState->unitId(), *shadowAssaultSide);
 				if(triggersNoEscape && targetState->alive())
 					refreshNoEscapePenalty(targetState->unitId());
 				if(triggersEvasiveShroud && retaliation

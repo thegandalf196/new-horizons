@@ -2,6 +2,16 @@
 
 ## Purpose
 
+### 2026-10-03 UP-173 — Fixture pre-build review guards
+
+Readiness review catches two fixture-only mistakes before a test build: fatal
+ASSERT macros in a value-returning geometry helper, and a Castle defender used
+for a faction-locked Dungeon perk. A failed fatal assertion returns void and
+cannot compile in that helper; use an explicit ADD_FAILURE plus a typed return.
+Create two distinct allowed Dungeon heroes and retain legal acquisition checks.
+Do not loosen runtime faction gates or misreport this source review as a failed
+native run. The owning tester repairs the unregistered fixture before freeze.
+
 ### 2026-10-03 UP-171 — Detached bonus mutation receiver
 
 Combined Evasive Shroud build92831 exits1: BattleExchangeVariant's helper
