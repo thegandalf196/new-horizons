@@ -888,6 +888,47 @@ bool CBattleInfoCallback::battleIsShroudFlankingAttack(const BattleAttackInfo & 
 	return isToReverse(attack.attacker, attack.defender, attackerHex, defenderHex);
 }
 
+bool CBattleInfoCallback::battleNightProwlerCrossesEnemy(
+	const battle::Unit * mover, const BattleHexArray & committedPath) const
+{
+	const auto * currentBattle = getBattle();
+	if(!mover || !currentBattle || !mover->alive() || mover->isGhost()
+		|| mover->hasBonusOfType(BonusType::FLYING) || committedPath.empty())
+		return false;
+
+	const auto & deployment = currentBattle->getDeploymentState();
+	if(deployment.activeSide() != BattleSide::NONE || currentBattle->getTacticDist() > 0)
+		return false;
+
+	const auto controllerSide = playerToSide(battleGetOwner(mover));
+	if(controllerSide != BattleSide::ATTACKER && controllerSide != BattleSide::DEFENDER)
+		return false;
+	const auto moverOwner = battleGetOwner(mover);
+	if(moverOwner == PlayerColor::CANNOT_DETERMINE)
+		return false;
+	const auto * hero = battleGetFightingHero(controllerSide);
+	if(!hero || newHorizonsShroud::rank(hero) <= 0 || !newHorizonsShroud::hasNightProwler(hero))
+		return false;
+
+	for(const auto & position : committedPath)
+	{
+		if(!position.isValid())
+			continue;
+		for(const auto & footprintHex : mover->getHexes(position))
+		{
+			if(!footprintHex.isValid())
+				continue;
+			const auto * occupant = battleGetUnitByPos(footprintHex, true);
+			if(!occupant || occupant->unitId() == mover->unitId())
+				continue;
+			const auto occupantOwner = battleGetOwner(occupant);
+			if(occupantOwner != PlayerColor::CANNOT_DETERMINE && moverOwner != occupantOwner)
+				return true;
+		}
+	}
+	return false;
+}
+
 bool CBattleInfoCallback::battleHasFormationFightingProtection(const battle::Unit * defender,
 	const BattleHex & assumedPosition) const
 {

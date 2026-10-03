@@ -73,6 +73,7 @@ ACTIVE_PERKS = {
     "new-horizons:shroudOfMalassa.shadowAssault",
     "new-horizons:shroudOfMalassa.noEscape",
     "new-horizons:shroudOfMalassa.evasiveShroud",
+    "new-horizons:shroudOfMalassa.nightProwler",
     "new-horizons:spellcraft.empowerSpell",
     "new-horizons:spellcraft.spellPenetration",
     "new-horizons:natureMagic.herbalist",

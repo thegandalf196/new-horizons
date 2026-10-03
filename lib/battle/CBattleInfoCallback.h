@@ -146,6 +146,9 @@ public:
 		const battle::Unit * primaryTarget) const;
 	/// True for an ordinary hostile melee blow delivered from behind the defender.
 	bool battleIsShroudFlankingAttack(const BattleAttackInfo & attack) const;
+	/// Whether an accepted non-flying Ghost Walk route crosses a living hostile footprint
+	/// while the current controlling hero has Night Prowler.
+	bool battleNightProwlerCrossesEnemy(const battle::Unit * mover, const BattleHexArray & committedPath) const;
 	/// Whether a living creature stack is protected by an allied formation at the
 	/// attack's projected defender position (or its current position when omitted).
 	bool battleHasFormationFightingProtection(const battle::Unit * defender,

@@ -14,6 +14,24 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP175 Night Prowler is source/native verified and active. Actually committed,
+non-flying Ghost Walk through a currently hostile footprint grants10% melee/
+ranged damage on the next attack in that activation. Existing UNTIL_ATTACK and
+STACK_ACTIVATION Bonus lifetimes consume the pair after the full first hit set
+or expire it unused. Named quantitative feedback, gated exact-route AI prediction,
+branch-local consumption/replay and ID-only cache history are included. Core53687
+and repaired both-target90975 build pass; initial client17500 failure and repairs
+are retained. Principal3/3 passes (suite0.825s,total1.110s); production-active3/3
+passes (suite0.833s,total1.110s), both zero skips. Data/inventory19/19, module drift
+and activated incremental build pass. Final independent review finds no blocker.
+Binary SHA-256:537d5121058c8e16be5a5c1eab738ca0a4d9177a63984128650e3e3e9ac1c785.
+Coverage193/310 active perks,117 planned; faction55/90,35 planned; Shroud6/10;
+ranks84/93 unchanged. Generic UI Provisional and purpose-made art Not done.
+Broader hazard/control/form, full-save and rendered-delivery checks remain Phase2;
+the flying negative is a shared-predicate check, not an executed flying move.
+No immutable playable promotion is claimed. Deep Flank UP174 and Vanish UP176
+await their narrow recorded design rulings, without implementation/count claims.
+
 UP173 Shadow Assault is source/native verified and active. A target-carried,
 attacking-side-specific battle-long Bonus gates the first qualifying flank's
 25-percentage-point Creature-Defense ignore. Accepted hits consume it even on
@@ -1552,9 +1570,9 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 192/310 | 118 planned; Shadow Assault is the newest source/native-verified activation. Learning is 3/10; Estates is 5/10; Battlecraft is 5/10; Command is 7/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 193/310 | 117 planned; Night Prowler is the newest source/native-verified activation. Learning is 3/10; Estates is 5/10; Battlecraft is 5/10; Command is 7/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
-| Faction perks active | 54/90 | 36 planned perks; Shadow Assault has first/repeat/fresh-target accepted-strike, side-specific consumption, live/AI branch and narrow Bonus persistence evidence. |
+| Faction perks active | 55/90 | 35 planned perks; Night Prowler has committed hostile transit, first-strike consumption, unused expiry and isolated AI route/replay evidence. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
@@ -1710,7 +1728,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Divine Mandate | 0/3 | 0/10 | Ranks and progression missing |
 | Sylvan Luck | 3/0 | 10/0 | Evidence audit required |
 | Metamagic | 3/0 | 10/0 | Evidence audit required |
-| Shroud of Malassa | 3/0 | 5/5 | Basic Backstab/Ambusher/Shadow Assault and Advanced No Escape/Evasive Shroud are active; five perks remain planned. Shadow Assault has per-target/per-side accepted-hit evidence; Evasive has live retaliation and real expiry evidence. |
+| Shroud of Malassa | 3/0 | 6/4 | Basic Backstab/Ambusher/Shadow Assault and Advanced No Escape/Evasive Shroud/Night Prowler are active; four perks remain planned. Night Prowler has live/AI crossing, first-strike and unused-expiry evidence; its flying negative is predicate-only. |
 | Demonic Gating | 3/0 | 10/0 | Evidence audit required |
 | Necromancy | 3/0 | 3/7 | Seven perks missing; one inert hook |
 | Bloodrage | 3/0 | 7/3 | War Drums, Fury Unbound, Endless Bloodshed, Unrelenting, Berserker, Blood Scent and Rage Through Pain have focused live/AI evidence and legal progression; First Blood, Slayer and Avatar of Rage remain planned. |

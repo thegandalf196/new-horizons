@@ -187,6 +187,46 @@ bool isEvasiveShroudProtection(const Bonus * bonus)
 		&& bonus->stacking == EVASIVE_SHROUD_STACKING_KEY;
 }
 
+bool hasNightProwler(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(SKILL_ID), std::string(NIGHT_PROWLER_PERK_ID));
+}
+
+std::vector<Bonus> nightProwlerDamageBonuses()
+{
+	std::vector<Bonus> result;
+	result.reserve(2);
+	const auto duration = BonusDuration::STACK_ACTIVATION | BonusDuration::UNTIL_ATTACK;
+
+	Bonus meleeDamage(duration, BonusType::PERCENTAGE_DAMAGE_BOOST, BonusSource::SECONDARY_SKILL,
+		NIGHT_PROWLER_DAMAGE_PERCENT, shroudSkillSource(), BonusCustomSubtype::damageTypeMelee);
+	meleeDamage.stacking = std::string(NIGHT_PROWLER_MELEE_STACKING_KEY);
+	meleeDamage.description.appendRawString("Night Prowler: +10% damage on the next attack this activation");
+	result.push_back(std::move(meleeDamage));
+
+	Bonus rangedDamage(duration, BonusType::PERCENTAGE_DAMAGE_BOOST, BonusSource::SECONDARY_SKILL,
+		NIGHT_PROWLER_DAMAGE_PERCENT, shroudSkillSource(), BonusCustomSubtype::damageTypeRanged);
+	rangedDamage.stacking = std::string(NIGHT_PROWLER_RANGED_STACKING_KEY);
+	rangedDamage.description.appendRawString("Night Prowler: +10% damage on the next attack this activation");
+	result.push_back(std::move(rangedDamage));
+	return result;
+}
+
+bool isNightProwlerBonus(const Bonus * bonus)
+{
+	if(!bonus || bonus->duration != (BonusDuration::STACK_ACTIVATION | BonusDuration::UNTIL_ATTACK)
+		|| bonus->type != BonusType::PERCENTAGE_DAMAGE_BOOST
+		|| bonus->val != NIGHT_PROWLER_DAMAGE_PERCENT
+		|| bonus->source != BonusSource::SECONDARY_SKILL || bonus->sid != shroudSkillSource())
+		return false;
+
+	const bool melee = bonus->subtype == BonusCustomSubtype::damageTypeMelee
+		&& bonus->stacking == NIGHT_PROWLER_MELEE_STACKING_KEY;
+	const bool ranged = bonus->subtype == BonusCustomSubtype::damageTypeRanged
+		&& bonus->stacking == NIGHT_PROWLER_RANGED_STACKING_KEY;
+	return melee || ranged;
+}
+
 bool deniesRetaliation(int value)
 {
 	return value >= 3;

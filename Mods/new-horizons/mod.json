@@ -6469,7 +6469,7 @@
 								"requires": "advanced",
 								"description": "A stack that uses Ghost Walk to pass through an enemy stack's occupied hexes gains +10% damage on its next attack that activation.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "A stack that uses Ghost Walk to pass through an enemy stack's occupied hexes gains +10% damage on its next attack that activation."
 								}
 							},

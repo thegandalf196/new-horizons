@@ -2,6 +2,26 @@
 
 ## Purpose
 
+### 2026-10-03 UP-175 — Repeat detached mutation receiver and TU scope
+
+Client build17500 exits1. Four new AttackPossibility consumption sites call
+removeUnitBonus on CUnitState, which has no such method. The UP171 lesson below
+already records this receiver constraint: use the branch-local StackWithBonuses
+returned by HypotheticBattle::getForUpdate, never widen CUnitState's API merely
+to compile a perk. Independent review also finds BEx references an AP anonymous-
+namespace helper absent from its own translation unit; add a local helper or
+inline selector. That separate scope issue is source review, not a reported
+compiler error from this build. Retain testing/UP175-night-prowler-client-build.log;
+repair through the sole AI owner, freeze, rebuild, then run native acceptance.
+Pre-build fixture review additionally repairs non-constexpr BattleHex constants,
+a flying Angel used for a non-flying Ghost Walk path, and a mismatched log
+assertion. A persistent Basic Backstab instead of one-shot Ambusher isolates the
+Night Prowler follow-up baseline. Do not weaken faction/movement/lifetime rules.
+Resolution: guarded branch-wrapper removals and a BEx-local helper pass repaired
+both-target build90975. Principal3/3 and production-active3/3 pass, zero skips,
+each total1.110s. The failed build and original logs are retained; no shared
+unit-state API, production duration or acquisition validation was weakened.
+
 ### 2026-10-03 UP-173 — Fixture pre-build review guards
 
 Readiness review catches two fixture-only mistakes before a test build: fatal

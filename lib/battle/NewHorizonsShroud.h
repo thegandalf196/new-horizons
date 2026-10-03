@@ -8,6 +8,7 @@
 #include "BattleSide.h"
 
 #include <string_view>
+#include <vector>
 
 class CGHeroInstance;
 struct Bonus;
@@ -25,7 +26,10 @@ constexpr std::string_view AMBUSHER_PERK_ID = "new-horizons:shroudOfMalassa.ambu
 constexpr std::string_view SHADOW_ASSAULT_PERK_ID = "new-horizons:shroudOfMalassa.shadowAssault";
 constexpr std::string_view NO_ESCAPE_PERK_ID = "new-horizons:shroudOfMalassa.noEscape";
 constexpr std::string_view EVASIVE_SHROUD_PERK_ID = "new-horizons:shroudOfMalassa.evasiveShroud";
+constexpr std::string_view NIGHT_PROWLER_PERK_ID = "new-horizons:shroudOfMalassa.nightProwler";
 constexpr std::string_view AMBUSHER_STACKING_KEY = "new-horizons:shroudOfMalassa.ambusherSpent";
+constexpr std::string_view NIGHT_PROWLER_MELEE_STACKING_KEY = "new-horizons:shroudOfMalassa.nightProwler.melee";
+constexpr std::string_view NIGHT_PROWLER_RANGED_STACKING_KEY = "new-horizons:shroudOfMalassa.nightProwler.ranged";
 constexpr int SHADOW_ASSAULT_DEFENSE_IGNORE_PERCENT = 25;
 constexpr std::string_view NO_ESCAPE_STACKING_KEY = "new-horizons:shroudOfMalassa.noEscape";
 constexpr std::string_view EVASIVE_SHROUD_STACKING_KEY = "new-horizons:shroudOfMalassa.evasiveShroud";
@@ -33,6 +37,7 @@ constexpr int BACKSTAB_DAMAGE_PERCENT = 15;
 constexpr int AMBUSHER_DAMAGE_PERCENT = 20;
 constexpr int NO_ESCAPE_SPEED_PENALTY = -2;
 constexpr int EVASIVE_SHROUD_REDUCTION_BASIS_POINTS = 1500;
+constexpr int NIGHT_PROWLER_DAMAGE_PERCENT = 10;
 
 DLL_LINKAGE int rank(const CGHeroInstance * hero);
 DLL_LINKAGE int flankingDamagePercent(int rank);
@@ -52,5 +57,8 @@ DLL_LINKAGE bool isNoEscapeSpeedPenalty(const Bonus * bonus);
 DLL_LINKAGE bool hasEvasiveShroud(const CGHeroInstance * hero);
 DLL_LINKAGE Bonus evasiveShroudProtection();
 DLL_LINKAGE bool isEvasiveShroudProtection(const Bonus * bonus);
+DLL_LINKAGE bool hasNightProwler(const CGHeroInstance * hero);
+DLL_LINKAGE std::vector<Bonus> nightProwlerDamageBonuses();
+DLL_LINKAGE bool isNightProwlerBonus(const Bonus * bonus);
 DLL_LINKAGE bool deniesRetaliation(int rank);
 }

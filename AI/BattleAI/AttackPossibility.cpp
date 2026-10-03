@@ -59,6 +59,11 @@ bool hasShadowAssaultSpentMarker(const battle::Unit * unit, BattleSide attacking
 			{ return newHorizonsShroud::isShadowAssaultSpentMarker(bonus, attackingSide); }));
 }
 
+bool hasNightProwlerBonus(const battle::Unit * unit)
+{
+	return unit && unit->hasBonus(CSelector(newHorizonsShroud::isNightProwlerBonus));
+}
+
 int bulwarkPreemptivePercent(const battle::Unit * defender, const CBattleInfoCallback & state)
 {
 	if(!defender || !defender->defended()
@@ -159,6 +164,8 @@ void DamageCache::cacheDamage(const battle::Unit * attacker, const battle::Unit 
 		&& (newHorizonsShroud::hasShadowAssault(attackerHero)
 			|| hasShadowAssaultSpentMarker(defender, attackerSide)))
 		shadowAssaultTargetSides.emplace(defender->unitId(), attackerSide);
+	if(newHorizonsShroud::hasNightProwler(attackerHero) || hasNightProwlerBonus(attacker))
+		nightProwlerAttackers.insert(attacker->unitId());
 
 	// A continuation allowance is per-action state, not part of the ID-keyed
 	// baseline damage cache. Its shared callback forecast is intentionally
@@ -298,6 +305,14 @@ bool DamageCache::tracksShadowAssault(uint32_t defenderId) const
 	return false;
 }
 
+bool DamageCache::tracksNightProwler(uint32_t attackerId) const
+{
+	for(const auto * cache = this; cache; cache = cache->parent)
+		if(cache->nightProwlerAttackers.contains(attackerId))
+			return true;
+	return false;
+}
+
 int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)
 {
 	if(hasRangedMarkEffect(defender, newHorizonsSorcery::ARCANE_BREACH_EFFECT))
@@ -314,6 +329,10 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	if((raSide == BattleSide::ATTACKER || raSide == BattleSide::DEFENDER)
 		&& (hasShadowAssault || hasShadowAssaultSpentMarker(defender, raSide)))
 		shadowAssaultTargetSides.emplace(defender->unitId(), raSide);
+	const bool hasNightProwler = newHorizonsShroud::hasNightProwler(raHero);
+	const bool hasNightProwlerEffect = hasNightProwlerBonus(attacker);
+	if(hasNightProwler || hasNightProwlerEffect)
+		nightProwlerAttackers.insert(attacker->unitId());
 	const auto * defenderHero = hb->battleGetOwnerHero(defender);
 	const bool hasBastion = defenderHero && defenderHero->hasActivePerk(
 		std::string(newHorizonsCombatSkills::ARMORER_SKILL_ID),
@@ -363,6 +382,9 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 		|| hasAmbusher
 		|| hasShadowAssault
 		|| tracksShadowAssault(defender->unitId())
+		|| hasNightProwler
+		|| hasNightProwlerEffect
+		|| tracksNightProwler(attacker->unitId())
 		|| tracksAmbusher(attacker->unitId())
 		|| tracksEvasiveShroud(defender->unitId())
 		|| tracksRangedMarks(defender->unitId()))
@@ -666,14 +688,25 @@ AttackPossibility AttackPossibility::evaluate(
 			continue;
 
 		AttackPossibility ap(hex, defHex, attackInfo);
+		const auto * raHero = attackerSide == BattleSide::ATTACKER || attackerSide == BattleSide::DEFENDER
+			? state->battleGetFightingHero(attackerSide) : nullptr;
+		const bool canCheckNightProwlerPath = ap.from.isValid()
+			&& ap.from != attacker->getPosition()
+			&& !attacker->hasBonusOfType(BonusType::FLYING)
+			&& raHero && newHorizonsShroud::rank(raHero) > 0
+			&& newHorizonsShroud::hasNightProwler(raHero);
+		BattleHexArray nightProwlerPath;
+		if(canCheckNightProwlerPath)
+			nightProwlerPath = state->getPath(attacker->getPosition(), ap.from, attacker).first;
+		const bool crossesNightProwlerEnemy = !nightProwlerPath.empty()
+			&& state->battleNightProwlerCrossesEnemy(attacker, nightProwlerPath);
+		const bool hasNightProwlerEffect = hasNightProwlerBonus(attacker);
 		ap.attack.protectIntercepted = !attackInfo.shooting
 			&& defender->unitId() != requestedDefender->unitId();
 		ap.perfectMoment = !rangedFollowUp && perfectMoment && state->battleCanUsePerfectMoment(attacker)
 			&& !attackInfo.retaliation && state->battleMatchOwner(attacker, defender);
 		const auto * raPrimaryTarget = state->battleResolveHeroOrderTarget(attacker, requestedDefender,
 			attackInfo.shooting);
-		const auto * raHero = attackerSide == BattleSide::ATTACKER || attackerSide == BattleSide::DEFENDER
-			? state->battleGetFightingHero(attackerSide) : nullptr;
 		const auto defenderSide = state->playerToSide(state->battleGetOwner(defender));
 		const auto * defenderHero = defenderSide == BattleSide::ATTACKER || defenderSide == BattleSide::DEFENDER
 			? state->battleGetFightingHero(defenderSide) : nullptr;
@@ -788,6 +821,16 @@ AttackPossibility AttackPossibility::evaluate(
 		if(!vstd::contains_if(defenderUnits, [defender](const battle::Unit * unit)
 			{ return unit->unitId() == defender->unitId(); }))
 			defenderUnits.push_back(defender);
+		const auto hasNightProwlerBonusIn = [](const battle::Units & units)
+		{
+			return std::ranges::any_of(units, [](const battle::Unit * unit)
+				{ return hasNightProwlerBonus(unit); });
+		};
+		const bool projectsNightProwler = crossesNightProwlerEnemy || hasNightProwlerEffect
+			|| hasNightProwlerBonus(defender) || hasNightProwlerBonus(requestedDefender)
+			|| hasNightProwlerBonusIn(defenderUnits)
+			|| hasNightProwlerBonusIn(requestedDefenderUnits)
+			|| hasNightProwlerBonusIn(retaliatedUnits);
 		const auto hasBastionTarget = [&state](const battle::Units & targets)
 		{
 			return std::ranges::any_of(targets, [&state](const battle::Unit * target)
@@ -865,14 +908,18 @@ AttackPossibility AttackPossibility::evaluate(
 		if(ap.perfectMoment || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 				|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 				|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune
-				|| projectsNoEscape || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault || projectsBloodragePain)
+				|| projectsNoEscape || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
+				|| projectsNightProwler || projectsBloodragePain)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
 	if(projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 			|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune
-			|| projectsNoEscape || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault || projectsBloodragePain)
+			|| projectsNoEscape || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
+			|| projectsNightProwler || projectsBloodragePain)
 			ap.effectPreview = fortunePreview;
+	if(crossesNightProwlerEnemy && fortunePreview)
+		fortunePreview->addUnitBonus(attacker->unitId(), newHorizonsShroud::nightProwlerDamageBonuses());
 	const CBattleInfoCallback & luckState = fortunePreview
 		? static_cast<const CBattleInfoCallback &>(*fortunePreview) : *state;
 	const auto qualifiesForNoEscape = [&fortunePreview](const BattleAttackInfo & projectedAttack)
@@ -988,7 +1035,7 @@ AttackPossibility AttackPossibility::evaluate(
 	ap.attackerState = ap.effectPreview
 			? std::static_pointer_cast<battle::CUnitState>(ap.effectPreview->getForUpdate(attacker->unitId()))
 			: attacker->acquireState();
-		ap.shootersBlockedDmg = bestAp.shootersBlockedDmg;
+	ap.shootersBlockedDmg = bestAp.shootersBlockedDmg;
 
 		const int totalAttacks = getAttackCount(*ap.attackerState, attackInfo.shooting, *state);
 
@@ -1108,6 +1155,9 @@ AttackPossibility AttackPossibility::evaluate(
 						ap.attackerState.get(), projectedPreemptiveDamage.healthLoss, damageCache, state);
 					ap.attackerState->damage(appliedPreemptiveDamage, false,
 						preemptiveProvenance);
+					if(fortunePreview && hasNightProwlerBonus(strikeDefenderState->second.get()))
+						if(auto projectedStriker = fortunePreview->getForUpdate(strikeDefenderState->second->unitId()))
+							projectedStriker->removeUnitBonus(CSelector(newHorizonsShroud::isNightProwlerBonus));
 					if(triggersAmbusher)
 						spendAmbusher(strikeDefenderState->second->unitId());
 					if(shadowAssaultSide)
@@ -1366,6 +1416,12 @@ AttackPossibility AttackPossibility::evaluate(
 					ap.defenderDead = !defenderState->alive();
 				}
 			}
+			// The pair applies to this complete BattleAttackInfo, including all
+			// collateral targets, then expires before the next own strike.
+			if(i == 0 && hasNightProwlerBonus(ap.attackerState.get())
+				&& !strike.hits.empty() && fortunePreview)
+				if(auto projectedStriker = fortunePreview->getForUpdate(attacker->unitId()))
+					projectedStriker->removeUnitBonus(CSelector(newHorizonsShroud::isNightProwlerBonus));
 			auto projectedStrikeAttack = ap.attack;
 			projectedStrikeAttack.attacker = ap.attackerState.get();
 			projectedStrikeAttack.defender = strikeDefenderState->second.get();
@@ -1533,6 +1589,9 @@ AttackPossibility AttackPossibility::evaluate(
 							counterShooter->unitId(), currentRound);
 					}
 					counterShooter->afterAttack(true, false, true);
+					if(fortunePreview && hasNightProwlerBonus(counterShooter.get()))
+						if(auto projectedStriker = fortunePreview->getForUpdate(counterShooter->unitId()))
+							projectedStriker->removeUnitBonus(CSelector(newHorizonsShroud::isNightProwlerBonus));
 				}
 			}
 			if(fortunePreview && !strike.hits.empty())
@@ -1809,6 +1868,13 @@ AttackPossibility AttackPossibility::evaluate(
 				if(retaliation && (targetState->unitId() == retaliation->defenderId
 					|| state->getBattle()->getLuckRollRules().affectsAllTargets))
 					retaliationActualDamage += actualDamage;
+			}
+			if(retaliation && !retaliation->hits.empty())
+			{
+				auto retaliatorState = defenderStates.at(retaliation->attackerId);
+				if(fortunePreview && hasNightProwlerBonus(retaliatorState.get()))
+					if(auto projectedStriker = fortunePreview->getForUpdate(retaliatorState->unitId()))
+						projectedStriker->removeUnitBonus(CSelector(newHorizonsShroud::isNightProwlerBonus));
 			}
 			if(retaliation && !retaliation->hits.empty())
 			{

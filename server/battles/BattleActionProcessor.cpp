@@ -3199,6 +3199,7 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 	//initing necessary tables
 	auto accessibility = battle.getAccessibility(currentUnit);
 	const bool ghostWalk = newHorizonsShroud::rank(battle.battleGetOwnerHero(currentUnit)) > 0;
+	bool nightProwlerGrantedThisMove = false;
 	BattleHexArray passed;
 	//Ignore obstacles on starting position
 	passed.insert(currentUnit->getPosition());
@@ -3525,8 +3526,38 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 					sm.distance = segmentDistance;
 					sm.teleporting = false;
 					sm.tilesToMove = tiles;
+					const bool nightProwlerTriggered = !nightProwlerGrantedThisMove
+						&& battle.battleNightProwlerCrossesEnemy(currentUnit, sm.tilesToMove);
 					breakSanctuary(battle, currentUnit);
 					gameHandler->sendAndApply(sm);
+					if(nightProwlerTriggered)
+					{
+						SetStackEffect effect;
+						effect.battleID = battle.getBattle()->getBattleID();
+						if(const auto existing = currentUnit->getAllBonuses(
+							CSelector(newHorizonsShroud::isNightProwlerBonus));
+							existing && !existing->empty())
+						{
+							std::vector<Bonus> previous;
+							previous.reserve(existing->size());
+							for(const auto & bonus : *existing)
+								previous.push_back(*bonus);
+							effect.toRemove.emplace_back(currentUnit->unitId(), std::move(previous));
+						}
+						effect.toAdd.emplace_back(currentUnit->unitId(), newHorizonsShroud::nightProwlerDamageBonuses());
+						gameHandler->sendAndApply(effect);
+
+						BattleLogMessage message;
+						message.battleID = battle.getBattle()->getBattleID();
+						MetaString line;
+						line.appendRawString("Night Prowler: %s gains +");
+						currentUnit->addNameReplacement(line, currentUnit->getCount());
+						line.appendNumber(newHorizonsShroud::NIGHT_PROWLER_DAMAGE_PERCENT);
+						line.appendRawString("% damage on its next attack this activation.");
+						message.lines.push_back(std::move(line));
+						gameHandler->sendAndApply(message);
+						nightProwlerGrantedThisMove = true;
+					}
 				}
 				tiles.clear();
 			}

@@ -95,6 +95,7 @@ private:
 	std::set<uint32_t> evasiveShroudTargets;
 	std::set<uint32_t> ambusherAttackers;
 	std::set<std::pair<uint32_t, BattleSide>> shadowAssaultTargetSides;
+	std::set<uint32_t> nightProwlerAttackers;
 	DamageCache * parent;
 
 	void buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side);
@@ -102,6 +103,7 @@ private:
 	bool tracksEvasiveShroud(uint32_t defenderId) const;
 	bool tracksAmbusher(uint32_t attackerId) const;
 	bool tracksShadowAssault(uint32_t defenderId) const;
+	bool tracksNightProwler(uint32_t attackerId) const;
 
 public:
 	DamageCache() : parent(nullptr) {}

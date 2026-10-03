@@ -23,6 +23,11 @@
 
 namespace
 {
+bool hasNightProwlerBonus(const battle::Unit * unit)
+{
+	return unit && unit->hasBonus(CSelector(newHorizonsShroud::isNightProwlerBonus));
+}
+
 bool projectNoQuarterAfterHit(const CBattleInfoCallback & battle, const BattleAttackInfo & attack,
 	StackWithBonuses & target)
 {
@@ -197,6 +202,21 @@ float BattleExchangeVariant::trackAttack(
 
 	auto attacker = hb->getForUpdate(ap.attack.attacker->unitId());
 	const auto originalPosition = attacker->getPosition();
+	const auto attackerSide = hb->playerToSide(hb->battleGetOwner(attacker.get()));
+	const auto * attackerHero = attackerSide == BattleSide::ATTACKER || attackerSide == BattleSide::DEFENDER
+		? hb->battleGetFightingHero(attackerSide) : nullptr;
+	const bool canCheckNightProwlerPath = ap.from.isValid()
+		&& ap.from != originalPosition
+		&& !attacker->hasBonusOfType(BonusType::FLYING)
+		&& attackerHero && newHorizonsShroud::rank(attackerHero) > 0
+		&& newHorizonsShroud::hasNightProwler(attackerHero);
+	BattleHexArray nightProwlerPath;
+	if(canCheckNightProwlerPath)
+		nightProwlerPath = hb->getPath(originalPosition, ap.from, attacker.get()).first;
+	const bool crossesNightProwlerEnemy = !nightProwlerPath.empty()
+		&& hb->battleNightProwlerCrossesEnemy(attacker.get(), nightProwlerPath);
+	if(crossesNightProwlerEnemy)
+		attacker->addUnitBonus(newHorizonsShroud::nightProwlerDamageBonuses());
 	if(!ap.attack.shooting && ap.from.isValid())
 		attacker->setPosition(ap.from);
 
@@ -293,10 +313,15 @@ float BattleExchangeVariant::trackAttack(
 					const bool luckAffectedTarget = unitId == strike.defenderId
 						|| hb->getLuckRollRules().affectsAllTargets;
 					if(wasAlive && !target->alive() && luckAffectedTarget
-						&& hb->battleMatchOwner(projectedAttacker.get(), target.get()))
+							&& hb->battleMatchOwner(projectedAttacker.get(), target.get()))
 						enemyStackKilled = true;
 				}
 			}
+			// Each projected striker spends its one-attack reward after its full hit set.
+			// The movement bonus belongs to the moved stack, so an enemy preemptive
+			// strike cannot consume it.
+			if(!strike.hits.empty() && hasNightProwlerBonus(projectedAttacker.get()))
+				projectedAttacker->removeUnitBonus(CSelector(newHorizonsShroud::isNightProwlerBonus));
 
 			// Spend Ambusher on the accepted direct hit even if its attacker did not
 			// survive; Evasive Shroud refreshes only for a surviving attacker.
@@ -518,6 +543,7 @@ float BattleExchangeVariant::trackAttack(
 		&& qualifiesForAmbusher(*hb, projectedAttack);
 	const auto shadowAssaultSide = !evaluateOnly
 		? qualifyingShadowAssaultSide(*hb, projectedAttack) : std::optional<BattleSide>{};
+	const bool nightProwlerPending = hasNightProwlerBonus(attacker.get());
 
 	int64_t attackDamage = damageCache.getDamage(attacker.get(), defender.get(), hb);
 	const auto attackDamageProvenance = battleAIDamageProvenance(
@@ -560,6 +586,8 @@ float BattleExchangeVariant::trackAttack(
 			dpsScore.ourDamageReduce += defenderDamageReduce;
 
 		defender->damage(attackDamage, false, attackDamageProvenance);
+		if(nightProwlerPending)
+			attacker->removeUnitBonus(CSelector(newHorizonsShroud::isNightProwlerBonus));
 		if(triggersAmbusher)
 			spendAmbusher(*hb, attacker->unitId());
 		if(shadowAssaultSide)
@@ -705,6 +733,7 @@ float BattleExchangeVariant::trackAttack(
 		const bool triggersRetaliationEvasiveShroud = qualifiesForEvasiveShroud(*hb, retaliationAttack);
 		const bool triggersRetaliationAmbusher = qualifiesForAmbusher(*hb, retaliationAttack);
 		const auto retaliationShadowAssaultSide = qualifyingShadowAssaultSide(*hb, retaliationAttack);
+		const bool retaliationNightProwlerPending = hasNightProwlerBonus(defender.get());
 		auto retaliationDamage = hb->battleExpectedLuckDamage(retaliationAttack);
 		const bool consumesRetaliationBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
 			retaliationAttack.attacker, retaliationAttack.physicalDamage)
@@ -739,6 +768,8 @@ float BattleExchangeVariant::trackAttack(
 		const int64_t actualDamage = projectedRetaliationDamage.appliedDamage;
 		const bool attackerWasAlive = attacker->alive();
 		attacker->damage(retaliationDamage, false, retaliationProvenance);
+		if(retaliationNightProwlerPending)
+			defender->removeUnitBonus(CSelector(newHorizonsShroud::isNightProwlerBonus));
 		if(triggersRetaliationAmbusher)
 			spendAmbusher(*hb, defender->unitId());
 		if(retaliationShadowAssaultSide)
