@@ -57,6 +57,11 @@ bool hasNoEscape(const CGHeroInstance * hero)
 	return hero && hero->hasActivePerk(std::string(SKILL_ID), std::string(NO_ESCAPE_PERK_ID));
 }
 
+bool hasEvasiveShroud(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(SKILL_ID), std::string(EVASIVE_SHROUD_PERK_ID));
+}
+
 Bonus noEscapeSpeedPenalty()
 {
 	Bonus bonus(BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION, BonusType::STACKS_SPEED,
@@ -72,6 +77,25 @@ bool isNoEscapeSpeedPenalty(const Bonus * bonus)
 		&& bonus->type == BonusType::STACKS_SPEED && bonus->val == NO_ESCAPE_SPEED_PENALTY
 		&& bonus->source == BonusSource::SECONDARY_SKILL && bonus->sid == shroudSkillSource()
 		&& bonus->stacking == NO_ESCAPE_STACKING_KEY;
+}
+
+Bonus evasiveShroudProtection()
+{
+	Bonus bonus(BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION,
+		BonusType::PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS, BonusSource::SECONDARY_SKILL,
+		EVASIVE_SHROUD_REDUCTION_BASIS_POINTS, shroudSkillSource());
+	bonus.stacking = std::string(EVASIVE_SHROUD_STACKING_KEY);
+	bonus.description.appendRawString("Evasive Shroud: 15% physical damage reduction until the next Creature Activation");
+	return bonus;
+}
+
+bool isEvasiveShroudProtection(const Bonus * bonus)
+{
+	return bonus && bonus->duration == BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION
+		&& bonus->type == BonusType::PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS
+		&& bonus->val == EVASIVE_SHROUD_REDUCTION_BASIS_POINTS
+		&& bonus->source == BonusSource::SECONDARY_SKILL && bonus->sid == shroudSkillSource()
+		&& bonus->stacking == EVASIVE_SHROUD_STACKING_KEY;
 }
 
 bool deniesRetaliation(int value)

@@ -4332,6 +4332,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		}
 	}
 	bool noEscapeTriggered = false;
+	bool evasiveShroudTriggered = false;
 	if(defender)
 	{
 		const auto primaryHit = std::ranges::find_if(bat.bsa, [defender](const BattleStackAttacked & hit)
@@ -4343,11 +4344,44 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			BattleAttackInfo shroudAttack(attacker, defender, attack.distance, attack.ranged);
 			shroudAttack.physicalDamage = shroudAttack.physicalDamage && !bat.spellLike();
 			shroudAttack.retaliation = counterAttack;
-			noEscapeTriggered = newHorizonsShroud::hasNoEscape(battle.battleGetOwnerHero(attacker))
-				&& battle.battleIsShroudFlankingAttack(shroudAttack);
+			const bool flankingAttack = battle.battleIsShroudFlankingAttack(shroudAttack);
+			const auto * attackingHero = battle.battleGetOwnerHero(attacker);
+			noEscapeTriggered = newHorizonsShroud::hasNoEscape(attackingHero) && flankingAttack;
+			evasiveShroudTriggered = newHorizonsShroud::hasEvasiveShroud(attackingHero) && flankingAttack;
 		}
 	}
 	gameHandler->sendAndApply(bat);
+	if(evasiveShroudTriggered && attacker->alive())
+	{
+		SetStackEffect evasiveShroud;
+		evasiveShroud.battleID = battle.getBattle()->getBattleID();
+		const auto existing = attacker->getAllBonuses(CSelector([](const Bonus * bonus)
+		{
+			return newHorizonsShroud::isEvasiveShroudProtection(bonus);
+		}));
+		const bool refreshing = existing && !existing->empty();
+		if(refreshing)
+		{
+			std::vector<Bonus> toReplace;
+			toReplace.reserve(existing->size());
+			for(const auto & bonus : *existing)
+				toReplace.push_back(*bonus);
+			evasiveShroud.toRemove.emplace_back(attacker->unitId(), std::move(toReplace));
+		}
+		evasiveShroud.toAdd.emplace_back(attacker->unitId(),
+			std::vector<Bonus>{newHorizonsShroud::evasiveShroudProtection()});
+		gameHandler->sendAndApply(evasiveShroud);
+
+		BattleLogMessage message;
+		message.battleID = battle.getBattle()->getBattleID();
+		MetaString line;
+		line.appendRawString(refreshing ? "Evasive Shroud refreshes %s with " : "Evasive Shroud grants %s ");
+		line.appendNumber(newHorizonsShroud::EVASIVE_SHROUD_REDUCTION_BASIS_POINTS / 100);
+		line.appendRawString("% physical damage reduction until its next activation.");
+		attacker->addNameReplacement(line, attacker->getCount());
+		message.lines.push_back(std::move(line));
+		gameHandler->sendAndApply(message);
+	}
 	if(noEscapeTriggered && defender->alive())
 	{
 		SetStackEffect noEscape;

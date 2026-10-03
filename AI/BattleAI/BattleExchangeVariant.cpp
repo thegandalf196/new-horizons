@@ -114,6 +114,25 @@ bool controlledBySamePlayer(const CBattleInfoCallback & battle,
 	const auto secondOwner = battle.battleGetOwner(second);
 	return firstOwner != PlayerColor::CANNOT_DETERMINE && firstOwner == secondOwner;
 }
+
+bool qualifiesForEvasiveShroud(const CBattleInfoCallback & battle, const BattleAttackInfo & attack)
+{
+	if(!battle.battleIsShroudFlankingAttack(attack))
+		return false;
+	const auto side = battle.playerToSide(battle.battleGetOwner(attack.attacker));
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return false;
+	return newHorizonsShroud::hasEvasiveShroud(battle.battleGetFightingHero(side));
+}
+
+void refreshEvasiveShroud(HypotheticBattle & battle, uint32_t attackerUnitId)
+{
+	auto attacker = battle.getForUpdate(attackerUnitId);
+	if(!attacker)
+		return;
+	attacker->removeUnitBonus(CSelector(newHorizonsShroud::isEvasiveShroudProtection));
+	attacker->addUnitBonus({newHorizonsShroud::evasiveShroudProtection()});
+}
 }
 
 AttackerValue::AttackerValue()
@@ -179,6 +198,28 @@ float BattleExchangeVariant::trackAttack(
 		{
 			auto projectedAttacker = hb->getForUpdate(strike.attackerId);
 			auto projectedDefender = hb->getForUpdate(strike.defenderId);
+			BattleAttackInfo projectedAttack(projectedAttacker.get(), projectedDefender.get(), 0, strike.shooting);
+			// The projection records the resolved physical-creature provenance;
+			// preserve that explicit context for attack-classified post-hit effects.
+			projectedAttack.physicalDamage = strike.damageProvenance
+				== battle::DamageProvenance::PHYSICAL_CREATURE;
+			projectedAttack.retaliation = strike.retaliation;
+			projectedAttack.cleaveDamagePercent = strike.cleaveDamagePercent;
+			projectedAttack.attackerPos = projectedAttacker->getPosition();
+			projectedAttack.defenderPos = projectedDefender->getPosition();
+			const bool hasPrimaryHit = std::ranges::any_of(strike.hits, [&strike](const auto & hit)
+			{
+				return hit.first == strike.defenderId;
+			});
+			bool triggersEvasiveShroud = hasPrimaryHit
+				&& hb->battleIsShroudFlankingAttack(projectedAttack);
+			if(triggersEvasiveShroud)
+			{
+				const auto attackingSide = hb->playerToSide(hb->battleGetOwner(projectedAttacker.get()));
+				const auto * attackingHero = attackingSide == BattleSide::ATTACKER || attackingSide == BattleSide::DEFENDER
+					? hb->battleGetFightingHero(attackingSide) : nullptr;
+				triggersEvasiveShroud = newHorizonsShroud::hasEvasiveShroud(attackingHero);
+			}
 			if(strike.protectIntercepted)
 				hb->consumeHeroOrderProtectInterception(ap.attack.defender->unitId(), strike.defenderId);
 			std::vector<std::pair<uint32_t, int64_t>> actualHits;
@@ -217,14 +258,13 @@ float BattleExchangeVariant::trackAttack(
 				}
 			}
 
-			BattleAttackInfo projectedAttack(projectedAttacker.get(), projectedDefender.get(), 0, strike.shooting);
-			// The projection records the resolved physical-creature provenance;
-			// preserve that explicit context for Second Chance eligibility instead
-			// of re-inferring it from the detached unit's bonuses.
-			projectedAttack.physicalDamage = strike.damageProvenance
-				== battle::DamageProvenance::PHYSICAL_CREATURE;
-			projectedAttack.retaliation = strike.retaliation;
-			projectedAttack.cleaveDamagePercent = strike.cleaveDamagePercent;
+			// Match the server's post-hit trigger: it applies only after the direct
+			// accepted hit and only when the flanking attacker survived.
+			if(triggersEvasiveShroud && projectedAttacker->alive())
+			{
+				projectedAttacker->removeUnitBonus(CSelector(newHorizonsShroud::isEvasiveShroudProtection));
+				projectedAttacker->addUnitBonus({newHorizonsShroud::evasiveShroudProtection()});
+			}
 			if(strike.cleaveDamagePercent > 0)
 				projectedAttacker->cleaveUsedThisActivation = true;
 			if(strike.perfectMoment && !strike.retaliation)
@@ -428,6 +468,8 @@ float BattleExchangeVariant::trackAttack(
 	}
 	BattleAttackInfo projectedAttack(attacker.get(), defender.get(), 0, shooting);
 	projectedAttack.protectIntercepted = protectIntercepted;
+	const bool triggersEvasiveShroud = !evaluateOnly
+		&& qualifiesForEvasiveShroud(*hb, projectedAttack);
 
 	int64_t attackDamage = damageCache.getDamage(attacker.get(), defender.get(), hb);
 	const auto attackDamageProvenance = battleAIDamageProvenance(
@@ -470,6 +512,8 @@ float BattleExchangeVariant::trackAttack(
 			dpsScore.ourDamageReduce += defenderDamageReduce;
 
 		defender->damage(attackDamage, false, attackDamageProvenance);
+		if(triggersEvasiveShroud && attacker->alive())
+			refreshEvasiveShroud(*hb, attacker->unitId());
 		if(consumesBastion)
 			defender->armorerBastionRound = hb->battleGetRound();
 		if(actualDamage > 0)
@@ -543,6 +587,8 @@ float BattleExchangeVariant::trackAttack(
 			cleaveAttack.attackerPos = projectedAttacker->getPosition();
 			cleaveAttack.defenderPos = targetUnit->getPosition();
 			cleaveAttack.cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
+			const bool triggersCleaveEvasiveShroud = !evaluateOnly
+				&& qualifiesForEvasiveShroud(*hb, cleaveAttack);
 			const auto cleaveProvenance = battleAIDamageProvenance(
 				projectedAttacker.get(), cleaveAttack.physicalDamage);
 			const bool consumesCleaveBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
@@ -570,6 +616,8 @@ float BattleExchangeVariant::trackAttack(
 
 				const bool targetWasAlive = target->alive();
 				target->damage(cleaveDamage, false, cleaveProvenance);
+				if(triggersCleaveEvasiveShroud && projectedAttacker->alive())
+					refreshEvasiveShroud(*hb, projectedAttacker->unitId());
 				if(consumesCleaveBastion)
 					target->armorerBastionRound = hb->battleGetRound();
 				resolvedCleaveDamage = cleaveDamage;
@@ -594,6 +642,7 @@ float BattleExchangeVariant::trackAttack(
 	{
 		BattleAttackInfo retaliationAttack(defender.get(), attacker.get(), 0, false);
 		retaliationAttack.retaliation = true;
+		const bool triggersRetaliationEvasiveShroud = qualifiesForEvasiveShroud(*hb, retaliationAttack);
 		auto retaliationDamage = hb->battleExpectedLuckDamage(retaliationAttack);
 		const bool consumesRetaliationBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
 			retaliationAttack.attacker, retaliationAttack.physicalDamage)
@@ -628,6 +677,8 @@ float BattleExchangeVariant::trackAttack(
 		const int64_t actualDamage = projectedRetaliationDamage.appliedDamage;
 		const bool attackerWasAlive = attacker->alive();
 		attacker->damage(retaliationDamage, false, retaliationProvenance);
+		if(triggersRetaliationEvasiveShroud && defender->alive())
+			refreshEvasiveShroud(*hb, defender->unitId());
 		if(consumesRetaliationBastion)
 			attacker->armorerBastionRound = hb->battleGetRound();
 		if(actualDamage > 0)

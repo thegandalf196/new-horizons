@@ -2,6 +2,27 @@
 
 ## Purpose
 
+### 2026-10-03 UP-171 — Detached bonus mutation receiver
+
+Combined Evasive Shroud build92831 exits1: BattleExchangeVariant's helper
+casts to battle::CUnitState, which has no addUnitBonus/removeUnitBonus methods.
+These mutations belong to the detached StackWithBonuses wrapper returned by
+HypotheticBattle::getForUpdate. Repair the bounded AI receiver, not the shared
+unit-state API or authoritative bonus graph. Retain
+testing/UP171-evasive-shroud-baseline-build.log; no stale native run or
+activation is acceptance. Require a frozen-source both-target retry.
+Retry76200 exits0. The first three-case native gate passes2/3, zero skips:
+the1,000-peasant target dies after the preceding negative-control attacks plus
+the flanking hit, so it cannot demonstrate ordinary retaliation. Preserve
+UP171-evasive-shroud-native.log/XML. Repair only fixture survival controls,
+using current damage-range bounds; refresh/real-expiry and Bonus roundtrip
+already pass. Do not reduce production damage or claim the failed case passed.
+Resolution: receiver repair plus fixture survival bounds (3,000 peasants and
+20 Angels, with pre-hit damage/retaliation assertions) compile in both targets.
+Repaired principal3/3 and final production-active3/3 pass with zero skips;
+the latter takes5.730s and uses no planned-only registry override. The original
+failure logs remain retained. No production damage or duration rule was changed.
+
 ### 2026-10-03 UP-170 — Observe activation-timed effects before expiry
 
 The first No Escape native gate passes2/4 with zero skips. Its combat log

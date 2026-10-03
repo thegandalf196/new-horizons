@@ -9,6 +9,7 @@
  */
 #pragma once
 #include <algorithm>
+#include <set>
 #include "../../lib/battle/CUnitState.h"
 #include "StackWithBonuses.h"
 
@@ -90,10 +91,12 @@ private:
 	std::unordered_map<uint32_t, std::unordered_map<uint32_t, float>> damageCache;
 	std::map<BattleHex, std::unordered_map<uint32_t, int64_t>> obstacleDamage;
 	std::set<uint32_t> rangedMarkTargets;
+	std::set<uint32_t> evasiveShroudTargets;
 	DamageCache * parent;
 
 	void buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side);
 	bool tracksRangedMarks(uint32_t defenderId) const;
+	bool tracksEvasiveShroud(uint32_t defenderId) const;
 
 public:
 	DamageCache() : parent(nullptr) {}

@@ -3393,7 +3393,7 @@
 					"requires": "advanced",
 					"description": "After making a flanking attack, the attacker receives 15% physical damage reduction until its next activation.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "After making a flanking attack, the attacker receives 15% physical damage reduction until its next activation."
 					}
 				},
