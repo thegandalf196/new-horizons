@@ -14,6 +14,26 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP129 deterministic Diplomacy foundation is source/native verified. Captured-profile
+raw Army Value forecasts, all three rank thresholds,
+Negotiator/Common Cause/Grand Diplomat, whole-stack Gold/count feedback,
+rank-zero authored-free exceptions, author eligibility serialization and minimum
+AI admission hooks exist. Final client67358 and test39859 exit0. Principal retry
+passes10/10 from3 suites in1.870s, with no failures/errors/skips. Normal perk
+offers, real full-price paid/free queries, Leadership-limited admission, permanent
+surplus dismissal, refusal-to-flee resolution, actual unflaggable map ownership,
+player-owned exclusion and current/old eligibility serialization pass. Binary:
+94754dc4103f089d4097f2eb032903dbfe9eb9b257a4ab670379487d8077af5e.
+Independent frozen production/fixture review, data/inventory19/19, module--check
+and diffcheck pass. Accepted perks203->206/310 (104 planned); ranks84->87/93
+(6 planned); Diplomacy3/10 perks. Faction totals remain62/90 and Necromancy10/10.
+Adjacent transfer checks pass7/8 in2.440s: the existing same-hero exact-fit
+merge case fails and reproduces in isolation. No crash/corruption is observed;
+cause is unresolved and recorded for Phase2 rather than weakening assertions.
+Also deferred: restored/stale query provenance, full AI dialog execution and
+valuation, localization/rendered feedback. Dedicated perk art remains Not done.
+No playable snapshot promotion or rendered acceptance is claimed.
+
 UP189 Lord of the Dead is source/native verified in the203/310 accepted
 snapshot. Original-army living-Champion
 capture, ordered pre-conversion12-equivalent consumption, exact Bone Dragon,
@@ -1759,8 +1779,8 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Specification area | Current coverage | Principal remaining work |
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
-| Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 203/310 | 107 planned; Lord of the Dead is the newest source/native-verified activation. Necromancy is 10/10; Learning 3/10; Estates 5/10; Battlecraft 6/10; Logistics 6/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
+| Skill rank effects active | 87/93 | All three Diplomacy ranks now use deterministic joining; Divine Mandate and Elemental Rebirth account for the six planned ranks. |
+| Skill perks active | 206/310 | 104 planned; Negotiator, Common Cause and Grand Diplomat are the newest source/native-verified activations. Diplomacy is 3/10; Necromancy 10/10; Learning 3/10; Estates 5/10; Battlecraft 6/10; Logistics 6/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 62/90 | 28 planned perks; Lord of the Dead has normal Expert selection, ordered conversion and actual atomic Bone Dragon town-delivery evidence. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -1772,7 +1792,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Creature category forms | 126/126 | 50 Core, 58 Elite, 18 Champion are registered; this is not creature-ability coverage. |
 | Siege output formula families | 4/4 | Ballista, Catapult, Tent and defensive tower outputs have data; universal Blacksmith access and Ballista Yard's weekly Siege effect are implemented with focused native tests. Rendered/playable acceptance remains open. |
 | Recruitment perks active | 6/10 | Four planned; external, solo town and split town Muster have server and AI paths. |
-| Diplomacy ranks/perks active | 0/3 ranks, 0/10 perks | Deterministic Diplomacy and its UI remain missing. |
+| Diplomacy ranks/perks active | 3/3 ranks, 3/10 perks | Deterministic joining, whole-stack count/Gold feedback, authored-free exceptions, saved eligibility and minimum AI admission pass focused verification; seven perks remain missing. |
 
 Additional canonical breadth not yet reducible to a defensible completion
 fraction: nine town/faction sections (33 grouped unique-building table rows),
@@ -1911,7 +1931,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Wisdom | 3/0 | 8/2 | Mana Conservation post-combat Normal recovery, Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. One other perk remains missing. Broader interactions and playable acceptance remain open. |
 | Warcasting | 3/0 | 6/4 | Spellward has focused live/detached/current-controller damage evidence. Master Synthesis has first-consumption Spell/Order, typed-exclusion and branch-history evidence. Four perks missing; Combat Casting and Enchanted Command await shared rule decisions; Perfect Rhythm stacking is unresolved. |
 | Logistics | 3/0 | 6/4 | Four perks missing; Roadmaster/Wayfarer/Mountaineer native verified, with human/server and AI shared-cost evidence |
-| Diplomacy | 0/3 | 0/10 | Ranks and progression missing |
+| Diplomacy | 3/3 | 3/10 | Deterministic foundation verified; seven perks remain missing |
 | Estates | 3/0 | 5/5 | Land Surveyor, Tax Collector, Investor, Estate Network and Financier supply working Basic/Advanced/Expert perks. Accepted mine-capture grants, daily income, weekly Wood/Ore, weekly treasury interest, Investor's pre-income treasury snapshot and AI resource receipt/selection are native verified. |
 | Learning | 3/0 | 3/7 | Mentor, Quick Study and Field Study supply working Basic/Advanced perks and open ordinary Expert-rank progression. Meetings, weekly persistence, initial offer reroll, stronger-opponent awarded XP and query/RNG parity are native verified. Academic Study awaits first-visit timing. |
 | Luck | 3/0 | 6/4 | Fortune's Favor, Lucky Aim, Second Chance, Gambler, Chain of Fortune and Twist of Fate source/native verified; four perks remain planned. |

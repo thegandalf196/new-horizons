@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/entities/hero/NewHorizonsDiplomacy.h"
 #include "../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../lib/entities/hero/NewHorizonsMasteryEffects.h"
 
@@ -22,6 +23,7 @@
 #include "../../lib/mapObjects/MapObjects.h"
 #include "../../lib/mapObjects/ObjectTemplate.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/mapObjects/CGCreature.h"
 #include "../../lib/mapObjects/CGMarket.h"
 #include "../../lib/mapping/TerrainTile.h"
 #include "../../lib/CConfigHandler.h"
@@ -47,6 +49,7 @@
 
 #include <algorithm>
 #include <array>
+#include <limits>
 #include <map>
 #include <optional>
 #include <set>
@@ -800,10 +803,97 @@ void AIGateway::showBlockingDialog(const std::string & text, const std::vector<C
 				}
 			}
 
+			auto objects = cc->getVisitableObjs(target);
+			if(heroPtr.isVerified() && target.isValid())
+			{
+				for(const auto * object : objects)
+				{
+					const auto * neutralCreature = dynamic_cast<const CGCreature *>(object);
+					if(!neutralCreature)
+						continue;
+
+					const auto forecast = neutralCreature->getNewHorizonsDiplomacyForecast(*heroPtr.get());
+					if(!forecast.usesNewHorizonsRules)
+						continue;
+
+					bool hasCreatureOffer = false;
+					bool validCreatureCount = true;
+					std::optional<int64_t> offeredCreatureCount;
+					bool validGoldComponent = true;
+					std::optional<int64_t> offeredGoldCost;
+					for(const auto & component : components)
+					{
+						if(component.type == ComponentType::CREATURE
+							&& component.subType.as<CreatureID>() == neutralCreature->getCreatureID())
+						{
+							if(hasCreatureOffer || !component.value || *component.value <= 0)
+								validCreatureCount = false;
+							else
+								offeredCreatureCount = *component.value;
+							hasCreatureOffer = true;
+						}
+						else if(component.type == ComponentType::RESOURCE
+							&& component.subType.as<GameResID>() == GameResID(GameResID::GOLD))
+						{
+							if(offeredGoldCost || !component.value || *component.value < 0)
+								validGoldComponent = false;
+							else
+								offeredGoldCost = *component.value;
+						}
+					}
+
+					if(!hasCreatureOffer)
+						continue;
+
+					const bool countMatchesForecast = validCreatureCount && offeredCreatureCount
+						&& forecast.joiningAmount > 0
+						&& forecast.joiningAmount <= std::numeric_limits<int32_t>::max()
+						&& *offeredCreatureCount == forecast.joiningAmount;
+					const bool goldMatchesForecast = validGoldComponent && (forecast.authoredFree
+						? (!offeredGoldCost || *offeredGoldCost == 0)
+						: offeredGoldCost && forecast.normalGoldCostValid
+							&& forecast.normalGoldCostFitsAction
+							&& forecast.normalGoldCost >= 0
+							&& *offeredGoldCost == forecast.normalGoldCost);
+
+					const int64_t requiredGold = forecast.authoredFree ? 0 : forecast.normalGoldCost;
+					const bool canAfford = goldMatchesForecast && requiredGold >= 0
+						&& cc->getResourceAmount()[EGameResID::GOLD] >= requiredGold;
+
+					bool hasUsefulAdmission = false;
+					if(countMatchesForecast && canAfford)
+					{
+						const auto * visitableTile = cc->getTile(neutralCreature->visitablePos());
+						if(visitableTile)
+						{
+							const auto plannedArmy = nullkiller->armyManager->getBestArmy(
+								heroPtr.get(), heroPtr.get(), neutralCreature, visitableTile->getTerrainID());
+							int64_t currentCreatureCount = 0;
+							for(const auto & [slot, stack] : heroPtr->Slots())
+								if(stack->getCreatureID() == neutralCreature->getCreatureID())
+									currentCreatureCount += stack->getCount();
+
+							int64_t plannedCreatureCount = 0;
+							for(const auto & stack : plannedArmy)
+								if(stack.creature && stack.creature->getId() == neutralCreature->getCreatureID())
+									plannedCreatureCount += stack.count;
+
+							// getBestArmy uses the same Leadership/slot projection that the
+							// subsequent garrison transfer applies.
+							hasUsefulAdmission = plannedCreatureCount > currentCreatureCount;
+						}
+					}
+
+					const bool accept = forecast.eligible && forecast.willing
+						&& countMatchesForecast && canAfford && hasUsefulAdmission;
+					answerQuery(askID, accept ? 1 : 0);
+					return;
+				}
+			}
+
 			// yes&no for non-teaching dialogs: retain the existing danger-aware
 			// adventure decision.
 			bool answer = true;
-			auto objects = cc->getVisitableObjs(target);
 
 			if(heroPtr.isVerified() && target.isValid() && !objects.empty())
 			{

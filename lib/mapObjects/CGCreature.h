@@ -11,6 +11,9 @@
 
 #include "army/CArmedInstance.h"
 #include "../ResourceSet.h"
+#include "../entities/hero/NewHorizonsDiplomacy.h"
+
+#include <stdexcept>
 
 class DLL_LINKAGE CGCreature : public CArmedInstance //creatures on map
 {
@@ -48,6 +51,8 @@ public:
 	UpgradedStackPresence upgradedStackPresence = UpgradedStackPresence::RANDOM;
 	int8_t joiningPercentage = -1;
 	bool joinOnlyForMoney = false;
+	/// Explicit map-authored opt-out from New Horizons deterministic Diplomacy.
+	bool diplomacyEligible = true;
 
 	bool refusedJoining = false;
 
@@ -65,6 +70,7 @@ public:
 	CreatureID getCreatureID() const;
 	const CCreature * getCreature() const;
 	TQuantity getJoiningAmount() const;
+	newHorizonsDiplomacy::Forecast getNewHorizonsDiplomacyForecast(const CGHeroInstance & hero) const;
 
 	//stack formation depends on position,
 	bool containsUpgradedStack() const;
@@ -72,6 +78,9 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && !diplomacyEligible
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_ELIGIBILITY))
+			throw std::runtime_error("Cannot write New Horizons Diplomacy eligibility to an older format");
 		h & static_cast<CArmedInstance&>(*this);
 		if(h.version >= Handler::Version::HOTA_MAP_FORMAT_EXTENSIONS_2)
 		{
@@ -102,6 +111,10 @@ public:
 			h & upgradedStackPresence;
 			h & joinOnlyForMoney;
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_ELIGIBILITY))
+			h & diplomacyEligible;
+		else if(!h.saving)
+			diplomacyEligible = true;
 	}
 protected:
 	void setPropertyDer(ObjProperty what, ObjPropertyID identifier) override;

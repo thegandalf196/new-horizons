@@ -2,6 +2,42 @@
 
 ## Purpose
 
+### 2026-10-03 UP-129 — Concrete neutral type and HeroPtr reference
+
+Initial client95849 fails because AIGateway uses dynamic_cast to CGCreature
+without including its definition. Add CGCreature.h explicitly; do not rely on
+the MapObjects umbrella or precompiled-header accidents. Retry88847 exposes
+that HeroPtr::operator* returns a pointer rather than a hero reference. Pass
+*heroPtr.get() to the shared forecast. Keep UP129-client-build.log and
+UP129-client-build-retry.log separate from retry2 evidence. Review also caught
+legacy aggression gating of deterministic joins, rejection of initial FLEE
+responses, and joining-enabled response recomputation after declining a join.
+Fix the authoritative encounter path; do not soften threshold or query tests.
+Native acceptance remains pending until the frozen fixtures build and run.
+Test build15477 then exits1 on fixture API misuse: the concrete translator
+definition is missing, JSON serializer constructor arguments are wrong, and
+full-object binary serialization needs complete bonus updater types. Preserve
+UP129-test-build.log. Repair fixture includes/API calls, not production guards
+or required outcome assertions; focused execution still has not occurred.
+Test retry66042 exits0. Source review then catches the JSON fixture loading into
+an already populated neutral, while map option loading inserts slot0 and expects
+an empty instance. Load saved JSON into a fresh CGCreature and preserve the
+original for binary checks; do not alter the production loader for this fixture.
+After the fresh-object correction, test retry2 handle77176 exits0. Principal
+56667 runs10 cases in1.766s:5 pass,5 fail; retain UP129-principal.log/XML.
+Normal rank advancement used the legacy core Diplomacy ID rather than the
+module-decoded skill ID. The rank-zero free case also exposes an eligibility
+owner-convention issue under investigation: ordinary unflaggable wandering
+creatures must not be excluded merely for lacking the capturable NEUTRAL owner.
+No coverage is accepted until focused repairs and native rerun succeed.
+Final client67358/test39859 pass. Principal retry10/10 passes1.870s, zero skips;
+the raw threshold/real query/payment/transfer/wire requirements now pass.
+Adjacent7/8 passes2.440s; same-hero OrdinaryMerge final exact-fit response is
+false and reproduces in isolation. Its player field is correctly populated;
+do not assert an omitted-actor cause. Rejection cause is unresolved, without
+observed crash or corruption. Retain UP129-adjacent and merge-diagnostic log/XML
+for Phase2; do not weaken expectations to conceal it.
+
 ### 2026-10-03 UP-188 — Callback definition required by town-name lookup
 
 Client62687 fails in UIHelper's new callback `getTown` call because CPlayerInterface

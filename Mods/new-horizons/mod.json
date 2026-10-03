@@ -5449,21 +5449,21 @@
 							"basic": {
 								"description": "An eligible neutral stack with Army Value no greater than 25% of the hero's current army may offer to join for its normal recruitment gold cost.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "An eligible neutral stack with Army Value no greater than 25% of the hero's current army may offer to join for its normal recruitment gold cost."
 								}
 							},
 							"advanced": {
 								"description": "The deterministic joining threshold becomes 50% of the hero's Army Value.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The deterministic joining threshold becomes 50% of the hero's Army Value."
 								}
 							},
 							"expert": {
 								"description": "The deterministic joining threshold becomes 75% of the hero's Army Value.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The deterministic joining threshold becomes 75% of the hero's Army Value."
 								}
 							}
@@ -5475,7 +5475,7 @@
 								"requires": "basic",
 								"description": "Increase the Diplomacy joining threshold by 15 percentage points.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Increase the Diplomacy joining threshold by 15 percentage points."
 								}
 							},
@@ -5515,7 +5515,7 @@
 								"requires": "advanced",
 								"description": "Neutral creatures of the hero's faction count as half their normal Army Value when checking the Diplomacy threshold.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Neutral creatures of the hero's faction count as half their normal Army Value when checking the Diplomacy threshold."
 								}
 							},
@@ -5555,7 +5555,7 @@
 								"requires": "expert",
 								"description": "Increase the Diplomacy joining threshold by a further 25 percentage points, to a maximum of 100% of the hero's Army Value.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Increase the Diplomacy joining threshold by a further 25 percentage points, to a maximum of 100% of the hero's Army Value."
 								}
 							},

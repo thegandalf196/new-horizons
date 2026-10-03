@@ -1,5 +1,15 @@
 # Serialization
 
+## New Horizons Diplomacy eligibility
+
+`NEW_HORIZONS_DIPLOMACY_ELIGIBILITY` appends the explicit
+`CGCreature::diplomacyEligible` map-authored opt-out. The matching optional
+`diplomacyEligible` JSON property defaults to true. Older object records reset
+the field to true; a false value cannot be written to an older format and is
+rejected before object payload bytes. A missing/old captured hero perk-rule
+snapshot continues to use legacy Diplomacy behavior rather than activating
+rules from the currently installed registry.
+
 ## Necromancy Ossuary destination
 
 `NEW_HORIZONS_NECROMANCY_OSSUARY` appends the result's `ossuaryTown` object ID

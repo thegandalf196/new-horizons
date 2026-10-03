@@ -30,6 +30,40 @@
 
 #include <vstd/RNG.h>
 
+namespace
+{
+void appendNewHorizonsDiplomacyNotes(MetaString & text,
+	const newHorizonsDiplomacy::Forecast & forecast, bool includeTransferWarning)
+{
+	if(forecast.active && !forecast.authoredFree)
+	{
+		text.appendRawString("\n\nDiplomacy threshold: up to ");
+		text.appendRawString(std::to_string(forecast.thresholdPercent));
+		text.appendRawString("% of your current Army Value.");
+		if(forecast.commonCause)
+			text.appendRawString(" Common Cause counts same-faction neutral troops at half Army Value.");
+	}
+	if(!forecast.eligible)
+		text.appendRawString("\nThis neutral stack is not eligible to join.");
+	else if(!forecast.willing)
+		text.appendRawString("\nThis neutral stack does not meet the current Diplomacy threshold.");
+	else if(forecast.authoredFree)
+		text.appendRawString("\nThis map-authored Compliant stack joins without the Diplomacy threshold or Gold payment.");
+
+	if(includeTransferWarning)
+		text.appendRawString("\n\nWarning: creatures left behind when the army transfer window closes will be dismissed permanently.");
+}
+
+void showExpiredDiplomacyOffer(IGameEventCallback & gameEvents, const CGHeroInstance * hero)
+{
+	InfoWindow info;
+	info.player = hero->tempOwner;
+	info.text.appendRawString("This Diplomacy offer is no longer available.");
+	info.type = EInfoWindowMode::MODAL;
+	gameEvents.showInfoDialog(&info);
+}
+}
+
 MetaString CGCreature::getHoverText(PlayerColor player) const
 {
 	if(stacks.empty())
@@ -90,9 +124,15 @@ MetaString CGCreature::getPopupText(const CGHeroInstance * hero) const
 		ms.append(getHoverText(hero));
 		ms.appendRawString("\n\n");
 
+		const auto forecast = getNewHorizonsDiplomacyForecast(*hero);
 		int decision = takenAction(hero, true);
 
-		switch (decision)
+		if(forecast.usesNewHorizonsRules && forecast.willing && !forecast.authoredFree)
+		{
+			ms.appendTextID("core.genrltxt.244");
+			ms.replaceNumber(static_cast<int32_t>(forecast.normalGoldCost));
+		}
+		else switch (decision)
 		{
 		case FIGHT:
 			ms.appendTextID("core.genrltxt.246");
@@ -108,6 +148,8 @@ MetaString CGCreature::getPopupText(const CGHeroInstance * hero) const
 			ms.replaceNumber(decision);
 			break;
 		}
+		if(forecast.usesNewHorizonsRules)
+			appendNewHorizonsDiplomacyNotes(ms, forecast, false);
 		hoverName = ms;
 	}
 	else
@@ -169,7 +211,33 @@ void CGCreature::onHeroVisit(IGameEventCallback & gameEvents, const CGHeroInstan
 		gameEvents.showInfoDialog(&iw);
 	}
 	
+	const auto forecast = getNewHorizonsDiplomacyForecast(*h);
 	int action = takenAction(h);
+	if(forecast.usesNewHorizonsRules && forecast.willing && action >= JOIN_FOR_FREE)
+	{
+		BlockingDialog ynd(true, false);
+		ynd.player = h->tempOwner;
+		ynd.components.emplace_back(ComponentType::CREATURE, getCreatureID(), forecast.joiningAmount);
+		if(forecast.authoredFree)
+		{
+			ynd.text.appendTextID("core.advevent.86");
+			ynd.text.replaceName(getCreatureID(), forecast.joiningAmount);
+		}
+		else
+		{
+			assert(forecast.normalGoldCostFitsAction);
+			ynd.components.emplace_back(ComponentType::RESOURCE, GameResID(GameResID::GOLD),
+				static_cast<int32_t>(forecast.normalGoldCost));
+			ynd.text.appendTextID("core.advevent.90");
+			ynd.text.replaceNumber(forecast.joiningAmount);
+			ynd.text.replaceNumber(static_cast<int32_t>(forecast.normalGoldCost));
+			ynd.text.replaceNamePlural(getCreature()->getId());
+		}
+		appendNewHorizonsDiplomacyNotes(ynd.text, forecast, true);
+		gameEvents.showBlockingDialog(this, &ynd);
+		return;
+	}
+
 	switch( action ) //decide what we do...
 	{
 	case FIGHT:
@@ -220,6 +288,39 @@ const CCreature * CGCreature::getCreature() const
 TQuantity CGCreature::getJoiningAmount() const
 {
 	return std::max(static_cast<int64_t>(1), getStackCount(SlotID(0)) * cb->getSettings().getInteger(EGameSettings::CREATURES_JOINING_PERCENTAGE) / 100);
+}
+
+newHorizonsDiplomacy::Forecast CGCreature::getNewHorizonsDiplomacyForecast(const CGHeroInstance & hero) const
+{
+	newHorizonsDiplomacy::ForecastInput input;
+	input.usesNewHorizonsRules = newHorizonsDiplomacy::usesNewHorizonsRules(hero.getPerkState().rules);
+	input.skillRank = hero.getPerkSkillRank(newHorizonsDiplomacy::SKILL_ID);
+	input.negotiator = hero.hasActivePerk(newHorizonsDiplomacy::SKILL_ID,
+		newHorizonsDiplomacy::NEGOTIATOR_ID);
+	input.grandDiplomat = hero.hasActivePerk(newHorizonsDiplomacy::SKILL_ID,
+		newHorizonsDiplomacy::GRAND_DIPLOMAT_ID);
+	input.heroArmyValue = hero.getArmyStrength();
+	input.joiningAmount = getStackCount(SlotID(0));
+	input.encounterEligible = diplomacyEligible
+		&& (tempOwner == PlayerColor::UNFLAGGABLE || tempOwner == PlayerColor::NEUTRAL)
+		&& initialCharacter != Character::SAVAGE && input.joiningAmount > 0;
+	input.authoredFree = initialCharacter == Character::COMPLIANT && !joinOnlyForMoney;
+
+	const auto * creature = getCreature();
+	if(creature)
+	{
+		input.creatureArmyValue = getArmyStrength();
+		input.goldCostPerCreature = creature->getRecruitCost(EGameResID::GOLD);
+		input.commonCause = hero.hasActivePerk(newHorizonsDiplomacy::SKILL_ID,
+			newHorizonsDiplomacy::COMMON_CAUSE_ID)
+			&& creature->getFactionID() == hero.getFactionID();
+	}
+	else
+	{
+		input.encounterEligible = false;
+	}
+
+	return newHorizonsDiplomacy::resolveForecast(input);
 }
 
 void CGCreature::pickRandomObject(IGameRandomizer & gameRandomizer)
@@ -385,10 +486,19 @@ int CGCreature::takenAction(const CGHeroInstance *h, bool allowJoin) const
 	int diplomacy = std::min<int>(h->valOfBonuses(BonusType::WANDERING_CREATURES_JOIN_BONUS), maxDiplomacyDisposition);
 	int charisma = powerFactor + diplomacy + sympathy;
 
-	if(charisma < agression)
-		return FIGHT;
-
-	if (allowJoin && cb->getSettings().getInteger(EGameSettings::CREATURES_JOINING_PERCENTAGE) > 0)
+	const auto forecast = getNewHorizonsDiplomacyForecast(*h);
+	if(forecast.usesNewHorizonsRules)
+	{
+		if(allowJoin && forecast.willing)
+		{
+			if(forecast.authoredFree || forecast.normalGoldCost == 0)
+				return JOIN_FOR_FREE;
+			if(forecast.normalGoldCostFitsAction)
+				return static_cast<int>(forecast.normalGoldCost);
+		}
+	}
+	else if(charisma >= agression && allowJoin
+		&& cb->getSettings().getInteger(EGameSettings::CREATURES_JOINING_PERCENTAGE) > 0)
 	{
 		if((cb->getSettings().getBoolean(EGameSettings::CREATURES_ALLOW_JOINING_FOR_FREE) || initialCharacter == Character::COMPLIANT) && diplomacy + sympathy + 1 >= agression && !joinOnlyForMoney)
 			return JOIN_FOR_FREE;
@@ -399,6 +509,10 @@ int CGCreature::takenAction(const CGHeroInstance *h, bool allowJoin) const
 			int32_t stackCount = getStackCount(SlotID(0));
 			return recruitCost * stackCount; //join for gold
 		}
+	}
+	else if(charisma < agression)
+	{
+		return FIGHT;
 	}
 
 	//we are still here - creatures have not joined hero, flee or fight
@@ -441,7 +555,24 @@ void CGCreature::joinDecision(IGameEventCallback & gameEvents, const CGHeroInsta
 	}
 	else //accepted
 	{
-		if (cb->getResource(h->tempOwner, EGameResID::GOLD) < cost) //player don't have enough gold!
+		const auto forecast = getNewHorizonsDiplomacyForecast(*h);
+		int64_t requiredGold = cost;
+		int64_t joiningAmount = getJoiningAmount();
+		if(forecast.usesNewHorizonsRules)
+		{
+			const int64_t expectedGold = forecast.authoredFree ? 0 : forecast.normalGoldCost;
+			if(refusedJoining || !forecast.willing
+				|| (!forecast.authoredFree && !forecast.normalGoldCostFitsAction)
+				|| cost != expectedGold)
+			{
+				showExpiredDiplomacyOffer(gameEvents, h);
+				return;
+			}
+			requiredGold = expectedGold;
+			joiningAmount = forecast.joiningAmount;
+		}
+
+		if(cb->getResource(h->tempOwner, EGameResID::GOLD) < requiredGold) //player don't have enough gold!
 		{
 			InfoWindow iw;
 			iw.player = h->tempOwner;
@@ -454,13 +585,13 @@ void CGCreature::joinDecision(IGameEventCallback & gameEvents, const CGHeroInsta
 		}
 
 		//take gold
-		if(cost)
-			gameEvents.giveResource(h->tempOwner,EGameResID::GOLD,-cost);
+		if(requiredGold)
+			gameEvents.giveResource(h->tempOwner, EGameResID::GOLD, -static_cast<int32_t>(requiredGold));
 
 		giveReward(gameEvents, h);
 
 		for(auto & stack : this->stacks)
-			stack.second->setCount(getJoiningAmount());
+			stack.second->setCount(joiningAmount);
 
 		gameEvents.tryJoiningArmy(this, h, true, true);
 	}
@@ -563,7 +694,33 @@ void CGCreature::battleFinished(IGameEventCallback & gameEvents, const CGHeroIns
 
 void CGCreature::blockingDialogAnswered(IGameEventCallback & gameEvents, const CGHeroInstance *hero, int32_t answer) const
 {
-	auto action = takenAction(hero);
+	auto action = takenAction(hero, !refusedJoining);
+	const auto forecast = getNewHorizonsDiplomacyForecast(*hero);
+	if(forecast.usesNewHorizonsRules)
+	{
+		if(action == FLEE)
+		{
+			fleeDecision(gameEvents, hero, answer);
+			return;
+		}
+		if(action == FIGHT)
+		{
+			showExpiredDiplomacyOffer(gameEvents, hero);
+			return;
+		}
+
+		const int64_t expectedGold = forecast.authoredFree ? 0 : forecast.normalGoldCost;
+		if(refusedJoining || !forecast.willing
+			|| (!forecast.authoredFree && !forecast.normalGoldCostFitsAction)
+			|| action != expectedGold)
+		{
+			showExpiredDiplomacyOffer(gameEvents, hero);
+			return;
+		}
+		joinDecision(gameEvents, hero, static_cast<int>(expectedGold), answer);
+		return;
+	}
+
 	if(!refusedJoining && action >= JOIN_FOR_FREE) //higher means price
 		joinDecision(gameEvents, hero, action, answer);
 	else if(action != FIGHT)
@@ -734,6 +891,7 @@ static const std::vector<std::string> CHARACTER_JSON  =
 void CGCreature::serializeJsonOptions(JsonSerializeFormat & handler)
 {
 	handler.serializeEnum("character", initialCharacter, CHARACTER_JSON);
+	handler.serializeBool("diplomacyEligible", diplomacyEligible, true);
 
 	if(handler.saving)
 	{
