@@ -280,6 +280,11 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	const bool hasGamblerPenalty = attacker->hasBonus(gamblerPenaltySelector);
 	const bool hasRangedFollowUp = shooting && hasPendingRangedFollowUp(attacker);
 	const bool hasReducedExtraActivation = hb->battleGetActivationOutputPercent(attacker) < 100;
+	const auto * battleInfo = hb->getBattle();
+	const bool hasBloodragePain = attacker->getPersonalBloodrageIncrement() > 0
+		|| (battleInfo
+			&& (raSide == BattleSide::ATTACKER || raSide == BattleSide::DEFENDER)
+			&& battleInfo->getBloodragePainIncrement(raSide) > 0);
 	// IDs alone cannot key a target/controller/round-sensitive premium. Preserve
 	// original-damage snapshots for comparison, but recompute current v2 damage.
 	// Remember marked targets so expiry/Dispel cannot revive a cached premium.
@@ -287,6 +292,7 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	// of Fortune can change side Luck after a strike. Never let an ID-only cache
 	// reuse damage across either projected state. The Chain bypass remains active
 	// after its once-per-round trigger because a pending gift can still be spent.
+	// Bloodrage Pain can change damage after a projected health-threshold crossing.
 	if(heroCommands::supportedByRules(hb->getBattle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE)
 		|| newHorizonsBattlecraft::rank(hb->battleGetOwnerHero(attacker)) > 0
 		|| hasRangedFollowUp
@@ -297,6 +303,7 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 		|| fortune.gambler
 		|| fortune.chainOfFortune
 		|| hasGamblerPenalty
+		|| hasBloodragePain
 		|| tracksRangedMarks(defender->unitId()))
 	{
 		if(!attacker->alive())
@@ -658,6 +665,14 @@ AttackPossibility AttackPossibility::evaluate(
 		const bool projectsChainOfFortune = state->getBattle()
 			&& (state->getBattle()->getSylvanLuckState(BattleSide::ATTACKER).chainOfFortune
 				|| state->getBattle()->getSylvanLuckState(BattleSide::DEFENDER).chainOfFortune);
+		const auto * battleInfo = state->getBattle();
+		const bool attackerSideHasBloodragePain = battleInfo
+			&& (attackerSide == BattleSide::ATTACKER || attackerSide == BattleSide::DEFENDER)
+			&& battleInfo->getBloodragePainIncrement(attackerSide) > 0;
+		const bool defenderSideHasBloodragePain = battleInfo
+			&& (defenderSide == BattleSide::ATTACKER || defenderSide == BattleSide::DEFENDER)
+			&& battleInfo->getBloodragePainIncrement(defenderSide) > 0;
+		const bool projectsBloodragePain = attackerSideHasBloodragePain || defenderSideHasBloodragePain;
 		const auto hasSecondChanceFor = [&state](const battle::Unit * unit, bool physicalDamage)
 		{
 			if(!unit || !state->getBattle()
@@ -783,13 +798,13 @@ AttackPossibility AttackPossibility::evaluate(
 		if(ap.perfectMoment || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 				|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 				|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune
-				|| projectsNoEscape)
+				|| projectsNoEscape || projectsBloodragePain)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
 	if(projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 			|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune
-			|| projectsNoEscape)
+			|| projectsNoEscape || projectsBloodragePain)
 			ap.effectPreview = fortunePreview;
 	const CBattleInfoCallback & luckState = fortunePreview
 		? static_cast<const CBattleInfoCallback &>(*fortunePreview) : *state;

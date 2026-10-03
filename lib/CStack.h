@@ -16,6 +16,7 @@
 #include "mapObjects/CGHeroInstance.h" // for commander serialization
 
 #include "battle/CUnitState.h"
+#include "battle/NewHorizonsBloodrage.h"
 
 struct BattleStackAttacked;
 class BattleInfo;
@@ -92,6 +93,7 @@ public:
 	int unitFortuneSpeed(const battle::Unit * unit) const override;
 	int unitSpeedBonus(const battle::Unit * unit) const override;
 	int unitAdditionalRetaliations(const battle::Unit * unit) const override;
+	int unitBloodragePainIncrement(const battle::Unit * unit) const override;
 
 	void spendMana(ServerCallback * server, const int spellCost) const override;
 
@@ -105,7 +107,12 @@ public:
 	template <typename Handler> void serialize(Handler & h)
 	{
 		//this assumes that stack objects is newly created
-		//stackState is not serialized here
+		//CUnitState is not serialized here except for explicit battle-long fields.
+		if(h.saving && !newHorizonsBloodrage::isValidPersonalIncrement(personalBloodrageIncrement))
+			throw std::runtime_error("Invalid personal Bloodrage increment");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_RAGE_THROUGH_PAIN)
+			&& personalBloodrageIncrement != 0)
+			throw std::runtime_error("Cannot discard personal Bloodrage state in an older format");
 		assert(isIndependentNode());
 		h & static_cast<CBonusSystemNode&>(*this);
 		h & typeID;
@@ -115,6 +122,14 @@ public:
 		h & slot;
 		h & side;
 		h & initialPosition;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_RAGE_THROUGH_PAIN))
+		{
+			h & personalBloodrageIncrement;
+			if(!h.saving && !newHorizonsBloodrage::isValidPersonalIncrement(personalBloodrageIncrement))
+				throw std::runtime_error("Invalid saved personal Bloodrage increment");
+		}
+		else if(!h.saving)
+			personalBloodrageIncrement = 0;
 	}
 
 private:

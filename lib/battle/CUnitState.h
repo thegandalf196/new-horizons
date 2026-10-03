@@ -226,6 +226,8 @@ public:
 	std::vector<uint32_t> archeryCrossfireDefenders;
 	/// Number of accepted activations remaining before No Quarter's morale penalty ends.
 	int32_t noQuarterMoraleActivationsRemaining;
+	/// One personal Bloodrage increment earned the first time this unit crosses below half HP.
+	int32_t personalBloodrageIncrement = 0;
 	/// Tenths of a hit point per creature carried between capacity-regeneration activations.
 	int32_t capacityRegenerationRemainderTenths = 0;
 	bool timeStopTurnConsumedFlag;
@@ -343,6 +345,7 @@ public:
 	int32_t getCount() const override;
 	int32_t getFirstHPleft() const override;
 	int32_t getUnusableRemains() const override;
+	int32_t getPersonalBloodrageIncrement() const override { return personalBloodrageIncrement; }
 	int64_t getAvailableHealth() const override;
 	int64_t getSurvivingMissingHealth() const override;
 	int64_t getTotalHealth() const override;

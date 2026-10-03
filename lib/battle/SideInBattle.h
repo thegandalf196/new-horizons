@@ -178,6 +178,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	int32_t bloodrageAdditionalRetaliations = 0;
 	// Blood Scent's target-sensitive increment is resolved from the saved skill rank/perk.
 	int32_t bloodrageLowHealthIncrement = 0;
+	// Rage Through Pain's personal increment profile is resolved at battle setup.
+	int32_t bloodragePainIncrement = 0;
 	// Double Command is a contextual immediate continuation and one combat use.
 	DoubleCommandState doubleCommandState;
 	// Battle Plan is a once-per-combat round-one Order choice, resolved before

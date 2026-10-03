@@ -3769,7 +3769,7 @@
 					"requires": "basic",
 					"description": "The first time a friendly stack falls below 50% maximum HP, that stack gains one personal Bloodrage increment for the rest of combat.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The first time a friendly stack falls below 50% maximum HP, that stack gains one personal Bloodrage increment for the rest of combat."
 					}
 				},

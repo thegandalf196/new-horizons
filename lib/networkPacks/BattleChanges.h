@@ -50,6 +50,12 @@ public:
 		return remaining.isNumber() && remaining.Integer() > 0;
 	}
 
+	bool hasRageThroughPainState() const
+	{
+		const auto & increment = data["state"]["personalBloodrageIncrement"];
+		return increment.isNumber() && increment.Float() != 0.0;
+	}
+
 	template <typename Handler> void serialize(Handler & h)
 	{
 		const auto & veteranDamage = data["state"]["veteranPhysicalDamageSinceActivation"];
@@ -60,6 +66,9 @@ public:
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_RESERVE)
 			&& activationMovementBonus.isNumber() && activationMovementBonus.Integer() != 0)
 			throw std::runtime_error("Cannot discard Battlecraft Reserve movement state in an older unit update format");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_RAGE_THROUGH_PAIN)
+			&& hasRageThroughPainState())
+			throw std::runtime_error("Cannot discard personal Bloodrage state in an older unit update format");
 		h & id;
 		h & healthDelta;
 		h & data;

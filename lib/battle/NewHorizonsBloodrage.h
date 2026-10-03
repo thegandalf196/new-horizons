@@ -27,6 +27,11 @@ DLL_LINKAGE bool hasEndlessBloodshed(const CGHeroInstance * hero);
 DLL_LINKAGE bool hasUnrelenting(const CGHeroInstance * hero);
 DLL_LINKAGE bool hasBerserker(const CGHeroInstance * hero);
 DLL_LINKAGE bool hasBloodScent(const CGHeroInstance * hero);
+DLL_LINKAGE bool hasRageThroughPain(const CGHeroInstance * hero);
+constexpr bool isValidPersonalIncrement(int value)
+{
+	return value == 0 || value == BASIC_INCREMENT || value == ADVANCED_INCREMENT || value == EXPERT_INCREMENT;
+}
 DLL_LINKAGE int initialDamagePercent(const CGHeroInstance * hero);
 DLL_LINKAGE int advanceDamagePercent(const CGHeroInstance * hero, int currentPercent);
 }

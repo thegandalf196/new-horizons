@@ -14,6 +14,20 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP169 Rage Through Pain is source/native verified and active. A saved per-unit
+increment is earned once at a strict below-half HP crossing; shared damage and
+threshold consumers apply the normal cap. Accepted-hit feedback and detached
+AI projection are included. Both-target build52291 exits0; principal4/4 passes
+in1.186s with zero skips. Activated data/inventory19/19, module drift and
+incremental build pass; final production-active4/4 passes in1.183s, zero skips.
+Final review accepts with no blocker; test binary SHA-256 is
+fc1b4c90470cb164641e06ffc4be91220bedfb03776d788b212fba43a956e4d9.
+Coverage is189/310 active perks, faction51/90 and Bloodrage7/10. Broader historic
+CUnitState binary restoration and rare control/form/revival interactions remain
+Phase2. Purpose-made art is Not done; generic UI is Provisional.
+The preceding No Escape source is pushed as9f59f66eb; notice37098685825 passes,
+and full Windows37098764803 is running on that source, excluding dirty UP169.
+
 UP170 No Escape runtime and detached AI are source/native verified and active.
 Accepted rear melee applies a nonstacking -2 Speed bonus to its surviving direct
 target until that target's next Creature Activation; qualifying retaliation uses
@@ -1482,9 +1496,9 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 188/310 | 122 planned; No Escape is the newest source/native-verified activation. Learning is 3/10; Estates is 5/10; Battlecraft is 5/10; Command is 7/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 189/310 | 121 planned; Rage Through Pain is the newest source/native-verified activation. Learning is 3/10; Estates is 5/10; Battlecraft is 5/10; Command is 7/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
-| Faction perks active | 50/90 | 40 planned perks; No Escape has focused live/detached activation-lifetime evidence. |
+| Faction perks active | 51/90 | 39 planned perks; Rage Through Pain has focused per-stack live/detached crossing and saved-state evidence. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
@@ -1634,8 +1648,8 @@ interactions, and rendered/playable acceptance remain separate.
 | Warcasting | 3/0 | 5/5 | Spellward has focused live/detached/current-controller damage evidence. Five perks missing; Combat Casting and Enchanted Command await shared rule decisions. |
 | Logistics | 3/0 | 5/5 | Five perks missing; Roadmaster/Wayfarer native verified |
 | Diplomacy | 0/3 | 0/10 | Ranks and progression missing |
-| Estates | 3/0 | 4/6 | Land Surveyor, Tax Collector, Estate Network and Financier supply working Basic/Advanced/Expert perks. Accepted mine-capture grants, daily income, weekly Wood/Ore, weekly treasury interest and AI resource receipt/selection are native verified. |
-| Learning | 3/0 | 2/8 | Mentor and Quick Study supply working Basic/Advanced perks and open ordinary Expert-rank progression. Meetings, weekly persistence, initial offer reroll and query/RNG parity are native verified. Academic Study awaits first-visit timing. |
+| Estates | 3/0 | 5/5 | Land Surveyor, Tax Collector, Investor, Estate Network and Financier supply working Basic/Advanced/Expert perks. Accepted mine-capture grants, daily income, weekly Wood/Ore, weekly treasury interest, Investor's pre-income treasury snapshot and AI resource receipt/selection are native verified. |
+| Learning | 3/0 | 3/7 | Mentor, Quick Study and Field Study supply working Basic/Advanced perks and open ordinary Expert-rank progression. Meetings, weekly persistence, initial offer reroll, stronger-opponent awarded XP and query/RNG parity are native verified. Academic Study awaits first-visit timing. |
 | Luck | 3/0 | 6/4 | Fortune's Favor, Lucky Aim, Second Chance, Gambler, Chain of Fortune and Twist of Fate source/native verified; four perks remain planned. |
 | Divine Mandate | 0/3 | 0/10 | Ranks and progression missing |
 | Sylvan Luck | 3/0 | 10/0 | Evidence audit required |
@@ -1643,7 +1657,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Shroud of Malassa | 3/0 | 2/8 | Basic Backstab and Advanced No Escape are active; the other eight perks remain planned. |
 | Demonic Gating | 3/0 | 10/0 | Evidence audit required |
 | Necromancy | 3/0 | 3/7 | Seven perks missing; one inert hook |
-| Bloodrage | 3/0 | 6/4 | War Drums, Fury Unbound, Endless Bloodshed, Unrelenting, Berserker and Blood Scent have focused live/AI evidence and legal progression; four perks remain missing. |
+| Bloodrage | 3/0 | 7/3 | War Drums, Fury Unbound, Endless Bloodshed, Unrelenting, Berserker, Blood Scent and Rage Through Pain have focused live/AI evidence and legal progression; First Blood, Slayer and Avatar of Rage remain planned. |
 | Bulwark of the Mire | 3/0 | 9/1 | Nine perks are active in committed source; 53/53 native regressions pass; persistent Poison status builds and passes focused tests; Deep Bulwark and rendered/playable evidence remain open |
 | Elemental Rebirth | 0/3 | 0/10 | Ranks and progression missing |
 

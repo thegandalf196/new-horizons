@@ -626,6 +626,8 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 		currentBattle->sides[i].bloodrageAdditionalRetaliations = newHorizonsBloodrage::hasBerserker(heroes[i]) ? 1 : 0;
 		currentBattle->sides[i].bloodrageLowHealthIncrement = newHorizonsBloodrage::hasBloodScent(heroes[i])
 			? newHorizonsBloodrage::incrementForRank(currentBattle->sides[i].bloodrageRank) : 0;
+		currentBattle->sides[i].bloodragePainIncrement = newHorizonsBloodrage::hasRageThroughPain(heroes[i])
+			? newHorizonsBloodrage::incrementForRank(currentBattle->sides[i].bloodrageRank) : 0;
 	}
 
 	currentBattle->tile = tile;
@@ -1442,6 +1444,17 @@ bool BattleInfo::hasNoQuarterState() const
 			return newHorizonsOffense::isNoQuarterBonus(bonus);
 		}));
 		return bonuses && !bonuses->empty();
+	});
+}
+
+bool BattleInfo::hasRageThroughPainState() const
+{
+	if(sides[BattleSide::ATTACKER].bloodragePainIncrement != 0
+		|| sides[BattleSide::DEFENDER].bloodragePainIncrement != 0)
+		return true;
+	return std::ranges::any_of(stacks, [](const auto & stack)
+	{
+		return stack && stack->getPersonalBloodrageIncrement() != 0;
 	});
 }
 

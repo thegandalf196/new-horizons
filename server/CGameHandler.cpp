@@ -2032,6 +2032,30 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 		int64_t actualSecondaryDamage = 0;
 	};
 	std::vector<SoulChainEcho> echoes;
+	struct PersonalBloodrageGain
+	{
+		BattleID battleID = BattleID::NONE;
+		CreatureID creature = CreatureID::NONE;
+		int32_t countBefore = 0;
+	};
+	std::map<uint32_t, PersonalBloodrageGain> personalBloodrageGains;
+	const auto capturePersonalBloodrageGains = [&](const BattleID & battleID,
+		const std::vector<BattleStackAttacked> & hits)
+	{
+		const auto * battleInfo = gameState().getBattle(battleID);
+		if(!battleInfo)
+			return;
+		for(const auto & hit : hits)
+		{
+			const auto & earned = hit.newState.data["state"]["personalBloodrageIncrement"];
+			if(hit.damageAmount <= 0 || !earned.isNumber() || earned.Float() <= 0)
+				continue;
+			const auto * unit = battleInfo->battleGetUnitByID(hit.stackAttacked);
+			if(unit && unit->getPersonalBloodrageIncrement() == 0)
+				personalBloodrageGains.emplace(unit->unitId(),
+					PersonalBloodrageGain{battleID, unit->creatureId(), unit->getCount()});
+		}
+	};
 
 	auto captureSoulChainTriggers = [&](const BattleID & battleID,
 		const std::vector<BattleStackAttacked> & hits)
@@ -2061,11 +2085,35 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 	// it is not an ordinary damage event and intentionally does not trigger this
 	// combat reaction.
 	if(const auto * attack = dynamic_cast<const BattleAttack *>(&pack))
+	{
 		captureSoulChainTriggers(attack->battleID, attack->bsa);
+		capturePersonalBloodrageGains(attack->battleID, attack->bsa);
+	}
 	else if(const auto * injured = dynamic_cast<const StacksInjured *>(&pack))
+	{
 		captureSoulChainTriggers(injured->battleID, injured->stacks);
+		capturePersonalBloodrageGains(injured->battleID, injured->stacks);
+	}
 
 	gameServer().applyPack(pack);
+	for(const auto & [unitId, gain] : personalBloodrageGains)
+	{
+		const auto * battleInfo = gameState().getBattle(gain.battleID);
+		const auto * unit = battleInfo ? battleInfo->battleGetUnitByID(unitId) : nullptr;
+		if(!unit || unit->getPersonalBloodrageIncrement() <= 0)
+			continue;
+		BattleLogMessage log;
+		log.battleID = gain.battleID;
+		MetaString line = MetaString::createFromRawString("Rage Through Pain: ");
+		line.appendNumber(gain.countBefore);
+		line.appendRawString(" ");
+		line.appendName(gain.creature, gain.countBefore);
+		line.appendRawString(" gain one personal Bloodrage increment (");
+		line.appendNumber(unit->getPersonalBloodrageIncrement());
+		line.appendRawString(" percentage points; normal cap applies) for the rest of combat.");
+		log.lines.push_back(std::move(line));
+		sendAndApply(log);
+	}
 
 	if(echoes.empty())
 		return;

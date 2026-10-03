@@ -19,6 +19,7 @@ constexpr std::string_view ENDLESS_BLOODSHED = "new-horizons:bloodrage.endlessBl
 constexpr std::string_view UNRELENTING = "new-horizons:bloodrage.unrelenting";
 constexpr std::string_view BERSERKER = "new-horizons:bloodrage.berserker";
 constexpr std::string_view BLOOD_SCENT = "new-horizons:bloodrage.bloodScent";
+constexpr std::string_view RAGE_THROUGH_PAIN = "new-horizons:bloodrage.rageThroughPain";
 }
 
 int rank(const CGHeroInstance * hero)
@@ -81,6 +82,12 @@ bool hasBerserker(const CGHeroInstance * hero)
 bool hasBloodScent(const CGHeroInstance * hero)
 {
 	return hero && hero->hasActivePerk(std::string(SKILL), std::string(BLOOD_SCENT));
+}
+
+bool hasRageThroughPain(const CGHeroInstance * hero)
+{
+	return hero && rank(hero) > 0
+		&& hero->hasActivePerk(std::string(SKILL), std::string(RAGE_THROUGH_PAIN));
 }
 
 int capForHero(const CGHeroInstance * hero)

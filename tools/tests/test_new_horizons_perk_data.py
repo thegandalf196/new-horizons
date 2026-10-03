@@ -21,6 +21,7 @@ ACTIVE_PERKS = {
     "new-horizons:command.battlePlan",
     "new-horizons:command.doubleCommand",
     "new-horizons:bloodrage.bloodScent",
+    "new-horizons:bloodrage.rageThroughPain",
     "new-horizons:bloodrage.unrelenting",
     "new-horizons:bloodrage.berserker",
     "new-horizons:bloodrage.furyUnbound",

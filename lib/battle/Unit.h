@@ -163,6 +163,8 @@ public:
 	virtual int64_t getGuardianSpiritHitPoints() const { return 0; }
 	/// Remaining rounds on the active Guardian Spirit marker, or zero when inactive.
 	virtual int32_t getGuardianSpiritRoundsRemaining() const { return 0; }
+	/// Bloodrage earned personally by this stack, in percentage points.
+	virtual int32_t getPersonalBloodrageIncrement() const { return 0; }
 
 	virtual int getTotalAttacks(bool ranged) const = 0;
 	/// Creature Defense with the temporary bonus granted by the Defend action removed.

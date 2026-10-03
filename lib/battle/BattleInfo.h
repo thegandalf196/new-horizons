@@ -80,6 +80,10 @@ public:
 	{
 		return sides.at(side).bloodrageLowHealthIncrement;
 	}
+	int32_t getBloodragePainIncrement(BattleSide side) const override
+	{
+		return sides.at(side).bloodragePainIncrement;
+	}
 	SylvanLuckState getSylvanLuckState(BattleSide side) const override { return sides.at(side).sylvanLuck; }
 	AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override
 	{
@@ -124,6 +128,7 @@ public:
 	bool hasReserveMovementState() const;
 	bool hasCleaveState() const;
 	bool hasNoQuarterState() const;
+	bool hasRageThroughPainState() const;
 	bool hasRelentlessAssaultState() const
 	{
 		return sides[BattleSide::ATTACKER].relentlessAssault.hasState()
@@ -188,6 +193,9 @@ public:
 	{
 		if(h.saving)
 		{
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RAGE_THROUGH_PAIN)
+				&& hasRageThroughPainState())
+				throw std::runtime_error("Cannot discard Rage Through Pain battle state");
 			if(!h.hasFeature(Handler::Version::BATTLE_INITIAL_ARMY_VALUE) && hasInitialArmyValueState())
 				throw std::runtime_error("Cannot discard initial battle Army Value snapshot");
 			deploymentState.validateShape();
@@ -213,6 +221,9 @@ public:
 				|| side.bloodrageAdditionalRetaliations < 0 || side.bloodrageAdditionalRetaliations > 1
 				|| (side.bloodrageLowHealthIncrement != 0
 					&& (side.bloodrageRank == 0 || side.bloodrageLowHealthIncrement
+						!= newHorizonsBloodrage::incrementForRank(side.bloodrageRank)))
+				|| (side.bloodragePainIncrement != 0
+					&& (side.bloodrageRank == 0 || side.bloodragePainIncrement
 						!= newHorizonsBloodrage::incrementForRank(side.bloodrageRank)))
 				|| (side.bloodrageRank < 2
 					&& (side.bloodrageSpeedBonus != 0 || side.bloodrageAdditionalRetaliations != 0)))
@@ -370,6 +381,16 @@ public:
 				for(auto & side : sides)
 					side.bloodrageLowHealthIncrement = 0;
 			}
+			if(h.hasFeature(Handler::Version::NEW_HORIZONS_RAGE_THROUGH_PAIN))
+			{
+				h & sides[BattleSide::ATTACKER].bloodragePainIncrement;
+				h & sides[BattleSide::DEFENDER].bloodragePainIncrement;
+			}
+			else if(!h.saving)
+			{
+				for(auto & side : sides)
+					side.bloodragePainIncrement = 0;
+			}
 			if(!h.saving && (!validBloodrageSnapshot(sides[BattleSide::ATTACKER])
 				|| !validBloodrageSnapshot(sides[BattleSide::DEFENDER])))
 				throw std::runtime_error("Invalid saved Bloodrage rank, cap, or damage state");
@@ -390,6 +411,8 @@ public:
 			bloodrageDestroyedUnits.clear();
 			for(auto & side : sides)
 				side.bloodrageLowHealthIncrement = 0;
+			for(auto & side : sides)
+				side.bloodragePainIncrement = 0;
 		}
 		h & round;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_FIRE_WALL))

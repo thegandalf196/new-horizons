@@ -571,7 +571,7 @@ int CBattleInfoCallback::battleBloodrageSpeed(const battle::Unit * unit) const
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return 0;
 	const int cap = getBattle()->getBloodrageCapPercent(side);
-	const int damage = std::max(0, getBattle()->getBloodrageDamagePercent(side));
+	const int damage = battleGetBloodrageDamagePercent(unit);
 	const int bonus = std::max(0, getBattle()->getBloodrageSpeedBonus(side));
 	return cap > 0 && static_cast<int64_t>(damage) * 2 >= cap ? bonus : 0;
 }
@@ -584,9 +584,22 @@ int CBattleInfoCallback::battleBloodrageRetaliations(const battle::Unit * unit) 
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return 0;
 	const int cap = getBattle()->getBloodrageCapPercent(side);
-	const int damage = std::max(0, getBattle()->getBloodrageDamagePercent(side));
+	const int damage = battleGetBloodrageDamagePercent(unit);
 	const int bonus = std::max(0, getBattle()->getBloodrageAdditionalRetaliations(side));
 	return cap > 0 && static_cast<int64_t>(damage) * 2 >= cap ? bonus : 0;
+}
+
+int CBattleInfoCallback::battleBloodragePainIncrement(const battle::Unit * unit) const
+{
+	if(!getBattle() || !unit || !unit->alive() || unit->isGhost())
+		return 0;
+	const auto side = playerToSide(battleGetOwner(unit));
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return 0;
+	const int rank = getBattle()->getBloodrageRank(side);
+	const int increment = getBattle()->getBloodragePainIncrement(side);
+	return getBattle()->getBloodrageCapPercent(side) > 0 && rank > 0
+		&& increment == newHorizonsBloodrage::incrementForRank(rank) ? increment : 0;
 }
 
 bool CBattleInfoCallback::battleBeginsActivation(const battle::Unit * unit, BattleUnitTurnReason reason) const
@@ -779,7 +792,13 @@ int CBattleInfoCallback::battleGetBloodrageDamagePercent(const battle::Unit * un
 	const auto side = playerToSide(battleGetOwner(unit));
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return 0;
-	return std::max(0, getBattle()->getBloodrageDamagePercent(side));
+	const int cap = std::max(0, getBattle()->getBloodrageCapPercent(side));
+	if(cap == 0)
+		return 0;
+	const int globalDamage = std::max(0, getBattle()->getBloodrageDamagePercent(side));
+	const int personalIncrement = std::max(0, unit->getPersonalBloodrageIncrement());
+	return static_cast<int>(std::min<int64_t>(cap,
+		static_cast<int64_t>(globalDamage) + personalIncrement));
 }
 
 int CBattleInfoCallback::battleGetBloodrageDamagePercent(const battle::Unit * attacker,

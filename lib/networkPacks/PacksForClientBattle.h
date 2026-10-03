@@ -53,6 +53,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info && !h.hasFeature(Handler::Version::BATTLE_INITIAL_ARMY_VALUE)
 			&& info->hasInitialArmyValueState())
 			throw std::runtime_error("Cannot discard initial Army Value snapshot from BattleStart");
+		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_RAGE_THROUGH_PAIN)
+			&& info->hasRageThroughPainState())
+			throw std::runtime_error("Cannot discard Rage Through Pain battle start state");
 		if(h.saving && info && !h.hasFeature(Handler::Version::BATTLE_FINAL_RELOCATION)
 			&& info->getDeploymentState().hasFinalRelocationState())
 			throw std::runtime_error("Cannot discard final relocation state from BattleStart");
@@ -456,6 +459,10 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 			&& std::ranges::any_of(changedStacks, [](const UnitChanges & change)
 				{ return change.hasNoQuarterMoraleState(); }))
 			throw std::runtime_error("Cannot discard No Quarter unit state update");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_RAGE_THROUGH_PAIN)
+			&& std::ranges::any_of(changedStacks, [](const UnitChanges & change)
+				{ return change.hasRageThroughPainState(); }))
+			throw std::runtime_error("Cannot discard personal Bloodrage unit state update");
 		h & battleID;
 		h & changedStacks;
 		assert(battleID != BattleID::NONE);
@@ -508,6 +515,9 @@ struct BattleStackAttacked
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_RANGED_FOLLOW_UP)
 			&& followUpPercent.isNumber() && followUpPercent.Float() != 0)
 			throw std::runtime_error("Cannot discard ranged follow-up attack state update");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_RAGE_THROUGH_PAIN)
+			&& newState.hasRageThroughPainState())
+			throw std::runtime_error("Cannot discard personal Bloodrage attack state update");
 		h & stackAttacked;
 		h & attackerID;
 		h & newState;
@@ -583,6 +593,15 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		const auto hasPersonalBloodrage = [](const UnitChanges & change)
+		{
+			return change.hasRageThroughPainState();
+		};
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_RAGE_THROUGH_PAIN)
+			&& (std::ranges::any_of(attackerChanges.changedStacks, hasPersonalBloodrage)
+				|| std::ranges::any_of(bsa, [](const BattleStackAttacked & hit)
+					{ return hit.newState.hasRageThroughPainState(); })))
+			throw std::runtime_error("Cannot discard personal Bloodrage attack state");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_NO_QUARTER)
 			&& (std::ranges::any_of(attackerChanges.changedStacks, [](const UnitChanges & change)
 					{ return change.hasNoQuarterMoraleState(); })
@@ -950,6 +969,10 @@ struct DLL_LINKAGE StacksInjured : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_RAGE_THROUGH_PAIN)
+			&& std::ranges::any_of(stacks, [](const BattleStackAttacked & hit)
+				{ return hit.newState.hasRageThroughPainState(); }))
+			throw std::runtime_error("Cannot discard personal Bloodrage injury state in an older format");
 		h & battleID;
 		h & stacks;
 		assert(battleID != BattleID::NONE);

@@ -10,6 +10,7 @@
 #include "StdInc.h"
 
 #include "CUnitState.h"
+#include "NewHorizonsBloodrage.h"
 
 #include <vcmi/spells/Spell.h>
 
@@ -969,6 +970,7 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	archeryCrossfireAttackers = other.archeryCrossfireAttackers;
 	archeryCrossfireDefenders = other.archeryCrossfireDefenders;
 	noQuarterMoraleActivationsRemaining = other.noQuarterMoraleActivationsRemaining;
+	personalBloodrageIncrement = other.personalBloodrageIncrement;
 	capacityRegenerationRemainderTenths = other.capacityRegenerationRemainderTenths;
 	timeStopTurnConsumedFlag = other.timeStopTurnConsumedFlag;
 	regenerationRateMillionths = other.regenerationRateMillionths;
@@ -1751,6 +1753,9 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeInt("noQuarterMoraleActivationsRemaining", noQuarterMoraleActivationsRemaining, 0);
 	if(noQuarterMoraleActivationsRemaining < 0 || noQuarterMoraleActivationsRemaining > 2)
 		throw std::runtime_error("Invalid No Quarter morale lifetime");
+	handler.serializeInt("personalBloodrageIncrement", personalBloodrageIncrement, 0);
+	if(!newHorizonsBloodrage::isValidPersonalIncrement(personalBloodrageIncrement))
+		throw std::runtime_error("Invalid personal Bloodrage increment");
 	handler.serializeInt("capacityRegenerationRemainderTenths", capacityRegenerationRemainderTenths, 0);
 	if(capacityRegenerationRemainderTenths < 0 || capacityRegenerationRemainderTenths > 9)
 		throw std::runtime_error("Invalid capacity regeneration remainder");
@@ -1873,6 +1878,7 @@ void CUnitState::localInit(const IUnitEnvironment * env_)
 void CUnitState::reset()
 {
 	cloned = false;
+	personalBloodrageIncrement = 0;
 	activationMovementBonus = 0;
 	defending = false;
 	drainedMana = false;
@@ -1978,6 +1984,17 @@ JsonNode CUnitState::save()
 void CUnitState::load(const JsonNode & data)
 {
 	//TODO: use instance resolver
+	const auto & savedPainIncrement = data["state"]["personalBloodrageIncrement"];
+	if(!savedPainIncrement.isNull())
+	{
+		if(savedPainIncrement.getType() != JsonNode::JsonType::DATA_INTEGER)
+			throw std::runtime_error("Personal Bloodrage increment must be an integer");
+		const int64_t rawIncrement = savedPainIncrement.Integer();
+		if(rawIncrement != 0 && rawIncrement != newHorizonsBloodrage::BASIC_INCREMENT
+			&& rawIncrement != newHorizonsBloodrage::ADVANCED_INCREMENT
+			&& rawIncrement != newHorizonsBloodrage::EXPERT_INCREMENT)
+			throw std::runtime_error("Invalid personal Bloodrage increment");
+	}
 	const bool previousBattleFormState = hasBattleFormState();
 	reset();
 	if(previousBattleFormState)
@@ -1985,6 +2002,7 @@ void CUnitState::load(const JsonNode & data)
 	JsonDeserializer deser(nullptr, data);
 	deser.serializeStruct("state", *this);
 	if(phantomInitialIntegrity < 0 || phantomIntegrity < 0 || phantomRoundsRemaining < 0
+		|| !newHorizonsBloodrage::isValidPersonalIncrement(personalBloodrageIncrement)
 		|| guardianSpiritHitPoints < 0 || guardianSpiritRoundsRemaining < 0
 		|| ((guardianSpiritHitPoints == 0) != (guardianSpiritRoundsRemaining == 0))
 		|| regenerationRateMillionths < 0
@@ -2027,6 +2045,20 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 	{
 		amount = 0;
 		return;
+	}
+	const int64_t maximumHealthBefore = battle::getMaximumHealth(*this);
+	const int64_t availableHealthBefore = getAvailableHealth();
+	const int64_t halfHealthCeiling = maximumHealthBefore > 0
+		? maximumHealthBefore / 2 + maximumHealthBefore % 2 : 0;
+	int32_t eligiblePainIncrement = 0;
+	if(personalBloodrageIncrement == 0 && env && maximumHealthBefore > 0
+		&& availableHealthBefore >= halfHealthCeiling)
+	{
+		// Resolve the current controller before damage can kill the unit. The
+		// earned increment itself remains personal and follows this stack.
+		eligiblePainIncrement = env->unitBloodragePainIncrement(this);
+		if(!newHorizonsBloodrage::isValidPersonalIncrement(eligiblePainIncrement))
+			throw std::logic_error("Invalid Rage Through Pain increment from unit environment");
 	}
 	const int32_t firstHPleftBefore = health.getFirstHPleft();
 	const int32_t countBefore = health.getCount();
@@ -2100,6 +2132,13 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 	bool disintegrate = hasBonusOfType(BonusType::DISINTEGRATE);
 	if(health.available() <= 0 && (cloned || summoned || disintegrate))
 		ghostPending = true;
+
+	const int64_t availableHealthAfter = getAvailableHealth();
+	if(personalBloodrageIncrement == 0 && eligiblePainIncrement > 0
+		&& availableHealthAfter < availableHealthBefore
+		&& availableHealthBefore >= halfHealthCeiling
+		&& availableHealthAfter < halfHealthCeiling)
+		personalBloodrageIncrement = eligiblePainIncrement;
 
 	if(!alive())
 	{

@@ -63,6 +63,7 @@ void CStack::localInit(BattleInfo * battleInfo)
 {
 	battle = battleInfo;
 	assert(typeID.hasValue());
+	const int32_t restoredPersonalBloodrageIncrement = personalBloodrageIncrement;
 
 	exportBonuses();
 	if(base) //stack originating from "real" stack in garrison -> attach to it
@@ -79,6 +80,9 @@ void CStack::localInit(BattleInfo * battleInfo)
 		attachTo(*army);
 	}
 	CUnitState::localInit(this); //it causes execution of the CStack::isOnNativeTerrain where nativeTerrain will be considered
+	// CUnitState::localInit resets ordinary per-battle transient state; preserve
+	// the one personal increment explicitly carried by this binary stack snapshot.
+	personalBloodrageIncrement = restoredPersonalBloodrageIncrement;
 	position = initialPosition;
 }
 
@@ -458,6 +462,11 @@ int CStack::unitSpeedBonus(const battle::Unit * unit) const
 int CStack::unitAdditionalRetaliations(const battle::Unit * unit) const
 {
 	return battle->battleBloodrageRetaliations(unit);
+}
+
+int CStack::unitBloodragePainIncrement(const battle::Unit * unit) const
+{
+	return battle ? battle->battleBloodragePainIncrement(unit) : 0;
 }
 
 uint32_t CStack::unitId() const

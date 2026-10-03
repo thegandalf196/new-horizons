@@ -127,6 +127,10 @@ public:
 	{
 		return subject->getBattle()->getBloodrageLowHealthIncrement(side);
 	}
+	int32_t getBloodragePainIncrement(BattleSide side) const override
+	{
+		return subject->getBattle()->getBloodragePainIncrement(side);
+	}
 	std::vector<PendingDemonicGateFootprint> getPendingDemonicGateFootprints(BattleSide side) const override
 	{
 		return subject->getBattle()->getPendingDemonicGateFootprints(side);

@@ -790,6 +790,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 		bloodrageSpeedBonuses[side] = realBattle->getBattle()->getBloodrageSpeedBonus(side);
 		bloodrageAdditionalRetaliations[side] = realBattle->getBattle()->getBloodrageAdditionalRetaliations(side);
 		bloodrageLowHealthIncrements[side] = realBattle->getBattle()->getBloodrageLowHealthIncrement(side);
+		bloodragePainIncrements[side] = realBattle->getBattle()->getBloodragePainIncrement(side);
 	}
 
 	localEnvironment.reset(new HypotheticEnvironment(this, env));
@@ -809,6 +810,11 @@ bool HypotheticBattle::hasCompletedHeroSpellLevel(BattleSide side, int32_t level
 bool HypotheticBattle::unitHasAmmoCart(const battle::Unit * unit) const
 {
 	return battleUnitHasAmmoCart(unit);
+}
+
+int HypotheticBattle::unitBloodragePainIncrement(const battle::Unit * unit) const
+{
+	return battleBloodragePainIncrement(unit);
 }
 
 PlayerColor HypotheticBattle::unitEffectiveOwner(const battle::Unit * unit) const
@@ -1691,6 +1697,11 @@ int32_t HypotheticBattle::getBloodrageAdditionalRetaliations(BattleSide side) co
 int32_t HypotheticBattle::getBloodrageLowHealthIncrement(BattleSide side) const
 {
 	return bloodrageLowHealthIncrements.at(side);
+}
+
+int32_t HypotheticBattle::getBloodragePainIncrement(BattleSide side) const
+{
+	return bloodragePainIncrements.at(side);
 }
 
 IBattleInfo::ObstacleCList HypotheticBattle::getAllObstacles() const
