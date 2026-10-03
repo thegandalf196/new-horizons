@@ -106,7 +106,7 @@ std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNe
 		text.appendNumber(result.zombiesRaised);
 		text.appendRawString(" ");
 		text.appendName(zombie, result.zombiesRaised);
-		text.appendRawString(" from groups of three Skeletons\n");
+		text.appendRawString(" from Core casualties (three Skeletons each)\n");
 	}
 
 	if(result.skeletonsRaised > 0 || result.zombiesRaised > 0)

@@ -13,6 +13,11 @@
 
 class CCreature;
 
+namespace newHorizonsCreatures
+{
+class CreatureCategoryRules;
+}
+
 namespace newHorizonsNecromancy
 {
 inline constexpr const char * SKILL_ID = "new-horizons:necromancy";
@@ -30,6 +35,8 @@ struct DLL_LINKAGE NecromancyResult
 	bool boneCollector = false;
 	bool corpsePreservation = false;
 	bool darkConversionAvailable = false;
+	/// Historical field name retained in the versioned result payload. This is
+	/// true only when the automatic Core-only conversion actually produced Zombies.
 	bool darkConversionChosen = false;
 	bool applied = false;
 	bool blockedByArmyCapacity = false;
@@ -92,12 +99,18 @@ DLL_LINKAGE DestinationPlan reserveDestinations(SlotID existingSkeleton, SlotID 
 /// format.
 DLL_LINKAGE int32_t countLivingEligibleCasualties(const std::map<CreatureID, si32> & casualties);
 
-/// Resolve the count-based New Horizons conversion.  `zombieChoice` means that
-/// every complete group of three offered Skeletons becomes one Zombie; the
-/// remainder stays Skeletons.  Slot booleans are part of the resolver so a
-/// caller can preflight the whole conversion atomically before mutating state.
-DLL_LINKAGE NecromancyResult resolve(int rank, int32_t eligibleCasualties,
+/// Count only explicitly captured Core-category casualties that leave an
+/// ordinary raisable corpse. Missing creature-category context never infers a tier.
+DLL_LINKAGE int32_t countLivingEligibleCoreCasualties(const std::map<CreatureID, si32> & casualties,
+	const newHorizonsCreatures::CreatureCategoryRules & categoryRules);
+
+/// Resolve base Necromancy once over all eligible casualties; Dark Conversion
+/// automatically consumes complete groups of three Skeletons attributable to
+/// Core casualties only. `eligibleCoreCasualties` is independently floored for
+/// that conversion gate, while any Skeleton remaining from global base rounding
+/// is preserved. Slot booleans are part of the resolver to preflight all output
+/// stacks atomically before mutating state.
+DLL_LINKAGE NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleCoreCasualties,
 	bool boneCollector, bool corpsePreservation, bool darkConversionAvailable,
-	bool zombieChoice, bool skeletonSlotAvailable, bool zombieSlotAvailable,
-	int32_t currentMana, int32_t manaLimit);
+	bool skeletonSlotAvailable, bool zombieSlotAvailable, int32_t currentMana, int32_t manaLimit);
 }

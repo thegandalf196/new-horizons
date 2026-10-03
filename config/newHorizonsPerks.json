@@ -2,7 +2,7 @@
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
 	"sourceDocument": "docs/design-sources/New Horizons.md",
-	"sourceSha256": "13f7aae2ad8797f34018e23fd9327b054ba4b240ac40da9f83ee5333118a18b6",
+	"sourceSha256": "f7923a372c4ac07945197d7f35ec7cfed892544258dc26a50c9870c01970cbac",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -3645,10 +3645,10 @@
 					"id": "new-horizons:necromancy.soulHarvester",
 					"name": "Soul Harvester",
 					"requires": "advanced",
-					"description": "When resolving Necromancy, every complete group of 6 Skeletons generated from eligible Elite-tier casualties is automatically raised as 1 Wight or the equivalent Necropolis Elite defined by the faction roster.",
+					"description": "When resolving Necromancy, every complete group of 6 Skeletons generated from eligible Elite-tier casualties is automatically raised as 1 Wight. Wights remain Core-tier; the conversion's input is Elite-tier casualties, not its output.",
 					"effect": {
 						"status": "planned",
-						"description": "When resolving Necromancy, every complete group of 6 Skeletons generated from eligible Elite-tier casualties is automatically raised as 1 Wight or the equivalent Necropolis Elite defined by the faction roster."
+						"description": "When resolving Necromancy, every complete group of 6 Skeletons generated from eligible Elite-tier casualties is automatically raised as 1 Wight. Wights remain Core-tier; the conversion's input is Elite-tier casualties, not its output."
 					}
 				},
 				{

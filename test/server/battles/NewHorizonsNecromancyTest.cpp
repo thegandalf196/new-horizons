@@ -17,6 +17,7 @@
 #include "../../../lib/IGameSettings.h"
 #include "../../../lib/entities/hero/CHero.h"
 #include "../../../lib/entities/hero/NewHorizonsNecromancy.h"
+#include "../../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/mapping/CMap.h"
 #include "../../../lib/bonuses/BonusParameters.h"
@@ -63,40 +64,59 @@ public:
 
 TEST(NewHorizonsNecromancy, RankFormulaUsesExactLivingCountsAndBoneCollectorPoints)
 {
-	const auto basic = resolve(1, 99, false, false, false, false, true, true, 0, 0);
+	const auto basic = resolve(1, 99, 0, false, false, false, true, true, 0, 0);
 	EXPECT_EQ(basic.percentage, 10);
 	EXPECT_EQ(basic.skeletonsOffered, 9);
 	EXPECT_EQ(basic.skeletonsRaised, 9);
 
-	const auto advanced = resolve(2, 99, false, false, false, false, true, true, 0, 0);
+	const auto advanced = resolve(2, 99, 0, false, false, false, true, true, 0, 0);
 	EXPECT_EQ(advanced.skeletonsOffered, 19);
 
-	const auto expert = resolve(3, 99, false, false, false, false, true, true, 0, 0);
+	const auto expert = resolve(3, 99, 0, false, false, false, true, true, 0, 0);
 	EXPECT_EQ(expert.skeletonsOffered, 29);
 
-	const auto collector = resolve(1, 99, true, false, false, false, true, true, 0, 0);
+	const auto collector = resolve(1, 99, 0, true, false, false, true, true, 0, 0);
 	EXPECT_EQ(collector.percentage, 15);
 	EXPECT_EQ(collector.skeletonsOffered, 14);
 	EXPECT_TRUE(collector.applied);
 }
 
-TEST(NewHorizonsNecromancy, DarkConversionKeepsRemainderAndRequiresAllDestinations)
+TEST(NewHorizonsNecromancy, DarkConversionAutomaticallyUsesOnlyCompleteCoreGroups)
 {
-	const auto converted = resolve(1, 100, false, false, true, true, true, true, 0, 0);
-	EXPECT_EQ(converted.skeletonsOffered, 10);
-	EXPECT_EQ(converted.zombiesRaised, 3);
-	EXPECT_EQ(converted.skeletonsRaised, 1);
-	EXPECT_TRUE(converted.darkConversionChosen);
+	const auto incompleteCoreGroup = resolve(1, 29, 29, false, false, true, true, true, 0, 0);
+	EXPECT_EQ(incompleteCoreGroup.skeletonsOffered, 2);
+	EXPECT_EQ(incompleteCoreGroup.zombiesRaised, 0);
+	EXPECT_EQ(incompleteCoreGroup.skeletonsRaised, 2);
+	EXPECT_FALSE(incompleteCoreGroup.darkConversionChosen);
 
-	const auto blocked = resolve(1, 100, false, false, true, true, true, false, 0, 0);
-	EXPECT_TRUE(blocked.blockedByArmyCapacity);
-	EXPECT_FALSE(blocked.applied);
-	EXPECT_EQ(blocked.skeletonsRaised, 0);
-	EXPECT_EQ(blocked.zombiesRaised, 0);
+	const auto completeCoreGroup = resolve(1, 30, 30, false, false, true, false, true, 0, 0);
+	EXPECT_EQ(completeCoreGroup.skeletonsOffered, 3);
+	EXPECT_EQ(completeCoreGroup.zombiesRaised, 1);
+	EXPECT_EQ(completeCoreGroup.skeletonsRaised, 0);
+	EXPECT_TRUE(completeCoreGroup.darkConversionChosen);
+	EXPECT_TRUE(completeCoreGroup.applied);
 
-	const auto skeletonOnly = resolve(1, 100, false, false, true, false, true, false, 0, 0);
-	EXPECT_TRUE(skeletonOnly.applied);
-	EXPECT_EQ(skeletonOnly.skeletonsRaised, 10);
+	// Base Skeleton output is floored over all eligible casualties, but only
+	// complete groups generated from the Core subset become Zombies.
+	const auto mixedTiers = resolve(1, 100, 60, false, false, true, true, true, 0, 0);
+	EXPECT_EQ(mixedTiers.skeletonsOffered, 10);
+	EXPECT_EQ(mixedTiers.zombiesRaised, 2);
+	EXPECT_EQ(mixedTiers.skeletonsRaised, 4);
+	EXPECT_TRUE(mixedTiers.darkConversionChosen);
+
+	// The global floor remains one Skeleton here; independently flooring the
+	// Core subset must not lose that aggregate remainder.
+	const auto aggregateRemainder = resolve(2, 5, 4, false, false, true, true, true, 0, 0);
+	EXPECT_EQ(aggregateRemainder.skeletonsOffered, 1);
+	EXPECT_EQ(aggregateRemainder.zombiesRaised, 0);
+	EXPECT_EQ(aggregateRemainder.skeletonsRaised, 1);
+
+	const auto blockedMixedTiers = resolve(1, 100, 60, false, false, true, true, false, 0, 0);
+	EXPECT_TRUE(blockedMixedTiers.blockedByArmyCapacity);
+	EXPECT_FALSE(blockedMixedTiers.applied);
+	EXPECT_FALSE(blockedMixedTiers.darkConversionChosen);
+	EXPECT_EQ(blockedMixedTiers.skeletonsRaised, 0);
+	EXPECT_EQ(blockedMixedTiers.zombiesRaised, 0);
 }
 
 TEST(NewHorizonsNecromancy, DestinationReservationUsesTwoFreeSlotsAndRejectsOneAtomically)
@@ -123,15 +143,15 @@ TEST(NewHorizonsNecromancy, DestinationReservationUsesTwoFreeSlotsAndRejectsOneA
 
 TEST(NewHorizonsNecromancy, BlackHarvestIsCappedByManaCapacity)
 {
-	const auto harvested = resolve(3, 1000, false, false, false, false, true, true, 0, 100);
+	const auto harvested = resolve(3, 1000, 0, false, false, false, true, true, 0, 100);
 	EXPECT_EQ(harvested.skeletonsRaised, 300);
 	EXPECT_EQ(harvested.manaRecovered, 10);
 
-	const auto nearlyFull = resolve(3, 1000, false, false, false, false, true, true, 95, 100);
+	const auto nearlyFull = resolve(3, 1000, 0, false, false, false, true, true, 95, 100);
 	EXPECT_EQ(nearlyFull.manaRecovered, 5);
 
 	// Passing current mana as the limit is the server's no-Black-Harvest gate.
-	const auto noHarvest = resolve(3, 1000, false, false, false, false, true, true, 0, 0);
+	const auto noHarvest = resolve(3, 1000, 0, false, false, false, true, true, 0, 0);
 	EXPECT_EQ(noHarvest.manaRecovered, 0);
 }
 
@@ -420,6 +440,34 @@ protected:
 		}
 	}
 
+	void setMixedCoreEliteCasualties(int32_t coreCount, int32_t eliteCount)
+	{
+		const auto core = creature("core:pikeman");
+		const auto elite = creature("core:monk");
+		const auto coreCategory = gameState()->getCreatureCategory(core);
+		const auto eliteCategory = gameState()->getCreatureCategory(elite);
+		ASSERT_TRUE(coreCategory);
+		ASSERT_TRUE(eliteCategory);
+		ASSERT_EQ(coreCategory->category, newHorizonsCreatures::CreatureCategory::CORE);
+		ASSERT_EQ(eliteCategory->category, newHorizonsCreatures::CreatureCategory::ELITE);
+
+		defenderSideHero->clearSlots();
+		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), core, coreCount));
+		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(1), elite, eliteCount));
+	}
+
+	int32_t armyCreatureCount(const CGHeroInstance & hero, CreatureID creatureId) const
+	{
+		int32_t total = 0;
+		for(const auto & [slot, stack] : hero.Slots())
+		{
+			(void)slot;
+			if(stack->getCreatureID() == creatureId)
+				total += stack->getCount();
+		}
+		return total;
+	}
+
 	void makeNeutralForCapacityTest(CGHeroInstance * hero)
 	{
 		for(const auto & bonus : hero->getHeroType()->specialty)
@@ -508,7 +556,7 @@ TEST_F(NewHorizonsNecromancyRuntimeTest, QueryRejectsForgedChoiceAndAcceptsOnlyS
 	EXPECT_EQ(*selected, zombie);
 }
 
-TEST_F(NewHorizonsNecromancyAITest, ComputerWinnerReceivesAndResumesAuthoritativeDarkConversionQuery)
+TEST_F(NewHorizonsNecromancyAITest, ComputerWinnerAutomaticallyConvertsCompleteCoreGroups)
 {
 	ASSERT_NE(attackerSideHero, nullptr);
 	ASSERT_NE(defenderSideHero, nullptr);
@@ -530,18 +578,39 @@ TEST_F(NewHorizonsNecromancyAITest, ComputerWinnerReceivesAndResumesAuthoritativ
 	ASSERT_FALSE(gameState()->getPlayerState(PlayerColor(0))->isHuman());
 	ASSERT_GE(attackerSideHero->getFreeSlots().size(), 2u);
 
-	// Make the casualties part of the original defending army so the battle
-	// result records all 101 deaths (units injected after battle start have no
-	// original-stack baseline). Basic Necromancy offers ten Skeletons, so the
-	// Zombie choice needs two distinct destinations: 3 Zombies + 1 Skeleton.
-	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), creature("core:peasant"), 101));
+	// Keep the casualties in the original army and use an explicitly classified
+	// Core creature. Basic Necromancy creates 10 Skeletons from 101 casualties;
+	// the automatic conversion leaves 3 Zombies and the one-Skeleton remainder.
+	const auto pikeman = creature("core:pikeman");
+	const auto pikemanCategory = gameState()->getCreatureCategory(pikeman);
+	ASSERT_TRUE(pikemanCategory);
+	ASSERT_EQ(pikemanCategory->category, newHorizonsCreatures::CreatureCategory::CORE);
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), pikeman, 101));
+	const auto skeleton = creature("core:skeleton");
+	const auto zombie = creature("core:zombie");
+	const auto armyCount = [](const CGHeroInstance & hero, CreatureID creatureId)
+	{
+		int32_t total = 0;
+		for(const auto & [slot, stack] : hero.Slots())
+		{
+			(void)slot;
+			if(stack->getCreatureID() == creatureId)
+				total += stack->getCount();
+		}
+		return total;
+	};
+	const int32_t skeletonsBefore = armyCount(*attackerSideHero, skeleton);
+	const int32_t zombiesBefore = armyCount(*attackerSideHero, zombie);
+	// Level-up packets are emitted only after the adventure interface is ready.
+	// These simulated controllers answer their ordinary dialogs directly.
+	gameHandler->onAdvInterfaceReady(PlayerColor(0));
+	gameHandler->onAdvInterfaceReady(PlayerColor(1));
 	gameHandler->battles->startBattle(attackerSideHero, defenderSideHero);
 	ASSERT_NE(gameState()->getBattle(PlayerColor(0)), nullptr);
 	gameHandler->battles->cheatBattleVictory(PlayerColor(0));
 
-	// Resolve whichever ordinary battle-result dialogs the compact fixture
-	// created. In a real game each controller answers its own dialog; this test
-	// then inspects the server-owned choice exposed for the computer winner.
+	// Resolve ordinary battle-result dialogs; Dark Conversion itself is
+	// automatic and does not insert a choice query for the computer winner.
 	for(const auto player : {PlayerColor(0), PlayerColor(1)})
 	{
 		auto dialog = gameHandler->queries->topQuery(player);
@@ -551,26 +620,18 @@ TEST_F(NewHorizonsNecromancyAITest, ComputerWinnerReceivesAndResumesAuthoritativ
 		}
 	}
 
-	auto necromancyQuery = gameHandler->queries->topQuery(PlayerColor(0));
-	ASSERT_NE(necromancyQuery, nullptr);
-	ASSERT_EQ(necromancyQuery->getType(), QueryType::NecromancyChoice);
-	EXPECT_FALSE(gameHandler->queryReply(necromancyQuery->queryID, 3, PlayerColor(0)));
-	EXPECT_EQ(gameHandler->queries->topQuery(PlayerColor(0)), necromancyQuery);
-	ASSERT_TRUE(gameHandler->queryReply(necromancyQuery->queryID, 2, PlayerColor(0)));
+	const auto followup = gameHandler->queries->topQuery(PlayerColor(0));
+	EXPECT_TRUE(!followup || followup->getType() != QueryType::NecromancyChoice);
 	for(int remainingLevelUps = 10; remainingLevelUps > 0; --remainingLevelUps)
 	{
-		auto followup = gameHandler->queries->topQuery(PlayerColor(0));
-		if(!followup)
+		auto levelUp = gameHandler->queries->topQuery(PlayerColor(0));
+		if(!levelUp)
 			break;
-		// The large casualty fixture may grant a normal post-battle level-up.
-		// Resolve it so cleanup can complete; it is independent of conversion.
-		ASSERT_EQ(followup->getType(), QueryType::HeroLevelUpDialog);
-		ASSERT_TRUE(gameHandler->queryReply(followup->queryID, 0, PlayerColor(0)));
+		ASSERT_EQ(levelUp->getType(), QueryType::HeroLevelUpDialog);
+		ASSERT_TRUE(gameHandler->queryReply(levelUp->queryID, 0, PlayerColor(0)));
 	}
 	EXPECT_EQ(gameHandler->queries->topQuery(PlayerColor(0)), nullptr);
 
-	const auto zombie = creature("core:zombie");
-	const auto skeleton = creature("core:skeleton");
 	const auto zombieSlot = attackerSideHero->getSlotFor(zombie);
 	const auto skeletonSlot = attackerSideHero->getSlotFor(skeleton);
 	ASSERT_TRUE(zombieSlot.validSlot());
@@ -578,8 +639,8 @@ TEST_F(NewHorizonsNecromancyAITest, ComputerWinnerReceivesAndResumesAuthoritativ
 	ASSERT_TRUE(attackerSideHero->hasStackAtSlot(zombieSlot));
 	ASSERT_TRUE(attackerSideHero->hasStackAtSlot(skeletonSlot));
 	EXPECT_NE(zombieSlot, skeletonSlot);
-	EXPECT_EQ(attackerSideHero->getStackCount(zombieSlot), 3);
-	EXPECT_EQ(attackerSideHero->getStackCount(skeletonSlot), 1);
+	EXPECT_EQ(armyCount(*attackerSideHero, zombie) - zombiesBefore, 3);
+	EXPECT_EQ(armyCount(*attackerSideHero, skeleton) - skeletonsBefore, 1);
 	EXPECT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
 
 	// The defeated hero is retained in the pool, not destroyed. It must no
@@ -619,7 +680,7 @@ TEST_F(NewHorizonsNecromancyAdmissionAITest, PostBattleRaisesSkeletonsInSpareSlo
 	ASSERT_EQ(necromancyResult.eligibleCasualties, 100);
 	ASSERT_EQ(necromancyResult.rank, 1);
 	const auto expected = resolve(necromancyResult.rank,
-		necromancyResult.eligibleCasualties, false, false, false, false, true, true, 0, 0);
+		necromancyResult.eligibleCasualties, 0, false, false, false, true, true, 0, 0);
 	ASSERT_TRUE(expected.applied);
 	EXPECT_EQ(necromancyResult.skeletonsRaised, expected.skeletonsRaised);
 	EXPECT_FALSE(necromancyResult.blockedByArmyCapacity);
@@ -685,94 +746,79 @@ TEST_F(NewHorizonsNecromancyAdmissionAITest, PostBattleNecromancyWithNoFreeSlotI
 	EXPECT_EQ(recordingServer->systemMessages, 0);
 }
 
-TEST_F(NewHorizonsNecromancyAdmissionAITest, DarkConversionPreviewRejectsMixedOutputThatNeedsTwoSlots)
+TEST_F(NewHorizonsNecromancyAdmissionAITest, DarkConversionAutomaticallyConvertsCoreShareOfMixedTierCasualties)
+{
+	ASSERT_NE(attackerSideHero, nullptr);
+	ASSERT_NE(defenderSideHero, nullptr);
+	prepareNecromancerArmy(false);
+
+	attackerSideHero->applyPerkSelection({
+		"new-horizons:necromancy", "new-horizons:necromancy.darkConversion"});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(
+		"new-horizons:necromancy", "new-horizons:necromancy.darkConversion"));
+	ASSERT_GE(attackerSideHero->getFreeSlots().size(), 2u);
+
+	const auto skeleton = creature("core:skeleton");
+	const auto zombie = creature("core:zombie");
+	setMixedCoreEliteCasualties(60, 40);
+	gameHandler->battles->startBattle(attackerSideHero, defenderSideHero);
+	ASSERT_NE(gameState()->getBattle(PlayerColor(0)), nullptr);
+	gameHandler->battles->cheatBattleVictory(PlayerColor(0));
+	resolveBattleDialogsOnly();
+	const auto followup = gameHandler->queries->topQuery(PlayerColor(0));
+	EXPECT_TRUE(!followup || followup->getType() != QueryType::NecromancyChoice);
+	resolveLevelUpDialogs();
+
+	ASSERT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
+	ASSERT_EQ(recordingServer->battleResults.size(), 1u);
+	const auto & necromancyResult = recordingServer->battleResults.back().necromancy;
+	ASSERT_TRUE(necromancyResult.active);
+	ASSERT_TRUE(necromancyResult.applied);
+	EXPECT_EQ(necromancyResult.rank, 1);
+	EXPECT_EQ(necromancyResult.eligibleCasualties, 100);
+	EXPECT_EQ(necromancyResult.skeletonsOffered, 10);
+	EXPECT_TRUE(necromancyResult.darkConversionAvailable);
+	EXPECT_TRUE(necromancyResult.darkConversionChosen);
+	EXPECT_FALSE(necromancyResult.blockedByArmyCapacity);
+	EXPECT_EQ(necromancyResult.skeletonsRaised, 4);
+	EXPECT_EQ(necromancyResult.zombiesRaised, 2);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 16);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, skeleton), 20);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, zombie), 2);
+	EXPECT_EQ(recordingServer->systemMessages, 0);
+}
+
+TEST_F(NewHorizonsNecromancyAdmissionAITest, DarkConversionRejectsMixedAutomaticOutputAtomicallyWhenOneSlotRemains)
 {
 	ASSERT_NE(attackerSideHero, nullptr);
 	ASSERT_NE(defenderSideHero, nullptr);
 	prepareNecromancerArmy(false);
 	fillFillerSlots(1, GameConstants::ARMY_SIZE - 2);
 	ASSERT_EQ(attackerSideHero->getFreeSlots().size(), 1u);
-
 	attackerSideHero->applyPerkSelection({
 		"new-horizons:necromancy", "new-horizons:necromancy.darkConversion"});
 	ASSERT_TRUE(attackerSideHero->hasActivePerk(
 		"new-horizons:necromancy", "new-horizons:necromancy.darkConversion"));
 
-	const auto gargoyle = creature("core:stoneGargoyle");
 	const auto skeleton = creature("core:skeleton");
-	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), gargoyle, 100));
-	gameHandler->battles->startBattle(attackerSideHero, defenderSideHero);
-	ASSERT_NE(gameState()->getBattle(PlayerColor(0)), nullptr);
-	gameHandler->battles->cheatBattleVictory(PlayerColor(0));
-	// Basic Necromancy offers ten Skeletons: those fit in the single free slot.
-	// Converting them needs both one Skeleton (the remainder) and three Zombies,
-	// so the preview must not offer the impossible mixed result.
-	resolveBattleDialogs();
-
-	ASSERT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
-	ASSERT_EQ(recordingServer->battleResults.size(), 1u);
-	const auto & necromancyResult = recordingServer->battleResults.back().necromancy;
-	ASSERT_TRUE(necromancyResult.active);
-	EXPECT_EQ(necromancyResult.rank, 1);
-	EXPECT_EQ(necromancyResult.skeletonsOffered, 10);
-	EXPECT_TRUE(necromancyResult.darkConversionAvailable);
-	EXPECT_FALSE(necromancyResult.darkConversionChosen);
-	EXPECT_TRUE(necromancyResult.applied);
-	EXPECT_FALSE(necromancyResult.blockedByArmyCapacity);
-	EXPECT_EQ(necromancyResult.skeletonsRaised, 10);
-	EXPECT_EQ(necromancyResult.zombiesRaised, 0);
-	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 16);
-	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(6)), 10);
-	EXPECT_EQ(attackerSideHero->getCreature(SlotID(6)), skeleton.toCreature());
-	EXPECT_EQ(recordingServer->systemMessages, 0);
-}
-
-TEST_F(NewHorizonsNecromancyAdmissionAITest, DarkConversionRechecksArmyCapacityAfterChoiceQuery)
-{
-	ASSERT_NE(attackerSideHero, nullptr);
-	ASSERT_NE(defenderSideHero, nullptr);
-	prepareNecromancerArmy(false);
-	// With two empty slots, both Skeleton-only and mixed Zombie output fit.
-	fillFillerSlots(1, GameConstants::ARMY_SIZE - 3);
-	ASSERT_EQ(attackerSideHero->getFreeSlots().size(), 2u);
-	attackerSideHero->applyPerkSelection({
-		"new-horizons:necromancy", "new-horizons:necromancy.darkConversion"});
-	ASSERT_TRUE(attackerSideHero->hasActivePerk(
-		"new-horizons:necromancy", "new-horizons:necromancy.darkConversion"));
-
-	const auto gargoyle = creature("core:stoneGargoyle");
 	const auto zombie = creature("core:zombie");
-	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), gargoyle, 100));
+	setMixedCoreEliteCasualties(60, 40);
 	gameHandler->battles->startBattle(attackerSideHero, defenderSideHero);
 	ASSERT_NE(gameState()->getBattle(PlayerColor(0)), nullptr);
 	gameHandler->battles->cheatBattleVictory(PlayerColor(0));
 	resolveBattleDialogsOnly();
-
-	auto necromancyQuery = gameHandler->queries->topQuery(PlayerColor(0));
-	ASSERT_NE(necromancyQuery, nullptr);
-	ASSERT_EQ(necromancyQuery->getType(), QueryType::NecromancyChoice);
-	ASSERT_TRUE(necromancyQuery->isValidReply(2)); // Zombie was legal when offered.
-
-	// Model an authoritative army-capacity change while the choice is pending.
-	// The remaining empty slot can hold the Skeleton remainder or the Zombies,
-	// but not both; the selected mixed result must now fail atomically.
-	const auto monk = creature("core:monk");
-	const auto monkCapacity = attackerSideHero->getLeadershipSlotCapacity(monk);
-	ASSERT_TRUE(monkCapacity);
-	ASSERT_GE(monkCapacity->maximum, 1);
-	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(5), monk, 1));
-	ASSERT_EQ(attackerSideHero->getFreeSlots().size(), 1u);
-
-	ASSERT_TRUE(gameHandler->queryReply(necromancyQuery->queryID, 2, PlayerColor(0)));
+	const auto followup = gameHandler->queries->topQuery(PlayerColor(0));
+	EXPECT_TRUE(!followup || followup->getType() != QueryType::NecromancyChoice);
 	resolveLevelUpDialogs();
 	ASSERT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
 	ASSERT_EQ(recordingServer->battleResults.size(), 1u);
 	const auto & necromancyResult = recordingServer->battleResults.back().necromancy;
 	ASSERT_TRUE(necromancyResult.active);
 	EXPECT_EQ(necromancyResult.rank, 1);
-	EXPECT_TRUE(necromancyResult.darkConversionAvailable);
-	EXPECT_TRUE(necromancyResult.darkConversionChosen);
+	EXPECT_EQ(necromancyResult.eligibleCasualties, 100);
 	EXPECT_EQ(necromancyResult.skeletonsOffered, 10);
+	EXPECT_TRUE(necromancyResult.darkConversionAvailable);
+	EXPECT_FALSE(necromancyResult.darkConversionChosen);
 	EXPECT_FALSE(necromancyResult.applied);
 	EXPECT_TRUE(necromancyResult.blockedByArmyCapacity);
 	EXPECT_EQ(necromancyResult.skeletonsRaised, 0);
@@ -780,10 +826,8 @@ TEST_F(NewHorizonsNecromancyAdmissionAITest, DarkConversionRechecksArmyCapacityA
 	EXPECT_EQ(necromancyResult.manaRecovered, 0);
 	EXPECT_EQ(recordingServer->battleResults.back().raisedStack.getCreature(), nullptr);
 	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 16);
-	EXPECT_EQ(attackerSideHero->getCreature(SlotID(5)), monk.toCreature());
-	const auto zombieSlot = attackerSideHero->getSlotFor(zombie);
-	ASSERT_TRUE(zombieSlot.validSlot());
-	EXPECT_FALSE(attackerSideHero->hasStackAtSlot(zombieSlot));
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, skeleton), 16);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, zombie), 0);
 	for(const auto & [slot, stack] : attackerSideHero->Slots())
 	{
 		const auto capacity = attackerSideHero->getLeadershipSlotCapacity(stack->getCreatureID());

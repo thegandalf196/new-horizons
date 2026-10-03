@@ -1,7 +1,7 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-03
-Canonical source SHA-256: `13f7aae2ad8797f34018e23fd9327b054ba4b240ac40da9f83ee5333118a18b6`
+Canonical source SHA-256: `f7923a372c4ac07945197d7f35ec7cfed892544258dc26a50c9870c01970cbac`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
 completion separately from catalogue presence and artwork. An `active` data row,
@@ -13,6 +13,28 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+UP186 Dark Conversion's canonical execution gap is corrected and source/native
+verified: automatic Core-only groups, global base rounding and all unconverted
+Skeletons retained, no player/AI conversion query or capacity fallback. The
+actual post-battle path uses captured category rules and atomic multiple-output
+admission. Client35092 and resumed both-target9620 pass; interrupted70772 is
+retained. Initial principal11/12 and retry11/12 exposed missing simulated
+controller readiness, not a production conversion fault. Ready-build71025
+passes; principal12/12 passes2.383s and adjacent9/9 passes1.778s, zero skips.
+Binary SHA-256:
+70900e308674b933b1ba3835d5a78085aad55bbc5af83e85fd7f785086c9b5ae.
+Data/inventory19/19, module consistency, result-text guard and independent
+production review pass. The native tester stayed pending initialization after
+the environment transition; root cancelled it and performed these focused
+checks directly. Registry counts remain197/310 active,113 planned: this repairs
+faithful coverage of an already-active row, not a new activation. Rendered/actual
+full-AI play and broader interactions remain Phase2; no playable promotion.
+UP184 Soul Harvester's output is resolved: the user retained the named Wight,
+which remains Core-tier. Its input alone is Elite casualties. Canonical and
+registry descriptions are updated; the perk remains planned. UP185 Master of Bones is mapped, not
+implemented: owned built Skeleton upgrade availability and an explicit output
+form in the result are required.
 
 UP183 Corpse Preservation is active and source/native verified. Ordinary magical
 casualties require the perk; destroyed remains remain excluded. Ordered usable

@@ -8,6 +8,7 @@
 
 #include "../../CCreatureHandler.h"
 #include "../../bonuses/BonusEnum.h"
+#include "../creature/NewHorizonsCreatureCategoryRules.h"
 
 #include <algorithm>
 #include <limits>
@@ -42,6 +43,22 @@ int32_t countLivingEligibleCasualties(const std::map<CreatureID, si32> & casualt
 	return clampCount(count);
 }
 
+int32_t countLivingEligibleCoreCasualties(const std::map<CreatureID, si32> & casualties,
+	const newHorizonsCreatures::CreatureCategoryRules & categoryRules)
+{
+	int64_t count = 0;
+	for(const auto & [creatureId, amount] : casualties)
+	{
+		if(amount <= 0 || !creatureId.hasValue() || !isLivingCreature(creatureId.toCreature()))
+			continue;
+
+		const auto category = newHorizonsCreatures::creatureCategoryView(categoryRules, creatureId);
+		if(category && category->category == newHorizonsCreatures::CreatureCategory::CORE)
+			count += amount;
+	}
+	return clampCount(count);
+}
+
 DestinationPlan reserveDestinations(SlotID existingSkeleton, SlotID existingZombie,
 	std::vector<SlotID> freeSlots, int32_t skeletonCount, int32_t zombieCount)
 {
@@ -66,10 +83,9 @@ DestinationPlan reserveDestinations(SlotID existingSkeleton, SlotID existingZomb
 	return result;
 }
 
-NecromancyResult resolve(int rank, int32_t eligibleCasualties,
+NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleCoreCasualties,
 	bool boneCollector, bool corpsePreservation, bool darkConversionAvailable,
-	bool zombieChoice, bool skeletonSlotAvailable, bool zombieSlotAvailable,
-	int32_t currentMana, int32_t manaLimit)
+	bool skeletonSlotAvailable, bool zombieSlotAvailable, int32_t currentMana, int32_t manaLimit)
 {
 	NecromancyResult result;
 	result.active = rank >= 1 && rank <= 3;
@@ -86,23 +102,24 @@ NecromancyResult resolve(int rank, int32_t eligibleCasualties,
 	if(result.skeletonsOffered <= 0)
 		return result;
 
-	result.darkConversionChosen = darkConversionAvailable && zombieChoice;
-	if(result.darkConversionChosen)
-	{
-		result.zombiesRaised = result.skeletonsOffered / 3;
-		result.skeletonsRaised = result.skeletonsOffered % 3;
-	}
-	else
-		result.skeletonsRaised = result.skeletonsOffered;
+	// Preserve the existing single global Necromancy floor for base Skeletons.
+	// Separately floor the explicitly classified Core casualty share only to
+	// decide how many complete Core-generated groups are eligible for conversion.
+	const auto coreSkeletons = clampCount(static_cast<int64_t>(std::clamp(eligibleCoreCasualties, 0, result.eligibleCasualties))
+		* result.percentage / 100);
+	if(darkConversionAvailable)
+		result.zombiesRaised = coreSkeletons / 3;
+	result.skeletonsRaised = result.skeletonsOffered - result.zombiesRaised * 3;
+	result.darkConversionChosen = result.zombiesRaised > 0;
 
-	// Preflight every output stack before callers mutate the army.  A Dark
-	// Conversion result with a remainder needs both legal destinations.
+	// Preflight every output stack before callers mutate the army.
 	const bool skeletonsFit = result.skeletonsRaised == 0 || skeletonSlotAvailable;
 	const bool zombiesFit = result.zombiesRaised == 0 || zombieSlotAvailable;
 	if(!skeletonsFit || !zombiesFit)
 	{
 		result.skeletonsRaised = 0;
 		result.zombiesRaised = 0;
+		result.darkConversionChosen = false;
 		result.blockedByArmyCapacity = true;
 		return result;
 	}

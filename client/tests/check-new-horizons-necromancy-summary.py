@@ -36,6 +36,8 @@ def main() -> None:
 
     require(HELPER, '"Generated: "', "generated count")
     require(HELPER, '"Converted: "', "conversion count")
+    require(HELPER, '" from Core casualties (three Skeletons each)\\n"',
+            "Core-only automatic conversion explanation")
     require(HELPER, '"Delivered to army: "', "delivered count")
     require(HELPER, '"Black Harvest recovered +"', "mana recovery")
     require(HELPER, '"No creatures were delivered: the hero has no legal army slot',

@@ -25,6 +25,10 @@ struct BattleResultsApplied;
 class CBattleInfoCallback;
 class CGHeroInstance;
 class CArmedInstance;
+namespace newHorizonsCreatures
+{
+class CreatureCategoryRules;
+}
 
 class CBattleQuery;
 class BattleProcessor;
@@ -72,23 +76,14 @@ struct FinishingBattleHelper
 class BattleResultProcessor : boost::noncopyable
 {
 	CGameHandler * gameHandler;
-	struct PendingNecromancy
-	{
-		ObjectInstanceID hero;
-		std::vector<CreatureID> choices;
-		std::map<CreatureID, int32_t> offeredCounts;
-		std::optional<CreatureID> selected;
-	};
 
 	std::map<BattleID, std::unique_ptr<BattleResult>> battleResults;
 	std::map<BattleID, std::unique_ptr<FinishingBattleHelper>> finishingBattles;
-	std::map<BattleID, PendingNecromancy> pendingNecromancy;
 
-	void askNecromancyChoice(const BattleID & battleID, const CGHeroInstance * hero,
-		const PendingNecromancy & pending);
-	bool applyNewHorizonsNecromancy(const BattleID & battleID, const BattleResult & result,
+	bool applyNewHorizonsNecromancy(const BattleResult & result,
+		const newHorizonsCreatures::CreatureCategoryRules & categoryRules,
 		int32_t initialMana, const CGHeroInstance * winnerHero,
-		BattleResultsApplied & resultsApplied, std::optional<CreatureID> selected);
+		BattleResultsApplied & resultsApplied);
 
 public:
 	explicit BattleResultProcessor(CGameHandler * gameHandler);
