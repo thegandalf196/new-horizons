@@ -28,6 +28,9 @@ Descriptor/packet persistence is not full midbattle resume. Rendered/actualAI
 handoff, broader siege layouts and malformed post-opening phases remain Phase2.
 No playable snapshot is promoted. Binary SHA-256:
 `ab5cb64908b58d203ed9233a88749960d01789655a68d34297c27ca7a560a6d1`.
+Source is pushed as`a85f2e44e303effe166badb5765422f4eeb6585a`.
+Notice37086103464 is queued on that source. Full Windows37082097577 is still
+live on older7aaa48c1; Tactics Windows compile/package acceptance is pending.
 
 UP-154 Tactics is source-staged with independent range3 deployment for each
 entitled army, saved phase progression, authoritative side/whole-footprint guards
