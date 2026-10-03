@@ -102,7 +102,7 @@ DestinationPlan reserveDestinations(SlotID existingSkeleton, SlotID existingZomb
 NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleCoreCasualties,
 	bool boneCollector, bool corpsePreservation, bool darkConversionAvailable,
 	bool skeletonSlotAvailable, bool zombieSlotAvailable, int32_t currentMana, int32_t manaLimit,
-	int32_t eligibleEliteCasualties, bool soulHarvester, bool wightSlotAvailable)
+	int32_t eligibleEliteCasualties, bool soulHarvester, bool wightSlotAvailable, CreatureID skeletonOutput)
 {
 	NecromancyResult result;
 	result.active = rank >= 1 && rank <= 3;
@@ -146,19 +146,24 @@ NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleC
 		result.skeletonsRaised = 0;
 		result.zombiesRaised = 0;
 		result.wightsRaised = 0;
+		result.skeletonCreature = CreatureID::NONE;
 		result.darkConversionChosen = false;
 		result.blockedByArmyCapacity = true;
 		return result;
 	}
 
 	result.applied = true;
+	const auto baseSkeleton = CreatureID(CreatureID::decode("core:skeleton"));
+	if(result.skeletonsRaised > 0 && skeletonOutput.hasValue() && skeletonOutput != baseSkeleton)
+		result.skeletonCreature = skeletonOutput;
+
 	const int outputKinds = (result.skeletonsRaised > 0) + (result.zombiesRaised > 0) + (result.wightsRaised > 0);
 	if(outputKinds == 1 && result.zombiesRaised > 0)
 		result.raisedCreature = CreatureID(CreatureID::decode("core:zombie"));
 	else if(outputKinds == 1 && result.wightsRaised > 0)
 		result.raisedCreature = CreatureID(CreatureID::decode("core:wight"));
 	else if(outputKinds == 1 && result.skeletonsRaised > 0)
-		result.raisedCreature = CreatureID(CreatureID::decode("core:skeleton"));
+		result.raisedCreature = result.skeletonCreature.hasValue() ? result.skeletonCreature : baseSkeleton;
 
 	const int32_t totalRaised = result.skeletonsRaised + result.zombiesRaised + result.wightsRaised;
 	if(totalRaised >= 10)

@@ -19,6 +19,7 @@
 
 #include "../../lib/GameLibrary.h"
 #include "../../lib/CStack.h"
+#include "../../lib/CCreatureHandler.h"
 #include "../../lib/CPlayerState.h"
 #include "../../lib/IGameSettings.h"
 #include "../../lib/battle/SideInBattle.h"
@@ -59,6 +60,51 @@ std::shared_ptr<battle::CUnitState> acquireOriginalFormState(const CStack & stac
 	auto state = stack.acquireState();
 	state->endBattleForm();
 	return state;
+}
+
+/// Return a Skeleton upgrade offered by a currently owned Necropolis town
+/// whose corresponding upgrade dwelling is already built.
+CreatureID availableNecropolisSkeletonUpgrade(const PlayerState * ownerState)
+{
+	if(!ownerState)
+		return CreatureID::NONE;
+
+	const auto skeleton = CreatureID(CreatureID::decode("core:skeleton"));
+	const auto * skeletonType = (*LIBRARY->creh)[skeleton];
+	if(!skeletonType)
+		return CreatureID::NONE;
+
+	for(const auto * town : ownerState->getTowns())
+	{
+		if(!town || town->getFactionID() != FactionID::NECROPOLIS)
+			continue;
+
+		const auto * townType = town->getTown();
+		if(!townType)
+			continue;
+
+		const auto levels = std::min(townType->creatures.size(), town->creatures.size());
+		for(size_t level = 0; level < levels; ++level)
+		{
+			const auto & configuredCreatures = townType->creatures[level];
+			const auto & offeredCreatures = town->creatures[level].second;
+			for(size_t upgrade = 1; upgrade < configuredCreatures.size(); ++upgrade)
+			{
+				const auto creature = configuredCreatures[upgrade];
+				if(!skeletonType->upgrades.contains(creature) || !vstd::contains(offeredCreatures, creature))
+					continue;
+
+				const auto dwelling = BuildingID::getDwellingFromLevel(
+					static_cast<int>(level), static_cast<int>(upgrade));
+				if(!dwelling.hasValue() || !townType->buildings.count(dwelling) || !town->hasBuilt(dwelling))
+					continue;
+
+				if(LIBRARY->creatures()->getById(creature))
+					return creature;
+			}
+		}
+	}
+	return CreatureID::NONE;
 }
 
 // Resolve every output against one projected army before emitting any packs.
@@ -622,8 +668,16 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 		newHorizonsNecromancy::DARK_CONVERSION_ID);
 	const bool soulHarvester = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 		newHorizonsNecromancy::SOUL_HARVESTER_ID);
+	const bool masterOfBones = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+		newHorizonsNecromancy::MASTER_OF_BONES_ID);
 	const bool blackHarvest = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 		newHorizonsNecromancy::BLACK_HARVEST_ID);
+	const auto * ownerState = masterOfBones
+		? gameHandler->gameInfo().getPlayerState(winnerHero->tempOwner)
+		: nullptr;
+	const auto skeletonOutput = masterOfBones
+		? availableNecropolisSkeletonUpgrade(ownerState)
+		: CreatureID::NONE;
 
 	const bool hasTwoPoolSpellPoints = newHorizonsMagic::spellPointRulesActive(winnerHero->getMagicRules());
 	const int32_t currentNormal = winnerHero->getNormalSpellPoints();
@@ -635,12 +689,13 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 	auto summary = newHorizonsNecromancy::resolve(winnerHero->getNewHorizonsNecromancyRank(), eligibleCount, eligibleCoreCount,
 		boneCollector, corpsePreservation, darkConversion,
 		true, true, postBattleMana,
-		blackHarvest ? winnerHero->manaLimit() : postBattleMana, eligibleEliteCount, soulHarvester, true);
+		blackHarvest ? winnerHero->manaLimit() : postBattleMana, eligibleEliteCount, soulHarvester, true, skeletonOutput);
 	if(!summary.active)
 		return false;
 
+	const auto raisedSkeleton = summary.skeletonCreature.hasValue() ? summary.skeletonCreature : skeleton;
 	const auto plan = planRaisedArmy(*winnerHero,
-		{{skeleton, summary.skeletonsRaised}, {zombie, summary.zombiesRaised}, {wight, summary.wightsRaised}});
+		{{raisedSkeleton, summary.skeletonsRaised}, {zombie, summary.zombiesRaised}, {wight, summary.wightsRaised}});
 	if(!plan)
 	{
 		summary.applied = false;
@@ -648,6 +703,7 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 		summary.skeletonsRaised = 0;
 		summary.zombiesRaised = 0;
 		summary.wightsRaised = 0;
+		summary.skeletonCreature = CreatureID::NONE;
 		summary.darkConversionChosen = false;
 		summary.manaRecovered = 0;
 		summary.raisedCreature = CreatureID::NONE;
@@ -658,11 +714,11 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 	applyRaisedArmy(*gameHandler, *winnerHero, *plan);
 
 	// Keep the legacy descriptor useful for clients when there is one output
-	// stack.  A Dark Conversion result may contain two stacks; leaving the
-	// legacy single-stack field empty avoids showing a misleading partial popup
-	// while New Horizons clients consume the complete summary below.
+	// kind. Combined conversions may produce multiple output stacks; leaving the
+	// legacy single-stack field empty avoids a misleading partial popup while
+	// New Horizons clients consume the complete summary below.
 	if(summary.skeletonsRaised > 0 && summary.zombiesRaised == 0 && summary.wightsRaised == 0)
-		resultsApplied.raisedStack = CStackBasicDescriptor(skeleton, summary.skeletonsRaised);
+		resultsApplied.raisedStack = CStackBasicDescriptor(raisedSkeleton, summary.skeletonsRaised);
 	else if(summary.zombiesRaised > 0 && summary.skeletonsRaised == 0 && summary.wightsRaised == 0)
 		resultsApplied.raisedStack = CStackBasicDescriptor(zombie, summary.zombiesRaised);
 	else if(summary.wightsRaised > 0 && summary.skeletonsRaised == 0 && summary.zombiesRaised == 0)

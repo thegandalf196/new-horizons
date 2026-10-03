@@ -2,6 +2,18 @@
 
 ## Purpose
 
+### 2026-10-03 UP-185 — Creature service interfaces are not concrete entities
+
+Client57879 fails in the new upgrade-availability helper: CreatureService
+`getById` returns the public Creature interface, not CCreature with its public
+`upgrades` set. Use the supported upgrade accessor or appropriate concrete
+lookup; do not weaken configured-upgrade validation to make compilation pass.
+Preserve UP185-client-build.log. Runtime owner repairs the API mismatch before
+root resumes the same incremental build; source/native acceptance stays pending.
+Resolution: concrete `LIBRARY->creh` lookup preserves the configured-upgrade set.
+Client retry43912 and test65198 pass. Principal26/26 and adjacent9/9 pass on the
+freshly linked binary, zero skips; the repaired source is independently reviewed.
+
 ### 2026-10-03 UP-184 — Google Test fixtures cannot be final
 
 Client95124 passes. Test53850 fails compiling the new Soul Harvester fixture:

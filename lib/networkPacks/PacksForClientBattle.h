@@ -1023,6 +1023,11 @@ struct DLL_LINKAGE BattleResultsApplied : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !necromancy.isSkeletonOutputValid())
+			throw std::runtime_error("Invalid Necromancy Skeleton output form");
+		if(h.saving && necromancy.skeletonCreature != CreatureID::NONE
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_SKELETON_FORM))
+			throw std::runtime_error("Cannot write Necromancy Skeleton form to an older format");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY)
 			&& !necromancy.empty())
 			throw std::runtime_error("Cannot write New Horizons Necromancy summary to an older format");

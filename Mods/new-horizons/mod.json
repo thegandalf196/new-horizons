@@ -6743,7 +6743,7 @@
 								"requires": "expert",
 								"description": "Skeletons raised by Necromancy are raised as their upgraded form when the appropriate Necropolis upgrade is available to the player.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Skeletons raised by Necromancy are raised as their upgraded form when the appropriate Necropolis upgrade is available to the player."
 								}
 							},

@@ -19,6 +19,7 @@
 #include "../../../lib/entities/hero/NewHorizonsNecromancy.h"
 #include "../../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
+#include "../../../lib/mapObjects/CGTownInstance.h"
 #include "../../../lib/mapping/CMap.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/modding/CModHandler.h"
@@ -168,6 +169,48 @@ TEST(NewHorizonsNecromancy, DarkConversionAndSoulHarvesterProduceIndependentOutp
 	EXPECT_EQ(mixedTiers.skeletonsRaised, 2);
 	EXPECT_TRUE(mixedTiers.darkConversionChosen);
 	EXPECT_TRUE(mixedTiers.applied);
+}
+
+TEST(NewHorizonsNecromancy, MasterOfBonesChangesOnlyTheSkeletonOutputForm)
+{
+	const auto baseSkeletons = resolve(3, 10, 0, false, false, false, true, true, 0, 0);
+	ASSERT_TRUE(baseSkeletons.applied);
+	EXPECT_EQ(baseSkeletons.skeletonsRaised, 3);
+	EXPECT_EQ(baseSkeletons.skeletonCreature, CreatureID::NONE);
+
+	const auto skeletonWarrior = creature("core:skeletonWarrior");
+	const auto upgraded = resolve(3, 10, 0, false, false, false, true, true, 0, 0,
+		0, false, true, skeletonWarrior);
+	ASSERT_TRUE(upgraded.applied);
+	EXPECT_EQ(upgraded.skeletonsOffered, 3);
+	EXPECT_EQ(upgraded.skeletonsRaised, 3);
+	EXPECT_EQ(upgraded.skeletonCreature, skeletonWarrior);
+	EXPECT_EQ(upgraded.raisedCreature, skeletonWarrior);
+	EXPECT_EQ(upgraded.zombiesRaised, 0);
+	EXPECT_EQ(upgraded.wightsRaised, 0);
+	EXPECT_TRUE(upgraded.isSkeletonOutputValid());
+}
+
+TEST(NewHorizonsNecromancy, MasterOfBonesKeepsItsFormAcrossMixedOutputsAndAtomicRejection)
+{
+	const auto skeletonWarrior = creature("core:skeletonWarrior");
+	const auto mixed = resolve(2, 130, 65, false, false, true, true, true, 0, 0,
+		65, true, true, skeletonWarrior);
+	ASSERT_TRUE(mixed.applied);
+	EXPECT_EQ(mixed.skeletonsRaised, 2);
+	EXPECT_EQ(mixed.skeletonCreature, skeletonWarrior);
+	EXPECT_EQ(mixed.zombiesRaised, 4);
+	EXPECT_EQ(mixed.wightsRaised, 2);
+
+	const auto blocked = resolve(2, 130, 65, false, false, true, true, true, 0, 0,
+		65, true, false, skeletonWarrior);
+	EXPECT_TRUE(blocked.blockedByArmyCapacity);
+	EXPECT_FALSE(blocked.applied);
+	EXPECT_EQ(blocked.skeletonsRaised, 0);
+	EXPECT_EQ(blocked.zombiesRaised, 0);
+	EXPECT_EQ(blocked.wightsRaised, 0);
+	EXPECT_EQ(blocked.skeletonCreature, CreatureID::NONE);
+	EXPECT_TRUE(blocked.isSkeletonOutputValid());
 }
 
 TEST(NewHorizonsNecromancy, ThreeOutputCapacityRejectionIsAtomic)
@@ -428,6 +471,17 @@ protected:
 class NewHorizonsNecromancyAdmissionAITest : public NewHorizonsNecromancyAITest
 {
 protected:
+	enum class SkeletonDwellingScenario
+	{
+		ABSENT,
+		OWNED_UPGRADE_UNBUILT,
+		OWNED_UPGRADE_BUILT,
+		FOREIGN_UPGRADE_BUILT
+	};
+
+	SkeletonDwellingScenario skeletonDwellingScenario = SkeletonDwellingScenario::ABSENT;
+	CGTownInstance * skeletonDwellingTown = nullptr;
+
 	void mapLoaded(CMap * loaded) override
 	{
 		NewHorizonsNecromancyAITest::mapLoaded(loaded);
@@ -451,7 +505,59 @@ protected:
 			.playerActive(PlayerColor(1))
 			.hero({5, 5, 0}, HeroTypeID(72), PlayerColor(0)).heroGarrison({{token, 1}})
 			.hero({7, 7, 0}, HeroTypeID(1), PlayerColor(1)).heroGarrison({{token, 1}});
+		if(skeletonDwellingScenario != SkeletonDwellingScenario::ABSENT)
+		{
+			const auto townOwner = skeletonDwellingScenario == SkeletonDwellingScenario::FOREIGN_UPGRADE_BUILT
+				? PlayerColor(1) : PlayerColor(0);
+			builder.town({10, 10, 0}, FactionID::NECROPOLIS, townOwner).townGarrison({});
+		}
 		startWithMap(std::move(builder));
+
+		const auto towns = gameState()->getMap().getObjects<CGTownInstance>();
+		if(skeletonDwellingScenario == SkeletonDwellingScenario::ABSENT)
+		{
+			ASSERT_TRUE(towns.empty());
+			RecordProperty("master_of_bones_town_setup", "absent");
+		}
+		else
+		{
+			ASSERT_EQ(towns.size(), 1u);
+			skeletonDwellingTown = towns.front();
+			ASSERT_NE(skeletonDwellingTown, nullptr);
+			ASSERT_EQ(skeletonDwellingTown->getFactionID(), FactionID::NECROPOLIS);
+			const bool foreign = skeletonDwellingScenario == SkeletonDwellingScenario::FOREIGN_UPGRADE_BUILT;
+			ASSERT_EQ(skeletonDwellingTown->getOwner(), foreign ? PlayerColor(1) : PlayerColor(0));
+
+			skeletonDwellingTown->removeAllBuildings();
+			skeletonDwellingTown->addBuilding(BuildingID::DWELL_LVL_1);
+			const bool upgradeBuilt = skeletonDwellingScenario == SkeletonDwellingScenario::OWNED_UPGRADE_BUILT || foreign;
+			if(upgradeBuilt)
+				skeletonDwellingTown->addBuilding(BuildingID::DWELL_LVL_1_UP);
+
+			const auto * townType = skeletonDwellingTown->getTown();
+			ASSERT_NE(townType, nullptr);
+			ASSERT_TRUE(townType->buildings.contains(BuildingID::DWELL_LVL_1));
+			ASSERT_TRUE(townType->buildings.contains(BuildingID::DWELL_LVL_1_UP));
+			ASSERT_GE(townType->creatures.size(), 1u);
+			ASSERT_GE(townType->creatures.front().size(), 2u);
+			EXPECT_EQ(townType->creatures.front()[0], creature("core:skeleton"));
+			EXPECT_EQ(townType->creatures.front()[1], creature("core:skeletonWarrior"));
+			ASSERT_GE(skeletonDwellingTown->creatures.size(), 1u);
+			auto & offeredCreatures = skeletonDwellingTown->creatures.front().second;
+			offeredCreatures.clear();
+			offeredCreatures.push_back(creature("core:skeleton"));
+			if(upgradeBuilt)
+				offeredCreatures.push_back(creature("core:skeletonWarrior"));
+			EXPECT_EQ(skeletonDwellingTown->hasBuilt(BuildingID::DWELL_LVL_1_UP), upgradeBuilt);
+			EXPECT_EQ(vstd::contains(offeredCreatures, creature("core:skeletonWarrior")), upgradeBuilt);
+
+			RecordProperty("master_of_bones_town_setup", foreign ? "foreign_built"
+				: upgradeBuilt ? "owned_built" : "owned_upgrade_unbuilt");
+			RecordProperty("master_of_bones_town_owner", foreign ? "player1" : "player0");
+			RecordProperty("master_of_bones_upgrade_dwelling_configured", "true");
+			RecordProperty("master_of_bones_upgrade_dwelling_built", upgradeBuilt ? "true" : "false");
+			RecordProperty("master_of_bones_upgrade_creature", "core:skeletonWarrior");
+		}
 
 		recordingServer = std::make_unique<NecromancyAdmissionRecordingServer>();
 		recordingServer->gameState = gameState();
@@ -722,6 +828,173 @@ protected:
 		EXPECT_EQ(gameHandler->queries->topQuery(PlayerColor(0)), nullptr);
 	}
 };
+
+/// Master of Bones must be selected through ordinary rank-gated offers; the
+/// town setup varies only the ownership/build state of the configured upgrade.
+class NewHorizonsNecromancyMasterOfBonesAdmissionAITest
+	: public NewHorizonsNecromancyAdmissionAITest
+{
+protected:
+	void assertMasterOfBonesRegistryRow()
+	{
+		const auto & perks = attackerSideHero->getPerkState().rules
+			["skills"][newHorizonsNecromancy::SKILL_ID]["perks"].Vector();
+		const auto masterOfBones = std::find_if(perks.begin(), perks.end(), [](const auto & perk)
+		{
+			return perk["id"].String() == newHorizonsNecromancy::MASTER_OF_BONES_ID;
+		});
+		ASSERT_NE(masterOfBones, perks.end());
+		EXPECT_EQ((*masterOfBones)["name"].String(), "Master of Bones");
+		EXPECT_EQ((*masterOfBones)["requires"].String(), "expert");
+		EXPECT_EQ((*masterOfBones)["effect"]["status"].String(), "active");
+		EXPECT_EQ((*masterOfBones)["description"].String(),
+			"Skeletons raised by Necromancy are raised as their upgraded form when the appropriate Necropolis upgrade is available to the player.");
+		EXPECT_EQ((*masterOfBones)["effect"]["description"].String(),
+			(*masterOfBones)["description"].String());
+		RecordProperty("master_of_bones_registry_id", (*masterOfBones)["id"].String());
+		RecordProperty("master_of_bones_registry_name", (*masterOfBones)["name"].String());
+		RecordProperty("master_of_bones_registry_required_rank", (*masterOfBones)["requires"].String());
+		RecordProperty("master_of_bones_registry_description", (*masterOfBones)["description"].String());
+		RecordProperty("master_of_bones_registry_effect_status", (*masterOfBones)["effect"]["status"].String());
+	}
+
+	void prepareExpertMasterOfBonesNecromancer()
+	{
+		prepareNecromancerArmy(false);
+		assertMasterOfBonesRegistryRow();
+		const auto necromancyId = SecondarySkill::decode(newHorizonsNecromancy::SKILL_ID);
+		ASSERT_GE(necromancyId, 0);
+		const SecondarySkill necromancy(necromancyId);
+
+		ASSERT_TRUE(selectPerkThroughNormalOffer(attackerSideHero,
+			newHorizonsNecromancy::CORPSE_PRESERVATION_ID, MasteryLevel::BASIC));
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+			newHorizonsNecromancy::CORPSE_PRESERVATION_ID));
+		gameHandler->levelUpHero(attackerSideHero, necromancy, false);
+		ASSERT_EQ(attackerSideHero->getSecSkillLevel(necromancy), MasteryLevel::ADVANCED);
+		ASSERT_TRUE(selectPerkThroughNormalOffer(attackerSideHero,
+			newHorizonsNecromancy::SOUL_HARVESTER_ID, MasteryLevel::ADVANCED));
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+			newHorizonsNecromancy::SOUL_HARVESTER_ID));
+		gameHandler->levelUpHero(attackerSideHero, necromancy, false);
+		ASSERT_EQ(attackerSideHero->getSecSkillLevel(necromancy), MasteryLevel::EXPERT);
+		ASSERT_TRUE(selectPerkThroughNormalOffer(attackerSideHero,
+			newHorizonsNecromancy::MASTER_OF_BONES_ID, MasteryLevel::EXPERT));
+		ASSERT_TRUE(attackerSideHero->getPerkState().hasSelection(newHorizonsNecromancy::SKILL_ID,
+			newHorizonsNecromancy::MASTER_OF_BONES_ID));
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+			newHorizonsNecromancy::MASTER_OF_BONES_ID));
+
+		RecordProperty("master_of_bones_activation_override_applied", "false");
+		RecordProperty("master_of_bones_skill_rank", "expert");
+		RecordProperty("master_of_bones_selected", "true");
+		RecordProperty("master_of_bones_selected_perk", newHorizonsNecromancy::MASTER_OF_BONES_ID);
+		RecordProperty("master_of_bones_basic_perk", newHorizonsNecromancy::CORPSE_PRESERVATION_ID);
+		RecordProperty("master_of_bones_advanced_perk", newHorizonsNecromancy::SOUL_HARVESTER_ID);
+	}
+
+	void expectPostBattleSkeletonForm(CreatureID expectedForm)
+	{
+		ASSERT_NE(attackerSideHero, nullptr);
+		ASSERT_NE(defenderSideHero, nullptr);
+		prepareExpertMasterOfBonesNecromancer();
+
+		const auto baseSkeleton = creature("core:skeleton");
+		const auto skeletonWarrior = creature("core:skeletonWarrior");
+		const auto pikeman = creature("core:pikeman");
+		ASSERT_EQ(attackerSideHero->getStackCount(SlotID(0)), 16);
+		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), pikeman, 10));
+
+		gameHandler->battles->startBattle(attackerSideHero, defenderSideHero);
+		ASSERT_NE(gameState()->getBattle(PlayerColor(0)), nullptr);
+		gameHandler->battles->cheatBattleVictory(PlayerColor(0));
+		resolveBattleDialogsOnly();
+		const auto followup = gameHandler->queries->topQuery(PlayerColor(0));
+		EXPECT_TRUE(!followup || followup->getType() != QueryType::NecromancyChoice);
+		resolveLevelUpDialogs();
+		EXPECT_EQ(gameHandler->queries->topQuery(PlayerColor(0)), nullptr);
+
+		ASSERT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
+		ASSERT_EQ(recordingServer->battleResults.size(), 1u);
+		const auto & result = recordingServer->battleResults.back().necromancy;
+		ASSERT_TRUE(result.active);
+		EXPECT_EQ(result.rank, MasteryLevel::EXPERT);
+		EXPECT_EQ(result.eligibleCasualties, 10);
+		EXPECT_EQ(result.skeletonsOffered, 3);
+		EXPECT_EQ(result.skeletonsRaised, 3);
+		EXPECT_EQ(result.skeletonCreature, expectedForm);
+		EXPECT_EQ(result.raisedCreature, expectedForm == CreatureID::NONE ? baseSkeleton : expectedForm);
+		EXPECT_TRUE(result.applied);
+		EXPECT_FALSE(result.blockedByArmyCapacity);
+		EXPECT_EQ(armyCreatureCount(*attackerSideHero, baseSkeleton), 16 + (expectedForm == CreatureID::NONE ? 3 : 0));
+		EXPECT_EQ(armyCreatureCount(*attackerSideHero, skeletonWarrior), expectedForm == CreatureID::NONE ? 0 : 3);
+		EXPECT_EQ(recordingServer->systemMessages, 0);
+	}
+};
+
+class NewHorizonsNecromancyMasterOfBonesOwnedBuiltAdmissionAITest
+	: public NewHorizonsNecromancyMasterOfBonesAdmissionAITest
+{
+public:
+	NewHorizonsNecromancyMasterOfBonesOwnedBuiltAdmissionAITest()
+	{
+		skeletonDwellingScenario = SkeletonDwellingScenario::OWNED_UPGRADE_BUILT;
+	}
+};
+
+class NewHorizonsNecromancyMasterOfBonesOwnedUnbuiltAdmissionAITest
+	: public NewHorizonsNecromancyMasterOfBonesAdmissionAITest
+{
+public:
+	NewHorizonsNecromancyMasterOfBonesOwnedUnbuiltAdmissionAITest()
+	{
+		skeletonDwellingScenario = SkeletonDwellingScenario::OWNED_UPGRADE_UNBUILT;
+	}
+};
+
+class NewHorizonsNecromancyMasterOfBonesForeignBuiltAdmissionAITest
+	: public NewHorizonsNecromancyMasterOfBonesAdmissionAITest
+{
+public:
+	NewHorizonsNecromancyMasterOfBonesForeignBuiltAdmissionAITest()
+	{
+		skeletonDwellingScenario = SkeletonDwellingScenario::FOREIGN_UPGRADE_BUILT;
+	}
+};
+
+class NewHorizonsNecromancyMasterOfBonesNoTownAdmissionAITest
+	: public NewHorizonsNecromancyMasterOfBonesAdmissionAITest
+{
+};
+
+TEST_F(NewHorizonsNecromancyMasterOfBonesOwnedBuiltAdmissionAITest, PostBattleRaisesAsConfiguredSkeletonWarrior)
+{
+	ASSERT_NE(skeletonDwellingTown, nullptr);
+	ASSERT_TRUE(skeletonDwellingTown->hasBuilt(BuildingID::DWELL_LVL_1_UP));
+	expectPostBattleSkeletonForm(creature("core:skeletonWarrior"));
+}
+
+TEST_F(NewHorizonsNecromancyMasterOfBonesOwnedUnbuiltAdmissionAITest, BuildableUpgradeAloneKeepsBaseSkeletonForm)
+{
+	ASSERT_NE(skeletonDwellingTown, nullptr);
+	ASSERT_TRUE(skeletonDwellingTown->getTown()->buildings.contains(BuildingID::DWELL_LVL_1_UP));
+	ASSERT_FALSE(skeletonDwellingTown->hasBuilt(BuildingID::DWELL_LVL_1_UP));
+	expectPostBattleSkeletonForm(CreatureID::NONE);
+}
+
+TEST_F(NewHorizonsNecromancyMasterOfBonesForeignBuiltAdmissionAITest, ForeignBuiltUpgradeKeepsBaseSkeletonForm)
+{
+	ASSERT_NE(skeletonDwellingTown, nullptr);
+	ASSERT_TRUE(skeletonDwellingTown->hasBuilt(BuildingID::DWELL_LVL_1_UP));
+	ASSERT_EQ(skeletonDwellingTown->getOwner(), PlayerColor(1));
+	expectPostBattleSkeletonForm(CreatureID::NONE);
+}
+
+TEST_F(NewHorizonsNecromancyMasterOfBonesNoTownAdmissionAITest, MissingUpgradeKeepsBaseSkeletonForm)
+{
+	ASSERT_EQ(skeletonDwellingTown, nullptr);
+	expectPostBattleSkeletonForm(CreatureID::NONE);
+}
 
 TEST_F(NewHorizonsNecromancyRuntimeTest, CasualtySnapshotExcludesUndeadAndNonliving)
 {
@@ -1346,6 +1619,7 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	outgoing.necromancy.wightsRaised = 7;
 	outgoing.necromancy.manaRecovered = 10;
 	outgoing.necromancy.raisedCreature = creature("core:zombie");
+	outgoing.necromancy.skeletonCreature = creature("core:skeletonWarrior");
 
 	CMemorySerializer wire;
 	wire.oser & outgoing;
@@ -1356,35 +1630,68 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	EXPECT_EQ(incoming.necromancy.zombiesRaised, 11);
 	EXPECT_EQ(incoming.necromancy.wightsRaised, 7);
 	EXPECT_EQ(incoming.necromancy.manaRecovered, 10);
+	EXPECT_EQ(incoming.necromancy.skeletonCreature, creature("core:skeletonWarrior"));
 
 	CMemorySerializer directWire;
 	directWire.oser & outgoing.necromancy;
 	newHorizonsNecromancy::NecromancyResult directIncoming;
 	directWire.iser & directIncoming;
 	EXPECT_EQ(directIncoming.wightsRaised, 7);
+	EXPECT_EQ(directIncoming.skeletonCreature, creature("core:skeletonWarrior"));
 
 	const auto necromancyWithoutWightsVersion = ESerializationVersion::NEW_HORIZONS_NECROMANCY;
 	newHorizonsNecromancy::NecromancyResult legacyResult = outgoing.necromancy;
 	legacyResult.wightsRaised = 0;
+	legacyResult.skeletonCreature = CreatureID::NONE;
 	CMemorySerializer legacyResultWire;
 	legacyResultWire.oser.version = necromancyWithoutWightsVersion;
 	legacyResultWire.oser & legacyResult;
 	legacyResultWire.iser.version = necromancyWithoutWightsVersion;
 	newHorizonsNecromancy::NecromancyResult legacyResultIncoming;
 	legacyResultIncoming.wightsRaised = 9;
+	legacyResultIncoming.skeletonCreature = creature("core:skeletonWarrior");
 	legacyResultWire.iser & legacyResultIncoming;
 	EXPECT_EQ(legacyResultIncoming.wightsRaised, 0);
+	EXPECT_EQ(legacyResultIncoming.skeletonCreature, CreatureID::NONE);
 
 	CMemorySerializer legacyOuterWire;
 	legacyOuterWire.oser.version = necromancyWithoutWightsVersion;
 	BattleResultsApplied legacyOuter = outgoing;
 	legacyOuter.necromancy.wightsRaised = 0;
+	legacyOuter.necromancy.skeletonCreature = CreatureID::NONE;
 	legacyOuterWire.oser & legacyOuter;
 	legacyOuterWire.iser.version = necromancyWithoutWightsVersion;
 	BattleResultsApplied legacyOuterIncoming;
 	legacyOuterIncoming.necromancy.wightsRaised = 9;
+	legacyOuterIncoming.necromancy.skeletonCreature = creature("core:skeletonWarrior");
 	legacyOuterWire.iser & legacyOuterIncoming;
 	EXPECT_EQ(legacyOuterIncoming.necromancy.wightsRaised, 0);
+	EXPECT_EQ(legacyOuterIncoming.necromancy.skeletonCreature, CreatureID::NONE);
+
+	const auto necromancyWithoutSkeletonFormVersion = ESerializationVersion::NEW_HORIZONS_NECROMANCY_WIGHTS;
+	newHorizonsNecromancy::NecromancyResult legacySkeletonResult = outgoing.necromancy;
+	legacySkeletonResult.skeletonCreature = CreatureID::NONE;
+	CMemorySerializer legacySkeletonResultWire;
+	legacySkeletonResultWire.oser.version = necromancyWithoutSkeletonFormVersion;
+	legacySkeletonResultWire.oser & legacySkeletonResult;
+	legacySkeletonResultWire.iser.version = necromancyWithoutSkeletonFormVersion;
+	newHorizonsNecromancy::NecromancyResult legacySkeletonResultIncoming;
+	legacySkeletonResultIncoming.skeletonCreature = creature("core:skeletonWarrior");
+	legacySkeletonResultWire.iser & legacySkeletonResultIncoming;
+	EXPECT_EQ(legacySkeletonResultIncoming.wightsRaised, 7);
+	EXPECT_EQ(legacySkeletonResultIncoming.skeletonCreature, CreatureID::NONE);
+
+	CMemorySerializer legacySkeletonOuterWire;
+	legacySkeletonOuterWire.oser.version = necromancyWithoutSkeletonFormVersion;
+	BattleResultsApplied legacySkeletonOuter = outgoing;
+	legacySkeletonOuter.necromancy.skeletonCreature = CreatureID::NONE;
+	legacySkeletonOuterWire.oser & legacySkeletonOuter;
+	legacySkeletonOuterWire.iser.version = necromancyWithoutSkeletonFormVersion;
+	BattleResultsApplied legacySkeletonOuterIncoming;
+	legacySkeletonOuterIncoming.necromancy.skeletonCreature = creature("core:skeletonWarrior");
+	legacySkeletonOuterWire.iser & legacySkeletonOuterIncoming;
+	EXPECT_EQ(legacySkeletonOuterIncoming.necromancy.wightsRaised, 7);
+	EXPECT_EQ(legacySkeletonOuterIncoming.necromancy.skeletonCreature, CreatureID::NONE);
 
 	newHorizonsNecromancy::NecromancyResult unsupportedDirect;
 	unsupportedDirect.wightsRaised = 1;
@@ -1402,6 +1709,31 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	EXPECT_THROW(unsupportedOuterWire.oser & unsupportedOuter, std::runtime_error);
 	EXPECT_TRUE(unsupportedOuterWire.extractBuffer().empty())
 		<< "An older outer packet writer must reject a nonzero Wight count before writing bytes";
+
+	newHorizonsNecromancy::NecromancyResult unsupportedSkeletonDirect;
+	unsupportedSkeletonDirect.skeletonsRaised = 1;
+	unsupportedSkeletonDirect.skeletonCreature = creature("core:skeletonWarrior");
+	CMemorySerializer unsupportedSkeletonDirectWire;
+	unsupportedSkeletonDirectWire.oser.version = necromancyWithoutSkeletonFormVersion;
+	EXPECT_THROW(unsupportedSkeletonDirectWire.oser & unsupportedSkeletonDirect, std::runtime_error);
+	EXPECT_TRUE(unsupportedSkeletonDirectWire.extractBuffer().empty())
+		<< "An older result writer must reject an upgraded Skeleton form before writing bytes";
+
+	BattleResultsApplied unsupportedSkeletonOuter;
+	unsupportedSkeletonOuter.battleID = BattleID(6);
+	unsupportedSkeletonOuter.necromancy.skeletonsRaised = 1;
+	unsupportedSkeletonOuter.necromancy.skeletonCreature = creature("core:skeletonWarrior");
+	CMemorySerializer unsupportedSkeletonOuterWire;
+	unsupportedSkeletonOuterWire.oser.version = necromancyWithoutSkeletonFormVersion;
+	EXPECT_THROW(unsupportedSkeletonOuterWire.oser & unsupportedSkeletonOuter, std::runtime_error);
+	EXPECT_TRUE(unsupportedSkeletonOuterWire.extractBuffer().empty())
+		<< "An older outer packet writer must reject an upgraded Skeleton form before writing bytes";
+
+	newHorizonsNecromancy::NecromancyResult invalidSkeletonForm;
+	invalidSkeletonForm.skeletonCreature = creature("core:skeletonWarrior");
+	CMemorySerializer invalidSkeletonFormWire;
+	EXPECT_THROW(invalidSkeletonFormWire.oser & invalidSkeletonForm, std::runtime_error);
+	EXPECT_TRUE(invalidSkeletonFormWire.extractBuffer().empty());
 
 	newHorizonsNecromancy::NecromancyResult invalidDirect;
 	invalidDirect.wightsRaised = -1;

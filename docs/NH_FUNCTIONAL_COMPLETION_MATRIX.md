@@ -14,6 +14,27 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP185 Master of Bones is active and source/native verified. Remaining Skeleton
+output uses its configured upgrade only when the winner currently owns a
+Necropolis with the corresponding upgrade dwelling built and that creature in
+its offered roster. The actual form participates in atomic Leadership/slot
+planning and is carried explicitly in versioned result packets and UI; base
+generation/conversion quantities remain Skeleton equivalents. No polling or
+separate AI query is introduced. Initial client57879 exposed a concrete/interface
+API mismatch, repaired without weakening the configured-upgrade check; retry43912
+and test65198 pass. Luna tester principal26/26 passes5.386s, adjacent9/9
+passes1.707s, zero skips. Four map cases record production active/no override,
+ordinary Basic CP -> Advanced Soul -> Expert Master selection, and actual owned
+built/unbuilt, foreign built or absent availability. Binary SHA-256:
+b5612702c235e3d66403429999fe6838558e13635680337d701ace6e3ba276c9.
+Data/inventory19/19, generated module, result guard and Astra review pass.
+Coverage198->199/310 active,112->111 planned; Necromancy5->6/10; faction57->58/90.
+Rank/spell counts unchanged. Deferred Phase2: actual construction/capture roster
+refresh, broader interactions, full AI play and rendered acceptance. Dedicated
+perk art is missing; no playable promotion. Next prepared slice is Death Lord
+and Grave Knowledge weighted eligibility. Full Windows37136224312 still targets
+preceding e8f2cb4b5; notice37137524285 succeeds on12431082e.
+
 UP184 Soul Harvester is active and source/native verified. Eligible Elite
 casualties independently fund complete six-Skeleton groups yielding Core Wights;
 Core Zombie conversion remains independent and all remainders stay Skeletons.
@@ -1682,9 +1703,9 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 198/310 | 112 planned; Soul Harvester is the newest source/native-verified activation. Necromancy is 5/10; Learning 3/10; Estates 5/10; Battlecraft 6/10; Logistics 6/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 199/310 | 111 planned; Master of Bones is the newest source/native-verified activation. Necromancy is 6/10; Learning 3/10; Estates 5/10; Battlecraft 6/10; Logistics 6/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
-| Faction perks active | 57/90 | 33 planned perks; Soul Harvester has normal perk selection, actual post-battle Wight delivery and atomic mixed-output admission evidence. |
+| Faction perks active | 58/90 | 32 planned perks; Master of Bones has normal Expert selection, owned-built availability and actual upgraded post-battle output evidence. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |

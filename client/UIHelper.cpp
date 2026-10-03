@@ -68,7 +68,9 @@ std::string UIHelper::getNecromancyInfoWindowText(const CStackBasicDescriptor & 
 std::vector<Component> UIHelper::getNewHorizonsNecromancyComponents(const newHorizonsNecromancy::NecromancyResult & result)
 {
 	std::vector<Component> components;
-	const auto skeleton = CreatureID(CreatureID::decode("core:skeleton"));
+	const auto skeleton = result.skeletonCreature.hasValue()
+		? result.skeletonCreature
+		: CreatureID(CreatureID::decode("core:skeleton"));
 	const auto zombie = CreatureID(CreatureID::decode("core:zombie"));
 	const auto wight = CreatureID(CreatureID::decode("core:wight"));
 	if(result.skeletonsRaised > 0)
@@ -82,7 +84,10 @@ std::vector<Component> UIHelper::getNewHorizonsNecromancyComponents(const newHor
 
 std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNecromancy::NecromancyResult & result)
 {
-	const auto skeleton = CreatureID(CreatureID::decode("core:skeleton"));
+	const auto skeleton = result.skeletonCreature.hasValue()
+		? result.skeletonCreature
+		: CreatureID(CreatureID::decode("core:skeleton"));
+	const auto baseSkeleton = CreatureID(CreatureID::decode("core:skeleton"));
 	const auto zombie = CreatureID(CreatureID::decode("core:zombie"));
 	const auto wight = CreatureID(CreatureID::decode("core:wight"));
 	MetaString text;
@@ -100,7 +105,7 @@ std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNe
 		text.appendRawString("Generated: ");
 		text.appendNumber(result.skeletonsOffered);
 		text.appendRawString(" ");
-		text.appendName(skeleton, result.skeletonsOffered);
+		text.appendName(baseSkeleton, result.skeletonsOffered);
 		text.appendRawString("\n");
 	}
 
@@ -110,7 +115,9 @@ std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNe
 		text.appendNumber(result.zombiesRaised);
 		text.appendRawString(" ");
 		text.appendName(zombie, result.zombiesRaised);
-		text.appendRawString(" from Core casualties (three Skeletons each)\n");
+		text.appendRawString(" from Core casualties (three ");
+		text.appendName(baseSkeleton, 3);
+		text.appendRawString(" each)\n");
 	}
 
 	if(result.wightsRaised > 0)
@@ -119,7 +126,9 @@ std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNe
 		text.appendNumber(result.wightsRaised);
 		text.appendRawString(" ");
 		text.appendName(wight, result.wightsRaised);
-		text.appendRawString(" from Elite casualties (six Skeletons per Wight)\n");
+		text.appendRawString(" from Elite casualties (six ");
+		text.appendName(baseSkeleton, 6);
+		text.appendRawString(" per Wight)\n");
 	}
 
 	if(result.skeletonsRaised > 0 || result.zombiesRaised > 0 || result.wightsRaised > 0)

@@ -27,6 +27,7 @@ inline constexpr const char * CORPSE_PRESERVATION_ID = "new-horizons:necromancy.
 inline constexpr const char * DARK_CONVERSION_ID = "new-horizons:necromancy.darkConversion";
 inline constexpr const char * BLACK_HARVEST_ID = "new-horizons:necromancy.blackHarvest";
 inline constexpr const char * SOUL_HARVESTER_ID = "new-horizons:necromancy.soulHarvester";
+inline constexpr const char * MASTER_OF_BONES_ID = "new-horizons:necromancy.masterOfBones";
 
 /// The post-battle payload is deliberately explicit.  The client must be able
 /// to explain what the authoritative server actually raised, including a
@@ -50,6 +51,8 @@ struct DLL_LINKAGE NecromancyResult
 	int32_t skeletonsRaised = 0;
 	int32_t zombiesRaised = 0;
 	int32_t wightsRaised = 0;
+	/// NONE means the ordinary Skeleton form; set only for an applied upgraded output.
+	CreatureID skeletonCreature = CreatureID::NONE;
 	int32_t manaRecovered = 0;
 
 	CreatureID raisedCreature = CreatureID::NONE;
@@ -57,6 +60,11 @@ struct DLL_LINKAGE NecromancyResult
 	template <typename Handler>
 	void serialize(Handler & h)
 	{
+		if(h.saving && !isSkeletonOutputValid())
+			throw std::runtime_error("Invalid Necromancy Skeleton output form");
+		if(h.saving && skeletonCreature != CreatureID::NONE
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_SKELETON_FORM))
+			throw std::runtime_error("Cannot write Necromancy Skeleton form to an older format");
 		if(h.saving && wightsRaised < 0)
 			throw std::runtime_error("Invalid negative Necromancy Wight count");
 		if(h.saving && wightsRaised != 0
@@ -87,6 +95,21 @@ struct DLL_LINKAGE NecromancyResult
 		}
 		if(wightsRaised < 0)
 			throw std::runtime_error("Invalid negative Necromancy Wight count");
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_SKELETON_FORM))
+		{
+			h & skeletonCreature;
+		}
+		else if(!h.saving)
+		{
+			skeletonCreature = CreatureID::NONE;
+		}
+		if(!isSkeletonOutputValid())
+			throw std::runtime_error("Invalid Necromancy Skeleton output form");
+	}
+
+	bool isSkeletonOutputValid() const
+	{
+		return skeletonCreature == CreatureID::NONE || (skeletonCreature.hasValue() && skeletonsRaised > 0);
 	}
 
 	bool empty() const
@@ -95,7 +118,8 @@ struct DLL_LINKAGE NecromancyResult
 			&& !darkConversionChosen && !applied && !blockedByArmyCapacity
 			&& rank == 0 && percentage == 0 && eligibleCasualties == 0
 			&& skeletonsOffered == 0 && skeletonsRaised == 0 && zombiesRaised == 0
-			&& wightsRaised == 0 && manaRecovered == 0 && raisedCreature == CreatureID::NONE;
+			&& wightsRaised == 0 && manaRecovered == 0 && raisedCreature == CreatureID::NONE
+			&& skeletonCreature == CreatureID::NONE;
 	}
 };
 
@@ -136,5 +160,6 @@ DLL_LINKAGE int32_t countLivingEligibleEliteCasualties(const std::map<CreatureID
 DLL_LINKAGE NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleCoreCasualties,
 	bool boneCollector, bool corpsePreservation, bool darkConversionAvailable,
 	bool skeletonSlotAvailable, bool zombieSlotAvailable, int32_t currentMana, int32_t manaLimit,
-	int32_t eligibleEliteCasualties = 0, bool soulHarvester = false, bool wightSlotAvailable = true);
+	int32_t eligibleEliteCasualties = 0, bool soulHarvester = false, bool wightSlotAvailable = true,
+	CreatureID skeletonOutput = CreatureID::NONE);
 }

@@ -192,6 +192,7 @@ ACTIVE_PERKS = {
     "new-horizons:necromancy.darkConversion",
     "new-horizons:necromancy.blackHarvest",
     "new-horizons:necromancy.soulHarvester",
+    "new-horizons:necromancy.masterOfBones",
     "new-horizons:bloodrage.warDrums",
     "new-horizons:metamagic.spellSequencing",
     "new-horizons:metamagic.arcaneEconomy",

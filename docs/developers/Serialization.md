@@ -1,5 +1,16 @@
 # Serialization
 
+## Master of Bones output form
+
+`NEW_HORIZONS_NECROMANCY_SKELETON_FORM` appends `skeletonCreature` after the
+Wight count. NONE denotes the base/legacy Skeleton output; a populated form
+identifies the actual configured upgraded creature, even in a mixed reward.
+Older records reset the field to NONE. Direct and enclosing result writers
+reject a populated form under unsupported versions before their payloads.
+An explicit form requires a nonnegative creature ID and positive Skeleton
+output count. Army and UI consumers use the authoritative form, not a separate
+client-side perk or town-availability calculation.
+
 ## Soul Harvester result payload
 
 `NEW_HORIZONS_NECROMANCY_WIGHTS` appends `wightsRaised` to the existing
