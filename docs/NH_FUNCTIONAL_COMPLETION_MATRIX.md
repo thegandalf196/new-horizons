@@ -14,6 +14,16 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+Field Study source is committed/pushed as4c41c8aa0; notice37095711525 passes.
+Full Windows37094808848 remains running on older Investor21dbb224b, not this
+later source. Next-item maps do not increase coverage: Master Teacher awaits
+whether selected Mentor is required; Archivist shares UP-054's Adventure-scroll
+policy; Unyielding shares Deep Bulwark's absent nonmagical displacement producer.
+Prospector awaits Gold-mine eligibility; Magnate awaits ownership/stacking rules.
+Their event/history, packet, income and AI/UI seams are mapped, but no new
+mechanic is implemented or counted. Reuse the queue evidence after answers
+instead of repeating exploration or activating a narrowed subset.
+
 UP161 Field Study is source/native verified and activated: generic battle-start raw Army
 Value snapshots and wandering-army classification feed a winner-only conditional
 25-percentage-point XP contribution. Existing Learning rank bonuses compose
