@@ -1576,7 +1576,7 @@ bool CUnitState::canMove(int turn) const
 
 bool CUnitState::defended(int turn) const
 {
-	return !turn && defending;
+	return !turn && (defending || hasBonusOfType(BonusType::UNIT_DEFENDING));
 }
 
 bool CUnitState::moved(int turn) const
@@ -1704,7 +1704,7 @@ int CUnitState::getDefense(bool ranged) const
 int CUnitState::getDefenseIgnoringDefensiveStance(bool ranged) const
 {
 	const int stanceBonus = ranged ? defensiveStanceRangedBonus : defensiveStanceMeleeBonus;
-	return std::max(0, getDefense(ranged) - (defending ? stanceBonus : 0));
+	return std::max(0, getDefense(ranged) - (defended() ? stanceBonus : 0));
 }
 
 std::shared_ptr<Unit> CUnitState::acquire() const
@@ -2322,10 +2322,11 @@ void CUnitState::afterNewRound(bool isFirstRound)
 			makeGhost();
 	}
 
+	// Defend's action flag blocks movement only for this round. Its separate
+	// UNIT_DEFENDING bonus remains the authoritative stance marker until the
+	// stack's next activation, so retain the captured stance values here.
 	defending = false;
 	activationMovementBonus = 0;
-	defensiveStanceMeleeBonus = 0;
-	defensiveStanceRangedBonus = 0;
 	bulwarkPreemptiveUsed = false;
 	waiting = false;
 	waitedThisTurn = false;

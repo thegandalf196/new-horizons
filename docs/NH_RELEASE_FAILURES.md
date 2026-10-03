@@ -2,6 +2,44 @@
 
 ## Purpose
 
+### 2026-10-02 UP-154 — Windows deployment source-guard drift
+
+Full Windows run37086471771 on b954d071 terminates in failure before compilation.
+Job111097728868, Package audit regression tests, runs91 tests with one failure:
+the spell-routing source guard still requires `on || tacticsMode || !canCastSpells`
+after production correctly changed to global `deploymentPhase` blocking.
+Repair the guard and mutation checks without weakening global deployment or
+spent-action feedback assertions. This is source-guard drift, not an observed
+MSVC failure or infrastructure outage. Compilation/package stages were skipped;
+retain this run and require a repaired preflight before another full dispatch.
+
+### 2026-10-02 UP-156 — Defend lifetime and turn eligibility
+
+The base rank audit finds round rollover clearing Defend's action flag and exact
+stance provenance while its STACK_GETS_TURN bonuses remain. A first narrow repair
+retains those fields and baseline25126 compiles, but review catches willMove's
+!defending guard: the retained flag would suppress the next activation. Do not
+execute/promote that baseline as accepted behavior. Reuse the existing
+UNIT_DEFENDING duration tag for effective stance, retain provenance until next
+activation, and keep the round action flag reset. Projected AI Defend must tag
+its clone too. Native acceptance must include actual turn-queue selection, not
+only a direct afterGetsTurn call. Mastery allocation remains separately planned.
+The revised effective-stance predicate also exposes Second Wind's use of
+`moved() || defended()` as action-completion eligibility. A prior-round stance
+must not qualify before the current normal activation. Correct that consumer to
+current-round action state and include focused eligibility evidence; do not
+defer a newly introduced incorrect core mechanic as mere integration polish.
+Client retry84116 succeeds. Combined fixture build98647 fails because the new
+helper treats the MasteryLevel constant namespace as a type; use the existing
+integer rank API. Independent fixture review also catches the last striker's
+attack potentially advancing the round before unconditional endRound. Retain a
+slower unspent reserve and assert round1 before checking spent retaliation, then
+advance once to round2. Keep original stance and real-queue assertions; neither
+failure justifies relaxing production rules or claiming native acceptance.
+Repaired combined27682 exits0. Native37434 passes16/16 in4.453s, zero skips,
+including actual next-round queue selection and Second Wind's prior-round/current-
+round distinction. Original failed logs remain; no immutable snapshot is promoted.
+
 ### 2026-10-02 UP-154 — focused data-gate command correction
 
 Root review found an additional blocking construction-order defect while

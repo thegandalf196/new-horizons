@@ -14,6 +14,21 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP156's base Defend prerequisite is source/native verified: the current-round
+action flag resets for queue eligibility, while the existing UNIT_DEFENDING
+duration tag and captured stance persist until next activation. Shared damage,
+AI clone projection and Second Wind's current-round eligibility are aligned.
+Both-target retry27682 passes; focused native37434 passes16/16 in4.453s, zero
+skips, including actual next-round queue selection. No new perk activation:
+coverage remains184/310 perks and84/93 ranks, directly recounted from registry;
+Command's stale summary row is corrected to7/10. Battlefield Mastery and
+Pre-emptive Strike await recorded narrow design rulings. Broader expiry/save,
+vanilla and visual interactions remain Phase2; no playable promotion.
+
+Windows guard drift in full37086471771 is repaired and pushed as0721ee12b.
+Local package gate91/91 and notice37087398608 pass; replacement full37087488369
+is confirmed in_progress on0721ee12b, excluding uncommitted Defend changes.
+
 UP-154 Tactics is now active and source/native verified. Both armies receive
 independent base-plus-two-row deployment, sequential phase packets and strict
 pre-action side/whole-footprint/occupancy validation. Opening effects and round1
@@ -31,6 +46,9 @@ No playable snapshot is promoted. Binary SHA-256:
 Source is pushed as`a85f2e44e303effe166badb5765422f4eeb6585a`.
 Notice37086103464 is queued on that source. Full Windows37082097577 is still
 live on older7aaa48c1; Tactics Windows compile/package acceptance is pending.
+CI update: older37082097577 succeeds on7aaa48c1; notice37086103464 succeeds
+on Tacticsa85f2e44e. New full37086471771 is queued onb954d071f (delivery notes
+only beyond the same Tactics source). Tactics Windows acceptance remains pending.
 
 UP-154 Tactics is source-staged with independent range3 deployment for each
 entitled army, saved phase progression, authoritative side/whole-footprint guards
@@ -1504,7 +1522,7 @@ interactions, and rendered/playable acceptance remain separate.
 | War Machines | 3/0 | 5/5 | Surgeon and Piercing Bolts have focused live/detached evidence; Fortification Engineer has real fortified-town manual-shot evidence; Master Gunner has accepted independently targeted second-shot evidence; Quartermaster has accepted half-output Ballista/Tent/Catapult extra-activation evidence. Five perks remain planned. Battlefield Medic persistence awaits clarification. |
 | Discipline | 3/0 | 7/3 | Steadfast joins Unbreakable, Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless with focused authoritative and detached evidence. Three perks remain planned; Esprit de Corps composition scope, Heroic Spirit activation timing and Veteran Cohesion HP reference await clarification. |
 | Recruitment | 3/0 | 6/4 | Four perks missing |
-| Command | 3/0 | 5/5 | Aggressive/Defensive, Veteran, Combined Arms and Commanding Presence have focused runtime/AI evidence; ordinary Advanced/Expert progression opens. Five perks remain planned. |
+| Command | 3/0 | 7/3 | Aggressive/Defensive, Veteran, Combined Arms, Commanding Presence, Battle Plan and Double Command have focused runtime/AI evidence. Iron Will, Crisis Command and Seize Initiative remain planned pending their recorded narrow design rulings. |
 | Light Magic | 3/0 | 9/1 | Sanctuary Keeper's linked Morale lifetime and actual AI cast are native verified; Litany grants distinct Mass Bless, alongside Benediction, Healer, Guardian, Aegis, Purifier, Retributionist and Crusader. Miracle Worker remains planned. |
 | Shadow Magic | 3/0 | 9/1 | Grand Malediction now grants distinct Mass Curse/Sorrow with native cast/forecast evidence, alongside the eight earlier perks. Plaguebearer awaits its normal-limit definition. |
 | Nature Magic | 3/0 | 7/3 | Geomancer's structural/terrain effects and actual AI cast are native verified alongside Venomancer's whole-Base snapshot and independent Toxic Spines. Herbalist, Rootcaller, Beastcaller, Verdant Warden and Verdant Communion active. Mire Shaper, Worldroot and Elemental Conjurer remain planned. |

@@ -1193,8 +1193,9 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderState(B
 			return {};
 		const auto * target = battleGetUnitByID(targetUnitIds.front());
 		const bool canonicalRules = heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules());
+		const auto targetState = target ? target->acquireState() : nullptr;
 		const bool hasSpentActivation = target
-			&& (target->moved() || (canonicalRules && target->defended()));
+			&& (target->moved() || (canonicalRules && targetState && targetState->defending));
 		if(!ownCombatUnit(target) || !hasSpentActivation)
 			return {};
 		result.primaryTargetUnitId = target->unitId();

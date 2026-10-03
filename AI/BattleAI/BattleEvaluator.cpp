@@ -3316,6 +3316,8 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 	if(!projectedTarget)
 		return false;
 	projectedTarget->defending = true;
+	projectedTarget->addUnitBonus(std::vector<Bonus>{
+		Bonus(BonusDuration::STACK_GETS_TURN, BonusType::UNIT_DEFENDING, BonusSource::OTHER, 0, BonusSourceID())});
 	bool bastionForecastAvailable = defendedPreview->battleHasBastionProtection(projectedTarget.get());
 	float holdFastMoraleValue = 0.0f;
 	if(hasHoldFast && !stack->unaffectedByMorale() && battle->battleGetMorale(stack) < 0)
