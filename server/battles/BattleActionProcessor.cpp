@@ -4331,7 +4331,51 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 				armorerBastionTriggered.push_back(target);
 		}
 	}
+	bool noEscapeTriggered = false;
+	if(defender)
+	{
+		const auto primaryHit = std::ranges::find_if(bat.bsa, [defender](const BattleStackAttacked & hit)
+		{
+			return hit.stackAttacked == defender->unitId() && !hit.isSecondary();
+		});
+		if(primaryHit != bat.bsa.end())
+		{
+			BattleAttackInfo shroudAttack(attacker, defender, attack.distance, attack.ranged);
+			shroudAttack.physicalDamage = shroudAttack.physicalDamage && !bat.spellLike();
+			shroudAttack.retaliation = counterAttack;
+			noEscapeTriggered = newHorizonsShroud::hasNoEscape(battle.battleGetOwnerHero(attacker))
+				&& battle.battleIsShroudFlankingAttack(shroudAttack);
+		}
+	}
 	gameHandler->sendAndApply(bat);
+	if(noEscapeTriggered && defender->alive())
+	{
+		SetStackEffect noEscape;
+		noEscape.battleID = battle.getBattle()->getBattleID();
+		const auto existing = defender->getAllBonuses(CSelector([](const Bonus * bonus)
+		{
+			return newHorizonsShroud::isNoEscapeSpeedPenalty(bonus);
+		}));
+		if(existing && !existing->empty())
+		{
+			std::vector<Bonus> toReplace;
+			toReplace.reserve(existing->size());
+			for(const auto & bonus : *existing)
+				toReplace.push_back(*bonus);
+			noEscape.toRemove.emplace_back(defender->unitId(), std::move(toReplace));
+		}
+		noEscape.toAdd.emplace_back(defender->unitId(),
+			std::vector<Bonus>{newHorizonsShroud::noEscapeSpeedPenalty()});
+		gameHandler->sendAndApply(noEscape);
+
+		BattleLogMessage message;
+		message.battleID = battle.getBattle()->getBattleID();
+		MetaString line;
+		line.appendRawString("No Escape reduces %s's Speed by 2 until its next activation.");
+		defender->addNameReplacement(line, defender->getCount());
+		message.lines.push_back(std::move(line));
+		gameHandler->sendAndApply(message);
+	}
 	if(gamblerAttackWindowUsed && !bat.lucky() && attacker->alive())
 	{
 		const auto existing = attacker->getAllBonuses(CSelector([](const Bonus * bonus)

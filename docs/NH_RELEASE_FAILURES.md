@@ -2,6 +2,25 @@
 
 ## Purpose
 
+### 2026-10-03 UP-170 — Observe activation-timed effects before expiry
+
+The first No Escape native gate passes2/4 with zero skips. Its combat log
+confirms the effect triggered, but the fast victim's automatically advanced
+Creature Activation expires it before the fixture reads the live bonus.
+Separately, blockRetaliation(victim) adds BLOCKS_RETALIATION to the wrong unit;
+it does not prevent the victim's response. Retain UP170-no-escape-native.log/XML.
+Repair fixture controls and the observation interval, not the production timer:
+prevent retaliation on the attacking stacks, spend the victim's real activation
+first, and retain an unacted reserve before checking refresh. Then explicitly
+verify expiry on its next genuine activation. Acceptance remains pending.
+Fixture retry builds18646/29029 catch const CStack* passed to the mutable
+retaliation helper and battle::Unit* passed to a CStack-only action helper.
+Use mutable flankers for bonus setup and the common Unit interface for actions;
+do not cast away constness or run the previous binary as repaired evidence.
+Resolution: both-target retry3 build33849 exits0; principal4/4 passes in8.112s
+and the final production-active gate passes4/4 in8.145s, both zero skips.
+Original failed logs remain retained; no production timer change was required.
+
 ### 2026-10-03 UP-161 — Unsigned 64-bit battle snapshot encoding
 
 Core-only build29456 exits1: BinaryDeserializer deliberately rejects direct

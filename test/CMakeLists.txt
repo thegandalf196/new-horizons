@@ -316,6 +316,7 @@ set(test_SRCS
 		server/battles/NewHorizonsWarcastingTest.cpp
 		server/battles/WarcastingScriptSpellTest.cpp
 		server/battles/NewHorizonsShroudTest.cpp
+		server/battles/NewHorizonsShroudNoEscapeTest.cpp
 		server/battles/NewHorizonsSylvanLuckTest.cpp
 		server/battles/NewHorizonsFortunesFavorTest.cpp
 		server/battles/NewHorizonsLuckyAimTest.cpp

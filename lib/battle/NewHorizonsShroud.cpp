@@ -7,6 +7,17 @@
 #include "NewHorizonsShroud.h"
 
 #include "../mapObjects/CGHeroInstance.h"
+#include "../bonuses/Bonus.h"
+
+namespace
+{
+BonusSourceID shroudSkillSource()
+{
+	static const BonusSourceID source{SecondarySkill{SecondarySkill::decode(
+		std::string(newHorizonsShroud::SKILL_ID))}};
+	return source;
+}
+}
 
 namespace newHorizonsShroud
 {
@@ -39,6 +50,28 @@ int backstabDamagePercent(const CGHeroInstance * hero)
 {
 	return hero && hero->hasActivePerk(std::string(SKILL_ID), std::string(BACKSTAB_PERK_ID))
 		? BACKSTAB_DAMAGE_PERCENT : 0;
+}
+
+bool hasNoEscape(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(SKILL_ID), std::string(NO_ESCAPE_PERK_ID));
+}
+
+Bonus noEscapeSpeedPenalty()
+{
+	Bonus bonus(BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION, BonusType::STACKS_SPEED,
+		BonusSource::SECONDARY_SKILL, NO_ESCAPE_SPEED_PENALTY, shroudSkillSource());
+	bonus.stacking = std::string(NO_ESCAPE_STACKING_KEY);
+	bonus.description.appendRawString("No Escape: -2 Speed until the next Creature Activation");
+	return bonus;
+}
+
+bool isNoEscapeSpeedPenalty(const Bonus * bonus)
+{
+	return bonus && bonus->duration == BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION
+		&& bonus->type == BonusType::STACKS_SPEED && bonus->val == NO_ESCAPE_SPEED_PENALTY
+		&& bonus->source == BonusSource::SECONDARY_SKILL && bonus->sid == shroudSkillSource()
+		&& bonus->stacking == NO_ESCAPE_STACKING_KEY;
 }
 
 bool deniesRetaliation(int value)

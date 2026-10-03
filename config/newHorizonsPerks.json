@@ -3383,7 +3383,7 @@
 					"requires": "advanced",
 					"description": "After suffering a flanking melee attack, the target loses 2 Speed until its next activation.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "After suffering a flanking melee attack, the target loses 2 Speed until its next activation."
 					}
 				},

@@ -23,6 +23,7 @@
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
+#include "../../lib/battle/NewHorizonsShroud.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 
@@ -605,6 +606,11 @@ AttackPossibility AttackPossibility::evaluate(
 			attackInfo.shooting);
 		const auto * raHero = attackerSide == BattleSide::ATTACKER || attackerSide == BattleSide::DEFENDER
 			? state->battleGetFightingHero(attackerSide) : nullptr;
+		const auto defenderSide = state->playerToSide(state->battleGetOwner(defender));
+		const auto * defenderHero = defenderSide == BattleSide::ATTACKER || defenderSide == BattleSide::DEFENDER
+			? state->battleGetFightingHero(defenderSide) : nullptr;
+		const bool projectsNoEscape = newHorizonsShroud::hasNoEscape(raHero)
+			|| newHorizonsShroud::hasNoEscape(defenderHero);
 		const bool ordinaryArcheryShooter = newHorizonsArchery::isOrdinaryPhysicalShooter(attacker);
 		const auto currentRound = state->battleGetRound();
 		const auto currentActivationSerial = static_cast<int32_t>(state->getBattle()->getActivationSerial());
@@ -776,15 +782,33 @@ AttackPossibility AttackPossibility::evaluate(
 			|| projectsImmovable || projectsSwampRenewal || projectsMireGrip;
 		if(ap.perfectMoment || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 				|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
-				|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune)
+				|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune
+				|| projectsNoEscape)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
 	if(projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
-			|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune)
+			|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune
+			|| projectsNoEscape)
 			ap.effectPreview = fortunePreview;
 	const CBattleInfoCallback & luckState = fortunePreview
 		? static_cast<const CBattleInfoCallback &>(*fortunePreview) : *state;
+	const auto qualifiesForNoEscape = [&fortunePreview](const BattleAttackInfo & projectedAttack)
+	{
+		if(!fortunePreview || !fortunePreview->battleIsShroudFlankingAttack(projectedAttack))
+			return false;
+		const auto side = fortunePreview->playerToSide(
+			fortunePreview->battleGetOwner(projectedAttack.attacker));
+		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			return false;
+		return newHorizonsShroud::hasNoEscape(fortunePreview->battleGetFightingHero(side));
+	};
+	const auto refreshNoEscapePenalty = [&fortunePreview](uint32_t targetUnitId)
+	{
+		auto target = fortunePreview->getForUpdate(targetUnitId);
+		target->removeUnitBonus(CSelector(newHorizonsShroud::isNoEscapeSpeedPenalty));
+		target->addUnitBonus({newHorizonsShroud::noEscapeSpeedPenalty()});
+	};
 	const auto captureAndProjectFortuneStrike = [&fortunePreview](const BattleAttackInfo & attack,
 		const std::vector<std::pair<uint32_t, int64_t>> & hits,
 		battle::CUnitState * attackerState, std::optional<ProjectedLuckOutcome> & resolvedLuck)
@@ -1049,6 +1073,7 @@ AttackPossibility AttackPossibility::evaluate(
 					victimAttack.unluckyStrike = false;
 				}
 				victimAttack.defenderPos = defenderState->getPosition();
+				const bool triggersNoEscape = qualifiesForNoEscape(victimAttack);
 				if(strike.perfectMoment)
 				{
 					// Non-lucky collateral of a forced positive strike is neutral,
@@ -1103,6 +1128,8 @@ AttackPossibility AttackPossibility::evaluate(
 				defenderState->damage(damageDealt, false,
 					damageProvenance);
 				strike.resolvedHits.emplace_back(u->unitId(), damageDealt);
+				if(triggersNoEscape && defenderState->alive())
+					refreshNoEscapePenalty(defenderState->unitId());
 				if(consumesBastion)
 					defenderState->armorerBastionRound = currentRound;
 				if(victimAttack.physicalDamage && ordinaryAttacker && defenderState->defended()
@@ -1565,18 +1592,24 @@ AttackPossibility AttackPossibility::evaluate(
 			{
 				auto actualDamage = rawDamage;
 				bool consumesBastion = false;
+				bool triggersNoEscape = false;
 				if(retaliation)
 				{
 					auto retaliatorState = defenderStates.at(retaliation->attackerId);
 					BattleAttackInfo retaliationAttack(retaliatorState.get(), targetState.get(), 0, false);
 					retaliationAttack.retaliation = true;
 					retaliationAttack.secondaryAttack = targetState->unitId() != attacker->unitId();
+					retaliationAttack.attackerPos = retaliatorState->getPosition();
+					retaliationAttack.defenderPos = targetState->getPosition();
+					triggersNoEscape = qualifiesForNoEscape(retaliationAttack);
 					consumesBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
 						retaliationAttack.attacker, retaliationAttack.physicalDamage)
 						&& luckState.battleHasBastionProtection(targetState.get());
 				}
 				targetState->damage(actualDamage, false,
 					retaliation ? retaliation->damageProvenance : battle::DamageProvenance::OTHER);
+				if(triggersNoEscape && targetState->alive())
+					refreshNoEscapePenalty(targetState->unitId());
 				if(consumesBastion)
 					targetState->armorerBastionRound = currentRound;
 				retaliationActualHits.emplace_back(targetState->unitId(), actualDamage);

@@ -14,6 +14,24 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP170 No Escape runtime and detached AI are source/native verified and active.
+Accepted rear melee applies a nonstacking -2 Speed bonus to its surviving direct
+target until that target's next Creature Activation; qualifying retaliation uses
+the same predicate. Visible current-controller heroes govern AI projection.
+Both-target baseline build42759 exits0; independent runtime/AI review finds no
+blocker. Initial principal2/4 result exposes fixture retaliation controls and
+post-activation observation errors, not a production duration failure. Repair
+retry3 build33849 exits0; principal4/4 passes in8.112s with zero skips. Production
+activation, generated module, data/inventory19/19 and activated both-target build
+pass. Final activated native gate passes4/4 in8.145s, zero skips; independent
+activation review finds no blocker. Coverage188/310 perks,122 planned; faction
+50/90, Shroud2/10; ranks84/93 unchanged. Full-game resume, resurrection, hidden-
+enemy comparative valuation and guaranteed separate status labeling remain
+Phase2. Purpose-made art is Not done; generic UI is Provisional. No playable
+promotion is claimed. Native binary SHA-256:
+a9cb4afb3fd1184af1e2825e6f55791a3d9b8a57a4353bcc5a0f002fa0fcb02e.
+Windows37094808848 succeeds on the older Investor21dbb224b source, not this work.
+
 Field Study source is committed/pushed as4c41c8aa0; notice37095711525 passes.
 Full Windows37094808848 remains running on older Investor21dbb224b, not this
 later source. Next-item maps do not increase coverage: Master Teacher awaits
@@ -1464,9 +1482,9 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 187/310 | 123 planned; Field Study is the newest source/native-verified activation. Learning is 3/10; Estates is 5/10; Battlecraft is 5/10; Command is 7/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 188/310 | 122 planned; No Escape is the newest source/native-verified activation. Learning is 3/10; Estates is 5/10; Battlecraft is 5/10; Command is 7/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
-| Faction perks active | 49/90 | 41 planned perks; Blood Scent has attack-local live/detached evidence. |
+| Faction perks active | 50/90 | 40 planned perks; No Escape has focused live/detached activation-lifetime evidence. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
@@ -1622,7 +1640,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Divine Mandate | 0/3 | 0/10 | Ranks and progression missing |
 | Sylvan Luck | 3/0 | 10/0 | Evidence audit required |
 | Metamagic | 3/0 | 10/0 | Evidence audit required |
-| Shroud of Malassa | 3/0 | 1/9 | Basic Backstab is active; the other nine perks remain planned. |
+| Shroud of Malassa | 3/0 | 2/8 | Basic Backstab and Advanced No Escape are active; the other eight perks remain planned. |
 | Demonic Gating | 3/0 | 10/0 | Evidence audit required |
 | Necromancy | 3/0 | 3/7 | Seven perks missing; one inert hook |
 | Bloodrage | 3/0 | 6/4 | War Drums, Fury Unbound, Endless Bloodshed, Unrelenting, Berserker and Blood Scent have focused live/AI evidence and legal progression; four perks remain missing. |
