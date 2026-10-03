@@ -30,6 +30,7 @@ inline constexpr const char * SOUL_HARVESTER_ID = "new-horizons:necromancy.soulH
 inline constexpr const char * DEATH_LORD_ID = "new-horizons:necromancy.deathLord";
 inline constexpr const char * GRAVE_KNOWLEDGE_ID = "new-horizons:necromancy.graveKnowledge";
 inline constexpr const char * MASTER_OF_BONES_ID = "new-horizons:necromancy.masterOfBones";
+inline constexpr const char * OSSUARY_ID = "new-horizons:necromancy.ossuary";
 
 /// The post-battle payload is deliberately explicit.  The client must be able
 /// to explain what the authoritative server actually raised, including a
@@ -64,10 +65,17 @@ struct DLL_LINKAGE NecromancyResult
 	int32_t manaRecovered = 0;
 
 	CreatureID raisedCreature = CreatureID::NONE;
+	/// Set only when Ossuary successfully delivered the complete output batch to this town's upper army.
+	ObjectInstanceID ossuaryTown = ObjectInstanceID::NONE;
 
 	template <typename Handler>
 	void serialize(Handler & h)
 	{
+		if(h.saving && !isOssuaryDestinationValid())
+			throw std::runtime_error("Invalid Necromancy Ossuary destination");
+		if(h.saving && ossuaryTown != ObjectInstanceID::NONE
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_OSSUARY))
+			throw std::runtime_error("Cannot write Necromancy Ossuary destination to an older format");
 		if(h.saving && !isSpecialCasualtySummaryValid())
 			throw std::runtime_error("Invalid negative Necromancy special casualty summary");
 		if(h.saving && hasSpecialCasualtySummary()
@@ -134,6 +142,23 @@ struct DLL_LINKAGE NecromancyResult
 		}
 		if(!isSpecialCasualtySummaryValid())
 			throw std::runtime_error("Invalid negative Necromancy special casualty summary");
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_OSSUARY))
+		{
+			h & ossuaryTown;
+		}
+		else if(!h.saving)
+		{
+			ossuaryTown = ObjectInstanceID::NONE;
+		}
+		if(!isOssuaryDestinationValid())
+			throw std::runtime_error("Invalid Necromancy Ossuary destination");
+	}
+
+	bool isOssuaryDestinationValid() const
+	{
+		return ossuaryTown == ObjectInstanceID::NONE || (ossuaryTown.hasValue()
+			&& active && applied && !blockedByArmyCapacity
+			&& (skeletonsRaised > 0 || zombiesRaised > 0 || wightsRaised > 0));
 	}
 
 	bool isSpecialCasualtySummaryValid() const
@@ -160,7 +185,8 @@ struct DLL_LINKAGE NecromancyResult
 			&& rank == 0 && percentage == 0 && eligibleCasualties == 0
 			&& skeletonsOffered == 0 && skeletonsRaised == 0 && zombiesRaised == 0
 			&& wightsRaised == 0 && manaRecovered == 0 && raisedCreature == CreatureID::NONE
-			&& skeletonCreature == CreatureID::NONE && !hasSpecialCasualtySummary();
+			&& skeletonCreature == CreatureID::NONE && !hasSpecialCasualtySummary()
+			&& ossuaryTown == ObjectInstanceID::NONE;
 	}
 };
 

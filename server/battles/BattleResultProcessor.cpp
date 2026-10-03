@@ -107,9 +107,56 @@ CreatureID availableNecropolisSkeletonUpgrade(const PlayerState * ownerState)
 	return CreatureID::NONE;
 }
 
+/// Select the nearest currently owned Necropolis by the same squared-distance
+/// and first-on-tie convention used by the adventure spell town selector.
+const CGTownInstance * nearestOwnedNecropolisTown(const PlayerState * ownerState, PlayerColor owner,
+	const int3 & origin)
+{
+	if(!ownerState)
+		return nullptr;
+
+	const CGTownInstance * nearest = nullptr;
+	ui32 nearestDistance = std::numeric_limits<ui32>::max();
+	for(const auto * town : ownerState->getTowns())
+	{
+		if(!town || town->getOwner() != owner || town->getFactionID() != FactionID::NECROPOLIS)
+			continue;
+
+		const ui32 distance = town->visitablePos().dist2dSQ(origin);
+		if(!nearest || distance < nearestDistance)
+		{
+			nearest = town;
+			nearestDistance = distance;
+		}
+	}
+	return nearest;
+}
+
+bool validRaisedArmyOutputs(const std::vector<std::pair<CreatureID, int64_t>> & outputs)
+{
+	for(const auto & [creature, count] : outputs)
+		if(count < 0 || (count > 0 && (!creature.hasValue() || !creature.toCreature())))
+			return false;
+	return true;
+}
+
+bool validRaisedArmyState(const CArmedInstance & army)
+{
+	for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
+	{
+		if(const auto * stack = army.getStackPtr(SlotID(i)))
+		{
+			if(stack->getCount() < 0 || !stack->getCreatureID().hasValue()
+				|| !stack->getCreatureID().toCreature())
+				return false;
+		}
+	}
+	return true;
+}
+
 // Resolve every output against one projected army before emitting any packs.
 // A matching stack may be full even though another slot can admit the reward.
-std::optional<RaisedArmyPlan> planRaisedArmy(const CGHeroInstance & hero,
+std::optional<RaisedArmyPlan> planRaisedArmy(const CArmedInstance & army,
 	const std::vector<std::pair<CreatureID, int64_t>> & outputs)
 {
 	struct ProjectedSlot
@@ -119,7 +166,7 @@ std::optional<RaisedArmyPlan> planRaisedArmy(const CGHeroInstance & hero,
 	};
 	std::array<ProjectedSlot, GameConstants::ARMY_SIZE> slots;
 	for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
-		if(const auto * stack = hero.getStackPtr(SlotID(i)))
+		if(const auto * stack = army.getStackPtr(SlotID(i)))
 		{
 			if(stack->getCount() < 0)
 				return std::nullopt;
@@ -134,8 +181,11 @@ std::optional<RaisedArmyPlan> planRaisedArmy(const CGHeroInstance & hero,
 		if(count == 0)
 			continue;
 		int64_t capacity = std::numeric_limits<TQuantity>::max();
-		if(const auto leadership = hero.getLeadershipSlotCapacity(creature))
-			capacity = std::min<int64_t>(capacity, leadership->maximum);
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(&army))
+		{
+			if(const auto leadership = hero->getLeadershipSlotCapacity(creature))
+				capacity = std::min<int64_t>(capacity, leadership->maximum);
+		}
 		int64_t remaining = count;
 		// Fill every matching stack first, then reserve distinct empty slots.
 		for(const bool empty : {false, true})
@@ -158,12 +208,12 @@ std::optional<RaisedArmyPlan> planRaisedArmy(const CGHeroInstance & hero,
 	return plan;
 }
 
-void applyRaisedArmy(CGameHandler & handler, const CGHeroInstance & hero, const RaisedArmyPlan & plan)
+void applyRaisedArmy(CGameHandler & handler, const CArmedInstance & army, const RaisedArmyPlan & plan)
 {
 	for(const auto & addition : plan)
 	{
-		const StackLocation location(hero.id, addition.slot);
-		const bool applied = hero.hasStackAtSlot(addition.slot)
+		const StackLocation location(army.id, addition.slot);
+		const bool applied = army.hasStackAtSlot(addition.slot)
 			? handler.changeStackCount(location, addition.count, ChangeValueMode::RELATIVE)
 			: handler.insertNewStack(location, addition.creature.toCreature(), addition.count);
 		// The simulation thread applies this preflighted plan without yielding.
@@ -674,9 +724,11 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 		newHorizonsNecromancy::GRAVE_KNOWLEDGE_ID);
 	const bool masterOfBones = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 		newHorizonsNecromancy::MASTER_OF_BONES_ID);
+	const bool ossuary = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+		newHorizonsNecromancy::OSSUARY_ID);
 	const bool blackHarvest = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 		newHorizonsNecromancy::BLACK_HARVEST_ID);
-	const auto * ownerState = masterOfBones
+	const auto * ownerState = masterOfBones || ossuary
 		? gameHandler->gameInfo().getPlayerState(winnerHero->tempOwner)
 		: nullptr;
 	const auto skeletonOutput = masterOfBones
@@ -710,9 +762,42 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 		return false;
 
 	const auto raisedSkeleton = summary.skeletonCreature.hasValue() ? summary.skeletonCreature : skeleton;
-	const auto plan = planRaisedArmy(*winnerHero,
-		{{raisedSkeleton, summary.skeletonsRaised}, {zombie, summary.zombiesRaised}, {wight, summary.wightsRaised}});
-	if(!plan)
+	const std::vector<std::pair<CreatureID, int64_t>> outputs = {
+		{raisedSkeleton, summary.skeletonsRaised},
+		{zombie, summary.zombiesRaised},
+		{wight, summary.wightsRaised}};
+	if(!validRaisedArmyOutputs(outputs))
+		throw std::runtime_error("Invalid Necromancy army output");
+	if(!validRaisedArmyState(*winnerHero))
+		throw std::runtime_error("Invalid winner army state during Necromancy resolution");
+	const bool hasRaisedOutput = summary.skeletonsRaised > 0 || summary.zombiesRaised > 0 || summary.wightsRaised > 0;
+
+	auto acceptedPlan = planRaisedArmy(*winnerHero, outputs);
+	const CArmedInstance * receivingArmy = winnerHero;
+	const CGTownInstance * destinationTown = nullptr;
+	if(!acceptedPlan && ossuary && hasRaisedOutput)
+	{
+		// Ossuary has one deterministic destination attempt. Do not search farther
+		// towns if the nearest owned Necropolis cannot accept the complete batch.
+		destinationTown = nearestOwnedNecropolisTown(ownerState, winnerHero->tempOwner,
+			winnerHero->visitablePos());
+		// getUpperArmy is the visible garrison side (garrison Hero when present,
+		// otherwise the town army); the visiting Hero is deliberately excluded.
+		const auto * townArmy = destinationTown ? destinationTown->getUpperArmy() : nullptr;
+		if(townArmy && townArmy->getOwner() == winnerHero->tempOwner)
+		{
+			if(!validRaisedArmyState(*townArmy))
+				throw std::runtime_error("Invalid Necropolis army state during Ossuary resolution");
+			acceptedPlan = planRaisedArmy(*townArmy, outputs);
+			if(acceptedPlan)
+				receivingArmy = townArmy;
+		}
+		else
+		{
+			acceptedPlan.reset();
+		}
+	}
+	if(!acceptedPlan)
 	{
 		summary.applied = false;
 		summary.blockedByArmyCapacity = true;
@@ -723,11 +808,15 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 		summary.darkConversionChosen = false;
 		summary.manaRecovered = 0;
 		summary.raisedCreature = CreatureID::NONE;
+		summary.ossuaryTown = ObjectInstanceID::NONE;
 		resultsApplied.necromancy = summary;
 		return true;
 	}
 
-	applyRaisedArmy(*gameHandler, *winnerHero, *plan);
+	applyRaisedArmy(*gameHandler, *receivingArmy, *acceptedPlan);
+	if(destinationTown
+		&& (summary.skeletonsRaised > 0 || summary.zombiesRaised > 0 || summary.wightsRaised > 0))
+		summary.ossuaryTown = destinationTown->id;
 
 	// Keep the legacy descriptor useful for clients when there is one output
 	// kind. Combined conversions may produce multiple output stacks; leaving the

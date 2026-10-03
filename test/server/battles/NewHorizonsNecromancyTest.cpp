@@ -559,9 +559,18 @@ protected:
 		OWNED_UPGRADE_BUILT,
 		FOREIGN_UPGRADE_BUILT
 	};
+	enum class OssuaryTownPairScenario
+	{
+		NONE,
+		FOREIGN_NEAREST,
+		OWNED_NEAREST_FULL
+	};
 
 	SkeletonDwellingScenario skeletonDwellingScenario = SkeletonDwellingScenario::ABSENT;
+	OssuaryTownPairScenario ossuaryTownPairScenario = OssuaryTownPairScenario::NONE;
 	CGTownInstance * skeletonDwellingTown = nullptr;
+	CGTownInstance * ossuaryNearTown = nullptr;
+	CGTownInstance * ossuaryFarTown = nullptr;
 
 	void mapLoaded(CMap * loaded) override
 	{
@@ -586,7 +595,15 @@ protected:
 			.playerActive(PlayerColor(1))
 			.hero({5, 5, 0}, HeroTypeID(72), PlayerColor(0)).heroGarrison({{token, 1}})
 			.hero({7, 7, 0}, HeroTypeID(1), PlayerColor(1)).heroGarrison({{token, 1}});
-		if(skeletonDwellingScenario != SkeletonDwellingScenario::ABSENT)
+		if(ossuaryTownPairScenario != OssuaryTownPairScenario::NONE)
+		{
+			ASSERT_EQ(skeletonDwellingScenario, SkeletonDwellingScenario::ABSENT);
+			const auto nearOwner = ossuaryTownPairScenario == OssuaryTownPairScenario::FOREIGN_NEAREST
+				? PlayerColor(1) : PlayerColor(0);
+			builder.town({10, 10, 0}, FactionID::NECROPOLIS, nearOwner).townGarrison({});
+			builder.town({20, 20, 0}, FactionID::NECROPOLIS, PlayerColor(0)).townGarrison({});
+		}
+		else if(skeletonDwellingScenario != SkeletonDwellingScenario::ABSENT)
 		{
 			const auto townOwner = skeletonDwellingScenario == SkeletonDwellingScenario::FOREIGN_UPGRADE_BUILT
 				? PlayerColor(1) : PlayerColor(0);
@@ -595,7 +612,28 @@ protected:
 		startWithMap(std::move(builder));
 
 		const auto towns = gameState()->getMap().getObjects<CGTownInstance>();
-		if(skeletonDwellingScenario == SkeletonDwellingScenario::ABSENT)
+		if(ossuaryTownPairScenario != OssuaryTownPairScenario::NONE)
+		{
+			ASSERT_EQ(towns.size(), 2u);
+			for(auto * town : towns)
+			{
+				ASSERT_NE(town, nullptr);
+				if(town->pos.x == 10)
+					ossuaryNearTown = town;
+				else if(town->pos.x == 20)
+					ossuaryFarTown = town;
+			}
+			ASSERT_NE(ossuaryNearTown, nullptr);
+			ASSERT_NE(ossuaryFarTown, nullptr);
+			EXPECT_EQ(ossuaryNearTown->getFactionID(), FactionID::NECROPOLIS);
+			EXPECT_EQ(ossuaryFarTown->getFactionID(), FactionID::NECROPOLIS);
+			EXPECT_EQ(ossuaryNearTown->getOwner(), ossuaryTownPairScenario == OssuaryTownPairScenario::FOREIGN_NEAREST
+				? PlayerColor(1) : PlayerColor(0));
+			EXPECT_EQ(ossuaryFarTown->getOwner(), PlayerColor(0));
+			RecordProperty("ossuary_near_town_owner", ossuaryNearTown->getOwner() == PlayerColor(0) ? "player0" : "player1");
+			RecordProperty("ossuary_far_town_owner", "player0");
+		}
+		else if(skeletonDwellingScenario == SkeletonDwellingScenario::ABSENT)
 		{
 			ASSERT_TRUE(towns.empty());
 			RecordProperty("master_of_bones_town_setup", "absent");
@@ -737,7 +775,8 @@ protected:
 	}
 
 	void prepareAdvancedSpecialNecromancer(const std::string & perkId, const std::string & perkName,
-		const std::string & propertyPrefix)
+		const std::string & propertyPrefix,
+		const std::string & basicPerkId = newHorizonsNecromancy::DARK_CONVERSION_ID)
 	{
 		prepareNecromancerArmy(false);
 		assertSpecialPerkRegistryRow(perkId, perkName, propertyPrefix);
@@ -745,10 +784,8 @@ protected:
 		ASSERT_GE(necromancyIndex, 0);
 		const SecondarySkill necromancy(necromancyIndex);
 
-		ASSERT_TRUE(selectPerkThroughNormalOffer(attackerSideHero,
-			newHorizonsNecromancy::DARK_CONVERSION_ID, MasteryLevel::BASIC));
-		ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
-			newHorizonsNecromancy::DARK_CONVERSION_ID));
+		ASSERT_TRUE(selectPerkThroughNormalOffer(attackerSideHero, basicPerkId, MasteryLevel::BASIC));
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID, basicPerkId));
 		gameHandler->levelUpHero(attackerSideHero, necromancy, false);
 		ASSERT_EQ(attackerSideHero->getSecSkillLevel(necromancy), MasteryLevel::ADVANCED);
 		ASSERT_TRUE(selectPerkThroughNormalOffer(attackerSideHero, perkId, MasteryLevel::ADVANCED));
@@ -759,7 +796,7 @@ protected:
 		RecordProperty(propertyPrefix + "_skill_rank", "advanced");
 		RecordProperty(propertyPrefix + "_selected", "true");
 		RecordProperty(propertyPrefix + "_selected_perk", perkId);
-		RecordProperty(propertyPrefix + "_basic_perk", newHorizonsNecromancy::DARK_CONVERSION_ID);
+		RecordProperty(propertyPrefix + "_basic_perk", basicPerkId);
 	}
 
 	void prepareAdvancedNecromancerWithoutSpecialPerk()
@@ -1218,6 +1255,327 @@ class NewHorizonsNecromancyMasterOfBonesNoTownAdmissionAITest
 	: public NewHorizonsNecromancyMasterOfBonesAdmissionAITest
 {
 };
+
+/// Ossuary admission tests keep the destination deterministic and use the
+/// ordinary rank-gated perk offer path against the active production registry.
+class NewHorizonsNecromancyOssuaryAdmissionAITest
+	: public NewHorizonsNecromancyAdmissionAITest
+{
+protected:
+	using ArmySnapshot = std::array<std::pair<CreatureID, int32_t>, GameConstants::ARMY_SIZE>;
+
+	void assertOssuaryRegistryRow()
+	{
+		const auto & perks = attackerSideHero->getPerkState().rules
+			["skills"][newHorizonsNecromancy::SKILL_ID]["perks"].Vector();
+		const auto ossuary = std::find_if(perks.begin(), perks.end(), [](const auto & perk)
+		{
+			return perk["id"].String() == newHorizonsNecromancy::OSSUARY_ID;
+		});
+		ASSERT_NE(ossuary, perks.end());
+		EXPECT_EQ((*ossuary)["name"].String(), "Ossuary");
+		EXPECT_EQ((*ossuary)["requires"].String(), "advanced");
+		EXPECT_EQ((*ossuary)["effect"]["status"].String(), "active");
+		RecordProperty("ossuary_registry_id", (*ossuary)["id"].String());
+		RecordProperty("ossuary_registry_name", (*ossuary)["name"].String());
+		RecordProperty("ossuary_registry_required_rank", (*ossuary)["requires"].String());
+		RecordProperty("ossuary_registry_effect_status", (*ossuary)["effect"]["status"].String());
+	}
+
+	void prepareAdvancedOssuaryNecromancer(const std::string & basicPerkId)
+	{
+		assertOssuaryRegistryRow();
+		prepareAdvancedSpecialNecromancer(newHorizonsNecromancy::OSSUARY_ID,
+			"Ossuary", "ossuary", basicPerkId);
+	}
+
+	void prepareAdvancedNecromancerWithoutSelectedOssuary()
+	{
+		prepareNecromancerArmy(false);
+		assertOssuaryRegistryRow();
+		const int necromancyIndex = SecondarySkill::decode(newHorizonsNecromancy::SKILL_ID);
+		ASSERT_GE(necromancyIndex, 0);
+		const SecondarySkill necromancy(necromancyIndex);
+		ASSERT_TRUE(selectPerkThroughNormalOffer(attackerSideHero,
+			newHorizonsNecromancy::BLACK_HARVEST_ID, MasteryLevel::BASIC));
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+			newHorizonsNecromancy::BLACK_HARVEST_ID));
+		gameHandler->levelUpHero(attackerSideHero, necromancy, false);
+		ASSERT_EQ(attackerSideHero->getSecSkillLevel(necromancy), MasteryLevel::ADVANCED);
+		EXPECT_FALSE(attackerSideHero->getPerkState().hasSelection(newHorizonsNecromancy::SKILL_ID,
+			newHorizonsNecromancy::OSSUARY_ID));
+		EXPECT_FALSE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+			newHorizonsNecromancy::OSSUARY_ID));
+
+		RecordProperty("ossuary_activation_override_applied", "false");
+		RecordProperty("ossuary_skill_rank", "advanced");
+		RecordProperty("ossuary_selected", "false");
+		RecordProperty("ossuary_selected_perk", "none");
+		RecordProperty("ossuary_basic_perk", newHorizonsNecromancy::BLACK_HARVEST_ID);
+	}
+
+	ArmySnapshot snapshotArmy(const CArmedInstance & army) const
+	{
+		ArmySnapshot snapshot{};
+		for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
+			if(const auto * stack = army.getStackPtr(SlotID(i)))
+				snapshot[static_cast<size_t>(i)] = {stack->getCreatureID(), stack->getCount()};
+		return snapshot;
+	}
+
+	int32_t armyCreatureCount(const CArmedInstance & army, CreatureID creatureId) const
+	{
+		int32_t total = 0;
+		for(const auto & [slot, stack] : army.Slots())
+		{
+			(void)slot;
+			if(stack->getCreatureID() == creatureId)
+				total += stack->getCount();
+		}
+		return total;
+	}
+
+	void fillTownSlotsWithPikemen(CGTownInstance * town)
+	{
+		ASSERT_NE(town, nullptr);
+		town->clearSlots();
+		const auto pikeman = creature("core:pikeman");
+		for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
+			ASSERT_TRUE(town->setCreature(SlotID(i), pikeman, 1));
+		ASSERT_EQ(town->stacksCount(), GameConstants::ARMY_SIZE);
+		ASSERT_TRUE(town->getFreeSlots().empty());
+	}
+
+	void resolveOssuaryBattle()
+	{
+		resolveAdmissionBattle();
+		ASSERT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
+		ASSERT_EQ(recordingServer->battleResults.size(), 1u);
+	}
+};
+
+class NewHorizonsNecromancyOssuaryForeignNearestAdmissionAITest
+	: public NewHorizonsNecromancyOssuaryAdmissionAITest
+{
+public:
+	NewHorizonsNecromancyOssuaryForeignNearestAdmissionAITest()
+	{
+		ossuaryTownPairScenario = OssuaryTownPairScenario::FOREIGN_NEAREST;
+	}
+};
+
+class NewHorizonsNecromancyOssuaryFullNearestAdmissionAITest
+	: public NewHorizonsNecromancyOssuaryAdmissionAITest
+{
+public:
+	NewHorizonsNecromancyOssuaryFullNearestAdmissionAITest()
+	{
+		ossuaryTownPairScenario = OssuaryTownPairScenario::OWNED_NEAREST_FULL;
+	}
+};
+
+class NewHorizonsNecromancyOssuaryOwnedTownAdmissionAITest
+	: public NewHorizonsNecromancyOssuaryAdmissionAITest
+{
+public:
+	NewHorizonsNecromancyOssuaryOwnedTownAdmissionAITest()
+	{
+		skeletonDwellingScenario = SkeletonDwellingScenario::OWNED_UPGRADE_BUILT;
+	}
+};
+
+TEST_F(NewHorizonsNecromancyOssuaryForeignNearestAdmissionAITest,
+	PostBattleSlotsFailureDeliversMixedOutputsToOwnedTownUpperArmy)
+{
+	ASSERT_NE(attackerSideHero, nullptr);
+	ASSERT_NE(ossuaryNearTown, nullptr);
+	ASSERT_NE(ossuaryFarTown, nullptr);
+	ASSERT_EQ(ossuaryNearTown->getOwner(), PlayerColor(1));
+	ASSERT_EQ(ossuaryFarTown->getOwner(), PlayerColor(0));
+	ASSERT_EQ(ossuaryFarTown->getUpperArmy(), ossuaryFarTown);
+
+	prepareAdvancedOssuaryNecromancer(newHorizonsNecromancy::DARK_CONVERSION_ID);
+	fillFillerSlots(1, GameConstants::ARMY_SIZE - 1);
+	ASSERT_EQ(attackerSideHero->getFreeSlots().size(), 0u);
+
+	const auto skeleton = creature("core:skeleton");
+	const auto zombie = creature("core:zombie");
+	ASSERT_TRUE(ossuaryFarTown->setCreature(SlotID(0), skeleton, 2));
+	setMixedCoreEliteCasualties(65, 65);
+	const auto heroBefore = snapshotArmy(*attackerSideHero);
+	const auto ownedTownBefore = snapshotArmy(*ossuaryFarTown);
+	const auto foreignTownBefore = snapshotArmy(*ossuaryNearTown);
+
+	resolveOssuaryBattle();
+
+	const auto & result = recordingServer->battleResults.back().necromancy;
+	ASSERT_TRUE(result.active);
+	EXPECT_EQ(result.rank, MasteryLevel::ADVANCED);
+	EXPECT_TRUE(result.applied);
+	EXPECT_FALSE(result.blockedByArmyCapacity);
+	EXPECT_EQ(result.eligibleCasualties, 130);
+	EXPECT_EQ(result.skeletonsOffered, 26);
+	EXPECT_EQ(result.skeletonsRaised, 14);
+	EXPECT_EQ(result.zombiesRaised, 4);
+	EXPECT_EQ(result.wightsRaised, 0);
+	EXPECT_TRUE(result.darkConversionChosen);
+	EXPECT_EQ(result.ossuaryTown, ossuaryFarTown->id);
+	EXPECT_EQ(result.raisedCreature, CreatureID::NONE);
+	EXPECT_EQ(snapshotArmy(*attackerSideHero), heroBefore)
+		<< "The failed hero plan must not partially apply before Ossuary delivery";
+	EXPECT_EQ(snapshotArmy(*ossuaryNearTown), foreignTownBefore)
+		<< "The nearer foreign Necropolis must not receive the result";
+	auto ownedTownAfter = ownedTownBefore;
+	ownedTownAfter[0] = {skeleton, 16};
+	ownedTownAfter[1] = {zombie, 4};
+	EXPECT_EQ(snapshotArmy(*ossuaryFarTown), ownedTownAfter);
+	EXPECT_EQ(armyCreatureCount(*ossuaryFarTown, skeleton), 16);
+	EXPECT_EQ(armyCreatureCount(*ossuaryFarTown, zombie), 4);
+	EXPECT_EQ(recordingServer->systemMessages, 0);
+}
+
+TEST_F(NewHorizonsNecromancyOssuaryOwnedTownAdmissionAITest,
+	PostBattleLeadershipCapacityFailureDeliversAndBlackHarvestCountsActualTownOutput)
+{
+	ASSERT_NE(attackerSideHero, nullptr);
+	ASSERT_NE(skeletonDwellingTown, nullptr);
+	ASSERT_EQ(skeletonDwellingTown->getOwner(), PlayerColor(0));
+	ASSERT_EQ(skeletonDwellingTown->getUpperArmy(), skeletonDwellingTown);
+	prepareAdvancedOssuaryNecromancer(newHorizonsNecromancy::BLACK_HARVEST_ID);
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+		newHorizonsNecromancy::BLACK_HARVEST_ID));
+
+	const auto skeleton = creature("core:skeleton");
+	const auto capacity = attackerSideHero->getLeadershipSlotCapacity(skeleton);
+	ASSERT_TRUE(capacity);
+	ASSERT_EQ(capacity->maximum, 16);
+	attackerSideHero->clearSlots();
+	for(int i = 0; i < GameConstants::ARMY_SIZE - 1; ++i)
+		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(i), skeleton, capacity->maximum));
+	ASSERT_EQ(attackerSideHero->stacksCount(), GameConstants::ARMY_SIZE - 1);
+	ASSERT_EQ(attackerSideHero->getFreeSlots().size(), 1u);
+
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 10, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 0);
+	ASSERT_GE(attackerSideHero->manaLimit(), 4);
+	const auto pikeman = creature("core:pikeman");
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), pikeman, 200));
+	const auto heroBefore = snapshotArmy(*attackerSideHero);
+
+	resolveOssuaryBattle();
+
+	const auto & result = recordingServer->battleResults.back().necromancy;
+	ASSERT_TRUE(result.active);
+	EXPECT_EQ(result.skeletonsOffered, 40);
+	EXPECT_TRUE(result.applied);
+	EXPECT_FALSE(result.blockedByArmyCapacity);
+	EXPECT_EQ(result.skeletonsRaised, 40);
+	EXPECT_EQ(result.zombiesRaised, 0);
+	EXPECT_EQ(result.ossuaryTown, skeletonDwellingTown->id);
+	EXPECT_EQ(result.manaRecovered, 4)
+		<< "Black Harvest should use the successfully delivered 40-creature output, not a blocked hero plan";
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 4);
+	EXPECT_EQ(snapshotArmy(*attackerSideHero), heroBefore);
+	EXPECT_EQ(armyCreatureCount(*skeletonDwellingTown, skeleton), 40);
+	EXPECT_EQ(recordingServer->systemMessages, 0);
+}
+
+TEST_F(NewHorizonsNecromancyOssuaryAdmissionAITest,
+	SelectedOssuaryWithNoOwnedTownBlocksWithoutPartialHeroOutput)
+{
+	ASSERT_EQ(skeletonDwellingTown, nullptr);
+	prepareAdvancedOssuaryNecromancer(newHorizonsNecromancy::BLACK_HARVEST_ID);
+	fillFillerSlots(1, GameConstants::ARMY_SIZE - 1);
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+		newHorizonsNecromancy::OSSUARY_ID));
+	ASSERT_TRUE(gameState()->getPlayerState(PlayerColor(0))->getTowns().empty());
+	const auto pikeman = creature("core:pikeman");
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), pikeman, 100));
+	const auto heroBefore = snapshotArmy(*attackerSideHero);
+
+	resolveOssuaryBattle();
+
+	const auto & result = recordingServer->battleResults.back().necromancy;
+	ASSERT_TRUE(result.active);
+	EXPECT_EQ(result.rank, MasteryLevel::ADVANCED);
+	EXPECT_EQ(result.skeletonsOffered, 20);
+	EXPECT_TRUE(result.blockedByArmyCapacity);
+	EXPECT_FALSE(result.applied);
+	EXPECT_EQ(result.skeletonsRaised, 0);
+	EXPECT_EQ(result.zombiesRaised, 0);
+	EXPECT_EQ(result.manaRecovered, 0);
+	EXPECT_EQ(result.ossuaryTown, ObjectInstanceID::NONE);
+	EXPECT_EQ(snapshotArmy(*attackerSideHero), heroBefore);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, creature("core:skeleton")), 16);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 16);
+	EXPECT_EQ(attackerSideHero->stacksCount(), GameConstants::ARMY_SIZE);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, creature("core:zombie")), 0);
+	EXPECT_EQ(recordingServer->systemMessages, 0);
+}
+
+TEST_F(NewHorizonsNecromancyOssuaryFullNearestAdmissionAITest,
+	FullNearestOwnedTownBlocksAtomicallyWithoutSearchingFartherTown)
+{
+	ASSERT_NE(ossuaryNearTown, nullptr);
+	ASSERT_NE(ossuaryFarTown, nullptr);
+	ASSERT_EQ(ossuaryNearTown->getOwner(), PlayerColor(0));
+	ASSERT_EQ(ossuaryFarTown->getOwner(), PlayerColor(0));
+	ASSERT_EQ(ossuaryNearTown->getUpperArmy(), ossuaryNearTown);
+	ASSERT_EQ(ossuaryFarTown->getUpperArmy(), ossuaryFarTown);
+	prepareAdvancedOssuaryNecromancer(newHorizonsNecromancy::BLACK_HARVEST_ID);
+	fillFillerSlots(1, GameConstants::ARMY_SIZE - 1);
+	fillTownSlotsWithPikemen(ossuaryNearTown);
+	ASSERT_TRUE(ossuaryFarTown->getFreeSlots().size() > 0);
+	const auto pikeman = creature("core:pikeman");
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), pikeman, 100));
+	const auto heroBefore = snapshotArmy(*attackerSideHero);
+	const auto nearTownBefore = snapshotArmy(*ossuaryNearTown);
+	const auto farTownBefore = snapshotArmy(*ossuaryFarTown);
+
+	resolveOssuaryBattle();
+
+	const auto & result = recordingServer->battleResults.back().necromancy;
+	ASSERT_TRUE(result.active);
+	EXPECT_EQ(result.skeletonsOffered, 20);
+	EXPECT_TRUE(result.blockedByArmyCapacity);
+	EXPECT_FALSE(result.applied);
+	EXPECT_EQ(result.skeletonsRaised, 0);
+	EXPECT_EQ(result.zombiesRaised, 0);
+	EXPECT_EQ(result.manaRecovered, 0);
+	EXPECT_EQ(result.ossuaryTown, ObjectInstanceID::NONE);
+	EXPECT_EQ(snapshotArmy(*attackerSideHero), heroBefore);
+	EXPECT_EQ(snapshotArmy(*ossuaryNearTown), nearTownBefore);
+	EXPECT_EQ(snapshotArmy(*ossuaryFarTown), farTownBefore);
+	EXPECT_EQ(armyCreatureCount(*ossuaryFarTown, creature("core:skeleton")), 0);
+	EXPECT_EQ(recordingServer->systemMessages, 0);
+}
+
+TEST_F(NewHorizonsNecromancyOssuaryOwnedTownAdmissionAITest,
+	UnselectedOssuaryDoesNotFallbackToAvailableOwnedTown)
+{
+	ASSERT_NE(skeletonDwellingTown, nullptr);
+	ASSERT_EQ(skeletonDwellingTown->getUpperArmy(), skeletonDwellingTown);
+	prepareAdvancedNecromancerWithoutSelectedOssuary();
+	fillFillerSlots(1, GameConstants::ARMY_SIZE - 1);
+	const auto pikeman = creature("core:pikeman");
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), pikeman, 100));
+	const auto heroBefore = snapshotArmy(*attackerSideHero);
+	const auto townBefore = snapshotArmy(*skeletonDwellingTown);
+
+	resolveOssuaryBattle();
+
+	const auto & result = recordingServer->battleResults.back().necromancy;
+	ASSERT_TRUE(result.active);
+	EXPECT_EQ(result.skeletonsOffered, 20);
+	EXPECT_TRUE(result.blockedByArmyCapacity);
+	EXPECT_FALSE(result.applied);
+	EXPECT_EQ(result.skeletonsRaised, 0);
+	EXPECT_EQ(result.manaRecovered, 0);
+	EXPECT_EQ(result.ossuaryTown, ObjectInstanceID::NONE);
+	EXPECT_EQ(snapshotArmy(*attackerSideHero), heroBefore);
+	EXPECT_EQ(snapshotArmy(*skeletonDwellingTown), townBefore);
+	EXPECT_EQ(recordingServer->systemMessages, 0);
+}
 
 TEST_F(NewHorizonsNecromancyMasterOfBonesOwnedBuiltAdmissionAITest, PostBattleRaisesAsConfiguredSkeletonWarrior)
 {
@@ -1869,6 +2227,7 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	outgoing.necromancy.skeletonsRaised = 2;
 	outgoing.necromancy.zombiesRaised = 11;
 	outgoing.necromancy.wightsRaised = 7;
+	outgoing.necromancy.applied = true;
 	outgoing.necromancy.deathLordCasualties = 31;
 	outgoing.necromancy.graveKnowledgeCasualties = 29;
 	outgoing.necromancy.deathLordSkeletons = 8;
@@ -1876,6 +2235,7 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	outgoing.necromancy.manaRecovered = 10;
 	outgoing.necromancy.raisedCreature = creature("core:zombie");
 	outgoing.necromancy.skeletonCreature = creature("core:skeletonWarrior");
+	outgoing.necromancy.ossuaryTown = ObjectInstanceID(23);
 
 	CMemorySerializer wire;
 	wire.oser & outgoing;
@@ -1891,6 +2251,7 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	EXPECT_EQ(incoming.necromancy.graveKnowledgeSkeletons, 5);
 	EXPECT_EQ(incoming.necromancy.manaRecovered, 10);
 	EXPECT_EQ(incoming.necromancy.skeletonCreature, creature("core:skeletonWarrior"));
+	EXPECT_EQ(incoming.necromancy.ossuaryTown, ObjectInstanceID(23));
 
 	CMemorySerializer directWire;
 	directWire.oser & outgoing.necromancy;
@@ -1902,6 +2263,7 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	EXPECT_EQ(directIncoming.deathLordSkeletons, 8);
 	EXPECT_EQ(directIncoming.graveKnowledgeSkeletons, 5);
 	EXPECT_EQ(directIncoming.skeletonCreature, creature("core:skeletonWarrior"));
+	EXPECT_EQ(directIncoming.ossuaryTown, ObjectInstanceID(23));
 
 	const auto necromancyWithoutWightsVersion = ESerializationVersion::NEW_HORIZONS_NECROMANCY;
 	newHorizonsNecromancy::NecromancyResult legacyResult = outgoing.necromancy;
@@ -1911,6 +2273,7 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacyResult.deathLordSkeletons = 0;
 	legacyResult.graveKnowledgeSkeletons = 0;
 	legacyResult.skeletonCreature = CreatureID::NONE;
+	legacyResult.ossuaryTown = ObjectInstanceID::NONE;
 	CMemorySerializer legacyResultWire;
 	legacyResultWire.oser.version = necromancyWithoutWightsVersion;
 	legacyResultWire.oser & legacyResult;
@@ -1922,6 +2285,7 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacyResultIncoming.deathLordSkeletons = 8;
 	legacyResultIncoming.graveKnowledgeSkeletons = 5;
 	legacyResultIncoming.skeletonCreature = creature("core:skeletonWarrior");
+	legacyResultIncoming.ossuaryTown = ObjectInstanceID(77);
 	legacyResultWire.iser & legacyResultIncoming;
 	EXPECT_EQ(legacyResultIncoming.wightsRaised, 0);
 	EXPECT_EQ(legacyResultIncoming.deathLordCasualties, 0);
@@ -1929,6 +2293,7 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	EXPECT_EQ(legacyResultIncoming.deathLordSkeletons, 0);
 	EXPECT_EQ(legacyResultIncoming.graveKnowledgeSkeletons, 0);
 	EXPECT_EQ(legacyResultIncoming.skeletonCreature, CreatureID::NONE);
+	EXPECT_EQ(legacyResultIncoming.ossuaryTown, ObjectInstanceID::NONE);
 
 	CMemorySerializer legacyOuterWire;
 	legacyOuterWire.oser.version = necromancyWithoutWightsVersion;
@@ -1939,6 +2304,7 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacyOuter.necromancy.deathLordSkeletons = 0;
 	legacyOuter.necromancy.graveKnowledgeSkeletons = 0;
 	legacyOuter.necromancy.skeletonCreature = CreatureID::NONE;
+	legacyOuter.necromancy.ossuaryTown = ObjectInstanceID::NONE;
 	legacyOuterWire.oser & legacyOuter;
 	legacyOuterWire.iser.version = necromancyWithoutWightsVersion;
 	BattleResultsApplied legacyOuterIncoming;
@@ -1948,6 +2314,7 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacyOuterIncoming.necromancy.deathLordSkeletons = 8;
 	legacyOuterIncoming.necromancy.graveKnowledgeSkeletons = 5;
 	legacyOuterIncoming.necromancy.skeletonCreature = creature("core:skeletonWarrior");
+	legacyOuterIncoming.necromancy.ossuaryTown = ObjectInstanceID(77);
 	legacyOuterWire.iser & legacyOuterIncoming;
 	EXPECT_EQ(legacyOuterIncoming.necromancy.wightsRaised, 0);
 	EXPECT_EQ(legacyOuterIncoming.necromancy.deathLordCasualties, 0);
@@ -1955,6 +2322,7 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	EXPECT_EQ(legacyOuterIncoming.necromancy.deathLordSkeletons, 0);
 	EXPECT_EQ(legacyOuterIncoming.necromancy.graveKnowledgeSkeletons, 0);
 	EXPECT_EQ(legacyOuterIncoming.necromancy.skeletonCreature, CreatureID::NONE);
+	EXPECT_EQ(legacyOuterIncoming.necromancy.ossuaryTown, ObjectInstanceID::NONE);
 
 	const auto necromancyWithoutSkeletonFormVersion = ESerializationVersion::NEW_HORIZONS_NECROMANCY_WIGHTS;
 	newHorizonsNecromancy::NecromancyResult legacySkeletonResult = outgoing.necromancy;
@@ -1963,6 +2331,7 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacySkeletonResult.graveKnowledgeCasualties = 0;
 	legacySkeletonResult.deathLordSkeletons = 0;
 	legacySkeletonResult.graveKnowledgeSkeletons = 0;
+	legacySkeletonResult.ossuaryTown = ObjectInstanceID::NONE;
 	CMemorySerializer legacySkeletonResultWire;
 	legacySkeletonResultWire.oser.version = necromancyWithoutSkeletonFormVersion;
 	legacySkeletonResultWire.oser & legacySkeletonResult;
@@ -1981,6 +2350,7 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacySkeletonOuter.necromancy.graveKnowledgeCasualties = 0;
 	legacySkeletonOuter.necromancy.deathLordSkeletons = 0;
 	legacySkeletonOuter.necromancy.graveKnowledgeSkeletons = 0;
+	legacySkeletonOuter.necromancy.ossuaryTown = ObjectInstanceID::NONE;
 	legacySkeletonOuterWire.oser & legacySkeletonOuter;
 	legacySkeletonOuterWire.iser.version = necromancyWithoutSkeletonFormVersion;
 	BattleResultsApplied legacySkeletonOuterIncoming;
@@ -1995,6 +2365,7 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacySpecialResult.graveKnowledgeCasualties = 0;
 	legacySpecialResult.deathLordSkeletons = 0;
 	legacySpecialResult.graveKnowledgeSkeletons = 0;
+	legacySpecialResult.ossuaryTown = ObjectInstanceID::NONE;
 	CMemorySerializer legacySpecialResultWire;
 	legacySpecialResultWire.oser.version = necromancyWithoutSpecialCasualtiesVersion;
 	legacySpecialResultWire.oser & legacySpecialResult;
@@ -2004,11 +2375,13 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacySpecialResultIncoming.graveKnowledgeCasualties = 29;
 	legacySpecialResultIncoming.deathLordSkeletons = 8;
 	legacySpecialResultIncoming.graveKnowledgeSkeletons = 5;
+	legacySpecialResultIncoming.ossuaryTown = ObjectInstanceID(77);
 	legacySpecialResultWire.iser & legacySpecialResultIncoming;
 	EXPECT_EQ(legacySpecialResultIncoming.deathLordCasualties, 0);
 	EXPECT_EQ(legacySpecialResultIncoming.graveKnowledgeCasualties, 0);
 	EXPECT_EQ(legacySpecialResultIncoming.deathLordSkeletons, 0);
 	EXPECT_EQ(legacySpecialResultIncoming.graveKnowledgeSkeletons, 0);
+	EXPECT_EQ(legacySpecialResultIncoming.ossuaryTown, ObjectInstanceID::NONE);
 
 	CMemorySerializer legacySpecialOuterWire;
 	legacySpecialOuterWire.oser.version = necromancyWithoutSpecialCasualtiesVersion;
@@ -2017,6 +2390,7 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacySpecialOuter.necromancy.graveKnowledgeCasualties = 0;
 	legacySpecialOuter.necromancy.deathLordSkeletons = 0;
 	legacySpecialOuter.necromancy.graveKnowledgeSkeletons = 0;
+	legacySpecialOuter.necromancy.ossuaryTown = ObjectInstanceID::NONE;
 	legacySpecialOuterWire.oser & legacySpecialOuter;
 	legacySpecialOuterWire.iser.version = necromancyWithoutSpecialCasualtiesVersion;
 	BattleResultsApplied legacySpecialOuterIncoming;
@@ -2024,11 +2398,13 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	legacySpecialOuterIncoming.necromancy.graveKnowledgeCasualties = 29;
 	legacySpecialOuterIncoming.necromancy.deathLordSkeletons = 8;
 	legacySpecialOuterIncoming.necromancy.graveKnowledgeSkeletons = 5;
+	legacySpecialOuterIncoming.necromancy.ossuaryTown = ObjectInstanceID(77);
 	legacySpecialOuterWire.iser & legacySpecialOuterIncoming;
 	EXPECT_EQ(legacySpecialOuterIncoming.necromancy.deathLordCasualties, 0);
 	EXPECT_EQ(legacySpecialOuterIncoming.necromancy.graveKnowledgeCasualties, 0);
 	EXPECT_EQ(legacySpecialOuterIncoming.necromancy.deathLordSkeletons, 0);
 	EXPECT_EQ(legacySpecialOuterIncoming.necromancy.graveKnowledgeSkeletons, 0);
+	EXPECT_EQ(legacySpecialOuterIncoming.necromancy.ossuaryTown, ObjectInstanceID::NONE);
 
 	newHorizonsNecromancy::NecromancyResult unsupportedDirect;
 	unsupportedDirect.wightsRaised = 1;
@@ -2083,6 +2459,30 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	EXPECT_TRUE(unsupportedSpecialOuterWire.extractBuffer().empty())
 		<< "An older outer packet writer must reject special casualty fields before writing bytes";
 
+	const auto necromancyWithoutOssuaryVersion = ESerializationVersion::NEW_HORIZONS_NECROMANCY_SPECIAL_CASUALTIES;
+	newHorizonsNecromancy::NecromancyResult unsupportedOssuaryDirect;
+	unsupportedOssuaryDirect.active = true;
+	unsupportedOssuaryDirect.applied = true;
+	unsupportedOssuaryDirect.skeletonsRaised = 1;
+	unsupportedOssuaryDirect.ossuaryTown = ObjectInstanceID(23);
+	CMemorySerializer unsupportedOssuaryDirectWire;
+	unsupportedOssuaryDirectWire.oser.version = necromancyWithoutOssuaryVersion;
+	EXPECT_THROW(unsupportedOssuaryDirectWire.oser & unsupportedOssuaryDirect, std::runtime_error);
+	EXPECT_TRUE(unsupportedOssuaryDirectWire.extractBuffer().empty())
+		<< "An older result writer must reject an Ossuary destination before writing bytes";
+
+	BattleResultsApplied unsupportedOssuaryOuter;
+	unsupportedOssuaryOuter.battleID = BattleID(10);
+	unsupportedOssuaryOuter.necromancy.active = true;
+	unsupportedOssuaryOuter.necromancy.applied = true;
+	unsupportedOssuaryOuter.necromancy.skeletonsRaised = 1;
+	unsupportedOssuaryOuter.necromancy.ossuaryTown = ObjectInstanceID(23);
+	CMemorySerializer unsupportedOssuaryOuterWire;
+	unsupportedOssuaryOuterWire.oser.version = necromancyWithoutOssuaryVersion;
+	EXPECT_THROW(unsupportedOssuaryOuterWire.oser & unsupportedOssuaryOuter, std::runtime_error);
+	EXPECT_TRUE(unsupportedOssuaryOuterWire.extractBuffer().empty())
+		<< "An older outer packet writer must reject an Ossuary destination before writing bytes";
+
 	newHorizonsNecromancy::NecromancyResult invalidSkeletonForm;
 	invalidSkeletonForm.skeletonCreature = creature("core:skeletonWarrior");
 	CMemorySerializer invalidSkeletonFormWire;
@@ -2114,6 +2514,25 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	CMemorySerializer invalidSpecialOuterWire;
 	EXPECT_THROW(invalidSpecialOuterWire.oser & invalidSpecialOuter, std::runtime_error);
 	EXPECT_TRUE(invalidSpecialOuterWire.extractBuffer().empty());
+
+	newHorizonsNecromancy::NecromancyResult invalidOssuaryDirect;
+	invalidOssuaryDirect.active = true;
+	invalidOssuaryDirect.applied = true;
+	invalidOssuaryDirect.skeletonsRaised = 1;
+	invalidOssuaryDirect.ossuaryTown = ObjectInstanceID(-2);
+	CMemorySerializer invalidOssuaryDirectWire;
+	EXPECT_THROW(invalidOssuaryDirectWire.oser & invalidOssuaryDirect, std::runtime_error);
+	EXPECT_TRUE(invalidOssuaryDirectWire.extractBuffer().empty());
+
+	BattleResultsApplied invalidOssuaryOuter;
+	invalidOssuaryOuter.battleID = BattleID(11);
+	invalidOssuaryOuter.necromancy.active = true;
+	invalidOssuaryOuter.necromancy.applied = true;
+	invalidOssuaryOuter.necromancy.skeletonsRaised = 1;
+	invalidOssuaryOuter.necromancy.ossuaryTown = ObjectInstanceID(-2);
+	CMemorySerializer invalidOssuaryOuterWire;
+	EXPECT_THROW(invalidOssuaryOuterWire.oser & invalidOssuaryOuter, std::runtime_error);
+	EXPECT_TRUE(invalidOssuaryOuterWire.extractBuffer().empty());
 
 	CMemorySerializer old;
 	old.oser.version = ESerializationVersion::NEW_HORIZONS_CANONICAL_ORDERS;

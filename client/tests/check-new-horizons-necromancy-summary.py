@@ -5,8 +5,8 @@ The server owns eligibility, conversion, capacity and mana calculations.  This
 small client contract only proves that the packet summary is rendered from
 those authoritative fields, that final Skeleton-form/Zombie counts get creature
 components, Death Lord and Grave Knowledge pools are explained from packet
-counts, and legacy Necromancy feedback remains the fallback for old result
-packets.
+counts, Ossuary delivery names its destination when available, and legacy
+Necromancy feedback remains the fallback for old result packets.
 """
 
 import re
@@ -53,6 +53,7 @@ def main() -> None:
         "darkConversionChosen",
         "manaRecovered",
         "blockedByArmyCapacity",
+        "ossuaryTown",
     ):
         require(HELPER, f"result.{field}", f"authoritative summary field {field}")
 
@@ -132,6 +133,23 @@ def main() -> None:
             "text.appendName(skeleton, result.skeletonsRaised)",
             "selected Skeleton delivered count")
     require(summary_builder,
+            "result.ossuaryTown != ObjectInstanceID::NONE",
+            "packet-provided Ossuary destination gate")
+    require(summary_builder,
+            "GAME->interface()->cb->getTown(result.ossuaryTown)",
+            "existing callback lookup for the delivered-to town")
+    require(summary_builder,
+            "ossuaryTown->getObjectName().toString(&GAME->translator())",
+            "actual delivered-to town name")
+    require(summary_builder, '"Delivered to Ossuary: "',
+            "Ossuary destination label")
+    require(summary_builder, '"a Necropolis town"',
+            "safe generic Ossuary destination fallback")
+    require(summary_builder, '" instead of the hero: "',
+            "Ossuary delivery instead of hero wording")
+    if "getTownsInfo" in summary_builder or "hasActivePerk" in summary_builder:
+        raise AssertionError("Ossuary summary must not select destinations or recalculate perk eligibility")
+    require(summary_builder,
             "const auto baseSkeleton = CreatureID(CreatureID::decode(\"core:skeleton\"));",
             "canonical base Skeleton-equivalent binding")
     require(summary_builder,
@@ -155,7 +173,7 @@ def main() -> None:
         )
     require(HELPER, '"Delivered to army: "', "delivered count")
     require(HELPER, '"Black Harvest recovered +"', "mana recovery")
-    require(HELPER, '"No creatures were delivered: the hero has no legal army slot',
+    require(HELPER, '"No creatures were delivered: no legal army capacity or Necropolis destination was available',
             "blocked capacity reason")
     require(HELPER, '"The eligible casualty count was below the current Necromancy raising threshold.',
             "rounded-zero threshold reason")

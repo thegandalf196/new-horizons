@@ -1077,6 +1077,11 @@ struct DLL_LINKAGE BattleResultsApplied : public CPackForClient
 	{
 		if(h.saving && !necromancy.isSkeletonOutputValid())
 			throw std::runtime_error("Invalid Necromancy Skeleton output form");
+		if(h.saving && !necromancy.isOssuaryDestinationValid())
+			throw std::runtime_error("Invalid Necromancy Ossuary destination");
+		if(h.saving && necromancy.ossuaryTown != ObjectInstanceID::NONE
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_OSSUARY))
+			throw std::runtime_error("Cannot write Necromancy Ossuary destination to an older format");
 		if(h.saving && !necromancy.isSpecialCasualtySummaryValid())
 			throw std::runtime_error("Invalid negative Necromancy special casualty summary");
 		if(h.saving && necromancy.hasSpecialCasualtySummary()

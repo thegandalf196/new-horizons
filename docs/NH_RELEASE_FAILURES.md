@@ -2,6 +2,14 @@
 
 ## Purpose
 
+### 2026-10-03 UP-188 — Callback definition required by town-name lookup
+
+Client62687 fails in UIHelper's new callback `getTown` call because CPlayerInterface
+only forward-declares CCallback. Include the actual callback header at the call
+site; do not remove authoritative destination identity or town-name feedback to
+avoid the compiler error. Preserve UP188-client-build.log. UI owner repairs only
+the include, then root runs an incremental retry before native acceptance.
+
 ### 2026-10-03 UP-187 — Old-format fixtures and canonical source identity
 
 Review caught a fixture attempting to write populated new special-casualty maps

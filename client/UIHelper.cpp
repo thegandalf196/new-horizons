@@ -14,7 +14,9 @@
 #include "widgets/CComponent.h"
 #include "CPlayerInterface.h"
 
+#include "../lib/callback/CCallback.h"
 #include "../lib/mapObjects/CGHeroInstance.h"
+#include "../lib/mapObjects/CGTownInstance.h"
 #include "../lib/entities/hero/NewHorizonsNecromancy.h"
 #include "../lib/networkPacks/ArtifactLocation.h"
 #include "../lib/CRandomGenerator.h"
@@ -90,6 +92,9 @@ std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNe
 	const auto baseSkeleton = CreatureID(CreatureID::decode("core:skeleton"));
 	const auto zombie = CreatureID(CreatureID::decode("core:zombie"));
 	const auto wight = CreatureID(CreatureID::decode("core:wight"));
+	const CGTownInstance * ossuaryTown = nullptr;
+	if(result.ossuaryTown != ObjectInstanceID::NONE && GAME->interface() && GAME->interface()->cb)
+		ossuaryTown = GAME->interface()->cb->getTown(result.ossuaryTown);
 	MetaString text;
 	text.appendRawString("Necromancy\n");
 
@@ -162,7 +167,17 @@ std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNe
 
 	if(result.skeletonsRaised > 0 || result.zombiesRaised > 0 || result.wightsRaised > 0)
 	{
-		text.appendRawString("Delivered to army: ");
+		if(result.ossuaryTown != ObjectInstanceID::NONE)
+		{
+			text.appendRawString("Delivered to Ossuary: ");
+			if(ossuaryTown)
+				text.appendRawString(ossuaryTown->getObjectName().toString(&GAME->translator()));
+			else
+				text.appendRawString("a Necropolis town");
+			text.appendRawString(" instead of the hero: ");
+		}
+		else
+			text.appendRawString("Delivered to army: ");
 		bool hasOutput = false;
 		if(result.skeletonsRaised > 0)
 		{
@@ -200,7 +215,7 @@ std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNe
 
 	if(result.blockedByArmyCapacity)
 	{
-		text.appendRawString("No creatures were delivered: the hero has no legal army slot for the Necromancy result.");
+		text.appendRawString("No creatures were delivered: no legal army capacity or Necropolis destination was available for the Necromancy result.");
 	}
 	else if(result.eligibleCasualties == 0)
 	{

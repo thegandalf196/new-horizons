@@ -1,5 +1,15 @@
 # Serialization
 
+## Necromancy Ossuary destination
+
+`NEW_HORIZONS_NECROMANCY_OSSUARY` appends the result's `ossuaryTown` object ID
+after special-casualty summaries. NONE denotes normal Hero delivery; a populated
+town ID requires an active, successfully applied, positive raised army and no
+capacity-block marker. Older records reset NONE; unsupported populated direct
+and enclosing writes reject before payload bytes. Actual destination validation
+and whole-batch army admission happen at post-battle authority time; the UI
+consumes the selected destination without recalculating nearest towns.
+
 ## Special Necromancy casualty pools
 
 `NEW_HORIZONS_NECROMANCY_SPECIAL_CASUALTIES` appends captured nonliving and

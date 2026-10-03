@@ -1,7 +1,7 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-03
-Canonical source SHA-256: `169f3f4ca5ddc858e9e07954edb7b99817a2334a0ab0bb939df63ebb99e44799`
+Canonical source SHA-256: `3095a8a47c689cd7af5a74a8fe0e44d85998648c39b41df201189dd6793b0684`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
 completion separately from catalogue presence and artwork. An `active` data row,
@@ -13,6 +13,21 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+UP188 Ossuary is source/native verified and included in accepted coverage.
+Hero-first projected admission falls back only on
+whole-batch capacity failure to one nearest currently owned Necropolis's normal
+upper army. Invalid data is not masked as overflow. Explicit destination feedback,
+guarded current/older wire fields and shared automatic Human/AI authority exist.
+Independent Astra source review has no blocker; data/inventory19/19 and UI guard
+pass. Client62687's incomplete callback type is repaired by the required header;
+retry67941 exits0. Test40127 exits0; reviewed fixture correction/retry79662
+exits0. Principal37/37 passes8.395s and adjacent12/12 passes2.626s, zero skips.
+Actual armies/Normal Mana, normal Advanced selection without override and
+guarded current/older wire pass. Independent Astra review reports no blocker.
+Coverage201->202/310,109->108 planned; Necromancy8->9/10; faction60->61/90.
+Deferred visiting/garrison Hero variants, rendered popup and broad interactions.
+Rendered acceptance and broad interactions remain separate; no playable promotion.
 
 UP187 Death Lord and Grave Knowledge are source/native verified. Separately
 captured original-form nonliving/Undead pools retain Corpse Preservation and
@@ -1733,9 +1748,9 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 201/310 | 109 planned; Death Lord and Grave Knowledge are the newest source/native-verified activations. Necromancy is 8/10; Learning 3/10; Estates 5/10; Battlecraft 6/10; Logistics 6/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 202/310 | 108 planned; Ossuary is the newest source/native-verified activation. Necromancy is 9/10; Learning 3/10; Estates 5/10; Battlecraft 6/10; Logistics 6/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
-| Faction perks active | 60/90 | 30 planned perks; Death Lord and Grave Knowledge have normal Advanced selection, actual special-casualty conversion and provenance evidence. |
+| Faction perks active | 61/90 | 29 planned perks; Ossuary has normal Advanced selection, actual atomic town-delivery and guarded destination evidence. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
