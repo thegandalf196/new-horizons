@@ -607,7 +607,8 @@ void GameStatePackVisitor::visitSetNewHorizonsDiplomacyState(SetNewHorizonsDiplo
 	auto * hero = gs.getHero(pack.heroId);
 	if(!hero)
 		throw std::runtime_error("New Horizons Diplomacy state references a missing hero");
-	hero->setNewHorizonsDiplomacyState(pack.peacemakerLastWeek, pack.pacifiedCreatureId, pack.tributeLastWeek);
+	hero->setNewHorizonsDiplomacyState(pack.peacemakerLastWeek, pack.pacifiedCreatureId,
+		pack.tributeLastWeek, pack.pactExpiryDay);
 }
 
 void GameStatePackVisitor::visitSetNewHorizonsDemonicReserve(SetNewHorizonsDemonicReserve & pack)

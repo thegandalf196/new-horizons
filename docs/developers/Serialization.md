@@ -157,11 +157,21 @@ Peacemaker week are rejected. A spent marker with no protected target is valid
 after deliberate attack; a stale target ID is inactive once its week no longer
 matches the current absolute week, so no week-start cleanup scan is needed.
 
-The `SetNewHorizonsDiplomacyState` packet carries the complete three-field hero
-snapshot and has appended polymorphic type ID 293. Its writer rejects formats
-without the feature, its old-format reader defaults the appended state, and
-current-format reads validate the hero ID and state before application. The
-game-state visitor applies the snapshot atomically to the referenced hero.
+The `SetNewHorizonsDiplomacyState` packet carries the complete weekly snapshot
+and has appended polymorphic type ID 293. `NEW_HORIZONS_RECRUITMENT_PACT_STATE`
+appends the absolute expiry day of the hero's armed Recruitment Pact. Its
+sentinel is `-1`; values below `-1` are invalid. The older weekly-state format
+preserves its original three-field payload and defaults the Pact expiry to
+`-1`. Writers reject a populated Pact state when saving to a format that cannot
+represent it. The hero helper reports the Pact active only while its perk is
+active and the current day is nonnegative and no later than the saved expiry;
+expiration is evaluated on use, with no polling or cleanup scan.
+
+The packet writer rejects formats without the weekly-state feature, and rejects
+a populated Pact expiry when the newer feature is unavailable. Readers reset
+fields absent from their format and validate the complete state before
+application. The game-state visitor applies the full snapshot atomically to the
+referenced hero.
 
 ## New Horizons battle Mana expenditure
 

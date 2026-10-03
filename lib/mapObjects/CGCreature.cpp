@@ -29,6 +29,7 @@
 #include "../entities/ResourceTypeHandler.h"
 #include "../entities/creature/NewHorizonsMusterRules.h"
 
+#include <limits>
 #include <vstd/RNG.h>
 
 namespace
@@ -69,6 +70,8 @@ void appendEnvoyDiplomacyInformation(MetaString & text,
 	}
 	if(forecast.commonCause)
 		text.appendRawString("\nCommon Cause counts same-faction neutral troops at half Army Value.");
+	if(forecast.recruitmentPact)
+		text.appendRawString("\nRecruitment Pact treats this stack as having 15% lower Army Value for joining.");
 	if(!forecast.eligible)
 		text.appendRawString("\nThis neutral stack is not eligible to join through Diplomacy.");
 
@@ -93,6 +96,8 @@ void appendNewHorizonsDiplomacyNotes(MetaString & text,
 		if(forecast.commonCause)
 			text.appendRawString(" Common Cause counts same-faction neutral troops at half Army Value.");
 	}
+	if(forecast.recruitmentPact)
+		text.appendRawString("\nRecruitment Pact treats this stack as having 15% lower Army Value for joining.");
 	if(!forecast.eligible)
 		text.appendRawString("\nThis neutral stack is not eligible to join.");
 	else if(!forecast.willing)
@@ -114,14 +119,22 @@ void showExpiredDiplomacyOffer(IGameEventCallback & gameEvents, const CGHeroInst
 }
 
 void updateDiplomacyWeeklyState(IGameEventCallback & gameEvents, const CGHeroInstance & hero,
-	int32_t peacemakerLastWeek, ObjectInstanceID pacifiedCreatureId, int32_t tributeLastWeek)
+	int32_t peacemakerLastWeek, ObjectInstanceID pacifiedCreatureId, int32_t tributeLastWeek,
+	int32_t pactExpiryDay)
 {
 	SetNewHorizonsDiplomacyState state;
 	state.heroId = hero.id;
 	state.peacemakerLastWeek = peacemakerLastWeek;
 	state.pacifiedCreatureId = pacifiedCreatureId;
 	state.tributeLastWeek = tributeLastWeek;
+	state.pactExpiryDay = pactExpiryDay;
 	gameEvents.sendAndApply(state);
+}
+
+void consumeRecruitmentPact(IGameEventCallback & gameEvents, const CGHeroInstance & hero)
+{
+	updateDiplomacyWeeklyState(gameEvents, hero, hero.getNewHorizonsPeacemakerLastWeek(),
+		hero.getNewHorizonsPacifiedCreatureId(), hero.getNewHorizonsTributeLastWeek(), -1);
 }
 }
 
@@ -284,21 +297,29 @@ void CGCreature::onHeroVisit(IGameEventCallback & gameEvents, const CGHeroInstan
 	if(forecast.usesNewHorizonsRules)
 	{
 		const auto calendar = cb->getCalendar();
-		const int week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+		const int32_t currentDay = calendar.getCurrentDay();
+		const int week = newHorizonsMuster::absoluteWeek(currentDay, calendar.getDaysInWeek());
+		const bool neutralContact = tempOwner == PlayerColor::NEUTRAL || tempOwner == PlayerColor::UNFLAGGABLE;
+		const bool pactArmed = neutralContact && h->hasNewHorizonsRecruitmentPact(currentDay);
 		wasProtectedTarget = passableFor(h);
 
 		if(wasProtectedTarget)
 		{
 			// A direct visit is the player's deliberate attack. End passage for this
-			// creature without refunding this week's Peacemaker use.
+			// creature without refunding this week's Peacemaker use. A neutral
+			// contact consumes any armed Recruitment Pact unless it opens the
+			// joining offer whose response consumes the Pact.
 			updateDiplomacyWeeklyState(gameEvents, *h, h->getNewHorizonsPeacemakerLastWeek(),
-				ObjectInstanceID::NONE, h->getNewHorizonsTributeLastWeek());
+				ObjectInstanceID::NONE, h->getNewHorizonsTributeLastWeek(),
+				pactArmed && !(forecast.willing && action >= JOIN_FOR_FREE)
+					? -1 : h->getNewHorizonsRecruitmentPactExpiryDay());
 		}
 		else if(forecast.eligible && action == FIGHT
 			&& h->hasActivePerk(newHorizonsDiplomacy::SKILL_ID, DIPLOMACY_PEACEMAKER_PERK_ID)
 			&& !h->hasUsedNewHorizonsPeacemaker(week))
 		{
-			updateDiplomacyWeeklyState(gameEvents, *h, week, id, h->getNewHorizonsTributeLastWeek());
+			updateDiplomacyWeeklyState(gameEvents, *h, week, id, h->getNewHorizonsTributeLastWeek(),
+				pactArmed ? -1 : h->getNewHorizonsRecruitmentPactExpiryDay());
 
 			InfoWindow info;
 			info.player = h->tempOwner;
@@ -321,7 +342,8 @@ void CGCreature::onHeroVisit(IGameEventCallback & gameEvents, const CGHeroInstan
 				gameEvents.giveResource(h->tempOwner, EGameResID::GOLD, -goldCost);
 
 			updateDiplomacyWeeklyState(gameEvents, *h, h->getNewHorizonsPeacemakerLastWeek(),
-				h->getNewHorizonsPacifiedCreatureId(), week);
+				h->getNewHorizonsPacifiedCreatureId(), week,
+				pactArmed ? -1 : h->getNewHorizonsRecruitmentPactExpiryDay());
 			gameEvents.removeObject(this, h->getOwner());
 
 			InfoWindow info;
@@ -334,6 +356,12 @@ void CGCreature::onHeroVisit(IGameEventCallback & gameEvents, const CGHeroInstan
 			info.type = EInfoWindowMode::MODAL;
 			gameEvents.showInfoDialog(&info);
 			return;
+		}
+		else if(pactArmed && !(forecast.willing && action >= JOIN_FOR_FREE))
+		{
+			// This is the next contacted neutral stack, but no join offer is pending.
+			// Consume before combat/flee handling so its follow-up prompt cannot reuse it.
+			consumeRecruitmentPact(gameEvents, *h);
 		}
 	}
 
@@ -423,6 +451,7 @@ newHorizonsDiplomacy::Forecast CGCreature::getNewHorizonsDiplomacyForecast(const
 		newHorizonsDiplomacy::NEGOTIATOR_ID);
 	input.grandDiplomat = hero.hasActivePerk(newHorizonsDiplomacy::SKILL_ID,
 		newHorizonsDiplomacy::GRAND_DIPLOMAT_ID);
+	input.recruitmentPact = hero.hasNewHorizonsRecruitmentPact(cb->getCalendar().getCurrentDay());
 	input.heroArmyValue = hero.getArmyStrength();
 	input.joiningAmount = getStackCount(SlotID(0));
 	input.encounterEligible = diplomacyEligible
@@ -445,6 +474,26 @@ newHorizonsDiplomacy::Forecast CGCreature::getNewHorizonsDiplomacyForecast(const
 	}
 
 	return newHorizonsDiplomacy::resolveForecast(input);
+}
+
+void CGCreature::onSuccessfulNewHorizonsRecruitment(IGameEventCallback & gameEvents,
+	const CGHeroInstance & hero) const
+{
+	const bool neutralStack = tempOwner == PlayerColor::NEUTRAL || tempOwner == PlayerColor::UNFLAGGABLE;
+	if(!neutralStack || !diplomacyEligible || initialCharacter == Character::SAVAGE
+		|| !newHorizonsDiplomacy::usesNewHorizonsRules(hero.getPerkState().rules)
+		|| !hero.hasActivePerk(newHorizonsDiplomacy::SKILL_ID, newHorizonsDiplomacy::RECRUITMENT_PACT_ID))
+		return;
+
+	const int32_t currentDay = cb->getCalendar().getCurrentDay();
+	if(currentDay < 0)
+		return;
+
+	const int64_t expiryDay = static_cast<int64_t>(currentDay) + 7;
+	const auto maximumDay = std::numeric_limits<int32_t>::max();
+	const int32_t pactExpiryDay = static_cast<int32_t>(std::min<int64_t>(expiryDay, maximumDay));
+	updateDiplomacyWeeklyState(gameEvents, hero, hero.getNewHorizonsPeacemakerLastWeek(),
+		hero.getNewHorizonsPacifiedCreatureId(), hero.getNewHorizonsTributeLastWeek(), pactExpiryDay);
 }
 
 bool CGCreature::passableFor(const CGHeroInstance * hero) const
@@ -679,9 +728,18 @@ void CGCreature::fleeDecision(IGameEventCallback & gameEvents, const CGHeroInsta
 
 void CGCreature::joinDecision(IGameEventCallback & gameEvents, const CGHeroInstance *h, int cost, ui32 accept) const
 {
+	const auto forecast = getNewHorizonsDiplomacyForecast(*h);
+	const bool neutralContact = tempOwner == PlayerColor::NEUTRAL || tempOwner == PlayerColor::UNFLAGGABLE;
+	const bool pactResponse = !refusedJoining && neutralContact && forecast.usesNewHorizonsRules
+		&& h->hasNewHorizonsRecruitmentPact(cb->getCalendar().getCurrentDay());
+
 	if(!accept)
 	{
-		if(takenAction(h,false) == FLEE)
+		const int refusalAction = takenAction(h, false);
+		if(pactResponse)
+			consumeRecruitmentPact(gameEvents, *h);
+
+		if(refusalAction == FLEE)
 		{
 			gameEvents.setObjPropertyValue(id, ObjProperty::MONSTER_REFUSED_JOIN, true);
 			flee(gameEvents, h);
@@ -694,7 +752,6 @@ void CGCreature::joinDecision(IGameEventCallback & gameEvents, const CGHeroInsta
 	}
 	else //accepted
 	{
-		const auto forecast = getNewHorizonsDiplomacyForecast(*h);
 		int64_t requiredGold = cost;
 		int64_t joiningAmount = getJoiningAmount();
 		if(forecast.usesNewHorizonsRules)
@@ -704,6 +761,8 @@ void CGCreature::joinDecision(IGameEventCallback & gameEvents, const CGHeroInsta
 				|| (!forecast.authoredFree && !forecast.normalGoldCostFitsAction)
 				|| cost != expectedGold)
 			{
+				if(pactResponse)
+					consumeRecruitmentPact(gameEvents, *h);
 				showExpiredDiplomacyOffer(gameEvents, h);
 				return;
 			}
@@ -713,6 +772,9 @@ void CGCreature::joinDecision(IGameEventCallback & gameEvents, const CGHeroInsta
 
 		if(cb->getResource(h->tempOwner, EGameResID::GOLD) < requiredGold) //player don't have enough gold!
 		{
+			if(pactResponse)
+				consumeRecruitmentPact(gameEvents, *h);
+
 			InfoWindow iw;
 			iw.player = h->tempOwner;
 			iw.text.appendTextID("core.genrltxt.29");  //You don't have enough gold
@@ -722,6 +784,9 @@ void CGCreature::joinDecision(IGameEventCallback & gameEvents, const CGHeroInsta
 			joinDecision(gameEvents, h, cost, false);
 			return;
 		}
+
+		if(pactResponse)
+			consumeRecruitmentPact(gameEvents, *h);
 
 		//take gold
 		if(requiredGold)
@@ -833,17 +898,24 @@ void CGCreature::battleFinished(IGameEventCallback & gameEvents, const CGHeroIns
 
 void CGCreature::blockingDialogAnswered(IGameEventCallback & gameEvents, const CGHeroInstance *hero, int32_t answer) const
 {
-	auto action = takenAction(hero, !refusedJoining);
 	const auto forecast = getNewHorizonsDiplomacyForecast(*hero);
+	const bool neutralContact = tempOwner == PlayerColor::NEUTRAL || tempOwner == PlayerColor::UNFLAGGABLE;
+	const bool pactResponse = !refusedJoining && neutralContact && forecast.usesNewHorizonsRules
+		&& hero->hasNewHorizonsRecruitmentPact(cb->getCalendar().getCurrentDay());
+	auto action = takenAction(hero, !refusedJoining);
 	if(forecast.usesNewHorizonsRules)
 	{
 		if(action == FLEE)
 		{
+			if(pactResponse)
+				consumeRecruitmentPact(gameEvents, *hero);
 			fleeDecision(gameEvents, hero, answer);
 			return;
 		}
 		if(action == FIGHT)
 		{
+			if(pactResponse)
+				consumeRecruitmentPact(gameEvents, *hero);
 			showExpiredDiplomacyOffer(gameEvents, hero);
 			return;
 		}
@@ -853,6 +925,8 @@ void CGCreature::blockingDialogAnswered(IGameEventCallback & gameEvents, const C
 			|| (!forecast.authoredFree && !forecast.normalGoldCostFitsAction)
 			|| action != expectedGold)
 		{
+			if(pactResponse)
+				consumeRecruitmentPact(gameEvents, *hero);
 			showExpiredDiplomacyOffer(gameEvents, hero);
 			return;
 		}

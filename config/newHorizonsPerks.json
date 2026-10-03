@@ -2489,7 +2489,7 @@
 					"requires": "advanced",
 					"description": "After successfully recruiting a neutral stack, the next neutral stack contacted within 7 days is treated as 15% lower Army Value for the joining threshold.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "After successfully recruiting a neutral stack, the next neutral stack contacted within 7 days is treated as 15% lower Army Value for the joining threshold."
 					}
 				},

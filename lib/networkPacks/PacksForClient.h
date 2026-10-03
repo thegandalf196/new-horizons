@@ -1885,13 +1885,14 @@ struct DLL_LINKAGE SetNewHorizonsLearningMentorState : public CPackForClient
 	}
 };
 
-/// Complete weekly Peacemaker/Tribute usage snapshot for one hero.
+/// Complete New Horizons Diplomacy usage and Recruitment Pact snapshot for one hero.
 struct DLL_LINKAGE SetNewHorizonsDiplomacyState : public CPackForClient
 {
 	ObjectInstanceID heroId = ObjectInstanceID::NONE;
 	int32_t peacemakerLastWeek = -1;
 	ObjectInstanceID pacifiedCreatureId = ObjectInstanceID::NONE;
 	int32_t tributeLastWeek = -1;
+	int32_t pactExpiryDay = -1;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
@@ -1900,6 +1901,7 @@ struct DLL_LINKAGE SetNewHorizonsDiplomacyState : public CPackForClient
 		return heroId.hasValue()
 			&& peacemakerLastWeek >= -1
 			&& tributeLastWeek >= -1
+			&& pactExpiryDay >= -1
 			&& (pacifiedCreatureId == ObjectInstanceID::NONE
 				|| (pacifiedCreatureId.hasValue() && peacemakerLastWeek >= 0));
 	}
@@ -1908,6 +1910,9 @@ struct DLL_LINKAGE SetNewHorizonsDiplomacyState : public CPackForClient
 	{
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE))
 			throw std::runtime_error("New Horizons Diplomacy state packet requires the new wire format");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_PACT_STATE)
+			&& pactExpiryDay != -1)
+			throw std::runtime_error("New Horizons Recruitment Pact packet state requires the new wire format");
 		if(h.saving && !hasValidState())
 			throw std::runtime_error("Invalid New Horizons Diplomacy state packet");
 
@@ -1917,8 +1922,6 @@ struct DLL_LINKAGE SetNewHorizonsDiplomacyState : public CPackForClient
 			h & peacemakerLastWeek;
 			h & pacifiedCreatureId;
 			h & tributeLastWeek;
-			if(!h.saving && !hasValidState())
-				throw std::runtime_error("Invalid New Horizons Diplomacy state packet");
 		}
 		else if(!h.saving)
 		{
@@ -1926,6 +1929,12 @@ struct DLL_LINKAGE SetNewHorizonsDiplomacyState : public CPackForClient
 			pacifiedCreatureId = ObjectInstanceID::NONE;
 			tributeLastWeek = -1;
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_PACT_STATE))
+			h & pactExpiryDay;
+		else if(!h.saving)
+			pactExpiryDay = -1;
+		if(!h.saving && !hasValidState())
+			throw std::runtime_error("Invalid New Horizons Diplomacy state packet");
 	}
 };
 

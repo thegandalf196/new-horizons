@@ -19,6 +19,7 @@ inline constexpr const char * SKILL_ID = "new-horizons:diplomacy";
 inline constexpr const char * NEGOTIATOR_ID = "new-horizons:diplomacy.negotiator";
 inline constexpr const char * COMMON_CAUSE_ID = "new-horizons:diplomacy.commonCause";
 inline constexpr const char * GRAND_DIPLOMAT_ID = "new-horizons:diplomacy.grandDiplomat";
+inline constexpr const char * RECRUITMENT_PACT_ID = "new-horizons:diplomacy.recruitmentPact";
 
 /// Result shared by the neutral-creature encounter, feedback and adventure AI.
 struct DLL_LINKAGE Forecast
@@ -35,6 +36,8 @@ struct DLL_LINKAGE Forecast
 	bool negotiator = false;
 	bool commonCause = false;
 	bool grandDiplomat = false;
+	/// Recruitment Pact is actually lowering this eligible stack's threshold value.
+	bool recruitmentPact = false;
 	uint64_t heroArmyValue = 0;
 	uint64_t creatureArmyValue = 0;
 	/// Full-stack ordinary recruitment price, even for an authored-free offer.
@@ -56,6 +59,7 @@ struct DLL_LINKAGE ForecastInput
 	bool negotiator = false;
 	bool commonCause = false;
 	bool grandDiplomat = false;
+	bool recruitmentPact = false;
 	uint64_t heroArmyValue = 0;
 	uint64_t creatureArmyValue = 0;
 	int64_t goldCostPerCreature = 0;

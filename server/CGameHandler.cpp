@@ -2209,7 +2209,39 @@ void CGameHandler::sendQueryResolved(QueryID queryID)
 
 void CGameHandler::sendAndApply(CGarrisonOperationPack & pack)
 {
+	std::vector<QueryPtr> recruitingVisits;
+	for(const auto & query : queries->allQueries())
+	{
+		auto * visit = queries->queryAs<MapObjectVisitQuery>(query);
+		if(!visit || !visit->trackingNeutralRecruitment || visit->admittedNeutralRecruitment)
+			continue;
+
+		const auto isRecruitmentMove = [visit](const RebalanceStacks & move)
+		{
+			return move.srcArmy == visit->visitedObject && move.dstArmy == visit->visitingHero && move.count > 0;
+		};
+		bool receivesTroops = false;
+		if(const auto * move = dynamic_cast<const RebalanceStacks *>(&pack))
+			receivesTroops = isRecruitmentMove(*move);
+		else if(const auto * moves = dynamic_cast<const BulkRebalanceStacks *>(&pack))
+			receivesTroops = std::ranges::any_of(moves->moves, isRecruitmentMove);
+		else if(const auto * swap = dynamic_cast<const SwapStacks *>(&pack))
+		{
+			const auto * source = dynamic_cast<const CArmedInstance *>(gameInfo().getObjInstance(visit->visitedObject));
+			if(source)
+			{
+				if(swap->srcArmy == visit->visitedObject && swap->dstArmy == visit->visitingHero)
+					receivesTroops = source->getStackCount(swap->srcSlot) > 0;
+				else if(swap->dstArmy == visit->visitedObject && swap->srcArmy == visit->visitingHero)
+					receivesTroops = source->getStackCount(swap->dstSlot) > 0;
+			}
+		}
+		if(receivesTroops)
+			recruitingVisits.push_back(query);
+	}
 	sendAndApply(static_cast<CPackForClient &>(pack));
+	for(const auto & query : recruitingVisits)
+		queries->queryAs<MapObjectVisitQuery>(query)->admittedNeutralRecruitment = true;
 	checkVictoryLossConditionsForAll();
 }
 
@@ -5307,6 +5339,20 @@ void CGameHandler::tryJoiningArmy(const CArmedInstance *src, const CArmedInstanc
 {
 	if (removeObjWhenFinished)
 		removeAfterVisit(src->id);
+	const auto * recruitingHero = dynamic_cast<const CGHeroInstance *>(dst);
+	if(removeObjWhenFinished && dynamic_cast<const CGCreature *>(src) && recruitingHero
+		&& recruitingHero->hasActivePerk(newHorizonsDiplomacy::SKILL_ID, newHorizonsDiplomacy::RECRUITMENT_PACT_ID))
+	{
+		for(const auto & query : queries->allQueries())
+		{
+			auto * visit = queries->queryAs<MapObjectVisitQuery>(query);
+			if(visit && visit->visitedObject == src->id && visit->visitingHero == dst->id)
+			{
+				visit->trackingNeutralRecruitment = true;
+				break;
+			}
+		}
+	}
 
 	// A New Horizons hero may accept more joining creatures than one of their
 	// Leadership-limited slots can hold.  Treat this like any other partial

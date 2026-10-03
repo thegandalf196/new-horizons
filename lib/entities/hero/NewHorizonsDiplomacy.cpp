@@ -20,12 +20,12 @@ namespace newHorizonsDiplomacy
 namespace
 {
 bool meetsArmyValueThreshold(uint64_t heroArmyValue, uint64_t creatureArmyValue,
-	int32_t thresholdPercent, bool countCreatureAsHalf)
+	int32_t thresholdPercent, bool countCreatureAsHalf, bool recruitmentPact)
 {
 	if(thresholdPercent <= 0)
 		return false;
 
-	const uint64_t denominator = 100;
+	const uint64_t denominator = recruitmentPact ? 85 : 100;
 	const uint64_t multiplier = static_cast<uint64_t>(thresholdPercent) * (countCreatureAsHalf ? 2 : 1);
 	const uint64_t whole = heroArmyValue / denominator;
 	const uint64_t remainder = heroArmyValue % denominator;
@@ -71,6 +71,8 @@ Forecast resolveForecast(const ForecastInput & input)
 	result.negotiator = result.active && input.negotiator;
 	result.commonCause = result.active && input.commonCause;
 	result.grandDiplomat = result.active && input.grandDiplomat;
+	result.recruitmentPact = result.active && result.eligible && !result.authoredFree
+		&& input.recruitmentPact;
 	result.heroArmyValue = input.heroArmyValue;
 	result.creatureArmyValue = input.creatureArmyValue;
 	result.joiningAmount = std::max<int64_t>(0, input.joiningAmount);
@@ -104,7 +106,7 @@ Forecast resolveForecast(const ForecastInput & input)
 	const bool withinThreshold = result.active && result.eligible
 		&& result.normalGoldCostFitsAction
 		&& meetsArmyValueThreshold(result.heroArmyValue, result.creatureArmyValue,
-			result.thresholdPercent, result.commonCause);
+			result.thresholdPercent, result.commonCause, result.recruitmentPact);
 	result.willing = result.authoredFree || withinThreshold;
 	return result;
 }

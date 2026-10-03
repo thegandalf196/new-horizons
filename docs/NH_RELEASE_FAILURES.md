@@ -2,6 +2,23 @@
 
 ## Purpose
 
+### 2026-10-03 UP-129 Pact — Respect fixture skill progression
+
+Test build retry passes, but fresh UP129-pact-principal.log/XML records23/27:
+all four new encounter cases fail during setup with the preceding-perk-tier
+advancement exception. Correct setup through normal rank/perk selection;
+do not disable progression validation or weaken encounter assertions.
+Retain the failing artifacts and run a distinct corrected principal retry.
+
+### 2026-10-03 UP-129 Pact — Concrete fixture includes
+
+Client66210 passes. Test build54732 fails in the new discounted-acceptance
+fixture because StackLocation is only forward-declared by PacksForClient.h.
+The fixture must include the type's defining header before constructing it;
+do not change production interfaces or remove the actual transfer assertion.
+Retain UP129-pact-test-build.log and use a distinct retry log. Native Pact
+acceptance has not run, so registration status is not accepted coverage.
+
 ### 2026-10-03 UP-129 weekly Diplomacy — Review before build
 
 Root review caught a potential removed-guardian dereference in movement after

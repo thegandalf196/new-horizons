@@ -164,12 +164,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_NECROMANCY_LORD_OF_DEAD, // pre-conversion Bone Dragon result and defeated Champion snapshot
 	NEW_HORIZONS_DIPLOMACY_ELIGIBILITY, // explicit map-authored neutral-join eligibility
 	NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE, // per-hero weekly Peacemaker and Tribute usage/protection state
+	NEW_HORIZONS_RECRUITMENT_PACT_STATE, // per-hero active Recruitment Pact expiry day
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE,
+	CURRENT = NEW_HORIZONS_RECRUITMENT_PACT_STATE,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -232,6 +233,9 @@ static_assert(ESerializationVersion::NEW_HORIZONS_DIPLOMACY_ELIGIBILITY > ESeria
 static_assert(ESerializationVersion::NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE
 	> ESerializationVersion::NEW_HORIZONS_DIPLOMACY_ELIGIBILITY,
 	"Diplomacy weekly state must remain append-only");
+static_assert(ESerializationVersion::NEW_HORIZONS_RECRUITMENT_PACT_STATE
+	> ESerializationVersion::NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE,
+	"Recruitment Pact state must remain append-only");
 static_assert(ESerializationVersion::CURRENT >= ESerializationVersion::NEW_HORIZONS_MASTERIES);
 static_assert(ESerializationVersion::NEW_HORIZONS_CASTLE_GATE > ESerializationVersion::NEW_HORIZONS_HOUSE_OF_WISDOM);
 static_assert(ESerializationVersion::NEW_HORIZONS_MUSTER > ESerializationVersion::NEW_HORIZONS_CASTLE_GATE);

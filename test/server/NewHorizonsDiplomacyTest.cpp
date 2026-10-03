@@ -32,6 +32,7 @@
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/networkPacks/Component.h"
 #include "../../lib/networkPacks/PacksForClient.h"
+#include "../../lib/networkPacks/StackLocation.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include "../../lib/serializer/ESerializationVersion.h"
 #include "../../lib/serializer/JsonDeserializer.h"
@@ -77,12 +78,15 @@ public:
 			garrisonDialogs.push_back(*dialog);
 		if(const auto * message = dynamic_cast<const SystemMessage *>(&pack))
 			systemMessageTexts.push_back(message->text.toString(LIBRARY->generaltexth.get()));
+		if(const auto * info = dynamic_cast<const InfoWindow *>(&pack))
+			infoWindowTexts.push_back(info->text.toString(LIBRARY->generaltexth.get()));
 		GameHandlerTestServer::applyPack(pack);
 	}
 
 	std::vector<BlockingDialog> blockingDialogs;
 	std::vector<GarrisonDialog> garrisonDialogs;
 	std::vector<std::string> systemMessageTexts;
+	std::vector<std::string> infoWindowTexts;
 };
 
 class NewHorizonsDiplomacyTest : public TinyMapGameTest
@@ -137,6 +141,96 @@ protected:
 		server = std::make_unique<DiplomacyRecordingServer>(gameState(), PLAYER);
 		gameHandler = std::make_unique<CGameHandler>(*server, gameState());
 		gameState()->actingPlayers.insert(PLAYER);
+	}
+
+	void startGameWithTwoNeutralStacks(int32_t heroPikemen, int32_t firstNeutralPikemen,
+		int32_t secondNeutralPikemen, CGCreature::Character character)
+	{
+		const auto pikeman = creature("core:pikeman");
+		const int3 firstNeutralPosition{12, 12, 0};
+		const int3 secondNeutralPosition{24, 24, 0};
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder.size(36, false).playerActive(PLAYER)
+			.hero({5, 5, 0}, heroType("core:christian"), PLAYER)
+			.heroGarrison({{pikeman, heroPikemen}})
+			.monster(firstNeutralPosition, pikeman, static_cast<uint16_t>(firstNeutralPikemen),
+				static_cast<int8_t>(character))
+			.monster(secondNeutralPosition, pikeman, static_cast<uint16_t>(secondNeutralPikemen),
+				static_cast<int8_t>(character));
+		startWithMap(std::move(builder));
+
+		hero = findHeroAt({5, 5, 0});
+		neutral = dynamic_cast<CGCreature *>(findObjectAt(firstNeutralPosition));
+		secondNeutral = dynamic_cast<CGCreature *>(findObjectAt(secondNeutralPosition));
+		ASSERT_NE(hero, nullptr);
+		ASSERT_NE(neutral, nullptr);
+		ASSERT_NE(secondNeutral, nullptr);
+
+		server = std::make_unique<DiplomacyRecordingServer>(gameState(), PLAYER);
+		gameHandler = std::make_unique<CGameHandler>(*server, gameState());
+		gameState()->actingPlayers.insert(PLAYER);
+	}
+
+	void selectRecruitmentPact()
+	{
+		advanceToDiplomacyRank(MasteryLevel::ADVANCED, ENVOY_PERK_ID,
+			newHorizonsDiplomacy::RECRUITMENT_PACT_ID);
+		ASSERT_TRUE(hero->hasActivePerk(DIPLOMACY_SKILL, ENVOY_PERK_ID));
+		ASSERT_TRUE(hero->hasActivePerk(DIPLOMACY_SKILL, newHorizonsDiplomacy::RECRUITMENT_PACT_ID));
+	}
+
+	void acceptFirstNeutralAndArmRecruitmentPact(int32_t & triggerDay)
+	{
+		ASSERT_TRUE(hero->hasActivePerk(DIPLOMACY_SKILL, newHorizonsDiplomacy::RECRUITMENT_PACT_ID));
+		neutral->agression = 10;
+		triggerDay = gameState()->getCalendar().getCurrentDay();
+		ASSERT_GE(triggerDay, 0);
+		EXPECT_EQ(hero->getNewHorizonsRecruitmentPactExpiryDay(), -1);
+
+		const auto forecast = neutral->getNewHorizonsDiplomacyForecast(*hero);
+		ASSERT_TRUE(forecast.eligible);
+		ASSERT_TRUE(forecast.willing);
+		ASSERT_FALSE(forecast.authoredFree);
+		grantResources(PLAYER, GameResID(EGameResID::GOLD), 10000);
+		const auto neutralId = neutral->id;
+		gameHandler->objectVisited(neutral, hero);
+		ASSERT_EQ(server->blockingDialogs.size(), 1u)
+			<< "The first stack must use the ordinary paid Diplomacy offer";
+		const auto offerQuery = server->blockingDialogs.back().queryID;
+		ASSERT_NE(offerQuery, QueryID::NONE);
+		EXPECT_EQ(hero->getNewHorizonsRecruitmentPactExpiryDay(), -1)
+			<< "A pending offer does not arm Pact before recruitment succeeds";
+		ASSERT_TRUE(gameHandler->queryReply(offerQuery, 1, PLAYER));
+		ASSERT_EQ(hero->getStackCount(SlotID(0)), 17);
+		ASSERT_EQ(neutral->getStackCount(SlotID(0)), 1);
+		ASSERT_EQ(server->garrisonDialogs.size(), 1u)
+			<< "The Leadership-limited remainder stays in the normal transfer window";
+		const auto transferQuery = server->garrisonDialogs.back().queryID;
+		ASSERT_NE(transferQuery, QueryID::NONE);
+		ASSERT_TRUE(gameHandler->queryReply(transferQuery, 0, PLAYER));
+		EXPECT_EQ(gameState()->getObjInstance(neutralId), nullptr);
+		EXPECT_EQ(hero->getNewHorizonsRecruitmentPactExpiryDay(), triggerDay + 7)
+			<< "An accepted recruitment arms Pact only after positive troop admission";
+	}
+
+	int32_t findPactOnlyWillingStackCount(CGCreature * contactedNeutral, int32_t pactExpiryDay)
+	{
+		for(int32_t count = 1; count <= 100; ++count)
+		{
+			contactedNeutral->setStackCount(SlotID(0), static_cast<TQuantity>(count));
+			const auto withPact = contactedNeutral->getNewHorizonsDiplomacyForecast(*hero);
+			if(!withPact.recruitmentPact || !withPact.willing)
+				continue;
+
+			hero->setNewHorizonsDiplomacyState(hero->getNewHorizonsPeacemakerLastWeek(),
+				hero->getNewHorizonsPacifiedCreatureId(), hero->getNewHorizonsTributeLastWeek(), -1);
+			const bool willingWithoutPact = contactedNeutral->getNewHorizonsDiplomacyForecast(*hero).willing;
+			hero->setNewHorizonsDiplomacyState(hero->getNewHorizonsPeacemakerLastWeek(),
+				hero->getNewHorizonsPacifiedCreatureId(), hero->getNewHorizonsTributeLastWeek(), pactExpiryDay);
+			if(!willingWithoutPact)
+				return count;
+		}
+		return 0;
 	}
 
 	void revealNeutralForPlayer()
@@ -231,6 +325,7 @@ protected:
 	CGHeroInstance * hero = nullptr;
 	CGHeroInstance * otherHero = nullptr;
 	CGCreature * neutral = nullptr;
+	CGCreature * secondNeutral = nullptr;
 	std::unique_ptr<DiplomacyRecordingServer> server;
 	std::unique_ptr<CGameHandler> gameHandler;
 };
@@ -316,6 +411,43 @@ TEST(NewHorizonsDiplomacy, UsesExactRankAndPerkThresholdBoundaries)
 	input.creatureArmyValue = 401;
 	EXPECT_FALSE(resolveForecast(input).willing)
 		<< "Grand Diplomat caps the threshold at 100% of hero Army Value";
+}
+
+TEST(NewHorizonsDiplomacy, RecruitmentPactUsesExactFifteenPercentDiscount)
+{
+	auto input = eligibleInput();
+	input.skillRank = 2;
+	input.recruitmentPact = true;
+	input.heroArmyValue = 170;
+	input.creatureArmyValue = 100;
+	const auto pactBoundary = resolveForecast(input);
+	EXPECT_TRUE(pactBoundary.recruitmentPact);
+	EXPECT_EQ(pactBoundary.thresholdPercent, 50);
+	EXPECT_TRUE(pactBoundary.willing)
+		<< "A 15% discount makes 100 exactly the adjusted threshold: floor(170 * 50 / 85)";
+	input.creatureArmyValue = 101;
+	EXPECT_FALSE(resolveForecast(input).willing)
+		<< "The Pact comparison must not round a creature Army Value above the exact boundary down";
+
+	input = eligibleInput();
+	input.skillRank = 2;
+	input.commonCause = true;
+	input.recruitmentPact = true;
+	input.heroArmyValue = 170;
+	input.creatureArmyValue = 200;
+	EXPECT_TRUE(resolveForecast(input).willing)
+		<< "Common Cause and Pact use the exact combined threshold: floor(170 * 50 * 2 / 85)";
+	input.creatureArmyValue = 201;
+	EXPECT_FALSE(resolveForecast(input).willing);
+
+	input = eligibleInput();
+	input.skillRank = 3;
+	input.commonCause = true;
+	input.recruitmentPact = true;
+	input.heroArmyValue = std::numeric_limits<uint64_t>::max();
+	input.creatureArmyValue = std::numeric_limits<uint64_t>::max();
+	EXPECT_TRUE(resolveForecast(input).willing)
+		<< "An overflowing mathematical threshold saturates safely instead of wrapping below the stack";
 }
 
 TEST(NewHorizonsDiplomacy, KeepsEligibilityAndAuthoredFreeExceptionsSeparateFromRank)
@@ -929,6 +1061,163 @@ TEST_F(NewHorizonsDiplomacyTest, WillingPaidOfferDoesNotConsumeTribute)
 		<< "Accepting a willing ordinary offer is not the automatic Tribute mechanic";
 }
 
+TEST_F(NewHorizonsDiplomacyTest, RecruitmentPactSelectsNormallyArmsOnRecruitmentAndDiscountsTheNextContact)
+{
+	startGameWithTwoNeutralStacks(16, 2, 1, CGCreature::Character::HOSTILE);
+	selectRecruitmentPact();
+
+	int32_t triggerDay = -1;
+	acceptFirstNeutralAndArmRecruitmentPact(triggerDay);
+	const auto expiryDay = triggerDay + 7;
+	EXPECT_EQ(hero->getNewHorizonsRecruitmentPactExpiryDay(), expiryDay);
+	EXPECT_TRUE(hero->hasNewHorizonsRecruitmentPact(triggerDay));
+	EXPECT_TRUE(hero->hasNewHorizonsRecruitmentPact(expiryDay))
+		<< "The inclusive boundary remains valid after seven elapsed game days";
+	EXPECT_FALSE(hero->hasNewHorizonsRecruitmentPact(expiryDay + 1));
+
+	secondNeutral->agression = 0;
+	const auto pactOnlyCount = findPactOnlyWillingStackCount(secondNeutral, expiryDay);
+	ASSERT_GT(pactOnlyCount, 0)
+		<< "The second stack must be unwilling normally and willing only with the 15% Pact discount";
+	secondNeutral->setStackCount(SlotID(0), static_cast<TQuantity>(pactOnlyCount));
+	const auto discountedForecast = secondNeutral->getNewHorizonsDiplomacyForecast(*hero);
+	ASSERT_TRUE(discountedForecast.willing);
+	EXPECT_TRUE(discountedForecast.recruitmentPact);
+
+	const auto oldOfferCount = server->blockingDialogs.size();
+	gameHandler->objectVisited(secondNeutral, hero);
+	ASSERT_EQ(server->blockingDialogs.size(), oldOfferCount + 1)
+		<< "A Pact-qualified stack keeps the ordinary paid joining offer";
+	const auto offerQuery = server->blockingDialogs.back().queryID;
+	ASSERT_NE(offerQuery, QueryID::NONE);
+	EXPECT_EQ(hero->getNewHorizonsRecruitmentPactExpiryDay(), expiryDay)
+		<< "The entitlement remains available until the pending offer receives a response";
+	ASSERT_TRUE(gameHandler->queryReply(offerQuery, 0, PLAYER));
+	EXPECT_EQ(hero->getNewHorizonsRecruitmentPactExpiryDay(), -1)
+		<< "Declining the Pact-qualified offer consumes the entitlement";
+
+	for(size_t index = oldOfferCount + 1; index < server->blockingDialogs.size(); ++index)
+	{
+		const auto followup = server->blockingDialogs[index].queryID;
+		if(followup != QueryID::NONE)
+		{
+			ASSERT_TRUE(gameHandler->queryReply(followup, 0, PLAYER));
+		}
+	}
+}
+
+TEST_F(NewHorizonsDiplomacyTest, RecruitmentPactIsConsumedByAnUnwillingNextContact)
+{
+	startGameWithTwoNeutralStacks(16, 2, 100, CGCreature::Character::HOSTILE);
+	selectRecruitmentPact();
+
+	int32_t triggerDay = -1;
+	acceptFirstNeutralAndArmRecruitmentPact(triggerDay);
+	ASSERT_TRUE(hero->hasNewHorizonsRecruitmentPact(triggerDay));
+	secondNeutral->agression = 10;
+	secondNeutral->neverFlees = true;
+	const auto unwillingForecast = secondNeutral->getNewHorizonsDiplomacyForecast(*hero);
+	ASSERT_TRUE(unwillingForecast.recruitmentPact);
+	ASSERT_FALSE(unwillingForecast.willing);
+
+	const auto oldOfferCount = server->blockingDialogs.size();
+	gameHandler->objectVisited(secondNeutral, hero);
+	EXPECT_EQ(hero->getNewHorizonsRecruitmentPactExpiryDay(), -1)
+		<< "A contact that gets no joining offer consumes Pact before combat handling";
+	EXPECT_NE(gameState()->getBattle(PLAYER), nullptr)
+		<< "The unwilling hostile stack retains the ordinary combat path";
+	EXPECT_EQ(server->blockingDialogs.size(), oldOfferCount)
+		<< "An unwilling contact must not leave a recruitment modal open";
+}
+
+TEST_F(NewHorizonsDiplomacyTest, AcceptedOfferWithoutAnyAdmittedTroopsDoesNotRearmRecruitmentPact)
+{
+	startGameWithTwoNeutralStacks(17, 1, 1, CGCreature::Character::HOSTILE);
+	selectRecruitmentPact();
+	neutral->agression = 10;
+	const auto neutralId = neutral->id;
+	const auto forecast = neutral->getNewHorizonsDiplomacyForecast(*hero);
+	ASSERT_TRUE(forecast.willing);
+	grantResources(PLAYER, GameResID(EGameResID::GOLD), 10000);
+
+	gameHandler->objectVisited(neutral, hero);
+	ASSERT_EQ(server->blockingDialogs.size(), 1u);
+	ASSERT_NE(server->blockingDialogs.back().queryID, QueryID::NONE);
+	ASSERT_TRUE(gameHandler->queryReply(server->blockingDialogs.back().queryID, 1, PLAYER));
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), 17);
+	EXPECT_EQ(neutral->getStackCount(SlotID(0)), 1)
+		<< "The accepted offer reaches the garrison dialog with no legal Leadership capacity";
+	ASSERT_EQ(server->garrisonDialogs.size(), 1u);
+	ASSERT_NE(server->garrisonDialogs.back().queryID, QueryID::NONE);
+	ASSERT_TRUE(gameHandler->queryReply(server->garrisonDialogs.back().queryID, 0, PLAYER));
+	EXPECT_EQ(gameState()->getObjInstance(neutralId), nullptr);
+	EXPECT_EQ(hero->getNewHorizonsRecruitmentPactExpiryDay(), -1)
+		<< "Closing an accepted offer without positive troop admission does not trigger Pact";
+}
+
+TEST_F(NewHorizonsDiplomacyTest, AcceptedDiscountedOfferRearmsRecruitmentPactOnItsInclusiveExpiryDay)
+{
+	startGameWithTwoNeutralStacks(16, 2, 1, CGCreature::Character::HOSTILE);
+	selectRecruitmentPact();
+
+	int32_t triggerDay = -1;
+	acceptFirstNeutralAndArmRecruitmentPact(triggerDay);
+	const auto oldExpiryDay = triggerDay + 7;
+	ASSERT_TRUE(hero->hasNewHorizonsRecruitmentPact(oldExpiryDay));
+	ASSERT_TRUE(gameHandler->moveStack(StackLocation(hero->id, SlotID(0)),
+		StackLocation(hero->id, SlotID(1)), 1));
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), 16);
+	EXPECT_EQ(hero->getStackCount(SlotID(1)), 1);
+
+	gameState()->day = oldExpiryDay;
+	ASSERT_EQ(gameState()->getCalendar().getCurrentDay(), oldExpiryDay);
+	const auto pactOnlyCount = findPactOnlyWillingStackCount(secondNeutral, oldExpiryDay);
+	ASSERT_GT(pactOnlyCount, 1)
+		<< "The accepted discounted stack must leave a remainder after one legal troop transfers";
+	secondNeutral->setStackCount(SlotID(0), static_cast<TQuantity>(pactOnlyCount));
+	secondNeutral->agression = 10;
+	const auto discountedForecast = secondNeutral->getNewHorizonsDiplomacyForecast(*hero);
+	ASSERT_TRUE(discountedForecast.recruitmentPact);
+	ASSERT_TRUE(discountedForecast.willing);
+
+	const auto goldBefore = gameState()->getPlayerState(PLAYER)->resources[EGameResID::GOLD];
+	const auto oldOfferCount = server->blockingDialogs.size();
+	const auto oldGarrisonCount = server->garrisonDialogs.size();
+	const auto secondNeutralId = secondNeutral->id;
+	gameHandler->objectVisited(secondNeutral, hero);
+	ASSERT_EQ(server->blockingDialogs.size(), oldOfferCount + 1)
+		<< "The Pact remains active on its inclusive expiry day and presents a normal paid offer";
+	const auto & offer = server->blockingDialogs.back();
+	ASSERT_NE(offer.queryID, QueryID::NONE);
+	ASSERT_EQ(offer.components.size(), 2u);
+	EXPECT_EQ(offer.components[1].type, ComponentType::RESOURCE);
+	EXPECT_EQ(offer.components[1].subType.as<GameResID>(), GameResID(EGameResID::GOLD));
+	ASSERT_TRUE(offer.components[1].value.has_value());
+	EXPECT_EQ(*offer.components[1].value, discountedForecast.normalGoldCost);
+	const auto offerText = offer.text.toString(LIBRARY->generaltexth.get());
+	EXPECT_NE(offerText.find("Recruitment Pact treats this stack as having 15% lower Army Value"),
+		std::string::npos);
+	ASSERT_TRUE(gameHandler->queryReply(offer.queryID, 1, PLAYER));
+	EXPECT_EQ(gameState()->getPlayerState(PLAYER)->resources[EGameResID::GOLD],
+		goldBefore - discountedForecast.normalGoldCost);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), 17)
+		<< "The accepted offer admits the one Pikeman that fits the original stack's Leadership capacity";
+	EXPECT_EQ(hero->getStackCount(SlotID(1)), 1);
+	EXPECT_EQ(secondNeutral->getStackCount(SlotID(0)), pactOnlyCount - 1);
+	ASSERT_EQ(server->garrisonDialogs.size(), oldGarrisonCount + 1)
+		<< "The remaining accepted creatures stay in the ordinary transfer window";
+	ASSERT_NE(server->garrisonDialogs.back().queryID, QueryID::NONE);
+	ASSERT_TRUE(gameHandler->queryReply(server->garrisonDialogs.back().queryID, 0, PLAYER));
+	EXPECT_EQ(gameState()->getObjInstance(secondNeutralId), nullptr);
+	EXPECT_EQ(hero->getNewHorizonsRecruitmentPactExpiryDay(), oldExpiryDay + 7)
+		<< "Positive admission on the old boundary day rearms Pact for seven more elapsed days";
+	EXPECT_TRUE(std::none_of(server->infoWindowTexts.begin(), server->infoWindowTexts.end(),
+		[](const std::string & text)
+		{
+			return text.find("no longer available") != std::string::npos;
+		})) << "The inclusive boundary must not show an expired-offer message";
+}
+
 TEST_F(NewHorizonsDiplomacyTest, WeeklyPeacemakerAndTributeStateIsVersionedAndValidated)
 {
 	startGame(1, 1, CGCreature::Character::COMPLIANT);
@@ -1032,4 +1321,98 @@ TEST_F(NewHorizonsDiplomacyTest, WeeklyPeacemakerAndTributeStateIsVersionedAndVa
 	invalidTargetWire.oser.version = ESerializationVersion::CURRENT;
 	EXPECT_THROW(invalidTargetWire.oser & invalidTargetPacket, std::runtime_error);
 	EXPECT_TRUE(invalidTargetWire.extractBuffer().empty());
+}
+
+TEST_F(NewHorizonsDiplomacyTest, RecruitmentPactStateRoundTripsAndDefaultsInThePreviousWeeklyFormat)
+{
+	startGame(1, 1, CGCreature::Character::COMPLIANT);
+	const auto neutralId = neutral->id;
+	const auto pactExpiryDay = gameState()->getCalendar().getCurrentDay() + 7;
+	hero->setNewHorizonsDiplomacyState(4, neutralId, 4, pactExpiryDay);
+
+	CMemorySerializer currentHero;
+	currentHero.oser.version = ESerializationVersion::CURRENT;
+	currentHero.iser.version = ESerializationVersion::CURRENT;
+	currentHero.oser & *hero;
+	CGHeroInstance currentHeroCopy(gameState().get());
+	currentHero.iser.cb = gameState().get();
+	currentHero.iser & currentHeroCopy;
+	EXPECT_EQ(currentHeroCopy.getNewHorizonsPeacemakerLastWeek(), 4);
+	EXPECT_EQ(currentHeroCopy.getNewHorizonsPacifiedCreatureId(), neutralId);
+	EXPECT_EQ(currentHeroCopy.getNewHorizonsTributeLastWeek(), 4);
+	EXPECT_EQ(currentHeroCopy.getNewHorizonsRecruitmentPactExpiryDay(), pactExpiryDay);
+
+	CMemorySerializer oldWeeklyHeroWriter;
+	oldWeeklyHeroWriter.oser.version = ESerializationVersion::NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE;
+	EXPECT_THROW(oldWeeklyHeroWriter.oser & *hero, std::runtime_error);
+	EXPECT_TRUE(oldWeeklyHeroWriter.extractBuffer().empty())
+		<< "A weekly-format hero writer must reject active Pact state before writing bytes";
+
+	hero->setNewHorizonsDiplomacyState(4, neutralId, 4, -1);
+	CMemorySerializer oldWeeklyHeroSnapshot;
+	oldWeeklyHeroSnapshot.oser.version = ESerializationVersion::NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE;
+	oldWeeklyHeroSnapshot.iser.version = ESerializationVersion::NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE;
+	oldWeeklyHeroSnapshot.oser & *hero;
+	CGHeroInstance oldWeeklyHeroCopy(gameState().get());
+	oldWeeklyHeroCopy.setNewHorizonsDiplomacyState(8, neutralId, 9, pactExpiryDay);
+	oldWeeklyHeroSnapshot.iser.cb = gameState().get();
+	oldWeeklyHeroSnapshot.iser & oldWeeklyHeroCopy;
+	EXPECT_EQ(oldWeeklyHeroCopy.getNewHorizonsPeacemakerLastWeek(), 4);
+	EXPECT_EQ(oldWeeklyHeroCopy.getNewHorizonsPacifiedCreatureId(), neutralId);
+	EXPECT_EQ(oldWeeklyHeroCopy.getNewHorizonsTributeLastWeek(), 4);
+	EXPECT_EQ(oldWeeklyHeroCopy.getNewHorizonsRecruitmentPactExpiryDay(), -1)
+		<< "A previous weekly snapshot retains its fields and defaults the appended Pact field";
+
+	SetNewHorizonsDiplomacyState currentPacket;
+	currentPacket.heroId = hero->id;
+	currentPacket.peacemakerLastWeek = 4;
+	currentPacket.pacifiedCreatureId = neutralId;
+	currentPacket.tributeLastWeek = 4;
+	currentPacket.pactExpiryDay = pactExpiryDay;
+	CMemorySerializer currentPacketSnapshot;
+	currentPacketSnapshot.oser.version = ESerializationVersion::CURRENT;
+	currentPacketSnapshot.iser.version = ESerializationVersion::CURRENT;
+	currentPacketSnapshot.oser & currentPacket;
+	SetNewHorizonsDiplomacyState currentPacketCopy;
+	currentPacketSnapshot.iser & currentPacketCopy;
+	EXPECT_EQ(currentPacketCopy.heroId, hero->id);
+	EXPECT_EQ(currentPacketCopy.peacemakerLastWeek, 4);
+	EXPECT_EQ(currentPacketCopy.pacifiedCreatureId, neutralId);
+	EXPECT_EQ(currentPacketCopy.tributeLastWeek, 4);
+	EXPECT_EQ(currentPacketCopy.pactExpiryDay, pactExpiryDay);
+	EXPECT_TRUE(currentPacketCopy.hasValidState());
+
+	CMemorySerializer oldWeeklyPacketWriter;
+	oldWeeklyPacketWriter.oser.version = ESerializationVersion::NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE;
+	EXPECT_THROW(oldWeeklyPacketWriter.oser & currentPacket, std::runtime_error);
+	EXPECT_TRUE(oldWeeklyPacketWriter.extractBuffer().empty())
+		<< "A previous weekly packet writer must reject active Pact state before writing bytes";
+
+	SetNewHorizonsDiplomacyState oldWeeklyPacket;
+	oldWeeklyPacket.heroId = hero->id;
+	oldWeeklyPacket.peacemakerLastWeek = 4;
+	oldWeeklyPacket.pacifiedCreatureId = neutralId;
+	oldWeeklyPacket.tributeLastWeek = 4;
+	CMemorySerializer oldWeeklyPacketSnapshot;
+	oldWeeklyPacketSnapshot.oser.version = ESerializationVersion::NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE;
+	oldWeeklyPacketSnapshot.iser.version = ESerializationVersion::NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE;
+	oldWeeklyPacketSnapshot.oser & oldWeeklyPacket;
+	SetNewHorizonsDiplomacyState oldWeeklyPacketCopy;
+	oldWeeklyPacketCopy.pactExpiryDay = pactExpiryDay;
+	oldWeeklyPacketSnapshot.iser & oldWeeklyPacketCopy;
+	EXPECT_EQ(oldWeeklyPacketCopy.heroId, hero->id);
+	EXPECT_EQ(oldWeeklyPacketCopy.peacemakerLastWeek, 4);
+	EXPECT_EQ(oldWeeklyPacketCopy.pacifiedCreatureId, neutralId);
+	EXPECT_EQ(oldWeeklyPacketCopy.tributeLastWeek, 4);
+	EXPECT_EQ(oldWeeklyPacketCopy.pactExpiryDay, -1)
+		<< "A previous weekly packet snapshot retains the weekly trio and defaults Pact";
+
+	EXPECT_THROW(hero->setNewHorizonsDiplomacyState(-1, ObjectInstanceID::NONE, -1, -2), std::runtime_error);
+	SetNewHorizonsDiplomacyState invalidPactPacket;
+	invalidPactPacket.heroId = hero->id;
+	invalidPactPacket.pactExpiryDay = -2;
+	CMemorySerializer invalidPactWire;
+	invalidPactWire.oser.version = ESerializationVersion::CURRENT;
+	EXPECT_THROW(invalidPactWire.oser & invalidPactPacket, std::runtime_error);
+	EXPECT_TRUE(invalidPactWire.extractBuffer().empty());
 }

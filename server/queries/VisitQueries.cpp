@@ -14,6 +14,7 @@
 
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/mapObjects/CGCreature.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/mapObjects/TownBuildingInstance.h"
 #include "../CGameHandler.h"
@@ -78,6 +79,13 @@ MapObjectVisitQuery::MapObjectVisitQuery(CGameHandler * owner, const CGObjectIns
 void MapObjectVisitQuery::onRemoval(PlayerColor color)
 {
 	auto object = gh->gameState().getObjInstance(visitedObject);
+	if(trackingNeutralRecruitment && admittedNeutralRecruitment)
+	{
+		const auto * creature = dynamic_cast<const CGCreature *>(object);
+		const auto * hero = gh->gameState().getHero(visitingHero);
+		if(creature && hero)
+			creature->onSuccessfulNewHorizonsRecruitment(*gh, *hero);
+	}
 
 	gh->objectVisitEnded(visitingHero, players.front());
 

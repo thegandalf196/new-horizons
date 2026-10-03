@@ -36,6 +36,9 @@ public:
 	static constexpr QueryType TYPE = QueryType::MapObjectVisit;
 
 	bool removeObjectAfterVisit;
+	/// Server-only accepted encounter context; no benefit until actual troop intake.
+	bool trackingNeutralRecruitment = false;
+	bool admittedNeutralRecruitment = false;
 
 	MapObjectVisitQuery(CGameHandler * owner, const CGObjectInstance * Obj, const CGHeroInstance * Hero);
 
