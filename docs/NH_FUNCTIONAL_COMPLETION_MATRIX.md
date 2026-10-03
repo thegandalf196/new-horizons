@@ -27,6 +27,9 @@ tactical AI certification. No playable snapshot promotion or rendered acceptance
 Iron Will, Crisis Command and Seize Initiative retain their narrow unanswered
 design/conflict questions. Windows37077420212 succeeds on older37dd359b8,
 including Battle Plan but not Passing Lines.
+Passing Lines source7aaa48c1be92db6056973dfd4a3e6ad9164302c5 is pushed.
+Notice37081984549 succeeds; full Windows37082097577 is queued on that source.
+No compile/package success is claimed before that job reaches terminal success.
 
 UP-148 Battle Plan is implemented and active after both-target builds and
 principal native5/5 in13.180s, zero skips. Its saved pre-combat opportunity and
