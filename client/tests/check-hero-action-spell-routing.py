@@ -67,7 +67,9 @@ def verify_spent_action_spell_feedback(source):
 
     block_ui = source.split('void BattleWindow::blockUI(bool on)', 1)[1]
     assert 'spellcastingProblem == ESpellCastProblem::CASTS_PER_TURN_LIMIT' in block_ui
-    assert 'on || tacticsMode || !canCastSpells' in block_ui
+    compact_block_ui = re.sub(r'\s+', '', block_ui)
+    assert 'constbooldeploymentPhase=owner.isDeploymentPhase();' in compact_block_ui
+    assert 'setShortcutBlocked(EShortcut::BATTLE_CAST_SPELL,on||deploymentPhase||!canCastSpells);' in compact_block_ui
 
     hero = (SOURCE.parent / 'BattleHero.cpp').read_text()
     clicked = hero.split('void BattleHero::heroLeftClicked()', 1)[1].split('void BattleHero::heroRightClicked()', 1)[0]
@@ -128,6 +130,22 @@ def main():
     window = (SOURCE.parent / 'BattleWindow.cpp').read_text()
     verify_orders_help(window)
     verify_spent_action_spell_feedback(window)
+    deployment_mutants = [
+        window.replace('on || deploymentPhase || !canCastSpells',
+                       'on || localTacticsMode || !canCastSpells', 1),
+        window.replace('on || deploymentPhase || !canCastSpells',
+                       'on || !canCastSpells', 1),
+        window.replace('const bool deploymentPhase = owner.isDeploymentPhase();',
+                       'const bool deploymentPhase = owner.isInTacticsMode();', 1),
+    ]
+    for index, mutant in enumerate(deployment_mutants):
+        assert mutant != window
+        try:
+            verify_spent_action_spell_feedback(mutant)
+        except AssertionError:
+            continue
+        raise AssertionError(f'Global deployment spell-block mutant {index} survived')
+    print(f'PASS: global deployment blocks spell routing; {len(deployment_mutants)} local/missing-phase mutants rejected')
     help_mutants = [
         window.replace('addUsedEvents(SHOW_POPUP)', 'addUsedEvents(SHOW_POPUP | LCLICK)', 1),
         window.replace('addUsedEvents(SHOW_POPUP)', 'addUsedEvents(SHOW_POPUP | KEYBOARD)', 1),
