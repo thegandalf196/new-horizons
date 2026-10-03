@@ -2,7 +2,7 @@
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
 	"sourceDocument": "docs/design-sources/New Horizons.md",
-	"sourceSha256": "3095a8a47c689cd7af5a74a8fe0e44d85998648c39b41df201189dd6793b0684",
+	"sourceSha256": "58a3cd1c20a1b47641ff65866b4e4f3cf9ddc3d5767ed742126b9e0442f2290f",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -2439,7 +2439,7 @@
 					"requires": "basic",
 					"description": "From up to 5 hexes away, reveal whether a visible neutral stack is willing to negotiate and the gold required if it joins.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "From up to 5 hexes away, reveal whether a visible neutral stack is willing to negotiate and the gold required if it joins."
 					}
 				},

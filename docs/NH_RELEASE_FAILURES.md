@@ -2,6 +2,30 @@
 
 ## Purpose
 
+### 2026-10-03 UP-129 Envoy — Actual sight authority in hidden-target fixtures
+
+Retry principal2776 passes14/15; the remaining visibility assertion fails because
+CGHeroInstance::getSightRadius reads the library engine settings, not the map
+override used by the fixture. Replace that ineffective override with an
+authoritative GiveBonus sight penalty followed by FoWChange HIDDEN; assert the
+actual sight radius and visibility before testing the popup. Preserve the failed
+retry log/XML. Production visibility/range guards are unchanged. A fresh focused
+rebuild/rerun is required before accepting Envoy.
+Resolution: test68817 exits0 and final principal retry2 passes15/15 in3.282s,
+zero skips. The real hidden-target precondition and positive reveal both pass;
+no production visibility guard or assertion was weakened.
+
+### 2026-10-03 UP-129 Envoy — Hero visitable offset and perk argument
+
+Client69085 and test68880 pass, but first principal61370 passes only the prior
+10/15 cases. New fixture positions assumed the hero's artwork anchor was its
+visitable tile: builder x5 produces visitable x4, so neutral x10 is distance6,
+not5. Derive positions from the actual visitable coordinate and retain exact
+squared-distance boundary assertions. The Basic Envoy helper also supplied
+Envoy in the Advanced argument; select it in the Basic argument through the
+ordinary offer path. Preserve UP129-envoy-principal.log/XML; do not loosen the
+production five-tile gate or bypass perk selection to conceal fixture errors.
+
 ### 2026-10-03 UP-129 — Concrete neutral type and HeroPtr reference
 
 Initial client95849 fails because AIGateway uses dynamic_cast to CGCreature

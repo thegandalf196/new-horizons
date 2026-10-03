@@ -32,6 +32,53 @@
 
 namespace
 {
+constexpr const char * DIPLOMACY_ENVOY_PERK_ID = "new-horizons:diplomacy.envoy";
+constexpr ui32 DIPLOMACY_ENVOY_RANGE_SQUARED = 25;
+
+bool canShowEnvoyDiplomacyInformation(const CGCreature & creature, const CGHeroInstance & hero)
+{
+	if(!hero.hasActivePerk(newHorizonsDiplomacy::SKILL_ID, DIPLOMACY_ENVOY_PERK_ID))
+		return false;
+
+	if(creature.tempOwner != PlayerColor::NEUTRAL && creature.tempOwner != PlayerColor::UNFLAGGABLE)
+		return false;
+
+	if(!creature.isVisibleFor(hero.getOwner()))
+		return false;
+
+	const auto creaturePosition = creature.anchorPos();
+	const auto heroPosition = hero.visitablePos();
+	return creaturePosition.z == heroPosition.z
+		&& creaturePosition.dist2dSQ(heroPosition) <= DIPLOMACY_ENVOY_RANGE_SQUARED;
+}
+
+void appendEnvoyDiplomacyInformation(MetaString & text,
+	const newHorizonsDiplomacy::Forecast & forecast)
+{
+	text.appendRawString("\n\nEnvoy: ");
+	text.appendRawString(forecast.willing ? "willing to negotiate." : "not willing to negotiate.");
+
+	if(forecast.active && !forecast.authoredFree)
+	{
+		text.appendRawString("\nDiplomacy threshold: up to ");
+		text.appendRawString(std::to_string(forecast.thresholdPercent));
+		text.appendRawString("% of your current Army Value.");
+	}
+	if(forecast.commonCause)
+		text.appendRawString("\nCommon Cause counts same-faction neutral troops at half Army Value.");
+	if(!forecast.eligible)
+		text.appendRawString("\nThis neutral stack is not eligible to join through Diplomacy.");
+
+	text.appendRawString("\nGold required if it joins: ");
+	if(forecast.authoredFree)
+		text.appendRawString("0");
+	else if(forecast.normalGoldCostValid)
+		text.appendRawString(std::to_string(forecast.normalGoldCost));
+	else
+		text.appendRawString("unavailable");
+	text.appendRawString(" Gold.");
+}
+
 void appendNewHorizonsDiplomacyNotes(MetaString & text,
 	const newHorizonsDiplomacy::Forecast & forecast, bool includeTransferWarning)
 {
@@ -155,6 +202,12 @@ MetaString CGCreature::getPopupText(const CGHeroInstance * hero) const
 	else
 	{
 		hoverName = getHoverText(hero->tempOwner);
+		if(canShowEnvoyDiplomacyInformation(*this, *hero))
+		{
+			const auto forecast = getNewHorizonsDiplomacyForecast(*hero);
+			if(forecast.usesNewHorizonsRules)
+				appendEnvoyDiplomacyInformation(hoverName, forecast);
+		}
 	}
 
 	if (settings["general"]["enableUiEnhancements"].Bool())

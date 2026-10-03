@@ -18,6 +18,7 @@
 #include "../../lib/IGameSettings.h"
 #include "../../lib/CPlayerState.h"
 #include "../../lib/CSkillHandler.h"
+#include "../../lib/bonuses/BonusCustomTypes.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/bonuses/Propagators.h"
 #include "../../lib/bonuses/Updaters.h"
@@ -47,6 +48,7 @@ using newHorizonsDiplomacy::resolveForecast;
 
 constexpr PlayerColor PLAYER(0);
 constexpr auto DIPLOMACY_SKILL = "new-horizons:diplomacy";
+constexpr auto ENVOY_PERK_ID = "new-horizons:diplomacy.envoy";
 
 CreatureID creature(const char * id)
 {
@@ -106,14 +108,15 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, capabilities);
 	}
 
-	void startGame(int32_t heroPikemen, int32_t neutralPikemen, CGCreature::Character character)
+	void startGame(int32_t heroPikemen, int32_t neutralPikemen, CGCreature::Character character,
+		int3 neutralPosition = {12, 12, 0})
 	{
 		const auto pikeman = creature("core:pikeman");
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder.size(36, false).playerActive(PLAYER)
 			.hero({5, 5, 0}, heroType("core:christian"), PLAYER)
 			.heroGarrison({{pikeman, heroPikemen}})
-			.monster({12, 12, 0}, pikeman, static_cast<uint16_t>(neutralPikemen),
+			.monster(neutralPosition, pikeman, static_cast<uint16_t>(neutralPikemen),
 				static_cast<int8_t>(character));
 		startWithMap(std::move(builder));
 
@@ -125,6 +128,29 @@ protected:
 		server = std::make_unique<DiplomacyRecordingServer>(gameState(), PLAYER);
 		gameHandler = std::make_unique<CGameHandler>(*server, gameState());
 		gameState()->actingPlayers.insert(PLAYER);
+	}
+
+	void revealNeutralForPlayer()
+	{
+		FoWChange reveal;
+		reveal.player = PLAYER;
+		reveal.mode = ETileVisibility::REVEALED;
+		for(int y = 0; y < neutral->getHeight(); ++y)
+			for(int x = 0; x < neutral->getWidth(); ++x)
+				reveal.tiles.insert(neutral->anchorPos() + int3(-x, -y, 0));
+		gameHandler->sendAndApply(reveal);
+		ASSERT_TRUE(neutral->isVisibleFor(PLAYER));
+	}
+
+	std::string neutralPopupText() const
+	{
+		return neutral->getPopupText(hero).toString(LIBRARY->generaltexth.get());
+	}
+
+	void selectBasicEnvoy()
+	{
+		advanceToDiplomacyRank(MasteryLevel::BASIC, ENVOY_PERK_ID);
+		ASSERT_TRUE(hero->hasActivePerk(DIPLOMACY_SKILL, ENVOY_PERK_ID));
 	}
 
 	static bool selectOfferedPerk(CGameHandler & handler, CGHeroInstance * candidate,
@@ -327,11 +353,135 @@ TEST(NewHorizonsDiplomacy, UsesTheCapturedPerkRegistryForRulesetGating)
 
 TEST_F(NewHorizonsDiplomacyLegacyGateTest, MapWithoutCapturedNewHorizonsPerksStaysOnTheLegacyPath)
 {
-	startGame(16, 2, CGCreature::Character::HOSTILE);
+	startGame(16, 2, CGCreature::Character::HOSTILE, {9, 5, 0});
 	const auto forecast = neutral->getNewHorizonsDiplomacyForecast(*hero);
 	EXPECT_FALSE(forecast.usesNewHorizonsRules);
 	EXPECT_FALSE(forecast.active);
 	EXPECT_FALSE(forecast.willing);
+	revealNeutralForPlayer();
+	const auto popup = neutralPopupText();
+	EXPECT_EQ(popup.find("Envoy:"), std::string::npos);
+	EXPECT_EQ(popup.find("Gold required if it joins:"), std::string::npos);
+}
+
+TEST_F(NewHorizonsDiplomacyTest, UnselectedEnvoyDoesNotChangeTheVisibleNeutralPopup)
+{
+	startGame(16, 2, CGCreature::Character::HOSTILE, {9, 5, 0});
+	advanceToDiplomacyRank(MasteryLevel::BASIC);
+	ASSERT_FALSE(hero->hasActivePerk(DIPLOMACY_SKILL, ENVOY_PERK_ID));
+	revealNeutralForPlayer();
+	EXPECT_EQ(neutral->anchorPos().dist2dSQ(hero->visitablePos()), 25u);
+
+	const auto popup = neutralPopupText();
+	EXPECT_EQ(popup.find("Envoy:"), std::string::npos);
+	EXPECT_EQ(popup.find("Gold required if it joins:"), std::string::npos);
+	EXPECT_EQ(popup.find("Diplomacy threshold:"), std::string::npos);
+}
+
+TEST_F(NewHorizonsDiplomacyTest, EnvoyReportsWillingPaidStackAtInclusiveFiveTileRangeWithoutChangingVisibility)
+{
+	startGame(16, 2, CGCreature::Character::HOSTILE, {9, 5, 0});
+	selectBasicEnvoy();
+	ASSERT_EQ(neutral->anchorPos().dist2dSQ(hero->visitablePos()), 25u);
+	const int3 unrelatedHiddenTile{30, 30, 0};
+	const int originalSightRadius = hero->getSightRadius();
+	ASSERT_GT(originalSightRadius, 0);
+	GiveBonus sightPenalty;
+	sightPenalty.id = hero->id;
+	sightPenalty.bonus.type = BonusType::SIGHT_RADIUS;
+	sightPenalty.bonus.valType = BonusValueType::ADDITIVE_VALUE;
+	sightPenalty.bonus.val = -originalSightRadius;
+	gameHandler->sendAndApply(sightPenalty);
+	ASSERT_EQ(hero->getSightRadius(), 0);
+
+	FoWChange hide;
+	hide.player = PLAYER;
+	hide.mode = ETileVisibility::HIDDEN;
+	for(int y = 0; y < neutral->getHeight(); ++y)
+		for(int x = 0; x < neutral->getWidth(); ++x)
+			hide.tiles.insert(neutral->anchorPos() + int3(-x, -y, 0));
+	gameHandler->sendAndApply(hide);
+	ASSERT_FALSE(gameState()->isVisibleFor(neutral, PLAYER));
+	ASSERT_FALSE(gameState()->isVisibleFor(unrelatedHiddenTile, PLAYER));
+	const auto hiddenPopup = neutralPopupText();
+	EXPECT_EQ(hiddenPopup.find("Envoy:"), std::string::npos);
+	EXPECT_EQ(hiddenPopup.find("Gold required if it joins:"), std::string::npos);
+	EXPECT_FALSE(gameState()->isVisibleFor(neutral, PLAYER));
+	EXPECT_FALSE(gameState()->isVisibleFor(unrelatedHiddenTile, PLAYER));
+
+	revealNeutralForPlayer();
+	ASSERT_TRUE(gameState()->isVisibleFor(neutral, PLAYER));
+	ASSERT_FALSE(hero->hasVisions(neutral, BonusCustomSubtype::visionsMonsters));
+
+	const auto normalHover = neutral->getHoverText(hero).toString(LIBRARY->generaltexth.get());
+	EXPECT_EQ(normalHover, neutral->getHoverText(PLAYER).toString(LIBRARY->generaltexth.get()));
+	const auto forecast = neutral->getNewHorizonsDiplomacyForecast(*hero);
+	ASSERT_TRUE(forecast.willing);
+	const auto popup = neutralPopupText();
+	EXPECT_NE(popup.find("Envoy: willing to negotiate."), std::string::npos);
+	EXPECT_NE(popup.find("Diplomacy threshold: up to 25% of your current Army Value."), std::string::npos);
+	EXPECT_NE(popup.find("Gold required if it joins: " + std::to_string(forecast.normalGoldCost) + " Gold."),
+		std::string::npos);
+	EXPECT_EQ(neutral->getHoverText(hero).toString(LIBRARY->generaltexth.get()), normalHover)
+		<< "Envoy reports in the detail popup, not the one-line hover/status text";
+	EXPECT_FALSE(hero->hasVisions(neutral, BonusCustomSubtype::visionsMonsters));
+	EXPECT_TRUE(gameState()->isVisibleFor(neutral, PLAYER));
+	EXPECT_FALSE(gameState()->isVisibleFor(unrelatedHiddenTile, PLAYER))
+		<< "Reading an Envoy report must not grant map visibility";
+}
+
+TEST_F(NewHorizonsDiplomacyTest, EnvoyReportsAuthoredFreeJoinWithoutThresholdOrGold)
+{
+	startGame(1, 2, CGCreature::Character::COMPLIANT, {9, 5, 0});
+	selectBasicEnvoy();
+	revealNeutralForPlayer();
+	ASSERT_EQ(neutral->anchorPos().dist2dSQ(hero->visitablePos()), 25u);
+	const auto forecast = neutral->getNewHorizonsDiplomacyForecast(*hero);
+	ASSERT_TRUE(forecast.authoredFree);
+	ASSERT_TRUE(forecast.willing);
+
+	const auto popup = neutralPopupText();
+	EXPECT_NE(popup.find("Envoy: willing to negotiate."), std::string::npos);
+	EXPECT_NE(popup.find("Gold required if it joins: 0 Gold."), std::string::npos);
+	EXPECT_EQ(popup.find("Diplomacy threshold:"), std::string::npos);
+	EXPECT_FALSE(hero->hasVisions(neutral, BonusCustomSubtype::visionsMonsters));
+}
+
+TEST_F(NewHorizonsDiplomacyTest, EnvoyReportsThresholdFailureAndGoldAtFiveTiles)
+{
+	startGame(16, 20, CGCreature::Character::HOSTILE, {9, 5, 0});
+	selectBasicEnvoy();
+	revealNeutralForPlayer();
+	ASSERT_EQ(neutral->anchorPos().dist2dSQ(hero->visitablePos()), 25u);
+	const auto forecast = neutral->getNewHorizonsDiplomacyForecast(*hero);
+	ASSERT_FALSE(forecast.willing);
+
+	const auto popup = neutralPopupText();
+	EXPECT_NE(popup.find("Envoy: not willing to negotiate."), std::string::npos);
+	EXPECT_NE(popup.find("Diplomacy threshold: up to 25% of your current Army Value."),
+		std::string::npos);
+	EXPECT_NE(popup.find("Gold required if it joins: " + std::to_string(forecast.normalGoldCost) + " Gold."),
+		std::string::npos);
+}
+
+TEST_F(NewHorizonsDiplomacyTest, EnvoyDoesNotReportBeyondFiveTilesOrAtSquaredDistanceTwentySix)
+{
+	startGame(16, 2, CGCreature::Character::HOSTILE, {10, 5, 0});
+	selectBasicEnvoy();
+	revealNeutralForPlayer();
+	ASSERT_EQ(neutral->anchorPos().dist2dSQ(hero->visitablePos()), 36u);
+	const auto sixTilePopup = neutralPopupText();
+	EXPECT_EQ(sixTilePopup.find("Envoy:"), std::string::npos);
+	EXPECT_EQ(sixTilePopup.find("Gold required if it joins:"), std::string::npos);
+
+	// This is a read-only popup query; relocating the fixture stack lets the
+	// same selected Envoy exercise the diagonal squared-distance boundary.
+	neutral->setAnchorPos(hero->visitablePos() + int3(5, 1, 0));
+	revealNeutralForPlayer();
+	ASSERT_EQ(neutral->anchorPos().dist2dSQ(hero->visitablePos()), 26u);
+	const auto diagonalPopup = neutralPopupText();
+	EXPECT_EQ(diagonalPopup.find("Envoy:"), std::string::npos);
+	EXPECT_EQ(diagonalPopup.find("Gold required if it joins:"), std::string::npos);
 }
 
 TEST_F(NewHorizonsDiplomacyTest, PaidOfferUsesSelectedAdvancedDiplomacyPerksAndSafeAdmission)
