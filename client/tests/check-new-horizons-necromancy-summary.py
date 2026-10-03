@@ -4,8 +4,9 @@
 The server owns eligibility, conversion, capacity and mana calculations.  This
 small client contract only proves that the packet summary is rendered from
 those authoritative fields, that final Skeleton-form/Zombie counts get creature
-components, and that legacy Necromancy feedback remains the fallback for old
-result packets.
+components, Death Lord and Grave Knowledge pools are explained from packet
+counts, and legacy Necromancy feedback remains the fallback for old result
+packets.
 """
 
 import re
@@ -39,7 +40,12 @@ def function_body(source: str, signature: str) -> str:
 
 def main() -> None:
     for field in (
+        "percentage",
         "eligibleCasualties",
+        "deathLordCasualties",
+        "graveKnowledgeCasualties",
+        "deathLordSkeletons",
+        "graveKnowledgeSkeletons",
         "skeletonsOffered",
         "skeletonsRaised",
         "zombiesRaised",
@@ -80,6 +86,48 @@ def main() -> None:
     require(summary_builder,
             "text.appendName(baseSkeleton, result.skeletonsOffered)",
             "base Skeleton-equivalent generated count")
+    require(summary_builder, '"Ordinary living casualties: "',
+            "ordinary living casualty pool label")
+    require(summary_builder, '" (normal rate "',
+            "ordinary living rate scope")
+    require(summary_builder, "text.appendNumber(result.percentage)",
+            "authoritative ordinary living rate")
+    require(summary_builder, "if(result.deathLordCasualties > 0)",
+            "Death Lord pool eligibility gate")
+    require(summary_builder, '" Construct/Elemental casualties -> "',
+            "Death Lord casualty pool description")
+    require(summary_builder, "text.appendNumber(result.deathLordCasualties)",
+            "authoritative Death Lord casualty count")
+    require(summary_builder, "text.appendNumber(result.deathLordSkeletons)",
+            "authoritative Death Lord generated equivalent count")
+    require(summary_builder,
+            "text.appendName(baseSkeleton, result.deathLordSkeletons)",
+            "Death Lord base Skeleton-equivalent label")
+    require(summary_builder,
+            '" (base equivalent) at 25% of the normal rate.\\n"',
+            "Death Lord normal-rate fraction")
+    require(summary_builder,
+            '" (base equivalents) at 25% of the normal rate.\\n"',
+            "Death Lord plural normal-rate fraction")
+    require(summary_builder, "if(result.graveKnowledgeCasualties > 0)",
+            "Grave Knowledge pool eligibility gate")
+    require(summary_builder, '" Undead casualties -> "',
+            "Grave Knowledge casualty pool description")
+    require(summary_builder,
+            "text.appendNumber(result.graveKnowledgeCasualties)",
+            "authoritative Grave Knowledge casualty count")
+    require(summary_builder,
+            "text.appendNumber(result.graveKnowledgeSkeletons)",
+            "authoritative Grave Knowledge generated equivalent count")
+    require(summary_builder,
+            "text.appendName(baseSkeleton, result.graveKnowledgeSkeletons)",
+            "Grave Knowledge base Skeleton-equivalent label")
+    require(summary_builder,
+            '" (base equivalent) at the fixed 20% rate.\\n"',
+            "Grave Knowledge fixed rate")
+    require(summary_builder,
+            '" (base equivalents) at the fixed 20% rate.\\n"',
+            "Grave Knowledge plural fixed rate")
     require(summary_builder,
             "text.appendName(skeleton, result.skeletonsRaised)",
             "selected Skeleton delivered count")
@@ -131,6 +179,10 @@ def main() -> None:
     # snapshot or call the legacy health-weighted resolver.
     if "calculateNecromancy" in HELPER or "getSlotFor" in HELPER:
         raise AssertionError("client summary must consume the packet, not infer army capacity")
+    if summary_builder.index("if(result.deathLordCasualties > 0)") > summary_builder.index("if(result.blockedByArmyCapacity)"):
+        raise AssertionError("Death Lord pool summary must remain visible when army capacity blocks delivery")
+    if summary_builder.index("if(result.graveKnowledgeCasualties > 0)") > summary_builder.index("if(result.blockedByArmyCapacity)"):
+        raise AssertionError("Grave Knowledge pool summary must remain visible when army capacity blocks delivery")
 
     print("New Horizons Necromancy summary UI source checks passed")
 

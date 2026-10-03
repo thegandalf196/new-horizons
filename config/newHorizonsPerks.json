@@ -2,7 +2,7 @@
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
 	"sourceDocument": "docs/design-sources/New Horizons.md",
-	"sourceSha256": "f7923a372c4ac07945197d7f35ec7cfed892544258dc26a50c9870c01970cbac",
+	"sourceSha256": "169f3f4ca5ddc858e9e07954edb7b99817a2334a0ab0bb939df63ebb99e44799",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -3657,7 +3657,7 @@
 					"requires": "advanced",
 					"description": "Construct and Elemental casualties become eligible at 25% of the normal Necromancy conversion rate.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Construct and Elemental casualties become eligible at 25% of the normal Necromancy conversion rate."
 					}
 				},
@@ -3667,7 +3667,7 @@
 					"requires": "advanced",
 					"description": "When defeating Undead enemies, 20% of their eligible casualties may be reclaimed as Skeletons even though they are not living.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "When defeating Undead enemies, 20% of their eligible casualties may be reclaimed as Skeletons even though they are not living."
 					}
 				},
@@ -3675,10 +3675,10 @@
 					"id": "new-horizons:necromancy.ossuary",
 					"name": "Ossuary",
 					"requires": "advanced",
-					"description": "If the hero has no legal army slot for raised creatures, they are sent to the nearest owned Necropolis town instead of being lost.",
+					"description": "If the hero cannot accept the raised creatures because of unavailable army slots or Leadership limits, they are sent to the nearest owned Necropolis town instead of being lost.",
 					"effect": {
 						"status": "planned",
-						"description": "If the hero has no legal army slot for raised creatures, they are sent to the nearest owned Necropolis town instead of being lost."
+						"description": "If the hero cannot accept the raised creatures because of unavailable army slots or Leadership limits, they are sent to the nearest owned Necropolis town instead of being lost."
 					}
 				},
 				{
@@ -3695,10 +3695,10 @@
 					"id": "new-horizons:necromancy.lordOfTheDead",
 					"name": "Lord of the Dead",
 					"requires": "expert",
-					"description": "After defeating an army containing at least one Champion-tier living creature, if the base Necromancy result contains at least 12 Skeletons, 12 are automatically replaced with 1 faction-defined high-tier Undead, once per combat. This conversion resolves before other Necromancy conversion perks.",
+					"description": "After defeating an army containing at least one Champion-tier living creature, if the base Necromancy result contains at least 12 Skeletons, 12 are automatically replaced with 1 Bone Dragon, once per combat. This conversion resolves before other Necromancy conversion perks.",
 					"effect": {
 						"status": "planned",
-						"description": "After defeating an army containing at least one Champion-tier living creature, if the base Necromancy result contains at least 12 Skeletons, 12 are automatically replaced with 1 faction-defined high-tier Undead, once per combat. This conversion resolves before other Necromancy conversion perks."
+						"description": "After defeating an army containing at least one Champion-tier living creature, if the base Necromancy result contains at least 12 Skeletons, 12 are automatically replaced with 1 Bone Dragon, once per combat. This conversion resolves before other Necromancy conversion perks."
 					}
 				}
 			]

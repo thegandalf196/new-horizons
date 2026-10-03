@@ -2,6 +2,26 @@
 
 ## Purpose
 
+### 2026-10-03 UP-187 — Old-format fixtures and canonical source identity
+
+Review caught a fixture attempting to write populated new special-casualty maps
+in an old format; the production prewrite rejection was correct. Clear fields
+on the old writer source, and seed only the read target when checking resets.
+Actual magical-casualty fixtures must inflict at least one death after the target's
+magical reductions; use sufficient Spell Power rather than relax provenance checks.
+After the user clarified Ossuary in the canonical document, the data identity
+test exposed its stale registry source hash. Update sourceSha256 and regenerate
+the module with each canonical amendment; repaired data/inventory gates pass19/19.
+No production guard was weakened for these setup/identity corrections.
+Fresh native principal passes32/32, but adjacent11/12 has the Vampire capture
+case rejected at hero spell submission. Vampire initiative differs from the
+slower original Pikeman/Golem fixtures; establish the legal active-side window
+before casting rather than relax server action ownership. Preserve the original
+UP187-adjacent log/XML and rerun after focused diagnosis/repair.
+The fixture-only incremental rebuild17335 passes. Final retry principal32/32
+and adjacent12/12 pass, zero skips; the Vampire case uses the real attacker's
+round-1 window. Original failing evidence remains separate from retry logs.
+
 ### 2026-10-03 UP-185 — Creature service interfaces are not concrete entities
 
 Client57879 fails in the new upgrade-availability helper: CreatureService

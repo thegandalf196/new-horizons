@@ -387,11 +387,52 @@ struct DLL_LINKAGE BattleResult : public Query
 	BattleSideArray<TExpType> exp{0,0}; //exp for attacker and defender
 	BattleSideArray<std::map<CreatureID, si32>> necromancyEligibleCasualties;
 	bool necromancyEligibilityCaptured = false;
+	BattleSideArray<std::map<CreatureID, si32>> necromancyNonlivingEligibleCasualties;
+	BattleSideArray<std::map<CreatureID, si32>> necromancyUndeadEligibleCasualties;
+	bool necromancySpecialEligibilityCaptured = false;
+
+	bool hasSpecialNecromancyCasualties() const
+	{
+		return necromancySpecialEligibilityCaptured
+			|| !necromancyNonlivingEligibleCasualties[BattleSide::ATTACKER].empty()
+			|| !necromancyNonlivingEligibleCasualties[BattleSide::DEFENDER].empty()
+			|| !necromancyUndeadEligibleCasualties[BattleSide::ATTACKER].empty()
+			|| !necromancyUndeadEligibleCasualties[BattleSide::DEFENDER].empty();
+	}
+
+	bool isSpecialNecromancyCaptureValid() const
+	{
+		if(!necromancySpecialEligibilityCaptured && hasSpecialNecromancyCasualties())
+			return false;
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			for(const auto & entry : necromancyNonlivingEligibleCasualties[side])
+			{
+				if(!entry.first.hasValue() || entry.second < 0)
+					return false;
+			}
+			for(const auto & entry : necromancyUndeadEligibleCasualties[side])
+			{
+				if(!entry.first.hasValue() || entry.second < 0)
+					return false;
+			}
+		}
+		return true;
+	}
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !isSpecialNecromancyCaptureValid())
+			throw std::runtime_error("Invalid Necromancy special casualty capture");
+		if(h.saving && hasSpecialNecromancyCasualties()
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_SPECIAL_CASUALTIES))
+			throw std::runtime_error("Cannot write Necromancy special casualty capture to an older format");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY)
+			&& (necromancyEligibilityCaptured || !necromancyEligibleCasualties[BattleSide::ATTACKER].empty()
+				|| !necromancyEligibleCasualties[BattleSide::DEFENDER].empty()))
+			throw std::runtime_error("Cannot write New Horizons Necromancy result to an older format");
 		h & battleID;
 		h & queryID;
 		h & result;
@@ -408,9 +449,20 @@ struct DLL_LINKAGE BattleResult : public Query
 			necromancyEligibleCasualties = {};
 			necromancyEligibilityCaptured = false;
 		}
-		else if(necromancyEligibilityCaptured || !necromancyEligibleCasualties[BattleSide::ATTACKER].empty()
-			|| !necromancyEligibleCasualties[BattleSide::DEFENDER].empty())
-			throw std::runtime_error("Cannot write New Horizons Necromancy result to an older format");
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_SPECIAL_CASUALTIES))
+		{
+			h & necromancyNonlivingEligibleCasualties;
+			h & necromancyUndeadEligibleCasualties;
+			h & necromancySpecialEligibilityCaptured;
+		}
+		else if(!h.saving)
+		{
+			necromancyNonlivingEligibleCasualties = {};
+			necromancyUndeadEligibleCasualties = {};
+			necromancySpecialEligibilityCaptured = false;
+		}
+		if(!isSpecialNecromancyCaptureValid())
+			throw std::runtime_error("Invalid Necromancy special casualty capture");
 		assert(battleID != BattleID::NONE);
 	}
 };
@@ -1025,6 +1077,11 @@ struct DLL_LINKAGE BattleResultsApplied : public CPackForClient
 	{
 		if(h.saving && !necromancy.isSkeletonOutputValid())
 			throw std::runtime_error("Invalid Necromancy Skeleton output form");
+		if(h.saving && !necromancy.isSpecialCasualtySummaryValid())
+			throw std::runtime_error("Invalid negative Necromancy special casualty summary");
+		if(h.saving && necromancy.hasSpecialCasualtySummary()
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_SPECIAL_CASUALTIES))
+			throw std::runtime_error("Cannot write Necromancy special casualties to an older format");
 		if(h.saving && necromancy.skeletonCreature != CreatureID::NONE
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_SKELETON_FORM))
 			throw std::runtime_error("Cannot write Necromancy Skeleton form to an older format");

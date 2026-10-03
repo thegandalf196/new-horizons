@@ -31,10 +31,12 @@
 #include "../../../server/queries/QueriesProcessor.h"
 
 #include <algorithm>
+#include <array>
 #include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace
 {
@@ -90,10 +92,28 @@ protected:
 			(*corpsePreservation)["effect"]["status"].String() = "active";
 		else if(productionStatus != "active")
 			throw std::runtime_error("Corpse Preservation must be planned or active in canonical content");
+
+		for(const auto & [perkId, propertyName] : std::array<std::pair<const char *, const char *>, 2>{
+			std::pair{newHorizonsNecromancy::DEATH_LORD_ID, "death_lord"},
+			std::pair{newHorizonsNecromancy::GRAVE_KNOWLEDGE_ID, "grave_knowledge"}})
+		{
+			const auto specialPerk = std::find_if(perks.begin(), perks.end(), [perkId](const JsonNode & perk)
+			{
+				return perk["id"].String() == perkId;
+			});
+			if(specialPerk == perks.end())
+				throw std::runtime_error(std::string("Missing special Necromancy perk in registry: ") + perkId);
+			const auto status = (*specialPerk)["effect"]["status"].String();
+			RecordProperty(std::string(propertyName) + "_registry_status", status);
+			RecordProperty(std::string(propertyName) + "_activation_override_applied", "false");
+			if(status != "active")
+				throw std::runtime_error(std::string("Special Necromancy perk must be active in canonical content: ") + perkId);
+		}
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
 	}
 
-	void startNecromancerGame(bool selectCorpsePreservation, int32_t attackerSpellPower = 10)
+	void startNecromancerGame(bool selectCorpsePreservation, int32_t attackerSpellPower = 10,
+		std::string_view advancedPerkId = {})
 	{
 		startGame();
 		// Keep the real Necromancer faction/rank check while reusing the compact
@@ -107,6 +127,18 @@ protected:
 
 		if(selectCorpsePreservation)
 			acceptCorpsePreservationThroughOffer(attackerSideHero);
+		if(!advancedPerkId.empty())
+		{
+			gameHandler->onAdvInterfaceReady(PlayerColor(0));
+			gameHandler->onAdvInterfaceReady(PlayerColor(1));
+			gameHandler->levelUpHero(attackerSideHero, SecondarySkill(necromancyIndex), false);
+			ASSERT_EQ(attackerSideHero->getSecSkillLevel(SecondarySkill(necromancyIndex)), MasteryLevel::ADVANCED);
+			acceptPerkThroughOffer(attackerSideHero, std::string(advancedPerkId), MasteryLevel::ADVANCED);
+			RecordProperty(advancedPerkId == newHorizonsNecromancy::DEATH_LORD_ID
+				? "death_lord_selected" : "grave_knowledge_selected", "true");
+			RecordProperty(advancedPerkId == newHorizonsNecromancy::DEATH_LORD_ID
+				? "death_lord_skill_rank" : "grave_knowledge_skill_rank", "advanced");
+		}
 
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		attackerSideHero->addSpellToSpellbook(SpellID::MAGIC_ARROW);
@@ -128,7 +160,7 @@ protected:
 		setTestSpellPointTotal(defenderSideHero, 1000);
 	}
 
-	void acceptCorpsePreservationThroughOffer(CGHeroInstance * hero)
+	void acceptPerkThroughOffer(CGHeroInstance * hero, const std::string & perkId, int requiredRank)
 	{
 		const auto rankLookup = [hero](const std::string & skillId)
 		{
@@ -140,22 +172,30 @@ protected:
 			for(size_t choice = 0; choice < offer.size(); ++choice)
 			{
 				if(offer[choice].selection.skillId != newHorizonsNecromancy::SKILL_ID
-					|| offer[choice].selection.perkId != newHorizonsNecromancy::CORPSE_PRESERVATION_ID)
+					|| offer[choice].selection.perkId != perkId)
 					continue;
 
-				ASSERT_EQ(offer[choice].requiredRank, static_cast<int>(MasteryLevel::BASIC));
+				ASSERT_EQ(offer[choice].requiredRank, requiredRank);
 				gameHandler->levelUpHero(hero, offer, choice, seed, false);
 				ASSERT_TRUE(hero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
-					newHorizonsNecromancy::CORPSE_PRESERVATION_ID));
+					perkId));
 				return;
 			}
 		}
-		FAIL() << "Corpse Preservation never appeared in a legal Basic Necromancy offer";
+		FAIL() << "Perk never appeared in a legal rank-gated Necromancy offer: " << perkId;
 	}
 
-	void prepareBattle(bool selectCorpsePreservation, int32_t attackerSpellPower = 10)
+	void acceptCorpsePreservationThroughOffer(CGHeroInstance * hero)
 	{
-		startNecromancerGame(selectCorpsePreservation, attackerSpellPower);
+		acceptPerkThroughOffer(hero, newHorizonsNecromancy::CORPSE_PRESERVATION_ID,
+			static_cast<int>(MasteryLevel::BASIC));
+	}
+
+	void prepareBattle(bool selectCorpsePreservation, int32_t attackerSpellPower = 10,
+		const char * targetCreatureId = "core:pikeman", int32_t targetCount = targetStackCount,
+		std::string_view advancedPerkId = {})
+	{
+		startNecromancerGame(selectCorpsePreservation, attackerSpellPower, advancedPerkId);
 		// Necromancy can award up to 10 Skeletons from this stack. Keep ordinary
 		// per-stack Leadership capacity from masking the result-path assertions.
 		attackerSideHero->level = 75;
@@ -164,10 +204,11 @@ protected:
 		attackerSideHero->clearSlots();
 		defenderSideHero->clearSlots();
 		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), creatureById("core:archer"), shooterStackCount));
-		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), creatureById("core:pikeman"), targetStackCount));
+		const auto targetCreature = creatureById(targetCreatureId);
+		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), targetCreature, targetCount));
 
 		startBattle();
-		target = findArmyStack(BattleSide::DEFENDER, creatureById("core:pikeman"));
+		target = findArmyStack(BattleSide::DEFENDER, targetCreature);
 		shooter = findArmyStack(BattleSide::ATTACKER, creatureById("core:archer"));
 		ASSERT_NE(target, nullptr);
 		ASSERT_NE(shooter, nullptr);
@@ -388,6 +429,15 @@ protected:
 		const auto found = counts.find(creature);
 		return found == counts.end() ? 0 : found->second;
 	}
+
+	int32_t specialResultCount(const BattleResult & result, BattleSide side, CreatureID creature,
+		bool nonliving) const
+	{
+		const auto & counts = nonliving ? result.necromancyNonlivingEligibleCasualties[side]
+			: result.necromancyUndeadEligibleCasualties[side];
+		const auto found = counts.find(creature);
+		return found == counts.end() ? 0 : found->second;
+	}
 };
 }
 
@@ -441,6 +491,51 @@ TEST_F(NewHorizonsCorpsePreservationTest, LegalBasicPerkIncludesMagicArrowCasual
 		<< "Corpse Preservation must affect actual Necromancy, not only the displayed result map";
 }
 
+TEST_F(NewHorizonsCorpsePreservationTest, DeathLordCapturesCorpsePreservedMagicalNonlivingCasualties)
+{
+	prepareBattle(true, 100, "core:ironGolem", targetStackCount, newHorizonsNecromancy::DEATH_LORD_ID);
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+		newHorizonsNecromancy::DEATH_LORD_ID));
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+		newHorizonsNecromancy::CORPSE_PRESERVATION_ID));
+	ASSERT_TRUE(castHeroSpell(BattleSide::ATTACKER, SpellID::MAGIC_ARROW, target));
+	const auto magicalAtCast = target->acquireState()->getMagicalCasualties();
+	ASSERT_GT(magicalAtCast, 0);
+
+	const auto result = finishAndCaptureResult();
+	ASSERT_TRUE(result.has_value());
+	ASSERT_TRUE(result->necromancySpecialEligibilityCaptured);
+	const auto ironGolem = creatureById("core:ironGolem");
+	EXPECT_EQ(resultCount(*result, BattleSide::DEFENDER, ironGolem, false), targetStackCount);
+	EXPECT_EQ(resultCount(*result, BattleSide::DEFENDER, ironGolem, true), 0);
+	EXPECT_EQ(specialResultCount(*result, BattleSide::DEFENDER, ironGolem, true), targetStackCount)
+		<< "The special nonliving pool includes magical casualties only because the Basic perk was legally selected";
+	EXPECT_EQ(specialResultCount(*result, BattleSide::DEFENDER, ironGolem, false), 0);
+	EXPECT_EQ(raisedSkeletons(), 5)
+		<< "Advanced Death Lord generates Skeleton equivalents at one quarter of Necromancy's normal rate";
+}
+
+TEST_F(NewHorizonsCorpsePreservationTest, GraveKnowledgeCapturesOnlyUndeadCasualtiesAndRaisesAtFixedRate)
+{
+	prepareBattle(true, 100, "core:vampire", targetStackCount, newHorizonsNecromancy::GRAVE_KNOWLEDGE_ID);
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+		newHorizonsNecromancy::GRAVE_KNOWLEDGE_ID));
+	ASSERT_TRUE(advanceToActiveSideInRound(BattleSide::ATTACKER, 1));
+	ASSERT_TRUE(castHeroSpell(BattleSide::ATTACKER, SpellID::MAGIC_ARROW, target));
+	ASSERT_GT(target->acquireState()->getMagicalCasualties(), 0);
+
+	const auto result = finishAndCaptureResult();
+	ASSERT_TRUE(result.has_value());
+	ASSERT_TRUE(result->necromancySpecialEligibilityCaptured);
+	const auto vampire = creatureById("core:vampire");
+	EXPECT_EQ(resultCount(*result, BattleSide::DEFENDER, vampire, false), targetStackCount);
+	EXPECT_EQ(resultCount(*result, BattleSide::DEFENDER, vampire, true), 0);
+	EXPECT_EQ(specialResultCount(*result, BattleSide::DEFENDER, vampire, false), targetStackCount);
+	EXPECT_EQ(specialResultCount(*result, BattleSide::DEFENDER, vampire, true), 0);
+	EXPECT_EQ(raisedSkeletons(), 20)
+		<< "Grave Knowledge uses its fixed 20% rate on eligible Undead casualties";
+}
+
 TEST_F(NewHorizonsCorpsePreservationTest, PhysicalBattleAttackCasualtiesRemainEligibleWithoutThePerk)
 {
 	prepareBattle(false);
@@ -484,6 +579,34 @@ TEST_F(NewHorizonsCorpsePreservationTest, DisintegrateRemainsExcludedWithCorpseP
 	EXPECT_EQ(resultCount(*result, BattleSide::DEFENDER, pikeman, true), targetStackCount - destroyedBySpell)
 		<< "Corpse Preservation never restores remains explicitly destroyed by Disintegrate";
 	EXPECT_EQ(raisedSkeletons(), (targetStackCount - destroyedBySpell) / 10);
+}
+
+TEST_F(NewHorizonsCorpsePreservationTest, DeathLordSpecialPoolExcludesDisintegrateDestroyedRemains)
+{
+	constexpr int32_t golemStackCount = 1000;
+	prepareBattle(true, 100, "core:ironGolem", golemStackCount, newHorizonsNecromancy::DEATH_LORD_ID);
+	const auto havocMagicIndex = SecondarySkill::decode("new-horizons:havocMagic");
+	ASSERT_GE(havocMagicIndex, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(havocMagicIndex), MasteryLevel::EXPERT,
+		ChangeValueMode::ABSOLUTE);
+	const auto disintegrate = spellById(DISINTEGRATE_SPELL);
+	ASSERT_NE(disintegrate, SpellID::NONE);
+	ASSERT_TRUE(castHeroSpell(BattleSide::ATTACKER, disintegrate, target));
+
+	const auto state = target->acquireState();
+	const auto destroyedBySpell = state->getUnusableRemains();
+	ASSERT_GT(destroyedBySpell, 0);
+	ASSERT_LT(destroyedBySpell, golemStackCount);
+	EXPECT_EQ(state->getMagicalCasualties(), 0);
+
+	const auto result = finishAndCaptureResult();
+	ASSERT_TRUE(result.has_value());
+	ASSERT_TRUE(result->necromancySpecialEligibilityCaptured);
+	const auto ironGolem = creatureById("core:ironGolem");
+	const auto usableSpecialCasualties = golemStackCount - destroyedBySpell;
+	EXPECT_EQ(specialResultCount(*result, BattleSide::DEFENDER, ironGolem, true), usableSpecialCasualties)
+		<< "Death Lord excludes remains explicitly destroyed by Disintegrate";
+	EXPECT_EQ(raisedSkeletons(), usableSpecialCasualties * 20 / 400);
 }
 
 TEST_F(NewHorizonsCorpsePreservationTest, PartialResurrectionConsumesNewestMixedCasualtiesFirst)

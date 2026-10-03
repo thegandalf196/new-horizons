@@ -1,5 +1,16 @@
 # Serialization
 
+## Special Necromancy casualty pools
+
+`NEW_HORIZONS_NECROMANCY_SPECIAL_CASUALTIES` appends captured nonliving and
+Undead eligible casualty maps and an explicit capture flag to `BattleResult`.
+Older records reset these to empty/false; raw casualty maps cannot supply the
+new perk inputs. The same boundary appends four nonnegative summary counts:
+Death Lord and Grave Knowledge eligible inputs and their generated base
+Skeleton-equivalent contributions, before category conversions. Unsupported
+populated direct/enclosing writes reject before payload bytes. This does not
+add ongoing-battle save/resume.
+
 ## Master of Bones output form
 
 `NEW_HORIZONS_NECROMANCY_SKELETON_FORM` appends `skeletonCreature` after the

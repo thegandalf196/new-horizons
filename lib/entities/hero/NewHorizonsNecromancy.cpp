@@ -25,9 +25,59 @@ bool isLivingCreature(const CCreature * creature)
 		&& !creature->hasBonusOfType(BonusType::MECHANICAL);
 }
 
+bool isEligibleNonlivingCreature(const CCreature * creature)
+{
+	return creature
+		&& creature->hasBonusOfType(BonusType::NON_LIVING)
+		&& !creature->hasBonusOfType(BonusType::UNDEAD)
+		&& !creature->hasBonusOfType(BonusType::MECHANICAL);
+}
+
+bool isEligibleUndeadCreature(const CCreature * creature)
+{
+	return creature
+		&& creature->hasBonusOfType(BonusType::UNDEAD)
+		&& !creature->hasBonusOfType(BonusType::MECHANICAL);
+}
+
 int32_t clampCount(int64_t value)
 {
 	return static_cast<int32_t>(std::clamp<int64_t>(value, 0, std::numeric_limits<int32_t>::max()));
+}
+
+template<typename EligibilityPredicate>
+SpecialCasualtyCounts countSpecialCasualties(const std::map<CreatureID, si32> & casualties,
+	const newHorizonsCreatures::CreatureCategoryRules & categoryRules, EligibilityPredicate eligibleCreature)
+{
+	int64_t total = 0;
+	int64_t core = 0;
+	int64_t elite = 0;
+	for(const auto & [creatureId, amount] : casualties)
+	{
+		if(amount <= 0 || !creatureId.hasValue() || !eligibleCreature(creatureId.toCreature()))
+			continue;
+
+		total += amount;
+		const auto category = newHorizonsCreatures::creatureCategoryView(categoryRules, creatureId);
+		if(category && category->category == newHorizonsCreatures::CreatureCategory::CORE)
+			core += amount;
+		else if(category && category->category == newHorizonsCreatures::CreatureCategory::ELITE)
+			elite += amount;
+	}
+
+	SpecialCasualtyCounts result;
+	result.total = clampCount(total);
+	result.core = std::min(clampCount(core), result.total);
+	result.elite = std::min(clampCount(elite), result.total - result.core);
+	return result;
+}
+
+SpecialCasualtyCounts normalizeSpecialCounts(SpecialCasualtyCounts counts)
+{
+	counts.total = std::max(0, counts.total);
+	counts.core = std::clamp(counts.core, 0, counts.total);
+	counts.elite = std::clamp(counts.elite, 0, counts.total - counts.core);
+	return counts;
 }
 }
 
@@ -75,6 +125,18 @@ int32_t countLivingEligibleEliteCasualties(const std::map<CreatureID, si32> & ca
 	return clampCount(count);
 }
 
+SpecialCasualtyCounts countEligibleNonlivingCasualties(const std::map<CreatureID, si32> & casualties,
+	const newHorizonsCreatures::CreatureCategoryRules & categoryRules)
+{
+	return countSpecialCasualties(casualties, categoryRules, isEligibleNonlivingCreature);
+}
+
+SpecialCasualtyCounts countEligibleUndeadCasualties(const std::map<CreatureID, si32> & casualties,
+	const newHorizonsCreatures::CreatureCategoryRules & categoryRules)
+{
+	return countSpecialCasualties(casualties, categoryRules, isEligibleUndeadCreature);
+}
+
 DestinationPlan reserveDestinations(SlotID existingSkeleton, SlotID existingZombie,
 	std::vector<SlotID> freeSlots, int32_t skeletonCount, int32_t zombieCount)
 {
@@ -102,7 +164,8 @@ DestinationPlan reserveDestinations(SlotID existingSkeleton, SlotID existingZomb
 NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleCoreCasualties,
 	bool boneCollector, bool corpsePreservation, bool darkConversionAvailable,
 	bool skeletonSlotAvailable, bool zombieSlotAvailable, int32_t currentMana, int32_t manaLimit,
-	int32_t eligibleEliteCasualties, bool soulHarvester, bool wightSlotAvailable, CreatureID skeletonOutput)
+	int32_t eligibleEliteCasualties, bool soulHarvester, bool wightSlotAvailable, CreatureID skeletonOutput,
+	SpecialCasualtyCounts nonliving, SpecialCasualtyCounts undead)
 {
 	NecromancyResult result;
 	result.active = rank >= 1 && rank <= 3;
@@ -115,23 +178,36 @@ NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleC
 	result.darkConversionAvailable = darkConversionAvailable;
 	result.eligibleCasualties = std::max(0, eligibleCasualties);
 	result.percentage = rank * 10 + (boneCollector ? 5 : 0);
-	result.skeletonsOffered = clampCount(static_cast<int64_t>(result.eligibleCasualties) * result.percentage / 100);
+	nonliving = normalizeSpecialCounts(nonliving);
+	undead = normalizeSpecialCounts(undead);
+	result.deathLordCasualties = nonliving.total;
+	result.graveKnowledgeCasualties = undead.total;
+	result.deathLordSkeletons = clampCount(static_cast<int64_t>(nonliving.total) * result.percentage / 400);
+	result.graveKnowledgeSkeletons = clampCount(static_cast<int64_t>(undead.total) * 20 / 100);
+	const auto ordinarySkeletons = clampCount(static_cast<int64_t>(result.eligibleCasualties) * result.percentage / 100);
+	result.skeletonsOffered = clampCount(static_cast<int64_t>(ordinarySkeletons)
+		+ result.deathLordSkeletons + result.graveKnowledgeSkeletons);
 	if(result.skeletonsOffered <= 0)
 		return result;
 
-	// Preserve the single global Necromancy floor for base Skeletons. Separately
-	// floor each captured category's casualty share before checking its conversion
-	// groups. Inputs are clamped to a disjoint partition of the total so malformed
-	// or saturated counts cannot consume more Skeletons than the global result.
+	// Preserve the single global Necromancy floor for ordinary living Skeletons.
+	// Special casualty pools use their own floored rates, and category-specific
+	// contributions from each pool are summed only after those independent floors.
+	// Inputs are clamped to disjoint category partitions so malformed or saturated
+	// counts cannot consume more Skeletons than the generated pools provide.
 	const auto coreCasualties = std::clamp(eligibleCoreCasualties, 0, result.eligibleCasualties);
 	const auto eliteCasualties = std::clamp(eligibleEliteCasualties, 0,
 		result.eligibleCasualties - coreCasualties);
-	const auto coreSkeletons = clampCount(static_cast<int64_t>(coreCasualties) * result.percentage / 100);
-	const auto eliteSkeletons = clampCount(static_cast<int64_t>(eliteCasualties) * result.percentage / 100);
+	const int64_t coreSkeletons = static_cast<int64_t>(coreCasualties) * result.percentage / 100
+		+ static_cast<int64_t>(nonliving.core) * result.percentage / 400
+		+ static_cast<int64_t>(undead.core) * 20 / 100;
+	const int64_t eliteSkeletons = static_cast<int64_t>(eliteCasualties) * result.percentage / 100
+		+ static_cast<int64_t>(nonliving.elite) * result.percentage / 400
+		+ static_cast<int64_t>(undead.elite) * 20 / 100;
 	if(darkConversionAvailable)
-		result.zombiesRaised = coreSkeletons / 3;
+		result.zombiesRaised = clampCount(coreSkeletons / 3);
 	if(soulHarvester)
-		result.wightsRaised = eliteSkeletons / 6;
+		result.wightsRaised = clampCount(eliteSkeletons / 6);
 	const int64_t convertedSkeletons = static_cast<int64_t>(result.zombiesRaised) * 3
 		+ static_cast<int64_t>(result.wightsRaised) * 6;
 	result.skeletonsRaised = clampCount(static_cast<int64_t>(result.skeletonsOffered) - convertedSkeletons);

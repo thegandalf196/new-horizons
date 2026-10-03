@@ -668,6 +668,10 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 		newHorizonsNecromancy::DARK_CONVERSION_ID);
 	const bool soulHarvester = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 		newHorizonsNecromancy::SOUL_HARVESTER_ID);
+	const bool deathLord = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+		newHorizonsNecromancy::DEATH_LORD_ID);
+	const bool graveKnowledge = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+		newHorizonsNecromancy::GRAVE_KNOWLEDGE_ID);
 	const bool masterOfBones = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 		newHorizonsNecromancy::MASTER_OF_BONES_ID);
 	const bool blackHarvest = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
@@ -678,6 +682,17 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 	const auto skeletonOutput = masterOfBones
 		? availableNecropolisSkeletonUpgrade(ownerState)
 		: CreatureID::NONE;
+	newHorizonsNecromancy::SpecialCasualtyCounts nonlivingCasualties;
+	newHorizonsNecromancy::SpecialCasualtyCounts undeadCasualties;
+	if(result.necromancySpecialEligibilityCaptured)
+	{
+		if(deathLord)
+			nonlivingCasualties = newHorizonsNecromancy::countEligibleNonlivingCasualties(
+				result.necromancyNonlivingEligibleCasualties[losingSide], categoryRules);
+		if(graveKnowledge)
+			undeadCasualties = newHorizonsNecromancy::countEligibleUndeadCasualties(
+				result.necromancyUndeadEligibleCasualties[losingSide], categoryRules);
+	}
 
 	const bool hasTwoPoolSpellPoints = newHorizonsMagic::spellPointRulesActive(winnerHero->getMagicRules());
 	const int32_t currentNormal = winnerHero->getNormalSpellPoints();
@@ -689,7 +704,8 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 	auto summary = newHorizonsNecromancy::resolve(winnerHero->getNewHorizonsNecromancyRank(), eligibleCount, eligibleCoreCount,
 		boneCollector, corpsePreservation, darkConversion,
 		true, true, postBattleMana,
-		blackHarvest ? winnerHero->manaLimit() : postBattleMana, eligibleEliteCount, soulHarvester, true, skeletonOutput);
+		blackHarvest ? winnerHero->manaLimit() : postBattleMana, eligibleEliteCount, soulHarvester, true, skeletonOutput,
+		nonlivingCasualties, undeadCasualties);
 	if(!summary.active)
 		return false;
 
@@ -1089,6 +1105,12 @@ void BattleResultProcessor::setBattleResult(const CBattleInfoCallback & battle, 
 	const bool excludeMagicalCasualties = winnerHero && winnerHero->usesNewHorizonsNecromancy()
 		&& !winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 			newHorizonsNecromancy::CORPSE_PRESERVATION_ID);
+	const bool deathLord = winnerHero && winnerHero->usesNewHorizonsNecromancy()
+		&& winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+			newHorizonsNecromancy::DEATH_LORD_ID);
+	const bool graveKnowledge = winnerHero && winnerHero->usesNewHorizonsNecromancy()
+		&& winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+			newHorizonsNecromancy::GRAVE_KNOWLEDGE_ID);
 
 	auto allStacks = battle.battleGetStacksIf([](const CStack * stack){
 
@@ -1124,16 +1146,30 @@ void BattleResultProcessor::setBattleResult(const CBattleInfoCallback & battle, 
 			const si32 excludedMagical = excludeMagicalCasualties
 				? std::clamp<si32>(resultState->getMagicalCasualties(), 0, usableCasualties) : 0;
 			const si32 eligibleCasualties = usableCasualties - excludedMagical;
-			if(eligibleCasualties > 0
+			const bool hasUsableRemains = eligibleCasualties > 0
 				&& !st->summoned && !st->isClone()
 				&& !st->hasBonusOfType(BonusType::DISINTEGRATE)
-				&& !resultCreatureType->hasBonusOfType(BonusType::UNDEAD)
+				&& resultCreatureType;
+			if(!hasUsableRemains)
+				continue;
+
+			if(!resultCreatureType->hasBonusOfType(BonusType::UNDEAD)
 				&& !resultCreatureType->hasBonusOfType(BonusType::NON_LIVING)
 				&& !resultCreatureType->hasBonusOfType(BonusType::MECHANICAL))
 				battleResult->necromancyEligibleCasualties[st->unitSide()][resultCreature] += eligibleCasualties;
+
+			if(deathLord && resultCreatureType->hasBonusOfType(BonusType::NON_LIVING)
+				&& !resultCreatureType->hasBonusOfType(BonusType::UNDEAD)
+				&& !resultCreatureType->hasBonusOfType(BonusType::MECHANICAL))
+				battleResult->necromancyNonlivingEligibleCasualties[st->unitSide()][resultCreature] += eligibleCasualties;
+
+			if(graveKnowledge && resultCreatureType->hasBonusOfType(BonusType::UNDEAD)
+				&& !resultCreatureType->hasBonusOfType(BonusType::MECHANICAL))
+				battleResult->necromancyUndeadEligibleCasualties[st->unitSide()][resultCreature] += eligibleCasualties;
 		}
 	}
 	battleResult->necromancyEligibilityCaptured = true;
+	battleResult->necromancySpecialEligibilityCaptured = true;
 }
 
 bool BattleResultProcessor::battleIsEnding(const CBattleInfoCallback & battle) const

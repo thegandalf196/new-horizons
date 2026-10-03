@@ -159,12 +159,13 @@ enum class ESerializationVersion : int32_t
 	BATTLE_CASUALTY_PROVENANCE, // ordered usable casualty causes and temporary restoration identity in state updates
 	NEW_HORIZONS_NECROMANCY_WIGHTS, // explicit Soul Harvester Wight output in post-battle summaries
 	NEW_HORIZONS_NECROMANCY_SKELETON_FORM, // explicit upgraded Skeleton output in mixed Necromancy summaries
+	NEW_HORIZONS_NECROMANCY_SPECIAL_CASUALTIES, // captured special corpse pools and weighted conversion summaries
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_NECROMANCY_SKELETON_FORM,
+	CURRENT = NEW_HORIZONS_NECROMANCY_SPECIAL_CASUALTIES,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");

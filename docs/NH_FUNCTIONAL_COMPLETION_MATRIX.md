@@ -1,7 +1,7 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-03
-Canonical source SHA-256: `f7923a372c4ac07945197d7f35ec7cfed892544258dc26a50c9870c01970cbac`
+Canonical source SHA-256: `169f3f4ca5ddc858e9e07954edb7b99817a2334a0ab0bb939df63ebb99e44799`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
 completion separately from catalogue presence and artwork. An `active` data row,
@@ -13,6 +13,36 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+UP187 Death Lord and Grave Knowledge are source/native verified. Separately
+captured original-form nonliving/Undead pools retain Corpse Preservation and
+destroyed-remains exclusions; their separately floored quarter-normal/fixed20%
+contributions feed automatic category conversions and atomic army admission.
+Packet-driven result text reports each eligible input and generated contribution.
+Client13126, test86643 and fixture-only retry17335 pass. Initial principal32/32
+passes6.689s; adjacent11/12's faster-Vampire action-window setup is repaired
+without changing production. Final principal32/32 passes6.716s and adjacent12/12
+passes2.607s, zero skips. New cases use production-active rows, no override,
+normal Basic-perk then Advanced selection, actual army counts and actual spell
+provenance. Binary SHA-256:
+212ea29fb37c2f95a844e452174c6b5db40da917d08d432abf4b57cacd77d07c.
+Data/inventory19/19, generated module/result guard and Astra review pass.
+Coverage199->201/310 active,111->109 planned; Necromancy6->8/10;
+faction58->60/90. Ranks/spells unchanged. Deferred Phase2: broad restoration,
+Battle Form/status/save interactions, full AI play and rendered popup review;
+dedicated art is missing. No playable promotion. Next UP188 Ossuary, scope
+resolved; UP189 Lord of the Dead awaits explicit output species.
+Subsequent user clarification names Bone Dragon for UP189; this is integrated
+in the canonical source and planned registry, not yet implemented coverage.
+
+UP187 Death Lord/Grave Knowledge source and registrations are in progress toward
+focused acceptance. Client13126 passes, data/inventory19/19 and UI guard pass,
+and independent Astra production review has no blocker. The registry contains
+the two new active rows, but accepted coverage below remains at UP185 until the
+new native binary executes the focused cases. Old packet fixtures must clear
+new fields before old-format writing; the downgrade guard correctly rejects
+populated special capture. UP188 Ossuary scope is now explicit in the canonical
+source: both Leadership limits and unavailable slots trigger its fallback.
 
 UP185 Master of Bones is active and source/native verified. Remaining Skeleton
 output uses its configured upgrade only when the winner currently owns a
@@ -1703,9 +1733,9 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 199/310 | 111 planned; Master of Bones is the newest source/native-verified activation. Necromancy is 6/10; Learning 3/10; Estates 5/10; Battlecraft 6/10; Logistics 6/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 201/310 | 109 planned; Death Lord and Grave Knowledge are the newest source/native-verified activations. Necromancy is 8/10; Learning 3/10; Estates 5/10; Battlecraft 6/10; Logistics 6/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
-| Faction perks active | 58/90 | 32 planned perks; Master of Bones has normal Expert selection, owned-built availability and actual upgraded post-battle output evidence. |
+| Faction perks active | 60/90 | 30 planned perks; Death Lord and Grave Knowledge have normal Advanced selection, actual special-casualty conversion and provenance evidence. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |

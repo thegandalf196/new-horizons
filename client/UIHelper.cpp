@@ -95,9 +95,38 @@ std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNe
 
 	if(result.eligibleCasualties > 0)
 	{
-		text.appendRawString("Eligible casualties: ");
+		text.appendRawString("Ordinary living casualties: ");
 		text.appendNumber(result.eligibleCasualties);
+		text.appendRawString(" (normal rate ");
+		text.appendNumber(result.percentage);
+		text.appendRawString("%)");
 		text.appendRawString("\n");
+	}
+
+	if(result.deathLordCasualties > 0)
+	{
+		text.appendRawString("Death Lord: ");
+		text.appendNumber(result.deathLordCasualties);
+		text.appendRawString(" Construct/Elemental casualties -> ");
+		text.appendNumber(result.deathLordSkeletons);
+		text.appendRawString(" generated ");
+		text.appendName(baseSkeleton, result.deathLordSkeletons);
+		text.appendRawString(result.deathLordSkeletons == 1
+			? " (base equivalent) at 25% of the normal rate.\n"
+			: " (base equivalents) at 25% of the normal rate.\n");
+	}
+
+	if(result.graveKnowledgeCasualties > 0)
+	{
+		text.appendRawString("Grave Knowledge: ");
+		text.appendNumber(result.graveKnowledgeCasualties);
+		text.appendRawString(" Undead casualties -> ");
+		text.appendNumber(result.graveKnowledgeSkeletons);
+		text.appendRawString(" generated ");
+		text.appendName(baseSkeleton, result.graveKnowledgeSkeletons);
+		text.appendRawString(result.graveKnowledgeSkeletons == 1
+			? " (base equivalent) at the fixed 20% rate.\n"
+			: " (base equivalents) at the fixed 20% rate.\n");
 	}
 
 	if(result.skeletonsOffered > 0)
