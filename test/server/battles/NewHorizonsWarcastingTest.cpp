@@ -23,6 +23,7 @@
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+#include "../../../lib/spells/ISpellMechanics.h"
 
 namespace
 {
@@ -38,6 +39,9 @@ constexpr auto martialChannelingPerk = "new-horizons:warcasting.martialChannelin
 constexpr auto arcaneChannelingPerk = "new-horizons:warcasting.arcaneChanneling";
 constexpr auto tacticalWeavingPerk = "new-horizons:warcasting.tacticalWeaving";
 constexpr auto battleMeditationPerk = "new-horizons:warcasting.battleMeditation";
+constexpr auto spellwardPerk = "new-horizons:warcasting.spellward";
+constexpr auto masterSynthesisPerk = "new-horizons:warcasting.masterSynthesis";
+constexpr auto sorceryBasicPerk = "new-horizons:sorceryMagic.overcharger";
 
 std::shared_ptr<Bonus> testTimeStopMarker(BattleSide side)
 {
@@ -66,6 +70,7 @@ class NewHorizonsWarcastingTest : public HeroCommandFixture
 {
 protected:
 	bool historicalCounterspell = false;
+	bool activateMasterSynthesisIfPlanned = false;
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
@@ -83,6 +88,19 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
 
 		auto perkRules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+		if(activateMasterSynthesisIfPlanned)
+		{
+			auto & perks = perkRules["skills"][warcastingSkill]["perks"].Vector();
+			const auto synthesis = std::find_if(perks.begin(), perks.end(), [](const auto & perk)
+			{
+				return perk["id"].String() == masterSynthesisPerk;
+			});
+			if(synthesis == perks.end())
+				throw std::runtime_error("Missing Master Synthesis in the Warcasting perk registry");
+			RecordProperty("master_synthesis_registry_status", (*synthesis)["effect"]["status"].String());
+			if((*synthesis)["effect"]["status"].String() == "planned")
+				(*synthesis)["effect"]["status"].String() = "active";
+		}
 		if(!plannedWarcastingPerkBeforeInit.empty())
 		{
 			auto & perks = perkRules["skills"][warcastingSkill]["perks"].Vector();
@@ -118,12 +136,122 @@ protected:
 		activateBattleMeditationBeforeInit = true;
 	}
 
-	void prepareWarcasting(int rank = 1, bool withMetamagic = false, bool defenderCountermage = false)
+	bool offerContains(CGHeroInstance * hero, const std::string & perkId)
 	{
+		const auto rankLookup = [hero](const std::string & skillId)
+		{
+			return hero->getPerkSkillRank(skillId);
+		};
+		for(uint64_t seed = 0; seed < 4096; ++seed)
+		{
+			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed);
+			if(std::ranges::any_of(offers, [&](const auto & offer)
+			{
+				return offer.selection.skillId == warcastingSkill && offer.selection.perkId == perkId;
+			}))
+				return true;
+		}
+		return false;
+	}
+
+	void acceptPerkThroughOffer(CGHeroInstance * hero, const std::string & skillId,
+		const std::string & perkId, int expectedRank)
+	{
+		const auto rankLookup = [hero](const std::string & offeredSkillId)
+		{
+			return hero->getPerkSkillRank(offeredSkillId);
+		};
+		for(uint64_t seed = 0; seed < 4096; ++seed)
+		{
+			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto candidate = std::find_if(offers.begin(), offers.end(), [&](const auto & offer)
+			{
+				return offer.selection.skillId == skillId && offer.selection.perkId == perkId;
+			});
+			if(candidate == offers.end())
+				continue;
+
+			ASSERT_EQ(candidate->requiredRank, expectedRank);
+			const auto choice = static_cast<size_t>(std::distance(offers.begin(), candidate));
+			gameHandler->levelUpHero(hero, offers, choice, seed, false);
+			ASSERT_TRUE(hero->hasActivePerk(skillId, perkId));
+			return;
+		}
+		FAIL() << "Perk was not present in a legal offer: " << perkId;
+	}
+
+	void acceptWarcastingPerkThroughOffer(CGHeroInstance * hero, const std::string & perkId, int expectedRank)
+	{
+		acceptPerkThroughOffer(hero, warcastingSkill, perkId, expectedRank);
+	}
+
+	void acquireTacticalWeavingThroughAdvancedOffer(CGHeroInstance * hero)
+	{
+		const int decodedWarcasting = SecondarySkill::decode(warcastingSkill);
+		ASSERT_GE(decodedWarcasting, 0);
+		const auto skill = SecondarySkill(decodedWarcasting);
+
+		hero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		acceptWarcastingPerkThroughOffer(hero, spellwardPerk, static_cast<int>(MasteryLevel::BASIC));
+		gameHandler->levelUpHero(hero, skill, false);
+		acceptWarcastingPerkThroughOffer(hero, tacticalWeavingPerk, static_cast<int>(MasteryLevel::ADVANCED));
+	}
+
+	void acquireBasicSorceryPrerequisite(CGHeroInstance * hero)
+	{
+		const int decodedSorcery = SecondarySkill::decode(sorcerySkill);
+		ASSERT_GE(decodedSorcery, 0);
+		const auto skill = SecondarySkill(decodedSorcery);
+
+		hero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		if(!hero->hasActivePerk(sorcerySkill, sorceryBasicPerk))
+			acceptPerkThroughOffer(hero, sorcerySkill, sorceryBasicPerk, static_cast<int>(MasteryLevel::BASIC));
+	}
+
+	void acquireCountermageThroughAdvancedOffer(CGHeroInstance * hero)
+	{
+		acquireBasicSorceryPrerequisite(hero);
+		const int decodedSorcery = SecondarySkill::decode(sorcerySkill);
+		ASSERT_GE(decodedSorcery, 0);
+		const auto skill = SecondarySkill(decodedSorcery);
+
+		gameHandler->levelUpHero(hero, skill, false);
+		acceptPerkThroughOffer(hero, sorcerySkill, countermagePerk, static_cast<int>(MasteryLevel::ADVANCED));
+	}
+
+	void acquireMasterSynthesisThroughExpertOffer(CGHeroInstance * hero)
+	{
+		const int decodedWarcasting = SecondarySkill::decode(warcastingSkill);
+		ASSERT_GE(decodedWarcasting, 0);
+		const auto skill = SecondarySkill(decodedWarcasting);
+
+		hero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		acceptWarcastingPerkThroughOffer(hero, spellwardPerk, static_cast<int>(MasteryLevel::BASIC));
+		hero->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+		acceptWarcastingPerkThroughOffer(hero, tacticalWeavingPerk, static_cast<int>(MasteryLevel::ADVANCED));
+		hero->setSecSkillLevel(skill, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+		ASSERT_TRUE(offerContains(hero, masterSynthesisPerk))
+			<< "Master Synthesis must be offered only after reaching Expert Warcasting";
+		acceptWarcastingPerkThroughOffer(hero, masterSynthesisPerk, static_cast<int>(MasteryLevel::EXPERT));
+	}
+
+	void prepareWarcasting(int rank = 1, bool withMetamagic = false, bool defenderCountermage = false,
+		bool masterSynthesis = false, bool tacticalWeaving = false, bool defenderSorceryBasic = false)
+	{
+		activateMasterSynthesisIfPlanned = masterSynthesis;
 		startGame();
 		const int decodedWarcasting = SecondarySkill::decode(warcastingSkill);
 		ASSERT_GE(decodedWarcasting, 0);
-		attackerSideHero->setSecSkillLevel(SecondarySkill(decodedWarcasting), rank, ChangeValueMode::ABSOLUTE);
+		ASSERT_FALSE(masterSynthesis && tacticalWeaving);
+		if(masterSynthesis)
+			acquireMasterSynthesisThroughExpertOffer(attackerSideHero);
+		else if(tacticalWeaving)
+		{
+			ASSERT_EQ(rank, static_cast<int>(MasteryLevel::ADVANCED));
+			acquireTacticalWeavingThroughAdvancedOffer(attackerSideHero);
+		}
+		else
+			attackerSideHero->setSecSkillLevel(SecondarySkill(decodedWarcasting), rank, ChangeValueMode::ABSOLUTE);
 		if(withMetamagic)
 		{
 			const int decodedMetamagic = SecondarySkill::decode(metamagicSkill);
@@ -131,17 +259,12 @@ protected:
 			attackerSideHero->setSecSkillLevel(SecondarySkill(decodedMetamagic), 1, ChangeValueMode::ABSOLUTE);
 		}
 		if(defenderCountermage)
-		{
-			const int decodedSorcery = SecondarySkill::decode(sorcerySkill);
-			ASSERT_GE(decodedSorcery, 0);
-			// Countermage is an Advanced Sorcery perk, so its fixture hero must
-			// meet the same rank gate as an ordinary selection.
-			defenderSideHero->setSecSkillLevel(SecondarySkill(decodedSorcery), MasteryLevel::ADVANCED,
-				ChangeValueMode::ABSOLUTE);
-			defenderSideHero->applyPerkSelection({std::string(sorcerySkill), std::string(countermagePerk)});
-			ASSERT_TRUE(defenderSideHero->hasActivePerk(std::string(sorcerySkill), std::string(countermagePerk)));
-		}
+			acquireCountermageThroughAdvancedOffer(defenderSideHero);
+		else if(defenderSorceryBasic)
+			acquireBasicSorceryPrerequisite(defenderSideHero);
 		attackerSideHero->setPrimarySkill(PrimarySkill::ATTACK, 100, ChangeValueMode::ABSOLUTE);
+		if(masterSynthesis)
+			attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 43, ChangeValueMode::ABSOLUTE);
 		// Recovery restores Normal, not Buffer: give these casting fixtures real
 		// capacity instead of implicitly overcharging a zero-Knowledge hero.
 		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 1000, ChangeValueMode::ABSOLUTE);
@@ -154,7 +277,8 @@ protected:
 
 		startBattle();
 		attacker = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex), 10);
-		defender = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 10);
+		defender = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex),
+			masterSynthesis ? 1000 : 10);
 		beginCombat();
 
 		BattleUnitsChanged remove;
@@ -164,6 +288,16 @@ protected:
 				remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
 		gameHandler->sendAndApply(remove);
 		activate(attacker);
+	}
+
+	void prepareAdvancedTacticalWeaving()
+	{
+		prepareWarcasting(2, false, false, false, true);
+	}
+
+	void prepareWithDefenderBasicSorcery()
+	{
+		prepareWarcasting(1, true, false, false, false, true);
 	}
 
 	void activate(const CStack * stack)
@@ -179,6 +313,13 @@ protected:
 	{
 		auto & allowances = battle()->getSide(side).heroActionAllowances;
 		return allowances.grantAllowance(HeroActionAllowanceState::AllowanceKind::ORDER,
+			HeroActionAllowanceState::GrantSource::PERK, battle()->battleGetRound());
+	}
+
+	uint32_t grantSpellAllowanceForFixture(BattleSide side)
+	{
+		auto & allowances = battle()->getSide(side).heroActionAllowances;
+		return allowances.grantAllowance(HeroActionAllowanceState::AllowanceKind::SPELL,
 			HeroActionAllowanceState::GrantSource::PERK, battle()->battleGetRound());
 	}
 
@@ -210,6 +351,16 @@ protected:
 		action.metamagicGrand = grand;
 		action.aimToUnit(target);
 		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
+	}
+
+	int spellWarcastingBonus(SpellID spell) const
+	{
+		const auto * spellData = spell.toSpell();
+		if(!spellData)
+			return 0;
+		spells::BattleCast parameters(battle(), attackerSideHero, spells::Mode::HERO, spellData);
+		const auto mechanics = spellData->battleMechanics(&parameters);
+		return mechanics ? mechanics->getWarcastingBonusPercent() : 0;
 	}
 
 	bool declineMetamagic()
@@ -328,7 +479,11 @@ TEST_F(NewHorizonsWarcastingTest, OrderReadinessIsAvailableThroughInclusiveExpir
 	EXPECT_EQ(newHorizonsWarcasting::orderBonus(battle()->getWarcastingState(BattleSide::ATTACKER),
 		battle()->battleGetRound()), 10);
 	advanceRound();
-	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER), AlternatingHeroActionState{});
+	const auto expiredReadiness = battle()->getWarcastingState(BattleSide::ATTACKER);
+	EXPECT_EQ(expiredReadiness.nextEligibleAction, AlternatingHeroActionState::Action::NONE);
+	EXPECT_EQ(expiredReadiness.empowermentPercent, 0);
+	EXPECT_EQ(expiredReadiness.expiryRound, 0);
+	EXPECT_TRUE(expiredReadiness.hasConsumedBonus);
 }
 
 TEST_F(NewHorizonsWarcastingTest, MartialChannelingAddsOnlyToSpellToOrderReadiness)
@@ -390,9 +545,8 @@ TEST_F(NewHorizonsWarcastingTest, ArcaneChannelingAddsOnlyToOrderToSpellReadines
 
 TEST_F(NewHorizonsWarcastingTest, TacticalWeavingKeepsReadinessThroughSecondInclusiveRound)
 {
-	prepareWarcasting(2);
+	prepareAdvancedTacticalWeaving();
 	EXPECT_EQ(savedPerkDefinition(tacticalWeavingPerk)["effect"]["status"].String(), "active");
-	selectWarcastingPerk(tacticalWeavingPerk);
 	const int32_t spellRound = battle()->getRound();
 
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
@@ -483,8 +637,7 @@ TEST_F(NewHorizonsWarcastingTest, RankLossDisablesSelectedChanneling)
 
 TEST_F(NewHorizonsWarcastingTest, RankLossDisablesAdvancedTacticalWeaving)
 {
-	prepareWarcasting(2);
-	selectWarcastingPerk(tacticalWeavingPerk);
+	prepareAdvancedTacticalWeaving();
 	const int decodedWarcasting = SecondarySkill::decode(warcastingSkill);
 	ASSERT_GE(decodedWarcasting, 0);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(decodedWarcasting), 1, ChangeValueMode::ABSOLUTE);
@@ -498,8 +651,7 @@ TEST_F(NewHorizonsWarcastingTest, RankLossDisablesAdvancedTacticalWeaving)
 
 TEST_F(NewHorizonsWarcastingTest, TacticalOrderToSpellReadinessExpiresUnusedAtRoundThree)
 {
-	prepareWarcasting(2);
-	selectWarcastingPerk(tacticalWeavingPerk);
+	prepareAdvancedTacticalWeaving();
 	const int32_t orderRound = battle()->getRound();
 
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
@@ -1196,7 +1348,7 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalCounterspellUsesCountermageCostWit
 
 TEST_F(NewHorizonsWarcastingTest, PlayerViewKeepsHiddenArmedCounterspellUnresolved)
 {
-	prepareWarcasting(1, true);
+	prepareWithDefenderBasicSorcery();
 	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
 	setTestSpellPointTotal(defenderSideHero, 0);
 	ASSERT_FALSE(defenderSideHero->hasActivePerk(std::string(sorcerySkill), std::string(countermagePerk)));
@@ -1227,11 +1379,7 @@ TEST_F(NewHorizonsWarcastingTest, PlayerViewKeepsHiddenArmedCounterspellUnresolv
 	};
 
 	const auto withoutCountermage = projectFromAttackerView();
-	ASSERT_GE(SecondarySkill::decode(sorcerySkill), 0);
-	defenderSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(sorcerySkill)),
-		MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-	defenderSideHero->applyPerkSelection({std::string(sorcerySkill), std::string(countermagePerk)});
-	ASSERT_TRUE(defenderSideHero->hasActivePerk(std::string(sorcerySkill), std::string(countermagePerk)));
+	acquireCountermageThroughAdvancedOffer(defenderSideHero);
 	setTestSpellPointTotal(defenderSideHero, 1000);
 	const auto withCountermage = projectFromAttackerView();
 
@@ -1290,4 +1438,150 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalBattleCopiesAndExpiresItsReadiness
 	EXPECT_EQ(projection.getWarcastingState(BattleSide::ATTACKER).lastManaRecoveryRound,
 		authoritative.lastManaRecoveryRound);
 	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER), authoritative);
+}
+
+TEST_F(NewHorizonsWarcastingTest, MasterSynthesisLegalExpertOfferUpgradesFirstOrderButNotSecondSpell)
+{
+	prepareWarcasting(3, false, false, true);
+	const auto side = BattleSide::ATTACKER;
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(warcastingSkill, masterSynthesisPerk));
+	ASSERT_FALSE(battle()->getWarcastingState(side).hasConsumedBonus);
+	EXPECT_EQ(newHorizonsWarcasting::spellBonus(attackerSideHero, battle()->getWarcastingState(side),
+		battle()->battleGetRound()), 0);
+
+	// The first Hero Spell has no prior Order readiness, so Master Synthesis cannot
+	// invent an empowerment; it only arms the next, ordinary Warcasting readiness.
+	ASSERT_EQ(spellWarcastingBonus(SpellID::HASTE), 0);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	auto readyForOrder = battle()->getWarcastingState(side);
+	EXPECT_EQ(readyForOrder.nextEligibleAction, AlternatingHeroActionState::Action::ORDER);
+	EXPECT_EQ(readyForOrder.empowermentPercent, 30);
+	EXPECT_FALSE(readyForOrder.hasConsumedBonus);
+
+	advanceRound();
+	const auto typedRound = battle()->battleGetRound();
+	grantOrderAllowanceForFixture(side);
+	const auto readinessBeforeTypedOrder = battle()->getWarcastingState(side);
+	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
+	const auto typedOrder = battle()->getHeroOrderState(side);
+	ASSERT_TRUE(typedOrder);
+	EXPECT_EQ(typedOrder->warcastingBonusPercent, 0);
+	EXPECT_EQ(battle()->getWarcastingState(side), readinessBeforeTypedOrder);
+	EXPECT_FALSE(battle()->getWarcastingState(side).hasConsumedBonus);
+	EXPECT_EQ(battle()->getHeroActionAllowances(side).remainingCounts(typedRound).heroActions, 1u);
+
+	// The readiness survived the typed Order. It is still inclusive at the second
+	// following round because the legally selected Advanced perk is Tactical Weaving.
+	advanceRound();
+	ASSERT_EQ(newHorizonsWarcasting::orderBonus(attackerSideHero, battle()->getWarcastingState(side),
+		battle()->battleGetRound()), 50);
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto firstEmpoweredOrder = battle()->getHeroOrderState(side);
+	ASSERT_TRUE(firstEmpoweredOrder);
+	EXPECT_EQ(firstEmpoweredOrder->warcastingBonusPercent, 50);
+	EXPECT_TRUE(battle()->getWarcastingState(side).hasConsumedBonus);
+	EXPECT_EQ(battle()->getWarcastingState(side).empowermentPercent, 30);
+	EXPECT_TRUE(std::ranges::any_of(server.battleLogLines, [](const auto & line)
+	{
+		return line.find("Warcasting adds +50 percentage points") != std::string::npos;
+	}));
+
+	advanceRound();
+	EXPECT_EQ(spellWarcastingBonus(SpellID::MAGIC_ARROW), 30);
+	const auto * magicArrow = SpellID(SpellID::MAGIC_ARROW).toSpell();
+	ASSERT_NE(magicArrow, nullptr);
+	spells::BattleCast magicArrowCast(battle(), attackerSideHero, spells::Mode::HERO, magicArrow);
+	const auto mechanics = magicArrow->battleMechanics(&magicArrowCast);
+	ASSERT_NE(mechanics, nullptr);
+	EXPECT_EQ(mechanics->getWarcastingBonusPercent(), 30);
+	const int64_t expectedDamage = mechanics->getEffectValue();
+	ASSERT_GT(expectedDamage, 0);
+	const auto healthBefore = defender->getAvailableHealth();
+	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, defender));
+	EXPECT_EQ(healthBefore - defender->getAvailableHealth(), expectedDamage);
+	EXPECT_TRUE(battle()->getWarcastingState(side).hasConsumedBonus);
+}
+
+TEST_F(NewHorizonsWarcastingTest, MasterSynthesisBoostsFirstSpellOnlyAndIsolatedAIFollowup)
+{
+	prepareWarcasting(3, false, false, true);
+	const auto side = BattleSide::ATTACKER;
+
+	// An unempowered first Order remains ordinary and arms the normal Expert bonus.
+	ASSERT_EQ(battle()->getWarcastingState(side).nextEligibleAction, AlternatingHeroActionState::Action::NONE);
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto unempoweredOrder = battle()->getHeroOrderState(side);
+	ASSERT_TRUE(unempoweredOrder);
+	EXPECT_EQ(unempoweredOrder->warcastingBonusPercent, 0);
+	EXPECT_FALSE(battle()->getWarcastingState(side).hasConsumedBonus);
+	EXPECT_EQ(battle()->getWarcastingState(side).empowermentPercent, 30);
+	EXPECT_EQ(battle()->getWarcastingState(side).nextEligibleAction, AlternatingHeroActionState::Action::SPELL);
+
+	const auto readinessBeforeTypedSpell = battle()->getWarcastingState(side);
+	grantSpellAllowanceForFixture(side);
+	EXPECT_EQ(spellWarcastingBonus(SpellID::MAGIC_ARROW), 0);
+	const auto typedSpellHealth = defender->getAvailableHealth();
+	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, defender));
+	EXPECT_LT(defender->getAvailableHealth(), typedSpellHealth);
+	EXPECT_EQ(battle()->getWarcastingState(side), readinessBeforeTypedSpell);
+	EXPECT_FALSE(battle()->getWarcastingState(side).hasConsumedBonus);
+
+	advanceRound();
+	WarcastingEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	HypotheticBattle projected(&environment, callback);
+	HypotheticBattle sibling(&environment, callback);
+	ASSERT_EQ(newHorizonsWarcasting::spellBonus(attackerSideHero,
+		projected.getWarcastingState(side), projected.getRound()), 50);
+	auto prepared = projected.prepareHeroSpellAllowance(side, false, false);
+	ASSERT_TRUE(prepared);
+	ASSERT_EQ(prepared->action.receipt.allowance, HeroActionAllowanceState::AllowanceKind::HERO);
+	ASSERT_TRUE(projected.beginProjectedHeroAction(side, *prepared));
+	ASSERT_TRUE(projected.projectAcceptedHeroSpell(side, SpellID::MAGIC_ARROW,
+		defender->unitId(), false, false, false, false, *prepared));
+	EXPECT_TRUE(projected.getWarcastingState(side).hasConsumedBonus);
+	EXPECT_FALSE(battle()->getWarcastingState(side).hasConsumedBonus);
+	EXPECT_FALSE(sibling.getWarcastingState(side).hasConsumedBonus);
+	EXPECT_EQ(projected.getWarcastingState(side).empowermentPercent, 30);
+
+	EXPECT_EQ(spellWarcastingBonus(SpellID::MAGIC_ARROW), 50);
+	const auto * magicArrow = SpellID(SpellID::MAGIC_ARROW).toSpell();
+	ASSERT_NE(magicArrow, nullptr);
+	spells::BattleCast magicArrowCast(battle(), attackerSideHero, spells::Mode::HERO, magicArrow);
+	const auto mechanics = magicArrow->battleMechanics(&magicArrowCast);
+	ASSERT_NE(mechanics, nullptr);
+	EXPECT_EQ(mechanics->getWarcastingBonusPercent(), 50);
+	const int64_t expectedDamage = mechanics->getEffectValue();
+	ASSERT_GT(expectedDamage, 0);
+	const auto healthBefore = defender->getAvailableHealth();
+	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, defender));
+	EXPECT_EQ(healthBefore - defender->getAvailableHealth(), expectedDamage);
+	EXPECT_TRUE(battle()->getWarcastingState(side).hasConsumedBonus);
+
+	advanceRound();
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto laterOrder = battle()->getHeroOrderState(side);
+	ASSERT_TRUE(laterOrder);
+	EXPECT_EQ(laterOrder->warcastingBonusPercent, 30);
+	EXPECT_TRUE(battle()->getWarcastingState(side).hasConsumedBonus);
+}
+
+TEST_F(NewHorizonsWarcastingTest, MasterSynthesisDoesNotRescueUnusedExpiredReadiness)
+{
+	prepareWarcasting(3, false, false, true);
+	const auto side = BattleSide::ATTACKER;
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_EQ(battle()->getWarcastingState(side).nextEligibleAction, AlternatingHeroActionState::Action::ORDER);
+	EXPECT_FALSE(battle()->getWarcastingState(side).hasConsumedBonus);
+
+	advanceRound();
+	advanceRound();
+	EXPECT_EQ(newHorizonsWarcasting::orderBonus(attackerSideHero,
+		battle()->getWarcastingState(side), battle()->battleGetRound()), 50);
+	advanceRound();
+	EXPECT_EQ(battle()->getWarcastingState(side).nextEligibleAction, AlternatingHeroActionState::Action::NONE);
+	EXPECT_FALSE(battle()->getWarcastingState(side).hasConsumedBonus);
+	EXPECT_EQ(newHorizonsWarcasting::effectiveBonus(attackerSideHero,
+		battle()->getWarcastingState(side), AlternatingHeroActionState::Action::ORDER,
+		battle()->battleGetRound()), 0);
 }

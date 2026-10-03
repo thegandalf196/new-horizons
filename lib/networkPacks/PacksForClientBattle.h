@@ -56,6 +56,10 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_RAGE_THROUGH_PAIN)
 			&& info->hasRageThroughPainState())
 			throw std::runtime_error("Cannot discard Rage Through Pain battle start state");
+		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_SYNTHESIS)
+			&& (info->getWarcastingState(BattleSide::ATTACKER).hasConsumedBonus
+				|| info->getWarcastingState(BattleSide::DEFENDER).hasConsumedBonus))
+			throw std::runtime_error("Cannot discard Warcasting consumption history from BattleStart");
 		if(h.saving && info && !h.hasFeature(Handler::Version::BATTLE_FINAL_RELOCATION)
 			&& info->getDeploymentState().hasFinalRelocationState())
 			throw std::runtime_error("Cannot discard final relocation state from BattleStart");

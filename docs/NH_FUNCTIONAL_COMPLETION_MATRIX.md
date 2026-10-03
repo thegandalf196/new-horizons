@@ -14,6 +14,24 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP178 Master Synthesis is source/native verified and active. Shared Spell/Order
+resolution replaces only the first consumed positive readiness with50, retains
+combat-long history through expiry and excludes typed bonus actions. Live Spell
+damage, Order snapshots, detached AI and existing visible-hero status are covered;
+saved history uses an append-only feature with older-writer loss guards. Both
+Linux targets build. Principal7/7 passes; initial adjacent58/64 required six
+fixture-only repairs, then adjacent64/64 passes, zero skips,11.141s. Active7/7
+passes, zero skips,1.316s; all three registry XML properties are active. Focused
+data/inventory19/19 and generated-module check pass; independent review finds
+no blocker. Binary SHA-256:
+b206d126311f098c5964bc25a2b3e170e9b553eea4a62b97c75ff1286440d4ba.
+Coverage194/310 active perks,116 planned; Warcasting6/10; faction55/90 and
+ranks84/93 unchanged. Generic UI is Provisional, purpose-made art Not done.
+Perfect Rhythm stacking, full battle-save restoration, broader interactions and
+rendered UI remain deferred; no playable snapshot promotion is claimed.
+UP177 records the next missing Portal of Summoning source-linked recruitment
+requirement: the current duplicate growth pool is not canonical shared stock.
+
 UP175 Night Prowler is source/native verified and active. Actually committed,
 non-flying Ghost Walk through a currently hostile footprint grants10% melee/
 ranged damage on the next attack in that activation. Existing UNTIL_ATTACK and
@@ -1570,7 +1588,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 193/310 | 117 planned; Night Prowler is the newest source/native-verified activation. Learning is 3/10; Estates is 5/10; Battlecraft is 5/10; Command is 7/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 194/310 | 116 planned; Master Synthesis is the newest source/native-verified activation. Learning is 3/10; Estates is 5/10; Battlecraft is 5/10; Command is 7/10; Warcasting is 6/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 55/90 | 35 planned perks; Night Prowler has committed hostile transit, first-strike consumption, unused expiry and isolated AI route/replay evidence. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -1719,7 +1737,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Chaos Magic | 3/0 | 3/7 | Blinkmaster, Weaver and Paradox Shield are active with focused evidence recorded above; seven perks remain planned. |
 | Spellcraft | 3/0 | 4/6 | Grand Formula scales the first accepted Level 4-or-5 hero spell's SP term by 150%; Arcane Focus, Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold. Basic/Advanced/Expert efficiency is 110/120/130% under saved v3 rules. |
 | Wisdom | 3/0 | 8/2 | Mana Conservation post-combat Normal recovery, Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. One other perk remains missing. Broader interactions and playable acceptance remain open. |
-| Warcasting | 3/0 | 5/5 | Spellward has focused live/detached/current-controller damage evidence. Five perks missing; Combat Casting and Enchanted Command await shared rule decisions. |
+| Warcasting | 3/0 | 6/4 | Spellward has focused live/detached/current-controller damage evidence. Master Synthesis has first-consumption Spell/Order, typed-exclusion and branch-history evidence. Four perks missing; Combat Casting and Enchanted Command await shared rule decisions; Perfect Rhythm stacking is unresolved. |
 | Logistics | 3/0 | 5/5 | Five perks missing; Roadmaster/Wayfarer native verified |
 | Diplomacy | 0/3 | 0/10 | Ranks and progression missing |
 | Estates | 3/0 | 5/5 | Land Surveyor, Tax Collector, Investor, Estate Network and Financier supply working Basic/Advanced/Expert perks. Accepted mine-capture grants, daily income, weekly Wood/Ore, weekly treasury interest, Investor's pre-income treasury snapshot and AI resource receipt/selection are native verified. |

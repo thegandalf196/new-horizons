@@ -60,14 +60,43 @@ inline int readinessLifetimeRounds(const CGHeroInstance * hero)
 		? 2 : 1;
 }
 
+inline bool hasMasterSynthesis(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk("new-horizons:warcasting", "new-horizons:warcasting.masterSynthesis");
+}
+
+/// Applies Master Synthesis only to an existing, matching Warcasting readiness.
+/// The first accepted consumption is tracked by the shared battle state, so both
+/// spell and Order projections use the same combat-long replacement.
+inline int effectiveBonus(const CGHeroInstance * hero, const AlternatingHeroActionState & state,
+	AlternatingHeroActionState::Action action, int32_t round)
+{
+	const int raw = state.bonusFor(action, round);
+	if(raw <= 0)
+		return 0;
+	if(hasMasterSynthesis(hero) && !state.hasConsumedBonus)
+		return 50;
+	return raw;
+}
+
 inline int orderBonus(const AlternatingHeroActionState & state, int32_t round)
 {
 	return state.bonusFor(AlternatingHeroActionState::Action::ORDER, round);
 }
 
+inline int orderBonus(const CGHeroInstance * hero, const AlternatingHeroActionState & state, int32_t round)
+{
+	return effectiveBonus(hero, state, AlternatingHeroActionState::Action::ORDER, round);
+}
+
 inline int spellBonus(const AlternatingHeroActionState & state, int32_t round)
 {
 	return state.bonusFor(AlternatingHeroActionState::Action::SPELL, round);
+}
+
+inline int spellBonus(const CGHeroInstance * hero, const AlternatingHeroActionState & state, int32_t round)
+{
+	return effectiveBonus(hero, state, AlternatingHeroActionState::Action::SPELL, round);
 }
 
 /// Battle Meditation is earned only by consuming live Order-to-Spell readiness.

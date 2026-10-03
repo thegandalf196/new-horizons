@@ -53,6 +53,7 @@
 #include "../../lib/StartInfo.h"
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/CUnitState.h"
+#include "../../lib/battle/NewHorizonsWarcasting.h"
 #include "../../lib/battle/NewHorizonsBloodrage.h"
 #include "../../lib/bonuses/BonusEnum.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
@@ -941,10 +942,15 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 
 	const auto & warcasting = battle->getWarcastingState(side);
 	const auto round = battle->getRound();
+	const auto * visibleHero = battleCallback->battleGetFightingHero(side);
 	if(hasActiveWarcasting(warcasting, round))
 	{
 		const auto action = warcasting.nextEligibleAction;
-		const auto empowerment = warcasting.bonusFor(action, round);
+		// Only apply hero-specific Master Synthesis when this client can see the
+		// fighting hero. Readiness itself remains a public saved battle state.
+		const auto empowerment = visibleHero
+			? newHorizonsWarcasting::effectiveBonus(visibleHero, warcasting, action, round)
+			: warcasting.bonusFor(action, round);
 		const auto actionName = action == AlternatingHeroActionState::Action::SPELL ? "Spell" : "Order";
 		const auto amount = action == AlternatingHeroActionState::Action::SPELL
 			? "+" + std::to_string(empowerment) + "%"
@@ -961,7 +967,7 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 		entries.push_back({warcastingIconName(action), actionName, amount, tooltip});
 	}
 
-	if(const auto * hero = battleCallback->battleGetFightingHero(side))
+	if(const auto * hero = visibleHero)
 	{
 		for(const auto & skill : LIBRARY->skillh->objects)
 		{

@@ -29,6 +29,8 @@
 #include "../mapObjects/CGTownInstance.h"
 #include "../bonuses/Bonus.h"
 #include "../battle/CBattleInfoCallback.h"
+#include "../battle/HeroActionAllowanceState.h"
+#include "../battle/HeroCommand.h"
 #include "../battle/IBattleState.h"
 #include "../battle/AlternatingHeroActionState.h"
 #include "../battle/NewHorizonsWarcasting.h"
@@ -757,12 +759,28 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		&& (casterSide == BattleSide::ATTACKER || casterSide == BattleSide::DEFENDER))
 	{
 		const auto * battleInfo = cb->getBattle();
-		if(battleInfo && !event->isMetamagicFollowup()
-			&& newHorizonsWarcasting::enabled(battleInfo->getMagicRules()))
-			warcastingBonusPercent = battleInfo->getWarcastingState(casterSide).bonusFor(
-				AlternatingHeroActionState::Action::SPELL, battleInfo->getRound());
-
 		const auto * hero = dynamic_cast<const CGHeroInstance *>(caster);
+		bool spendsHeroAllowance = !event->isMetamagicFollowup();
+		const int32_t battleRound = battleInfo ? battleInfo->getRound() : -1;
+		if(battleInfo && !event->isMetamagicFollowup() && battleRound >= 0
+			&& heroCommands::supportedByRules(battleInfo->getHeroCommandRules(), HeroCommand::CHARGE))
+		{
+			const auto & allowances = battleInfo->getHeroActionAllowances(casterSide);
+			if(allowances.currentRound == battleRound)
+			{
+				const auto selection = allowances.eligibleAllowance(
+					HeroActionAllowanceState::ActionKind::SPELL, battleRound);
+				spendsHeroAllowance = selection
+					&& selection->allowance == HeroActionAllowanceState::AllowanceKind::HERO;
+			}
+			else
+				spendsHeroAllowance = false;
+		}
+		if(battleInfo && spendsHeroAllowance
+			&& newHorizonsWarcasting::enabled(battleInfo->getMagicRules()))
+			warcastingBonusPercent = newHorizonsWarcasting::spellBonus(hero,
+				battleInfo->getWarcastingState(casterSide), battleInfo->getRound());
+
 		if(battleInfo && hero && battleInfo->getSideHero(casterSide) == hero
 			&& !battleInfo->hasCompletedHeroSpellCast(casterSide)
 			&& hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),

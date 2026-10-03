@@ -157,7 +157,27 @@ TEST(AlternatingHeroActionState, ExpiredMatchingActionRearmsWithoutConsumingABon
 	State state;
 	state.recordAcceptedAction(Action::SPELL, 1, 20);
 	EXPECT_EQ(state.recordAcceptedAction(Action::ORDER, 3, 30), 0);
+	EXPECT_FALSE(state.hasConsumedBonus);
 	EXPECT_EQ(state.bonusFor(Action::SPELL, 4), 30);
+}
+
+TEST(AlternatingHeroActionState, MasterSynthesisTracksOnlyPositiveMatchedConsumption)
+{
+	State unmatched;
+	unmatched.recordAcceptedAction(Action::SPELL, 1, 20);
+	EXPECT_EQ(unmatched.recordAcceptedAction(Action::SPELL, 2, 30), 0);
+	EXPECT_FALSE(unmatched.hasConsumedBonus);
+
+	State expired;
+	expired.recordAcceptedAction(Action::SPELL, 1, 20);
+	EXPECT_EQ(expired.recordAcceptedAction(Action::ORDER, 3, 30), 0);
+	EXPECT_FALSE(expired.hasConsumedBonus);
+
+	State consumed;
+	consumed.recordAcceptedAction(Action::SPELL, 1, 20);
+	EXPECT_EQ(consumed.recordAcceptedAction(Action::ORDER, 2, 0), 20);
+	EXPECT_TRUE(consumed.hasConsumedBonus);
+	EXPECT_EQ(consumed.nextEligibleAction, Action::NONE);
 }
 
 TEST(AlternatingHeroActionState, ExpiryClearingReturnsAChangedCopy)
@@ -184,6 +204,19 @@ TEST(AlternatingHeroActionState, ExpiryClearingPreservesBattleMeditationRound)
 	EXPECT_EQ(state.lastManaRecoveryRound, 6);
 }
 
+TEST(AlternatingHeroActionState, MasterSynthesisConsumptionSurvivesReadinessExpiry)
+{
+	State state;
+	state.recordAcceptedAction(Action::SPELL, 1, 10);
+	EXPECT_EQ(state.recordAcceptedAction(Action::ORDER, 2, 20), 10);
+	ASSERT_TRUE(state.hasConsumedBonus);
+
+	const auto expired = state.clearedIfExpired(4);
+	EXPECT_EQ(expired.nextEligibleAction, Action::NONE);
+	EXPECT_TRUE(expired.hasConsumedBonus);
+	EXPECT_TRUE(state.clearedIfExpired(3).hasConsumedBonus);
+}
+
 TEST(AlternatingHeroActionState, ZeroLifetimeExpiresInclusivelyAtTheCurrentRound)
 {
 	State state;
@@ -200,7 +233,34 @@ TEST(AlternatingHeroActionState, ZeroEmpowermentConsumesThenClearsReadiness)
 	state.recordAcceptedAction(Action::SPELL, 2, 20);
 
 	EXPECT_EQ(state.recordAcceptedAction(Action::ORDER, 3, 0), 20);
-	EXPECT_EQ(state, State{});
+	EXPECT_EQ(state.nextEligibleAction, Action::NONE);
+	EXPECT_EQ(state.empowermentPercent, 0);
+	EXPECT_EQ(state.expiryRound, 0);
+	EXPECT_TRUE(state.hasConsumedBonus);
+}
+
+TEST(AlternatingHeroActionState, MasterSynthesisConsumptionIsBranchLocalAndRoundTrips)
+{
+	State original;
+	original.recordAcceptedAction(Action::SPELL, 1, 20);
+	State consumedBranch = original;
+	State untouchedBranch = original;
+
+	EXPECT_EQ(consumedBranch.recordAcceptedAction(Action::ORDER, 2, 30), 20);
+	EXPECT_TRUE(consumedBranch.hasConsumedBonus);
+	EXPECT_FALSE(original.hasConsumedBonus);
+	EXPECT_FALSE(untouchedBranch.hasConsumedBonus);
+	EXPECT_EQ(untouchedBranch.bonusFor(Action::ORDER, 2), 20);
+
+	CMemorySerializer serializer;
+	serializer.oser.version = ESerializationVersion::CURRENT;
+	serializer.iser.version = ESerializationVersion::CURRENT;
+	ASSERT_NO_THROW(serializer.oser & consumedBranch);
+
+	State restored;
+	ASSERT_NO_THROW(serializer.iser & restored);
+	EXPECT_EQ(restored, consumedBranch);
+	EXPECT_TRUE(restored.hasConsumedBonus);
 }
 
 TEST(AlternatingHeroActionState, RejectsInvalidInputAndOverflowAtomically)
@@ -286,6 +346,32 @@ TEST(AlternatingHeroActionState, OlderWarcastingSaveDefaultsRecoveryRoundAndReje
 	malformed.oser.version = ESerializationVersion::CURRENT;
 	EXPECT_THROW(malformed.oser & recoveryOnly, std::runtime_error);
 	EXPECT_TRUE(malformed.extractBuffer().empty());
+}
+
+TEST(AlternatingHeroActionState, MasterSynthesisHistoryDefaultsForOldReadersAndRejectsOldWriters)
+{
+	State compatible;
+	compatible.recordAcceptedAction(Action::SPELL, 4, 20);
+	CMemorySerializer oldVersion;
+	oldVersion.oser.version = ESerializationVersion::NEW_HORIZONS_RAGE_THROUGH_PAIN;
+	oldVersion.iser.version = ESerializationVersion::NEW_HORIZONS_RAGE_THROUGH_PAIN;
+	ASSERT_NO_THROW(oldVersion.oser & compatible);
+
+	State restored;
+	ASSERT_NO_THROW(oldVersion.iser & restored);
+	EXPECT_EQ(restored.nextEligibleAction, compatible.nextEligibleAction);
+	EXPECT_EQ(restored.empowermentPercent, compatible.empowermentPercent);
+	EXPECT_FALSE(restored.hasConsumedBonus);
+
+	State consumed;
+	consumed.recordAcceptedAction(Action::SPELL, 1, 20);
+	consumed.recordAcceptedAction(Action::ORDER, 2, 0);
+	ASSERT_TRUE(consumed.hasConsumedBonus);
+
+	CMemorySerializer lossyWriter;
+	lossyWriter.oser.version = ESerializationVersion::NEW_HORIZONS_RAGE_THROUGH_PAIN;
+	EXPECT_THROW(lossyWriter.oser & consumed, std::runtime_error);
+	EXPECT_TRUE(lossyWriter.extractBuffer().empty());
 }
 
 TEST(AlternatingHeroActionState, InactiveStateRoundTrips)

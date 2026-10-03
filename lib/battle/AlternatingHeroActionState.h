@@ -28,6 +28,7 @@ struct DLL_LINKAGE AlternatingHeroActionState
 	int32_t empowermentPercent = 0;
 	int32_t expiryRound = 0;
 	int32_t lastManaRecoveryRound = -1;
+	bool hasConsumedBonus = false;
 
 	bool operator==(const AlternatingHeroActionState &) const = default;
 
@@ -57,6 +58,8 @@ struct DLL_LINKAGE AlternatingHeroActionState
 			throw std::invalid_argument("Alternating hero action expiry round overflows");
 
 		const auto consumedEmpowerment = bonusFor(action, currentRound);
+		if(consumedEmpowerment > 0)
+			hasConsumedBonus = true;
 		if(empowerment == 0)
 		{
 			clearReadiness();
@@ -103,6 +106,8 @@ struct DLL_LINKAGE AlternatingHeroActionState
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLE_MEDITATION)
 				&& lastManaRecoveryRound != -1)
 				throw std::runtime_error("Cannot save Battle Meditation recovery state to an older version");
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_SYNTHESIS) && hasConsumedBonus)
+				throw std::runtime_error("Cannot save Warcasting consumption history to an older version");
 		}
 		h & nextEligibleAction;
 		h & empowermentPercent;
@@ -111,6 +116,10 @@ struct DLL_LINKAGE AlternatingHeroActionState
 			h & lastManaRecoveryRound;
 		else if(!h.saving)
 			lastManaRecoveryRound = -1;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_SYNTHESIS))
+			h & hasConsumedBonus;
+		else if(!h.saving)
+			hasConsumedBonus = false;
 		if(!h.saving)
 			validateShape();
 	}

@@ -2974,8 +2974,13 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 	const bool combinedArmsEnabled = hero
 		&& heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules())
 		&& heroCommands::hasCombinedArms(hero);
-	const int warcastingBonus = hero && newHorizonsWarcasting::enabled(battle.getBattle()->getMagicRules())
-		? newHorizonsWarcasting::orderBonus(battle.getBattle()->getWarcastingState(side), battle.battleGetRound()) : 0;
+	const auto round = battle.battleGetRound();
+	const auto orderAllowance = battle.getBattle()->getHeroActionAllowances(side).eligibleAllowance(
+		HeroActionAllowanceState::ActionKind::ORDER, round);
+	const int warcastingBonus = hero && orderAllowance
+		&& orderAllowance->allowance == HeroActionAllowanceState::AllowanceKind::HERO
+		&& newHorizonsWarcasting::enabled(battle.getBattle()->getMagicRules())
+		? newHorizonsWarcasting::orderBonus(hero, battle.getBattle()->getWarcastingState(side), round) : 0;
 	const auto coefficient = [&](const char * commandKey, const char * effectKey)
 	{
 		const auto & formula = commandRules[commandKey]["effects"][effectKey];

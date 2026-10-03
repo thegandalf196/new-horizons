@@ -2270,10 +2270,12 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		{
 			auto next = side.warcastingState;
 			const auto * hero = commandBattle->battleGetFightingHero(pack.ba.side);
-			const int consumedBonus = next.recordAcceptedAction(AlternatingHeroActionState::Action::ORDER,
+			const int effectiveBonus = newHorizonsWarcasting::orderBonus(
+				hero, next, commandBattle->getRound());
+			next.recordAcceptedAction(AlternatingHeroActionState::Action::ORDER,
 				commandBattle->getRound(), newHorizonsWarcasting::empowerment(hero,
 					AlternatingHeroActionState::Action::ORDER), newHorizonsWarcasting::readinessLifetimeRounds(hero));
-			if(canonicalOrder && (!pack.orderState || consumedBonus != pack.orderState->warcastingBonusPercent))
+			if(canonicalOrder && (!pack.orderState || effectiveBonus != pack.orderState->warcastingBonusPercent))
 				throw std::runtime_error("Warcasting Order snapshot does not match current readiness");
 			nextWarcastingState = std::move(next);
 		}

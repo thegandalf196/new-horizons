@@ -526,8 +526,15 @@ std::optional<FocusFireState> CBattleInfoCallback::battlePrepareFocusFireState(B
 	result.issuedRound = battleGetRound();
 	const auto * hero = battleGetFightingHero(side);
 	const auto & formula = getBattle()->getHeroCommandRules()["commands"]["focusFire"]["effects"]["rangedDamagePercent"];
+	const auto & allowances = getBattle()->getHeroActionAllowances(side);
+	const auto allowance = result.issuedRound >= 0 && allowances.currentRound == result.issuedRound
+		? allowances.eligibleAllowance(HeroActionAllowanceState::ActionKind::ORDER, result.issuedRound)
+		: std::optional<HeroActionAllowanceState::Selection>();
+	const bool spendsHeroAllowance = !heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), HeroCommand::CHARGE)
+		|| (allowance && allowance->allowance == HeroActionAllowanceState::AllowanceKind::HERO);
 	const auto warcastingBonus = newHorizonsWarcasting::enabled(getBattle()->getMagicRules())
-		? newHorizonsWarcasting::orderBonus(getBattle()->getWarcastingState(side), result.issuedRound) : 0;
+		&& spendsHeroAllowance
+		? newHorizonsWarcasting::orderBonus(hero, getBattle()->getWarcastingState(side), result.issuedRound) : 0;
 	result.rangedDamagePercent = heroCommands::coefficient(formula, *hero, warcastingBonus);
 	const bool includeMeleeRecipients = heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
 		&& heroCommands::hasCombinedArms(hero);
@@ -1195,7 +1202,7 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderState(B
 	if(newHorizonsWarcasting::enabled(getBattle()->getMagicRules())
 		&& allowance && allowance->allowance == HeroActionAllowanceState::AllowanceKind::HERO)
 		result.warcastingBonusPercent = newHorizonsWarcasting::orderBonus(
-			getBattle()->getWarcastingState(side), result.issuedRound);
+			hero, getBattle()->getWarcastingState(side), result.issuedRound);
 	if(command == HeroCommand::HOLD_THE_LINE
 		&& hero->hasActivePerk(newHorizonsIronDiscipline::SKILL, newHorizonsIronDiscipline::PERK))
 	{

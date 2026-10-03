@@ -119,6 +119,7 @@ ACTIVE_PERKS = {
     "new-horizons:warcasting.spellward",
     "new-horizons:warcasting.tacticalWeaving",
     "new-horizons:warcasting.battleMeditation",
+    "new-horizons:warcasting.masterSynthesis",
     "new-horizons:archery.targetCaller",
     "new-horizons:archery.skirmisher",
     "new-horizons:archery.pointBlankShot",

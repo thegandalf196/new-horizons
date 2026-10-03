@@ -2245,7 +2245,7 @@
 					"requires": "expert",
 					"description": "The first Warcasting bonus consumed each combat is automatically treated as +50% / +50 percentage points instead of its normal value.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The first Warcasting bonus consumed each combat is automatically treated as +50% / +50 percentage points instead of its normal value."
 					}
 				}
