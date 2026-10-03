@@ -2,6 +2,74 @@
 
 ## Purpose
 
+### 2026-10-03 UP-179 — Dependent template call in effect recorder
+
+Hypnotize capture client39016 exits1: the generic packet lambda requires
+`bonus.parameters->template toCustom<JsonNode>()`, not the non-dependent
+spelling. Root corrects that call without changing capture behavior. Original
+UP179-hypnotize-client-build.log is retained; retry26745 uses a separate log.
+Do not claim native acceptance from the initial compile or stale test binary.
+
+Test11554 exits1 because CUnitState::damage takes a mutable int64 reference:
+the new fixture passed a const local and a temporary. Root uses mutable wound
+locals, retaining the exact health/boundary assertions. Original
+UP179-hypnotize-test-build.log is retained; retry uses a separate log.
+
+Test retry7191 builds successfully. Native60997 executes22 cases:9 planner/
+parser passes,13 real Astral cases fail at cast eligibility before effect
+application, including the six pre-existing boundary cases. Preserve
+UP179-hypnotize-principal.log/XML. Diagnose the real fixture/content failure;
+do not relax production eligibility or claim acceptance from parser tests alone.
+
+Diagnosis: the direct BattleStart fixture remains at round0 with allowance
+currentRound=-1, so the ordinary Hero Action gate rejects every Hero cast.
+The Astral fixture now enters its first playable round through BattleNextRound,
+which initializes allowances normally. Limit this setup repair to the focused
+fixture, not production rules or the entire unrelated legacy spell suite.
+
+That setup repair is necessary but not sufficient: fixture build36554 exits0,
+native1690 still reports9/22 passes with the same13 eligibility failures.
+Retain UP179-hypnotize-principal-retry.log/XML. Instrument the actual Problem
+messages and cast/target rejection boundaries before making another repair;
+the previous allowance diagnosis did not establish the sole cause.
+
+Diagnostic build47255 exits0. The single Pikeman probe proves general casting
+is allowed (callback OK, round1 allowance present) but target admission fails:
+the saved-v3 spell is Chaos, while the old fixture grants only vanilla Schools.
+Its actual effectLevel is0, effectValue35 and specialty-adjusted ceiling40,
+not the fixture's assumed Expert value345. Repair the explicit fixture School
+and expected saved-v3 SP coefficient; preserve both exact-boundary probes.
+
+School-fixture build5484 exits1: the new Chaos helper was placed on the
+parameterized derived fixture but also called by a base-fixture refresh case.
+Root moves that helper to the shared test base; only the focused Hypnotize
+cases call it. Keep UP179-hypnotize-school-fixture-build.log and retry separately.
+
+Retry30562 compiles, but native27718 still passes9/22. School/first-round
+assertions now pass; target admission still rejects the old scale assumption.
+The canonical expanded-attribute profile has powerDivisor10, and expected
+values must use the loaded spell's authored base/level powers rather than old
+Heroes III numeric comments. Compute the independent expected formula from
+those data and saved145% coefficient, not from the capture API being tested.
+Retain UP179-hypnotize-principal-final.log/XML despite its historical filename.
+
+Data-fixture build39994 exits0; native10260 passes21/22 in5.990s. The sole
+refresh failure is an invalid opponent recast: battleMatchOwner uses original
+unitSide, so a defender cannot target its own originally defended unit with
+Hypnotize. Preserve this production behavior. Test a same-caster refresh after
+specialty removal and normal next-round action renewal; add an ordinary duration
+bonus so the original effect actually survives that boundary. The existing
+ownership-policy interaction belongs in Phase2, not this metadata change.
+
+Final focused build39697 exits0. Native5489 passes all22 cases in5.958s,
+zero skips, with a same-caster accepted recast after specialty removal and a
+real round transition. The original ceiling is retained and the timer is
+restored. UP179-hypnotize-refresh-final.log/XML are the accepted evidence;
+older filenames containing "accepted" or "final" do not override their
+recorded failing results. Independent final review has no blocking finding.
+An explicit specialty-absence assertion and detached refresh parity are
+deferred test strengthening, not a production eligibility change.
+
 ### 2026-10-03 UP-179 — Verify coordinator termination before resuming
 
 Retry15193 exits143 after179/320 without a compiler error. Root inspects process

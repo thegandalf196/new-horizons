@@ -136,6 +136,18 @@ recast/Dispel therefore use the existing effect lifecycle. The append-only type
 requires `NEW_HORIZONS_SHIELD_OF_CHAOS_PHYSICAL_REDUCTION` serialization support;
 down-saving its state to an older format is rejected.
 
+## Hypnotize cast-time ceiling metadata
+
+The `HYPNOTIZED` marker may carry a named `addInfo.maximumTargetHealth`
+integer. The authoritative spell-effect recorder captures the exact
+target-adjusted ceiling used by the original Hypnotize cast. This metadata does
+not change control or targeting; it lets later effect-transfer rules evaluate
+the original cast limit without re-running caster bonuses. A duration-only
+refresh preserves the existing marker payload, matching normal `toUpdate`
+semantics. Markers without the payload remain valid for older states. The
+structured payload is stored in `BonusParameters` as a `JsonNode` and is
+validated as a non-negative integer when parsed.
+
 ## Favorable creature probability modifiers
 
 `FAVORABLE_CREATURE_CHANCE_MULTIPLIER_BASIS_POINTS` multiplies explicitly

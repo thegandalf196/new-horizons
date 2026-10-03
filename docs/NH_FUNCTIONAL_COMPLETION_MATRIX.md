@@ -18,6 +18,17 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+Additional UP179 prerequisite accepted: Hypnotize markers capture their exact
+original specialty-adjusted HP ceiling in production, without changing cast
+eligibility or ordinary refresh semantics. Client retry26745/test39697 exit0;
+UP179-hypnotize-refresh-final.log/XML (native5489) passes22/22 in5.958s,
+zero skips. Real cast boundaries, refresh timer/retained ceiling, exact integer
+parser/wire representation and legacy absence pass. Independent review has no
+blocker; data/inventory19/19 pass. Full Reality Warp remains missing: no spell,
+perk or rank count increase, and no playable promotion. Detached refresh parity,
+original-side targeting interactions and binary-loaded metadata validation by
+the eventual transfer consumer remain Phase2 concerns.
+
 UP179 Reality Warp remains missing as a complete combat spell (60/67 unchanged).
 Its required stable caster-provenance representation and detached reciprocal
 bundle planner exist in production sources, with Guardian/Regeneration/Hydra

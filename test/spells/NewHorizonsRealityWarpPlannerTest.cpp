@@ -7,6 +7,7 @@
 #include "../../lib/bonuses/Limiters.h"
 #include "../../lib/bonuses/Propagators.h"
 #include "../../lib/bonuses/Updaters.h"
+#include "../../lib/json/JsonBonus.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include "../../lib/serializer/ESerializationVersion.h"
 #include "../../lib/spells/NewHorizonsRealityWarp.h"
@@ -215,4 +216,79 @@ TEST(NewHorizonsRealityWarpPlannerTest, BonusCasterOwnerSerializationIsVersioned
 	unsupportedDownsave.oser.version = ESerializationVersion::NEW_HORIZONS_RECRUITMENT_PACT_STATE;
 	EXPECT_THROW(unsupportedDownsave.oser & source, std::runtime_error);
 	EXPECT_TRUE(unsupportedDownsave.extractBuffer().empty());
+}
+
+namespace
+{
+JsonNode hypnotizedBonusConfig()
+{
+	JsonNode result;
+	result["type"].String() = "HYPNOTIZED";
+	result.setModScope("core", false);
+	return result;
+}
+}
+
+TEST(NewHorizonsRealityWarpPlannerTest, HypnotizeHealthCeilingSurvivesParserJsonAndCurrentWireRoundTrip)
+{
+	constexpr int64_t capturedHealthCeiling = 9007199254740993LL;
+	auto config = hypnotizedBonusConfig();
+	config["addInfo"]["maximumTargetHealth"].Integer() = capturedHealthCeiling;
+	config["addInfo"]["opaqueLegacyField"].String() = "preserved";
+
+	const auto parsed = JsonUtils::parseBonus(config);
+	ASSERT_NE(parsed, nullptr);
+	ASSERT_EQ(parsed->type, BonusType::HYPNOTIZED);
+	ASSERT_NE(parsed->parameters, nullptr);
+	const auto parsedInfo = parsed->parameters->toCustom<JsonNode>();
+	ASSERT_EQ(parsedInfo["maximumTargetHealth"].getType(), JsonNode::JsonType::DATA_INTEGER);
+	EXPECT_EQ(parsedInfo["maximumTargetHealth"].Integer(), capturedHealthCeiling);
+	EXPECT_EQ(parsedInfo["opaqueLegacyField"].String(), "preserved");
+
+	CMemorySerializer wire;
+	wire.oser.version = ESerializationVersion::CURRENT;
+	wire.iser.version = ESerializationVersion::CURRENT;
+	wire.oser & *parsed;
+	Bonus restored;
+	wire.iser & restored;
+	ASSERT_NE(restored.parameters, nullptr);
+	EXPECT_EQ(restored.parameters->toCustom<JsonNode>()["maximumTargetHealth"].Integer(), capturedHealthCeiling);
+	EXPECT_EQ(restored.parameters->toCustom<JsonNode>()["opaqueLegacyField"].String(), "preserved");
+
+	const auto jsonRoundTrip = JsonUtils::parseBonus(restored.toJsonNode());
+	ASSERT_NE(jsonRoundTrip, nullptr);
+	ASSERT_NE(jsonRoundTrip->parameters, nullptr);
+	EXPECT_EQ(jsonRoundTrip->parameters->toCustom<JsonNode>()["maximumTargetHealth"].Integer(), capturedHealthCeiling);
+	EXPECT_EQ(jsonRoundTrip->parameters->toCustom<JsonNode>()["opaqueLegacyField"].String(), "preserved");
+}
+
+TEST(NewHorizonsRealityWarpPlannerTest, HypnotizeParserRejectsMalformedCapturedHealthCeilings)
+{
+	auto floatingCeiling = hypnotizedBonusConfig();
+	floatingCeiling["addInfo"]["maximumTargetHealth"].Float() = 9007199254740992.0;
+	EXPECT_THROW(JsonUtils::parseBonus(floatingCeiling), std::runtime_error);
+
+	auto negativeCeiling = hypnotizedBonusConfig();
+	negativeCeiling["addInfo"]["maximumTargetHealth"].Integer() = -1;
+	EXPECT_THROW(JsonUtils::parseBonus(negativeCeiling), std::runtime_error);
+
+	auto missingCeiling = hypnotizedBonusConfig();
+	missingCeiling["addInfo"]["opaqueLegacyField"].String() = "preserved";
+	EXPECT_THROW(JsonUtils::parseBonus(missingCeiling), std::runtime_error);
+}
+
+TEST(NewHorizonsRealityWarpPlannerTest, LegacyHypnotizeWithoutHealthCeilingRemainsReadable)
+{
+	const auto legacy = JsonUtils::parseBonus(hypnotizedBonusConfig());
+	ASSERT_NE(legacy, nullptr);
+	ASSERT_EQ(legacy->type, BonusType::HYPNOTIZED);
+	EXPECT_EQ(legacy->parameters, nullptr);
+
+	CMemorySerializer wire;
+	wire.oser.version = ESerializationVersion::CURRENT;
+	wire.iser.version = ESerializationVersion::CURRENT;
+	wire.oser & *legacy;
+	Bonus restored;
+	wire.iser & restored;
+	EXPECT_EQ(restored.parameters, nullptr);
 }

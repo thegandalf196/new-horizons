@@ -301,6 +301,24 @@ static TBonusParametersPtr loadBonusAddInfo(BonusType type, const JsonNode & val
 			var = BonusParameters(value);
 			break;
 		}
+		case BonusType::HYPNOTIZED:
+		{
+			// Older Hypnotize markers do not have addInfo. Preserve the historic
+			// handling of non-object addInfo, while validating the named runtime
+			// payload used to retain its cast-time target-health ceiling.
+			if(value.isStruct())
+			{
+				const auto & maximumTargetHealth = value["maximumTargetHealth"];
+				if(maximumTargetHealth.getType() != JsonNode::JsonType::DATA_INTEGER
+					|| maximumTargetHealth.Integer() < 0)
+					throw std::runtime_error("HYPNOTIZED addInfo requires a non-negative integer maximumTargetHealth");
+
+				var = BonusParameters(value);
+			}
+			else
+				logMod->warn("Bonus type %s does not supports addInfo!", LIBRARY->bth->bonusToString(type));
+			break;
+		}
 		default:
 			logMod->warn("Bonus type %s does not supports addInfo!", LIBRARY->bth->bonusToString(type) );
 	}

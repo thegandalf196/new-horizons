@@ -26,6 +26,7 @@
 #include "../battle/NewHorizonsSoulChain.h"
 #include "../battle/NewHorizonsWarcasting.h"
 #include "../battle/Unit.h"
+#include "../bonuses/BonusParameters.h"
 #include "../bonuses/Updaters.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../networkPacks/PacksForClientBattle.h"
@@ -225,9 +226,10 @@ public:
 	};
 
 	EffectPacketRecorder(ServerCallback & delegate, const CBattleInfoCallback & battle,
-		PlayerColor casterOwner, SpellID castSpellId, SpellID effectSpellId)
+		const Mechanics & mechanics, PlayerColor casterOwner, SpellID castSpellId, SpellID effectSpellId)
 		: delegate(delegate)
 		, battle(battle)
+		, mechanics(mechanics)
 		, casterOwner(casterOwner)
 		, castSpellId(castSpellId)
 		, effectSpellId(effectSpellId)
@@ -345,6 +347,7 @@ public:
 private:
 	ServerCallback & delegate;
 	const CBattleInfoCallback & battle;
+	const Mechanics & mechanics;
 	PlayerColor casterOwner;
 	SpellID castSpellId;
 	SpellID effectSpellId;
@@ -503,6 +506,7 @@ private:
 	void record(SetStackEffect & pack)
 	{
 		stackEffectsTouched = true;
+		captureHypnotizeCeiling(pack);
 		if(casterOwner != PlayerColor::CANNOT_DETERMINE)
 		{
 			// Stamp incoming copies. Generic updates may only extend the old timer,
@@ -572,6 +576,65 @@ private:
 
 		delegate.apply(pack);
 		effectChangesFinalized = false;
+	}
+
+	void captureHypnotizeCeiling(SetStackEffect & pack)
+	{
+		static const SpellID hypnotizeSpell(SpellID::decode("core:hypnotize"));
+		if(castSpellId != hypnotizeSpell && effectSpellId != hypnotizeSpell)
+			return;
+
+		const auto capture = [this](auto & changes)
+		{
+			for(auto & [unitId, bonuses] : changes)
+			{
+				const auto * recipient = battle.battleGetUnitByID(unitId);
+				if(!recipient)
+					continue;
+
+				for(auto & bonus : bonuses)
+				{
+					if(bonus.type != BonusType::HYPNOTIZED
+						|| bonus.source != BonusSource::SPELL_EFFECT
+						|| (bonus.sid != BonusSourceID(castSpellId)
+							&& bonus.sid != BonusSourceID(effectSpellId)))
+						continue;
+
+					const int64_t maximumTargetHealth = mechanics.applySpellBonus(
+						mechanics.getEffectValue(), recipient);
+					if(maximumTargetHealth < 0)
+						throw std::runtime_error("Hypnotize produced a negative captured health ceiling");
+
+					JsonNode parameters;
+					if(bonus.parameters)
+					{
+						try
+						{
+							parameters = bonus.parameters->template toCustom<JsonNode>();
+						}
+						catch(const std::exception &)
+						{
+							throw std::runtime_error("Hypnotize bonus has incompatible non-JSON parameters");
+						}
+
+						if(!parameters.isStruct())
+							throw std::runtime_error("Hypnotize bonus parameters must be a named object");
+
+						const auto & existingCeiling = parameters["maximumTargetHealth"];
+						if(!existingCeiling.isNull()
+							&& (existingCeiling.getType() != JsonNode::JsonType::DATA_INTEGER
+								|| existingCeiling.Integer() != maximumTargetHealth))
+							throw std::runtime_error("Hypnotize bonus has an incompatible captured health ceiling");
+					}
+
+					parameters["maximumTargetHealth"].Integer() = maximumTargetHealth;
+					bonus.parameters = std::make_shared<BonusParameters>(parameters);
+				}
+			}
+		};
+
+		capture(pack.toAdd);
+		capture(pack.toUpdate);
 	}
 };
 
@@ -1587,7 +1650,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	// Magic Mirror resolves from the reflecting side, although caster still identifies
 	// the original spell caster; use the effective side for application provenance.
 	const auto effectCasterOwner = battle()->sideToPlayer(effectiveCasterSide());
-	EffectPacketRecorder effectRecorder(*server, *battle(), effectCasterOwner,
+	EffectPacketRecorder effectRecorder(*server, *battle(), *this, effectCasterOwner,
 		acceptedSpellId, effectSpellId);
 	if(!isCounterspellNegated())
 		doRemoveEffects(&effectRecorder, affectedUnits, std::bind(&BattleSpellMechanics::counteringSelector, this, _1));
@@ -2297,7 +2360,7 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 			battle()->getBattle()->getMagicRules(), acceptedSpellId);
 		// Keep hypothetical/reflected casts aligned with the live effective source.
 		const auto effectCasterOwner = battle()->sideToPlayer(effectiveCasterSide());
-		effectRecorder.emplace(*server, *battle(), effectCasterOwner,
+		effectRecorder.emplace(*server, *battle(), *this, effectCasterOwner,
 			acceptedSpellId, effectSpellId);
 		effectServer = &*effectRecorder;
 	}

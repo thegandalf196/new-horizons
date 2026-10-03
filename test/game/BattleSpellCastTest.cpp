@@ -249,6 +249,15 @@ public:
 		gameState->currentBattles.front()->tacticDistance = 0;
 	}
 
+	/// Advance this narrow spell fixture into its first playable round so current
+	/// New Horizons Hero Action rules expose a real spell allowance to mechanics.
+	void beginFirstPlayableBattleRound()
+	{
+		BattleNextRound nextRound;
+		nextRound.battleID = BattleID(0);
+		gameEventCallback->sendAndApply(nextRound);
+	}
+
 	CGHeroInstance * getHeroByOwner(PlayerColor owner) const
 	{
 		for(auto heroID : map->getHeroesOnMap())
@@ -473,6 +482,18 @@ public:
 		EXPECT_CALL(problemMock, add(_)).Times(AnyNumber());
 		auto m = spell->battleMechanics(&cast);
 		return m->canBeCast(problemMock) && m->canBeCastAt(tgt, problemMock);
+	}
+
+	void configureHypnotizeCaster(CGHeroInstance * hero)
+	{
+		const SpellID hypnotize(SpellID::HYPNOTIZE);
+		configureCaster(hero, hypnotize, /*spellpower*/ 10);
+		const auto chaosMagicId = SecondarySkill::decode("new-horizons:chaosMagic");
+		ASSERT_GE(chaosMagicId, 0);
+		hero->setSecSkillLevel(SecondarySkill(chaosMagicId), MasteryLevel::EXPERT,
+			ChangeValueMode::ABSOLUTE);
+		ASSERT_EQ(hero->getSpellSchoolLevel(hypnotize.toSpell()), MasteryLevel::EXPERT);
+		ASSERT_EQ(hero->getMagicRules()["schoolRankPowerCoefficientPercent"].Vector().at(3).Integer(), 145);
 	}
 
 	CGHeroInstance * specialist = nullptr;
@@ -1047,32 +1068,47 @@ struct SpellLevScaleCase
 	int          heroLevel;
 };
 
+static int64_t ordinaryHypnotizeHealthCap(const CGHeroInstance * hero)
+{
+	const CSpell * spell = SpellID(SpellID::HYPNOTIZE).toSpell();
+	const int64_t heroSpellPower = hero->getPrimSkillLevel(PrimarySkill::SPELL_POWER);
+	const int64_t spellPowerComponent = static_cast<int64_t>(spell->getBasePower())
+		* heroSpellPower * 145 / (100LL * hero->getEffectPowerDivisor(spell));
+	return spell->getLevelPower(MasteryLevel::EXPERT) + spellPowerComponent;
+}
+
 // Astral's Hypnotize specialty raises the maximum-health threshold a stack can be
-// hypnotised at by 3% for every <target creature level> hero levels. Base cap for
-// Expert Air Magic is 50 + spellpower*25. The test gates on castability: a stack whose
-// total health sits exactly at the scaled cap is castable, one health point above is not.
+// hypnotised at by 3% for every <target creature level> hero levels. Expected caps
+// use the authored spell power data and current saved Chaos coefficient independently
+// of the mechanics value under test.
 class AstralHypnotizeSpecialty : public BattleSpellCastTest, public ::testing::WithParamInterface<SpellLevScaleCase>
 {
 public:
-	/// Can Astral hypnotise a stack of the case's creature whose total health is set to
-	/// exactly `health`? Rebuilds the battle each call so the two boundary probes are independent.
-	bool canHypnotiseAtHealth(const SpellLevScaleCase & c, int64_t health)
+	int64_t specialtyHealthCap(const SpellLevScaleCase & c, const CGHeroInstance * hero) const
 	{
-		const int astralIdx = 40;
-		const SpellID hypnotize(60);
+		const int targetLevel = CreatureID(c.targetCreature).toCreature()->getLevel();
+		const int64_t baseCap = ::ordinaryHypnotizeHealthCap(hero);
+		const int percent = 3 * (c.heroLevel / targetLevel);
+		return baseCap * (100 + percent) / 100;
+	}
 
+	void prepareSpecialist(const SpellLevScaleCase & c)
+	{
 		resetGame();
-		startDuel(astralIdx, c.heroLevel);
-		configureCaster(specialist, hypnotize, /*spellpower*/ 10);
+		startDuel(/*Astral*/ 40, c.heroLevel);
+		beginFirstPlayableBattleRound();
+		configureHypnotizeCaster(specialist);
+	}
 
+	CStack * addStackAtHealth(const SpellLevScaleCase & c, int64_t health)
+	{
 		const CreatureID cid(c.targetCreature);
 		const int hp = cid.toCreature()->getMaxHealth();
 		const int count = static_cast<int>(health / hp) + 3; // headroom so the stack survives the wound
-		CStack * tgt = addStack(BattleSide::DEFENDER, cid, count);
-		int64_t wound = static_cast<int64_t>(count) * hp - health; // leave exactly `health` available
-		tgt->damage(wound);
-
-		return canCastAt(specialist, hypnotize, tgt);
+		CStack * target = addStack(BattleSide::DEFENDER, cid, count);
+		int64_t wound = static_cast<int64_t>(count) * hp - health;
+		target->damage(wound);
+		return target;
 	}
 };
 
@@ -1081,14 +1117,48 @@ TEST_P(AstralHypnotizeSpecialty, healthThresholdGatesCasting)
 	const auto & c = GetParam();
 
 	const int targetLevel = CreatureID(c.targetCreature).toCreature()->getLevel();
-	const int64_t baseCap = 50 + 10 * 25; // Expert Air Magic at spellpower 10
 	const int percent = 3 * (c.heroLevel / targetLevel); // 3% * floor(heroLevel / targetLevel)
-	const int64_t cap = baseCap * (100 + percent) / 100;
+	const SpellID hypnotize(SpellID::HYPNOTIZE);
 
-	EXPECT_TRUE(canHypnotiseAtHealth(c, cap))
+	prepareSpecialist(c);
+	const int64_t cap = specialtyHealthCap(c, specialist);
+	CStack * atCap = addStackAtHealth(c, cap);
+	EXPECT_TRUE(canCastAt(specialist, hypnotize, atCap))
 		<< c.name << ": health " << cap << " at cap (+" << percent << "%) should be castable";
-	EXPECT_FALSE(canHypnotiseAtHealth(c, cap + 1))
+
+	prepareSpecialist(c);
+	CStack * overCap = addStackAtHealth(c, cap + 1);
+	EXPECT_FALSE(canCastAt(specialist, hypnotize, overCap))
 		<< c.name << ": health " << (cap + 1) << " above cap (+" << percent << "%) should be blocked";
+}
+
+TEST_P(AstralHypnotizeSpecialty, realCastStoresTheSpecialtyAdjustedHealthCeiling)
+{
+	const auto & c = GetParam();
+	const SpellID hypnotize(60);
+
+	prepareSpecialist(c);
+	const int64_t cap = specialtyHealthCap(c, specialist);
+	CStack * atCap = addStackAtHealth(c, cap);
+	CStack * overCap = addStackAtHealth(c, cap + 1);
+
+	ASSERT_EQ(atCap->getAvailableHealth(), cap);
+	ASSERT_EQ(overCap->getAvailableHealth(), cap + 1);
+	ASSERT_TRUE(canCastAt(specialist, hypnotize, atCap))
+		<< c.name << ": a stack exactly at Astral's specialty-adjusted ceiling must remain eligible";
+	EXPECT_FALSE(canCastAt(specialist, hypnotize, overCap))
+		<< c.name << ": one health above Astral's specialty-adjusted ceiling must be blocked";
+
+	castOn(specialist, hypnotize, atCap);
+	const auto markerSelector = Selector::type()(BonusType::HYPNOTIZED)
+		.And(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(hypnotize)));
+	const auto markers = atCap->getBonuses(markerSelector);
+	ASSERT_EQ(markers->size(), 1u);
+	ASSERT_NE(markers->front()->parameters, nullptr);
+	const auto parameters = markers->front()->parameters->toCustom<JsonNode>();
+	ASSERT_EQ(parameters["maximumTargetHealth"].getType(), JsonNode::JsonType::DATA_INTEGER);
+	EXPECT_EQ(parameters["maximumTargetHealth"].Integer(), cap)
+		<< c.name << ": the applied marker must retain the exact cap from this real cast";
 }
 
 INSTANTIATE_TEST_SUITE_P(Astral, AstralHypnotizeSpecialty, ::testing::Values(
@@ -1100,6 +1170,72 @@ INSTANTIATE_TEST_SUITE_P(Astral, AstralHypnotizeSpecialty, ::testing::Values(
 	SpellLevScaleCase{"cavalier_L15", 10, 15}  // level 6, not divisible: floor(15/6)=2 -> +6%
 ),
 	[](const ::testing::TestParamInfo<SpellLevScaleCase> & info) { return info.param.name; });
+
+TEST_F(BattleSpellCastTest, HypnotizeDurationRefreshRetainsTheOriginalCapturedHealthCeiling)
+{
+	const SpellID hypnotize(SpellID::HYPNOTIZE);
+	resetGame();
+	startDuel(/*Astral*/ 40, /*heroLevel*/ 12);
+	beginFirstPlayableBattleRound();
+	configureHypnotizeCaster(specialist);
+	// Keep the initial marker alive through one real round transition so the same
+	// original-side caster can refresh it after Astral's specialty is removed.
+	specialist->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELL_DURATION, BonusSource::OTHER, 3, BonusSourceID()));
+
+	const CreatureID pikeman(0);
+	const int64_t ordinaryCap = ordinaryHypnotizeHealthCap(specialist);
+	const int astralPercent = 3 * (12 / pikeman.toCreature()->getLevel());
+	const int64_t originalAstralCap = ordinaryCap * (100 + astralPercent) / 100;
+	ASSERT_GT(originalAstralCap, ordinaryCap);
+	const int64_t targetHealth = ordinaryCap / 2;
+	ASSERT_GT(targetHealth, 0);
+	ASSERT_LT(targetHealth, ordinaryCap);
+
+	const int pikemanHealth = pikeman.toCreature()->getMaxHealth();
+	const int count = static_cast<int>(targetHealth / pikemanHealth) + 3;
+	CStack * target = addStack(BattleSide::DEFENDER, pikeman, count);
+	int64_t wound = static_cast<int64_t>(count) * pikemanHealth - targetHealth;
+	target->damage(wound);
+	ASSERT_EQ(target->getAvailableHealth(), targetHealth);
+
+	ASSERT_TRUE(canCastAt(specialist, hypnotize, target));
+	castOn(specialist, hypnotize, target);
+	auto markerSelector = Selector::type()(BonusType::HYPNOTIZED)
+		.And(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(hypnotize)));
+	auto markers = target->getBonuses(markerSelector);
+	ASSERT_EQ(markers->size(), 1u);
+	ASSERT_NE(markers->front()->parameters, nullptr);
+	EXPECT_EQ(markers->front()->parameters->toCustom<JsonNode>()["maximumTargetHealth"].Integer(), originalAstralCap);
+	const auto originalDuration = markers->front()->turnsRemain;
+	ASSERT_GT(originalDuration, 1);
+
+	removeSpecialty(specialist);
+	const int64_t ordinaryAfterSpecialtyRemoval = ordinaryHypnotizeHealthCap(specialist);
+	ASSERT_LT(ordinaryAfterSpecialtyRemoval, originalAstralCap);
+	ASSERT_LT(targetHealth, ordinaryAfterSpecialtyRemoval);
+	BattleNextRound nextRound;
+	nextRound.battleID = BattleID(0);
+	gameEventCallback->sendAndApply(nextRound);
+
+	markers = target->getBonuses(markerSelector);
+	ASSERT_EQ(markers->size(), 1u);
+	ASSERT_NE(markers->front()->parameters, nullptr);
+	EXPECT_EQ(markers->front()->parameters->toCustom<JsonNode>()["maximumTargetHealth"].Integer(), originalAstralCap);
+	EXPECT_EQ(markers->front()->turnsRemain, originalDuration - 1);
+
+	// The same caster remains opposed to the stack's original owner, but no longer
+	// has Astral's higher cap. This accepted recast must refresh duration only.
+	ASSERT_TRUE(canCastAt(specialist, hypnotize, target));
+	castOn(specialist, hypnotize, target);
+	markers = target->getBonuses(markerSelector);
+	ASSERT_EQ(markers->size(), 1u);
+	ASSERT_NE(markers->front()->parameters, nullptr);
+	EXPECT_EQ(markers->front()->parameters->toCustom<JsonNode>()["maximumTargetHealth"].Integer(), originalAstralCap)
+		<< "A duration refresh must not replace the first cast's cap with the refreshing caster's lower cap";
+	EXPECT_EQ(markers->front()->turnsRemain, originalDuration)
+		<< "The accepted recast should restore the original duration after the round advance";
+}
 
 // Adela's Bless specialty (GENERAL_DAMAGE_PREMY): blessed units deal more damage.
 class AdelaBlessSpecialty : public BattleSpellCastTest, public ::testing::WithParamInterface<SpellLevScaleCase>
