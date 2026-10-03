@@ -179,7 +179,18 @@ public:
 	void endTurn();
 
 	// TODO: all the routines like recruiting hero or building army should be removed from here and extracted to elementar goals or whatever
-	void recruitCreatures(const CGDwelling * d, const CArmedInstance * recruiter);
+	void recruitCreatures(const CGDwelling * d, const CArmedInstance * recruiter,
+		ObjectInstanceID portalTownId = ObjectInstanceID::NONE);
+	/// Return the useful owned external dwelling that this town may currently
+	/// use through its Portal of Summoning. This is read-only; callers that
+	/// execute a purchase must submit the weekly source choice first.
+	const CGDwelling * getBestPortalRecruitmentDwelling(
+		const CGTownInstance * town, const CCreatureSet * destination) const;
+	/// Submit the town's one allowed Portal source replacement for this week.
+	void selectPortalRecruitmentDwelling(const CGTownInstance * town, const CGDwelling * source);
+	/// Buy from the real linked dwelling stock for a town army. The town remains
+	/// the explicit Portal context in the authoritative request.
+	void recruitPortalCreatures(const CGTownInstance * town, const CArmedInstance * recruiter);
 	/// Try one rank-only New Horizons Muster request for an eligible town hero.  This
 	/// only reads the town roster and sends the authoritative callback request;
 	/// it never edits the replicated recruitment pool locally.

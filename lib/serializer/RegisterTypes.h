@@ -331,4 +331,6 @@ void registerTypes(Serializer &s)
 	s.template registerType<BattleMoraleSuppressionStateChanged>(288);
 	s.template registerType<BattleReducedExtraActivationStateChanged>(289);
 	s.template registerType<BattleDeploymentPhaseChanged>(290);
+	s.template registerType<SelectPortalDwelling>(291);
+	s.template registerType<SetPortalDwellingSource>(292);
 }

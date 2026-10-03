@@ -1838,6 +1838,32 @@ struct DLL_LINKAGE SetNewHorizonsMusterState : public CPackForClient
 	}
 };
 
+/// Authoritative per-town Portal of Summoning source selection. The selected
+/// dwelling keeps its own shared stock; this packet changes only the link.
+struct DLL_LINKAGE SetPortalDwellingSource : public CPackForClient
+{
+	ObjectInstanceID townId = ObjectInstanceID::NONE;
+	ObjectInstanceID sourceDwellingId = ObjectInstanceID::NONE;
+	int32_t lastSelectionWeek = -1;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_PORTAL_SOURCE))
+			throw std::runtime_error(h.saving
+				? "Portal source state requires the new wire format"
+				: "Portal source state is unavailable in the old wire format");
+		if(h.saving && (townId == ObjectInstanceID::NONE || sourceDwellingId == ObjectInstanceID::NONE || lastSelectionWeek < 0))
+			throw std::runtime_error("Invalid Portal source state packet");
+		h & townId;
+		h & sourceDwellingId;
+		h & lastSelectionWeek;
+		if(!h.saving && (townId == ObjectInstanceID::NONE || sourceDwellingId == ObjectInstanceID::NONE || lastSelectionWeek < 0))
+			throw std::runtime_error("Invalid Portal source state packet");
+	}
+};
+
 /// Authoritative weekly Learning Mentor use for one hero.
 struct DLL_LINKAGE SetNewHorizonsLearningMentorState : public CPackForClient
 {

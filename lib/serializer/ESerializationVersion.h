@@ -154,15 +154,18 @@ enum class ESerializationVersion : int32_t
 	BATTLE_INITIAL_ARMY_VALUE, // captured raw starting army values and wandering-army classification
 	NEW_HORIZONS_RAGE_THROUGH_PAIN, // personal Bloodrage increments and battle perk snapshots
 	NEW_HORIZONS_MASTER_SYNTHESIS, // battle-long first Warcasting bonus consumption history
+	NEW_HORIZONS_PORTAL_SOURCE, // linked external dwelling and weekly Portal choice, explicit recruitment context
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_MASTER_SYNTHESIS,
+	CURRENT = NEW_HORIZONS_PORTAL_SOURCE,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
+static_assert(ESerializationVersion::NEW_HORIZONS_PORTAL_SOURCE > ESerializationVersion::NEW_HORIZONS_MASTER_SYNTHESIS,
+	"Portal source state must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_MASTER_SYNTHESIS > ESerializationVersion::NEW_HORIZONS_RAGE_THROUGH_PAIN,
 	"Warcasting consumption history must remain append-only");
 static_assert(ESerializationVersion::BATTLE_INITIAL_ARMY_VALUE > ESerializationVersion::NEW_HORIZONS_INVESTOR_INCOME,

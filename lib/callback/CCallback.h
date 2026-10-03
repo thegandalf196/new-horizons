@@ -60,7 +60,9 @@ public:
 	bool buildBuilding(const CGTownInstance *town, BuildingID buildingID) override;
 	bool visitTownBuilding(const CGTownInstance *town, BuildingID buildingID) override;
 	bool unlockNewHorizonsAdventureSpell(const CGTownInstance * town, int guildLevel) override;
-	void recruitCreatures(const CGDwelling * obj, const CArmedInstance * dst, CreatureID ID, ui32 amount, si32 level=-1) override;
+	void recruitCreatures(const CGDwelling * obj, const CArmedInstance * dst, CreatureID ID, ui32 amount, si32 level=-1,
+		ObjectInstanceID portalTownId = ObjectInstanceID::NONE) override;
+	int selectPortalDwelling(const CGTownInstance * town, ObjectInstanceID source) override;
 	void musterCreatures(const CGHeroInstance *hero, const CGDwelling *dwelling, CreatureID firstCreature,
 		CreatureID secondCreature = CreatureID::NONE, int32_t firstAmount = 0) override;
 	void arrangeDemonicReserve(const CGHeroInstance * hero, SlotID activeSlot,

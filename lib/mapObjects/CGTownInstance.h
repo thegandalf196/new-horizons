@@ -95,12 +95,24 @@ public:
 	/// Guild tiers whose canonical New Horizons Adventure Spell has been
 	/// permanently unlocked for this town.
 	std::set<si32> newHorizonsAdventureSpellGuildLevelsUnlocked;
+	/// Selected owned external dwelling for this town's New Horizons Portal of Summoning.
+	/// Recruitment stock remains on the source dwelling; this is only a persistent link.
+	ObjectInstanceID portalSourceDwellingId = ObjectInstanceID::NONE;
+	/// Absolute week in which this town last replaced its Portal source.
+	int32_t portalLastSelectionWeek = -1;
 	/// Map author supplied the initial army, including an explicitly empty army.
 	bool customInitialGarrison = false;
 
 	//////////////////////////////////////////////////////////////////////////
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && ((portalSourceDwellingId == ObjectInstanceID::NONE && portalLastSelectionWeek != -1)
+			|| (portalSourceDwellingId != ObjectInstanceID::NONE && portalLastSelectionWeek < 0)))
+			throw std::runtime_error("Invalid New Horizons Portal source state");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_PORTAL_SOURCE)
+			&& (portalSourceDwellingId != ObjectInstanceID::NONE || portalLastSelectionWeek != -1))
+			throw std::runtime_error("New Horizons Portal source requires the new save format");
+
 		h & static_cast<CGDwelling&>(*this);
 		h & nameTextId;
 		if(!h.hasFeature(Handler::Version::TOWN_NAME_TEXT_ID))
@@ -132,6 +144,19 @@ public:
 
 		if(h.hasFeature(Handler::Version::SPELL_RESEARCH_IMPROVEMENTS))
 			h & spellResearchPendingRerollsCounters;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PORTAL_SOURCE))
+		{
+			h & portalSourceDwellingId;
+			h & portalLastSelectionWeek;
+		}
+		else if(!h.saving)
+		{
+			portalSourceDwellingId = ObjectInstanceID::NONE;
+			portalLastSelectionWeek = -1;
+		}
+		if((portalSourceDwellingId == ObjectInstanceID::NONE && portalLastSelectionWeek != -1)
+			|| (portalSourceDwellingId != ObjectInstanceID::NONE && portalLastSelectionWeek < 0))
+			throw std::runtime_error("Invalid New Horizons Portal source state");
 
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGE_GUILD_SLOTS))
 		{

@@ -254,7 +254,9 @@ public:
 	bool buyHouseOfWisdomScroll(const IMarket *m, const CGHeroInstance *h, SpellID spell);
 	bool garrisonSwap(ObjectInstanceID tid);
 	bool upgradeCreature( ObjectInstanceID objid, SlotID pos, CreatureID upgID );
-	bool recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst, CreatureID crid, int32_t cram, int32_t level, PlayerColor player);
+	bool recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst, CreatureID crid, int32_t cram, int32_t level,
+		PlayerColor player, ObjectInstanceID portalTownId = ObjectInstanceID::NONE);
+	bool selectPortalDwelling(ObjectInstanceID townId, ObjectInstanceID sourceDwellingId, PlayerColor player);
 	bool musterCreatures(ObjectInstanceID heroId, ObjectInstanceID targetId, CreatureID creatureId, PlayerColor player,
 		CreatureID secondCreatureId = CreatureID::NONE, int32_t firstAmount = 0);
 	bool arrangeDemonicReserve(ObjectInstanceID heroId, SlotID activeSlot, CreatureID creatureId,

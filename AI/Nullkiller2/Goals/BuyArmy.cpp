@@ -11,6 +11,7 @@
 #include "BuyArmy.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/mapObjects/CGTownInstance.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../AIGateway.h"
 #include "../Engine/Nullkiller.h"
 
@@ -47,8 +48,39 @@ void BuyArmy::accept(AIGateway * aiGw)
 	auto upgradeSuccessful = aiGw->makePossibleUpgrades(town);
 
 	auto armyToBuy = aiGw->nullkiller->armyManager->getArmyAvailableToBuy(town->getUpperArmy(), town);
+	struct RecruitmentCandidate
+	{
+		const CGDwelling * source = nullptr;
+		ObjectInstanceID portalTownId = ObjectInstanceID::NONE;
+		creInfo creature;
+	};
+	std::vector<RecruitmentCandidate> candidates;
+	bool portalSourceSelectionSubmitted = false;
+	candidates.reserve(armyToBuy.size());
+	for(const auto & creature : armyToBuy)
+	{
+		// The legacy extra town row is not Portal stock. Portal candidates below
+		// are scored directly from the real selected external dwelling.
+		if(newHorizonsMagic::rulesActive(aiGw->cc->getMagicRules()) && creature.level >= 0
+			&& static_cast<size_t>(creature.level) >= town->getTown()->creatures.size())
+			continue;
+		candidates.push_back({town, ObjectInstanceID::NONE, creature});
+	}
 
-	if(armyToBuy.empty())
+	const auto * portalDwelling = aiGw->getBestPortalRecruitmentDwelling(town, town->getUpperArmy());
+	if(portalDwelling)
+	{
+		auto portalArmy = aiGw->nullkiller->armyManager->getArmyAvailableToBuy(
+			town->getUpperArmy(), portalDwelling);
+		for(const auto & creature : portalArmy)
+		{
+			if(objid != CreatureID::NONE && creature.creID.getNum() != objid)
+				continue;
+			candidates.push_back({portalDwelling, town->id, creature});
+		}
+	}
+
+	if(candidates.empty())
 	{
 		if(upgradeSuccessful)
 			return;
@@ -56,15 +88,25 @@ void BuyArmy::accept(AIGateway * aiGw)
 		throw cannotFulfillGoalException("No creatures to buy.");
 	}
 
-	for(int i = 0; valueBought < value && i < armyToBuy.size(); i++)
+	std::stable_sort(candidates.begin(), candidates.end(), [](const RecruitmentCandidate & left, const RecruitmentCandidate & right)
 	{
+		return left.creature.creID.toCreature()->getAIValue() > right.creature.creID.toCreature()->getAIValue();
+	});
+
+	for(auto & candidate : candidates)
+	{
+		if(valueBought >= value)
+			break;
+
 		auto res = aiGw->cc->getResourceAmount();
-		auto & ci = armyToBuy[i];
+		auto & ci = candidate.creature;
 
 		if(objid != CreatureID::NONE && ci.creID.getNum() != objid)
 			continue;
 
-		vstd::amin(ci.count, res / ci.creID.toCreature()->getFullRecruitCost());
+		const auto recruitCost = candidate.source->getRecruitmentCost(ci.creID);
+		if(!recruitCost.empty())
+			vstd::amin(ci.count, res / recruitCost);
 		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(town->getUpperArmy()))
 		{
 			if(const auto capacity = hero->getLeadershipSlotCapacity(ci.creID))
@@ -105,7 +147,13 @@ void BuyArmy::accept(AIGateway * aiGw)
 			}
 			if (town->getUpperArmy()->stacksCount() < GameConstants::ARMY_SIZE || town->getUpperArmy()->getSlotFor(ci.creID).validSlot()) //It is possible we don't scrap despite we wanted to due to not scrapping stacks that fit our faction
 			{
-				aiGw->cc->recruitCreatures(town, town->getUpperArmy(), ci.creID, ci.count, ci.level);
+				if(candidate.portalTownId != ObjectInstanceID::NONE && !portalSourceSelectionSubmitted)
+				{
+					aiGw->selectPortalRecruitmentDwelling(town, candidate.source);
+					portalSourceSelectionSubmitted = true;
+				}
+				aiGw->cc->recruitCreatures(candidate.source, town->getUpperArmy(), ci.creID, ci.count, ci.level,
+					candidate.portalTownId);
 			}
 			valueBought += ci.count * ci.creID.toCreature()->getAIValue();
 		}

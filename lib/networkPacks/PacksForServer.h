@@ -346,12 +346,14 @@ struct DLL_LINKAGE UnlockNewHorizonsAdventureSpell : public CPackForServer
 struct DLL_LINKAGE RecruitCreatures : public CPackForServer
 {
 	RecruitCreatures() = default;
-	RecruitCreatures(const ObjectInstanceID & TID, const ObjectInstanceID & DST, const CreatureID & CRID, si32 Amount, si32 Level)
+	RecruitCreatures(const ObjectInstanceID & TID, const ObjectInstanceID & DST, const CreatureID & CRID,
+		si32 Amount, si32 Level, ObjectInstanceID PortalTown = ObjectInstanceID::NONE)
 		: tid(TID)
 		, dst(DST)
 		, crid(CRID)
 		, amount(Amount)
 		, level(Level)
+		, portalTownId(PortalTown)
 	{
 	}
 	ObjectInstanceID tid; //dwelling id, or town
@@ -359,17 +361,47 @@ struct DLL_LINKAGE RecruitCreatures : public CPackForServer
 	CreatureID crid;
 	ui32 amount = 0; //creature amount
 	si32 level = 0; //dwelling level to buy from, -1 if any
+	ObjectInstanceID portalTownId = ObjectInstanceID::NONE; //explicit Portal context for remote source recruitment
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && portalTownId != ObjectInstanceID::NONE
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_PORTAL_SOURCE))
+			throw std::runtime_error("Portal recruitment requires the new wire format");
 		h & static_cast<CPackForServer &>(*this);
 		h & tid;
 		h & dst;
 		h & crid;
 		h & amount;
 		h & level;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PORTAL_SOURCE))
+			h & portalTownId;
+		else if(!h.saving)
+			portalTownId = ObjectInstanceID::NONE;
+	}
+};
+
+/// Select or replace the owned external dwelling linked to one owned Portal town.
+struct DLL_LINKAGE SelectPortalDwelling : public CPackForServer
+{
+	ObjectInstanceID townId = ObjectInstanceID::NONE;
+	ObjectInstanceID sourceDwellingId = ObjectInstanceID::NONE;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_PORTAL_SOURCE))
+			throw std::runtime_error(h.saving
+				? "Portal source selection requires the new wire format"
+				: "Portal source selection is unavailable in the old wire format");
+		h & static_cast<CPackForServer &>(*this);
+		h & townId;
+		h & sourceDwellingId;
+		if(townId == ObjectInstanceID::NONE || sourceDwellingId == ObjectInstanceID::NONE)
+			throw std::runtime_error("Invalid Portal source selection request");
 	}
 };
 

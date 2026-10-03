@@ -13,9 +13,12 @@
 #include "../widgets/Images.h"
 
 #include <array>
+#include <cstdint>
+#include <optional>
 #include <vector>
 
 class CBuilding;
+class CGDwelling;
 class CGTownInstance;
 class CSpell;
 struct CStructure;
@@ -146,6 +149,10 @@ class CCastleBuildings : public CIntObject
 	std::map<BuildingID, std::vector<const CStructure *> > groups;
 	// actual IntObject's visible on screen
 	std::vector<std::shared_ptr<CBuildingRect>> buildings;
+	ObjectInstanceID pendingPortalTown = ObjectInstanceID::NONE;
+	ObjectInstanceID pendingPortalSource = ObjectInstanceID::NONE;
+	std::optional<uint32_t> pendingPortalRequestID;
+	int32_t pendingPortalWeek = -1;
 
 	const CGTownInstance * town;
 
@@ -154,6 +161,8 @@ class CCastleBuildings : public CIntObject
 	void enterBlacksmith(BuildingID building, ArtifactID artifactID);//support for blacksmith + ballista yard
 	void enterBuilding(BuildingID building);//for buildings with simple description + pic left-click messages
 	void enterCastleGate(BuildingID building);
+	void enterPortalOfSummoning(BuildingID building);
+	void enterPortalDwelling(ObjectInstanceID sourceDwelling);
 	void enterFountain(const BuildingID & building, BuildingSubID::EBuildingSubID subID, BuildingID upgrades);//Rampart's fountains
 	
 	void openMagesGuild();
@@ -170,6 +179,9 @@ public:
 	~CCastleBuildings();
 
 	void enterDwelling(int level);
+	void openPortalDwelling(ObjectInstanceID sourceDwelling);
+	void portalDwellingSelectionRequested(ObjectInstanceID townID, ObjectInstanceID sourceID, int32_t week, uint32_t requestID);
+	void portalDwellingSelectionRealized(uint32_t requestID, bool result);
 	void enterTownHall();
 	void enterRewardable(BuildingID building);
 	void enterMagesGuild();
@@ -262,6 +274,9 @@ public:
 	bool holdsGarrison(const CArmedInstance * army) override;
 
 	void castleTeleport(int where);
+	void openPortalDwelling(ObjectInstanceID sourceDwelling);
+	void portalDwellingSelectionRequested(ObjectInstanceID townID, ObjectInstanceID sourceID, int32_t week, uint32_t requestID);
+	void portalDwellingSelectionRealized(uint32_t requestID, bool result);
 	void townChange();
 	void keyPressed(EShortcut key) override;
 

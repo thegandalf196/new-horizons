@@ -48,6 +48,7 @@ public:
 	void visitUnlockNewHorizonsAdventureSpell(UnlockNewHorizonsAdventureSpell & pack) override;
 	void visitVisitTownBuilding(VisitTownBuilding & pack) override;
 	void visitRecruitCreatures(RecruitCreatures & pack) override;
+	void visitSelectPortalDwelling(SelectPortalDwelling & pack) override;
 	void visitMusterCreatures(MusterCreatures & pack) override;
 	void visitArrangeDemonicReserve(ArrangeDemonicReserve & pack) override;
 	void visitUpgradeCreature(UpgradeCreature & pack) override;

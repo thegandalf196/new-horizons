@@ -14,6 +14,24 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP177 Portal of Summoning is source/native verified. Authority stores
+one owned external source identity and last-selection absolute week per town;
+remote recruitment carries explicit Portal context and deducts actual source
+stock. Town selection uses exact-request asynchronous acknowledgment with
+window/source/week revalidation. AI discovers and schedules real-source stock;
+inactive profiles retain vanilla behavior. Core43329 and authority99958 pass.
+Client79950's callback-type failure is repaired; combined34651 is interrupted
+with exit143, then incremental75438 passes and links both client/test targets.
+Principal9/9 and adjacent recruitment8/8 pass, zero skips,3.987s/4.074s;
+tests exercise actual source deductions/cost/receipts, ownership/Leadership
+rejection, weekly per-town selection, full adventure save/load and legacy wire
+guards. Data/inventory19/19, module drift and independent review pass.
+Binary SHA-256:084fb8e102f7ec99f2bac6abcd42a90a8f9a5fb746db81ef6a504b95f2aec3a2.
+This closes the missing Portal building principal path, not a counted perk;
+194/310 perks and84/93 ranks are unchanged. Rendered UI/acknowledgment,
+broader ownership transitions and end-to-end AI scheduling remain Phase2.
+No playable snapshot promotion is claimed.
+
 UP178 Master Synthesis is source/native verified and active. Shared Spell/Order
 resolution replaces only the first consumed positive readiness with50, retains
 combat-long history through expiry and excludes typed bonus actions. Live Spell
@@ -29,8 +47,8 @@ Coverage194/310 active perks,116 planned; Warcasting6/10; faction55/90 and
 ranks84/93 unchanged. Generic UI is Provisional, purpose-made art Not done.
 Perfect Rhythm stacking, full battle-save restoration, broader interactions and
 rendered UI remain deferred; no playable snapshot promotion is claimed.
-UP177 records the next missing Portal of Summoning source-linked recruitment
-requirement: the current duplicate growth pool is not canonical shared stock.
+UP177 replaces the legacy duplicate Portal growth pool under active rules;
+inactive saved profiles continue using the legacy path.
 
 UP175 Night Prowler is source/native verified and active. Actually committed,
 non-flying Ghost Walk through a currently hostile footprint grants10% melee/

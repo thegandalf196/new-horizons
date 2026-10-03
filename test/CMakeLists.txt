@@ -369,6 +369,7 @@ set(test_SRCS
 		server/NewHorizonsLeadershipAdmissionTest.cpp
 		server/NewHorizonsBattleFormResultTest.cpp
 		server/NewHorizonsRecruitmentMusterTest.cpp
+		server/NewHorizonsPortalSummoningTest.cpp
 		server/NewHorizonsDemonicReserveTest.cpp
 		server/RandomArtifactPoolExclusionsTest.cpp
 		server/RandomArtifactPoolConsumersTest.cpp
@@ -495,6 +496,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/Engine/TaskFailureTest.cpp
 		nullkiller2/Engine/NewHorizonsLogisticsMovementAITest.cpp
 		nullkiller2/Goals/BuyArmyTest.cpp
+		nullkiller2/NewHorizonsPortalRecruitmentTest.cpp
 		nullkiller2/Goals/CompositionTest.cpp
 		nullkiller2/Goals/ExploreNeighbourTileTest.cpp
 		nullkiller2/ArmyFormationLeadershipTest.cpp

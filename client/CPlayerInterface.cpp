@@ -1393,6 +1393,9 @@ void CPlayerInterface::requestRealized( PackageApplied *pa )
 		for(const auto & window : ENGINE->windows().findWindows<HeroMasteryWindow>())
 			window->requestApplied(pa->requestID, pa->result);
 
+	if(pa->packType == CTypeList::getInstance().getTypeID<SelectPortalDwelling>(nullptr) && castleInt)
+		castleInt->portalDwellingSelectionRealized(pa->requestID, pa->result);
+
 	if(pa->packType == CTypeList::getInstance().getTypeID<MoveHero>(nullptr))
 		movementController->onMoveHeroApplied();
 

@@ -75,14 +75,26 @@ int CCallback::sendQueryReply(std::optional<int32_t> reply, QueryID queryID)
 	return sendRequest(pack);
 }
 
-void CCallback::recruitCreatures(const CGDwelling * obj, const CArmedInstance * dst, CreatureID ID, ui32 amount, si32 level)
+void CCallback::recruitCreatures(const CGDwelling * obj, const CArmedInstance * dst, CreatureID ID, ui32 amount,
+	si32 level, ObjectInstanceID portalTownId)
 {
 	// TODO exception for neutral dwellings shouldn't be hardcoded
 	if(getPlayerID() != obj->tempOwner && obj->ID != Obj::WAR_MACHINE_FACTORY && obj->ID != Obj::REFUGEE_CAMP)
 		return;
 
-	RecruitCreatures pack(obj->id, dst->id, ID, amount, level);
+	RecruitCreatures pack(obj->id, dst->id, ID, amount, level, portalTownId);
 	sendRequest(pack);
+}
+
+int CCallback::selectPortalDwelling(const CGTownInstance * town, ObjectInstanceID source)
+{
+	if(!town || !getPlayerID() || town->getOwner() != *getPlayerID())
+		return -1;
+
+	SelectPortalDwelling pack;
+	pack.townId = town->id;
+	pack.sourceDwellingId = source;
+	return sendRequest(pack);
 }
 
 void CCallback::musterCreatures(const CGHeroInstance * hero, const CGDwelling * dwelling, CreatureID firstCreature,

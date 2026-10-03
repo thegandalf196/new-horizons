@@ -56,6 +56,7 @@
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include "../../lib/IGameSettings.h"
 #include "../../lib/GameConstants.h"
+#include "../../lib/CPlayerState.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/gameState/NewHorizonsAstrology.h"
 #include "../../lib/gameState/UpgradeInfo.h"
@@ -65,8 +66,10 @@
 #include "../../lib/campaign/CampaignState.h"
 #include "../../lib/entities/artifact/CArtifact.h"
 #include "../../lib/entities/building/CBuilding.h"
+#include "../../lib/entities/creature/NewHorizonsMusterRules.h"
 #include "../../lib/entities/ResourceTypeHandler.h"
 #include "../../lib/entities/hero/NewHorizonsCapabilityRules.h"
+#include "../../lib/mapObjects/CGDwelling.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/mapObjects/TownBuildingInstance.h"
@@ -1324,6 +1327,19 @@ bool CCastleBuildings::buildingTryActivateCustomUI(BuildingID buildingToTest, Bu
 						return false;
 
 				case BuildingSubID::PORTAL_OF_SUMMONING:
+						if (newHorizonsMagic::rulesActive(GAME->interface()->cb->getMagicRules()))
+						{
+							if(!GAME->interface()->makingTurn || town->getOwner() != GAME->interface()->playerID)
+							{
+								GAME->interface()->showInfoDialog("Only the town's active owner can use the Portal of Summoning.");
+								return true;
+							}
+
+							enterPortalOfSummoning(buildingToTest);
+							return true;
+						}
+
+						// Preserve the legacy Portal recruitment row outside New Horizons games.
 						if (town->creatures[town->getTown()->creatures.size()].second.empty())//No creatures
 							GAME->interface()->showInfoDialog(LIBRARY->generaltexth->translate("core.tcommand.30"));
 						else
@@ -1435,6 +1451,142 @@ void CCastleBuildings::enterCastleGate(BuildingID building)
 	}, 0, images);
 	wnd->onPopup = [availableTowns](int index) { CRClickPopup::createAndPush(GAME->interface()->cb->getObjInstance(ObjectInstanceID(availableTowns[index])), ENGINE->getCursorPosition()); };
 	ENGINE->windows().pushWindow(wnd);
+}
+
+void CCastleBuildings::enterPortalOfSummoning(BuildingID building)
+{
+	// A selection request may still be resolving. Do not expose the old linked source
+	// as if it were the result of that request; the player can reopen after its ack.
+	if(pendingPortalRequestID.has_value())
+	{
+		pendingPortalTown = ObjectInstanceID::NONE;
+		pendingPortalSource = ObjectInstanceID::NONE;
+		pendingPortalRequestID.reset();
+		pendingPortalWeek = -1;
+		GAME->interface()->showInfoDialog("The Portal source selection is still being processed. Reopen the Portal after the update arrives.");
+		return;
+	}
+
+	const auto & callback = GAME->interface()->cb;
+	const auto * playerState = callback->getPlayerState(town->getOwner());
+	if(!playerState)
+		return;
+
+	const auto calendar = callback->getCalendar();
+	const int currentWeek = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+	const bool canReplaceSource = town->portalLastSelectionWeek < currentWeek;
+
+	std::vector<ObjectInstanceID> sourceIDs;
+	size_t initialSelection = 0;
+	for(const auto * object : playerState->getOwnedObjects())
+	{
+		const auto * dwelling = dynamic_cast<const CGDwelling *>(object);
+		if(!dwelling || (dwelling->ID != Obj::CREATURE_GENERATOR1 && dwelling->ID != Obj::CREATURE_GENERATOR4)
+			|| dwelling->getOwner() != town->getOwner())
+			continue;
+
+		if(dwelling->id != town->portalSourceDwellingId && !canReplaceSource)
+			continue;
+
+		if(dwelling->id == town->portalSourceDwellingId)
+			initialSelection = sourceIDs.size();
+		sourceIDs.push_back(dwelling->id);
+	}
+
+	if(sourceIDs.empty())
+	{
+		GAME->interface()->showInfoDialog("No eligible owned external dwellings are available for this Portal choice.");
+		return;
+	}
+
+	std::vector<int> availableSources;
+	availableSources.reserve(sourceIDs.size());
+	for(const auto id : sourceIDs)
+		availableSources.push_back(id.getNum());
+
+	const auto description = canReplaceSource
+		? "Choose an owned external dwelling to recruit from. The selected source may be replaced once each week."
+		: "Choose the current Portal source to recruit from. A different source may be selected next week.";
+	auto window = std::make_shared<CObjectListWindow>(availableSources,
+		std::make_shared<CAnimImage>(town->getTown()->clientInfo.buildingsIcons, building.getNum()),
+		town->getTown()->buildings.at(building)->getNameTranslated(), description,
+		[townID = town->id, sourceIDs](int index)
+		{
+			if(index < 0 || static_cast<size_t>(index) >= sourceIDs.size())
+				return;
+
+			const auto sourceID = sourceIDs[index];
+			auto * interface = GAME->interface();
+			if(!interface || !interface->castleInt || interface->castleInt->town->id != townID)
+				return;
+
+			const auto * portalTown = dynamic_cast<const CGTownInstance *>(interface->cb->getObjInstance(townID));
+			const auto * source = dynamic_cast<const CGDwelling *>(interface->cb->getObjInstance(sourceID));
+			if(!portalTown || !interface->makingTurn
+				|| !newHorizonsMagic::rulesActive(interface->cb->getMagicRules())
+				|| portalTown->getOwner() != interface->playerID
+				|| !portalTown->hasBuilt(BuildingSubID::PORTAL_OF_SUMMONING))
+			{
+				interface->showInfoDialog("This town can no longer use the New Horizons Portal.");
+				return;
+			}
+
+			if(!source || (source->ID != Obj::CREATURE_GENERATOR1 && source->ID != Obj::CREATURE_GENERATOR4)
+				|| source->getOwner() != portalTown->getOwner())
+			{
+				interface->showInfoDialog("That external dwelling is no longer eligible for this Portal.");
+				return;
+			}
+
+			if(sourceID != portalTown->portalSourceDwellingId)
+			{
+				const auto calendar = interface->cb->getCalendar();
+				const int currentWeek = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+				if(portalTown->portalLastSelectionWeek >= currentWeek)
+				{
+					interface->showInfoDialog("This Portal has already changed its source this week.");
+					return;
+				}
+
+				const int requestID = interface->cb->selectPortalDwelling(portalTown, sourceID);
+				if(requestID < 0)
+				{
+					interface->showInfoDialog("The Portal source selection could not be submitted.");
+					return;
+				}
+
+				interface->castleInt->portalDwellingSelectionRequested(townID, sourceID, currentWeek, static_cast<uint32_t>(requestID));
+				return;
+			}
+
+			interface->castleInt->openPortalDwelling(sourceID);
+		}, initialSelection);
+	window->onPopup = [sourceIDs](int index)
+	{
+		if(index >= 0 && static_cast<size_t>(index) < sourceIDs.size())
+			CRClickPopup::createAndPush(GAME->interface()->cb->getObjInstance(sourceIDs[index]), ENGINE->getCursorPosition());
+	};
+	ENGINE->windows().pushWindow(window);
+}
+
+void CCastleBuildings::enterPortalDwelling(ObjectInstanceID sourceDwelling)
+{
+	const auto * source = dynamic_cast<const CGDwelling *>(GAME->interface()->cb->getObjInstance(sourceDwelling));
+	if(!source)
+		return;
+
+	const auto portalTownID = town->id;
+	auto recruitCallback = [sourceDwelling, portalTownID](CreatureID creature, int count)
+	{
+		auto callback = GAME->interface()->cb;
+		const auto * sourceDwellingObject = dynamic_cast<const CGDwelling *>(callback->getObjInstance(sourceDwelling));
+		const auto * portalTown = dynamic_cast<const CGTownInstance *>(callback->getObjInstance(portalTownID));
+		if(!sourceDwellingObject || !portalTown)
+			return;
+
+		callback->recruitCreatures(sourceDwellingObject, portalTown->getUpperArmy(), creature, count, -1, portalTownID);
+	};
+	ENGINE->windows().createAndPushWindow<CRecruitmentWindow>(source, -1, town->getUpperArmy(), recruitCallback, nullptr, -87);
 }
 
 void CCastleBuildings::enterDwelling(int level)
@@ -1945,6 +2097,104 @@ void CCastleInterface::castleTeleport(int where)
 	GAME->interface()->localState->setSelection(town->getVisitingHero());//according to assert(ho == adventureInt->selection) in the eraseCurrentPathOf
 	GAME->interface()->cb->teleportHero(town->getVisitingHero(), dest);
 	GAME->interface()->localState->erasePath(town->getVisitingHero());
+}
+
+void CCastleBuildings::openPortalDwelling(ObjectInstanceID sourceDwelling)
+{
+	if(!town || !GAME->interface()->makingTurn || town->getOwner() != GAME->interface()->playerID
+		|| town->portalSourceDwellingId != sourceDwelling
+		|| !newHorizonsMagic::rulesActive(GAME->interface()->cb->getMagicRules())
+		|| !town->hasBuilt(BuildingSubID::PORTAL_OF_SUMMONING))
+		return;
+
+	const auto * source = dynamic_cast<const CGDwelling *>(GAME->interface()->cb->getObjInstance(sourceDwelling));
+	if(!source || (source->ID != Obj::CREATURE_GENERATOR1 && source->ID != Obj::CREATURE_GENERATOR4)
+		|| source->getOwner() != town->getOwner())
+	{
+		GAME->interface()->showInfoDialog("The selected Portal source is no longer available to this town.");
+		return;
+	}
+
+	enterPortalDwelling(sourceDwelling);
+}
+
+void CCastleBuildings::portalDwellingSelectionRequested(ObjectInstanceID townID, ObjectInstanceID sourceID,
+	int32_t week, uint32_t requestID)
+{
+	if(!town || town->id != townID)
+		return;
+
+	pendingPortalTown = townID;
+	pendingPortalSource = sourceID;
+	pendingPortalWeek = week;
+	pendingPortalRequestID = requestID;
+}
+
+void CCastleBuildings::portalDwellingSelectionRealized(uint32_t requestID, bool result)
+{
+	if(!pendingPortalRequestID || *pendingPortalRequestID != requestID)
+		return;
+
+	const auto expectedTown = pendingPortalTown;
+	const auto expectedSource = pendingPortalSource;
+	const auto expectedWeek = pendingPortalWeek;
+	pendingPortalTown = ObjectInstanceID::NONE;
+	pendingPortalSource = ObjectInstanceID::NONE;
+	pendingPortalRequestID.reset();
+	pendingPortalWeek = -1;
+
+	if(expectedTown != town->id)
+		return;
+
+	if(!result)
+	{
+		GAME->interface()->showInfoDialog("The Portal source selection was rejected. Reopen the Portal to choose again.");
+		return;
+	}
+
+	const auto & callback = GAME->interface()->cb;
+	const auto * portalTown = dynamic_cast<const CGTownInstance *>(callback->getObjInstance(expectedTown));
+	const auto * source = dynamic_cast<const CGDwelling *>(callback->getObjInstance(expectedSource));
+	const auto calendar = callback->getCalendar();
+	const int currentWeek = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+	if(!portalTown || !source
+		|| !GAME->interface()->makingTurn
+		|| !newHorizonsMagic::rulesActive(callback->getMagicRules())
+		|| portalTown->getOwner() != GAME->interface()->playerID
+		|| !portalTown->hasBuilt(BuildingSubID::PORTAL_OF_SUMMONING)
+		|| portalTown->portalSourceDwellingId != expectedSource
+		|| (source->ID != Obj::CREATURE_GENERATOR1 && source->ID != Obj::CREATURE_GENERATOR4)
+		|| source->getOwner() != portalTown->getOwner())
+	{
+		GAME->interface()->showInfoDialog("The Portal source changed, but is no longer available for this town. Reopen the Portal to continue.");
+		return;
+	}
+	if(portalTown->portalLastSelectionWeek != expectedWeek || currentWeek != expectedWeek)
+	{
+		GAME->interface()->showInfoDialog("The Portal source was applied after the game week changed. Reopen the Portal to continue.");
+		return;
+	}
+
+	openPortalDwelling(expectedSource);
+}
+
+void CCastleInterface::openPortalDwelling(ObjectInstanceID sourceDwelling)
+{
+	if(builds && town)
+		builds->openPortalDwelling(sourceDwelling);
+}
+
+void CCastleInterface::portalDwellingSelectionRequested(ObjectInstanceID townID, ObjectInstanceID sourceID,
+	int32_t week, uint32_t requestID)
+{
+	if(builds && town && town->id == townID)
+		builds->portalDwellingSelectionRequested(townID, sourceID, week, requestID);
+}
+
+void CCastleInterface::portalDwellingSelectionRealized(uint32_t requestID, bool result)
+{
+	if(builds)
+		builds->portalDwellingSelectionRealized(requestID, result);
 }
 
 void CCastleInterface::townChange()

@@ -44,6 +44,10 @@ Goals::TGoalVec BuyArmyBehavior::decompose(const Nullkiller * aiNk) const
 		}
 
 		auto townArmyAvailableToBuy = aiNk->armyManager->getArmyAvailableToBuyAsCCreatureSet(town, aiNk->getFreeResources());
+		const auto * portalSource = aiNk->aiGw->getBestPortalRecruitmentDwelling(town, town->getUpperArmy());
+		auto portalArmyAvailableToBuy = portalSource
+			? aiNk->armyManager->getArmyAvailableToBuyAsCCreatureSet(portalSource, aiNk->getFreeResources())
+			: nullptr;
 
 		for(const CGHeroInstance * targetHero : heroes)
 		{
@@ -59,6 +63,21 @@ Goals::TGoalVec BuyArmyBehavior::decompose(const Nullkiller * aiNk) const
 				// Evaluate the entire code with the outside towns loop too.
 				if(reinforcement)
 					vstd::amin(reinforcement, aiNk->armyManager->howManyReinforcementsCanBuy(town->getUpperArmy(), town));
+
+				// Portal stock belongs to the linked external dwelling, so value it
+				// from that real source rather than the town's legacy display row.
+				if(portalSource && portalArmyAvailableToBuy)
+				{
+					auto portalReinforcement = aiNk->armyManager->howManyReinforcementsCanGet(
+						targetHero,
+						targetHero,
+						&*portalArmyAvailableToBuy,
+						TerrainId::NONE);
+					if(portalReinforcement)
+						vstd::amin(portalReinforcement,
+							aiNk->armyManager->howManyReinforcementsCanBuy(town->getUpperArmy(), portalSource));
+					reinforcement = std::max(reinforcement, portalReinforcement);
+				}
 
 				if(reinforcement)
 				{

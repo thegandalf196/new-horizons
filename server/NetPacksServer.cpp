@@ -177,7 +177,14 @@ void ApplyGhNetPackVisitor::visitRecruitCreatures(RecruitCreatures & pack)
 	gh.throwIfWrongPlayer(connection, &pack);
 	gh.throwIfPlayerNotActive(connection, &pack);
 	// ownership checks are inside recruitCreatures
-	result = gh.recruitCreatures(pack.tid, pack.dst, pack.crid, pack.amount, pack.level, pack.player);
+	result = gh.recruitCreatures(pack.tid, pack.dst, pack.crid, pack.amount, pack.level, pack.player, pack.portalTownId);
+}
+
+void ApplyGhNetPackVisitor::visitSelectPortalDwelling(SelectPortalDwelling & pack)
+{
+	gh.throwIfWrongOwner(connection, &pack, pack.townId);
+	gh.throwIfPlayerNotActive(connection, &pack);
+	result = gh.selectPortalDwelling(pack.townId, pack.sourceDwellingId, pack.player);
 }
 
 void ApplyGhNetPackVisitor::visitMusterCreatures(MusterCreatures & pack)

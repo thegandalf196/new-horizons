@@ -363,7 +363,9 @@ std::shared_ptr<CCreatureSet> ArmyManager::getArmyAvailableToBuyAsCCreatureSet(
 		if(!ci.count || ci.creID == CreatureID::NONE)
 			continue;
 
-		vstd::amin(ci.count, availableRes / ci.creID.toCreature()->getFullRecruitCost()); //max count we can afford
+		const auto recruitCost = dwelling->getRecruitmentCost(ci.creID);
+		if(!recruitCost.empty())
+			vstd::amin(ci.count, availableRes / recruitCost); //max count we can afford
 
 		if(!ci.count)
 			continue;
@@ -374,7 +376,7 @@ std::shared_ptr<CCreatureSet> ArmyManager::getArmyAvailableToBuyAsCCreatureSet(
 			break;
 
 		army->setCreature(dst, ci.creID, ci.count);
-		availableRes -= ci.creID.toCreature()->getFullRecruitCost() * ci.count;
+		availableRes -= recruitCost * ci.count;
 	}
 
 	return army;
@@ -446,7 +448,9 @@ std::vector<creInfo> ArmyManager::getArmyAvailableToBuy(
 		// Recruitment uses getSlotFor on both the AI callback and the server. It
 		// therefore targets the first physical same-creature slot, not spare room
 		// in a later duplicate slot. Keep the forecast on that same slot.
-		vstd::amin(ci.count, availableRes / ci.creID.toCreature()->getFullRecruitCost());
+		const auto recruitCost = dwelling->getRecruitmentCost(ci.creID);
+		if(!recruitCost.empty())
+			vstd::amin(ci.count, availableRes / recruitCost);
 		if(carrier)
 		{
 			if(const auto capacity = carrier->getLeadershipSlotCapacity(ci.creID))
@@ -523,7 +527,7 @@ std::vector<creInfo> ArmyManager::getArmyAvailableToBuy(
 		ci.level = i; //this is important for Dungeon Summoning Portal
 		creaturesInDwellings.push_back(ci);
 		projectedCreatureCounts[ci.creID] += ci.count;
-		availableRes -= ci.creID.toCreature()->getFullRecruitCost() * ci.count;
+		availableRes -= recruitCost * ci.count;
 	}
 
 	return creaturesInDwellings;

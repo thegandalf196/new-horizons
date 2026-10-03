@@ -606,6 +606,19 @@ void GameStatePackVisitor::visitSetNewHorizonsDemonicReserve(SetNewHorizonsDemon
 		hero->setDemonicReserve(std::move(pack.reserve));
 }
 
+void GameStatePackVisitor::visitSetPortalDwellingSource(SetPortalDwellingSource & pack)
+{
+	auto * town = dynamic_cast<CGTownInstance *>(gs.getObjInstance(pack.townId));
+	const auto * source = dynamic_cast<const CGDwelling *>(gs.getObjInstance(pack.sourceDwellingId));
+	if(!town || !source
+		|| (source->ID != Obj::CREATURE_GENERATOR1 && source->ID != Obj::CREATURE_GENERATOR4)
+		|| pack.lastSelectionWeek < 0)
+		throw std::runtime_error("Invalid New Horizons Portal source state packet");
+
+	town->portalSourceDwellingId = pack.sourceDwellingId;
+	town->portalLastSelectionWeek = pack.lastSelectionWeek;
+}
+
 void GameStatePackVisitor::visitSetMovePoints(SetMovePoints & pack)
 {
 	CGHeroInstance *hero = gs.getHero(pack.hid);

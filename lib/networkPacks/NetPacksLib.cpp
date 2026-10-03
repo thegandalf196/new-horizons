@@ -607,6 +607,11 @@ void SetNewHorizonsDemonicReserve::visitTyped(ICPackVisitor & visitor)
 	visitor.visitSetNewHorizonsDemonicReserve(*this);
 }
 
+void SetPortalDwellingSource::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitSetPortalDwellingSource(*this);
+}
+
 void ShowWorldViewEx::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitShowWorldViewEx(*this);
@@ -695,6 +700,11 @@ void UnlockNewHorizonsAdventureSpell::visitTyped(ICPackVisitor & visitor)
 void RecruitCreatures::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitRecruitCreatures(*this);
+}
+
+void SelectPortalDwelling::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitSelectPortalDwelling(*this);
 }
 
 void MusterCreatures::visitTyped(ICPackVisitor & visitor)

@@ -1623,7 +1623,105 @@ void AIGateway::pickBestCreatures(const CArmedInstance * destinationArmy, const 
 	//TODO - having now strongest possible army, we may want to think about arranging stacks
 }
 
-void AIGateway::recruitCreatures(const CGDwelling * d, const CArmedInstance * recruiter)
+const CGDwelling * AIGateway::getBestPortalRecruitmentDwelling(
+	const CGTownInstance * town, const CCreatureSet * destination) const
+{
+	if(!newHorizonsMagic::rulesActive(cc->getMagicRules())
+		|| !town || !destination || town->tempOwner != playerID
+		|| !town->hasBuilt(BuildingSubID::PORTAL_OF_SUMMONING))
+		return nullptr;
+	const auto * destinationArmy = dynamic_cast<const CArmedInstance *>(destination);
+	if(destinationArmy != town && destinationArmy != town->getVisitingHero()
+		&& destinationArmy != town->getGarrisonHero())
+		return nullptr;
+
+	const auto & calendar = cc->getCalendar();
+	const int currentWeek = ::newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+	const bool selectionAlreadyUsed = town->portalLastSelectionWeek >= currentWeek;
+
+	auto isEligibleSource = [&](const CGDwelling * dwelling)
+	{
+		if(!dwelling || dwelling->tempOwner != town->tempOwner
+			|| (dwelling->ID != Obj::CREATURE_GENERATOR1 && dwelling->ID != Obj::CREATURE_GENERATOR4))
+			return false;
+
+		return std::ranges::any_of(dwelling->creatures, [](const auto & row)
+		{
+			return row.first > 0 && !row.second.empty();
+		});
+	};
+
+	auto scoreSource = [&](const CGDwelling * dwelling) -> ui64
+	{
+		if(!isEligibleSource(dwelling) || hasPendingMuster(dwelling))
+			return 0;
+
+		const auto * carrier = dynamic_cast<const CGHeroInstance *>(destination);
+		const auto candidates = nullkiller->armyManager->getArmyAvailableToBuy(
+			destination, dwelling, cc->getResourceAmount(), 0, carrier);
+		ui64 score = 0;
+		for(const auto & candidate : candidates)
+		{
+			if(candidate.count > 0 && candidate.creID.toCreature())
+				score += nullkiller->armyManager->evaluateStackPower(candidate.creID.toCreature(), candidate.count);
+		}
+		return score;
+	};
+
+	if(selectionAlreadyUsed)
+	{
+		if(town->portalSourceDwellingId == ObjectInstanceID::NONE)
+			return nullptr;
+		const auto * source = dynamic_cast<const CGDwelling *>(cc->getObj(town->portalSourceDwellingId, false));
+		return scoreSource(source) > 0 ? source : nullptr;
+	}
+
+	const CGDwelling * bestSource = nullptr;
+	ui64 bestScore = 0;
+	for(const auto * object : cc->getMyObjects())
+	{
+		const auto * source = dynamic_cast<const CGDwelling *>(object);
+		const ui64 score = scoreSource(source);
+		if(score > bestScore || (score == bestScore && score > 0 && bestSource && source->id < bestSource->id))
+		{
+			bestSource = source;
+			bestScore = score;
+		}
+	}
+	return bestSource;
+}
+
+void AIGateway::selectPortalRecruitmentDwelling(const CGTownInstance * town, const CGDwelling * source)
+{
+	if(!newHorizonsMagic::rulesActive(cc->getMagicRules())
+		|| !town || !source || town->tempOwner != playerID || source->tempOwner != town->tempOwner
+		|| !town->hasBuilt(BuildingSubID::PORTAL_OF_SUMMONING)
+		|| (source->ID != Obj::CREATURE_GENERATOR1 && source->ID != Obj::CREATURE_GENERATOR4)
+		|| town->portalSourceDwellingId == source->id)
+		return;
+
+	const auto & calendar = cc->getCalendar();
+	const int currentWeek = ::newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+	if(town->portalLastSelectionWeek >= currentWeek)
+		return;
+
+	cc->selectPortalDwelling(town, source->id);
+}
+
+void AIGateway::recruitPortalCreatures(const CGTownInstance * town, const CArmedInstance * recruiter)
+{
+	if(!newHorizonsMagic::rulesActive(cc->getMagicRules()) || !town || !recruiter)
+		return;
+
+	const auto * source = getBestPortalRecruitmentDwelling(town, recruiter);
+	if(!source)
+		return;
+
+	selectPortalRecruitmentDwelling(town, source);
+	recruitCreatures(source, recruiter, town->id);
+}
+
+void AIGateway::recruitCreatures(const CGDwelling * d, const CArmedInstance * recruiter, ObjectInstanceID portalTownId)
 {
 	//now used only for visited dwellings / towns, not BuyArmy goal
 	if(hasPendingMuster(d))
@@ -1675,8 +1773,12 @@ void AIGateway::recruitCreatures(const CGDwelling * d, const CArmedInstance * re
 			}
 		}
 		if(count > 0)
-			cc->recruitCreatures(d, recruiter, creID, count, i);
+			cc->recruitCreatures(d, recruiter, creID, count, i, portalTownId);
 	}
+
+	if(portalTownId == ObjectInstanceID::NONE)
+		if(const auto * town = dynamic_cast<const CGTownInstance *>(d))
+			recruitPortalCreatures(town, recruiter);
 }
 
 void AIGateway::battleStart(const BattleID & battleID, const CCreatureSet * army1, const CCreatureSet * army2, int3 tile, const CGHeroInstance * hero1, const CGHeroInstance * hero2, BattleSide side, bool replayAllowed)

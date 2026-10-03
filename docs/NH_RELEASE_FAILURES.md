@@ -2,6 +2,30 @@
 
 ## Purpose
 
+### 2026-10-03 UP-177 — Never wait for packet realization under the GUI lock
+
+Source review finds that the Portal source picker enables waitTillRealize while
+the GUI owns the interface mutex. CClient::sendRequest releases only the game-
+state mutex; incoming state/ack processing also needs the interface mutex.
+This can deadlock despite a correct authoritative request. Use asynchronous
+state acknowledgement and revalidate the current town/window lifetime before
+opening recruitment. Do not manually drop the GUI mutex or mutate the link
+locally. This was caught before execution, not a reproduced user crash.
+The same review catches an undefined Portal-army local and missing New Horizons
+gates in AI source discovery and legacy-row exclusion. The sole AI owner repairs
+the variable and restores inactive-profile behavior before any build.
+Client79950 then fails on three auto-pointer declarations for a shared_ptr
+callback in CCastleInterface.cpp. Keep the existing callback ownership idiom:
+reference or shared_ptr copy, not deduced raw pointer. The UI owner repairs all
+three sites; retain UP177-portal-client-build.log. Client/test retry and native
+acceptance remain separate gates.
+The repaired combined build34651 is then terminal exit143 at272/374, without
+a compiler error in its retained log. Process inspection confirms cmake/ninja
+has stopped; the termination cause is unknown. Only after that check, resume
+incrementally as75438 with a new log, preserving completed objects and the
+original evidence. Do not mistake an interrupted build for a successful link.
+
+
 ### 2026-10-03 UP-175 — Repeat detached mutation receiver and TU scope
 
 Client build17500 exits1. Four new AttackPossibility consumption sites call

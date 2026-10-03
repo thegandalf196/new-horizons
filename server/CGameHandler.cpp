@@ -752,6 +752,10 @@ void CGameHandler::init(StartInfo *si, Load::ProgressAccumulator & progressTrack
 
 void CGameHandler::setPortalDwelling(const CGTownInstance * town, bool forced=false, bool clear = false)
 {// bool forced = true - if creature should be replaced, if false - only if no creature was set
+	// The New Horizons Portal links to a real owned external dwelling instead
+	// of maintaining the legacy random bonus row in each town.
+	if(newHorizonsMagic::rulesActive(gameInfo().getMagicRules()))
+		return;
 
 	const PlayerState * p = gameInfo().getPlayerState(town->tempOwner);
 	if (!p)
@@ -3275,12 +3279,41 @@ bool CGameHandler::unlockNewHorizonsAdventureSpell(ObjectInstanceID townId, int3
 	return true;
 }
 
-bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dstid, CreatureID crid, int32_t cram, int32_t fromLvl, PlayerColor player)
+bool CGameHandler::selectPortalDwelling(ObjectInstanceID townId, ObjectInstanceID sourceDwellingId, PlayerColor player)
+{
+	const auto * town = gameState().getTown(townId);
+	const auto * source = dynamic_cast<const CGDwelling *>(gameInfo().getObj(sourceDwellingId));
+
+	COMPLAIN_RET_FALSE_IF(!newHorizonsMagic::rulesActive(gameInfo().getMagicRules()),
+		"New Horizons Portal recruitment is not enabled in this game!");
+	COMPLAIN_RET_FALSE_IF(!town || town->getOwner() != player
+		|| !town->hasBuilt(BuildingSubID::PORTAL_OF_SUMMONING),
+		"Cannot select a source without an owned Portal of Summoning!");
+	COMPLAIN_RET_FALSE_IF(!source || (source->ID != Obj::CREATURE_GENERATOR1 && source->ID != Obj::CREATURE_GENERATOR4)
+		|| source->getOwner() != player,
+		"Portal source must be an owned external creature dwelling!");
+
+	const int week = newHorizonsMuster::absoluteWeek(gameInfo().getCalendar().getCurrentDay(),
+		gameInfo().getCalendar().getDaysInWeek());
+	COMPLAIN_RET_FALSE_IF(town->portalLastSelectionWeek >= week,
+		"This Portal has already changed its source this week!");
+
+	SetPortalDwellingSource update;
+	update.townId = townId;
+	update.sourceDwellingId = sourceDwellingId;
+	update.lastSelectionWeek = week;
+	sendAndApply(update);
+	return true;
+}
+
+bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dstid, CreatureID crid, int32_t cram,
+	int32_t fromLvl, PlayerColor player, ObjectInstanceID portalTownId)
 {
 	const auto * dwelling = dynamic_cast<const CGDwelling *>(gameInfo().getObj(objid));
 	const auto * town = dynamic_cast<const CGTownInstance *>(gameInfo().getObj(objid));
 	const auto * army = dynamic_cast<const CArmedInstance *>(gameInfo().getObj(dstid));
 	const auto * hero = dynamic_cast<const CGHeroInstance *>(gameInfo().getObj(dstid));
+	const auto * portalTown = portalTownId == ObjectInstanceID::NONE ? nullptr : gameInfo().getTown(portalTownId);
 	const auto * c = crid.toCreature();
 
 	COMPLAIN_RET_FALSE_IF(!c, "Cannot recruit: invalid creature!");
@@ -3291,7 +3324,26 @@ bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst
 	COMPLAIN_RET_FALSE_IF(!dwelling || !army, "Cannot recruit: invalid object!");
 	COMPLAIN_RET_FALSE_IF(dwelling->getOwner() != player && dwelling->getOwner() != PlayerColor::UNFLAGGABLE, "Cannot recruit: dwelling not owned!");
 
-	if (town)
+	if (portalTownId != ObjectInstanceID::NONE)
+	{
+		const bool externalDwelling = dwelling->ID == Obj::CREATURE_GENERATOR1 || dwelling->ID == Obj::CREATURE_GENERATOR4;
+		const bool destinationBelongsToPortal = portalTown
+			&& (army == portalTown
+				|| (hero && (hero == portalTown->getVisitingHero() || hero == portalTown->getGarrisonHero())));
+		COMPLAIN_RET_FALSE_IF(!newHorizonsMagic::rulesActive(gameInfo().getMagicRules())
+			|| !portalTown || portalTown->getOwner() != player
+			|| !portalTown->hasBuilt(BuildingSubID::PORTAL_OF_SUMMONING)
+			|| portalTown->portalSourceDwellingId != objid || dwelling->getOwner() != player,
+			"Portal source is not selected by an owned Portal of Summoning!");
+		COMPLAIN_RET_FALSE_IF(!externalDwelling,
+			"Portal recruitment requires an external creature dwelling!");
+		COMPLAIN_RET_FALSE_IF(warMachine,
+			"Portal recruitment cannot recruit war machines!");
+		COMPLAIN_RET_FALSE_IF(!destinationBelongsToPortal || army->getOwner() != player
+			|| (hero && hero->getOwner() != player),
+			"Portal recruitment destination must be the town or its visiting/garrisoned hero!");
+	}
+	else if (town)
 	{
 		COMPLAIN_RET_FALSE_IF(town != army && !hero, "Cannot recruit: invalid destination!");
 		COMPLAIN_RET_FALSE_IF(hero != town->getGarrisonHero() && hero != town->getVisitingHero(), "Cannot recruit: can only recruit to town or hero in town!!");

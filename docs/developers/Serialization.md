@@ -1,5 +1,18 @@
 # Serialization
 
+## New Horizons Portal of Summoning source
+
+`NEW_HORIZONS_PORTAL_SOURCE` appends the town's external source-dwelling ID and
+last successful selection absolute week. Troop stock remains on the dwelling;
+the town serializes only the link and quota marker. Old town records default to
+no source and week -1; populated state cannot be written to an older format.
+The new SelectPortalDwelling and SetPortalDwellingSource packets have appended
+polymorphic type IDs. RecruitCreatures appends optional Portal-town context;
+ordinary older records default to none, while a populated context fails closed
+on an older writer before its payload. Authoritative recruitment validates the
+owned built Portal, matching selected still-owned source, and town-associated
+destination before charging resources or deducting the source's real stock.
+
 ## New Horizons immediate Double Command continuation
 
 `NEW_HORIZONS_DOUBLE_COMMAND` appends a per-side combat-used marker and contextual

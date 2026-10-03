@@ -40,7 +40,10 @@ public:
 	virtual void recruitHero(const CGObjectInstance *townOrTavern, const CGHeroInstance *hero, const HeroTypeID & nextHero=HeroTypeID::NONE)=0;
 	virtual bool buildBuilding(const CGTownInstance *town, BuildingID buildingID)=0;
 	virtual bool visitTownBuilding(const CGTownInstance *town, BuildingID buildingID)=0;
-	virtual void recruitCreatures(const CGDwelling *obj, const CArmedInstance * dst, CreatureID ID, ui32 amount, si32 level=-1)=0;
+	virtual void recruitCreatures(const CGDwelling *obj, const CArmedInstance * dst, CreatureID ID, ui32 amount,
+		si32 level=-1, ObjectInstanceID portalTownId = ObjectInstanceID::NONE)=0;
+	/// Requests to link an owned external dwelling to an owned Portal town.
+	virtual int selectPortalDwelling(const CGTownInstance * town, ObjectInstanceID source) { return -1; }
 	/// Requests one New Horizons Recruitment Muster operation at a town or
 	/// eligible external dwelling. The server derives amount/category eligibility
 	/// and validates target context and weekly use markers. Optional Broad Muster
