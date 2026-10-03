@@ -1051,21 +1051,34 @@ bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, EMovementMode moveme
 	}
 
 	const TerrainTile t = *gameInfo().getTile(hmpos);
-	const int3 guardPos = gameState().guardingCreaturePosition(hmpos);
+	const int3 preferredGuardPos = gameState().guardingCreaturePosition(hmpos);
+	int3 guardPos(-1, -1, -1);
 	const CGObjectInstance * objectToVisit = nullptr;
 	const CGObjectInstance * guardian = nullptr;
+	const CGObjectInstance * preferredGuardian = nullptr;
 
 	if (!t.visitableObjects.empty())
 		objectToVisit = gameState().getObjInstance(t.visitableObjects.back());
 
-	if (gameInfo().isInTheMap(guardPos))
+	if(gameState().getMap().isInTheMap(preferredGuardPos))
 	{
-		for (auto const & objectID : gameInfo().getTile(guardPos)->visitableObjects)
+		for(const auto * candidate : gameState().guardingCreatures(hmpos))
 		{
-			const auto * object = gameState().getObjInstance(objectID);
+			const int3 candidateVisitablePos = candidate->visitablePos();
+			if(candidateVisitablePos == preferredGuardPos)
+				preferredGuardian = candidate;
 
-			if (object->ID == MapObjectID::MONSTER) // exclude other objects, such as hero flying above monster
-				guardian = object;
+			if(candidate->passableFor(h))
+				continue;
+
+			if(!guardian || candidateVisitablePos == preferredGuardPos)
+			{
+				guardian = candidate;
+				guardPos = candidateVisitablePos;
+			}
+
+			if(candidateVisitablePos == preferredGuardPos)
+				break;
 		}
 	}
 
@@ -1170,7 +1183,8 @@ bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, EMovementMode moveme
 		? pathfinderHelper->getMovementCost(h->visitablePos(), hmpos, layer, h->movementPointsRemaining())
 		: 0;
 
-	if (guardian && getVisitingHero(guardian) != nullptr)
+	if ((guardian && getVisitingHero(guardian) != nullptr)
+		|| (preferredGuardian && preferredGuardian != guardian && getVisitingHero(preferredGuardian) != nullptr))
 		return complainRet("You cannot move your hero there. Simultaneous turns are active and another player is interacting with this wandering monster!");
 
 	if (objectToVisit && getVisitingHero(objectToVisit) != nullptr && getVisitingHero(objectToVisit) != h)
@@ -1252,9 +1266,17 @@ bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, EMovementMode moveme
 		}
 		else if (lookForGuards == CHECK_FOR_GUARDS && gameInfo().isInTheMap(guardPos))
 		{
+			const ObjectInstanceID guardianId = guardian->id;
+			const ObjectInstanceID objectToVisitId = objectToVisit ? objectToVisit->id : ObjectInstanceID::NONE;
 			objectVisited(guardian, h);
 
-			moveQuery->visitDestAfterVictory = visitDest==VISIT_DEST;
+			const auto calendar = gameInfo().getCalendar();
+			const int week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+			const bool passedByPeacemaker = h->isNewHorizonsCreaturePacified(guardianId, week);
+			const bool destinationIsGuardian = objectToVisitId == guardianId;
+			const bool destinationWasRemoved = destinationIsGuardian && !gameInfo().getObjInstance(objectToVisitId);
+			const bool destinationWasResolved = destinationIsGuardian && (passedByPeacemaker || destinationWasRemoved);
+			moveQuery->visitDestAfterVictory = visitDest == VISIT_DEST && !destinationWasResolved;
 		}
 		else if (visitDest == VISIT_DEST)
 		{

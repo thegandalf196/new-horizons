@@ -5485,7 +5485,7 @@
 								"requires": "basic",
 								"description": "The first eligible neutral stack encountered each week that would otherwise initiate combat instead allows the hero to pass without fighting and remains on the map. The hero may still deliberately attack it through the ordinary encounter interaction.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The first eligible neutral stack encountered each week that would otherwise initiate combat instead allows the hero to pass without fighting and remains on the map. The hero may still deliberately attack it through the ordinary encounter interaction."
 								}
 							},
@@ -5525,7 +5525,7 @@
 								"requires": "advanced",
 								"description": "Once per week, the first eligible neutral stack that refuses to join automatically accepts Gold equal to its normal recruitment value and leaves the map if the kingdom can pay that amount. If the treasury is insufficient, normal combat rules apply.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Once per week, the first eligible neutral stack that refuses to join automatically accepts Gold equal to its normal recruitment value and leaves the map if the kingdom can pay that amount. If the treasury is insufficient, normal combat rules apply."
 								}
 							},

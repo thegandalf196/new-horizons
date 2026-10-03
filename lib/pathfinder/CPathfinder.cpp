@@ -412,7 +412,13 @@ EPathNodeAction CPathfinder::getTeleportDestAction() const
 
 bool CPathfinder::isDestinationGuardian() const
 {
-	return gameInfo.guardingCreaturePosition(destination.node->coord) == destination.node->coord;
+	const auto * helper = config->getOrCreatePathfinderHelper(destination, gameInfo);
+	for(const auto * guardian : gameInfo.getGuardingCreatures(destination.node->coord, helper->hero))
+	{
+		if(guardian->visitablePos() == destination.node->coord)
+			return true;
+	}
+	return false;
 }
 
 void CPathfinderHelper::initializePatrol()
@@ -516,7 +522,12 @@ bool CPathfinderHelper::passOneTurnLimitCheck(const PathNodeInfo & source) const
 
 int CPathfinderHelper::getGuardiansCount(int3 tile) const
 {
-	return gameInfo.getGuardingCreatures(tile).size();
+	auto guardians = gameInfo.getGuardingCreatures(tile);
+	std::erase_if(guardians, [this](const CGObjectInstance * guardian)
+	{
+		return guardian->passableFor(hero);
+	});
+	return guardians.size();
 }
 
 bool CPathfinderHelper::isTileBlockedByHole(const int3 & tile) const

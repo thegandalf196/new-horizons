@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "CGameInfoCallback.h"
 
+#include <algorithm>
 #include <set>
 
 #include "../entities/building/CBuilding.h"
@@ -64,6 +65,21 @@ const std::set<ArtifactID> & IGameInfoCallback::getRandomArtifactPoolExclusions(
 {
 	static const std::set<ArtifactID> empty;
 	return empty;
+}
+
+std::vector<const CGObjectInstance *> IGameInfoCallback::getGuardingCreatures(int3 pos, const CGHeroInstance * hero) const
+{
+	if(!hero)
+		return getGuardingCreatures(pos);
+	if(!guardingCreaturePosition(pos).isValid())
+		return {};
+
+	auto guardians = getGuardingCreatures(pos);
+	std::erase_if(guardians, [hero](const CGObjectInstance * guardian)
+	{
+		return guardian->passableFor(hero);
+	});
+	return guardians;
 }
 
 const JsonNode & CGameInfoCallback::getHeroPerkRules() const

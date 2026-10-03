@@ -11,6 +11,7 @@
 #include <array>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -24,6 +25,7 @@
 #include "../../lib/bonuses/Updaters.h"
 #include "../../lib/entities/hero/CHero.h"
 #include "../../lib/entities/hero/NewHorizonsDiplomacy.h"
+#include "../../lib/entities/creature/NewHorizonsMusterRules.h"
 #include "../../lib/mapObjects/CGCreature.h"
 #include "../../lib/mapObjects/ObjectTemplate.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -49,6 +51,8 @@ using newHorizonsDiplomacy::resolveForecast;
 constexpr PlayerColor PLAYER(0);
 constexpr auto DIPLOMACY_SKILL = "new-horizons:diplomacy";
 constexpr auto ENVOY_PERK_ID = "new-horizons:diplomacy.envoy";
+constexpr auto PEACEMAKER_PERK_ID = "new-horizons:diplomacy.peacemaker";
+constexpr auto TRIBUTE_PERK_ID = "new-horizons:diplomacy.tribute";
 
 CreatureID creature(const char * id)
 {
@@ -109,7 +113,7 @@ protected:
 	}
 
 	void startGame(int32_t heroPikemen, int32_t neutralPikemen, CGCreature::Character character,
-		int3 neutralPosition = {12, 12, 0})
+		int3 neutralPosition = {12, 12, 0}, bool addSecondHero = false)
 	{
 		const auto pikeman = creature("core:pikeman");
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
@@ -118,12 +122,17 @@ protected:
 			.heroGarrison({{pikeman, heroPikemen}})
 			.monster(neutralPosition, pikeman, static_cast<uint16_t>(neutralPikemen),
 				static_cast<int8_t>(character));
+		if(addSecondHero)
+			builder.hero({24, 24, 0}, heroType("core:adela"), PLAYER);
 		startWithMap(std::move(builder));
 
-		hero = findHeroByOwner(PLAYER);
+		hero = findHeroAt({5, 5, 0});
+		otherHero = addSecondHero ? findHeroAt({24, 24, 0}) : nullptr;
 		neutral = findFirst<CGCreature>();
 		ASSERT_NE(hero, nullptr);
 		ASSERT_NE(neutral, nullptr);
+		if(addSecondHero)
+			ASSERT_NE(otherHero, nullptr);
 
 		server = std::make_unique<DiplomacyRecordingServer>(gameState(), PLAYER);
 		gameHandler = std::make_unique<CGameHandler>(*server, gameState());
@@ -195,7 +204,32 @@ protected:
 		}
 	}
 
+	int32_t currentAbsoluteWeek() const
+	{
+		const auto calendar = gameState()->getCalendar();
+		return newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+	}
+
+	std::optional<int3> neutralGuardApproachFor(const CGHeroInstance * movingHero) const
+	{
+		for(int dx = -1; dx <= 1; ++dx)
+			for(int dy = -1; dy <= 1; ++dy)
+			{
+				if(dx == 0 && dy == 0)
+					continue;
+				const int3 destination = movingHero->pos + int3(dx, dy, 0);
+				if(!map()->isInTheMap(destination))
+					continue;
+				const int3 visitableTile = movingHero->convertToVisitablePos(destination);
+				if(map()->isInTheMap(visitableTile) && visitableTile != neutral->visitablePos()
+					&& map()->guardingCreaturePosition(visitableTile) == neutral->visitablePos())
+					return destination;
+			}
+		return std::nullopt;
+	}
+
 	CGHeroInstance * hero = nullptr;
+	CGHeroInstance * otherHero = nullptr;
 	CGCreature * neutral = nullptr;
 	std::unique_ptr<DiplomacyRecordingServer> server;
 	std::unique_ptr<CGameHandler> gameHandler;
@@ -695,4 +729,307 @@ TEST_F(NewHorizonsDiplomacyTest, ExplicitMapOptOutAndEligibilitySerializationRem
 	oldSnapshot.iser & legacyCopy;
 	EXPECT_TRUE(legacyCopy.diplomacyEligible)
 		<< "An older map snapshot without the field must retain the default-eligible behavior";
+}
+
+TEST_F(NewHorizonsDiplomacyTest, PeacemakerProtectsOnlyItsHeroAndExpiresAtTheNextWeek)
+{
+	startGame(1, 20, CGCreature::Character::HOSTILE, {6, 4, 0}, true);
+	advanceToDiplomacyRank(MasteryLevel::ADVANCED, PEACEMAKER_PERK_ID, TRIBUTE_PERK_ID);
+	neutral->agression = 10;
+	neutral->neverFlees = true;
+
+	const auto forecast = neutral->getNewHorizonsDiplomacyForecast(*hero);
+	ASSERT_TRUE(forecast.active);
+	ASSERT_TRUE(forecast.eligible);
+	ASSERT_FALSE(forecast.willing);
+	ASSERT_TRUE(forecast.normalGoldCostValid);
+	const auto goldAtStart = gameState()->getPlayerState(PLAYER)->resources[EGameResID::GOLD];
+	if(goldAtStart < forecast.normalGoldCost)
+		grantResources(PLAYER, GameResID(EGameResID::GOLD),
+			static_cast<int>(forecast.normalGoldCost - goldAtStart));
+	ASSERT_TRUE(hero->hasActivePerk(DIPLOMACY_SKILL, PEACEMAKER_PERK_ID));
+	ASSERT_TRUE(hero->hasActivePerk(DIPLOMACY_SKILL, TRIBUTE_PERK_ID));
+	ASSERT_FALSE(otherHero->hasActivePerk(DIPLOMACY_SKILL, PEACEMAKER_PERK_ID));
+
+	const auto neutralId = neutral->id;
+	const auto week = currentAbsoluteWeek();
+	const auto goldBefore = gameState()->getPlayerState(PLAYER)->resources[EGameResID::GOLD];
+	ASSERT_GE(goldBefore, forecast.normalGoldCost)
+		<< "The active Tribute perk must be affordable so Peacemaker precedence is exercised";
+	const auto destination = neutralGuardApproachFor(hero);
+	ASSERT_TRUE(destination.has_value()) << "Fixture must move into a tile guarded by the neutral stack";
+	ASSERT_TRUE(hero->pos.areNeighbours(*destination));
+	ASSERT_EQ(map()->guardingCreaturePosition(hero->convertToVisitablePos(*destination)),
+		neutral->visitablePos());
+
+	gameHandler->setMovePoints(hero->id, 20000);
+	ASSERT_TRUE(gameHandler->moveHero(hero->id, *destination, EMovementMode::STANDARD, false,
+		PLAYER, EPathfindingLayer::LAND));
+	EXPECT_EQ(hero->pos, *destination);
+	EXPECT_EQ(gameState()->getObjInstance(neutralId), neutral);
+	EXPECT_EQ(gameState()->getBattle(PLAYER), nullptr)
+		<< "The first qualifying hostile encounter passes without starting combat";
+	EXPECT_TRUE(hero->isNewHorizonsCreaturePacified(neutralId, week));
+	EXPECT_TRUE(neutral->passableFor(hero));
+	EXPECT_FALSE(neutral->passableFor(otherHero))
+		<< "The protected stack remains a guard for a different hero of the same player";
+	EXPECT_EQ(hero->getNewHorizonsPeacemakerLastWeek(), week);
+	EXPECT_EQ(hero->getNewHorizonsPacifiedCreatureId(), neutralId);
+	EXPECT_EQ(hero->getNewHorizonsTributeLastWeek(), -1);
+	EXPECT_EQ(gameState()->getPlayerState(PLAYER)->resources[EGameResID::GOLD], goldBefore);
+
+	const auto currentCalendar = gameState()->getCalendar();
+	gameState()->day = (week + 1) * currentCalendar.getDaysInWeek() + 1;
+	const auto nextWeek = currentAbsoluteWeek();
+	ASSERT_NE(nextWeek, week);
+	EXPECT_FALSE(hero->isNewHorizonsCreaturePacified(neutralId, nextWeek));
+	EXPECT_FALSE(neutral->passableFor(hero))
+		<< "Protection is derived from the current absolute week and expires without a reset event";
+	EXPECT_TRUE(hero->hasUsedNewHorizonsPeacemaker(week));
+	EXPECT_FALSE(hero->hasUsedNewHorizonsPeacemaker(nextWeek));
+}
+
+TEST_F(NewHorizonsDiplomacyTest, DeliberateAttackClearsPeacemakerTargetButKeepsWeeklyUse)
+{
+	startGame(1, 20, CGCreature::Character::HOSTILE, {6, 4, 0});
+	advanceToDiplomacyRank(MasteryLevel::BASIC, PEACEMAKER_PERK_ID);
+	neutral->agression = 10;
+	neutral->neverFlees = true;
+	const auto neutralId = neutral->id;
+	const auto week = currentAbsoluteWeek();
+
+	const auto destination = neutralGuardApproachFor(hero);
+	ASSERT_TRUE(destination.has_value());
+	gameHandler->setMovePoints(hero->id, 20000);
+	ASSERT_TRUE(gameHandler->moveHero(hero->id, *destination, EMovementMode::STANDARD, false,
+		PLAYER, EPathfindingLayer::LAND));
+	ASSERT_TRUE(hero->isNewHorizonsCreaturePacified(neutralId, week));
+
+	gameHandler->objectVisited(neutral, hero);
+	EXPECT_EQ(hero->getNewHorizonsPacifiedCreatureId(), ObjectInstanceID::NONE);
+	EXPECT_EQ(hero->getNewHorizonsPeacemakerLastWeek(), week);
+	EXPECT_TRUE(hero->hasUsedNewHorizonsPeacemaker(week))
+		<< "Choosing a deliberate attack clears passage but does not refund this week's use";
+	EXPECT_NE(gameState()->getBattle(PLAYER), nullptr);
+}
+
+TEST_F(NewHorizonsDiplomacyTest, TributePaysAndRemovesAnUnwillingStackOnTheMovementPath)
+{
+	startGame(1, 2, CGCreature::Character::HOSTILE, {6, 4, 0});
+	advanceToDiplomacyRank(MasteryLevel::ADVANCED,
+		newHorizonsDiplomacy::NEGOTIATOR_ID, TRIBUTE_PERK_ID);
+	neutral->agression = 10;
+	neutral->neverFlees = true;
+
+	const auto forecast = neutral->getNewHorizonsDiplomacyForecast(*hero);
+	ASSERT_TRUE(hero->hasActivePerk(DIPLOMACY_SKILL, TRIBUTE_PERK_ID));
+	ASSERT_TRUE(forecast.eligible);
+	ASSERT_FALSE(forecast.authoredFree);
+	ASSERT_FALSE(forecast.willing);
+	ASSERT_TRUE(forecast.normalGoldCostValid);
+	ASSERT_TRUE(forecast.normalGoldCostFitsAction);
+	const auto neutralId = neutral->id;
+	const auto week = currentAbsoluteWeek();
+	const auto goldBefore = gameState()->getPlayerState(PLAYER)->resources[EGameResID::GOLD];
+	if(goldBefore < forecast.normalGoldCost)
+		grantResources(PLAYER, GameResID(EGameResID::GOLD),
+			static_cast<int>(forecast.normalGoldCost - goldBefore));
+	const auto fundedGold = gameState()->getPlayerState(PLAYER)->resources[EGameResID::GOLD];
+	ASSERT_GE(fundedGold, forecast.normalGoldCost);
+	const auto destination = neutralGuardApproachFor(hero);
+	ASSERT_TRUE(destination.has_value());
+
+	gameHandler->setMovePoints(hero->id, 20000);
+	ASSERT_TRUE(gameHandler->moveHero(hero->id, *destination, EMovementMode::STANDARD, false,
+		PLAYER, EPathfindingLayer::LAND));
+	EXPECT_EQ(hero->pos, *destination)
+		<< "Movement must complete after Tribute removes the guarding object during its callback";
+	EXPECT_EQ(gameState()->getObjInstance(neutralId), nullptr);
+	EXPECT_EQ(gameState()->getBattle(PLAYER), nullptr);
+	EXPECT_EQ(gameState()->getPlayerState(PLAYER)->resources[EGameResID::GOLD],
+		fundedGold - forecast.normalGoldCost);
+	EXPECT_EQ(hero->getNewHorizonsTributeLastWeek(), week);
+	EXPECT_TRUE(hero->hasUsedNewHorizonsTribute(week));
+	EXPECT_EQ(hero->getNewHorizonsPacifiedCreatureId(), ObjectInstanceID::NONE);
+	EXPECT_TRUE(server->blockingDialogs.empty())
+		<< "An unwilling stack is handled by automatic Tribute, not a recruitment offer";
+}
+
+TEST_F(NewHorizonsDiplomacyTest, InsufficientTributeGoldFallsThroughToCombatWithoutUsingTheQuota)
+{
+	startGame(1, 2, CGCreature::Character::HOSTILE, {6, 4, 0});
+	advanceToDiplomacyRank(MasteryLevel::ADVANCED,
+		newHorizonsDiplomacy::NEGOTIATOR_ID, TRIBUTE_PERK_ID);
+	neutral->agression = 10;
+	neutral->neverFlees = true;
+
+	const auto forecast = neutral->getNewHorizonsDiplomacyForecast(*hero);
+	ASSERT_TRUE(forecast.eligible);
+	ASSERT_FALSE(forecast.willing);
+	ASSERT_GT(forecast.normalGoldCost, 0);
+	const auto neutralId = neutral->id;
+	const auto affordableGold = gameState()->getPlayerState(PLAYER)->resources[EGameResID::GOLD];
+	grantResources(PLAYER, GameResID(EGameResID::GOLD),
+		static_cast<int>(forecast.normalGoldCost - 1 - affordableGold));
+	const auto goldBefore = gameState()->getPlayerState(PLAYER)->resources[EGameResID::GOLD];
+	ASSERT_EQ(goldBefore, forecast.normalGoldCost - 1);
+	const auto destination = neutralGuardApproachFor(hero);
+	ASSERT_TRUE(destination.has_value());
+
+	gameHandler->setMovePoints(hero->id, 20000);
+	ASSERT_TRUE(gameHandler->moveHero(hero->id, *destination, EMovementMode::STANDARD, false,
+		PLAYER, EPathfindingLayer::LAND));
+	EXPECT_EQ(gameState()->getObjInstance(neutralId), neutral);
+	EXPECT_EQ(gameState()->getBattle(PLAYER) != nullptr, true)
+		<< "An unaffordable Tribute attempt must retain the ordinary hostile battle path";
+	EXPECT_EQ(gameState()->getPlayerState(PLAYER)->resources[EGameResID::GOLD], goldBefore);
+	EXPECT_EQ(hero->getNewHorizonsTributeLastWeek(), -1);
+	EXPECT_FALSE(hero->hasUsedNewHorizonsTribute(currentAbsoluteWeek()));
+	EXPECT_EQ(hero->getNewHorizonsPeacemakerLastWeek(), -1);
+}
+
+TEST_F(NewHorizonsDiplomacyTest, WillingPaidOfferDoesNotConsumeTribute)
+{
+	startGame(4, 1, CGCreature::Character::HOSTILE, {6, 4, 0});
+	advanceToDiplomacyRank(MasteryLevel::ADVANCED,
+		newHorizonsDiplomacy::NEGOTIATOR_ID, TRIBUTE_PERK_ID);
+	neutral->agression = 10;
+	neutral->neverFlees = true;
+
+	const auto forecast = neutral->getNewHorizonsDiplomacyForecast(*hero);
+	ASSERT_TRUE(forecast.eligible);
+	ASSERT_TRUE(forecast.willing);
+	ASSERT_FALSE(forecast.authoredFree);
+	const auto neutralId = neutral->id;
+	const auto week = currentAbsoluteWeek();
+	ASSERT_TRUE(hero->hasActivePerk(DIPLOMACY_SKILL, TRIBUTE_PERK_ID));
+	const auto goldBefore = gameState()->getPlayerState(PLAYER)->resources[EGameResID::GOLD];
+	if(goldBefore < forecast.normalGoldCost)
+		grantResources(PLAYER, GameResID(EGameResID::GOLD),
+			static_cast<int>(forecast.normalGoldCost - goldBefore));
+	const auto fundedGold = gameState()->getPlayerState(PLAYER)->resources[EGameResID::GOLD];
+	const auto destination = neutralGuardApproachFor(hero);
+	ASSERT_TRUE(destination.has_value());
+
+	gameHandler->setMovePoints(hero->id, 20000);
+	ASSERT_TRUE(gameHandler->moveHero(hero->id, *destination, EMovementMode::STANDARD, false,
+		PLAYER, EPathfindingLayer::LAND));
+	ASSERT_EQ(server->blockingDialogs.size(), 1u)
+		<< "A willing stack should retain the ordinary paid recruitment offer";
+	EXPECT_EQ(hero->getNewHorizonsTributeLastWeek(), -1);
+	EXPECT_EQ(gameState()->getPlayerState(PLAYER)->resources[EGameResID::GOLD], fundedGold);
+	ASSERT_NE(server->blockingDialogs.back().queryID, QueryID::NONE);
+	ASSERT_TRUE(gameHandler->queryReply(server->blockingDialogs.back().queryID, 1, PLAYER));
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), 5);
+	EXPECT_EQ(gameState()->getObjInstance(neutralId), nullptr);
+	EXPECT_EQ(gameState()->getPlayerState(PLAYER)->resources[EGameResID::GOLD],
+		fundedGold - forecast.normalGoldCost);
+	EXPECT_EQ(hero->getNewHorizonsTributeLastWeek(), -1);
+	EXPECT_FALSE(hero->hasUsedNewHorizonsTribute(week))
+		<< "Accepting a willing ordinary offer is not the automatic Tribute mechanic";
+}
+
+TEST_F(NewHorizonsDiplomacyTest, WeeklyPeacemakerAndTributeStateIsVersionedAndValidated)
+{
+	startGame(1, 1, CGCreature::Character::COMPLIANT);
+	const auto neutralId = neutral->id;
+
+	hero->setNewHorizonsDiplomacyState(4, neutralId, 4);
+	CMemorySerializer currentHero;
+	currentHero.oser.version = ESerializationVersion::CURRENT;
+	currentHero.iser.version = ESerializationVersion::CURRENT;
+	currentHero.oser & *hero;
+	CGHeroInstance currentHeroCopy(gameState().get());
+	currentHero.iser.cb = gameState().get();
+	currentHero.iser & currentHeroCopy;
+	EXPECT_EQ(currentHeroCopy.getNewHorizonsPeacemakerLastWeek(), 4);
+	EXPECT_EQ(currentHeroCopy.getNewHorizonsPacifiedCreatureId(), neutralId);
+	EXPECT_EQ(currentHeroCopy.getNewHorizonsTributeLastWeek(), 4);
+	EXPECT_TRUE(currentHeroCopy.hasUsedNewHorizonsPeacemaker(4));
+	EXPECT_TRUE(currentHeroCopy.hasUsedNewHorizonsTribute(4));
+
+	CMemorySerializer oldHeroWriter;
+	oldHeroWriter.oser.version = ESerializationVersion::NEW_HORIZONS_DIPLOMACY_ELIGIBILITY;
+	EXPECT_THROW(oldHeroWriter.oser & *hero, std::runtime_error);
+	EXPECT_TRUE(oldHeroWriter.extractBuffer().empty())
+		<< "An older hero writer must reject populated weekly Diplomacy state before writing bytes";
+
+	hero->setNewHorizonsDiplomacyState(-1, ObjectInstanceID::NONE, -1);
+	CMemorySerializer oldHeroSnapshot;
+	oldHeroSnapshot.oser.version = ESerializationVersion::NEW_HORIZONS_DIPLOMACY_ELIGIBILITY;
+	oldHeroSnapshot.iser.version = ESerializationVersion::NEW_HORIZONS_DIPLOMACY_ELIGIBILITY;
+	oldHeroSnapshot.oser & *hero;
+	CGHeroInstance legacyHeroCopy(gameState().get());
+	legacyHeroCopy.setNewHorizonsDiplomacyState(8, neutralId, 9);
+	oldHeroSnapshot.iser.cb = gameState().get();
+	oldHeroSnapshot.iser & legacyHeroCopy;
+	EXPECT_EQ(legacyHeroCopy.getNewHorizonsPeacemakerLastWeek(), -1);
+	EXPECT_EQ(legacyHeroCopy.getNewHorizonsPacifiedCreatureId(), ObjectInstanceID::NONE);
+	EXPECT_EQ(legacyHeroCopy.getNewHorizonsTributeLastWeek(), -1)
+		<< "An older hero snapshot must clear any pre-existing weekly Diplomacy state";
+
+	SetNewHorizonsDiplomacyState packet;
+	packet.heroId = hero->id;
+	packet.peacemakerLastWeek = 4;
+	packet.pacifiedCreatureId = neutralId;
+	packet.tributeLastWeek = 4;
+	CMemorySerializer currentPacket;
+	currentPacket.oser.version = ESerializationVersion::CURRENT;
+	currentPacket.iser.version = ESerializationVersion::CURRENT;
+	currentPacket.oser & packet;
+	SetNewHorizonsDiplomacyState packetCopy;
+	currentPacket.iser & packetCopy;
+	EXPECT_EQ(packetCopy.heroId, hero->id);
+	EXPECT_EQ(packetCopy.peacemakerLastWeek, 4);
+	EXPECT_EQ(packetCopy.pacifiedCreatureId, neutralId);
+	EXPECT_EQ(packetCopy.tributeLastWeek, 4);
+	EXPECT_TRUE(packetCopy.hasValidState());
+
+	CMemorySerializer oldPacketWriter;
+	oldPacketWriter.oser.version = ESerializationVersion::NEW_HORIZONS_DIPLOMACY_ELIGIBILITY;
+	EXPECT_THROW(oldPacketWriter.oser & packet, std::runtime_error);
+	EXPECT_TRUE(oldPacketWriter.extractBuffer().empty())
+		<< "An older packet writer must reject weekly Diplomacy state before writing bytes";
+
+	SetNewHorizonsDiplomacyState legacyPacket;
+	legacyPacket.heroId = hero->id;
+	CMemorySerializer oldPacketSnapshot;
+	oldPacketSnapshot.oser.version = ESerializationVersion::NEW_HORIZONS_DIPLOMACY_ELIGIBILITY;
+	oldPacketSnapshot.iser.version = ESerializationVersion::NEW_HORIZONS_DIPLOMACY_ELIGIBILITY;
+	// The packet was introduced with the new format, so an old-version packet
+	// writer correctly refuses to emit one. Supply only its historical heroId
+	// prefix to exercise the old reader's defaulting branch without weakening
+	// that writer guard or implying this was a valid old network packet.
+	oldPacketSnapshot.oser & legacyPacket.heroId;
+	SetNewHorizonsDiplomacyState legacyPacketCopy;
+	legacyPacketCopy.peacemakerLastWeek = 8;
+	legacyPacketCopy.pacifiedCreatureId = neutralId;
+	legacyPacketCopy.tributeLastWeek = 9;
+	oldPacketSnapshot.iser & legacyPacketCopy;
+	EXPECT_EQ(legacyPacketCopy.heroId, hero->id);
+	EXPECT_EQ(legacyPacketCopy.peacemakerLastWeek, -1);
+	EXPECT_EQ(legacyPacketCopy.pacifiedCreatureId, ObjectInstanceID::NONE);
+	EXPECT_EQ(legacyPacketCopy.tributeLastWeek, -1)
+		<< "An older packet snapshot must default all appended state fields";
+
+	EXPECT_THROW(hero->setNewHorizonsDiplomacyState(-2, neutralId, 4), std::runtime_error);
+	EXPECT_THROW(hero->setNewHorizonsDiplomacyState(-1, ObjectInstanceID(-2), 4), std::runtime_error);
+	EXPECT_EQ(hero->getNewHorizonsPeacemakerLastWeek(), -1);
+
+	SetNewHorizonsDiplomacyState invalidWeekPacket;
+	invalidWeekPacket.heroId = hero->id;
+	invalidWeekPacket.peacemakerLastWeek = -2;
+	CMemorySerializer invalidWeekWire;
+	invalidWeekWire.oser.version = ESerializationVersion::CURRENT;
+	EXPECT_THROW(invalidWeekWire.oser & invalidWeekPacket, std::runtime_error);
+	EXPECT_TRUE(invalidWeekWire.extractBuffer().empty());
+
+	SetNewHorizonsDiplomacyState invalidTargetPacket;
+	invalidTargetPacket.heroId = hero->id;
+	invalidTargetPacket.peacemakerLastWeek = 4;
+	invalidTargetPacket.pacifiedCreatureId = ObjectInstanceID(-2);
+	CMemorySerializer invalidTargetWire;
+	invalidTargetWire.oser.version = ESerializationVersion::CURRENT;
+	EXPECT_THROW(invalidTargetWire.oser & invalidTargetPacket, std::runtime_error);
+	EXPECT_TRUE(invalidTargetWire.extractBuffer().empty());
 }

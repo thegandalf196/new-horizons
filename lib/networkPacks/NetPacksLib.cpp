@@ -602,6 +602,11 @@ void SetNewHorizonsLearningMentorState::visitTyped(ICPackVisitor & visitor)
 	visitor.visitSetNewHorizonsLearningMentorState(*this);
 }
 
+void SetNewHorizonsDiplomacyState::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitSetNewHorizonsDiplomacyState(*this);
+}
+
 void SetNewHorizonsDemonicReserve::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitSetNewHorizonsDemonicReserve(*this);

@@ -300,6 +300,26 @@ public:
 	void markNewHorizonsLearningMentorUsed(int32_t week) { newHorizonsLearningMentorLastWeek = week < 0 ? -1 : week; }
 	int32_t getNewHorizonsLandSurveyorLastWeek() const { return newHorizonsLandSurveyorLastWeek; }
 	bool hasUsedNewHorizonsLandSurveyor(int32_t week) const { return newHorizonsLandSurveyorLastWeek == week; }
+	int32_t getNewHorizonsPeacemakerLastWeek() const { return newHorizonsPeacemakerLastWeek; }
+	ObjectInstanceID getNewHorizonsPacifiedCreatureId() const { return newHorizonsPacifiedCreatureId; }
+	bool hasUsedNewHorizonsPeacemaker(int32_t week) const { return week >= 0 && newHorizonsPeacemakerLastWeek == week; }
+	bool isNewHorizonsCreaturePacified(ObjectInstanceID creatureId, int32_t week) const
+	{
+		return week >= 0 && newHorizonsPeacemakerLastWeek == week
+			&& newHorizonsPacifiedCreatureId != ObjectInstanceID::NONE
+			&& newHorizonsPacifiedCreatureId == creatureId
+			&& hasActivePerk("new-horizons:diplomacy", "new-horizons:diplomacy.peacemaker");
+	}
+	int32_t getNewHorizonsTributeLastWeek() const { return newHorizonsTributeLastWeek; }
+	bool hasUsedNewHorizonsTribute(int32_t week) const { return week >= 0 && newHorizonsTributeLastWeek == week; }
+	void setNewHorizonsDiplomacyState(int32_t peacemakerLastWeek, ObjectInstanceID pacifiedCreatureId, int32_t tributeLastWeek)
+	{
+		if(!isValidNewHorizonsDiplomacyState(peacemakerLastWeek, pacifiedCreatureId, tributeLastWeek))
+			throw std::runtime_error("Invalid New Horizons Diplomacy weekly state");
+		newHorizonsPeacemakerLastWeek = peacemakerLastWeek;
+		newHorizonsPacifiedCreatureId = pacifiedCreatureId;
+		newHorizonsTributeLastWeek = tributeLastWeek;
+	}
 	int getPerkSkillRank(const std::string & skillId) const;
 	bool hasActivePerk(const std::string & skillId, const std::string & perkId) const;
 	/// New Horizons Necromancy is a separate saved-rules path.  Legacy heroes
@@ -478,11 +498,21 @@ private:
 	int32_t newHorizonsMusterUsesThisWeek = 0;
 	int32_t newHorizonsLearningMentorLastWeek = -1;
 	int32_t newHorizonsLandSurveyorLastWeek = -1;
+	int32_t newHorizonsPeacemakerLastWeek = -1;
+	ObjectInstanceID newHorizonsPacifiedCreatureId = ObjectInstanceID::NONE;
+	int32_t newHorizonsTributeLastWeek = -1;
 	DemonicReserve demonicReserve;
 	std::array<int, GameConstants::PRIMARY_SKILLS> lastPrimaryGains{};
 	void levelUpAutomatically(IGameRandomizer & gameRandomizer);
 	void attachCommanderToArmy();
 	bool isNewHorizonsSpellExcluded(const SpellID & spell) const;
+	static bool isValidNewHorizonsDiplomacyState(int32_t peacemakerLastWeek,
+		ObjectInstanceID pacifiedCreatureId, int32_t tributeLastWeek)
+	{
+		return peacemakerLastWeek >= -1 && tributeLastWeek >= -1
+			&& (pacifiedCreatureId == ObjectInstanceID::NONE
+				|| (pacifiedCreatureId.hasValue() && peacemakerLastWeek >= 0));
+	}
 
 public:
 	std::string getHeroTypeName() const;
@@ -492,6 +522,17 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+		{
+			if(!isValidNewHorizonsDiplomacyState(newHorizonsPeacemakerLastWeek,
+				newHorizonsPacifiedCreatureId, newHorizonsTributeLastWeek))
+				throw std::runtime_error("Invalid New Horizons Diplomacy weekly state");
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE)
+				&& (newHorizonsPeacemakerLastWeek != -1
+					|| newHorizonsPacifiedCreatureId != ObjectInstanceID::NONE
+					|| newHorizonsTributeLastWeek != -1))
+				throw std::runtime_error("New Horizons Diplomacy weekly state requires the new save format");
+		}
 		if(h.saving && (!h.hasFeature(Handler::Version::NEW_HORIZONS_INVESTOR_INCOME)
 			&& newHorizonsInvestorDailyGold != 0))
 			throw std::runtime_error("New Horizons Investor state requires the new save format");
@@ -620,6 +661,22 @@ public:
 			throw std::runtime_error("New Horizons Land Surveyor state requires the new save format");
 		else if(!h.saving)
 			newHorizonsLandSurveyorLastWeek = -1;
+
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE))
+		{
+			h & newHorizonsPeacemakerLastWeek;
+			h & newHorizonsPacifiedCreatureId;
+			h & newHorizonsTributeLastWeek;
+			if(!h.saving && !isValidNewHorizonsDiplomacyState(newHorizonsPeacemakerLastWeek,
+				newHorizonsPacifiedCreatureId, newHorizonsTributeLastWeek))
+				throw std::runtime_error("Invalid New Horizons Diplomacy weekly state");
+		}
+		else if(!h.saving)
+		{
+			newHorizonsPeacemakerLastWeek = -1;
+			newHorizonsPacifiedCreatureId = ObjectInstanceID::NONE;
+			newHorizonsTributeLastWeek = -1;
+		}
 
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_DEMONIC_RESERVE))
 			h & demonicReserve;

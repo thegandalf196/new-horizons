@@ -113,6 +113,7 @@ public:
 	void visitSetNewHorizonsCastleGateState(SetNewHorizonsCastleGateState & pack) override;
 	void visitSetNewHorizonsMusterState(SetNewHorizonsMusterState & pack) override;
 	void visitSetNewHorizonsLearningMentorState(SetNewHorizonsLearningMentorState & pack) override;
+	void visitSetNewHorizonsDiplomacyState(SetNewHorizonsDiplomacyState & pack) override;
 	void visitSetNewHorizonsDemonicReserve(SetNewHorizonsDemonicReserve & pack) override;
 	void visitSetPortalDwellingSource(SetPortalDwellingSource & pack) override;
 	void visitEntitiesChanged(EntitiesChanged & pack) override;

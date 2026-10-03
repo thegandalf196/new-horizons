@@ -34,6 +34,7 @@ public:
 	void visitHeroVisitCastle(HeroVisitCastle & pack) override;
 	void visitSetMana(SetMana & pack) override;
 	void visitSetNewHorizonsAdventureSpellState(SetNewHorizonsAdventureSpellState & pack) override;
+	void visitSetNewHorizonsDiplomacyState(SetNewHorizonsDiplomacyState & pack) override;
 	void visitSetNewHorizonsAdventureSpellUnlock(SetNewHorizonsAdventureSpellUnlock & pack) override;
 	void visitSetMovePoints(SetMovePoints & pack) override;
 	void visitSetResearchedSpells(SetResearchedSpells & pack) override;

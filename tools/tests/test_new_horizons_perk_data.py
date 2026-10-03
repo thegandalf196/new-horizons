@@ -16,6 +16,8 @@ ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
     "new-horizons:diplomacy.envoy",
+    "new-horizons:diplomacy.peacemaker",
+    "new-horizons:diplomacy.tribute",
     "new-horizons:diplomacy.negotiator",
     "new-horizons:diplomacy.commonCause",
     "new-horizons:diplomacy.grandDiplomat",

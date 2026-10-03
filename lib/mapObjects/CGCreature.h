@@ -71,6 +71,8 @@ public:
 	const CCreature * getCreature() const;
 	TQuantity getJoiningAmount() const;
 	newHorizonsDiplomacy::Forecast getNewHorizonsDiplomacyForecast(const CGHeroInstance & hero) const;
+	using CGObjectInstance::passableFor;
+	bool passableFor(const CGHeroInstance * hero) const override;
 
 	//stack formation depends on position,
 	bool containsUpgradedStack() const;

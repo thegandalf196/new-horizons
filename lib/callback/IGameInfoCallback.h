@@ -169,6 +169,9 @@ public:
 	virtual bool checkForVisitableDir(const int3 & src, const int3 & dst) const = 0;
 	/// Returns all wandering monsters that guard specified tile
 	virtual std::vector<const CGObjectInstance *> getGuardingCreatures (int3 pos) const = 0;
+	/// Returns the guardians that still block passage for this hero.
+	/// The default implementation filters the regular list via hero-aware object passability.
+	virtual std::vector<const CGObjectInstance *> getGuardingCreatures(int3 pos, const CGHeroInstance * hero) const;
 	/// Returns if tile is guarded by wandering monsters without checking whether player has access to the tile. AVOID USAGE.
 	virtual bool isTileGuardedUnchecked(int3 tile) const = 0;
 

@@ -27,12 +27,15 @@
 #include "../serializer/JsonSerializeFormat.h"
 #include "../entities/faction/CTownHandler.h"
 #include "../entities/ResourceTypeHandler.h"
+#include "../entities/creature/NewHorizonsMusterRules.h"
 
 #include <vstd/RNG.h>
 
 namespace
 {
 constexpr const char * DIPLOMACY_ENVOY_PERK_ID = "new-horizons:diplomacy.envoy";
+constexpr const char * DIPLOMACY_PEACEMAKER_PERK_ID = "new-horizons:diplomacy.peacemaker";
+constexpr const char * DIPLOMACY_TRIBUTE_PERK_ID = "new-horizons:diplomacy.tribute";
 constexpr ui32 DIPLOMACY_ENVOY_RANGE_SQUARED = 25;
 
 bool canShowEnvoyDiplomacyInformation(const CGCreature & creature, const CGHeroInstance & hero)
@@ -108,6 +111,17 @@ void showExpiredDiplomacyOffer(IGameEventCallback & gameEvents, const CGHeroInst
 	info.text.appendRawString("This Diplomacy offer is no longer available.");
 	info.type = EInfoWindowMode::MODAL;
 	gameEvents.showInfoDialog(&info);
+}
+
+void updateDiplomacyWeeklyState(IGameEventCallback & gameEvents, const CGHeroInstance & hero,
+	int32_t peacemakerLastWeek, ObjectInstanceID pacifiedCreatureId, int32_t tributeLastWeek)
+{
+	SetNewHorizonsDiplomacyState state;
+	state.heroId = hero.id;
+	state.peacemakerLastWeek = peacemakerLastWeek;
+	state.pacifiedCreatureId = pacifiedCreatureId;
+	state.tributeLastWeek = tributeLastWeek;
+	gameEvents.sendAndApply(state);
 }
 }
 
@@ -265,7 +279,64 @@ void CGCreature::onHeroVisit(IGameEventCallback & gameEvents, const CGHeroInstan
 	}
 	
 	const auto forecast = getNewHorizonsDiplomacyForecast(*h);
-	int action = takenAction(h);
+	const int action = takenAction(h);
+	bool wasProtectedTarget = false;
+	if(forecast.usesNewHorizonsRules)
+	{
+		const auto calendar = cb->getCalendar();
+		const int week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+		wasProtectedTarget = passableFor(h);
+
+		if(wasProtectedTarget)
+		{
+			// A direct visit is the player's deliberate attack. End passage for this
+			// creature without refunding this week's Peacemaker use.
+			updateDiplomacyWeeklyState(gameEvents, *h, h->getNewHorizonsPeacemakerLastWeek(),
+				ObjectInstanceID::NONE, h->getNewHorizonsTributeLastWeek());
+		}
+		else if(forecast.eligible && action == FIGHT
+			&& h->hasActivePerk(newHorizonsDiplomacy::SKILL_ID, DIPLOMACY_PEACEMAKER_PERK_ID)
+			&& !h->hasUsedNewHorizonsPeacemaker(week))
+		{
+			updateDiplomacyWeeklyState(gameEvents, *h, week, id, h->getNewHorizonsTributeLastWeek());
+
+			InfoWindow info;
+			info.player = h->tempOwner;
+			info.text.appendRawString("Peacemaker allows your hero to pass this neutral stack without combat for the rest of this week.");
+			info.components.emplace_back(ComponentType::CREATURE, getCreatureID(), forecast.joiningAmount);
+			info.type = EInfoWindowMode::MODAL;
+			gameEvents.showInfoDialog(&info);
+			return;
+		}
+		else if(!wasProtectedTarget && forecast.eligible && !forecast.willing && !forecast.authoredFree
+			&& h->hasActivePerk(newHorizonsDiplomacy::SKILL_ID, DIPLOMACY_TRIBUTE_PERK_ID)
+			&& !h->hasUsedNewHorizonsTribute(week)
+			&& forecast.normalGoldCostValid && forecast.normalGoldCostFitsAction
+			&& forecast.normalGoldCost >= 0
+			&& static_cast<int64_t>(cb->getResource(h->tempOwner, EGameResID::GOLD)) >= forecast.normalGoldCost)
+		{
+			const auto creatureId = getCreatureID();
+			const auto goldCost = static_cast<int32_t>(forecast.normalGoldCost);
+			if(goldCost)
+				gameEvents.giveResource(h->tempOwner, EGameResID::GOLD, -goldCost);
+
+			updateDiplomacyWeeklyState(gameEvents, *h, h->getNewHorizonsPeacemakerLastWeek(),
+				h->getNewHorizonsPacifiedCreatureId(), week);
+			gameEvents.removeObject(this, h->getOwner());
+
+			InfoWindow info;
+			info.player = h->tempOwner;
+			info.text.appendRawString("Tribute paid: ");
+			info.text.appendRawString(std::to_string(forecast.normalGoldCost));
+			info.text.appendRawString(" Gold. The neutral stack departs.");
+			info.components.emplace_back(ComponentType::CREATURE, creatureId, forecast.joiningAmount);
+			info.components.emplace_back(ComponentType::RESOURCE, GameResID(GameResID::GOLD), goldCost);
+			info.type = EInfoWindowMode::MODAL;
+			gameEvents.showInfoDialog(&info);
+			return;
+		}
+	}
+
 	if(forecast.usesNewHorizonsRules && forecast.willing && action >= JOIN_FOR_FREE)
 	{
 		BlockingDialog ynd(true, false);
@@ -374,6 +445,21 @@ newHorizonsDiplomacy::Forecast CGCreature::getNewHorizonsDiplomacyForecast(const
 	}
 
 	return newHorizonsDiplomacy::resolveForecast(input);
+}
+
+bool CGCreature::passableFor(const CGHeroInstance * hero) const
+{
+	if(!hero)
+		return false;
+	if(tempOwner != PlayerColor::NEUTRAL && tempOwner != PlayerColor::UNFLAGGABLE)
+		return CGObjectInstance::passableFor(hero);
+
+	const auto calendar = cb->getCalendar();
+	const int week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+	if(hero->isNewHorizonsCreaturePacified(id, week))
+		return true;
+
+	return CGObjectInstance::passableFor(hero);
 }
 
 void CGCreature::pickRandomObject(IGameRandomizer & gameRandomizer)

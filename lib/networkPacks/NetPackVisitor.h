@@ -139,6 +139,7 @@ public:
 	virtual void visitSetNewHorizonsCastleGateState(SetNewHorizonsCastleGateState & pack) {}
 	virtual void visitSetNewHorizonsMusterState(SetNewHorizonsMusterState & pack) {}
 	virtual void visitSetNewHorizonsLearningMentorState(SetNewHorizonsLearningMentorState & pack) {}
+	virtual void visitSetNewHorizonsDiplomacyState(SetNewHorizonsDiplomacyState & pack) {}
 	virtual void visitSetNewHorizonsDemonicReserve(SetNewHorizonsDemonicReserve & pack) {}
 	virtual void visitSetPortalDwellingSource(SetPortalDwellingSource & pack) {}
 	virtual void visitShowWorldViewEx(ShowWorldViewEx & pack) {}

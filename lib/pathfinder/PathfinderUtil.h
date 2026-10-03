@@ -21,7 +21,8 @@ namespace PathfinderUtil
 	using ELayer = EPathfindingLayer;
 
 	template<EPathfindingLayer::Type layer>
-	EPathAccessibility evaluateAccessibility(const int3 & pos, const TerrainTile & tinfo, const FoW & fow, const PlayerColor player, const IGameInfoCallback & gameInfo)
+	EPathAccessibility evaluateAccessibility(const int3 & pos, const TerrainTile & tinfo, const FoW & fow,
+		const PlayerColor player, const IGameInfoCallback & gameInfo, const CGHeroInstance * hero = nullptr)
 	{
 		if(!fow[pos])
 			return EPathAccessibility::BLOCKED;
@@ -68,7 +69,7 @@ namespace PathfinderUtil
 			{
 				return EPathAccessibility::BLOCKED;
 			}
-			else if(gameInfo.guardingCreaturePosition(pos).isValid())
+			else if(hero ? !gameInfo.getGuardingCreatures(pos, hero).empty() : gameInfo.guardingCreaturePosition(pos).isValid())
 			{
 				// Monster close by; blocked visit for battle
 				return EPathAccessibility::GUARDED;

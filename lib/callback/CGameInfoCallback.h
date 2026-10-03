@@ -23,6 +23,8 @@ protected:
 	bool canGetFullInfo(const CGObjectInstance *obj) const; //true we player owns obj or ally owns obj or privileged mode
 
 public:
+	using IGameInfoCallback::getGuardingCreatures;
+
 	const JsonNode & getMagicRules() const override;
 	const JsonNode & getHeroDevelopmentRules() const override;
 	const JsonNode & getHeroCapabilityRules() const override;

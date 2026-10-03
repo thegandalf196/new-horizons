@@ -93,7 +93,7 @@ namespace AIPathfinding
 			source.coord.toString());
 #endif
 
-		auto destGuardians = aiNk->cc->getGuardingCreatures(destination.coord);
+		auto destGuardians = aiNk->cc->getGuardingCreatures(destination.coord, pathfinderHelper->hero);
 		bool allowBypass = false;
 
 		switch(blocker)
@@ -264,7 +264,7 @@ namespace AIPathfinding
 			return false;
 		}
 
-		const auto srcGuardians = aiNk->cc->getGuardingCreatures(source.coord);
+		const auto srcGuardians = aiNk->cc->getGuardingCreatures(source.coord, pathfinderHelper->hero);
 		const auto srcNode = nodeStorage->getAINode(source.node);
 
 		vstd::erase_if(destGuardians, [&](const CGObjectInstance * destGuard) -> bool

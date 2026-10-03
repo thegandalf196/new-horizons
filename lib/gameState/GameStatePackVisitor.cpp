@@ -600,6 +600,16 @@ void GameStatePackVisitor::visitSetNewHorizonsLearningMentorState(SetNewHorizons
 		hero->markNewHorizonsLearningMentorUsed(pack.lastUseWeek);
 }
 
+void GameStatePackVisitor::visitSetNewHorizonsDiplomacyState(SetNewHorizonsDiplomacyState & pack)
+{
+	if(!pack.hasValidState())
+		throw std::runtime_error("Invalid New Horizons Diplomacy state packet");
+	auto * hero = gs.getHero(pack.heroId);
+	if(!hero)
+		throw std::runtime_error("New Horizons Diplomacy state references a missing hero");
+	hero->setNewHorizonsDiplomacyState(pack.peacemakerLastWeek, pack.pacifiedCreatureId, pack.tributeLastWeek);
+}
+
 void GameStatePackVisitor::visitSetNewHorizonsDemonicReserve(SetNewHorizonsDemonicReserve & pack)
 {
 	if(auto * hero = gs.getHero(pack.heroId))

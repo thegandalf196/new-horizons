@@ -375,6 +375,13 @@ void ApplyClientNetPackVisitor::visitHeroVisit(HeroVisit & pack)
 	callInterfaceIfPresent(cl, pack.player, &IGameEventsReceiver::heroVisit, hero, obj, pack.starting);
 }
 
+void ApplyClientNetPackVisitor::visitSetNewHorizonsDiplomacyState(SetNewHorizonsDiplomacyState & pack)
+{
+	// Peacemaker changes guardian legality without changing hero stat bonuses.
+	// Invalidate once at the authoritative state transition, not while rendering.
+	callAllInterfaces(cl, &CGameInterface::invalidatePaths);
+}
+
 void ApplyClientNetPackVisitor::visitNewTurn(NewTurn & pack)
 {
 	callAllInterfaces(cl, &CGameInterface::invalidatePaths);

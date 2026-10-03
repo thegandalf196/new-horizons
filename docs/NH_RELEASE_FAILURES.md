@@ -2,6 +2,19 @@
 
 ## Purpose
 
+### 2026-10-03 UP-129 weekly Diplomacy — Review before build
+
+Root review caught a potential removed-guardian dereference in movement after
+objectVisited: Tribute can remove that object during the callback. Snapshot
+guardian/destination IDs before calling it; do not dereference removed objects
+afterward. Require a real movement fixture in addition to direct-visit tests.
+Hero down-save validation also must precede base payload writes. The old-reader
+packet fixture uses only a documented synthetic heroId prefix because the new
+packet itself is correctly forbidden on old writers. Preserve that rejection.
+Finally, hero-aware guard filtering must retain the cached no-guardian fast path;
+do not enumerate nearby monsters on every ordinary pathfinding tile. These are
+source-review corrections, not observed crash/performance reproduction claims.
+
 ### 2026-10-03 UP-129 Envoy — Actual sight authority in hidden-target fixtures
 
 Retry principal2776 passes14/15; the remaining visibility assertion fails because

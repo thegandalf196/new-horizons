@@ -146,6 +146,23 @@ is rejected under an older wire version rather than silently discarded. Mine
 ownership and resource grants continue through their ordinary packets; there is
 no periodic allowance-reset scan and no new packet type registration.
 
+## New Horizons Diplomacy weekly state
+
+`NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE` appends a hero's last Peacemaker use week,
+the protected neutral creature's object ID, and last Tribute use week. Old hero
+records default to `-1`, `NONE`, and `-1`; populated state cannot be down-saved
+to a format that cannot represent it. Week markers below `-1`, negative
+non-sentinel object IDs, and a protected target without a nonnegative
+Peacemaker week are rejected. A spent marker with no protected target is valid
+after deliberate attack; a stale target ID is inactive once its week no longer
+matches the current absolute week, so no week-start cleanup scan is needed.
+
+The `SetNewHorizonsDiplomacyState` packet carries the complete three-field hero
+snapshot and has appended polymorphic type ID 293. Its writer rejects formats
+without the feature, its old-format reader defaults the appended state, and
+current-format reads validate the hero ID and state before application. The
+game-state visitor applies the snapshot atomically to the referenced hero.
+
 ## New Horizons battle Mana expenditure
 
 `BATTLE_HERO_MANA_EXPENDITURE` adds accepted hero spell costs and paid opposing

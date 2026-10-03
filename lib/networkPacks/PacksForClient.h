@@ -1885,6 +1885,50 @@ struct DLL_LINKAGE SetNewHorizonsLearningMentorState : public CPackForClient
 	}
 };
 
+/// Complete weekly Peacemaker/Tribute usage snapshot for one hero.
+struct DLL_LINKAGE SetNewHorizonsDiplomacyState : public CPackForClient
+{
+	ObjectInstanceID heroId = ObjectInstanceID::NONE;
+	int32_t peacemakerLastWeek = -1;
+	ObjectInstanceID pacifiedCreatureId = ObjectInstanceID::NONE;
+	int32_t tributeLastWeek = -1;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	bool hasValidState() const
+	{
+		return heroId.hasValue()
+			&& peacemakerLastWeek >= -1
+			&& tributeLastWeek >= -1
+			&& (pacifiedCreatureId == ObjectInstanceID::NONE
+				|| (pacifiedCreatureId.hasValue() && peacemakerLastWeek >= 0));
+	}
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE))
+			throw std::runtime_error("New Horizons Diplomacy state packet requires the new wire format");
+		if(h.saving && !hasValidState())
+			throw std::runtime_error("Invalid New Horizons Diplomacy state packet");
+
+		h & heroId;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE))
+		{
+			h & peacemakerLastWeek;
+			h & pacifiedCreatureId;
+			h & tributeLastWeek;
+			if(!h.saving && !hasValidState())
+				throw std::runtime_error("Invalid New Horizons Diplomacy state packet");
+		}
+		else if(!h.saving)
+		{
+			peacemakerLastWeek = -1;
+			pacifiedCreatureId = ObjectInstanceID::NONE;
+			tributeLastWeek = -1;
+		}
+	}
+};
+
 /// Complete authoritative Demonic Reserve snapshot for one Inferno hero.
 /// Active-army mutations use the ordinary stack packets; this packet keeps the
 /// off-army owned troop pool identical on the server and every client.

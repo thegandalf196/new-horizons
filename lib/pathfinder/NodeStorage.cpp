@@ -46,19 +46,19 @@ EPathAccessibility NodeStorage::evaluateAccessibility(
 	{
 	case ELayer::LAND:
 		return PathfinderUtil::evaluateAccessibility<ELayer::LAND>(
-			coord, *tile, playerTeam->fogOfWarMap, player, *gameInfo);
+			coord, *tile, playerTeam->fogOfWarMap, player, *gameInfo, out.hero);
 	case ELayer::SAIL:
 		return PathfinderUtil::evaluateAccessibility<ELayer::SAIL>(
-			coord, *tile, playerTeam->fogOfWarMap, player, *gameInfo);
+			coord, *tile, playerTeam->fogOfWarMap, player, *gameInfo, out.hero);
 	case ELayer::WATER:
 		return PathfinderUtil::evaluateAccessibility<ELayer::WATER>(
-			coord, *tile, playerTeam->fogOfWarMap, player, *gameInfo);
+			coord, *tile, playerTeam->fogOfWarMap, player, *gameInfo, out.hero);
 	case ELayer::AIR:
 		return PathfinderUtil::evaluateAccessibility<ELayer::AIR>(
-			coord, *tile, playerTeam->fogOfWarMap, player, *gameInfo);
+			coord, *tile, playerTeam->fogOfWarMap, player, *gameInfo, out.hero);
 	case ELayer::AVIATE:
 		return PathfinderUtil::evaluateAccessibility<ELayer::AVIATE>(
-			coord, *tile, playerTeam->fogOfWarMap, player, *gameInfo);
+			coord, *tile, playerTeam->fogOfWarMap, player, *gameInfo, out.hero);
 	default:
 		return EPathAccessibility::NOT_SET;
 	}
