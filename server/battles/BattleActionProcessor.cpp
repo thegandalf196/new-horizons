@@ -4333,6 +4333,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	}
 	bool noEscapeTriggered = false;
 	bool evasiveShroudTriggered = false;
+	bool ambusherTriggered = false;
+	int32_t ambusherAttackerCount = 0;
 	if(defender)
 	{
 		const auto primaryHit = std::ranges::find_if(bat.bsa, [defender](const BattleStackAttacked & hit)
@@ -4348,9 +4350,31 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			const auto * attackingHero = battle.battleGetOwnerHero(attacker);
 			noEscapeTriggered = newHorizonsShroud::hasNoEscape(attackingHero) && flankingAttack;
 			evasiveShroudTriggered = newHorizonsShroud::hasEvasiveShroud(attackingHero) && flankingAttack;
+			ambusherTriggered = flankingAttack
+				&& newHorizonsShroud::ambusherDamagePercent(attackingHero, attacker) > 0;
+			if(ambusherTriggered)
+				ambusherAttackerCount = attacker->getCount();
 		}
 	}
 	gameHandler->sendAndApply(bat);
+	if(ambusherTriggered)
+	{
+		SetStackEffect ambusherSpent;
+		ambusherSpent.battleID = battle.getBattle()->getBattleID();
+		ambusherSpent.toAdd.emplace_back(attacker->unitId(),
+			std::vector<Bonus>{newHorizonsShroud::ambusherSpentMarker()});
+		gameHandler->sendAndApply(ambusherSpent);
+
+		BattleLogMessage message;
+		message.battleID = battle.getBattle()->getBattleID();
+		MetaString line;
+		line.appendRawString("Ambusher grants %s +");
+		line.appendNumber(newHorizonsShroud::AMBUSHER_DAMAGE_PERCENT);
+		line.appendRawString("% damage on its first flanking attack this combat.");
+		attacker->addNameReplacement(line, ambusherAttackerCount);
+		message.lines.push_back(std::move(line));
+		gameHandler->sendAndApply(message);
+	}
 	if(evasiveShroudTriggered && attacker->alive())
 	{
 		SetStackEffect evasiveShroud;

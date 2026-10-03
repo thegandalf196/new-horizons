@@ -8,6 +8,8 @@
 
 #include "../mapObjects/CGHeroInstance.h"
 #include "../bonuses/Bonus.h"
+#include "../bonuses/BonusSelector.h"
+#include "Unit.h"
 
 namespace
 {
@@ -50,6 +52,38 @@ int backstabDamagePercent(const CGHeroInstance * hero)
 {
 	return hero && hero->hasActivePerk(std::string(SKILL_ID), std::string(BACKSTAB_PERK_ID))
 		? BACKSTAB_DAMAGE_PERCENT : 0;
+}
+
+bool hasAmbusher(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(SKILL_ID), std::string(AMBUSHER_PERK_ID));
+}
+
+Bonus ambusherSpentMarker()
+{
+	Bonus bonus(BonusDuration::ONE_BATTLE, BonusType::NONE, BonusSource::SECONDARY_SKILL,
+		0, shroudSkillSource());
+	bonus.stacking = std::string(AMBUSHER_STACKING_KEY);
+	bonus.hidden = true;
+	return bonus;
+}
+
+bool isAmbusherSpentMarker(const Bonus * bonus)
+{
+	return bonus && bonus->duration == BonusDuration::ONE_BATTLE && bonus->type == BonusType::NONE
+		&& bonus->val == 0 && bonus->source == BonusSource::SECONDARY_SKILL
+		&& bonus->sid == shroudSkillSource() && bonus->stacking == AMBUSHER_STACKING_KEY;
+}
+
+int ambusherDamagePercent(const CGHeroInstance * hero, const battle::Unit * unit)
+{
+	if(!hasAmbusher(hero) || !unit)
+		return 0;
+	const bool alreadySpent = unit->hasBonus(CSelector([](const Bonus * bonus)
+	{
+		return isAmbusherSpentMarker(bonus);
+	}));
+	return alreadySpent ? 0 : AMBUSHER_DAMAGE_PERCENT;
 }
 
 bool hasNoEscape(const CGHeroInstance * hero)

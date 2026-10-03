@@ -92,11 +92,13 @@ private:
 	std::map<BattleHex, std::unordered_map<uint32_t, int64_t>> obstacleDamage;
 	std::set<uint32_t> rangedMarkTargets;
 	std::set<uint32_t> evasiveShroudTargets;
+	std::set<uint32_t> ambusherAttackers;
 	DamageCache * parent;
 
 	void buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side);
 	bool tracksRangedMarks(uint32_t defenderId) const;
 	bool tracksEvasiveShroud(uint32_t defenderId) const;
+	bool tracksAmbusher(uint32_t attackerId) const;
 
 public:
 	DamageCache() : parent(nullptr) {}

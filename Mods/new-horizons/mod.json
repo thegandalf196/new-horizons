@@ -6419,7 +6419,7 @@
 								"requires": "basic",
 								"description": "The first flanking attack made by each friendly stack in a combat deals +20% damage.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The first flanking attack made by each friendly stack in a combat deals +20% damage."
 								}
 							},

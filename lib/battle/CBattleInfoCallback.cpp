@@ -2777,7 +2777,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			const auto * attackerHero = battleGetOwnerHero(info.attacker);
 			payload.shroudFlankingDamagePercent = newHorizonsShroud::flankingDamagePercent(
 				newHorizonsShroud::rank(attackerHero))
-				+ newHorizonsShroud::backstabDamagePercent(attackerHero);
+				+ newHorizonsShroud::backstabDamagePercent(attackerHero)
+				+ newHorizonsShroud::ambusherDamagePercent(attackerHero, info.attacker);
 		}
 		if(info.defender && info.defender->defended() && ordinaryCreatureAttack
 			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.defender)

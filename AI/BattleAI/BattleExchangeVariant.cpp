@@ -125,6 +125,17 @@ bool qualifiesForEvasiveShroud(const CBattleInfoCallback & battle, const BattleA
 	return newHorizonsShroud::hasEvasiveShroud(battle.battleGetFightingHero(side));
 }
 
+bool qualifiesForAmbusher(const CBattleInfoCallback & battle, const BattleAttackInfo & attack)
+{
+	if(!battle.battleIsShroudFlankingAttack(attack))
+		return false;
+	const auto side = battle.playerToSide(battle.battleGetOwner(attack.attacker));
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return false;
+	return newHorizonsShroud::ambusherDamagePercent(
+		battle.battleGetFightingHero(side), attack.attacker) > 0;
+}
+
 void refreshEvasiveShroud(HypotheticBattle & battle, uint32_t attackerUnitId)
 {
 	auto attacker = battle.getForUpdate(attackerUnitId);
@@ -132,6 +143,12 @@ void refreshEvasiveShroud(HypotheticBattle & battle, uint32_t attackerUnitId)
 		return;
 	attacker->removeUnitBonus(CSelector(newHorizonsShroud::isEvasiveShroudProtection));
 	attacker->addUnitBonus({newHorizonsShroud::evasiveShroudProtection()});
+}
+
+void spendAmbusher(HypotheticBattle & battle, uint32_t attackerUnitId)
+{
+	if(auto attacker = battle.getForUpdate(attackerUnitId))
+		attacker->addUnitBonus({newHorizonsShroud::ambusherSpentMarker()});
 }
 }
 
@@ -211,15 +228,16 @@ float BattleExchangeVariant::trackAttack(
 			{
 				return hit.first == strike.defenderId;
 			});
-			bool triggersEvasiveShroud = hasPrimaryHit
+			const bool shroudFlankingAttack = hasPrimaryHit
 				&& hb->battleIsShroudFlankingAttack(projectedAttack);
-			if(triggersEvasiveShroud)
-			{
-				const auto attackingSide = hb->playerToSide(hb->battleGetOwner(projectedAttacker.get()));
-				const auto * attackingHero = attackingSide == BattleSide::ATTACKER || attackingSide == BattleSide::DEFENDER
-					? hb->battleGetFightingHero(attackingSide) : nullptr;
-				triggersEvasiveShroud = newHorizonsShroud::hasEvasiveShroud(attackingHero);
-			}
+			const auto attackingSide = shroudFlankingAttack
+				? hb->playerToSide(hb->battleGetOwner(projectedAttacker.get())) : BattleSide::NONE;
+			const auto * attackingHero = attackingSide == BattleSide::ATTACKER || attackingSide == BattleSide::DEFENDER
+				? hb->battleGetFightingHero(attackingSide) : nullptr;
+			const bool triggersAmbusher = shroudFlankingAttack
+				&& newHorizonsShroud::ambusherDamagePercent(attackingHero, projectedAttacker.get()) > 0;
+			const bool triggersEvasiveShroud = shroudFlankingAttack
+				&& newHorizonsShroud::hasEvasiveShroud(attackingHero);
 			if(strike.protectIntercepted)
 				hb->consumeHeroOrderProtectInterception(ap.attack.defender->unitId(), strike.defenderId);
 			std::vector<std::pair<uint32_t, int64_t>> actualHits;
@@ -258,8 +276,10 @@ float BattleExchangeVariant::trackAttack(
 				}
 			}
 
-			// Match the server's post-hit trigger: it applies only after the direct
-			// accepted hit and only when the flanking attacker survived.
+			// Spend Ambusher on the accepted direct hit even if its attacker did not
+			// survive; Evasive Shroud refreshes only for a surviving attacker.
+			if(triggersAmbusher)
+				projectedAttacker->addUnitBonus({newHorizonsShroud::ambusherSpentMarker()});
 			if(triggersEvasiveShroud && projectedAttacker->alive())
 			{
 				projectedAttacker->removeUnitBonus(CSelector(newHorizonsShroud::isEvasiveShroudProtection));
@@ -470,6 +490,8 @@ float BattleExchangeVariant::trackAttack(
 	projectedAttack.protectIntercepted = protectIntercepted;
 	const bool triggersEvasiveShroud = !evaluateOnly
 		&& qualifiesForEvasiveShroud(*hb, projectedAttack);
+	const bool triggersAmbusher = !evaluateOnly
+		&& qualifiesForAmbusher(*hb, projectedAttack);
 
 	int64_t attackDamage = damageCache.getDamage(attacker.get(), defender.get(), hb);
 	const auto attackDamageProvenance = battleAIDamageProvenance(
@@ -512,6 +534,8 @@ float BattleExchangeVariant::trackAttack(
 			dpsScore.ourDamageReduce += defenderDamageReduce;
 
 		defender->damage(attackDamage, false, attackDamageProvenance);
+		if(triggersAmbusher)
+			spendAmbusher(*hb, attacker->unitId());
 		if(triggersEvasiveShroud && attacker->alive())
 			refreshEvasiveShroud(*hb, attacker->unitId());
 		if(consumesBastion)
@@ -589,6 +613,8 @@ float BattleExchangeVariant::trackAttack(
 			cleaveAttack.cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
 			const bool triggersCleaveEvasiveShroud = !evaluateOnly
 				&& qualifiesForEvasiveShroud(*hb, cleaveAttack);
+			const bool triggersCleaveAmbusher = !evaluateOnly
+				&& qualifiesForAmbusher(*hb, cleaveAttack);
 			const auto cleaveProvenance = battleAIDamageProvenance(
 				projectedAttacker.get(), cleaveAttack.physicalDamage);
 			const bool consumesCleaveBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
@@ -616,6 +642,8 @@ float BattleExchangeVariant::trackAttack(
 
 				const bool targetWasAlive = target->alive();
 				target->damage(cleaveDamage, false, cleaveProvenance);
+				if(triggersCleaveAmbusher)
+					spendAmbusher(*hb, projectedAttacker->unitId());
 				if(triggersCleaveEvasiveShroud && projectedAttacker->alive())
 					refreshEvasiveShroud(*hb, projectedAttacker->unitId());
 				if(consumesCleaveBastion)
@@ -643,6 +671,7 @@ float BattleExchangeVariant::trackAttack(
 		BattleAttackInfo retaliationAttack(defender.get(), attacker.get(), 0, false);
 		retaliationAttack.retaliation = true;
 		const bool triggersRetaliationEvasiveShroud = qualifiesForEvasiveShroud(*hb, retaliationAttack);
+		const bool triggersRetaliationAmbusher = qualifiesForAmbusher(*hb, retaliationAttack);
 		auto retaliationDamage = hb->battleExpectedLuckDamage(retaliationAttack);
 		const bool consumesRetaliationBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
 			retaliationAttack.attacker, retaliationAttack.physicalDamage)
@@ -677,6 +706,8 @@ float BattleExchangeVariant::trackAttack(
 		const int64_t actualDamage = projectedRetaliationDamage.appliedDamage;
 		const bool attackerWasAlive = attacker->alive();
 		attacker->damage(retaliationDamage, false, retaliationProvenance);
+		if(triggersRetaliationAmbusher)
+			spendAmbusher(*hb, defender->unitId());
 		if(triggersRetaliationEvasiveShroud && defender->alive())
 			refreshEvasiveShroud(*hb, defender->unitId());
 		if(consumesRetaliationBastion)
