@@ -6703,7 +6703,7 @@
 								"requires": "advanced",
 								"description": "When resolving Necromancy, every complete group of 6 Skeletons generated from eligible Elite-tier casualties is automatically raised as 1 Wight. Wights remain Core-tier; the conversion's input is Elite-tier casualties, not its output.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "When resolving Necromancy, every complete group of 6 Skeletons generated from eligible Elite-tier casualties is automatically raised as 1 Wight. Wights remain Core-tier; the conversion's input is Elite-tier casualties, not its output."
 								}
 							},

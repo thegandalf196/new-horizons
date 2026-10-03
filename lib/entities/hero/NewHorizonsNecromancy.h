@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <map>
+#include <stdexcept>
 #include <vector>
 
 class CCreature;
@@ -25,6 +26,7 @@ inline constexpr const char * BONE_COLLECTOR_ID = "new-horizons:necromancy.boneC
 inline constexpr const char * CORPSE_PRESERVATION_ID = "new-horizons:necromancy.corpsePreservation";
 inline constexpr const char * DARK_CONVERSION_ID = "new-horizons:necromancy.darkConversion";
 inline constexpr const char * BLACK_HARVEST_ID = "new-horizons:necromancy.blackHarvest";
+inline constexpr const char * SOUL_HARVESTER_ID = "new-horizons:necromancy.soulHarvester";
 
 /// The post-battle payload is deliberately explicit.  The client must be able
 /// to explain what the authoritative server actually raised, including a
@@ -47,6 +49,7 @@ struct DLL_LINKAGE NecromancyResult
 	int32_t skeletonsOffered = 0;
 	int32_t skeletonsRaised = 0;
 	int32_t zombiesRaised = 0;
+	int32_t wightsRaised = 0;
 	int32_t manaRecovered = 0;
 
 	CreatureID raisedCreature = CreatureID::NONE;
@@ -54,6 +57,11 @@ struct DLL_LINKAGE NecromancyResult
 	template <typename Handler>
 	void serialize(Handler & h)
 	{
+		if(h.saving && wightsRaised < 0)
+			throw std::runtime_error("Invalid negative Necromancy Wight count");
+		if(h.saving && wightsRaised != 0
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_WIGHTS))
+			throw std::runtime_error("Cannot write Necromancy Wights to an older format");
 		h & active;
 		h & boneCollector;
 		h & corpsePreservation;
@@ -69,6 +77,16 @@ struct DLL_LINKAGE NecromancyResult
 		h & zombiesRaised;
 		h & manaRecovered;
 		h & raisedCreature;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_WIGHTS))
+		{
+			h & wightsRaised;
+		}
+		else if(!h.saving)
+		{
+			wightsRaised = 0;
+		}
+		if(wightsRaised < 0)
+			throw std::runtime_error("Invalid negative Necromancy Wight count");
 	}
 
 	bool empty() const
@@ -77,7 +95,7 @@ struct DLL_LINKAGE NecromancyResult
 			&& !darkConversionChosen && !applied && !blockedByArmyCapacity
 			&& rank == 0 && percentage == 0 && eligibleCasualties == 0
 			&& skeletonsOffered == 0 && skeletonsRaised == 0 && zombiesRaised == 0
-			&& manaRecovered == 0 && raisedCreature == CreatureID::NONE;
+			&& wightsRaised == 0 && manaRecovered == 0 && raisedCreature == CreatureID::NONE;
 	}
 };
 
@@ -104,13 +122,19 @@ DLL_LINKAGE int32_t countLivingEligibleCasualties(const std::map<CreatureID, si3
 DLL_LINKAGE int32_t countLivingEligibleCoreCasualties(const std::map<CreatureID, si32> & casualties,
 	const newHorizonsCreatures::CreatureCategoryRules & categoryRules);
 
+/// Count only explicitly captured Elite-category casualties that leave an
+/// ordinary raisable corpse. Missing creature-category context never infers a tier.
+DLL_LINKAGE int32_t countLivingEligibleEliteCasualties(const std::map<CreatureID, si32> & casualties,
+	const newHorizonsCreatures::CreatureCategoryRules & categoryRules);
+
 /// Resolve base Necromancy once over all eligible casualties; Dark Conversion
-/// automatically consumes complete groups of three Skeletons attributable to
-/// Core casualties only. `eligibleCoreCasualties` is independently floored for
-/// that conversion gate, while any Skeleton remaining from global base rounding
-/// is preserved. Slot booleans are part of the resolver to preflight all output
-/// stacks atomically before mutating state.
+/// consumes complete groups of three Skeletons attributable to Core casualties,
+/// while Soul Harvester consumes complete groups of six attributable to Elite
+/// casualties. Each category is independently floored for its conversion gate,
+/// while every remainder from global base rounding remains Skeletons. Slot
+/// booleans preflight all output stacks atomically before state mutation.
 DLL_LINKAGE NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleCoreCasualties,
 	bool boneCollector, bool corpsePreservation, bool darkConversionAvailable,
-	bool skeletonSlotAvailable, bool zombieSlotAvailable, int32_t currentMana, int32_t manaLimit);
+	bool skeletonSlotAvailable, bool zombieSlotAvailable, int32_t currentMana, int32_t manaLimit,
+	int32_t eligibleEliteCasualties = 0, bool soulHarvester = false, bool wightSlotAvailable = true);
 }

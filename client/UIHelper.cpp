@@ -70,10 +70,13 @@ std::vector<Component> UIHelper::getNewHorizonsNecromancyComponents(const newHor
 	std::vector<Component> components;
 	const auto skeleton = CreatureID(CreatureID::decode("core:skeleton"));
 	const auto zombie = CreatureID(CreatureID::decode("core:zombie"));
+	const auto wight = CreatureID(CreatureID::decode("core:wight"));
 	if(result.skeletonsRaised > 0)
 		components.emplace_back(ComponentType::CREATURE, skeleton, result.skeletonsRaised);
 	if(result.zombiesRaised > 0)
 		components.emplace_back(ComponentType::CREATURE, zombie, result.zombiesRaised);
+	if(result.wightsRaised > 0)
+		components.emplace_back(ComponentType::CREATURE, wight, result.wightsRaised);
 	return components;
 }
 
@@ -81,6 +84,7 @@ std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNe
 {
 	const auto skeleton = CreatureID(CreatureID::decode("core:skeleton"));
 	const auto zombie = CreatureID(CreatureID::decode("core:zombie"));
+	const auto wight = CreatureID(CreatureID::decode("core:wight"));
 	MetaString text;
 	text.appendRawString("Necromancy\n");
 
@@ -109,7 +113,16 @@ std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNe
 		text.appendRawString(" from Core casualties (three Skeletons each)\n");
 	}
 
-	if(result.skeletonsRaised > 0 || result.zombiesRaised > 0)
+	if(result.wightsRaised > 0)
+	{
+		text.appendRawString("Converted: ");
+		text.appendNumber(result.wightsRaised);
+		text.appendRawString(" ");
+		text.appendName(wight, result.wightsRaised);
+		text.appendRawString(" from Elite casualties (six Skeletons per Wight)\n");
+	}
+
+	if(result.skeletonsRaised > 0 || result.zombiesRaised > 0 || result.wightsRaised > 0)
 	{
 		text.appendRawString("Delivered to army: ");
 		bool hasOutput = false;
@@ -127,6 +140,15 @@ std::string UIHelper::getNewHorizonsNecromancyInfoWindowText(const newHorizonsNe
 			text.appendNumber(result.zombiesRaised);
 			text.appendRawString(" ");
 			text.appendName(zombie, result.zombiesRaised);
+			hasOutput = true;
+		}
+		if(result.wightsRaised > 0)
+		{
+			if(hasOutput)
+				text.appendRawString(" and ");
+			text.appendNumber(result.wightsRaised);
+			text.appendRawString(" ");
+			text.appendName(wight, result.wightsRaised);
 		}
 		text.appendRawString("\n");
 	}

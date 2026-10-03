@@ -605,12 +605,14 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 
 	const auto skeleton = CreatureID(CreatureID::decode("core:skeleton"));
 	const auto zombie = CreatureID(CreatureID::decode("core:zombie"));
+	const auto wight = CreatureID(CreatureID::decode("core:wight"));
 	const auto losingSide = CBattleInfoEssentials::otherSide(result.winner);
 	const auto & eligible = result.necromancyEligibilityCaptured
 		? result.necromancyEligibleCasualties[losingSide]
 		: result.casualties[losingSide];
 	const auto eligibleCount = newHorizonsNecromancy::countLivingEligibleCasualties(eligible);
 	const auto eligibleCoreCount = newHorizonsNecromancy::countLivingEligibleCoreCasualties(eligible, categoryRules);
+	const auto eligibleEliteCount = newHorizonsNecromancy::countLivingEligibleEliteCasualties(eligible, categoryRules);
 
 	const bool boneCollector = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 		newHorizonsNecromancy::BONE_COLLECTOR_ID);
@@ -618,6 +620,8 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 		newHorizonsNecromancy::CORPSE_PRESERVATION_ID);
 	const bool darkConversion = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 		newHorizonsNecromancy::DARK_CONVERSION_ID);
+	const bool soulHarvester = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+		newHorizonsNecromancy::SOUL_HARVESTER_ID);
 	const bool blackHarvest = winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 		newHorizonsNecromancy::BLACK_HARVEST_ID);
 
@@ -631,18 +635,19 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 	auto summary = newHorizonsNecromancy::resolve(winnerHero->getNewHorizonsNecromancyRank(), eligibleCount, eligibleCoreCount,
 		boneCollector, corpsePreservation, darkConversion,
 		true, true, postBattleMana,
-		blackHarvest ? winnerHero->manaLimit() : postBattleMana);
+		blackHarvest ? winnerHero->manaLimit() : postBattleMana, eligibleEliteCount, soulHarvester, true);
 	if(!summary.active)
 		return false;
 
 	const auto plan = planRaisedArmy(*winnerHero,
-		{{skeleton, summary.skeletonsRaised}, {zombie, summary.zombiesRaised}});
+		{{skeleton, summary.skeletonsRaised}, {zombie, summary.zombiesRaised}, {wight, summary.wightsRaised}});
 	if(!plan)
 	{
 		summary.applied = false;
 		summary.blockedByArmyCapacity = true;
 		summary.skeletonsRaised = 0;
 		summary.zombiesRaised = 0;
+		summary.wightsRaised = 0;
 		summary.darkConversionChosen = false;
 		summary.manaRecovered = 0;
 		summary.raisedCreature = CreatureID::NONE;
@@ -656,10 +661,12 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 	// stack.  A Dark Conversion result may contain two stacks; leaving the
 	// legacy single-stack field empty avoids showing a misleading partial popup
 	// while New Horizons clients consume the complete summary below.
-	if(summary.skeletonsRaised > 0 && summary.zombiesRaised == 0)
+	if(summary.skeletonsRaised > 0 && summary.zombiesRaised == 0 && summary.wightsRaised == 0)
 		resultsApplied.raisedStack = CStackBasicDescriptor(skeleton, summary.skeletonsRaised);
-	else if(summary.zombiesRaised > 0 && summary.skeletonsRaised == 0)
+	else if(summary.zombiesRaised > 0 && summary.skeletonsRaised == 0 && summary.wightsRaised == 0)
 		resultsApplied.raisedStack = CStackBasicDescriptor(zombie, summary.zombiesRaised);
+	else if(summary.wightsRaised > 0 && summary.skeletonsRaised == 0 && summary.zombiesRaised == 0)
+		resultsApplied.raisedStack = CStackBasicDescriptor(wight, summary.wightsRaised);
 	resultsApplied.necromancy = summary;
 	return true;
 }

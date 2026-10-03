@@ -28,6 +28,7 @@ def main() -> None:
         "skeletonsOffered",
         "skeletonsRaised",
         "zombiesRaised",
+        "wightsRaised",
         "darkConversionChosen",
         "manaRecovered",
         "blockedByArmyCapacity",
@@ -38,6 +39,8 @@ def main() -> None:
     require(HELPER, '"Converted: "', "conversion count")
     require(HELPER, '" from Core casualties (three Skeletons each)\\n"',
             "Core-only automatic conversion explanation")
+    require(HELPER, '" from Elite casualties (six Skeletons per Wight)\\n"',
+            "Elite-casualty Wight conversion explanation")
     require(HELPER, '"Delivered to army: "', "delivered count")
     require(HELPER, '"Black Harvest recovered +"', "mana recovery")
     require(HELPER, '"No creatures were delivered: the hero has no legal army slot',
@@ -46,6 +49,8 @@ def main() -> None:
             "rounded-zero threshold reason")
     require(HELPER, 'ComponentType::CREATURE, skeleton', "Skeleton result component")
     require(HELPER, 'ComponentType::CREATURE, zombie', "Zombie result component")
+    require(HELPER, 'CreatureID::decode("core:wight")', "Wight creature binding")
+    require(HELPER, 'ComponentType::CREATURE, wight', "Wight result component")
     require(HEADER, "getNewHorizonsNecromancyInfoWindowText", "summary text API")
     require(HEADER, "getNewHorizonsNecromancyComponents", "summary component API")
 

@@ -2,6 +2,16 @@
 
 ## Purpose
 
+### 2026-10-03 UP-184 — Google Test fixtures cannot be final
+
+Client95124 passes. Test53850 fails compiling the new Soul Harvester fixture:
+Google Test generates derived case classes, so its fixture cannot be `final`.
+Remove that qualifier from the fixture; do not alter production inheritance.
+Retain UP184-test-build.log. Resume the same incremental build only after the
+test owner freezes the correction; native acceptance remains a separate gate.
+Resolution: retry15042 exits0. Focused principal20/20 and adjacent9/9 pass,
+zero skips, on the freshly linked binary. No production inheritance change.
+
 ### 2026-10-03 UP-181/182 — Standalone state headers need their own constants
 
 Core51743 and client32699 pass, but test15320 fails compiling the new

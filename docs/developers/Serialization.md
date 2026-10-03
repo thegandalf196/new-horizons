@@ -1,5 +1,14 @@
 # Serialization
 
+## Soul Harvester result payload
+
+`NEW_HORIZONS_NECROMANCY_WIGHTS` appends `wightsRaised` to the existing
+Necromancy result without reordering older fields. Older summaries read with
+zero Wights. Nonzero Wight outputs cannot be written in an older format:
+both the result and enclosing `BattleResultsApplied` reject the write before
+their payload. Negative Wight counts are rejected on write and read. Mixed
+outputs use the explicit counts, not the legacy single-stack descriptor.
+
 ## Ordered usable casualty provenance
 
 `BATTLE_CASUALTY_PROVENANCE` identifies state updates retaining ordered usable

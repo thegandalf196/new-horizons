@@ -157,12 +157,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_PORTAL_SOURCE, // linked external dwelling and weekly Portal choice, explicit recruitment context
 	BATTLE_INITIAL_DEPLOYMENT_ORDER, // resolved first side for the ordinary initial deployment stage
 	BATTLE_CASUALTY_PROVENANCE, // ordered usable casualty causes and temporary restoration identity in state updates
+	NEW_HORIZONS_NECROMANCY_WIGHTS, // explicit Soul Harvester Wight output in post-battle summaries
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = BATTLE_CASUALTY_PROVENANCE,
+	CURRENT = NEW_HORIZONS_NECROMANCY_WIGHTS,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");

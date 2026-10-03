@@ -14,6 +14,24 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP184 Soul Harvester is active and source/native verified. Eligible Elite
+casualties independently fund complete six-Skeleton groups yielding Core Wights;
+Core Zombie conversion remains independent and all remainders stay Skeletons.
+The post-battle authority atomically admits all three outputs, with no choice
+query or partial fallback, and sends explicit Wight counts to the existing UI.
+Client95124 passes; test53850 exposed a fixture-only `final` qualifier, repaired
+by its owner; resumed15042 passes. Principal20/20 passes4.193s; adjacent9/9
+passes1.718s, zero skips. Production active/no-override properties are recorded
+for five battle cases. Binary SHA-256:
+cf6fe68c13be8424f92e519508ddca19e1d6bb5d9f31f072b11fd553e6bc63f8.
+Data/inventory19/19, module consistency, UI source guard and independent review
+pass. Perks197->198/310; planned113->112; Necromancy4->5/10; faction56->57/90.
+Spell identities and rank counts are unchanged. Deferred Phase2: combined
+fractional category carry, broader interactions, full AI play and rendered
+acceptance. Dedicated perk artwork is still missing; no playable promotion.
+Next is UP185 Master of Bones. Full Windows37136224312 targets preceding
+e8f2cb4b5, not this new source.
+
 UP186 Dark Conversion's canonical execution gap is corrected and source/native
 verified: automatic Core-only groups, global base rounding and all unconverted
 Skeletons retained, no player/AI conversion query or capacity fallback. The
@@ -32,7 +50,7 @@ faithful coverage of an already-active row, not a new activation. Rendered/actua
 full-AI play and broader interactions remain Phase2; no playable promotion.
 UP184 Soul Harvester's output is resolved: the user retained the named Wight,
 which remains Core-tier. Its input alone is Elite casualties. Canonical and
-registry descriptions are updated; the perk remains planned. UP185 Master of Bones is mapped, not
+registry descriptions are updated; the perk's implementation is accepted above. UP185 Master of Bones is mapped, not
 implemented: owned built Skeleton upgrade availability and an explicit output
 form in the result are required.
 
@@ -1664,9 +1682,9 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 197/310 | 113 planned; Corpse Preservation is the newest source/native-verified activation. Necromancy is 4/10; Learning 3/10; Estates 5/10; Battlecraft 6/10; Logistics 6/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 198/310 | 112 planned; Soul Harvester is the newest source/native-verified activation. Necromancy is 5/10; Learning 3/10; Estates 5/10; Battlecraft 6/10; Logistics 6/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
-| Faction perks active | 56/90 | 34 planned perks; Corpse Preservation has real cast, filtered reward, ordered restoration and health-state evidence. |
+| Faction perks active | 57/90 | 33 planned perks; Soul Harvester has normal perk selection, actual post-battle Wight delivery and atomic mixed-output admission evidence. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |

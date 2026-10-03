@@ -27,9 +27,11 @@
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 
+#include <algorithm>
 #include <array>
 #include <limits>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace
@@ -119,6 +121,71 @@ TEST(NewHorizonsNecromancy, DarkConversionAutomaticallyUsesOnlyCompleteCoreGroup
 	EXPECT_EQ(blockedMixedTiers.zombiesRaised, 0);
 }
 
+TEST(NewHorizonsNecromancy, SoulHarvesterUsesOnlyCompleteEliteGroupsAndLeavesRemainders)
+{
+	const auto completeEliteGroup = resolve(2, 30, 0, false, false, false, true, true, 0, 0,
+		30, true, true);
+	EXPECT_EQ(completeEliteGroup.skeletonsOffered, 6);
+	EXPECT_EQ(completeEliteGroup.wightsRaised, 1);
+	EXPECT_EQ(completeEliteGroup.skeletonsRaised, 0);
+	EXPECT_EQ(completeEliteGroup.raisedCreature, creature("core:wight"));
+
+	// Advanced Necromancy offers seven Skeletons from 35 Elite casualties. One
+	// complete six-Skeleton group becomes a Wight; the seventh remains a Skeleton.
+	const auto eliteRemainder = resolve(2, 35, 0, false, false, false, true, true, 0, 0,
+		35, true, true);
+	EXPECT_EQ(eliteRemainder.skeletonsOffered, 7);
+	EXPECT_EQ(eliteRemainder.wightsRaised, 1);
+	EXPECT_EQ(eliteRemainder.skeletonsRaised, 1);
+	EXPECT_TRUE(eliteRemainder.applied);
+
+	// Core and Champion casualties are not Soul Harvester inputs. Only captured
+	// Elite casualties contribute to its independent six-Skeleton threshold.
+	const auto nonEliteCasualties = resolve(2, 30, 30, false, false, false, true, true, 0, 0,
+		0, true, true);
+	EXPECT_EQ(nonEliteCasualties.skeletonsOffered, 6);
+	EXPECT_EQ(nonEliteCasualties.wightsRaised, 0);
+	EXPECT_EQ(nonEliteCasualties.skeletonsRaised, 6);
+
+	// Champion casualties are also non-Elite input; the Resolver accepts only
+	// the separately captured Elite count for this conversion.
+	const auto championCasualties = resolve(2, 30, 0, false, false, false, true, true, 0, 0,
+		0, true, true);
+	EXPECT_EQ(championCasualties.wightsRaised, 0);
+	EXPECT_EQ(championCasualties.skeletonsRaised, 6);
+}
+
+TEST(NewHorizonsNecromancy, DarkConversionAndSoulHarvesterProduceIndependentOutputs)
+{
+	// At Advanced rank, 65 Core + 65 Elite casualties yield 26 Skeletons.
+	// The Core share funds four Zombies, the Elite share funds two Wights, and
+	// the global rounding remainder stays as two Skeletons.
+	const auto mixedTiers = resolve(2, 130, 65, false, false, true, true, true, 0, 0,
+		65, true, true);
+	EXPECT_EQ(mixedTiers.skeletonsOffered, 26);
+	EXPECT_EQ(mixedTiers.zombiesRaised, 4);
+	EXPECT_EQ(mixedTiers.wightsRaised, 2);
+	EXPECT_EQ(mixedTiers.skeletonsRaised, 2);
+	EXPECT_TRUE(mixedTiers.darkConversionChosen);
+	EXPECT_TRUE(mixedTiers.applied);
+}
+
+TEST(NewHorizonsNecromancy, ThreeOutputCapacityRejectionIsAtomic)
+{
+	// The same three output kinds need distinct destinations. With only the
+	// Skeleton and Zombie destinations available, no part of the result applies.
+	const auto blocked = resolve(2, 130, 65, false, true, true, true, true, 0, 100,
+		65, true, false);
+	EXPECT_EQ(blocked.skeletonsOffered, 26);
+	EXPECT_TRUE(blocked.blockedByArmyCapacity);
+	EXPECT_FALSE(blocked.applied);
+	EXPECT_FALSE(blocked.darkConversionChosen);
+	EXPECT_EQ(blocked.skeletonsRaised, 0);
+	EXPECT_EQ(blocked.zombiesRaised, 0);
+	EXPECT_EQ(blocked.wightsRaised, 0);
+	EXPECT_EQ(blocked.manaRecovered, 0);
+}
+
 TEST(NewHorizonsNecromancy, DestinationReservationUsesTwoFreeSlotsAndRejectsOneAtomically)
 {
 	const auto twoSlots = newHorizonsNecromancy::reserveDestinations(
@@ -153,6 +220,16 @@ TEST(NewHorizonsNecromancy, BlackHarvestIsCappedByManaCapacity)
 	// Passing current mana as the limit is the server's no-Black-Harvest gate.
 	const auto noHarvest = resolve(3, 1000, 0, false, false, false, true, true, 0, 0);
 	EXPECT_EQ(noHarvest.manaRecovered, 0);
+
+	// Black Harvest counts final creatures, not the Skeleton-equivalent inputs.
+	// Three hundred offered Skeletons become fifty Wights, so the actual output
+	// restores five Mana instead of the ten Mana the unconverted count would cap at.
+	const auto convertedOutput = resolve(3, 1000, 0, false, false, false, true, true, 0, 100,
+		1000, true, true);
+	EXPECT_EQ(convertedOutput.skeletonsOffered, 300);
+	EXPECT_EQ(convertedOutput.wightsRaised, 50);
+	EXPECT_EQ(convertedOutput.skeletonsRaised, 0);
+	EXPECT_EQ(convertedOutput.manaRecovered, 5);
 }
 
 class NewHorizonsNecromancyRuntimeTest : public BattleTestFixture
@@ -456,6 +533,30 @@ protected:
 		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(1), elite, eliteCount));
 	}
 
+	bool selectPerkThroughNormalOffer(CGHeroInstance * hero, const std::string & perkId, int requiredRank)
+	{
+		const std::string skillId = newHorizonsNecromancy::SKILL_ID;
+		const auto rankLookup = [hero](const std::string & requestedSkill)
+		{
+			return hero->getPerkSkillRank(requestedSkill);
+		};
+		for(uint64_t seed = 0; seed < 4096; ++seed)
+		{
+			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto candidate = std::find_if(offer.begin(), offer.end(), [&](const auto & entry)
+			{
+				return entry.selection.skillId == skillId && entry.selection.perkId == perkId;
+			});
+			if(candidate == offer.end() || candidate->requiredRank != requiredRank)
+				continue;
+
+			const auto choice = static_cast<size_t>(std::distance(offer.begin(), candidate));
+			gameHandler->levelUpHero(hero, offer, choice, seed, false);
+			return true;
+		}
+		return false;
+	}
+
 	int32_t armyCreatureCount(const CGHeroInstance & hero, CreatureID creatureId) const
 	{
 		int32_t total = 0;
@@ -511,6 +612,115 @@ protected:
 	}
 
 	std::unique_ptr<NecromancyAdmissionRecordingServer> recordingServer;
+};
+
+/// Specialized admission fixture for post-battle Soul Harvester cases. It uses
+/// the production registry unchanged so the ordinary legal-offer path is tested.
+class NewHorizonsNecromancySoulHarvesterAdmissionAITest
+	: public NewHorizonsNecromancyAdmissionAITest
+{
+protected:
+	void assertSoulHarvesterRegistryRow()
+	{
+		const auto & perks = attackerSideHero->getPerkState().rules
+			["skills"][newHorizonsNecromancy::SKILL_ID]["perks"].Vector();
+		const auto soulHarvester = std::find_if(perks.begin(), perks.end(), [](const auto & perk)
+		{
+			return perk["id"].String() == newHorizonsNecromancy::SOUL_HARVESTER_ID;
+		});
+		ASSERT_NE(soulHarvester, perks.end());
+		EXPECT_EQ((*soulHarvester)["name"].String(), "Soul Harvester");
+		EXPECT_EQ((*soulHarvester)["requires"].String(), "advanced");
+		EXPECT_EQ((*soulHarvester)["effect"]["status"].String(), "active");
+		EXPECT_EQ((*soulHarvester)["description"].String(),
+			"When resolving Necromancy, every complete group of 6 Skeletons generated from eligible Elite-tier casualties is automatically raised as 1 Wight. Wights remain Core-tier; the conversion's input is Elite-tier casualties, not its output.");
+		EXPECT_EQ((*soulHarvester)["effect"]["description"].String(),
+			(*soulHarvester)["description"].String());
+		RecordProperty("soul_harvester_registry_id", (*soulHarvester)["id"].String());
+		RecordProperty("soul_harvester_registry_name", (*soulHarvester)["name"].String());
+		RecordProperty("soul_harvester_registry_required_rank", (*soulHarvester)["requires"].String());
+		RecordProperty("soul_harvester_registry_description", (*soulHarvester)["description"].String());
+		RecordProperty("soul_harvester_registry_effect_status", (*soulHarvester)["effect"]["status"].String());
+	}
+
+	void prepareAdvancedSoulHarvesterNecromancer()
+	{
+		prepareNecromancerArmy(false);
+		assertSoulHarvesterRegistryRow();
+		const int necromancyIndex = SecondarySkill::decode(newHorizonsNecromancy::SKILL_ID);
+		ASSERT_GE(necromancyIndex, 0);
+		const SecondarySkill necromancy(necromancyIndex);
+		ASSERT_TRUE(selectPerkThroughNormalOffer(attackerSideHero,
+			newHorizonsNecromancy::DARK_CONVERSION_ID, MasteryLevel::BASIC));
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+			newHorizonsNecromancy::DARK_CONVERSION_ID));
+
+		// Advancing through CGameHandler exercises the ordinary preceding-tier gate.
+		gameHandler->levelUpHero(attackerSideHero, necromancy, false);
+		ASSERT_EQ(attackerSideHero->getSecSkillLevel(necromancy), MasteryLevel::ADVANCED);
+		ASSERT_TRUE(selectPerkThroughNormalOffer(attackerSideHero,
+			newHorizonsNecromancy::SOUL_HARVESTER_ID, MasteryLevel::ADVANCED));
+		ASSERT_TRUE(attackerSideHero->getPerkState().hasSelection(newHorizonsNecromancy::SKILL_ID,
+			newHorizonsNecromancy::SOUL_HARVESTER_ID));
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+			newHorizonsNecromancy::SOUL_HARVESTER_ID));
+		RecordProperty("soul_harvester_activation_override_applied", "false");
+		RecordProperty("soul_harvester_skill_rank", "advanced");
+		RecordProperty("soul_harvester_selected", "true");
+		RecordProperty("soul_harvester_selected_perk", newHorizonsNecromancy::SOUL_HARVESTER_ID);
+		RecordProperty("soul_harvester_basic_perk", newHorizonsNecromancy::DARK_CONVERSION_ID);
+	}
+
+	void expectThreeOutputCapacityBlock(size_t freeSlotCount)
+	{
+		ASSERT_NE(attackerSideHero, nullptr);
+		ASSERT_NE(defenderSideHero, nullptr);
+		ASSERT_LE(freeSlotCount, static_cast<size_t>(GameConstants::ARMY_SIZE - 1));
+		prepareAdvancedSoulHarvesterNecromancer();
+		fillFillerSlots(1, GameConstants::ARMY_SIZE - 1 - static_cast<int>(freeSlotCount));
+		ASSERT_EQ(attackerSideHero->getFreeSlots().size(), freeSlotCount);
+
+		const auto skeleton = creature("core:skeleton");
+		const auto zombie = creature("core:zombie");
+		const auto wight = creature("core:wight");
+		setMixedCoreEliteCasualties(65, 65);
+		gameHandler->battles->startBattle(attackerSideHero, defenderSideHero);
+		ASSERT_NE(gameState()->getBattle(PlayerColor(0)), nullptr);
+		gameHandler->battles->cheatBattleVictory(PlayerColor(0));
+		resolveBattleDialogsOnly();
+		const auto followup = gameHandler->queries->topQuery(PlayerColor(0));
+		EXPECT_TRUE(!followup || followup->getType() != QueryType::NecromancyChoice);
+		resolveLevelUpDialogs();
+		EXPECT_EQ(gameHandler->queries->topQuery(PlayerColor(0)), nullptr);
+
+		ASSERT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
+		ASSERT_EQ(recordingServer->battleResults.size(), 1u);
+		const auto & necromancyResult = recordingServer->battleResults.back().necromancy;
+		ASSERT_TRUE(necromancyResult.active);
+		EXPECT_EQ(necromancyResult.eligibleCasualties, 130);
+		EXPECT_EQ(necromancyResult.skeletonsOffered, 26);
+		EXPECT_TRUE(necromancyResult.blockedByArmyCapacity);
+		EXPECT_FALSE(necromancyResult.applied);
+		EXPECT_FALSE(necromancyResult.darkConversionChosen);
+		EXPECT_EQ(necromancyResult.skeletonsRaised, 0);
+		EXPECT_EQ(necromancyResult.zombiesRaised, 0);
+		EXPECT_EQ(necromancyResult.wightsRaised, 0);
+		EXPECT_EQ(necromancyResult.manaRecovered, 0);
+		EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 16);
+		EXPECT_EQ(armyCreatureCount(*attackerSideHero, skeleton), 16);
+		EXPECT_EQ(armyCreatureCount(*attackerSideHero, zombie), 0);
+		EXPECT_EQ(armyCreatureCount(*attackerSideHero, wight), 0);
+		EXPECT_EQ(recordingServer->systemMessages, 0);
+	}
+
+	void resolveBattleWithoutNecromancyQuery()
+	{
+		resolveBattleDialogsOnly();
+		const auto followup = gameHandler->queries->topQuery(PlayerColor(0));
+		EXPECT_TRUE(!followup || followup->getType() != QueryType::NecromancyChoice);
+		resolveLevelUpDialogs();
+		EXPECT_EQ(gameHandler->queries->topQuery(PlayerColor(0)), nullptr);
+	}
 };
 
 TEST_F(NewHorizonsNecromancyRuntimeTest, CasualtySnapshotExcludesUndeadAndNonliving)
@@ -788,6 +998,149 @@ TEST_F(NewHorizonsNecromancyAdmissionAITest, DarkConversionAutomaticallyConverts
 	EXPECT_EQ(recordingServer->systemMessages, 0);
 }
 
+TEST_F(NewHorizonsNecromancySoulHarvesterAdmissionAITest, PostBattleResolvesCoreAndEliteConversionsTogether)
+{
+	ASSERT_NE(attackerSideHero, nullptr);
+	ASSERT_NE(defenderSideHero, nullptr);
+	prepareAdvancedSoulHarvesterNecromancer();
+	setMixedCoreEliteCasualties(60, 60);
+
+	const auto skeleton = creature("core:skeleton");
+	const auto zombie = creature("core:zombie");
+	const auto wight = creature("core:wight");
+	gameHandler->battles->startBattle(attackerSideHero, defenderSideHero);
+	ASSERT_NE(gameState()->getBattle(PlayerColor(0)), nullptr);
+	gameHandler->battles->cheatBattleVictory(PlayerColor(0));
+	resolveBattleWithoutNecromancyQuery();
+
+	ASSERT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
+	ASSERT_EQ(recordingServer->battleResults.size(), 1u);
+	const auto & necromancyResult = recordingServer->battleResults.back().necromancy;
+	ASSERT_TRUE(necromancyResult.active);
+	EXPECT_TRUE(necromancyResult.applied);
+	EXPECT_FALSE(necromancyResult.blockedByArmyCapacity);
+	EXPECT_EQ(necromancyResult.rank, MasteryLevel::ADVANCED);
+	EXPECT_EQ(necromancyResult.eligibleCasualties, 120);
+	EXPECT_EQ(necromancyResult.skeletonsOffered, 24);
+	EXPECT_TRUE(necromancyResult.darkConversionChosen);
+	EXPECT_EQ(necromancyResult.zombiesRaised, 4);
+	EXPECT_EQ(necromancyResult.wightsRaised, 2);
+	EXPECT_EQ(necromancyResult.skeletonsRaised, 0);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, skeleton), 16);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, zombie), 4);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, wight), 2);
+	EXPECT_EQ(recordingServer->systemMessages, 0);
+}
+
+TEST_F(NewHorizonsNecromancySoulHarvesterAdmissionAITest, PostBattleAdmissionKeepsRemainderAcrossThreeOutputKinds)
+{
+	ASSERT_NE(attackerSideHero, nullptr);
+	ASSERT_NE(defenderSideHero, nullptr);
+	prepareAdvancedSoulHarvesterNecromancer();
+	ASSERT_GE(attackerSideHero->getFreeSlots().size(), 3u);
+	setMixedCoreEliteCasualties(65, 65);
+
+	const auto skeleton = creature("core:skeleton");
+	const auto zombie = creature("core:zombie");
+	const auto wight = creature("core:wight");
+	gameHandler->battles->startBattle(attackerSideHero, defenderSideHero);
+	ASSERT_NE(gameState()->getBattle(PlayerColor(0)), nullptr);
+	gameHandler->battles->cheatBattleVictory(PlayerColor(0));
+	resolveBattleWithoutNecromancyQuery();
+
+	ASSERT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
+	ASSERT_EQ(recordingServer->battleResults.size(), 1u);
+	const auto & necromancyResult = recordingServer->battleResults.back().necromancy;
+	ASSERT_TRUE(necromancyResult.active);
+	EXPECT_TRUE(necromancyResult.applied);
+	EXPECT_FALSE(necromancyResult.blockedByArmyCapacity);
+	EXPECT_EQ(necromancyResult.eligibleCasualties, 130);
+	EXPECT_EQ(necromancyResult.skeletonsOffered, 26);
+	EXPECT_EQ(necromancyResult.zombiesRaised, 4);
+	EXPECT_EQ(necromancyResult.wightsRaised, 2);
+	EXPECT_EQ(necromancyResult.skeletonsRaised, 2);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, skeleton), 18);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, zombie), 4);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, wight), 2);
+	EXPECT_EQ(recordingServer->systemMessages, 0);
+}
+
+TEST_F(NewHorizonsNecromancySoulHarvesterAdmissionAITest, ThreeOutputAdmissionRejectsOneFreeSlotAtomically)
+{
+	expectThreeOutputCapacityBlock(1);
+}
+
+TEST_F(NewHorizonsNecromancySoulHarvesterAdmissionAITest, ThreeOutputAdmissionRejectsTwoFreeSlotsAtomically)
+{
+	expectThreeOutputCapacityBlock(2);
+}
+
+TEST_F(NewHorizonsNecromancyAdmissionAITest, EliteCasualtiesStaySkeletonsWithoutSelectedSoulHarvester)
+{
+	ASSERT_NE(attackerSideHero, nullptr);
+	ASSERT_NE(defenderSideHero, nullptr);
+	prepareNecromancerArmy(false);
+	const int necromancyIndex = SecondarySkill::decode(newHorizonsNecromancy::SKILL_ID);
+	ASSERT_GE(necromancyIndex, 0);
+	const SecondarySkill necromancy(necromancyIndex);
+	ASSERT_TRUE(selectPerkThroughNormalOffer(attackerSideHero,
+		newHorizonsNecromancy::CORPSE_PRESERVATION_ID, MasteryLevel::BASIC));
+	gameHandler->levelUpHero(attackerSideHero, necromancy, false);
+	ASSERT_EQ(attackerSideHero->getSecSkillLevel(necromancy), MasteryLevel::ADVANCED);
+	const auto & registeredPerks = attackerSideHero->getPerkState().rules
+		["skills"][newHorizonsNecromancy::SKILL_ID]["perks"].Vector();
+	const auto soulHarvester = std::find_if(registeredPerks.begin(), registeredPerks.end(), [](const auto & perk)
+	{
+		return perk["id"].String() == newHorizonsNecromancy::SOUL_HARVESTER_ID;
+	});
+	ASSERT_NE(soulHarvester, registeredPerks.end());
+	EXPECT_EQ((*soulHarvester)["effect"]["status"].String(), "active");
+	EXPECT_EQ((*soulHarvester)["requires"].String(), "advanced");
+	ASSERT_FALSE(attackerSideHero->getPerkState().hasSelection(newHorizonsNecromancy::SKILL_ID,
+		newHorizonsNecromancy::SOUL_HARVESTER_ID));
+	ASSERT_FALSE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+		newHorizonsNecromancy::SOUL_HARVESTER_ID));
+	RecordProperty("soul_harvester_registry_id", (*soulHarvester)["id"].String());
+	RecordProperty("soul_harvester_registry_name", (*soulHarvester)["name"].String());
+	RecordProperty("soul_harvester_registry_required_rank", (*soulHarvester)["requires"].String());
+	RecordProperty("soul_harvester_registry_description", (*soulHarvester)["description"].String());
+	RecordProperty("soul_harvester_registry_effect_status", (*soulHarvester)["effect"]["status"].String());
+	RecordProperty("soul_harvester_activation_override_applied", "false");
+	RecordProperty("soul_harvester_skill_rank", "advanced");
+	RecordProperty("soul_harvester_selected", "false");
+	RecordProperty("soul_harvester_selected_perk", "none");
+	RecordProperty("soul_harvester_basic_perk", newHorizonsNecromancy::CORPSE_PRESERVATION_ID);
+
+	const auto skeleton = creature("core:skeleton");
+	const auto monk = creature("core:monk");
+	const auto wight = creature("core:wight");
+	const auto monkCategory = gameState()->getCreatureCategory(monk);
+	ASSERT_TRUE(monkCategory);
+	ASSERT_EQ(monkCategory->category, newHorizonsCreatures::CreatureCategory::ELITE);
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), monk, 60));
+	gameHandler->battles->startBattle(attackerSideHero, defenderSideHero);
+	ASSERT_NE(gameState()->getBattle(PlayerColor(0)), nullptr);
+	gameHandler->battles->cheatBattleVictory(PlayerColor(0));
+	resolveBattleDialogsOnly();
+	const auto followup = gameHandler->queries->topQuery(PlayerColor(0));
+	EXPECT_TRUE(!followup || followup->getType() != QueryType::NecromancyChoice);
+	resolveLevelUpDialogs();
+	EXPECT_EQ(gameHandler->queries->topQuery(PlayerColor(0)), nullptr);
+
+	ASSERT_EQ(gameState()->getBattle(PlayerColor(0)), nullptr);
+	ASSERT_EQ(recordingServer->battleResults.size(), 1u);
+	const auto & necromancyResult = recordingServer->battleResults.back().necromancy;
+	ASSERT_TRUE(necromancyResult.active);
+	EXPECT_EQ(necromancyResult.eligibleCasualties, 60);
+	EXPECT_EQ(necromancyResult.skeletonsOffered, 12);
+	EXPECT_TRUE(necromancyResult.applied);
+	EXPECT_EQ(necromancyResult.skeletonsRaised, 12);
+	EXPECT_EQ(necromancyResult.wightsRaised, 0);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, skeleton), 28);
+	EXPECT_EQ(armyCreatureCount(*attackerSideHero, wight), 0);
+	EXPECT_EQ(recordingServer->systemMessages, 0);
+}
+
 TEST_F(NewHorizonsNecromancyAdmissionAITest, DarkConversionRejectsMixedAutomaticOutputAtomicallyWhenOneSlotRemains)
 {
 	ASSERT_NE(attackerSideHero, nullptr);
@@ -990,6 +1343,7 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	outgoing.necromancy.skeletonsOffered = 35;
 	outgoing.necromancy.skeletonsRaised = 2;
 	outgoing.necromancy.zombiesRaised = 11;
+	outgoing.necromancy.wightsRaised = 7;
 	outgoing.necromancy.manaRecovered = 10;
 	outgoing.necromancy.raisedCreature = creature("core:zombie");
 
@@ -1000,12 +1354,73 @@ TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 	EXPECT_EQ(incoming.necromancy.rank, 3);
 	EXPECT_EQ(incoming.necromancy.skeletonsRaised, 2);
 	EXPECT_EQ(incoming.necromancy.zombiesRaised, 11);
+	EXPECT_EQ(incoming.necromancy.wightsRaised, 7);
 	EXPECT_EQ(incoming.necromancy.manaRecovered, 10);
+
+	CMemorySerializer directWire;
+	directWire.oser & outgoing.necromancy;
+	newHorizonsNecromancy::NecromancyResult directIncoming;
+	directWire.iser & directIncoming;
+	EXPECT_EQ(directIncoming.wightsRaised, 7);
+
+	const auto necromancyWithoutWightsVersion = ESerializationVersion::NEW_HORIZONS_NECROMANCY;
+	newHorizonsNecromancy::NecromancyResult legacyResult = outgoing.necromancy;
+	legacyResult.wightsRaised = 0;
+	CMemorySerializer legacyResultWire;
+	legacyResultWire.oser.version = necromancyWithoutWightsVersion;
+	legacyResultWire.oser & legacyResult;
+	legacyResultWire.iser.version = necromancyWithoutWightsVersion;
+	newHorizonsNecromancy::NecromancyResult legacyResultIncoming;
+	legacyResultIncoming.wightsRaised = 9;
+	legacyResultWire.iser & legacyResultIncoming;
+	EXPECT_EQ(legacyResultIncoming.wightsRaised, 0);
+
+	CMemorySerializer legacyOuterWire;
+	legacyOuterWire.oser.version = necromancyWithoutWightsVersion;
+	BattleResultsApplied legacyOuter = outgoing;
+	legacyOuter.necromancy.wightsRaised = 0;
+	legacyOuterWire.oser & legacyOuter;
+	legacyOuterWire.iser.version = necromancyWithoutWightsVersion;
+	BattleResultsApplied legacyOuterIncoming;
+	legacyOuterIncoming.necromancy.wightsRaised = 9;
+	legacyOuterWire.iser & legacyOuterIncoming;
+	EXPECT_EQ(legacyOuterIncoming.necromancy.wightsRaised, 0);
+
+	newHorizonsNecromancy::NecromancyResult unsupportedDirect;
+	unsupportedDirect.wightsRaised = 1;
+	CMemorySerializer unsupportedDirectWire;
+	unsupportedDirectWire.oser.version = necromancyWithoutWightsVersion;
+	EXPECT_THROW(unsupportedDirectWire.oser & unsupportedDirect, std::runtime_error);
+	EXPECT_TRUE(unsupportedDirectWire.extractBuffer().empty())
+		<< "An older result writer must reject a nonzero Wight count before writing bytes";
+
+	BattleResultsApplied unsupportedOuter;
+	unsupportedOuter.battleID = BattleID(4);
+	unsupportedOuter.necromancy.wightsRaised = 1;
+	CMemorySerializer unsupportedOuterWire;
+	unsupportedOuterWire.oser.version = necromancyWithoutWightsVersion;
+	EXPECT_THROW(unsupportedOuterWire.oser & unsupportedOuter, std::runtime_error);
+	EXPECT_TRUE(unsupportedOuterWire.extractBuffer().empty())
+		<< "An older outer packet writer must reject a nonzero Wight count before writing bytes";
+
+	newHorizonsNecromancy::NecromancyResult invalidDirect;
+	invalidDirect.wightsRaised = -1;
+	CMemorySerializer invalidDirectWire;
+	EXPECT_THROW(invalidDirectWire.oser & invalidDirect, std::runtime_error);
+	EXPECT_TRUE(invalidDirectWire.extractBuffer().empty());
+
+	BattleResultsApplied invalidOuter;
+	invalidOuter.battleID = BattleID(5);
+	invalidOuter.necromancy.wightsRaised = -1;
+	CMemorySerializer invalidOuterWire;
+	EXPECT_THROW(invalidOuterWire.oser & invalidOuter, std::runtime_error);
+	EXPECT_TRUE(invalidOuterWire.extractBuffer().empty());
 
 	CMemorySerializer old;
 	old.oser.version = ESerializationVersion::NEW_HORIZONS_CANONICAL_ORDERS;
 	BattleResultsApplied legacyPayload = outgoing;
 	EXPECT_THROW(old.oser & legacyPayload, std::runtime_error);
+	EXPECT_TRUE(old.extractBuffer().empty());
 
 	BattleResult result;
 	result.battleID = BattleID(2);

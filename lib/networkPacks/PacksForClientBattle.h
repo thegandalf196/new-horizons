@@ -1023,6 +1023,14 @@ struct DLL_LINKAGE BattleResultsApplied : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY)
+			&& !necromancy.empty())
+			throw std::runtime_error("Cannot write New Horizons Necromancy summary to an older format");
+		if(h.saving && necromancy.wightsRaised != 0
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_WIGHTS))
+			throw std::runtime_error("Cannot write Necromancy Wights to an older format");
+		if(h.saving && necromancy.wightsRaised < 0)
+			throw std::runtime_error("Invalid negative Necromancy Wight count");
 		h & battleID;
 		h & victor;
 		h & loser;
