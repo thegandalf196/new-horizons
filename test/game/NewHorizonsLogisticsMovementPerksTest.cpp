@@ -23,9 +23,11 @@
 namespace
 {
 constexpr auto LOGISTICS_SKILL = "new-horizons:logistics";
+constexpr auto PATHFINDING_PERK = "new-horizons:logistics.pathfinding";
 constexpr auto SCOUTING_PERK = "new-horizons:logistics.scouting";
 constexpr auto ROADMASTER_PERK = "new-horizons:logistics.roadmaster";
 constexpr auto WAYFARER_PERK = "new-horizons:logistics.wayfarer";
+constexpr auto MOUNTAINEER_PERK = "new-horizons:logistics.mountaineer";
 
 void setPerkStatus(JsonNode & rules, const std::string & perkId, const std::string & status)
 {
@@ -36,6 +38,15 @@ void setPerkStatus(JsonNode & rules, const std::string & perkId, const std::stri
 				perk["effect"]["status"].String() = status;
 				return;
 			}
+	throw std::runtime_error("Missing New Horizons perk in Logistics movement fixture: " + perkId);
+}
+
+std::string getPerkStatus(JsonNode & rules, const std::string & perkId)
+{
+	for(auto & skillEntry : rules["skills"].Struct())
+		for(auto & perk : skillEntry.second["perks"].Vector())
+			if(perk["id"].String() == perkId)
+				return perk["effect"]["status"].String();
 	throw std::runtime_error("Missing New Horizons perk in Logistics movement fixture: " + perkId);
 }
 
@@ -59,6 +70,17 @@ protected:
 		auto activePerkRules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
 		setPerkStatus(activePerkRules, ROADMASTER_PERK, "active");
 		setPerkStatus(activePerkRules, WAYFARER_PERK, "active");
+		const auto mountaineerRegistryStatus = getPerkStatus(activePerkRules, MOUNTAINEER_PERK);
+		RecordProperty("mountaineer_registry_status", mountaineerRegistryStatus);
+		if(mountaineerRegistryStatus == "planned")
+		{
+			setPerkStatus(activePerkRules, MOUNTAINEER_PERK, "active");
+			RecordProperty("mountaineer_fixture_override", "planned_to_active");
+		}
+		else if(mountaineerRegistryStatus == "active")
+			RecordProperty("mountaineer_fixture_override", "none");
+		else
+			throw std::runtime_error("Unexpected Mountaineer status in Logistics movement fixture: " + mountaineerRegistryStatus);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(activePerkRules));
 	}
 
@@ -149,11 +171,11 @@ protected:
 
 	void installLegacyPlannedSnapshot()
 	{
-		// Simulate a hero loaded with the older saved rules snapshot. The perk
-		// identities were acquired above through validated offers; only their
-		// captured activation status is restored here.
+		// Simulate an older saved rules snapshot: acquired identities remain, but
+		// their then-planned statuses do not activate these movement perks.
 		setPerkStatus(legacyPerkRules, ROADMASTER_PERK, "planned");
 		setPerkStatus(legacyPerkRules, WAYFARER_PERK, "planned");
+		setPerkStatus(legacyPerkRules, MOUNTAINEER_PERK, "planned");
 		auto savedState = hero->getPerkState().toJson();
 		savedState["rules"] = legacyPerkRules;
 		auto restoredState = newHorizonsHeroes::PerkState::fromJson(savedState);
@@ -247,6 +269,54 @@ TEST_F(NewHorizonsLogisticsMovementPerksTest, WayfarerCapsPassableTerrainAndPres
 	expectAcceptedMove(legacyRoadDestination, 13);
 
 	const auto rock = legacyRoadDestination + int3(1, 0, 0);
+	setTile(rock, ETerrainId::ROCK, RoadId::NO_ROAD);
+	const auto positionBeforeBlockedMove = hero->visitablePos();
+	const int movementBeforeBlockedMove = hero->movementPointsRemaining();
+	EXPECT_FALSE(handler->moveHero(hero->id, hero->convertFromVisitablePos(rock),
+		EMovementMode::STANDARD, false, hero->getOwner(), EPathfindingLayer::LAND));
+	EXPECT_EQ(hero->visitablePos(), positionBeforeBlockedMove);
+	EXPECT_EQ(hero->movementPointsRemaining(), movementBeforeBlockedMove);
+}
+
+TEST_F(NewHorizonsLogisticsMovementPerksTest, MountaineerRemovesOnlyRoughAndSubterraneanPenalties)
+{
+	startGame();
+	const auto source = hero->visitablePos();
+	const auto roughDestination = source + int3(1, 0, 0);
+	setTile(source, ETerrainId::ROUGH, RoadId::NO_ROAD);
+	setTile(roughDestination, ETerrainId::ROUGH, RoadId::NO_ROAD);
+
+	advanceLogistics(); // Basic Logistics.
+	ASSERT_TRUE(chooseOfferedPerk(PATHFINDING_PERK));
+	ASSERT_TRUE(hero->hasActivePerk(LOGISTICS_SKILL, PATHFINDING_PERK));
+	advanceLogistics(); // Advanced Logistics, legally unlocked by Basic Pathfinding.
+	ASSERT_FALSE(hero->hasActivePerk(LOGISTICS_SKILL, MOUNTAINEER_PERK));
+	EXPECT_EQ(forecastCost(roughDestination), 12); // Pathfinding halves the ordinary rough-terrain surcharge.
+	ASSERT_TRUE(chooseOfferedPerk(MOUNTAINEER_PERK));
+	ASSERT_TRUE(hero->hasActivePerk(LOGISTICS_SKILL, MOUNTAINEER_PERK));
+	expectAcceptedMove(roughDestination, 10);
+
+	const auto subterraneanSource = hero->visitablePos();
+	const auto subterraneanDestination = subterraneanSource + int3(1, 0, 0);
+	const auto unrelatedDestination = subterraneanSource + int3(0, 1, 0);
+	setTile(subterraneanSource, ETerrainId::LAVA, RoadId::NO_ROAD);
+	setTile(unrelatedDestination, ETerrainId::LAVA, RoadId::NO_ROAD);
+	EXPECT_EQ(forecastCost(unrelatedDestination), 12); // Mountaineer does not waive other terrain penalties.
+
+	setTile(subterraneanSource, ETerrainId::SUBTERRANEAN, RoadId::NO_ROAD);
+	setTile(subterraneanDestination, ETerrainId::SUBTERRANEAN, RoadId::NO_ROAD);
+	EXPECT_EQ(forecastCost(subterraneanDestination), 10);
+	expectAcceptedMove(subterraneanDestination, 10);
+
+	installLegacyPlannedSnapshot();
+	EXPECT_FALSE(hero->hasActivePerk(LOGISTICS_SKILL, MOUNTAINEER_PERK));
+	ASSERT_TRUE(hero->hasActivePerk(LOGISTICS_SKILL, PATHFINDING_PERK));
+	const auto plannedDestination = hero->visitablePos() + int3(1, 0, 0);
+	setTile(hero->visitablePos(), ETerrainId::SUBTERRANEAN, RoadId::NO_ROAD);
+	setTile(plannedDestination, ETerrainId::SUBTERRANEAN, RoadId::NO_ROAD);
+	expectAcceptedMove(plannedDestination, 12); // A saved planned perk does not suppress the surcharge.
+
+	const auto rock = hero->visitablePos() + int3(1, 0, 0);
 	setTile(rock, ETerrainId::ROCK, RoadId::NO_ROAD);
 	const auto positionBeforeBlockedMove = hero->visitablePos();
 	const int movementBeforeBlockedMove = hero->movementPointsRemaining();

@@ -26,9 +26,11 @@ namespace
 {
 constexpr PlayerColor PLAYER(0);
 constexpr auto LOGISTICS_SKILL = "new-horizons:logistics";
+constexpr auto PATHFINDING_PERK = "new-horizons:logistics.pathfinding";
 constexpr auto SCOUTING_PERK = "new-horizons:logistics.scouting";
 constexpr auto ROADMASTER_PERK = "new-horizons:logistics.roadmaster";
 constexpr auto WAYFARER_PERK = "new-horizons:logistics.wayfarer";
+constexpr auto MOUNTAINEER_PERK = "new-horizons:logistics.mountaineer";
 
 void activateMapPerk(JsonNode & rules, std::string_view perkId)
 {
@@ -39,6 +41,15 @@ void activateMapPerk(JsonNode & rules, std::string_view perkId)
 				perk["effect"]["status"].String() = "active";
 				return;
 			}
+	throw std::runtime_error("Missing New Horizons movement perk in AI fixture: " + std::string(perkId));
+}
+
+std::string mapPerkStatus(JsonNode & rules, std::string_view perkId)
+{
+	for(auto & [skillId, skill] : rules["skills"].Struct())
+		for(auto & perk : skill["perks"].Vector())
+			if(perk["id"].String() == perkId)
+				return perk["effect"]["status"].String();
 	throw std::runtime_error("Missing New Horizons movement perk in AI fixture: " + std::string(perkId));
 }
 
@@ -73,11 +84,21 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
 			JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
 
-		// Roadmaster and Wayfarer are still planned in the live catalog. Activate
-		// them only in this map snapshot so the fixture can use their server offers.
+		// Preserve the existing fixture activation for these Logistics tests.
 		auto perkRules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
 		activateMapPerk(perkRules, ROADMASTER_PERK);
 		activateMapPerk(perkRules, WAYFARER_PERK);
+		const auto mountaineerRegistryStatus = mapPerkStatus(perkRules, MOUNTAINEER_PERK);
+		RecordProperty("mountaineer_registry_status", mountaineerRegistryStatus);
+		if(mountaineerRegistryStatus == "planned")
+		{
+			activateMapPerk(perkRules, MOUNTAINEER_PERK);
+			RecordProperty("mountaineer_fixture_override", "planned_to_active");
+		}
+		else if(mountaineerRegistryStatus == "active")
+			RecordProperty("mountaineer_fixture_override", "none");
+		else
+			throw std::runtime_error("Unexpected Mountaineer status in AI fixture: " + mountaineerRegistryStatus);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
 	}
 
@@ -238,4 +259,64 @@ TEST_F(NewHorizonsLogisticsMovementAITest, AcceptedRoadmasterAndWayfarerRefreshP
 	EXPECT_EQ(server->acceptedPerks[0], SCOUTING_PERK);
 	EXPECT_EQ(server->acceptedPerks[1], ROADMASTER_PERK);
 	EXPECT_EQ(server->acceptedPerks[2], WAYFARER_PERK);
+}
+
+TEST_F(NewHorizonsLogisticsMovementAITest, AcceptedMountaineerRefreshesRoughAndSubterraneanRouteCosts)
+{
+	startGame();
+	const auto source = hero->visitablePos();
+	const auto destination = source + int3(1, 0, 0);
+	auto & sourceTile = map()->getTile(source);
+	auto & destinationTile = map()->getTile(destination);
+	sourceTile.terrainType = ETerrainId::ROUGH;
+	destinationTile.terrainType = ETerrainId::ROUGH;
+
+	advanceLogistics(); // Basic Logistics.
+	ASSERT_EQ(hero->getPerkSkillRank(LOGISTICS_SKILL), MasteryLevel::BASIC);
+	ASSERT_TRUE(chooseOfferedPerk(PATHFINDING_PERK));
+	ASSERT_TRUE(hero->hasActivePerk(LOGISTICS_SKILL, PATHFINDING_PERK));
+
+	auto callback = makeCallback(PLAYER);
+	auto gateway = makeGateway(callback);
+	NK2AI::Goals::TGoalVec priorityTasks;
+	const auto projectedCost = [&](const int3 & target) -> std::optional<float>
+	{
+		const auto paths = gateway->nullkiller->pathfinder->getPathInfo(target);
+		if(paths.empty())
+			return std::nullopt;
+		return paths.front().movementCost();
+	};
+
+	const auto initialPosition = hero->visitablePos();
+	ASSERT_TRUE(gateway->nullkiller->updateStateAndExecutePriorityPass(priorityTasks, 1));
+	const int basicMovementLimit = landMovementLimit(callback);
+	ASSERT_GT(basicMovementLimit, 0);
+	auto withoutMountaineer = projectedCost(destination);
+	ASSERT_TRUE(withoutMountaineer.has_value());
+	EXPECT_NEAR(*withoutMountaineer * basicMovementLimit, 12.0f, 0.01f);
+
+	advanceLogistics(); // Advanced Logistics, legally unlocked by Basic Pathfinding.
+	ASSERT_EQ(hero->getPerkSkillRank(LOGISTICS_SKILL), MasteryLevel::ADVANCED);
+	ASSERT_TRUE(chooseOfferedPerk(MOUNTAINEER_PERK));
+	ASSERT_TRUE(hero->hasActivePerk(LOGISTICS_SKILL, MOUNTAINEER_PERK));
+	ASSERT_EQ(server->acceptedPerks.back(), MOUNTAINEER_PERK);
+	gateway->invalidatePaths();
+	ASSERT_TRUE(gateway->nullkiller->updateStateAndExecutePriorityPass(priorityTasks, 2));
+	const int advancedMovementLimit = landMovementLimit(callback);
+	ASSERT_GT(advancedMovementLimit, 0);
+	auto withMountaineer = projectedCost(destination);
+	ASSERT_TRUE(withMountaineer.has_value());
+	EXPECT_NEAR(*withMountaineer * advancedMovementLimit, 10.0f, 0.01f);
+
+	sourceTile.terrainType = ETerrainId::SUBTERRANEAN;
+	destinationTile.terrainType = ETerrainId::SUBTERRANEAN;
+	gateway->invalidatePaths();
+	ASSERT_TRUE(gateway->nullkiller->updateStateAndExecutePriorityPass(priorityTasks, 3));
+	auto subterraneanCost = projectedCost(destination);
+	ASSERT_TRUE(subterraneanCost.has_value());
+	EXPECT_NEAR(*subterraneanCost * advancedMovementLimit, 10.0f, 0.01f);
+	EXPECT_EQ(hero->visitablePos(), initialPosition);
+	ASSERT_EQ(server->acceptedPerks.size(), 2u);
+	EXPECT_EQ(server->acceptedPerks[0], PATHFINDING_PERK);
+	EXPECT_EQ(server->acceptedPerks[1], MOUNTAINEER_PERK);
 }

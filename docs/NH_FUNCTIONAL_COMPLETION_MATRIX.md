@@ -1,7 +1,7 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-03
-Canonical source SHA-256: `ccaa84fcd322b1e011ab5cac8094195f198b499026f5f78005b1a1a4eab93d21`
+Canonical source SHA-256: `13f7aae2ad8797f34018e23fd9327b054ba4b240ac40da9f83ee5333118a18b6`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
 completion separately from catalogue presence and artwork. An `active` data row,
@@ -13,6 +13,28 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+UP181 Mountaineer and UP182 Grand Tactics are active and source/native verified.
+Accepted rules: Rough/Subterranean cost exemptions with
+Rock still blocked; unique Grand Tactics holder deploys after the opponent's
+eligible initial phase, both holders keep attacker-first, and final Redeployment
+is unchanged. Generic saved ordering reuses authoritative deployment callbacks.
+Core51743/client32699 pass. Test15320's missing standalone header include and
+18902's fixture-only rank type error are repaired; resumed19165 and frozen98551
+pass. Principal12/12 and adjacent6/6 pass, zero skips. Final fixture build31761
+passes; production-active12/12 passes2.618s with XML proving active registration
+and no fixture activation override. Binary SHA-256:
+22315f6c31d82de5b1caef29f33354cfc2ae0317ed422cbc0300995b176c5087.
+Data/inventory19/19, module drift and independent review pass. Perks194->196/310,
+planned116->114; Battlecraft5->6/10, Logistics5->6/10. Ranks84/93 and combat
+spells60/67 are unchanged. Rendered deployment handoff, actual full AI deployment,
+broader interactions and purpose-made icons remain Phase2/visual work. No local
+playable snapshot promotion is claimed.
+UP183 Corpse Preservation's baseline decision is canonical: magical casualties
+are excluded without the perk, Disintegrate always excluded. Runtime remains
+planned pending saved provenance. The user resolved partial Resurrection to
+most recent usable casualties first; ordered saved accounting is required.
+This documentation does not count Corpse Preservation as implemented.
 
 UP177 Portal of Summoning is source/native verified. Authority stores
 one owned external source identity and last-selection absolute week per town;
@@ -1606,7 +1628,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 194/310 | 116 planned; Master Synthesis is the newest source/native-verified activation. Learning is 3/10; Estates is 5/10; Battlecraft is 5/10; Command is 7/10; Warcasting is 6/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 196/310 | 114 planned; Grand Tactics and Mountaineer are the newest source/native-verified activations. Learning is 3/10; Estates is 5/10; Battlecraft is 6/10; Logistics is 6/10; Command is 7/10; Warcasting is 6/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 55/90 | 35 planned perks; Night Prowler has committed hostile transit, first-strike consumption, unused expiry and isolated AI route/replay evidence. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -1742,7 +1764,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Offense | 3/0 | 10/0 | Evidence audit required |
 | Armorer | 3/0 | 7/3 | Bastion, Formation Fighting and Veteran have focused live/detached damage evidence. Three perks missing; Last Stand and Defiant await design choices. |
 | Archery | 3/0 | 10/0 | All ten perks are active; focused evidence pending |
-| Battlecraft | 3/0 | 5/5 | Entrench, Reserve, Passing Lines, Tactics and Redeployment active. Focused native evidence covers delayed movement, friendly transit and initial/final deployment; rendered/actualAI deployment execution remains Phase2. Five perks remain planned. |
+| Battlecraft | 3/0 | 6/4 | Entrench, Reserve, Passing Lines, Tactics, Redeployment and Grand Tactics active. Focused native evidence covers delayed movement, friendly transit and initial/final deployment ordering; rendered/actualAI deployment execution remains Phase2. Four perks remain planned. |
 | War Machines | 3/0 | 5/5 | Surgeon and Piercing Bolts have focused live/detached evidence; Fortification Engineer has real fortified-town manual-shot evidence; Master Gunner has accepted independently targeted second-shot evidence; Quartermaster has accepted half-output Ballista/Tent/Catapult extra-activation evidence. Five perks remain planned. Battlefield Medic persistence awaits clarification. |
 | Discipline | 3/0 | 7/3 | Steadfast joins Unbreakable, Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless with focused authoritative and detached evidence. Three perks remain planned; Esprit de Corps composition scope, Heroic Spirit activation timing and Veteran Cohesion HP reference await clarification. |
 | Recruitment | 3/0 | 6/4 | Four perks missing |
@@ -1756,7 +1778,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Spellcraft | 3/0 | 4/6 | Grand Formula scales the first accepted Level 4-or-5 hero spell's SP term by 150%; Arcane Focus, Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold. Basic/Advanced/Expert efficiency is 110/120/130% under saved v3 rules. |
 | Wisdom | 3/0 | 8/2 | Mana Conservation post-combat Normal recovery, Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. One other perk remains missing. Broader interactions and playable acceptance remain open. |
 | Warcasting | 3/0 | 6/4 | Spellward has focused live/detached/current-controller damage evidence. Master Synthesis has first-consumption Spell/Order, typed-exclusion and branch-history evidence. Four perks missing; Combat Casting and Enchanted Command await shared rule decisions; Perfect Rhythm stacking is unresolved. |
-| Logistics | 3/0 | 5/5 | Five perks missing; Roadmaster/Wayfarer native verified |
+| Logistics | 3/0 | 6/4 | Four perks missing; Roadmaster/Wayfarer/Mountaineer native verified, with human/server and AI shared-cost evidence |
 | Diplomacy | 0/3 | 0/10 | Ranks and progression missing |
 | Estates | 3/0 | 5/5 | Land Surveyor, Tax Collector, Investor, Estate Network and Financier supply working Basic/Advanced/Expert perks. Accepted mine-capture grants, daily income, weekly Wood/Ore, weekly treasury interest, Investor's pre-income treasury snapshot and AI resource receipt/selection are native verified. |
 | Learning | 3/0 | 3/7 | Mentor, Quick Study and Field Study supply working Basic/Advanced perks and open ordinary Expert-rank progression. Meetings, weekly persistence, initial offer reroll, stronger-opponent awarded XP and query/RNG parity are native verified. Academic Study awaits first-visit timing. |

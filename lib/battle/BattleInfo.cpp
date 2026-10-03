@@ -904,18 +904,24 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 		if(newHorizonsHeroes::usesPerkRules(cb->getHeroPerkRules()))
 		{
 			BattleDeploymentState deployment;
+			BattleSideArray<bool> hasGrandTactics{};
 			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 			{
 				const auto * hero = heroes[side];
 				const bool hasTactics = hero && hero->tacticFormationEnabled
 					&& hero->hasActivePerk("new-horizons:battlecraft", "new-horizons:battlecraft.tactics");
-				if(hasTactics)
-					deployment.distances[side] = 3; // Base row plus the two canonical Tactics rows.
+				hasGrandTactics[side] = hero && hero->tacticFormationEnabled
+					&& hero->hasActivePerk("new-horizons:battlecraft", "new-horizons:battlecraft.grandTactics");
+				if(hasTactics || hasGrandTactics[side])
+					deployment.distances[side] = hasTactics ? 3 : 1;
 
-			if(hero && hero->tacticFormationEnabled
-				&& hero->hasActivePerk("new-horizons:battlecraft", "new-horizons:battlecraft.redeployment"))
+				if(hero && hero->tacticFormationEnabled
+					&& hero->hasActivePerk("new-horizons:battlecraft", "new-horizons:battlecraft.redeployment"))
 					deployment.finalRelocationDistances[side] = hasTactics ? 3 : 1;
 			}
+			if(hasGrandTactics[BattleSide::ATTACKER] != hasGrandTactics[BattleSide::DEFENDER]
+				&& hasGrandTactics[BattleSide::ATTACKER])
+				deployment.initialFirstSide = BattleSide::DEFENDER;
 			if(deployment.distances[BattleSide::ATTACKER] > 0 || deployment.distances[BattleSide::DEFENDER] > 0
 				|| deployment.finalRelocationDistances[BattleSide::ATTACKER] > 0
 				|| deployment.finalRelocationDistances[BattleSide::DEFENDER] > 0)

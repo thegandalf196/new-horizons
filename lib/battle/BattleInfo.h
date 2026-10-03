@@ -199,6 +199,9 @@ public:
 			if(!h.hasFeature(Handler::Version::BATTLE_INITIAL_ARMY_VALUE) && hasInitialArmyValueState())
 				throw std::runtime_error("Cannot discard initial battle Army Value snapshot");
 			deploymentState.validateShape();
+			if(!h.hasFeature(Handler::Version::BATTLE_INITIAL_DEPLOYMENT_ORDER)
+				&& deploymentState.hasNonDefaultInitialOrder())
+				throw std::runtime_error("Cannot discard initial deployment ordering");
 			if(deploymentState.independent)
 			{
 				const auto activeSide = deploymentState.activeSide();

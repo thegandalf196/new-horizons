@@ -12,6 +12,7 @@
 
 #include "BattleSide.h"
 #include "../GameConstants.h"
+#include "BattleHex.h"
 #include "../serializer/ESerializationVersion.h"
 
 /// Independent army deployment opportunities. The ordinary tactics side and
@@ -19,15 +20,24 @@
 struct DLL_LINKAGE BattleDeploymentState
 {
 	bool independent = false;
+	/// Resolved order for the initial deployment opportunities. Final relocation
+	/// retains its separate attacker-then-defender order.
+	BattleSide initialFirstSide = BattleSide::ATTACKER;
 	BattleSideArray<uint8_t> distances{};
 	BattleSideArray<bool> completed{};
 	BattleSideArray<uint8_t> finalRelocationDistances{};
 	BattleSideArray<bool> finalRelocationCompleted{};
 
+	bool hasNonDefaultInitialOrder() const
+	{
+		return initialFirstSide != BattleSide::ATTACKER;
+	}
+
 	BattleSide initialActiveSide() const
 	{
 		if(independent)
-			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			for(const auto side : {initialFirstSide,
+				initialFirstSide == BattleSide::ATTACKER ? BattleSide::DEFENDER : BattleSide::ATTACKER})
 				if(distances[side] > 0 && !completed[side])
 					return side;
 		return BattleSide::NONE;
@@ -79,6 +89,8 @@ struct DLL_LINKAGE BattleDeploymentState
 
 	void validateShape() const
 	{
+		if(initialFirstSide != BattleSide::ATTACKER && initialFirstSide != BattleSide::DEFENDER)
+			throw std::runtime_error("Invalid first side in initial deployment order");
 		if(independent && distances[BattleSide::ATTACKER] == 0
 			&& distances[BattleSide::DEFENDER] == 0 && !hasFinalRelocationState())
 			throw std::runtime_error("Independent deployment has no resolved opportunity");
@@ -98,8 +110,12 @@ struct DLL_LINKAGE BattleDeploymentState
 				|| finalRelocationDistances[side] != 0 || finalRelocationCompleted[side]))
 				throw std::runtime_error("Independent deployment state is disabled");
 		}
-		if(distances[BattleSide::ATTACKER] > 0 && !completed[BattleSide::ATTACKER]
-			&& completed[BattleSide::DEFENDER])
+		if(!independent && hasNonDefaultInitialOrder())
+			throw std::runtime_error("Initial deployment order is set while independent deployment is disabled");
+		const auto secondInitialSide = initialFirstSide == BattleSide::ATTACKER
+			? BattleSide::DEFENDER : BattleSide::ATTACKER;
+		if(distances[initialFirstSide] > 0 && !completed[initialFirstSide]
+			&& completed[secondInitialSide])
 			throw std::runtime_error("Deployment phases completed out of sequence");
 		if(finalRelocationDistances[BattleSide::ATTACKER] > 0
 			&& !finalRelocationCompleted[BattleSide::ATTACKER]
@@ -117,7 +133,8 @@ struct DLL_LINKAGE BattleDeploymentState
 		previous.validateShape();
 		if(*this == previous)
 			return;
-		if(!previous.independent || !independent || distances != previous.distances
+		if(!previous.independent || !independent || initialFirstSide != previous.initialFirstSide
+			|| distances != previous.distances
 			|| finalRelocationDistances != previous.finalRelocationDistances)
 			throw std::runtime_error("Deployment update changes resolved opportunities");
 		auto expected = previous;
@@ -137,6 +154,8 @@ struct DLL_LINKAGE BattleDeploymentState
 				throw std::runtime_error("Cannot discard independent deployment state");
 			if(!h.hasFeature(Handler::Version::BATTLE_FINAL_RELOCATION) && hasFinalRelocationState())
 				throw std::runtime_error("Cannot discard final relocation state");
+			if(!h.hasFeature(Handler::Version::BATTLE_INITIAL_DEPLOYMENT_ORDER) && hasNonDefaultInitialOrder())
+				throw std::runtime_error("Cannot discard initial deployment order");
 		}
 		if(h.hasFeature(feature))
 		{
@@ -162,6 +181,10 @@ struct DLL_LINKAGE BattleDeploymentState
 			finalRelocationDistances = {};
 			finalRelocationCompleted = {};
 		}
+		if(h.hasFeature(Handler::Version::BATTLE_INITIAL_DEPLOYMENT_ORDER))
+			h & initialFirstSide;
+		else if(!h.saving)
+			initialFirstSide = BattleSide::ATTACKER;
 		validateShape();
 	}
 };

@@ -155,15 +155,18 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_RAGE_THROUGH_PAIN, // personal Bloodrage increments and battle perk snapshots
 	NEW_HORIZONS_MASTER_SYNTHESIS, // battle-long first Warcasting bonus consumption history
 	NEW_HORIZONS_PORTAL_SOURCE, // linked external dwelling and weekly Portal choice, explicit recruitment context
+	BATTLE_INITIAL_DEPLOYMENT_ORDER, // resolved first side for the ordinary initial deployment stage
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_PORTAL_SOURCE,
+	CURRENT = BATTLE_INITIAL_DEPLOYMENT_ORDER,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
+static_assert(ESerializationVersion::BATTLE_INITIAL_DEPLOYMENT_ORDER > ESerializationVersion::NEW_HORIZONS_PORTAL_SOURCE,
+	"Initial deployment ordering must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_PORTAL_SOURCE > ESerializationVersion::NEW_HORIZONS_MASTER_SYNTHESIS,
 	"Portal source state must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_MASTER_SYNTHESIS > ESerializationVersion::NEW_HORIZONS_RAGE_THROUGH_PAIN,

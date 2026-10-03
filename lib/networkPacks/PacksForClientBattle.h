@@ -63,6 +63,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info && !h.hasFeature(Handler::Version::BATTLE_FINAL_RELOCATION)
 			&& info->getDeploymentState().hasFinalRelocationState())
 			throw std::runtime_error("Cannot discard final relocation state from BattleStart");
+		if(h.saving && info && !h.hasFeature(Handler::Version::BATTLE_INITIAL_DEPLOYMENT_ORDER)
+			&& info->getDeploymentState().hasNonDefaultInitialOrder())
+			throw std::runtime_error("Cannot discard initial deployment order from BattleStart");
 		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_RANGED_FOLLOW_UP)
 			&& info->hasRangedFollowUpState())
 			throw std::runtime_error("Cannot discard ranged follow-up battle start state");
@@ -112,6 +115,9 @@ struct DLL_LINKAGE BattleDeploymentPhaseChanged : public CPackForClient
 	{
 		if(!h.hasFeature(Handler::Version::BATTLE_DEPLOYMENT_PHASES))
 			throw std::runtime_error("Deployment phase updates require the current save/network format");
+		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_INITIAL_DEPLOYMENT_ORDER)
+			&& state.hasNonDefaultInitialOrder())
+			throw std::runtime_error("Cannot discard initial deployment phase ordering");
 		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_FINAL_RELOCATION)
 			&& state.hasFinalRelocationState())
 			throw std::runtime_error("Cannot discard final relocation phase state");

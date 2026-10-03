@@ -10,6 +10,13 @@ This is a binding inventory, not a full visual audit or a product completion cla
 
 ## Status meanings
 
+UP181/182 source/native checkpoint: Mountaineer and Grand Tactics are active
+after successful client/test builds, principal12/12, adjacent6/6 and active
+registry12/12 checks. Existing perk/deployment controls are reused; generic UI
+remains Provisional and both neutral fallback icons remain Not done art.
+Rendered deployment handoff and full AI deployment still need Phase2 acceptance;
+no local playable snapshot or graphical review is claimed.
+
 Battle Plan interaction (UP-148): implemented with source/native evidence. The existing
 painted Orders panel names the free opening choice, disables decline/Perfect
 Moment while pending, and returns to the chooser after target cancellation.

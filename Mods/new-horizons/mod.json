@@ -3058,7 +3058,7 @@
 				"schemaVersion": 1,
 				"rulesetVersion": 2,
 				"sourceDocument": "docs/design-sources/New Horizons.md",
-				"sourceSha256": "ccaa84fcd322b1e011ab5cac8094195f198b499026f5f78005b1a1a4eab93d21",
+				"sourceSha256": "13f7aae2ad8797f34018e23fd9327b054ba4b240ac40da9f83ee5333118a18b6",
 				"maxSkillChoices": 2,
 				"maxPerkChoices": 2,
 				"maxPerksPerSkill": 3,
@@ -3573,10 +3573,10 @@
 								"id": "new-horizons:battlecraft.grandTactics",
 								"name": "Grand Tactics",
 								"requires": "expert",
-								"description": "Enemy deployment is revealed before this hero's deployment is finalized. The hero then completes the ordinary deployment phase with full knowledge of the enemy formation.",
+								"description": "The hero completes initial deployment after the opponent's eligible initial deployment phase. If both heroes have Grand Tactics, initial deployment keeps the normal attacker-then-defender order. This changes initial deployment only; the later Redeployment stage is unchanged. A holder without Tactics uses the ordinary one-row area, not Tactics' two additional rows. Scenario restrictions and the ordinary deployment confirmation flow remain in force.",
 								"effect": {
-									"status": "planned",
-									"description": "Enemy deployment is revealed before this hero's deployment is finalized. The hero then completes the ordinary deployment phase with full knowledge of the enemy formation."
+									"status": "active",
+									"description": "The hero completes initial deployment after the opponent's eligible initial deployment phase. If both heroes have Grand Tactics, initial deployment keeps the normal attacker-then-defender order. This changes initial deployment only; the later Redeployment stage is unchanged. A holder without Tactics uses the ordinary one-row area, not Tactics' two additional rows. Scenario restrictions and the ordinary deployment confirmation flow remain in force."
 								}
 							},
 							{
@@ -5391,10 +5391,10 @@
 								"id": "new-horizons:logistics.mountaineer",
 								"name": "Mountaineer",
 								"requires": "advanced",
-								"description": "Rough and mountainous passable terrain imposes no additional movement penalty.",
+								"description": "Rough and Subterranean terrain impose no additional movement penalty. Impassable Rock remains impassable; other terrain penalties are unchanged.",
 								"effect": {
-									"status": "planned",
-									"description": "Rough and mountainous passable terrain imposes no additional movement penalty."
+									"status": "active",
+									"description": "Rough and Subterranean terrain impose no additional movement penalty. Impassable Rock remains impassable; other terrain penalties are unchanged."
 								}
 							},
 							{
@@ -6671,10 +6671,10 @@
 								"id": "new-horizons:necromancy.corpsePreservation",
 								"name": "Corpse Preservation",
 								"requires": "basic",
-								"description": "Casualties caused by ordinary magical damage remain eligible for Necromancy unless an effect explicitly destroys or invalidates remains.",
+								"description": "Casualties caused by ordinary magical damage become eligible for Necromancy. Without this perk, ordinary magical casualties are excluded. Effects that explicitly destroy or invalidate remains, such as Disintegrate, remain excluded even with the perk.",
 								"effect": {
 									"status": "planned",
-									"description": "Casualties caused by ordinary magical damage remain eligible for Necromancy unless an effect explicitly destroys or invalidates remains."
+									"description": "Casualties caused by ordinary magical damage become eligible for Necromancy. Without this perk, ordinary magical casualties are excluded. Effects that explicitly destroy or invalidate remains, such as Disintegrate, remain excluded even with the perk."
 								}
 							},
 							{

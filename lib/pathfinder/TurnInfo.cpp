@@ -330,6 +330,8 @@ TurnInfo::TurnInfo(TurnInfoCache * sharedCache, const CGHeroInstance * target, i
 		&& target->hasActivePerk("new-horizons:logistics", "new-horizons:logistics.roadmaster");
 	newHorizonsWayfarer = newHorizonsMovement
 		&& target->hasActivePerk("new-horizons:logistics", "new-horizons:logistics.wayfarer");
+	const bool newHorizonsMountaineer = newHorizonsMovement
+		&& target->hasActivePerk("new-horizons:logistics", "new-horizons:logistics.mountaineer");
 
 	int lowestSpeed = 10;
 	if(!newHorizonsMovement)
@@ -441,6 +443,11 @@ TurnInfo::TurnInfo(TurnInfoCache * sharedCache, const CGHeroInstance * target, i
 		{
 			TerrainId affectedTerrain = bonus->subtype.as<TerrainId>();
 			noterrainPenalty.at(affectedTerrain.num) = true;
+		}
+		if(newHorizonsMountaineer)
+		{
+			noterrainPenalty.at(TerrainId::ROUGH) = true;
+			noterrainPenalty.at(TerrainId::SUBTERRANEAN) = true;
 		}
 
 		const auto allStacksNativeForTerrain = [this](TerrainId terrainId)

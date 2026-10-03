@@ -1,5 +1,17 @@
 # Serialization
 
+## Resolved initial deployment ordering
+
+`BATTLE_INITIAL_DEPLOYMENT_ORDER` appends the resolved first side to the generic
+`BattleDeploymentState`. Older records default to attacker-first. Initial
+opportunities follow that resolved ordering, skipping sides without eligibility;
+the separate final-relocation stage remains attacker-first. Live updates may
+complete only the current opportunity and cannot change resolved ordering.
+Non-default ordering cannot be written to older formats: the state, enclosing
+BattleInfo, BattleStart and deployment-change packet reject before their payloads.
+Grand Tactics resolves this field during battle setup; it adds no separate action
+or duplicated client-side deployment allowance.
+
 ## New Horizons Portal of Summoning source
 
 `NEW_HORIZONS_PORTAL_SOURCE` appends the town's external source-dwelling ID and

@@ -15,6 +15,8 @@ from jsonschema import Draft4Validator
 ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
+    "new-horizons:battlecraft.grandTactics",
+    "new-horizons:logistics.mountaineer",
     "new-horizons:battlecraft.redeployment",
     "new-horizons:battlecraft.tactics",
     "new-horizons:battlecraft.passingLines",

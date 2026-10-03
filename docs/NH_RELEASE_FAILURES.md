@@ -2,6 +2,24 @@
 
 ## Purpose
 
+### 2026-10-03 UP-181/182 — Standalone state headers need their own constants
+
+Core51743 and client32699 pass, but test15320 fails compiling the new
+BattleDeploymentOrderTest: BFIELD_WIDTH is unavailable when including the state
+header directly. The constant belongs to BattleHex.h, not GameConstants.h or
+NumericConstants.h. Add the direct BattleHex.h include to BattleDeploymentState,
+instead of depending on consumer include order or adding a fixture-only workaround.
+Preserve testing/UP181-UP182-test-build.log. Repaired build18902 and final frozen
+incremental/native checks remain separate acceptance gates.
+Repaired18902 later exposes a fixture-only type error: MasteryLevel is a namespace
+of rank constants, not a parameter type. Use the existing integer rank contract
+in the legal-acquisition helper; do not change production Skill types. Resume
+incrementally only after the fixture owner freezes the correction.
+Resolution: resumed19165 and frozen98551 pass; principal12/12, adjacent6/6 and
+production-active12/12 pass, zero skips. Final fixture31761 builds successfully.
+The fixes preserve production rank semantics and make the header self-contained.
+
+
 ### 2026-10-03 UP-177 — Never wait for packet realization under the GUI lock
 
 Source review finds that the Portal source picker enables waitTillRealize while
