@@ -72,6 +72,48 @@ void projectRelentlessAssaultAttack(HypotheticBattle & battle, const BattleAttac
 		return;
 	battle.recordRelentlessAssaultAttack(attack.attacker->unitSide(), *primaryTargetUnitId);
 }
+
+uint32_t distToNearestReachableNeighbour(const ReachabilityInfo & reachability,
+	const battle::Unit * attacker, const battle::Unit * defender)
+{
+	auto attackableHexes = defender->getHexes();
+	if(attacker->doubleWide())
+	{
+		if(defender->doubleWide())
+			attackableHexes.insert(battle::Unit::getHexes(defender->occupiedHex(), true, defender->unitSide()));
+		else
+			attackableHexes.insert(battle::Unit::getHexes(defender->getPosition(), true, defender->unitSide()));
+	}
+	attackableHexes.eraseIf([defender](const BattleHex & hex)
+		{
+			return hex.getY() != defender->getPosition().getY() || !hex.isAvailable();
+		});
+
+	uint32_t result = ReachabilityInfo::INFINITE_DIST;
+	for(const auto & targetHex : attackableHexes)
+		for(const auto & neighbour : targetHex.getNeighbouringTiles())
+			if(reachability.isReachable(neighbour))
+				result = std::min(result, reachability.distances.at(neighbour.toInt()));
+	return result;
+}
+
+bool controlledByDifferentPlayer(const CBattleInfoCallback & battle,
+	const battle::Unit * first, const battle::Unit * second)
+{
+	const auto firstOwner = battle.battleGetOwner(first);
+	const auto secondOwner = battle.battleGetOwner(second);
+	return firstOwner != PlayerColor::CANNOT_DETERMINE
+		&& secondOwner != PlayerColor::CANNOT_DETERMINE
+		&& firstOwner != secondOwner;
+}
+
+bool controlledBySamePlayer(const CBattleInfoCallback & battle,
+	const battle::Unit * first, const battle::Unit * second)
+{
+	const auto firstOwner = battle.battleGetOwner(first);
+	const auto secondOwner = battle.battleGetOwner(second);
+	return firstOwner != PlayerColor::CANNOT_DETERMINE && firstOwner == secondOwner;
+}
 }
 
 AttackerValue::AttackerValue()
@@ -706,14 +748,19 @@ ReachabilityInfo getReachabilityWithEnemyBypass(
 	ReachabilityInfo::Parameters params(activeStack, activeStack->getPosition());
 	// This path constructs Parameters directly (to account for destructible
 	// enemy stacks), so preserve the same Shroud rank gate as the normal
-	// callback-created reachability cache.
-	params.ghostWalk = newHorizonsShroud::rank(state->battleGetOwnerHero(activeStack)) > 0;
+	// callback-created reachability cache. Resolve the current controller through
+	// the visibility-aware fighting-hero query rather than reconstructing a hidden
+	// opponent hero from its battle side.
+	const auto controllerSide = state->playerToSide(state->battleGetOwner(activeStack));
+	if(controllerSide == BattleSide::ATTACKER || controllerSide == BattleSide::DEFENDER)
+		params.ghostWalk = newHorizonsShroud::rank(state->battleGetFightingHero(controllerSide)) > 0;
+	state->configurePassingLines(activeStack, params);
 
 	if(!params.flying && !params.ghostWalk)
 	{
 		for(const auto * unit : state->battleAliveUnits())
 		{
-			if(unit->unitSide() == activeStack->unitSide())
+			if(!controlledByDifferentPlayer(*state, activeStack, unit))
 				continue;
 
 			auto dmg = damageCache.getOriginalDamage(activeStack, unit, state);
@@ -779,7 +826,7 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 			enemy->getCount(),
 			LIBRARY->creatures()->getById(enemy->creatureId())->getJsonKey());
 
-		auto distance = dists.distToNearestNeighbour(activeStack, enemy);
+		auto distance = distToNearestReachableNeighbour(dists, activeStack, enemy);
 
 		if(distance >= GameConstants::BFIELD_SIZE)
 			continue;
@@ -792,12 +839,10 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 
 		for (const battle::Unit* ally : hb->battleAliveUnits()) 
 		{
-			if (ally == activeStack) 
-				continue;
-			if (ally->unitSide() != activeStack->unitSide()) 
+			if (ally == activeStack || !controlledBySamePlayer(*hb, activeStack, ally))
 				continue;
 
-			float allyDistance = dists.distToNearestNeighbour(ally, enemy);
+			float allyDistance = distToNearestReachableNeighbour(dists, ally, enemy);
 			if (allyDistance < closestAllyDistance)
 			{
 				closestAllyDistance = allyDistance;
@@ -845,7 +890,9 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 #endif
 
 					BattleHex enemyHex = hex;
-					while(!flying && dists.distances[enemyHex.toInt()] > speed && dists.predecessors.at(enemyHex.toInt()).isValid())
+					while(!flying
+						&& (dists.distances[enemyHex.toInt()] > speed || !dists.isReachable(enemyHex))
+						&& dists.predecessors.at(enemyHex.toInt()).isValid())
 					{
 						enemyHex = dists.predecessors.at(enemyHex.toInt());
 
@@ -855,7 +902,7 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 							assert(defenderToBypass != nullptr);
 							auto attackHex = dists.predecessors[enemyHex.toInt()];
 							
-							if(defenderToBypass &&
+							if(defenderToBypass && dists.isReachable(attackHex) &&
 							   defenderToBypass != enemy &&
 							   vstd::contains(defenderToBypass->getAttackableHexes(activeStack), attackHex))
 							{
@@ -890,6 +937,8 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 							}
 						}
 					}
+					if(!dists.isReachable(enemyHex))
+						continue;
 
 				result.positions.insert(enemyHex);
 				result.cachedAttack = attack;
@@ -1441,17 +1490,21 @@ battle::Units ReachabilityMapCache::computeOneTurnReachableUnits(std::shared_ptr
 
 			ReachabilityInfo unitReachability = reachabilityIter != unitReachabilityMap.end() ? reachabilityIter->second : turnBattle.getReachability(unit);
 
-			bool reachable = unitReachability.distances.at(hex.toInt()) <= radius;
+			// Distances may be finite through Passing Lines (or Ghost Walk) even
+			// when this occupied hex is not a legal movement destination.
+			bool reachable = unitReachability.isReachable(hex)
+				&& unitReachability.distances.at(hex.toInt()) <= radius;
 
 			if(!reachable && unitReachability.accessibility[hex.toInt()] == EAccessibility::ALIVE_STACK)
 			{
-				const battle::Unit * hexStack = cb->battleGetUnitByPos(hex);
+				const battle::Unit * hexStack = turnBattle.battleGetUnitByPos(hex);
 
-				if(hexStack && cb->battleMatchOwner(unit, hexStack, false))
+				if(hexStack && controlledByDifferentPlayer(turnBattle, unit, hexStack))
 				{
 					for(const BattleHex & neighbour : hex.getNeighbouringTiles())
 					{
-						reachable = unitReachability.distances.at(neighbour.toInt()) <= radius;
+						reachable = unitReachability.isReachable(neighbour)
+							&& unitReachability.distances.at(neighbour.toInt()) <= radius;
 
 						if(reachable) break;
 					}
@@ -1494,7 +1547,8 @@ bool BattleExchangeEvaluator::checkPositionBlocksOurStacks(const HypotheticBattl
 
 		for(const battle::Unit * unit : turnQueue)
 		{
-			if(unit->unitId() == unitToUpdate->unitId() || cb->battleMatchOwner(unit, activeUnit, false))
+			if(unit->unitId() == unitToUpdate->unitId()
+				|| controlledByDifferentPlayer(turnBattle, unit, activeUnit))
 				continue;
 
 			auto blockedUnitDamage = unit->getMinDamage(hb.battleCanShoot(unit)) * unit->getCount();
@@ -1506,18 +1560,21 @@ bool BattleExchangeEvaluator::checkPositionBlocksOurStacks(const HypotheticBattl
 			for(BattleHex hex = BattleHex::TOP_LEFT; hex.isValid(); ++hex)
 			{
 				bool enemyUnit = false;
-				bool reachable = unitReachability.distances.at(hex.toInt()) <= unitSpeed;
+				// A transit-occupied hex must not be scored as a legal endpoint.
+				bool reachable = unitReachability.isReachable(hex)
+					&& unitReachability.distances.at(hex.toInt()) <= unitSpeed;
 
 				if(!reachable && unitReachability.accessibility[hex.toInt()] == EAccessibility::ALIVE_STACK)
 				{
 					const battle::Unit * hexStack = turnBattle.battleGetUnitByPos(hex);
 
-					if(hexStack && cb->battleMatchOwner(unit, hexStack, false))
+					if(hexStack && controlledByDifferentPlayer(turnBattle, unit, hexStack))
 					{
 						enemyUnit = true;
 						for(const BattleHex & neighbour : hex.getNeighbouringTiles())
 						{
-							reachable = unitReachability.distances.at(neighbour.toInt()) <= unitSpeed;
+							reachable = unitReachability.isReachable(neighbour)
+								&& unitReachability.distances.at(neighbour.toInt()) <= unitSpeed;
 
 							if(reachable) break;
 						}

@@ -46,6 +46,16 @@ bool ReachabilityInfo::isReachable(const BattleHex & hex) const
 			}))
 			return false;
 	}
+	if(params.friendlyTransit.any())
+	{
+		const auto occupiedHexes = battle::Unit::getHexes(hex, params.doubleWide, params.side);
+		if(std::ranges::any_of(occupiedHexes, [this](const BattleHex & occupiedHex)
+			{
+				return occupiedHex.isValid()
+					&& params.friendlyTransit.test(static_cast<size_t>(occupiedHex.toInt()));
+			}))
+			return false;
+	}
 
 	return distances[hex.toInt()] < INFINITE_DIST;
 }

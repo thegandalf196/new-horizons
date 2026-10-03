@@ -2,6 +2,23 @@
 
 ## Purpose
 
+### 2026-10-02 UP-153 — detached views and activation-token assertions
+
+Both-target build9087 succeeds. First principal native32568 runs6 tests:
+4pass/2fail, zero skips. Preserve `UP153-principal.log` and XML. Gameplay
+transit, occupied endpoint rejection, current-controller footprints, occupied
+Fire Wall damage and hidden Quicksand stopping pass their assertions. The
+remaining failures compare an uncopied hypothetical unit against a frozen
+snapshot and compare the Fire Wall trigger token against the next activation.
+`HypotheticBattle` lazily exposes the subject until `getForUpdate` creates a
+branch-owned unit. Pin the detached copy before changing the live battle; do
+not change production copying policy to satisfy this fixture. Capture the
+activation token before the authoritative movement action, because completing
+movement can advance the battle queue. Retry acceptance remains pending.
+Fixture-only retry38200 builds both targets. Principal13004 passes6/6 in4.330s;
+adjacent87077 passes10/10 in2.280s, zero skips. No production rule was weakened
+to satisfy the failed assertions.
+
 ### 2026-10-02 UP-148 — prospective read-only battle adapters
 
 Build95660 fails because BattleProxy is intentionally abstract: a prospective

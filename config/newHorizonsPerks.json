@@ -499,7 +499,7 @@
 					"requires": "advanced",
 					"description": "Friendly stacks may move through hexes occupied by friendly stacks, provided they end movement in a legal empty position.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Friendly stacks may move through hexes occupied by friendly stacks, provided they end movement in a legal empty position."
 					}
 				},

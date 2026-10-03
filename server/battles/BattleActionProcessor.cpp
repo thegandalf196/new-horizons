@@ -3226,12 +3226,51 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 			}
 		}
 
+		bool deferredGateClose = false;
+		auto trimToLastLegalTransitEndpoint = [&]() -> int
+		{
+			int lastLegalTile = -1;
+			for(int index = static_cast<int>(tiles.size()) - 1; index >= 0; --index)
+			{
+				if(accessibility.accessible(tiles[static_cast<size_t>(index)], currentUnit))
+				{
+					lastLegalTile = index;
+					break;
+				}
+			}
+
+			// The current position is the legal fallback when this segment starts
+			// inside a run of friendly occupied transit hexes.
+			BattleHex lastLegalHex = lastCommittedPosition;
+			if(lastLegalTile >= 0)
+			{
+				lastLegalHex = tiles[static_cast<size_t>(lastLegalTile)];
+				std::vector<BattleHex> legalPrefix;
+				legalPrefix.reserve(static_cast<size_t>(lastLegalTile + 1));
+				for(int index = 0; index <= lastLegalTile; ++index)
+					legalPrefix.push_back(tiles[static_cast<size_t>(index)]);
+				tiles.clear();
+				for(const auto & tile : legalPrefix)
+					tiles.insert(tile);
+			}
+			else
+				tiles.clear();
+
+			for(int index = 0; index < static_cast<int>(unitPath.size()); ++index)
+				if(unitPath[static_cast<size_t>(index)] == lastLegalHex)
+					return index - 1;
+			return -1;
+		};
 		while(movementSuccess)
 		{
 			if (movementsLeft<tilesToMove)
 				throw std::runtime_error("Movement terminated abnormally");
 
 			bool gateStateChanging = false;
+			bool openGateBeforeTransit = false;
+			bool deferredTransitHazard = false;
+			BattleHexArray transitHazardPositions;
+			int resumeMovementLeft = -1;
 			//special handling for opening gate on from starting hex
 			if (openGateAtHex.isValid() && openGateAtHex == start)
 				gateStateChanging = true;
@@ -3242,41 +3281,84 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 					BattleHex hex = unitPath[movementsLeft];
 					tiles.insert(hex);
 					const auto footprint = currentUnit->getHexes(hex);
-					const bool crossingOccupiedStack = ghostWalk && std::ranges::any_of(footprint, [&](const BattleHex & occupiedHex)
+					const bool crossingPassingLinesStack = std::ranges::any_of(footprint, [&](const BattleHex & occupiedHex)
+					{
+						return occupiedHex.isValid()
+							&& reachability.params.friendlyTransit.test(static_cast<size_t>(occupiedHex.toInt()));
+					});
+					const bool crossingOccupiedStack = ghostWalk && !crossingPassingLinesStack
+						&& std::ranges::any_of(footprint, [&](const BattleHex & occupiedHex)
 					{
 						return occupiedHex.isValid()
 							&& accessibility[occupiedHex.toInt()] == EAccessibility::ALIVE_STACK;
 					});
 
-					if ((openGateAtHex.isValid() && openGateAtHex == hex) ||
-						(gateMayCloseAtHex.isValid() && gateMayCloseAtHex == hex))
+					const bool openingGateHere = openGateAtHex.isValid() && openGateAtHex == hex;
+					const bool closingGateHere = gateMayCloseAtHex.isValid() && gateMayCloseAtHex == hex;
+					if(openingGateHere && crossingPassingLinesStack)
+					{
+						// Open before traversing this friendly-occupied boundary. The
+						// current segment ends at its last legal tile; this tile is
+						// revisited after the gate update.
+						resumeMovementLeft = trimToLastLegalTransitEndpoint();
+						gateStateChanging = true;
+						openGateBeforeTransit = true;
+						continue;
+					}
+
+					if ((openingGateHere && !crossingPassingLinesStack)
+						|| (closingGateHere && !crossingPassingLinesStack))
 					{
 						gateStateChanging = true;
 					}
 
-					//if we walked onto something, finalize this portion of stack movement check into obstacle
-					if(!crossingOccupiedStack && !battle.battleGetAllObstaclesOnPos(hex, false).empty())
-						obstacleHit = true;
-
-					if (currentUnit->doubleWide())
+					bool obstacleOnFootprint = !battle.battleGetAllObstaclesOnPos(hex, false).empty();
+					if(currentUnit->doubleWide())
 					{
 						BattleHex otherHex = currentUnit->occupiedHex(hex);
-						//two hex creature hit obstacle by backside
-						auto obstacle2 = battle.battleGetAllObstaclesOnPos(otherHex, false);
-						if(!crossingOccupiedStack && otherHex.isValid() && !obstacle2.empty())
+						if(otherHex.isValid() && !battle.battleGetAllObstaclesOnPos(otherHex, false).empty())
+							obstacleOnFootprint = true;
+					}
+					const bool alreadyProcessedObstacle = std::ranges::all_of(footprint, [&](const BattleHex & occupiedHex)
+					{
+						return !occupiedHex.isValid() || passed.contains(occupiedHex);
+					});
+
+					//if we walked onto something, finalize this portion of stack movement check into obstacle
+					if(!crossingOccupiedStack && obstacleOnFootprint && !alreadyProcessedObstacle)
+					{
+						if(crossingPassingLinesStack)
+						{
+							// Do not stop on the occupied cell. First commit only the
+							// legal prefix, trigger the obstacle at this crossed
+							// footprint, then resume only if movement continues.
+							resumeMovementLeft = trimToLastLegalTransitEndpoint();
+							transitHazardPositions.insert(hex);
+							deferredTransitHazard = true;
+							obstacleHit = true;
+						}
+						else
 							obstacleHit = true;
 					}
+
+					if(closingGateHere && crossingPassingLinesStack && !deferredTransitHazard)
+					{
+						// The unit is already beyond the gate, but this friendly
+						// footprint cannot be a close-gate movement endpoint.
+						deferredGateClose = true;
+						gateMayCloseAtHex = BattleHex();
+					}
+
 					if(!obstacleHit)
 						passed.insert(hex);
 				}
 			}
+			if(resumeMovementLeft >= 0)
+				movementsLeft = resumeMovementLeft;
 
 			if (!tiles.empty())
 			{
 				//commit movement
-				BattleStackMoved sm;
-				sm.battleID = battle.getBattle()->getBattleID();
-				sm.stack = currentUnit->unitId();
 				int segmentDistance = 0;
 				for(const auto & hex : tiles)
 				{
@@ -3285,12 +3367,18 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 					++segmentDistance;
 					lastCommittedPosition = hex;
 				}
-				result.distance += segmentDistance;
-				sm.distance = segmentDistance;
-				sm.teleporting = false;
-				sm.tilesToMove = tiles;
-				breakSanctuary(battle, currentUnit);
-				gameHandler->sendAndApply(sm);
+				if(segmentDistance > 0)
+				{
+					BattleStackMoved sm;
+					sm.battleID = battle.getBattle()->getBattleID();
+					sm.stack = currentUnit->unitId();
+					result.distance += segmentDistance;
+					sm.distance = segmentDistance;
+					sm.teleporting = false;
+					sm.tilesToMove = tiles;
+					breakSanctuary(battle, currentUnit);
+					gameHandler->sendAndApply(sm);
+				}
 				tiles.clear();
 			}
 
@@ -3304,7 +3392,7 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 					if(currentUnit->doubleWide())
 						passed.insert(currentUnit->occupiedHex());
 				}
-				if (gateStateChanging)
+				if (gateStateChanging && !openGateBeforeTransit)
 				{
 					if (currentUnit->getPosition() == openGateAtHex)
 					{
@@ -3324,10 +3412,50 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 						owner->updateGateState(battle);
 					}
 				}
+
+				if(deferredTransitHazard && movementSuccess)
+				{
+					movementSuccess = battle.handleObstacleTriggersForUnitAtPositions(
+						*gameHandler->spellEnv, *currentUnit, transitHazardPositions, passed);
+					for(const auto & position : transitHazardPositions)
+						passed.insert(currentUnit->getHexes(position));
+
+					if(movementSuccess)
+					{
+						// The stack stayed at its last legal position while the
+						// crossed hazard resolved. Revisit that path step now that
+						// its obstacle has already been processed.
+						continue;
+					}
+				}
+
+				if(openGateBeforeTransit)
+				{
+					openGateAtHex = BattleHex();
+					if(movementSuccess && currentUnit->alive())
+					{
+						BattleUpdateGateState db;
+						db.battleID = battle.getBattle()->getBattleID();
+						db.state = EGateState::OPENED;
+						gameHandler->sendAndApply(db);
+					}
+					if(movementSuccess)
+					{
+						continue;
+					}
+				}
+
+				if(deferredGateClose)
+				{
+					owner->updateGateState(battle);
+					deferredGateClose = false;
+				}
 			}
 			else
 			{
 				//movement finished normally: we reached destination
+				if(deferredGateClose)
+					owner->updateGateState(battle);
 				break;
 			}
 		}

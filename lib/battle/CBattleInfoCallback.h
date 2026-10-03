@@ -192,6 +192,11 @@ public:
 	std::vector<std::shared_ptr<const CObstacleInstance>> getAllAffectedObstaclesByStack(const battle::Unit * unit, const BattleHexArray & passed) const override;
 	//Handle obstacle damage here, requires SpellCastEnvironment
 	bool handleObstacleTriggersForUnit(SpellCastEnvironment & spellEnv, const battle::Unit & unit, const BattleHexArray & passed = {}) const;
+	/// Trigger hazards on crossed footprints while the stack remains at its last
+	/// legal position (used when a friendly occupied transit tile cannot be a
+	/// committed movement segment endpoint).
+	bool handleObstacleTriggersForUnitAtPositions(SpellCastEnvironment & spellEnv, const battle::Unit & unit,
+		const BattleHexArray & positions, const BattleHexArray & passed = {}) const;
 
 	const CStack * battleGetStackByPos(const BattleHex & pos, bool onlyAlive = true) const;
 
@@ -326,6 +331,9 @@ public:
 
 	ReachabilityInfo getReachability(const battle::Unit * unit) const;
 	ReachabilityInfo getReachability(const ReachabilityInfo::Parameters & params) const;
+	/// Adds the current controlling hero's Passing Lines traversal hexes to a
+	/// custom reachability query without changing its side or Ghost Walk rules.
+	void configurePassingLines(const battle::Unit * mover, ReachabilityInfo::Parameters & params) const;
 	AccessibilityInfo getAccessibility() const;
 	AccessibilityInfo getAccessibility(const battle::Unit * stack) const; //Hexes occupied by stack will be marked as accessible.
 	AccessibilityInfo getAccessibility(const BattleHexArray & accessibleHexes) const; //given hexes will be marked as accessible
@@ -343,4 +351,8 @@ protected:
 	ReachabilityInfo makeBFS(const AccessibilityInfo & accessibility, const ReachabilityInfo::Parameters & params) const;
 	bool isInObstacle(const BattleHex & hex, const BattleHexArray & obstacles, const ReachabilityInfo::Parameters & params) const;
 	BattleHexArray getStoppers(BattleSide whichSidePerspective) const; //get hexes with stopping obstacles (quicksands)
+	std::vector<std::shared_ptr<const CObstacleInstance>> getAffectedObstaclesAtPositions(
+		const battle::Unit * unit, const BattleHexArray & positions, const BattleHexArray & passed) const;
+	bool handleObstacleTriggersForUnitWithObstacles(SpellCastEnvironment & spellEnv, const battle::Unit & unit,
+		const std::vector<std::shared_ptr<const CObstacleInstance>> & obstacles) const;
 };

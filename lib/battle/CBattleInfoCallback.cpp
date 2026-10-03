@@ -3248,12 +3248,60 @@ std::vector<std::shared_ptr<const CObstacleInstance>> CBattleInfoCallback::getAl
 	return affectedObstacles;
 }
 
+std::vector<std::shared_ptr<const CObstacleInstance>> CBattleInfoCallback::getAffectedObstaclesAtPositions(
+	const battle::Unit * unit, const BattleHexArray & positions, const BattleHexArray & passed) const
+{
+	auto affectedObstacles = std::vector<std::shared_ptr<const CObstacleInstance>>();
+	if(!unit || !unit->alive())
+		return affectedObstacles;
+
+	for(const auto & position : positions)
+	{
+		if(!position.isValid())
+			continue;
+
+		const auto footprint = unit->getHexes(position);
+		auto positionObstacles = std::vector<std::shared_ptr<const CObstacleInstance>>();
+		for(const auto & hex : footprint)
+		{
+			if(!hex.isValid() || passed.contains(hex))
+				continue;
+			for(const auto & obstacle : battleGetAllObstaclesOnPos(hex, false))
+				if(!vstd::contains(positionObstacles, obstacle))
+					positionObstacles.push_back(obstacle);
+		}
+
+		if(footprint.contains(BattleHex::GATE_BRIDGE) && battleIsGatePassable())
+			vstd::erase_if(positionObstacles, [](const auto & obstacle)
+			{
+				return obstacle->obstacleType == CObstacleInstance::MOAT;
+			});
+
+		for(const auto & obstacle : positionObstacles)
+			if(!vstd::contains(affectedObstacles, obstacle))
+				affectedObstacles.push_back(obstacle);
+	}
+	return affectedObstacles;
+}
+
 bool CBattleInfoCallback::handleObstacleTriggersForUnit(SpellCastEnvironment & spellEnv, const battle::Unit & unit, const BattleHexArray & passed) const
+{
+	return handleObstacleTriggersForUnitWithObstacles(spellEnv, unit, getAllAffectedObstaclesByStack(&unit, passed));
+}
+
+bool CBattleInfoCallback::handleObstacleTriggersForUnitAtPositions(SpellCastEnvironment & spellEnv,
+	const battle::Unit & unit, const BattleHexArray & positions, const BattleHexArray & passed) const
+{
+	return handleObstacleTriggersForUnitWithObstacles(spellEnv, unit, getAffectedObstaclesAtPositions(&unit, positions, passed));
+}
+
+bool CBattleInfoCallback::handleObstacleTriggersForUnitWithObstacles(SpellCastEnvironment & spellEnv,
+	const battle::Unit & unit, const std::vector<std::shared_ptr<const CObstacleInstance>> & obstacles) const
 {
 	if(!unit.alive() || unit.isTimeStopped())
 		return false;
 	bool movementStopped = false;
-	for(auto & obstacle : getAllAffectedObstaclesByStack(&unit, passed))
+	for(const auto & obstacle : obstacles)
 	{
 		//helper info
 		const SpellCreatedObstacle * spellObstacle = dynamic_cast<const SpellCreatedObstacle *>(obstacle.get());
@@ -3484,6 +3532,16 @@ ReachabilityInfo CBattleInfoCallback::makeBFS(const AccessibilityInfo & accessib
 		for(auto & tile : traversalAccessibility)
 			if(tile == EAccessibility::ALIVE_STACK)
 				tile = EAccessibility::ACCESSIBLE;
+	}
+	else
+	{
+		// Passing Lines is narrower than Ghost Walk: only the selected friendly
+		// footprints are relaxed, and only where the final accessibility map
+		// still identifies a living stack (obstacles/walls remain blockers).
+		for(int hex = 0; hex < GameConstants::BFIELD_SIZE; ++hex)
+			if(params.friendlyTransit.test(static_cast<size_t>(hex))
+				&& traversalAccessibility[hex] == EAccessibility::ALIVE_STACK)
+				traversalAccessibility[hex] = EAccessibility::ACCESSIBLE;
 	}
 	for(int hex = 0; hex < GameConstants::BFIELD_SIZE; hex++)
 		accessibleCache[hex] = traversalAccessibility.accessible(hex, params.doubleWide, params.side);
@@ -3821,7 +3879,10 @@ bool CBattleInfoCallback::isInTacticRange(const BattleHex & dest) const
 ReachabilityInfo CBattleInfoCallback::getReachability(const battle::Unit * unit) const
 {
 	ReachabilityInfo::Parameters params(unit, unit->getPosition());
-	params.ghostWalk = newHorizonsShroud::rank(battleGetOwnerHero(unit)) > 0;
+	const auto controllerSide = playerToSide(battleGetOwner(unit));
+	if(controllerSide == BattleSide::ATTACKER || controllerSide == BattleSide::DEFENDER)
+		params.ghostWalk = newHorizonsShroud::rank(battleGetFightingHero(controllerSide)) > 0;
+	configurePassingLines(unit, params);
 
 	if(!battleDoWeKnowAbout(unit->unitSide()))
 	{
@@ -3831,6 +3892,57 @@ ReachabilityInfo CBattleInfoCallback::getReachability(const battle::Unit * unit)
 	}
 
 	return getReachability(params);
+}
+
+void CBattleInfoCallback::configurePassingLines(const battle::Unit * mover, ReachabilityInfo::Parameters & params) const
+{
+	params.friendlyTransit.reset();
+	if(!mover || !getBattle())
+		return;
+
+	const auto controller = battleGetOwner(mover);
+	const auto controllerSide = playerToSide(controller);
+	if(controllerSide != BattleSide::ATTACKER && controllerSide != BattleSide::DEFENDER)
+		return;
+
+	// Use the visibility-aware side callback. battleGetOwnerHero() reads the
+	// underlying side hero directly and would expose hidden enemy skill state to
+	// player-scoped reachability queries.
+	const auto * controllerHero = battleGetFightingHero(controllerSide);
+	if(!controllerHero || !controllerHero->hasActivePerk(
+		"new-horizons:battlecraft", "new-horizons:battlecraft.passingLines"))
+		return;
+
+	const auto accessibility = getAccessibility();
+	const auto gateState = battleGetGateState();
+	const bool hasWalls = battleGetFortifications().wallsHealth > 0;
+	const auto battlefield = battleGetBattlefieldType();
+	const auto * battlefieldInfo = battlefield != BattleField::NONE ? battlefield.getInfo() : nullptr;
+
+	for(const auto * friendly : battleAliveUnits())
+	{
+		if(!friendly || friendly->unitId() == mover->unitId() || battleGetOwner(friendly) != controller)
+			continue;
+
+		for(const auto & hex : friendly->getHexes())
+		{
+			if(!hex.isAvailable() || accessibility[hex.toInt()] != EAccessibility::ALIVE_STACK)
+				continue;
+
+			// These restrictions are established before living stacks are layered
+			// into AccessibilityInfo. Preserve them if a unit happens to cover one.
+			if(hex.getX() == 0 || hex.getX() == GameConstants::BFIELD_WIDTH - 1)
+				continue;
+			if(battlefieldInfo && vstd::contains(battlefieldInfo->impassableHexes, hex))
+				continue;
+			if(hasWalls && (hex == BattleHex::GATE_OUTER || hex == BattleHex::GATE_INNER)
+				&& (gateState == EGateState::BLOCKED
+					|| (gateState == EGateState::CLOSED && params.side != BattleSide::DEFENDER)))
+				continue;
+
+			params.friendlyTransit.set(static_cast<size_t>(hex.toInt()));
+		}
+	}
 }
 
 ReachabilityInfo CBattleInfoCallback::getReachability(const ReachabilityInfo::Parameters & params) const

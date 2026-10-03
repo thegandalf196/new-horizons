@@ -14,6 +14,20 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP-153 Passing Lines is active and source/native verified. Shared movement permits
+friendly occupied transit but rejects occupied endpoints, including controlled
+double-wide footprints. The authoritative path preserves occupied Fire Wall
+damage and stops before hidden Quicksand; detached AI consumes the same query.
+Both Linux targets build; principal retry13004 passes6/6 in4.330s and adjacent
+87077 passes10/10 in2.280s, zero skips. Data/inventory19/19, module drift and
+independent review pass. Coverage182->183/310 perks,128->127 planned;
+Battlecraft3/10, ranks84/93 and faction49/90 unchanged. Phase2 retains compound
+hazards, consecutive friendly footprints, siege gate/moat interactions and full
+tactical AI certification. No playable snapshot promotion or rendered acceptance.
+Iron Will, Crisis Command and Seize Initiative retain their narrow unanswered
+design/conflict questions. Windows37077420212 succeeds on older37dd359b8,
+including Battle Plan but not Passing Lines.
+
 UP-148 Battle Plan is implemented and active after both-target builds and
 principal native5/5 in13.180s, zero skips. Its saved pre-combat opportunity and
 dedicated BATTLE_PLAN receipt run after tactics but before any Creature Activation,
@@ -1318,7 +1332,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Three Skills have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 84/93 | All three Spellcraft ranks now work and are registered active; Diplomacy, Divine Mandate, and Elemental Rebirth account for the nine planned ranks. |
-| Skill perks active | 182/310 | 128 planned; Battle Plan is the newest source/native-verified activation. Command is 7/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 183/310 | 127 planned; Passing Lines is the newest source/native-verified activation. Battlecraft is 3/10; Command is 7/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 49/90 | 41 planned perks; Blood Scent has attack-local live/detached evidence. |
 | Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
