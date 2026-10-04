@@ -81,6 +81,12 @@ std::string damageSpellSpecialtyMarker(HeroTypeID heroType, SpellID spell)
 		+ std::to_string(spell.getNum());
 }
 
+std::string skillSpecialtyMarker(HeroTypeID heroType, SecondarySkill skill)
+{
+	return "new-horizons:skill-specialty:" + std::to_string(heroType.getNum()) + ":"
+		+ std::to_string(skill.getNum());
+}
+
 const ArtifactID & spellbindersHatArtifactID()
 {
 	static const ArtifactID result(ArtifactID::decode("core:spellbindersHat"));
@@ -558,6 +564,18 @@ std::string CGHeroInstance::getSpecialtyDescriptionTranslated() const
 				return description.toString(LIBRARY->generaltexth.get());
 			}
 
+	if(const auto rules = newHorizonsHeroes::skillSpecialtyRules(primaryGrowthRules))
+		if(heroType->secondarySkillSpecialtyAlias
+			&& heroType->secondarySkillSpecialtyAlias->skill == SecondarySkill(SecondarySkill::LOGISTICS)
+			&& getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::LOGISTICS)) > 0)
+		{
+			MetaString description;
+			description.appendRawString("Core Logistics movement bonuses are increased by +");
+			description.appendNumber(rules->coreBonusPercent);
+			description.appendRawString("%. Logistics perks are not increased.");
+			return description.toString(LIBRARY->generaltexth.get());
+		}
+
 	return heroType->getSpecialtyDescriptionTranslated();
 }
 
@@ -575,6 +593,22 @@ int CGHeroInstance::getDamageSpellSpecialtyBonusPercent(SpellID spell) const
 		return bonus && bonus->stacking == marker;
 	});
 	return converted ? rules->componentPercent : 0;
+}
+
+int CGHeroInstance::getSkillSpecialtyCoreBonusPercent(SecondarySkill skill) const
+{
+	const auto rules = newHorizonsHeroes::skillSpecialtyRules(primaryGrowthRules);
+	const CHero * heroType = getHeroType();
+	if(!rules || !heroType || std::ranges::find(rules->skills, skill) == rules->skills.end())
+		return 0;
+
+	const std::string marker = skillSpecialtyMarker(heroType->getId(), skill);
+	const auto & localBonuses = getExportedBonusList();
+	const bool converted = std::ranges::any_of(localBonuses, [&marker](const auto & bonus)
+	{
+		return bonus && bonus->stacking == marker;
+	});
+	return converted ? rules->coreBonusPercent : 0;
 }
 
 HeroTypeID CGHeroInstance::getHeroTypeID() const
@@ -830,6 +864,10 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	const bool convertsCreatureLineSpecialty = newHorizonsHeroes::creatureLineSpecialtyRules(primaryGrowthRules).has_value()
 		&& heroType->creatureLineSpecialtyAlias.has_value();
 	const bool convertsDamageSpellSpecialty = newHorizonsHeroes::damageSpellSpecialtyRules(primaryGrowthRules).has_value();
+	const auto skillSpecialties = newHorizonsHeroes::skillSpecialtyRules(primaryGrowthRules);
+	const bool convertsLogisticsSpecialty = skillSpecialties.has_value()
+		&& heroType->secondarySkillSpecialtyAlias
+		&& heroType->secondarySkillSpecialtyAlias->skill == SecondarySkill(SecondarySkill::LOGISTICS);
 	for(const std::shared_ptr<Bonus> & b : heroType->specialty)
 	{
 		if(convertsCreatureLineSpecialty
@@ -854,7 +892,21 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 				continue;
 			}
 		}
+		if(convertsLogisticsSpecialty
+			&& std::ranges::find(heroType->secondarySkillSpecialtyAlias->bonuses, b)
+				!= heroType->secondarySkillSpecialtyAlias->bonuses.end())
+			continue;
 		addNewBonus(b);
+	}
+	if(convertsLogisticsSpecialty)
+	{
+		auto marker = std::make_shared<Bonus>();
+		marker->type = BonusType::NONE;
+		marker->source = BonusSource::HERO_SPECIAL;
+		marker->sid = BonusSourceID(heroType->getId());
+		marker->duration = BonusDuration::PERMANENT;
+		marker->stacking = skillSpecialtyMarker(heroType->getId(), SecondarySkill(SecondarySkill::LOGISTICS));
+		addNewBonus(marker);
 	}
 	if(convertsCreatureLineSpecialty)
 		refreshCreatureLineSpecialtyBonuses(true);

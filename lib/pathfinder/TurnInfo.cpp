@@ -95,8 +95,35 @@ int64_t applyPercentageRoundUp(const int64_t base, const int64_t percentage)
 	return (base >= 0 ? saturatingAdd(product, 99) : saturatingAdd(product, -99)) / 100;
 }
 
+bool isCoreLogisticsSourceBonus(const Bonus & bonus)
+{
+	return bonus.source == BonusSource::SECONDARY_SKILL
+		&& bonus.sid == BonusSourceID(SecondarySkill(SecondarySkill::LOGISTICS));
+}
+
+bool isNewHorizonsLogisticsSourceBonus(const Bonus & bonus)
+{
+	static const int newHorizonsLogistics = SecondarySkill::decode("new-horizons:logistics");
+	return bonus.source == BonusSource::SECONDARY_SKILL
+		&& newHorizonsLogistics >= 0
+		&& bonus.sid == BonusSourceID(SecondarySkill(newHorizonsLogistics));
+}
+
+bool isLogisticsCoreEffectMovementBonus(const Bonus & bonus)
+{
+	// The legacy Logistics entity predates the New Horizons split movement
+	// selectors and only carries a land bonus. New Horizons maps that skill to
+	// its own Logistics entity, whose core effects supply both movement pools.
+	const bool landOrSeaMovement = bonus.subtype == BonusSubtypeID(BonusCustomSubtype::heroMovementLand)
+		|| bonus.subtype == BonusSubtypeID(BonusCustomSubtype::heroMovementSea);
+	return bonus.type == BonusType::MOVEMENT
+		&& bonus.valType == BonusValueType::PERCENT_TO_BASE
+		&& landOrSeaMovement
+		&& (isCoreLogisticsSourceBonus(bonus) || isNewHorizonsLogisticsSourceBonus(bonus));
+}
+
 NewHorizonsMovementModifiers getNewHorizonsMovementModifiers(
-	const TConstBonusListPtr & bonuses, const CSelector & daySelector)
+	const TConstBonusListPtr & bonuses, const CSelector & daySelector, const CGHeroInstance * hero)
 {
 	NewHorizonsMovementModifiers result;
 	std::array<int64_t, vstd::to_underlying(BonusSource::NUM_BONUS_SOURCE)> percentToSource = {};
@@ -136,9 +163,13 @@ NewHorizonsMovementModifiers getNewHorizonsMovementModifiers(
 
 		const auto sourceIndex = vstd::to_underlying(bonus->source);
 		const auto sourcePercentage = percentToSource[sourceIndex];
+		int64_t rawValue = bonus->val;
+		if(isLogisticsCoreEffectMovementBonus(*bonus))
+			rawValue = applyPercentageRoundDown(rawValue,
+				hero->getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::LOGISTICS)));
 		const int64_t modifiedValue = bonus->source == BonusSource::CREATURE_ABILITY
-			? applyPercentageRoundUp(bonus->val, sourcePercentage)
-			: applyPercentageRoundDown(bonus->val, sourcePercentage);
+			? applyPercentageRoundUp(rawValue, sourcePercentage)
+			: applyPercentageRoundDown(rawValue, sourcePercentage);
 
 		switch(bonus->valType)
 		{
@@ -171,23 +202,13 @@ NewHorizonsMovementModifiers getNewHorizonsMovementModifiers(
 	return result;
 }
 
-bool isCoreLogisticsMovementBonus(const Bonus & bonus)
-{
-	// The legacy Logistics entity predates the New Horizons split movement
-	// selectors and only carries a land bonus.  New Horizons heroes use the
-	// same Logistics percentage for both movement pools, while legacy heroes
-	// must continue to use the original land-only bonus.
-	return bonus.source == BonusSource::SECONDARY_SKILL
-		&& bonus.sid == BonusSourceID(SecondarySkill(SecondarySkill::LOGISTICS));
-}
-
 TConstBonusListPtr newHorizonsWaterBonuses(
 	const TConstBonusListPtr & landBonuses, const TConstBonusListPtr & waterBonuses)
 {
 	const bool waterHasCoreLogistics = std::ranges::any_of(*waterBonuses,
 		[](const std::shared_ptr<const Bonus> & bonus)
 		{
-			return isCoreLogisticsMovementBonus(*bonus);
+			return isCoreLogisticsSourceBonus(*bonus);
 		});
 	if(waterHasCoreLogistics)
 		return waterBonuses;
@@ -198,7 +219,7 @@ TConstBonusListPtr newHorizonsWaterBonuses(
 
 	for(const auto & bonus : *landBonuses)
 	{
-		if(!isCoreLogisticsMovementBonus(*bonus))
+		if(!isCoreLogisticsSourceBonus(*bonus))
 			continue;
 
 		auto seaBonus = std::make_shared<Bonus>(*bonus);
@@ -388,8 +409,8 @@ TurnInfo::TurnInfo(TurnInfoCache * sharedCache, const CGHeroInstance * target, i
 		const auto landBonuses = sharedCache->movementPointsLimitLand.getBonusList(target, landSelector);
 		const auto waterBonuses = newHorizonsWaterBonuses(landBonuses,
 			sharedCache->movementPointsLimitWater.getBonusList(target, waterSelector));
-		const auto landModifiers = getNewHorizonsMovementModifiers(landBonuses, daySelector);
-		auto waterModifiers = getNewHorizonsMovementModifiers(waterBonuses, daySelector);
+		const auto landModifiers = getNewHorizonsMovementModifiers(landBonuses, daySelector, target);
+		auto waterModifiers = getNewHorizonsMovementModifiers(waterBonuses, daySelector, target);
 		if(newHorizonsNavigation)
 			waterModifiers.percentageToBase = saturatingAdd(waterModifiers.percentageToBase, 25);
 		movePointsLimitLand = applyNewHorizonsMovementBounds(

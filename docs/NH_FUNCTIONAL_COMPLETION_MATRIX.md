@@ -1,6 +1,18 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
+Latest source/native acceptance UP218: Logistics for Kyrre/Gunnar/Dessa.
+Canonical20% affects only core Land/Sea10/20/30, yielding12/24/36, not perks.
+Both-target95053 and repair41124 succeed; native33370 passes15/15 in6.804s,
+zero skips. Real aliases, both pools/ranks, Navigation, unrelated bonuses,
+cached rank removal, saved markers and legacy retention pass, alongside adjacent
+movement/damage/creature controls. Module drift and twelve hero-data checks pass;
+Astra has no blocker. One Skill specialty slice gains coverage; this does not
+complete the Skill specialty family or change Skill/rank/perk/spell totals.
+First native failure identified legacy/active Skill-source confusion and is
+retained in the failure ledger. Phase2: combined source modifiers and broader
+interactions. No GUI/playable claim. Next: Armorer's reduction and growth chance.
+Windows37215692312 is terminal SUCCESS on422f0ce0a, excluding UP217/UP218.
 Latest source/native acceptance UP217: damage-spell specialties apply fixed15%
 to the Spell Power component alone. Nine eligible heroes/eight visible effects
 share exact-producer, saved-rule and rational arithmetic paths; Solmyr's explicit

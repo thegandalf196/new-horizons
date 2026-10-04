@@ -1,7 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-04/schema",
 	"title": "Saved New Horizons hero growth and scale rules",
-	"description": "New Horizons hero growth, canonical skill-offer weights, starting-skill schema, and optional versioned creature-line and damage-spell specialty conversions. Primary growth grants the fixed class vector on every level; version 3 additionally evaluates independent configured skill bonus rolls. Empty retains legacy heroes.",
+	"description": "New Horizons hero growth, canonical skill-offer weights, starting-skill schema, and optional versioned creature-line, damage-spell, and Logistics specialty conversions. Primary growth grants the fixed class vector on every level; version 3 additionally evaluates independent configured skill bonus rolls. Empty retains legacy heroes.",
 	"type": "object",
 	"oneOf": [
 		{"maxProperties": 0},
@@ -35,7 +35,8 @@
 				},
 				"startingSkills": {"$ref": "#/definitions/startingSkills"},
 				"creatureLineSpecialties": {"$ref": "#/definitions/creatureLineSpecialties"},
-				"damageSpellSpecialties": {"$ref": "#/definitions/damageSpellSpecialties"}
+				"damageSpellSpecialties": {"$ref": "#/definitions/damageSpellSpecialties"},
+				"skillSpecialties": {"$ref": "#/definitions/skillSpecialties"}
 			}
 		}
 	],
@@ -97,6 +98,20 @@
 			"properties": {
 				"version": {"type": "integer", "enum": [1]},
 				"componentPercent": {"type": "integer", "enum": [15]}
+			}
+		},
+		"skillSpecialties": {
+			"type": "object",
+			"required": ["version", "coreBonusPercent", "skills"],
+			"additionalProperties": false,
+			"properties": {
+				"version": {"type": "integer", "enum": [1]},
+				"coreBonusPercent": {"type": "integer", "enum": [20]},
+				"skills": {
+					"type": "array", "minItems": 1, "maxItems": 1,
+					"uniqueItems": true,
+					"items": {"type": "string", "enum": ["core:logistics"]}
+				}
 			}
 		},
 		"startingSkills": {

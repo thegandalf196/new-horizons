@@ -59,6 +59,14 @@ public:
 		std::vector<std::shared_ptr<Bonus>> bonuses;
 	};
 	std::optional<CreatureLineSpecialtyAlias> creatureLineSpecialtyAlias;
+	/// Exact legacy `specialty.secondary` alias and its generated prototype
+	/// bonuses. The alias is retained even if its skill has no generic bonuses.
+	struct SecondarySkillSpecialtyAlias
+	{
+		SecondarySkill skill;
+		std::vector<std::shared_ptr<Bonus>> bonuses;
+	};
+	std::optional<SecondarySkillSpecialtyAlias> secondarySkillSpecialtyAlias;
 	/// Exact prototype entries produced by eligible damage-spell specialty
 	/// sources. New Horizons converts only these pointers on fresh hero copies.
 	struct DamageSpellSpecialtyProducer

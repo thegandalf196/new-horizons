@@ -336,7 +336,9 @@ void CHeroHandler::loadHeroSpecialty(CHero * hero, const JsonNode & node) const
 
 		LIBRARY->identifiers()->requestIdentifier("secondarySkill", skillNode, [this, hero, stepSize](si32 skill)
 		{
-			skillSpecialtiesToGenerate.push_back({hero->ID, SecondarySkill(skill), stepSize});
+			const SecondarySkill specialtySkill(skill);
+			hero->secondarySkillSpecialtyAlias = CHero::SecondarySkillSpecialtyAlias{specialtySkill, {}};
+			skillSpecialtiesToGenerate.push_back({hero->ID, specialtySkill, stepSize});
 		});
 	}
 
@@ -567,7 +569,14 @@ void CHeroHandler::afterLoadFinalization()
 	// leading to createSecondarySkillSpecialty creating copy of incomplete bonus
 	for (const auto & specialty : skillSpecialtiesToGenerate)
 	{
+		auto & hero = objects.at(specialty.hero.getNum());
 		for (const auto & bonus : createSecondarySkillSpecialty(specialty.skill, specialty.stepSize))
-			objects.at(specialty.hero.getNum())->specialty.push_back(prepSpec(specialty.hero, bonus));
+		{
+			auto prepared = prepSpec(specialty.hero, bonus);
+			hero->specialty.push_back(prepared);
+			if(hero->secondarySkillSpecialtyAlias
+				&& hero->secondarySkillSpecialtyAlias->skill == specialty.skill)
+				hero->secondarySkillSpecialtyAlias->bonuses.push_back(std::move(prepared));
+		}
 	}
 }

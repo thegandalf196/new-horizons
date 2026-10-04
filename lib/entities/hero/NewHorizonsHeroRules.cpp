@@ -112,6 +112,28 @@ void validateOptionalDamageSpellSpecialtyRules(const JsonNode & rules)
 		validateDamageSpellSpecialtyRules(found->second);
 }
 
+void validateSkillSpecialtyRules(const JsonNode & rules)
+{
+	fields(rules, {"version", "coreBonusPercent", "skills"});
+	require(integer(rules["version"], 1, 1), "skill specialty version");
+	require(integer(rules["coreBonusPercent"], 20, 20), "skill specialty core bonus percentage");
+	const auto & skills = rules["skills"];
+	require(skills.isVector() && skills.Vector().size() == 1, "version 1 skill specialties must contain only core:logistics");
+	require(skills.Vector().front().isString() && skills.Vector().front().String() == "core:logistics",
+		"version 1 skill specialty must be core:logistics");
+	require(resolve(SecondarySkill::entityType(), skills.Vector().front().String()) == SecondarySkill::LOGISTICS,
+		"unknown version 1 skill specialty");
+}
+
+void validateOptionalSkillSpecialtyRules(const JsonNode & rules)
+{
+	if(!rules.isStruct())
+		return;
+	const auto found = rules.Struct().find("skillSpecialties");
+	if(found != rules.Struct().end())
+		validateSkillSpecialtyRules(found->second);
+}
+
 void validateExcludedSkills(const JsonNode & excludedSkills)
 {
 	if(excludedSkills.isNull())
@@ -299,10 +321,11 @@ void validateHeroRules(const JsonNode & rules, bool requireAllClasses)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "skillSpecialties"});
 	validateCommon(rules);
 	validateOptionalCreatureLineSpecialtyRules(rules);
 	validateOptionalDamageSpellSpecialtyRules(rules);
+	validateOptionalSkillSpecialtyRules(rules);
 	validateExcludedSkills(rules["excludedSkills"]);
 	validateSkillOfferWeights(rules["skillOfferWeights"], requireAllClasses);
 	validateStartingSkills(rules["startingSkills"], requireAllClasses);
@@ -331,10 +354,11 @@ void validateResolvedHeroRules(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "skillSpecialties"});
 	validateCommon(rules);
 	validateOptionalCreatureLineSpecialtyRules(rules);
 	validateOptionalDamageSpellSpecialtyRules(rules);
+	validateOptionalSkillSpecialtyRules(rules);
 	validateExcludedSkills(rules["excludedSkills"]);
 	if(!rules["skillOfferWeights"].isNull())
 		validateSkillOfferWeightRow(rules["skillOfferWeights"]);
@@ -353,6 +377,8 @@ JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 		result["creatureLineSpecialties"] = rules["creatureLineSpecialties"];
 	if(rules.Struct().contains("damageSpellSpecialties"))
 		result["damageSpellSpecialties"] = rules["damageSpellSpecialties"];
+	if(rules.Struct().contains("skillSpecialties"))
+		result["skillSpecialties"] = rules["skillSpecialties"];
 	if(rules["skillOfferWeights"].isStruct())
 		result["skillOfferWeights"] = rules["skillOfferWeights"][HeroClassID::encode(heroClass.getNum())];
 	if(rules["excludedSkills"].isVector())
@@ -394,6 +420,21 @@ std::optional<DamageSpellSpecialtyRules> damageSpellSpecialtyRules(const JsonNod
 	return DamageSpellSpecialtyRules{
 		.version = static_cast<int>(found->second["version"].Integer()),
 		.componentPercent = static_cast<int>(found->second["componentPercent"].Integer())
+	};
+}
+
+std::optional<SkillSpecialtyRules> skillSpecialtyRules(const JsonNode & resolvedRules)
+{
+	if(!usesRules(resolvedRules) || !resolvedRules.isStruct())
+		return std::nullopt;
+	const auto found = resolvedRules.Struct().find("skillSpecialties");
+	if(found == resolvedRules.Struct().end())
+		return std::nullopt;
+	validateSkillSpecialtyRules(found->second);
+	return SkillSpecialtyRules{
+		.version = static_cast<int>(found->second["version"].Integer()),
+		.coreBonusPercent = static_cast<int>(found->second["coreBonusPercent"].Integer()),
+		.skills = {SecondarySkill(SecondarySkill::LOGISTICS)}
 	};
 }
 

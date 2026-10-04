@@ -412,6 +412,9 @@ public:
 	/// Returns the saved New Horizons damage-specialty component bonus only
 	/// when this hero has the matching persistent local conversion marker.
 	int getDamageSpellSpecialtyBonusPercent(SpellID spell) const;
+	/// Returns the saved New Horizons core Skill-specialty bonus only when this
+	/// hero has the matching persistent local conversion marker.
+	int getSkillSpecialtyCoreBonusPercent(SecondarySkill skill) const;
 	void setHeroType(HeroTypeID type);
 
 	bool isGarrisoned() const;

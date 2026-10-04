@@ -2,6 +2,29 @@
 
 ## Purpose
 
+### 2026-10-04 UP218 — Focused repair acceptance
+
+Bounded repair41124 succeeds. Native33370 passes15/15 in6.804s, zero skips:
+the intended224/248/272 pools, Navigation274, unrelated sources, reused caches
+through rank removal and both saved/legacy guards now pass, alongside eleven
+adjacent controls. Exact legacy-producer retention replaces the false empty
+list assumption. Module drift and twelve hero-data checks pass; final Astra
+review finds no blocker. Source/native evidence is not playable acceptance.
+
+### 2026-10-04 UP218 — Legacy alias and active Skill identity are distinct
+
+Both-target95053 succeeds. Native46075 runs15 tests, zero skips, in6.852s;
+eleven adjacent controls pass but all four new specialty tests fail. The local
+saved specialty getter returns20, yet movement remains220/240/260 because the
+matching predicate identifies the legacy core:logistics alias, not the active
+new-horizons:logistics rank-bonus source. Match the exact active Skill source
+as well, without scaling unrelated sources or Navigation. Keep224/248/272.
+The legacy fixture also incorrectly assumes its alias producer list is empty:
+core and New Horizons Skill definitions differ. The captured list is nonempty,
+while the absent-rule220 movement assertions pass. Preserve that observed
+legacy behavior and verify producer retention; do not invent a260 baseline.
+First failure evidence: UP218-skill-specialty-native.log/XML. Retry pending.
+
 ### 2026-10-04 UP217 — Final focused acceptance
 
 Both-target9817 and bounded fixture rebuild65610 succeed. Native23804 passes

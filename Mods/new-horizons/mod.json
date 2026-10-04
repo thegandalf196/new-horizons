@@ -2719,6 +2719,13 @@
 					"version": 1,
 					"componentPercent": 15
 				},
+				"skillSpecialties": {
+					"version": 1,
+					"coreBonusPercent": 20,
+					"skills": [
+						"core:logistics"
+					]
+				},
 				"startingSkills": {
 					"factionSkills": {
 						"core:castle": "new-horizons:divineMandate",

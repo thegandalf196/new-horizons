@@ -51,6 +51,15 @@ struct DLL_LINKAGE DamageSpellSpecialtyRules
 	int componentPercent = 15;
 };
 
+/// Saved New Horizons conversion of the core Logistics Skill specialty.
+/// V1 deliberately supports only this one skill family.
+struct DLL_LINKAGE SkillSpecialtyRules
+{
+	int version = 1;
+	int coreBonusPercent = 20;
+	std::vector<SecondarySkill> skills;
+};
+
 /// Read-only live-hero presentation. No secondary attributes or masteries are
 /// fabricated here. Primary growth is the fixed class vector; version 3 also
 /// exposes the owned skills' independent bonus opportunities.
@@ -92,6 +101,9 @@ DLL_LINKAGE std::optional<CreatureLineSpecialtyRules> creatureLineSpecialtyRules
 /// Returns the damage-spell conversion captured by this hero. Missing rules
 /// intentionally retain the legacy specialty behavior for older saves.
 DLL_LINKAGE std::optional<DamageSpellSpecialtyRules> damageSpellSpecialtyRules(const JsonNode & resolvedRules);
+/// Returns the converted skill specialties captured by this hero. Missing
+/// rules intentionally preserve legacy specialty behavior for older saves.
+DLL_LINKAGE std::optional<SkillSpecialtyRules> skillSpecialtyRules(const JsonNode & resolvedRules);
 /// Legacy compatibility accessor. New Horizons primary growth is deterministic
 /// for older profiles. Version 3 returns the configured owned-skill chances.
 DLL_LINKAGE std::vector<SkillGrowthChance> skillGrowthChances(const JsonNode & resolvedRules,
