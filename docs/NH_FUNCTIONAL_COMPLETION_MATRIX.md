@@ -1,6 +1,22 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
+UP221 Offense specialty slice source/native accepted: Crag Hack/Gundula
+receive12/24/36% core melee damage and Attack-growth chances. Only per-instance
+exact NH Offense rank-bonus clones are adjusted; Lua aggregates, unrelated
+sources and perks remain unchanged. Client80060 and repair builds22982/50115
+succeed; final native91027 passes15/15 in7.752s, zero skips, covering both aliases,
+all ranks, forecasts/accepted attacks, ranged/OTHER/Executioner controls,
+projected core removal, initial-XP sampling, rank removal, save/load and older
+supported lists, plus adjacent Armorer/Logistics/growth controls. Module drift
+and12 hero-data checks pass. Production/fixture review finds no blocker; first
+compile/oracle failures and repairs are retained. Skill-specialty coverage now
+includes Logistics, Armorer and Offense; Archery/Estates and other conversion
+families remain incomplete. No rank/perk/spell totals change or graphical/
+playable claim. Phase2 retains future magical-melee semantics and broader
+modifier compositions. UP220 audit identifies Shield/Air Shield as the next
+safe hero-access exclusion, preserving creature effects and authored-profile gaps.
+
 UP220 six-row access slice accepted: optional saved-v3 heroAccess excludes
 Stone Skin/Bloodlust/Prayer/Precision/Slayer/Disrupting Ray from hero casting,
 acquisition and new default books without disabling world/creature effects.

@@ -33,6 +33,7 @@
 #include "../gameState/CGameState.h"
 #include "../gameState/UpgradeInfo.h"
 #include "../CCreatureHandler.h"
+#include "../bonuses/BonusCustomTypes.h"
 #include "../bonuses/Limiters.h"
 #include "../mapping/CMap.h"
 #include "../StartInfo.h"
@@ -1151,9 +1152,22 @@ void CGHeroInstance::updateSkillBonus(const SecondarySkill & which, int val)
 
 	if(val > 0)
 	{
+		static const SecondarySkill newHorizonsOffenseSkill(SecondarySkill::decode("new-horizons:offense"));
+		const int offenseSpecialtyPercent = which == newHorizonsOffenseSkill
+			? getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::OFFENCE)) : 0;
 		auto skillBonus = (*LIBRARY->skillh)[which]->at(val).effects;
 		for(const auto& b : skillBonus)
-			addNewBonus(std::make_shared<Bonus>(*b));
+		{
+			auto bonus = std::make_shared<Bonus>(*b);
+			if(offenseSpecialtyPercent > 0
+				&& bonus->type == BonusType::PERCENTAGE_DAMAGE_BOOST
+				&& bonus->subtype == BonusCustomSubtype::damageTypeMelee
+				&& bonus->valType == BonusValueType::BASE_NUMBER
+				&& bonus->source == BonusSource::SECONDARY_SKILL
+				&& bonus->sid == BonusSourceID(which))
+				bonus->val = bonus->val * (100 + offenseSpecialtyPercent) / 100;
+			addNewBonus(bonus);
+		}
 	}
 
 	const int luckSkillIndex = SecondarySkill::decode("new-horizons:luck");
@@ -1199,6 +1213,14 @@ std::optional<newHorizonsHeroes::PrimaryGrowthView> CGHeroInstance::getPrimaryGr
 				&& opportunity.attribute == PrimarySkill::DEFENSE)
 				opportunity.chancePercent = std::min(100,
 					opportunity.chancePercent * (100 + armorerSpecialtyPercent) / 100);
+	static const int newHorizonsOffenseSkill = SecondarySkill::decode("new-horizons:offense");
+	const int offenseSpecialtyPercent = getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::OFFENCE));
+	if(newHorizonsOffenseSkill >= 0 && offenseSpecialtyPercent > 0)
+		for(auto & opportunity : result.extraGrowth)
+			if(opportunity.skill.getNum() == newHorizonsOffenseSkill
+				&& opportunity.attribute == PrimarySkill::ATTACK)
+				opportunity.chancePercent = std::min(100,
+					opportunity.chancePercent * (100 + offenseSpecialtyPercent) / 100);
 	if(hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.deepKnowledge"))
 	{
 		const int wisdomSkillID = SecondarySkill::decode("new-horizons:wisdom");

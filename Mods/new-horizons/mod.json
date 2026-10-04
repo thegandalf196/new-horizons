@@ -2736,7 +2736,8 @@
 					"coreBonusPercent": 20,
 					"skills": [
 						"core:logistics",
-						"core:armorer"
+						"core:armorer",
+						"core:offence"
 					]
 				},
 				"startingSkills": {

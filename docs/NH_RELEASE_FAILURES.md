@@ -2,6 +2,41 @@
 
 ## Purpose
 
+### 2026-10-04 UP221 — Fixture setup corrections before execution
+
+Root static review catches a mutable damage argument cast from const storage,
+duplicate fixture member, initial-growth case using the ordinary control rather
+than the specialist, and missing beginCombat. Tester corrects these before the
+native build. Astra identifies a stale-forecast risk when advancing activation
+by Defending intervening units; preserve the exact initial arithmetic assertions
+and recompute the accepted attack forecast immediately before dispatch. No
+production blocker found. Client80060 and twelve hero-data checks pass; native
+execution remains pending. Record actual compile/runtime failures below rather
+than weakening principal-path evidence. Phase2 retains future magical-melee
+semantics and broader modifier compositions.
+
+Native build93795 stops on one fixture compilation error: the local
+newHorizonsOffense helper collides with the existing namespace of that name.
+Root renames it nhOffenseSkill in the four call/declaration sites; production
+code is unchanged. First log: UP221-offense-specialty-native-build.log.
+Bounded repair build and native run must pass before accepting UP221.
+
+Repair build22982 succeeds. First native11986 runs15 tests in7.681s:13 pass,
+two specialist cases fail exact arithmetic by one damage point. Their oracle
+multiplies an already floored baseline whereas the engine applies the Offense
+factor before final flooring; the Pikeman Attack/Defense baseline is fractional
+at the chosen count. Keep exact assertions and make the baseline integral or
+derive the full pre-rounding oracle, not a tolerance or production change.
+UP221-offense-specialty-native.log/XML retains the failure. Real accepted hits,
+growth, source values, old rules and saved markers did not fail independently.
+
+Tester confirms unrounded base292.5; use200 rather than100 attacking Pikemen
+for integral base585, retaining every exact expected percentage assertion.
+Bounded rebuild50115 succeeds; final native91027 passes15/15 in7.752s,
+zero skips, UP221-offense-specialty-final.log/XML. Initial compile/static
+repairs and first native oracle failure remain visible. No production damage
+formula, tolerance or intended specialty/perk assertion was weakened.
+
 ### 2026-10-04 UP220 — Source-review fixture corrections before native acceptance
 
 Production review approves separate heroAccess/world membership. Root catches

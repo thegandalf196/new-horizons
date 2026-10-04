@@ -108,9 +108,9 @@
 				"version": {"type": "integer", "enum": [1]},
 				"coreBonusPercent": {"type": "integer", "enum": [20]},
 				"skills": {
-					"type": "array", "minItems": 1, "maxItems": 2,
+					"type": "array", "minItems": 1, "maxItems": 3,
 					"uniqueItems": true,
-					"items": {"type": "string", "enum": ["core:logistics", "core:armorer"]}
+					"items": {"type": "string", "enum": ["core:logistics", "core:armorer", "core:offence"]}
 				}
 			}
 		},
