@@ -39,6 +39,20 @@ class ConfluxGrowthDataTest(unittest.TestCase):
         self.assertEqual(slots['modify@4']['modify@1'], ['dwellingLvl1'])
         self.assertEqual(slots['modify@5']['appendItems'], [['dwellingLvl8']])
         self.assertEqual(slots['modify@3']['modify@3'], ['horde1'])
+        self.assertEqual(slots['modify@3']['appendItems'], [['horde2']])
+
+    def test_vault_uses_one_standard_horde_producer_for_the_fire_upgrade_line(self):
+        self.assertEqual(self.town['horde']['modify@2'], 3)
+        vault = self.town['buildings']['horde2']
+        self.assertEqual(vault['name'], 'Vault of Ashes')
+        self.assertEqual(vault['requires'], ['dwellingLvl4'])
+        self.assertEqual(vault['cost#override']['gold'], 1000)
+        self.assertEqual(vault['cost#override']['ore'], 5)
+        self.assertNotIn('bonuses', vault, 'Do not double-count Horde growth')
+        line = load('config/newHorizonsCreatureCategories.json')['growthLines']['core:fireElemental']
+        self.assertEqual(line['weeklyBaseGrowth'], 4)
+        self.assertEqual(line['hordeGrowthOverride'], 2)
+        self.assertEqual(line['members'], ['core:fireElemental', 'core:energyElemental'])
 
     def test_original_building_icons_are_referenced_not_replaced_or_extracted(self):
         self.assertEqual(self.town['buildingsIcons'], 'NH_conflux_buildings')
@@ -49,7 +63,7 @@ class ConfluxGrowthDataTest(unittest.TestCase):
         for frame, image in frames.items():
             self.assertEqual(image, {
                 'group': 0, 'frame': frame, 'defFile': 'HALLELEM.DEF',
-                'defGroup': 0, 'defFrame': 37 if frame == 150 else frame})
+                'defGroup': 0, 'defFrame': {150: 37, 24: 33}.get(frame, frame)})
 
 
 if __name__ == '__main__':

@@ -1,6 +1,17 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
+UP227 Vault of Ashes source/native accepted: standard Horde2 now targets
+Fire/Energy row3, with saved base4 and horde addition2. Actual prerequisite
+construction, unbuilt/built controls, unchanged initial stock, upgrade
+non-duplication, weekly stock, Water-row control, shared AI growth forecast and
+current eight-row save restoration pass. Both-target84391 succeeds; native97534
+passes3/3 in2.695s, zero skips. Five data guards/module drift and independent
+review pass. One missing town growth mechanic is implemented; registered
+spell/rank/perk counts are unchanged. Dedicated art remains Not done, hall
+reference provisional; no rendered/playable acceptance. Older category snapshots
+without the override, strategic AI choice and broader composition remain Phase2.
+
 UP224 Resurrection specialty source/native accepted: Alamar/Jeddite receive20%
 only on the4SP component; fixed100 stays unchanged. Exact instance producers
 and supported-spell membership preserve older Cure-only snapshots. Client51670
@@ -225,7 +236,8 @@ Both-target7085 and fixture retry28194 succeed; native75381 passes3/3 in2.168s,
 zero skips, UP211-conflux-focused-retry.log/XML. Python13/13 and generated-module
 drift pass. Authentic-art binding and hall hook exist; rendered acceptance remains
 pending. Phase2 retains co-located town-art selection/layout and preconstruction
-Garden valuation for Sprite. Vault of Ashes remains missing. Ordinary Horde rows
+Garden valuation for Sprite. Vault of Ashes is subsequently accepted under UP227.
+Ordinary Horde rows
 are source-mapped, not blanket native verified. Skill/spell/perk counts unchanged.
 UP210's historical policy-only map is superseded by the native acceptance above.
 

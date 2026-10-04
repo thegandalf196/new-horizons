@@ -10,6 +10,13 @@ This is a binding inventory, not a full visual audit or a product completion cla
 
 ## Status meanings
 
+UP227 Vault of Ashes: dedicated hall/town artwork **Not done**. Its functional
+Horde2 hall card references purchaser HALLELEM.DEF frame33 (the related Fire
+dwelling) as a temporary binding, without extracted pixels, generated artwork,
+new frame composition or a bespoke town-scene structure. The native fourth
+unique-building card reuses existing hall layout. This is not approved Vault
+art or rendered acceptance; future bespoke art must use the HoMM3 art skill.
+
 UP212 Mage Guild scroll binding: **Provisional** source integration for standalone
 NH iconScroll32/44 images. The client now references native TPMAGES.DEF group0
 frame0 from purchaser H3sprite.lod: actual blank open83x61 parchment. Original

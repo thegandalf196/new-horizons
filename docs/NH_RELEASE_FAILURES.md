@@ -2,6 +2,18 @@
 
 ## Purpose
 
+### 2026-10-04 UP227 — Construction-state enum and test invocation
+
+First both-target build45584 fails only in the new Conflux fixture: the
+construction prerequisite state is PREREQUIRES, not PREREQUISITES. Preserve
+UP227-vault-build.log and correct that test identifier without weakening
+construction validation. Use unittest discovery with tools/tests as the search
+directory; package-style invocation cannot resolve the existing flat imports.
+Discovery passes all five Conflux data guards. Array merge indices are explicitly
+one-based in JsonUtils::getIndexSafe; the second horde slot is modify@2.
+Repaired both-target84391 succeeds; native97534 passes3/3 in2.695s with zero
+skips. Keep the first failed build log alongside the repaired evidence.
+
 ### 2026-10-04 UP225 — Legacy schema fixtures and target setup
 
 First offline magic/schema invocation through python -m unittest lacks the

@@ -2,13 +2,17 @@
 	"core:conflux": {
 		"town": {
 			"buildingsIcons": "NH_conflux_buildings",
+			"horde": {
+				"modify@2": 3
+			},
 			"creatures": {
 				"modify@1": [ "pixie" ],
 				"appendItems": [ [ "sprite" ] ]
 			},
 			"hallSlots": {
 				"modify@3": {
-					"modify@3": [ "horde1" ]
+					"modify@3": [ "horde1" ],
+					"appendItems": [ [ "horde2" ] ]
 				},
 				"modify@4": {
 					"modify@1": [ "dwellingLvl1" ]
@@ -42,6 +46,20 @@
 							"val": 3
 						}
 					]
+				},
+				"horde2": {
+					"name": "Vault of Ashes",
+					"description": "The Vault of Ashes increases weekly Fire and Energy Elemental growth by 2.",
+					"requires": [ "dwellingLvl4" ],
+					"cost#override": {
+						"gold": 1000,
+						"wood": 0,
+						"ore": 5,
+						"mercury": 0,
+						"sulfur": 0,
+						"crystal": 0,
+						"gems": 0
+					}
 				},
 				"dwellingLvl8": {
 					"name": "Sprite Grove",

@@ -257,3 +257,132 @@ TEST_F(NewHorizonsConfluxGrowthTest, NewConfluxTownStartsWithEightIndependentSto
 	EXPECT_EQ(town->creatures.at(0).second.size(), 0u);
 	EXPECT_EQ(town->creatures.at(7).second.size(), 0u);
 }
+
+TEST_F(NewHorizonsConfluxGrowthTest, VaultOfAshesAddsFireLineGrowthAtTheWeeklyBoundary)
+{
+	const auto fireElemental = creature("core:fireElemental");
+	const auto energyElemental = creature("core:energyElemental");
+	const auto waterElemental = creature("core:waterElemental");
+	startConfluxMap();
+	auto * town = expectAt<CGTownInstance>({18, 18, 0});
+	ASSERT_NE(town, nullptr);
+	ASSERT_EQ(town->getTown()->creatures.size(), 8u);
+	ASSERT_EQ(town->creatures.size(), 8u);
+	ASSERT_EQ(town->getTown()->hordeLvl.at(1), 3);
+	ASSERT_TRUE(town->getTown()->buildings.contains(BuildingID::HORDE_2));
+	ASSERT_NE(fireElemental.toCreature(), nullptr);
+	ASSERT_NE(energyElemental.toCreature(), nullptr);
+	ASSERT_NE(waterElemental.toCreature(), nullptr);
+	EXPECT_EQ(town->getTown()->creatures.at(3).front(), fireElemental);
+	EXPECT_EQ(town->creatureBaseGrowth(fireElemental), 4);
+	EXPECT_EQ(town->creatureHordeGrowth(fireElemental), 2);
+	EXPECT_EQ(town->creatureHordeGrowth(energyElemental), 2)
+		<< "The Fire/Energy upgrade pair shares its saved growth-line horde override";
+
+	GameHandlerTestServer server(gameState(), PlayerColor(0));
+	CGameHandler gameHandler(server, gameState());
+	gameHandler.randomizer->setSeed(227);
+	grantBuildingResources(*this);
+	gameHandler.onNewTurn();
+	ASSERT_EQ(gameState()->day, 1);
+
+	const auto fireDwelling = BuildingID::getDwellingFromLevel(3, 0);
+	const auto waterDwelling = BuildingID::getDwellingFromLevel(2, 0);
+	ASSERT_TRUE(town->getTown()->buildings.contains(fireDwelling));
+	ASSERT_TRUE(town->getTown()->buildings.contains(waterDwelling));
+	ASSERT_FALSE(town->hasBuilt(BuildingID::HORDE_2));
+
+	const std::array<BuildingID, 6> prerequisiteBuildings = {
+		BuildingID::FORT,
+		BuildingID::MAGES_GUILD_1,
+		BuildingID::DWELL_LVL_1,
+		BuildingID::DWELL_LVL_2,
+		waterDwelling,
+		fireDwelling
+	};
+	for(size_t index = 0; index + 1 < prerequisiteBuildings.size(); ++index)
+	{
+		const auto building = prerequisiteBuildings[index];
+		ASSERT_TRUE(gameHandler.buildStructure(town->id, building)) << "failed building " << building;
+		EXPECT_TRUE(town->hasBuilt(building));
+	}
+	EXPECT_EQ(gameState()->canBuildStructure(town, BuildingID::HORDE_2), EBuildingState::PREREQUIRES)
+		<< "Vault of Ashes requires the Fire Elemental dwelling";
+	ASSERT_TRUE(gameHandler.buildStructure(town->id, fireDwelling));
+	EXPECT_TRUE(town->hasBuilt(fireDwelling));
+	EXPECT_EQ(gameState()->canBuildStructure(town, BuildingID::HORDE_2), EBuildingState::ALLOWED);
+
+	constexpr int fireRow = 3;
+	constexpr int waterRow = 2;
+	ASSERT_EQ(town->creatures.at(fireRow).second, (std::vector<CreatureID>{fireElemental}));
+	ASSERT_EQ(town->creatures.at(fireRow).first, 4u);
+	EXPECT_EQ(town->creatureGrowth(fireRow), 4) << "An unbuilt Vault does not activate its +2 growth";
+	const auto fireStockBeforeVault = town->creatures.at(fireRow).first;
+	const auto waterStockBeforeVault = town->creatures.at(waterRow).first;
+	const int waterGrowthBeforeVault = town->creatureGrowth(waterRow);
+
+#ifdef ENABLE_NULLKILLER2_AI
+	// An unbuilt Horde 2 is already mapped to the Fire Elemental row, so the
+	// shared AI building estimate sees its prospective +2 without building it.
+	auto armyManager = std::make_unique<NK2AI::ArmyManager>(nullptr, nullptr);
+	const auto prospectiveVaultInfo = NK2AI::BuildingInfo(
+		town->getTown()->buildings.at(BuildingID::HORDE_2).get(), fireElemental.toCreature(),
+		fireElemental, town, armyManager);
+	EXPECT_FALSE(prospectiveVaultInfo.isBuilt);
+	EXPECT_EQ(prospectiveVaultInfo.creatureGrowth, 2);
+#endif
+
+	ASSERT_TRUE(gameHandler.buildStructure(town->id, BuildingID::HORDE_2));
+	EXPECT_TRUE(town->hasBuilt(BuildingID::HORDE_2));
+	EXPECT_EQ(town->creatures.at(fireRow).first, fireStockBeforeVault)
+		<< "Construction changes next week's growth, not the stock already generated on day one";
+	EXPECT_EQ(town->creatures.at(waterRow).first, waterStockBeforeVault);
+	EXPECT_EQ(town->creatureGrowth(fireRow), 6);
+	EXPECT_EQ(town->creatureGrowth(waterRow), waterGrowthBeforeVault);
+
+	const auto energyDwelling = BuildingID::getDwellingFromLevel(3, 1);
+	ASSERT_TRUE(town->getTown()->buildings.contains(energyDwelling));
+	ASSERT_TRUE(gameHandler.buildStructure(town->id, energyDwelling));
+	ASSERT_EQ(town->creatures.at(fireRow).second,
+		(std::vector<CreatureID>{fireElemental, energyElemental}));
+	EXPECT_EQ(town->creatureGrowth(fireRow), 6)
+		<< "Upgrading the shared Fire/Energy stock row does not stack the horde addition";
+	EXPECT_EQ(town->creatureGrowth(waterRow), waterGrowthBeforeVault)
+		<< "Vault growth remains confined to the Fire Elemental line";
+
+#ifdef ENABLE_NULLKILLER2_AI
+	const auto builtVaultInfo = NK2AI::BuildingInfo(
+		town->getTown()->buildings.at(BuildingID::HORDE_2).get(), fireElemental.toCreature(),
+		fireElemental, town, armyManager);
+	EXPECT_TRUE(builtVaultInfo.isBuilt);
+	EXPECT_EQ(builtVaultInfo.creatureGrowth, 6)
+		<< "The built-row AI forecast uses the same authoritative growth query";
+#endif
+
+	for(int day = 1; day < 8; ++day)
+		gameHandler.onNewTurn();
+	ASSERT_EQ(gameState()->day, 8);
+	EXPECT_EQ(town->creatures.at(fireRow).first, 10u);
+	EXPECT_EQ(town->creatures.at(waterRow).first, waterStockBeforeVault + waterGrowthBeforeVault);
+
+	const auto townId = town->id;
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	const auto * restoredTown = restored.getTown(townId);
+	ASSERT_NE(restoredTown, nullptr);
+	ASSERT_EQ(restoredTown->getTown()->hordeLvl.at(1), 3);
+	ASSERT_EQ(restoredTown->creatures.size(), 8u);
+	EXPECT_TRUE(restoredTown->hasBuilt(BuildingID::HORDE_2));
+	EXPECT_EQ(restoredTown->creatureBaseGrowth(fireElemental), 4);
+	EXPECT_EQ(restoredTown->creatureHordeGrowth(fireElemental), 2);
+	EXPECT_EQ(restoredTown->creatureHordeGrowth(energyElemental), 2);
+	EXPECT_EQ(restoredTown->creatures.at(fireRow).second,
+		(std::vector<CreatureID>{fireElemental, energyElemental}));
+	EXPECT_EQ(restoredTown->creatures.at(fireRow).first, 10u);
+	EXPECT_EQ(restoredTown->creatureGrowth(fireRow), 6);
+	EXPECT_EQ(restoredTown->creatures.at(waterRow).first,
+		waterStockBeforeVault + waterGrowthBeforeVault);
+	EXPECT_EQ(restoredTown->creatureGrowth(waterRow), waterGrowthBeforeVault);
+}
