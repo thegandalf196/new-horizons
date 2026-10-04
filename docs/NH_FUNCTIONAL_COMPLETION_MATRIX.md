@@ -2084,10 +2084,37 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Diplomacy ranks/perks active | 3/3 ranks, 7/10 perks | Deterministic joining, Envoy, Peacemaker, Tribute and Recruitment Pact pass focused verification, including versioned state; three perks remain missing. |
 
 Additional canonical breadth not yet reducible to a defensible completion
-fraction: nine town/faction sections (33 grouped unique-building table rows),
-nine artifact-conversion families, six specialty families, required combat/hero/
+fraction: nine town/faction sections (37 grouped unique-building table rows),
+ten artifact-conversion rows, six specialty families, required combat/hero/
 adventure UI surfaces, save-state representation, and minimum AI hooks. The
 next ledger pass must enumerate these items rather than invent a denominator.
+2026-10-04 inventory correction: the current canonical Unique-building rebalance
+tables contain37 non-header rows; Artifact rebalance framework contains10.
+These replace stale33/nine counts. Grouped retained/growth rows and separate
+effect clauses are not atomic implementation units, so this correction grants
+no additional gameplay coverage and creates no invented completion fraction.
+
+2026-10-04 targeted coverage audit: canonical friendly-fire confirmation is
+missing in the ordinary hero cast paths (UP203, now assigned). Primary hero
+attribute and flat land/sea Movement artifact conversions are absent (UP204,
+now assigned). Enum PRIMARY_SKILL alone is not enough to identify a hero rating:
+Vial of Dragon Blood's dragon-only Creature Attack/Defense remain unscaled.
+Master Logistician is an unblocked planned Logistics perk with an identified
+NewTurn event seam, including the Stables refill interaction. These mappings
+grant no coverage credit before implementation and focused execution evidence.
+
+UP203/UP204 source/native acceptance2026-10-04: client16088 and both-target64537
+pass; native71900 passes6/6 in1.610s, zero skips, including real Armageddon damage,
+immune/Hypnotize recipient semantics, Hand of Fate potential collateral without
+RNG, confirmation gate and actual artifact equip/removal. The required friendly-
+fire confirmation path is implemented in the client using native controls;
+rendered callback/dialog acceptance remains separate. Three artifact-framework
+rows (hero primary, flat land Movement, flat sea Movement) now have source/native
+evidence:78 converted records/43 artifacts, exact data guards and equipped values.
+Vial's dragon-only ratings remain unchanged. Other artifact rows are not credited.
+Perk213/310, rank87/93 and combat61/67 counts are unchanged. Phase2 retains GUI
+acceptance, broad spell interactions, assembled artifact/save roundtrips and
+strategic AI artifact valuation; source delivery does not imply playable promotion.
 
 Priority for this phase is missing gameplay coverage, especially shared paths
 that unlock several specified items. Focused verification is sufficient to

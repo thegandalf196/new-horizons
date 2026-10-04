@@ -10,6 +10,16 @@ This is a binding inventory, not a full visual audit or a product completion cla
 
 ## Status meanings
 
+UP203 indiscriminate-spell friendly-fire confirmation: **Provisional** interaction,
+source/native verified2026-10-04. Reuse the existing native framed yes/no dialog and
+ordinary text/stack names, rather than creating decorative assets. Required
+content is the actual potentially affected friendly-stack preview. Source,
+native guard/preview tests and rendered interaction acceptance are distinct;
+client16088 and both-target64537 build, and native71900 passes6/6, including
+recipient preview and confirmation gate. These are not rendered callback or
+dialog acceptance; the existing native frame alone does not prove visual quality.
+No new artwork or GUI execution is authorized by this entry.
+
 UP190 Puppet Master interaction is source/native verified (8/8 principal
 cases, successful client/test builds), not visually accepted.
 Its single-target spell interaction reuses existing native controls; controller

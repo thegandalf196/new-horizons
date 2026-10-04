@@ -314,6 +314,7 @@ set(test_SRCS
 		server/battles/NewHorizonsEarthquakeTest.cpp
 		battleAI/NewHorizonsEarthquakeAITest.cpp
 		server/battles/NewHorizonsHavocStructuresTest.cpp
+		server/battles/NewHorizonsFriendlyFireTest.cpp
 		battleAI/NewHorizonsHavocStructuresAITest.cpp
 		server/battles/NewHorizonsVenomancerTest.cpp
 		server/battles/NewHorizonsRegenerationTest.cpp
@@ -371,6 +372,7 @@ set(test_SRCS
 		server/queries/NewHorizonsFountainOfFortuneTest.cpp
 		server/queries/NewHorizonsCastleStablesTest.cpp
 		server/queries/NewHorizonsBloodObeliskTest.cpp
+		server/queries/NewHorizonsArtifactScaleTest.cpp
 		server/queries/NewHorizonsMagicUniversityTest.cpp
 		server/queries/NewHorizonsAdventureSpellUnlockTest.cpp
 		server/NewHorizonsEconomyTest.cpp

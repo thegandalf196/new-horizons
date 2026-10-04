@@ -2,6 +2,53 @@
 
 ## Purpose
 
+### 2026-10-04 UP-203/UP-204 — Focused acceptance after repairs
+
+Client retry16088 and both-target64537 succeed. Native71900 passes6/6 in1.610s,
+zero skips; UP203-UP204-focused.log/XML retain the evidence. Artifact removals
+assert actual loaded IDs/legal slots and separate Sea Captain's Hat from Ocean
+Guidance, retaining all four Movement records. Focused Python24/24 and module
+drift pass. Failures below are historical repaired evidence, not active blockers.
+No GUI, full assembled-artifact/save interaction or playable acceptance claim.
+
+### 2026-10-04 UP-203 — Native RNG fixture API
+
+Both-target18945 fails compiling the friendly-fire fixture: GameRandomizer
+exposes its ordinary RNG through getDefault(), not nextInt directly. Root
+corrects both assertions to getDefault().nextInt, retaining the no-RNG-draw
+requirement. Evidence: UP203-UP204-focused-build.log. Client retry16088 already
+passes; native execution still requires a successful fixture rebuild.
+
+### 2026-10-04 UP-203 — Client target sentinel scope
+
+Client19130 fails compilation at BattleActionsController.cpp because the new
+preview adapter refers to undeclared INVALID_UNIT_ID. Use the target's declared
+sentinel or predicate, not an invented magic number or transitive include.
+Evidence: UP203-friendly-fire-client-build.log. Shared helper/native artifact
+build42395 already succeeds; that is not client acceptance. Retry is required.
+
+### 2026-10-04 UP-204 — Artifact fixture removal crash
+
+Native build42395 succeeds, but run46950 exits139. Headless GDB88507 locates
+null slotInfo in GameStatePackVisitor::visitBulkEraseArtifacts at the fixture's
+MISC1 removal after HEAD/FEET removal. The authored equipment list is not proof
+that the H3M importer placed an artifact in that slot. Verify loaded artifact
+identities/actual legal slots before every authoritative removal; do not weaken
+the exact scaled-value requirements or add a production workaround without
+evidence of a reachable gameplay defect. Retain UP204-artifact-first-build.log,
+UP204-artifact-first.log and UP204-artifact-crash-backtrace.log. Acceptance is
+pending repair and retry; no coverage credit or playable promotion follows.
+
+### 2026-10-04 UP-204 — Focused Python test import path
+
+Root's package-style invocation of test_new_horizons_artifact_data fails before
+test execution because that existing module imports test_new_horizons_content
+as a sibling, not a package-qualified module. Correct invocation:
+`env PYTHONPATH=tools/tests python3 -m unittest test_new_horizons_artifact_data`.
+The corrected command passes3/3. This is an invocation failure, not artifact
+runtime acceptance or a production defect; keep the sibling test directory on
+the import path when running this existing test family.
+
 ### 2026-10-04 UP-202 — Final focused acceptance
 
 All failures below are repaired. Client retry32362 and final both-target20101

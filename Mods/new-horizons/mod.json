@@ -7192,7 +7192,8 @@
 		"config/heroes/solmyr.json"
 	],
 	"artifacts": [
-		"config/artifacts/spellbindersHat.json"
+		"config/artifacts/spellbindersHat.json",
+		"config/artifacts/scaledAttributesAndMovement.json"
 	],
 	"factions": [
 		"config/factions/uniqueBuildings.json",

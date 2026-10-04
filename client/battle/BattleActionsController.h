@@ -22,6 +22,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -109,6 +110,9 @@ class BattleActionsController
 	PurifyPicker purifyPicker;
 	std::function<bool(const BattleAction &, const CStack *)> cureAfflictionPicker;
 	uint64_t castingSession = 0;
+	/// Weak callbacks from the friendly-fire dialog use this token before
+	/// accessing the controller, so closing a battle invalidates queued callbacks.
+	std::shared_ptr<int> friendlyFireCallbackLifetime = std::make_shared<int>(0);
 	/// Optional pre-target Temporal Field choice for Sorcery Slow.
 	TemporalFieldFactory temporalFieldFactory;
 
@@ -262,9 +266,13 @@ class BattleActionsController
 	bool heroOrderTargetIdIsLegal(uint32_t unitId) const;
 	void updateHeroOrderTargetingStatus(const BattleHex & hoveredHex);
 	void selectHeroOrderTarget(const BattleHex & clickedHex);
+	/// Sends an ordinary hero spell immediately, or opens the generic New
+	/// Horizons friendly-fire confirmation when its live effect preview requires it.
+	bool submitHeroSpellAction(const BattleAction & action);
 
 public:
 	BattleActionsController(BattleInterface & owner);
+	~BattleActionsController();
 
 	/// initialize list of potential actions for new active stack
 	void activateStack();

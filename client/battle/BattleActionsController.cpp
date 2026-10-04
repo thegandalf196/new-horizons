@@ -51,6 +51,7 @@
 #include "../../lib/spells/effects/Effect.h"
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/spells/NewHorizonsFriendlyFire.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 
 #include <set>
@@ -71,6 +72,88 @@ constexpr std::string_view stormOfDaggersJsonKey = "new-horizons:stormOfDaggers"
 constexpr std::string_view shadowGiftJsonKey = "new-horizons:shadowGift";
 constexpr int32_t stormOfDaggersMaximumTargets = 5;
 constexpr int32_t vengefulVinesFootprintHexCount = 6;
+
+struct FriendlyFirePreview
+{
+	newHorizonsFriendlyFire::ConfirmationSnapshot snapshot;
+	std::vector<const CStack *> recipients;
+};
+
+std::optional<FriendlyFirePreview> buildFriendlyFirePreview(BattleInterface & owner,
+	const BattleAction & action, uint64_t castingSession)
+{
+	if(action.actionType != EActionType::HERO_SPELL || !owner.curInt || !owner.curInt->cb
+		|| owner.curInt->isAutoFightOn || !owner.makingTurn() || owner.isInTacticsMode())
+		return std::nullopt;
+
+	const auto battle = owner.getBattle();
+	const auto * battleState = battle ? battle->getBattle() : nullptr;
+	const auto * hero = owner.currentHero();
+	const auto * spell = action.spell.toSpell();
+	if(!battle || !battleState || !hero || !spell || !spell->isDamage())
+		return std::nullopt;
+
+	const auto side = battle->battleGetMySide();
+	if((side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| action.side != side || battleState->getSideHero(side) != hero
+		|| battleState->getSidePlayer(side) != owner.curInt->cb->getPlayerID())
+		return std::nullopt;
+
+	const auto target = action.getTarget(battle.get());
+	spells::BattleCast cast(battle.get(), hero, spells::Mode::HERO, spell);
+	cast.setOvercharge(action.spellOvercharge);
+	cast.setSelectiveDispel(action.spellSelectiveDispel);
+	cast.setCureAffliction(action.spellCureAffliction);
+	cast.setMassSlow(action.spellMassSlow);
+	cast.setShadowGiftSacrificePercent(action.spellShadowGiftSacrificePercent);
+	cast.setMetamagicFollowup(action.metamagicFollowup);
+	cast.setMetamagicGrand(action.metamagicGrand);
+	cast.setMetamagicManaRefund(action.metamagicManaRefund);
+	for(const auto & destination : target)
+	{
+		if(destination.unitValue)
+		{
+			cast.setMetamagicTargetUnitId(destination.unitValue->unitId());
+			break;
+		}
+	}
+
+	auto mechanics = spell->battleMechanics(&cast);
+	if(!mechanics || !mechanics->usesNewHorizonsMagicV3())
+		return std::nullopt;
+	mechanics->setStormOfDaggersTargetCount(static_cast<int32_t>(action.target.size()));
+
+	spells::detail::ProblemImpl targetProblem;
+	if(!mechanics->canBeCastAt(target, targetProblem))
+		return std::nullopt;
+
+	FriendlyFirePreview result;
+	result.snapshot.battleID = battleState->getBattleID();
+	result.snapshot.spellID = action.spell;
+	result.snapshot.heroID = hero->id;
+	result.snapshot.casterSide = side;
+	result.snapshot.round = battleState->getRound();
+	result.snapshot.castingSession = castingSession;
+	result.recipients = newHorizonsFriendlyFire::potentialFriendlyDamageTargets(*mechanics, target);
+	result.snapshot.friendlyUnitIDs.reserve(result.recipients.size());
+	for(const auto * stack : result.recipients)
+		if(stack)
+			result.snapshot.friendlyUnitIDs.push_back(stack->unitId());
+	return result;
+}
+
+std::string friendlyFireConfirmationText(const CSpell * spell, const std::vector<const CStack *> & recipients)
+{
+	std::string result = spell ? spell->getNameTranslated() : "This spell";
+	result += " may also affect these friendly stacks:\n";
+	for(const auto * stack : recipients)
+	{
+		if(stack)
+			result += "\n  " + std::to_string(stack->getCount()) + " " + stack->getName();
+	}
+	result += "\n\nCast anyway?";
+	return result;
+}
 
 static const char * vengefulVinesDirectionName(BattleHex::EDir direction)
 {
@@ -484,6 +567,79 @@ BattleActionsController::BattleActionsController(BattleInterface & owner):
 	selectedStack(nullptr),
 	heroSpellToCast(nullptr)
 {
+}
+
+BattleActionsController::~BattleActionsController()
+{
+	friendlyFireCallbackLifetime.reset();
+}
+
+bool BattleActionsController::submitHeroSpellAction(const BattleAction & action)
+{
+	if(!owner.curInt || !owner.curInt->cb)
+		return false;
+
+	const auto preview = buildFriendlyFirePreview(owner, action, castingSession);
+	if(!preview || preview->recipients.empty())
+	{
+		owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), action);
+		return true;
+	}
+
+	const auto snapshot = preview->snapshot;
+	const auto message = friendlyFireConfirmationText(action.spell.toSpell(), preview->recipients);
+	auto gate = std::make_shared<newHorizonsFriendlyFire::ConfirmationGate>(snapshot);
+	std::weak_ptr<int> weakLifetime = friendlyFireCallbackLifetime;
+
+	auto closeCapturedSession = [this, weakLifetime, expectedSession = snapshot.castingSession]()
+	{
+		const auto lifetime = weakLifetime.lock();
+		if(!lifetime || castingSession != expectedSession)
+			return;
+		endCastingSpell();
+	};
+
+	owner.curInt->showYesNoDialog(message,
+		[this, weakLifetime, gate, action, snapshot]()
+		{
+			const auto lifetime = weakLifetime.lock();
+			if(!lifetime || !gate->isPending())
+				return;
+
+			if(castingSession != snapshot.castingSession || !heroSpellToCast
+				|| heroSpellToCast->spell != snapshot.spellID || heroSpellToCast->side != snapshot.casterSide)
+			{
+				gate->cancel();
+				if(castingSession == snapshot.castingSession)
+					endCastingSpell();
+				return;
+			}
+
+			const auto current = buildFriendlyFirePreview(owner, action, castingSession);
+			if(!current || current->recipients.empty() || !gate->confirm(current->snapshot))
+			{
+				gate->cancel();
+				if(castingSession == snapshot.castingSession)
+					endCastingSpell();
+				return;
+			}
+
+			if(!owner.curInt || !owner.curInt->cb)
+			{
+				endCastingSpell();
+				return;
+			}
+			owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), action);
+			endCastingSpell();
+		},
+		[this, weakLifetime, gate, closeCapturedSession]()
+		{
+			const auto lifetime = weakLifetime.lock();
+			if(!lifetime || !gate->cancel())
+				return;
+			closeCapturedSession();
+		});
+	return false;
 }
 
 namespace
@@ -1101,8 +1257,8 @@ void BattleActionsController::confirmStormOfDaggersTargets()
 		action.aimToUnit(target);
 	}
 
-	owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), action);
-	endCastingSpell();
+	if(submitHeroSpellAction(action))
+		endCastingSpell();
 }
 
 void BattleActionsController::undoStormOfDaggersTarget()
@@ -1331,8 +1487,8 @@ void BattleActionsController::confirmSoulChainTargets()
 		action.aimToUnit(target);
 	}
 
-	owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), action);
-	endCastingSpell();
+	if(submitHeroSpellAction(action))
+		endCastingSpell();
 }
 
 void BattleActionsController::undoSoulChainTarget()
@@ -1536,8 +1692,8 @@ void BattleActionsController::selectLifeDrainTarget(const BattleHex & clickedHex
 
 	if(!owner.curInt || !owner.curInt->cb)
 		return;
-	owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), action);
-	endCastingSpell();
+	if(submitHeroSpellAction(action))
+		endCastingSpell();
 }
 
 bool BattleActionsController::fireWallPlacementModeActive() const
@@ -1710,8 +1866,8 @@ void BattleActionsController::selectFireWallStartOrDirection(const BattleHex & c
 	action.spellFireWallDirection = direction;
 	if(owner.curInt && owner.curInt->cb)
 	{
-		owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), action);
-		endCastingSpell();
+		if(submitHeroSpellAction(action))
+			endCastingSpell();
 	}
 }
 
@@ -2044,8 +2200,8 @@ void BattleActionsController::confirmVengefulVines()
 	if(!owner.curInt || !owner.curInt->cb)
 		return;
 
-	owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), action);
-	endCastingSpell();
+	if(submitHeroSpellAction(action))
+		endCastingSpell();
 }
 
 void BattleActionsController::updateRepeatedPlacementStatus(const BattleHex & hoveredHex)
@@ -2190,8 +2346,8 @@ void BattleActionsController::confirmRepeatedPlacement()
 
 	if(!owner.curInt || !owner.curInt->cb)
 		return;
-	owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), action);
-	endCastingSpell();
+	if(submitHeroSpellAction(action))
+		endCastingSpell();
 }
 
 void BattleActionsController::undoRepeatedPlacement()
@@ -2803,8 +2959,8 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 				return;
 			}
 		}
-		owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), *heroSpellToCast);
-		endCastingSpell();
+		if(submitHeroSpellAction(*heroSpellToCast))
+			endCastingSpell();
 	}
 	else
 	{
@@ -2833,8 +2989,8 @@ bool BattleActionsController::continueOrdinarySpellcast()
 	if(spellSelMode.get() == PossiblePlayerBattleAction::NO_LOCATION)
 	{
 		heroSpellToCast->aimToHex(BattleHex::INVALID);
-		owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), *heroSpellToCast);
-		endCastingSpell();
+		if(submitHeroSpellAction(*heroSpellToCast))
+			endCastingSpell();
 		return true;
 	}
 
@@ -3856,8 +4012,8 @@ void BattleActionsController::actionRealize(PossiblePlayerBattleAction action, c
 					heroSpellToCast->aimToUnit(targetStack); //victim
 				else
 					heroSpellToCast->aimToHex(targetHex);
-				owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), *heroSpellToCast);
-				endCastingSpell();
+				if(submitHeroSpellAction(*heroSpellToCast))
+					endCastingSpell();
 			}
 			selectedStack = nullptr;
 			return;

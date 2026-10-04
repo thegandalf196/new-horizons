@@ -1,0 +1,220 @@
+{
+	"core:armageddonsBlade": {
+		"bonuses": {
+			"attack": { "val": 15 },
+			"defence": { "val": 15 },
+			"spellpower": { "val": 15 },
+			"knowledge": { "val": 30 }
+		},
+		"text": {
+			"description": "While equipped, increases the hero's Attack, Defense, and Spell Power by 15 and Knowledge by 30. Grants Expert Armageddon and immunity to Armageddon."
+		}
+	},
+	"core:armorOfWonder": {
+		"bonuses": {
+			"attack": { "val": 5 },
+			"defence": { "val": 5 },
+			"spellpower": { "val": 5 },
+			"knowledge": { "val": 5 }
+		},
+		"text": { "description": "While equipped, increases each of the hero's four Primary Attributes by 5." }
+	},
+	"core:blackshardOfTheDeadKnight": {
+		"bonuses": { "attack": { "val": 15 } },
+		"text": { "description": "While equipped, increases the hero's Attack by 15." }
+	},
+	"core:bootsOfSpeed": {
+		"bonuses": { "movement": { "val": 60 } },
+		"text": { "description": "While equipped, increases the hero's land Movement by 60." }
+	},
+	"core:breastplateOfBrimstone": {
+		"bonuses": { "spellpower": { "val": 25 } },
+		"text": { "description": "While equipped, increases the hero's Spell Power by 25." }
+	},
+	"core:breastplateOfPetrifiedWood": {
+		"bonuses": { "spellpower": { "val": 5 } },
+		"text": { "description": "While equipped, increases the hero's Spell Power by 5." }
+	},
+	"core:bucklerOfTheGnollKing": {
+		"bonuses": { "defence": { "val": 20 } },
+		"text": { "description": "While equipped, increases the hero's Defense by 20." }
+	},
+	"core:celestialNecklaceOfBliss": {
+		"bonuses": {
+			"attack": { "val": 15 },
+			"defence": { "val": 15 },
+			"spellpower": { "val": 15 },
+			"knowledge": { "val": 15 }
+		},
+		"text": { "description": "While equipped, increases each of the hero's four Primary Attributes by 15." }
+	},
+	"core:centaurAxe": {
+		"bonuses": { "attack": { "val": 10 } },
+		"text": { "description": "While equipped, increases the hero's Attack by 10." }
+	},
+	"core:crownOfDragontooth": {
+		"bonuses": { "spellpower": { "val": 20 }, "knowledge": { "val": 20 } },
+		"text": { "description": "While equipped, increases the hero's Spell Power and Knowledge by 20 each." }
+	},
+	"core:crownOfTheSupremeMagi": {
+		"bonuses": { "knowledge": { "val": 20 } },
+		"text": { "description": "While equipped, increases the hero's Knowledge by 20." }
+	},
+	"core:dragonScaleArmor": {
+		"bonuses": { "attack": { "val": 20 }, "defence": { "val": 20 } },
+		"text": { "description": "While equipped, increases the hero's Attack and Defense by 20 each." }
+	},
+	"core:dragonScaleShield": {
+		"bonuses": { "attack": { "val": 15 }, "defence": { "val": 15 } },
+		"text": { "description": "While equipped, increases the hero's Attack and Defense by 15 each." }
+	},
+	"core:dragonWingTabard": {
+		"bonuses": { "spellpower": { "val": 10 }, "knowledge": { "val": 10 } },
+		"text": { "description": "While equipped, increases the hero's Spell Power and Knowledge by 10 each." }
+	},
+	"core:dragonboneGreaves": {
+		"bonuses": { "spellpower": { "val": 5 }, "knowledge": { "val": 5 } },
+		"text": { "description": "While equipped, increases the hero's Spell Power and Knowledge by 5 each." }
+	},
+	"core:equestriansGloves": {
+		"bonuses": { "movement": { "val": 30 } },
+		"text": { "description": "While equipped, increases the hero's land Movement by 30." }
+	},
+	"core:greaterGnollsFlail": {
+		"bonuses": { "attack": { "val": 20 } },
+		"text": { "description": "While equipped, increases the hero's Attack by 20." }
+	},
+	"core:hellstormHelmet": {
+		"bonuses": { "knowledge": { "val": 25 } },
+		"text": { "description": "While equipped, increases the hero's Knowledge by 25." }
+	},
+	"core:helmOfChaos": {
+		"bonuses": { "knowledge": { "val": 15 } },
+		"text": { "description": "While equipped, increases the hero's Knowledge by 15." }
+	},
+	"core:helmOfHeavenlyEnlightenment": {
+		"bonuses": {
+			"attack": { "val": 30 },
+			"defence": { "val": 30 },
+			"spellpower": { "val": 30 },
+			"knowledge": { "val": 30 }
+		},
+		"text": { "description": "While equipped, increases each of the hero's four Primary Attributes by 30." }
+	},
+	"core:helmOfTheAlabasterUnicorn": {
+		"bonuses": { "knowledge": { "val": 5 } },
+		"text": { "description": "While equipped, increases the hero's Knowledge by 5." }
+	},
+	"core:lionsShieldOfCourage": {
+		"bonuses": {
+			"attack": { "val": 20 },
+			"defence": { "val": 20 },
+			"spellpower": { "val": 20 },
+			"knowledge": { "val": 20 }
+		},
+		"text": { "description": "While equipped, increases each of the hero's four Primary Attributes by 20." }
+	},
+	"core:necklaceOfDragonteeth": {
+		"bonuses": { "spellpower": { "val": 15 }, "knowledge": { "val": 15 } },
+		"text": { "description": "While equipped, increases the hero's Spell Power and Knowledge by 15 each." }
+	},
+	"core:necklaceOfOceanGuidance": {
+		"bonuses": { "movement": { "val": 100 } },
+		"text": { "description": "While equipped, increases the hero's sea Movement by 100." }
+	},
+	"core:ogresClubOfHavoc": {
+		"bonuses": { "attack": { "val": 25 } },
+		"text": { "description": "While equipped, increases the hero's Attack by 25." }
+	},
+	"core:powerOfTheDragonFather": {
+		"bonuses": {
+			"attack": { "val": 30 },
+			"defence": { "val": 30 },
+			"spellpower": { "val": 30 },
+			"knowledge": { "val": 30 }
+		},
+		"text": {
+			"description": "The assembled set increases the hero's Attack and Defense by 75 each, Spell Power and Knowledge by 80 each, and Morale and Luck by 1 each. It also grants immunity to spells of levels 1 through 4."
+		}
+	},
+	"core:redDragonFlameTongue": {
+		"bonuses": { "attack": { "val": 10 }, "defence": { "val": 10 } },
+		"text": { "description": "While equipped, increases the hero's Attack and Defense by 10 each." }
+	},
+	"core:ribCage": {
+		"bonuses": { "spellpower": { "val": 10 } },
+		"text": { "description": "While equipped, increases the hero's Spell Power by 10." }
+	},
+	"core:sandalsOfTheSaint": {
+		"bonuses": {
+			"attack": { "val": 10 },
+			"defence": { "val": 10 },
+			"spellpower": { "val": 10 },
+			"knowledge": { "val": 10 }
+		},
+		"text": { "description": "While equipped, increases each of the hero's four Primary Attributes by 10." }
+	},
+	"core:scalesOfTheGreaterBasilisk": {
+		"bonuses": { "spellpower": { "val": 15 } },
+		"text": { "description": "While equipped, increases the hero's Spell Power by 15." }
+	},
+	"core:seaCaptainsHat": {
+		"bonuses": { "movement": { "val": 50 } },
+		"text": {
+			"description": "While equipped, increases the hero's sea Movement by 50, protects the hero from whirlpools, and grants access to Summon Boat. Other legacy spell grants do not bypass New Horizons spell-availability and daily-use rules."
+		}
+	},
+	"core:sentinelsShield": {
+		"bonuses": { "defence": { "val": 60 }, "attack": { "val": -15 } },
+		"text": { "description": "While equipped, increases the hero's Defense by 60 and decreases Attack by 15." }
+	},
+	"core:shieldOfTheDamned": {
+		"bonuses": { "defence": { "val": 30 } },
+		"text": { "description": "While equipped, increases the hero's Defense by 30." }
+	},
+	"core:shieldOfTheDwarvenLords": {
+		"bonuses": { "defence": { "val": 10 } },
+		"text": { "description": "While equipped, increases the hero's Defense by 10." }
+	},
+	"core:shieldOfTheYawningDead": {
+		"bonuses": { "defence": { "val": 15 } },
+		"text": { "description": "While equipped, increases the hero's Defense by 15." }
+	},
+	"core:skullHelmet": {
+		"bonuses": { "knowledge": { "val": 10 } },
+		"text": { "description": "While equipped, increases the hero's Knowledge by 10." }
+	},
+	"core:swordOfHellfire": {
+		"bonuses": { "attack": { "val": 30 } },
+		"text": { "description": "While equipped, increases the hero's Attack by 30." }
+	},
+	"core:swordOfJudgement": {
+		"bonuses": {
+			"attack": { "val": 25 },
+			"defence": { "val": 25 },
+			"spellpower": { "val": 25 },
+			"knowledge": { "val": 25 }
+		},
+		"text": { "description": "While equipped, increases each of the hero's four Primary Attributes by 25." }
+	},
+	"core:targOfTheRampagingOgre": {
+		"bonuses": { "defence": { "val": 25 } },
+		"text": { "description": "While equipped, increases the hero's Defense by 25." }
+	},
+	"core:thunderHelmet": {
+		"bonuses": { "knowledge": { "val": 50 }, "spellpower": { "val": -10 } },
+		"text": { "description": "While equipped, increases the hero's Knowledge by 50 and decreases Spell Power by 10." }
+	},
+	"core:titansCuirass": {
+		"bonuses": { "spellpower": { "val": 50 }, "knowledge": { "val": -10 } },
+		"text": { "description": "While equipped, increases the hero's Spell Power by 50 and decreases Knowledge by 10." }
+	},
+	"core:titansGladius": {
+		"bonuses": { "attack": { "val": 60 }, "defence": { "val": -15 } },
+		"text": { "description": "While equipped, increases the hero's Attack by 60 and decreases Defense by 15." }
+	},
+	"core:tunicOfTheCyclopsKing": {
+		"bonuses": { "spellpower": { "val": 20 } },
+		"text": { "description": "While equipped, increases the hero's Spell Power by 20." }
+	}
+}
