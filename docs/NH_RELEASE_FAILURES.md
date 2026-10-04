@@ -2,6 +2,49 @@
 
 ## Purpose
 
+### 2026-10-04 UP-205/UP-206 — Focused acceptance after repairs
+
+Both-target retry68082 succeeds. Native26470 passes6/6 in3.290s, zero skips,
+UP205-UP206-focused.log/XML, including repaired legacy control, live/detached
+Speed artifacts and adjacent Stables/primary artifact cases. The first combined
+Python command also used a nonexistent remembered artifact-pool module name;
+the actual guard is test_new_horizons_artifact_data. Corrected selected data/
+inventory25/25 and module drift pass. Retain earlier failures as invocation/
+fixture lessons, not claims of production defects. No playable promotion.
+
+### 2026-10-04 UP-206 — Use the real BonusSelector header
+
+Combined build45126 fails in the new Speed-artifact fixture because it includes
+nonexistent lib/bonuses/Selector.h. The actual shared selector header is
+BonusSelector.h. Root repairs only the include; no mechanic change. Keep
+UP205-UP206-final-build.log and rebuild before native acceptance.
+
+Retry59322 reaches a second fixture-only API mismatch: HypotheticBattle needs
+a shared CBattleInfoCallback, not a raw BattleInfo pointer. The fixture owner
+repairs its constructor from existing shared-callback test patterns; do not
+change the production AI interface to accommodate an incorrect fixture.
+Retain UP205-UP206-final-build-retry.log and rebuild before runtime acceptance.
+
+### 2026-10-04 UP-205 — Legacy fixture must clear captured defaults
+
+Both-target73017 compiles successfully. Native27217 passes the principal land/
+boat/pathfinder and Stables/save cases plus the adjacent Stables test, but its
+legacy control fails: an empty JSON object override merges with NH defaults and
+does not disable the captured movement rules. The tester changes the legacy
+branch to null overrides, matching existing legacy fixtures. Retain the failed
+UP205-master-logistician-focused.log/XML; rerun after rebuilding the fixture.
+No production carry defect was observed in this run.
+
+### 2026-10-04 UP-205 — Activation expectation during candidate verification
+
+The first selected perk/inventory Python run fails because Master Logistician's
+candidate activation was added to the registry but not the explicit ACTIVE_PERKS
+test expectation. Its follow-on309 count is a stopped subtest, not missing data;
+the source registry still contains310 entries. Add only the newly implemented
+perk to the expectation and retain the310-count/source-description checks.
+Production client57328 succeeds; native acceptance remains pending. Do not
+count candidate activation alone as coverage.
+
 ### 2026-10-04 UP-203/UP-204 — Focused acceptance after repairs
 
 Client retry16088 and both-target64537 succeed. Native71900 passes6/6 in1.610s,

@@ -151,7 +151,8 @@ def main():
         'heroClasses': hero_class_patch_files,
         'heroes': hero_patch_files,
         'artifacts': ['config/artifacts/spellbindersHat.json',
-                      'config/artifacts/scaledAttributesAndMovement.json'],
+                      'config/artifacts/scaledAttributesAndMovement.json',
+                      'config/artifacts/speedAndInitiative.json'],
         'factions': faction_patch_files,
         'objects': ['config/objects/magicSpring.json'],
         'spells': [

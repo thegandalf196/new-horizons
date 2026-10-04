@@ -5445,7 +5445,7 @@
 								"requires": "expert",
 								"description": "Up to 15% of unused Movement at the end of a day carries over to the next day.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Up to 15% of unused Movement at the end of a day carries over to the next day."
 								}
 							}
@@ -7193,7 +7193,8 @@
 	],
 	"artifacts": [
 		"config/artifacts/spellbindersHat.json",
-		"config/artifacts/scaledAttributesAndMovement.json"
+		"config/artifacts/scaledAttributesAndMovement.json",
+		"config/artifacts/speedAndInitiative.json"
 	],
 	"factions": [
 		"config/factions/uniqueBuildings.json",

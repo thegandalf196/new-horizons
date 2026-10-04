@@ -1,0 +1,59 @@
+{
+	"core:ringOfTheWayfarer": {
+		"bonuses": {
+			"initiative": {
+				"type": "STACKS_INITIATIVE_BASE",
+				"val": 1,
+				"valueType": "BASE_NUMBER",
+				"limiters": [
+					{
+						"type": "HAS_ANOTHER_BONUS_LIMITER",
+						"bonusType": "STACKS_INITIATIVE_BASE",
+						"bonusSourceType": "CREATURE_ABILITY"
+					}
+				]
+			}
+		},
+		"text": {
+			"description": "While equipped, grants every creature stack in the hero's army +1 Speed and +1 Initiative."
+		}
+	},
+	"core:necklaceOfSwiftness": {
+		"bonuses": {
+			"initiative": {
+				"type": "STACKS_INITIATIVE_BASE",
+				"val": 1,
+				"valueType": "BASE_NUMBER",
+				"limiters": [
+					{
+						"type": "HAS_ANOTHER_BONUS_LIMITER",
+						"bonusType": "STACKS_INITIATIVE_BASE",
+						"bonusSourceType": "CREATURE_ABILITY"
+					}
+				]
+			}
+		},
+		"text": {
+			"description": "While equipped, grants every creature stack in the hero's army +1 Speed and +1 Initiative."
+		}
+	},
+	"core:capeOfVelocity": {
+		"bonuses": {
+			"initiative": {
+				"type": "STACKS_INITIATIVE_BASE",
+				"val": 2,
+				"valueType": "BASE_NUMBER",
+				"limiters": [
+					{
+						"type": "HAS_ANOTHER_BONUS_LIMITER",
+						"bonusType": "STACKS_INITIATIVE_BASE",
+						"bonusSourceType": "CREATURE_ABILITY"
+					}
+				]
+			}
+		},
+		"text": {
+			"description": "While equipped, grants every creature stack in the hero's army +2 Speed and +2 Initiative."
+		}
+	}
+}

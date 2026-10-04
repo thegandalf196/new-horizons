@@ -40,12 +40,14 @@
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include "../TurnStartVisitScheduler.h"
 
+#include <limits>
 #include <set>
 #include <vstd/RNG.h>
 
 namespace
 {
 constexpr int32_t NEW_HORIZONS_CASTLE_STABLES_MOVEMENT_PERCENT = 20;
+constexpr int32_t NEW_HORIZONS_MASTER_LOGISTICIAN_CARRY_PERCENT = 15;
 
 int estateNetworkWeeklyIncome(const PlayerState & state)
 {
@@ -774,6 +776,17 @@ std::vector<SetMovePoints> NewTurnProcessor::updateHeroesMovementPoints()
 				// NOTE: this code executed when bonuses of previous day not yet updated (this happen in NewTurn::applyGs). See issue 2356
 				newMovementPoints = h->movementPointsLimitCached(EPathfindingLayer::LAND, ti.get());
 
+			if(gameHandler->gameState().day > 0
+				&& h->usesNewHorizonsMovement()
+				&& h->hasActivePerk("new-horizons:logistics", "new-horizons:logistics.masterLogistician"))
+			{
+				const int64_t unusedMovement = std::max<int64_t>(0, h->movementPointsRemaining());
+				const int64_t carriedMovement = NEW_HORIZONS_MASTER_LOGISTICIAN_CARRY_PERCENT * unusedMovement / 100;
+				const int64_t nextMovement = static_cast<int64_t>(newMovementPoints) + carriedMovement;
+				newMovementPoints = static_cast<int32_t>(std::min<int64_t>(
+					nextMovement, std::numeric_limits<int32_t>::max()));
+			}
+
 			if (newMovementPoints != h->movementPointsRemaining())
 				result.emplace_back(h->id, newMovementPoints);
 		}
@@ -1024,6 +1037,9 @@ void NewTurnProcessor::grantNewHorizonsCastleStablesBonus()
 				|| !hero->usesNewHorizonsMovement() || !processedHeroes.insert(hero->id).second)
 				return;
 
+			const int32_t oldMovementLimit = hero->movementPointsLimit();
+			const int32_t oldMovementRemaining = hero->movementPointsRemaining();
+
 			Bonus bonus(BonusDuration::ONE_DAY, BonusType::MOVEMENT,
 				BonusSource::TOWN_STRUCTURE, NEW_HORIZONS_CASTLE_STABLES_MOVEMENT_PERCENT, source);
 			bonus.subtype = BonusCustomSubtype::heroMovementLand;
@@ -1035,9 +1051,13 @@ void NewTurnProcessor::grantNewHorizonsCastleStablesBonus()
 			grant.bonus = bonus;
 			gameHandler->giveHeroBonus(&grant);
 
-			const int movementLimit = hero->movementPointsLimit();
-			if(hero->movementPointsRemaining() != movementLimit)
-				gameHandler->setMovePoints(hero->id, movementLimit);
+			const int64_t carriedMovement = std::max<int64_t>(0,
+				static_cast<int64_t>(oldMovementRemaining) - oldMovementLimit);
+			const int64_t movementLimit = static_cast<int64_t>(hero->movementPointsLimit()) + carriedMovement;
+			const int32_t clampedMovementLimit = static_cast<int32_t>(std::min<int64_t>(
+				movementLimit, std::numeric_limits<int32_t>::max()));
+			if(hero->movementPointsRemaining() != clampedMovementLimit)
+				gameHandler->setMovePoints(hero->id, clampedMovementLimit);
 		};
 
 		grantToResident(town->getVisitingHero());

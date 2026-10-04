@@ -1,14 +1,14 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
-Latest native-verified slice: UP202 Fortress Blood Obelisk.
-Client retry32362 and final both-target20101 pass; native31232 passes4/4
-in2.870s, zero skips, including adjacent Stables/Fountain. Independent Astra
-production review finds no blocker; root inspected and corrected the fixture.
+Latest native-verified slice: UP205 Master Logistician and UP206 Speed/Initiative
+artifacts. Both-target retry68082 passes; native26470 passes6/6 in3.290s, zero
+skips, including adjacent Stables and primary/Movement artifact conversions.
+Independent Astra source/architecture and fixture reviews find no blocker.
 Combat spell
-identities61/67 (Chaos7/11); perks213/310
-(97 planned), faction perks62/90 and ranks87/93 unchanged. This adds one
-verified specified town mechanic, not a perk or spell. Source/native acceptance
+identities61/67 (Chaos7/11); perks214/310
+(96 planned), faction perks62/90 and ranks87/93 unchanged. This adds one
+verified perk and one artifact-conversion family. Source/native acceptance
 only; GUI and playable delivery remain pending.
 Canonical source SHA-256: `5b26a4930b6c6838e7435454c96b35a19039c275694e975636b37e6003b68a4a`
 
@@ -22,6 +22,22 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+2026-10-04 UP205/UP206 source/native accepted: Master Logistician carries
+floor(15% of actual unused Movement) at completed-day NewTurn refill, preserving
+ordinary maximum and carry through Stables. Actual legal Expert selection,
+first-day/no-perk/legacy guards, 100/99/zero rounding, repeated land/boat days,
+computer ownership, same-day pathfinder use and saved resident/perk/Movement
+pass. Speed artifacts add conditional Initiative1/1/2 for a creature-authored
+base; Mage/Archmage and fallback Genie prove Speed/Initiative4->2->1->0 on real
+equipment/removal, plus detached AI projection. No runtime poller or new saved
+counter. Both-target retry68082 and native26470 pass6/6 in3.290s, zero skips;
+UP205-UP206-focused.log/XML retain evidence. Focused data/inventory25/25, module
+drift and independent Astra reviews pass. Perks213->214/310, Logistics7->8/10;
+four targeted artifact-framework families now have evidence, not all ten rows.
+Phase2 retains future-day strategic carry forecasting, projected creature-form
+limiter reevaluation, broad interactions and rendered feedback. No GUI or
+playable promotion claimed. Fixture-only compile/invocation failures are retained.
 
 2026-10-04 UP202 Blood Obelisk is source/native verified. NH Fortress special2
 replaces the legacy local Attack2 with a generic defendingHeroBonuses Attack20
@@ -2069,7 +2085,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Divine Mandate and Elemental Rebirth have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 87/93 | All three Diplomacy ranks now use deterministic joining; Divine Mandate and Elemental Rebirth account for the six planned ranks. |
-| Skill perks active | 213/310 | 97 planned; Resource Broker is the newest source/native-verified activation. Diplomacy is 7/10; Chaos Magic 4/10; Necromancy 10/10; Learning 3/10; Estates 6/10; Battlecraft 6/10; Logistics 7/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 214/310 | 96 planned; Master Logistician is the newest source/native-verified activation. Diplomacy is 7/10; Chaos Magic 4/10; Necromancy 10/10; Learning 3/10; Estates 6/10; Battlecraft 6/10; Logistics 8/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 62/90 | 28 planned perks; Lord of the Dead has normal Expert selection, ordered conversion and actual atomic Bone Dragon town-delivery evidence. |
 | Canonical combat-spell identities registered | 61/67 | 6 missing/inactive; Puppet Master is the newest source/native-verified identity. Chaos is 7/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -2246,7 +2262,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Spellcraft | 3/0 | 4/6 | Grand Formula scales the first accepted Level 4-or-5 hero spell's SP term by 150%; Arcane Focus, Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold. Basic/Advanced/Expert efficiency is 110/120/130% under saved v3 rules. |
 | Wisdom | 3/0 | 8/2 | Mana Conservation post-combat Normal recovery, Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. One other perk remains missing. Broader interactions and playable acceptance remain open. |
 | Warcasting | 3/0 | 6/4 | Spellward has focused live/detached/current-controller damage evidence. Master Synthesis has first-consumption Spell/Order, typed-exclusion and branch-history evidence. Four perks missing; Combat Casting and Enchanted Command await shared rule decisions; Perfect Rhythm stacking is unresolved. |
-| Logistics | 3/0 | 7/3 | Three perks missing; Forced March native movement/battle/state/AI verified alongside Roadmaster/Wayfarer/Mountaineer. Future unspent-burst route forecasting remains Phase2. |
+| Logistics | 3/0 | 8/2 | Rapid Embarkation and Pursuit March remain missing. Master Logistician has actual day/boat/Stables/save/pathfinder evidence alongside Forced March, Roadmaster, Wayfarer and Mountaineer. Future-day strategic carry and unspent-burst forecasting remain Phase2. |
 | Diplomacy | 3/0 | 7/3 | Foundation, Envoy, Peacemaker, Tribute and Recruitment Pact verified; three perks remain missing |
 | Estates | 3/0 | 6/4 | Resource Broker joins Land Surveyor, Tax Collector, Investor, Estate Network and Financier. Local Marketplace rate, accepted AI trade, mine-capture grants, daily income, weekly Wood/Ore, weekly treasury interest and Investor's pre-income treasury snapshot have focused native evidence. Broader interactions and playable delivery remain separate. |
 | Learning | 3/0 | 3/7 | Mentor, Quick Study and Field Study supply working Basic/Advanced perks and open ordinary Expert-rank progression. Meetings, weekly persistence, initial offer reroll, stronger-opponent awarded XP and query/RNG parity are native verified. Academic Study awaits first-visit timing. |
