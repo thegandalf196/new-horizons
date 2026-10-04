@@ -32,6 +32,10 @@ DLL_LINKAGE bool spellAvailableForOrdinaryAcquisition(const JsonNode & rules,
 /// Invalid/out-of-range/null definitions fail before dereference. Callers supply
 /// validated snapshots; registry content is used only for identity and spell kind.
 DLL_LINKAGE bool spellAllowedBySavedRoster(const JsonNode & rules, SpellID spell);
+/// Hero access additionally applies the optional saved-v3 per-row heroAccess
+/// marker. Missing markers preserve older snapshots; non-hero abilities retain
+/// their world-roster behavior.
+DLL_LINKAGE bool spellAllowedByHeroRoster(const JsonNode & rules, SpellID spell);
 /// Spell-ID form rejects non-common abilities. It does not replace
 /// spellAllowedBySavedRoster for casting or other world membership.
 DLL_LINKAGE bool spellAvailableForOrdinaryAcquisition(const JsonNode & rules, SpellID spell);

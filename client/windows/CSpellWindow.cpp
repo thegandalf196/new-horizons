@@ -421,7 +421,7 @@ void CSpellWindow::readSchoolContext()
 		const bool admitted = battleCallback
 			? newHorizonsMagic::spellAllowedByBattleRoster(*battleCallback, id)
 			: newHorizonsMagic::spellAllowedByWorldRoster(*myInt->cb, id);
-		if(!admitted)
+		if(!admitted || !newHorizonsMagic::spellAllowedByHeroRoster(myHero->getMagicRules(), id))
 			continue;
 		// Admission must precede school/level lookup for newly installed spells
 		// that did not exist in this saved roster. Cache the same set for all UI paths.

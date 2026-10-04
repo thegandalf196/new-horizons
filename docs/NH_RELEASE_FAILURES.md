@@ -2,6 +2,19 @@
 
 ## Purpose
 
+### 2026-10-04 UP220 — Source-review fixture corrections before native acceptance
+
+Production review approves separate heroAccess/world membership. Root catches
+House-of-Wisdom fixture misuse (Castle is not eligible; use an actual Conflux
+town), then Astra catches overlapping friendly/enemy hexes. Correct both
+before runtime acceptance; assert the actual action controller is Player0 so
+rejection cannot be proved by an unrelated ownership error. Client78840 and
+native50252/25274 builds succeed. First native18192 passes18/18 in2.044s,
+zero skips. Evidence includes authorized rejection without spend, actual Ogre
+Mage Bloodlust, real acquisition/default-book producers and old-save round-trip.
+No failed native run was concealed or assertion weakened. Remaining roster and
+authored specialty gaps stay open; broad effect interactions remain Phase2.
+
 ### 2026-10-04 UP219 — Focused repair acceptance
 
 Bounded rebuild2116 succeeds. Final native12882 passes13/13 in6.135s with

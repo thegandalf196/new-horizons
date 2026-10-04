@@ -56,6 +56,7 @@ JsonNode legacyRules()
 		spell.Struct().erase("selectedPlacement");
 		spell.Struct().erase("earthquake");
 		spell.Struct().erase("structures");
+		spell.Struct().erase("heroAccess");
 		if(spell.Struct().contains("variant"))
 		{
 			spell.Struct().erase("variant");
@@ -78,6 +79,7 @@ JsonNode formulaRules()
 	{
 		(void)name;
 		spell.Struct().erase("structures");
+		spell.Struct().erase("heroAccess");
 		if(spell.Struct().contains("variant"))
 		{
 			spell.Struct().erase("variant");

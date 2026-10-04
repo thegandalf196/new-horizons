@@ -142,6 +142,7 @@ def legacy_rules(rules):
             spell.pop('selectedPlacement', None)
             spell.pop('earthquake', None)
             spell.pop('structures', None)
+            spell.pop('heroAccess', None)
     return result
 
 

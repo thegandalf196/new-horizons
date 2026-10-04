@@ -46,6 +46,7 @@ class MagicV2DataTest(unittest.TestCase):
         self.rules['spells']['core:earthquake'].pop('earthquake')
         for row in self.rules['spells'].values():
             row.pop('structures', None)
+            row.pop('heroAccess', None)
         self.rules['spells'] = {key: row for key, row in self.rules['spells'].items()
                                 if 'variant' not in row}
         self.old_rules = legacy_rules(self.rules)
@@ -60,6 +61,32 @@ class MagicV2DataTest(unittest.TestCase):
         self.old_validator.validate(self.old_rules)
         self.assertFalse(self.old_validator.is_valid(self.rules))
         self.assertFalse(self.validator.is_valid(self.old_rules))
+
+    def test_retired_hero_spells_preserve_world_effect_definitions(self):
+        for identity in ('core:stoneSkin', 'core:bloodlust', 'core:prayer',
+                         'core:precision', 'core:slayer', 'core:disruptingRay'):
+            with self.subTest(spell=identity):
+                row = self.v3_rules['spells'][identity]
+                self.assertIs(row.get('active', True), True)
+                self.assertIs(row.get('heroAccess'), False)
+                self.assertIs(row.get('ordinaryAcquisition'), False)
+
+    def test_hero_access_is_optional_boolean_in_v3_only(self):
+        validator = Draft4Validator(self.v3, registry=self.registry)
+        missing = copy.deepcopy(self.v3_rules)
+        for row in missing['spells'].values():
+            row.pop('heroAccess', None)
+        validator.validate(missing)
+        for invalid in (None, 'false', 0, [], {}):
+            changed = copy.deepcopy(self.v3_rules)
+            changed['spells']['core:stoneSkin']['heroAccess'] = invalid
+            self.assertFalse(validator.is_valid(changed))
+        for rules, older_validator in ((self.rules, self.validator),
+                                       (self.old_rules, self.old_validator)):
+            older_validator.validate(rules)
+            changed = copy.deepcopy(rules)
+            changed['spells']['core:stoneSkin']['heroAccess'] = False
+            self.assertFalse(older_validator.is_valid(changed))
 
     def test_earthquake_v3_parameters_are_bounded_and_absent_from_legacy(self):
         validator = Draft4Validator(self.v3, registry=self.registry)

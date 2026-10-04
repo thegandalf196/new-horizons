@@ -585,7 +585,9 @@
 					"core:bloodlust": {
 						"schools": [
 							"new-horizons:chaos"
-						]
+						],
+						"ordinaryAcquisition": false,
+						"heroAccess": false
 					},
 					"core:chainLightning": {
 						"schools": [
@@ -1172,7 +1174,9 @@
 					"core:disruptingRay": {
 						"schools": [
 							"new-horizons:shadow"
-						]
+						],
+						"ordinaryAcquisition": false,
+						"heroAccess": false
 					},
 					"new-horizons:disintegrate": {
 						"schools": [
@@ -1474,7 +1478,9 @@
 					"core:prayer": {
 						"schools": [
 							"new-horizons:light"
-						]
+						],
+						"ordinaryAcquisition": false,
+						"heroAccess": false
 					},
 					"new-horizons:poison": {
 						"schools": [
@@ -1491,7 +1497,9 @@
 					"core:precision": {
 						"schools": [
 							"new-horizons:sorcery"
-						]
+						],
+						"ordinaryAcquisition": false,
+						"heroAccess": false
 					},
 					"core:protectAir": {
 						"schools": [
@@ -1573,7 +1581,9 @@
 					"core:slayer": {
 						"schools": [
 							"new-horizons:nature"
-						]
+						],
+						"ordinaryAcquisition": false,
+						"heroAccess": false
 					},
 					"core:slow": {
 						"schools": [
@@ -1622,7 +1632,9 @@
 					"core:stoneSkin": {
 						"schools": [
 							"new-horizons:nature"
-						]
+						],
+						"ordinaryAcquisition": false,
+						"heroAccess": false
 					},
 					"core:teleport": {
 						"schools": [

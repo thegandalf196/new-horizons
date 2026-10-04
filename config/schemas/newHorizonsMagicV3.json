@@ -1,7 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-04/schema",
 	"title": "Saved New Horizons magic rules v3",
-	"description": "New Horizons magic rules with saved direct-damage formulas, explicit school-rank Spell Power coefficient factors, optional saved Spellcraft efficiency, optional per-row active and ordinary-acquisition state, and optional Cure-affliction mode. Missing ordinary-acquisition markers preserve older profiles as eligible. Older snapshots without Spellcraft efficiency retain 100% Spellcraft. Runtime validation rejects the incompatible combination of fixed Mage Guild generation and faction weights.",
+	"description": "New Horizons magic rules with saved direct-damage formulas, explicit school-rank Spell Power coefficient factors, optional saved Spellcraft efficiency, optional per-row active, hero-access, and ordinary-acquisition state, and optional Cure-affliction mode. Missing hero-access markers preserve older profiles as accessible; missing ordinary-acquisition markers preserve older profiles as eligible. Older snapshots without Spellcraft efficiency retain 100% Spellcraft. Runtime validation rejects the incompatible combination of fixed Mage Guild generation and faction weights.",
 	"type": "object",
 	"required": ["schemaVersion", "rulesetVersion", "schoolRankPowerCoefficientPercent", "schools", "spells", "schoolSkills", "skillReplacements"],
 	"dependencies": {"mageGuildGeneration": ["factions"]},
@@ -167,6 +167,11 @@
 					"type": "boolean",
 					"not": {"type": "null"},
 					"description": "Whether this spell may be learned through ordinary acquisition. Omission defaults to true for compatibility with older saved profiles."
+				},
+				"heroAccess": {
+					"type": "boolean",
+					"not": {"type": "null"},
+					"description": "Whether heroes may cast and acquire this common spell. Omission defaults to true for compatibility with older saved-v3 profiles; this does not disable creature or world-effect behavior."
 				},
 				"directDamage": {"$ref": "#/definitions/directDamage"},
 				"cureAfflictions": {

@@ -69,6 +69,25 @@ bool savedSpellRowIsActive(const JsonNode & row)
 	return active->second.isBool() && active->second.Bool();
 }
 
+bool spellAllowedByHeroAccessMarker(const JsonNode & rules, const std::string & identity)
+{
+	if(!rules.isStruct()
+		|| rules["rulesetVersion"].getType() != JsonNode::JsonType::DATA_INTEGER
+		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+		return true;
+
+	const auto * row = savedSpellRow(rules, identity);
+	if(!row)
+		return true; // World-roster admission is checked separately.
+
+	const auto marker = row->Struct().find("heroAccess");
+	if(marker == row->Struct().end())
+		return true; // Older saved-v3 snapshots had no hero-access marker.
+	if(!marker->second.isBool())
+		throw std::runtime_error("Saved spell roster heroAccess marker must be boolean");
+	return marker->second.Bool();
+}
+
 std::optional<SavedSpellVariant> savedV3ActiveVariant(const JsonNode & rules, SpellID spell)
 {
 	if(!rules.isStruct()
@@ -190,6 +209,7 @@ bool spellAvailableForOrdinaryAcquisition(const JsonNode & rules,
 	}
 
 	return spellBelongsToRules(rules, scopedIdentity, commonHeroSpell)
+		&& spellAllowedByHeroAccessMarker(rules, scopedIdentity)
 		&& ordinaryAcquisition;
 }
 
@@ -200,6 +220,16 @@ bool spellAllowedBySavedRoster(const JsonNode & rules, SpellID spell)
 		return false;
 	const auto & definition = LIBRARY->spellh->objects.at(id);
 	return definition && spellBelongsToRules(rules, definition->getJsonKey(), definition->isCommonHeroSpell());
+}
+
+bool spellAllowedByHeroRoster(const JsonNode & rules, SpellID spell)
+{
+	const auto * definition = commonHeroSpell(spell);
+	if(!definition)
+		return spellAllowedBySavedRoster(rules, spell);
+
+	return spellBelongsToRules(rules, definition->getJsonKey(), true)
+		&& spellAllowedByHeroAccessMarker(rules, definition->getJsonKey());
 }
 
 bool spellAvailableForOrdinaryAcquisition(const JsonNode & rules, SpellID spell)

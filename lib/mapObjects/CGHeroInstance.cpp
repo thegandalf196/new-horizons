@@ -746,7 +746,11 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	{
 		// hero starts with default spells
 		for(const auto & spellID : getHeroType()->spells)
-			spells.insert(spellID);
+		{
+			if(!newHorizonsMagic::rulesActive(getMagicRules())
+				|| newHorizonsMagic::spellAllowedByHeroRoster(getMagicRules(), spellID))
+				spells.insert(spellID);
+		}
 	}
 	else //remove placeholder
 		spells -= SpellID::PRESET;
@@ -1504,7 +1508,7 @@ void CGHeroInstance::spendMana(ServerCallback * server, const int spellCost) con
 
 bool CGHeroInstance::canCastThisSpell(const spells::Spell * spell) const
 {
-	if(!spell || !newHorizonsMagic::spellAllowedBySavedRoster(getMagicRules(), spell->getId()))
+	if(!spell || !newHorizonsMagic::spellAllowedByHeroRoster(getMagicRules(), spell->getId()))
 		return false;
 	if(isNewHorizonsSpellExcluded(spell->getId()))
 		return false;
@@ -1536,7 +1540,7 @@ bool CGHeroInstance::canCastThisSpell(const spells::Spell * spell) const
 
 bool CGHeroInstance::canLearnSpell(const spells::Spell * spell, bool allowBanned) const
 {
-	if(!spell || !newHorizonsMagic::spellAllowedBySavedRoster(getMagicRules(), spell->getId()))
+	if(!spell || !newHorizonsMagic::spellAllowedByHeroRoster(getMagicRules(), spell->getId()))
 		return false;
 	if(spell->isCommonHeroSpell()
 		&& !newHorizonsMagic::spellAvailableForOrdinaryAcquisition(getMagicRules(), spell->getId()))
@@ -2024,6 +2028,9 @@ bool CGHeroInstance::spellbookContainsSpell(const SpellID & spell) const
 
 bool CGHeroInstance::isSpellInscribedForCasting(const SpellID & spellId) const
 {
+	if(!newHorizonsMagic::spellAllowedByHeroRoster(getMagicRules(), spellId))
+		return false;
+
 	if(hasSavedV3VariantDeclaration(getMagicRules(), spellId))
 		return cb && cb->isAllowed(spellId) && !isNewHorizonsSpellExcluded(spellId)
 			&& newHorizonsMagic::variantGrantAvailable(getMagicRules(), this, spellId);
@@ -2033,6 +2040,9 @@ bool CGHeroInstance::isSpellInscribedForCasting(const SpellID & spellId) const
 
 bool CGHeroInstance::isSpellbinderHatGrantEligible(const SpellID & spellId) const
 {
+	if(!newHorizonsMagic::spellAllowedByHeroRoster(getMagicRules(), spellId))
+		return false;
+
 	// The temporary grant is tied to this exact equipped artifact and a saved
 	// New Horizons rules snapshot. Legacy games retain SPELLS_OF_LEVEL behavior.
 	if(!spellId.hasValue() || !newHorizonsMagic::rulesActive(getMagicRules()) || !cb)
@@ -2044,8 +2054,7 @@ bool CGHeroInstance::isSpellbinderHatGrantEligible(const SpellID & spellId) cons
 	const auto * spell = spellId.toSpell();
 	if(!spell || !spell->isCommonHeroSpell() || !spell->isCombat())
 		return false;
-	if(!newHorizonsMagic::spellAllowedBySavedRoster(getMagicRules(), spellId)
-		|| isNewHorizonsSpellExcluded(spellId) || !cb->isAllowed(spellId))
+	if(isNewHorizonsSpellExcluded(spellId) || !cb->isAllowed(spellId))
 		return false;
 
 	return getSpellLevel(spell) == 5;
@@ -2056,6 +2065,9 @@ std::set<SpellID> CGHeroInstance::getInscribedSpellsForCasting() const
 	std::set<SpellID> result;
 	for(const auto & spell : spells)
 	{
+		if(!newHorizonsMagic::spellAllowedByHeroRoster(getMagicRules(), spell))
+			continue;
+
 		if(!hasSavedV3VariantDeclaration(getMagicRules(), spell)
 			|| isSpellInscribedForCasting(spell))
 			result.insert(spell);
@@ -2078,7 +2090,7 @@ std::set<SpellID> CGHeroInstance::getInscribedSpellsForCasting() const
 std::vector<BonusSourceID> CGHeroInstance::getSourcesForSpell(const SpellID & spellId) const
 {
 	std::vector<BonusSourceID> sources;
-	if(!newHorizonsMagic::spellAllowedBySavedRoster(getMagicRules(), spellId))
+	if(!newHorizonsMagic::spellAllowedByHeroRoster(getMagicRules(), spellId))
 		return sources;
 	if(isNewHorizonsSpellExcluded(spellId))
 		return sources;

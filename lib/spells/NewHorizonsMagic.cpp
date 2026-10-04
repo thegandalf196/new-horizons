@@ -1179,7 +1179,7 @@ void validateRules(const JsonNode & rules)
 		else if(version < SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "ordinaryAcquisition"});
 		else
-			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "ordinaryAcquisition", "variant", "earthquake", "structures"});
+			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "ordinaryAcquisition", "heroAccess", "variant", "earthquake", "structures"});
 		if(data.Struct().contains("structures"))
 		{
 			require(name == "core:meteorShower" || name == "core:armageddon",
@@ -1238,6 +1238,9 @@ void validateRules(const JsonNode & rules)
 		}
 		if(data.Struct().contains("ordinaryAcquisition"))
 			require(data["ordinaryAcquisition"].isBool(), "ordinaryAcquisition spell flag");
+		if(data.Struct().contains("heroAccess"))
+			require(version == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION && data["heroAccess"].isBool(),
+				"heroAccess spell flag requires a boolean saved-v3 value");
 		if(data.Struct().contains("selectedPlacement"))
 		{
 			const auto & selectedPlacement = data["selectedPlacement"];

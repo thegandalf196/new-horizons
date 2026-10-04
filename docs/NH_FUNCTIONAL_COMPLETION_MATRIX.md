@@ -1,6 +1,17 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
+UP220 six-row access slice accepted: optional saved-v3 heroAccess excludes
+Stone Skin/Bloodlust/Prayer/Precision/Slayer/Disrupting Ray from hero casting,
+acquisition and new default books without disabling world/creature effects.
+Client78840 and native builds50252/25274 succeed; native18192 passes18/18
+in2.044s, zero skips: actual stock/start producers, source bypass guards,
+authorized rejected action without spend, Ogre Mage cast/effect and old save
+round-trip plus admission/schema controls. Module drift/19 offline magic-schema/
+12 hero-data checks pass. Production review approved; fixture overlap corrected.
+No complete-roster or hero-profile credit and no spell-total change: Haste,
+core:shield/other legacy rows and obsolete specialties remain to resolve.
+No graphical acceptance or launcher promotion; broad interactions remain Phase2.
 Latest source/native acceptance UP219: Mephala/Tazar/Neela Armorer specialties
 apply6/12/18% core physical reduction and12/24/36% Defense-growth chance.
 Both-target21618 and bounded fixture-repair2116 succeed. Native12882 passes

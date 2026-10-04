@@ -83,6 +83,36 @@ TEST(NewHorizonsSpellAvailabilityTest, OrdinaryAcquisitionPolicyIsSeparateFromSa
 		current, "new-horizons:counterspell", true));
 }
 
+TEST(NewHorizonsSpellAvailabilityTest, HeroAccessIsSeparateFromWorldMembershipAndOldRowsDefaultToAllowed)
+{
+	JsonNode older;
+	older["rulesetVersion"].Integer() = 3;
+	older["spells"]["core:stoneSkin"] = JsonNode(JsonMap{});
+
+	EXPECT_TRUE(spellBelongsToRules(older, "core:stoneSkin", true));
+	EXPECT_TRUE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(older, "core:stoneSkin", true));
+
+	JsonNode current = older;
+	current["spells"]["core:stoneSkin"]["heroAccess"].Bool() = false;
+	current["spells"]["core:stoneSkin"]["ordinaryAcquisition"].Bool() = false;
+	EXPECT_TRUE(spellBelongsToRules(current, "core:stoneSkin", true))
+		<< "heroAccess changes hero permission without removing the spell/effect from the saved world";
+	EXPECT_FALSE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(current, "core:stoneSkin", true));
+}
+
+TEST(NewHorizonsSpellAvailabilityTest, InvalidHeroAccessMarkerRejectsInsteadOfDefaultingToAllowed)
+{
+	for(const auto invalidMarker : {JsonNode(), JsonNode("false"), JsonNode(0)})
+	{
+		JsonNode invalid;
+		invalid["rulesetVersion"].Integer() = 3;
+		invalid["spells"]["core:stoneSkin"] = JsonNode(JsonMap{});
+		invalid["spells"]["core:stoneSkin"]["heroAccess"] = invalidMarker;
+		EXPECT_THROW(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(
+			invalid, "core:stoneSkin", true), std::runtime_error);
+	}
+}
+
 TEST(NewHorizonsSpellAvailabilityTest, InvalidOrdinaryAcquisitionMarkerRejects)
 {
 	JsonNode invalid;
