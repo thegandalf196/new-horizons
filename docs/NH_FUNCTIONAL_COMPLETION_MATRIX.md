@@ -1,6 +1,20 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
+UP224 Cure specialty source/native accepted: real Uland
+receives20% only on Cure's Spell Power-derived component; fixed25 and Healer's
+existing post-component floor remain unchanged. Optional saved rules and exact
+local producer markers retain older snapshots. Independent production/fixture
+reviews have no blocker; client52539 and twelve hero-data/module drift checks
+pass. Both-target3385/69675 pass; native20053 passes22/22 in4.011s, zero skips,
+including three real Cure cases, five adjacent damage-specialty cases and
+component/parser controls. Known-v3 parser oracle repair is retained in the
+failure ledger. No complete
+non-damage specialty-family or spell-total increment. Resurrection's canonical
+Level5/22Mana/100+4SP foundation is the next mapped missing execution path.
+Broader proxy/AI/modifier and mixed legacy-profile composition remain Phase2;
+no graphical/playable delivery is claimed.
+
 UP223 Estates specialty source/native accepted: Lord Haart receives150/300/600
 core daily Gold instead of125/250/500. Only per-instance NH Estates Gold
 BASE_NUMBER producer clones scale; perks/unrelated income/other resources and

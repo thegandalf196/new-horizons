@@ -67,15 +67,17 @@ public:
 		std::vector<std::shared_ptr<Bonus>> bonuses;
 	};
 	std::optional<SecondarySkillSpecialtyAlias> secondarySkillSpecialtyAlias;
-	/// Exact prototype entries produced by eligible damage-spell specialty
-	/// sources. New Horizons converts only these pointers on fresh hero copies.
-	struct DamageSpellSpecialtyProducer
+	/// Exact prototype entries produced by eligible spell-specialty sources.
+	/// New Horizons converts only these pointers on fresh hero copies.
+	struct SpellSpecialtyProducer
 	{
 		SpellID spell;
 		std::shared_ptr<Bonus> bonus;
 		bool supported = true;
 	};
-	std::vector<DamageSpellSpecialtyProducer> damageSpellSpecialtyProducers;
+	using DamageSpellSpecialtyProducer = SpellSpecialtyProducer;
+	std::vector<SpellSpecialtyProducer> damageSpellSpecialtyProducers;
+	std::vector<SpellSpecialtyProducer> nonDamageSpellSpecialtyProducers;
 	std::set<SpellID> spells;
 	/// New Horizons-only perk selections authored on a hero prototype. These
 	/// are applied once when a fresh hero instance is created.

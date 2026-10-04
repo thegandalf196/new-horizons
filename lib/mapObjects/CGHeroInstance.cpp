@@ -82,6 +82,12 @@ std::string damageSpellSpecialtyMarker(HeroTypeID heroType, SpellID spell)
 		+ std::to_string(spell.getNum());
 }
 
+std::string nonDamageSpellSpecialtyMarker(HeroTypeID heroType, SpellID spell)
+{
+	return "new-horizons:non-damage-spell-specialty:" + std::to_string(heroType.getNum()) + ":"
+		+ std::to_string(spell.getNum());
+}
+
 std::string skillSpecialtyMarker(HeroTypeID heroType, SecondarySkill skill)
 {
 	return "new-horizons:skill-specialty:" + std::to_string(heroType.getNum()) + ":"
@@ -576,6 +582,18 @@ std::string CGHeroInstance::getSpecialtyDescriptionTranslated() const
 				return description.toString(LIBRARY->generaltexth.get());
 			}
 
+	if(const auto rules = newHorizonsHeroes::nonDamageSpellSpecialtyRules(primaryGrowthRules))
+		for(const auto & producer : heroType->nonDamageSpellSpecialtyProducers)
+			if(getNonDamageSpellSpecialtyBonusPercent(producer.spell) > 0)
+			{
+				MetaString description;
+				description.appendName(producer.spell);
+				description.appendRawString(" gains +");
+				description.appendNumber(rules->componentPercent);
+				description.appendRawString("% to its Spell Power-derived healing component.");
+				return description.toString(LIBRARY->generaltexth.get());
+			}
+
 	if(const auto rules = newHorizonsHeroes::skillSpecialtyRules(primaryGrowthRules))
 		if(heroType->secondarySkillSpecialtyAlias
 			&& getSkillSpecialtyCoreBonusPercent(heroType->secondarySkillSpecialtyAlias->skill) > 0)
@@ -599,6 +617,22 @@ int CGHeroInstance::getDamageSpellSpecialtyBonusPercent(SpellID spell) const
 		return 0;
 
 	const std::string marker = damageSpellSpecialtyMarker(heroType->getId(), spell);
+	const auto & localBonuses = getExportedBonusList();
+	const bool converted = std::ranges::any_of(localBonuses, [&marker](const auto & bonus)
+	{
+		return bonus && bonus->stacking == marker;
+	});
+	return converted ? rules->componentPercent : 0;
+}
+
+int CGHeroInstance::getNonDamageSpellSpecialtyBonusPercent(SpellID spell) const
+{
+	const auto rules = newHorizonsHeroes::nonDamageSpellSpecialtyRules(primaryGrowthRules);
+	const CHero * heroType = getHeroType();
+	if(!rules || !heroType || std::ranges::find(rules->spells, spell) == rules->spells.end())
+		return 0;
+
+	const std::string marker = nonDamageSpellSpecialtyMarker(heroType->getId(), spell);
 	const auto & localBonuses = getExportedBonusList();
 	const bool converted = std::ranges::any_of(localBonuses, [&marker](const auto & bonus)
 	{
@@ -894,6 +928,7 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	const bool convertsCreatureLineSpecialty = newHorizonsHeroes::creatureLineSpecialtyRules(primaryGrowthRules).has_value()
 		&& heroType->creatureLineSpecialtyAlias.has_value();
 	const bool convertsDamageSpellSpecialty = newHorizonsHeroes::damageSpellSpecialtyRules(primaryGrowthRules).has_value();
+	const bool convertsNonDamageSpellSpecialty = newHorizonsHeroes::nonDamageSpellSpecialtyRules(primaryGrowthRules).has_value();
 	const bool convertsSkillSpecialty = hasSupportedSkillSpecialty
 		&& getSkillSpecialtyCoreBonusPercent(heroType->secondarySkillSpecialtyAlias->skill) > 0;
 	for(const std::shared_ptr<Bonus> & b : heroType->specialty)
@@ -916,6 +951,24 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 				auto converted = std::make_shared<Bonus>(*b);
 				converted->val = 0;
 				converted->stacking = damageSpellSpecialtyMarker(heroType->getId(), producer->spell);
+				addNewBonus(converted);
+				continue;
+			}
+		}
+		if(convertsNonDamageSpellSpecialty)
+		{
+			const auto producer = std::ranges::find_if(heroType->nonDamageSpellSpecialtyProducers,
+				[&b](const auto & candidate)
+				{
+					return candidate.bonus == b;
+				});
+			if(producer != heroType->nonDamageSpellSpecialtyProducers.end())
+			{
+				if(!producer->supported)
+					throw std::runtime_error("New Horizons cannot convert a non-damage spell specialty with limiters, updaters, propagation, or a non-base value type");
+				auto converted = std::make_shared<Bonus>(*b);
+				converted->val = 0;
+				converted->stacking = nonDamageSpellSpecialtyMarker(heroType->getId(), producer->spell);
 				addNewBonus(converted);
 				continue;
 			}

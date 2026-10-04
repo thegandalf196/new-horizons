@@ -81,13 +81,15 @@ TEST(NewHorizonsDirectDamageTest, DamageSpecialtySupportsLargestDivisorAndReject
 	EXPECT_THROW(largest.evaluateBasisPoints(1, 1, 10000, 0, -1), std::runtime_error);
 }
 
-TEST(NewHorizonsDirectDamageTest, V1RejectsFieldButBothVersionsPermitAbsence)
+TEST(NewHorizonsDirectDamageTest, V1RejectsFieldButSupportedVersionsPermitAbsence)
 {
 	const JsonNode absent(JsonMap{});
 	EXPECT_FALSE(directDamageFormula(absent, 1));
 	EXPECT_FALSE(directDamageFormula(absent, 2));
+	EXPECT_FALSE(directDamageFormula(absent, 3));
 	EXPECT_THROW(directDamageFormula(record(), 1), std::runtime_error);
-	EXPECT_THROW(directDamageFormula(record(), 3), std::runtime_error);
+	EXPECT_TRUE(directDamageFormula(record(), 3));
+	EXPECT_THROW(directDamageFormula(record(), 4), std::runtime_error);
 	EXPECT_THROW(directDamageFormula(JsonNode(), 2), std::runtime_error);
 }
 

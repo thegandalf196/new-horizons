@@ -239,6 +239,7 @@ set(test_SRCS
 		server/battles/NewHorizonsMagicResistanceTest.cpp
 		server/battles/NewHorizonsCreatureSpecialtyTest.cpp
 		server/battles/NewHorizonsDamageSpecialtyTest.cpp
+		server/battles/NewHorizonsHealingSpecialtyTest.cpp
 		server/battles/NewHorizonsSkillSpecialtyTest.cpp
 		server/battles/NewHorizonsArmorerSpecialtyTest.cpp
 		server/battles/NewHorizonsOffenseSpecialtyTest.cpp

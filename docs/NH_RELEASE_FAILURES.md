@@ -2,6 +2,18 @@
 
 ## Purpose
 
+### 2026-10-04 UP224 — Stale unsupported-version oracle
+
+Both-target build3385 succeeds. First native64172 passes21/22 in3.991s,
+including all three new Cure cases and five real damage-specialty controls.
+Only the old direct-damage parser test fails: it still expects version3 to
+throw, while the existing production parser supports versions1 through3.
+Retain UP224-cure-native.log/XML. Repair the fixture to accept the current
+v3 record/absent field and reject version4; do not weaken production validation
+or suppress the failing test. Repair build69675 succeeds; final native20053
+passes22/22 in4.011s with zero skips, UP224-cure-accepted.log/XML. Independent
+review confirms the repair matches the existing versions1–3 production contract.
+
 ### 2026-10-04 UP223 — Native binary must be relinked after contract expansion
 
 Client-only build39945 succeeds, but the first adjacent native run uses the

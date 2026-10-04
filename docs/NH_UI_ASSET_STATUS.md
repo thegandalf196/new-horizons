@@ -348,6 +348,15 @@ The normal launcher's verify-only path check passes for this snapshot.
 
 ## Spellbook binding details
 
+### Non-damage spell specialty tooltip conversion
+
+Provisional presentation,2026-10-04: UP224 live-instance specialty descriptions
+state the saved20% bonus to Cure's Spell Power-derived healing component.
+Existing hero panels/icons remain unchanged; no new artwork or final visual
+approval is claimed. Source review and builds3385/69675 pass; native20053
+passes22/22 including saved component identity, not rendered panel acceptance.
+Prototype-only specialty tooltip consumers and rendered layout remain Phase2.
+
 ### Creature-line specialty tooltip conversion
 
 Provisional presentation,2026-10-04: hero and exchange live-instance tooltips

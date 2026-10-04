@@ -45,6 +45,14 @@ std::optional<SpellID> damageSpellSpecialtyTarget(SpellID sourceSpell)
 	return sourceSpell;
 }
 
+std::optional<SpellID> nonDamageSpellSpecialtyTarget(SpellID sourceSpell)
+{
+	const CSpell * spell = sourceSpell.toSpell();
+	if(sourceSpell == SpellID::CURE && spell && !spell->isDamage())
+		return sourceSpell;
+	return std::nullopt;
+}
+
 bool plainDamageSpellSpecialtyBonus(const JsonNode & definition)
 {
 	if(!definition["valueType"].isString() || definition["valueType"].String() != "BASE_NUMBER")
@@ -356,6 +364,8 @@ void CHeroHandler::loadHeroSpecialty(CHero * hero, const JsonNode & node) const
 				hero->specialty.push_back(prepared);
 				if(const auto family = damageSpellSpecialtyTarget(SpellID(spell)))
 					hero->damageSpellSpecialtyProducers.push_back({*family, prepared, true});
+				if(const auto family = nonDamageSpellSpecialtyTarget(SpellID(spell)))
+					hero->nonDamageSpellSpecialtyProducers.push_back({*family, prepared, true});
 			}
 		});
 	}

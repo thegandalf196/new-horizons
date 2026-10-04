@@ -112,6 +112,32 @@ void validateOptionalDamageSpellSpecialtyRules(const JsonNode & rules)
 		validateDamageSpellSpecialtyRules(found->second);
 }
 
+void validateNonDamageSpellSpecialtyRules(const JsonNode & rules)
+{
+	fields(rules, {"version", "componentPercent", "spells"});
+	require(integer(rules["version"], 1, 1), "non-damage-spell specialty version");
+	require(integer(rules["componentPercent"], 20, 20), "non-damage-spell specialty component percentage");
+	const auto & spells = rules["spells"];
+	require(spells.isVector() && spells.Vector().size() == 1,
+		"version 1 non-damage spell specialties must list only core:cure");
+	for(const auto & spell : spells.Vector())
+	{
+		require(spell.isString() && spell.String() == "core:cure",
+			"version 1 non-damage spell specialties support only core:cure");
+		require(resolve("spell", spell.String()) == SpellID::CURE,
+			"unknown version 1 non-damage spell specialty");
+	}
+}
+
+void validateOptionalNonDamageSpellSpecialtyRules(const JsonNode & rules)
+{
+	if(!rules.isStruct())
+		return;
+	const auto found = rules.Struct().find("nonDamageSpellSpecialties");
+	if(found != rules.Struct().end())
+		validateNonDamageSpellSpecialtyRules(found->second);
+}
+
 void validateSkillSpecialtyRules(const JsonNode & rules)
 {
 	fields(rules, {"version", "coreBonusPercent", "skills"});
@@ -333,10 +359,11 @@ void validateHeroRules(const JsonNode & rules, bool requireAllClasses)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "skillSpecialties"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties"});
 	validateCommon(rules);
 	validateOptionalCreatureLineSpecialtyRules(rules);
 	validateOptionalDamageSpellSpecialtyRules(rules);
+	validateOptionalNonDamageSpellSpecialtyRules(rules);
 	validateOptionalSkillSpecialtyRules(rules);
 	validateExcludedSkills(rules["excludedSkills"]);
 	validateSkillOfferWeights(rules["skillOfferWeights"], requireAllClasses);
@@ -366,10 +393,11 @@ void validateResolvedHeroRules(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "skillSpecialties"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties"});
 	validateCommon(rules);
 	validateOptionalCreatureLineSpecialtyRules(rules);
 	validateOptionalDamageSpellSpecialtyRules(rules);
+	validateOptionalNonDamageSpellSpecialtyRules(rules);
 	validateOptionalSkillSpecialtyRules(rules);
 	validateExcludedSkills(rules["excludedSkills"]);
 	if(!rules["skillOfferWeights"].isNull())
@@ -389,6 +417,8 @@ JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 		result["creatureLineSpecialties"] = rules["creatureLineSpecialties"];
 	if(rules.Struct().contains("damageSpellSpecialties"))
 		result["damageSpellSpecialties"] = rules["damageSpellSpecialties"];
+	if(rules.Struct().contains("nonDamageSpellSpecialties"))
+		result["nonDamageSpellSpecialties"] = rules["nonDamageSpellSpecialties"];
 	if(rules.Struct().contains("skillSpecialties"))
 		result["skillSpecialties"] = rules["skillSpecialties"];
 	if(rules["skillOfferWeights"].isStruct())
@@ -433,6 +463,22 @@ std::optional<DamageSpellSpecialtyRules> damageSpellSpecialtyRules(const JsonNod
 		.version = static_cast<int>(found->second["version"].Integer()),
 		.componentPercent = static_cast<int>(found->second["componentPercent"].Integer())
 	};
+}
+
+std::optional<NonDamageSpellSpecialtyRules> nonDamageSpellSpecialtyRules(const JsonNode & resolvedRules)
+{
+	if(!usesRules(resolvedRules) || !resolvedRules.isStruct())
+		return std::nullopt;
+	const auto found = resolvedRules.Struct().find("nonDamageSpellSpecialties");
+	if(found == resolvedRules.Struct().end())
+		return std::nullopt;
+	validateNonDamageSpellSpecialtyRules(found->second);
+	NonDamageSpellSpecialtyRules result;
+	result.version = static_cast<int>(found->second["version"].Integer());
+	result.componentPercent = static_cast<int>(found->second["componentPercent"].Integer());
+	for(const auto & spell : found->second["spells"].Vector())
+		result.spells.emplace_back(resolve("spell", spell.String()));
+	return result;
 }
 
 std::optional<SkillSpecialtyRules> skillSpecialtyRules(const JsonNode & resolvedRules)

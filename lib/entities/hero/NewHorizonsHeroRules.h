@@ -51,6 +51,15 @@ struct DLL_LINKAGE DamageSpellSpecialtyRules
 	int componentPercent = 15;
 };
 
+/// Saved New Horizons conversion of supported non-damage spell specialties
+/// to the Spell Power-derived numerical component. V1 supports Cure only.
+struct DLL_LINKAGE NonDamageSpellSpecialtyRules
+{
+	int version = 1;
+	int componentPercent = 20;
+	std::vector<SpellID> spells;
+};
+
 /// Saved New Horizons conversion of supported core Skill specialties.
 /// V1 uses an explicit allowlist so legacy and unsupported aliases remain inert.
 struct DLL_LINKAGE SkillSpecialtyRules
@@ -101,6 +110,9 @@ DLL_LINKAGE std::optional<CreatureLineSpecialtyRules> creatureLineSpecialtyRules
 /// Returns the damage-spell conversion captured by this hero. Missing rules
 /// intentionally retain the legacy specialty behavior for older saves.
 DLL_LINKAGE std::optional<DamageSpellSpecialtyRules> damageSpellSpecialtyRules(const JsonNode & resolvedRules);
+/// Returns the converted non-damage spell specialties captured by this hero.
+/// Missing rules intentionally preserve legacy specialty behavior for older saves.
+DLL_LINKAGE std::optional<NonDamageSpellSpecialtyRules> nonDamageSpellSpecialtyRules(const JsonNode & resolvedRules);
 /// Returns the converted skill specialties captured by this hero. Missing
 /// rules intentionally preserve legacy specialty behavior for older saves.
 DLL_LINKAGE std::optional<SkillSpecialtyRules> skillSpecialtyRules(const JsonNode & resolvedRules);

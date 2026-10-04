@@ -2789,6 +2789,13 @@
 					"version": 1,
 					"componentPercent": 15
 				},
+				"nonDamageSpellSpecialties": {
+					"version": 1,
+					"componentPercent": 20,
+					"spells": [
+						"core:cure"
+					]
+				},
 				"skillSpecialties": {
 					"version": 1,
 					"coreBonusPercent": 20,

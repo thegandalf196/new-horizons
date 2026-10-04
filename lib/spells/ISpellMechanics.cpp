@@ -160,7 +160,7 @@ int64_t scaleSpellPowerComponentWithCoefficientBasisPoints(const int64_t numerat
 	if(numerator < 0 || divisor <= 0 || coefficientBasisPoints < 0 || coefficientBasisPoints > 100000
 		|| warcastingBonusPercent < 0 || warcastingBonusPercent > 1000
 		|| empowerSpellBonusPercent < 0 || empowerSpellBonusPercent > 1000
-		|| (damageSpecialtyPercent != 0 && damageSpecialtyPercent != 15))
+		|| (damageSpecialtyPercent != 0 && damageSpecialtyPercent != 15 && damageSpecialtyPercent != 20))
 		throw std::invalid_argument("Invalid Spell Power basis-point coefficient inputs");
 	if(coefficientBasisPoints == 0 || numerator == 0)
 		return 0;
@@ -175,6 +175,11 @@ int64_t scaleSpellPowerComponentWithCoefficientBasisPoints(const int64_t numerat
 	{
 		denominator *= 20;
 		multiplier *= 23;
+	}
+	else if(damageSpecialtyPercent == 20)
+	{
+		denominator *= 5;
+		multiplier *= 6;
 	}
 	const int64_t whole = numerator / denominator;
 	const int64_t remainder = numerator % denominator;
@@ -1038,12 +1043,15 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 			}
 			else if(battle && newHorizonsMagic::cureEnabled(battle->getMagicRules(), owner->getId()))
 			{
-				// The New Horizons Cure formula has a fixed component and a
-				// Spell-Power component. Target, school, and specialty modifiers
-				// still flow through the usual applySpellBonus call in heal.lua.
-				auto powerHealing = scaleSpellPowerComponentWithCoefficientBasisPoints(
-					3LL * effectPower, 2, spellPowerCoefficientBasisPoints);
-				if(const auto * hero = caster->getHeroCaster(); hero && hero->hasActivePerk(
+				// The specialty scales only Cure's Spell-Power component. Its fixed
+				// component and downstream target/effect modifiers retain their
+				// existing stages in the usual heal.lua application path.
+				const auto * hero = caster->getHeroCaster();
+				const int specialtyPercent = hero
+					? hero->getNonDamageSpellSpecialtyBonusPercent(owner->getId()) : 0;
+				auto powerHealing = scaleDamageSpellPowerComponentWithCoefficientBasisPoints(
+					3LL * effectPower, 2, spellPowerCoefficientBasisPoints, specialtyPercent);
+				if(hero && hero->hasActivePerk(
 					"new-horizons:lightMagic", "new-horizons:lightMagic.healer"))
 					powerHealing = powerHealing * 120 / 100;
 				effectValue = 25 + powerHealing;
