@@ -96,6 +96,22 @@ void validateOptionalCreatureLineSpecialtyRules(const JsonNode & rules)
 		validateCreatureLineSpecialtyRules(found->second);
 }
 
+void validateDamageSpellSpecialtyRules(const JsonNode & rules)
+{
+	fields(rules, {"version", "componentPercent"});
+	require(integer(rules["version"], 1, 1), "damage-spell specialty version");
+	require(integer(rules["componentPercent"], 15, 15), "damage-spell specialty component percentage");
+}
+
+void validateOptionalDamageSpellSpecialtyRules(const JsonNode & rules)
+{
+	if(!rules.isStruct())
+		return;
+	const auto found = rules.Struct().find("damageSpellSpecialties");
+	if(found != rules.Struct().end())
+		validateDamageSpellSpecialtyRules(found->second);
+}
+
 void validateExcludedSkills(const JsonNode & excludedSkills)
 {
 	if(excludedSkills.isNull())
@@ -283,9 +299,10 @@ void validateHeroRules(const JsonNode & rules, bool requireAllClasses)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties"});
 	validateCommon(rules);
 	validateOptionalCreatureLineSpecialtyRules(rules);
+	validateOptionalDamageSpellSpecialtyRules(rules);
 	validateExcludedSkills(rules["excludedSkills"]);
 	validateSkillOfferWeights(rules["skillOfferWeights"], requireAllClasses);
 	validateStartingSkills(rules["startingSkills"], requireAllClasses);
@@ -314,9 +331,10 @@ void validateResolvedHeroRules(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties"});
 	validateCommon(rules);
 	validateOptionalCreatureLineSpecialtyRules(rules);
+	validateOptionalDamageSpellSpecialtyRules(rules);
 	validateExcludedSkills(rules["excludedSkills"]);
 	if(!rules["skillOfferWeights"].isNull())
 		validateSkillOfferWeightRow(rules["skillOfferWeights"]);
@@ -333,6 +351,8 @@ JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 		result[key] = rules[key];
 	if(rules.Struct().contains("creatureLineSpecialties"))
 		result["creatureLineSpecialties"] = rules["creatureLineSpecialties"];
+	if(rules.Struct().contains("damageSpellSpecialties"))
+		result["damageSpellSpecialties"] = rules["damageSpellSpecialties"];
 	if(rules["skillOfferWeights"].isStruct())
 		result["skillOfferWeights"] = rules["skillOfferWeights"][HeroClassID::encode(heroClass.getNum())];
 	if(rules["excludedSkills"].isVector())
@@ -360,6 +380,20 @@ std::optional<CreatureLineSpecialtyRules> creatureLineSpecialtyRules(const JsonN
 		.attributePerStep = static_cast<int>(rules["attributePerStep"].Integer()),
 		.levelStep = static_cast<int>(rules["levelStep"].Integer()),
 		.attributeMaximum = static_cast<int>(rules["attributeMaximum"].Integer())
+	};
+}
+
+std::optional<DamageSpellSpecialtyRules> damageSpellSpecialtyRules(const JsonNode & resolvedRules)
+{
+	if(!usesRules(resolvedRules) || !resolvedRules.isStruct())
+		return std::nullopt;
+	const auto found = resolvedRules.Struct().find("damageSpellSpecialties");
+	if(found == resolvedRules.Struct().end())
+		return std::nullopt;
+	validateDamageSpellSpecialtyRules(found->second);
+	return DamageSpellSpecialtyRules{
+		.version = static_cast<int>(found->second["version"].Integer()),
+		.componentPercent = static_cast<int>(found->second["componentPercent"].Integer())
 	};
 }
 

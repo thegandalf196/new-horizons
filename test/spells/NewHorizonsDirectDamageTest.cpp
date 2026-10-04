@@ -11,6 +11,7 @@
 #include "effects/EffectFixture.h"
 #include "../../lib/spells/NewHorizonsDirectDamage.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/ISpellMechanics.h"
 #include <limits>
 #include <stdexcept>
 
@@ -53,6 +54,31 @@ TEST(NewHorizonsDirectDamageTest, SchoolRankScalesOnlyTheSpellPowerCoefficient)
 	EXPECT_EQ(formula.evaluate(20, 10, 130), 152) << "Advanced multiplies only the Spell Power coefficient";
 	EXPECT_EQ(formula.evaluate(20, 10, 145), 158) << "Expert multiplies only the Spell Power coefficient";
 	EXPECT_THROW(formula.evaluate(20, 10, 1001), std::runtime_error);
+}
+
+TEST(NewHorizonsDirectDamageTest, DamageSpecialtyPreservesBaseAndFloorsOnlyOnce)
+{
+	const DirectDamageFormula formula{100, 20};
+	EXPECT_EQ(formula.evaluateBasisPoints(0, 3, 14500, 25, 15), 100);
+	EXPECT_EQ(formula.evaluateBasisPoints(1, 3, 14500, 25, 15), 113)
+		<< "Floor 20/3 * 1.45 * 1.25 * 1.15 once, then add the unchanged fixed base";
+	const DirectDamageFormula fractionalBasisPoint{20, 1};
+	EXPECT_EQ(fractionalBasisPoint.evaluateBasisPoints(100000, 1, 1, 0, 15), 31)
+		<< "Do not truncate a basis-point coefficient multiplied by 115/100";
+	EXPECT_EQ(fractionalBasisPoint.evaluateBasisPoints(100000, 1, 1, 0, 0), 30);
+}
+
+TEST(NewHorizonsDirectDamageTest, DamageSpecialtySupportsLargestDivisorAndRejectsUnknownFactor)
+{
+	const DirectDamageFormula largest{MAX_DIRECT_DAMAGE_PARAMETER, MAX_DIRECT_DAMAGE_PARAMETER};
+	const auto maximum = std::numeric_limits<int32_t>::max();
+	EXPECT_EQ(largest.evaluateBasisPoints(maximum, maximum, 100000, 1000, 15), INT64_C(127500000));
+	const int64_t denominator = static_cast<int64_t>(maximum) * INT64_C(2000000000);
+	EXPECT_EQ(spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
+		denominator - 1, maximum, 100000, 1000, 1000, 15), INT64_C(2782999999999))
+		<< "The remainder loop must not overflow signed arithmetic with a large divisor";
+	EXPECT_THROW(largest.evaluateBasisPoints(1, 1, 10000, 0, 14), std::runtime_error);
+	EXPECT_THROW(largest.evaluateBasisPoints(1, 1, 10000, 0, -1), std::runtime_error);
 }
 
 TEST(NewHorizonsDirectDamageTest, V1RejectsFieldButBothVersionsPermitAbsence)

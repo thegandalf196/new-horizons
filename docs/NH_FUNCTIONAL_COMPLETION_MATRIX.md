@@ -1,6 +1,19 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
+Latest source/native acceptance UP217: damage-spell specialties apply fixed15%
+to the Spell Power component alone. Nine eligible heroes/eight visible effects
+share exact-producer, saved-rule and rational arithmetic paths; Solmyr's explicit
+replacement and non-damage aliases remain untouched. Both-target9817 and bounded
+fixture rebuild65610 succeed. Native23804 passes11/11 in3.504s, zero skips:
+real Ciele cast/estimate/save and unrelated/prototype controls, Deemer level/tier
+independence, Luna stored Fire Wall plus actual trigger, missing-rule legacy,
+fractional/max-divisor arithmetic and three adjacent creature-line controls.
+One additional specialty conversion family gains acceptance, not all six.
+Module drift,12 hero-data and8 guild checks pass. Final Astra review finds no
+blocker. Detached-AI execution, mixed diagnostic snapshots, prototype-only
+tooltip surfaces and broader interactions remain Phase2; no GUI/playable claim.
+Windows37215692312 is live on422f0ce0a, excluding UP217. Other counts unchanged.
 Latest source/native acceptance UP216: canonical creature-line specialties now
 grant +1 Speed/+1 Initiative and flat Attack/Defense per five levels, capped6.
 Both-target4780 and bounded fixture rebuild77861 succeed. Native85455 passes7/7

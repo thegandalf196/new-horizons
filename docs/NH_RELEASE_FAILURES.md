@@ -2,6 +2,45 @@
 
 ## Purpose
 
+### 2026-10-04 UP217 — Final focused acceptance
+
+Both-target9817 and bounded fixture rebuild65610 succeed. Native23804 passes
+11/11 in3.504s with zero skips, UP217-damage-specialty-final.log/XML. Controller
+repair preserves the actual accepted Meteor Shower and both target-tier damage
+assertions. Ciele save/estimate/cast, Luna stored/triggered damage, legacy and
+rational-bound controls pass; Astra review finds no blocker. Earlier failed
+build/native evidence remains below. Source/native acceptance is not graphical
+or playable delivery.
+
+### 2026-10-04 UP217 — Drift-check fixture must include translation inputs
+
+The focused hero-data suite initially passed11/12; its isolated CMake drift
+fixture omitted config/newHorizonsAdventureSpellTexts.json, which the production
+guard already reads. Captured stderr identifies the missing file, not a changed
+specialty rule or broken guard. Add that required input to the fixture's copy
+list without relaxing CMake validation. The same12-test command now passes.
+Lesson: isolated fixtures must mirror every required production input.
+
+### 2026-10-04 UP217 — Preserve registered Lua method arity
+
+Both-target build12061 fails at luascript/api/spells/Mechanics.cpp: the registered
+member helper has three named Lua arguments, but its C++ signature was extended
+to four. A C++ default argument does not preserve a registered member-pointer
+arity. Keep the public three-argument member and Lua contract unchanged, and
+introduce a distinctly named internal four-argument damage-specialty helper.
+Do not relax the registrar assertion or implicitly change existing Lua scripts.
+Compiler evidence is UP217-damage-specialty-build.log; acceptance is pending.
+
+### 2026-10-04 UP217 — Target tier must not change the cast controller
+
+Both-target retry9817 succeeds. Native56236 passes10/11 in3.546s, zero skips;
+Deemer's accepted Meteor Shower request is rejected. Its high-tier Archangel
+target also changes the acting side through higher Initiative. The fixture now
+authors low target Initiative and explicitly asserts Player0 controls the action
+before casting, preserving both target tiers and the actual cast assertion.
+No production authority check is weakened. Retain the first log/XML and verify
+the bounded fixture rebuild65610 before rerunning.
+
 ### 2026-10-04 UP216 — Translator ownership at tooltip boundary
 
 Native76737 passed6/7 in2.954s with zero skips. The legacy fixture removed the

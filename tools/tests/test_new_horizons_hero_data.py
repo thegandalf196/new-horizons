@@ -296,7 +296,7 @@ class HeroDataTest(unittest.TestCase):
             (root / 'Mods/new-horizons').mkdir(parents=True)
             for name in ('Combat', 'Artifacts', 'Magic', 'CreatureCategories', 'Schools', 'Skills', 'Heroes', 'Capabilities',
                          'Masteries', 'Perks', 'MasteryTexts', 'CreatureCategoryTexts', 'FortTexts', 'MusterTexts',
-                         'HeroClassTexts', 'CombatTexts', 'ConvenienceBonuses'):
+                         'HeroClassTexts', 'CombatTexts', 'AdventureSpellTexts', 'ConvenienceBonuses'):
                 shutil.copyfile(ROOT / f'config/newHorizons{name}.json', root / f'config/newHorizons{name}.json')
             shutil.copyfile(ROOT / 'Mods/new-horizons/mod.json', root / 'Mods/new-horizons/mod.json')
             script = root / 'check.cmake'

@@ -23,8 +23,38 @@
 #include "../../json/JsonUtils.h"
 #include "../../modding/IdentifierStorage.h"
 #include "../../CSkillHandler.h"
+#include "../../spells/CSpell.h"
 #include "../../texts/CGeneralTextHandler.h"
 #include "../../texts/CLegacyConfigParser.h"
+
+namespace
+{
+std::optional<SpellID> damageSpellSpecialtyTarget(SpellID sourceSpell)
+{
+	const CSpell * spell = sourceSpell.toSpell();
+	if(!spell)
+		return std::nullopt;
+
+	// Fire Wall's cast-time bonus is authored on both the visible spell and its
+	// hidden trigger. They are one specialty family; the trigger only consumes
+	// the already-snapshotted cast value and must not receive a second boost.
+	if(spell->getJsonKey() == "core:fireWallTrigger")
+		return SpellID(SpellID::FIRE_WALL);
+	if(!spell->isDamage())
+		return std::nullopt;
+	return sourceSpell;
+}
+
+bool plainDamageSpellSpecialtyBonus(const JsonNode & definition)
+{
+	if(!definition["valueType"].isString() || definition["valueType"].String() != "BASE_NUMBER")
+		return false;
+	for(const auto key : {"addInfo", "limiters", "propagator", "updater", "propagationUpdater", "effectRange", "stacking"})
+		if(!definition[key].isNull())
+			return false;
+	return true;
+}
+}
 
 CHeroHandler::~CHeroHandler() = default;
 
@@ -319,7 +349,12 @@ void CHeroHandler::loadHeroSpecialty(CHero * hero, const JsonNode & node) const
 		LIBRARY->identifiers()->requestIdentifier("spell", spellNode, [this, hero, prepSpec, val](si32 spell)
 		{
 			for (const auto & bonus : createSpellScalingSpecialty(SpellID(spell), val))
-				hero->specialty.push_back(prepSpec(bonus));
+			{
+				auto prepared = prepSpec(bonus);
+				hero->specialty.push_back(prepared);
+				if(const auto family = damageSpellSpecialtyTarget(SpellID(spell)))
+					hero->damageSpellSpecialtyProducers.push_back({*family, prepared, true});
+			}
 		});
 	}
 
@@ -344,7 +379,28 @@ void CHeroHandler::loadHeroSpecialty(CHero * hero, const JsonNode & node) const
 		// The merge keeps the key so downstream patches can still address it;
 		// it is not a bonus definition and must never be sent to parseBonus().
 		if(!keyValue.second.isNull())
-			hero->specialty.push_back(prepSpec(JsonUtils::parseBonus(keyValue.second)));
+		{
+			auto prepared = prepSpec(JsonUtils::parseBonus(keyValue.second));
+			hero->specialty.push_back(prepared);
+
+			const JsonNode subtype = keyValue.second["subtype"];
+			if(!subtype.isString())
+				continue;
+			const bool supported = plainDamageSpellSpecialtyBonus(keyValue.second);
+			const JsonNode bonusType = keyValue.second["type"];
+			LIBRARY->identifiers()->requestIdentifier("bonus", bonusType,
+				[hero, prepared, subtype, supported](si32 id)
+				{
+					if(static_cast<BonusType>(id) != BonusType::SPECIFIC_SPELL_DAMAGE)
+						return;
+					LIBRARY->identifiers()->requestIdentifier("spell", subtype,
+						[hero, prepared, supported](si32 spell)
+						{
+							if(const auto family = damageSpellSpecialtyTarget(SpellID(spell)))
+								hero->damageSpellSpecialtyProducers.push_back({*family, prepared, supported});
+						});
+				});
+		}
 	}
 }
 

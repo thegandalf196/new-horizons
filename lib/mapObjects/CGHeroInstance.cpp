@@ -75,6 +75,12 @@ std::string creatureLineSpecialtyMarker(HeroTypeID heroType, CreatureID creature
 		+ std::to_string(creature.getNum()) + ":" + std::string(stat);
 }
 
+std::string damageSpellSpecialtyMarker(HeroTypeID heroType, SpellID spell)
+{
+	return "new-horizons:damage-spell-specialty:" + std::to_string(heroType.getNum()) + ":"
+		+ std::to_string(spell.getNum());
+}
+
 const ArtifactID & spellbindersHatArtifactID()
 {
 	static const ArtifactID result(ArtifactID::decode("core:spellbindersHat"));
@@ -503,42 +509,72 @@ std::string CGHeroInstance::getSpecialtyDescriptionTranslated() const
 		return {};
 
 	const auto rules = newHorizonsHeroes::creatureLineSpecialtyRules(primaryGrowthRules);
-	if(!rules || !heroType->creatureLineSpecialtyAlias)
-		return heroType->getSpecialtyDescriptionTranslated();
-
-	const CreatureID creature = heroType->creatureLineSpecialtyAlias->creature;
-	const std::array<std::string, 4> markers = {
-		creatureLineSpecialtyMarker(heroType->getId(), creature, "speed"),
-		creatureLineSpecialtyMarker(heroType->getId(), creature, "initiative"),
-		creatureLineSpecialtyMarker(heroType->getId(), creature, "attack"),
-		creatureLineSpecialtyMarker(heroType->getId(), creature, "defense")
-	};
 	const auto & localBonuses = getExportedBonusList();
-	const bool converted = std::ranges::any_of(localBonuses, [&markers](const auto & bonus)
+	if(rules && heroType->creatureLineSpecialtyAlias)
 	{
-		return bonus && std::ranges::find(markers, bonus->stacking) != markers.end();
-	});
-	if(!converted)
-		return heroType->getSpecialtyDescriptionTranslated();
+		const CreatureID creature = heroType->creatureLineSpecialtyAlias->creature;
+		const std::array<std::string, 4> markers = {
+			creatureLineSpecialtyMarker(heroType->getId(), creature, "speed"),
+			creatureLineSpecialtyMarker(heroType->getId(), creature, "initiative"),
+			creatureLineSpecialtyMarker(heroType->getId(), creature, "attack"),
+			creatureLineSpecialtyMarker(heroType->getId(), creature, "defense")
+		};
+		const bool converted = std::ranges::any_of(localBonuses, [&markers](const auto & bonus)
+		{
+			return bonus && std::ranges::find(markers, bonus->stacking) != markers.end();
+		});
+		if(converted)
+		{
+			MetaString description;
+			description.appendNamePlural(creature);
+			description.appendRawString(" and their upgrades gain +");
+			description.appendNumber(rules->speed);
+			description.appendRawString(" Speed and +");
+			description.appendNumber(rules->initiative);
+			description.appendRawString(" Initiative. They also gain +");
+			description.appendNumber(rules->attributePerStep);
+			description.appendRawString(" Creature Attack and +");
+			description.appendNumber(rules->attributePerStep);
+			description.appendRawString(" Creature Defense per ");
+			description.appendNumber(rules->levelStep);
+			description.appendRawString(" hero levels, up to +");
+			description.appendNumber(rules->attributeMaximum);
+			description.appendRawString(" at level ");
+			description.appendNumber(rules->levelStep * rules->attributeMaximum);
+			description.appendRawString(".");
+			return description.toString(LIBRARY->generaltexth.get());
+		}
+	}
 
-	MetaString description;
-	description.appendNamePlural(creature);
-	description.appendRawString(" and their upgrades gain +");
-	description.appendNumber(rules->speed);
-	description.appendRawString(" Speed and +");
-	description.appendNumber(rules->initiative);
-	description.appendRawString(" Initiative. They also gain +");
-	description.appendNumber(rules->attributePerStep);
-	description.appendRawString(" Creature Attack and +");
-	description.appendNumber(rules->attributePerStep);
-	description.appendRawString(" Creature Defense per ");
-	description.appendNumber(rules->levelStep);
-	description.appendRawString(" hero levels, up to +");
-	description.appendNumber(rules->attributeMaximum);
-	description.appendRawString(" at level ");
-	description.appendNumber(rules->levelStep * rules->attributeMaximum);
-	description.appendRawString(".");
-	return description.toString(LIBRARY->generaltexth.get());
+	if(const auto damageRules = newHorizonsHeroes::damageSpellSpecialtyRules(primaryGrowthRules))
+		for(const auto & producer : heroType->damageSpellSpecialtyProducers)
+			if(getDamageSpellSpecialtyBonusPercent(producer.spell) > 0)
+			{
+				MetaString description;
+				description.appendName(producer.spell);
+				description.appendRawString(" gains +");
+				description.appendNumber(damageRules->componentPercent);
+				description.appendRawString("% to its Spell Power-derived damage component.");
+				return description.toString(LIBRARY->generaltexth.get());
+			}
+
+	return heroType->getSpecialtyDescriptionTranslated();
+}
+
+int CGHeroInstance::getDamageSpellSpecialtyBonusPercent(SpellID spell) const
+{
+	const auto rules = newHorizonsHeroes::damageSpellSpecialtyRules(primaryGrowthRules);
+	const CHero * heroType = getHeroType();
+	if(!rules || !heroType)
+		return 0;
+
+	const std::string marker = damageSpellSpecialtyMarker(heroType->getId(), spell);
+	const auto & localBonuses = getExportedBonusList();
+	const bool converted = std::ranges::any_of(localBonuses, [&marker](const auto & bonus)
+	{
+		return bonus && bonus->stacking == marker;
+	});
+	return converted ? rules->componentPercent : 0;
 }
 
 HeroTypeID CGHeroInstance::getHeroTypeID() const
@@ -793,12 +829,31 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	const CHero * heroType = getHeroType();
 	const bool convertsCreatureLineSpecialty = newHorizonsHeroes::creatureLineSpecialtyRules(primaryGrowthRules).has_value()
 		&& heroType->creatureLineSpecialtyAlias.has_value();
+	const bool convertsDamageSpellSpecialty = newHorizonsHeroes::damageSpellSpecialtyRules(primaryGrowthRules).has_value();
 	for(const std::shared_ptr<Bonus> & b : heroType->specialty)
 	{
 		if(convertsCreatureLineSpecialty
 			&& std::ranges::find(heroType->creatureLineSpecialtyAlias->bonuses, b)
 				!= heroType->creatureLineSpecialtyAlias->bonuses.end())
 			continue;
+		if(convertsDamageSpellSpecialty)
+		{
+			const auto producer = std::ranges::find_if(heroType->damageSpellSpecialtyProducers,
+				[&b](const auto & candidate)
+				{
+					return candidate.bonus == b;
+				});
+			if(producer != heroType->damageSpellSpecialtyProducers.end())
+			{
+				if(!producer->supported)
+					throw std::runtime_error("New Horizons cannot convert a damage-spell specialty with limiters, updaters, propagation, or a non-base value type");
+				auto converted = std::make_shared<Bonus>(*b);
+				converted->val = 0;
+				converted->stacking = damageSpellSpecialtyMarker(heroType->getId(), producer->spell);
+				addNewBonus(converted);
+				continue;
+			}
+		}
 		addNewBonus(b);
 	}
 	if(convertsCreatureLineSpecialty)

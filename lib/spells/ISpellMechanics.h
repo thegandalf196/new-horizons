@@ -85,7 +85,8 @@ DLL_LINKAGE int64_t scaleWarcastingSpellPowerComponent(int64_t numerator, int64_
 /// basis-point coefficient and the snapshotted Warcasting percentage. Fixed
 /// spell bases and level-power components must stay outside the input.
 DLL_LINKAGE int64_t scaleSpellPowerComponentWithCoefficientBasisPoints(int64_t numerator, int32_t divisor,
-	int32_t coefficientBasisPoints, int32_t warcastingBonusPercent = 0, int32_t empowerSpellBonusPercent = 0);
+	int32_t coefficientBasisPoints, int32_t warcastingBonusPercent = 0, int32_t empowerSpellBonusPercent = 0,
+	int32_t damageSpecialtyPercent = 0);
 
 class DLL_LINKAGE IBattleCast
 {
@@ -420,6 +421,8 @@ public:
 		int32_t coefficientPercent) const;
 	int64_t scaleSpellPowerComponentWithCoefficientBasisPoints(int64_t numerator, int32_t divisor,
 		int32_t coefficientBasisPoints) const;
+	int64_t scaleDamageSpellPowerComponentWithCoefficientBasisPoints(int64_t numerator, int32_t divisor,
+		int32_t coefficientBasisPoints, int32_t damageSpecialtyPercent) const;
 	virtual Target canonicalizeTarget(const Target & aim) const = 0;
 
 	//Battle facade

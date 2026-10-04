@@ -27,25 +27,27 @@ int32_t parameter(const JsonNode & node)
 }
 }
 
-int64_t DirectDamageFormula::evaluate(int32_t effectPower, int32_t divisor, int coefficientPercent) const
+int64_t DirectDamageFormula::evaluate(int32_t effectPower, int32_t divisor, int coefficientPercent,
+	int32_t damageSpecialtyPercent) const
 {
 	if(coefficientPercent < 0 || coefficientPercent > 1000)
 		throw std::runtime_error("Invalid New Horizons direct damage evaluation inputs");
-	return evaluateBasisPoints(effectPower, divisor, coefficientPercent * 100);
+	return evaluateBasisPoints(effectPower, divisor, coefficientPercent * 100, 0, damageSpecialtyPercent);
 }
 
 int64_t DirectDamageFormula::evaluateBasisPoints(int32_t effectPower, int32_t divisor,
-	int32_t coefficientBasisPoints, int32_t empowerSpellBonusPercent) const
+	int32_t coefficientBasisPoints, int32_t empowerSpellBonusPercent, int32_t damageSpecialtyPercent) const
 {
 	// Also check directly constructed DTOs. Negative damage is not healing.
 	if(base < 0 || base > MAX_DIRECT_DAMAGE_PARAMETER || powerCoefficient < 0
 		|| powerCoefficient > MAX_DIRECT_DAMAGE_PARAMETER || effectPower < 0 || divisor <= 0
 		|| coefficientBasisPoints < 0 || coefficientBasisPoints > 100000
-		|| empowerSpellBonusPercent < 0 || empowerSpellBonusPercent > 1000)
+		|| empowerSpellBonusPercent < 0 || empowerSpellBonusPercent > 1000
+		|| (damageSpecialtyPercent != 0 && damageSpecialtyPercent != 15))
 		throw std::runtime_error("Invalid New Horizons direct damage evaluation inputs");
 	const int64_t scaledPower = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
 		static_cast<int64_t>(powerCoefficient) * effectPower, divisor,
-		coefficientBasisPoints, 0, empowerSpellBonusPercent);
+		coefficientBasisPoints, 0, empowerSpellBonusPercent, damageSpecialtyPercent);
 	if(scaledPower > std::numeric_limits<int64_t>::max() - base)
 		throw std::overflow_error("New Horizons direct damage result overflows");
 	return base + scaledPower;

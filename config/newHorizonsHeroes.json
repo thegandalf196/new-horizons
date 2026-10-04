@@ -65,6 +65,10 @@
 		"levelStep": 5,
 		"attributeMaximum": 6
 	},
+	"damageSpellSpecialties": {
+		"version": 1,
+		"componentPercent": 15
+	},
 	"startingSkills": {
 		"factionSkills": {
 			"core:castle": "new-horizons:divineMandate",

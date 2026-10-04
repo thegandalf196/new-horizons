@@ -409,6 +409,9 @@ public:
 	/// Uses the saved New Horizons creature-line specialty rules only when this
 	/// instance carries their persistent conversion markers.
 	std::string getSpecialtyDescriptionTranslated() const;
+	/// Returns the saved New Horizons damage-specialty component bonus only
+	/// when this hero has the matching persistent local conversion marker.
+	int getDamageSpellSpecialtyBonusPercent(SpellID spell) const;
 	void setHeroType(HeroTypeID type);
 
 	bool isGarrisoned() const;

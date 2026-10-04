@@ -43,6 +43,14 @@ struct DLL_LINKAGE CreatureLineSpecialtyRules
 	int attributeMaximum = 6;
 };
 
+/// Saved New Horizons conversion of legacy damage-spell specialties to the
+/// Spell Power-derived damage component. The only supported payload is V1.
+struct DLL_LINKAGE DamageSpellSpecialtyRules
+{
+	int version = 1;
+	int componentPercent = 15;
+};
+
 /// Read-only live-hero presentation. No secondary attributes or masteries are
 /// fabricated here. Primary growth is the fixed class vector; version 3 also
 /// exposes the owned skills' independent bonus opportunities.
@@ -81,6 +89,9 @@ DLL_LINKAGE JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroCl
 /// Returns the creature-line conversion saved in the hero snapshot. Old or
 /// otherwise legacy snapshots intentionally return nullopt.
 DLL_LINKAGE std::optional<CreatureLineSpecialtyRules> creatureLineSpecialtyRules(const JsonNode & resolvedRules);
+/// Returns the damage-spell conversion captured by this hero. Missing rules
+/// intentionally retain the legacy specialty behavior for older saves.
+DLL_LINKAGE std::optional<DamageSpellSpecialtyRules> damageSpellSpecialtyRules(const JsonNode & resolvedRules);
 /// Legacy compatibility accessor. New Horizons primary growth is deterministic
 /// for older profiles. Version 3 returns the configured owned-skill chances.
 DLL_LINKAGE std::vector<SkillGrowthChance> skillGrowthChances(const JsonNode & resolvedRules,
