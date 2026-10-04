@@ -2,6 +2,44 @@
 
 ## Purpose
 
+### 2026-10-04 UP-198 — Final focused acceptance
+
+The historical fixture failures below are repaired. Final both-target96096
+exits0; native4614 passes19/19 in1.692s, zero skips, retained in
+UP198-amplifier-accepted.log/XML. Real hero-local visits, exact saved timed
+bonuses, nonstacking refresh, latest expiry and actual computer-winner raising
+pass. Data/inventory20/20 and module drift pass; Astra review has no blocking
+finding. Source/native acceptance is not graphical or playable delivery.
+
+### 2026-10-04 UP-198 — Compare the named reward, not all raising bonuses
+
+Rank-setup build10255 passes. Native65373 passes18/19: exact named Amplifier
+benefit, stored duration refresh/save/expiry and computer raising assertions
+pass, but three total UNDEAD_RAISE_PERCENTAGE assertions ignored the hero's
+intrinsic Basic Necromancy bonus. Retain UP198-amplifier-final.log/XML. Record
+each hero's pre-visit total and compare the10-point delta/nonvisitor unchanged
+total; do not mistake ordinary skill bonuses for a kingdom-wide building leak.
+Final fixture acceptance still awaits the corrected focused run.
+
+### 2026-10-04 UP-198 — Controlled starting Skill rank in the visit fixture
+
+Retry76110 builds both targets successfully. Focused native46234 passes18/19:
+the real computer-winner raising case and adjacent resolver/legacy guards pass,
+but the visit case tried to advance an authored starting Necromancy rank as if
+it were rankless and hit the preceding-perk requirement. Preserve
+UP198-amplifier-focused.log/XML. Control the fixture's starting rank before
+using the ordinary Basic acquisition path; do not bypass production progression
+or weaken its prerequisite validation. Visit/refresh/expiry acceptance is pending.
+
+### 2026-10-04 UP-198 — Direct concrete-type includes in the Amplifier fixture
+
+Registered fixture build45525 exits1 because its hero-specialty and Skill-handler
+accesses had only forward declarations of CHero and CSkillHandler. Retain
+build/new-horizons-linux/testing/UP198-amplifier-fixture-build.log. The tester
+added the direct concrete headers and braced the GTest conditional; retry76110
+is live. Do not weaken production encapsulation or rely on transitive/PCH
+includes. Client68479 already passed; principal native acceptance is pending.
+
 ### 2026-10-04 UP-196 — Accepted focused retry
 
 The two compilation failures below are repaired, not current blockers. Client

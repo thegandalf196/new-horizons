@@ -1,11 +1,12 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
-Latest accepted slice: UP196 Estates Resource Broker, shared town Marketplace rate.
-Client retry94429 and both-target fixture retry38283 build; focused native64173
-passes7/7 across two suites in1.373s, zero skips. Independent Astra review
-finds no blocker. Combat spell identities61/67 (Chaos7/11); perks213/310
-(97 planned), Estates6/10; ranks87/93 unchanged. Source/native acceptance
+Latest accepted slice: UP198 Necropolis Necromancy Amplifier visiting-hero reward.
+Client68479 and final both-target build96096 pass; native4614 passes19/19
+across five focused suites in1.692s, zero skips. Independent Astra review finds
+no blocker. Combat spell identities61/67 (Chaos7/11); perks213/310
+(97 planned), faction perks62/90 and ranks87/93 unchanged. This adds one
+verified specified town mechanic, not a perk or spell. Source/native acceptance
 only; GUI and playable delivery remain pending.
 Canonical source SHA-256: `5b26a4930b6c6838e7435454c96b35a19039c275694e975636b37e6003b68a4a`
 
@@ -19,6 +20,22 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+2026-10-04 UP198 Necromancy Amplifier is source/native accepted. The NH building
+removes the permanent kingdom aura and grants only a visiting Necropolis hero
+a named10-percentage-point N_DAYS7 reward. The actual post-battle resolver reads
+the maximum matching positive town effect and applies it before existing
+casualty/conversion arithmetic. Real visits prove built/class/hero-local guards,
+cross-building nonstacking refresh, exact stored durations1/7 across save/load,
+continued benefit after the old entry expires and loss seven days after the
+newest visit. A computer-owned hero's actual battle raises10 Skeletons from50
+eligible casualties at Basic20% instead of5 at10%; adjacent legacy/resolver
+guards pass. Final build96096 and UP198-amplifier-accepted.log/XML prove19/19
+in1.692s, zero skips; focused data/inventory20/20 and module drift pass.
+No new saved field, daily poller, UI/art approval or playable promotion.
+Duplicate stored-entry consolidation, duration presentation and strategic AI
+visit valuation remain Phase2 follow-ups. Building inventory has no complete
+atomic denominator yet; no fabricated global building percentage is reported.
 
 2026-10-04 post-UP196 audit: all31 per-Skill rows were compared with the live
 registry. The lower Necromancy row was stale at4/10; it now records10/10 with

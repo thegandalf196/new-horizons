@@ -166,7 +166,8 @@ NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleC
 	bool skeletonSlotAvailable, bool zombieSlotAvailable, int32_t currentMana, int32_t manaLimit,
 	int32_t eligibleEliteCasualties, bool soulHarvester, bool wightSlotAvailable, CreatureID skeletonOutput,
 	SpecialCasualtyCounts nonliving, SpecialCasualtyCounts undead,
-	bool lordOfTheDead, bool defeatedArmyHadLivingChampion, bool boneDragonSlotAvailable)
+	bool lordOfTheDead, bool defeatedArmyHadLivingChampion, bool boneDragonSlotAvailable,
+	int32_t amplifierBonusPercent)
 {
 	NecromancyResult result;
 	result.active = rank >= 1 && rank <= 3;
@@ -178,7 +179,8 @@ NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32_t eligibleC
 	result.corpsePreservation = corpsePreservation;
 	result.darkConversionAvailable = darkConversionAvailable;
 	result.eligibleCasualties = std::max(0, eligibleCasualties);
-	result.percentage = rank * 10 + (boneCollector ? 5 : 0);
+	const auto boundedAmplifierBonus = std::clamp(amplifierBonusPercent, 0, 100);
+	result.percentage = std::clamp(rank * 10 + (boneCollector ? 5 : 0) + boundedAmplifierBonus, 0, 100);
 	nonliving = normalizeSpecialCounts(nonliving);
 	undead = normalizeSpecialCounts(undead);
 	result.deathLordCasualties = nonliving.total;

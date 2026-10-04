@@ -39,6 +39,7 @@
 #include "../entities/faction/CTownHandler.h"
 #include "../entities/hero/CHeroHandler.h"
 #include "../entities/hero/CHeroClass.h"
+#include "../entities/hero/NewHorizonsNecromancy.h"
 #include "../entities/ResourceTypeHandler.h"
 #include "../battle/CBattleInfoEssentials.h"
 #include "../bonuses/BonusParameters.h"
@@ -2177,6 +2178,25 @@ int CGHeroInstance::getNewHorizonsNecromancyRank() const
 	if(!usesNewHorizonsNecromancy())
 		return 0;
 	return std::clamp<int>(getSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:necromancy"))), 0, 3);
+}
+
+int32_t CGHeroInstance::getNewHorizonsNecromancyAmplifierBonusPercent() const
+{
+	if(!usesNewHorizonsNecromancy())
+		return 0;
+
+	int32_t result = 0;
+	const auto bonuses = getUnstackedBonuses(Selector::type()(BonusType::UNDEAD_RAISE_PERCENTAGE));
+	for(const auto & bonus : *bonuses)
+	{
+		if(bonus->source != BonusSource::TOWN_STRUCTURE
+			|| bonus->stacking != newHorizonsNecromancy::AMPLIFIER_STACKING_KEY
+			|| bonus->val <= 0)
+			continue;
+
+		result = std::max(result, bonus->val);
+	}
+	return result;
 }
 
 void CGHeroInstance::applyPerkSelection(const newHorizonsHeroes::PerkSelection & selection)

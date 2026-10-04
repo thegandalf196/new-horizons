@@ -32,6 +32,7 @@ inline constexpr const char * GRAVE_KNOWLEDGE_ID = "new-horizons:necromancy.grav
 inline constexpr const char * MASTER_OF_BONES_ID = "new-horizons:necromancy.masterOfBones";
 inline constexpr const char * OSSUARY_ID = "new-horizons:necromancy.ossuary";
 inline constexpr const char * LORD_OF_THE_DEAD_ID = "new-horizons:necromancy.lordOfTheDead";
+inline constexpr const char * AMPLIFIER_STACKING_KEY = "newHorizonsNecromancyAmplifier";
 
 /// The post-battle payload is deliberately explicit.  The client must be able
 /// to explain what the authoritative server actually raised, including a
@@ -288,5 +289,5 @@ DLL_LINKAGE NecromancyResult resolve(int rank, int32_t eligibleCasualties, int32
 	CreatureID skeletonOutput = CreatureID::NONE,
 	SpecialCasualtyCounts nonliving = {}, SpecialCasualtyCounts undead = {},
 	bool lordOfTheDead = false, bool defeatedArmyHadLivingChampion = false,
-	bool boneDragonSlotAvailable = true);
+	bool boneDragonSlotAvailable = true, int32_t amplifierBonusPercent = 0);
 }

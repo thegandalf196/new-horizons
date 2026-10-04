@@ -1112,6 +1112,22 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(patch['produce'], {'sulfur': 1})
         self.assertEqual(patch['bonuses'], [])
 
+    def test_necromancy_amplifier_is_a_seven_day_hero_reward_not_a_kingdom_aura(self):
+        patch = load('Mods/new-horizons/Content/config/factions/uniqueBuildings.json')['core:necropolis']['town']['buildings']['special2']
+        self.assertEqual(patch['bonuses'], [])
+        self.assertEqual(patch['configuration']['visitMode'], 'unlimited')
+        reward, = patch['configuration']['rewards']
+        self.assertEqual(reward['limiter']['heroClasses'],
+                         ['core:deathknight', 'core:necromancer'])
+        bonus, = reward['bonuses']
+        self.assertEqual(bonus, {
+            'type': 'UNDEAD_RAISE_PERCENTAGE', 'val': 10,
+            'duration': 'N_DAYS', 'turns': 7,
+            'stacking': 'newHorizonsNecromancyAmplifier',
+        })
+        self.assertNotIn('playerBonuses', reward)
+        self.assertNotIn('propagator', bonus)
+
     def test_universal_mage_guild_overlay_reaches_level_five(self):
         overlay = load('Mods/new-horizons/Content/config/factions/universalMageGuilds.json')
         module = load('Mods/new-horizons/mod.json')

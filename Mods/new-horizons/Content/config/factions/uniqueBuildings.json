@@ -49,6 +49,27 @@
 			}
 		}
 	},
+	"core:necropolis": {
+		"town": {
+			"buildings": {
+				"special2": {
+					"name": "Necromancy Amplifier",
+					"description": "Visiting Necropolis heroes gain 10 percentage points of Necromancy raising for 7 days. Amplifiers do not stack; another visit renews the benefit.",
+					"bonuses": [],
+					"configuration": {
+						"visitMode": "unlimited",
+						"rewards": [
+							{
+								"limiter": { "heroClasses": [ "core:deathknight", "core:necromancer" ] },
+								"message": "The Necromancy Amplifier increases this hero's Necromancy raising by 10 percentage points for 7 days. This benefit does not stack with other Amplifiers.",
+								"bonuses": [ { "type": "UNDEAD_RAISE_PERCENTAGE", "val": 10, "duration": "N_DAYS", "turns": 7, "stacking": "newHorizonsNecromancyAmplifier" } ]
+							}
+						]
+					}
+				}
+			}
+		}
+	},
 	"core:conflux": {
 		"town": {
 			"buildings": {

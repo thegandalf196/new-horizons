@@ -344,6 +344,8 @@ public:
 	/// retaining core:necromancy continue through calculateNecromancy().
 	bool usesNewHorizonsNecromancy() const;
 	int getNewHorizonsNecromancyRank() const;
+	/// Active percentage points from a visited Necromancy Amplifier under captured New Horizons rules.
+	int32_t getNewHorizonsNecromancyAmplifierBonusPercent() const;
 	void applyPerkSelection(const newHorizonsHeroes::PerkSelection & selection);
 	std::optional<newHorizonsHeroes::MasteryView> getMasteryView() const;
 	void captureMasteryEligibility(uint32_t nextLevel);

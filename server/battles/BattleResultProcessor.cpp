@@ -788,7 +788,8 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 		true, true, postBattleMana,
 		blackHarvest ? winnerHero->manaLimit() : postBattleMana, eligibleEliteCount, soulHarvester, true, skeletonOutput,
 		nonlivingCasualties, undeadCasualties, lordOfTheDead,
-		result.necromancyDefeatedArmyHadLivingChampion, true);
+		result.necromancyDefeatedArmyHadLivingChampion, true,
+		winnerHero->getNewHorizonsNecromancyAmplifierBonusPercent());
 	if(!summary.active)
 		return false;
 
