@@ -1384,14 +1384,16 @@ AttackPossibility AttackPossibility::evaluate(
 					}
 				}
 
-				bool isEnemy = state->battleMatchOwner(attacker, u);
+				const bool hostileToActionController = state->battleMatchActionController(attacker, u);
+				const bool friendlyToActionController = state->battleMatchActionController(attacker, u, true);
 
-				// this includes enemy units as well as attacker units under enemy's mind control
-				if(isEnemy)
+				// Score the deliberate target from the player who controls this action,
+				// without changing the target's physical allegiance or combat effects.
+				if(hostileToActionController)
 					ap.defenderDamageReduce += defenderDamageReduce;
 
-				// damaging attacker's units (even those under enemy's mind control) is considered friendly fire
-				if(attackerSide == u->unitSide())
+				// Only actual controller-friendly stacks are collateral from this action's perspective.
+				if(friendlyToActionController)
 					ap.collateralDamageReduce += defenderDamageReduce;
 
 				if(damageDealt > 0 && attackInfo.physicalDamage

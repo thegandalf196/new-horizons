@@ -24,6 +24,7 @@
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/CUnitState.h"
 #include "../battle/NewHorizonsSoulChain.h"
+#include "../battle/NewHorizonsPuppetMaster.h"
 #include "../battle/NewHorizonsWarcasting.h"
 #include "../battle/Unit.h"
 #include "../bonuses/BonusParameters.h"
@@ -2545,6 +2546,10 @@ std::vector<AimType> BattleSpellMechanics::getTargetTypes() const
 
 bool BattleSpellMechanics::isReceptive(const battle::Unit * target) const
 {
+	if(target && newHorizonsPuppetMaster::isMentalControlSpell(owner->getJsonKey())
+		&& newHorizonsPuppetMaster::hasLucidity(target))
+		return false;
+
 	if(target && isNewHorizonsBlinkSpell(owner) && usesNewHorizonsMagicV3()
 		&& target->unitSide() == casterSide)
 	{

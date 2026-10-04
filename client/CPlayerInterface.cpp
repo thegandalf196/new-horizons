@@ -817,7 +817,17 @@ void CPlayerInterface::actionStarted(const BattleID & battleID, const BattleActi
 	BATTLE_EVENT_POSSIBLE_RETURN;
 
 	if(battleInt)
-		battleInt->trySetActivePlayer(cb->getBattle(battleID)->sideToPlayer(action.side));
+	{
+		const auto battle = cb->getBattle(battleID);
+		auto activePlayer = battle->sideToPlayer(action.side);
+		if(action.isUnitAction())
+		{
+			const auto * actor = battle->battleGetStackByID(action.stackNumber);
+			if(actor)
+				activePlayer = battle->battleGetActionController(actor);
+		}
+		battleInt->trySetActivePlayer(activePlayer);
+	}
 
 	battleInt->startAction(action);
 }

@@ -1,4 +1,78 @@
 {
+	"core:berserk": {
+		"targetCondition": {"noneOf": {"bonus.LUCIDITY": "absolute"}}
+	},
+	"puppetMaster": {
+		"name": "Puppet Master",
+		"type": "combat",
+		"school": {"new-horizons:chaos": true},
+		"level": 4,
+		"power": 0,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "CREATURE",
+		"graphics": {
+			"iconBook": "SPELLS.def:0:60",
+			"iconScroll": "SPELLSCR.def:0:60",
+			"iconEffect": "SPELLINT.def:0:61",
+			"iconImmune": "SPELLINT.def:0:61",
+			"iconScenarioBonus": "SPELLBON.def:0:60"
+		},
+		"animation": {"affect": ["C10SPA0"]},
+		"sounds": {"cast": "HYPNOTIZ"},
+		"levels": {
+			"base": {
+				"range": "0",
+				"description": "Control one enemy stack for one Creature Activation without changing its allegiance. Wait defers that same controlled activation. After the activation ends, the stack gains Lucidity for 2 rounds, preventing mental domination and control.",
+				"cost": 16,
+				"power": 0,
+				"targetModifier": {"smart": true},
+				"battleEffects": {"control": {"type": "newHorizonsPuppetMaster"}}
+			},
+			"none": {},
+			"basic": {},
+			"advanced": {},
+			"expert": {}
+		},
+		"flags": {"negative": true},
+		"targetCondition": {
+			"noneOf": {
+				"bonus.LUCIDITY": "absolute",
+				"bonus.MIND_IMMUNITY": "normal",
+				"bonus.SIEGE_WEAPON": "absolute"
+			}
+		}
+	},
+	"lucidity": {
+		"name": "Lucidity",
+		"type": "combat",
+		"school": {"new-horizons:chaos": true},
+		"level": 0,
+		"power": 0,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "CREATURE",
+		"graphics": {
+			"iconBook": "SPELLS.def:0:60",
+			"iconScroll": "SPELLSCR.def:0:60",
+			"iconEffect": "SPELLINT.def:0:61",
+			"iconImmune": "SPELLINT.def:0:61",
+			"iconScenarioBonus": "SPELLBON.def:0:60"
+		},
+		"levels": {
+			"base": {
+				"range": "0",
+				"description": "Lucidity: immune to mental domination and control for 2 rounds. Ordinary debuffs, damage, relocation, transformation and Reality Warp remain eligible.",
+				"cost": 0,
+				"power": 0
+			},
+			"none": {},
+			"basic": {},
+			"advanced": {},
+			"expert": {}
+		},
+		"flags": {"positive": true, "special": true}
+	},
 	"poison" : {
 		"name" : "Poison",
 		"type" : "combat",

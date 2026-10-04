@@ -10,6 +10,7 @@
 #pragma once
 
 #include "../../lib/battle/CBattleInfoCallback.h"
+#include "../../lib/battle/NewHorizonsPuppetMaster.h"
 #include "../../lib/battle/NewHorizonsSoulChain.h"
 #include "MagicArrowOverchargeWindow.h"
 #include "SelectiveDispelWindow.h"
@@ -19,6 +20,7 @@
 #include "lib/spells/NewHorizonsBlink.h"
 
 #include <functional>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -115,6 +117,9 @@ class BattleActionsController
 
 	// the monster that casts the spell 
 	const CStack * monsterCaster = nullptr;
+	/// Temporary caster proxy for player-selected creature abilities. It retains
+	/// the active stack's stats while exposing its action controller as owner.
+	mutable std::unique_ptr<newHorizonsPuppetMaster::ActionControllerCaster> actionControllerCaster;
 
 	/// cached message that was set by this class in status bar
 	std::string currentConsoleMsg;

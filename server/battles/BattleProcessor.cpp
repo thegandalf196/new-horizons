@@ -23,6 +23,7 @@
 #include "../../lib/CPlayerState.h"
 #include "../../lib/TerrainHandler.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
+#include "../../lib/battle/NewHorizonsPuppetMaster.h"
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/BattleLayout.h"
@@ -487,6 +488,28 @@ void BattleProcessor::expireStackActivationBonuses(const BattleID & battleID, co
 		// unit's activation clock.  In particular, do not expire effects whose
 		// lifetime is tied to activation completion.
 		return;
+	}
+	if(action.actionType != EActionType::WAIT)
+	{
+		const auto controlMarkers = actedStack->getBonuses(Selector::type()(BonusType::PUPPET_MASTER_CONTROL));
+		if(controlMarkers && !controlMarkers->empty())
+		{
+			SetStackEffect controlFinished;
+			controlFinished.battleID = battleID;
+			std::vector<Bonus> removedControl;
+			removedControl.reserve(controlMarkers->size());
+			for(const auto & marker : *controlMarkers)
+				if(marker)
+					removedControl.push_back(*marker);
+			if(!removedControl.empty())
+			{
+				controlFinished.toRemove.emplace_back(actedStack->unitId(), std::move(removedControl));
+				if(actedStack->alive())
+					controlFinished.toAdd.emplace_back(actedStack->unitId(),
+						std::vector<Bonus>{newHorizonsPuppetMaster::lucidityMarker()});
+				gameHandler->sendAndApply(controlFinished);
+			}
+		}
 	}
 	const auto expiring = actedStack ? actedStack->getAllBonuses(Bonus::UntilActivationEnds) : nullptr;
 	std::vector<Bonus> bonuses;

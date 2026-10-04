@@ -13,6 +13,7 @@
 #include "../CStack.h"
 #include "BattleInfo.h"
 #include "CObstacleInstance.h"
+#include "NewHorizonsPuppetMaster.h"
 #include "GameLibrary.h"
 #include "IGameSettings.h"
 
@@ -624,6 +625,39 @@ PlayerColor CBattleInfoEssentials::battleGetOwner(const battle::Unit * unit) con
 		return otherPlayer(initialOwner);
 	else
 		return initialOwner;
+}
+
+PlayerColor CBattleInfoEssentials::battleGetActionController(const battle::Unit * unit) const
+{
+	if(!unit || !getBattle())
+		return PlayerColor::CANNOT_DETERMINE;
+
+	const auto allegianceOwner = battleGetOwner(unit);
+
+	const auto markers = unit->getBonuses(Selector::type()(BonusType::PUPPET_MASTER_CONTROL));
+	if(!markers)
+		return allegianceOwner;
+
+	for(const auto & marker : *markers)
+		if(marker && newHorizonsPuppetMaster::isValidControlMarker(*this, unit, marker.get()))
+			return marker->spellCasterOwner;
+
+	// Invalid or legacy control metadata must never grant authority to an
+	// arbitrary player. Fall back to the existing allegiance controller.
+	return allegianceOwner;
+}
+
+bool CBattleInfoEssentials::battleMatchActionController(const battle::Unit * actor,
+	const battle::Unit * target, const bool sameOwner) const
+{
+	RETURN_IF_NOT_BATTLE(false);
+	if(!actor || !target)
+		return false;
+	if(actor->unitId() == target->unitId())
+		return sameOwner;
+
+	const auto targetOwner = getBattle()->getSidePlayer(target->unitSide());
+	return (battleGetActionController(actor) == targetOwner) == sameOwner;
 }
 
 const CGHeroInstance * CBattleInfoEssentials::battleGetOwnerHero(const battle::Unit * unit) const

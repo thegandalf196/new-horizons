@@ -27,6 +27,7 @@
 #include "NewHorizonsWarcasting.h"
 #include "NewHorizonsBloodrage.h"
 #include "NewHorizonsDiscipline.h"
+#include "NewHorizonsPuppetMaster.h"
 #include "IGameSettings.h"
 #include "PossiblePlayerBattleAction.h"
 #include "../bonuses/BonusParameters.h"
@@ -1717,7 +1718,18 @@ PossiblePlayerBattleAction CBattleInfoCallback::getCasterAction(const CSpell * s
 {
 	RETURN_IF_NOT_BATTLE(PossiblePlayerBattleAction::INVALID);
 
-	const spells::BattleCast cast(this, caster, mode, spell);
+	std::optional<newHorizonsPuppetMaster::ActionControllerCaster> actionControllerCaster;
+	const spells::Caster * effectiveCaster = caster;
+	if(mode == spells::Mode::CREATURE_ACTIVE)
+	{
+		if(const auto * unit = dynamic_cast<const battle::Unit *>(caster))
+		{
+			actionControllerCaster.emplace(caster, battleGetActionController(unit));
+			effectiveCaster = &*actionControllerCaster;
+		}
+	}
+
+	const spells::BattleCast cast(this, effectiveCaster, mode, spell);
 	if(spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_LIFE_DRAIN_SPELL)
 	{
 		// Life Drain is a human hero spell with an ordered enemy/friendly pair;
@@ -1748,7 +1760,7 @@ PossiblePlayerBattleAction CBattleInfoCallback::getCasterAction(const CSpell * s
 			return PossiblePlayerBattleAction(PossiblePlayerBattleAction::OBSTACLE, spell->id);
 		case spells::AimType::LOCATION:
 		{
-			const CSpell::TargetInfo ti(spell, caster->getSpellSchoolLevel(spell), mode);
+			const CSpell::TargetInfo ti(spell, effectiveCaster->getSpellSchoolLevel(spell), mode);
 			if(ti.clearAffected)
 				return PossiblePlayerBattleAction(PossiblePlayerBattleAction::FREE_LOCATION, spell->id);
 			return PossiblePlayerBattleAction(PossiblePlayerBattleAction::ANY_LOCATION, spell->id);
@@ -2343,14 +2355,14 @@ BattleHexArray CBattleInfoCallback::battleGetSkirmisherTargetHexes(const battle:
 	for(const auto * target : battleAliveUnits())
 	{
 		// battleMatchOwner is true for hostile stacks; reject allies and accept enemies.
-		if(!target || target->isInvincible() || !battleMatchOwner(attacker, target))
+		if(!target || target->isInvincible() || !battleMatchActionController(attacker, target))
 			continue;
 		for(const BattleHex & targetHex : target->getHexes())
 		{
 			for(const BattleHex & candidate : firingPositions)
 			{
 				projected->setPosition(candidate);
-				if(battleCanShoot(projected.get(), targetHex))
+				if(battleCanShootAction(projected.get(), targetHex))
 				{
 					result.insert(targetHex);
 					break;
@@ -2373,7 +2385,7 @@ BattleHexArray CBattleInfoCallback::battleGetSkirmisherAttackFromHexes(const bat
 	if(!newHorizonsArchery::canUseSkirmisher(hero, attacker))
 		return {};
 	const auto * target = battleGetUnitByPos(targetHex);
-	if(!target || !target->alive() || target->isInvincible() || !battleMatchOwner(attacker, target))
+	if(!target || !target->alive() || target->isInvincible() || !battleMatchActionController(attacker, target))
 		return {};
 
 	const int movementLimit = static_cast<int>(attacker->getMovementRange(0) / 2);
@@ -2392,7 +2404,7 @@ BattleHexArray CBattleInfoCallback::battleGetSkirmisherAttackFromHexes(const bat
 			continue;
 
 		moved->setPosition(candidate);
-		if(!battleCanShoot(moved.get(), targetHex))
+		if(!battleCanShootAction(moved.get(), targetHex))
 			continue;
 		result.insert(candidate);
 		if(distances)
@@ -2427,6 +2439,25 @@ bool CBattleInfoCallback::battleCanAttackUnit(const battle::Unit * attacker, con
 	if(attacker == target || !battleMatchOwner(attacker, target))
 		return false;
 
+	if(!target->alive())
+		return false;
+	return attacker->isMeleeAttacker();
+}
+
+bool CBattleInfoCallback::battleCanAttackUnitAction(const battle::Unit * attacker,
+	const battle::Unit * target) const
+{
+	RETURN_IF_NOT_BATTLE(false);
+	if(battleTacticDist())
+		return false;
+	if(!attacker)
+		throw std::runtime_error("Undefined attacker in battleCanAttackUnitAction!");
+	if(!target || target->isInvincible()
+		|| (target->hasBonusOfType(BonusType::SANCTIFIED)
+			&& battleMatchActionController(attacker, target, false)))
+		return false;
+	if(attacker == target || !battleMatchActionController(attacker, target, false))
+		return false;
 	if(!target->alive())
 		return false;
 	return attacker->isMeleeAttacker();
@@ -2601,6 +2632,49 @@ bool CBattleInfoCallback::battleCanShoot(const battle::Unit * attacker, const Ba
 		}
 	}
 
+	return false;
+}
+
+bool CBattleInfoCallback::battleCanShootAction(const battle::Unit * attacker, const BattleHex & dest) const
+{
+	RETURN_IF_NOT_BATTLE(false);
+	if(!dest.isAvailable() || !attacker)
+		return false;
+
+	const battle::Unit * defender = battleGetUnitByPos(dest);
+	const bool emptyHexAreaAttack = battleCanTargetEmptyHex(attacker);
+	if(!emptyHexAreaAttack)
+	{
+		if(!defender || defender->isInvincible()
+			|| (defender->hasBonusOfType(BonusType::SANCTIFIED)
+				&& battleMatchActionController(attacker, defender, false)))
+			return false;
+	}
+
+	if(emptyHexAreaAttack || (defender->alive() && battleMatchActionController(attacker, defender, false)))
+	{
+		const bool pointBlankAdjacentShot = defender && attacker->isShooter() && attacker->canShoot()
+			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attacker)
+			&& !attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
+			&& newHorizonsArchery::hasPointBlankShot(battleGetOwnerHero(attacker))
+			&& battleMatchActionController(attacker, defender, false)
+			&& isMeleeAttackPossible(attacker, defender);
+		if(battleCanShoot(attacker) || pointBlankAdjacentShot)
+		{
+			if(defender && !canShootAdjacentUnits(attacker) && isMeleeAttackPossible(attacker, defender)
+				&& !pointBlankAdjacentShot)
+				return false;
+
+			const auto limitedRangeBonus = attacker->getBonus(Selector::type()(BonusType::LIMITED_SHOOTING_RANGE));
+			if(!limitedRangeBonus)
+				return true;
+
+			const int shootingRange = limitedRangeBonus->val;
+			if(defender)
+				return isEnemyUnitWithinSpecifiedRange(attacker->getPosition(), defender, shootingRange);
+			return isHexWithinSpecifiedRange(attacker->getPosition(), dest, shootingRange);
+		}
+	}
 	return false;
 }
 
@@ -4571,6 +4645,8 @@ SpellID CBattleInfoCallback::getRandomBeneficialSpell(vstd::RNG & rand, const ba
 		SpellID::STONE_SKIN
 	};
 	std::vector<SpellID> beneficialSpells;
+	newHorizonsPuppetMaster::ActionControllerCaster actionCaster(caster,
+		battleGetActionController(caster));
 
 	auto getAliveEnemy = [&](const std::function<bool(const CStack *)> & pred) -> const CStack *
 	{
@@ -4597,7 +4673,7 @@ SpellID CBattleInfoCallback::getRandomBeneficialSpell(vstd::RNG & rand, const ba
 		spells::Target target;
 		target.emplace_back(subject);
 
-		spells::BattleCast cast(this, caster, spells::Mode::CREATURE_ACTIVE, spellPtr);
+		spells::BattleCast cast(this, &actionCaster, spells::Mode::CREATURE_ACTIVE, spellPtr);
 
 		auto m = spellPtr->battleMechanics(&cast);
 		if (!m->canBeCastAt(target))

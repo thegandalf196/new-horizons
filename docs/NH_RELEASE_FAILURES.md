@@ -2,6 +2,70 @@
 
 ## Purpose
 
+### 2026-10-03 UP-190 — Explicit selector include in new helper
+
+Combined client/test build72676 exits1 at the new Puppet Master helper:
+Selector was used without including BonusSelector.h. Root adds the explicit
+header, retains UP190-puppet-build.log, and resumes compiled objects in a
+separate retry log. This is not native acceptance or a successful build.
+Retry17836 also exits1: iterating the returned BonusList requires its complete
+BonusList.h definition, not just the selector declaration. Root adds that
+explicit header; retain UP190-puppet-build-retry.log and retry2 separately.
+Retry2 (session23198) builds both targets successfully. First native invocation
+from the repository root exits1 before any test: CONFIG/FILESYSTEM is absent
+because development resource lookup uses the current directory. Rerun from
+build/new-horizons-linux/bin with absolute isolated-profile and evidence paths;
+retain UP190-puppet-principal.log/XML rather than counting this as a mechanic
+failure or weakening production loading.
+Corrected native16624 executes6 cases in1.751s, zero skips:4 pass,2 fail.
+Real hex cast/controller/allegiance, selected shot/Sanctuary, active creature
+ability/provenance and detached AI valuation pass. Wait/lifecycle fixture fails
+ordinary Slow eligibility and its afterOneRound duration assertion; JSON bonus
+fixture sees unresolved named spell SID -1. Retain principal-retry log/XML.
+Tester diagnoses actual eligibility, round advancement and identifier lifecycle
+without weakening spell immunity/duration or claiming a6/6 pass. The newly
+approved Berserk-removal correction is not included in this binary.
+Incremental Berserk client86698 exits1: BonusSourceID's variant requires a
+typed SpellID, not SpellIDBase::Type. Root wraps BERSERK in SpellID before
+constructing BonusSourceID; preserve UP190-puppet-berserk-client-build.log
+and retry separately. Apply the same typed-ID convention in new fixtures.
+Final fixture build15580 exits1: CStack exposes creatureId(), not
+getCreatureID(). Root corrects the two innate-source fixture calls, preserving
+the source/SID assertions. Retain UP190-puppet-final-test-build.log and retry.
+
+Closure: client retry90585/test retry72097 exit0. Fixture repairs use direct
+receptivity checks rather than a spent Hero Action, one exact round transition,
+and the named-spell JSON mod scope; production gates remain intact. Final
+native97155 passes8/8 in2.290s, zero skips. Adjacent Berserk runtime/AI guard
+71741 passes6/6 in1.986s, zero skips. Retain UP190-puppet-final.log/XML and
+UP190-berserk-adjacent.log/XML alongside every earlier failure; no GUI or
+playable acceptance is implied.
+
+### 2026-10-03 UP-190 — Use the actual Python test import surface
+
+The proposed tools.tests.test_new_horizons_magic_data module does not exist.
+The perk/inventory cases in that combined command passed19/19, but the command
+failed overall at import; it is not a20-case pass. Existing magic_v2_data and
+map_magic_schema modules import their sibling test_new_horizons_content, so
+module-style execution requires PYTHONPATH=tools/tests (or discovery rooted
+there). Root preserves these failed invocation results and corrects the runner
+instead of changing production to address test-import errors.
+
+Corrected invocation runs23 cases,22 pass; the complete legacy-v1 schema
+projection case fails. Read-only comparison of HEAD's committed magic profile
+and the dirty profile through the same legacy_rules/validator reproduces that
+failure in both, while the current v3 profile validates with zero errors.
+Record the existing legacy fixture/schema integration mismatch for Phase2;
+do not attribute it to Puppet Master or expand this source slice into legacy
+fixture repair. The23-case command is not an all-pass gate.
+
+The new Puppet Master data fixture initially used json.loads on the existing
+JSON-with-comments spell file and failed during setup. Reuse the established
+parse_jsonc helper, which preserves quoted comment-looking text. Corrected
+focused registration/perk/inventory invocation passes22/22. This is data
+validation only, not native spell/action execution or visual acceptance.
+
+
 ### 2026-10-03 UP-179 — Dependent template call in effect recorder
 
 Hypnotize capture client39016 exits1: the generic packet lambda requires

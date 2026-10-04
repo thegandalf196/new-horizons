@@ -23,6 +23,7 @@
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsDiscipline.h"
+#include "../../lib/battle/NewHorizonsPuppetMaster.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/bonuses/BonusParameters.h"
@@ -1231,6 +1232,9 @@ bool BattleFlowProcessor::tryActivateMoralePenalty(const CBattleInfoCallback & b
 
 bool BattleFlowProcessor::tryActivateBerserkPenalty(const CBattleInfoCallback & battle, const CStack * next)
 {
+	if(newHorizonsPuppetMaster::hasValidControlMarker(battle, next))
+		return false;
+
 	if (next->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)) //while in berserk
 	{
 		const auto candidates = battle.getBerserkForcedActions(next);

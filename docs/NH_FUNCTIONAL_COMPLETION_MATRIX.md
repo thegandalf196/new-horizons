@@ -1,11 +1,11 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-03
-Latest accepted slice: Recruitment Pact; client/test builds pass and
-UP129-pact-principal-retry.log/XML passes27/27 in6.764s, zero skips. Independent
-review has no blocking findings. Perks210/310,100 planned;Diplomacy7/10;
-ranks87/93 unchanged. Source/native acceptance only, no playable promotion.
-Canonical source SHA-256: `58a3cd1c20a1b47641ff65866b4e4f3cf9ddc3d5767ed742126b9e0442f2290f`
+Latest accepted slice: Puppet Master and Lucidity; client/test builds pass and
+UP190-puppet-final.log/XML passes8/8 in2.290s, zero skips. Independent review
+findings are resolved. Combat spell identities61/67 (Chaos7/11); perks210/310
+and ranks87/93 unchanged. Source/native acceptance only, no playable promotion.
+Canonical source SHA-256: `5b26a4930b6c6838e7435454c96b35a19039c275694e975636b37e6003b68a4a`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
 completion separately from catalogue presence and artwork. An `active` data row,
@@ -17,6 +17,20 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+UP190 Puppet Master/Lucidity is source/native verified. Client90585 and test
+retry72097 exit0; native97155 passes8/8 in2.290s, zero skips. Real hex-only
+casting, controller authentication and unchanged allegiance, Wait/resumption,
+release before Morale, fixed two-round narrow Lucidity, Sanctuary shot parity,
+successful Berserk-bundle removal and rejected-target preservation, active
+creature ability targeting/provenance, JSON/wire and lossy-write rejection,
+and detached AI attack valuation pass. Data/inventory22/22 and module check
+pass. Combat identities60->61/67; Chaos6->7/11. Perks210/310 and ranks87/93
+remain unchanged. Adjacent Berserk runtime/AI guard71741 passes6/6 in1.986s,
+zero skips (UP190-berserk-adjacent.log/XML). No GUI validation or playable
+promotion. Phase2 retains
+dedicated Time Stop and multi-control/status/reaction matrices, move-only AI
+valuation and unused canCastWithoutSkip continuation cleanup.
 
 Additional UP179 prerequisite accepted: Hypnotize markers capture their exact
 original specialty-adjusted HP ceiling in production, without changing cast
@@ -1834,7 +1848,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Skill perks active | 210/310 | 100 planned; Recruitment Pact is the newest source/native-verified activation. Diplomacy is 7/10; Necromancy 10/10; Learning 3/10; Estates 5/10; Battlecraft 6/10; Logistics 6/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 62/90 | 28 planned perks; Lord of the Dead has normal Expert selection, ordered conversion and actual atomic Bone Dragon town-delivery evidence. |
-| Canonical combat-spell identities registered | 60/67 | 7 missing/inactive; Shield of Chaos is the newest identity. Chaos is 6/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
+| Canonical combat-spell identities registered | 61/67 | 6 missing/inactive; Puppet Master is the newest source/native-verified identity. Chaos is 7/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree. UP-146 adds native-verified independent simultaneous state/effects and action/AI/UI hooks; broader per-Order interaction coverage remains Phase2. |
@@ -2007,9 +2021,9 @@ opens the Shroud's ordinary Advanced-rank progression; Blinkmaster opens Chaos.
 
 The detailed canonical school rosters govern when they conflict with older
 summary counts. They contain 67 combat spells plus five Neutral Adventure
-spells. The current saved roster has 60 of 67 combat identities with active
-settings rows and registered mod/core definitions; seven are absent or inactive.
-Shield of Chaos is the newest registered identity. This count describes
+spells. The current saved roster has 61 of 67 combat identities with active
+settings rows and registered mod/core definitions; six are absent or inactive.
+Puppet Master is the newest registered identity. This count describes
 identity registration, not exact-effect or AI completion.
 
 Frailty replaces core Weakness in new saved-v3 acquisition while older saved
@@ -2308,7 +2322,7 @@ from the active identity row.
 | Light | 11 | 11 | No missing identity; Crusade! has focused runtime/native evidence. Rendered/playable and broader interaction evidence remain open. |
 | Shadow | 12 | 12 | None by identity; rendered/playable and broader interaction evidence remain open |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
-| Chaos | 11 | 6 | Confusion; Polymorph; Puppet Master; Reality Warp; Pandemonium |
+| Chaos | 11 | 7 | Confusion; Polymorph; Reality Warp; Pandemonium |
 | Nature | 11 | 9 | Nature's Wrath; Elemental Convergence |
 | Havoc | 11 | 11 | None by identity; exact-effect evidence still required |
 

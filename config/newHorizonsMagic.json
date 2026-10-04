@@ -343,6 +343,11 @@
 			"level": 1,
 			"costs": [4, 4, 4, 4]
 		},
+		"new-horizons:puppetMaster": {
+			"schools": ["new-horizons:chaos"],
+			"level": 4,
+			"costs": [16, 16, 16, 16]
+		},
 		"new-horizons:hydrasVitality": {
 			"schools": ["new-horizons:nature"],
 			"level": 4,

@@ -1,14 +1,22 @@
 # New Horizons UI and asset status register
 
-Last audited: 2026-10-02
+Last audited: 2026-10-03
 
 This is the maintained UI/art status index for the current New Horizons working tree. It records live bindings and remaining visual/UI work. It does not replace gameplay specs, source configs, runtime manifests, or acceptance records. The row-level index is [NH_UI_ASSET_INVENTORY.csv](NH_UI_ASSET_INVENTORY.csv).
 
-The audit used canonical registries and current source bindings rather than counting files. The current combat-spell settings contain 104 entries, 100 enabled; Animate Dead, Clone, Weakness and Counterspell are inactive rows. These include noncanonical compatibility identities; the canonical identity coverage is separately tracked as 60/67 in the functional matrix. The five Neutral Adventure Spells are tracked separately. It also covers all 31 registered secondary skills, all 310 perk definitions, all eight Order bindings, and the scoped hero, spellbook, convenience, creature-info, and ranked-recruitment UI surfaces below. Active means enabled in source configuration, not necessarily promoted to the playable build. Unregistered Magic Missile is noted separately as non-live; Spell Lock is registered and has an active-profile native consumer test. The row-level CSV's spell bindings still need a fresh full reconciliation before being used as current totals; its perk activation labels are checked against the current registry.
+The audit used canonical registries and current source bindings rather than counting files. The earlier combat-spell binding audit recorded 104 entries, 100 enabled; Animate Dead, Clone, Weakness and Counterspell were inactive rows. These include noncanonical compatibility identities; current canonical identity coverage is separately tracked as 61/67 in the functional matrix. The five Neutral Adventure Spells are tracked separately. It also covers all 31 registered secondary skills, all 310 perk definitions, all eight Order bindings, and the scoped hero, spellbook, convenience, creature-info, and ranked-recruitment UI surfaces below. Active means enabled in source configuration, not necessarily promoted to the playable build. Unregistered Magic Missile is noted separately as non-live; Spell Lock is registered and has an active-profile native consumer test. The row-level CSV's spell bindings still need a fresh full reconciliation before being used as current totals; its perk activation labels are checked against the current registry.
 
 This is a binding inventory, not a full visual audit or a product completion claim. No game was launched and no GUI review was performed for this register. A resource path, generated manifest, native-size file, or implemented code path does not by itself establish final art or accepted UI. `tools.tests.test_new_horizons_ui_perk_inventory` now checks all 310 perk rows against the current activation registry and ensures active neutral fallbacks remain classified as Not done art.
 
 ## Status meanings
+
+UP190 Puppet Master interaction is source/native verified (8/8 principal
+cases, successful client/test builds), not visually accepted.
+Its single-target spell interaction reuses existing native controls; controller
+dispatch changes are behavior work, not a new panel design. Puppet Master and
+the internal Lucidity status currently reference Hypnotize icons/animation;
+both purpose-made icons are **Not done**, not provisional completed artwork.
+No new art has been created and no graphical or playable acceptance is claimed.
 
 UP181/182 source/native checkpoint: Mountaineer and Grand Tactics are active
 after successful client/test builds, principal12/12, adjacent6/6 and active

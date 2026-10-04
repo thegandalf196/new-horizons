@@ -665,6 +665,12 @@
 	"NO_LUCK" : {},
 	"NO_RETALIATION" : {},
 	"NO_SPELLCAST_BY_DEFAULT" : {},
+	"PUPPET_MASTER_CONTROL" : {
+		"description" : "Temporary action control without changing creature allegiance; expires after one completed Creature Activation"
+	},
+	"LUCIDITY" : {
+		"description" : "Immunity to explicitly classified mental domination and control effects"
+	},
 	"NONEVIL_ALIGNMENT_MIX" : {},
 	"NOT_ACTIVE" : {},
 	"ON_COMBAT_EVENT" : {},

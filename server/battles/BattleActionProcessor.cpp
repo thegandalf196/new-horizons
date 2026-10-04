@@ -28,6 +28,7 @@
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/CObstacleInstance.h"
+#include "../../lib/battle/NewHorizonsPuppetMaster.h"
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/HeroActionAllowanceState.h"
@@ -358,7 +359,7 @@ static bool isSanctifiedHostileTarget(const CBattleInfoCallback & battle,
 	const battle::Unit * attacker, const battle::Unit * target)
 {
 	return attacker && target && target->hasBonusOfType(BonusType::SANCTIFIED)
-		&& battle.battleMatchOwner(attacker, target);
+		&& battle.battleMatchActionController(attacker, target, false);
 }
 
 static bool creatureSpellDirectlyTargetsSanctified(const CBattleInfoCallback & battle,
@@ -377,7 +378,9 @@ static bool creatureSpellDirectlyTargetsSanctified(const CBattleInfoCallback & b
 	if(!spell)
 		return false;
 
-	spells::BattleCast cast(&battle, caster, spells::Mode::CREATURE_ACTIVE, spell);
+	newHorizonsPuppetMaster::ActionControllerCaster actionCaster(caster,
+		battle.battleGetActionController(caster));
+	spells::BattleCast cast(&battle, &actionCaster, spells::Mode::CREATURE_ACTIVE, spell);
 	int32_t spellLevel = ability ? std::max(0, ability->val) : 0;
 	if(abilityType == BonusType::SPELLCASTER)
 	{
@@ -1535,6 +1538,13 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 		gameHandler->complain("Invalid target to attack");
 		return false;
 	}
+	const bool automaticBerserkAttack = stack->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)
+		&& !newHorizonsPuppetMaster::hasValidControlMarker(battle, stack);
+	if(!battle.battleMatchActionController(stack, destinationStack) && !automaticBerserkAttack)
+	{
+		gameHandler->complain("A creature action can only attack a target hostile to its action controller.");
+		return false;
+	}
 	if(isSanctifiedHostileTarget(battle, stack, destinationStack))
 	{
 		gameHandler->complain("A Sanctified stack cannot be selected for a direct attack.");
@@ -1597,7 +1607,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 	const bool longWeaponAttack = battle.isLongWeaponAttack(stack, destinationStack);
 	const bool skirmisherShot = requestedSkirmisherPosition
 		&& newHorizonsArchery::canUseSkirmisher(skirmisherHero, stack)
-		&& battle.battleCanShoot(stack, destinationTile);
+		&& battle.battleCanShootAction(stack, destinationTile);
 
 	if(!regularMeleeAttack && !longWeaponAttack && !skirmisherShot)
 	{
@@ -1984,7 +1994,7 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 
 	const CStack * destinationStack = battle.battleGetStackByPos(destination);
 
-	if (!battle.battleCanShoot(stack, destination))
+	if (!battle.battleCanShootAction(stack, destination))
 	{
 		gameHandler->complain("Cannot shoot!");
 		return false;
@@ -1998,7 +2008,7 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 		return false;
 	}
 	if(pendingFollowUp && (!destinationStack || !destinationStack->alive() || destinationStack->isGhost()
-		|| battle.battleMatchOwner(stack, destinationStack, true)))
+		|| battle.battleMatchActionController(stack, destinationStack, true)))
 	{
 		gameHandler->complain("Master Gunner follow-up must target a living enemy creature.");
 		return false;
@@ -2185,7 +2195,9 @@ bool BattleActionProcessor::doUnitSpellAction(const CBattleInfoCallback & battle
 	}
 
 	const CSpell * spell = SpellID(spellID).toSpell();
-	spells::BattleCast parameters(&battle, stack, spells::Mode::CREATURE_ACTIVE, spell);
+	newHorizonsPuppetMaster::ActionControllerCaster actionCaster(stack,
+		battle.battleGetActionController(stack));
+	spells::BattleCast parameters(&battle, &actionCaster, spells::Mode::CREATURE_ACTIVE, spell);
 	int32_t spellLvl = 0;
 	if(spellcaster)
 		vstd::amax(spellLvl, spellcaster->val);
@@ -2379,7 +2391,9 @@ bool BattleActionProcessor::doWalkAndSpellcastAction(const CBattleInfoCallback &
 	}
 
 	const CSpell * spell = spellID.toSpell();
-	spells::BattleCast parameters(&battle, stack, spells::Mode::CREATURE_ACTIVE, spell);
+	newHorizonsPuppetMaster::ActionControllerCaster actionCaster(stack,
+		battle.battleGetActionController(stack));
+	spells::BattleCast parameters(&battle, &actionCaster, spells::Mode::CREATURE_ACTIVE, spell);
 	int32_t spellLvl = std::max(0, bonus->val);
 	//Magic Plains raises level of spells cast by creatures; must match the client-side preview in BattleActionsController
 	if(spell->getLevel() > 0)
@@ -2837,9 +2851,9 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		const auto * target = targets.size() == ((melee || skirmisherShot) ? 2u : 1u)
 			? battle.battleGetStackByPos(targets.back().hexValue) : nullptr;
 		bool legal = (melee || shooting || skirmisherShot) && battle.battleCanUsePerfectMoment(unit)
-			&& target && target->alive() && battle.battleMatchOwner(unit, target);
+			&& target && target->alive() && battle.battleMatchActionController(unit, target);
 		if(legal && shooting)
-			legal = battle.battleCanShoot(unit, target->getPosition());
+			legal = battle.battleCanShootAction(unit, target->getPosition());
 		if(legal && skirmisherShot)
 			legal = battle.battleCanSkirmisherAttackFromHex(unit, targets.back().hexValue, targets.front().hexValue);
 		if(legal && melee)
@@ -5242,16 +5256,20 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 			return false;
 		}
 
-		// The client-side player check authenticates the active unit's owner, but
-		// hero actions carry their side separately and therefore have no stack ID
-		// to bind that identity to.  Validate both forms before the Metamagic
+		// Authenticate the player against the active unit's action controller;
+		// ordinary unit actions retain the stack's physical side. Hero actions
+		// carry their side separately, so validate both forms before the Metamagic
 		// pending guard (and before StartAction) so a forged opposite-side action
 		// cannot consume or bypass the pending sequence.
 		auto unitOwner = battle.battleGetOwner(active);
-		const auto controllingSide = battle.playerToSide(unitOwner);
+		auto actionController = battle.battleGetActionController(active);
+		const auto controllingSide = battle.playerToSide(actionController);
+		const auto allegianceSide = battle.playerToSide(unitOwner);
 		const bool stoppedPassRequest = active->isTimeStopped()
 			&& (ba.actionType == EActionType::NO_ACTION || ba.actionType == EActionType::DEFEND);
-		if(ba.isUnitAction() && ba.side != (stoppedPassRequest ? controllingSide : active->unitSide()))
+		if(ba.isUnitAction() && (stoppedPassRequest
+			? (ba.side != controllingSide && ba.side != active->unitSide())
+			: ba.side != active->unitSide()))
 		{
 			gameHandler->complain("Can not make actions for the other battle side!");
 			return false;
@@ -5264,7 +5282,7 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 			return false;
 		}
 
-		if(player != unitOwner)
+		if(player != actionController)
 		{
 			gameHandler->complain("Can not make actions in battles you are not part of!");
 			return false;
@@ -5276,7 +5294,7 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 			// The identity/side/owner checks above are deliberately completed before
 			// allowing it; no WAIT/DEFEND or other creature action can use this path.
 			BattleAction pass = BattleAction::makeNoAction(active);
-			pass.side = battle.playerToSide(unitOwner);
+			pass.side = allegianceSide;
 			pass.timeStopHeroActionPass = true;
 			if(effectiveActionOut)
 				*effectiveActionOut = pass;
@@ -5290,7 +5308,7 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 			// explicit no-op pass so stasis never gains a defending bonus. WAIT and
 			// every other creature action remain rejected by canStackAct.
 			BattleAction pass = BattleAction::makeNoAction(active);
-			pass.side = battle.playerToSide(unitOwner);
+			pass.side = allegianceSide;
 			pass.timeStopHeroActionPass = true;
 			if(effectiveActionOut)
 				*effectiveActionOut = pass;

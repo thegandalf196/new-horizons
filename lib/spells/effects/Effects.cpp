@@ -21,6 +21,7 @@
 #include "../../GameLibrary.h"
 #include "../../CStack.h"
 #include "../../battle/CUnitState.h"
+#include "../../battle/NewHorizonsPuppetMaster.h"
 #include "../../battle/NewHorizonsBulwark.h"
 #include "../../json/JsonNode.h"
 #include "../../modding/IdentifierStorage.h"
@@ -37,6 +38,125 @@ namespace effects
 
 namespace
 {
+class NewHorizonsPuppetMasterEffect final : public Effect
+{
+	bool isValidTarget(const Mechanics * mechanics, const battle::Unit * unit) const
+	{
+		if(!mechanics || !mechanics->battle() || !unit || !unit->alive()
+			|| !unit->isValidTarget(false) || !mechanics->isReceptive(unit))
+			return false;
+
+		const auto casterSide = mechanics->battle()->playerToSide(mechanics->getCasterColor());
+		return (casterSide == BattleSide::ATTACKER || casterSide == BattleSide::DEFENDER)
+			&& unit->unitSide() != casterSide
+			&& !newHorizonsPuppetMaster::hasControlMarker(unit)
+			&& !newHorizonsPuppetMaster::hasLucidity(unit);
+	}
+
+public:
+	void adjustAffectedHexes(BattleHexArray & hexes, const Mechanics *, const Target & spellTarget) const override
+	{
+		for(const auto & destination : spellTarget)
+		{
+			const auto hex = destination.unitValue ? destination.unitValue->getPosition() : destination.hexValue;
+			if(hex.isValid())
+				hexes.insert(hex);
+		}
+	}
+
+	bool applicableGeneral(Problem & problem, const Mechanics * mechanics) const override
+	{
+		if(mechanics && mechanics->battle())
+			for(const auto * unit : mechanics->battle()->battleGetAllUnits(false))
+				if(isValidTarget(mechanics, unit))
+					return true;
+
+		if(mechanics)
+			mechanics->adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
+		return false;
+	}
+
+	bool applicableTarget(Problem & problem, const Mechanics * mechanics, const Target & target) const override
+	{
+		if(!filterTarget(mechanics, target).empty())
+			return true;
+		if(mechanics)
+			mechanics->adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
+		return false;
+	}
+
+	void apply(ServerCallback * server, const Mechanics * mechanics, const Target & target) const override
+	{
+		if(!server || !mechanics || !mechanics->battle())
+			return;
+		for(const auto & destination : filterTarget(mechanics, target))
+		{
+			const auto * unit = destination.unitValue;
+			if(!unit)
+				continue;
+
+			std::vector<Bonus> berserkBonuses;
+			const auto existingBerserk = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
+				BonusSourceID(SpellID(SpellID::BERSERK))));
+			if(existingBerserk)
+			{
+				berserkBonuses.reserve(existingBerserk->size());
+				for(const auto & bonus : *existingBerserk)
+					if(bonus)
+						berserkBonuses.emplace_back(*bonus);
+			}
+
+			auto marker = newHorizonsPuppetMaster::controlMarker(
+				mechanics->getSpellId(), mechanics->getCasterColor());
+			SetStackEffect effect;
+			effect.battleID = mechanics->getBattleID();
+			if(!berserkBonuses.empty())
+				effect.toRemove.emplace_back(unit->unitId(), std::move(berserkBonuses));
+			effect.toAdd.emplace_back(unit->unitId(), std::vector<Bonus>{std::move(marker)});
+			server->apply(effect);
+		}
+	}
+
+	Target filterTarget(const Mechanics * mechanics, const Target & target) const override
+	{
+		Target filtered;
+		for(const auto & destination : target)
+		{
+			const battle::Unit * unit = destination.unitValue;
+			if(!unit && destination.hexValue.isValid() && mechanics && mechanics->battle())
+				unit = mechanics->battle()->battleGetUnitByPos(destination.hexValue, true);
+
+			if(isValidTarget(mechanics, unit))
+			{
+				auto resolved = destination;
+				resolved.unitValue = unit;
+				filtered.push_back(std::move(resolved));
+				break;
+			}
+		}
+		return filtered;
+	}
+
+	Target transformTarget(const Mechanics * mechanics, const Target & aimPoint, const Target & spellTarget) const override
+	{
+		const auto & source = spellTarget.empty() ? aimPoint : spellTarget;
+		return filterTarget(mechanics, source);
+	}
+
+protected:
+	void initImpl(JsonNode data) override
+	{
+		if(data["type"].String() != "newHorizonsPuppetMaster")
+			throw std::runtime_error("Puppet Master effect requires type 'newHorizonsPuppetMaster'");
+		for(const auto & [key, value] : data.Struct())
+		{
+			(void)value;
+			if(key != "type" && key != "indirect" && key != "optional")
+				throw std::runtime_error("Unknown Puppet Master effect parameter: " + key);
+		}
+	}
+};
+
 // Ice Bolt's historic New Horizons speed effect remains part of v1/v2
 // compatibility. The v3 design makes Ice Bolt damage-only, so wrap just that
 // effect and resolve its availability from the saved battle profile each time
@@ -617,6 +737,8 @@ Effects::EffectsMap Effects::loadJson(const JsonNode & effectMap, const std::str
 		std::shared_ptr<Effect> effect;
 		if(rawType == "core:battleForm")
 			effect = std::make_shared<BattleFormEffect>();
+		else if(rawType == "newHorizonsPuppetMaster")
+			effect = std::make_shared<NewHorizonsPuppetMasterEffect>();
 		else
 		{
 			auto identifier = LIBRARY->identifiers()->getIdentifier("script", raw["type"]);

@@ -1131,6 +1131,16 @@ void BattleInterface::giveCommand(EActionType action, const std::vector<BattleHe
 		logGlobal->error("Player %s is not in battle", curInt->playerID.toString());
 		return;
 	}
+	if(actor)
+	{
+		// Unit packets identify the stack's physical side. A Hero Command during
+		// that activation belongs to the player who controls it, which may differ
+		// from the stack's allegiance (for example during Puppet Master).
+		if(action == EActionType::HERO_COMMAND)
+			side = getBattle()->playerToSide(getBattle()->battleGetActionController(actor));
+		else
+			side = actor->unitSide();
+	}
 
 	BattleAction ba;
 	ba.side = side;

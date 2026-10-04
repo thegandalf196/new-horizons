@@ -2476,7 +2476,7 @@ void BattleActionsController::enterCreatureCastingMode()
 		if (action.get() != PossiblePlayerBattleAction::NO_LOCATION)
 			continue;
 
-		const spells::Caster * caster = owner.stacksController->getActiveStack();
+		const spells::Caster * caster = getCurrentSpellcaster();
 		const CSpell * spell = action.spell().toSpell();
 
 		spells::Target target;
@@ -2575,7 +2575,8 @@ void BattleActionsController::reorderPossibleActionsPriority(const CStack * stac
 				return 2;
 				break;
 			case PossiblePlayerBattleAction::SHOOT:
-				if(targetStack == nullptr || targetStack->unitSide() == stack->unitSide() || !targetStack->alive())
+				if(targetStack == nullptr || !targetStack->alive()
+					|| owner.getBattle()->battleMatchActionController(stack, targetStack, true))
 					return 100; //bottom priority
 
 				return 4;
@@ -3485,7 +3486,7 @@ bool BattleActionsController::actionIsLegal(PossiblePlayerBattleAction action, c
 				const CStack * currentStack = owner.stacksController->getActiveStack();
 				bool allowLongWeapon = action.get() == PossiblePlayerBattleAction::LONG_WEAPON_ATTACK;
 				return currentStack &&
-					owner.getBattle()->battleCanAttackUnit(currentStack, targetStack) &&
+					owner.getBattle()->battleCanAttackUnitAction(currentStack, targetStack) &&
 					owner.getBattle()->battleCanAttackHex(currentStack, targetHex) &&
 					findAttackFromHex(owner, currentStack, targetHex, allowLongWeapon).isValid();
 			}
@@ -3503,7 +3504,7 @@ bool BattleActionsController::actionIsLegal(PossiblePlayerBattleAction action, c
 		case PossiblePlayerBattleAction::SHOOT:
 			{
 				auto currentStack = owner.stacksController->getActiveStack();
-				if(!owner.getBattle()->battleCanShoot(currentStack, targetHex))
+				if(!owner.getBattle()->battleCanShootAction(currentStack, targetHex))
 					return false;
 
 				if((targetStack == nullptr || targetStack->isInvincible()) && owner.getBattle()->battleCanTargetEmptyHex(currentStack))
@@ -4179,11 +4180,28 @@ void BattleActionsController::tryActivateStackSpellcasting(const CStack * caster
 const spells::Caster * BattleActionsController::getCurrentSpellcaster() const
 {
 	if (heroSpellToCast)
+	{
+		actionControllerCaster.reset();
 		return owner.currentHero();
-	else if(monsterCaster)
-		return monsterCaster;
-	else
-		return owner.stacksController->getActiveStack();
+	}
+
+	const CStack * creatureCaster = monsterCaster ? monsterCaster : owner.stacksController->getActiveStack();
+	if(!creatureCaster)
+	{
+		actionControllerCaster.reset();
+		return nullptr;
+	}
+
+	const auto battle = owner.getBattle();
+	if(!battle)
+	{
+		actionControllerCaster.reset();
+		return creatureCaster;
+	}
+
+	actionControllerCaster = std::make_unique<newHorizonsPuppetMaster::ActionControllerCaster>(
+		creatureCaster, battle->battleGetActionController(creatureCaster));
+	return actionControllerCaster.get();
 }
 
 spells::Mode BattleActionsController::getCurrentCastMode() const

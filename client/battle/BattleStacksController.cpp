@@ -944,7 +944,7 @@ void BattleStacksController::activateStack()
 	if ( !stackToActivate)
 		return;
 
-	owner.trySetActivePlayer(stackToActivate->unitOwner());
+	owner.trySetActivePlayer(owner.getBattle()->battleGetActionController(stackToActivate));
 
 	setActiveStack(stackToActivate);
 	stackToActivate = nullptr;
@@ -1143,7 +1143,7 @@ std::vector<const CStack *> BattleStacksController::selectHoveredStacks()
 	stacks.push_back(target);
 
 	// affected units by multi-hex attacks
-	if(owner.getBattle()->battleCanAttackHex(activeStack, hoveredHex) && owner.getBattle()->battleCanAttackUnit(activeStack, target))
+	if(owner.getBattle()->battleCanAttackHex(activeStack, hoveredHex) && owner.getBattle()->battleCanAttackUnitAction(activeStack, target))
 	{
 		const bool allowLongWeapon = owner.actionsController->currentActionUsesLongWeapon(hoveredHex);
 		BattleHex fromHex = owner.getBattle()->fromWhichHexAttack(activeStack, hoveredHex, owner.fieldController->selectAttackDirection(hoveredHex), allowLongWeapon);

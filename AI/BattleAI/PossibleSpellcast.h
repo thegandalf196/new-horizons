@@ -74,6 +74,10 @@ public:
 	/// This is precomputed over the effect's full uniform form pool so generic
 	/// castEval does not value RNGStub's midpoint form as the random outcome.
 	std::optional<float> spellBattleFormExpectedValue;
+	/// Signed value of replacing the target's ordinary next activation with one
+	/// activation controlled by the caster. Computed from the projected action,
+	/// since the status itself has no immediate health delta.
+	std::optional<float> spellPuppetMasterExpectedValue;
 	/// Marginal three-activation physical Poison value for canonical Nature
 	/// Poison, whose immediate cast does not change health.
 	float spellNaturePoisonValue = 0.0f;

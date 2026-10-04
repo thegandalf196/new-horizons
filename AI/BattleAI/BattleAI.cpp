@@ -84,26 +84,34 @@ void CBattleAI::initBattleInterface(std::shared_ptr<Environment> ENV, std::share
 BattleAction CBattleAI::useHealingTent(const BattleID & battleID, const CStack *stack)
 {
 	const auto battle = cb->getBattle(battleID);
-	const auto currentControllerSide = battle->playerToSide(battle->battleGetOwner(stack));
-	const auto makeActionForCurrentController = [currentControllerSide](BattleAction action)
+	const auto currentControllerSide = battle->playerToSide(battle->battleGetActionController(stack));
+	const auto makeActionForUnitSide = [stack](BattleAction action)
 	{
-		action.side = currentControllerSide;
+		action.side = stack->unitSide();
 		return action;
 	};
 	const auto defend = [&]()
 	{
-		return makeActionForCurrentController(BattleAction::makeDefend(stack));
+		return makeActionForUnitSide(BattleAction::makeDefend(stack));
+	};
+	const auto controllerFriendlyStacks = [&]()
+	{
+		std::vector<const CStack *> result;
+		for(const auto * target : battle->battleGetStacks(CBattleInfoEssentials::MINE_AND_ENEMY))
+			if(battle->battleMatchActionController(stack, target, true))
+				result.push_back(target);
+		return result;
 	};
 	if(!stack->isFirstAidTent())
 	{
-		const auto healingTargets = battle->battleGetStacks(CBattleInfoEssentials::ONLY_MINE);
+		const auto healingTargets = controllerFriendlyStacks();
 		std::map<int, const CStack *> woundHpToStack;
 		for(const auto * target : healingTargets)
 			if(const auto woundHp = target->getMaxHealth() - target->getFirstHPleft())
 				woundHpToStack[woundHp] = target;
 		if(woundHpToStack.empty())
 			return defend();
-		return makeActionForCurrentController(BattleAction::makeHeal(stack, woundHpToStack.rbegin()->second));
+		return makeActionForUnitSide(BattleAction::makeHeal(stack, woundHpToStack.rbegin()->second));
 	}
 
 	const auto * tentOwner = battle->battleGetOwnerHero(stack);
@@ -114,7 +122,7 @@ BattleAction CBattleAI::useHealingTent(const BattleID & battleID, const CStack *
 	if(!canonicalSiegeRules)
 	{
 		std::map<int, const CStack *> woundHpToStack;
-		for(const auto * target : battle->battleGetStacks(CBattleInfoEssentials::ONLY_MINE))
+		for(const auto * target : controllerFriendlyStacks())
 			if(const auto woundHp = target->getMaxHealth() - target->getFirstHPleft())
 				woundHpToStack[woundHp] = target;
 
@@ -125,7 +133,7 @@ BattleAction CBattleAI::useHealingTent(const BattleID & battleID, const CStack *
 			for(const auto * target : battle->battleGetStacks(CBattleInfoEssentials::MINE_AND_ENEMY))
 			{
 				if(!target->alive() || !target->canBeHealed()
-					|| !battle->battleMatchOwner(stack, target, true))
+					|| !battle->battleMatchActionController(stack, target, true))
 					continue;
 
 				if(const auto woundHp = target->getMaxHealth() - target->getFirstHPleft())
@@ -137,17 +145,17 @@ BattleAction CBattleAI::useHealingTent(const BattleID & battleID, const CStack *
 			}
 
 			if(!afflictionWoundHpToStack.empty())
-				return makeActionForCurrentController(
+				return makeActionForUnitSide(
 					BattleAction::makeHeal(stack, afflictionWoundHpToStack.rbegin()->second));
 			if(!controllerWoundHpToStack.empty())
-				return makeActionForCurrentController(
+				return makeActionForUnitSide(
 					BattleAction::makeHeal(stack, controllerWoundHpToStack.rbegin()->second));
 			return defend();
 		}
 
 		if(woundHpToStack.empty())
 			return defend();
-		return makeActionForCurrentController(
+		return makeActionForUnitSide(
 			BattleAction::makeHeal(stack, woundHpToStack.rbegin()->second));
 	}
 
@@ -163,7 +171,7 @@ BattleAction CBattleAI::useHealingTent(const BattleID & battleID, const CStack *
 	{
 		const auto * target = dynamic_cast<const CStack *>(unit);
 		if(!target || !target->alive() || !target->canBeHealed()
-			|| !battle->battleMatchOwner(stack, target, true))
+			|| !battle->battleMatchActionController(stack, target, true))
 			continue;
 
 		auto projectedTarget = target->acquireState();
@@ -187,7 +195,7 @@ BattleAction CBattleAI::useHealingTent(const BattleID & battleID, const CStack *
 	const auto selected = bestAfflictionTarget ? bestAfflictionTarget : bestControllerTarget;
 	if(!selected)
 		return defend();
-	return makeActionForCurrentController(BattleAction::makeHeal(stack, selected->second));
+	return makeActionForUnitSide(BattleAction::makeHeal(stack, selected->second));
 }
 
 void CBattleAI::yourTacticPhase(const BattleID & battleID, int distance)
@@ -313,7 +321,7 @@ std::optional<BattleAction> chooseDemonicGate(const std::shared_ptr<CBattleInfoC
 
 	BattleAction result;
 	result.actionType = EActionType::DEMONIC_GATING;
-	result.side = side;
+	result.side = source->unitSide();
 	result.stackNumber = source->unitId();
 	result.gatingCreature = chosen;
 	if(bestMovement != source->getPosition())
@@ -413,10 +421,9 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 		}
 
 		BattleAction pass = BattleAction::makeNoAction(stack);
-		// A hypnotized stack retains its original unitSide(), but this AI instance
-		// represents the controlling side.  Time Stop pass authorization follows
-		// that controller, just like the available Hero Action above.
-		pass.side = battleCallback->playerToSide(battleCallback->battleGetOwner(stack));
+		// The AI callback is dispatched for the action controller, while every
+		// creature-action packet continues to identify the stack's physical side.
+		pass.side = stack->unitSide();
 		cb->battleMakeUnitAction(battleID, pass);
 		return;
 	}
@@ -490,12 +497,12 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 			for(const auto * target : battleCallback->battleAliveUnits())
 			{
 				if(!target || !target->alive() || target->isGhost()
-					|| battleCallback->battleMatchOwner(stack, target, true))
+					|| battleCallback->battleMatchActionController(stack, target, true))
 					continue;
 
 				const bool hasLegalHex = std::ranges::any_of(target->getHexes(), [&](const BattleHex & hex)
 				{
-					return hex.isValid() && battleCallback->battleCanShoot(stack, hex);
+					return hex.isValid() && battleCallback->battleCanShootAction(stack, hex);
 				});
 				if(!hasLegalHex)
 					continue;
@@ -513,13 +520,11 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 		if(bestTarget)
 		{
 			BattleAction followUp = BattleAction::makeShotAttack(stack, bestTarget);
-			followUp.side = battleCallback->playerToSide(battleCallback->battleGetOwner(stack));
 			cb->battleMakeUnitAction(battleID, followUp);
 			return;
 		}
 
 		BattleAction pass = BattleAction::makeNoAction(stack);
-		pass.side = battleCallback->playerToSide(battleCallback->battleGetOwner(stack));
 		cb->battleMakeUnitAction(battleID, pass);
 		return;
 	}
@@ -551,7 +556,7 @@ BattleAction CBattleAI::useCatapult(const BattleID & battleID, const CStack * st
 	BattleAction attack;
 	BattleHex targetHex = BattleHex::INVALID;
 	const auto battle = cb->getBattle(battleID);
-	const auto currentControllerSide = battle->playerToSide(battle->battleGetOwner(stack));
+	const auto currentControllerSide = battle->playerToSide(battle->battleGetActionController(stack));
 
 	if(battle->battleGetGateState() == EGateState::CLOSED)
 	{
@@ -596,13 +601,13 @@ BattleAction CBattleAI::useCatapult(const BattleID & battleID, const CStack * st
 	if(!targetHex.isValid())
 	{
 		auto defend = BattleAction::makeDefend(stack);
-		defend.side = currentControllerSide;
+		defend.side = stack->unitSide();
 		return defend;
 	}
 
 	attack.aimToHex(targetHex);
 	attack.actionType = EActionType::CATAPULT;
-	attack.side = currentControllerSide;
+	attack.side = stack->unitSide();
 	attack.stackNumber = stack->unitId();
 
 	movesSkippedByDefense = 0;

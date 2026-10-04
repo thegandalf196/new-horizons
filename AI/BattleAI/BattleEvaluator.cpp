@@ -209,6 +209,11 @@ bool isCanonicalDoom(const CSpell * spell)
 	return spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_DOOM_SPELL;
 }
 
+bool isCanonicalPuppetMaster(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == "new-horizons:puppetMaster";
+}
+
 bool BattleEvaluator::canonicalDoomAvailableInSavedRules(const JsonNode & magicRules, const CSpell * spell)
 {
 	return isCanonicalDoom(spell)
@@ -379,6 +384,54 @@ float expectedBerserkActivationValue(const battle::Unit * original, const battle
 	const int resistance = std::clamp(original->magicResistance(), 0, 100);
 	const float applicationChance = 1.0f - static_cast<float>(resistance) / 100.0f;
 	return signedValue * applicationChance;
+}
+
+float expectedPuppetMasterActivationSwing(const CSpell * spell, const spells::Target & target,
+	const CGHeroInstance * caster, bool metamagicFollowup, bool metamagicGrand, int overcharge,
+	const std::shared_ptr<HypotheticBattle> & currentBattle, DamageCache & damageCache,
+	const Environment * environment, PlayerColor valuedPlayer, BattleSide valuedSide)
+{
+	if(!isCanonicalPuppetMaster(spell) || target.size() != 1 || !target.front().unitValue
+		|| !caster || !currentBattle || !environment)
+		return 0.0f;
+
+	const auto targetId = target.front().unitValue->unitId();
+	const auto * originalTarget = currentBattle->battleGetUnitByID(targetId);
+	if(!originalTarget || !originalTarget->alive() || originalTarget->isGhost() || originalTarget->isTurret())
+		return 0.0f;
+
+	PotentialTargets ordinaryActions(originalTarget, damageCache, currentBattle);
+	const float ordinaryActionValue = std::max(0.0f, static_cast<float>(ordinaryActions.bestActionValue()));
+
+	auto projectedBattle = std::make_shared<HypotheticBattle>(environment, currentBattle);
+	const auto * projectedTarget = projectedBattle->battleGetUnitByID(targetId);
+	if(!projectedTarget)
+		return 0.0f;
+
+	spells::Target projectedAim{spells::Destination(projectedTarget)};
+	spells::BattleCast projectedCast(projectedBattle.get(), caster, spells::Mode::HERO, spell);
+	projectedCast.setMetamagicFollowup(metamagicFollowup);
+	projectedCast.setMetamagicGrand(metamagicGrand);
+	projectedCast.setOvercharge(overcharge);
+	projectedCast.setMetamagicTargetUnitId(targetId);
+	auto projectedMechanics = spell->battleMechanics(&projectedCast);
+	spells::detail::ProblemImpl problem;
+	if(!projectedMechanics->canBeCastAt(projectedAim, problem))
+		return 0.0f;
+	projectedMechanics->castEval(projectedBattle->getServerCallback(), projectedAim);
+	if(projectedBattle->battleGetActionController(projectedTarget) != valuedPlayer
+		|| projectedBattle->playerToSide(projectedBattle->battleGetActionController(projectedTarget)) != valuedSide)
+		return 0.0f;
+
+	DamageCache controlledDamage(&damageCache);
+	controlledDamage.buildDamageCache(projectedBattle, valuedSide);
+	PotentialTargets controlledActions(projectedTarget, controlledDamage, projectedBattle);
+	const float controlledActionValue = std::max(0.0f, static_cast<float>(controlledActions.bestActionValue()));
+	const float applicationChance = 1.0f - static_cast<float>(std::clamp(originalTarget->magicResistance(), 0, 100)) / 100.0f;
+
+	// The target's ordinary activation would benefit its true owner; Puppet
+	// Master replaces that value with a real action selected by its controller.
+	return (ordinaryActionValue + controlledActionValue) * applicationChance;
 }
 
 float expectedCurseTargetActivationValue(const battle::Unit * target,
@@ -1589,7 +1642,7 @@ float blinkDirectAttackValue(const battle::Unit * attacker, const battle::Unit *
 	DamageCache & damageCache, bool includeShooting = true)
 {
 	if(!attacker || !defender || !attacker->alive() || !defender->alive()
-		|| !battle.battleCanAttackUnit(attacker, defender))
+		|| !battle.battleCanAttackUnitAction(attacker, defender))
 		return 0.0f;
 
 	const auto availableHealth = std::max<int64_t>(0, defender->getAvailableHealth());
@@ -1613,7 +1666,7 @@ float blinkDirectAttackValue(const battle::Unit * attacker, const battle::Unit *
 			static_cast<uint64_t>(totalDamage), damageCache, battleState);
 	};
 
-	if(includeShooting && battle.battleCanShoot(attacker, defender->getPosition()))
+	if(includeShooting && battle.battleCanShootAction(attacker, defender->getPosition()))
 		bestValue = std::max(bestValue, valueForAttackMode(true));
 	if(battle.isMeleeAttackPossible(attacker, defender) || battle.isLongWeaponAttack(attacker, defender))
 		bestValue = std::max(bestValue, valueForAttackMode(false));
@@ -4419,6 +4472,16 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							ps.spellBattleFormExpectedValue = *expectedValue
 								* scoreEvaluator.getPositiveEffectMultiplier();
 						}
+						if(isCanonicalPuppetMaster(spell))
+						{
+							const auto expectedValue = expectedPuppetMasterActivationSwing(
+								spell, ps.dest, hero, metamagicFollowup, metamagicGrandChoice, overcharge,
+								hb, damageCache, env.get(), playerID, side);
+							if(expectedValue <= 0.0f)
+								continue;
+							ps.spellPuppetMasterExpectedValue = expectedValue
+								* scoreEvaluator.getPositiveEffectMultiplier();
+						}
 						if(const auto structuralValue = SpellTargetEvaluator::earthquakeStructuralHPValue(
 							candidateMechanics.get(), ps.dest, env.get(), cb->getBattle(battleID)))
 						{
@@ -4683,11 +4746,11 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				if(!unit->alive())
 					continue;
 
-				if(state->battleGetOwner(unit) != playerID)
+				if(state->battleGetActionController(unit) != playerID)
 				{
 					enemyHadTurn = true;
 
-					const auto enemySide = state->playerToSide(state->battleGetOwner(unit));
+					const auto enemySide = state->playerToSide(state->battleGetActionController(unit));
 					const auto & enemyAllowances = state->getHeroActionAllowances(enemySide);
 					const bool enemyCanPayForSpell = enemyAllowances.currentRound >= 0
 						? enemyAllowances.eligibleAllowance(HeroActionAllowanceState::ActionKind::SPELL,
@@ -4747,7 +4810,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					: static_cast<float>(potentialTargets.bestActionValue());
 
 				//best action is from effective owner`s point if view, we need to convert to our point if view
-				if(state->battleGetOwner(unit) != playerID)
+				if(state->battleGetActionController(unit) != playerID)
 					bav = -bav;
 				values[unit->unitId()] += bav;
 				state->getForUpdate(unit->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
@@ -4777,7 +4840,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		healthOfStack[unit->unitId()] = unit->getAvailableHealth();
 		valueOfStack[unit->unitId()] = 0;
 
-		if(cb->getBattle(battleID)->battleGetOwner(unit) == playerID && unit->canMove() && !unit->moved())
+		if(cb->getBattle(battleID)->battleGetActionController(unit) == playerID && unit->canMove() && !unit->moved())
 			ourRemainingTurns++;
 	}
 
@@ -4928,6 +4991,27 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + *ps.spellBattleFormExpectedValue;
+					continue;
+				}
+				// Puppet Master has no immediate HP delta. Value the target's
+				// projected controlled activation from target enumeration, then keep
+				// that candidate-specific score instead of letting generic castEval
+				// collapse the control marker to zero.
+				if(ps.command == HeroCommand::NONE && ps.spellPuppetMasterExpectedValue.has_value())
+				{
+					if(ps.dest.size() != 1 || !ps.dest.front().unitValue)
+					{
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
+					targetId = ps.dest.front().unitValue->unitId();
+					if(counterspellNegated
+						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
+							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
+							counterspellNegated, *spellAllowance))
+						ps.value = std::numeric_limits<float>::lowest();
+					else
+						ps.value = baseline + *ps.spellPuppetMasterExpectedValue;
 					continue;
 				}
 				// Sanctuary has no immediate health delta. Price direct attacks on

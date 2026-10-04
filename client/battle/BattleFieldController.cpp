@@ -429,10 +429,10 @@ void BattleFieldController::rebuildBackgroundWithHexes()
 		{
 			//shade occupiable and attackable hexes
 			if (occupiableHexes.contains(hex) ||
-				(owner.getBattle()->battleCanAttackUnit(activeStack, owner.getBattle()->battleGetStackByPos(hex, true)) &&
+				(owner.getBattle()->battleCanAttackUnitAction(activeStack, owner.getBattle()->battleGetStackByPos(hex, true)) &&
 					owner.getBattle()->battleCanAttackHex(availableHexes, activeStack, hex)) ||
 				(owner.getBattle()->battleGetStackByPos(hex, true) &&
-					owner.getBattle()->battleCanShoot(activeStack, hex)))
+					owner.getBattle()->battleCanShootAction(activeStack, hex)))
 				showHighlightedHex(*backgroundWithHexes, cellShade, hex, false);
 		}
 	}
@@ -547,7 +547,7 @@ BattleHexArray BattleFieldController::getHighlightedHexesForMovementTarget()
 	auto hoveredStack = owner.getBattle()->battleGetStackByPos(hoveredHex, false);
 
 	bool canReach = owner.getBattle()->battleCanAttackHex(availableHexes, stack, hoveredHex);
-	bool canAttack = canReach && (owner.getBattle()->battleCanAttackUnit(stack, hoveredStack));
+	bool canAttack = canReach && (owner.getBattle()->battleCanAttackUnitAction(stack, hoveredStack));
 	bool adjacentSpellCaster = stack->hasBonusOfType(BonusType::ADJACENT_SPELLCASTER) && stack->canCast();
 	bool canCastAdjacentSpell = false;
 	if (canReach && adjacentSpellCaster && hoveredStack)

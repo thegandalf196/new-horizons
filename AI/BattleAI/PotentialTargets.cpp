@@ -13,6 +13,7 @@
 #include "../../lib/CStack.h"//todo: remove
 #include "../../lib/battle/ReachabilityInfo.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
+#include "../../lib/battle/NewHorizonsPuppetMaster.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 
 PotentialTargets::PotentialTargets(
@@ -25,7 +26,8 @@ PotentialTargets::PotentialTargets(
 	auto avHexes = state->battleGetAvailableHexes(reachability, attackerInfo, false);
 
 	//FIXME: this should part of battleGetAvailableHexes
-	berserk = attackerInfo->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE);
+	const bool puppetControlled = newHorizonsPuppetMaster::hasValidControlMarker(*state, attackerInfo);
+	berserk = attackerInfo->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE) && !puppetControlled;
 	if(berserk)
 	{
 		forcedBerserkActions = state->getBerserkForcedActions(attackerInfo);
@@ -43,11 +45,11 @@ PotentialTargets::PotentialTargets(
 		// Sanctuary bars this unit only as a deliberately selected enemy primary.
 		// Attacks whose primary is another stack may still include it as collateral.
 		const bool sanctuaryEnemy = defender->hasBonusOfType(BonusType::SANCTIFIED)
-			&& state->battleMatchOwner(attackerInfo, defender);
+			&& state->battleMatchActionController(attackerInfo, defender);
 		if(sanctuaryEnemy && !state->battleCanTargetEmptyHex(attackerInfo))
 			continue;
 
-		if(!berserk && !state->battleMatchOwner(attackerInfo, defender))
+		if(!berserk && !state->battleMatchActionController(attackerInfo, defender))
 			continue;
 
 		auto GenerateAttackInfo = [&](bool shooting, const BattleHex & hex) -> AttackPossibility
@@ -93,7 +95,7 @@ PotentialTargets::PotentialTargets(
 		}
 		else
 		{
-			const bool canShootFromCurrentPosition = state->battleCanShoot(attackerInfo, defender->getPosition());
+			const bool canShootFromCurrentPosition = state->battleCanShootAction(attackerInfo, defender->getPosition());
 			if(canShootFromCurrentPosition)
 				possibleAttacks.push_back(GenerateAttackInfo(true, BattleHex::INVALID));
 

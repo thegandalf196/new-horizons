@@ -129,6 +129,11 @@ public:
 
 	///returns player that controls given stack; mind control included
 	PlayerColor battleGetOwner(const battle::Unit * unit) const;
+	/// Player authorized to issue this unit's action. Puppet Master control is separate from allegiance.
+	PlayerColor battleGetActionController(const battle::Unit * unit) const override;
+	/// Compare actor action control with target's physical-side owner; for direct action legality only.
+	bool battleMatchActionController(const battle::Unit * actor, const battle::Unit * target,
+		bool sameOwner = false) const override;
 
 	///returns hero that controls given stack; nullptr if none; mind control included
 	const CGHeroInstance * battleGetOwnerHero(const battle::Unit * unit) const;

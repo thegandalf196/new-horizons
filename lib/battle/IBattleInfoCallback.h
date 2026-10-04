@@ -94,6 +94,11 @@ public:
 	virtual int32_t nextObstacleId() const = 0; //returns next available obstacle ID
 
 	virtual battle::Units battleGetUnitsIf(const battle::UnitFilter & predicate) const = 0;
+	/// Player allowed to issue the active unit's actions; does not alter allegiance or effect relationships.
+	virtual PlayerColor battleGetActionController(const battle::Unit * unit) const = 0;
+	/// Compares the actor's action controller with the target's original battle-side owner.
+	virtual bool battleMatchActionController(const battle::Unit * actor, const battle::Unit * target,
+		bool sameOwner = false) const = 0;
 
 	virtual const battle::Unit * battleGetUnitByID(uint32_t ID) const = 0;
 	virtual const battle::Unit * battleGetUnitByPos(const BattleHex & pos, bool onlyAlive = true) const = 0;
