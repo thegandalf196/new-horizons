@@ -25,6 +25,7 @@ public:
 	int32_t getSpellSchoolLevel(const Spell * spell, SpellSchool * outSelectedSchool = nullptr) const override;
 	int32_t getEffectLevel(const Spell * spell) const override;
 	int64_t getSpellBonus(const Spell * spell, int64_t base, const battle::Unit * affectedStack) const override;
+	int32_t getElementalSpellDamageBonus(SpellDamageElement element) const override;
 	int64_t getSpecificSpellBonus(const Spell * spell, int64_t base) const override;
 	int32_t getEffectPower(const Spell * spell) const override;
 	int32_t getEffectPowerDivisor(const Spell * spell) const override;

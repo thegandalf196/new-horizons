@@ -1,7 +1,13 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
-Latest native-verified slice: UP211 separate Conflux Pixie/Sprite recruitment
+Latest native-verified slice: UP210 elemental Orb conversion and UP213 supplied
+Fortress Mage Guild all-five art bindings. Both-target59223 succeeds; native71275
+passes10/10 in4.479s, zero skips. Four real Orbs, equipment/save/removal,
+accepted casts/AI forecasts, cap ordering, obstacle snapshot and wire guards
+pass. Targeted artifact conversion families4->5 of10; no blanket artifact
+completion. Fortress art/construction bindings pass but rendered acceptance
+remains pending. Historical prior slice: UP211 separate Conflux Pixie/Sprite recruitment
 and Garden growth. Both-target7085 and fixture retry28194 pass; native75381
 passes3/3 in2.168s, zero skips, including the adjacent Tower Library/Brimstone
 case. Independent Astra production review finds no blocking issue.
@@ -24,6 +30,20 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP210 source/native accepted2026-10-04: explicit actual-element metadata is
+independent of six Schools. Four legacy Orb+50% producers become+25% final
+magical damage for matching tagged spells. Shared caster/proxy and detached
+AI calculations agree with actual HP loss, before received-damage cap; raw
+Fire Wall snapshots receive the multiplier once. All four real equipped Orbs,
+adventure save/load and removal, accepted casts, untagged Earth-School Implosion,
+cap and current/old wire controls pass. Build59223 succeeds; native71275 passes
+nine Orb cases plus one Fortress construction case (10/10, zero skips,4.479s).
+Eight data checks and generated-module drift pass. Artifact-family coverage
+increases4->5 of10; skill/rank/perk/spell identity counts unchanged. Phase2:
+broad obstacle/proxy/artifact/spell composition, strategic artifact valuation,
+rendered feedback and playable delivery. No runtime scan or inferred School
+fallback; no GUI or launcher promotion.
+
 UP211 Conflux separate Pixie/Sprite Core lines and Garden growth are verified.
 Actual construction, independent14/10 initial stocks, Garden+4/+3, week32/23
 stocks, authoritative recruitment and built-dwelling AI forecasts pass. Supported
@@ -35,9 +55,7 @@ drift pass. Authentic-art binding and hall hook exist; rendered acceptance remai
 pending. Phase2 retains co-located town-art selection/layout and preconstruction
 Garden valuation for Sprite. Vault of Ashes remains missing. Ordinary Horde rows
 are source-mapped, not blanket native verified. Skill/spell/perk counts unchanged.
-UP210 actual-element ruling is received: tags are independent of Schools and
-neutral/necrotic spells remain untagged. Production implementation is next;
-no coverage credit from the ruling alone.
+UP210's historical policy-only map is superseded by the native acceptance above.
 
 2026-10-04 UP205/UP206 source/native accepted: Master Logistician carries
 floor(15% of actual unused Movement) at completed-day NewTurn refill, preserving

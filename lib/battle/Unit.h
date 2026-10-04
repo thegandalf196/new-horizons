@@ -128,6 +128,7 @@ public:
 	{
 		return unstacked ? getUnstackedBonuses(selector) : getAllBonuses(selector, cachingStr);
 	}
+	int32_t getElementalSpellDamageBonus(SpellDamageElement element) const override;
 	bool isMeleeAttacker() const;
 	bool isSummoned() const;
 	bool hasImmunity(SpellID spell) const;

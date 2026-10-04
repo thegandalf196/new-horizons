@@ -133,6 +133,9 @@ public:
 
 	JsonNode targetCondition; //custom condition on what spell can affect
 
+	/// Actual damage theme used by elemental bonuses; independent of Magic Schools.
+	SpellDamageElement getDamageElement() const { return damageElement; }
+
 	CSpell();
 	~CSpell();
 
@@ -239,6 +242,7 @@ public://internal, for use only by Mechanics classes
 	const IAdventureSpellMechanics & getAdventureMechanics() const;
 	std::unique_ptr<spells::Mechanics> battleMechanics(const spells::IBattleCast * event) const;
 private:
+	int64_t applyElementalDamageBonus(const spells::Caster * caster, int64_t damage) const;
 	void setIsOffensive(const bool val);
 	void setIsRising(const bool val);
 
@@ -256,6 +260,7 @@ private:
 	bool special;
 	bool nonMagical; //For creature abilities like bind
 	bool persistent;
+	SpellDamageElement damageElement = SpellDamageElement::NONE;
 
 	std::string attributes; //reference only attributes //todo: remove or include in configuration format, currently unused
 

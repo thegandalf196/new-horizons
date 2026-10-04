@@ -236,6 +236,7 @@ class JsonNode;
 	BONUS_NAME(PUPPET_MASTER_CONTROL) /*New Horizons: one-activation action controller, without changing allegiance*/ \
 	BONUS_NAME(LUCIDITY) /*New Horizons: timed immunity to explicitly classified mental control spells*/ \
 	BONUS_NAME(CREATURE_ABILITY_SUPPRESSION) /*timed creature capability restriction: 1 special/triggered, 2 also passive offensive*/ \
+	BONUS_NAME(ELEMENTAL_SPELL_DAMAGE) /*final magical damage percentage; subtype is explicit SpellDamageElement, not a School*/ \
 
 	/* end of list */
 

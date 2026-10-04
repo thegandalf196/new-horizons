@@ -7208,7 +7208,8 @@
 	"artifacts": [
 		"config/artifacts/spellbindersHat.json",
 		"config/artifacts/scaledAttributesAndMovement.json",
-		"config/artifacts/speedAndInitiative.json"
+		"config/artifacts/speedAndInitiative.json",
+		"config/artifacts/elementalOrbs.json"
 	],
 	"factions": [
 		"config/factions/uniqueBuildings.json",
@@ -7222,7 +7223,8 @@
 	"spells": [
 		"config/spells/newHorizons.json",
 		"config/spells/iceBolt.json",
-		"config/spells/massVariants.json"
+		"config/spells/massVariants.json",
+		"config/spells/elementalDamageTags.json"
 	],
 	"spellSchools": {
 		"light": {

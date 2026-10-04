@@ -1,0 +1,54 @@
+{
+	"core:orbOfTheFirmament": {
+		"bonuses": {
+			"spellDamage": {
+				"type": "ELEMENTAL_SPELL_DAMAGE",
+				"subtype": "spellElementAir",
+				"val": 25,
+				"valueType": "BASE_NUMBER"
+			}
+		},
+		"text": {
+			"description": "While equipped, increases final magical damage from Air/Lightning spells by 25%. This follows the spell's actual element, not its Magic School."
+		}
+	},
+	"core:orbOfSilt": {
+		"bonuses": {
+			"spellDamage": {
+				"type": "ELEMENTAL_SPELL_DAMAGE",
+				"subtype": "spellElementEarth",
+				"val": 25,
+				"valueType": "BASE_NUMBER"
+			}
+		},
+		"text": {
+			"description": "While equipped, increases final magical damage from Earth spells by 25%. This follows the spell's actual element, not its Magic School."
+		}
+	},
+	"core:orbOfTempestuousFire": {
+		"bonuses": {
+			"spellDamage": {
+				"type": "ELEMENTAL_SPELL_DAMAGE",
+				"subtype": "spellElementFire",
+				"val": 25,
+				"valueType": "BASE_NUMBER"
+			}
+		},
+		"text": {
+			"description": "While equipped, increases final magical damage from Fire spells by 25%. This follows the spell's actual element, not its Magic School."
+		}
+	},
+	"core:orbOfDrivingRain": {
+		"bonuses": {
+			"spellDamage": {
+				"type": "ELEMENTAL_SPELL_DAMAGE",
+				"subtype": "spellElementWater",
+				"val": 25,
+				"valueType": "BASE_NUMBER"
+			}
+		},
+		"text": {
+			"description": "While equipped, increases final magical damage from Water/Frost spells by 25%. This follows the spell's actual element, not its Magic School."
+		}
+	}
+}

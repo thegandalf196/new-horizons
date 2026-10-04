@@ -370,6 +370,12 @@
 				"type" : "boolean"
 			}
 		},
+		"damageElement" : {
+			"type" : "string",
+			"enum" : ["none", "air", "fire", "water", "earth"],
+			"default" : "none",
+			"description" : "Actual elemental damage theme, independent of Magic School membership"
+		},
 		"level" : {
 			"type" : "number",
 			"description" : "Spell level",

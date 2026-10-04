@@ -1,5 +1,15 @@
 # Serialization
 
+## Explicit elemental spell damage
+
+`NEW_HORIZONS_ELEMENTAL_SPELL_DAMAGE` gates the appended `ELEMENTAL_SPELL_DAMAGE`
+Bonus type. Its subtype is an explicit damage element, not a Magic School.
+Current Bonus records preserve the type/subtype/value normally; direct writers
+reject unsupported old formats before their payload. Static spell element
+metadata is loaded with spell definitions and adds no per-hero counter or saved
+spell-state field. Ordinary equipment identity and bonus inheritance remain the
+source of the equipped Orb effect.
+
 ## Independent Conflux Core recruitment
 
 The New Horizons Conflux catalogue uses eight recruitment rows, preserving the

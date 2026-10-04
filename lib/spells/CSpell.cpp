@@ -31,6 +31,8 @@
 
 #include <vcmi/spells/Caster.h>
 
+#include <limits>
+
 static constexpr std::array LEVEL_NAMES = {"none", "basic", "advanced", "expert"};
 
 ///CSpell
@@ -113,7 +115,31 @@ int64_t CSpell::calculateDamage(const spells::Caster * caster) const
 		}
 	}
 
-	return caster->getSpellBonus(this, rawDamage, nullptr);
+	return applyElementalDamageBonus(caster, caster->getSpellBonus(this, rawDamage, nullptr));
+}
+
+int64_t CSpell::applyElementalDamageBonus(const spells::Caster * caster, const int64_t damage) const
+{
+	if(!caster || !isMagical() || !isDamage() || damageElement == SpellDamageElement::NONE || damage <= 0)
+		return damage;
+
+	const int32_t bonusPercent = caster->getElementalSpellDamageBonus(damageElement);
+	if(bonusPercent == 0)
+		return damage;
+
+	const int64_t multiplier = std::max<int64_t>(0, 100 + static_cast<int64_t>(bonusPercent));
+	if(multiplier == 0)
+		return 0;
+
+	const int64_t wholeDamage = damage / 100;
+	const int64_t fractionalDamage = damage % 100 * multiplier / 100;
+	const int64_t maximum = std::numeric_limits<int64_t>::max();
+	if(wholeDamage > maximum / multiplier)
+		return maximum;
+	const int64_t scaledWholeDamage = wholeDamage * multiplier;
+	if(scaledWholeDamage > maximum - fractionalDamage)
+		return maximum;
+	return scaledWholeDamage + fractionalDamage;
 }
 
 bool CSpell::hasSchool(SpellSchool which) const
@@ -586,6 +612,8 @@ int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Uni
 		const int multiplierPercent = std::max(0, finalDamageMultiplierPercent);
 		ret = ret / 100 * multiplierPercent + ret % 100 * multiplierPercent / 100;
 	}
+	if(applyCasterBonuses)
+		ret = applyElementalDamageBonus(caster, ret);
 
 	//cap damage received per single creature (e.g. HotA war machines), same rule as melee/ranged damage
 	if(affectedCreature != nullptr)

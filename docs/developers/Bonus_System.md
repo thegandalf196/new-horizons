@@ -1,5 +1,14 @@
 # Bonus System
 
+## Elemental final spell damage
+
+`ELEMENTAL_SPELL_DAMAGE` grants a percentage bonus to final magical damage for
+an explicitly tagged spell element. Subtypes `spellElementAir`, `spellElementFire`,
+`spellElementWater`, and `spellElementEarth` are independent of Magic Schools.
+The New Horizons Orbs use value 25. Untagged spells and physical damage do not
+qualify; no School affinity supplies a fallback element. Equipment removal uses
+ordinary bonus-tree cache invalidation, without a scan or new usage state.
+
 ## Explicit status tags
 
 `Bonus::statusTags` records opt-in status classification. `DEBUFF` means the

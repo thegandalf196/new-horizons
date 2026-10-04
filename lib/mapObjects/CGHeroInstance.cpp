@@ -1219,6 +1219,14 @@ int64_t CGHeroInstance::getSpellBonus(const spells::Spell * spell, int64_t base,
 	return base;
 }
 
+int32_t CGHeroInstance::getElementalSpellDamageBonus(SpellDamageElement element) const
+{
+	if(element == SpellDamageElement::NONE)
+		return 0;
+	const BonusSubtypeID subtype(BonusCustomSubtype(static_cast<int32_t>(element)));
+	return valOfBonuses(BonusType::ELEMENTAL_SPELL_DAMAGE, subtype);
+}
+
 int64_t CGHeroInstance::getSpecificSpellBonus(const spells::Spell * spell, int64_t base) const
 {
 	base = static_cast<int64_t>(base * (100 + valOfBonuses(BonusType::SPECIFIC_SPELL_DAMAGE, BonusSubtypeID(spell->getId()))) / 100.0);

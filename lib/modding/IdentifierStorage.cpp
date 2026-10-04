@@ -63,6 +63,10 @@ CIdentifierStorage::CIdentifierStorage()
 	registerObject(ModScope::scopeBuiltin(), "bonusSubtype", "spellLevel5", 5);
 	for(int level = 1; level <= GameConstants::CREATURES_PER_TOWN; ++level)
 		registerObject(ModScope::scopeBuiltin(), "bonusSubtype", "creatureLevel" + std::to_string(level), level);
+	registerObject(ModScope::scopeBuiltin(), "bonusSubtype", "spellElementAir", static_cast<int>(SpellDamageElement::AIR));
+	registerObject(ModScope::scopeBuiltin(), "bonusSubtype", "spellElementFire", static_cast<int>(SpellDamageElement::FIRE));
+	registerObject(ModScope::scopeBuiltin(), "bonusSubtype", "spellElementWater", static_cast<int>(SpellDamageElement::WATER));
+	registerObject(ModScope::scopeBuiltin(), "bonusSubtype", "spellElementEarth", static_cast<int>(SpellDamageElement::EARTH));
 	registerObject(ModScope::scopeBuiltin(), "spell", "preset", SpellID::PRESET);
 	registerObject(ModScope::scopeBuiltin(), "spell", "spellbook_preset", SpellID::SPELLBOOK_PRESET);
 	registerObject(ModScope::scopeBuiltin(), "bonusSubtype", "combatEventBeforeAttack", static_cast<int>(CombatEventType::BEFORE_ATTACK));

@@ -167,6 +167,7 @@ EntityTypeEnum bonusSubtypeEntityType(BonusType type)
 		case BonusType::VISIONS:
 		case BonusType::SPELLS_OF_LEVEL:
 		case BonusType::CREATURE_GROWTH:
+		case BonusType::ELEMENTAL_SPELL_DAMAGE:
 		case BonusType::ON_COMBAT_EVENT:
         case BonusType::FREE_SHOOTING:
         case BonusType::ALIGNMENT_MIX: // alignment

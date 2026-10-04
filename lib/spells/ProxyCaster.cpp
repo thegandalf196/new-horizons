@@ -58,6 +58,14 @@ int64_t ProxyCaster::getSpellBonus(const Spell * spell, int64_t base, const batt
 	return base;
 }
 
+int32_t ProxyCaster::getElementalSpellDamageBonus(SpellDamageElement element) const
+{
+	if(actualCaster)
+		return actualCaster->getElementalSpellDamageBonus(element);
+
+	return 0;
+}
+
 int64_t ProxyCaster::getSpecificSpellBonus(const Spell * spell, int64_t base) const
 {
 	if(actualCaster)

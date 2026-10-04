@@ -246,6 +246,16 @@ enum class ChangeValueMode : int8_t
 	ABSOLUTE
 };
 
+/// Damage identity, deliberately independent of Magic School membership.
+enum class SpellDamageElement : int8_t
+{
+	NONE = -1,
+	AIR = 0,
+	FIRE = 1,
+	WATER = 2,
+	EARTH = 3
+};
+
 enum class CombatEventType : int8_t
 {
 	INVALID = 0,

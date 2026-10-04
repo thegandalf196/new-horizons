@@ -2,6 +2,61 @@
 
 ## Purpose
 
+### 2026-10-04 UP210 — Final bounded acceptance after fixture repairs
+
+Both-target build59223 succeeds. Native71275 passes all nine Orb controls and
+the Fortress construction/binding case (10/10, zero skips,4.479s). The cap case
+now authors low Behemoth Initiative to preserve the intended acting controller;
+normal unit targeting and authoritative validation remain intact. Four equipped
+artifact type/save/removal paths and actual cast/forecast comparisons pass.
+Retain earlier failure logs as fixture/API lessons; do not erase them or claim
+those earlier runs established acceptance. Data gates8/8 and module drift pass.
+
+### 2026-10-04 UP210 — The cap fixture must preserve the acting controller
+
+Retry68330 passes8/9; changing Fireball from unit to hex targeting does not fix
+the cap-case rejection and was not its actual cause. Diagnostic build34997 and
+its one-case run establish that spell, exact target and Hero Spell allowance
+are valid, but the active stack belongs to PlayerColor1. Replacing a Pikeman
+with the higher-Initiative Behemoth changed who acts first, so PlayerColor0's
+request correctly fails authoritative controller authentication. Author low
+Initiative explicitly for this controlled damage fixture, retaining Behemoth's
+HP and every damage/cap/action assertion. Do not loosen production validation.
+
+### 2026-10-04 UP210 — Artifact type and instance identities differ
+
+Native-only resumed build65339 succeeds. Focused run31645 runs9 cases, zero
+skips, but passes4 and fails5. Four equipment/save assertions compare
+CArtifactInstance::getId (instance identity) to ArtifactID (type identity);
+use getTypeId without removing actual equipment or saved-state assertions.
+Their damage/forecast/removal assertions report no separate failure. The cap
+case's damage/cap calculations pass, but the accepted Fireball action rejects;
+diagnose that target/action fixture before claiming coverage. Preserve failed
+UP210-elemental-orbs-focused.log/XML; no production acceptance from this run.
+
+### 2026-10-04 UP210 — Forecast fixtures require concrete AI headers
+
+Both-target build30051 stops at776/1041 on the new Orb fixture: DamageEnvironment
+and HypotheticBattle are undeclared. Include their actual concrete headers; do
+not assume the test precompiled header supplies AI types. The cap fixture also
+needs a higher-health creature because getMaxHealth is per-creature, not the
+stack's aggregate health. Retain the original log; fixture owner repairs these
+without changing production damage or weakening assertions before one retry.
+
+### 2026-10-04 UP210 — Use the actual numeric Mechanics API and JSONC schema
+
+Root prebuild review catches optional-style has_value/dereference calls on
+Mechanics::getEffectValue(), whose return is plain int64. Repair the fixture
+before building; do not change the production API or weaken numeric assertions.
+This is the same Value/value_or class of error already seen on Windows.
+The first Python data gate runs8 checks with one error: spell.json contains
+supported JSONC comments, so plain json.loads is inappropriate for that schema.
+Strip only comment tokens while preserving quoted strings/URLs; no new parser
+dependency or product schema relaxation is needed. Keep the failure lesson.
+The retry also exposes supported trailing commas in the existing JSONC schema;
+remove only out-of-string trailing comma tokens in the test adapter. Production
+schema/parser behavior remains unchanged.
+
 ### 2026-10-04 UP211 — Explicitly author an empty construction fixture
 
 Both-target build7085 succeeds. Native49630 runs two Conflux cases but fails

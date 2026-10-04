@@ -106,6 +106,14 @@ const IBonusBearer* Unit::getBonusBearer() const
 	return this;
 }
 
+int32_t Unit::getElementalSpellDamageBonus(SpellDamageElement element) const
+{
+	if(element == SpellDamageElement::NONE)
+		return 0;
+	const BonusSubtypeID subtype(BonusCustomSubtype(static_cast<int32_t>(element)));
+	return valOfBonuses(BonusType::ELEMENTAL_SPELL_DAMAGE, subtype);
+}
+
 const BattleHexArray & Unit::getSurroundingHexes(const BattleHex & assumedPosition) const
 {
 	BattleHex hex = (assumedPosition.toInt() != BattleHex::INVALID) ? assumedPosition : getPosition(); //use hypothetical position

@@ -19,6 +19,8 @@
 #include "../texts/CLegacyConfigParser.h"
 #include "../texts/CGeneralTextHandler.h"
 
+#include <stdexcept>
+
 static constexpr std::array LEVEL_NAMES = {"none", "basic", "advanced", "expert"};
 
 std::vector<JsonNode> CSpellHandler::loadLegacyData()
@@ -207,6 +209,25 @@ std::shared_ptr<CSpell> CSpellHandler::loadFromJson(const std::string & scope, c
 	spell->id = id;
 	spell->identifier = identifier;
 	spell->modScope = scope;
+	if(const auto damageElement = json.Struct().find("damageElement"); damageElement != json.Struct().end())
+	{
+		if(!damageElement->second.isString())
+			throw std::runtime_error("Spell " + identifier + ": damageElement must be one of none, air, fire, water, or earth");
+
+		const auto & value = damageElement->second.String();
+		if(value == "none")
+			spell->damageElement = SpellDamageElement::NONE;
+		else if(value == "air")
+			spell->damageElement = SpellDamageElement::AIR;
+		else if(value == "fire")
+			spell->damageElement = SpellDamageElement::FIRE;
+		else if(value == "water")
+			spell->damageElement = SpellDamageElement::WATER;
+		else if(value == "earth")
+			spell->damageElement = SpellDamageElement::EARTH;
+		else
+			throw std::runtime_error("Spell " + identifier + ": unknown damageElement '" + value + "'");
+	}
 
 	const auto type = json["type"].String();
 

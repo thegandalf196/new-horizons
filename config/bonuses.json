@@ -690,6 +690,9 @@
 	"SPELL" : {},
 	"SPELL_CAST_COUNTER" : {},
 	"SPELL_DAMAGE" : {},
+	"ELEMENTAL_SPELL_DAMAGE" : {
+		"description" : "Increases final magical damage for explicitly tagged spell elements, independently of Magic Schools"
+	},
 	"SPELL_DURATION" : {},
 	"SPELLS_OF_LEVEL" : {},
 	"SPELLS_OF_SCHOOL" : {},

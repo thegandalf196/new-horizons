@@ -12,11 +12,14 @@
 
 #include "../../../lib/battle/BattleHex.h"
 
+#include <cstdint>
+
 class PlayerColor;
 class MetaString;
 class ServerCallback;
 class CGHeroInstance;
 class SpellSchool;
+enum class SpellDamageElement : std::int8_t;
 
 namespace battle
 {
@@ -46,6 +49,9 @@ public:
 
 	///applying sorcery secondary skill etc
 	virtual int64_t getSpellBonus(const Spell * spell, int64_t base, const battle::Unit * affectedStack) const = 0;
+	/// Returns the final-damage modifier for an explicitly tagged element.
+	/// Casters without elemental damage bonuses return zero.
+	virtual int32_t getElementalSpellDamageBonus(SpellDamageElement element) const { return 0; }
 
 	///only bonus for particular spell
 	virtual int64_t getSpecificSpellBonus(const Spell * spell, int64_t base) const = 0;

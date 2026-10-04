@@ -25,6 +25,10 @@
 	
 		// List of spell schools this spell belongs to. Require for spells other than abilities
 		"school": {"air":true, "earth":true, "fire":true, "water":true},
+
+		// Optional actual damage theme for elemental damage bonuses; independent of school membership
+		// Allowed values: "none" (default), "air", "fire", "water", "earth"
+		"damageElement": "fire",
 	
 		// Spell level, value in range 1-5, or 0 for abilities
 		"level": 1,
@@ -301,6 +305,14 @@ TODO
 	}
 }
 ```
+
+## Damage element
+
+`damageElement` is an optional, explicit tag for a spell's actual damage theme.
+It is independent of the spell's Magic Schools: school membership does not infer
+or add damage elements. Omit the field or use `"none"` for neutral or untagged
+spells. Elemental final-damage bonuses apply only to spells that are both magical
+and flagged as dealing damage.
 
 ## Spell power
 

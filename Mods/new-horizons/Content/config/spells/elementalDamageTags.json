@@ -1,0 +1,38 @@
+{
+	"core:fireball": {
+		"damageElement": "fire"
+	},
+	"core:landMine": {
+		"damageElement": "fire"
+	},
+	"core:landMineTrigger": {
+		"damageElement": "fire"
+	},
+	"core:fireWall": {
+		"damageElement": "fire"
+	},
+	"core:fireWallTrigger": {
+		"damageElement": "fire"
+	},
+	"core:inferno": {
+		"damageElement": "fire"
+	},
+	"core:iceBolt": {
+		"damageElement": "water"
+	},
+	"core:frostRing": {
+		"damageElement": "water"
+	},
+	"core:lightningBolt": {
+		"damageElement": "air"
+	},
+	"core:chainLightning": {
+		"damageElement": "air"
+	},
+	"new-horizons:masterChainLightning": {
+		"damageElement": "air"
+	},
+	"core:meteorShower": {
+		"damageElement": "earth"
+	}
+}
