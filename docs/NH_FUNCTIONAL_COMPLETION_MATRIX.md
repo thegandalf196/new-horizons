@@ -1,9 +1,9 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-03
-Latest accepted slice: Puppet Master and Lucidity; client/test builds pass and
-UP190-puppet-final.log/XML passes8/8 in2.290s, zero skips. Independent review
-findings are resolved. Combat spell identities61/67 (Chaos7/11); perks210/310
+Latest accepted slice: Summon Boat destination targeting; client/test builds pass
+and UP056-summon-boat-targeting-focused.log/XML passes8/8 in2.563s, zero skips.
+Independent source review finds no blocker. Combat spell identities61/67 (Chaos7/11); perks210/310
 and ranks87/93 unchanged. Source/native acceptance only, no playable promotion.
 Canonical source SHA-256: `5b26a4930b6c6838e7435454c96b35a19039c275694e975636b37e6003b68a4a`
 
@@ -17,6 +17,20 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+UP056 Summon Boat required targeting path is source/native verified: generic
+effect capabilities enable map selection without a ranged-spell cast; native
+range-mask contrast uses the shared visible, empty adjacent-water predicate.
+Authoritative placement honors an explicit selection, with deterministic first
+legal neighbor only for the exact no-target sentinel. Legacy casts remain
+immediate; AI default use is preserved. Combined retry39815 builds both targets;
+native49715 passes8/8 in2.563s, zero skips (UP056-summon-boat-targeting-focused.log/XML).
+The narrow UI wiring guard, module check and independent source review pass.
+This closes the required source/native destination-selection gap, not all five
+Adventure Spell effects or rendered/playable acceptance. Native-resolution
+contrast/cursor and actual input/cancellation remain deferred visual evidence;
+multi-destination AI preference is unverified. Combat61/67, perks210/310 and
+ranks87/93 remain unchanged; other UP056 design questions remain open.
 
 UP123 Pandemonium prerequisite is source/native verified: production Bonus status
 tags and optional status identity are versioned, strictly validated, default empty

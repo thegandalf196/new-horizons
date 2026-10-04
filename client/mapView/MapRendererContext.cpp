@@ -413,8 +413,8 @@ bool MapRendererAdventureContext::showSpellRange(const int3 & position) const
 	if (!hero || !spell.hasValue())
 		return false;
 
-	const auto * spellEffect = spell.toSpell()->getAdventureMechanics().getEffectAs<AdventureSpellRangedEffect>(hero);
-	return !spellEffect->isTargetInRange(GAME->interface()->cb.get(), hero, position);
+	const auto * spellEffect = spell.toSpell()->getAdventureMechanics().getEffectAs<IAdventureSpellEffect>(hero);
+	return spellEffect && !spellEffect->isTargetInRange(GAME->interface()->cb.get(), hero, position);
 }
 
 MapRendererAdventureTransitionContext::MapRendererAdventureTransitionContext(const MapRendererContextState & viewState)

@@ -30,6 +30,8 @@ public:
 	virtual ESpellCastResult applyAdventureEffects(SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters) const {return ESpellCastResult::OK;};
 	virtual ESpellCastResult beginCast(SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters, const AdventureSpellMechanics & mechanics) const {return ESpellCastResult::OK;};
 	virtual void endCast(SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters) const {};
+	virtual bool requiresTargetSelection(const spells::Caster * caster) const {return false;};
+	virtual bool isTargetInRange(const IGameInfoCallback * cb, const spells::Caster * caster, const int3 & pos) const {return true;};
 	virtual bool canBeCastImpl(spells::Problem & problem, const IGameInfoCallback * cb, const spells::Caster * caster) const {return true;};
 	virtual bool canBeCastAtImpl(spells::Problem & problem, const IGameInfoCallback * cb, const spells::Caster * caster, const int3 & pos) const {return true;};
 	virtual std::string getCursorForTarget(const IGameInfoCallback * cb, const spells::Caster * caster, const int3 & pos) const {return {};};
@@ -54,7 +56,8 @@ public:
 	int getRangeX() const;
 	int getRangeY() const;
 	bool ignoresFogOfWar() const;
-	bool isTargetInRange(const IGameInfoCallback * cb, const spells::Caster * caster, const int3 & pos) const;
+	bool requiresTargetSelection(const spells::Caster * caster) const override {return true;};
+	bool isTargetInRange(const IGameInfoCallback * cb, const spells::Caster * caster, const int3 & pos) const override;
 	bool isTargetInRangeFrom(const IGameInfoCallback * cb, const spells::Caster * caster, const int3 & source, const int3 & pos) const;
 	virtual bool isValidTargetFrom(const IGameInfoCallback * cb, const spells::Caster * caster, const int3 & source, const int3 & pos) const;
 	std::string getCursorForTarget(const IGameInfoCallback * cb, const spells::Caster * caster, const int3 & pos) const override = 0; //must be implemented in derived classes

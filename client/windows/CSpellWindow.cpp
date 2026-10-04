@@ -963,9 +963,9 @@ void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)
 			spells::detail::ProblemImpl problem;
 			if (mySpell->getAdventureMechanics().canBeCast(problem, GAME->interface()->cb.get(), owner->myHero))
 			{
-				const auto * rangeEffect = mySpell->getAdventureMechanics().getEffectAs<AdventureSpellRangedEffect>(owner->myHero);
+				const auto * spellEffect = mySpell->getAdventureMechanics().getEffectAs<IAdventureSpellEffect>(owner->myHero);
 
-				if(rangeEffect != nullptr)
+				if(spellEffect && spellEffect->requiresTargetSelection(owner->myHero))
 					adventureInt->enterCastingMode(mySpell);
 				else
 					owner->myInt->cb->castSpell(h, mySpell->id);

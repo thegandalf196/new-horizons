@@ -14,6 +14,7 @@
 
 #include "../CSpell.h"
 
+#include "../../callback/IGameInfoCallback.h"
 #include "../../mapObjects/CGHeroInstance.h"
 #include "../../mapObjects/MiscObjects.h"
 #include "../../mapping/CMap.h"
@@ -23,6 +24,50 @@
 
 namespace
 {
+const int3 noSummonBoatTarget(-1, -1, -1);
+
+bool isNoSummonBoatTarget(const int3 & pos)
+{
+	return pos == noSummonBoatTarget;
+}
+
+bool isLegalNewHorizonsDestination(const IGameInfoCallback * cb, const CGHeroInstance * hero, const int3 & pos)
+{
+	if(!cb || !hero)
+		return false;
+
+	const int3 origin = hero->visitablePos();
+	const int64_t dx = static_cast<int64_t>(pos.x) - origin.x;
+	const int64_t dy = static_cast<int64_t>(pos.y) - origin.y;
+
+	if(pos.z != origin.z || dx < -1 || dx > 1 || dy < -1 || dy > 1 || (dx == 0 && dy == 0))
+		return false;
+
+	if(!cb->isInTheMap(pos) || !cb->isVisibleFor(pos, hero->getCasterOwner()))
+		return false;
+
+	const TerrainTile * tile = cb->getTile(pos, false);
+	return tile && tile->isWater() && !tile->blocked() && !tile->visitable();
+}
+
+int3 findFirstLegalNewHorizonsDestination(const IGameInfoCallback * cb, const CGHeroInstance * hero)
+{
+	if(!cb || !hero)
+		return noSummonBoatTarget;
+
+	std::vector<int3> offsets;
+	hero->getOutOffsets(offsets);
+
+	for(const auto & offset : offsets)
+	{
+		const int3 candidate = hero->visitablePos() + offset;
+		if(isLegalNewHorizonsDestination(cb, hero, candidate))
+			return candidate;
+	}
+
+	return noSummonBoatTarget;
+}
+
 const CGBoat * findNearestAvailableBoat(const CMap * map, const CGHeroInstance * hero)
 {
 	if(!map || !hero)
@@ -75,6 +120,38 @@ bool SummonBoatEffect::requiresExistingBoat(const spells::Caster * caster) const
 	return hero && newHorizonsMagic::isAdventureSpell(hero->getMagicRules(), owner->id);
 }
 
+bool SummonBoatEffect::requiresTargetSelection(const spells::Caster * caster) const
+{
+	return requiresExistingBoat(caster);
+}
+
+bool SummonBoatEffect::isTargetInRange(const IGameInfoCallback * cb, const spells::Caster * caster, const int3 & pos) const
+{
+	if(!requiresExistingBoat(caster))
+		return true;
+
+	return isLegalNewHorizonsDestination(cb, caster->getHeroCaster(), pos);
+}
+
+bool SummonBoatEffect::canBeCastAtImpl(spells::Problem &, const IGameInfoCallback * cb, const spells::Caster * caster, const int3 & pos) const
+{
+	if(!requiresExistingBoat(caster))
+		return true;
+
+	if(isNoSummonBoatTarget(pos))
+		return !isNoSummonBoatTarget(findFirstLegalNewHorizonsDestination(cb, caster->getHeroCaster()));
+
+	return isLegalNewHorizonsDestination(cb, caster->getHeroCaster(), pos);
+}
+
+std::string SummonBoatEffect::getCursorForTarget(const IGameInfoCallback * cb, const spells::Caster * caster, const int3 & pos) const
+{
+	if(requiresExistingBoat(caster) && isLegalNewHorizonsDestination(cb, caster->getHeroCaster(), pos))
+		return "mapTurn1Sail";
+
+	return {};
+}
+
 bool SummonBoatEffect::canCreateNewBoat(const spells::Caster * caster) const
 {
 	return createdBoat != BoatId::NONE && !requiresExistingBoat(caster);
@@ -103,10 +180,11 @@ ESpellCastResult SummonBoatEffect::beginCast(
 
 bool SummonBoatEffect::canBeCastImpl(spells::Problem & problem, const IGameInfoCallback * cb, const spells::Caster * caster) const
 {
-	if(!caster->getHeroCaster())
+	const auto * hero = caster ? caster->getHeroCaster() : nullptr;
+	if(!hero)
 		return false;
 
-	if(caster->getHeroCaster()->inBoat())
+	if(hero->inBoat())
 	{
 		MetaString message = MetaString::createFromTextID("core.genrltxt.333");
 		message.replaceTextID(caster->getCasterNameTextID());
@@ -114,9 +192,12 @@ bool SummonBoatEffect::canBeCastImpl(spells::Problem & problem, const IGameInfoC
 		return false;
 	}
 
-	int3 summonPos = caster->getHeroCaster()->bestLocation();
+	const bool mustUseExistingBoat = requiresExistingBoat(caster);
+	const int3 summonPos = mustUseExistingBoat
+		? findFirstLegalNewHorizonsDestination(cb, hero)
+		: hero->bestLocation();
 
-	if(summonPos.x < 0)
+	if((mustUseExistingBoat && isNoSummonBoatTarget(summonPos)) || (!mustUseExistingBoat && summonPos.x < 0))
 	{
 		MetaString message = MetaString::createFromTextID("core.genrltxt.334");
 		message.replaceTextID(caster->getCasterNameTextID());
@@ -129,6 +210,22 @@ bool SummonBoatEffect::canBeCastImpl(spells::Problem & problem, const IGameInfoC
 
 ESpellCastResult SummonBoatEffect::applyAdventureEffects(SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters) const
 {
+	const auto * hero = parameters.caster ? parameters.caster->getHeroCaster() : nullptr;
+	if(!hero)
+		return ESpellCastResult::ERROR;
+
+	const bool mustUseExistingBoat = requiresExistingBoat(parameters.caster);
+	int3 summonPos = noSummonBoatTarget;
+	if(mustUseExistingBoat)
+	{
+		summonPos = isNoSummonBoatTarget(parameters.pos)
+			? findFirstLegalNewHorizonsDestination(env->getCb(), hero)
+			: parameters.pos;
+
+		if(!isLegalNewHorizonsDestination(env->getCb(), hero, summonPos))
+			return ESpellCastResult::ERROR;
+	}
+
 	//check if spell works at all
 	if(env->getRNG()->nextInt(0, 99) >= getSuccessChance(parameters.caster)) //power is % chance of success
 	{
@@ -142,12 +239,11 @@ ESpellCastResult SummonBoatEffect::applyAdventureEffects(SpellCastEnvironment * 
 
 	// New Horizons uses the captured neutral Adventure Spell rules. It always
 	// retrieves an existing boat, regardless of legacy mastery configuration.
-	const bool mustUseExistingBoat = requiresExistingBoat(parameters.caster);
 	const CGBoat * nearest = (useExistingBoat || mustUseExistingBoat)
-		? findNearestAvailableBoat(env->getMap(), parameters.caster->getHeroCaster())
+		? findNearestAvailableBoat(env->getMap(), hero)
 		: nullptr;
-
-	int3 summonPos = parameters.caster->getHeroCaster()->bestLocation();
+	if(!mustUseExistingBoat)
+		summonPos = hero->bestLocation();
 
 	if(nullptr != nearest) //we found boat to summon
 	{

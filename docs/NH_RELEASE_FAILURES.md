@@ -2,6 +2,17 @@
 
 ## Purpose
 
+### 2026-10-03 UP-056 — Explicit callback definition in shared destination helper
+
+Combined build7395 exits1: SummonBoatEffect's new shared predicate invokes
+IGameInfoCallback methods with only its forward declaration in scope. Root adds
+the direct callback header, preserving behavior and assertions. Retain
+UP056-summon-boat-targeting-build.log; retry uses a separate log and existing
+compiled objects. No successful build/native evidence is claimed from this failure.
+Closure: retry39815 builds vcmiclient and vcmitest successfully; native49715
+passes8/8 in2.563s, zero skips. Retain targeting-focused.log/XML alongside both
+build logs. No assertions or production validation were weakened.
+
 ### 2026-10-03 UP-123 — GoogleTest fixture cannot be final
 
 The original UP123-status-tags-final-build.log exits1 compiling the new

@@ -647,10 +647,12 @@ void AdventureMapInterface::onTileHovered(const int3 &targetPosition)
 	if(spellBeingCasted)
 	{
 		const auto * hero = GAME->interface()->localState->getCurrentHero();
-		const auto * spellEffect = spellBeingCasted->getAdventureMechanics().getEffectAs<AdventureSpellRangedEffect>(hero);
+		const auto * spellEffect = spellBeingCasted->getAdventureMechanics().getEffectAs<IAdventureSpellEffect>(hero);
 		spells::detail::ProblemImpl problem;
 
-		if(spellEffect && spellEffect->canBeCastAtImpl(problem, GAME->interface()->cb.get(), hero, targetPosition))
+		if(spellEffect
+			&& spellEffect->isTargetInRange(GAME->interface()->cb.get(), hero, targetPosition)
+			&& spellEffect->canBeCastAtImpl(problem, GAME->interface()->cb.get(), hero, targetPosition))
 			ENGINE->cursor().set(spellEffect->getCursorForTarget(GAME->interface()->cb.get(), hero, targetPosition));
 		else
 			ENGINE->cursor().set(Cursor::Map::POINTER);

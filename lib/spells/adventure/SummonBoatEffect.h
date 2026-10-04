@@ -26,6 +26,10 @@ public:
 
 private:
 	bool requiresExistingBoat(const spells::Caster * caster) const;
+	bool requiresTargetSelection(const spells::Caster * caster) const final;
+	bool isTargetInRange(const IGameInfoCallback * cb, const spells::Caster * caster, const int3 & pos) const final;
+	bool canBeCastAtImpl(spells::Problem & problem, const IGameInfoCallback * cb, const spells::Caster * caster, const int3 & pos) const final;
+	std::string getCursorForTarget(const IGameInfoCallback * cb, const spells::Caster * caster, const int3 & pos) const final;
 	ESpellCastResult beginCast(SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters, const AdventureSpellMechanics & mechanics) const final;
 	bool canBeCastImpl(spells::Problem & problem, const IGameInfoCallback * cb, const spells::Caster * caster) const final;
 	ESpellCastResult applyAdventureEffects(SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters) const final;

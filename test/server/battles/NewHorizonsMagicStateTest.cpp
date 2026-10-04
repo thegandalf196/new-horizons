@@ -24,6 +24,8 @@
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/Problem.h"
+#include "../../../lib/spells/adventure/AdventureSpellEffect.h"
 #include "../../../lib/constants/StringConstants.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/battle/CObstacleInstance.h"
@@ -33,6 +35,10 @@
 #include "../../../lib/bonuses/Updaters.h"
 #include "../../../server/ServerSpellCastEnvironment.h"
 #include "../../../server/queries/QueriesProcessor.h"
+
+#include <algorithm>
+#include <array>
+#include <vector>
 
 namespace
 {
@@ -253,11 +259,23 @@ protected:
 		ASSERT_EQ(attackerSideHero->getSpellSchoolLevel(summonBoat.toSpell()), 3);
 	}
 
-	bool castSummonBoat()
+	const IAdventureSpellEffect * summonBoatEffect() const
+	{
+		return SpellID(SpellID::SUMMON_BOAT).toSpell()->getAdventureMechanics().getEffectAs<IAdventureSpellEffect>(attackerSideHero);
+	}
+
+	bool canCastSummonBoatAt(const int3 & target)
+	{
+		spells::detail::ProblemImpl problem;
+		return SpellID(SpellID::SUMMON_BOAT).toSpell()->getAdventureMechanics().canBeCastAt(
+			problem, &gameHandler->gameInfo(), attackerSideHero, target);
+	}
+
+	bool castSummonBoat(const int3 & target = int3(-1, -1, -1))
 	{
 		AdventureSpellCastParameters parameters;
 		parameters.caster = attackerSideHero;
-		parameters.pos = int3();
+		parameters.pos = target;
 		auto * environment = dynamic_cast<SpellCastEnvironment *>(gameHandler->spellcastEnvironment());
 		EXPECT_NE(environment, nullptr);
 		return SpellID(SpellID::SUMMON_BOAT).toSpell()->adventureCast(environment, parameters);
@@ -876,27 +894,125 @@ TEST_F(NewHorizonsMagicStateTest, SummonBoatRejectsMissingBoatBeforeManaOrDailyS
 TEST_F(NewHorizonsMagicStateTest, SummonBoatMovesAnExistingBoatUnderSavedNewHorizonsRules)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareSummonBoatCast(true));
+	setMapVisibility(PlayerColor(0), true);
 	const auto summonPosition = attackerSideHero->bestLocation();
 	ASSERT_GE(summonPosition.x, 0);
+	const auto * effect = summonBoatEffect();
+	ASSERT_NE(effect, nullptr);
+	ASSERT_TRUE(effect->requiresTargetSelection(attackerSideHero));
+
+	std::vector<int3> offsets;
+	attackerSideHero->getOutOffsets(offsets);
+	const auto selectedPosition = std::find_if(offsets.begin(), offsets.end(), [&](const int3 & offset)
+	{
+		const auto candidate = attackerSideHero->visitablePos() + offset;
+		return candidate != summonPosition && effect->isTargetInRange(&gameHandler->gameInfo(), attackerSideHero, candidate);
+	});
+	ASSERT_NE(selectedPosition, offsets.end());
+	const auto selectedDestination = attackerSideHero->visitablePos() + *selectedPosition;
+	ASSERT_NE(selectedDestination, summonPosition);
+	EXPECT_TRUE(canCastSummonBoatAt(selectedDestination));
+
 	const int3 remoteWater(20, 20, 0);
 	gameState()->getMap().getTile(remoteWater).terrainType = ETerrainId::WATER;
 	gameHandler->createBoat(remoteWater, BoatId::NECROPOLIS, PlayerColor(0));
 	ASSERT_EQ(gameState()->getMap().getObjects<CGBoat>().size(), 1u);
 
 	const auto manaBefore = attackerSideHero->getManaAvailable();
-	ASSERT_TRUE(castSummonBoat());
+	ASSERT_TRUE(castSummonBoat(selectedDestination));
 
 	const auto boats = gameState()->getMap().getObjects<CGBoat>();
 	ASSERT_EQ(boats.size(), 1u);
-	EXPECT_EQ(boats.front()->visitablePos(), summonPosition);
+	EXPECT_EQ(boats.front()->visitablePos(), selectedDestination);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - attackerSideHero->getSpellCost(SpellID(SpellID::SUMMON_BOAT).toSpell()));
 	EXPECT_TRUE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+}
+
+TEST_F(NewHorizonsMagicStateTest, SummonBoatUsesFirstLegalDestinationForExactNoTargetSentinel)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareSummonBoatCast(true));
+	setMapVisibility(PlayerColor(0), true);
+	const int3 remoteWater(20, 20, 0);
+	gameState()->getMap().getTile(remoteWater).terrainType = ETerrainId::WATER;
+	gameHandler->createBoat(remoteWater, BoatId::NECROPOLIS, PlayerColor(0));
+
+	const auto expectedDestination = attackerSideHero->bestLocation();
+	ASSERT_GE(expectedDestination.x, 0);
+	ASSERT_TRUE(summonBoatEffect()->requiresTargetSelection(attackerSideHero));
+	ASSERT_TRUE(summonBoatEffect()->isTargetInRange(&gameHandler->gameInfo(), attackerSideHero, expectedDestination));
+	ASSERT_TRUE(canCastSummonBoatAt(expectedDestination));
+
+	ASSERT_TRUE(castSummonBoat(int3(-1, -1, -1)));
+	const auto boats = gameState()->getMap().getObjects<CGBoat>();
+	ASSERT_EQ(boats.size(), 1u);
+	EXPECT_EQ(boats.front()->visitablePos(), expectedDestination);
+	EXPECT_TRUE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+}
+
+TEST_F(NewHorizonsMagicStateTest, SummonBoatRejectsIllegalSelectedDestinationsWithoutConsumingCastState)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareSummonBoatCast(true));
+	setMapVisibility(PlayerColor(0), true);
+	const auto * effect = summonBoatEffect();
+	ASSERT_NE(effect, nullptr);
+	ASSERT_TRUE(effect->requiresTargetSelection(attackerSideHero));
+
+	const auto center = attackerSideHero->visitablePos();
+	const int3 nonWater = center + int3(0, -1, 0);
+	const int3 nonAdjacent = center + int3(0, 2, 0);
+	const int3 occupiedWater = center + int3(0, 1, 0);
+	const int3 hiddenAdjacent = center + int3(-1, 0, 0);
+	const int3 differentLevel = center + int3(0, 1, 1);
+	const int3 explicitZero;
+	gameState()->getMap().getTile(nonWater).terrainType = ETerrainId::GRASS;
+	gameState()->getMap().getTile(nonAdjacent).terrainType = ETerrainId::WATER;
+	gameState()->getMap().getTile(explicitZero).terrainType = ETerrainId::GRASS;
+	gameState()->getMap().getTile(hiddenAdjacent).terrainType = ETerrainId::WATER;
+	const auto teamId = gameState()->players.at(PlayerColor(0)).team;
+	gameState()->teams.at(teamId).fogOfWarMap[hiddenAdjacent] = 0;
+	ASSERT_TRUE(gameState()->isVisibleFor(occupiedWater, PlayerColor(0)));
+	ASSERT_FALSE(gameState()->isVisibleFor(hiddenAdjacent, PlayerColor(0)));
+	gameHandler->createBoat(occupiedWater, BoatId::CASTLE, PlayerColor(0));
+	ASSERT_TRUE(gameState()->getMap().isInTheMap(nonAdjacent));
+	ASSERT_FALSE(gameState()->getMap().isInTheMap(differentLevel));
+
+	const int3 remoteWater(20, 20, 0);
+	gameState()->getMap().getTile(remoteWater).terrainType = ETerrainId::WATER;
+	gameHandler->createBoat(remoteWater, BoatId::NECROPOLIS, PlayerColor(0));
+	const auto initialBoats = gameState()->getMap().getObjects<CGBoat>();
+	ASSERT_EQ(initialBoats.size(), 2u);
+	std::vector<int3> originalBoatPositions;
+	for(const auto * boat : initialBoats)
+		originalBoatPositions.push_back(boat->visitablePos());
+
+	const std::array<int3, 6> illegalTargets = {
+		explicitZero, nonWater, nonAdjacent, differentLevel, occupiedWater, hiddenAdjacent
+	};
+	for(const auto & target : illegalTargets)
+	{
+		SCOPED_TRACE(target.toString());
+		EXPECT_FALSE(effect->isTargetInRange(&gameHandler->gameInfo(), attackerSideHero, target));
+		EXPECT_FALSE(canCastSummonBoatAt(target));
+
+		const auto manaBefore = attackerSideHero->getManaAvailable();
+		EXPECT_FALSE(castSummonBoat(target));
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+		EXPECT_FALSE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+
+		const auto boatsAfter = gameState()->getMap().getObjects<CGBoat>();
+		ASSERT_EQ(boatsAfter.size(), originalBoatPositions.size());
+		for(size_t index = 0; index < boatsAfter.size(); ++index)
+			EXPECT_EQ(boatsAfter[index]->visitablePos(), originalBoatPositions[index]);
+	}
 }
 
 TEST_F(NewHorizonsMagicStateTest, LegacyExpertSummonBoatStillCreatesConfiguredBoat)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareSummonBoatCast(false));
 	ASSERT_FALSE(newHorizonsMagic::isAdventureSpell(attackerSideHero->getMagicRules(), SpellID(SpellID::SUMMON_BOAT)));
+	const auto * effect = summonBoatEffect();
+	ASSERT_NE(effect, nullptr);
+	EXPECT_FALSE(effect->requiresTargetSelection(attackerSideHero));
 	const auto summonPosition = attackerSideHero->bestLocation();
 	ASSERT_GE(summonPosition.x, 0);
 	ASSERT_TRUE(gameState()->getMap().getObjects<CGBoat>().empty());
