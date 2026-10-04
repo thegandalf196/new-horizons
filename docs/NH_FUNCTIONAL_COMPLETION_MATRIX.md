@@ -20,6 +20,18 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+2026-10-04 post-UP196 audit: all31 per-Skill rows were compared with the live
+registry. The lower Necromancy row was stale at4/10; it now records10/10 with
+the UP184-189 evidence references. Diplomacy's lower row now consistently uses
+active/planned notation (3/0 ranks,7/3 perks), and its obsolete Basic-progression
+blocker is removed. Canonical exceptional external rank advancement is retained.
+Totals remain213/310 perks,87/93 ranks and62/90 faction perks; these corrections
+are not new implementation coverage. Independent Astra audit finds no mismatch.
+UP197 identifies an additional concrete town mechanic gap: Skeleton Transformer
+still preserves sacrificed count instead of producing50% aggregate HP in whole
+Skeletons. Its selection-rounding boundary awaits clarification; no full-building
+completion or new denominator is inferred from the old type-change path.
+
 2026-10-04 UP196 Resource Broker is source/native accepted. A generic resource-
 pair quote hook preserves existing custom-market dispatch; the town applies
 120% ordinary effectiveness before existing integer rounding only for Wood/Ore
@@ -2112,7 +2124,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Wisdom | 3/0 | 8/2 | Mana Conservation post-combat Normal recovery, Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. One other perk remains missing. Broader interactions and playable acceptance remain open. |
 | Warcasting | 3/0 | 6/4 | Spellward has focused live/detached/current-controller damage evidence. Master Synthesis has first-consumption Spell/Order, typed-exclusion and branch-history evidence. Four perks missing; Combat Casting and Enchanted Command await shared rule decisions; Perfect Rhythm stacking is unresolved. |
 | Logistics | 3/0 | 7/3 | Three perks missing; Forced March native movement/battle/state/AI verified alongside Roadmaster/Wayfarer/Mountaineer. Future unspent-burst route forecasting remains Phase2. |
-| Diplomacy | 3/3 | 7/10 | Foundation, Envoy, Peacemaker, Tribute and Recruitment Pact verified; three perks remain missing |
+| Diplomacy | 3/0 | 7/3 | Foundation, Envoy, Peacemaker, Tribute and Recruitment Pact verified; three perks remain missing |
 | Estates | 3/0 | 6/4 | Resource Broker joins Land Surveyor, Tax Collector, Investor, Estate Network and Financier. Local Marketplace rate, accepted AI trade, mine-capture grants, daily income, weekly Wood/Ore, weekly treasury interest and Investor's pre-income treasury snapshot have focused native evidence. Broader interactions and playable delivery remain separate. |
 | Learning | 3/0 | 3/7 | Mentor, Quick Study and Field Study supply working Basic/Advanced perks and open ordinary Expert-rank progression. Meetings, weekly persistence, initial offer reroll, stronger-opponent awarded XP and query/RNG parity are native verified. Academic Study awaits first-visit timing. |
 | Luck | 3/0 | 6/4 | Fortune's Favor, Lucky Aim, Second Chance, Gambler, Chain of Fortune and Twist of Fate source/native verified; four perks remain planned. |
@@ -2121,15 +2133,16 @@ interactions, and rendered/playable acceptance remain separate.
 | Metamagic | 3/0 | 10/0 | Evidence audit required |
 | Shroud of Malassa | 3/0 | 6/4 | Basic Backstab/Ambusher/Shadow Assault and Advanced No Escape/Evasive Shroud/Night Prowler are active; four perks remain planned. Night Prowler has live/AI crossing, first-strike and unused-expiry evidence; its flying negative is predicate-only. |
 | Demonic Gating | 3/0 | 10/0 | Evidence audit required |
-| Necromancy | 3/0 | 4/6 | Corpse Preservation joins Bone Collector, Dark Conversion and Black Harvest. Real spell/physical damage, destroyed remains, LIFO restoration and filtered raising pass focused native checks; six perks remain planned. |
+| Necromancy | 3/0 | 10/0 | All ten perks are active. UP184/185/186/187/188/189 record accepted category conversion, Master of Bones, casualty-derived XP/Mana, atomic Ossuary fallback and Bone Dragon conversion evidence. Broader save/control/result-UI interactions and playable delivery remain separate. |
 | Bloodrage | 3/0 | 7/3 | War Drums, Fury Unbound, Endless Bloodshed, Unrelenting, Berserker, Blood Scent and Rage Through Pain have focused live/AI evidence and legal progression; First Blood, Slayer and Avatar of Rage remain planned. |
 | Bulwark of the Mire | 3/0 | 9/1 | Nine perks are active in committed source; 53/53 native regressions pass; persistent Poison status builds and passes focused tests; Deep Bulwark and rendered/playable evidence remain open |
 | Elemental Rebirth | 0/3 | 0/10 | Ranks and progression missing |
 
-Strict progression requires a perk at the preceding rank before the next Skill
-rank. Three Skills therefore cannot normally advance beyond Basic because they
-have no active Basic perk: Diplomacy,
-Divine Mandate, and Elemental Rebirth. Fortune's Favor opens Luck; Tax Collector opens Estates and
+Ordinary progression requires a perk at the preceding rank before the next Skill
+rank; canonical exceptional external rank advancement remains permitted.
+Two Skills still lack active ranks and Basic perks: Divine Mandate and
+Elemental Rebirth. Diplomacy now has three active ranks and legal Basic/Advanced
+perk choices. Fortune's Favor opens Luck; Tax Collector opens Estates and
 Mentor opens Learning. Backstab now
 opens the Shroud's ordinary Advanced-rank progression; Blinkmaster opens Chaos.
 
