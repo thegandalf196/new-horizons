@@ -1,10 +1,10 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
-Latest native-verified slice: UP201 Rampart Fountain of Fortune.
-Client38823 and both-target final23674 pass; native12287 passes1/1 in1.136s,
-zero skips. Independent Astra production review finds no blocker; root inspected
-the native fixture. Separate fixture review remains Phase2. Combat spell
+Latest native-verified slice: UP201 Castle Stables day-start Movement.
+Client56799 and both-target62880 pass; native71208 passes2/2 in1.894s,
+zero skips, including adjacent Fountain. Independent Astra production review
+finds no blocker; root inspected the native fixture. Combat spell
 identities61/67 (Chaos7/11); perks213/310
 (97 planned), faction perks62/90 and ranks87/93 unchanged. This adds one
 verified specified town mechanic, not a perk or spell. Source/native acceptance
@@ -21,6 +21,25 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+2026-10-04 UP201 Castle Stables is source/native verified. After NewTurn expires
+the previous ONE_DAY bonus, eligible visiting/garrison Castle residents receive
+land-Movement20 PERCENT_TO_BASE and a refill to the fresh shared current-day
+maximum. Percent bonuses remain additive; this does not reintroduce creature
+Speed, a weekly flat400 visiting grant, a new counter or ordinary-update scan.
+Existing saved bonuses, bonus-cache invalidation, authoritative GiveBonus and
+SetMovePoints are reused. NH content clears the old reward/alias only; core
+content remains unchanged. Client56799 and both-target62880 pass. Native71208
+passes2/2 in1.894s, zero skips, UP201-stables-focused.log/XML: actual construction
+and day starts, computer-owned visiting/garrison residents, exact200-to240
+maximum/refill, same slow/fast army allowance, outside/midday isolation, shared
+current/future limits, saved day bonus/residence, departure expiry and repeated
+resident regrant without stacking; adjacent Fountain remains green. Data/
+inventory21/21, module drift and Astra production review pass. One specified
+town mechanic added; perk/rank/spell counts unchanged. Phase2 retains allied
+scenario execution, inconsistent resident-reference hardening and strategic
+AI valuation. No GUI or playable promotion. Blood Obelisk is mapped next;
+Lighthouse departure scope and Glyphs aura choices still await answers.
 
 2026-10-04 UP201 Fountain of Fortune is source/native verified. NH Rampart
 special2 supplies local defending-creature Luck3, replacing core Luck2, and

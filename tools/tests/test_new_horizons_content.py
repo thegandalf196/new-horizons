@@ -1112,6 +1112,14 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(patch['produce'], {'sulfur': 1})
         self.assertEqual(patch['bonuses'], [])
 
+    def test_castle_stables_disable_legacy_flat_weekly_visiting_reward(self):
+        patch = load('Mods/new-horizons/Content/config/factions/uniqueBuildings.json')['core:castle']['town']['buildings']['special2']
+        self.assertEqual(patch['name'], 'Stables')
+        self.assertIsNone(patch['configuration'])
+        self.assertIsNone(patch['mapObjectLikeBonuses'])
+        self.assertNotIn('bonuses', patch)
+        self.assertIn('begin the day', patch['description'])
+
     def test_fountain_of_fortune_has_defensive_luck_and_weekly_hero_blessings(self):
         patch = load('Mods/new-horizons/Content/config/factions/uniqueBuildings.json')['core:rampart']['town']['buildings']['special2']
         self.assertEqual(patch['bonuses'], [{'type': 'LUCK', 'val': 3}])

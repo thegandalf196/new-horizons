@@ -40,10 +40,13 @@
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include "../TurnStartVisitScheduler.h"
 
+#include <set>
 #include <vstd/RNG.h>
 
 namespace
 {
+constexpr int32_t NEW_HORIZONS_CASTLE_STABLES_MOVEMENT_PERCENT = 20;
+
 int estateNetworkWeeklyIncome(const PlayerState & state)
 {
 	const size_t ownedTownCount = state.getTowns().size();
@@ -964,6 +967,8 @@ void NewTurnProcessor::onNewTurn()
 	bool newMonth = calendar.nextDay().getDayOfMonth() == 1;
 
 	gameHandler->sendAndApply(n);
+	// The NewTurn pack expires prior-day ONE_DAY bonuses and refills regular Movement first.
+	grantNewHorizonsCastleStablesBonus();
 
 	if (newWeek)
 	{
@@ -992,4 +997,50 @@ void NewTurnProcessor::onNewTurn()
 	}
 
 	logGlobal->trace("Info about turn %d has been sent!", n.day);
+}
+
+void NewTurnProcessor::grantNewHorizonsCastleStablesBonus()
+{
+	std::set<ObjectInstanceID> processedHeroes;
+
+	for(const auto & townID : gameHandler->gameState().getMap().getAllTowns())
+	{
+		const auto * town = gameHandler->gameState().getTown(townID);
+		if(!town || town->getFactionID() != FactionID::CASTLE
+			|| !town->hasBuilt(BuildingID::SPECIAL_2)
+			|| !town->getOwner().isValidPlayer())
+			continue;
+
+		const auto building = town->getTown()->buildings.find(BuildingID::SPECIAL_2);
+		if(building == town->getTown()->buildings.end() || !building->second)
+			continue;
+
+		const BonusSourceID source(building->second->getUniqueTypeID());
+		const auto grantToResident = [&](const CGHeroInstance * hero)
+		{
+			if(!hero || !hero->getOwner().isValidPlayer()
+				|| gameHandler->gameInfo().getPlayerRelations(hero->getOwner(), town->getOwner()) == PlayerRelations::ENEMIES
+				|| hero->inBoat()
+				|| !hero->usesNewHorizonsMovement() || !processedHeroes.insert(hero->id).second)
+				return;
+
+			Bonus bonus(BonusDuration::ONE_DAY, BonusType::MOVEMENT,
+				BonusSource::TOWN_STRUCTURE, NEW_HORIZONS_CASTLE_STABLES_MOVEMENT_PERCENT, source);
+			bonus.subtype = BonusCustomSubtype::heroMovementLand;
+			bonus.valType = BonusValueType::PERCENT_TO_BASE;
+			bonus.description.appendTextID(building->second->getDescriptionTextID());
+
+			GiveBonus grant;
+			grant.id = hero->id;
+			grant.bonus = bonus;
+			gameHandler->giveHeroBonus(&grant);
+
+			const int movementLimit = hero->movementPointsLimit();
+			if(hero->movementPointsRemaining() != movementLimit)
+				gameHandler->setMovePoints(hero->id, movementLimit);
+		};
+
+		grantToResident(town->getVisitingHero());
+		grantToResident(town->getGarrisonHero());
+	}
 }

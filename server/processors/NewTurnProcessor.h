@@ -60,6 +60,7 @@ class NewTurnProcessor : boost::noncopyable
 	bool hasAstronomyTowerDefinition() const;
 
 	NewTurn generateNewTurnPack();
+	void grantNewHorizonsCastleStablesBonus();
 	void handleTimeEvents(PlayerColor player);
 	void handleTownEvents(const CGTownInstance *town);
 

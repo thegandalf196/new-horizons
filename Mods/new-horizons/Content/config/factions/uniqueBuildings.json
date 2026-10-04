@@ -2,6 +2,12 @@
 	"core:castle": {
 		"town": {
 			"buildings": {
+				"special2": {
+					"name": "Stables",
+					"description": "Heroes who begin the day in this town gain 20% maximum land Movement for that day. Creature Speed does not affect this benefit.",
+					"mapObjectLikeBonuses": null,
+					"configuration": null
+				},
 				"special3": {
 					"name": "Brotherhood of the Sword",
 					"description": "The Brotherhood of the Sword trains each visiting hero in Leadership.",
