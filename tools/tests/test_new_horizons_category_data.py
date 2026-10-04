@@ -55,7 +55,7 @@ class CreatureCategoryDataTest(unittest.TestCase):
         }
         lines = self.rules['growthLines']
         fortress = load('config/creatures/fortress.json')
-        self.assertEqual(set(lines), {f'core:{name}' for name in expected})
+        self.assertEqual(set(lines), {f'core:{name}' for name in expected} | {'core:pixie', 'core:sprite'})
         inherited_members = set()
         for base_name, weekly_growth in expected.items():
             with self.subTest(base_creature=base_name):
@@ -67,6 +67,12 @@ class CreatureCategoryDataTest(unittest.TestCase):
                 self.assertTrue(set(line['members']) <= set(self.rules['creatures']))
                 inherited_members.update(line['members'])
         self.assertEqual(len(inherited_members), 14)
+
+    def test_conflux_core_lines_have_independent_saved_growth(self):
+        self.assertEqual(self.rules['growthLines']['core:pixie'], {
+            'weeklyBaseGrowth': 14, 'hordeGrowthOverride': 4, 'members': ['core:pixie']})
+        self.assertEqual(self.rules['growthLines']['core:sprite'], {
+            'weeklyBaseGrowth': 10, 'members': ['core:sprite']})
 
     def test_texts_are_complete_and_separate(self):
         texts = load('config/newHorizonsCreatureCategoryTexts.json')
@@ -132,7 +138,7 @@ class CreatureCategoryDataTest(unittest.TestCase):
                     self.assertFalse(missing.exists())
         self.assertNotEqual(subprocess.run([sys.executable, str(script), '--output', str(live)], capture_output=True).returncode, 0)
         self.assertEqual(live.read_bytes(), before)
-        self.assertEqual(json.loads(before)['version'], '0.14.0')
+        self.assertEqual(json.loads(before)['version'], load('config/newHorizonsVersion.json')['version'])
         self.assertEqual(json.loads(before)['settings']['creatures'],
                          {'newHorizonsCategories': self.rules})
 

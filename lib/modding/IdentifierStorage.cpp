@@ -14,6 +14,7 @@
 #include "ModScope.h"
 
 #include "../GameLibrary.h"
+#include "../constants/NumericConstants.h"
 #include "../constants/StringConstants.h"
 #include "../json/JsonNode.h"
 
@@ -60,13 +61,8 @@ CIdentifierStorage::CIdentifierStorage()
 	registerObject(ModScope::scopeBuiltin(), "bonusSubtype", "spellLevel3", 3);
 	registerObject(ModScope::scopeBuiltin(), "bonusSubtype", "spellLevel4", 4);
 	registerObject(ModScope::scopeBuiltin(), "bonusSubtype", "spellLevel5", 5);
-	registerObject(ModScope::scopeBuiltin(), "bonusSubtype", "creatureLevel1", 1);
-	registerObject(ModScope::scopeBuiltin(), "bonusSubtype", "creatureLevel2", 2);
-	registerObject(ModScope::scopeBuiltin(), "bonusSubtype", "creatureLevel3", 3);
-	registerObject(ModScope::scopeBuiltin(), "bonusSubtype", "creatureLevel4", 4);
-	registerObject(ModScope::scopeBuiltin(), "bonusSubtype", "creatureLevel5", 5);
-	registerObject(ModScope::scopeBuiltin(), "bonusSubtype", "creatureLevel6", 6);
-	registerObject(ModScope::scopeBuiltin(), "bonusSubtype", "creatureLevel7", 7);
+	for(int level = 1; level <= GameConstants::CREATURES_PER_TOWN; ++level)
+		registerObject(ModScope::scopeBuiltin(), "bonusSubtype", "creatureLevel" + std::to_string(level), level);
 	registerObject(ModScope::scopeBuiltin(), "spell", "preset", SpellID::PRESET);
 	registerObject(ModScope::scopeBuiltin(), "spell", "spellbook_preset", SpellID::SPELLBOOK_PRESET);
 	registerObject(ModScope::scopeBuiltin(), "bonusSubtype", "combatEventBeforeAttack", static_cast<int>(CombatEventType::BEFORE_ATTACK));

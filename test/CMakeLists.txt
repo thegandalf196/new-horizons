@@ -375,6 +375,7 @@ set(test_SRCS
 		server/queries/NewHorizonsArtifactScaleTest.cpp
 		server/queries/NewHorizonsMasterLogisticianTest.cpp
 		server/queries/NewHorizonsSpeedArtifactTest.cpp
+		server/queries/NewHorizonsConfluxGrowthTest.cpp
 		server/queries/NewHorizonsMagicUniversityTest.cpp
 		server/queries/NewHorizonsAdventureSpellUnlockTest.cpp
 		server/NewHorizonsEconomyTest.cpp

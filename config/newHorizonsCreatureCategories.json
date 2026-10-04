@@ -145,6 +145,15 @@
 		"core:phoenix": "champion"
 	},
 	"growthLines": {
+		"core:pixie": {
+			"weeklyBaseGrowth": 14,
+			"hordeGrowthOverride": 4,
+			"members": ["core:pixie"]
+		},
+		"core:sprite": {
+			"weeklyBaseGrowth": 10,
+			"members": ["core:sprite"]
+		},
 		"core:gnoll": {
 			"weeklyBaseGrowth": 14,
 			"members": ["core:gnoll", "core:gnollMarauder"]

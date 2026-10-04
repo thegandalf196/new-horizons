@@ -10,6 +10,14 @@ This is a binding inventory, not a full visual audit or a product completion cla
 
 ## Status meanings
 
+UP211 Conflux independent Core recruitment: implementation in progress.
+Pixie and Sprite are separate recruitment choices, using the supported eighth
+dwelling and original artwork referenced externally. Existing Sprite artwork is
+not a newly authored or approved independent-town asset. Hall/Fort layout and
+co-located town structure selection require native-resolution visual review;
+classify the new binding as **Provisional**, not Final. No GUI run, extracted
+original art, newly generated art or playable acceptance is claimed.
+
 UP203 indiscriminate-spell friendly-fire confirmation: **Provisional** interaction,
 source/native verified2026-10-04. Reuse the existing native framed yes/no dialog and
 ordinary text/stack names, rather than creating decorative assets. Required

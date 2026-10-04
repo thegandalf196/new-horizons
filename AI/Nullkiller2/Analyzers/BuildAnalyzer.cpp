@@ -176,7 +176,16 @@ BuildingInfo::BuildingInfo(
 
 		if(isBuilt)
 		{
-			creatureGrowth = town->creatureGrowth(creatureLevel - 1);
+			const auto & creatureRows = town->getTown()->creatures;
+			const auto row = std::ranges::find_if(creatureRows, [creature](const auto & members)
+			{
+				return vstd::contains(members, creature->getId());
+			});
+
+			if(row != creatureRows.end())
+				creatureGrowth = town->creatureGrowth(static_cast<int>(std::distance(creatureRows.begin(), row)));
+			else
+				creatureGrowth = town->creatureGrowth(creatureLevel - 1);
 		}
 		else
 		{

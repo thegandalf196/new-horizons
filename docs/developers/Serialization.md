@@ -1,5 +1,16 @@
 # Serialization
 
+## Independent Conflux Core recruitment
+
+The New Horizons Conflux catalogue uses eight recruitment rows, preserving the
+first seven dwelling indices and appending the independent Sprite dwelling.
+Current town stock and captured creature-growth rules use their existing saved
+representations. No new field or binary-format version is introduced.
+An old seven-row Conflux stock vector cannot be interpreted under that catalogue:
+town decode rejects it before gameplay, with a request to start a new game.
+It does not move, convert or delete old Sprite stocks, or rewrite the save file.
+Eight-row current records retain their independent stocks through ordinary loads.
+
 ## Rewardable next-level Experience
 
 `NEW_HORIZONS_REWARDABLE_NEXT_LEVEL_EXPERIENCE` appends

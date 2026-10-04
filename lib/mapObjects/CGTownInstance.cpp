@@ -1508,6 +1508,17 @@ void CGTownInstance::fillUpgradeInfo(UpgradeInfo & info, const CStackInstance &s
 
 void CGTownInstance::postDeserialize()
 {
+	// The independent Sprite dwelling changes Conflux's recruitment layout.
+	// Reject old stock vectors rather than silently reinterpreting Sprite stock
+	// as Pixies or indexing a nonexistent eighth row at the next week boundary.
+	constexpr size_t legacyConfluxRecruitmentRows = 7;
+	if(getFactionID() == FactionID::CONFLUX
+		&& getTown()->buildings.contains(BuildingID::DWELL_LVL_8)
+		&& getTown()->creatures.size() > legacyConfluxRecruitmentRows
+		&& creatures.size() == legacyConfluxRecruitmentRows)
+		throw std::runtime_error("This Conflux save uses the old Pixie/Sprite upgrade layout. "
+			"Start a new game to use the separate New Horizons Core recruitment lines.");
+
 	for(auto & building : rewardableBuildings)
 		building.second->town = this;
 

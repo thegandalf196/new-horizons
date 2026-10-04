@@ -1,16 +1,17 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
-Latest native-verified slice: UP205 Master Logistician and UP206 Speed/Initiative
-artifacts. Both-target retry68082 passes; native26470 passes6/6 in3.290s, zero
-skips, including adjacent Stables and primary/Movement artifact conversions.
-Independent Astra source/architecture and fixture reviews find no blocker.
+Latest native-verified slice: UP211 separate Conflux Pixie/Sprite recruitment
+and Garden growth. Both-target7085 and fixture retry28194 pass; native75381
+passes3/3 in2.168s, zero skips, including the adjacent Tower Library/Brimstone
+case. Independent Astra production review finds no blocking issue.
 Combat spell
 identities61/67 (Chaos7/11); perks214/310
 (96 planned), faction perks62/90 and ranks87/93 unchanged. This adds one
-verified perk and one artifact-conversion family. Source/native acceptance
+verified perk and one artifact-conversion family in UP205/UP206; UP211 adds
+independent Conflux recruitment and the specified Garden growth. Source/native acceptance
 only; GUI and playable delivery remain pending.
-Canonical source SHA-256: `5b26a4930b6c6838e7435454c96b35a19039c275694e975636b37e6003b68a4a`
+Canonical source SHA-256: `9a7f7a25df83f86f2c88414c11d857eb9c3e06d52bb1c7913cdca9b1eebd5c83`
 
 This is the durable evidence register for UP-023. It tracks functional gameplay
 completion separately from catalogue presence and artwork. An `active` data row,
@@ -22,6 +23,21 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+UP211 Conflux separate Pixie/Sprite Core lines and Garden growth are verified.
+Actual construction, independent14/10 initial stocks, Garden+4/+3, week32/23
+stocks, authoritative recruitment and built-dwelling AI forecasts pass. Supported
+slot8 preserves existing row IDs. Current eight-row save/load passes; old seven-row
+Conflux saves are explicitly rejected before gameplay, not silently migrated.
+Both-target7085 and fixture retry28194 succeed; native75381 passes3/3 in2.168s,
+zero skips, UP211-conflux-focused-retry.log/XML. Python13/13 and generated-module
+drift pass. Authentic-art binding and hall hook exist; rendered acceptance remains
+pending. Phase2 retains co-located town-art selection/layout and preconstruction
+Garden valuation for Sprite. Vault of Ashes remains missing. Ordinary Horde rows
+are source-mapped, not blanket native verified. Skill/spell/perk counts unchanged.
+UP210 actual-element ruling is received: tags are independent of Schools and
+neutral/necrotic spells remain untagged. Production implementation is next;
+no coverage credit from the ruling alone.
 
 2026-10-04 UP205/UP206 source/native accepted: Master Logistician carries
 floor(15% of actual unused Movement) at completed-day NewTurn refill, preserving

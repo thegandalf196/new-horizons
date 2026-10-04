@@ -23,9 +23,10 @@ def main():
         parser.error('refusing existing output or symlink')
     build.mkdir(exist_ok=True)
     metadata = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())
+    product_version = json.loads((ROOT / 'config/newHorizonsVersion.json').read_text())['version']
     rules = json.loads((ROOT / 'config/newHorizonsCreatureCategories.json').read_text())
     texts = json.loads((ROOT / 'config/newHorizonsCreatureCategoryTexts.json').read_text())
-    if metadata['version'] != '0.14.0' or metadata['settings'].get('creatures') != {'newHorizonsCategories': rules}:
+    if metadata['version'] != product_version or metadata['settings'].get('creatures') != {'newHorizonsCategories': rules}:
         parser.error('unexpected live category composition; regenerate the active module first')
     if any(metadata['translations'].get(key) != value for key, value in texts.items()):
         parser.error('live category translations are missing or stale')

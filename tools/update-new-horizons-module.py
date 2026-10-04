@@ -109,9 +109,11 @@ def main():
         'config/factions/uniqueBuildings.json',
         'config/factions/universalMageGuilds.json',
         'config/factions/towerCreatureRanks.json',
+        'config/factions/confluxCreatureRanks.json',
     ]
     creature_patch_files = [
         'config/creatures/tower.json',
+        'config/creatures/conflux.json',
     ]
     hero_class_patch_files = [
         'config/heroClasses/names.json',

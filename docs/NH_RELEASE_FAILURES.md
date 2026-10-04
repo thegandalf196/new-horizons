@@ -2,6 +2,35 @@
 
 ## Purpose
 
+### 2026-10-04 UP211 — Explicitly author an empty construction fixture
+
+Both-target build7085 succeeds. Native49630 runs two Conflux cases but fails
+the initial-state assertions: TinyH3MBuilder's default town already includes a
+Fort and first dwelling. Author an explicit empty building list before testing
+the real prerequisite chain; preserve growth, recruitment and save assertions.
+Keep UP211-conflux-focused.log/XML as the failed fixture evidence, not a
+production-growth failure. No coverage credit until the corrected run passes.
+
+Fixture-only retry28194 builds successfully. Native75381 then passes3/3 in
+2.168s, zero skips, including adjacent Tower Library/Brimstone. The pre-init
+map hook removes authored DEFAULT/FORT rather than changing production rules;
+all tested construction and recruitment still use the authoritative handler.
+Retain both failed and passing logs/XML. Python13/13 and module drift pass.
+
+### 2026-10-04 UP211 — Candidate data requires regenerated metadata
+
+An early category-data run passes six checks but its private-composition check
+rejects the stale live manifest after captured growth lines were edited and
+before the module was regenerated. The diagnostic intentionally requires exact
+canonical composition. Complete the isolated content files, regenerate the
+module, then rerun; do not weaken that drift guard. No production failure was
+established by this premature candidate check.
+After regeneration the same private guard still fails because it hardcodes the
+obsolete0.14.0 live version while the authoritative product version is0.15.0.
+Read config/newHorizonsVersion.json for the live-version guard and test; retain
+exact category/text equality, private-path protections and its diagnostic version.
+This is a stale diagnostic-tool baseline, not a reason to downgrade the product.
+
 ### 2026-10-04 UP-205/UP-206 — Focused acceptance after repairs
 
 Both-target retry68082 succeeds. Native26470 passes6/6 in3.290s, zero skips,

@@ -2497,13 +2497,12 @@ CHallInterface::CHallInterface(const CGTownInstance * Town):
 	town(Town)
 {
 	OBJECT_CONSTRUCTION;
-	const bool dynamicLayout = town->getFactionID() == FactionID::TOWER
+	const bool dynamicLayout = (town->getFactionID() == FactionID::TOWER || town->getFactionID() == FactionID::CONFLUX)
 		&& newHorizonsMagic::rulesActive(GAME->interface()->cb->getMagicRules());
 	if(dynamicLayout)
 	{
-		// The original bitmap has card frames baked at the vanilla slot positions.
-		// Preserve its title/footer, but replace the card area before drawing the
-		// relocated Library and dwellings with frames belonging to each card.
+		// Preserve the original title/footer, but replace baked card frames when
+		// New Horizons relocates or adds cards in a faction hall.
 		auto leather = ENGINE->renderHandler().createImage(Point(pos.w - 8, 524), CanvasScalingPolicy::AUTO);
 		auto canvas = leather->getCanvas();
 		canvas.fillTexture(ENGINE->renderHandler().loadImage(

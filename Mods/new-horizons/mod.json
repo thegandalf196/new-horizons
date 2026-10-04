@@ -306,6 +306,19 @@
 					"core:phoenix": "champion"
 				},
 				"growthLines": {
+					"core:pixie": {
+						"weeklyBaseGrowth": 14,
+						"hordeGrowthOverride": 4,
+						"members": [
+							"core:pixie"
+						]
+					},
+					"core:sprite": {
+						"weeklyBaseGrowth": 10,
+						"members": [
+							"core:sprite"
+						]
+					},
 					"core:gnoll": {
 						"weeklyBaseGrowth": 14,
 						"members": [
@@ -7180,7 +7193,8 @@
 		}
 	},
 	"creatures": [
-		"config/creatures/tower.json"
+		"config/creatures/tower.json",
+		"config/creatures/conflux.json"
 	],
 	"heroClasses": [
 		"config/heroClasses/names.json"
@@ -7199,7 +7213,8 @@
 	"factions": [
 		"config/factions/uniqueBuildings.json",
 		"config/factions/universalMageGuilds.json",
-		"config/factions/towerCreatureRanks.json"
+		"config/factions/towerCreatureRanks.json",
+		"config/factions/confluxCreatureRanks.json"
 	],
 	"objects": [
 		"config/objects/magicSpring.json"
