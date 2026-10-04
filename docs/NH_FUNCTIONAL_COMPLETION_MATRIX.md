@@ -1,6 +1,30 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
+UP222 Archery specialty source/native accepted: Orrin's core physical ranged
+damage and Attack-growth chances become12/24/36, ordinary heroes10/20/30.
+Both-target46837 succeeds; native35240 passes12/12 in6.231s, zero skips,
+including accepted shot/forecast, unrelated ranged and Target Caller controls,
+unchanged melee, saved markers, rank removal, older lists and adjacent specialty
+checks. Module drift,20 magic and12 hero-data checks pass. Skill-specialty
+coverage now includes Logistics, Armorer, Offense and Archery; Estates remains
+missing. Spell/rank/perk totals unchanged. No playable/graphical claim;
+broader modifier/AI compositions and seeded initial-XP sampling remain Phase2.
+
+UP220 audited remainder source/native accepted:29 further noncanonical rows
+now opt out of hero access/acquisition, making35 explicit exclusions. World
+effects, existing fields, prior six exclusions, Haste and canonical spells are
+preserved. Build7593 succeeds after two fixture unique_ptr declaration repairs;
+native55749 passes19/19 in2.067s, zero skips. Actual guild/House stocks,13 real
+starters (all seven Shield profiles), all35 explicitly known spell/source guards,
+authorized rejected cast, actual Ogre Mage/Master Genie/Storm Elemental effects,
+markerless old-save restoration and schema/compatibility controls pass.
+Twenty magic/schema and12 hero-data checks plus module drift/review pass.
+This adds access-policy coverage for29 identities, not new spells or completed
+hero profiles; Haste and authored replacements stay open. Random Genie selection,
+broader source interactions and rendered/playable acceptance remain separate.
+The earlier six-row checkpoint below is historical. No launcher promotion.
+
 UP221 Offense specialty slice source/native accepted: Crag Hack/Gundula
 receive12/24/36% core melee damage and Attack-growth chances. Only per-instance
 exact NH Offense rank-bonus clones are adjusted; Lua aggregates, unrelated

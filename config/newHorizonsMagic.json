@@ -80,12 +80,16 @@
 	},
 	"spells": {
 		"core:airElemental": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:nature",
 				"new-horizons:havoc"
 			]
 		},
 		"core:airShield": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:light"
 			]
@@ -104,6 +108,8 @@
 			]
 		},
 		"core:antiMagic": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:sorcery"
 			],
@@ -173,6 +179,8 @@
 			}
 		},
 		"core:blind": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:shadow",
 				"new-horizons:chaos"
@@ -462,6 +470,8 @@
 			}
 		},
 		"core:counterstrike": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:light"
 			]
@@ -521,6 +531,8 @@
 			}
 		},
 		"core:deathRipple": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:shadow"
 			],
@@ -533,11 +545,15 @@
 			]
 		},
 		"core:destroyUndead": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:light"
 			]
 		},
 		"core:disguise": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:sorcery"
 			]
@@ -578,6 +594,8 @@
 			}
 		},
 		"core:earthElemental": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:nature",
 				"new-horizons:havoc"
@@ -603,12 +621,16 @@
 			}
 		},
 		"core:fireElemental": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:nature",
 				"new-horizons:havoc"
 			]
 		},
 		"core:fireShield": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:havoc"
 			]
@@ -646,6 +668,8 @@
 			}
 		},
 		"core:forceField": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:sorcery"
 			]
@@ -663,11 +687,15 @@
 			]
 		},
 		"core:fortune": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:chaos"
 			]
 		},
 		"core:frenzy": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:chaos"
 			]
@@ -701,6 +729,8 @@
 			]
 		},
 		"core:hypnotize": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:chaos"
 			],
@@ -805,6 +835,8 @@
 			}
 		},
 		"core:magicMirror": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:sorcery"
 			],
@@ -837,6 +869,8 @@
 			}
 		},
 		"core:mirth": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:chaos"
 			]
@@ -880,21 +914,29 @@
 			"heroAccess": false
 		},
 		"core:protectAir": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:light"
 			]
 		},
 		"core:protectEarth": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:light"
 			]
 		},
 		"core:protectFire": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:light"
 			]
 		},
 		"core:protectWater": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:light"
 			]
@@ -913,6 +955,8 @@
 			]
 		},
 		"core:removeObstacle": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:nature"
 			]
@@ -942,16 +986,22 @@
 			]
 		},
 		"core:sacrifice": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:shadow"
 			]
 		},
 		"core:scuttleBoat": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:havoc"
 			]
 		},
 		"core:shield": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:light"
 			]
@@ -1045,21 +1095,29 @@
 			]
 		},
 		"core:viewAir": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:nature"
 			]
 		},
 		"core:viewEarth": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:nature"
 			]
 		},
 		"core:visions": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:sorcery"
 			]
 		},
 		"core:waterElemental": {
+			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:nature",
 				"new-horizons:havoc"

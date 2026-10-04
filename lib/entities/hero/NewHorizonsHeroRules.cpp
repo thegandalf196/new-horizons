@@ -118,18 +118,18 @@ void validateSkillSpecialtyRules(const JsonNode & rules)
 	require(integer(rules["version"], 1, 1), "skill specialty version");
 	require(integer(rules["coreBonusPercent"], 20, 20), "skill specialty core bonus percentage");
 	const auto & skills = rules["skills"];
-	require(skills.isVector() && !skills.Vector().empty() && skills.Vector().size() <= 3,
-		"version 1 skill specialties must list one to three supported core skills");
+	require(skills.isVector() && !skills.Vector().empty() && skills.Vector().size() <= 4,
+		"version 1 skill specialties must list one to four supported core skills");
 	std::set<int> seen;
 	for(const auto & skill : skills.Vector())
 	{
 		require(skill.isString()
 			&& (skill.String() == "core:logistics" || skill.String() == "core:armorer"
-				|| skill.String() == "core:offence"),
-			"version 1 skill specialties support only core:logistics, core:armorer and core:offence");
+				|| skill.String() == "core:offence" || skill.String() == "core:archery"),
+			"version 1 skill specialties support only core:logistics, core:armorer, core:offence and core:archery");
 		const int skillId = resolve(SecondarySkill::entityType(), skill.String());
 		require(skillId == SecondarySkill::LOGISTICS || skillId == SecondarySkill::ARMORER
-			|| skillId == SecondarySkill::OFFENCE,
+			|| skillId == SecondarySkill::OFFENCE || skillId == SecondarySkill::ARCHERY,
 			"unknown version 1 skill specialty");
 		require(seen.insert(skillId).second, "duplicate version 1 skill specialty");
 	}

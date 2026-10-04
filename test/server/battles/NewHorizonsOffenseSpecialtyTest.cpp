@@ -572,6 +572,6 @@ TEST(NewHorizonsOffenseSpecialtyRulesTest, CurrentAndOlderSupportedListsRemainVa
 	setSpecialtyList(duplicate, {"core:offence", "core:offence"});
 	EXPECT_THROW(newHorizonsHeroes::validateHeroRules(duplicate, true), std::runtime_error);
 	auto unsupported = rules;
-	setSpecialtyList(unsupported, {"core:archery"});
+	setSpecialtyList(unsupported, {"core:eagleEye"});
 	EXPECT_THROW(newHorizonsHeroes::validateHeroRules(unsupported, true), std::runtime_error);
 }

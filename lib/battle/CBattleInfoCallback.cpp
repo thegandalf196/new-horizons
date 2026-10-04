@@ -2920,7 +2920,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		const bool ordinaryCreatureAttack = newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.attacker);
 		if(info.shooting && ordinaryCreatureAttack)
 			payload.newHorizonsArcheryDamagePercent = newHorizonsCombatSkills::archeryDamagePercent(
-				newHorizonsCombatSkills::archeryRank(battleGetOwnerHero(info.attacker)));
+				battleGetOwnerHero(info.attacker));
 		if(ordinaryCreatureAttack && info.attacker->battlecraftWaitBonusAvailable())
 			payload.battlecraftWaitDamagePercent = newHorizonsBattlecraft::rankPercent(
 				newHorizonsBattlecraft::rank(battleGetOwnerHero(info.attacker)));

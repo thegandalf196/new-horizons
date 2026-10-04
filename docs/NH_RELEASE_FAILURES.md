@@ -2,6 +2,27 @@
 
 ## Purpose
 
+### 2026-10-04 UP220 remainder / UP222 — Fixture API ownership types
+
+Build95706 stops on two expanded spell-access fixture declarations treating
+CSpell::battleMechanics' unique_ptr result as a raw pointer. Root had caught
+the static type issue after the frozen build started and waited for its terminal
+result rather than editing compiled inputs mid-run. Use const auto to retain
+the owning mechanics object, as the existing creature-cast control already does.
+First evidence: UP220-UP222-coverage-build.log. Repair/native acceptance remains
+pending. No production access/rules change is needed. The Offense fixture's
+unsupported-list control now uses Eagle Eye because Archery becomes supported;
+keep the rejection assertion, not a stale invalid assumption about Archery.
+
+Repair build7593 succeeds. Native55749 passes19/19 in2.067s, zero skips,
+UP220-remainder-native.log/XML: all35 restricted identities, real guild/House
+stock and13 starters, source/inscription denial, rejection without spend,
+Ogre Mage Bloodlust/Master Genie Shield and Air Shield/Storm Elemental Protect
+Air effects, and markerless saved-game restoration pass. No native failure was
+hidden or game launched. Random Genie selection and broader source interactions
+remain Phase2; Haste and authored replacements remain explicit implementation
+gaps. UP222's native acceptance is still pending, not inferred from this run.
+
 ### 2026-10-04 UP221 — Fixture setup corrections before execution
 
 Root static review catches a mutable damage argument cast from const storage,

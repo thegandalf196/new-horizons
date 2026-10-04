@@ -129,6 +129,16 @@ int archeryDamagePercent(int value)
 	return std::clamp(value, 0, 3) * 10;
 }
 
+int archeryDamagePercent(const CGHeroInstance * hero)
+{
+	const int coreDamagePercent = archeryDamagePercent(archeryRank(hero));
+	if(!hero)
+		return coreDamagePercent;
+
+	const int specialtyPercent = hero->getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ARCHERY));
+	return coreDamagePercent * (100 + specialtyPercent) / 100;
+}
+
 int bracePreemptivePercent(int basePercent, bool hasCountercharge)
 {
 	if(!hasCountercharge || basePercent <= 0)

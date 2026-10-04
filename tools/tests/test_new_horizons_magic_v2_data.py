@@ -6,6 +6,26 @@ import unittest
 
 from test_new_horizons_content import legacy_rules, load
 
+
+HERO_INACCESSIBLE_NONCANONICAL_CORE_SPELLS = frozenset({
+    'core:airElemental', 'core:airShield', 'core:antiMagic', 'core:blind',
+    'core:bloodlust', 'core:counterstrike', 'core:deathRipple',
+    'core:destroyUndead', 'core:disguise', 'core:disruptingRay',
+    'core:earthElemental', 'core:fireElemental', 'core:fireShield',
+    'core:forceField', 'core:fortune', 'core:frenzy', 'core:hypnotize',
+    'core:magicMirror', 'core:mirth', 'core:prayer', 'core:precision',
+    'core:protectAir', 'core:protectEarth', 'core:protectFire',
+    'core:protectWater', 'core:removeObstacle', 'core:sacrifice',
+    'core:scuttleBoat', 'core:shield', 'core:slayer', 'core:stoneSkin',
+    'core:viewAir', 'core:viewEarth', 'core:visions', 'core:waterElemental',
+})
+
+NEW_HORIZONS_NON_ORDINARY_ACQUISITION_SPELLS = frozenset({
+    'new-horizons:massBless', 'new-horizons:massCurse',
+    'new-horizons:massRegeneration', 'new-horizons:massSlow',
+    'new-horizons:massSorrow', 'new-horizons:masterChainLightning',
+})
+
 try:
     from jsonschema import Draft4Validator
     from referencing import Registry, Resource
@@ -62,14 +82,60 @@ class MagicV2DataTest(unittest.TestCase):
         self.assertFalse(self.old_validator.is_valid(self.rules))
         self.assertFalse(self.validator.is_valid(self.old_rules))
 
-    def test_retired_hero_spells_preserve_world_effect_definitions(self):
-        for identity in ('core:stoneSkin', 'core:bloodlust', 'core:prayer',
-                         'core:precision', 'core:slayer', 'core:disruptingRay'):
+    def test_noncanonical_core_spells_are_hero_inaccessible_but_world_active(self):
+        spells = self.v3_rules['spells']
+        hero_inaccessible = {
+            identity for identity, row in spells.items()
+            if row.get('heroAccess') is False
+        }
+        self.assertEqual(hero_inaccessible, HERO_INACCESSIBLE_NONCANONICAL_CORE_SPELLS)
+
+        non_ordinary_acquisition = {
+            identity for identity, row in spells.items()
+            if row.get('ordinaryAcquisition') is False
+        }
+        self.assertEqual(
+            non_ordinary_acquisition,
+            HERO_INACCESSIBLE_NONCANONICAL_CORE_SPELLS
+            | NEW_HORIZONS_NON_ORDINARY_ACQUISITION_SPELLS,
+        )
+
+        for identity in sorted(HERO_INACCESSIBLE_NONCANONICAL_CORE_SPELLS):
             with self.subTest(spell=identity):
-                row = self.v3_rules['spells'][identity]
+                row = spells[identity]
                 self.assertIs(row.get('active', True), True)
                 self.assertIs(row.get('heroAccess'), False)
                 self.assertIs(row.get('ordinaryAcquisition'), False)
+                self.assertTrue(row.get('schools'))
+
+    def test_canonical_and_current_new_horizons_spell_rows_remain_unchanged(self):
+        expected = {
+            'core:haste': {
+                'schools': ['new-horizons:sorcery'],
+                'level': 1,
+                'costs': [4, 4, 3, 3],
+            },
+            'core:cure': {
+                'schools': ['new-horizons:light'],
+                'level': 1,
+                'costs': [4, 4, 4, 4],
+                'cureAfflictions': ['core:poison', 'core:disease'],
+            },
+            'core:bless': {
+                'schools': ['new-horizons:light'],
+                'level': 1,
+                'costs': [4, 4, 3, 3],
+            },
+            'new-horizons:holyWrath': {
+                'schools': ['new-horizons:light'],
+                'level': 3,
+                'costs': [11, 11, 11, 11],
+                'directDamage': {'base': 40, 'powerCoefficient': 2},
+            },
+        }
+        for identity, expected_row in expected.items():
+            with self.subTest(spell=identity):
+                self.assertEqual(self.v3_rules['spells'][identity], expected_row)
 
     def test_hero_access_is_optional_boolean_in_v3_only(self):
         validator = Draft4Validator(self.v3, registry=self.registry)

@@ -1221,6 +1221,14 @@ std::optional<newHorizonsHeroes::PrimaryGrowthView> CGHeroInstance::getPrimaryGr
 				&& opportunity.attribute == PrimarySkill::ATTACK)
 				opportunity.chancePercent = std::min(100,
 					opportunity.chancePercent * (100 + offenseSpecialtyPercent) / 100);
+	static const int newHorizonsArcherySkill = SecondarySkill::decode("new-horizons:archery");
+	const int archerySpecialtyPercent = getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ARCHERY));
+	if(newHorizonsArcherySkill >= 0 && archerySpecialtyPercent > 0)
+		for(auto & opportunity : result.extraGrowth)
+			if(opportunity.skill.getNum() == newHorizonsArcherySkill
+				&& opportunity.attribute == PrimarySkill::ATTACK)
+				opportunity.chancePercent = std::min(100,
+					opportunity.chancePercent * (100 + archerySpecialtyPercent) / 100);
 	if(hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.deepKnowledge"))
 	{
 		const int wisdomSkillID = SecondarySkill::decode("new-horizons:wisdom");

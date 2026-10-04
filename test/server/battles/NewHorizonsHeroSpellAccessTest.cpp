@@ -31,9 +31,21 @@
 
 namespace
 {
-constexpr std::array<std::string_view, 6> HERO_RESTRICTED_SPELLS = {
+constexpr std::array<std::string_view, 35> HERO_RESTRICTED_SPELLS = {
 	"core:stoneSkin", "core:bloodlust", "core:prayer",
-	"core:precision", "core:slayer", "core:disruptingRay"
+	"core:precision", "core:slayer", "core:disruptingRay",
+	"core:airElemental", "core:antiMagic", "core:blind", "core:counterstrike",
+	"core:deathRipple", "core:destroyUndead", "core:disguise", "core:earthElemental",
+	"core:fireElemental", "core:fireShield", "core:forceField", "core:fortune",
+	"core:frenzy", "core:hypnotize", "core:magicMirror", "core:mirth",
+	"core:protectAir", "core:protectEarth", "core:protectFire", "core:protectWater",
+	"core:removeObstacle", "core:sacrifice", "core:scuttleBoat", "core:viewAir",
+	"core:viewEarth", "core:visions", "core:waterElemental",
+	"core:shield", "core:airShield"
+};
+
+constexpr std::array<std::string_view, 4> CONFLUX_PROTECTION_SPELLS = {
+	"core:protectAir", "core:protectEarth", "core:protectFire", "core:protectWater"
 };
 
 struct StartingSpellHero
@@ -42,13 +54,20 @@ struct StartingSpellHero
 	std::string_view spell;
 };
 
-constexpr std::array<StartingSpellHero, 6> HERO_STARTING_SPELLS = {{
+constexpr std::array<StartingSpellHero, 13> HERO_STARTING_SPELLS = {{
 	{"core:labetha", "core:stoneSkin"},
 	{"core:inteus", "core:bloodlust"},
 	{"core:loynis", "core:prayer"},
 	{"core:zubin", "core:precision"},
 	{"core:coronius", "core:slayer"},
-	{"core:aenain", "core:disruptingRay"}
+	{"core:aenain", "core:disruptingRay"},
+	{"core:piquedram", "core:shield"},
+	{"core:neela", "core:shield"},
+	{"core:theodorus", "core:shield"},
+	{"core:styg", "core:shield"},
+	{"core:galthran", "core:shield"},
+	{"core:nimbus", "core:shield"},
+	{"core:jaegar", "core:shield"}
 }};
 
 SpellID spellNamed(std::string_view identifier)
@@ -123,7 +142,8 @@ protected:
 			.heroGarrison({{token, 1}});
 
 		for(size_t index = 1; index < HERO_STARTING_SPELLS.size(); ++index)
-			builder.hero({5 + static_cast<int32_t>(index) * 2, 5, 0},
+			builder.hero({5 + static_cast<int32_t>(index % 6) * 2,
+				5 + static_cast<int32_t>(index / 6) * 4, 0},
 				heroTypeNamed(HERO_STARTING_SPELLS[index].hero), PlayerColor(0));
 
 		builder.hero({30, 5, 0}, heroTypeNamed("core:christian"), PlayerColor(1))
@@ -232,12 +252,18 @@ TEST_F(NewHorizonsHeroSpellAccessTest, ExplicitKnownSpellAndScrollCannotBypassHe
 	hero->addSpellToSpellbook(stoneSkin);
 	ASSERT_TRUE(gameHandler->giveHeroNewScroll(hero, stoneSkin, ArtifactPosition::MISC1));
 
-	EXPECT_TRUE(hero->spellbookContainsSpell(stoneSkin));
+	for(const auto identifier : HERO_RESTRICTED_SPELLS)
+	{
+		const auto spell = spellNamed(identifier);
+		ASSERT_TRUE(spell.hasValue()) << identifier;
+		hero->addSpellToSpellbook(spell);
+		EXPECT_TRUE(hero->spellbookContainsSpell(spell)) << identifier;
+		EXPECT_FALSE(hero->isSpellInscribedForCasting(spell)) << identifier;
+		EXPECT_TRUE(hero->getSourcesForSpell(spell).empty()) << identifier;
+		EXPECT_FALSE(hero->canCastThisSpell(spell.toSpell())) << identifier;
+	}
 	EXPECT_TRUE(hero->hasScroll(stoneSkin, false));
-	EXPECT_FALSE(hero->isSpellInscribedForCasting(stoneSkin));
 	EXPECT_FALSE(hero->getInscribedSpellsForCasting().contains(stoneSkin));
-	EXPECT_TRUE(hero->getSourcesForSpell(stoneSkin).empty());
-	EXPECT_FALSE(hero->canCastThisSpell(stoneSkin.toSpell()));
 
 	// An eligible spell can still be explicitly known and castable in this profile.
 	const auto magicArrow = spellNamed("core:magicArrow");
@@ -261,9 +287,13 @@ TEST_F(NewHorizonsHeroSpellAccessTest, RejectedHeroActionDoesNotSpendManaOrActio
 	auto * friendly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex + 1), 10);
 	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(rightHex + 10), 10);
 	auto * ogreMage = addStack(BattleSide::ATTACKER, creatureByName("core:ogreMage"), BattleHex(leftHex + 2), 2);
+	auto * masterGenie = addStack(BattleSide::ATTACKER, creatureByName("core:masterGenie"), BattleHex(leftHex + 3), 2);
+	auto * stormElemental = addStack(BattleSide::ATTACKER, creatureByName("core:stormElemental"), BattleHex(leftHex + 4), 2);
 	ASSERT_NE(friendly, nullptr);
 	ASSERT_NE(enemy, nullptr);
 	ASSERT_NE(ogreMage, nullptr);
+	ASSERT_NE(masterGenie, nullptr);
+	ASSERT_NE(stormElemental, nullptr);
 	beginCombat();
 
 	const auto * active = battle()->battleActiveUnit();
@@ -296,6 +326,42 @@ TEST_F(NewHorizonsHeroSpellAccessTest, RejectedHeroActionDoesNotSpendManaOrActio
 	ASSERT_TRUE(mechanics->canBeCastAt(creatureTarget));
 	creatureCast.cast(gameHandler->spellEnv.get(), creatureTarget);
 	EXPECT_TRUE(hasEffect(friendly, bloodlust));
+
+	// These engine effects remain world-active and creature-castable even though
+	// their legacy spellbook identities are no longer available to heroes.
+	for(const auto identifier : {"core:shield", "core:airShield"})
+	{
+		const auto spell = spellNamed(identifier);
+		ASSERT_TRUE(newHorizonsMagic::spellAllowedBySavedRoster(gameState()->getMagicRules(), spell));
+		EXPECT_FALSE(newHorizonsMagic::spellAllowedByHeroRoster(gameState()->getMagicRules(), spell));
+		const auto * definition = spell.toSpell();
+		ASSERT_NE(definition, nullptr);
+		spells::BattleCast cast(battle(), masterGenie, spells::Mode::CREATURE_ACTIVE, definition);
+		const auto mechanics = definition->battleMechanics(&cast);
+		ASSERT_NE(mechanics, nullptr);
+		ASSERT_TRUE(mechanics->canBeCastAt(creatureTarget)) << identifier;
+		cast.cast(gameHandler->spellEnv.get(), creatureTarget);
+		EXPECT_TRUE(hasEffect(friendly, spell)) << identifier;
+	}
+
+	for(const auto identifier : CONFLUX_PROTECTION_SPELLS)
+	{
+		const auto spell = spellNamed(identifier);
+		ASSERT_TRUE(newHorizonsMagic::spellAllowedBySavedRoster(gameState()->getMagicRules(), spell)) << identifier;
+		EXPECT_FALSE(newHorizonsMagic::spellAllowedByHeroRoster(gameState()->getMagicRules(), spell)) << identifier;
+		EXPECT_FALSE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(gameState()->getMagicRules(), spell))
+			<< identifier;
+	}
+	const auto protectAir = spellNamed("core:protectAir");
+	const auto * protectAirDefinition = protectAir.toSpell();
+	ASSERT_NE(protectAirDefinition, nullptr);
+	spells::BattleCast confluxProtection(battle(), stormElemental,
+		spells::Mode::CREATURE_ACTIVE, protectAirDefinition);
+	const auto protectionMechanics = protectAirDefinition->battleMechanics(&confluxProtection);
+	ASSERT_NE(protectionMechanics, nullptr);
+	ASSERT_TRUE(protectionMechanics->canBeCastAt(creatureTarget));
+	confluxProtection.cast(gameHandler->spellEnv.get(), creatureTarget);
+	EXPECT_TRUE(hasEffect(friendly, protectAir));
 }
 
 TEST_F(NewHorizonsHeroSpellAccessTest, OlderSavedRowsWithoutNewMarkersRetainKnownSpellAndRoundTrip)
@@ -315,6 +381,15 @@ TEST_F(NewHorizonsHeroSpellAccessTest, OlderSavedRowsWithoutNewMarkersRetainKnow
 	EXPECT_FALSE(hero->getSourcesForSpell(stoneSkin).empty());
 	EXPECT_TRUE(hero->canCastThisSpell(stoneSkin.toSpell()));
 
+	// A prior save with no hero-access field retains authored Shield starters.
+	auto * shieldStarter = heroNamed("core:piquedram");
+	ASSERT_NE(shieldStarter, nullptr);
+	const auto shield = spellNamed("core:shield");
+	ASSERT_TRUE(oldRules["spells"]["core:shield"]["heroAccess"].isNull());
+	EXPECT_TRUE(shieldStarter->spellbookContainsSpell(shield));
+	EXPECT_TRUE(shieldStarter->isSpellInscribedForCasting(shield));
+	EXPECT_TRUE(shieldStarter->canCastThisSpell(shield.toSpell()));
+
 	const auto saved = gameState()->saveToMemory();
 	CGameState restored;
 	restored.preInit(LIBRARY);
@@ -325,6 +400,10 @@ TEST_F(NewHorizonsHeroSpellAccessTest, OlderSavedRowsWithoutNewMarkersRetainKnow
 	EXPECT_TRUE(restoredHero->spellbookContainsSpell(stoneSkin));
 	EXPECT_TRUE(newHorizonsMagic::spellAllowedByHeroRoster(restoredHero->getMagicRules(), stoneSkin));
 	EXPECT_TRUE(restoredHero->canCastThisSpell(stoneSkin.toSpell()));
+	const auto * restoredShieldStarter = restored.getHero(shieldStarter->id);
+	ASSERT_NE(restoredShieldStarter, nullptr);
+	EXPECT_TRUE(restoredShieldStarter->spellbookContainsSpell(shield));
+	EXPECT_TRUE(restoredShieldStarter->canCastThisSpell(shield.toSpell()));
 }
 
 TEST_F(NewHorizonsHeroSpellAccessTest, CurrentV3ParserRejectsNonBooleanHeroAccess)

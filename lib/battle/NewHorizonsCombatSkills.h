@@ -52,6 +52,8 @@ DLL_LINKAGE int paviseReductionPercent(const CGHeroInstance * hero);
 DLL_LINKAGE std::int64_t applyVeteran(battle::CUnitState * state, const CGHeroInstance * hero);
 DLL_LINKAGE int archeryRank(const CGHeroInstance * hero);
 DLL_LINKAGE int archeryDamagePercent(int rank);
+/// Returns Archery's core ranged-damage contribution after its saved Skill specialty, if present.
+DLL_LINKAGE int archeryDamagePercent(const CGHeroInstance * hero);
 /// Apply Countercharge to Brace's Order-snapshot coefficient only. Other
 /// pre-emptive damage, including Bulwark, is intentionally outside this rule.
 DLL_LINKAGE int bracePreemptivePercent(int basePercent, bool hasCountercharge);
