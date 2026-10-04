@@ -2,6 +2,33 @@
 
 ## Purpose
 
+### 2026-10-04 UP-201 — Focused Fountain acceptance
+
+Both fixture-only assumptions below are repaired. Final both-target23674
+builds and native12287 passes1/1 in1.136s, zero skips, retained as
+UP201-fountain-final.log/XML. Actual construction and town visits, defensive/
+visiting recipient isolation, saved bonuses/history, per-hero/per-building
+weekly entitlement, accepted-result cleanup and next-week reuse pass.
+Data/inventory20/20 and module drift pass. No production workaround, full
+battle/retreat/replay claim, GUI run or playable promotion. Record those
+broader interactions, strategic AI routing and rendered feedback for Phase2.
+
+### 2026-10-04 UP-201 — Town bonus installation in fixture setup
+
+Client38823 and both-target82906 compile/link successfully. First Fountain
+native run fails before visits: the fixture calls addBuilding directly, which
+only inserts the building ID and does not install local building bonuses.
+Real NewStructures application calls recreateBuildingsBonuses. Preserve
+UP201-fountain-focused.log/XML and correct setup through the authoritative
+construction path, not a production workaround or a weakened Luck assertion.
+Fountain native acceptance and coverage credit remain pending the retry.
+Retry63580 builds successfully and verifies defending Luck3. The next assertion
+incorrectly expects exactly one generated configuration entry; the visited
+message also creates a record, so actual size is2. Preserve the interim
+UP201-fountain-accepted.log/XML and select the actual first-visit reward in
+the fixture. Do not remove the intended visited message from production data
+to accommodate a fixture-only list-size assumption.
+
 ### 2026-10-04 UP-199 — Final focused acceptance
 
 The fixture include failure below is repaired. Client77558, baseline19532 and

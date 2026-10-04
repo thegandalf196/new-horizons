@@ -1,10 +1,10 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
-Latest accepted slice: UP199 Dungeon Battle Scholar Academy proportional XP.
-Client77558, baseline19532 and both-target retry82390 pass; native49376 passes
-10/10 across three focused suites in3.561s, zero skips. Independent Astra review finds
-no blocker. Combat spell identities61/67 (Chaos7/11); perks213/310
+Latest native-verified slice: UP201 Rampart Fountain of Fortune.
+Client38823 and both-target final23674 pass; native12287 passes1/1 in1.136s,
+zero skips. Independent Astra production review finds no blocker; final fixture
+review is pending. Combat spell identities61/67 (Chaos7/11); perks213/310
 (97 planned), faction perks62/90 and ranks87/93 unchanged. This adds one
 verified specified town mechanic, not a perk or spell. Source/native acceptance
 only; GUI and playable delivery remain pending.
@@ -20,6 +20,25 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+2026-10-04 UP201 Fountain of Fortune is source/native verified. NH Rampart
+special2 supplies local defending-creature Luck3, replacing core Luck2, and
+visiting-hero Luck2 ONE_BATTLE through existing rewardable buildings. Each
+physical Fountain tracks its own per-hero weekly entitlement. Real authoritative
+construction installs the defensive bonus; real visits by a computer-owned hero
+prove isolation, repeat blocking, distinct physical Fountain and hero access.
+Saved hero bonuses and building visitor history survive; accepted-battle result
+cleanup consumes the blessing without reopening same-week entitlement. Actual
+turn progression resets weekly entitlement and permits another visit.
+Client38823 and final both-target23674 build; native12287 passes1/1 in1.136s,
+zero skips, retained as UP201-fountain-final.log/XML. Data/inventory20/20 and
+module drift pass. One specified town mechanic added; perk/rank/spell totals
+unchanged. Ordinary additive bonuses from independent Fountains are preserved,
+with no new nonstacking rule. Phase2 retains strategic AI route valuation,
+full battle/retreat/replay interactions and rendered feedback. The fixture
+exercises accepted-result cleanup, not a complete battle. No GUI or playable
+promotion. Stables is the next mapped unblocked town mechanic; Lighthouse
+departure scope and UP200 aura choices await clarification.
 
 2026-10-04 UP199 Battle Scholar Academy is source/native accepted. NH Dungeon
 special4 now grants25% of the current missing XP to the next level once per hero

@@ -1112,6 +1112,16 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(patch['produce'], {'sulfur': 1})
         self.assertEqual(patch['bonuses'], [])
 
+    def test_fountain_of_fortune_has_defensive_luck_and_weekly_hero_blessings(self):
+        patch = load('Mods/new-horizons/Content/config/factions/uniqueBuildings.json')['core:rampart']['town']['buildings']['special2']
+        self.assertEqual(patch['bonuses'], [{'type': 'LUCK', 'val': 3}])
+        configuration = patch['configuration']
+        self.assertEqual(configuration['visitMode'], 'hero')
+        self.assertEqual(configuration['resetParameters'], {'weeks': 1, 'visitors': True})
+        reward, = configuration['rewards']
+        self.assertEqual(reward['bonuses'], [{'type': 'LUCK', 'val': 2, 'duration': 'ONE_BATTLE'}])
+        self.assertNotIn('playerBonuses', reward)
+
     def test_necromancy_amplifier_is_a_seven_day_hero_reward_not_a_kingdom_aura(self):
         patch = load('Mods/new-horizons/Content/config/factions/uniqueBuildings.json')['core:necropolis']['town']['buildings']['special2']
         self.assertEqual(patch['bonuses'], [])

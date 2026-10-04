@@ -21,6 +21,30 @@
 			}
 		}
 	},
+	"core:rampart": {
+		"town": {
+			"buildings": {
+				"special2": {
+					"name": "Fountain of Fortune",
+					"description": "Defending creatures gain 3 Luck. Each Fountain blesses each visiting hero with 2 Luck for the next combat, once per week.",
+					"bonuses": [ { "type": "LUCK", "val": 3 } ],
+					"configuration": {
+						"visitMode": "hero",
+						"resetParameters": { "weeks": 1, "visitors": true },
+						"notVisitedTooltip": "A blessing is available for this hero this week.",
+						"visitedTooltip": "This hero has received this Fountain's blessing this week.",
+						"onVisitedMessage": "This hero has already received this Fountain's blessing this week.",
+						"rewards": [
+							{
+								"message": "The Fountain of Fortune grants this hero 2 Luck for the next combat.",
+								"bonuses": [ { "type": "LUCK", "val": 2, "duration": "ONE_BATTLE" } ]
+							}
+						]
+					}
+				}
+			}
+		}
+	},
 	"core:inferno": {
 		"town": {
 			"buildings": {
