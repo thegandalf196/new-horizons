@@ -1,6 +1,15 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
+UP225 source/native accepted: optional saved-v3 Resurrection now implements
+Level5/22Mana/100+4SP, permanent real casualty restoration, original-count cap,
+accessible corpses, temporary-target exclusions and small-wound healing without
+legacy dispel. Both-target5018/14793 pass; native8017 passes9/9 in4.758s,
+zero skips, including adjacent Cure and mixed-casualty controls. Old snapshots
+retain authored mechanics. This corrects an existing identity;61/67 registered
+identities remain unchanged. Postbattle journeys and broader AI/modifier/creature
+interactions remain Phase2; no graphical/playable or specialty conversion credit.
+
 UP224 Cure specialty source/native accepted: real Uland
 receives20% only on Cure's Spell Power-derived component; fixed25 and Healer's
 existing post-component floor remain unchanged. Optional saved rules and exact

@@ -1179,7 +1179,7 @@ void validateRules(const JsonNode & rules)
 		else if(version < SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "ordinaryAcquisition"});
 		else
-			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "ordinaryAcquisition", "heroAccess", "variant", "earthquake", "structures"});
+			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "ordinaryAcquisition", "heroAccess", "variant", "earthquake", "structures", "restoration"});
 		if(data.Struct().contains("structures"))
 		{
 			require(name == "core:meteorShower" || name == "core:armageddon",
@@ -1266,6 +1266,24 @@ void validateRules(const JsonNode & rules)
 				require((sourceSpell == SpellID::POISON || sourceSpell == SpellID::DISEASE)
 					&& sourceSpell.toSpell(), "only Poison and Disease are supported Cure afflictions");
 			}
+		}
+		if(data.Struct().contains("restoration"))
+		{
+			require(version == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+				&& name == "core:resurrection", "restoration marker is only valid for core:resurrection in saved magic rules v3");
+			const auto & restoration = data["restoration"];
+			fields(restoration, {"version"});
+			require(restoration["version"].getType() == JsonNode::JsonType::DATA_INTEGER
+				&& integer(restoration["version"], RESURRECTION_RESTORATION_VERSION,
+					RESURRECTION_RESTORATION_VERSION), "Resurrection restoration version");
+			require(data["level"].getType() == JsonNode::JsonType::DATA_INTEGER
+				&& integer(data["level"], RESURRECTION_LEVEL, RESURRECTION_LEVEL), "New Horizons Resurrection level");
+			require(data["costs"].isVector() && data["costs"].Vector().size() == 4,
+				"four New Horizons Resurrection mastery costs required");
+			for(const auto & cost : data["costs"].Vector())
+				require(cost.getType() == JsonNode::JsonType::DATA_INTEGER
+					&& integer(cost, RESURRECTION_MANA_COST, RESURRECTION_MANA_COST),
+					"New Horizons Resurrection costs must be 22 at all mastery ranks");
 		}
 		// Strict field/type/bounds checks, including rejection of present-null.
 		(void)directDamageFormula(data, version);
@@ -1671,6 +1689,29 @@ bool cureEnabled(const JsonNode & rules, SpellID spell)
 		&& rules["spells"]["core:cure"].isStruct()
 		&& rules["spells"]["core:cure"].Struct().contains("cureAfflictions")
 		&& rules["spells"]["core:cure"]["cureAfflictions"].isVector();
+}
+
+bool resurrectionRestorationEnabled(const JsonNode & rules, SpellID spell)
+{
+	if(spell != SpellID::RESURRECTION || !rules.isStruct()
+		|| !integer(rules["rulesetVersion"], SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
+			SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+		|| !spellAllowedBySavedRoster(rules, spell))
+		return false;
+
+	const auto * definition = spell.toSpell();
+	if(!definition || !rules["spells"].isStruct())
+		return false;
+	const auto found = rules["spells"].Struct().find(definition->getJsonKey());
+	if(found == rules["spells"].Struct().end() || !found->second.isStruct()
+		|| !found->second.Struct().contains("restoration"))
+		return false;
+
+	const auto & restoration = found->second["restoration"];
+	return restoration.isStruct()
+		&& restoration["version"].getType() == JsonNode::JsonType::DATA_INTEGER
+		&& integer(restoration["version"], RESURRECTION_RESTORATION_VERSION,
+			RESURRECTION_RESTORATION_VERSION);
 }
 
 bool physicalPoisonEnabled(const JsonNode & rules, SpellID spell)

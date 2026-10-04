@@ -977,13 +977,16 @@
 			"schools": [
 				"new-horizons:light"
 			],
-			"level": 3,
+			"level": 5,
 			"costs": [
-				12,
-				12,
-				10,
-				10
-			]
+				22,
+				22,
+				22,
+				22
+			],
+			"restoration": {
+				"version": 1
+			}
 		},
 		"core:sacrifice": {
 			"ordinaryAcquisition": false,

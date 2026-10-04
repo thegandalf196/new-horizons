@@ -15,6 +15,10 @@ local function isPhantomUnitCaster(mechanics)
 	local caster = mechanics:getUnitCaster()
 	return caster ~= nil and caster:getPhantomInitialIntegrity() > 0
 end
+local function isIneligibleNewHorizonsResurrectionTarget(mechanics, unit)
+	return mechanics:isNewHorizonsResurrection()
+		and (unit:isSummoned() or unit:isClone() or unit:getPhantomInitialIntegrity() > 0)
+end
 
 function Script:getHealLevel()
 	return HEAL_LEVEL_FROM_STRING[self.healLevel] or ENUM.HealLevel.heal
@@ -32,6 +36,9 @@ function Script:getHealPower()
 	return HEAL_POWER_FROM_STRING[self.healPower] or ENUM.HealPower.permanent
 end
 function Script:getEffectiveHealPower(mechanics)
+	if mechanics:isNewHorizonsResurrection() then
+		return ENUM.HealPower.permanent
+	end
 	if isPhantomUnitCaster(mechanics) and self:getHealLevel() ~= ENUM.HealLevel.heal then
 		-- The reduced Heal level cannot be paired with one-battle resurrection power.
 		return ENUM.HealPower.permanent
@@ -42,6 +49,7 @@ function Script:getMinFullUnits()
 	return self.minFullUnits or 0
 end
 function Script:getEffectiveMinFullUnits(mechanics)
+	if mechanics:isNewHorizonsResurrection() then return 0 end
 	if isPhantomUnitCaster(mechanics) and self:getHealLevel() ~= ENUM.HealLevel.heal then
 		-- A minimum full-resurrection threshold must not prevent ordinary healing.
 		return 0
@@ -51,6 +59,7 @@ end
 
 --- Only injured units are valid; resurrect/overheal levels also accept dead units.
 function Script:isValidTarget(mechanics, unit)
+	if isIneligibleNewHorizonsResurrectionTarget(mechanics, unit) then return false end
 	local level = self:getEffectiveHealLevel(mechanics)
 	local allowDead = level ~= ENUM.HealLevel.heal
 	if not unit:isValidTarget(allowDead) then return false end
@@ -88,7 +97,8 @@ function Script:getHealthChange(mechanics, spellTarget)
 	local healLevel = self:getEffectiveHealLevel(mechanics)
 	for _, dest in ipairs(spellTarget) do
 		local unit = dest.unit
-		if unit and not (phantomCaster and unit:isDead()) then
+		if unit and not (phantomCaster and unit:isDead())
+			and not isIneligibleNewHorizonsResurrectionTarget(mechanics, unit) then
 			local copy = unit:copy()
 			local healedHP, resurrected = copy:heal(mechanics:applySpellBonus(mechanics:getEffectValue(), unit),
 				healLevel, self:getEffectiveHealPower(mechanics))
@@ -109,7 +119,8 @@ function Script:apply(mechanics, server, target)
 
 	for _, dest in ipairs(target) do
 		local unit = dest.unit
-		if unit and not (phantomCaster and unit:isDead()) then
+		if unit and not (phantomCaster and unit:isDead())
+			and not isIneligibleNewHorizonsResurrectionTarget(mechanics, unit) then
 			local healedHP, resurrected = server:healUnit(
 				battle, unit, mechanics:applySpellBonus(mechanics:getEffectValue(), unit), healLevel, self:getEffectiveHealPower(mechanics))
 

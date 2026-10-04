@@ -268,6 +268,8 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"True when this hero spell is being cast through an additional Metamagic Spell Action.");
 	R.method<&Mechanics::isNewHorizonsCure>("isNewHorizonsCure", {},
 		"True when this cast uses the explicitly saved New Horizons Cure behavior.");
+	R.method<&Mechanics::isNewHorizonsResurrection>("isNewHorizonsResurrection", {},
+		"True when this cast uses the explicitly saved New Horizons Resurrection restoration behavior.");
 	R.function<&MechanicsProxy::getCureAfflictionSource>("getCureAfflictionSource", {},
 		"Returns the selected Cure affliction source key, or an empty string for heal-only.");
 	R.method<&Mechanics::isMassSlow>("isMassSlow", {},

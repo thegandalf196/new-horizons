@@ -2,6 +2,27 @@
 
 ## Purpose
 
+### 2026-10-04 UP225 — Legacy schema fixtures and target setup
+
+First offline magic/schema invocation through python -m unittest lacks the
+flat tools/tests import path; run the script directly. The direct20-case run
+then passes13/20: seven errors come from a downgrade helper leaving the new
+v3-only restoration marker in data it submits to the unchanged v2 schema.
+Retain UP225-magic-data-first.log. Strip restoration in the v2 and v1 fixture
+helpers, not the production schemas. Two new strict marker-shape/absence and
+v3-only guards are added. Repaired run passes22/22 in1.967s, recorded in
+UP225-magic-data-repaired.log.
+
+Independent fixture review before registration catches typed SpellID source
+wrappers, overlapping double-wide Archangel footprints, uninjured temporary
+targets making rejection trivial, and a corpse cast with its only active ally
+dead. Repair only the unregistered fixture while baseline5018 compiles frozen
+production. Ensure living legal active context and meaningful target injury;
+do not weaken authoritative validation. Permanent-health ledger evidence is
+not separate postbattle execution; that lifecycle remains Phase2. Repaired
+fixture build14793 passes; final native8017 passes9/9 in4.758s, zero skips
+(UP225-resurrection-native.log/XML). No production validation was weakened.
+
 ### 2026-10-04 UP224 — Stale unsupported-version oracle
 
 Both-target build3385 succeeds. First native64172 passes21/22 in3.991s,

@@ -1056,6 +1056,17 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 					powerHealing = powerHealing * 120 / 100;
 				effectValue = 25 + powerHealing;
 			}
+			else if(battle && newHorizonsMagic::resurrectionRestorationEnabled(
+				battle->getMagicRules(), owner->getId()))
+			{
+				// The fixed pool stays unscaled; only raw Spell Power contributes to
+				// the School/Spellcraft and shared cast-component multipliers.
+				effectValue = newHorizonsMagic::RESURRECTION_BASE_POOL_HP
+					+ scaleSpellPowerComponentWithCoefficientBasisPoints(
+						static_cast<int64_t>(newHorizonsMagic::RESURRECTION_SPELL_POWER_HP_PER_POINT)
+							* std::max<int64_t>(effectPower, 0),
+						1, spellPowerCoefficientBasisPoints);
+			}
 			else
 			{
 				const auto modifiers = newHorizonsMagic::magicArrowOverchargeModifiers(
@@ -1550,6 +1561,12 @@ bool BaseMechanics::isNewHorizonsCure() const
 {
 	return cb && cb->getBattle()
 		&& newHorizonsMagic::cureEnabled(cb->getBattle()->getMagicRules(), owner->getId());
+}
+
+bool BaseMechanics::isNewHorizonsResurrection() const
+{
+	return cb && cb->getBattle()
+		&& newHorizonsMagic::resurrectionRestorationEnabled(cb->getBattle()->getMagicRules(), owner->getId());
 }
 
 bool BaseMechanics::usesNewHorizonsBerserkTargeting() const

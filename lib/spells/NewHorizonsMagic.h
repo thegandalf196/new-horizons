@@ -76,6 +76,11 @@ constexpr int METAMAGIC_FORMULA_RESERVE_POINTS = 3;
 constexpr int METAMAGIC_SPELL_BUFFER_POINTS = 6;
 constexpr int DIRECT_DAMAGE_POWER_DIVISOR = 10;
 constexpr int COUNTERSPELL_LISTED_COST = 11;
+constexpr int RESURRECTION_RESTORATION_VERSION = 1;
+constexpr int RESURRECTION_LEVEL = 5;
+constexpr int RESURRECTION_MANA_COST = 22;
+constexpr int RESURRECTION_BASE_POOL_HP = 100;
+constexpr int RESURRECTION_SPELL_POWER_HP_PER_POINT = 4;
 inline constexpr std::string_view METAMAGIC_SKILL = "new-horizons:metamagic";
 inline constexpr std::string_view METAMAGIC_SPELL_SEQUENCING = "new-horizons:metamagic.spellSequencing";
 inline constexpr std::string_view METAMAGIC_ARCANE_ECONOMY = "new-horizons:metamagic.arcaneEconomy";
@@ -321,6 +326,10 @@ DLL_LINKAGE bool magicArrowOverchargeEnabled(const JsonNode & rules, SpellID spe
 /// single-target, selected-physical-affliction behavior. Missing settings keep
 /// older snapshots on the original Cure mechanics.
 DLL_LINKAGE bool cureEnabled(const JsonNode & rules, SpellID spell);
+/// True only for saved-v3 Resurrection rows that explicitly opt into the
+/// canonical Level 5 restoration behavior. Missing markers preserve older
+/// snapshots' spell effect and caster configuration.
+DLL_LINKAGE bool resurrectionRestorationEnabled(const JsonNode & rules, SpellID spell);
 /// True only for the saved v3 New Horizons hero Poison row. It applies the
 /// shared physical-affliction state; the core creature ability is unchanged.
 DLL_LINKAGE bool physicalPoisonEnabled(const JsonNode & rules, SpellID spell);

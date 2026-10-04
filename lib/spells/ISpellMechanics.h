@@ -344,6 +344,7 @@ public:
 	virtual IBattleCast::Value adjustEffectDuration(IBattleCast::Value baseDuration) const { return baseDuration; }
 	virtual bool isSelectiveDispel() const { return false; }
 	virtual bool isNewHorizonsCure() const { return false; }
+	virtual bool isNewHorizonsResurrection() const { return false; }
 	virtual SpellID getCureAffliction() const { return SpellID::NONE; }
 	virtual bool isMassSlow() const { return false; }
 	/// Selected Shadow Gift tier and shared preview calculations. Invalid or
@@ -476,6 +477,7 @@ public:
 	int32_t getCounterspellManaSpent() const;
 	bool isSelectiveDispel() const override;
 	bool isNewHorizonsCure() const override;
+	bool isNewHorizonsResurrection() const override;
 	bool isMassSlow() const override;
 	int32_t getShadowGiftSacrificePercent() const override;
 	bool isNewHorizonsStormOfDaggers() const override;

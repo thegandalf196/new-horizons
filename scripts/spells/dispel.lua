@@ -4,6 +4,11 @@ Script.__index = Script
 
 function Script:getDispelableBonuses(mechanics, unit)
 	local currentSpellKey = mechanics:getSpell():getJsonKey()
+	if mechanics:isNewHorizonsResurrection() then
+		-- New Horizons Resurrection restores casualties only; the optional
+		-- legacy Cure sub-effect is not part of this saved spell behavior.
+		return unit:getBonuses({}):filter(function() return false end)
+	end
 	if mechanics:isNewHorizonsCure() then
 		local selectedAffliction = mechanics:getCureAfflictionSource()
 		-- Cure removes only the explicitly selected physical-affliction source

@@ -67,10 +67,37 @@ class MagicV2DataTest(unittest.TestCase):
         for row in self.rules['spells'].values():
             row.pop('structures', None)
             row.pop('heroAccess', None)
+            row.pop('restoration', None)
         self.rules['spells'] = {key: row for key, row in self.rules['spells'].items()
                                 if 'variant' not in row}
         self.old_rules = legacy_rules(self.rules)
         self.formula_spell = 'core:magicArrow'
+
+    def test_resurrection_marker_is_optional_and_v3_only(self):
+        validator = Draft4Validator(self.v3, registry=self.registry)
+        row = self.v3_rules['spells']['core:resurrection']
+        self.assertEqual(row['restoration'], {'version': 1})
+        self.assertEqual(row['level'], 5)
+        self.assertEqual(row['costs'], [22] * 4)
+        validator.validate(self.v3_rules)
+        markerless = copy.deepcopy(self.v3_rules)
+        markerless['spells']['core:resurrection'].pop('restoration')
+        validator.validate(markerless)
+        self.assertNotIn('restoration', self.rules['spells']['core:resurrection'])
+        self.assertNotIn('restoration', self.old_rules['spells']['core:resurrection'])
+        invalid_v2 = copy.deepcopy(self.rules)
+        invalid_v2['spells']['core:resurrection']['restoration'] = {'version': 1}
+        self.assertFalse(self.validator.is_valid(invalid_v2))
+
+    def test_resurrection_marker_shape_is_strict(self):
+        validator = Draft4Validator(self.v3, registry=self.registry)
+        for marker in (None, {}, {'version': 2}, {'version': 1.5},
+                       {'version': '1'}, {'version': True},
+                       {'version': 1, 'extra': 0}):
+            with self.subTest(marker=marker):
+                changed = copy.deepcopy(self.v3_rules)
+                changed['spells']['core:resurrection']['restoration'] = marker
+                self.assertFalse(validator.is_valid(changed))
 
     def test_named_schemas_and_valid_v2_formula(self):
         Draft4Validator.check_schema(self.v1)

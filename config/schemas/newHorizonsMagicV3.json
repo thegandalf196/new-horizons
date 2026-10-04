@@ -181,6 +181,15 @@
 					"uniqueItems": true,
 					"items": {"type": "string", "enum": ["core:poison", "core:disease"]}
 				},
+				"restoration": {
+					"description": "Optional saved-v3 Resurrection restoration behavior. Only core:resurrection may opt in; omission preserves older saved spell behavior.",
+					"type": "object",
+					"required": ["version"],
+					"additionalProperties": false,
+					"properties": {
+						"version": {"type": "integer", "enum": [1]}
+					}
+				},
 				"selectedPlacement": {"type": "boolean", "enum": [true]},
 				"structures": {
 					"type": "object",
