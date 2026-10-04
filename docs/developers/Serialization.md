@@ -1,5 +1,16 @@
 # Serialization
 
+## Rewardable next-level Experience
+
+`NEW_HORIZONS_REWARDABLE_NEXT_LEVEL_EXPERIENCE` appends
+`Reward::heroExperienceNextLevelPercent`, an integer from 0 to 100. The
+percentage is applied to the hero's current Experience gap to the next level;
+the base portion is rounded down and then uses the ordinary hero Experience
+gain modifier. Rewardable configurations and Experience-component previews use
+the same calculation. Older records reset the field to zero, and writers reject
+a populated field before writing Reward payload bytes when the target format
+does not support it.
+
 ## Creature ability suppression (source/native accepted; delivery pending)
 
 `NEW_HORIZONS_CREATURE_ABILITY_SUPPRESSION` gates the appended

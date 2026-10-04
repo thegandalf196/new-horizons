@@ -12,7 +12,11 @@
 #include "Reward.h"
 
 #include "../mapObjects/CGHeroInstance.h"
+#include "../GameLibrary.h"
+#include "../callback/IGameInfoCallback.h"
+#include "../entities/hero/CHeroHandler.h"
 #include "../entities/hero/NewHorizonsHeroRules.h"
+#include "../mapping/CMapHeader.h"
 #include "../spells/NewHorizonsMagic.h"
 #include "../serializer/JsonSerializeFormat.h"
 #include "../constants/StringConstants.h"
@@ -30,6 +34,7 @@ void Rewardable::RewardRevealTiles::serializeJson(JsonSerializeFormat & handler)
 
 Rewardable::Reward::Reward()
 	: heroExperience(0)
+	, heroExperienceNextLevelPercent(0)
 	, heroLevel(0)
 	, manaDiff(0)
 	, manaBuffer(0)
@@ -45,6 +50,34 @@ Rewardable::Reward::Reward()
 }
 
 Rewardable::Reward::~Reward() = default;
+
+TExpType Rewardable::Reward::calculateHeroExperience(const CGHeroInstance * hero) const
+{
+	TExpType result = 0;
+	if(heroExperience > 0)
+		result = hero ? hero->calculateXp(heroExperience) : heroExperience;
+
+	if(!hero || heroExperienceNextLevelPercent <= 0)
+		return result;
+
+	ui32 maximumLevel = LIBRARY->heroh->maxSupportedLevel();
+	if(hero->cb)
+	{
+		if(const auto * mapHeader = hero->cb->getMapHeader(); mapHeader && mapHeader->levelLimit > 0)
+			maximumLevel = std::min<ui32>(maximumLevel, mapHeader->levelLimit);
+	}
+
+	if(hero->level >= maximumLevel)
+		return result;
+
+	const TExpType nextLevelExperience = LIBRARY->heroh->reqExp(hero->level + 1);
+	const TExpType missingExperience = nextLevelExperience > hero->exp ? nextLevelExperience - hero->exp : 0;
+	const TExpType percent = heroExperienceNextLevelPercent;
+	const TExpType percentageExperience = (missingExperience / 100) * percent
+		+ (missingExperience % 100) * percent / 100;
+
+	return result + hero->calculateXp(percentageExperience);
+}
 
 si32 Rewardable::Reward::calculateManaPoints(const CGHeroInstance * hero) const
 {
@@ -127,8 +160,17 @@ void Rewardable::Reward::loadComponents(std::vector<Component> & comps, const CG
 			comps.emplace_back(ComponentType::LUCK, bonus->val);
 	}
 	
-	if (heroExperience)
-		comps.emplace_back(ComponentType::EXPERIENCE, static_cast<si32>(h ? h->calculateXp(heroExperience) : heroExperience));
+	if (heroExperience || heroExperienceNextLevelPercent)
+	{
+		TExpType experience = h ? calculateHeroExperience(h) : heroExperience;
+		// Negative fixed Experience rewards were historically previewed even though
+		// grantRewardBeforeLevelup only grants positive fixed Experience.
+		if(h && heroExperience < 0 && heroExperienceNextLevelPercent == 0)
+			experience = h->calculateXp(heroExperience);
+		const si32 componentExperience = static_cast<si32>(std::clamp<TExpType>(experience,
+			std::numeric_limits<si32>::min(), std::numeric_limits<si32>::max()));
+		comps.emplace_back(ComponentType::EXPERIENCE, componentExperience);
+	}
 
 	if (heroLevel)
 		comps.emplace_back(ComponentType::LEVEL, heroLevel);
@@ -209,6 +251,9 @@ void Rewardable::Reward::serializeJson(JsonSerializeFormat & handler)
 {
 	if(handler.saving && manaBuffer < 0)
 		throw std::runtime_error("Buffer reward cannot be negative");
+	if(handler.saving && (heroExperienceNextLevelPercent < 0
+		|| heroExperienceNextLevelPercent > MAX_HERO_EXPERIENCE_NEXT_LEVEL_PERCENT))
+		throw std::runtime_error("Reward next-level Experience percentage must be between 0 and 100");
 	resources.serializeJson(handler, "resources");
 	handler.serializeBool("removeObject", removeObject);
 	handler.serializeInt("manaPercentage", manaPercentage);
@@ -217,6 +262,10 @@ void Rewardable::Reward::serializeJson(JsonSerializeFormat & handler)
 	if(!handler.saving && manaBuffer < 0)
 		throw std::runtime_error("Buffer reward cannot be negative");
 	handler.serializeInt("heroExperience", heroExperience);
+	handler.serializeInt("heroExperienceNextLevelPercent", heroExperienceNextLevelPercent, 0);
+	if(!handler.saving && (heroExperienceNextLevelPercent < 0
+		|| heroExperienceNextLevelPercent > MAX_HERO_EXPERIENCE_NEXT_LEVEL_PERCENT))
+		throw std::runtime_error("Invalid next-level Experience reward percentage");
 	handler.serializeInt("heroLevel", heroLevel);
 	handler.serializeInt("manaDiff", manaDiff);
 	handler.serializeInt("manaOverflowFactor", manaOverflowFactor);

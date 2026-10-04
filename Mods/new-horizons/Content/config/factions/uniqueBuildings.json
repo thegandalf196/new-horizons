@@ -95,6 +95,23 @@
 							}
 						]
 					}
+				},
+				"special4": {
+					"name": "Battle Scholar Academy",
+					"description": "Each Battle Scholar Academy trains each hero once, granting Experience equal to 25% of the amount still needed for the next level.",
+					"configuration": {
+						"visitMode": "hero",
+						"notVisitedTooltip": "Training available for this hero.",
+						"visitedTooltip": "This hero has already trained here.",
+						"onVisitedMessage": "This hero has already received training from this Battle Scholar Academy.",
+						"rewards": [
+							{
+								"message": "The Battle Scholar Academy grants Experience equal to 25% of the amount still needed for the next level.",
+								"heroExperience": 0,
+								"heroExperienceNextLevelPercent": 25
+							}
+						]
+					}
 				}
 			}
 		}

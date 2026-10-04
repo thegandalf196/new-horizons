@@ -170,15 +170,18 @@ enum class ESerializationVersion : int32_t
 	BONUS_STATUS_TAGS, // explicit status classification and effect identity metadata
 	NEW_HORIZONS_FORCED_MARCH, // daily exhaustion allowance and next-combat first-round Morale snapshot
 	NEW_HORIZONS_CREATURE_ABILITY_SUPPRESSION, // typed timed capability restriction; legacy Forgetfulness remains unchanged
+	NEW_HORIZONS_REWARDABLE_NEXT_LEVEL_EXPERIENCE, // percentage-of-next-level rewardable Experience
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_CREATURE_ABILITY_SUPPRESSION,
+	CURRENT = NEW_HORIZONS_REWARDABLE_NEXT_LEVEL_EXPERIENCE,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
+static_assert(ESerializationVersion::NEW_HORIZONS_REWARDABLE_NEXT_LEVEL_EXPERIENCE > ESerializationVersion::NEW_HORIZONS_CREATURE_ABILITY_SUPPRESSION,
+	"Rewardable next-level Experience must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_CREATURE_ABILITY_SUPPRESSION > ESerializationVersion::NEW_HORIZONS_FORCED_MARCH,
 	"Creature ability suppression must remain absent from older snapshots");
 static_assert(ESerializationVersion::NEW_HORIZONS_FORCED_MARCH > ESerializationVersion::BONUS_STATUS_TAGS,

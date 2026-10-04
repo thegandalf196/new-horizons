@@ -52,6 +52,7 @@ bool hasNonSkillReward(const Rewardable::Reward & reward)
 {
 	return reward.resources.nonZero()
 		|| reward.heroExperience != 0
+		|| reward.heroExperienceNextLevelPercent != 0
 		|| reward.heroLevel != 0
 		|| reward.manaDiff != 0
 		|| reward.manaBuffer != 0
@@ -269,8 +270,7 @@ void Rewardable::Interface::grantRewardBeforeLevelup(IGameEventCallback & gameEv
 	if (info.reward.heroLevel > 0)
 		expToGive += LIBRARY->heroh->reqExp(hero->level+info.reward.heroLevel) - LIBRARY->heroh->reqExp(hero->level);
 
-	if (info.reward.heroExperience > 0)
-		expToGive += hero->calculateXp(info.reward.heroExperience);
+	expToGive += info.reward.calculateHeroExperience(hero);
 
 	if(expToGive)
 		gameEvents.giveExperience(hero, expToGive);

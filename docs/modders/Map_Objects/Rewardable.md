@@ -37,6 +37,26 @@ Rewardable object is defined similarly to other objects, with key difference bei
 
 ## Configurable object definition
 
+### Experience rewards
+
+In addition to the fixed `heroExperience` amount, a reward may specify
+`heroExperienceNextLevelPercent` as an integer from 0 to 100. The game computes
+that percentage of the Experience the visiting hero currently lacks for the
+next allowed level, rounding the base amount down, then applies the hero's
+ordinary Experience-gain modifier (including Learning). For example:
+
+```json
+"rewards" : [
+	{
+		"heroExperienceNextLevelPercent" : 25
+	}
+]
+```
+
+Fixed `heroExperience`, percentage-based next-level Experience, and `heroLevel`
+remain separate reward fields; the fixed Experience and percentage-based
+portion are additive.
+
 ```json
 // List of potential rewards
 "rewards" : [

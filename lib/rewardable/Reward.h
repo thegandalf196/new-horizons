@@ -11,6 +11,7 @@
 #pragma once
 
 #include "../ResourceSet.h"
+#include "../GameConstants.h"
 #include "../bonuses/Bonus.h"
 #include "../networkPacks/Component.h"
 
@@ -64,6 +65,8 @@ struct DLL_LINKAGE Reward final
 
 	/// received experience
 	si32 heroExperience;
+	/// experience as a percentage of the hero's current gap to the next level
+	si32 heroExperienceNextLevelPercent = 0;
 
 	/// received levels (converted into XP during grant)
 	si32 heroLevel;
@@ -129,6 +132,7 @@ struct DLL_LINKAGE Reward final
 	void loadComponents(std::vector<Component> & comps, const CGHeroInstance * h) const;
 	
 	Component getDisplayedComponent(const CGHeroInstance * h) const;
+	TExpType calculateHeroExperience(const CGHeroInstance * hero) const;
 
 	si32 calculateManaPoints(const CGHeroInstance * h) const;
 	si32 calculateMovePoints(const CGHeroInstance * h) const;
@@ -136,8 +140,17 @@ struct DLL_LINKAGE Reward final
 	Reward();
 	~Reward();
 
+	static constexpr si32 MAX_HERO_EXPERIENCE_NEXT_LEVEL_PERCENT = 100;
+
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && (heroExperienceNextLevelPercent < 0
+			|| heroExperienceNextLevelPercent > MAX_HERO_EXPERIENCE_NEXT_LEVEL_PERCENT))
+			throw std::runtime_error("Reward next-level Experience percentage must be between 0 and 100");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_REWARDABLE_NEXT_LEVEL_EXPERIENCE)
+			&& heroExperienceNextLevelPercent != 0)
+			throw std::runtime_error("Next-level Experience reward requires the New Horizons reward save format");
+
 		h & resources;
 		h & extraComponents;
 		h & removeObject;
@@ -179,6 +192,16 @@ struct DLL_LINKAGE Reward final
 			throw std::runtime_error("Buffer reward requires the New Horizons Spell Point save format");
 		else if(!h.saving)
 			manaBuffer = 0;
+
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_REWARDABLE_NEXT_LEVEL_EXPERIENCE))
+		{
+			h & heroExperienceNextLevelPercent;
+			if(!h.saving && (heroExperienceNextLevelPercent < 0
+				|| heroExperienceNextLevelPercent > MAX_HERO_EXPERIENCE_NEXT_LEVEL_PERCENT))
+				throw std::runtime_error("Invalid next-level Experience reward percentage");
+		}
+		else if(!h.saving)
+			heroExperienceNextLevelPercent = 0;
 	}
 	
 	void serializeJson(JsonSerializeFormat & handler);

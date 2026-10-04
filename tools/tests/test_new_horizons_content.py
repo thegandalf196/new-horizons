@@ -1244,6 +1244,23 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertIn('spell points', reward['message'].lower())
         self.assertNotIn('primary', reward)
 
+    def test_dungeon_academy_grants_a_quarter_of_remaining_level_experience_once_per_hero(self):
+        patches = load('Mods/new-horizons/Content/config/factions/uniqueBuildings.json')
+        patch = patches['core:dungeon']['town']['buildings']['special4']
+        self.assertEqual(patch['name'], 'Battle Scholar Academy')
+        configuration = patch['configuration']
+        self.assertEqual(configuration['visitMode'], 'hero')
+        self.assertNotIn('resetParameters', configuration)
+        self.assertEqual(len(configuration['rewards']), 1)
+        reward = configuration['rewards'][0]
+        self.assertEqual(reward['heroExperienceNextLevelPercent'], 25)
+        self.assertEqual(reward['heroExperience'], 0)
+        self.assertNotIn('heroLevel', reward)
+        self.assertNotIn('special4', patches['core:castle']['town']['buildings'])
+        legacy = load('config/factions/dungeon.json')['dungeon']['town']['buildings']['special4']['configuration']['rewards'][0]
+        self.assertEqual(legacy['heroExperience'], 1000)
+        self.assertNotIn('heroExperienceNextLevelPercent', legacy)
+
     def test_legacy_secondary_specialties_are_neutralized_without_erasing_other_bonuses(self):
         patches = load('Mods/new-horizons/Content/config/heroes/halon.json')
         self.assertTrue(set(NH_FACTION_SPECIALTY_PRESENTATIONS) <= set(patches))

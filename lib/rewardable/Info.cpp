@@ -175,6 +175,17 @@ void Rewardable::Info::configureReward(Rewardable::Configuration & object, IGame
 	reward.resources = randomizer.loadResources(source["resources"], variables);
 
 	reward.heroExperience = randomizer.loadValue(source["heroExperience"], variables);
+	if(source.Struct().contains("heroExperienceNextLevelPercent"))
+	{
+		const auto & experiencePercent = source["heroExperienceNextLevelPercent"];
+		if(experiencePercent.getType() != JsonNode::JsonType::DATA_INTEGER
+			|| experiencePercent.Integer() < 0
+			|| experiencePercent.Integer() > Rewardable::Reward::MAX_HERO_EXPERIENCE_NEXT_LEVEL_PERCENT)
+			throw std::runtime_error("Reward heroExperienceNextLevelPercent must be an integer between 0 and 100");
+		reward.heroExperienceNextLevelPercent = static_cast<si32>(experiencePercent.Integer());
+	}
+	else
+		reward.heroExperienceNextLevelPercent = 0;
 	reward.heroLevel = randomizer.loadValue(source["heroLevel"], variables);
 
 	reward.manaDiff = randomizer.loadValue(source["manaPoints"], variables);

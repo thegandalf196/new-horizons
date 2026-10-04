@@ -2,6 +2,28 @@
 
 ## Purpose
 
+### 2026-10-04 UP-199 — Final focused acceptance
+
+The fixture include failure below is repaired. Client77558, baseline19532 and
+both-target retry82390 pass. Native49376 passes10/10 in3.561s, zero skips,
+retained as UP199-academy-focused.log/XML. Actual Academy visits, exact preview/
+grant, per-hero/per-building saved history and strict reward/parser/version
+guards pass, alongside adjacent Spell Point rewards. Data/inventory21/21,
+module drift and Astra reviews pass. This is source/native acceptance only;
+graphical testing and playable promotion remain separate. Inherited extreme-XP
+calculateXp multiplication overflow is recorded for Phase2, not silently fixed
+through unrelated arithmetic changes.
+
+### 2026-10-04 UP-199 — Concrete Bonus types in direct Reward serialization tests
+
+Client77558 and baseline vcmitest19532 pass. Registered Academy fixture
+build33367 exits1: directly serializing Reward instantiates its Bonus graph,
+but the fixture has only forward declarations of BonusParameters, IPropagator,
+ILimiter and IUpdater. Retain UP199-academy-fixture-build.log; the many template
+errors have this one missing-include cause. Add the existing concrete Bonus
+headers to the fixture, not a production serializer/PCH workaround. Focused
+native acceptance remains pending; the stale binary was not executed.
+
 ### 2026-10-04 UP-198 — Final focused acceptance
 
 The historical fixture failures below are repaired. Final both-target96096

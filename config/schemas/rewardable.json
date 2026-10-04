@@ -107,6 +107,7 @@
 				"description" : { "$ref" : "#/definitions/message" },
 				
 				"heroExperience" : { "$ref" : "#/definitions/value" },
+				"heroExperienceNextLevelPercent" : { "type" : "integer", "minimum" : 0, "maximum" : 100 },
 				"heroLevel" : { "$ref" : "#/definitions/value" },
 				"movePercentage" : { "$ref" : "#/definitions/value" },
 				"movePoints" : { "$ref" : "#/definitions/value" },

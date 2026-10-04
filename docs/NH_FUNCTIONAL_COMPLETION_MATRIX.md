@@ -1,9 +1,9 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
-Latest accepted slice: UP198 Necropolis Necromancy Amplifier visiting-hero reward.
-Client68479 and final both-target build96096 pass; native4614 passes19/19
-across five focused suites in1.692s, zero skips. Independent Astra review finds
+Latest accepted slice: UP199 Dungeon Battle Scholar Academy proportional XP.
+Client77558, baseline19532 and both-target retry82390 pass; native49376 passes
+10/10 across three focused suites in3.561s, zero skips. Independent Astra review finds
 no blocker. Combat spell identities61/67 (Chaos7/11); perks213/310
 (97 planned), faction perks62/90 and ranks87/93 unchanged. This adds one
 verified specified town mechanic, not a perk or spell. Source/native acceptance
@@ -20,6 +20,24 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+2026-10-04 UP199 Battle Scholar Academy is source/native accepted. NH Dungeon
+special4 now grants25% of the current missing XP to the next level once per hero
+per physical Academy, instead of fixed1000 XP. The reusable bounded Reward field
+shares calculation between grant and Experience-component preview, floors the
+gap percentage before ordinary Learning, respects map/engine level caps and
+preserves positive fixed-XP grants and negative fixed-XP no-grant behavior.
+Strict config/schema validation, current saved reward data, old-read-zero,
+old-format alignment and pre-Reward-payload downsave rejection are verified.
+Real computer-owned authoritative visits prove exact preview/grant, different
+levels/current XP, repeat blocking, independent second Academy/hero and saved
+visitation/XP. Client77558, baseline19532 and both-target82390 pass;
+UP199-academy-focused.log/XML passes10/10 in3.561s, zero skips, including eight
+adjacent Normal/Buffer/legacy reward cases. Data/inventory21/21 and module drift
+pass; Astra source/fixture review has no blocker. One specified town mechanic
+added; perk/rank/spell totals unchanged. Strategic Academy route/valuation and
+inherited extreme-XP calculateXp multiplication overflow remain Phase2.
+No GUI run, artwork change or playable promotion is claimed.
 
 2026-10-04 UP198 Necromancy Amplifier is source/native accepted. The NH building
 removes the permanent kingdom aura and grants only a visiting Necropolis hero
