@@ -1318,7 +1318,7 @@
 			"magic": 0
 		},
 		"basic": {
-			"description": "Once per combat, when the hero uses the Hero Action to cast a Light Spell, immediately issue one Order; or after using the Hero Action to issue an Order, immediately cast one Light Spell.",
+			"description": "Once per completed pair per combat, when the hero uses the Hero Action to cast a Light Spell, gain one Order-only follow-up usable until round end; or after using the Hero Action to issue an Order, gain one Light-Spell-only follow-up usable until round end.",
 			"images": {
 				"small": "NH_divineMandate_basic_small.png",
 				"medium": "NH_divineMandate_basic_medium.png",

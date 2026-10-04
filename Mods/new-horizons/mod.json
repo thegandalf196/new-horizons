@@ -3196,7 +3196,7 @@
 				"schemaVersion": 1,
 				"rulesetVersion": 2,
 				"sourceDocument": "docs/design-sources/New Horizons.md",
-				"sourceSha256": "5b26a4930b6c6838e7435454c96b35a19039c275694e975636b37e6003b68a4a",
+				"sourceSha256": "f3b1e6a9657ba0ccce9ea7d82543fed358c335b3805aacf2660e3ca659a8a961",
 				"maxSkillChoices": 2,
 				"maxPerkChoices": 2,
 				"maxPerksPerSkill": 3,
@@ -6113,10 +6113,10 @@
 						"description": "Faction-locked Skill. Castle unites sacred intervention and military command. Divine Mandate creates a precise exception to the normal Spell-or-Order choice without introducing a second action currency.",
 						"ranks": {
 							"basic": {
-								"description": "Once per combat, when the hero uses the Hero Action to cast a Light Spell, immediately issue one Order; or after using the Hero Action to issue an Order, immediately cast one Light Spell.",
+								"description": "Once per completed pair per combat, when the hero uses the Hero Action to cast a Light Spell, gain one Order-only follow-up usable until round end; or after using the Hero Action to issue an Order, gain one Light-Spell-only follow-up usable until round end.",
 								"effect": {
 									"status": "planned",
-									"description": "Once per combat, when the hero uses the Hero Action to cast a Light Spell, immediately issue one Order; or after using the Hero Action to issue an Order, immediately cast one Light Spell."
+									"description": "Once per completed pair per combat, when the hero uses the Hero Action to cast a Light Spell, gain one Order-only follow-up usable until round end; or after using the Hero Action to issue an Order, gain one Light-Spell-only follow-up usable until round end."
 								}
 							},
 							"advanced": {
@@ -7166,7 +7166,7 @@
 						"name": "Elemental Rebirth",
 						"domain": "Faction",
 						"availability": "Conflux heroes only",
-						"description": "Faction-locked Skill. Conflux answers destruction with temporary elemental life. When a normal allied stack is destroyed, Elemental Rebirth summons an Elite Elemental using the lost stack's maximum HP as the scale.",
+						"description": "Faction-locked Skill. Conflux answers destruction with temporary elemental life. When a normal allied stack is destroyed, Elemental Rebirth summons an Elite Elemental using the lost stack's battle-start maximum aggregate HP as the scale. Capture that HP basis at the start of combat; intervening casualties or temporary HP changes do not change it.",
 						"ranks": {
 							"basic": {
 								"description": "When a non-summoned allied stack is destroyed, summon a random Elite Elemental stack at that position with aggregate HP equal to 25% of the destroyed stack's maximum aggregate HP.",
@@ -8729,7 +8729,7 @@
 				"magic": 0
 			},
 			"basic": {
-				"description": "Once per combat, when the hero uses the Hero Action to cast a Light Spell, immediately issue one Order; or after using the Hero Action to issue an Order, immediately cast one Light Spell.",
+				"description": "Once per completed pair per combat, when the hero uses the Hero Action to cast a Light Spell, gain one Order-only follow-up usable until round end; or after using the Hero Action to issue an Order, gain one Light-Spell-only follow-up usable until round end.",
 				"images": {
 					"small": "NH_divineMandate_basic_small.png",
 					"medium": "NH_divineMandate_basic_medium.png",
