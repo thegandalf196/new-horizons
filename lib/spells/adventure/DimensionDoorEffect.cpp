@@ -71,6 +71,14 @@ int DimensionDoorEffect::getMovementPointsTaken(const spells::Caster * caster, i
 	return std::min(nonnegativeRemaining, std::max(0, movementPointsTaken));
 }
 
+std::string DimensionDoorEffect::getTargetingHintTextId(const spells::Caster * caster) const
+{
+	if(usesNewHorizonsRules(caster))
+		return "new-horizons.adventure.dimensionDoor.targetingHint";
+
+	return {};
+}
+
 bool DimensionDoorEffect::usesNewHorizonsRules(const spells::Caster * caster) const
 {
 	const auto * hero = caster ? caster->getHeroCaster() : nullptr;

@@ -44,6 +44,7 @@
 #include "../../lib/StartInfo.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
+#include "../../lib/texts/MetaString.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/mapObjects/MiscObjects.h"
@@ -646,6 +647,8 @@ void AdventureMapInterface::onTileHovered(const int3 &targetPosition)
 
 	if(spellBeingCasted)
 	{
+		writeSpellTargetingHint();
+
 		const auto * hero = GAME->interface()->localState->getCurrentHero();
 		const auto * spellEffect = spellBeingCasted->getAdventureMechanics().getEffectAs<IAdventureSpellEffect>(hero);
 		spells::detail::ProblemImpl problem;
@@ -899,11 +902,38 @@ void AdventureMapInterface::enterCastingMode(const CSpell * sp)
 	spellBeingCasted = sp;
 	GAME->interface()->localState->setCurrentSpell(sp->id);
 	setState(EAdventureState::CASTING_SPELL);
+	updateSpellTargetingHint();
+	writeSpellTargetingHint();
+}
+
+void AdventureMapInterface::updateSpellTargetingHint()
+{
+	spellTargetingHintText.clear();
+	const auto * hero = GAME->interface()->localState->getCurrentHero();
+	if(!spellBeingCasted || !hero)
+		return;
+
+	const auto * spellEffect = spellBeingCasted->getAdventureMechanics().getEffectAs<IAdventureSpellEffect>(hero);
+	if(!spellEffect)
+		return;
+
+	const auto textId = spellEffect->getTargetingHintTextId(hero);
+	if(!textId.empty())
+		spellTargetingHintText = MetaString::createFromTextID(textId).toString(&GAME->translator());
+}
+
+void AdventureMapInterface::writeSpellTargetingHint() const
+{
+	if(!spellTargetingHintText.empty())
+		ENGINE->statusbar()->write(spellTargetingHintText);
 }
 
 void AdventureMapInterface::exitCastingMode()
 {
 	assert(spellBeingCasted);
+	if(!spellTargetingHintText.empty())
+		ENGINE->statusbar()->clearIfMatching(spellTargetingHintText);
+	spellTargetingHintText.clear();
 	spellBeingCasted = nullptr;
 	setState(EAdventureState::MAKING_TURN);
 	GAME->interface()->localState->setCurrentSpell(SpellID::NONE);

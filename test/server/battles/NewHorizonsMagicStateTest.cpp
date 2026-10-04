@@ -1312,6 +1312,7 @@ TEST_F(NewHorizonsMagicStateTest, NewHorizonsDimensionDoorUsesVisibleEightTileTa
 	ASSERT_NE(effect, nullptr);
 	ASSERT_TRUE(newHorizonsMagic::isAdventureSpell(attackerSideHero->getMagicRules(), dimensionDoor));
 	EXPECT_TRUE(effect->requiresTargetSelection(attackerSideHero));
+	EXPECT_EQ(effect->getTargetingHintTextId(attackerSideHero), "new-horizons.adventure.dimensionDoor.targetingHint");
 
 	const int3 source = attackerSideHero->getSightCenter();
 	const int3 target = source + int3(8, 0, 0);
@@ -1376,6 +1377,7 @@ TEST_F(NewHorizonsMagicStateTest, LegacyDimensionDoorKeepsItsRectangularRangeAnd
 	ASSERT_NE(effect, nullptr);
 	ASSERT_FALSE(newHorizonsMagic::isAdventureSpell(attackerSideHero->getMagicRules(), dimensionDoor));
 	EXPECT_TRUE(effect->requiresTargetSelection(attackerSideHero));
+	EXPECT_TRUE(effect->getTargetingHintTextId(attackerSideHero).empty());
 
 	const int3 source = attackerSideHero->getSightCenter();
 	const int3 legacyRangeEdge = source + int3(9, 0, 0);

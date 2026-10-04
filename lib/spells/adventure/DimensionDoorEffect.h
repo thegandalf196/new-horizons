@@ -28,6 +28,7 @@ public:
 	int getMovementPointsRequired() const;
 	int getMovementPointsTaken() const;
 	int getMovementPointsTaken(const spells::Caster * caster, int remainingMovement) const;
+	std::string getTargetingHintTextId(const spells::Caster * caster) const final;
 	bool doesWaterLandFailureTakePoints() const;
 	bool doesExposeFogOfWar() const;
 	bool isTargetInRange(const IGameInfoCallback * cb, const spells::Caster * caster, const int3 & pos) const final;

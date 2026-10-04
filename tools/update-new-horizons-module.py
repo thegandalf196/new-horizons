@@ -93,6 +93,7 @@ def main():
     fort_translations = canonical('newHorizonsFortTexts.json')
     muster_translations = canonical('newHorizonsMusterTexts.json')
     combat_translations = canonical('newHorizonsCombatTexts.json')
+    adventure_translations = canonical('newHorizonsAdventureSpellTexts.json')
     # These patch files contain explicit hero overrides plus the
     # creation-only neutralization and faction-skill presentation replacement
     # for legacy secondary-skill specialties. Keep it in the generated
@@ -173,6 +174,7 @@ def main():
     if preview_output is not None and args.mastery_preview_output is None:
         metadata['translations'] = dict(hero_class_translations)
         metadata['translations'].update(combat_translations)
+        metadata['translations'].update(adventure_translations)
     if preview_output is not None:
         destination = preview_output.resolve()
         if not destination.is_relative_to((root / 'build').resolve()):
@@ -195,6 +197,7 @@ def main():
         metadata['translations'].update(fort_translations)
         metadata['translations'].update(muster_translations)
         metadata['translations'].update(combat_translations)
+        metadata['translations'].update(adventure_translations)
         if preview_output is None:
             metadata['translations'].update(hero_class_translations)
         metadata['description'] += (' Separate future Artillery mastery candidate: one permanent extra choice '

@@ -2,6 +2,17 @@
 
 ## Purpose
 
+### 2026-10-03 UP-056 — Deferred stale mastery fixture version
+
+Supplemental content/mastery Python batch passes5/6; the existing
+test_schema_registration_and_default_mastery_identity still hardcodes0.14.0
+while canonical newHorizonsVersion.json and the generated module use0.15.0.
+This predates the targeting hint and is a non-blocking Phase2 fixture issue.
+Do not alter the live release version or mask it as a translation regression.
+The focused live-module union and private-preview translation/overwrite checks
+both pass (2/2). Update the stale fixture's version expectation at a later batch
+checkpoint; no exhaustive suite is required for this bounded UI hint.
+
 ### 2026-10-03 UP-056 — Planned Dimension Door caster ownership
 
 Client build53826 exits1: addDimensionDoorTeleportation has no local `hero`,

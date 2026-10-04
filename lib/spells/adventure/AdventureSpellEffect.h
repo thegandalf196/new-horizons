@@ -31,6 +31,7 @@ public:
 	virtual ESpellCastResult beginCast(SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters, const AdventureSpellMechanics & mechanics) const {return ESpellCastResult::OK;};
 	virtual void endCast(SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters) const {};
 	virtual bool requiresTargetSelection(const spells::Caster * caster) const {return false;};
+	virtual std::string getTargetingHintTextId(const spells::Caster * caster) const {return {};};
 	virtual bool isTargetInRange(const IGameInfoCallback * cb, const spells::Caster * caster, const int3 & pos) const {return true;};
 	virtual bool canBeCastImpl(spells::Problem & problem, const IGameInfoCallback * cb, const spells::Caster * caster) const {return true;};
 	virtual bool canBeCastAtImpl(spells::Problem & problem, const IGameInfoCallback * cb, const spells::Caster * caster, const int3 & pos) const {return true;};

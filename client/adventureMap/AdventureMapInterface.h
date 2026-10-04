@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include <string>
+
 #include "../gui/CIntObject.h"
 #include "AdventureMapShortcuts.h"
 
@@ -63,6 +65,9 @@ private:
 	/// spell for which player is selecting target, or nullptr if none
 	const CSpell *spellBeingCasted;
 
+	/// localized hint shown while selecting a target for an Adventure Spell
+	std::string spellTargetingHintText;
+
 	/// tile the map view is centered on, kept up to date by onMapViewMoved
 	int3 mapViewCenter;
 
@@ -82,6 +87,8 @@ private:
 	void handleMapScrollingUpdate(uint32_t msPassed);
 
 	void showMoveDetailsInStatusbar(const CGHeroInstance & hero, const CGPathNode & pathNode);
+	void updateSpellTargetingHint();
+	void writeSpellTargetingHint() const;
 
 	const CGObjectInstance *getActiveObject(const int3 &tile);
 

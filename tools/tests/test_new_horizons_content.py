@@ -1516,6 +1516,7 @@ class NewHorizonsContentTest(unittest.TestCase):
         translations.update(load('config/newHorizonsMusterTexts.json'))
         translations.update(load('config/newHorizonsHeroClassTexts.json'))
         translations.update(load('config/newHorizonsCombatTexts.json'))
+        translations.update(load('config/newHorizonsAdventureSpellTexts.json'))
         self.assertEqual(module['translations'], translations)
         self.assertEqual(module['bonuses'], load('config/newHorizonsConvenienceBonuses.json'))
         self.assertEqual(module['filesystem'][''], [{'type': 'dir', 'path': '/Content'}])

@@ -1,10 +1,10 @@
 # New Horizons functional completion matrix
 
-Updated: 2026-10-03
-Latest accepted slice: Dimension Door visible/legal radius8 and successful
-full-Movement expenditure, shared with UI targeting and planned AI positions.
-Client/test builds pass; UP056-dimension-door-policy-focused.log/XML passes6/6
-in2.086s, zero skips. Root integration and independent Luna runtime/test review
+Updated: 2026-10-04
+Latest accepted slice: Dimension Door localized ends-Movement targeting hint,
+following visible/legal radius8 and full-Movement expenditure shared with AI.
+Client/test build1721 passes; UP056-dimension-door-hint-focused.log/XML passes13/13
+in3.979s, zero skips. Root integration and independent Luna runtime/UI/test review
 find no blocker; the separate Astra reviewer spawn was rejected by the service
 thread limit. Combat spell identities61/67 (Chaos7/11); perks210/310
 and ranks87/93 unchanged. Source/native acceptance only, no playable promotion.
@@ -21,6 +21,22 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+2026-10-04 UP056 required DD warning is source/native-hook verified. Generic
+effect capability returns a localized text ID only under captured NH rules;
+existing adventure status bar shows it at selection entry/hover and clears only
+matching text on accepted submission or cancellation. No new panel/art or
+gameplay change. Dedicated Adventure text map is registered by generator and
+CMake parity; the focused live/private-preview union checks pass2/2. Client/test
+build1721 passes, native38925 passes13/13 in3.979s, zero skips, including NH/legacy
+provider assertions and adjacent DD/Summon Boat actual/AI guards. Manually run
+source-wiring guard and module check pass; CMake does not register that static
+guard. Independent Luna UI/data review finds no blocker. Native-resolution
+text fit and actual input/cancellation remain unverified visual evidence.
+Protected-barrier enforcement still blocks full DD completion. Supplemental
+mastery batch5/6 has an existing stale0.14.0 expectation against0.15.0, recorded
+as Phase2 fixture cleanup, not a functional hint failure. Counts unchanged;
+no graphical/playable promotion.
+
 UP056 Dimension Door explicit target and expenditure clauses are source/native
 verified. Captured New Horizons rules require a caster-owner-visible, clear,
 same-level destination within8 using the existing rounded DIST_2D convention.
@@ -32,8 +48,8 @@ retry22130 pass; native43587 passes6/6 in2.086s, zero skips, covering actual cas
 hidden/out-of-range/blocked no-spend rejection, legacy behavior, legal/fog AI
 routes and daily action revalidation. Module/diff checks pass. Initial AI scope
 and test header failures are retained in NH_RELEASE_FAILURES.md. No GUI,
-profile or playable promotion. Protected-barrier enforcement and the required
-casting-ends-Movement warning remain Phase 1 gaps; full DD and the five Adventure
+profile or playable promotion. Protected-barrier enforcement remains a Phase1
+gap; the subsequent hint slice above adds the warning hook. Full DD and the five Adventure
 Spell effects are not claimed complete. Water Walk's end-day rule awaits its
 stranded-hero policy answer; other existing design questions remain open.
 Combat61/67, perks210/310 and ranks87/93 remain unchanged.

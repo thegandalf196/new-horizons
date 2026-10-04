@@ -9204,6 +9204,7 @@
 		"new-horizons.combat.physicalPoison.label": "Physical Poison",
 		"new-horizons.combat.physicalPoison.tooltip": "%LABEL\nNext real activation tick: %DAMAGE physical damage.\n%ACTIVATIONS real activations remaining.",
 		"new-horizons.combat.physicalPoison.hiddenEffects": "%COUNT additional active effects are not shown.",
+		"new-horizons.adventure.dimensionDoor.targetingHint": "Choose a destination. Casting Dimension Door spends all remaining Movement.",
 		"core.heroClass.alchemist.name": "Battle Mage",
 		"core.heroClass.demoniac.name": "Tyrant",
 		"core.heroClass.heretic.name": "Cultist",

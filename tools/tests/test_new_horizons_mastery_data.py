@@ -55,6 +55,7 @@ class MasteryDataTest(unittest.TestCase):
             expected.update(load('config/newHorizonsFortTexts.json'))
             expected.update(load('config/newHorizonsMusterTexts.json'))
             expected.update(load('config/newHorizonsCombatTexts.json'))
+            expected.update(load('config/newHorizonsAdventureSpellTexts.json'))
             self.assertEqual(metadata['translations'], expected)
             subprocess.run(command + ['--check'], check=True, capture_output=True)
             self.assertNotEqual(subprocess.run(command, capture_output=True).returncode, 0)
@@ -87,6 +88,7 @@ class MasteryDataTest(unittest.TestCase):
         expected.update(load('config/newHorizonsFortTexts.json'))
         expected.update(load('config/newHorizonsMusterTexts.json'))
         expected.update(load('config/newHorizonsCombatTexts.json'))
+        expected.update(load('config/newHorizonsAdventureSpellTexts.json'))
         expected.update(load('config/newHorizonsHeroClassTexts.json'))
         self.assertEqual(module['translations'], expected)
 
