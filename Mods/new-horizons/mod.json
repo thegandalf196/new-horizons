@@ -2796,7 +2796,8 @@
 						"core:logistics",
 						"core:armorer",
 						"core:offence",
-						"core:archery"
+						"core:archery",
+						"core:estates"
 					]
 				},
 				"startingSkills": {

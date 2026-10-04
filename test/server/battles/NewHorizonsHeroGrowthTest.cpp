@@ -29,11 +29,13 @@
 #include "../../../lib/networkPacks/PacksForClient.h"
 #include "../../../lib/networkPacks/StackLocation.h"
 #include "../../../lib/entities/hero/CHeroHandler.h"
+#include "../../../lib/entities/hero/CHero.h"
 #include "../../../lib/entities/hero/CHeroClass.h"
 #include "../../../lib/entities/hero/NewHorizonsPerkState.h"
 #include "../../../lib/entities/hero/NewHorizonsPrimaryGrowth.h"
 #include "../../../lib/CPlayerState.h"
 #include "../../../lib/CSkillHandler.h"
+#include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/filesystem/ResourcePath.h"
@@ -55,6 +57,10 @@
 #include "../../../lib/serializer/CMemorySerializer.h"
 
 #include <functional>
+#include <algorithm>
+#include <array>
+#include <memory>
+#include <string>
 #include <string_view>
 
 class NewHorizonsHeroGrowthTest : public HeroCommandFixture
@@ -2387,6 +2393,191 @@ TEST_F(NewHorizonsHeroGrowthTest, EstatesRanksGenerateCanonicalDailyGold)
 		attackerSideHero->setSecSkillLevel(estates, rank, ChangeValueMode::ABSOLUTE);
 		EXPECT_EQ(attackerSideHero->dailyIncome()[EGameResID::GOLD] - baseline, expected[rank]);
 	}
+}
+
+namespace
+{
+constexpr std::string_view ESTATES_SKILL_ID = "new-horizons:estates";
+constexpr std::string_view TAX_COLLECTOR_ID = "new-horizons:estates.taxCollector";
+constexpr std::string_view INVESTOR_ID = "new-horizons:estates.investor";
+constexpr int TEST_INCOME_HANDICAP_PERCENT = 50;
+
+HeroTypeID estatesHeroType(const char * identifier)
+{
+	return HeroTypeID(HeroTypeID::decode(identifier));
+}
+
+SecondarySkill estatesSkill()
+{
+	const auto decoded = SecondarySkill::decode(std::string(ESTATES_SKILL_ID));
+	if(decoded < 0)
+		throw std::runtime_error("New Horizons Estates is not registered");
+	return SecondarySkill(decoded);
+}
+
+void addOtherResourceIncome(CGHeroInstance * hero, EGameResID resource, int value)
+{
+	const auto bonus = std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::GENERATE_RESOURCE,
+		BonusSource::OTHER, value, BonusSourceID(), BonusSubtypeID(GameResID(resource)));
+	hero->addNewBonus(bonus);
+}
+}
+
+class NewHorizonsEstatesSpecialtyFixture : public NewHorizonsHeroGrowthTest
+{
+protected:
+	bool useOlderSkillSpecialtyRules = false;
+
+	void configurePlayer(PlayerSettings & settings) const override
+	{
+		HeroCommandFixture::configurePlayer(settings);
+		settings.handicap.percentIncome = TEST_INCOME_HANDICAP_PERCENT;
+	}
+
+	void mapLoaded(CMap * map) override
+	{
+		NewHorizonsHeroGrowthTest::mapLoaded(map);
+		auto rules = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+		if(useOlderSkillSpecialtyRules)
+		{
+			auto & skills = rules["skillSpecialties"]["skills"].Vector();
+			skills.clear();
+			for(const auto skill : {"core:logistics", "core:armorer", "core:offence", "core:archery"})
+				skills.emplace_back(std::string(skill));
+		}
+		rules.setOverrideFlag(true);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, std::move(rules));
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+	}
+
+	void startEstatesGame()
+	{
+		const CreatureID token(0);
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder.size(36, false).name("NewHorizonsEstatesSpecialty")
+			.playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
+			.town({8, 10, 0}, FactionID::CASTLE, PlayerColor(0)).townGarrison({})
+			.town({30, 30, 0}, FactionID::CASTLE, PlayerColor(1)).townGarrison({})
+			.hero({5, 5, 0}, estatesHeroType("core:lordHaart"), PlayerColor(0)).heroExperience(0)
+			.heroGarrison({{token, 1}})
+			.hero({7, 7, 0}, estatesHeroType("core:solmyr"), PlayerColor(1)).heroExperience(0)
+			.heroGarrison({{token, 1}});
+		startWithMap(std::move(builder));
+		attackerSideHero = findHeroAt({5, 5, 0});
+		defenderSideHero = findHeroAt({7, 7, 0});
+		ASSERT_NE(attackerSideHero, nullptr);
+		ASSERT_NE(defenderSideHero, nullptr);
+	}
+};
+
+TEST_F(NewHorizonsEstatesSpecialtyFixture, LordHaartScalesOnlyEstatesIncomeAndKeepsSharedIncomeIndependent)
+{
+	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires the New Horizons content module";
+	startEstatesGame();
+	auto * lordHaart = attackerSideHero;
+	auto * ordinaryHero = defenderSideHero;
+	ASSERT_EQ(lordHaart->getHeroType()->getJsonKey(), "core:lordHaart");
+	ASSERT_TRUE(lordHaart->getHeroType()->secondarySkillSpecialtyAlias);
+	ASSERT_EQ(lordHaart->getHeroType()->secondarySkillSpecialtyAlias->skill,
+		SecondarySkill(SecondarySkill::ESTATES));
+	ASSERT_FALSE(ordinaryHero->getHeroType()->secondarySkillSpecialtyAlias
+		&& ordinaryHero->getHeroType()->secondarySkillSpecialtyAlias->skill == SecondarySkill(SecondarySkill::ESTATES));
+	ASSERT_EQ(lordHaart->getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ESTATES)), 20);
+	EXPECT_EQ(ordinaryHero->getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ESTATES)), 0);
+
+	const auto estates = estatesSkill();
+	lordHaart->setSecSkillLevel(estates, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	ordinaryHero->setSecSkillLevel(estates, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	for(auto * hero : {lordHaart, ordinaryHero})
+	{
+		addOtherResourceIncome(hero, EGameResID::GOLD, 30);
+		addOtherResourceIncome(hero, EGameResID::WOOD, 2);
+		hero->setNewHorizonsInvestorDailyGold(100);
+		hero->applyPerkSelection({std::string(ESTATES_SKILL_ID), std::string(TAX_COLLECTOR_ID)});
+		ASSERT_TRUE(hero->hasActivePerk(std::string(ESTATES_SKILL_ID), std::string(TAX_COLLECTOR_ID)));
+	}
+
+	static constexpr std::array<int, 3> ranks = {
+		MasteryLevel::BASIC, MasteryLevel::ADVANCED, MasteryLevel::EXPERT};
+	static constexpr std::array<int, 3> ordinaryCoreIncome = {125, 250, 500};
+	static constexpr std::array<int, 3> specialistCoreIncome = {150, 300, 600};	// 120% of the core Estates producer.
+	int64_t savedSpecialistIncome = 0;
+	for(size_t index = 0; index < ranks.size(); ++index)
+	{
+		lordHaart->setSecSkillLevel(estates, ranks[index], ChangeValueMode::ABSOLUTE);
+		ordinaryHero->setSecSkillLevel(estates, ranks[index], ChangeValueMode::ABSOLUTE);
+		if(index == 1)
+		{
+			for(auto * hero : {lordHaart, ordinaryHero})
+			{
+				hero->applyPerkSelection({std::string(ESTATES_SKILL_ID), std::string(INVESTOR_ID)});
+				ASSERT_TRUE(hero->hasActivePerk(std::string(ESTATES_SKILL_ID), std::string(INVESTOR_ID)));
+			}
+		}
+
+		const int sharedGold = 30 /* OTHER */ + 50 /* one Tax Collector town */
+			+ (index == 0 ? 0 : 100 /* Investor snapshot */);
+		const int64_t expectedSpecialistGold = vstd::divideAndCeil(
+			static_cast<int64_t>(specialistCoreIncome[index] + sharedGold) * TEST_INCOME_HANDICAP_PERCENT, 100);
+		const int64_t expectedOrdinaryGold = vstd::divideAndCeil(
+			static_cast<int64_t>(ordinaryCoreIncome[index] + sharedGold) * TEST_INCOME_HANDICAP_PERCENT, 100);
+		EXPECT_EQ(lordHaart->dailyIncome()[EGameResID::GOLD], expectedSpecialistGold);
+		EXPECT_EQ(ordinaryHero->dailyIncome()[EGameResID::GOLD], expectedOrdinaryGold);
+		EXPECT_EQ(lordHaart->dailyIncome()[EGameResID::WOOD], 1);
+		EXPECT_EQ(ordinaryHero->dailyIncome()[EGameResID::WOOD], 1);
+		const auto overbroadSpecialistGold = vstd::divideAndCeil(
+			static_cast<int64_t>(ordinaryCoreIncome[index] + sharedGold) * 120 * TEST_INCOME_HANDICAP_PERCENT, 10000);
+		EXPECT_NE(expectedSpecialistGold, overbroadSpecialistGold)
+			<< "The specialty must not scale OTHER income, Tax Collector, or Investor";
+		EXPECT_EQ(lordHaart->getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ESTATES)), 20);
+		EXPECT_EQ(ordinaryHero->getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ESTATES)), 0);
+		if(index + 1 == ranks.size())
+			savedSpecialistIncome = lordHaart->dailyIncome()[EGameResID::GOLD];
+	}
+
+	const auto heroId = lordHaart->id;
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	auto * loaded = restored.getHero(heroId);
+	ASSERT_NE(loaded, nullptr);
+	EXPECT_EQ(loaded->getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ESTATES)), 20);
+	EXPECT_EQ(loaded->dailyIncome()[EGameResID::GOLD], savedSpecialistIncome);
+
+	lordHaart->setSecSkillLevel(estates, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	ordinaryHero->setSecSkillLevel(estates, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(lordHaart->getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ESTATES)), 20);
+	EXPECT_EQ(lordHaart->dailyIncome()[EGameResID::GOLD], ordinaryHero->dailyIncome()[EGameResID::GOLD]);
+}
+
+TEST_F(NewHorizonsEstatesSpecialtyFixture, OlderSupportedSkillSpecialtyListRetainsLordHaartsLegacyAlias)
+{
+	useOlderSkillSpecialtyRules = true;
+	startEstatesGame();
+	auto * lordHaart = attackerSideHero;
+	ASSERT_TRUE(lordHaart->getHeroType()->secondarySkillSpecialtyAlias);
+	ASSERT_EQ(lordHaart->getHeroType()->secondarySkillSpecialtyAlias->skill,
+		SecondarySkill(SecondarySkill::ESTATES));
+	const auto rules = newHorizonsHeroes::skillSpecialtyRules(lordHaart->getPrimaryGrowthRules());
+	ASSERT_TRUE(rules);
+	EXPECT_EQ(rules->skills.size(), 4u);
+	EXPECT_EQ(std::find(rules->skills.begin(), rules->skills.end(), SecondarySkill(SecondarySkill::ESTATES)),
+		rules->skills.end());
+	EXPECT_EQ(lordHaart->getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ESTATES)), 0);
+
+	const auto & alias = lordHaart->getHeroType()->secondarySkillSpecialtyAlias->bonuses;
+	ASSERT_FALSE(alias.empty());
+	const auto local = lordHaart->getExportedBonusList();
+	for(const auto & prototype : alias)
+		EXPECT_TRUE(std::ranges::any_of(local, [&prototype](const auto & bonus)
+		{
+			return bonus->type == prototype->type && bonus->source == prototype->source
+				&& bonus->subtype == prototype->subtype && bonus->valType == prototype->valType
+				&& bonus->val == prototype->val && bonus->sid == prototype->sid;
+		})) << "Older resolved rules leave the exact legacy Estates alias installed";
 }
 
 TEST_F(NewHorizonsHeroGrowthTest, LearningRanksApplyCanonicalExperienceGain)

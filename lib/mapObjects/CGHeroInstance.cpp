@@ -1155,6 +1155,9 @@ void CGHeroInstance::updateSkillBonus(const SecondarySkill & which, int val)
 		static const SecondarySkill newHorizonsOffenseSkill(SecondarySkill::decode("new-horizons:offense"));
 		const int offenseSpecialtyPercent = which == newHorizonsOffenseSkill
 			? getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::OFFENCE)) : 0;
+		static const SecondarySkill newHorizonsEstatesSkill(SecondarySkill::decode("new-horizons:estates"));
+		const int estatesSpecialtyPercent = which == newHorizonsEstatesSkill
+			? getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ESTATES)) : 0;
 		auto skillBonus = (*LIBRARY->skillh)[which]->at(val).effects;
 		for(const auto& b : skillBonus)
 		{
@@ -1166,6 +1169,13 @@ void CGHeroInstance::updateSkillBonus(const SecondarySkill & which, int val)
 				&& bonus->source == BonusSource::SECONDARY_SKILL
 				&& bonus->sid == BonusSourceID(which))
 				bonus->val = bonus->val * (100 + offenseSpecialtyPercent) / 100;
+			if(estatesSpecialtyPercent > 0
+				&& bonus->type == BonusType::GENERATE_RESOURCE
+				&& bonus->subtype == BonusSubtypeID(GameResID(EGameResID::GOLD))
+				&& bonus->valType == BonusValueType::BASE_NUMBER
+				&& bonus->source == BonusSource::SECONDARY_SKILL
+				&& bonus->sid == BonusSourceID(which))
+				bonus->val = bonus->val * (100 + estatesSpecialtyPercent) / 100;
 			addNewBonus(bonus);
 		}
 	}

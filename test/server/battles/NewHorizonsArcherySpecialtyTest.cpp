@@ -37,7 +37,6 @@ namespace
 constexpr std::string_view NH_ARCHERY_ID = "new-horizons:archery";
 constexpr std::string_view UNRELATED_RANGED_DAMAGE_ID = "test:unrelated-ranged-damage";
 constexpr int UNRELATED_RANGED_DAMAGE_PERCENT = 50;
-constexpr std::string_view ARCHERY_SPECIALTY_ID = "core:archery";
 
 HeroTypeID heroType(const char * identifier)
 {
@@ -94,10 +93,9 @@ protected:
 		if(useOlderSupportedSpecialtyList)
 		{
 			auto & skills = rules["skillSpecialties"]["skills"].Vector();
-			std::erase_if(skills, [](const JsonNode & value)
-			{
-				return value.String() == ARCHERY_SPECIALTY_ID;
-			});
+			skills.clear();
+			for(const auto skill : {"core:logistics", "core:armorer", "core:offence"})
+				skills.emplace_back(std::string(skill));
 		}
 		// This is the exact rules snapshot that the created hero resolves and saves.
 		rules.setOverrideFlag(true);

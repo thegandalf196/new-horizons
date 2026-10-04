@@ -1,6 +1,18 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
+UP223 Estates specialty source/native accepted: Lord Haart receives150/300/600
+core daily Gold instead of125/250/500. Only per-instance NH Estates Gold
+BASE_NUMBER producer clones scale; perks/unrelated income/other resources and
+handicap order are unchanged. Client39945 and builds16010/47106 succeed;
+native95834 passes12/12 in4.501s, zero skips, including new real-hero rank/
+save/removal/legacy controls and six existing AI income cases. Module drift,
+twelve hero-data checks and independent review pass. Five mapped Skill aliases
+now have core-effect conversion: Logistics, Armorer, Offense, Archery, Estates.
+This is not whole specialty-family completion; primary/non-damage families and
+authored profiles remain incomplete. Spell/rank/perk totals unchanged. Broader
+modded projections and Lord Haart actual daily receipt remain Phase2; no GUI.
+
 UP222 Archery specialty source/native accepted: Orrin's core physical ranged
 damage and Attack-growth chances become12/24/36, ordinary heroes10/20/30.
 Both-target46837 succeeds; native35240 passes12/12 in6.231s, zero skips,

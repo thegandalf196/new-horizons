@@ -72,7 +72,7 @@
 	"skillSpecialties": {
 		"version": 1,
 		"coreBonusPercent": 20,
-		"skills": ["core:logistics", "core:armorer", "core:offence", "core:archery"]
+		"skills": ["core:logistics", "core:armorer", "core:offence", "core:archery", "core:estates"]
 	},
 	"startingSkills": {
 		"factionSkills": {

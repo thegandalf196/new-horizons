@@ -2,6 +2,29 @@
 
 ## Purpose
 
+### 2026-10-04 UP223 — Native binary must be relinked after contract expansion
+
+Client-only build39945 succeeds, but the first adjacent native run uses the
+previous vcmitest binary. Six Estates AI cases reject the new five-alias config
+with the old one-to-four parser; the markerless baseline case passes. Evidence:
+UP223-estates-adjacent.log/XML (1/7 pass). This is not an income/AI production
+failure: vcmitest contains its own linked parser objects. Build that target
+before acceptance execution, then rerun these exact controls. Do not drop
+Estates from the new config or loosen validation to accommodate a stale binary.
+After both-target16010 relinks vcmitest, native90493 passes both new Estates
+cases, the baseline and all six AI controls. It fails only Archery's prior-list
+fixture: removing Archery from today's five entries does not reconstruct the
+historical three-entry snapshot (4 remains). Pin the exact historical list
+Logistics/Armorer/Offense rather than deriving it from expanding current data.
+UP223-estates-final.log/XML retains the11/12 result. Root repairs only fixture
+input, preserving its size/legacy-alias assertions. Build47106/rerun pending.
+Static fixture review also corrected floor-based handicap expectations to the
+engine's divideAndCeil and typed the resource wrapper before compilation; no
+income production fix or relaxed oracle was needed.
+Repair build47106 succeeds. Final native95834 passes12/12 in4.501s, zero
+skips, UP223-estates-accepted.log/XML. Both Estates cases, all six AI controls,
+baseline, Archery and parser controls pass. Historical failed evidence remains.
+
 ### 2026-10-04 UP220 remainder / UP222 — Fixture API ownership types
 
 Build95706 stops on two expanded spell-access fixture declarations treating
@@ -21,7 +44,13 @@ Ogre Mage Bloodlust/Master Genie Shield and Air Shield/Storm Elemental Protect
 Air effects, and markerless saved-game restoration pass. No native failure was
 hidden or game launched. Random Genie selection and broader source interactions
 remain Phase2; Haste and authored replacements remain explicit implementation
-gaps. UP222's native acceptance is still pending, not inferred from this run.
+gaps. UP222 is accepted separately: build46837 and native35240 pass12/12
+in6.231s, zero skips. Its frozen fixture separates raw100 damage from the
+unrelated50% bonus before computing rank oracles. Static review initially
+suggested changing Focus Fire's helper value5 to10; source inspection rejected
+that suggestion because Target Caller is a separate payload contribution.
+Keep acceptance arithmetic tied to actual contribution seams, not reviewer
+assumptions. No production change or relaxed oracle was needed.
 
 ### 2026-10-04 UP221 — Fixture setup corrections before execution
 
