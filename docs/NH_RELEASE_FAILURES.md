@@ -2,6 +2,30 @@
 
 ## Purpose
 
+### 2026-10-04 UP219 — Focused repair acceptance
+
+Bounded rebuild2116 succeeds. Final native12882 passes13/13 in6.135s with
+zero skips, UP219-armorer-specialty-final.log/XML. Exact Logistics marker
+matching preserves Mephala's valid Armorer marker; Basic Pavise precedes
+Advanced Formation Fighting. All intended reduction/growth assertions,
+accepted melee/forecast, initial-XP sampler and legacy/save controls pass.
+Module drift/twelve hero-data checks pass; source review has no blocker.
+Seeded threshold growth and broad perk/AI interactions remain Phase2.
+
+### 2026-10-04 UP219 — Expanded specialty support needs exact fixture identity
+
+Both-target build21618 succeeds. Native30347 runs13 tests in5.948s, zero
+skips:9 pass and4 fail. The earlier Logistics fixture counts every Skill
+specialty marker on ordinary control Mephala; her newly supported Armorer
+marker is legitimate and must not be removed. Count the Logistics identity
+specifically. Three Armorer alias cases reach Advanced Formation Fighting
+selection without a Basic perk, and correctly receive the prerequisite error.
+Give the fixtures a valid Basic perk first; retain production progression and
+the6/12/18 reduction plus12/24/36 growth assertions. Initial-XP sampling,
+missing-rule legacy behavior and adjacent physical/growth controls pass.
+First evidence: UP219-armorer-specialty-native.log/XML. Repair pending; no
+native acceptance or playable delivery is claimed.
+
 ### 2026-10-04 UP218 — Focused repair acceptance
 
 Bounded repair41124 succeeds. Native33370 passes15/15 in6.804s, zero skips:

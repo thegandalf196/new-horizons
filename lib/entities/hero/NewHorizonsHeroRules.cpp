@@ -118,11 +118,19 @@ void validateSkillSpecialtyRules(const JsonNode & rules)
 	require(integer(rules["version"], 1, 1), "skill specialty version");
 	require(integer(rules["coreBonusPercent"], 20, 20), "skill specialty core bonus percentage");
 	const auto & skills = rules["skills"];
-	require(skills.isVector() && skills.Vector().size() == 1, "version 1 skill specialties must contain only core:logistics");
-	require(skills.Vector().front().isString() && skills.Vector().front().String() == "core:logistics",
-		"version 1 skill specialty must be core:logistics");
-	require(resolve(SecondarySkill::entityType(), skills.Vector().front().String()) == SecondarySkill::LOGISTICS,
-		"unknown version 1 skill specialty");
+	require(skills.isVector() && !skills.Vector().empty() && skills.Vector().size() <= 2,
+		"version 1 skill specialties must list one or two supported core skills");
+	std::set<int> seen;
+	for(const auto & skill : skills.Vector())
+	{
+		require(skill.isString()
+			&& (skill.String() == "core:logistics" || skill.String() == "core:armorer"),
+			"version 1 skill specialties support only core:logistics and core:armorer");
+		const int skillId = resolve(SecondarySkill::entityType(), skill.String());
+		require(skillId == SecondarySkill::LOGISTICS || skillId == SecondarySkill::ARMORER,
+			"unknown version 1 skill specialty");
+		require(seen.insert(skillId).second, "duplicate version 1 skill specialty");
+	}
 }
 
 void validateOptionalSkillSpecialtyRules(const JsonNode & rules)
@@ -431,11 +439,12 @@ std::optional<SkillSpecialtyRules> skillSpecialtyRules(const JsonNode & resolved
 	if(found == resolvedRules.Struct().end())
 		return std::nullopt;
 	validateSkillSpecialtyRules(found->second);
-	return SkillSpecialtyRules{
-		.version = static_cast<int>(found->second["version"].Integer()),
-		.coreBonusPercent = static_cast<int>(found->second["coreBonusPercent"].Integer()),
-		.skills = {SecondarySkill(SecondarySkill::LOGISTICS)}
-	};
+	SkillSpecialtyRules result;
+	result.version = static_cast<int>(found->second["version"].Integer());
+	result.coreBonusPercent = static_cast<int>(found->second["coreBonusPercent"].Integer());
+	for(const auto & skill : found->second["skills"].Vector())
+		result.skills.emplace_back(resolve(SecondarySkill::entityType(), skill.String()));
+	return result;
 }
 
 std::vector<SkillGrowthChance> skillGrowthChances(const JsonNode & resolvedRules,

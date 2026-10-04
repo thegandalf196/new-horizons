@@ -87,6 +87,17 @@ std::string skillSpecialtyMarker(HeroTypeID heroType, SecondarySkill skill)
 		+ std::to_string(skill.getNum());
 }
 
+std::shared_ptr<Bonus> makeSkillSpecialtyMarker(HeroTypeID heroType, SecondarySkill skill)
+{
+	auto marker = std::make_shared<Bonus>();
+	marker->type = BonusType::NONE;
+	marker->source = BonusSource::HERO_SPECIAL;
+	marker->sid = BonusSourceID(heroType);
+	marker->duration = BonusDuration::PERMANENT;
+	marker->stacking = skillSpecialtyMarker(heroType, skill);
+	return marker;
+}
+
 const ArtifactID & spellbindersHatArtifactID()
 {
 	static const ArtifactID result(ArtifactID::decode("core:spellbindersHat"));
@@ -566,13 +577,13 @@ std::string CGHeroInstance::getSpecialtyDescriptionTranslated() const
 
 	if(const auto rules = newHorizonsHeroes::skillSpecialtyRules(primaryGrowthRules))
 		if(heroType->secondarySkillSpecialtyAlias
-			&& heroType->secondarySkillSpecialtyAlias->skill == SecondarySkill(SecondarySkill::LOGISTICS)
-			&& getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::LOGISTICS)) > 0)
+			&& getSkillSpecialtyCoreBonusPercent(heroType->secondarySkillSpecialtyAlias->skill) > 0)
 		{
 			MetaString description;
-			description.appendRawString("Core Logistics movement bonuses are increased by +");
+			description.appendTextID(heroType->secondarySkillSpecialtyAlias->skill.toEntity(LIBRARY)->getNameTextID());
+			description.appendRawString(" core numerical effects are increased by +");
 			description.appendNumber(rules->coreBonusPercent);
-			description.appendRawString("%. Logistics perks are not increased.");
+			description.appendRawString("%. Skill perks are not increased.");
 			return description.toString(LIBRARY->generaltexth.get());
 		}
 
@@ -785,6 +796,21 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 		secSkills = newHorizonsHeroes::applyStartingFactionSkill(primaryGrowthRules,
 			getHeroClass()->isMagicHero(), getFactionID(), secSkills);
 	}
+	const CHero * heroType = getHeroType();
+	const auto skillSpecialties = newHorizonsHeroes::skillSpecialtyRules(primaryGrowthRules);
+	const bool hasSupportedSkillSpecialty = skillSpecialties.has_value()
+		&& heroType->secondarySkillSpecialtyAlias
+		&& std::ranges::find(skillSpecialties->skills, heroType->secondarySkillSpecialtyAlias->skill)
+			!= skillSpecialties->skills.end();
+	if(creationInitialization && hasSupportedSkillSpecialty
+		&& getSkillSpecialtyCoreBonusPercent(heroType->secondarySkillSpecialtyAlias->skill) == 0)
+	{
+		// Starting heroes may already have enough experience to be leveled
+		// automatically below. Install the saved marker before those rolls so
+		// their core Skill-growth chance uses the same converted view as later
+		// level-ups and the UI forecast.
+		addNewBonus(makeSkillSpecialtyMarker(heroType->getId(), heroType->secondarySkillSpecialtyAlias->skill));
+	}
 
 	// Magic-school conversion is an independent saved magic-profile rule. Keep
 	// applying it even when an old hero has no primary-growth snapshot.
@@ -860,14 +886,11 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	}
 
 	//copy active (probably growing) bonuses from hero prototype to hero object
-	const CHero * heroType = getHeroType();
 	const bool convertsCreatureLineSpecialty = newHorizonsHeroes::creatureLineSpecialtyRules(primaryGrowthRules).has_value()
 		&& heroType->creatureLineSpecialtyAlias.has_value();
 	const bool convertsDamageSpellSpecialty = newHorizonsHeroes::damageSpellSpecialtyRules(primaryGrowthRules).has_value();
-	const auto skillSpecialties = newHorizonsHeroes::skillSpecialtyRules(primaryGrowthRules);
-	const bool convertsLogisticsSpecialty = skillSpecialties.has_value()
-		&& heroType->secondarySkillSpecialtyAlias
-		&& heroType->secondarySkillSpecialtyAlias->skill == SecondarySkill(SecondarySkill::LOGISTICS);
+	const bool convertsSkillSpecialty = hasSupportedSkillSpecialty
+		&& getSkillSpecialtyCoreBonusPercent(heroType->secondarySkillSpecialtyAlias->skill) > 0;
 	for(const std::shared_ptr<Bonus> & b : heroType->specialty)
 	{
 		if(convertsCreatureLineSpecialty
@@ -892,21 +915,11 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 				continue;
 			}
 		}
-		if(convertsLogisticsSpecialty
+		if(convertsSkillSpecialty
 			&& std::ranges::find(heroType->secondarySkillSpecialtyAlias->bonuses, b)
 				!= heroType->secondarySkillSpecialtyAlias->bonuses.end())
 			continue;
 		addNewBonus(b);
-	}
-	if(convertsLogisticsSpecialty)
-	{
-		auto marker = std::make_shared<Bonus>();
-		marker->type = BonusType::NONE;
-		marker->source = BonusSource::HERO_SPECIAL;
-		marker->sid = BonusSourceID(heroType->getId());
-		marker->duration = BonusDuration::PERMANENT;
-		marker->stacking = skillSpecialtyMarker(heroType->getId(), SecondarySkill(SecondarySkill::LOGISTICS));
-		addNewBonus(marker);
 	}
 	if(convertsCreatureLineSpecialty)
 		refreshCreatureLineSpecialtyBonuses(true);
@@ -1174,6 +1187,14 @@ std::optional<newHorizonsHeroes::PrimaryGrowthView> CGHeroInstance::getPrimaryGr
 	}
 	result.extraGrowth = newHorizonsHeroes::skillGrowthChances(primaryGrowthRules,
 		[this](SecondarySkill skill) { return getSecSkillLevel(skill); });
+	static const int newHorizonsArmorerSkill = SecondarySkill::decode("new-horizons:armorer");
+	const int armorerSpecialtyPercent = getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ARMORER));
+	if(newHorizonsArmorerSkill >= 0 && armorerSpecialtyPercent > 0)
+		for(auto & opportunity : result.extraGrowth)
+			if(opportunity.skill.getNum() == newHorizonsArmorerSkill
+				&& opportunity.attribute == PrimarySkill::DEFENSE)
+				opportunity.chancePercent = std::min(100,
+					opportunity.chancePercent * (100 + armorerSpecialtyPercent) / 100);
 	if(hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.deepKnowledge"))
 	{
 		const int wisdomSkillID = SecondarySkill::decode("new-horizons:wisdom");

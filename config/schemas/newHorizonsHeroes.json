@@ -1,7 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-04/schema",
 	"title": "Saved New Horizons hero growth and scale rules",
-	"description": "New Horizons hero growth, canonical skill-offer weights, starting-skill schema, and optional versioned creature-line, damage-spell, and Logistics specialty conversions. Primary growth grants the fixed class vector on every level; version 3 additionally evaluates independent configured skill bonus rolls. Empty retains legacy heroes.",
+	"description": "New Horizons hero growth, canonical skill-offer weights, starting-skill schema, and optional versioned creature-line, damage-spell, Logistics, and Armorer specialty conversions. Primary growth grants the fixed class vector on every level; version 3 additionally evaluates independent configured skill bonus rolls. Empty retains legacy heroes.",
 	"type": "object",
 	"oneOf": [
 		{"maxProperties": 0},
@@ -108,9 +108,9 @@
 				"version": {"type": "integer", "enum": [1]},
 				"coreBonusPercent": {"type": "integer", "enum": [20]},
 				"skills": {
-					"type": "array", "minItems": 1, "maxItems": 1,
+					"type": "array", "minItems": 1, "maxItems": 2,
 					"uniqueItems": true,
-					"items": {"type": "string", "enum": ["core:logistics"]}
+					"items": {"type": "string", "enum": ["core:logistics", "core:armorer"]}
 				}
 			}
 		},

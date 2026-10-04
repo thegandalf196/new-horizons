@@ -1,6 +1,17 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
+Latest source/native acceptance UP219: Mephala/Tazar/Neela Armorer specialties
+apply6/12/18% core physical reduction and12/24/36% Defense-growth chance.
+Both-target21618 and bounded fixture-repair2116 succeed. Native12882 passes
+13/13 in6.135s, zero skips: real aliases/ranks, forecasts/accepted attack,
+initial-XP sampler timing, save/load, removal, unrelated/prototype and legacy
+guards plus Logistics/physical/growth controls. Module drift/twelve hero-data
+checks pass; Astra finds no blocker. Skill-specialty coverage adds Armorer to
+Logistics, but the whole family remains partial; no rank/perk/spell total changes.
+Phase2 retains seeded growth thresholds, active perk compositions and detached
+AI projections. No graphical or playable delivery claim. UP220 records the
+confirmed legacy spell acquisition/starting-book gap for the next priority.
 Latest source/native acceptance UP218: Logistics for Kyrre/Gunnar/Dessa.
 Canonical20% affects only core Land/Sea10/20/30, yielding12/24/36, not perks.
 Both-target95053 and repair41124 succeed; native33370 passes15/15 in6.804s,

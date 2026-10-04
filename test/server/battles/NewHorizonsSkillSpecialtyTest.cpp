@@ -120,14 +120,16 @@ protected:
 		return water ? turn->getMovePointsLimitWater() : turn->getMovePointsLimitLand();
 	}
 
-	static int countSkillSpecialtyMarkers(const CGHeroInstance * hero)
+	static int countSkillSpecialtyMarkers(const CGHeroInstance * hero, SecondarySkill skill)
 	{
+		const auto expectedMarker = std::string("new-horizons:skill-specialty:")
+			+ std::to_string(hero->getHeroTypeID().getNum()) + ":" + std::to_string(skill.getNum());
 		return static_cast<int>(std::count_if(hero->getExportedBonusList().begin(), hero->getExportedBonusList().end(),
-			[](const std::shared_ptr<Bonus> & bonus)
+			[&expectedMarker](const std::shared_ptr<Bonus> & bonus)
 			{
 				return bonus->type == BonusType::NONE
 					&& bonus->source == BonusSource::HERO_SPECIAL
-					&& bonus->stacking.starts_with("new-horizons:skill-specialty:");
+					&& bonus->stacking == expectedMarker;
 			}));
 	}
 
@@ -170,10 +172,12 @@ TEST_F(NewHorizonsSkillSpecialtyTest, ScalesOnlyCoreLogisticsForTheThreeLegacySp
 		ASSERT_TRUE(specialist->getHeroType()->secondarySkillSpecialtyAlias.has_value());
 		EXPECT_EQ(specialist->getHeroType()->secondarySkillSpecialtyAlias->skill, coreLogistics);
 		EXPECT_EQ(specialist->getSkillSpecialtyCoreBonusPercent(coreLogistics), 20);
-		EXPECT_EQ(countSkillSpecialtyMarkers(specialist), 1);
+		EXPECT_EQ(countSkillSpecialtyMarkers(specialist, coreLogistics), 1);
 	}
 	EXPECT_EQ(control->getSkillSpecialtyCoreBonusPercent(coreLogistics), 0);
-	EXPECT_EQ(countSkillSpecialtyMarkers(control), 0);
+	EXPECT_EQ(countSkillSpecialtyMarkers(control, coreLogistics), 0);
+	EXPECT_EQ(countSkillSpecialtyMarkers(control, SecondarySkill(SecondarySkill::ARMORER)), 1)
+		<< "The Logistics fixture must retain Mephala's unrelated Armorer specialty marker";
 
 	std::vector<std::vector<std::pair<si32, std::string>>> originalPrototypeSpecialties;
 	for(auto * specialist : {kyrre, gunnar, dessa})
@@ -229,7 +233,7 @@ TEST_F(NewHorizonsSkillSpecialtyTest, ScalesOnlyCoreLogisticsForTheThreeLegacySp
 	auto * restoredKyrre = restored.getHero(heroId);
 	ASSERT_NE(restoredKyrre, nullptr);
 	EXPECT_EQ(restoredKyrre->getSkillSpecialtyCoreBonusPercent(coreLogistics), 20);
-	EXPECT_EQ(countSkillSpecialtyMarkers(restoredKyrre), 1);
+	EXPECT_EQ(countSkillSpecialtyMarkers(restoredKyrre, coreLogistics), 1);
 	EXPECT_EQ(restoredKyrre->movementPointsLimit(), expectedSpecialist.back());
 
 	// Removing the skill after Expert invalidates the same cached daily pools.
@@ -274,7 +278,7 @@ TEST_F(NewHorizonsSkillSpecialtyTest, MissingSavedRulesPreserveTheLegacyAliasAnd
 	const SecondarySkill coreLogistics(SecondarySkill::LOGISTICS);
 	setRank(kyrre, MasteryLevel::BASIC);
 	EXPECT_EQ(kyrre->getSkillSpecialtyCoreBonusPercent(coreLogistics), 0);
-	EXPECT_EQ(countSkillSpecialtyMarkers(kyrre), 0);
+	EXPECT_EQ(countSkillSpecialtyMarkers(kyrre, coreLogistics), 0);
 	ASSERT_TRUE(kyrre->getHeroType()->secondarySkillSpecialtyAlias.has_value());
 	const auto & legacyAlias = kyrre->getHeroType()->secondarySkillSpecialtyAlias->bonuses;
 	ASSERT_FALSE(legacyAlias.empty());
@@ -316,6 +320,6 @@ TEST_F(NewHorizonsSkillSpecialtyTest, MissingSavedRulesPreserveTheLegacyAliasAnd
 	auto * restoredKyrre = restored.getHero(heroId);
 	ASSERT_NE(restoredKyrre, nullptr);
 	EXPECT_EQ(restoredKyrre->getSkillSpecialtyCoreBonusPercent(coreLogistics), 0);
-	EXPECT_EQ(countSkillSpecialtyMarkers(restoredKyrre), 0);
+	EXPECT_EQ(countSkillSpecialtyMarkers(restoredKyrre, coreLogistics), 0);
 	EXPECT_EQ(restoredKyrre->movementPointsLimit(), 220);
 }

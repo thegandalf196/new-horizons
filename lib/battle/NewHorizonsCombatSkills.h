@@ -36,6 +36,8 @@ constexpr int VETERAN_RECOVERY_PERCENT = 15;
 
 DLL_LINKAGE int armorerRank(const CGHeroInstance * hero);
 DLL_LINKAGE int armorerReductionPercent(int rank);
+/// Returns Armorer's core reduction after the saved Skill specialty, if present.
+DLL_LINKAGE int armorerReductionPercent(const CGHeroInstance * hero);
 /// Independent physical reduction while adjacent to a living friendly creature stack.
 DLL_LINKAGE int formationFightingReductionPercent(const CGHeroInstance * hero);
 /// Whether an attacker qualifies for ordinary creature-attack skill hit modifiers.

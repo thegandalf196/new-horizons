@@ -2926,7 +2926,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				newHorizonsBattlecraft::rank(battleGetOwnerHero(info.attacker)));
 		if(ordinaryCreatureAttack)
 			payload.newHorizonsArmorerReductionPercent = newHorizonsCombatSkills::armorerReductionPercent(
-				newHorizonsCombatSkills::armorerRank(battleGetOwnerHero(info.defender)));
+				battleGetOwnerHero(info.defender));
 		if(info.defender && battleHasFormationFightingProtection(info.defender, info.defenderPos))
 			payload.formationFightingReductionPercent = newHorizonsCombatSkills::formationFightingReductionPercent(
 				battleGetOwnerHero(info.defender));

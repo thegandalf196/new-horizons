@@ -2723,7 +2723,8 @@
 					"version": 1,
 					"coreBonusPercent": 20,
 					"skills": [
-						"core:logistics"
+						"core:logistics",
+						"core:armorer"
 					]
 				},
 				"startingSkills": {

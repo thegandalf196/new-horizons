@@ -58,6 +58,15 @@ int armorerReductionPercent(int value)
 	return std::clamp(value, 0, 3) * 5;
 }
 
+int armorerReductionPercent(const CGHeroInstance * hero)
+{
+	if(!hero)
+		return 0;
+	const int coreReduction = armorerReductionPercent(armorerRank(hero));
+	const int specialtyPercent = hero->getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ARMORER));
+	return coreReduction * (100 + specialtyPercent) / 100;
+}
+
 int formationFightingReductionPercent(const CGHeroInstance * hero)
 {
 	return hero && hero->hasActivePerk(std::string(ARMORER_SKILL_ID), std::string(FORMATION_FIGHTING_PERK_ID))

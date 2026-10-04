@@ -51,8 +51,8 @@ struct DLL_LINKAGE DamageSpellSpecialtyRules
 	int componentPercent = 15;
 };
 
-/// Saved New Horizons conversion of the core Logistics Skill specialty.
-/// V1 deliberately supports only this one skill family.
+/// Saved New Horizons conversion of supported core Skill specialties.
+/// V1 uses an explicit allowlist so legacy and unsupported aliases remain inert.
 struct DLL_LINKAGE SkillSpecialtyRules
 {
 	int version = 1;
