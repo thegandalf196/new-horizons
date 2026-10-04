@@ -72,7 +72,7 @@
 	"nonDamageSpellSpecialties": {
 		"version": 1,
 		"componentPercent": 20,
-		"spells": ["core:cure", "core:resurrection"]
+		"spells": ["core:cure", "core:resurrection", "core:bless"]
 	},
 	"skillSpecialties": {
 		"version": 1,

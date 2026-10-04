@@ -918,9 +918,9 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
 		const int empowerBonusPercent = empowerSpellBonusPercent(rules, hero, spell->getId());
 		const int64_t power = std::max<int32_t>(0, hero->getEffectPower(spell));
-		const int64_t termDivisor = static_cast<int64_t>(BLESS_SPELL_POWER_DURATION_DIVISOR)
-			* SPELL_POWER_COEFFICIENT_BASIS_POINTS * 100;
-		const int64_t term = power * coefficientBasisPoints * (100 + empowerBonusPercent) / termDivisor;
+		const int specialtyPercent = hero->getNonDamageSpellSpecialtyBonusPercent(SpellID(SpellID::BLESS));
+		const int64_t term = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
+			power, BLESS_SPELL_POWER_DURATION_DIVISOR, coefficientBasisPoints, 0, empowerBonusPercent, specialtyPercent);
 		const int ordinaryDuration = blessDurationFromPowerTerm(term);
 		const int64_t spellDurationModifier = static_cast<int64_t>(hero->valOfBonuses(
 			BonusType::SPELL_DURATION, BonusSubtypeID()))

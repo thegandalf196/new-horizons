@@ -11,12 +11,16 @@
 #include "HeroCommandFixture.h"
 
 #include "../../SpellPointTestUtils.h"
+#include "../../../lib/battle/BattleAttackInfo.h"
 #include "../../../lib/battle/BattleInfo.h"
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/bonuses/Bonus.h"
+#include "../../../lib/bonuses/Limiters.h"
+#include "../../../lib/bonuses/Updaters.h"
 #include "../../../lib/entities/hero/CHero.h"
+#include "../../../lib/entities/hero/CHeroHandler.h"
 #include "../../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
@@ -40,6 +44,7 @@ namespace
 {
 constexpr std::string_view NON_DAMAGE_SPECIALTY_SPELL = "core:cure";
 constexpr std::string_view RESURRECTION_SPECIALTY_SPELL = "core:resurrection";
+constexpr std::string_view BLESS_SPECIALTY_SPELL = "core:bless";
 constexpr std::string_view CURE_SKILL_ID = "new-horizons:lightMagic";
 constexpr std::string_view SPELLCRAFT_SKILL_ID = "new-horizons:spellcraft";
 constexpr std::string_view HEALER_PERK_ID = "new-horizons:lightMagic.healer";
@@ -76,13 +81,42 @@ const Bonus * findSpellScalingPrototype(const CGHeroInstance * hero, SpellID spe
 	return found == type->specialty.end() ? nullptr : found->get();
 }
 
+const Bonus * findAdelaBlessDamagePrototype(const CGHeroInstance * hero)
+{
+	const auto * type = hero->getHeroType();
+	const auto found = std::find_if(type->specialty.begin(), type->specialty.end(), [](const auto & bonus)
+	{
+		return bonus && bonus->type == BonusType::GENERAL_DAMAGE_PREMY
+			&& bonus->val == 3 && bonus->limiter && bonus->updater;
+	});
+	return found == type->specialty.end() ? nullptr : found->get();
+}
+
+bool hasAdelaBlessDamageProducer(const CGHeroInstance * hero, const Bonus * prototype, int value)
+{
+	if(!prototype)
+		return false;
+	const auto bonuses = hero->getExportedBonusList();
+	return std::ranges::any_of(bonuses, [prototype, value](const auto & bonus)
+	{
+		return bonus && bonus->type == prototype->type && bonus->source == prototype->source
+			&& bonus->sid == prototype->sid && bonus->subtype == prototype->subtype
+			&& bonus->val == value && bonus->limiter && prototype->limiter
+			&& bonus->limiter->toJsonNode() == prototype->limiter->toJsonNode()
+			&& bonus->updater && prototype->updater
+			&& bonus->updater->toJsonNode() == prototype->updater->toJsonNode();
+	});
+}
+
 class NewHorizonsHealingSpecialtyTest : public HeroCommandFixture
 {
 protected:
 	bool enableNonDamageSpecialtyRules = true;
 	bool includeResurrectionSpecialty = false;
+	bool includeBlessSpecialty = false;
 	CGHeroInstance * ordinaryHero = nullptr;
 	CStack * target = nullptr;
+	CStack * controlTarget = nullptr;
 
 	void SetUp() override
 	{
@@ -110,6 +144,8 @@ protected:
 			spells.emplace_back(std::string(NON_DAMAGE_SPECIALTY_SPELL));
 			if(includeResurrectionSpecialty)
 				spells.emplace_back(std::string(RESURRECTION_SPECIALTY_SPELL));
+			if(includeBlessSpecialty)
+				spells.emplace_back(std::string(BLESS_SPECIALTY_SPELL));
 			heroRules.setOverrideFlag(true);
 		}
 		else
@@ -122,7 +158,8 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, std::move(heroRules));
 	}
 
-	void startSpecialistMap(std::string_view specialistHero = "core:uland")
+	void startSpecialistMap(std::string_view specialistHero = "core:uland",
+		std::string_view controlHero = "core:solmyr", uint32_t experience = 0)
 	{
 		const CreatureID pikeman(CreatureID::decode("core:pikeman"));
 		ASSERT_TRUE(pikeman.hasValue());
@@ -130,9 +167,9 @@ protected:
 		builder.size(36, false)
 			.name("NewHorizonsHealingSpecialty")
 			.playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
-			.hero({5, 5, 0}, heroType(specialistHero), PlayerColor(0)).heroExperience(0)
+			.hero({5, 5, 0}, heroType(specialistHero), PlayerColor(0)).heroExperience(experience)
 			.heroGarrison({{pikeman, 100}})
-			.hero({7, 7, 0}, heroType("core:solmyr"), PlayerColor(1)).heroExperience(0)
+			.hero({7, 7, 0}, heroType(controlHero), PlayerColor(1)).heroExperience(experience)
 			.heroGarrison({{pikeman, 100}});
 		startWithMap(std::move(builder));
 
@@ -144,6 +181,39 @@ protected:
 		defenderSideHero = ordinaryHero;
 		ASSERT_NE(attackerSideHero, nullptr);
 		ASSERT_NE(ordinaryHero, nullptr);
+	}
+
+	void prepareBlessDamageBattle(int spellPower = 0)
+	{
+		prepareHeroesForBattle(SpellID::BLESS, spellPower);
+		const auto lightMagic = SecondarySkill(SecondarySkill::decode(std::string(CURE_SKILL_ID)));
+		const auto spellcraft = SecondarySkill(SecondarySkill::decode(std::string(SPELLCRAFT_SKILL_ID)));
+		ASSERT_TRUE(lightMagic.hasValue());
+		ASSERT_TRUE(spellcraft.hasValue());
+		for(auto * hero : {attackerSideHero, ordinaryHero})
+		{
+			hero->setPrimarySkill(PrimarySkill::ATTACK, 10, ChangeValueMode::ABSOLUTE);
+			hero->setPrimarySkill(PrimarySkill::DEFENSE, 10, ChangeValueMode::ABSOLUTE);
+			hero->setSecSkillLevel(lightMagic, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+			hero->setSecSkillLevel(spellcraft, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+			hero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+				BonusType::GENERAL_DAMAGE_PREMY, BonusSource::OTHER, 5, BonusSourceID()));
+		}
+
+		startBattle();
+		BattleUnitsChanged remove;
+		remove.battleID = BattleID(0);
+		for(const auto * unit : battle()->battleGetAllUnits(false))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+		gameHandler->sendAndApply(remove);
+		target = addStack(BattleSide::ATTACKER, CreatureID(CreatureID::decode("core:pikeman")),
+			BattleHex(3, 5), 100);
+		controlTarget = addStack(BattleSide::DEFENDER, CreatureID(CreatureID::decode("core:pikeman")),
+			BattleHex(12, 5), 100);
+		beginCombat();
+		ASSERT_NE(target, nullptr);
+		ASSERT_NE(controlTarget, nullptr);
+		ASSERT_EQ(battle()->battleGetOwner(battle()->battleActiveUnit()), PlayerColor(0));
 	}
 
 	void prepareBattle(int spellPower = TEST_SPELL_POWER)
@@ -198,6 +268,29 @@ protected:
 			hero->setPrimarySkill(PrimarySkill::SPELL_POWER, spellPower, ChangeValueMode::ABSOLUTE);
 			setTestSpellPointTotal(hero, 100);
 		}
+	}
+
+	int blessDuration(const CGHeroInstance * caster)
+	{
+		const auto * bless = SpellID(SpellID::BLESS).toSpell();
+		spells::BattleCast cast(battle(), caster, spells::Mode::HERO, bless);
+		return bless->battleMechanics(&cast)->getEffectDuration();
+	}
+
+	int appliedBlessDuration(const CStack * unit) const
+	{
+		const auto bonuses = unit->getAllBonuses(Selector::source(
+			BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::BLESS))));
+		for(const auto & bonus : *bonuses)
+			if(bonus->type == BonusType::ALWAYS_MAXIMUM_DAMAGE)
+				return bonus->turnsRemain;
+		return 0;
+	}
+
+	DamageRange forecastDamage(const CStack * from, const CStack * to) const
+	{
+		BattleAttackInfo info(from, to, 0, false);
+		return battle()->calculateDmgRange(info).damage;
 	}
 
 	void injure(int64_t damage)
@@ -607,4 +700,204 @@ TEST_F(NewHorizonsHealingSpecialtyTest, HistoricalCureOnlyRulesKeepAlamarsResurr
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(target->getAvailableHealth() - healthBefore, forecast.hpDelta);
 	EXPECT_EQ(manaBefore - attackerSideHero->getManaAvailable(), 22);
+}
+
+TEST_F(NewHorizonsHealingSpecialtyTest, AdelaScalesBlessPowerDurationAndRemovesOnlyItsLegacyDamageProducer)
+{
+	includeBlessSpecialty = true;
+	startSpecialistMap("core:adela", "core:adelaide", LIBRARY->heroh->reqExp(2));
+	ASSERT_EQ(attackerSideHero->getHeroType()->getJsonKey(), "core:adela");
+	ASSERT_EQ(ordinaryHero->getHeroType()->getJsonKey(), "core:adelaide");
+	ASSERT_EQ(attackerSideHero->level, 2);
+	ASSERT_EQ(ordinaryHero->level, attackerSideHero->level);
+	ASSERT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(SpellID::BLESS), 20);
+	EXPECT_EQ(ordinaryHero->getNonDamageSpellSpecialtyBonusPercent(SpellID::BLESS), 0);
+	const auto savedRules = newHorizonsHeroes::nonDamageSpellSpecialtyRules(
+		attackerSideHero->getPrimaryGrowthRules());
+	ASSERT_TRUE(savedRules.has_value());
+	ASSERT_EQ(savedRules->spells.size(), 2u);
+	EXPECT_EQ(savedRules->spells[1], SpellID::BLESS);
+
+	JsonNode blessOnlyRules(JsonPath::builtin("config/newHorizonsHeroes"));
+	auto & blessRules = blessOnlyRules["nonDamageSpellSpecialties"];
+	blessRules["version"].Integer() = 1;
+	blessRules["componentPercent"].Integer() = 20;
+	auto & supportedSpells = blessRules["spells"].Vector();
+	supportedSpells.clear();
+	supportedSpells.emplace_back(std::string(BLESS_SPECIALTY_SPELL));
+	EXPECT_NO_THROW(newHorizonsHeroes::validateHeroRules(blessOnlyRules, true));
+	supportedSpells.emplace_back(std::string(BLESS_SPECIALTY_SPELL));
+	EXPECT_THROW(newHorizonsHeroes::validateHeroRules(blessOnlyRules, true), std::runtime_error)
+		<< "The supported spell list remains unique";
+	supportedSpells.clear();
+	supportedSpells.emplace_back("core:magicArrow");
+	EXPECT_THROW(newHorizonsHeroes::validateHeroRules(blessOnlyRules, true), std::runtime_error)
+		<< "Version 1 rejects spells without a mapped specialty conversion";
+
+	const auto * prototype = findAdelaBlessDamagePrototype(attackerSideHero);
+	ASSERT_NE(prototype, nullptr);
+	const int prototypeValue = prototype->val;
+	ASSERT_EQ(prototypeValue, 3);
+	EXPECT_TRUE(hasAdelaBlessDamageProducer(attackerSideHero, prototype, 0))
+		<< "Only Adela's exact limiter/updater clone is made inert";
+	EXPECT_FALSE(hasAdelaBlessDamageProducer(attackerSideHero, prototype, prototypeValue));
+	EXPECT_EQ(prototype->val, prototypeValue) << "The shared hero prototype remains unchanged";
+
+	const auto heroId = attackerSideHero->id;
+	CMemorySerializer memory;
+	memory.oser.version = ESerializationVersion::CURRENT;
+	memory.iser.version = ESerializationVersion::CURRENT;
+	memory.oser & *gameState();
+	CGameState restored;
+	memory.iser.cb = &restored;
+	memory.iser.loadingGamestate = true;
+	memory.iser & restored;
+	auto * loadedAdela = restored.getHero(heroId);
+	ASSERT_NE(loadedAdela, nullptr);
+	EXPECT_EQ(loadedAdela->getNonDamageSpellSpecialtyBonusPercent(SpellID::BLESS), 20);
+	const auto * loadedPrototype = findAdelaBlessDamagePrototype(loadedAdela);
+	ASSERT_NE(loadedPrototype, nullptr);
+	EXPECT_TRUE(hasAdelaBlessDamageProducer(loadedAdela, loadedPrototype, 0));
+	EXPECT_EQ(loadedPrototype->val, prototypeValue);
+
+	prepareBlessDamageBattle();
+	EXPECT_EQ(target->valOfBonuses(BonusType::GENERAL_DAMAGE_PREMY), 5);
+	EXPECT_EQ(controlTarget->valOfBonuses(BonusType::GENERAL_DAMAGE_PREMY), 5);
+
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
+	ordinaryHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(blessDuration(attackerSideHero), newHorizonsMagic::BLESS_BASE_DURATION)
+		<< "The fixed two-round duration is unchanged at zero Spell Power";
+	EXPECT_EQ(blessDuration(ordinaryHero), newHorizonsMagic::BLESS_BASE_DURATION);
+
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 67, ChangeValueMode::ABSOLUTE);
+	ordinaryHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 67, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(blessDuration(attackerSideHero), newHorizonsMagic::BLESS_BASE_DURATION + 1)
+		<< "Adela's 20% applies to the SP/80 term before its floor";
+	EXPECT_EQ(blessDuration(ordinaryHero), newHorizonsMagic::BLESS_BASE_DURATION)
+		<< "The ordinary control remains below the first duration threshold";
+
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 200, ChangeValueMode::ABSOLUTE);
+	ordinaryHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 200, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(blessDuration(attackerSideHero), newHorizonsMagic::BLESS_MAX_DURATION);
+	EXPECT_EQ(blessDuration(ordinaryHero), newHorizonsMagic::BLESS_MAX_DURATION)
+		<< "The normal four-round cap remains authoritative";
+
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 67, ChangeValueMode::ABSOLUTE);
+	ordinaryHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 67, ChangeValueMode::ABSOLUTE);
+	const auto * bless = SpellID(SpellID::BLESS).toSpell();
+	ASSERT_NE(bless, nullptr);
+	spells::BattleCast specialistCast(battle(), attackerSideHero, spells::Mode::HERO, bless);
+	const auto mechanics = bless->battleMechanics(&specialistCast);
+	spells::Target specialistAim;
+	specialistAim.emplace_back(target);
+	ASSERT_EQ(mechanics->getEffectDuration(), newHorizonsMagic::BLESS_BASE_DURATION + 1);
+	ASSERT_TRUE(mechanics->canBeCastAt(specialistAim));
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = SpellID::BLESS;
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(appliedBlessDuration(target), mechanics->getEffectDuration())
+		<< "The accepted Adela cast applies the shared Mechanics duration forecast";
+	EXPECT_EQ(target->valOfBonuses(BonusType::GENERAL_DAMAGE_PREMY), 5)
+		<< "The old level-updated damage producer no longer contributes";
+
+	spells::BattleCast controlCast(battle(), ordinaryHero, spells::Mode::HERO, bless);
+	spells::Target controlAim;
+	controlAim.emplace_back(controlTarget);
+	controlCast.applyEffects(gameHandler->spellcastEnvironment(), controlAim);
+	EXPECT_EQ(appliedBlessDuration(controlTarget), newHorizonsMagic::BLESS_BASE_DURATION);
+	EXPECT_EQ(controlTarget->valOfBonuses(BonusType::GENERAL_DAMAGE_PREMY), 5);
+	const auto adelaDamage = forecastDamage(target, controlTarget);
+	const auto ordinaryDamage = forecastDamage(controlTarget, target);
+	EXPECT_EQ(adelaDamage.min, ordinaryDamage.min);
+	EXPECT_EQ(adelaDamage.max, ordinaryDamage.max)
+		<< "Matching primary ratings and unrelated bonuses produce identical blessed-stack forecasts";
+
+	const auto adelaBonuses = attackerSideHero->getExportedBonusList();
+	const auto unrelated = std::find_if(adelaBonuses.begin(), adelaBonuses.end(), [](const auto & bonus)
+	{
+		return bonus && bonus->type == BonusType::GENERAL_DAMAGE_PREMY
+			&& bonus->source == BonusSource::OTHER && bonus->val == 5
+			&& !bonus->limiter && !bonus->updater;
+	});
+	ASSERT_NE(unrelated, adelaBonuses.end());
+	const auto damageWithUnrelated = adelaDamage;
+	attackerSideHero->removeBonus(*unrelated);
+	EXPECT_LT(target->valOfBonuses(BonusType::GENERAL_DAMAGE_PREMY), 5);
+	const auto damageWithoutUnrelated = forecastDamage(target, controlTarget);
+	EXPECT_LT(damageWithoutUnrelated.min, damageWithUnrelated.min);
+	EXPECT_LT(damageWithoutUnrelated.max, damageWithUnrelated.max)
+		<< "The unrelated source remains effective through the shared damage calculation";
+}
+
+TEST_F(NewHorizonsHealingSpecialtyTest, HistoricalCureAndResurrectionListRetainsAdelaBlessDamageSpecialty)
+{
+	includeResurrectionSpecialty = true;
+	startSpecialistMap("core:adela", "core:adelaide", LIBRARY->heroh->reqExp(2));
+	ASSERT_EQ(attackerSideHero->getHeroType()->getJsonKey(), "core:adela");
+	ASSERT_EQ(ordinaryHero->getHeroType()->getJsonKey(), "core:adelaide");
+	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(SpellID::BLESS), 0);
+	const auto savedRules = newHorizonsHeroes::nonDamageSpellSpecialtyRules(
+		attackerSideHero->getPrimaryGrowthRules());
+	ASSERT_TRUE(savedRules.has_value());
+	ASSERT_EQ(savedRules->spells.size(), 2u);
+	EXPECT_EQ(savedRules->spells[0], SpellID::CURE);
+	EXPECT_EQ(savedRules->spells[1], SpellID::RESURRECTION);
+
+	const auto * prototype = findAdelaBlessDamagePrototype(attackerSideHero);
+	ASSERT_NE(prototype, nullptr);
+	const int prototypeValue = prototype->val;
+	EXPECT_TRUE(hasAdelaBlessDamageProducer(attackerSideHero, prototype, prototypeValue))
+		<< "A historical list that omits Bless cannot suppress its legacy producer";
+
+	const auto heroId = attackerSideHero->id;
+	CMemorySerializer memory;
+	memory.oser.version = ESerializationVersion::CURRENT;
+	memory.iser.version = ESerializationVersion::CURRENT;
+	memory.oser & *gameState();
+	CGameState restored;
+	memory.iser.cb = &restored;
+	memory.iser.loadingGamestate = true;
+	memory.iser & restored;
+	auto * loadedAdela = restored.getHero(heroId);
+	ASSERT_NE(loadedAdela, nullptr);
+	EXPECT_EQ(loadedAdela->getNonDamageSpellSpecialtyBonusPercent(SpellID::BLESS), 0);
+	const auto * loadedPrototype = findAdelaBlessDamagePrototype(loadedAdela);
+	ASSERT_NE(loadedPrototype, nullptr);
+	EXPECT_TRUE(hasAdelaBlessDamageProducer(loadedAdela, loadedPrototype, prototypeValue));
+
+	prepareBlessDamageBattle(67);
+	const auto * bless = SpellID(SpellID::BLESS).toSpell();
+	ASSERT_NE(bless, nullptr);
+	spells::BattleCast specialistCast(battle(), attackerSideHero, spells::Mode::HERO, bless);
+	const auto mechanics = bless->battleMechanics(&specialistCast);
+	EXPECT_EQ(mechanics->getEffectDuration(), newHorizonsMagic::BLESS_BASE_DURATION);
+	spells::Target specialistAim;
+	specialistAim.emplace_back(target);
+	ASSERT_TRUE(mechanics->canBeCastAt(specialistAim));
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = SpellID::BLESS;
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(appliedBlessDuration(target), newHorizonsMagic::BLESS_BASE_DURATION);
+	const int legacyDamage = 3 * (attackerSideHero->level / target->creatureLevel());
+	ASSERT_GT(legacyDamage, 0) << "The test must exercise Adela's level/creature-level updater";
+	EXPECT_EQ(target->valOfBonuses(BonusType::GENERAL_DAMAGE_PREMY), 5 + legacyDamage);
+
+	spells::BattleCast controlCast(battle(), ordinaryHero, spells::Mode::HERO, bless);
+	spells::Target controlAim;
+	controlAim.emplace_back(controlTarget);
+	controlCast.applyEffects(gameHandler->spellcastEnvironment(), controlAim);
+	EXPECT_EQ(appliedBlessDuration(controlTarget), newHorizonsMagic::BLESS_BASE_DURATION);
+	EXPECT_EQ(controlTarget->valOfBonuses(BonusType::GENERAL_DAMAGE_PREMY), 5);
+	const auto adelaDamage = forecastDamage(target, controlTarget);
+	const auto ordinaryDamage = forecastDamage(controlTarget, target);
+	EXPECT_GT(adelaDamage.min, ordinaryDamage.min);
+	EXPECT_GT(adelaDamage.max, ordinaryDamage.max)
+		<< "The old Bless specialty still changes its own damage bonus when the saved allowlist omits it";
 }

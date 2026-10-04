@@ -910,9 +910,10 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 			}
 			else if(v3Bless)
 			{
-				const int64_t spellPowerTerm = scaleSpellPowerComponentWithCoefficientBasisPoints(
+				const int specialtyPercent = heroCaster->getNonDamageSpellSpecialtyBonusPercent(familyID);
+				const int64_t spellPowerTerm = scaleDamageSpellPowerComponentWithCoefficientBasisPoints(
 					effectPower, newHorizonsMagic::BLESS_SPELL_POWER_DURATION_DIVISOR,
-					getSpellPowerCoefficientBasisPoints());
+					getSpellPowerCoefficientBasisPoints(), specialtyPercent);
 				int64_t duration = newHorizonsMagic::blessDurationFromPowerTerm(spellPowerTerm);
 				duration += heroCaster->valOfBonuses(BonusType::SPELL_DURATION, BonusSubtypeID());
 				duration += heroCaster->valOfBonuses(BonusType::SPELL_DURATION,

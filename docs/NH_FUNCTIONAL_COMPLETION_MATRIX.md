@@ -1,6 +1,18 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
+UP224 Adela/Bless source/native accepted: +20% scales only the numericalSP/80
+duration term before flooring; fixed2/cap4 remain unchanged. Her exact original
+Bless-limited level-based damage producer is made inert only on the converted
+instance; prototypes, unrelated bonuses and older unlisted saves remain intact.
+Hero-aware duration/specialty text matches the component rule. Client38169 and
+both-target99683/48936 pass; final native6322 passes8/8 in5.310s, zero skips,
+including two new real-Adela cases plus all six Cure/Resurrection controls.
+Twelve hero-data checks/module drift and independent reviews pass. Four mapped
+non-damage aliases now converted; spell/rank/perk identity totals unchanged.
+Broad modifier/proxy/variant/AI composition and graphical/playable delivery remain
+Phase2. First callback compile and save-pointer-oracle failures are retained.
+
 UP227 Vault of Ashes source/native accepted: standard Horde2 now targets
 Fire/Energy row3, with saved base4 and horde addition2. Actual prerequisite
 construction, unbuilt/built controls, unchanged initial stock, upgrade
@@ -2357,6 +2369,13 @@ remain separately tracked rather than silently assumed.
 
 ## Skills and perks baseline
 
+Historical baseline and implementation trace follow. Current registration is
+31 Skills,87 active/6 planned ranks and214 active/96 planned perks, verified
+from the registry on2026-10-04. Later accepted UP183 implements casualty
+provenance and Corpse Preservation; earlier descriptions of its inert flag below
+are not current missing-feature findings. Use the current Skill table and the
+accepted queue evidence rather than the historical baseline to select work.
+
 The canonical catalogue contains 31 Skills, 93 rank effects, and 310 perks: 403
 requirements in total. The historical 2026-10-02 registry had 84 active rank effects and 180
 active perks, leaving nine ranks and 130 perks planned. These counts were
@@ -2504,6 +2523,11 @@ Mentor opens Learning. Backstab now
 opens the Shroud's ordinary Advanced-rank progression; Blinkmaster opens Chaos.
 
 ## Spell baseline
+
+Historical checkpoints follow. In particular, UP220's35 legacy access exclusions
+and UP056's explicit Summon Boat destination targeting supersede the earlier
+admission/targeting gaps below. Their remaining authored-profile and graphical
+delivery gaps are still open; historical identity counts are not current totals.
 
 The detailed canonical school rosters govern when they conflict with older
 summary counts. They contain 67 combat spells plus five Neutral Adventure

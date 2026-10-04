@@ -63,6 +63,26 @@ bool plainDamageSpellSpecialtyBonus(const JsonNode & definition)
 			return false;
 	return true;
 }
+
+bool exactAdelaBlessSpecialtyBonus(const CHero * hero, const std::string & name, const JsonNode & definition)
+{
+	if(!hero || hero->getJsonKey() != "core:adela" || name != "bless"
+		|| !definition.isStruct() || definition.Struct().size() != 4
+		|| !definition["type"].isString() || definition["type"].String() != "GENERAL_DAMAGE_PREMY"
+		|| !definition["val"].isNumber() || definition["val"].Float() != 3.0
+		|| !definition["updater"].isString()
+		|| definition["updater"].String() != "TIMES_HERO_LEVEL_DIVIDE_STACK_LEVEL")
+		return false;
+
+	const auto & limiters = definition["limiters"];
+	if(!limiters.isVector() || limiters.Vector().size() != 1)
+		return false;
+	const auto & limiter = limiters.Vector().front();
+	return limiter.isStruct() && limiter.Struct().size() == 3
+		&& limiter["type"].isString() && limiter["type"].String() == "HAS_ANOTHER_BONUS_LIMITER"
+		&& limiter["bonusSourceType"].isString() && limiter["bonusSourceType"].String() == "SPELL_EFFECT"
+		&& limiter["bonusSourceID"].isString() && limiter["bonusSourceID"].String() == "bless";
+}
 }
 
 CHeroHandler::~CHeroHandler() = default;
@@ -395,6 +415,8 @@ void CHeroHandler::loadHeroSpecialty(CHero * hero, const JsonNode & node) const
 		{
 			auto prepared = prepSpec(JsonUtils::parseBonus(keyValue.second));
 			hero->specialty.push_back(prepared);
+			if(exactAdelaBlessSpecialtyBonus(hero, keyValue.first, keyValue.second))
+				hero->nonDamageSpellSpecialtyProducers.push_back({SpellID(SpellID::BLESS), prepared, true});
 
 			const JsonNode subtype = keyValue.second["subtype"];
 			if(!subtype.isString())

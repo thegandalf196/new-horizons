@@ -2805,7 +2805,8 @@
 					"componentPercent": 20,
 					"spells": [
 						"core:cure",
-						"core:resurrection"
+						"core:resurrection",
+						"core:bless"
 					]
 				},
 				"skillSpecialties": {

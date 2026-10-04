@@ -590,7 +590,10 @@ std::string CGHeroInstance::getSpecialtyDescriptionTranslated() const
 				description.appendName(producer.spell);
 				description.appendRawString(" gains +");
 				description.appendNumber(rules->componentPercent);
-				description.appendRawString("% to its Spell Power-derived healing component.");
+				if(producer.spell == SpellID::BLESS)
+					description.appendRawString("% to its Spell Power-derived duration component before its normal duration cap.");
+				else
+					description.appendRawString("% to its Spell Power-derived healing component.");
 				return description.toString(LIBRARY->generaltexth.get());
 			}
 

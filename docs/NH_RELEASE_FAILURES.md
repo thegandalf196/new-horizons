@@ -2,6 +2,23 @@
 
 ## Purpose
 
+### 2026-10-04 UP224 — Bless control cast requires the spell environment
+
+Client38169 passes. First both-target60053 fails at two new fixture control
+casts: BattleCast::applyEffects takes ServerCallback*, not CGameHandler*.
+Keep UP224-adela-native-build.log. Use the existing battle spell environment
+adapter for control application; do not loosen production casting interfaces
+or drop the accepted principal cast/damage comparisons.
+Repair build99683 succeeds. First native64226 passes6/8 in5.327s, zero skips;
+only the two new save-shape checks fail. Their helper compares limiter/updater
+pointer identities against the global prototype after deserialization rather
+than the reconstructed objects' semantics. Preserve UP224-adela-native.log/XML;
+repair that test oracle while retaining source/type/value/marker and actual
+duration/damage checks. Existing Cure/Res cases and the new principal checks pass.
+Final build48936 passes; native6322 passes8/8 in5.310s, zero skips, recorded in
+UP224-adela-accepted.log/XML. Independent review accepts the semantic oracle;
+no production or gameplay assertion was weakened.
+
 ### 2026-10-04 UP227 — Construction-state enum and test invocation
 
 First both-target build45584 fails only in the new Conflux fixture: the
