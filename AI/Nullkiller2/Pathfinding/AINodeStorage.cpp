@@ -1321,7 +1321,7 @@ std::optional<AINodeStorage::DimensionDoorSpellPlan> AINodeStorage::getDimension
 		return std::nullopt;
 	}
 
-	const int movementPointsTaken = std::min(plannedSourceMoveRemains, capability.effect->getMovementPointsTaken());
+	const int movementPointsTaken = capability.effect->getMovementPointsTaken(hero, plannedSourceMoveRemains);
 	const float movementCost = static_cast<float>(movementPointsTaken) / plannedSourceMoveLimit;
 
 	DimensionDoorSpellPlan plan;
@@ -1440,12 +1440,13 @@ void AINodeStorage::addDimensionDoorTeleportation(
 	if(node->locked || node->getCost() <= plan.destinationCost)
 		return;
 
+	const auto * hero = srcNode->actor->hero;
 	AIPathfinding::DimensionDoorActionParameters parameters;
 	parameters.usedSpell = plan.spell->id;
 	parameters.destination = destination;
 	parameters.manaCost = plan.manaCost;
 	parameters.movementPointsRequired = plan.effect->getMovementPointsRequired();
-	parameters.movementPointsTaken = plan.effect->getMovementPointsTaken();
+	parameters.movementPointsTaken = plan.effect->getMovementPointsTaken(hero, plan.plannedSourceMoveRemains);
 	parameters.plannedSourceTurn = plan.plannedSourceTurn;
 	parameters.plannedSourceMoveRemains = plan.plannedSourceMoveRemains;
 	parameters.plannedSourceMoveLimit = plan.plannedSourceMoveLimit;

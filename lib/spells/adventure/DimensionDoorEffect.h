@@ -14,6 +14,7 @@
 
 class DLL_LINKAGE DimensionDoorEffect final : public AdventureSpellRangedEffect
 {
+	const CSpell * owner;
 	std::string cursor;
 	std::string cursorGuarded;
 	int movementPointsRequired;
@@ -26,11 +27,14 @@ public:
 
 	int getMovementPointsRequired() const;
 	int getMovementPointsTaken() const;
+	int getMovementPointsTaken(const spells::Caster * caster, int remainingMovement) const;
 	bool doesWaterLandFailureTakePoints() const;
 	bool doesExposeFogOfWar() const;
+	bool isTargetInRange(const IGameInfoCallback * cb, const spells::Caster * caster, const int3 & pos) const final;
 	bool isValidTargetFrom(const IGameInfoCallback * cb, const spells::Caster * caster, const int3 & source, const int3 & destination) const final;
 
 private:
+	bool usesNewHorizonsRules(const spells::Caster * caster) const;
 	bool canBeCastImpl(spells::Problem & problem, const IGameInfoCallback * cb, const spells::Caster * caster) const final;
 	bool canBeCastAtImpl(spells::Problem & problem, const IGameInfoCallback * cb, const spells::Caster * caster, const int3 & pos) const final;
 	ESpellCastResult applyAdventureEffects(SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters) const final;

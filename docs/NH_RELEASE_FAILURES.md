@@ -2,6 +2,29 @@
 
 ## Purpose
 
+### 2026-10-03 UP-056 — Planned Dimension Door caster ownership
+
+Client build53826 exits1: addDimensionDoorTeleportation has no local `hero`,
+although the new caster-aware expenditure call used that name. The earlier plan
+builder does own a local hero, so its call is unaffected. Return the bounded AI
+file to its owner to use the source actor's hero; preserve planned remaining
+Movement rather than substituting the live allowance. Original log:
+UP056-dimension-door-policy-client-build.log. Retry must use a separate log and
+existing objects; no build or native acceptance is claimed from this failure.
+Closure of compile failure: owner binds the hero from srcNode->actor->hero;
+client retry55650 builds successfully, retaining
+UP056-dimension-door-policy-client-build-retry.log. Native evidence is pending.
+
+Focused build83845 exits1 in the new AI fog fixture: direct access to
+players.at(...).team requires the complete PlayerState definition, not its
+callback forward declaration. Server fixture compiles; the tester owns adding
+the explicit header. Preserve UP056-dimension-door-policy-focused-build.log;
+retry separately with the compiled objects and unchanged assertions.
+Closure: tester adds direct CPlayerState.h (PlayerState and TeamState); combined
+retry22130 builds both targets successfully. Native43587 passes6/6 in2.086s,
+zero skips (UP056-dimension-door-policy-focused.log/XML). No production behavior
+or assertions were weakened; retained failures remain useful compile lessons.
+
 ### 2026-10-03 UP-056 — Explicit callback definition in shared destination helper
 
 Combined build7395 exits1: SummonBoatEffect's new shared predicate invokes

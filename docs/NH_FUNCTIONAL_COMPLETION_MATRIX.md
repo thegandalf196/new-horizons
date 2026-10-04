@@ -1,9 +1,12 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-03
-Latest accepted slice: Summon Boat destination targeting; client/test builds pass
-and UP056-summon-boat-targeting-focused.log/XML passes8/8 in2.563s, zero skips.
-Independent source review finds no blocker. Combat spell identities61/67 (Chaos7/11); perks210/310
+Latest accepted slice: Dimension Door visible/legal radius8 and successful
+full-Movement expenditure, shared with UI targeting and planned AI positions.
+Client/test builds pass; UP056-dimension-door-policy-focused.log/XML passes6/6
+in2.086s, zero skips. Root integration and independent Luna runtime/test review
+find no blocker; the separate Astra reviewer spawn was rejected by the service
+thread limit. Combat spell identities61/67 (Chaos7/11); perks210/310
 and ranks87/93 unchanged. Source/native acceptance only, no playable promotion.
 Canonical source SHA-256: `5b26a4930b6c6838e7435454c96b35a19039c275694e975636b37e6003b68a4a`
 
@@ -17,6 +20,23 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+UP056 Dimension Door explicit target and expenditure clauses are source/native
+verified. Captured New Horizons rules require a caster-owner-visible, clear,
+same-level destination within8 using the existing rounded DIST_2D convention.
+The generic UI capability uses the same predicate; planned AI positions share
+that legality and spend planned remaining Movement, rather than live Movement.
+Success consumes all remaining Movement. Legacy hidden-map rectangular range
+and configured expenditure remain unchanged. Client retry55650 and combined
+retry22130 pass; native43587 passes6/6 in2.086s, zero skips, covering actual cast,
+hidden/out-of-range/blocked no-spend rejection, legacy behavior, legal/fog AI
+routes and daily action revalidation. Module/diff checks pass. Initial AI scope
+and test header failures are retained in NH_RELEASE_FAILURES.md. No GUI,
+profile or playable promotion. Protected-barrier enforcement and the required
+casting-ends-Movement warning remain Phase 1 gaps; full DD and the five Adventure
+Spell effects are not claimed complete. Water Walk's end-day rule awaits its
+stranded-hero policy answer; other existing design questions remain open.
+Combat61/67, perks210/310 and ranks87/93 remain unchanged.
 
 UP056 Summon Boat required targeting path is source/native verified: generic
 effect capabilities enable map selection without a ranged-spell cast; native

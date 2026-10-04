@@ -26,6 +26,7 @@
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/spells/Problem.h"
 #include "../../../lib/spells/adventure/AdventureSpellEffect.h"
+#include "../../../lib/spells/adventure/DimensionDoorEffect.h"
 #include "../../../lib/constants/StringConstants.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/battle/CObstacleInstance.h"
@@ -257,6 +258,45 @@ protected:
 			}
 		}
 		ASSERT_EQ(attackerSideHero->getSpellSchoolLevel(summonBoat.toSpell()), 3);
+	}
+
+	void prepareDimensionDoorCast(bool withNewHorizonsRules, int movementPoints = 1200)
+	{
+		useMagic = withNewHorizonsRules;
+		startGame();
+		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::DIMENSION_DOOR));
+		setTestSpellPointTotal(attackerSideHero, 1000);
+		attackerSideHero->setMovementPoints(movementPoints);
+	}
+
+	const DimensionDoorEffect * dimensionDoorEffect() const
+	{
+		return SpellID(SpellID::DIMENSION_DOOR).toSpell()->getAdventureMechanics()
+			.getEffectAs<DimensionDoorEffect>(attackerSideHero);
+	}
+
+	bool canCastDimensionDoorAt(const int3 & target)
+	{
+		spells::detail::ProblemImpl problem;
+		return SpellID(SpellID::DIMENSION_DOOR).toSpell()->getAdventureMechanics().canBeCastAt(
+			problem, &gameHandler->gameInfo(), attackerSideHero, target);
+	}
+
+	bool castDimensionDoorAt(const int3 & target)
+	{
+		AdventureSpellCastParameters parameters;
+		parameters.caster = attackerSideHero;
+		parameters.pos = target;
+		auto * environment = dynamic_cast<SpellCastEnvironment *>(gameHandler->spellcastEnvironment());
+		EXPECT_NE(environment, nullptr);
+		return SpellID(SpellID::DIMENSION_DOOR).toSpell()->adventureCast(environment, parameters);
+	}
+
+	void setTileVisibility(PlayerColor player, const int3 & tile, bool visible)
+	{
+		const auto teamId = gameState()->players.at(player).team;
+		gameState()->teams.at(teamId).fogOfWarMap[tile] = visible ? 1 : 0;
 	}
 
 	const IAdventureSpellEffect * summonBoatEffect() const
@@ -1261,6 +1301,97 @@ TEST_F(NewHorizonsMagicStateTest, DimensionDoorRejectedWithoutMovementLeavesScro
 	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(dimensionDoor));
 	EXPECT_EQ(environment->prepared, 0);
 	EXPECT_EQ(environment->completed, 0);
+}
+
+TEST_F(NewHorizonsMagicStateTest, NewHorizonsDimensionDoorUsesVisibleEightTileTargetAndExhaustsMovement)
+{
+	prepareDimensionDoorCast(true, 1200);
+	revealMap(PlayerColor(0));
+	const SpellID dimensionDoor(SpellID::DIMENSION_DOOR);
+	const auto * effect = dimensionDoorEffect();
+	ASSERT_NE(effect, nullptr);
+	ASSERT_TRUE(newHorizonsMagic::isAdventureSpell(attackerSideHero->getMagicRules(), dimensionDoor));
+	EXPECT_TRUE(effect->requiresTargetSelection(attackerSideHero));
+
+	const int3 source = attackerSideHero->getSightCenter();
+	const int3 target = source + int3(8, 0, 0);
+	ASSERT_EQ(source.dist(target, int3::DIST_2D), 8u);
+	const int movementBefore = attackerSideHero->movementPointsRemaining();
+	ASSERT_GT(movementBefore, 300);
+	EXPECT_EQ(effect->getMovementPointsTaken(attackerSideHero, movementBefore), movementBefore);
+	EXPECT_TRUE(effect->isTargetInRange(&gameHandler->gameInfo(), attackerSideHero, target));
+	EXPECT_TRUE(effect->isValidTargetFrom(&gameHandler->gameInfo(), attackerSideHero, source, target));
+	EXPECT_TRUE(canCastDimensionDoorAt(target));
+
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	ASSERT_TRUE(castDimensionDoorAt(target));
+
+	EXPECT_EQ(attackerSideHero->visitablePos(), target);
+	EXPECT_EQ(attackerSideHero->movementPointsRemaining(), 0);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - attackerSideHero->getSpellCost(dimensionDoor.toSpell()));
+	EXPECT_TRUE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+}
+
+TEST_F(NewHorizonsMagicStateTest, NewHorizonsDimensionDoorRejectsHiddenOutOfRangeAndBlockedTargetsWithoutSpending)
+{
+	prepareDimensionDoorCast(true, 1200);
+	revealMap(PlayerColor(0));
+	const auto * effect = dimensionDoorEffect();
+	ASSERT_NE(effect, nullptr);
+	const int3 source = attackerSideHero->getSightCenter();
+	const int3 hiddenTarget = source + int3(3, 0, 0);
+	const int3 outOfRangeTarget = source + int3(9, 0, 0);
+	const int3 blockedTarget = source + int3(2, 2, 0);
+	gameState()->getMap().getTile(blockedTarget).blockingObjects.push_back(defenderSideHero->id);
+	ASSERT_TRUE(gameState()->getMap().getTile(blockedTarget).blocked());
+	setTileVisibility(PlayerColor(0), hiddenTarget, false);
+	ASSERT_FALSE(gameState()->isVisibleFor(hiddenTarget, PlayerColor(0)));
+
+	const std::array<int3, 3> illegalTargets = {hiddenTarget, outOfRangeTarget, blockedTarget};
+	const int movementBefore = attackerSideHero->movementPointsRemaining();
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	const int3 positionBefore = attackerSideHero->visitablePos();
+	ASSERT_FALSE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+
+	for(const auto & target : illegalTargets)
+	{
+		SCOPED_TRACE(target.toString());
+		EXPECT_FALSE(effect->isTargetInRange(&gameHandler->gameInfo(), attackerSideHero, target));
+		EXPECT_FALSE(effect->isValidTargetFrom(&gameHandler->gameInfo(), attackerSideHero, source, target));
+		EXPECT_FALSE(canCastDimensionDoorAt(target));
+		EXPECT_FALSE(castDimensionDoorAt(target));
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+		EXPECT_EQ(attackerSideHero->movementPointsRemaining(), movementBefore);
+		EXPECT_EQ(attackerSideHero->visitablePos(), positionBefore);
+		EXPECT_FALSE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+	}
+}
+
+TEST_F(NewHorizonsMagicStateTest, LegacyDimensionDoorKeepsItsRectangularRangeAndConfiguredMovementCost)
+{
+	prepareDimensionDoorCast(false, 1200);
+	setMapVisibility(PlayerColor(0), false);
+	const SpellID dimensionDoor(SpellID::DIMENSION_DOOR);
+	const auto * effect = dimensionDoorEffect();
+	ASSERT_NE(effect, nullptr);
+	ASSERT_FALSE(newHorizonsMagic::isAdventureSpell(attackerSideHero->getMagicRules(), dimensionDoor));
+	EXPECT_TRUE(effect->requiresTargetSelection(attackerSideHero));
+
+	const int3 source = attackerSideHero->getSightCenter();
+	const int3 legacyRangeEdge = source + int3(9, 0, 0);
+	const int movementBefore = attackerSideHero->movementPointsRemaining();
+	ASSERT_GT(movementBefore, 300);
+	EXPECT_EQ(effect->getMovementPointsTaken(attackerSideHero, movementBefore), 300);
+	EXPECT_TRUE(effect->isTargetInRange(&gameHandler->gameInfo(), attackerSideHero, legacyRangeEdge));
+	EXPECT_TRUE(effect->isValidTargetFrom(&gameHandler->gameInfo(), attackerSideHero, source, legacyRangeEdge));
+	EXPECT_TRUE(canCastDimensionDoorAt(legacyRangeEdge));
+
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	ASSERT_TRUE(castDimensionDoorAt(legacyRangeEdge));
+	EXPECT_EQ(attackerSideHero->visitablePos(), legacyRangeEdge);
+	EXPECT_EQ(attackerSideHero->movementPointsRemaining(), movementBefore - 300);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - attackerSideHero->getSpellCost(dimensionDoor.toSpell()));
+	EXPECT_FALSE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
 }
 
 TEST_F(NewHorizonsMagicStateTest, TownPortalQueryCancelThenGuildVisitRetainsTheOriginalScroll)

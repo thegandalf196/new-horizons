@@ -21,6 +21,7 @@
 #include "lib/GameLibrary.h"
 #include "lib/GameConstants.h"
 #include "lib/IGameSettings.h"
+#include "lib/CPlayerState.h"
 #include "lib/bonuses/Bonus.h"
 #include "lib/mapObjectConstructors/AObjectTypeHandler.h"
 #include "lib/mapObjectConstructors/CObjectClassesHandler.h"
@@ -136,6 +137,18 @@ protected:
 				gameState()->getMap().getTile(center + int3(dx, dy, 0)).terrainType = ETerrainId::WATER;
 			}
 		}
+	}
+
+	void makeRockWall(int x)
+	{
+		for(int y = 0; y < map()->height; ++y)
+			map()->getTile({x, y, 0}).terrainType = ETerrainId::ROCK;
+	}
+
+	void setTileVisibility(const int3 & tile, bool visible)
+	{
+		const auto teamId = gameState()->players.at(PLAYER).team;
+		gameState()->teams.at(teamId).fogOfWarMap[tile] = visible ? 1 : 0;
 	}
 
 	void addOneDayTravelBonus(CGHeroInstance * hero, BonusType type)
@@ -269,6 +282,75 @@ TEST_F(AdventureSpellDailyPathfindingTest, NewHorizonsSummonBoatPathUsesAKnownAv
 	{
 		return hasAvailableActionOnTurn<NK2AI::AIPathfinding::SummonBoatAction>(path, 0);
 	}));
+}
+
+TEST_F(AdventureSpellDailyPathfindingTest, NewHorizonsDimensionDoorPathExhaustsMovementBeforeTheFollowingTile)
+{
+	const SpellID dimensionDoorSpell = spell("core:dimensionDoor");
+	auto * hero = startHeroWithSpells(true, {dimensionDoorSpell});
+	ASSERT_NE(hero, nullptr);
+	ASSERT_GT(hero->movementPointsRemaining(), 300);
+	setMapVisibility(PLAYER, true);
+
+	const int3 source = hero->visitablePos();
+	makeRockWall(source.x + 1);
+	const int3 target = source + int3(10, 0, 0);
+	ASSERT_TRUE(map()->isInTheMap(target));
+
+	const auto gateway = makeGateway(PLAYER);
+	const auto paths = pathsTo(*gateway, hero, target);
+	const auto route = std::ranges::find_if(paths, [&](const NK2AI::AIPath & path)
+	{
+		return path.targetTile() == target;
+	});
+	ASSERT_NE(route, paths.end()) << "no path crosses the wall through a legal Dimension Door landing";
+	ASSERT_TRUE(hasAvailableActionOnTurn<NK2AI::AIPathfinding::DimensionDoorAction>(*route, 0)) << route->toString();
+	EXPECT_EQ(route->targetNode().turns, 1) << route->toString();
+
+	bool foundDimensionDoorLanding = false;
+	for(size_t index = 0; index < route->nodes.size(); ++index)
+	{
+		const auto & node = route->nodes[index];
+		if(!node.specialAction || !dynamic_cast<const NK2AI::AIPathfinding::DimensionDoorAction *>(node.specialAction.get()))
+			continue;
+
+		foundDimensionDoorLanding = true;
+		ASSERT_LT(index + 1, route->nodes.size()) << route->toString();
+		const auto & sourceNode = route->nodes[index + 1];
+		EXPECT_EQ(node.coord.z, sourceNode.coord.z);
+		EXPECT_LE(sourceNode.coord.dist(node.coord, int3::DIST_2D), 8u);
+		EXPECT_TRUE(gameState()->isVisibleFor(node.coord, PLAYER));
+	}
+	EXPECT_TRUE(foundDimensionDoorLanding) << route->toString();
+}
+
+TEST_F(AdventureSpellDailyPathfindingTest, NewHorizonsDimensionDoorPathDoesNotCrossByTargetingHiddenLandings)
+{
+	const SpellID dimensionDoorSpell = spell("core:dimensionDoor");
+	auto * hero = startHeroWithSpells(true, {dimensionDoorSpell});
+	ASSERT_NE(hero, nullptr);
+
+	const int3 source = hero->visitablePos();
+	makeRockWall(source.x + 1);
+	setMapVisibility(PLAYER, false);
+	setTileVisibility(source, true);
+	const int3 target = source + int3(10, 0, 0);
+	setTileVisibility(target, true);
+	ASSERT_TRUE(map()->isInTheMap(target));
+	ASSERT_TRUE(gameState()->isVisibleFor(target, PLAYER));
+
+	const auto gateway = makeGateway(PLAYER);
+	const auto paths = pathsTo(*gateway, hero, target);
+	EXPECT_FALSE(std::ranges::any_of(paths, [&](const NK2AI::AIPath & path)
+	{
+		return path.targetTile() == target
+			&& std::ranges::any_of(path.nodes, [&](const NK2AI::AIPathNodeInfo & node)
+			{
+				return node.specialAction
+					&& dynamic_cast<const NK2AI::AIPathfinding::DimensionDoorAction *>(node.specialAction.get());
+			});
+	})) << "a New Horizons route must not reveal or target hidden intermediate landing tiles";
+	EXPECT_TRUE(paths.empty()) << "the rock wall prevents a non-spell route to the visible destination";
 }
 
 TEST_F(AdventureSpellDailyPathfindingTest, DimensionDoorRevalidationUsesThePlannedSpellDay)
