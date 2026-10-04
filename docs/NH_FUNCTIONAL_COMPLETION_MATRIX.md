@@ -3,8 +3,9 @@
 Updated: 2026-10-04
 Latest native-verified slice: UP201 Rampart Fountain of Fortune.
 Client38823 and both-target final23674 pass; native12287 passes1/1 in1.136s,
-zero skips. Independent Astra production review finds no blocker; final fixture
-review is pending. Combat spell identities61/67 (Chaos7/11); perks213/310
+zero skips. Independent Astra production review finds no blocker; root inspected
+the native fixture. Separate fixture review remains Phase2. Combat spell
+identities61/67 (Chaos7/11); perks213/310
 (97 planned), faction perks62/90 and ranks87/93 unchanged. This adds one
 verified specified town mechanic, not a perk or spell. Source/native acceptance
 only; GUI and playable delivery remain pending.
