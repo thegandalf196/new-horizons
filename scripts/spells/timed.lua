@@ -11,6 +11,11 @@ local SANCTUARY_SPELL = "new-horizons:sanctuary"
 local ENTANGLE_SPELL = "new-horizons:entangle"
 local VENGEFUL_VINES_SPELL = "new-horizons:vengefulVines"
 local MISFORTUNE_SPELL = "core:misfortune"
+local FORGETFULNESS_SPELL = "core:forgetfulness"
+local MINDBREAKER_PERK = "new-horizons:chaosMagic.mindbreaker"
+local FORGETFULNESS_BASE_DURATION = 1
+local FORGETFULNESS_MAX_DURATION = 3
+local FORGETFULNESS_POWER_DIVISOR = 80
 local LIGHT_MAGIC_SKILL = "new-horizons:lightMagic"
 local HEALER_PERK = "new-horizons:lightMagic.healer"
 local GUARDIAN_PERK = "new-horizons:lightMagic.guardian"
@@ -78,9 +83,16 @@ function Script:convertBonuses(mechanics)
 	local entangleDuration = nil
 	local vengefulVinesDuration = nil
 	local misfortuneDuration = nil
+	local forgetfulnessDuration = nil
 	local shieldOfChaosDuration = nil
 	local misfortuneChanceMultiplierBasisPoints = nil
-	if spellKey == SHIELD_OF_CHAOS_SPELL and mechanics:usesNewHorizonsMagicV3() then
+	if spellKey == FORGETFULNESS_SPELL and mechanics:usesNewHorizonsMagicV3() then
+		local powerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
+			math.max(0, mechanics:getEffectPower()), FORGETFULNESS_POWER_DIVISOR,
+			mechanics:getSpellPowerCoefficientBasisPoints())
+		forgetfulnessDuration = mechanics:adjustEffectDuration(math.min(
+			FORGETFULNESS_MAX_DURATION, FORGETFULNESS_BASE_DURATION + powerTerm))
+	elseif spellKey == SHIELD_OF_CHAOS_SPELL and mechanics:usesNewHorizonsMagicV3() then
 		shieldOfChaosDuration = mechanics:adjustEffectDuration(SHIELD_OF_CHAOS_BASE_DURATION)
 	elseif spellKey == CRUSADE_SPELL and mechanics:usesNewHorizonsMagicV3() then
 		-- Crusade authors a fixed three-round buff, independent of Spell Power. Apply
@@ -143,6 +155,11 @@ function Script:convertBonuses(mechanics)
 
 	for name, b in pairs(self.bonus or {}) do
 		local nb = self:deepCopyBonus(b)
+		if forgetfulnessDuration ~= nil and nb.type == "FORGETFULL" then
+			-- Canonical Forgetfulness forbids shooting at every School rank.
+			-- Legacy casts retain their authored half-damage behavior.
+			nb.val = 100
+		end
 		if misfortuneDuration ~= nil and name == "luck" then
 			-- New Horizons Misfortune suppresses only positive Luck. The timed
 			-- zero cap leaves negative Luck and the stack's ordinary bonuses intact.
@@ -169,7 +186,9 @@ function Script:convertBonuses(mechanics)
 			nb.type = "STACKS_INITIATIVE"
 			nb.valueType = "ADDITIVE_VALUE"
 		end
-		if misfortuneDuration ~= nil then
+		if forgetfulnessDuration ~= nil then
+			nb.turns = forgetfulnessDuration
+		elseif misfortuneDuration ~= nil then
 			nb.turns = misfortuneDuration
 		elseif entangleDuration ~= nil then
 			nb.turns = entangleDuration
@@ -187,6 +206,24 @@ function Script:convertBonuses(mechanics)
 		nb.sourceID = spellKey
 
 		converted[name] = nb
+	end
+
+	if forgetfulnessDuration ~= nil then
+		local suppressionLevel = 1
+		local hero = mechanics:getHeroCaster()
+		if hero and hero:hasActivePerk(CHAOS_MAGIC_SKILL, MINDBREAKER_PERK) then
+			suppressionLevel = 2
+		end
+		converted.creatureAbilitySuppression = {
+			type = "CREATURE_ABILITY_SUPPRESSION",
+			duration = ENUM.BonusDuration.nTurns,
+			val = suppressionLevel,
+			valueType = "INDEPENDENT_MAX",
+			turns = forgetfulnessDuration,
+			sourceType = "SPELL_EFFECT",
+			sourceID = spellKey,
+			statusTags = {"DEBUFF"}
+		}
 	end
 
 	if misfortuneChanceMultiplierBasisPoints ~= nil then
@@ -284,6 +321,10 @@ function Script:applyHeroSpecialty(mechanics, buffer, unit)
 	if not hero then return end
 
 	local spellKey = mechanics:getEffectSpell():getJsonKey()
+	-- Capability levels are categorical, not enchantment magnitudes. Legacy
+	-- specialty arithmetic must not turn a full shooting ban back into a penalty
+	-- or upgrade the base restriction into Mindbreaker's passive suppression.
+	if spellKey == FORGETFULNESS_SPELL and mechanics:usesNewHorizonsMagicV3() then return end
 	-- These New Horizons effects have authored power terms and no configured
 	-- spell specialty that should rewrite their fixed or derived components.
 	if spellKey == HOLY_ARMOR_SPELL or spellKey == HEAVENLY_GALE_SPELL

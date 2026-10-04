@@ -671,6 +671,9 @@
 	"LUCIDITY" : {
 		"description" : "Immunity to explicitly classified mental domination and control effects"
 	},
+	"CREATURE_ABILITY_SUPPRESSION" : {
+		"description" : "Forgets special and triggered creature abilities; Mindbreaker also suppresses passive offensive traits"
+	},
 	"NONEVIL_ALIGNMENT_MIX" : {},
 	"NOT_ACTIVE" : {},
 	"ON_COMBAT_EVENT" : {},

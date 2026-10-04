@@ -58,6 +58,7 @@ set(lib_MAIN_SRCS
 	battle/PhysicalAffliction.cpp
 	battle/TimeStopState.cpp
 	battle/NewHorizonsBloodrage.cpp
+	battle/NewHorizonsCreatureAbilitySuppression.cpp
 	battle/NewHorizonsBulwark.cpp
 	battle/NewHorizonsPlague.cpp
 	battle/NewHorizonsPuppetMaster.cpp
@@ -512,6 +513,7 @@ set(lib_MAIN_HEADERS
 	battle/BattleDeploymentState.h
 	battle/PhysicalAffliction.h
 	battle/NewHorizonsBloodrage.h
+	battle/NewHorizonsCreatureAbilitySuppression.h
 	battle/NewHorizonsBulwark.h
 	battle/NewHorizonsSoulChain.h
 	battle/NewHorizonsPuppetMaster.h

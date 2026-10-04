@@ -45,6 +45,8 @@ struct BonusDescriptor final : ApiSerializable<BonusDescriptor>
 	JsonNode sourceID;
 	JsonNode targetSourceType;
 	JsonNode addInfo;
+	JsonNode statusTags;
+	std::string statusIdentity;
 	JsonNode limiters;
 	JsonNode propagator;
 	JsonNode updater;
@@ -74,6 +76,8 @@ struct BonusDescriptor final : ApiSerializable<BonusDescriptor>
 		s("sourceID",           sourceID,           "Identifier of the specific source within its sourceType.");
 		s("targetSourceType",   targetSourceType,   "Source type the bonus is restricted to act upon (used by hero specialty bonuses).");
 		s("addInfo",            addInfo,            "Optional auxiliary payload — meaning depends on the bonus type.");
+		s("statusTags",         statusTags,         "Optional explicit tags for this timed status, such as DEBUFF.");
+		s("statusIdentity",     statusIdentity,     "Optional identity distinguishing this status from another with the same source and type.");
 		s("limiters",           limiters,           "JSON-defined limiter chain that definea whether the bonus applies to a given bearer.");
 		s("propagator",         propagator,         "Rule for propagating the bonus upwards for area effect (army-wide, player-wide, …).");
 		s("updater",            updater,            "Rules for recalculation of bonus parameters (e.g. scales with stack count).");

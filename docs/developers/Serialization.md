@@ -1,5 +1,19 @@
 # Serialization
 
+## Creature ability suppression (source/native accepted; delivery pending)
+
+`NEW_HORIZONS_CREATURE_ABILITY_SUPPRESSION` gates the appended
+`CREATURE_ABILITY_SUPPRESSION` Bonus type. Value 1 restricts special, triggered
+and activated creature capabilities; value 2 additionally suppresses explicitly
+classified passive offensive traits. The timed spell bundle carries ordinary
+Spell-effect source/provenance and expiry. It filters evaluated views rather
+than deleting intrinsic bonuses, so expiry and Dispel can restore capabilities.
+Direct Bonus and enclosing SetStackEffect writers reject unsupported old formats
+before their payloads. UP194 passes the focused build/native gate, including real
+cast, expiry/Dispel, detached projection restoration and BattleAI coverage.
+This does not add ongoing-battle save/resume support. Broader integration,
+rendered UI, status-popup wording and playable delivery remain separate.
+
 ## New Horizons Forced March state
 
 `NEW_HORIZONS_FORCED_MARCH` appends two absolute-day hero markers: the last

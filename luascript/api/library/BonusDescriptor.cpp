@@ -40,6 +40,8 @@ JsonNode BonusDescriptor::toJson() const
 	if(!sourceID.isNull())           result["sourceID"] = sourceID;
 	if(!targetSourceType.isNull())   result["targetSourceType"] = targetSourceType;
 	if(!addInfo.isNull())            result["addInfo"] = addInfo;
+	if(!statusTags.isNull())         result["statusTags"] = statusTags;
+	if(!statusIdentity.empty())      result["statusIdentity"] = JsonNode(statusIdentity);
 	if(!limiters.isNull())           result["limiters"] = limiters;
 	if(!propagator.isNull())         result["propagator"] = propagator;
 	if(!updater.isNull())            result["updater"] = updater;

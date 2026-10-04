@@ -30,6 +30,7 @@ class DLL_LINKAGE TargetConditionItem : public IReceptiveCheck
 public:
 	virtual void setInverted(bool value) = 0;
 	virtual void setExclusive(bool value) = 0;
+	virtual bool isForgetfulnessShooterRequirement() const { return false; }
 
 	virtual bool isExclusive() const = 0;
 };

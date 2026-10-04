@@ -56,6 +56,20 @@ struct DLL_LINKAGE SetStackEffect : public CPackForClient
 			&& (containsPuppetMasterState(toAdd) || containsPuppetMasterState(toUpdate)
 				|| containsPuppetMasterState(toRemove)))
 			throw std::runtime_error("Cannot discard New Horizons Puppet Master stack effect");
+		const auto containsAbilitySuppression = [](const auto & effects)
+		{
+			return std::ranges::any_of(effects, [](const auto & stackEffects)
+			{
+				return std::ranges::any_of(stackEffects.second, [](const Bonus & bonus)
+				{
+					return bonus.type == BonusType::CREATURE_ABILITY_SUPPRESSION;
+				});
+			});
+		};
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_CREATURE_ABILITY_SUPPRESSION)
+			&& (containsAbilitySuppression(toAdd) || containsAbilitySuppression(toUpdate)
+				|| containsAbilitySuppression(toRemove)))
+			throw std::runtime_error("Cannot discard creature ability suppression in stack-effect packet");
 		const auto containsStatusMetadata = [](const auto & effects)
 		{
 			return std::ranges::any_of(effects, [](const auto & stackEffects)

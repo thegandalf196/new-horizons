@@ -139,6 +139,18 @@ class DamageCalculatorTest : public DamageCalculatorTestBase
 {
 };
 
+class LegacyForgetfulnessDamageTest : public DamageCalculatorTestBase
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		TinyMapGameTest::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, JsonNode());
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
+	}
+};
+
 class NewHorizonsPhysicalReductionTest : public DamageCalculatorTestBase
 {
 protected:
@@ -726,15 +738,18 @@ TEST_F(DamageCalculatorTest, AttackReductionRespectsItsCombatLimiter)
 /// Forgetfulness only ever bites a shot. Medusas carry it well: they shoot, they ignore the melee
 /// penalty that would otherwise muddy the melee half of this, and unlike titans they are not immune
 /// to mind spells, which the spell refuses to be cast on.
-TEST_F(DamageCalculatorTest, ForgetfulnessHalvesRangedDamage)
+TEST_F(LegacyForgetfulnessDamageTest, ForgetfulnessHalvesRangedDamage)
 {
 	const auto * source = attacker(medusa);
+	const auto * target = defender(medusa);
+	const auto before = estimate(source, target, 0, true).damage.min;
+	ASSERT_GT(before, 0);
 	cast(defenderSideHero, SpellID::FORGETFULNESS, source);
 
-	EXPECT_EQ(estimate(source, defender(medusa), 0, true).damage.min, 300);
+	EXPECT_EQ(estimate(source, target, 0, true).damage.min, before / 2);
 }
 
-TEST_F(DamageCalculatorTest, ForgetfulnessIsIgnoredInMelee)
+TEST_F(LegacyForgetfulnessDamageTest, ForgetfulnessIsIgnoredInMelee)
 {
 	const auto * source = attacker(medusa);
 	cast(defenderSideHero, SpellID::FORGETFULNESS, source);

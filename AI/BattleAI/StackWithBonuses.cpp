@@ -16,6 +16,7 @@
 #include "../../lib/battle/NewHorizonsBattlecraft.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsBloodrage.h"
+#include "../../lib/battle/NewHorizonsCreatureAbilitySuppression.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/PhysicalAffliction.h"
 #include "../../lib/battle/TimeStopState.h"
@@ -348,12 +349,29 @@ SlotID StackWithBonuses::unitSlot() const
 
 TConstBonusListPtr StackWithBonuses::getAllBonuses(const CSelector & selector, const std::string & cachingStr) const
 {
-	return mergeBonuses(selector, cachingStr, false);
+	const int32_t level = newHorizonsCreatureAbilitySuppression::suppressionLevel(*this);
+	if(level == 0)
+		return getBonusesBeforeCreatureAbilitySuppression(selector, cachingStr, false);
+
+	// Suppress intrinsic bonuses before stacking. Otherwise an intrinsic ability
+	// could already have been combined with another source of the same type and
+	// become impossible to remove without also losing that unrelated source.
+	const auto baseline = getBonusesBeforeCreatureAbilitySuppression(selector, cachingStr, true);
+	return newHorizonsCreatureAbilitySuppression::filterBonuses(*this, baseline, level, true);
 }
 
 TConstBonusListPtr StackWithBonuses::getUnstackedBonuses(const CSelector & selector) const
 {
-	return mergeBonuses(selector, {}, true);
+	const int32_t level = newHorizonsCreatureAbilitySuppression::suppressionLevel(*this);
+	const auto baseline = getBonusesBeforeCreatureAbilitySuppression(selector, {}, true);
+	return level == 0 ? baseline
+		: newHorizonsCreatureAbilitySuppression::filterBonuses(*this, baseline, level, false);
+}
+
+TConstBonusListPtr StackWithBonuses::getBonusesBeforeCreatureAbilitySuppression(
+	const CSelector & selector, const std::string & cachingStr, const bool unstacked) const
+{
+	return mergeBonuses(selector, cachingStr, unstacked);
 }
 
 TConstBonusListPtr StackWithBonuses::mergeBonuses(const CSelector & selector,
@@ -365,10 +383,15 @@ TConstBonusListPtr StackWithBonuses::mergeBonuses(const CSelector & selector,
 	// Refresh changes duration, not value. Filtering before merging can hide the
 	// existing identity and incorrectly turn a refresh into a new effect.
 	const auto & mergeSelector = bonusesToUpdate.empty() ? selector : Selector::all;
-	TConstBonusListPtr originalList = unstacked
-		? origBearer->getUnstackedBonuses(mergeSelector)
-		: origBearer->getAllBonuses(mergeSelector,
-			bonusesToUpdate.empty() ? cachingStr : std::string());
+	const auto originalCachingStr = bonusesToUpdate.empty() ? cachingStr : std::string();
+	TConstBonusListPtr originalList;
+	if(const auto * originalUnit = dynamic_cast<const battle::Unit *>(origBearer))
+		originalList = originalUnit->getBonusesBeforeCreatureAbilitySuppression(
+			mergeSelector, originalCachingStr, unstacked);
+	else
+		originalList = unstacked
+			? origBearer->getUnstackedBonuses(mergeSelector)
+			: origBearer->getAllBonuses(mergeSelector, originalCachingStr);
 	const bool hasProjectionSnapshot = unstacked
 		? projectedUnstackedEffects.has_value() : projectedEffects.has_value();
 

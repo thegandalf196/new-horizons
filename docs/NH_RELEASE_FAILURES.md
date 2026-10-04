@@ -2,6 +2,84 @@
 
 ## Purpose
 
+### 2026-10-04 UP-194 — Final focused acceptance
+
+The historical failures below are superseded by the final source/native
+acceptance, not current blockers. Client retry5595 and test retry49144 builds
+pass. The `build/new-horizons-linux/testing/UP194-forgetfulness-final-focused-retry2.log`
+run and matching XML report 24/24 tests across seven suites in5.855s, with zero
+failures, errors, disabled tests or skips. The focused run
+covers the real Forgetfulness/Mindbreaker runtime, detached and BattleAI views,
+bonus metadata/serialization, and isolated legacy damage behavior. Independent
+Astra review finds no blocking issue. Data/inventory19/19, modulecheck and
+diffcheck pass. This establishes source/native acceptance only: no GUI,
+playable-delivery or Windows build acceptance is claimed. Full Windows
+37177603721 succeeded on e4946162f, which excludes UP194.
+
+Phase2 follow-ups remain: the creature-window status popup still displays the
+legacy Forgetfulness text; broad spell/status/action interactions were not
+exhaustively certified; and external retaliation-grace interactions remain
+unverified. These do not block this focused Phase1 acceptance.
+
+### Historical UP-194 pre-acceptance failures — Explicit suppression helper dependencies
+
+Client build61077 fails because the new helper uses CSelector and BonusList
+through forward declarations only. Add their explicit complete-type headers in
+the helper implementation; do not rely on transitive/PCH includes. Initial
+evidence is UP194-forgetfulness-client-build.log. Retry keeps compiled objects
+and a separate log; no native acceptance is inferred from a retry starting.
+Retry78695 also fails: root used a nonexistent Selector.h path rather than
+the actual BonusSelector.h. Resolve header paths with rg before patching.
+Independent review additionally catches an extra closing brace in the isolated
+server fixture before compilation; remove it. Neither failure changes gameplay
+semantics. Logs remain separate and acceptance still requires successful build
+and actual native execution.
+Source review also corrects the AI Hydra fixture: its effective live ability
+must remain suppressed after an actual cast; only the raw baseline retains it.
+The passive-offense fixture must use Medusa, not Mage: the current Tower content
+deliberately removes Magi's No Melee Penalty. Do not restore removed abilities
+in production merely to satisfy a stale fixture assumption.
+Test build30689 fails on three isolated fixture API assumptions: CSpell must
+be complete for its interface conversion, BonusList exposes operator[] rather
+than at(), and HypotheticBattle branches take a shared callback subject rather
+than a stack-allocated parent. Correct these to existing APIs without changing
+production; preserve UP194-forgetfulness-test-build.log and retry evidence.
+Retry79245 compiles the server fixture but fails the AI fixture constructor:
+BattleEvaluator requires CBattleCallback, not CPlayerBattleCallback. Instantiate
+the normal callback with the test battle for the read-only spell-choice check;
+keep CPlayerBattleCallback for hypothetical attack projections. Preserve the
+retry log and run a separate corrected retry, without loosening engine types.
+Corrected test build49144 passes. First native69745 runs20 cases in5.368s,
+zero skips, with9 passes/11 failures. All four AI cases pass; most server cases
+fail because the Lua-created marker loses DEBUFF metadata. Rejected forged
+commands also publish StartAction before the new dispatch gate, and the Ogre
+fixture's later action advances beyond expiry. Two legacy damage fixtures reject
+casts in this active NH profile. Investigate each cause rather than weakening
+expectations or reporting partial passes as acceptance. Preserve initial
+UP194-forgetfulness-active-focused.log/XML and use a distinct retry report.
+Admission/metadata build4418 passes; retry24547 passes21/22 in5.330s, zero skips.
+The remaining Ogre fixture trace proves cast round1, post-melee round3 and
+post-Defend round4: the fixture's explicit endRound moves beyond the three-round
+duration. Remove that redundant advance and assert the marker immediately before
+the accepted Defend; a legal Defend may naturally end the final duration round.
+Keep UP194-forgetfulness-round-trace.log. The two old damage tests inherited
+active NH settings and never initialized its action round; isolate only those
+tests in an explicit legacy magic/command snapshot fixture, preserving their
+original damage expectations and leaving the shared damage fixture unchanged.
+Final candidate65082 passes all22 NH/status/AI cases, but two isolated legacy
+cases reject setup because active NH hero ratings require enabled Orders.
+Clear the legacy fixture's dependent HEROES_NEW_HORIZONS snapshot too; preserve
+the engine's invariant instead of loosening runtime validation. Retain the
+24-case candidate log/XML separately from the next corrected final run.
+Legacy setup then succeeds; candidate66468 passes23/24 in5.843s, zero skips.
+The old fixed ranged damage expectation assumes an unpenalized baseline,
+whereas this calculator/profile estimates a blocked shot. The legacy check now
+measures the same fixed attacker/target before and after the real spell and
+requires exactly half of that positive baseline, rather than changing a
+prototype damage value to make the test green. Full-melee expectation remains
+unchanged. This verifies the legacy spell multiplier without conflating other
+shooting modifiers with Forgetfulness.
+
 ### 2026-10-04 UP-192 — Explicit AI path turn comparison type
 
 Client30904 and base test94869 compile successfully. New isolated AI fixture

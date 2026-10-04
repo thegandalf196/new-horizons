@@ -56,6 +56,10 @@ public:
 	void localInit(BattleInfo * battleInfo);
 	void afterNewRound(bool isFirstRound = false);
 	bool acceptsBonus(const Bonus & bonus) const override;
+	TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr = {}) const override;
+	TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override;
+	TConstBonusListPtr getBonusesBeforeCreatureAbilitySuppression(
+		const CSelector & selector, const std::string & cachingStr = {}, bool unstacked = false) const override;
 	std::string getName() const; //plural or singular
 
 	bool canBeHealed() const; //for first aid tent - only harmed stacks that are not war machines

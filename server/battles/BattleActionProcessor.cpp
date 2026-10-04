@@ -13,6 +13,7 @@
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsDiscipline.h"
+#include "../../lib/battle/NewHorizonsCreatureAbilitySuppression.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
 #include "../../lib/battle/NewHorizonsShadowGift.h"
@@ -177,6 +178,33 @@ void logRangedFollowUp(const CBattleInfoCallback & battle, CGameHandler & gameHa
 	unit->addNameReplacement(line, unit->getCount());
 	message.lines.push_back(std::move(line));
 	gameHandler.sendAndApply(message);
+}
+
+bool isCreatureActionAllowedDuringForgetfulness(const CBattleInfoCallback & battle,
+	const BattleAction & action)
+{
+	const auto * actingStack = battle.battleGetStackByID(action.stackNumber, false);
+	if(!actingStack || !action.isUnitAction()
+		|| newHorizonsCreatureAbilitySuppression::suppressionLevel(*actingStack) == 0)
+		return true;
+
+	switch(action.actionType)
+	{
+	case EActionType::BAD_MORALE:
+	case EActionType::NO_ACTION:
+	case EActionType::WALK:
+	case EActionType::WAIT:
+	case EActionType::DEFEND:
+		return true;
+	case EActionType::WALK_AND_ATTACK:
+		// Reject extra attack modes even if a client forges the command. A
+		// return-after-strike uses a third destination and is not a basic melee
+		// attack either.
+		return !action.archerySkirmisherAttack && !action.perfectMoment
+			&& action.getTarget(&battle).size() == 2;
+	default:
+		return false;
+	}
 }
 }
 
@@ -2448,6 +2476,12 @@ bool BattleActionProcessor::canStackAct(const CBattleInfoCallback & battle, cons
 bool BattleActionProcessor::dispatchBattleAction(const CBattleInfoCallback & battle, const BattleAction & ba,
 	bool allowPursuitContinuation)
 {
+	if(!isCreatureActionAllowedDuringForgetfulness(battle, ba))
+	{
+		gameHandler->complain("Forgetfulness prevents this creature ability.");
+		return false;
+	}
+
 	if(ba.archerySkirmisherAttack && ba.actionType != EActionType::WALK_AND_ATTACK)
 	{
 		gameHandler->complain("Skirmisher metadata is only valid for a move-and-attack action.");
@@ -3056,6 +3090,11 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 	if(ba.actionType == EActionType::WAIT && stack && stack->waitedThisTurn)
 	{
 		gameHandler->complain("This stack has already waited this round!");
+		return false;
+	}
+	if(!isCreatureActionAllowedDuringForgetfulness(battle, effectiveAction))
+	{
+		gameHandler->complain("Forgetfulness prevents this creature ability.");
 		return false;
 	}
 	logGlobal->trace("Making action: %s", ba.toString());

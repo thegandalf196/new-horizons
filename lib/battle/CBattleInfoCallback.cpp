@@ -26,6 +26,7 @@
 #include "NewHorizonsShroud.h"
 #include "NewHorizonsWarcasting.h"
 #include "NewHorizonsBloodrage.h"
+#include "NewHorizonsCreatureAbilitySuppression.h"
 #include "NewHorizonsDiscipline.h"
 #include "NewHorizonsPuppetMaster.h"
 #include "IGameSettings.h"
@@ -1654,6 +1655,17 @@ std::vector<PossiblePlayerBattleAction> CBattleInfoCallback::getClientActionsFor
 		if(stack->pursuitMovementRemaining > 0)
 		{
 			if(stack->canMove())
+				allowedActionList.push_back(PossiblePlayerBattleAction::MOVE_STACK);
+			return allowedActionList;
+		}
+		if(newHorizonsCreatureAbilitySuppression::suppressionLevel(*stack) > 0)
+		{
+			if(stack->isMeleeAttacker())
+			{
+				allowedActionList.push_back(PossiblePlayerBattleAction::ATTACK);
+				allowedActionList.push_back(PossiblePlayerBattleAction::WALK_AND_ATTACK);
+			}
+			if(stack->canMove() && stack->getMovementRange(0))
 				allowedActionList.push_back(PossiblePlayerBattleAction::MOVE_STACK);
 			return allowedActionList;
 		}

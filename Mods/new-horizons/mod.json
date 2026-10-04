@@ -1263,8 +1263,8 @@
 						"costs": [
 							8,
 							8,
-							6,
-							6
+							8,
+							8
 						]
 					},
 					"core:fortune": {
@@ -4867,7 +4867,7 @@
 								"requires": "advanced",
 								"description": "Forgetfulness also suppresses the target's passive offensive creature abilities for its duration.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Forgetfulness also suppresses the target's passive offensive creature abilities for its duration."
 								}
 							},

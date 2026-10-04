@@ -537,6 +537,8 @@ public:
 
 	TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr = "") const override;
 	TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override;
+	TConstBonusListPtr getBonusesBeforeCreatureAbilitySuppression(
+		const CSelector & selector, const std::string & cachingStr = {}, bool unstacked = false) const override;
 
 	int32_t getTreeVersion() const override;
 

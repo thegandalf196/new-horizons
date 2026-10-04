@@ -76,8 +76,9 @@ protected:
 class SelectorCondition : public TargetConditionItemBase
 {
 public:
-	SelectorCondition(const CSelector & csel):
-		sel(csel)
+	SelectorCondition(const CSelector & csel, std::optional<BonusType> configuredBonusType = {}):
+		sel(csel),
+		configuredBonusType(configuredBonusType)
 	{
 	}
 	SelectorCondition(const CSelector & csel, si32 minVal, si32 maxVal):
@@ -97,8 +98,14 @@ protected:
 		return false;
 	}
 
+	bool isForgetfulnessShooterRequirement() const override
+	{
+		return configuredBonusType == BonusType::SHOOTER && isExclusive() && !inverted;
+	}
+
 private:
 	CSelector sel;
+	std::optional<BonusType> configuredBonusType;
 	si32 minVal = std::numeric_limits<si32>::min();
 	si32 maxVal = std::numeric_limits<si32>::max();
 };
@@ -386,7 +393,10 @@ public:
 		{
 			std::optional bonusID(LIBRARY->identifiers()->getIdentifier(scope, "bonus", identifier, true));
 			if (bonusID)
-				return std::make_shared<SelectorCondition>(Selector::type()(static_cast<BonusType>(*bonusID)));
+			{
+				const auto type = static_cast<BonusType>(*bonusID);
+				return std::make_shared<SelectorCondition>(Selector::type()(type), type);
+			}
 			else
 				logMod->error("Invalid bonus %s type in spell target condition.", identifier);
 		}
@@ -527,9 +537,13 @@ bool TargetCondition::check(const ItemVector & condition, const Mechanics * m, c
 {
 	bool nonExclusiveCheck = false;
 	bool nonExclusiveExits = false;
+	const bool forgetfulnessDoesNotRequireShooter = m && m->getSpellId() == SpellID(SpellID::FORGETFULNESS)
+		&& m->usesNewHorizonsMagicV3();
 
 	for(const auto & item : condition)
 	{
+		if(forgetfulnessDoesNotRequireShooter && item->isForgetfulnessShooterRequirement())
+			continue;
 		if(ignoreMagicResistance && dynamic_cast<const ResistanceCondition *>(item.get()))
 			continue;
 

@@ -745,6 +745,19 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 			result += " Misfortune Weaver subtracts another ten percentage points from the probability "
 				"multiplier, retaining the 25% floor.";
 	}
+	else if(hero && spell->getId() == SpellID::FORGETFULNESS
+		&& rulesActive(hero->getMagicRules())
+		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		&& spellAllowedBySavedRoster(hero->getMagicRules(), spell->getId()))
+	{
+		result = "Target one enemy stack. It may only move, make basic melee attacks, Wait and Defend. "
+			"Shooting, activated abilities, special attacks, triggered creature abilities and creature spellcasting "
+			"are suppressed. Ordinary retaliation and structural creature properties remain unchanged. "
+			"Duration = min(3, 1 + floor(scaled Spell Power / 80)) rounds before eligible duration extensions. "
+			"School rank scales the Spell Power term, not the fixed base or cap; Expert never makes this a mass spell.";
+		if(hero->hasActivePerk("new-horizons:chaosMagic", "new-horizons:chaosMagic.mindbreaker"))
+			result += " Mindbreaker also suppresses intrinsic passive offensive abilities for this duration.";
+	}
 	else if(hero && physicalPoisonEnabled(hero->getMagicRules(), spell->getId()))
 	{
 		result = "Target one enemy living stack. It suffers physical Poison damage on its next three activations: "

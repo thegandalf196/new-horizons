@@ -17,6 +17,7 @@
 
 #include "texts/CGeneralTextHandler.h"
 #include "battle/BattleInfo.h"
+#include "battle/NewHorizonsCreatureAbilitySuppression.h"
 #include "battle/NewHorizonsOffense.h"
 #include "GameLibrary.h"
 #include "networkPacks/PacksForClientBattle.h"
@@ -140,6 +141,34 @@ bool CStack::acceptsBonus(const Bonus & bonus) const
 	const auto * hero = getMyHero();
 	return natureSummoned && hero
 		&& hero->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.wildChance");
+}
+
+TConstBonusListPtr CStack::getBonusesBeforeCreatureAbilitySuppression(const CSelector & selector,
+	const std::string & cachingStr, const bool unstacked) const
+{
+	return unstacked
+		? CBonusSystemNode::getUnstackedBonuses(selector)
+		: CBonusSystemNode::getAllBonuses(selector, cachingStr);
+}
+
+TConstBonusListPtr CStack::getAllBonuses(const CSelector & selector, const std::string & cachingStr) const
+{
+	const int32_t level = newHorizonsCreatureAbilitySuppression::suppressionLevel(*this);
+	if(level == 0)
+		return CBonusSystemNode::getAllBonuses(selector, cachingStr);
+
+	const auto baseline = getBonusesBeforeCreatureAbilitySuppression(selector, cachingStr, true);
+	return newHorizonsCreatureAbilitySuppression::filterBonuses(*this, baseline, level, true);
+}
+
+TConstBonusListPtr CStack::getUnstackedBonuses(const CSelector & selector) const
+{
+	const int32_t level = newHorizonsCreatureAbilitySuppression::suppressionLevel(*this);
+	if(level == 0)
+		return CBonusSystemNode::getUnstackedBonuses(selector);
+
+	const auto baseline = getBonusesBeforeCreatureAbilitySuppression(selector, {}, true);
+	return newHorizonsCreatureAbilitySuppression::filterBonuses(*this, baseline, level, false);
 }
 
 int32_t CStack::unitLevel() const

@@ -120,6 +120,14 @@ public:
 	virtual bool canShootBlocked() const = 0;
 	virtual bool canShoot() const = 0;
 	virtual bool isShooter() const = 0;
+	/// Returns the ordinary, limiter-correct bonus view before New Horizons
+	/// creature-ability suppression. Views that layer suppression over another
+	/// unit must override this to avoid making a temporary filter irreversible.
+	virtual TConstBonusListPtr getBonusesBeforeCreatureAbilitySuppression(
+		const CSelector & selector, const std::string & cachingStr = {}, bool unstacked = false) const
+	{
+		return unstacked ? getUnstackedBonuses(selector) : getAllBonuses(selector, cachingStr);
+	}
 	bool isMeleeAttacker() const;
 	bool isSummoned() const;
 	bool hasImmunity(SpellID spell) const;

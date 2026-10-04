@@ -11,6 +11,7 @@
 
 #include "CUnitState.h"
 #include "NewHorizonsBloodrage.h"
+#include "NewHorizonsCreatureAbilitySuppression.h"
 
 #include <vcmi/spells/Spell.h>
 
@@ -246,12 +247,23 @@ int32_t CRetaliations::total() const
 	if(noRetaliation.hasBonus())
 		return 0;
 
+	const auto additionalRetaliations = env ? env->unitAdditionalRetaliations(owner) : 0;
+	if(newHorizonsCreatureAbilitySuppression::suppressionLevel(*owner) >= 2)
+	{
+		// The ordinary bonus cache normally preserves a larger observed cap for
+		// the current round after Dispel. Mindbreaker is an active suppression,
+		// not removal of the bonus: do not let that latch retain native extra
+		// retaliations while the marker is present.
+		const int64_t currentTotal = 1LL + totalProxy.getValue() + additionalRetaliations;
+		return static_cast<int32_t>(std::clamp<int64_t>(currentTotal, 0,
+			std::numeric_limits<int32_t>::max()));
+	}
+
 	//after dispel bonus should remain during current round
 	int32_t val = 1 + totalProxy.getValue();
 	vstd::amax(totalCache, val);
 	// Keep the ordinary, cached allowance separate so a live controller or
 	// Bloodrage threshold change can remove the derived retaliation immediately.
-	const auto additionalRetaliations = env ? env->unitAdditionalRetaliations(owner) : 0;
 	return static_cast<int32_t>(std::min<int64_t>(std::numeric_limits<int32_t>::max(),
 		static_cast<int64_t>(totalCache) + additionalRetaliations));
 }
@@ -1504,12 +1516,14 @@ bool CUnitState::hasClone() const
 
 bool CUnitState::canCast() const
 {
-	return casts.canUse(1) && !castSpellThisTurn;//do not check specific cast abilities here
+	return newHorizonsCreatureAbilitySuppression::suppressionLevel(*this) == 0
+		&& casts.canUse(1) && !castSpellThisTurn;//do not check specific cast abilities here
 }
 
 bool CUnitState::isCaster() const
 {
-	return casts.total() > 0;//do not check specific cast abilities here
+	return newHorizonsCreatureAbilitySuppression::suppressionLevel(*this) == 0
+		&& casts.total() > 0;//do not check specific cast abilities here
 }
 
 bool CUnitState::canShootBlocked() const
@@ -1519,9 +1533,9 @@ bool CUnitState::canShootBlocked() const
 
 bool CUnitState::canShoot() const
 {
-	return
-		shots.canUse(1) &&
-		bonusCache.getBonusValue(UnitBonusValuesProxy::FORGETFULL) < 100; //100% forgetfulness disables shooting
+	return newHorizonsCreatureAbilitySuppression::suppressionLevel(*this) == 0
+		&& shots.canUse(1)
+		&& bonusCache.getBonusValue(UnitBonusValuesProxy::FORGETFULL) < 100; //100% forgetfulness disables shooting
 }
 
 bool CUnitState::isShooter() const
@@ -2797,51 +2811,39 @@ CUnitStateDetached::CUnitStateDetached(const IUnitInfo * unit_, const IBonusBear
 
 TConstBonusListPtr CUnitStateDetached::getAllBonuses(const CSelector & selector, const std::string & cachingStr) const
 {
-	if(!hasBattleFormState())
-		return bonus->getAllBonuses(selector, cachingStr);
-
-	const CreatureID sourceCreature = unit->unitType()->getId();
-	const CreatureID effectiveCreature = battleFormCreature();
-	TConstBonusListPtr originalBonuses = bonus->getAllBonuses(selector, cachingStr);
-	if(effectiveCreature == sourceCreature)
-		return originalBonuses;
-
-	auto result = std::make_shared<BonusList>();
-	for(const auto & bonus : *originalBonuses)
-	{
-		if(isBattleFormNativeBonus(bonus.get(), battleFormOriginalCreature())
-			|| isBattleFormNativeBonus(bonus.get(), sourceCreature))
-			continue;
-		result->push_back(bonus);
-	}
-
-	const IUnitInfo * sourceUnitInfo = unit;
-	while(const auto * detached = dynamic_cast<const CUnitStateDetached *>(sourceUnitInfo))
-		sourceUnitInfo = detached->unit;
-	const IBonusBearer * sourceBonusBearer = bonus;
-	while(const auto * detached = dynamic_cast<const CUnitStateDetached *>(sourceBonusBearer))
-		sourceBonusBearer = detached->bonus;
-	const auto * sourceStack = dynamic_cast<const CStack *>(sourceUnitInfo);
-	if(!sourceStack)
-		sourceStack = dynamic_cast<const CStack *>(sourceBonusBearer);
-	const auto * fallbackArmy = dynamic_cast<const CArmedInstance *>(sourceBonusBearer);
-	if(!fallbackArmy)
-		fallbackArmy = dynamic_cast<const CArmedInstance *>(sourceUnitInfo);
-	const auto effectiveNativeBonuses = getBattleFormNativeBonuses(*this, sourceStack, fallbackArmy, selector);
-	for(const auto & bonus : *effectiveNativeBonuses)
-		result->push_back(bonus);
-	result->stackBonuses();
-	return result;
+	const int32_t level = newHorizonsCreatureAbilitySuppression::suppressionLevel(*this);
+	if(level == 0)
+		return getBonusesBeforeCreatureAbilitySuppression(selector, cachingStr, false);
+	const auto baseline = getBonusesBeforeCreatureAbilitySuppression(selector, cachingStr, true);
+	return newHorizonsCreatureAbilitySuppression::filterBonuses(*this, baseline, level, true);
 }
 
 TConstBonusListPtr CUnitStateDetached::getUnstackedBonuses(const CSelector & selector) const
 {
+	const int32_t level = newHorizonsCreatureAbilitySuppression::suppressionLevel(*this);
+	if(level == 0)
+		return getBonusesBeforeCreatureAbilitySuppression(selector, {}, true);
+	const auto baseline = getBonusesBeforeCreatureAbilitySuppression(selector, {}, true);
+	return newHorizonsCreatureAbilitySuppression::filterBonuses(*this, baseline, level, false);
+}
+
+TConstBonusListPtr CUnitStateDetached::getBonusesBeforeCreatureAbilitySuppression(const CSelector & selector,
+	const std::string & cachingStr, const bool unstacked) const
+{
+	const auto sourceBonuses = [this, &selector, &cachingStr, unstacked]()
+	{
+		if(const auto * sourceUnit = dynamic_cast<const Unit *>(bonus))
+			return sourceUnit->getBonusesBeforeCreatureAbilitySuppression(selector, cachingStr, unstacked);
+
+		return unstacked ? bonus->getUnstackedBonuses(selector) : bonus->getAllBonuses(selector, cachingStr);
+	};
+
 	if(!hasBattleFormState())
-		return bonus->getUnstackedBonuses(selector);
+		return sourceBonuses();
 
 	const CreatureID sourceCreature = unit->unitType()->getId();
 	const CreatureID effectiveCreature = battleFormCreature();
-	TConstBonusListPtr originalBonuses = bonus->getUnstackedBonuses(selector);
+	const auto originalBonuses = sourceBonuses();
 	if(effectiveCreature == sourceCreature)
 		return originalBonuses;
 
@@ -2866,9 +2868,11 @@ TConstBonusListPtr CUnitStateDetached::getUnstackedBonuses(const CSelector & sel
 	const auto * fallbackArmy = dynamic_cast<const CArmedInstance *>(sourceBonusBearer);
 	if(!fallbackArmy)
 		fallbackArmy = dynamic_cast<const CArmedInstance *>(sourceUnitInfo);
-	const auto effectiveNativeBonuses = getBattleFormNativeBonuses(*this, sourceStack, fallbackArmy, selector, true);
+	const auto effectiveNativeBonuses = getBattleFormNativeBonuses(*this, sourceStack, fallbackArmy, selector, unstacked);
 	for(const auto & nativeBonus : *effectiveNativeBonuses)
 		result->push_back(nativeBonus);
+	if(!unstacked)
+		result->stackBonuses();
 	return result;
 }
 

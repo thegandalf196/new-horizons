@@ -163,6 +163,9 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 		if(h.saving && (type == BonusType::PUPPET_MASTER_CONTROL || type == BonusType::LUCIDITY)
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_PUPPET_MASTER_CONTROL))
 			throw std::runtime_error("Cannot discard New Horizons Puppet Master control or Lucidity state");
+		if(h.saving && type == BonusType::CREATURE_ABILITY_SUPPRESSION
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CREATURE_ABILITY_SUPPRESSION))
+			throw std::runtime_error("Cannot discard creature ability suppression state");
 		if(h.saving && (duration & BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION) != 0
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CREATURE_ACTIVATION_DURATION))
 			throw std::runtime_error("Cannot discard New Horizons creature activation bonus duration");
