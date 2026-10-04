@@ -41,6 +41,8 @@ public:
 	/// how effectively resources are exchanged - 1.0 for trade at nominal price of resources, e.g. Warlock's Lab
 	/// by default derived from market efficiency and never better than 0.5, giving 2:1 rate for resources of same price
 	virtual double getMarketExchangeEffectiveness() const;
+	/// how effectively this market exchanges a specific resource pair
+	virtual double getResourceExchangeEffectiveness(GameResID resourceToSell, GameResID resourceToBuy) const;
 	CArtifactSet * getArtifactsStorage() const;
 	virtual bool getOffer(int id1, int id2, int &val1, int &val2, EMarketMode mode) const; //val1 - how many units of id1 player has to give to receive val2 units
 

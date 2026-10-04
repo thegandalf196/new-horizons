@@ -250,6 +250,7 @@ public:
 	EGeneratorState shipyardStatus() const override;
 	const IObjectInterface * getObject() const override;
 	int getMarketEfficiency() const override; //=market count
+	double getResourceExchangeEffectiveness(GameResID resourceToSell, GameResID resourceToBuy) const override;
 	std::set<EMarketMode> availableModes() const override;
 	std::vector<TradeItemBuy> availableItemsIds(EMarketMode mode) const override;
 	const std::vector<SpellID> & getHouseOfWisdomScrolls() const;

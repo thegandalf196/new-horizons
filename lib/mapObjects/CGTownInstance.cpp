@@ -784,6 +784,29 @@ int CGTownInstance::getMarketEfficiency() const
 	return marketCount;
 }
 
+double CGTownInstance::getResourceExchangeEffectiveness(GameResID resourceToSell, GameResID resourceToBuy) const
+{
+	const double ordinaryEffectiveness = IMarket::getResourceExchangeEffectiveness(resourceToSell, resourceToBuy);
+	const bool sellsCommonResource = resourceToSell == EGameResID::WOOD || resourceToSell == EGameResID::ORE;
+	const bool buysRareResource = resourceToBuy == EGameResID::MERCURY || resourceToBuy == EGameResID::SULFUR
+		|| resourceToBuy == EGameResID::CRYSTAL || resourceToBuy == EGameResID::GEMS;
+
+	if(!hasBuiltResourceMarketplace() || !sellsCommonResource || !buysRareResource)
+		return ordinaryEffectiveness;
+
+	const auto hasResourceBroker = [this](const CGHeroInstance * hero)
+	{
+		return hero
+			&& hero->getVisitedTown() == this
+			&& hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.resourceBroker");
+	};
+
+	if(hasResourceBroker(getVisitingHero()) || hasResourceBroker(getGarrisonHero()))
+		return ordinaryEffectiveness * 1.2;
+
+	return ordinaryEffectiveness;
+}
+
 std::vector<TradeItemBuy> CGTownInstance::availableItemsIds(EMarketMode mode) const
 {
 	if(mode == EMarketMode::RESOURCE_ARTIFACT)

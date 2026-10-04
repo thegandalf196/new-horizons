@@ -2611,7 +2611,7 @@
 					"requires": "advanced",
 					"description": "While this hero is in a town, Marketplace exchanges of Wood or Ore for rare resources in that town use a rate 20% more favorable than the ordinary Marketplace rate.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "While this hero is in a town, Marketplace exchanges of Wood or Ore for rare resources in that town use a rate 20% more favorable than the ordinary Marketplace rate."
 					}
 				},

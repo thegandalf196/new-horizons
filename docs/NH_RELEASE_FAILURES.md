@@ -2,6 +2,38 @@
 
 ## Purpose
 
+### 2026-10-04 UP-196 — Accepted focused retry
+
+The two compilation failures below are repaired, not current blockers. Client
+retry94429, baseline vcmitest13751 and fixture retry38283 exit0. Native64173
+retains UP196-resource-broker-focused.log/XML:7/7 across two suites in1.373s,
+zero failures/errors/skips. A normal Advanced offer, exact shared quotes and
+authoritative resource deltas, locality/direction/custom-market guards and real
+ResourceTrader -> callback -> serialized request -> server validation pass.
+Astra reviews report no blocker. This is source/native acceptance only; new
+Windows package, rendered UI and playable promotion remain separate.
+
+### 2026-10-04 UP-196 — Current final callback in the AI fixture
+
+Registered fixture build97281 exits1: MockCCallback derives from final CCallback.
+The copied old ResourceTraderTest mocking seam is stale/unregistered and is not
+evidence of a supported current test interface. Retained log:
+build/new-horizons-linux/testing/UP196-resource-broker-fixture-build.log.
+Use a real callback and supported test connection/request capture, not removal
+of production final or preprocessor inheritance tricks. Client retry94429 and
+baseline vcmitest13751 already pass; focused fixture/native gates remain pending.
+
+### 2026-10-04 UP-196 — Residence-check public API
+
+Client build70173 exits1: CGTownInstance's new Resource Broker check attempted
+to read private CGHeroInstance::visitedTown. Retained log:
+build/new-horizons-linux/testing/UP196-resource-broker-client-build.log.
+Use the existing const getVisitedTown() getter to compare actual associated
+towns; do not make saved residence state public or weaken the same-town gate.
+The owner applied that narrow correction; rebuild/native acceptance remains
+required. Completed objects are retained. Existing unrelated compiler warnings
+are not this failure's cause.
+
 ### 2026-10-04 UP-194 — Final focused acceptance
 
 The historical failures below are superseded by the final source/native
