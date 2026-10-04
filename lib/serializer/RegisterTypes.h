@@ -334,4 +334,5 @@ void registerTypes(Serializer &s)
 	s.template registerType<SelectPortalDwelling>(291);
 	s.template registerType<SetPortalDwellingSource>(292);
 	s.template registerType<SetNewHorizonsDiplomacyState>(293);
+	s.template registerType<SetNewHorizonsForcedMarchState>(294);
 }

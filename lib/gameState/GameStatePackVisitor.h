@@ -111,6 +111,7 @@ public:
 	void visitSetNewHorizonsAdventureSpellUnlock(SetNewHorizonsAdventureSpellUnlock & pack) override;
 	void visitSetNewHorizonsAdventureSpellState(SetNewHorizonsAdventureSpellState & pack) override;
 	void visitSetNewHorizonsCastleGateState(SetNewHorizonsCastleGateState & pack) override;
+	void visitSetNewHorizonsForcedMarchState(SetNewHorizonsForcedMarchState & pack) override;
 	void visitSetNewHorizonsMusterState(SetNewHorizonsMusterState & pack) override;
 	void visitSetNewHorizonsLearningMentorState(SetNewHorizonsLearningMentorState & pack) override;
 	void visitSetNewHorizonsDiplomacyState(SetNewHorizonsDiplomacyState & pack) override;

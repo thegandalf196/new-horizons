@@ -80,6 +80,12 @@ public:
 	virtual PlayerColor getSidePlayer(BattleSide side) const = 0;
 	virtual const CArmedInstance * getSideArmy(BattleSide side) const = 0;
 	virtual const CGHeroInstance * getSideHero(BattleSide side) const = 0;
+	/// First-round-only Morale modifier captured when this battle was created.
+	virtual int32_t getFirstRoundMoraleModifier(BattleSide side) const
+	{
+		(void)side;
+		return 0;
+	}
 	/// Returns list of all spells used by specified side (and that can be learned by opposite hero)
 	virtual std::vector<SpellID> getUsedSpells(BattleSide side) const = 0;
 

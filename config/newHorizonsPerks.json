@@ -2317,7 +2317,7 @@
 					"requires": "basic",
 					"description": "Once per day after exhausting normal Movement, gain additional Movement equal to 10% of maximum Movement. The army begins its next combat that day with -1 Morale during round 1.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Once per day after exhausting normal Movement, gain additional Movement equal to 10% of maximum Movement. The army begins its next combat that day with -1 Morale during round 1."
 					}
 				},

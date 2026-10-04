@@ -1,12 +1,11 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
-Latest accepted slice: Dimension Door localized ends-Movement targeting hint,
-following visible/legal radius8 and full-Movement expenditure shared with AI.
-Client/test build1721 passes; UP056-dimension-door-hint-focused.log/XML passes13/13
-in3.979s, zero skips. Root integration and independent Luna runtime/UI/test review
-find no blocker; the separate Astra reviewer spawn was rejected by the service
-thread limit. Combat spell identities61/67 (Chaos7/11); perks210/310
+Latest accepted slice: Logistics Forced March, ordinary exhaustion burst plus
+next-combat first-round Morale fatigue. Client30904/base tests94869 build;
+focused fixture retries and final active both-target build pass. Native91757
+passes18/18 in5.867s, zero skips; independent Astra source review finds no blocker.
+Combat spell identities61/67 (Chaos7/11); perks211/310
 and ranks87/93 unchanged. Source/native acceptance only, no playable promotion.
 Canonical source SHA-256: `5b26a4930b6c6838e7435454c96b35a19039c275694e975636b37e6003b68a4a`
 
@@ -20,6 +19,24 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+UP192 audit identified Logistics Forced March as missing, not provided by the
+legacy permanent Movement mastery of the same name. Canonical coverage requires
+the once-per-day exhaustion burst and first-round next-combat Morale penalty
+together. Runtime movement/state, battle snapshot and isolated native/AI test
+owners implemented those paths with append-only serialization. The perk is
+now active after source/build/native gates: client30904, base tests94869,
+AI retry28857, server retry93649 and final focused retry28173 build successfully.
+Initial native5-case fixture run fails on assumed zero baseline Morale and
+anchor/visitable-coordinate expectations; corrected retry93754 passes5/5 in1.731s.
+Final active native91757 passes18/18 in5.867s, zero skips, including three
+adjacent movement and ten shared Morale cases. Data/inventory19/19 and module
+check pass. Reports: UP192-forced-march-active-focused.log/XML. Independent
+Astra production and corrected-fixture reviews find no blocker. Counts move
+210->211/310 perks (99 planned), Logistics6->7/10; ranks87/93 and combat61/67
+are unchanged. No graphical acceptance or playable snapshot promotion.
+Prospective AI route forecasting of an unspent burst is deferred to Phase2;
+actual authoritative award, fresh pathing and spending are required here.
 
 2026-10-04 UP056 required DD warning is source/native-hook verified. Generic
 effect capability returns a localized text ID only under captured NH rules;
@@ -1908,7 +1925,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | Divine Mandate and Elemental Rebirth have no active rank effects; many registered Skills lack working perk progression. |
 | Skill rank effects active | 87/93 | All three Diplomacy ranks now use deterministic joining; Divine Mandate and Elemental Rebirth account for the six planned ranks. |
-| Skill perks active | 210/310 | 100 planned; Recruitment Pact is the newest source/native-verified activation. Diplomacy is 7/10; Necromancy 10/10; Learning 3/10; Estates 5/10; Battlecraft 6/10; Logistics 6/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 211/310 | 99 planned; Forced March is the newest source/native-verified activation. Diplomacy is 7/10; Necromancy 10/10; Learning 3/10; Estates 5/10; Battlecraft 6/10; Logistics 7/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 21/27 | Six planned ranks. |
 | Faction perks active | 62/90 | 28 planned perks; Lord of the Dead has normal Expert selection, ordered conversion and actual atomic Bone Dragon town-delivery evidence. |
 | Canonical combat-spell identities registered | 61/67 | 6 missing/inactive; Puppet Master is the newest source/native-verified identity. Chaos is 7/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -2058,7 +2075,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Spellcraft | 3/0 | 4/6 | Grand Formula scales the first accepted Level 4-or-5 hero spell's SP term by 150%; Arcane Focus, Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold. Basic/Advanced/Expert efficiency is 110/120/130% under saved v3 rules. |
 | Wisdom | 3/0 | 8/2 | Mana Conservation post-combat Normal recovery, Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. One other perk remains missing. Broader interactions and playable acceptance remain open. |
 | Warcasting | 3/0 | 6/4 | Spellward has focused live/detached/current-controller damage evidence. Master Synthesis has first-consumption Spell/Order, typed-exclusion and branch-history evidence. Four perks missing; Combat Casting and Enchanted Command await shared rule decisions; Perfect Rhythm stacking is unresolved. |
-| Logistics | 3/0 | 6/4 | Four perks missing; Roadmaster/Wayfarer/Mountaineer native verified, with human/server and AI shared-cost evidence |
+| Logistics | 3/0 | 7/3 | Three perks missing; Forced March native movement/battle/state/AI verified alongside Roadmaster/Wayfarer/Mountaineer. Future unspent-burst route forecasting remains Phase2. |
 | Diplomacy | 3/3 | 7/10 | Foundation, Envoy, Peacemaker, Tribute and Recruitment Pact verified; three perks remain missing |
 | Estates | 3/0 | 5/5 | Land Surveyor, Tax Collector, Investor, Estate Network and Financier supply working Basic/Advanced/Expert perks. Accepted mine-capture grants, daily income, weekly Wood/Ore, weekly treasury interest, Investor's pre-income treasury snapshot and AI resource receipt/selection are native verified. |
 | Learning | 3/0 | 3/7 | Mentor, Quick Study and Field Study supply working Basic/Advanced perks and open ordinary Expert-rank progression. Meetings, weekly persistence, initial offer reroll, stronger-opponent awarded XP and query/RNG parity are native verified. Academic Study awaits first-visit timing. |

@@ -2,6 +2,31 @@
 
 ## Purpose
 
+### 2026-10-04 UP-192 — Explicit AI path turn comparison type
+
+Client30904 and base test94869 compile successfully. New isolated AI fixture
+build36673 fails at two `std::min` calls combining `int` and `uint8_t` path
+turns. Root specifies `std::min<int>` without altering route assertions; retry
+28857 retains existing objects and a separate log. Preserve both
+UP192-forced-march-ai-build.log and its retry log. This fixture compile failure
+is not native acceptance or a production movement failure.
+
+AI retry28857 exits0. Server fixture build35388 then fails on missing explicit
+BattleLayout definition at a copied restart layout. Root adds BattleLayout.h
+and braces around an assertion conditional to avoid a dangling-else warning.
+Server retry uses retained objects and UP192-forced-march-server-build-retry.log;
+the initial server-build log is retained. Prefer explicit complete-type includes
+in new fixtures rather than assuming BattleTestFixture's forward declarations
+are sufficient.
+
+Server retry93649 exits0. Initial native79289 runs5 cases in1.750s, zero skips,
+with3 pass/2 fail. Both failures are fixture expectations: ordinary stack Morale
+is+1, not0, and MoveHero request coordinates use the hero anchor rather than the
+visitable tile. Root compares first-round Morale to moraleValWithBonus(-1),
+round2 to moraleVal(), and request positions to convertFromVisitablePos.
+Actual burst, day markers, both gateway steps and fresh path turns passed.
+Keep UP192-forced-march-focused.log/XML; rerun under separate retry reports.
+
 ### 2026-10-03 UP-056 — Deferred stale mastery fixture version
 
 Supplemental content/mastery Python batch passes5/6; the existing

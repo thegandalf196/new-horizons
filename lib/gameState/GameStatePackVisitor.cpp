@@ -586,6 +586,16 @@ void GameStatePackVisitor::visitSetNewHorizonsCastleGateState(SetNewHorizonsCast
 		hero->markNewHorizonsCastleGateUsed(pack.lastUseDay);
 }
 
+void GameStatePackVisitor::visitSetNewHorizonsForcedMarchState(SetNewHorizonsForcedMarchState & pack)
+{
+	if(!pack.hasValidState())
+		throw std::runtime_error("Invalid New Horizons Forced March state packet");
+	auto * hero = gs.getHero(pack.heroID);
+	if(!hero)
+		throw std::runtime_error("New Horizons Forced March state references a missing hero");
+	hero->setNewHorizonsForcedMarchState(pack.lastUseDay, pack.penaltyDay);
+}
+
 void GameStatePackVisitor::visitSetNewHorizonsMusterState(SetNewHorizonsMusterState & pack)
 {
 	if(auto * hero = gs.getHero(pack.heroId))

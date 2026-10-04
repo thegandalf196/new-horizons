@@ -1811,6 +1811,41 @@ struct DLL_LINKAGE SetNewHorizonsCastleGateState : public CPackForClient
 	}
 };
 
+/// Authoritative daily use and pending first-combat penalty for Forced March.
+struct DLL_LINKAGE SetNewHorizonsForcedMarchState : public CPackForClient
+{
+	ObjectInstanceID heroID = ObjectInstanceID::NONE;
+	int32_t lastUseDay = -1;
+	int32_t penaltyDay = -1;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	bool hasValidState() const
+	{
+		return heroID.hasValue()
+			&& lastUseDay >= -1
+			&& penaltyDay >= -1
+			&& (penaltyDay == -1 || (lastUseDay >= 0 && penaltyDay == lastUseDay));
+	}
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_FORCED_MARCH))
+			throw std::runtime_error(h.saving
+				? "New Horizons Forced March packet requires the new wire format"
+				: "New Horizons Forced March packet is unavailable in the old wire format");
+		if(h.saving && !hasValidState())
+			throw std::runtime_error("Invalid New Horizons Forced March state packet");
+
+		h & heroID;
+		h & lastUseDay;
+		h & penaltyDay;
+
+		if(!h.saving && !hasValidState())
+			throw std::runtime_error("Invalid New Horizons Forced March state packet");
+	}
+};
+
 /// Authoritative weekly Recruitment Muster markers.  The stock mutation is
 /// carried separately by SetAvailableCreatures; this packet mirrors the
 /// server-authored hero and dwelling uses to every client so save/load and UI

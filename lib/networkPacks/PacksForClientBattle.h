@@ -47,6 +47,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_FORCED_MARCH)
+			&& info->hasFirstRoundMoraleModifierState())
+			throw std::runtime_error("Cannot discard first-round battle Morale modifier from BattleStart");
 		if(h.saving && info && info->hasCasualtyProvenanceState())
 			throw std::runtime_error("Binary BattleStart descriptors cannot preserve casualty health provenance");
 		if(h.saving && info && !h.hasFeature(Handler::Version::BATTLE_DEPLOYMENT_PHASES)

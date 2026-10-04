@@ -96,6 +96,7 @@ ACTIVE_PERKS = {
     "new-horizons:bulwarkOfTheMire.immovable",
     "new-horizons:bulwarkOfTheMire.vengefulMire",
     "new-horizons:logistics.pathfinding",
+    "new-horizons:logistics.forcedMarch",
     "new-horizons:logistics.navigation",
     "new-horizons:logistics.scouting",
     "new-horizons:logistics.roadmaster",

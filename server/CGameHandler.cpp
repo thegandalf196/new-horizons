@@ -1258,7 +1258,32 @@ bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, EMovementMode moveme
 			tmh.attackedFrom = guardPos;
 
 		tmh.result = result;
+		const int movementPointsBeforeMove = h->movementPointsRemaining();
 		sendAndApply(tmh);
+
+		// Forced March is earned only from an accepted ordinary movement step
+		// that actually exhausts positive Movement. At this point TryMoveHero
+		// has already applied any embark/disembark transition, so its current
+		// movement limit is the correct one for the resulting vehicle.
+		if(movementMode == EMovementMode::STANDARD
+			&& result != TryMoveHero::FAILED
+			&& movementPointsBeforeMove > 0
+			&& h->movementPointsRemaining() == 0
+			&& h->hasActivePerk("new-horizons:logistics", "new-horizons:logistics.forcedMarch"))
+		{
+			const int32_t currentDay = gameInfo().getCalendar().getCurrentDay();
+			if(currentDay >= 0 && h->getNewHorizonsForcedMarchLastUseDay() != currentDay)
+			{
+				SetNewHorizonsForcedMarchState forcedMarchState;
+				forcedMarchState.heroID = h->id;
+				forcedMarchState.lastUseDay = currentDay;
+				forcedMarchState.penaltyDay = currentDay;
+				sendAndApply(forcedMarchState);
+
+				const int extraMovement = std::max(0, h->movementPointsLimit()) / 10;
+				setMovePoints(h->id, extraMovement);
+			}
+		}
 
 		if (visitDest == VISIT_DEST && objectToVisit && objectToVisit->id == h->id)
 		{ // Hero should be always able to visit any object he is staying on even if there are guards around

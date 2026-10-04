@@ -1081,6 +1081,8 @@ int CBattleInfoCallback::battleGetMorale(const battle::Unit * unit) const
 	if(!getBattle() || !unit->alive() || unit->isGhost())
 		return unit->moraleVal();
 
+	const int32_t firstRoundMoraleModifier = getBattle()->getRound() == 1
+		? getBattle()->getFirstRoundMoraleModifier(unit->unitSide()) : 0;
 	const auto * hero = battleGetOwnerHero(unit);
 	int32_t additionalMorale = 0;
 	if(hero && hero->hasActivePerk("new-horizons:discipline", "new-horizons:discipline.standardBearer"))
@@ -1112,8 +1114,15 @@ int CBattleInfoCallback::battleGetMorale(const battle::Unit * unit) const
 			&& battleGetBloodrageDamagePercent(unit) > 0 ? 0 : morale;
 	};
 	if(!newHorizonsDiscipline::hasSteadfast(hero))
-		return applyMoraleFloor(additionalMorale == 0
-			? unit->moraleVal() : unit->moraleValWithBonus(additionalMorale));
+	{
+		if(additionalMorale == 0 && firstRoundMoraleModifier == 0)
+			return applyMoraleFloor(unit->moraleVal());
+		const auto totalAdditionalMorale = static_cast<int64_t>(additionalMorale)
+			+ static_cast<int64_t>(firstRoundMoraleModifier);
+		const auto boundedAdditionalMorale = static_cast<int32_t>(std::clamp<int64_t>(totalAdditionalMorale,
+			std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
+		return applyMoraleFloor(unit->moraleValWithBonus(boundedAdditionalMorale));
+	}
 
 	const auto moraleBonuses = unit->getUnstackedBonuses(Selector::type()(BonusType::MORALE));
 	BonusList adjustedMoraleBonuses;
@@ -1143,7 +1152,7 @@ int CBattleInfoCallback::battleGetMorale(const battle::Unit * unit) const
 	const auto currentMoraleBonuses = unit->getBonusesOfType(BonusType::MORALE);
 	const int64_t moraleDelta = static_cast<int64_t>(adjustedMoraleBonuses.totalValue())
 		- static_cast<int64_t>(currentMoraleBonuses->totalValue());
-	const int64_t totalAdditionalMorale = moraleDelta + additionalMorale;
+	const int64_t totalAdditionalMorale = moraleDelta + additionalMorale + firstRoundMoraleModifier;
 	const auto boundedAdditionalMorale = static_cast<int32_t>(std::clamp<int64_t>(totalAdditionalMorale,
 		std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
 	return applyMoraleFloor(unit->moraleValWithBonus(boundedAdditionalMorale));

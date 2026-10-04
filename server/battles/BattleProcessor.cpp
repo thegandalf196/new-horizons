@@ -98,6 +98,9 @@ void BattleProcessor::restartBattle(const BattleID & battleID, const CArmedInsta
 								const CGHeroInstance *hero1, const CGHeroInstance *hero2, const BattleLayout & layout, const CGTownInstance *town)
 {
 	auto battle = gameHandler->gameState().getBattle(battleID);
+	BattleSideArray<int32_t> preservedFirstRoundMoraleModifiers{};
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		preservedFirstRoundMoraleModifiers[side] = battle->getSide(side).firstRoundMoraleModifier;
 
 	auto attackerQuery = gameHandler->queries->topQuery(battle->getSide(BattleSide::ATTACKER).color);
 	auto * lastBattleQuery = gameHandler->queries->queryAs<CBattleQuery>(attackerQuery);
@@ -126,11 +129,14 @@ void BattleProcessor::restartBattle(const BattleID & battleID, const CArmedInsta
 	bc.battleID = battleID;
 	gameHandler->sendAndApply(bc);
 
-	startBattle(army1, army2, tile, hero1, hero2, layout, town, true);
+	startBattle(army1, army2, tile, hero1, hero2, layout, town, true,
+		preservedFirstRoundMoraleModifiers);
 }
 
 void BattleProcessor::startBattle(const CArmedInstance *army1, const CArmedInstance *army2, int3 tile,
-								const CGHeroInstance *hero1, const CGHeroInstance *hero2, const BattleLayout & layout, const CGTownInstance *town, bool restarted)
+								const CGHeroInstance *hero1, const CGHeroInstance *hero2, const BattleLayout & layout,
+								const CGTownInstance *town, bool restarted,
+								std::optional<BattleSideArray<int32_t>> preservedFirstRoundMoraleModifiers)
 {
 	assert(gameHandler->gameState().getBattle(army1->getOwner()) == nullptr);
 	assert(gameHandler->gameState().getBattle(army2->getOwner()) == nullptr);
@@ -138,7 +144,8 @@ void BattleProcessor::startBattle(const CArmedInstance *army1, const CArmedInsta
 	BattleSideArray<const CArmedInstance *> armies{army1, army2};
 	BattleSideArray<const CGHeroInstance*>heroes{hero1, hero2};
 
-	auto battleID = setupBattle(tile, armies, heroes, layout, town); //initializes stacks, places creatures on battlefield, blocks and informs player interfaces
+	auto battleID = setupBattle(tile, armies, heroes, layout, town,
+		preservedFirstRoundMoraleModifiers); //initializes stacks, places creatures on battlefield, blocks and informs player interfaces
 
 	const auto * battle = gameHandler->gameState().getBattle(battleID);
 	assert(battle);
@@ -227,7 +234,9 @@ void BattleProcessor::startBattle(const CArmedInstance *army1, const CArmedInsta
 		nullptr);
 }
 
-BattleID BattleProcessor::setupBattle(int3 tile, BattleSideArray<const CArmedInstance *> armies, BattleSideArray<const CGHeroInstance *> heroes, const BattleLayout & layout, const CGTownInstance *town)
+BattleID BattleProcessor::setupBattle(int3 tile, BattleSideArray<const CArmedInstance *> armies,
+	BattleSideArray<const CGHeroInstance *> heroes, const BattleLayout & layout, const CGTownInstance *town,
+	std::optional<BattleSideArray<int32_t>> preservedFirstRoundMoraleModifiers)
 {
 	const auto & t = *gameHandler->gameInfo().getTile(tile);
 	TerrainId terrain = t.getTerrainID();
@@ -272,6 +281,11 @@ BattleID BattleProcessor::setupBattle(int3 tile, BattleSideArray<const CArmedIns
 	//send info about battles
 	BattleStart bs;
 	bs.info = BattleInfo::setupBattle(&gameHandler->gameInfo(), tile, terrain, battlefieldType, armies, heroes, layout, town);
+	if(preservedFirstRoundMoraleModifiers)
+	{
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			bs.info->getSide(side).firstRoundMoraleModifier = (*preservedFirstRoundMoraleModifiers)[side];
+	}
 	bs.battleID = gameHandler->gameState().nextBattleID;
 
 	engageIntoBattle(bs.info->getSide(BattleSide::ATTACKER).color);
@@ -292,6 +306,26 @@ BattleID BattleProcessor::setupBattle(int3 tile, BattleSideArray<const CArmedIns
 	bs.info->replayAllowed = topBattleQuery == nullptr && onlyOnePlayerHuman;
 
 	gameHandler->sendAndApply(bs);
+
+	// A setup snapshot is now accepted and visible to both clients. Consume only
+	// the originating hero state after that acceptance; retries instead receive
+	// the captured side snapshot above and must not consume again.
+	if(!preservedFirstRoundMoraleModifiers)
+	{
+		const auto currentDay = gameHandler->gameInfo().getCalendar().getCurrentDay();
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			const auto * hero = heroes[side];
+			if(!hero || currentDay < 0 || hero->getNewHorizonsForcedMarchPenaltyDay() != currentDay)
+				continue;
+
+			SetNewHorizonsForcedMarchState state;
+			state.heroID = hero->id;
+			state.lastUseDay = hero->getNewHorizonsForcedMarchLastUseDay();
+			state.penaltyDay = -1;
+			gameHandler->sendAndApply(state);
+		}
+	}
 
 	return bs.battleID;
 }

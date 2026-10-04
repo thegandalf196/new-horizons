@@ -13,6 +13,7 @@
 #include "../../lib/constants/Enumerations.h"
 #include "../../lib/battle/BattleSide.h"
 #include <functional>
+#include <optional>
 
 class CGHeroInstance;
 class CGTownInstance;
@@ -52,7 +53,9 @@ class BattleProcessor : boost::noncopyable
 	void engageIntoBattle(PlayerColor player);
 
 	bool checkBattleStateChanges(const CBattleInfoCallback & battle);
-	BattleID setupBattle(int3 tile, BattleSideArray<const CArmedInstance *> armies, BattleSideArray<const CGHeroInstance *> heroes, const BattleLayout & layout, const CGTownInstance *town);
+	BattleID setupBattle(int3 tile, BattleSideArray<const CArmedInstance *> armies,
+		BattleSideArray<const CGHeroInstance *> heroes, const BattleLayout & layout, const CGTownInstance *town,
+		std::optional<BattleSideArray<int32_t>> preservedFirstRoundMoraleModifiers = std::nullopt);
 
 	bool makeAutomaticBattleAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	void expireStackActivationBonuses(const BattleID & battleID, const BattleAction & action);
@@ -65,7 +68,10 @@ public:
 	~BattleProcessor();
 
 	/// Starts battle with specified parameters
-	void startBattle(const CArmedInstance *army1, const CArmedInstance *army2, int3 tile, const CGHeroInstance *hero1, const CGHeroInstance *hero2, const BattleLayout & layout, const CGTownInstance *town, bool restarted = false);
+	void startBattle(const CArmedInstance *army1, const CArmedInstance *army2, int3 tile,
+		const CGHeroInstance *hero1, const CGHeroInstance *hero2, const BattleLayout & layout,
+		const CGTownInstance *town, bool restarted = false,
+		std::optional<BattleSideArray<int32_t>> preservedFirstRoundMoraleModifiers = std::nullopt);
 	/// Starts battle between two armies (which can also be heroes) at position of 2nd object
 	void startBattle(const CArmedInstance *army1, const CArmedInstance *army2);
 	/// Restart ongoing battle and end previous battle

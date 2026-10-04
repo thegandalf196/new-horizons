@@ -580,10 +580,14 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 	currentBattle->luckRollRules.badChance = cb->getSettings().getVector(EGameSettings::COMBAT_BAD_LUCK_CHANCE);
 	currentBattle->luckRollRules.diceSize = cb->getSettings().getInteger(EGameSettings::COMBAT_LUCK_DICE_SIZE);
 	currentBattle->luckRollRules.affectsAllTargets = cb->getSettings().getBoolean(EGameSettings::COMBAT_LUCKY_STRIKE_AFFECTS_ALL_TARGETS);
+	const auto currentDay = cb->getCalendar().getCurrentDay();
 
 	for(auto i : { BattleSide::LEFT_SIDE, BattleSide::RIGHT_SIDE})
 	{
 		currentBattle->sides[i].init(heroes[i], armies[i], i == BattleSide::RIGHT_SIDE ? town : nullptr);
+		if(heroes[i] && currentDay >= 0
+			&& heroes[i]->getNewHorizonsForcedMarchPenaltyDay() == currentDay)
+			currentBattle->sides[i].firstRoundMoraleModifier = -1;
 		if(const auto * army = armies[i])
 		{
 			currentBattle->sides[i].initialArmyValue = army->getArmyStrength();

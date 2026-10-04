@@ -137,6 +137,7 @@ public:
 	virtual void visitAdvmapSpellCast(AdvmapSpellCast & pack) {}
 	virtual void visitSetNewHorizonsAdventureSpellState(SetNewHorizonsAdventureSpellState & pack) {}
 	virtual void visitSetNewHorizonsCastleGateState(SetNewHorizonsCastleGateState & pack) {}
+	virtual void visitSetNewHorizonsForcedMarchState(SetNewHorizonsForcedMarchState & pack) {}
 	virtual void visitSetNewHorizonsMusterState(SetNewHorizonsMusterState & pack) {}
 	virtual void visitSetNewHorizonsLearningMentorState(SetNewHorizonsLearningMentorState & pack) {}
 	virtual void visitSetNewHorizonsDiplomacyState(SetNewHorizonsDiplomacyState & pack) {}

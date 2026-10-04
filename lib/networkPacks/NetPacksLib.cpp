@@ -592,6 +592,11 @@ void SetNewHorizonsCastleGateState::visitTyped(ICPackVisitor & visitor)
 	visitor.visitSetNewHorizonsCastleGateState(*this);
 }
 
+void SetNewHorizonsForcedMarchState::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitSetNewHorizonsForcedMarchState(*this);
+}
+
 void SetNewHorizonsMusterState::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitSetNewHorizonsMusterState(*this);

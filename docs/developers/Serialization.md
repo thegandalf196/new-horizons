@@ -1,5 +1,19 @@
 # Serialization
 
+## New Horizons Forced March state
+
+`NEW_HORIZONS_FORCED_MARCH` appends two absolute-day hero markers: the last
+successful exhaustion allowance and the pending next-combat Morale penalty.
+Both default to `-1`. A dedicated typed packet carries the complete snapshot;
+expiry is evaluated against the current day, without a reset scan.
+The battle captures the pending penalty in a generic per-side first-round
+Morale modifier, consumed only at authoritative battle startup. The shared
+Morale calculation uses that modifier only during round 1, so Time Stop does
+not extend it. Old records default to unused/zero; populated state must reject
+unsupported writes before payload bytes rather than silently lose the use.
+This descriptor extension does not add ongoing-battle save/resume support.
+UP192 tracks implementation and focused acceptance separately.
+
 ## Explicit bonus status classification
 
 `BONUS_STATUS_TAGS` appends `Bonus::statusTags` and `statusIdentity` after

@@ -188,6 +188,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	// Raw Army Value and opponent kind captured before battle mutations begin.
 	std::optional<uint64_t> initialArmyValue;
 	bool initialArmyIsWandering = false;
+	// Movement fatigue captured at battle setup; applies as an additional Morale
+	// modifier only for the first combat round.
+	int32_t firstRoundMoraleModifier = 0;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);
@@ -340,6 +343,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && firstRoundMoraleModifier != 0
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_FORCED_MARCH))
+			throw std::runtime_error("Cannot discard first-round battle Morale modifier");
 		if(h.saving && initialArmyIsWandering && !initialArmyValue)
 			throw std::runtime_error("Wandering battle army has no initial Army Value snapshot");
 		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_INITIAL_ARMY_VALUE)
@@ -648,6 +654,10 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			initialArmyValue.reset();
 			initialArmyIsWandering = false;
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_FORCED_MARCH))
+			h & firstRoundMoraleModifier;
+		else if(!h.saving)
+			firstRoundMoraleModifier = 0;
 		if(!h.saving)
 		{
 			validateDoubleCommandState();

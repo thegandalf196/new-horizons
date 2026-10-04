@@ -196,6 +196,9 @@ public:
 		{
 			if(hasCasualtyProvenanceState())
 				throw std::runtime_error("Binary battle descriptors cannot preserve casualty health provenance");
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_FORCED_MARCH)
+				&& hasFirstRoundMoraleModifierState())
+				throw std::runtime_error("Cannot discard first-round battle Morale modifier");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RAGE_THROUGH_PAIN)
 				&& hasRageThroughPainState())
 				throw std::runtime_error("Cannot discard Rage Through Pain battle state");
@@ -695,6 +698,12 @@ public:
 	PlayerColor getSidePlayer(BattleSide side) const override;
 	const CArmedInstance * getSideArmy(BattleSide side) const override;
 	const CGHeroInstance * getSideHero(BattleSide side) const override;
+	int32_t getFirstRoundMoraleModifier(BattleSide side) const override
+	{
+		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			return 0;
+		return getSide(side).firstRoundMoraleModifier;
+	}
 
 	ui8 getTacticDist() const override;
 	BattleSide getTacticsSide() const override;
@@ -706,6 +715,13 @@ public:
 		return std::any_of(sides.begin(), sides.end(), [](const SideInBattle & side)
 		{
 			return side.initialArmyValue.has_value() || side.initialArmyIsWandering;
+		});
+	}
+	bool hasFirstRoundMoraleModifierState() const
+	{
+		return std::any_of(sides.begin(), sides.end(), [](const SideInBattle & side)
+		{
+			return side.firstRoundMoraleModifier != 0;
 		});
 	}
 	int32_t getRound() const override;

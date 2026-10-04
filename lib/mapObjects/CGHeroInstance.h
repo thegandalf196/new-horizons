@@ -278,6 +278,15 @@ public:
 	void resetNewHorizonsAdventureSpellCastToday() { newHorizonsAdventureSpellState.castToday = false; }
 	bool hasUsedNewHorizonsCastleGateToday(int32_t day) const { return newHorizonsCastleGateLastUseDay == day; }
 	void markNewHorizonsCastleGateUsed(int32_t day) { newHorizonsCastleGateLastUseDay = day; }
+	int32_t getNewHorizonsForcedMarchLastUseDay() const { return newHorizonsForcedMarchLastUseDay; }
+	int32_t getNewHorizonsForcedMarchPenaltyDay() const { return newHorizonsForcedMarchPenaltyDay; }
+	void setNewHorizonsForcedMarchState(int32_t lastUseDay, int32_t penaltyDay)
+	{
+		if(!isValidNewHorizonsForcedMarchState(lastUseDay, penaltyDay))
+			throw std::runtime_error("Invalid New Horizons Forced March state");
+		newHorizonsForcedMarchLastUseDay = lastUseDay;
+		newHorizonsForcedMarchPenaltyDay = penaltyDay;
+	}
 	bool hasUsedNewHorizonsMuster(int32_t week) const { return getNewHorizonsMusterUsesThisWeek(week) > 0; }
 	int32_t getNewHorizonsMusterLastWeek() const { return newHorizonsMusterLastWeek; }
 	int32_t getNewHorizonsMusterUsesThisWeek(int32_t week) const
@@ -503,6 +512,8 @@ private:
 	JsonNode primaryGrowthRules;
 	newHorizonsMagic::AdventureSpellState newHorizonsAdventureSpellState;
 	int32_t newHorizonsCastleGateLastUseDay = -1;
+	int32_t newHorizonsForcedMarchLastUseDay = -1;
+	int32_t newHorizonsForcedMarchPenaltyDay = -1;
 	int32_t newHorizonsMusterLastWeek = -1;
 	int32_t newHorizonsMusterUsesThisWeek = 0;
 	int32_t newHorizonsLearningMentorLastWeek = -1;
@@ -522,6 +533,11 @@ private:
 		return peacemakerLastWeek >= -1 && tributeLastWeek >= -1 && pactExpiryDay >= -1
 			&& (pacifiedCreatureId == ObjectInstanceID::NONE
 				|| (pacifiedCreatureId.hasValue() && peacemakerLastWeek >= 0));
+	}
+	static bool isValidNewHorizonsForcedMarchState(int32_t lastUseDay, int32_t penaltyDay)
+	{
+		return lastUseDay >= -1 && penaltyDay >= -1
+			&& (penaltyDay == -1 || (lastUseDay >= 0 && penaltyDay == lastUseDay));
 	}
 
 public:
@@ -545,6 +561,12 @@ public:
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_PACT_STATE)
 				&& newHorizonsRecruitmentPactExpiryDay != -1)
 				throw std::runtime_error("New Horizons Recruitment Pact state requires the new save format");
+			if(!isValidNewHorizonsForcedMarchState(newHorizonsForcedMarchLastUseDay,
+				newHorizonsForcedMarchPenaltyDay))
+				throw std::runtime_error("Invalid New Horizons Forced March state");
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_FORCED_MARCH)
+				&& (newHorizonsForcedMarchLastUseDay != -1 || newHorizonsForcedMarchPenaltyDay != -1))
+				throw std::runtime_error("New Horizons Forced March state requires the new save format");
 		}
 		if(h.saving && (!h.hasFeature(Handler::Version::NEW_HORIZONS_INVESTOR_INCOME)
 			&& newHorizonsInvestorDailyGold != 0))
@@ -728,6 +750,21 @@ public:
 		}
 		else if(!h.saving)
 			newHorizonsInvestorDailyGold = 0;
+
+		// Appended daily use and pending first-combat penalty state.
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_FORCED_MARCH))
+		{
+			h & newHorizonsForcedMarchLastUseDay;
+			h & newHorizonsForcedMarchPenaltyDay;
+		}
+		else if(!h.saving)
+		{
+			newHorizonsForcedMarchLastUseDay = -1;
+			newHorizonsForcedMarchPenaltyDay = -1;
+		}
+		if(!h.saving && !isValidNewHorizonsForcedMarchState(newHorizonsForcedMarchLastUseDay,
+			newHorizonsForcedMarchPenaltyDay))
+			throw std::runtime_error("Invalid New Horizons Forced March state");
 
 		if(!h.saving)
 		{

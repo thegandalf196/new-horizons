@@ -168,15 +168,18 @@ enum class ESerializationVersion : int32_t
 	BONUS_SPELL_CASTER_OWNER, // stable spell-caster owner provenance for applied bonuses
 	NEW_HORIZONS_PUPPET_MASTER_CONTROL, // one-activation action controller and fixed Lucidity markers
 	BONUS_STATUS_TAGS, // explicit status classification and effect identity metadata
+	NEW_HORIZONS_FORCED_MARCH, // daily exhaustion allowance and next-combat first-round Morale snapshot
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = BONUS_STATUS_TAGS,
+	CURRENT = NEW_HORIZONS_FORCED_MARCH,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
+static_assert(ESerializationVersion::NEW_HORIZONS_FORCED_MARCH > ESerializationVersion::BONUS_STATUS_TAGS,
+	"Forced March state must remain append-only");
 static_assert(ESerializationVersion::BONUS_STATUS_TAGS > ESerializationVersion::NEW_HORIZONS_PUPPET_MASTER_CONTROL,
 	"Bonus status metadata must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_PUPPET_MASTER_CONTROL > ESerializationVersion::BONUS_SPELL_CASTER_OWNER,
