@@ -10,6 +10,20 @@ This is a binding inventory, not a full visual audit or a product completion cla
 
 ## Status meanings
 
+UP212 Mage Guild scroll binding: **Provisional** source integration for standalone
+NH iconScroll32/44 images. The client now references native TPMAGES.DEF group0
+frame0 from purchaser H3sprite.lod: actual blank open83x61 parchment. Original
+SPELLSCR composites remain untouched; small emblems retain native size, oversized
+aliases aspect-fit inside54x45, and the full parchment remains the hitbox.
+No extracted pixels, uncertain Modder Tools Pack template, new art or dependency
+is shipped. The blank reference resolves the container binding, not every icon's
+visual construction: opaque square paintings still need proper transparent
+emblems/scroll-role exports. Keep that art correction **Not done**; do not call
+a pasted opaque square final artwork. Client86675 builds and independent Astra
+review finds no blocking source issue; existing Mage Guild asset guards pass5/5.
+No GUI run,
+native-resolution composed-widget acceptance or playable promotion yet.
+
 UP211 Conflux independent Core recruitment: implementation in progress.
 Pixie and Sprite are separate recruitment choices, using the supported eighth
 dwelling and original artwork referenced externally. Existing Sprite artwork is

@@ -95,6 +95,10 @@ constexpr int NH_FORT_COMPACT_STAT_COLUMNS = 2;
 constexpr int NH_FORT_COMPACT_STAT_ROWS = NH_FORT_STAT_COUNT / NH_FORT_COMPACT_STAT_COLUMNS;
 constexpr int NH_FORT_COMPACT_PORTRAIT_HEIGHT = 15;
 constexpr int NH_FORT_CONFLUX_COMPACT_PORTRAIT_MAX_HEIGHT = 40;
+constexpr int MAGE_GUILD_SCROLL_WIDTH = 83;
+constexpr int MAGE_GUILD_SCROLL_HEIGHT = 61;
+constexpr int MAGE_GUILD_EMBLEM_WIDTH = 54;
+constexpr int MAGE_GUILD_EMBLEM_HEIGHT = 45;
 
 int rankedFortTinyFontHeight()
 {
@@ -3508,8 +3512,39 @@ CMageGuildScreen::Scroll::Scroll(Point position, const CSpell *Spell, ObjectInst
 
 	addUsedEvents(LCLICK | SHOW_POPUP | HOVER);
 	pos += position;
-	image = std::make_shared<CAnimImage>(AnimationPath::builtin("SPELLSCR"), spell->id.getNum());
-	pos = image->pos;
+	const auto spellScroll = std::make_shared<CAnimImage>(AnimationPath::builtin("SPELLSCR"), spell->id.getNum());
+	const bool hasNativeScrollFrame = spellScroll->pos.w == MAGE_GUILD_SCROLL_WIDTH
+		&& spellScroll->pos.h == MAGE_GUILD_SCROLL_HEIGHT;
+	const bool wrapStandaloneIcon = newHorizonsMagic::mageGuildGenerationActive(GAME->interface()->cb->getMagicRules())
+		&& !hasNativeScrollFrame;
+	if(wrapStandaloneIcon)
+	{
+		emblem = spellScroll;
+		image = std::make_shared<CAnimImage>(AnimationPath::builtin("TPMAGES.DEF"), 0);
+		pos = image->pos;
+
+		// Preserve the rolled edges. Book-sized aliases also occur in iconScroll,
+		// so fit oversized art without stretching it or enlarging small emblems.
+		if(emblem->pos.w > 0 && emblem->pos.h > 0
+			&& (emblem->pos.w > MAGE_GUILD_EMBLEM_WIDTH || emblem->pos.h > MAGE_GUILD_EMBLEM_HEIGHT))
+		{
+			const int width = std::min({emblem->pos.w, MAGE_GUILD_EMBLEM_WIDTH,
+				MAGE_GUILD_EMBLEM_HEIGHT * emblem->pos.w / emblem->pos.h});
+			const Point fittedSize(std::max(1, width),
+				std::max(1, width * emblem->pos.h / emblem->pos.w));
+			emblem->setScale(fittedSize);
+			emblem->pos.w = fittedSize.x;
+			emblem->pos.h = fittedSize.y;
+		}
+		emblem->moveBy(Point((MAGE_GUILD_SCROLL_WIDTH - emblem->pos.w) / 2,
+			(MAGE_GUILD_SCROLL_HEIGHT - emblem->pos.h) / 2));
+		moveChildForeground(emblem.get());
+	}
+	else
+	{
+		image = spellScroll;
+		pos = image->pos;
+	}
 }
 
 void CMageGuildScreen::Scroll::clickPressed(const Point & cursorPosition)

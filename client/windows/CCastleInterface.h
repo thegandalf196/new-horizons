@@ -449,6 +449,7 @@ class CMageGuildScreen : public CStatusbarWindow
 	{
 		const CSpell * spell;
 		std::shared_ptr<CAnimImage> image;
+		std::shared_ptr<CAnimImage> emblem;
 		ObjectInstanceID townId;
 
 	public:
