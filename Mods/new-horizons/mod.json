@@ -2707,6 +2707,14 @@
 						]
 					}
 				],
+				"creatureLineSpecialties": {
+					"version": 1,
+					"speed": 1,
+					"initiative": 1,
+					"attributePerStep": 1,
+					"levelStep": 5,
+					"attributeMaximum": 6
+				},
 				"startingSkills": {
 					"factionSkills": {
 						"core:castle": "new-horizons:divineMandate",

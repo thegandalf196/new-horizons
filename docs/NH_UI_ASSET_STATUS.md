@@ -348,6 +348,15 @@ The normal launcher's verify-only path check passes for this snapshot.
 
 ## Spellbook binding details
 
+### Creature-line specialty tooltip conversion
+
+Provisional presentation,2026-10-04: hero and exchange live-instance tooltips
+now describe the saved canonical +1 Speed/+1 Initiative and flat five-level
+Attack/Defense growth capped6. Existing panels and artwork are unchanged.
+UP216 native85455 passes7/7; this is source/native evidence, not rendered
+approval. Prototype-only CHeroOverview/CKingdomInterface text remains a tracked
+Phase2 discrepancy. No new art or final-art classification is implied.
+
 ### Specialty and Fort binding correction
 
 Hero `specialtyLarge` images feed the 44×44 `UN44` atlas, not the 82×93

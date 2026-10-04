@@ -683,7 +683,7 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 	titleText.replaceTextID(curHero->getClassNameTextID());
 	title->setText(titleText.toString(&GAME->translator()));
 
-	specArea->text = curHero->getHeroType()->getSpecialtyDescriptionTranslated();
+	specArea->text = curHero->getSpecialtyDescriptionTranslated();
 	specImage->setFrame(curHero->getHeroType()->imageIndex);
 	specName->setText(curHero->getHeroType()->getSpecialtyNameTranslated());
 

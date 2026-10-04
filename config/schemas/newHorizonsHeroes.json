@@ -1,7 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-04/schema",
 	"title": "Saved New Horizons hero growth and scale rules",
-	"description": "New Horizons hero growth, canonical skill-offer weights, and starting-skill schema. Primary growth grants the fixed class vector on every level; version 3 additionally evaluates independent configured skill bonus rolls. Empty retains legacy heroes.",
+	"description": "New Horizons hero growth, canonical skill-offer weights, starting-skill schema, and optional versioned creature-line specialty conversion. Primary growth grants the fixed class vector on every level; version 3 additionally evaluates independent configured skill bonus rolls. Empty retains legacy heroes.",
 	"type": "object",
 	"oneOf": [
 		{"maxProperties": 0},
@@ -33,7 +33,8 @@
 					"description": "Independent skill-based primary bonus chances by rank for version 3 profiles. Older profiles ignore these rows.",
 					"type": "array", "items": {"$ref": "#/definitions/extra"}
 				},
-				"startingSkills": {"$ref": "#/definitions/startingSkills"}
+				"startingSkills": {"$ref": "#/definitions/startingSkills"},
+				"creatureLineSpecialties": {"$ref": "#/definitions/creatureLineSpecialties"}
 			}
 		}
 	],
@@ -73,6 +74,19 @@
 					"type": "array", "minItems": 4, "maxItems": 4,
 					"items": {"type": "integer", "minimum": 0, "maximum": 100}
 				}
+			}
+		},
+		"creatureLineSpecialties": {
+			"type": "object",
+			"required": ["version", "speed", "initiative", "attributePerStep", "levelStep", "attributeMaximum"],
+			"additionalProperties": false,
+			"properties": {
+				"version": {"type": "integer", "enum": [1]},
+				"speed": {"type": "integer", "enum": [1]},
+				"initiative": {"type": "integer", "enum": [1]},
+				"attributePerStep": {"type": "integer", "enum": [1]},
+				"levelStep": {"type": "integer", "enum": [5]},
+				"attributeMaximum": {"type": "integer", "enum": [6]}
 			}
 		},
 		"startingSkills": {

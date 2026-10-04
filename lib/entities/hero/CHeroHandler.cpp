@@ -286,8 +286,15 @@ void CHeroHandler::loadHeroSpecialty(CHero * hero, const JsonNode & node) const
 
 		LIBRARY->identifiers()->requestIdentifier("creature", creatureNode, [this, hero, prepSpec, targetLevel, stepSize](si32 creature)
 		{
-			for (const auto & bonus : createCreatureSpecialty(CreatureID(creature), targetLevel, stepSize))
-				hero->specialty.push_back(prepSpec(bonus));
+			CHero::CreatureLineSpecialtyAlias alias;
+			alias.creature = CreatureID(creature);
+			for (const auto & bonus : createCreatureSpecialty(alias.creature, targetLevel, stepSize))
+			{
+				auto prepared = prepSpec(bonus);
+				alias.bonuses.push_back(prepared);
+				hero->specialty.push_back(std::move(prepared));
+			}
+			hero->creatureLineSpecialtyAlias = std::move(alias);
 		});
 	}
 

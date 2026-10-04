@@ -95,6 +95,7 @@ private:
 
 	IGameInfoCallback * getCallback() const final { return cb; }
 	bool isSpellbinderHatGrantEligible(const SpellID & spell) const;
+	void refreshCreatureLineSpecialtyBonuses(bool createIfMissing);
 
 public:
 	//////////////////////////////////////////////////////////////////////////
@@ -405,6 +406,9 @@ public:
 
 	const CHero * getHeroType() const;
 	HeroTypeID getHeroTypeID() const;
+	/// Uses the saved New Horizons creature-line specialty rules only when this
+	/// instance carries their persistent conversion markers.
+	std::string getSpecialtyDescriptionTranslated() const;
 	void setHeroType(HeroTypeID type);
 
 	bool isGarrisoned() const;

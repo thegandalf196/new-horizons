@@ -2,6 +2,21 @@
 
 ## Purpose
 
+### 2026-10-04 UP216 — Translator ownership at tooltip boundary
+
+Native76737 passed6/7 in2.954s with zero skips. The legacy fixture removed the
+optional field from an input object, but GameSettings::addOverride merges over
+installed defaults and reintroduced it. Mark the complete fixture rules object
+as an authoritative replacement and assert the state actually omits the field
+before testing the legacy branch. Production validation was not weakened.
+The bounded fixture rebuild is77861; retain its terminal result before retrying.
+
+Build32607 failed because the new MetaString tooltip passed the library's
+unique_ptr<CGeneralTextHandler> where toString requires const ITranslator*.
+Use generaltexth.get(), following its ownership contract. The compiler evidence
+is retained privately in UP216-creature-specialty-build.log. No native or
+playable acceptance from this failed build; retry the same candidate after repair.
+
 ### 2026-10-04 UP214 — Final focused acceptance
 
 Both-target80140 and bounded fixture rebuild14491 succeed. Native39842 passes

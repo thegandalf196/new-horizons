@@ -31,6 +31,18 @@ struct DLL_LINKAGE SkillGrowthChance
 	int chancePercent = 0;
 };
 
+/// Saved, versioned conversion of the legacy `specialty.creature` alias.
+/// The only supported payload is the canonical Version 1 rule set.
+struct DLL_LINKAGE CreatureLineSpecialtyRules
+{
+	int version = 1;
+	int speed = 1;
+	int initiative = 1;
+	int attributePerStep = 1;
+	int levelStep = 5;
+	int attributeMaximum = 6;
+};
+
 /// Read-only live-hero presentation. No secondary attributes or masteries are
 /// fabricated here. Primary growth is the fixed class vector; version 3 also
 /// exposes the owned skills' independent bonus opportunities.
@@ -66,6 +78,9 @@ DLL_LINKAGE std::optional<SecondarySkill> normalizeRewardSkill(const JsonNode & 
 DLL_LINKAGE void validateHeroRules(const JsonNode & rules, bool requireAllClasses);
 DLL_LINKAGE void validateResolvedHeroRules(const JsonNode & rules);
 DLL_LINKAGE JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass);
+/// Returns the creature-line conversion saved in the hero snapshot. Old or
+/// otherwise legacy snapshots intentionally return nullopt.
+DLL_LINKAGE std::optional<CreatureLineSpecialtyRules> creatureLineSpecialtyRules(const JsonNode & resolvedRules);
 /// Legacy compatibility accessor. New Horizons primary growth is deterministic
 /// for older profiles. Version 3 returns the configured owned-skill chances.
 DLL_LINKAGE std::vector<SkillGrowthChance> skillGrowthChances(const JsonNode & resolvedRules,

@@ -76,6 +76,26 @@ void validateCommon(const JsonNode & rules)
 	}
 }
 
+void validateCreatureLineSpecialtyRules(const JsonNode & rules)
+{
+	fields(rules, {"version", "speed", "initiative", "attributePerStep", "levelStep", "attributeMaximum"});
+	require(integer(rules["version"], 1, 1), "creature-line specialty version");
+	require(integer(rules["speed"], 1, 1), "creature-line specialty speed");
+	require(integer(rules["initiative"], 1, 1), "creature-line specialty initiative");
+	require(integer(rules["attributePerStep"], 1, 1), "creature-line specialty attribute step");
+	require(integer(rules["levelStep"], 5, 5), "creature-line specialty level step");
+	require(integer(rules["attributeMaximum"], 6, 6), "creature-line specialty attribute maximum");
+}
+
+void validateOptionalCreatureLineSpecialtyRules(const JsonNode & rules)
+{
+	if(!rules.isStruct())
+		return;
+	const auto found = rules.Struct().find("creatureLineSpecialties");
+	if(found != rules.Struct().end())
+		validateCreatureLineSpecialtyRules(found->second);
+}
+
 void validateExcludedSkills(const JsonNode & excludedSkills)
 {
 	if(excludedSkills.isNull())
@@ -263,8 +283,9 @@ void validateHeroRules(const JsonNode & rules, bool requireAllClasses)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties"});
 	validateCommon(rules);
+	validateOptionalCreatureLineSpecialtyRules(rules);
 	validateExcludedSkills(rules["excludedSkills"]);
 	validateSkillOfferWeights(rules["skillOfferWeights"], requireAllClasses);
 	validateStartingSkills(rules["startingSkills"], requireAllClasses);
@@ -293,8 +314,9 @@ void validateResolvedHeroRules(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties"});
 	validateCommon(rules);
+	validateOptionalCreatureLineSpecialtyRules(rules);
 	validateExcludedSkills(rules["excludedSkills"]);
 	if(!rules["skillOfferWeights"].isNull())
 		validateSkillOfferWeightRow(rules["skillOfferWeights"]);
@@ -309,6 +331,8 @@ JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 	JsonNode result;
 	for(const auto * key : {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "extraGrowth"})
 		result[key] = rules[key];
+	if(rules.Struct().contains("creatureLineSpecialties"))
+		result["creatureLineSpecialties"] = rules["creatureLineSpecialties"];
 	if(rules["skillOfferWeights"].isStruct())
 		result["skillOfferWeights"] = rules["skillOfferWeights"][HeroClassID::encode(heroClass.getNum())];
 	if(rules["excludedSkills"].isVector())
@@ -318,6 +342,25 @@ JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 	result["profile"] = rules["classProfiles"][HeroClassID::encode(heroClass.getNum())];
 	validateResolvedHeroRules(result);
 	return result;
+}
+
+std::optional<CreatureLineSpecialtyRules> creatureLineSpecialtyRules(const JsonNode & resolvedRules)
+{
+	if(!usesRules(resolvedRules) || !resolvedRules.isStruct())
+		return std::nullopt;
+	const auto found = resolvedRules.Struct().find("creatureLineSpecialties");
+	if(found == resolvedRules.Struct().end())
+		return std::nullopt;
+	validateCreatureLineSpecialtyRules(found->second);
+	const auto & rules = found->second;
+	return CreatureLineSpecialtyRules{
+		.version = static_cast<int>(rules["version"].Integer()),
+		.speed = static_cast<int>(rules["speed"].Integer()),
+		.initiative = static_cast<int>(rules["initiative"].Integer()),
+		.attributePerStep = static_cast<int>(rules["attributePerStep"].Integer()),
+		.levelStep = static_cast<int>(rules["levelStep"].Integer()),
+		.attributeMaximum = static_cast<int>(rules["attributeMaximum"].Integer())
+	};
 }
 
 std::vector<SkillGrowthChance> skillGrowthChances(const JsonNode & resolvedRules,

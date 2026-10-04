@@ -16,12 +16,15 @@
 #include <vcmi/spells/Spell.h>
 #include <vstd/RNG.h>
 
+#include <string_view>
+
 #include "../CPlayerState.h"
 #include "../callback/IGameInfoCallback.h"
 #include "../callback/IGameEventCallback.h"
 #include "../callback/IGameRandomizer.h"
 #include "../callback/EditorCallback.h"
 #include "../texts/CGeneralTextHandler.h"
+#include "../texts/MetaString.h"
 #include "../TerrainHandler.h"
 #include "../RoadHandler.h"
 #include "../IGameSettings.h"
@@ -30,6 +33,7 @@
 #include "../gameState/CGameState.h"
 #include "../gameState/UpgradeInfo.h"
 #include "../CCreatureHandler.h"
+#include "../bonuses/Limiters.h"
 #include "../mapping/CMap.h"
 #include "../StartInfo.h"
 #include "../GameSettings.h"
@@ -65,6 +69,12 @@
 
 namespace
 {
+std::string creatureLineSpecialtyMarker(HeroTypeID heroType, CreatureID creature, std::string_view stat)
+{
+	return "new-horizons:creature-line-specialty:" + std::to_string(heroType.getNum()) + ":"
+		+ std::to_string(creature.getNum()) + ":" + std::string(stat);
+}
+
 const ArtifactID & spellbindersHatArtifactID()
 {
 	static const ArtifactID result(ArtifactID::decode("core:spellbindersHat"));
@@ -486,6 +496,51 @@ const CHero * CGHeroInstance::getHeroType() const
 	return getHeroTypeID().toHeroType();
 }
 
+std::string CGHeroInstance::getSpecialtyDescriptionTranslated() const
+{
+	const CHero * heroType = getHeroType();
+	if(!heroType)
+		return {};
+
+	const auto rules = newHorizonsHeroes::creatureLineSpecialtyRules(primaryGrowthRules);
+	if(!rules || !heroType->creatureLineSpecialtyAlias)
+		return heroType->getSpecialtyDescriptionTranslated();
+
+	const CreatureID creature = heroType->creatureLineSpecialtyAlias->creature;
+	const std::array<std::string, 4> markers = {
+		creatureLineSpecialtyMarker(heroType->getId(), creature, "speed"),
+		creatureLineSpecialtyMarker(heroType->getId(), creature, "initiative"),
+		creatureLineSpecialtyMarker(heroType->getId(), creature, "attack"),
+		creatureLineSpecialtyMarker(heroType->getId(), creature, "defense")
+	};
+	const auto & localBonuses = getExportedBonusList();
+	const bool converted = std::ranges::any_of(localBonuses, [&markers](const auto & bonus)
+	{
+		return bonus && std::ranges::find(markers, bonus->stacking) != markers.end();
+	});
+	if(!converted)
+		return heroType->getSpecialtyDescriptionTranslated();
+
+	MetaString description;
+	description.appendNamePlural(creature);
+	description.appendRawString(" and their upgrades gain +");
+	description.appendNumber(rules->speed);
+	description.appendRawString(" Speed and +");
+	description.appendNumber(rules->initiative);
+	description.appendRawString(" Initiative. They also gain +");
+	description.appendNumber(rules->attributePerStep);
+	description.appendRawString(" Creature Attack and +");
+	description.appendNumber(rules->attributePerStep);
+	description.appendRawString(" Creature Defense per ");
+	description.appendNumber(rules->levelStep);
+	description.appendRawString(" hero levels, up to +");
+	description.appendNumber(rules->attributeMaximum);
+	description.appendRawString(" at level ");
+	description.appendNumber(rules->levelStep * rules->attributeMaximum);
+	description.appendRawString(".");
+	return description.toString(LIBRARY->generaltexth.get());
+}
+
 HeroTypeID CGHeroInstance::getHeroTypeID() const
 {
 	if (ID == Obj::RANDOM_HERO)
@@ -735,8 +790,19 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	}
 
 	//copy active (probably growing) bonuses from hero prototype to hero object
-	for(const std::shared_ptr<Bonus> & b : getHeroType()->specialty)
+	const CHero * heroType = getHeroType();
+	const bool convertsCreatureLineSpecialty = newHorizonsHeroes::creatureLineSpecialtyRules(primaryGrowthRules).has_value()
+		&& heroType->creatureLineSpecialtyAlias.has_value();
+	for(const std::shared_ptr<Bonus> & b : heroType->specialty)
+	{
+		if(convertsCreatureLineSpecialty
+			&& std::ranges::find(heroType->creatureLineSpecialtyAlias->bonuses, b)
+				!= heroType->creatureLineSpecialtyAlias->bonuses.end())
+			continue;
 		addNewBonus(b);
+	}
+	if(convertsCreatureLineSpecialty)
+		refreshCreatureLineSpecialtyBonuses(true);
 
 	//initialize bonuses
 	recreateSecondarySkillsBonuses();
@@ -2290,8 +2356,81 @@ void CGHeroInstance::levelUp(const std::array<int, GameConstants::PRIMARY_SKILLS
 {
 	lastPrimaryGains = gains;
 	++level;
+	refreshCreatureLineSpecialtyBonuses(false);
 	//update specialty and other bonuses that scale with level
 	nodeHasChanged();
+}
+
+void CGHeroInstance::refreshCreatureLineSpecialtyBonuses(bool createIfMissing)
+{
+	const auto rules = newHorizonsHeroes::creatureLineSpecialtyRules(primaryGrowthRules);
+	const CHero * heroType = getHeroType();
+	if(!rules || !heroType || !heroType->creatureLineSpecialtyAlias)
+		return;
+
+	const CreatureID creature = heroType->creatureLineSpecialtyAlias->creature;
+	const std::array<std::string, 4> markers = {
+		creatureLineSpecialtyMarker(heroType->getId(), creature, "speed"),
+		creatureLineSpecialtyMarker(heroType->getId(), creature, "initiative"),
+		creatureLineSpecialtyMarker(heroType->getId(), creature, "attack"),
+		creatureLineSpecialtyMarker(heroType->getId(), creature, "defense")
+	};
+	const auto & existingBonuses = getExportedBonusList();
+	const bool hasMarkers = std::ranges::any_of(existingBonuses, [&markers](const auto & bonus)
+	{
+		return bonus && std::ranges::find(markers, bonus->stacking) != markers.end();
+	});
+	if(!createIfMissing && !hasMarkers)
+		return;
+
+	const CCreature * specCreature = creature.toCreature();
+	if(!specCreature)
+		return;
+
+	removeBonuses(CSelector([markers](const Bonus * bonus)
+	{
+		return bonus && std::ranges::find(markers, bonus->stacking) != markers.end();
+	}));
+
+	const TLimiterPtr lineLimiter = std::make_shared<CCreatureTypeLimiter>(*specCreature, true);
+	auto makeBonus = [heroType, creature](BonusType type, std::string_view stat)
+	{
+		auto bonus = std::make_shared<Bonus>();
+		bonus->duration = BonusDuration::PERMANENT;
+		bonus->source = BonusSource::HERO_SPECIAL;
+		bonus->sid = BonusSourceID(heroType->getId());
+		bonus->stacking = creatureLineSpecialtyMarker(heroType->getId(), creature, stat);
+		bonus->type = type;
+		bonus->valType = BonusValueType::BASE_NUMBER;
+		return bonus;
+	};
+
+	auto speed = makeBonus(BonusType::STACKS_SPEED, "speed");
+	speed->val = rules->speed;
+	speed->limiter = lineLimiter;
+	addNewBonus(speed);
+
+	auto initiative = makeBonus(BonusType::STACKS_INITIATIVE_BASE, "initiative");
+	initiative->val = rules->initiative;
+	auto initiativeLimiter = std::make_shared<AllOfLimiter>();
+	initiativeLimiter->add(lineLimiter);
+	initiativeLimiter->add(std::make_shared<HasAnotherBonusLimiter>(
+		BonusType::STACKS_INITIATIVE_BASE, BonusSource::CREATURE_ABILITY));
+	initiative->limiter = initiativeLimiter;
+	addNewBonus(initiative);
+
+	const int attributeBonus = static_cast<int>(std::min<int64_t>(rules->attributeMaximum,
+		static_cast<int64_t>(level) / rules->levelStep * rules->attributePerStep));
+	for(const auto skill : {PrimarySkill::ATTACK, PrimarySkill::DEFENSE})
+	{
+		const std::string_view stat = skill == PrimarySkill::ATTACK ? "attack" : "defense";
+		auto attribute = makeBonus(BonusType::PRIMARY_SKILL, stat);
+		attribute->subtype = BonusSubtypeID(skill);
+		attribute->val = attributeBonus;
+		attribute->targetSourceType = BonusSource::CREATURE_ABILITY;
+		attribute->limiter = lineLimiter;
+		addNewBonus(attribute);
+	}
 }
 
 void CGHeroInstance::attachCommanderToArmy()

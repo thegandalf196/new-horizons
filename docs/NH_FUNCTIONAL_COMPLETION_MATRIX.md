@@ -1,6 +1,19 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
+Latest source/native acceptance UP216: canonical creature-line specialties now
+grant +1 Speed/+1 Initiative and flat Attack/Defense per five levels, capped6.
+Both-target4780 and bounded fixture rebuild77861 succeed. Native85455 passes7/7
+in2.928s, zero skips: real Mage/Archer lines and upgrades, unrelated controls,
+thresholds1/4/5/9/10/29/30/35, level packets, authored/prototype preservation,
+save/load plus next level, explicit/fallback Initiative and absent-rule legacy
+semantics, alongside resistance and guild binding controls. Independent production
+review finds no blocker. One specialty conversion family gains focused acceptance;
+the six-family specification is not blanket complete. Spell/rank/perk/artifact
+counts below remain unchanged. Hero/exchange tooltips reflect saved instance
+rules; prototype-only tooltip surfaces and broader interactions remain Phase2.
+Windows37211254873 is terminal SUCCESS on6b6afc677, excluding UP216. No GUI
+or playable promotion. The UP214 paragraph below is historical acceptance.
 Latest source/native acceptance: UP214 total Magic Resistance cap. Both-target
 80140 and bounded fixture rebuild14491 succeed; native39842 passes6/6 in2.362s,
 zero skips. Real equipment/innate resistance and aura, explicitly detached
