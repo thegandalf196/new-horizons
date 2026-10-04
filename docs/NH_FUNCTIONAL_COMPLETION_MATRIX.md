@@ -2,7 +2,9 @@
 
 Updated: 2026-10-04
 Adela/Bless source checkpoint0c5964b71 is committed/pushed and remote-verified.
-UP228 Spellcraft-specialty mapping is pending implementation; no coverage credit.
+UP228 Spellcraft-specialty map found no eligible built-in alias: the active
+module explicitly replaces all five legacy producers. Preserve those authored
+replacements; no missing built-in conversion or additional coverage credit.
 
 UP224 Adela/Bless source/native accepted: +20% scales only the numericalSP/80
 duration term before flooring; fixed2/cap4 remain unchanged. Her exact original
