@@ -99,6 +99,8 @@ public:
 	bool battleCanBeginHeroCommand(BattleSide side, HeroCommand command) const;
 	/// Shared real/hypothetical ammunition policy, including the off-field bank artifact.
 	bool battleUnitHasAmmoCart(const battle::Unit * unit) const;
+	/// Effective spell resistance, including allied aura and the saved New Horizons cap.
+	int battleGetMagicResistance(const battle::Unit * unit) const;
 	/// Effective Morale for the current battle, including dynamic Standard Bearer adjacency.
 	int battleGetMorale(const battle::Unit * unit) const;
 	/// Whether one saved Order state still benefits this living unit, independent of its perk provider.

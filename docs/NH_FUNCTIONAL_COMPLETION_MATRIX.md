@@ -1,6 +1,15 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
+Latest source/native acceptance: UP214 total Magic Resistance cap. Both-target
+80140 and bounded fixture rebuild14491 succeed; native39842 passes6/6 in2.362s,
+zero skips. Real equipment/innate resistance and aura, explicitly detached
+projection, seeded74/75 accepted casts, positive Haste, independent immunity,
+legacy76/100 and penetration/Twist controls pass. Targeted artifact conversion
+families5->6 of10. Skill/perk/rank/spell counts are unchanged. Astra review has
+no blocker; Phase2 retains untouched-recipient projected aura previews and the
+historical-v2 fixture helper sanitation. No rendered/playable acceptance.
+The prior slice below remains historical evidence.
 Latest native-verified slice: UP210 elemental Orb conversion and UP213 supplied
 Fortress Mage Guild all-five art bindings. Both-target59223 succeeds; native71275
 passes10/10 in4.479s, zero skips. Four real Orbs, equipment/save/removal,
@@ -29,6 +38,23 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+UP214 source/native accepted2026-10-04: total Magic Resistance caps75% only
+under New Horizons magic rules. Shared live/projected environment forwarding
+uses raw bonus totals and maximum same-owner adjacent aura, preserving all
+10,201 legacy base/aura results. Printed Dwarf/Battle Dwarf and resistance
+artifact percentages remain unchanged; resistance remains a chance roll,
+not Spell Immunity. No saved field, runtime poller or UI state mutation added.
+Both-target80140 and fixture rebuild14491 pass. Native39842 passes6/6 in2.362s,
+zero skips, UP214-magic-resistance-final.log/XML: equipped Garniture/Surcoat/Boots
+with Battle Dwarf and Unicorn, explicitly detached aura/bonus changes without
+live mutation, actual raw100 target casts at74/75 boundary, positive Haste,
+independent immunity, legacy76/100, penetration and two Twist controls.
+Generated-module drift, seven adjacent artifact-data checks and independent
+Astra review pass. Targeted artifact-family coverage5->6 of10; other counts
+unchanged. Phase2: untouched live recipients in projected aura movement,
+shared historical-v2 fixture sanitation, broad interactions and rendered
+feedback. Source/build acceptance is not launcher or graphical promotion.
 
 UP210 source/native accepted2026-10-04: explicit actual-element metadata is
 independent of six Schools. Four legacy Orb+50% producers become+25% final

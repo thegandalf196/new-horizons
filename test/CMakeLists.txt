@@ -236,6 +236,7 @@ set(test_SRCS
 		server/battles/NewHorizonsSpellRewardFilterTest.cpp
 		server/battles/NewHorizonsDirectDamageMechanicsTest.cpp
 		server/battles/NewHorizonsElementalOrbsTest.cpp
+		server/battles/NewHorizonsMagicResistanceTest.cpp
 		battle/NewHorizonsMagicArrowActionTest.cpp
 		battle/NewHorizonsBerserkForcedActionTest.cpp
 		battle/NewHorizonsCounterspellActionTest.cpp

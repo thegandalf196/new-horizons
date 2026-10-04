@@ -98,6 +98,7 @@ public:
 	int unitSpeedBonus(const battle::Unit * unit) const override;
 	int unitAdditionalRetaliations(const battle::Unit * unit) const override;
 	int unitBloodragePainIncrement(const battle::Unit * unit) const override;
+	std::optional<int> unitMagicResistance(const battle::Unit * unit) const override;
 
 	void spendMana(ServerCallback * server, const int spellCost) const override;
 

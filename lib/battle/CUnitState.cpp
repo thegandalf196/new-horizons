@@ -1391,6 +1391,16 @@ FactionID CUnitState::getFactionID() const
 	return battleFormCreature().toCreature()->getFactionID();
 }
 
+int32_t CUnitState::magicResistance() const
+{
+	if(env)
+	{
+		if(const auto resistance = env->unitMagicResistance(this))
+			return *resistance;
+	}
+	return AFactionMember::magicResistance();
+}
+
 int32_t CUnitState::getCasterUnitId() const
 {
 	return static_cast<int32_t>(unitId());

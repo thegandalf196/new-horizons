@@ -840,6 +840,13 @@ int HypotheticBattle::unitBloodragePainIncrement(const battle::Unit * unit) cons
 	return battleBloodragePainIncrement(unit);
 }
 
+std::optional<int> HypotheticBattle::unitMagicResistance(const battle::Unit * unit) const
+{
+	if(!unit || !newHorizonsMagic::rulesActive(getMagicRules()))
+		return std::nullopt;
+	return battleGetMagicResistance(unit);
+}
+
 PlayerColor HypotheticBattle::unitEffectiveOwner(const battle::Unit * unit) const
 {
 	return battleGetOwner(unit);

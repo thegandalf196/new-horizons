@@ -1880,6 +1880,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, SpellPenetrationDoesNotBypassMagicR
 {
 	forceRealHeroScale = true;
 	usePerks = true;
+	authoredRules = savedV3Formula();
 	prepare();
 	selectSpellPenetration();
 
@@ -1887,8 +1888,11 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, SpellPenetrationDoesNotBypassMagicR
 		BonusType::MAGIC_RESISTANCE, BonusSource::CREATURE_ABILITY, 100, BonusSourceID()));
 	spells::BattleCast resistanceCast(battle(), attackerSideHero, spells::Mode::HERO, spell);
 	const auto resistanceMechanics = spell->battleMechanics(&resistanceCast);
-	EXPECT_FALSE(resistanceMechanics->isReceptive(target));
-	EXPECT_FALSE(resistanceMechanics->canBeCastAt(spells::Target{spells::Destination(target)}));
+	// Resistance remains a chance roll, not immunity, even at a raw100% bonus.
+	// Spell Penetration affects damage protection, not the capped75% chance.
+	EXPECT_EQ(target->magicResistance(), 75);
+	EXPECT_TRUE(resistanceMechanics->isReceptive(target));
+	EXPECT_TRUE(resistanceMechanics->canBeCastAt(spells::Target{spells::Destination(target)}));
 
 	auto * immune = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"),
 		BattleHex(rightHex - 1), 1000);

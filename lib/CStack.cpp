@@ -181,20 +181,7 @@ int32_t CStack::unitLevel() const
 
 si32 CStack::magicResistance() const
 {
-	auto magicResistance = AFactionMember::magicResistance();
-
-	si32 auraBonus = 0;
-
-	for(const auto * one : battle->battleAdjacentUnits(this))
-	{
-		if(one->unitOwner() == owner)
-			vstd::amax(auraBonus, one->valOfBonuses(BonusType::SPELL_RESISTANCE_AURA)); //max value
-	}
-	vstd::abetween(auraBonus, 0, 100);
-	vstd::abetween(magicResistance, 0, 100);
-	float castChance = (100 - magicResistance) * (100 - auraBonus)/100.0;
-
-	return static_cast<si32>(100 - castChance);
+	return CUnitState::magicResistance();
 }
 
 std::vector<SpellID> CStack::activeSpells() const
@@ -496,6 +483,13 @@ int CStack::unitAdditionalRetaliations(const battle::Unit * unit) const
 int CStack::unitBloodragePainIncrement(const battle::Unit * unit) const
 {
 	return battle ? battle->battleBloodragePainIncrement(unit) : 0;
+}
+
+std::optional<int> CStack::unitMagicResistance(const battle::Unit * unit) const
+{
+	if(!battle || !unit)
+		return std::nullopt;
+	return battle->battleGetMagicResistance(unit);
 }
 
 uint32_t CStack::unitId() const

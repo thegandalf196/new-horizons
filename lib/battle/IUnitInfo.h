@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include <optional>
+
 #include "../GameConstants.h"
 #include "BattleSide.h"
 
@@ -26,6 +28,7 @@ public:
 	virtual bool unitHasAmmoCart(const Unit * unit) const = 0; //todo: handle ammo cart with bonus system
 
 	virtual PlayerColor unitEffectiveOwner(const Unit * unit) const = 0;
+	virtual std::optional<int> unitMagicResistance(const Unit *) const { return std::nullopt; }
 	virtual int unitFortuneSpeed(const Unit *) const { return 0; }
 	virtual int unitSpeedBonus(const Unit *) const { return 0; }
 	virtual int unitAdditionalRetaliations(const Unit *) const { return 0; }

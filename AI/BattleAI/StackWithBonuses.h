@@ -185,6 +185,7 @@ public:
 	int unitFortuneSpeed(const battle::Unit * unit) const override { return battleFortuneSpeed(unit); }
 	int unitSpeedBonus(const battle::Unit * unit) const override { return battleBloodrageSpeed(unit); }
 	int unitBloodragePainIncrement(const battle::Unit * unit) const override;
+	std::optional<int> unitMagicResistance(const battle::Unit * unit) const override;
 	int unitAdditionalRetaliations(const battle::Unit * unit) const override
 	{
 		return battleBloodrageRetaliations(unit);

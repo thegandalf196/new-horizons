@@ -2,6 +2,34 @@
 
 ## Purpose
 
+### 2026-10-04 UP214 — Final focused acceptance
+
+Both-target80140 and bounded fixture rebuild14491 succeed. Native39842 passes
+all six focused cases in2.362s, zero skips, UP214-magic-resistance-final.log/XML.
+Actual74/75 resistance-boundary casts, equipment/aura and detached projection,
+positive spell, true immunity, legacy and penetration/Twist controls pass.
+Earlier compile/setup failures remain below as lessons, not acceptance evidence.
+
+### 2026-10-04 UP214 — Variant bonus identifiers require typed spell IDs
+
+Build39401 and diagnostic retry32791 fail in the new native fixture, not the
+production cap. BonusSubtypeID cannot construct its variant from the raw
+SpellID::MAGIC_ARROW enum; explicitly wrap it in SpellID first. Diagnostic
+UP214-build-retry.log retains the compiler evidence. Keep the immunity assertion
+and correct the identifier rather than weakening targeting rules. Root also
+tightens positive Haste evidence to require its spell-sourced bonus rather than
+accepting intrinsic creature Speed. Root's first selector conjunction used
+logical&& and produced bool rather than CSelector (build58491); use the existing
+hasBonusFrom typed-source API instead. UP214-build-fixed.log retains this error.
+Acceptance remains pending.
+
+Focused native36148 passes the three new UP214 cases and two existing Twist
+controls (5/6, zero skips), but the older penetration case throws before its
+assertions: savedFormula relabels current data asv2 without stripping v3-only
+structures/placement/variant fields. The cap/penetration case now explicitly
+uses the current savedV3Formula. Phase2: sanitize the shared historical-v2 helper
+and verify its other consumers; do not relax production saved-rules validation.
+
 ### 2026-10-04 UP210 — Final bounded acceptance after fixture repairs
 
 Both-target build59223 succeeds. Native71275 passes all nine Orb controls and

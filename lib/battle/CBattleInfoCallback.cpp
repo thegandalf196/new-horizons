@@ -64,6 +64,7 @@ constexpr auto HOLY_ARMOR_SAVED_ROSTER_KEY = "new-horizons:holyArmor";
 constexpr auto WARCASTING_SKILL_ID = "new-horizons:warcasting";
 constexpr auto SPELLWARD_PERK_ID = "new-horizons:warcasting.spellward";
 constexpr int SPELLWARD_REDUCTION_BASIS_POINTS = 1000;
+constexpr int NEW_HORIZONS_MAGIC_RESISTANCE_CAP_PERCENT = 75;
 
 int64_t scaledBattleOutput(int64_t base, int32_t outputPercent)
 {
@@ -437,6 +438,31 @@ bool CBattleInfoCallback::battleUnitHasAmmoCart(const battle::Unit * unit) const
 	const auto artifact = hero->artifactsWorn.find(ArtifactPosition::MACH2);
 	return artifact != hero->artifactsWorn.end()
 		&& artifact->second.getArt()->getTypeId() == ArtifactID::AMMO_CART;
+}
+
+int CBattleInfoCallback::battleGetMagicResistance(const battle::Unit * unit) const
+{
+	if(!unit)
+		return 0;
+
+	int resistance = std::clamp(unit->valOfBonuses(BonusType::MAGIC_RESISTANCE), 0, 100);
+	int auraResistance = 0;
+	for(const auto * adjacent : battleAdjacentUnits(unit))
+	{
+		if(adjacent->unitOwner() == unit->unitOwner())
+			auraResistance = std::max(auraResistance, adjacent->valOfBonuses(BonusType::SPELL_RESISTANCE_AURA));
+	}
+	auraResistance = std::clamp(auraResistance, 0, 100);
+
+	// Combine independent resistance sources using the same legacy composition,
+	// with integer flooring rather than floating-point rounding.
+	const int combinedResistance = (10000 - (100 - resistance) * (100 - auraResistance)) / 100;
+	const auto * battleState = getBattle();
+	const int maximumResistance = battleState
+		&& newHorizonsMagic::rulesActive(battleState->getMagicRules())
+		? NEW_HORIZONS_MAGIC_RESISTANCE_CAP_PERCENT
+		: 100;
+	return std::min(combinedResistance, maximumResistance);
 }
 
 bool CBattleInfoCallback::battleIsFocusFireRecipient(const battle::Unit * unit, BattleSide side) const
