@@ -177,23 +177,50 @@
 				[ { "x": 491, "y": 325 }, { "x": 591, "y": 325 } ]
 			],
 			"structures": {
-				"mageGuild4": {
-					"animation": "TBFRMAG4.json",
+				"mageGuild1": {
+					"animation": "TBFRMAGE.def",
+					"x": 0,
+					"y": 200,
+					"z": -1,
+					"campaignBonus": "BoFMage1.pcx",
+					"border": "TOFMAG1A.bmp",
+					"area": "TZFMAG1A.bmp"
+				},
+				"mageGuild2": {
+					"animation": "TBFRMAG2.def",
+					"x": 0,
+					"y": 177,
+					"z": -1,
+					"campaignBonus": "BoFMage2.pcx",
+					"border": "TOFMAG2A.bmp",
+					"area": "TZFMAG2A.bmp"
+				},
+				"mageGuild3": {
+					"animation": "TBFRMAG3.def",
 					"x": 0,
 					"y": 135,
 					"z": -1,
-					"campaignBonus": "BoFmage3.pcx",
+					"campaignBonus": "BoFMage3.pcx",
 					"border": "TOFMAG3A.bmp",
 					"area": "TZFMAG3A.bmp"
 				},
-				"mageGuild5": {
-					"animation": "TBFRMAG5.json",
+				"mageGuild4": {
+					"animation": "TBFRMAG4.def",
 					"x": 0,
-					"y": 135,
-					"z": -1,
-					"campaignBonus": "BoFmage3.pcx",
-					"border": "TOFMAG3A.bmp",
-					"area": "TZFMAG3A.bmp"
+					"y": 92,
+					"z": 1,
+					"campaignBonus": "BoFMage4.pcx",
+					"border": "TOFMAG4A.bmp",
+					"area": "TZFMAG4A.bmp"
+				},
+				"mageGuild5": {
+					"animation": "TBFRMAG5.def",
+					"x": 0,
+					"y": 79,
+					"z": 1,
+					"campaignBonus": "BoFMage5.pcx",
+					"border": "TOFMAG5A.bmp",
+					"area": "TZFMAG5A.bmp"
 				}
 			},
 			"buildings": {

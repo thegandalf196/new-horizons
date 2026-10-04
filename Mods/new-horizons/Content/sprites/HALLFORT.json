@@ -1,15 +1,29 @@
 {
-  "basepath": "HALLFORT/",
   "images": [
     {
       "group": 0,
+      "frame": 0,
+      "file": "fortress-mage-guild-hall-1.png"
+    },
+    {
+      "group": 0,
+      "frame": 1,
+      "file": "fortress-mage-guild-hall-2.png"
+    },
+    {
+      "group": 0,
+      "frame": 2,
+      "file": "fortress-mage-guild-hall-3.png"
+    },
+    {
+      "group": 0,
       "frame": 3,
-      "file": "mage-guild-4.png"
+      "file": "fortress-mage-guild-hall-4.png"
     },
     {
       "group": 0,
       "frame": 4,
-      "file": "mage-guild-5.png"
+      "file": "fortress-mage-guild-hall-5.png"
     }
   ]
 }

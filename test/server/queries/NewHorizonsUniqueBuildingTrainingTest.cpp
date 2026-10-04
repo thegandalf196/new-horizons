@@ -523,7 +523,8 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, MissingMageGuildLevelsBuildSequent
 		buildGuildLevel(guildTown, guildTown.level5, 5);
 
 	const auto expectStructureArt = [](const CGTownInstance * town, BuildingID building,
-		const char * animation, const char * campaignBonus, const char * border, const char * area)
+		const char * animation, const char * campaignBonus, const char * border, const char * area,
+		std::optional<int3> expectedPosition = std::nullopt)
 	{
 		const auto buildingInfo = town->getTown()->buildings.find(building);
 		ASSERT_NE(buildingInfo, town->getTown()->buildings.end());
@@ -537,6 +538,12 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, MissingMageGuildLevelsBuildSequent
 		EXPECT_EQ((*structure)->campaignBonus, ImagePath::builtin(campaignBonus));
 		EXPECT_EQ((*structure)->borderName, ImagePath::builtin(border));
 		EXPECT_EQ((*structure)->areaName, ImagePath::builtin(area));
+		if(expectedPosition)
+		{
+			EXPECT_EQ((*structure)->pos.x, expectedPosition->x);
+			EXPECT_EQ((*structure)->pos.y, expectedPosition->y);
+			EXPECT_EQ((*structure)->pos.z, expectedPosition->z);
+		}
 	};
 
 	EXPECT_EQ(guildTowns[0].town->getTown()->clientInfo.buildingsIcons,
@@ -551,10 +558,21 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, MissingMageGuildLevelsBuildSequent
 		"SMAGSW4.json", "BoSmage3.pcx", "TOSMAGSW4.png", "TZSMAGSW4.png");
 	expectStructureArt(guildTowns[1].town, guildTowns[1].level5,
 		"SMAGSW5.json", "BoSmage3.pcx", "TOSMAGSW5.png", "TZSMAGSW5.png");
-	expectStructureArt(guildTowns[2].town, guildTowns[2].level4,
-		"TBFRMAG4.json", "BoFmage3.pcx", "TOFMAG3A.bmp", "TZFMAG3A.bmp");
-	expectStructureArt(guildTowns[2].town, guildTowns[2].level5,
-		"TBFRMAG5.json", "BoFmage3.pcx", "TOFMAG3A.bmp", "TZFMAG3A.bmp");
+	const std::array fortressGuildArt{
+		std::tuple{BuildingID::MAGES_GUILD_1, "TBFRMAGE.def", "BoFMage1.pcx",
+			"TOFMAG1A.bmp", "TZFMAG1A.bmp", 200, -1},
+		std::tuple{BuildingID::MAGES_GUILD_2, "TBFRMAG2.def", "BoFMage2.pcx",
+			"TOFMAG2A.bmp", "TZFMAG2A.bmp", 177, -1},
+		std::tuple{BuildingID::MAGES_GUILD_3, "TBFRMAG3.def", "BoFMage3.pcx",
+			"TOFMAG3A.bmp", "TZFMAG3A.bmp", 135, -1},
+		std::tuple{BuildingID::MAGES_GUILD_4, "TBFRMAG4.def", "BoFMage4.pcx",
+			"TOFMAG4A.bmp", "TZFMAG4A.bmp", 92, 1},
+		std::tuple{BuildingID::MAGES_GUILD_5, "TBFRMAG5.def", "BoFMage5.pcx",
+			"TOFMAG5A.bmp", "TZFMAG5A.bmp", 79, 1},
+	};
+	for(const auto & [building, animation, campaignBonus, border, area, y, z] : fortressGuildArt)
+		expectStructureArt(guildTowns[2].town, building, animation, campaignBonus, border, area,
+			int3(0, y, z));
 	for(int level = 1; level <= 3; ++level)
 	{
 		const auto suffix = std::to_string(level);
