@@ -118,14 +118,18 @@ void validateNonDamageSpellSpecialtyRules(const JsonNode & rules)
 	require(integer(rules["version"], 1, 1), "non-damage-spell specialty version");
 	require(integer(rules["componentPercent"], 20, 20), "non-damage-spell specialty component percentage");
 	const auto & spells = rules["spells"];
-	require(spells.isVector() && spells.Vector().size() == 1,
-		"version 1 non-damage spell specialties must list only core:cure");
+	require(spells.isVector() && !spells.Vector().empty() && spells.Vector().size() <= 2,
+		"version 1 non-damage spell specialties must list one or two supported spells");
+	std::set<int> seen;
 	for(const auto & spell : spells.Vector())
 	{
-		require(spell.isString() && spell.String() == "core:cure",
-			"version 1 non-damage spell specialties support only core:cure");
-		require(resolve("spell", spell.String()) == SpellID::CURE,
+		require(spell.isString()
+			&& (spell.String() == "core:cure" || spell.String() == "core:resurrection"),
+			"version 1 non-damage spell specialties support only core:cure and core:resurrection");
+		const int spellId = resolve("spell", spell.String());
+		require(spellId == SpellID::CURE || spellId == SpellID::RESURRECTION,
 			"unknown version 1 non-damage spell specialty");
+		require(seen.insert(spellId).second, "duplicate version 1 non-damage spell specialty");
 	}
 }
 

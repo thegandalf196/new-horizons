@@ -48,7 +48,8 @@ std::optional<SpellID> damageSpellSpecialtyTarget(SpellID sourceSpell)
 std::optional<SpellID> nonDamageSpellSpecialtyTarget(SpellID sourceSpell)
 {
 	const CSpell * spell = sourceSpell.toSpell();
-	if(sourceSpell == SpellID::CURE && spell && !spell->isDamage())
+	if((sourceSpell == SpellID::CURE || sourceSpell == SpellID::RESURRECTION)
+		&& spell && !spell->isDamage())
 		return sourceSpell;
 	return std::nullopt;
 }

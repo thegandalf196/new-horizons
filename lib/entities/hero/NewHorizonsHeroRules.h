@@ -52,7 +52,7 @@ struct DLL_LINKAGE DamageSpellSpecialtyRules
 };
 
 /// Saved New Horizons conversion of supported non-damage spell specialties
-/// to the Spell Power-derived numerical component. V1 supports Cure only.
+/// to the Spell Power-derived numerical component. V1 supports Cure and Resurrection.
 struct DLL_LINKAGE NonDamageSpellSpecialtyRules
 {
 	int version = 1;

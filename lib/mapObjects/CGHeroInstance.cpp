@@ -928,7 +928,8 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	const bool convertsCreatureLineSpecialty = newHorizonsHeroes::creatureLineSpecialtyRules(primaryGrowthRules).has_value()
 		&& heroType->creatureLineSpecialtyAlias.has_value();
 	const bool convertsDamageSpellSpecialty = newHorizonsHeroes::damageSpellSpecialtyRules(primaryGrowthRules).has_value();
-	const bool convertsNonDamageSpellSpecialty = newHorizonsHeroes::nonDamageSpellSpecialtyRules(primaryGrowthRules).has_value();
+	const auto nonDamageSpellSpecialtyRules = newHorizonsHeroes::nonDamageSpellSpecialtyRules(primaryGrowthRules);
+	const bool convertsNonDamageSpellSpecialty = nonDamageSpellSpecialtyRules.has_value();
 	const bool convertsSkillSpecialty = hasSupportedSkillSpecialty
 		&& getSkillSpecialtyCoreBonusPercent(heroType->secondarySkillSpecialtyAlias->skill) > 0;
 	for(const std::shared_ptr<Bonus> & b : heroType->specialty)
@@ -958,9 +959,11 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 		if(convertsNonDamageSpellSpecialty)
 		{
 			const auto producer = std::ranges::find_if(heroType->nonDamageSpellSpecialtyProducers,
-				[&b](const auto & candidate)
+				[&b, &nonDamageSpellSpecialtyRules](const auto & candidate)
 				{
-					return candidate.bonus == b;
+					return candidate.bonus == b
+						&& std::ranges::find(nonDamageSpellSpecialtyRules->spells, candidate.spell)
+							!= nonDamageSpellSpecialtyRules->spells.end();
 				});
 			if(producer != heroType->nonDamageSpellSpecialtyProducers.end())
 			{

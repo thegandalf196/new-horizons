@@ -1,6 +1,17 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
+UP224 Resurrection specialty source/native accepted: Alamar/Jeddite receive20%
+only on the4SP component; fixed100 stays unchanged. Exact instance producers
+and supported-spell membership preserve older Cure-only snapshots. Client51670
+and both-target5985 pass; native49136 passes12/12 in6.477s, zero skips,
+including real aliases, rank/fractional/fixed-base, accepted cast/forecast,
+prototype/unrelated bonus/save and adjacent Cure/casualty controls. Three mapped
+non-damage aliases now converted (Uland, Alamar, Jeddite), not the entire family.
+Combat identities remain61/67. Broader composition remains Phase2; no promotion.
+Primary Attribute audit found no eligible built-in flat hero-stat producer:
+creature-limited PRIMARY_SKILL entries must not become hero attributes.
+
 UP225 source/native accepted: optional saved-v3 Resurrection now implements
 Level5/22Mana/100+4SP, permanent real casualty restoration, original-count cap,
 accessible corpses, temporary-target exclusions and small-wound healing without

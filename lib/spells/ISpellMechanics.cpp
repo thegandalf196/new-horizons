@@ -1059,13 +1059,17 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 			else if(battle && newHorizonsMagic::resurrectionRestorationEnabled(
 				battle->getMagicRules(), owner->getId()))
 			{
-				// The fixed pool stays unscaled; only raw Spell Power contributes to
-				// the School/Spellcraft and shared cast-component multipliers.
+				// Both the fixed pool and the Spell Power-derived pool remain separate:
+				// School/Spellcraft, shared cast modifiers and the specialty affect only
+				// the raw Spell Power component.
+				const auto * hero = caster->getHeroCaster();
+				const int specialtyPercent = hero
+					? hero->getNonDamageSpellSpecialtyBonusPercent(owner->getId()) : 0;
 				effectValue = newHorizonsMagic::RESURRECTION_BASE_POOL_HP
-					+ scaleSpellPowerComponentWithCoefficientBasisPoints(
+					+ scaleDamageSpellPowerComponentWithCoefficientBasisPoints(
 						static_cast<int64_t>(newHorizonsMagic::RESURRECTION_SPELL_POWER_HP_PER_POINT)
 							* std::max<int64_t>(effectPower, 0),
-						1, spellPowerCoefficientBasisPoints);
+						1, spellPowerCoefficientBasisPoints, specialtyPercent);
 			}
 			else
 			{
