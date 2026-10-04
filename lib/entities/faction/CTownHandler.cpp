@@ -336,6 +336,18 @@ void CTownHandler::loadBuilding(CTown * town, const std::string & stringID, cons
 
 	loadBuildingBonuses(source["bonuses"], ret->buildingBonuses, ret);
 
+	BonusList parsedDefendingHeroBonuses;
+	loadBuildingBonuses(source["defendingHeroBonuses"], parsedDefendingHeroBonuses, ret);
+	for(const auto & bonus : parsedDefendingHeroBonuses)
+	{
+		if(bonus->propagator)
+		{
+			logMod->error("Building '%s' defendingHeroBonuses cannot use a propagator", ret->getJsonKey());
+			continue;
+		}
+		ret->defendingHeroBonuses.push_back(bonus);
+	}
+
 	if(!source["mapObjectLikeBonuses"].isNull())
 	{
 		LIBRARY->identifiers()->requestIdentifierIfNotNull("object", source["mapObjectLikeBonuses"], [ret](si32 identifier)

@@ -48,6 +48,8 @@ public:
 	bool upgradeReplacesBonuses = false;
 	bool manualHeroVisit = false;
 	BonusList buildingBonuses;
+	/// Bonuses applied to the defending hero for the duration of a town siege battle.
+	BonusList defendingHeroBonuses;
 	MapObjectID mapObjectLikeBonuses;
 
 	Rewardable::Info rewardableObjectInfo; ///configurable rewards for special buildings

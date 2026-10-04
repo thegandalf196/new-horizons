@@ -2,6 +2,44 @@
 
 ## Purpose
 
+### 2026-10-04 UP-202 — Final focused acceptance
+
+All failures below are repaired. Client retry32362 and final both-target20101
+exit0; native31232 passes4/4 in2.870s, zero skips, retained as
+UP202-blood-obelisk-final.log/XML. Siege hero/creature distinction, live
+HeroCommand, cancellation/restart/results scope, independent weekly rewards,
+saved blessing/history, accepted-result consumption, same-week denial and
+next-week reuse pass; adjacent Stables/Fountain remain green. No GUI/playable
+promotion or complete physical-damage integration claim.
+
+### 2026-10-04 UP-202 — Siege fixture baseline isolation
+
+Native66208 passes adjacent Fountain/Stables but fails both Blood Obelisk cases.
+The fixture attempts to rebuild an already present Fort, and compares creature
+Attack with its base while the independent native-terrain bonus adds1. Guard
+Fort construction with hasBuilt and isolate the battle from native-terrain
+bonuses before applying BattleStart. Retain the exact heroAttack20 and unchanged
+creatureAttack requirements; neither failure warrants a production workaround.
+Evidence: UP202-blood-obelisk-focused.log/XML. Acceptance remains pending retry.
+
+### 2026-10-04 UP-202 — Creature identifier fixture API
+
+Blood Obelisk test build97506 rejects CreatureID::isValid(), which does not
+exist. The fixture now checks the decoded numeric identifiers are nonnegative,
+as existing creature fixtures do. Evidence: UP202-blood-obelisk-tests-build.log.
+The independent review also caught and repaired a null-defender layout argument
+before execution: no-hero siege layout must use its actual defending town army,
+not a null hero. No production workaround or weakened mechanic requirement.
+
+### 2026-10-04 UP-202 — Free helpers cannot use visitor friendship
+
+First Blood Obelisk client build61032 exits1: the new free helpers accessed
+CGTownInstance::builtBuildings, a private field. GameStatePackVisitor friendship
+does not extend to its anonymous-namespace helpers. Use public getBuildings()
+and retain the building set locally; do not widen visibility or add friendship.
+Evidence: UP202-blood-obelisk-client-build.log. Runtime/native acceptance and
+coverage credit remain pending the corrected build and focused fixtures.
+
 ### 2026-10-04 UP-201 — Focused Fountain acceptance
 
 Both fixture-only assumptions below are repaired. Final both-target23674

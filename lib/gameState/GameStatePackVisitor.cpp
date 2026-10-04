@@ -14,6 +14,7 @@
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/NewHorizonsOffense.h"
 #include "../battle/NewHorizonsWarcasting.h"
+#include "../bonuses/BonusSelector.h"
 #include "../spells/NewHorizonsMagic.h"
 #include "TavernHeroesPool.h"
 
@@ -25,6 +26,8 @@
 #include "../entities/artifact/ArtifactUtils.h"
 #include "../entities/artifact/CArtifact.h"
 #include "../entities/artifact/CArtifactFittingSet.h"
+#include "../entities/building/CBuilding.h"
+#include "../entities/faction/CTown.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../mapObjects/CGMarket.h"
 #include "../mapObjects/CGTownInstance.h"
@@ -37,8 +40,81 @@
 #include "../spells/CSpell.h"
 #include "../spells/NewHorizonsMagic.h"
 
+#include <algorithm>
+#include <set>
+#include <string>
+#include <string_view>
+
 namespace
 {
+constexpr std::string_view TOWN_DEFENDING_HERO_BONUS_STACKING_PREFIX = "townDefendingHero:";
+
+std::string townDefendingHeroBonusStacking(const CBuilding & building, const Bonus & bonus, size_t index)
+{
+	const auto buildingType = building.getUniqueTypeID();
+	std::string result(TOWN_DEFENDING_HERO_BONUS_STACKING_PREFIX);
+	result += std::to_string(buildingType.getFaction().getNum());
+	result += ':';
+	result += std::to_string(buildingType.getBuilding().getNum());
+	result += ':';
+	if(bonus.stacking.empty())
+	{
+		result += "entry:";
+		result += std::to_string(index);
+	}
+	else
+	{
+		result += "key:";
+		result += bonus.stacking;
+	}
+	return result;
+}
+
+bool isReplacedTownBuilding(const CTown & townType, const std::set<BuildingID> & builtBuildings, BuildingID buildingID)
+{
+	return std::ranges::any_of(builtBuildings, [&](BuildingID upgradeID)
+	{
+		const auto upgrade = townType.buildings.find(upgradeID);
+		return upgrade != townType.buildings.end()
+			&& upgrade->second->getBase() == buildingID
+			&& upgrade->second->upgradeReplacesBonuses;
+	});
+}
+
+void grantTownDefendingHeroBonuses(CGTownInstance & town, CGHeroInstance & hero)
+{
+	const auto * townType = town.getTown();
+	if(!townType)
+		return;
+
+	const auto builtBuildings = town.getBuildings();
+	for(const BuildingID buildingID : builtBuildings)
+	{
+		const auto buildingIterator = townType->buildings.find(buildingID);
+		if(buildingIterator == townType->buildings.end()
+			|| isReplacedTownBuilding(*townType, builtBuildings, buildingID))
+			continue;
+
+		const CBuilding & building = *buildingIterator->second;
+		for(size_t index = 0; index < building.defendingHeroBonuses.size(); ++index)
+		{
+			const auto & configuredBonus = building.defendingHeroBonuses[index];
+			if(!configuredBonus)
+				continue;
+
+			auto bonus = std::make_shared<Bonus>(*configuredBonus);
+			bonus->duration = BonusDuration::ONE_BATTLE;
+			bonus->turnsRemain = 0;
+			bonus->source = BonusSource::TOWN_STRUCTURE;
+			bonus->sid = BonusSourceID(building.getUniqueTypeID());
+			bonus->stacking = townDefendingHeroBonusStacking(building, *configuredBonus, index);
+			if(bonus->description.empty())
+				bonus->description.appendTextID(building.getNameTextID());
+			hero.addNewBonus(bonus);
+		}
+	}
+}
+
 SideInBattle * findBattleSide(CGameState & gs, ObjectInstanceID heroID)
 {
 	for(auto & battle : gs.currentBattles)
@@ -1855,6 +1931,7 @@ void GameStatePackVisitor::visitBattleStart(BattleStart & pack)
 		{
 			hero->detachFrom(town->townAndVis);
 			hero->attachTo(*town);
+			grantTownDefendingHeroBonuses(*town, *hero);
 		}
 	}
 
@@ -2877,6 +2954,11 @@ void GameStatePackVisitor::restorePreBattleState(BattleID battleID)
 
 		if (hero)
 		{
+			hero->removeBonusesRecursive(CSelector([](const Bonus * bonus)
+			{
+				return bonus && bonus->source == BonusSource::TOWN_STRUCTURE
+					&& bonus->stacking.starts_with(TOWN_DEFENDING_HERO_BONUS_STACKING_PREFIX);
+			}));
 			hero->detachFrom(*town);
 			hero->attachTo(town->townAndVis);
 		}

@@ -193,6 +193,10 @@ These are just a couple of examples of what can be done in VCMI. See vcmi config
 	
 	// Bonuses provided by this special building if this building or any of its upgrades are constructed in town
 	"bonuses" : [ BONUS_FORMAT ]
+
+	// Optional bonuses applied to the actual defending hero when this town is attacked.
+	// They are scoped to that siege battle; propagators are not supported.
+	"defendingHeroBonuses" : [ BONUS_FORMAT ]
 	
 	// If set to true, this building will not automatically activate on new day or on entering town and needs to be activated manually on click
 	// Note that such building can only be activated by visiting hero, and not by garrisoned hero.
@@ -210,6 +214,20 @@ These are just a couple of examples of what can be done in VCMI. See vcmi config
 	"marketOffer" : [ "fireMagic", "airMagic", "waterMagic", "earthMagic" ],
 }
 ```
+
+`defendingHeroBonuses` is separate from `bonuses`: it is applied only when the
+built structure participates in a defended-town battle with a defending hero.
+The engine gives these bonuses `ONE_BATTLE` duration and removes only this
+building-defender scope when the battle is cancelled or completed. A bonus in
+this list cannot use a propagator; it is attached to the defending hero and
+then inherited by that hero's battle army. If an upgrade sets
+`upgradeReplacesBonuses`, the replaced building's defending-hero bonuses are
+also omitted. Equal explicit `stacking` keys within one building retain their
+usual non-stacking behavior; different entries without a key remain distinct.
+Explicit stacking keys are scoped to their physical building for these bonuses.
+The `townDefendingHero:` stacking prefix is reserved by the engine and must not
+be used by mod-authored bonuses. These bonuses are attached after battle setup;
+use them for live battle values, not setup-time snapshots such as initial Mana.
 
 Building requirements can be described using logical expressions:
 

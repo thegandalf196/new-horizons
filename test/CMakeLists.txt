@@ -370,6 +370,7 @@ set(test_SRCS
 		server/queries/NewHorizonsBattleScholarAcademyTest.cpp
 		server/queries/NewHorizonsFountainOfFortuneTest.cpp
 		server/queries/NewHorizonsCastleStablesTest.cpp
+		server/queries/NewHorizonsBloodObeliskTest.cpp
 		server/queries/NewHorizonsMagicUniversityTest.cpp
 		server/queries/NewHorizonsAdventureSpellUnlockTest.cpp
 		server/NewHorizonsEconomyTest.cpp

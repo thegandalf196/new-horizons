@@ -107,6 +107,16 @@
 			"description" : "Bonuses that are provided by this building in any town where this building has been built. Only affects town itself (including siege), to propagate effect to player or team please use bonus propagators",
 			"items" : { "$ref" : "bonusInstance.json" }
 		},
+		"defendingHeroBonuses" : {
+			"type" : "array",
+			"description" : "Bonuses applied only to the defending hero for the duration of a town siege. Propagators are not supported.",
+			"items" : {
+				"allOf" : [
+					{ "$ref" : "bonusInstance.json" },
+					{ "not" : { "required" : [ "propagator" ] } }
+				]
+			}
+		},
 		"marketModes" : {
 			"type" : "array",
 			"items" : {

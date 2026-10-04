@@ -1130,6 +1130,22 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(reward['bonuses'], [{'type': 'LUCK', 'val': 2, 'duration': 'ONE_BATTLE'}])
         self.assertNotIn('playerBonuses', reward)
 
+    def test_blood_obelisk_has_siege_hero_attack_and_weekly_physical_blessing(self):
+        patch = load('Mods/new-horizons/Content/config/factions/uniqueBuildings.json')['core:fortress']['town']['buildings']['special2']
+        self.assertEqual(patch['bonuses'], [])
+        self.assertEqual(patch['defendingHeroBonuses'],
+                         [{'type': 'PRIMARY_SKILL', 'subtype': 'attack', 'val': 20}])
+        configuration = patch['configuration']
+        self.assertEqual(configuration['visitMode'], 'hero')
+        self.assertEqual(configuration['resetParameters'], {'weeks': 1, 'visitors': True})
+        reward, = configuration['rewards']
+        self.assertEqual(reward['bonuses'], [
+            {'type': 'PERCENTAGE_DAMAGE_BOOST', 'subtype': subtype,
+             'val': 10, 'duration': 'ONE_BATTLE'}
+            for subtype in ('damageTypeMelee', 'damageTypeRanged')
+        ])
+        self.assertNotIn('playerBonuses', reward)
+
     def test_necromancy_amplifier_is_a_seven_day_hero_reward_not_a_kingdom_aura(self):
         patch = load('Mods/new-horizons/Content/config/factions/uniqueBuildings.json')['core:necropolis']['town']['buildings']['special2']
         self.assertEqual(patch['bonuses'], [])

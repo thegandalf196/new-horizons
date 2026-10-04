@@ -1,10 +1,11 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
-Latest native-verified slice: UP201 Castle Stables day-start Movement.
-Client56799 and both-target62880 pass; native71208 passes2/2 in1.894s,
-zero skips, including adjacent Fountain. Independent Astra production review
-finds no blocker; root inspected the native fixture. Combat spell
+Latest native-verified slice: UP202 Fortress Blood Obelisk.
+Client retry32362 and final both-target20101 pass; native31232 passes4/4
+in2.870s, zero skips, including adjacent Stables/Fountain. Independent Astra
+production review finds no blocker; root inspected and corrected the fixture.
+Combat spell
 identities61/67 (Chaos7/11); perks213/310
 (97 planned), faction perks62/90 and ranks87/93 unchanged. This adds one
 verified specified town mechanic, not a perk or spell. Source/native acceptance
@@ -21,6 +22,27 @@ verification without an obvious crash or state-integrity defect. Unverified
 cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
+
+2026-10-04 UP202 Blood Obelisk is source/native verified. NH Fortress special2
+replaces the legacy local Attack2 with a generic defendingHeroBonuses Attack20
+producer and per-hero/per-physical weekly next-combat physical-damage10% reward.
+Shared BattleStart instantiates built, non-superseded building bonuses only on
+the actual siege defender hero. Reserved building-scoped stacking identity and
+ordinary ONE_BATTLE serialization support cancellation/results cleanup without
+consuming unrelated visiting blessings. No new polling loop, saved counter or
+frontend mutation. Actual hero Attack and live HeroCommand coefficient rise20;
+raw creature Attack does not. Native31232 passes4/4 in2.870s, zero skips,
+UP202-blood-obelisk-final.log/XML: authoritative construction and computer-owned
+visits, both damage subtypes, independent hero/physical weekly history, saved
+blessing/history, accepted-result consumption and same-week denial, next-week
+reuse, siege defender isolation, cancel/restart and result cleanup, no-hero
+siege, plus adjacent Stables/Fountain. Client32362 and both-target20101 pass;
+data/adjacent/perk/inventory22/22, module drift and Astra production review pass.
+One specified town mechanic added; spell/perk/rank counts unchanged. Damage
+script consumption is source-traced; complete melee/ranged damage resolution,
+strategic prebattle AI valuation and rendered feedback remain Phase2. Generic
+future producers affecting setup-time snapshots need separate validation.
+No ongoing-battle save/resume, GUI acceptance or playable promotion claimed.
 
 2026-10-04 UP201 Castle Stables is source/native verified. After NewTurn expires
 the previous ONE_DAY bonus, eligible visiting/garrison Castle residents receive

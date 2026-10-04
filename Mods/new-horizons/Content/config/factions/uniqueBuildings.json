@@ -51,6 +51,34 @@
 			}
 		}
 	},
+	"core:fortress": {
+		"town": {
+			"buildings": {
+				"special2": {
+					"name": "Blood Obelisk",
+					"description": "The defending hero gains 20 Attack during a siege. Each Blood Obelisk blesses each visiting hero once per week: friendly creatures deal 10% more physical damage in the next combat.",
+					"bonuses": [],
+					"defendingHeroBonuses": [ { "type": "PRIMARY_SKILL", "subtype": "attack", "val": 20 } ],
+					"configuration": {
+						"visitMode": "hero",
+						"resetParameters": { "weeks": 1, "visitors": true },
+						"notVisitedTooltip": "A battle blessing is available for this hero this week.",
+						"visitedTooltip": "This hero has received this Obelisk's blessing this week.",
+						"onVisitedMessage": "This hero has already received this Obelisk's blessing this week.",
+						"rewards": [
+							{
+								"message": "The Blood Obelisk grants friendly creatures 10% more physical damage for this hero's next combat.",
+								"bonuses": [
+									{ "type": "PERCENTAGE_DAMAGE_BOOST", "subtype": "damageTypeMelee", "val": 10, "duration": "ONE_BATTLE" },
+									{ "type": "PERCENTAGE_DAMAGE_BOOST", "subtype": "damageTypeRanged", "val": 10, "duration": "ONE_BATTLE" }
+								]
+							}
+						]
+					}
+				}
+			}
+		}
+	},
 	"core:inferno": {
 		"town": {
 			"buildings": {
