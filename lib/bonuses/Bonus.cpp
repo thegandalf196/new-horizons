@@ -99,11 +99,27 @@ std::string Bonus::Description(const IGameInfoCallback * cb, std::optional<si32>
 
 JsonNode Bonus::toJsonNode() const
 {
+	if(!hasValidStatusMetadata())
+		throw std::runtime_error("Invalid bonus status metadata");
 	JsonNode root;
 	if(appliedByEnemy)
 		root["appliedByEnemy"].Bool() = true;
 	if(spellCasterOwner != PlayerColor::CANNOT_DETERMINE)
 		root["spellCasterOwner"].Integer() = spellCasterOwner.getNum();
+	if(!statusTags.empty())
+	{
+		for(const auto tag : statusTags)
+		{
+			switch(tag)
+			{
+				case BonusStatusTag::DEBUFF:
+					root["statusTags"].Vector().emplace_back("DEBUFF");
+					break;
+			}
+		}
+	}
+	if(!statusIdentity.empty())
+		root["statusIdentity"].String() = statusIdentity;
 	// only add values that might reasonably be found in config files
 	root["type"].String() = LIBRARY->bth->bonusToString(type);
 	if(subtype != BonusSubtypeID())

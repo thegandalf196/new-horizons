@@ -2,6 +2,17 @@
 
 ## Purpose
 
+### 2026-10-03 UP-123 — GoogleTest fixture cannot be final
+
+The original UP123-status-tags-final-build.log exits1 compiling the new
+BonusStatusTagsTest.cpp fixture. GoogleTest's TEST_F macro derives generated
+test classes from the fixture, so declaring BonusStatusTagsRefreshTest `final`
+is rejected by the compiler. Root removed only the `final` qualifier; no test
+assertions or production behavior were changed. Retry24367 subsequently builds
+both targets successfully under UP123-status-tags-final-build-retry.log.
+UP123-status-tags-focused.log/XML passes14/14 from4 suites in0.917s, zero skips.
+Retain the original failed log; no assertions were weakened to obtain the pass.
+
 ### 2026-10-03 UP-190 — Explicit selector include in new helper
 
 Combined client/test build72676 exits1 at the new Puppet Master helper:

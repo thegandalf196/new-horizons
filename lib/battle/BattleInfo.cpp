@@ -1938,24 +1938,58 @@ void BattleInfo::addOrUpdateUnitBonus(CStack * sta, const Bonus & value, bool fo
 		return;
 	}
 
-	if(forceAdd || !sta->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, value.sid).And(Selector::typeSubtypeValueType(value.type, value.subtype, value.valType))))
+	const auto matchesRefreshIdentity = [&value](const std::shared_ptr<Bonus> & stackBonus)
 	{
-		//no such effect or cumulative - add new
-		logBonus->trace("%s receives a new bonus: %s", sta->nodeName(), value.Description(nullptr));
-		sta->addNewBonus(std::make_shared<Bonus>(value));
+		return stackBonus && stackBonus->source == value.source && stackBonus->sid == value.sid
+			&& stackBonus->type == value.type && stackBonus->subtype == value.subtype
+			&& stackBonus->valType == value.valType && stackBonus->statusIdentity == value.statusIdentity;
+	};
+	const auto updateMatchingBonuses = [&]()
+	{
+		for(const auto & stackBonus : sta->getExportedBonusList()) //TODO: optimize
+		{
+			if(!matchesRefreshIdentity(stackBonus))
+				continue;
+			stackBonus->turnsRemain = std::max(stackBonus->turnsRemain, value.turnsRemain);
+			for(const BonusStatusTag tag : value.statusTags)
+				if(std::find(stackBonus->statusTags.begin(), stackBonus->statusTags.end(), tag) == stackBonus->statusTags.end())
+					stackBonus->statusTags.push_back(tag);
+		}
+		sta->nodeHasChanged();
+	};
+	const CSelector matchingStatusIdentity([&value](const Bonus * candidate)
+	{
+		return candidate && candidate->statusIdentity == value.statusIdentity;
+	});
+	const bool hasLegacyRefreshCandidate = sta->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, value.sid)
+		.And(Selector::typeSubtypeValueType(value.type, value.subtype, value.valType)).And(matchingStatusIdentity));
+	if(!value.hasStatusMetadata())
+	{
+		// Preserve legacy selector behavior for ordinary untagged bonuses. The
+		// local refresh still avoids merging into a distinct explicit identity.
+		if(forceAdd || !hasLegacyRefreshCandidate)
+		{
+			logBonus->trace("%s receives a new bonus: %s", sta->nodeName(), value.Description(nullptr));
+			sta->addNewBonus(std::make_shared<Bonus>(value));
+		}
+		else
+			updateMatchingBonuses();
 	}
 	else
 	{
-		logBonus->trace("%s updated bonus: %s", sta->nodeName(), value.Description(nullptr));
-
-		for(const auto & stackBonus : sta->getExportedBonusList()) //TODO: optimize
+		// Explicit statuses are keyed by the ordinary component fields plus their
+		// identity. Different identities must coexist, including non-spell sources.
+		const bool hasMatchingIdentity = std::ranges::any_of(sta->getExportedBonusList(), matchesRefreshIdentity);
+		if(forceAdd || !hasMatchingIdentity)
 		{
-			if(stackBonus->source == value.source && stackBonus->sid == value.sid && stackBonus->type == value.type && stackBonus->subtype == value.subtype && stackBonus->valType == value.valType)
-			{
-				stackBonus->turnsRemain = std::max(stackBonus->turnsRemain, value.turnsRemain);
-			}
+			logBonus->trace("%s receives a new identified status bonus: %s", sta->nodeName(), value.Description(nullptr));
+			sta->addNewBonus(std::make_shared<Bonus>(value));
 		}
-		sta->nodeHasChanged();
+		else
+		{
+			logBonus->trace("%s updated identified status bonus: %s", sta->nodeName(), value.Description(nullptr));
+			updateMatchingBonuses();
+		}
 	}
 }
 

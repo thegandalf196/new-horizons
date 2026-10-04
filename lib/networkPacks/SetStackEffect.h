@@ -56,6 +56,20 @@ struct DLL_LINKAGE SetStackEffect : public CPackForClient
 			&& (containsPuppetMasterState(toAdd) || containsPuppetMasterState(toUpdate)
 				|| containsPuppetMasterState(toRemove)))
 			throw std::runtime_error("Cannot discard New Horizons Puppet Master stack effect");
+		const auto containsStatusMetadata = [](const auto & effects)
+		{
+			return std::ranges::any_of(effects, [](const auto & stackEffects)
+			{
+				return std::ranges::any_of(stackEffects.second, [](const Bonus & bonus)
+				{
+					return bonus.hasStatusMetadata();
+				});
+			});
+		};
+		if(h.saving && !h.hasFeature(Handler::Version::BONUS_STATUS_TAGS)
+			&& (containsStatusMetadata(toAdd) || containsStatusMetadata(toUpdate)
+				|| containsStatusMetadata(toRemove)))
+			throw std::runtime_error("Cannot discard bonus status metadata in stack-effect packet");
 		h & battleID;
 		h & toAdd;
 		h & toUpdate;

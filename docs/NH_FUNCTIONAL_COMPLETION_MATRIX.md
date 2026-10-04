@@ -18,6 +18,19 @@ cross-system interactions are deferred explicitly to Phase 2.
 
 ## Phase 1 specification-coverage snapshot
 
+UP123 Pandemonium prerequisite is source/native verified: production Bonus status
+tags and optional status identity are versioned, strictly validated, default empty
+for legacy bytes and guarded against lossy older writes. Generic refresh preserves
+strength/provenance, unions tags and separates identities. Client14349 and combined
+retry24367 build successfully; UP123-status-tags-focused.log/XML passes14/14
+in0.917s, zero skips. Independent source review finds no blocker; data/inventory
+22/22 and module check pass. No automatic debuff classification, count consumer,
+Pandemonium cast/perk, UI or playable delivery is claimed. Combat61/67, perks
+210/310 and ranks87/93 remain unchanged. Full Pandemonium awaits the existing
+count/perk questions. Before activating producers, revisit special physical-affliction
+and guardian-spirit replacement metadata; additional malformed-read, inherited
+refresh and copy fixtures are Phase2 deferrals.
+
 UP190 Puppet Master/Lucidity is source/native verified. Client90585 and test
 retry72097 exit0; native97155 passes8/8 in2.290s, zero skips. Real hex-only
 casting, controller authentication and unchanged allegiance, Wait/resumption,

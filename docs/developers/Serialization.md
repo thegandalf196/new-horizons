@@ -1,5 +1,18 @@
 # Serialization
 
+## Explicit bonus status classification
+
+`BONUS_STATUS_TAGS` appends `Bonus::statusTags` and `statusIdentity` after
+spell-caster provenance. Tags are explicit author metadata, currently `DEBUFF`;
+they do not infer classification from value sign, source, spell polarity or
+allegiance. Empty identity retains the existing source/SID grouping identity;
+an explicit identity can distinguish different statuses from the same source.
+Older reads clear both fields. Populated metadata cannot be down-saved: direct
+Bonus and enclosing SetStackEffect writers reject it before their payloads.
+JSON uses `statusTags: ["DEBUFF"]` and optional `statusIdentity`, with the same
+validation as current binary records. This representation alone does not define
+Pandemonium's repeated-application count or activate that spell.
+
 ## New Horizons Diplomacy eligibility
 
 `NEW_HORIZONS_DIPLOMACY_ELIGIBILITY` appends the explicit

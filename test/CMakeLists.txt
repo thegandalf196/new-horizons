@@ -51,6 +51,7 @@ set(test_SRCS
 		battle/battle_UnitTest.cpp
 
 		bonus/BonusSystemTest.cpp
+		bonus/BonusStatusTagsTest.cpp
 		bonus/NewHorizonsUnstackedBonusTest.cpp
 		bonus/NewHorizonsCreatureProbabilityTest.cpp
 

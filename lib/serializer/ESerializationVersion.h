@@ -167,15 +167,18 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_RECRUITMENT_PACT_STATE, // per-hero active Recruitment Pact expiry day
 	BONUS_SPELL_CASTER_OWNER, // stable spell-caster owner provenance for applied bonuses
 	NEW_HORIZONS_PUPPET_MASTER_CONTROL, // one-activation action controller and fixed Lucidity markers
+	BONUS_STATUS_TAGS, // explicit status classification and effect identity metadata
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_PUPPET_MASTER_CONTROL,
+	CURRENT = BONUS_STATUS_TAGS,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
+static_assert(ESerializationVersion::BONUS_STATUS_TAGS > ESerializationVersion::NEW_HORIZONS_PUPPET_MASTER_CONTROL,
+	"Bonus status metadata must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_PUPPET_MASTER_CONTROL > ESerializationVersion::BONUS_SPELL_CASTER_OWNER,
 	"Puppet Master control markers must remain append-only");
 static_assert(ESerializationVersion::BATTLE_CASUALTY_PROVENANCE > ESerializationVersion::BATTLE_INITIAL_DEPLOYMENT_ORDER,

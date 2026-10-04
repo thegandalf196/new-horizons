@@ -17,6 +17,8 @@
 #include "../filesystem/ResourcePath.h"
 #include <vcmi/scripting/ApiTags.h>
 #include <stdexcept>
+#include <string_view>
+#include <vector>
 
 class IBonusBearer;
 class IPropagator;
@@ -70,6 +72,42 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 	// appliedByEnemy, this can be compared with a new recipient after an effect
 	// moves between units. Unknown legacy and non-spell bonuses use the sentinel.
 	PlayerColor spellCasterOwner = PlayerColor::CANNOT_DETERMINE;
+	// Optional status-level metadata. Several component bonuses may represent one
+	// status; callers must use statusIdentity to group components when provided.
+	std::vector<BonusStatusTag> statusTags;
+	std::string statusIdentity;
+	static constexpr size_t MAX_STATUS_IDENTITY_LENGTH = 256;
+	static bool isValidStatusTag(BonusStatusTag tag)
+	{
+		return tag == BonusStatusTag::DEBUFF;
+	}
+	static bool isValidStatusIdentity(std::string_view identity)
+	{
+		if(identity.size() > MAX_STATUS_IDENTITY_LENGTH)
+			return false;
+		for(const unsigned char character : identity)
+			if(character < 0x20 || character == 0x7f)
+				return false;
+		return true;
+	}
+	bool hasStatusMetadata() const
+	{
+		return !statusTags.empty() || !statusIdentity.empty();
+	}
+	bool hasValidStatusMetadata() const
+	{
+		if(!isValidStatusIdentity(statusIdentity) || (!statusIdentity.empty() && statusTags.empty()))
+			return false;
+		for(size_t index = 0; index < statusTags.size(); ++index)
+		{
+			if(!isValidStatusTag(statusTags[index]))
+				return false;
+			for(size_t previous = 0; previous < index; ++previous)
+				if(statusTags[previous] == statusTags[index])
+					return false;
+		}
+		return true;
+	}
 	static bool isValidSpellCasterOwner(PlayerColor owner)
 	{
 		return owner.isValidPlayer() || owner == PlayerColor::CANNOT_DETERMINE
@@ -94,6 +132,11 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 		if(h.saving && spellCasterOwner != PlayerColor::CANNOT_DETERMINE
 			&& !h.hasFeature(Handler::Version::BONUS_SPELL_CASTER_OWNER))
 			throw std::runtime_error("Cannot discard bonus spell caster owner provenance");
+		if(h.saving && !hasValidStatusMetadata())
+			throw std::runtime_error("Invalid bonus status metadata");
+		if(h.saving && hasStatusMetadata()
+			&& !h.hasFeature(Handler::Version::BONUS_STATUS_TAGS))
+			throw std::runtime_error("Cannot discard bonus status metadata");
 		// TIME_STOP is a new serialized bonus type.  Never emit it through an
 		// older handler: doing so would shift/interpret the enum differently in a
 		// legacy reader.  A battle without this marker remains fully loadable by
@@ -164,6 +207,18 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 		}
 		else if(!h.saving)
 			spellCasterOwner = PlayerColor::CANNOT_DETERMINE;
+		if(h.hasFeature(Handler::Version::BONUS_STATUS_TAGS))
+		{
+			h & statusTags;
+			h & statusIdentity;
+			if(!h.saving && !hasValidStatusMetadata())
+				throw std::runtime_error("Invalid bonus status metadata");
+		}
+		else if(!h.saving)
+		{
+			statusTags.clear();
+			statusIdentity.clear();
+		}
 
 		//old saves stored BATTLE_NO_FLEEING in the slot now used by BATTLE_CAN_FLEE, it blocked retreating unconditionally
 		if(!h.saving && !h.hasFeature(Handler::Version::RETREAT_PERMISSION_BONUSES) && type == BonusType::BATTLE_CAN_FLEE)

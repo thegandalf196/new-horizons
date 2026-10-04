@@ -1,5 +1,19 @@
 # Bonus System
 
+## Explicit status tags
+
+`Bonus::statusTags` records opt-in status classification. `DEBUFF` means the
+author classified this applied status as a debuff; a negative value or low
+Morale alone is not a tag. `statusIdentity` optionally distinguishes statuses
+sharing a source/SID. Leave it empty for the ordinary existing identity.
+Components of the same logical status should use the same identity. Generic
+duration refresh preserves original numerical payload and caster provenance,
+retains explicit classification and must not merge distinct explicit identities.
+Tags travel with copied bonuses and their ordinary removal lifecycle. This is
+metadata infrastructure, not an active effect counter or automatic tagging of
+existing content. New Horizons Pandemonium's unresolved count/perk semantics
+remain in the user-priority queue.
+
 The bonus system of VCMI is a set of mechanisms that make handling of different bonuses for heroes, towns, players and units easier. The system consists of a set of nodes representing objects that can be a source or a subject of a bonus and two directed acyclic graphs (DAGs) representing inheritance and propagation of bonuses. Core of bonus system is defined in HeroBonus.h file.
 
 ## Bonus System Nodes

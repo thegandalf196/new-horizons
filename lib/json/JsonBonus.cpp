@@ -969,6 +969,33 @@ bool JsonUtils::parseBonus(const JsonNode &ability, Bonus *b, const TextIdentifi
 		b->spellCasterOwner = PlayerColor(static_cast<si32>(ownerValue));
 	}
 
+	if(ability.Struct().contains("statusTags"))
+	{
+		value = &ability["statusTags"];
+		if(value->getType() != JsonNode::JsonType::DATA_VECTOR)
+			throw std::runtime_error("Bonus statusTags must be an array of known status tag strings");
+		for(const JsonNode & tagNode : value->Vector())
+		{
+			if(tagNode.getType() != JsonNode::JsonType::DATA_STRING)
+				throw std::runtime_error("Bonus statusTags entries must be strings");
+			if(tagNode.String() != "DEBUFF")
+				throw std::runtime_error("Unknown bonus status tag: " + tagNode.String());
+			if(std::find(b->statusTags.begin(), b->statusTags.end(), BonusStatusTag::DEBUFF) != b->statusTags.end())
+				throw std::runtime_error("Duplicate bonus status tag: DEBUFF");
+			b->statusTags.push_back(BonusStatusTag::DEBUFF);
+		}
+	}
+
+	if(ability.Struct().contains("statusIdentity"))
+	{
+		value = &ability["statusIdentity"];
+		if(value->getType() != JsonNode::JsonType::DATA_STRING)
+			throw std::runtime_error("Bonus statusIdentity must be a string");
+		b->statusIdentity = value->String();
+	}
+	if(!b->hasValidStatusMetadata())
+		throw std::runtime_error("Invalid bonus status metadata");
+
 	value = &ability["limiters"];
 	if (!value->isNull())
 		b->limiter = parseLimiter(*value);

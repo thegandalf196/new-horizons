@@ -572,6 +572,18 @@
 			"enum" : [ -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7 ],
 			"description" : "Runtime provenance: stable owner ID of the side that applied the spell effect; -3 means unknown."
 		},
+		"statusTags" : {
+			"type" : "array",
+			"items" : { "type" : "string", "enum" : [ "DEBUFF" ] },
+			"uniqueItems" : true,
+			"description" : "Explicit status-level classifications shared by component bonuses."
+		},
+		"statusIdentity" : {
+			"type" : "string",
+			"maxLength" : 256,
+			"pattern" : "^[^\\u0000-\\u001F\\u007F]*$",
+			"description" : "Optional grouping identity for component bonuses representing one status; a nonempty identity requires statusTags."
+		},
 		"propagator" : {
 			"description" : "propagator",
 			"type" : "string",
@@ -642,5 +654,16 @@
 			"type" : "boolean",
 			"description" : "Optional, hide bonus in creature window"
 		}
-	}
+	},
+	"anyOf" : [
+		{
+			"properties" : {
+				"statusIdentity" : { "enum" : [ "" ] }
+			}
+		},
+		{
+			"required" : [ "statusTags" ],
+			"properties" : { "statusTags" : { "minItems" : 1 } }
+		}
+	]
 }

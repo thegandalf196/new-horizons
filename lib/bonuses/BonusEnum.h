@@ -329,6 +329,13 @@ enum class BonusValueType : uint8_t
 #undef BONUS_VALUE
 };
 
+/// Explicit classification of a temporary status carried by one or more bonuses.
+/// Keep values append-only because they are stored in saves and network packets.
+enum class BonusStatusTag : uint8_t
+{
+	DEBUFF = 0
+};
+
 enum class BonusNodeType
 {
 	NONE = -1,
