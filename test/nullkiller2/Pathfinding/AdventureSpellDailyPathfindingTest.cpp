@@ -28,6 +28,7 @@
 #include "lib/mapObjectConstructors/AObjectTypeHandler.h"
 #include "lib/mapObjectConstructors/CObjectClassesHandler.h"
 #include "lib/mapObjects/CGHeroInstance.h"
+#include "lib/mapObjects/CGTownInstance.h"
 #include "lib/pathfinder/TurnInfo.h"
 #include "lib/mapObjects/MiscObjects.h"
 #include "lib/modding/CModHandler.h"
@@ -142,6 +143,60 @@ protected:
 			spell("core:summonBoat"),
 			spell("core:dimensionDoor"),
 			spell("core:townPortal")});
+	}
+
+	CGHeroInstance * startHeroWithTownPortalScenario(bool newHorizons)
+	{
+		useNewHorizonsRules = newHorizons;
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder
+			.size(36, false)
+			.name("AdventureSpellTownPortalMovement")
+			.playerActive(PLAYER)
+			.town({18, 18, 0}, FactionID::CASTLE, PLAYER)
+			.townGarrison({})
+			.hero({5, 5, 0}, HeroTypeID(0), PLAYER)
+			.heroGarrison({{CreatureID(27), 1}})
+			.heroPrimary(10, 10, 10, 20)
+			.heroSpells({spell("core:townPortal")})
+			.heroEquipped({{ArtifactPosition::SPELLBOOK, ArtifactID::SPELLBOOK}});
+		startWithMap(std::move(builder));
+
+		auto * hero = findHeroByOwner(PLAYER);
+		if(hero)
+		{
+			setTestSpellPointTotal(hero, 200);
+			hero->setMovementPoints(2000);
+		}
+		return hero;
+	}
+
+	NK2AI::AIPathNode * townPortalDestinationNode(
+		NK2AI::AIGateway & gateway,
+		const CGHeroInstance * hero,
+		const int3 & destination,
+		NK2AI::DayFlags dayFlags)
+	{
+		const auto storage = gateway.nullkiller->pathfinder->getStorage();
+		if(!storage)
+			return nullptr;
+
+		for(CGPathNode * initialNode : storage->getInitialNodes())
+		{
+			const auto * initialAI = storage->getAINode(initialNode);
+			if(!initialAI->actor || initialAI->actor->hero != hero || !initialAI->actor->castActor)
+				continue;
+
+			const auto targetNode = storage->getOrCreateNode(
+				destination,
+				EPathfindingLayer::LAND,
+				initialAI->actor->castActor,
+				dayFlags);
+			if(targetNode)
+				return *targetNode;
+		}
+
+		return nullptr;
 	}
 
 	std::vector<NK2AI::AIPath> pathsTo(NK2AI::AIGateway & gateway, const CGHeroInstance * hero, const int3 & target)
@@ -414,6 +469,95 @@ TEST_F(AdventureSpellDailyPathfindingTest, NewHorizonsDimensionDoorPathDoesNotCr
 			});
 	})) << "a New Horizons route must not reveal or target hidden intermediate landing tiles";
 	EXPECT_TRUE(paths.empty()) << "the rock wall prevents a non-spell route to the visible destination";
+}
+
+TEST_F(AdventureSpellDailyPathfindingTest, NewHorizonsTownPortalExhaustsMovementAndFurtherTravelStartsTomorrow)
+{
+	auto * hero = startHeroWithTownPortalScenario(true);
+	ASSERT_NE(hero, nullptr);
+	ASSERT_EQ(hero->movementPointsRemaining(), 2000);
+	setMapVisibility(PLAYER, true);
+	makeRockWall(hero->visitablePos().x + 1);
+
+	const auto towns = gameState()->getMap().getObjects<CGTownInstance>();
+	ASSERT_EQ(towns.size(), 1);
+	const auto * town = towns.front();
+	ASSERT_EQ(town->tempOwner, PLAYER);
+	ASSERT_EQ(town->getVisitingHero(), nullptr);
+
+	const auto gateway = makeGateway(PLAYER);
+	const int3 townPosition = town->visitablePos();
+	const auto townPaths = pathsTo(*gateway, hero, townPosition);
+	const auto portalRoute = std::ranges::find_if(townPaths, [](const NK2AI::AIPath & path)
+	{
+		return hasAvailableActionOnTurn<NK2AI::AIPathfinding::TownPortalAction>(path, 0);
+	});
+	ASSERT_NE(portalRoute, townPaths.end()) << "the owned unoccupied town should be reachable by Town Portal";
+	EXPECT_EQ(portalRoute->targetNode().turns, 0);
+
+	auto * portalNode = townPortalDestinationNode(
+		*gateway,
+		hero,
+		townPosition,
+		NK2AI::DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST);
+	ASSERT_NE(portalNode, nullptr);
+	ASSERT_EQ(portalNode->action, EPathNodeAction::TELEPORT_NORMAL);
+	ASSERT_NE(dynamic_cast<const NK2AI::AIPathfinding::TownPortalAction *>(portalNode->specialAction.get()), nullptr);
+	EXPECT_EQ(portalNode->turns, 0);
+	EXPECT_EQ(portalNode->moveRemains, 0);
+	EXPECT_FLOAT_EQ(
+		portalNode->getCost(),
+		static_cast<float>(hero->movementPointsRemaining()) / static_cast<float>(hero->movementPointsLimit()));
+
+	const int3 outwardDirection = townPosition - town->pos;
+	ASSERT_NE(outwardDirection, int3(0, 0, 0));
+	const int3 beyondTown = townPosition + int3(
+		2 * outwardDirection.x,
+		2 * outwardDirection.y,
+		2 * outwardDirection.z);
+	ASSERT_TRUE(map()->isInTheMap(beyondTown));
+	const auto beyondTownPaths = pathsTo(*gateway, hero, beyondTown);
+	const auto nextDayRoute = std::ranges::find_if(beyondTownPaths, [](const NK2AI::AIPath & path)
+	{
+		return hasAvailableActionOnTurn<NK2AI::AIPathfinding::TownPortalAction>(path, 0);
+	});
+	ASSERT_NE(nextDayRoute, beyondTownPaths.end()) << "travel can continue from the destination town on a later day";
+	EXPECT_EQ(nextDayRoute->targetNode().turns, 1);
+}
+
+TEST_F(AdventureSpellDailyPathfindingTest, LegacyTownPortalKeepsItsConfiguredFixedMovementDeduction)
+{
+	auto * hero = startHeroWithTownPortalScenario(false);
+	ASSERT_NE(hero, nullptr);
+	ASSERT_EQ(hero->movementPointsRemaining(), 2000);
+	setMapVisibility(PLAYER, true);
+	makeRockWall(hero->visitablePos().x + 1);
+
+	const auto towns = gameState()->getMap().getObjects<CGTownInstance>();
+	ASSERT_EQ(towns.size(), 1);
+	const auto * town = towns.front();
+	ASSERT_EQ(town->getVisitingHero(), nullptr);
+
+	const auto gateway = makeGateway(PLAYER);
+	const auto townPaths = pathsTo(*gateway, hero, town->visitablePos());
+	ASSERT_TRUE(std::ranges::any_of(townPaths, [](const NK2AI::AIPath & path)
+	{
+		return hasAvailableActionOnTurn<NK2AI::AIPathfinding::TownPortalAction>(path, 0);
+	}));
+
+	auto * portalNode = townPortalDestinationNode(
+		*gateway,
+		hero,
+		town->visitablePos(),
+		NK2AI::DayFlags::NONE);
+	ASSERT_NE(portalNode, nullptr);
+	ASSERT_EQ(portalNode->action, EPathNodeAction::TELEPORT_NORMAL);
+	ASSERT_NE(dynamic_cast<const NK2AI::AIPathfinding::TownPortalAction *>(portalNode->specialAction.get()), nullptr);
+	EXPECT_EQ(portalNode->turns, 0);
+	EXPECT_EQ(portalNode->moveRemains, 1700);
+	EXPECT_FLOAT_EQ(
+		portalNode->getCost(),
+		300.f / static_cast<float>(hero->movementPointsLimit()));
 }
 
 TEST_F(AdventureSpellDailyPathfindingTest, DimensionDoorRevalidationUsesThePlannedSpellDay)

@@ -1,6 +1,17 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-05
+Town Portal Movement exhaustion accepted: shared exact-identity/saved-NH cost
+now consumes all remaining Movement after successful teleport. Nullkiller uses
+planned source Movement, zero cast-day residual and full remaining-day cost;
+further travel starts next day. Legacy live deductions and outside-NH AI cost
+remain unchanged. Both-target46722 passes; native73990 passes8/8 in2.608s,
+zero skips, covering accepted cast, cancellation, legacy and actual AI paths.
+Nearest-town ownership/selection and minimum admission remain held, so this is
+one completed canonical clause, not full Town Portal completion. No identity
+counts change, GUI or playable promotion. Wider interrupted/failed transfers
+and alternate planned origins remain Phase2.
+
 Breakthrough explicit Defend reduction repair: shared Lua now halves whole
 Battlecraft/Bulwark fields, including their bundled Defend bonuses, before
 physical mitigation composition and cap. Both-target builds52099/53299 pass;
@@ -2459,16 +2470,17 @@ is awaiting user clarification, so production activation remains planned and
 the positive fixtures explicitly enable it. No active-perk count increment.
 See UP-054 and the failure ledger for retry identities and final gate state.
 
-Adventure-effect audit (UP-056): five identities/acquisition paths exist,
-but all five retain missing canonical effect/UI clauses. Summon Boat's existing-
-only rule now passes native tests, but adjacent-target choice/preview is missing;
-Water Walk end-day land legality is unestablished;
-Town Portal still allows selected towns and fixed Movement expenditure;
-Fly protected-barrier enforcement is unestablished; Dimension Door still lacks
-visible range-eight/full-Movement/protected-barrier enforcement. Shared 1.5x
-Water Walk/Fly step costs already exist. These are missing Phase 1 effects,
-not coverage established by the 5/5 acquisition count. Next: shared Town Portal
-policy, preserving deterministic existing distance unless evidence demands more.
+Adventure-effect audit (UP-056), refreshed2026-10-05: five identities/acquisition
+paths exist, not five effect-complete spells. Summon Boat's existing-only rule
+and legal adjacent destination selection are source/native verified; rendering
+remains separate. Dimension Door's visible legal radius8, full-Movement spending
+and warning hook are source/native verified; protected barriers remain missing.
+Water Walk end-day land legality awaits the stranded-hero policy. Fly protected
+barriers await authored geometry/metadata. Town Portal exhaustion is now
+source/native verified with8/8 focused cases; selected destinations remain
+possible, while controlled-town scope and minimum admission remain held.
+Shared1.5x Water Walk/Fly costs exist. No full-effect count follows
+from the acquisition count or this correction of obsolete audit statements.
 
 Arcane Reservoir checkpoint: the Expert Wisdom perk adds 25 Maximum Normal
 Spell Points after Knowledge/Intelligence rounding, without filling new
@@ -2820,7 +2832,7 @@ interactions, and rendered/playable acceptance remain separate.
 |---|---:|---:|---|
 | Offense | 3/0 | 10/0 | Bounded consumer audit found Breakthrough omitted explicit Battlecraft/Bulwark Defend reductions. UP231 repairs those channels with8/8 focused cases, accepted melee and equivalent-view detached parity. Broader mundane-state taxonomy and stale earlier-tier fixture repairs remain deferred; active registration is not whole-family certification. |
 | Armorer | 3/0 | 7/3 | Bastion, Formation Fighting and Veteran have focused live/detached damage evidence. Three perks missing; Last Stand and Defiant await design choices. |
-| Archery | 3/0 | 10/0 | All ten perks are active; focused evidence pending |
+| Archery | 3/0 | 10/0 | Bounded canonical consumer audit finds all ten active perks represented in shared payload, authoritative actions/reactions and BattleAI projections; no missing principal source clause identified. This is source evidence, not focused whole-family execution certification. |
 | Battlecraft | 3/0 | 7/3 | Pre-emptive Strike joins Entrench, Reserve, Passing Lines, Tactics, Redeployment and Grand Tactics. UP157 focused22/22 zero skips covers accepted pre-hit50%, retained retaliation, same-round re-Defend/next-round eligibility, disabled/ranged/no-perk controls, replicated state and detached AI exchange/Defend hooks. Broader Bulwark composition and rendered/actualAI deployment execution remain Phase2. Three perks remain planned. |
 | War Machines | 3/0 | 5/5 | Surgeon and Piercing Bolts have focused live/detached evidence; Fortification Engineer has real fortified-town manual-shot evidence; Master Gunner has accepted independently targeted second-shot evidence; Quartermaster has accepted half-output Ballista/Tent/Catapult extra-activation evidence. Five perks remain planned. Battlefield Medic persistence awaits clarification. |
 | Discipline | 3/0 | 7/3 | Steadfast joins Unbreakable, Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless with focused authoritative and detached evidence. Three perks remain planned; Esprit de Corps composition scope, Heroic Spirit activation timing and Veteran Cohesion HP reference await clarification. |

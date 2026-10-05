@@ -1467,6 +1467,7 @@ struct TownPortalFinder
 	std::vector<const CGTownInstance *> targetTowns;
 	AINodeStorage * nodeStorage;
 	const CSpell * townPortal;
+	const TownPortalEffect * townPortalEffect;
 	uint64_t movementNeeded;
 	SpellID spellID;
 	bool townSelectionAllowed;
@@ -1482,7 +1483,7 @@ struct TownPortalFinder
 		, spellID(spellID)
 		, usesSharedDailyOpportunity(newHorizonsMagic::isAdventureSpell(hero->getMagicRules(), spellID))
 	{
-		auto townPortalEffect = townPortal->getAdventureMechanics().getEffectAs<TownPortalEffect>(hero);
+		townPortalEffect = townPortal->getAdventureMechanics().getEffectAs<TownPortalEffect>(hero);
 		movementNeeded = townPortalEffect->getMovementPointsRequired();
 		townSelectionAllowed = townPortalEffect->townSelectionAllowed();
 	}
@@ -1552,7 +1553,10 @@ struct TownPortalFinder
 		}
 
 		AIPathNode * node = nodeOptional.value();
-		float movementCost = (float)movementNeeded / (float)hero->movementPointsLimit();
+		const int movementTaken = usesSharedDailyOpportunity && spellID == SpellID(SpellID::TOWN_PORTAL)
+			? townPortalEffect->getMovementPointsTaken(hero, bestNode->moveRemains)
+			: static_cast<int>(movementNeeded);
+		float movementCost = (float)movementTaken / (float)hero->movementPointsLimit();
 		movementCost += bestNode->getCost();
 
 		if(node->action == EPathNodeAction::UNKNOWN || node->getCost() > movementCost)
@@ -1562,7 +1566,7 @@ struct TownPortalFinder
 				nodeStorage->getAINode(bestNode),
 				EPathNodeAction::TELEPORT_NORMAL,
 				bestNode->turns,
-				bestNode->moveRemains - movementNeeded,
+				std::max(0, bestNode->moveRemains - movementTaken),
 				movementCost,
 				DO_NOT_SAVE_TO_COMMITTED_TILES);
 			node->dayFlags = destinationDayFlags;

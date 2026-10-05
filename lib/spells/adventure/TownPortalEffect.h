@@ -13,6 +13,7 @@
 #include "TownRelatedAdventureSpellEffect.h"
 
 class CGTownInstance;
+class CGHeroInstance;
 
 class DLL_LINKAGE TownPortalEffect final : public spells::adventure::TownRelatedAdventureSpellEffect
 {
@@ -23,6 +24,7 @@ public:
 	TownPortalEffect(const CSpell * s, const JsonNode & config);
 
 	int getMovementPointsRequired() const { return movementPointsRequired; }
+	int getMovementPointsTaken(const CGHeroInstance * hero, int remainingMovement) const;
 	bool townSelectionAllowed() const { return allowTownSelection; }
 
 private:

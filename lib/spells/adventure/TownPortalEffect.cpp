@@ -20,6 +20,8 @@
 #include "../../mapObjects/CGTownInstance.h"
 #include "../../mapping/CMap.h"
 #include "../../networkPacks/PacksForClient.h"
+#include "../CSpell.h"
+#include "../NewHorizonsMagic.h"
 
 TownPortalEffect::TownPortalEffect(const CSpell * s, const JsonNode & config)
 	: TownRelatedAdventureSpellEffect(s, config["allowTownSelection"].Bool(), config["skipOccupiedTowns"].Bool())
@@ -31,6 +33,16 @@ TownPortalEffect::TownPortalEffect(const CSpell * s, const JsonNode & config)
 bool TownPortalEffect::shouldOfferTownInDialog(const CGTownInstance * town) const
 {
 	return town->getVisitingHero() == nullptr;
+}
+
+int TownPortalEffect::getMovementPointsTaken(const CGHeroInstance * hero, int remainingMovement) const
+{
+	const int nonnegativeRemaining = std::max(0, remainingMovement);
+	if(hero && owner && owner->id == SpellID(SpellID::TOWN_PORTAL)
+		&& newHorizonsMagic::isAdventureSpell(hero->getMagicRules(), owner->id))
+		return nonnegativeRemaining;
+
+	return std::min(nonnegativeRemaining, std::max(0, movementPointsTaken));
 }
 
 void TownPortalEffect::configureDialogTitleAndDescription(MetaString & title, MetaString & description) const
@@ -177,10 +189,9 @@ void TownPortalEffect::endCast(SpellCastEnvironment * env, const AdventureSpellC
 	{
 		SetMovePoints smp;
 		smp.hid = ObjectInstanceID(parameters.caster->getCasterUnitId());
-		if(movementPointsTaken < static_cast<int>(parameters.caster->getHeroCaster()->movementPointsRemaining()))
-			smp.val = parameters.caster->getHeroCaster()->movementPointsRemaining() - movementPointsTaken;
-		else
-			smp.val = 0;
+		const auto * hero = parameters.caster->getHeroCaster();
+		const int remainingMovement = static_cast<int>(hero->movementPointsRemaining());
+		smp.val = std::max(0, remainingMovement - getMovementPointsTaken(hero, remainingMovement));
 		env->apply(smp);
 	}
 }

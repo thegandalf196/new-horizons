@@ -407,6 +407,7 @@ set(test_SRCS
 		server/queries/NewHorizonsConfluxGrowthTest.cpp
 		server/queries/NewHorizonsMagicUniversityTest.cpp
 		server/queries/NewHorizonsAdventureSpellUnlockTest.cpp
+		server/queries/NewHorizonsTownPortalMovementTest.cpp
 		server/NewHorizonsEconomyTest.cpp
 		server/NewHorizonsEstatesFinancierTest.cpp
 		server/NewHorizonsEstatesInvestorTest.cpp
