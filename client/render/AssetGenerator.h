@@ -78,6 +78,15 @@ private:
 	mutable std::map<std::string, std::optional<std::uint32_t>> menuTitleSourceCrc32;
 
 	CanvasPtr createNewHorizonsMenuTitleImage(const std::string & resource) const;
+	CanvasPtr createAcademyTownIconBuiltToday(
+		const std::string & normalImage,
+		const AnimationPath & originalAnimation,
+		size_t normalFrame,
+		size_t builtFrame) const;
+	CanvasPtr createAcademyMapLayer(
+		const AnimationPath & originalAnimation,
+		size_t frame,
+		EImageBlitMode layer) const;
 	void loadMenuTitleArtMetadata() const;
 	std::optional<ResourcePath> resolveMenuTitleSourcePath(const std::string & resource) const;
 	std::optional<std::uint32_t> getMenuTitleSourceCrc32(const ResourcePath & sourcePath) const;

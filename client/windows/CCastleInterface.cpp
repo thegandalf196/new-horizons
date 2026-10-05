@@ -77,6 +77,8 @@
 #include "../../lib/spells/CSpell.h"
 #include "wiki/WikiWindow.h"
 
+#include <cmath>
+
 static std::optional<newHorizonsCreatures::CreatureCategoryView> currentCreatureCategory(const CCreature * creature)
 {
 	if(!creature || !GAME || !GAME->interface() || !GAME->interface()->cb)
@@ -235,19 +237,184 @@ std::shared_ptr<CPicture> createResponsiveFortCardBackground(const Point & size)
 
 class MageGuildExteriorHotspot final : public CPicture
 {
+	struct OutlineSegment
+	{
+		Point from;
+		Point to;
+	};
+
 	bool hovered = false;
+	std::vector<OutlineSegment> hoverOutline;
 	static constexpr const char * HOVER_TEXT = "Adventure Spells";
+
+	static void appendClosedOutline(const std::vector<Point> & points, std::vector<OutlineSegment> & result)
+	{
+		if(points.size() < 3)
+			return;
+
+		std::vector<Point> simplified;
+		simplified.reserve(points.size());
+		for(const auto & point : points)
+		{
+			while(simplified.size() >= 2)
+			{
+				const auto & a = simplified[simplified.size() - 2];
+				const auto & b = simplified.back();
+				const auto cross = static_cast<long long>(b.x - a.x) * (point.y - b.y)
+					- static_cast<long long>(b.y - a.y) * (point.x - b.x);
+				if(cross != 0)
+					break;
+				simplified.pop_back();
+			}
+			simplified.push_back(point);
+		}
+
+		if(simplified.size() < 3)
+			return;
+
+		result.reserve(result.size() + simplified.size());
+		for(size_t index = 0; index < simplified.size(); ++index)
+			result.push_back({simplified[index], simplified[(index + 1) % simplified.size()]});
+	}
+
+	void cacheConfiguredArchOutline()
+	{
+		if(pos.w <= 2 || pos.h <= 2)
+			return;
+
+		// Opaque custom pictures cannot provide a keyed contour, so scale the
+		// established arched opening profile to their configured picture bounds.
+		const int left = 0;
+		const int right = pos.w - 1;
+		const int top = 0;
+		const int bottom = pos.h - 1;
+		const int halfWidth = (right - left) / 2;
+		const int rise = std::max(1, std::min(halfWidth * 86 / 100, (pos.h - 1) / 3));
+		const int springY = top + rise;
+		constexpr int arcSegments = 40;
+		std::vector<Point> outline;
+		outline.reserve(arcSegments + 3);
+
+		for(int step = 0; step <= arcSegments; ++step)
+		{
+			const double t = static_cast<double>(step) / arcSegments;
+			const double normalized = 2.0 * t - 1.0;
+			const double curve = std::sqrt(std::max(0.0, 1.0 - normalized * normalized));
+			const int x = left + static_cast<int>(std::lround((right - left) * t));
+			const int y = springY - static_cast<int>(std::lround(rise * curve));
+			outline.emplace_back(x, y);
+		}
+
+		outline.emplace_back(right, bottom);
+		outline.emplace_back(left, bottom);
+		appendClosedOutline(outline, hoverOutline);
+	}
+
+	void cacheImageSilhouette()
+	{
+		const auto surface = getSurface();
+		if(!surface || surface->width() <= 1 || surface->height() <= 1)
+			return;
+
+		struct RowExtent
+		{
+			int left = -1;
+			int right = -1;
+		};
+
+		const int width = surface->width();
+		const int height = surface->height();
+		std::vector<RowExtent> rows(static_cast<size_t>(height));
+		int firstRow = -1;
+		int lastRow = -1;
+		int widestRow = -1;
+		int widest = 0;
+
+		for(int y = 0; y < height; ++y)
+		{
+			for(int x = 0; x < width; ++x)
+			{
+				if(surface->isTransparent(Point(x, y)))
+					continue;
+
+				if(rows[static_cast<size_t>(y)].left < 0)
+					rows[static_cast<size_t>(y)].left = x;
+				rows[static_cast<size_t>(y)].right = x;
+			}
+
+			const auto & row = rows[static_cast<size_t>(y)];
+			if(row.left < 0)
+				continue;
+
+			if(firstRow < 0)
+				firstRow = y;
+			lastRow = y;
+			const int rowWidth = row.right - row.left + 1;
+			if(rowWidth > widest)
+			{
+				widest = rowWidth;
+				widestRow = y;
+			}
+		}
+
+		if(firstRow < 0)
+			return;
+
+		const auto & topRow = rows[static_cast<size_t>(firstRow)];
+		const auto & bottomRow = rows[static_cast<size_t>(lastRow)];
+		const int topWidth = topRow.right - topRow.left + 1;
+		const int bottomWidth = bottomRow.right - bottomRow.left + 1;
+		const bool hasArchedSilhouette = widestRow > firstRow
+			&& widestRow - firstRow < (lastRow - firstRow) / 2
+			&& topWidth * 4 < widest * 3
+			&& bottomWidth * 4 >= widest * 3;
+		if(!hasArchedSilhouette)
+			return;
+
+		std::vector<Point> outline;
+		outline.reserve(static_cast<size_t>((lastRow - firstRow + 1) * 2));
+		for(int y = firstRow; y <= lastRow; ++y)
+		{
+			const auto & row = rows[static_cast<size_t>(y)];
+			if(row.left >= 0)
+				outline.emplace_back(row.left, y);
+		}
+		for(int y = lastRow; y >= firstRow; --y)
+		{
+			const auto & row = rows[static_cast<size_t>(y)];
+			if(row.right >= 0)
+				outline.emplace_back(row.right, y);
+		}
+
+		appendClosedOutline(outline, hoverOutline);
+	}
+
+	void cacheHoverOutline()
+	{
+		cacheImageSilhouette();
+		if(hoverOutline.empty())
+			cacheConfiguredArchOutline();
+	}
 
 	void drawHoverBorder(Canvas & to) const
 	{
-		if(hovered)
-			to.drawBorder(Rect::createAround(pos, 1), Colors::METALLIC_GOLD);
+		if(!hovered)
+			return;
+
+		const auto origin = pos.topLeft();
+		for(const auto & segment : hoverOutline)
+			to.drawLine(
+				origin + segment.from,
+				origin + segment.to,
+				Colors::METALLIC_GOLD,
+				Colors::METALLIC_GOLD);
 	}
 
 public:
 	MageGuildExteriorHotspot(const ImagePath & image, const Point & position, ObjectInstanceID townId)
 		: CPicture(image, position.x, position.y)
 	{
+		cacheHoverOutline();
 		addUsedEvents(HOVER);
 		setRedrawParent(true);
 		addLClickCallback([townId]()
@@ -3374,11 +3541,11 @@ std::string adventureSpellUnlockCostText(const ResourceSet & cost)
 class MageGuildAdventureSpellHelpArea final : public CHoverableArea
 {
 	std::string description;
-	std::shared_ptr<CComponent> component;
+	SpellID spell;
 
 public:
 	MageGuildAdventureSpellHelpArea(const Rect & area, std::string description_, SpellID spell)
-		: description(std::move(description_)), component(std::make_shared<CComponent>(ComponentType::SPELL, spell))
+		: description(std::move(description_)), spell(spell)
 	{
 		pos = area + pos.topLeft();
 		addUsedEvents(SHOW_POPUP);
@@ -3386,13 +3553,13 @@ public:
 
 	void showPopupWindow(const Point &) override
 	{
-		CRClickPopup::createAndPush(description, component);
+		CRClickPopup::createAndPush(description, std::make_shared<CComponent>(ComponentType::SPELL, spell));
 	}
 };
 }
 
 CMageGuildAdventureSpellWindow::CMageGuildAdventureSpellWindow(ObjectInstanceID townId)
-	: CWindowObject(BORDERED, ImagePath::builtin("newHorizonsOrdersBackground.png")), townId(townId)
+	: CWindowObject(BORDERED, ImagePath::builtin("newHorizonsAdventureGuildBackground.png")), townId(townId)
 {
 	updateSpells(townId);
 }
@@ -3412,9 +3579,8 @@ void CMageGuildAdventureSpellWindow::updateSpells(ObjectInstanceID tID)
 
 	elements.push_back(std::make_shared<CLabel>(320, 20, FONT_BIG, ETextAlignment::CENTER,
 		Colors::YELLOW, "Mage Guild Adventure Spells", 590));
-	elements.push_back(std::make_shared<CMultiLineLabel>(Rect(22, 49, 596, 27), FONT_SMALL,
-		ETextAlignment::CENTER, Colors::WHITE,
-		"Each Guild tier has one fixed spell. Unlocks stay with this town; visiting heroes learn unlocked spells."));
+	elements.push_back(std::make_shared<CLabel>(320, 49, FONT_SMALL, ETextAlignment::CENTER,
+		Colors::WHITE, "One fixed spell per Guild tier; unlocks stay with this town.", 560));
 
 	const auto & magicRules = GAME->interface()->cb->getMagicRules();
 	if(!newHorizonsMagic::adventureSpellRulesActive(magicRules))
@@ -3424,13 +3590,23 @@ void CMageGuildAdventureSpellWindow::updateSpells(ObjectInstanceID tID)
 	}
 	else
 	{
-		constexpr int rowLeft = 18;
-		constexpr int rowTop = 82;
-		constexpr int rowWidth = 604;
-		constexpr int rowHeight = 68;
-		constexpr int rowGap = 5;
-		const ColorRGBA rowFill(35, 21, 13, 92);
-		const ColorRGBA rowBorder(154, 119, 66, 255);
+		constexpr int listLeft = 18;
+		constexpr int listTop = 72;
+		constexpr int listWidth = 604;
+		constexpr int listHeight = 308;
+		constexpr int rowTop = 79;
+		constexpr int rowHeight = 56;
+		constexpr int rowGap = 3;
+		constexpr int iconLeft = listLeft + 8;
+		constexpr int iconSize = 48;
+		constexpr int textLeft = listLeft + 65;
+		constexpr int textWidth = 454;
+		constexpr int buyLeft = listLeft + listWidth - 64 - 10;
+		const ColorRGBA listFill(35, 21, 13, 92);
+		const ColorRGBA listBorder(154, 119, 66, 255);
+		const ColorRGBA rowDivider(154, 119, 66, 180);
+		elements.push_back(std::make_shared<TransparentFilledRectangle>(
+			Rect(listLeft, listTop, listWidth, listHeight), listFill, listBorder));
 		const auto resources = GAME->interface()->cb->getResourceAmount();
 		const bool ownsTown = town->getOwner() == GAME->interface()->playerID;
 		const bool turnIsActive = GAME->interface()->makingTurn;
@@ -3454,7 +3630,6 @@ void CMageGuildAdventureSpellWindow::updateSpells(ObjectInstanceID tID)
 			}
 
 			const int rowY = rowTop + (guildLevel - 1) * (rowHeight + rowGap);
-			const Rect row(rowLeft, rowY, rowWidth, rowHeight);
 			const bool built = town->mageGuildLevel() >= guildLevel;
 			const bool unlocked = town->hasNewHorizonsAdventureSpellUnlocked(guildLevel);
 			const bool allowed = GAME->interface()->cb->isAllowed(spellId);
@@ -3483,28 +3658,33 @@ void CMageGuildAdventureSpellWindow::updateSpells(ObjectInstanceID tID)
 				statusColor = Colors::YELLOW;
 			}
 
-			elements.push_back(std::make_shared<TransparentFilledRectangle>(row, rowFill, rowBorder));
+			if(guildLevel > 1)
+			{
+				const int dividerY = rowY - rowGap;
+				elements.push_back(std::make_shared<TransparentFilledRectangle>(
+					Rect(listLeft + 8, dividerY + 1, listWidth - 16, 1), rowDivider, rowDivider));
+			}
 			elements.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SPELLSCR"), spellId.getNum(),
-				Rect(rowLeft + 8, rowY + 10, 48, 48)));
-			elements.push_back(std::make_shared<CLabel>(rowLeft + 65, rowY + 5, FONT_MEDIUM,
+				Rect(iconLeft, rowY + 4, iconSize, iconSize)));
+			elements.push_back(std::make_shared<CLabel>(textLeft, rowY + 2, FONT_MEDIUM,
 				ETextAlignment::TOPLEFT, Colors::YELLOW,
-				"Guild " + adventureSpellGuildLevelName(guildLevel) + " — " + spell->getNameTranslated(), 462));
-			elements.push_back(std::make_shared<CMultiLineLabel>(Rect(rowLeft + 65, rowY + 24, 470, 15),
-				FONT_TINY, ETextAlignment::TOPLEFT, statusColor, status));
+				"Guild " + adventureSpellGuildLevelName(guildLevel) + " — " + spell->getNameTranslated(), textWidth));
+			elements.push_back(std::make_shared<CLabel>(textLeft, rowY + 20, FONT_TINY,
+				ETextAlignment::TOPLEFT, statusColor, status, textWidth));
 			const std::string costText = "Unlock cost: " + adventureSpellUnlockCostText(cost);
-			elements.push_back(std::make_shared<CLabel>(rowLeft + 65, rowY + 43, FONT_TINY,
-				ETextAlignment::TOPLEFT, Colors::WHITE, costText, 470));
+			elements.push_back(std::make_shared<CLabel>(textLeft, rowY + 37, FONT_TINY,
+				ETextAlignment::TOPLEFT, Colors::WHITE, costText, textWidth));
 
 			const auto popupText = spell->getDescriptionTranslated(0) + "\n\n" + costText
 				+ ". Unlocking is permanent for this town. A visiting hero learns the spell from this town.";
 			elements.push_back(std::make_shared<MageGuildAdventureSpellHelpArea>(
-				Rect(rowLeft, rowY, 545, rowHeight), popupText, spellId));
+				Rect(listLeft, rowY, buyLeft - listLeft - 8, rowHeight), popupText, spellId));
 
 			if(built && !unlocked && allowed)
 			{
 				const std::string buyHelp = "Spend " + adventureSpellUnlockCostText(cost)
 					+ " to unlock " + spell->getNameTranslated() + " permanently for this town.";
-				auto buy = std::make_shared<CButton>(Point(rowLeft + 560, rowY + 19),
+				auto buy = std::make_shared<CButton>(Point(buyLeft, rowY + 12),
 					AnimationPath::builtin("IBUY30.DEF"), CButton::tooltip("Unlock", buyHelp),
 					[this, guildLevel]()
 					{
@@ -3512,7 +3692,6 @@ void CMageGuildAdventureSpellWindow::updateSpells(ObjectInstanceID tID)
 						if(!currentTown || !GAME->interface()->cb->unlockNewHorizonsAdventureSpell(currentTown, guildLevel))
 							GAME->interface()->showInfoDialog("The Adventure Spell unlock request was not submitted. Check the town and its resources, then try again.");
 					});
-				buy->setTextOverlay("BUY", FONT_TINY, Colors::YELLOW);
 				buy->setBorderColor(Colors::METALLIC_GOLD);
 				buy->block(!canPurchase);
 				elements.push_back(buy);
@@ -3520,9 +3699,9 @@ void CMageGuildAdventureSpellWindow::updateSpells(ObjectInstanceID tID)
 		}
 	}
 
-	elements.push_back(std::make_shared<CLabel>(22, 471, FONT_TINY, ETextAlignment::TOPLEFT,
+	elements.push_back(std::make_shared<CLabel>(22, 400, FONT_TINY, ETextAlignment::TOPLEFT,
 		Colors::WHITE, "Right-click a spell for its description and town purchase terms.", 490));
-	closeButton = std::make_shared<CButton>(Point(555, 462), AnimationPath::builtin("NH_cancel_button"),
+	closeButton = std::make_shared<CButton>(Point(555, 391), AnimationPath::builtin("NH_cancel_button"),
 		CButton::tooltip("Close", "Return to the Mage Guild."), [this] { close(); }, EShortcut::GLOBAL_CANCEL);
 	closeButton->setHoverable(true);
 	updateShadow();

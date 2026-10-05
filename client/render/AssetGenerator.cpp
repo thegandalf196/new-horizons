@@ -51,6 +51,38 @@ void AssetGenerator::initialize()
 	imageFiles[ImagePath::builtin("NH_MENU_GAMSELB1")] = [this](){ return createNewHorizonsMenuTitleImage("GAMSELB1"); };
 	imageFiles[ImagePath::builtin("NH_MENU_LOADBAR")] = [this](){ return createNewHorizonsMenuTitleImage("LOADBAR"); };
 
+	imageFiles[ImagePath::builtin("NH_academy_fort_large_built.png")] = [this]()
+	{
+		return createAcademyTownIconBuiltToday("NH_academy_fort_large_normal.png", AnimationPath::builtin("ITPT"), 4, 5);
+	};
+	imageFiles[ImagePath::builtin("NH_academy_fort_small_built.png")] = [this]()
+	{
+		return createAcademyTownIconBuiltToday("NH_academy_fort_small_normal.png", AnimationPath::builtin("ITPA"), 6, 7);
+	};
+	imageFiles[ImagePath::builtin("NH_academy_village_large_built.png")] = [this]()
+	{
+		return createAcademyTownIconBuiltToday("NH_academy_village_large_normal.png", AnimationPath::builtin("ITPT"), 22, 23);
+	};
+	imageFiles[ImagePath::builtin("NH_academy_village_small_built.png")] = [this]()
+	{
+		return createAcademyTownIconBuiltToday("NH_academy_village_small_normal.png", AnimationPath::builtin("ITPA"), 24, 25);
+	};
+
+	auto addAcademyMapLayers = [this](const std::string & image, const AnimationPath & originalAnimation)
+	{
+		imageFiles[ImagePath::builtin(image + "-SHADOW.png")] = [this, originalAnimation]()
+		{
+			return createAcademyMapLayer(originalAnimation, 0, EImageBlitMode::ONLY_SHADOW_HIDE_FLAG_COLOR);
+		};
+		imageFiles[ImagePath::builtin(image + "-OVERLAY.png")] = [this, originalAnimation]()
+		{
+			return createAcademyMapLayer(originalAnimation, 0, EImageBlitMode::ONLY_FLAG_COLOR);
+		};
+	};
+	addAcademyMapLayers("NH_ACADEMY_VILLAGE_BODY", AnimationPath::builtin("AVCTOWR0"));
+	addAcademyMapLayers("NH_ACADEMY_FORT_BODY", AnimationPath::builtin("AVCTOWX0"));
+	addAcademyMapLayers("NH_ACADEMY_CAPITOL_BODY", AnimationPath::builtin("AVCTOWZ0"));
+
 	imageFiles[ImagePath::builtin("AdventureOptionsBackgroundClear.png")] = [this](){ return createAdventureOptionsCleanBackground();};
 	imageFiles[ImagePath::builtin("SpellBookLarge.png")] = [this](){ return createBigSpellBook();};
 	imageFiles[ImagePath::builtin("MuPopUpCustom.png")] = [this](){ return createMuPopUpCustom();};
@@ -136,6 +168,7 @@ void AssetGenerator::initialize()
 	imageFiles[ImagePath::builtin("newHorizonsHeroBackground.png")] = [this](){ return createNewHorizonsHeroBackground(); };
 	imageFiles[ImagePath::builtin("newHorizonsLevelUpBackground.png")] = [this](){ return createNewHorizonsLevelUpBackground(); };
 	addDialogBackground("newHorizonsOrdersBackground.png", Point(640, 500));
+	addDialogBackground("newHorizonsAdventureGuildBackground.png", Point(640, 440));
 	for(PlayerColor color(0); color < PlayerColor::PLAYER_LIMIT; ++color)
 	{
 		const std::string name = "newHorizonsSplitBackground-" + color.toString() + ".png";
@@ -211,6 +244,100 @@ std::map<ImagePath, std::shared_ptr<ISharedImage>> AssetGenerator::generateAllIm
 std::map<AnimationPath, AssetGenerator::AnimationLayoutMap> AssetGenerator::generateAllAnimations()
 {
 	return animationFiles;
+}
+
+AssetGenerator::CanvasPtr AssetGenerator::createAcademyTownIconBuiltToday(
+	const std::string & normalImage,
+	const AnimationPath & originalAnimation,
+	size_t normalFrame,
+	size_t builtFrame) const
+{
+	const ImagePath authoredPath = ImagePath::builtin(normalImage);
+	const ImagePath authoredSprites = authoredPath.addPrefix("SPRITES/");
+	const ImagePath authoredData = authoredPath.addPrefix("DATA/");
+	const AnimationPath originalDef = originalAnimation.addPrefix("SPRITES/");
+	const auto * resources = CResourceHandler::get();
+	const bool hasAuthoredImage = resources->existsResource(authoredSprites)
+		|| resources->existsResource(authoredData)
+		|| resources->existsResource(authoredPath);
+	if(!hasAuthoredImage || !resources->existsResource(originalDef))
+		return nullptr;
+
+	ImageLocator authoredLocator(authoredPath, EImageBlitMode::SIMPLE);
+	authoredLocator.scalingFactor = 1;
+	const auto authored = ENGINE->renderHandler().loadImage(authoredLocator);
+	if(!authored)
+		return nullptr;
+
+	auto loadNativeFrame = [&](size_t frame)
+	{
+		ImageLocator locator(originalAnimation, static_cast<int>(frame), 0, EImageBlitMode::COLORKEY);
+		locator.scalingFactor = 1;
+		return ENGINE->renderHandler().loadImage(locator);
+	};
+
+	const auto originalNormal = loadNativeFrame(normalFrame);
+	const auto originalBuilt = loadNativeFrame(builtFrame);
+	const Point size = authored->dimensions();
+	if(!originalNormal || !originalBuilt || originalNormal->dimensions() != size || originalBuilt->dimensions() != size)
+	{
+		logGlobal->warn("New Horizons Academy town icon %s does not match its original DEF frame geometry", normalImage);
+		return nullptr;
+	}
+
+	Canvas normalFrameCanvas(size, CanvasScalingPolicy::IGNORE);
+	Canvas builtFrameCanvas(size, CanvasScalingPolicy::IGNORE);
+	normalFrameCanvas.drawColor(Rect(Point(0, 0), size), ColorRGBA());
+	builtFrameCanvas.drawColor(Rect(Point(0, 0), size), ColorRGBA());
+	normalFrameCanvas.draw(originalNormal, Point(0, 0));
+	builtFrameCanvas.draw(originalBuilt, Point(0, 0));
+
+	auto result = ENGINE->renderHandler().createImage(size, CanvasScalingPolicy::IGNORE);
+	Canvas canvas = result->getCanvas();
+	canvas.drawColor(Rect(Point(0, 0), size), ColorRGBA());
+	canvas.draw(authored, Point(0, 0));
+
+	for(int y = 0; y < size.y; ++y)
+	{
+		for(int x = 0; x < size.x; ++x)
+		{
+			const Point pixel(x, y);
+			const ColorRGBA normal = normalFrameCanvas.getPixel(pixel);
+			const ColorRGBA built = builtFrameCanvas.getPixel(pixel);
+			if(normal != built)
+				canvas.drawPoint(pixel, built);
+		}
+	}
+
+	return result;
+}
+
+AssetGenerator::CanvasPtr AssetGenerator::createAcademyMapLayer(
+	const AnimationPath & originalAnimation,
+	size_t frame,
+	EImageBlitMode layer) const
+{
+	static constexpr int MAP_IMAGE_SIZE = 192;
+	const Point size(MAP_IMAGE_SIZE, MAP_IMAGE_SIZE);
+	const AnimationPath originalDef = originalAnimation.addPrefix("SPRITES/");
+	if(!CResourceHandler::get()->existsResource(originalDef))
+		return nullptr;
+
+	ImageLocator locator(originalAnimation, static_cast<int>(frame), 0, layer);
+	locator.scalingFactor = 1;
+	const auto originalLayer = ENGINE->renderHandler().loadImage(locator);
+	if(!originalLayer || originalLayer->dimensions() != size)
+	{
+		logGlobal->warn("New Horizons Academy town layer from %s does not match the required %d-pixel map canvas",
+			originalAnimation.getOriginalName(), MAP_IMAGE_SIZE);
+		return nullptr;
+	}
+
+	auto result = ENGINE->renderHandler().createImage(size, CanvasScalingPolicy::IGNORE);
+	Canvas canvas = result->getCanvas();
+	canvas.drawColor(Rect(Point(0, 0), size), ColorRGBA());
+	canvas.draw(originalLayer, Point(0, 0));
+	return result;
 }
 
 void AssetGenerator::loadMenuTitleArtMetadata() const
