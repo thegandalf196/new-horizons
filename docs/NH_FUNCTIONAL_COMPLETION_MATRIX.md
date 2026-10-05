@@ -1,6 +1,17 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-05
+Mandate of Heaven source/native accepted. Existing total-completed-pair history
+supports one free first sequence through the selected Expert four-pair cap;
+ordinary caps and first-pair Reserve recovery are unchanged. Both-target25480
+exits0; native55540 passes49/49 in6.848s, zero skips, including actual four-pair,
+inactive saved selection, detached/accepted AI and count4 compatibility cases.
+Data/inventory19/19, module drift, Order/sidebar guards and independent review
+pass. Perks221->222/310, faction69->70/90, Divine Mandate4->5/10. Ranks93/93
+and combat identities61/67 unchanged. Broad interactions and rendered/playable
+delivery remain separate. Evidence: UP108-heaven-build.log and
+UP108-heaven-native.log/XML. Next unblocked slice: Purifying Mandate.
+
 Knightly Sequence source/native accepted: selected Divine Mandate Spell cost
 is reduced2 after Wisdom with a minimum1; selected Divine Mandate Orders capture
 their own5-point efficiency contribution. Sacred10 and Knightly5 compose without

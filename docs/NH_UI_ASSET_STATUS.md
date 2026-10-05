@@ -2,6 +2,12 @@
 
 Last audited: 2026-10-04
 
+2026-10-05 Mandate of Heaven integration: the generic Divine Mandate resource
+row already uses the shared dynamic cap. Completed-pair history must remain
+visible if a later rank/perk change lowers that cap; only remaining uses clamp
+to zero. No layout, background, icon or artwork changes are required. Its
+NH_perk_neutral fallback remains Not done art; focused acceptance is in UP108.
+
 2026-10-05 Knightly Sequence integration: existing Order numerical previews
 and their cache key consume the combined captured Divine Mandate efficiency,
 with Sacred and Knightly provenance kept separate. No layout/material/art change

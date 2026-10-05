@@ -27,6 +27,9 @@
 /// (such as spell school or a distinct Order ID) remain a future extension seam.
 struct DLL_LINKAGE HeroActionAllowanceState
 {
+	static constexpr uint8_t MAX_DIVINE_MANDATE_COMPLETED_PAIRS = 4;
+	static constexpr uint8_t MAX_DIVINE_MANDATE_COMPLETED_PAIRS_WITHOUT_MANDATE_OF_HEAVEN = 3;
+
 	enum class ActionKind : uint8_t
 	{
 		SPELL,
@@ -276,7 +279,8 @@ struct DLL_LINKAGE HeroActionAllowanceState
 	{
 		if(currentRound < -1 || nextGrantId == 0 || (currentRound == -1 && !grants.empty()))
 			throw std::runtime_error("Invalid Hero Action allowance ledger shape");
-		if(divineMandateCompletedPairs > 3 || (currentRound == -1 && divineMandateCompletedPairs != 0))
+		if(divineMandateCompletedPairs > MAX_DIVINE_MANDATE_COMPLETED_PAIRS
+			|| (currentRound == -1 && divineMandateCompletedPairs != 0))
 			throw std::runtime_error("Invalid Divine Mandate completed-pair count");
 
 		uint32_t previousId = 0;
@@ -320,6 +324,10 @@ struct DLL_LINKAGE HeroActionAllowanceState
 				return grant.source == GrantSource::DIVINE_MANDATE;
 			})))
 			throw std::runtime_error("Cannot discard Divine Mandate battle state");
+		if(h.saving
+			&& divineMandateCompletedPairs > MAX_DIVINE_MANDATE_COMPLETED_PAIRS_WITHOUT_MANDATE_OF_HEAVEN
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_MANDATE_OF_HEAVEN))
+			throw std::runtime_error("Cannot discard the Mandate of Heaven extended pair count");
 		if(h.saving)
 			validateShape();
 		h & currentRound;
@@ -335,6 +343,10 @@ struct DLL_LINKAGE HeroActionAllowanceState
 			h & divineMandateCompletedPairs;
 		else if(!h.saving)
 			divineMandateCompletedPairs = 0;
+		if(!h.saving
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_MANDATE_OF_HEAVEN)
+			&& divineMandateCompletedPairs > MAX_DIVINE_MANDATE_COMPLETED_PAIRS_WITHOUT_MANDATE_OF_HEAVEN)
+			throw std::runtime_error("Pre-Mandate of Heaven save contains an extended Divine Mandate pair count");
 		if(!h.saving)
 			validateShape();
 	}
@@ -446,7 +458,8 @@ struct DLL_LINKAGE DivineMandateTransition
 		using Source = Ledger::GrantSource;
 
 		ledger.validateShape();
-		if(round < 0 || ledger.currentRound != round || receipt.round != round || maximumPairs > 3)
+		if(round < 0 || ledger.currentRound != round || receipt.round != round
+			|| maximumPairs > Ledger::MAX_DIVINE_MANDATE_COMPLETED_PAIRS)
 			throw std::invalid_argument("Invalid Divine Mandate accepted-action context");
 
 		auto next = ledger;

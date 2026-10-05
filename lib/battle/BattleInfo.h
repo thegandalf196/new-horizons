@@ -155,6 +155,11 @@ public:
 		return sides[BattleSide::ATTACKER].hasKnightlySequenceOrderState()
 			|| sides[BattleSide::DEFENDER].hasKnightlySequenceOrderState();
 	}
+	bool hasMandateOfHeavenState() const
+	{
+		return sides[BattleSide::ATTACKER].hasMandateOfHeavenState()
+			|| sides[BattleSide::DEFENDER].hasMandateOfHeavenState();
+	}
 	std::optional<FocusFireState> getFocusFireState(BattleSide side) const override { return sides.at(side).focusFire; }
 	/// Drop decode-only legacy Doctrine state and its battle-long bonuses.
 	/// Round Order bonuses are intentionally preserved.
@@ -260,6 +265,9 @@ public:
 		{
 			for(const auto & side : sides)
 			{
+				if(side.hasMandateOfHeavenState()
+					&& !h.hasFeature(Handler::Version::NEW_HORIZONS_MANDATE_OF_HEAVEN))
+					throw std::runtime_error("Cannot discard the Mandate of Heaven pair count in an older battle format");
 				side.validateOrderStates();
 				side.validateDoubleCommandState();
 				side.validatePreCombatOrderState();

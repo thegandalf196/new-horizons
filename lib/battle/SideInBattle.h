@@ -351,6 +351,11 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			return order.knightlySequenceEfficiencyBonusPercent != 0;
 		});
 	}
+	bool hasMandateOfHeavenState() const
+	{
+		return heroActionAllowances.divineMandateCompletedPairs
+			> HeroActionAllowanceState::MAX_DIVINE_MANDATE_COMPLETED_PAIRS_WITHOUT_MANDATE_OF_HEAVEN;
+	}
 
 	void init(const CGHeroInstance * Hero, const CArmedInstance * Army, const CGTownInstance * town);
 	const CArmedInstance * getArmy() const;
@@ -364,6 +369,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		if(h.saving && hasKnightlySequenceOrderState()
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_KNIGHTLY_SEQUENCE))
 			throw std::runtime_error("Cannot discard Knightly Sequence battle Order state");
+		if(h.saving && hasMandateOfHeavenState()
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_MANDATE_OF_HEAVEN))
+			throw std::runtime_error("Cannot discard the Mandate of Heaven pair count");
 		if(h.saving && firstRoundMoraleModifier != 0
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_FORCED_MARCH))
 			throw std::runtime_error("Cannot discard first-round battle Morale modifier");

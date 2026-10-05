@@ -53,6 +53,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info && info->hasKnightlySequenceOrderState()
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_KNIGHTLY_SEQUENCE))
 			throw std::runtime_error("Cannot discard Knightly Sequence state from BattleStart");
+		if(h.saving && info && info->hasMandateOfHeavenState()
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_MANDATE_OF_HEAVEN))
+			throw std::runtime_error("Cannot discard the Mandate of Heaven pair count from BattleStart");
 		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_ELEMENTAL_REBIRTH)
 			&& info->hasElementalRebirthBasisState())
 			throw std::runtime_error("Cannot discard Elemental Rebirth battle-start HP basis from BattleStart");

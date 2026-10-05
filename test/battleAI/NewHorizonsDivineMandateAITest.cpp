@@ -10,12 +10,14 @@
 
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
+#include "../../AI/BattleAI/StackWithBonuses.h"
 #include "../../lib/GameConstants.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/IGameSettings.h"
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/HeroActionAllowanceState.h"
+#include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -27,6 +29,9 @@ namespace
 {
 constexpr auto divineMandateSkill = "new-horizons:divineMandate";
 constexpr auto chaplainsReservePerk = "new-horizons:divineMandate.chaplainSReserve";
+constexpr auto sacredCommandPerk = "new-horizons:divineMandate.sacredCommand";
+constexpr auto knightlySequencePerk = "new-horizons:divineMandate.knightlySequence";
+constexpr auto mandateOfHeavenPerk = "new-horizons:divineMandate.mandateOfHeaven";
 using Ledger = HeroActionAllowanceState;
 using ActionKind = Ledger::ActionKind;
 using AllowanceKind = Ledger::AllowanceKind;
@@ -107,21 +112,40 @@ protected:
 		for(const auto * rank : {"basic", "advanced", "expert"})
 			perks["skills"][divineMandateSkill]["ranks"][rank]["effect"]["status"].String() = "active";
 		bool foundChaplainReserve = false;
+		bool foundSacredCommand = false;
+		bool foundKnightlySequence = false;
+		bool foundMandateOfHeaven = false;
 		for(auto & perk : perks["skills"][divineMandateSkill]["perks"].Vector())
 		{
-			if(perk["id"].String() == chaplainsReservePerk)
+			const auto & id = perk["id"].String();
+			if(id == chaplainsReservePerk)
 			{
 				perk["effect"]["status"].String() = "active";
 				foundChaplainReserve = true;
-				break;
+			}
+			else if(id == sacredCommandPerk)
+			{
+				perk["effect"]["status"].String() = "active";
+				foundSacredCommand = true;
+			}
+			else if(id == knightlySequencePerk)
+			{
+				perk["effect"]["status"].String() = "active";
+				foundKnightlySequence = true;
+			}
+			else if(id == mandateOfHeavenPerk)
+			{
+				perk["effect"]["status"].String() = "active";
+				foundMandateOfHeaven = true;
 			}
 		}
-		if(!foundChaplainReserve)
-			throw std::runtime_error("Missing Chaplain's Reserve registry entry");
+		if(!foundChaplainReserve || !foundSacredCommand || !foundKnightlySequence || !foundMandateOfHeaven)
+			throw std::runtime_error("Missing Divine Mandate perk registry entry");
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perks));
 	}
 
-	void prepareBattle(MasteryLevel::Type rank, bool selectChaplainReserve = false)
+	void prepareBattle(MasteryLevel::Type rank, bool selectChaplainReserve = false,
+		bool selectMandateOfHeaven = false)
 	{
 		startGame();
 		ASSERT_EQ(attackerSideHero->getFactionID(), FactionID::CASTLE);
@@ -149,6 +173,17 @@ protected:
 			ASSERT_EQ(attackerSideHero->getNormalSpellPoints(), normalCapacity - 3);
 			ASSERT_EQ(attackerSideHero->getBufferSpellPoints(), 20);
 		}
+		if(selectMandateOfHeaven)
+		{
+			ASSERT_EQ(rank, MasteryLevel::EXPERT)
+				<< "Mandate of Heaven requires Expert Divine Mandate";
+			attackerSideHero->applyPerkSelection({divineMandateSkill, sacredCommandPerk});
+			attackerSideHero->applyPerkSelection({divineMandateSkill, knightlySequencePerk});
+			attackerSideHero->applyPerkSelection({divineMandateSkill, mandateOfHeavenPerk});
+			ASSERT_TRUE(attackerSideHero->hasActivePerk(divineMandateSkill, sacredCommandPerk));
+			ASSERT_TRUE(attackerSideHero->hasActivePerk(divineMandateSkill, knightlySequencePerk));
+			ASSERT_TRUE(attackerSideHero->hasActivePerk(divineMandateSkill, mandateOfHeavenPerk));
+		}
 
 		startBattle();
 		BattleUnitsChanged changes;
@@ -175,7 +210,7 @@ protected:
 		environment = std::make_shared<DivineMandateAIEnvironment>(gameState());
 		const auto status = battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER);
 		ASSERT_TRUE(status.active);
-		EXPECT_EQ(status.maximumPairs, static_cast<uint8_t>(rank));
+		EXPECT_EQ(status.maximumPairs, static_cast<uint8_t>(rank + (selectMandateOfHeaven ? 1 : 0)));
 	}
 
 	bool issueSpell(SpellID spell)
@@ -285,9 +320,77 @@ TEST_F(NewHorizonsDivineMandateAITest, CreatureActionDoesNotCancelAnUnusedFollow
 	EXPECT_EQ(afterCreatureAction.pendingFollowup->allowance, AllowanceKind::SPELL);
 }
 
-TEST(NewHorizonsDivineMandateLedgerTest, CompletedPairCapsAreOneTwoAndThreeAndDoNotRecurse)
+TEST_F(NewHorizonsDivineMandateAITest, MandateOfHeavenAllowsTheFourthPairThroughDetachedAIProjection)
 {
-	for(uint8_t maximumPairs = 1; maximumPairs <= 3; ++maximumPairs)
+	prepareBattle(MasteryLevel::EXPERT, false, true);
+
+	for(uint8_t completedPairs = 0; completedPairs < 3; ++completedPairs)
+	{
+		if(completedPairs != 0)
+			advanceRound();
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+			BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE)));
+		ASSERT_TRUE(battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER).pendingFollowup);
+		ASSERT_TRUE(issueSpell(SpellID(SpellID::BLESS)));
+		EXPECT_EQ(battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER).completedPairs,
+			completedPairs + 1);
+	}
+
+	auto status = battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER);
+	ASSERT_EQ(status.maximumPairs, 4);
+	ASSERT_EQ(status.completedPairs, 3);
+
+	advanceRound();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE)));
+	status = battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER);
+	ASSERT_TRUE(status.pendingFollowup);
+	ASSERT_EQ(status.pendingFollowup->source, GrantSource::DIVINE_MANDATE);
+	ASSERT_EQ(status.pendingFollowup->allowance, AllowanceKind::SPELL);
+	const auto liveLedgerBeforeProjection = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+
+	auto subject = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	HypotheticBattle projection(environment.get(), subject);
+	const auto projectedStatus = projection.battleGetDivineMandateStatus(BattleSide::ATTACKER);
+	EXPECT_EQ(projectedStatus.maximumPairs, 4);
+	EXPECT_EQ(projectedStatus.completedPairs, 3);
+	ASSERT_TRUE(projectedStatus.pendingFollowup);
+	EXPECT_EQ(projectedStatus.pendingFollowup->source, GrantSource::DIVINE_MANDATE);
+	EXPECT_EQ(projection.getHeroActionAllowances(BattleSide::ATTACKER).divineMandateCompletedPairs, 3);
+	const auto projectedSpell = projection.battleGetSpellActionAllowance(BattleSide::ATTACKER,
+		SpellID(SpellID::BLESS));
+	ASSERT_TRUE(projectedSpell);
+	EXPECT_EQ(projectedSpell->source, GrantSource::DIVINE_MANDATE);
+	EXPECT_EQ(battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER).completedPairs, 3)
+		<< "Detached status reads the copied ledger without changing authoritative progress";
+
+	callback->heroActions.clear();
+	ASSERT_TRUE(runEvaluator());
+	ASSERT_EQ(callback->heroActions.size(), 1u);
+	const auto selected = callback->heroActions.front();
+	ASSERT_EQ(selected.actionType, EActionType::HERO_SPELL);
+	EXPECT_EQ(selected.spell, SpellID(SpellID::BLESS));
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER).divineMandateCompletedPairs, 3)
+		<< "AI evaluation is detached and leaves the server ledger untouched";
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), liveLedgerBeforeProjection);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), selected));
+	status = battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER);
+	EXPECT_EQ(status.completedPairs, 4);
+	EXPECT_FALSE(status.pendingFollowup);
+
+	advanceRound();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE)));
+	status = battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER);
+	EXPECT_EQ(status.maximumPairs, 4);
+	EXPECT_EQ(status.completedPairs, 4);
+	EXPECT_FALSE(status.pendingFollowup) << "No fifth pair follows after the free fourth pair";
+	EXPECT_FALSE(battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID(SpellID::BLESS)));
+}
+
+TEST(NewHorizonsDivineMandateLedgerTest, CompletedPairCapsAreOneThroughFourAndDoNotRecurse)
+{
+	for(uint8_t maximumPairs = 1; maximumPairs <= 4; ++maximumPairs)
 	{
 		Ledger ledger;
 		int32_t round = 1;

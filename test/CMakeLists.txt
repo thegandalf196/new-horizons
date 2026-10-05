@@ -200,6 +200,8 @@ set(test_SRCS
 		server/battles/NewHorizonsSacredCommandPacketsTest.cpp
 		server/battles/NewHorizonsKnightlySequenceTest.cpp
 		server/battles/NewHorizonsKnightlySequencePacketsTest.cpp
+		server/battles/NewHorizonsMandateOfHeavenTest.cpp
+		server/battles/NewHorizonsMandateOfHeavenPacketsTest.cpp
 		server/battles/NewHorizonsFrailtyTest.cpp
 		server/battles/LifeDrainTest.cpp
 		server/battles/SoulStealTest.cpp

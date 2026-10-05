@@ -1006,8 +1006,9 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 					const auto mandate = battleCallback->battleGetDivineMandateStatus(side);
 					if(!mandate.active || mandate.maximumPairs == 0)
 						continue;
-					const auto completed = std::min<unsigned>(mandate.completedPairs, mandate.maximumPairs);
-					const auto remaining = static_cast<unsigned>(mandate.maximumPairs) - completed;
+					const auto completed = static_cast<unsigned>(mandate.completedPairs);
+					const auto remaining = completed < mandate.maximumPairs
+						? static_cast<unsigned>(mandate.maximumPairs) - completed : 0u;
 					value = std::to_string(remaining) + " / " + std::to_string(mandate.maximumPairs);
 					std::string details = "Completed Spell/Order pairs this combat: "
 						+ std::to_string(completed) + " of " + std::to_string(mandate.maximumPairs)

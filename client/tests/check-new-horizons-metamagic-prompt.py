@@ -104,6 +104,10 @@ assert "battleCanUseMetamagicFollowup(metamagicSide, mySpell->id)" in spellbook
 assert "battleGetSpellActionAllowance(side, spell)" in spellbook
 assert "canUseSpellForCurrentDivineMandateFollowup(mySpell->id)" in spellbook
 assert "DIVINE_MANDATE_USES" in window
+mandate_status = window.split("case CSkill::CombatStatusProvider::DIVINE_MANDATE_USES:", 1)[1].split("providerDetails =", 1)[0]
+assert "static_cast<unsigned>(mandate.completedPairs)" in mandate_status
+assert "completed < mandate.maximumPairs" in mandate_status
+assert "std::min" not in mandate_status, "Completed pairs are history, not a clamped remaining-use count"
 assert "METAMAGIC_ARCANE_ECONOMY" in spellbook
 assert "owner->myHero);" in spellbook.split("const bool canCast", 1)[1].split("if(canCast)", 1)[0]
 

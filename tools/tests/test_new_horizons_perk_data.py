@@ -17,6 +17,7 @@ RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
     "new-horizons:divineMandate.sacredCommand",
     "new-horizons:divineMandate.knightlySequence",
+    "new-horizons:divineMandate.mandateOfHeaven",
     "new-horizons:divineMandate.consecratedCasting",
     "new-horizons:divineMandate.chaplainSReserve",
     "new-horizons:elementalRebirth.primalBurst",

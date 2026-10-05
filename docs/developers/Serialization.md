@@ -1,5 +1,18 @@
 # Serialization
 
+## Mandate of Heaven completed-pair cap (source/native accepted)
+
+`NEW_HORIZONS_MANDATE_OF_HEAVEN` permits the existing Divine Mandate completed-
+pair count to reach4. It appends no fields and does not introduce a second
+once-per-combat flag. Expert heroes with the selected active perk derive a
+four-pair cap; other existing rank caps are unchanged. Completed history remains
+total accepted pairs rather than a mutable remaining-use counter.
+Count0–3 preserves the existing layout. Unsupported old direct and enclosing
+writers must reject count4 before payload bytes; old-format reads must not
+accept an out-of-format fourth pair. Current history is not clamped if later
+rank/perk changes lower the derived cap: further grants fail closed instead.
+This does not lift whole-battle health/provenance save restrictions. See UP108.
+
 ## Knightly Sequence Order efficiency (source/native accepted)
 
 `NEW_HORIZONS_KNIGHTLY_SEQUENCE` appends the separate

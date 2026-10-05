@@ -62,6 +62,9 @@ uint8_t divineMandateMaximumPairs(const CGHeroInstance * hero)
 	const auto & rankEffect = perkRules["skills"]["new-horizons:divineMandate"]["ranks"][rankNames[rank]]["effect"];
 	if(rankEffect["status"].String() != "active")
 		return 0;
+	if(rank == 3 && hero->hasActivePerk("new-horizons:divineMandate",
+		"new-horizons:divineMandate.mandateOfHeaven"))
+		return 4;
 	return static_cast<uint8_t>(rank);
 }
 
