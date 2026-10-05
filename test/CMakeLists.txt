@@ -12,6 +12,21 @@ add_test(NAME nhHeroDevelopmentNavigationTest COMMAND nhHeroDevelopmentNavigatio
 add_executable(nhStackInfoPanelHoverStateTest ../client/tests/StackInfoPanelHoverStateTest.cpp)
 add_test(NAME nhStackInfoPanelHoverStateTest COMMAND nhStackInfoPanelHoverStateTest)
 
+# Reproduce the Academy built-town-icon load path with every scaling factor. The
+# SDL dummy backend keeps the renderer bootstrap isolated from the host display.
+if(TARGET vcmisdl2 AND UNIX AND NOT APPLE AND NOT ENABLE_SDL3)
+	add_executable(nhAcademyBuiltIconRuntimeTest ../client/tests/AcademyBuiltIconRuntimeTest.cpp)
+	target_link_libraries(nhAcademyBuiltIconRuntimeTest PRIVATE vcmisdl2)
+	vcmi_set_output_dir(nhAcademyBuiltIconRuntimeTest "")
+	add_test(NAME nhAcademyBuiltIconRuntimeTest COMMAND nhAcademyBuiltIconRuntimeTest)
+	set_tests_properties(nhAcademyBuiltIconRuntimeTest PROPERTIES
+		WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+		TIMEOUT 60
+		SKIP_RETURN_CODE 77
+		ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy;SDL_RENDER_DRIVER=software"
+	)
+endif()
+
 set(VCMI_GOOGLETEST_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/googletest" CACHE PATH
 	"GoogleTest source directory (bundled submodule or installed local sources)")
 set(googleTest_Dir "${VCMI_GOOGLETEST_SOURCE_DIR}")

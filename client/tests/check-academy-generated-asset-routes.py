@@ -36,6 +36,7 @@ for generated, frame_pair in ICON_ROUTES.items():
 assert "normalFrameCanvas.getPixel(pixel)" in GENERATOR
 assert "builtFrameCanvas.getPixel(pixel)" in GENERATOR
 assert "canvas.drawPoint(pixel, built)" in GENERATOR
+assert "locator.originalDefFrame = true;" in GENERATOR
 assert "createAcademyTownIconBuiltToday" in HEADER
 assert 'authoredPath.addPrefix("SPRITES/")' in GENERATOR
 assert 'authoredPath.addPrefix("DATA/")' in GENERATOR
@@ -52,6 +53,18 @@ for backend in (SDL2, SDL3):
     assert base_load.index("assetGenerator->generateImage(imagePath)") < base_load.index("existsResource(imagePathSprites)")
     assert "locator.scalingFactor == 1 && assetGenerator->preferGeneratedImage(imagePath)" in scaled_load
     assert "!preferGeneratedImage" in scaled_load
+    assert "if(locator.originalDefFrame)\n\t\treturn nullptr;" in scaled_load
+
+for backend_path in (
+    ROOT / "clientsdl2/render/ScalableImage.cpp",
+    ROOT / "clientsdl3/render/ScalableImage.cpp",
+):
+    backend = backend_path.read_text(encoding="utf-8")
+    load_or_generate = backend.split("ScalableImageShared::loadOrGenerateImage", 1)[1].split("ScalableImageShared::", 1)[0]
+    assert "loadingLocator.originalDefFrame = locator.originalDefFrame;" in load_or_generate
+
+assert "bool originalDefFrame = false;" in (ROOT / "client/render/ImageLocator.h").read_text(encoding="utf-8")
+assert "if(originalDefFrame != other.originalDefFrame)" in (ROOT / "client/render/ImageLocator.cpp").read_text(encoding="utf-8")
 
 MAP_ROUTES = {
     "NH_ACADEMY_VILLAGE_BODY": "AVCTOWR0",

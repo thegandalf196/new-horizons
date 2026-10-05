@@ -64,6 +64,8 @@ bool SharedImageLocator::operator < (const SharedImageLocator & other) const
 		return defGroup < other.defGroup;
 	if(defFrame != other.defFrame)
 		return defFrame < other.defFrame;
+	if(originalDefFrame != other.originalDefFrame)
+		return originalDefFrame < other.originalDefFrame;
 	if(layer != other.layer)
 		return layer < other.layer;
 	if(generateShadow != other.generateShadow)

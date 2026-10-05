@@ -281,6 +281,7 @@ AssetGenerator::CanvasPtr AssetGenerator::createAcademyTownIconBuiltToday(
 	{
 		ImageLocator locator(originalAnimation, static_cast<int>(frame), 0, EImageBlitMode::COLORKEY);
 		locator.scalingFactor = 1;
+		locator.originalDefFrame = true;
 		return ENGINE->renderHandler().loadImage(locator);
 	};
 

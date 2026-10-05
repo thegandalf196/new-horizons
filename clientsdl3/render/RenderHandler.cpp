@@ -361,6 +361,9 @@ void RenderHandler::storeCachedImage(const ImageLocator & locator, std::shared_p
 
 std::shared_ptr<SDLImageShared> RenderHandler::loadScaledImage(const ImageLocator & locator)
 {
+	if(locator.originalDefFrame)
+		return nullptr;
+
 	static constexpr std::array scaledDataPath = {
 		"", // 0x
 		"DATA/",

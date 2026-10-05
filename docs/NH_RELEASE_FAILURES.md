@@ -2,6 +2,31 @@
 
 ## Purpose
 
+### 2026-10-05 UP237 — Built-town icon recursion at scaled UI
+
+Academy Town Hall construction succeeds in the simulation, then crashes the
+client while refreshing the built-today town-list icon. Loading a compositor's
+original DEF frames at nominal scale 1 is insufficient to avoid recursion:
+`ScalableImageShared` eagerly loads the current screen's scale. At scales 2–4,
+the scaled DEF lookup resolves the faction's animation alias and re-enters the
+same compositor before its cache entry has been stored. Repeated normal-image
+loads and a runNetwork stack-overflow-shaped kernel fault identify this path.
+
+Original-frame locators must retain their raw-frame intent through scaled loads
+and have a separate cache identity. Both SDL backends now bypass aliases and HD
+substitution for these locators, scaling the decoded native pixels instead.
+Headless new-game initialization cannot cover this client-renderer path; require
+the focused dummy-SDL consumer check at screen scales 1–4. Keep user crash logs
+and purchaser-native comparison images in ignored validation directories.
+
+Focused runtime verification passes with zero skips: all four built icons at
+scales 1–4, expected native dimensions and marker differences confined to the
+lower-right region. The standalone fixture links the client/backend libraries;
+its initial setup needed the concrete screen interface, a standalone fatal-error
+handler and the standard bin output directory for the matching shared library.
+These were fixture bootstrap failures, not additional production regressions.
+The SDL dummy driver and temporary profile avoid host-display/input automation.
+
 ### 2026-10-05 UP235 — Academy resource consumer and validation paths
 
 Animation JSON aliases do not replace siege images loaded through `ImagePath`.

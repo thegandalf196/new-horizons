@@ -33,6 +33,8 @@ struct SharedImageLocator
 	std::optional<AnimationPath> defFile;
 	int defFrame = -1;
 	int defGroup = -1;
+	/// Load this exact DEF frame only; do not substitute an animation-layout alias or HD variant.
+	bool originalDefFrame = false;
 	EImageBlitMode layer = EImageBlitMode::OPAQUE;
 
 	std::optional<ShadowMode> generateShadow;
