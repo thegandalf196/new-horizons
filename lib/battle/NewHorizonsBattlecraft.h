@@ -12,6 +12,7 @@ class CGHeroInstance;
 namespace battle
 {
 class CUnitState;
+class Unit;
 }
 
 namespace newHorizonsBattlecraft
@@ -19,6 +20,9 @@ namespace newHorizonsBattlecraft
 DLL_LINKAGE int rank(const CGHeroInstance * hero);
 DLL_LINKAGE int rankPercent(int rank);
 DLL_LINKAGE bool hasEntrench(const CGHeroInstance * hero);
+DLL_LINKAGE bool hasPreemptiveStrike(const CGHeroInstance * hero);
+DLL_LINKAGE int preemptiveStrikeDamagePercent(const CGHeroInstance * defenderHero,
+	const battle::Unit * defender, int32_t round);
 DLL_LINKAGE int defendReductionPercent(const CGHeroInstance * hero);
 /// Speed granted only when an active Basic Reserve perk's ordinary creature
 /// takes its delayed TURN_QUEUE activation after Waiting.

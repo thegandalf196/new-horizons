@@ -1,6 +1,22 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-05
+Pre-emptive Strike accepted: Advanced Battlecraft now dispatches a separate50%
+pre-hit against the first eligible incoming melee per Defending stack each
+round, retaining normal retaliation. Independent copied/replicated round state
+survives re-Defend, with lazy next-round eligibility and old-writer fail-closed
+guards. Shared eligibility excludes disabled/Time Stopped stacks; ordinary
+physical Magog melee remains eligible. Detached AI forecasts, exchange merge
+and Defend valuation exercise the same rule without live mutation. Both-target
+67320 and fixture-only retry4257 pass; focused99767 passes22/22 in6.291s,
+zero skips, including seven new cases. Initial17/22 fixture failures are retained
+in the failure ledger. Data/inventory19/19, module drift and independent review
+pass. Coverage224->225/310 perks, generic153->154/220, Battlecraft6->7/10;
+faction71/90 and combat identities61/67 unchanged. Wider Bulwark composition,
+comparative Defend value and full midbattle world saves remain Phase2. No GUI,
+artwork approval or Linux promotion. Metamagic/Gating source audits identify
+their existing consumers; those ledger corrections earn no new identities.
+
 Unmanned defensive-tower output accepted: a town without a defending hero now
 uses the saved v3+ defensiveTowerDamage formula at Siege0, canonical base60.
 Shared live/preview calculation reads town-world rules, never the attacking
@@ -2561,7 +2577,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | All three ranks per Skill are active; many registered Skills still lack complete perk progression. |
 | Skill rank effects active | 93/93 | Elemental Rebirth's three ranks now have source/native and owning-side AI evidence. Active status does not certify every wider interaction. |
-| Skill perks active | 224/310 | 86 planned; Frenzied Curse is the newest source/native-verified activation. Diplomacy is 7/10; Chaos Magic 5/10; Necromancy 10/10; Learning 3/10; Estates 6/10; Battlecraft 6/10; Logistics 8/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 225/310 | 85 planned; Pre-emptive Strike is the newest source/native-verified activation. Generic154/220, faction71/90. Diplomacy is 7/10; Chaos Magic 5/10; Necromancy 10/10; Learning 3/10; Estates 6/10; Battlecraft 7/10; Logistics 8/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 27/27 | All nine faction rank foundations are active; their remaining perks and wider integration are separate work. |
 | Faction perks active | 71/90 | 19 planned perks; Divine Mandate has six accepted perks, including Expert Mandate of Heaven and Advanced Purifying Mandate; Elemental Rebirth has three accepted perks with normal Basic-to-Advanced selection and live/detached evidence. |
 | Canonical combat-spell identities registered | 61/67 | 6 missing/inactive; Puppet Master is the newest source/native-verified identity. Chaos is 7/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -2795,7 +2811,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Offense | 3/0 | 10/0 | Evidence audit required |
 | Armorer | 3/0 | 7/3 | Bastion, Formation Fighting and Veteran have focused live/detached damage evidence. Three perks missing; Last Stand and Defiant await design choices. |
 | Archery | 3/0 | 10/0 | All ten perks are active; focused evidence pending |
-| Battlecraft | 3/0 | 6/4 | Entrench, Reserve, Passing Lines, Tactics, Redeployment and Grand Tactics active. Focused native evidence covers delayed movement, friendly transit and initial/final deployment ordering; rendered/actualAI deployment execution remains Phase2. Four perks remain planned. |
+| Battlecraft | 3/0 | 7/3 | Pre-emptive Strike joins Entrench, Reserve, Passing Lines, Tactics, Redeployment and Grand Tactics. UP157 focused22/22 zero skips covers accepted pre-hit50%, retained retaliation, same-round re-Defend/next-round eligibility, disabled/ranged/no-perk controls, replicated state and detached AI exchange/Defend hooks. Broader Bulwark composition and rendered/actualAI deployment execution remain Phase2. Three perks remain planned. |
 | War Machines | 3/0 | 5/5 | Surgeon and Piercing Bolts have focused live/detached evidence; Fortification Engineer has real fortified-town manual-shot evidence; Master Gunner has accepted independently targeted second-shot evidence; Quartermaster has accepted half-output Ballista/Tent/Catapult extra-activation evidence. Five perks remain planned. Battlefield Medic persistence awaits clarification. |
 | Discipline | 3/0 | 7/3 | Steadfast joins Unbreakable, Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless with focused authoritative and detached evidence. Three perks remain planned; Esprit de Corps composition scope, Heroic Spirit activation timing and Veteran Cohesion HP reference await clarification. |
 | Recruitment | 3/0 | 6/4 | Four perks missing |
@@ -2816,9 +2832,9 @@ interactions, and rendered/playable acceptance remain separate.
 | Luck | 3/0 | 6/4 | Fortune's Favor, Lucky Aim, Second Chance, Gambler, Chain of Fortune and Twist of Fate source/native verified; four perks remain planned. |
 | Divine Mandate | 3/0 | 6/4 | Paired rank foundation, Chaplain's Reserve, Consecrated Casting, Sacred Command, Knightly Sequence, Mandate of Heaven and Purifying Mandate source/native verified; four perks remain missing. Legal progression reaches the implemented Expert perk. |
 | Sylvan Luck | 3/0 | 10/0 | Principal-path audit identifies consumers for all ten perks. Perfect Moment's missing automatic first eligible attack and +5 current-Luck threshold are repaired under UP023: client/native builds pass, focused19/19 zero skips, including server/AI/Skirmisher. Broader35-case run passes31 with four unrelated fixture/compatibility guard failures recorded for Phase2; this is not whole-family integration or playable acceptance. |
-| Metamagic | 3/0 | 10/0 | Evidence audit required |
+| Metamagic | 3/0 | 10/0 | Bounded source audit2026-10-05 identifies consumers for all ranks and ten active perks: HeroSpellAllowanceTransition, ISpellMechanics, BattleSpellMechanics, BaseMechanics, Focus Magic and GameStatePackVisitor; existing focused fixtures cover sequences, costs, duration, marks, closure rewards and automatic Grand continuation, including AI. No missing principal source clause verified. This audit did not rerun native tests or establish playable delivery; wider interactions remain Phase2. |
 | Shroud of Malassa | 3/0 | 6/4 | Basic Backstab/Ambusher/Shadow Assault and Advanced No Escape/Evasive Shroud/Night Prowler are active; four perks remain planned. Night Prowler has live/AI crossing, first-strike and unused-expiry evidence; its flying negative is predicate-only. |
-| Demonic Gating | 3/0 | 10/0 | Evidence audit required |
+| Demonic Gating | 3/0 | 10/0 | Bounded source audit2026-10-05 finds rank/category validation, all ten perk consumers in accepted Gate, arrival and result flows, and chooseDemonicGate AI rank/reserve/placement selection. Focused fixtures exist for accepted arrival, range, movement, timing, health, morale and continuation; Endless Legion has arithmetic-only evidence, not end-to-end result-path certification. No missing principal source clause verified. This audit did not rerun native tests or establish playable delivery; wider interactions remain Phase2. |
 | Necromancy | 3/0 | 10/0 | All ten perks are active. UP184/185/186/187/188/189 record accepted category conversion, Master of Bones, casualty-derived XP/Mana, atomic Ossuary fallback and Bone Dragon conversion evidence. Broader save/control/result-UI interactions and playable delivery remain separate. |
 | Bloodrage | 3/0 | 7/3 | War Drums, Fury Unbound, Endless Bloodshed, Unrelenting, Berserker, Blood Scent and Rage Through Pain have focused live/AI evidence and legal progression; First Blood, Slayer and Avatar of Rage remain planned. |
 | Bulwark of the Mire | 3/0 | 9/1 | Nine perks are active in committed source; 53/53 native regressions pass; persistent Poison status builds and passes focused tests; Deep Bulwark and rendered/playable evidence remain open |

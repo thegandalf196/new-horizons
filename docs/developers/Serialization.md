@@ -1,5 +1,21 @@
 # Serialization
 
+## Battlecraft Pre-emptive Strike round state (source/native accepted)
+
+`NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE` protects the new
+`CUnitState::battlecraftPreemptiveStrikeRound` carried in unit-state JSON.
+`-1` means no dispatched reaction; nonnegative values identify the last round
+in which this stack dispatched the Battlecraft reaction. Missing older JSON
+defaults to `-1`, and values below `-1` are invalid. State copies retain the
+stamp. Another Defend or round rollover does not reset it: availability compares
+the current round, independently of Bulwark's Defend-scoped marker.
+
+Populated unsupported direct `UnitChanges` and enclosing `BattleUnitsChanged`,
+`BattleStackAttacked`, `BattleAttack` and `StacksInjured` writers reject before
+their payload bytes. This extends replicated/detached combat state, not complete
+ongoing-battle world-save support. Principal execution/transport acceptance is
+tracked in UP157; existing casualty and form guards remain intact.
+
 ## Mandate of Heaven completed-pair cap (source/native accepted)
 
 `NEW_HORIZONS_MANDATE_OF_HEAVEN` permits the existing Divine Mandate completed-

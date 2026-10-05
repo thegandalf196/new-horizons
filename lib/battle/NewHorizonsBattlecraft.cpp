@@ -36,6 +36,24 @@ bool hasEntrench(const CGHeroInstance * hero)
 	return hero && hero->hasActivePerk("new-horizons:battlecraft", "new-horizons:battlecraft.entrench");
 }
 
+bool hasPreemptiveStrike(const CGHeroInstance * hero)
+{
+	return rank(hero) >= 2
+		&& hero->hasActivePerk("new-horizons:battlecraft", "new-horizons:battlecraft.preEmptiveStrike");
+}
+
+int preemptiveStrikeDamagePercent(const CGHeroInstance * defenderHero,
+	const battle::Unit * defender, int32_t round)
+{
+	if(round < 0 || !hasPreemptiveStrike(defenderHero) || !defender || !defender->canMove()
+		|| !defender->defended() || !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defender))
+		return 0;
+	const auto * state = dynamic_cast<const battle::CUnitState *>(defender);
+	if(!state || state->battlecraftPreemptiveStrikeRound == round)
+		return 0;
+	return 50;
+}
+
 int defendReductionPercent(const CGHeroInstance * hero)
 {
 	const int value = rankPercent(rank(hero));

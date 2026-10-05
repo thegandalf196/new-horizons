@@ -3750,7 +3750,7 @@
 								"requires": "advanced",
 								"description": "The first melee attack each round against a Defending friendly stack triggers a 50%-damage pre-emptive attack. This does not consume normal retaliation.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The first melee attack each round against a Defending friendly stack triggers a 50%-damage pre-emptive attack. This does not consume normal retaliation."
 								}
 							},

@@ -14,6 +14,7 @@
 #include "../../lib/CStack.h"
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/battle/NewHorizonsBattlecraft.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
@@ -519,6 +520,7 @@ float BattleExchangeVariant::trackAttack(
 		static_cast<battle::CAmmo &>(unitToUpdate->shots) = affectedUnit->shots;
 		static_cast<battle::CAmmo &>(unitToUpdate->counterAttacks) = affectedUnit->counterAttacks;
 		unitToUpdate->battlecraftWaitBonusUsed = affectedUnit->battlecraftWaitBonusUsed;
+		unitToUpdate->battlecraftPreemptiveStrikeRound = affectedUnit->battlecraftPreemptiveStrikeRound;
 		unitToUpdate->cleaveUsedThisActivation = affectedUnit->cleaveUsedThisActivation;
 		unitToUpdate->bulwarkPreemptiveUsed = affectedUnit->bulwarkPreemptiveUsed;
 		unitToUpdate->bulwarkMireGripApplied = affectedUnit->bulwarkMireGripApplied;

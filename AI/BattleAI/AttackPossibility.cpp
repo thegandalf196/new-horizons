@@ -864,7 +864,19 @@ AttackPossibility AttackPossibility::evaluate(
 					counterfire.attacker, counterfire.physicalDamage);
 			});
 		const bool ordinaryAttacker = newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attacker);
-		const bool mayReceiveBulwarkReaction = ordinaryAttacker && attackInfo.physicalDamage
+		const auto battlecraftPreemptivePercent = [state, currentRound](const battle::Unit * target)
+		{
+			return newHorizonsBattlecraft::preemptiveStrikeDamagePercent(
+				state->battleGetOwnerHero(target), target, currentRound);
+		};
+		const bool mayReceiveBattlecraftReaction = physicalCreatureAttack && defender && requestedDefender
+			&& !attackInfo.shooting
+			&& !attackInfo.bracePreemptive && attackInfo.preemptiveDamagePercent <= 0
+			&& ((state->battleMatchOwner(attacker, defender, false)
+				&& battlecraftPreemptivePercent(defender) > 0)
+				|| (state->battleMatchOwner(attacker, requestedDefender, false)
+					&& battlecraftPreemptivePercent(requestedDefender) > 0));
+		const bool mayReceiveBulwarkReaction = physicalCreatureAttack
 			&& !attackInfo.shooting && !attackInfo.retaliation
 			&& !attackInfo.bracePreemptive && attackInfo.preemptiveDamagePercent <= 0
 			&& (bulwarkPreemptivePercent(defender, *state) > 0
@@ -872,13 +884,12 @@ AttackPossibility AttackPossibility::evaluate(
 		const bool mayReflectBulwarkDamage = attackInfo.physicalDamage && ordinaryAttacker
 			&& (bulwarkReflectionBasisPoints(defender, *state, attackInfo.shooting) > 0
 				|| bulwarkReflectionBasisPoints(requestedDefender, *state, attackInfo.shooting) > 0);
-		const int bulwarkRound = state->battleGetRound();
 		const auto * defendedHero = state->battleGetOwnerHero(defender);
 		const auto defenderInitialState = defender->acquireState();
 		const bool projectsImmovable = attackInfo.physicalDamage && ordinaryAttacker
 			&& defender->defended() && newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defender)
 			&& newHorizonsBulwark::hasImmovable(defendedHero) && defenderInitialState
-			&& defenderInitialState->bulwarkImmovableRound != bulwarkRound;
+			&& defenderInitialState->bulwarkImmovableRound != currentRound;
 		const bool projectsSwampRenewal = attackInfo.physicalDamage && ordinaryAttacker
 			&& defender->defended() && newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defender)
 			&& newHorizonsBulwark::hasSwampRenewal(defendedHero);
@@ -907,7 +918,7 @@ AttackPossibility AttackPossibility::evaluate(
 			&& !attackerInitialState->bulwarkMireGripApplied;
 		const bool projectsBastion = projectsBastionOnAttack || projectsBastionOnRetaliation
 			|| projectsBastionOnCounterfire;
-		const bool projectsBulwarkEffects = mayReceiveBulwarkReaction || mayReflectBulwarkDamage
+		const bool projectsBulwarkEffects = mayReceiveBattlecraftReaction || mayReceiveBulwarkReaction || mayReflectBulwarkDamage
 			|| projectsImmovable || projectsSwampRenewal || projectsMireGrip;
 		if(ap.perfectMoment || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 				|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
@@ -1124,6 +1135,51 @@ AttackPossibility AttackPossibility::evaluate(
 			if(!ap.attackerState->alive() || strikeDefenderState == defenderStates.end()
 				|| !strikeDefenderState->second->alive()
 				|| (attackInfo.shooting && !ap.attackerState->canShoot()))
+				break;
+			if(physicalCreatureAttack && !attackInfo.shooting
+				&& !attackInfo.bracePreemptive && attackInfo.preemptiveDamagePercent <= 0
+				&& state->battleMatchOwner(ap.attackerState.get(), strikeDefenderState->second.get(), false))
+			{
+				const int preemptivePercent = newHorizonsBattlecraft::preemptiveStrikeDamagePercent(
+					state->battleGetOwnerHero(strikeDefenderState->second.get()),
+					strikeDefenderState->second.get(), currentRound);
+				if(preemptivePercent > 0)
+				{
+					// Consume only this detached recipient's first reaction for the
+					// current round. The reaction is a separate pre-hit strike and
+					// does not consume ordinary retaliation.
+					strikeDefenderState->second->battlecraftPreemptiveStrikeRound = currentRound;
+					BattleAttackInfo preemptive(strikeDefenderState->second.get(), ap.attackerState.get(), 0, false);
+					preemptive.retaliation = true;
+					preemptive.preemptiveDamagePercent = preemptivePercent;
+					preemptive.attackerPos = strikeDefenderState->second->getPosition();
+					preemptive.defenderPos = ap.attackerState->getPosition();
+					const auto preemptiveProvenance = battleAIDamageProvenance(
+						strikeDefenderState->second.get(), preemptive.physicalDamage);
+					auto requestedPreemptiveDamage = luckState.battleExpectedLuckDamage(preemptive);
+					auto appliedPreemptiveDamage = requestedPreemptiveDamage;
+					const auto projectedPreemptiveDamage = battleAIProjectDamage(
+						ap.attackerState.get(), requestedPreemptiveDamage, preemptiveProvenance);
+					ap.attackerDamageReduce += calculateDamageReduce(
+						strikeDefenderState->second.get(), ap.attackerState.get(),
+						projectedPreemptiveDamage.healthLoss, damageCache, state);
+					ap.attackerState->damage(appliedPreemptiveDamage, false, preemptiveProvenance);
+					if(fortunePreview)
+					{
+						FortuneStrikeProjection preemptiveStrike;
+						preemptiveStrike.attackerId = strikeDefenderState->second->unitId();
+						preemptiveStrike.defenderId = ap.attackerState->unitId();
+						preemptiveStrike.retaliation = true;
+						preemptiveStrike.damageProvenance = preemptiveProvenance;
+						preemptiveStrike.hits.emplace_back(ap.attackerState->unitId(), requestedPreemptiveDamage);
+						preemptiveStrike.resolvedHits.emplace_back(ap.attackerState->unitId(), appliedPreemptiveDamage);
+						captureAndProjectFortuneStrike(preemptive, preemptiveStrike.hits,
+							strikeDefenderState->second.get(), preemptiveStrike.resolvedLuck);
+						ap.fortuneStrikes.push_back(std::move(preemptiveStrike));
+					}
+				}
+			}
+			if(!ap.attackerState->alive())
 				break;
 			if(ordinaryAttacker && attackInfo.physicalDamage && !attackInfo.shooting
 				&& !attackInfo.retaliation && !attackInfo.bracePreemptive
@@ -1342,8 +1398,8 @@ AttackPossibility AttackPossibility::evaluate(
 				if(victimAttack.physicalDamage && ordinaryAttacker && defenderState->defended()
 					&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defenderState.get())
 					&& newHorizonsBulwark::hasImmovable(targetHero)
-					&& defenderState->bulwarkImmovableRound != bulwarkRound)
-					defenderState->bulwarkImmovableRound = bulwarkRound;
+					&& defenderState->bulwarkImmovableRound != currentRound)
+					defenderState->bulwarkImmovableRound = currentRound;
 				if(!ap.bulwarkMireGripTriggered && ordinaryAttacker
 					&& !ap.attackerState->bulwarkMireGripApplied && projectedDamage.appliedDamage > 0
 					&& victimAttack.physicalDamage && !attackInfo.shooting

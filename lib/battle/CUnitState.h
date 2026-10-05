@@ -266,6 +266,9 @@ public:
 	/// Whether the one-shot Battlecraft Wait damage bonus has already been spent this round.
 	/// The availability is the conjunction of waitedThisTurn and !battlecraftWaitBonusUsed.
 	bool battlecraftWaitBonusUsed;
+	/// Round in which this stack received Battlecraft's Pre-emptive Strike.
+	/// Unlike Bulwark's Defend-scoped marker, this is not reset by Defend.
+	int32_t battlecraftPreemptiveStrikeRound = -1;
 	/// Temporary Speed granted only for this unit's delayed activation after Waiting.
 	/// Cleared when the authoritative Creature Activation ends; unlike a timed bonus,
 	/// it does not affect initiative or later activations.

@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BattleActionProcessor.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
+#include "../../lib/battle/NewHorizonsBattlecraft.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsDiscipline.h"
@@ -3998,6 +3999,45 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	// If the attacker or defender is not alive before the attack action, the action should be skipped.
 	if((!attacker->alive()) || (defender && !defender->alive()))
 		return;
+
+	// Battlecraft's Pre-emptive Strike answers the first eligible melee blow
+	// against a Defending friendly creature this round. Its own pre-emptive
+	// damage marker and counter flag prevent recursion without spending
+	// ordinary retaliation.
+	if(defender && !attack.ranged && !attack.brace && attack.preemptiveDamagePercent <= 0
+		&& newHorizonsCombatSkills::isPhysicalCreatureAttack(attacker, true)
+		&& battle.battleMatchOwner(attacker, defender, false))
+	{
+		const auto * defenderHero = battle.battleGetOwnerHero(defender);
+		const auto round = battle.battleGetRound();
+		const int percent = newHorizonsBattlecraft::preemptiveStrikeDamagePercent(
+			defenderHero, defender, round);
+		if(percent > 0)
+		{
+			auto state = defender->acquireState();
+			state->battlecraftPreemptiveStrikeRound = round;
+			BattleUnitsChanged changed;
+			changed.battleID = battle.getBattle()->getBattleID();
+			UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
+			update.data = state->save();
+			changed.changedStacks.push_back(std::move(update));
+			gameHandler->sendAndApply(changed);
+
+			BattleLogMessage message;
+			message.battleID = battle.getBattle()->getBattleID();
+			MetaString line;
+			line.appendRawString("Battlecraft's Pre-emptive Strike: %s attacks %s before the incoming melee blow for 50% normal damage.");
+			defender->addNameReplacement(line, defender->getCount());
+			attacker->addNameReplacement(line, attacker->getCount());
+			message.lines.push_back(std::move(line));
+			gameHandler->sendAndApply(message);
+
+			makeAttack(battle, defender, attacker, {.targetHex = attacker->getPosition(), .first = true,
+				.counter = true, .preemptiveDamagePercent = percent});
+			if(!attacker->alive() || !defender->alive())
+				return;
+		}
+	}
 
 	const auto * bulwarkHero = defender && defender->defended()
 		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(defender)

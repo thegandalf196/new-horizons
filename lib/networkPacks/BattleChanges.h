@@ -57,6 +57,12 @@ public:
 		return increment.isNumber() && increment.Float() != 0.0;
 	}
 
+	bool hasBattlecraftPreemptiveStrikeRoundState() const
+	{
+		const auto & round = data["state"]["battlecraftPreemptiveStrikeRound"];
+		return round.isNumber() && round.Integer() >= 0;
+	}
+
 	bool hasCasualtyProvenanceState() const
 	{
 		return battle::hasCasualtyProvenanceState(data);
@@ -78,6 +84,9 @@ public:
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_RAGE_THROUGH_PAIN)
 			&& hasRageThroughPainState())
 			throw std::runtime_error("Cannot discard personal Bloodrage state in an older unit update format");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE)
+			&& hasBattlecraftPreemptiveStrikeRoundState())
+			throw std::runtime_error("Cannot discard Battlecraft Pre-emptive Strike round state in an older unit update format");
 		h & id;
 		h & healthDelta;
 		h & data;

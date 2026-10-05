@@ -2,6 +2,25 @@
 
 ## Purpose
 
+### 2026-10-05 UP157 — Isolate combat-perk fixture prerequisites and AI options
+
+Both-target build67320 passes732 steps. Initial focused native24408 passes17/22
+in6.333s, zero skips; retain UP157-preemptive-native.log/XML. Four new tests
+fail at the fixture's accepted end-Tactics/Defend setup after selecting Tactics
+as their required Basic perk. Use a legal nondeployment Basic perk to isolate
+the Advanced combat reaction; do not weaken deployment or action validation.
+The AI selection fixture puts a zero-Movement creature next to a melee target:
+zero movement still permits that adjacent attack, which AI selects legitimately.
+Place a reachable future threat beyond immediate attack reach and avoid lethal
+overkill before asserting Defend selection. No principal perk acceptance or
+count increase follows from the initial failure; repairs and rerun are required.
+
+Fixture-only build4257 passes4/4. Repaired focused99767 passes22/22 in6.291s,
+zero skips, with all seven new principal cases. Retain repaired.log/XML beside
+the initial failure. The change to legal Entrench acquisition isolates combat
+without bypassing prerequisites; distant, smaller threat geometry preserves
+the actual AI Defend assertion rather than accepting any action.
+
 ### 2026-10-05 UP023 — Active Perfect Moment diverged from its specification
 
 The active registry said automatic first eligible attack at current Luck+5,

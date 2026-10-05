@@ -1315,6 +1315,7 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	waiting = other.waiting;
 	waitedThisTurn = other.waitedThisTurn;
 	battlecraftWaitBonusUsed = other.battlecraftWaitBonusUsed;
+	battlecraftPreemptiveStrikeRound = other.battlecraftPreemptiveStrikeRound;
 	defensiveStanceMeleeBonus = other.defensiveStanceMeleeBonus;
 	defensiveStanceRangedBonus = other.defensiveStanceRangedBonus;
 	bulwarkPreemptiveUsed = other.bulwarkPreemptiveUsed;
@@ -2134,6 +2135,9 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeBool("waiting", waiting);
 	handler.serializeBool("waitedThisTurn", waitedThisTurn);
 	handler.serializeBool("battlecraftWaitBonusUsed", battlecraftWaitBonusUsed);
+	handler.serializeInt("battlecraftPreemptiveStrikeRound", battlecraftPreemptiveStrikeRound, -1);
+	if(battlecraftPreemptiveStrikeRound < -1)
+		throw std::runtime_error("Invalid Battlecraft Pre-emptive Strike round marker");
 	handler.serializeInt("activationMovementBonus", activationMovementBonus, 0);
 	if(activationMovementBonus < 0)
 		throw std::runtime_error("Invalid negative activation movement bonus");
@@ -2262,6 +2266,7 @@ void CUnitState::reset()
 	waiting = false;
 	waitedThisTurn = false;
 	battlecraftWaitBonusUsed = false;
+	battlecraftPreemptiveStrikeRound = -1;
 	defensiveStanceMeleeBonus = 0;
 	defensiveStanceRangedBonus = 0;
 	bulwarkPreemptiveUsed = false;

@@ -40,6 +40,7 @@
 #include "../../lib/battle/NewHorizonsWarcasting.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
+#include "../../lib/battle/NewHorizonsBattlecraft.h"
 #include "../../lib/battle/NewHorizonsDiscipline.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsShadowGift.h"
@@ -3433,11 +3434,13 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 	const auto * hero = battle->battleGetOwnerHero(stack);
 	const int bulwarkRank = newHorizonsBulwark::rank(hero);
 	const int paviseReduction = newHorizonsCombatSkills::paviseReductionPercent(hero);
+	const bool hasBattlecraftPreemptiveStrike = newHorizonsBattlecraft::hasPreemptiveStrike(hero);
 	const bool hasHoldFast = newHorizonsDiscipline::hasHoldFast(hero);
 	const bool hasBastion = hero && hero->hasActivePerk(
 		std::string(newHorizonsCombatSkills::ARMORER_SKILL_ID),
 		std::string(newHorizonsCombatSkills::BASTION_PERK_ID));
-	if(bulwarkRank == 0 && paviseReduction == 0 && !hasHoldFast && !hasBastion)
+	if(bulwarkRank == 0 && paviseReduction == 0 && !hasBattlecraftPreemptiveStrike
+		&& !hasHoldFast && !hasBastion)
 		return false;
 
 	auto defendedPreview = std::make_shared<HypotheticBattle>(environment, battle);
@@ -3656,20 +3659,22 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 	}
 
 	float preemptiveValue = 0.0f;
-	const int preemptivePercent = newHorizonsBulwark::preemptivePercent(
-		bulwarkRank, newHorizonsBulwark::hasBogAmbush(hero));
-	if(preemptivePercent > 0 && !projectedTarget->bulwarkPreemptiveUsed)
+	const int battlecraftPreemptivePercent = newHorizonsBattlecraft::preemptiveStrikeDamagePercent(
+		hero, projectedTarget.get(), battle->battleGetRound());
+	const auto applyPreemptiveReaction = [&](int percent)
 	{
 		const IncomingThreat * bestMeleeThreat = nullptr;
-		float bestReaction = 0.0f;
+		float bestReaction = -1.0f;
 		for(const auto & threat : threats)
 		{
 			if(threat.shooting || !threat.physicalDamage)
 				continue;
 			auto projectedEnemy = defendedPreview->getForUpdate(threat.enemy->unitId());
+			if(!projectedEnemy || !projectedEnemy->alive())
+				continue;
 			BattleAttackInfo reaction(projectedTarget.get(), projectedEnemy.get(), 0, false);
 			reaction.retaliation = true;
-			reaction.preemptiveDamagePercent = preemptivePercent;
+			reaction.preemptiveDamagePercent = percent;
 			const float value = averageOrderDamage(defendedPreview->battleEstimateDamage(reaction));
 			if(value > bestReaction)
 			{
@@ -3677,58 +3682,75 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 				bestMeleeThreat = &threat;
 			}
 		}
-		if(bestMeleeThreat)
+		if(!bestMeleeThreat)
+			return 0.0f;
+
+		const IncomingThreat & threat = *bestMeleeThreat;
+		auto projectedEnemy = defendedPreview->getForUpdate(threat.enemy->unitId());
+		BattleAttackInfo reaction(projectedTarget.get(), projectedEnemy.get(), 0, false);
+		reaction.retaliation = true;
+		reaction.preemptiveDamagePercent = percent;
+		auto reactionDamage = defendedPreview->battleExpectedLuckDamage(reaction);
+		vstd::amin(reactionDamage, projectedEnemy->getAvailableHealth());
+		projectedEnemy->damage(reactionDamage);
+		if(!projectedEnemy->alive())
 		{
-			const IncomingThreat & threat = *bestMeleeThreat;
-			auto projectedEnemy = defendedPreview->getForUpdate(threat.enemy->unitId());
-			BattleAttackInfo reaction(projectedTarget.get(), projectedEnemy.get(), 0, false);
-			reaction.retaliation = true;
-			reaction.preemptiveDamagePercent = preemptivePercent;
-			auto reactionDamage = defendedPreview->battleExpectedLuckDamage(reaction);
-			vstd::amin(reactionDamage, projectedEnemy->getAvailableHealth());
-			preemptiveValue = static_cast<float>(reactionDamage);
-			projectedEnemy->damage(reactionDamage);
-			if(!projectedEnemy->alive())
-			{
-				for(auto & projectedThreat : threats)
-					if(projectedThreat.enemy->unitId() == threat.enemy->unitId()
-						&& !projectedThreat.shooting)
-					{
-						projectedThreat.afterFirstPerAttack = 0.0f;
-						projectedThreat.afterPerAttack = 0.0f;
-					}
-			}
-			else
-			{
-				BattleAttackInfo afterReaction(projectedEnemy.get(), projectedTarget.get(), 0, false);
-				const float afterPerAttack = averageOrderDamage(
-					defendedPreview->battleEstimateDamage(afterReaction));
-				float afterFirstPerAttack = afterPerAttack;
-				if(threat.immovableRoundBefore || threat.bastionRoundBefore)
+			for(auto & projectedThreat : threats)
+				if(projectedThreat.enemy->unitId() == threat.enemy->unitId()
+					&& !projectedThreat.shooting)
 				{
-					const auto consumedRound = projectedTarget->bulwarkImmovableRound;
-					const auto consumedBastionRound = projectedTarget->armorerBastionRound;
-					if(threat.immovableRoundBefore)
-						projectedTarget->bulwarkImmovableRound = *threat.immovableRoundBefore;
-					if(threat.bastionRoundBefore)
-						projectedTarget->armorerBastionRound = *threat.bastionRoundBefore;
-					BattleAttackInfo firstAfterReaction(projectedEnemy.get(), projectedTarget.get(), 0, false);
-					afterFirstPerAttack = averageOrderDamage(
-						defendedPreview->battleEstimateDamage(firstAfterReaction));
-					projectedTarget->bulwarkImmovableRound = consumedRound;
-					projectedTarget->armorerBastionRound = consumedBastionRound;
+					projectedThreat.afterFirstPerAttack = 0.0f;
+					projectedThreat.afterPerAttack = 0.0f;
 				}
-				// The attacker's damage count may change after the reaction, which
-				// also changes how much physical damage can be reflected.
-				for(auto & projectedThreat : threats)
-					if(projectedThreat.enemy->unitId() == threat.enemy->unitId()
-						&& !projectedThreat.shooting)
-					{
-						projectedThreat.afterFirstPerAttack = afterFirstPerAttack;
-						projectedThreat.afterPerAttack = afterPerAttack;
-					}
+		}
+		else
+		{
+			BattleAttackInfo afterReaction(projectedEnemy.get(), projectedTarget.get(), 0, false);
+			const float afterPerAttack = averageOrderDamage(
+				defendedPreview->battleEstimateDamage(afterReaction));
+			float afterFirstPerAttack = afterPerAttack;
+			if(threat.immovableRoundBefore || threat.bastionRoundBefore)
+			{
+				const auto consumedRound = projectedTarget->bulwarkImmovableRound;
+				const auto consumedBastionRound = projectedTarget->armorerBastionRound;
+				if(threat.immovableRoundBefore)
+					projectedTarget->bulwarkImmovableRound = *threat.immovableRoundBefore;
+				if(threat.bastionRoundBefore)
+					projectedTarget->armorerBastionRound = *threat.bastionRoundBefore;
+				BattleAttackInfo firstAfterReaction(projectedEnemy.get(), projectedTarget.get(), 0, false);
+				afterFirstPerAttack = averageOrderDamage(
+					defendedPreview->battleEstimateDamage(firstAfterReaction));
+				projectedTarget->bulwarkImmovableRound = consumedRound;
+				projectedTarget->armorerBastionRound = consumedBastionRound;
 			}
+			for(auto & projectedThreat : threats)
+				if(projectedThreat.enemy->unitId() == threat.enemy->unitId()
+					&& !projectedThreat.shooting)
+				{
+					projectedThreat.afterFirstPerAttack = afterFirstPerAttack;
+					projectedThreat.afterPerAttack = afterPerAttack;
+				}
+		}
+		return static_cast<float>(reactionDamage);
+	};
+	if(battlecraftPreemptivePercent > 0)
+	{
+		const float value = applyPreemptiveReaction(battlecraftPreemptivePercent);
+		if(value > 0.0f)
+		{
+			projectedTarget->battlecraftPreemptiveStrikeRound = battle->battleGetRound();
+			preemptiveValue += value;
+		}
+	}
+	const int bulwarkPreemptivePercent = newHorizonsBulwark::preemptivePercent(
+		bulwarkRank, newHorizonsBulwark::hasBogAmbush(hero));
+	if(bulwarkPreemptivePercent > 0 && !projectedTarget->bulwarkPreemptiveUsed)
+	{
+		const float value = applyPreemptiveReaction(bulwarkPreemptivePercent);
+		if(value > 0.0f)
+		{
 			projectedTarget->bulwarkPreemptiveUsed = true;
+			preemptiveValue += value;
 		}
 	}
 	float incomingBeforeDefend = 0.0f;

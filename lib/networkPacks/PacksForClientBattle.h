@@ -555,6 +555,10 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 			&& std::ranges::any_of(changedStacks, [](const UnitChanges & change)
 				{ return change.hasRageThroughPainState(); }))
 			throw std::runtime_error("Cannot discard personal Bloodrage unit state update");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE)
+			&& std::ranges::any_of(changedStacks, [](const UnitChanges & change)
+				{ return change.hasBattlecraftPreemptiveStrikeRoundState(); }))
+			throw std::runtime_error("Cannot discard Battlecraft Pre-emptive Strike unit state update");
 		h & battleID;
 		h & changedStacks;
 		assert(battleID != BattleID::NONE);
@@ -613,6 +617,9 @@ struct BattleStackAttacked
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_RAGE_THROUGH_PAIN)
 			&& newState.hasRageThroughPainState())
 			throw std::runtime_error("Cannot discard personal Bloodrage attack state update");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE)
+			&& newState.hasBattlecraftPreemptiveStrikeRoundState())
+			throw std::runtime_error("Cannot discard Battlecraft Pre-emptive Strike attack state update");
 		h & stackAttacked;
 		h & attackerID;
 		h & newState;
@@ -692,6 +699,10 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 		{
 			return change.hasRageThroughPainState();
 		};
+		const auto hasBattlecraftPreemptiveStrikeRound = [](const UnitChanges & change)
+		{
+			return change.hasBattlecraftPreemptiveStrikeRoundState();
+		};
 		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_CASUALTY_PROVENANCE)
 			&& (std::ranges::any_of(attackerChanges.changedStacks, [](const UnitChanges & change)
 					{ return change.hasCasualtyProvenanceState(); })
@@ -709,6 +720,11 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 				|| std::ranges::any_of(bsa, [](const BattleStackAttacked & hit)
 					{ return hit.newState.hasNoQuarterMoraleState(); })))
 			throw std::runtime_error("Cannot discard No Quarter attack state");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE)
+			&& (std::ranges::any_of(attackerChanges.changedStacks, hasBattlecraftPreemptiveStrikeRound)
+				|| std::ranges::any_of(bsa, [](const BattleStackAttacked & hit)
+					{ return hit.newState.hasBattlecraftPreemptiveStrikeRoundState(); })))
+			throw std::runtime_error("Cannot discard Battlecraft Pre-emptive Strike attack state");
 		if(h.saving && chainGateTriggered && !h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE))
 			throw std::runtime_error("Cannot discard Chain Gate attack state");
 		h & battleID;
@@ -1100,6 +1116,10 @@ struct DLL_LINKAGE StacksInjured : public CPackForClient
 			&& std::ranges::any_of(stacks, [](const BattleStackAttacked & hit)
 				{ return hit.newState.hasRageThroughPainState(); }))
 			throw std::runtime_error("Cannot discard personal Bloodrage injury state in an older format");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE)
+			&& std::ranges::any_of(stacks, [](const BattleStackAttacked & hit)
+				{ return hit.newState.hasBattlecraftPreemptiveStrikeRoundState(); }))
+			throw std::runtime_error("Cannot discard Battlecraft Pre-emptive Strike injury state in an older format");
 		h & battleID;
 		h & stacks;
 		assert(battleID != BattleID::NONE);
