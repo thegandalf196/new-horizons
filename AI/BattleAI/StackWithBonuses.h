@@ -127,6 +127,8 @@ public:
 	bool applyPurifySelection(const std::vector<SpellID> & spellEffectGroups, bool clearPhysicalPoison);
 
 	void removeUnitBonus(const CSelector & selector);
+	/// Freeze the current bonus inputs for a retained pre-damage scoring snapshot.
+	void freezeDamageScoringBonusSnapshot();
 	void applyNoQuarter(int32_t moraleActivationsRemaining, bool appliedByEnemy = false);
 	void consumeNoQuarterActivation();
 	void clearNoQuarterRoundBlocker();
@@ -148,6 +150,9 @@ private:
 	// source bonus and its shared identity for source-sensitive mechanics in
 	// getUnstackedBonuses.
 	std::optional<std::vector<std::shared_ptr<Bonus>>> projectedUnstackedEffects;
+	/// Immutable effective inputs used by branch-local magical-hit valuation.
+	std::optional<std::vector<Bonus>> damageScoringBonuses;
+	std::optional<std::vector<std::shared_ptr<Bonus>>> damageScoringUnstackedBonuses;
 	// Branch-local history: once a marked source/sid group is captured, remember
 	// its identity even if the marker is removed or expires. This is only for
 	// retaining detached projections; it does not make the group an affliction.
@@ -174,6 +179,13 @@ private:
 	BattleSide side;
 	PlayerColor player;
 	SlotID slot;
+};
+
+struct ProjectedPrimalBurstHit
+{
+	std::shared_ptr<StackWithBonuses> preHitTarget;
+	PlayerColor targetController;
+	int64_t actualDamage = 0;
 };
 
 class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironment
@@ -426,6 +438,10 @@ public:
 		bool cloneKilled, bool nativeRebirth);
 	const std::set<uint32_t> & getElementalRebirthSpawnUnitIds() const { return elementalRebirthSpawnUnitIds; }
 	bool isElementalRebirthSpawn(uint32_t unitId) const { return elementalRebirthSpawnUnitIds.contains(unitId); }
+	const std::vector<ProjectedPrimalBurstHit> & getProjectedPrimalBurstHits() const
+	{
+		return projectedPrimalBurstHits;
+	}
 
 	int64_t getActualDamage(const DamageRange & damage, int32_t attackerCount, vstd::RNG & rng) const override;
 	std::vector<SpellID> getUsedSpells(BattleSide side) const override;
@@ -452,6 +468,9 @@ public:
 private:
 	/// IDs created by this branch's Elemental Rebirth projection; never serialized.
 	std::set<uint32_t> elementalRebirthSpawnUnitIds;
+	/// Actual magical HP losses from the accepted projected Primal Burst batches.
+	/// Pre-hit snapshots are owned so branch copies don't borrow mutable/live units.
+	std::vector<ProjectedPrimalBurstHit> projectedPrimalBurstHits;
 	BattleDeploymentState deploymentState;
 	BattleSideArray<ReducedExtraActivationState> reducedExtraActivationStates;
 	/// Newest Order is last; updates by command preserve this issuance order.

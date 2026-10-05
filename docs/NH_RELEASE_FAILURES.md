@@ -2,6 +2,31 @@
 
 ## Purpose
 
+### 2026-10-05 UP046 — Strong SpellID wrapper in the perk fixture
+
+First client/native build64934 exits1 in the new runtime fixture:
+`SpellID::MAGIC_ARROW` is an enum, not an object with `toSpell()`.
+Preserve UP046-perks-build.log. Construct `SpellID(SpellID::MAGIC_ARROW)`
+before resolving the entity. Pre-retry source review also distinguishes the
+cast's optional effect value from mechanics' plain Value64; do not call
+`has_value` or dereference the latter. No production failure or acceptance is
+inferred from this fixture compile error. The expanded three-perk candidate
+must be frozen, rebuilt and exercised before coverage increases.
+Core-only build63831 then exits1 in the new ability helper: iterating BonusList
+needs its concrete header, not the forward declaration exposed by Unit/Bonus.
+Preserve UP046-perks-core-build.log. Add the direct BonusList.h include; do not
+expand the precompiled header or change mitigation semantics to hide the error.
+Frozen full build66091 then fails only in the new AI fixture's prepare signature:
+MasteryLevel is a namespace; the parameter type is MasteryLevel::Type. Retain
+UP046-three-perks-build.log. This repeats the recorded UP108 fixture lesson;
+check existing enum declarations when extending test helper signatures rather
+than relying on the spelling of qualified enumerator values. Production objects
+compile, but the test binary is not accepted until repaired and rebuilt.
+Repaired full build68374 passes; native92485 passes23/23 in6.366s, zero skips.
+UP046-three-perks-build-repaired.log and UP046-three-perks-native.log/XML retain
+the acceptance evidence. Neither production semantics nor fixture assertions
+were weakened to repair the compiler errors.
+
 ### 2026-10-04 UP224 — Bless control cast requires the spell environment
 
 Client38169 passes. First both-target60053 fails at two new fixture control

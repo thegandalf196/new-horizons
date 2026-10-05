@@ -9,9 +9,15 @@
 
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/CStack.h"
+#include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/battle/NewHorizonsElementalRebirth.h"
+#include "../../../lib/battle/NewHorizonsMagicalAbilityDamage.h"
 #include "../../../lib/modding/CModHandler.h"
+#include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+#include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/ISpellMechanics.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 
 #include <algorithm>
 #include <optional>
@@ -57,10 +63,13 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
+			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 	}
 
 	void prepare(int rank, int sourceCount = 7, const char * sourceCreature = "core:peasant",
-		bool includeCloneStack = false)
+		bool includeCloneStack = false, bool selectPrimalBurst = false,
+		bool selectGreaterEssence = false, bool selectElementalWard = false)
 	{
 		startGame();
 		defenderSideHero->setHeroType(heroType("core:brissa"));
@@ -70,6 +79,17 @@ protected:
 		const auto skillNumber = SecondarySkill::decode(std::string(REBIRTH_SKILL));
 		ASSERT_GE(skillNumber, 0);
 		defenderSideHero->setSecSkillLevel(SecondarySkill(skillNumber), rank, ChangeValueMode::ABSOLUTE);
+		if(selectGreaterEssence || selectElementalWard)
+			selectPrimalBurst = true;
+		if(selectPrimalBurst)
+			defenderSideHero->applyPerkSelection({std::string(REBIRTH_SKILL),
+				"new-horizons:elementalRebirth.primalBurst"});
+		if(selectGreaterEssence)
+			defenderSideHero->applyPerkSelection({std::string(REBIRTH_SKILL),
+				"new-horizons:elementalRebirth.greaterEssence"});
+		if(selectElementalWard)
+			defenderSideHero->applyPerkSelection({std::string(REBIRTH_SKILL),
+				"new-horizons:elementalRebirth.elementalWard"});
 		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), creature(sourceCreature), sourceCount));
 		if(includeCloneStack)
 			ASSERT_TRUE(defenderSideHero->setCreature(SlotID(1), creature(sourceCreature), sourceCount));
@@ -85,6 +105,24 @@ protected:
 		ASSERT_GT(basisAtStart, 0);
 		ASSERT_EQ(basisAtStart, static_cast<int64_t>(sourceCount) * source->getMaxHealth());
 		beginCombat();
+	}
+
+	uint32_t addTemporaryStack(BattleSide side, const CreatureID & type,
+		const BattleHex & position, int32_t count)
+	{
+		battle::UnitInfo info;
+		info.id = battle()->battleNextUnitId();
+		info.count = count;
+		info.type = type;
+		info.side = side;
+		info.position = position;
+		info.summoned = true;
+		BattleUnitsChanged add;
+		add.battleID = BattleID(0);
+		add.changedStacks.emplace_back(info.id, UnitChanges::EOperation::ADD);
+		info.save(add.changedStacks.back().data);
+		gameHandler->sendAndApply(add);
+		return info.id;
 	}
 
 	CStack * stackAt(BattleSide side, SlotID slot) const
@@ -208,6 +246,157 @@ TEST_F(NewHorizonsElementalRebirthTest, BattleAttackUsesExpertFiftyPercentAfterP
 	EXPECT_TRUE(server.attacks.front().bsa.front().killed());
 }
 
+TEST_F(NewHorizonsElementalRebirthTest, AdvancedRankAloneDoesNotEnableUnselectedPerks)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::ADVANCED));
+	const auto profile = newHorizonsElementalRebirth::activeProfile(defenderSideHero);
+	ASSERT_TRUE(profile.has_value());
+	EXPECT_FALSE(profile->greaterEssence);
+	EXPECT_FALSE(profile->elementalWard);
+	EXPECT_EQ(newHorizonsElementalRebirth::targetHP(
+		{source->unitId(), source->unitSide(), source->getPosition(), basisAtStart, *profile}),
+		expectedHP(basisAtStart, 40));
+}
+
+TEST_F(NewHorizonsElementalRebirthTest, SelectedBasicPrimalBurstSplitsOneBudgetAcrossUniqueHostiles)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::BASIC, 1000, "core:peasant", false, true));
+	ASSERT_TRUE(newHorizonsElementalRebirth::activeProfile(defenderSideHero)->primalBurst);
+
+	std::vector<BattleHex> emptyAdjacent;
+	for(const auto & hex : source->getSurroundingHexes())
+		if(hex.isAvailable() && !battle()->battleGetUnitByPos(hex, false))
+			emptyAdjacent.push_back(hex);
+	ASSERT_GE(emptyAdjacent.size(), 3u);
+
+	const auto firstHostile = addTemporaryStack(BattleSide::ATTACKER, creature("core:pikeman"), emptyAdjacent[0], 20);
+	const auto secondHostile = addTemporaryStack(BattleSide::ATTACKER, creature("core:pikeman"), emptyAdjacent[1], 20);
+	const auto friendly = addTemporaryStack(BattleSide::DEFENDER, creature("core:pikeman"), emptyAdjacent[2], 20);
+	Bonus reduction(BonusDuration::ONE_BATTLE, BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS,
+		BonusSource::OTHER, 2000, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY));
+	SetStackEffect protectFirst;
+	protectFirst.battleID = BattleID(0);
+	protectFirst.toAdd.emplace_back(firstHostile, std::vector<Bonus>{reduction});
+	gameHandler->sendAndApply(protectFirst);
+	const auto * firstBefore = battle()->battleGetUnitByID(firstHostile);
+	const auto * secondBefore = battle()->battleGetUnitByID(secondHostile);
+	const auto * friendlyBefore = battle()->battleGetUnitByID(friendly);
+	ASSERT_NE(firstBefore, nullptr);
+	ASSERT_NE(secondBefore, nullptr);
+	ASSERT_NE(friendlyBefore, nullptr);
+	const auto firstHealthBefore = firstBefore->getAvailableHealth();
+	const auto secondHealthBefore = secondBefore->getAvailableHealth();
+	const auto friendlyHealthBefore = friendlyBefore->getAvailableHealth();
+
+	applyInjury(source, source->getAvailableHealth());
+
+	const auto units = battle()->battleGetAllUnits(false);
+	const auto rebornIt = std::ranges::find_if(units, [](const auto * unit)
+	{
+		if(!unit || !unit->isSummoned() || !unit->unitType())
+			return false;
+		const auto key = unit->unitType()->getJsonKey();
+		return key == "core:airElemental" || key == "core:waterElemental"
+			|| key == "core:fireElemental" || key == "core:earthElemental"
+			|| key == "core:magicElemental";
+	});
+	ASSERT_NE(rebornIt, units.end());
+	const auto * reborn = *rebornIt;
+	const auto budget = newHorizonsElementalRebirth::primalBurstDamageBudget(reborn->getAvailableHealth());
+	const auto targetCount = newHorizonsElementalRebirth::adjacentHostileUnitIds(*battle(), *reborn).size();
+	EXPECT_EQ(targetCount, 2u) << "Each hostile unit ID receives only one equal share";
+	const auto share = newHorizonsElementalRebirth::primalBurstShare(budget, targetCount);
+	ASSERT_GT(share, 0);
+	const auto * firstAfter = battle()->battleGetUnitByID(firstHostile);
+	const auto * secondAfter = battle()->battleGetUnitByID(secondHostile);
+	ASSERT_NE(firstAfter, nullptr);
+	ASSERT_NE(secondAfter, nullptr);
+	const auto expectedFirstDamage = newHorizonsMagicalAbilityDamage::adjustDamage(
+		*battle(), *firstAfter, share);
+	const auto expectedSecondDamage = newHorizonsMagicalAbilityDamage::adjustDamage(
+		*battle(), *secondAfter, share);
+	EXPECT_LT(expectedFirstDamage, share) << "Primal Burst uses the shared magical ability reduction seam";
+	EXPECT_EQ(expectedSecondDamage, share) << "An unprotected target receives its full equal share";
+
+	EXPECT_EQ(firstAfter->getAvailableHealth(), firstHealthBefore - expectedFirstDamage);
+	EXPECT_EQ(secondAfter->getAvailableHealth(), secondHealthBefore - expectedSecondDamage);
+	const auto * friendlyAfter = battle()->battleGetUnitByID(friendly);
+	ASSERT_NE(friendlyAfter, nullptr);
+	EXPECT_EQ(friendlyAfter->getAvailableHealth(), friendlyHealthBefore);
+	EXPECT_TRUE(std::ranges::any_of(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Primal Burst deals") != std::string::npos;
+	}));
+	ASSERT_EQ(std::ranges::count_if(server.injuries, [](const StacksInjured & injury)
+	{
+		return injury.stacks.size() == 2;
+	}), 1);
+}
+
+TEST_F(NewHorizonsElementalRebirthTest, BasicRankWithoutPrimalBurstSelectionDoesNotDamageAdjacentHostiles)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::BASIC, 100));
+	const auto profile = newHorizonsElementalRebirth::activeProfile(defenderSideHero);
+	ASSERT_TRUE(profile.has_value());
+	EXPECT_FALSE(profile->primalBurst);
+
+	const auto emptyAdjacent = std::ranges::find_if(source->getSurroundingHexes(), [this](const BattleHex & hex)
+	{
+		return hex.isAvailable() && !battle()->battleGetUnitByPos(hex, false);
+	});
+	ASSERT_NE(emptyAdjacent, source->getSurroundingHexes().end());
+	const auto hostile = addTemporaryStack(BattleSide::ATTACKER, creature("core:pikeman"), *emptyAdjacent, 20);
+	const auto * before = battle()->battleGetUnitByID(hostile);
+	ASSERT_NE(before, nullptr);
+	const auto healthBefore = before->getAvailableHealth();
+
+	applyInjury(source, source->getAvailableHealth());
+
+	const auto * after = battle()->battleGetUnitByID(hostile);
+	ASSERT_NE(after, nullptr);
+	EXPECT_EQ(after->getAvailableHealth(), healthBefore);
+	EXPECT_FALSE(std::ranges::any_of(server.battleLogLines, [](const std::string & line)
+	{
+		return line.find("Primal Burst deals") != std::string::npos;
+	}));
+}
+
+TEST_F(NewHorizonsElementalRebirthTest, SelectedAdvancedPerkRequiresAndPreservesBasicSelection)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::ADVANCED, 100, "core:peasant", false, false, true));
+	const auto profile = newHorizonsElementalRebirth::activeProfile(defenderSideHero);
+	ASSERT_TRUE(profile.has_value());
+	EXPECT_TRUE(defenderSideHero->hasActivePerk(std::string(REBIRTH_SKILL),
+		"new-horizons:elementalRebirth.primalBurst"));
+	EXPECT_TRUE(profile->primalBurst);
+	EXPECT_TRUE(profile->greaterEssence);
+	EXPECT_FALSE(profile->elementalWard);
+
+	applyInjury(source, source->getAvailableHealth());
+	const auto spawns = summonedUnits();
+	ASSERT_EQ(spawns.size(), 1u);
+	const auto * reborn = spawns.front();
+	EXPECT_EQ(reborn->getAvailableHealth(), expectedHP(basisAtStart, 55));
+	EXPECT_LT(reborn->getAvailableHealth(), static_cast<int64_t>(reborn->getCount()) * reborn->getMaxHealth());
+}
+
+TEST_F(NewHorizonsElementalRebirthTest, SelectedAdvancedWardIsAppliedToTheActualRebornStack)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::ADVANCED, 100, "core:peasant", false, false, false, true));
+	const auto profile = newHorizonsElementalRebirth::activeProfile(defenderSideHero);
+	ASSERT_TRUE(profile.has_value());
+	EXPECT_TRUE(profile->primalBurst);
+	EXPECT_FALSE(profile->greaterEssence);
+	EXPECT_TRUE(profile->elementalWard);
+
+	applyInjury(source, source->getAvailableHealth());
+	const auto spawns = summonedUnits();
+	ASSERT_EQ(spawns.size(), 1u);
+	const auto wardReduction = spawns.front()->valOfBonuses(
+		BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS, BonusSubtypeID(SpellSchool::ANY));
+	EXPECT_GE(wardReduction, 2000);
+}
+
 TEST_F(NewHorizonsElementalRebirthTest, SummonedAndCloneDeathsDoNotRebirth)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::BASIC, 7, "core:peasant", true));
@@ -301,4 +490,67 @@ TEST_F(NewHorizonsElementalRebirthTest, BasisRoundTripsAndRejectsOlderSave)
 	CStack restored;
 	currentReader.iser & restored;
 	EXPECT_EQ(restored.getBattleStartMaximumAggregateHP(), basis);
+}
+
+TEST_F(NewHorizonsElementalRebirthTest, SharedWardBonusReducesMagicArrowDamageAndLeavesUnbonusedStackUnchanged)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::BASIC, 7, "core:pikeman", true));
+	auto * protectedUnit = stackAt(BattleSide::DEFENDER, SlotID(0));
+	auto * control = stackAt(BattleSide::DEFENDER, SlotID(1));
+	ASSERT_NE(protectedUnit, nullptr);
+	ASSERT_NE(control, nullptr);
+
+	const auto ward = newHorizonsElementalRebirth::elementalWardBonus(
+		{MasteryLevel::ADVANCED, 40, false, false, true});
+	ASSERT_TRUE(ward.has_value());
+	SetStackEffect applyWard;
+	applyWard.battleID = BattleID(0);
+	applyWard.toAdd.emplace_back(protectedUnit->unitId(), std::vector<Bonus>{*ward});
+	gameHandler->sendAndApply(applyWard);
+
+	const auto * spell = SpellID(SpellID::MAGIC_ARROW).toSpell();
+	ASSERT_NE(spell, nullptr);
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&cast);
+	ASSERT_NE(mechanics, nullptr);
+	const auto rawDamage = mechanics->getEffectValue();
+	ASSERT_GT(rawDamage, 0);
+
+	EXPECT_EQ(mechanics->adjustEffectValue(control), rawDamage);
+	EXPECT_EQ(mechanics->adjustEffectValue(protectedUnit), rawDamage * 80 / 100)
+		<< "The existing spell receiver path must consume Ward as an independent 20% magical reduction";
+}
+
+TEST(NewHorizonsElementalRebirthPerkRulesTest, GreaterEssenceAddsFifteenPointsOnlyAtAdvancedAndExpert)
+{
+	newHorizonsElementalRebirth::DeathSnapshot snapshot;
+	snapshot.battleStartMaximumAggregateHP = 1001;
+	snapshot.profile = {MasteryLevel::ADVANCED, 40, false, false, false};
+	EXPECT_EQ(newHorizonsElementalRebirth::targetHP(snapshot), 400);
+	snapshot.profile.greaterEssence = true;
+	EXPECT_EQ(newHorizonsElementalRebirth::targetHP(snapshot), 550);
+
+	snapshot.profile = {MasteryLevel::EXPERT, 50, false, true, false};
+	EXPECT_EQ(newHorizonsElementalRebirth::targetHP(snapshot), 650);
+
+	snapshot.profile = {MasteryLevel::BASIC, 25, false, true, false};
+	EXPECT_EQ(newHorizonsElementalRebirth::targetHP(snapshot), 0)
+		<< "An advanced-only saved perk cannot be represented at Basic rank";
+}
+
+TEST(NewHorizonsElementalRebirthPerkRulesTest, ElementalWardBuildsOneBattleAnySchoolReduction)
+{
+	using namespace newHorizonsElementalRebirth;
+
+	EXPECT_FALSE(elementalWardBonus({MasteryLevel::BASIC, 25, false, false, true}));
+	const auto bonus = elementalWardBonus({MasteryLevel::ADVANCED, 40, false, false, true});
+	ASSERT_TRUE(bonus.has_value());
+	EXPECT_EQ(bonus->duration, BonusDuration::ONE_BATTLE);
+	EXPECT_EQ(bonus->type, BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS);
+	EXPECT_EQ(bonus->source, BonusSource::SECONDARY_SKILL);
+	EXPECT_EQ(bonus->sid, BonusSourceID(SecondarySkill(
+		SecondarySkill::decode("new-horizons:elementalRebirth"))));
+	EXPECT_EQ(bonus->val, 2000);
+	EXPECT_EQ(bonus->subtype, BonusSubtypeID(SpellSchool::ANY));
+	EXPECT_EQ(bonus->stacking, "new-horizons:elementalRebirth.elementalWard");
 }

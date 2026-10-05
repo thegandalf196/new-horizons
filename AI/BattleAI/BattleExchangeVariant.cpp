@@ -229,6 +229,27 @@ void BattleExchangeVariant::accountForNewElementalRebirthSpawns(
 	}
 }
 
+void BattleExchangeVariant::accountForNewPrimalBurstHits(const size_t firstNewHit,
+	const PlayerColor referenceController, const bool referenceActorIsOurs,
+	DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & hb)
+{
+	const auto & hits = hb->getProjectedPrimalBurstHits();
+	for(size_t index = firstNewHit; index < hits.size(); ++index)
+	{
+		const auto & hit = hits[index];
+		if(!hit.preHitTarget || hit.actualDamage <= 0)
+			continue;
+		const auto value = AttackPossibility::calculateDamageReduce(nullptr, hit.preHitTarget.get(),
+			static_cast<uint64_t>(hit.actualDamage), damageCache, hb);
+		const bool targetSharesReferenceController = hit.targetController == referenceController;
+		const bool targetIsOurs = targetSharesReferenceController == referenceActorIsOurs;
+		if(targetIsOurs)
+			dpsScore.ourDamageReduce += value;
+		else
+			dpsScore.enemyDamageReduce += value;
+	}
+}
+
 MoveTarget::MoveTarget()
 	: positions(), cachedAttack(), score(EvaluationResult::INEFFECTIVE_SCORE)
 {
@@ -246,8 +267,10 @@ float BattleExchangeVariant::trackAttack(
 		return 0;
 	}
 	const auto rebirthSpawnIdsBefore = hb->getElementalRebirthSpawnUnitIds();
+	const auto primalBurstFirstNewHit = hb->getProjectedPrimalBurstHits().size();
 
 	auto attacker = hb->getForUpdate(ap.attack.attacker->unitId());
+	const auto referenceController = hb->battleGetOwner(attacker.get());
 	const auto originalPosition = attacker->getPosition();
 	const auto attackerSide = hb->playerToSide(hb->battleGetOwner(attacker.get()));
 	const auto * attackerHero = attackerSide == BattleSide::ATTACKER || attackerSide == BattleSide::DEFENDER
@@ -584,6 +607,7 @@ float BattleExchangeVariant::trackAttack(
 		ap.shootersBlockedDmg);
 #endif
 	accountForNewElementalRebirthSpawns(rebirthSpawnIdsBefore, attacker.get(), true, damageCache, hb);
+	accountForNewPrimalBurstHits(primalBurstFirstNewHit, referenceController, true, damageCache, hb);
 
 	return attackValue;
 }
@@ -599,6 +623,8 @@ float BattleExchangeVariant::trackAttack(
 	bool allowRetaliation)
 {
 	const auto rebirthSpawnIdsBefore = hb->getElementalRebirthSpawnUnitIds();
+	const auto primalBurstFirstNewHit = hb->getProjectedPrimalBurstHits().size();
+	const auto referenceController = hb->battleGetOwner(attacker.get());
 	const std::string cachingStringBlocksRetaliation = "type_BLOCKS_RETALIATION";
 	static const auto selectorBlocksRetaliation = Selector::type()(BonusType::BLOCKS_RETALIATION);
 	static const auto firstStrikeSelector = Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeAll)
@@ -900,6 +926,7 @@ float BattleExchangeVariant::trackAttack(
 	}
 #endif
 	accountForNewElementalRebirthSpawns(rebirthSpawnIdsBefore, attacker.get(), isOurAttack, damageCache, hb);
+	accountForNewPrimalBurstHits(primalBurstFirstNewHit, referenceController, isOurAttack, damageCache, hb);
 
 	return score;
 }

@@ -11,21 +11,28 @@
 
 #include "AccessibilityInfo.h"
 #include "Unit.h"
+#include "../bonuses/Bonus.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
+#include <cstddef>
 #include <optional>
 #include <vector>
 
 class CArmedInstance;
+class CBattleInfoCallback;
 class CGHeroInstance;
 
 namespace newHorizonsElementalRebirth
 {
-/// Saved-rank-derived profile. Rank 1/2/3 maps to the canonical 25/40/50 HP percentages.
+/// Saved-rank/perk-derived profile. Rank 1/2/3 maps to the canonical 25/40/50 HP percentages;
+/// selected advanced perks are captured here so death resolution does not re-read mutable hero state.
 struct DLL_LINKAGE ActiveProfile
 {
 	int rank = 0;
 	int healthPercent = 0;
+	bool primalBurst = false;
+	bool greaterEssence = false;
+	bool elementalWard = false;
 };
 
 /// Immutable pre-hit facts needed to decide and resolve one destruction reaction.
@@ -58,6 +65,18 @@ struct DLL_LINKAGE SpawnDescriptor
 
 /// Returns the active canonical profile using the hero's saved faction-skill and perk snapshots.
 DLL_LINKAGE std::optional<ActiveProfile> activeProfile(const CGHeroInstance * hero);
+
+/// Total Primal Burst budget is floor(10% of reborn aggregate HP).
+DLL_LINKAGE int64_t primalBurstDamageBudget(int64_t rebornAggregateHP);
+/// Equal integer share for each unique adjacent hostile; any remainder is discarded.
+DLL_LINKAGE int64_t primalBurstShare(int64_t damageBudget, size_t hostileCount);
+/// Unique, sorted IDs for living valid targets adjacent to the complete reborn footprint and
+/// hostile under current battle ownership/control.
+DLL_LINKAGE std::vector<uint32_t> adjacentHostileUnitIds(
+	const CBattleInfoCallback & battle, const battle::Unit & center);
+
+/// Bonus applied to each reborn stack when Elemental Ward was active at source death.
+DLL_LINKAGE std::optional<Bonus> elementalWardBonus(const ActiveProfile & profile);
 
 /// Whether a pre-hit unit can be a source (ordinary, non-summoned, non-clone creature stack).
 DLL_LINKAGE bool isEligibleSource(const battle::Unit & unit);

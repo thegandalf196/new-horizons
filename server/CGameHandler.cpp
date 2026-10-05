@@ -41,6 +41,7 @@
 #include "../lib/battle/BattleInfo.h"
 #include "../lib/battle/PhysicalAffliction.h"
 #include "../lib/battle/NewHorizonsElementalRebirth.h"
+#include "../lib/battle/NewHorizonsMagicalAbilityDamage.h"
 #include "../lib/battle/NewHorizonsSoulChain.h"
 #include "../lib/bonuses/BonusParameters.h"
 #include "../lib/callback/GameRandomizer.h"
@@ -2231,6 +2232,14 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 			continue;
 		}
 
+		if(const auto ward = newHorizonsElementalRebirth::elementalWardBonus(trigger.snapshot.profile))
+		{
+			SetStackEffect applyWard;
+			applyWard.battleID = trigger.battleID;
+			applyWard.toAdd.emplace_back(spawn->unit.id, std::vector<Bonus>{*ward});
+			sendAndApply(applyWard);
+		}
+
 		const auto actualWound = actualFullHealth - spawn->health.targetAggregateHP;
 		if(actualWound > 0)
 		{
@@ -2258,8 +2267,71 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 		line.appendRawString(" with ");
 		line.appendNumber(spawn->health.targetAggregateHP);
 		line.appendRawString(" HP at the fallen stack's position.");
+		if(trigger.snapshot.profile.greaterEssence)
+			line.appendRawString(" Greater Essence increases its rebirth health.");
+		if(trigger.snapshot.profile.elementalWard)
+			line.appendRawString(" Elemental Ward protects it from magical damage.");
 		log.lines.push_back(std::move(line));
 		sendAndApply(log);
+
+		if(trigger.snapshot.profile.primalBurst)
+		{
+			const auto * updatedBattle = gameState().getBattle(trigger.battleID);
+			const auto * burstSource = updatedBattle
+				? updatedBattle->battleGetUnitByID(spawn->unit.id) : nullptr;
+			if(!burstSource || !burstSource->alive())
+				continue;
+
+			const auto targetIds = newHorizonsElementalRebirth::adjacentHostileUnitIds(*updatedBattle, *burstSource);
+			const auto damageBudget = newHorizonsElementalRebirth::primalBurstDamageBudget(
+				burstSource->getAvailableHealth());
+			const auto damagePerTarget = newHorizonsElementalRebirth::primalBurstShare(
+				damageBudget, targetIds.size());
+			if(damagePerTarget <= 0)
+				continue;
+
+			StacksInjured burst;
+			burst.battleID = trigger.battleID;
+			BattleLogMessage burstLog;
+			burstLog.battleID = trigger.battleID;
+			for(const auto targetId : targetIds)
+			{
+				const auto * target = updatedBattle->battleGetUnitByID(targetId);
+				if(!target || !target->alive() || !target->unitType())
+					continue;
+
+				const auto rawDamage = newHorizonsMagicalAbilityDamage::adjustDamage(
+					*updatedBattle, *target, damagePerTarget);
+				if(rawDamage <= 0)
+					continue;
+
+				BattleStackAttacked hit;
+				hit.stackAttacked = targetId;
+				hit.attackerID = spawn->unit.id;
+				hit.damageAmount = rawDamage;
+				const auto targetCreature = target->creatureId();
+				const auto targetCount = target->getCount();
+				CStack::prepareAttacked(hit, getRandomGenerator(), target->acquireState(),
+					false, false, battle::DamageProvenance::SPELL);
+
+				MetaString damageLine = MetaString::createFromRawString("Primal Burst deals ");
+				damageLine.appendNumber(hit.damageAmount);
+				damageLine.appendRawString(" elemental damage to ");
+				damageLine.appendNumber(targetCount);
+				damageLine.appendRawString(" ");
+				damageLine.appendName(targetCreature, targetCount);
+				damageLine.appendRawString(".");
+				burstLog.lines.push_back(std::move(damageLine));
+				burst.stacks.push_back(std::move(hit));
+			}
+
+			if(!burst.stacks.empty())
+			{
+				// Publish the damage text before the single authoritative injury packet.
+				sendAndApply(burstLog);
+				sendAndApply(burst);
+			}
+		}
 	}
 
 	for(const auto & [unitId, gain] : personalBloodrageGains)

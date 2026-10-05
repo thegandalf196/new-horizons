@@ -4033,7 +4033,7 @@
 					"requires": "basic",
 					"description": "When a reborn Elemental appears, adjacent enemies suffer elemental damage equal to 10% of the reborn stack's aggregate HP, divided evenly among them.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "When a reborn Elemental appears, adjacent enemies suffer elemental damage equal to 10% of the reborn stack's aggregate HP, divided evenly among them."
 					}
 				},
@@ -4043,7 +4043,7 @@
 					"requires": "advanced",
 					"description": "Elemental Rebirth creates an additional +15 percentage points of the destroyed stack's maximum HP.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Elemental Rebirth creates an additional +15 percentage points of the destroyed stack's maximum HP."
 					}
 				},
@@ -4053,7 +4053,7 @@
 					"requires": "advanced",
 					"description": "Reborn Elementals receive 20% magical damage reduction.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Reborn Elementals receive 20% magical damage reduction."
 					}
 				},

@@ -16,6 +16,7 @@
 #include "../../lib/battle/NewHorizonsBattlecraft.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsBloodrage.h"
+#include "../../lib/battle/NewHorizonsMagicalAbilityDamage.h"
 #include "../../lib/battle/NewHorizonsCreatureAbilitySuppression.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/PhysicalAffliction.h"
@@ -395,6 +396,23 @@ TConstBonusListPtr StackWithBonuses::mergeBonuses(const CSelector & selector,
 	const std::string & cachingStr, bool unstacked) const
 {
 	auto ret = std::make_shared<BonusList>();
+	if(damageScoringBonuses)
+	{
+		if(unstacked)
+		{
+			if(damageScoringUnstackedBonuses)
+				for(const auto & bonus : *damageScoringUnstackedBonuses)
+					if(bonus && selector(bonus.get()))
+						ret->push_back(bonus);
+		}
+		else
+			for(const auto & bonus : *damageScoringBonuses)
+				if(selector(&bonus))
+					ret->push_back(std::make_shared<Bonus>(bonus));
+		if(!unstacked)
+			ret->stackBonuses();
+		return ret;
+	}
 	const CreatureID effectiveCreature = battleFormCreature();
 	const bool replaceNativeCreatureBonuses = effectiveCreature != sourceCreatureType;
 	// Refresh changes duration, not value. Filtering before merging can hide the
@@ -606,6 +624,31 @@ void StackWithBonuses::removeUnitBonus(const CSelector & selector)
 		restoreGuardianSpiritFromExistingBonuses(*this);
 }
 
+void StackWithBonuses::freezeDamageScoringBonusSnapshot()
+{
+	if(damageScoringBonuses)
+		return;
+
+	const auto stacked = getBonusesBeforeCreatureAbilitySuppression(Selector::all, {}, false);
+	const auto unstacked = getBonusesBeforeCreatureAbilitySuppression(Selector::all, {}, true);
+	damageScoringBonuses.emplace();
+	damageScoringBonuses->reserve(stacked->size());
+	for(const auto & bonus : *stacked)
+		if(bonus)
+			damageScoringBonuses->push_back(*bonus);
+	damageScoringUnstackedBonuses.emplace();
+	damageScoringUnstackedBonuses->reserve(unstacked->size());
+	std::unordered_map<const Bonus *, std::shared_ptr<Bonus>> copies;
+	for(const auto & bonus : *unstacked)
+		if(bonus)
+		{
+			auto [copy, inserted] = copies.try_emplace(bonus.get());
+			if(inserted)
+				copy->second = std::make_shared<Bonus>(*bonus);
+			damageScoringUnstackedBonuses->push_back(copy->second);
+		}
+}
+
 void StackWithBonuses::applyNoQuarter(int32_t moraleActivationsRemaining, bool appliedByEnemy)
 {
 	if(moraleActivationsRemaining <= 0 || moraleActivationsRemaining > 2)
@@ -772,7 +815,10 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	bonusTreeVersion(1)
 {
 	if(const auto * parent = dynamic_cast<const HypotheticBattle *>(realBattle.get()))
+	{
 		elementalRebirthSpawnUnitIds = parent->elementalRebirthSpawnUnitIds;
+		projectedPrimalBurstHits = parent->projectedPrimalBurstHits;
+	}
 	auto activeUnit = realBattle->battleActiveUnit();
 	activeUnitId = activeUnit ? activeUnit->unitId() : -1;
 	projectedRound = realBattle->battleGetRound();
@@ -2279,6 +2325,8 @@ std::optional<uint32_t> HypotheticBattle::projectElementalRebirth(const battle::
 	JsonNode data;
 	descriptor->unit.save(data);
 	addUnit(descriptor->unit.id, data);
+	if(const auto ward = newHorizonsElementalRebirth::elementalWardBonus(snapshot.profile))
+		addUnitBonus(descriptor->unit.id, {*ward});
 	auto projected = getForUpdate(descriptor->unit.id);
 	const auto fullHealth = projected->getAvailableHealth();
 	if(fullHealth < descriptor->health.targetAggregateHP)
@@ -2298,6 +2346,73 @@ std::optional<uint32_t> HypotheticBattle::projectElementalRebirth(const battle::
 		return {};
 	}
 	elementalRebirthSpawnUnitIds.insert(descriptor->unit.id);
+
+	if(snapshot.profile.primalBurst)
+	{
+		const auto hostileIds = newHorizonsElementalRebirth::adjacentHostileUnitIds(*this, *projected);
+		const auto damageBudget = newHorizonsElementalRebirth::primalBurstDamageBudget(
+			projected->getAvailableHealth());
+		const auto rawShare = newHorizonsElementalRebirth::primalBurstShare(damageBudget, hostileIds.size());
+		if(rawShare > 0)
+		{
+			struct PendingBurstHit
+			{
+				uint32_t unitId;
+				std::shared_ptr<StackWithBonuses> preHitTarget;
+				PlayerColor targetController;
+				int64_t adjustedDamage;
+				int64_t healthBefore;
+				std::optional<newHorizonsElementalRebirth::DeathSnapshot> rebirthSource;
+				bool cloneKilled;
+				bool nativeRebirth;
+			};
+			std::vector<PendingBurstHit> pendingHits;
+			pendingHits.reserve(hostileIds.size());
+
+			// Match the authoritative batch: resolve every target, mitigation value,
+			// controller, and death-source snapshot before changing any recipient.
+			for(const auto targetId : hostileIds)
+			{
+				auto target = getForUpdate(targetId);
+				if(!target || !target->alive())
+					continue;
+				const auto adjustedDamage = newHorizonsMagicalAbilityDamage::adjustDamage(
+					*this, *target, rawShare);
+				if(adjustedDamage <= 0)
+					continue;
+				auto preHitTarget = std::make_shared<StackWithBonuses>(this, target.get());
+				preHitTarget->freezeDamageScoringBonusSnapshot();
+				pendingHits.push_back({targetId, std::move(preHitTarget), battleGetOwner(target.get()),
+					adjustedDamage, target->getAvailableHealth(), captureElementalRebirthSource(*target),
+					target->isClone(), hasReadyNativeRebirth(target.get())});
+			}
+
+			for(const auto & hit : pendingHits)
+			{
+				auto target = getForUpdate(hit.unitId);
+				if(!target || !target->alive())
+					continue;
+				auto appliedDamage = hit.adjustedDamage;
+				target->damage(appliedDamage, false, battle::DamageProvenance::SPELL);
+				const auto actualDamage = std::max<int64_t>(0,
+					hit.healthBefore - target->getAvailableHealth());
+				if(actualDamage <= 0)
+					continue;
+				target->removeUnitBonus(Bonus::UntilBeingAttacked);
+				projectedPrimalBurstHits.push_back({hit.preHitTarget, hit.targetController, actualDamage});
+			}
+
+			// Only after the complete damage batch do its deaths trigger new rebirths.
+			for(const auto & hit : pendingHits)
+			{
+				if(!hit.rebirthSource)
+					continue;
+				auto target = getForUpdate(hit.unitId);
+				projectElementalRebirth(target.get(), *hit.rebirthSource,
+					!target || !target->alive(), hit.cloneKilled, hit.nativeRebirth);
+			}
+		}
+	}
 	return descriptor->unit.id;
 }
 

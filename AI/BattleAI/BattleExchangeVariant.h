@@ -109,6 +109,9 @@ private:
 	void accountForNewElementalRebirthSpawns(const std::set<uint32_t> & idsBefore,
 		const battle::Unit * referenceActor, bool referenceActorIsOurs,
 		DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & hb);
+	void accountForNewPrimalBurstHits(size_t firstNewHit, PlayerColor referenceController,
+		bool referenceActorIsOurs, DamageCache & damageCache,
+		const std::shared_ptr<HypotheticBattle> & hb);
 	BattleScore dpsScore;
 	std::map<uint32_t, AttackerValue> attackerValue;
 	std::set<uint32_t> scoredElementalRebirthSpawnUnitIds;

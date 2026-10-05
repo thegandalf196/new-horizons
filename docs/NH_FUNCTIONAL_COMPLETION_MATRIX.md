@@ -1,6 +1,22 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-05
+UP046 three-perk source/native acceptance: Primal Burst supplies a genuine Basic
+selection; Greater Essence adds15 percentage points to Rebirth HP; Elemental
+Ward grants the actual temporary output20% magical damage reduction. Runtime
+and detached AI share captured selections, HP, unique current-allegiance targets,
+non-spell magical mitigation and batch ordering. Collateral scoring retains
+owned pre-hit inputs across branch copies. Repaired full build68374 passes;
+native92485 passes23/23 in6.366s, zero skips, including19 Rebirth cases and four
+adjacent controls.17 perk-data checks, module drift, diff checks and independent
+review pass. Perks214->217/310; faction perks62->65/90; Rebirth0->3/10. Ranks
+remain93/93 and combat identities61/67. Evidence: UP046-three-perks-build-repaired.log
+and UP046-three-perks-native.log/XML. Retain failed compiler logs and lessons.
+Remaining seven Rebirth perks, wider Guardian/native-Rebirth combinations,
+representative valuation accuracy, full combat save/resume and rendered/playable
+delivery remain separate; this is not complete Rebirth progression. Next mapped
+foundation: Swift Rebirth's bounded current-cycle insertion.
+The following base-rank paragraph is historical acceptance, not current counts.
 UP046 base ranks source/native accepted: frozen battle-start HP, authoritative
 physical/spell injury reactions, exact25/40/50% temporary Elementals at the legal
 corpse position, ordinary unit updates and result log are implemented. Detached
@@ -2362,9 +2378,9 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | All three ranks per Skill are active; many registered Skills still lack complete perk progression. |
 | Skill rank effects active | 93/93 | Elemental Rebirth's three ranks now have source/native and owning-side AI evidence. Active status does not certify every wider interaction. |
-| Skill perks active | 214/310 | 96 planned; Master Logistician is the newest source/native-verified activation. Diplomacy is 7/10; Chaos Magic 4/10; Necromancy 10/10; Learning 3/10; Estates 6/10; Battlecraft 6/10; Logistics 8/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 217/310 | 93 planned; Primal Burst, Greater Essence and Elemental Ward are the newest source/native-verified activations. Diplomacy is 7/10; Chaos Magic 4/10; Necromancy 10/10; Learning 3/10; Estates 6/10; Battlecraft 6/10; Logistics 8/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 27/27 | All nine faction rank foundations are active; their remaining perks and wider integration are separate work. |
-| Faction perks active | 62/90 | 28 planned perks; Lord of the Dead has normal Expert selection, ordered conversion and actual atomic Bone Dragon town-delivery evidence. |
+| Faction perks active | 65/90 | 25 planned perks; Elemental Rebirth has three accepted perks with normal Basic-to-Advanced selection and live/detached evidence. |
 | Canonical combat-spell identities registered | 61/67 | 6 missing/inactive; Puppet Master is the newest source/native-verified identity. Chaos is 7/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
@@ -2568,13 +2584,13 @@ interactions, and rendered/playable acceptance remain separate.
 | Necromancy | 3/0 | 10/0 | All ten perks are active. UP184/185/186/187/188/189 record accepted category conversion, Master of Bones, casualty-derived XP/Mana, atomic Ossuary fallback and Bone Dragon conversion evidence. Broader save/control/result-UI interactions and playable delivery remain separate. |
 | Bloodrage | 3/0 | 7/3 | War Drums, Fury Unbound, Endless Bloodshed, Unrelenting, Berserker, Blood Scent and Rage Through Pain have focused live/AI evidence and legal progression; First Blood, Slayer and Avatar of Rage remain planned. |
 | Bulwark of the Mire | 3/0 | 9/1 | Nine perks are active in committed source; 53/53 native regressions pass; persistent Poison status builds and passes focused tests; Deep Bulwark and rendered/playable evidence remain open |
-| Elemental Rebirth | 3/0 | 0/10 | Base ranks source/native verified, including frozen starting HP, exact temporary output and owning-side AI. All ten perks and ordinary perk-gated progression remain missing. |
+| Elemental Rebirth | 3/0 | 3/7 | Base ranks plus Primal Burst, Greater Essence and Elemental Ward source/native verified. Normal Basic-to-Advanced perk selection, exact HP, magical mitigation and owning-side AI are exercised; seven perks remain planned. |
 
 Ordinary progression requires a perk at the preceding rank before the next Skill
 rank; canonical exceptional external rank advancement remains permitted.
-Both Elemental Rebirth and Divine Mandate lack Basic perks. Their ranks are
-implemented, but ordinary perk-gated
-advancement remains incomplete. Diplomacy has three active ranks and legal Basic/Advanced
+Divine Mandate still lacks Basic perks. Elemental Rebirth now has a real Basic
+prerequisite and Advanced choices, but lacks an Expert perk; full ordinary
+perk-gated advancement remains incomplete. Diplomacy has three active ranks and legal Basic/Advanced
 perk choices. Fortune's Favor opens Luck; Tax Collector opens Estates and
 Mentor opens Learning. Backstab now
 opens the Shroud's ordinary Advanced-rank progression; Blinkmaster opens Chaos.

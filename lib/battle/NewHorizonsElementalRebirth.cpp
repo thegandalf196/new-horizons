@@ -11,6 +11,7 @@
 #include "NewHorizonsElementalRebirth.h"
 
 #include "../CStack.h"
+#include "CBattleInfoCallback.h"
 #include "../GameLibrary.h"
 #include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../entities/hero/NewHorizonsPerkRules.h"
@@ -21,6 +22,7 @@
 #include <algorithm>
 #include <array>
 #include <limits>
+#include <set>
 #include <string>
 #include <string_view>
 
@@ -31,6 +33,11 @@ namespace
 constexpr std::string_view SKILL_ID = "new-horizons:elementalRebirth";
 constexpr std::array<std::string_view, 3> RANK_IDS = {"basic", "advanced", "expert"};
 constexpr std::array<int, 3> HEALTH_PERCENTAGES = {25, 40, 50};
+constexpr std::string_view PRIMAL_BURST_ID = "new-horizons:elementalRebirth.primalBurst";
+constexpr std::string_view GREATER_ESSENCE_ID = "new-horizons:elementalRebirth.greaterEssence";
+constexpr std::string_view ELEMENTAL_WARD_ID = "new-horizons:elementalRebirth.elementalWard";
+constexpr int GREATER_ESSENCE_HEALTH_PERCENTAGE_POINTS = 15;
+constexpr int ELEMENTAL_WARD_REDUCTION_BASIS_POINTS = 2000;
 
 const std::array<CreatureID, 5> & canonicalElementals()
 {
@@ -52,7 +59,8 @@ bool isNormalSlot(const battle::Unit & unit)
 bool isValidProfile(const ActiveProfile & profile)
 {
 	return profile.rank >= 1 && profile.rank <= 3
-		&& profile.healthPercent == HEALTH_PERCENTAGES[static_cast<size_t>(profile.rank - 1)];
+		&& profile.healthPercent == HEALTH_PERCENTAGES[static_cast<size_t>(profile.rank - 1)]
+		&& (profile.rank >= 2 || (!profile.greaterEssence && !profile.elementalWard));
 }
 }
 
@@ -85,7 +93,58 @@ std::optional<ActiveProfile> activeProfile(const CGHeroInstance * hero)
 	if(!status.isString() || status.String() != "active")
 		return std::nullopt;
 
-	return ActiveProfile{rank, HEALTH_PERCENTAGES[static_cast<size_t>(rank - 1)]};
+	return ActiveProfile{rank, HEALTH_PERCENTAGES[static_cast<size_t>(rank - 1)],
+		hero->hasActivePerk(std::string(SKILL_ID), std::string(PRIMAL_BURST_ID)),
+		hero->hasActivePerk(std::string(SKILL_ID), std::string(GREATER_ESSENCE_ID)),
+		hero->hasActivePerk(std::string(SKILL_ID), std::string(ELEMENTAL_WARD_ID))};
+}
+
+int64_t primalBurstDamageBudget(int64_t rebornAggregateHP)
+{
+	return rebornAggregateHP > 0 ? rebornAggregateHP / 10 : 0;
+}
+
+int64_t primalBurstShare(int64_t damageBudget, size_t hostileCount)
+{
+	if(damageBudget <= 0 || hostileCount == 0
+		|| hostileCount > static_cast<size_t>(std::numeric_limits<int64_t>::max()))
+		return 0;
+	return damageBudget / static_cast<int64_t>(hostileCount);
+}
+
+std::vector<uint32_t> adjacentHostileUnitIds(const CBattleInfoCallback & battle,
+	const battle::Unit & center)
+{
+	std::set<uint32_t> hostileIds;
+	for(const auto & hex : center.getSurroundingHexes())
+	{
+		if(!hex.isAvailable())
+			continue;
+		const auto * candidate = battle.battleGetUnitByPos(hex, true);
+		if(!candidate || candidate->unitId() == center.unitId()
+			|| !candidate->alive() || !candidate->isValidTarget(false)
+			|| battle.battleGetOwner(&center) == battle.battleGetOwner(candidate))
+			continue;
+		hostileIds.insert(candidate->unitId());
+	}
+	return {hostileIds.begin(), hostileIds.end()};
+}
+
+std::optional<Bonus> elementalWardBonus(const ActiveProfile & profile)
+{
+	if(!isValidProfile(profile) || !profile.elementalWard)
+		return std::nullopt;
+
+	const SecondarySkill skill(SecondarySkill::decode(std::string(SKILL_ID)));
+	if(skill.getNum() < 0)
+		return std::nullopt;
+
+	Bonus bonus(BonusDuration::ONE_BATTLE, BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS,
+		BonusSource::SECONDARY_SKILL, ELEMENTAL_WARD_REDUCTION_BASIS_POINTS,
+		BonusSourceID(skill), BonusSubtypeID(SpellSchool::ANY));
+	bonus.stacking = std::string(ELEMENTAL_WARD_ID);
+	bonus.description.appendRawString("Elemental Ward: 20% magical damage reduction");
+	return bonus;
 }
 
 bool isEligibleSource(const battle::Unit & unit)
@@ -172,7 +231,8 @@ int64_t targetHP(const DeathSnapshot & snapshot)
 		return 0;
 
 	const auto basis = snapshot.battleStartMaximumAggregateHP;
-	const auto percent = snapshot.profile.healthPercent;
+	const auto percent = snapshot.profile.healthPercent
+		+ (snapshot.profile.greaterEssence ? GREATER_ESSENCE_HEALTH_PERCENTAGE_POINTS : 0);
 	const auto scaled = (basis / 100) * percent + ((basis % 100) * percent) / 100;
 	return std::max<int64_t>(1, scaled);
 }

@@ -134,6 +134,15 @@ The following example shows an artifact providing a bonus based on the level of 
 
 # Fractional magical damage reduction
 
+Non-spell magical abilities use `newHorizonsMagicalAbilityDamage::adjustDamage`.
+For saved New Horizons multiplicative-MDR battles it combines independent
+ANY-school percent/basis-point sources, Hold the Line and controller-derived
+perk protection with the ordinary magical reduction cap. This is damage
+mitigation, not a spell cast: it does not invoke Magic Resistance, School or
+spell-specific immunity, Spell Lock, caster bonuses or elemental Orb bonuses.
+Outside that saved profile it leaves the ability's raw damage unchanged; it
+does not alter any existing legacy spell path.
+
 `SPELL_DAMAGE_REDUCTION_BASIS_POINTS` stores an independent reduction source
 in basis points: 100 equals 1%, and values are bounded to 0–10000 at damage
 resolution. Its subtype follows `SPELL_DAMAGE_REDUCTION` (a Spell School or

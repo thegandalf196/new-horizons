@@ -59,6 +59,7 @@ set(lib_MAIN_SRCS
 	battle/TimeStopState.cpp
 	battle/NewHorizonsBloodrage.cpp
 	battle/NewHorizonsElementalRebirth.cpp
+	battle/NewHorizonsMagicalAbilityDamage.cpp
 	battle/NewHorizonsCreatureAbilitySuppression.cpp
 	battle/NewHorizonsBulwark.cpp
 	battle/NewHorizonsPlague.cpp
@@ -516,6 +517,7 @@ set(lib_MAIN_HEADERS
 	battle/PhysicalAffliction.h
 	battle/NewHorizonsBloodrage.h
 	battle/NewHorizonsElementalRebirth.h
+	battle/NewHorizonsMagicalAbilityDamage.h
 	battle/NewHorizonsCreatureAbilitySuppression.h
 	battle/NewHorizonsBulwark.h
 	battle/NewHorizonsSoulChain.h

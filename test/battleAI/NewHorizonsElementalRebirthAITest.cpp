@@ -12,6 +12,7 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/NewHorizonsMagicalAbilityDamage.h"
 #include "../../lib/battle/NewHorizonsElementalRebirth.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/entities/hero/CHero.h"
@@ -23,6 +24,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <string_view>
 
 namespace
 {
@@ -67,6 +69,23 @@ const battle::Unit * unitAt(const CBattleInfoCallback & battle, BattleSide side,
 	return nullptr;
 }
 
+std::optional<newHorizonsElementalRebirth::DeathSnapshot> captureAndKillSource(
+	HypotheticBattle & projected, uint32_t sourceId)
+{
+	const auto * source = projected.battleGetUnitByID(sourceId);
+	if(!source)
+		return {};
+	auto snapshot = projected.captureElementalRebirthSource(*source);
+	if(!snapshot)
+		return {};
+	auto projectedSource = projected.getForUpdate(sourceId);
+	int64_t lethalDamage = projectedSource->getAvailableHealth();
+	projectedSource->damage(lethalDamage);
+	if(projected.battleGetUnitByID(sourceId)->alive())
+		return {};
+	return snapshot;
+}
+
 std::vector<const battle::Unit *> rebirthSpawns(const HypotheticBattle & battle)
 {
 	std::vector<const battle::Unit *> result;
@@ -75,12 +94,29 @@ std::vector<const battle::Unit *> rebirthSpawns(const HypotheticBattle & battle)
 			result.push_back(unit);
 	return result;
 }
+
+bool moveUnitAdjacent(HypotheticBattle & battle, uint32_t movingUnitId, uint32_t centerUnitId)
+{
+	const auto * center = battle.battleGetUnitByID(centerUnitId);
+	if(!center)
+		return false;
+	for(const auto & hex : center->getSurroundingHexes())
+		if(hex.isAvailable() && !battle.battleGetUnitByPos(hex, true))
+		{
+			battle.moveUnit(movingUnitId, hex);
+			return true;
+		}
+	return false;
+}
 }
 
 class NewHorizonsElementalRebirthAITest : public HeroCommandFixture
 {
 protected:
 	static constexpr auto REBIRTH_SKILL = "new-horizons:elementalRebirth";
+	static constexpr auto PRIMAL_BURST = "new-horizons:elementalRebirth.primalBurst";
+	static constexpr auto GREATER_ESSENCE = "new-horizons:elementalRebirth.greaterEssence";
+	static constexpr auto ELEMENTAL_WARD = "new-horizons:elementalRebirth.elementalWard";
 	CGHeroInstance * confluxHero = nullptr;
 	const battle::Unit * source = nullptr;
 	const battle::Unit * survivingAlly = nullptr;
@@ -104,7 +140,8 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
 
-	void prepare()
+	void prepare(MasteryLevel::Type rebirthRank = MasteryLevel::BASIC, int sourceCount = 1,
+		const char * advancedPerk = nullptr, bool selectPrimalBurst = false, int attackerCount = 100)
 	{
 		startGame();
 		attackerSideHero->clearSlots();
@@ -117,13 +154,34 @@ protected:
 		ASSERT_GE(rebirthSkillId, 0);
 		confluxHero->setSecSkillLevel(SecondarySkill(rebirthSkillId), MasteryLevel::BASIC,
 			ChangeValueMode::ABSOLUTE);
+		if(selectPrimalBurst || advancedPerk)
+		{
+			confluxHero->applyPerkSelection({REBIRTH_SKILL, PRIMAL_BURST});
+			ASSERT_TRUE(confluxHero->hasActivePerk(REBIRTH_SKILL, PRIMAL_BURST));
+		}
+		if(advancedPerk)
+		{
+			confluxHero->setSecSkillLevel(SecondarySkill(rebirthSkillId), MasteryLevel::ADVANCED,
+				ChangeValueMode::ABSOLUTE);
+			confluxHero->applyPerkSelection({REBIRTH_SKILL, advancedPerk});
+			ASSERT_TRUE(confluxHero->hasActivePerk(REBIRTH_SKILL, advancedPerk));
+		}
+		if(rebirthRank != MasteryLevel::BASIC
+			&& !(advancedPerk && rebirthRank == MasteryLevel::ADVANCED))
+			confluxHero->setSecSkillLevel(SecondarySkill(rebirthSkillId), rebirthRank,
+				ChangeValueMode::ABSOLUTE);
 		ASSERT_TRUE(confluxHero->usesNewHorizonsMovement());
 		const auto sourceProfile = newHorizonsElementalRebirth::activeProfile(confluxHero);
 		ASSERT_TRUE(sourceProfile.has_value());
-		ASSERT_EQ(sourceProfile->rank, 1);
+		ASSERT_EQ(sourceProfile->rank, static_cast<int>(rebirthRank));
+		ASSERT_EQ(sourceProfile->primalBurst, selectPrimalBurst || advancedPerk);
+		ASSERT_EQ(sourceProfile->greaterEssence,
+			advancedPerk && std::string_view(advancedPerk) == GREATER_ESSENCE);
+		ASSERT_EQ(sourceProfile->elementalWard,
+			advancedPerk && std::string_view(advancedPerk) == ELEMENTAL_WARD);
 
-		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), creature("core:pikeman"), 100));
-		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), creature("core:peasant"), 1));
+		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), creature("core:pikeman"), attackerCount));
+		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), creature("core:peasant"), sourceCount));
 		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(1), creature("core:peasant"), 1000));
 		giveArtifact(confluxHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		confluxHero->removeAllSpells();
@@ -212,6 +270,88 @@ TEST_F(NewHorizonsElementalRebirthAITest, ProjectsSpellKilledSourceAsTemporarySt
 		<< "Detached spell projection must not injure the live source";
 }
 
+TEST_F(NewHorizonsElementalRebirthAITest, SelectedGreaterEssenceAddsFifteenPointsAtAdvancedAndExpert)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::ADVANCED, 100, GREATER_ESSENCE, true));
+	const auto basis = source->getBattleStartMaximumAggregateHP();
+	ASSERT_GT(basis, 0);
+
+	auto advancedProjection = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto advancedSnapshot = captureAndKillSource(*advancedProjection, source->unitId());
+	ASSERT_TRUE(advancedSnapshot.has_value());
+	EXPECT_TRUE(advancedSnapshot->profile.primalBurst);
+	EXPECT_TRUE(advancedSnapshot->profile.greaterEssence);
+	EXPECT_FALSE(advancedSnapshot->profile.elementalWard);
+	ASSERT_TRUE(advancedProjection->projectElementalRebirth(
+		advancedProjection->battleGetUnitByID(source->unitId()), *advancedSnapshot, true, false, false));
+	auto advancedSpawns = rebirthSpawns(*advancedProjection);
+	ASSERT_EQ(advancedSpawns.size(), 1u);
+	EXPECT_EQ(advancedSpawns.front()->getAvailableHealth(), basis * 55 / 100);
+
+	const int rebirthSkillId = SecondarySkill::decode(REBIRTH_SKILL);
+	confluxHero->setSecSkillLevel(SecondarySkill(rebirthSkillId), MasteryLevel::EXPERT,
+		ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(confluxHero->hasActivePerk(REBIRTH_SKILL, GREATER_ESSENCE));
+	auto expertProjection = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto expertSnapshot = captureAndKillSource(*expertProjection, source->unitId());
+	ASSERT_TRUE(expertSnapshot.has_value());
+	EXPECT_EQ(expertSnapshot->profile.rank, static_cast<int>(MasteryLevel::EXPERT));
+	EXPECT_TRUE(expertSnapshot->profile.greaterEssence);
+	ASSERT_TRUE(expertProjection->projectElementalRebirth(
+		expertProjection->battleGetUnitByID(source->unitId()), *expertSnapshot, true, false, false));
+	const auto expertSpawns = rebirthSpawns(*expertProjection);
+	ASSERT_EQ(expertSpawns.size(), 1u);
+	EXPECT_EQ(expertSpawns.front()->getAvailableHealth(), basis * 65 / 100);
+
+	EXPECT_EQ(source->getAvailableHealth(), basis)
+		<< "Greater Essence projections must leave the authoritative source untouched";
+}
+
+TEST_F(NewHorizonsElementalRebirthAITest, WardAndPrimalBurstUseTheSharedProjectedMagicMitigation)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::ADVANCED, 100, ELEMENTAL_WARD, true));
+	const auto sourceId = source->unitId();
+	const auto targetId = opposingPikemen->unitId();
+	const auto sourceHealth = source->getAvailableHealth();
+	const auto targetHealth = opposingPikemen->getAvailableHealth();
+	auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	ASSERT_TRUE(moveUnitAdjacent(*projected, targetId, sourceId));
+
+	const auto hostileIds = newHorizonsElementalRebirth::adjacentHostileUnitIds(
+		*projected, *projected->battleGetUnitByID(sourceId));
+	ASSERT_EQ(hostileIds, std::vector<uint32_t>{targetId});
+	const auto snapshot = captureAndKillSource(*projected, sourceId);
+	ASSERT_TRUE(snapshot.has_value());
+	EXPECT_TRUE(snapshot->profile.primalBurst);
+	EXPECT_FALSE(snapshot->profile.greaterEssence);
+	EXPECT_TRUE(snapshot->profile.elementalWard);
+	ASSERT_TRUE(projected->projectElementalRebirth(
+		projected->battleGetUnitByID(sourceId), *snapshot, true, false, false));
+
+	const auto spawns = rebirthSpawns(*projected);
+	ASSERT_EQ(spawns.size(), 1u);
+	const auto * reborn = spawns.front();
+	const auto expectedRebornHP = source->getBattleStartMaximumAggregateHP() * 40 / 100;
+	EXPECT_EQ(reborn->getAvailableHealth(), expectedRebornHP);
+	EXPECT_EQ(reborn->valOfBonuses(BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS), 2000);
+	ASSERT_EQ(projected->getProjectedPrimalBurstHits().size(), 1u);
+	const auto & burstHit = projected->getProjectedPrimalBurstHits().front();
+	EXPECT_EQ(burstHit.preHitTarget->unitId(), targetId);
+	EXPECT_EQ(burstHit.targetController, battle()->battleGetOwner(opposingPikemen));
+	EXPECT_EQ(burstHit.actualDamage, newHorizonsElementalRebirth::primalBurstDamageBudget(expectedRebornHP));
+	EXPECT_EQ(projected->battleGetUnitByID(targetId)->getAvailableHealth(), targetHealth - burstHit.actualDamage);
+
+	// Magic Resistance is not a substitute for the separate generic magical-damage
+	// reduction supplied by Ward; the shared forecast applies exactly 20% here.
+	projected->getForUpdate(reborn->unitId())->addUnitBonus({Bonus(BonusDuration::PERMANENT,
+		BonusType::MAGIC_RESISTANCE, BonusSource::OTHER, 100, BonusSourceID())});
+	EXPECT_EQ(newHorizonsMagicalAbilityDamage::adjustDamage(*projected, *reborn, 100), 80);
+	EXPECT_EQ(source->getAvailableHealth(), sourceHealth);
+	EXPECT_EQ(opposingPikemen->getAvailableHealth(), targetHealth);
+	EXPECT_EQ(battle()->battleGetAllUnits(false).size(), 3u)
+		<< "Ward and Primal Burst must remain detached AI projection effects";
+}
+
 TEST_F(NewHorizonsElementalRebirthAITest, ReplacementChangesPhysicalExchangeScoreInsteadOfBeingDroppedAsMagicalSummon)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
@@ -266,4 +406,74 @@ TEST_F(NewHorizonsElementalRebirthAITest, ReplacementChangesPhysicalExchangeScor
 	EXPECT_NEAR(rebirthScore - baselineScore, expectedReplacementValue,
 		std::max(1.0f, expectedReplacementValue * 0.02f))
 		<< "The projected replacement must contribute exactly once in the physical DPS score scale";
+}
+
+TEST_F(NewHorizonsElementalRebirthAITest, PrimalBurstCollateralIsIncludedInPhysicalExchangeAndBranchCopies)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::BASIC, 400, nullptr, true, 1000));
+	ASSERT_TRUE(confluxHero->hasActivePerk(REBIRTH_SKILL, PRIMAL_BURST));
+	const auto sourceId = source->unitId();
+	const auto attackerId = opposingPikemen->unitId();
+	const auto liveSourceHealth = source->getAvailableHealth();
+	const auto liveAttackerHealth = opposingPikemen->getAvailableHealth();
+
+	auto rebirthProjection = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	ASSERT_TRUE(moveUnitAdjacent(*rebirthProjection, attackerId, sourceId));
+	const auto adjacentPosition = rebirthProjection->battleGetUnitByID(attackerId)->getPosition();
+	DamageCache rebirthCache;
+	BattleExchangeVariant rebirthExchange;
+	rebirthExchange.trackAttack(rebirthProjection->getForUpdate(attackerId),
+		rebirthProjection->getForUpdate(sourceId), false, false, rebirthCache, rebirthProjection,
+		false, false);
+	ASSERT_FALSE(rebirthProjection->battleGetUnitByID(sourceId)->alive());
+	const auto spawns = rebirthSpawns(*rebirthProjection);
+	ASSERT_EQ(spawns.size(), 1u);
+	ASSERT_EQ(rebirthProjection->getProjectedPrimalBurstHits().size(), 1u);
+	const auto & burstHit = rebirthProjection->getProjectedPrimalBurstHits().front();
+	EXPECT_EQ(burstHit.preHitTarget->unitId(), attackerId);
+	EXPECT_EQ(burstHit.preHitTarget->getAvailableHealth(), liveAttackerHealth);
+	EXPECT_EQ(burstHit.actualDamage, newHorizonsElementalRebirth::primalBurstDamageBudget(
+		spawns.front()->getAvailableHealth()));
+
+	const auto rebirthScore = rebirthExchange.getScore().enemyDamageReduce
+		- rebirthExchange.getScore().ourDamageReduce;
+	const auto enemies = rebirthProjection->battleGetUnitsIf([&](const battle::Unit * unit)
+	{
+		return unit && unit->alive() && !rebirthProjection->battleMatchOwner(spawns.front(), unit);
+	});
+	ASSERT_FALSE(enemies.empty());
+	const auto fullSpawnHP = static_cast<int64_t>(spawns.front()->getCount()) * spawns.front()->getMaxHealth();
+	ASSERT_GT(fullSpawnHP, 0);
+	const float expectedReplacementValue = static_cast<float>(rebirthCache.getOriginalDamage(
+		spawns.front(), enemies.front(), rebirthProjection)) * static_cast<float>(spawns.front()->getAvailableHealth())
+		/ static_cast<float>(fullSpawnHP);
+	const float expectedBurstValue = AttackPossibility::calculateDamageReduce(nullptr,
+		burstHit.preHitTarget.get(), static_cast<uint64_t>(burstHit.actualDamage), rebirthCache, rebirthProjection);
+
+	// A child branch must retain the owned pre-hit snapshot and burst ledger entry.
+	auto childProjection = std::make_shared<HypotheticBattle>(environment.get(), rebirthProjection);
+	ASSERT_EQ(childProjection->getProjectedPrimalBurstHits().size(), 1u);
+	EXPECT_EQ(childProjection->getProjectedPrimalBurstHits().front().preHitTarget->getAvailableHealth(),
+		liveAttackerHealth);
+
+	confluxHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(REBIRTH_SKILL)),
+		MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	auto baselineProjection = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	baselineProjection->moveUnit(attackerId, adjacentPosition);
+	DamageCache baselineCache;
+	BattleExchangeVariant baselineExchange;
+	baselineExchange.trackAttack(baselineProjection->getForUpdate(attackerId),
+		baselineProjection->getForUpdate(sourceId), false, false, baselineCache, baselineProjection,
+		false, false);
+	const auto baselineScore = baselineExchange.getScore().enemyDamageReduce
+		- baselineExchange.getScore().ourDamageReduce;
+	EXPECT_TRUE(baselineProjection->getElementalRebirthSpawnUnitIds().empty());
+	EXPECT_TRUE(baselineProjection->getProjectedPrimalBurstHits().empty());
+	EXPECT_GT(expectedReplacementValue, 0.0f);
+	EXPECT_GT(expectedBurstValue, 0.0f);
+	EXPECT_NEAR(rebirthScore - baselineScore, expectedReplacementValue + expectedBurstValue,
+		std::max(1.0f, (expectedReplacementValue + expectedBurstValue) * 0.02f))
+		<< "The detached exchange values both the temporary replacement and its magical collateral";
+	EXPECT_EQ(source->getAvailableHealth(), liveSourceHealth);
+	EXPECT_EQ(opposingPikemen->getAvailableHealth(), liveAttackerHealth);
 }
