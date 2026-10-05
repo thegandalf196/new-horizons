@@ -59,6 +59,9 @@ DLL_LINKAGE std::vector<SpellID> eligibleSpellEffectGroups(const JsonNode & magi
 	const battle::Unit * unit);
 /// Returns a copy of the selected source spell's complete SPELL_EFFECT group.
 DLL_LINKAGE std::vector<Bonus> spellEffectGroupBonuses(const battle::Unit * unit, SpellID sourceSpell);
+/// Classify an existing selected group before removal. Spell-effect transport does not make
+/// physical afflictions (including legacy Poison/Disease groups) magical.
+DLL_LINKAGE bool isMagicalSpellEffectGroup(const battle::Unit * unit, SpellID sourceSpell);
 /// Whether this unit currently carries the distinct stored physical Poison affliction.
 DLL_LINKAGE bool hasPhysicalPoison(const battle::Unit * unit);
 /// Clears only the stored physical Poison fields on a copied/projected unit state.

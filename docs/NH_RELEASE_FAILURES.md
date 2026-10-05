@@ -2,6 +2,42 @@
 
 ## Purpose
 
+### 2026-10-05 UP108 — Allowance kind is not grant source
+
+Repaired native build37739 failed in the ordinary Purify AI fixture because
+`GrantSource::HERO` does not exist. HERO is an allowance kind; ROUND is the
+source of the ordinary round allowance. Correct the assertion to ROUND without
+changing production or dropping the ordinary-cast control. Both historical V2
+fixtures now also strip the V3-only restoration field. Preserve
+UP108-purifying-native-build-repaired.log; the replacement build uses
+UP108-purifying-native-build-repaired-v2.log. Repaired build30070 exits0;
+native4954 passes43/43 in7.802s, zero skips. All original filter cases retained;
+production validation was not loosened. Source/native acceptance established.
+
+### 2026-10-05 UP108 — Purify fixture version and AI-choice assumptions
+
+Client15739 and native71940 build successfully. First focused run54853 passes
+40/43 in7.393s: all five new server cases and the selected Divine Mandate AI
+case pass. Two existing V2 compatibility fixtures reject a copied V3-only
+`heroAccess` field; strip it from their historical snapshots rather than
+loosening the strict gameplay schema. The new ordinary-AI control wrongly
+assumes Purify must win against legal Orders: the evaluator selects an Order.
+Keep its no-extra-cleanse/source/parity assertions, but isolate ordinary Purify
+behavior from global heuristic preference. Preserve UP108-purifying-native.log
+and XML; acceptance remains pending the repaired focused run.
+
+### 2026-10-05 UP108 — Spell-effect transport is not magical provenance
+
+Pre-build Purifying Mandate review found that legacy Poison/Disease can travel
+as SPELL_EFFECT source groups while the shared affliction system classifies
+them as physical. Treating every removed spell-source group as a magical
+trigger would wrongly award an extra cleanse after a physical-only removal.
+Runtime and detached AI now use the same pre-removal classification helper;
+ordinary Purify eligibility remains unchanged. The focused legacy Disease
+regression must leave an unrelated physical affliction intact. Do not infer
+provenance from packet/bonus source category alone. Native acceptance is pending
+under UP108, not established by this source review.
+
 ### 2026-10-05 UP108 — Order-preview source guard arity
 
 Knightly build79514 and native77528 pass32/32. The separate Order source guard

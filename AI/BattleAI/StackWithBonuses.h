@@ -124,7 +124,10 @@ public:
 	void updateUnitBonus(const std::vector<Bonus> & bonus);
 	void removeUnitBonus(const std::vector<Bonus> & bonus);
 	/// Projects an already selected Purify payload onto this detached state.
-	bool applyPurifySelection(const std::vector<SpellID> & spellEffectGroups, bool clearPhysicalPoison);
+	bool applyPurifySelection(const std::vector<SpellID> & spellEffectGroups, bool clearPhysicalPoison,
+		bool applyPurifyingMandate = false);
+	/// Removes exactly the highest-priority current physical affliction from this detached state.
+	bool removeFirstPhysicalAffliction();
 
 	void removeUnitBonus(const CSelector & selector);
 	/// Freeze the current bonus inputs for a retained pre-damage scoring snapshot.

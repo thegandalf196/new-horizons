@@ -46,6 +46,8 @@
 #include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/battle/NewHorizonsSoulChain.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
+#include "../../lib/battle/NewHorizonsDivineMandate.h"
+#include "../../lib/battle/PhysicalAffliction.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/gameState/InfoAboutArmy.h"
 #include "../../lib/CRandomGenerator.h"
@@ -155,6 +157,58 @@ bool isCanonicalPurify(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == newHorizonsPurify::SPELL_ID
 		&& spell->getId() == newHorizonsPurify::spellID();
+}
+
+float purifyingMandateAdditionalAfflictionValue(const SpellTargetEvaluator::PurifySelection & selection,
+	const Environment * environment, const std::shared_ptr<CBattleInfoCallback> & battleCallback)
+{
+	std::map<int32_t, std::vector<SpellID>> groupsByUnit;
+	std::set<int32_t> physicalPoisonUnits(selection.physicalPoisonStackIds.begin(),
+		selection.physicalPoisonStackIds.end());
+	for(const auto & [unitId, sourceSpell] : selection.spellEffectGroups)
+		groupsByUnit[unitId].push_back(sourceSpell);
+
+	if(groupsByUnit.empty())
+		return 0.0f;
+	const bool hasQualifyingGroup = std::any_of(groupsByUnit.begin(), groupsByUnit.end(),
+		[&](const auto & candidate)
+		{
+			const auto * unit = battleCallback->battleGetUnitByID(static_cast<uint32_t>(candidate.first));
+			return unit && std::any_of(candidate.second.begin(), candidate.second.end(), [&](const SpellID sourceSpell)
+			{
+				return newHorizonsPurify::isMagicalSpellEffectGroup(unit, sourceSpell);
+			});
+		});
+	if(!hasQualifyingGroup)
+		return 0.0f;
+
+	auto projection = std::make_shared<HypotheticBattle>(environment, battleCallback);
+	float result = 0.0f;
+	for(const auto & [unitId, groups] : groupsByUnit)
+	{
+		auto projectedUnit = projection->getForUpdate(static_cast<uint32_t>(unitId));
+		if(!projectedUnit || !projectedUnit->alive())
+			continue;
+
+		const bool removesMagicalSpellGroup = std::any_of(groups.begin(), groups.end(), [&](const SpellID sourceSpell)
+		{
+			return newHorizonsPurify::isMagicalSpellEffectGroup(projectedUnit.get(), sourceSpell);
+		});
+		projectedUnit->applyPurifySelection(groups, physicalPoisonUnits.contains(unitId));
+		if(!removesMagicalSpellGroup)
+			continue;
+
+		const auto affliction = physicalAfflictions::first(*projectedUnit);
+		if(!affliction)
+			continue;
+
+		// Keep the additional cleanse on the same health-value scale used by
+		// Purify's spell-group evaluation; the projection applies the shared
+		// Poison/Disease/Bleeding/oldest selection order.
+		if(projectedUnit->removeFirstPhysicalAffliction())
+			result += std::max(1.0f, static_cast<float>(projectedUnit->getAvailableHealth()) * 0.9f);
+	}
+	return result;
 }
 
 bool isCanonicalShadowGift(const CBattleInfoCallback & battle, const CSpell * spell)
@@ -4513,6 +4567,12 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							ps.spellPurifyChoices = selection.spellEffectGroups;
 							ps.spellPurifyPhysicalTargets = selection.physicalPoisonStackIds;
 							ps.spellPurifyHeuristicValue = selection.value;
+							if(divineMandateFollowup
+								&& newHorizonsDivineMandate::hasPurifyingMandatePerk(hero))
+							{
+								ps.spellPurifyHeuristicValue += purifyingMandateAdditionalAfflictionValue(
+									selection, env.get(), battleCallback);
+							}
 						}
 						if(isCanonicalShadowGift(*cb->getBattle(battleID), spell))
 						{
@@ -5136,6 +5196,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						physicalPoisonUnits.insert(id);
 						selectedUnits.insert(id);
 					}
+					const bool applyPurifyingMandate = ps.divineMandateFollowup
+						&& newHorizonsDivineMandate::hasPurifyingMandatePerk(hero);
 
 					bool selectionProjected = !selectedUnits.empty();
 					for(const auto id : selectedUnits)
@@ -5147,6 +5209,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							break;
 						}
 						const auto foundGroups = groupsByUnit.find(id);
+						bool removesMagicalSpellGroup = false;
 						if(foundGroups != groupsByUnit.end())
 							for(const auto sourceSpell : foundGroups->second)
 							{
@@ -5157,7 +5220,12 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 									continue;
 								}
 								if(newHorizonsPurify::spellEffectGroupBonuses(projectedUnit.get(), sourceSpell).empty())
+								{
 									selectionProjected = false;
+									continue;
+								}
+								removesMagicalSpellGroup = newHorizonsPurify::isMagicalSpellEffectGroup(
+									projectedUnit.get(), sourceSpell) || removesMagicalSpellGroup;
 							}
 						if(physicalPoisonUnits.contains(id)
 							&& !newHorizonsPurify::hasPhysicalPoison(projectedUnit.get()))
@@ -5167,7 +5235,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 						const auto groups = foundGroups == groupsByUnit.end()
 							? std::vector<SpellID>{} : foundGroups->second;
-						if(!projectedUnit->applyPurifySelection(groups, physicalPoisonUnits.contains(id)))
+						if(!projectedUnit->applyPurifySelection(groups, physicalPoisonUnits.contains(id),
+							applyPurifyingMandate && removesMagicalSpellGroup))
 						{
 							selectionProjected = false;
 							break;

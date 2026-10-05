@@ -572,9 +572,10 @@ void StackWithBonuses::removeUnitBonus(const std::vector<Bonus> & bonus)
 }
 
 bool StackWithBonuses::applyPurifySelection(const std::vector<SpellID> & spellEffectGroups,
-	bool clearPhysicalPoisonState)
+	bool clearPhysicalPoisonState, const bool applyPurifyingMandate)
 {
 	bool changed = false;
+	bool removedMagicalSpellGroup = false;
 	bool removePhysicalPoison = clearPhysicalPoisonState;
 	for(const auto sourceSpell : spellEffectGroups)
 	{
@@ -588,12 +589,33 @@ bool StackWithBonuses::applyPurifySelection(const std::vector<SpellID> & spellEf
 		if(group.empty())
 			continue;
 
+		removedMagicalSpellGroup = newHorizonsPurify::isMagicalSpellEffectGroup(this, sourceSpell)
+			|| removedMagicalSpellGroup;
 		removeUnitBonus(group);
 		changed = true;
 	}
 	if(removePhysicalPoison)
 		changed = newHorizonsPurify::clearPhysicalPoison(this) || changed;
+	if(applyPurifyingMandate && removedMagicalSpellGroup)
+		changed = removeFirstPhysicalAffliction() || changed;
 	return changed;
+}
+
+bool StackWithBonuses::removeFirstPhysicalAffliction()
+{
+	const auto affliction = physicalAfflictions::first(*this);
+	if(!affliction)
+		return false;
+
+	if(affliction->storedPoison)
+		return newHorizonsPurify::clearPhysicalPoison(this);
+
+	const auto removal = physicalAfflictions::removalPlan(*this, *affliction);
+	if(removal.empty())
+		return false;
+
+	removeUnitBonus(removal);
+	return true;
 }
 
 void StackWithBonuses::removeUnitBonus(const CSelector & selector)

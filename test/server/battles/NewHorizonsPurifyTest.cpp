@@ -8,7 +8,12 @@
 #include "HeroCommandFixture.h"
 
 #include "../../../lib/battle/BattleInfo.h"
+#include "../../../lib/battle/CBattleInfoEssentials.h"
+#include "../../../lib/battle/HeroCommand.h"
+#include "../../../lib/battle/NewHorizonsDivineMandate.h"
+#include "../../../lib/battle/PhysicalAffliction.h"
 #include "../../../lib/bonuses/Bonus.h"
+#include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/networkPacks/PacksForClientBattle.h"
@@ -22,6 +27,9 @@ namespace
 {
 constexpr auto lightMagicSkill = "new-horizons:lightMagic";
 constexpr auto purifierPerk = "new-horizons:lightMagic.purifier";
+constexpr auto divineMandateSkill = "new-horizons:divineMandate";
+constexpr auto sacredCommandPerk = "new-horizons:divineMandate.sacredCommand";
+constexpr auto purifyingMandatePerk = "new-horizons:divineMandate.purifyingMandate";
 
 SpellID purifySpell()
 {
@@ -65,6 +73,8 @@ protected:
 			for(auto & [identity, row] : rules["spells"].Struct())
 			{
 				(void)identity;
+				row.Struct().erase("heroAccess");
+				row.Struct().erase("restoration");
 				row.Struct().erase("structures");
 				if(row.Struct().contains("variant"))
 				{
@@ -76,7 +86,46 @@ protected:
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
 	}
 
-	void prepare(int32_t spellPower = 0, bool purifier = false)
+	void acceptPerkThroughOffer(CGHeroInstance * hero, const std::string_view skillId,
+		const std::string_view perkId)
+	{
+		const auto rankLookup = [hero](const std::string & queriedSkillId)
+		{
+			return hero->getPerkSkillRank(queriedSkillId);
+		};
+
+		for(uint64_t seed = 0; seed < 4096; ++seed)
+		{
+			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed);
+			const auto selected = std::find_if(offer.begin(), offer.end(), [&](const auto & candidate)
+			{
+				return candidate.selection.skillId == skillId && candidate.selection.perkId == perkId;
+			});
+			if(selected == offer.end())
+				continue;
+
+			const auto choice = static_cast<size_t>(std::distance(offer.begin(), selected));
+			gameHandler->levelUpHero(hero, offer, choice, seed, false);
+			ASSERT_TRUE(hero->hasActivePerk(std::string(skillId), std::string(perkId)));
+			return;
+		}
+
+		FAIL() << perkId << " never appeared in a legal perk offer";
+	}
+
+	void selectPurifyingMandate()
+	{
+		const int skill = SecondarySkill::decode(divineMandateSkill);
+		ASSERT_GE(skill, 0);
+		attackerSideHero->setSecSkillLevel(SecondarySkill(skill), MasteryLevel::BASIC,
+			ChangeValueMode::ABSOLUTE);
+		acceptPerkThroughOffer(attackerSideHero, divineMandateSkill, sacredCommandPerk);
+		attackerSideHero->setSecSkillLevel(SecondarySkill(skill), MasteryLevel::ADVANCED,
+			ChangeValueMode::ABSOLUTE);
+		acceptPerkThroughOffer(attackerSideHero, divineMandateSkill, purifyingMandatePerk);
+	}
+
+	void prepare(int32_t spellPower = 0, bool purifier = false, bool purifyingMandate = false)
 	{
 		startGame();
 		const int lightMagic = SecondarySkill::decode(lightMagicSkill);
@@ -90,6 +139,8 @@ protected:
 				ChangeValueMode::ABSOLUTE);
 			attackerSideHero->applyPerkSelection({lightMagicSkill, purifierPerk});
 		}
+		if(purifyingMandate)
+			selectPurifyingMandate();
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, spellPower, ChangeValueMode::ABSOLUTE);
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		attackerSideHero->addSpellToSpellbook(purifySpell());
@@ -106,6 +157,7 @@ protected:
 		ASSERT_EQ(battle()->getMagicRules()["rulesetVersion"].Integer(), magicVersion);
 		ASSERT_EQ(newHorizonsPurify::spellID(), purifySpell());
 		ASSERT_EQ(attackerSideHero->hasActivePerk(lightMagicSkill, purifierPerk), purifier);
+		ASSERT_EQ(newHorizonsDivineMandate::hasPurifyingMandatePerk(attackerSideHero), purifyingMandate);
 	}
 
 	void removeDeployedUnits()
@@ -141,6 +193,33 @@ protected:
 		change.data = state->save();
 		update.changedStacks.push_back(std::move(change));
 		gameHandler->sendAndApply(update);
+	}
+
+	void addMarkedAffliction(CStack * unit, const std::string & kind, const int64_t applicationOrder,
+		const int32_t sourceNumber)
+	{
+		const BonusSourceID sourceID{BonusCustomSource(sourceNumber)};
+		Bonus marker(BonusDuration::PERMANENT, BonusType::PHYSICAL_AFFLICTION,
+			BonusSource::OTHER, 0, sourceID);
+		JsonNode parameters;
+		parameters["kind"].String() = kind;
+		parameters["applicationOrder"].Integer() = applicationOrder;
+		marker.parameters = std::make_shared<BonusParameters>(parameters);
+
+		Bonus effect(BonusDuration::PERMANENT, BonusType::STACKS_SPEED, BonusSource::OTHER, -1, sourceID);
+		SetStackEffect add;
+		add.battleID = BattleID(0);
+		add.toAdd.emplace_back(unit->unitId(), std::vector<Bonus>{effect, marker});
+		gameHandler->sendAndApply(add);
+	}
+
+	bool hasAffliction(const CStack * unit, const std::string & kind) const
+	{
+		const auto afflictions = physicalAfflictions::enumerate(*unit);
+		return std::any_of(afflictions.begin(), afflictions.end(), [&](const auto & affliction)
+		{
+			return affliction.kind == kind;
+		});
 	}
 
 	BattleAction action(BattleHex center, std::vector<std::pair<int32_t, SpellID>> choices = {}) const
@@ -326,6 +405,127 @@ TEST_F(NewHorizonsPurifyTest, PurifierAutomaticallyClearsPhysicalPoisonInAdditio
 	EXPECT_EQ(friendly->physicalPoisonActivationsRemaining, 0);
 	EXPECT_EQ(friendly->physicalPoisonSourceStackId, -1);
 	EXPECT_FALSE(hasEffect(friendly, SpellID(SpellID::CURSE)));
+}
+
+TEST_F(NewHorizonsPurifyTest, DivineMandateOrderFollowupPurifyRemovesOneStoredPoisonAffliction)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0, false, true));
+	addSourceGroup(friendly, SpellID(SpellID::CURSE));
+	addPhysicalPoison(friendly);
+	addMarkedAffliction(friendly, "disease", 1, 41001);
+	addMarkedAffliction(friendly, "bleeding", 2, 41002);
+
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto allowance = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, purifySpell());
+	ASSERT_TRUE(allowance.has_value());
+	EXPECT_EQ(allowance->allowance, HeroActionAllowanceState::AllowanceKind::SPELL);
+	EXPECT_EQ(allowance->source, HeroActionAllowanceState::GrantSource::DIVINE_MANDATE);
+	ASSERT_TRUE(cast({{static_cast<int32_t>(friendly->unitId()), SpellID(SpellID::CURSE)}}));
+
+	EXPECT_FALSE(hasEffect(friendly, SpellID(SpellID::CURSE)));
+	EXPECT_EQ(friendly->physicalPoisonBaseDamage, 0);
+	EXPECT_EQ(friendly->physicalPoisonActivationsRemaining, 0);
+	EXPECT_TRUE(hasAffliction(friendly, "disease"));
+	EXPECT_TRUE(hasAffliction(friendly, "bleeding"));
+	EXPECT_EQ(battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER).completedPairs, 1);
+}
+
+TEST_F(NewHorizonsPurifyTest, PurifierCleanupPrecedesMandateDiseaseRemoval)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0, true, true));
+	addSourceGroup(friendly, SpellID(SpellID::CURSE));
+	addPhysicalPoison(friendly);
+	addMarkedAffliction(friendly, "disease", 1, 42001);
+	addMarkedAffliction(friendly, "bleeding", 2, 42002);
+
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	ASSERT_TRUE(cast({{static_cast<int32_t>(friendly->unitId()), SpellID(SpellID::CURSE)}}));
+
+	EXPECT_FALSE(hasEffect(friendly, SpellID(SpellID::CURSE)));
+	EXPECT_EQ(friendly->physicalPoisonBaseDamage, 0)
+		<< "Purifier's existing automatic Poison cleanup resolves before the Mandate bonus";
+	EXPECT_FALSE(hasAffliction(friendly, "disease"));
+	EXPECT_TRUE(hasAffliction(friendly, "bleeding"));
+	EXPECT_EQ(physicalAfflictions::enumerate(*friendly).size(), 1u);
+}
+
+TEST_F(NewHorizonsPurifyTest, OrdinaryInitialHeroSpellDoesNotReceivePurifyingMandateBonus)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0, false, true));
+	addSourceGroup(friendly, SpellID(SpellID::CURSE));
+	addPhysicalPoison(friendly);
+	addMarkedAffliction(friendly, "disease", 1, 43001);
+
+	const auto initialAllowance = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, purifySpell());
+	ASSERT_TRUE(initialAllowance.has_value());
+	EXPECT_EQ(initialAllowance->allowance, HeroActionAllowanceState::AllowanceKind::HERO);
+	EXPECT_NE(initialAllowance->source, HeroActionAllowanceState::GrantSource::DIVINE_MANDATE);
+	ASSERT_TRUE(cast({{static_cast<int32_t>(friendly->unitId()), SpellID(SpellID::CURSE)}}));
+
+	EXPECT_FALSE(hasEffect(friendly, SpellID(SpellID::CURSE)));
+	EXPECT_EQ(friendly->physicalPoisonBaseDamage, 20);
+	EXPECT_TRUE(hasAffliction(friendly, "disease"));
+	const auto status = battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER);
+	EXPECT_EQ(status.completedPairs, 0);
+	ASSERT_TRUE(status.pendingFollowup.has_value());
+	EXPECT_EQ(status.pendingFollowup->source, HeroActionAllowanceState::GrantSource::DIVINE_MANDATE);
+	EXPECT_EQ(status.pendingFollowup->allowance, HeroActionAllowanceState::AllowanceKind::ORDER);
+}
+
+TEST_F(NewHorizonsPurifyTest, PhysicalOnlyMandatePurifyDoesNotTriggerAnExtraAfflictionRemoval)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0, false, true));
+	addPhysicalPoison(friendly);
+	addMarkedAffliction(friendly, "disease", 1, 44001);
+
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	const auto allowanceBefore = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, purifySpell());
+	ASSERT_TRUE(allowanceBefore.has_value());
+	EXPECT_EQ(allowanceBefore->source, HeroActionAllowanceState::GrantSource::DIVINE_MANDATE);
+	EXPECT_FALSE(cast());
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_GT(friendly->physicalPoisonActivationsRemaining, 0);
+	const auto allowanceAfterNoOp = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, purifySpell());
+	ASSERT_TRUE(allowanceAfterNoOp.has_value());
+	EXPECT_EQ(allowanceAfterNoOp->source, HeroActionAllowanceState::GrantSource::DIVINE_MANDATE);
+
+	ASSERT_TRUE(cast({{static_cast<int32_t>(friendly->unitId()),
+		newHorizonsPurify::physicalPoisonChoiceID()}}));
+	EXPECT_EQ(friendly->physicalPoisonBaseDamage, 0);
+	EXPECT_EQ(friendly->physicalPoisonActivationsRemaining, 0);
+	EXPECT_TRUE(hasAffliction(friendly, "disease"));
+	EXPECT_EQ(battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER).completedPairs, 1);
+}
+
+TEST_F(NewHorizonsPurifyTest, MandateDiseaseGroupRemovalDoesNotUnlockAnotherAfflictionRemoval)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0, false, true));
+	// Synthetic legacy source groups keep this trigger regression deterministic;
+	// core Disease is also recognized as a physical affliction by the shared helper.
+	addSourceGroup(friendly, SpellID(SpellID::DISEASE));
+	addMarkedAffliction(friendly, "bleeding", 1, 45001);
+
+	ASSERT_TRUE(hasEffect(friendly, SpellID(SpellID::DISEASE)));
+	const auto afflictionsBefore = physicalAfflictions::enumerate(*friendly);
+	ASSERT_EQ(afflictionsBefore.size(), 2u);
+	EXPECT_TRUE(std::ranges::any_of(afflictionsBefore, [](const auto & affliction)
+	{
+		return affliction.kind == "disease" && affliction.source == BonusSource::SPELL_EFFECT;
+	}));
+	EXPECT_TRUE(hasAffliction(friendly, "bleeding"));
+
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto allowance = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, purifySpell());
+	ASSERT_TRUE(allowance.has_value());
+	EXPECT_EQ(allowance->source, HeroActionAllowanceState::GrantSource::DIVINE_MANDATE);
+	ASSERT_TRUE(cast({{static_cast<int32_t>(friendly->unitId()), SpellID(SpellID::DISEASE)}}));
+
+	EXPECT_FALSE(hasEffect(friendly, SpellID(SpellID::DISEASE)));
+	EXPECT_TRUE(hasAffliction(friendly, "bleeding"));
+	EXPECT_EQ(physicalAfflictions::enumerate(*friendly).size(), 1u)
+		<< "Removing a legacy physical Disease group alone is not a magical-effect trigger";
+	EXPECT_EQ(battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER).completedPairs, 1);
 }
 
 TEST(NewHorizonsPurifyHelpersTest, ActionRoundTripsAndOlderProtocolRejectsOnlyPopulatedPurifyChoices)

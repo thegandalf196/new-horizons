@@ -6191,7 +6191,7 @@
 								"requires": "advanced",
 								"description": "When a Light Spell cast through Divine Mandate removes a negative magical effect, it also removes one physical affliction from that target if present.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "When a Light Spell cast through Divine Mandate removes a negative magical effect, it also removes one physical affliction from that target if present."
 								}
 							},

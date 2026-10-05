@@ -1,6 +1,19 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-05
+Purifying Mandate source/native accepted: a selected Divine Mandate Light cast
+that actually removes a negative magical effect cleanses one remaining physical
+affliction per target after ordinary Purify/Purifier cleanup. Legacy physical
+Poison/Disease spell-source groups do not qualify as magical triggers. Client15739
+and repaired native build30070 pass; native4954 passes43/43 in7.802s, zero skips.
+Data/inventory19/19, module drift and independent review pass. Coverage222->223/310
+perks, faction70->71/90, Divine Mandate5->6/10; ranks and spell identities unchanged.
+Evidence: UP108-purifying-client-build.log,
+UP108-purifying-native-build-repaired-v2.log and UP108-purifying-native-repaired.log/XML.
+Broader interactions, heuristic tuning and rendered/playable delivery remain
+separate. No new persistent state, GUI or snapshot promotion. Next: UP056 Town
+Portal's canonical nearest-town and exhausted-Movement behavior.
+
 Mandate of Heaven source/native accepted. Existing total-completed-pair history
 supports one free first sequence through the selected Expert four-pair cap;
 ordinary caps and first-pair Reserve recovery are unchanged. Both-target25480
@@ -2451,9 +2464,9 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | All three ranks per Skill are active; many registered Skills still lack complete perk progression. |
 | Skill rank effects active | 93/93 | Elemental Rebirth's three ranks now have source/native and owning-side AI evidence. Active status does not certify every wider interaction. |
-| Skill perks active | 221/310 | 89 planned; Knightly Sequence is the newest source/native-verified activation. Diplomacy is 7/10; Chaos Magic 4/10; Necromancy 10/10; Learning 3/10; Estates 6/10; Battlecraft 6/10; Logistics 8/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 223/310 | 87 planned; Purifying Mandate is the newest source/native-verified activation. Diplomacy is 7/10; Chaos Magic 4/10; Necromancy 10/10; Learning 3/10; Estates 6/10; Battlecraft 6/10; Logistics 8/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 27/27 | All nine faction rank foundations are active; their remaining perks and wider integration are separate work. |
-| Faction perks active | 69/90 | 21 planned perks; Divine Mandate has three real Basic choices and the Advanced Knightly Sequence; Elemental Rebirth has three accepted perks with normal Basic-to-Advanced selection and live/detached evidence. |
+| Faction perks active | 71/90 | 19 planned perks; Divine Mandate has six accepted perks, including Expert Mandate of Heaven and Advanced Purifying Mandate; Elemental Rebirth has three accepted perks with normal Basic-to-Advanced selection and live/detached evidence. |
 | Canonical combat-spell identities registered | 61/67 | 6 missing/inactive; Puppet Master is the newest source/native-verified identity. Chaos is 7/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
@@ -2649,7 +2662,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Estates | 3/0 | 6/4 | Resource Broker joins Land Surveyor, Tax Collector, Investor, Estate Network and Financier. Local Marketplace rate, accepted AI trade, mine-capture grants, daily income, weekly Wood/Ore, weekly treasury interest and Investor's pre-income treasury snapshot have focused native evidence. Broader interactions and playable delivery remain separate. |
 | Learning | 3/0 | 3/7 | Mentor, Quick Study and Field Study supply working Basic/Advanced perks and open ordinary Expert-rank progression. Meetings, weekly persistence, initial offer reroll, stronger-opponent awarded XP and query/RNG parity are native verified. Academic Study awaits first-visit timing. |
 | Luck | 3/0 | 6/4 | Fortune's Favor, Lucky Aim, Second Chance, Gambler, Chain of Fortune and Twist of Fate source/native verified; four perks remain planned. |
-| Divine Mandate | 3/0 | 4/6 | Paired rank foundation, Chaplain's Reserve, Consecrated Casting, Sacred Command and Knightly Sequence source/native verified; six perks remain missing. Legal Basic-to-Advanced perk selection works; Expert perks remain missing. |
+| Divine Mandate | 3/0 | 6/4 | Paired rank foundation, Chaplain's Reserve, Consecrated Casting, Sacred Command, Knightly Sequence, Mandate of Heaven and Purifying Mandate source/native verified; four perks remain missing. Legal progression reaches the implemented Expert perk. |
 | Sylvan Luck | 3/0 | 10/0 | Evidence audit required |
 | Metamagic | 3/0 | 10/0 | Evidence audit required |
 | Shroud of Malassa | 3/0 | 6/4 | Basic Backstab/Ambusher/Shadow Assault and Advanced No Escape/Evasive Shroud/Night Prowler are active; four perks remain planned. Night Prowler has live/AI crossing, first-strike and unused-expiry evidence; its flying negative is predicate-only. |
@@ -2661,8 +2674,8 @@ interactions, and rendered/playable acceptance remain separate.
 
 Ordinary progression requires a perk at the preceding rank before the next Skill
 rank; canonical exceptional external rank advancement remains permitted.
-Chaplain's Reserve supplies Divine Mandate's first real Basic perk; Advanced
-and Expert perk choices remain missing. Elemental Rebirth now has a real Basic
+Chaplain's Reserve supplies a real Basic Divine Mandate prerequisite, with
+Advanced and Expert choices now implemented. Elemental Rebirth has a real Basic
 prerequisite and Advanced choices, but lacks an Expert perk; full ordinary
 perk-gated advancement remains incomplete. Diplomacy has three active ranks and legal Basic/Advanced
 perk choices. Fortune's Favor opens Luck; Tax Collector opens Estates and

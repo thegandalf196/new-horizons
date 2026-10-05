@@ -14,6 +14,7 @@
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsDiscipline.h"
 #include "../../lib/battle/NewHorizonsCreatureAbilitySuppression.h"
+#include "../../lib/battle/NewHorizonsDivineMandate.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
 #include "../../lib/battle/NewHorizonsShadowGift.h"
@@ -1040,7 +1041,7 @@ static bool validatePurifyAction(const CBattleInfoCallback & battle, const Battl
 }
 
 static void applyPurifyAction(CGameHandler & gameHandler, const CBattleInfoCallback & battle,
-	const BattleAction & action, const CGHeroInstance * hero)
+	const BattleAction & action, const CGHeroInstance * hero, const bool purifyingMandate)
 {
 	if(action.target.size() != 1 || action.target.front().unitValue != -1000)
 		return;
@@ -1051,6 +1052,7 @@ static void applyPurifyAction(CGameHandler & gameHandler, const CBattleInfoCallb
 		hero ? hero->getPrimSkillLevel(PrimarySkill::SPELL_POWER) : 0, purifier);
 
 	std::map<int32_t, std::vector<Bonus>> removalsByUnit;
+	std::set<int32_t> magicallyCleansedUnits;
 	std::set<int32_t> manuallySelectedPhysicalPoison;
 	for(const auto & [unitId, sourceSpell] : action.spellPurifyChoices)
 	{
@@ -1065,6 +1067,10 @@ static void applyPurifyAction(CGameHandler & gameHandler, const CBattleInfoCallb
 		auto bonuses = newHorizonsPurify::spellEffectGroupBonuses(unit, sourceSpell);
 		if(!bonuses.empty())
 		{
+			// Capture only genuinely magical removals before their source groups disappear.
+			if(newHorizonsPurify::isMagicalSpellEffectGroup(unit, sourceSpell))
+				magicallyCleansedUnits.insert(unitId);
+
 			auto & selected = removalsByUnit[unitId];
 			selected.insert(selected.end(), std::make_move_iterator(bonuses.begin()),
 				std::make_move_iterator(bonuses.end()));
@@ -1129,6 +1135,61 @@ static void applyPurifyAction(CGameHandler & gameHandler, const CBattleInfoCallb
 		gameHandler.sendAndApply(physicalPoisonUpdates);
 	if(!physicalPoisonLog.lines.empty())
 		gameHandler.sendAndApply(physicalPoisonLog);
+
+	if(!purifyingMandate || magicallyCleansedUnits.empty())
+		return;
+
+	SetStackEffect removePhysicalAfflictions;
+	removePhysicalAfflictions.battleID = battleId;
+	BattleUnitsChanged updateStoredPhysicalPoisons;
+	updateStoredPhysicalPoisons.battleID = battleId;
+	BattleLogMessage physicalAfflictionLog;
+	physicalAfflictionLog.battleID = battleId;
+	for(const int32_t unitId : magicallyCleansedUnits)
+	{
+		const auto * unit = battle.battleGetStackByID(unitId, false);
+		if(!unit)
+			continue;
+		const auto affliction = physicalAfflictions::first(*unit);
+		if(!affliction)
+			continue;
+
+		bool removed = false;
+		if(affliction->storedPoison)
+		{
+			auto state = unit->acquireState();
+			if(!newHorizonsPurify::clearPhysicalPoison(state.get()))
+				continue;
+
+			UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
+			update.data = state->save();
+			updateStoredPhysicalPoisons.changedStacks.push_back(std::move(update));
+			removed = true;
+		}
+		else
+		{
+			auto bonuses = physicalAfflictions::removalPlan(*unit, *affliction);
+			if(bonuses.empty())
+				continue;
+			removePhysicalAfflictions.toRemove.emplace_back(static_cast<ui32>(unitId), std::move(bonuses));
+			removed = true;
+		}
+
+		if(removed)
+		{
+			MetaString line;
+			line.appendRawString("Purifying Mandate removes a physical affliction from %s.");
+			unit->addNameReplacement(line, unit->getCount());
+			physicalAfflictionLog.lines.push_back(std::move(line));
+		}
+	}
+
+	if(!removePhysicalAfflictions.toRemove.empty())
+		gameHandler.sendAndApply(removePhysicalAfflictions);
+	if(!updateStoredPhysicalPoisons.changedStacks.empty())
+		gameHandler.sendAndApply(updateStoredPhysicalPoisons);
+	if(!physicalAfflictionLog.lines.empty())
+		gameHandler.sendAndApply(physicalAfflictionLog);
 }
 
 bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)
@@ -1299,6 +1360,11 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 		&& newHorizonsMagic::spellPointRulesActive(h->getMagicRules())
 		&& newHorizonsMagic::hasMetamagicPerk(h, newHorizonsMagic::METAMAGIC_FORMULA_RESERVE))
 		parameters.setMetamagicManaRefund(newHorizonsMagic::METAMAGIC_FORMULA_RESERVE_POINTS);
+	const auto spellAllowance = battle.battleGetSpellActionAllowance(ba.side, ba.spell);
+	const bool purifyingMandate = spellAllowance
+		&& spellAllowance->allowance == HeroActionAllowanceState::AllowanceKind::SPELL
+		&& spellAllowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
+		&& newHorizonsDivineMandate::hasPurifyingMandatePerk(h);
 
 	// Counterspell is resolved after the enemy hero's ordinary cast checks. A
 	// valid hero spell therefore still consumes its action and listed mana even
@@ -1328,7 +1394,7 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 		: std::vector<std::shared_ptr<Bonus>>{};
 	parameters.cast(gameHandler->spellcastEnvironment(), target);
 	if(!counterspellNegated && s->getId() == newHorizonsPurify::spellID())
-		applyPurifyAction(*gameHandler, battle, ba, h);
+		applyPurifyAction(*gameHandler, battle, ba, h, purifyingMandate);
 	if(!counterspellNegated && s->getJsonKey() == newHorizonsShadowGift::SPELL_ID)
 	{
 		// Pay only after the script published the timed status. This keeps the

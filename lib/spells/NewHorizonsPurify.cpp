@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsPurify.h"
+#include "../battle/PhysicalAffliction.h"
 
 #include "CSpell.h"
 #include "NewHorizonsMagic.h"
@@ -152,6 +153,19 @@ std::vector<Bonus> spellEffectGroupBonuses(const battle::Unit * unit, const Spel
 		if(bonus)
 			result.emplace_back(*bonus);
 	return result;
+}
+
+bool isMagicalSpellEffectGroup(const battle::Unit * unit, const SpellID sourceSpell)
+{
+	if(!unit || spellEffectGroupBonuses(unit, sourceSpell).empty())
+		return false;
+
+	const auto afflictions = physicalAfflictions::enumerate(*unit);
+	return std::none_of(afflictions.begin(), afflictions.end(), [&](const physicalAfflictions::Affliction & affliction)
+	{
+		return !affliction.storedPoison && affliction.source == BonusSource::SPELL_EFFECT
+			&& affliction.sourceID.as<SpellID>() == sourceSpell;
+	});
 }
 
 bool hasPhysicalPoison(const battle::Unit * unit)

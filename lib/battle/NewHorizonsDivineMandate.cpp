@@ -67,4 +67,10 @@ int32_t consecratedCastingBonusPercent(const CGHeroInstance * hero)
 	return hasActiveDivineMandate(hero) && hero->hasActivePerk("new-horizons:divineMandate",
 		"new-horizons:divineMandate.consecratedCasting") ? 10 : 0;
 }
+
+bool hasPurifyingMandatePerk(const CGHeroInstance * hero)
+{
+	return hasActiveDivineMandate(hero) && hero->hasActivePerk("new-horizons:divineMandate",
+		"new-horizons:divineMandate.purifyingMandate");
+}
 }
