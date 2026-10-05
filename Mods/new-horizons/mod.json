@@ -3196,7 +3196,7 @@
 				"schemaVersion": 1,
 				"rulesetVersion": 2,
 				"sourceDocument": "docs/design-sources/New Horizons.md",
-				"sourceSha256": "f3b1e6a9657ba0ccce9ea7d82543fed358c335b3805aacf2660e3ca659a8a961",
+				"sourceSha256": "b6bf092e8ad871a0308ba1f1d7b85d6b9be8907c3c4927a3cce3c90f5f51da65",
 				"maxSkillChoices": 2,
 				"maxPerkChoices": 2,
 				"maxPerksPerSkill": 3,
@@ -6229,10 +6229,10 @@
 								"id": "new-horizons:divineMandate.crownAndAltar",
 								"name": "Crown and Altar",
 								"requires": "expert",
-								"description": "If the paired Light Spell and Order both affect the same friendly stack, both their rating-derived numerical components are increased by 20%.",
+								"description": "The second action of a Divine Mandate pair automatically gains +20% to its rating-derived numerical components on each friendly stack also affected by the first action. This applies in either Spell-then-Order or Order-then-Spell order. It requires no extra button or target-preselection step and does not retroactively change the first action.",
 								"effect": {
 									"status": "planned",
-									"description": "If the paired Light Spell and Order both affect the same friendly stack, both their rating-derived numerical components are increased by 20%."
+									"description": "The second action of a Divine Mandate pair automatically gains +20% to its rating-derived numerical components on each friendly stack also affected by the first action. This applies in either Spell-then-Order or Order-then-Spell order. It requires no extra button or target-preselection step and does not retroactively change the first action."
 								}
 							}
 						]
