@@ -227,6 +227,14 @@ std::shared_ptr<ISharedImage> AssetGenerator::generateImage(const ImagePath & im
 		return nullptr;
 }
 
+bool AssetGenerator::preferGeneratedImage(const ImagePath & image) const
+{
+	return image == ImagePath::builtin("NH_academy_fort_large_built.png")
+		|| image == ImagePath::builtin("NH_academy_fort_small_built.png")
+		|| image == ImagePath::builtin("NH_academy_village_large_built.png")
+		|| image == ImagePath::builtin("NH_academy_village_small_built.png");
+}
+
 std::map<ImagePath, std::shared_ptr<ISharedImage>> AssetGenerator::generateAllImages()
 {
 	std::map<ImagePath, std::shared_ptr<ISharedImage>> result;

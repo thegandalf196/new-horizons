@@ -1,0 +1,3094 @@
+{
+  "package": "New Horizons Academy definitive artwork",
+  "date": "2026-10-05",
+  "status": "Art handoff; VCMI integration pending",
+  "selectedVersions": {
+    "town": "review-v8",
+    "adventure": "adventure-v3",
+    "workshops": "buildings-v8",
+    "hall": "buildings-v7"
+  },
+  "fileCountExcludingThisManifest": 377,
+  "totalBytesExcludingThisManifest": 133251664,
+  "files": [
+    {
+      "path": "PREVIEW.html",
+      "bytes": 1981,
+      "sha256": "a062c526a7061173ea56e6a5c549c80fc7bc234b83dac55d3e767e0b81df216c"
+    },
+    {
+      "path": "README.md",
+      "bytes": 3509,
+      "sha256": "e6e9c5d76a707decca47d6a4d900f9125d057c299549d22f6f465a2a4fe0ae80"
+    },
+    {
+      "path": "VALIDATION.json",
+      "bytes": 274,
+      "sha256": "42fa29f87af802f697cf007a6656a7e9f40af5daceac4b99985bc37e471bdce5"
+    },
+    {
+      "path": "integration/VCMI-CHECKLIST.md",
+      "bytes": 8576,
+      "sha256": "559168a6068fc509c6a3bc839b4ee6db0adfb69102d9ff0076336a014826a4c6"
+    },
+    {
+      "path": "integration/academy-assets.json",
+      "bytes": 68973,
+      "sha256": "09456282b1b4a8d58970f9cf681ac18f849d627dd50edb4ea2f49f4cc5d8024d"
+    },
+    {
+      "path": "integration/export-validation.json",
+      "bytes": 45650,
+      "sha256": "8e2c350eaa70be2edfca2a7021480caf1881784716e878fb7a59bb29d4b0e221"
+    },
+    {
+      "path": "integration/icon-mapping.json",
+      "bytes": 1566,
+      "sha256": "82f2cd89a57b48750a2df9397fdfca9cac2343978ce9d9714c9f7a996d673bf2"
+    },
+    {
+      "path": "integration/prompts.json",
+      "bytes": 79152,
+      "sha256": "f850a305395e70e93decbe820503dcb0c1f77484a6907aa6c43868ccb5b2b902"
+    },
+    {
+      "path": "integration/puzzle-layout.json",
+      "bytes": 2499,
+      "sha256": "13a00babe516763e7b2b012b5796c3e61ffc12e7a893b5d55d814050585eb103"
+    },
+    {
+      "path": "integration/town-layout.json",
+      "bytes": 25775,
+      "sha256": "9cd04b3dd13b5e8d941e4837ccc03e0824cb591524b0fc2c56644b2ca071de24"
+    },
+    {
+      "path": "integration/town-validation.json",
+      "bytes": 301,
+      "sha256": "29a2477db0a39bcc86022776d008bd555d4a661fe71d13ada7f77d29e330a9cb"
+    },
+    {
+      "path": "integration/vcmi-tower.json",
+      "bytes": 14454,
+      "sha256": "4c92cf92e1dcea6429ce7827e0d824360902fa3df83a9fa3e484994fa341b4ea"
+    },
+    {
+      "path": "masters/adventure/avctowr0.png",
+      "bytes": 1060736,
+      "sha256": "cca4261a03b525cb87aea1e892d53af02eab13e2e50d10c7c64047d484610f81"
+    },
+    {
+      "path": "masters/adventure/avctowr0.prompt.txt",
+      "bytes": 1339,
+      "sha256": "b11af5c3ef78c3f5aa80caf79c05b1da432d586abe9e23f69a50bb4fef9beda8"
+    },
+    {
+      "path": "masters/adventure/avctowx0.png",
+      "bytes": 1589764,
+      "sha256": "210069de748751460e9e9be7b3b5255b4b8929fe8baee6a13bfc2113ff009a0a"
+    },
+    {
+      "path": "masters/adventure/avctowx0.prompt.txt",
+      "bytes": 1527,
+      "sha256": "15b66cc3ad50295c304eaac9ecb9bb000e16e4b353e7a75cf76c7779dccb75e5"
+    },
+    {
+      "path": "masters/adventure/avctowz0.png",
+      "bytes": 2514098,
+      "sha256": "88e52f079fc2b6cc4bf22f0d71c924397201658c75260fc33cc28d8d1af8f9cb"
+    },
+    {
+      "path": "masters/adventure/avctowz0.prompt.txt",
+      "bytes": 681,
+      "sha256": "58a02285059315b3f1fd5e66a245b23639ef833f862dce923205563405d9401a"
+    },
+    {
+      "path": "masters/siege/sgtwarch.png",
+      "bytes": 1159330,
+      "sha256": "44b751d39b33ec951e5ee8eb26735fd598bb94471fc5d49c9a8032e57dae16dc"
+    },
+    {
+      "path": "masters/siege/sgtwarch.prompt.txt",
+      "bytes": 793,
+      "sha256": "bd5ae1b2347acfb066b5eeb8d502fdb94a96480e2b955b22da87cf90c57b51cc"
+    },
+    {
+      "path": "masters/siege/sgtwback.png",
+      "bytes": 3320996,
+      "sha256": "3b035f281e5725f10d0bc0c842b9f1a11cd01526d9cc5183c423752c980f5d62"
+    },
+    {
+      "path": "masters/siege/sgtwback.prompt.txt",
+      "bytes": 800,
+      "sha256": "dc745b5c1cafb95bb73c69bf0b626aa47127cd7bed59e73bf6d72bd3f26c27a7"
+    },
+    {
+      "path": "masters/siege/sgtwman1.png",
+      "bytes": 1513713,
+      "sha256": "b588560e425a9a601bd0a7c5293c017c92bd74b57edab7faf779e5ae27d2d89c"
+    },
+    {
+      "path": "masters/siege/sgtwman1.prompt.txt",
+      "bytes": 793,
+      "sha256": "a1fbc69563c5e997bc993690c42c7b786e8d7bdf67a9ddf3bebbe2525b714e95"
+    },
+    {
+      "path": "masters/siege/sgtwman2.png",
+      "bytes": 1598452,
+      "sha256": "c3f2f91c88c6b0070e33b9e8c3c515a77a3a70940b3c13d2b41b9eba9a7f8b90"
+    },
+    {
+      "path": "masters/siege/sgtwman2.prompt.txt",
+      "bytes": 793,
+      "sha256": "3ac584c08ce377685298813a334640156c2a1c451c09d5cc81557fff66f8d654"
+    },
+    {
+      "path": "masters/siege/sgtwmanc.png",
+      "bytes": 322347,
+      "sha256": "30f2318e8ab62eda14e9ab01568d93bc8476494b22c85c4ce563e910984bad92"
+    },
+    {
+      "path": "masters/siege/sgtwmanc.prompt.txt",
+      "bytes": 756,
+      "sha256": "f9be7881ab7dcf815207cb445c450a035504ed93a4dfae86d83a9970d14b618c"
+    },
+    {
+      "path": "masters/siege/sgtwmta.png",
+      "bytes": 140796,
+      "sha256": "e36e739f60d9dfb2605de2dd866018cbc0367da50eea89818047711673e4d5c6"
+    },
+    {
+      "path": "masters/siege/sgtwmta.prompt.txt",
+      "bytes": 546,
+      "sha256": "2ff79afa31c3e9385cacbe7ec0d58168e4d599dab5fb38b97b8ace13dd4b359a"
+    },
+    {
+      "path": "masters/siege/sgtwtpwl.png",
+      "bytes": 2027910,
+      "sha256": "3fd3d5dadc15ff78862c54ef49ad07b12d662b16ec64987ae8079ec0ebbd1f9f"
+    },
+    {
+      "path": "masters/siege/sgtwtpwl.prompt.txt",
+      "bytes": 623,
+      "sha256": "061b5e68c481538e786f21226961eb3a4449373ef82dbe3ae1dc2417c8fa5904"
+    },
+    {
+      "path": "masters/siege/sgtwtw11.png",
+      "bytes": 1050016,
+      "sha256": "5489c220a7ff6d54fc94f4bda4c4da550ffe6f8207e4001f6ce855744a389c37"
+    },
+    {
+      "path": "masters/siege/sgtwtw11.prompt.txt",
+      "bytes": 622,
+      "sha256": "cf9c44d577f4733406798849a6314a22300d6143933a43c9a455fee54d32d866"
+    },
+    {
+      "path": "masters/siege/sgtwtw12.png",
+      "bytes": 1527147,
+      "sha256": "2202caa60a32194625760e102fa07b5586ec542a4abef089cb499a7a2548e075"
+    },
+    {
+      "path": "masters/siege/sgtwtw12.prompt.txt",
+      "bytes": 626,
+      "sha256": "d0d2be0f326da1354b47fd2117ca1a4b6cf14e2f2bbf46a866deaa0d2e008ebe"
+    },
+    {
+      "path": "masters/siege/sgtwtw1c.png",
+      "bytes": 783862,
+      "sha256": "662b737ce3838494ddcbe86544d8da2c73006a762628929c14ab064853d0e734"
+    },
+    {
+      "path": "masters/siege/sgtwtw1c.prompt.txt",
+      "bytes": 599,
+      "sha256": "3447c37761db4e203f62faa8201abeff074e3637e72eda6c59b41f5ff8398590"
+    },
+    {
+      "path": "masters/siege/sgtwtw21.png",
+      "bytes": 1686947,
+      "sha256": "81df18745dae617a4b0de5876cc76f9131d9c0029240f9e0959a7af40ca55822"
+    },
+    {
+      "path": "masters/siege/sgtwtw21.prompt.txt",
+      "bytes": 553,
+      "sha256": "c5a48e79d05638a63852873deccb7520c4b8e7bcfb3d9240d21043d0b80f5a0e"
+    },
+    {
+      "path": "masters/siege/sgtwtw22.png",
+      "bytes": 1481755,
+      "sha256": "d62d6def68446f270b2ff3563bea7ceb7c8235a831c4667d11e08bc807af39ee"
+    },
+    {
+      "path": "masters/siege/sgtwtw22.prompt.txt",
+      "bytes": 626,
+      "sha256": "9d7af10ef06aaa9261e7159382b40138ed7311380cf9dacdfb28f5a55e9446d4"
+    },
+    {
+      "path": "masters/siege/sgtwtw2c.png",
+      "bytes": 916974,
+      "sha256": "d563634fe73c04167b9de818b3c580de50896d03a5db66f609acdb6120cf7085"
+    },
+    {
+      "path": "masters/siege/sgtwtw2c.prompt.txt",
+      "bytes": 690,
+      "sha256": "3e313cfc11573a7024b22fc6961ce23496871346c7918fb49ad97091c95138e8"
+    },
+    {
+      "path": "masters/siege/sgtwwa11.png",
+      "bytes": 1271064,
+      "sha256": "d969dd681649658b3253dc4859d2d6e7e2a9badb87b28d9e9f22577fc1f3a18c"
+    },
+    {
+      "path": "masters/siege/sgtwwa11.prompt.txt",
+      "bytes": 691,
+      "sha256": "04ac1de1f4c8ced974562346e2dda8a3c1360e6ca1f8b3a570c1370ed0ca65a3"
+    },
+    {
+      "path": "masters/siege/sgtwwa12.png",
+      "bytes": 1059159,
+      "sha256": "481d0a4810defa51f06b4c4447b4fec36e458191c474b830082118a38d0cb389"
+    },
+    {
+      "path": "masters/siege/sgtwwa12.prompt.txt",
+      "bytes": 691,
+      "sha256": "e49b42069e57b73b73b6050cc29636a4802e8a0bf0459d5904fe1b02a3566070"
+    },
+    {
+      "path": "masters/siege/sgtwwa13.png",
+      "bytes": 840709,
+      "sha256": "43ecc0ca67ca89cc3dd0cfda9b248cecbcb042a3a55ae41b9c584e683b093054"
+    },
+    {
+      "path": "masters/siege/sgtwwa13.prompt.txt",
+      "bytes": 755,
+      "sha256": "a91008fa915f599c354054b8877540dba6689ae6f00c9a5d34ac496094182acc"
+    },
+    {
+      "path": "masters/siege/sgtwwa2.png",
+      "bytes": 1531362,
+      "sha256": "e4246ae911d7b787dbaec77a4a72d87ef3272bb8999690ecb280d3ddce14fd5a"
+    },
+    {
+      "path": "masters/siege/sgtwwa2.prompt.txt",
+      "bytes": 732,
+      "sha256": "bf415077f8edd004e6d969d556289b0cfbd6ee902b61a7a8f100fb6f63dd1c22"
+    },
+    {
+      "path": "masters/siege/sgtwwa31.png",
+      "bytes": 1133577,
+      "sha256": "239046cc60b7835a68e292ebed2763c0722ce60bf895a875f67dc70df9951ca7"
+    },
+    {
+      "path": "masters/siege/sgtwwa31.prompt.txt",
+      "bytes": 733,
+      "sha256": "029bb716d4d107f5692b5db356bd072caacd1e9c7af8a2c6362d6bc5712ed79f"
+    },
+    {
+      "path": "masters/siege/sgtwwa32.png",
+      "bytes": 1152864,
+      "sha256": "6b5aea411ff46fbddaeab7f1a3aafe8c53c96b2276e6ba161675a95780321e74"
+    },
+    {
+      "path": "masters/siege/sgtwwa32.prompt.txt",
+      "bytes": 733,
+      "sha256": "036d1714f778399bdcf020633575a77a7083e62c457c0d24644f5865dd1c61d0"
+    },
+    {
+      "path": "masters/siege/sgtwwa33.png",
+      "bytes": 1302477,
+      "sha256": "d51aac176016152c7eac60b27227b941406052ae9199c6ff34c3485ec9fed6dd"
+    },
+    {
+      "path": "masters/siege/sgtwwa33.prompt.txt",
+      "bytes": 812,
+      "sha256": "9cb7b619b0a6c9ca816a811e715999fada83e876f3f7dd31b8e43b4b2bd7aec8"
+    },
+    {
+      "path": "masters/siege/sgtwwa41.png",
+      "bytes": 1409349,
+      "sha256": "55ea101071113f00a8645f087fd6cc846fc1902165770322c7470a7d688178bc"
+    },
+    {
+      "path": "masters/siege/sgtwwa41.prompt.txt",
+      "bytes": 532,
+      "sha256": "be76722c902194c5fd16785f00f3a6e14fdbe91acbf4701e1dc4bbc98208497d"
+    },
+    {
+      "path": "masters/siege/sgtwwa42.png",
+      "bytes": 1320218,
+      "sha256": "648238906437199c12111b45b6659e6b047993652e1bde1c1f8ab19ea1d887dd"
+    },
+    {
+      "path": "masters/siege/sgtwwa42.prompt.txt",
+      "bytes": 594,
+      "sha256": "03e631f5f2b6da17bb34094f03c55653ba99160d9639b6a54680d9e6755ea0c1"
+    },
+    {
+      "path": "masters/siege/sgtwwa43.png",
+      "bytes": 1121410,
+      "sha256": "2a6e904e3c46b842938c0b3390e3b2e6b75551e0f412aa078a7051cff0c2e207"
+    },
+    {
+      "path": "masters/siege/sgtwwa43.prompt.txt",
+      "bytes": 677,
+      "sha256": "f2d2cd9a42eff59a28e3e9630fea973c84736d8a2102b4e7f331dab76c0b3b59"
+    },
+    {
+      "path": "masters/siege/sgtwwa5.png",
+      "bytes": 1243068,
+      "sha256": "fefe74d1aef5e76f5b93d526811ce0b53b7516ca0470ea867307c3a1d263e2ec"
+    },
+    {
+      "path": "masters/siege/sgtwwa5.prompt.txt",
+      "bytes": 531,
+      "sha256": "55c10e3d8bab272db6d902dde82e9cc3ee332bcd15b28205c441e676f71ad984"
+    },
+    {
+      "path": "masters/siege/sgtwwa61.png",
+      "bytes": 1299681,
+      "sha256": "abfcf801409ac73394568d8d89ab8aed0958a48a271eea2ddceba74b953cd761"
+    },
+    {
+      "path": "masters/siege/sgtwwa61.prompt.txt",
+      "bytes": 573,
+      "sha256": "128da0551b913a555767ed987cfbf8614f40a9ba18401c77ad8516d43b755b6c"
+    },
+    {
+      "path": "masters/siege/sgtwwa62.png",
+      "bytes": 1256320,
+      "sha256": "c253384ff93a9b00c2fe0b1ae41a7464557088330d7977476da4ecb7742f220c"
+    },
+    {
+      "path": "masters/siege/sgtwwa62.prompt.txt",
+      "bytes": 629,
+      "sha256": "6e5057513e9b2b74348ef029eaa1cb2eecc59fc850f30f769f73a6d0b35f3d5d"
+    },
+    {
+      "path": "masters/siege/sgtwwa63.png",
+      "bytes": 883501,
+      "sha256": "f1f7ea4caea11c1b86c37792ca098312d80b92cd15e99be7cf68936356c0e5e7"
+    },
+    {
+      "path": "masters/siege/sgtwwa63.prompt.txt",
+      "bytes": 702,
+      "sha256": "7de8127000ae5e282ee868036c442e25c6e64a7004933809931a5edfb66ee749"
+    },
+    {
+      "path": "masters/town/buildings/tbtwblak.png",
+      "bytes": 1907732,
+      "sha256": "998e89d2e889cb8c4f5614ba6df7923ca1afb116431e8b00989e22629d244910"
+    },
+    {
+      "path": "masters/town/buildings/tbtwblak.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwcas2.png",
+      "bytes": 1692743,
+      "sha256": "e6ba316ad4651f928c0e1760d35bc536d13c07201d19c3626908bf07499e039c"
+    },
+    {
+      "path": "masters/town/buildings/tbtwcas2.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwcas3.png",
+      "bytes": 1829288,
+      "sha256": "5fa2a33a5f0bb0ef88edc95d43ec461b634125d9632f7f0aa86769618ab7074e"
+    },
+    {
+      "path": "masters/town/buildings/tbtwcas3.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwcstl.png",
+      "bytes": 1909910,
+      "sha256": "e4799daa159ea71ad4309504f5e5cf9d3d9b3acb2e916abcea461f6586831eb8"
+    },
+    {
+      "path": "masters/town/buildings/tbtwcstl.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwdw_0.png",
+      "bytes": 1683436,
+      "sha256": "c1463088b8bc39da890d67340fa822d535f381df2626a26597eaeb6a111a38e0"
+    },
+    {
+      "path": "masters/town/buildings/tbtwdw_0.prompt.txt",
+      "bytes": 1587,
+      "sha256": "84a5d2c78b02c8ae8cfb7e414ba002034d0e8f098ae78a8deed5998d39f36ddc"
+    },
+    {
+      "path": "masters/town/buildings/tbtwdw_1.png",
+      "bytes": 1998771,
+      "sha256": "5d7224e379a0f2e76ff543117b60b969e580cfac01527146482482f583259eb8"
+    },
+    {
+      "path": "masters/town/buildings/tbtwdw_1.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwdw_2.png",
+      "bytes": 1845880,
+      "sha256": "33c1d5bda2be65199e79b22d7ca37d721361f10fa70ab71ae819020ae5600b7b"
+    },
+    {
+      "path": "masters/town/buildings/tbtwdw_2.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwdw_3.png",
+      "bytes": 1780876,
+      "sha256": "e1e99e3b6357b5ce02a376a3788949a9d181072bd24f1da75ff5305e48563435"
+    },
+    {
+      "path": "masters/town/buildings/tbtwdw_3.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwdw_4.png",
+      "bytes": 1981372,
+      "sha256": "cf7f73a16fe1e35a52c3d7b91f6c62e17f71877edf1a91963313a72612eda1f6"
+    },
+    {
+      "path": "masters/town/buildings/tbtwdw_4.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwdw_5.png",
+      "bytes": 1683771,
+      "sha256": "f44af939ba74124cb132ac3f7e30e6725cd74cedd109c7505ce362330bbeb65d"
+    },
+    {
+      "path": "masters/town/buildings/tbtwdw_5.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwdw_6.png",
+      "bytes": 2331128,
+      "sha256": "113ea1d5cc783c07ed3c58527ed9cc47f682b1678d3edb896f19e8be030d8fe9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwdw_6.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwext0.png",
+      "bytes": 1547564,
+      "sha256": "9d3e7b050f597b1b8b231954b0affb257a82934c308e7292cd8af1d924ba3609"
+    },
+    {
+      "path": "masters/town/buildings/tbtwext0.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwext1.png",
+      "bytes": 2285319,
+      "sha256": "b0a0990906fb08a8cae4081d6767b7e9a0ccd3d60d07da7173a782069e52294b"
+    },
+    {
+      "path": "masters/town/buildings/tbtwext1.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwext2.png",
+      "bytes": 23715,
+      "sha256": "2740a867bf326adb0ff6e0edb427d7bb011541b541f46bc179ab581ca9d490e2"
+    },
+    {
+      "path": "masters/town/buildings/tbtwhal2.png",
+      "bytes": 1973349,
+      "sha256": "30f8f94cbe5c0dc5b9475aa1f852d52cf91ea4a681a80d733214293abed6c22d"
+    },
+    {
+      "path": "masters/town/buildings/tbtwhal2.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwhal3.png",
+      "bytes": 1526602,
+      "sha256": "8e92d9c93e1984c90cad93e508a80bbc1acc635f57d6a07f2a9441fdf0c630a8"
+    },
+    {
+      "path": "masters/town/buildings/tbtwhal3.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwhal4.png",
+      "bytes": 1493717,
+      "sha256": "29ed736e3a9e63510d9da0d352535903f4aa52d3f628886e15987775e51b0d62"
+    },
+    {
+      "path": "masters/town/buildings/tbtwhal4.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwhall.png",
+      "bytes": 2343016,
+      "sha256": "17fca6bcd04b5c15323fefdb8c1658b9d081fa93f17adeb3f17f2b2466d9a80a"
+    },
+    {
+      "path": "masters/town/buildings/tbtwhall.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwholy.png",
+      "bytes": 1316827,
+      "sha256": "7d6dadd8e24a97d3217e52b41e089308f6c4281e35e0feb179ec0198d1c653ba"
+    },
+    {
+      "path": "masters/town/buildings/tbtwholy.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwhrd1.png",
+      "bytes": 1678958,
+      "sha256": "988af3ce51cbcd3ff575a42d2cc55df4d06cfe61ee0b51b043b3b9e219ea298a"
+    },
+    {
+      "path": "masters/town/buildings/tbtwhrd1.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwhrd2.png",
+      "bytes": 1739511,
+      "sha256": "ef301ae6920b2304664b4039af5c0dc00ce294d885293c92584d3611481995cb"
+    },
+    {
+      "path": "masters/town/buildings/tbtwhrd2.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwmag2.png",
+      "bytes": 1231000,
+      "sha256": "7ff396b45fd86220c9b1a0c4fa142e927d127e935c394c51a51416c9a123937e"
+    },
+    {
+      "path": "masters/town/buildings/tbtwmag2.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwmag3.png",
+      "bytes": 1186687,
+      "sha256": "f07d56d9c5d145ef36201b81003b93b557f8317e96e98a6c31b99a52295fccf5"
+    },
+    {
+      "path": "masters/town/buildings/tbtwmag3.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwmag4.png",
+      "bytes": 1239449,
+      "sha256": "7140e0553e20966358393035ed93d360a7fabb20b8c1e79cc3077c4e1f6c5f05"
+    },
+    {
+      "path": "masters/town/buildings/tbtwmag4.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwmage.png",
+      "bytes": 1317323,
+      "sha256": "5b596553fe2ed14eb318a222195c8b95bb1d817cd54f131aa946b927f4891e4e"
+    },
+    {
+      "path": "masters/town/buildings/tbtwmage.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwmark.png",
+      "bytes": 2574952,
+      "sha256": "aeb1ef2b47486d57577e7d4d34fdaf50fbf752271d905135549022252e6b94b0"
+    },
+    {
+      "path": "masters/town/buildings/tbtwmark.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwsilo.png",
+      "bytes": 1759888,
+      "sha256": "a24f02a7a4663545f99affb919971723719dbedf88d0e4a0e98a6184121015e6"
+    },
+    {
+      "path": "masters/town/buildings/tbtwsilo.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwspec.png",
+      "bytes": 2428648,
+      "sha256": "ed118783c5872c56664369e9481adff29f0e97e1b72301e386d72302c2285e8f"
+    },
+    {
+      "path": "masters/town/buildings/tbtwspec.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwtvrn.png",
+      "bytes": 1905486,
+      "sha256": "c5b69bc6cb3e5555336b0b676ecfbcae64d0f041981879b9cd0792c077e26cc4"
+    },
+    {
+      "path": "masters/town/buildings/tbtwtvrn.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwup_0.png",
+      "bytes": 2265031,
+      "sha256": "3960de4445035131b318bff779caa6b4ecf81a98201db8ea656798155df1145c"
+    },
+    {
+      "path": "masters/town/buildings/tbtwup_0.prompt.txt",
+      "bytes": 1649,
+      "sha256": "66ae40a11d177356216845a4c8ef334cc1ceb13fcc4d2e0dba97b503ad05252f"
+    },
+    {
+      "path": "masters/town/buildings/tbtwup_1.png",
+      "bytes": 1927490,
+      "sha256": "df2c9be4a0e6055acdcb0e797df4894821a8492b8b444438f0ef15aff733a3a4"
+    },
+    {
+      "path": "masters/town/buildings/tbtwup_1.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwup_2.png",
+      "bytes": 1812417,
+      "sha256": "45b91df8b69dacfccc5547fc389d14dc042a01539fafeff906b2bab87dc878c8"
+    },
+    {
+      "path": "masters/town/buildings/tbtwup_2.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwup_3.png",
+      "bytes": 1830105,
+      "sha256": "4a313a8e3040480b9dde13e7c3a1288cfe020c233edb38dc61f12bb4eb097308"
+    },
+    {
+      "path": "masters/town/buildings/tbtwup_3.prompt.txt",
+      "bytes": 1175,
+      "sha256": "b45a4aaa74ddb77c4e422dfd0e81dbe239a2ab44ddd8755acb69f2da2b73b736"
+    },
+    {
+      "path": "masters/town/buildings/tbtwup_4.png",
+      "bytes": 1748552,
+      "sha256": "c3f6ca473d9da10a6d3cf820ed1373df177e1a4c1a239b483f0892941b7d1640"
+    },
+    {
+      "path": "masters/town/buildings/tbtwup_4.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwup_5.png",
+      "bytes": 1937943,
+      "sha256": "e8451c07f2567b3e0d737e988904c5508c59e83d560dd6120ecd00a3d264841a"
+    },
+    {
+      "path": "masters/town/buildings/tbtwup_5.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/buildings/tbtwup_6.png",
+      "bytes": 1852887,
+      "sha256": "ef0f8b766751820551915ab25b07baa30656aedb2ed5cac5b513446fa6b0c91f"
+    },
+    {
+      "path": "masters/town/buildings/tbtwup_6.prompt.txt",
+      "bytes": 1363,
+      "sha256": "87b57d35f251cb0e49f4bbc63b2ba155d608ed922bd0ee48855ca016788e71c9"
+    },
+    {
+      "path": "masters/town/corrections/guild-and-wall.png",
+      "bytes": 957243,
+      "sha256": "c24863eb75ac747422caa6d3038d6de05d5e7ba676b464d828304ab3f03c5696"
+    },
+    {
+      "path": "masters/town/corrections/guild-and-wall.prompt.txt",
+      "bytes": 1126,
+      "sha256": "0d7202b1244f04999ac96dfeb5e665913b244057250cd57e5186e09c837955fc"
+    },
+    {
+      "path": "masters/town/corrections/house-roof-context.png",
+      "bytes": 1167767,
+      "sha256": "88fb7c68e6a54c05ee995542a1c4ec5a19766daa7fdc72fb6f6ad988c80b3882"
+    },
+    {
+      "path": "masters/town/landscape.png",
+      "bytes": 3040190,
+      "sha256": "7d9bb8290b85c33831b98fc3a07a7cd270a78b473849e81a286528df2ec19f24"
+    },
+    {
+      "path": "masters/town/landscape.prompt.txt",
+      "bytes": 1008,
+      "sha256": "fc1923f0d6745d5217afbc4b797cd96bc436292bd53adf58b1bcf96c952eddc0"
+    },
+    {
+      "path": "masters/ui/creature-background.png",
+      "bytes": 2018958,
+      "sha256": "aa7d7c84dced82d0577eb3fbda052fd8ff1999f61351d4e77f661f7ad0f75b46"
+    },
+    {
+      "path": "masters/ui/creature-background.prompt.txt",
+      "bytes": 566,
+      "sha256": "745fa8fa2b4ee110e03f516d332c2e8f732a4a43e90dff922a85009c8bf3752c"
+    },
+    {
+      "path": "masters/ui/guild-window.png",
+      "bytes": 2433729,
+      "sha256": "5916fba84f68ee02beb188670225f5c4567d1263658132bfbfa574d09c7677df"
+    },
+    {
+      "path": "masters/ui/guild-window.prompt.txt",
+      "bytes": 542,
+      "sha256": "905a544a97045031e8a9038ea906f196545aae2e67e1e24f84ea58b5e176ab25"
+    },
+    {
+      "path": "masters/ui/puzzle.png",
+      "bytes": 2737422,
+      "sha256": "1391ab7a3e4e738b206cd9d40d4952c1634893050f4eaaa1cfc6b4815d42434b"
+    },
+    {
+      "path": "masters/ui/puzzle.prompt.txt",
+      "bytes": 856,
+      "sha256": "ed05f95d5b77ad77d58a3bf8a020c8896a2f4d64d97608914786ab5a51c451cc"
+    },
+    {
+      "path": "native/adventure/avctowr0.png",
+      "bytes": 42580,
+      "sha256": "c37627fb0ad787dd1e9b58b266134f792fecfbc5fd22009f4a4c5791391ab49a"
+    },
+    {
+      "path": "native/adventure/avctowx0.png",
+      "bytes": 63025,
+      "sha256": "a338162d172493a7e44f20a17305bcab476dd585c605e82e61f8135a629d477d"
+    },
+    {
+      "path": "native/adventure/avctowz0.png",
+      "bytes": 63084,
+      "sha256": "d879af5c119257376ea4d4abaf9a95bc3af7152fb68717cb9e571896fb273bee"
+    },
+    {
+      "path": "native/siege/sgtwarch.png",
+      "bytes": 37795,
+      "sha256": "066de5bb68e00dc0e068e2fc6d63fbf53dc318061cc7fe73069d25a7f42807a8"
+    },
+    {
+      "path": "native/siege/sgtwback.png",
+      "bytes": 1264637,
+      "sha256": "2b86b7ab9b69b5ce711a21026c9dd33accded5841a5cc09173ad132260b85664"
+    },
+    {
+      "path": "native/siege/sgtwdrw1.png",
+      "bytes": 3311,
+      "sha256": "a56363db4051efca03a237ce9c0141f54df9fcd6e79f7eefa5c56d2a236772fd"
+    },
+    {
+      "path": "native/siege/sgtwdrw2.png",
+      "bytes": 4762,
+      "sha256": "2b28306e2349e5bf8e73e76042d854bc6010f4afffe207bce11b968c6f073e44"
+    },
+    {
+      "path": "native/siege/sgtwdrw3.png",
+      "bytes": 4693,
+      "sha256": "49263a8292e05c58702b74dfc4acf2109af7c90b924f198d1c185cf68eb2d0d2"
+    },
+    {
+      "path": "native/siege/sgtwdrwc.png",
+      "bytes": 637,
+      "sha256": "82a020d3e3c11d0521e38039e773fe3b933f2706d54161e58bf5719cf379fb54"
+    },
+    {
+      "path": "native/siege/sgtwman1.png",
+      "bytes": 58620,
+      "sha256": "b8d3414c92f3ce7b415dab18e23cb462e85633ca857dc31b11e5832b25c7e283"
+    },
+    {
+      "path": "native/siege/sgtwman2.png",
+      "bytes": 55259,
+      "sha256": "8af3e1c79efc078e8c929968e86dfbdcc92445b0aad7d4b029f1cd297c306a1b"
+    },
+    {
+      "path": "native/siege/sgtwmanc.png",
+      "bytes": 12847,
+      "sha256": "8790638153aa32c1363adda266bca425addcc5473100701f5a042fdaf6293547"
+    },
+    {
+      "path": "native/siege/sgtwmta.png",
+      "bytes": 15961,
+      "sha256": "be5c5fa7a81016028c667022c9a0e1997cf63049b62b5ab500f2786110726a42"
+    },
+    {
+      "path": "native/siege/sgtwtpwl.png",
+      "bytes": 36302,
+      "sha256": "cf863ab8203de7f0825adf86a1afa5a000300d090f3f79325e84826fafe462fc"
+    },
+    {
+      "path": "native/siege/sgtwtw11.png",
+      "bytes": 5097,
+      "sha256": "ec2c93cd4dcf97b1b70725697ab3f1ea98054bcada7779261e861fa7c1e7b1af"
+    },
+    {
+      "path": "native/siege/sgtwtw12.png",
+      "bytes": 4753,
+      "sha256": "c6b7e9416b34be2e3a1f2050592f14e888400aa99ff449954af6121191b4b37d"
+    },
+    {
+      "path": "native/siege/sgtwtw1c.png",
+      "bytes": 4367,
+      "sha256": "e99e22e65d5b09ad8fd65ea8d894889ccf91bd9cdd516c493a9fe934ef222bd9"
+    },
+    {
+      "path": "native/siege/sgtwtw21.png",
+      "bytes": 9700,
+      "sha256": "cb314a1d1fc2140cef8da6c5ca906afdbb4a7283dd5e3cd8664e65ba88c42943"
+    },
+    {
+      "path": "native/siege/sgtwtw22.png",
+      "bytes": 8851,
+      "sha256": "2efd898e46a6e8491a600176d17221db45660749e60f17459b27efeebd37b704"
+    },
+    {
+      "path": "native/siege/sgtwtw2c.png",
+      "bytes": 5948,
+      "sha256": "f0c99c2cc69b1ed09937edb0d8451b9146f03e915705f57ada1b9ae2e95ee80f"
+    },
+    {
+      "path": "native/siege/sgtwwa11.png",
+      "bytes": 13930,
+      "sha256": "cbad5aa36a02283a77b392ced2e8bc1f4dde713c9fcaff0f8054774344616557"
+    },
+    {
+      "path": "native/siege/sgtwwa12.png",
+      "bytes": 12760,
+      "sha256": "4ee6d283a8c47f75b59e901dbc3823b4af8742f249c68f1684e2a886aeabfdb6"
+    },
+    {
+      "path": "native/siege/sgtwwa13.png",
+      "bytes": 7906,
+      "sha256": "9e3fc456b1a284ff26ea5a8541b8a93ad511a2f74a328b031a9ee1d70991331e"
+    },
+    {
+      "path": "native/siege/sgtwwa2.png",
+      "bytes": 23902,
+      "sha256": "466b8731c5e747001688f15a6eeb3d60f321ae33ecca76436670c416b5e5a3b9"
+    },
+    {
+      "path": "native/siege/sgtwwa31.png",
+      "bytes": 19990,
+      "sha256": "0018022f5b333dda38123339db08ecf310a0664b8492412cd5dc70ba3a7abd2a"
+    },
+    {
+      "path": "native/siege/sgtwwa32.png",
+      "bytes": 20407,
+      "sha256": "20af3297db8a9c23a40f866e17e3f723e21b6f6d6bb42236582474c3358937a3"
+    },
+    {
+      "path": "native/siege/sgtwwa33.png",
+      "bytes": 19643,
+      "sha256": "6ebbdb8d06d4e9d60b0fd7f3ca1c49c47de242185e5eeabd5e3bb2d43b74f420"
+    },
+    {
+      "path": "native/siege/sgtwwa41.png",
+      "bytes": 13718,
+      "sha256": "dd76f4c650f04992a1bbf0cbf6a6b773b53c99bcadb52c412cc290f32097c0c2"
+    },
+    {
+      "path": "native/siege/sgtwwa42.png",
+      "bytes": 13047,
+      "sha256": "b76206bb7f1612b04b4670f0816c983bcf6747653f033cc29f62432282575362"
+    },
+    {
+      "path": "native/siege/sgtwwa43.png",
+      "bytes": 11441,
+      "sha256": "4bd2cdd0f227ccbb5af974f65655efd9873712d33261beffb2e07c63541985fb"
+    },
+    {
+      "path": "native/siege/sgtwwa5.png",
+      "bytes": 18615,
+      "sha256": "8b44a03f5b0cb9d894402bbfd23ffda22f0b04a793c5ed61604f2f4a485d380c"
+    },
+    {
+      "path": "native/siege/sgtwwa61.png",
+      "bytes": 12293,
+      "sha256": "05a4b74b569dff2412c120357f8cf2bcf7b7575c942e75f8ee610d2a3ad10ab0"
+    },
+    {
+      "path": "native/siege/sgtwwa62.png",
+      "bytes": 11933,
+      "sha256": "67b3143a09b3d94aa71af0049d23bd49f1df5dab68588abbd583143fe93ee7e7"
+    },
+    {
+      "path": "native/siege/sgtwwa63.png",
+      "bytes": 9248,
+      "sha256": "e6331c188c9a758bd0b20b7da7c1a3d0dd19c38d3f6b1bb46f4885a2d1208bce"
+    },
+    {
+      "path": "native/town/buildings/tbtwblak.png",
+      "bytes": 36969,
+      "sha256": "b0a3ac4a78f23b5e28d78095f88d31dae2d8282309852a999a08b86d2015a5cf"
+    },
+    {
+      "path": "native/town/buildings/tbtwcas2.png",
+      "bytes": 69800,
+      "sha256": "a5ccc367f8993d016ad63a773d5aba1010169f5e7ad50b7e208de07b4b2512ce"
+    },
+    {
+      "path": "native/town/buildings/tbtwcas3.png",
+      "bytes": 73544,
+      "sha256": "8c7cb0fa771a7816aa136030ab9256f6a90c7286f8115a3b85c8514412b99040"
+    },
+    {
+      "path": "native/town/buildings/tbtwcstl.png",
+      "bytes": 56771,
+      "sha256": "cbf31f3403194a86b3f83de2d6a84bb0bf5fb5ff33b8013d407d6c19859529ad"
+    },
+    {
+      "path": "native/town/buildings/tbtwdw_0.png",
+      "bytes": 6112,
+      "sha256": "94a20c948f7d2b6536f0dae40eeae664abae87743439bd749866e2c100bf145d"
+    },
+    {
+      "path": "native/town/buildings/tbtwdw_1.png",
+      "bytes": 11653,
+      "sha256": "36679e85e88717eb0fed0305feae97903f5ed79bd5b6e1c7aa8059a68193a451"
+    },
+    {
+      "path": "native/town/buildings/tbtwdw_2.png",
+      "bytes": 25428,
+      "sha256": "ca9b229535c4e056dc25683a9a21a2ce52d88a07aa6c049711eea9d9256d5f10"
+    },
+    {
+      "path": "native/town/buildings/tbtwdw_3.png",
+      "bytes": 13309,
+      "sha256": "cc6769fcca692b5b8fe8d21363e3594a6a1127f8ba9cd1b44fee04500198d49c"
+    },
+    {
+      "path": "native/town/buildings/tbtwdw_4.png",
+      "bytes": 15861,
+      "sha256": "50b7ddfa886d1be1abbf1f8c11ee3f62bca7439aad4490167a0d76b1907169e7"
+    },
+    {
+      "path": "native/town/buildings/tbtwdw_5.png",
+      "bytes": 14247,
+      "sha256": "fe7fd1464b716312cffe0e6ba37d5f764b23e174fbd91cc9022d819dc5e79287"
+    },
+    {
+      "path": "native/town/buildings/tbtwdw_6.png",
+      "bytes": 35843,
+      "sha256": "e275b54cabf984cf7523fe23f92fe3f21190dcd56ecfa7059cb1a76cf3ce1c82"
+    },
+    {
+      "path": "native/town/buildings/tbtwext0.png",
+      "bytes": 18682,
+      "sha256": "3513ac99312f9df3693cccbe409535308f3df1b2317807090e0ce30f07cd9850"
+    },
+    {
+      "path": "native/town/buildings/tbtwext1.png",
+      "bytes": 7839,
+      "sha256": "a0121d2ae5989032dbc917268ee30d26dca41a221ca1efb3b36a7c99f087428a"
+    },
+    {
+      "path": "native/town/buildings/tbtwext2.png",
+      "bytes": 23715,
+      "sha256": "2740a867bf326adb0ff6e0edb427d7bb011541b541f46bc179ab581ca9d490e2"
+    },
+    {
+      "path": "native/town/buildings/tbtwhal2.png",
+      "bytes": 76155,
+      "sha256": "e187a23ff4dcf9a976f4817b25479d8c9dc50aefccb5cb291e62092e4f33d268"
+    },
+    {
+      "path": "native/town/buildings/tbtwhal3.png",
+      "bytes": 105424,
+      "sha256": "3494b2d2603b6fb61fcb8945073d55a38760946869ea08e99539e7553a7ba846"
+    },
+    {
+      "path": "native/town/buildings/tbtwhal4.png",
+      "bytes": 104877,
+      "sha256": "04538dda48c6715708271d4bfbdde4ddebdbe03a5234cf0fc75b40da2524ede6"
+    },
+    {
+      "path": "native/town/buildings/tbtwhall.png",
+      "bytes": 35296,
+      "sha256": "a785d625d2aa0eda807c26266967eb7e088daf747ced4e156703f1b9b62f074f"
+    },
+    {
+      "path": "native/town/buildings/tbtwholy.png",
+      "bytes": 26914,
+      "sha256": "1a711a7f35827b2082c5cc15e938677dfb89800ed9acc916a348edc8539093a7"
+    },
+    {
+      "path": "native/town/buildings/tbtwhrd1.png",
+      "bytes": 12572,
+      "sha256": "fa76e40efbc20fbc03f8c4b2537c45bd759ed7fbbcf68b6bdc30d8f09f8a11d4"
+    },
+    {
+      "path": "native/town/buildings/tbtwhrd2.png",
+      "bytes": 13936,
+      "sha256": "3ae3398365cbe38decbb5e03bd4c09e50cb4df371a00b7a3b43afd503a11b1ae"
+    },
+    {
+      "path": "native/town/buildings/tbtwmag2.png",
+      "bytes": 38236,
+      "sha256": "eb7b50e15377dc5ce9994313b345d5ac2320a123dbc1b85757eb4884d64d1c4d"
+    },
+    {
+      "path": "native/town/buildings/tbtwmag3.png",
+      "bytes": 39256,
+      "sha256": "984acc7e49e166d228b6c9fc5fc70e726c71736b8682bfbd2f88749b23b2aa54"
+    },
+    {
+      "path": "native/town/buildings/tbtwmag4.png",
+      "bytes": 43363,
+      "sha256": "05049b9794f539543e40f9f3030013c48b928f7f77946cc482f4faa80de7b1af"
+    },
+    {
+      "path": "native/town/buildings/tbtwmage.png",
+      "bytes": 34425,
+      "sha256": "7d3dda60d063a854bca87dfbc0ad1f11cd5c1dd817729f2d41b385602549506d"
+    },
+    {
+      "path": "native/town/buildings/tbtwmark.png",
+      "bytes": 36321,
+      "sha256": "95b9f5bbbf1b89369923210667e35f485d41c12fa37dc83d081bf106316cabd4"
+    },
+    {
+      "path": "native/town/buildings/tbtwsilo.png",
+      "bytes": 8007,
+      "sha256": "f63ddefb638247cd23b7a865adaae0ef51d0aa09a625795f6aa0e79d1a2b26c2"
+    },
+    {
+      "path": "native/town/buildings/tbtwspec.png",
+      "bytes": 16100,
+      "sha256": "42e058f3014bd0493063fced313b330bd4bdc4e0b4327e32072ee2420c27a09d"
+    },
+    {
+      "path": "native/town/buildings/tbtwtvrn.png",
+      "bytes": 26373,
+      "sha256": "d292fbb53f34718979e8eff0fdf0d6e0f47e4f8fab764dc300dad170ccbfbee0"
+    },
+    {
+      "path": "native/town/buildings/tbtwup_0.png",
+      "bytes": 9003,
+      "sha256": "87975725125218f6d9922235b381104f90ad7c7048f05aa2e370f5a7062f3f9b"
+    },
+    {
+      "path": "native/town/buildings/tbtwup_1.png",
+      "bytes": 12973,
+      "sha256": "04092ce9ea37769f7357404aab04bee4f01e2b5d9bb85b79798c0014c8a8afc6"
+    },
+    {
+      "path": "native/town/buildings/tbtwup_2.png",
+      "bytes": 27519,
+      "sha256": "2b0b8e79430a00161e3c29d783e55e5245d634ccf3c15f3ecc7305fd6e8d3043"
+    },
+    {
+      "path": "native/town/buildings/tbtwup_3.png",
+      "bytes": 15902,
+      "sha256": "d4a89dab27dcfde986524bba9e8af2bd5101502f5e7d88be98aad1c2894c8205"
+    },
+    {
+      "path": "native/town/buildings/tbtwup_4.png",
+      "bytes": 25214,
+      "sha256": "2655ea32e83a5839ef8e43325d8a18da96bc53c2f9f22e804ea08c6436b2f87a"
+    },
+    {
+      "path": "native/town/buildings/tbtwup_5.png",
+      "bytes": 26754,
+      "sha256": "f86188d597978aae2b0ebd836af4bb9aaf228accb81be85ff71453508c87ecd9"
+    },
+    {
+      "path": "native/town/buildings/tbtwup_6.png",
+      "bytes": 45089,
+      "sha256": "97bb01e0b7d9280f47fd260feba9ce83f6fbe1d2ede96b21560b3386fbfaed2b"
+    },
+    {
+      "path": "native/town/corrections/guild-and-wall.png",
+      "bytes": 43902,
+      "sha256": "253c28d4f8de5abeb1a2ef205792f3295e7df252d7c17dabf6e30a93eea2004c"
+    },
+    {
+      "path": "native/town/corrections/house-roof.png",
+      "bytes": 3489,
+      "sha256": "70fbeaaa6d402a631753a59de871811119c5a46ca38e153673e3a994eda55fae"
+    },
+    {
+      "path": "native/town/landscape.png",
+      "bytes": 824533,
+      "sha256": "73387f56e84327e1bd56edbd92c60052390a91ade79671d362f297f7d7cea7b3"
+    },
+    {
+      "path": "native/ui/bonus/botblack.png",
+      "bytes": 12365,
+      "sha256": "b430f190c468c2806204323e95728c8d782e76c7cffcdfafb73dc172bbbef937"
+    },
+    {
+      "path": "native/ui/bonus/botcast1.png",
+      "bytes": 12135,
+      "sha256": "ed0f3f281b0bdad081678414b77faebc382fd96a13836dad3720389cfff52ac3"
+    },
+    {
+      "path": "native/ui/bonus/botcast2.png",
+      "bytes": 12183,
+      "sha256": "a732bff5a8466b0bf0fdd178d93dddcdba6da617fa448ea5a44d242939bb95c8"
+    },
+    {
+      "path": "native/ui/bonus/botcast3.png",
+      "bytes": 12158,
+      "sha256": "53d4801d2f9e486201fd5943b8fdf229361292b606d38b5e0e3b0fa937095bf7"
+    },
+    {
+      "path": "native/ui/bonus/botcastw.png",
+      "bytes": 12158,
+      "sha256": "efe53b01bc787b0faf15a8b44dde791f33fa9abd859f8f2752a937840913b478"
+    },
+    {
+      "path": "native/ui/bonus/botga1h.png",
+      "bytes": 12356,
+      "sha256": "a88eab4aeb187514b8a167f21e1bceebacc1836c62ae7d6971abb1a8b4f7b49c"
+    },
+    {
+      "path": "native/ui/bonus/botga2h.png",
+      "bytes": 12317,
+      "sha256": "241fa36ef2027bbe716bf384f3c97fc41436ccf6f194cfaa1ec9805555a2b5cf"
+    },
+    {
+      "path": "native/ui/bonus/botgar1.png",
+      "bytes": 12293,
+      "sha256": "3d1a3745325e8517e5dd607fd19c3749f702690236bdd129360f6be875c3686e"
+    },
+    {
+      "path": "native/ui/bonus/botgar2.png",
+      "bytes": 12251,
+      "sha256": "d5c77012858e7a36f887220aad138632ba4727a83d840129ccb783d63c205b63"
+    },
+    {
+      "path": "native/ui/bonus/botgen1.png",
+      "bytes": 12483,
+      "sha256": "502d1c3bf67ec411a4e3d01fe26cceb61f1a7b23d5583f4177302be869bd720a"
+    },
+    {
+      "path": "native/ui/bonus/botgen2.png",
+      "bytes": 12310,
+      "sha256": "191eb39132b419f0b2d3a1f6347fee3080c39bc0362d18f66e1c314ae1de3f11"
+    },
+    {
+      "path": "native/ui/bonus/botgld1.png",
+      "bytes": 12056,
+      "sha256": "7727ef5427a0e959445c63c5f426391587e910fc29758b8d1a6f93781b87df6c"
+    },
+    {
+      "path": "native/ui/bonus/botgld2.png",
+      "bytes": 12095,
+      "sha256": "b3765ed7f5593c5efa8580db854c9a2253f7c565733367e144caf85723417533"
+    },
+    {
+      "path": "native/ui/bonus/botgld3.png",
+      "bytes": 12155,
+      "sha256": "34142c7437099e4adb1f4e8b8717501b9cbef800f8d2312eeb82eda6f7c7d422"
+    },
+    {
+      "path": "native/ui/bonus/botgld4.png",
+      "bytes": 12227,
+      "sha256": "e4eb3215f21c7e2e08ebd29673079ea0c6999d00a83084db1a563f2dfef7e750"
+    },
+    {
+      "path": "native/ui/bonus/botgld5.png",
+      "bytes": 12175,
+      "sha256": "63fcf79d6dc78e988d9d2014129449771fe1942e3ca8e9680e45d6109a7abc83"
+    },
+    {
+      "path": "native/ui/bonus/botgldl.png",
+      "bytes": 12289,
+      "sha256": "a3b91959918fbef512da692833c49dd67a687961c0873364028b9f18dfacf426"
+    },
+    {
+      "path": "native/ui/bonus/botgldw.png",
+      "bytes": 11966,
+      "sha256": "bad88708247b90f9c46828bb39a5be68d442759db3fbc112299a92a9667a9ebb"
+    },
+    {
+      "path": "native/ui/bonus/botgolm1.png",
+      "bytes": 12459,
+      "sha256": "11c5640b21ad12d9587d5cd9414c82dc211076fc880f3fac4752af62781bc752"
+    },
+    {
+      "path": "native/ui/bonus/botgolm2.png",
+      "bytes": 12488,
+      "sha256": "73f9d510afcb2a35d4c882186921f814175a1df159325d567628704d4f620459"
+    },
+    {
+      "path": "native/ui/bonus/botgrail.png",
+      "bytes": 12250,
+      "sha256": "0ee02e74309cb179b19be791efceea5a3db145f41f99e1d78f9035b931810e66"
+    },
+    {
+      "path": "native/ui/bonus/botgrem1.png",
+      "bytes": 12269,
+      "sha256": "4f105df40107e411e570694c6ca34f8c7091f534f1c8a1c9a08161485ee2bcff"
+    },
+    {
+      "path": "native/ui/bonus/botgrem2.png",
+      "bytes": 12251,
+      "sha256": "6d39f01ffcd5cd733d98513388017a662122f5926de40bda2d9c48cfd7b941ec"
+    },
+    {
+      "path": "native/ui/bonus/bothall1.png",
+      "bytes": 12149,
+      "sha256": "376d2a193b39bbd9c5529b90faba899cde4fc421da645e342a40c3ca158082d5"
+    },
+    {
+      "path": "native/ui/bonus/bothall2.png",
+      "bytes": 12174,
+      "sha256": "a990ff22600dc6c84715c672d0f4529520089da7f153fdeb23a85a57bad0b116"
+    },
+    {
+      "path": "native/ui/bonus/bothall3.png",
+      "bytes": 12267,
+      "sha256": "bad956c1a03c223aba2f45113c0167e917c817b92f440bc0a9260589cbb3fb2e"
+    },
+    {
+      "path": "native/ui/bonus/bothall4.png",
+      "bytes": 12256,
+      "sha256": "ebd717dacbf378135fff0ab26223e59268fa9db00c6d0f3b2ffdbcdc3eeff94a"
+    },
+    {
+      "path": "native/ui/bonus/botmag1.png",
+      "bytes": 12155,
+      "sha256": "70fb06a8b3d86408802f2b0fec13b83b8f2b4e2fd595de6c2be4b313234e165b"
+    },
+    {
+      "path": "native/ui/bonus/botmag2.png",
+      "bytes": 12171,
+      "sha256": "2faf7797a78b33cd9257fdc8dbd7592a4e5000b3b1f8ee0ba6f3730b2f3ad865"
+    },
+    {
+      "path": "native/ui/bonus/botmark.png",
+      "bytes": 12067,
+      "sha256": "02b0a0de2e768bf5a8269e3675d01d322233fc917df54930329334378fc2683b"
+    },
+    {
+      "path": "native/ui/bonus/botmarka.png",
+      "bytes": 12442,
+      "sha256": "f64efbe0f861b87106306994dbead3124ba6174a2a5ad486559c06e62cb4cc81"
+    },
+    {
+      "path": "native/ui/bonus/botmarks.png",
+      "bytes": 12240,
+      "sha256": "343a9139d63e8a2bcd859eb7b7e9b167d4431761785f65c16d3db7b28c64a53e"
+    },
+    {
+      "path": "native/ui/bonus/botnaga1.png",
+      "bytes": 12129,
+      "sha256": "45d5ec9429db791bd4fe29b97b804ea26fd2a37e2b1d0d070c0c0be550ec6ad1"
+    },
+    {
+      "path": "native/ui/bonus/botnaga2.png",
+      "bytes": 12371,
+      "sha256": "4c74d9ae851e74c7e4b268a8e04bf35e5124ed7f6a5f951382ed34e59cdb06b0"
+    },
+    {
+      "path": "native/ui/bonus/bottav.png",
+      "bytes": 12201,
+      "sha256": "accc7e56a0284360e67817ca1071a52c8fb98dd256cb087a3dad34bf62f8c189"
+    },
+    {
+      "path": "native/ui/bonus/bottit1.png",
+      "bytes": 12048,
+      "sha256": "62e668d6f0a0811f3b677ceeac8a881a5fdc3a3c8c50fd5b717379a4811b6da4"
+    },
+    {
+      "path": "native/ui/bonus/bottit2.png",
+      "bytes": 12043,
+      "sha256": "723e90df71b72cd80187abe28fe0a0ac28e697187cbc250cb56e5d03b5dc599d"
+    },
+    {
+      "path": "native/ui/crbkgtow.png",
+      "bytes": 32125,
+      "sha256": "3e3a564a8c20ad5a7dd3f8aa51c706177a02e0aaad750c7c7bde8d5b25a8dabf"
+    },
+    {
+      "path": "native/ui/hall/frame-000.png",
+      "bytes": 33905,
+      "sha256": "8a6387cbbf11c29023444544c95b6d17b1dcad5c31736a9e88127a85c96301d9"
+    },
+    {
+      "path": "native/ui/hall/frame-001.png",
+      "bytes": 33859,
+      "sha256": "3d6b67db5f78cddf99029dd55ffc68a665e0f44a218d3eb593e3ec25ba2cb219"
+    },
+    {
+      "path": "native/ui/hall/frame-002.png",
+      "bytes": 33940,
+      "sha256": "5e8d7f60c29a92c3750cf59dd7cda884d31bdb860d2df7aa09403796679eda15"
+    },
+    {
+      "path": "native/ui/hall/frame-003.png",
+      "bytes": 33893,
+      "sha256": "9afe2a66b4f82ab8a3f45a76627ddd0035365457efff048b8be5f5490003d7b1"
+    },
+    {
+      "path": "native/ui/hall/frame-004.png",
+      "bytes": 33783,
+      "sha256": "7e902cb00f0cbc443e2c05ba5d1f21aa161ec2033250877a8d1ec1112b92dd84"
+    },
+    {
+      "path": "native/ui/hall/frame-005.png",
+      "bytes": 34294,
+      "sha256": "b9806a304836262037a97d7888edfa4fdd4b696ad54c06fb0cb380ba1d1b8f6a"
+    },
+    {
+      "path": "native/ui/hall/frame-006.png",
+      "bytes": 33905,
+      "sha256": "8a6387cbbf11c29023444544c95b6d17b1dcad5c31736a9e88127a85c96301d9"
+    },
+    {
+      "path": "native/ui/hall/frame-007.png",
+      "bytes": 33778,
+      "sha256": "e54fa31160f5a285d0d49da66e2d1214ef603272ae25b83eb0ecded8b7ec6fab"
+    },
+    {
+      "path": "native/ui/hall/frame-008.png",
+      "bytes": 33804,
+      "sha256": "913c68d2873fff01bb5ce788d2906b1c057e7d7bb55e1904fa8e6d5d0059bb27"
+    },
+    {
+      "path": "native/ui/hall/frame-009.png",
+      "bytes": 33752,
+      "sha256": "6ee55ef0491d1459a6f2f603f55281d8025956cbab078cb858bd226d99a45648"
+    },
+    {
+      "path": "native/ui/hall/frame-010.png",
+      "bytes": 34014,
+      "sha256": "edacfc4abf4a842bcba6d15ed0186066b341b5f79fb49a4b7b58c1606c7824e5"
+    },
+    {
+      "path": "native/ui/hall/frame-011.png",
+      "bytes": 34621,
+      "sha256": "e3860f9e0b62b163413c6de8132f01944006f6f6ff987eb15ebcd50ec8c7068f"
+    },
+    {
+      "path": "native/ui/hall/frame-012.png",
+      "bytes": 33967,
+      "sha256": "5e99dd518d38bcfe606bb76bf9f8ba7f601cb7952a8c6bd7ed8b3483f3a489fe"
+    },
+    {
+      "path": "native/ui/hall/frame-013.png",
+      "bytes": 34008,
+      "sha256": "c3e56fd174e644c4ad5b781df9f8a7dbc117ae5d71cc6d207dbcaffb42d1f97e"
+    },
+    {
+      "path": "native/ui/hall/frame-014.png",
+      "bytes": 34293,
+      "sha256": "0e1638e6720a775da037341c791cf98a6a525b8e76d6e7d6284289461db4ce83"
+    },
+    {
+      "path": "native/ui/hall/frame-015.png",
+      "bytes": 33914,
+      "sha256": "92adeb0d5894b3b3bfaea4ad52d93b18acb1d3d559ece0f99b02eef99450bda4"
+    },
+    {
+      "path": "native/ui/hall/frame-016.png",
+      "bytes": 34169,
+      "sha256": "77c7bfe6c5b9817bb8f7c72c23ceaddbae488480e92a145b3bd6f4e5cb9cd768"
+    },
+    {
+      "path": "native/ui/hall/frame-017.png",
+      "bytes": 34194,
+      "sha256": "378a0104a000145aa1f31a1971d27b97d3dc774210a48396a91d5e23e080669f"
+    },
+    {
+      "path": "native/ui/hall/frame-018.png",
+      "bytes": 34018,
+      "sha256": "f58ca57c7526a0f6e19ccdd1c0c6b407c1bc8ce1521b4aadcd2d07e8215b0a6d"
+    },
+    {
+      "path": "native/ui/hall/frame-019.png",
+      "bytes": 33910,
+      "sha256": "db8159adc51dbe0b13955041f4e616125c71187a614de6648e1f366388160ed1"
+    },
+    {
+      "path": "native/ui/hall/frame-020.png",
+      "bytes": 33905,
+      "sha256": "8a6387cbbf11c29023444544c95b6d17b1dcad5c31736a9e88127a85c96301d9"
+    },
+    {
+      "path": "native/ui/hall/frame-021.png",
+      "bytes": 33737,
+      "sha256": "e1f407841325b9fe13bd94268e355a79932320e44be257ae47d9b224d0d1ed76"
+    },
+    {
+      "path": "native/ui/hall/frame-022.png",
+      "bytes": 33907,
+      "sha256": "b41a4ab84a6df76ecfccf56c8156754995029cbb733a9a7b91cba9bc23931deb"
+    },
+    {
+      "path": "native/ui/hall/frame-023.png",
+      "bytes": 34003,
+      "sha256": "7ba17eb8018fb9a9f28367ec0637666f0ec45bd462d40209b0cb624933f3daa5"
+    },
+    {
+      "path": "native/ui/hall/frame-024.png",
+      "bytes": 33905,
+      "sha256": "8a6387cbbf11c29023444544c95b6d17b1dcad5c31736a9e88127a85c96301d9"
+    },
+    {
+      "path": "native/ui/hall/frame-025.png",
+      "bytes": 33905,
+      "sha256": "8a6387cbbf11c29023444544c95b6d17b1dcad5c31736a9e88127a85c96301d9"
+    },
+    {
+      "path": "native/ui/hall/frame-026.png",
+      "bytes": 33865,
+      "sha256": "8e90145220afbb1a0b4d3983a5128a5fb5f86d9ae2a6087b9abde723b281c116"
+    },
+    {
+      "path": "native/ui/hall/frame-027.png",
+      "bytes": 33905,
+      "sha256": "8a6387cbbf11c29023444544c95b6d17b1dcad5c31736a9e88127a85c96301d9"
+    },
+    {
+      "path": "native/ui/hall/frame-028.png",
+      "bytes": 33905,
+      "sha256": "8a6387cbbf11c29023444544c95b6d17b1dcad5c31736a9e88127a85c96301d9"
+    },
+    {
+      "path": "native/ui/hall/frame-029.png",
+      "bytes": 33905,
+      "sha256": "8a6387cbbf11c29023444544c95b6d17b1dcad5c31736a9e88127a85c96301d9"
+    },
+    {
+      "path": "native/ui/hall/frame-030.png",
+      "bytes": 34530,
+      "sha256": "b4ed04e2aa505ddd33ec9c26dbe2267717136c1007348b0326102cdbb19e0ccc"
+    },
+    {
+      "path": "native/ui/hall/frame-031.png",
+      "bytes": 33937,
+      "sha256": "68e87a8a163e4bf81e97e43d1566da8d4adc73e4ebc580e65aa7a6b3e6716a53"
+    },
+    {
+      "path": "native/ui/hall/frame-032.png",
+      "bytes": 34165,
+      "sha256": "dbbdb21efe207e40ee5a83e5cff30e88876afd8adebbe4170903b31c0233e33a"
+    },
+    {
+      "path": "native/ui/hall/frame-033.png",
+      "bytes": 33788,
+      "sha256": "2b8a27cc0068c466be56f43d7c78c89ea7faa034229d96db5d3eaad936c5d6fa"
+    },
+    {
+      "path": "native/ui/hall/frame-034.png",
+      "bytes": 34229,
+      "sha256": "6f3fc5a121f7ea656c8aa994e8abc1b53a95936c7e4487b7bf16240f9d838c37"
+    },
+    {
+      "path": "native/ui/hall/frame-035.png",
+      "bytes": 34366,
+      "sha256": "3997d57f90f603111a27aa9df70870b356d03cb357eae2618d4879ea25507548"
+    },
+    {
+      "path": "native/ui/hall/frame-036.png",
+      "bytes": 34594,
+      "sha256": "0617c9589894e7a12ca3c153c8f6ae119e29d8774bfdb11bbb14906ad5457c4e"
+    },
+    {
+      "path": "native/ui/hall/frame-037.png",
+      "bytes": 34536,
+      "sha256": "486f40ee4316f93c59b7d132e29c25966ff669da6d4aac341542b50e7a1cef68"
+    },
+    {
+      "path": "native/ui/hall/frame-038.png",
+      "bytes": 33839,
+      "sha256": "326f17ee839099fb866637eaadf4e954966b645df482ca6d0c58b1a0e8aba6d2"
+    },
+    {
+      "path": "native/ui/hall/frame-039.png",
+      "bytes": 34292,
+      "sha256": "b3f3b9efd0011a2705bccba9ba901a729484888463925d08aedbafb02c5f124e"
+    },
+    {
+      "path": "native/ui/hall/frame-040.png",
+      "bytes": 33785,
+      "sha256": "096a13611810464104582b01a24f6ad970880ba812487a524a6c0479414ab5bd"
+    },
+    {
+      "path": "native/ui/hall/frame-041.png",
+      "bytes": 33930,
+      "sha256": "84b7909812dc70b0ee3438255d5878879ff8de33328db509b7f069614a317d32"
+    },
+    {
+      "path": "native/ui/hall/frame-042.png",
+      "bytes": 34162,
+      "sha256": "dadfb603e07bb980f2e1aa6d59b4661fed7d5b43f21dbbf26f4c98c3751e9735"
+    },
+    {
+      "path": "native/ui/hall/frame-043.png",
+      "bytes": 34050,
+      "sha256": "d7ec571c02359d2d9a90bb939ebb608ad5295ee4c57d7a16cdcbc6854c3b3d50"
+    },
+    {
+      "path": "native/ui/icons/fort-large-built.png",
+      "bytes": 11790,
+      "sha256": "65676cb3d157433d5d3e446c4d17e8951f04e76f334a3bda7c8c678cc2983e78"
+    },
+    {
+      "path": "native/ui/icons/fort-large-normal.png",
+      "bytes": 11996,
+      "sha256": "a116c5eb1f855d3ce4c46cbe4594fab7e33df88ed2ea3cf0cda8b48d05d4c954"
+    },
+    {
+      "path": "native/ui/icons/fort-small-built.png",
+      "bytes": 4778,
+      "sha256": "b46d0800921240b8c76ad39430f94bc89a94bd0b2e1739d11d1c7edd2377c2de"
+    },
+    {
+      "path": "native/ui/icons/fort-small-normal.png",
+      "bytes": 4937,
+      "sha256": "577ee94affe11c8b144dd97b42a9dcb692b27e98b414997fce793df3162b3961"
+    },
+    {
+      "path": "native/ui/icons/village-large-built.png",
+      "bytes": 11752,
+      "sha256": "8b81bbb9360fdd10fd60104a6e54e91d5cfbdc3381dfbbd9ee3c85b3ec218e54"
+    },
+    {
+      "path": "native/ui/icons/village-large-normal.png",
+      "bytes": 11967,
+      "sha256": "e975eaa398bd11505c66bfd61e4c42886b12f4a64cf13b0fdb56eb42af3dfed8"
+    },
+    {
+      "path": "native/ui/icons/village-small-built.png",
+      "bytes": 4774,
+      "sha256": "9e79c4c8890b882ad0acfb8cd5a4394449ea7719a10be866e9ea46a95ed1e78c"
+    },
+    {
+      "path": "native/ui/icons/village-small-normal.png",
+      "bytes": 4946,
+      "sha256": "788fdac314a4027083d72aa703f9a290bf844fed65e6080a2dc6ea80e2559278"
+    },
+    {
+      "path": "native/ui/puzzle-full.png",
+      "bytes": 1019962,
+      "sha256": "4a4d8e8632fa2c851097b5883fcb3d23f945e9b3d0dda9e2b5139b3e25aa1a69"
+    },
+    {
+      "path": "native/ui/puzzle/puztow00.png",
+      "bytes": 41709,
+      "sha256": "647b7c284db96f5d71de6f5c34b8f881a5534ffddd07690264b1ec44a2f7fd8f"
+    },
+    {
+      "path": "native/ui/puzzle/puztow01.png",
+      "bytes": 10693,
+      "sha256": "0276357534dde2a7194ed3c722dfa92466d4cd9525cf649b4655704941ee1f23"
+    },
+    {
+      "path": "native/ui/puzzle/puztow02.png",
+      "bytes": 14323,
+      "sha256": "20c4194459284afe80f45a3cfebf0e9c093fe98faa251eaf413e1ae8918dd081"
+    },
+    {
+      "path": "native/ui/puzzle/puztow03.png",
+      "bytes": 12653,
+      "sha256": "f5c4ccfb678ec8cc9359d249e96c6d3f08b864fc8903f5e7682f91eb70335400"
+    },
+    {
+      "path": "native/ui/puzzle/puztow04.png",
+      "bytes": 96928,
+      "sha256": "b8f2fd2ce8d07c3d8c2ef2a09c3db0a5166efb6a47feca609e15b9baaa62e789"
+    },
+    {
+      "path": "native/ui/puzzle/puztow05.png",
+      "bytes": 82286,
+      "sha256": "9469309f8c4548a8d3301c523ff740a333325f545de16f904ee3c3630819a826"
+    },
+    {
+      "path": "native/ui/puzzle/puztow06.png",
+      "bytes": 31542,
+      "sha256": "009453adb543c61efd42d561e058e1f4175d3d72931b4bd8c2774fc7f196c47f"
+    },
+    {
+      "path": "native/ui/puzzle/puztow07.png",
+      "bytes": 49801,
+      "sha256": "ad5e93abd0118f02bab2c15e4560c69219af7e11f9bfa1c44d03fb45759e6b14"
+    },
+    {
+      "path": "native/ui/puzzle/puztow08.png",
+      "bytes": 45666,
+      "sha256": "2cdf84b301a1400405776e7a5220915c9fa6c0f307d41218ea0864165a3154f0"
+    },
+    {
+      "path": "native/ui/puzzle/puztow09.png",
+      "bytes": 37198,
+      "sha256": "3a08f85bcdd032f73cfefe05e8d0c7022de656186371480e020e2ebba77d4608"
+    },
+    {
+      "path": "native/ui/puzzle/puztow10.png",
+      "bytes": 84905,
+      "sha256": "711f2f823e79da3ce60275b125a3bfaf226c2d69dd8265631d7efaf86b37d9b1"
+    },
+    {
+      "path": "native/ui/puzzle/puztow11.png",
+      "bytes": 39402,
+      "sha256": "0c43e5b9bdcf3726fed0a065e9cdf770bdfd9d5b35771dbcd0a0ee22b3292fa0"
+    },
+    {
+      "path": "native/ui/puzzle/puztow12.png",
+      "bytes": 53338,
+      "sha256": "c035fbb2455bd1417767f0fd146fc35676ad62bf6162014fd49ae68a8a9941ba"
+    },
+    {
+      "path": "native/ui/puzzle/puztow13.png",
+      "bytes": 69072,
+      "sha256": "e506164f56dd999c0a1aff5b32203b93ec4266082503f60cb401eedc6843eecf"
+    },
+    {
+      "path": "native/ui/puzzle/puztow14.png",
+      "bytes": 35503,
+      "sha256": "3a17a590bcdef116f8f456b5aa9d556507888b69d7813ae673db184b049a7e73"
+    },
+    {
+      "path": "native/ui/puzzle/puztow15.png",
+      "bytes": 64285,
+      "sha256": "bf6b97fbb7446a766bcee00544b45f95eba6c31c3e41d7970bef0c9bf8ca2342"
+    },
+    {
+      "path": "native/ui/puzzle/puztow16.png",
+      "bytes": 77846,
+      "sha256": "fdae22281c1cf2f0f0f683919811945a4fa4771f6a34cbf359adda2d63ed182f"
+    },
+    {
+      "path": "native/ui/puzzle/puztow17.png",
+      "bytes": 36794,
+      "sha256": "6bdb2cef40092fb9eead91db140f0233be8462abb69bcfc2dfbc5a2a5a7748fa"
+    },
+    {
+      "path": "native/ui/puzzle/puztow18.png",
+      "bytes": 39976,
+      "sha256": "2330fa909c2d5345eff93c84a2834542cc688be5b3e511cde48c0399368c5700"
+    },
+    {
+      "path": "native/ui/puzzle/puztow19.png",
+      "bytes": 18176,
+      "sha256": "21b988e66b8f59e23c5ead43debe49b2c735c67ed340e372202481b8a67e452f"
+    },
+    {
+      "path": "native/ui/puzzle/puztow20.png",
+      "bytes": 49628,
+      "sha256": "0f069e6e4c25e343543cb02bbcb6050646851bac12a8f8adb2df77eb424be036"
+    },
+    {
+      "path": "native/ui/puzzle/puztow21.png",
+      "bytes": 56928,
+      "sha256": "ae59231c9be94e49dbc6fd326ba501fb76d6d5bdd7a50fddca61a43a1f29ccd5"
+    },
+    {
+      "path": "native/ui/puzzle/puztow22.png",
+      "bytes": 40973,
+      "sha256": "511e952c8fbcf406ccb560c01110ed4ee93c09db60bcd6e75b47b9e07e605ce4"
+    },
+    {
+      "path": "native/ui/puzzle/puztow23.png",
+      "bytes": 35713,
+      "sha256": "e67be629a389196800c5e9ba47bb78b76d93e50051e17af7b9d30f943cc226f2"
+    },
+    {
+      "path": "native/ui/puzzle/puztow24.png",
+      "bytes": 21460,
+      "sha256": "f491521bb39b13d6b2579ac610ca32b5c62e5b0a51a2bc054d18a056a925a0c0"
+    },
+    {
+      "path": "native/ui/puzzle/puztow25.png",
+      "bytes": 53172,
+      "sha256": "060a2fe40783d0b2364e775269574e307d0ad6e06a2c3ec7107a0b256e77f01d"
+    },
+    {
+      "path": "native/ui/puzzle/puztow26.png",
+      "bytes": 27583,
+      "sha256": "bc3d88563c2ff9dd06c9d4d454be393e72cc84ce3d3888971dcc650dd878c69a"
+    },
+    {
+      "path": "native/ui/puzzle/puztow27.png",
+      "bytes": 23248,
+      "sha256": "4a379aa8c77114a70fd085e5b9f4a48342ad778f7306f84e3588ad97b2a8f688"
+    },
+    {
+      "path": "native/ui/puzzle/puztow28.png",
+      "bytes": 56231,
+      "sha256": "83b27bcb1279be3cb895be2cbfb8308226c2d2ea46f0eabf29194de762b6c769"
+    },
+    {
+      "path": "native/ui/puzzle/puztow29.png",
+      "bytes": 41104,
+      "sha256": "fc78d66107c7b8bb7a0ab62b74660be7774ab394456aa38c039767fbe7f4b08f"
+    },
+    {
+      "path": "native/ui/puzzle/puztow30.png",
+      "bytes": 25564,
+      "sha256": "4796af2e30cdf80688daa90f0ee59277698f9d271bf7c18cc3402d977cd188db"
+    },
+    {
+      "path": "native/ui/puzzle/puztow31.png",
+      "bytes": 38400,
+      "sha256": "92fdbfd4cb391bbfaebac592552b1ccf08d924670100ee2e7e5e320eeb1188f9"
+    },
+    {
+      "path": "native/ui/puzzle/puztow32.png",
+      "bytes": 38529,
+      "sha256": "9174afb085400e3a56208a75a66866e1abd563bc96504fc835b184e2690029f9"
+    },
+    {
+      "path": "native/ui/puzzle/puztow33.png",
+      "bytes": 44450,
+      "sha256": "11637148015c4e85ce1778b3f24c69a53d0fde492e43232da5890f7e37b061bb"
+    },
+    {
+      "path": "native/ui/puzzle/puztow34.png",
+      "bytes": 48034,
+      "sha256": "09a8b09652f385c12c4a68b3f2dceb7243f194f3c1015f96a42f126ee37c975e"
+    },
+    {
+      "path": "native/ui/puzzle/puztow35.png",
+      "bytes": 33439,
+      "sha256": "ca9d442f41dce4782279e78e69fc5b8169ad8cb9403ea3cae0ff42f2e6e63ee4"
+    },
+    {
+      "path": "native/ui/puzzle/puztow36.png",
+      "bytes": 46186,
+      "sha256": "aa7b890ddbb8be4fbfec4f0a0f96af5d9fa1b45d221531314917c934e552b0e8"
+    },
+    {
+      "path": "native/ui/puzzle/puztow37.png",
+      "bytes": 60742,
+      "sha256": "89c166cc61ba1d7173e36c42388aafbe27b245c6f3066aab001ad2635ccfe784"
+    },
+    {
+      "path": "native/ui/puzzle/puztow38.png",
+      "bytes": 46206,
+      "sha256": "e03609199e5ec638c72c95a369611c6fc2d6e7025994330a15523452cec5191e"
+    },
+    {
+      "path": "native/ui/puzzle/puztow39.png",
+      "bytes": 30945,
+      "sha256": "21efe1399bd87b1a93ec454f0d88dfbfee12743a8a62537d935342749fcad36b"
+    },
+    {
+      "path": "native/ui/puzzle/puztow40.png",
+      "bytes": 46875,
+      "sha256": "4fcd92839930b8b5260e1638a350180d5d69c6683f14d666dd448a76c9b7601d"
+    },
+    {
+      "path": "native/ui/puzzle/puztow41.png",
+      "bytes": 34500,
+      "sha256": "039439e9b1fb3da6a9a3dd6d9b3a65195cb589a16cf875b27563732b5640144d"
+    },
+    {
+      "path": "native/ui/puzzle/puztow42.png",
+      "bytes": 70075,
+      "sha256": "0b624533038193ec925c49a6b83abbabf1fe3385e9301e42676bd6923ff84364"
+    },
+    {
+      "path": "native/ui/puzzle/puztow43.png",
+      "bytes": 54056,
+      "sha256": "b2e2792a0be8a6922f707bde6ef6637ee0d903fcabc3fb069644e1a215a12144"
+    },
+    {
+      "path": "native/ui/puzzle/puztow44.png",
+      "bytes": 31203,
+      "sha256": "d5fe461498a306c49969350fac3236e042c6646e7173510f80ebcdc8a2ee5c51"
+    },
+    {
+      "path": "native/ui/puzzle/puztow45.png",
+      "bytes": 65337,
+      "sha256": "273945af3474eeb33e10cc099a9306c51359d7c387ab66fe3875b10e95799510"
+    },
+    {
+      "path": "native/ui/puzzle/puztow46.png",
+      "bytes": 21967,
+      "sha256": "9859f114c89c8b98fe54d1de5858075848ee447c3707dc037b37429e3a80ae97"
+    },
+    {
+      "path": "native/ui/puzzle/puztow47.png",
+      "bytes": 23435,
+      "sha256": "a550142ea49983414c1e6277c4c3fa0a85c48da62c726dd00567bc643047e0a3"
+    },
+    {
+      "path": "native/ui/tpcastow.png",
+      "bytes": 29908,
+      "sha256": "4e51381ceb46a184df2c870809328ffded3a3d03233933074bc368628bbf1ec7"
+    },
+    {
+      "path": "native/ui/tpmagetw.png",
+      "bytes": 89400,
+      "sha256": "32d1ad50be36c18f9ee9b5d8af95cd60398811bb94659c36f1714967e61478d3"
+    },
+    {
+      "path": "previews/map-three-variants.png",
+      "bytes": 172452,
+      "sha256": "20ff751d5cc43983f9642076ad73ac25202716fca8a1379777225163db22554d"
+    },
+    {
+      "path": "previews/map-town-lineup.png",
+      "bytes": 332056,
+      "sha256": "e63164d19de233d4f7f4a96f0dcadd3f26ef668eb00076984cb2579109cc460f"
+    },
+    {
+      "path": "previews/siege-damaged.png",
+      "bytes": 1358348,
+      "sha256": "b4367c5bee806126aa9e81f25c6e261795d64e06e0663102c3f94c8f847d02b2"
+    },
+    {
+      "path": "previews/siege-destroyed.png",
+      "bytes": 1356954,
+      "sha256": "bd0dd9496eb527468902122486411796f4c724e562be506193da7bebefdf3476"
+    },
+    {
+      "path": "previews/siege-intact.png",
+      "bytes": 1360677,
+      "sha256": "c0a71e9af913d9d29a4e1267893bc2432230a09972a2bfe539b8d003414101c0"
+    },
+    {
+      "path": "previews/town-basic-workshop.png",
+      "bytes": 933650,
+      "sha256": "87453835daafbc5022534a0e758744d6339a82a87606ed5fee3410ee0d1f5dd0"
+    },
+    {
+      "path": "previews/town-final.png",
+      "bytes": 933792,
+      "sha256": "419ca9ac43ae125ebbb1a7b7e8060ef3641442d08154bd06e282688ba8fa1d36"
+    },
+    {
+      "path": "previews/town-original-comparison.png",
+      "bytes": 1700633,
+      "sha256": "ba6a048dec6b586065131fed6786331e88340f9181837a768730b44472fdb27b"
+    },
+    {
+      "path": "previews/workshop-basic-upgraded.png",
+      "bytes": 41811,
+      "sha256": "a39f92ef6699b4411621f5134a8102639abe56b3039733ba0029dcf3b7412f33"
+    }
+  ],
+  "provenance": [
+    {
+      "file": "native/adventure/avctowr0.png",
+      "workspaceSource": "assets/academy/native/adventure/avctowr0.png"
+    },
+    {
+      "file": "native/adventure/avctowx0.png",
+      "workspaceSource": "assets/academy/native/adventure/avctowx0.png"
+    },
+    {
+      "file": "native/adventure/avctowz0.png",
+      "workspaceSource": "assets/academy/native/adventure/avctowz0.png"
+    },
+    {
+      "file": "native/siege/sgtwarch.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwarch.png"
+    },
+    {
+      "file": "native/siege/sgtwback.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwback.png"
+    },
+    {
+      "file": "native/siege/sgtwdrw1.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwdrw1.png"
+    },
+    {
+      "file": "native/siege/sgtwdrw2.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwdrw2.png"
+    },
+    {
+      "file": "native/siege/sgtwdrw3.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwdrw3.png"
+    },
+    {
+      "file": "native/siege/sgtwdrwc.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwdrwc.png"
+    },
+    {
+      "file": "native/siege/sgtwman1.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwman1.png"
+    },
+    {
+      "file": "native/siege/sgtwman2.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwman2.png"
+    },
+    {
+      "file": "native/siege/sgtwmanc.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwmanc.png"
+    },
+    {
+      "file": "native/siege/sgtwmta.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwmta.png"
+    },
+    {
+      "file": "native/siege/sgtwtpwl.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwtpwl.png"
+    },
+    {
+      "file": "native/siege/sgtwtw11.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwtw11.png"
+    },
+    {
+      "file": "native/siege/sgtwtw12.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwtw12.png"
+    },
+    {
+      "file": "native/siege/sgtwtw1c.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwtw1c.png"
+    },
+    {
+      "file": "native/siege/sgtwtw21.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwtw21.png"
+    },
+    {
+      "file": "native/siege/sgtwtw22.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwtw22.png"
+    },
+    {
+      "file": "native/siege/sgtwtw2c.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwtw2c.png"
+    },
+    {
+      "file": "native/siege/sgtwwa11.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwwa11.png"
+    },
+    {
+      "file": "native/siege/sgtwwa12.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwwa12.png"
+    },
+    {
+      "file": "native/siege/sgtwwa13.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwwa13.png"
+    },
+    {
+      "file": "native/siege/sgtwwa2.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwwa2.png"
+    },
+    {
+      "file": "native/siege/sgtwwa31.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwwa31.png"
+    },
+    {
+      "file": "native/siege/sgtwwa32.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwwa32.png"
+    },
+    {
+      "file": "native/siege/sgtwwa33.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwwa33.png"
+    },
+    {
+      "file": "native/siege/sgtwwa41.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwwa41.png"
+    },
+    {
+      "file": "native/siege/sgtwwa42.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwwa42.png"
+    },
+    {
+      "file": "native/siege/sgtwwa43.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwwa43.png"
+    },
+    {
+      "file": "native/siege/sgtwwa5.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwwa5.png"
+    },
+    {
+      "file": "native/siege/sgtwwa61.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwwa61.png"
+    },
+    {
+      "file": "native/siege/sgtwwa62.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwwa62.png"
+    },
+    {
+      "file": "native/siege/sgtwwa63.png",
+      "workspaceSource": "assets/academy/native/siege/sgtwwa63.png"
+    },
+    {
+      "file": "native/ui/bonus/botblack.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botblack.png"
+    },
+    {
+      "file": "native/ui/bonus/botcast1.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botcast1.png"
+    },
+    {
+      "file": "native/ui/bonus/botcast2.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botcast2.png"
+    },
+    {
+      "file": "native/ui/bonus/botcast3.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botcast3.png"
+    },
+    {
+      "file": "native/ui/bonus/botcastw.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botcastw.png"
+    },
+    {
+      "file": "native/ui/bonus/botga1h.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botga1h.png"
+    },
+    {
+      "file": "native/ui/bonus/botga2h.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botga2h.png"
+    },
+    {
+      "file": "native/ui/bonus/botgar1.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botgar1.png"
+    },
+    {
+      "file": "native/ui/bonus/botgar2.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botgar2.png"
+    },
+    {
+      "file": "native/ui/bonus/botgen1.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botgen1.png"
+    },
+    {
+      "file": "native/ui/bonus/botgen2.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botgen2.png"
+    },
+    {
+      "file": "native/ui/bonus/botgld1.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botgld1.png"
+    },
+    {
+      "file": "native/ui/bonus/botgld2.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botgld2.png"
+    },
+    {
+      "file": "native/ui/bonus/botgld3.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botgld3.png"
+    },
+    {
+      "file": "native/ui/bonus/botgld4.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botgld4.png"
+    },
+    {
+      "file": "native/ui/bonus/botgld5.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botgld5.png"
+    },
+    {
+      "file": "native/ui/bonus/botgldl.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botgldl.png"
+    },
+    {
+      "file": "native/ui/bonus/botgldw.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botgldw.png"
+    },
+    {
+      "file": "native/ui/bonus/botgolm1.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botgolm1.png"
+    },
+    {
+      "file": "native/ui/bonus/botgolm2.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botgolm2.png"
+    },
+    {
+      "file": "native/ui/bonus/botgrail.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botgrail.png"
+    },
+    {
+      "file": "native/ui/bonus/botgrem1.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botgrem1.png"
+    },
+    {
+      "file": "native/ui/bonus/botgrem2.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botgrem2.png"
+    },
+    {
+      "file": "native/ui/bonus/bothall1.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/bothall1.png"
+    },
+    {
+      "file": "native/ui/bonus/bothall2.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/bothall2.png"
+    },
+    {
+      "file": "native/ui/bonus/bothall3.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/bothall3.png"
+    },
+    {
+      "file": "native/ui/bonus/bothall4.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/bothall4.png"
+    },
+    {
+      "file": "native/ui/bonus/botmag1.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botmag1.png"
+    },
+    {
+      "file": "native/ui/bonus/botmag2.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botmag2.png"
+    },
+    {
+      "file": "native/ui/bonus/botmark.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botmark.png"
+    },
+    {
+      "file": "native/ui/bonus/botmarka.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botmarka.png"
+    },
+    {
+      "file": "native/ui/bonus/botmarks.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botmarks.png"
+    },
+    {
+      "file": "native/ui/bonus/botnaga1.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botnaga1.png"
+    },
+    {
+      "file": "native/ui/bonus/botnaga2.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/botnaga2.png"
+    },
+    {
+      "file": "native/ui/bonus/bottav.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/bottav.png"
+    },
+    {
+      "file": "native/ui/bonus/bottit1.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/bottit1.png"
+    },
+    {
+      "file": "native/ui/bonus/bottit2.png",
+      "workspaceSource": "assets/academy/native/ui/bonus/bottit2.png"
+    },
+    {
+      "file": "native/ui/crbkgtow.png",
+      "workspaceSource": "assets/academy/native/ui/crbkgtow.png"
+    },
+    {
+      "file": "native/ui/hall/frame-000.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-000.png"
+    },
+    {
+      "file": "native/ui/hall/frame-001.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-001.png"
+    },
+    {
+      "file": "native/ui/hall/frame-002.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-002.png"
+    },
+    {
+      "file": "native/ui/hall/frame-003.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-003.png"
+    },
+    {
+      "file": "native/ui/hall/frame-004.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-004.png"
+    },
+    {
+      "file": "native/ui/hall/frame-005.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-005.png"
+    },
+    {
+      "file": "native/ui/hall/frame-006.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-006.png"
+    },
+    {
+      "file": "native/ui/hall/frame-007.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-007.png"
+    },
+    {
+      "file": "native/ui/hall/frame-008.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-008.png"
+    },
+    {
+      "file": "native/ui/hall/frame-009.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-009.png"
+    },
+    {
+      "file": "native/ui/hall/frame-010.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-010.png"
+    },
+    {
+      "file": "native/ui/hall/frame-011.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-011.png"
+    },
+    {
+      "file": "native/ui/hall/frame-012.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-012.png"
+    },
+    {
+      "file": "native/ui/hall/frame-013.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-013.png"
+    },
+    {
+      "file": "native/ui/hall/frame-014.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-014.png"
+    },
+    {
+      "file": "native/ui/hall/frame-015.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-015.png"
+    },
+    {
+      "file": "native/ui/hall/frame-016.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-016.png"
+    },
+    {
+      "file": "native/ui/hall/frame-017.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-017.png"
+    },
+    {
+      "file": "native/ui/hall/frame-018.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-018.png"
+    },
+    {
+      "file": "native/ui/hall/frame-019.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-019.png"
+    },
+    {
+      "file": "native/ui/hall/frame-020.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-020.png"
+    },
+    {
+      "file": "native/ui/hall/frame-021.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-021.png"
+    },
+    {
+      "file": "native/ui/hall/frame-022.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-022.png"
+    },
+    {
+      "file": "native/ui/hall/frame-023.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-023.png"
+    },
+    {
+      "file": "native/ui/hall/frame-024.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-024.png"
+    },
+    {
+      "file": "native/ui/hall/frame-025.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-025.png"
+    },
+    {
+      "file": "native/ui/hall/frame-026.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-026.png"
+    },
+    {
+      "file": "native/ui/hall/frame-027.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-027.png"
+    },
+    {
+      "file": "native/ui/hall/frame-028.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-028.png"
+    },
+    {
+      "file": "native/ui/hall/frame-029.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-029.png"
+    },
+    {
+      "file": "native/ui/hall/frame-030.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-030.png"
+    },
+    {
+      "file": "native/ui/hall/frame-031.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-031.png"
+    },
+    {
+      "file": "native/ui/hall/frame-032.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-032.png"
+    },
+    {
+      "file": "native/ui/hall/frame-033.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-033.png"
+    },
+    {
+      "file": "native/ui/hall/frame-034.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-034.png"
+    },
+    {
+      "file": "native/ui/hall/frame-035.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-035.png"
+    },
+    {
+      "file": "native/ui/hall/frame-036.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-036.png"
+    },
+    {
+      "file": "native/ui/hall/frame-037.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-037.png"
+    },
+    {
+      "file": "native/ui/hall/frame-038.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-038.png"
+    },
+    {
+      "file": "native/ui/hall/frame-039.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-039.png"
+    },
+    {
+      "file": "native/ui/hall/frame-040.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-040.png"
+    },
+    {
+      "file": "native/ui/hall/frame-041.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-041.png"
+    },
+    {
+      "file": "native/ui/hall/frame-042.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-042.png"
+    },
+    {
+      "file": "native/ui/hall/frame-043.png",
+      "workspaceSource": "assets/academy/native/ui/hall/frame-043.png"
+    },
+    {
+      "file": "native/ui/icons/fort-large-built.png",
+      "workspaceSource": "assets/academy/native/ui/icons/fort-large-built.png"
+    },
+    {
+      "file": "native/ui/icons/fort-large-normal.png",
+      "workspaceSource": "assets/academy/native/ui/icons/fort-large-normal.png"
+    },
+    {
+      "file": "native/ui/icons/fort-small-built.png",
+      "workspaceSource": "assets/academy/native/ui/icons/fort-small-built.png"
+    },
+    {
+      "file": "native/ui/icons/fort-small-normal.png",
+      "workspaceSource": "assets/academy/native/ui/icons/fort-small-normal.png"
+    },
+    {
+      "file": "native/ui/icons/village-large-built.png",
+      "workspaceSource": "assets/academy/native/ui/icons/village-large-built.png"
+    },
+    {
+      "file": "native/ui/icons/village-large-normal.png",
+      "workspaceSource": "assets/academy/native/ui/icons/village-large-normal.png"
+    },
+    {
+      "file": "native/ui/icons/village-small-built.png",
+      "workspaceSource": "assets/academy/native/ui/icons/village-small-built.png"
+    },
+    {
+      "file": "native/ui/icons/village-small-normal.png",
+      "workspaceSource": "assets/academy/native/ui/icons/village-small-normal.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow00.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow00.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow01.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow01.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow02.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow02.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow03.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow03.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow04.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow04.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow05.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow05.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow06.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow06.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow07.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow07.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow08.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow08.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow09.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow09.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow10.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow10.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow11.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow11.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow12.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow12.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow13.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow13.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow14.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow14.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow15.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow15.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow16.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow16.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow17.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow17.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow18.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow18.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow19.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow19.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow20.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow20.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow21.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow21.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow22.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow22.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow23.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow23.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow24.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow24.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow25.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow25.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow26.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow26.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow27.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow27.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow28.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow28.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow29.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow29.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow30.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow30.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow31.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow31.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow32.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow32.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow33.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow33.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow34.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow34.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow35.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow35.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow36.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow36.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow37.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow37.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow38.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow38.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow39.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow39.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow40.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow40.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow41.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow41.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow42.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow42.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow43.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow43.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow44.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow44.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow45.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow45.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow46.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow46.png"
+    },
+    {
+      "file": "native/ui/puzzle/puztow47.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle/puztow47.png"
+    },
+    {
+      "file": "native/ui/puzzle-full.png",
+      "workspaceSource": "assets/academy/native/ui/puzzle-full.png"
+    },
+    {
+      "file": "native/ui/tpcastow.png",
+      "workspaceSource": "assets/academy/native/ui/tpcastow.png"
+    },
+    {
+      "file": "native/ui/tpmagetw.png",
+      "workspaceSource": "assets/academy/native/ui/tpmagetw.png"
+    },
+    {
+      "file": "masters/siege/sgtwarch.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwarch.png"
+    },
+    {
+      "file": "masters/siege/sgtwback.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwback.png"
+    },
+    {
+      "file": "masters/siege/sgtwman1.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwman1.png"
+    },
+    {
+      "file": "masters/siege/sgtwman2.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwman2.png"
+    },
+    {
+      "file": "masters/siege/sgtwmanc.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwmanc.png"
+    },
+    {
+      "file": "masters/siege/sgtwmta.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwmta.png"
+    },
+    {
+      "file": "masters/siege/sgtwtpwl.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwtpwl.png"
+    },
+    {
+      "file": "masters/siege/sgtwtw11.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwtw11.png"
+    },
+    {
+      "file": "masters/siege/sgtwtw12.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwtw12.png"
+    },
+    {
+      "file": "masters/siege/sgtwtw1c.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwtw1c.png"
+    },
+    {
+      "file": "masters/siege/sgtwtw21.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwtw21.png"
+    },
+    {
+      "file": "masters/siege/sgtwtw22.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwtw22.png"
+    },
+    {
+      "file": "masters/siege/sgtwtw2c.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwtw2c.png"
+    },
+    {
+      "file": "masters/siege/sgtwwa11.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwwa11.png"
+    },
+    {
+      "file": "masters/siege/sgtwwa12.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwwa12.png"
+    },
+    {
+      "file": "masters/siege/sgtwwa13.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwwa13.png"
+    },
+    {
+      "file": "masters/siege/sgtwwa2.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwwa2.png"
+    },
+    {
+      "file": "masters/siege/sgtwwa31.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwwa31.png"
+    },
+    {
+      "file": "masters/siege/sgtwwa32.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwwa32.png"
+    },
+    {
+      "file": "masters/siege/sgtwwa33.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwwa33.png"
+    },
+    {
+      "file": "masters/siege/sgtwwa41.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwwa41.png"
+    },
+    {
+      "file": "masters/siege/sgtwwa42.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwwa42.png"
+    },
+    {
+      "file": "masters/siege/sgtwwa43.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwwa43.png"
+    },
+    {
+      "file": "masters/siege/sgtwwa5.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwwa5.png"
+    },
+    {
+      "file": "masters/siege/sgtwwa61.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwwa61.png"
+    },
+    {
+      "file": "masters/siege/sgtwwa62.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwwa62.png"
+    },
+    {
+      "file": "masters/siege/sgtwwa63.png",
+      "workspaceSource": "assets/academy/masters/siege/sgtwwa63.png"
+    },
+    {
+      "file": "masters/ui/creature-background.png",
+      "workspaceSource": "assets/academy/masters/ui/creature-background.png"
+    },
+    {
+      "file": "masters/ui/guild-window.png",
+      "workspaceSource": "assets/academy/masters/ui/guild-window.png"
+    },
+    {
+      "file": "masters/ui/puzzle.png",
+      "workspaceSource": "assets/academy/masters/ui/puzzle.png"
+    },
+    {
+      "file": "masters/adventure/avctowr0.png",
+      "workspaceSource": "assets/academy/masters/adventure-v3/avctowr0.png"
+    },
+    {
+      "file": "masters/adventure/avctowx0.png",
+      "workspaceSource": "assets/academy/masters/adventure-v3/avctowx0.png"
+    },
+    {
+      "file": "masters/adventure/avctowz0.png",
+      "workspaceSource": "assets/academy/masters/adventure-v3/avctowz0.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwblak.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwblak.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwblak.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwblak.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwcas2.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwcas2.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwcas2.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwcas2.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwcas3.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwcas3.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwcas3.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwcas3.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwcstl.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwcstl.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwcstl.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwcstl.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwdw_0.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwdw_0.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwdw_0.png",
+      "workspaceSource": "assets/desert/buildings-v8/tbtwdw_0.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwdw_1.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwdw_1.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwdw_1.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwdw_1.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwdw_2.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwdw_2.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwdw_2.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwdw_2.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwdw_3.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwdw_3.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwdw_3.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwdw_3.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwdw_4.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwdw_4.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwdw_4.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwdw_4.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwdw_5.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwdw_5.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwdw_5.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwdw_5.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwdw_6.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwdw_6.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwdw_6.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwdw_6.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwext0.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwext0.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwext0.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwext0.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwext1.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwext1.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwext1.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwext1.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwext2.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwext2.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwext2.png",
+      "workspaceSource": "assets/desert/buildings-v7/tbtwext2.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwhal2.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwhal2.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwhal2.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwhal2.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwhal3.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwhal3.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwhal3.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwhal3.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwhal4.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwhal4.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwhal4.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwhal4.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwhall.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwhall.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwhall.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwhall.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwholy.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwholy.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwholy.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwholy.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwhrd1.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwhrd1.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwhrd1.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwhrd1.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwhrd2.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwhrd2.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwhrd2.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwhrd2.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwmag2.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwmag2.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwmag2.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwmag2.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwmag3.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwmag3.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwmag3.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwmag3.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwmag4.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwmag4.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwmag4.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwmag4.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwmage.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwmage.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwmage.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwmage.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwmark.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwmark.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwmark.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwmark.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwsilo.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwsilo.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwsilo.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwsilo.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwspec.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwspec.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwspec.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwspec.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwtvrn.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwtvrn.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwtvrn.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwtvrn.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwup_0.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwup_0.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwup_0.png",
+      "workspaceSource": "assets/desert/buildings-v8/tbtwup_0.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwup_1.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwup_1.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwup_1.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwup_1.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwup_2.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwup_2.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwup_2.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwup_2.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwup_3.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwup_3.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwup_3.png",
+      "workspaceSource": "assets/desert/buildings-v2/tbtwup_3.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwup_4.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwup_4.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwup_4.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwup_4.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwup_5.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwup_5.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwup_5.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwup_5.png"
+    },
+    {
+      "file": "native/town/buildings/tbtwup_6.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/tbtwup_6.png"
+    },
+    {
+      "file": "masters/town/buildings/tbtwup_6.png",
+      "workspaceSource": "assets/desert/buildings-v1/tbtwup_6.png"
+    },
+    {
+      "file": "masters/town/landscape.png",
+      "workspaceSource": "assets/desert/tower-landscape-desert-v1.png"
+    },
+    {
+      "file": "masters/town/corrections/guild-and-wall.png",
+      "workspaceSource": "assets/desert/buildings-v7/guild-and-wall.png"
+    },
+    {
+      "file": "masters/town/corrections/house-roof-context.png",
+      "workspaceSource": "assets/desert/buildings-v2/roof-context-repaired-v2.png"
+    },
+    {
+      "file": "native/town/corrections/guild-and-wall.png",
+      "workspaceSource": "assets/desert/review-v8/native-buildings/guild-and-wall.png"
+    },
+    {
+      "file": "previews/town-final.png",
+      "workspaceSource": "assets/desert/review-v8/desert-full-town.png"
+    },
+    {
+      "file": "previews/town-basic-workshop.png",
+      "workspaceSource": "assets/desert/review-v8/desert-basic-workshop.png"
+    },
+    {
+      "file": "previews/town-original-comparison.png",
+      "workspaceSource": "assets/desert/review-v8/side-by-side-native.png"
+    },
+    {
+      "file": "previews/workshop-basic-upgraded.png",
+      "workspaceSource": "assets/desert/review-v8/workshop-basic-upgraded.png"
+    },
+    {
+      "file": "previews/map-town-lineup.png",
+      "workspaceSource": "assets/academy/review/town-style-comparison/fortified-towns-native.png"
+    },
+    {
+      "file": "previews/map-three-variants.png",
+      "workspaceSource": "assets/academy/review/town-style-comparison/all-academy-variants-native.png"
+    },
+    {
+      "file": "previews/siege-intact.png",
+      "workspaceSource": "assets/academy/review/siege-academy-intact.png"
+    },
+    {
+      "file": "previews/siege-damaged.png",
+      "workspaceSource": "assets/academy/review/siege-academy-damaged.png"
+    },
+    {
+      "file": "previews/siege-destroyed.png",
+      "workspaceSource": "assets/academy/review/siege-academy-destroyed.png"
+    },
+    {
+      "file": "integration/vcmi-tower.json",
+      "workspaceSource": "inventory/vcmi-tower.json"
+    },
+    {
+      "file": "integration/puzzle-layout.json",
+      "workspaceSource": "inventory/puzzle-layout.json"
+    },
+    {
+      "file": "integration/icon-mapping.json",
+      "workspaceSource": "assets/academy/icon-mapping.json"
+    },
+    {
+      "file": "integration/town-validation.json",
+      "workspaceSource": "assets/desert/review-v8/validation.json"
+    },
+    {
+      "file": "integration/export-validation.json",
+      "workspaceSource": "assets/academy/validation.json"
+    }
+  ]
+}

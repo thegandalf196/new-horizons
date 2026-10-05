@@ -1,0 +1,22 @@
+{
+  "base": "review-v2",
+  "sceneSize": [
+    800,
+    374
+  ],
+  "changedPixels": 13287,
+  "changesOutsideIntendedAreas": 0,
+  "editRegion": {
+    "left": 592,
+    "top": 105,
+    "width": 179,
+    "height": 129
+  },
+  "workshopRegion": [
+    446,
+    221,
+    64,
+    71
+  ],
+  "VCMITested": false
+}

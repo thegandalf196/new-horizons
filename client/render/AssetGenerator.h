@@ -33,6 +33,7 @@ public:
 	void initialize();
 
 	std::shared_ptr<ISharedImage> generateImage(const ImagePath & image);
+	bool preferGeneratedImage(const ImagePath & image) const;
 
 	std::map<ImagePath, std::shared_ptr<ISharedImage>> generateAllImages();
 	std::map<AnimationPath, AnimationLayoutMap> generateAllAnimations();

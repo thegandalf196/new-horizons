@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "academyNativeManifestEntries": 174,
+  "decodedPNGs": 295,
+  "approvedAdventureSpritesByteIdentical": true,
+  "basicWorkshopMasterByteIdentical": true,
+  "localDocumentationLinksValid": true,
+  "rejectedRevisionsExcluded": true,
+  "VCMITested": false
+}

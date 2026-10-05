@@ -1,0 +1,1214 @@
+{
+  "resolution": [
+    800,
+    374
+  ],
+  "layout": [
+    {
+      "id": "grail",
+      "animation": "TBTWHOLY.def",
+      "x": 237,
+      "y": 14,
+      "z": -2,
+      "campaignBonus": "BoTGrail.pcx",
+      "border": "TOTHOLYA.bmp",
+      "area": "TZTHOLYA.bmp"
+    },
+    {
+      "id": "mageGuild5",
+      "animation": "TBTWMAG5.def",
+      "x": 593,
+      "y": 14,
+      "z": -1,
+      "campaignBonus": "BoTGld5.pcx",
+      "border": "TOTGLD5.bmp",
+      "area": "TZTGLD5.bmp"
+    },
+    {
+      "id": "castle",
+      "animation": "TBTWCAS3.def",
+      "x": 301,
+      "y": 0,
+      "z": -1,
+      "campaignBonus": "BoTCast3.pcx",
+      "border": "TOTCAS3.bmp",
+      "area": "TZTCAS3.bmp"
+    },
+    {
+      "id": "dwellingUpLvl7",
+      "animation": "TBTWUP_6.def",
+      "x": 75,
+      "y": 91,
+      "z": -1,
+      "campaignBonus": "BoTTit2.pcx",
+      "border": "TOTTIT2.bmp",
+      "area": "TZTTIT2.bmp"
+    },
+    {
+      "id": "marketplace",
+      "animation": "TBTWMARK.def",
+      "x": 614,
+      "y": 292,
+      "campaignBonus": "BoTMark.pcx",
+      "border": "TOTMRK.bmp",
+      "area": "TZTMRK.bmp"
+    },
+    {
+      "id": "blacksmith",
+      "animation": "TBTWBLAK.def",
+      "x": 478,
+      "y": 211,
+      "campaignBonus": "BoTBlack.pcx",
+      "border": "TOTBLKA.bmp",
+      "area": "TZTBLKA.bmp"
+    },
+    {
+      "id": "horde1Upgr",
+      "animation": "TBTWHRD2.def",
+      "x": 0,
+      "y": 28,
+      "campaignBonus": "BoTGa2h.pcx",
+      "border": "TOTGAR2H.bmp",
+      "area": "TZTGAR2H.bmp",
+      "hidden": true,
+      "builds": "horde1"
+    },
+    {
+      "id": "special2",
+      "animation": "TBTWEXT0.def",
+      "x": 409,
+      "y": 82,
+      "campaignBonus": "BoTCastW.pcx",
+      "border": "TOTCASW.bmp",
+      "area": "TZTCASW.bmp"
+    },
+    {
+      "id": "special3",
+      "animation": "TBTWEXT1.def",
+      "x": 702,
+      "y": 115,
+      "campaignBonus": "BoTGldL.pcx",
+      "border": "TOTGLDL.bmp",
+      "area": "TZTGLDL.bmp"
+    },
+    {
+      "id": "dwellingUpLvl4",
+      "animation": "TBTWUP_3.def",
+      "x": 613,
+      "y": 74,
+      "campaignBonus": "BoTMag2.pcx",
+      "border": "TOTMAG2.bmp",
+      "area": "TZTMAG2.bmp"
+    },
+    {
+      "id": "dwellingUpLvl5",
+      "animation": "TBTWUP_4.def",
+      "x": 511,
+      "y": 8,
+      "campaignBonus": "BoTGen2.pcx",
+      "border": "TOTGEN2.bmp",
+      "area": "TZTGEN2.bmp"
+    },
+    {
+      "id": "tavern",
+      "animation": "TBTWTVRN.def",
+      "x": 375,
+      "y": 278,
+      "z": 1,
+      "campaignBonus": "BoTTav.pcx",
+      "border": "TOTTAV.bmp",
+      "area": "TZTTAV.bmp"
+    },
+    {
+      "id": "special4",
+      "animation": "TBTWEXT2.def",
+      "x": 592,
+      "y": 189,
+      "z": 1,
+      "campaignBonus": "BoTGldW.pcx",
+      "border": "TOTGLDW.bmp",
+      "area": "TZTGLDW.bmp"
+    },
+    {
+      "id": "dwellingUpLvl1",
+      "animation": "TBTWUP_0.def",
+      "x": 446,
+      "y": 221,
+      "z": 1,
+      "campaignBonus": "BoTGrem2.pcx",
+      "border": "TOTGRM2A.bmp",
+      "area": "TZTGRM2A.bmp"
+    },
+    {
+      "id": "dwellingUpLvl3",
+      "animation": "TBTWUP_2.def",
+      "x": 209,
+      "y": 177,
+      "z": 1,
+      "campaignBonus": "BoTGolm2.pcx",
+      "border": "TOTGOL2A.bmp",
+      "area": "TZTGOL2A.bmp"
+    },
+    {
+      "id": "capitol",
+      "animation": "TBTWHAL4.def",
+      "x": 0,
+      "y": 82,
+      "z": 2,
+      "campaignBonus": "BoTHall4.pcx",
+      "border": "TOTHAL4.bmp",
+      "area": "TZTHAL4.bmp"
+    },
+    {
+      "id": "special1",
+      "animation": "TBTWSPEC.def",
+      "x": 674,
+      "y": 276,
+      "z": 2,
+      "campaignBonus": "BoTMarkA.pcx",
+      "border": "TOTMRKA.bmp",
+      "area": "TZTMRKA.bmp"
+    },
+    {
+      "id": "dwellingUpLvl6",
+      "animation": "TBTWUP_5.def",
+      "x": 681,
+      "y": 157,
+      "z": 2,
+      "campaignBonus": "BoTNaga2.pcx",
+      "border": "TOTNAG2.bmp",
+      "area": "TZTNAG2.bmp"
+    },
+    {
+      "id": "resourceSilo",
+      "animation": "TBTWSILO.def",
+      "x": 763,
+      "y": 214,
+      "z": 3,
+      "campaignBonus": "BoTMarkS.pcx",
+      "border": "TOTMRKS.bmp",
+      "area": "TZTMRKS.bmp"
+    }
+  ],
+  "assets": [
+    {
+      "name": "tbtwblak.def",
+      "master": "masters/town/buildings/tbtwblak.png",
+      "native": "native/town/buildings/tbtwblak.png",
+      "sourceSize": [
+        140,
+        146
+      ],
+      "masterSize": [
+        1228,
+        1281
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 7,
+        "width": 138,
+        "height": 135
+      },
+      "generatedBox": {
+        "left": 24,
+        "top": 22,
+        "width": 1192,
+        "height": 1232
+      },
+      "originalFrameCount": 20,
+      "originalResource": "tbtwblak.def"
+    },
+    {
+      "name": "tbtwcas2.def",
+      "master": "masters/town/buildings/tbtwcas2.png",
+      "native": "native/town/buildings/tbtwcas2.png",
+      "sourceSize": [
+        139,
+        301
+      ],
+      "masterSize": [
+        853,
+        1844
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 139,
+        "height": 301
+      },
+      "generatedBox": {
+        "left": 15,
+        "top": 3,
+        "width": 824,
+        "height": 1815
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwcas2.def"
+    },
+    {
+      "name": "tbtwcas3.def",
+      "master": "masters/town/buildings/tbtwcas3.png",
+      "native": "native/town/buildings/tbtwcas3.png",
+      "sourceSize": [
+        139,
+        301
+      ],
+      "masterSize": [
+        853,
+        1844
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 139,
+        "height": 301
+      },
+      "generatedBox": {
+        "left": 4,
+        "top": 0,
+        "width": 842,
+        "height": 1830
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwcas3.def"
+    },
+    {
+      "name": "tbtwcstl.def",
+      "master": "masters/town/buildings/tbtwcstl.png",
+      "native": "native/town/buildings/tbtwcstl.png",
+      "sourceSize": [
+        107,
+        278
+      ],
+      "masterSize": [
+        778,
+        2021
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 107,
+        "height": 278
+      },
+      "generatedBox": {
+        "left": 5,
+        "top": 1,
+        "width": 771,
+        "height": 2013
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwcstl.def"
+    },
+    {
+      "name": "tbtwdw_0.def",
+      "master": "masters/town/buildings/tbtwdw_0.png",
+      "native": "native/town/buildings/tbtwdw_0.png",
+      "sourceSize": [
+        53,
+        71
+      ],
+      "masterSize": [
+        1254,
+        1254
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 53,
+        "height": 71
+      },
+      "generatedBox": {
+        "left": 64,
+        "top": 255,
+        "width": 1134,
+        "height": 795
+      },
+      "originalFrameCount": 20,
+      "originalResource": "tbtwdw_0.def"
+    },
+    {
+      "name": "tbtwdw_1.def",
+      "master": "masters/town/buildings/tbtwdw_1.png",
+      "native": "native/town/buildings/tbtwdw_1.png",
+      "sourceSize": [
+        53,
+        95
+      ],
+      "masterSize": [
+        937,
+        1678
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 53,
+        "height": 95
+      },
+      "generatedBox": {
+        "left": 34,
+        "top": 12,
+        "width": 893,
+        "height": 1652
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwdw_1.def"
+    },
+    {
+      "name": "tbtwdw_2.def",
+      "master": "masters/town/buildings/tbtwdw_2.png",
+      "native": "native/town/buildings/tbtwdw_2.png",
+      "sourceSize": [
+        108,
+        127
+      ],
+      "masterSize": [
+        1157,
+        1360
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 108,
+        "height": 127
+      },
+      "generatedBox": {
+        "left": 18,
+        "top": 2,
+        "width": 1121,
+        "height": 1345
+      },
+      "originalFrameCount": 20,
+      "originalResource": "tbtwdw_2.def"
+    },
+    {
+      "name": "tbtwdw_3.def",
+      "master": "masters/town/buildings/tbtwdw_3.png",
+      "native": "native/town/buildings/tbtwdw_3.png",
+      "sourceSize": [
+        52,
+        122
+      ],
+      "masterSize": [
+        819,
+        1920
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 52,
+        "height": 122
+      },
+      "generatedBox": {
+        "left": 29,
+        "top": 6,
+        "width": 777,
+        "height": 1903
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwdw_3.def"
+    },
+    {
+      "name": "tbtwdw_4.def",
+      "master": "masters/town/buildings/tbtwdw_4.png",
+      "native": "native/town/buildings/tbtwdw_4.png",
+      "sourceSize": [
+        85,
+        84
+      ],
+      "masterSize": [
+        1254,
+        1254
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 85,
+        "height": 84
+      },
+      "generatedBox": {
+        "left": 113,
+        "top": 0,
+        "width": 1027,
+        "height": 1206
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwdw_4.def"
+    },
+    {
+      "name": "tbtwdw_5.def",
+      "master": "masters/town/buildings/tbtwdw_5.png",
+      "native": "native/town/buildings/tbtwdw_5.png",
+      "sourceSize": [
+        105,
+        66
+      ],
+      "masterSize": [
+        1582,
+        994
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 105,
+        "height": 66
+      },
+      "generatedBox": {
+        "left": 19,
+        "top": 6,
+        "width": 1544,
+        "height": 961
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwdw_5.def"
+    },
+    {
+      "name": "tbtwdw_6.def",
+      "master": "masters/town/buildings/tbtwdw_6.png",
+      "native": "native/town/buildings/tbtwdw_6.png",
+      "sourceSize": [
+        173,
+        86
+      ],
+      "masterSize": [
+        1779,
+        884
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 173,
+        "height": 86
+      },
+      "generatedBox": {
+        "left": 6,
+        "top": 23,
+        "width": 1767,
+        "height": 837
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwdw_6.def"
+    },
+    {
+      "name": "tbtwext0.def",
+      "master": "masters/town/buildings/tbtwext0.png",
+      "native": "native/town/buildings/tbtwext0.png",
+      "sourceSize": [
+        45,
+        191
+      ],
+      "masterSize": [
+        726,
+        2167
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 45,
+        "height": 191
+      },
+      "generatedBox": {
+        "left": 135,
+        "top": 7,
+        "width": 502,
+        "height": 2151
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwext0.def"
+    },
+    {
+      "name": "tbtwext1.def",
+      "master": "masters/town/buildings/tbtwext1.png",
+      "native": "native/town/buildings/tbtwext1.png",
+      "sourceSize": [
+        27,
+        92
+      ],
+      "masterSize": [
+        729,
+        2158
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 27,
+        "height": 92
+      },
+      "generatedBox": {
+        "left": 53,
+        "top": 7,
+        "width": 625,
+        "height": 2139
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwext1.def"
+    },
+    {
+      "name": "tbtwext2.def",
+      "master": "masters/town/buildings/tbtwext2.png",
+      "native": "native/town/buildings/tbtwext2.png",
+      "sourceSize": [
+        178,
+        45
+      ],
+      "masterSize": [
+        178,
+        45
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 178,
+        "height": 45
+      },
+      "generatedBox": {
+        "left": 0,
+        "top": 0,
+        "width": 178,
+        "height": 45
+      },
+      "originalFrameCount": 1,
+      "method": "Native lower-wall extraction from repaired joint guild",
+      "originalResource": "tbtwext2.def"
+    },
+    {
+      "name": "tbtwhal2.def",
+      "master": "masters/town/buildings/tbtwhal2.png",
+      "native": "native/town/buildings/tbtwhal2.png",
+      "sourceSize": [
+        264,
+        139
+      ],
+      "masterSize": [
+        1728,
+        910
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 264,
+        "height": 139
+      },
+      "generatedBox": {
+        "left": 2,
+        "top": 76,
+        "width": 1701,
+        "height": 785
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwhal2.def"
+    },
+    {
+      "name": "tbtwhal3.def",
+      "master": "masters/town/buildings/tbtwhal3.png",
+      "native": "native/town/buildings/tbtwhal3.png",
+      "sourceSize": [
+        264,
+        277
+      ],
+      "masterSize": [
+        1225,
+        1284
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 264,
+        "height": 277
+      },
+      "generatedBox": {
+        "left": 0,
+        "top": 0,
+        "width": 1222,
+        "height": 1231
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwhal3.def"
+    },
+    {
+      "name": "tbtwhal4.def",
+      "master": "masters/town/buildings/tbtwhal4.png",
+      "native": "native/town/buildings/tbtwhal4.png",
+      "sourceSize": [
+        264,
+        277
+      ],
+      "masterSize": [
+        1225,
+        1284
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 264,
+        "height": 277
+      },
+      "generatedBox": {
+        "left": 0,
+        "top": 0,
+        "width": 1221,
+        "height": 1178
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwhal4.def"
+    },
+    {
+      "name": "tbtwhall.def",
+      "master": "masters/town/buildings/tbtwhall.png",
+      "native": "native/town/buildings/tbtwhall.png",
+      "sourceSize": [
+        177,
+        75
+      ],
+      "masterSize": [
+        1926,
+        816
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 177,
+        "height": 75
+      },
+      "generatedBox": {
+        "left": 86,
+        "top": 45,
+        "width": 1758,
+        "height": 725
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwhall.def"
+    },
+    {
+      "name": "tbtwholy.def",
+      "master": "masters/town/buildings/tbtwholy.png",
+      "native": "native/town/buildings/tbtwholy.png",
+      "sourceSize": [
+        90,
+        218
+      ],
+      "masterSize": [
+        806,
+        1952
+      ],
+      "sourceBox": {
+        "left": 4,
+        "top": 2,
+        "width": 82,
+        "height": 216
+      },
+      "generatedBox": {
+        "left": 62,
+        "top": 0,
+        "width": 689,
+        "height": 1935
+      },
+      "originalFrameCount": 20,
+      "originalResource": "tbtwholy.def"
+    },
+    {
+      "name": "tbtwhrd1.def",
+      "master": "masters/town/buildings/tbtwhrd1.png",
+      "native": "native/town/buildings/tbtwhrd1.png",
+      "sourceSize": [
+        57,
+        95
+      ],
+      "masterSize": [
+        971,
+        1619
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 57,
+        "height": 95
+      },
+      "generatedBox": {
+        "left": 44,
+        "top": 60,
+        "width": 889,
+        "height": 1461
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwhrd1.def"
+    },
+    {
+      "name": "tbtwhrd2.def",
+      "master": "masters/town/buildings/tbtwhrd2.png",
+      "native": "native/town/buildings/tbtwhrd2.png",
+      "sourceSize": [
+        57,
+        114
+      ],
+      "masterSize": [
+        887,
+        1774
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 56,
+        "height": 113
+      },
+      "generatedBox": {
+        "left": 19,
+        "top": 12,
+        "width": 848,
+        "height": 1717
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwhrd2.def"
+    },
+    {
+      "name": "tbtwmag2.def",
+      "master": "masters/town/buildings/tbtwmag2.png",
+      "native": "native/town/buildings/tbtwmag2.png",
+      "sourceSize": [
+        178,
+        169
+      ],
+      "masterSize": [
+        1287,
+        1222
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 178,
+        "height": 169
+      },
+      "generatedBox": {
+        "left": 30,
+        "top": 8,
+        "width": 1226,
+        "height": 1181
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwmag2.def"
+    },
+    {
+      "name": "tbtwmag3.def",
+      "master": "masters/town/buildings/tbtwmag3.png",
+      "native": "native/town/buildings/tbtwmag3.png",
+      "sourceSize": [
+        178,
+        186
+      ],
+      "masterSize": [
+        1227,
+        1282
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 178,
+        "height": 186
+      },
+      "generatedBox": {
+        "left": 2,
+        "top": 1,
+        "width": 1222,
+        "height": 1245
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwmag3.def"
+    },
+    {
+      "name": "tbtwmag4.def",
+      "master": "masters/town/buildings/tbtwmag4.png",
+      "native": "native/town/buildings/tbtwmag4.png",
+      "sourceSize": [
+        178,
+        203
+      ],
+      "masterSize": [
+        1174,
+        1339
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 178,
+        "height": 203
+      },
+      "generatedBox": {
+        "left": 10,
+        "top": 9,
+        "width": 1151,
+        "height": 1300
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwmag4.def"
+    },
+    {
+      "resource": "tbtwmag5.def",
+      "native": "native/town/corrections/guild-and-wall.png",
+      "master": "masters/town/corrections/guild-and-wall.png",
+      "note": "Joint guild replaces separate top-stage guild; use placement/visibility notes, not original single-layer canvas."
+    },
+    {
+      "name": "tbtwmage.def",
+      "master": "masters/town/buildings/tbtwmage.png",
+      "native": "native/town/buildings/tbtwmage.png",
+      "sourceSize": [
+        171,
+        152
+      ],
+      "masterSize": [
+        1330,
+        1182
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 171,
+        "height": 152
+      },
+      "generatedBox": {
+        "left": 11,
+        "top": 10,
+        "width": 1308,
+        "height": 1158
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwmage.def"
+    },
+    {
+      "name": "tbtwmark.def",
+      "master": "masters/town/buildings/tbtwmark.png",
+      "native": "native/town/buildings/tbtwmark.png",
+      "sourceSize": [
+        186,
+        73
+      ],
+      "masterSize": [
+        2001,
+        786
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 186,
+        "height": 73
+      },
+      "generatedBox": {
+        "left": 0,
+        "top": 0,
+        "width": 2001,
+        "height": 786
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwmark.def"
+    },
+    {
+      "name": "tbtwsilo.def",
+      "master": "masters/town/buildings/tbtwsilo.png",
+      "native": "native/town/buildings/tbtwsilo.png",
+      "sourceSize": [
+        27,
+        94
+      ],
+      "masterSize": [
+        726,
+        2167
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 27,
+        "height": 94
+      },
+      "generatedBox": {
+        "left": 107,
+        "top": 172,
+        "width": 512,
+        "height": 1826
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwsilo.def"
+    },
+    {
+      "name": "tbtwspec.def",
+      "master": "masters/town/buildings/tbtwspec.png",
+      "native": "native/town/buildings/tbtwspec.png",
+      "sourceSize": [
+        68,
+        85
+      ],
+      "masterSize": [
+        1122,
+        1402
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 68,
+        "height": 85
+      },
+      "generatedBox": {
+        "left": 31,
+        "top": 38,
+        "width": 1067,
+        "height": 1316
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwspec.def"
+    },
+    {
+      "name": "tbtwtvrn.def",
+      "master": "masters/town/buildings/tbtwtvrn.png",
+      "native": "native/town/buildings/tbtwtvrn.png",
+      "sourceSize": [
+        122,
+        94
+      ],
+      "masterSize": [
+        1429,
+        1101
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 122,
+        "height": 94
+      },
+      "generatedBox": {
+        "left": 53,
+        "top": 1,
+        "width": 1343,
+        "height": 1052
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwtvrn.def"
+    },
+    {
+      "name": "tbtwup_0.def",
+      "master": "masters/town/buildings/tbtwup_0.png",
+      "native": "native/town/buildings/tbtwup_0.png",
+      "sourceSize": [
+        64,
+        71
+      ],
+      "masterSize": [
+        1327,
+        1186
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 64,
+        "height": 71
+      },
+      "generatedBox": {
+        "left": 14,
+        "top": 107,
+        "width": 1298,
+        "height": 945
+      },
+      "originalFrameCount": 20,
+      "originalResource": "tbtwup_0.def"
+    },
+    {
+      "name": "tbtwup_1.def",
+      "master": "masters/town/buildings/tbtwup_1.png",
+      "native": "native/town/buildings/tbtwup_1.png",
+      "sourceSize": [
+        53,
+        114
+      ],
+      "masterSize": [
+        855,
+        1839
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 52,
+        "height": 113
+      },
+      "generatedBox": {
+        "left": 20,
+        "top": 2,
+        "width": 814,
+        "height": 1818
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwup_1.def"
+    },
+    {
+      "name": "tbtwup_2.def",
+      "master": "masters/town/buildings/tbtwup_2.png",
+      "native": "native/town/buildings/tbtwup_2.png",
+      "sourceSize": [
+        108,
+        127
+      ],
+      "masterSize": [
+        1157,
+        1360
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 108,
+        "height": 127
+      },
+      "generatedBox": {
+        "left": 39,
+        "top": 26,
+        "width": 1080,
+        "height": 1289
+      },
+      "originalFrameCount": 20,
+      "originalResource": "tbtwup_2.def"
+    },
+    {
+      "name": "tbtwup_3.def",
+      "master": "masters/town/buildings/tbtwup_3.png",
+      "native": "native/town/buildings/tbtwup_3.png",
+      "sourceSize": [
+        52,
+        143
+      ],
+      "masterSize": [
+        757,
+        2078
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 52,
+        "height": 143
+      },
+      "generatedBox": {
+        "left": 8,
+        "top": 0,
+        "width": 734,
+        "height": 2044
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwup_3.def"
+    },
+    {
+      "name": "tbtwup_4.def",
+      "master": "masters/town/buildings/tbtwup_4.png",
+      "native": "native/town/buildings/tbtwup_4.png",
+      "sourceSize": [
+        85,
+        151
+      ],
+      "masterSize": [
+        941,
+        1672
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 85,
+        "height": 150
+      },
+      "generatedBox": {
+        "left": 23,
+        "top": 5,
+        "width": 896,
+        "height": 1605
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwup_4.def"
+    },
+    {
+      "name": "tbtwup_5.def",
+      "master": "masters/town/buildings/tbtwup_5.png",
+      "native": "native/town/buildings/tbtwup_5.png",
+      "sourceSize": [
+        105,
+        117
+      ],
+      "masterSize": [
+        1188,
+        1324
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 105,
+        "height": 117
+      },
+      "generatedBox": {
+        "left": 31,
+        "top": 15,
+        "width": 1142,
+        "height": 1275
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwup_5.def"
+    },
+    {
+      "name": "tbtwup_6.def",
+      "master": "masters/town/buildings/tbtwup_6.png",
+      "native": "native/town/buildings/tbtwup_6.png",
+      "sourceSize": [
+        173,
+        139
+      ],
+      "masterSize": [
+        1399,
+        1124
+      ],
+      "sourceBox": {
+        "left": 0,
+        "top": 0,
+        "width": 173,
+        "height": 139
+      },
+      "generatedBox": {
+        "left": 16,
+        "top": 14,
+        "width": 1366,
+        "height": 1060
+      },
+      "originalFrameCount": 1,
+      "originalResource": "tbtwup_6.def"
+    }
+  ],
+  "overrides": {
+    "guild": {
+      "master": "masters/town/corrections/guild-and-wall.png",
+      "x": 592,
+      "y": 14,
+      "width": 179,
+      "height": 220,
+      "lowerWallRedrawY": 189,
+      "preservedRegion": [
+        62,
+        0,
+        44,
+        149
+      ],
+      "native": "native/town/corrections/guild-and-wall.png",
+      "note": "Native composite is authoritative: contains preserved review-2 tower pixels. Do not regenerate solely from edited high-resolution master."
+    },
+    "roof": {
+      "native": "native/town/corrections/house-roof.png",
+      "position": [
+        665,
+        255
+      ],
+      "draw": "after building layers"
+    },
+    "basicWorkshop": {
+      "native": "native/town/buildings/tbtwdw_0.png",
+      "position": [
+        453,
+        221
+      ]
+    },
+    "upgradedWorkshop": {
+      "native": "native/town/buildings/tbtwup_0.png",
+      "position": [
+        446,
+        221
+      ]
+    }
+  }
+}

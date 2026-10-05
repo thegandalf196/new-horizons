@@ -1,0 +1,303 @@
+{
+	"core:tower": {
+		"name": "Academy",
+		"nativeTerrain#override": [
+			"sand"
+		],
+		"creatureBackground": {
+			"120px": "NH_academy/ui/tpcastow.png",
+			"130px": "NH_academy/ui/crbkgtow.png"
+		},
+		"puzzleMap": {
+			"prefix": "NH_academy/ui/puzzle/puztow"
+		},
+		"town": {
+			"mapObject": {
+				"templates": {
+					"village": {
+						"animation": "NH_ACADEMY_VILLAGE_BODY"
+					},
+					"fort": {
+						"animation": "NH_ACADEMY_FORT_BODY"
+					},
+					"citadel": {
+						"animation": "NH_ACADEMY_FORT_BODY"
+					},
+					"castle": {
+						"animation": "NH_ACADEMY_FORT_BODY"
+					},
+					"capitol": {
+						"animation": "NH_ACADEMY_CAPITOL_BODY"
+					}
+				}
+			},
+			"structures": {
+				"mageGuild1": {
+					"animation": "NH_ACADEMY_TBTWMAGE",
+					"campaignBonus": "NH_academy/ui/bonus/botgld1.png",
+					"area": "NH_academy/town/masks/mageGuild1-area.png",
+					"border": "NH_academy/town/masks/mageGuild1-border.png"
+				},
+				"mageGuild2": {
+					"animation": "NH_ACADEMY_TBTWMAG2",
+					"campaignBonus": "NH_academy/ui/bonus/botgld2.png",
+					"area": "NH_academy/town/masks/mageGuild2-area.png",
+					"border": "NH_academy/town/masks/mageGuild2-border.png"
+				},
+				"mageGuild3": {
+					"animation": "NH_ACADEMY_TBTWMAG3",
+					"campaignBonus": "NH_academy/ui/bonus/botgld3.png",
+					"area": "NH_academy/town/masks/mageGuild3-area.png",
+					"border": "NH_academy/town/masks/mageGuild3-border.png"
+				},
+				"mageGuild4": {
+					"animation": "NH_ACADEMY_TBTWMAG4",
+					"campaignBonus": "NH_academy/ui/bonus/botgld4.png",
+					"area": "NH_academy/town/masks/mageGuild4-area.png",
+					"border": "NH_academy/town/masks/mageGuild4-border.png"
+				},
+				"mageGuild5": {
+					"animation": "NH_ACADEMY_GUILD5_TOP",
+					"campaignBonus": "NH_academy/ui/bonus/botgld5.png",
+					"x": 592,
+					"y": 14,
+					"area": "NH_academy/town/masks/mageGuild5-area.png",
+					"border": "NH_academy/town/masks/mageGuild5-border.png"
+				},
+				"tavern": {
+					"animation": "NH_ACADEMY_TBTWTVRN",
+					"campaignBonus": "NH_academy/ui/bonus/bottav.png",
+					"area": "NH_academy/town/masks/tavern-area.png",
+					"border": "NH_academy/town/masks/tavern-border.png"
+				},
+				"fort": {
+					"animation": "NH_ACADEMY_TBTWCSTL",
+					"campaignBonus": "NH_academy/ui/bonus/botcast1.png",
+					"area": "NH_academy/town/masks/fort-area.png",
+					"border": "NH_academy/town/masks/fort-border.png"
+				},
+				"citadel": {
+					"animation": "NH_ACADEMY_TBTWCAS2",
+					"campaignBonus": "NH_academy/ui/bonus/botcast2.png",
+					"area": "NH_academy/town/masks/citadel-area.png",
+					"border": "NH_academy/town/masks/citadel-border.png"
+				},
+				"castle": {
+					"animation": "NH_ACADEMY_TBTWCAS3",
+					"campaignBonus": "NH_academy/ui/bonus/botcast3.png",
+					"area": "NH_academy/town/masks/castle-area.png",
+					"border": "NH_academy/town/masks/castle-border.png"
+				},
+				"villageHall": {
+					"animation": "NH_ACADEMY_TBTWHALL",
+					"campaignBonus": "NH_academy/ui/bonus/bothall1.png",
+					"area": "NH_academy/town/masks/villageHall-area.png",
+					"border": "NH_academy/town/masks/villageHall-border.png"
+				},
+				"townHall": {
+					"animation": "NH_ACADEMY_TBTWHAL2",
+					"campaignBonus": "NH_academy/ui/bonus/bothall2.png",
+					"area": "NH_academy/town/masks/townHall-area.png",
+					"border": "NH_academy/town/masks/townHall-border.png"
+				},
+				"cityHall": {
+					"animation": "NH_ACADEMY_TBTWHAL3",
+					"campaignBonus": "NH_academy/ui/bonus/bothall3.png",
+					"area": "NH_academy/town/masks/cityHall-area.png",
+					"border": "NH_academy/town/masks/cityHall-border.png"
+				},
+				"capitol": {
+					"animation": "NH_ACADEMY_TBTWHAL4",
+					"campaignBonus": "NH_academy/ui/bonus/bothall4.png",
+					"area": "NH_academy/town/masks/capitol-area.png",
+					"border": "NH_academy/town/masks/capitol-border.png"
+				},
+				"marketplace": {
+					"animation": "NH_ACADEMY_TBTWMARK",
+					"campaignBonus": "NH_academy/ui/bonus/botmark.png",
+					"area": "NH_academy/town/masks/marketplace-area.png",
+					"border": "NH_academy/town/masks/marketplace-border.png"
+				},
+				"resourceSilo": {
+					"animation": "NH_ACADEMY_TBTWSILO",
+					"campaignBonus": "NH_academy/ui/bonus/botmarks.png",
+					"area": "NH_academy/town/masks/resourceSilo-area.png",
+					"border": "NH_academy/town/masks/resourceSilo-border.png"
+				},
+				"blacksmith": {
+					"animation": "NH_ACADEMY_TBTWBLAK",
+					"campaignBonus": "NH_academy/ui/bonus/botblack.png",
+					"area": "NH_academy/town/masks/blacksmith-area.png",
+					"border": "NH_academy/town/masks/blacksmith-border.png"
+				},
+				"special1": {
+					"animation": "NH_ACADEMY_TBTWSPEC",
+					"campaignBonus": "NH_academy/ui/bonus/botmarka.png",
+					"area": "NH_academy/town/masks/special1-area.png",
+					"border": "NH_academy/town/masks/special1-border.png"
+				},
+				"horde1": {
+					"animation": "NH_ACADEMY_TBTWHRD1",
+					"campaignBonus": "NH_academy/ui/bonus/botga1h.png",
+					"area": "NH_academy/town/masks/horde1-area.png",
+					"border": "NH_academy/town/masks/horde1-border.png"
+				},
+				"horde1Upgr": {
+					"animation": "NH_ACADEMY_TBTWHRD2",
+					"campaignBonus": "NH_academy/ui/bonus/botga2h.png",
+					"area": "NH_academy/town/masks/horde1Upgr-area.png",
+					"border": "NH_academy/town/masks/horde1Upgr-border.png"
+				},
+				"special2": {
+					"animation": "NH_ACADEMY_TBTWEXT0",
+					"campaignBonus": "NH_academy/ui/bonus/botcastw.png",
+					"area": "NH_academy/town/masks/special2-area.png",
+					"border": "NH_academy/town/masks/special2-border.png"
+				},
+				"special3": {
+					"animation": "NH_ACADEMY_TBTWEXT1",
+					"campaignBonus": "NH_academy/ui/bonus/botgldl.png",
+					"area": "NH_academy/town/masks/special3-area.png",
+					"border": "NH_academy/town/masks/special3-border.png"
+				},
+				"special4": {
+					"animation": "NH_ACADEMY_SPECIAL4_LOWER",
+					"campaignBonus": "NH_academy/ui/bonus/botgldw.png",
+					"area": "NH_academy/town/masks/special4-area.png",
+					"border": "NH_academy/town/masks/special4-border.png"
+				},
+				"grail": {
+					"animation": "NH_ACADEMY_TBTWHOLY",
+					"campaignBonus": "NH_academy/ui/bonus/botgrail.png",
+					"area": "NH_academy/town/masks/grail-area.png",
+					"border": "NH_academy/town/masks/grail-border.png"
+				},
+				"dwellingLvl1": {
+					"animation": "NH_ACADEMY_TBTWDW_0",
+					"campaignBonus": "NH_academy/ui/bonus/botgrem1.png",
+					"area": "NH_academy/town/masks/dwellingLvl1-area.png",
+					"border": "NH_academy/town/masks/dwellingLvl1-border.png"
+				},
+				"dwellingLvl2": {
+					"animation": "NH_ACADEMY_TBTWDW_1",
+					"campaignBonus": "NH_academy/ui/bonus/botgar1.png",
+					"area": "NH_academy/town/masks/dwellingLvl2-area.png",
+					"border": "NH_academy/town/masks/dwellingLvl2-border.png"
+				},
+				"dwellingLvl3": {
+					"animation": "NH_ACADEMY_TBTWDW_2",
+					"campaignBonus": "NH_academy/ui/bonus/botgolm1.png",
+					"area": "NH_academy/town/masks/dwellingLvl3-area.png",
+					"border": "NH_academy/town/masks/dwellingLvl3-border.png"
+				},
+				"dwellingLvl4": {
+					"animation": "NH_ACADEMY_TBTWDW_4",
+					"campaignBonus": "NH_academy/ui/bonus/botgen1.png",
+					"x": 511,
+					"y": 75,
+					"area": "NH_academy/town/masks/dwellingLvl4-area.png",
+					"border": "NH_academy/town/masks/dwellingLvl4-border.png"
+				},
+				"dwellingLvl5": {
+					"animation": "NH_ACADEMY_TBTWDW_3",
+					"campaignBonus": "NH_academy/ui/bonus/botmag1.png",
+					"x": 613,
+					"y": 95,
+					"area": "NH_academy/town/masks/dwellingLvl5-area.png",
+					"border": "NH_academy/town/masks/dwellingLvl5-border.png"
+				},
+				"dwellingLvl6": {
+					"animation": "NH_ACADEMY_TBTWDW_5",
+					"campaignBonus": "NH_academy/ui/bonus/botnaga1.png",
+					"area": "NH_academy/town/masks/dwellingLvl6-area.png",
+					"border": "NH_academy/town/masks/dwellingLvl6-border.png"
+				},
+				"dwellingLvl7": {
+					"animation": "NH_ACADEMY_TBTWDW_6",
+					"campaignBonus": "NH_academy/ui/bonus/bottit1.png",
+					"area": "NH_academy/town/masks/dwellingLvl7-area.png",
+					"border": "NH_academy/town/masks/dwellingLvl7-border.png"
+				},
+				"dwellingUpLvl1": {
+					"animation": "NH_ACADEMY_TBTWUP_0",
+					"campaignBonus": "NH_academy/ui/bonus/botgrem2.png",
+					"area": "NH_academy/town/masks/dwellingUpLvl1-area.png",
+					"border": "NH_academy/town/masks/dwellingUpLvl1-border.png"
+				},
+				"dwellingUpLvl2": {
+					"animation": "NH_ACADEMY_TBTWUP_1",
+					"campaignBonus": "NH_academy/ui/bonus/botgar2.png",
+					"area": "NH_academy/town/masks/dwellingUpLvl2-area.png",
+					"border": "NH_academy/town/masks/dwellingUpLvl2-border.png"
+				},
+				"dwellingUpLvl3": {
+					"animation": "NH_ACADEMY_TBTWUP_2",
+					"campaignBonus": "NH_academy/ui/bonus/botgolm2.png",
+					"area": "NH_academy/town/masks/dwellingUpLvl3-area.png",
+					"border": "NH_academy/town/masks/dwellingUpLvl3-border.png"
+				},
+				"dwellingUpLvl4": {
+					"animation": "NH_ACADEMY_TBTWUP_4",
+					"campaignBonus": "NH_academy/ui/bonus/botgen2.png",
+					"x": 511,
+					"y": 8,
+					"area": "NH_academy/town/masks/dwellingUpLvl4-area.png",
+					"border": "NH_academy/town/masks/dwellingUpLvl4-border.png"
+				},
+				"dwellingUpLvl5": {
+					"animation": "NH_ACADEMY_TBTWUP_3",
+					"campaignBonus": "NH_academy/ui/bonus/botmag2.png",
+					"x": 613,
+					"y": 74,
+					"area": "NH_academy/town/masks/dwellingUpLvl5-area.png",
+					"border": "NH_academy/town/masks/dwellingUpLvl5-border.png"
+				},
+				"dwellingUpLvl6": {
+					"animation": "NH_ACADEMY_TBTWUP_5",
+					"campaignBonus": "NH_academy/ui/bonus/botnaga2.png",
+					"area": "NH_academy/town/masks/dwellingUpLvl6-area.png",
+					"border": "NH_academy/town/masks/dwellingUpLvl6-border.png"
+				},
+				"dwellingUpLvl7": {
+					"animation": "NH_ACADEMY_TBTWUP_6",
+					"campaignBonus": "NH_academy/ui/bonus/bottit2.png",
+					"area": "NH_academy/town/masks/dwellingUpLvl7-area.png",
+					"border": "NH_academy/town/masks/dwellingUpLvl7-border.png"
+				},
+				"academyRoof": {
+					"animation": "NH_ACADEMY_TOWN_ROOF",
+					"x": 665,
+					"y": 255,
+					"z": 4
+				}
+			},
+			"icons": {
+				"village": {
+					"normal": {
+						"large": "NH_academy_village_large_normal.png",
+						"small": "NH_academy_village_small_normal.png"
+					},
+					"built": {
+						"large": "NH_academy_village_large_built.png",
+						"small": "NH_academy_village_small_built.png"
+					}
+				},
+				"fort": {
+					"normal": {
+						"large": "NH_academy_fort_large_normal.png",
+						"small": "NH_academy_fort_small_normal.png"
+					},
+					"built": {
+						"large": "NH_academy_fort_large_built.png",
+						"small": "NH_academy_fort_small_built.png"
+					}
+				}
+			},
+			"townBackground": "NH_academy/town/landscape.png",
+			"guildWindow": [
+				"NH_academy/ui/tpmagetw.png"
+			],
+			"buildingsIcons": "NH_tower_buildings"
+		}
+	}
+}

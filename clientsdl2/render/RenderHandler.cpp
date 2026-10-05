@@ -264,6 +264,16 @@ std::shared_ptr<ISharedImage> RenderHandler::loadImageFromFileUncached(const Ima
 	if(locator.image)
 	{
 		auto imagePath = *locator.image;
+		if(assetGenerator->preferGeneratedImage(imagePath))
+		{
+			auto generated = assetGenerator->generateImage(imagePath);
+			if(generated)
+			{
+				generated->setAsyncUpscale(false);
+				return generated;
+			}
+		}
+
 		auto imagePathSprites = imagePath.addPrefix("SPRITES/");
 		auto imagePathData = imagePath.addPrefix("DATA/");
 
@@ -393,6 +403,9 @@ std::shared_ptr<SDLImageShared> RenderHandler::loadScaledImage(const ImageLocato
 	auto imagePathData = ImagePath::builtin(imagePathString).addPrefix(scaledDataPath.at(locator.scalingFactor));
 
 	std::shared_ptr<SDLImageShared> img = nullptr;
+	const bool preferGeneratedImage = locator.scalingFactor == 1 && assetGenerator->preferGeneratedImage(imagePath);
+	if(preferGeneratedImage)
+		img = std::dynamic_pointer_cast<SDLImageShared>(assetGenerator->generateImage(imagePath));
 
 	if(!img && CResourceHandler::get()->existsResource(imagePathSprites) && (settings["video"]["useHdTextures"].Bool() || locator.scalingFactor == 1))
 		img = std::make_shared<SDLImageShared>(imagePathSprites, optimizeImage);
@@ -405,7 +418,7 @@ std::shared_ptr<SDLImageShared> RenderHandler::loadScaledImage(const ImageLocato
 	}
 	if(!img && CResourceHandler::get()->existsResource(imagePath))
 		img = std::make_shared<SDLImageShared>(imagePath, optimizeImage);
-	if(!img && locator.scalingFactor == 1)
+	if(!img && locator.scalingFactor == 1 && !preferGeneratedImage)
 		img = std::dynamic_pointer_cast<SDLImageShared>(assetGenerator->generateImage(imagePath));
 
 	if(img)

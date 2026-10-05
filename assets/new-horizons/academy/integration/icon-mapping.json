@@ -1,0 +1,66 @@
+[
+  {
+    "type": "fort",
+    "size": "large",
+    "state": "normal",
+    "native": "assets/academy/native/ui/icons/fort-large-normal.png",
+    "originalDef": "itpt",
+    "originalFrame": 4
+  },
+  {
+    "type": "fort",
+    "size": "large",
+    "state": "built",
+    "native": "assets/academy/native/ui/icons/fort-large-built.png",
+    "originalDef": "itpt",
+    "originalFrame": 5
+  },
+  {
+    "type": "fort",
+    "size": "small",
+    "state": "normal",
+    "native": "assets/academy/native/ui/icons/fort-small-normal.png",
+    "originalDef": "itpa",
+    "originalFrame": 6
+  },
+  {
+    "type": "fort",
+    "size": "small",
+    "state": "built",
+    "native": "assets/academy/native/ui/icons/fort-small-built.png",
+    "originalDef": "itpa",
+    "originalFrame": 7
+  },
+  {
+    "type": "village",
+    "size": "large",
+    "state": "normal",
+    "native": "assets/academy/native/ui/icons/village-large-normal.png",
+    "originalDef": "itpt",
+    "originalFrame": 22
+  },
+  {
+    "type": "village",
+    "size": "large",
+    "state": "built",
+    "native": "assets/academy/native/ui/icons/village-large-built.png",
+    "originalDef": "itpt",
+    "originalFrame": 23
+  },
+  {
+    "type": "village",
+    "size": "small",
+    "state": "normal",
+    "native": "assets/academy/native/ui/icons/village-small-normal.png",
+    "originalDef": "itpa",
+    "originalFrame": 24
+  },
+  {
+    "type": "village",
+    "size": "small",
+    "state": "built",
+    "native": "assets/academy/native/ui/icons/village-small-built.png",
+    "originalDef": "itpa",
+    "originalFrame": 25
+  }
+]

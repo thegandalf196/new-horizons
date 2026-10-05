@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Guard Academy assets that must be composed from external Heroes III art."""
+"""Guard Academy runtime-composed icons and clean authored fallbacks."""
 
 from pathlib import Path
 
@@ -8,6 +8,8 @@ ROOT = Path(__file__).resolve().parents[2]
 GENERATOR = (ROOT / "client/render/AssetGenerator.cpp").read_text(encoding="utf-8")
 HEADER = (ROOT / "client/render/AssetGenerator.h").read_text(encoding="utf-8")
 IMAGES = ROOT / "Mods/new-horizons/Images"
+SDL2 = (ROOT / "clientsdl2/render/RenderHandler.cpp").read_text(encoding="utf-8")
+SDL3 = (ROOT / "clientsdl3/render/RenderHandler.cpp").read_text(encoding="utf-8")
 
 
 ICON_ROUTES = {
@@ -28,6 +30,8 @@ ICON_ROUTES = {
 for generated, frame_pair in ICON_ROUTES.items():
     assert f'ImagePath::builtin("{generated}")' in GENERATOR, generated
     assert frame_pair in GENERATOR, frame_pair
+    normal = generated.replace("_built.png", "_normal.png")
+    assert (IMAGES / generated).read_bytes() == (IMAGES / normal).read_bytes(), generated
 
 assert "normalFrameCanvas.getPixel(pixel)" in GENERATOR
 assert "builtFrameCanvas.getPixel(pixel)" in GENERATOR
@@ -36,6 +40,18 @@ assert "createAcademyTownIconBuiltToday" in HEADER
 assert 'authoredPath.addPrefix("SPRITES/")' in GENERATOR
 assert 'authoredPath.addPrefix("DATA/")' in GENERATOR
 assert "if(!hasAuthoredImage || !resources->existsResource(originalDef))" in GENERATOR
+assert "bool preferGeneratedImage(const ImagePath & image) const;" in HEADER
+preference = GENERATOR.split("bool AssetGenerator::preferGeneratedImage", 1)[1].split("std::map<ImagePath", 1)[0]
+for generated in ICON_ROUTES:
+    assert f'ImagePath::builtin("{generated}")' in preference, generated
+
+for backend in (SDL2, SDL3):
+    base_load = backend.split("RenderHandler::loadImageFromFileUncached", 1)[1].split("RenderHandler::storeCachedImage", 1)[0]
+    scaled_load = backend.split("RenderHandler::loadScaledImage", 1)[1].split("RenderHandler::loadImage(", 1)[0]
+    assert "assetGenerator->preferGeneratedImage(imagePath)" in base_load
+    assert base_load.index("assetGenerator->generateImage(imagePath)") < base_load.index("existsResource(imagePathSprites)")
+    assert "locator.scalingFactor == 1 && assetGenerator->preferGeneratedImage(imagePath)" in scaled_load
+    assert "!preferGeneratedImage" in scaled_load
 
 MAP_ROUTES = {
     "NH_ACADEMY_VILLAGE_BODY": "AVCTOWR0",
@@ -56,7 +72,4 @@ assert "MAP_IMAGE_SIZE = 192" in GENERATOR
 assert "createAcademyMapLayer" in HEADER
 assert 'addDialogBackground("newHorizonsAdventureGuildBackground.png", Point(640, 440))' in GENERATOR
 
-for generated in ICON_ROUTES:
-    assert not (IMAGES / generated).exists(), f"committed original badge image: {generated}"
-
-print("Academy built-town icons, map layers, and guild background routes are registered.")
+print("Academy built-town icons prefer runtime composition and retain clean authored fallbacks.")

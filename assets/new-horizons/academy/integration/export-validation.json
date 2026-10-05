@@ -1,0 +1,2269 @@
+{
+  "validated": 174,
+  "allDimensionsPass": true,
+  "inGameTested": false,
+  "checks": [
+    {
+      "file": "assets/academy/native/siege/sgtwarch.png",
+      "width": 75,
+      "height": 285,
+      "expected": [
+        75,
+        285
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwback.png",
+      "width": 800,
+      "height": 556,
+      "expected": [
+        800,
+        556
+      ],
+      "dimensionsPass": true,
+      "alpha": false
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwdrw1.png",
+      "width": 111,
+      "height": 99,
+      "expected": [
+        111,
+        99
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwdrw2.png",
+      "width": 111,
+      "height": 99,
+      "expected": [
+        111,
+        99
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwdrw3.png",
+      "width": 111,
+      "height": 99,
+      "expected": [
+        111,
+        99
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwdrwc.png",
+      "width": 111,
+      "height": 99,
+      "expected": [
+        111,
+        99
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwman1.png",
+      "width": 74,
+      "height": 305,
+      "expected": [
+        74,
+        305
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwman2.png",
+      "width": 74,
+      "height": 305,
+      "expected": [
+        74,
+        305
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwmanc.png",
+      "width": 74,
+      "height": 305,
+      "expected": [
+        74,
+        305
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwtpwl.png",
+      "width": 185,
+      "height": 61,
+      "expected": [
+        185,
+        61
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwtw11.png",
+      "width": 41,
+      "height": 40,
+      "expected": [
+        41,
+        40
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwtw12.png",
+      "width": 41,
+      "height": 40,
+      "expected": [
+        41,
+        40
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwtw1c.png",
+      "width": 41,
+      "height": 40,
+      "expected": [
+        41,
+        40
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwtw21.png",
+      "width": 41,
+      "height": 84,
+      "expected": [
+        41,
+        84
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwtw22.png",
+      "width": 41,
+      "height": 84,
+      "expected": [
+        41,
+        84
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwtw2c.png",
+      "width": 41,
+      "height": 85,
+      "expected": [
+        41,
+        85
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwwa11.png",
+      "width": 75,
+      "height": 104,
+      "expected": [
+        75,
+        104
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwwa12.png",
+      "width": 74,
+      "height": 104,
+      "expected": [
+        74,
+        104
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwwa13.png",
+      "width": 75,
+      "height": 104,
+      "expected": [
+        75,
+        104
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwwa2.png",
+      "width": 65,
+      "height": 191,
+      "expected": [
+        65,
+        191
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwwa31.png",
+      "width": 71,
+      "height": 174,
+      "expected": [
+        71,
+        174
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwwa32.png",
+      "width": 71,
+      "height": 174,
+      "expected": [
+        71,
+        174
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwwa33.png",
+      "width": 71,
+      "height": 174,
+      "expected": [
+        71,
+        174
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwwa41.png",
+      "width": 56,
+      "height": 130,
+      "expected": [
+        56,
+        130
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwwa42.png",
+      "width": 55,
+      "height": 130,
+      "expected": [
+        55,
+        130
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwwa43.png",
+      "width": 55,
+      "height": 130,
+      "expected": [
+        55,
+        130
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwwa5.png",
+      "width": 62,
+      "height": 173,
+      "expected": [
+        62,
+        173
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwwa61.png",
+      "width": 60,
+      "height": 121,
+      "expected": [
+        60,
+        121
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwwa62.png",
+      "width": 60,
+      "height": 121,
+      "expected": [
+        60,
+        121
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwwa63.png",
+      "width": 60,
+      "height": 121,
+      "expected": [
+        60,
+        121
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/adventure/avctowr0.png",
+      "width": 192,
+      "height": 192,
+      "expected": [
+        192,
+        192
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/adventure/avctowx0.png",
+      "width": 192,
+      "height": 192,
+      "expected": [
+        192,
+        192
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/adventure/avctowz0.png",
+      "width": 192,
+      "height": 192,
+      "expected": [
+        192,
+        192
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/siege/sgtwmta.png",
+      "width": 320,
+      "height": 320,
+      "expected": [
+        320,
+        320
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/tpcastow.png",
+      "width": 100,
+      "height": 120,
+      "expected": [
+        100,
+        120
+      ],
+      "dimensionsPass": true,
+      "alpha": false
+    },
+    {
+      "file": "assets/academy/native/ui/crbkgtow.png",
+      "width": 100,
+      "height": 130,
+      "expected": [
+        100,
+        130
+      ],
+      "dimensionsPass": true,
+      "alpha": false
+    },
+    {
+      "file": "assets/academy/native/ui/tpmagetw.png",
+      "width": 141,
+      "height": 217,
+      "expected": [
+        141,
+        217
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/icons/fort-large-normal.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/icons/fort-large-built.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/icons/fort-small-normal.png",
+      "width": 48,
+      "height": 32,
+      "expected": [
+        48,
+        32
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/icons/fort-small-built.png",
+      "width": 48,
+      "height": 32,
+      "expected": [
+        48,
+        32
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/icons/village-large-normal.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/icons/village-large-built.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/icons/village-small-normal.png",
+      "width": 48,
+      "height": 32,
+      "expected": [
+        48,
+        32
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/icons/village-small-built.png",
+      "width": 48,
+      "height": 32,
+      "expected": [
+        48,
+        32
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-000.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-001.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-002.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-003.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-004.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-005.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-006.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-007.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-008.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-009.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-010.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-011.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-012.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-013.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-014.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-015.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-016.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-017.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-018.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-019.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-020.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-021.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-022.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-023.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-024.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-025.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-026.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-027.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-028.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-029.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-030.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-031.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-032.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-033.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-034.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-035.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-036.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-037.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-038.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-039.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-040.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-041.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-042.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/hall/frame-043.png",
+      "width": 150,
+      "height": 70,
+      "expected": [
+        150,
+        70
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botgld1.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botgld2.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botgld3.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botgld4.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botgld5.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/bottav.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botcast1.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botcast2.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botcast3.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/bothall1.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/bothall2.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/bothall3.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/bothall4.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botmark.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botmarks.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botblack.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botmarka.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botga1h.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botga2h.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botcastw.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botgldl.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botgldw.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botgrail.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botgrem1.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botgar1.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botgolm1.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botmag1.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botgen1.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botnaga1.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/bottit1.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botgrem2.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botgar2.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botgolm2.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botmag2.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botgen2.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/botnaga2.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/bonus/bottit2.png",
+      "width": 58,
+      "height": 64,
+      "expected": [
+        58,
+        64
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow00.png",
+      "width": 189,
+      "height": 67,
+      "expected": [
+        189,
+        67
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow01.png",
+      "width": 21,
+      "height": 196,
+      "expected": [
+        21,
+        196
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow02.png",
+      "width": 23,
+      "height": 251,
+      "expected": [
+        23,
+        251
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow03.png",
+      "width": 72,
+      "height": 66,
+      "expected": [
+        72,
+        66
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow04.png",
+      "width": 205,
+      "height": 148,
+      "expected": [
+        205,
+        148
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow05.png",
+      "width": 110,
+      "height": 221,
+      "expected": [
+        110,
+        221
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow06.png",
+      "width": 42,
+      "height": 218,
+      "expected": [
+        42,
+        218
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow07.png",
+      "width": 99,
+      "height": 146,
+      "expected": [
+        99,
+        146
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow08.png",
+      "width": 94,
+      "height": 142,
+      "expected": [
+        94,
+        142
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow09.png",
+      "width": 106,
+      "height": 102,
+      "expected": [
+        106,
+        102
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow10.png",
+      "width": 131,
+      "height": 192,
+      "expected": [
+        131,
+        192
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow11.png",
+      "width": 151,
+      "height": 90,
+      "expected": [
+        151,
+        90
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow12.png",
+      "width": 108,
+      "height": 143,
+      "expected": [
+        108,
+        143
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow13.png",
+      "width": 119,
+      "height": 172,
+      "expected": [
+        119,
+        172
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow14.png",
+      "width": 67,
+      "height": 154,
+      "expected": [
+        67,
+        154
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow15.png",
+      "width": 104,
+      "height": 182,
+      "expected": [
+        104,
+        182
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow16.png",
+      "width": 169,
+      "height": 141,
+      "expected": [
+        169,
+        141
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow17.png",
+      "width": 63,
+      "height": 169,
+      "expected": [
+        63,
+        169
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow18.png",
+      "width": 145,
+      "height": 93,
+      "expected": [
+        145,
+        93
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow19.png",
+      "width": 86,
+      "height": 69,
+      "expected": [
+        86,
+        69
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow20.png",
+      "width": 71,
+      "height": 245,
+      "expected": [
+        71,
+        245
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow21.png",
+      "width": 77,
+      "height": 242,
+      "expected": [
+        77,
+        242
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow22.png",
+      "width": 76,
+      "height": 172,
+      "expected": [
+        76,
+        172
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow23.png",
+      "width": 100,
+      "height": 105,
+      "expected": [
+        100,
+        105
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow24.png",
+      "width": 51,
+      "height": 127,
+      "expected": [
+        51,
+        127
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow25.png",
+      "width": 112,
+      "height": 140,
+      "expected": [
+        112,
+        140
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow26.png",
+      "width": 60,
+      "height": 133,
+      "expected": [
+        60,
+        133
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow27.png",
+      "width": 86,
+      "height": 90,
+      "expected": [
+        86,
+        90
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow28.png",
+      "width": 100,
+      "height": 167,
+      "expected": [
+        100,
+        167
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow29.png",
+      "width": 94,
+      "height": 127,
+      "expected": [
+        94,
+        127
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow30.png",
+      "width": 91,
+      "height": 81,
+      "expected": [
+        91,
+        81
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow31.png",
+      "width": 96,
+      "height": 116,
+      "expected": [
+        96,
+        116
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow32.png",
+      "width": 112,
+      "height": 105,
+      "expected": [
+        112,
+        105
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow33.png",
+      "width": 180,
+      "height": 83,
+      "expected": [
+        180,
+        83
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow34.png",
+      "width": 95,
+      "height": 153,
+      "expected": [
+        95,
+        153
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow35.png",
+      "width": 112,
+      "height": 89,
+      "expected": [
+        112,
+        89
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow36.png",
+      "width": 113,
+      "height": 124,
+      "expected": [
+        113,
+        124
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow37.png",
+      "width": 100,
+      "height": 201,
+      "expected": [
+        100,
+        201
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow38.png",
+      "width": 115,
+      "height": 125,
+      "expected": [
+        115,
+        125
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow39.png",
+      "width": 154,
+      "height": 60,
+      "expected": [
+        154,
+        60
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow40.png",
+      "width": 100,
+      "height": 156,
+      "expected": [
+        100,
+        156
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow41.png",
+      "width": 96,
+      "height": 123,
+      "expected": [
+        96,
+        123
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow42.png",
+      "width": 122,
+      "height": 188,
+      "expected": [
+        122,
+        188
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow43.png",
+      "width": 102,
+      "height": 164,
+      "expected": [
+        102,
+        164
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow44.png",
+      "width": 100,
+      "height": 103,
+      "expected": [
+        100,
+        103
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow45.png",
+      "width": 96,
+      "height": 231,
+      "expected": [
+        96,
+        231
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow46.png",
+      "width": 62,
+      "height": 134,
+      "expected": [
+        62,
+        134
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "file": "assets/academy/native/ui/puzzle/puztow47.png",
+      "width": 43,
+      "height": 172,
+      "expected": [
+        43,
+        172
+      ],
+      "dimensionsPass": true,
+      "alpha": true,
+      "alphaMin": 0,
+      "alphaMax": 255
+    }
+  ],
+  "expectedAssetCount": 174,
+  "transparentAssetsPass": true,
+  "galleryTargetsPass": true,
+  "masterCount": 42,
+  "promptCount": 42,
+  "failures": []
+}

@@ -164,9 +164,14 @@ class NewHorizonsTowerBuildingProgressionTest(unittest.TestCase):
         for image in descriptor:
             with self.subTest(frame=image["frame"]):
                 self.assertEqual(image["group"], 0)
-                self.assertEqual(image["defFile"], "HALLTOWR.DEF")
-                self.assertEqual(image["defGroup"], 0)
-                self.assertEqual(image["defFrame"], source_frame[image["frame"]])
+                self.assertEqual(
+                    image["file"],
+                    f"NH_academy/ui/hall/frame-{source_frame[image['frame']]:03d}.png",
+                )
+                self.assertNotIn("defFile", image)
+                self.assertTrue(
+                    (ROOT / "Mods/new-horizons/Images" / image["file"]).is_file()
+                )
 
         creature_profiles = load("Mods/new-horizons/Content/config/creatures/tower.json")
         for creature, expected_level, expected_gold in (

@@ -2,6 +2,22 @@
 
 Last audited: 2026-10-05
 
+UP-235/UP-236 source integrated: supplied Academy art replaces Tower presentation,
+without restoring the bundled upstream gameplay snapshot. Integration remains
+Provisional pending native-scale/playable evidence. Original gate resources and
+runtime-only icon markers stay purchaser-supplied; mixed native map shadows must
+not be redistributed. The Mage Guild purchase panel's popup components must not
+be main-window children, its rows use one continuous recessed list, and its
+exterior hover stroke follows an opening silhouette rather than image bounds.
+These supersede the earlier rectangular-border source checkpoint below.
+No new painting or blanket Final-art approval is claimed by registration.
+Focused import, image-route, art and progression checks pass; the offline
+production-registration town composite is visually reviewed. Linux client and
+native tests build, content loads and a bounded headless new game runs AI turns.
+Clean authored fallbacks satisfy built-icon schema validation; the original
+marker and map shadow/ownership layers are composed only at runtime. Native
+visual acceptance remains pending, including the purchase panel and hover stroke.
+
 UP004/UP232 canonical feedback source correction verified: retain the existing
 textured leather/red/gold hero-status surface, but replace its historical three
 independent action counters with one normal Hero Action Available/Spent state.

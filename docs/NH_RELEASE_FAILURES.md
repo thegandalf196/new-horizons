@@ -2,6 +2,25 @@
 
 ## Purpose
 
+### 2026-10-05 UP235 — Academy resource consumer and validation paths
+
+Animation JSON aliases do not replace siege images loaded through `ImagePath`.
+Register generated siege PNGs under the requested SGTW image resource names;
+keep original gate resources external. The focused Academy check covers this.
+
+The first headless Academy load starts a game but reports four missing built-icon
+images in faction schema validation. Runtime-only generated images are invisible
+to that validator. Supply generated-normal-art fallbacks containing no original
+badge pixels, and prefer the runtime compositor only for these four names in
+both native-base and 1x scaled renderer paths. A filesystem fallback alone would
+suppress the badge. The repeated headless resource check loads cleanly without
+the Tower validation warning. Logs remain under `build/nh-up235-validation/`.
+
+The old Tower progression guard assumes HALLTOWR DEF-frame aliases. Its failure
+after the art import is an obsolete representation assertion, not a lost semantic
+swap. Keep all 44 frame checks and the 33/34 and 40/41 swaps, but assert authored
+PNG aliases and resource existence instead. The revised focused guard passes.
+
 ### 2026-10-05 UP012 — Biography guard invocation
 
 The package-style `python3 -m unittest tools.tests.test_new_horizons_hero_biographies`
