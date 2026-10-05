@@ -17,6 +17,7 @@ not a runtime acceptance test.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import stat
@@ -33,6 +34,11 @@ except ImportError as error:  # pragma: no cover - environment diagnostic
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_ROOT = Path("assets/new-horizons/academy")
 IMAGE_ROOT = Path("Mods/new-horizons/Images")
+ICON_REVISION_ROOT = SOURCE_ROOT / "icon-revisions/v2"
+ICON_REVISION_MANIFEST = ICON_REVISION_ROOT / "manifest.json"
+# Filled only after the reviewed v2 manifest and all four exports are installed.
+# A non-hash sentinel intentionally makes import/check fail closed in the meantime.
+APPROVED_ICON_REVISION_MANIFEST_SHA256 = "03bd00c50cdb07b488764512a81cf3e1a2fabb0510b70b5660374ca912b46775"
 
 PROVENANCE_FILES = (
     "README.md",
@@ -93,6 +99,42 @@ ICON_NORMALS = {
     "native/ui/icons/village-small-normal.png": "NH_academy_village_small_normal.png",
 }
 
+ICON_REVISION_MASTERS = {
+    "fort": "masters/fort.png",
+    "village": "masters/village.png",
+}
+
+ICON_REVISION_SLOTS = {
+    "village.large.normal": {
+        "source": "native/ui/icons/village-large-normal.png",
+        "master": "village",
+        "export": "exports/NH_academy_village_large_normal.png",
+        "runtime": "NH_academy_village_large_normal.png",
+        "dimensions": [58, 64],
+    },
+    "village.small.normal": {
+        "source": "native/ui/icons/village-small-normal.png",
+        "master": "village",
+        "export": "exports/NH_academy_village_small_normal.png",
+        "runtime": "NH_academy_village_small_normal.png",
+        "dimensions": [48, 32],
+    },
+    "fort.large.normal": {
+        "source": "native/ui/icons/fort-large-normal.png",
+        "master": "fort",
+        "export": "exports/NH_academy_fort_large_normal.png",
+        "runtime": "NH_academy_fort_large_normal.png",
+        "dimensions": [58, 64],
+    },
+    "fort.small.normal": {
+        "source": "native/ui/icons/fort-small-normal.png",
+        "master": "fort",
+        "export": "exports/NH_academy_fort_small_normal.png",
+        "runtime": "NH_academy_fort_small_normal.png",
+        "dimensions": [48, 32],
+    },
+}
+
 SEMANTIC_STRUCTURE_ASSETS = {
     # New Horizons keeps Genie at creature level 4 and Mage at level 5, while
     # preserving the art's original on-screen positions.
@@ -105,6 +147,143 @@ SEMANTIC_STRUCTURE_ASSETS = {
 
 def compact_json(value: object) -> bytes:
     return (json.dumps(value, indent="\t", ensure_ascii=False) + "\n").encode("utf-8")
+
+
+def sha256_hex(payload: bytes) -> str:
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _reject_duplicate_json_keys(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"Duplicate JSON key in Academy icon revision manifest: {key!r}")
+        result[key] = value
+    return result
+
+
+def _revision_file(root: Path, relative: str) -> Path:
+    if not isinstance(relative, str) or "\\" in relative:
+        raise ValueError(f"Unsafe Academy icon revision path: {relative!r}")
+    path = PurePosixPath(relative)
+    if path.is_absolute() or path.anchor or not path.parts or any(part in ("", ".", "..") for part in path.parts):
+        raise ValueError(f"Unsafe Academy icon revision path: {relative!r}")
+
+    base = root / ICON_REVISION_ROOT
+    if base.is_symlink():
+        raise ValueError("Symlinks are not accepted for the Academy icon revision directory")
+    candidate = base.joinpath(*path.parts)
+    current = base
+    for part in path.parts:
+        current = current / part
+        if current.is_symlink():
+            raise ValueError(f"Symlinks are not accepted in Academy icon revision files: {relative}")
+    try:
+        candidate.resolve(strict=True).relative_to(base.resolve(strict=True))
+    except (OSError, ValueError) as error:
+        raise ValueError(f"Academy icon revision file is missing or escapes its revision directory: {relative}") from error
+    if not candidate.is_file():
+        raise ValueError(f"Academy icon revision path is not a file: {relative}")
+    return candidate
+
+
+def load_icon_revision(root: Path, expected_manifest_sha256: str) -> dict:
+    """Load only the explicitly pinned Academy icon revision and exact exports."""
+    source_routes = {
+        record["source"]: record["runtime"]
+        for record in ICON_REVISION_SLOTS.values()
+    }
+    if source_routes != ICON_NORMALS:
+        raise RuntimeError("Academy icon revision slots drifted from the importer source/runtime mapping")
+    if not re.fullmatch(r"[0-9a-f]{64}", expected_manifest_sha256 or ""):
+        raise RuntimeError("Academy v2 icon revision is not enabled: importer manifest SHA-256 pin is unset")
+
+    manifest_path = _revision_file(root, "manifest.json")
+    raw_manifest = manifest_path.read_bytes()
+    actual_manifest_sha256 = sha256_hex(raw_manifest)
+    if actual_manifest_sha256 != expected_manifest_sha256:
+        raise RuntimeError(
+            "Academy v2 icon revision manifest changed: "
+            f"expected {expected_manifest_sha256}, got {actual_manifest_sha256}"
+        )
+
+    try:
+        manifest = json.loads(raw_manifest.decode("utf-8"), object_pairs_hook=_reject_duplicate_json_keys)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError(f"Academy icon revision manifest is not valid UTF-8 JSON: {manifest_path}") from error
+    if not isinstance(manifest, dict) or set(manifest) != {
+        "schemaVersion", "revision", "builtFallbackPolicy", "masters", "icons", "provenance"
+    }:
+        raise ValueError("Academy icon revision manifest has unexpected top-level fields")
+    if type(manifest["schemaVersion"]) is not int or manifest["schemaVersion"] != 1 or manifest["revision"] != "v2":
+        raise ValueError("Academy icon revision manifest must declare schemaVersion 1 and revision v2")
+    if manifest["builtFallbackPolicy"] != "byte-identical-to-active-normal":
+        raise ValueError("Academy built-icon fallbacks must remain byte-identical to their normal icons")
+
+    masters = manifest["masters"]
+    if not isinstance(masters, dict) or set(masters) != set(ICON_REVISION_MASTERS):
+        raise ValueError("Academy icon revision must register exactly the fort and village masters")
+    for name, expected_path in ICON_REVISION_MASTERS.items():
+        record = masters[name]
+        if not isinstance(record, dict) or set(record) != {"path", "sha256"} or record["path"] != expected_path:
+            raise ValueError(f"Academy icon revision has an invalid {name} master record")
+        if not isinstance(record["sha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", record["sha256"]):
+            raise ValueError(f"Academy icon revision has an invalid {name} master hash")
+        master_path = _revision_file(root, record["path"])
+        master_bytes = master_path.read_bytes()
+        if sha256_hex(master_bytes) != record["sha256"]:
+            raise ValueError(f"Academy icon revision master bytes do not match the manifest: {record['path']}")
+        try:
+            with Image.open(master_path) as image:
+                image.verify()
+        except OSError as error:
+            raise ValueError(f"Academy icon revision master is not a valid image: {record['path']}") from error
+
+    provenance = manifest["provenance"]
+    if not isinstance(provenance, dict) or set(provenance) != {"prompt", "sha256"} or provenance["prompt"] != "PROMPT.md":
+        raise ValueError("Academy icon revision must retain PROMPT.md provenance")
+    if not isinstance(provenance["sha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", provenance["sha256"]):
+        raise ValueError("Academy icon revision has an invalid prompt provenance hash")
+    prompt_bytes = _revision_file(root, provenance["prompt"]).read_bytes()
+    if sha256_hex(prompt_bytes) != provenance["sha256"]:
+        raise ValueError("Academy icon revision prompt provenance does not match the manifest")
+
+    icons = manifest["icons"]
+    if not isinstance(icons, dict) or set(icons) != set(ICON_REVISION_SLOTS):
+        raise ValueError("Academy icon revision must register exactly the four normal town-icon slots")
+    exports_by_runtime = {}
+    for slot, expected in ICON_REVISION_SLOTS.items():
+        record = icons[slot]
+        if not isinstance(record, dict) or set(record) != {
+            "source", "master", "export", "runtime", "dimensions", "sha256"
+        }:
+            raise ValueError(f"Academy icon revision has an invalid {slot} record")
+        for key in ("source", "master", "export", "runtime", "dimensions"):
+            if record[key] != expected[key]:
+                raise ValueError(f"Academy icon revision changed the approved {slot} {key} mapping")
+        if not isinstance(record["sha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", record["sha256"]):
+            raise ValueError(f"Academy icon revision has an invalid {slot} export hash")
+        export_path = _revision_file(root, record["export"])
+        export_bytes = export_path.read_bytes()
+        if sha256_hex(export_bytes) != record["sha256"]:
+            raise ValueError(f"Academy icon revision export bytes do not match the manifest: {record['export']}")
+        try:
+            with Image.open(export_path) as image:
+                if list(image.size) != expected["dimensions"]:
+                    raise ValueError(
+                        f"Academy icon revision export has wrong native dimensions: {record['export']} "
+                        f"({image.width}x{image.height})"
+                    )
+                image.verify()
+        except OSError as error:
+            raise ValueError(f"Academy icon revision export is not a valid image: {record['export']}") from error
+        exports_by_runtime[record["runtime"]] = export_bytes
+
+    return {
+        "manifest": manifest,
+        "manifest_sha256": actual_manifest_sha256,
+        "exports_by_runtime": exports_by_runtime,
+    }
 
 
 def validate_archive(archive: zipfile.ZipFile) -> dict[str, zipfile.ZipInfo]:
@@ -183,6 +362,44 @@ def safe_write(root: Path, relative: str | Path, payload: bytes, check_only: boo
     if not check_only:
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(payload)
+
+
+def install_curated_icon(root: Path, runtime_name: str, payload: bytes, legacy_package_bytes: bytes, check_only: bool):
+    """Install a pinned icon export, accepting only the exact prior package bytes."""
+    if Path(runtime_name).name != runtime_name or not runtime_name.endswith("_normal.png"):
+        raise ValueError(f"Unexpected Academy normal icon runtime name: {runtime_name}")
+    destination = root / IMAGE_ROOT / runtime_name
+    built_name = runtime_name.replace("_normal.png", "_built.png")
+    built_destination = root / IMAGE_ROOT / built_name
+
+    def preflight(path: Path, label: str) -> bool:
+        if path.is_symlink():
+            raise RuntimeError(f"Refusing to replace symlinked Academy {label}: {path}")
+        if not path.exists():
+            if check_only:
+                raise RuntimeError(f"Reviewed Academy {label} is missing: {path}")
+            return True
+        if not path.is_file():
+            raise RuntimeError(f"Academy {label} destination is not a regular file: {path}")
+        current = path.read_bytes()
+        if current == payload:
+            return False
+        if current != legacy_package_bytes:
+            raise RuntimeError(f"Refusing to replace unrecognized Academy {label} pixels: {path}")
+        if check_only:
+            raise RuntimeError(f"Reviewed Academy {label} is not installed: {path}")
+        return True
+
+    # Validate both active names before writing either, so an unexpected
+    # built fallback cannot leave only the normal path updated.
+    write_normal = preflight(destination, "icon")
+    write_built = preflight(built_destination, "built-icon fallback")
+    if write_normal:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(payload)
+    if write_built:
+        built_destination.parent.mkdir(parents=True, exist_ok=True)
+        built_destination.write_bytes(payload)
 
 
 def aliased_animation(resource: str, image_path: str, frame_count: int = 1) -> bytes:
@@ -324,7 +541,7 @@ def resolve_case_insensitive(base: Path, relative: PurePosixPath) -> Path | None
     return current if current.is_file() else None
 
 
-def validate_runtime_routes(root: Path, archive: zipfile.ZipFile, names: dict[str, zipfile.ZipInfo]):
+def validate_runtime_routes(root: Path, archive: zipfile.ZipFile, names: dict[str, zipfile.ZipInfo], icon_revision: dict):
     patch = json.loads((root / "Mods/new-horizons/Content/config/factions/academyArt.json").read_text(encoding="utf-8"))
     faction = patch["core:tower"]
     town = faction["town"]
@@ -343,17 +560,28 @@ def validate_runtime_routes(root: Path, archive: zipfile.ZipFile, names: dict[st
     for template, definition in town["mapObject"]["templates"].items():
         animation_image_path(root, definition["animation"])
 
-    for group in town["icons"].values():
+    for group_name, group in town["icons"].items():
         for size in ("large", "small"):
             normal = group["normal"][size]
-            if not resolve_case_insensitive(root / IMAGE_ROOT, PurePosixPath(normal)):
+            slot = f"{group_name}.{size}.normal"
+            expected = ICON_REVISION_SLOTS.get(slot)
+            if expected is None or normal != expected["runtime"]:
+                raise ValueError(f"Academy normal icon route differs from the reviewed v2 slot: {slot} -> {normal}")
+            normal_path = resolve_case_insensitive(root / IMAGE_ROOT, PurePosixPath(normal))
+            if not normal_path:
                 raise ValueError(f"Missing normal town icon {normal}")
+            reviewed_bytes = icon_revision["exports_by_runtime"][normal]
+            if normal_path.read_bytes() != reviewed_bytes:
+                raise ValueError(f"Installed Academy icon differs from its reviewed v2 export: {normal}")
             built_fallback = group["built"][size]
             fallback = resolve_case_insensitive(root / IMAGE_ROOT, PurePosixPath(built_fallback))
             if not fallback:
                 raise ValueError(f"Missing generated-only built icon fallback {built_fallback}")
-            if fallback.read_bytes() != (root / IMAGE_ROOT / normal).read_bytes():
-                raise ValueError(f"Built icon fallback must contain only safe normal art: {built_fallback}")
+            expected_built = normal.replace("_normal.png", "_built.png")
+            if built_fallback != expected_built:
+                raise ValueError(f"Academy built fallback route differs from its normal icon: {built_fallback}")
+            if fallback.read_bytes() != reviewed_bytes:
+                raise ValueError(f"Built icon fallback must exactly match the reviewed safe normal export: {built_fallback}")
 
     siege_assets = {
         name for name in names
@@ -463,7 +691,7 @@ def expected_hall_alias() -> bytes:
     })
 
 
-def make_runtime_assets(root: Path, archive: zipfile.ZipFile, names: dict[str, zipfile.ZipInfo], check_only: bool):
+def make_runtime_assets(root: Path, archive: zipfile.ZipFile, names: dict[str, zipfile.ZipInfo], check_only: bool, icon_revision: dict):
     native_paths = sorted(path for path in names if path.startswith("native/") and path.endswith(".png"))
     if not EXCLUDED_NATIVE <= set(native_paths):
         missing = sorted(EXCLUDED_NATIVE - set(native_paths))
@@ -477,18 +705,26 @@ def make_runtime_assets(root: Path, archive: zipfile.ZipFile, names: dict[str, z
         package_bytes = archive.read(names[native])
         safe_write(root, SOURCE_ROOT / native, package_bytes, check_only)
         if native in ICON_NORMALS:
-            runtime_path = Path(ICON_NORMALS[native])
+            # The original normal export remains provenance-only. Runtime art
+            # comes from the separately reviewed and pinned v2 revision below.
+            continue
         else:
             runtime_path = Path("NH_academy") / PurePosixPath(native).relative_to("native")
         safe_write(root, IMAGE_ROOT / runtime_path, package_bytes, check_only)
 
-    # Content validation needs concrete resources for built slots. These are
-    # safe generated-only normal-art fallbacks; the client prefers runtime
-    # badge composition before checking these paths.
-    for normal_path in ICON_NORMALS.values():
-        normal_bytes = (root / IMAGE_ROOT / normal_path).read_bytes()
-        built_path = normal_path.replace("_normal.png", "_built.png")
-        safe_write(root, IMAGE_ROOT / built_path, normal_bytes, check_only)
+    # Install only manifest-pinned v2 exports. Native package normals are the
+    # sole accepted prior state; built paths remain byte-identical safe
+    # fallbacks while the client composes the marker from external DEF frames.
+    for slot, expected in ICON_REVISION_SLOTS.items():
+        runtime_name = expected["runtime"]
+        legacy_bytes = archive.read(names[expected["source"]])
+        install_curated_icon(
+            root,
+            runtime_name,
+            icon_revision["exports_by_runtime"][runtime_name],
+            legacy_bytes,
+            check_only,
+        )
 
     asset_records = archive_json(archive, names, "integration/academy-assets.json")
     town_layout = archive_json(archive, names, "integration/town-layout.json")
@@ -662,12 +898,13 @@ def main() -> int:
     args = parser.parse_args()
     root = args.root.resolve()
     try:
+        icon_revision = load_icon_revision(root, APPROVED_ICON_REVISION_MANIFEST_SHA256)
         with zipfile.ZipFile(args.archive) as archive:
             names = validate_archive(archive)
             import_provenance(root, archive, names, args.check)
-            make_runtime_assets(root, archive, names, args.check)
+            make_runtime_assets(root, archive, names, args.check, icon_revision)
             build_patch_outputs(root, args.check)
-            validate_runtime_routes(root, archive, names)
+            validate_runtime_routes(root, archive, names, icon_revision)
             if not args.check:
                 render_all_built_preview(root, archive, names)
     except (OSError, zipfile.BadZipFile, ValueError, RuntimeError, KeyError, TypeError) as error:

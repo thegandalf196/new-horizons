@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """Focused Academy art registration and provenance checks."""
 
+import hashlib
 import json
 from pathlib import Path
+import shutil
+import sys
+import tempfile
 import unittest
 
 from PIL import Image
@@ -12,6 +16,9 @@ ROOT = Path(__file__).resolve().parents[2]
 IMAGES = ROOT / "Mods/new-horizons/Images"
 ACADEMY_SOURCE = ROOT / "assets/new-horizons/academy"
 ART_PATCH = ROOT / "Mods/new-horizons/Content/config/factions/academyArt.json"
+OPTIONS_TAB = ROOT / "client/lobby/OptionsTab.cpp"
+sys.path.insert(0, str(ROOT / "tools"))
+import import_new_horizons_academy_assets as academy_importer
 
 
 def read_json(relative):
@@ -96,6 +103,91 @@ class NewHorizonsAcademyArtTest(unittest.TestCase):
                 self.assertTrue(faction_icons["built"][size].endswith("_built.png"))
                 self.assertTrue(built_fallback.is_file())
                 self.assertEqual(built_fallback.read_bytes(), normal.read_bytes())
+
+    def test_reviewed_v2_icon_revision_is_pinned_and_installed_exactly(self):
+        revision = academy_importer.load_icon_revision(
+            ROOT,
+            academy_importer.APPROVED_ICON_REVISION_MANIFEST_SHA256,
+        )
+        self.assertEqual(revision["manifest"]["revision"], "v2")
+        self.assertEqual(
+            revision["manifest"]["builtFallbackPolicy"],
+            "byte-identical-to-active-normal",
+        )
+        for slot, expected in academy_importer.ICON_REVISION_SLOTS.items():
+            with self.subTest(slot=slot):
+                runtime = expected["runtime"]
+                export = revision["exports_by_runtime"][runtime]
+                active = IMAGES / runtime
+                built = IMAGES / runtime.replace("_normal.png", "_built.png")
+                self.assertEqual(active.read_bytes(), export)
+                self.assertEqual(built.read_bytes(), export)
+
+    def test_icon_revision_manifest_and_exports_reject_unreviewed_changes(self):
+        pin = academy_importer.APPROVED_ICON_REVISION_MANIFEST_SHA256
+        with tempfile.TemporaryDirectory() as temporary:
+            temp_root = Path(temporary)
+            source_revision = ROOT / academy_importer.ICON_REVISION_ROOT
+            target_revision = temp_root / academy_importer.ICON_REVISION_ROOT
+            shutil.copytree(source_revision, target_revision)
+
+            manifest_path = temp_root / academy_importer.ICON_REVISION_MANIFEST
+            manifest_bytes = manifest_path.read_bytes()
+            manifest_path.write_bytes(manifest_bytes + b" ")
+            with self.assertRaisesRegex(RuntimeError, "manifest changed"):
+                academy_importer.load_icon_revision(temp_root, pin)
+            manifest_path.write_bytes(manifest_bytes)
+
+            export_path = target_revision / "exports/NH_academy_village_large_normal.png"
+            export_bytes = export_path.read_bytes()
+            export_path.write_bytes(export_bytes + b"\0")
+            with self.assertRaisesRegex(ValueError, "export bytes do not match"):
+                academy_importer.load_icon_revision(temp_root, pin)
+            export_path.write_bytes(export_bytes)
+
+            altered_manifest = json.loads(manifest_bytes)
+            altered_manifest["icons"]["fort.large.normal"]["runtime"] = "unapproved.png"
+            altered_bytes = json.dumps(altered_manifest, indent="\t", ensure_ascii=False).encode("utf-8") + b"\n"
+            manifest_path.write_bytes(altered_bytes)
+            altered_pin = hashlib.sha256(altered_bytes).hexdigest()
+            with self.assertRaisesRegex(ValueError, "changed the approved fort.large.normal runtime mapping"):
+                academy_importer.load_icon_revision(temp_root, altered_pin)
+
+        legacy = b"package normal pixels"
+        reviewed = b"reviewed v2 export pixels"
+        unknown = b"unreviewed local edits"
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            normal = root / academy_importer.IMAGE_ROOT / "NH_academy_fort_small_normal.png"
+            built = root / academy_importer.IMAGE_ROOT / "NH_academy_fort_small_built.png"
+            normal.parent.mkdir(parents=True)
+            normal.write_bytes(legacy)
+            built.write_bytes(legacy)
+            academy_importer.install_curated_icon(
+                root, normal.name, reviewed, legacy, check_only=False
+            )
+            self.assertEqual(normal.read_bytes(), reviewed)
+            self.assertEqual(built.read_bytes(), reviewed)
+
+            built.write_bytes(unknown)
+            with self.assertRaisesRegex(RuntimeError, "unrecognized Academy built-icon fallback pixels"):
+                academy_importer.install_curated_icon(
+                    root, normal.name, b"next reviewed export", reviewed, check_only=False
+                )
+            self.assertEqual(normal.read_bytes(), reviewed)
+            self.assertEqual(built.read_bytes(), unknown)
+
+    def test_faction_selection_names_stay_white_and_selection_uses_existing_border(self):
+        source = OPTIONS_TAB.read_text(encoding="utf-8")
+        start = source.index("void OptionsTab::SelectionWindow::genContentFactions()")
+        end = source.index("void OptionsTab::SelectionWindow::genContentHeroes()", start)
+        faction_renderer = source[start:end]
+        self.assertEqual(faction_renderer.count("drawOutlinedText("), 2)
+        self.assertEqual(faction_renderer.count("Colors::WHITE"), 2)
+        self.assertNotIn("Colors::YELLOW", faction_renderer)
+        self.assertIn("lobby/townBorderSmallActivated", faction_renderer)
+        self.assertIn("lobby/townBorderBigActivated", faction_renderer)
 
     def test_siege_uses_direct_images_and_provenance_exceptions_stay_out(self):
         siege_images = sorted(IMAGES.glob("SGTW*.png"))

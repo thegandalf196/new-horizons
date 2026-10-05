@@ -56,3 +56,19 @@ The active art-only faction patch is
 `core:tower`, creature/building rules, costs, requirements, entrances, and map
 blocking geometry intact. Academy uses sand as its native terrain as explicitly
 selected by the user. Original gate references remain external.
+
+## Town-icon revision v2
+
+`icon-revisions/v2/` contains the separately generated fort/village masters,
+exact prompts, reviewed manifest and four native exports. They replace the
+distant sandy icon compositions with closer ivory architecture, teal roofs and
+clear light/shadow separation. Large faction-selection icons remain 58×64;
+small adventure-list icons remain 48×32 with the native one-pixel black frame.
+The original handoff's normal icons remain preserved under `native/ui/icons/`.
+
+The importer explicitly pins the reviewed v2 manifest and installs only its
+hashed exports, including byte-identical built-slot fallbacks. Reimporting the
+original handoff cannot silently revert this revision. Runtime built markers
+still come only from the purchaser's external DEF frames. Mechanical reductions
+are reproducible with `tools/export_new_horizons_academy_icon_v2.py --check`.
+Faction-selection names are white; the existing activated border marks selection.

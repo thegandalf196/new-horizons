@@ -2,6 +2,18 @@
 
 Last audited: 2026-10-05
 
+UP-238 Academy faction/town-list icons: revised artwork is Provisional pending
+user native-scale acceptance, not Final. The two new HoMM3-Art masters and exact
+prompts live in `assets/new-horizons/academy/icon-revisions/v2/`; four reviewed
+exports supply the existing 58×64 faction-selection and 48×32 adventure-list
+slots. Small icons match the native opaque black one-pixel frame. Faction names
+use white text with the existing activated selection border. Native-size and
+nearest-neighbor comparisons were inspected; pinned import, reduction checks and
+six focused asset tests pass. Prior source art remains preserved, and built-today
+badges remain runtime-only purchaser resources. UP-237 addresses the scaled
+compositor recursion separately; renderer verification and playable delivery are
+recorded in the priority queue rather than inferred from these asset checks.
+
 UP-235/UP-236 source integrated: supplied Academy art replaces Tower presentation,
 without restoring the bundled upstream gameplay snapshot. Integration remains
 Provisional pending native-scale/playable evidence. Original gate resources and

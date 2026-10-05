@@ -1,0 +1,65 @@
+{
+	"schemaVersion": 1,
+	"revision": "v2",
+	"builtFallbackPolicy": "byte-identical-to-active-normal",
+	"masters": {
+		"fort": {
+			"path": "masters/fort.png",
+			"sha256": "e742cba1ee0ba8ec3b804196f16958337fbb68df7b0f83d9a138ce5170f878b9"
+		},
+		"village": {
+			"path": "masters/village.png",
+			"sha256": "0aa4232a1d85328e493a5e89f38de03bdc6cf7759016dfcab48dd21ca3076703"
+		}
+	},
+	"icons": {
+		"village.large.normal": {
+			"source": "native/ui/icons/village-large-normal.png",
+			"master": "village",
+			"export": "exports/NH_academy_village_large_normal.png",
+			"runtime": "NH_academy_village_large_normal.png",
+			"dimensions": [
+				58,
+				64
+			],
+			"sha256": "1945d2a6755c07ce386f20d1c9c40bd86142ba206a71ebb4148d1661226f2f05"
+		},
+		"village.small.normal": {
+			"source": "native/ui/icons/village-small-normal.png",
+			"master": "village",
+			"export": "exports/NH_academy_village_small_normal.png",
+			"runtime": "NH_academy_village_small_normal.png",
+			"dimensions": [
+				48,
+				32
+			],
+			"sha256": "e8af9c8361b419acd7013d10e0ae3e4b11814e119363a75ff15c9fdaef1f1a69"
+		},
+		"fort.large.normal": {
+			"source": "native/ui/icons/fort-large-normal.png",
+			"master": "fort",
+			"export": "exports/NH_academy_fort_large_normal.png",
+			"runtime": "NH_academy_fort_large_normal.png",
+			"dimensions": [
+				58,
+				64
+			],
+			"sha256": "970062215adc97f3de99dbede40e779696f1f91b8c3f1d1d2785bfd95d9d6a11"
+		},
+		"fort.small.normal": {
+			"source": "native/ui/icons/fort-small-normal.png",
+			"master": "fort",
+			"export": "exports/NH_academy_fort_small_normal.png",
+			"runtime": "NH_academy_fort_small_normal.png",
+			"dimensions": [
+				48,
+				32
+			],
+			"sha256": "5e0181f8504a21af39cf44fbe4a90625fc9e2b5e8d830015d89e6eadaf3a1a10"
+		}
+	},
+	"provenance": {
+		"prompt": "PROMPT.md",
+		"sha256": "1e599e36f9844842feb43515a3abb249df930615ee6945c494bb029e1e242574"
+	}
+}
