@@ -1682,9 +1682,11 @@ Coverage156->159/310; planned154->151; Havoc6active/4planned. Independent source
 and fixture reviews have no remaining blocker. Phase2 retains broad defense/
 coefficient interactions, proxy/reflection cases and the older hybrid v2 fixture
 audit. Art Not done and generic UI provisional; no GUI/playable promotion.
-UP-111 Cataclysm is mapped but not implemented: baseline Armageddon also lacks
-specified physical-obstacle cleanup, and the ordinary magical-obstacle filter
-awaits a recorded item-level clarification. Fortification damage is separate.
+UP-111 Cataclysm remains mapped but not implemented. The earlier baseline
+Armageddon obstacle/fortification gap was subsequently addressed by UP-139's
+accepted structural foundation (e538921a4); it is no longer missing work.
+Cataclysm's ordinary magical-obstacle filter still awaits its recorded
+item-level clarification. Absolute-landmark destructibility remains unresolved.
 
 UP-107 Land Surveyor is active and focused native verified. First successful
 mine capture per hero per absolute week grants three times the mine's normal
