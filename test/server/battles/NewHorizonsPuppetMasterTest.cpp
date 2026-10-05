@@ -420,17 +420,22 @@ TEST_F(NewHorizonsPuppetMasterTest, ResistedControlLeavesTheExistingBerserkSpell
 	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
 	const auto mechanics = spell->battleMechanics(&cast);
 	ASSERT_NE(mechanics, nullptr);
-	EXPECT_FALSE(mechanics->isReceptive(controlled));
+	ASSERT_EQ(controlled->magicResistance(), 75)
+		<< "The New Horizons resistance cap clips the fixture's 100% source to 75%";
+	EXPECT_TRUE(mechanics->isReceptive(controlled))
+		<< "Magic Resistance is rolled during accepted cast resolution, not target receptivity";
 	spells::detail::ProblemImpl problem;
 	spells::Target aim{battle::Destination(controlled->getPosition())};
-	EXPECT_FALSE(mechanics->canBeCastAt(aim, problem));
-	std::vector<std::string> problems;
-	problem.getAll(problems);
+	EXPECT_TRUE(mechanics->canBeCastAt(aim, problem));
 
-	EXPECT_FALSE(castPuppetMaster()) << ::testing::PrintToString(problems);
+	ASSERT_TRUE(castPuppetMaster()) << "The legal cast must reach its authoritative resistance roll";
+	const auto casts = server.castsOf(puppetMasterSpell());
+	ASSERT_EQ(casts.size(), 1u);
+	EXPECT_TRUE(casts.front().announcement.resistedCres.contains(controlled->unitId()))
+		<< "The seeded 75% resistance roll must actually reject Puppet Master's effect";
 	EXPECT_FALSE(newHorizonsPuppetMaster::hasControlMarker(controlled));
 	EXPECT_EQ(spellEffects(controlled, SpellID(SpellID::BERSERK))->size(), 2u)
-		<< "A rejected/resisted Puppet Master attempt must not clean up the prior spell source";
+		<< "A resisted Puppet Master cast must not clean up the prior spell source";
 }
 
 TEST_F(NewHorizonsPuppetMasterTest, ControlledCreatureActiveSpellUsesControllerTargetingAndProvenance)

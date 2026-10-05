@@ -30,4 +30,10 @@ public:
 	/// measured from the berserker's side in AttackPossibility damage-reduction units.
 	/// WALK and NO_ACTION contribute zero.
 	float expectedBerserkActionValue() const;
+
+private:
+	// Frenzied Curse is evaluated in an isolated hypothetical battle. Keep its
+	// unit snapshots alive because forced actions and AttackPossibility retain
+	// pointers into that branch.
+	std::shared_ptr<HypotheticBattle> forcedBerserkState;
 };

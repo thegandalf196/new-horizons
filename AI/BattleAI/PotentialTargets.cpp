@@ -13,6 +13,7 @@
 #include "../../lib/CStack.h"//todo: remove
 #include "../../lib/battle/ReachabilityInfo.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
+#include "../../lib/battle/NewHorizonsBerserk.h"
 #include "../../lib/battle/NewHorizonsPuppetMaster.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 
@@ -21,21 +22,37 @@ PotentialTargets::PotentialTargets(
 	DamageCache & damageCache,
 	std::shared_ptr<HypotheticBattle> state)
 {
-	auto attackerInfo = state->battleGetUnitByID(attacker->unitId());
-	auto reachability = state->getReachability(attackerInfo);
-	auto avHexes = state->battleGetAvailableHexes(reachability, attackerInfo, false);
+	auto evaluationState = state;
+	auto attackerInfo = evaluationState->battleGetUnitByID(attacker->unitId());
 
 	//FIXME: this should part of battleGetAvailableHexes
-	const bool puppetControlled = newHorizonsPuppetMaster::hasValidControlMarker(*state, attackerInfo);
+	const bool puppetControlled = newHorizonsPuppetMaster::hasValidControlMarker(*evaluationState, attackerInfo);
 	berserk = attackerInfo->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE) && !puppetControlled;
+	const auto forcedActivationBonus = berserk
+		? newHorizonsBerserk::forcedActivationSpeedBonus(*evaluationState, attackerInfo)
+		: std::optional<Bonus>{};
+	if(forcedActivationBonus)
+	{
+		// Berserk candidate pointers outlive this constructor, so model the
+		// forced activation in its own child branch instead of temporarily
+		// changing the caller's shared forecast.
+		forcedBerserkState = std::make_shared<HypotheticBattle>(evaluationState->env, evaluationState);
+		forcedBerserkState->addUnitBonus(attackerInfo->unitId(), {*forcedActivationBonus});
+		evaluationState = forcedBerserkState;
+		attackerInfo = evaluationState->battleGetUnitByID(attacker->unitId());
+	}
+	auto reachability = evaluationState->getReachability(attackerInfo);
+	auto avHexes = evaluationState->battleGetAvailableHexes(reachability, attackerInfo, false);
+	DamageCache forcedDamageCache;
+	DamageCache & actionDamageCache = forcedActivationBonus ? forcedDamageCache : damageCache;
 	if(berserk)
 	{
-		forcedBerserkActions = state->getBerserkForcedActions(attackerInfo);
+		forcedBerserkActions = evaluationState->getBerserkForcedActions(attackerInfo);
 		if(forcedBerserkActions.empty())
 			forcedBerserkActions.push_back({EActionType::NO_ACTION, attackerInfo->getPosition(), nullptr});
 	}
 
-	auto aliveUnits = state->battleGetUnitsIf([=](const battle::Unit * unit)
+	auto aliveUnits = evaluationState->battleGetUnitsIf([=](const battle::Unit * unit)
 	{
 		return unit->isValidTarget() && unit->unitId() != attackerInfo->unitId();
 	});
@@ -45,11 +62,11 @@ PotentialTargets::PotentialTargets(
 		// Sanctuary bars this unit only as a deliberately selected enemy primary.
 		// Attacks whose primary is another stack may still include it as collateral.
 		const bool sanctuaryEnemy = defender->hasBonusOfType(BonusType::SANCTIFIED)
-			&& state->battleMatchActionController(attackerInfo, defender);
-		if(sanctuaryEnemy && !state->battleCanTargetEmptyHex(attackerInfo))
+			&& evaluationState->battleMatchActionController(attackerInfo, defender);
+		if(sanctuaryEnemy && !evaluationState->battleCanTargetEmptyHex(attackerInfo))
 			continue;
 
-		if(!berserk && !state->battleMatchActionController(attackerInfo, defender))
+		if(!berserk && !evaluationState->battleMatchActionController(attackerInfo, defender))
 			continue;
 
 		auto GenerateAttackInfo = [&](bool shooting, const BattleHex & hex) -> AttackPossibility
@@ -59,13 +76,13 @@ PotentialTargets::PotentialTargets(
 				: 0;
 			auto bai = BattleAttackInfo(attackerInfo, defender, distance, shooting);
 			if(shooting && hex.isValid() && hex != attackerInfo->getPosition()
-				&& newHorizonsArchery::canUseSkirmisher(state->battleGetFightingHero(attackerInfo->unitSide()), attackerInfo))
+				&& newHorizonsArchery::canUseSkirmisher(evaluationState->battleGetFightingHero(attackerInfo->unitSide()), attackerInfo))
 				bai.archeryRangedDamageMultiplierPercent = newHorizonsArchery::SKIRMISHER_DAMAGE_PERCENT;
 
-			auto ordinary = AttackPossibility::evaluate(bai, hex, damageCache, state);
-			if(!berserk && state->battleCanUsePerfectMoment(attackerInfo))
+			auto ordinary = AttackPossibility::evaluate(bai, hex, actionDamageCache, evaluationState);
+			if(!berserk && evaluationState->battleCanUsePerfectMoment(attackerInfo))
 			{
-				auto declared = AttackPossibility::evaluate(bai, hex, damageCache, state, true);
+				auto declared = AttackPossibility::evaluate(bai, hex, actionDamageCache, evaluationState, true);
 				// Save the single use when it changes no material outcome. This
 				// modest opportunity-cost heuristic is not a new combat rule.
 				const float reserve = std::max(1.0f, std::abs(ordinary.damageDiff()) * 0.1f);
@@ -95,15 +112,15 @@ PotentialTargets::PotentialTargets(
 		}
 		else
 		{
-			const bool canShootFromCurrentPosition = state->battleCanShootAction(attackerInfo, defender->getPosition());
+			const bool canShootFromCurrentPosition = evaluationState->battleCanShootAction(attackerInfo, defender->getPosition());
 			if(canShootFromCurrentPosition)
 				possibleAttacks.push_back(GenerateAttackInfo(true, BattleHex::INVALID));
 
-			if(!sanctuaryEnemy && newHorizonsArchery::canUseSkirmisher(state->battleGetFightingHero(attackerInfo->unitSide()), attackerInfo))
+			if(!sanctuaryEnemy && newHorizonsArchery::canUseSkirmisher(evaluationState->battleGetFightingHero(attackerInfo->unitSide()), attackerInfo))
 			{
 				// Score every legal destination so the AI can trade movement, firing line,
 				// range, and Counterfire exposure instead of always choosing one nearest hex.
-				for(const BattleHex & hex : state->battleGetSkirmisherAttackFromHexes(attackerInfo,
+				for(const BattleHex & hex : evaluationState->battleGetSkirmisherAttackFromHexes(attackerInfo,
 					defender->getPosition()))
 					possibleAttacks.push_back(GenerateAttackInfo(true, hex));
 			}
@@ -112,7 +129,7 @@ PotentialTargets::PotentialTargets(
 			{
 				for(const BattleHex & hex : avHexes)
 				{
-					if(!state->isMeleeAttackPossible(attackerInfo, defender, hex))
+					if(!evaluationState->isMeleeAttackPossible(attackerInfo, defender, hex))
 						continue;
 
 					auto bai = GenerateAttackInfo(false, hex);
@@ -130,6 +147,17 @@ PotentialTargets::PotentialTargets(
 	{
 		return lhs.damageDiff() > rhs.damageDiff();
 	});
+
+	if(forcedActivationBonus && forcedBerserkState)
+	{
+		// The scoped Speed has done its job: it selected reachable forced actions
+		// and informed their attack projections. Remove it before callers replay
+		// any chosen AttackPossibility into their longer-lived forecast.
+		for(auto & attack : possibleAttacks)
+			if(attack.effectPreview)
+				attack.effectPreview->removeUnitBonus(attackerInfo->unitId(), {*forcedActivationBonus});
+		forcedBerserkState->removeUnitBonus(attackerInfo->unitId(), {*forcedActivationBonus});
+	}
 }
 
 int64_t PotentialTargets::bestActionValue() const

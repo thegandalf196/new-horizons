@@ -16,11 +16,13 @@
 #include "../TurnTimerHandler.h"
 
 #include "../../lib/CStack.h"
+#include "../../lib/ScopeGuard.h"
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/BattleLayout.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/BattleProxy.h"
 #include "../../lib/battle/IBattleState.h"
+#include "../../lib/battle/NewHorizonsBerserk.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsDiscipline.h"
 #include "../../lib/battle/NewHorizonsPuppetMaster.h"
@@ -1232,47 +1234,126 @@ bool BattleFlowProcessor::tryActivateMoralePenalty(const CBattleInfoCallback & b
 
 bool BattleFlowProcessor::tryActivateBerserkPenalty(const CBattleInfoCallback & battle, const CStack * next)
 {
+	if(!next || !battle.getBattle())
+		return false;
+
 	if(newHorizonsPuppetMaster::hasValidControlMarker(battle, next))
 		return false;
 
 	if (next->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)) //while in berserk
 	{
-		const auto candidates = battle.getBerserkForcedActions(next);
+		const auto battleID = battle.getBattle()->getBattleID();
+		const auto unitID = next->unitId();
+		const auto unitSide = next->unitSide();
+		const auto forcedActivationSpeed = newHorizonsBerserk::forcedActivationSpeedBonus(battle, next);
+		const auto removeFrenziedCurseBonus = [this, battleID, unitID]()
+		{
+			const auto * currentBattle = gameHandler->gameState().getBattle(battleID);
+			const auto * currentUnit = currentBattle ? currentBattle->battleGetStackByID(unitID, false) : nullptr;
+			if(!currentUnit)
+				return;
+
+			const auto bonuses = currentUnit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
+				BonusSourceID(SpellID(SpellID::BERSERK))).And(Selector::type()(BonusType::STACKS_SPEED)));
+			if(!bonuses)
+				return;
+
+			std::vector<Bonus> toRemove;
+			for(const auto & bonus : *bonuses)
+				if(bonus && newHorizonsBerserk::isFrenziedCurseSpeedBonus(bonus.get()))
+					toRemove.push_back(*bonus);
+			if(toRemove.empty())
+				return;
+
+			SetStackEffect remove;
+			remove.battleID = battleID;
+			remove.toRemove.emplace_back(unitID, std::move(toRemove));
+			gameHandler->sendAndApply(remove);
+		};
+		const auto cleanupFrenziedCurseBonus = vstd::makeScopeGuard([removeFrenziedCurseBonus]()
+		{
+			removeFrenziedCurseBonus();
+		});
+
+		const auto existingSpeedBonuses = next->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
+			BonusSourceID(SpellID(SpellID::BERSERK))).And(Selector::type()(BonusType::STACKS_SPEED)));
+		const bool hasFrenziedCurseBonus = existingSpeedBonuses
+			&& std::ranges::any_of(*existingSpeedBonuses, [](const auto & bonus)
+			{
+				return bonus && newHorizonsBerserk::isFrenziedCurseSpeedBonus(bonus.get());
+			});
+
+		if(!forcedActivationSpeed && hasFrenziedCurseBonus)
+			removeFrenziedCurseBonus();
+
+		bool grantedFrenziedCurseBonus = false;
+		if(forcedActivationSpeed && !hasFrenziedCurseBonus)
+		{
+			SetStackEffect add;
+			add.battleID = battleID;
+			add.toAdd.emplace_back(unitID, std::vector<Bonus>{*forcedActivationSpeed});
+			gameHandler->sendAndApply(add);
+			grantedFrenziedCurseBonus = true;
+		}
+
+		const auto * currentBattle = gameHandler->gameState().getBattle(battleID);
+		const auto * currentBerserker = currentBattle ? currentBattle->battleGetStackByID(unitID, false) : nullptr;
+		if(!currentBerserker)
+			return true;
+
+		const auto candidates = battle.getBerserkForcedActions(currentBerserker);
 		// Inspection and AI projection enumerate ties without consuming RNG.
 		// Only the authoritative activation chooses the actual target.
 		const ForcedAction forcedAction = candidates.size() > 1
 			? *RandomGeneratorUtil::nextItem(candidates, gameHandler->getRandomGenerator())
 			: candidates.empty() ? ForcedAction{} : candidates.front();
+		if(forcedAction.type == EActionType::NO_ACTION)
+		{
+			removeFrenziedCurseBonus();
+			makeStackDoNothing(battle, currentBerserker);
+			return true;
+		}
+		if(grantedFrenziedCurseBonus)
+		{
+			BattleLogMessage message;
+			message.battleID = battleID;
+			MetaString line;
+			line.appendRawString("Frenzied Curse gives %s +2 Speed for its forced activation.");
+			currentBerserker->addNameReplacement(line);
+			message.lines.push_back(std::move(line));
+			gameHandler->sendAndApply(message);
+		}
 		if (forcedAction.type == EActionType::SHOOT)
 		{
 			BattleAction rangeAttack;
 			rangeAttack.actionType = EActionType::SHOOT;
-			rangeAttack.side = next->unitSide();
-			rangeAttack.stackNumber = next->unitId();
+			rangeAttack.side = unitSide;
+			rangeAttack.stackNumber = unitID;
 			rangeAttack.aimToUnit(forcedAction.target);
-			makeAutomaticAction(battle, next, rangeAttack);
+			makeAutomaticAction(battle, currentBerserker, rangeAttack);
 		}
 		else if (forcedAction.type == EActionType::WALK_AND_ATTACK)
 		{
 			BattleAction meleeAttack;
 			meleeAttack.actionType = EActionType::WALK_AND_ATTACK;
-			meleeAttack.side = next->unitSide();
-			meleeAttack.stackNumber = next->unitId();
+			meleeAttack.side = unitSide;
+			meleeAttack.stackNumber = unitID;
 			meleeAttack.aimToHex(forcedAction.position);
 			meleeAttack.aimToUnit(forcedAction.target);
-			makeAutomaticAction(battle, next, meleeAttack);
+			makeAutomaticAction(battle, currentBerserker, meleeAttack);
 		} else if (forcedAction.type == EActionType::WALK)
 		{
 			BattleAction movement;
 			movement.actionType = EActionType::WALK;
-			movement.side = next->unitSide();
-			movement.stackNumber = next->unitId();
+			movement.side = unitSide;
+			movement.stackNumber = unitID;
 			movement.aimToHex(forcedAction.position);
-			makeAutomaticAction(battle, next, movement);
+			makeAutomaticAction(battle, currentBerserker, movement);
 		}
 		else
 		{
-			makeStackDoNothing(battle, next);
+			removeFrenziedCurseBonus();
+			makeStackDoNothing(battle, currentBerserker);
 		}
 		return true;
 	}

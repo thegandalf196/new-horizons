@@ -31,6 +31,8 @@ JsonNode magicRulesForVersion(int version)
 		spell.Struct().erase("selectedPlacement");
 		spell.Struct().erase("earthquake");
 		spell.Struct().erase("structures");
+		spell.Struct().erase("heroAccess");
+		spell.Struct().erase("restoration");
 		if(spell.Struct().contains("variant"))
 		{
 			spell.Struct().erase("variant");

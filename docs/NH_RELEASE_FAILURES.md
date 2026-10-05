@@ -2,6 +2,60 @@
 
 ## Purpose
 
+### 2026-10-05 UP062 — Final Frenzied Curse gate accepted
+
+Boundary preflight uses(4,5)->(12,5), verifies ordinary WALK and boosted shared
+WALK_AND_ATTACK, then removes its test-only bonus before the authoritative
+activation. The server must independently grant, attack and clean up. Final
+build64062 exits0; native42075 passes30/30 in6.265s, zero skips. Retain all prior
+failed logs and assertions; no production/schema contract was weakened.
+UP062-frenzied-native-build-repaired-v4.log and
+UP062-frenzied-native-final.log/XML are the accepted evidence. Data/inventory19/19,
+module drift and independent review pass; coverage224/310, Chaos Magic5/10.
+
+### 2026-10-05 UP062 — Principal geometry and historical control repairs
+
+Repaired native build97008 exits0; first focused run65113 passes22/30 in5.413s,
+zero skips. All seven AI cases pass. Three activation cases expose fixture
+assumptions: the chosen near geometry is already in ordinary melee range;
+the final attack packet may be retaliation; the helper reports eligibility,
+not whether the temporary bonus remains attached after an action. Preserve
+expanded-reach/accepted-action/actual-marker cleanup assertions while correcting
+those assumptions. Four old V1/V2 profile cases copy the V3-only heroAccess
+field; repair historical snapshots, not the strict schema. The Puppet resistance
+control is unexpectedly receptive and remains under diagnosis. Retain every
+original filter case and UP062-frenzied-native.log/XML. No coverage credit yet.
+
+Repairs retain all30 cases: near geometry moves to(3,5)->(12,5), own attack is
+identified by attacker ID, and WALK cleanup checks attached marker/range. V1/V2
+snapshots strip heroAccess/restoration. Puppet's nominal100 resistance source
+is capped to75 in NH; resistance is rolled at accepted resolution, not target
+receptivity. Its control now requires the cast packet's resistedCres entry and
+preserves both Berserk effects with no control marker. Production unchanged;
+repaired build64193 exits1 in UP062-frenzied-native-build-repaired-v2.log:
+BattleAttack stores targets inside bsa entries, not a direct stackAttacked field.
+Keep attacker-ID selection, assert bsa is nonempty, then check its target field.
+Do not remove the actual-target assertion. Owner repairs only that fixture line;
+another sequential build is required before running the full retained filter.
+
+Build63588 exits0. Rerun27862 passes29/30 in6.314s, zero skips; all historical,
+Puppet, AI, owner/inactive and movement-only cleanup controls pass. The active
+attack geometry at(3,5) is beyond even boosted reach. Derive the fixture position
+from actual movement/path cost and preflight both ordinary and boosted shared
+candidates instead of guessing distances. Retain the actual accepted attack and
+post-action cleanup assertions. Preserve UP062-frenzied-native-repaired.log/XML.
+
+### 2026-10-05 UP062 — Typed spell source in Frenzied AI fixture
+
+Client78683 exits0. Native build89833 exits1 while compiling the new AI fixture:
+BonusSourceID cannot hold a raw SpellIDBase enum; wrap BERSERK in SpellID before
+constructing the source variant. Preserve UP062-frenzied-native-build.log.
+Repair the fixture constructor, not the variant schema or production contracts;
+retain all assertions and rerun the focused native gate before acceptance.
+Independent frozen runtime/AI and fixture reviews found no blocking issue.
+Broader stopped-unit Berserk valuation is existing Phase2 work, not a new
+Frenzied reach regression: Time Stop returns zero movement before Speed bonuses.
+
 ### 2026-10-05 UP108 — Allowance kind is not grant source
 
 Repaired native build37739 failed in the ordinary Purify AI fixture because

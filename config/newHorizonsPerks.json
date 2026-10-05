@@ -1789,7 +1789,7 @@
 					"requires": "basic",
 					"description": "A Berserked creature gains +2 Speed during its forced activation.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "A Berserked creature gains +2 Speed during its forced activation."
 					}
 				},

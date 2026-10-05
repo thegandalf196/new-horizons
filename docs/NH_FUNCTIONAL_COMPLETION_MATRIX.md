@@ -1,6 +1,19 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-05
+Frenzied Curse source/native accepted under UP062: action-scoped +2 Speed for
+a real forced Berserk activation, captured original-caster perk provenance,
+authoritative reach/cleanup/logging and isolated AI planning. Client78683 and
+final native build64062 pass. Native42075 passes30/30 in6.265s, zero skips;
+data/inventory19/19, module drift and independent review pass. Coverage223->224/310
+perks (153/220 generic), Chaos Magic4->5/10; faction71/90, ranks93/93 and combat
+identities61/67 unchanged. Evidence: UP062-frenzied-client-build.log,
+UP062-frenzied-native-build-repaired-v4.log and UP062-frenzied-native-final.log/XML.
+Failures and fixture repairs remain in NH_RELEASE_FAILURES.md. No new saved
+state, GUI or snapshot promotion. Broader stopped-unit Berserk valuation and
+interaction coverage remain Phase2. Full base Berserk's skipped-turn lifetime
+question is unresolved independently; it was resurfaced without choosing it.
+
 Purifying Mandate source/native accepted: a selected Divine Mandate Light cast
 that actually removes a negative magical effect cleanses one remaining physical
 affliction per target after ordinary Purify/Purifier cleanup. Legacy physical
@@ -2465,7 +2478,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | All three ranks per Skill are active; many registered Skills still lack complete perk progression. |
 | Skill rank effects active | 93/93 | Elemental Rebirth's three ranks now have source/native and owning-side AI evidence. Active status does not certify every wider interaction. |
-| Skill perks active | 223/310 | 87 planned; Purifying Mandate is the newest source/native-verified activation. Diplomacy is 7/10; Chaos Magic 4/10; Necromancy 10/10; Learning 3/10; Estates 6/10; Battlecraft 6/10; Logistics 8/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 224/310 | 86 planned; Frenzied Curse is the newest source/native-verified activation. Diplomacy is 7/10; Chaos Magic 5/10; Necromancy 10/10; Learning 3/10; Estates 6/10; Battlecraft 6/10; Logistics 8/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 27/27 | All nine faction rank foundations are active; their remaining perks and wider integration are separate work. |
 | Faction perks active | 71/90 | 19 planned perks; Divine Mandate has six accepted perks, including Expert Mandate of Heaven and Advanced Purifying Mandate; Elemental Rebirth has three accepted perks with normal Basic-to-Advanced selection and live/detached evidence. |
 | Canonical combat-spell identities registered | 61/67 | 6 missing/inactive; Puppet Master is the newest source/native-verified identity. Chaos is 7/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -2654,7 +2667,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Nature Magic | 3/0 | 7/3 | Geomancer's structural/terrain effects and actual AI cast are native verified alongside Venomancer's whole-Base snapshot and independent Toxic Spines. Herbalist, Rootcaller, Beastcaller, Verdant Warden and Verdant Communion active. Mire Shaper, Worldroot and Elemental Conjurer remain planned. |
 | Havoc Magic | 3/0 | 7/3 | Three perks missing; Mine Layer has focused live/detached placement evidence |
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
-| Chaos Magic | 3/0 | 4/6 | Mindbreaker joins Blinkmaster, Weaver and Paradox Shield with focused source/native evidence recorded above; six perks remain planned. |
+| Chaos Magic | 3/0 | 5/5 | Frenzied Curse joins Mindbreaker, Blinkmaster, Weaver and Paradox Shield with focused source/native evidence recorded above; five perks remain planned. Base Berserk lifecycle is still partial. |
 | Spellcraft | 3/0 | 4/6 | Grand Formula scales the first accepted Level 4-or-5 hero spell's SP term by 150%; Arcane Focus, Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold. Basic/Advanced/Expert efficiency is 110/120/130% under saved v3 rules. |
 | Wisdom | 3/0 | 8/2 | Mana Conservation post-combat Normal recovery, Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. One other perk remains missing. Broader interactions and playable acceptance remain open. |
 | Warcasting | 3/0 | 6/4 | Spellward has focused live/detached/current-controller damage evidence. Master Synthesis has first-consumption Spell/Order, typed-exclusion and branch-history evidence. Four perks missing; Combat Casting and Enchanted Command await shared rule decisions; Perfect Rhythm stacking is unresolved. |

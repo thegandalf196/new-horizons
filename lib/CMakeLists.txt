@@ -63,6 +63,7 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsMagicalAbilityDamage.cpp
 	battle/NewHorizonsCreatureAbilitySuppression.cpp
 	battle/NewHorizonsBulwark.cpp
+	battle/NewHorizonsBerserk.cpp
 	battle/NewHorizonsPlague.cpp
 	battle/NewHorizonsPuppetMaster.cpp
 	battle/NewHorizonsSoulChain.cpp
@@ -522,6 +523,7 @@ set(lib_MAIN_HEADERS
 	battle/NewHorizonsMagicalAbilityDamage.h
 	battle/NewHorizonsCreatureAbilitySuppression.h
 	battle/NewHorizonsBulwark.h
+	battle/NewHorizonsBerserk.h
 	battle/NewHorizonsSoulChain.h
 	battle/NewHorizonsPuppetMaster.h
 	battle/NewHorizonsBattlecraft.h
