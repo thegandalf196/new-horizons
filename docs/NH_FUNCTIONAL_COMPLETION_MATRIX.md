@@ -11,8 +11,9 @@ perks, faction70->71/90, Divine Mandate5->6/10; ranks and spell identities uncha
 Evidence: UP108-purifying-client-build.log,
 UP108-purifying-native-build-repaired-v2.log and UP108-purifying-native-repaired.log/XML.
 Broader interactions, heuristic tuning and rendered/playable delivery remain
-separate. No new persistent state, GUI or snapshot promotion. Next: UP056 Town
-Portal's canonical nearest-town and exhausted-Movement behavior.
+separate. No new persistent state, GUI or snapshot promotion. Town Portal's
+canonical nearest-town/Movement correction awaits its recorded design choices;
+next bounded maps examine Divine Discipline and Rapid Embarkation.
 
 Mandate of Heaven source/native accepted. Existing total-completed-pair history
 supports one free first sequence through the selected Expert four-pair cap;
