@@ -17,6 +17,10 @@ def require(source: str, text: str, label: str) -> None:
 
 
 def main() -> None:
+    level_name = UI.split("std::string adventureSpellGuildLevelName(int guildLevel)", 1)[1].split("\n}", 1)[0]
+    require(level_name, "return std::to_string(guildLevel);", "Arabic numerals in purchase tier names and lock hints")
+    if "std::array" in level_name:
+        raise AssertionError("Guild level labels must not substitute Roman numerals")
     require(HEADER, "class CMageGuildAdventureSpellWindow : public CWindowObject", "five-tier purchase panel")
     require(HEADER, "void updateSpells(ObjectInstanceID townId);", "authoritative UI refresh entry point")
     require(UI, "class MageGuildExteriorHotspot final : public CPicture", "picture-sized exterior hotspot")

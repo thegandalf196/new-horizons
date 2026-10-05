@@ -3361,10 +3361,7 @@ namespace
 {
 std::string adventureSpellGuildLevelName(int guildLevel)
 {
-	static constexpr std::array<const char *, 5> names = {"I", "II", "III", "IV", "V"};
-	if(guildLevel < 1 || guildLevel > static_cast<int>(names.size()))
-		return std::to_string(guildLevel);
-	return names[static_cast<size_t>(guildLevel - 1)];
+	return std::to_string(guildLevel);
 }
 
 std::string adventureSpellUnlockCostText(const ResourceSet & cost)
