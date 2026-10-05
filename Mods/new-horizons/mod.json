@@ -7322,7 +7322,8 @@
 		"config/artifacts/spellbindersHat.json",
 		"config/artifacts/scaledAttributesAndMovement.json",
 		"config/artifacts/speedAndInitiative.json",
-		"config/artifacts/elementalOrbs.json"
+		"config/artifacts/elementalOrbs.json",
+		"config/artifacts/adventureMovementCasts.json"
 	],
 	"factions": [
 		"config/factions/uniqueBuildings.json",

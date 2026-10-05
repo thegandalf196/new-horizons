@@ -1,0 +1,12 @@
+{
+	"core:bootsOfLevitation": {
+		"text": {
+			"description": "While equipped, allows you to cast Water Walk for 20 Spell Points without learning the spell. Casting uses your one Adventure Spell for the day. The boots do not provide free Water Walking."
+		}
+	},
+	"core:angelWings": {
+		"text": {
+			"description": "While equipped, allows you to cast Fly for 40 Spell Points without learning the spell. Casting uses your one Adventure Spell for the day. The wings do not provide free flight."
+		}
+	}
+}

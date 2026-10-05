@@ -13,6 +13,7 @@
 #include "AI/Nullkiller2/Pathfinding/Actions/DimensionDoorAction.h"
 #include "AI/Nullkiller2/Pathfinding/Actions/TownPortalAction.h"
 #include "AI/Nullkiller2/Pathfinding/AINodeStorage.h"
+#include "AI/Nullkiller2/Pathfinding/Actors.h"
 #include "AI/Nullkiller2/Pathfinding/AIPathfinder.h"
 #include "SpellPointTestUtils.h"
 #include "mock/TinyH3MBuilder.h"
@@ -23,11 +24,14 @@
 #include "lib/IGameSettings.h"
 #include "lib/CPlayerState.h"
 #include "lib/bonuses/Bonus.h"
+#include "lib/entities/artifact/CArtifact.h"
 #include "lib/mapObjectConstructors/AObjectTypeHandler.h"
 #include "lib/mapObjectConstructors/CObjectClassesHandler.h"
 #include "lib/mapObjects/CGHeroInstance.h"
+#include "lib/pathfinder/TurnInfo.h"
 #include "lib/mapObjects/MiscObjects.h"
 #include "lib/modding/CModHandler.h"
+#include "lib/pathfinder/CGPathNode.h"
 #include "lib/pathfinder/PathfinderOptions.h"
 #include "lib/spells/NewHorizonsMagic.h"
 #include "lib/spells/CSpell.h"
@@ -39,6 +43,21 @@ const PlayerColor PLAYER(0);
 SpellID spell(const char * identity)
 {
 	return SpellID(SpellID::decode(identity));
+}
+
+ArtifactID coreArtifact(const char * identity)
+{
+	return ArtifactID(ArtifactID::decode(identity));
+}
+
+ArtifactPosition firstHeroArtifactSlot(ArtifactID artifactId)
+{
+	const auto * artifact = artifactId.toArtifact();
+	if(!artifact)
+		return ArtifactPosition::PRE_FIRST;
+
+	const auto & slots = artifact->getPossibleSlots().at(ArtBearer::HERO);
+	return slots.empty() ? ArtifactPosition::PRE_FIRST : slots.front();
 }
 
 template<typename TAction>
@@ -80,9 +99,19 @@ protected:
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
 	}
 
-	CGHeroInstance * startHeroWithSpells(bool newHorizons, std::vector<SpellID> heroSpells)
+	CGHeroInstance * startHeroWithSpells(bool newHorizons, std::vector<SpellID> heroSpells,
+		std::vector<ArtifactID> extraArtifacts = {})
 	{
 		useNewHorizonsRules = newHorizons;
+		std::vector<std::pair<ArtifactPosition, ArtifactID>> equipped{
+			{ArtifactPosition::SPELLBOOK, ArtifactID::SPELLBOOK}};
+		for(const auto artifact : extraArtifacts)
+		{
+			const auto slot = firstHeroArtifactSlot(artifact);
+			if(slot == ArtifactPosition::PRE_FIRST)
+				return nullptr;
+			equipped.emplace_back(slot, artifact);
+		}
 
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder
@@ -93,7 +122,7 @@ protected:
 			.heroGarrison({{CreatureID(27), 1}})
 			.heroPrimary(10, 10, 10, 20)
 			.heroSpells(std::move(heroSpells))
-			.heroEquipped({{ArtifactPosition::SPELLBOOK, ArtifactID::SPELLBOOK}});
+			.heroEquipped(std::move(equipped));
 		startWithMap(std::move(builder));
 
 		auto * hero = findHeroByOwner(PLAYER);
@@ -174,6 +203,40 @@ protected:
 		boat->setAnchorPos(position);
 		map()->generateUniqueInstanceName(boat.get());
 		map()->addNewObject(std::move(boat));
+	}
+
+	template<typename TAction>
+	void expectArtifactActionAccounting(CGHeroInstance * hero, SpellID spellId, int spellCost,
+		NK2AI::DayFlags movementFlag)
+	{
+		NK2AI::ChainActor actor;
+		actor.hero = hero;
+		NK2AI::AIPathNode sourceNode;
+		sourceNode.actor = &actor;
+		sourceNode.turns = 0;
+		sourceNode.manaCost = 7;
+		PathNodeInfo source;
+		source.node = &sourceNode;
+		CDestinationNodeInfo destination;
+		destination.turn = 0;
+		NK2AI::AIPathNode destinationNode;
+
+		TAction action(hero, spellId);
+		EXPECT_TRUE(action.usesNewHorizonsAdventureSpellOpportunity());
+		ASSERT_TRUE(action.canAct(nullptr, &sourceNode, 0));
+		action.applyOnDestination(hero, destination, source, &destinationNode, &sourceNode);
+		EXPECT_EQ(destinationNode.manaCost, 7 + spellCost);
+		const auto expectedFlags = static_cast<uint8_t>(movementFlag)
+			| static_cast<uint8_t>(NK2AI::DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST);
+		EXPECT_EQ(static_cast<uint8_t>(destinationNode.dayFlags), expectedFlags);
+
+		setTestSpellPointTotal(hero, 7 + spellCost - 1);
+		EXPECT_FALSE(action.canAct(nullptr, &sourceNode, 0));
+		setTestSpellPointTotal(hero, 200);
+
+		sourceNode.dayFlags = NK2AI::DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST;
+		EXPECT_FALSE(action.canAct(nullptr, &sourceNode, 0));
+		EXPECT_TRUE(action.canAct(nullptr, &sourceNode, 1));
 	}
 };
 }
@@ -482,6 +545,82 @@ TEST_F(AdventureSpellDailyPathfindingTest, LowMovementRolloverCanUseTomorrowWate
 
 	ASSERT_NE(route, paths.end()) << "AI should defer the water crossing until movement replenishes tomorrow";
 	EXPECT_TRUE((hasAvailableActionOnTurn<NK2AI::AIPathfinding::WaterWalkingAction>(*route, 1))) << route->toString();
+}
+
+TEST_F(AdventureSpellDailyPathfindingTest, BootsPlanPaidWaterWalkWithoutLearningItAndDeferAfterTodaysUse)
+{
+	const auto boots = coreArtifact("core:bootsOfLevitation");
+	const auto waterWalk = spell("core:waterWalk");
+	auto * hero = startHeroWithSpells(true, {}, {boots});
+	ASSERT_NE(hero, nullptr);
+	ASSERT_FALSE(hero->spellbookContainsSpell(waterWalk));
+	ASSERT_TRUE(hero->canCastThisSpell(waterWalk.toSpell()));
+	EXPECT_EQ(hero->getSpellCost(waterWalk.toSpell()), 20);
+	EXPECT_FALSE(hero->getTurnInfo(0)->hasWaterWalking());
+
+	const int3 source = hero->visitablePos();
+	surroundWithWater(source);
+	const int3 target = source + int3(2, 0, 0);
+	const auto gateway = makeGateway(PLAYER);
+	const auto paths = pathsTo(*gateway, hero, target);
+	const auto route = std::ranges::find_if(paths, [hero, target](const NK2AI::AIPath & path)
+	{
+		return path.targetHero == hero && path.targetTile() == target;
+	});
+	ASSERT_NE(route, paths.end()) << "Boots should create a usable Water Walk transition";
+	ASSERT_TRUE((hasAvailableActionOnTurn<NK2AI::AIPathfinding::WaterWalkingAction>(*route, 0))) << route->toString();
+	expectArtifactActionAccounting<NK2AI::AIPathfinding::WaterWalkingAction>(
+		hero, waterWalk, 20, NK2AI::DayFlags::WATER_WALK_CAST);
+
+	hero->setMovementPoints(MOVEMENT_POINTS_BELOW_ONE_STEP);
+	hero->setNewHorizonsAdventureSpellCastToday(true);
+	const auto tomorrowGateway = makeGateway(PLAYER);
+	const auto tomorrowPaths = pathsTo(*tomorrowGateway, hero, target);
+	const auto tomorrowRoute = std::ranges::find_if(tomorrowPaths, [hero, target](const NK2AI::AIPath & path)
+	{
+		return path.targetHero == hero && path.targetTile() == target;
+	});
+	ASSERT_NE(tomorrowRoute, tomorrowPaths.end()) << "An exhausted daily allowance should defer Water Walk";
+	EXPECT_TRUE((hasAvailableActionOnTurn<NK2AI::AIPathfinding::WaterWalkingAction>(*tomorrowRoute, 1)))
+		<< tomorrowRoute->toString();
+}
+
+TEST_F(AdventureSpellDailyPathfindingTest, AngelWingsPlanPaidFlyWithoutLearningItAndDeferAfterTodaysUse)
+{
+	const auto wings = coreArtifact("core:angelWings");
+	const auto fly = spell("core:fly");
+	auto * hero = startHeroWithSpells(true, {}, {wings});
+	ASSERT_NE(hero, nullptr);
+	ASSERT_FALSE(hero->spellbookContainsSpell(fly));
+	ASSERT_TRUE(hero->canCastThisSpell(fly.toSpell()));
+	EXPECT_EQ(hero->getSpellCost(fly.toSpell()), 40);
+	EXPECT_FALSE(hero->getTurnInfo(0)->hasFlyingMovement());
+
+	const int3 source = hero->visitablePos();
+	surroundWithWater(source);
+	const int3 target = source + int3(2, 0, 0);
+	const auto gateway = makeGateway(PLAYER);
+	const auto paths = pathsTo(*gateway, hero, target);
+	const auto route = std::ranges::find_if(paths, [hero, target](const NK2AI::AIPath & path)
+	{
+		return path.targetHero == hero && path.targetTile() == target;
+	});
+	ASSERT_NE(route, paths.end()) << "Angel Wings should create a usable Fly transition";
+	ASSERT_TRUE((hasAvailableActionOnTurn<NK2AI::AIPathfinding::AirWalkingAction>(*route, 0))) << route->toString();
+	expectArtifactActionAccounting<NK2AI::AIPathfinding::AirWalkingAction>(
+		hero, fly, 40, NK2AI::DayFlags::FLY_CAST);
+
+	hero->setMovementPoints(MOVEMENT_POINTS_BELOW_ONE_STEP);
+	hero->setNewHorizonsAdventureSpellCastToday(true);
+	const auto tomorrowGateway = makeGateway(PLAYER);
+	const auto tomorrowPaths = pathsTo(*tomorrowGateway, hero, target);
+	const auto tomorrowRoute = std::ranges::find_if(tomorrowPaths, [hero, target](const NK2AI::AIPath & path)
+	{
+		return path.targetHero == hero && path.targetTile() == target;
+	});
+	ASSERT_NE(tomorrowRoute, tomorrowPaths.end()) << "An exhausted daily allowance should defer Fly";
+	EXPECT_TRUE((hasAvailableActionOnTurn<NK2AI::AIPathfinding::AirWalkingAction>(*tomorrowRoute, 1)))
+		<< tomorrowRoute->toString();
 }
 
 TEST_F(AdventureSpellDailyPathfindingTest, OneDayWaterWalkExpiresBeforeLowMovementCrossingTomorrow)

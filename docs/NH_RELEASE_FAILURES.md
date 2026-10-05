@@ -2,6 +2,41 @@
 
 ## Purpose
 
+### 2026-10-05 UP023 — First native execution finds rollover regression
+
+Repaired native build69581 exits0. The first focused execution runs20 cases
+in6.296s:16 pass,4 fail, zero skipped. Preserve
+UP023-adventure-artifacts-native-focused.log/XML. The v2 fixture incorrectly
+retains v3-only heroAccess data; repair historical profile construction without
+removing legacy passive assertions. Three real next-day path cases fail,
+including the pre-existing low-Movement Water Walk rollover case. Current-day
+paid artifact casts, exact costs and daily rejection pass. Diagnose production
+layer admission before accepting the slice; do not weaken next-day assertions
+or claim native acceptance from successful compilation.
+
+Accepted repair: remove premature day0 cast-used suppression from generic
+layer eligibility, which runs before MovementPreparationRule advances the
+destination day. NK2 retains its final plannedTurn/dayFlags action validation.
+Down-convert the historical v2 fixture by stripping v3-only row metadata and
+disabling variant rows before strict validation, matching existing historical
+builders; no assertions changed. Both-target build79874 exits0 and repaired
+native70394 passes20/20 in6.541s, zero skips, with separate repaired log/XML.
+The reviewer explicitly corrected the earlier missed ordering risk. Generic
+whole-route hypothetical cast-budget forecasting remains deferred, not claimed
+implemented by this repair.
+
+### 2026-10-05 UP023 — Adventure artifact native fixture include
+
+Client35563 passes. First native build61323 terminates with an incomplete
+TurnInfo type in the two new AI cases: the fixture uses getTurnInfo but only
+had the hero's forward declaration. Add the explicit lib/pathfinder/TurnInfo.h
+include; no production rule or test assertion changes. Preserve
+UP023-adventure-artifacts-native-build.log. Incremental retry69581 uses
+UP023-adventure-artifacts-native-build-repaired.log; native acceptance remains
+pending until actual execution. The unsuccessful first apply_patch matched a
+relative include style that this file does not use and wrote nothing; the
+correct repository-root include is applied.
+
 ### 2026-10-05 UP021 — Exact-fit fixture diagnosis and accepted repair
 
 The successful partial merge applies a garrison-operation pack, which checks

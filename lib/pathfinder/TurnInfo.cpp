@@ -408,15 +408,23 @@ TurnInfo::TurnInfo(TurnInfoCache * sharedCache, const CGHeroInstance * target, i
 	{
 		static const CSelector selector = Selector::type()(BonusType::WATER_WALKING);
 		const auto & bonuses = sharedCache->waterWalking.getBonusList(target, selector);
-		waterWalkingTest = bonuses->getFirst(daySelector) != nullptr;
-		waterWalkingValue = bonuses->valOfBonuses(daySelector);
+		const CSelector applicableBonus = daySelector.And([target](const Bonus * bonus)
+		{
+			return !target->isNewHorizonsAdventureMovementArtifactBonus(*bonus);
+		});
+		waterWalkingTest = bonuses->getFirst(applicableBonus) != nullptr;
+		waterWalkingValue = bonuses->valOfBonuses(applicableBonus);
 	}
 
 	{
 		static const CSelector selector = Selector::type()(BonusType::FLYING_MOVEMENT);
 		const auto & bonuses = sharedCache->flyingMovement.getBonusList(target, selector);
-		flyingMovementTest = bonuses->getFirst(daySelector) != nullptr;
-		flyingMovementValue = bonuses->valOfBonuses(daySelector);
+		const CSelector applicableBonus = daySelector.And([target](const Bonus * bonus)
+		{
+			return !target->isNewHorizonsAdventureMovementArtifactBonus(*bonus);
+		});
+		flyingMovementTest = bonuses->getFirst(applicableBonus) != nullptr;
+		flyingMovementValue = bonuses->valOfBonuses(applicableBonus);
 	}
 
 	{

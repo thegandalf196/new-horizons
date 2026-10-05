@@ -18,9 +18,12 @@
 #include "../../../lib/modding/ModDescription.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/entities/hero/CHeroClass.h"
+#include "../../../lib/entities/artifact/CArtifact.h"
 #include "../../../lib/entities/artifact/CArtifactInstance.h"
 #include "../../../lib/mapObjects/CGTownInstance.h"
 #include "../../../lib/mapObjects/MiscObjects.h"
+#include "../../../lib/networkPacks/ArtifactLocation.h"
+#include "../../../lib/pathfinder/TurnInfo.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
@@ -76,6 +79,20 @@ JsonNode magicRulesForVersion(int version)
 	rules["rulesetVersion"].Integer() = version;
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules.Struct().erase("spellcraftEfficiencyPercent");
+	for(auto & [name, spell] : rules["spells"].Struct())
+	{
+		(void)name;
+		spell.Struct().erase("selectedPlacement");
+		spell.Struct().erase("earthquake");
+		spell.Struct().erase("structures");
+		spell.Struct().erase("heroAccess");
+		spell.Struct().erase("restoration");
+		if(spell.Struct().contains("variant"))
+		{
+			spell.Struct().erase("variant");
+			spell["active"].Bool() = false;
+		}
+	}
 	if(version == newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION)
 	{
 		newHorizonsMagic::validateRules(rules);
@@ -111,6 +128,21 @@ JsonNode magicRulesForVersion(int version)
 	}
 	newHorizonsMagic::validateRules(rules);
 	return rules;
+}
+
+ArtifactID coreArtifact(const char * identity)
+{
+	return ArtifactID(ArtifactID::decode(identity));
+}
+
+ArtifactPosition firstHeroArtifactSlot(ArtifactID artifactId)
+{
+	const auto * artifact = artifactId.toArtifact();
+	if(!artifact)
+		return ArtifactPosition::PRE_FIRST;
+
+	const auto & slots = artifact->getPossibleSlots().at(ArtBearer::HERO);
+	return slots.empty() ? ArtifactPosition::PRE_FIRST : slots.front();
 }
 }
 
@@ -268,6 +300,99 @@ protected:
 		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::DIMENSION_DOOR));
 		setTestSpellPointTotal(attackerSideHero, 1000);
 		attackerSideHero->setMovementPoints(movementPoints);
+	}
+
+	void prepareArtifactMovementCast(ArtifactID artifact)
+	{
+		startGame();
+		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+		const auto slot = firstHeroArtifactSlot(artifact);
+		ASSERT_NE(slot, ArtifactPosition::PRE_FIRST);
+		giveArtifact(attackerSideHero, artifact, slot);
+		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::TOWN_PORTAL));
+		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::DIMENSION_DOOR));
+		attackerSideHero->setMovementPoints(1200);
+		setTestSpellPointTotal(attackerSideHero, 100);
+	}
+
+	bool castAdventureSpell(SpellID spell)
+	{
+		AdventureSpellCastParameters parameters;
+		parameters.caster = attackerSideHero;
+		parameters.pos = int3();
+		auto * environment = dynamic_cast<SpellCastEnvironment *>(gameHandler->spellcastEnvironment());
+		EXPECT_NE(environment, nullptr);
+		return spell.toSpell()->adventureCast(environment, parameters);
+	}
+
+	bool canBeginAdventureSpell(SpellID spell)
+	{
+		spells::detail::ProblemImpl problem;
+		return spell.toSpell()->getAdventureMechanics().canBeCast(
+			problem, &gameHandler->gameInfo(), attackerSideHero);
+	}
+
+	void verifyArtifactMovementException(ArtifactID artifact, SpellID spell,
+		bool waterWalk, int expectedCost, int listedCost)
+	{
+		prepareArtifactMovementCast(artifact);
+		const auto slot = firstHeroArtifactSlot(artifact);
+		const auto * spellObject = spell.toSpell();
+		ASSERT_NE(spellObject, nullptr);
+		ASSERT_FALSE(attackerSideHero->spellbookContainsSpell(spell));
+		ASSERT_TRUE(newHorizonsMagic::isAdventureSpell(attackerSideHero->getMagicRules(), spell));
+		ASSERT_TRUE(attackerSideHero->canCastThisSpell(spellObject));
+		const auto artifactSource = BonusSourceID(artifact);
+		ASSERT_TRUE(vstd::contains(attackerSideHero->getSourcesForSpell(spell), artifactSource));
+		EXPECT_EQ(attackerSideHero->getSpellCost(spellObject), expectedCost);
+
+		const auto movementActive = [this, waterWalk]()
+		{
+			const auto turnInfo = attackerSideHero->getTurnInfo(0);
+			return waterWalk ? turnInfo->hasWaterWalking() : turnInfo->hasFlyingMovement();
+		};
+		EXPECT_FALSE(movementActive());
+
+		const auto townPortal = SpellID(SpellID::TOWN_PORTAL);
+		const auto dimensionDoor = SpellID(SpellID::DIMENSION_DOOR);
+		ASSERT_TRUE(attackerSideHero->canCastThisSpell(townPortal.toSpell()));
+		ASSERT_TRUE(attackerSideHero->canCastThisSpell(dimensionDoor.toSpell()));
+		ASSERT_TRUE(canBeginAdventureSpell(townPortal));
+		ASSERT_TRUE(canBeginAdventureSpell(dimensionDoor));
+
+		setTestSpellPointTotal(attackerSideHero, expectedCost - 1);
+		EXPECT_FALSE(castAdventureSpell(spell));
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), expectedCost - 1);
+		EXPECT_FALSE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+		EXPECT_FALSE(movementActive());
+
+		gameHandler->removeArtifact(ArtifactLocation(attackerSideHero->id, slot));
+		EXPECT_FALSE(attackerSideHero->canCastThisSpell(spellObject));
+		EXPECT_FALSE(vstd::contains(attackerSideHero->getSourcesForSpell(spell), artifactSource));
+		EXPECT_EQ(attackerSideHero->getSpellCost(spellObject), listedCost);
+		EXPECT_FALSE(movementActive());
+
+		giveArtifact(attackerSideHero, artifact, slot);
+		ASSERT_TRUE(vstd::contains(attackerSideHero->getSourcesForSpell(spell), artifactSource));
+		setTestSpellPointTotal(attackerSideHero, 100);
+		const auto manaBeforeAcceptedCast = attackerSideHero->getManaAvailable();
+		ASSERT_TRUE(castAdventureSpell(spell));
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeAcceptedCast - expectedCost);
+		EXPECT_TRUE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+		EXPECT_TRUE(movementActive());
+
+		for(const auto chainedSpell : {townPortal, dimensionDoor})
+		{
+			EXPECT_FALSE(canBeginAdventureSpell(chainedSpell));
+			const auto manaBeforeRejectedChain = attackerSideHero->getManaAvailable();
+			EXPECT_FALSE(castAdventureSpell(chainedSpell));
+			EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeRejectedChain);
+			EXPECT_TRUE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+		}
+
+		gameHandler->removeArtifact(ArtifactLocation(attackerSideHero->id, slot));
+		EXPECT_FALSE(vstd::contains(attackerSideHero->getSourcesForSpell(spell), artifactSource));
+		EXPECT_TRUE(movementActive());
 	}
 
 	const DimensionDoorEffect * dimensionDoorEffect() const
@@ -914,6 +1039,42 @@ TEST_F(NewHorizonsMagicStateTest, AdventureSpellUsesOneSharedDailyOpportunityAnd
 	EXPECT_FALSE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
 	EXPECT_TRUE(cast(waterWalk));
 	EXPECT_TRUE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
+}
+
+TEST_F(NewHorizonsMagicStateTest, BootsOfLevitationGrantPaidUnlearnedWaterWalkAndConsumeTheSharedDailyOpportunity)
+{
+	verifyArtifactMovementException(coreArtifact("core:bootsOfLevitation"),
+		SpellID(SpellID::WATER_WALK), true, 20, 30);
+}
+
+TEST_F(NewHorizonsMagicStateTest, AngelWingsGrantPaidUnlearnedFlyAndConsumeTheSharedDailyOpportunity)
+{
+	verifyArtifactMovementException(coreArtifact("core:angelWings"),
+		SpellID(SpellID::FLY), false, 40, 60);
+}
+
+TEST_F(NewHorizonsMagicStateTest, Version2MovementArtifactsKeepTheirLegacyPassiveBonuses)
+{
+	magicVersion = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
+	startGame();
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	const auto boots = coreArtifact("core:bootsOfLevitation");
+	const auto wings = coreArtifact("core:angelWings");
+	giveArtifact(attackerSideHero, boots, firstHeroArtifactSlot(boots));
+	giveArtifact(attackerSideHero, wings, firstHeroArtifactSlot(wings));
+
+	const SpellID waterWalk(SpellID::WATER_WALK);
+	const SpellID fly(SpellID::FLY);
+	ASSERT_FALSE(attackerSideHero->spellbookContainsSpell(waterWalk));
+	ASSERT_FALSE(attackerSideHero->spellbookContainsSpell(fly));
+	EXPECT_FALSE(attackerSideHero->canCastThisSpell(waterWalk.toSpell()));
+	EXPECT_FALSE(attackerSideHero->canCastThisSpell(fly.toSpell()));
+	EXPECT_EQ(attackerSideHero->getSpellCost(waterWalk.toSpell()), 30);
+	EXPECT_EQ(attackerSideHero->getSpellCost(fly.toSpell()), 60);
+
+	const auto turnInfo = attackerSideHero->getTurnInfo(0);
+	EXPECT_TRUE(turnInfo->hasWaterWalking());
+	EXPECT_TRUE(turnInfo->hasFlyingMovement());
 }
 
 TEST_F(NewHorizonsMagicStateTest, SummonBoatRejectsMissingBoatBeforeManaOrDailyStateInSavedNewHorizonsRules)

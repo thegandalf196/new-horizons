@@ -24,6 +24,7 @@
 #include "../lib/CConfigHandler.h"
 #include "../lib/CRandomGenerator.h"
 #include "../lib/callback/CCallback.h"
+#include "../lib/bonuses/BonusList.h"
 #include "../lib/pathfinder/CGPathNode.h"
 #include "../lib/mapObjects/CGHeroInstance.h"
 #include "../lib/mapping/TerrainTile.h"
@@ -290,7 +291,11 @@ AudioPath HeroMovementController::getMovementSoundFor(const CGHeroInstance * her
 		return {};
 
 	// flying movement sound, unless hero is actually on a boat
-	if(hero->hasBonusOfType(BonusType::FLYING_MOVEMENT) && !hero->inBoat())
+	const CSelector activeFlight = [hero](const Bonus * bonus)
+	{
+		return !hero->isNewHorizonsAdventureMovementArtifactBonus(*bonus);
+	};
+	if(!hero->inBoat() && hero->getBonusesOfType(BonusType::FLYING_MOVEMENT)->getFirst(activeFlight))
 		return AudioPath::builtin("HORSE10.wav");
 
 	auto prevTile = GAME->interface()->cb->getTile(posPrev);

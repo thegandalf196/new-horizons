@@ -70,6 +70,9 @@
 
 namespace
 {
+constexpr int32_t bootsOfLevitationWaterWalkCost = 20;
+constexpr int32_t angelWingsFlyCost = 40;
+
 std::string creatureLineSpecialtyMarker(HeroTypeID heroType, CreatureID creature, std::string_view stat)
 {
 	return "new-horizons:creature-line-specialty:" + std::to_string(heroType.getNum()) + ":"
@@ -109,6 +112,36 @@ const ArtifactID & spellbindersHatArtifactID()
 {
 	static const ArtifactID result(ArtifactID::decode("core:spellbindersHat"));
 	return result;
+}
+
+const ArtifactID & bootsOfLevitationArtifactID()
+{
+	static const ArtifactID result(ArtifactID::decode("core:bootsOfLevitation"));
+	return result;
+}
+
+const ArtifactID & angelWingsArtifactID()
+{
+	static const ArtifactID result(ArtifactID::decode("core:angelWings"));
+	return result;
+}
+
+const SpellID & waterWalkSpellID()
+{
+	static const SpellID result(SpellID::WATER_WALK);
+	return result;
+}
+
+const SpellID & flySpellID()
+{
+	static const SpellID result(SpellID::FLY);
+	return result;
+}
+
+bool usesCurrentAdventureMovementArtifactRules(const JsonNode & rules)
+{
+	return newHorizonsMagic::rulesActive(rules)
+		&& rules["rulesetVersion"].Integer() >= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
 }
 
 bool isSpellbindersHatLevelGrant(const Bonus & bonus)
@@ -199,6 +232,23 @@ bool CGHeroInstance::isNativeTerrain(TerrainId terrain) const
 bool CGHeroInstance::usesNewHorizonsMovement() const
 {
 	return newHorizonsHeroes::usesRules(capabilityRules);
+}
+
+bool CGHeroInstance::isNewHorizonsAdventureMovementArtifactBonus(const Bonus & bonus) const
+{
+	const auto & rules = getMagicRules();
+	if(!usesCurrentAdventureMovementArtifactRules(rules) || bonus.source != BonusSource::ARTIFACT)
+		return false;
+
+	if(bonus.type == BonusType::WATER_WALKING
+		&& bonus.sid == BonusSourceID(bootsOfLevitationArtifactID()))
+		return newHorizonsMagic::isAdventureSpell(rules, waterWalkSpellID());
+
+	if(bonus.type == BonusType::FLYING_MOVEMENT
+		&& bonus.sid == BonusSourceID(angelWingsArtifactID()))
+		return newHorizonsMagic::isAdventureSpell(rules, flySpellID());
+
+	return false;
 }
 
 bool CGHeroInstance::hasNewHorizonsTerrainAffinity(TerrainId terrain,
@@ -1897,7 +1947,21 @@ int32_t CGHeroInstance::getSpellCost(const spells::Spell * sp) const
 {
 	const int listedCost = getListedSpellCost(sp);
 	if(newHorizonsMagic::isAdventureSpell(getMagicRules(), sp->getId()))
+	{
+		const auto & rules = getMagicRules();
+		if(usesCurrentAdventureMovementArtifactRules(rules) && cb && cb->isAllowed(sp->getId())
+			&& !isNewHorizonsSpellExcluded(sp->getId()))
+		{
+			const auto sources = getSourcesForSpell(sp->getId());
+			if(sp->getId() == waterWalkSpellID()
+				&& vstd::contains(sources, BonusSourceID(bootsOfLevitationArtifactID())))
+				return bootsOfLevitationWaterWalkCost;
+			if(sp->getId() == flySpellID()
+				&& vstd::contains(sources, BonusSourceID(angelWingsArtifactID())))
+				return angelWingsFlyCost;
+		}
 		return listedCost;
+	}
 	const int rank = newHorizonsMagic::wisdomRank(this);
 	return rank == MasteryLevel::NONE ? listedCost
 		: newHorizonsMagic::wisdomAdjustedCost(listedCost, 1, rank);
@@ -2209,6 +2273,34 @@ std::vector<BonusSourceID> CGHeroInstance::getSourcesForSpell(const SpellID & sp
 
 	if(hasSpellbook() && spellbookContainsSpell(spellId))
 		sources.emplace_back(getArt(ArtifactPosition::SPELLBOOK)->getId());
+
+	const auto & rules = getMagicRules();
+	if(usesCurrentAdventureMovementArtifactRules(rules)
+		&& newHorizonsMagic::isAdventureSpell(rules, spellId)
+		&& cb && cb->isAllowed(spellId))
+	{
+		auto addArtifactGrantSource = [this, &sources](const BonusType type, const ArtifactID & artifact)
+		{
+			if(!hasArt(artifact, true, true))
+				return;
+
+			for(const auto & bonus : *getBonusesOfType(type))
+			{
+				if(bonus->sid != BonusSourceID(artifact)
+					|| !isNewHorizonsAdventureMovementArtifactBonus(*bonus))
+					continue;
+
+				if(!vstd::contains(sources, BonusSourceID(artifact)))
+					sources.emplace_back(artifact);
+				return;
+			}
+		};
+
+		if(spellId == waterWalkSpellID())
+			addArtifactGrantSource(BonusType::WATER_WALKING, bootsOfLevitationArtifactID());
+		else if(spellId == flySpellID())
+			addArtifactGrantSource(BonusType::FLYING_MOVEMENT, angelWingsArtifactID());
+	}
 
 	const BonusSourceID legacyScrollSource{ArtifactID(ArtifactID::SPELL_SCROLL)};
 	for(const auto & bonus : *getBonusesOfType(BonusType::SPELL, spellId))

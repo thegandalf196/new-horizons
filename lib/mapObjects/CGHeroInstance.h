@@ -221,6 +221,9 @@ public:
 	/// Whether this hero uses the saved New Horizons adventure-movement rules.
 	/// Legacy heroes intentionally retain the ordinary speed/terrain path.
 	bool usesNewHorizonsMovement() const;
+	/// Identifies the two artifact movement bonuses replaced by paid Adventure
+	/// Spell grants in the current saved New Horizons magic rules.
+	bool isNewHorizonsAdventureMovementArtifactBonus(const Bonus & bonus) const;
 	/// New Horizons movement affinity is granted by the hero's faction (or an
 	/// explicit native-terrain bonus) or by an army whose every roster stack is
 	/// native to the terrain.  This is separate from legacy battle affinity.

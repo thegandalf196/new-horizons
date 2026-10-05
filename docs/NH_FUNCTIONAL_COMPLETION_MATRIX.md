@@ -2542,8 +2542,14 @@ Separate exceptions, **not additional framework rows**: Spellbinder's Hat has
 focused eligibility/equipment/removal/legacy fixtures; four elemental Tomes
 have explicit pool exclusions and data/native consumer checks (replacement
 set intentionally unauthored). Boots of Levitation's paid20-Mana Water Walk
-and Angel Wings' paid40-Mana Fly/daily-allowance clauses require artifact-specific
-consumer evidence; general Adventure Spell tests do not establish acceptance.
+and Angel Wings' paid40-Mana Fly/daily-allowance clauses have principal-path
+source/native evidence2026-10-05: exact equipped/unlearned sources, payment,
+daily rejection, removal, genuine cast effects, v2 passive compatibility and
+real NK2 current/next-day routes. Final both-target build79874 and native70394
+pass20/20 in6.541s, zero skips; seven data checks and independent review pass.
+These are two explicit exceptions, not additional table rows or new spells.
+Deferred: generic whole-route hypothetical daily budgeting, combined artifacts,
+rendered spellbook/audio and strategic valuation. No playable promotion.
 Bounded reviewer audit2026-10-05; no new implementation or gameplay count credit.
 2026-10-04 inventory correction: the current canonical Unique-building rebalance
 tables contain37 non-header rows; Artifact rebalance framework contains10.

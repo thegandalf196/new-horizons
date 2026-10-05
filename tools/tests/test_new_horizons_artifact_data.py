@@ -8,6 +8,25 @@ from test_new_horizons_content import load
 
 
 class ArtifactPoolDataTest(unittest.TestCase):
+    def test_adventure_movement_descriptions_are_registered_without_replacing_legacy_bonuses(self):
+        path = 'config/artifacts/adventureMovementCasts.json'
+        overlay = load('Mods/new-horizons/Content/' + path)
+        self.assertIn(path, load('Mods/new-horizons/mod.json')['artifacts'])
+        self.assertEqual(set(overlay), {'core:bootsOfLevitation', 'core:angelWings'})
+        for artifact, spell, cost in (
+                ('core:bootsOfLevitation', 'Water Walk', 20),
+                ('core:angelWings', 'Fly', 40)):
+            with self.subTest(artifact=artifact):
+                self.assertEqual(set(overlay[artifact]), {'text'})
+                text = overlay[artifact]['text']['description']
+                self.assertIn(spell, text)
+                self.assertIn(f'{cost} Spell Points', text)
+                self.assertIn('one Adventure Spell for the day', text)
+                self.assertIn('without learning', text)
+        core = load('config/artifacts.json')
+        self.assertEqual(core['bootsOfLevitation']['bonuses']['waterWalking']['type'], 'WATER_WALKING')
+        self.assertEqual(core['angelWings']['bonuses']['fly']['type'], 'FLYING_MOVEMENT')
+
     def test_only_retired_elemental_tomes_are_excluded(self):
         rules = load('config/newHorizonsArtifacts.json')
         self.assertEqual(set(rules['randomPoolExclusions']), {

@@ -155,7 +155,8 @@ def main():
         'artifacts': ['config/artifacts/spellbindersHat.json',
                       'config/artifacts/scaledAttributesAndMovement.json',
                       'config/artifacts/speedAndInitiative.json',
-                      'config/artifacts/elementalOrbs.json'],
+                      'config/artifacts/elementalOrbs.json',
+                      'config/artifacts/adventureMovementCasts.json'],
         'factions': faction_patch_files,
         'objects': ['config/objects/magicSpring.json'],
         'spells': [
