@@ -2,6 +2,31 @@
 
 ## Purpose
 
+### 2026-10-05 UP231 — Damage fixture contracts and information views
+
+Initial both-target build33121 fails: DamageRange has no equality operator.
+Compare min/max explicitly; the new fixture also needed concrete class/randomizer
+headers and a baseline name that does not shadow its helper. Retain
+UP231-breakthrough-build.log. Independent review caught a separate oracle error:
+real Defend changes Creature Defense too. Capture separate with/without-perk
+baselines with Battlecraft temporarily absent, preserving the real stance bonus,
+then assert the new90%/80% reduction channels independently.
+
+Native40482 passes7/10 in3.332s, zero skips. Two existing OffenseRank cases throw
+"Earlier New Horizons perk tier is still required": their direct Advanced perk
+setup needs a legal Basic prerequisite, not relaxed production validation.
+Record those stale fixtures for Phase2. The new detached assertion compares a
+player-scoped callback that hides the defending hero with an all-knowing live
+oracle; the missing enemy Battlecraft contribution is an information mismatch.
+Use an aliasing all-knowing callback for equivalent-view parity. Do not infer
+that player-scoped AI knows private enemy skills. Retain initial native.log/XML.
+
+Repaired both-target52099/53299 pass. Focused30605 passes8/8 in2.745s, zero
+skips; retain UP231-breakthrough-native-repaired.log/XML. This run excludes,
+rather than falsely marks green, the two stale Offense fixtures. Broader
+passive-source interactions and independent legacy-factor execution remain
+deferred; no GUI, world-save acceptance or playable promotion is claimed.
+
 ### 2026-10-05 UP157 — Isolate combat-perk fixture prerequisites and AI options
 
 Both-target build67320 passes732 steps. Initial focused native24408 passes17/22

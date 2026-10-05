@@ -100,6 +100,14 @@ local function hasPhysicalDamageReductionStage(info)
 		and (info.physicalDamageReductionCapPercent or -1) >= 0
 end
 
+local function getDefendReductionRemainingFraction(info)
+	if not info.physicalDamage or info.shooting then return 1.0 end
+
+	local ignoredPercent = math.max(0,
+		math.min(100, info.defensiveStanceDamageReductionIgnorePercent or 0))
+	return 1.0 - ignoredPercent / 100
+end
+
 --- Values from one source and source ID keep BonusList's value-type rules together.
 --- Distinct source IDs remain independent reductions in the physical mitigation stage.
 --- This opt-in curated path assumes source-local modifiers; the Lua Bonus API cannot attribute
@@ -181,8 +189,9 @@ local function getPhysicalDamageReductionFactor(info)
 	table.insert(reductions, { info.newHorizonsArmorerReductionPercent or 0, 100 })
 	table.insert(reductions, { info.formationFightingReductionPercent or 0, 100 })
 	table.insert(reductions, { info.paviseDamageReductionPercent or 0, 100 })
-	table.insert(reductions, { info.battlecraftDefendReductionPercent or 0, 100 })
-	table.insert(reductions, { info.bulwarkDamageReductionBasisPoints or 0, 10000 })
+	local defendReductionRemainingFraction = getDefendReductionRemainingFraction(info)
+	table.insert(reductions, { (info.battlecraftDefendReductionPercent or 0) * defendReductionRemainingFraction, 100 })
+	table.insert(reductions, { (info.bulwarkDamageReductionBasisPoints or 0) * defendReductionRemainingFraction, 10000 })
 	local orderReductions = info.heroOrderDamageReductionPercents or {}
 	if #orderReductions > 0 then
 		for _, value in ipairs(orderReductions) do
@@ -465,11 +474,12 @@ function Script:getArmorerFactor(info)
 			return bonus:getSource() ~= ENUM.BonusSource.spellEffect
 		end):totalValue()
 	end
-	-- Breakthrough applies to the Defense contribution of the explicit Defend
-	-- state in getDefense(), not to passive Armorer, creature abilities, or
-	-- any other general damage reduction represented here.
+	-- Breakthrough scales the explicit Defend-derived Bulwark contribution,
+	-- not passive general reductions or Orders. Defend's Defense bonus is
+	-- handled independently in getDefense().
 	return -(reduction + (info.heroOrderDamageReductionPercent or 0)) / 100
-		- ((info.bulwarkDamageReductionBasisPoints or 0) / 10000)
+		- ((info.bulwarkDamageReductionBasisPoints or 0)
+			* getDefendReductionRemainingFraction(info) / 10000)
 end
 
 --- New Horizons Armorer is an independent post-Defense reduction source.
@@ -487,7 +497,8 @@ end
 --- Battlecraft's Defend training is independent from Armorer and Orders.
 function Script:getBattlecraftDefendFactor(info)
 	if hasPhysicalDamageReductionStage(info) then return 0 end
-	return -(info.battlecraftDefendReductionPercent or 0) / 100
+	return -(info.battlecraftDefendReductionPercent or 0)
+		* getDefendReductionRemainingFraction(info) / 100
 end
 
 --- Shield and air shield: each lessens one kind of blow and ignores the other.

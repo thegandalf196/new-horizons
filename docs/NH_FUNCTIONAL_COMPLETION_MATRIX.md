@@ -1,6 +1,16 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-05
+Breakthrough explicit Defend reduction repair: shared Lua now halves whole
+Battlecraft/Bulwark fields, including their bundled Defend bonuses, before
+physical mitigation composition and cap. Both-target builds52099/53299 pass;
+focused native30605 passes8/8 in2.745s, zero skips. Actual accepted melee and
+equivalent all-knowing detached calculations agree. Hidden enemy-skill AI
+forecasts are not certified; broader mundane-state classification and legacy
+factor execution remain deferred. Two stale Offense prerequisite fixtures fail
+separately and are recorded. This repairs an active identity: counts remain
+225/310 perks and61/67 combat identities. No playable promotion.
+
 Pre-emptive Strike accepted: Advanced Battlecraft now dispatches a separate50%
 pre-hit against the first eligible incoming melee per Defending stack each
 round, retaining normal retaliation. Independent copied/replicated round state
@@ -2808,7 +2818,7 @@ interactions, and rendered/playable acceptance remain separate.
 
 | Skill | Active/planned ranks | Active/planned perks | Immediate state |
 |---|---:|---:|---|
-| Offense | 3/0 | 10/0 | Evidence audit required |
+| Offense | 3/0 | 10/0 | Bounded consumer audit found Breakthrough omitted explicit Battlecraft/Bulwark Defend reductions. UP231 repairs those channels with8/8 focused cases, accepted melee and equivalent-view detached parity. Broader mundane-state taxonomy and stale earlier-tier fixture repairs remain deferred; active registration is not whole-family certification. |
 | Armorer | 3/0 | 7/3 | Bastion, Formation Fighting and Veteran have focused live/detached damage evidence. Three perks missing; Last Stand and Defiant await design choices. |
 | Archery | 3/0 | 10/0 | All ten perks are active; focused evidence pending |
 | Battlecraft | 3/0 | 7/3 | Pre-emptive Strike joins Entrench, Reserve, Passing Lines, Tactics, Redeployment and Grand Tactics. UP157 focused22/22 zero skips covers accepted pre-hit50%, retained retaliation, same-round re-Defend/next-round eligibility, disabled/ranged/no-perk controls, replicated state and detached AI exchange/Defend hooks. Broader Bulwark composition and rendered/actualAI deployment execution remain Phase2. Three perks remain planned. |
@@ -2822,7 +2832,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Havoc Magic | 3/0 | 7/3 | Three perks missing; Mine Layer has focused live/detached placement evidence |
 | Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
 | Chaos Magic | 3/0 | 5/5 | Frenzied Curse joins Mindbreaker, Blinkmaster, Weaver and Paradox Shield with focused source/native evidence recorded above; five perks remain planned. Base Berserk lifecycle is still partial. |
-| Spellcraft | 3/0 | 4/6 | Grand Formula scales the first accepted Level 4-or-5 hero spell's SP term by 150%; Arcane Focus, Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold. Basic/Advanced/Expert efficiency is 110/120/130% under saved v3 rules. |
+| Spellcraft | 3/0 | 4/6 | Grand Formula scales the first accepted Level 4-or-5 hero spell's SP term by 150%; Arcane Focus, Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold. Basic/Advanced/Expert efficiency is 110/120/130% under saved v3 rules. Planned does not mean entirely unimplemented: Precise Casting has7/7 principal native cases and awaits Time Stop/Earthquake scope; Counterpressure has an accepted-cast map and a no-op trigger boundary. Concentration target-count definition, Cross-School multi-school relation, Extend Spell unusual lifetimes and Overwhelming Formula penetration composition remain explicit rulings, not unmapped features. |
 | Wisdom | 3/0 | 8/2 | Mana Conservation post-combat Normal recovery, Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. One other perk remains missing. Broader interactions and playable acceptance remain open. |
 | Warcasting | 3/0 | 6/4 | Spellward has focused live/detached/current-controller damage evidence. Master Synthesis has first-consumption Spell/Order, typed-exclusion and branch-history evidence. Four perks missing; Combat Casting and Enchanted Command await shared rule decisions; Perfect Rhythm stacking is unresolved. |
 | Logistics | 3/0 | 8/2 | Rapid Embarkation and Pursuit March remain missing. Master Logistician has actual day/boat/Stables/save/pathfinder evidence alongside Forced March, Roadmaster, Wayfarer and Mountaineer. Future-day strategic carry and unspent-burst forecasting remain Phase2. |
