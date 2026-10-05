@@ -2,6 +2,42 @@
 
 ## Purpose
 
+### 2026-10-05 UP023 — Creature siege AI callback mismatch
+
+Both-target build23954 exits1: CBattleInfoCallback has no battleGetStacks
+method. Use the declared stack-filter API instead of assuming the player
+callback convenience API exists on its base. Preserve the failed
+UP023-creature-siege-build.log; no native acceptance from this compile attempt.
+Independent review also caught the field control removing every defender before
+beginCombat, which could conclude the battle before callback checks. Restore a
+living defender in that fixture without weakening the no-wall assertion.
+Production WAIT preservation and normal action-bookkeeping findings were
+repaired before this gate. Retry and authoritative native execution pending.
+
+Retry71445 builds client and native targets successfully. Native98352 exits139
+in the first real AI case. Batch debugger63884 localizes the crash to the test
+recording callback's inherited surrender/retreat transport request, which uses
+a null session. Give that fixture callback an explicit neutral decision,
+matching existing recording callback practice; do not alter production retreat
+rules. Preserve UP023-creature-siege-native.log and UP023-creature-siege-gdb.log.
+The failed native run establishes no accepted wall-shot result.
+
+Callback-repaired build83087 exits0. Native52203 runs6 cases in2.154s:
+4 pass, both gate positives fail because the real evaluator selects WAIT.
+The production policy deliberately preserves WAIT; enum06 is WAIT, not SHOOT.
+Keep that tactical guard and repair the positive scenario to exercise a genuine
+non-Wait activation before expecting a wall shot. Ordinary-shot, field and
+both Hero Action controls pass. Keep the failed repaired log/XML separately.
+
+Accepted repair adds a separate nearby hostile stack to the positive siege
+fixture, retaining the inside defender and allied ground force. It asserts a
+legal ordinary shot before actual AI evaluation; no fake Wait state or relaxed
+production guard. Both-target build92551 exits0; native35852 passes6/6
+in2.190s, zero skips, including both authoritative gate-damage cases and
+activation completion. Independent review accepts the bounded repair. Evidence:
+UP023-creature-siege-build-geometry-repaired.log and
+UP023-creature-siege-native-geometry-repaired.log/XML. Earlier failed logs remain.
+
 ### 2026-10-05 UP023 — First native execution finds rollover regression
 
 Repaired native build69581 exits0. The first focused execution runs20 cases

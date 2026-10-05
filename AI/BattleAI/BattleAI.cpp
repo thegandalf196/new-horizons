@@ -19,6 +19,9 @@
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/callback/IGameInfoCallback.h"
+#include "../../lib/battle/CBattleInfoCallback.h"
+#include "../../lib/battle/IBattleState.h"
+#include "../../lib/battle/PossiblePlayerBattleAction.h"
 #include "../../lib/battle/PhysicalAffliction.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -537,6 +540,13 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 		return;
 	}
 
+	// Creature Catapult abilities are legal stack actions, distinct from the
+	// Catapult war-machine branch above. Consider one only after ordinary Hero
+	// Actions and typed continuations have had their opportunity to resolve.
+	const auto currentBattle = cb->getBattle(battleID);
+	if(currentBattle && shouldUseCreatureCatapult(*currentBattle, stack, result, playerID))
+		result = useCatapult(battleID, stack);
+
 	if(result.actionType == EActionType::DEFEND)
 	{
 		movesSkippedByDefense++;
@@ -549,6 +559,107 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 	logAi->trace("BattleAI decision made in %lld", timeElapsed(start));
 
 	cb->battleMakeUnitAction(battleID, result);
+}
+
+bool CBattleAI::shouldUseCreatureCatapult(CBattleInfoCallback & battle,
+	const CStack * stack, const BattleAction & ordinaryAction, PlayerColor actionController)
+{
+	if(!stack || !stack->alive() || stack->isGhost() || stack->isTurret()
+		|| stack->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| !stack->hasBonusOfType(BonusType::CATAPULT)
+		|| battle.battleGetActionController(stack) != actionController)
+		return false;
+	if(ordinaryAction.actionType == EActionType::WAIT)
+		return false;
+
+	const auto * battleState = battle.getBattle();
+	if(!battleState || battleState->getActiveStackID() < 0
+		|| stack->unitId() != static_cast<uint32_t>(battleState->getActiveStackID()))
+		return false;
+
+	const BattleClientInterfaceData clientData{{}, 0};
+	const auto legalActions = battle.getClientActionsForStack(stack, clientData);
+	const PossiblePlayerBattleAction catapultAction{PossiblePlayerBattleAction::CATAPULT};
+	if(std::ranges::find(legalActions, catapultAction) == legalActions.end())
+		return false;
+
+	const auto * defendedTown = battle.battleGetDefendedTown();
+	if(!defendedTown || defendedTown->fortificationsLevel().wallsHealth <= 0)
+		return false;
+
+	const BattleSide actionSide = battle.playerToSide(actionController);
+	const BattleSide townSide = battle.playerToSide(defendedTown->tempOwner);
+	if((actionSide != BattleSide::ATTACKER && actionSide != BattleSide::DEFENDER)
+		|| townSide != CBattleInfoEssentials::otherSide(actionSide))
+		return false;
+
+	if(battle.battleGetCatapultStructuralDamage(stack, 1) <= 0)
+		return false;
+
+	static constexpr std::array attackableWallParts{
+		EWallPart::KEEP,
+		EWallPart::BOTTOM_TOWER,
+		EWallPart::UPPER_TOWER,
+		EWallPart::BELOW_GATE,
+		EWallPart::OVER_GATE,
+		EWallPart::BOTTOM_WALL,
+		EWallPart::UPPER_WALL,
+		EWallPart::GATE
+	};
+	const bool hasUsefulStructure = std::ranges::any_of(attackableWallParts, [&](EWallPart part)
+	{
+		return battle.isWallPartAttackable(part) && battle.getWallStructuralHP(part) > 0;
+	});
+	if(!hasUsefulStructure)
+		return false;
+
+	const bool gateNeedsBreaching = battle.battleGetGateState() == EGateState::CLOSED
+		&& battle.isWallPartAttackable(EWallPart::GATE)
+		&& battle.getWallStructuralHP(EWallPart::GATE) > 0;
+	if(gateNeedsBreaching)
+	{
+		bool alliedGroundForceOutside = false;
+		bool hostileStackInside = false;
+		for(const auto * candidate : battle.battleGetAllStacks())
+		{
+			if(!candidate || !candidate->alive() || candidate->isGhost() || candidate->isTurret()
+				|| candidate->unitId() == stack->unitId())
+				continue;
+
+			const auto candidateOwnerSide = battle.playerToSide(battle.battleGetOwner(candidate));
+			const auto candidateControllerSide = battle.playerToSide(battle.battleGetActionController(candidate));
+			const bool hasOutsideFootprint = std::ranges::any_of(candidate->getHexes(), [&](const BattleHex & hex)
+			{
+				return hex.isValid() && !battle.battleIsInsideWalls(hex);
+			});
+			const bool hasInsideFootprint = std::ranges::any_of(candidate->getHexes(), [&](const BattleHex & hex)
+			{
+				return hex.isValid() && battle.battleIsInsideWalls(hex);
+			});
+
+			// Count only a controlled allied ground melee force outside the walls;
+			// neither the acting Cyclops itself, shooters, siege engines, nor a
+			// Puppet-controlled unit on the opposing side creates a breach need.
+			if(candidateOwnerSide == actionSide && candidateControllerSide == actionSide
+				&& !candidate->hasBonusOfType(BonusType::FLYING) && !candidate->isShooter()
+				&& !candidate->hasBonusOfType(BonusType::SIEGE_WEAPON) && candidate->isMeleeAttacker()
+				&& hasOutsideFootprint)
+				alliedGroundForceOutside = true;
+
+			const auto hostileSide = CBattleInfoEssentials::otherSide(actionSide);
+			if(candidateOwnerSide == hostileSide && candidateControllerSide == hostileSide
+				&& hasInsideFootprint)
+				hostileStackInside = true;
+		}
+
+		if(alliedGroundForceOutside && hostileStackInside)
+			return true;
+	}
+
+	// Otherwise preserve ordinary valuable attacks and use an available wall
+	// shot only when the evaluator found no attack, or selected movement/defense.
+	return ordinaryAction.actionType == EActionType::DEFEND
+		|| ordinaryAction.actionType == EActionType::WALK;
 }
 
 BattleAction CBattleAI::useCatapult(const BattleID & battleID, const CStack * stack)

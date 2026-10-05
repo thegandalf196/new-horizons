@@ -1,15 +1,18 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-05
-Bounded creature/AI audit finds Cyclops and Cyclops King wall-shot flags,
-human legality and authoritative resolution, but no default BattleAI selection:
-activeStack only routes actual Catapult machines to CATAPULT. This is a missing
-minimum-AI hook under UP023, now assigned; existing126-form registration does
-not establish ability usage. No completion/count credit before a real-siege
-AI submission and authoritative resolution. Castle/Rampart/Necropolis unique-
+Cyclops and Cyclops King minimum siege-AI hook accepted: default activeStack
+selects the existing legal creature CATAPULT ability for a useful hostile gate
+breach, preserving WAIT, useful ordinary attacks without breach need and Hero
+Action/typed continuation priority. Both actual AI-selected gate shots pass
+authoritative structural damage and activation completion. Both-target build92551
+passes; native35852 passes6/6 in2.190s, zero skips. Broader siege valuation and
+controller interaction matrix remain Phase2 work; no new creature/perk/spell
+identity count. Castle/Rampart/Necropolis unique-
 building audit found no new unblocked gap among checked rows; retain existing
 Skeleton Transformer/Lighthouse choices. Crown and Altar's first-action timing
-is now explicitly awaiting a design answer; it remains planned.
+is resolved: automatic second-action boost, no extra UI. Recipient qualification
+shares the outstanding Shared Purpose decision; runtime remains planned.
 
 UP021 principal army-transfer gap repaired: ordinary/radial last-stack intent
 preserves one creature, fits receiving Leadership and gives normal localized

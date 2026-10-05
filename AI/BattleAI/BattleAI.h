@@ -15,6 +15,7 @@
 #include "TacticsHandler.h"
 
 class CSpell;
+class CBattleInfoCallback;
 
 /*
 struct CurrentOffensivePotential
@@ -73,6 +74,9 @@ public:
 
 	void print(const std::string &text) const;
 	BattleAction useCatapult(const BattleID & battleID, const CStack *stack);
+	/// Whether a legal creature Catapult shot should replace the ordinary action.
+	static bool shouldUseCreatureCatapult(CBattleInfoCallback & battle,
+		const CStack * stack, const BattleAction & ordinaryAction, PlayerColor actionController);
 	BattleAction useHealingTent(const BattleID & battleID, const CStack *stack);
 	/// Chooses the movement-only tail of a Pursuit activation. Exposed for the
 	/// deterministic AI regression; callers must submit it through the server.
