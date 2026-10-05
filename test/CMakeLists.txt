@@ -247,6 +247,8 @@ set(test_SRCS
 		server/battles/NewHorizonsElementalOrbsTest.cpp
 		server/battles/NewHorizonsMagicResistanceTest.cpp
 		server/battles/NewHorizonsCreatureSpecialtyTest.cpp
+		server/battles/NewHorizonsCastleCreatureStatsTest.cpp
+		server/battles/NewHorizonsBrimstoneSiegeTest.cpp
 		server/battles/NewHorizonsDamageSpecialtyTest.cpp
 		server/battles/NewHorizonsHealingSpecialtyTest.cpp
 		server/battles/NewHorizonsResurrectionFoundationTest.cpp

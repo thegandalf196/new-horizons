@@ -112,6 +112,7 @@ def main():
         'config/factions/confluxCreatureRanks.json',
     ]
     creature_patch_files = [
+        'config/creatures/castle.json',
         'config/creatures/tower.json',
         'config/creatures/conflux.json',
     ]

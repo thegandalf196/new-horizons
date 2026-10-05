@@ -86,6 +86,9 @@
 					"name": "Brimstone Stormclouds",
 					"description": "The Brimstone Stormclouds grant the defending hero +20 Spell Power during a siege and produce 1 Sulfur per day.",
 					"produce": { "sulfur": 1 },
+					"defendingHeroBonuses": [
+						{ "type": "PRIMARY_SKILL", "subtype": "spellpower", "val": 20 }
+					],
 					"bonuses": []
 				},
 				"special4": {

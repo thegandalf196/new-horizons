@@ -7306,6 +7306,7 @@
 		}
 	},
 	"creatures": [
+		"config/creatures/castle.json",
 		"config/creatures/tower.json",
 		"config/creatures/conflux.json"
 	],

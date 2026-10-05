@@ -1,6 +1,20 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-05
+Brimstone Stormclouds siege clause and Castle four-form role-stat pass accepted.
+The built Inferno building grants only the defending siege hero20 Spell Power
+through existing one-battle state; accepted-result cleanup, unbuilt and field
+controls pass. Shared daily-income calculation still includes Sulfur1. Loaded
+Swordsman/Crusader/Griffin/Royal Griffin stats, costs, growth, categories and
+Leadership match the authored rows; upgrades/double attack/retaliation definitions
+remain intact. Both-target build91972 passes; native85598 passes5/5 in1.765s,
+zero skips. Two exact offline guards, module drift and independent review pass.
+This closes one missing building clause and four specified creature data rows,
+not new perk/spell/creature identities. Broader played sieges, recruitment,
+strategic AI valuation and rendered descriptions remain Phase2/delivery work.
+No GUI or Linux promotion. Evidence: UP023-building-castle-build-repaired.log
+and UP023-building-castle-native.log/XML. First fixture API failure is retained.
+
 Cyclops and Cyclops King minimum siege-AI hook accepted: default activeStack
 selects the existing legal creature CATAPULT ability for a useful hostile gate
 breach, preserving WAIT, useful ordinary attacks without breach need and Hero
@@ -2554,8 +2568,9 @@ additional specialty families or treating retired aliases as missing content.
 Canonical source: **Artifact rebalance framework** in `design-sources/New Horizons.md`.
 Its denominator is exactly ten table rows. Six rows have focused source/native
 conversion evidence; this is not certification of all artifacts or exceptions.
-Two retained-baseline rows lack family-wide acceptance, one qualitative row
-has an incomplete exception audit, and one conversion awaits a design ruling.
+Two retained-baseline rows lack family-wide acceptance, the qualitative row
+has a bounded source/binding audit rather than native family certification, and
+one conversion awaits a design ruling.
 
 | Canonical row | Current evidence | Remaining Phase1 work / boundary |
 |---|---|---|
@@ -2568,7 +2583,7 @@ has an incomplete exception audit, and one conversion awaits a design ruling.
 | Resistance retained; total cap75% | UP214: equipment, innate/aura, seeded rolls, projections and legacy; native39842 | Projected untouched-recipient aura adjacency is Phase2. |
 | Elemental Orbs +25% final magical damage | UP210: explicit tags, shared scaler, actual equipment/casts/projections; native71275 | Broad proxy/spell composition and strategic valuation are Phase2. |
 | Resource / Gold income unchanged | Core GENERATE_RESOURCE producers retained | Family-wide preservation/economy acceptance not established. |
-| Duration / immunity qualitative effects retained | Core producers retained; removed-mechanic exception audit partial | Audit exact bindings against removed Schools and Adventure Spells. |
+| Duration / immunity qualitative effects retained | Bounded2026-10-05 source/binding audit: Conjuring/Magi durations and named spell immunities retained through generic consumers; current access grants pass saved-roster gates | No unblocked rewrite found. Destroy Undead remains an extant world-effect row with heroAccess:false; that is not authority to remove its Pendant immunity. Broader equipment/cast native preservation remains separate. |
 
 Separate exceptions, **not additional framework rows**: Spellbinder's Hat has
 focused eligibility/equipment/removal/legacy fixtures; four elemental Tomes

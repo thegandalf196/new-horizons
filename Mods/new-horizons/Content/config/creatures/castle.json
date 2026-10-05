@@ -1,0 +1,42 @@
+{
+	"core:swordsman": {
+		"attack": 8,
+		"defense": 10,
+		"damage": { "min": 5, "max": 7 },
+		"hitPoints": 30,
+		"growth": 7,
+		"cost": { "gold": 250 },
+		"speed": 5,
+		"initiative": 5
+	},
+	"core:crusader": {
+		"attack": 10,
+		"defense": 11,
+		"damage": { "min": 6, "max": 8 },
+		"hitPoints": 35,
+		"growth": 7,
+		"cost": { "gold": 350 },
+		"speed": 6,
+		"initiative": 6
+	},
+	"core:griffin": {
+		"attack": 9,
+		"defense": 9,
+		"damage": { "min": 4, "max": 7 },
+		"hitPoints": 30,
+		"growth": 5,
+		"cost": { "gold": 300 },
+		"speed": 7,
+		"initiative": 7
+	},
+	"core:royalGriffin": {
+		"attack": 11,
+		"defense": 11,
+		"damage": { "min": 6, "max": 9 },
+		"hitPoints": 40,
+		"growth": 5,
+		"cost": { "gold": 450 },
+		"speed": 9,
+		"initiative": 9
+	}
+}

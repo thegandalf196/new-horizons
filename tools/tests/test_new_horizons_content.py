@@ -1113,6 +1113,28 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(patch['name'], 'Brimstone Stormclouds')
         self.assertEqual(patch['produce'], {'sulfur': 1})
         self.assertEqual(patch['bonuses'], [])
+        self.assertEqual(patch['defendingHeroBonuses'],
+                         [{'type': 'PRIMARY_SKILL', 'subtype': 'spellpower', 'val': 20}])
+
+    def test_castle_role_swap_applies_the_four_authored_stat_rows(self):
+        patch = load('Mods/new-horizons/Content/config/creatures/castle.json')
+        expected = {
+            'core:swordsman': (8, 10, 5, 7, 30, 5, 7, 250),
+            'core:crusader': (10, 11, 6, 8, 35, 6, 7, 350),
+            'core:griffin': (9, 9, 4, 7, 30, 7, 5, 300),
+            'core:royalGriffin': (11, 11, 6, 9, 40, 9, 5, 450),
+        }
+        self.assertEqual(set(patch), set(expected))
+        for creature, values in expected.items():
+            with self.subTest(creature=creature):
+                attack, defense, low, high, health, speed, growth, gold = values
+                self.assertEqual(patch[creature], {
+                    'attack': attack, 'defense': defense,
+                    'damage': {'min': low, 'max': high},
+                    'hitPoints': health, 'speed': speed, 'initiative': speed,
+                    'growth': growth, 'cost': {'gold': gold},
+                })
+        self.assertIn('config/creatures/castle.json', load('Mods/new-horizons/mod.json')['creatures'])
 
     def test_castle_stables_disable_legacy_flat_weekly_visiting_reward(self):
         patch = load('Mods/new-horizons/Content/config/factions/uniqueBuildings.json')['core:castle']['town']['buildings']['special2']

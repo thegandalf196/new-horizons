@@ -2,6 +2,24 @@
 
 ## Purpose
 
+### 2026-10-05 UP023 — Castle loaded-definition fixture interface
+
+Both-target build6413 exits1: CreatureService getById exposes the Creature
+interface, not concrete CCreature fields/bonus methods. The new Castle fixture
+must use its declared upgrade and bonus-bearer interfaces; preserve all exact
+stat and retained-ability assertions. Brimstone's fixture compiles. This is a
+test API failure, not evidence against the frozen data changes or native
+acceptance. Keep UP023-building-castle-build.log and use a separate retry log.
+
+Accepted repair uses getBonusBearer for interface abilities and the declared
+CreatureID::toCreature accessor for the concrete upgrade set, with every original
+assertion retained. Build91972 exits0; native85598 passes5/5 in1.765s, zero
+skips. The actual Brimstone grant/cleanup and four loaded Castle definitions
+pass. Evidence: UP023-building-castle-build-repaired.log and
+UP023-building-castle-native.log/XML. Review acknowledged its missed interface
+return type; compilation remains the definitive API gate. No production
+mechanic was weakened to obtain a pass.
+
 ### 2026-10-05 UP023 — Creature siege AI callback mismatch
 
 Both-target build23954 exits1: CBattleInfoCallback has no battleGetStacks
