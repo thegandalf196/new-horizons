@@ -309,6 +309,7 @@ set(test_SRCS
 		server/battles/NewHorizonsHandOfFateTest.cpp
 		server/battles/NewHorizonsMisfortuneTest.cpp
 		server/battles/NewHorizonsShieldOfChaosTest.cpp
+		server/battles/NewHorizonsArcaneBallisticsTest.cpp
 		server/battles/NewHorizonsArcaneFocusTest.cpp
 		server/battles/NewHorizonsGrandFormulaTest.cpp
 		server/battles/NewHorizonsHolyArmorTest.cpp

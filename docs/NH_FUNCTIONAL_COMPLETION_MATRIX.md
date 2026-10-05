@@ -1,6 +1,15 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-05
+UP-232 Arcane Ballistics principal effect verified: three current beneficiary
+Arcane Breach marks and the active perk grant ordinary ranged creature attacks
+25% penetration of combined capped Physical Damage Reduction. Shared simulation,
+detached AI forecasts and hover eligibility use one attack-local query, distinct
+from Creature Defense penetration. Linux client/test targets build; six focused
+native cases pass, zero skips, including accepted-shot and independent 67%/40%
+damage oracles. Existing identity counts remain 225/310 perks and 61/67 combat
+spells; broader interactions and rendered/playable delivery remain Phase 2.
+
 UP-234 implemented (rendered/playable verification pending): replace Vengeful Vines' six-hex orientation selector with
 three connected selected hexes and third-click submission; align all new-spell
 casting panels and book icons; compose House of Wisdom parchment and filter

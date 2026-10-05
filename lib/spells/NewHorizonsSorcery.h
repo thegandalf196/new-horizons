@@ -25,6 +25,7 @@ inline constexpr const char * FOCUS_MAGIC_SPELL = "new-horizons:focusMagic";
 inline constexpr const char * ARCANE_BREACH_EFFECT = "new-horizons:arcaneBreach";
 inline constexpr const char * FOCUS_MAGIC_TRIGGER = "core:focusMagic";
 inline constexpr const char * ARCANE_BREACH_TRIGGER = "core:arcaneBreach";
+inline constexpr const char * ARCANE_BALLISTICS_PERK = "new-horizons:sorceryMagic.countermage";
 
 constexpr int FOCUS_MAGIC_MANA = 11;
 constexpr int FOCUS_MAGIC_DURATION_ROUNDS = 3;
@@ -33,6 +34,7 @@ constexpr int ARCANE_BREACH_MAX_MARKS = 3;
 constexpr int ARCANE_BREACH_BASE_BASIS_POINTS = 1000;
 constexpr int ARCANE_BREACH_POWER_BASIS_POINTS = 5;
 constexpr int ARCANE_BREACH_CAP_BASIS_POINTS = 2000;
+constexpr int ARCANE_BALLISTICS_PDR_IGNORE_PERCENT = 25;
 
 /// Captured penetration of one mark: min(20%, 10% + 0.05% * Spell Power).
 /// Preserve fractional percentages until the combined penetration is applied

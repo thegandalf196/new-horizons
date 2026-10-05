@@ -2,6 +2,23 @@
 
 ## Purpose
 
+### 2026-10-05 UP232 — Arcane Ballistics ranged fixture legality
+
+The first registered-fixture build succeeds, but the principal native case
+fails before mark generation: both test shooters start adjacent to the hostile
+target and ordinary shooting is blocked. The two eligibility controls pass.
+Independent review identifies the same geometry defect. Repair the fixture's
+positions, not production shooting legality or the perk. Retain
+`build/nh-up232-validation/build.log` and `native-first.log`/XML; require the
+accepted shot, independent PDR source/cap oracles and detached parity to pass
+before committing the implementation.
+Repair moves the target outside both shooters' adjacency and separates the
+two-hex control stacks. The repaired both-target build succeeds; all three
+new cases plus three related Sorcery/Focus Magic cases pass 6/6, zero skips.
+Final evidence: `build-repaired.log`, `native-final.log` and XML in the same
+directory. Production legality and the substantive damage assertions remain
+unchanged; the failure was fixture setup, not a perk defect.
+
 ### 2026-10-05 UP234 — Content audit baseline and UI acceptance boundary
 
 The existing68-case content suite has65 passes and three unrelated failures:

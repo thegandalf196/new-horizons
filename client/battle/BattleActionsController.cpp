@@ -3184,15 +3184,13 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 					&& newHorizonsCombatSkills::paviseReductionPercent(battle.battleGetOwnerHero(targetStack)) > 0)
 					result += "\nPavise: 25% independent ranged physical reduction (included above; combined cap applies).";
 				const auto side = static_cast<int32_t>(battle.playerToSide(battle.battleGetOwner(shooter)));
-				const auto marks = newHorizonsBattleStatus::arcaneBreachStatus(
-					*targetStack->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER));
-				int64_t penetration = 0;
-				for(const auto & group : marks.groups)
-					if(group.beneficiarySide == side)
-						penetration += group.totalPenetrationBasisPoints;
-				if(penetration > 0)
-					result += "\nArcane Breach: " + newHorizonsBattleStatus::formatBasisPoints(penetration)
+				const auto penetration = battle.battleGetRangedAttackPenetration(attackInfo);
+				if(penetration.creatureDefenseIgnoreBasisPoints > 0)
+					result += "\nArcane Breach: " + newHorizonsBattleStatus::formatBasisPoints(penetration.creatureDefenseIgnoreBasisPoints)
 						+ " Creature Defense ignored (included above).";
+				if(penetration.physicalDamageReductionIgnorePercent > 0)
+					result += "\nArcane Ballistics: " + std::to_string(penetration.physicalDamageReductionIgnorePercent)
+						+ "% of combined Physical Damage Reduction ignored (included above).";
 				const auto focus = newHorizonsBattleStatus::focusMagicStatus(
 					*shooter->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER));
 				if(focus && focus->beneficiarySide == side)

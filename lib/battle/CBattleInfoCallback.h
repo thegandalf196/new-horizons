@@ -11,6 +11,8 @@
 
 #include <vcmi/spells/Magic.h>
 
+#include <cstdint>
+
 #include "ReachabilityInfo.h"
 #include "BattleAttackInfo.h"
 #include "RelentlessAssaultState.h"
@@ -55,6 +57,13 @@ struct DLL_LINKAGE AttackableTiles
 	BattleHexArray overrideAnimationPositions;
 };
 
+/// Attack-local penetrations supplied by current Arcane Breach marks and Sorcery perks.
+struct DLL_LINKAGE RangedAttackPenetration
+{
+	int32_t creatureDefenseIgnoreBasisPoints = 0;
+	int32_t physicalDamageReductionIgnorePercent = 0;
+};
+
 struct DLL_LINKAGE BattleClientInterfaceData
 {
 	std::vector<SpellID> creatureSpellsToCast;
@@ -91,6 +100,8 @@ public:
 	bool battleCanTakeRangedFollowUp(const battle::Unit * unit) const;
 	/// Saved final damage multiplier for a pending Ballista shot, or 100 when none applies.
 	int battleGetRangedFollowUpDamagePercent(const battle::Unit * unit) const;
+	/// Validated current Arcane Breach penetration for this attack, including Arcane Ballistics.
+	RangedAttackPenetration battleGetRangedAttackPenetration(const BattleAttackInfo & attack) const;
 	std::vector<SpellSchool> battleGetActiveSpellSchools() const;
 	std::vector<SpellSchool> battleGetSpellSchools(SpellID spell) const;
 	int battleGetSpellLevel(SpellID spell) const;

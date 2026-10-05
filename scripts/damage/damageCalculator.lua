@@ -211,7 +211,13 @@ local function getPhysicalDamageReductionFactor(info)
 	end
 
 	local capPercent = math.max(0, math.min(100, info.physicalDamageReductionCapPercent))
-	return math.max(remainingDamage, 1 - capPercent / 100)
+	local cappedDamageFactor = math.max(remainingDamage, 1 - capPercent / 100)
+	local reductionIgnorePercent = math.max(0,
+		math.min(100, info.physicalDamageReductionIgnorePercent or 0))
+	-- Penetration removes a fraction of the final capped reduction, not a flat
+	-- percentage point from one source. Keep the independent-source product and
+	-- cap intact before applying this attack-local exception.
+	return 1 - (1 - cappedDamageFactor) * (1 - reductionIgnorePercent / 100)
 end
 
 -- The same four, as methods - a patch is a chunk of its own and cannot see the locals above. The

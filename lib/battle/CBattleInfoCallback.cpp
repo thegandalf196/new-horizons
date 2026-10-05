@@ -2752,6 +2752,84 @@ bool CBattleInfoCallback::battleCanShootAction(const battle::Unit * attacker, co
 	return false;
 }
 
+RangedAttackPenetration CBattleInfoCallback::battleGetRangedAttackPenetration(
+	const BattleAttackInfo & attack) const
+{
+	RangedAttackPenetration result;
+	const auto * currentBattle = getBattle();
+	if(!currentBattle || !attack.physicalDamage || !attack.shooting || !attack.attacker || !attack.defender
+		|| !attack.defender->alive() || attack.defender->isGhost()
+		|| !newHorizonsMagic::rulesActive(currentBattle->getMagicRules()))
+		return result;
+
+	const auto attackerSide = playerToSide(battleGetOwner(attack.attacker));
+	const auto defenderSide = playerToSide(battleGetOwner(attack.defender));
+	if(attackerSide == BattleSide::NONE || defenderSide == BattleSide::NONE || attackerSide == defenderSide)
+		return result;
+
+	int validMarks = 0;
+	const auto triggers = attack.defender->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
+	for(const auto & bonus : *triggers)
+	{
+		if(bonus->source != BonusSource::SPELL_EFFECT || !bonus->parameters
+			|| (Bonus::NTurns(bonus.get()) && bonus->turnsRemain <= 0))
+			continue;
+		try
+		{
+			// Check source spell identity first; only those candidates need the
+			// script subtype's resolved name.
+			if(bonus->sid.toString() != newHorizonsSorcery::ARCANE_BREACH_EFFECT
+				|| bonus->subtype.toString() != newHorizonsSorcery::ARCANE_BREACH_TRIGGER)
+				continue;
+		}
+		catch(const std::exception &)
+		{
+			continue;
+		}
+
+		const JsonNode * markParameters = nullptr;
+		try
+		{
+			markParameters = &bonus->parameters->toCustom<JsonNode>();
+		}
+		catch(const std::exception &)
+		{
+			continue;
+		}
+		if(!markParameters->isStruct())
+			continue;
+
+		const auto sideParameter = markParameters->Struct().find("beneficiarySide");
+		// Lua numbers round-trip as JSON floats. Compare the exact enum value
+		// rather than rejecting valid 0.0/1.0 or truncating fractional inputs.
+		if(sideParameter == markParameters->Struct().end()
+			|| !sideParameter->second.isNumber()
+			|| sideParameter->second.Float() != static_cast<int32_t>(attackerSide)
+			|| bonus->val <= 0)
+			continue;
+
+		const int perMarkBasisPoints = std::min(bonus->val,
+			newHorizonsSorcery::ARCANE_BREACH_CAP_BASIS_POINTS);
+		result.creatureDefenseIgnoreBasisPoints = std::min(
+			result.creatureDefenseIgnoreBasisPoints + perMarkBasisPoints,
+			newHorizonsSorcery::ARCANE_BREACH_MAX_MARKS * newHorizonsSorcery::ARCANE_BREACH_CAP_BASIS_POINTS);
+		if(++validMarks >= newHorizonsSorcery::ARCANE_BREACH_MAX_MARKS)
+			break;
+	}
+
+	if(validMarks < newHorizonsSorcery::ARCANE_BREACH_MAX_MARKS
+		|| !newHorizonsCombatSkills::isPhysicalCreatureAttack(attack.attacker, attack.physicalDamage)
+		|| newHorizonsMagic::physicalDamageReductionCapPercent(currentBattle->getMagicRules()) < 0)
+		return result;
+
+	const auto * attackerHero = battleGetOwnerHero(attack.attacker);
+	if(attackerHero && attackerHero->hasActivePerk(newHorizonsSorcery::SORCERY_MAGIC_SKILL,
+		newHorizonsSorcery::ARCANE_BALLISTICS_PERK))
+		result.physicalDamageReductionIgnorePercent = newHorizonsSorcery::ARCANE_BALLISTICS_PDR_IGNORE_PERCENT;
+
+	return result;
+}
+
 DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo & info) const
 {
 
@@ -2784,6 +2862,9 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	const auto * currentBattle = getBattle();
 	if(currentBattle)
 		payload.physicalDamageReductionCapPercent = newHorizonsMagic::physicalDamageReductionCapPercent(currentBattle->getMagicRules());
+	const auto rangedPenetration = battleGetRangedAttackPenetration(info);
+	payload.rangedDefenseIgnoreBasisPoints = rangedPenetration.creatureDefenseIgnoreBasisPoints;
+	payload.physicalDamageReductionIgnorePercent = rangedPenetration.physicalDamageReductionIgnorePercent;
 	if(currentBattle && info.physicalDamage && info.shooting && info.defender
 		&& newHorizonsMagic::rulesActive(currentBattle->getMagicRules()))
 	{
@@ -2793,64 +2874,6 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			for(const auto & bonus : *galeBonuses)
 				payload.heavenlyGaleDamageReductionBasisPoints = std::max(
 					payload.heavenlyGaleDamageReductionBasisPoints, bonus->val);
-		}
-	}
-	if(currentBattle && info.physicalDamage && info.shooting && info.attacker && info.defender
-		&& info.defender->alive() && !info.defender->isGhost()
-		&& newHorizonsMagic::rulesActive(currentBattle->getMagicRules()))
-	{
-		const auto attackerSide = playerToSide(battleGetOwner(info.attacker));
-		const auto defenderSide = playerToSide(battleGetOwner(info.defender));
-		if(attackerSide != BattleSide::NONE && defenderSide != BattleSide::NONE && attackerSide != defenderSide)
-		{
-				int validMarks = 0;
-				const auto triggers = info.defender->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
-				for(const auto & bonus : *triggers)
-			{
-				if(bonus->source != BonusSource::SPELL_EFFECT || !bonus->parameters)
-					continue;
-				try
-				{
-					// Check source spell identity first; only those candidates need the
-					// script subtype's resolved name.
-					if(bonus->sid.toString() != newHorizonsSorcery::ARCANE_BREACH_EFFECT
-						|| bonus->subtype.toString() != newHorizonsSorcery::ARCANE_BREACH_TRIGGER)
-						continue;
-				}
-				catch(const std::exception &)
-				{
-					continue;
-				}
-
-				const JsonNode * markParameters = nullptr;
-				try
-				{
-					markParameters = &bonus->parameters->toCustom<JsonNode>();
-				}
-				catch(const std::exception &)
-				{
-					continue;
-				}
-				if(!markParameters->isStruct())
-					continue;
-
-				const auto sideParameter = markParameters->Struct().find("beneficiarySide");
-				// Lua numbers round-trip as JSON floats. Compare the exact enum value
-				// rather than rejecting valid 0.0/1.0 or truncating fractional inputs.
-				if(sideParameter == markParameters->Struct().end()
-					|| !sideParameter->second.isNumber()
-					|| sideParameter->second.Float() != static_cast<int32_t>(attackerSide)
-					|| bonus->val <= 0)
-					continue;
-
-				const int perMarkBasisPoints = std::min(bonus->val,
-					newHorizonsSorcery::ARCANE_BREACH_CAP_BASIS_POINTS);
-				payload.rangedDefenseIgnoreBasisPoints = std::min(
-					payload.rangedDefenseIgnoreBasisPoints + perMarkBasisPoints,
-					newHorizonsSorcery::ARCANE_BREACH_MAX_MARKS * newHorizonsSorcery::ARCANE_BREACH_CAP_BASIS_POINTS);
-				if(++validMarks >= newHorizonsSorcery::ARCANE_BREACH_MAX_MARKS)
-					break;
-			}
 		}
 	}
 	payload.targetedRangedCommand = battleIsTargetedRangedCommand(
