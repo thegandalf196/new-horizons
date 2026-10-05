@@ -42,7 +42,7 @@
 					}
 				},
 				"mageGuild5": {
-					"name": "Mage Guild V",
+					"name": "Mage Guild Level 5",
 					"description": "The fifth level of the Mage Guild unlocks the highest-rank spells.",
 					"upgrades": "mageGuild4",
 					"cost#override": {
@@ -132,7 +132,7 @@
 			},
 			"buildings": {
 				"mageGuild4": {
-					"name": "Mage Guild IV",
+					"name": "Mage Guild Level 4",
 					"description": "The fourth level of the Mage Guild unlocks high-rank spells.",
 					"upgrades": "mageGuild3",
 					"cost#override": {
@@ -144,7 +144,7 @@
 					}
 				},
 				"mageGuild5": {
-					"name": "Mage Guild V",
+					"name": "Mage Guild Level 5",
 					"description": "The fifth level of the Mage Guild unlocks the highest-rank spells.",
 					"upgrades": "mageGuild4",
 					"cost#override": {
@@ -225,7 +225,7 @@
 			},
 			"buildings": {
 				"mageGuild4": {
-					"name": "Mage Guild IV",
+					"name": "Mage Guild Level 4",
 					"description": "The fourth level of the Mage Guild unlocks high-rank spells.",
 					"upgrades": "mageGuild3",
 					"cost#override": {
@@ -237,7 +237,7 @@
 					}
 				},
 				"mageGuild5": {
-					"name": "Mage Guild V",
+					"name": "Mage Guild Level 5",
 					"description": "The fifth level of the Mage Guild unlocks the highest-rank spells.",
 					"upgrades": "mageGuild4",
 					"cost#override": {

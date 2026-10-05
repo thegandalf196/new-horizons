@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "name": "sanctuary-symbol",
+  "source": {
+    "path": "master.png",
+    "filename": "master.png",
+    "byte_size": 2240929,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "c9c7069420db53909268978c32c41cb124b4ace124e330717b6b905a623a18c8"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "c9c7069420db53909268978c32c41cb124b4ace124e330717b6b905a623a18c8"
+    },
+    {
+      "file": "sanctuary-symbol-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "9e9621f839e28f69e65620e8a835f73a867d57d986c5e5b0b654c212a70c11a9"
+    },
+    {
+      "file": "sanctuary-symbol-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "be64d8389695da2fa1fc06d20b3a9ac0eac915ef45b5a9fcde78921b891c0f5d"
+    },
+    {
+      "file": "sanctuary-symbol-30.png",
+      "kind": "icon",
+      "dimensions": [
+        30,
+        30
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "5ed20426e4ca9f8b91aa79eaa111d9d56fc72d7a4ac8913ed5d544084882d84d"
+    },
+    {
+      "file": "sanctuary-symbol-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "e17af52be46e17672d4b87c71d95d9f81d8cde522450f9e91237342904f71240"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "sanctuary-symbol-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "sanctuary-symbol-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "sanctuary-symbol-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "sanctuary-symbol-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

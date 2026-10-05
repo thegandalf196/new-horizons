@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "name": "heavenly-gale-symbol",
+  "source": {
+    "path": "master.png",
+    "filename": "master.png",
+    "byte_size": 2198431,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "9f5c9e99fa896674c414863ff037e973aff9a1ec2e156fa8b584910c04bee03f"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "9f5c9e99fa896674c414863ff037e973aff9a1ec2e156fa8b584910c04bee03f"
+    },
+    {
+      "file": "heavenly-gale-symbol-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "1bb874d491f719643358910ba3b3cf15e9ddd497a8e6f63e52cc0d284d0fd892"
+    },
+    {
+      "file": "heavenly-gale-symbol-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "d38f67aefb6df1b69847e7e7d8d0ec116d6ad95bd9ca2a6b7a7d2930a28af8f1"
+    },
+    {
+      "file": "heavenly-gale-symbol-30.png",
+      "kind": "icon",
+      "dimensions": [
+        30,
+        30
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "0b840f3972c7088f5aa5f17f0697ba7aeb62429680958d071747cd52b5b0354d"
+    },
+    {
+      "file": "heavenly-gale-symbol-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "8d78962508f1075913c9ba489977a755a545ba153b2ec8f5f768f220ef4c7c5f"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "heavenly-gale-symbol-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "heavenly-gale-symbol-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "heavenly-gale-symbol-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "heavenly-gale-symbol-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

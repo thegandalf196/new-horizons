@@ -470,8 +470,6 @@ class CMageGuildScreen : public CStatusbarWindow
 
 	std::shared_ptr<CPicture> window;
 	std::shared_ptr<CButton> exit;
-	std::shared_ptr<CButton> adventureSpellsButton;
-	std::shared_ptr<CLabel> adventureSpellsLabel;
 	std::vector<std::shared_ptr<Scroll>> spells;
 	std::vector<std::shared_ptr<CAnimImage>> emptyScrolls;
 	std::vector<std::shared_ptr<ScrollAllSpells>> auroraBorealisScrolls;

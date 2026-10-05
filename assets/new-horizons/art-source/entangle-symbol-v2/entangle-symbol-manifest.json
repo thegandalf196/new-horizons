@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "name": "entangle-symbol",
+  "source": {
+    "path": "master.png",
+    "filename": "master.png",
+    "byte_size": 2075077,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "e188fcae8aba9e91c059d1aaf1aecfaf12fa2c27f4421fa2e387294aff2420a8"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "e188fcae8aba9e91c059d1aaf1aecfaf12fa2c27f4421fa2e387294aff2420a8"
+    },
+    {
+      "file": "entangle-symbol-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "14ae0e8bef68d58bc9a5dfa4ae478473a69be2abc783f2c9a855c92c0f8416e5"
+    },
+    {
+      "file": "entangle-symbol-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "2d91e1239a6084e9a0da4ac5626b8a7f406af45de8a6bc959992d613e6fc8a16"
+    },
+    {
+      "file": "entangle-symbol-30.png",
+      "kind": "icon",
+      "dimensions": [
+        30,
+        30
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "a0ed040182d487fae13808869ce541edebb7363342a2e1843bd8acb035a31ee0"
+    },
+    {
+      "file": "entangle-symbol-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "5ec6ae6b62e53cab53f83c897e386f2098cb71c34f7be36cfc76d24db6400243"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "entangle-symbol-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "entangle-symbol-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "entangle-symbol-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "entangle-symbol-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

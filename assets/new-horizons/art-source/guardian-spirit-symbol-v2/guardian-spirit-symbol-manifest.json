@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "name": "guardian-spirit-symbol",
+  "source": {
+    "path": "master.png",
+    "filename": "master.png",
+    "byte_size": 2638258,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "e1a51bbb843708319755cd477f819154b7fea41e52aedea7e3c8d2ad41c23321"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "e1a51bbb843708319755cd477f819154b7fea41e52aedea7e3c8d2ad41c23321"
+    },
+    {
+      "file": "guardian-spirit-symbol-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "054cfe47cac360482a220bfcf59dac0b0c24493808ac820e659e14e46cc72b01"
+    },
+    {
+      "file": "guardian-spirit-symbol-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "63536ce43ddeb4b7852fb3dd89b3eafd66887a78e0cf9c442ed60afa13d97f98"
+    },
+    {
+      "file": "guardian-spirit-symbol-30.png",
+      "kind": "icon",
+      "dimensions": [
+        30,
+        30
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "06bbc8d60f1205bf6191fa63b642a4cc6cc054de1976d91ef3f498d1741ee579"
+    },
+    {
+      "file": "guardian-spirit-symbol-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "593565c8f8d4847981c7b9c479fb379e4a1849a4c831cc97b1178375b34368e7"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "guardian-spirit-symbol-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "guardian-spirit-symbol-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "guardian-spirit-symbol-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "guardian-spirit-symbol-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

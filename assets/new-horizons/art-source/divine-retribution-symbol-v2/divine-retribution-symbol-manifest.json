@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "name": "divine-retribution-symbol",
+  "source": {
+    "path": "master.png",
+    "filename": "master.png",
+    "byte_size": 1310362,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "53c3d41a9d705143ab2eed2c850fdcf3232cfd4831cf0fd36323c2845b3211bc"
+  },
+  "preparation": {
+    "exif_orientation_applied": true,
+    "oriented_dimensions": [
+      1254,
+      1254
+    ],
+    "canvas_dimensions": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA",
+    "fit": null,
+    "padding_rgba": null
+  },
+  "outputs": [
+    {
+      "file": "master.png",
+      "kind": "master",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "method": "exact byte copy",
+      "sha256": "53c3d41a9d705143ab2eed2c850fdcf3232cfd4831cf0fd36323c2845b3211bc"
+    },
+    {
+      "file": "divine-retribution-symbol-44.png",
+      "kind": "icon",
+      "dimensions": [
+        44,
+        44
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "94585402296da5aa432a105d9ec8f6421015d9e45df4ee5eaaab03598bdcc26e"
+    },
+    {
+      "file": "divine-retribution-symbol-32.png",
+      "kind": "icon",
+      "dimensions": [
+        32,
+        32
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "c6a25f2aee90180abed0c315816ba9ef4f14827f3d2d05e27a30ca28d59d2b03"
+    },
+    {
+      "file": "divine-retribution-symbol-30.png",
+      "kind": "icon",
+      "dimensions": [
+        30,
+        30
+      ],
+      "mode": "RGBA",
+      "method": "LANCZOS",
+      "sha256": "d277239acf6bd67ed13008553dc1703f54e2acf21ba38b5598bd8bbc1d8e34d5"
+    },
+    {
+      "file": "divine-retribution-symbol-comparison.png",
+      "kind": "comparison",
+      "dimensions": [
+        1000,
+        490
+      ],
+      "mode": "RGB",
+      "method": "labeled composite; see comparison regions",
+      "sha256": "43f092cf239ca492bcedff9b12b3bba1704149f3091f3d73f09b4d8d5b0ca8a4"
+    }
+  ],
+  "comparison": {
+    "background_rgb": [
+      34,
+      36,
+      40
+    ],
+    "enlargement_scale": 6,
+    "regions": [
+      {
+        "kind": "master",
+        "box": [
+          20,
+          100,
+          340,
+          420
+        ],
+        "method": "LANCZOS",
+        "dimensions": [
+          320,
+          320
+        ]
+      },
+      {
+        "kind": "native",
+        "source_size": 44,
+        "box": [
+          380,
+          100,
+          424,
+          144
+        ],
+        "dimensions": [
+          44,
+          44
+        ],
+        "method": "unscaled",
+        "source_file": "divine-retribution-symbol-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 44,
+        "box": [
+          380,
+          192,
+          644,
+          456
+        ],
+        "dimensions": [
+          264,
+          264
+        ],
+        "method": "NEAREST",
+        "source_file": "divine-retribution-symbol-44.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "native",
+        "source_size": 32,
+        "box": [
+          700,
+          100,
+          732,
+          132
+        ],
+        "dimensions": [
+          32,
+          32
+        ],
+        "method": "unscaled",
+        "source_file": "divine-retribution-symbol-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      },
+      {
+        "kind": "enlarged",
+        "source_size": 32,
+        "box": [
+          700,
+          192,
+          892,
+          384
+        ],
+        "dimensions": [
+          192,
+          192
+        ],
+        "method": "NEAREST",
+        "source_file": "divine-retribution-symbol-32.png",
+        "source_method": "LANCZOS reduction from prepared master"
+      }
+    ]
+  }
+}

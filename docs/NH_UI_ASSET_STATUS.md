@@ -1,6 +1,6 @@
 # New Horizons UI and asset status register
 
-Last audited: 2026-10-03
+Last audited: 2026-10-04
 
 This is the maintained UI/art status index for the current New Horizons working tree. It records live bindings and remaining visual/UI work. It does not replace gameplay specs, source configs, runtime manifests, or acceptance records. The row-level index is [NH_UI_ASSET_INVENTORY.csv](NH_UI_ASSET_INVENTORY.csv).
 
@@ -9,6 +9,28 @@ The audit used canonical registries and current source bindings rather than coun
 This is a binding inventory, not a full visual audit or a product completion claim. No game was launched and no GUI review was performed for this register. A resource path, generated manifest, native-size file, or implemented code path does not by itself establish final art or accepted UI. `tools.tests.test_new_horizons_ui_perk_inventory` now checks all 310 perk rows against the current activation registry and ensures active neutral fallbacks remain classified as Not done art.
 
 ## Status meanings
+
+UP230 user-priority correction: all26 custom live spell raster families were
+audited, not just the screenshot's Vengeful Vines. Their78 original30/32/44px
+runtime files are opaque RGB paintings. The native parchment wrapper is valid
+but cannot remove painted pixels. The new spell-symbol policy is persistent in
+NH_HOMM3_UI_STYLE_GUIDE.md. Transparent symbol revisions are being integrated
+through the built-in image generator and HoMM3 art skill. All26 new masters
+and native32/44 comparison sheets are inspected; original masters stay intact.
+All78 runtime PNGs are integrated; two final alpha/hash/native-dimension/binding
+tests pass, plus eight content-binding checks. Converted identities and hashes are
+tracked in assets/new-horizons/art-source/spell-symbols-v2/manifest.json.
+Do not call the whole icon request complete until every listed family is
+converted and inspected. New art remains **Provisional**, not user-approved Final.
+
+The standalone Adventure Spells access button/label is removed in source.
+The existing selected faction/tier exterior picture supplies the hotspot and
+gold rectangular hover border, preserving the native purchase panel and saved
+rules gating. Client92271 builds; the focused source guard passes. All five
+authored Roman-numeral guild names now use Mage Guild Level4/5 consistently;
+the nine-faction data guard passes9/9. Gold hover appearance, input teardown
+status cleanup and in-game visual acceptance remain unverified. No GUI launch
+or playable snapshot promotion occurred.
 
 UP227 Vault of Ashes: dedicated hall/town artwork **Not done**. Its functional
 Horde2 hall card references purchaser HALLELEM.DEF frame33 (the related Fire
@@ -24,9 +46,10 @@ SPELLSCR composites remain untouched; small emblems retain native size, oversize
 aliases aspect-fit inside54x45, and the full parchment remains the hitbox.
 No extracted pixels, uncertain Modder Tools Pack template, new art or dependency
 is shipped. The blank reference resolves the container binding, not every icon's
-visual construction: opaque square paintings still need proper transparent
-emblems/scroll-role exports. Keep that art correction **Not done**; do not call
-a pasted opaque square final artwork. Client86675 builds and independent Astra
+visual construction: UP230 now supplies transparent emblems for all26 custom
+raster families, with final alpha/hash gates passing. The earlier opaque
+paintings are retained as historical sources, not accepted scroll artwork.
+Client86675 builds and independent Astra
 review finds no blocking source issue; existing Mage Guild asset guards pass5/5.
 No GUI run,
 native-resolution composed-widget acceptance or playable promotion yet.

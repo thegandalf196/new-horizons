@@ -238,6 +238,59 @@ std::shared_ptr<CPicture> createResponsiveFortCardBackground(const Point & size)
 	return std::make_shared<CPicture>(std::static_pointer_cast<IImage>(image), Point(0, 0));
 }
 
+class MageGuildExteriorHotspot final : public CPicture
+{
+	bool hovered = false;
+	static constexpr const char * HOVER_TEXT = "Adventure Spells";
+
+	void drawHoverBorder(Canvas & to) const
+	{
+		if(hovered)
+			to.drawBorder(Rect::createAround(pos, 1), Colors::METALLIC_GOLD);
+	}
+
+public:
+	MageGuildExteriorHotspot(const ImagePath & image, const Point & position, ObjectInstanceID townId)
+		: CPicture(image, position.x, position.y)
+	{
+		addUsedEvents(HOVER);
+		setRedrawParent(true);
+		addLClickCallback([townId]()
+		{
+			ENGINE->windows().createAndPushWindow<CMageGuildAdventureSpellWindow>(townId);
+		});
+		addRClickCallback([]()
+		{
+			CRClickPopup::createAndPush("View and purchase the fixed Adventure Spell unlock for each Mage Guild tier.");
+		});
+	}
+
+	void hover(bool on) override
+	{
+		if((on && !ENGINE->input().inputModeSupportsHover()) || hovered == on)
+			return;
+
+		hovered = on;
+		if(on)
+			ENGINE->statusbar()->write(HOVER_TEXT);
+		else
+			ENGINE->statusbar()->clearIfMatching(HOVER_TEXT);
+		redraw();
+	}
+
+	void show(Canvas & to) override
+	{
+		CPicture::show(to);
+		drawHoverBorder(to);
+	}
+
+	void showAll(Canvas & to) override
+	{
+		CPicture::showAll(to);
+		drawHoverBorder(to);
+	}
+};
+
 const CCreature * creatureAtDwellingLevel(const CGTownInstance * town, int level)
 {
 	if(!town || level < 0 || static_cast<size_t>(level) >= town->creatures.size())
@@ -3238,7 +3291,12 @@ CMageGuildScreen::CMageGuildScreen(CCastleInterface * owner, const ImagePath & i
 	auto windowPosition = owner->town->getTown()->clientInfo.guildWindowPosition;
 	if(windowPosition == Point(0, 0)) // TODO: remove legacy for compatibility
 		windowPosition = Point(332, 76);
-	window = std::make_shared<CPicture>(selectedGuildWindow, windowPosition.x, windowPosition.y);
+	const bool adventureSpellRulesActive = newHorizonsMagic::adventureSpellRulesActive(
+		GAME->interface()->cb->getMagicRules());
+	if(adventureSpellRulesActive)
+		window = std::make_shared<MageGuildExteriorHotspot>(selectedGuildWindow, windowPosition, townId);
+	else
+		window = std::make_shared<CPicture>(selectedGuildWindow, windowPosition.x, windowPosition.y);
 
 	resdatabar = std::make_shared<CMinorResDataBar>();
 	resdatabar->moveBy(pos.topLeft(), true);
@@ -3249,17 +3307,6 @@ CMageGuildScreen::CMageGuildScreen(CCastleInterface * owner, const ImagePath & i
 	statusbar = CGStatusBar::create(statusbarBackground);
 
 	exit = std::make_shared<CButton>(Point(748, 556), AnimationPath::builtin("TPMAGE1.DEF"), CButton::tooltip(LIBRARY->generaltexth->allTexts[593]), [&](){ close(); }, EShortcut::GLOBAL_RETURN);
-	if(newHorizonsMagic::adventureSpellRulesActive(GAME->interface()->cb->getMagicRules()))
-	{
-		adventureSpellsLabel = std::make_shared<CLabel>(610, 536, FONT_TINY, ETextAlignment::CENTER,
-			Colors::YELLOW, "Adventure Spells", 106);
-		adventureSpellsButton = std::make_shared<CButton>(Point(674, 510), AnimationPath::builtin("NH_spells_button"),
-			CButton::tooltip("Adventure Spells", "View and purchase the fixed Adventure Spell unlock for each Mage Guild tier."),
-			[this]() { ENGINE->windows().createAndPushWindow<CMageGuildAdventureSpellWindow>(townId); });
-		adventureSpellsButton->setHoverable(true);
-		adventureSpellsButton->setBorderColor(Colors::METALLIC_GOLD);
-	}
-
 	updateSpells(townId);
 }
 

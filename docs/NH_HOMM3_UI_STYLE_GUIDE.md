@@ -27,6 +27,21 @@ semantics unless the task explicitly calls for changing them.
   conventions, or modern-style gradients. Painted lighting and shading that
   match the original game are appropriate.
 
+## Spell-symbol presentation
+
+User direction2026-10-04: new spell icons follow original Heroes III spells:
+display only the spell's identifying symbol, with transparent space around and
+through its silhouette. Do not use the opaque leather/scenery painting suitable
+for a secondary Skill icon as a spell emblem. The Mage Guild's rolled parchment
+and the spellbook's page are independent UI surfaces; neither belongs inside
+the spell raster. Preserve symbol identity and readability at actual30/32/44px
+roles. Inspect alpha and native exports, not just a high-resolution painting.
+
+Mage Guild Adventure Spell access uses the existing exterior illustration as
+a clickable, gold-highlighted hover region, not a separate icon/button. Reuse
+the configured faction/tier image bounds and position. Guild level names use
+the ordinary Arabic1–5 convention consistently across factions.
+
 ## Build from the outside inward
 
 Before placing individual sprites, decompose the UI as:

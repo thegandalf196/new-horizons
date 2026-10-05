@@ -141,6 +141,45 @@ class MageGuildAssetsTest(unittest.TestCase):
         for path in obsolete:
             self.assertFalse(path.exists(), str(path))
 
+    def test_all_authored_mage_guild_names_use_arabic_level_numbers(self):
+        overlay = load(CONTENT / "config/factions/universalMageGuilds.json")
+        expected_factions = {
+            "core:castle", "core:rampart", "core:tower", "core:inferno", "core:necropolis",
+            "core:dungeon", "core:stronghold", "core:fortress", "core:conflux",
+        }
+        self.assertEqual(set(overlay), expected_factions)
+
+        expected_authored_names = {
+            "core:castle": {"mageGuild5": "Mage Guild Level 5"},
+            "core:stronghold": {
+                "mageGuild4": "Mage Guild Level 4",
+                "mageGuild5": "Mage Guild Level 5",
+            },
+            "core:fortress": {
+                "mageGuild4": "Mage Guild Level 4",
+                "mageGuild5": "Mage Guild Level 5",
+            },
+        }
+        actual_authored_names = {}
+        for faction, row in overlay.items():
+            town = row["town"]
+            if "mageGuild" in town:
+                self.assertEqual(town["mageGuild"], 5, faction)
+            buildings = town.get("buildings", {})
+            faction_names = {}
+            for level in range(1, 6):
+                building = buildings.get(f"mageGuild{level}", {})
+                if "name" not in building:
+                    continue
+                self.assertEqual(building["name"], f"Mage Guild Level {level}", (faction, level))
+                faction_names[f"mageGuild{level}"] = building["name"]
+            if faction_names:
+                actual_authored_names[faction] = faction_names
+
+        # Only these existing faction overrides author guild names; all other
+        # factions retain their inherited normal tier translations.
+        self.assertEqual(actual_authored_names, expected_authored_names)
+
     def test_hall_overrides_only_replace_intended_frames(self):
         for _, _, hall, expected in PACKAGES.values():
             descriptor = load(CONTENT / "sprites" / (hall + ".json"))

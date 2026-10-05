@@ -1,6 +1,17 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
+UP230 is the new user-priority UI/art correction: native exterior-picture
+Adventure Spell access replaces its separate icon/label; five authored guild
+names use ordinary Arabic levels4/5. Client92271 and source/data guards pass.
+All26 custom spell families have new transparent masters/native exports;
+all78 live PNGs pass the final alpha/hash/native-dimension/binding-linkage audit
+(two tests), eight spell-binding checks and module drift. This changes no gameplay
+identity counts; all new artwork is Provisional and graphical acceptance remains
+separate. Deferred stale content-inventory/inactive-Aegis tests are recorded
+under UP230; affected spell/icon binding checks pass. Finish this queue item
+before returning to the unblocked faction foundations; source gates now pass,
+but rendered/playable acceptance remains pending.
 Design decisions e6ba582a9 are committed/pushed: Elemental Rebirth uses captured
 battle-start maximum aggregate HP; Divine Mandate follows Metamagic-style
 round-end opportunities and completed-pair usage. Those foundation gates are

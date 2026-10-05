@@ -19,8 +19,23 @@ def require(source: str, text: str, label: str) -> None:
 def main() -> None:
     require(HEADER, "class CMageGuildAdventureSpellWindow : public CWindowObject", "five-tier purchase panel")
     require(HEADER, "void updateSpells(ObjectInstanceID townId);", "authoritative UI refresh entry point")
-    require(UI, 'AnimationPath::builtin("NH_spells_button")', "Mage Guild access button")
-    require(UI, "createAndPushWindow<CMageGuildAdventureSpellWindow>(townId)", "access button opens purchase panel")
+    require(UI, "class MageGuildExteriorHotspot final : public CPicture", "picture-sized exterior hotspot")
+    require(UI, ": CPicture(image, position.x, position.y)", "hitbox uses the loaded image's native bounds")
+    require(UI, "addUsedEvents(HOVER)", "native picture hover interaction")
+    require(UI, "setRedrawParent(true)", "hover outline redraws the Mage Guild surface")
+    require(UI, "Rect::createAround(pos, 1), Colors::METALLIC_GOLD", "gold outline follows the loaded picture bounds")
+    require(UI, "addLClickCallback([townId]()", "exterior picture click callback")
+    require(UI, "createAndPushWindow<CMageGuildAdventureSpellWindow>(townId)", "hotspot opens the existing purchase panel")
+    screen = UI.split("CMageGuildScreen::CMageGuildScreen", 1)[1].split(
+        "void CMageGuildScreen::updateSpells", 1
+    )[0]
+    require(screen, "selectedGuildWindow, windowPosition, townId", "hotspot uses faction/tier picture and configured position")
+    require(screen, "if(adventureSpellRulesActive)", "hotspot remains gated by saved Adventure Spell rules")
+    require(screen, "else\n\t\twindow = std::make_shared<CPicture>(selectedGuildWindow, windowPosition.x, windowPosition.y);",
+            "vanilla Mage Guild keeps its non-interactive picture")
+    for obsolete in ("NH_spells_button", "adventureSpellsButton", "adventureSpellsLabel"):
+        if obsolete in HEADER or obsolete in screen:
+            raise AssertionError(f"separate Adventure Spell access control must be removed: {obsolete}")
     require(UI, "newHorizonsMagic::adventureSpellRulesActive", "saved-rules gate")
     require(UI, "guildLevel <= 5", "five fixed Guild tiers")
     require(UI, "newHorizonsMagic::adventureSpellForGuildLevel(magicRules, guildLevel)", "fixed spell from saved rules")

@@ -1,0 +1,462 @@
+{
+  "schemaVersion": 1,
+  "purpose": "UP-230 inventory of custom New Horizons spell-symbol exports. The parchment is supplied by the native Mage Guild UI compositor, not embedded in these icons.",
+  "status": "converted-provisional",
+  "counts": {
+    "families": 26,
+    "converted": 26,
+    "pending": 0
+  },
+  "imageRoles": {
+    "iconBook": "44x44",
+    "iconScroll": "per family binding below (32x32 or 44x44)",
+    "iconEffect": "30x30",
+    "iconImmune": "30x30",
+    "iconScenarioBonus": "32x32 except legacy spell-trait aliases explicitly listed"
+  },
+  "families": [
+    {
+      "spellKey": "poison",
+      "name": "Poison",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_nature_poison_44.png", "iconScroll": "NH_nature_poison_32.png", "iconEffect": "NH_nature_poison_30.png", "iconImmune": "NH_nature_poison_30.png", "iconScenarioBonus": "NH_nature_poison_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/nature-poison-v1/master.png", "exports": {"44": "assets/new-horizons/art-source/nature-poison-v1/nature-poison-44.png", "32": "assets/new-horizons/art-source/nature-poison-v1/nature-poison-32.png", "30": "assets/new-horizons/art-source/nature-poison-v1/nature-poison-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/nature-poison-symbol-v2/master.png",
+        "masterSha256": "573c15a5da5b412acf480b8d195eebc07f14ff4081993029464a09a77dea3ea8",
+        "prompt": "assets/new-horizons/art-source/nature-poison-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/nature-poison-symbol-v2/nature-poison-symbol-44.png", "sourceSha256": "7ca183cce49cef162e2086bb2b2b6b6c5b29c8d924f058f5bf6c1ffd6725263d", "live": "Mods/new-horizons/Images/NH_nature_poison_44.png", "liveSha256": "7ca183cce49cef162e2086bb2b2b6b6c5b29c8d924f058f5bf6c1ffd6725263d", "referenceSha256": "4c7a3f460c691a9c2d414f853ca990ea40b869082ec48fefec58a4af7458269a"},
+          "32": {"source": "assets/new-horizons/art-source/nature-poison-symbol-v2/nature-poison-symbol-32.png", "sourceSha256": "88d77f0efcc6328f7d1f3be72428de72687978be72bee7dc72c04d5539a8c3f0", "live": "Mods/new-horizons/Images/NH_nature_poison_32.png", "liveSha256": "88d77f0efcc6328f7d1f3be72428de72687978be72bee7dc72c04d5539a8c3f0", "referenceSha256": "702d2eb520f0895c72f179a81390b41534d7376db57945f4cc7a2b284c6aa35e"},
+          "30": {"source": "assets/new-horizons/art-source/nature-poison-symbol-v2/nature-poison-symbol-30.png", "sourceSha256": "6f0a2b92fcbeefc197bc8f0373c10b5b5cbda9017cec462fcff2ef5660b46ef4", "live": "Mods/new-horizons/Images/NH_nature_poison_30.png", "liveSha256": "6f0a2b92fcbeefc197bc8f0373c10b5b5cbda9017cec462fcff2ef5660b46ef4", "referenceSha256": "e068b8e8e77ab9dc8c6a731b7657f25b10795c53219ea8222ca1e020faadc4d2"}
+        }
+      }
+    },
+    {
+      "spellKey": "holyWrath",
+      "name": "Holy Wrath",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_holyWrath_44.png", "iconScroll": "NH_holyWrath_44.png", "iconEffect": "NH_holyWrath_30.png", "iconImmune": "NH_holyWrath_30.png", "iconScenarioBonus": "SPELLBON.def:0:15"},
+      "reference": {"master": "assets/new-horizons/art-source/holy-wrath-v1/master.png", "exports": {"44": "assets/new-horizons/art-source/holy-wrath-v1/holy-wrath-44.png", "32": "assets/new-horizons/art-source/holy-wrath-v1/holy-wrath-32.png", "30": "assets/new-horizons/art-source/holy-wrath-v1/effect-30-export/holy-wrath-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/holy-wrath-symbol-v2/master.png",
+        "masterSha256": "46c93df5c00aa63a52b3f06fd4a2093b1dce6f090e27983f50beaabafe4e1d4a",
+        "prompt": "assets/new-horizons/art-source/holy-wrath-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/holy-wrath-symbol-v2/holy-wrath-symbol-44.png", "sourceSha256": "5c37f2e675913a664426cf0a340c44a108d7e528544a44e64253d0c413c34460", "live": "Mods/new-horizons/Images/NH_holyWrath_44.png", "liveSha256": "5c37f2e675913a664426cf0a340c44a108d7e528544a44e64253d0c413c34460", "referenceSha256": "c1d32935d1bfbaa9f197778959791a47f96a3dff14fd64f06af313133facd410"},
+          "32": {"source": "assets/new-horizons/art-source/holy-wrath-symbol-v2/holy-wrath-symbol-32.png", "sourceSha256": "ae04c1527b31cb62b1c094aa956b22a55873568dd68a53caa9043b2bc3b7c16a", "live": "Mods/new-horizons/Images/NH_holyWrath_32.png", "liveSha256": "ae04c1527b31cb62b1c094aa956b22a55873568dd68a53caa9043b2bc3b7c16a", "referenceSha256": "dd84eee182c3d37c6107baa3b5f99afcb85c4f8b7d4b4d23d36d4c50f8aa221e"},
+          "30": {"source": "assets/new-horizons/art-source/holy-wrath-symbol-v2/holy-wrath-symbol-30.png", "sourceSha256": "9c40ca62851d91db594548cae2806f32c3c988d12f7eb0087f330f03419e99df", "live": "Mods/new-horizons/Images/NH_holyWrath_30.png", "liveSha256": "9c40ca62851d91db594548cae2806f32c3c988d12f7eb0087f330f03419e99df", "referenceSha256": "f47660333d87a4a410093ff5f491f11f1efe64885bcdc28e1220dfb33e2aea12"}
+        }
+      }
+    },
+    {
+      "spellKey": "sanctuary",
+      "name": "Sanctuary",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_spell_sanctuary_44.png", "iconScroll": "NH_spell_sanctuary_32.png", "iconEffect": "NH_spell_sanctuary_30.png", "iconImmune": "NH_spell_sanctuary_30.png", "iconScenarioBonus": "NH_spell_sanctuary_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/sanctuary-v1/exports/sanctuary/master.png", "exports": {"44": "assets/new-horizons/art-source/sanctuary-v1/exports/sanctuary/sanctuary-44.png", "32": "assets/new-horizons/art-source/sanctuary-v1/exports/sanctuary/sanctuary-32.png", "30": "assets/new-horizons/art-source/sanctuary-v1/exports/sanctuary/sanctuary-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/sanctuary-symbol-v2/master.png",
+        "masterSha256": "c9c7069420db53909268978c32c41cb124b4ace124e330717b6b905a623a18c8",
+        "prompt": "assets/new-horizons/art-source/sanctuary-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/sanctuary-symbol-v2/sanctuary-symbol-44.png", "sourceSha256": "9e9621f839e28f69e65620e8a835f73a867d57d986c5e5b0b654c212a70c11a9", "live": "Mods/new-horizons/Images/NH_spell_sanctuary_44.png", "liveSha256": "9e9621f839e28f69e65620e8a835f73a867d57d986c5e5b0b654c212a70c11a9", "referenceSha256": "1246f2e00b07c0e2687d83a2cbae74172e71caa730f4509d233f8e1f5a924c23"},
+          "32": {"source": "assets/new-horizons/art-source/sanctuary-symbol-v2/sanctuary-symbol-32.png", "sourceSha256": "be64d8389695da2fa1fc06d20b3a9ac0eac915ef45b5a9fcde78921b891c0f5d", "live": "Mods/new-horizons/Images/NH_spell_sanctuary_32.png", "liveSha256": "be64d8389695da2fa1fc06d20b3a9ac0eac915ef45b5a9fcde78921b891c0f5d", "referenceSha256": "e32e60e5431757f876f7222985279dac74e806293b24c4095075d7169b4a73df"},
+          "30": {"source": "assets/new-horizons/art-source/sanctuary-symbol-v2/sanctuary-symbol-30.png", "sourceSha256": "5ed20426e4ca9f8b91aa79eaa111d9d56fc72d7a4ac8913ed5d544084882d84d", "live": "Mods/new-horizons/Images/NH_spell_sanctuary_30.png", "liveSha256": "5ed20426e4ca9f8b91aa79eaa111d9d56fc72d7a4ac8913ed5d544084882d84d", "referenceSha256": "392d82f79375365e0945a49b6541e90a442273e316ee375b3bf54fa731e1ba24"}
+        }
+      }
+    },
+    {
+      "spellKey": "guardianSpirit",
+      "name": "Guardian Spirit",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_spell_guardian_spirit_44.png", "iconScroll": "NH_spell_guardian_spirit_32.png", "iconEffect": "NH_spell_guardian_spirit_30.png", "iconImmune": "NH_spell_guardian_spirit_30.png", "iconScenarioBonus": "NH_spell_guardian_spirit_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/guardian-spirit-v1/master.png", "exports": {"44": "assets/new-horizons/art-source/guardian-spirit-v1/guardian-spirit-44.png", "32": "assets/new-horizons/art-source/guardian-spirit-v1/guardian-spirit-32.png", "30": "assets/new-horizons/art-source/guardian-spirit-v1/guardian-spirit-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/guardian-spirit-symbol-v2/master.png",
+        "masterSha256": "e1a51bbb843708319755cd477f819154b7fea41e52aedea7e3c8d2ad41c23321",
+        "prompt": "assets/new-horizons/art-source/guardian-spirit-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/guardian-spirit-symbol-v2/guardian-spirit-symbol-44.png", "sourceSha256": "054cfe47cac360482a220bfcf59dac0b0c24493808ac820e659e14e46cc72b01", "live": "Mods/new-horizons/Images/NH_spell_guardian_spirit_44.png", "liveSha256": "054cfe47cac360482a220bfcf59dac0b0c24493808ac820e659e14e46cc72b01", "referenceSha256": "25547da27b1295804e98c878275d74b2607316cd26f9a6b35bd91fd50b3fcd47"},
+          "32": {"source": "assets/new-horizons/art-source/guardian-spirit-symbol-v2/guardian-spirit-symbol-32.png", "sourceSha256": "63536ce43ddeb4b7852fb3dd89b3eafd66887a78e0cf9c442ed60afa13d97f98", "live": "Mods/new-horizons/Images/NH_spell_guardian_spirit_32.png", "liveSha256": "63536ce43ddeb4b7852fb3dd89b3eafd66887a78e0cf9c442ed60afa13d97f98", "referenceSha256": "c342877491bc1fabbc4c5fa213e83f9df2f48e428099baa1538ba47a5defbdf0"},
+          "30": {"source": "assets/new-horizons/art-source/guardian-spirit-symbol-v2/guardian-spirit-symbol-30.png", "sourceSha256": "06bbc8d60f1205bf6191fa63b642a4cc6cc054de1976d91ef3f498d1741ee579", "live": "Mods/new-horizons/Images/NH_spell_guardian_spirit_30.png", "liveSha256": "06bbc8d60f1205bf6191fa63b642a4cc6cc054de1976d91ef3f498d1741ee579", "referenceSha256": "bb997e00c878d472e6ac3ec3c575d5c724905a9a12eef71def5323cd9424e142"}
+        }
+      }
+    },
+    {
+      "spellKey": "heavenlyGale",
+      "name": "Heavenly Gale",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_spell_heavenly_gale_44.png", "iconScroll": "NH_spell_heavenly_gale_32.png", "iconEffect": "NH_spell_heavenly_gale_30.png", "iconImmune": "NH_spell_heavenly_gale_30.png", "iconScenarioBonus": "NH_spell_heavenly_gale_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/heavenly-gale-v1/master.png", "exports": {"44": "assets/new-horizons/art-source/heavenly-gale-v1/heavenly-gale-44.png", "32": "assets/new-horizons/art-source/heavenly-gale-v1/heavenly-gale-32.png", "30": "assets/new-horizons/art-source/heavenly-gale-v1/heavenly-gale-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/heavenly-gale-symbol-v2/master.png",
+        "masterSha256": "9f5c9e99fa896674c414863ff037e973aff9a1ec2e156fa8b584910c04bee03f",
+        "prompt": "assets/new-horizons/art-source/heavenly-gale-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/heavenly-gale-symbol-v2/heavenly-gale-symbol-44.png", "sourceSha256": "1bb874d491f719643358910ba3b3cf15e9ddd497a8e6f63e52cc0d284d0fd892", "live": "Mods/new-horizons/Images/NH_spell_heavenly_gale_44.png", "liveSha256": "1bb874d491f719643358910ba3b3cf15e9ddd497a8e6f63e52cc0d284d0fd892", "referenceSha256": "48d6dd0ae77b36467c04d1ba3d622c380031824fbe0288f6bf2df99379c625ce"},
+          "32": {"source": "assets/new-horizons/art-source/heavenly-gale-symbol-v2/heavenly-gale-symbol-32.png", "sourceSha256": "d38f67aefb6df1b69847e7e7d8d0ec116d6ad95bd9ca2a6b7a7d2930a28af8f1", "live": "Mods/new-horizons/Images/NH_spell_heavenly_gale_32.png", "liveSha256": "d38f67aefb6df1b69847e7e7d8d0ec116d6ad95bd9ca2a6b7a7d2930a28af8f1", "referenceSha256": "b520a0262dba176cec26718785ed296ffb019634d0d9c919966d92e5f7592113"},
+          "30": {"source": "assets/new-horizons/art-source/heavenly-gale-symbol-v2/heavenly-gale-symbol-30.png", "sourceSha256": "0b840f3972c7088f5aa5f17f0697ba7aeb62429680958d071747cd52b5b0354d", "live": "Mods/new-horizons/Images/NH_spell_heavenly_gale_30.png", "liveSha256": "0b840f3972c7088f5aa5f17f0697ba7aeb62429680958d071747cd52b5b0354d", "referenceSha256": "fb44f9bb754b893c0d4787a785fd2f60c5c4b6205727b4a797b06edc33d92138"}
+        }
+      }
+    },
+    {
+      "spellKey": "divineRetribution",
+      "name": "Divine Retribution",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_spell_divine_retribution_44.png", "iconScroll": "NH_spell_divine_retribution_32.png", "iconEffect": "NH_spell_divine_retribution_30.png", "iconImmune": "NH_spell_divine_retribution_30.png", "iconScenarioBonus": "NH_spell_divine_retribution_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/divine-retribution-v1/exports/divine-retribution/master.png", "exports": {"44": "assets/new-horizons/art-source/divine-retribution-v1/exports/divine-retribution/divine-retribution-44.png", "32": "assets/new-horizons/art-source/divine-retribution-v1/exports/divine-retribution/divine-retribution-32.png", "30": "assets/new-horizons/art-source/divine-retribution-v1/exports/divine-retribution/divine-retribution-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/divine-retribution-symbol-v2/master.png",
+        "masterSha256": "53c3d41a9d705143ab2eed2c850fdcf3232cfd4831cf0fd36323c2845b3211bc",
+        "prompt": "assets/new-horizons/art-source/divine-retribution-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/divine-retribution-symbol-v2/divine-retribution-symbol-44.png", "sourceSha256": "94585402296da5aa432a105d9ec8f6421015d9e45df4ee5eaaab03598bdcc26e", "live": "Mods/new-horizons/Images/NH_spell_divine_retribution_44.png", "liveSha256": "94585402296da5aa432a105d9ec8f6421015d9e45df4ee5eaaab03598bdcc26e", "referenceSha256": "3c574ad0948b4d8eceeed6e3c16e1e6a26fd17f44327716c1f866ebeebc06e74"},
+          "32": {"source": "assets/new-horizons/art-source/divine-retribution-symbol-v2/divine-retribution-symbol-32.png", "sourceSha256": "c6a25f2aee90180abed0c315816ba9ef4f14827f3d2d05e27a30ca28d59d2b03", "live": "Mods/new-horizons/Images/NH_spell_divine_retribution_32.png", "liveSha256": "c6a25f2aee90180abed0c315816ba9ef4f14827f3d2d05e27a30ca28d59d2b03", "referenceSha256": "beebef9503054988f783eb61e78e0779fb8eb72a3c8d7ec13ae8b3e5de9ce1f2"},
+          "30": {"source": "assets/new-horizons/art-source/divine-retribution-symbol-v2/divine-retribution-symbol-30.png", "sourceSha256": "d277239acf6bd67ed13008553dc1703f54e2acf21ba38b5598bd8bbc1d8e34d5", "live": "Mods/new-horizons/Images/NH_spell_divine_retribution_30.png", "liveSha256": "d277239acf6bd67ed13008553dc1703f54e2acf21ba38b5598bd8bbc1d8e34d5", "referenceSha256": "48191b9af30b18133f132621806942d519d9520b3ee87ce240348e7dffea1928"}
+        }
+      }
+    },
+    {
+      "spellKey": "purify",
+      "name": "Purify",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_spell_purify_44.png", "iconScroll": "NH_spell_purify_32.png", "iconEffect": "NH_spell_purify_30.png", "iconImmune": "NH_spell_purify_30.png", "iconScenarioBonus": "NH_spell_purify_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/purify-v1/master.png", "exports": {"44": "assets/new-horizons/art-source/purify-v1/exports-final/NH_spell_purify-44.png", "32": "assets/new-horizons/art-source/purify-v1/exports-final/NH_spell_purify-32.png", "30": "assets/new-horizons/art-source/purify-v1/exports-final/NH_spell_purify-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/purify-symbol-v2/master.png",
+        "masterSha256": "2a69e2748d1ca8e6c7c78cd06270539e638f5edde6bfd15b7766301b2b8d61be",
+        "prompt": "assets/new-horizons/art-source/purify-symbol-v2/README.md#exact-edit-prompt",
+        "referenceIdentity": "The original purify-v1/master.png and active exports-final/master.png are byte-identical; this is a background-extracted/reframed revision of the same censer-and-plume subject.",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/purify-symbol-v2/purify-symbol-44.png", "sourceSha256": "41ce0505b6e2b4842bbd0cab79ccfef3ce425cdf6e37ac1ececc47941a300da5", "live": "Mods/new-horizons/Images/NH_spell_purify_44.png", "liveSha256": "41ce0505b6e2b4842bbd0cab79ccfef3ce425cdf6e37ac1ececc47941a300da5", "referenceSha256": "1b452a6e4ccf80d48629f225e4dab92288005163db6b66a2bf07be090b5847b1"},
+          "32": {"source": "assets/new-horizons/art-source/purify-symbol-v2/purify-symbol-32.png", "sourceSha256": "94e8e633a654235622beb1daba6ab6b8b4fc6e219199b79849b4830c8b7c8799", "live": "Mods/new-horizons/Images/NH_spell_purify_32.png", "liveSha256": "94e8e633a654235622beb1daba6ab6b8b4fc6e219199b79849b4830c8b7c8799", "referenceSha256": "1d7f4812cf416d763f329f1e8f2a8e0660df2544bdb11e1af4c17b5d6d806b5d"},
+          "30": {"source": "assets/new-horizons/art-source/purify-symbol-v2/purify-symbol-30.png", "sourceSha256": "bf521665d7c85ed781766d0f1978b68b8b9e7e64d4b800f918d9553cdf4494d5", "live": "Mods/new-horizons/Images/NH_spell_purify_30.png", "liveSha256": "bf521665d7c85ed781766d0f1978b68b8b9e7e64d4b800f918d9553cdf4494d5", "referenceSha256": "7bf6abef1106fe2657b854d01bf8c7326eda1677615d2071d10db8a639b9731c"}
+        }
+      }
+    },
+    {
+      "spellKey": "blink",
+      "name": "Blink",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_spell_blink_44.png", "iconScroll": "NH_spell_blink_32.png", "iconEffect": "NH_spell_blink_30.png", "iconImmune": "NH_spell_blink_30.png", "iconScenarioBonus": "NH_spell_blink_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/blink-v1/master.png", "exports": {"44": "assets/new-horizons/art-source/blink-v1/blink-44.png", "32": "assets/new-horizons/art-source/blink-v1/blink-32.png", "30": "assets/new-horizons/art-source/blink-v1/blink-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/blink-symbol-v2/master.png",
+        "masterSha256": "97871067dd32f623fad499b709afaca2662807ed50aca1285b5fca20507e5563",
+        "prompt": "assets/new-horizons/art-source/blink-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/blink-symbol-v2/blink-symbol-44.png", "sourceSha256": "fa6d2c65bc80d45eb429f557291f7e74466245e37db4783f3aad046111870e88", "live": "Mods/new-horizons/Images/NH_spell_blink_44.png", "liveSha256": "fa6d2c65bc80d45eb429f557291f7e74466245e37db4783f3aad046111870e88", "referenceSha256": "019d368e143aa1a9cf6f095a6c31898cdb051d7968ab78278a0a847ce8e5d436"},
+          "32": {"source": "assets/new-horizons/art-source/blink-symbol-v2/blink-symbol-32.png", "sourceSha256": "5cd668823d392a059b611e4a44c5803e2e89cafd62d010c3289f204d3085a967", "live": "Mods/new-horizons/Images/NH_spell_blink_32.png", "liveSha256": "5cd668823d392a059b611e4a44c5803e2e89cafd62d010c3289f204d3085a967", "referenceSha256": "23bece59bc13c87460d8edac35b69335892c6cfe7e729633e59ae6327287b6df"},
+          "30": {"source": "assets/new-horizons/art-source/blink-symbol-v2/blink-symbol-30.png", "sourceSha256": "7e289d0cab2378b7e48117f0621177f793dbcfa9f83acd9b2500a2ef82a04a1f", "live": "Mods/new-horizons/Images/NH_spell_blink_30.png", "liveSha256": "7e289d0cab2378b7e48117f0621177f793dbcfa9f83acd9b2500a2ef82a04a1f", "referenceSha256": "5092b35447825638f49661730876d14d3839f8b6758cbac9d4ea13db43ec8943"}
+        }
+      }
+    },
+    {
+      "spellKey": "hydrasVitality",
+      "name": "Hydra's Vitality",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_spell_hydras_vitality_44.png", "iconScroll": "NH_spell_hydras_vitality_32.png", "iconEffect": "NH_spell_hydras_vitality_30.png", "iconImmune": "NH_spell_hydras_vitality_30.png", "iconScenarioBonus": "NH_spell_hydras_vitality_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/hydras-vitality-v1/master.png", "exports": {"44": "assets/new-horizons/art-source/hydras-vitality-v1/hydras-vitality-44.png", "32": "assets/new-horizons/art-source/hydras-vitality-v1/hydras-vitality-32.png", "30": "assets/new-horizons/art-source/hydras-vitality-v1/hydras-vitality-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/hydras-vitality-symbol-v2/master.png",
+        "masterSha256": "19f0a78571214eea89d9f723405934de61e9aa51cc413d8367cd4dc367362654",
+        "prompt": "assets/new-horizons/art-source/hydras-vitality-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/hydras-vitality-symbol-v2/hydras-vitality-symbol-44.png", "sourceSha256": "f94aaf90b6732fdd31cd53f3e180f846aa3268817ec4531d10934f853a6d777d", "live": "Mods/new-horizons/Images/NH_spell_hydras_vitality_44.png", "liveSha256": "f94aaf90b6732fdd31cd53f3e180f846aa3268817ec4531d10934f853a6d777d", "referenceSha256": "ff7431f3a6f13261d03e3b4fd62963e5e830c14621e4084fc73a933178c7783a"},
+          "32": {"source": "assets/new-horizons/art-source/hydras-vitality-symbol-v2/hydras-vitality-symbol-32.png", "sourceSha256": "465125bbf4c3aa6d509b456a93e1a46f041d79f451dcdca32da8ed2bc2286140", "live": "Mods/new-horizons/Images/NH_spell_hydras_vitality_32.png", "liveSha256": "465125bbf4c3aa6d509b456a93e1a46f041d79f451dcdca32da8ed2bc2286140", "referenceSha256": "9246cd7dcae2b6429e3aae73635a05343fd454eaf177f7f19ceef09c9e1e6489"},
+          "30": {"source": "assets/new-horizons/art-source/hydras-vitality-symbol-v2/hydras-vitality-symbol-30.png", "sourceSha256": "500e068c6fe069c4aea70af6b0d97428878fc09d757fc97f3ae5ca4a043eaa1a", "live": "Mods/new-horizons/Images/NH_spell_hydras_vitality_30.png", "liveSha256": "500e068c6fe069c4aea70af6b0d97428878fc09d757fc97f3ae5ca4a043eaa1a", "referenceSha256": "55c9697d87b1356b50cdb8b058d6b07de095b180901db868d425426a9316abb0"}
+        }
+      }
+    },
+    {
+      "spellKey": "verdantPrison",
+      "name": "Verdant Prison",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_spell_verdant_prison_44.png", "iconScroll": "NH_spell_verdant_prison_32.png", "iconEffect": "NH_spell_verdant_prison_30.png", "iconImmune": "NH_spell_verdant_prison_30.png", "iconScenarioBonus": "NH_spell_verdant_prison_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/verdant-prison-v1/master.png", "exports": {"44": "assets/new-horizons/art-source/verdant-prison-v1/verdant-prison-44.png", "32": "assets/new-horizons/art-source/verdant-prison-v1/verdant-prison-32.png", "30": "assets/new-horizons/art-source/verdant-prison-v1/verdant-prison-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/verdant-prison-symbol-v2/master.png",
+        "masterSha256": "0f0181dda801aac7bf3a51bbef6d877debf3c280e9df91da198082258ded2f0d",
+        "prompt": "assets/new-horizons/art-source/verdant-prison-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/verdant-prison-symbol-v2/verdant-prison-symbol-44.png", "sourceSha256": "6b5dedad30e445c7f1f3c5ed3716f818ac4fe1c073c3287d87aa8676dcab2986", "live": "Mods/new-horizons/Images/NH_spell_verdant_prison_44.png", "liveSha256": "6b5dedad30e445c7f1f3c5ed3716f818ac4fe1c073c3287d87aa8676dcab2986", "referenceSha256": "0c256daa70d5f1869122566ad3dbb06bbf99c0a13eb47a9471110b7f4d562835"},
+          "32": {"source": "assets/new-horizons/art-source/verdant-prison-symbol-v2/verdant-prison-symbol-32.png", "sourceSha256": "8f6ea3486fd3efd7c8f823feedff6cbc481202178bec0c271ce7d62e219566df", "live": "Mods/new-horizons/Images/NH_spell_verdant_prison_32.png", "liveSha256": "8f6ea3486fd3efd7c8f823feedff6cbc481202178bec0c271ce7d62e219566df", "referenceSha256": "afe77f743334427ad54a29f6d51e35610da0e186ac81140c6cf7c0d93d6cfb33"},
+          "30": {"source": "assets/new-horizons/art-source/verdant-prison-symbol-v2/verdant-prison-symbol-30.png", "sourceSha256": "f8d575ce6af273cd13ffcdc25b2012d8ede5a019a2df6d7f5ad4913d63c44f15", "live": "Mods/new-horizons/Images/NH_spell_verdant_prison_30.png", "liveSha256": "f8d575ce6af273cd13ffcdc25b2012d8ede5a019a2df6d7f5ad4913d63c44f15", "referenceSha256": "7e44a5c56e552a54240e9e6a95bce83acfc8ea8a5dfb398ed4c6e0b380d63c32"}
+        }
+      }
+    },
+    {
+      "spellKey": "summonTrolls",
+      "name": "Summon Trolls",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_spell_summon_trolls_44.png", "iconScroll": "NH_spell_summon_trolls_32.png", "iconEffect": "NH_spell_summon_trolls_30.png", "iconImmune": "NH_spell_summon_trolls_30.png", "iconScenarioBonus": "NH_spell_summon_trolls_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/summon-trolls-v1/master.png", "exports": {"44": "assets/new-horizons/art-source/summon-trolls-v1/summon-trolls-44.png", "32": "assets/new-horizons/art-source/summon-trolls-v1/summon-trolls-32.png", "30": "assets/new-horizons/art-source/summon-trolls-v1/summon-trolls-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/summon-trolls-symbol-v2/master.png",
+        "masterSha256": "f063910b39bba6e715fe90478b19b1b8707d3d974a57474429c2735824311198",
+        "prompt": "assets/new-horizons/art-source/summon-trolls-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/summon-trolls-symbol-v2/summon-trolls-symbol-44.png", "sourceSha256": "58ec5d506839094dbd655d142d81462283129c7e473f958d80f585d7b0b09478", "live": "Mods/new-horizons/Images/NH_spell_summon_trolls_44.png", "liveSha256": "58ec5d506839094dbd655d142d81462283129c7e473f958d80f585d7b0b09478", "referenceSha256": "3e936408f0f5204d1320ab2988a4b774ffdeabb25e3ba361205b6d129a93788e"},
+          "32": {"source": "assets/new-horizons/art-source/summon-trolls-symbol-v2/summon-trolls-symbol-32.png", "sourceSha256": "d1373c76cadb4671e09c0412e9b6289a7ad5540e8218278410bae89aeaf8a95a", "live": "Mods/new-horizons/Images/NH_spell_summon_trolls_32.png", "liveSha256": "d1373c76cadb4671e09c0412e9b6289a7ad5540e8218278410bae89aeaf8a95a", "referenceSha256": "d38ca4467ca68ad67fbce0cf98e6e0decee011dc71fd17c01d643cb71574254d"},
+          "30": {"source": "assets/new-horizons/art-source/summon-trolls-symbol-v2/summon-trolls-symbol-30.png", "sourceSha256": "42c20c71e9b83c80c9cb90efb1d2c25e67156e535a2540c08b0f1c01309b67e8", "live": "Mods/new-horizons/Images/NH_spell_summon_trolls_30.png", "liveSha256": "42c20c71e9b83c80c9cb90efb1d2c25e67156e535a2540c08b0f1c01309b67e8", "referenceSha256": "990fb5386b7f64ec9e6795818b5c700398e3dc03cdb954e723401486c94c4726"}
+        }
+      }
+    },
+    {
+      "spellKey": "vengefulVines",
+      "name": "Vengeful Vines",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_spell_vengeful_vines_44.png", "iconScroll": "NH_spell_vengeful_vines_32.png", "iconEffect": "NH_spell_vengeful_vines_30.png", "iconImmune": "NH_spell_vengeful_vines_30.png", "iconScenarioBonus": "NH_spell_vengeful_vines_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/vengeful-vines-v1/master.png", "exports": {"44": "assets/new-horizons/art-source/vengeful-vines-v1/vengeful-vines-44.png", "32": "assets/new-horizons/art-source/vengeful-vines-v1/vengeful-vines-32.png", "30": "assets/new-horizons/art-source/vengeful-vines-v1/vengeful-vines-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/vengeful-vines-symbol-v2/master.png",
+        "masterSha256": "a03a164c749b75da2beeba85ed0346908733997be70c8038c93b26aa51ee8b4e",
+        "prompt": "assets/new-horizons/art-source/vengeful-vines-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/vengeful-vines-symbol-v2/vengeful-vines-symbol-44.png", "sourceSha256": "2097f60a46d5548ecfc9d27c5ebec8d368cb5cf7597e3062c580cc906d87f967", "live": "Mods/new-horizons/Images/NH_spell_vengeful_vines_44.png", "liveSha256": "2097f60a46d5548ecfc9d27c5ebec8d368cb5cf7597e3062c580cc906d87f967", "referenceSha256": "cae077673436ff49ba2069f9f64fbcccd10bf2e090667866a15fe11063252285"},
+          "32": {"source": "assets/new-horizons/art-source/vengeful-vines-symbol-v2/vengeful-vines-symbol-32.png", "sourceSha256": "f6ee625bc9dd249f2606261d629e43d2b66b10981db12088bca088d80e189ab1", "live": "Mods/new-horizons/Images/NH_spell_vengeful_vines_32.png", "liveSha256": "f6ee625bc9dd249f2606261d629e43d2b66b10981db12088bca088d80e189ab1", "referenceSha256": "284af40840f657d21d1ded96455ed266fcb941b63c8456a0ac4a7b4ce66acfd5"},
+          "30": {"source": "assets/new-horizons/art-source/vengeful-vines-symbol-v2/vengeful-vines-symbol-30.png", "sourceSha256": "e29c669a0559569ccfb4dd105256a36719220f1c12a2f05f9e688e2963411b18", "live": "Mods/new-horizons/Images/NH_spell_vengeful_vines_30.png", "liveSha256": "e29c669a0559569ccfb4dd105256a36719220f1c12a2f05f9e688e2963411b18", "referenceSha256": "cc579150d5df2a656a3599355a76a36ede024613d440f80277a8f57ff06fd678"}
+        }
+      }
+    },
+    {
+      "spellKey": "entangle",
+      "name": "Entangle",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_spell_entangle_44.png", "iconScroll": "NH_spell_entangle_32.png", "iconEffect": "NH_spell_entangle_30.png", "iconImmune": "NH_spell_entangle_30.png", "iconScenarioBonus": "NH_spell_entangle_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/entangle-v1/master.png", "exports": {"44": "assets/new-horizons/art-source/entangle-v1/entangle-44.png", "32": "assets/new-horizons/art-source/entangle-v1/entangle-32.png", "30": "assets/new-horizons/art-source/entangle-v1/entangle-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/entangle-symbol-v2/master.png",
+        "masterSha256": "e188fcae8aba9e91c059d1aaf1aecfaf12fa2c27f4421fa2e387294aff2420a8",
+        "prompt": "assets/new-horizons/art-source/entangle-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/entangle-symbol-v2/entangle-symbol-44.png", "sourceSha256": "14ae0e8bef68d58bc9a5dfa4ae478473a69be2abc783f2c9a855c92c0f8416e5", "live": "Mods/new-horizons/Images/NH_spell_entangle_44.png", "liveSha256": "14ae0e8bef68d58bc9a5dfa4ae478473a69be2abc783f2c9a855c92c0f8416e5", "referenceSha256": "b6cfbb48360a949c35ea8d0fd35003b846aa59aafe297832956a51ae01b79feb"},
+          "32": {"source": "assets/new-horizons/art-source/entangle-symbol-v2/entangle-symbol-32.png", "sourceSha256": "2d91e1239a6084e9a0da4ac5626b8a7f406af45de8a6bc959992d613e6fc8a16", "live": "Mods/new-horizons/Images/NH_spell_entangle_32.png", "liveSha256": "2d91e1239a6084e9a0da4ac5626b8a7f406af45de8a6bc959992d613e6fc8a16", "referenceSha256": "3e67d8774705e9a9fa47d71020f33e33a82e427f5cf1789937ea4b1ac4465e2d"},
+          "30": {"source": "assets/new-horizons/art-source/entangle-symbol-v2/entangle-symbol-30.png", "sourceSha256": "a0ed040182d487fae13808869ce541edebb7363342a2e1843bd8acb035a31ee0", "live": "Mods/new-horizons/Images/NH_spell_entangle_30.png", "liveSha256": "a0ed040182d487fae13808869ce541edebb7363342a2e1843bd8acb035a31ee0", "referenceSha256": "a7b51171470d3c5686997a8dc46d0a1f35836967edfa887dc0c4bf422a0e394d"}
+        }
+      }
+    },
+    {
+      "spellKey": "holyArmor",
+      "name": "Holy Armor",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_spell_holy_armor_44.png", "iconScroll": "NH_spell_holy_armor_44.png", "iconEffect": "NH_spell_holy_armor_30.png", "iconImmune": "NH_spell_holy_armor_30.png", "iconScenarioBonus": "NH_spell_holy_armor_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/holy-armor-v1/exports/master.png", "exports": {"44": "assets/new-horizons/art-source/holy-armor-v1/exports/holy-armor-44.png", "32": "assets/new-horizons/art-source/holy-armor-v1/exports/holy-armor-32.png", "30": "assets/new-horizons/art-source/holy-armor-v1/exports/holy-armor-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/holy-armor-symbol-v2/master.png",
+        "masterSha256": "1520ed8b7c141daafcd7c6a396258810ce307275ae176961f6bcda598c1dfc47",
+        "prompt": "assets/new-horizons/art-source/holy-armor-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/holy-armor-symbol-v2/holy-armor-symbol-44.png", "sourceSha256": "7d280f0e12876e1187634973418198f7027a8d7e28e2aae3c656735cb3b4cc95", "live": "Mods/new-horizons/Images/NH_spell_holy_armor_44.png", "liveSha256": "7d280f0e12876e1187634973418198f7027a8d7e28e2aae3c656735cb3b4cc95", "referenceSha256": "51f25e332b2ddf887c43c52018d1d8eef6a141ac0d5d750a03303be7b451c1ff"},
+          "32": {"source": "assets/new-horizons/art-source/holy-armor-symbol-v2/holy-armor-symbol-32.png", "sourceSha256": "e0fa796166a8a9464393bae6333eea384648cc2155dd0609348ad6ac016d73ac", "live": "Mods/new-horizons/Images/NH_spell_holy_armor_32.png", "liveSha256": "e0fa796166a8a9464393bae6333eea384648cc2155dd0609348ad6ac016d73ac", "referenceSha256": "8262589893069d5de0fdec9df57975185b4d2b1afefe431d521fb1bd80dbf542"},
+          "30": {"source": "assets/new-horizons/art-source/holy-armor-symbol-v2/holy-armor-symbol-30.png", "sourceSha256": "f7b734a23b5f5a7ffb2a2a882fe700f7e2e36661b7ce2718a504cda2bcb3b39e", "live": "Mods/new-horizons/Images/NH_spell_holy_armor_30.png", "liveSha256": "f7b734a23b5f5a7ffb2a2a882fe700f7e2e36661b7ce2718a504cda2bcb3b39e", "referenceSha256": "34b49d7c4d6d3ea1b1491d6d68b1fab3529cf3e4c99537767ad63ec2cbf6b33b"}
+        }
+      }
+    },
+    {
+      "spellKey": "lifeDrain",
+      "name": "Life Drain",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_spell_life_drain_44.png", "iconScroll": "NH_spell_life_drain_32.png", "iconEffect": "NH_spell_life_drain_30.png", "iconImmune": "NH_spell_life_drain_30.png", "iconScenarioBonus": "NH_spell_life_drain_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/life-drain-v1/master.png", "exports": {"44": "assets/new-horizons/art-source/life-drain-v1/life-drain-44.png", "32": "assets/new-horizons/art-source/life-drain-v1/life-drain-32.png", "30": "assets/new-horizons/art-source/life-drain-v1/life-drain-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/life-drain-symbol-v2/master.png",
+        "masterSha256": "311ffe745bf9aad21c9a04dcdea7837f6ac84c33de2f441c834cbb30a26a1f78",
+        "prompt": "assets/new-horizons/art-source/life-drain-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/life-drain-symbol-v2/life-drain-symbol-44.png", "sourceSha256": "014225f2b09350c97ab44c054ecd791c8b5e40d6d408010fd35a14de941c2580", "live": "Mods/new-horizons/Images/NH_spell_life_drain_44.png", "liveSha256": "014225f2b09350c97ab44c054ecd791c8b5e40d6d408010fd35a14de941c2580", "referenceSha256": "7d9e30912763cef064d5c64748b30611b536f891db1d411f3f3cc18451371112"},
+          "32": {"source": "assets/new-horizons/art-source/life-drain-symbol-v2/life-drain-symbol-32.png", "sourceSha256": "72cab87a7586a38d2aacd9d4cdc53bcacfd10f93d653b72cf545a5bc128774de", "live": "Mods/new-horizons/Images/NH_spell_life_drain_32.png", "liveSha256": "72cab87a7586a38d2aacd9d4cdc53bcacfd10f93d653b72cf545a5bc128774de", "referenceSha256": "6bc808fdf15a238afcf45471f60cb9209a4a6800196823136b7c4254a139eb80"},
+          "30": {"source": "assets/new-horizons/art-source/life-drain-symbol-v2/life-drain-symbol-30.png", "sourceSha256": "74d62bfccfa85e77a0393d3953bcc7e5f1c2f4ff3bedb472578f3813435cd0cc", "live": "Mods/new-horizons/Images/NH_spell_life_drain_30.png", "liveSha256": "74d62bfccfa85e77a0393d3953bcc7e5f1c2f4ff3bedb472578f3813435cd0cc", "referenceSha256": "23855e84937a2535d40609a12cf5b3d45b7d31913fd9d6f969ae2e28f7d6154a"}
+        }
+      }
+    },
+    {
+      "spellKey": "stormOfDaggers",
+      "name": "Storm of Daggers",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_stormOfDaggers_44.png", "iconScroll": "NH_stormOfDaggers_44.png", "iconEffect": "NH_stormOfDaggers_30.png", "iconImmune": "NH_stormOfDaggers_30.png", "iconScenarioBonus": "NH_stormOfDaggers_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/storm-of-daggers-v1/icon-exports/master.png", "exports": {"44": "assets/new-horizons/art-source/storm-of-daggers-v1/icon-exports/storm-of-daggers-44.png", "32": "assets/new-horizons/art-source/storm-of-daggers-v1/icon-exports/storm-of-daggers-32.png", "30": "assets/new-horizons/art-source/storm-of-daggers-v1/icon-exports/storm-of-daggers-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/storm-of-daggers-symbol-v2/master.png",
+        "masterSha256": "5985022adba44da71311a7d4d74e3922da9f0b84bb89b9e0ce3b56c273d81ba2",
+        "prompt": "assets/new-horizons/art-source/storm-of-daggers-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/storm-of-daggers-symbol-v2/storm-of-daggers-symbol-44.png", "sourceSha256": "ee99c7cc398a50c97e0af6dc73f3888c2e23f77bb4b394960096aaf5ad124f71", "live": "Mods/new-horizons/Images/NH_stormOfDaggers_44.png", "liveSha256": "ee99c7cc398a50c97e0af6dc73f3888c2e23f77bb4b394960096aaf5ad124f71", "referenceSha256": "9d3df28c4fac52037f5d146d7e896b0cb0e8285b2e38993e82fc8a73c686b50b"},
+          "32": {"source": "assets/new-horizons/art-source/storm-of-daggers-symbol-v2/storm-of-daggers-symbol-32.png", "sourceSha256": "8d19b2a85765d7e4812c42a4bd93db5ae3173f1076e714b28c7ff1bd86daa4aa", "live": "Mods/new-horizons/Images/NH_stormOfDaggers_32.png", "liveSha256": "8d19b2a85765d7e4812c42a4bd93db5ae3173f1076e714b28c7ff1bd86daa4aa", "referenceSha256": "83d32aafdb5c4bcb25e96c3bf6094bf4de0a8ce5955a780d0ba7d74f2b6ae70a"},
+          "30": {"source": "assets/new-horizons/art-source/storm-of-daggers-symbol-v2/storm-of-daggers-symbol-30.png", "sourceSha256": "d08b325a317ad2844d972b52e6e968e0d458670fab9d4f81526426321dbe6e41", "live": "Mods/new-horizons/Images/NH_stormOfDaggers_30.png", "liveSha256": "d08b325a317ad2844d972b52e6e968e0d458670fab9d4f81526426321dbe6e41", "referenceSha256": "d76f82d58ef94c28f4ee7ba0570aa6a62e84c137717c1994028a4d73452b6ef6"}
+        }
+      }
+    },
+    {
+      "spellKey": "regeneration",
+      "name": "Regeneration",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_regeneration_44.png", "iconScroll": "NH_regeneration_44.png", "iconEffect": "NH_regeneration_30.png", "iconImmune": "NH_regeneration_30.png", "iconScenarioBonus": "SPELLBON.def:0:15"},
+      "reference": {"master": "assets/new-horizons/art-source/regeneration-v1/selected/master.png", "exports": {"44": "assets/new-horizons/art-source/regeneration-v1/selected/NH_regeneration-44.png", "32": "assets/new-horizons/art-source/regeneration-v1/selected/NH_regeneration-32.png", "30": "assets/new-horizons/art-source/regeneration-v1/selected/NH_regeneration-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/regeneration-symbol-v2/master.png",
+        "masterSha256": "6af95164c1114e9f5322802ddb715cb635cb9f935b7b580ef16b273d8c6b7efc",
+        "prompt": "assets/new-horizons/art-source/regeneration-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/regeneration-symbol-v2/regeneration-symbol-44.png", "sourceSha256": "5f8cabd9343ffac910d65f785368761ca42bfe5f5444c1e8304ce3422453904f", "live": "Mods/new-horizons/Images/NH_regeneration_44.png", "liveSha256": "5f8cabd9343ffac910d65f785368761ca42bfe5f5444c1e8304ce3422453904f", "referenceSha256": "8ee6032ae0b8c8fb38090739324d604ffe429dd4a2774427a5687f1a010cf0a1"},
+          "32": {"source": "assets/new-horizons/art-source/regeneration-symbol-v2/regeneration-symbol-32.png", "sourceSha256": "50cfde92ca315c57f9cd7b0078a62ed16580b9aa9fec20c05313dc17d608141a", "live": "Mods/new-horizons/Images/NH_regeneration_32.png", "liveSha256": "50cfde92ca315c57f9cd7b0078a62ed16580b9aa9fec20c05313dc17d608141a", "referenceSha256": "93ac89308d927fbc98a8aedfc78b8ffab6fa8a7ad0fe09a2c3f41dddd8155861"},
+          "30": {"source": "assets/new-horizons/art-source/regeneration-symbol-v2/regeneration-symbol-30.png", "sourceSha256": "6da5720c2187fbe92a62ed4fed9a7956020d35602adf98bfb56b42b42aa42981", "live": "Mods/new-horizons/Images/NH_regeneration_30.png", "liveSha256": "6da5720c2187fbe92a62ed4fed9a7956020d35602adf98bfb56b42b42aa42981", "referenceSha256": "cd1e4d882ed74c58f640537afd0410cb7f126c0b2322469ea020f350c55387fa"}
+        }
+      }
+    },
+    {
+      "spellKey": "hexOfPain",
+      "name": "Hex of Pain",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_hex_of_pain_44.png", "iconScroll": "NH_hex_of_pain_32.png", "iconEffect": "NH_hex_of_pain_30.png", "iconImmune": "NH_hex_of_pain_30.png", "iconScenarioBonus": "NH_hex_of_pain_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/hex-of-pain-v1/exports/hex-of-pain/master.png", "exports": {"44": "assets/new-horizons/art-source/hex-of-pain-v1/exports/hex-of-pain/hex-of-pain-44.png", "32": "assets/new-horizons/art-source/hex-of-pain-v1/exports/hex-of-pain/hex-of-pain-32.png", "30": "assets/new-horizons/art-source/hex-of-pain-v1/exports/hex-of-pain/hex-of-pain-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/hex-of-pain-symbol-v2/master.png",
+        "masterSha256": "8b41eeac0c03380dfba412c40d6f248cb92aab6604be97db045d783ba90552dc",
+        "prompt": "assets/new-horizons/art-source/hex-of-pain-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/hex-of-pain-symbol-v2/hex-of-pain-symbol-44.png", "sourceSha256": "3a1f9b9595bda12353498b2eff93c0e7bfc63181f3a68964df10bd74421fd332", "live": "Mods/new-horizons/Images/NH_hex_of_pain_44.png", "liveSha256": "3a1f9b9595bda12353498b2eff93c0e7bfc63181f3a68964df10bd74421fd332", "referenceSha256": "acd18bceb0e8e32738bacee06de38560c13641fe555cf63b60953d28490a4ece"},
+          "32": {"source": "assets/new-horizons/art-source/hex-of-pain-symbol-v2/hex-of-pain-symbol-32.png", "sourceSha256": "969ec24696326ed519953e93a432c29304a43c09e3dfab6dbbb41655cc901a39", "live": "Mods/new-horizons/Images/NH_hex_of_pain_32.png", "liveSha256": "969ec24696326ed519953e93a432c29304a43c09e3dfab6dbbb41655cc901a39", "referenceSha256": "87aa524e07d044d572668458f3058c6c5f129f9ca28c237f9f75daee08a20ccd"},
+          "30": {"source": "assets/new-horizons/art-source/hex-of-pain-symbol-v2/hex-of-pain-symbol-30.png", "sourceSha256": "900e64602f05c6d68843524127d9ab9faba02bd2ea51e1e2b2eb0a94f1052844", "live": "Mods/new-horizons/Images/NH_hex_of_pain_30.png", "liveSha256": "900e64602f05c6d68843524127d9ab9faba02bd2ea51e1e2b2eb0a94f1052844", "referenceSha256": "b81c2dea4bc4986b860b1c985547a2e7e0b166396aed367f95fbbca0cf586947"}
+        }
+      }
+    },
+    {
+      "spellKey": "plague",
+      "name": "Plague",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_plague_44.png", "iconScroll": "NH_plague_32.png", "iconEffect": "NH_plague_30.png", "iconImmune": "NH_plague_30.png", "iconScenarioBonus": "NH_plague_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/plague-v1/master.png", "exports": {"44": "assets/new-horizons/art-source/plague-v1/plague-44.png", "32": "assets/new-horizons/art-source/plague-v1/plague-32.png", "30": "assets/new-horizons/art-source/plague-v1/plague-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/plague-symbol-v2/master.png",
+        "masterSha256": "aa9cdc2f6f8bc8287ccaad3eb65e894de931b586def6667a93965cbc0046c49e",
+        "prompt": "assets/new-horizons/art-source/plague-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/plague-symbol-v2/plague-symbol-44.png", "sourceSha256": "cb0bbac51cd54386543a374ec6036072f7bb2490f981c0fc9402813dbff763c7", "live": "Mods/new-horizons/Images/NH_plague_44.png", "liveSha256": "cb0bbac51cd54386543a374ec6036072f7bb2490f981c0fc9402813dbff763c7", "referenceSha256": "27778566b0f134ca26ee452d60ed70387cc6f38cd48c3ccb903ef83c0c31a3eb"},
+          "32": {"source": "assets/new-horizons/art-source/plague-symbol-v2/plague-symbol-32.png", "sourceSha256": "e00203c004c622ce2d3a10041cde1f116bbda22692c8396db661345209b5ec30", "live": "Mods/new-horizons/Images/NH_plague_32.png", "liveSha256": "e00203c004c622ce2d3a10041cde1f116bbda22692c8396db661345209b5ec30", "referenceSha256": "517ba3bf6e21e82b49f9e35565c3fb8bdc946392181e6d463415ce9eb2fbbdcd"},
+          "30": {"source": "assets/new-horizons/art-source/plague-symbol-v2/plague-symbol-30.png", "sourceSha256": "490a11d1c2e94aa739a3ca6a835d24c7451f2a1fd03838ed068d80be29738bf9", "live": "Mods/new-horizons/Images/NH_plague_30.png", "liveSha256": "490a11d1c2e94aa739a3ca6a835d24c7451f2a1fd03838ed068d80be29738bf9", "referenceSha256": "4161f6f8e449152bda0103ae42f0658532a9d7982c112165e3b91ba7b5f1513e"}
+        }
+      }
+    },
+    {
+      "spellKey": "soulChain",
+      "name": "Soul Chain",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_spell_soul_chain_44.png", "iconScroll": "NH_spell_soul_chain_44.png", "iconEffect": "NH_spell_soul_chain_30.png", "iconImmune": "NH_spell_soul_chain_30.png", "iconScenarioBonus": "NH_spell_soul_chain_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/soul-chain-v1/exports/soul-chain/master.png", "exports": {"44": "assets/new-horizons/art-source/soul-chain-v1/exports/soul-chain/soul-chain-44.png", "32": "assets/new-horizons/art-source/soul-chain-v1/exports/soul-chain/soul-chain-32.png", "30": "assets/new-horizons/art-source/soul-chain-v1/exports/soul-chain/soul-chain-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/soul-chain-symbol-v2/master.png",
+        "masterSha256": "30529b503773b9c47ecb19b4e01ce1bee9bedabc50fd7c804b852b3e96b57254",
+        "prompt": "assets/new-horizons/art-source/soul-chain-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/soul-chain-symbol-v2/soul-chain-symbol-44.png", "sourceSha256": "63c35ff30f6c91f086e63d8b0ffb8aaea09f3df403b137b3c15ee489610490c0", "live": "Mods/new-horizons/Images/NH_spell_soul_chain_44.png", "liveSha256": "63c35ff30f6c91f086e63d8b0ffb8aaea09f3df403b137b3c15ee489610490c0", "referenceSha256": "ee89018f24802ddd6de4a1dab797ec8036b019b6839376085758f059d0be2d70"},
+          "32": {"source": "assets/new-horizons/art-source/soul-chain-symbol-v2/soul-chain-symbol-32.png", "sourceSha256": "03be26c6c227b8733b31f244e97ec3155a63fe954f56a3de8772812a49d55197", "live": "Mods/new-horizons/Images/NH_spell_soul_chain_32.png", "liveSha256": "03be26c6c227b8733b31f244e97ec3155a63fe954f56a3de8772812a49d55197", "referenceSha256": "1e538ddef65f2a3d51a09257474578757a766119c8b2f4619d87af663036ec6f"},
+          "30": {"source": "assets/new-horizons/art-source/soul-chain-symbol-v2/soul-chain-symbol-30.png", "sourceSha256": "055874dcac01f5d7556318903dc46f8855b1788c62f1fa67492f87190c6a1dbd", "live": "Mods/new-horizons/Images/NH_spell_soul_chain_30.png", "liveSha256": "055874dcac01f5d7556318903dc46f8855b1788c62f1fa67492f87190c6a1dbd", "referenceSha256": "10846eb839237b4444e1e5772ebef0bcc43a955720fb6003d84184a7090556fa"}
+        }
+      }
+    },
+    {
+      "spellKey": "shadowGift",
+      "name": "Shadow Gift",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_spell_shadow_gift_44.png", "iconScroll": "NH_spell_shadow_gift_44.png", "iconEffect": "NH_spell_shadow_gift_30.png", "iconImmune": "NH_spell_shadow_gift_30.png", "iconScenarioBonus": "NH_spell_shadow_gift_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/shadow-gift-v2/master.png", "exports": {"44": "assets/new-horizons/art-source/shadow-gift-v2/shadow-gift-44.png", "32": "assets/new-horizons/art-source/shadow-gift-v2/shadow-gift-32.png", "30": "assets/new-horizons/art-source/shadow-gift-v2/shadow-gift-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/shadow-gift-symbol-v2/master.png",
+        "masterSha256": "11118dd4f9a15357331c3478ebd0e7153853ac7fccd24a463aef554c06a18419",
+        "prompt": "assets/new-horizons/art-source/shadow-gift-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/shadow-gift-symbol-v2/shadow-gift-symbol-44.png", "sourceSha256": "1dd586a1c957cdec76c8787e7281eb35b33179cd5c05cc5c748565915e51d3bf", "live": "Mods/new-horizons/Images/NH_spell_shadow_gift_44.png", "liveSha256": "1dd586a1c957cdec76c8787e7281eb35b33179cd5c05cc5c748565915e51d3bf", "referenceSha256": "f8d85530382e43c0823c674c5577c00d07d089b28bd07f1ebcb0cfa8d0e26b6b"},
+          "32": {"source": "assets/new-horizons/art-source/shadow-gift-symbol-v2/shadow-gift-symbol-32.png", "sourceSha256": "72fcd2914eb29dfb9a61c4806c22948c0e02420b55a570436f2679c3b2b7422f", "live": "Mods/new-horizons/Images/NH_spell_shadow_gift_32.png", "liveSha256": "72fcd2914eb29dfb9a61c4806c22948c0e02420b55a570436f2679c3b2b7422f", "referenceSha256": "639223d649adb952c24af07923ed0d44fedf93bbc8bed43092010fc535494e08"},
+          "30": {"source": "assets/new-horizons/art-source/shadow-gift-symbol-v2/shadow-gift-symbol-30.png", "sourceSha256": "1214882beec47e0f0186f55a544421230225e906a5befab2fc7f772a2125e947", "live": "Mods/new-horizons/Images/NH_spell_shadow_gift_30.png", "liveSha256": "1214882beec47e0f0186f55a544421230225e906a5befab2fc7f772a2125e947", "referenceSha256": "f01f2a80b47472aa9779181e04e95058593e0c79c38815af1bfbe8b5e67e280c"}
+        }
+      }
+    },
+    {
+      "spellKey": "vampirism",
+      "name": "Vampirism",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_spell_vampirism_44.png", "iconScroll": "NH_spell_vampirism_32.png", "iconEffect": "NH_spell_vampirism_30.png", "iconImmune": "NH_spell_vampirism_30.png", "iconScenarioBonus": "NH_spell_vampirism_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/vampirism-v1/master.png", "exports": {"44": "assets/new-horizons/art-source/vampirism-v1/vampirism-44.png", "32": "assets/new-horizons/art-source/vampirism-v1/vampirism-32.png", "30": "assets/new-horizons/art-source/vampirism-v1/vampirism-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/vampirism-symbol-v2/master.png",
+        "masterSha256": "1b3b3edc5324522ce4e9b22ea891076cd10343acf133bfc2f01b9726bac79885",
+        "prompt": "assets/new-horizons/art-source/vampirism-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/vampirism-symbol-v2/vampirism-symbol-44.png", "sourceSha256": "cebb9aa684f65d08884141f2c151c661c21149959873529739f81af2a62c5c10", "live": "Mods/new-horizons/Images/NH_spell_vampirism_44.png", "liveSha256": "cebb9aa684f65d08884141f2c151c661c21149959873529739f81af2a62c5c10", "referenceSha256": "203b6fe164ab0f7e86b8959ff2fbca5d7092879b268358c00632961fa2b30e33"},
+          "32": {"source": "assets/new-horizons/art-source/vampirism-symbol-v2/vampirism-symbol-32.png", "sourceSha256": "39a5854d27873ad438d928d298945232451e739dcb8fcc48ed7f665282cea377", "live": "Mods/new-horizons/Images/NH_spell_vampirism_32.png", "liveSha256": "39a5854d27873ad438d928d298945232451e739dcb8fcc48ed7f665282cea377", "referenceSha256": "efe317a740305c2f104b2d4f9c9351eb3a8851e49b39a0e73566c4907b32a55f"},
+          "30": {"source": "assets/new-horizons/art-source/vampirism-symbol-v2/vampirism-symbol-30.png", "sourceSha256": "25a2afa2cc7c8d8b8c0be58a61bfcef338daa0936125bce40ca691178272514f", "live": "Mods/new-horizons/Images/NH_spell_vampirism_30.png", "liveSha256": "25a2afa2cc7c8d8b8c0be58a61bfcef338daa0936125bce40ca691178272514f", "referenceSha256": "6d552b418d698d7a76c4690a3724a493626b4a0c851ded9486ec16d6fa8887df"}
+        }
+      }
+    },
+    {
+      "spellKey": "reanimate",
+      "name": "Re-animate",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_spell_reanimate_44.png", "iconScroll": "NH_spell_reanimate_32.png", "iconEffect": "NH_spell_reanimate_30.png", "iconImmune": "NH_spell_reanimate_30.png", "iconScenarioBonus": "NH_spell_reanimate_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/reanimate-v1/exports/reanimate/master.png", "exports": {"44": "assets/new-horizons/art-source/reanimate-v1/exports/reanimate/reanimate-44.png", "32": "assets/new-horizons/art-source/reanimate-v1/exports/reanimate/reanimate-32.png", "30": "assets/new-horizons/art-source/reanimate-v1/exports/reanimate/reanimate-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/reanimate-symbol-v2/master.png",
+        "masterSha256": "fa7563dafa8485dca12b2b3f1cb8c98f81d395d6ef5143170d019ef2564e9b38",
+        "prompt": "assets/new-horizons/art-source/reanimate-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/reanimate-symbol-v2/reanimate-symbol-44.png", "sourceSha256": "7e586b5e38d55b7f97ccf713636173490ff88753ee8c550c499d3cc53c89d9b6", "live": "Mods/new-horizons/Images/NH_spell_reanimate_44.png", "liveSha256": "7e586b5e38d55b7f97ccf713636173490ff88753ee8c550c499d3cc53c89d9b6", "referenceSha256": "bbd2f6e2eab3ff56ab42931610b75d56caff188ad1fd83680c9b606ebee26f3c"},
+          "32": {"source": "assets/new-horizons/art-source/reanimate-symbol-v2/reanimate-symbol-32.png", "sourceSha256": "469fc9a66d27b9a560bb81c925e7031c75d4e7d253252613bba77323fdba9bd3", "live": "Mods/new-horizons/Images/NH_spell_reanimate_32.png", "liveSha256": "469fc9a66d27b9a560bb81c925e7031c75d4e7d253252613bba77323fdba9bd3", "referenceSha256": "24b30e98a4e2b1d298fd5852c915adf27b3cb13ad7083cfa6a229f7a877f283b"},
+          "30": {"source": "assets/new-horizons/art-source/reanimate-symbol-v2/reanimate-symbol-30.png", "sourceSha256": "5e99b0edeae9d89179653da784ba5fa3227a6f8650cd521e2e22a3077c8b40bb", "live": "Mods/new-horizons/Images/NH_spell_reanimate_30.png", "liveSha256": "5e99b0edeae9d89179653da784ba5fa3227a6f8650cd521e2e22a3077c8b40bb", "referenceSha256": "1b435a310fdcca5f6fd2e361386f73250f3c4fde77efdf67a359f1dd5b3d743b"}
+        }
+      }
+    },
+    {
+      "spellKey": "soulReaper",
+      "name": "Soul Reaper",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_spell_soul_reaper_44.png", "iconScroll": "NH_spell_soul_reaper_32.png", "iconEffect": "NH_spell_soul_reaper_30.png", "iconImmune": "NH_spell_soul_reaper_30.png", "iconScenarioBonus": "NH_spell_soul_reaper_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/soul-reaper-v1/exports/master.png", "exports": {"44": "assets/new-horizons/art-source/soul-reaper-v1/exports/soul-reaper-44.png", "32": "assets/new-horizons/art-source/soul-reaper-v1/exports/soul-reaper-32.png", "30": "assets/new-horizons/art-source/soul-reaper-v1/exports/soul-reaper-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/soul-reaper-symbol-v2/master.png",
+        "masterSha256": "eb87f371c5f90b8df8029712a76ef939ba389ab5b20432eff5073ed5f4804a52",
+        "prompt": "assets/new-horizons/art-source/soul-reaper-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/soul-reaper-symbol-v2/soul-reaper-symbol-44.png", "sourceSha256": "45f71f3cbfbb3bc4faa5874a62310539a898b340b1dadd2425797378efbd7f23", "live": "Mods/new-horizons/Images/NH_spell_soul_reaper_44.png", "liveSha256": "45f71f3cbfbb3bc4faa5874a62310539a898b340b1dadd2425797378efbd7f23", "referenceSha256": "fcfca3429d1b5fdbb43e4dd73d17e30c63f7333030c0b9ab7431f89bb9a86bb4"},
+          "32": {"source": "assets/new-horizons/art-source/soul-reaper-symbol-v2/soul-reaper-symbol-32.png", "sourceSha256": "34395b690df93efd4cb4300b36d512a5447db3145ca5da503477da872f5ce21d", "live": "Mods/new-horizons/Images/NH_spell_soul_reaper_32.png", "liveSha256": "34395b690df93efd4cb4300b36d512a5447db3145ca5da503477da872f5ce21d", "referenceSha256": "e9618a6a90ff5220cf34261bbd9ad12440f3c914b1fceb629ab86ac188d64ef8"},
+          "30": {"source": "assets/new-horizons/art-source/soul-reaper-symbol-v2/soul-reaper-symbol-30.png", "sourceSha256": "d36a3bec32bda0261fcf8fac218870f781aea8d58660752b3a65cda89197913f", "live": "Mods/new-horizons/Images/NH_spell_soul_reaper_30.png", "liveSha256": "d36a3bec32bda0261fcf8fac218870f781aea8d58660752b3a65cda89197913f", "referenceSha256": "efe1ae278e1cd153df883cc358ec541f6284a9a961fd398f0bc52d11a4031fb8"}
+        }
+      }
+    },
+    {
+      "spellKey": "doom",
+      "name": "Doom",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_spell_doom_44.png", "iconScroll": "NH_spell_doom_32.png", "iconEffect": "NH_spell_doom_30.png", "iconImmune": "NH_spell_doom_30.png", "iconScenarioBonus": "NH_spell_doom_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/doom-v1/master.png", "exports": {"44": "assets/new-horizons/art-source/doom-v1/doom-44.png", "32": "assets/new-horizons/art-source/doom-v1/doom-32.png", "30": "assets/new-horizons/art-source/doom-v1/doom-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/doom-symbol-v2/master.png",
+        "masterSha256": "be3ea61c006a34f32c62a9c2528c8b07047a55ec6bfe42eff63fffd91fefc3d2",
+        "prompt": "assets/new-horizons/art-source/doom-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/doom-symbol-v2/doom-symbol-44.png", "sourceSha256": "733440f7b63c78013a23e8cd426d356215b373ff57f099835298f0979f64ebe3", "live": "Mods/new-horizons/Images/NH_spell_doom_44.png", "liveSha256": "733440f7b63c78013a23e8cd426d356215b373ff57f099835298f0979f64ebe3", "referenceSha256": "0a434ecf3c16d1e6aa9f6980ddf810f38bc6bd5b8c4aa81d32182bf2fa0f9236"},
+          "32": {"source": "assets/new-horizons/art-source/doom-symbol-v2/doom-symbol-32.png", "sourceSha256": "a494c50d76206c7310e5addd292230f4bdf0c3e18bc808165d77827bf3d8c042", "live": "Mods/new-horizons/Images/NH_spell_doom_32.png", "liveSha256": "a494c50d76206c7310e5addd292230f4bdf0c3e18bc808165d77827bf3d8c042", "referenceSha256": "413ef058c776ce13492f49ae0fabad758578237e0a1be6cfbf4a03f0cc86bf92"},
+          "30": {"source": "assets/new-horizons/art-source/doom-symbol-v2/doom-symbol-30.png", "sourceSha256": "c1a19d5463be74f1573e7994438bb6550cee6536c44b38d9b8bfc066984be3f7", "live": "Mods/new-horizons/Images/NH_spell_doom_30.png", "liveSha256": "c1a19d5463be74f1573e7994438bb6550cee6536c44b38d9b8bfc066984be3f7", "referenceSha256": "a7afb6adaab9baf29e2f4f0e71043af9bc4142f33affff01e508506d614064f2"}
+        }
+      }
+    },
+    {
+      "spellKey": "frailty",
+      "name": "Frailty",
+      "status": "converted",
+      "liveBindings": {"iconBook": "NH_frailty_44.png", "iconScroll": "NH_frailty_44.png", "iconEffect": "NH_frailty_30.png", "iconImmune": "NH_frailty_30.png", "iconScenarioBonus": "NH_frailty_32.png"},
+      "reference": {"master": "assets/new-horizons/art-source/frailty-v1/exports/frailty/master.png", "exports": {"44": "assets/new-horizons/art-source/frailty-v1/exports/frailty/frailty-44.png", "32": "assets/new-horizons/art-source/frailty-v1/exports/frailty/frailty-32.png", "30": "assets/new-horizons/art-source/frailty-v1/exports/frailty/frailty-30.png"}},
+      "symbol": {
+        "master": "assets/new-horizons/art-source/frailty-symbol-v2/master.png",
+        "masterSha256": "fe6d75a220d6e5cb5c47b020757ec83c6cd80250241e60b247cef9e3825fe504",
+        "prompt": "assets/new-horizons/art-source/frailty-symbol-v2/README.md#exact-edit-prompt",
+        "exports": {
+          "44": {"source": "assets/new-horizons/art-source/frailty-symbol-v2/frailty-symbol-44.png", "sourceSha256": "13fb3ee42d95c45ae72446c8b81087bfe1532727a1e736c86630efa3a471297d", "live": "Mods/new-horizons/Images/NH_frailty_44.png", "liveSha256": "13fb3ee42d95c45ae72446c8b81087bfe1532727a1e736c86630efa3a471297d", "referenceSha256": "0ac3c5d42564e75d375d1f81fee8b36895e785be029e23c05684af89adc4997d"},
+          "32": {"source": "assets/new-horizons/art-source/frailty-symbol-v2/frailty-symbol-32.png", "sourceSha256": "4b73fdb7f2859d991bc4ba03408417123d20dcf67e762ac9c35b3a586e0d813c", "live": "Mods/new-horizons/Images/NH_frailty_32.png", "liveSha256": "4b73fdb7f2859d991bc4ba03408417123d20dcf67e762ac9c35b3a586e0d813c", "referenceSha256": "14d0b2582d08686c5f3e5734e31affffa3ef192f6bd55541626007b13b53ad66"},
+          "30": {"source": "assets/new-horizons/art-source/frailty-symbol-v2/frailty-symbol-30.png", "sourceSha256": "505b3ffc2eeeb9602cedb436db93f5cd13eca307d6f77da854b25a89301e98a7", "live": "Mods/new-horizons/Images/NH_frailty_30.png", "liveSha256": "505b3ffc2eeeb9602cedb436db93f5cd13eca307d6f77da854b25a89301e98a7", "referenceSha256": "810251d698c5d76f8b17041fb8d5d5ea7be0ea7abf12b3a162fa560ff227c26b"}
+        }
+      }
+    }
+  ]
+}
