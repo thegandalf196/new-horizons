@@ -2,6 +2,29 @@
 
 ## Purpose
 
+### 2026-10-05 UP108 — Consecrated fixture header and projection baseline
+
+Client97140 passes. First native-target build2604 exits1 on an incorrect fixture
+include: CPlayerBattleCallback.h lives in lib/battle, not lib/callback. Retain
+UP108-consecrated-native-build.log; locate headers with rg --files before using
+a guessed subsystem path. Production compiles and remains unchanged.
+Independent review also catches two fixture-oracle issues before native testing:
+re-fetch a projected target after castEval because copy-on-write can replace the
+pre-cast live fallback; set an explicit creature enchant-duration baseline because
+CUnitState defaults to3, rather than assuming a HERO-only Bless formula applies
+to a creature. One imp's CREATURE_SPELL_POWER is divided by100; configure7500
+to exercise75 power. Repair setup/oracles without weakening the perk exclusions.
+No native acceptance or coverage increment until a frozen rebuilt candidate passes.
+Repaired build55168 passes. Native18598 passes21/22; all three new Consecrated
+cases pass. Its sole exception is Grand Formula's final CMemorySerializer::deepCopy
+after casualties: BattleInfo.h explicitly rejects binary casualty-health provenance
+since756d225818 (2026-10-03). Independent review classifies this existing whole-
+battle save/fixture expectation as Phase2, not a Consecrated regression. Preserve
+UP108-consecrated-native.log/XML. The accepted focused filter excludes only that
+case and passes21/21 in5.491s (5534), zero skips; retain
+UP108-consecrated-focused-accepted.log/XML. Do not weaken the protective save guard
+or describe the original22-case batch as fully green.
+
 ### 2026-10-05 UP108 — Callback interface and concrete spell includes
 
 First Reserve build47952 exits1; retain UP108-reserve-build.log. The generic

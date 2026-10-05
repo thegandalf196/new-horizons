@@ -21,4 +21,6 @@ namespace newHorizonsDivineMandate
 /// Divine Mandate pair transitions from zero to one in the current combat.
 DLL_LINKAGE int32_t chaplainReserveRecovery(const CGHeroInstance * hero,
 	uint8_t beforeCompletedPairs, uint8_t afterCompletedPairs);
+/// Spell Power-derived percentage captured for an eligible Divine Mandate cast.
+DLL_LINKAGE int32_t consecratedCastingBonusPercent(const CGHeroInstance * hero);
 }

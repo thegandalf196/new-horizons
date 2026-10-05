@@ -16,24 +16,37 @@
 
 namespace newHorizonsDivineMandate
 {
-int32_t chaplainReserveRecovery(const CGHeroInstance * hero,
-	const uint8_t beforeCompletedPairs, const uint8_t afterCompletedPairs)
+namespace
 {
-	if(!hero || beforeCompletedPairs != 0 || afterCompletedPairs != 1
-		|| hero->getFactionID() != FactionID::CASTLE
+bool hasActiveDivineMandate(const CGHeroInstance * hero)
+{
+	if(!hero || hero->getFactionID() != FactionID::CASTLE
 		|| !hero->usesPrimaryGrowth()
 		|| !newHorizonsHeroes::usesRules(hero->getPrimaryGrowthRules())
 		|| !newHorizonsMagic::spellPointRulesActive(hero->getMagicRules()))
-		return 0;
+		return false;
 
 	const auto factionSkill = newHorizonsHeroes::factionSkill(
 		hero->getPrimaryGrowthRules(), FactionID::CASTLE);
 	const auto divineMandateId = SecondarySkill::decode("new-horizons:divineMandate");
-	if(!factionSkill || divineMandateId < 0 || *factionSkill != SecondarySkill(divineMandateId)
-		|| hero->getSecSkillLevel(*factionSkill) == 0)
+	return factionSkill && divineMandateId >= 0 && *factionSkill == SecondarySkill(divineMandateId)
+		&& hero->getSecSkillLevel(*factionSkill) != 0;
+}
+}
+
+int32_t chaplainReserveRecovery(const CGHeroInstance * hero,
+	const uint8_t beforeCompletedPairs, const uint8_t afterCompletedPairs)
+{
+	if(beforeCompletedPairs != 0 || afterCompletedPairs != 1 || !hasActiveDivineMandate(hero))
 		return 0;
 
 	return hero->hasActivePerk("new-horizons:divineMandate",
 		"new-horizons:divineMandate.chaplainSReserve") ? 3 : 0;
+}
+
+int32_t consecratedCastingBonusPercent(const CGHeroInstance * hero)
+{
+	return hasActiveDivineMandate(hero) && hero->hasActivePerk("new-horizons:divineMandate",
+		"new-horizons:divineMandate.consecratedCasting") ? 10 : 0;
 }
 }

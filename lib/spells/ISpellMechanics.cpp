@@ -33,6 +33,7 @@
 #include "../battle/HeroCommand.h"
 #include "../battle/IBattleState.h"
 #include "../battle/AlternatingHeroActionState.h"
+#include "../battle/NewHorizonsDivineMandate.h"
 #include "../battle/NewHorizonsWarcasting.h"
 #include "../battle/Unit.h"
 #include "../mapObjects/CGHeroInstance.h"
@@ -783,22 +784,23 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	{
 		const auto * battleInfo = cb->getBattle();
 		const auto * hero = dynamic_cast<const CGHeroInstance *>(caster);
+		std::optional<HeroActionAllowanceState::Selection> spellAllowance;
+		if(!event->isMetamagicFollowup() && owner)
+			spellAllowance = cb->battleGetSpellActionAllowance(casterSide, owner->getId());
 		bool spendsHeroAllowance = !event->isMetamagicFollowup();
 		const int32_t battleRound = battleInfo ? battleInfo->getRound() : -1;
 		if(battleInfo && !event->isMetamagicFollowup() && battleRound >= 0
 			&& heroCommands::supportedByRules(battleInfo->getHeroCommandRules(), HeroCommand::CHARGE))
 		{
-			const auto & allowances = battleInfo->getHeroActionAllowances(casterSide);
-			if(allowances.currentRound == battleRound)
-			{
-				const auto selection = allowances.eligibleAllowance(
-					HeroActionAllowanceState::ActionKind::SPELL, battleRound);
-				spendsHeroAllowance = selection
-					&& selection->allowance == HeroActionAllowanceState::AllowanceKind::HERO;
-			}
-			else
-				spendsHeroAllowance = false;
+			spendsHeroAllowance = spellAllowance
+				&& spellAllowance->allowance == HeroActionAllowanceState::AllowanceKind::HERO;
 		}
+		if(battleInfo && hero && owner && battleInfo->getSideHero(casterSide) == hero
+			&& spellAllowance
+			&& spellAllowance->allowance == HeroActionAllowanceState::AllowanceKind::SPELL
+			&& spellAllowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE)
+			consecratedCastingBonusPercent =
+				newHorizonsDivineMandate::consecratedCastingBonusPercent(hero);
 		if(battleInfo && spendsHeroAllowance
 			&& newHorizonsWarcasting::enabled(battleInfo->getMagicRules()))
 			warcastingBonusPercent = newHorizonsWarcasting::spellBonus(hero,
@@ -1502,9 +1504,15 @@ int32_t BaseMechanics::getArcaneFocusBonusPercent() const
 	return arcaneFocusBonusPercent;
 }
 
+int32_t BaseMechanics::getConsecratedCastingBonusPercent() const
+{
+	return consecratedCastingBonusPercent;
+}
+
 int32_t BaseMechanics::getCastSpellPowerComponentBonusPercent() const
 {
-	const int combinedMultiplierPercent = (100 + arcaneFocusBonusPercent) * grandFormulaMultiplierPercent / 100;
+	const int combinedMultiplierPercent = (100 + arcaneFocusBonusPercent)
+		* grandFormulaMultiplierPercent * (100 + consecratedCastingBonusPercent) / 10000;
 	return combinedMultiplierPercent - 100;
 }
 

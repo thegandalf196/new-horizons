@@ -195,6 +195,7 @@ set(test_SRCS
 		server/battles/NewHorizonsSoulChainTest.cpp
 		server/battles/NewHorizonsElementalRebirthTest.cpp
 		server/battles/NewHorizonsChaplainReserveTest.cpp
+		server/battles/NewHorizonsConsecratedCastingTest.cpp
 		server/battles/NewHorizonsFrailtyTest.cpp
 		server/battles/LifeDrainTest.cpp
 		server/battles/SoulStealTest.cpp

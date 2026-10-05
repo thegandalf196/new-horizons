@@ -466,6 +466,7 @@ public:
 	int32_t getEffectPowerDivisor() const override;
 	int32_t getWarcastingBonusPercent() const override;
 	int32_t getArcaneFocusBonusPercent() const override;
+	int32_t getConsecratedCastingBonusPercent() const;
 	int32_t getCastSpellPowerComponentBonusPercent() const override;
 	IBattleCast::Value getEffectDuration() const override;
 	IBattleCast::Value adjustEffectDuration(IBattleCast::Value baseDuration) const override;
@@ -547,6 +548,8 @@ private:
 	int32_t warcastingBonusPercent = 0;
 	/// First-cast Arcane Focus captured before BattleSpellCast marks completion.
 	int32_t arcaneFocusBonusPercent = 0;
+	/// Consecrated Casting's Spell Power component bonus captured for this cast.
+	int32_t consecratedCastingBonusPercent = 0;
 	/// Grand Formula's 150% component multiplier, or 100% when unavailable.
 	int32_t grandFormulaMultiplierPercent = 100;
 	///actual spell-power affecting effect duration

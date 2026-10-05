@@ -1672,6 +1672,20 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		server->apply(castDescription);
 
 	server->apply(sc);
+	if(mode == Mode::HERO && getConsecratedCastingBonusPercent() > 0 && !isCounterspellNegated())
+	{
+		BattleLogMessage consecratedDescription;
+		consecratedDescription.battleID = battle()->getBattle()->getBattleID();
+		MetaString line;
+		line.appendTextID(caster->getCasterNameTextID());
+		line.appendRawString(" casts ");
+		line.appendTextID(owner->getNameTextID());
+		line.appendRawString(" through Divine Mandate: Consecrated Casting adds +");
+		line.appendNumber(getConsecratedCastingBonusPercent());
+		line.appendRawString("% to its Spell Power-derived components.");
+		consecratedDescription.lines.push_back(std::move(line));
+		server->apply(consecratedDescription);
+	}
 	if(mode == Mode::HERO && getWarcastingBonusPercent() > 0)
 	{
 		BattleLogMessage warcastingDescription;

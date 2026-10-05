@@ -1,6 +1,24 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-05
+UP108 Consecrated Casting source/native accepted: only a Light Spell paid by
+the selected Divine Mandate grant receives its captured10% SP-component factor.
+Initial Hero Action spells, other sources, creature casts, fixed terms and costs
+remain unchanged. Shared BaseMechanics supplies actual and detached prediction;
+an accepted-cast log identifies the modifier. Existing Arcane Focus/Grand Formula
+factors compose exactly for their current domain. Client97140 and repaired
+both-target55168 pass. Three new actual-effect/projection/control cases pass;
+the accepted focused run5534 passes21/21 in5.491s with zero skips. The initial
+22-case run18598 passes21/22; its sole Grand Formula binary battle-copy exception
+is the pre-existing casualty-health provenance rejection from756d225818, not a
+new perk regression. Preserve UP108-consecrated-native.log/XML and track that
+whole-battle save/fixture expectation for Phase2; the accepted rerun explicitly
+excludes only that case.17 data checks, module drift and independent review pass.
+Perks218->219/310; faction perks66->67/90; Divine Mandate1->2/10. Ranks93/93 and
+combat identities61/67 unchanged. Next: Sacred Command's distinct captured Order
+efficiency contribution, shared by live resolution and detached AI, with explicit
+save compatibility. No rendered acceptance or playable promotion is claimed.
+The following paragraphs record earlier acceptance checkpoints.
 UP108 Chaplain's Reserve source/native accepted: the first completed Divine
 Mandate pair restores3 Normal Spell Points after the Spell-side cost or accepted
 Order-side transition. Reuses the persisted completed-pair counter; no new action,
@@ -2392,9 +2410,9 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | All three ranks per Skill are active; many registered Skills still lack complete perk progression. |
 | Skill rank effects active | 93/93 | Elemental Rebirth's three ranks now have source/native and owning-side AI evidence. Active status does not certify every wider interaction. |
-| Skill perks active | 218/310 | 92 planned; Chaplain's Reserve is the newest source/native-verified activation. Diplomacy is 7/10; Chaos Magic 4/10; Necromancy 10/10; Learning 3/10; Estates 6/10; Battlecraft 6/10; Logistics 8/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 219/310 | 91 planned; Consecrated Casting is the newest source/native-verified activation. Diplomacy is 7/10; Chaos Magic 4/10; Necromancy 10/10; Learning 3/10; Estates 6/10; Battlecraft 6/10; Logistics 8/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 27/27 | All nine faction rank foundations are active; their remaining perks and wider integration are separate work. |
-| Faction perks active | 66/90 | 24 planned perks; Divine Mandate has its first real Basic perk, Chaplain's Reserve; Elemental Rebirth has three accepted perks with normal Basic-to-Advanced selection and live/detached evidence. |
+| Faction perks active | 67/90 | 23 planned perks; Divine Mandate has two real Basic choices, Chaplain's Reserve and Consecrated Casting; Elemental Rebirth has three accepted perks with normal Basic-to-Advanced selection and live/detached evidence. |
 | Canonical combat-spell identities registered | 61/67 | 6 missing/inactive; Puppet Master is the newest source/native-verified identity. Chaos is 7/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
@@ -2590,7 +2608,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Estates | 3/0 | 6/4 | Resource Broker joins Land Surveyor, Tax Collector, Investor, Estate Network and Financier. Local Marketplace rate, accepted AI trade, mine-capture grants, daily income, weekly Wood/Ore, weekly treasury interest and Investor's pre-income treasury snapshot have focused native evidence. Broader interactions and playable delivery remain separate. |
 | Learning | 3/0 | 3/7 | Mentor, Quick Study and Field Study supply working Basic/Advanced perks and open ordinary Expert-rank progression. Meetings, weekly persistence, initial offer reroll, stronger-opponent awarded XP and query/RNG parity are native verified. Academic Study awaits first-visit timing. |
 | Luck | 3/0 | 6/4 | Fortune's Favor, Lucky Aim, Second Chance, Gambler, Chain of Fortune and Twist of Fate source/native verified; four perks remain planned. |
-| Divine Mandate | 3/0 | 1/9 | Paired rank foundation and Chaplain's Reserve source/native verified; nine perks remain missing. The real Basic perk opens ordinary Advanced-rank progression, not full Advanced/Expert perk progression. |
+| Divine Mandate | 3/0 | 2/8 | Paired rank foundation, Chaplain's Reserve and Consecrated Casting source/native verified; eight perks remain missing. Real Basic choices open ordinary Advanced-rank progression, not full Advanced/Expert perk progression. |
 | Sylvan Luck | 3/0 | 10/0 | Evidence audit required |
 | Metamagic | 3/0 | 10/0 | Evidence audit required |
 | Shroud of Malassa | 3/0 | 6/4 | Basic Backstab/Ambusher/Shadow Assault and Advanced No Escape/Evasive Shroud/Night Prowler are active; four perks remain planned. Night Prowler has live/AI crossing, first-strike and unused-expiry evidence; its flying negative is predicate-only. |

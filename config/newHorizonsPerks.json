@@ -2957,7 +2957,7 @@
 					"requires": "basic",
 					"description": "A Light Spell cast through Divine Mandate gains +10% to its Spell Power-derived numerical component.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "A Light Spell cast through Divine Mandate gains +10% to its Spell Power-derived numerical component."
 					}
 				},
