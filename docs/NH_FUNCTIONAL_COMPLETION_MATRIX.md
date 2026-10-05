@@ -1,6 +1,21 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-05
+Continuation audit: the registry still contains 225 active and 85 planned
+perks. All six missing combat identities have unresolved item-level rule
+questions in the priority queue: UP-117, UP-072, UP-043, UP-066, UP-179 and
+UP-123. The audited planned Discipline/War Machines/Recruitment and faction
+families also retain explicit scope/lifecycle/producer holds. This is a bounded
+selection audit, not proof that every remaining Version 1.0 item is blocked,
+not completed coverage, and not authority to defer specified mechanics to
+Phase 2. Continue checking other unblocked required paths while questions await
+answers. Windows notice run 37348507197 succeeds on `0e645f79b`; full run
+37348640988 is now running, not yet Windows build or package acceptance.
+Older full run 37333267686 succeeds on `d8b32e15d`; nonexpired game artifact
+11361458394 contains that older source, not the three subsequent commits.
+Further bounded checks identify recorded holds in all 16 planned Command,
+Warcasting, Logistics, Diplomacy and Estates perks. No coverage counts change.
+
 UP-004 canonical hero-action presentation source verified: one normal Hero
 Action Available/Spent state replaces three independent counters; exceptional
 Spell/Order opportunities expose source and expiry through ordinary controls.
