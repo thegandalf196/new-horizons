@@ -193,6 +193,7 @@ set(test_SRCS
 		server/battles/NewHorizonsForcedMarchTest.cpp
 		server/battles/NewHorizonsForgetfulnessTest.cpp
 		server/battles/NewHorizonsSoulChainTest.cpp
+		server/battles/NewHorizonsElementalRebirthTest.cpp
 		server/battles/NewHorizonsFrailtyTest.cpp
 		server/battles/LifeDrainTest.cpp
 		server/battles/SoulStealTest.cpp
@@ -467,6 +468,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/HeroCommandAITest.cpp
 		battleAI/NewHorizonsDoubleCommandAITest.cpp
 		battleAI/NewHorizonsDivineMandateAITest.cpp
+		battleAI/NewHorizonsElementalRebirthAITest.cpp
 		battleAI/NewHorizonsBattlePlanAITest.cpp
 		battleAI/AttackResourceProjectionTest.cpp
 		battleAI/DamageReductionControlTest.cpp

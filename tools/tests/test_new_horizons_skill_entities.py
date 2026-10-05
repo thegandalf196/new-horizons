@@ -182,6 +182,7 @@ ACTIVE_RANK_EFFECTS = {
 # generic bonus entity, so their JSON skill effect deliberately remains the
 # zero-valued placeholder while the canonical registry marks them active.
 RUNTIME_ACTIVE_RANKS = {
+    "elementalRebirth",
     "divineMandate",
     "armorer",
     "archery",

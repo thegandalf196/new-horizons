@@ -253,6 +253,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	type(Stack->unitType()),
 	sourceCreatureType(Stack->unitType()->getId()),
 	baseAmount(Stack->unitBaseAmount()),
+	battleStartMaximumAggregateHP(Stack->getBattleStartMaximumAggregateHP()),
 	id(Stack->unitId()),
 	side(Stack->unitSide()),
 	player(Stack->unitOwner()),
@@ -272,6 +273,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	type(Stack->unitType()),
 	sourceCreatureType(Stack->unitType()->getId()),
 	baseAmount(Stack->unitBaseAmount()),
+	battleStartMaximumAggregateHP(Stack->getBattleStartMaximumAggregateHP()),
 	id(Stack->unitId()),
 	side(Stack->unitSide()),
 	player(Stack->unitOwner()),
@@ -323,6 +325,7 @@ StackWithBonuses::~StackWithBonuses() = default;
 StackWithBonuses & StackWithBonuses::operator=(const battle::CUnitState & other)
 {
 	battle::CUnitState::operator=(other);
+	battleStartMaximumAggregateHP = other.getBattleStartMaximumAggregateHP();
 	return *this;
 }
 
@@ -354,6 +357,11 @@ PlayerColor StackWithBonuses::unitOwner() const
 SlotID StackWithBonuses::unitSlot() const
 {
 	return slot;
+}
+
+int64_t StackWithBonuses::getBattleStartMaximumAggregateHP() const
+{
+	return battleStartMaximumAggregateHP;
 }
 
 TConstBonusListPtr StackWithBonuses::getAllBonuses(const CSelector & selector, const std::string & cachingStr) const
@@ -763,6 +771,8 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	env(ENV),
 	bonusTreeVersion(1)
 {
+	if(const auto * parent = dynamic_cast<const HypotheticBattle *>(realBattle.get()))
+		elementalRebirthSpawnUnitIds = parent->elementalRebirthSpawnUnitIds;
 	auto activeUnit = realBattle->battleActiveUnit();
 	activeUnitId = activeUnit ? activeUnit->unitId() : -1;
 	projectedRound = realBattle->battleGetRound();
@@ -1888,7 +1898,13 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 		auto poisonDamage = newHorizonsBulwark::physicalPoisonTickDamage(unit.get());
 		if(poisonDamage > 0)
 		{
+			const bool wasAlive = unit->alive();
+			const auto rebirthSource = wasAlive ? captureElementalRebirthSource(*unit) : std::nullopt;
+			const bool nativeRebirth = hasReadyNativeRebirth(unit.get());
 			unit->damage(poisonDamage, false, battle::DamageProvenance::PHYSICAL_CREATURE);
+			if(rebirthSource)
+				projectElementalRebirth(unit.get(), *rebirthSource,
+					wasAlive && !unit->alive(), unit->isClone(), nativeRebirth);
 			newHorizonsBulwark::advancePhysicalPoison(unit.get());
 		}
 		if(unit->bulwarkMireGripApplied)
@@ -2212,6 +2228,79 @@ uint32_t HypotheticBattle::nextUnitId() const
 	return nextId++;
 }
 
+std::optional<newHorizonsElementalRebirth::DeathSnapshot> HypotheticBattle::captureElementalRebirthSource(
+	const battle::Unit & unit) const
+{
+	const auto side = unit.unitSide();
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return {};
+	return newHorizonsElementalRebirth::captureDeathSource(unit, battleGetFightingHero(side));
+}
+
+bool HypotheticBattle::hasReadyNativeRebirth(const battle::Unit * unit) const
+{
+	return unit && !unit->isClone()
+		&& unit->valOfBonuses(BonusType::REBIRTH) > 0
+		&& unit->canCast()
+		&& unit->getPhantomInitialIntegrity() == 0;
+}
+
+std::optional<uint32_t> HypotheticBattle::projectElementalRebirth(const battle::Unit * postHitUnit,
+	const newHorizonsElementalRebirth::DeathSnapshot & snapshot, const bool hitKilled,
+	const bool cloneKilled, const bool nativeRebirth)
+{
+	if(!newHorizonsElementalRebirth::stillEligibleDeath(
+		postHitUnit, snapshot, hitKilled, cloneKilled, nativeRebirth))
+		return {};
+
+	const auto candidates = newHorizonsElementalRebirth::legalCandidatePool(
+		getCreatureCategoryRules(), getAccessibility(), snapshot.corpsePosition, snapshot.side);
+	if(candidates.empty())
+		return {};
+
+	// This is a private representative outcome for one hypothetical branch. Never draw
+	// from the authoritative game RNG or mutate the live battle's random stream.
+	auto * rng = getServerCallback()->getRNG();
+	if(!rng)
+		return {};
+	const auto candidateIndex = static_cast<size_t>(rng->nextInt(static_cast<int>(candidates.size()) - 1));
+	if(candidateIndex >= candidates.size())
+		return {};
+	const auto creature = candidates[candidateIndex];
+	const auto * sourceArmy = getSideArmy(snapshot.side);
+	const auto owner = getSidePlayer(snapshot.side);
+	const auto effectiveMaxHP = newHorizonsElementalRebirth::effectiveSummonMaxHP(
+		sourceArmy, creature, owner, snapshot.side);
+	auto descriptor = newHorizonsElementalRebirth::makeSpawnDescriptor(nextUnitId(), creature,
+		snapshot.side, snapshot.corpsePosition, newHorizonsElementalRebirth::targetHP(snapshot), effectiveMaxHP);
+	if(!descriptor)
+		return {};
+
+	JsonNode data;
+	descriptor->unit.save(data);
+	addUnit(descriptor->unit.id, data);
+	auto projected = getForUpdate(descriptor->unit.id);
+	const auto fullHealth = projected->getAvailableHealth();
+	if(fullHealth < descriptor->health.targetAggregateHP)
+	{
+		removeUnit(descriptor->unit.id);
+		return {};
+	}
+	const auto wound = fullHealth - descriptor->health.targetAggregateHP;
+	if(wound > 0)
+	{
+		auto appliedDamage = wound;
+		projected->damage(appliedDamage);
+	}
+	if(projected->getAvailableHealth() != descriptor->health.targetAggregateHP)
+	{
+		removeUnit(descriptor->unit.id);
+		return {};
+	}
+	elementalRebirthSpawnUnitIds.insert(descriptor->unit.id);
+	return descriptor->unit.id;
+}
+
 int64_t HypotheticBattle::getActualDamage(const DamageRange & damage, int32_t attackerCount, vstd::RNG & rng) const
 {
 	return (damage.min + damage.max) / 2;
@@ -2290,6 +2379,9 @@ int64_t HypotheticBattle::projectHexOfPainStrike(const BattleAttackInfo & attack
 
 	const auto attacker = getForUpdate(attack.attacker->unitId());
 	const auto healthBefore = attacker->getAvailableHealth();
+	const auto rebirthSource = attacker->alive()
+		? captureElementalRebirthSource(*attacker) : std::nullopt;
+	const bool nativeRebirth = hasReadyNativeRebirth(attacker.get());
 	CombatEventPayload payload;
 	payload.ranged = attack.shooting;
 	payload.isCounter = attack.retaliation;
@@ -2329,6 +2421,9 @@ int64_t HypotheticBattle::projectHexOfPainStrike(const BattleAttackInfo & attack
 			attacker.get(), attack.defender ? battleGetUnitByID(attack.defender->unitId()) : nullptr,
 			parameters, payload);
 	}
+	if(rebirthSource)
+		projectElementalRebirth(attacker.get(), *rebirthSource,
+			attacker->alive() == false, attacker->isClone(), nativeRebirth);
 
 	return std::max<int64_t>(0, healthBefore - attacker->getAvailableHealth());
 }
@@ -2466,8 +2561,34 @@ void HypotheticBattle::HypotheticServerCallback::apply(SetStackEffect & pack)
 
 void HypotheticBattle::HypotheticServerCallback::apply(StacksInjured & pack)
 {
+	struct PendingRebirth
+	{
+		newHorizonsElementalRebirth::DeathSnapshot snapshot;
+		bool cloneKilled = false;
+		bool nativeRebirth = false;
+	};
+	std::map<uint32_t, PendingRebirth> pendingRebirths;
+	for(const auto & hit : pack.stacks)
+	{
+		auto unit = owner->getForUpdate(hit.stackAttacked);
+		if(!unit || !unit->alive() || pendingRebirths.contains(hit.stackAttacked))
+			continue;
+		auto snapshot = owner->captureElementalRebirthSource(*unit);
+		if(!snapshot)
+			continue;
+		pendingRebirths.emplace(hit.stackAttacked, PendingRebirth{
+			*snapshot, unit->isClone(), owner->hasReadyNativeRebirth(unit.get())});
+	}
+
 	BattleStatePackVisitor visitor(*owner);
 	pack.visit(visitor);
+	for(const auto & [unitId, pending] : pendingRebirths)
+	{
+		auto unit = owner->getForUpdate(unitId);
+		const bool hitKilled = unit && !unit->alive();
+		owner->projectElementalRebirth(unit.get(), pending.snapshot, hitKilled,
+			pending.cloneKilled, pending.nativeRebirth);
+	}
 }
 
 void HypotheticBattle::HypotheticServerCallback::apply(BattleObstaclesChanged & pack)

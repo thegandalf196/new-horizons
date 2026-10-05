@@ -1,6 +1,18 @@
 # New Horizons functional completion matrix
 
-Updated: 2026-10-04
+Updated: 2026-10-05
+UP046 base ranks source/native accepted: frozen battle-start HP, authoritative
+physical/spell injury reactions, exact25/40/50% temporary Elementals at the legal
+corpse position, ordinary unit updates and result log are implemented. Detached
+owning-side AI retains the basis and models replacement units plus their value.
+Client8888 and final native build81405 pass; native64752 passes12/12 in3.755s,
+zero skips (eight new cases and four adjacent controls).17 perk-data checks,
+module drift, diff checks and independent review pass. Rank effects90->93/93;
+faction ranks24->27/27. Perks214/310 and combat61/67 unchanged. All ten Rebirth
+perks remain planned; next are Greater Essence and Elemental Ward. Wider chained
+death/HP-bonus composition, stochastic/initiative AI forecasts and unknown
+opponent-skill forecasting remain Phase2. Descriptor basis roundtrip is not full
+midbattle save/resume; no GUI acceptance or playable promotion is claimed.
 UP230 is the new user-priority UI/art correction: native exterior-picture
 Adventure Spell access replaces its separate icon/label; five authored guild
 names use ordinary Arabic levels4/5. Client92271 and source/data guards pass.
@@ -19,8 +31,9 @@ resolved. UP108 now implements/activates all three Divine Mandate ranks with
 shared typed allowances, accepted completed-pair accounting, Light-only Spell
 follow-ups, round expiry, UI admission/status and detached AI parity. Client and
 native build79510 passes after a test-only type correction; six new native tests
-and21 adjacent allowance/projection/provider checks pass, zero skips. Counts are
-90/93 ranks and214/310 perks; Elemental Rebirth's three ranks remain missing.
+and21 adjacent allowance/projection/provider checks pass, zero skips. At that
+checkpoint counts were90/93 ranks and214/310 perks; UP046 now supplies the three
+remaining rank effects, as recorded above.
 UP229 adds the missing Hero Movement tooltip capacity/cost breakdown through
 the existing native popup and exact read-only current-day movement aggregation.
 Client43390 and both-target61049/26637 pass; repaired native34473 passes15/15
@@ -2347,10 +2360,10 @@ without a defensible item-level denominator remain explicitly uncounted.
 
 | Specification area | Current coverage | Principal remaining work |
 |---|---:|---|
-| Skills registered | 31/31 | Elemental Rebirth has no active rank effects; many registered Skills lack working perk progression. |
-| Skill rank effects active | 90/93 | Divine Mandate's three ranks now have paired-action source/native evidence; Elemental Rebirth accounts for the three planned ranks. |
+| Skills registered | 31/31 | All three ranks per Skill are active; many registered Skills still lack complete perk progression. |
+| Skill rank effects active | 93/93 | Elemental Rebirth's three ranks now have source/native and owning-side AI evidence. Active status does not certify every wider interaction. |
 | Skill perks active | 214/310 | 96 planned; Master Logistician is the newest source/native-verified activation. Diplomacy is 7/10; Chaos Magic 4/10; Necromancy 10/10; Learning 3/10; Estates 6/10; Battlecraft 6/10; Logistics 8/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
-| Faction Skill ranks active | 24/27 | Three Elemental Rebirth ranks remain planned. |
+| Faction Skill ranks active | 27/27 | All nine faction rank foundations are active; their remaining perks and wider integration are separate work. |
 | Faction perks active | 62/90 | 28 planned perks; Lord of the Dead has normal Expert selection, ordered conversion and actual atomic Bone Dragon town-delivery evidence. |
 | Canonical combat-spell identities registered | 61/67 | 6 missing/inactive; Puppet Master is the newest source/native-verified identity. Chaos is 7/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
@@ -2555,12 +2568,12 @@ interactions, and rendered/playable acceptance remain separate.
 | Necromancy | 3/0 | 10/0 | All ten perks are active. UP184/185/186/187/188/189 record accepted category conversion, Master of Bones, casualty-derived XP/Mana, atomic Ossuary fallback and Bone Dragon conversion evidence. Broader save/control/result-UI interactions and playable delivery remain separate. |
 | Bloodrage | 3/0 | 7/3 | War Drums, Fury Unbound, Endless Bloodshed, Unrelenting, Berserker, Blood Scent and Rage Through Pain have focused live/AI evidence and legal progression; First Blood, Slayer and Avatar of Rage remain planned. |
 | Bulwark of the Mire | 3/0 | 9/1 | Nine perks are active in committed source; 53/53 native regressions pass; persistent Poison status builds and passes focused tests; Deep Bulwark and rendered/playable evidence remain open |
-| Elemental Rebirth | 0/3 | 0/10 | Ranks and progression missing |
+| Elemental Rebirth | 3/0 | 0/10 | Base ranks source/native verified, including frozen starting HP, exact temporary output and owning-side AI. All ten perks and ordinary perk-gated progression remain missing. |
 
 Ordinary progression requires a perk at the preceding rank before the next Skill
 rank; canonical exceptional external rank advancement remains permitted.
-Elemental Rebirth still lacks active ranks; both it and Divine Mandate lack Basic
-perks. Divine Mandate's ranks are implemented, but its ordinary perk-gated
+Both Elemental Rebirth and Divine Mandate lack Basic perks. Their ranks are
+implemented, but ordinary perk-gated
 advancement remains incomplete. Diplomacy has three active ranks and legal Basic/Advanced
 perk choices. Fortune's Favor opens Luck; Tax Collector opens Estates and
 Mentor opens Learning. Backstab now

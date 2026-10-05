@@ -552,6 +552,7 @@ public:
 	SlotID unitSlot() const override;
 
 	int32_t unitBaseAmount() const override;
+	int64_t getBattleStartMaximumAggregateHP() const override;
 
 	void spendMana(ServerCallback * server, const int spellCost) const override;
 

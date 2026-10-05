@@ -7171,21 +7171,21 @@
 							"basic": {
 								"description": "When a non-summoned allied stack is destroyed, summon a random Elite Elemental stack at that position with aggregate HP equal to 25% of the destroyed stack's maximum aggregate HP.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "When a non-summoned allied stack is destroyed, summon a random Elite Elemental stack at that position with aggregate HP equal to 25% of the destroyed stack's maximum aggregate HP."
 								}
 							},
 							"advanced": {
 								"description": "Reborn Elemental HP becomes 40% of the destroyed stack's maximum aggregate HP.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Reborn Elemental HP becomes 40% of the destroyed stack's maximum aggregate HP."
 								}
 							},
 							"expert": {
 								"description": "Reborn Elemental HP becomes 50% of the destroyed stack's maximum aggregate HP.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Reborn Elemental HP becomes 50% of the destroyed stack's maximum aggregate HP."
 								}
 							}

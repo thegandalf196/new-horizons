@@ -172,6 +172,8 @@ public:
 	virtual int64_t getGuardianSpiritHitPoints() const { return 0; }
 	/// Remaining rounds on the active Guardian Spirit marker, or zero when inactive.
 	virtual int32_t getGuardianSpiritRoundsRemaining() const { return 0; }
+	/// Frozen battle-start maximum aggregate HP used by Elemental Rebirth; zero when not captured.
+	virtual int64_t getBattleStartMaximumAggregateHP() const { return 0; }
 	/// Bloodrage earned personally by this stack, in percentage points.
 	virtual int32_t getPersonalBloodrageIncrement() const { return 0; }
 

@@ -24,6 +24,7 @@
 #include "../../lib/battle/BattleProxy.h"
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/HeroActionAllowanceState.h"
+#include "../../lib/battle/NewHorizonsElementalRebirth.h"
 #include "../../lib/battle/ReducedExtraActivationState.h"
 
 class HypotheticBattle;
@@ -109,6 +110,7 @@ public:
 	BattleSide unitSide() const override;
 	PlayerColor unitOwner() const override;
 	SlotID unitSlot() const override;
+	int64_t getBattleStartMaximumAggregateHP() const override;
 
 	///IBonusBearer
 	TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr = "") const override;
@@ -165,6 +167,9 @@ private:
 	const CCreature * type;
 	CreatureID sourceCreatureType;
 	ui32 baseAmount;
+	/// Frozen source HP basis copied from the authoritative unit for detached forecasts.
+	/// A new hypothetical summon has no eligible source basis.
+	int64_t battleStartMaximumAggregateHP = 0;
 	uint32_t id;
 	BattleSide side;
 	PlayerColor player;
@@ -413,6 +418,14 @@ public:
 	void removeObstacle(uint32_t id) override;
 
 	uint32_t nextUnitId() const override;
+	std::optional<newHorizonsElementalRebirth::DeathSnapshot> captureElementalRebirthSource(
+		const battle::Unit & unit) const;
+	bool hasReadyNativeRebirth(const battle::Unit * unit) const;
+	std::optional<uint32_t> projectElementalRebirth(const battle::Unit * postHitUnit,
+		const newHorizonsElementalRebirth::DeathSnapshot & snapshot, bool hitKilled,
+		bool cloneKilled, bool nativeRebirth);
+	const std::set<uint32_t> & getElementalRebirthSpawnUnitIds() const { return elementalRebirthSpawnUnitIds; }
+	bool isElementalRebirthSpawn(uint32_t unitId) const { return elementalRebirthSpawnUnitIds.contains(unitId); }
 
 	int64_t getActualDamage(const DamageRange & damage, int32_t attackerCount, vstd::RNG & rng) const override;
 	std::vector<SpellID> getUsedSpells(BattleSide side) const override;
@@ -437,6 +450,8 @@ public:
 	const scripting::Pool & getScriptContextPool() const override;
 
 private:
+	/// IDs created by this branch's Elemental Rebirth projection; never serialized.
+	std::set<uint32_t> elementalRebirthSpawnUnitIds;
 	BattleDeploymentState deploymentState;
 	BattleSideArray<ReducedExtraActivationState> reducedExtraActivationStates;
 	/// Newest Order is last; updates by command preserve this issuance order.

@@ -40,6 +40,7 @@
 
 #include "../lib/battle/BattleInfo.h"
 #include "../lib/battle/PhysicalAffliction.h"
+#include "../lib/battle/NewHorizonsElementalRebirth.h"
 #include "../lib/battle/NewHorizonsSoulChain.h"
 #include "../lib/bonuses/BonusParameters.h"
 #include "../lib/callback/GameRandomizer.h"
@@ -2089,7 +2090,13 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 		CreatureID creature = CreatureID::NONE;
 		int32_t countBefore = 0;
 	};
+	struct ElementalRebirthTrigger
+	{
+		BattleID battleID = BattleID::NONE;
+		newHorizonsElementalRebirth::DeathSnapshot snapshot;
+	};
 	std::map<uint32_t, PersonalBloodrageGain> personalBloodrageGains;
+	std::map<uint32_t, ElementalRebirthTrigger> elementalRebirthTriggers;
 	const auto capturePersonalBloodrageGains = [&](const BattleID & battleID,
 		const std::vector<BattleStackAttacked> & hits)
 	{
@@ -2105,6 +2112,27 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 			if(unit && unit->getPersonalBloodrageIncrement() == 0)
 				personalBloodrageGains.emplace(unit->unitId(),
 					PersonalBloodrageGain{battleID, unit->creatureId(), unit->getCount()});
+		}
+	};
+	auto captureElementalRebirthTriggers = [&](const BattleID & battleID,
+		const std::vector<BattleStackAttacked> & hits)
+	{
+		const auto * battleInfo = gameState().getBattle(battleID);
+		if(!battleInfo)
+			return;
+
+		for(const auto & hit : hits)
+		{
+			if(!hit.killed() || hit.cloneKilled() || hit.willRebirth())
+				continue;
+
+			const auto * unit = battleInfo->battleGetUnitByID(hit.stackAttacked);
+			if(!unit)
+				continue;
+			const auto * hero = battleInfo->getSideHero(unit->unitSide());
+			const auto snapshot = newHorizonsElementalRebirth::captureDeathSource(*unit, hero);
+			if(snapshot)
+				elementalRebirthTriggers.try_emplace(unit->unitId(), ElementalRebirthTrigger{battleID, *snapshot});
 		}
 	};
 
@@ -2139,14 +2167,101 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 	{
 		captureSoulChainTriggers(attack->battleID, attack->bsa);
 		capturePersonalBloodrageGains(attack->battleID, attack->bsa);
+		captureElementalRebirthTriggers(attack->battleID, attack->bsa);
 	}
 	else if(const auto * injured = dynamic_cast<const StacksInjured *>(&pack))
 	{
 		captureSoulChainTriggers(injured->battleID, injured->stacks);
 		capturePersonalBloodrageGains(injured->battleID, injured->stacks);
+		captureElementalRebirthTriggers(injured->battleID, injured->stacks);
 	}
 
 	gameServer().applyPack(pack);
+	for(const auto & [unitId, trigger] : elementalRebirthTriggers)
+	{
+		const auto * battleInfo = gameState().getBattle(trigger.battleID);
+		const auto * unit = battleInfo ? battleInfo->battleGetUnitByID(unitId) : nullptr;
+		if(!battleInfo || !newHorizonsElementalRebirth::stillEligibleDeath(unit, trigger.snapshot,
+			true, false, false))
+			continue;
+
+		const auto candidates = newHorizonsElementalRebirth::legalCandidatePool(
+			battleInfo->getCreatureCategoryRules(), battleInfo->getAccessibility(),
+			trigger.snapshot.corpsePosition, trigger.snapshot.side);
+		if(candidates.empty())
+		{
+			logGlobal->warn("Elemental Rebirth has no legal Elite Elemental for corpse hex %d",
+				trigger.snapshot.corpsePosition.toInt());
+			continue;
+		}
+
+		const CreatureID creature = *RandomGeneratorUtil::nextItem(candidates, getRandomGenerator());
+		const auto desiredHP = newHorizonsElementalRebirth::targetHP(trigger.snapshot);
+		const auto effectiveMaxHP = newHorizonsElementalRebirth::effectiveSummonMaxHP(
+			battleInfo->getSideArmy(trigger.snapshot.side), creature,
+			battleInfo->getSidePlayer(trigger.snapshot.side), trigger.snapshot.side);
+		auto spawn = newHorizonsElementalRebirth::makeSpawnDescriptor(
+			battleInfo->battleNextUnitId(), creature, trigger.snapshot.side, trigger.snapshot.corpsePosition,
+			desiredHP, effectiveMaxHP);
+		if(!spawn)
+		{
+			logGlobal->error("Elemental Rebirth could not represent %lld HP for creature id %d",
+				static_cast<long long>(desiredHP), creature.getNum());
+			continue;
+		}
+
+		BattleUnitsChanged add;
+		add.battleID = trigger.battleID;
+		auto & addedUnit = add.changedStacks.emplace_back(spawn->unit.id, UnitChanges::EOperation::ADD);
+		spawn->unit.save(addedUnit.data);
+		sendAndApply(add);
+
+		const auto * reborn = gameState().getBattle(trigger.battleID)->battleGetUnitByID(spawn->unit.id);
+		if(!reborn)
+			throw std::runtime_error("Elemental Rebirth stack was not published");
+		const auto actualFullHealth = reborn->getAvailableHealth();
+		if(actualFullHealth < spawn->health.targetAggregateHP)
+		{
+			logGlobal->error("Elemental Rebirth spawned %lld HP below its %lld HP target",
+				static_cast<long long>(actualFullHealth), static_cast<long long>(spawn->health.targetAggregateHP));
+			BattleUnitsChanged remove;
+			remove.battleID = trigger.battleID;
+			remove.changedStacks.emplace_back(spawn->unit.id, UnitChanges::EOperation::REMOVE);
+			sendAndApply(remove);
+			continue;
+		}
+
+		const auto actualWound = actualFullHealth - spawn->health.targetAggregateHP;
+		if(actualWound > 0)
+		{
+			auto state = reborn->acquireState();
+			int64_t wound = actualWound;
+			state->damage(wound);
+			if(state->getAvailableHealth() != spawn->health.targetAggregateHP)
+				throw std::runtime_error("Elemental Rebirth failed to apply its exact aggregate HP target");
+
+			UnitChanges update(spawn->unit.id, UnitChanges::EOperation::UPDATE);
+			update.data = state->save();
+			update.healthDelta = -wound;
+			BattleUnitsChanged damaged;
+			damaged.battleID = trigger.battleID;
+			damaged.changedStacks.push_back(std::move(update));
+			sendAndApply(damaged);
+		}
+
+		BattleLogMessage log;
+		log.battleID = trigger.battleID;
+		MetaString line = MetaString::createFromRawString("Elemental Rebirth summons ");
+		line.appendNumber(spawn->health.count);
+		line.appendRawString(" ");
+		line.appendName(creature, spawn->health.count);
+		line.appendRawString(" with ");
+		line.appendNumber(spawn->health.targetAggregateHP);
+		line.appendRawString(" HP at the fallen stack's position.");
+		log.lines.push_back(std::move(line));
+		sendAndApply(log);
+	}
+
 	for(const auto & [unitId, gain] : personalBloodrageGains)
 	{
 		const auto * battleInfo = gameState().getBattle(gain.battleID);

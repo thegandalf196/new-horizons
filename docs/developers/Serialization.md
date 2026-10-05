@@ -1,5 +1,23 @@
 # Serialization
 
+## Elemental Rebirth starting HP basis (source/native accepted)
+
+`NEW_HORIZONS_ELEMENTAL_REBIRTH` appends a nonnegative frozen battle-start
+maximum aggregate HP basis to the `CStack` descriptor. Zero means uncaptured or
+ineligible; older reads default to zero rather than inventing historical HP.
+Initial eligible stacks capture once after battle-start bonus initialization,
+not when evaluator copies are created or later health/HP bonuses change.
+Detached views retain/delegate this immutable metadata. Unsupported old-format
+writes must reject a populated basis before direct and enclosing payloads.
+
+Temporary Elemental creation uses ordinary unit-addition and exact-health state
+updates; no new packet type or normal-Mana-like resource is introduced. This
+metadata extension does not implement complete midbattle save/resume: existing
+health/provenance and creature-form fail-closed restrictions remain in effect.
+UP046 verifies current descriptor-basis roundtrip and unsupported old-writer
+rejection. This is not a whole-combat health/save restoration claim. Graphical
+acceptance and playable delivery remain separate.
+
 ## Explicit elemental spell damage
 
 `NEW_HORIZONS_ELEMENTAL_SPELL_DAMAGE` gates the appended `ELEMENTAL_SPELL_DAMAGE`

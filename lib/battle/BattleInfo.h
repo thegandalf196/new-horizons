@@ -130,6 +130,7 @@ public:
 	bool hasNoQuarterState() const;
 	bool hasRageThroughPainState() const;
 	bool hasCasualtyProvenanceState() const;
+	bool hasElementalRebirthBasisState() const;
 	bool hasRelentlessAssaultState() const
 	{
 		return sides[BattleSide::ATTACKER].relentlessAssault.hasState()
@@ -194,6 +195,9 @@ public:
 	{
 		if(h.saving)
 		{
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_ELEMENTAL_REBIRTH)
+				&& hasElementalRebirthBasisState())
+				throw std::runtime_error("Cannot discard Elemental Rebirth battle-start HP basis in an older battle format");
 			if(hasCasualtyProvenanceState())
 				throw std::runtime_error("Binary battle descriptors cannot preserve casualty health provenance");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_FORCED_MARCH)

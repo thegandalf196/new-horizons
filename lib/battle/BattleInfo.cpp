@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "BattleInfo.h"
+#include "NewHorizonsElementalRebirth.h"
 #include "NewHorizonsBloodrage.h"
 #include "NewHorizonsBattlecraft.h"
 #include "NewHorizonsCombatSkills.h"
@@ -487,6 +488,8 @@ void BattleInfo::localInit()
 		s->localInit(this);
 
 	exportBonuses();
+	for(auto & stack : stacks)
+		stack->captureBattleStartMaximumAggregateHP();
 }
 
 
@@ -1473,6 +1476,14 @@ bool BattleInfo::hasCasualtyProvenanceState() const
 	return std::ranges::any_of(stacks, [](const auto & stack)
 	{
 		return stack && stack->hasCasualtyProvenanceState();
+	});
+}
+
+bool BattleInfo::hasElementalRebirthBasisState() const
+{
+	return std::ranges::any_of(stacks, [](const auto & stack)
+	{
+		return stack && stack->getBattleStartMaximumAggregateHP() > 0;
 	});
 }
 

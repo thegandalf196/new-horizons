@@ -2927,6 +2927,26 @@ int32_t CUnitStateDetached::unitBaseAmount() const
 	return unit->unitBaseAmount();
 }
 
+int64_t CUnitStateDetached::getBattleStartMaximumAggregateHP() const
+{
+	if(const auto * detachedSource = dynamic_cast<const CUnitStateDetached *>(unit))
+	{
+		const auto basis = detachedSource->getBattleStartMaximumAggregateHP();
+		if(basis > 0)
+			return basis;
+	}
+	else if(const auto * sourceUnit = dynamic_cast<const Unit *>(unit))
+	{
+		const auto basis = sourceUnit->getBattleStartMaximumAggregateHP();
+		if(basis > 0)
+			return basis;
+	}
+	if(const auto * detachedBonus = dynamic_cast<const CUnitStateDetached *>(bonus))
+		return detachedBonus->getBattleStartMaximumAggregateHP();
+	const auto * sourceBonus = dynamic_cast<const Unit *>(bonus);
+	return sourceBonus ? sourceBonus->getBattleStartMaximumAggregateHP() : 0;
+}
+
 void CUnitStateDetached::spendMana(ServerCallback * server, const int spellCost) const
 {
 	if(spellCost != 1)

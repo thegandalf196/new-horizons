@@ -5725,6 +5725,21 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 					if(oldHealth != newHealth)
 					{
+						if(state->isElementalRebirthSpawn(unit->unitId()) && oldHealth == 0
+							&& newHealth > 0 && unit->unitType())
+						{
+							// Elemental Rebirth is a newly-created temporary stack, but unlike
+							// generic magical summons it replaces destroyed army strength. Keep
+							// its score in the existing creature-value / exact-HP scale.
+							const auto maxHealth = std::max<int64_t>(1, unit->getMaxHealth());
+							const float spawnValue = static_cast<float>(newHealth)
+								* static_cast<float>(unit->unitType()->getAIValue())
+								/ static_cast<float>(maxHealth);
+							const bool ourUnit = state->battleGetOwner(unit) == playerID;
+							damageToHostilesScore += ourUnit ? spawnValue : -spawnValue;
+							continue;
+						}
+
 						auto damage = std::abs(oldHealth - newHealth);
 						auto originalDefender = original;
 

@@ -183,6 +183,52 @@ AttackerValue::AttackerValue()
 {
 }
 
+void BattleExchangeVariant::accountForNewElementalRebirthSpawns(
+	const std::set<uint32_t> & idsBefore, const battle::Unit * referenceActor,
+	const bool referenceActorIsOurs, DamageCache & damageCache,
+	const std::shared_ptr<HypotheticBattle> & hb)
+{
+	if(!referenceActor)
+		return;
+
+	for(const auto unitId : hb->getElementalRebirthSpawnUnitIds())
+	{
+		if(idsBefore.contains(unitId) || !scoredElementalRebirthSpawnUnitIds.insert(unitId).second)
+			continue;
+
+		const auto * spawned = hb->battleGetUnitByID(unitId);
+		if(!spawned || !spawned->alive() || !spawned->unitType() || spawned->getAvailableHealth() <= 0)
+			continue;
+
+		const auto enemies = hb->battleGetUnitsIf([&](const battle::Unit * candidate)
+		{
+			return candidate && candidate->alive() && candidate->unitType()
+				&& candidate->getPosition().isValid()
+				&& !hb->battleMatchOwner(spawned, candidate);
+		});
+		if(enemies.empty())
+			continue;
+
+		const auto fullHealth = static_cast<int64_t>(spawned->getCount()) * spawned->getMaxHealth();
+		if(fullHealth <= 0)
+			continue;
+
+		// Keep this in the exchange's damage-reduction/DPS units: scale one ordinary
+		// projected attack by the exact surviving HP fraction. This is a bounded
+		// representative-target approximation, not a full initiative-branch forecast.
+		const auto projectedDamage = std::max<int64_t>(0,
+			damageCache.getOriginalDamage(spawned, enemies.front(), hb));
+		const float spawnValue = static_cast<float>(projectedDamage)
+			* static_cast<float>(spawned->getAvailableHealth()) / static_cast<float>(fullHealth);
+		const bool sameSideAsReference = spawned->unitSide() == referenceActor->unitSide();
+		const bool spawnIsOurs = referenceActorIsOurs ? sameSideAsReference : !sameSideAsReference;
+		if(spawnIsOurs)
+			dpsScore.enemyDamageReduce += spawnValue;
+		else
+			dpsScore.ourDamageReduce += spawnValue;
+	}
+}
+
 MoveTarget::MoveTarget()
 	: positions(), cachedAttack(), score(EvaluationResult::INEFFECTIVE_SCORE)
 {
@@ -199,6 +245,7 @@ float BattleExchangeVariant::trackAttack(
 		logAi->trace("Skipping fake ap attack");
 		return 0;
 	}
+	const auto rebirthSpawnIdsBefore = hb->getElementalRebirthSpawnUnitIds();
 
 	auto attacker = hb->getForUpdate(ap.attack.attacker->unitId());
 	const auto originalPosition = attacker->getPosition();
@@ -246,9 +293,14 @@ float BattleExchangeVariant::trackAttack(
 		if(ap.preAttackDamage > 0)
 		{
 			const bool wasAlive = attacker->alive();
+			const auto rebirthSource = wasAlive ? hb->captureElementalRebirthSource(*attacker) : std::nullopt;
+			const bool nativeRebirth = hb->hasReadyNativeRebirth(attacker.get());
 			auto preAttackDamage = ap.preAttackDamage;
 			attacker->damage(preAttackDamage);
 			hb->recordBloodrageTransition(attacker, wasAlive);
+			if(rebirthSource)
+				hb->projectElementalRebirth(attacker.get(), *rebirthSource,
+					wasAlive && !attacker->alive(), attacker->isClone(), nativeRebirth);
 		}
 
 		for(const auto & strike : ap.fortuneStrikes)
@@ -284,6 +336,13 @@ float BattleExchangeVariant::trackAttack(
 				hb->consumeHeroOrderProtectInterception(ap.attack.defender->unitId(), strike.defenderId);
 			std::vector<std::pair<uint32_t, int64_t>> actualHits;
 			actualHits.reserve(strike.hits.size());
+			struct PendingRebirth
+			{
+				newHorizonsElementalRebirth::DeathSnapshot snapshot;
+				bool cloneKilled = false;
+				bool nativeRebirth = false;
+			};
+			std::map<uint32_t, PendingRebirth> pendingRebirths;
 			bool enemyStackKilled = false;
 			for(const auto & [unitId, damage] : strike.hits)
 			{
@@ -293,6 +352,12 @@ float BattleExchangeVariant::trackAttack(
 					projectedAttacker.get(), strike.damageProvenance == battle::DamageProvenance::PHYSICAL_CREATURE)
 					&& hb->battleHasBastionProtection(target.get());
 				const auto wasAlive = target->alive();
+				if(wasAlive && !pendingRebirths.contains(unitId))
+				{
+					if(const auto snapshot = hb->captureElementalRebirthSource(*target))
+						pendingRebirths.emplace(unitId, PendingRebirth{
+							*snapshot, target->isClone(), hb->hasReadyNativeRebirth(target.get())});
+				}
 				const auto healthBefore = target->getAvailableHealth();
 				const auto projectedDamage = battleAIProjectDamage(target.get(), appliedDamage,
 					strike.damageProvenance);
@@ -343,9 +408,15 @@ float BattleExchangeVariant::trackAttack(
 				projectedAttack.luckyStrike = fortune.consumePerfectMoment();
 				hb->setSylvanLuckState(side, fortune);
 			}
-			hb->projectFortuneStrike(projectedAttack, actualHits, projectedAttacker.get(), enemyStackKilled,
-				strike.resolvedLuck, true);
+				hb->projectFortuneStrike(projectedAttack, actualHits, projectedAttacker.get(), enemyStackKilled,
+					strike.resolvedLuck, true);
 			hb->projectRangedMarkStrike(projectedAttack, actualHits);
+			for(const auto & [unitId, pending] : pendingRebirths)
+			{
+				auto target = hb->getForUpdate(unitId);
+				hb->projectElementalRebirth(target.get(), pending.snapshot,
+					!target->alive(), pending.cloneKilled, pending.nativeRebirth);
+			}
 			const auto healthBeforeHexOfPain = projectedAttacker->getAvailableHealth();
 			hb->projectHexOfPainStrike(projectedAttack, actualHits, strike.attackIndex);
 			if(projectedAttacker->unitId() == attacker->unitId())
@@ -372,9 +443,14 @@ float BattleExchangeVariant::trackAttack(
 		if(attackerDamage > projectedAttackerDamage + ap.preAttackDamage)
 		{
 			const bool wasAlive = attacker->alive();
+			const auto rebirthSource = wasAlive ? hb->captureElementalRebirthSource(*attacker) : std::nullopt;
+			const bool nativeRebirth = hb->hasReadyNativeRebirth(attacker.get());
 			auto residual = attackerDamage - projectedAttackerDamage - ap.preAttackDamage;
 			attacker->damage(residual);
 			hb->recordBloodrageTransition(attacker, wasAlive);
+			if(rebirthSource)
+				hb->projectElementalRebirth(attacker.get(), *rebirthSource,
+					wasAlive && !attacker->alive(), attacker->isClone(), nativeRebirth);
 		}
 	}
 	else
@@ -388,8 +464,14 @@ float BattleExchangeVariant::trackAttack(
 			if(damageDealt > 0)
 			{
 				const bool wasAlive = unitToUpdate->alive();
+				const auto rebirthSource = wasAlive
+					? hb->captureElementalRebirthSource(*unitToUpdate) : std::nullopt;
+				const bool nativeRebirth = hb->hasReadyNativeRebirth(unitToUpdate.get());
 				unitToUpdate->damage(damageDealt);
 				hb->recordBloodrageTransition(unitToUpdate, wasAlive);
+				if(rebirthSource)
+					hb->projectElementalRebirth(unitToUpdate.get(), *rebirthSource,
+						wasAlive && !unitToUpdate->alive(), unitToUpdate->isClone(), nativeRebirth);
 			}
 		}
 	}
@@ -501,6 +583,7 @@ float BattleExchangeVariant::trackAttack(
 		ap.collateralDamageReduce,
 		ap.shootersBlockedDmg);
 #endif
+	accountForNewElementalRebirthSpawns(rebirthSpawnIdsBefore, attacker.get(), true, damageCache, hb);
 
 	return attackValue;
 }
@@ -515,6 +598,7 @@ float BattleExchangeVariant::trackAttack(
 	bool evaluateOnly,
 	bool allowRetaliation)
 {
+	const auto rebirthSpawnIdsBefore = hb->getElementalRebirthSpawnUnitIds();
 	const std::string cachingStringBlocksRetaliation = "type_BLOCKS_RETALIATION";
 	static const auto selectorBlocksRetaliation = Selector::type()(BonusType::BLOCKS_RETALIATION);
 	static const auto firstStrikeSelector = Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeAll)
@@ -559,9 +643,9 @@ float BattleExchangeVariant::trackAttack(
 	float attackerDamageReduce = 0;
 	const bool defenderWasAlive = defender->alive();
 	const int64_t defenderHealthBeforeAttack = defender->getAvailableHealth();
-	const bool defenderMayRebirth = !defender->isClone()
-		&& defender->valOfBonuses(BonusType::REBIRTH) > 0
-		&& defender->canCast() && defender->getPhantomInitialIntegrity() == 0;
+	const auto defenderRebirthSource = defenderWasAlive
+		? hb->captureElementalRebirthSource(*defender) : std::nullopt;
+	const bool defenderMayRebirth = hb->hasReadyNativeRebirth(defender.get());
 	auto projectedAttacker = evaluateOnly ? attacker->acquireState()
 		: std::static_pointer_cast<battle::CUnitState>(attacker);
 
@@ -602,6 +686,9 @@ float BattleExchangeVariant::trackAttack(
 		hb->projectFortuneStrike(projectedAttack, {{defender->unitId(), actualDamage}}, attacker.get(),
 			defenderWasAlive && !defender->alive() && hb->battleMatchOwner(attacker.get(), defender.get()));
 		hb->projectRangedMarkStrike(projectedAttack, {{defender->unitId(), actualDamage}});
+		if(defenderRebirthSource)
+			hb->projectElementalRebirth(defender.get(), *defenderRebirthSource,
+				defenderWasAlive && !defender->alive(), defender->isClone(), defenderMayRebirth);
 		if(relentlessAssaultTargetUnitId)
 			projectRelentlessAssaultAttack(*hb, requestedAttack, relentlessAssaultTargetUnitId);
 	}
@@ -699,6 +786,9 @@ float BattleExchangeVariant::trackAttack(
 					dpsScore.ourDamageReduce += cleaveDamageReduce;
 
 				const bool targetWasAlive = target->alive();
+				const auto targetRebirthSource = targetWasAlive
+					? hb->captureElementalRebirthSource(*target) : std::nullopt;
+				const bool targetMayRebirth = hb->hasReadyNativeRebirth(target.get());
 				target->damage(cleaveDamage, false, cleaveProvenance);
 				if(triggersCleaveAmbusher)
 					spendAmbusher(*hb, projectedAttacker->unitId());
@@ -715,6 +805,9 @@ float BattleExchangeVariant::trackAttack(
 				hb->projectFortuneStrike(cleaveAttack, {{target->unitId(), cleaveDamage}}, attacker.get(),
 					targetWasAlive && !target->alive() && hb->battleMatchOwner(attacker.get(), target.get()));
 				hb->projectRangedMarkStrike(cleaveAttack, {{target->unitId(), cleaveDamage}});
+				if(targetRebirthSource)
+					hb->projectElementalRebirth(target.get(), *targetRebirthSource,
+						targetWasAlive && !target->alive(), target->isClone(), targetMayRebirth);
 			}
 				projectedAttacker->afterAttack(false, false, cleaveAttack.physicalDamage);
 				const auto cleaveHexScoringActor = projectedAttacker->acquireState();
@@ -767,6 +860,9 @@ float BattleExchangeVariant::trackAttack(
 
 		const int64_t actualDamage = projectedRetaliationDamage.appliedDamage;
 		const bool attackerWasAlive = attacker->alive();
+		const auto attackerRebirthSource = attackerWasAlive
+			? hb->captureElementalRebirthSource(*attacker) : std::nullopt;
+		const bool attackerMayRebirth = hb->hasReadyNativeRebirth(attacker.get());
 		attacker->damage(retaliationDamage, false, retaliationProvenance);
 		if(retaliationNightProwlerPending)
 			defender->removeUnitBonus(CSelector(newHorizonsShroud::isNightProwlerBonus));
@@ -783,6 +879,9 @@ float BattleExchangeVariant::trackAttack(
 		hb->recordBloodrageTransition(attacker, attackerWasAlive);
 		hb->projectFortuneStrike(retaliationAttack, {{attacker->unitId(), actualDamage}}, defender.get(),
 			attackerWasAlive && !attacker->alive() && hb->battleMatchOwner(defender.get(), attacker.get()));
+		if(attackerRebirthSource)
+			hb->projectElementalRebirth(attacker.get(), *attackerRebirthSource,
+				attackerWasAlive && !attacker->alive(), attacker->isClone(), attackerMayRebirth);
 		defender->afterAttack(false, true, retaliationAttack.physicalDamage);
 		const auto retaliationHexScoringActor = defender->acquireState();
 		const auto retaliationHexDamage = projectHexOfPain(defender.get(), attacker.get(), false, true,
@@ -800,6 +899,7 @@ float BattleExchangeVariant::trackAttack(
 		logAi->trace("Attack has zero score def:%2f att:%2f", defenderDamageReduce, attackerDamageReduce);
 	}
 #endif
+	accountForNewElementalRebirthSpawns(rebirthSpawnIdsBefore, attacker.get(), isOurAttack, damageCache, hb);
 
 	return score;
 }

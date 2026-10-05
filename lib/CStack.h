@@ -34,6 +34,7 @@ private:
 	BattleSide side = BattleSide::NONE;
 
 	SlotID slot;  //slot - position in garrison (may be 255 for neutrals/called creatures)
+	int64_t battleStartMaximumAggregateHP = 0; //Elemental Rebirth source basis; zero for legacy/ineligible battles
 
 	bool doubleWideCached = false;
 	const CCreature * formBonusSource = nullptr; // transient effective native source while polymorphed
@@ -82,6 +83,9 @@ public:
 
 	const CCreature * unitType() const override;
 	int32_t unitBaseAmount() const override;
+	int64_t getBattleStartMaximumAggregateHP() const override { return battleStartMaximumAggregateHP; }
+	/// Capture once after battle-start bonus export. Zero-valued/ineligible stacks remain uncaptured.
+	void captureBattleStartMaximumAggregateHP();
 
 	uint32_t unitId() const override;
 	BattleSide unitSide() const override;
@@ -120,6 +124,9 @@ public:
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_RAGE_THROUGH_PAIN)
 			&& personalBloodrageIncrement != 0)
 			throw std::runtime_error("Cannot discard personal Bloodrage state in an older format");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_ELEMENTAL_REBIRTH)
+			&& battleStartMaximumAggregateHP != 0)
+			throw std::runtime_error("Cannot discard Elemental Rebirth battle-start HP basis in an older format");
 		assert(isIndependentNode());
 		h & static_cast<CBonusSystemNode&>(*this);
 		h & typeID;
@@ -137,6 +144,14 @@ public:
 		}
 		else if(!h.saving)
 			personalBloodrageIncrement = 0;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_ELEMENTAL_REBIRTH))
+		{
+			h & battleStartMaximumAggregateHP;
+			if(!h.saving && battleStartMaximumAggregateHP < 0)
+				throw std::runtime_error("Invalid saved Elemental Rebirth battle-start HP basis");
+		}
+		else if(!h.saving)
+			battleStartMaximumAggregateHP = 0;
 	}
 
 private:

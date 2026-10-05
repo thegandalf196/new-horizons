@@ -19,6 +19,7 @@
 #include "battle/BattleInfo.h"
 #include "battle/NewHorizonsCreatureAbilitySuppression.h"
 #include "battle/NewHorizonsOffense.h"
+#include "battle/NewHorizonsElementalRebirth.h"
 #include "GameLibrary.h"
 #include "networkPacks/PacksForClientBattle.h"
 #include "spells/CSpell.h"
@@ -448,6 +449,23 @@ TConstBonusListPtr getBattleFormNativeBonuses(
 int32_t CStack::unitBaseAmount() const
 {
 	return baseAmount;
+}
+
+void CStack::captureBattleStartMaximumAggregateHP()
+{
+	const auto * combatHero = battle ? battle->battleGetFightingHero(unitSide()) : getMyHero();
+	if(battleStartMaximumAggregateHP > 0
+		|| !newHorizonsElementalRebirth::isEligibleSource(*this)
+		|| !newHorizonsElementalRebirth::activeProfile(combatHero))
+		return;
+
+	const auto maximumPerCreature = getMaxHealth();
+	if(maximumPerCreature == 0 || unitBaseAmount() <= 0)
+		return;
+
+	const auto aggregate = static_cast<int64_t>(unitBaseAmount()) * maximumPerCreature;
+	if(aggregate > 0)
+		battleStartMaximumAggregateHP = aggregate;
 }
 
 const IBonusBearer* CStack::getBonusBearer() const
