@@ -2,6 +2,22 @@
 
 ## Purpose
 
+### 2026-10-05 UP012 — Biography guard invocation
+
+The package-style `python3 -m unittest tools.tests.test_new_horizons_hero_biographies`
+invocation fails because this script imports a sibling test module directly.
+Run `python3 tools/tests/test_new_horizons_hero_biographies.py -q` instead;
+that invocation passes all five focused checks. This is an invocation repair,
+not a gameplay or biography-content failure.
+The first native build fails because the fixture uses CHeroHandler's public
+HeroType interface, whose biography methods are private. Use the concrete
+CHero accessor for the test; do not widen the public engine API. Initial log:
+`build/nh-up012-validation/build.log`.
+The repaired client/test build passes; the two isolated native cases pass with
+zero skips. Evidence: `build-repaired.log` and `native.log`/XML in that directory.
+The prior suspected Mods-prefixed resource path was removed during source review
+before execution; actual localization provenance supplies the override check.
+
 ### 2026-10-05 UP232 — Arcane Ballistics ranged fixture legality
 
 The first registered-fixture build succeeds, but the principal native case

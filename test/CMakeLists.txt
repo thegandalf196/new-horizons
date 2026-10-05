@@ -98,6 +98,7 @@ set(test_SRCS
 		hero/NewHorizonsLogisticsLevelWireTest.cpp
 		hero/NewHorizonsHeroRulesTest.cpp
 		hero/NewHorizonsHalonInitializationTest.cpp
+		hero/NewHorizonsHeroBiographyTest.cpp
 		hero/NewHorizonsHeroRulesFixture.h
 		game/MovementCostTest.cpp
 		game/NewHorizonsLogisticsMovementPerksTest.cpp

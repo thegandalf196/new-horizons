@@ -1,6 +1,25 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-05
+UP-012 native content-loading gate accepted: all 52 selectively activated
+biographies match production text resolution and New Horizons registration
+provenance; the 92 inherited identities have no NH biography override. Live
+instance custom text retains precedence. Both Linux targets build; two focused
+native cases pass with zero skips, plus five Python guards and module drift.
+No gameplay identity counts change. Map-file custom-biography parsing, rendered
+presentation and playable delivery remain separate; this is not renewed
+editorial or original-text byte-equivalence approval.
+
+Freshness audit: the current canonical text and integrated decisions do not
+clear the recorded holds for 14 planned Learning/Armorer/Luck perks or 13
+planned School perks. Offense, Archery and Sorcery have no planned perks.
+Elemental Conjurer's modifier and Reality Breaker's target scope are specified;
+their holds are dependencies on unfinished base spells, not ambiguity in those
+perk clauses. The apparent Empower timed-duration gap was a false positive:
+the Mechanics member scaler already includes Empower. Tower's authored Mage,
+Arch Mage and Genie ability clauses likewise have production consumers. No
+new identity-count credit follows from these bounded audits.
+
 Continuation audit: the registry still contains 225 active and 85 planned
 perks. All six missing combat identities have unresolved item-level rule
 questions in the priority queue: UP-117, UP-072, UP-043, UP-066, UP-179 and
