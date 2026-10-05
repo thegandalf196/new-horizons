@@ -23,8 +23,7 @@ SelectiveDispelWindow::SelectiveDispelWindow(SelectiveDispelContext context_)
 {
 	pos.w = WINDOW_WIDTH;
 	pos.h = WINDOW_HEIGHT;
-	moveTo(context.anchor + Point(18, 18));
-	fitToScreen(4);
+	center();
 
 	OBJECT_CONSTRUCTION;
 	decoration.push_back(std::make_shared<TransparentFilledRectangle>(

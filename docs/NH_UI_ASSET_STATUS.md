@@ -1,6 +1,17 @@
 # New Horizons UI and asset status register
 
-Last audited: 2026-10-04
+Last audited: 2026-10-05
+
+UP004/UP232 canonical feedback correction in progress: retain the existing
+textured leather/red/gold hero-status surface, but replace its historical three
+independent action counters with one normal Hero Action Available/Spent state.
+Typed additional opportunities belong on ordinary Spell/Order controls with
+source and expiry, while generic skill providers retain their own status rows.
+Arcane Ballistics ranged hover uses the same attack-local penetration query as
+the damage calculation and distinguishes combined PDR from Creature Defense.
+No new raster or art approval is implied. These interactions remain Provisional
+until native-resolution rendered and playable acceptance; focused source/build
+evidence is recorded in the priority queue.
 
 2026-10-05 Perfect Moment source correction verified: canonical automatic first
 eligible +5-Luck attack replaces the obsolete manual checkbox and local armed
@@ -184,6 +195,15 @@ Implementation is Final only when the intended UI behavior and its presentation 
 
 ## Current status summary
 
+UP-234 implementation checkpoint: custom spellbook frames now center inside
+their school-border canvas, with original DEF placement restored between page
+changes. Temporal Field and Selective Dispel use viewport-centered choices.
+The Vengeful Vines three-hex selector and shared House of Wisdom parchment
+presentation are implemented. Existing artwork remains unchanged and
+Provisional; these source corrections are not rendered acceptance or a new
+playable promotion. Full scroll hitboxes, native scale and vanilla controls
+must be checked in the finished client before closing the reported defects.
+
 UP-140 Steadfast: generic legal offer/name/help presentation is Provisional;
 purpose-made art remains Not done with NH_perk_neutral fallback. Source/native
 principal14/14 passes, registration174/310 active and136 planned. No new art,
@@ -257,7 +277,7 @@ removal does not change the provisional approval status of the perk icon.
 | Hydra's Vitality spell icon and capacity feedback | Provisional | Provisional | Original three-headed hydra painting has 44/32/30 exports, retained master, exact prompt, provenance and inspected native/enlarged comparison under `assets/new-horizons/art-source/hydras-vitality-v1/`. Book/scroll/scenario/effect/immune bindings are registered. Both Linux targets link; eight runtime/AI cases, sixteen existing health guards and the UI source guard pass. Capacity preview and next-activation status use shared values. Rendered/playable acceptance and final art approval remain pending. |
 | Verdant Prison spell icon and targeting | Provisional | Provisional | Original root-cage painting has 44/32/30 exports, master, exact prompt, provenance and native/enlarged comparison under `assets/new-horizons/art-source/verdant-prison-v1/`. Book/scroll/scenario/effect/immune bindings are registered; summon assets are referenced without copying purchaser pixels. Both Linux targets link; eleven runtime/AI cases, ten Trolls guards and targeting source checks pass. Rendered/playable review and final art approval remain pending; Verdant Warden perk art remains Not done. |
 | Summon Trolls spell icon and targeting | Provisional | Provisional | Original moss-stone Troll idol has 44/32/30 exports and retained master, exact prompt, provenance and native/enlarged comparison under `assets/new-horizons/art-source/summon-trolls-v1/`. Book/scroll/scenario/effect/immune bindings are registered; C18SPW0 and SUMNELM are referenced without copying purchaser pixels. Both Linux targets link; ten focused runtime/AI cases, two existing AI guards and the targeting source guard pass. Rendered/playable review and final art approval are pending; Beastcaller perk art remains Not done. |
-| Vengeful Vines spell icon and targeting | Provisional | Provisional | Purpose-made HoMM3-art winding thorn vine has 44/32/30 RGB exports and retained master, exact prompt, provenance and native/enlarged comparison under `assets/new-horizons/art-source/vengeful-vines-v1/`. Book/scroll/scenario/effect/immune bindings are registered; SP02_ and BIND are referenced without copied purchaser pixels. Full-footprint preview, six-way rotation and explicit confirmation reuse the leather target-selection strip. Both Linux targets link; 13/13 focused native cases and the UI source guard pass. Rendered/playable and final approval remain pending. |
+| Vengeful Vines spell icon and targeting | Provisional | Provisional | Purpose-made HoMM3-art winding thorn vine has 44/32/30 RGB exports and retained master, exact prompt, provenance and native/enlarged comparison under `assets/new-horizons/art-source/vengeful-vines-v1/`. Book/scroll/scenario/effect/immune bindings are registered; SP02_ and BIND are referenced without copied purchaser pixels. UP-234 replaces historical six-way rotation/confirmation with three connected selected hexes, third-click submission, Backspace undo and battlefield preview. Both Linux targets link and the UI source guard passes. Rendered/playable and final approval remain pending. |
 | Entangle spell icon and root status | Provisional | Provisional | Purpose-made HoMM3-art boot-and-roots 44/32/30 RGB exports are bound to book/scroll/scenario/effect/immune roles. Master, exact prompt, provenance and native-size comparison are retained under `assets/new-horizons/art-source/entangle-v1/`. Existing SP02_ animation and BIND sound are referenced without copying purchaser pixels. The stack status reads actual remaining root rounds and distinguishes movement restraint from Time Stop. Both Linux targets link, and 17/17 focused native cases plus 4/4 status wiring checks pass. In-game rendering and user-final approval remain open. Rootcaller's neutral perk fallback is Not done art. |
 | Army split dialog | Provisional | Provisional | User confirmed garrison-to-garrison and hero-to-garrison transfers work, but rejected the earlier dialog's pasted full-width gold seams and cutout-like composition. The latest source uses a continuous leather field, the classic outer frame, and individual beveled creature, owner, slider, amount, and button wells based on the user's [visual reference](https://i.imgur.com/8nKTXds.jpeg). Source guards and Linux client build pass. A private in-game `Split Imps` capture from unpromoted candidate `344129b2…` shows the seams gone and the controls visible at game scale; texture join/button-well aesthetics and garrison/hero variants still need user review. The earlier seam-removal snapshot remains promoted; this latest well-refinement has **not** been promoted. Existing portrait/crest/button art is reused, not newly generated. |
 | Skill-provided combat resources | Provisional | Provisional | Optional skill metadata declares a typed read-only status provider and localized help. Generic entries reuse the learned rank's existing icon and show current/maximum values separately from round Actions. Metamagic and Bloodrage are the first two typed Skill providers; Counterspell and Warcasting use the same row renderer for non-Skill state. Actual visible height controls panel placement, without a reserved Metamagic slot. Source review, metadata tests and focused UI guards pass; native client CI and graphical acceptance remain pending, including compact stack overlays and sticky panels on/off. |

@@ -69,17 +69,6 @@ struct SoulChainSelectionPreview
 	std::vector<SoulChainTargetPreview> targets;
 };
 
-struct VengefulVinesSelectionPreview
-{
-	BattleHex origin = BattleHex::INVALID;
-	BattleHex::EDir orientation = BattleHex::RIGHT;
-	int32_t affectedEnemyStacks = 0;
-	bool originSelected = false;
-	bool pathFits = false;
-	bool canConfirm = false;
-	std::string status;
-};
-
 using MagicArrowOverchargeFactory = std::function<std::optional<MagicArrowOverchargeContext>(
 	const BattleAction &, const BattleHex &, const CStack *)>;
 using ShadowGiftFactory = std::function<std::optional<ShadowGiftContext>(
@@ -168,10 +157,9 @@ class BattleActionsController
 	/// its six adjacent directions.  Only the compact start+direction action is
 	/// sent to the server.
 	BattleHex fireWallSelectedStart = BattleHex::INVALID;
-	/// Explicit origin/orientation selection for saved-v3 New Horizons Vengeful
-	/// Vines. The spell action is sent only after a separate Confirm.
-	BattleHex vengefulVinesOrigin = BattleHex::INVALID;
-	BattleHex::EDir vengefulVinesOrientation = BattleHex::RIGHT;
+	/// Ordered location selection for saved-v3 New Horizons Vengeful Vines.
+	/// The third valid click is sent immediately as a three-location spell target.
+	std::vector<BattleHex> vengefulVinesSelectedHexes;
 	BattleID vengefulVinesBattleID;
 	std::optional<PlayerColor> vengefulVinesPlayer;
 	BattleSide vengefulVinesSide = BattleSide::NONE;
@@ -240,10 +228,10 @@ class BattleActionsController
 	void selectFireWallStartOrDirection(const BattleHex & clickedHex);
 	bool fireWallPlacementLineIsLegal(const BattleHex & start, BattleHex::EDir direction) const;
 	bool vengefulVinesSelectionContextIsCurrent() const;
-	bool vengefulVinesTargetsAreLegal(const BattleHex & origin, BattleHex::EDir direction) const;
+	bool vengefulVinesTargetsAreLegal(const std::vector<BattleHex> & selectedHexes) const;
 	int32_t vengefulVinesEnemyTargetCount(const BattleHexArray & footprint) const;
 	void updateVengefulVinesStatus(const BattleHex & hoveredHex);
-	void selectVengefulVinesOriginOrOrientation(const BattleHex & clickedHex);
+	void selectVengefulVinesHex(const BattleHex & clickedHex);
 	bool stormOfDaggersSelectionContextIsCurrent() const;
 	bool stormOfDaggersTargetIsLegal(uint32_t unitId) const;
 	bool stormOfDaggersTargetsAreLegal(const std::vector<uint32_t> & unitIds) const;
@@ -329,19 +317,13 @@ public:
 	BattleHexArray getFireWallPlacementLegalStartHexes() const;
 	BattleHexArray getFireWallPlacementLegalEndpoints() const;
 
-	/// Saved-v3 Vengeful Vines selects a battlefield origin and one of six
-	/// directions, then requires explicit confirmation of the complete footprint.
+	/// Saved-v3 Vengeful Vines selects three distinct connected locations and
+	/// casts immediately on the third legal click.
 	bool vengefulVinesTargetSelectionModeActive() const;
-	bool vengefulVinesOriginSelected() const;
-	BattleHex vengefulVinesSelectedOrigin() const;
-	bool vengefulVinesOriginIsLegal(const BattleHex & hex) const;
-	bool vengefulVinesEndpointIsLegal(const BattleHex & hex) const;
-	BattleHexArray getVengefulVinesLegalStartHexes() const;
-	BattleHexArray getVengefulVinesRotationHexes() const;
-	BattleHexArray getVengefulVinesPreviewFootprint() const;
-	VengefulVinesSelectionPreview getVengefulVinesSelectionPreview() const;
-	void rotateVengefulVinesOrientation();
-	void confirmVengefulVines();
+	const std::vector<BattleHex> & getVengefulVinesSelectedHexes() const;
+	bool vengefulVinesHexIsLegalCandidate(const BattleHex & hex) const;
+	bool vengefulVinesHexCompletesLegalCast(const BattleHex & hex) const;
+	void undoVengefulVinesSelection();
 
 	/// Start/cancel the direct battlefield selector used by targeted Orders.
 	/// No battle state is changed until the callback receives the final action.

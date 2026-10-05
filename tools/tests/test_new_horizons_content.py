@@ -636,7 +636,7 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(next(p for p in perks if p['id'].endswith('.verdantWarden'))
                          ['effect']['status'], 'active')
 
-    def test_vengeful_vines_is_oriented_damage_with_fixed_movement_penalty(self):
+    def test_vengeful_vines_is_connected_damage_with_fixed_movement_penalty(self):
         row = self.rules['spells']['new-horizons:vengefulVines']
         self.assertEqual((row['schools'], row['level'], row['costs']),
                          (['new-horizons:nature'], 1, [5, 5, 5, 5]))
@@ -646,6 +646,9 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(spell['targetType'], 'LOCATION')
         self.assertTrue(spell['flags']['damage'])
         base = spell['levels']['base']
+        self.assertIn('three distinct connected', base['description'])
+        self.assertIn('third legal click casts immediately', base['description'])
+        self.assertNotIn('six-hex', base['description'])
         self.assertEqual((base['cost'], base['range']), (5, '0'))
         self.assertTrue(base['targetModifier']['smart'])
         self.assertEqual(base['battleEffects']['directDamage'], {'type': 'damage'})

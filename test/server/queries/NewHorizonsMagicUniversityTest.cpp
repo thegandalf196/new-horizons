@@ -121,11 +121,36 @@ TEST_F(NewHorizonsMagicUniversityTest, SpecialtyAndRemovedScrollOffersAreRejecte
 		ASSERT_TRUE(spell.hasValue());
 		// An adversarial stale offer must not bypass authoritative eligibility.
 		town->setHouseOfWisdomScrolls({spell});
+		const auto visibleOffers = town->availableItemsIds(EMarketMode::RESOURCE_SKILL);
+		EXPECT_TRUE(std::none_of(visibleOffers.begin(), visibleOffers.end(), [spell](const TradeItemBuy & offer)
+			{ return offer.as<SpellID>() == spell; }));
 		EXPECT_FALSE(handler.buyHouseOfWisdomScroll(town, hero, spell));
 		EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, before);
 		EXPECT_FALSE(hero->hasScroll(spell, false));
 		EXPECT_EQ(town->getHouseOfWisdomScrolls(), std::vector<SpellID>{spell});
 	}
+}
+
+TEST_F(NewHorizonsMagicUniversityTest, MapBannedAndInvalidPersistedOffersAreHiddenWithoutChangingStock)
+{
+	startGame();
+	const auto allowedSpell = town->availableItemsIds(EMarketMode::RESOURCE_SKILL).front().as<SpellID>();
+	ASSERT_TRUE(allowedSpell.hasValue());
+	gameState()->getMap().allowedSpells.erase(allowedSpell);
+	town->setHouseOfWisdomScrolls({allowedSpell});
+	const auto resourcesBefore = gameState()->getPlayerState(PlayerColor(0))->resources;
+	GameHandlerTestServer server(gameState());
+	CGameHandler handler(server, gameState());
+	EXPECT_TRUE(town->availableItemsIds(EMarketMode::RESOURCE_SKILL).empty());
+	EXPECT_EQ(town->getHouseOfWisdomScrolls(), std::vector<SpellID>{allowedSpell});
+	EXPECT_FALSE(handler.buyHouseOfWisdomScroll(town, hero, allowedSpell));
+	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, resourcesBefore);
+	EXPECT_FALSE(hero->hasScroll(allowedSpell, false));
+
+	const SpellID invalidSpell(999999);
+	town->setHouseOfWisdomScrolls({invalidSpell});
+	EXPECT_TRUE(town->availableItemsIds(EMarketMode::RESOURCE_SKILL).empty());
+	EXPECT_EQ(town->getHouseOfWisdomScrolls(), std::vector<SpellID>{invalidSpell});
 }
 
 TEST_F(NewHorizonsMagicUniversityTest, InsufficientGoldDoesNotPartiallyCharge)

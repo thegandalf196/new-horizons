@@ -2,6 +2,47 @@
 
 ## Purpose
 
+### 2026-10-05 UP234 — Content audit baseline and UI acceptance boundary
+
+The existing68-case content suite has65 passes and three unrelated failures:
+its curated hero-spell inventory oracle omits newer Mass variants/Puppet Master,
+which also makes two legacy-schema validation cases fail. The focused Vengeful
+Vines metadata case and generated-module drift check pass. Do not change live
+spell availability to satisfy an outdated test inventory; reconcile that oracle
+in Phase2. Source layout checks cannot certify native rendered appearance.
+House of Wisdom's Haste/Cure/Bless screenshot is not evidence of an acquisition
+bypass: retained identities remain eligible; audit stale saved offers separately.
+The initial native build fails in the new friendly-exclusion fixture: the
+bonus query returns a shared BonusList pointer, so the assertion must use
+`->empty()`, not `.empty()`. This fixture is repaired. The first native run
+passes 14/15: the historical v2 fixture retains v3-only `heroAccess` and
+`restoration` fields, rejected by the strict saved-profile parser. Strip those
+fields only in the pre-v3 test snapshot; production validation stays unchanged.
+After repair, Linux client/test targets build and the focused native filter
+passes 15/15, zero skips. Retain initial and repaired logs under
+`build/nh-up234-validation/`; final evidence is `native-final.log`/XML and
+`build-fixture-final.log`. Rendered acceptance remains pending, not inferred
+from the successful build or source guards.
+
+### 2026-10-05 UP233 — Linux delivery startup and AI warning boundary
+
+Clean committed-source256176fae Release/Ninja build passes744 steps, followed
+by a4-step correct-version relink. The legacy CMake Git helper misreads an
+absolute worktree .git pointer; changing only the disposable worktree metadata
+to the equivalent relative pointer makes the generated version match its actual
+commit. No gameplay source correction or shared-worktree reset is involved.
+The first private smoke profile was an already-existing unmanaged empty directory
+and was correctly rejected before client execution. Retain UP233-headless-smoke.log;
+retry with a new child profile initializes All for One and runs several AI turns.
+Bounded20-second stop returns124 intentionally, without GUI or pointer input.
+
+That smoke also logs2851 `Stack ammo overuse. total: 0, used: 0, requested: 1`
+warnings, starting in a day2 AI garrison encounter. AI continues afterward;
+no crash is established. Retain UP233-headless-smoke-repaired.log and private
+profile for reproduction. Investigate live versus detached ammunition spending
+as a Phase2 integration finding; do not present startup acceptance as full AI
+correctness. Snapshot6e1e8ce3 is promoted at the user's explicit delivery request.
+
 ### 2026-10-05 UP231 — Damage fixture contracts and information views
 
 Initial both-target build33121 fails: DamageRange has no equality operator.

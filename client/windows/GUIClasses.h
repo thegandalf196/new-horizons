@@ -15,6 +15,7 @@
 #include "../../lib/entities/hero/NewHorizonsPerkState.h"
 #include "../widgets/Images.h"
 #include "../widgets/IVideoHolder.h"
+#include "../../lib/constants/EntityIdentifiers.h"
 
 #include <array>
 
@@ -54,6 +55,24 @@ class GraphicalPrimitiveCanvas;
 class TransparentFilledRectangle;
 class CSecSkillPlace;
 class CArtPlace;
+
+/// Displays a spell symbol on the native rolled-parchment surface when the
+/// spell frame contains only a standalone icon. Complete 83x61 scroll frames
+/// are shown untouched.
+class CSpellScrollPresentation final : public CIntObject
+{
+	std::shared_ptr<CAnimImage> background;
+	std::shared_ptr<CAnimImage> emblem;
+	CArtPlace * interactionTarget = nullptr;
+
+public:
+	CSpellScrollPresentation(SpellID spell, Point position, bool wrapStandaloneIcon);
+	void setInteractionTarget(CArtPlace * target);
+	void setVisible(bool visible);
+	void clickPressed(const Point & cursorPosition) override;
+	void showPopupWindow(const Point & cursorPosition) override;
+	void hover(bool on) override;
+};
 
 enum class EUserEvent;
 
@@ -424,12 +443,14 @@ class CUniversityWindow final : public CStatusbarWindow, public IMarketHolder
 	{
 		std::shared_ptr<CSecSkillPlace> skill;
 		std::shared_ptr<CArtPlace> scroll;
+		std::shared_ptr<CSpellScrollPresentation> scrollPresentation;
 		std::shared_ptr<CPicture> topBar;
 		std::shared_ptr<CPicture> bottomBar;
 		std::shared_ptr<CLabel> name;
 		std::shared_ptr<CLabel> level;
 		SpellID scrollID;
 		bool scrollMode = false;
+		Point scrollSlotOrigin;
 	public:
 		SecondarySkill ID;//id of selected skill
 		CUniversityWindow * parent;

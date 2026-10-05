@@ -794,34 +794,18 @@ void BattleFieldController::showHighlightedHexes(Canvas & canvas)
 		return;
 	}
 
-	// Vengeful Vines previews the shared, complete six-hex winding while the
-	// player chooses an orientation. The origin may be occupied or obstructed;
-	// only playable geometry and spell target legality affect confirmation.
+	// Vengeful Vines marks the ordered selections and the legal hovered next
+	// location. The third valid location is submitted immediately by the
+	// controller; occupied and obstructed playable hexes remain selectable.
 	if(owner.actionsController->vengefulVinesTargetSelectionModeActive())
 	{
-		if(!owner.actionsController->vengefulVinesOriginSelected())
-		{
-			for(const auto & hex : owner.actionsController->getVengefulVinesLegalStartHexes())
-				showHighlightedHex(canvas, cellShade, hex, true);
+		const auto & selected = owner.actionsController->getVengefulVinesSelectedHexes();
+		for(const auto & hex : selected)
+			showHighlightedHex(canvas, cellUnitMovementHighlight, hex, false);
 
-			const auto hovered = getHoveredHex();
-			if(hovered.isValid() && owner.actionsController->vengefulVinesOriginIsLegal(hovered))
-				showHighlightedHex(canvas, cellUnitMovementHighlight, hovered, false);
-		}
-		else
-		{
-			showHighlightedHex(canvas, cellUnitMovementHighlight,
-				owner.actionsController->vengefulVinesSelectedOrigin(), false);
-			for(const auto & endpoint : owner.actionsController->getVengefulVinesRotationHexes())
-				showHighlightedHex(canvas, cellShade, endpoint, true);
-
-			for(const auto & hex : owner.actionsController->getVengefulVinesPreviewFootprint())
-				showHighlightedHex(canvas, cellShade, hex, true);
-
-			const auto hovered = getHoveredHex();
-			if(hovered.isValid() && owner.actionsController->vengefulVinesEndpointIsLegal(hovered))
-				showHighlightedHex(canvas, cellUnitMovementHighlight, hovered, false);
-		}
+		const auto hovered = getHoveredHex();
+		if(hovered.isValid() && owner.actionsController->vengefulVinesHexIsLegalCandidate(hovered))
+			showHighlightedHex(canvas, cellShade, hovered, true);
 		return;
 	}
 

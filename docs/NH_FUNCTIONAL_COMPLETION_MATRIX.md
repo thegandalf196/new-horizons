@@ -1,6 +1,17 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-05
+UP-234 implemented (rendered/playable verification pending): replace Vengeful Vines' six-hex orientation selector with
+three connected selected hexes and third-click submission; align all new-spell
+casting panels and book icons; compose House of Wisdom parchment and filter
+stale offers. This repairs existing identities and required UI, not new
+spell/perk count credit. Source, focused validation and rendered/playable
+delivery remain separate checkpoints. Counts remain 225/310 perks and 61/67
+combat spell identities.
+Both Linux targets build; focused geometry/runtime/AI/House tests pass 15/15,
+zero skips. UI source guards, metadata and module drift checks pass; independent
+review has no blocker. The default launcher snapshot remains unchanged.
+
 Town Portal Movement exhaustion accepted: shared exact-identity/saved-NH cost
 now consumes all remaining Movement after successful teleport. Nullkiller uses
 planned source Movement, zero cast-day residual and full remaining-day cost;
@@ -3111,9 +3122,13 @@ Independent review has no remaining blocker. The HoMM3 art workflow produced ori
 Phase 2 retains combined classic Bind lifecycle, full save/load/Dispel,
 wider AI forecasts, rendering and playable acceptance.
 
-Vengeful Vines now has the saved-v3 Level-1 Nature, 5-Mana winding attack.
-Shared geometry enforces a full six-hex S-bend for execution, client preview
-and AI candidates. Intersected enemies take `20 + 1.1 × SP` damage once per
+Vengeful Vines has the saved-v3 Level-1 Nature, 5-Mana attack. UP-234
+supersedes the old six-hex S-bend with exactly three distinct connected
+selected hexes, shared between execution, client validation and cached AI
+candidates. Third legal click submits; Backspace undoes and Escape cancels.
+The earlier native results below cover the previous geometry; updated
+three-hex validation evidence is recorded at the UP-234 checkpoint above.
+Intersected enemies take `20 + 1.1 × SP` damage once per
 stack and lose two movement Speed for two rounds without changing Initiative;
 the existing movement-only bonus preserves even classic Initiative fallback.
 School rank scales only the damage power term. Both Linux targets link, and

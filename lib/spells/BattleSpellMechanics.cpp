@@ -1224,7 +1224,7 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 	if(vengefulVinesEnabled)
 	{
 		const auto path = newHorizonsVengefulVines::footprint(target);
-		if(mode != Mode::HERO || casterSide == BattleSide::NONE || path.size() != 6
+		if(mode != Mode::HERO || casterSide == BattleSide::NONE || path.size() != 3
 			|| spellTarget.size() != path.size())
 			return false;
 
@@ -2530,7 +2530,7 @@ Target BattleSpellMechanics::transformSpellTarget(const Target & aimPoint) const
 		&& isNewHorizonsVengefulVinesSpell(owner, battle()->getBattle()->getMagicRules()))
 	{
 		const auto path = newHorizonsVengefulVines::footprint(aimPoint);
-		if(path.size() != 6)
+		if(path.size() != 3)
 			return {};
 
 		spellTarget.reserve(path.size());
@@ -2597,7 +2597,7 @@ std::vector<AimType> BattleSpellMechanics::getTargetTypes() const
 {
 	if(battle() && battle()->getBattle()
 		&& isNewHorizonsVengefulVinesSpell(owner, battle()->getBattle()->getMagicRules()))
-		return {AimType::LOCATION, AimType::LOCATION};
+		return {AimType::LOCATION, AimType::LOCATION, AimType::LOCATION};
 
 	auto ret = BaseMechanics::getTargetTypes();
 

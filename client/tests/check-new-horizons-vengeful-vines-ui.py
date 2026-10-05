@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Source guard for the explicit Vengeful Vines orientation selector."""
+"""Source guard for canonical three-location Vengeful Vines targeting."""
 
 from pathlib import Path
 
@@ -9,6 +9,8 @@ CONTROLLER = (ROOT / "client/battle/BattleActionsController.cpp").read_text(enco
 CONTROLLER_H = (ROOT / "client/battle/BattleActionsController.h").read_text(encoding="utf-8")
 FIELD = (ROOT / "client/battle/BattleFieldController.cpp").read_text(encoding="utf-8")
 WINDOW = (ROOT / "client/battle/BattleWindow.cpp").read_text(encoding="utf-8")
+RUNTIME_H = (ROOT / "lib/spells/NewHorizonsVengefulVines.h").read_text(encoding="utf-8")
+RUNTIME = (ROOT / "lib/spells/NewHorizonsVengefulVines.cpp").read_text(encoding="utf-8")
 
 
 def between(source: str, start: str, end: str) -> str:
@@ -19,9 +21,11 @@ def between(source: str, start: str, end: str) -> str:
 
 def main() -> None:
     assert "newHorizonsVengefulVines::enabled" in CONTROLLER
-    assert "newHorizonsVengefulVines::footprint(origin, direction)" in CONTROLLER
-    assert "BattleHex::EDir vengefulVinesOrientation = BattleHex::RIGHT" in CONTROLLER_H
-    assert "struct VengefulVinesSelectionPreview" in CONTROLLER_H
+    assert "footprint(const battle::Target & target)" in RUNTIME_H
+    assert "connectedTriples()" in RUNTIME_H
+    assert "std::vector<BattleHex> vengefulVinesSelectedHexes" in CONTROLLER_H
+    assert "BattleHex::EDir vengefulVinesOrientation" not in CONTROLLER_H
+    assert "originSelected" not in CONTROLLER_H
 
     # The saved-v3 spell enters a dedicated selector before LOCATION reaches
     # the ordinary caster-action path that would submit a single-hex target.
@@ -33,40 +37,53 @@ def main() -> None:
     assert "updateVengefulVinesStatus(BattleHex::INVALID)" in cast
 
     context = between(CONTROLLER, "bool BattleActionsController::vengefulVinesSelectionContextIsCurrent",
-                      "bool BattleActionsController::vengefulVinesOriginSelected")
+                      "const std::vector<BattleHex> & BattleActionsController::getVengefulVinesSelectedHexes")
     for token in ("vengefulVinesBattleID", "vengefulVinesPlayer", "vengefulVinesSide",
                   "vengefulVinesRound", "vengefulVinesHeroID", "owner.makingTurn()"):
         assert token in context
 
-    # Full geometry, receptive enemy filtering, and mechanics legality are
-    # rechecked on Confirm. Selection clicks only update origin/orientation.
+    # The shared rules helper owns exact-three, distinct, connected playable
+    # location geometry and the authoritative validation reuses that helper.
+    geometry = between(RUNTIME, "BattleHexArray footprint(const battle::Target & target)",
+                       "connectedTriples()")
+    for token in ("target.size() != 3", "destination.unitValue", "hex.isAvailable()",
+                  "selected.contains(hex)", "mutualPosition(previous, hex)"):
+        assert token in geometry, token
+
     validation = between(CONTROLLER, "bool BattleActionsController::vengefulVinesTargetsAreLegal",
-                         "VengefulVinesSelectionPreview BattleActionsController::getVengefulVinesSelectionPreview")
-    assert "newHorizonsVengefulVines::footprint(origin, direction)" in validation
+                         "void BattleActionsController::updateVengefulVinesStatus")
+    assert "selectedHexes.size() != vengefulVinesFootprintHexCount" in validation
+    assert "target.emplace_back(hex)" in validation
+    assert "newHorizonsVengefulVines::footprint(target)" in validation
     assert "vengefulVinesEnemyTargetCount(footprint) == 0" in validation
     assert "mechanics->canBeCast(problem)" in validation
-    assert "newHorizonsVengefulVines::footprint(target)" in validation
     assert "mechanics->canBeCastAt(target, problem)" in validation
 
-    selection = between(CONTROLLER, "void BattleActionsController::selectVengefulVinesOriginOrOrientation",
-                        "void BattleActionsController::confirmVengefulVines")
-    assert "vengefulVinesOrientation = BattleHex::RIGHT" in selection
-    assert "adjacentSpellDirection(vengefulVinesOrigin, clickedHex)" in selection
-    assert "battleMakeSpellAction" not in selection
-    assert "vengefulVinesEndpointIsLegal(clickedHex)" in selection
+    candidate = between(CONTROLLER, "bool BattleActionsController::vengefulVinesHexIsLegalCandidate",
+                        "int32_t BattleActionsController::vengefulVinesEnemyTargetCount")
+    for token in ("hex.isAvailable()", "vengefulVinesSelectedHexes.size() >= vengefulVinesFootprintHexCount",
+                  "std::ranges::find(vengefulVinesSelectedHexes, hex)", "mutualPosition(selected, hex)",
+                  "vengefulVinesHexCompletesLegalCast(hex)"):
+        assert token in candidate, token
 
-    confirmation = between(CONTROLLER, "void BattleActionsController::confirmVengefulVines",
-                           "void BattleActionsController::updateRepeatedPlacementStatus")
-    assert "vengefulVinesTargetsAreLegal" in confirmation
-    assert "action.aimToHex(vengefulVinesOrigin)" in confirmation
-    assert "cloneInDirection(vengefulVinesOrientation, false)" in confirmation
-    assert "battleMakeSpellAction(owner.getBattleID(), action)" in confirmation
-    assert confirmation.index("vengefulVinesTargetsAreLegal") < confirmation.index("BattleAction action")
+    selection = between(CONTROLLER, "void BattleActionsController::selectVengefulVinesHex",
+                        "void BattleActionsController::updateRepeatedPlacementStatus")
+    assert selection.index("if(!vengefulVinesHexIsLegalCandidate(clickedHex))") < selection.index(
+        "vengefulVinesSelectedHexes.push_back(clickedHex)")
+    assert "action.target.clear()" in selection
+    assert "for(const auto & hex : vengefulVinesSelectedHexes)" in selection
+    assert "action.aimToHex(hex)" in selection
+    assert selection.index("vengefulVinesSelectedHexes.push_back(clickedHex)") < selection.index("submitHeroSpellAction(action)")
+    assert "confirmVengefulVines" not in CONTROLLER
+    assert "rotateVengefulVinesOrientation" not in CONTROLLER
+
+    undo = between(CONTROLLER, "void BattleActionsController::undoVengefulVinesSelection",
+                   "void BattleActionsController::updateVengefulVinesStatus")
+    assert "vengefulVinesSelectedHexes.pop_back()" in undo
 
     cleanup = between(CONTROLLER, "void BattleActionsController::endCastingSpell",
                       "bool BattleActionsController::isActiveStackSpellcaster")
-    assert "vengefulVinesOrigin = BattleHex::INVALID" in cleanup
-    assert "vengefulVinesOrientation = BattleHex::RIGHT" in cleanup
+    assert "vengefulVinesSelectedHexes.clear()" in cleanup
     assert "updateBattleTargetSelectionControls()" in cleanup
     right_click = between(CONTROLLER, "void BattleActionsController::onHexRightClicked",
                           "bool BattleActionsController::heroSpellcastingModeActive")
@@ -76,32 +93,27 @@ def main() -> None:
     field = between(FIELD, "void BattleFieldController::showHighlightedHexes",
                     "Rect BattleFieldController::hexPositionLocal")
     assert "vengefulVinesTargetSelectionModeActive()" in field
-    assert "getVengefulVinesLegalStartHexes()" in field
-    assert "getVengefulVinesPreviewFootprint()" in field
-    preview = between(CONTROLLER, "BattleHexArray BattleActionsController::getVengefulVinesPreviewFootprint",
-                      "int32_t BattleActionsController::vengefulVinesEnemyTargetCount")
-    assert "footprint(vengefulVinesOrigin, vengefulVinesOrientation)" in preview
-    assert "hoveredEndpoint" not in preview
-    assert "getVengefulVinesRotationHexes()" in field
+    assert "getVengefulVinesSelectedHexes()" in field
+    assert "vengefulVinesHexIsLegalCandidate(hovered)" in field
     assert "cellShade" in field and "cellUnitMovementHighlight" in field
 
     panel = between(WINDOW, "class BattleTargetSelectionPanel", "BattleWindow::BattleWindow")
-    for token in ("vengefulVinesTargetSelectionModeActive()", "getVengefulVinesSelectionPreview()",
-                  'setTextOverlay(undoButtonText, FONT_SMALL, Colors::WHITE)', '"Rotate"',
-                  'setTextOverlay("Cancel"', 'setTextOverlay("Confirm"',
-                  'ImagePath::builtin("DiBoxBck")', 'AnimationPath::builtin("settingsWindow/button80")',
-                  "rotateVengefulVinesOrientation()", "confirmVengefulVines()"):
-        assert token in panel, token
+    assert "vengefulVines" not in panel
+    assert 'ImagePath::builtin("DiBoxBck")' in panel
+    assert 'AnimationPath::builtin("settingsWindow/button80")' in panel
+    assert "center();" in panel
 
     controls = between(WINDOW, "void BattleWindow::updateBattleTargetSelectionControls",
                        "void BattleWindow::bOpenActiveUnit")
-    assert "vengefulVinesCanConfirm" in controls
-    assert "vengefulVinesCanRotate" in controls
+    assert "vengefulVinesCanUndo" in controls
     assert "GLOBAL_ACCEPT" in controls and "GLOBAL_BACKSPACE" in controls
     assert "!vengefulVinesActive" in controls
+    assert "undoVengefulVinesSelection()" in WINDOW
+    assert "rotateVengefulVinesOrientation" not in WINDOW
+    assert "confirmVengefulVines" not in WINDOW
     assert "GLOBAL_CANCEL" in WINDOW
 
-    print("PASS: saved-v3 routing, six-way preview, full-fit enemy validation, explicit confirm, controls, and cleanup")
+    print("PASS: saved-v3 routing, three connected location targets, third-click validation/submission, undo, overlay, and cleanup")
     print("Source wiring only; rendered appearance and a live battle remain unverified")
 
 

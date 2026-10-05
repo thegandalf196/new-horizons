@@ -1123,7 +1123,7 @@
 		"levels": {
 			"base": {
 				"range": "0",
-				"description": "Choose an origin and one of six orientations, preview the six-hex winding path, then confirm. Each intersected enemy stack takes 20 + 1.1 x Spell Power Nature damage once and loses 2 movement Speed for two rounds. Initiative is unchanged. Nature rank strengthens only the Spell Power damage term; friendly stacks are unaffected. The complete path must fit on the battlefield.",
+				"description": "Choose three distinct connected battlefield hexes. Each new hex must touch a selected hex; lines, bends and triangles are allowed. The third legal click casts immediately. Backspace undoes the last selection; Escape cancels. Each intersected enemy stack takes 20 + 1.1 x Spell Power Nature damage once and loses 2 movement Speed for two rounds. Initiative is unchanged. Nature rank strengthens only the Spell Power damage term; friendly stacks are unaffected.",
 				"cost": 5,
 				"power": 0,
 				"targetModifier": {"smart": true},

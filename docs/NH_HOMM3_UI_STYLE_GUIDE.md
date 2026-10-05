@@ -37,6 +37,15 @@ and the spellbook's page are independent UI surfaces; neither belongs inside
 the spell raster. Preserve symbol identity and readability at actual30/32/44px
 roles. Inspect alpha and native exports, not just a high-resolution painting.
 
+Center independent spellbook PNG frames inside the actual school-border
+canvas; do not inherit vanilla DEF offsets for smaller standalone symbols.
+Preserve native DEF placement when slots change spells. Both Mage Guild and
+House of Wisdom scrolls use the same parchment composition policy: complete
+scroll sprites remain untouched, standalone symbols sit on the native blank
+scroll, and parchment is never duplicated. Spell casting-choice and
+confirmation panels are viewport-centered, not cursor-anchored; ordinary
+tooltips retain their normal cursor-relative behavior.
+
 Mage Guild Adventure Spell access uses the existing exterior illustration as
 a clickable, gold-highlighted hover region, not a separate icon/button. Reuse
 the configured faction/tier image bounds and position. Guild level names use

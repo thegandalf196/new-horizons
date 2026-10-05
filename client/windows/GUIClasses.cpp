@@ -197,6 +197,81 @@ int CUniversityWindow::getUniversityItemPosX(size_t itemIndex, size_t skillCount
 	return stripX + (smallBlockWidth / 2) - iconHalfSize;
 }
 
+CSpellScrollPresentation::CSpellScrollPresentation(SpellID spell, Point position, bool wrapStandaloneIcon)
+	: CIntObject(CIntObject::NO_ACTIONS, position)
+{
+	constexpr int nativeScrollWidth = 83;
+	constexpr int nativeScrollHeight = 61;
+	constexpr int emblemMaximumWidth = 54;
+	constexpr int emblemMaximumHeight = 45;
+
+	OBJECT_CONSTRUCTION;
+	const auto spellFrame = std::make_shared<CAnimImage>(AnimationPath::builtin("SPELLSCR"), spell.getNum());
+	const bool isCompleteNativeScroll = spellFrame->pos.w == nativeScrollWidth
+		&& spellFrame->pos.h == nativeScrollHeight;
+	if(wrapStandaloneIcon && !isCompleteNativeScroll)
+	{
+		emblem = spellFrame;
+		background = std::make_shared<CAnimImage>(AnimationPath::builtin("TPMAGES.DEF"), 0);
+
+		// Preserve the native parchment edges and aspect ratio. Spell frames
+		// are usually already 32/44px symbols; only fit larger aliases inward.
+		if(emblem->pos.w > 0 && emblem->pos.h > 0
+			&& (emblem->pos.w > emblemMaximumWidth || emblem->pos.h > emblemMaximumHeight))
+		{
+			const int width = std::min({emblem->pos.w, emblemMaximumWidth,
+				emblemMaximumHeight * emblem->pos.w / emblem->pos.h});
+			const Point fittedSize(std::max(1, width),
+				std::max(1, width * emblem->pos.h / emblem->pos.w));
+			emblem->setScale(fittedSize);
+			emblem->pos.w = fittedSize.x;
+			emblem->pos.h = fittedSize.y;
+		}
+		emblem->moveBy(Point((nativeScrollWidth - emblem->pos.w) / 2,
+			(nativeScrollHeight - emblem->pos.h) / 2));
+		moveChildForeground(emblem.get());
+	}
+	else
+		background = spellFrame;
+
+	pos = background->pos;
+}
+
+void CSpellScrollPresentation::setVisible(bool visible)
+{
+	if(background)
+		background->visible = visible;
+	if(emblem)
+		emblem->visible = visible;
+}
+
+void CSpellScrollPresentation::setInteractionTarget(CArtPlace * target)
+{
+	interactionTarget = target;
+	if(interactionTarget)
+		addUsedEvents(LCLICK | SHOW_POPUP | HOVER);
+	else
+		removeUsedEvents(LCLICK | SHOW_POPUP | HOVER);
+}
+
+void CSpellScrollPresentation::clickPressed(const Point & cursorPosition)
+{
+	if(interactionTarget)
+		interactionTarget->clickPressed(cursorPosition);
+}
+
+void CSpellScrollPresentation::showPopupWindow(const Point & cursorPosition)
+{
+	if(interactionTarget)
+		interactionTarget->showPopupWindow(cursorPosition);
+}
+
+void CSpellScrollPresentation::hover(bool on)
+{
+	if(interactionTarget)
+		interactionTarget->hover(on);
+}
+
 CRecruitmentWindow::CCreatureCard::CCreatureCard(CRecruitmentWindow * window, const CCreature * crea, int totalAmount)
 	: CIntObject(LCLICK | SHOW_POPUP),
 	parent(window),
@@ -1537,10 +1612,12 @@ CUniversityWindow::CItem::CItem(CUniversityWindow * _parent, SpellID _ID, int X,
 	scrollMode(true)
 {
 	OBJECT_CONSTRUCTION;
+	const bool useHouseParchment = parent->houseOfWisdom;
 	pos.x += X;
 	pos.y += Y;
 
 	scroll = std::make_shared<CArtPlace>(Point(), ArtifactID::SPELL_SCROLL, scrollID);
+	scrollSlotOrigin = scroll->pos.topLeft();
 	scroll->setClickPressedCallback([this](CComponentHolder&, const Point&)
 		{
 			const auto goods = parent->market->availableItemsIds(EMarketMode::RESOURCE_SKILL);
@@ -1550,6 +1627,13 @@ CUniversityWindow::CItem::CItem(CUniversityWindow * _parent, SpellID _ID, int X,
 			if(GAME->interface()->cb->getResourceAmount().canAfford(cost))
 				parent->makeDeal(scrollID);
 		});
+	if(useHouseParchment)
+	{
+		// The full-size parchment presentation forwards its events to this
+		// component so popup text and the normal purchase callback stay shared.
+		scroll->removeUsedEvents(LCLICK | SHOW_POPUP | HOVER);
+		scroll->image->visible = false;
+	}
 	update();
 }
 
@@ -1568,11 +1652,61 @@ void CUniversityWindow::CItem::update()
 			scroll->setArtifact(ArtifactID::SPELL_SCROLL, scrollID);
 		else
 			scroll->setArtifact(ArtifactID(ArtifactID::NONE));
-		topBar = std::make_shared<CPicture>(image, Point(-28, -22));
+		if(parent->houseOfWisdom)
+		{
+			scroll->image->visible = false;
+		}
+		constexpr int houseTopBarY = -29;
+		constexpr int spellScrollHeight = 61;
+		const int initialTopBarY = parent->houseOfWisdom ? houseTopBarY : -22;
+		topBar = std::make_shared<CPicture>(image, Point(-28, initialTopBarY));
 		bottomBar = std::make_shared<CPicture>(image, Point(-28, 48));
-		name = std::make_shared<CLabel>(22, -13, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, scrollID.toSpell()->getNameTranslated());
-		level = std::make_shared<CLabel>(22, 57, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE,
-			std::to_string(cost[EGameResID::GOLD]) + " " + GameResID(EGameResID::GOLD).toResource()->getNameTranslated());
+		int finalTopBarY = initialTopBarY;
+		int parchmentY = 0;
+		int bottomBarY = 48;
+		if(parent->houseOfWisdom)
+		{
+			constexpr int gap = 2;
+			constexpr int confirmButtonTop = 313;
+			constexpr int clerkFrameBottom = 201;
+			const int bottomBarHeight = bottomBar->pos.h;
+			const int requiredHeight = topBar->pos.h + spellScrollHeight + bottomBarHeight + 2 * gap;
+			const int initialAvailableHeight = parent->pos.y + confirmButtonTop - (pos.y + finalTopBarY);
+			const int maximumTopBarShift = std::max(0, pos.y + finalTopBarY - (parent->pos.y + clerkFrameBottom));
+			const int topBarShift = std::min(maximumTopBarShift, std::max(0, requiredHeight - initialAvailableHeight));
+			finalTopBarY -= topBarShift;
+			topBar->moveBy(Point(0, -topBarShift));
+
+			int finalGap = gap;
+			const int availableAfterShift = initialAvailableHeight + topBarShift;
+			const int overflow = requiredHeight - availableAfterShift;
+			if(overflow > 0)
+				finalGap = std::max(0, gap - (overflow + 1) / 2);
+
+			parchmentY = finalTopBarY + topBar->pos.h + finalGap;
+			bottomBarY = parchmentY + spellScrollHeight + finalGap;
+			bottomBar->moveBy(Point(0, bottomBarY - 48));
+			const int nameY = finalTopBarY + topBar->pos.h / 2;
+			name = std::make_shared<CLabel>(22, nameY, FONT_SMALL,
+				ETextAlignment::CENTER, Colors::WHITE, scrollID.toSpell()->getNameTranslated());
+			const int priceLabelY = bottomBarY + bottomBar->pos.h / 2;
+			level = std::make_shared<CLabel>(22, priceLabelY, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE,
+				std::to_string(cost[EGameResID::GOLD]) + " " + GameResID(EGameResID::GOLD).toResource()->getNameTranslated());
+
+			scroll->moveTo(Point(scrollSlotOrigin.x, scrollSlotOrigin.y + parchmentY + (61 - 44) / 2));
+			scrollPresentation = std::make_shared<CSpellScrollPresentation>(scrollID, Point(-19, parchmentY), true);
+			scrollPresentation->setInteractionTarget(scroll.get());
+			scrollPresentation->setVisible(available);
+			scrollPresentation->setInputEnabled(available);
+			moveChildForeground(scrollPresentation.get());
+		}
+		else
+		{
+			name = std::make_shared<CLabel>(22, -13, FONT_SMALL,
+				ETextAlignment::CENTER, Colors::WHITE, scrollID.toSpell()->getNameTranslated());
+			level = std::make_shared<CLabel>(22, 57, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE,
+				std::to_string(cost[EGameResID::GOLD]) + " " + GameResID(EGameResID::GOLD).toResource()->getNameTranslated());
+		}
 		return;
 	}
 

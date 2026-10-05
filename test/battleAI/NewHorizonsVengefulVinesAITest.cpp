@@ -20,6 +20,7 @@
 #include "../../lib/spells/NewHorizonsVengefulVines.h"
 #include "../../server/CGameHandler.h"
 
+#include <array>
 #include <map>
 #include <set>
 
@@ -53,18 +54,6 @@ public:
 	}
 };
 
-bool sameLocationTarget(const spells::Target & lhs, const spells::Target & rhs)
-{
-	if(lhs.size() != rhs.size())
-		return false;
-
-	for(size_t index = 0; index < lhs.size(); ++index)
-		if(lhs[index].unitValue || rhs[index].unitValue || lhs[index].hexValue != rhs[index].hexValue)
-			return false;
-
-	return true;
-}
-
 bool intersects(const BattleHexArray & footprint, const battle::Unit * unit)
 {
 	if(!unit)
@@ -75,17 +64,27 @@ bool intersects(const BattleHexArray & footprint, const battle::Unit * unit)
 		return unit->coversPos(hex);
 	});
 }
+
+std::array<int, 3> locationSetKey(const spells::Target & target)
+{
+	if(target.size() != 3 || target[0].unitValue || target[1].unitValue || target[2].unitValue)
+		return {-1, -1, -1};
+
+	std::array<int, 3> key{
+		target[0].hexValue.toInt(), target[1].hexValue.toInt(), target[2].hexValue.toInt()};
+	std::ranges::sort(key);
+	return key;
+}
 }
 
 class NewHorizonsVengefulVinesAITest : public HeroCommandFixture
 {
 protected:
 	CStack * active = nullptr;
-	CStack * friendlyOnPath = nullptr;
+	CStack * friendlyOutside = nullptr;
 	CStack * wideEnemy = nullptr;
 	CStack * otherEnemy = nullptr;
 	BattleHex origin = BattleHex(8, 5);
-	BattleHex::EDir direction = BattleHex::RIGHT;
 	BattleHexArray expectedFootprint;
 	std::shared_ptr<VengefulVinesEnvironment> environment;
 	std::shared_ptr<VengefulVinesCallback> callback;
@@ -127,26 +126,29 @@ protected:
 			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
 		gameHandler->sendAndApply(remove);
 
-		expectedFootprint = newHorizonsVengefulVines::footprint(origin, direction);
-		ASSERT_EQ(expectedFootprint.size(), 6u);
-		ASSERT_EQ(origin.cloneInDirection(direction, false), expectedFootprint[1]);
+		const auto second = origin.cloneInDirection(BattleHex::RIGHT, false);
+		const auto third = second.cloneInDirection(BattleHex::RIGHT, false);
+		expectedFootprint.clear();
+		expectedFootprint.insert(origin);
+		expectedFootprint.insert(second);
+		expectedFootprint.insert(third);
+		ASSERT_EQ(expectedFootprint.size(), 3u);
 
 		active = addStack(BattleSide::ATTACKER,
 			creatureByName("core:pikeman"), BattleHex(3, 9), 1);
-		friendlyOnPath = addStack(BattleSide::ATTACKER,
-			creatureByName("core:pikeman"), expectedFootprint[3], 20);
+		friendlyOutside = addStack(BattleSide::ATTACKER,
+			creatureByName("core:pikeman"), BattleHex(5, 9), 20);
 		wideEnemy = addStack(BattleSide::DEFENDER,
 			creatureByName("core:griffin"), expectedFootprint[0], 20);
 		otherEnemy = addStack(BattleSide::DEFENDER,
-			creatureByName("core:ogre"), expectedFootprint[5], 20);
+			creatureByName("core:ogre"), expectedFootprint[2], 20);
 		ASSERT_NE(active, nullptr);
-		ASSERT_NE(friendlyOnPath, nullptr);
+		ASSERT_NE(friendlyOutside, nullptr);
 		ASSERT_NE(wideEnemy, nullptr);
 		ASSERT_NE(otherEnemy, nullptr);
 		ASSERT_TRUE(wideEnemy->doubleWide());
 		ASSERT_TRUE(wideEnemy->getHexes().contains(expectedFootprint[0]));
 		ASSERT_TRUE(wideEnemy->getHexes().contains(expectedFootprint[1]));
-		ASSERT_TRUE(friendlyOnPath->getHexes().contains(expectedFootprint[3]));
 
 		BattleSetActiveStack activate;
 		activate.battleID = BattleID(0);
@@ -160,7 +162,7 @@ protected:
 	}
 };
 
-TEST_F(NewHorizonsVengefulVinesAITest, EnumeratesLegalPathsAndAIProjectionMatchesResolvedDamage)
+TEST_F(NewHorizonsVengefulVinesAITest, EnumeratesLegalConnectedTriplesAndAIProjectionMatchesResolvedDamage)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto spell = vengefulVinesSpell();
@@ -171,46 +173,49 @@ TEST_F(NewHorizonsVengefulVinesAITest, EnumeratesLegalPathsAndAIProjectionMatche
 	const auto manaBefore = attackerSideHero->getManaAvailable();
 	const auto wideHealthBefore = wideEnemy->getAvailableHealth();
 	const auto otherHealthBefore = otherEnemy->getAvailableHealth();
-	const auto friendlyHealthBefore = friendlyOnPath->getAvailableHealth();
+	const auto friendlyHealthBefore = friendlyOutside->getAvailableHealth();
 	const auto widePathOverlap = std::count_if(expectedFootprint.begin(), expectedFootprint.end(),
 		[this](const BattleHex & hex) { return wideEnemy->coversPos(hex); });
 	ASSERT_EQ(widePathOverlap, 2)
-		<< "The test footprint intersects both hexes of this double-wide stack";
+		<< "The three selected hexes intersect both body hexes of this double-wide stack";
 
 	HypotheticBattle targetSnapshot(environment.get(), callback->getBattle(BattleID(0)));
 	spells::BattleCast targetPreview(&targetSnapshot, attackerSideHero, spells::Mode::HERO, vines);
 	const auto targetMechanics = vines->battleMechanics(&targetPreview);
 	ASSERT_EQ(targetMechanics->getEffectValue(), 130);
 	ASSERT_EQ(targetMechanics->getTargetTypes(),
-		(std::vector<spells::AimType>{spells::AimType::LOCATION, spells::AimType::LOCATION}));
+		(std::vector<spells::AimType>{
+			spells::AimType::LOCATION, spells::AimType::LOCATION, spells::AimType::LOCATION}));
 	const auto viableTargets = SpellTargetEvaluator::getViableTargets(targetMechanics.get());
 	ASSERT_FALSE(viableTargets.empty());
 
 	const spells::Target knownLegalTarget{
-		spells::Destination(expectedFootprint[0]), spells::Destination(expectedFootprint[1])};
+		spells::Destination(expectedFootprint[0]),
+		spells::Destination(expectedFootprint[1]),
+		spells::Destination(expectedFootprint[2])};
 	bool foundKnownTarget = false;
-	std::set<std::pair<int, int>> uniqueLocationPairs;
+	std::set<std::array<int, 3>> uniqueLocationTriples;
 	for(const auto & target : viableTargets)
 	{
-		ASSERT_EQ(target.size(), 2u);
+		ASSERT_EQ(target.size(), 3u);
 		ASSERT_EQ(target[0].unitValue, nullptr);
 		ASSERT_EQ(target[1].unitValue, nullptr);
+		ASSERT_EQ(target[2].unitValue, nullptr);
 		const auto footprint = newHorizonsVengefulVines::footprint(target);
-		ASSERT_EQ(footprint.size(), 6u);
+		ASSERT_EQ(footprint.size(), 3u);
 		spells::detail::ProblemImpl problem;
 		EXPECT_TRUE(targetMechanics->canBeCastAt(target, problem));
 		EXPECT_TRUE(intersects(footprint, wideEnemy) || intersects(footprint, otherEnemy))
 			<< "Vines AI candidates should be filtered before legality checks when no enemy is hit";
-		EXPECT_TRUE(uniqueLocationPairs.emplace(target[0].hexValue.toInt(),
-			target[1].hexValue.toInt()).second);
-		foundKnownTarget |= sameLocationTarget(target, knownLegalTarget);
+		EXPECT_TRUE(uniqueLocationTriples.insert(locationSetKey(target)).second);
+		foundKnownTarget |= locationSetKey(target) == locationSetKey(knownLegalTarget);
 	}
 	ASSERT_TRUE(foundKnownTarget);
 
-	// The known cast crosses both body hexes of one Griffin, but the effect and
+	// The known cast selects both body hexes of one Griffin, but the effect and
 	// its generic damage projection must apply once to the stack.
 	const auto knownFootprint = newHorizonsVengefulVines::footprint(knownLegalTarget);
-	ASSERT_EQ(knownFootprint.size(), 6u);
+	ASSERT_EQ(knownFootprint.size(), 3u);
 	ASSERT_TRUE(targetMechanics->canBeCastAt(knownLegalTarget));
 	targetMechanics->castEval(targetSnapshot.getServerCallback(), knownLegalTarget);
 	const auto * projectedWide = targetSnapshot.battleGetUnitByID(wideEnemy->unitId());
@@ -220,7 +225,7 @@ TEST_F(NewHorizonsVengefulVinesAITest, EnumeratesLegalPathsAndAIProjectionMatche
 	EXPECT_EQ(wideHealthBefore - projectedWide->getAvailableHealth(), 130);
 	EXPECT_EQ(otherHealthBefore - projectedOther->getAvailableHealth(), 130);
 	EXPECT_EQ(friendlyHealthBefore,
-		targetSnapshot.battleGetUnitByID(friendlyOnPath->unitId())->getAvailableHealth());
+		targetSnapshot.battleGetUnitByID(friendlyOutside->unitId())->getAvailableHealth());
 	EXPECT_EQ(wideEnemy->getAvailableHealth(), wideHealthBefore)
 		<< "The detached target projection must not modify the live battle";
 
@@ -233,11 +238,11 @@ TEST_F(NewHorizonsVengefulVinesAITest, EnumeratesLegalPathsAndAIProjectionMatche
 	ASSERT_EQ(action.actionType, EActionType::HERO_SPELL);
 	ASSERT_EQ(action.spell, spell);
 	const auto aiTarget = action.getTarget(battle());
-	ASSERT_EQ(aiTarget.size(), 2u);
+	ASSERT_EQ(aiTarget.size(), 3u);
 	ASSERT_TRUE(std::any_of(viableTargets.begin(), viableTargets.end(), [&](const spells::Target & target)
 	{
-		return sameLocationTarget(target, aiTarget);
-	})) << "BattleEvaluator should retain the full selected origin/orientation pair";
+        return locationSetKey(target) == locationSetKey(aiTarget);
+	})) << "BattleEvaluator should submit one legal connected triple from the shared candidate set";
 
 	HypotheticBattle aiProjection(environment.get(), callback->getBattle(BattleID(0)));
 	spells::BattleCast aiPreview(&aiProjection, attackerSideHero, spells::Mode::HERO, vines);
@@ -251,7 +256,7 @@ TEST_F(NewHorizonsVengefulVinesAITest, EnumeratesLegalPathsAndAIProjectionMatche
 		ASSERT_NE(projectedEnemy, nullptr);
 		projectedHealth.emplace(enemy->unitId(), projectedEnemy->getAvailableHealth());
 	}
-	const auto * projectedFriendly = aiProjection.battleGetUnitByID(friendlyOnPath->unitId());
+	const auto * projectedFriendly = aiProjection.battleGetUnitByID(friendlyOutside->unitId());
 	ASSERT_NE(projectedFriendly, nullptr);
 	EXPECT_EQ(projectedFriendly->getAvailableHealth(), friendlyHealthBefore);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
@@ -263,6 +268,6 @@ TEST_F(NewHorizonsVengefulVinesAITest, EnumeratesLegalPathsAndAIProjectionMatche
 	for(const auto * enemy : {wideEnemy, otherEnemy})
 		EXPECT_EQ(enemy->getAvailableHealth(), projectedHealth.at(enemy->unitId()))
 			<< "The actual cast should match BattleAI's hypothetical damage forecast";
-	EXPECT_EQ(friendlyOnPath->getAvailableHealth(), friendlyHealthBefore)
+	EXPECT_EQ(friendlyOutside->getAvailableHealth(), friendlyHealthBefore)
 		<< "Vengeful Vines must not damage a friendly stack inside the footprint";
 }

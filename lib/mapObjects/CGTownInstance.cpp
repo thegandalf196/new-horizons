@@ -55,7 +55,19 @@ namespace
 {
 constexpr size_t HOUSE_OF_WISDOM_STOCK_SIZE = 6;
 
-std::vector<SpellID> houseOfWisdomCandidates(const JsonNode & magicRules)
+bool isHouseOfWisdomCandidate(const JsonNode & magicRules, SpellID spellId, const IGameInfoCallback & callback)
+{
+	if(!newHorizonsMagic::rulesActive(magicRules)
+		|| !newHorizonsMagic::spellAllowedBySavedRoster(magicRules, spellId)
+		|| !newHorizonsMagic::spellAvailableForOrdinaryAcquisition(magicRules, spellId)
+		|| !callback.isAllowed(spellId))
+		return false;
+
+	const auto * spell = spellId.toSpell();
+	return spell && spell->isCommonHeroSpell() && !spell->isAdventure() && spell->getLevel() > 0;
+}
+
+std::vector<SpellID> houseOfWisdomCandidates(const JsonNode & magicRules, const IGameInfoCallback & callback)
 {
 	std::vector<SpellID> result;
 	if(!newHorizonsMagic::rulesActive(magicRules))
@@ -63,9 +75,7 @@ std::vector<SpellID> houseOfWisdomCandidates(const JsonNode & magicRules)
 
 	for(const auto & spell : LIBRARY->spellh->objects)
 	{
-		if(!spell || !spell->isCommonHeroSpell() || spell->isAdventure() || spell->getLevel() <= 0
-			|| !newHorizonsMagic::spellAllowedBySavedRoster(magicRules, spell->getId())
-			|| !newHorizonsMagic::spellAvailableForOrdinaryAcquisition(magicRules, spell->getId()))
+		if(!spell || !isHouseOfWisdomCandidate(magicRules, spell->getId(), callback))
 			continue;
 		result.push_back(spell->getId());
 	}
@@ -362,7 +372,7 @@ void CGTownInstance::initializeHouseOfWisdomScrolls(IGameRandomizer & gameRandom
 		|| !newHorizonsHouseOfWisdom::eligible(this, cb->getMagicRules()))
 		return;
 
-	std::vector<SpellID> remaining = houseOfWisdomCandidates(cb->getMagicRules());
+	std::vector<SpellID> remaining = houseOfWisdomCandidates(cb->getMagicRules(), *cb);
 	while(!remaining.empty() && newHorizonsHouseOfWisdomScrolls.size() < HOUSE_OF_WISDOM_STOCK_SIZE)
 	{
 		const auto selected = gameRandomizer.getDefault().nextInt(0, static_cast<int>(remaining.size()) - 1);
@@ -823,7 +833,13 @@ std::vector<TradeItemBuy> CGTownInstance::availableItemsIds(EMarketMode mode) co
 		{
 			std::vector<TradeItemBuy> result;
 			for(const auto spell : getHouseOfWisdomScrolls())
-				result.emplace_back(spell);
+			{
+				// Stored stock is authoritative and is never rerolled, but an old
+				// or edited save must not expose spells no longer admitted by the
+				// current persisted magic profile.
+				if(isHouseOfWisdomCandidate(cb->getMagicRules(), spell, *cb))
+					result.emplace_back(spell);
+			}
 			return result;
 		}
 

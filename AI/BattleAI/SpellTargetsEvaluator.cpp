@@ -308,7 +308,8 @@ std::vector<Target> canonicalVengefulVinesTargets(const Mechanics * spellMechani
 {
 	std::vector<Target> result;
 	if(!spellMechanics || !spellMechanics->battle()
-		|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::LOCATION, AimType::LOCATION})
+		|| spellMechanics->getTargetTypes() != std::vector<AimType>{
+			AimType::LOCATION, AimType::LOCATION, AimType::LOCATION})
 		return result;
 
 	const auto * battle = spellMechanics->battle();
@@ -334,32 +335,23 @@ std::vector<Target> canonicalVengefulVinesTargets(const Mechanics * spellMechani
 	if(enemyOccupiedHexes.empty())
 		return result;
 
-	const auto directions = BattleHex::hexagonalDirections();
-	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	for(const auto & footprint : newHorizonsVengefulVines::connectedTriples())
 	{
-		const BattleHex origin(index);
-		if(!origin.isAvailable())
+		const bool intersectsEnemy = std::any_of(footprint.begin(), footprint.end(), [&](const BattleHex & hex)
+		{
+			return enemyOccupiedHexes.contains(hex);
+		});
+		if(!intersectsEnemy)
 			continue;
 
-		for(const auto direction : directions)
-		{
-			const auto footprint = newHorizonsVengefulVines::footprint(origin, direction);
-			if(footprint.size() != 6)
-				continue;
+		Target target;
+		target.reserve(footprint.size());
+		for(const auto & hex : footprint)
+			target.emplace_back(hex);
 
-			const bool intersectsEnemy = std::any_of(footprint.begin(), footprint.end(), [&](const BattleHex & hex)
-			{
-				return enemyOccupiedHexes.contains(hex);
-			});
-			if(!intersectsEnemy)
-				continue;
-
-			const BattleHex endpoint = origin.cloneInDirection(direction, false);
-			Target target{Destination(origin), Destination(endpoint)};
-			detail::ProblemImpl problem;
-			if(spellMechanics->canBeCastAt(target, problem))
-				result.push_back(std::move(target));
-		}
+		detail::ProblemImpl problem;
+		if(spellMechanics->canBeCastAt(target, problem))
+			result.push_back(std::move(target));
 	}
 
 	return result;

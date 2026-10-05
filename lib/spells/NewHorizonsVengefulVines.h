@@ -15,6 +15,7 @@
 #include "../json/JsonNode.h"
 
 #include <string_view>
+#include <vector>
 
 namespace newHorizonsVengefulVines
 {
@@ -23,10 +24,12 @@ inline constexpr std::string_view SPELL_KEY = "new-horizons:vengefulVines";
 /// True only for the active Vengeful Vines entry in a saved New Horizons v3 roster.
 DLL_LINKAGE bool enabled(const JsonNode & savedRules, SpellID spell);
 
-/// Returns the selected origin and five winding steps, or empty if any step is unavailable.
-DLL_LINKAGE BattleHexArray footprint(const BattleHex & origin, BattleHex::EDir direction);
-
-/// Reads exactly two location destinations: origin, then an adjacent direction marker.
-/// Unit targets, malformed orientations, and footprints that do not fit return empty.
+/// Reads exactly three ordered, distinct, playable location destinations.
+/// Each destination after the first must touch at least one earlier selection.
+/// Unit targets, malformed order, and unavailable hexes return empty.
 DLL_LINKAGE BattleHexArray footprint(const battle::Target & target);
+
+/// Returns each connected three-hex selection once, in a deterministic valid click order.
+/// Every result is suitable for constructing three ordered location destinations.
+DLL_LINKAGE const std::vector<BattleHexArray> & connectedTriples();
 }

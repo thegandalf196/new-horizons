@@ -13,8 +13,11 @@
 
 #include "NewHorizonsMagic.h"
 #include "NewHorizonsSpellAvailability.h"
-#include "OrientedSpellPattern.h"
 #include "CSpell.h"
+
+#include <algorithm>
+#include <array>
+#include <set>
 
 namespace newHorizonsVengefulVines
 {
@@ -28,22 +31,73 @@ bool enabled(const JsonNode & savedRules, const SpellID spell)
 		&& newHorizonsMagic::spellAllowedBySavedRoster(savedRules, spell);
 }
 
-BattleHexArray footprint(const BattleHex & origin, const BattleHex::EDir direction)
-{
-	static constexpr std::array<int, 5> windingSteps{0, 1, 0, -1, 0};
-	return spells::makeOrientedSpellPath(origin, direction, windingSteps);
-}
-
 BattleHexArray footprint(const battle::Target & target)
 {
-	if(target.size() != 2 || target[0].unitValue || target[1].unitValue
-		|| !target[0].hexValue.isAvailable() || !target[1].hexValue.isAvailable())
+	if(target.size() != 3)
 		return {};
 
-	const auto direction = spells::adjacentSpellDirection(target[0].hexValue, target[1].hexValue);
-	if(direction == BattleHex::NONE)
-		return {};
+	BattleHexArray selected;
+	for(const auto & destination : target)
+	{
+		const auto & hex = destination.hexValue;
+		if(destination.unitValue || !hex.isAvailable() || selected.contains(hex))
+			return {};
 
-	return footprint(target[0].hexValue, direction);
+		if(!selected.empty())
+		{
+			const bool touchesSelection = std::ranges::any_of(selected, [&hex](const BattleHex & previous)
+			{
+				return BattleHex::mutualPosition(previous, hex) != BattleHex::NONE;
+			});
+			if(!touchesSelection)
+				return {};
+		}
+
+		selected.insert(hex);
+	}
+
+	return selected;
+}
+
+const std::vector<BattleHexArray> & connectedTriples()
+{
+	static const std::vector<BattleHexArray> triples = []
+	{
+		std::vector<BattleHexArray> result;
+		std::set<std::array<int, 3>> seen;
+
+		for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+		{
+			const BattleHex first(index);
+			if(!first.isAvailable())
+				continue;
+
+			for(const auto & second : BattleHexArray::getNeighbouringTiles(first))
+			{
+				BattleHexArray thirdCandidates = BattleHexArray::getNeighbouringTiles(first);
+				thirdCandidates.insert(BattleHexArray::getNeighbouringTiles(second));
+
+				for(const auto & third : thirdCandidates)
+				{
+					if(third == first || third == second || !third.isAvailable())
+						continue;
+
+					auto key = std::array<int, 3>{first.toInt(), second.toInt(), third.toInt()};
+					std::ranges::sort(key);
+					if(!seen.insert(key).second)
+						continue;
+
+					BattleHexArray triple;
+					triple.insert(first);
+					triple.insert(second);
+					triple.insert(third);
+					result.push_back(std::move(triple));
+				}
+			}
+		}
+		return result;
+	}();
+
+	return triples;
 }
 }

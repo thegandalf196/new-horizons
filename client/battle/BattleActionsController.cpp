@@ -71,7 +71,7 @@ constexpr std::string_view hydrasVitalityJsonKey = "new-horizons:hydrasVitality"
 constexpr std::string_view stormOfDaggersJsonKey = "new-horizons:stormOfDaggers";
 constexpr std::string_view shadowGiftJsonKey = "new-horizons:shadowGift";
 constexpr int32_t stormOfDaggersMaximumTargets = 5;
-constexpr int32_t vengefulVinesFootprintHexCount = 6;
+constexpr int32_t vengefulVinesFootprintHexCount = 3;
 
 struct FriendlyFirePreview
 {
@@ -153,20 +153,6 @@ std::string friendlyFireConfirmationText(const CSpell * spell, const std::vector
 	}
 	result += "\n\nCast anyway?";
 	return result;
-}
-
-static const char * vengefulVinesDirectionName(BattleHex::EDir direction)
-{
-	switch(direction)
-	{
-	case BattleHex::TOP_LEFT: return "top-left";
-	case BattleHex::TOP_RIGHT: return "top-right";
-	case BattleHex::RIGHT: return "right";
-	case BattleHex::BOTTOM_RIGHT: return "bottom-right";
-	case BattleHex::BOTTOM_LEFT: return "bottom-left";
-	case BattleHex::LEFT: return "left";
-	default: return "invalid";
-	}
 }
 
 bool isStormOfDaggersSpell(const CSpell * spell)
@@ -1893,77 +1879,51 @@ bool BattleActionsController::vengefulVinesSelectionContextIsCurrent() const
 	return hero && hero->id == vengefulVinesHeroID;
 }
 
-bool BattleActionsController::vengefulVinesOriginSelected() const
+const std::vector<BattleHex> & BattleActionsController::getVengefulVinesSelectedHexes() const
 {
-	return vengefulVinesTargetSelectionModeActive() && vengefulVinesOrigin.isAvailable();
+	return vengefulVinesSelectedHexes;
 }
 
-BattleHex BattleActionsController::vengefulVinesSelectedOrigin() const
-{
-	return vengefulVinesOrigin;
-}
-
-bool BattleActionsController::vengefulVinesOriginIsLegal(const BattleHex & hex) const
+bool BattleActionsController::vengefulVinesHexIsLegalCandidate(const BattleHex & hex) const
 {
 	if(!vengefulVinesTargetSelectionModeActive() || !vengefulVinesSelectionContextIsCurrent()
-		|| !hex.isAvailable())
+		|| !hex.isAvailable() || vengefulVinesSelectedHexes.size() >= vengefulVinesFootprintHexCount
+		|| std::ranges::find(vengefulVinesSelectedHexes, hex) != vengefulVinesSelectedHexes.end())
 		return false;
 
-	for(const auto direction : BattleHex::hexagonalDirections())
-		if(newHorizonsVengefulVines::footprint(hex, direction).size() == vengefulVinesFootprintHexCount)
-			return true;
-	return false;
+	if(!vengefulVinesSelectedHexes.empty())
+	{
+		const bool touchesSelection = std::ranges::any_of(vengefulVinesSelectedHexes, [&hex](const BattleHex & selected)
+		{
+			return BattleHex::mutualPosition(selected, hex) != BattleHex::NONE;
+		});
+		if(!touchesSelection)
+			return false;
+	}
+
+	if(vengefulVinesSelectedHexes.size() == vengefulVinesFootprintHexCount - 1)
+		return vengefulVinesHexCompletesLegalCast(hex);
+
+	return true;
 }
 
-bool BattleActionsController::vengefulVinesEndpointIsLegal(const BattleHex & hex) const
+bool BattleActionsController::vengefulVinesHexCompletesLegalCast(const BattleHex & hex) const
 {
-	if(!vengefulVinesOriginSelected() || !vengefulVinesSelectionContextIsCurrent() || !hex.isAvailable())
+	if(vengefulVinesSelectedHexes.size() != vengefulVinesFootprintHexCount - 1
+		|| !hex.isAvailable()
+		|| std::ranges::find(vengefulVinesSelectedHexes, hex) != vengefulVinesSelectedHexes.end())
 		return false;
 
-	return spells::adjacentSpellDirection(vengefulVinesOrigin, hex) != BattleHex::NONE;
-}
-
-BattleHexArray BattleActionsController::getVengefulVinesLegalStartHexes() const
-{
-	BattleHexArray result;
-	if(!vengefulVinesTargetSelectionModeActive() || !vengefulVinesSelectionContextIsCurrent()
-		|| vengefulVinesOriginSelected())
-		return result;
-
-	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	const bool touchesSelection = std::ranges::any_of(vengefulVinesSelectedHexes, [&hex](const BattleHex & selected)
 	{
-		const BattleHex hex(index);
-		if(vengefulVinesOriginIsLegal(hex))
-			result.insert(hex);
-	}
-	return result;
-}
+		return BattleHex::mutualPosition(selected, hex) != BattleHex::NONE;
+	});
+	if(!touchesSelection)
+		return false;
 
-BattleHexArray BattleActionsController::getVengefulVinesRotationHexes() const
-{
-	BattleHexArray result;
-	if(!vengefulVinesOriginSelected() || !vengefulVinesSelectionContextIsCurrent())
-		return result;
-
-	for(const auto direction : BattleHex::hexagonalDirections())
-	{
-		const auto endpoint = vengefulVinesOrigin.cloneInDirection(direction, false);
-		if(endpoint.isAvailable())
-			result.insert(endpoint);
-	}
-	return result;
-}
-
-BattleHexArray BattleActionsController::getVengefulVinesPreviewFootprint() const
-{
-	if(!vengefulVinesOriginSelected() || !vengefulVinesSelectionContextIsCurrent())
-		return {};
-
-	// Keep the battlefield preview aligned with the committed orientation that
-	// Confirm will submit. Hovering an adjacent hex highlights that rotation
-	// control, but it does not replace the six-hex preview before the click.
-	auto result = newHorizonsVengefulVines::footprint(vengefulVinesOrigin, vengefulVinesOrientation);
-	return result.size() == vengefulVinesFootprintHexCount ? result : BattleHexArray{};
+	auto candidate = vengefulVinesSelectedHexes;
+	candidate.push_back(hex);
+	return vengefulVinesTargetsAreLegal(candidate);
 }
 
 int32_t BattleActionsController::vengefulVinesEnemyTargetCount(const BattleHexArray & footprint) const
@@ -1994,12 +1954,16 @@ int32_t BattleActionsController::vengefulVinesEnemyTargetCount(const BattleHexAr
 	return static_cast<int32_t>(distinctEnemies.size());
 }
 
-bool BattleActionsController::vengefulVinesTargetsAreLegal(const BattleHex & origin, BattleHex::EDir direction) const
+bool BattleActionsController::vengefulVinesTargetsAreLegal(const std::vector<BattleHex> & selectedHexes) const
 {
-	if(!vengefulVinesSelectionContextIsCurrent())
+	if(!vengefulVinesSelectionContextIsCurrent() || selectedHexes.size() != vengefulVinesFootprintHexCount)
 		return false;
 
-	const auto footprint = newHorizonsVengefulVines::footprint(origin, direction);
+	spells::Target target;
+	for(const auto & hex : selectedHexes)
+		target.emplace_back(hex);
+
+	const auto footprint = newHorizonsVengefulVines::footprint(target);
 	if(footprint.size() != vengefulVinesFootprintHexCount)
 		return false;
 	if(vengefulVinesEnemyTargetCount(footprint) == 0)
@@ -2021,65 +1985,22 @@ bool BattleActionsController::vengefulVinesTargetsAreLegal(const BattleHex & ori
 	if(!mechanics->canBeCast(problem))
 		return false;
 
-	spells::Target target;
-	target.emplace_back(origin);
-	target.emplace_back(origin.cloneInDirection(direction, false));
-	if(newHorizonsVengefulVines::footprint(target).size() != vengefulVinesFootprintHexCount)
-		return false;
-
 	return mechanics->canBeCastAt(target, problem);
 }
 
-VengefulVinesSelectionPreview BattleActionsController::getVengefulVinesSelectionPreview() const
+void BattleActionsController::undoVengefulVinesSelection()
 {
-	VengefulVinesSelectionPreview result;
-	result.origin = vengefulVinesOrigin;
-	result.orientation = vengefulVinesOrientation;
-	result.originSelected = vengefulVinesOriginSelected();
 	if(!vengefulVinesTargetSelectionModeActive())
-		return result;
+		return;
 	if(!vengefulVinesSelectionContextIsCurrent())
 	{
-		result.status = "Battle context changed. Cancel and reopen Vengeful Vines.";
-		return result;
+		endCastingSpell();
+		return;
 	}
-	if(!result.originSelected)
-	{
-		result.status = "Select a playable origin. Occupied and obstacle hexes are allowed; direction starts at right.";
-		return result;
-	}
-
-	const auto footprint = newHorizonsVengefulVines::footprint(result.origin, result.orientation);
-	result.pathFits = footprint.size() == vengefulVinesFootprintHexCount;
-	if(!result.pathFits)
-	{
-		result.status = "The selected winding does not fit. Choose another origin or rotate.";
-		return result;
-	}
-
-	result.affectedEnemyStacks = vengefulVinesEnemyTargetCount(footprint);
-	result.canConfirm = result.affectedEnemyStacks > 0
-		&& vengefulVinesTargetsAreLegal(result.origin, result.orientation);
-	if(result.affectedEnemyStacks == 0)
-		result.status = "No receptive enemy stack is in this winding. Rotate or choose another origin.";
-	else if(!result.canConfirm)
-		result.status = "The full winding is not currently legal. Rotate or cancel and choose again.";
-	else
-		result.status = std::to_string(result.affectedEnemyStacks) + " enemy stack"
-			+ (result.affectedEnemyStacks == 1 ? " is" : "s are")
-			+ " in the six-hex path. Confirm to cast; Rotate or click an adjacent hex to change direction.";
-	return result;
-}
-
-void BattleActionsController::rotateVengefulVinesOrientation()
-{
-	if(!vengefulVinesOriginSelected() || !vengefulVinesSelectionContextIsCurrent())
+	if(vengefulVinesSelectedHexes.empty())
 		return;
 
-	const auto directions = BattleHex::hexagonalDirections();
-	const auto current = std::find(directions.begin(), directions.end(), vengefulVinesOrientation);
-	const size_t index = current == directions.end() ? 0 : static_cast<size_t>(std::distance(directions.begin(), current));
-	vengefulVinesOrientation = directions[(index + 1) % directions.size()];
+	vengefulVinesSelectedHexes.pop_back();
 	if(owner.windowObject)
 		owner.windowObject->updateBattleTargetSelectionControls();
 	updateVengefulVinesStatus(BattleHex::INVALID);
@@ -2097,36 +2018,34 @@ void BattleActionsController::updateVengefulVinesStatus(const BattleHex & hovere
 	{
 		message = "Battle context changed. Vengeful Vines selection cancelled.";
 	}
-	else if(!vengefulVinesOriginSelected())
-	{
-		message = "Vengeful Vines: select an origin; occupied and obstacle hexes are allowed. Default direction: right.";
-		if(hoveredHex.isValid())
-			message += vengefulVinesOriginIsLegal(hoveredHex)
-				? " Click to select this origin."
-				: " This origin cannot fit the complete winding in any orientation.";
-	}
 	else
 	{
-		const auto direction = vengefulVinesOrientation;
-		const auto footprint = newHorizonsVengefulVines::footprint(vengefulVinesOrigin, direction);
-		message = "Vengeful Vines: origin " + std::to_string(vengefulVinesOrigin.toInt())
-			+ ", direction " + vengefulVinesDirectionName(direction) + ". ";
-		if(footprint.size() != vengefulVinesFootprintHexCount)
-			message += "The complete winding does not fit; rotate or choose another origin. ";
-		else
+		message = "Vengeful Vines: " + std::to_string(vengefulVinesSelectedHexes.size())
+			+ "/" + std::to_string(vengefulVinesFootprintHexCount) + " locations selected.";
+		if(vengefulVinesSelectedHexes.size() < vengefulVinesFootprintHexCount)
+			message += " Click a distinct connected playable hex; Backspace removes the last; Esc cancels.";
+		if(hoveredHex.isValid())
 		{
-			const auto targets = vengefulVinesEnemyTargetCount(footprint);
-			message += std::to_string(targets) + " receptive enemy stacks in the six-hex preview. ";
+			if(vengefulVinesHexIsLegalCandidate(hoveredHex))
+			{
+				if(vengefulVinesSelectedHexes.size() == vengefulVinesFootprintHexCount - 1)
+				{
+					auto candidate = vengefulVinesSelectedHexes;
+					candidate.push_back(hoveredHex);
+					spells::Target target;
+					for(const auto & hex : candidate)
+						target.emplace_back(hex);
+					const auto footprint = newHorizonsVengefulVines::footprint(target);
+					const auto enemies = vengefulVinesEnemyTargetCount(footprint);
+					message += " This completes a legal pattern affecting " + std::to_string(enemies)
+						+ (enemies == 1 ? " enemy stack; click to cast." : " enemy stacks; click to cast.");
+				}
+				else
+					message += " This is a legal next location.";
+			}
+			else if(vengefulVinesSelectedHexes.size() == vengefulVinesFootprintHexCount - 1)
+				message += " That third hex is not a legal cast; the first two remain selected.";
 		}
-		if(vengefulVinesEndpointIsLegal(hoveredHex))
-			message += "Click this adjacent hex to rotate to "
-				+ std::string(vengefulVinesDirectionName(
-					spells::adjacentSpellDirection(vengefulVinesOrigin, hoveredHex)))
-				+ "; the preview updates after the click, without casting.";
-		else if(hoveredHex == vengefulVinesOrigin)
-			message += "Click the origin again to clear it.";
-		else
-			message += "Click Rotate or an adjacent hex to change direction, then Confirm. Esc cancels.";
 	}
 
 	if(!currentConsoleMsg.empty())
@@ -2135,7 +2054,7 @@ void BattleActionsController::updateVengefulVinesStatus(const BattleHex & hovere
 	currentConsoleMsg = std::move(message);
 }
 
-void BattleActionsController::selectVengefulVinesOriginOrOrientation(const BattleHex & clickedHex)
+void BattleActionsController::selectVengefulVinesHex(const BattleHex & clickedHex)
 {
 	if(!vengefulVinesTargetSelectionModeActive())
 		return;
@@ -2145,27 +2064,26 @@ void BattleActionsController::selectVengefulVinesOriginOrOrientation(const Battl
 		return;
 	}
 
-	if(!vengefulVinesOriginSelected())
+	if(!vengefulVinesHexIsLegalCandidate(clickedHex))
 	{
-		if(vengefulVinesOriginIsLegal(clickedHex))
+		updateVengefulVinesStatus(clickedHex);
+		return;
+	}
+
+	vengefulVinesSelectedHexes.push_back(clickedHex);
+	if(vengefulVinesSelectedHexes.size() == vengefulVinesFootprintHexCount)
+	{
+		// The third-click candidate check above revalidated both mechanics gates.
+		// Preserve the ordered selections as three LOCATION destinations.
+		BattleAction action = *heroSpellToCast;
+		action.target.clear();
+		for(const auto & hex : vengefulVinesSelectedHexes)
+			action.aimToHex(hex);
+		if(owner.curInt && owner.curInt->cb && submitHeroSpellAction(action))
 		{
-			vengefulVinesOrigin = clickedHex;
-			vengefulVinesOrientation = BattleHex::RIGHT;
+			endCastingSpell();
+			return;
 		}
-	}
-	else if(clickedHex == vengefulVinesOrigin)
-	{
-		vengefulVinesOrigin = BattleHex::INVALID;
-		vengefulVinesOrientation = BattleHex::RIGHT;
-	}
-	else if(vengefulVinesEndpointIsLegal(clickedHex))
-	{
-		vengefulVinesOrientation = spells::adjacentSpellDirection(vengefulVinesOrigin, clickedHex);
-	}
-	else if(vengefulVinesOriginIsLegal(clickedHex))
-	{
-		vengefulVinesOrigin = clickedHex;
-		vengefulVinesOrientation = BattleHex::RIGHT;
 	}
 
 	if(owner.windowObject)
@@ -2173,35 +2091,6 @@ void BattleActionsController::selectVengefulVinesOriginOrOrientation(const Battl
 	updateVengefulVinesStatus(clickedHex);
 	ENGINE->fakeMouseMove();
 	ENGINE->windows().totalRedraw();
-}
-
-void BattleActionsController::confirmVengefulVines()
-{
-	if(!vengefulVinesTargetSelectionModeActive())
-		return;
-	if(!vengefulVinesSelectionContextIsCurrent())
-	{
-		endCastingSpell();
-		return;
-	}
-	if(!vengefulVinesOriginSelected()
-		|| !vengefulVinesTargetsAreLegal(vengefulVinesOrigin, vengefulVinesOrientation))
-	{
-		if(owner.windowObject)
-			owner.windowObject->updateBattleTargetSelectionControls();
-		updateVengefulVinesStatus(BattleHex::INVALID);
-		return;
-	}
-
-	BattleAction action = *heroSpellToCast;
-	action.target.clear();
-	action.aimToHex(vengefulVinesOrigin);
-	action.aimToHex(vengefulVinesOrigin.cloneInDirection(vengefulVinesOrientation, false));
-	if(!owner.curInt || !owner.curInt->cb)
-		return;
-
-	if(submitHeroSpellAction(action))
-		endCastingSpell();
 }
 
 void BattleActionsController::updateRepeatedPlacementStatus(const BattleHex & hoveredHex)
@@ -2562,8 +2451,7 @@ void BattleActionsController::endCastingSpell()
 	lifeDrainRound = -1;
 	lifeDrainHeroID = ObjectInstanceID::NONE;
 	fireWallSelectedStart = BattleHex::INVALID;
-	vengefulVinesOrigin = BattleHex::INVALID;
-	vengefulVinesOrientation = BattleHex::RIGHT;
+	vengefulVinesSelectedHexes.clear();
 	vengefulVinesBattleID = BattleID();
 	vengefulVinesPlayer.reset();
 	vengefulVinesSide = BattleSide::NONE;
@@ -2810,8 +2698,7 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 	heroSpellToCast->side = battle->battleGetMySide();
 	heroSpellToCast->metamagicFollowup = heroSpellToCast->side != BattleSide::NONE
 		&& battle->battleCanUseMetamagicFollowup(heroSpellToCast->side, spellID);
-	vengefulVinesOrigin = BattleHex::INVALID;
-	vengefulVinesOrientation = BattleHex::RIGHT;
+	vengefulVinesSelectedHexes.clear();
 	vengefulVinesBattleID = BattleID();
 	vengefulVinesPlayer.reset();
 	vengefulVinesSide = BattleSide::NONE;
@@ -4129,8 +4016,7 @@ void BattleActionsController::onHexHovered(const BattleHex & hoveredHex)
 			return;
 		}
 
-		if((!vengefulVinesOriginSelected() && vengefulVinesOriginIsLegal(hoveredHex))
-			|| vengefulVinesEndpointIsLegal(hoveredHex))
+		if(vengefulVinesHexIsLegalCandidate(hoveredHex))
 			ENGINE->cursor().set(Cursor::Spellcast::SPELL);
 		else
 			ENGINE->cursor().set(Cursor::Combat::BLOCKED);
@@ -4292,7 +4178,7 @@ void BattleActionsController::onHexLeftClicked(const BattleHex & clickedHex)
 
 	if(vengefulVinesTargetSelectionModeActive())
 	{
-		selectVengefulVinesOriginOrOrientation(clickedHex);
+		selectVengefulVinesHex(clickedHex);
 		return;
 	}
 

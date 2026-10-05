@@ -1141,6 +1141,9 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 	schoolRequirementText.clear();
 	divineMandateRequirementText.clear();
 	image->visible = false;
+	// setSpell reuses each slot; restore the legacy top-left frame origin before
+	// selecting a new frame so a preceding centered PNG cannot shift a DEF icon.
+	image->moveTo(pos.topLeft());
 	name->setText("");
 	level->setText("");
 	cost->setText("");
@@ -1196,6 +1199,23 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 			}
 			else
 				schoolBorder = std::make_shared<CAnimImage>(LIBRARY->spellSchoolHandler->getById(owner->selectedTab)->getSpellBordersPath(), schoolLevel);
+		}
+
+		// New spell icons are registered as independent PNG frames in SPELLS.
+		// Keep legacy DEF frames at their original offsets, but center dynamic
+		// frames in the school-border canvas (or the original icon canvas when no
+		// border is available) using the dimensions actually loaded at runtime.
+		if(!mySpell->getIconBook().empty())
+		{
+			constexpr int originalIconCanvasWidth = 78;
+			constexpr int originalIconCanvasHeight = 65;
+			Rect iconCanvas(pos.x, pos.y, originalIconCanvasWidth, originalIconCanvasHeight);
+			if(schoolBorder && schoolBorder->pos.w > 0 && schoolBorder->pos.h > 0)
+				iconCanvas = schoolBorder->pos;
+
+			image->moveTo(Point(
+				iconCanvas.x + (iconCanvas.w - image->pos.w) / 2,
+				iconCanvas.y + (iconCanvas.h - image->pos.h) / 2));
 		}
 
 		ColorRGBA firstLineColor, secondLineColor;

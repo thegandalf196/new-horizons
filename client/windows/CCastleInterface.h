@@ -41,6 +41,7 @@ class CComponentBox;
 class LRClickableArea;
 class LRClickableAreaWText;
 class CTextInputWithConfirm;
+class CSpellScrollPresentation;
 
 /// Building "button"
 class CBuildingRect : public CShowableAnim
@@ -448,8 +449,7 @@ class CMageGuildScreen : public CStatusbarWindow
 	class Scroll : public CIntObject
 	{
 		const CSpell * spell;
-		std::shared_ptr<CAnimImage> image;
-		std::shared_ptr<CAnimImage> emblem;
+		std::shared_ptr<CSpellScrollPresentation> presentation;
 		ObjectInstanceID townId;
 
 	public:
