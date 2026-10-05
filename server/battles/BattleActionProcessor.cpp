@@ -201,7 +201,7 @@ bool isCreatureActionAllowedDuringForgetfulness(const CBattleInfoCallback & batt
 		// Reject extra attack modes even if a client forges the command. A
 		// return-after-strike uses a third destination and is not a basic melee
 		// attack either.
-		return !action.archerySkirmisherAttack && !action.perfectMoment
+		return !action.archerySkirmisherAttack
 			&& action.getTarget(&battle).size() == 2;
 	default:
 		return false;
@@ -1613,11 +1613,14 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 	bool allowPursuitContinuation)
 {
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
-	const auto perfectMomentSide = ba.perfectMoment ? battle.playerToSide(battle.battleGetOwner(stack)) : BattleSide::NONE;
 	battle::Target target = ba.getTarget(&battle);
 
 	if (!canStackAct(battle, stack))
 		return false;
+	// Perfect Moment is automatic on the first eligible primary strike. Keep the
+	// side in the existing result context; the shared eligibility predicate
+	// decides at the actual target/attack boundary whether this strike qualifies.
+	const auto perfectMomentSide = battle.playerToSide(battle.battleGetOwner(stack));
 	if(stack->pursuitMovementRemaining > 0)
 	{
 		gameHandler->complain("Pursuit allows movement only; it does not grant another attack");
@@ -2084,11 +2087,11 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 {
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
 	const bool pendingFollowUp = battle.battleHasPendingRangedFollowUp(stack);
-	const auto perfectMomentSide = ba.perfectMoment ? battle.playerToSide(battle.battleGetOwner(stack)) : BattleSide::NONE;
 	battle::Target target = ba.getTarget(&battle);
 
 	if (!canStackAct(battle, stack))
 		return false;
+	const auto perfectMomentSide = battle.playerToSide(battle.battleGetOwner(stack));
 
 	if(target.empty())
 	{
@@ -2962,7 +2965,8 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		const auto targets = ba.getTarget(&battle);
 		const auto * target = targets.size() == ((melee || skirmisherShot) ? 2u : 1u)
 			? battle.battleGetStackByPos(targets.back().hexValue) : nullptr;
-		bool legal = (melee || shooting || skirmisherShot) && battle.battleCanUsePerfectMoment(unit)
+		bool legal = (melee || shooting || skirmisherShot)
+			&& battle.battleCanUsePerfectMoment(unit, target, shooting || skirmisherShot)
 			&& target && target->alive() && battle.battleMatchActionController(unit, target);
 		if(legal && shooting)
 			legal = battle.battleCanShootAction(unit, target->getPosition());
@@ -4167,7 +4171,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 
 	const bool perfectMoment = attack.perfectMomentSide != BattleSide::NONE && !attack.counter && !attack.brace
 		&& attack.attackIndex == 0 && battle.playerToSide(battle.battleGetOwner(attacker)) == attack.perfectMomentSide
-		&& defender && battle.battleMatchOwner(attacker, defender) && battle.battleCanUsePerfectMoment(attacker);
+		&& defender && battle.battleMatchOwner(attacker, defender)
+		&& battle.battleCanUsePerfectMoment(attacker, defender, attack.ranged);
 	const auto luckSide = battle.playerToSide(battle.battleGetOwner(attacker));
 	bool secondChanceWasAvailable = false;
 	bool gamblerAttackWasAvailable = false;

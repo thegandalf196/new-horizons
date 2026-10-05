@@ -2526,7 +2526,6 @@ void BattleActionsController::endCastingSpell()
 {
 	++castingSession;
 	// The battle's Escape shortcut also reaches this method outside spell mode.
-	owner.clearPerfectMoment();
 	cancelHeroOrderTargeting();
 	const bool wasRepeatedPlacement = repeatedPlacementModeActive();
 	const bool wasFireWallPlacement = fireWallPlacementModeActive();
@@ -4186,8 +4185,6 @@ void BattleActionsController::onHexHovered(const BattleHex & hoveredHex)
 		newConsoleMsg = LIBRARY->generaltexth->translate("core.genrltxt.156"); // "View arrow tower info."
 	}
 
-	if(owner.isPerfectMomentArmed())
-		newConsoleMsg = "Perfect Moment armed: next attack. Esc/right-click cancels. " + newConsoleMsg;
 	if (!currentConsoleMsg.empty())
 		ENGINE->statusbar()->clearIfMatching(currentConsoleMsg);
 
@@ -4467,7 +4464,6 @@ void BattleActionsController::activateStack()
 
 void BattleActionsController::onHexRightClicked(const BattleHex & clickedHex)
 {
-	owner.clearPerfectMoment();
 	if(skirmisherActionModeActive())
 	{
 		if(skirmisherTargetHex.isValid())

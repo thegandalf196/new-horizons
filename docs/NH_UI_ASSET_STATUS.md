@@ -2,6 +2,14 @@
 
 Last audited: 2026-10-04
 
+2026-10-05 Perfect Moment source correction verified: canonical automatic first
+eligible +5-Luck attack replaces the obsolete manual checkbox and local armed
+state. Reuse the existing Hero Action panel and footer; remove the declaration
+control rather than inventing new art or a substitute button. Existing perk
+art approval status is unchanged. Source/native/build evidence belongs to UP023;
+client/native builds,19 focused native cases and11 client source guards pass.
+Rendered acceptance and Linux playable delivery remain separate and unclaimed.
+
 2026-10-05 Mandate of Heaven integration: the generic Divine Mandate resource
 row already uses the shared dynamic cap. Completed-pair history must remain
 visible if a later rank/perk change lowers that cap; only remaining uses clamp

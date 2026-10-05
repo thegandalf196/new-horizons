@@ -661,6 +661,9 @@ AttackPossibility AttackPossibility::evaluate(
 	DamageCache & damageCache,
 	std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment)
 {
+	// Retained for source compatibility with cached evaluations. Perfect Moment
+	// is now automatic and cannot be opted out of or forced by this hint.
+	(void)perfectMoment;
 	auto attacker = attackInfo.attacker;
 	const bool rangedFollowUp = attackInfo.shooting && hasPendingRangedFollowUp(attacker);
 	const auto * requestedDefender = attackInfo.defender;
@@ -703,7 +706,8 @@ AttackPossibility AttackPossibility::evaluate(
 		const bool hasNightProwlerEffect = hasNightProwlerBonus(attacker);
 		ap.attack.protectIntercepted = !attackInfo.shooting
 			&& defender->unitId() != requestedDefender->unitId();
-		ap.perfectMoment = !rangedFollowUp && perfectMoment && state->battleCanUsePerfectMoment(attacker)
+		ap.perfectMoment = !rangedFollowUp
+			&& state->battleCanUsePerfectMoment(attacker, defender, attackInfo.shooting)
 			&& !attackInfo.retaliation && state->battleMatchOwner(attacker, defender);
 		const auto * raPrimaryTarget = state->battleResolveHeroOrderTarget(attacker, requestedDefender,
 			attackInfo.shooting);

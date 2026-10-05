@@ -79,17 +79,7 @@ PotentialTargets::PotentialTargets(
 				&& newHorizonsArchery::canUseSkirmisher(evaluationState->battleGetFightingHero(attackerInfo->unitSide()), attackerInfo))
 				bai.archeryRangedDamageMultiplierPercent = newHorizonsArchery::SKIRMISHER_DAMAGE_PERCENT;
 
-			auto ordinary = AttackPossibility::evaluate(bai, hex, actionDamageCache, evaluationState);
-			if(!berserk && evaluationState->battleCanUsePerfectMoment(attackerInfo))
-			{
-				auto declared = AttackPossibility::evaluate(bai, hex, actionDamageCache, evaluationState, true);
-				// Save the single use when it changes no material outcome. This
-				// modest opportunity-cost heuristic is not a new combat rule.
-				const float reserve = std::max(1.0f, std::abs(ordinary.damageDiff()) * 0.1f);
-				if(declared.damageDiff() > ordinary.damageDiff() + reserve)
-					return declared;
-			}
-			return ordinary;
+			return AttackPossibility::evaluate(bai, hex, actionDamageCache, evaluationState);
 		};
 
 		if(berserk)

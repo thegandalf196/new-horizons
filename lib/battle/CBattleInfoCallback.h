@@ -114,9 +114,12 @@ public:
 	std::vector<uint32_t> battleGetHeroCommandTargets(BattleSide side, HeroCommand command) const;
 	std::optional<FocusFireState> battlePrepareFocusFireState(BattleSide side, uint32_t targetUnitId) const;
 	std::optional<FocusFireState> battleGetFocusFireState(BattleSide side) const;
-	/// Roll-only Luck; does not change the unit's displayed/static Luck bonuses.
-	int battleGetAttackLuck(const battle::Unit * attacker, const battle::Unit * target, bool shooting) const;
-	bool battleCanUsePerfectMoment(const battle::Unit * attacker) const;
+	/// Effective Luck for this strike; leaves displayed/static unit bonuses unchanged.
+	/// Threshold checks may exclude Serendipity's trigger-chance-only +1.
+	int battleGetAttackLuck(const battle::Unit * attacker, const battle::Unit * target, bool shooting,
+		bool includeChanceOnlySerendipity = true) const;
+	bool battleCanUsePerfectMoment(const battle::Unit * attacker, const battle::Unit * target = nullptr,
+		bool shooting = false) const;
 	bool battleCanTriggerCleave(const battle::Unit * attacker) const;
 	bool battleCanTriggerNoQuarter(const BattleAttackInfo & attack) const;
 	const battle::Unit * battleSelectCleaveTarget(const battle::Unit * attacker,

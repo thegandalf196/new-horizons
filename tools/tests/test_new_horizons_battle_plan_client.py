@@ -21,15 +21,17 @@ class BattlePlanClientTest(unittest.TestCase):
         self.assertNotIn("hasActivePerk", body)
         self.assertNotIn("battleMake", body)
 
-    def test_pending_opening_order_cannot_be_declined_or_arm_perfect_moment(self):
+    def test_pending_opening_order_cannot_be_declined_and_has_no_extra_declaration_control(self):
         source = (BATTLE / "BattleHeroActionWindow.cpp").read_text()
         cancel = function(source, "void BattleHeroActionWindow::cancelSelection()")
         self.assertLess(cancel.index("battleHasPendingPreCombatOrder"), cancel.index("close();"))
         refresh = function(source, "void BattleHeroActionWindow::refresh()")
         for token in ("pendingDoubleCommand || pendingPreCombatOrder",
-                      "canArmPerfectMoment() && !pendingOrder", "cancel->block(pendingOrder)",
+                      "cancel->block(pendingOrder)",
                       "Battle Plan: choose a free opening Order now"):
             self.assertIn(token, refresh)
+        self.assertNotIn("Perfect Moment", source)
+        self.assertNotIn("perfectMoment", refresh)
 
     def test_right_click_target_cancel_returns_to_the_opening_chooser(self):
         source = (BATTLE / "BattleActionsController.cpp").read_text()

@@ -2815,7 +2815,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Learning | 3/0 | 3/7 | Mentor, Quick Study and Field Study supply working Basic/Advanced perks and open ordinary Expert-rank progression. Meetings, weekly persistence, initial offer reroll, stronger-opponent awarded XP and query/RNG parity are native verified. Academic Study awaits first-visit timing. |
 | Luck | 3/0 | 6/4 | Fortune's Favor, Lucky Aim, Second Chance, Gambler, Chain of Fortune and Twist of Fate source/native verified; four perks remain planned. |
 | Divine Mandate | 3/0 | 6/4 | Paired rank foundation, Chaplain's Reserve, Consecrated Casting, Sacred Command, Knightly Sequence, Mandate of Heaven and Purifying Mandate source/native verified; four perks remain missing. Legal progression reaches the implemented Expert perk. |
-| Sylvan Luck | 3/0 | 10/0 | Evidence audit required |
+| Sylvan Luck | 3/0 | 10/0 | Principal-path audit identifies consumers for all ten perks. Perfect Moment's missing automatic first eligible attack and +5 current-Luck threshold are repaired under UP023: client/native builds pass, focused19/19 zero skips, including server/AI/Skirmisher. Broader35-case run passes31 with four unrelated fixture/compatibility guard failures recorded for Phase2; this is not whole-family integration or playable acceptance. |
 | Metamagic | 3/0 | 10/0 | Evidence audit required |
 | Shroud of Malassa | 3/0 | 6/4 | Basic Backstab/Ambusher/Shadow Assault and Advanced No Escape/Evasive Shroud/Night Prowler are active; four perks remain planned. Night Prowler has live/AI crossing, first-strike and unused-expiry evidence; its flying negative is predicate-only. |
 | Demonic Gating | 3/0 | 10/0 | Evidence audit required |

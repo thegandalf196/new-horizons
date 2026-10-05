@@ -677,7 +677,8 @@ std::vector<uint32_t> CBattleInfoCallback::battleFortuneAdjacentFriends(const ba
 	return result;
 }
 
-bool CBattleInfoCallback::battleCanUsePerfectMoment(const battle::Unit * attacker) const
+bool CBattleInfoCallback::battleCanUsePerfectMoment(const battle::Unit * attacker,
+	const battle::Unit * target, bool shooting) const
 {
 	if(!attacker || !getBattle() || battleTacticDist() || !attacker->alive() || attacker->isGhost()
 		|| attacker->isTimeStopped() || attacker->isTurret() || attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
@@ -688,8 +689,10 @@ bool CBattleInfoCallback::battleCanUsePerfectMoment(const battle::Unit * attacke
 		|| getBattle()->getActiveStackID() != attacker->unitId())
 		return false;
 	const auto side = playerToSide(battleGetOwner(attacker));
-	return (side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
-		&& getBattle()->getSylvanLuckState(side).canUsePerfectMoment();
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return false;
+	return getBattle()->getSylvanLuckState(side).canUsePerfectMoment()
+		&& battleGetAttackLuck(attacker, target, shooting, false) >= 5;
 }
 
 bool CBattleInfoCallback::battleCanTriggerCleave(const battle::Unit * attacker) const
@@ -742,7 +745,8 @@ const battle::Unit * CBattleInfoCallback::battleSelectCleaveTarget(const battle:
 	return candidates.empty() ? nullptr : candidates.front();
 }
 
-int CBattleInfoCallback::battleGetAttackLuck(const battle::Unit * attacker, const battle::Unit * target, bool shooting) const
+int CBattleInfoCallback::battleGetAttackLuck(const battle::Unit * attacker, const battle::Unit * target,
+	bool shooting, bool includeChanceOnlySerendipity) const
 {
 	if(!attacker || !getBattle())
 		return 0;
@@ -765,7 +769,12 @@ int CBattleInfoCallback::battleGetAttackLuck(const battle::Unit * attacker, cons
 	const auto mark = battleGetFocusFireState(side);
 	const bool focused = shooting && target && battleIsFocusFireRecipient(attacker, side)
 		&& battleIsFocusFireTargetActive(side) && mark && mark->targetUnitId == target->unitId();
-	return cap(std::clamp(getBattle()->getSylvanLuckState(side).chanceLuck(baseLuck, attacker->unitId(), focused), minimum, maximum));
+	const auto & fortune = getBattle()->getSylvanLuckState(side);
+	int luck = fortune.chanceLuck(baseLuck, attacker->unitId(), focused);
+	if(!includeChanceOnlySerendipity && fortune.serendipity
+		&& !fortune.positiveLuckUnits.contains(attacker->unitId()))
+		--luck;
+	return cap(std::clamp(luck, minimum, maximum));
 }
 
 int64_t CBattleInfoCallback::battleExpectedLuckDamage(const BattleAttackInfo & attack) const

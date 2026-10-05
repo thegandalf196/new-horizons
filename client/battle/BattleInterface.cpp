@@ -983,7 +983,6 @@ void BattleInterface::openingEnd()
 
 BattleInterface::~BattleInterface()
 {
-	clearPerfectMoment();
 	CPlayerInterface::battleInt = nullptr;
 
 	if (adventureInt)
@@ -1011,8 +1010,6 @@ void BattleInterface::stackAdded(const CStack * stack)
 
 void BattleInterface::stackRemoved(uint32_t stackID)
 {
-	if(perfectMomentStack == stackID)
-		clearPerfectMoment();
 	stacksController->stackRemoved(stackID);
 	fieldController->redrawBackgroundWithHexes();
 	windowObject->updateQueue();
@@ -1020,8 +1017,6 @@ void BattleInterface::stackRemoved(uint32_t stackID)
 
 void BattleInterface::stackActivated(const CStack *stack)
 {
-	// Even reactivation of the same stack starts a fresh local declaration.
-	clearPerfectMoment();
 	stacksController->stackActivated(stack);
 }
 
@@ -1153,33 +1148,6 @@ void BattleInterface::giveCommand(EActionType action, const std::vector<BattleHe
 	sendCommand(ba, actor);
 }
 
-bool BattleInterface::canArmPerfectMoment()
-{
-	const auto * active = stacksController->getActiveStack();
-	return active && curInt && !curInt->isAutoFightOn && !isDeploymentPhase()
-		&& !actionsController->heroSpellcastingModeActive()
-		&& !actionsController->creatureSpellcastingModeActive()
-		&& getBattle()->battleCanUsePerfectMoment(active);
-}
-
-bool BattleInterface::isPerfectMomentArmed()
-{
-	const auto * active = stacksController->getActiveStack();
-	return active && perfectMomentStack == active->unitId() && canArmPerfectMoment();
-}
-
-void BattleInterface::setPerfectMomentArmed(bool armed)
-{
-	clearPerfectMoment();
-	if(armed && canArmPerfectMoment())
-		perfectMomentStack = stacksController->getActiveStack()->unitId();
-}
-
-void BattleInterface::clearPerfectMoment()
-{
-	perfectMomentStack.reset();
-}
-
 void BattleInterface::sendCommand(BattleAction command, const CStack * actor)
 {
 	if(isDeploymentPhase())
@@ -1193,11 +1161,6 @@ void BattleInterface::sendCommand(BattleAction command, const CStack * actor)
 	if(actionsController)
 		actionsController->cancelHeroOrderTargeting();
 	command.stackNumber = actor ? actor->unitId() : ((command.side == BattleSide::ATTACKER) ? -1 : -2);
-	command.perfectMoment = actor && perfectMomentStack == actor->unitId() && isPerfectMomentArmed()
-		&& (command.actionType == EActionType::WALK_AND_ATTACK || command.actionType == EActionType::SHOOT);
-	// Clear before asynchronous submission, including non-attacks and requests
-	// later rejected by the authority. Never silently re-arm on rejection.
-	clearPerfectMoment();
 
 	if(!isInTacticsMode())
 	{
@@ -1556,8 +1519,6 @@ void BattleInterface::activateStack()
 	stacksController->activateStack();
 
 	const CStack * s = stacksController->getActiveStack();
-	if(!s || perfectMomentStack != s->unitId())
-		clearPerfectMoment();
 	if(!s)
 		return;
 
@@ -1580,7 +1541,6 @@ void BattleInterface::presentPendingHeroOrderChoice()
 		&& !callback->battleHasPendingPreCombatOrder(callback->battleGetMySide()))
 		|| !ENGINE->windows().findWindows<BattleHeroActionWindow>().empty())
 		return;
-	clearPerfectMoment();
 	ENGINE->windows().createAndPushWindow<BattleHeroActionWindow>(CPlayerInterface::battleInt, true);
 }
 

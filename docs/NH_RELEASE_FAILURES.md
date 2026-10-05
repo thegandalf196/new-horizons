@@ -2,6 +2,33 @@
 
 ## Purpose
 
+### 2026-10-05 UP023 — Active Perfect Moment diverged from its specification
+
+The active registry said automatic first eligible attack at current Luck+5,
+but production required a manual declaration and allowed negative Luck; its
+server fixture reinforced that wrong behavior. Audit executable consumers,
+not just active flags or passing assertions. Shared target-aware eligibility
+must exclude only Serendipity's explicitly chance-only bonus, and authority/AI
+must agree on automatic strike-time use. Remove the obsolete local arming UI.
+Do not copy the whole Sylvan history on every attack when filtering the
+chance-only bonus; use the existing referenced state and subtract that bonus
+before normal caps. Fixture isolation must avoid inherited rank Luck and retain
+eligible+5 in pre-emptive-death controls. Client26695 passes; native compilation
+59248 and focused execution remain pending at this checkpoint. Broader
+movement/reaction and whole-battle save acceptance are separate Phase2 work.
+
+Final native build59248 passes302/302. Broader native21000 passes31/35
+in8.997s, zero skips, with four guard failures: GenuineActivation manually
+constructs an invalid Second Wind Order shape; AuthoritativeMultiTarget and
+WildChance select Advanced perks without Basic prerequisites; LegacySave writes
+a whole modern battle at a version unable to retain initial Army Value.
+Independent review traces these to unchanged guards, not Perfect Moment's
+automatic trigger. Preserve UP023-perfect-moment-auto-native.log/XML and keep
+the four fixture repairs in Phase2. Do not label that broader run green or relax
+guards. Principal22333 passes19/19 in4.540s, zero skips; focused.log/XML retain
+the narrower acceptance evidence. Positive post-hit battle deep-copy passes,
+without claiming every world-save or old-version path. Eleven client guards pass.
+
 ### 2026-10-05 UP023 — Unmanned tower fixture build and setup
 
 Native build62771 fails at the new fixture's nonexistent BattleField.h include.

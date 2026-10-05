@@ -249,9 +249,8 @@ BattleHeroActionWindow::BattleHeroActionWindow(const std::shared_ptr<BattleInter
 	labels.push_back(std::make_shared<CMultiLineLabel>(Rect(28, 463, 472, 41), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
 		"Commands affect current troops only; no war machines.\nLater summons and clones do not inherit effects."));
 	cancel = std::make_shared<CButton>(Point(548, 445), AnimationPath::builtin("NH_cancel_button"),
-		CButton::tooltip("Cancel", "Return to battle and clear any Perfect Moment declaration without spending an action."), [this] { cancelSelection(); }, EShortcut::GLOBAL_CANCEL);
+		CButton::tooltip("Cancel", "Return to battle without spending an action."), [this] { cancelSelection(); }, EShortcut::GLOBAL_CANCEL);
 	cancel->setHoverable(true);
-	createPerfectMomentControl();
 	refresh();
 }
 
@@ -299,32 +298,8 @@ void BattleHeroActionWindow::createOrdersLayout()
 		"Targeted Orders select stacks directly on the battlefield. Protect uses two clicks: Protector, then adjacent Ward.\nRight-click/Escape cancels without spending an action.");
 	labels.push_back(std::make_shared<CLabel>(320, 463, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "Orders end with this round"));
 	cancel = std::make_shared<CButton>(Point(548, 443), AnimationPath::builtin("NH_cancel_button"),
-		CButton::tooltip("Cancel", "Return to battle and clear any Perfect Moment declaration without spending an action."), [this] { cancelSelection(); }, EShortcut::GLOBAL_CANCEL);
+		CButton::tooltip("Cancel", "Return to battle without spending an action."), [this] { cancelSelection(); }, EShortcut::GLOBAL_CANCEL);
 	cancel->setHoverable(true);
-	createPerfectMomentControl();
-}
-
-void BattleHeroActionWindow::createPerfectMomentControl()
-{
-	// Reuse the standard checkbox in the existing footer slot. This is a troop
-	// attack declaration, independent of the shared Spell/Order action budget.
-	perfectMomentToggle = std::make_shared<CToggleButton>(Point(16, 414), AnimationPath::builtin("sysopchk.def"),
-		CButton::tooltip("Perfect Moment — next attack",
-			"Once per combat, declare your next eligible melee or ranged attack a Lucky Strike. Select to return to battle armed; select again to disarm. No Hero Action is spent. Escape, right-click, another action or a stack change cancels the declaration. The authority consumes the use only when the declared strike happens."),
-		[this](bool selected)
-		{
-			auto owner = currentBattle();
-			if(!owner || !owner->canArmPerfectMoment())
-			{
-				refresh();
-				return;
-			}
-			owner->setPerfectMomentArmed(selected);
-			close(); // selecting is not Cancel: retain the local declaration
-		});
-	perfectMomentToggle->setHoverable(true);
-	perfectMomentLabel = std::make_shared<CMultiLineLabel>(Rect(48, 414, 480, 32), FONT_SMALL, ETextAlignment::TOPLEFT,
-		Colors::YELLOW, "Perfect Moment — next attack\nOnce per combat; no Hero Action.");
 }
 
 void BattleHeroActionWindow::cancelSelection()
@@ -335,7 +310,6 @@ void BattleHeroActionWindow::cancelSelection()
 		if(callback->battleHasPendingDoubleCommand(callback->battleGetMySide())
 			|| callback->battleHasPendingPreCombatOrder(callback->battleGetMySide()))
 			return;
-		owner->clearPerfectMoment();
 	}
 	close();
 }
@@ -395,19 +369,8 @@ void BattleHeroActionWindow::refresh()
 	const bool pendingPreCombatOrder = owner && owner->getBattle()->battleHasPendingPreCombatOrder(
 		owner->getBattle()->battleGetMySide());
 	const bool pendingOrder = pendingDoubleCommand || pendingPreCombatOrder;
-	const bool perfectMomentAvailable = owner && owner->canArmPerfectMoment() && !pendingOrder;
 	if(cancel)
 		cancel->block(pendingOrder);
-	if(perfectMomentToggle->isDisabled() == perfectMomentAvailable)
-		perfectMomentToggle->CIntObject::setEnabled(perfectMomentAvailable);
-	if(perfectMomentLabel->isDisabled() == perfectMomentAvailable)
-		perfectMomentLabel->setEnabled(perfectMomentAvailable);
-	const bool selected = perfectMomentAvailable && owner->isPerfectMomentArmed();
-	if(perfectMomentToggle->isSelected() != selected)
-		perfectMomentToggle->setSelectedSilent(selected);
-	perfectMomentToggle->block(!perfectMomentAvailable);
-	if(orderInstructions && orderInstructions->isDisabled() != perfectMomentAvailable)
-		orderInstructions->setEnabled(!perfectMomentAvailable);
 	if(!owner)
 	{
 		if(spellButton)
@@ -639,8 +602,6 @@ void BattleHeroActionWindow::refresh()
 void BattleHeroActionWindow::chooseTargetedCommand(HeroCommand command)
 {
 	auto owner = currentBattle();
-	if(owner)
-		owner->clearPerfectMoment();
 	if(!owner || !ordersOnly)
 	{
 		refresh();
@@ -675,8 +636,6 @@ void BattleHeroActionWindow::chooseTargetedCommand(HeroCommand command)
 void BattleHeroActionWindow::chooseCommand(HeroCommand command)
 {
 	auto owner = currentBattle();
-	if(owner)
-		owner->clearPerfectMoment();
 	if(!owner)
 	{
 		close();
@@ -704,8 +663,6 @@ void BattleHeroActionWindow::chooseSpell()
 	if(ordersOnly)
 		return;
 	auto owner = currentBattle();
-	if(owner)
-		owner->clearPerfectMoment();
 	if(!owner)
 	{
 		close();

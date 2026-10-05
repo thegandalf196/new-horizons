@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""Focused source/lifecycle guards for the presentation-only declaration.
+"""Source guards that Perfect Moment is automatic, not a player declaration.
 
-These guards do not replace native server acceptance or graphical validation.
-They deliberately run while the separately owned backend protocol is landing.
+These guards cover UI wiring only; native acceptance and rendered UI validation
+remain separate responsibilities.
 """
 
 from pathlib import Path
@@ -30,78 +30,28 @@ class PerfectMomentClientTest(unittest.TestCase):
         cls.interface = (BATTLE / "BattleInterface.cpp").read_text()
         cls.header = (BATTLE / "BattleInterface.h").read_text()
         cls.panel = (BATTLE / "BattleHeroActionWindow.cpp").read_text()
+        cls.panelHeader = (BATTLE / "BattleHeroActionWindow.h").read_text()
         cls.controller = (BATTLE / "BattleActionsController.cpp").read_text()
 
-    def test_eligibility_is_authoritative_and_not_a_hero_action_budget(self):
-        body = function(self.interface, "bool BattleInterface::canArmPerfectMoment()")
-        for required in ("getActiveStack()", "!curInt->isAutoFightOn", "!isInTacticsMode()",
-                         "heroSpellcastingModeActive()", "creatureSpellcastingModeActive()",
-                         "battleCanUsePerfectMoment(active)"):
-            self.assertIn(required, body)
-        self.assertNotIn("getHeroCommandUsed", body)
-        self.assertNotIn("battleCastSpells", body)
-        self.assertNotIn("canArmPerfectMoment() const", self.header)
+    def test_client_has_no_manual_perfect_moment_state_or_control(self):
+        for source in (self.interface, self.header, self.panel, self.panelHeader, self.controller):
+            self.assertNotIn("perfectmoment", source.lower())
+            self.assertNotIn("perfect moment", source.lower())
 
-    def test_local_arming_is_bound_to_one_stack(self):
-        self.assertIn("std::optional<uint32_t> perfectMomentStack", self.header)
-        arm = function(self.interface, "void BattleInterface::setPerfectMomentArmed")
-        self.assertLess(arm.index("clearPerfectMoment()"), arm.index("if(armed && canArmPerfectMoment())"))
-        self.assertIn("getActiveStack()->unitId()", arm)
-        self.assertNotIn("battleMake", arm)
-        query = function(self.interface, "bool BattleInterface::isPerfectMomentArmed()")
-        self.assertIn("perfectMomentStack == active->unitId()", query)
-        self.assertIn("canArmPerfectMoment()", query)
-
-    def test_only_next_player_melee_or_shot_can_carry_declaration(self):
+    def test_unit_actions_use_the_existing_authoritative_dispatch(self):
         body = function(self.interface, "void BattleInterface::sendCommand")
-        declaration = body[body.index("command.perfectMoment ="):body.index("clearPerfectMoment();")]
-        for required in ("actor &&", "perfectMomentStack == actor->unitId()", "isPerfectMomentArmed()",
-                         "EActionType::WALK_AND_ATTACK", "EActionType::SHOOT"):
-            self.assertIn(required, declaration)
-        for excluded in ("HERO_SPELL", "HERO_COMMAND", "MONSTER_SPELL", "CATAPULT"):
-            self.assertNotIn(excluded, declaration)
-        for dispatch in ("battleMakeUnitAction", "battleMakeTacticAction"):
-            self.assertLess(body.index("clearPerfectMoment();"), body.index(dispatch))
+        self.assertNotIn("perfectMoment", body)
+        self.assertNotIn("perfect moment", body.lower())
+        self.assertIn("battleMakeUnitAction", body)
+        self.assertIn("battleMakeTacticAction", body)
+        self.assertIn("command.stackNumber", body)
 
-    def test_cancellation_stack_changes_and_teardown_clear(self):
-        for signature in ("BattleInterface::~BattleInterface()", "void BattleInterface::stackActivated",
-                          "void BattleInterface::stackRemoved", "void BattleInterface::activateStack"):
-            self.assertIn("clearPerfectMoment()", function(self.interface, signature))
-        for signature in ("void BattleActionsController::endCastingSpell",
-                          "void BattleActionsController::onHexRightClicked"):
-            self.assertIn("owner.clearPerfectMoment()", function(self.controller, signature))
-        for signature in ("void BattleHeroActionWindow::cancelSelection",
-                          "void BattleHeroActionWindow::chooseCommand",
-                          "void BattleHeroActionWindow::chooseTargetedCommand",
-                          "void BattleHeroActionWindow::chooseSpell"):
-            self.assertIn("clearPerfectMoment()", function(self.panel, signature))
+    def test_action_panels_keep_their_existing_controls_and_order_instructions(self):
         self.assertEqual(self.panel.count("[this] { cancelSelection(); }, EShortcut::GLOBAL_CANCEL"), 2)
-
-    def test_toggle_only_arms_locally_and_shows_no_action_cost(self):
-        body = function(self.panel, "void BattleHeroActionWindow::createPerfectMomentControl")
-        for required in ("Perfect Moment — next attack", "No Hero Action is spent",
-                         "canArmPerfectMoment()", "setPerfectMomentArmed(selected)", "close();"):
-            self.assertIn(required, body)
-        self.assertNotIn("battleMake", body)
-        self.assertNotIn("sendCommand", body)
-        self.assertIn("Perfect Moment armed: next attack. Esc/right-click cancels.", self.controller)
-
-    def test_unavailable_toggle_is_hidden_not_just_blocked(self):
-        body = function(self.panel, "void BattleHeroActionWindow::refresh()")
-        self.assertIn("owner && owner->canArmPerfectMoment()", body)
-        self.assertIn("perfectMomentToggle->CIntObject::setEnabled(perfectMomentAvailable)", body)
-        self.assertIn("perfectMomentLabel->setEnabled(perfectMomentAvailable)", body)
-        self.assertIn("perfectMomentToggle->block(!perfectMomentAvailable)", body)
-        self.assertIn("orderInstructions->setEnabled(!perfectMomentAvailable)", body)
-
-    def test_footer_reuses_existing_slot_without_card_or_cancel_overlap(self):
-        self.assertIn("Point(16, 414)", self.panel)
-        self.assertIn("Rect(16, 378, 516, 30)", self.panel)
-        self.assertIn("Point(548, 443)", self.panel)
-        self.assertIn("Rect(48, 414, 480, 32)", self.panel)
-        self.assertGreaterEqual(414, 378 + 30)
-        self.assertLess(414 + 32, 463)  # checkbox stays above the footer caption
-        self.assertLess(48 + 480, 548)  # label lane stays left of Cancel
+        self.assertIn('"Cancel", "Return to battle without spending an action."', self.panel)
+        self.assertIn("Targeted Orders select stacks directly on the battlefield", self.panel)
+        self.assertIn("Protect uses two clicks: Protector, then adjacent Ward.", self.panel)
+        self.assertIn("cancel->block(pendingOrder)", function(self.panel, "void BattleHeroActionWindow::refresh()"))
 
 
 if __name__ == "__main__":

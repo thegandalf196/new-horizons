@@ -364,13 +364,14 @@ TEST_F(NewHorizonsCombatSkillsTest, MarksmanSkirmisherPreservesMultiShotAndAccep
 	shotEstimate.archeryRangedDamageMultiplierPercent = newHorizonsArchery::SKIRMISHER_DAMAGE_PERCENT;
 	const auto expectedDamagePerShot = battle()->calculateDmgRange(shotEstimate).damage.max;
 	battle()->activeStack = shooter->unitId();
+	shooter->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::LUCK,
+		BonusSource::OTHER, 5, BonusSourceID()));
 	auto & fortune = battle()->getSide(BattleSide::ATTACKER).sylvanLuck;
 	fortune.perfectMoment = true;
-	ASSERT_TRUE(battle()->battleCanUsePerfectMoment(shooter));
+	ASSERT_TRUE(battle()->battleCanUsePerfectMoment(shooter, target, true));
 
 	BattleAction action = BattleAction::makeMeleeAttack(shooter, target->getPosition(), *nonAdjacentFiringHex, false);
 	action.archerySkirmisherAttack = true;
-	action.perfectMoment = true;
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_TRUE(fortune.perfectMomentUsed)
 		<< "Perfect Moment is validated and applied as a ranged Skirmisher attack, not melee from its firing hex";

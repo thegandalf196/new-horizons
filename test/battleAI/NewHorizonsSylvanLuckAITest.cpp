@@ -18,6 +18,14 @@ JsonNode certainLuck()
 	return result;
 }
 
+JsonNode noGoodLuck()
+{
+	JsonNode result;
+	for(int i = 0; i < 10; ++i)
+		result.Vector().emplace_back(0);
+	return result;
+}
+
 class SylvanEnvironment final : public Environment
 {
 	std::shared_ptr<CGameState> state;
@@ -135,10 +143,12 @@ TEST_F(NewHorizonsSylvanLuckAITest, MasterGateContinuationPreservesProjectedActi
 TEST_F(NewHorizonsSylvanLuckAITest, PerfectMomentProjectsFirstShotOnlyAndCommitsUseOnlyToSelectedModel)
 {
 	ASSERT_NO_FATAL_FAILURE(startGame());
+	gameState()->getMap().overrideGameSetting(EGameSettings::COMBAT_GOOD_LUCK_CHANCE, noGoodLuck());
 	ASSERT_NO_FATAL_FAILURE(startBattle());
 	ASSERT_NO_FATAL_FAILURE(beginCombat());
 	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:marksman"), BattleHex(leftHex), 10);
 	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex + 5), 100);
+	luck(source, 5);
 	battle()->activeStack = source->unitId();
 	battle()->getSide(BattleSide::ATTACKER).sylvanLuck.perfectMoment = true;
 	auto environment = std::make_shared<SylvanEnvironment>(gameState());
@@ -146,20 +156,16 @@ TEST_F(NewHorizonsSylvanLuckAITest, PerfectMomentProjectsFirstShotOnlyAndCommits
 	auto model = std::make_shared<HypotheticBattle>(environment.get(), callback);
 	DamageCache cache;
 	BattleAttackInfo attack(source, target, 0, true);
-	const auto ordinary = AttackPossibility::evaluate(attack, BattleHex::INVALID, cache, model);
-	const auto declared = AttackPossibility::evaluate(attack, BattleHex::INVALID, cache, model, true);
-	ASSERT_TRUE(declared.perfectMoment);
-	ASSERT_EQ(declared.fortuneStrikes.size(), 2u);
-	ASSERT_EQ(ordinary.fortuneStrikes.size(), 2u);
-	EXPECT_TRUE(declared.fortuneStrikes[0].perfectMoment);
-	EXPECT_FALSE(declared.fortuneStrikes[1].perfectMoment);
-	EXPECT_GT(declared.fortuneStrikes[0].hits.front().second, ordinary.fortuneStrikes[0].hits.front().second);
-	EXPECT_EQ(declared.fortuneStrikes[1].hits.front().second, ordinary.fortuneStrikes[1].hits.front().second);
+	const auto projected = AttackPossibility::evaluate(attack, BattleHex::INVALID, cache, model);
+	ASSERT_TRUE(projected.perfectMoment);
+	ASSERT_EQ(projected.fortuneStrikes.size(), 2u);
+	EXPECT_TRUE(projected.fortuneStrikes[0].perfectMoment);
+	EXPECT_FALSE(projected.fortuneStrikes[1].perfectMoment);
 	EXPECT_FALSE(model->getSylvanLuckState(BattleSide::ATTACKER).perfectMomentUsed);
 	PotentialTargets candidates(source, cache, model);
 	EXPECT_TRUE(candidates.bestAction().perfectMoment);
 	BattleExchangeVariant exchange;
-	exchange.trackAttack(declared, model, cache);
+	exchange.trackAttack(projected, model, cache);
 	EXPECT_TRUE(model->getSylvanLuckState(BattleSide::ATTACKER).perfectMomentUsed);
 	EXPECT_TRUE(model->getSylvanLuckState(BattleSide::ATTACKER).positiveLuckUnits.contains(source->unitId()));
 	EXPECT_FALSE(battle()->getSylvanLuckState(BattleSide::ATTACKER).perfectMomentUsed);
@@ -172,13 +178,14 @@ TEST_F(NewHorizonsSylvanLuckAITest, PerfectMomentLethalPreviewAvoidsRetaliationA
 	ASSERT_NO_FATAL_FAILURE(beginCombat());
 	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(leftHex), 3);
 	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), 1);
+	luck(source, 5);
 	battle()->activeStack = source->unitId();
 	battle()->getSide(BattleSide::ATTACKER).sylvanLuck.perfectMoment = true;
 	auto environment = std::make_shared<SylvanEnvironment>(gameState());
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 	auto model = std::make_shared<HypotheticBattle>(environment.get(), callback);
 	DamageCache cache;
-	const auto preview = AttackPossibility::evaluate(BattleAttackInfo(source, target, 0, false), source->getPosition(), cache, model, true);
+	const auto preview = AttackPossibility::evaluate(BattleAttackInfo(source, target, 0, false), source->getPosition(), cache, model);
 	ASSERT_TRUE(preview.perfectMoment);
 	EXPECT_TRUE(preview.defenderDead);
 	EXPECT_EQ(preview.attackerState->getAvailableHealth(), source->getAvailableHealth());
@@ -191,15 +198,15 @@ TEST_F(NewHorizonsSylvanLuckAITest, PerfectMomentLethalPreviewAvoidsRetaliationA
 	}
 }
 
-TEST_F(NewHorizonsSylvanLuckAITest, PerfectMomentEndsSerendipityBeforeSecondProjectedShot)
+TEST_F(NewHorizonsSylvanLuckAITest, SerendipityChanceOnlyDoesNotQualifyForProjectedPerfectMoment)
 {
 	ASSERT_NO_FATAL_FAILURE(startGame());
-	gameState()->getMap().overrideGameSetting(EGameSettings::COMBAT_BAD_LUCK_CHANCE, certainLuck());
+	gameState()->getMap().overrideGameSetting(EGameSettings::COMBAT_GOOD_LUCK_CHANCE, noGoodLuck());
 	ASSERT_NO_FATAL_FAILURE(startBattle());
 	ASSERT_NO_FATAL_FAILURE(beginCombat());
 	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:marksman"), BattleHex(leftHex), 10);
 	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex + 5), 100);
-	luck(source, -1);
+	luck(source, 4);
 	battle()->activeStack = source->unitId();
 	auto & fortune = battle()->getSide(BattleSide::ATTACKER).sylvanLuck;
 	fortune.perfectMoment = fortune.serendipity = true;
@@ -208,11 +215,13 @@ TEST_F(NewHorizonsSylvanLuckAITest, PerfectMomentEndsSerendipityBeforeSecondProj
 	auto model = std::make_shared<HypotheticBattle>(environment.get(), callback);
 	DamageCache cache;
 	BattleAttackInfo attack(source, target, 0, true);
-	const auto ordinary = AttackPossibility::evaluate(attack, BattleHex::INVALID, cache, model);
-	const auto declared = AttackPossibility::evaluate(attack, BattleHex::INVALID, cache, model, true);
-	ASSERT_EQ(declared.fortuneStrikes.size(), 2u);
-	ASSERT_EQ(ordinary.fortuneStrikes.size(), 2u);
-	EXPECT_LT(declared.fortuneStrikes[1].hits.front().second, ordinary.fortuneStrikes[1].hits.front().second);
+	EXPECT_EQ(model->battleGetAttackLuck(source, target, true), 5);
+	EXPECT_FALSE(model->battleCanUsePerfectMoment(source, target, true));
+	const auto preview = AttackPossibility::evaluate(attack, BattleHex::INVALID, cache, model);
+	ASSERT_FALSE(preview.perfectMoment);
+	ASSERT_EQ(preview.fortuneStrikes.size(), 2u);
+	EXPECT_FALSE(preview.fortuneStrikes[0].perfectMoment);
+	EXPECT_FALSE(preview.fortuneStrikes[1].perfectMoment);
 	EXPECT_TRUE(model->getSylvanLuckState(BattleSide::ATTACKER).positiveLuckUnits.empty());
 	EXPECT_FALSE(fortune.perfectMomentUsed);
 }

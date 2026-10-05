@@ -29,6 +29,14 @@ JsonNode certainLuck()
 		result.Vector().emplace_back(100);
 	return result;
 }
+
+JsonNode noGoodLuck()
+{
+	JsonNode result;
+	for(int i = 0; i < 10; ++i)
+		result.Vector().emplace_back(0);
+	return result;
+}
 class SylvanEnvironment final : public Environment
 {
 	std::shared_ptr<CGameState> state;
@@ -153,19 +161,20 @@ TEST(SylvanLuckRulesTest, PerfectMomentWireStateAndLegacyDefaults)
 	EXPECT_TRUE(oldAction.extractBuffer().empty());
 }
 
-TEST_F(NewHorizonsSylvanLuckTest, PerfectMomentForcesNegativeLuckAndReplicatesOnlyAcceptedStrike)
+TEST_F(NewHorizonsSylvanLuckTest, PerfectMomentAutomaticallyTriggersAtFiveCurrentLuck)
 {
+	gameState()->getMap().overrideGameSetting(EGameSettings::COMBAT_GOOD_LUCK_CHANCE, noGoodLuck());
 	startBattle();
 	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(leftHex), 3);
 	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), 100);
 	blockRetaliation(source);
-	luck(source, -1);
+	luck(source, 5);
 	battle()->activeStack = source->unitId();
 	auto & fortune = battle()->getSide(BattleSide::ATTACKER).sylvanLuck;
 	fortune.perfectMoment = true;
-	EXPECT_TRUE(battle()->battleCanUsePerfectMoment(source));
+	EXPECT_TRUE(battle()->battleCanUsePerfectMoment(source, target, false));
 	auto action = BattleAction::makeMeleeAttack(source, target, source->getPosition());
-	action.perfectMoment = true;
+	EXPECT_FALSE(action.perfectMoment);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	ASSERT_FALSE(server.attacks.empty());
 	EXPECT_TRUE(server.attacks.front().lucky());
@@ -176,10 +185,37 @@ TEST_F(NewHorizonsSylvanLuckTest, PerfectMomentForcesNegativeLuckAndReplicatesOn
 	EXPECT_TRUE(fortune.positiveLuckUnits.contains(source->unitId()));
 	const auto attackCount = server.attacks.size();
 	battle()->activeStack = source->unitId();
+	action.perfectMoment = true;
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(server.attacks.size(), attackCount);
 	const auto restored = CMemorySerializer::deepCopy(*battle(), gameState().get());
 	EXPECT_TRUE(restored->getSylvanLuckState(BattleSide::ATTACKER).perfectMomentUsed);
+}
+
+TEST_F(NewHorizonsSylvanLuckTest, SerendipityChanceBonusDoesNotQualifyForPerfectMoment)
+{
+	gameState()->getMap().overrideGameSetting(EGameSettings::COMBAT_GOOD_LUCK_CHANCE, noGoodLuck());
+	startBattle();
+	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:marksman"), BattleHex(leftHex), 10);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex + 5), 100);
+	luck(source, 4);
+	battle()->activeStack = source->unitId();
+	auto & fortune = battle()->getSide(BattleSide::ATTACKER).sylvanLuck;
+	fortune.perfectMoment = fortune.serendipity = true;
+	EXPECT_EQ(battle()->battleGetAttackLuck(source, target, true), 5)
+		<< "Serendipity still contributes to positive-Luck trigger chance";
+	EXPECT_EQ(battle()->battleGetAttackLuck(source, target, true, false), 4)
+		<< "Only the actual Luck value is considered by Perfect Moment";
+	EXPECT_FALSE(battle()->battleCanUsePerfectMoment(source, target, true))
+		<< "Its chance-only bonus does not satisfy the current-Luck threshold";
+	auto action = BattleAction::makeShotAttack(source, target);
+	EXPECT_FALSE(action.perfectMoment);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	ASSERT_FALSE(server.attacks.empty());
+	EXPECT_FALSE(server.attacks.front().lucky());
+	ASSERT_TRUE(server.attacks.front().fortuneState);
+	EXPECT_FALSE(server.attacks.front().fortuneState->perfectMomentUsed);
+	EXPECT_FALSE(fortune.perfectMomentUsed);
 }
 
 TEST_F(NewHorizonsSylvanLuckTest, PerfectMomentRejectsForgedActionsBeforeStartWithoutSpending)
@@ -212,19 +248,19 @@ TEST_F(NewHorizonsSylvanLuckTest, PerfectMomentRejectsForgedActionsBeforeStartWi
 
 TEST_F(NewHorizonsSylvanLuckTest, PerfectMomentForcesOnlyFirstArrowOfDoubleShot)
 {
+	gameState()->getMap().overrideGameSetting(EGameSettings::COMBAT_GOOD_LUCK_CHANCE, noGoodLuck());
 	startBattle();
 	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:marksman"), BattleHex(leftHex), 10);
 	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex + 5), 100);
-	luck(source, -1);
+	luck(source, 5);
 	battle()->activeStack = source->unitId();
 	battle()->getSide(BattleSide::ATTACKER).sylvanLuck.perfectMoment = true;
 	auto action = BattleAction::makeShotAttack(source, target);
-	action.perfectMoment = true;
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	ASSERT_EQ(server.attacks.size(), 2u);
 	EXPECT_TRUE(server.attacks[0].lucky());
 	EXPECT_FALSE(server.attacks[1].lucky());
-	EXPECT_TRUE(server.attacks[1].unlucky());
+	EXPECT_FALSE(server.attacks[1].unlucky());
 }
 
 TEST_F(NewHorizonsSylvanLuckTest, PerfectMomentRetainsUseWhenEnemyFirstStrikeKillsDeclarer)
@@ -232,13 +268,13 @@ TEST_F(NewHorizonsSylvanLuckTest, PerfectMomentRetainsUseWhenEnemyFirstStrikeKil
 	startBattle();
 	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:peasant"), BattleHex(leftHex), 1);
 	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), 100);
+	luck(source, 5);
 	target->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::FIRST_STRIKE, BonusSource::OTHER, 1,
 		BonusSourceID(), BonusSubtypeID(BonusCustomSubtype::damageTypeAll)));
 	battle()->activeStack = source->unitId();
 	auto & fortune = battle()->getSide(BattleSide::ATTACKER).sylvanLuck;
 	fortune.perfectMoment = true;
 	auto action = BattleAction::makeMeleeAttack(source, target, source->getPosition());
-	action.perfectMoment = true;
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	ASSERT_FALSE(source->alive());
 	EXPECT_FALSE(fortune.perfectMomentUsed);
@@ -254,7 +290,7 @@ TEST_F(NewHorizonsSylvanLuckTest, PerfectMomentMultiTargetStrikePreservesClassic
 	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:hydra"), BattleHex(leftHex), 10);
 	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), 100);
 	auto * collateral = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(leftHex - 17), 100);
-	luck(source, -1);
+	luck(source, 5);
 	forceMaximumDamage(source);
 	battle()->activeStack = source->unitId();
 	auto & fortune = battle()->getSide(BattleSide::ATTACKER).sylvanLuck;
@@ -263,7 +299,6 @@ TEST_F(NewHorizonsSylvanLuckTest, PerfectMomentMultiTargetStrikePreservesClassic
 	expected.secondaryAttack = true;
 	const auto neutralDamage = battle()->calculateDmgRange(expected).damage.max;
 	auto action = BattleAction::makeMeleeAttack(source, target, source->getPosition());
-	action.perfectMoment = true;
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	ASSERT_EQ(server.attacks.size(), 1u);
 	ASSERT_EQ(server.attacks.front().bsa.size(), 2u);
