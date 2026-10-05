@@ -3211,7 +3211,9 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	payload.deathBlow = info.deathBlow;
 	payload.doubleDamage = info.doubleDamage;
 	if(info.attacker->hasBonusOfType(BonusType::SIEGE_WEAPON))
+	{
 		if(const auto * hero = battleGetOwnerHero(info.attacker))
+		{
 			if(const auto siege = hero->getSiegeCapabilities())
 			{
 				const auto & capabilityRules = hero->getCapabilityRules();
@@ -3237,6 +3239,16 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				else
 					payload.siegeSkillMultiplier = siege->ballistaDamageMultiplier;
 			}
+		}
+		else if(info.attacker->isTurret())
+		{
+			if(const auto * town = battleGetDefendedTown())
+			{
+				if(const auto baseDamage = town->getNewHorizonsDefensiveTowerBaseDamage())
+					payload.machineBaseDamage = *baseDamage;
+			}
+		}
+	}
 	payload.attackFactorPerPoint = LIBRARY->engineSettings()->getDouble(EGameSettings::COMBAT_ATTACK_POINT_DAMAGE_FACTOR);
 	payload.attackFactorCap = LIBRARY->engineSettings()->getDouble(EGameSettings::COMBAT_ATTACK_POINT_DAMAGE_FACTOR_CAP);
 	payload.defenseFactorPerPoint = LIBRARY->engineSettings()->getDouble(EGameSettings::COMBAT_DEFENSE_POINT_DAMAGE_FACTOR);

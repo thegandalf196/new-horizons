@@ -1425,6 +1425,15 @@ std::vector<CGTownInstance::WarMachineShopOffer> CGTownInstance::getWarMachineSh
 	return result;
 }
 
+std::optional<int> CGTownInstance::getNewHorizonsDefensiveTowerBaseDamage() const
+{
+	const auto & capabilityRules = cb->getHeroCapabilityRules();
+	if(!newHorizonsHeroes::usesRules(capabilityRules) || capabilityRules["rulesetVersion"].Integer() < 3)
+		return std::nullopt;
+
+	return newHorizonsHeroes::capabilitySiegeOutput(capabilityRules, 0, "defensiveTowerDamage");
+}
+
 void CGTownInstance::grantBallistaYardSiegeBonus(IGameEventCallback & gameEvents, const CGHeroInstance * hero) const
 {
 	if(!hero || hero->getOwner() != getOwner() || getFactionID() != FactionID::STRONGHOLD

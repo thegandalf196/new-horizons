@@ -1,6 +1,20 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-05
+Unmanned defensive-tower output accepted: a town without a defending hero now
+uses the saved v3+ defensiveTowerDamage formula at Siege0, canonical base60.
+Shared live/preview calculation reads town-world rules, never the attacking
+hero or freshly installed config. Hero and Engineer scaling remain unchanged;
+absent rules retain actual legacy town-script output. Client91717 and repaired
+both-target96872/44376 build; native22240 passes8/8 in2.703s, zero skips:
+real no-hero siege60, custom saved77, actual legacy BATTLE_SETUP and automatic
+CPU shot, plus all four existing Engineer controls. Module drift and independent
+review pass. Evidence: UP023-unmanned-tower-native-build-merge-repaired.log and
+UP023-unmanned-tower-native-merge-repaired.log/XML. Earlier fixture failures are
+retained. This closes a missing tower-output case, not a new spell/perk identity;
+perks224/310 and combat identities61/67 remain unchanged. Older-v2, whole-save
+and broader siege combinations remain Phase2. No GUI or Linux promotion.
+
 Glyphs siege Defense and war-machine HP clauses accepted: the Fortress building
 now grants its defending siege hero20 Defense, replacing the legacy2 bonus.
 Three actual construction/BattleStart cases cover defender-only grant, unchanged

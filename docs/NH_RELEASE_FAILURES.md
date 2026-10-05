@@ -2,6 +2,27 @@
 
 ## Purpose
 
+### 2026-10-05 UP023 — Unmanned tower fixture build and setup
+
+Native build62771 fails at the new fixture's nonexistent BattleField.h include.
+BattleField is already declared by the identifier headers; remove the guessed
+header rather than changing production. Preserve UP023-unmanned-tower-native-build.log.
+Root also finds manual BattleStart bypasses the actual BATTLE_SETUP script event;
+the legacy control must use the production BattleProcessor::startBattle path,
+not merely compare uninitialized creature-damage bonuses with themselves.
+No native or legacy-script acceptance from the failed fixture/build. The owner
+repairs only its new fixture before the next serialized build.
+Repaired build96872 succeeds. Native69107 passes5/8 (real legacy setup plus
+four Engineer controls) but its three v3 cases throw because map overrides
+merge with the installed v4 rules. Erasing warMachineShop from an override
+does not remove the inherited value: explicitly set it to JSON null. Preserve
+UP023-unmanned-tower-native.log/XML; do not weaken production version validation.
+Final build44376 passes; native22240 passes8/8 in2.703s, zero skips, including
+the true legacy setup, automatic no-hero shot, custom77 and Engineer controls.
+Keep native-build-merge-repaired.log and native-merge-repaired.log/XML. The
+runtime fix was unchanged across these fixture repairs. Older-v2 and wider
+save/siege combinations remain Phase2 rather than additional Phase1 gates.
+
 ### 2026-10-05 UP023/UP200 — Machine durability retained legacy resource data
 
 Initial native27834 passes all3 Glyphs siege controls but fails machine HP:

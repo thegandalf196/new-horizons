@@ -14,6 +14,8 @@
 #include "../entities/faction/CFaction.h" // TODO: remove
 #include "../entities/faction/CTown.h" // TODO: remove
 
+#include <optional>
+
 class CCastleEvent;
 class CTown;
 class TownBuildingInstance;
@@ -319,6 +321,8 @@ public:
 	bool isWarMachineAvailable(ArtifactID) const;
 	/// Returns the saved-rules shop inventory for built machine-selling buildings, deduplicated by artifact.
 	std::vector<WarMachineShopOffer> getWarMachineShopOffers() const;
+	/// Returns the New Horizons v3 base output for a town's defensive towers, or empty for legacy rules.
+	std::optional<int> getNewHorizonsDefensiveTowerBaseDamage() const;
 	/// Applies the saved Stronghold Ballista Yard visit effect to the visiting hero, refreshing rather than stacking.
 	void grantBallistaYardSiegeBonus(IGameEventCallback & gameEvents, const CGHeroInstance * hero) const;
 
