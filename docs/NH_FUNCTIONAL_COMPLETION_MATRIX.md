@@ -2513,9 +2513,38 @@ acceptance and playable snapshot delivery remain separate.
 
 Additional canonical breadth not yet reducible to a defensible completion
 fraction: nine town/faction sections (37 grouped unique-building table rows),
-ten artifact-conversion rows, six specialty families, required combat/hero/
+six specialty families, required combat/hero/
 adventure UI surfaces, save-state representation, and minimum AI hooks. The
 next ledger pass must enumerate these items rather than invent a denominator.
+
+### Artifact framework item ledger
+
+Canonical source: **Artifact rebalance framework** in `design-sources/New Horizons.md`.
+Its denominator is exactly ten table rows. Six rows have focused source/native
+conversion evidence; this is not certification of all artifacts or exceptions.
+Two retained-baseline rows lack family-wide acceptance, one qualitative row
+has an incomplete exception audit, and one conversion awaits a design ruling.
+
+| Canonical row | Current evidence | Remaining Phase1 work / boundary |
+|---|---|---|
+| Primary Attribute bonus/penalty ×5 | UP204: inventory78 records/43 overrides and actual equipment/removal; native71900 | Broad assembled-artifact/save/AI combinations are Phase2. |
+| Luck / Morale modifiers unchanged | Core LUCK/MORALE producers retained; no conversion required | Family-wide preservation not yet established; producer existence is not acceptance. |
+| Flat land Movement ÷10 | UP204: overlay, inventory and native71900 | Broad composition/rendered descriptions remain separate. |
+| Flat sea Movement ÷10 | UP204: Ocean Guidance and Sea Captain's Hat native cases | Broad composition/rendered descriptions remain separate. |
+| Speed also grants Initiative | UP206: real equipped/removal and explicit/fallback Initiative; native26470 | Projected creature-form limiter reevaluation is Phase2. |
+| Mana-regeneration tiers | UP207: mapped, no conversion overlay/native acceptance | Blocked on independently additive item maxima versus aggregate-before-max. |
+| Resistance retained; total cap75% | UP214: equipment, innate/aura, seeded rolls, projections and legacy; native39842 | Projected untouched-recipient aura adjacency is Phase2. |
+| Elemental Orbs +25% final magical damage | UP210: explicit tags, shared scaler, actual equipment/casts/projections; native71275 | Broad proxy/spell composition and strategic valuation are Phase2. |
+| Resource / Gold income unchanged | Core GENERATE_RESOURCE producers retained | Family-wide preservation/economy acceptance not established. |
+| Duration / immunity qualitative effects retained | Core producers retained; removed-mechanic exception audit partial | Audit exact bindings against removed Schools and Adventure Spells. |
+
+Separate exceptions, **not additional framework rows**: Spellbinder's Hat has
+focused eligibility/equipment/removal/legacy fixtures; four elemental Tomes
+have explicit pool exclusions and data/native consumer checks (replacement
+set intentionally unauthored). Boots of Levitation's paid20-Mana Water Walk
+and Angel Wings' paid40-Mana Fly/daily-allowance clauses require artifact-specific
+consumer evidence; general Adventure Spell tests do not establish acceptance.
+Bounded reviewer audit2026-10-05; no new implementation or gameplay count credit.
 2026-10-04 inventory correction: the current canonical Unique-building rebalance
 tables contain37 non-header rows; Artifact rebalance framework contains10.
 These replace stale33/nine counts. Grouped retained/growth rows and separate
