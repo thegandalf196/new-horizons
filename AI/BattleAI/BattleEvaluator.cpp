@@ -3045,13 +3045,13 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 		&& orderAllowance->allowance == HeroActionAllowanceState::AllowanceKind::HERO
 		&& newHorizonsWarcasting::enabled(battle.getBattle()->getMagicRules())
 		? newHorizonsWarcasting::orderBonus(hero, battle.getBattle()->getWarcastingState(side), round) : 0;
-	const int sacredCommandEfficiencyBonusPercent = preparedOrder
-		? preparedOrder->sacredCommandEfficiencyBonusPercent : 0;
+	const int divineMandateEfficiencyBonusPercent = preparedOrder
+		? preparedOrder->divineMandateEfficiencyBonusPercent() : 0;
 	const auto coefficient = [&](const char * commandKey, const char * effectKey)
 	{
 		const auto & formula = commandRules[commandKey]["effects"][effectKey];
 		return static_cast<float>(hero ? heroCommands::coefficient(formula, *hero, warcastingBonus,
-			sacredCommandEfficiencyBonusPercent)
+			divineMandateEfficiencyBonusPercent)
 			: heroCommands::coefficient(formula, 0, 0));
 	};
 	const auto meleeDamage = [&](const battle::Unit * attackerUnit, const battle::Unit * defenderUnit)
@@ -3141,7 +3141,7 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 	const auto & flankFormula = commandRules["flank"]["effects"]["meleeDamagePercent"];
 	const auto combinedArmsRangedPercent = combinedArmsEnabled
 		? static_cast<float>(heroCommands::combinedArmsFlankPercent(flankFormula, *hero, warcastingBonus,
-			sacredCommandEfficiencyBonusPercent))
+			divineMandateEfficiencyBonusPercent))
 		: 0.0f;
 
 	if(command == HeroCommand::CHARGE)
@@ -3307,7 +3307,7 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 			++distinctSides;
 		const int additionalSides = std::max(0, distinctSides - 1);
 		const int additionalSidePercent = battle.battleHeroOrderFlankAdditionalSidePercent(
-			side, warcastingBonus, sacredCommandEfficiencyBonusPercent);
+			side, warcastingBonus, divineMandateEfficiencyBonusPercent);
 		const auto meleeOrderValue = targetCanBeFlanked
 			? bestOwnMeleeDamage(target) * (flankDamage + additionalSides * additionalSidePercent) / 100.0f
 			: 0.0f;
@@ -3362,7 +3362,7 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 			extraAttack = std::max(extraAttack, anyDamage(target, enemy));
 		const auto directDamagePercent = hero
 			? static_cast<float>(heroCommands::secondWindPercent(*hero, warcastingBonus,
-				sacredCommandEfficiencyBonusPercent)) : 50.0f;
+				divineMandateEfficiencyBonusPercent)) : 50.0f;
 		return extraAttack * directDamagePercent / 100.0f;
 	}
 

@@ -50,6 +50,18 @@ int32_t sacredCommandEfficiencyBonusPercent(const CGHeroInstance * hero)
 		"new-horizons:divineMandate.sacredCommand") ? 10 : 0;
 }
 
+int32_t knightlySequenceOrderBonusPercent(const CGHeroInstance * hero)
+{
+	return hasActiveDivineMandate(hero) && hero->hasActivePerk("new-horizons:divineMandate",
+		"new-horizons:divineMandate.knightlySequence") ? 5 : 0;
+}
+
+int32_t knightlySequenceSpellCostReduction(const CGHeroInstance * hero)
+{
+	return hasActiveDivineMandate(hero) && hero->hasActivePerk("new-horizons:divineMandate",
+		"new-horizons:divineMandate.knightlySequence") ? 2 : 0;
+}
+
 int32_t consecratedCastingBonusPercent(const CGHeroInstance * hero)
 {
 	return hasActiveDivineMandate(hero) && hero->hasActivePerk("new-horizons:divineMandate",

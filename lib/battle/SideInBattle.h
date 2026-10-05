@@ -344,6 +344,13 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			return order.sacredCommandEfficiencyBonusPercent != 0;
 		});
 	}
+	bool hasKnightlySequenceOrderState() const
+	{
+		return std::any_of(orderStates.begin(), orderStates.end(), [](const HeroOrderState & order)
+		{
+			return order.knightlySequenceEfficiencyBonusPercent != 0;
+		});
+	}
 
 	void init(const CGHeroInstance * Hero, const CArmedInstance * Army, const CGTownInstance * town);
 	const CArmedInstance * getArmy() const;
@@ -354,6 +361,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		if(h.saving && hasSacredCommandOrderState()
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SACRED_COMMAND))
 			throw std::runtime_error("Cannot discard Sacred Command battle Order state");
+		if(h.saving && hasKnightlySequenceOrderState()
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_KNIGHTLY_SEQUENCE))
+			throw std::runtime_error("Cannot discard Knightly Sequence battle Order state");
 		if(h.saving && firstRoundMoraleModifier != 0
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_FORCED_MARCH))
 			throw std::runtime_error("Cannot discard first-round battle Morale modifier");

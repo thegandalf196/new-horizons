@@ -198,6 +198,8 @@ set(test_SRCS
 		server/battles/NewHorizonsConsecratedCastingTest.cpp
 		server/battles/NewHorizonsSacredCommandTest.cpp
 		server/battles/NewHorizonsSacredCommandPacketsTest.cpp
+		server/battles/NewHorizonsKnightlySequenceTest.cpp
+		server/battles/NewHorizonsKnightlySequencePacketsTest.cpp
 		server/battles/NewHorizonsFrailtyTest.cpp
 		server/battles/LifeDrainTest.cpp
 		server/battles/SoulStealTest.cpp

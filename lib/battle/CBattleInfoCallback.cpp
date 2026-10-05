@@ -561,7 +561,12 @@ std::optional<FocusFireState> CBattleInfoCallback::battlePrepareFocusFireState(B
 		&& allowance->allowance == HeroActionAllowanceState::AllowanceKind::ORDER
 		&& allowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
 		? newHorizonsDivineMandate::sacredCommandEfficiencyBonusPercent(hero) : 0;
-	result.rangedDamagePercent = heroCommands::coefficient(formula, *hero, warcastingBonus, sacredCommandBonus);
+	const auto knightlySequenceBonus = allowance
+		&& allowance->allowance == HeroActionAllowanceState::AllowanceKind::ORDER
+		&& allowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
+		? newHorizonsDivineMandate::knightlySequenceOrderBonusPercent(hero) : 0;
+	result.rangedDamagePercent = heroCommands::coefficient(formula, *hero, warcastingBonus,
+		sacredCommandBonus + knightlySequenceBonus);
 	const bool includeMeleeRecipients = heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
 		&& heroCommands::hasCombinedArms(hero);
 	const auto recipients = battleGetUnitsIf([this, side, includeMeleeRecipients](const battle::Unit * unit)
@@ -1239,14 +1244,18 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderState(B
 			hero, getBattle()->getWarcastingState(side), result.issuedRound);
 	if(allowance && allowance->allowance == HeroActionAllowanceState::AllowanceKind::ORDER
 		&& allowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE)
+	{
 		result.sacredCommandEfficiencyBonusPercent =
 			newHorizonsDivineMandate::sacredCommandEfficiencyBonusPercent(hero);
+		result.knightlySequenceEfficiencyBonusPercent =
+			newHorizonsDivineMandate::knightlySequenceOrderBonusPercent(hero);
+	}
 	if(command == HeroCommand::HOLD_THE_LINE
 		&& hero->hasActivePerk(newHorizonsIronDiscipline::SKILL, newHorizonsIronDiscipline::PERK))
 	{
 		const int physicalReduction = std::clamp(heroCommands::coefficient(
 			(*rules)["effects"]["damageReductionPercent"], *hero, result.warcastingBonusPercent,
-			result.sacredCommandEfficiencyBonusPercent), 0, 100);
+			result.divineMandateEfficiencyBonusPercent()), 0, 100);
 		result.holdMagicalReductionBasisPoints = static_cast<uint16_t>(physicalReduction
 			* newHorizonsIronDiscipline::BASIS_POINTS_PER_PHYSICAL_PERCENT);
 	}
@@ -1438,7 +1447,7 @@ int CBattleInfoCallback::battleHeroOrderFlankAdditionalSidePercent(BattleSide si
 }
 
 int CBattleInfoCallback::battleHeroOrderFlankAdditionalSidePercent(BattleSide side,
-	int warcastingBonusPercent, int sacredCommandEfficiencyBonusPercent) const
+	int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent) const
 {
 	const auto * battle = getBattle();
 	if(!battle || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
@@ -1449,7 +1458,7 @@ int CBattleInfoCallback::battleHeroOrderFlankAdditionalSidePercent(BattleSide si
 		return heroCommands::ENCIRCLEMENT_ADDITIONAL_SIDE_PERCENT;
 	if(hero)
 		return heroCommands::coefficient(formula, *hero, warcastingBonusPercent,
-			sacredCommandEfficiencyBonusPercent);
+			divineMandateEfficiencyBonusPercent);
 	return heroCommands::coefficient(formula, 0, 0);
 }
 
@@ -3013,7 +3022,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		{
 			return hero ? heroCommands::coefficient(formula, *hero,
 				orderState ? orderState->warcastingBonusPercent : 0,
-				orderState ? orderState->sacredCommandEfficiencyBonusPercent : 0) : 0;
+				orderState ? orderState->divineMandateEfficiencyBonusPercent() : 0) : 0;
 		};
 		const auto eligibleOrderUnit = [](const battle::Unit * unit)
 		{
@@ -3113,7 +3122,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 							const int orderDamagePercent = coefficientFor(rules["flank"]["effects"]["meleeDamagePercent"], attack, &attackerState)
 								+ additionalSides * battleHeroOrderFlankAdditionalSidePercent(
 									attackerSide, attackerState.warcastingBonusPercent,
-									attackerState.sacredCommandEfficiencyBonusPercent);
+									attackerState.divineMandateEfficiencyBonusPercent());
 							payload.heroOrderDamagePercent += orderDamagePercent;
 							if(orderDamagePercent > 0)
 								recordAttackerCause(HeroCommand::FLANK);
@@ -3127,7 +3136,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 						const auto combinedArmsDamagePercent = heroCommands::combinedArmsFlankPercent(
 							rules["flank"]["effects"]["meleeDamagePercent"], *attack,
 							attackerState.warcastingBonusPercent,
-							attackerState.sacredCommandEfficiencyBonusPercent);
+							attackerState.divineMandateEfficiencyBonusPercent());
 						payload.combinedArmsDamagePercent += combinedArmsDamagePercent;
 						if(combinedArmsDamagePercent > 0)
 							recordAttackerCause(HeroCommand::FLANK);
@@ -3139,7 +3148,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				{
 					const int orderMultiplier = heroCommands::secondWindPercent(
 						*attack, attackerState.warcastingBonusPercent,
-						attackerState.sacredCommandEfficiencyBonusPercent);
+						attackerState.divineMandateEfficiencyBonusPercent());
 					if(orderMultiplier < 100)
 					{
 						payload.heroOrderFinalDamageMultipliers.push_back(orderMultiplier);
@@ -4603,6 +4612,12 @@ int32_t CBattleInfoCallback::battleGetSpellCost(const spells::Spell * sp, const 
 	const bool ordinarySideHero = newHorizonsOrdinarySpell
 		&& (casterSide == BattleSide::ATTACKER || casterSide == BattleSide::DEFENDER)
 		&& getBattle()->getSideHero(casterSide) == caster;
+	const auto spellAllowance = ordinarySideHero
+		? battleGetSpellActionAllowance(casterSide, sp->getId()) : std::nullopt;
+	if(spellAllowance
+		&& spellAllowance->allowance == HeroActionAllowanceState::AllowanceKind::SPELL
+		&& spellAllowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE)
+		ret = std::max(1, ret - newHorizonsDivineMandate::knightlySequenceSpellCostReduction(caster));
 	const bool preparedCaster = ordinarySideHero
 		&& caster->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.preparedCaster")
 		&& !getBattle()->hasCompletedHeroSpellCast(casterSide);

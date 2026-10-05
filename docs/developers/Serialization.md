@@ -1,5 +1,18 @@
 # Serialization
 
+## Knightly Sequence Order efficiency (source/native accepted)
+
+`NEW_HORIZONS_KNIGHTLY_SEQUENCE` appends the separate
+`HeroOrderState::knightlySequenceEfficiencyBonusPercent` contribution:0 for
+ordinary Orders,5 for a selected Divine Mandate Order with the active perk.
+Sacred Command retains its independent0/10 provenance. Shared numerical
+consumers sum the two captured contributions, without scaling fixed terms.
+Old reads default Knightly to0; populated unsupported direct/enclosing writers
+must reject before bytes, and progress updates cannot rewrite the contribution.
+The paired Spell discount is derived from the existing typed allowance and
+needs no direction ledger or new Mana state. This does not lift existing
+whole-battle save health/provenance restrictions. Acceptance is tracked in UP108.
+
 ## Sacred Command Order efficiency
 
 `NEW_HORIZONS_SACRED_COMMAND` appends

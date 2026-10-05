@@ -150,6 +150,11 @@ public:
 		return sides[BattleSide::ATTACKER].hasSacredCommandOrderState()
 			|| sides[BattleSide::DEFENDER].hasSacredCommandOrderState();
 	}
+	bool hasKnightlySequenceOrderState() const
+	{
+		return sides[BattleSide::ATTACKER].hasKnightlySequenceOrderState()
+			|| sides[BattleSide::DEFENDER].hasKnightlySequenceOrderState();
+	}
 	std::optional<FocusFireState> getFocusFireState(BattleSide side) const override { return sides.at(side).focusFire; }
 	/// Drop decode-only legacy Doctrine state and its battle-long bonuses.
 	/// Round Order bonuses are intentionally preserved.
@@ -261,6 +266,9 @@ public:
 				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SACRED_COMMAND)
 					&& side.hasSacredCommandOrderState())
 					throw std::runtime_error("Cannot discard Sacred Command Order state in an older battle format");
+				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_KNIGHTLY_SEQUENCE)
+					&& side.hasKnightlySequenceOrderState())
+					throw std::runtime_error("Cannot discard Knightly Sequence Order state in an older battle format");
 				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS)
 					&& side.orderStates.size() > 1)
 					throw std::runtime_error("Cannot discard simultaneous Hero Orders in an older format");

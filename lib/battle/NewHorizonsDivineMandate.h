@@ -23,6 +23,10 @@ DLL_LINKAGE int32_t chaplainReserveRecovery(const CGHeroInstance * hero,
 	uint8_t beforeCompletedPairs, uint8_t afterCompletedPairs);
 /// Percentage-point efficiency captured when the selected Order payment is Divine Mandate.
 DLL_LINKAGE int32_t sacredCommandEfficiencyBonusPercent(const CGHeroInstance * hero);
+/// Additional percentage-point efficiency captured for a Knightly Sequence Order follow-up.
+DLL_LINKAGE int32_t knightlySequenceOrderBonusPercent(const CGHeroInstance * hero);
+/// Flat Mana reduction for a Knightly Sequence Light Spell follow-up.
+DLL_LINKAGE int32_t knightlySequenceSpellCostReduction(const CGHeroInstance * hero);
 /// Spell Power-derived percentage captured for an eligible Divine Mandate cast.
 DLL_LINKAGE int32_t consecratedCastingBonusPercent(const CGHeroInstance * hero);
 }

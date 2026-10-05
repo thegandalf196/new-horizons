@@ -6201,7 +6201,7 @@
 								"requires": "advanced",
 								"description": "If the Order is performed first, the paired Light Spell costs 2 less Mana; if the Light Spell is performed first, the paired Order gains +5 additional percentage points of efficiency.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "If the Order is performed first, the paired Light Spell costs 2 less Mana; if the Light Spell is performed first, the paired Order gains +5 additional percentage points of efficiency."
 								}
 							},

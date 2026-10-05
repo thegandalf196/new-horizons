@@ -2,6 +2,19 @@
 
 ## Purpose
 
+### 2026-10-05 UP108 — Order-preview source guard arity
+
+Knightly build79514 and native77528 pass32/32. The separate Order source guard
+still required the three-argument preview coefficient from before Sacred Command,
+although the accepted implementation already passes captured Divine Mandate
+efficiency as its fourth argument. Update that exact assertion and require the
+prepared snapshot aggregate getter; do not weaken the guard to mere symbol
+presence. The repaired guard passes. This is a stale source assertion, not a
+runtime failure or reason to omit Sacred/Knightly from previews.
+Pre-build fixture review also caught Advanced selection without a Basic perk;
+the fixture now legally selects a Basic prerequisite rather than bypassing offer
+legality. Production behavior was not changed for either fixture/guard repair.
+
 ### 2026-10-05 UP108 — Sacred fixture active-unit lookup
 
 Client build3475 passes. First native-target build45324 fails at the new

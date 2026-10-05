@@ -111,6 +111,14 @@ struct DLL_LINKAGE HeroOrderState
 	uint16_t holdMagicalReductionBasisPoints = 0;
 	/// Sacred Command's attribute-efficiency increment, captured when this Order is issued.
 	int32_t sacredCommandEfficiencyBonusPercent = 0;
+	/// Knightly Sequence's additional attribute-efficiency increment, captured when this Order is issued.
+	int32_t knightlySequenceEfficiencyBonusPercent = 0;
+
+	/// Combined Divine Mandate efficiency used by existing Order formulas.
+	int32_t divineMandateEfficiencyBonusPercent() const
+	{
+		return sacredCommandEfficiencyBonusPercent + knightlySequenceEfficiencyBonusPercent;
+	}
 
 	bool operator==(const HeroOrderState &) const = default;
 
@@ -171,6 +179,7 @@ struct DLL_LINKAGE HeroOrderState
 		if(command == HeroCommand::NONE || issuedRound < 1
 			|| warcastingBonusPercent < 0 || warcastingBonusPercent > 100
 			|| (sacredCommandEfficiencyBonusPercent != 0 && sacredCommandEfficiencyBonusPercent != 10)
+			|| (knightlySequenceEfficiencyBonusPercent != 0 && knightlySequenceEfficiencyBonusPercent != 5)
 			|| holdMagicalReductionBasisPoints > MAX_HOLD_MAGICAL_REDUCTION_BASIS_POINTS
 			|| holdMagicalReductionBasisPoints % BASIS_POINTS_PER_PHYSICAL_PERCENT != 0
 			|| protectInterceptionLimit < 1 || protectInterceptionLimit > 2
@@ -225,6 +234,9 @@ struct DLL_LINKAGE HeroOrderState
 		if(h.saving && sacredCommandEfficiencyBonusPercent != 0
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SACRED_COMMAND))
 			throw std::runtime_error("Cannot discard Sacred Command Order snapshot");
+		if(h.saving && knightlySequenceEfficiencyBonusPercent != 0
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_KNIGHTLY_SEQUENCE))
+			throw std::runtime_error("Cannot discard Knightly Sequence Order snapshot");
 		if(h.saving)
 			validateShape();
 		h & command;
@@ -267,6 +279,10 @@ struct DLL_LINKAGE HeroOrderState
 			h & sacredCommandEfficiencyBonusPercent;
 		else if(!h.saving)
 			sacredCommandEfficiencyBonusPercent = 0;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_KNIGHTLY_SEQUENCE))
+			h & knightlySequenceEfficiencyBonusPercent;
+		else if(!h.saving)
+			knightlySequenceEfficiencyBonusPercent = 0;
 		if(!h.saving)
 			validateShape();
 	}
@@ -325,17 +341,17 @@ DLL_LINKAGE int coefficient(const JsonNode & effect, int attack, int defense);
 /// Evaluate an Order formula for a hero, scaling only its Attack/Defense-derived
 /// terms by the hero's New Horizons Command rank (100/110/120/130%).
 DLL_LINKAGE int coefficient(const JsonNode & effect, const CGHeroInstance & hero);
-/// Add captured Spell-to-Order Warcasting and Sacred Command efficiency bonuses
+/// Add captured Spell-to-Order Warcasting and Divine Mandate efficiency bonuses
 /// to attribute-derived terms. Flat formula terms remain unchanged.
 DLL_LINKAGE int coefficient(const JsonNode & effect, const CGHeroInstance & hero, int warcastingBonusPercent,
-	int sacredCommandEfficiencyBonusPercent);
+	int divineMandateEfficiencyBonusPercent);
 DLL_LINKAGE int coefficient(const JsonNode & effect, const CGHeroInstance & hero, int warcastingBonusPercent);
 DLL_LINKAGE int efficiencyPercent(const CGHeroInstance & hero);
 DLL_LINKAGE int secondWindPercent(const CGHeroInstance & hero);
-/// Warcasting and Sacred Command scale only Second Wind's Leadership-derived
+/// Warcasting and Divine Mandate scale only Second Wind's Leadership-derived
 /// part; its base 50% damage component remains flat.
 DLL_LINKAGE int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent,
-	int sacredCommandEfficiencyBonusPercent);
+	int divineMandateEfficiencyBonusPercent);
 DLL_LINKAGE int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent);
 /// True when the hero currently has the active Expert Command Double Command perk.
 DLL_LINKAGE bool hasDoubleCommand(const CGHeroInstance * hero);
@@ -350,6 +366,6 @@ DLL_LINKAGE double combinedArmsFocusFirePercent(int rangedDamagePercent, const C
 DLL_LINKAGE double combinedArmsFlankPercent(const JsonNode & meleeDamageFormula,
 	const CGHeroInstance & hero, int warcastingBonusPercent = 0);
 DLL_LINKAGE double combinedArmsFlankPercent(const JsonNode & meleeDamageFormula,
-	const CGHeroInstance & hero, int warcastingBonusPercent, int sacredCommandEfficiencyBonusPercent);
+	const CGHeroInstance & hero, int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent);
 DLL_LINKAGE std::vector<Bonus> bonuses(const JsonNode & rules, HeroCommand command, const CGHeroInstance & hero);
 }

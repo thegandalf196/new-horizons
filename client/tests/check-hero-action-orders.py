@@ -71,11 +71,13 @@ assert "adjacent(*" not in order_targeting
 assert "visibleCommandDisplays" in action
 assert "CRClickPopup::createAndPush" in action
 # Effect previews must use the same allowance-aware Warcasting snapshot that
-# authoritative Hold preparation will capture. Iron Discipline keeps the exact
+# authoritative Hold preparation will capture, plus the captured Divine Mandate
+# sum. Iron Discipline keeps the exact
 # half-percent by formatting the saved coefficient in basis points.
 assert "battlePrepareHeroOrderState(side, HeroCommand::HOLD_THE_LINE, {})" in action
 assert "preparedHold ? preparedHold->warcastingBonusPercent : 0" in action
-assert "heroCommands::coefficient(formula, hero, warcastingBonusPercent)" in action
+assert "preparedHold ? preparedHold->divineMandateEfficiencyBonusPercent() : 0" in action
+assert "heroCommands::coefficient(formula, hero, warcastingBonusPercent, divineMandateEfficiencyBonusPercent)" in action
 assert "newHorizonsIronDiscipline::BASIS_POINTS_PER_PHYSICAL_PERCENT" in action
 assert 'AnimationPath::builtin("NH_orders_gauntlet_framed")' in (ROOT / "client/battle/BattleWindow.cpp").read_text(encoding="utf-8")
 assert "Protect unavailable. No legal Protector/Ward pair is available" in action

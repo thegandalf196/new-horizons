@@ -2,6 +2,12 @@
 
 Last audited: 2026-10-04
 
+2026-10-05 Knightly Sequence integration: existing Order numerical previews
+and their cache key consume the combined captured Divine Mandate efficiency,
+with Sacred and Knightly provenance kept separate. No layout/material/art change
+or graphical acceptance is claimed. Its generic NH_perk_neutral remains
+Not done artwork; implementation and focused acceptance are tracked in UP108.
+
 2026-10-05 Sacred Command integration: the existing Order chooser's numerical
 preview now receives the distinct prepared Divine Mandate efficiency snapshot,
 including Iron Discipline and Second Wind calculations. Native layout, frames,

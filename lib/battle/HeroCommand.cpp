@@ -94,10 +94,10 @@ int boundedCoefficient(const std::array<double, 3> & terms, const std::array<int
 }
 
 int attributeEfficiencyPercent(const CGHeroInstance & hero, PrimarySkill attribute,
-	int warcastingBonusPercent, int sacredCommandEfficiencyBonusPercent, bool includeCommanderPerks)
+	int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent, bool includeCommanderPerks)
 {
 	int efficiency = efficiencyPercent(hero) + std::clamp(warcastingBonusPercent, 0, 100)
-		+ std::clamp(sacredCommandEfficiencyBonusPercent, 0, 10);
+		+ std::clamp(divineMandateEfficiencyBonusPercent, 0, 15);
 	if(includeCommanderPerks && attribute == PrimarySkill::ATTACK
 		&& hero.hasActivePerk(COMMAND_SKILL, AGGRESSIVE_COMMANDER_PERK))
 		efficiency += BASIC_COMMANDER_EFFICIENCY_BONUS_PERCENT;
@@ -123,12 +123,12 @@ double boundedCoefficientComponent(double coefficient, double factor)
 }
 
 int heroCoefficient(const JsonNode & effect, const CGHeroInstance & hero, int warcastingBonusPercent,
-	int sacredCommandEfficiencyBonusPercent, bool includeCommanderPerks)
+	int divineMandateEfficiencyBonusPercent, bool includeCommanderPerks)
 {
 	const int attackEfficiency = attributeEfficiencyPercent(hero, PrimarySkill::ATTACK,
-		warcastingBonusPercent, sacredCommandEfficiencyBonusPercent, includeCommanderPerks);
+		warcastingBonusPercent, divineMandateEfficiencyBonusPercent, includeCommanderPerks);
 	const int defenseEfficiency = attributeEfficiencyPercent(hero, PrimarySkill::DEFENSE,
-		warcastingBonusPercent, sacredCommandEfficiencyBonusPercent, includeCommanderPerks);
+		warcastingBonusPercent, divineMandateEfficiencyBonusPercent, includeCommanderPerks);
 	return boundedCoefficient({effect["base"].Float(), effect["attack"].Float() * attackEfficiency / 100.0,
 		effect["defense"].Float() * defenseEfficiency / 100.0},
 		{1, hero.getPrimSkillLevel(PrimarySkill::ATTACK), hero.getPrimSkillLevel(PrimarySkill::DEFENSE)});
@@ -456,9 +456,9 @@ int coefficient(const JsonNode & effect, const CGHeroInstance & hero, int warcas
 }
 
 int coefficient(const JsonNode & effect, const CGHeroInstance & hero, int warcastingBonusPercent,
-	int sacredCommandEfficiencyBonusPercent)
+	int divineMandateEfficiencyBonusPercent)
 {
-	return heroCoefficient(effect, hero, warcastingBonusPercent, sacredCommandEfficiencyBonusPercent, true);
+	return heroCoefficient(effect, hero, warcastingBonusPercent, divineMandateEfficiencyBonusPercent, true);
 }
 
 int efficiencyPercent(const CGHeroInstance & hero)
@@ -477,7 +477,7 @@ int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent)
 }
 
 int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent,
-	int sacredCommandEfficiencyBonusPercent)
+	int divineMandateEfficiencyBonusPercent)
 {
 	int64_t leadership = 0;
 	if(const auto capacity = hero.getLeadershipCapacity())
@@ -485,7 +485,7 @@ int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent,
 	const int veteranCommanderBonus = hero.hasActivePerk(COMMAND_SKILL, VETERAN_COMMANDER_PERK)
 		? VETERAN_COMMANDER_EFFICIENCY_BONUS_PERCENT : 0;
 	const int efficiency = efficiencyPercent(hero) + std::clamp(warcastingBonusPercent, 0, 100)
-		+ std::clamp(sacredCommandEfficiencyBonusPercent, 0, 10)
+		+ std::clamp(divineMandateEfficiencyBonusPercent, 0, 15)
 		+ veteranCommanderBonus;
 	const double leadershipComponent = 0.015 * static_cast<double>(leadership) * efficiency / 100.0;
 	return std::clamp(50 + static_cast<int>(std::lround(leadershipComponent)), 0, 100);
@@ -520,13 +520,13 @@ double combinedArmsFlankPercent(const JsonNode & meleeDamageFormula, const CGHer
 }
 
 double combinedArmsFlankPercent(const JsonNode & meleeDamageFormula, const CGHeroInstance & hero,
-	int warcastingBonusPercent, int sacredCommandEfficiencyBonusPercent)
+	int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent)
 {
 	if(!hasCombinedArms(&hero))
 		return 0;
 	const double attackFactor = static_cast<double>(hero.getPrimSkillLevel(PrimarySkill::ATTACK))
 		* attributeEfficiencyPercent(hero, PrimarySkill::ATTACK, warcastingBonusPercent,
-			sacredCommandEfficiencyBonusPercent, true) / 100.0;
+			divineMandateEfficiencyBonusPercent, true) / 100.0;
 	return boundedCoefficientComponent(meleeDamageFormula["attack"].Float(), attackFactor) / 2.0;
 }
 

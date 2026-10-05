@@ -175,12 +175,13 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_DIVINE_MANDATE, // typed, round-limited reciprocal Hero Action allowance and pair count
 	NEW_HORIZONS_ELEMENTAL_REBIRTH, // frozen battle-start maximum aggregate HP basis for Rebirth
 	NEW_HORIZONS_SACRED_COMMAND, // captured Sacred Command efficiency on issued Orders
+	NEW_HORIZONS_KNIGHTLY_SEQUENCE, // captured Knightly Sequence efficiency on Orders
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_SACRED_COMMAND,
+	CURRENT = NEW_HORIZONS_KNIGHTLY_SEQUENCE,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
@@ -192,6 +193,8 @@ static_assert(ESerializationVersion::NEW_HORIZONS_ELEMENTAL_REBIRTH > ESerializa
 	"Elemental Rebirth battle HP basis must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_SACRED_COMMAND > ESerializationVersion::NEW_HORIZONS_ELEMENTAL_REBIRTH,
 	"Sacred Command Order snapshots must remain append-only");
+static_assert(ESerializationVersion::NEW_HORIZONS_KNIGHTLY_SEQUENCE > ESerializationVersion::NEW_HORIZONS_SACRED_COMMAND,
+	"Knightly Sequence Order snapshots must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_REWARDABLE_NEXT_LEVEL_EXPERIENCE > ESerializationVersion::NEW_HORIZONS_CREATURE_ABILITY_SUPPRESSION,
 	"Rewardable next-level Experience must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_CREATURE_ABILITY_SUPPRESSION > ESerializationVersion::NEW_HORIZONS_FORCED_MARCH,

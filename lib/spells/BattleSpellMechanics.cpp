@@ -1524,6 +1524,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	std::vector<FollowupTargetSnapshot> followupTargets;
 
 	int spellCost = 0;
+	int32_t knightlySequenceSpellCostReduction = 0;
 
 	sc.side = casterSide;
 	sc.spellID = getSpellId();
@@ -1561,6 +1562,14 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	if(mode == Mode::HERO)
 	{
 		const auto * casterHero = dynamic_cast<const CGHeroInstance *>(caster);
+		if(casterHero && !isMetamagicFollowup())
+		{
+			const auto allowance = battle()->battleGetSpellActionAllowance(casterSide, owner->getId());
+			if(allowance && allowance->allowance == HeroActionAllowanceState::AllowanceKind::SPELL
+				&& allowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE)
+				knightlySequenceSpellCostReduction =
+					newHorizonsDivineMandate::knightlySequenceSpellCostReduction(casterHero);
+		}
 		spellCost = battle()->battleGetSpellCost(owner, casterHero, isMassSlow() ? 3 : 1);
 		if(isMetamagicFollowup()
 			&& newHorizonsMagic::hasMetamagicPerk(casterHero, newHorizonsMagic::METAMAGIC_ARCANE_ECONOMY))
@@ -1672,6 +1681,21 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		server->apply(castDescription);
 
 	server->apply(sc);
+	if(mode == Mode::HERO && knightlySequenceSpellCostReduction > 0 && !isCounterspellNegated())
+	{
+		BattleLogMessage knightlySequenceDescription;
+		knightlySequenceDescription.battleID = battle()->getBattle()->getBattleID();
+		MetaString line;
+		line.appendTextID(caster->getCasterNameTextID());
+		line.appendRawString(" uses Knightly Sequence on ");
+		line.appendTextID(owner->getNameTextID());
+		line.appendRawString(" through Divine Mandate.");
+		line.appendRawString(" Cost reduction: up to 2 Mana (minimum 1); paid ");
+		line.appendNumber(sc.paidHeroManaCost);
+		line.appendRawString(" Mana).");
+		knightlySequenceDescription.lines.push_back(std::move(line));
+		server->apply(knightlySequenceDescription);
+	}
 	if(mode == Mode::HERO && getConsecratedCastingBonusPercent() > 0 && !isCounterspellNegated())
 	{
 		BattleLogMessage consecratedDescription;
