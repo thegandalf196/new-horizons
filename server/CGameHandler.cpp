@@ -40,6 +40,7 @@
 
 #include "../lib/battle/BattleInfo.h"
 #include "../lib/battle/PhysicalAffliction.h"
+#include "../lib/battle/NewHorizonsDivineMandate.h"
 #include "../lib/battle/NewHorizonsElementalRebirth.h"
 #include "../lib/battle/NewHorizonsMagicalAbilityDamage.h"
 #include "../lib/battle/NewHorizonsSoulChain.h"
@@ -2030,6 +2031,28 @@ void CGameHandler::grantLearningMentorAward(const std::optional<LearningMentorAw
 
 void CGameHandler::sendAndApply(CPackForClient & pack)
 {
+	struct ChaplainsReserveOrder
+	{
+		BattleID battleID = BattleID::NONE;
+		BattleSide side = BattleSide::NONE;
+		uint8_t beforeCompletedPairs = 0;
+	};
+	std::optional<ChaplainsReserveOrder> chaplainsReserveOrder;
+	if(const auto * startAction = dynamic_cast<const StartAction *>(&pack);
+		startAction && startAction->ba.actionType == EActionType::HERO_COMMAND
+		&& (startAction->ba.side == BattleSide::ATTACKER || startAction->ba.side == BattleSide::DEFENDER))
+	{
+		const auto * battleInfo = gameState().getBattle(startAction->battleID);
+		const auto * hero = battleInfo ? battleInfo->battleGetFightingHero(startAction->ba.side) : nullptr;
+		if(battleInfo && hero)
+		{
+			const auto beforeCompletedPairs = battleInfo->battleGetDivineMandateStatus(startAction->ba.side).completedPairs;
+			if(newHorizonsDivineMandate::chaplainReserveRecovery(hero, beforeCompletedPairs, 1) > 0)
+				chaplainsReserveOrder = ChaplainsReserveOrder{
+					startAction->battleID, startAction->ba.side, beforeCompletedPairs};
+		}
+	}
+
 	if(auto * effects = dynamic_cast<SetStackEffect *>(&pack))
 	{
 		// Stamp accepted effect applications in the outgoing packet, so replicas
@@ -2178,6 +2201,37 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 	}
 
 	gameServer().applyPack(pack);
+	if(chaplainsReserveOrder)
+	{
+		const auto * battleInfo = gameState().getBattle(chaplainsReserveOrder->battleID);
+		const auto * hero = battleInfo
+			? battleInfo->battleGetFightingHero(chaplainsReserveOrder->side) : nullptr;
+		if(hero && battleInfo)
+		{
+			const auto afterCompletedPairs = battleInfo->battleGetDivineMandateStatus(chaplainsReserveOrder->side).completedPairs;
+			const auto recovery = newHorizonsDivineMandate::chaplainReserveRecovery(
+				hero, chaplainsReserveOrder->beforeCompletedPairs, afterCompletedPairs);
+			if(recovery > 0)
+			{
+				const auto normalBeforeRecovery = hero->getNormalSpellPoints();
+				restoreSpellPoints(hero->id, recovery);
+				const auto actualRecovery = std::max<int32_t>(0,
+					hero->getNormalSpellPoints() - normalBeforeRecovery);
+				if(actualRecovery > 0)
+				{
+					BattleLogMessage message;
+					message.battleID = chaplainsReserveOrder->battleID;
+					MetaString line;
+					line.appendTextID(hero->getNameTextID());
+					line.appendRawString(" recovers ");
+					line.appendNumber(actualRecovery);
+					line.appendRawString(" Mana from Chaplain's Reserve.");
+					message.lines.push_back(std::move(line));
+					sendAndApply(message);
+				}
+			}
+		}
+	}
 	for(const auto & [unitId, trigger] : elementalRebirthTriggers)
 	{
 		const auto * battleInfo = gameState().getBattle(trigger.battleID);

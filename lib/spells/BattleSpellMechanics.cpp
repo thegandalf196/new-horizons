@@ -23,6 +23,7 @@
 #include "../battle/IBattleState.h"
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/CUnitState.h"
+#include "../battle/NewHorizonsDivineMandate.h"
 #include "../battle/NewHorizonsSoulChain.h"
 #include "../battle/NewHorizonsPuppetMaster.h"
 #include "../battle/NewHorizonsWarcasting.h"
@@ -1597,6 +1598,8 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	const auto * battleInfo = battle()->getBattle();
 	const int32_t battleRound = battleInfo->getRound();
 	const bool validHeroSide = casterSide == BattleSide::ATTACKER || casterSide == BattleSide::DEFENDER;
+	const uint8_t divineMandatePairsBeforeSpell = mode == Mode::HERO && casterHero && validHeroSide
+		? battle()->battleGetDivineMandateStatus(casterSide).completedPairs : 0;
 	bool spendsHeroAllowance = !sc.metamagicFollowup;
 	if(mode == Mode::HERO && validHeroSide && battleRound >= 0
 		&& heroCommands::supportedByRules(battleInfo->getHeroCommandRules(), HeroCommand::CHARGE))
@@ -2022,6 +2025,28 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	if(sc.activeCast)
 	{
 		caster->spendMana(server, spellCost);
+		const auto divineMandatePairsAfterSpell = mode == Mode::HERO && casterHero && validHeroSide
+			? battle()->battleGetDivineMandateStatus(casterSide).completedPairs : divineMandatePairsBeforeSpell;
+		const auto chaplainReserve = newHorizonsDivineMandate::chaplainReserveRecovery(
+			casterHero, divineMandatePairsBeforeSpell, divineMandatePairsAfterSpell);
+		if(chaplainReserve > 0)
+		{
+			const auto normalBeforeRecovery = casterHero->getNormalSpellPoints();
+			casterHero->spendMana(server, -chaplainReserve);
+			const auto actualRecovery = std::max<int32_t>(0,
+				casterHero->getNormalSpellPoints() - normalBeforeRecovery);
+			if(actualRecovery > 0)
+			{
+				BattleLogMessage reserveDescription;
+				reserveDescription.battleID = battle()->getBattle()->getBattleID();
+				MetaString line = MetaString::createFromTextID(casterHero->getNameTextID());
+				line.appendRawString(" recovers ");
+				line.appendNumber(actualRecovery);
+				line.appendRawString(" Mana from Chaplain's Reserve.");
+				reserveDescription.lines.push_back(std::move(line));
+				server->apply(reserveDescription);
+			}
+		}
 		if(recoverBattleMeditation)
 		{
 			const auto manaBeforeRecovery = casterHero->getNormalSpellPoints();

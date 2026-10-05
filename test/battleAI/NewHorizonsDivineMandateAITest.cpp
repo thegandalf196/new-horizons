@@ -20,11 +20,13 @@
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/modding/CModHandler.h"
+#include "../../lib/spells/CSpell.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 
 namespace
 {
 constexpr auto divineMandateSkill = "new-horizons:divineMandate";
+constexpr auto chaplainsReservePerk = "new-horizons:divineMandate.chaplainSReserve";
 using Ledger = HeroActionAllowanceState;
 using ActionKind = Ledger::ActionKind;
 using AllowanceKind = Ledger::AllowanceKind;
@@ -104,10 +106,22 @@ protected:
 		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
 		for(const auto * rank : {"basic", "advanced", "expert"})
 			perks["skills"][divineMandateSkill]["ranks"][rank]["effect"]["status"].String() = "active";
+		bool foundChaplainReserve = false;
+		for(auto & perk : perks["skills"][divineMandateSkill]["perks"].Vector())
+		{
+			if(perk["id"].String() == chaplainsReservePerk)
+			{
+				perk["effect"]["status"].String() = "active";
+				foundChaplainReserve = true;
+				break;
+			}
+		}
+		if(!foundChaplainReserve)
+			throw std::runtime_error("Missing Chaplain's Reserve registry entry");
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perks));
 	}
 
-	void prepareBattle(MasteryLevel::Type rank)
+	void prepareBattle(MasteryLevel::Type rank, bool selectChaplainReserve = false)
 	{
 		startGame();
 		ASSERT_EQ(attackerSideHero->getFactionID(), FactionID::CASTLE);
@@ -120,6 +134,21 @@ protected:
 		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::BLESS));
 		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::MAGIC_ARROW));
 		setTestSpellPointTotal(attackerSideHero, 100);
+		if(selectChaplainReserve)
+		{
+			attackerSideHero->applyPerkSelection({divineMandateSkill, chaplainsReservePerk});
+			ASSERT_TRUE(attackerSideHero->hasActivePerk(divineMandateSkill, chaplainsReservePerk));
+
+			// Leave exactly three Normal points of headroom so the paired reward is
+			// observable even when the spell's cost is paid from Buffer first.
+			attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 10, ChangeValueMode::ABSOLUTE);
+			const auto normalCapacity = attackerSideHero->manaLimit();
+			ASSERT_GE(normalCapacity, 3);
+			setTestSpellPointTotal(attackerSideHero, normalCapacity + 20);
+			attackerSideHero->setNormalSpellPoints(normalCapacity - 3);
+			ASSERT_EQ(attackerSideHero->getNormalSpellPoints(), normalCapacity - 3);
+			ASSERT_EQ(attackerSideHero->getBufferSpellPoints(), 20);
+		}
 
 		startBattle();
 		BattleUnitsChanged changes;
@@ -169,8 +198,11 @@ protected:
 
 TEST_F(NewHorizonsDivineMandateAITest, OrderOpensLightOnlySpellAndAICompletesTheAcceptedPair)
 {
-	prepareBattle(MasteryLevel::BASIC);
+	prepareBattle(MasteryLevel::BASIC, true);
 	ASSERT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
+	const auto spellCost = battle()->battleGetSpellCost(SpellID(SpellID::BLESS).toSpell(), attackerSideHero);
+	const auto normalBeforeSpell = attackerSideHero->getNormalSpellPoints();
+	const auto bufferBeforeSpell = attackerSideHero->getBufferSpellPoints();
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE)));
 
@@ -188,19 +220,33 @@ TEST_F(NewHorizonsDivineMandateAITest, OrderOpensLightOnlySpellAndAICompletesThe
 	const auto selected = callback->heroActions.front();
 	ASSERT_EQ(selected.actionType, EActionType::HERO_SPELL);
 	EXPECT_EQ(selected.spell, SpellID(SpellID::BLESS));
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), normalBeforeSpell);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferBeforeSpell);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), selected));
 
 	const auto completed = battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER);
 	EXPECT_EQ(completed.completedPairs, 1);
 	EXPECT_FALSE(completed.pendingFollowup);
+	const auto normalAfterSpellCost = normalBeforeSpell - std::max(0, spellCost - bufferBeforeSpell);
+	const auto bufferAfterSpellCost = std::max(0, bufferBeforeSpell - spellCost);
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(),
+		std::min<int32_t>(attackerSideHero->manaLimit(), normalAfterSpellCost + 3));
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferAfterSpellCost);
 	EXPECT_FALSE(battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER,
 		SpellID(SpellID::BLESS)));
 }
 
 TEST_F(NewHorizonsDivineMandateAITest, LightSpellOpensOrderAndAICompletesTheAcceptedPair)
 {
-	prepareBattle(MasteryLevel::BASIC);
+	prepareBattle(MasteryLevel::BASIC, true);
+	const auto spellCost = battle()->battleGetSpellCost(SpellID(SpellID::BLESS).toSpell(), attackerSideHero);
+	const auto normalBeforeSpell = attackerSideHero->getNormalSpellPoints();
+	const auto bufferBeforeSpell = attackerSideHero->getBufferSpellPoints();
 	ASSERT_TRUE(issueSpell(SpellID(SpellID::BLESS)));
+	const auto normalAfterSpellCost = normalBeforeSpell - std::max(0, spellCost - bufferBeforeSpell);
+	const auto bufferAfterSpellCost = std::max(0, bufferBeforeSpell - spellCost);
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), normalAfterSpellCost);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferAfterSpellCost);
 
 	const auto status = battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER);
 	ASSERT_TRUE(status.pendingFollowup);
@@ -212,11 +258,16 @@ TEST_F(NewHorizonsDivineMandateAITest, LightSpellOpensOrderAndAICompletesTheAcce
 	const auto selected = callback->heroActions.front();
 	ASSERT_EQ(selected.actionType, EActionType::HERO_COMMAND);
 	EXPECT_TRUE(heroCommands::isActive(selected.command));
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), normalAfterSpellCost);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferAfterSpellCost);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), selected));
 
 	const auto completed = battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER);
 	EXPECT_EQ(completed.completedPairs, 1);
 	EXPECT_FALSE(completed.pendingFollowup);
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(),
+		std::min<int32_t>(attackerSideHero->manaLimit(), normalAfterSpellCost + 3));
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferAfterSpellCost);
 }
 
 TEST_F(NewHorizonsDivineMandateAITest, CreatureActionDoesNotCancelAnUnusedFollowup)

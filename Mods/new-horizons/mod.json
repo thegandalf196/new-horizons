@@ -6171,7 +6171,7 @@
 								"requires": "basic",
 								"description": "After the first Divine Mandate sequence each combat resolves, recover 3 Mana.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "After the first Divine Mandate sequence each combat resolves, recover 3 Mana."
 								}
 							},

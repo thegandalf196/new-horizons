@@ -2,6 +2,20 @@
 
 ## Purpose
 
+### 2026-10-05 UP108 — Callback interface and concrete spell includes
+
+First Reserve build47952 exits1; retain UP108-reserve-build.log. The generic
+IBattleInfo pointer does not expose battleGetDivineMandateStatus; use the existing
+battle callback for the before-count just as for the after-count. Both modified
+fixtures need the direct CSpell.h include to establish the CSpell-to-spells::Spell
+inheritance conversion when calling battleGetSpellCost. Do not expand the PCH,
+loosen signatures or weaken recovery assertions to hide either compile error.
+The minimal owner repairs are frozen; native acceptance requires the repaired
+build and actual-action cases, not successful compilation of earlier objects.
+Repaired build25165 exits0 for client and native targets; focused native96092
+passes22/22 in2.672s, zero skips. Preserve UP108-reserve-build-repaired.log and
+UP108-reserve-native.log/XML. Gameplay semantics and assertions were unchanged.
+
 ### 2026-10-05 UP046 — Strong SpellID wrapper in the perk fixture
 
 First client/native build64934 exits1 in the new runtime fixture:
