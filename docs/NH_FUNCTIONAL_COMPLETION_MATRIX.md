@@ -1,6 +1,19 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-04
+Design decisions e6ba582a9 are committed/pushed: Elemental Rebirth uses captured
+battle-start maximum aggregate HP; Divine Mandate follows Metamagic-style
+round-end opportunities and completed-pair usage. Those foundation gates are
+resolved, not implemented/activated; counts remain87/93 ranks and214/310 perks.
+UP229 adds the missing Hero Movement tooltip capacity/cost breakdown through
+the existing native popup and exact read-only current-day movement aggregation.
+Client43390 and both-target61049/26637 pass; repaired native34473 passes15/15
+in2.498s, zero skips. Two source guards,17 perk-data checks, module drift and
+independent review pass. One missing P1 Hero UI path now has source/native
+acceptance; registered spell/rank/perk counts are unchanged. First fixture
+failure is retained; text fit/localization/bounds wording remain Phase2.
+No gameplay change, polling, new art, rendered credit or launcher promotion.
+
 Adela/Bless source checkpoint0c5964b71 is committed/pushed and remote-verified.
 UP228 Spellcraft-specialty map found no eligible built-in alias: the active
 module explicitly replaces all five legacy producers. Preserve those authored

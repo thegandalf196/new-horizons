@@ -11,13 +11,16 @@
 #include "../../lib/GameConstants.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/GameSettings.h"
+#include "../../lib/bonuses/Bonus.h"
 #include "../../lib/entities/hero/NewHorizonsPerkState.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapping/TerrainTile.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/pathfinder/CGPathNode.h"
+#include "../../lib/pathfinder/NewHorizonsMovement.h"
 #include "../../lib/pathfinder/PathfinderCache.h"
 #include "../../lib/pathfinder/PathfinderOptions.h"
+#include "../../lib/pathfinder/TurnInfo.h"
 #include "../../server/CGameHandler.h"
 
 namespace
@@ -25,9 +28,18 @@ namespace
 constexpr auto LOGISTICS_SKILL = "new-horizons:logistics";
 constexpr auto PATHFINDING_PERK = "new-horizons:logistics.pathfinding";
 constexpr auto SCOUTING_PERK = "new-horizons:logistics.scouting";
+constexpr auto NAVIGATION_PERK = "new-horizons:logistics.navigation";
 constexpr auto ROADMASTER_PERK = "new-horizons:logistics.roadmaster";
 constexpr auto WAYFARER_PERK = "new-horizons:logistics.wayfarer";
 constexpr auto MOUNTAINEER_PERK = "new-horizons:logistics.mountaineer";
+
+HeroTypeID heroType(const char * id)
+{
+	const int decoded = HeroTypeID::decode(id);
+	if(decoded < 0)
+		throw std::runtime_error(std::string("Missing hero in Logistics movement fixture: ") + id);
+	return HeroTypeID(decoded);
+}
 
 void setPerkStatus(JsonNode & rules, const std::string & perkId, const std::string & status)
 {
@@ -63,6 +75,15 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
+		if(!includeSkillSpecialtyRules)
+		{
+			auto heroRules = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+			heroRules.Struct().erase("skillSpecialties");
+			// Preserve an older exact hero-rules snapshot; do not inherit the
+			// installed module's optional core-specialty conversion.
+			heroRules.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, std::move(heroRules));
+		}
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
 			JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
 
@@ -84,12 +105,12 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(activePerkRules));
 	}
 
-	void startGame()
+	void startGame(const HeroTypeID selectedHeroType = HeroTypeID(16))
 	{
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder.size(36, false).name("NewHorizonsLogisticsMovementPerks")
 			.playerActive(PlayerColor(0))
-			.hero({5, 5, 0}, HeroTypeID(16), PlayerColor(0)) // Mephala; Rampart's native terrain is grass.
+			.hero({5, 5, 0}, selectedHeroType, PlayerColor(0)) // Mephala/Kyrre; Rampart native terrain is grass.
 			.heroGarrison({{CreatureID(0), 1}});
 		startWithMap(std::move(builder));
 		revealMap(PlayerColor(0));
@@ -142,6 +163,16 @@ protected:
 		tile.roadType = road;
 	}
 
+	void addMovementBonus(const bool water, const BonusSource source, const int value,
+		const BonusValueType valueType)
+	{
+		const auto subtype = BonusSubtypeID(water
+			? BonusCustomSubtype::heroMovementSea
+			: BonusCustomSubtype::heroMovementLand);
+		hero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::MOVEMENT,
+			source, value, BonusSourceID(), subtype, valueType));
+	}
+
 	std::optional<int> forecastCost(const int3 & destination)
 	{
 		const int movementBefore = hero->movementPointsRemaining();
@@ -182,6 +213,7 @@ protected:
 		const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()) = std::move(restoredState);
 	}
 
+	bool includeSkillSpecialtyRules = true;
 	JsonNode legacyPerkRules;
 	CGHeroInstance * hero = nullptr;
 	std::unique_ptr<GameHandlerTestServer> server;
@@ -324,4 +356,126 @@ TEST_F(NewHorizonsLogisticsMovementPerksTest, MountaineerRemovesOnlyRoughAndSubt
 		EMovementMode::STANDARD, false, hero->getOwner(), EPathfindingLayer::LAND));
 	EXPECT_EQ(hero->visitablePos(), positionBeforeBlockedMove);
 	EXPECT_EQ(hero->movementPointsRemaining(), movementBeforeBlockedMove);
+}
+
+TEST_F(NewHorizonsLogisticsMovementPerksTest, CurrentDailyMovementBreakdownMatchesLiveLandAndSeaComponentsAndBounds)
+{
+	startGame();
+	EXPECT_FALSE(newHorizonsMovement::currentDailyMovementBreakdown(nullptr, false).has_value());
+
+	const auto initialLand = newHorizonsMovement::currentDailyMovementBreakdown(hero, false);
+	const auto initialSea = newHorizonsMovement::currentDailyMovementBreakdown(hero, true);
+	ASSERT_TRUE(initialLand.has_value());
+	ASSERT_TRUE(initialSea.has_value());
+	EXPECT_EQ(initialLand->limit, 200);
+	EXPECT_EQ(initialSea->limit, 200);
+	EXPECT_EQ(initialLand->percentageToBase, 0);
+	EXPECT_EQ(initialSea->percentageToBase, 0);
+
+	// Attach ordinary bonuses to the real hero to exercise every displayed
+	// component, source-percentage modification, and the live minimum/maximum.
+	addMovementBonus(false, BonusSource::ARTIFACT, 10, BonusValueType::PERCENT_TO_SOURCE);
+	addMovementBonus(false, BonusSource::ARTIFACT, 10, BonusValueType::BASE_NUMBER);
+	addMovementBonus(false, BonusSource::ARTIFACT, 20, BonusValueType::PERCENT_TO_BASE);
+	addMovementBonus(false, BonusSource::SPELL_EFFECT, 5, BonusValueType::ADDITIVE_VALUE);
+	addMovementBonus(false, BonusSource::SPELL_EFFECT, 5, BonusValueType::PERCENT_TO_ALL);
+	addMovementBonus(false, BonusSource::OTHER, 300, BonusValueType::INDEPENDENT_MAX);
+	addMovementBonus(false, BonusSource::OTHER, 320, BonusValueType::INDEPENDENT_MIN);
+
+	addMovementBonus(true, BonusSource::OTHER, 20, BonusValueType::BASE_NUMBER);
+	addMovementBonus(true, BonusSource::OTHER, 10, BonusValueType::PERCENT_TO_BASE);
+	addMovementBonus(true, BonusSource::SPELL_EFFECT, 8, BonusValueType::ADDITIVE_VALUE);
+	addMovementBonus(true, BonusSource::SPELL_EFFECT, 5, BonusValueType::PERCENT_TO_ALL);
+	addMovementBonus(true, BonusSource::OTHER, 250, BonusValueType::INDEPENDENT_MAX);
+	addMovementBonus(true, BonusSource::OTHER, 260, BonusValueType::INDEPENDENT_MIN);
+
+	const auto land = newHorizonsMovement::currentDailyMovementBreakdown(hero, false);
+	const auto sea = newHorizonsMovement::currentDailyMovementBreakdown(hero, true);
+	ASSERT_TRUE(land.has_value());
+	ASSERT_TRUE(sea.has_value());
+	EXPECT_EQ(land->baseAdjustment, 11); // Artifact source +10% modifies its +10 base value.
+	EXPECT_EQ(land->percentageToBase, 22);
+	EXPECT_EQ(land->flat, 5);
+	EXPECT_EQ(land->percentageToAll, 5);
+	ASSERT_TRUE(land->lowerBound.has_value());
+	ASSERT_TRUE(land->upperBound.has_value());
+	EXPECT_EQ(*land->lowerBound, 300);
+	EXPECT_EQ(*land->upperBound, 320);
+	EXPECT_EQ(land->limit, 300); // Unbounded result 275 is raised by the minimum.
+
+	EXPECT_EQ(sea->baseAdjustment, 20);
+	EXPECT_EQ(sea->percentageToBase, 10);
+	EXPECT_EQ(sea->flat, 8);
+	EXPECT_EQ(sea->percentageToAll, 5);
+	ASSERT_TRUE(sea->lowerBound.has_value());
+	ASSERT_TRUE(sea->upperBound.has_value());
+	EXPECT_EQ(*sea->lowerBound, 250);
+	EXPECT_EQ(*sea->upperBound, 260);
+	EXPECT_EQ(sea->limit, 260); // Unbounded result 262 is capped by the maximum.
+
+	TurnInfoCache movementCache(hero);
+	const TurnInfo liveMovement(&movementCache, hero, 0);
+	EXPECT_EQ(liveMovement.getMovePointsLimitLand(), land->limit);
+	EXPECT_EQ(liveMovement.getMovePointsLimitWater(), sea->limit);
+	EXPECT_EQ(hero->movementPointsLimit(), land->limit);
+}
+
+TEST_F(NewHorizonsLogisticsMovementPerksTest, CurrentDailyMovementBreakdownIncludesCoreLogisticsSpecialtyAndNavigation)
+{
+	startGame(heroType("core:kyrre"));
+	// TinyMap hero placement does not apply Kyrre's authored starting skills;
+	// install her Basic New Horizons Logistics through the game handler, as in
+	// the dedicated skill-specialty fixture.
+	handler->changeSecSkill(hero, logisticsSkill(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	const SecondarySkill coreLogistics(SecondarySkill::LOGISTICS);
+	EXPECT_EQ(hero->getSkillSpecialtyCoreBonusPercent(coreLogistics), 20);
+
+	const auto initialLand = newHorizonsMovement::currentDailyMovementBreakdown(hero, false);
+	const auto initialSea = newHorizonsMovement::currentDailyMovementBreakdown(hero, true);
+	ASSERT_TRUE(initialLand.has_value());
+	ASSERT_TRUE(initialSea.has_value());
+	EXPECT_EQ(initialLand->percentageToBase, 12); // Core Logistics 10% receives the supported +20% specialty.
+	EXPECT_EQ(initialSea->percentageToBase, 12);
+	EXPECT_EQ(initialLand->limit, 224);
+	EXPECT_EQ(initialSea->limit, 224);
+
+	ASSERT_TRUE(chooseOfferedPerk(NAVIGATION_PERK));
+	ASSERT_TRUE(hero->hasActivePerk(LOGISTICS_SKILL, NAVIGATION_PERK));
+	const auto land = newHorizonsMovement::currentDailyMovementBreakdown(hero, false);
+	const auto sea = newHorizonsMovement::currentDailyMovementBreakdown(hero, true);
+	ASSERT_TRUE(land.has_value());
+	ASSERT_TRUE(sea.has_value());
+	EXPECT_EQ(land->percentageToBase, 12);
+	EXPECT_EQ(land->limit, 224);
+	EXPECT_EQ(sea->percentageToBase, 37); // Navigation is added only to the sea percentage-to-base stage.
+	EXPECT_EQ(sea->limit, 274);
+
+	TurnInfoCache movementCache(hero);
+	const TurnInfo liveMovement(&movementCache, hero, 0);
+	EXPECT_EQ(liveMovement.getMovePointsLimitLand(), land->limit);
+	EXPECT_EQ(liveMovement.getMovePointsLimitWater(), sea->limit);
+}
+
+TEST_F(NewHorizonsLogisticsMovementPerksTest, CurrentDailyMovementBreakdownKeepsLegacySpecialtyAndNullGuards)
+{
+	includeSkillSpecialtyRules = false;
+	startGame(heroType("core:kyrre"));
+	handler->changeSecSkill(hero, logisticsSkill(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	const SecondarySkill coreLogistics(SecondarySkill::LOGISTICS);
+	EXPECT_EQ(hero->getSkillSpecialtyCoreBonusPercent(coreLogistics), 0);
+
+	const auto legacyLand = newHorizonsMovement::currentDailyMovementBreakdown(hero, false);
+	const auto legacySea = newHorizonsMovement::currentDailyMovementBreakdown(hero, true);
+	ASSERT_TRUE(legacyLand.has_value());
+	ASSERT_TRUE(legacySea.has_value());
+	EXPECT_EQ(legacyLand->percentageToBase, 10); // The preserved legacy target-type alias rounds down at Kyrre's starting level.
+	EXPECT_EQ(legacySea->percentageToBase, 10);
+	EXPECT_EQ(legacyLand->limit, 220);
+	EXPECT_EQ(legacySea->limit, 220);
+	EXPECT_FALSE(newHorizonsMovement::currentDailyMovementBreakdown(nullptr, false).has_value());
+
+	TurnInfoCache movementCache(hero);
+	const TurnInfo liveMovement(&movementCache, hero, 0);
+	EXPECT_EQ(liveMovement.getMovePointsLimitLand(), legacyLand->limit);
+	EXPECT_EQ(liveMovement.getMovePointsLimitWater(), legacySea->limit);
 }

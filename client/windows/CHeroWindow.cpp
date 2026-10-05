@@ -48,6 +48,8 @@
 #include "../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/networkPacks/ArtifactLocation.h"
+#include "../../lib/pathfinder/NewHorizonsMovement.h"
+#include "../../lib/pathfinder/TurnInfo.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 
 namespace
@@ -860,7 +862,47 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 				+ " aggregate creatures. Display icon is illustrative.";
 		movementValue->setText(std::to_string(curHero->movementPointsRemaining()) + "/" + std::to_string(curHero->movementPointsLimit()));
 		movementArea->text = "Movement points remaining / current limit: " + std::to_string(curHero->movementPointsRemaining())
-			+ " / " + std::to_string(curHero->movementPointsLimit()) + ". Display icon is illustrative.";
+			+ " / " + std::to_string(curHero->movementPointsLimit()) + ".";
+		const auto landMovement = newHorizonsMovement::currentDailyMovementBreakdown(curHero, false);
+		const auto seaMovement = newHorizonsMovement::currentDailyMovementBreakdown(curHero, true);
+		if(landMovement && seaMovement)
+		{
+			const auto signedValue = [](const std::int64_t value)
+			{
+				return value > 0 ? "+" + std::to_string(value) : std::to_string(value);
+			};
+			const auto appendLimitBreakdown = [&signedValue, this](const char * label,
+				const newHorizonsMovement::DailyMovementBreakdown & breakdown)
+			{
+				movementArea->text += "\n" + std::string(label) + " maximum: " + std::to_string(breakdown.limit)
+					+ ". Inputs in order (including Logistics and other active bonuses): 200 base; base adjustment " + signedValue(breakdown.baseAdjustment)
+					+ "; " + signedValue(breakdown.percentageToBase) + "% to base; flat " + signedValue(breakdown.flat)
+					+ "; " + signedValue(breakdown.percentageToAll) + "% to all.";
+				if(breakdown.lowerBound)
+					movementArea->text += " Minimum bound: " + std::to_string(*breakdown.lowerBound) + ".";
+				if(breakdown.upperBound)
+					movementArea->text += " Maximum bound: " + std::to_string(*breakdown.upperBound) + ".";
+			};
+
+			appendLimitBreakdown("Land", *landMovement);
+			appendLimitBreakdown("Sea", *seaMovement);
+			if(curHero->hasActivePerk("new-horizons:logistics", "new-horizons:logistics.navigation"))
+				movementArea->text += "\nSea includes Navigation's +25% in its percent-to-base total.";
+
+			const auto turnInfo = curHero->getTurnInfo(0);
+			movementArea->text += "\nSteps: 10 orthogonal / 14 diagonal; final tile cost rounds up after modifiers.";
+			movementArea->text += "\nTerrain: x1.40 non-native, x1.80 Desert, x1.00 native. Native means the hero or entire army qualifies; one native stack alone does not suffice.";
+			if(turnInfo->hasNewHorizonsPathfinding())
+				movementArea->text += " Active Pathfinding halves only the terrain surcharge.";
+			if(turnInfo->hasNewHorizonsWayfarer())
+				movementArea->text += " Active Wayfarer caps the terrain multiplier at x1.25 after Pathfinding.";
+			movementArea->text += "\nRoad: x0.67.";
+			if(turnInfo->hasNewHorizonsRoadmaster())
+				movementArea->text += " Active Roadmaster further multiplies road cost by x0.75.";
+			movementArea->text += "\nSpecial travel: Water Walk/Fly steps use x1.50. Creature Speed is not a Movement modifier.";
+		}
+		else
+			movementArea->text += " Display icon is illustrative.";
 		const auto siege = curHero->getSiegeCapabilities();
 		legacySiegeValue->setText(siege ? std::to_string(siege->siegeRating) : "--");
 		legacySiegeArea->text = "Siege rating used by Ballista, Catapult, First Aid Tent and defensive tower formulas. It is not spent.\n";

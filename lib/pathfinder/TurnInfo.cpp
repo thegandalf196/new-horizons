@@ -263,6 +263,42 @@ int applyNewHorizonsMovementBounds(const int movement, const NewHorizonsMovement
 }
 }
 
+std::optional<newHorizonsMovement::DailyMovementBreakdown>
+newHorizonsMovement::currentDailyMovementBreakdown(const CGHeroInstance * hero, const bool water)
+{
+	if(!hero || !hero->usesNewHorizonsMovement())
+		return std::nullopt;
+
+	static const CSelector landSelector = Selector::typeSubtype(BonusType::MOVEMENT, BonusCustomSubtype::heroMovementLand);
+	static const CSelector waterSelector = Selector::typeSubtype(BonusType::MOVEMENT, BonusCustomSubtype::heroMovementSea);
+
+	const auto landBonuses = hero->getBonuses(landSelector);
+	const auto waterBonuses = newHorizonsWaterBonuses(landBonuses, hero->getBonuses(waterSelector));
+	const auto & selectedBonuses = water ? waterBonuses : landBonuses;
+	auto modifiers = getNewHorizonsMovementModifiers(selectedBonuses, Selector::days(0), hero);
+
+	// Navigation is an explicit sea-capacity modifier rather than an ordinary
+	// movement bonus. Keep this in the same stage as TurnInfo's live calculation.
+	if(water && hero->hasActivePerk("new-horizons:logistics", "new-horizons:logistics.navigation"))
+		modifiers.percentageToBase = saturatingAdd(modifiers.percentageToBase, 25);
+
+	const int unboundedMovement = newHorizonsMovement::maximumDailyMovement(
+		saturatingAdd(newHorizonsMovement::BASE_DAILY_MOVEMENT, modifiers.base),
+		modifiers.percentageToBase, modifiers.percentageToAll, modifiers.additive);
+
+	newHorizonsMovement::DailyMovementBreakdown result;
+	result.baseAdjustment = modifiers.base;
+	result.percentageToBase = modifiers.percentageToBase;
+	result.percentageToAll = modifiers.percentageToAll;
+	result.flat = modifiers.additive;
+	// BonusList uses INDEPENDENT_MAX as a lower bound and INDEPENDENT_MIN as
+	// an upper bound; expose those meanings rather than their enum names.
+	result.lowerBound = modifiers.independentMax;
+	result.upperBound = modifiers.independentMin;
+	result.limit = applyNewHorizonsMovementBounds(unboundedMovement, modifiers);
+	return result;
+}
+
 TConstBonusListPtr TurnInfoBonusList::getBonusList(const CGHeroInstance * target, const CSelector & bonusSelector)
 {
 	std::lock_guard guard(bonusListMutex);

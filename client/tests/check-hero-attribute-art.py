@@ -33,6 +33,12 @@ def main() -> None:
     require(HERO, 'Rect(152, 88, 140, 44)', "Leadership tooltip area dimensions")
     require(HERO, 'Rect(152, 132, 140, 44)', "Movement tooltip area dimensions")
     require(HERO, '"Movement points remaining / current limit: "', "Movement tooltip readout")
+    require(HERO, "currentDailyMovementBreakdown(curHero, false)", "shared land Movement breakdown")
+    require(HERO, "currentDailyMovementBreakdown(curHero, true)", "shared sea Movement breakdown")
+    for text in ("200 base", "percentageToBase", "percentageToAll", "breakdown.flat",
+                 "x1.40 non-native", "x1.80 Desert", "Road: x0.67",
+                 "Water Walk/Fly steps use x1.50", "Creature Speed is not a Movement modifier"):
+        require(HERO, text, "Movement tooltip rule breakdown")
     require(GROWTH, '"NH_hero_movement_painted_32"', "hero-development Movement binding")
     if '"NH_hero_movement_32"' in HERO or '"NH_hero_movement_32"' in GROWTH:
         raise AssertionError("hero attribute surfaces must use the replacement Movement art")

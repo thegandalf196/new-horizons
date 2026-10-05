@@ -12,12 +12,34 @@
 #include "../GameConstants.h"
 
 #include <cstdint>
+#include <optional>
+
+class CGHeroInstance;
 
 namespace newHorizonsMovement
 {
 constexpr int BASE_DAILY_MOVEMENT = 200;
 constexpr int ORTHOGONAL_STEP_COST = 10;
 constexpr int DIAGONAL_STEP_COST = 14;
+
+/// Read-only details for the current New Horizons daily Movement limit.
+/// Bounds preserve BonusList semantics: lowerBound comes from INDEPENDENT_MAX,
+/// while upperBound comes from INDEPENDENT_MIN.
+struct DLL_LINKAGE DailyMovementBreakdown
+{
+	std::int64_t baseAdjustment = 0;
+	std::int64_t percentageToBase = 0;
+	std::int64_t percentageToAll = 0;
+	std::int64_t flat = 0;
+	std::optional<std::int64_t> lowerBound;
+	std::optional<std::int64_t> upperBound;
+	int limit = 0;
+};
+
+/// Builds the current-day land or sea limit breakdown from the hero's active
+/// Movement bonuses. Legacy Movement rules do not have this breakdown.
+DLL_LINKAGE std::optional<DailyMovementBreakdown> currentDailyMovementBreakdown(
+	const CGHeroInstance * hero, bool water);
 
 /// Applies a percentage-to-base modifier and then a flat modifier to the
 /// canonical daily movement pool. The percentage operation is deliberately
