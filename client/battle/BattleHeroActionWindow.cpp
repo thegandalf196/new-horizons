@@ -55,6 +55,39 @@ const CommandDisplay & commandDisplay(HeroCommand command)
 	return commandDisplays.front();
 }
 
+std::string orderAllowanceSourceName(HeroActionAllowanceState::GrantSource source)
+{
+	switch(source)
+	{
+		case HeroActionAllowanceState::GrantSource::ROUND: return {};
+		case HeroActionAllowanceState::GrantSource::METAMAGIC: return "Metamagic";
+		case HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND: return "Grand Metamagic";
+		case HeroActionAllowanceState::GrantSource::PERK: return "Perk";
+		case HeroActionAllowanceState::GrantSource::ARTIFACT: return "Artifact";
+		case HeroActionAllowanceState::GrantSource::OTHER: return "Special ability";
+		case HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND: return "Double Command";
+		case HeroActionAllowanceState::GrantSource::BATTLE_PLAN: return "Battle Plan";
+		case HeroActionAllowanceState::GrantSource::DIVINE_MANDATE: return "Divine Mandate";
+	}
+	return "Additional ability";
+}
+
+std::string orderActionOpportunityText(const HeroActionAllowanceState::Selection & selection)
+{
+	const auto source = orderAllowanceSourceName(selection.source);
+	if(source.empty())
+		return {};
+
+	if(selection.source == HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND)
+		return "Double Command Order follow-up: choose a different Order now; expires in round "
+			+ std::to_string(selection.expiryRound) + ".";
+	if(selection.source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE)
+		return "Divine Mandate Order follow-up available through the end of round "
+			+ std::to_string(selection.expiryRound) + ".";
+	return source + " Order opportunity available through the end of round "
+		+ std::to_string(selection.expiryRound) + ".";
+}
+
 std::vector<CommandDisplay> visibleCommandDisplays(const JsonNode * rules)
 {
 	std::vector<CommandDisplay> result;
@@ -394,22 +427,14 @@ void BattleHeroActionWindow::refresh()
 	const bool pendingDivineMandateSpell = divineMandateFollowup
 		&& divineMandateFollowup->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
 		&& divineMandateFollowup->allowance == HeroActionAllowanceState::AllowanceKind::SPELL;
-	std::string divineMandateContext;
-	const auto mandateRound = callback->battleGetRound();
-	std::optional<HeroActionAllowanceState::Selection> orderSelection;
-	if(callback->battleUsesHeroCommands() && mandateRound >= 0)
-	{
-		const auto & allowanceLedger = callback->getBattle()->getHeroActionAllowances(side);
-		if(allowanceLedger.currentRound == mandateRound)
-			orderSelection = allowanceLedger.eligibleAllowance(HeroActionAllowanceState::ActionKind::ORDER, mandateRound);
-	}
-	if(orderSelection && orderSelection->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE)
-	{
-		divineMandateContext = "Divine Mandate Order follow-up available through the end of round "
-			+ std::to_string(orderSelection->expiryRound) + ".";
-	}
-	else if(pendingDivineMandateSpell && !orderSelection)
-		divineMandateContext = "Divine Mandate Light Spell follow-up available through the end of round "
+	std::string actionOpportunityContext;
+	const auto orderSelection = callback->battleUsesHeroCommands()
+		? callback->battleGetOrderActionAllowance(side)
+		: std::optional<HeroActionAllowanceState::Selection>{};
+	if(orderSelection)
+		actionOpportunityContext = orderActionOpportunityText(*orderSelection);
+	else if(pendingDivineMandateSpell)
+		actionOpportunityContext = "Divine Mandate Light Spell follow-up available through the end of round "
 			+ std::to_string(divineMandateFollowup->expiryRound) + ".";
 	const bool canAct = owner->makingTurn() && !owner->curInt->isAutoFightOn && !owner->isInTacticsMode() && !owner->actionsController->heroSpellcastingModeActive();
 	const auto * hero = owner->currentHero();
@@ -425,6 +450,10 @@ void BattleHeroActionWindow::refresh()
 		&& (spellProblem == ESpellCastProblem::OK || spellProblem == ESpellCastProblem::CASTS_PER_TURN_LIMIT);
 	if(spellButton)
 		spellButton->block(!canAct || !canSpell);
+	const auto actionCounts = callback->battleUsesHeroCommands()
+		? callback->battleHeroActionAllowanceCounts(side)
+		: HeroActionAllowanceState::Counts{};
+	const bool normalHeroActionAvailable = callback->battleUsesHeroCommands() && actionCounts.heroActions > 0;
 	bool anyCommand = false;
 	const auto orderBudgetSpent = [&]
 	{
@@ -453,9 +482,8 @@ void BattleHeroActionWindow::refresh()
 			return std::string("It is not your turn.");
 		if(orderBudgetSpent())
 		{
-			if(pendingDivineMandateSpell)
-				return std::string("A Divine Mandate Light Spell follow-up is available through the end of round ")
-					+ std::to_string(divineMandateFollowup->expiryRound) + ".";
+			if(!actionOpportunityContext.empty())
+				return actionOpportunityContext;
 			return std::string("No Hero or Order action is available.");
 		}
 		return std::string();
@@ -497,7 +525,7 @@ void BattleHeroActionWindow::refresh()
 		entry.second->setHelp(CButton::tooltip(display.name,
 			std::string(display.description) + (reason.empty() ? "\n\nReady: choose this Order." : "\n\nDisabled: " + reason)
 			+ combinedArmsHelp(rules, entry.first, hero)
-			+ (divineMandateContext.empty() ? "" : "\n\n" + divineMandateContext)
+			+ (actionOpportunityContext.empty() ? "" : "\n\n" + actionOpportunityContext)
 			+ "\nSpends an available Hero or Order action; no mana."));
 		if(protectPairUnavailable)
 			entry.second->setBorderColor(Colors::ORANGE);
@@ -569,8 +597,8 @@ void BattleHeroActionWindow::refresh()
 		if(targetReadback->getText() != readback)
 			targetReadback->setText(readback);
 	}
-	std::string availability = (anyCommand || (canAct && canSpell))
-		? "Hero action available" : "Hero action spent or unavailable";
+	std::string availability = normalHeroActionAvailable
+		? "Normal Hero Action available" : "Normal Hero Action spent";
 	if(ordersOnly)
 	{
 		// These are observed UI phases and authoritative shared-budget fields,
@@ -592,11 +620,14 @@ void BattleHeroActionWindow::refresh()
 		else
 			availability = anyCommand ? "Order available" : "No Order currently available";
 	}
-	setStateText(pendingPreCombatOrder
+	std::string stateText = pendingPreCombatOrder
 		? "Battle Plan: choose a free opening Order now"
 		: pendingDoubleCommand
 		? "Double Command: choose a different Order now"
-		: "Order: " + HeroCommandUI::name(order) + " | " + availability);
+		: "Order: " + HeroCommandUI::name(order) + " | " + availability;
+	if(!actionOpportunityContext.empty())
+		stateText += " | " + actionOpportunityContext;
+	setStateText(stateText);
 }
 
 void BattleHeroActionWindow::chooseTargetedCommand(HeroCommand command)

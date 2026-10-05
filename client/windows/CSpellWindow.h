@@ -144,7 +144,7 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 	void computeSpellsPerArea(); //recalculates spellAreas::mySpell
 	bool canUseSpellForCurrentDivineMandateFollowup(SpellID spell) const;
 	std::string currentDivineMandateFollowupText() const;
-	std::string divineMandateSpellFollowupText(SpellID spell) const;
+	std::string spellActionOpportunityText(SpellID spell) const;
 
 	void setSchoolImages(SpellSchool school);
 

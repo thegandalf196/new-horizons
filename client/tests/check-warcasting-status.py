@@ -31,20 +31,24 @@ assert '" Available through round "' in window
 assert '" (inclusive)."' in window
 assert 'entries.push_back({warcastingIconName(action), actionName, amount, tooltip});' in window
 
-# Generic entries retain their own row above the separate three-line action area.
+# Generic entries retain their own rows above one compact normal Hero Action state.
 assert "constexpr int effectAreaWidth = 70;" in layout
 assert "constexpr int effectAreaRowHeight = 32;" in layout
-assert "constexpr int actionCountLineHeight = 14;" in layout
-assert "constexpr int actionCountHeaderHeight = 18;" in layout
-assert "constexpr int actionCountPanelPadding = 6;" in layout
-assert "constexpr int actionCountPanelHeight = actionCountHeaderHeight + actionCountLineHeight * 3 + actionCountPanelPadding;" in layout
+assert "constexpr int heroActionStateLineHeight = 14;" in layout
+assert "constexpr int heroActionStateHeaderHeight = 18;" in layout
+assert "constexpr int heroActionStatePanelPadding = 6;" in layout
+assert "constexpr int heroActionStatePanelHeight = heroActionStateHeaderHeight" in layout
+assert "\t+ heroActionStateLineHeight + heroActionStatePanelPadding;" in layout
 assert 'ImagePath::builtin("DIBOXBCK")' in status
 assert "ColorRGBA(145, 18, 12), 2" in status
 assert "ColorRGBA(213, 185, 117)" in status
-assert 'addCount(0, "Hero", actionCounts.heroActions);' in status
-assert 'addCount(1, "Order", actionCounts.orderActions);' in status
-assert 'addCount(2, "Spell", actionCounts.spellActions);' in status
-assert "ETextAlignment::BOTTOMRIGHT, count > 0" in status
+assert '"Hero Action"' in status
+assert '"Available"' in status
+assert '"Spent"' in status
+assert "normalHeroActionAvailable" in status
+assert "Additional Spell-only and Order-only opportunities are shown with their source and expiry" in status
+for obsolete in ("actionCounts.orderActions", "actionCounts.spellActions", "Hero / Order / Spell Actions:", "addCount("):
+    assert obsolete not in status, f"independent action counter presentation remains: {obsolete}"
 assert "struct CombatStatusEntry" in layout
 assert "std::vector<CombatStatusEntry> statusEntries;" in layout
 assert "for(size_t row = 0; row < statusEntries.size(); ++row)" in status
@@ -57,8 +61,8 @@ assert "warcastingState" not in status
 assert "effectAreaMaxStatusRows" not in layout
 assert "effectAreaHeight" not in layout
 assert "outsideStackPanelOffsetY" not in layout
-assert "(showActionCounts ? HeroInfoPanelLayout::actionCountPanelHeight : 0)" in status
-assert "const int countsTop = statusRows * HeroInfoPanelLayout::effectAreaRowHeight;" in status
+assert "(showNormalHeroAction ? HeroInfoPanelLayout::heroActionStatePanelHeight : 0)" in status
+assert "const int stateTop = statusRows * HeroInfoPanelLayout::effectAreaRowHeight;" in status
 assert "ENGINE->windows().totalRedraw();" in status
 assert 'ENGINE->statusbar()->clearIfMatching(statusbarText);' in status
 
@@ -72,4 +76,4 @@ assert "heroBattleStatusHeight(BattleSide::DEFENDER)" in outside_layout
 assert "stackPanelBottom <= ENGINE->screenDimensions().y" in outside_layout
 assert "return false;" in outside_layout
 
-print("PASS: Warcasting art is rank-neutral, generic statuses size dynamically, action counts stay separate, and short-screen layout falls back")
+print("PASS: Warcasting art is rank-neutral, generic statuses size dynamically, the normal Hero Action is contextual, and short-screen layout falls back")

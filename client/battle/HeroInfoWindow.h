@@ -12,7 +12,6 @@
 #include "../windows/CWindowObject.h"
 
 #include "BattleSidePanel.h"
-#include "../../lib/battle/HeroActionAllowanceState.h"
 
 class CLabel;
 class CAnimImage;
@@ -35,10 +34,11 @@ constexpr int effectAreaLeft = 4;
 constexpr int effectAreaTop = 204;
 constexpr int effectAreaWidth = 70;
 constexpr int effectAreaRowHeight = 32;
-constexpr int actionCountLineHeight = 14;
-constexpr int actionCountHeaderHeight = 18;
-constexpr int actionCountPanelPadding = 6;
-constexpr int actionCountPanelHeight = actionCountHeaderHeight + actionCountLineHeight * 3 + actionCountPanelPadding;
+constexpr int heroActionStateLineHeight = 14;
+constexpr int heroActionStateHeaderHeight = 18;
+constexpr int heroActionStatePanelPadding = 6;
+constexpr int heroActionStatePanelHeight = heroActionStateHeaderHeight
+	+ heroActionStateLineHeight + heroActionStatePanelPadding;
 constexpr int effectAreaIconSize = 16;
 constexpr int spellPointsLabelY = 174;
 constexpr int spellPointsValueY = 186;
@@ -66,8 +66,8 @@ class HeroBattleStatusArea : public CIntObject
 	std::vector<std::shared_ptr<CLabel>> labels;
 	std::vector<CombatStatusEntry> statusEntries;
 	bool hasVisibleStatus = false;
-	HeroActionAllowanceState::Counts actionCounts;
-	bool showActionCounts = false;
+	bool normalHeroActionAvailable = false;
+	bool showNormalHeroAction = false;
 	std::string statusbarText;
 	std::string helpText;
 	bool renderDuringShow = true;
@@ -78,7 +78,7 @@ class HeroBattleStatusArea : public CIntObject
 public:
 	HeroBattleStatusArea(const Point & position);
 	void setStatus(const std::vector<CombatStatusEntry> & entries,
-		const HeroActionAllowanceState::Counts & actionCounts, bool showActionCounts);
+		bool normalHeroActionAvailable, bool showNormalHeroAction);
 	int statusHeight() const;
 	void setRenderDuringShow(bool value);
 	void hover(bool on) override;
@@ -104,7 +104,7 @@ public:
 	void initializeData(const InfoAboutHero & hero);
 	void update(const InfoAboutHero & updatedInfo);
 	void setBattleStatus(const std::vector<CombatStatusEntry> & entries,
-		const HeroActionAllowanceState::Counts & actionCounts, bool showActionCounts);
+		bool normalHeroActionAvailable, bool showNormalHeroAction);
 	int battleStatusHeight() const;
 	void setBattleStatusRenderDuringShow(bool value);
 };

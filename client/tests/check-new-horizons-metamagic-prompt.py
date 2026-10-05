@@ -122,14 +122,17 @@ close_book = spellbook.split("void CSpellWindow::closeSpellbook()", 1)[1].split(
 assert "battleMakeSpellAction" not in close_book
 assert "closeSpellbook(bool" not in (ROOT / "client/windows/CSpellWindow.h").read_text(encoding="utf-8")
 
-# The compact sidebar consumes the same authoritative, current-round counts as
-# command validation, and only appears for sides with a real hero in NH rules.
+# The compact sidebar consumes the authoritative normal Hero Action state and
+# provider statuses; typed extra Spell/Order allowances stay in their controls.
 refresh = window.split("void BattleWindow::refreshHeroBattleStatus", 1)[1].split(
     "void BattleWindow::updateCounterspellStatus", 1
 )[0]
 assert "battleCallback->battleUsesHeroCommands()" in refresh
 assert "battle->getSideHero(side) != nullptr" in refresh
 assert "battleHeroActionAllowanceCounts(side)" in refresh
+assert "actionCounts.heroActions > 0" in refresh
+assert "panel->setBattleStatus(entries, normalHeroActionAvailable, showNormalHeroAction);" in refresh
+assert "statusArea->setStatus(entries, normalHeroActionAvailable, showNormalHeroAction);" in refresh
 assert "battleCallback->battleGetFightingHero(side)" in refresh
 assert "skill->getCombatStatusProvider() == CSkill::CombatStatusProvider::NONE" in refresh
 assert "!skill ||" in refresh
@@ -154,13 +157,36 @@ assert "skill->at(std::clamp(skillRank, 1, 3)).iconSmall" in refresh
 assert "skill->getNameTranslated()" in refresh
 assert "skill->getCombatStatusDescriptionTranslated()" in refresh
 assert "std::vector<CombatStatusEntry> entries;" in refresh
-assert "panel->setBattleStatus(entries, actionCounts, showActionCounts);" in refresh
-assert "statusArea->setStatus(entries, actionCounts, showActionCounts);" in refresh
-assert 'addCount(0, "Hero", actionCounts.heroActions);' in hero_panel
-assert 'addCount(1, "Order", actionCounts.orderActions);' in hero_panel
-assert 'addCount(2, "Spell", actionCounts.spellActions);' in hero_panel
-assert "Hero Actions can cast a spell OR issue an Order." in hero_panel
-assert "Spell Actions can only cast spells; Order Actions can only issue Orders." in hero_panel
+assert '"Hero Action"' in hero_panel
+assert '"Available"' in hero_panel
+assert '"Spent"' in hero_panel
+assert '"Normal Hero Action: "' in hero_panel
+assert "Additional Spell-only and Order-only opportunities are shown with their source and expiry" in hero_panel
+for obsolete in ("actionCounts.orderActions", "actionCounts.spellActions", "Hero / Order / Spell Actions:", "addCount("):
+    assert obsolete not in hero_panel, f"independent action counter presentation remains: {obsolete}"
+
+# A pending Metamagic grant is identified at the ordinary spell control using
+# the selected typed allowance, including its source and inclusive expiry.
+assert "battleCallback->battleGetSpellActionAllowance(side, spell)" in spellbook
+assert "spellActionOpportunityText(mySpell->id)" in spellbook
+assert "GrantSource::METAMAGIC: return \"Metamagic\";" in spellbook
+assert "GrantSource::METAMAGIC_GRAND: return \"Grand Metamagic\";" in spellbook
+assert 'return source + opportunity + " available through the end of round "' in spellbook
+assert '" Light Spell follow-up"' in spellbook
+assert "selection->expiryRound" in spellbook
+assert "currentDivineMandateFollowupText()" in spellbook
+
+# The Orders chooser asks the candidate-aware callback for the selected grant,
+# preserving Divine Mandate while also labeling Double Command and other sources.
+orders_window = (ROOT / "client/battle/BattleHeroActionWindow.cpp").read_text(encoding="utf-8")
+assert "callback->battleGetOrderActionAllowance(side)" in orders_window
+assert "orderActionOpportunityText(*orderSelection)" in orders_window
+assert "GrantSource::DOUBLE_COMMAND: return \"Double Command\";" in orders_window
+assert "selection.expiryRound" in orders_window
+assert "actionOpportunityContext" in orders_window
+assert "callback->battleHeroActionAllowanceCounts(side)" in orders_window
+assert '"Normal Hero Action available"' in orders_window
+assert '"Normal Hero Action spent"' in orders_window
 
 # If the larger outside column will not fit vertically, existing compact
 # overlay placement is retained instead of cropping the active-stack panel.
@@ -172,11 +198,18 @@ assert "heroBattleStatusHeight(BattleSide::DEFENDER)" in outside_layout
 assert "outsideStackInfoPanelExtent" in outside_layout
 assert "stackPanelBottom <= ENGINE->screenDimensions().y" in outside_layout
 
-# The status renderer is generic and resource/action rows remain distinct.
+# The status renderer retains generic resource rows and uses one compact
+# two-line normal Hero Action state in place of separate typed counters.
 assert "struct CombatStatusEntry" in hero_panel_h
 assert "std::vector<CombatStatusEntry> statusEntries;" in hero_panel_h
 assert "const int statusRows = static_cast<int>(statusEntries.size());" in hero_panel
-assert "const int countsTop = statusRows * HeroInfoPanelLayout::effectAreaRowHeight;" in hero_panel
+assert "const int stateTop = statusRows * HeroInfoPanelLayout::effectAreaRowHeight;" in hero_panel
+assert "HeroInfoPanelLayout::heroActionStatePanelHeight" in hero_panel
+assert "HeroInfoPanelLayout::heroActionStateHeaderHeight" in hero_panel
+assert "HeroInfoPanelLayout::heroActionStateLineHeight" in hero_panel
+assert "stateTop + 11" in hero_panel
+assert "heroActionStateHeaderHeight" in hero_panel
+assert "heroActionStateLineHeight / 2" in hero_panel
 assert "effectAreaMaxStatusRows" not in hero_panel_h
 assert "outsideStackPanelOffsetY" not in hero_panel_h
 
@@ -214,4 +247,4 @@ assert "virtual bool isMetamagicFollowup() const" in mechanics_facade
 assert "bool isMetamagicFollowup() const override;" in base_mechanics
 assert 'R.method<&Mechanics::isMetamagicFollowup>("isMetamagicFollowup"' in lua_mechanics
 
-print("PASS: pending Metamagic remains optional, action counts use live NH state, and sidebar geometry falls back safely")
+print("PASS: typed opportunities remain contextual, the normal Hero Action is singular, and sidebar geometry falls back safely")

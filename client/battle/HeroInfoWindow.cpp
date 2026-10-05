@@ -32,9 +32,12 @@ static_assert(HeroInfoPanelLayout::effectAreaWidth == 70,
 	"Compact hero battle status entries must retain the existing 70px width");
 static_assert(HeroInfoPanelLayout::effectAreaRowHeight >= HeroInfoPanelLayout::effectAreaIconSize + 2 * 2,
 	"Combat status entries must retain an inset for their optional icons");
-static_assert(HeroInfoPanelLayout::actionCountPanelHeight == HeroInfoPanelLayout::actionCountHeaderHeight
-	+ HeroInfoPanelLayout::actionCountLineHeight * 3 + HeroInfoPanelLayout::actionCountPanelPadding,
-	"Each hero allowance count needs its own readable line");
+static_assert(HeroInfoPanelLayout::heroActionStatePanelHeight == HeroInfoPanelLayout::heroActionStateHeaderHeight
+	+ HeroInfoPanelLayout::heroActionStateLineHeight + HeroInfoPanelLayout::heroActionStatePanelPadding,
+	"Normal Hero Action status must remain a compact two-line state");
+static_assert(HeroInfoPanelLayout::heroActionStateHeaderHeight
+	+ HeroInfoPanelLayout::heroActionStateLineHeight / 2 < HeroInfoPanelLayout::heroActionStatePanelHeight,
+	"Normal Hero Action status text must remain within its panel");
 static_assert(HeroInfoPanelLayout::effectAreaLeft - HeroInfoPanelLayout::backgroundInset >= 3,
 	"Hero effect area must keep a side margin from the portrait frame");
 static_assert(HeroInfoPanelLayout::backgroundInset + HeroInfoPanelLayout::width
@@ -70,9 +73,10 @@ HeroBattleStatusArea::HeroBattleStatusArea(const Point & position)
 }
 
 void HeroBattleStatusArea::setStatus(const std::vector<CombatStatusEntry> & entries,
-	const HeroActionAllowanceState::Counts & actionCounts, bool showActionCounts_)
+	bool normalHeroActionAvailable_, bool showNormalHeroAction_)
 {
-	if(statusEntries == entries && actionCounts == this->actionCounts && showActionCounts == showActionCounts_)
+	if(statusEntries == entries && normalHeroActionAvailable == normalHeroActionAvailable_
+		&& showNormalHeroAction == showNormalHeroAction_)
 		return;
 
 	if(!statusbarText.empty())
@@ -80,8 +84,8 @@ void HeroBattleStatusArea::setStatus(const std::vector<CombatStatusEntry> & entr
 
 	OBJECT_CONSTRUCTION;
 	statusEntries = entries;
-	this->actionCounts = actionCounts;
-	showActionCounts = showActionCounts_;
+	normalHeroActionAvailable = normalHeroActionAvailable_;
+	showNormalHeroAction = showNormalHeroAction_;
 	refreshContents();
 }
 
@@ -118,9 +122,9 @@ void HeroBattleStatusArea::refreshContents()
 	helpText.clear();
 
 	const int statusRows = static_cast<int>(statusEntries.size());
-	hasVisibleStatus = !statusEntries.empty() || showActionCounts;
+	hasVisibleStatus = !statusEntries.empty() || showNormalHeroAction;
 	pos.h = statusRows * HeroInfoPanelLayout::effectAreaRowHeight
-		+ (showActionCounts ? HeroInfoPanelLayout::actionCountPanelHeight : 0);
+		+ (showNormalHeroAction ? HeroInfoPanelLayout::heroActionStatePanelHeight : 0);
 	if(!hasVisibleStatus)
 	{
 		removeUsedEvents(HOVER | SHOW_POPUP);
@@ -168,42 +172,30 @@ void HeroBattleStatusArea::refreshContents()
 		}
 	}
 
-	if(showActionCounts)
+	if(showNormalHeroAction)
 	{
-		const int countsTop = statusRows * HeroInfoPanelLayout::effectAreaRowHeight;
-		addFramedBackground(Rect(0, countsTop,
-			HeroInfoPanelLayout::effectAreaWidth, HeroInfoPanelLayout::actionCountPanelHeight));
+		const int stateTop = statusRows * HeroInfoPanelLayout::effectAreaRowHeight;
+		addFramedBackground(Rect(0, stateTop,
+			HeroInfoPanelLayout::effectAreaWidth, HeroInfoPanelLayout::heroActionStatePanelHeight));
 		labels.push_back(std::make_shared<CLabel>(HeroInfoPanelLayout::effectAreaWidth / 2,
-			countsTop + 11, EFonts::FONT_TINY, ETextAlignment::CENTER, Colors::YELLOW, "Actions"));
-		const auto addCount = [&](int row, const std::string & name, int count)
-		{
-			const int y = countsTop + HeroInfoPanelLayout::actionCountHeaderHeight
-				+ row * HeroInfoPanelLayout::actionCountLineHeight;
-			labels.push_back(std::make_shared<CLabel>(7, y, EFonts::FONT_TINY, ETextAlignment::TOPLEFT,
-				Colors::WHITE, name));
-			labels.push_back(std::make_shared<CLabel>(HeroInfoPanelLayout::effectAreaWidth - 7,
-				y + HeroInfoPanelLayout::actionCountLineHeight - 2, EFonts::FONT_TINY,
-				ETextAlignment::BOTTOMRIGHT, count > 0 ? Colors::YELLOW : Colors::WHITE, std::to_string(count)));
-		};
-		addCount(0, "Hero", actionCounts.heroActions);
-		addCount(1, "Order", actionCounts.orderActions);
-		addCount(2, "Spell", actionCounts.spellActions);
+			stateTop + 11, EFonts::FONT_TINY, ETextAlignment::CENTER, Colors::YELLOW, "Hero Action"));
+		const auto stateText = normalHeroActionAvailable ? "Available" : "Spent";
+		const auto stateColor = normalHeroActionAvailable ? Colors::YELLOW : Colors::WHITE;
+		labels.push_back(std::make_shared<CLabel>(HeroInfoPanelLayout::effectAreaWidth / 2,
+			stateTop + HeroInfoPanelLayout::heroActionStateHeaderHeight
+				+ HeroInfoPanelLayout::heroActionStateLineHeight / 2,
+			EFonts::FONT_TINY, ETextAlignment::CENTER, stateColor, stateText));
 
-		const auto countsHelp = CInfoWindow::genText("Hero Action Allowances",
-			"Hero Actions: " + std::to_string(actionCounts.heroActions)
-			+ "\nOrder Actions: " + std::to_string(actionCounts.orderActions)
-			+ "\nSpell Actions: " + std::to_string(actionCounts.spellActions)
-			+ "\nHero Actions can cast a spell OR issue an Order."
-			+ " Spell Actions can only cast spells; Order Actions can only issue Orders."
-			+ " Metamagic Spell Actions remain available until used or expired, and creature actions do not spend them.");
+		const auto actionHelp = CInfoWindow::genText("Hero Action",
+			std::string("Normal Hero Action: ") + stateText + "."
+			+ " Additional Spell-only and Order-only opportunities are shown with their source and expiry at the ordinary casting and Orders controls.");
 		if(helpText.empty())
-			helpText = countsHelp;
+			helpText = actionHelp;
 		else
-			helpText += "\n\n" + countsHelp;
+			helpText += "\n\n" + actionHelp;
 		if(!statusbarText.empty())
 			statusbarText += "  ";
-		statusbarText += "Hero / Order / Spell Actions: " + std::to_string(actionCounts.heroActions) + " / "
-			+ std::to_string(actionCounts.orderActions) + " / " + std::to_string(actionCounts.spellActions) + ".";
+		statusbarText += std::string("Hero Action: ") + stateText + ".";
 	}
 
 	ENGINE->windows().totalRedraw();
@@ -328,11 +320,11 @@ void HeroInfoBasicPanel::update(const InfoAboutHero & updatedInfo)
 }
 
 void HeroInfoBasicPanel::setBattleStatus(const std::vector<CombatStatusEntry> & entries,
-	const HeroActionAllowanceState::Counts & actionCounts, bool showActionCounts)
+	bool normalHeroActionAvailable, bool showNormalHeroAction)
 {
 	if(!showBattleStatus || !battleStatus)
 		return;
-	battleStatus->setStatus(entries, actionCounts, showActionCounts);
+	battleStatus->setStatus(entries, normalHeroActionAvailable, showNormalHeroAction);
 }
 
 int HeroInfoBasicPanel::battleStatusHeight() const

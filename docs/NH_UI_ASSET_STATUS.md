@@ -2,7 +2,7 @@
 
 Last audited: 2026-10-05
 
-UP004/UP232 canonical feedback correction in progress: retain the existing
+UP004/UP232 canonical feedback source correction verified: retain the existing
 textured leather/red/gold hero-status surface, but replace its historical three
 independent action counters with one normal Hero Action Available/Spent state.
 Typed additional opportunities belong on ordinary Spell/Order controls with
@@ -11,7 +11,9 @@ Arcane Ballistics ranged hover uses the same attack-local penetration query as
 the damage calculation and distinguishes combined PDR from Creature Defense.
 No new raster or art approval is implied. These interactions remain Provisional
 until native-resolution rendered and playable acceptance; focused source/build
-evidence is recorded in the priority queue.
+evidence is recorded in the priority queue. The Linux client builds, focused
+Metamagic/Warcasting/penetration guards pass, and independent review has no
+blocker. Arcane Ballistics additionally passes six focused native cases.
 
 2026-10-05 Perfect Moment source correction verified: canonical automatic first
 eligible +5-Luck attack replaces the obsolete manual checkbox and local armed

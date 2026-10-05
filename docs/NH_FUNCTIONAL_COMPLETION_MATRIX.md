@@ -1,6 +1,13 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-05
+UP-004 canonical hero-action presentation source verified: one normal Hero
+Action Available/Spent state replaces three independent counters; exceptional
+Spell/Order opportunities expose source and expiry through ordinary controls.
+Generic Skill status providers remain unchanged. Linux client build and focused
+Metamagic/Warcasting guards pass; review has no blocker. This is required-UI
+coverage, not a new mechanic/perk identity or rendered acceptance.
+
 UP-232 Arcane Ballistics principal effect verified: three current beneficiary
 Arcane Breach marks and the active perk grant ordinary ranged creature attacks
 25% penetration of combined capped Physical Damage Reduction. Shared simulation,

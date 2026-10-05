@@ -982,19 +982,20 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 		}
 	}
 
-	const bool showActionCounts = battleCallback->battleUsesHeroCommands()
+	const bool showNormalHeroAction = battleCallback->battleUsesHeroCommands()
 		&& battle->getSideHero(side) != nullptr;
-	const auto actionCounts = showActionCounts
+	const auto actionCounts = showNormalHeroAction
 		? battleCallback->battleHeroActionAllowanceCounts(side)
 		: HeroActionAllowanceState::Counts{};
+	const bool normalHeroActionAvailable = showNormalHeroAction && actionCounts.heroActions > 0;
 
 	const auto panel = side == BattleSide::ATTACKER ? attackerHeroWindow : defenderHeroWindow;
 	if(panel)
-		panel->setBattleStatus(entries, actionCounts, showActionCounts);
+		panel->setBattleStatus(entries, normalHeroActionAvailable, showNormalHeroAction);
 
 	const auto statusArea = side == BattleSide::ATTACKER ? attackerHeroStatus : defenderHeroStatus;
 	if(statusArea)
-		statusArea->setStatus(entries, actionCounts, showActionCounts);
+		statusArea->setStatus(entries, normalHeroActionAvailable, showNormalHeroAction);
 }
 
 int BattleWindow::heroBattleStatusHeight(BattleSide side) const

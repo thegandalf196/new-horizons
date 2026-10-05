@@ -55,6 +55,26 @@
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/CSpellHandler.h"
 
+namespace
+{
+std::string spellAllowanceSourceName(HeroActionAllowanceState::GrantSource source)
+{
+	switch(source)
+	{
+		case HeroActionAllowanceState::GrantSource::ROUND: return {};
+		case HeroActionAllowanceState::GrantSource::METAMAGIC: return "Metamagic";
+		case HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND: return "Grand Metamagic";
+		case HeroActionAllowanceState::GrantSource::PERK: return "Perk";
+		case HeroActionAllowanceState::GrantSource::ARTIFACT: return "Artifact";
+		case HeroActionAllowanceState::GrantSource::OTHER: return "Special ability";
+		case HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND: return "Double Command";
+		case HeroActionAllowanceState::GrantSource::BATTLE_PLAN: return "Battle Plan";
+		case HeroActionAllowanceState::GrantSource::DIVINE_MANDATE: return "Divine Mandate";
+	}
+	return "Additional ability";
+}
+}
+
 // Ordering of spell school tabs in SpelTab.def
 static const std::array schoolTabOrder =
 {
@@ -496,7 +516,7 @@ std::string CSpellWindow::currentDivineMandateFollowupText() const
 	}
 }
 
-std::string CSpellWindow::divineMandateSpellFollowupText(SpellID spell) const
+std::string CSpellWindow::spellActionOpportunityText(SpellID spell) const
 {
 	if(!battleSpellsOnly || !myInt->battleInt)
 		return {};
@@ -511,10 +531,16 @@ std::string CSpellWindow::divineMandateSpellFollowupText(SpellID spell) const
 			return {};
 
 		const auto selection = battleCallback->battleGetSpellActionAllowance(side, spell);
-		if(!selection || selection->source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE)
+		if(!selection)
 			return {};
 
-		return "Divine Mandate source: Light Spell follow-up through the end of round "
+		const auto source = spellAllowanceSourceName(selection->source);
+		if(source.empty())
+			return {};
+
+		const std::string opportunity = selection->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
+			? " Light Spell follow-up" : " Spell follow-up";
+		return source + opportunity + " available through the end of round "
 			+ std::to_string(selection->expiryRound) + ".";
 	}
 	catch(const std::runtime_error &)
@@ -1100,7 +1126,7 @@ void CSpellWindow::SpellArea::showPopupWindow(const Point & cursorPosition)
 			requirements += "\n\n" + schoolRequirementText;
 		if(divineMandateLocked)
 			requirements += "\n\n" + divineMandateRequirementText;
-		const auto followup = owner->divineMandateSpellFollowupText(mySpell->id);
+		const auto followup = owner->spellActionOpportunityText(mySpell->id);
 		const auto followupInfo = followup.empty() ? std::string() : "\n\n" + followup;
 		CRClickPopup::createAndPush(newHorizonsMagic::spellDescriptionForHero(owner->myHero, mySpell, schoolLevel)
 			+ dmgInfo + requirements + followupInfo,
@@ -1122,7 +1148,7 @@ void CSpellWindow::SpellArea::hover(bool on)
 			else
 				message.replaceTextID("vcmi.spellBook.zero_level.hint");
 			auto statusText = message.toString(&GAME->translator());
-			const auto followup = owner->divineMandateSpellFollowupText(mySpell->id);
+			const auto followup = owner->spellActionOpportunityText(mySpell->id);
 			if(!followup.empty())
 				statusText += " — " + followup;
 			owner->statusBar->write(statusText);
