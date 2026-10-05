@@ -1,6 +1,16 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-05
+Bounded creature/AI audit finds Cyclops and Cyclops King wall-shot flags,
+human legality and authoritative resolution, but no default BattleAI selection:
+activeStack only routes actual Catapult machines to CATAPULT. This is a missing
+minimum-AI hook under UP023, now assigned; existing126-form registration does
+not establish ability usage. No completion/count credit before a real-siege
+AI submission and authoritative resolution. Castle/Rampart/Necropolis unique-
+building audit found no new unblocked gap among checked rows; retain existing
+Skeleton Transformer/Lighthouse choices. Crown and Altar's first-action timing
+is now explicitly awaiting a design answer; it remains planned.
+
 UP021 principal army-transfer gap repaired: ordinary/radial last-stack intent
 preserves one creature, fits receiving Leadership and gives normal localized
 modal rejection for the exact-one case, including occupied garrisons. Explicit
@@ -2513,9 +2523,28 @@ acceptance and playable snapshot delivery remain separate.
 
 Additional canonical breadth not yet reducible to a defensible completion
 fraction: nine town/faction sections (37 grouped unique-building table rows),
-six specialty families, required combat/hero/
+required combat/hero/
 adventure UI surfaces, save-state representation, and minimum AI hooks. The
 next ledger pass must enumerate these items rather than invent a denominator.
+
+### Hero specialty conversion item ledger
+
+Canonical source: **Hero specialty conversion**, six table rows in
+`design-sources/New Horizons.md`. These are six mechanic families, not six
+heroes. Focused accepted slices do not establish every producer or combination;
+no whole-family completion fraction is inferred.
+
+| Canonical row | Current evidence | Remaining boundary |
+|---|---|---|
+| Primary Attribute specialty: legacy flat1 becomes5 | UP226's bounded audit found no eligible built-in flat hero-stat source; Fiur/Ignissa/Thunar/Erdamon entries are creature-limited | Requires an authored eligible producer, not conversion of creature stats into hero stats; no completion credit. |
+| Creature-line: Speed1/Initiative1, Attack/Defense per5 levels capped6 | UP216: actual line/upgrades/thresholds/cache/save/legacy, native85455 7/7 | Prototype-only descriptions and broader combat composition remain Phase2; source/native evidence is not rendered acceptance. |
+| Damage spell: SP component15% | UP217: nine surviving heroes/eight effects; native23804 11/11 includes actual Ciele/Deemer/Luna casts and stored Fire Wall trigger | Explicit replacement specialties remain untouched; broader detached execution, proxy/modifier composition and prototype tooltips remain Phase2. |
+| Non-damage spell: SP component20%, otherwise duration1 | UP224: Uland/Cure, Alamar/Jeddite/Resurrection and Adela/Bless component conversion accepted, including actual casts/forecasts and historical lists | Haste access and inactive Weakness/Animate Dead aliases retain their recorded blockers; not full-family completion. Bless has a numerical SP duration term, so its fallback duration1 does not apply. |
+| Skill: core numerical contribution20%, not perks | UP218/219/221/222/223: surviving Logistics, Armorer, Offense, Archery and Estates aliases, real ranks/core/perk controls/save/legacy | UP228 confirms five old Sorcery aliases were intentionally replaced; do not restore them. Broader composition and prototype tooltips remain Phase2. |
+| Resource: retain legacy daily quantity | Bounded producer audit2026-10-05:13 surviving sources, nine Gold350/day and four rare-resource1/day; unchanged HERO_SPECIAL provenance and shared dailyIncome/server receipt path | No concrete conversion gap found. Estates scaling is SECONDARY_SKILL-only and excludes these producers. Source/config evidence is not13-hero runtime acceptance or whole-family certification. |
+
+This ledger accounts for the six canonical requirements without inventing
+additional specialty families or treating retired aliases as missing content.
 
 ### Artifact framework item ledger
 
