@@ -1,6 +1,16 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-05
+UP021 principal army-transfer gap repaired: ordinary/radial last-stack intent
+preserves one creature, fits receiving Leadership and gives normal localized
+modal rejection for the exact-one case, including occupied garrisons. Explicit
+numeric splits remain exact. Client39538/native build88200 pass; native26444
+passes13/13 in3.908s, zero skips. Three source guards and independent review pass.
+Evidence: UP021-last-stack-native-repaired.log/XML and UP021-last-stack-*-build.log.
+Counts unchanged; broader interactions and rendered/playable delivery remain
+pending. The single-team fixture's premature victory is recorded in the failure
+ledger, not mistaken for a transfer-capacity regression.
+
 Frenzied Curse source/native accepted under UP062: action-scoped +2 Speed for
 a real forced Berserk activation, captured original-caster perk provenance,
 authoritative reach/cleanup/logging and isolated AI planning. Client78683 and
@@ -2485,7 +2495,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree. UP-146 adds native-verified independent simultaneous state/effects and action/AI/UI hooks; broader per-Order interaction coverage remains Phase2. |
-| Hero-class Leadership profiles | 18/18 | Capability data exists; transfer paths remain a user-reported correctness gap. |
+| Hero-class Leadership profiles | 18/18 | Capability data exists; UP021 ordinary/radial transfer principal paths pass13 focused native cases. Broader and rendered/playable acceptance remain pending. |
 | Creature base-line Leadership requirements | 64/64 | Data coverage only; individual creature mechanics remain unaudited. |
 | Creature category forms | 126/126 | 50 Core, 58 Elite, 18 Champion are registered; this is not creature-ability coverage. |
 | Siege output formula families | 4/4 | Ballista, Catapult, Tent and defensive tower outputs have data; universal Blacksmith access and Ballista Yard's weekly Siege effect are implemented with focused native tests. Rendered/playable acceptance remains open. |

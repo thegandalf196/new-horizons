@@ -2,6 +2,37 @@
 
 ## Purpose
 
+### 2026-10-05 UP021 — Exact-fit fixture diagnosis and accepted repair
+
+The successful partial merge applies a garrison-operation pack, which checks
+victory. A map with only one active team immediately wins and removes that
+player before the following exact-fit request. The rejection was therefore
+the active-player guard, not Leadership arithmetic. Add a second active player
+after assigning the original hero's army; assert the original player remains
+active/INGAME with no end-game/turn pack or query before the exact-fit request.
+Keep all exact counts and success assertions. Record actual localized modal
+InfoWindow feedback for empty and occupied cross-army last-creature rejection,
+not complain's serverProblem wrapper. The third source guard also needed its
+obsolete count-minus-one branch assertion replaced with the new ordinary-route
+contract. Client39538/native build88200 pass; native26444 passes13/13 in3.908s,
+zero skips, and all three source guards/review pass. Retain the first failed
+log/XML and repaired evidence; no production invariant was weakened. Rendered
+feedback and broader combinations remain separate Phase2/delivery obligations.
+
+### 2026-10-05 UP021 — Ordinary transfer route and feedback gaps
+
+Bounded source audit finds radial/Alt+Ctrl last-stack moves still require the
+entire count-minus-one numeric split to fit, instead of requesting a server-
+clamped whole-stack intent. Exact-one radial moves silently return and occupied
+same-creature clicks can reach complain's generic serverProblem broadcast.
+The one-creature native fixture currently asserts that broadcast, which is not
+the requested normal gameplay explanation. Preserve explicit numeric split
+semantics; use ordinary transfer intents and existing localized InfoWindow for
+valid last-creature rejection. First native75985 passes11/12 in3.595s, zero skips;
+OrdinaryMerge's third exact-fit request rejects without transferring. Diagnose
+the actual rejection, retain assertions and UP021-last-stack-native.log/XML.
+No verification or playable acceptance is inferred from passing wrong oracles.
+
 ### 2026-10-05 UP062 — Final Frenzied Curse gate accepted
 
 Boundary preflight uses(4,5)->(12,5), verifies ordinary WALK and boosted shared

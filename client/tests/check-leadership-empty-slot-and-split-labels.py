@@ -111,11 +111,33 @@ controls_bottom = button_y + button_height
 footer_top = dialog_height - footer_height
 assert controls_bottom + 10 <= footer_top, "the tallest split-dialog button must end above the lower frame with a margin"
 require(GARRISON, 'translate("core.tcommand.5")', "a one-creature last-stack no-op must explain the constraint")
-require(GARRISON, "if(amount <= 0)", "zero-amount last-stack transfers must be stopped before a split request")
+garrison_click = GARRISON.split("void CGarrisonSlot::clickPressed(", 1)[1].split("void CGarrisonSlot::gesture(", 1)[0]
+exact_one_click = "else if(lastHeroStackSelected && selection->myStack->getCount() <= 1"
+require(
+    garrison_click,
+    exact_one_click,
+    "cross-army exact-one attempts must be checked before either same-creature merges or empty-slot moves",
+)
+assert garrison_click.index(exact_one_click) < garrison_click.index("cb->mergeOrSwapStacks(selectedObj"), \
+    "exact-one empty-slot intent must show the gameplay explanation before sending a request"
+assert garrison_click.index(exact_one_click) < garrison_click.index("cb->mergeStacks(selectedObj"), \
+    "exact-one occupied same-creature merge must show the gameplay explanation before sending a request"
+radial_move = GARRISON.split("void CGarrisonInt::moveStackToAnotherArmy(", 1)[1].split("void CGarrisonInt::bulkMoveArmy(", 1)[0]
+radial_exact_one = "if(isLastStack && selected->myStack->getCount() <= 1)"
+require(radial_move, radial_exact_one, "radial/Alt+Ctrl exact-one last-stack attempts must explain the constraint")
+assert radial_move.index(radial_exact_one) < radial_move.index("cb->mergeStacks(srcArmy"), \
+    "radial occupied merges must preflight exact-one sources before sending a request"
+assert radial_move.index(radial_exact_one) < radial_move.index("cb->mergeOrSwapStacks(srcArmy"), \
+    "radial empty-slot moves must preflight exact-one sources before sending a request"
 require(
     GARRISON,
     "GAME->interface()->cb->mergeOrSwapStacks(selectedObj, owner->army(upg), selection->ID, ID);",
     "positive last-stack empty-slot transfers must use the server-clamped whole-stack intent",
+)
+require(
+    radial_move,
+    "GAME->interface()->cb->mergeOrSwapStacks(srcArmy, destArmy, srcSlot, destSlot);",
+    "positive radial last-stack empty-slot transfers must use the server-clamped whole-stack intent",
 )
 require(
     SERVER_TEST,

@@ -34,6 +34,13 @@ namespace
 class LeadershipRecordingServer final : public IGameServer
 {
 public:
+	struct RecordedInfoWindow
+	{
+		PlayerColor player;
+		EInfoWindowMode type;
+		std::string text;
+	};
+
 	explicit LeadershipRecordingServer(std::shared_ptr<CGameState> state)
 		: state(std::move(state))
 	{}
@@ -67,6 +74,8 @@ public:
 			++systemMessages;
 			systemMessageTexts.push_back(message->text.toString(LIBRARY->generaltexth.get()));
 		}
+		if(const auto * window = dynamic_cast<InfoWindow *>(&pack))
+			infoWindows.push_back({window->player, window->type, window->text.toString(LIBRARY->generaltexth.get())});
 		if(dynamic_cast<RebalanceStacks *>(&pack))
 			++rebalancePacks;
 		state->apply(pack);
@@ -85,6 +94,7 @@ public:
 	std::vector<PlayerEndsTurn> playerEndsTurnPacks;
 	std::vector<std::string> systemMessageTexts;
 	std::vector<std::string> targetedSystemMessageTexts;
+	std::vector<RecordedInfoWindow> infoWindows;
 	QueryID blockingDialogQuery = QueryID::NONE;
 	QueryID garrisonDialogQuery = QueryID::NONE;
 	ObjectInstanceID garrisonObject = ObjectInstanceID::NONE;
@@ -479,7 +489,9 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, OrdinaryMergeClampsToPerSlotLeadershi
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(36, false).playerActive(PlayerColor(0))
 		.hero({5, 5, 0}, heroType("core:christian"), PlayerColor(0))
-		.heroGarrison({{pikeman, 17}, {pikeman, 2}});
+		.heroGarrison({{pikeman, 17}, {pikeman, 2}})
+		.playerActive(PlayerColor(1))
+		.hero({25, 25, 0}, heroType("core:valeska"), PlayerColor(1));
 	startWithMap(std::move(builder));
 
 	auto * hero = findHeroByOwner(PlayerColor(0));
@@ -523,6 +535,15 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, OrdinaryMergeClampsToPerSlotLeadershi
 	ASSERT_EQ(server.responses.size(), 1u);
 	EXPECT_TRUE(server.responses.back().result);
 	EXPECT_EQ(server.systemMessages, 0);
+	ASSERT_TRUE(vstd::contains(gameState()->actingPlayers, PlayerColor(0)))
+		<< "the exact-fit request must follow an active partial merge in the same game";
+	const auto * playerState = gameState()->getPlayerState(PlayerColor(0));
+	ASSERT_NE(playerState, nullptr);
+	EXPECT_EQ(playerState->status, EPlayerStatus::INGAME);
+	EXPECT_TRUE(server.playerEndsGamePacks.empty());
+	EXPECT_TRUE(server.playerEndsTurnPacks.empty());
+	ASSERT_EQ(gameHandler.queries->topQuery(PlayerColor(0)), nullptr);
+	EXPECT_TRUE(server.targetedSystemMessageTexts.empty());
 
 	// Exact fit consumes the complete source stack.
 	hero->setStackCount(SlotID(0), capacity->maximum - 2);
@@ -537,6 +558,49 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, OrdinaryMergeClampsToPerSlotLeadershi
 	ASSERT_EQ(server.responses.size(), 1u);
 	EXPECT_TRUE(server.responses.back().result);
 	EXPECT_EQ(server.systemMessages, 0);
+}
+
+TEST_F(NewHorizonsLeadershipAdmissionTest, ExactOneCreatureMergeIntoOccupiedGarrisonCannotEmptyHero)
+{
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	const PlayerColor player(0);
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(player)
+		.town({12, 12, 0}, faction("core:castle"), player)
+		.townGarrison({{pikeman, 4}})
+		.hero({5, 5, 0}, heroType("core:christian"), player)
+		.heroGarrison({{pikeman, 1}});
+	startWithMap(std::move(builder));
+
+	auto * hero = findHeroByOwner(player);
+	auto * garrison = findFirst<CGTownInstance>();
+	ASSERT_NE(hero, nullptr);
+	ASSERT_NE(garrison, nullptr);
+	garrison->setVisitingHero(hero);
+	ASSERT_TRUE(hero->needsLastStack());
+	ASSERT_EQ(hero->getStackCount(SlotID(0)), 1);
+	ASSERT_EQ(garrison->getStackCount(SlotID(0)), 4);
+
+	LeadershipRecordingServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	gameState()->actingPlayers.insert(player);
+	ArrangeStacks mergeLastCreature(2, SlotID(0), SlotID(0), hero->id, garrison->id, 0);
+	mergeLastCreature.player = player;
+	mergeLastCreature.requestID = 56;
+	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, mergeLastCreature);
+
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), 1);
+	EXPECT_EQ(garrison->getStackCount(SlotID(0)), 4);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)) + garrison->getStackCount(SlotID(0)), 5);
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_FALSE(server.responses.back().result);
+	ASSERT_EQ(server.infoWindows.size(), 1u);
+	EXPECT_EQ(server.infoWindows.back().player, player);
+	EXPECT_EQ(server.infoWindows.back().type, EInfoWindowMode::MODAL);
+	EXPECT_EQ(server.infoWindows.back().text,
+		MetaString::createFromTextID("core.tcommand.5").toString(LIBRARY->generaltexth.get()));
+	EXPECT_EQ(server.systemMessages, 0);
+	EXPECT_EQ(server.rebalancePacks, 0);
 }
 
 TEST_F(NewHorizonsLeadershipAdmissionTest, WholeStackDragIntoEmptyHeroSlotFillsLeadershipCapacityAndLeavesRemainder)
@@ -648,9 +712,12 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, LastHeroCreatureDragToEmptyGarrisonRe
 	EXPECT_EQ(hero->getStackCount(SlotID(0)) + garrison->getStackCount(SlotID(0)), 1);
 	ASSERT_EQ(server.responses.size(), 1u);
 	EXPECT_FALSE(server.responses.back().result);
-	ASSERT_EQ(server.systemMessageTexts.size(), 1u);
-	EXPECT_NE(server.systemMessageTexts.back().find("Cannot move away the last creature!"), std::string::npos);
-	EXPECT_EQ(server.systemMessageTexts.back().find("No creatures to split"), std::string::npos);
+	ASSERT_EQ(server.infoWindows.size(), 1u);
+	EXPECT_EQ(server.infoWindows.back().player, player);
+	EXPECT_EQ(server.infoWindows.back().type, EInfoWindowMode::MODAL);
+	EXPECT_EQ(server.infoWindows.back().text,
+		MetaString::createFromTextID("core.tcommand.5").toString(LIBRARY->generaltexth.get()));
+	EXPECT_EQ(server.systemMessages, 0);
 	EXPECT_EQ(server.rebalancePacks, 0);
 }
 

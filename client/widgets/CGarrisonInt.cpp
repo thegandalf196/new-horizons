@@ -496,13 +496,14 @@ void CGarrisonSlot::clickPressed(const Point & cursorPosition)
 			{
 				refr = split();
 			}
+			else if(lastHeroStackSelected && selection->myStack->getCount() <= 1
+				&& (!creature || creature == selection->creature))
+			{
+				GAME->interface()->showInfoDialog(LIBRARY->generaltexth->translate("core.tcommand.5"));
+			}
 			else if(!creature && lastHeroStackSelected) // whole-stack intent reserves the last creature on the server
 			{
-				const auto amount = selection->myStack->getCount() - 1;
-				if(amount <= 0)
-					GAME->interface()->showInfoDialog(LIBRARY->generaltexth->translate("core.tcommand.5"));
-				else
-					GAME->interface()->cb->mergeOrSwapStacks(selectedObj, owner->army(upg), selection->ID, ID);
+				GAME->interface()->cb->mergeOrSwapStacks(selectedObj, owner->army(upg), selection->ID, ID);
 			}
 			else if(creature != selection->creature) // swap
 			{
@@ -834,6 +835,13 @@ void CGarrisonInt::moveStackToAnotherArmy(const CGarrisonSlot * selected)
 	if(!destArmy)
 		return;
 
+	const bool isLastStack = srcArmy->stacksCount() == 1 && srcArmy->needsLastStack();
+	if(isLastStack && selected->myStack->getCount() <= 1)
+	{
+		GAME->interface()->showInfoDialog(LIBRARY->generaltexth->translate("core.tcommand.5"));
+		return;
+	}
+
 	auto destSlot = destArmy->getSlotFor(selected->creature);
 
 	if(destSlot == SlotID())
@@ -845,7 +853,6 @@ void CGarrisonInt::moveStackToAnotherArmy(const CGarrisonSlot * selected)
 	if(isDestSlotEmpty && !destArmy->getStackCount(srcSlot))
 		destSlot = srcSlot; // Same place is more preferable
 
-	const bool isLastStack = srcArmy->stacksCount() == 1 && srcArmy->needsLastStack();
 	if(!isDestSlotEmpty)
 	{
 		// This is a combine intent, not a numeric split. The server can move
@@ -854,9 +861,9 @@ void CGarrisonInt::moveStackToAnotherArmy(const CGarrisonSlot * selected)
 	}
 	else if(isLastStack)
 	{
-		const auto srcAmount = selected->myStack->getCount() - 1;
-		if(srcAmount > 0 && checkLeadershipTransfer(srcArmy, destArmy, srcSlot, destSlot, srcAmount))
-			GAME->interface()->cb->splitStack(srcArmy, destArmy, srcSlot, destSlot, srcAmount);
+		// Whole-stack intent lets the authoritative server reserve one creature
+		// and clamp the transfer to the receiving hero's current Leadership.
+		GAME->interface()->cb->mergeOrSwapStacks(srcArmy, destArmy, srcSlot, destSlot);
 	}
 	else
 	{

@@ -115,6 +115,23 @@
 #define COMPLAIN_RET(txt) {complain(txt); return false;}
 #define COMPLAIN_RETF(txt, FORMAT) {complain(boost::str(boost::format(txt) % FORMAT)); return false;}
 
+namespace
+{
+void notifyCannotMoveLastCreature(CGameHandler & handler, PlayerColor player)
+{
+	if(!player.isValidPlayer())
+		return;
+	const auto * playerState = handler.gameInfo().getPlayerState(player, false);
+	if(!playerState || playerState->status != EPlayerStatus::INGAME)
+		return;
+
+	InfoWindow notification;
+	notification.player = player;
+	notification.text = MetaString::createFromTextID("core.tcommand.5");
+	handler.sendAndApply(notification);
+}
+}
+
 template <typename T>
 void callWith(std::vector<T> args, std::function<void(T)> fun, ui32 which)
 {
@@ -3143,6 +3160,14 @@ bool CGameHandler::arrangeStacks(ObjectInstanceID id1, ObjectInstanceID id2, ui8
 
 		if(transferCount == 0)
 		{
+			// Keeping the last creature in a required source army takes precedence
+			// over a simultaneous zero-capacity destination.
+			if(mustKeepLastSourceCreature && sourceCount == 1)
+			{
+				if(player == s1->tempOwner)
+					notifyCannotMoveLastCreature(*this, player);
+				return false;
+			}
 			if(const auto * hero = dynamic_cast<const CGHeroInstance *>(s2))
 			{
 				const auto capacity = hero->getLeadershipSlotCapacity(s1->getCreature(p1)->getId());
@@ -5754,17 +5779,17 @@ bool CGameHandler::moveStack(const StackLocation &src, const StackLocation &dst,
 		? static_cast<int64_t>(dstArmy->getStackCount(dst.slot)) + count : count;
 	if(destinationCount > std::numeric_limits<TQuantity>::max())
 		COMPLAIN_RET("Cannot exceed the maximum stack size!");
+	if(srcArmy != dstArmy
+		&& count == srcArmy->getStackCount(src.slot)
+		&& srcArmy->stacksCount() == 1
+		&& srcArmy->needsLastStack())
+	{
+		notifyCannotMoveLastCreature(*this, srcArmy->tempOwner);
+		return false;
+	}
 	if((srcArmy != dstArmy || src.slot != dst.slot)
 		&& !validateLeadershipStack(dstArmy, srcArmy->getCreature(src.slot)->getId(), destinationCount))
 		return false;
-
-	if (srcArmy != dstArmy  //moving away
-		&&  count == srcArmy->getStackCount(src.slot) //all creatures
-		&& srcArmy->stacksCount() == 1 //from the last stack
-		&& srcArmy->needsLastStack()) //that must be left
-	{
-		COMPLAIN_RET("Cannot move away the last creature!");
-	}
 
 	RebalanceStacks rs;
 	rs.srcArmy = srcArmy->id;
@@ -5807,6 +5832,11 @@ bool CGameHandler::swapStacks(const StackLocation & sl1, const StackLocation & s
 		// Whole-stack drags are move intents: reserve a required last creature,
 		// then clamp the transfer to the destination hero's current capacity.
 		int64_t transferCount = sourceCount - (mustKeepLastSourceCreature ? 1 : 0);
+		if(transferCount <= 0 && mustKeepLastSourceCreature && sourceCount == 1)
+		{
+			notifyCannotMoveLastCreature(*this, source->tempOwner);
+			return false;
+		}
 		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(destination))
 		{
 			if(const auto capacity = hero->getLeadershipSlotCapacity(creature->getId()))
@@ -5817,7 +5847,10 @@ bool CGameHandler::swapStacks(const StackLocation & sl1, const StackLocation & s
 			}
 		}
 		if(transferCount <= 0 && mustKeepLastSourceCreature && sourceCount > 0)
-			COMPLAIN_RET("Cannot move away the last creature!");
+		{
+			notifyCannotMoveLastCreature(*this, source->tempOwner);
+			return false;
+		}
 		return moveStack(sourceLocation, destinationLocation, static_cast<TQuantity>(transferCount));
 	};
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Source guard for ordinary, explicit-split, and reverse-rebalance routing."""
+"""Source guard for ordinary, last-stack, explicit-split, and rebalance routing."""
 
 from pathlib import Path
 import re
@@ -41,15 +41,34 @@ def main() -> None:
     click = click.split("void CGarrisonSlot::gesture(", 1)[0]
     click = compact(click)
     explicit_split = "if((owner->getSplittingMode()||ENGINE->isKeyboardShiftDown())&&(!creature||creature==selection->creature)){refr=split();}"
-    last_stack_empty = 'elseif(!creature&&lastHeroStackSelected){constautoamount=selection->myStack->getCount()-1;if(amount<=0)GAME->interface()->showInfoDialog(LIBRARY->generaltexth->translate("core.tcommand.5"));elseGAME->interface()->cb->mergeOrSwapStacks(selectedObj,owner->army(upg),selection->ID,ID);}'
+    last_stack_reason = 'elseif(lastHeroStackSelected&&selection->myStack->getCount()<=1&&(!creature||creature==selection->creature)){GAME->interface()->showInfoDialog(LIBRARY->generaltexth->translate("core.tcommand.5"));}'
+    last_stack_empty = "elseif(!creature&&lastHeroStackSelected){GAME->interface()->cb->mergeOrSwapStacks(selectedObj,owner->army(upg),selection->ID,ID);}"
     ordinary_merge = "elseGAME->interface()->cb->mergeStacks(selectedObj,owner->army(upg),selection->ID,ID);"
     assert explicit_split in click, "Shift/splitting mode must retain numeric split dialog"
-    assert last_stack_empty in click, "last-stack empty-slot click must explain zero fit and send positive moves as a server-clamped intent"
+    assert "if(selectedObj->stacksCount()==1&&owner->getSelection()->upg!=upg&&selectedObj->needsLastStack()){lastHeroStackSelected=true;}" in click, "last-stack restriction must apply only when moving between armies"
+    assert last_stack_reason in click, "exact-one cross-army empty moves and same-creature merges must show the localized explanation before requesting"
+    assert last_stack_empty in click, "last-stack empty-slot click must send a server-clamped whole-stack intent"
     assert "elseif(lastHeroStackSelected)refr=split();" not in click, "last-stack combine must not open numeric dialog"
     assert "cb->splitStack(selectedObj,owner->army(upg),selection->ID,ID,amount);" not in click, "last-stack empty-slot moves must not send an exact count"
     assert ordinary_merge in click, "ordinary occupied same-creature click must merge"
     assert click.index(explicit_split) < click.index(ordinary_merge)
-    assert click.index(explicit_split) < click.index(last_stack_empty) < click.index(ordinary_merge)
+    assert click.index(explicit_split) < click.index(last_stack_reason) < click.index(last_stack_empty) < click.index(ordinary_merge)
+
+    radial = GARRISON.split("void CGarrisonInt::moveStackToAnotherArmy(", 1)[1]
+    radial = radial.split("void CGarrisonInt::bulkMoveArmy(", 1)[0]
+    radial = compact(radial)
+    radial_reason = 'if(isLastStack&&selected->myStack->getCount()<=1){GAME->interface()->showInfoDialog(LIBRARY->generaltexth->translate("core.tcommand.5"));return;}'
+    radial_occupied_merge = "if(!isDestSlotEmpty){GAME->interface()->cb->mergeStacks(srcArmy,destArmy,srcSlot,destSlot);}"
+    radial_empty_last = "elseif(isLastStack){GAME->interface()->cb->mergeOrSwapStacks(srcArmy,destArmy,srcSlot,destSlot);}"
+    radial_other_swap = "else{GAME->interface()->cb->swapCreatures(srcArmy,destArmy,srcSlot,destSlot);}"
+    assert "constboolisLastStack=srcArmy->stacksCount()==1&&srcArmy->needsLastStack();" in radial
+    assert radial_reason in radial, "radial/Alt+Ctrl exact-one move must show the localized explanation"
+    assert radial_occupied_merge in radial, "radial occupied same-creature move must remain a merge intent"
+    assert radial_empty_last in radial, "radial empty-slot last-stack move must let the server retain one and clamp Leadership"
+    assert radial_other_swap in radial, "ordinary non-last move must remain a swap"
+    assert radial.index(radial_reason) < radial.index(radial_occupied_merge) < radial.index(radial_empty_last) < radial.index(radial_other_swap)
+    assert "splitStack(" not in radial, "radial whole-stack move must not use an exact-count split request"
+    assert "checkLeadershipTransfer(" not in radial, "radial whole-stack move must not refuse a smaller legal Leadership transfer"
 
     split = GARRISON.split("bool CGarrisonSlot::split()", 1)[1]
     split = split.split("bool CGarrisonSlot::mustForceReselection()", 1)[0]
