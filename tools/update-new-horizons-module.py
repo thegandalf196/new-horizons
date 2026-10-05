@@ -113,6 +113,7 @@ def main():
     ]
     creature_patch_files = [
         'config/creatures/castle.json',
+        'config/creatures/special.json',
         'config/creatures/tower.json',
         'config/creatures/conflux.json',
     ]

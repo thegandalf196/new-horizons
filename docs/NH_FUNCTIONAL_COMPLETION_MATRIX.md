@@ -1,6 +1,21 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-05
+Glyphs siege Defense and war-machine HP clauses accepted: the Fortress building
+now grants its defending siege hero20 Defense, replacing the legacy2 bonus.
+Three actual construction/BattleStart cases cover defender-only grant, unchanged
+raw creature Defense, unbuilt/field controls and accepted-result cleanup. Its
+8-tile adventure Morale aura remains blocked on UP200's distance/overlap choices;
+the building remains partial. Loaded machine HP coverage advances0/4 to4/4:
+Ballista300, Catapult500, First Aid Tent250, Ammo Cart250. The scoped overlay
+changes no costs, abilities or outputs. Native88293 passes4/4 in1.466s, zero
+skips; repaired and final both-target builds pass with12 jobs, two offline
+guards/module generation and independent Astra review pass. Evidence:
+UP200-machine-hp-before.log/XML (four actual legacy HP mismatches),
+UP200-machine-hp-final-build.log and UP200-machine-hp-final.log/XML. Broader
+machine battle/save and played-siege interactions remain Phase2. No GUI or
+Linux promotion; perks224/310 and combat identities61/67 remain unchanged.
+
 Canonical weekly-growth data accepted: a loaded-world audit found11 retained
 vanilla values differing from the authored64-row table. Existing saved growth
 lines now correct Archer, Monk, Cavalier, Unicorn, Naga, Skeleton, Wolf Rider,

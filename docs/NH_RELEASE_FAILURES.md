@@ -2,6 +2,19 @@
 
 ## Purpose
 
+### 2026-10-05 UP023/UP200 — Machine durability retained legacy resource data
+
+Initial native27834 passes all3 Glyphs siege controls but fails machine HP:
+Ballista250 instead of300, Catapult1000 instead of500, Tent75 instead of250,
+Cart100 instead of250. Keep UP200-machine-hp-before.log/XML. Correct the
+four scoped creature definitions and generated module registration, not the
+authored expectations or purchaser resources. Final88293 passes4/4 in1.466s,
+zero skips; both-target final build and exact offline guard pass. This proves
+loaded definitions, not every machine battle/save interaction. Those are Phase2.
+The first Glyphs build also exposed macro dangling-else warnings and review
+found fragile relative include paths: add braces and normalize../../../ paths.
+Repaired build55816 exits0; preserve its separate build log.
+
 ### 2026-10-05 UP023 — Canonical growth retained vanilla fallbacks
 
 Initial loaded64-row audit compiles (67485) but fails11 authored expectations:

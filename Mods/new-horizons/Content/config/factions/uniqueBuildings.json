@@ -75,6 +75,12 @@
 							}
 						]
 					}
+				},
+				"special3": {
+					"name": "Glyphs of Fear",
+					"description": "The defending hero gains 20 Defense during a siege.",
+					"bonuses": [],
+					"defendingHeroBonuses": [ { "type": "PRIMARY_SKILL", "subtype": "defence", "val": 20 } ]
 				}
 			}
 		}

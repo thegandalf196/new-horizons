@@ -1,0 +1,14 @@
+{
+	"core:ballista": {
+		"hitPoints": 300
+	},
+	"core:catapult": {
+		"hitPoints": 500
+	},
+	"core:firstAidTent": {
+		"hitPoints": 250
+	},
+	"core:ammoCart": {
+		"hitPoints": 250
+	}
+}

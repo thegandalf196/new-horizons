@@ -1116,6 +1116,27 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(patch['defendingHeroBonuses'],
                          [{'type': 'PRIMARY_SKILL', 'subtype': 'spellpower', 'val': 20}])
 
+    def test_glyphs_of_fear_replace_legacy_defense_with_siege_hero_bonus(self):
+        patch = load('Mods/new-horizons/Content/config/factions/uniqueBuildings.json')['core:fortress']['town']['buildings']['special3']
+        self.assertEqual(patch['name'], 'Glyphs of Fear')
+        self.assertEqual(patch['bonuses'], [])
+        self.assertEqual(patch['defendingHeroBonuses'],
+                         [{'type': 'PRIMARY_SKILL', 'subtype': 'defence', 'val': 20}])
+        self.assertNotIn('cost', patch)
+        self.assertNotIn('requires', patch)
+        self.assertNotIn('configuration', patch)
+
+    def test_war_machine_hit_points_use_canonical_values_without_other_overrides(self):
+        path = 'config/creatures/special.json'
+        patch = load('Mods/new-horizons/Content/' + path)
+        self.assertEqual(patch, {
+            'core:ballista': {'hitPoints': 300},
+            'core:catapult': {'hitPoints': 500},
+            'core:firstAidTent': {'hitPoints': 250},
+            'core:ammoCart': {'hitPoints': 250},
+        })
+        self.assertIn(path, load('Mods/new-horizons/mod.json')['creatures'])
+
     def test_canonical_growth_overrides_cover_legacy_mismatches_and_upgrades(self):
         rules = load('config/newHorizonsCreatureCategories.json')
         expected = {
