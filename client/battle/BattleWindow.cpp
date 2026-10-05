@@ -978,6 +978,7 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 				continue;
 
 			std::string value;
+			std::string providerDetails;
 			switch(skill->getCombatStatusProvider())
 			{
 				case CSkill::CombatStatusProvider::METAMAGIC_USES:
@@ -1000,11 +1001,36 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 					value = "+" + std::to_string(current) + "/" + std::to_string(cap) + "%";
 					break;
 				}
+				case CSkill::CombatStatusProvider::DIVINE_MANDATE_USES:
+				{
+					const auto mandate = battleCallback->battleGetDivineMandateStatus(side);
+					if(!mandate.active || mandate.maximumPairs == 0)
+						continue;
+					const auto completed = std::min<unsigned>(mandate.completedPairs, mandate.maximumPairs);
+					const auto remaining = static_cast<unsigned>(mandate.maximumPairs) - completed;
+					value = std::to_string(remaining) + " / " + std::to_string(mandate.maximumPairs);
+					std::string details = "Completed Spell/Order pairs this combat: "
+						+ std::to_string(completed) + " of " + std::to_string(mandate.maximumPairs)
+						+ "; remaining pairs: " + std::to_string(remaining) + ".";
+					if(mandate.pendingFollowup
+						&& mandate.pendingFollowup->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE)
+					{
+						const auto followupName = mandate.pendingFollowup->allowance == HeroActionAllowanceState::AllowanceKind::SPELL
+							? "Light Spell" : "Order";
+						details += "\nSource: Divine Mandate. Pending " + std::string(followupName)
+							+ " follow-up through the end of round "
+							+ std::to_string(mandate.pendingFollowup->expiryRound) + ".";
+					}
+					providerDetails = std::move(details);
+					break;
+				}
 				case CSkill::CombatStatusProvider::NONE:
 					continue;
 			}
 			const auto description = skill->getCombatStatusDescriptionTranslated();
-			const auto details = description.empty() ? value : description + "\n\n" + value;
+			const auto details = providerDetails.empty()
+				? (description.empty() ? value : description + "\n\n" + value)
+				: (description.empty() ? providerDetails : description + "\n\n" + providerDetails);
 			entries.push_back({skill->at(std::clamp(skillRank, 1, 3)).iconSmall,
 				skill->getNameTranslated(), value, CInfoWindow::genText(skill->getNameTranslated(), details)});
 		}

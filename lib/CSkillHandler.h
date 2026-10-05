@@ -26,6 +26,7 @@ public:
 		NONE,
 		METAMAGIC_USES,
 		BLOODRAGE_DAMAGE,
+		DIVINE_MANDATE_USES,
 	};
 
 	struct LevelInfo

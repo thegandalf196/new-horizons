@@ -390,11 +390,7 @@ bool CBattleInfoCallback::battleHeroCommandCommonAvailable(BattleSide side, Hero
 		return false;
 	if(battleUsesHeroCommands())
 	{
-		const auto round = battleGetRound();
-		const auto & allowances = getBattle()->getHeroActionAllowances(side);
-		const auto selected = round >= 0 && allowances.currentRound == round
-			? allowances.eligibleAllowance(HeroActionAllowanceState::ActionKind::ORDER, round)
-			: std::optional<HeroActionAllowanceState::Selection>();
+		const auto selected = battleGetOrderActionAllowance(side);
 		if(!selected || (preCombatOrder.orderPending()
 			&& selected->source != HeroActionAllowanceState::GrantSource::BATTLE_PLAN))
 			return false;
@@ -554,10 +550,7 @@ std::optional<FocusFireState> CBattleInfoCallback::battlePrepareFocusFireState(B
 	result.issuedRound = battleGetRound();
 	const auto * hero = battleGetFightingHero(side);
 	const auto & formula = getBattle()->getHeroCommandRules()["commands"]["focusFire"]["effects"]["rangedDamagePercent"];
-	const auto & allowances = getBattle()->getHeroActionAllowances(side);
-	const auto allowance = result.issuedRound >= 0 && allowances.currentRound == result.issuedRound
-		? allowances.eligibleAllowance(HeroActionAllowanceState::ActionKind::ORDER, result.issuedRound)
-		: std::optional<HeroActionAllowanceState::Selection>();
+	const auto allowance = battleGetOrderActionAllowance(side);
 	const bool spendsHeroAllowance = !heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), HeroCommand::CHARGE)
 		|| (allowance && allowance->allowance == HeroActionAllowanceState::AllowanceKind::HERO);
 	const auto warcastingBonus = newHorizonsWarcasting::enabled(getBattle()->getMagicRules())
@@ -1234,8 +1227,7 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderState(B
 	result.issuedRound = battleGetRound();
 	if(result.issuedRound < 1)
 		return {};
-	const auto allowance = getBattle()->getHeroActionAllowances(side).eligibleAllowance(
-		HeroActionAllowanceState::ActionKind::ORDER, result.issuedRound);
+	const auto allowance = battleGetOrderActionAllowance(side);
 	if(newHorizonsWarcasting::enabled(getBattle()->getMagicRules())
 		&& allowance && allowance->allowance == HeroActionAllowanceState::AllowanceKind::HERO)
 		result.warcastingBonusPercent = newHorizonsWarcasting::orderBonus(

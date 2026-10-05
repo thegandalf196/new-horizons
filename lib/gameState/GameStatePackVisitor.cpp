@@ -16,6 +16,7 @@
 #include "../battle/NewHorizonsWarcasting.h"
 #include "../bonuses/BonusSelector.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../spells/NewHorizonsSpellAvailability.h"
 #include "TavernHeroesPool.h"
 
 #include "../CPlayerState.h"
@@ -2239,8 +2240,7 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		if(previousDoubleCommand.orderPending())
 		{
 			const auto firstOrder = battleContext->getHeroOrderState(pack.ba.side, previousDoubleCommand.firstOrder);
-			const auto selected = side.heroActionAllowances.eligibleAllowance(
-				HeroActionAllowanceState::ActionKind::ORDER, battleContext->getRound());
+			const auto selected = battleContext->battleGetOrderActionAllowance(pack.ba.side);
 			if(!battleContext->battleHasPendingDoubleCommand(pack.ba.side) || !firstOrder
 				|| firstOrder->issuedRound != previousDoubleCommand.issuedRound
 				|| pack.ba.command == previousDoubleCommand.firstOrder
@@ -2252,8 +2252,7 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		}
 		else if(pack.doubleCommandState)
 		{
-			const auto selected = side.heroActionAllowances.eligibleAllowance(
-				HeroActionAllowanceState::ActionKind::ORDER, battleContext->getRound());
+			const auto selected = battleContext->battleGetOrderActionAllowance(pack.ba.side);
 			const auto * anchor = battleContext->battleActiveUnit();
 			if(!selected || selected->allowance != HeroActionAllowanceState::AllowanceKind::HERO
 				|| !anchor || !pack.orderState)
@@ -2292,7 +2291,8 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 	if(pack.ba.side == BattleSide::ATTACKER || pack.ba.side == BattleSide::DEFENDER)
 	{
 		auto * battle = gs.getBattle(pack.battleID);
-		if(pack.ba.metamagicFollowup && !battleContext->battleCanUseMetamagicFollowup(pack.ba.side))
+		if(pack.ba.metamagicFollowup
+			&& !battleContext->battleCanUseMetamagicFollowup(pack.ba.side, pack.ba.spell))
 			throw std::runtime_error("Metamagic follow-up StartAction without a selected Metamagic grant");
 		if(pack.ba.timeStopHeroActionPass)
 		{
@@ -2314,10 +2314,10 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 			bool spendsHeroAction = !pack.ba.metamagicFollowup;
 			if(sharedActionBudget)
 			{
-				const auto selected = battle->getSide(pack.ba.side).heroActionAllowances.eligibleAllowance(
-					HeroActionAllowanceState::ActionKind::SPELL, battle->getRound());
-				spendsHeroAction = selected
-					&& selected->allowance == HeroActionAllowanceState::AllowanceKind::HERO;
+				const auto selected = battleContext->battleGetSpellActionAllowance(pack.ba.side, pack.ba.spell);
+				if(!selected)
+					throw std::runtime_error("Hero spell StartAction has no eligible payload-aware allowance");
+				spendsHeroAction = selected->allowance == HeroActionAllowanceState::AllowanceKind::HERO;
 			}
 			if(spendsHeroAction)
 				battle->expireTimeStops(pack.ba.side);
@@ -2333,38 +2333,52 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		const bool sharedActionBudget = heroCommands::supportedByRules(
 			commandBattle->getHeroCommandRules(), HeroCommand::CHARGE);
 		std::optional<HeroActionAllowanceState::Receipt> orderReceipt;
+		auto nextAllowances = side.heroActionAllowances;
 		if(sharedActionBudget)
 		{
-			const auto selected = side.heroActionAllowances.eligibleAllowance(
-				HeroActionAllowanceState::ActionKind::ORDER, commandBattle->getRound());
+			const auto mandate = commandBattle->battleGetDivineMandateStatus(pack.ba.side);
+			const bool mandateAvailable = mandate.active
+				&& mandate.completedPairs < mandate.maximumPairs;
+			const auto orderGrantFilter = [mandateAvailable](const HeroActionAllowanceState::Grant & grant)
+			{
+				return grant.source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
+					|| mandateAvailable;
+			};
+			const auto selected = nextAllowances.eligibleAllowance(
+				HeroActionAllowanceState::ActionKind::ORDER, commandBattle->getRound(), orderGrantFilter);
 			if(!selected)
 				throw std::runtime_error("Accepted Order has no eligible action allowance");
 			if(acceptedPreCombatOrderState
 				&& (selected->allowance != HeroActionAllowanceState::AllowanceKind::ORDER
 					|| selected->source != HeroActionAllowanceState::GrantSource::BATTLE_PLAN))
 				throw std::runtime_error("Battle Plan Order has no selected dedicated allowance");
-			orderReceipt = side.heroActionAllowances.consumeAllowance(selected->grantId,
-				HeroActionAllowanceState::ActionKind::ORDER, commandBattle->getRound());
+			orderReceipt = nextAllowances.consumeAllowance(selected->grantId,
+				HeroActionAllowanceState::ActionKind::ORDER, commandBattle->getRound(), orderGrantFilter);
 			if(!orderReceipt)
 				throw std::runtime_error("Could not commit accepted Order action allowance");
+			DivineMandateTransition::applyAcceptedAction(nextAllowances, *orderReceipt,
+				commandBattle->getRound(), false, mandate.maximumPairs);
 		}
+		if(acceptedPreCombatOrderState && !orderReceipt)
+			throw std::runtime_error("Battle Plan Order did not consume its dedicated allowance");
 		if(acceptedDoubleCommandState)
 		{
 			if(!side.doubleCommandState.orderPending())
 			{
 				if(!orderReceipt || orderReceipt->allowance != HeroActionAllowanceState::AllowanceKind::HERO
-					|| side.heroActionAllowances.nextGrantId == std::numeric_limits<uint32_t>::max())
+					|| nextAllowances.nextGrantId == std::numeric_limits<uint32_t>::max())
 					throw std::runtime_error("Invalid Double Command primary Order receipt");
-				side.heroActionAllowances.grantAllowance(HeroActionAllowanceState::AllowanceKind::ORDER,
+				nextAllowances.grantAllowance(HeroActionAllowanceState::AllowanceKind::ORDER,
 					HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND, commandBattle->getRound());
 			}
 			else if(!orderReceipt || orderReceipt->source != HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND)
 				throw std::runtime_error("Double Command follow-up did not consume its grant");
 			commandBattle->setDoubleCommandState(pack.ba.side, *acceptedDoubleCommandState);
-			side.validateDoubleCommandState();
 		}
-		if(acceptedPreCombatOrderState && !orderReceipt)
-			throw std::runtime_error("Battle Plan Order did not consume its dedicated allowance");
+		if(sharedActionBudget)
+			side.heroActionAllowances = std::move(nextAllowances);
+		if(acceptedDoubleCommandState)
+			side.validateDoubleCommandState();
 		const bool spendsHeroAction = sharedActionBudget
 			? orderReceipt && orderReceipt->allowance == HeroActionAllowanceState::AllowanceKind::HERO
 			: true;
@@ -2728,6 +2742,19 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 			throw std::runtime_error("Accepted Counterspell Mana expenditure has no fighting hero");
 		const bool sharedActionBudget = heroCommands::supportedByRules(
 			battle->getHeroCommandRules(), HeroCommand::CHARGE);
+		const auto lightSchoolNumber = SpellSchool::decode("new-horizons:light");
+		const auto & savedMagicRules = battle->getMagicRules();
+		const auto spellSchools = newHorizonsMagic::spellSchools(savedMagicRules, pack.spellID);
+		const bool isLightSpell = newHorizonsMagic::spellAllowedByHeroRoster(savedMagicRules, pack.spellID)
+			&& lightSchoolNumber >= 0
+			&& std::find(spellSchools.begin(), spellSchools.end(), SpellSchool(lightSchoolNumber)) != spellSchools.end();
+		const auto mandate = battle->battleGetDivineMandateStatus(pack.side);
+		const bool mandateAvailable = mandate.active && mandate.completedPairs < mandate.maximumPairs;
+		const auto spellGrantFilter = [isLightSpell, mandateAvailable](const HeroActionAllowanceState::Grant & grant)
+		{
+			return HeroActionAllowanceState::grantAllowedForSpell(grant, isLightSpell)
+				&& (grant.source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE || mandateAvailable);
+		};
 		std::optional<HeroSpellAllowanceTransition::Result> spellTransition;
 		if(pack.metamagicGrand && !pack.metamagicFollowup)
 			throw std::runtime_error("Grand Metamagic metadata requires a follow-up cast");
@@ -2738,19 +2765,29 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 			throw std::runtime_error("Invalid Formula Reserve Metamagic refund");
 		if(sharedActionBudget)
 		{
-			const auto selected = casterSide.heroActionAllowances.eligibleAllowance(
-				HeroActionAllowanceState::ActionKind::SPELL, battle->getRound());
+			auto nextAllowances = casterSide.heroActionAllowances;
+			auto nextMetamagicUsesConsumed = casterSide.metamagicUsesConsumed;
+			auto nextMetamagicPendingCount = casterSide.metamagicPendingCount;
+			auto nextMetamagicGrandUsed = casterSide.metamagicGrandUsed;
+			const auto selected = nextAllowances.eligibleAllowance(
+				HeroActionAllowanceState::ActionKind::SPELL, battle->getRound(), spellGrantFilter);
 			if(!selected)
 				throw std::runtime_error("Accepted Hero spell has no eligible action allowance");
 			auto transition = HeroSpellAllowanceTransition::commitAcceptedCast(
-				casterSide.heroActionAllowances, selected->grantId, battle->getRound(),
+				nextAllowances, selected->grantId, battle->getRound(),
 				pack.metamagicFollowup, pack.metamagicGrand,
 				static_cast<uint8_t>(hero ? newHorizonsMagic::metamagicRank(hero) : 0),
 				hero && newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND),
-				casterSide.metamagicUsesConsumed, casterSide.metamagicPendingCount,
-				casterSide.metamagicGrandUsed, casterSide.metamagicSequenceSpells.size());
+				nextMetamagicUsesConsumed, nextMetamagicPendingCount,
+				nextMetamagicGrandUsed, casterSide.metamagicSequenceSpells.size(), spellGrantFilter);
 			if(!transition)
 				throw std::runtime_error("Accepted Hero spell has forged or inconsistent allowance metadata");
+			DivineMandateTransition::applyAcceptedAction(nextAllowances, transition->receipt,
+				battle->getRound(), isLightSpell, mandate.maximumPairs);
+			casterSide.heroActionAllowances = std::move(nextAllowances);
+			casterSide.metamagicUsesConsumed = nextMetamagicUsesConsumed;
+			casterSide.metamagicPendingCount = nextMetamagicPendingCount;
+			casterSide.metamagicGrandUsed = nextMetamagicGrandUsed;
 			spellTransition = std::move(*transition);
 		}
 		else if(pack.metamagicFollowup && casterSide.metamagicPendingCount == 0)

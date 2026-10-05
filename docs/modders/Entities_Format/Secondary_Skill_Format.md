@@ -79,7 +79,11 @@ Bloodrage uses the same metadata shape:
 ```
 
 `provider` selects an implemented status reader, not a script or arbitrary
-expression. `metamagicUses` reads the authoritative remaining/maximum Metamagic
+expression. `divineMandateUses` reads the remaining/maximum completed Divine
+Mandate pairs and any pending Light-Spell-only or Order-only opportunity from
+saved battle state. Unused opportunities expire at round end without spending a
+pair; a completed follow-up spends one pair. It is not a separate action pool.
+`metamagicUses` reads the authoritative remaining/maximum Metamagic
 combat allowance. `bloodrageDamage` reads the current cumulative Bloodrage damage
 bonus and the cap for its learned rank from battle state. Its compact value is
 shown as `+current/cap%`; the tooltip supplies the expanded explanation. Declaring a provider

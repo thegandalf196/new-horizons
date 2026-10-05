@@ -133,12 +133,20 @@ TEST_F(CSkillTest, BloodrageCombatStatusProviderIsTyped)
 	EXPECT_EQ(parsed->getCombatStatusDescriptionTranslated(), "Localized combat status probe");
 }
 
+TEST_F(CSkillTest, DivineMandateCombatStatusProviderIsTyped)
+{
+	TestSkillHandler handler;
+	const auto parsed = handler.loadFromJson("vcmi-test", skillConfig("divineMandateUses"), "divineMandateCombatStatusProbe", 42);
+	EXPECT_EQ(parsed->getCombatStatusProvider(), CSkill::CombatStatusProvider::DIVINE_MANDATE_USES);
+	EXPECT_EQ(parsed->getCombatStatusDescriptionTranslated(), "Localized combat status probe");
+}
+
 TEST(CSkillCombatStatusSchemaTest, OptionalStatusAcceptsCanonicalAndRejectsMalformedShapes)
 {
 	JsonNode skills(JsonPath::builtin("config/newHorizonsSkills"));
 	// This test validates status metadata, not mod-mounted image resources.
 	// Images are optional; their bindings are checked by the skill-data suite.
-	for(const auto * identifier : {"metamagic", "bloodrage"})
+	for(const auto * identifier : {"metamagic", "bloodrage", "divineMandate"})
 	{
 		JsonNode canonicalSkill = skills[identifier];
 		for(const auto * rank : {"basic", "advanced", "expert"})

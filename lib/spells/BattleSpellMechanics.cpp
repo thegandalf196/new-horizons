@@ -855,6 +855,12 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	if(mode == Mode::HERO && isMetamagicFollowup()
 		&& !battle()->battleCanUseMetamagicSpell(casterSide, owner->getId(), isMetamagicGrand()))
 		return adaptGenericProblem(problem);
+	// The shared Hero Action ledger is payload-aware: Divine Mandate's typed
+	// Spell grant may pay only for a Light spell. Keep this in the authoritative
+	// mechanics path so forged StartAction/cast metadata cannot spend a grant.
+	if(mode == Mode::HERO && battle()->battleUsesHeroCommands()
+		&& !battle()->battleGetSpellActionAllowance(casterSide, owner->getId()))
+		return adaptGenericProblem(problem);
 
 	if(!newHorizonsMagic::spellAllowedByBattleRoster(*battle(), owner->getId()))
 		return adaptGenericProblem(problem);
@@ -1598,7 +1604,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		const auto & allowances = battleInfo->getHeroActionAllowances(casterSide);
 		if(allowances.currentRound == battleRound)
 		{
-			const auto selection = allowances.eligibleAllowance(HeroActionAllowanceState::ActionKind::SPELL, battleRound);
+			const auto selection = battle()->battleGetSpellActionAllowance(casterSide, owner->getId());
 			spendsHeroAllowance = selection
 				&& selection->allowance == HeroActionAllowanceState::AllowanceKind::HERO;
 		}

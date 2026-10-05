@@ -422,6 +422,28 @@ void BattleHeroActionWindow::refresh()
 	}
 	auto callback = owner->getBattle();
 	const auto side = callback->battleGetMySide();
+	const auto divineMandateStatus = callback->battleGetDivineMandateStatus(side);
+	const auto & divineMandateFollowup = divineMandateStatus.pendingFollowup;
+	const bool pendingDivineMandateSpell = divineMandateFollowup
+		&& divineMandateFollowup->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
+		&& divineMandateFollowup->allowance == HeroActionAllowanceState::AllowanceKind::SPELL;
+	std::string divineMandateContext;
+	const auto mandateRound = callback->battleGetRound();
+	std::optional<HeroActionAllowanceState::Selection> orderSelection;
+	if(callback->battleUsesHeroCommands() && mandateRound >= 0)
+	{
+		const auto & allowanceLedger = callback->getBattle()->getHeroActionAllowances(side);
+		if(allowanceLedger.currentRound == mandateRound)
+			orderSelection = allowanceLedger.eligibleAllowance(HeroActionAllowanceState::ActionKind::ORDER, mandateRound);
+	}
+	if(orderSelection && orderSelection->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE)
+	{
+		divineMandateContext = "Divine Mandate Order follow-up available through the end of round "
+			+ std::to_string(orderSelection->expiryRound) + ".";
+	}
+	else if(pendingDivineMandateSpell && !orderSelection)
+		divineMandateContext = "Divine Mandate Light Spell follow-up available through the end of round "
+			+ std::to_string(divineMandateFollowup->expiryRound) + ".";
 	const bool canAct = owner->makingTurn() && !owner->curInt->isAutoFightOn && !owner->isInTacticsMode() && !owner->actionsController->heroSpellcastingModeActive();
 	const auto * hero = owner->currentHero();
 	const auto & rules = callback->getBattle()->getHeroCommandRules();
@@ -462,7 +484,12 @@ void BattleHeroActionWindow::refresh()
 		if(!owner->makingTurn())
 			return std::string("It is not your turn.");
 		if(orderBudgetSpent())
+		{
+			if(pendingDivineMandateSpell)
+				return std::string("A Divine Mandate Light Spell follow-up is available through the end of round ")
+					+ std::to_string(divineMandateFollowup->expiryRound) + ".";
 			return std::string("No Hero or Order action is available.");
+		}
 		return std::string();
 	};
 	for(size_t i = 0; i < commands.size(); ++i)
@@ -502,6 +529,7 @@ void BattleHeroActionWindow::refresh()
 		entry.second->setHelp(CButton::tooltip(display.name,
 			std::string(display.description) + (reason.empty() ? "\n\nReady: choose this Order." : "\n\nDisabled: " + reason)
 			+ combinedArmsHelp(rules, entry.first, hero)
+			+ (divineMandateContext.empty() ? "" : "\n\n" + divineMandateContext)
 			+ "\nSpends an available Hero or Order action; no mana."));
 		if(protectPairUnavailable)
 			entry.second->setBorderColor(Colors::ORANGE);

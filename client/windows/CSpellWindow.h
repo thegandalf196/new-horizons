@@ -36,8 +36,10 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 		const CSpell * mySpell;
 		int schoolLevel; //range: 0 none, 3 - expert
 		bool schoolLocked;
+		bool divineMandateLocked = false;
 		std::string schoolRequirementLabel;
 		std::string schoolRequirementText;
+		std::string divineMandateRequirementText;
 		CSpellWindow * owner;
 		std::shared_ptr<CAnimImage> image;
 		std::shared_ptr<CAnimImage> schoolBorder;
@@ -140,6 +142,9 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 	void processSpells();
 	void searchInput();
 	void computeSpellsPerArea(); //recalculates spellAreas::mySpell
+	bool canUseSpellForCurrentDivineMandateFollowup(SpellID spell) const;
+	std::string currentDivineMandateFollowupText() const;
+	std::string divineMandateSpellFollowupText(SpellID spell) const;
 
 	void setSchoolImages(SpellSchool school);
 

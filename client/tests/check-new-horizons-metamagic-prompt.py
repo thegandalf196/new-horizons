@@ -22,7 +22,7 @@ skill_schema = json.loads((ROOT / "config/schemas/skill.json").read_text(encodin
 new_horizons_skills = json.loads((ROOT / "config/newHorizonsSkills.json").read_text(encoding="utf-8"))
 
 combat_status_providers = skill_schema["properties"]["combatStatus"]["properties"]["provider"]["enum"]
-assert combat_status_providers == ["metamagicUses", "bloodrageDamage"]
+assert combat_status_providers == ["metamagicUses", "bloodrageDamage", "divineMandateUses"]
 assert new_horizons_skills["metamagic"]["combatStatus"]["provider"] == "metamagicUses"
 assert new_horizons_skills["bloodrage"]["combatStatus"]["provider"] == "bloodrageDamage"
 
@@ -77,21 +77,33 @@ assert "Metamagic" not in wait
 cast = actions.split("void BattleActionsController::castThisSpell", 1)[1].split(
     "bool BattleActionsController::continueOrdinarySpellcast", 1
 )[0]
-assert "battleCanUseMetamagicFollowup(heroSpellToCast->side)" in cast
+assert "battleCanUseMetamagicFollowup(heroSpellToCast->side, spellID)" in cast
 assert "heroSpellToCast->metamagicFollowup" in cast
 assert "metamagicGrand" not in cast
 
 # Grand extension is selected from authoritative consumed-use state by the
 # runtime, never from a client-side mode or BattleAction request bit. All
-# spell previews likewise use the default (non-player-selected) legality path.
+# spell previews may copy an already-authored action value, but cannot expose a
+# player-selected Grand mode. Keep this exact preview exception narrow.
+grand_preview_passthrough = "cast.setMetamagicGrand(action.metamagicGrand);"
+assert actions.count(grand_preview_passthrough) == 1
+preview = actions.split("std::optional<FriendlyFirePreview> buildFriendlyFirePreview", 1)[1].split(
+    "FriendlyFirePreview result;", 1
+)[0]
+assert grand_preview_passthrough in preview
+actions_without_grand_preview = actions.replace(grand_preview_passthrough, "")
 client_sources = (interface_h, interface, window_h, window, actions_h, actions, spellbook,
                   (ROOT / "client/windows/CSpellWindow.h").read_text(encoding="utf-8"))
 for source in client_sources:
+    source = source.replace(grand_preview_passthrough, "")
     for term in ("metamagicGrand", "toggleMetamagicGrandFollowup", "metamagicGrandModeActive"):
         assert term not in source, f"manual Grand request/control remains: {term}"
 assert "setMetamagicFollowup(followup)" in actions
-assert "setMetamagicGrand" not in actions + interface
-assert "battleCanUseMetamagicFollowup(metamagicSide)" in spellbook
+assert "setMetamagicGrand" not in actions_without_grand_preview + interface
+assert "battleCanUseMetamagicFollowup(metamagicSide, mySpell->id)" in spellbook
+assert "battleGetSpellActionAllowance(side, spell)" in spellbook
+assert "canUseSpellForCurrentDivineMandateFollowup(mySpell->id)" in spellbook
+assert "DIVINE_MANDATE_USES" in window
 assert "METAMAGIC_ARCANE_ECONOMY" in spellbook
 assert "owner->myHero);" in spellbook.split("const bool canCast", 1)[1].split("if(canCast)", 1)[0]
 

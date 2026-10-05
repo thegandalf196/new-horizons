@@ -432,6 +432,97 @@ void CSpellWindow::readSchoolContext()
 	}
 }
 
+bool CSpellWindow::canUseSpellForCurrentDivineMandateFollowup(SpellID spell) const
+{
+	if(!battleSpellsOnly || !myInt->battleInt)
+		return true;
+
+	try
+	{
+		const auto battleCallback = myInt->battleInt->getBattle();
+		if(!battleCallback)
+			return true;
+		const auto side = battleCallback->battleGetMySide();
+		if(side == BattleSide::NONE)
+			return true;
+
+		const auto status = battleCallback->battleGetDivineMandateStatus(side);
+		const auto & pending = status.pendingFollowup;
+		if(!pending
+			|| pending->source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
+			|| pending->allowance != HeroActionAllowanceState::AllowanceKind::SPELL)
+			return true;
+
+		// Use the same payload-aware query as authoritative casting. In
+		// particular, another unrestricted Spell grant may still pay for a
+		// non-Light spell while Divine Mandate's typed grant is pending.
+		return battleCallback->battleGetSpellActionAllowance(side, spell).has_value();
+	}
+	catch(const std::runtime_error &)
+	{
+		// If the battle has ended while this view is closing, keep the spell
+		// inspectable; the authoritative cast path still decides legality.
+		return true;
+	}
+}
+
+std::string CSpellWindow::currentDivineMandateFollowupText() const
+{
+	if(!battleSpellsOnly || !myInt->battleInt)
+		return {};
+
+	try
+	{
+		const auto battleCallback = myInt->battleInt->getBattle();
+		if(!battleCallback)
+			return {};
+		const auto side = battleCallback->battleGetMySide();
+		if(side == BattleSide::NONE)
+			return {};
+
+		const auto status = battleCallback->battleGetDivineMandateStatus(side);
+		const auto & pending = status.pendingFollowup;
+		if(!pending
+			|| pending->source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
+			|| pending->allowance != HeroActionAllowanceState::AllowanceKind::SPELL)
+			return {};
+
+		return "Divine Mandate Light Spell follow-up; available through the end of round "
+			+ std::to_string(pending->expiryRound) + ".";
+	}
+	catch(const std::runtime_error &)
+	{
+		return {};
+	}
+}
+
+std::string CSpellWindow::divineMandateSpellFollowupText(SpellID spell) const
+{
+	if(!battleSpellsOnly || !myInt->battleInt)
+		return {};
+
+	try
+	{
+		const auto battleCallback = myInt->battleInt->getBattle();
+		if(!battleCallback)
+			return {};
+		const auto side = battleCallback->battleGetMySide();
+		if(side == BattleSide::NONE)
+			return {};
+
+		const auto selection = battleCallback->battleGetSpellActionAllowance(side, spell);
+		if(!selection || selection->source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE)
+			return {};
+
+		return "Divine Mandate source: Light Spell follow-up through the end of round "
+			+ std::to_string(selection->expiryRound) + ".";
+	}
+	catch(const std::runtime_error &)
+	{
+		return {};
+	}
+}
+
 void CSpellWindow::searchInput()
 {
 	if(searchBox)
@@ -879,6 +970,12 @@ void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)
 			GAME->interface()->showInfoDialog(schoolRequirementText);
 			return;
 		}
+		if(!owner->canUseSpellForCurrentDivineMandateFollowup(mySpell->id))
+		{
+			GAME->interface()->showInfoDialog(owner->currentDivineMandateFollowupText()
+				+ "\nThis Spell cannot use that follow-up.");
+			return;
+		}
 
 		if(owner->onSpellSelect)
 		{
@@ -891,7 +988,7 @@ void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)
 		const auto battleCallback = battleInterface ? battleInterface->getBattle() : nullptr;
 		const auto metamagicSide = battleCallback ? battleCallback->battleGetMySide() : BattleSide::NONE;
 		const bool metamagicFollowup = battleCallback && metamagicSide != BattleSide::NONE
-			&& battleCallback->battleCanUseMetamagicFollowup(metamagicSide);
+			&& battleCallback->battleCanUseMetamagicFollowup(metamagicSide, mySpell->id);
 		auto spellCost = owner->myInt->cb->getSpellCost(mySpell, owner->myHero);
 		if(metamagicFollowup && newHorizonsMagic::hasMetamagicPerk(owner->myHero, newHorizonsMagic::METAMAGIC_ARCANE_ECONOMY))
 			spellCost = std::max(1, spellCost - 2);
@@ -998,8 +1095,15 @@ void CSpellWindow::SpellArea::showPopupWindow(const Point & cursorPosition)
 			dmgInfo = dmgText.toString(&GAME->translator());
 		}
 
-		const auto requirement = schoolLocked ? "\n\n" + schoolRequirementText : std::string();
-		CRClickPopup::createAndPush(newHorizonsMagic::spellDescriptionForHero(owner->myHero, mySpell, schoolLevel) + dmgInfo + requirement,
+		std::string requirements;
+		if(schoolLocked)
+			requirements += "\n\n" + schoolRequirementText;
+		if(divineMandateLocked)
+			requirements += "\n\n" + divineMandateRequirementText;
+		const auto followup = owner->divineMandateSpellFollowupText(mySpell->id);
+		const auto followupInfo = followup.empty() ? std::string() : "\n\n" + followup;
+		CRClickPopup::createAndPush(newHorizonsMagic::spellDescriptionForHero(owner->myHero, mySpell, schoolLevel)
+			+ dmgInfo + requirements + followupInfo,
 			std::make_shared<CComponent>(ComponentType::SPELL, mySpell->id));
 	}
 }
@@ -1017,7 +1121,11 @@ void CSpellWindow::SpellArea::hover(bool on)
 				message.replaceTextID("core.genrltxt", 171 + spellLevel);
 			else
 				message.replaceTextID("vcmi.spellBook.zero_level.hint");
-			owner->statusBar->write(message.toString(&GAME->translator()));
+			auto statusText = message.toString(&GAME->translator());
+			const auto followup = owner->divineMandateSpellFollowupText(mySpell->id);
+			if(!followup.empty())
+				statusText += " — " + followup;
+			owner->statusBar->write(statusText);
 		}
 		else
 			owner->statusBar->clear();
@@ -1028,8 +1136,10 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 {
 	schoolBorder.reset();
 	schoolLocked = false;
+	divineMandateLocked = false;
 	schoolRequirementLabel.clear();
 	schoolRequirementText.clear();
+	divineMandateRequirementText.clear();
 	image->visible = false;
 	name->setText("");
 	level->setText("");
@@ -1044,6 +1154,9 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 		// School rank; learning and other non-inscribed sources remain gated.
 		schoolLocked = requiredRank > 0 && !inscribedInSpellbook
 			&& !newHorizonsMagic::hasSchoolProficiency(owner->myHero, mySpell->getId());
+		divineMandateLocked = !owner->canUseSpellForCurrentDivineMandateFollowup(mySpell->getId());
+		if(divineMandateLocked)
+			divineMandateRequirementText = "This spell is not eligible for the pending Divine Mandate Light Spell follow-up.";
 		if(schoolLocked)
 		{
 			const auto rankName = GAME->translator().translate(TextIdentifier("core.skilllev", requiredRank - 1).get());
@@ -1064,7 +1177,7 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 		{
 			const auto battle = owner->myInt->battleInt->getBattle();
 			const auto side = battle->battleGetMySide();
-			if(side != BattleSide::NONE && battle->battleCanUseMetamagicFollowup(side)
+			if(side != BattleSide::NONE && battle->battleCanUseMetamagicFollowup(side, mySpell->id)
 				&& newHorizonsMagic::hasMetamagicPerk(owner->myHero, newHorizonsMagic::METAMAGIC_ARCANE_ECONOMY))
 				spellCost = std::max(1, spellCost - 2);
 		}
@@ -1086,7 +1199,7 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 		}
 
 		ColorRGBA firstLineColor, secondLineColor;
-		if((spellCost > owner->myHero->getManaAvailable() || schoolLocked) && !owner->onSpellSelect) //hero cannot cast this spell
+		if(divineMandateLocked || ((spellCost > owner->myHero->getManaAvailable() || schoolLocked) && !owner->onSpellSelect)) //hero cannot cast this spell
 		{
 			firstLineColor = Colors::WHITE;
 			secondLineColor = Colors::ORANGE;
@@ -1118,6 +1231,8 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 		cost->color = secondLineColor;
 		if(schoolLocked)
 			cost->setText(schoolRequirementLabel);
+		else if(divineMandateLocked)
+			cost->setText("Light spells only");
 		else
 		{
 			MetaString costText = MetaString::createFromRawString("%s: %d");

@@ -1123,7 +1123,7 @@ bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & 
 {
 	if(ba.metamagicGrand)
 		return false;
-	if(ba.metamagicFollowup != battle.battleCanUseMetamagicFollowup(ba.side))
+	if(ba.metamagicFollowup != battle.battleCanUseMetamagicFollowup(ba.side, ba.spell))
 		return false;
 
 	const auto * hero = battle.battleGetFightingHero(ba.side);
@@ -1178,7 +1178,7 @@ bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & 
 
 bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)
 {
-	if(ba.metamagicFollowup != battle.battleCanUseMetamagicFollowup(ba.side))
+	if(ba.metamagicFollowup != battle.battleCanUseMetamagicFollowup(ba.side, ba.spell))
 	{
 		gameHandler->complain("Metamagic follow-up is not available in the authoritative battle state");
 		return false;
@@ -2914,7 +2914,7 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 	// block creature actions, Orders, Wait, or Defend; only an accepted HERO_SPELL
 	// may consume the selected spell grant.
 	if(ba.actionType == EActionType::HERO_SPELL
-		&& ba.metamagicFollowup != battle.battleCanUseMetamagicFollowup(ba.side))
+		&& ba.metamagicFollowup != battle.battleCanUseMetamagicFollowup(ba.side, ba.spell))
 	{
 		gameHandler->complain("Forged or stale Metamagic follow-up request");
 		return false;
@@ -3002,8 +3002,7 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 			const auto & preCombatOrder = battle.getBattle()->getPreCombatOrderState(ba.side);
 			const auto & currentDoubleCommand = battle.getBattle()->getDoubleCommandState(ba.side);
 			const auto & allowances = battle.getBattle()->getHeroActionAllowances(ba.side);
-			const auto selected = allowances.eligibleAllowance(
-				HeroActionAllowanceState::ActionKind::ORDER, battle.battleGetRound());
+			const auto selected = battle.battleGetOrderActionAllowance(ba.side);
 			if(preCombatOrder.orderPending())
 			{
 				if(!battle.battleHasPendingPreCombatOrder(ba.side) || !selected

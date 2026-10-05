@@ -94,7 +94,7 @@
 			"properties" : {
 				"provider" : {
 					"type" : "string",
-					"enum" : ["metamagicUses", "bloodrageDamage"],
+					"enum" : ["metamagicUses", "bloodrageDamage", "divineMandateUses"],
 					"description" : "Source of the read-only combat status value"
 				},
 				"description" : {

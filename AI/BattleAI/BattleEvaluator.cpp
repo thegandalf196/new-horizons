@@ -77,6 +77,15 @@ SpellTypes spellType(const CSpell * spell)
 	return SpellTypes::OTHER;
 }
 
+bool isDivineMandateLightSpell(const CBattleInfoCallback & battle, SpellID spell)
+{
+	const auto schools = battle.battleGetSpellSchools(spell);
+	return std::any_of(schools.begin(), schools.end(), [](const SpellSchool & school)
+	{
+		return school.serializationKey() == "new-horizons:light";
+	});
+}
+
 bool isTransfigureMatter(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == "new-horizons:transfigureMatter";
@@ -4197,11 +4206,33 @@ bool BattleEvaluator::canCastSpell()
 	if(battleView->battleHasPendingDoubleCommand(side)
 		|| battleView->battleHasPendingPreCombatOrder(side))
 		return true;
+	const auto mandate = battleView->battleGetDivineMandateStatus(side);
+	if(mandate.active)
+	{
+		const auto * hero = battleView->battleGetMyHero();
+		if(hero && hero->hasSpellbook())
+			for(const auto & spell : LIBRARY->spellh->objects)
+			{
+				const auto selection = battleView->battleGetSpellActionAllowance(side, spell->getId());
+				const bool metamagicFollowup = selection
+					&& battleView->battleCanUseMetamagicFollowup(side, spell->getId());
+				const bool grand = HeroSpellAllowanceTransition::activatesGrand(metamagicFollowup,
+					battleView->battleMetamagicPendingCount(side),
+					battleView->battleMetamagicSequenceSpells(side).size(),
+					battleView->battleMetamagicUsesConsumed(side),
+					newHorizonsMagic::metamagicRank(hero),
+					newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND),
+					battleView->battleMetamagicGrandUsed(side));
+				if(selection && (spellType(spell.get()) == SpellTypes::BATTLE || isCounterspell(spell.get()))
+					&& spell->canBeCast(battleView.get(), spells::Mode::HERO, hero, grand))
+					return true;
+			}
+	}
 	auto hero = battleView->battleGetMyHero();
 	if(!hero)
 		return false;
 
-	if(battleView->battleCanCastSpell(hero, spells::Mode::HERO) == ESpellCastProblem::OK)
+	if(!mandate.active && battleView->battleCanCastSpell(hero, spells::Mode::HERO) == ESpellCastProblem::OK)
 		return true;
 	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE,
 		riposteCommand(), braceCommand()})
@@ -4228,29 +4259,55 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	LOGL("Casting spells sounds like fun. Let's see...");
 	// Double Command and Battle Plan both require an Order before any ordinary
 	// spell or creature action. Battle Plan's typed grant is not a HERO action.
-	const bool metamagicFollowup = !mandatoryOrder
+	const bool legacyMetamagicFollowup = !mandatoryOrder
 		&& battleView->battleCanUseMetamagicFollowup(side);
-	const bool activatesGrand = HeroSpellAllowanceTransition::activatesGrand(metamagicFollowup,
-		cb->getBattle(battleID)->battleMetamagicPendingCount(side),
-		cb->getBattle(battleID)->battleMetamagicSequenceSpells(side).size(),
-		cb->getBattle(battleID)->battleMetamagicUsesConsumed(side),
-		newHorizonsMagic::metamagicRank(hero),
-		newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND),
-		cb->getBattle(battleID)->battleMetamagicGrandUsed(side));
+	const auto divineMandateStatus = battleView->battleGetDivineMandateStatus(side);
 	// Grand is an automatic outcome of the third used sequence, never a
 	// selectable alternative. Project exactly the transition the server applies.
 	//Get all spells we can cast
 	struct SpellOption
 	{
 		const CSpell * spell = nullptr;
+		bool metamagicFollowup = false;
+		bool divineMandateFollowup = false;
 		bool metamagicGrand = false;
 	};
 	std::vector<SpellOption> possibleSpells;
 
 	for(auto const & s : LIBRARY->spellh->objects)
-		if(allowSpells && !mandatoryOrder
-			&& s->canBeCast(battleView.get(), spells::Mode::HERO, hero, activatesGrand))
-			possibleSpells.push_back({s.get(), activatesGrand});
+	{
+		if(!allowSpells || mandatoryOrder)
+			continue;
+
+		bool candidateMetamagicFollowup = legacyMetamagicFollowup;
+		bool divineMandateFollowup = false;
+		if(divineMandateStatus.active)
+		{
+			const auto selection = battleView->battleGetSpellActionAllowance(side, s->getId());
+			if(!selection)
+				continue;
+			candidateMetamagicFollowup = battleView->battleCanUseMetamagicFollowup(side, s->getId());
+			divineMandateFollowup = divineMandateStatus.pendingFollowup
+				&& selection->grantId == divineMandateStatus.pendingFollowup->id;
+		}
+
+		const bool activatesGrand = HeroSpellAllowanceTransition::activatesGrand(candidateMetamagicFollowup,
+			cb->getBattle(battleID)->battleMetamagicPendingCount(side),
+			cb->getBattle(battleID)->battleMetamagicSequenceSpells(side).size(),
+			cb->getBattle(battleID)->battleMetamagicUsesConsumed(side),
+			newHorizonsMagic::metamagicRank(hero),
+			newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND),
+			cb->getBattle(battleID)->battleMetamagicGrandUsed(side));
+		if(s->canBeCast(battleView.get(), spells::Mode::HERO, hero, activatesGrand))
+			possibleSpells.push_back({s.get(), candidateMetamagicFollowup,
+				divineMandateFollowup, activatesGrand});
+	}
+	const bool hasFollowupCandidate = !mandatoryOrder && (divineMandateStatus.active
+		? std::any_of(possibleSpells.begin(), possibleSpells.end(), [](const SpellOption & option)
+		{
+			return option.metamagicFollowup || option.divineMandateFollowup;
+		})
+		: legacyMetamagicFollowup);
 
 	LOGFL("I can cast %d spells.", possibleSpells.size());
 
@@ -4331,6 +4388,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	for(const auto & spellOption : possibleSpells)
 	{
 		const auto * spell = spellOption.spell;
+		const bool metamagicFollowup = spellOption.metamagicFollowup;
+		const bool divineMandateFollowup = spellOption.divineMandateFollowup;
 		const bool metamagicGrandChoice = spellOption.metamagicGrand;
 		if(isCounterspell(spell))
 		{
@@ -4345,6 +4404,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			ps.spell = spell;
 			ps.dest = {spells::Destination()};
 			ps.metamagicFollowup = metamagicFollowup;
+			ps.divineMandateFollowup = divineMandateFollowup;
 			ps.metamagicGrand = metamagicGrandChoice;
 			ps.value = value;
 			possibleCasts.push_back(std::move(ps));
@@ -4428,6 +4488,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							ps.dest.emplace_back(BattleHex::INVALID);
 						ps.spell = spell;
 						ps.metamagicFollowup = metamagicFollowup;
+						ps.divineMandateFollowup = divineMandateFollowup;
 						ps.metamagicGrand = metamagicGrandChoice;
 						ps.spellOvercharge = overcharge;
 						ps.spellSelectiveDispel = selectiveDispel;
@@ -4877,7 +4938,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		{
 			auto battleIsFinishedOpt = state->battleIsFinished();
 
-			if(battleIsFinishedOpt && !metamagicFollowup)
+			if(battleIsFinishedOpt && !hasFollowupCandidate)
 			{
 				print("No need to cast a spell. Battle will finish soon.");
 				return false;
@@ -4908,7 +4969,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 				if(ps.command == HeroCommand::NONE)
 				{
-					spellAllowance = state->prepareHeroSpellAllowance(side, ps.metamagicFollowup, ps.metamagicGrand);
+					spellAllowance = state->prepareHeroSpellAllowance(side, ps.spell->getId(),
+						ps.metamagicFollowup, ps.metamagicGrand);
 					if(!spellAllowance)
 					{
 						ps.value = std::numeric_limits<float>::lowest();
@@ -5781,7 +5843,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		{
 			return ps.value;
 		});
-	if(!mandatoryOrder && metamagicFollowup
+	if(!mandatoryOrder && (castToPerform.metamagicFollowup || castToPerform.divineMandateFollowup)
 		&& (castToPerform.value < noCastBaseline
 			|| vstd::isAlmostEqual(castToPerform.value, noCastBaseline)))
 	{
@@ -5792,7 +5854,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		LOGL("No beneficial hero action; retaining the Spell Action for this round.");
 		return false;
 	}
-	if(mandatoryOrder || metamagicFollowup
+	if(mandatoryOrder || castToPerform.metamagicFollowup || castToPerform.divineMandateFollowup
 		|| (castToPerform.value > noCastBaseline && !vstd::isAlmostEqual(castToPerform.value, noCastBaseline)))
 	{
 		LOGFL("Best hero action is %s (value %d). Will perform.", castToPerform.name() % castToPerform.value);

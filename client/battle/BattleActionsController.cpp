@@ -2484,7 +2484,8 @@ BattleHexArray BattleActionsController::getVerdantPrisonTargetHexes(const CSpell
 	spells::BattleCast cast(owner.getBattle().get(), getCurrentSpellcaster(), getCurrentCastMode(), spell);
 	const auto * battle = owner.getBattle().get();
 	const auto side = battle->battleGetMySide();
-	const bool followup = side != BattleSide::NONE && battle->battleCanUseMetamagicFollowup(side);
+	const bool followup = side != BattleSide::NONE
+		&& battle->battleCanUseMetamagicFollowup(side, spell->getId());
 	cast.setMetamagicFollowup(followup);
 
 	const auto mechanics = spell->battleMechanics(&cast);
@@ -2809,7 +2810,7 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 	heroSpellToCast->stackNumber = -1;
 	heroSpellToCast->side = battle->battleGetMySide();
 	heroSpellToCast->metamagicFollowup = heroSpellToCast->side != BattleSide::NONE
-		&& battle->battleCanUseMetamagicFollowup(heroSpellToCast->side);
+		&& battle->battleCanUseMetamagicFollowup(heroSpellToCast->side, spellID);
 	vengefulVinesOrigin = BattleHex::INVALID;
 	vengefulVinesOrientation = BattleHex::RIGHT;
 	vengefulVinesBattleID = BattleID();
@@ -2981,6 +2982,12 @@ bool BattleActionsController::continueOrdinarySpellcast()
 	const auto * spell = heroSpellToCast->spell.toSpell();
 	if(!castingHero || !spell)
 		return false;
+	const auto battle = owner.getBattle();
+	if(!battle)
+		return false;
+	heroSpellToCast->side = battle->battleGetMySide();
+	heroSpellToCast->metamagicFollowup = heroSpellToCast->side != BattleSide::NONE
+		&& battle->battleCanUseMetamagicFollowup(heroSpellToCast->side, spell->getId());
 
 	const auto spellSelMode = owner.getBattle()->getCasterAction(spell, castingHero, spells::Mode::HERO);
 	if(spellSelMode.get() == PossiblePlayerBattleAction::INVALID)
@@ -3339,7 +3346,8 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 				spells::BattleCast cast(owner.getBattle().get(), getCurrentSpellcaster(), getCurrentCastMode(), spell);
 				const auto * battle = owner.getBattle().get();
 				const auto side = battle->battleGetMySide();
-				const bool followup = side != BattleSide::NONE && battle->battleCanUseMetamagicFollowup(side);
+				const bool followup = side != BattleSide::NONE
+					&& battle->battleCanUseMetamagicFollowup(side, spell->getId());
 				cast.setMetamagicFollowup(followup);
 				const auto mechanics = spell->battleMechanics(&cast);
 				const auto capacityIncreasePercentMillionths = mechanics ? mechanics->getEffectValue() : 0;
@@ -4388,7 +4396,7 @@ bool BattleActionsController::isCastingPossibleHere(const CSpell * currentSpell,
 	{
 		const auto side = owner.getBattle()->battleGetMySide();
 		const bool followup = side != BattleSide::NONE
-			&& owner.getBattle()->battleCanUseMetamagicFollowup(side);
+			&& owner.getBattle()->battleCanUseMetamagicFollowup(side, currentSpell->getId());
 		cast.setMetamagicFollowup(followup);
 	}
 
@@ -4429,7 +4437,7 @@ bool BattleActionsController::isCastingPossibleHere(const CSpell * currentSpell,
 	{
 		const auto side = owner.getBattle()->battleGetMySide();
 		const bool followup = side != BattleSide::NONE
-			&& owner.getBattle()->battleCanUseMetamagicFollowup(side);
+			&& owner.getBattle()->battleCanUseMetamagicFollowup(side, currentSpell->getId());
 		selectiveCast.setMetamagicFollowup(followup);
 	}
 	selectiveCast.setSelectiveDispel(true);

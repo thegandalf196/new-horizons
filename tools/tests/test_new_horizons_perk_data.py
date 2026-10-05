@@ -231,6 +231,7 @@ ACTIVE_PERKS = {
     "new-horizons:havocMagic.annihilator",
 }
 ACTIVE_RANK_SKILLS = {
+    "new-horizons:divineMandate",
     "new-horizons:diplomacy",
     "new-horizons:warcasting",
     "new-horizons:demonicGating",

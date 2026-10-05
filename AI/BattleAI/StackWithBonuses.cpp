@@ -47,6 +47,15 @@
 
 namespace
 {
+bool isDivineMandateLightSpell(const CBattleInfoCallback & battle, SpellID spell)
+{
+	const auto schools = battle.battleGetSpellSchools(spell);
+	return std::any_of(schools.begin(), schools.end(), [](const SpellSchool & school)
+	{
+		return school.serializationKey() == "new-horizons:light";
+	});
+}
+
 bool projectedEffect(const Bonus * bonus)
 {
 	return bonus && (bonus->source == BonusSource::SPELL_EFFECT || bonus->source == BonusSource::HERO_COMMAND);
@@ -1149,7 +1158,7 @@ const HeroActionAllowanceState & HypotheticBattle::getHeroActionAllowances(Battl
 }
 
 std::optional<HypotheticBattle::ProjectedSpellAllowance> HypotheticBattle::prepareHeroSpellAllowance(
-	BattleSide side, bool metamagicFollowup, bool grand) const
+	BattleSide side, SpellID spell, bool metamagicFollowup, bool grand) const
 {
 	const auto & ledger = heroActionAllowances.at(side);
 	if(ledger.currentRound < 0)
@@ -1171,6 +1180,7 @@ std::optional<HypotheticBattle::ProjectedSpellAllowance> HypotheticBattle::prepa
 		prepared.allowancesBefore = ledger;
 		prepared.allowancesAfter = ledger;
 		prepared.metamagicBefore = metamagicStates.at(side);
+		prepared.spell = spell;
 		prepared.metamagicFollowup = metamagicFollowup;
 		prepared.grand = grand;
 		prepared.usesAfter = metamagicStates.at(side).uses;
@@ -1185,15 +1195,24 @@ std::optional<HypotheticBattle::ProjectedSpellAllowance> HypotheticBattle::prepa
 		auto meta = metamagicStates.at(side);
 		if(nextLedger.currentRound != projectedRound)
 			return {};
-		const auto selection = nextLedger.eligibleAllowance(HeroActionAllowanceState::ActionKind::SPELL, projectedRound);
-		if(!selection)
+		const auto candidateSelection = battleGetSpellActionAllowance(side, spell);
+		if(!candidateSelection)
+			return {};
+		const auto selectedGrantId = candidateSelection->grantId;
+		const auto grantFilter = [selectedGrantId](const HeroActionAllowanceState::Grant & grant)
+		{
+			return grant.id == selectedGrantId;
+		};
+		const auto selection = nextLedger.eligibleAllowance(
+			HeroActionAllowanceState::ActionKind::SPELL, projectedRound, grantFilter);
+		if(!selection || selection->grantId != candidateSelection->grantId)
 			return {};
 		const auto * hero = getSideHero(side);
 		const auto transition = HeroSpellAllowanceTransition::commitAcceptedCast(nextLedger, selection->grantId,
 			projectedRound, metamagicFollowup, grand,
 			hero ? newHorizonsMagic::metamagicRank(hero) : 0,
 			hero && newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND),
-			meta.uses, meta.pending, meta.grandUsed, meta.sequence.size());
+			meta.uses, meta.pending, meta.grandUsed, meta.sequence.size(), grantFilter);
 		if(!transition)
 			return {};
 
@@ -1202,6 +1221,7 @@ std::optional<HypotheticBattle::ProjectedSpellAllowance> HypotheticBattle::prepa
 		prepared.allowancesBefore = ledger;
 		prepared.allowancesAfter = std::move(nextLedger);
 		prepared.metamagicBefore = metamagicStates.at(side);
+		prepared.spell = spell;
 		prepared.metamagicFollowup = metamagicFollowup;
 		prepared.grand = grand;
 		prepared.usesAfter = meta.uses;
@@ -1273,7 +1293,8 @@ bool HypotheticBattle::isCurrentPreparedSpellAction(BattleSide side,
 	if((requireBegun && (!begunSpell || *begunSpell != prepared || begunOrder.has_value()))
 		|| (!requireBegun && (begunSpell.has_value() || begunOrder.has_value())))
 		return false;
-	const auto current = prepareHeroSpellAllowance(side, prepared.metamagicFollowup, prepared.grand);
+	const auto current = prepareHeroSpellAllowance(side, prepared.spell,
+		prepared.metamagicFollowup, prepared.grand);
 	return current && *current == prepared;
 }
 
@@ -1372,14 +1393,20 @@ bool HypotheticBattle::projectAcceptedHeroSpell(BattleSide side, SpellID spell, 
 {
 	const auto & action = prepared.action;
 	if(action.receipt.action != HeroActionAllowanceState::ActionKind::SPELL
+		|| spell != prepared.spell
 		|| metamagicFollowup != prepared.metamagicFollowup || grand != prepared.grand
 		|| !isCurrentPreparedSpellAction(side, prepared, true))
 		return false;
+	const bool lightSpell = isDivineMandateLightSpell(*this, spell);
+	const auto mandateStatus = battleGetDivineMandateStatus(side);
 
 	auto & meta = metamagicStates.at(side);
 	if(action.typedLedger)
 	{
-		heroActionAllowances.at(side) = prepared.allowancesAfter;
+		auto nextLedger = prepared.allowancesAfter;
+		DivineMandateTransition::applyAcceptedAction(nextLedger, action.receipt,
+			projectedRound, lightSpell, mandateStatus.maximumPairs);
+		heroActionAllowances.at(side) = std::move(nextLedger);
 		meta.uses = prepared.usesAfter;
 		meta.pending = prepared.pendingAfter;
 		meta.grandUsed = prepared.grandUsedAfter;
@@ -1449,6 +1476,7 @@ bool HypotheticBattle::projectAcceptedHeroOrder(BattleSide side, HeroCommand com
 	if(action.receipt.action != HeroActionAllowanceState::ActionKind::ORDER
 		|| !isCurrentPreparedOrderAction(side, prepared, true))
 		return false;
+	const auto mandateStatus = battleGetDivineMandateStatus(side);
 	const bool projectingCommand = command != HeroCommand::NONE;
 	if(projectingCommand && !heroCommands::isActive(command))
 		return false;
@@ -1494,7 +1522,12 @@ bool HypotheticBattle::projectAcceptedHeroOrder(BattleSide side, HeroCommand com
 	else if(projectingCommand && action.receipt.source == HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND)
 		return false;
 	if(action.typedLedger)
-		heroActionAllowances.at(side) = prepared.allowancesAfter;
+	{
+		auto nextLedger = prepared.allowancesAfter;
+		DivineMandateTransition::applyAcceptedAction(nextLedger, action.receipt,
+			projectedRound, false, mandateStatus.maximumPairs);
+		heroActionAllowances.at(side) = std::move(nextLedger);
+	}
 	if(action.isHeroAction() && newHorizonsWarcasting::enabled(getMagicRules()))
 	{
 		const auto * hero = getSideHero(side);
@@ -1584,7 +1617,7 @@ HypotheticBattle::ProjectedCounterspellOutcome HypotheticBattle::resolveProjecte
 bool HypotheticBattle::projectHeroSpellAllowance(BattleSide side, SpellID spell, uint32_t target,
 	bool metamagicFollowup, bool grand)
 {
-	const auto prepared = prepareHeroSpellAllowance(side, metamagicFollowup, grand);
+	const auto prepared = prepareHeroSpellAllowance(side, spell, metamagicFollowup, grand);
 	if(!prepared)
 		return false;
 	const auto counterspell = resolveProjectedCounterspell(side, spell.toSpell());

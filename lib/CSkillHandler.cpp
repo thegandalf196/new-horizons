@@ -31,9 +31,10 @@
 
 namespace
 {
-constexpr std::array<std::pair<std::string_view, CSkill::CombatStatusProvider>, 2> combatStatusProviders = {{
+constexpr std::array<std::pair<std::string_view, CSkill::CombatStatusProvider>, 3> combatStatusProviders = {{
 	{"metamagicUses", CSkill::CombatStatusProvider::METAMAGIC_USES},
 	{"bloodrageDamage", CSkill::CombatStatusProvider::BLOODRAGE_DAMAGE},
+	{"divineMandateUses", CSkill::CombatStatusProvider::DIVINE_MANDATE_USES},
 }};
 }
 

@@ -1072,7 +1072,7 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalGrandMatchesThirdUsedSequenceAndDo
 		ASSERT_TRUE(projection.projectHeroSpellAllowance(side, SpellID::HASTE, attacker->unitId(), false, false));
 		const auto before = projection.getHeroActionAllowances(side);
 		const bool activatesGrand = sequence == 2;
-		EXPECT_FALSE(projection.prepareHeroSpellAllowance(side, true, !activatesGrand));
+		EXPECT_FALSE(projection.prepareHeroSpellAllowance(side, SpellID::SLOW, true, !activatesGrand));
 		EXPECT_EQ(projection.getHeroActionAllowances(side), before);
 		ASSERT_TRUE(projection.projectHeroSpellAllowance(side, SpellID::SLOW, defender->unitId(), true, activatesGrand));
 		EXPECT_EQ(projection.getMetamagicUsesConsumed(side), sequence + 1);
@@ -1106,7 +1106,7 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalHeroReceiptExpiresOnlyItsTimeStopA
 	WarcastingEnvironment environment(gameState());
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 	HypotheticBattle projection(&environment, callback);
-	const auto prepared = projection.prepareHeroSpellAllowance(BattleSide::ATTACKER, false, false);
+	const auto prepared = projection.prepareHeroSpellAllowance(BattleSide::ATTACKER, SpellID::HASTE, false, false);
 	ASSERT_TRUE(prepared);
 	EXPECT_EQ(prepared->action.receipt.allowance, HeroActionAllowanceState::AllowanceKind::HERO);
 	ASSERT_TRUE(projection.beginProjectedHeroAction(BattleSide::ATTACKER, *prepared));
@@ -1145,7 +1145,7 @@ TEST_F(NewHorizonsWarcastingTest, TypedSpellAndOrderReceiptsPreserveOwnTimeStopA
 	WarcastingEnvironment environment(gameState());
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 	HypotheticBattle projection(&environment, callback);
-	auto spell = projection.prepareHeroSpellAllowance(BattleSide::ATTACKER, false, false);
+	auto spell = projection.prepareHeroSpellAllowance(BattleSide::ATTACKER, SpellID::HASTE, false, false);
 	ASSERT_TRUE(spell);
 	EXPECT_EQ(spell->action.receipt.allowance, HeroActionAllowanceState::AllowanceKind::SPELL);
 	EXPECT_EQ(spell->action.receipt.source, HeroActionAllowanceState::GrantSource::PERK);
@@ -1174,7 +1174,7 @@ TEST_F(NewHorizonsWarcastingTest, PreparedAllowanceCommitCannotBeReplayed)
 	WarcastingEnvironment environment(gameState());
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 	HypotheticBattle projection(&environment, callback);
-	const auto prepared = projection.prepareHeroSpellAllowance(BattleSide::ATTACKER, false, false);
+	const auto prepared = projection.prepareHeroSpellAllowance(BattleSide::ATTACKER, SpellID::HASTE, false, false);
 	ASSERT_TRUE(prepared);
 	ASSERT_TRUE(projection.beginProjectedHeroAction(BattleSide::ATTACKER, *prepared));
 	ASSERT_TRUE(projection.projectAcceptedHeroSpell(BattleSide::ATTACKER, SpellID::HASTE,
@@ -1203,7 +1203,7 @@ TEST_F(NewHorizonsWarcastingTest, StalePreparedActionCannotClearEffectsBeforeCom
 	WarcastingEnvironment environment(gameState());
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 	HypotheticBattle projection(&environment, callback);
-	const auto staleSpell = projection.prepareHeroSpellAllowance(side, false, false);
+	const auto staleSpell = projection.prepareHeroSpellAllowance(side, SpellID::HASTE, false, false);
 	ASSERT_TRUE(staleSpell);
 
 	// A typed Order consumes a different grant without crossing the Hero-action
@@ -1242,7 +1242,7 @@ TEST_F(NewHorizonsWarcastingTest, BegunOrderTokenCannotAuthorizeSameEpochSpellCo
 	WarcastingEnvironment environment(gameState());
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 	HypotheticBattle projection(&environment, callback);
-	const auto spell = projection.prepareHeroSpellAllowance(side, false, false);
+	const auto spell = projection.prepareHeroSpellAllowance(side, SpellID::HASTE, false, false);
 	const auto order = projection.prepareHeroOrderAllowance(side);
 	ASSERT_TRUE(spell);
 	ASSERT_TRUE(order);
@@ -1281,7 +1281,7 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalCounterspellUsesCountersequenceAnd
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor::SPECTATOR);
 	ASSERT_NE(callback->battleGetFightingHero(BattleSide::DEFENDER), nullptr);
 	HypotheticBattle lowManaProjection(&environment, callback);
-	auto lowManaPrepared = lowManaProjection.prepareHeroSpellAllowance(BattleSide::ATTACKER, false, false);
+	auto lowManaPrepared = lowManaProjection.prepareHeroSpellAllowance(BattleSide::ATTACKER, SpellID::HASTE, false, false);
 	ASSERT_TRUE(lowManaPrepared);
 	ASSERT_TRUE(lowManaProjection.beginProjectedHeroAction(BattleSide::ATTACKER, *lowManaPrepared));
 	auto outcome = lowManaProjection.resolveProjectedCounterspell(BattleSide::ATTACKER,
@@ -1302,7 +1302,7 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalCounterspellUsesCountersequenceAnd
 
 	setTestSpellPointTotal(defenderSideHero, wardCost);
 	HypotheticBattle negatedProjection(&environment, callback);
-	const auto prepared = negatedProjection.prepareHeroSpellAllowance(BattleSide::ATTACKER, false, false);
+	const auto prepared = negatedProjection.prepareHeroSpellAllowance(BattleSide::ATTACKER, SpellID::HASTE, false, false);
 	ASSERT_TRUE(prepared);
 	ASSERT_TRUE(negatedProjection.beginProjectedHeroAction(BattleSide::ATTACKER, *prepared));
 	outcome = negatedProjection.resolveProjectedCounterspell(BattleSide::ATTACKER,
@@ -1404,7 +1404,7 @@ TEST_F(NewHorizonsWarcastingTest, TypedCounterspellReplacesOldCountersequencePro
 	WarcastingEnvironment environment(gameState());
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 	HypotheticBattle projection(&environment, callback);
-	const auto prepared = projection.prepareHeroSpellAllowance(BattleSide::ATTACKER, false, false);
+	const auto prepared = projection.prepareHeroSpellAllowance(BattleSide::ATTACKER, counterspellId(), false, false);
 	ASSERT_TRUE(prepared);
 	EXPECT_EQ(prepared->action.receipt.allowance, HeroActionAllowanceState::AllowanceKind::SPELL);
 	ASSERT_TRUE(projection.beginProjectedHeroAction(BattleSide::ATTACKER, *prepared));
@@ -1533,7 +1533,7 @@ TEST_F(NewHorizonsWarcastingTest, MasterSynthesisBoostsFirstSpellOnlyAndIsolated
 	HypotheticBattle sibling(&environment, callback);
 	ASSERT_EQ(newHorizonsWarcasting::spellBonus(attackerSideHero,
 		projected.getWarcastingState(side), projected.getRound()), 50);
-	auto prepared = projected.prepareHeroSpellAllowance(side, false, false);
+	auto prepared = projected.prepareHeroSpellAllowance(side, SpellID::MAGIC_ARROW, false, false);
 	ASSERT_TRUE(prepared);
 	ASSERT_EQ(prepared->action.receipt.allowance, HeroActionAllowanceState::AllowanceKind::HERO);
 	ASSERT_TRUE(projected.beginProjectedHeroAction(side, *prepared));

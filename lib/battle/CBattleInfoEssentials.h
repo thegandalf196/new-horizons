@@ -24,6 +24,14 @@ class CArmedInstance;
 using TStacks = std::vector<const CStack *>;
 using TStackFilter = std::function<bool (const CStack *)>;
 
+struct DLL_LINKAGE DivineMandateStatus
+{
+	bool active = false;
+	uint8_t completedPairs = 0;
+	uint8_t maximumPairs = 0;
+	std::optional<HeroActionAllowanceState::Grant> pendingFollowup;
+};
+
 class DLL_LINKAGE CBattleInfoEssentials : public IBattleInfoCallback
 {
 protected:
@@ -102,6 +110,15 @@ public:
 	const std::vector<SpellID> & battleMetamagicSequenceSpells(BattleSide side) const;
 	bool battleMetamagicFirstCounterspellNegated(BattleSide side) const;
 	bool battleCanUseMetamagicFollowup(BattleSide side) const;
+	/// Candidate-aware view; a Divine Mandate SPELL grant only admits Light spells.
+	bool battleCanUseMetamagicFollowup(BattleSide side, SpellID spell) const;
+	/// Selected spell-paying grant for this candidate, honoring payload restrictions.
+	std::optional<HeroActionAllowanceState::Selection> battleGetSpellActionAllowance(
+		BattleSide side, SpellID spell) const;
+	/// Selected Order-paying grant after validating any Divine Mandate entitlement.
+	std::optional<HeroActionAllowanceState::Selection> battleGetOrderActionAllowance(BattleSide side) const;
+	/// Current saved-rank Divine Mandate view and its unexpired round-limited opportunity.
+	DivineMandateStatus battleGetDivineMandateStatus(BattleSide side) const;
 	/// Returns whether a spell is legal in the current Metamagic window.  The
 	/// Grand sequence may not repeat any earlier spell; ordinary one-extra
 	/// sequences retain the normal spellbook legality rules.

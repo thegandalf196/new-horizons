@@ -276,6 +276,7 @@ public:
 		HeroActionAllowanceState allowancesBefore;
 		HeroActionAllowanceState allowancesAfter;
 		ProjectedMetamagicSnapshot metamagicBefore;
+		SpellID spell;
 		bool metamagicFollowup = false;
 		bool grand = false;
 		uint8_t usesAfter = 0;
@@ -301,7 +302,7 @@ public:
 		std::optional<bool> negated;
 		std::optional<int> manaCost;
 	};
-	std::optional<ProjectedSpellAllowance> prepareHeroSpellAllowance(BattleSide side,
+	std::optional<ProjectedSpellAllowance> prepareHeroSpellAllowance(BattleSide side, SpellID spell,
 		bool metamagicFollowup, bool grand) const;
 	std::optional<ProjectedOrderAllowance> prepareHeroOrderAllowance(BattleSide side) const;
 	bool beginProjectedHeroAction(BattleSide side, const ProjectedSpellAllowance & prepared);

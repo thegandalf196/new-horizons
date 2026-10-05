@@ -12,6 +12,7 @@
 
 #include "../CStack.h"
 #include "BattleInfo.h"
+#include "IBattleState.h"
 #include "CObstacleInstance.h"
 #include "NewHorizonsPuppetMaster.h"
 #include "GameLibrary.h"
@@ -19,8 +20,63 @@
 
 #include "../constants/EntityIdentifiers.h"
 #include "../entities/building/TownFortifications.h"
+#include "../entities/hero/NewHorizonsHeroRules.h"
+#include "../entities/hero/NewHorizonsPerkRules.h"
 #include "../gameState/InfoAboutArmy.h"
+#include "../mapObjects/CGHeroInstance.h"
 #include "../mapObjects/CGTownInstance.h"
+#include "../spells/NewHorizonsMagic.h"
+#include "../spells/NewHorizonsSpellAvailability.h"
+
+namespace
+{
+const HeroActionAllowanceState & callbackAllowanceLedger(const CBattleInfoEssentials & callback, BattleSide side)
+{
+	if(const auto * state = dynamic_cast<const IBattleState *>(&callback))
+		return state->getHeroActionAllowances(side);
+	if(const auto * battle = callback.getBattle())
+		if(const auto * state = dynamic_cast<const IBattleState *>(battle))
+			return state->getHeroActionAllowances(side);
+	static const HeroActionAllowanceState empty;
+	return empty;
+}
+
+uint8_t divineMandateMaximumPairs(const CGHeroInstance * hero)
+{
+	if(!hero || !hero->usesPrimaryGrowth())
+		return 0;
+	const auto & savedRules = hero->getPrimaryGrowthRules();
+	if(!newHorizonsHeroes::usesRules(savedRules))
+		return 0;
+	const auto factionSkill = newHorizonsHeroes::factionSkill(savedRules, hero->getFactionID());
+	const auto divineMandateId = SecondarySkill::decode("new-horizons:divineMandate");
+	if(!factionSkill || divineMandateId < 0 || *factionSkill != SecondarySkill(divineMandateId))
+		return 0;
+	const int rank = hero->getSecSkillLevel(*factionSkill);
+	if(rank < 1 || rank > 3)
+		return 0;
+	const auto & perkRules = hero->getPerkState().rules;
+	if(!newHorizonsHeroes::usesPerkRules(perkRules))
+		return 0;
+	static constexpr std::array<const char *, 4> rankNames = {"", "basic", "advanced", "expert"};
+	const auto & rankEffect = perkRules["skills"]["new-horizons:divineMandate"]["ranks"][rankNames[rank]]["effect"];
+	if(rankEffect["status"].String() != "active")
+		return 0;
+	return static_cast<uint8_t>(rank);
+}
+
+bool isLightSpellInSavedRules(const JsonNode & rules, SpellID spell)
+{
+	if(!newHorizonsMagic::spellAllowedByHeroRoster(rules, spell))
+		return false;
+	const auto lightId = SpellSchool::decode("new-horizons:light");
+	if(lightId < 0)
+		return false;
+	const SpellSchool light(lightId);
+	const auto schools = newHorizonsMagic::spellSchools(rules, spell);
+	return std::find(schools.begin(), schools.end(), light) != schools.end();
+}
+}
 
 bool CBattleInfoEssentials::duringBattle() const
 {
@@ -120,13 +176,89 @@ bool CBattleInfoEssentials::battleCanUseMetamagicFollowup(BattleSide side) const
 	if(!heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), HeroCommand::CHARGE))
 		return battleMetamagicPendingCount(side) > 0;
 	const auto round = battleGetRound();
-	const auto & allowances = getBattle()->getHeroActionAllowances(side);
+	const auto & allowances = callbackAllowanceLedger(*this, side);
 	if(round < 0 || allowances.currentRound != round)
 		return false;
 	const auto selection = allowances.eligibleAllowance(HeroActionAllowanceState::ActionKind::SPELL, round);
 	return selection && selection->allowance == HeroActionAllowanceState::AllowanceKind::SPELL
 		&& (selection->source == HeroActionAllowanceState::GrantSource::METAMAGIC
 			|| selection->source == HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND);
+}
+
+std::optional<HeroActionAllowanceState::Selection> CBattleInfoEssentials::battleGetSpellActionAllowance(
+	BattleSide side, SpellID spell) const
+{
+	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| !heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), HeroCommand::CHARGE))
+		return {};
+	const auto round = battleGetRound();
+	const auto & allowances = callbackAllowanceLedger(*this, side);
+	if(round < 0 || allowances.currentRound != round)
+		return {};
+	const bool lightSpell = isLightSpellInSavedRules(getBattle()->getMagicRules(), spell);
+	const auto mandate = battleGetDivineMandateStatus(side);
+	const bool mandateAvailable = mandate.active && mandate.completedPairs < mandate.maximumPairs;
+	return allowances.eligibleAllowance(HeroActionAllowanceState::ActionKind::SPELL, round,
+		[lightSpell, mandateAvailable](const HeroActionAllowanceState::Grant & grant)
+		{
+			return HeroActionAllowanceState::grantAllowedForSpell(grant, lightSpell)
+				&& (grant.source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE || mandateAvailable);
+		});
+}
+
+std::optional<HeroActionAllowanceState::Selection> CBattleInfoEssentials::battleGetOrderActionAllowance(
+	BattleSide side) const
+{
+	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| !heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), HeroCommand::CHARGE))
+		return {};
+	const auto round = battleGetRound();
+	const auto & allowances = callbackAllowanceLedger(*this, side);
+	if(round < 0 || allowances.currentRound != round)
+		return {};
+	const auto mandate = battleGetDivineMandateStatus(side);
+	const bool mandateAvailable = mandate.active && mandate.completedPairs < mandate.maximumPairs;
+	return allowances.eligibleAllowance(HeroActionAllowanceState::ActionKind::ORDER, round,
+		[mandateAvailable](const HeroActionAllowanceState::Grant & grant)
+		{
+			return grant.source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE || mandateAvailable;
+		});
+}
+
+bool CBattleInfoEssentials::battleCanUseMetamagicFollowup(BattleSide side, SpellID spell) const
+{
+	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+		return false;
+	if(!heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), HeroCommand::CHARGE))
+		return battleMetamagicPendingCount(side) > 0;
+	const auto selection = battleGetSpellActionAllowance(side, spell);
+	return selection && selection->allowance == HeroActionAllowanceState::AllowanceKind::SPELL
+		&& (selection->source == HeroActionAllowanceState::GrantSource::METAMAGIC
+			|| selection->source == HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND);
+}
+
+DivineMandateStatus CBattleInfoEssentials::battleGetDivineMandateStatus(BattleSide side) const
+{
+	DivineMandateStatus result;
+	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| !heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), HeroCommand::CHARGE))
+		return result;
+	result.maximumPairs = divineMandateMaximumPairs(battleGetFightingHero(side));
+	result.active = result.maximumPairs != 0;
+	const auto & allowances = callbackAllowanceLedger(*this, side);
+	result.completedPairs = allowances.divineMandateCompletedPairs;
+	const auto round = battleGetRound();
+	if(round < 0 || allowances.currentRound != round)
+		return result;
+	const auto grant = std::find_if(allowances.grants.begin(), allowances.grants.end(), [round](const auto & item)
+	{
+		return item.source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
+			&& item.grantedRound == round && item.expiryRound >= round;
+	});
+	if(grant != allowances.grants.end() && result.active
+		&& result.completedPairs < result.maximumPairs)
+		result.pendingFollowup = *grant;
+	return result;
 }
 
 bool CBattleInfoEssentials::battleCanUseMetamagicSpell(BattleSide side, SpellID spell, bool grand) const

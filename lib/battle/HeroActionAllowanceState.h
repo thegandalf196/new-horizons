@@ -49,7 +49,8 @@ struct DLL_LINKAGE HeroActionAllowanceState
 		ARTIFACT,
 		OTHER,
 		DOUBLE_COMMAND,
-		BATTLE_PLAN
+		BATTLE_PLAN,
+		DIVINE_MANDATE
 	};
 
 	struct DLL_LINKAGE Grant
@@ -70,6 +71,9 @@ struct DLL_LINKAGE HeroActionAllowanceState
 			if(h.saving && source == GrantSource::BATTLE_PLAN
 				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLE_PLAN))
 				throw std::runtime_error("Cannot discard Battle Plan allowance grant");
+			if(h.saving && source == GrantSource::DIVINE_MANDATE
+				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_DIVINE_MANDATE))
+				throw std::runtime_error("Cannot discard Divine Mandate allowance grant");
 			if(h.saving)
 				validateShape();
 			h & id;
@@ -92,7 +96,10 @@ struct DLL_LINKAGE HeroActionAllowanceState
 				|| (source == GrantSource::DOUBLE_COMMAND
 					&& (allowance != AllowanceKind::ORDER || expiryRound != grantedRound))
 				|| (source == GrantSource::BATTLE_PLAN
-					&& (allowance != AllowanceKind::ORDER || grantedRound != 1 || expiryRound != 1)))
+					&& (allowance != AllowanceKind::ORDER || grantedRound != 1 || expiryRound != 1))
+				|| (source == GrantSource::DIVINE_MANDATE
+					&& ((allowance != AllowanceKind::SPELL && allowance != AllowanceKind::ORDER)
+						|| expiryRound != grantedRound)))
 				throw std::runtime_error("Invalid Hero Action allowance grant shape");
 		}
 	};
@@ -130,6 +137,7 @@ struct DLL_LINKAGE HeroActionAllowanceState
 	int32_t currentRound = -1;
 	uint32_t nextGrantId = 1;
 	std::vector<Grant> grants;
+	uint8_t divineMandateCompletedPairs = 0;
 
 	bool operator==(const HeroActionAllowanceState &) const = default;
 
@@ -176,6 +184,13 @@ struct DLL_LINKAGE HeroActionAllowanceState
 	/// allowances; within a class the earliest expiry and then lowest stable ID win.
 	std::optional<Selection> eligibleAllowance(ActionKind action, int32_t round) const
 	{
+		return eligibleAllowance(action, round, [](const Grant &) { return true; });
+	}
+
+	template <typename GrantPredicate>
+	std::optional<Selection> eligibleAllowance(ActionKind action, int32_t round,
+		const GrantPredicate & grantPredicate) const
+	{
 		validateShape();
 		validateQuery(action, round);
 		if(currentRound < 0 || round < currentRound)
@@ -184,7 +199,7 @@ struct DLL_LINKAGE HeroActionAllowanceState
 		const Grant * selected = nullptr;
 		for(const auto & grant : grants)
 		{
-			if(grant.expiryRound < round || !canPay(grant.allowance, action))
+			if(grant.expiryRound < round || !canPay(grant.allowance, action) || !grantPredicate(grant))
 				continue;
 			if(!selected || selectionKey(grant, action) < selectionKey(*selected, action))
 				selected = &grant;
@@ -198,12 +213,19 @@ struct DLL_LINKAGE HeroActionAllowanceState
 	/// wrong action kind, or wrong round returns no receipt and changes no state.
 	std::optional<Receipt> consumeAllowance(uint32_t grantId, ActionKind action, int32_t round)
 	{
+		return consumeAllowance(grantId, action, round, [](const Grant &) { return true; });
+	}
+
+	template <typename GrantPredicate>
+	std::optional<Receipt> consumeAllowance(uint32_t grantId, ActionKind action, int32_t round,
+		const GrantPredicate & grantPredicate)
+	{
 		validateShape();
 		validateQuery(action, round);
 		if(round != currentRound)
 			return {};
 
-		const auto selected = eligibleAllowance(action, round);
+		const auto selected = eligibleAllowance(action, round, grantPredicate);
 		if(!selected || selected->grantId != grantId)
 			return {};
 
@@ -254,9 +276,12 @@ struct DLL_LINKAGE HeroActionAllowanceState
 	{
 		if(currentRound < -1 || nextGrantId == 0 || (currentRound == -1 && !grants.empty()))
 			throw std::runtime_error("Invalid Hero Action allowance ledger shape");
+		if(divineMandateCompletedPairs > 3 || (currentRound == -1 && divineMandateCompletedPairs != 0))
+			throw std::runtime_error("Invalid Divine Mandate completed-pair count");
 
 		uint32_t previousId = 0;
 		uint32_t currentRoundBaseGrants = 0;
+		uint32_t divineMandateGrants = 0;
 		for(const auto & grant : grants)
 		{
 			grant.validateShape();
@@ -266,9 +291,13 @@ struct DLL_LINKAGE HeroActionAllowanceState
 			previousId = grant.id;
 			if(grant.source == GrantSource::ROUND && grant.grantedRound == currentRound)
 				++currentRoundBaseGrants;
+			if(grant.source == GrantSource::DIVINE_MANDATE)
+				++divineMandateGrants;
 		}
 		if(currentRoundBaseGrants > 1)
 			throw std::runtime_error("Duplicate base Hero Action allowance");
+		if(divineMandateGrants > 1)
+			throw std::runtime_error("Duplicate Divine Mandate follow-up allowance");
 	}
 
 	template <typename Handler> void serialize(Handler & h)
@@ -285,11 +314,27 @@ struct DLL_LINKAGE HeroActionAllowanceState
 				return grant.source == GrantSource::BATTLE_PLAN;
 			}))
 			throw std::runtime_error("Cannot discard Battle Plan allowance grant");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_DIVINE_MANDATE)
+			&& (divineMandateCompletedPairs != 0 || std::any_of(grants.begin(), grants.end(), [](const Grant & grant)
+			{
+				return grant.source == GrantSource::DIVINE_MANDATE;
+			})))
+			throw std::runtime_error("Cannot discard Divine Mandate battle state");
 		if(h.saving)
 			validateShape();
 		h & currentRound;
 		h & nextGrantId;
 		h & grants;
+		if(!h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_DIVINE_MANDATE)
+			&& std::any_of(grants.begin(), grants.end(), [](const Grant & grant)
+			{
+				return grant.source == GrantSource::DIVINE_MANDATE;
+			}))
+			throw std::runtime_error("Pre-Divine Mandate save contains a Divine Mandate allowance grant");
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_DIVINE_MANDATE))
+			h & divineMandateCompletedPairs;
+		else if(!h.saving)
+			divineMandateCompletedPairs = 0;
 		if(!h.saving)
 			validateShape();
 	}
@@ -320,6 +365,13 @@ struct DLL_LINKAGE HeroActionAllowanceState
 		}));
 	}
 
+	/// Divine Mandate's typed Spell grant pays only canonical Light spells. Other
+	/// grants retain their existing unrestricted candidate behavior.
+	static bool grantAllowedForSpell(const Grant & grant, bool isLightSpell)
+	{
+		return grant.source != GrantSource::DIVINE_MANDATE || isLightSpell;
+	}
+
 private:
 	static bool isValid(ActionKind value)
 	{
@@ -336,7 +388,8 @@ private:
 		return value == GrantSource::ROUND || value == GrantSource::METAMAGIC
 			|| value == GrantSource::METAMAGIC_GRAND || value == GrantSource::PERK
 			|| value == GrantSource::ARTIFACT || value == GrantSource::OTHER
-			|| value == GrantSource::DOUBLE_COMMAND || value == GrantSource::BATTLE_PLAN;
+			|| value == GrantSource::DOUBLE_COMMAND || value == GrantSource::BATTLE_PLAN
+			|| value == GrantSource::DIVINE_MANDATE;
 	}
 
 	static bool canPay(AllowanceKind allowance, ActionKind action)
@@ -375,6 +428,54 @@ private:
 		grants.push_back(grant);
 		++nextGrantId;
 		return grant.id;
+	}
+};
+
+/// Applies Divine Mandate only after an accepted action has a validated receipt.
+/// Callers pass a staged ledger copy so receipt spending and the follow-up grant
+/// or completed-pair increment commit together.
+struct DLL_LINKAGE DivineMandateTransition
+{
+	static void applyAcceptedAction(HeroActionAllowanceState & ledger,
+		const HeroActionAllowanceState::Receipt & receipt, int32_t round,
+		bool isLightSpell, uint8_t maximumPairs)
+	{
+		using Ledger = HeroActionAllowanceState;
+		using Action = Ledger::ActionKind;
+		using Allowance = Ledger::AllowanceKind;
+		using Source = Ledger::GrantSource;
+
+		ledger.validateShape();
+		if(round < 0 || ledger.currentRound != round || receipt.round != round || maximumPairs > 3)
+			throw std::invalid_argument("Invalid Divine Mandate accepted-action context");
+
+		auto next = ledger;
+		if(receipt.source == Source::DIVINE_MANDATE)
+		{
+			const bool validSpell = receipt.action == Action::SPELL
+				&& receipt.allowance == Allowance::SPELL && isLightSpell;
+			const bool validOrder = receipt.action == Action::ORDER
+				&& receipt.allowance == Allowance::ORDER;
+			if((!validSpell && !validOrder) || maximumPairs == 0
+				|| next.divineMandateCompletedPairs >= maximumPairs)
+				throw std::runtime_error("Invalid Divine Mandate follow-up receipt");
+			++next.divineMandateCompletedPairs;
+		}
+		else if(receipt.source == Source::ROUND && receipt.allowance == Allowance::HERO
+			&& next.divineMandateCompletedPairs < maximumPairs)
+		{
+			const bool pending = std::any_of(next.grants.begin(), next.grants.end(), [](const auto & grant)
+			{
+				return grant.source == Source::DIVINE_MANDATE;
+			});
+			if(!pending && ((receipt.action == Action::SPELL && isLightSpell) || receipt.action == Action::ORDER))
+			{
+				const auto followup = receipt.action == Action::ORDER ? Allowance::SPELL : Allowance::ORDER;
+				next.grantAllowance(followup, Source::DIVINE_MANDATE, round);
+			}
+		}
+		next.validateShape();
+		ledger = std::move(next);
 	}
 };
 
@@ -719,6 +820,26 @@ struct DLL_LINKAGE HeroSpellAllowanceTransition
 		bool & metamagicGrandUsed,
 		size_t sequenceSpellCount)
 	{
+		return commitAcceptedCast(ledger, selectionGrantId, round, metamagicFollowup, grand,
+			metamagicRank, grandPerkEnabled, metamagicUsesConsumed, metamagicPendingCount,
+			metamagicGrandUsed, sequenceSpellCount, [](const HeroActionAllowanceState::Grant &) { return true; });
+	}
+
+	template <typename GrantPredicate>
+	static std::optional<Result> commitAcceptedCast(
+		HeroActionAllowanceState & ledger,
+		uint32_t selectionGrantId,
+		int32_t round,
+		bool metamagicFollowup,
+		bool grand,
+		uint8_t metamagicRank,
+		bool grandPerkEnabled,
+		uint8_t & metamagicUsesConsumed,
+		uint8_t & metamagicPendingCount,
+		bool & metamagicGrandUsed,
+		size_t sequenceSpellCount,
+		const GrantPredicate & grantPredicate)
+	{
 		using Ledger = HeroActionAllowanceState;
 		using Allowance = Ledger::AllowanceKind;
 		using Source = Ledger::GrantSource;
@@ -732,7 +853,7 @@ struct DLL_LINKAGE HeroSpellAllowanceTransition
 		if(outstandingMetaGrants != metamagicPendingCount)
 			return {};
 
-		const auto selection = ledger.eligibleAllowance(Action::SPELL, round);
+		const auto selection = ledger.eligibleAllowance(Action::SPELL, round, grantPredicate);
 		if(!selection || selection->grantId != selectionGrantId)
 			return {};
 
@@ -772,7 +893,7 @@ struct DLL_LINKAGE HeroSpellAllowanceTransition
 			return {};
 
 		auto nextLedger = ledger;
-		const auto receipt = nextLedger.consumeAllowance(selectionGrantId, Action::SPELL, round);
+		const auto receipt = nextLedger.consumeAllowance(selectionGrantId, Action::SPELL, round, grantPredicate);
 		if(!receipt)
 			return {};
 

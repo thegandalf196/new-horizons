@@ -15,7 +15,12 @@ but rendered/playable acceptance remains pending.
 Design decisions e6ba582a9 are committed/pushed: Elemental Rebirth uses captured
 battle-start maximum aggregate HP; Divine Mandate follows Metamagic-style
 round-end opportunities and completed-pair usage. Those foundation gates are
-resolved, not implemented/activated; counts remain87/93 ranks and214/310 perks.
+resolved. UP108 now implements/activates all three Divine Mandate ranks with
+shared typed allowances, accepted completed-pair accounting, Light-only Spell
+follow-ups, round expiry, UI admission/status and detached AI parity. Client and
+native build79510 passes after a test-only type correction; six new native tests
+and21 adjacent allowance/projection/provider checks pass, zero skips. Counts are
+90/93 ranks and214/310 perks; Elemental Rebirth's three ranks remain missing.
 UP229 adds the missing Hero Movement tooltip capacity/cost breakdown through
 the existing native popup and exact read-only current-day movement aggregation.
 Client43390 and both-target61049/26637 pass; repaired native34473 passes15/15
@@ -2342,10 +2347,10 @@ without a defensible item-level denominator remain explicitly uncounted.
 
 | Specification area | Current coverage | Principal remaining work |
 |---|---:|---|
-| Skills registered | 31/31 | Divine Mandate and Elemental Rebirth have no active rank effects; many registered Skills lack working perk progression. |
-| Skill rank effects active | 87/93 | All three Diplomacy ranks now use deterministic joining; Divine Mandate and Elemental Rebirth account for the six planned ranks. |
+| Skills registered | 31/31 | Elemental Rebirth has no active rank effects; many registered Skills lack working perk progression. |
+| Skill rank effects active | 90/93 | Divine Mandate's three ranks now have paired-action source/native evidence; Elemental Rebirth accounts for the three planned ranks. |
 | Skill perks active | 214/310 | 96 planned; Master Logistician is the newest source/native-verified activation. Diplomacy is 7/10; Chaos Magic 4/10; Necromancy 10/10; Learning 3/10; Estates 6/10; Battlecraft 6/10; Logistics 8/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
-| Faction Skill ranks active | 21/27 | Six planned ranks. |
+| Faction Skill ranks active | 24/27 | Three Elemental Rebirth ranks remain planned. |
 | Faction perks active | 62/90 | 28 planned perks; Lord of the Dead has normal Expert selection, ordered conversion and actual atomic Bone Dragon town-delivery evidence. |
 | Canonical combat-spell identities registered | 61/67 | 6 missing/inactive; Puppet Master is the newest source/native-verified identity. Chaos is 7/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
@@ -2357,6 +2362,15 @@ without a defensible item-level denominator remain explicitly uncounted.
 | Siege output formula families | 4/4 | Ballista, Catapult, Tent and defensive tower outputs have data; universal Blacksmith access and Ballista Yard's weekly Siege effect are implemented with focused native tests. Rendered/playable acceptance remains open. |
 | Recruitment perks active | 6/10 | Four planned; external, solo town and split town Muster have server and AI paths. |
 | Diplomacy ranks/perks active | 3/3 ranks, 7/10 perks | Deterministic joining, Envoy, Peacemaker, Tribute and Recruitment Pact pass focused verification, including versioned state; three perks remain missing. |
+
+UP108 acceptance2026-10-04: three Divine Mandate ranks have both accepted
+Light Spell/Order pair directions,1/2/3 completed-pair limits, unused round
+expiry, no recursion/creature lock, versioned state, ordinary human controls and
+detached AI parity. Build79510 succeeds; six new native tests and21 adjacent
+allowance/projection/provider tests pass with zero skips. Rank coverage advances
+87->90/93 and faction ranks21->24/27; all ten Divine Mandate perks remain planned.
+Wider perk compositions and full battle save/resume are Phase2; graphical
+acceptance and playable snapshot delivery remain separate.
 
 Additional canonical breadth not yet reducible to a defensible completion
 fraction: nine town/faction sections (37 grouped unique-building table rows),
@@ -2533,7 +2547,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Estates | 3/0 | 6/4 | Resource Broker joins Land Surveyor, Tax Collector, Investor, Estate Network and Financier. Local Marketplace rate, accepted AI trade, mine-capture grants, daily income, weekly Wood/Ore, weekly treasury interest and Investor's pre-income treasury snapshot have focused native evidence. Broader interactions and playable delivery remain separate. |
 | Learning | 3/0 | 3/7 | Mentor, Quick Study and Field Study supply working Basic/Advanced perks and open ordinary Expert-rank progression. Meetings, weekly persistence, initial offer reroll, stronger-opponent awarded XP and query/RNG parity are native verified. Academic Study awaits first-visit timing. |
 | Luck | 3/0 | 6/4 | Fortune's Favor, Lucky Aim, Second Chance, Gambler, Chain of Fortune and Twist of Fate source/native verified; four perks remain planned. |
-| Divine Mandate | 0/3 | 0/10 | Ranks and progression missing |
+| Divine Mandate | 3/0 | 0/10 | Paired rank foundation source/native verified; ten perks and ordinary perk-gated progression remain missing. |
 | Sylvan Luck | 3/0 | 10/0 | Evidence audit required |
 | Metamagic | 3/0 | 10/0 | Evidence audit required |
 | Shroud of Malassa | 3/0 | 6/4 | Basic Backstab/Ambusher/Shadow Assault and Advanced No Escape/Evasive Shroud/Night Prowler are active; four perks remain planned. Night Prowler has live/AI crossing, first-strike and unused-expiry evidence; its flying negative is predicate-only. |
@@ -2545,8 +2559,9 @@ interactions, and rendered/playable acceptance remain separate.
 
 Ordinary progression requires a perk at the preceding rank before the next Skill
 rank; canonical exceptional external rank advancement remains permitted.
-Two Skills still lack active ranks and Basic perks: Divine Mandate and
-Elemental Rebirth. Diplomacy now has three active ranks and legal Basic/Advanced
+Elemental Rebirth still lacks active ranks; both it and Divine Mandate lack Basic
+perks. Divine Mandate's ranks are implemented, but its ordinary perk-gated
+advancement remains incomplete. Diplomacy has three active ranks and legal Basic/Advanced
 perk choices. Fortune's Favor opens Luck; Tax Collector opens Estates and
 Mentor opens Learning. Backstab now
 opens the Shroud's ordinary Advanced-rank progression; Blinkmaster opens Chaos.

@@ -6115,21 +6115,21 @@
 							"basic": {
 								"description": "Once per completed pair per combat, when the hero uses the Hero Action to cast a Light Spell, gain one Order-only follow-up usable until round end; or after using the Hero Action to issue an Order, gain one Light-Spell-only follow-up usable until round end.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Once per completed pair per combat, when the hero uses the Hero Action to cast a Light Spell, gain one Order-only follow-up usable until round end; or after using the Hero Action to issue an Order, gain one Light-Spell-only follow-up usable until round end."
 								}
 							},
 							"advanced": {
 								"description": "Divine Mandate may be used twice per combat.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Divine Mandate may be used twice per combat."
 								}
 							},
 							"expert": {
 								"description": "Divine Mandate may be used three times per combat.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Divine Mandate may be used three times per combat."
 								}
 							}
@@ -8723,6 +8723,10 @@
 			"specialty": [],
 			"tags": {
 				"special": true
+			},
+			"combatStatus": {
+				"provider": "divineMandateUses",
+				"description": "Remaining Divine Mandate pairs for this combat. A Hero Action casting a Light Spell grants an Order-only follow-up; issuing an Order grants a Light-Spell-only follow-up. The follow-up lasts until round end and spends a use only when performed. It does not block creature actions or create another pair."
 			},
 			"gainChance": {
 				"might": 0,
