@@ -2,6 +2,19 @@
 
 ## Purpose
 
+### 2026-10-05 UP023 — Canonical growth retained vanilla fallbacks
+
+Initial loaded64-row audit compiles (67485) but fails11 authored expectations:
+Archer, Monk, Cavalier, Unicorn, Naga, Skeleton, Wolf Rider, Air, Water, Magic
+and Phoenix. Legacy resource fallbacks are not evidence of canonical coverage.
+Preserve UP023-canonical-growth-before.log/XML. Repair the production saved
+growth-line rows, not the expected table or proprietary resources. Existing
+historical snapshots must not be merged with newly installed rows.
+Final both-target83259 exits0; native47814 passes3/3 in1.177s, zero skips,
+including checked upgrades and current/historical rule-object serialization.
+Keep UP023-canonical-growth-final-build.log and final.log/XML. Weekly stocks,
+full saves and recruitment remain separately scoped acceptance work.
+
 ### 2026-10-05 UP023 — Castle loaded-definition fixture interface
 
 Both-target build6413 exits1: CreatureService getById exposes the Creature

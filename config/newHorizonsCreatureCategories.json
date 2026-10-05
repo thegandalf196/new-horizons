@@ -145,6 +145,50 @@
 		"core:phoenix": "champion"
 	},
 	"growthLines": {
+		"core:archer": {
+			"weeklyBaseGrowth": 10,
+			"members": ["core:archer", "core:marksman"]
+		},
+		"core:monk": {
+			"weeklyBaseGrowth": 4,
+			"members": ["core:monk", "core:zealot"]
+		},
+		"core:cavalier": {
+			"weeklyBaseGrowth": 3,
+			"members": ["core:cavalier", "core:champion"]
+		},
+		"core:unicorn": {
+			"weeklyBaseGrowth": 3,
+			"members": ["core:unicorn", "core:warUnicorn"]
+		},
+		"core:naga": {
+			"weeklyBaseGrowth": 3,
+			"members": ["core:naga", "core:nagaQueen"]
+		},
+		"core:skeleton": {
+			"weeklyBaseGrowth": 18,
+			"members": ["core:skeleton", "core:skeletonWarrior"]
+		},
+		"core:goblinWolfRider": {
+			"weeklyBaseGrowth": 8,
+			"members": ["core:goblinWolfRider", "core:hobgoblinWolfRider"]
+		},
+		"core:airElemental": {
+			"weeklyBaseGrowth": 5,
+			"members": ["core:airElemental", "core:stormElemental"]
+		},
+		"core:waterElemental": {
+			"weeklyBaseGrowth": 5,
+			"members": ["core:waterElemental", "core:iceElemental"]
+		},
+		"core:psychicElemental": {
+			"weeklyBaseGrowth": 3,
+			"members": ["core:psychicElemental", "core:magicElemental"]
+		},
+		"core:firebird": {
+			"weeklyBaseGrowth": 1,
+			"members": ["core:firebird", "core:phoenix"]
+		},
 		"core:pixie": {
 			"weeklyBaseGrowth": 14,
 			"hordeGrowthOverride": 4,

@@ -1116,6 +1116,28 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(patch['defendingHeroBonuses'],
                          [{'type': 'PRIMARY_SKILL', 'subtype': 'spellpower', 'val': 20}])
 
+    def test_canonical_growth_overrides_cover_legacy_mismatches_and_upgrades(self):
+        rules = load('config/newHorizonsCreatureCategories.json')
+        expected = {
+            'core:archer': (10, 'core:marksman'),
+            'core:monk': (4, 'core:zealot'),
+            'core:cavalier': (3, 'core:champion'),
+            'core:unicorn': (3, 'core:warUnicorn'),
+            'core:naga': (3, 'core:nagaQueen'),
+            'core:skeleton': (18, 'core:skeletonWarrior'),
+            'core:goblinWolfRider': (8, 'core:hobgoblinWolfRider'),
+            'core:airElemental': (5, 'core:stormElemental'),
+            'core:waterElemental': (5, 'core:iceElemental'),
+            'core:psychicElemental': (3, 'core:magicElemental'),
+            'core:firebird': (1, 'core:phoenix'),
+        }
+        self.assertEqual(rules['rulesetVersion'], 2)
+        for base, (growth, upgrade) in expected.items():
+            with self.subTest(creature=base):
+                self.assertEqual(rules['growthLines'][base], {
+                    'weeklyBaseGrowth': growth, 'members': [base, upgrade],
+                })
+
     def test_castle_role_swap_applies_the_four_authored_stat_rows(self):
         patch = load('Mods/new-horizons/Content/config/creatures/castle.json')
         expected = {

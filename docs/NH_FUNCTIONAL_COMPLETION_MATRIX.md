@@ -1,6 +1,21 @@
 # New Horizons functional completion matrix
 
 Updated: 2026-10-05
+Canonical weekly-growth data accepted: a loaded-world audit found11 retained
+vanilla values differing from the authored64-row table. Existing saved growth
+lines now correct Archer, Monk, Cavalier, Unicorn, Naga, Skeleton, Wolf Rider,
+Air, Water, Psychic/Magic and Firebird/Phoenix families, including upgrades.
+The64 authored roster-row growth lookup coverage advances53/64 to64/64.
+This is not full creature-family gameplay coverage. Both-target83259 exits0;
+native47814 passes3/3 in1.177s, zero skips: all64 rows, checked upgrade forms,
+current-v2/historical-v2/v1 rule-object roundtrips and adjacent Castle definitions.
+Exact offline data guard, generated-module drift and independent Astra review
+pass. No engine scan, new schema, ability/cost/horde change or saved-row merge.
+Whole-world save/load, weekly stocks, recruitment and rendered delivery remain
+Phase2/separate. Perks224/310 and combat identities61/67 remain unchanged.
+Evidence: UP023-canonical-growth-before.log/XML (actual11 failures),
+UP023-canonical-growth-final-build.log and UP023-canonical-growth-final.log/XML.
+
 Brimstone Stormclouds siege clause and Castle four-form role-stat pass accepted.
 The built Inferno building grants only the defending siege hero20 Spell Power
 through existing one-battle state; accepted-result cleanup, unbuilt and field
