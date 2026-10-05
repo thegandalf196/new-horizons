@@ -141,6 +141,7 @@ bool hasSameHeroOrderIssuance(const HeroOrderState & previous, const HeroOrderSt
 		&& previous.protectInterceptionLimit == next.protectInterceptionLimit
 		&& previous.anchors == next.anchors
 		&& previous.warcastingBonusPercent == next.warcastingBonusPercent
+		&& previous.sacredCommandEfficiencyBonusPercent == next.sacredCommandEfficiencyBonusPercent
 		&& previous.holdMagicalReductionBasisPoints == next.holdMagicalReductionBasisPoints;
 }
 

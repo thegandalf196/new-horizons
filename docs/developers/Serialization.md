@@ -1,5 +1,22 @@
 # Serialization
 
+## Sacred Command Order efficiency
+
+`NEW_HORIZONS_SACRED_COMMAND` appends
+`HeroOrderState::sacredCommandEfficiencyBonusPercent` after the existing Order
+descriptor fields. Zero denotes an ordinary Order; 10 denotes an Order issued
+using the selected Divine Mandate allowance with Sacred Command. The shared
+pre-acceptance preparation captures this contribution independently of
+Warcasting, so later effects retain the accepted value after the opportunity
+is consumed. Flat formula terms are not scaled.
+
+Older records default to zero. Populated unsupported direct and enclosing
+writers must reject before their payload bytes; invalid contributions are
+rejected, and progress-only Order updates cannot change the captured value.
+This extension does not implement complete midbattle save/resume; the existing
+health/provenance and creature-form fail-closed restrictions still apply.
+Implementation and focused validation are tracked separately under UP108.
+
 ## Elemental Rebirth starting HP basis (source/native accepted)
 
 `NEW_HORIZONS_ELEMENTAL_REBIRTH` appends a nonnegative frozen battle-start

@@ -44,6 +44,12 @@ int32_t chaplainReserveRecovery(const CGHeroInstance * hero,
 		"new-horizons:divineMandate.chaplainSReserve") ? 3 : 0;
 }
 
+int32_t sacredCommandEfficiencyBonusPercent(const CGHeroInstance * hero)
+{
+	return hasActiveDivineMandate(hero) && hero->hasActivePerk("new-horizons:divineMandate",
+		"new-horizons:divineMandate.sacredCommand") ? 10 : 0;
+}
+
 int32_t consecratedCastingBonusPercent(const CGHeroInstance * hero)
 {
 	return hasActiveDivineMandate(hero) && hero->hasActivePerk("new-horizons:divineMandate",

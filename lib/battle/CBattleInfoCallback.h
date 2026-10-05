@@ -184,6 +184,8 @@ public:
 	uint8_t battleHeroOrderFlankSide(const battle::Unit * attacker, const battle::Unit * defender) const;
 	/// Flank's per-additional-side bonus for this hero snapshot (Encirclement changes 4% to 7%).
 	int battleHeroOrderFlankAdditionalSidePercent(BattleSide side, int warcastingBonusPercent = 0) const;
+	int battleHeroOrderFlankAdditionalSidePercent(BattleSide side, int warcastingBonusPercent,
+		int sacredCommandEfficiencyBonusPercent) const;
 	/// Target liveness/hostility, not permission to issue again or a promise of available shots.
 	bool battleIsFocusFireTargetActive(BattleSide side) const;
 	bool battleIsTargetedRangedCommand(const battle::Unit * attacker, const battle::Unit * defender,

@@ -2,6 +2,12 @@
 
 Last audited: 2026-10-04
 
+2026-10-05 Sacred Command integration: the existing Order chooser's numerical
+preview now receives the distinct prepared Divine Mandate efficiency snapshot,
+including Iron Discipline and Second Wind calculations. Native layout, frames,
+materials and artwork are unchanged. No visual approval, new art, or Final
+classification is implied; focused runtime validation remains under UP108.
+
 This is the maintained UI/art status index for the current New Horizons working tree. It records live bindings and remaining visual/UI work. It does not replace gameplay specs, source configs, runtime manifests, or acceptance records. The row-level index is [NH_UI_ASSET_INVENTORY.csv](NH_UI_ASSET_INVENTORY.csv).
 
 The audit used canonical registries and current source bindings rather than counting files. The earlier combat-spell binding audit recorded 104 entries, 100 enabled; Animate Dead, Clone, Weakness and Counterspell were inactive rows. These include noncanonical compatibility identities; current canonical identity coverage is separately tracked as 61/67 in the functional matrix. The five Neutral Adventure Spells are tracked separately. It also covers all 31 registered secondary skills, all 310 perk definitions, all eight Order bindings, and the scoped hero, spellbook, convenience, creature-info, and ranked-recruitment UI surfaces below. Active means enabled in source configuration, not necessarily promoted to the playable build. Unregistered Magic Missile is noted separately as non-live; Spell Lock is registered and has an active-profile native consumer test. The row-level CSV's spell bindings still need a fresh full reconciliation before being used as current totals; its perk activation labels are checked against the current registry.

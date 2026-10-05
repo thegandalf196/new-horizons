@@ -28,6 +28,7 @@
 #include "NewHorizonsBloodrage.h"
 #include "NewHorizonsCreatureAbilitySuppression.h"
 #include "NewHorizonsDiscipline.h"
+#include "NewHorizonsDivineMandate.h"
 #include "NewHorizonsPuppetMaster.h"
 #include "IGameSettings.h"
 #include "PossiblePlayerBattleAction.h"
@@ -556,7 +557,11 @@ std::optional<FocusFireState> CBattleInfoCallback::battlePrepareFocusFireState(B
 	const auto warcastingBonus = newHorizonsWarcasting::enabled(getBattle()->getMagicRules())
 		&& spendsHeroAllowance
 		? newHorizonsWarcasting::orderBonus(hero, getBattle()->getWarcastingState(side), result.issuedRound) : 0;
-	result.rangedDamagePercent = heroCommands::coefficient(formula, *hero, warcastingBonus);
+	const auto sacredCommandBonus = allowance
+		&& allowance->allowance == HeroActionAllowanceState::AllowanceKind::ORDER
+		&& allowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
+		? newHorizonsDivineMandate::sacredCommandEfficiencyBonusPercent(hero) : 0;
+	result.rangedDamagePercent = heroCommands::coefficient(formula, *hero, warcastingBonus, sacredCommandBonus);
 	const bool includeMeleeRecipients = heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
 		&& heroCommands::hasCombinedArms(hero);
 	const auto recipients = battleGetUnitsIf([this, side, includeMeleeRecipients](const battle::Unit * unit)
@@ -1232,11 +1237,16 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderState(B
 		&& allowance && allowance->allowance == HeroActionAllowanceState::AllowanceKind::HERO)
 		result.warcastingBonusPercent = newHorizonsWarcasting::orderBonus(
 			hero, getBattle()->getWarcastingState(side), result.issuedRound);
+	if(allowance && allowance->allowance == HeroActionAllowanceState::AllowanceKind::ORDER
+		&& allowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE)
+		result.sacredCommandEfficiencyBonusPercent =
+			newHorizonsDivineMandate::sacredCommandEfficiencyBonusPercent(hero);
 	if(command == HeroCommand::HOLD_THE_LINE
 		&& hero->hasActivePerk(newHorizonsIronDiscipline::SKILL, newHorizonsIronDiscipline::PERK))
 	{
 		const int physicalReduction = std::clamp(heroCommands::coefficient(
-			(*rules)["effects"]["damageReductionPercent"], *hero, result.warcastingBonusPercent), 0, 100);
+			(*rules)["effects"]["damageReductionPercent"], *hero, result.warcastingBonusPercent,
+			result.sacredCommandEfficiencyBonusPercent), 0, 100);
 		result.holdMagicalReductionBasisPoints = static_cast<uint16_t>(physicalReduction
 			* newHorizonsIronDiscipline::BASIS_POINTS_PER_PHYSICAL_PERCENT);
 	}
@@ -1424,6 +1434,12 @@ uint8_t CBattleInfoCallback::battleHeroOrderFlankSide(const battle::Unit * attac
 int CBattleInfoCallback::battleHeroOrderFlankAdditionalSidePercent(BattleSide side,
 	int warcastingBonusPercent) const
 {
+	return battleHeroOrderFlankAdditionalSidePercent(side, warcastingBonusPercent, 0);
+}
+
+int CBattleInfoCallback::battleHeroOrderFlankAdditionalSidePercent(BattleSide side,
+	int warcastingBonusPercent, int sacredCommandEfficiencyBonusPercent) const
+{
 	const auto * battle = getBattle();
 	if(!battle || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
 		return 0;
@@ -1432,7 +1448,8 @@ int CBattleInfoCallback::battleHeroOrderFlankAdditionalSidePercent(BattleSide si
 	if(hero && hero->hasActivePerk("new-horizons:offense", "new-horizons:offense.encirclement"))
 		return heroCommands::ENCIRCLEMENT_ADDITIONAL_SIDE_PERCENT;
 	if(hero)
-		return heroCommands::coefficient(formula, *hero, warcastingBonusPercent);
+		return heroCommands::coefficient(formula, *hero, warcastingBonusPercent,
+			sacredCommandEfficiencyBonusPercent);
 	return heroCommands::coefficient(formula, 0, 0);
 }
 
@@ -2995,7 +3012,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			const HeroOrderState * orderState)
 		{
 			return hero ? heroCommands::coefficient(formula, *hero,
-				orderState ? orderState->warcastingBonusPercent : 0) : 0;
+				orderState ? orderState->warcastingBonusPercent : 0,
+				orderState ? orderState->sacredCommandEfficiencyBonusPercent : 0) : 0;
 		};
 		const auto eligibleOrderUnit = [](const battle::Unit * unit)
 		{
@@ -3094,7 +3112,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 							const int additionalSides = std::max(0, distinct - 1);
 							const int orderDamagePercent = coefficientFor(rules["flank"]["effects"]["meleeDamagePercent"], attack, &attackerState)
 								+ additionalSides * battleHeroOrderFlankAdditionalSidePercent(
-									attackerSide, attackerState.warcastingBonusPercent);
+									attackerSide, attackerState.warcastingBonusPercent,
+									attackerState.sacredCommandEfficiencyBonusPercent);
 							payload.heroOrderDamagePercent += orderDamagePercent;
 							if(orderDamagePercent > 0)
 								recordAttackerCause(HeroCommand::FLANK);
@@ -3107,7 +3126,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 					{
 						const auto combinedArmsDamagePercent = heroCommands::combinedArmsFlankPercent(
 							rules["flank"]["effects"]["meleeDamagePercent"], *attack,
-							attackerState.warcastingBonusPercent);
+							attackerState.warcastingBonusPercent,
+							attackerState.sacredCommandEfficiencyBonusPercent);
 						payload.combinedArmsDamagePercent += combinedArmsDamagePercent;
 						if(combinedArmsDamagePercent > 0)
 							recordAttackerCause(HeroCommand::FLANK);
@@ -3118,7 +3138,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				if(attackerState.secondWindActive && attackerState.primaryTargetUnitId == info.attacker->unitId())
 				{
 					const int orderMultiplier = heroCommands::secondWindPercent(
-						*attack, attackerState.warcastingBonusPercent);
+						*attack, attackerState.warcastingBonusPercent,
+						attackerState.sacredCommandEfficiencyBonusPercent);
 					if(orderMultiplier < 100)
 					{
 						payload.heroOrderFinalDamageMultipliers.push_back(orderMultiplier);

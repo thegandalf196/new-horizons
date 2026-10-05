@@ -138,7 +138,7 @@ std::string effectLabel(const std::string & key, int value)
 }
 
 std::string commandEffects(const JsonNode & rules, HeroCommand command, const CGHeroInstance & hero,
-	int warcastingBonusPercent)
+	int warcastingBonusPercent, int sacredCommandEfficiencyBonusPercent)
 {
 	const auto & effects = rules["commands"][heroCommands::key(command)]["effects"];
 	if(!effects.isStruct())
@@ -151,8 +151,8 @@ std::string commandEffects(const JsonNode & rules, HeroCommand command, const CG
 		try
 		{
 			const int value = command == HeroCommand::SECOND_WIND && key == "additionalActivationDamagePercent"
-				? heroCommands::secondWindPercent(hero)
-				: heroCommands::coefficient(formula, hero, warcastingBonusPercent);
+				? heroCommands::secondWindPercent(hero, warcastingBonusPercent, sacredCommandEfficiencyBonusPercent)
+				: heroCommands::coefficient(formula, hero, warcastingBonusPercent, sacredCommandEfficiencyBonusPercent);
 			const auto line = effectLabel(key, value);
 			if(!result.empty())
 				result += '\n';
@@ -168,7 +168,8 @@ std::string commandEffects(const JsonNode & rules, HeroCommand command, const CG
 		&& hero.hasActivePerk(newHorizonsIronDiscipline::SKILL, newHorizonsIronDiscipline::PERK))
 	{
 		const int physicalReduction = std::clamp(heroCommands::coefficient(
-			effects["damageReductionPercent"], hero, warcastingBonusPercent), 0, 100);
+			effects["damageReductionPercent"], hero, warcastingBonusPercent,
+			sacredCommandEfficiencyBonusPercent), 0, 100);
 		if(!result.empty())
 			result += '\n';
 		result += "Magical taken " + basisPointPercentText(
@@ -356,20 +357,23 @@ void BattleHeroActionWindow::setStateText(const std::string & text)
 }
 
 void BattleHeroActionWindow::refreshEffects(const CGHeroInstance & hero, const JsonNode & rules,
-	int warcastingBonusPercent)
+	int warcastingBonusPercent, int sacredCommandEfficiencyBonusPercent)
 {
 	const auto ratings = std::make_pair(hero.getPrimSkillLevel(PrimarySkill::ATTACK), hero.getPrimSkillLevel(PrimarySkill::DEFENSE));
-	if(effectsInitialized && displayedRatings == ratings && displayedWarcastingBonus == warcastingBonusPercent)
+	if(effectsInitialized && displayedRatings == ratings && displayedWarcastingBonus == warcastingBonusPercent
+		&& displayedSacredCommandBonus == sacredCommandEfficiencyBonusPercent)
 		return;
 	displayedRatings = ratings;
 	displayedWarcastingBonus = warcastingBonusPercent;
+	displayedSacredCommandBonus = sacredCommandEfficiencyBonusPercent;
 	effectsInitialized = true;
 
 	for(size_t i = 0; i < commands.size(); ++i)
 	{
 		// The snapshot's coefficient helper is the single source of truth for
 		// the preview. The client only formats the returned numbers.
-		const auto effects = commandEffects(rules, commands[i].first, hero, warcastingBonusPercent);
+		const auto effects = commandEffects(rules, commands[i].first, hero, warcastingBonusPercent,
+			sacredCommandEfficiencyBonusPercent);
 		if(i < effectLabels.size())
 			effectLabels[i]->setText(effects);
 		const auto & display = commandDisplay(commands[i].first);
@@ -450,7 +454,8 @@ void BattleHeroActionWindow::refresh()
 	if(hero)
 	{
 		const auto preparedHold = callback->battlePrepareHeroOrderState(side, HeroCommand::HOLD_THE_LINE, {});
-		refreshEffects(*hero, rules, preparedHold ? preparedHold->warcastingBonusPercent : 0);
+		refreshEffects(*hero, rules, preparedHold ? preparedHold->warcastingBonusPercent : 0,
+			preparedHold ? preparedHold->sacredCommandEfficiencyBonusPercent : 0);
 	}
 	const auto spellProblem = hero ? callback->battleCanCastSpell(hero, spells::Mode::HERO) : ESpellCastProblem::INVALID;
 	const bool canSpell = spellButton && hero

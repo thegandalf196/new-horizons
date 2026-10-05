@@ -2,6 +2,28 @@
 
 ## Purpose
 
+### 2026-10-05 UP108 — Sacred fixture active-unit lookup
+
+Client build3475 passes. First native-target build45324 fails at the new
+fixture's active-stack lookup: `battleActiveUnit()` returns a read-only unit
+pointer, while `battleGetStackByID` expects an integer ID and returns a read-only
+stack. Use the actual unit ID and preserve constness in the fixture; do not cast
+away constness or loosen the production callback. Keep
+`UP108-sacred-native-build.log`. Native acceptance remains pending the repaired
+build and principal cases; no coverage increment is inferred from compilation.
+Repaired both-target44913 passes. Native86438 passes26/26 in4.654s, zero skips,
+including all six new cases; retain UP108-sacred-native-build-repaired.log and
+UP108-sacred-native.log/XML. Production semantics and fixture assertions were
+unchanged by the compile repair.
+
+### 2026-10-05 UP108 — UI inventory column order
+
+The focused two-case UI/perk inventory check caught six newly reconciled rows
+whose Implementation/Art classifications had been reversed. Restore the actual
+CSV column order: Implementation=Provisional, Art=Not done for neutral fallback
+icons. The unchanged guard then passes both cases across all 310 perk rows;
+do not mark a generic fallback as purpose-made or approved artwork.
+
 ### 2026-10-05 UP108 — Consecrated fixture header and projection baseline
 
 Client97140 passes. First native-target build2604 exits1 on an incorrect fixture

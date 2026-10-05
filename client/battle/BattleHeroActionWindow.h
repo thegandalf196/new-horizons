@@ -37,6 +37,7 @@ class BattleHeroActionWindow final : public CWindowObject
 	std::vector<std::shared_ptr<CMultiLineLabel>> effectLabels;
 	std::pair<int, int> displayedRatings;
 	int displayedWarcastingBonus = -1;
+	int displayedSacredCommandBonus = -1;
 	bool effectsInitialized = false;
 
 	std::shared_ptr<BattleInterface> currentBattle() const;
@@ -44,7 +45,8 @@ class BattleHeroActionWindow final : public CWindowObject
 	void createOrdersLayout();
 	void createPerfectMomentControl();
 	void cancelSelection();
-	void refreshEffects(const CGHeroInstance & hero, const JsonNode & rules, int warcastingBonusPercent);
+	void refreshEffects(const CGHeroInstance & hero, const JsonNode & rules, int warcastingBonusPercent,
+		int sacredCommandEfficiencyBonusPercent);
 	void setStateText(const std::string & text);
 	void chooseCommand(HeroCommand command);
 	void chooseSpell();

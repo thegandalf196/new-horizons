@@ -6141,7 +6141,7 @@
 								"requires": "basic",
 								"description": "An Order issued through Divine Mandate gains +10 percentage points of efficiency on its attribute-derived components.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "An Order issued through Divine Mandate gains +10 percentage points of efficiency on its attribute-derived components."
 								}
 							},

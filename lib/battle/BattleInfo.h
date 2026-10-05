@@ -145,6 +145,11 @@ public:
 		return heroCommands::isActive(command) ? command : HeroCommand::NONE;
 	}
 	std::vector<HeroOrderState> getHeroOrderStates(BattleSide side) const override;
+	bool hasSacredCommandOrderState() const
+	{
+		return sides[BattleSide::ATTACKER].hasSacredCommandOrderState()
+			|| sides[BattleSide::DEFENDER].hasSacredCommandOrderState();
+	}
 	std::optional<FocusFireState> getFocusFireState(BattleSide side) const override { return sides.at(side).focusFire; }
 	/// Drop decode-only legacy Doctrine state and its battle-long bonuses.
 	/// Round Order bonuses are intentionally preserved.
@@ -253,6 +258,9 @@ public:
 				side.validateOrderStates();
 				side.validateDoubleCommandState();
 				side.validatePreCombatOrderState();
+				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SACRED_COMMAND)
+					&& side.hasSacredCommandOrderState())
+					throw std::runtime_error("Cannot discard Sacred Command Order state in an older battle format");
 				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS)
 					&& side.orderStates.size() > 1)
 					throw std::runtime_error("Cannot discard simultaneous Hero Orders in an older format");

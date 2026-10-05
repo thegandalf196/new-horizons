@@ -47,6 +47,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && info && info->hasSacredCommandOrderState()
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SACRED_COMMAND))
+			throw std::runtime_error("Cannot discard Sacred Command state from BattleStart");
 		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_ELEMENTAL_REBIRTH)
 			&& info->hasElementalRebirthBasisState())
 			throw std::runtime_error("Cannot discard Elemental Rebirth battle-start HP basis from BattleStart");
@@ -773,6 +776,9 @@ struct DLL_LINKAGE StartAction : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && orderState && orderState->sacredCommandEfficiencyBonusPercent != 0
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SACRED_COMMAND))
+			throw std::runtime_error("Cannot discard Sacred Command StartAction state");
 		if(h.saving && preserveOtherOrders
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS))
 			throw std::runtime_error("Cannot discard multi-Order StartAction upsert intent in an older format");
@@ -849,6 +855,14 @@ struct DLL_LINKAGE BattleHeroOrderStateChanged : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		const auto hasSacredCommandBonus = [](const HeroOrderState & order)
+		{
+			return order.sacredCommandEfficiencyBonusPercent != 0;
+		};
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_SACRED_COMMAND)
+			&& ((state && hasSacredCommandBonus(*state))
+				|| (states && std::any_of(states->begin(), states->end(), hasSacredCommandBonus))))
+			throw std::runtime_error("Cannot discard Sacred Command state update");
 		if(h.saving && doubleCommandState
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_COMMAND))
 			throw std::runtime_error("Cannot discard Double Command state update");
