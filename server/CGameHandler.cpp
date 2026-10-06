@@ -1457,6 +1457,9 @@ bool CGameHandler::teleportHero(ObjectInstanceID hid, ObjectInstanceID dstid, ui
 	|| (!from
 		&& complain("Hero must be in town with Castle gate for teleporting"))
 
+	|| (newHorizonsCastleGate && from && from->getOwner() != h->getOwner()
+		&& complain("New Horizons Castle Gate departure requires a controlled town"))
+
 	|| (newHorizonsCastleGate
 		&& (from == nullptr || from->getFactionID() != FactionID::INFERNO
 			|| t->getFactionID() != FactionID::INFERNO)
@@ -1474,6 +1477,8 @@ bool CGameHandler::teleportHero(ObjectInstanceID hid, ObjectInstanceID dstid, ui
 
 	if(newHorizonsCastleGate && h->hasUsedNewHorizonsCastleGateToday(gameState().getCalendar().getCurrentDay()))
 		COMPLAIN_RET("This hero has already used a Castle Gate today");
+	if(newHorizonsCastleGate && t->getVisitingHero())
+		COMPLAIN_RET("Cannot teleport to an occupied Castle Gate destination");
 
 	int3 pos = h->convertFromVisitablePos(t->visitablePos());
 	if(!moveHero(hid,pos,EMovementMode::CASTLE_GATE))

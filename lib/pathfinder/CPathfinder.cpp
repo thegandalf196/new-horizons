@@ -223,10 +223,12 @@ void CPathfinder::calculatePaths()
 				continue;
 
 			destination.setNode(gameInfo, teleportNode);
+			const bool spendsCastleGateMovement = newHorizonsCastleGate
+				&& config->nodeStorage->isObjectTeleportation(teleportNode);
 			destination.turn = turn;
-			destination.movementLeft = newHorizonsCastleGate ? 0 : movement;
+			destination.movementLeft = spendsCastleGateMovement ? 0 : movement;
 			destination.cost = cost;
-			if(newHorizonsCastleGate)
+			if(spendsCastleGateMovement)
 				destination.cost += static_cast<float>(movement) / hlp->getMaxMovePoints(source.node->layer);
 
 			if(destination.isBetterWay())
@@ -270,18 +272,24 @@ TeleporterTilesVector CPathfinderHelper::getAllowedTeleportChannelExits(const Te
 TeleporterTilesVector CPathfinderHelper::getCastleGates(const PathNodeInfo & source) const
 {
 	TeleporterTilesVector allowedExits;
+	const bool newHorizonsCastleGate = newHorizonsMagic::rulesActive(gameInfo.getMagicRules());
+	const auto * sourceTown = dynamic_cast<const CGTownInstance *>(source.nodeObject);
+	if(newHorizonsCastleGate && (!sourceTown || sourceTown->getOwner() != hero->getOwner()
+		|| sourceTown->getFactionID() != FactionID::INFERNO))
+		return allowedExits;
 
 	// Do not offer an already-spent New Horizons Inferno gate to AI or
 	// adventure-map path planning.  The server remains authoritative, but
 	// filtering here avoids planning a route that is guaranteed to be rejected.
-	if(newHorizonsMagic::rulesActive(gameInfo.getMagicRules()) && source.node->turns == 0
+	if(newHorizonsCastleGate && turn == 0
 		&& hero->hasUsedNewHorizonsCastleGateToday(gameInfo.getCalendar().getCurrentDay()))
 		return allowedExits;
 
 	for(const auto & town : gameInfo.getPlayerState(hero->tempOwner)->getTowns())
 	{
 		if(town->id != source.nodeObject->id && town->getVisitingHero() == nullptr
-			&& town->hasBuilt(BuildingSubID::CASTLE_GATE))
+			&& town->hasBuilt(BuildingSubID::CASTLE_GATE)
+			&& (!newHorizonsCastleGate || town->getFactionID() == FactionID::INFERNO))
 		{
 			allowedExits.push_back(town->visitablePos());
 		}

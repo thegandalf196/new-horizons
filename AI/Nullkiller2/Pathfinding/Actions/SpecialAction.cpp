@@ -55,6 +55,14 @@ bool CompositeAction::usesNewHorizonsAdventureSpellOpportunity() const
 	});
 }
 
+bool CompositeAction::usesNewHorizonsCastleGateOpportunity() const
+{
+	return std::ranges::any_of(parts, [](const auto & part)
+	{
+		return part->usesNewHorizonsCastleGateOpportunity();
+	});
+}
+
 Goals::TSubgoal CompositeAction::decompose(const Nullkiller * aiNk, const CGHeroInstance * hero) const
 {
 	for(auto part : parts)

@@ -10,6 +10,7 @@ set(Nullkiller2_SRCS
 		Pathfinding/Actions/BoatActions.cpp
 		Pathfinding/Actions/WhirlpoolAction.cpp
 		Pathfinding/Actions/TownPortalAction.cpp
+		Pathfinding/Actions/CastleGateAction.cpp
 		Pathfinding/Actions/AdventureSpellCastMovementActions.cpp
 		Pathfinding/Actions/DimensionDoorAction.cpp
 		Pathfinding/Rules/AILayerTransitionRule.cpp
@@ -85,6 +86,7 @@ set(Nullkiller2_HEADERS
 		Pathfinding/Actions/BoatActions.h
 		Pathfinding/Actions/WhirlpoolAction.h
 		Pathfinding/Actions/TownPortalAction.h
+		Pathfinding/Actions/CastleGateAction.h
 		Pathfinding/Actions/AdventureSpellCastMovementActions.h
 		Pathfinding/Actions/DimensionDoorAction.h
 		Pathfinding/Rules/AILayerTransitionRule.h

@@ -2,6 +2,45 @@
 
 ## Purpose
 
+### 2026-10-06 — Castle Gate AI first-use coverage
+
+The principal-path audit finds no Nullkiller2 gate planning or execution. The
+new explicit action uses the normal CastleTeleportHero request. Integration
+inspection also finds occupied destinations previously consume Movement/use
+without relocation, a live-day filter using stale source turns after rollover,
+and gate Movement costs incorrectly applied to spell edges from a gate town.
+Source corrections and bounded server/AI fixtures are in progress.
+
+A premature server-only compile encounters CMake registration before the new
+action file exists; this is an integration checkpoint race, not a finished-source
+compiler defect. Wait for the explicit worker source freeze even for a narrow
+target, because regeneration reads all registrations. The first frozen client
+build then fails on nonexistent CGTownInstance::getNameTranslated in debug text;
+use getNameTextID, matching TownPortalAction. Preserve distinct original/repaired
+logs. Repaired client build passes53 steps; focused native acceptance is pending.
+
+Test-target build passes29 steps. First native principal run is1/2, zero skips,
+in1.327s: actual server gate travel/rejection/day reuse passes, while the AI
+fixture wrongly expects New Horizons Dimension Door to retain Movement and its
+gate request does not complete. Preserve `castle-gate-native.log/.xml` before
+repair. Trace the request rejection and fixture world state; do not weaken
+command/query validation or equate the generated route with executed travel.
+
+Repaired acceptance: the AI fixture now retains a live opposing town/hero and
+asserts the acting player survives source-town setup. A sole-player fixture can
+end the game during town visitation, leaving its subsequent request ineligible;
+the original rejection is not separately captured, so this is a source-backed
+fixture correction, not a claimed logged server rejection. Review catches a
+second setup mistake: TinyH3MBuilder's chained hero setters configure its last
+object. Append the opponent only after the tested hero's army/stats/spells/book
+are configured. Remove the invalid positive remaining-Movement assertion for
+Dimension Door; retain its separate spell-edge classification assertion.
+The repaired current binary passes2/2 principal tests in1.509s and9/9 adjacent
+pathfinding tests in0.903s, zero skips/errors/disabled. Original/repaired native
+receipts are distinct; each fixture-only increment builds3 steps. Source review
+has no remaining blocker. Full autonomous goal selection/compound paths and
+graphical delivery are deferred, not established by this focused run.
+
 ### 2026-10-06 — Astronomy construction forecast
 
 The town-building audit finds a first-use gap: construction never authors the

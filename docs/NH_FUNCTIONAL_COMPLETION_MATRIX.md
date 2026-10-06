@@ -2783,9 +2783,11 @@ behavior alone is not principal-path acceptance.
 Canonical source: **Unique-building rebalance**, exactly37 grouped table rows
 across nine factions. This denominator excludes universal Mage Guild depth and
 the separate Tower dwelling swap. Independent source audits found three known
-missing clauses, all already held for design scope: Lighthouse, Skeleton
-Transformer, and Glyphs of Fear's adventure aura. No new missing production
-mechanic was established by the remaining verification gaps.
+missing clauses held for design scope: Lighthouse, Skeleton Transformer, and
+Glyphs of Fear's adventure aura. Subsequent principal-path investigation finds
+and repairs Astronomy's construction-time reveal, then identifies missing
+Castle Gate AI planning/execution. These findings are distinct from mere
+verification gaps; implementation and acceptance receipts are tracked below.
 
 `Native` means focused principal-path evidence exists, not complete integration
 or graphical acceptance. `Source` means a production path exists but its
@@ -2806,7 +2808,7 @@ not newly implemented or individually certified content.
 | Tower Arcane Reservoir | Native: weekly one-hero visit/reset; source grants Buffer50 | Separate Normal/Buffer assertion and rendered refill remain unverified |
 | Tower Astronomy Tower | Native: construction immediately authors/synchronizes forecast; day-zero preservation, real week-start result and matching dwelling growth pass focused7/7 including wire controls | Month-end, another construction reusing a forecast, normal purchase eligibility, removal/capture composition and rendered/playable delivery remain unverified |
 | Tower Artifact Merchants | Baseline: artifact/resource marketplace modes | Row-specific runtime acceptance absent |
-| Inferno Castle Gate | Source: owned-gate teleport, daily use and Movement expenditure | Daily-state wire coverage alone is not real teleport acceptance |
+| Inferno Castle Gate | Native: actual owned Inferno gate travel, daily rejection/reuse, Movement exhaustion and Nullkiller2 planned route executing the normal authoritative request pass2/2; adjacent daily-opportunity/Dimension Door/node-pool cases pass9/9 | Full autonomous goal selection, compound routes, wider ownership changes and rendered/playable delivery remain Phase2 boundaries; daily-state wire coverage alone is not teleport acceptance |
 | Inferno Order of Fire | Native: actual visit grants permanent SP5 once per physical building, save | Wider permanent-stat composition Phase2 |
 | Inferno Brimstone Stormclouds | Native: UP023 siege defender SP20, cleanup, Sulfur1 daily | Wider siege composition Phase2 |
 | Inferno Birthing Pool / Cages | Baseline: core growth consumers | Row-specific runtime acceptance absent; numbers deferred |
@@ -2847,6 +2849,22 @@ ignored testing outputs `astronomy-construction-*`; binary SHA-256
 `649b7eaa5d6a668b749667889fcd3ceead877da104e72526d1b1fd04f9c318b0`.
 Spell/perk identity totals remain unchanged. Existing-forecast removal/capture
 and the wider boundaries above are deferred integration work, not certified.
+
+Castle Gate principal acceptance2026-10-06: repaired client build53 steps and
+test target29 steps pass with12 jobs; fixture-only increments each rebuild3
+steps. Current binary passes2/2 principal tests in1.509s and9/9 adjacent tests
+in0.903s, zero skips/errors/disabled. AI evidence includes a real
+CastleTeleportHero request through command validation, arrival, zero remaining
+Movement, recorded daily use and a next-day projected return route. The server
+fixture rejects wrong ownership/faction, missing gates, occupied destinations
+and same-town travel without consuming Movement or daily use. An earlier1/2
+failure receipt remains preserved: corrected fixture setup retains an active
+opponent and configures the tested hero before adding that opponent. No command
+validation is bypassed. Receipts: `castle-gate-native-repaired.log/.xml` and
+`castle-gate-adjacent.log/.xml`, binary SHA-256
+`76ecdccecf09fe09c8385f7beb1991507a9d12b4037d8b3cd53857a29e201e3a`.
+Source review has no remaining blocker. Spell/perk totals are unchanged; no
+launcher promotion or GUI acceptance is claimed.
 
 ### Hero specialty conversion item ledger
 

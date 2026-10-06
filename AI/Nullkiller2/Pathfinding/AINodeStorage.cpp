@@ -14,6 +14,7 @@
 #include "../../../lib/IGameSettings.h"
 #include "../../../lib/callback/IGameInfoCallback.h"
 #include "../../../lib/mapping/CMap.h"
+#include "../../../lib/mapObjects/CGTownInstance.h"
 #include "../../../lib/pathfinder/CPathfinder.h"
 #include "../../../lib/pathfinder/PathfinderOptions.h"
 #include "../../../lib/pathfinder/PathfinderUtil.h"
@@ -25,6 +26,7 @@
 #include "../AIGateway.h"
 #include "../Helpers/DimensionDoorUtils.h"
 #include "Actions/DimensionDoorAction.h"
+#include "Actions/CastleGateAction.h"
 #include "Actions/TownPortalAction.h"
 #include "Actions/WhirlpoolAction.h"
 
@@ -32,6 +34,19 @@
 
 namespace NK2AI
 {
+
+namespace
+{
+bool containsCastleGateAction(const std::shared_ptr<const SpecialAction> & action)
+{
+	if(!action)
+		return false;
+	if(dynamic_cast<const AIPathfinding::CastleGateAction *>(action.get()))
+		return true;
+	const auto parts = action->getParts();
+	return std::ranges::any_of(parts, containsCastleGateAction);
+}
+}
 
 const uint64_t FirstActorMask = 1;
 const uint64_t MIN_ARMY_STRENGTH_FOR_CHAIN = 5000;
@@ -239,12 +254,12 @@ std::optional<AIPathNode *> AINodeStorage::getOrCreateNode(
 	}
 
 	const auto & chains = nodes.get(pos);
-	const bool requestedSharedSpellOpportunityUsed = hasNewHorizonsAdventureSpellCastFlag(dayFlags);
+	const DayFlags requestedDailyOpportunityFlags = newHorizonsDailyOpportunityFlags(dayFlags);
 	for(AIPathNode * node : chains)
 	{
 		if(node->actor == actor
 			&& node->layer == layer
-			&& hasNewHorizonsAdventureSpellCastFlag(node->dayFlags) == requestedSharedSpellOpportunityUsed)
+			&& newHorizonsDailyOpportunityFlags(node->dayFlags) == requestedDailyOpportunityFlags)
 			return node;
 	}
 
@@ -329,7 +344,7 @@ void AINodeStorage::prepareDestination(CDestinationNodeInfo & destination, const
 {
 	auto * node = static_cast<AIPathNode *>(destination.node);
 	const auto flags = dayFlagsForTurn(getAINode(source.node), destination.turn);
-	if(hasNewHorizonsAdventureSpellCastFlag(flags) == hasNewHorizonsAdventureSpellCastFlag(node->dayFlags))
+	if(newHorizonsDailyOpportunityFlags(flags) == newHorizonsDailyOpportunityFlags(node->dayFlags))
 		return;
 
 	const auto canonicalNode = getOrCreateNode(node->coord, node->layer, node->actor, flags);
@@ -351,9 +366,11 @@ void AINodeStorage::commit(CDestinationNodeInfo & destination, const PathNodeInf
 	DayFlags destinationDayFlags = dayFlagsForTurn(srcNode, destination.turn);
 	if(pendingSpecialAction && pendingSpecialAction->usesNewHorizonsAdventureSpellOpportunity())
 		destinationDayFlags = static_cast<DayFlags>(destinationDayFlags | DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST);
+	if(pendingSpecialAction && pendingSpecialAction->usesNewHorizonsCastleGateOpportunity())
+		destinationDayFlags = static_cast<DayFlags>(destinationDayFlags | DayFlags::NEW_HORIZONS_CASTLE_GATE_USED);
 
-	if(hasNewHorizonsAdventureSpellCastFlag(destinationDayFlags)
-		!= hasNewHorizonsAdventureSpellCastFlag(dstNode->dayFlags))
+	if(newHorizonsDailyOpportunityFlags(destinationDayFlags)
+		!= newHorizonsDailyOpportunityFlags(dstNode->dayFlags))
 	{
 		const auto canonicalNode = getOrCreateNode(dstNode->coord, dstNode->layer, dstNode->actor, destinationDayFlags);
 		if(!canonicalNode)
@@ -1195,6 +1212,12 @@ std::vector<CGPathNode *> AINodeStorage::calculateTeleportations(
 	return neighbours;
 }
 
+bool AINodeStorage::isObjectTeleportation(const CGPathNode * destination) const
+{
+	const auto * aiDestination = getAINode(destination);
+	return !aiDestination->specialAction || containsCastleGateAction(aiDestination->specialAction);
+}
+
 void AINodeStorage::calculateObjectTeleportations(
 	std::vector<CGPathNode *> & neighbours,
 	const PathNodeInfo & source,
@@ -1204,15 +1227,46 @@ void AINodeStorage::calculateObjectTeleportations(
 	if(!source.isNodeObjectVisitable())
 		return;
 
+	const auto * sourceTown = dynamic_cast<const CGTownInstance *>(source.nodeObject);
+	const bool newHorizonsCastleGateSource = gameInfo
+		&& srcNode->actor && srcNode->actor->hero
+		&& newHorizonsMagic::rulesActive(gameInfo->getMagicRules())
+		&& sourceTown
+		&& sourceTown->getOwner() == srcNode->actor->hero->getOwner()
+		&& sourceTown->getFactionID() == FactionID::INFERNO
+		&& sourceTown->hasBuilt(BuildingSubID::CASTLE_GATE);
+	const auto ownedTowns = newHorizonsCastleGateSource
+		? aiNk->cc->getPlayerState(srcNode->actor->hero->tempOwner)->getTowns()
+		: std::vector<const CGTownInstance *>{};
+
 	auto accessibleExits = pathfinderHelper->getTeleportExits(source);
 
 	for(auto & neighbour : accessibleExits)
 	{
+		std::shared_ptr<const SpecialAction> specialAction;
+		DayFlags destinationDayFlags = dayFlagsForTurn(srcNode, pathfinderHelper->turn);
+		if(newHorizonsCastleGateSource)
+		{
+			const auto destinationTown = std::ranges::find_if(ownedTowns, [&](const CGTownInstance * town)
+			{
+				return town && town->visitablePos() == neighbour;
+			});
+			if(destinationTown == ownedTowns.end())
+				continue;
+
+			auto castleGateAction = std::make_shared<AIPathfinding::CastleGateAction>(sourceTown, *destinationTown);
+			if(!castleGateAction->canAct(aiNk, srcNode, pathfinderHelper->turn))
+				continue;
+
+			specialAction = std::move(castleGateAction);
+			destinationDayFlags = static_cast<DayFlags>(destinationDayFlags | DayFlags::NEW_HORIZONS_CASTLE_GATE_USED);
+		}
+
 		std::optional<AIPathNode *> node = getOrCreateNode(
 			neighbour,
 			source.node->layer,
 			srcNode->actor,
-			dayFlagsForTurn(srcNode, pathfinderHelper->turn));
+			destinationDayFlags);
 		if(!node)
 		{
 #if NK2AI_PATHFINDER_TRACE_LEVEL >= 1
@@ -1222,6 +1276,19 @@ void AINodeStorage::calculateObjectTeleportations(
 				static_cast<int32_t>(source.node->layer));
 #endif
 			continue;
+		}
+
+		if(specialAction)
+		{
+			// A destination/day state keeps the best route. Do not replace its
+			// predecessor action with a worse or already-settled gate route.
+			const int maxMovement = pathfinderHelper->getMaxMovePoints(source.node->layer);
+			const int plannedMovement = srcNode->moveRemains > 0 ? srcNode->moveRemains : maxMovement;
+			const float candidateCost = source.node->getCost()
+				+ (maxMovement > 0 ? static_cast<float>(plannedMovement) / maxMovement : 1.f);
+			if((*node)->locked || ((*node)->action != EPathNodeAction::UNKNOWN && (*node)->getCost() <= candidateCost))
+				continue;
+			(*node)->specialAction = std::move(specialAction);
 		}
 
 		neighbours.push_back(node.value());
@@ -1738,8 +1805,8 @@ bool AINodeStorage::isOtherChainBetter(
 	const DayFlags candidateDayFlags = dayFlagsForTurn(&candidateNode, candidateNode.turns);
 	const DayFlags otherDayFlags = dayFlagsForTurn(&other, candidateNode.turns);
 	if(other.actor && candidateNode.actor && other.actor->hero == candidateNode.actor->hero
-		&& hasNewHorizonsAdventureSpellCastFlag(otherDayFlags)
-		&& !hasNewHorizonsAdventureSpellCastFlag(candidateDayFlags))
+		&& (static_cast<ui8>(newHorizonsDailyOpportunityFlags(otherDayFlags))
+			& ~static_cast<ui8>(newHorizonsDailyOpportunityFlags(candidateDayFlags))) != 0)
 		return false;
 
 	auto sameNode = other.actor == candidateNode.actor;

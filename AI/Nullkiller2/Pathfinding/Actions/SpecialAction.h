@@ -43,6 +43,11 @@ public:
 		return false;
 	}
 
+	virtual bool usesNewHorizonsCastleGateOpportunity() const
+	{
+		return false;
+	}
+
 	virtual bool canAct(const Nullkiller * aiNk, const AIPathNodeInfo & source) const
 	{
 		return true;
@@ -87,6 +92,7 @@ public:
 	bool canAct(const Nullkiller * aiNk, const AIPathNode * source) const override;
 	bool canAct(const Nullkiller * aiNk, const AIPathNode * source, int plannedTurn) const override;
 	bool usesNewHorizonsAdventureSpellOpportunity() const override;
+	bool usesNewHorizonsCastleGateOpportunity() const override;
 	void execute(AIGateway * aiGw, const CGHeroInstance * hero) const override;
 	std::string toString() const override;
 	const CGObjectInstance * targetObject() const override;

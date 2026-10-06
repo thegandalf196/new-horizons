@@ -41,6 +41,10 @@ public:
 		const PathfinderConfig * pathfinderConfig,
 		const CPathfinderHelper * pathfinderHelper) = 0;
 
+	// Default storage returns object teleports only. AI storage can also return
+	// spell edges, whose movement costs must not inherit the entrance object's rules.
+	virtual bool isObjectTeleportation(const CGPathNode * destination) const { return true; }
+
 	virtual void commit(CDestinationNodeInfo & destination, const PathNodeInfo & source) = 0;
 
 	// Resolve state-dependent node identity after selecting the movement day,

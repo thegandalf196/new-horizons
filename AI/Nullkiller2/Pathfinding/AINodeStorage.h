@@ -43,8 +43,16 @@ enum DayFlags : ui8
 	NONE = 0,
 	FLY_CAST = 1,
 	WATER_WALK_CAST = 2,
-	NEW_HORIZONS_ADVENTURE_SPELL_CAST = 4
+	NEW_HORIZONS_ADVENTURE_SPELL_CAST = 4,
+	NEW_HORIZONS_CASTLE_GATE_USED = 8
 };
+
+inline DayFlags newHorizonsDailyOpportunityFlags(const DayFlags flags)
+{
+	constexpr ui8 trackedFlags = static_cast<ui8>(DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST)
+		| static_cast<ui8>(DayFlags::NEW_HORIZONS_CASTLE_GATE_USED);
+	return static_cast<DayFlags>(static_cast<ui8>(flags) & trackedFlags);
+}
 
 struct AIPathNode : public CGPathNode
 {
@@ -263,6 +271,7 @@ public:
 		const PathNodeInfo & source,
 		const PathfinderConfig * pathfinderConfig,
 		const CPathfinderHelper * pathfinderHelper) override;
+	bool isObjectTeleportation(const CGPathNode * destination) const override;
 
 	void commit(CDestinationNodeInfo & destination, const PathNodeInfo & source) override;
 	void prepareDestination(CDestinationNodeInfo & destination, const PathNodeInfo & source) override;

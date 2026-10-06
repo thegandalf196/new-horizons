@@ -16,6 +16,7 @@
 #include "Rules/AIPreviousNodeRule.h"
 
 #include "../../../lib/pathfinder/CPathfinder.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 
 namespace NK2AI
 {
@@ -45,6 +46,7 @@ namespace AIPathfinding
 		options.allowLayerTransitioningAfterBattle = true;
 		options.useTeleportWhirlpool = true;
 		options.forceUseTeleportWhirlpool = true;
+		options.useCastleGate = newHorizonsMagic::rulesActive(aiNk->cc->getMagicRules());
 		options.useTeleportOneWay = aiNk->settings->isOneWayMonolithUsageAllowed();
 		options.useTeleportOneWayRandom = aiNk->settings->isOneWayMonolithUsageAllowed();
 	}
