@@ -115,5 +115,10 @@
 		"graphics": {
 			"iconLarge": "NH_academy_nagaQueen_icon_large.png"
 		}
+	},
+	"core:giant": {
+		"graphics": {
+			"iconLarge": "NH_academy_giant_icon_large.png"
+		}
 	}
 }

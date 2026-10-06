@@ -1,5 +1,15 @@
 # Academy large-portrait background mattes
 
+Giant is now runtime-integrated (ID40/frame42), provisionally accepted. Its
+upper-left blue shape in comparisons belongs to the authored backdrop, not
+retained original Tower scenery. Eleven-portrait actual scaled-consumer/build
+checks pass; latest promoted playable remains ten portraits.
+
+Titan focused v2 fills two torso holes; v3 fills the left hand slit. Both exact
+prompts and old sources are preserved. V3 additionally fills sky pixel(6,15)
+and changes four contour pixels, so it remains unapproved and unregistered.
+Separate `titanV2`/`titanV3` mechanical exports do not select runtime artwork.
+
 Delivery checkpoint: committed source `6e600fc89` supplies ten provisional
 runtime portraits through the promoted Linux candidate. Native scale1–4
 consumer, build and bounded headless map/AI checks pass. Four subjects are

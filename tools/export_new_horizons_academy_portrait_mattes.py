@@ -76,6 +76,14 @@ CREATURES = {
         "master": REVISION / "masters/titan-matte.png",
         "mask": REVISION / "mattes/titan.png",
     },
+    "titanV2": {
+        "master": REVISION / "masters/titan-matte-v2.png",
+        "mask": REVISION / "mattes/titan-v2.png",
+    },
+    "titanV3": {
+        "master": REVISION / "masters/titan-matte-v3.png",
+        "mask": REVISION / "mattes/titan-v3.png",
+    },
 }
 
 

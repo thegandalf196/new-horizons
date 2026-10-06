@@ -2,6 +2,11 @@
 
 Updated: 2026-10-05
 
+UP239 source coverage now11/14: Giant ID40/frame42 integrated, client/fixture
+build and actual scaled consumer pass (zero skips), plus focused exports/tests
+and independent review. Latest playable delivery remains10/14. Titan revisions
+are unapproved drafts; Gargoyle drafts remain rejected. No gameplay count credit.
+
 Latest delivery: Linux script selects committed source `6e600fc89` in verified
 snapshot `bed369d0736cdef3ec6072b7e6ba1e62c859f9e75ca27507dd4ebc0233b927fa`.
 Ten portraits delivered; native consumer/build and bounded headless map/AI

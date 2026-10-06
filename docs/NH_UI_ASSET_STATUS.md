@@ -1,5 +1,10 @@
 # New Horizons UI and asset status register
 
+Source checkpoint:11/14 Academy portraits, adding provisionally approved Giant.
+Actual scaled consumer and build pass. Playable remains10/14. Titan v2/v3 are
+unregistered drafts; v3 changes one preserved sky pixel and four contour pixels.
+Both Gargoyle corrections are unfinished; none of these assets are Final.
+
 Latest delivery: source `6e600fc89` is built and promoted through the existing
 Linux script, with ten Academy portraits. Snapshot
 `bed369d0736cdef3ec6072b7e6ba1e62c859f9e75ca27507dd4ebc0233b927fa` is verified.

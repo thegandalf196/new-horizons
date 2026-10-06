@@ -28,6 +28,7 @@ BACKDROP_EXPORTS = (
     IMAGE_ROOT / "NH_academy_masterGenie_icon_large.png",
     IMAGE_ROOT / "NH_academy_naga_icon_large.png",
     IMAGE_ROOT / "NH_academy_nagaQueen_icon_large.png",
+    IMAGE_ROOT / "NH_academy_giant_icon_large.png",
 )
 MASKS = {
     "gremlin": (
@@ -70,10 +71,15 @@ MASKS = {
         ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/nagaQueen-v2.png",
         IMAGE_ROOT / "NH_academy_nagaQueen_portrait_mask.png",
     ),
+    "giant": (
+        ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/giant.png",
+        IMAGE_ROOT / "NH_academy_giant_portrait_mask.png",
+    ),
 }
 MASTER_GENIE_V2_SHA256 = "9f5291e7d50b29a4a16d8c54aeba2de9b4566456d5b5823e4d18023ac6659a40"
 NAGA_SHA256 = "c4e58bcf3c9b84f63ec7137c37da23fe3bc898a0e77e653ee6ad016c3997e453"
 NAGA_QUEEN_V2_SHA256 = "aa282c71f59b720ccc2604e81b3bc1527b8e58b7ab60403eee9fb28eb9f64c30"
+GIANT_SHA256 = "2e576469ff77e6c07ad529caedead80bc342e39f7fd5c87bd293dd53a83102bd"
 # Pillow's right/bottom-excluded crop rectangle from the approved composition.
 SOURCE_CROP = (0, 10, 100, 120)
 OUTPUT_SIZE = (58, 64)
@@ -107,6 +113,12 @@ def verify(check: bool, parser: argparse.ArgumentParser) -> None:
     naga_queen_sha256 = hashlib.sha256(naga_queen_matte.read_bytes()).hexdigest()
     if naga_queen_sha256 != NAGA_QUEEN_V2_SHA256:
         parser.error(f"Naga Queen v2 matte SHA256 differs from the reviewed source: {naga_queen_matte}")
+    giant_matte = MASKS["giant"][0]
+    if not giant_matte.is_file():
+        parser.error(f"missing pinned Giant matte: {giant_matte}")
+    giant_sha256 = hashlib.sha256(giant_matte.read_bytes()).hexdigest()
+    if giant_sha256 != GIANT_SHA256:
+        parser.error(f"Giant matte SHA256 differs from the reviewed source: {giant_matte}")
     expected_backdrop = render_backdrop()
     expected_pixels = expected_backdrop.tobytes()
 
