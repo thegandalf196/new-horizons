@@ -389,6 +389,7 @@ inline void exportDiagnostic(const std::filesystem::path & destination)
 	inspect(destination, "TWCRPORT.DEF", {{0, 37}}, census, palettes);
 	inspect(destination, "CPRSMALL.DEF", {{0, 36}, {0, 37}}, census, palettes);
 	inspect(destination, "AvWattak.DEF", {{0, 68}, {0, 69}, {0, 70}, {0, 71}}, census, palettes);
+	inspect(destination, "AVWmagx0.DEF", {{0, 0}, {0, 15}, {0, 29}}, census, palettes);
 	writeCensus(destination / "palette_census.csv", census, palettes);
 	std::ofstream notes(destination / "README.txt");
 	if(!notes)

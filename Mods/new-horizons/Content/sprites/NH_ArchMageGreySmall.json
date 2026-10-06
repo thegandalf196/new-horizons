@@ -1,0 +1,28 @@
+{
+  "paletteRemap": {
+    "164": [
+      127,
+      127,
+      127
+    ],
+    "170": [
+      106,
+      106,
+      106
+    ],
+    "202": [
+      68,
+      68,
+      68
+    ]
+  },
+  "images": [
+    {
+      "group": 0,
+      "frame": 0,
+      "defFile": "CPRSMALL.DEF",
+      "defGroup": 0,
+      "defFrame": 37
+    }
+  ]
+}

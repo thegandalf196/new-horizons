@@ -21,6 +21,12 @@ VALID_MAPS = {
     "mageProjectile": {"244": [220, 30, 24]},
     "archPortrait": {"40": [180, 180, 180]},
 }
+OPTIONAL_MAPS = {
+    **VALID_MAPS,
+    "archSmall": {"40": [180, 180, 180]},
+    "archEncounter": {"40": [180, 180, 180]},
+    "archMap": {"40": [180, 180, 180]},
+}
 
 
 class NewHorizonsMagiPaletteAliasesTest(unittest.TestCase):
@@ -80,6 +86,84 @@ class NewHorizonsMagiPaletteAliasesTest(unittest.TestCase):
             self.assertTrue(all(set(frame) == {
                 "group", "frame", "defFile", "defGroup", "defFrame"
             } for frame in descriptor["images"]))
+
+    def test_optional_archmage_aliases_use_only_explicit_source_frames(self):
+        descriptors = aliases.build_descriptors(OPTIONAL_MAPS)
+        self.assertEqual(
+            set(descriptors),
+            {
+                "NH_ArchMageGrey.json",
+                "NH_MageRedProjectile.json",
+                "NH_ArchMageGreyPortrait.json",
+                "NH_ArchMageGreySmall.json",
+                "NH_ArchMageGreyEncounter.json",
+                "NH_ArchMageGreyMap.json",
+            },
+        )
+        self.assertEqual(descriptors["NH_ArchMageGreySmall.json"], {
+            "paletteRemap": OPTIONAL_MAPS["archSmall"],
+            "images": [{
+                "group": 0,
+                "frame": 0,
+                "defFile": "CPRSMALL.DEF",
+                "defGroup": 0,
+                "defFrame": 37,
+            }],
+        })
+        self.assertEqual(descriptors["NH_ArchMageGreyEncounter.json"], {
+            "paletteRemap": OPTIONAL_MAPS["archEncounter"],
+            "images": [
+                {
+                    "group": 0,
+                    "frame": 0,
+                    "defFile": "AvWattak.DEF",
+                    "defGroup": 0,
+                    "defFrame": 70,
+                },
+                {
+                    "group": 0,
+                    "frame": 1,
+                    "defFile": "AvWattak.DEF",
+                    "defGroup": 0,
+                    "defFrame": 71,
+                },
+            ],
+        })
+        map_descriptor = descriptors["NH_ArchMageGreyMap.json"]
+        self.assertEqual(map_descriptor["paletteRemap"], OPTIONAL_MAPS["archMap"])
+        self.assertEqual(aliases.ARCH_MAGE_MAP_CANVAS_SIZE, (64, 64))
+        self.assertEqual(aliases.ARCH_MAGE_MAP_GROUP_FRAME_COUNTS, {0: 30})
+        self.assertEqual(len(map_descriptor["images"]), 30)
+        self.assertEqual(
+            [(entry["group"], entry["frame"], entry["defFile"], entry["defGroup"], entry["defFrame"])
+             for entry in map_descriptor["images"]],
+            [(0, frame, "AVWmagx0.DEF", 0, frame) for frame in range(30)],
+        )
+
+        # Each role is opt-in independently; omitted maps do not create files.
+        small_only = aliases.build_descriptors({**VALID_MAPS, "archSmall": OPTIONAL_MAPS["archSmall"]})
+        self.assertIn("NH_ArchMageGreySmall.json", small_only)
+        self.assertNotIn("NH_ArchMageGreyEncounter.json", small_only)
+        encounter_only = aliases.build_descriptors({**VALID_MAPS, "archEncounter": OPTIONAL_MAPS["archEncounter"]})
+        self.assertIn("NH_ArchMageGreyEncounter.json", encounter_only)
+        self.assertNotIn("NH_ArchMageGreySmall.json", encounter_only)
+        map_only = aliases.build_descriptors({**VALID_MAPS, "archMap": OPTIONAL_MAPS["archMap"]})
+        self.assertIn("NH_ArchMageGreyMap.json", map_only)
+        self.assertNotIn("NH_ArchMageGreySmall.json", map_only)
+        self.assertNotIn("NH_ArchMageGreyEncounter.json", map_only)
+
+    def test_optional_authored_maps_load_and_unknown_names_are_rejected(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            maps_path = Path(temp_dir) / "maps.json"
+            maps_path.write_text(json.dumps(OPTIONAL_MAPS), encoding="utf-8")
+            self.assertEqual(aliases.load_authored_maps(maps_path), OPTIONAL_MAPS)
+
+            maps_path.write_text(json.dumps({**VALID_MAPS, "unreviewedRole": {"40": [1, 2, 3]}}),
+                                 encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "unknown maps: unreviewedRole"):
+                aliases.load_authored_maps(maps_path)
+        with self.assertRaisesRegex(ValueError, "unknown maps: unreviewedRole"):
+            aliases.build_descriptors({**VALID_MAPS, "unreviewedRole": {"40": [1, 2, 3]}})
 
     def test_maps_are_normalized_and_descriptor_json_is_stable(self):
         reordered = {

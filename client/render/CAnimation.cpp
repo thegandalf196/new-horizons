@@ -214,10 +214,13 @@ ImageLocator CAnimation::getImageLocator(size_t frame, size_t group) const
 {
 	try
 	{
-		const ImageLocator & locator = source.at(group).at(frame);
+		ImageLocator locator = source.at(group).at(frame);
 
 		if (!locator.empty())
+		{
+			locator.layer = mode;
 			return locator;
+		}
 	}
 	catch (std::out_of_range &)
 	{

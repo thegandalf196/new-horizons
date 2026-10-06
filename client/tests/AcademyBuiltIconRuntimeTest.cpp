@@ -690,8 +690,12 @@ void verifyAcademyPortrait(const AcademyPortrait & portrait)
 		return;
 	}
 
-	require(creature->smallIconName.empty(),
-		std::string("Creature small icon must remain on its original CPRSMALL frame: core:") + portrait.identifier);
+	if(std::string_view(portrait.identifier) == "archMage")
+		require(creature->smallIconName == "NH_ArchMageGreySmall:0:0",
+			"Arch Mage must route its small icon through the palette-mapped CPRSMALL frame reference");
+	else
+		require(creature->smallIconName.empty(),
+			std::string("Creature small icon must remain on its original CPRSMALL frame: core:") + portrait.identifier);
 
 	constexpr Point size(58, 64);
 	const auto generated = renderer.loadImage(ImagePath::builtin(portrait.image), EImageBlitMode::SIMPLE);
@@ -782,26 +786,37 @@ void verifyAcademyPortrait(const AcademyPortrait & portrait)
 		EImageBlitMode::COLORKEY);
 	require(originalSmall && mappedSmall && originalSmall->dimensions() == Point(32, 32)
 		&& mappedSmall->dimensions() == Point(32, 32), "Original CPRSMALL creature icon is missing or changed geometry");
+	std::shared_ptr<IImage> expectedSmall = originalSmall;
+	if(std::string_view(portrait.identifier) == "archMage")
+	{
+		expectedSmall = renderer.loadImage(ImagePath::builtin(creature->smallIconName), EImageBlitMode::COLORKEY);
+		require(expectedSmall && expectedSmall->dimensions() == Point(32, 32),
+			"Arch Mage palette-mapped CPRSMALL reference is missing or changed geometry");
+	}
 	Canvas originalSmallCanvas(Point(32, 32), CanvasScalingPolicy::IGNORE);
 	Canvas mappedSmallCanvas(Point(32, 32), CanvasScalingPolicy::IGNORE);
+	Canvas expectedSmallCanvas(Point(32, 32), CanvasScalingPolicy::IGNORE);
 	drawImage(originalSmallCanvas, originalSmall, Point(32, 32));
 	drawImage(mappedSmallCanvas, mappedSmall, Point(32, 32));
+	drawImage(expectedSmallCanvas, expectedSmall, Point(32, 32));
 	size_t transparentSmallPixels = 0;
 	for(int y = 0; y < 32; ++y)
 	{
 		for(int x = 0; x < 32; ++x)
 		{
 			const Point pixel(x, y);
-			const ColorRGBA expected = originalSmallCanvas.getPixel(pixel);
-			if(expected.a < 255)
+			const ColorRGBA sourcePixel = originalSmallCanvas.getPixel(pixel);
+			const ColorRGBA expected = expectedSmallCanvas.getPixel(pixel);
+			if(sourcePixel.a < 255)
 				++transparentSmallPixels;
 			require(mappedSmallCanvas.getPixel(pixel) == expected,
-				std::string("CPRSMALL transparent cutout changed for core:") + portrait.identifier);
+				std::string("CPRSMALL registered icon did not match its source or authored alias for core:")
+				+ portrait.identifier);
 		}
 	}
 	require(transparentSmallPixels > 0, "CPRSMALL source is expected to remain a transparent cutout");
 	std::cout << "  " << portrait.identifier << ": " << foregroundPixels << " preserved subject pixels, "
-		<< backdropPixels << " authored backdrop pixels; CPRSMALL unchanged\n";
+		<< backdropPixels << " authored backdrop pixels; CPRSMALL registration verified\n";
 }
 
 bool cabirAnimationValidationRequested()
@@ -973,6 +988,7 @@ void verifyMappedPalettePixels(IRenderHandler & renderer, const CAnimation & ali
 	verifyPaletteMap(mappedLocator, description);
 	mappedLocator.layer = mode;
 	mappedLocator.scalingFactor = 1;
+	mappedLocator.originalDefFrame = true;
 	ImageLocator sourceLocator(*mappedLocator.defFile, mappedLocator.defFrame, mappedLocator.defGroup, mode);
 	sourceLocator.scalingFactor = 1;
 	sourceLocator.originalDefFrame = true;
@@ -1011,6 +1027,229 @@ void verifyMappedPalettePixels(IRenderHandler & renderer, const CAnimation & ali
 			description + " palette map did not change any used source color");
 }
 
+std::shared_ptr<CAnimation> verifyMappedFrameAlias(IRenderHandler & renderer, const char * aliasName,
+	const char * sourceName, const std::vector<size_t> & sourceFrames, EImageBlitMode mode)
+{
+	const AnimationPath aliasPath = AnimationPath::builtin(aliasName);
+	const AnimationPath sourcePath = AnimationPath::builtin(sourceName);
+	const JsonPath descriptorPath = aliasPath.addPrefix("SPRITES/").toType<EResType::JSON>();
+	require(CResourceHandler::get()->existsResource(descriptorPath),
+		std::string("Mapped image alias descriptor is missing: ") + aliasName);
+	const auto alias = renderer.loadAnimation(aliasPath, mode);
+	require(alias && alias->size(0) == sourceFrames.size(),
+		std::string("Mapped image alias has an unexpected frame count: ") + aliasName);
+	for(size_t group = 1; group < 64; ++group)
+		require(alias->size(group) == 0, std::string("Mapped image alias has an unexpected group: ") + aliasName);
+
+	for(size_t frame = 0; frame < sourceFrames.size(); ++frame)
+	{
+		const ImageLocator locator = alias->getImageLocator(frame, 0);
+		require(locator.defFile.has_value()
+			&& normalizedAnimationSource(*locator.defFile) == normalizedAnimationSource(sourcePath)
+			&& locator.defGroup == 0
+			&& locator.defFrame == static_cast<int>(sourceFrames[frame]),
+			std::string("Mapped image alias changed its original frame binding: ") + aliasName
+			+ " frame " + std::to_string(frame));
+		verifyPaletteMap(locator, std::string(aliasName) + " frame locator");
+	}
+	return alias;
+}
+
+std::shared_ptr<IImage> loadExactOriginalFrame(IRenderHandler & renderer, const AnimationPath & source,
+	size_t frame, size_t group, EImageBlitMode mode)
+{
+	ImageLocator locator(source, static_cast<int>(frame), static_cast<int>(group), mode);
+	locator.scalingFactor = 1;
+	locator.originalDefFrame = true;
+	return renderer.loadImage(locator);
+}
+
+void verifyOrdinaryFrameRemainsUnmapped(IRenderHandler & renderer, const AnimationPath & source,
+	size_t frame, EImageBlitMode mode, const std::string & description)
+{
+	const auto exact = loadExactOriginalFrame(renderer, source, frame, 0, mode);
+	const auto ordinary = renderer.loadImage(source, static_cast<int>(frame), 0, mode);
+	require(exact && ordinary && exact->dimensions() == ordinary->dimensions(),
+		description + " did not retain its original native canvas");
+	require(captureImagePixels(exact, exact->dimensions(), description + " exact source")
+		== captureImagePixels(ordinary, exact->dimensions(), description + " ordinary route"),
+		description + " was affected by another creature's palette alias");
+}
+
+void verifyOrdinaryAnimationGroupRemainsUnmapped(IRenderHandler & renderer, const AnimationPath & source,
+	size_t group, EImageBlitMode mode, const std::string & description)
+{
+	const auto animation = renderer.loadAnimation(source, mode);
+	require(animation && animation->size(group) > 0, description + " has no source frames");
+	for(size_t frame = 0; frame < animation->size(group); ++frame)
+	{
+		const auto exact = loadExactOriginalFrame(renderer, source, frame, group, mode);
+		const auto ordinary = animation->getImage(frame, group, true);
+		require(exact && ordinary && exact->dimensions() == ordinary->dimensions(),
+			description + " changed native frame geometry at frame " + std::to_string(frame));
+		require(captureImagePixels(exact, exact->dimensions(), description + " exact source")
+			== captureImagePixels(ordinary, exact->dimensions(), description + " ordinary route"),
+			description + " changed source pixels at frame " + std::to_string(frame));
+	}
+}
+
+void verifyGeneratedImageMatchesAlias(IRenderHandler & renderer, const ImagePath & generatedPath,
+	const CAnimation & alias, size_t frame, EImageBlitMode mode, const Point & expectedSize,
+	const std::string & description)
+{
+	ImageLocator aliasLocator = alias.getImageLocator(frame, 0);
+	aliasLocator.layer = mode;
+	aliasLocator.scalingFactor = 1;
+	aliasLocator.originalDefFrame = true;
+	const auto expected = renderer.loadImage(aliasLocator);
+	const auto generated = renderer.loadImage(generatedPath, mode);
+	require(expected && generated && expected->dimensions() == expectedSize
+		&& generated->dimensions() == expectedSize,
+		description + " did not preserve its source frame geometry");
+	const auto expectedPixels = captureImagePixels(expected, expectedSize, description + " mapped source");
+	const auto generatedPixels = captureImagePixels(generated, expectedSize, description + " generated route");
+	require(generatedPixels == expectedPixels,
+		description + " generated image differs from the exact palette-mapped source frame");
+}
+
+void verifyArchMageSmallAndEncounterImages(IRenderHandler & renderer)
+{
+	const auto getCreature = [](const char * identifier) -> const CCreature *
+	{
+		const auto creatureId = LIBRARY->identifiers()->getIdentifier(
+			ModScope::scopeGame(), "creature", std::string(identifier));
+		require(creatureId.has_value(), std::string("Could not resolve core:") + identifier);
+		return LIBRARY->creh->objects.at(static_cast<size_t>(*creatureId)).get();
+	};
+	const auto * mage = getCreature("mage");
+	const auto * archMage = getCreature("archMage");
+	require(mage && archMage, "Loaded Mage/Arch Mage definitions are missing for map/icon palette checks");
+	require(mage->smallIconName.empty(), "Mage must retain its original CPRSMALL frame route");
+	require(archMage->smallIconName == "NH_ArchMageGreySmall:0:0",
+		"Arch Mage must use its palette-mapped small-icon frame reference");
+	require(archMage->mapAttackFromRight == ImagePath::builtin("NH_ArchMageGreyEncounter:0:0")
+		&& archMage->mapAttackFromLeft == ImagePath::builtin("NH_ArchMageGreyEncounter:0:1"),
+		"Arch Mage must use palette-mapped right/left encounter frame references");
+
+	const auto smallIconAlias = verifyMappedFrameAlias(renderer, "NH_ArchMageGreySmall", "CPRSMALL", {37},
+		EImageBlitMode::COLORKEY);
+	verifyMappedPalettePixels(renderer, *smallIconAlias, 0, 0, EImageBlitMode::COLORKEY,
+		"Arch Mage small icon source frame", true);
+	const auto archMageSmallSource = loadExactOriginalFrame(renderer, AnimationPath::builtin("CPRSMALL"), 37, 0,
+		EImageBlitMode::COLORKEY);
+	require(archMageSmallSource != nullptr, "Arch Mage original CPRSMALL frame 37 is missing");
+	verifyGeneratedImageMatchesAlias(renderer, ImagePath::builtin("CPRSMALL:0:37"),
+		*smallIconAlias, 0, EImageBlitMode::COLORKEY, archMageSmallSource->dimensions(),
+		"Arch Mage registered CPRSMALL icon");
+
+	const auto encounterAlias = verifyMappedFrameAlias(renderer, "NH_ArchMageGreyEncounter", "AvWattak", {70, 71},
+		EImageBlitMode::SIMPLE);
+	verifyMappedPalettePixels(renderer, *encounterAlias, 0, 0, EImageBlitMode::SIMPLE,
+		"Arch Mage right encounter source frame", true);
+	verifyMappedPalettePixels(renderer, *encounterAlias, 0, 1, EImageBlitMode::SIMPLE,
+		"Arch Mage left encounter source frame", true);
+	const auto rightSource = loadExactOriginalFrame(renderer, AnimationPath::builtin("AvWattak"), 70, 0,
+		EImageBlitMode::SIMPLE);
+	const auto leftSource = loadExactOriginalFrame(renderer, AnimationPath::builtin("AvWattak"), 71, 0,
+		EImageBlitMode::SIMPLE);
+	require(rightSource && leftSource, "Arch Mage original encounter source frames are missing");
+	verifyGeneratedImageMatchesAlias(renderer, archMage->mapAttackFromRight, *encounterAlias, 0,
+		EImageBlitMode::SIMPLE, rightSource->dimensions(), "Arch Mage right encounter image");
+	verifyGeneratedImageMatchesAlias(renderer, archMage->mapAttackFromLeft, *encounterAlias, 1,
+		EImageBlitMode::SIMPLE, leftSource->dimensions(), "Arch Mage left encounter image");
+
+	verifyOrdinaryFrameRemainsUnmapped(renderer, AnimationPath::builtin("CPRSMALL"), 36,
+		EImageBlitMode::COLORKEY, "Mage CPRSMALL frame 36");
+	verifyOrdinaryFrameRemainsUnmapped(renderer, AnimationPath::builtin("AvWattak"), 68,
+		EImageBlitMode::SIMPLE, "Mage left AvWattak frame 68");
+	verifyOrdinaryFrameRemainsUnmapped(renderer, AnimationPath::builtin("AvWattak"), 69,
+		EImageBlitMode::SIMPLE, "Mage right AvWattak frame 69");
+	std::cout << "  Arch Mage small icon and encounter images: exact mapped source frames, native geometry/alpha, Mage frames unchanged\n";
+}
+
+void verifyArchMageAdventureMap()
+{
+	const auto archMageId = LIBRARY->identifiers()->getIdentifier(
+		ModScope::scopeGame(), "creature", std::string("archMage"));
+	require(archMageId.has_value(), "Could not resolve core:archMage for its adventure-map template");
+	const auto * archMage = LIBRARY->creh->objects.at(static_cast<size_t>(*archMageId)).get();
+	require(archMage != nullptr && archMage->getIndex() == 35, "Unexpected Arch Mage creature definition");
+
+	const auto handler = LIBRARY->objtypeh->getHandlerFor(Obj::MONSTER, archMage->getId().num);
+	require(handler != nullptr, "Arch Mage monster object handler is missing");
+	const auto templates = handler->getTemplates();
+	require(templates.size() == 1 && templates.front() != nullptr,
+		"Arch Mage must resolve to one dedicated adventure-map template");
+	const auto & objectTemplate = *templates.front();
+	require(objectTemplate.id == Obj::MONSTER && objectTemplate.subid == archMage->getId().num,
+		"Arch Mage adventure-map template is not bound to its creature identity");
+	const AnimationPath mapPath = AnimationPath::builtin("NH_ArchMageGreyMap.def");
+	require(objectTemplate.animationFile == mapPath,
+		"Arch Mage adventure-map template must use NH_ArchMageGreyMap.def");
+	require(objectTemplate.getWidth() == 2 && objectTemplate.getHeight() == 2 && objectTemplate.isVisitable(),
+		"Arch Mage must preserve the 2x2 visitable monster footprint");
+	for(int y = 0; y < 2; ++y)
+	{
+		for(int x = 0; x < 2; ++x)
+		{
+			const bool anchor = x == 0 && y == 0; // readJson reverses the mask into bottom-right-relative coordinates
+			require(objectTemplate.isVisibleAt(x, y), "Arch Mage mapMask must keep every footprint tile visible");
+			require(objectTemplate.isBlockedAt(x, y) == anchor && objectTemplate.isVisitableAt(x, y) == anchor,
+				"Arch Mage mapMask [VV, VA] must block and mark only its A anchor visitable");
+		}
+	}
+	for(int dy = -1; dy <= 1; ++dy)
+	{
+		for(int dx = -1; dx <= 1; ++dx)
+		{
+			if(dx != 0 || dy != 0)
+				require(objectTemplate.isVisitableFrom(dx, dy),
+					"Arch Mage must allow all eight surrounding visit approaches");
+		}
+	}
+
+	auto & renderer = ENGINE->renderHandler();
+	const auto mapAnimation = renderer.loadAnimation(mapPath, EImageBlitMode::WITH_SHADOW);
+	require(mapAnimation && mapAnimation->size(0) == 30,
+		"Arch Mage map alias must provide exactly 30 group-0 frames");
+	for(size_t group = 1; group < 64; ++group)
+		require(mapAnimation->size(group) == 0, "Arch Mage map alias must not add unrelated animation groups");
+	for(size_t frame = 0; frame < 30; ++frame)
+	{
+		ImageLocator locator = mapAnimation->getImageLocator(frame, 0);
+		require(locator.defFile.has_value()
+			&& normalizedAnimationSource(*locator.defFile) == AnimationPath::builtin("AVWmagx0.DEF")
+			&& locator.defGroup == 0 && locator.defFrame == static_cast<int>(frame),
+			"Arch Mage map alias must preserve original AVWmagx0 group-0 frame order at frame "
+				+ std::to_string(frame));
+		verifyPaletteMap(locator, "Arch Mage map alias frame " + std::to_string(frame));
+		locator.layer = EImageBlitMode::WITH_SHADOW;
+		locator.scalingFactor = 1;
+		locator.originalDefFrame = true;
+		const auto sourceFrame = renderer.loadImage(locator);
+		require(sourceFrame && sourceFrame->dimensions() == Point(64, 64),
+			"Arch Mage map alias must retain the original 64x64 canvas at frame " + std::to_string(frame));
+	}
+	for(const size_t frame : {size_t(0), size_t(15), size_t(29)})
+		verifyMappedPalettePixels(renderer, *mapAnimation, 0, frame, EImageBlitMode::WITH_SHADOW,
+			"Arch Mage map frame " + std::to_string(frame), true);
+
+	const auto mageId = LIBRARY->identifiers()->getIdentifier(
+		ModScope::scopeGame(), "creature", std::string("mage"));
+	require(mageId.has_value(), "Could not resolve core:mage for map-animation preservation");
+	const auto * mage = LIBRARY->creh->objects.at(static_cast<size_t>(*mageId)).get();
+	require(mage != nullptr, "Loaded Mage definition is missing for map-animation preservation");
+	const auto mageHandler = LIBRARY->objtypeh->getHandlerFor(Obj::MONSTER, mage->getId().num);
+	require(mageHandler != nullptr, "Mage monster object handler is missing");
+	const auto mageTemplates = mageHandler->getTemplates();
+	require(std::any_of(mageTemplates.begin(), mageTemplates.end(), [](const auto & entry)
+		{ return entry && entry->animationFile == AnimationPath::builtin("AVWmage0"); }),
+		"Base Mage must retain its original AVWmage0 adventure-map animation");
+	verifyOrdinaryAnimationGroupRemainsUnmapped(renderer, AnimationPath::builtin("AVWmage0"), 0,
+		EImageBlitMode::WITH_SHADOW, "Base Mage AVWmage0 group 0");
+	std::cout << "  Arch Mage map template: 2x2 anchor footprint, eight approaches, 30 exact 64x64 AVWmagx0 frames; AVWmage0 unchanged\n";
+}
+
 void verifyMagiPaletteAliases(IRenderHandler & renderer)
 {
 	const auto archMage = verifyCompletePaletteAlias(renderer, "NH_ArchMageGrey.def", "CAMAGE.DEF");
@@ -1025,6 +1264,8 @@ void verifyMagiPaletteAliases(IRenderHandler & renderer)
 		"Mage projectile frame", true);
 	verifyMappedPalettePixels(renderer, *portrait, 0, 0, EImageBlitMode::OPAQUE,
 		"Arch Mage portrait source frame", true);
+	verifyArchMageSmallAndEncounterImages(renderer);
+	verifyArchMageAdventureMap();
 }
 
 void exportMappedMagiPreviews(IRenderHandler & renderer, const std::filesystem::path & destination)
@@ -1042,13 +1283,21 @@ void exportMappedMagiPreviews(IRenderHandler & renderer, const std::filesystem::
 		require(image != nullptr, "Could not render opt-in mapped alias preview: " + filename);
 		image->exportBitmap(boost::filesystem::path((previewDirectory / filename).string()));
 	};
-
 	exportFrame(AnimationPath::builtin("NH_ArchMageGrey.def"), 2, 0,
 		EImageBlitMode::WITH_SHADOW_AND_SELECTION, "archmage_standing_g2_f0.png");
 	exportFrame(AnimationPath::builtin("NH_ArchMageGrey.def"), 14, 8,
 		EImageBlitMode::WITH_SHADOW_AND_SELECTION, "archmage_shooting_g14_f8.png");
 	exportFrame(AnimationPath::builtin("NH_ArchMageGreyPortrait"), 0, 0,
 		EImageBlitMode::OPAQUE, "archmage_portrait_source.png");
+	exportFrame(AnimationPath::builtin("NH_ArchMageGreySmall"), 0, 0,
+		EImageBlitMode::COLORKEY, "archmage_small_icon.png");
+	exportFrame(AnimationPath::builtin("NH_ArchMageGreyEncounter"), 0, 0,
+		EImageBlitMode::SIMPLE, "archmage_encounter_right.png");
+	exportFrame(AnimationPath::builtin("NH_ArchMageGreyEncounter"), 0, 1,
+		EImageBlitMode::SIMPLE, "archmage_encounter_left.png");
+	for(const size_t frame : {size_t(0), size_t(15), size_t(29)})
+		exportFrame(AnimationPath::builtin("NH_ArchMageGreyMap"), 0, frame,
+			EImageBlitMode::WITH_SHADOW, "archmage_map_f" + std::to_string(frame) + ".png");
 	for(size_t frame = 0; frame < 9; ++frame)
 		exportFrame(AnimationPath::builtin("NH_MageRedProjectile.def"), 0, frame,
 			EImageBlitMode::COLORKEY, "mage_projectile_f" + std::to_string(frame) + ".png");

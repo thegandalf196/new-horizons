@@ -2,9 +2,10 @@
 """Generate JSON-only Magi palette aliases from explicitly reviewed RGB maps.
 
 The generator uses installed DEF names and frame-count metadata only. It never
-opens or exports original sprite pixels. Supply a JSON object with exactly the
-`archBattle`, `mageProjectile`, and `archPortrait` mappings, then direct the
-three generated descriptors to a private output directory for review.
+opens or exports original sprite pixels. Supply the required `archBattle`,
+`mageProjectile`, and `archPortrait` mappings, with optional `archSmall` and
+`archEncounter` and `archMap` mappings, then direct generated descriptors to a private output
+directory for review.
 """
 
 import argparse
@@ -41,13 +42,20 @@ ARCH_MAGE_GROUP_FRAME_COUNTS = {
 MAGE_PROJECTILE_GROUP_FRAME_COUNTS = {0: 9}
 ARCH_MAGE_PORTRAIT_SOURCE_GROUP = 0
 ARCH_MAGE_PORTRAIT_SOURCE_FRAME = 37
+ARCH_MAGE_MAP_CANVAS_SIZE = (64, 64)
+ARCH_MAGE_MAP_GROUP_FRAME_COUNTS = {0: 30}
 
 MAP_NAMES = ("archBattle", "mageProjectile", "archPortrait")
-OUTPUT_NAMES = (
-    "NH_ArchMageGrey.json",
-    "NH_MageRedProjectile.json",
-    "NH_ArchMageGreyPortrait.json",
-)
+OPTIONAL_MAP_NAMES = ("archSmall", "archEncounter", "archMap")
+ALL_MAP_NAMES = MAP_NAMES + OPTIONAL_MAP_NAMES
+OUTPUT_NAMES = {
+    "archBattle": "NH_ArchMageGrey.json",
+    "mageProjectile": "NH_MageRedProjectile.json",
+    "archPortrait": "NH_ArchMageGreyPortrait.json",
+    "archSmall": "NH_ArchMageGreySmall.json",
+    "archEncounter": "NH_ArchMageGreyEncounter.json",
+    "archMap": "NH_ArchMageGreyMap.json",
+}
 
 
 def _unique_object(pairs):
@@ -62,9 +70,19 @@ def _unique_object(pairs):
 def load_authored_maps(path: Path) -> dict:
     with path.open("r", encoding="utf-8") as stream:
         value = json.load(stream, object_pairs_hook=_unique_object)
-    if not isinstance(value, dict) or set(value) != set(MAP_NAMES):
-        raise ValueError("maps JSON must contain exactly archBattle, mageProjectile, and archPortrait")
-    return {name: validate_palette_map(value[name], name) for name in MAP_NAMES}
+    if not isinstance(value, dict):
+        raise ValueError("maps JSON must be an object")
+    keys = set(value)
+    missing = set(MAP_NAMES) - keys
+    unknown = keys - set(ALL_MAP_NAMES)
+    if missing or unknown:
+        details = []
+        if missing:
+            details.append("missing required maps: " + ", ".join(sorted(missing)))
+        if unknown:
+            details.append("unknown maps: " + ", ".join(sorted(unknown)))
+        raise ValueError("; ".join(details))
+    return {name: validate_palette_map(value[name], name) for name in ALL_MAP_NAMES if name in value}
 
 
 def validate_palette_map(value: object, name: str) -> dict[str, list[int]]:
@@ -95,9 +113,19 @@ def _frame_entry(alias_group: int, alias_frame: int, def_file: str, def_group: i
 
 
 def build_descriptors(maps: dict) -> dict[str, dict]:
-    if not isinstance(maps, dict) or set(maps) != set(MAP_NAMES):
-        raise ValueError("palette maps must contain exactly archBattle, mageProjectile, and archPortrait")
-    validated = {name: validate_palette_map(maps[name], name) for name in MAP_NAMES}
+    if not isinstance(maps, dict):
+        raise ValueError("palette maps must be an object")
+    keys = set(maps)
+    missing = set(MAP_NAMES) - keys
+    unknown = keys - set(ALL_MAP_NAMES)
+    if missing or unknown:
+        details = []
+        if missing:
+            details.append("missing required maps: " + ", ".join(sorted(missing)))
+        if unknown:
+            details.append("unknown maps: " + ", ".join(sorted(unknown)))
+        raise ValueError("; ".join(details))
+    validated = {name: validate_palette_map(maps[name], name) for name in ALL_MAP_NAMES if name in maps}
 
     arch_battle_frames = [
         _frame_entry(group, frame, "CAMAGE.DEF", group, frame)
@@ -112,11 +140,36 @@ def build_descriptors(maps: dict) -> dict[str, dict]:
         _frame_entry(0, 0, "TWCRPORT.DEF", ARCH_MAGE_PORTRAIT_SOURCE_GROUP, ARCH_MAGE_PORTRAIT_SOURCE_FRAME)
     ]
 
-    return {
-        OUTPUT_NAMES[0]: {"paletteRemap": validated["archBattle"], "images": arch_battle_frames},
-        OUTPUT_NAMES[1]: {"paletteRemap": validated["mageProjectile"], "images": mage_projectile_frames},
-        OUTPUT_NAMES[2]: {"paletteRemap": validated["archPortrait"], "images": portrait_frames},
+    descriptors = {
+        OUTPUT_NAMES["archBattle"]: {"paletteRemap": validated["archBattle"], "images": arch_battle_frames},
+        OUTPUT_NAMES["mageProjectile"]: {
+            "paletteRemap": validated["mageProjectile"], "images": mage_projectile_frames
+        },
+        OUTPUT_NAMES["archPortrait"]: {"paletteRemap": validated["archPortrait"], "images": portrait_frames},
     }
+    if "archSmall" in validated:
+        descriptors[OUTPUT_NAMES["archSmall"]] = {
+            "paletteRemap": validated["archSmall"],
+            "images": [_frame_entry(0, 0, "CPRSMALL.DEF", 0, 37)],
+        }
+    if "archEncounter" in validated:
+        descriptors[OUTPUT_NAMES["archEncounter"]] = {
+            "paletteRemap": validated["archEncounter"],
+            "images": [
+                _frame_entry(0, 0, "AvWattak.DEF", 0, 70),
+                _frame_entry(0, 1, "AvWattak.DEF", 0, 71),
+            ],
+        }
+    if "archMap" in validated:
+        descriptors[OUTPUT_NAMES["archMap"]] = {
+            "paletteRemap": validated["archMap"],
+            "images": [
+                _frame_entry(group, frame, "AVWmagx0.DEF", group, frame)
+                for group, count in ARCH_MAGE_MAP_GROUP_FRAME_COUNTS.items()
+                for frame in range(count)
+            ],
+        }
+    return descriptors
 
 
 def descriptor_bytes(descriptor: dict) -> bytes:
@@ -167,7 +220,7 @@ def write_or_check(output_dir: Path, descriptors: dict[str, dict], check: bool) 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--maps", required=True, type=Path,
-                        help="JSON file containing the three explicitly authored RGB maps")
+                        help="JSON file containing three required and up to two optional authored RGB maps")
     parser.add_argument("--output-dir", required=True, type=Path,
                         help="private directory for generated JSON descriptors; never a Mods directory")
     parser.add_argument("--check", action="store_true", help="verify exact existing descriptor bytes without writing")

@@ -1,0 +1,301 @@
+{
+  "paletteRemap": {
+    "42": [
+      244,
+      127,
+      52
+    ],
+    "47": [
+      255,
+      98,
+      48
+    ],
+    "68": [
+      224,
+      63,
+      14
+    ],
+    "72": [
+      189,
+      88,
+      82
+    ],
+    "79": [
+      199,
+      58,
+      27
+    ],
+    "186": [
+      146,
+      146,
+      146
+    ],
+    "188": [
+      142,
+      142,
+      142
+    ],
+    "192": [
+      138,
+      138,
+      138
+    ],
+    "196": [
+      134,
+      134,
+      134
+    ],
+    "201": [
+      130,
+      130,
+      130
+    ],
+    "204": [
+      125,
+      125,
+      125
+    ],
+    "212": [
+      113,
+      113,
+      113
+    ],
+    "214": [
+      107,
+      107,
+      107
+    ],
+    "220": [
+      93,
+      93,
+      93
+    ],
+    "231": [
+      80,
+      80,
+      80
+    ],
+    "237": [
+      69,
+      69,
+      69
+    ],
+    "238": [
+      68,
+      68,
+      68
+    ]
+  },
+  "images": [
+    {
+      "group": 0,
+      "frame": 0,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 0
+    },
+    {
+      "group": 0,
+      "frame": 1,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 1
+    },
+    {
+      "group": 0,
+      "frame": 2,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 2
+    },
+    {
+      "group": 0,
+      "frame": 3,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 3
+    },
+    {
+      "group": 0,
+      "frame": 4,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 4
+    },
+    {
+      "group": 0,
+      "frame": 5,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 5
+    },
+    {
+      "group": 0,
+      "frame": 6,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 6
+    },
+    {
+      "group": 0,
+      "frame": 7,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 7
+    },
+    {
+      "group": 0,
+      "frame": 8,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 8
+    },
+    {
+      "group": 0,
+      "frame": 9,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 9
+    },
+    {
+      "group": 0,
+      "frame": 10,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 10
+    },
+    {
+      "group": 0,
+      "frame": 11,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 11
+    },
+    {
+      "group": 0,
+      "frame": 12,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 12
+    },
+    {
+      "group": 0,
+      "frame": 13,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 13
+    },
+    {
+      "group": 0,
+      "frame": 14,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 14
+    },
+    {
+      "group": 0,
+      "frame": 15,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 15
+    },
+    {
+      "group": 0,
+      "frame": 16,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 16
+    },
+    {
+      "group": 0,
+      "frame": 17,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 17
+    },
+    {
+      "group": 0,
+      "frame": 18,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 18
+    },
+    {
+      "group": 0,
+      "frame": 19,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 19
+    },
+    {
+      "group": 0,
+      "frame": 20,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 20
+    },
+    {
+      "group": 0,
+      "frame": 21,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 21
+    },
+    {
+      "group": 0,
+      "frame": 22,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 22
+    },
+    {
+      "group": 0,
+      "frame": 23,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 23
+    },
+    {
+      "group": 0,
+      "frame": 24,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 24
+    },
+    {
+      "group": 0,
+      "frame": 25,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 25
+    },
+    {
+      "group": 0,
+      "frame": 26,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 26
+    },
+    {
+      "group": 0,
+      "frame": 27,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 27
+    },
+    {
+      "group": 0,
+      "frame": 28,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 28
+    },
+    {
+      "group": 0,
+      "frame": 29,
+      "defFile": "AVWmagx0.DEF",
+      "defGroup": 0,
+      "defFrame": 29
+    }
+  ]
+}

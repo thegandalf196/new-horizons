@@ -241,7 +241,11 @@ ImageLocator RenderHandler::getLocatorForAnimationFrame(const AnimationPath & pa
 
 	const auto & locator = layout.at(group).at(frame);
 	if (locator.image || locator.defFile)
-		return locator;
+	{
+		auto result = locator;
+		result.layer = mode;
+		return result;
+	}
 
 	return ImageLocator(path, frame, group, mode);
 }
@@ -462,10 +466,12 @@ std::shared_ptr<IImage> RenderHandler::loadImage(const ImageLocator & locator)
 		if(splitted.size() == 3)
 		{
 			// allows image from def file with following filename (first group, then frame): "deffile.def:0:5"
-			adjustedLocator.defFile = AnimationPath::builtin(splitted[0]);
-			adjustedLocator.defGroup = std::stoi(splitted[1]);
-			adjustedLocator.defFrame = std::stoi(splitted[2]);
-			adjustedLocator.image = std::nullopt;
+			const auto frameLocator = getLocatorForAnimationFrame(AnimationPath::builtin(splitted[0]),
+				std::stoi(splitted[2]), std::stoi(splitted[1]), 1, locator.layer);
+			static_cast<SharedImageLocator &>(adjustedLocator) = frameLocator;
+			adjustedLocator.layer = locator.layer;
+			adjustedLocator.verticalFlip = locator.verticalFlip != frameLocator.verticalFlip;
+			adjustedLocator.horizontalFlip = locator.horizontalFlip != frameLocator.horizontalFlip;
 		}
 	}
 
@@ -481,9 +487,9 @@ std::shared_ptr<IImage> RenderHandler::loadImage(const ImageLocator & locator)
 	else
 		result = loadImageImpl(adjustedLocator)->createImageReference();
 
-	if (locator.horizontalFlip)
+	if (adjustedLocator.horizontalFlip)
 		result->horizontalFlip();
-	if (locator.verticalFlip)
+	if (adjustedLocator.verticalFlip)
 		result->verticalFlip();
 
 	return result;

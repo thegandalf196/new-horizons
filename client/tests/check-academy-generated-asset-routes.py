@@ -53,7 +53,7 @@ for backend in (SDL2, SDL3):
     assert base_load.index("assetGenerator->generateImage(imagePath)") < base_load.index("existsResource(imagePathSprites)")
     assert "locator.scalingFactor == 1 && assetGenerator->preferGeneratedImage(imagePath)" in scaled_load
     assert "!preferGeneratedImage" in scaled_load
-    assert "if(locator.originalDefFrame)\n\t\treturn nullptr;" in scaled_load
+    assert "if(locator.originalDefFrame || !locator.paletteRemap.empty())\n\t\treturn nullptr;" in scaled_load
 
 for backend_path in (
     ROOT / "clientsdl2/render/ScalableImage.cpp",

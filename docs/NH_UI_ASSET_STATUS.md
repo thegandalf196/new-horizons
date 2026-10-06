@@ -38,7 +38,14 @@ bounded true-headless progression to day7 and read-only launcher preflight pass.
 This is a development delivery, not graphical motion/user-final approval.
 Private inspection confirms CPRSMALL frame37 and AvWattak frames70/71 still
 need their own Arch Mage colour treatment; their shared-resource indices cannot
-be borrowed from CAMAGE or TWCRPORT. These remaining roles stay **Not done**.
+be borrowed from CAMAGE or TWCRPORT. These remaining roles were **Not done**.
+Superseding source checkpoint: resource-specific small/encounter and all30 map
+frames are now **Provisional**, with native rendered checks and selected private
+preview review. Registered CPRSMALL routing, exact pixels/alpha, original Mage
+isolation, 2x2 map footprint and all8 approaches pass. Full client builds and11
+Python checks pass; independent review has no blocker. Normal snapshot86eaae127d
+does not yet contain this slice. Full motion, SDL3 execution and user-final
+approval remain open; no original pixels are distributed.
 
 Cabir Linux development delivery,2026-10-06: snapshot30bc6ea from committed
 360b91d06 is selected by the normal Linux script. Original portrait, battle,

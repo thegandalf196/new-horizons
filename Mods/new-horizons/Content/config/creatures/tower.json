@@ -142,7 +142,12 @@
 		"shots": 20,
 		"growth": 3,
 		"graphics": {
+			"map": "NH_ArchMageGreyMap.def",
+			"mapMask": ["VV", "VA"],
 			"iconLarge": "NH_academy_archMage_icon_large.png",
+			"iconSmall": "NH_ArchMageGreySmall:0:0",
+			"mapAttackFromRight": "NH_ArchMageGreyEncounter:0:0",
+			"mapAttackFromLeft": "NH_ArchMageGreyEncounter:0:1",
 			"animation": "NH_ArchMageGrey.def",
 			"missile": {
 				"ray": [

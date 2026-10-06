@@ -2,6 +2,14 @@
 
 Updated: 2026-10-06
 
+Latest UP262 checkpoint: small/encounter/map colour roles have source bindings
+and focused native verification (1/1, zero skips,2.44s), including registered
+CPRSMALL routing, all30 map frames, native pixel/alpha fidelity and original
+map footprint/approaches.11 Python checks and client build pass. Source review
+has no blocker. Playable delivery and full motion/user approval remain open;
+normal Linux stays86eaae127d. Phase1 identity totals remain225/310 perks,
+61/67 combat spells and8/8 Orders. No identity credit for this presentation work.
+
 UP262 selective-renderer prerequisite is implemented in both backends and
 focused SDL2 native1x–4x checks pass: immutable palette aliases remain separate,
 source pixels/alpha are preserved and mirrored projectiles retain the mapping.
