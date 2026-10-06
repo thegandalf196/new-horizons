@@ -1,5 +1,11 @@
 # New Horizons UI and asset status register
 
+Latest delivery: source `6e600fc89` is built and promoted through the existing
+Linux script, with ten Academy portraits. Snapshot
+`bed369d0736cdef3ec6072b7e6ba1e62c859f9e75ca27507dd4ebc0233b927fa` is verified.
+All ten remain Provisional, not Final; user visual acceptance is pending.
+Earlier two-portrait delivery statements below are historical.
+
 Last audited: 2026-10-05
 
 UP240 Academy adventure-map material revision: **Provisional**, installed in source.
@@ -7,22 +13,26 @@ All three masters and their exact HoMM3-Art built-in edit prompts are retained
 under `assets/new-horizons/academy/map-revisions/v2/`. Root and reviewer inspected
 native comparisons; prior geometry and external ownership/shadows are unchanged.
 Pinned exports replace the three runtime bodies, with eight focused tests and
-import/reduction checks passing. The Linux launcher now selects the frozen
-`a3487aacf` candidate containing these bodies; user aesthetic acceptance remains
-separate. UP239's first generated Gremlin matte failed
-native comparison (retained snowy architecture) and is rejected, not new portrait
-coverage or approved artwork. Its corrected geometry-only matte now passes root
-native review provisionally; Master Gremlin's mask is also Provisional. Both
-large portraits, both Golem portraits, both Mage portraits and both Genie portraits have production
-integration and actual dummy-SDL scaled consumer verification (three repeated
-eight-portrait passes after fixture lifecycle repair). All eight are Provisional;
-the other six portraits are Not done. Naga's mask is provisionally accepted but
-unregistered; Naga Queen's initial mask is rejected for internal foreground holes.
-Master Genie v2 restores the vest hole, with two minor contour changes documented.
-Gargoyle
-drafts are rejected for scenery retained by their masks, not approved runtime art.
-No small-icon or gameplay changes; full portrait coverage and user approval remain
-unfinished.
+import/reduction checks passing. The earlier UP240 delivery checkpoint recorded
+the frozen `a3487aacf` candidate containing these bodies; this does not deliver
+UP239's newer portrait work. The playable portrait snapshot remains
+`e48e04550` with two portraits pending a new freeze and promotion. User aesthetic
+acceptance remains separate. UP239 now has ten of fourteen large portraits integrated in source
+through the production compositor. Native `nhAcademyBuiltIconRuntimeTest` evidence
+covers all ten at scales1–4 (PASS, zero skips in
+`build/new-horizons-linux/Testing/Temporary/LastTest.log`); client and fixture
+builds passed in the prior cycle. Naga (core ID38/frame40) and Naga Queen
+(ID39/frame41) are provisionally accepted; Queen uses v2 matte SHA256
+`aa282c71f59b720ccc2604e81b3bc1527b8e58b7ab60403eee9fb28eb9f64c30`, with its v1
+master/mask preserved. The earlier Gremlin matte that retained snowy architecture
+remains rejected; the corrected Gremlin, Master Gremlin, Golem, Mage, Arch Mage,
+Genie, Master Genie, Naga and Naga Queen compositions are Provisional, not Final.
+Gargoyle drafts are rejected. Giant is provisionally accepted but still
+unregistered; Titan is unapproved because of interior-looking holes near the
+hand/bolt junction and right beard/neck/armor. Four portraits are not integrated.
+These art registrations earn no gameplay coverage credit. No small-icon change
+or hall-roof fix is included; the playable portrait snapshot remains the two-
+portrait `e48e04550`, with overall user visual acceptance still open.
 
 UP-238 Academy faction/town-list icons: revised artwork is Provisional pending
 user native-scale acceptance, not Final. The two new HoMM3-Art masters and exact

@@ -2,23 +2,29 @@
 
 Updated: 2026-10-05
 
+Latest delivery: Linux script selects committed source `6e600fc89` in verified
+snapshot `bed369d0736cdef3ec6072b7e6ba1e62c859f9e75ca27507dd4ebc0233b927fa`.
+Ten portraits delivered; native consumer/build and bounded headless map/AI
+checks pass. User visual approval remains open; gameplay counts unchanged.
+The two-portrait delivery mentioned below is the earlier checkpoint.
+
 UP240 user-priority art slice: three revised Academy map-body images are integrated
 with exact prior geometry, reproducible native reductions and a pinned importer.
 Eight focused art tests, import/export checks and independent review pass. No
 gameplay identity is added: perks remain225/310 and combat identities61/67.
-UP239's eight provisional Gremlin/Golem/Mage/Genie portraits have a production compositor
-and actual dummy-SDL pixel/alias acceptance at scales1–4 (three consecutive native
-passes, zero skips; the previous four-portrait checkpoint passed ten repeats
-after restoring the fixture's production async-drain shutdown contract).
-Both Linux targets build; three Python checks and exporter validation pass; six other large
-portraits remain missing. Naga has an accepted provisional mask but no runtime
-registration; Naga Queen's initial mask is rejected for foreground holes/lines.
-The initial intermittent fixture failure is retained
-in the failure ledger, not claimed conclusively diagnosed. Stone
-and Obsidian Gargoyle drafts are rejected for retained scenery, not coverage.
-Original small cutouts do not
-need a snowy-background correction. Native user acceptance and playable delivery
-are tracked separately in the priority queue.
+UP239 now source-integrates ten of fourteen large portraits through the production
+compositor. Naga (core ID38/frame40) and Naga Queen (ID39/frame41) pass the native
+dummy-SDL consumer at scales1–4; `build/new-horizons-linux/Testing/Temporary/LastTest.log`
+records PASS with zero skips, and the client plus fixture builds passed in the
+prior cycle. Queen's selected v2 mask SHA256 is
+`aa282c71f59b720ccc2604e81b3bc1527b8e58b7ab60403eee9fb28eb9f64c30`; the original
+Queen master/mask are preserved. The portrait integration is art/runtime coverage,
+not gameplay identity credit; perks remain225/310 and combat identities61/67.
+Gargoyle drafts are rejected, Giant is provisionally accepted but unregistered,
+and Titan remains unapproved pending review of interior-looking holes. Four
+portraits are not integrated. Mechanical reduction is not art approval. The
+playable portrait snapshot remains `e48e04550` with two portraits; user visual
+acceptance is separate. This does not repair UP-241's hall roof.
 UP-012 native content-loading gate accepted: all 52 selectively activated
 biographies match production text resolution and New Horizons registration
 provenance; the 92 inherited identities have no NH biography override. Live

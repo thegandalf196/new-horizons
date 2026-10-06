@@ -1,5 +1,10 @@
 # Academy large-portrait background mattes
 
+Delivery checkpoint: committed source `6e600fc89` supplies ten provisional
+runtime portraits through the promoted Linux candidate. Native scale1–4
+consumer, build and bounded headless map/AI checks pass. Four subjects are
+still unregistered; no complete-family or user visual approval is implied.
+
 Geometry-only art, with approval tracked per subject. Generated through the
 built-in image tool and HoMM3 Art workflow; it contains no original colour pixels.
 
@@ -60,12 +65,28 @@ Root inspected the native/8× composite and accepted v2 provisionally; its two
 minor edge changes are not visually prominent. The exporter and runtime use v2,
 while the rejected prior master/mask remain preserved unchanged.
 
-Naga: initial geometry mask passes root native/8× composition review provisionally,
-but is not registered in runtime yet. Naga Queen: rejected initial draft, not
-runtime art. Its drawn internal black lines/gaps cut through subject shading,
-including the enclosed x23–27,y48–53 patch. Preserve the initial source/prompt;
-make a focused correction before accepting its composition. Both mechanical
-draft reductions are reproducible, which is not approval of the Queen mask.
+Earlier matte-review checkpoint: the Naga draft passed native/8× review but was
+not yet registered. The first Naga Queen draft was rejected for internal holes
+through subject shading, including the enclosed x23–27,y48–53 patch. That Queen
+master and matte remain preserved; the focused v2 correction below supersedes
+the initial rejection for the selected export, not the preserved v1 files.
+
+Ten-portrait integration checkpoint, 2026-10-05: Naga (core ID38, external
+TWCRPORT frame40) and Naga Queen (ID39, frame41) are provisionally accepted and
+registered through the production compositor. Queen's selected
+`masters/nagaQueen-matte-v2.png` reduces to `mattes/nagaQueen-v2.png` (SHA256
+`aa282c71f59b720ccc2604e81b3bc1527b8e58b7ab60403eee9fb28eb9f64c30`); the v1
+master and mask remain unchanged. The ten-portrait native consumer passes at
+scales1–4 with zero skips in
+`build/new-horizons-linux/Testing/Temporary/LastTest.log`; client and fixture
+builds passed in the prior cycle. This is art/runtime source coverage, not
+gameplay identity credit or a new playable delivery.
+
+The remaining four subjects are not all approved: Stone and Obsidian Gargoyle
+drafts are rejected; Giant is provisionally accepted but not registered; Titan
+remains unapproved pending review of interior-looking holes near the hand/bolt
+junction and right beard/neck/armor. Mechanical `--all --check` validates
+reduction reproducibility only; it does not certify every matte as suitable art.
 
 The runtime exporter `tools/export_new_horizons_academy_gremlin_portraits.py`
 reads only authored sources: the binary masks and the Academy desert backdrop.
@@ -73,7 +94,8 @@ It crops the backdrop at `(0,10,100,120)`, reduces it to58×64 with LANCZOS and
 copies the masks byte-for-byte. The large-icon fallback PNGs deliberately contain
 only this backdrop, never purchaser creature pixels. In ordinary runtime,
 AssetGenerator prefers the generated composition and reads the external raw
-TWCRPORT frames30/31/34/35/36/37/38/39 through the masks. No small-icon overrides are installed.
+TWCRPORT frames30/31/34/35/36/37/38/39/40/41 through the masks. No small-icon
+overrides are installed.
 Build and actual scaled-consumer verification are recorded separately in the queue.
 
 ## Exact correction prompt
