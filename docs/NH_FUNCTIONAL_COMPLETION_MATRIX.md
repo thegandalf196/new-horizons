@@ -2,6 +2,17 @@
 
 Updated: 2026-10-06
 
+2026-10-06 post-hook selection audit: independent bounded Portal, artifact and
+custom-creature reviews find no additional unblocked principal omission in
+those areas. Portal AI selection/contextual recruitment is present; artifact
+exceptions have existing paths and receipts; creature conversion defaults
+explicitly retain legacy abilities unless a dedicated pass says otherwise.
+This is not whole-game certification or a new native run. The next identified
+missing item is UP072 Elemental Convergence and three dependent Rebirth perks,
+held on the omitted Dirt/Sand/Swamp/Wasteland/coastal mapping. A narrow ruling
+is requested; no preselected option counts as an answer. No new feature or
+spell/perk identity is activated by this audit.
+
 2026-10-06 minimum AI-hook audit: Castle Gate now has actual Nullkiller2
 planned-route/authoritative-request acceptance (2/2 primary,9/9 adjacent,
 zero skips), committed as `cfd85b678`. The next demonstrated gap is Arcane
@@ -2826,7 +2837,7 @@ not newly implemented or individually certified content.
 | Necropolis Unearthed Graves / growth | Baseline: horde source map | Whole-family runtime acceptance absent |
 | Dungeon Astral Nexus | Native: repeat ordinary Normal refill and save via unique-building training | Buffer composition unverified; no weekly gate intended |
 | Dungeon Battle Scholar Academy | Native: UP199 remaining-next-level XP25%, preview, real visit and save | Wider advancement composition Phase2 |
-| Dungeon Portal of Summoning | Native: UP177 shared external-dwelling stock, weekly selection and recruitment deduction | Wider dwelling ownership composition Phase2 |
+| Dungeon Portal of Summoning | Native: UP177 shared external-dwelling stock, weekly selection and recruitment deduction; bounded2026-10-06 source audit confirms AI source scoring, saved weekly choice, selection request before contextual recruitment and real-source deduction | Full autonomous scheduled AI turn and wider dwelling ownership composition Phase2; no new missing principal source clause found |
 | Dungeon Artifact Merchants | Baseline: artifact/resource marketplace modes | Row-specific runtime acceptance absent |
 | Stronghold Hall of Valhalla | Native: actual visit grants permanent Attack5 per hero/building, save | Wider permanent-stat composition Phase2 |
 | Stronghold Ballista Yard | Native: UP024 machine shop pricing and weekly Siege20 refresh without stacking | Rendered shop acceptance separate |
@@ -2887,10 +2898,15 @@ It does not bypass reward availability or directly grant Mana. Receipts:
 `reservoir-ai-native.log/.xml`, binary SHA-256
 `c64cc7e6b9866e5cb94cb702c21d92feb5cf4765debd2be4b7e2565d4c94fa5b`.
 No source-review blocker remains; no launcher promotion/GUI acceptance.
-Next unblocked coverage investigation: remaining unique-building minimum AI
-consumers, beginning with Portal of Summoning's weekly dwelling selection and
-shared recruitment stock. Do not mistake an inherited verification gap for a
-new missing mechanic or silently decide the three held building policies.
+Follow-up source audit2026-10-06: Portal of Summoning's minimum AI consumers
+are already present. AIGateway selects current owned recruitable external stock,
+retains the weekly source and submits the normal selection; BuyArmy recruits
+with explicit Portal-town context. Server validation deducts the actual source
+stock/cost, never a mirror. Existing UP177 evidence is9/9 principal plus8/8
+adjacent with zero skips; this audit does not rerun those tests or claim a full
+scheduled AI turn. No new implementation or spell/perk count is earned. Do not
+mistake that Phase2 verification boundary for a missing source path, or silently
+decide the three held building policies.
 
 ### Hero specialty conversion item ledger
 
@@ -2946,6 +2962,13 @@ These are two explicit exceptions, not additional table rows or new spells.
 Deferred: generic whole-route hypothetical daily budgeting, combined artifacts,
 rendered spellbook/audio and strategic valuation. No playable promotion.
 Bounded reviewer audit2026-10-05; no new implementation or gameplay count credit.
+Independent bounded source audit2026-10-06 finds no additional unblocked
+artifact producer/minimum AI hook: Hat eligibility, capacity/clamping and paid
+movement-artifact access have production paths and focused receipts. Mana
+regeneration still requires UP207's aggregation ruling. Retained Luck/Morale,
+income and qualitative effects are not permission to invent new conversions
+or replacement Tomes. This is source-selection evidence, not a new native run
+or whole-family certification.
 2026-10-04 inventory correction: the current canonical Unique-building rebalance
 tables contain37 non-header rows; Artifact rebalance framework contains10.
 These replace stale33/nine counts. Grouped retained/growth rows and separate
