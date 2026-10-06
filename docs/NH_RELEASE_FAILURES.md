@@ -2,6 +2,18 @@
 
 ## Purpose
 
+### 2026-10-06 — Roof candidate headless CLI harness
+
+The first frozen-roof smoke invocation used unsupported `--savefrequency0`
+instead of the supported two arguments `--savefrequency 0`. It never reached
+the test map and timed out in the error path; this is a harness failure, not
+evidence of a candidate gameplay regression. Preserve the initial and corrected
+logs separately under ignored `build/nh-up241-validation/`. Killing the timeout
+wrapper alone initially left its child client; the tester identifies the exact
+fresh-profile process before terminating it and must confirm cleanup before
+accepting or starting another run. Reuse verified CLI syntax and inspect child
+processes, not only wrapper exit status.
+
 ### 2026-10-06 — Sylvan Luck client battle-interface include
 
 The first client compile dereferenced IBattleInfo with only its forward

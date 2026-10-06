@@ -9,13 +9,17 @@ not pixel-identical facade painting. The pinned runtime frame is installed;
 original master/native, position, one-frame alias and interaction masks remain
 unchanged. Eleven focused art tests and reproducible reduction pass. Registered
 VillageHall-stage scene differences stay inside its footprint. Original-handoff
-ZIP reimport, user approval and playable delivery are not claimed.
+ZIP reimport and user approval are not claimed. Committed `cadab569a` is built,
+checksum/headless verified and promoted in snapshot
+`3b7e155aec10506da961d94c6dfce24117bb11700879c903354da078cb23ceac`.
+The normal Linux script includes this frame; native rendered/user acceptance
+remains open and the known ammo diagnostic is not hidden by this art delivery.
 
-Latest playable checkpoint,2026-10-06: committed source `3eda8ac03` replaces
+Earlier playable checkpoint,2026-10-06: committed source `3eda8ac03` replaces
 the older playable references below. The default Linux script selects verified
 snapshot `a36a456b06bb4991978768107a6539258b4f419794306c714f42bc1c8a5c5f4f`,
 with12/14 Academy portraits and the newer required UI changes. The roof revision
-is not in that snapshot. Rendered/user acceptance remains separate.
+is not in that earlier snapshot. Rendered/user acceptance remains separate.
 
 Sylvan Luck temporary-state readback (UP243),2026-10-06: **Provisional** UI.
 Uses the existing native Luck row/help surface, with a localized Skill label

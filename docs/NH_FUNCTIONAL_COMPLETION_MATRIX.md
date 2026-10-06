@@ -2,6 +2,14 @@
 
 Updated: 2026-10-06
 
+UP241 delivery: committed/pushed `cadab569a` builds with12 jobs; frozen
+snapshot `3b7e155aec10506da961d94c6dfce24117bb11700879c903354da078cb23ceac`
+is independently checksum verified and headless-smoked through AI day7 before
+promotion to the normal Linux script. Prior snapshot is retained. Known ammo
+overuse recurs290 times; Phase2 tracking stays open. No crash/action-rejection
+markers or graphical acceptance. Windows37429818459 remains live compiling
+the earlier3eda8ac03 source. No identity count changes or whole-game completion.
+
 2026-10-06 user-priority UP241 source correction: one Provisional HoMM3-Art
 Village Hall roof revision is integrated, with original master/native,
 registration and masks preserved. Native and registered-scene comparisons were
