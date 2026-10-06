@@ -234,6 +234,8 @@
 					"description": "Once per week, the Arcane Reservoir grants one visiting hero 50 Buffer Spell Points. It does not restore Normal Spell Points.",
 					"manualHeroVisit": true,
 					"configuration": {
+						"notVisitedTooltip": "Available this week: +50 Buffer Spell Points for one visiting hero.",
+						"visitedTooltip": "Used this week. Available again next week.",
 						"resetParameters": {
 							"weeks": 1,
 							"visitors": true

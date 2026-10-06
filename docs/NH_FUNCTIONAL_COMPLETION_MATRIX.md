@@ -2,6 +2,18 @@
 
 Updated: 2026-10-06
 
+2026-10-06 Reservoir weekly UI coverage: town hover/help now reads the shared
+VISIT_ONCE visitor state and shows authored availability even without a hero.
+The existing VISIT_HERO training behavior is retained. Client/native builds
+pass with12 jobs; two focused authoritative visit/reset cases pass2/2 in0.926s,
+zero skips/errors, including both-hero/no-hero state, same-week denial,
+next-week reset and unchanged Normal/+50 Buffer. Module drift, diff and
+independent source/fixture review pass; UP242 records exact receipts/runner.
+No reward/reset rules, saved fields, polling or art changes. Native rendered
+hover fit/live refresh and playable delivery remain separate Phase2 gates.
+This closes another required town feedback path, not an identity: spell61/67
+and perk225/310 totals remain unchanged.
+
 2026-10-06 required Hero/town UI coverage: existing Hero tier slots and the
 read-only perk browser now expose acquired/available/locked/unavailable state,
 ordered prerequisite reasons and planned-entry disclosure. Selected perks bind

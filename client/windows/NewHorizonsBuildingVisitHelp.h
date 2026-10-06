@@ -12,13 +12,26 @@
 
 namespace newHorizonsBuildingVisitHelp
 {
-/// Returns authored per-hero rewardable state text without changing town or hero state.
+/// Returns authored town-rewardable state text without changing town or hero state.
 inline MetaString heroVisitStatus(const TownRewardableBuildingInstance & building, const CGHeroInstance * hero)
 {
-	if(!hero || building.configuration.visitMode != Rewardable::VISIT_HERO)
+	bool visited = false;
+	switch(building.configuration.visitMode)
+	{
+	case Rewardable::VISIT_HERO:
+		if(!hero)
+			return {};
+		visited = building.wasVisited(hero);
+		break;
+	case Rewardable::VISIT_ONCE:
+		// VISIT_ONCE tracks the building's visitor set and ignores its hero argument.
+		visited = building.wasVisited(nullptr);
+		break;
+	default:
 		return {};
+	}
 
-	const auto & status = building.wasVisited(hero)
+	const auto & status = visited
 		? building.configuration.visitedTooltip
 		: building.configuration.notVisitedTooltip;
 

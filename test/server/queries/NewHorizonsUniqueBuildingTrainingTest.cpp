@@ -280,6 +280,16 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, ArcaneReservoirAllowsExactlyOneHer
 	ASSERT_NE(firstHero, nullptr);
 	ASSERT_NE(secondHero, nullptr);
 	ASSERT_NE(firstHero, secondHero);
+	const auto visitText = [reservoir](const CGHeroInstance * hero)
+	{
+		return newHorizonsBuildingVisitHelp::heroVisitStatus(*reservoir, hero)
+			.toString(LIBRARY->generaltexth.get());
+	};
+	const std::string availableText = "Available this week: +50 Buffer Spell Points for one visiting hero.";
+	const std::string usedText = "Used this week. Available again next week.";
+	EXPECT_EQ(visitText(firstHero), availableText);
+	EXPECT_EQ(visitText(secondHero), availableText);
+	EXPECT_EQ(visitText(nullptr), availableText);
 
 	GameHandlerTestServer server(gameState(), PlayerColor(0));
 	CGameHandler gameHandler(server, gameState());
@@ -293,6 +303,9 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, ArcaneReservoirAllowsExactlyOneHer
 	EXPECT_EQ(firstHero->getBufferSpellPoints(), 50);
 	EXPECT_EQ(firstHero->getManaAvailable(), firstManaLimit - 3 + 50);
 	EXPECT_TRUE(reservoir->wasVisited(firstHero));
+	EXPECT_EQ(visitText(firstHero), usedText);
+	EXPECT_EQ(visitText(secondHero), usedText);
+	EXPECT_EQ(visitText(nullptr), usedText);
 
 	// VISIT_ONCE is shared by the physical building, so a different hero is
 	// refused until the weekly visitor set is cleared.
@@ -305,6 +318,8 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, ArcaneReservoirAllowsExactlyOneHer
 	EXPECT_EQ(secondHero->getNormalSpellPoints(), secondManaLimit - 4);
 	EXPECT_EQ(secondHero->getBufferSpellPoints(), 0);
 	EXPECT_EQ(secondHero->getManaAvailable(), secondManaLimit - 4);
+	EXPECT_EQ(visitText(secondHero), usedText);
+	EXPECT_EQ(visitText(nullptr), usedText);
 
 	// The reset fires when the authoritative NewTurn packet advances the map
 	// from day 7 to day 8, i.e. at the start of the next week.
@@ -313,6 +328,9 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, ArcaneReservoirAllowsExactlyOneHer
 	EXPECT_EQ(gameState()->day, 8u);
 	EXPECT_EQ(gameState()->players.at(PlayerColor(1)).status, EPlayerStatus::INGAME);
 	EXPECT_FALSE(reservoir->wasVisited(firstHero));
+	EXPECT_EQ(visitText(firstHero), availableText);
+	EXPECT_EQ(visitText(secondHero), availableText);
+	EXPECT_EQ(visitText(nullptr), availableText);
 
 	town->setVisitingHero(nullptr);
 	town->setVisitingHero(secondHero);
@@ -322,6 +340,9 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, ArcaneReservoirAllowsExactlyOneHer
 	EXPECT_EQ(secondHero->getBufferSpellPoints(), 50);
 	EXPECT_EQ(secondHero->getManaAvailable(), secondManaLimit - 2 + 50);
 	EXPECT_TRUE(reservoir->wasVisited(secondHero));
+	EXPECT_EQ(visitText(firstHero), usedText);
+	EXPECT_EQ(visitText(secondHero), usedText);
+	EXPECT_EQ(visitText(nullptr), usedText);
 }
 
 TEST_F(NewHorizonsUniqueBuildingTrainingTest, BrotherhoodVisitHelpTracksActualPerHeroTraining)
