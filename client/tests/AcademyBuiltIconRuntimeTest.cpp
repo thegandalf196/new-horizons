@@ -484,6 +484,73 @@ bool cabirAnimationValidationRequested()
 	return value && std::string_view(value) == "1";
 }
 
+void verifyMagiProjectileColors()
+{
+	constexpr std::array<std::array<uint8_t, 3>, 5> archMageRgb{{
+		{{192, 32, 24}},
+		{{232, 48, 40}},
+		{{255, 64, 48}},
+		{{232, 48, 40}},
+		{{192, 32, 24}},
+	}};
+	constexpr std::array<std::array<uint8_t, 2>, 5> archMageAlpha{{
+		{{255, 64}},
+		{{255, 128}},
+		{{255, 255}},
+		{{255, 128}},
+		{{255, 64}},
+	}};
+	const auto getCreature = [](const char * identifier) -> const CCreature *
+	{
+		const auto creatureId = LIBRARY->identifiers()->getIdentifier(
+			ModScope::scopeGame(), "creature", std::string(identifier));
+		require(creatureId.has_value(), std::string("Could not resolve core:") + identifier);
+		const size_t index = static_cast<size_t>(*creatureId);
+		require(index < LIBRARY->creh->objects.size(),
+			std::string("Creature identifier is out of range: core:") + identifier);
+		return LIBRARY->creh->objects[index].get();
+	};
+	const auto * mage = getCreature("mage");
+	const auto * archMage = getCreature("archMage");
+	require(mage != nullptr && archMage != nullptr, "Loaded Tower Mage definitions are missing");
+	require(mage->animDefName == AnimationPath::builtin("CMAGE.DEF"),
+		"Mage must retain its ordinary CMAGE.DEF animation");
+	require(mage->animation.projectileImageName == AnimationPath::builtin("PMAGEX.DEF"),
+		"Mage must retain its ordinary PMAGEX.DEF projectile");
+	require(mage->animation.projectileRay.empty(),
+		"Mage must not inherit the Arch Mage procedural ray colour override");
+	require(archMage->animation.attackClimaxFrame == 8,
+		"Arch Mage procedural rays must retain the inherited attack climax frame 8");
+	require(archMage->animation.projectileRay.size() == archMageRgb.size(),
+		"Loaded Arch Mage must have exactly five procedural rays");
+
+	for(size_t index = 0; index < archMageRgb.size(); ++index)
+	{
+		const RayColor & ray = archMage->animation.projectileRay[index];
+		const auto & rgb = archMageRgb[index];
+		const auto & alpha = archMageAlpha[index];
+		require(ray.start == ColorRGBA(rgb[0], rgb[1], rgb[2], alpha[0]),
+			"Loaded Arch Mage ray start color/alpha differs at ray " + std::to_string(index));
+		require(ray.end == ColorRGBA(rgb[0], rgb[1], rgb[2], alpha[1]),
+			"Loaded Arch Mage ray end color/alpha differs at ray " + std::to_string(index));
+	}
+
+	const std::array<const CCreature *, 2> magi{{mage, archMage}};
+	const std::array<const char *, 2> identifiers{{"core:mage", "core:archMage"}};
+	for(size_t index = 0; index < magi.size(); ++index)
+	{
+		const auto * creature = magi[index];
+		require(!creature->hasBonusOfType(BonusType::NO_MELEE_PENALTY),
+			std::string("Magi must retain the ordinary shooter melee penalty: ")
+				+ identifiers[index]);
+		require(creature->hasBonusOfType(BonusType::SHOOTER),
+			"Magi must retain shooter status");
+		require(creature->hasBonusOfType(BonusType::NO_DISTANCE_PENALTY),
+			"Magi must retain their ranged-distance capability");
+	}
+	std::cout << "  Mage/Arch Mage: loaded PMAGEX projectile and five red Arch Mage rays\n";
+}
+
 void verifyCabirAnimation(const char * descriptorName, bool master)
 {
 	const char * creatureIdentifier = master ? "masterGremlin" : "gremlin";
@@ -663,6 +730,7 @@ void runRuntimeRegression()
 	const auto & activeMods = LIBRARY->modh->getActiveMods();
 	require(std::find(activeMods.begin(), activeMods.end(), "new-horizons") != activeMods.end(),
 		"Isolated renderer test did not activate New Horizons");
+	verifyMagiProjectileColors();
 
 	constexpr std::array<const char *, 4> upscalingFilters{{"none", "xbrz2", "xbrz3", "xbrz4"}};
 	for(size_t factorIndex = 0; factorIndex < upscalingFilters.size(); ++factorIndex)

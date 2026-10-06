@@ -139,7 +139,16 @@
 		"shots": 20,
 		"growth": 3,
 		"graphics": {
-			"iconLarge": "NH_academy_archMage_icon_large.png"
+			"iconLarge": "NH_academy_archMage_icon_large.png",
+			"missile": {
+				"ray": [
+					{ "start": [192, 32, 24, 255], "end": [192, 32, 24, 64] },
+					{ "start": [232, 48, 40, 255], "end": [232, 48, 40, 128] },
+					{ "start": [255, 64, 48, 255], "end": [255, 64, 48, 255] },
+					{ "start": [232, 48, 40, 255], "end": [232, 48, 40, 128] },
+					{ "start": [192, 32, 24, 255], "end": [192, 32, 24, 64] }
+				]
+			}
 		},
 		"cost": {
 			"gold": 800

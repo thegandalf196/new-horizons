@@ -1,5 +1,19 @@
 # New Horizons UI and asset status register
 
+Magi colour treatment,2026-10-06: **Provisional** Arch Mage procedural beam
+source override changes only the five ray RGB bands, preserving their original
+alpha values and inherited timing/geometry. The merged-config check passes1/1;
+the rebuilt native isolated-module fixture also passes1/1 in2.30s, checking all
+loaded ray RGBA values, climax8 and unchanged ordinary Mage binding. Rendered
+verification and playable delivery remain separate gates.
+Ordinary Mage's bitmap projectile, grey Arch Mage robes and red staff glow are
+**Not done**. External DEF metadata identifies separate resources but does not
+establish semantic palette roles. Selective sprite treatment must preserve skin,
+staff detail, reserved transparency/shadow colours and all animation groups at
+native and scaled sizes. No extracted purchaser sprites are committed, and no
+artwork is Final. Both ordinary shooter melee penalties are already verified and
+included in the current Linux snapshot30bc6ea.
+
 Cabir Linux development delivery,2026-10-06: snapshot30bc6ea from committed
 360b91d06 is selected by the normal Linux script. Original portrait, battle,
 map/encounter resources and mechanics are included and natively verified;

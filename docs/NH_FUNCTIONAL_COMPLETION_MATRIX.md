@@ -2,6 +2,17 @@
 
 Updated: 2026-10-06
 
+UP262 colour source checkpoint: Arch Mage procedural rays have an isolated red
+override; ordinary Mage projectile and Arch Mage robe/staff sprite treatment
+remain open. Both ordinary shooter melee penalties are already natively verified
+and delivered. This presentation checkpoint earns no new spell/perk/Order
+identity: Phase1 remains225/310 perks,61/67 combat spells and8/8 Orders. Continue
+the user-priority colour work before returning to the ordinary missing-feature
+backlog; do not claim full creature artwork or rendered acceptance from JSON.
+Focused source check1/1 and rebuilt active-module native resource check1/1 pass
+(zero skips), including effective ray RGBA/timing and both melee penalties.
+Normal Linux remains on30bc6ea until the new presentation is separately delivered.
+
 Cabir development delivery checkpoint: normal Linux selects immutable30bc6ea
 from360b91d06, including all committed original Cabir roles, elemental defenses,
 permanent allied Repair and UP261 readback. The rebuild,13 focused mechanics
