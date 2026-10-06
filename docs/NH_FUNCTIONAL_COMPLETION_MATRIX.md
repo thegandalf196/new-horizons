@@ -2,6 +2,16 @@
 
 Updated: 2026-10-06
 
+Cabir presentation coverage advances with six original barehanded v3 action
+source sheets (base directional melee; Master front/directional melee/shooting,
+reaction/death) and whole-component base melee/reaction separation. Native
+contacts are readable; common scale, timing, remaining asset roles and runtime
+bindings remain open. No new perk/spell/Order identity count or complete-creature
+claim follows from source artwork. Continue UP253 before the ordinary backlog.
+Twenty focused offline cases and the Master wrapper reproduction check pass;
+independent review finds no offline blocker. Master walk strays/gait are explicit
+remaining defects, not native-motion acceptance. Normal Linux snapshot unchanged.
+
 Cabir mechanics verification checkpoint: client/native build93239 succeeds.
 The activated nine-case filter has zero skips; five incoming-element damage/
 serialization cases and the Magi melee-penalty control pass. Initial Repair

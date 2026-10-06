@@ -17,7 +17,9 @@ from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CREATURE_ROOT = ROOT / "assets/new-horizons/creatures/cabir/v2"
+CABIR_ROOT = ROOT / "assets/new-horizons/creatures/cabir"
+V2_ROOT = CABIR_ROOT / "v2"
+V3_ROOT = CABIR_ROOT / "v3"
 MAX_SOURCE_SIDE = 8192
 MAX_SOURCE_PIXELS = 8 * 1024 * 1024
 POSE_COUNT = 4
@@ -35,23 +37,53 @@ class PoseSource:
     source_sha256: str
     seed_alpha_threshold: int
     major_component_min_area: int = 50_000
+    allowed_source_root: Path | None = None
 
 
 SOURCES = {
     "melee": PoseSource(
         action="melee",
-        source_path=CREATURE_ROOT / "melee-v1/candidate-01.png",
-        output_dir=CREATURE_ROOT / "melee-v1/separated",
+        source_path=V2_ROOT / "melee-v1/candidate-01.png",
+        output_dir=V2_ROOT / "melee-v1/separated",
         source_sha256="148b3a365e5456c72935ca280afb6e36db61f5f0f3d0be395145d16c5403a257",
         seed_alpha_threshold=16,
+        allowed_source_root=V2_ROOT / "melee-v1",
     ),
     "reactions": PoseSource(
         action="reactions",
-        source_path=CREATURE_ROOT / "reactions-v1/candidate-02.png",
-        output_dir=CREATURE_ROOT / "reactions-v1/separated",
+        source_path=V2_ROOT / "reactions-v1/candidate-02.png",
+        output_dir=V2_ROOT / "reactions-v1/separated",
         source_sha256="744691e95d2bcfcb0ba7632ed158f9c24f1ad021edaba9eb13cd78b5dec49349",
         seed_alpha_threshold=128,
+        allowed_source_root=V2_ROOT / "reactions-v1",
     ),
+    "melee-front-v3": PoseSource(
+        action="melee-front-v3",
+        source_path=V3_ROOT / "melee-front-v1/candidate-01.png",
+        output_dir=V3_ROOT / "melee-front-v1/separated-v1",
+        source_sha256="b58a766ea7512b10315b8b82f0aa85b6a161534434745b402706da9547935efb",
+        seed_alpha_threshold=16,
+        allowed_source_root=V3_ROOT / "melee-front-v1",
+    ),
+    "reactions-v3": PoseSource(
+        action="reactions-v3",
+        source_path=V3_ROOT / "reactions-v1/candidate-01.png",
+        output_dir=V3_ROOT / "reactions-v1/separated-v1",
+        source_sha256="e42feeba9a6019b3685c756280cedf72173842fa2a652ed2ba59a33094ddaa56",
+        seed_alpha_threshold=16,
+        allowed_source_root=V3_ROOT / "reactions-v1",
+    ),
+}
+
+NATIVE_GROUPS = {
+    "melee-front-v3": {
+        "group": "base-melee-front-v3",
+        "poseNames": ["ready", "windup", "thrust", "recovery"],
+    },
+    "reactions-v3": {
+        "group": "base-reactions-v3",
+        "poseNames": ["hit", "brace", "dying", "dead"],
+    },
 }
 
 
@@ -61,6 +93,12 @@ def _within(path: Path, parent: Path) -> bool:
         return True
     except ValueError:
         return False
+
+
+def _validate_source_location(spec: PoseSource, source: Path) -> None:
+    """Reject any input outside the source action root pinned for this export."""
+    if spec.allowed_source_root is None or not _within(source.resolve(), spec.allowed_source_root.resolve()):
+        raise ValueError("source is outside its pinned Cabir action directory")
 
 
 def _check_dimensions(width: int, height: int) -> None:
@@ -345,6 +383,57 @@ def separate_poses(image: Image.Image, spec: PoseSource, source_sha256: str | No
     return frames, receipt
 
 
+def _export_native_alignment(frames: list[Image.Image], receipt: dict, spec: PoseSource, output: Path) -> dict[str, str]:
+    """Reuse the established Cabir 60px/ground-pivot alignment for v3 previews."""
+    native = NATIVE_GROUPS.get(spec.action)
+    if native is None:
+        return {}
+
+    # The existing aligner owns the shared 450x400 canvas, 60px reference
+    # scale, foot-contact pivot, 196.5 center anchor, contact sheet and GIF.
+    # Constructing its already-reviewed pose records here avoids grid crops,
+    # which would clip the deliberately seam-crossing whole silhouettes.
+    import export_new_horizons_cabir_pose_preview as preview
+
+    common_x, common_y, _common_right, _common_bottom = receipt["commonSourceCanvas"]["globalBBox"]
+    poses = []
+    for pose_name, frame, pose in zip(native["poseNames"], frames, receipt["poses"]):
+        x0, y0, x1, y1 = pose["paddedSourceBBox"]
+        local_box = (x0 - common_x, y0 - common_y, x1 - common_x, y1 - common_y)
+        crop = frame.crop(local_box)
+        poses.append(preview.NativePose(
+            name=pose_name,
+            image=crop,
+            source_path=spec.source_path.resolve().relative_to(ROOT).as_posix(),
+            source_sha256=receipt["sourceSha256"],
+            source_origin=(x0, y0),
+            extraction={
+                "kind": "pinned whole connected-component crop; no quadrant clipping",
+                "sourceGlobalSeedBBox": pose["sourceGlobalBBox"],
+                "sourceGlobalCrop": pose["paddedSourceBBox"],
+                "componentArea": pose["seedArea"],
+                "componentAlphaThreshold": pose["seedThreshold"],
+                "separationFrame": pose["frame"],
+            },
+        ))
+
+    artifacts, _metadata, _aligned = preview.build_preview_group(
+        native["group"], poses, reference_index=0
+    )
+    prefix = f"exports/{native['group']}/"
+    native_output = output / "native-export"
+    native_output.mkdir(parents=False, exist_ok=False)
+    hashes = {}
+    for relative, data in sorted(artifacts.items()):
+        if not relative.startswith(prefix):
+            raise RuntimeError(f"unexpected native alignment artifact path: {relative}")
+        target = native_output / relative[len(prefix):]
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+        hashes[target.relative_to(native_output).as_posix()] = hashlib.sha256(data).hexdigest()
+    return hashes
+
+
 def _read_source(path: Path) -> Image.Image:
     try:
         opened = Image.open(path)
@@ -365,8 +454,7 @@ def export_action(action: str) -> Path:
 
     source = spec.source_path.resolve()
     output = spec.output_dir
-    if not _within(source, (CREATURE_ROOT / f"{action}-v1").resolve()):
-        raise ValueError("source is outside its pinned Cabir action directory")
+    _validate_source_location(spec, source)
     if output.is_symlink() or output.exists():
         raise FileExistsError(f"refusing to replace existing separated output: {output}")
 
@@ -379,10 +467,13 @@ def export_action(action: str) -> Path:
     output.mkdir(parents=True, exist_ok=False)
     for frame_index, frame in enumerate(frames):
         frame.save(output / f"pose-{frame_index:02d}.png", format="PNG")
+    native_export_hashes = _export_native_alignment(frames, receipt, spec, output)
     receipt["outputFiles"] = {
         path.name: hashlib.sha256(path.read_bytes()).hexdigest()
         for path in sorted(output.glob("pose-*.png"))
     }
+    if native_export_hashes:
+        receipt["nativeExportFiles"] = native_export_hashes
     (output / "separation.json").write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
     if hashlib.sha256(source.read_bytes()).hexdigest() != source_sha256:
         raise RuntimeError("source pose sheet changed during separation")

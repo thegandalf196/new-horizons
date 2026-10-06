@@ -1,5 +1,17 @@
 # New Horizons UI and asset status register
 
+Barehanded Cabir source expansion: **Provisional** original v3 base directional
+melee and Master front/directional melee/shooting and reaction/death sheets now
+exist, with exact prompts and hashes in v3/ANIMATION_DRAFTS.md. Whole-component
+base melee/reaction separation preserves extended limbs across grid seams.
+Offline native contacts are readable, but common cross-action scale/motion and
+runtime integration are **Not done**. Repair pose, projectile, map and portrait
+roles remain open; no new asset is Final or installed in the normal snapshot.
+Master walk-v1 native review bundle is **Provisional / withheld from runtime**:
+deterministic alpha cleanup/export exists, but coloured fringe specks and gait
+remain unresolved. Base melee/reaction previews use a tracked standalone helper
+with explicit pinned roots, not a dependency on the superseded aligner draft.
+
 Superseding Cabir art direction,2026-10-06: bare hands for BOTH forms; no pot
 or fire vessel. All pot-based standing/action drafts below are retained as
 superseded references, not active runtime-ready artwork. New v3 base/upgraded

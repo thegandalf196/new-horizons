@@ -1,0 +1,323 @@
+{
+  "status": "provisional generated Cabir Master walk export; motion and alpha review pending",
+  "sourceSha256": "f38b76a4b929f21dd6c6fd4629c5b8c4f090145fc242cd11fe3abb6d40c7115d",
+  "sourceSize": [
+    1323,
+    1189
+  ],
+  "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/walk-v1/candidate-01.png",
+  "grid": {
+    "rows": 2,
+    "columns": 2,
+    "order": "row-major",
+    "xBoundaries": [
+      0,
+      662,
+      1323
+    ],
+    "yBoundaries": [
+      0,
+      594,
+      1189
+    ]
+  },
+  "policy": {
+    "seed": "largest 8-connected alpha>=16 component in each source cell",
+    "dilation": "3-pixel square/Chebyshev-radius dilation within each cell",
+    "retainedPixels": "original RGBA bytes are preserved inside the dilated seed",
+    "removedPixels": "outside the dilated seed, nonzero alpha is set to zero; RGB bytes are preserved",
+    "maximumRemovedAlphaAllowed": 10,
+    "noGlobalThreshold": true,
+    "noRecoloringOrWarping": true
+  },
+  "cells": [
+    {
+      "index": 0,
+      "row": 0,
+      "column": 0,
+      "sourceBounds": [
+        0,
+        0,
+        662,
+        594
+      ],
+      "size": [
+        662,
+        594
+      ],
+      "alpha16Components": [
+        {
+          "area": 134580,
+          "bbox": [
+            152,
+            34,
+            602,
+            581
+          ],
+          "maxAlpha": 255
+        }
+      ],
+      "seedArea": 134580,
+      "seedBounds": [
+        152,
+        34,
+        602,
+        581
+      ],
+      "sourceEdgeAlphaCounts": {
+        "left": 17,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "cleanedEdgeAlphaCounts": {
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "removedPixelCount": 2941,
+      "maximumRemovedAlpha": 4,
+      "removedAlphaHistogram": {
+        "1": 2561,
+        "2": 345,
+        "3": 34,
+        "4": 1
+      }
+    },
+    {
+      "index": 1,
+      "row": 0,
+      "column": 1,
+      "sourceBounds": [
+        662,
+        0,
+        1323,
+        594
+      ],
+      "size": [
+        661,
+        594
+      ],
+      "alpha16Components": [
+        {
+          "area": 131530,
+          "bbox": [
+            106,
+            36,
+            565,
+            575
+          ],
+          "maxAlpha": 255
+        },
+        {
+          "area": 1,
+          "bbox": [
+            416,
+            87,
+            417,
+            88
+          ],
+          "maxAlpha": 19
+        }
+      ],
+      "seedArea": 131530,
+      "seedBounds": [
+        106,
+        36,
+        565,
+        575
+      ],
+      "sourceEdgeAlphaCounts": {
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "cleanedEdgeAlphaCounts": {
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "removedPixelCount": 2365,
+      "maximumRemovedAlpha": 3,
+      "removedAlphaHistogram": {
+        "1": 2144,
+        "2": 203,
+        "3": 18
+      }
+    },
+    {
+      "index": 2,
+      "row": 1,
+      "column": 0,
+      "sourceBounds": [
+        0,
+        594,
+        662,
+        1189
+      ],
+      "size": [
+        662,
+        595
+      ],
+      "alpha16Components": [
+        {
+          "area": 136445,
+          "bbox": [
+            121,
+            17,
+            598,
+            560
+          ],
+          "maxAlpha": 255
+        },
+        {
+          "area": 1,
+          "bbox": [
+            437,
+            413,
+            438,
+            414
+          ],
+          "maxAlpha": 17
+        }
+      ],
+      "seedArea": 136445,
+      "seedBounds": [
+        121,
+        17,
+        598,
+        560
+      ],
+      "sourceEdgeAlphaCounts": {
+        "left": 3,
+        "right": 0,
+        "top": 0,
+        "bottom": 4
+      },
+      "cleanedEdgeAlphaCounts": {
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "removedPixelCount": 2817,
+      "maximumRemovedAlpha": 3,
+      "removedAlphaHistogram": {
+        "1": 2671,
+        "2": 137,
+        "3": 9
+      }
+    },
+    {
+      "index": 3,
+      "row": 1,
+      "column": 1,
+      "sourceBounds": [
+        662,
+        594,
+        1323,
+        1189
+      ],
+      "size": [
+        661,
+        595
+      ],
+      "alpha16Components": [
+        {
+          "area": 131154,
+          "bbox": [
+            102,
+            21,
+            575,
+            559
+          ],
+          "maxAlpha": 255
+        }
+      ],
+      "seedArea": 131154,
+      "seedBounds": [
+        102,
+        21,
+        575,
+        559
+      ],
+      "sourceEdgeAlphaCounts": {
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "cleanedEdgeAlphaCounts": {
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "removedPixelCount": 2537,
+      "maximumRemovedAlpha": 4,
+      "removedAlphaHistogram": {
+        "1": 2333,
+        "2": 186,
+        "3": 16,
+        "4": 2
+      }
+    }
+  ],
+  "removedPixelCount": 10660,
+  "maximumRemovedAlpha": 4,
+  "removedAlphaHistogram": {
+    "1": 9709,
+    "2": 871,
+    "3": 77,
+    "4": 3
+  },
+  "export": {
+    "frameCount": 4,
+    "bodyHeight": 60,
+    "canvas": [
+      450,
+      400
+    ],
+    "sharedSourceBounds": [
+      99,
+      14,
+      605,
+      584
+    ],
+    "sharedSourceBodySize": [
+      506,
+      570
+    ],
+    "scale": 0.10526315789473684,
+    "placement": [
+      170,
+      208
+    ],
+    "feetBaselineY": 268,
+    "alphaPolicy": "preserved; no thresholding or cleanup"
+  },
+  "sourceFileModified": false,
+  "sourcePromptPath": "assets/new-horizons/creatures/cabir-master/v3/walk-v1/candidate-01.prompt.txt",
+  "sourcePromptSha256": "088fe9244edce4bcb9401d173aa1b837c7efd31a3fed578e8f9d713721dc6731",
+  "referenceMasterPath": "assets/new-horizons/creatures/cabir-master/v3/standing-master.png",
+  "referenceMasterSha256": "c1c88872bf0cc8e969f9d883b289aff86071db31241d35a16255b74532fbca15",
+  "referencePromptPath": "assets/new-horizons/creatures/cabir-master/v3/standing.prompt.txt",
+  "referencePromptSha256": "3b97121db995db93b8ec57e775b147c3edfca9da5d0a3696dd471ff67390a5b7",
+  "cleanupRevision": "cabir-master-walk-v1-alpha-cleanup-radius-3",
+  "cleanedRgbaSha256": "e846de0694d017992bf82059784c0d48ab869e51c3e5fb87670487dd87c53ea1",
+  "cleanedPngSha256": "66c9402eaa19e17a50840a0871150b2ed9db72062dad0511ba7b37c1e272d537",
+  "cleanedPath": "candidate-01-alpha-cleaned.png",
+  "nativeExportPath": "native-export",
+  "nativeFiles": {
+    "animation-proof.gif": "23b24c416a5a51ecdee1fd7c4b22012ac4af4892f4d158f6db40da3ecc19e21f",
+    "contact-sheet-4x.png": "e2764d5700912fa24d24335fcbb77a97a52ee246448c7926a7fed08bd6d4ef77",
+    "export.json": "7cea9959f060b153eaa266c6fb1747680d2d6e72d078cee74519acbd3c4bff1c",
+    "frame-00.png": "d43b03662131e1753d7b6a5147dd984921abfece26d43f277f2cf3dd2e8d79b3",
+    "frame-01.png": "44ce1b4a166eeda52594e2b1beae8c2ac89341fdfa070e333fd1c2157a0c6a7f",
+    "frame-02.png": "8c6e9337e1914555a358ecf29f6f3fb8ae065f0f9da14beabc2f546e021e05f5",
+    "frame-03.png": "2b5c48955b4754385cba1f2b9057532ea0f646fccfa90933c5abce4da5f970f0"
+  }
+}

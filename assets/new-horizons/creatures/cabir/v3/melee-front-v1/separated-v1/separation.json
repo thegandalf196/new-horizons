@@ -1,0 +1,163 @@
+{
+  "status": "offline lossless pose separation; alignment/native review pending",
+  "action": "melee-front-v3",
+  "sourcePath": "assets/new-horizons/creatures/cabir/v3/melee-front-v1/candidate-01.png",
+  "sourceSha256": "b58a766ea7512b10315b8b82f0aa85b6a161534434745b402706da9547935efb",
+  "sourceSize": [
+    1323,
+    1189
+  ],
+  "sourceComponentCountAtThreshold": 11,
+  "majorComponentAreaMinimum": 50000,
+  "selectedPoseCount": 4,
+  "componentConnectivity": "8-connected",
+  "ordering": "row-major by component bbox center; top/bottom split at source height/2, then x center",
+  "commonSourceCanvas": {
+    "globalBBox": [
+      58,
+      62,
+      1291,
+      1147
+    ],
+    "size": [
+      1233,
+      1085
+    ],
+    "scale": 1.0,
+    "resized": false,
+    "sourceOffsetsPreserved": true
+  },
+  "policy": {
+    "seed": "four largest-area components meeting area minimum at alpha>=16",
+    "dilationRadius": 4,
+    "dilationShape": "square/Chebyshev radius, clipped to source bounds",
+    "retainedPixels": "original source RGBA bytes copied unchanged",
+    "removedPixels": "only nonzero source pixels outside a unique pose dilation; alpha must be <=10; no recoloring",
+    "maximumRemovedAlphaAllowed": 10,
+    "independentResize": false,
+    "quadrantCropping": false
+  },
+  "removedPixelCount": 12869,
+  "maximumRemovedAlpha": 5,
+  "removedAlphaHistogram": {
+    "1": 11501,
+    "2": 1139,
+    "3": 161,
+    "4": 44,
+    "5": 24
+  },
+  "poses": [
+    {
+      "frame": "pose-00.png",
+      "row": 0,
+      "column": 0,
+      "seedThreshold": 16,
+      "seedArea": 130964,
+      "seedMaxAlpha": 255,
+      "sourceGlobalBBox": [
+        66,
+        71,
+        566,
+        577
+      ],
+      "paddedSourceBBox": [
+        62,
+        67,
+        570,
+        581
+      ],
+      "sourceOffsetOnCommonCanvas": [
+        4,
+        5
+      ]
+    },
+    {
+      "frame": "pose-01.png",
+      "row": 0,
+      "column": 1,
+      "seedThreshold": 16,
+      "seedArea": 151955,
+      "seedMaxAlpha": 255,
+      "sourceGlobalBBox": [
+        728,
+        66,
+        1287,
+        577
+      ],
+      "paddedSourceBBox": [
+        724,
+        62,
+        1291,
+        581
+      ],
+      "sourceOffsetOnCommonCanvas": [
+        666,
+        0
+      ]
+    },
+    {
+      "frame": "pose-02.png",
+      "row": 1,
+      "column": 0,
+      "seedThreshold": 16,
+      "seedArea": 155951,
+      "seedMaxAlpha": 255,
+      "sourceGlobalBBox": [
+        62,
+        643,
+        794,
+        1141
+      ],
+      "paddedSourceBBox": [
+        58,
+        639,
+        798,
+        1145
+      ],
+      "sourceOffsetOnCommonCanvas": [
+        0,
+        577
+      ]
+    },
+    {
+      "frame": "pose-03.png",
+      "row": 1,
+      "column": 1,
+      "seedThreshold": 16,
+      "seedArea": 130034,
+      "seedMaxAlpha": 255,
+      "sourceGlobalBBox": [
+        755,
+        647,
+        1241,
+        1143
+      ],
+      "paddedSourceBBox": [
+        751,
+        643,
+        1245,
+        1147
+      ],
+      "sourceOffsetOnCommonCanvas": [
+        693,
+        581
+      ]
+    }
+  ],
+  "sourceFileModified": false,
+  "outputFiles": {
+    "pose-00.png": "56c58771139dd3c4dd3c281f85fea431d20aad1cfa3aa472a628067ab81534a6",
+    "pose-01.png": "e4a2a3752c7f3d1b30f77db8923b01e06006037d6a991078f093767766221372",
+    "pose-02.png": "6d5d9448ac9f2957d9099a23b7976fecbb9de713898babed1d9971516a3b932e",
+    "pose-03.png": "2a8bb0ee59185ff144f286dc8ab398aec99346b00e268f4f579ed54d4ee65766"
+  },
+  "nativeExportFiles": {
+    "alignment.json": "8995803386b13f4ef86f906dbda0a808ce64b117212947d06dd1c77042e8cd92",
+    "animation-proof.gif": "f6499ff74ff8d20f4985b2a0495863d66d14b16f9da2556e7efdb94c183cdb7a",
+    "contact-sheet-4x.png": "1f49416d08a339e513088b92d0522958b79547029ca98808ade79caa157cfe88",
+    "frame-00.png": "ad87294e471503ab7918d8c244167c2a3f86eb9f22c4900f8c4fcdaa442b7688",
+    "frame-01.png": "3e67a3fd202329e687375f05a1af2da13f2a31ff42a0bc9a8211dcbc0d3814c3",
+    "frame-02.png": "94976eb211fec16efbc92beb117b77c7085c289b19d3e9a5b57cfffa44c2876a",
+    "frame-03.png": "04aee670009eb74a9ca4cae38fa8da01f8595a4df09a38f8a1d3af17c7d19f10"
+  }
+}

@@ -1,5 +1,8 @@
 # Barehanded Cabir — provisional source art
 
+See [ANIMATION_DRAFTS.md](ANIMATION_DRAFTS.md) for the new directional melee
+sources, upgraded action sheets and current separation/remaining-work evidence.
+
 This v3 supersedes the pot-based v2 presentation at the user's direction.
 `standing-master.png` is the new original base standing master; the matching
 upgraded master lives in `../../cabir-master/v3/`. Exact built-in image-generation

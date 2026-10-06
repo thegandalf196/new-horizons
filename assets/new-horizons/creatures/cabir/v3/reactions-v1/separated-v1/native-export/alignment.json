@@ -1,0 +1,342 @@
+{
+  "group": "base-reactions-v3",
+  "status": "provisional native alignment for visual review; no runtime binding",
+  "canvas": [
+    450,
+    400
+  ],
+  "targetRootPivot": [
+    196.5,
+    268.0
+  ],
+  "alphaThresholdForScaleAndGround": 16,
+  "scaleCalibration": {
+    "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+    "referencePoseIndex": 0,
+    "referencePose": "hit",
+    "referenceAlpha16BBox": [
+      4,
+      4,
+      563,
+      597
+    ],
+    "referenceBodyHeight": 593,
+    "targetBodyHeight": 60.0,
+    "uniformScale": 0.10118043844856661
+  },
+  "perPosePivotsAreGroundContactNotOverallBBoxCenter": true,
+  "contactBandRule": {
+    "fraction": 0.03,
+    "minimumSourcePixels": 8,
+    "meaning": "lower contact band excludes raised/extended weapon from x-root estimate"
+  },
+  "uncertainty": null,
+  "poses": [
+    {
+      "pose": "hit",
+      "sourcePath": "assets/new-horizons/creatures/cabir/v3/reactions-v1/candidate-01.png",
+      "sourceSha256": "e42feeba9a6019b3685c756280cedf72173842fa2a652ed2ba59a33094ddaa56",
+      "sourceOrigin": [
+        53,
+        39
+      ],
+      "sourceSize": [
+        567,
+        601
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          57,
+          43,
+          616,
+          636
+        ],
+        "sourceGlobalCrop": [
+          53,
+          39,
+          620,
+          640
+        ],
+        "componentArea": 146519,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-00.png"
+      },
+      "sourcePivotGlobal": [
+        355.5,
+        636.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          563,
+          597
+        ],
+        "bandTop": 579,
+        "bandBottomExclusive": 597,
+        "contactXBounds": [
+          74,
+          531
+        ],
+        "sourcePivotLocal": [
+          302.5,
+          597.0
+        ]
+      },
+      "uniformSheetScale": 0.10118043844856661,
+      "resizedSourceSize": [
+        57,
+        61
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        166,
+        208
+      ],
+      "outputPivotActual": [
+        196.6070826306914,
+        268.40472175379426
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    },
+    {
+      "pose": "brace",
+      "sourcePath": "assets/new-horizons/creatures/cabir/v3/reactions-v1/candidate-01.png",
+      "sourceSha256": "e42feeba9a6019b3685c756280cedf72173842fa2a652ed2ba59a33094ddaa56",
+      "sourceOrigin": [
+        727,
+        140
+      ],
+      "sourceSize": [
+        494,
+        502
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          731,
+          144,
+          1217,
+          638
+        ],
+        "sourceGlobalCrop": [
+          727,
+          140,
+          1221,
+          642
+        ],
+        "componentArea": 133508,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-01.png"
+      },
+      "sourcePivotGlobal": [
+        973.0,
+        638.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          490,
+          498
+        ],
+        "bandTop": 483,
+        "bandBottomExclusive": 498,
+        "contactXBounds": [
+          7,
+          485
+        ],
+        "sourcePivotLocal": [
+          246.0,
+          498.0
+        ]
+      },
+      "uniformSheetScale": 0.10118043844856661,
+      "resizedSourceSize": [
+        50,
+        51
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        172,
+        218
+      ],
+      "outputPivotActual": [
+        196.8903878583474,
+        268.38785834738616
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    },
+    {
+      "pose": "dying",
+      "sourcePath": "assets/new-horizons/creatures/cabir/v3/reactions-v1/candidate-01.png",
+      "sourceSha256": "e42feeba9a6019b3685c756280cedf72173842fa2a652ed2ba59a33094ddaa56",
+      "sourceOrigin": [
+        32,
+        734
+      ],
+      "sourceSize": [
+        616,
+        389
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          36,
+          738,
+          644,
+          1119
+        ],
+        "sourceGlobalCrop": [
+          32,
+          734,
+          648,
+          1123
+        ],
+        "componentArea": 126180,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-02.png"
+      },
+      "sourcePivotGlobal": [
+        299.5,
+        1119.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          612,
+          385
+        ],
+        "bandTop": 373,
+        "bandBottomExclusive": 385,
+        "contactXBounds": [
+          46,
+          489
+        ],
+        "sourcePivotLocal": [
+          267.5,
+          385.0
+        ]
+      },
+      "uniformSheetScale": 0.10118043844856661,
+      "resizedSourceSize": [
+        62,
+        39
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        169,
+        229
+      ],
+      "outputPivotActual": [
+        196.06576728499158,
+        267.95446880269816
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    },
+    {
+      "pose": "dead",
+      "sourcePath": "assets/new-horizons/creatures/cabir/v3/reactions-v1/candidate-01.png",
+      "sourceSha256": "e42feeba9a6019b3685c756280cedf72173842fa2a652ed2ba59a33094ddaa56",
+      "sourceOrigin": [
+        667,
+        892
+      ],
+      "sourceSize": [
+        634,
+        232
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          671,
+          896,
+          1297,
+          1120
+        ],
+        "sourceGlobalCrop": [
+          667,
+          892,
+          1301,
+          1124
+        ],
+        "componentArea": 98606,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-03.png"
+      },
+      "sourcePivotGlobal": [
+        935.0,
+        1120.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          630,
+          228
+        ],
+        "bandTop": 220,
+        "bandBottomExclusive": 228,
+        "contactXBounds": [
+          46,
+          490
+        ],
+        "sourcePivotLocal": [
+          268.0,
+          228.0
+        ]
+      },
+      "uniformSheetScale": 0.10118043844856661,
+      "resizedSourceSize": [
+        64,
+        23
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        169,
+        245
+      ],
+      "outputPivotActual": [
+        196.11635750421584,
+        268.0691399662732
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    }
+  ],
+  "reviewCropBounds": [
+    158,
+    200,
+    241,
+    277
+  ]
+}

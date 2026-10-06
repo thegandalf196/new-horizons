@@ -1,0 +1,162 @@
+{
+  "status": "offline lossless pose separation; alignment/native review pending",
+  "action": "reactions-v3",
+  "sourcePath": "assets/new-horizons/creatures/cabir/v3/reactions-v1/candidate-01.png",
+  "sourceSha256": "e42feeba9a6019b3685c756280cedf72173842fa2a652ed2ba59a33094ddaa56",
+  "sourceSize": [
+    1326,
+    1187
+  ],
+  "sourceComponentCountAtThreshold": 11,
+  "majorComponentAreaMinimum": 50000,
+  "selectedPoseCount": 4,
+  "componentConnectivity": "8-connected",
+  "ordering": "row-major by component bbox center; top/bottom split at source height/2, then x center",
+  "commonSourceCanvas": {
+    "globalBBox": [
+      32,
+      39,
+      1301,
+      1124
+    ],
+    "size": [
+      1269,
+      1085
+    ],
+    "scale": 1.0,
+    "resized": false,
+    "sourceOffsetsPreserved": true
+  },
+  "policy": {
+    "seed": "four largest-area components meeting area minimum at alpha>=16",
+    "dilationRadius": 4,
+    "dilationShape": "square/Chebyshev radius, clipped to source bounds",
+    "retainedPixels": "original source RGBA bytes copied unchanged",
+    "removedPixels": "only nonzero source pixels outside a unique pose dilation; alpha must be <=10; no recoloring",
+    "maximumRemovedAlphaAllowed": 10,
+    "independentResize": false,
+    "quadrantCropping": false
+  },
+  "removedPixelCount": 12534,
+  "maximumRemovedAlpha": 4,
+  "removedAlphaHistogram": {
+    "1": 11197,
+    "2": 1047,
+    "3": 253,
+    "4": 37
+  },
+  "poses": [
+    {
+      "frame": "pose-00.png",
+      "row": 0,
+      "column": 0,
+      "seedThreshold": 16,
+      "seedArea": 146519,
+      "seedMaxAlpha": 255,
+      "sourceGlobalBBox": [
+        57,
+        43,
+        616,
+        636
+      ],
+      "paddedSourceBBox": [
+        53,
+        39,
+        620,
+        640
+      ],
+      "sourceOffsetOnCommonCanvas": [
+        21,
+        0
+      ]
+    },
+    {
+      "frame": "pose-01.png",
+      "row": 0,
+      "column": 1,
+      "seedThreshold": 16,
+      "seedArea": 133508,
+      "seedMaxAlpha": 255,
+      "sourceGlobalBBox": [
+        731,
+        144,
+        1217,
+        638
+      ],
+      "paddedSourceBBox": [
+        727,
+        140,
+        1221,
+        642
+      ],
+      "sourceOffsetOnCommonCanvas": [
+        695,
+        101
+      ]
+    },
+    {
+      "frame": "pose-02.png",
+      "row": 1,
+      "column": 0,
+      "seedThreshold": 16,
+      "seedArea": 126180,
+      "seedMaxAlpha": 255,
+      "sourceGlobalBBox": [
+        36,
+        738,
+        644,
+        1119
+      ],
+      "paddedSourceBBox": [
+        32,
+        734,
+        648,
+        1123
+      ],
+      "sourceOffsetOnCommonCanvas": [
+        0,
+        695
+      ]
+    },
+    {
+      "frame": "pose-03.png",
+      "row": 1,
+      "column": 1,
+      "seedThreshold": 16,
+      "seedArea": 98606,
+      "seedMaxAlpha": 255,
+      "sourceGlobalBBox": [
+        671,
+        896,
+        1297,
+        1120
+      ],
+      "paddedSourceBBox": [
+        667,
+        892,
+        1301,
+        1124
+      ],
+      "sourceOffsetOnCommonCanvas": [
+        635,
+        853
+      ]
+    }
+  ],
+  "sourceFileModified": false,
+  "outputFiles": {
+    "pose-00.png": "57a5d31c4114e61e0ccd37616698466c480a76a4a4f0c026c2366b58d7fe7051",
+    "pose-01.png": "045fb4301f7072e1b9ca58cc2d359a2b7f50012d420be854b8351c9db32b467f",
+    "pose-02.png": "86dc2f703bffa2364900e62d2be42dc4e72fbae32bffe61d4f1967f4a31e0a9d",
+    "pose-03.png": "eaabe5e1498dbc669ed93aebe9816f31d4b86ddb36002d001319fca72d2e1f97"
+  },
+  "nativeExportFiles": {
+    "alignment.json": "44f3b209bc56ce4f3d9310a90a31ebc74e80f4ea622dddc497f50d5fd715971a",
+    "animation-proof.gif": "6bcf6fb08f405c2369c2acf152068c76cc74df7c726e608fc0dfab568b021057",
+    "contact-sheet-4x.png": "10a752402743204b009a4802482db6da40966ada706b54ee093c617d4de01988",
+    "frame-00.png": "57c5d2d781d0393522ff975b21c8f83f94cb6f1116e31c1ffaa0348c978e5aa5",
+    "frame-01.png": "df094f5120ba0edda953e045fd5353076c9be2e9037f50407b8fc6a6e0ca5764",
+    "frame-02.png": "d5ce9adbb1d359870c000cd693f0d929bc666ece87e015d40b3f562738c28339",
+    "frame-03.png": "1cff2cc2c222410466fb08e03a5232df06b17b037377777db9ef76347697074a"
+  }
+}
