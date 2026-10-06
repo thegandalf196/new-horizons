@@ -45,6 +45,10 @@ tools/new-horizons-launch.sh --assets '/path/to/purchased Heroes III Complete' \
 `--testmap` is VCMI's built-in debug scenario route: it starts the selected map
 through the normal in-process server and avoids fragile main-menu coordinates.
 It is a diagnostic route, not a replacement for ordinary-input acceptance.
+The example above can open spectator battle UI. For non-graphical checks,
+also pass `--headless`; dummy SDL drivers alone do not disable that UI.
+To validate an unpromoted Linux snapshot, follow the explicit candidate/profile
+recipe in [LINUX_PLAYABLE_SNAPSHOT.md](ci/LINUX_PLAYABLE_SNAPSHOT.md).
 Do not launch the original binary directly and assume this profile is applied.
 
 Run the bounded gameplay smoke test with:

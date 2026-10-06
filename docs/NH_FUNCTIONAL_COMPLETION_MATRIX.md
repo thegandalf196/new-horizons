@@ -2,6 +2,19 @@
 
 Updated: 2026-10-06
 
+Linux delivery checkpoint: exact committedadf92c01d is built and frozen in
+snapshot536e86, including both required Estates feedback additions below.
+The true-headless managed smoke advances13 player-turn starts through day5
+and12 NK2 turn cycles, with BattleAI entry and no missing-player-red/invalid-side
+diagnostics. Expected timeout124 is followed by verified process/lock cleanup;
+the2278-file manifest remains unchanged. Independent review permits development
+promotion without claiming ordinary GUI or rendered acceptance. Root promotes
+the same snapshot and normal-script verify-only selects it. The non-headless
+spectator failure, denied debugger attach and Shield of Chaos neutral-warning
+are recorded separately for Phase2; no causal fix is claimed. This delivers
+required UI source already implemented, not new identities:225/310 perks,
+61/67 combat spells and8/8 Orders remain unchanged.
+
 UP255 adds the missing Resource Broker contribution to the existing Deal
 right-click help for selected owned-town trades. Percentage comes from shared
 effective/ordinary rates; no copied eligibility, altered quote/rounding or trade

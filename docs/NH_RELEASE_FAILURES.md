@@ -2,6 +2,43 @@
 
 ## Purpose
 
+### 2026-10-06 — Candidate smoke omitted explicit headless mode
+
+The exact adf92c01d candidate536e86 passes its2278-file manifest check, but
+the dummy-SDL invocation omitted --headless. It loads the map and opens battle
+UI before repeating missing-player-red and invalid-battle-side diagnostics;
+bounded shutdown requires exact-child containment. This is not a passing smoke.
+Source inspection finds a possible nonparticipant spectator callback route:
+testmap enables AI-only play, and without headless the client auto-enables
+spectator UI. Do not attribute the error to economic help or relax battle-side
+visibility without a producing callstack. Normal4af281d5 remains selected.
+
+One bounded managed debugger attempt cannot attach under the host's ptrace
+restriction. No callstack is captured; it is stopped before the first error and
+is not a reproduced diagnostic. No permission change or repeated attach is
+attempted. The exact owned wrapper/client are gone, private profile lock is
+released and candidate hashes remain unchanged. Private receipts are retained
+under `build/new-horizons-linux/nh-up256-debug-tdtQGp/`; original failed smoke
+receipts remain under `nh-candidate-smoke-536e86-IkNA8q/` in the same build root.
+
+The documented scenario-smoke harness already passes --headless. Candidate
+documentation now spells out equivalent explicit client/resources, fresh
+private profile, dummy SDL and correctly separated --savefrequency 0 arguments.
+Independent review finds no command/permission blocker. A corrected true-headless
+candidate run is assigned separately; do not treat the documentation review,
+attach failure or earlier timeout as playable acceptance.
+
+Corrected headless-path receipt: one20-second run advances13 turn starts through
+day5,12 NK2 cycles and BattleAI, without either target diagnostic. Timeout124
+is deliberate and followed by verified client exit, unlocked profile and removed
+runtime links. The full client log retains Shield of Chaos's default-NEUTRAL
+positiveness warning. Manifest and hashes remain unchanged. Independent review
+finds no demonstrated Phase1 promotion blocker; root selects the same536e86
+snapshot and normal-launcher verify-only passes. This is development-candidate
+delivery, not rendered/manual acceptance or a spectator diagnosis. Keep the
+unattributed spectator failure and warning as Phase2 findings. Receipts:
+`build/new-horizons-linux/nh-up256-headless-H9DlTa/`.
+
 ### 2026-10-06 — Flank focused control compares casualties against full strength
 
 UP245's client/native builds pass and its exact seven-case run82491 is6/7,
