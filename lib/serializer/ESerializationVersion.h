@@ -179,15 +179,18 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_MANDATE_OF_HEAVEN, // Divine Mandate supports the Expert-perk fourth sequence
 	NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE, // per-stack first-melee reaction round marker
 	NEW_HORIZONS_REBIRTH_OUTPUT_ORIGINAL_HP, // immutable initial aggregate HP on Elemental Rebirth output stacks
+	NEW_HORIZONS_ASTROLOGY_CONSTRUCTION_PREVIEW, // immediate authoritative forecast on Astronomy Tower construction
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_REBIRTH_OUTPUT_ORIGINAL_HP,
+	CURRENT = NEW_HORIZONS_ASTROLOGY_CONSTRUCTION_PREVIEW,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
+static_assert(ESerializationVersion::NEW_HORIZONS_ASTROLOGY_CONSTRUCTION_PREVIEW > ESerializationVersion::NEW_HORIZONS_REBIRTH_OUTPUT_ORIGINAL_HP,
+	"Construction-time Astrology preview must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE > ESerializationVersion::NEW_HORIZONS_MANDATE_OF_HEAVEN,
 	"Battlecraft Pre-emptive Strike state must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_REBIRTH_OUTPUT_ORIGINAL_HP > ESerializationVersion::NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE,

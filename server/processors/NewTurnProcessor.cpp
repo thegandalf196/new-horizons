@@ -723,6 +723,21 @@ AstrologyWeek NewTurnProcessor::pickAstrologyWeek(bool newMonth)
 	return {weekType, creature, additionalGrowth};
 }
 
+AstrologyWeek NewTurnProcessor::prepareUpcomingAstrologyWeek()
+{
+	const auto & existing = gameHandler->gameState().nextAstrologyWeek;
+	if(existing.known())
+		return existing;
+
+	const auto calendar = gameHandler->gameInfo().getCalendar();
+	const int daysUntilNextWeek = !calendar.getCurrentDay()
+		? calendar.getDaysInWeek() + 1
+		: calendar.getDaysInWeek() - calendar.getDayOfWeek() + 1;
+	const Calendar nextWeekStart(gameHandler->gameInfo().getSettings(),
+		calendar.getCurrentDay() + daysUntilNextWeek);
+	return pickAstrologyWeek(nextWeekStart.getDayOfMonth() == 1);
+}
+
 bool NewTurnProcessor::hasAstronomyTowerDefinition() const
 {
 	// New Horizons replaces Tower's legacy Lookout Tower (SPECIAL_2) without
@@ -932,7 +947,7 @@ NewTurn NewTurnProcessor::generateNewTurnPack()
 		// so the next result is for the week after the one about to begin.  On a
 		// mid-week load with an older save, author the upcoming week immediately
 		// instead of leaving the preview unavailable until the next boundary.
-		if(newWeek)
+		if(newWeek && (!firstTurn || !n.nextAstrologyWeek.known()))
 		{
 			const Calendar futureWeekStart(gameHandler->gameInfo().getSettings(),
 				calendar.getCurrentDay() + calendar.getDaysInWeek() + 1);
@@ -940,12 +955,7 @@ NewTurn NewTurnProcessor::generateNewTurnPack()
 		}
 		else if(!n.nextAstrologyWeek.known())
 		{
-			const int daysUntilNextWeek = firstTurn
-				? calendar.getDaysInWeek() + 1
-				: calendar.getDaysInWeek() - calendar.getDayOfWeek() + 1;
-			const Calendar nextWeekStart(gameHandler->gameInfo().getSettings(),
-				calendar.getCurrentDay() + daysUntilNextWeek);
-			n.nextAstrologyWeek = pickAstrologyWeek(nextWeekStart.getDayOfMonth() == 1);
+			n.nextAstrologyWeek = prepareUpcomingAstrologyWeek();
 		}
 	}
 

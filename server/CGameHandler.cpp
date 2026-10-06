@@ -3425,6 +3425,9 @@ bool CGameHandler::buildStructure(ObjectInstanceID tid, BuildingID requestedID, 
 	}
 
 	//We know what has been built, apply changes. Do this as final step to properly update town window
+	if(newHorizonsMagic::rulesActive(gameState().getMagicRules())
+		&& t->getFactionID() == FactionID::TOWER && ns.bid.contains(BuildingID::SPECIAL_2))
+		ns.nextAstrologyWeek = newTurnProcessor->prepareUpcomingAstrologyWeek();
 	sendAndApply(ns);
 
 	//Other post-built events. To some logic like giving spells to work gamestate changes for new building must be already in place!

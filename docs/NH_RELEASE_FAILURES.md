@@ -2,6 +2,26 @@
 
 ## Purpose
 
+### 2026-10-06 — Astronomy construction forecast
+
+The town-building audit finds a first-use gap: construction never authors the
+preview until NewTurn, so a last-day Tower build cannot reveal the upcoming
+week before it begins. Carry the forecast in the authoritative NewStructures
+packet, before the existing client building refresh, without advancing time.
+Review also identifies a day-zero forecast reroll on the initial NewTurn;
+preserve a known forecast there while advancing it at ordinary week boundaries.
+
+Initial focused client build fails because the new packet template names
+ESerializationVersion without a guaranteed declaration. Match adjacent packet
+templates with `Handler::Version` rather than relying on incidental includes.
+The original failure log is retained as `astronomy-construction-build.log`;
+the repaired client build passes. Test compilation then catches two fixture
+uses of `.getNum()` on the enum constant `BuildingID::DWELL_LVL_1`; wrap the
+constant in BuildingID before reading its number. The original test-build
+failure and incremental successor have distinct logs. Repaired increment passes
+100 steps; principal focused acceptance passes7/7 in0.919s with zero skips.
+No playable promotion is inferred from these source/native corrections.
+
 ### 2026-10-06 — Rebirth metadata fixture acceptance
 
 Review catches an older-format CMemorySerializer buffer read as CURRENT.
@@ -19,6 +39,13 @@ its receipts were accidentally overwritten by the corrected-profile run.
 Do not count it as gameplay evidence or reconstruct a claimed receipt.
 
 ### 2026-10-05 — Windows libiconv source download timeout
+
+Successor receipt2026-10-06: full run `37405475795` at exact repair source
+`975c6f011445049690b39c501128684a0cc64e5b` completes successfully, including
+compilation, package closure/license/source checks and downloadable-artifact
+upload. Artifact `11389625197` carries that exact source in its name. This
+resolves the observed download blocker; it is not Windows gameplay acceptance
+and excludes later Rebirth/Astronomy changes. Historical failure details follow.
 
 Full Windows run `37403632207`, source `9c7c4880f`, failed before compilation
 in the complete dependency graph/source archive preflight. Both configured GNU

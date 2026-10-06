@@ -836,14 +836,22 @@ struct DLL_LINKAGE NewStructures : public CPackForClient
 	ObjectInstanceID tid;
 	std::set<BuildingID> bid;
 	si16 built = 0;
+	std::optional<AstrologyWeek> nextAstrologyWeek;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && nextAstrologyWeek.has_value()
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_ASTROLOGY_CONSTRUCTION_PREVIEW))
+			throw std::runtime_error("Cannot write construction-time Astrology preview to an older format");
 		h & tid;
 		h & bid;
 		h & built;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_ASTROLOGY_CONSTRUCTION_PREVIEW))
+			h & nextAstrologyWeek;
+		else if(!h.saving)
+			nextAstrologyWeek.reset();
 	}
 };
 

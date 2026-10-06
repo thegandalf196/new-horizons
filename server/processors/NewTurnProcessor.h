@@ -68,6 +68,7 @@ class NewTurnProcessor : boost::noncopyable
 
 public:
 	NewTurnProcessor(CGameHandler * gameHandler);
+	AstrologyWeek prepareUpcomingAstrologyWeek();
 
 	void onNewTurn();
 	void onPlayerTurnStarted(PlayerColor color);

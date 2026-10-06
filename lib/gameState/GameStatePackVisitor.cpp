@@ -1122,6 +1122,8 @@ void GameStatePackVisitor::visitNewStructures(NewStructures & pack)
 	t->updateAppearance();
 	t->built = pack.built;
 	t->recreateBuildingsBonuses();
+	if(pack.nextAstrologyWeek)
+		gs.nextAstrologyWeek = *pack.nextAstrologyWeek;
 }
 
 void GameStatePackVisitor::visitRazeStructures(RazeStructures & pack)

@@ -2804,7 +2804,7 @@ not newly implemented or individually certified content.
 | Rampart growth buildings | Baseline: core horde consumers | Row-specific runtime acceptance absent; numbers deferred |
 | Tower Library | Native: Mage/Arch Mage growth1, no Genie growth; source suppresses extra Guild spells | Cost/prerequisite/position are config evidence, not full construction acceptance |
 | Tower Arcane Reservoir | Native: weekly one-hero visit/reset; source grants Buffer50 | Separate Normal/Buffer assertion and rendered refill remain unverified |
-| Tower Astronomy Tower | Source: authoritative NewTurn forecast and castle preview | Wire tests alone do not prove forecast becomes actual following week; principal-path check next |
+| Tower Astronomy Tower | Native: construction immediately authors/synchronizes forecast; day-zero preservation, real week-start result and matching dwelling growth pass focused7/7 including wire controls | Month-end, another construction reusing a forecast, normal purchase eligibility, removal/capture composition and rendered/playable delivery remain unverified |
 | Tower Artifact Merchants | Baseline: artifact/resource marketplace modes | Row-specific runtime acceptance absent |
 | Inferno Castle Gate | Source: owned-gate teleport, daily use and Movement expenditure | Daily-state wire coverage alone is not real teleport acceptance |
 | Inferno Order of Fire | Native: actual visit grants permanent SP5 once per physical building, save | Wider permanent-stat composition Phase2 |
@@ -2836,6 +2836,17 @@ All37 rows are accounted for. This is an audit denominator, not a claim of
 37/37 implementation acceptance or a replacement for the user-priority queue.
 Skeleton Transformer and Glyphs policy questions were refreshed2026-10-06;
 preselected suggestions are not submitted user decisions.
+
+Astronomy first-use acceptance2026-10-06: client build321 steps and repaired
+test-target increment100 steps pass with12 jobs. Focused Astronomy/Castle Gate
+wire run passes7/7 in0.919s with zero skips/errors/disabled. This closes the
+identified construction-time source gap without daily polling or time advance.
+Tests use real authoritative forced construction and NewTurn application, not
+normal purchase eligibility or graphical interaction. Receipts remain under
+ignored testing outputs `astronomy-construction-*`; binary SHA-256
+`649b7eaa5d6a668b749667889fcd3ceead877da104e72526d1b1fd04f9c318b0`.
+Spell/perk identity totals remain unchanged. Existing-forecast removal/capture
+and the wider boundaries above are deferred integration work, not certified.
 
 ### Hero specialty conversion item ledger
 
