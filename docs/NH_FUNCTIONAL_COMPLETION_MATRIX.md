@@ -2,6 +2,15 @@
 
 Updated: 2026-10-06
 
+Cabir development delivery checkpoint: normal Linux selects immutable30bc6ea
+from360b91d06, including all committed original Cabir roles, elemental defenses,
+permanent allied Repair and UP261 readback. The rebuild,13 focused mechanics
+tests, native resource checks and explicit-candidate headless smoke to day8 pass.
+Old990be55 remains available. Full graphical/motion acceptance and provisional
+art approval remain open; no extra perk/spell identity count. Phase1 remains
+225/310 perks,61/67 combat spells and8/8 Orders. Queued Magi/Arch Magi colour
+treatment is next user-priority source work, not ordinary balance refinement.
+
 Cabir adventure-map source/resource integration closes the remaining map/encounter
 binding gap for both forms. Unique four-frame64x64 animations, both encounter
 facings and eight-slot legacy H3M aliases are original-source derivatives.

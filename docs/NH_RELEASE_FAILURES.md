@@ -2,6 +2,21 @@
 
 ## Purpose
 
+### 2026-10-06 — Cabir candidate profile overlap and known schema diagnostics
+
+The first candidate smoke chooses a profile below the repository, itself below
+the original installation root. The launcher correctly rejects overlapping input
+and writable-profile paths before execution. A new /tmp parent with nonexistent
+profile child fixes the test setup; do not bypass the overlap protection.
+Corrected20s true-headless smoke reaches day8; timeout124 is intentional, with
+owned process/runtime gone and profile lock released. Snapshot30bc6ea from
+360b91d06 is subsequently promoted only after independent review and focused
+native13/13 plus resource1/1 success. The four cabirRepair schema warnings reject
+the effect discriminator field `type`; actual authoritative repair tests pass.
+Keep this non-blocking schema integration finding for Phase2, alongside existing
+Shield of Chaos neutral-default and redundant namespace diagnostics. Do not
+describe the smoke as a completed match, rendered acceptance or proof of no bugs.
+
 ### 2026-10-06 — Cabir portrait guard assumed no other graphics fields
 
 The combined Cabir map/battle/portrait content check found two failures in a

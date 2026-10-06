@@ -1,5 +1,12 @@
 # New Horizons UI and asset status register
 
+Cabir Linux development delivery,2026-10-06: snapshot30bc6ea from committed
+360b91d06 is selected by the normal Linux script. Original portrait, battle,
+map/encounter resources and mechanics are included and natively verified;
+bounded true-headless play reaches day8. Artwork remains **Provisional**.
+This does not establish battlefield gait/timing, projectile origins, actual
+pointer interaction or user Final approval. Previous990be55 is retained.
+
 Cabir map/encounter resources,2026-10-06: **Provisional**, source-integrated
 and natively loadable for both forms. Unique64x64 map descriptors use four
 real walk poses; legacy H3M sprite-name aliases repeat that sequence in eight
