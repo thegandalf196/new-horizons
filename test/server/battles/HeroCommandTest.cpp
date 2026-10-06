@@ -277,8 +277,11 @@ TEST_F(EncirclementTest, EncirclementChangesOnlyAdditionalSideDamageAfterARecord
 	EXPECT_GT(firstFlankDamage.damage.min, firstWithoutOrder);
 	EXPECT_EQ(firstFlankDamage.attackerOrderCause, HeroCommand::FLANK);
 
-	blockRetaliation(defender);
+	blockRetaliation(attacker);
+	const int32_t attackerCountBeforeStrike = attacker->getCount();
 	ASSERT_TRUE(this->attack(attacker, defender->getPosition()));
+	ASSERT_EQ(attacker->getCount(), attackerCountBeforeStrike)
+		<< "The repeated-side comparison requires the attacking stack to survive unchanged";
 	const auto afterFirstAttack = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
 	ASSERT_TRUE(afterFirstAttack);
 	const auto * flank = afterFirstAttack->flankFor(defender->unitId());
@@ -310,6 +313,197 @@ TEST_F(EncirclementTest, EncirclementChangesOnlyAdditionalSideDamageAfterARecord
 	EXPECT_EQ(extraSideAfterSelection.attackerOrderCause, HeroCommand::FLANK);
 	EXPECT_EQ(battle()->battleGetHeroOrderState(BattleSide::ATTACKER)->flankFor(defender->unitId())->sideMask,
 		firstSide) << "Hypothetical damage estimation must not record a Flank approach";
+}
+
+TEST_F(EncirclementTest, FlankProjectedAttackerPositionMatchesMovedGeometryAndDamage)
+{
+	prepareEncirclement();
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(70), 100);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(71), 100);
+	ASSERT_NE(attacker, nullptr);
+	ASSERT_NE(defender, nullptr);
+
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeTargetedHeroCommand(BattleSide::ATTACKER, HeroCommand::FLANK, defender->unitId())));
+	const auto firstContact = battle()->battleHeroOrderFlankSide(attacker, defender);
+	ASSERT_NE(firstContact, 0);
+	blockRetaliation(attacker);
+	const int32_t attackerCountBeforeStrike = attacker->getCount();
+	ASSERT_TRUE(this->attack(attacker, defender->getPosition()));
+	ASSERT_EQ(attacker->getCount(), attackerCountBeforeStrike)
+		<< "A Flank preview fixture must not lose attackers to retaliation";
+	const auto savedOrder = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(savedOrder);
+	ASSERT_NE(savedOrder->flankFor(defender->unitId()), nullptr);
+	const uint8_t recordedMask = savedOrder->flankFor(defender->unitId())->sideMask;
+	ASSERT_EQ(recordedMask, firstContact);
+
+	const auto repeatedAttack = BattleAttackInfo(attacker, defender, 0, false);
+	const int repeatedPercent = battle()->battleHeroOrderFlankMeleeDamagePercent(repeatedAttack);
+	ASSERT_GT(repeatedPercent, 0);
+	const auto repeatedDamage = battle()->calculateDmgRange(repeatedAttack);
+	ASSERT_EQ(repeatedDamage.attackerOrderCause, HeroCommand::FLANK);
+
+	const auto freeFootprint = [this](const battle::Unit * moving, const BattleHex & position)
+	{
+		bool hasAvailableHex = false;
+		for(const auto & hex : moving->getHexes(position))
+		{
+			if(!hex.isValid())
+				continue;
+			if(!hex.isAvailable())
+				return false;
+			hasAvailableHex = true;
+			const auto * occupant = battle()->battleGetUnitByPos(hex);
+			if(occupant && occupant->unitId() != moving->unitId())
+				return false;
+		}
+		return hasAvailableHex;
+	};
+	std::optional<BattleHex> projectedPosition;
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		const BattleHex position(index);
+		if(position == attacker->getPosition() || !freeFootprint(attacker, position))
+			continue;
+		const auto projectedMask = battle()->battleHeroOrderFlankSide(attacker, defender,
+			position, BattleHex::INVALID);
+		if((projectedMask & static_cast<uint8_t>(~recordedMask)) != 0)
+		{
+			projectedPosition = position;
+			break;
+		}
+	}
+	ASSERT_TRUE(projectedPosition) << "The marked target should be reachable from an unrecorded side";
+
+	BattleAttackInfo projectedAttack(attacker, defender, 0, false);
+	projectedAttack.attackerPos = *projectedPosition;
+	const auto originalAttackerPosition = attacker->getPosition();
+	const auto originalDefenderPosition = defender->getPosition();
+	const auto projectedMask = battle()->battleHeroOrderFlankSide(attacker, defender,
+		projectedAttack.attackerPos, projectedAttack.defenderPos);
+	const int projectedPercent = battle()->battleHeroOrderFlankMeleeDamagePercent(projectedAttack);
+	const auto projectedDamage = battle()->calculateDmgRange(projectedAttack);
+	EXPECT_NE(projectedMask & static_cast<uint8_t>(~recordedMask), 0);
+	EXPECT_GT(projectedPercent, repeatedPercent);
+	EXPECT_GT(projectedDamage.damage.min, repeatedDamage.damage.min);
+	EXPECT_EQ(attacker->getPosition(), originalAttackerPosition);
+	EXPECT_EQ(defender->getPosition(), originalDefenderPosition);
+	EXPECT_EQ(battle()->battleGetHeroOrderState(BattleSide::ATTACKER)->flankFor(defender->unitId())->sideMask,
+		recordedMask) << "A projected attack must not record a Flank side";
+
+	auto movedState = attacker->acquireState();
+	movedState->setPosition(*projectedPosition);
+	BattleUnitsChanged moved;
+	moved.battleID = BattleID(0);
+	UnitChanges update(attacker->unitId(), UnitChanges::EOperation::UPDATE);
+	update.data = movedState->save();
+	moved.changedStacks.push_back(std::move(update));
+	gameHandler->sendAndApply(moved);
+
+	const auto movedSideMask = battle()->battleHeroOrderFlankSide(attacker, defender);
+	const auto movedAttack = BattleAttackInfo(attacker, defender, 0, false);
+	const auto movedDamage = battle()->calculateDmgRange(movedAttack);
+	EXPECT_EQ(movedSideMask, projectedMask);
+	EXPECT_EQ(battle()->battleHeroOrderFlankMeleeDamagePercent(movedAttack), projectedPercent);
+	EXPECT_EQ(movedDamage.damage.min, projectedDamage.damage.min);
+	EXPECT_EQ(movedDamage.damage.max, projectedDamage.damage.max);
+	EXPECT_EQ(battle()->battleGetHeroOrderState(BattleSide::ATTACKER)->flankFor(defender->unitId())->sideMask,
+		recordedMask) << "Moving without attacking must preserve accepted side history";
+}
+
+TEST_F(EncirclementTest, FlankProjectedDefenderPositionMatchesMovedGeometryAndDamage)
+{
+	prepareEncirclement();
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(70), 100);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(71), 100);
+	ASSERT_NE(attacker, nullptr);
+	ASSERT_NE(defender, nullptr);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeTargetedHeroCommand(BattleSide::ATTACKER, HeroCommand::FLANK, defender->unitId())));
+	const auto firstContact = battle()->battleHeroOrderFlankSide(attacker, defender);
+	ASSERT_NE(firstContact, 0);
+	blockRetaliation(attacker);
+	const int32_t attackerCountBeforeStrike = attacker->getCount();
+	ASSERT_TRUE(this->attack(attacker, defender->getPosition()));
+	ASSERT_EQ(attacker->getCount(), attackerCountBeforeStrike)
+		<< "A Flank preview fixture must not lose attackers to retaliation";
+	const auto savedOrder = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(savedOrder);
+	ASSERT_NE(savedOrder->flankFor(defender->unitId()), nullptr);
+	const uint8_t recordedMask = savedOrder->flankFor(defender->unitId())->sideMask;
+	ASSERT_EQ(recordedMask, firstContact);
+
+	const auto repeatedAttack = BattleAttackInfo(attacker, defender, 0, false);
+	const int repeatedPercent = battle()->battleHeroOrderFlankMeleeDamagePercent(repeatedAttack);
+	const auto repeatedDamage = battle()->calculateDmgRange(repeatedAttack);
+
+	const auto freeFootprint = [this](const battle::Unit * moving, const BattleHex & position)
+	{
+		bool hasAvailableHex = false;
+		for(const auto & hex : moving->getHexes(position))
+		{
+			if(!hex.isValid())
+				continue;
+			if(!hex.isAvailable())
+				return false;
+			hasAvailableHex = true;
+			const auto * occupant = battle()->battleGetUnitByPos(hex);
+			if(occupant && occupant->unitId() != moving->unitId())
+				return false;
+		}
+		return hasAvailableHex;
+	};
+	std::optional<BattleHex> projectedPosition;
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		const BattleHex position(index);
+		if(position == defender->getPosition() || !freeFootprint(defender, position))
+			continue;
+		const auto projectedMask = battle()->battleHeroOrderFlankSide(attacker, defender,
+			BattleHex::INVALID, position);
+		if((projectedMask & static_cast<uint8_t>(~recordedMask)) != 0)
+		{
+			projectedPosition = position;
+			break;
+		}
+	}
+	ASSERT_TRUE(projectedPosition) << "A proposed defender position should expose an unrecorded side";
+
+	BattleAttackInfo projectedAttack(attacker, defender, 0, false);
+	projectedAttack.defenderPos = *projectedPosition;
+	const auto originalAttackerPosition = attacker->getPosition();
+	const auto originalDefenderPosition = defender->getPosition();
+	const auto projectedMask = battle()->battleHeroOrderFlankSide(attacker, defender,
+		projectedAttack.attackerPos, projectedAttack.defenderPos);
+	const int projectedPercent = battle()->battleHeroOrderFlankMeleeDamagePercent(projectedAttack);
+	const auto projectedDamage = battle()->calculateDmgRange(projectedAttack);
+	EXPECT_NE(projectedMask & static_cast<uint8_t>(~recordedMask), 0);
+	EXPECT_GT(projectedPercent, repeatedPercent);
+	EXPECT_GT(projectedDamage.damage.min, repeatedDamage.damage.min);
+	EXPECT_EQ(attacker->getPosition(), originalAttackerPosition);
+	EXPECT_EQ(defender->getPosition(), originalDefenderPosition);
+	EXPECT_EQ(battle()->battleGetHeroOrderState(BattleSide::ATTACKER)->flankFor(defender->unitId())->sideMask,
+		recordedMask) << "A projected defender position must not record a Flank side";
+
+	auto movedState = defender->acquireState();
+	movedState->setPosition(*projectedPosition);
+	BattleUnitsChanged moved;
+	moved.battleID = BattleID(0);
+	UnitChanges update(defender->unitId(), UnitChanges::EOperation::UPDATE);
+	update.data = movedState->save();
+	moved.changedStacks.push_back(std::move(update));
+	gameHandler->sendAndApply(moved);
+
+	const auto movedSideMask = battle()->battleHeroOrderFlankSide(attacker, defender);
+	const auto movedAttack = BattleAttackInfo(attacker, defender, 0, false);
+	const auto movedDamage = battle()->calculateDmgRange(movedAttack);
+	EXPECT_EQ(movedSideMask, projectedMask);
+	EXPECT_EQ(battle()->battleHeroOrderFlankMeleeDamagePercent(movedAttack), projectedPercent);
+	EXPECT_EQ(movedDamage.damage.min, projectedDamage.damage.min);
+	EXPECT_EQ(movedDamage.damage.max, projectedDamage.damage.max);
+	EXPECT_EQ(battle()->battleGetHeroOrderState(BattleSide::ATTACKER)->flankFor(defender->unitId())->sideMask,
+		recordedMask) << "Moving without attacking must preserve accepted side history";
 }
 
 TEST_F(HeroCommandTest, WideFlankContactReportsEachDistinctContactSide)
@@ -386,6 +580,45 @@ TEST_F(HeroCommandTest, WideFlankContactReportsEachDistinctContactSide)
 	const auto actualMask = battle()->battleHeroOrderFlankSide(wide, target);
 	EXPECT_GE(sideCount(actualMask), 2);
 	EXPECT_EQ(actualMask, contactMask(wide->getHexes(), target->getHexes()));
+	std::optional<BattleHex> projectedPosition;
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		const BattleHex position(index);
+		if(position == wide->getPosition())
+			continue;
+		const auto & cells = wide->getHexes(position);
+		const bool completeFootprint = std::ranges::all_of(cells, [](const BattleHex & cell)
+		{
+			return cell.isAvailable();
+		});
+		if(cells.size() != 2 || !completeFootprint || !cellsAreFree(cells))
+			continue;
+		const auto projectedMask = battle()->battleHeroOrderFlankSide(wide, target,
+			position, target->getPosition());
+		if(projectedMask != 0 && projectedMask != actualMask)
+		{
+			projectedPosition = position;
+			break;
+		}
+	}
+	ASSERT_TRUE(projectedPosition) << "A double-wide unit should have a second legal projected contact position";
+	const auto originalWidePosition = wide->getPosition();
+	const auto originalTargetPosition = target->getPosition();
+	const auto projectedMask = battle()->battleHeroOrderFlankSide(wide, target,
+		*projectedPosition, originalTargetPosition);
+	EXPECT_EQ(projectedMask, contactMask(wide->getHexes(*projectedPosition), target->getHexes()));
+	EXPECT_EQ(wide->getPosition(), originalWidePosition);
+	EXPECT_EQ(target->getPosition(), originalTargetPosition);
+	auto movedState = wide->acquireState();
+	movedState->setPosition(*projectedPosition);
+	BattleUnitsChanged moved;
+	moved.battleID = BattleID(0);
+	UnitChanges update(wide->unitId(), UnitChanges::EOperation::UPDATE);
+	update.data = movedState->save();
+	moved.changedStacks.push_back(std::move(update));
+	gameHandler->sendAndApply(moved);
+	EXPECT_EQ(battle()->battleHeroOrderFlankSide(wide, target), projectedMask);
+	EXPECT_EQ(battle()->battleHeroOrderFlankSide(wide, target), contactMask(wide->getHexes(), target->getHexes()));
 }
 
 TEST_F(HeroCommandTest, HeroOrderStatePacketRoundTripsThroughClientPackPointer)
@@ -1427,7 +1660,10 @@ TEST_F(HeroCommandTest, FlankRaisesTheFirstDistinctSideAttack)
 	EXPECT_EQ(collateral.attackerOrderCause, HeroCommand::FLANK);
 	EXPECT_EQ(battle()->calculateDmgRange(BattleAttackInfo(attacker, defender, 0, true)).attackerOrderCause,
 		HeroCommand::NONE);
+	EXPECT_EQ(battle()->battleHeroOrderFlankMeleeDamagePercent(BattleAttackInfo(attacker, defender, 0, true)), 0);
 	EXPECT_EQ(battle()->battleGetHeroOrderState(BattleSide::ATTACKER)->flankFor(defender->unitId())->sideMask, side);
+	EXPECT_EQ(battle()->battleHeroOrderFlankMeleeDamagePercent(BattleAttackInfo(defender, attacker, 0, false)), 0)
+		<< "An opposing attack must not borrow the attacker's Flank Order";
 	BattleAttackInfo secondAttack(secondAttacker, defender, 0, false);
 	const auto secondSide = battle()->battleHeroOrderFlankSide(secondAttacker, defender);
 	ASSERT_NE(secondSide, 0);

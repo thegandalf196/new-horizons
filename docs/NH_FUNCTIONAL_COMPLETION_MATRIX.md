@@ -2,6 +2,20 @@
 
 Updated: 2026-10-06
 
+UP245 implements the required Flank side identities and proposed-position
+contribution readback in the existing Order help, marked-target tooltip and
+melee hover. Shared contact geometry uses both projected footprints; the same
+coefficient supplies production damage and forecast. Client/native builds pass
+with12 jobs; seven focused cases pass in2.325s with zero skips, including
+projected geometry, wide contact, accepted Flank/Encirclement, Formation Fighting
+and Combined Arms. Independent review finds no blocker. No new identity/rule or
+saved state: spell/perk counts remain unchanged. Native rendered fit/localization
+remain Phase2, and playable delivery is pending. Receipts are retained under
+ignored `build/nh-flank-readback.xSWIhS2Q/`.
+
+Windows37437598557 is now successful on exactbea86a2c3. Compile/package success
+is not Windows graphical acceptance or delivery of the newer dirty Flank slice.
+
 UP244 committed/pushed asbea86a2c3, then exact committed Linux source rebuilt,
 frozen, independently2277-file verified and bounded-smoked through AI day7.
 The normal script resolves promoted snapshotc172340f, retaining prior snapshots.

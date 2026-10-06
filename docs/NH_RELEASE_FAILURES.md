@@ -2,6 +2,33 @@
 
 ## Purpose
 
+### 2026-10-06 — Flank focused control compares casualties against full strength
+
+UP245's client/native builds pass and its exact seven-case run82491 is6/7,
+zero skips,2.053s. Both new projected-position cases, wide geometry, actual Flank,
+Formation Fighting/Combined Arms and direction formatting pass. Existing
+EncirclementChangesOnlyAdditionalSideDamageAfterARecordedFlank fails pre/post
+damage equality5900 versus4897. Root traces its blockRetaliation(defender)
+setup: that helper grants BLOCKS_RETALIATION, while authoritative attacks and
+forecasts check this bonus on the attacker. Attacker casualty count is not yet
+directly observed; do not claim a numerical casualty diagnosis from damage
+alone. The tester owns a narrow fixture correction with explicit count evidence;
+do not weaken side/bonus assertions or mark the initial run green. Receipts:
+ignored `build/nh-flank-readback.xSWIhS2Q/native.log` and `native.xml`.
+
+Repair evidence: all three strike fixtures now block retaliation on the acting
+attacker and explicitly assert unchanged attacker count. Independent review
+finds no weakened damage/history assertions. Repaired client/native build83993
+passes; correct-bin execution98399 passes7/7, zero skips,2.325s. Preserve initial
+failure receipts alongside `native-repaired-bin.log/xml`.
+
+The intervening root invocation from repository CWD loaded the wrong development
+resource root, omitted New Horizons and produced two resource failures/four
+skips. It is a harness failure, not fixture acceptance. Restore the isolated
+test preset's New Horizons entry and run from `build/new-horizons-linux/bin`,
+where development resources are registered. Retain `native-repaired.log/xml`;
+never accept a green test subset after missing-content skips.
+
 ### 2026-10-06 — Nonfatal Dispel preview invalid-spell diagnostics
 
 The exact bea86a2c3 frozen Linux candidate passes file verification and its

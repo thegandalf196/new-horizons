@@ -419,6 +419,13 @@ std::vector<OrderIndicator> activeOrderIndicators(const CStack * stack)
 		case HeroCommand::FLANK:
 			applies = !own && state->primaryTargetUnitId == stack->unitId();
 			suffix = "marked target";
+			if(applies)
+			{
+				const auto * flank = state->flankFor(stack->unitId());
+				if(flank)
+					detail = "Contributing attack sides relative to this target: "
+						+ newHorizonsFlankReadback::formatDirections(flank->sideMask) + ".";
+			}
 			break;
 		case HeroCommand::SECOND_WIND:
 			applies = own && state->primaryTargetUnitId == stack->unitId()

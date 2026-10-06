@@ -195,7 +195,13 @@ public:
 	bool battleCanTriggerHeroOrderBrace(const battle::Unit * attacker, const battle::Unit * defender,
 		int movementDistance, bool shooting, bool counter) const;
 	/// Distinct side used by a melee attack against a Flank target, or zero when not adjacent.
-	uint8_t battleHeroOrderFlankSide(const battle::Unit * attacker, const battle::Unit * defender) const;
+	/// Optional positions let forecasts use the same footprint geometry as the proposed attack.
+	uint8_t battleHeroOrderFlankSide(const battle::Unit * attacker, const battle::Unit * defender,
+		const BattleHex & attackerPosition = BattleHex::INVALID,
+		const BattleHex & defenderPosition = BattleHex::INVALID) const;
+	/// Exact ordinary melee damage-percent contribution from an active Flank Order for this attack.
+	/// Uses proposed positions when supplied and performs no state mutation.
+	int battleHeroOrderFlankMeleeDamagePercent(const BattleAttackInfo & attack) const;
 	/// Flank's per-additional-side bonus for this hero snapshot (Encirclement changes 4% to 7%).
 	int battleHeroOrderFlankAdditionalSidePercent(BattleSide side, int warcastingBonusPercent = 0) const;
 	int battleHeroOrderFlankAdditionalSidePercent(BattleSide side, int warcastingBonusPercent,

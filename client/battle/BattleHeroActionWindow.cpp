@@ -9,6 +9,7 @@
 #include "BattleInterface.h"
 #include "BattleWindow.h"
 #include "BattleActionsController.h"
+#include "NewHorizonsBattleStatus.h"
 #include "../CPlayerInterface.h"
 #include "../GameEngine.h"
 #include "../gui/WindowHandler.h"
@@ -522,8 +523,21 @@ void BattleHeroActionWindow::refresh()
 		if(reason.empty() && !available)
 			reason = "The authority currently rejects this Order's requirements.";
 		const auto & display = commandDisplay(entry.first);
+		std::string flankReadback;
+		if(entry.first == HeroCommand::FLANK)
+		{
+			const auto activeFlank = callback->battleGetHeroOrderState(side, HeroCommand::FLANK);
+			if(activeFlank)
+			{
+				const auto * target = activeFlank->flankFor(activeFlank->primaryTargetUnitId);
+				flankReadback = "\n\nContributing attack sides relative to the marked target: ";
+				flankReadback += newHorizonsFlankReadback::formatDirections(target ? target->sideMask : 0);
+				flankReadback += ".";
+			}
+		}
 		entry.second->setHelp(CButton::tooltip(display.name,
 			std::string(display.description) + (reason.empty() ? "\n\nReady: choose this Order." : "\n\nDisabled: " + reason)
+			+ flankReadback
 			+ combinedArmsHelp(rules, entry.first, hero)
 			+ (actionOpportunityContext.empty() ? "" : "\n\n" + actionOpportunityContext)
 			+ "\nSpends an available Hero or Order action; no mana."));

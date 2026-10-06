@@ -20,6 +20,7 @@
 #include "StackInfoStatusPresentation.h"
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <limits>
 #include <map>
@@ -28,6 +29,39 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+
+namespace newHorizonsFlankReadback
+{
+/// Side-mask bits follow BattleHex::EDir order, viewed from the marked target.
+inline constexpr std::array<std::string_view, 6> DIRECTION_NAMES = {
+	"top-left", "top-right", "right", "bottom-right", "bottom-left", "left"
+};
+
+inline std::vector<std::string_view> directionNames(uint8_t sideMask)
+{
+	std::vector<std::string_view> result;
+	for(std::size_t index = 0; index < DIRECTION_NAMES.size(); ++index)
+		if((sideMask & static_cast<uint8_t>(1u << index)) != 0)
+			result.push_back(DIRECTION_NAMES[index]);
+	return result;
+}
+
+inline std::string formatDirections(uint8_t sideMask)
+{
+	const auto names = directionNames(sideMask);
+	if(names.empty())
+		return "none yet";
+
+	std::string result;
+	for(const auto name : names)
+	{
+		if(!result.empty())
+			result += ", ";
+		result += name;
+	}
+	return result;
+}
+}
 
 namespace newHorizonsBattleStatus
 {

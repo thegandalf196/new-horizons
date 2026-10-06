@@ -120,16 +120,19 @@ bool orderUnitsAdjacent(const battle::Unit * first, const battle::Unit * second,
 	return false;
 }
 
-uint8_t orderContactingSideMask(const battle::Unit * attacker, const battle::Unit * defender)
+uint8_t orderContactingSideMask(const battle::Unit * attacker, const battle::Unit * defender,
+	const BattleHex & attackerPosition = BattleHex::INVALID, const BattleHex & defenderPosition = BattleHex::INVALID)
 {
 	if(!attacker || !defender)
 		return 0;
 	uint8_t sideMask = 0;
-	for(const auto & attackerHex : attacker->getHexes())
+	const auto & attackerHexes = attackerPosition.isValid() ? attacker->getHexes(attackerPosition) : attacker->getHexes();
+	const auto & defenderHexes = defenderPosition.isValid() ? defender->getHexes(defenderPosition) : defender->getHexes();
+	for(const auto & attackerHex : attackerHexes)
 	{
 		if(!attackerHex.isValid())
 			continue;
-		for(const auto & defenderHex : defender->getHexes())
+		for(const auto & defenderHex : defenderHexes)
 		{
 			if(!defenderHex.isValid() || BattleHex::getDistance(defenderHex, attackerHex) != 1)
 				continue;
@@ -1440,13 +1443,57 @@ bool CBattleInfoCallback::battleCanTriggerHeroOrderBrace(const battle::Unit * at
 }
 
 uint8_t CBattleInfoCallback::battleHeroOrderFlankSide(const battle::Unit * attacker,
-	const battle::Unit * defender) const
+	const battle::Unit * defender, const BattleHex & attackerPosition, const BattleHex & defenderPosition) const
 {
-	if(!attacker || !defender || !attacker->getPosition().isValid() || !defender->getPosition().isValid())
+	if(!attacker || !defender
+		|| !(attackerPosition.isValid() || attacker->getPosition().isValid())
+		|| !(defenderPosition.isValid() || defender->getPosition().isValid()))
 		return 0;
-	if(battleHasFormationFightingProtection(defender))
+	if(battleHasFormationFightingProtection(defender, defenderPosition))
 		return 0;
-	return orderContactingSideMask(attacker, defender);
+	return orderContactingSideMask(attacker, defender, attackerPosition, defenderPosition);
+}
+
+int CBattleInfoCallback::battleHeroOrderFlankMeleeDamagePercent(const BattleAttackInfo & attack) const
+{
+	const auto * currentBattle = getBattle();
+	if(!currentBattle || !heroCommands::isCanonicalRules(currentBattle->getHeroCommandRules())
+		|| !attack.attacker || !attack.defender || attack.shooting
+		|| attack.attacker->isGhost() || attack.defender->isGhost())
+		return 0;
+
+	const auto * attacker = attack.attacker;
+	if(!attacker->alive() || attacker->isTurret() || attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| attacker->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER)
+		return 0;
+
+	const auto attackerSide = playerToSide(battleGetOwner(attacker));
+	if(attackerSide != BattleSide::ATTACKER && attackerSide != BattleSide::DEFENDER)
+		return 0;
+	const auto * hero = battleGetOwnerHero(attacker);
+	if(!hero)
+		return 0;
+	const auto state = battleGetHeroOrderState(attackerSide, HeroCommand::FLANK);
+	if(!state || state->issuedRound != battleGetRound()
+		|| state->primaryTargetUnitId != attack.defender->unitId())
+		return 0;
+	const auto * flank = state->flankFor(attack.defender->unitId());
+	if(!flank || battleHasFormationFightingProtection(attack.defender, attack.defenderPos))
+		return 0;
+
+	const auto sideMask = battleHeroOrderFlankSide(attacker, attack.defender, attack.attackerPos, attack.defenderPos);
+	int distinctSides = 0;
+	for(auto bits = flank->sideMask; bits; bits &= static_cast<uint8_t>(bits - 1))
+		++distinctSides;
+	for(auto bits = static_cast<uint8_t>(sideMask & ~flank->sideMask); bits; bits &= static_cast<uint8_t>(bits - 1))
+		++distinctSides;
+	const int additionalSides = std::max(0, distinctSides - 1);
+	const auto & formula = currentBattle->getHeroCommandRules()["commands"]["flank"]["effects"]["meleeDamagePercent"];
+	const int baseDamagePercent = heroCommands::coefficient(formula, *hero,
+		state->warcastingBonusPercent, state->divineMandateEfficiencyBonusPercent());
+	const int additionalSidePercent = battleHeroOrderFlankAdditionalSidePercent(attackerSide,
+		state->warcastingBonusPercent, state->divineMandateEfficiencyBonusPercent());
+	return baseDamagePercent + additionalSides * additionalSidePercent;
 }
 
 int CBattleInfoCallback::battleHeroOrderFlankAdditionalSidePercent(BattleSide side,
@@ -3139,26 +3186,12 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				if(eligibleOrderUnit(info.attacker)
 					&& attackerState.primaryTargetUnitId == info.defender->unitId())
 				{
-					if(!info.shooting
-						&& !battleHasFormationFightingProtection(info.defender, info.defenderPos))
+					if(!info.shooting)
 					{
-						const auto sideMask = battleHeroOrderFlankSide(info.attacker, info.defender);
-						if(const auto * flank = attackerState.flankFor(info.defender->unitId()))
-						{
-							int distinct = 0;
-							for(auto bits = flank->sideMask; bits; bits &= static_cast<uint8_t>(bits - 1))
-								++distinct;
-							for(auto bits = static_cast<uint8_t>(sideMask & ~flank->sideMask); bits; bits &= static_cast<uint8_t>(bits - 1))
-								++distinct; // each newly contacting side established by this blow counts once
-							const int additionalSides = std::max(0, distinct - 1);
-							const int orderDamagePercent = coefficientFor(rules["flank"]["effects"]["meleeDamagePercent"], attack, &attackerState)
-								+ additionalSides * battleHeroOrderFlankAdditionalSidePercent(
-									attackerSide, attackerState.warcastingBonusPercent,
-									attackerState.divineMandateEfficiencyBonusPercent());
-							payload.heroOrderDamagePercent += orderDamagePercent;
-							if(orderDamagePercent > 0)
-								recordAttackerCause(HeroCommand::FLANK);
-						}
+						const int orderDamagePercent = battleHeroOrderFlankMeleeDamagePercent(info);
+						payload.heroOrderDamagePercent += orderDamagePercent;
+						if(orderDamagePercent > 0)
+							recordAttackerCause(HeroCommand::FLANK);
 					}
 					else if(info.shooting && info.physicalDamage && info.defender->alive()
 						&& battleGetOwner(info.attacker) != battleGetOwner(info.defender)

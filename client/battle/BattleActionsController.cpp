@@ -3334,7 +3334,22 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 					estimation.kills.max += std::min<int64_t>(splash.kills.max, splashTarget->getCount());
 				}
 
-				return formatMeleeAttack(estimation, targetStack->getName()) + "\n" + formatRetaliation(retaliation, enemyMayBeKilled);
+				std::string flankPrefix;
+				const auto battle = owner.getBattle();
+				const auto side = battle->battleGetMySide();
+				const auto activeFlank = battle->battleGetHeroOrderState(side, HeroCommand::FLANK);
+				if(activeFlank && activeFlank->issuedRound == owner.getBattle()->battleGetRound()
+					&& activeFlank->primaryTargetUnitId == targetStack->unitId()
+					&& attacker && attacker->alive() && !attacker->isGhost()
+					&& battle->playerToSide(battle->battleGetOwner(attacker)) == side
+					&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attacker)
+					&& targetStack->alive() && !targetStack->isGhost())
+				{
+					const int flankPercent = owner.getBattle()->battleHeroOrderFlankMeleeDamagePercent(attackInfo);
+					flankPrefix = "Flank +" + std::to_string(flankPercent) + "% here (included): ";
+				}
+				return flankPrefix + formatMeleeAttack(estimation, targetStack->getName())
+					+ "\n" + formatRetaliation(retaliation, enemyMayBeKilled);
 			}
 
 		case PossiblePlayerBattleAction::SHOOT:
