@@ -2,6 +2,14 @@
 
 Updated: 2026-10-06
 
+Bounded canonical hold review: Skeleton Transformer's aggregate wording settles
+selection pooling, but final integer rounding remains unspecified. Lighthouse
+source-town embarkation penalty waiver is separable from the held repeated-day
+sea-capacity bonus policy; its next slice must share projected-origin eligibility
+with authority and AI, not read only the hero's current town. Neither review is
+implementation or coverage credit. Windows37458617656 is authoritatively still
+in progress on dc5de4c48 and has advanced to client compilation.
+
 Cabir animation export checkpoint: one shared atlas scale/anchor, source
 preservation, alpha/geometry guards and native frame/GIF/contact exports exist;
 five focused synthetic tests and independent review pass. Generated walking
