@@ -15,6 +15,13 @@ The content aliases now pass exact native source/frame/pixel checks and selected
 rendered review; full client builds and ten adjacent Python checks pass. Normal
 Linux delivery, complete motion review and small/map roles remain open. This
 presentation work changes no Phase1 spell/perk/Order identity counts.
+Linux development delivery now selects snapshot86eaae127d from2081b5441.
+Exact candidate native checks,2,355-file manifest, bounded true-headless smoke
+to day7 and profile cleanup pass. Prior30bc6ea is retained. Small/encounter
+Magi colour roles are confirmed missing by private original-resource inspection;
+full animation review and SDL3 execution remain open. Phase1 coverage counts
+stay225/310 perks,61/67 combat spells,8/8 Orders, with no identity credit for
+palette presentation or diagnostic code.
 
 UP262 colour source checkpoint: Arch Mage procedural rays have an isolated red
 override; ordinary Mage projectile and Arch Mage robe/staff sprite treatment

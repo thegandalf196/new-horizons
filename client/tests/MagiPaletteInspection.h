@@ -387,6 +387,8 @@ inline void exportDiagnostic(const std::filesystem::path & destination)
 	inspect(destination, "CAMAGE.DEF", {{2, 0}, {14, 0}, {14, 12}, {15, 0}, {15, 12}, {16, 0}, {16, 12}}, census, palettes);
 	inspect(destination, "PMAGEX.DEF", {{0, 0}, {0, 1}, {0, 2}, {0, 3}, {0, 4}, {0, 5}, {0, 6}, {0, 7}, {0, 8}}, census, palettes);
 	inspect(destination, "TWCRPORT.DEF", {{0, 37}}, census, palettes);
+	inspect(destination, "CPRSMALL.DEF", {{0, 36}, {0, 37}}, census, palettes);
+	inspect(destination, "AvWattak.DEF", {{0, 68}, {0, 69}, {0, 70}, {0, 71}}, census, palettes);
 	writeCensus(destination / "palette_census.csv", census, palettes);
 	std::ofstream notes(destination / "README.txt");
 	if(!notes)

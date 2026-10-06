@@ -31,6 +31,14 @@ actual mapped holding/shooting/large-portrait/projectile outputs in private
 temporary storage. These show the requested grey/red treatment at native size;
 full motion, small/map roles, normal snapshot delivery and user-final approval
 remain open. No original sprite pixels are committed or included as art assets.
+Superseding Linux delivery checkpoint: the normal launcher now selects frozen
+snapshot86eaae127d from committed2081b5441, including the battle/large-portrait
+grey/red aliases and red Mage projectile. Native checks, manifest verification,
+bounded true-headless progression to day7 and read-only launcher preflight pass.
+This is a development delivery, not graphical motion/user-final approval.
+Private inspection confirms CPRSMALL frame37 and AvWattak frames70/71 still
+need their own Arch Mage colour treatment; their shared-resource indices cannot
+be borrowed from CAMAGE or TWCRPORT. These remaining roles stay **Not done**.
 
 Cabir Linux development delivery,2026-10-06: snapshot30bc6ea from committed
 360b91d06 is selected by the normal Linux script. Original portrait, battle,
