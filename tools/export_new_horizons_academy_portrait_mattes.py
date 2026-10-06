@@ -65,8 +65,16 @@ CREATURES = {
         "mask": REVISION / "mattes/naga.png",
     },
     "nagaQueen": {
-        "master": REVISION / "masters/nagaQueen-matte.png",
-        "mask": REVISION / "mattes/nagaQueen.png",
+        "master": REVISION / "masters/nagaQueen-matte-v2.png",
+        "mask": REVISION / "mattes/nagaQueen-v2.png",
+    },
+    "giant": {
+        "master": REVISION / "masters/giant-matte.png",
+        "mask": REVISION / "mattes/giant.png",
+    },
+    "titan": {
+        "master": REVISION / "masters/titan-matte.png",
+        "mask": REVISION / "mattes/titan.png",
     },
 }
 

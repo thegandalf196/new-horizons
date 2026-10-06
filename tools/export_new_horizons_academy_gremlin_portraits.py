@@ -26,6 +26,8 @@ BACKDROP_EXPORTS = (
     IMAGE_ROOT / "NH_academy_archMage_icon_large.png",
     IMAGE_ROOT / "NH_academy_genie_icon_large.png",
     IMAGE_ROOT / "NH_academy_masterGenie_icon_large.png",
+    IMAGE_ROOT / "NH_academy_naga_icon_large.png",
+    IMAGE_ROOT / "NH_academy_nagaQueen_icon_large.png",
 )
 MASKS = {
     "gremlin": (
@@ -60,8 +62,18 @@ MASKS = {
         ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/masterGenie-v2.png",
         IMAGE_ROOT / "NH_academy_masterGenie_portrait_mask.png",
     ),
+    "naga": (
+        ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/naga.png",
+        IMAGE_ROOT / "NH_academy_naga_portrait_mask.png",
+    ),
+    "nagaQueen": (
+        ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/nagaQueen-v2.png",
+        IMAGE_ROOT / "NH_academy_nagaQueen_portrait_mask.png",
+    ),
 }
 MASTER_GENIE_V2_SHA256 = "9f5291e7d50b29a4a16d8c54aeba2de9b4566456d5b5823e4d18023ac6659a40"
+NAGA_SHA256 = "c4e58bcf3c9b84f63ec7137c37da23fe3bc898a0e77e653ee6ad016c3997e453"
+NAGA_QUEEN_V2_SHA256 = "aa282c71f59b720ccc2604e81b3bc1527b8e58b7ab60403eee9fb28eb9f64c30"
 # Pillow's right/bottom-excluded crop rectangle from the approved composition.
 SOURCE_CROP = (0, 10, 100, 120)
 OUTPUT_SIZE = (58, 64)
@@ -83,6 +95,18 @@ def verify(check: bool, parser: argparse.ArgumentParser) -> None:
     master_genie_sha256 = hashlib.sha256(master_genie_matte.read_bytes()).hexdigest()
     if master_genie_sha256 != MASTER_GENIE_V2_SHA256:
         parser.error(f"Master Genie v2 matte SHA256 differs from the reviewed source: {master_genie_matte}")
+    naga_matte = MASKS["naga"][0]
+    if not naga_matte.is_file():
+        parser.error(f"missing pinned Naga matte: {naga_matte}")
+    naga_sha256 = hashlib.sha256(naga_matte.read_bytes()).hexdigest()
+    if naga_sha256 != NAGA_SHA256:
+        parser.error(f"Naga matte SHA256 differs from the reviewed source: {naga_matte}")
+    naga_queen_matte = MASKS["nagaQueen"][0]
+    if not naga_queen_matte.is_file():
+        parser.error(f"missing pinned Naga Queen v2 matte: {naga_queen_matte}")
+    naga_queen_sha256 = hashlib.sha256(naga_queen_matte.read_bytes()).hexdigest()
+    if naga_queen_sha256 != NAGA_QUEEN_V2_SHA256:
+        parser.error(f"Naga Queen v2 matte SHA256 differs from the reviewed source: {naga_queen_matte}")
     expected_backdrop = render_backdrop()
     expected_pixels = expected_backdrop.tobytes()
 

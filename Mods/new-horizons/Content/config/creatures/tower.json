@@ -105,5 +105,15 @@
 		"graphics": {
 			"iconLarge": "NH_academy_masterGenie_icon_large.png"
 		}
+	},
+	"core:naga": {
+		"graphics": {
+			"iconLarge": "NH_academy_naga_icon_large.png"
+		}
+	},
+	"core:nagaQueen": {
+		"graphics": {
+			"iconLarge": "NH_academy_nagaQueen_icon_large.png"
+		}
 	}
 }

@@ -40,6 +40,8 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
             "NH_academy_archMage_icon_large.png",
             "NH_academy_genie_icon_large.png",
             "NH_academy_masterGenie_icon_large.png",
+            "NH_academy_naga_icon_large.png",
+            "NH_academy_nagaQueen_icon_large.png",
         )
         decoded = []
         for path in backdrop_paths:
@@ -49,7 +51,7 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
                 decoded.append(image.tobytes())
         self.assertTrue(all(pixels == decoded[0] for pixels in decoded[1:]))
 
-        creatures = ("gremlin", "masterGremlin", "ironGolem", "stoneGolem", "mage", "archMage", "genie")
+        creatures = ("gremlin", "masterGremlin", "ironGolem", "stoneGolem", "mage", "archMage", "genie", "naga")
         for creature in creatures:
             runtime = IMAGE_ROOT / f"NH_academy_{creature}_portrait_mask.png"
             source = ROOT / f"assets/new-horizons/academy/portrait-revisions/v1/mattes/{creature}.png"
@@ -63,6 +65,22 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
         self.assertEqual(
             (IMAGE_ROOT / "NH_academy_masterGenie_portrait_mask.png").read_bytes(), master_genie_bytes
         )
+        naga_source = ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/naga.png"
+        naga_bytes = naga_source.read_bytes()
+        self.assertEqual(
+            hashlib.sha256(naga_bytes).hexdigest(),
+            "c4e58bcf3c9b84f63ec7137c37da23fe3bc898a0e77e653ee6ad016c3997e453",
+        )
+        self.assertEqual((IMAGE_ROOT / "NH_academy_naga_portrait_mask.png").read_bytes(), naga_bytes)
+        naga_queen_source = ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/nagaQueen-v2.png"
+        naga_queen_bytes = naga_queen_source.read_bytes()
+        self.assertEqual(
+            hashlib.sha256(naga_queen_bytes).hexdigest(),
+            "aa282c71f59b720ccc2604e81b3bc1527b8e58b7ab60403eee9fb28eb9f64c30",
+        )
+        self.assertEqual(
+            (IMAGE_ROOT / "NH_academy_nagaQueen_portrait_mask.png").read_bytes(), naga_queen_bytes
+        )
 
     def test_only_reviewed_large_portrait_routes_are_registered(self):
         config = parse_jsonc((ROOT / "Mods/new-horizons/Content/config/creatures/tower.json").read_text())
@@ -75,6 +93,8 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
             "core:archMage": "NH_academy_archMage_icon_large.png",
             "core:genie": "NH_academy_genie_icon_large.png",
             "core:masterGenie": "NH_academy_masterGenie_icon_large.png",
+            "core:naga": "NH_academy_naga_icon_large.png",
+            "core:nagaQueen": "NH_academy_nagaQueen_icon_large.png",
         }
         for creature, image in expected.items():
             with self.subTest(creature=creature):
@@ -96,6 +116,8 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
         self.assertEqual(core["archMage"]["index"], 35)
         self.assertEqual(core["genie"]["index"], 36)
         self.assertEqual(core["masterGenie"]["index"], 37)
+        self.assertEqual(core["naga"]["index"], 38)
+        self.assertEqual(core["nagaQueen"]["index"], 39)
         fixture = (ROOT / "client/tests/AcademyBuiltIconRuntimeTest.cpp").read_text(encoding="utf-8")
         self.assertIn('{"ironGolem", "NH_academy_ironGolem_icon_large.png", "NH_academy_ironGolem_portrait_mask.png", 32, 34}', fixture)
         self.assertIn('{"stoneGolem", "NH_academy_stoneGolem_icon_large.png", "NH_academy_stoneGolem_portrait_mask.png", 33, 35}', fixture)
@@ -107,6 +129,14 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
         )
         self.assertIn(
             '{"masterGenie", "NH_academy_masterGenie_icon_large.png", "NH_academy_masterGenie_portrait_mask.png", 37, 39}',
+            fixture,
+        )
+        self.assertIn(
+            '{"naga", "NH_academy_naga_icon_large.png", "NH_academy_naga_portrait_mask.png", 38, 40}',
+            fixture,
+        )
+        self.assertIn(
+            '{"nagaQueen", "NH_academy_nagaQueen_icon_large.png", "NH_academy_nagaQueen_portrait_mask.png", 39, 41}',
             fixture,
         )
         config = (ROOT / "Mods/new-horizons/Content/config/creatures/tower.json").read_text(encoding="utf-8")
