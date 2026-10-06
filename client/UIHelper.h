@@ -15,6 +15,8 @@
 #include "../lib/constants/EntityIdentifiers.h"
 #include "../lib/texts/MetaString.h"
 
+#include <cstdint>
+
 struct MoveArtifactInfo;
 struct Component;
 class CArtifactSet;
@@ -25,6 +27,11 @@ class CStackBasicDescriptor;
 namespace newHorizonsNecromancy
 {
 struct NecromancyResult;
+}
+
+namespace newHorizonsHeroes
+{
+struct LeadershipSlotCapacity;
 }
 
 namespace UIHelper
@@ -51,4 +58,10 @@ namespace UIHelper
     /// authoritative for every transfer request.
     bool hasNoLeadershipCapacityForMerge(const CArmedInstance * source, const CArmedInstance * destination,
         SlotID sourceSlot, SlotID destinationSlot);
+    /// Localized, read-only explanation of requested per-slot Leadership demand.
+    std::string getNewHorizonsLeadershipProposalText(const newHorizonsHeroes::LeadershipSlotCapacity & capacity,
+        int64_t existingCount, int64_t incomingCount);
+    /// Compact localized summary for the existing army-transfer hover line.
+    std::string getNewHorizonsLeadershipProposalSummary(const newHorizonsHeroes::LeadershipSlotCapacity & capacity,
+        int64_t existingCount, int64_t incomingCount);
 }

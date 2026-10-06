@@ -247,12 +247,11 @@ void CGarrisonSlot::hover (bool on)
 			{
 				if(const auto capacity = receivingHero->getLeadershipSlotCapacity(source->creature->getId()))
 				{
-					int incoming = source->myStack->getCount();
+					int64_t incoming = source->myStack->getCount();
 					if(source->getObj()->needsLastStack() && source->getObj()->stacksCount() == 1 && !creature)
 						incoming--;
-					const int resulting = creature == source->creature ? incoming + myStack->getCount() : incoming;
-					temp.appendRawString(" | Leadership: " + std::to_string(resulting) + "/"
-						+ std::to_string(capacity->maximum) + " max");
+					const int64_t existing = creature == source->creature ? myStack->getCount() : 0;
+					temp.appendRawString(UIHelper::getNewHorizonsLeadershipProposalSummary(*capacity, existing, incoming));
 				}
 			}
 		}

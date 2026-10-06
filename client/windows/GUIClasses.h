@@ -20,6 +20,7 @@
 #include <array>
 
 class CGHeroInstance;
+class CCreature;
 class CGObjectInstance;
 class CGDwelling;
 class CArmedInstance;
@@ -55,6 +56,7 @@ class GraphicalPrimitiveCanvas;
 class TransparentFilledRectangle;
 class CSecSkillPlace;
 class CArtPlace;
+class LRClickableAreaWText;
 
 /// Displays a spell symbol on the native rolled-parchment surface when the
 /// spell frame contains only a standalone icon. Complete 83x61 scroll frames
@@ -119,11 +121,13 @@ class CRecruitmentWindow : public CStatusbarWindow
 	std::shared_ptr<CLabel> availableTitle;
 	std::shared_ptr<CLabel> toRecruitTitle;
 	std::shared_ptr<CLabel> leadershipLimit;
+	std::shared_ptr<LRClickableAreaWText> leadershipHelp;
 	std::array<std::shared_ptr<CLabel>, 3> categoryHeaders;
 	std::shared_ptr<CreatureCostBox> costPerTroopValue;
 	std::shared_ptr<CreatureCostBox> totalCostValue;
 
 	void select(std::shared_ptr<CCreatureCard> card);
+	void updateLeadershipProposalHelp(int proposedCount);
 	void buy();
 	void sliderMoved(int to);
 	static ImagePath getRecruitmentBackground(const CGDwelling * dwelling, int level);
@@ -148,6 +152,11 @@ class CSplitWindow : public CWindowObject
 	std::function<void(int, int)> callback;
 	int leftAmount;
 	int rightAmount;
+	int initialLeftAmount;
+	int initialRightAmount;
+	const CCreature * splitCreature;
+	const CArmedInstance * leftArmy;
+	const CArmedInstance * rightArmy;
 
 	int leftMin;
 	int rightMin;
@@ -161,11 +170,14 @@ class CSplitWindow : public CWindowObject
 	std::shared_ptr<CTextInput> rightInput;
 	std::shared_ptr<CAnimImage> leftOwnerMarker;
 	std::shared_ptr<CAnimImage> rightOwnerMarker;
+	std::shared_ptr<LRClickableAreaWText> leftLeadershipHelp;
+	std::shared_ptr<LRClickableAreaWText> rightLeadershipHelp;
 	std::shared_ptr<CMultiLineLabel> leftOwnerLabel;
 	std::shared_ptr<CMultiLineLabel> rightOwnerLabel;
 
 	void setAmountText(std::string text, bool left);
 	void setAmount(int value, bool left);
+	void updateLeadershipReadback();
 	void sliderMoved(int value);
 	void apply();
 

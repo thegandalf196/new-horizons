@@ -2,6 +2,29 @@
 
 Updated: 2026-10-06
 
+UP261 required Leadership feedback: proposed additional Leadership, aggregate
+slot demand, legal incoming count and exact point shortfall now use shared
+receiving-hero capacity in recruitment help, transfer hover and split owner help.
+No army-wide pool, changed transfer rule, new raster or action control. Retry
+build55262 succeeds; five pure cases plus two real admission controls pass7/7,
+zero skips, in947ms. Source/routing/split guards, five translation/generator tests,
+module drift and independent review pass. Rendered fit, status-bar truncation,
+actual GUI/privacy execution and delivery remain Phase2/delivery gates. Required
+UI breadth increases;225/310 perks,61/67 combat spells and8/8 Orders are unchanged.
+
+Delivery follow-up: UP257–UP260 now ship in the normal Linux launcher through
+reviewed snapshot990be55, exact committed48d5a2b3f. Its2,278-file manifest stays
+unchanged after one bounded true-headless smoke through AI day6 and verified
+process/runtime/lock cleanup. Deliberate timeout124 is not full-game acceptance.
+Normal launcher verify-only selects the promoted snapshot; prior536e86 is
+retained. Native rendering, FPS, ordinary pointer interactions and executed
+privacy boundaries remain unverified. Shield of Chaos's default-neutral warning,
+redundant masterChainLightning namespace and bounded NK2 node-capacity misses
+are deferred diagnostics, not demonstrated promotion blockers. Windows notice
+preflight37483116278 succeeds; full37483347788 is still live on48d5a2b3f.
+Earlier delivery-pending statements below describe their historical checkpoints.
+Coverage remains225/310 perks,61/67 combat spells and8/8 Orders.
+
 UP259/260 required-UI checkpoint: generic compact combat Luck now has exact
 shared target-neutral value and scoped source/override help, composed with
 existing Sylvan details in one native hitbox. Both Luck/Morale source strings

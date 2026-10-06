@@ -1,5 +1,19 @@
 # New Horizons UI and asset status register
 
+Proposed Leadership demand,2026-10-06: **Provisional**. UP261 adds localized
+per-slot requested demand, legal incoming count and capacity shortfall to existing
+recruitment-row help, army-transfer hover and split-dialog owner-marker help.
+No new raster, panel, ornament or transfer behavior. Ineligible help is disabled;
+recruitment help stops above cost boxes and split help avoids count inputs.
+Source guard and independent review pass; retry55262 builds client/native and
+the seven focused native cases pass with zero skips.
+Rendered fit, actual input/privacy behavior and playable delivery remain open.
+
+Delivery follow-up: UP257–UP260 are now in normal Linux snapshot990be55 from
+committed48d5a2b3f after bounded headless smoke and independent promotion review.
+Earlier delivery-pending text below is historical; rendering/FPS/input gates
+remain open and none of the artwork is newly Final.
+
 Combat Luck readback and source cache,2026-10-06: **Provisional**. UP259 adds
 localized exact target-neutral attack Luck and scoped source/override help to
 the existing compact Luck row, composed with Sylvan details in one hitbox.

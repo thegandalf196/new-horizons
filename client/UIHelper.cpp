@@ -18,8 +18,10 @@
 #include "../lib/mapObjects/CGHeroInstance.h"
 #include "../lib/mapObjects/CGTownInstance.h"
 #include "../lib/entities/hero/NewHorizonsNecromancy.h"
+#include "../lib/entities/hero/NewHorizonsCapabilityRules.h"
 #include "../lib/networkPacks/ArtifactLocation.h"
 #include "../lib/CRandomGenerator.h"
+#include "widgets/NewHorizonsLeadershipReadback.h"
 #include "GameInstance.h"
 
 std::vector<Component> UIHelper::getArtifactsComponents(const CArtifactSet & artSet, const std::vector<MoveArtifactInfo> & movedPack)
@@ -343,4 +345,49 @@ bool UIHelper::hasNoLeadershipCapacityForMerge(const CArmedInstance * source, co
 		return false;
 
 	return destination->getStackCount(destinationSlot) >= capacity->maximum;
+}
+
+std::string UIHelper::getNewHorizonsLeadershipProposalText(const newHorizonsHeroes::LeadershipSlotCapacity & capacity,
+	int64_t existingCount, int64_t incomingCount)
+{
+	if(!GAME)
+		return {};
+
+	const auto proposal = newHorizonsLeadershipReadback::evaluate(capacity, existingCount, incomingCount);
+	MetaString text;
+	text.appendTextID("new-horizons.combat.leadership.proposal");
+	text.replaceTokenNumber("%ADDED%", proposal.addedLeadership);
+	text.replaceTokenNumber("%DEMAND%", proposal.resultingDemand);
+	text.replaceTokenNumber("%CAPACITY%", proposal.leadership);
+	text.replaceTokenNumber("%MAX%", proposal.maximumCount);
+	text.replaceTokenNumber("%LEGAL%", proposal.legalIncomingCount);
+
+	if(proposal.excess > 0)
+	{
+		text.appendEOL();
+		text.appendTextID("new-horizons.combat.leadership.proposalExcess");
+		text.replaceTokenNumber("%EXCESS%", proposal.excess);
+	}
+	return text.toString(&GAME->translator());
+}
+
+std::string UIHelper::getNewHorizonsLeadershipProposalSummary(const newHorizonsHeroes::LeadershipSlotCapacity & capacity,
+	int64_t existingCount, int64_t incomingCount)
+{
+	if(!GAME)
+		return {};
+
+	const auto proposal = newHorizonsLeadershipReadback::evaluate(capacity, existingCount, incomingCount);
+	MetaString text;
+	text.appendTextID("new-horizons.combat.leadership.transfer");
+	text.replaceTokenNumber("%RESULTING%", proposal.resultingCount);
+	text.replaceTokenNumber("%MAX%", proposal.maximumCount);
+	text.replaceTokenNumber("%ADDED%", proposal.addedLeadership);
+	text.replaceTokenNumber("%LEGAL%", proposal.legalIncomingCount);
+	if(proposal.excess > 0)
+	{
+		text.appendTextID("new-horizons.combat.leadership.transferExcess");
+		text.replaceTokenNumber("%EXCESS%", proposal.excess);
+	}
+	return text.toString(&GAME->translator());
 }

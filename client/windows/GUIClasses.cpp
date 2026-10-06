@@ -22,6 +22,7 @@
 #include "../CServerHandler.h"
 #include "../Client.h"
 #include "../CPlayerInterface.h"
+#include "../UIHelper.h"
 
 #include "../GameEngine.h"
 #include "../GameInstance.h"
@@ -34,6 +35,7 @@
 #include "../widgets/CComponent.h"
 #include "../widgets/CComponentHolder.h"
 #include "../widgets/CGarrisonInt.h"
+#include "../widgets/MiscWidgets.h"
 #include "../widgets/CreatureCostBox.h"
 #include "../widgets/ControllerActionButton.h"
 #include "../widgets/CTextInput.h"
@@ -379,6 +381,41 @@ void CRecruitmentWindow::select(std::shared_ptr<CCreatureCard> card)
 		maxButton->block(maxAmount == 0);
 		slider->block(maxAmount == 0);
 	}
+	else
+	{
+		leadershipLimit->setText("");
+		updateLeadershipProposalHelp(0);
+	}
+}
+
+void CRecruitmentWindow::updateLeadershipProposalHelp(int proposedCount)
+{
+	if(!leadershipHelp)
+		return;
+
+	leadershipHelp->text.clear();
+	leadershipHelp->hoverText.clear();
+	const auto * hero = dynamic_cast<const CGHeroInstance *>(dst);
+	if(!selected || !hero)
+	{
+		leadershipHelp->disable();
+		return;
+	}
+
+	const auto capacity = hero->getLeadershipSlotCapacity(selected->creature->getId());
+	if(!capacity)
+	{
+		leadershipHelp->disable();
+		return;
+	}
+
+	const auto slot = dst->getSlotFor(selected->creature->getId());
+	const int existing = slot.validSlot() ? dst->getStackCount(slot) : 0;
+	const auto text = UIHelper::getNewHorizonsLeadershipProposalText(*capacity, existing, proposedCount);
+	leadershipHelp->text = text;
+	leadershipHelp->hoverText = text;
+	if(leadershipHelp->isDisabled())
+		leadershipHelp->enable();
 }
 
 void CRecruitmentWindow::close()
@@ -530,6 +567,8 @@ CRecruitmentWindow::CRecruitmentWindow(const CGDwelling * Dwelling, int Level, c
 	toRecruitTitle = std::make_shared<CLabel>(279 + layoutOffsetX, 233, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->allTexts[16]);
 	leadershipLimit = std::make_shared<CLabel>(243 + layoutOffsetX, 214, FONT_SMALL,
 		ETextAlignment::CENTER, Colors::YELLOW, "", 360);
+	leadershipHelp = std::make_shared<LRClickableAreaWText>(Rect(63 + layoutOffsetX, 207, 360, 14));
+	leadershipHelp->disable();
 
 	availableCreaturesChanged();
 }
@@ -666,6 +705,7 @@ void CRecruitmentWindow::sliderMoved(int to)
 	toRecruitValue->setText(std::to_string(to));
 
 	totalCostValue->set(recruitmentCost * to);
+	updateLeadershipProposalHelp(to);
 }
 
 CSplitWindow::CSplitWindow(const CCreature * creature, std::function<void(int, int)> callback_, int leftMin_, int rightMin_,
@@ -674,6 +714,11 @@ CSplitWindow::CSplitWindow(const CCreature * creature, std::function<void(int, i
 	callback(callback_),
 	leftAmount(leftAmount_),
 	rightAmount(rightAmount_),
+	initialLeftAmount(leftAmount_),
+	initialRightAmount(rightAmount_),
+	splitCreature(creature),
+	leftArmy(leftOwnerInfo.army),
+	rightArmy(rightOwnerInfo.army),
 	leftMin(leftMin_),
 	rightMin(rightMin_)
 {
@@ -690,13 +735,13 @@ CSplitWindow::CSplitWindow(const CCreature * creature, std::function<void(int, i
 
 	constexpr int leftSideCenter = 70;
 	constexpr int rightSideCenter = 227;
+	constexpr int ownerMarkerY = 194;
 
-	auto createOwnerMarker = [](const CSplitWindowOwner & owner, int centerX)
+	auto createOwnerMarker = [ownerMarkerY](const CSplitWindowOwner & owner, int centerX)
 	{
 		if(!owner.army)
 			return std::shared_ptr<CAnimImage>();
 
-		constexpr int ownerMarkerY = 194;
 		constexpr int markerHalfWidth = 29;
 		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(owner.army))
 			return std::make_shared<CAnimImage>(AnimationPath::builtin("PortraitsLarge"), hero->getIconIndex(), 0,
@@ -712,6 +757,10 @@ CSplitWindow::CSplitWindow(const CCreature * creature, std::function<void(int, i
 
 	leftOwnerMarker = createOwnerMarker(leftOwnerInfo, leftSideCenter);
 	rightOwnerMarker = createOwnerMarker(rightOwnerInfo, rightSideCenter);
+	leftLeadershipHelp = std::make_shared<LRClickableAreaWText>(Rect(leftSideCenter - 29, ownerMarkerY, 58, 64));
+	rightLeadershipHelp = std::make_shared<LRClickableAreaWText>(Rect(rightSideCenter - 29, ownerMarkerY, 58, 64));
+	leftLeadershipHelp->disable();
+	rightLeadershipHelp->disable();
 
 	const auto * leftHero = leftOwnerInfo.army ? dynamic_cast<const CGHeroInstance *>(leftOwnerInfo.army) : nullptr;
 	const auto * rightHero = rightOwnerInfo.army ? dynamic_cast<const CGHeroInstance *>(rightOwnerInfo.army) : nullptr;
@@ -756,6 +805,7 @@ CSplitWindow::CSplitWindow(const CCreature * creature, std::function<void(int, i
 	MetaString titleStr = MetaString::createFromTextID("core.genrltxt.256");
 	titleStr.replaceNamePlural(creature->getId());
 	title = std::make_shared<CLabel>(150, 34, FONT_BIG, ETextAlignment::CENTER, Colors::YELLOW, titleStr.toString(&GAME->translator()));
+	updateLeadershipReadback();
 }
 
 void CSplitWindow::setAmountText(std::string text, bool left)
@@ -789,6 +839,46 @@ void CSplitWindow::setAmount(int value, bool left)
 
 	leftInput->setText(std::to_string(leftAmount));
 	rightInput->setText(std::to_string(rightAmount));
+	updateLeadershipReadback();
+}
+
+void CSplitWindow::updateLeadershipReadback()
+{
+	const auto updateSide = [this](const std::shared_ptr<LRClickableAreaWText> & help,
+		const CArmedInstance * army, int initialCount, int currentCount)
+	{
+		if(!help)
+			return;
+
+		help->text.clear();
+		help->hoverText.clear();
+		const auto * hero = dynamic_cast<const CGHeroInstance *>(army);
+		if(!hero || !splitCreature)
+		{
+			help->disable();
+			return;
+		}
+
+		const auto capacity = hero->getLeadershipSlotCapacity(splitCreature->getId());
+		if(!capacity)
+		{
+			help->disable();
+			return;
+		}
+
+		const int64_t normalizedInitial = std::max<int64_t>(0, initialCount);
+		const int64_t normalizedCurrent = std::max<int64_t>(0, currentCount);
+		const int64_t existingCount = std::min(normalizedInitial, normalizedCurrent);
+		const int64_t incomingCount = std::max<int64_t>(0, normalizedCurrent - normalizedInitial);
+		const auto text = UIHelper::getNewHorizonsLeadershipProposalText(*capacity, existingCount, incomingCount);
+		help->text = text;
+		help->hoverText = text;
+		if(help->isDisabled())
+			help->enable();
+	};
+
+	updateSide(leftLeadershipHelp, leftArmy, initialLeftAmount, leftAmount);
+	updateSide(rightLeadershipHelp, rightArmy, initialRightAmount, rightAmount);
 }
 
 void CSplitWindow::apply()

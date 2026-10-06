@@ -2,6 +2,16 @@
 
 ## Purpose
 
+### 2026-10-06 — Split-owner geometry lambda capture
+
+UP261 build90062 fails because ownerMarkerY is moved from inside a captureless
+lambda to its surrounding scope and then forwarded into make_shared. That
+forwarding odr-uses the local constexpr, so it needs an explicit value capture.
+Root adds `[ownerMarkerY]`; retry55262 builds client/native successfully and
+the focused seven-case filter passes with zero skips. Preserve the geometry and
+callback semantics; do not duplicate constants or weaken build gates. A source
+guard/review alone did not catch this compilation defect.
+
 ### 2026-10-06 — Hovered-frame source-description formatting
 
 UP260 caller tracing shows updateHoveredStacks refreshes an unchanged inspected

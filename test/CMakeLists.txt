@@ -267,6 +267,7 @@ set(test_SRCS
 		battle/BattlecraftStatusPresentationTest.cpp
 		battle/BattleMoraleReadbackTest.cpp
 		battle/BattleLuckReadbackTest.cpp
+		battle/LeadershipProposalReadbackTest.cpp
 		battle/SylvanLuckStatusPresentationTest.cpp
 		server/battles/NewHorizonsElementalOrbsTest.cpp
 		server/battles/NewHorizonsMagicResistanceTest.cpp

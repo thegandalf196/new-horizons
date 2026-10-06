@@ -352,6 +352,7 @@ set(vcmiclientcommon_HEADERS
 	widgets/CComponentHolder.h
 	widgets/CExchangeController.h
 	widgets/CGarrisonInt.h
+	widgets/NewHorizonsLeadershipReadback.h
 	widgets/CreatureCostBox.h
 	widgets/ComboBox.h
 	widgets/ControllerActionButton.h
