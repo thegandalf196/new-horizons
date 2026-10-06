@@ -2,6 +2,23 @@
 
 ## Purpose
 
+### 2026-10-06 — Private magic-art lookup and native-image validation
+
+Raw image existence checks did not follow the renderer's SPRITES/, DATA/, raw
+lookup and could silently disable valid module art. Match resource lookup before
+claiming an optional hook works. The client/fixture build and opt-in native check
+pass after correction; actual BattleHero lifecycle remains separately unverified.
+The first native fixture wrongly required visible glow pixels on every frame;
+the supplied final frame intentionally clears the glow. Assert sequence-wide
+changes while retaining per-frame geometry and transparent-pixel invariants.
+The supplied representative alpha is binary; conditional blend checks are not
+evidence of a partial-alpha sample. Do not weaken real assertions or invent one.
+Offline TPMAGE reconstruction initially decoded 24-bit PCX as RGB instead of BGR.
+Follow the actual loader before judging palette fit. The corrected opaque book
+crop still has a visible rectangle and remains visually unaccepted. Clean-plate
+composition must export the local67x85 alpha patch, never the full800x600 room
+positioned at378,344. Preserve pixels outside restoration/cutout masks.
+
 ### 2026-10-06 — Optional magic-art metadata and battle defining include
 
 The first casting-hook compile exposed an incomplete IBattleInfo at the
