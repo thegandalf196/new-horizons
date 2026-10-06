@@ -16,7 +16,10 @@ the normal Linux snapshotd5b344341f; manual rendered acceptance remains open.
 The one-line correction builds and a bounded private headless smoke reaches
 AI day6 without ammo-overuse/crash/request-rejection markers. Deterministic
 fixture plus three adjacent controls pass4/4, zero skips, in1.480s; independent
-review finds no blocker. Playable delivery remains pending. Phase2 finding: the same smoke emits
+review finds no blocker. Fix `4a8729506` is rebuilt and delivered through normal
+Linux snapshot `4af281d505a5`; its private20-second smoke reaches AI day5 without
+recorded ammo/crash/request-rejection markers (deliberate timeout). Manual play
+acceptance remains open. Phase2 finding: the earlier smoke emits
 `Unauthorized obstacles access attempt, assuming massive spell`; retain this
 separately for obstacle/spell-preview access diagnosis, not as an ammo-fix failure
 or permission to broaden this Phase1 slice into a full integration campaign.
