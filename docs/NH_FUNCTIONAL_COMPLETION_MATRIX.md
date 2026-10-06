@@ -2,6 +2,12 @@
 
 Updated: 2026-10-05
 
+Latest playable: source `9540b0643`, verified frozen snapshot
+`bad986b13d1b1711a93d901a1749b73568d078291a01bb2644f39c2e64342011`,
+delivers12/14 Academy portraits through the unchanged Linux script. Exact
+build and bounded content/map/AI checks pass; user visual acceptance remains
+open. No gameplay coverage increase. Older delivery numbers below are history.
+
 Latest UP239 source coverage:12/14, adding provisionally accepted Titan v3.
 Native twelve-portrait consumer, build, export checks and source review pass.
 Five isolated contour uncertainties are deferred aesthetic polish. Two rejected

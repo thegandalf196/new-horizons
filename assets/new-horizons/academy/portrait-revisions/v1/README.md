@@ -1,5 +1,12 @@
 # Academy large-portrait background mattes
 
+Latest delivery: source `9540b0643` supplies12/14 provisional portraits through
+the promoted Linux snapshot. Obsidian v2/v3 native reductions are reproducible
+but rejected: v2 retains225 pixels in the forbidden lower-left architecture
+region; v3 removes nearly all of that region but leaks the upper-left spire
+and cuts holes through foreground. Neither is a runtime route. A mechanical
+export PASS is not art approval.
+
 Latest source: Titan v3 provisionally accepted and runtime-integrated, ID41/frame43.
 Its recognizable anatomy and lightning pass native review; five isolated contour
 uncertainties are deferred aesthetic polish rather than Phase1 blockers. All

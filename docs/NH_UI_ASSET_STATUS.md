@@ -1,5 +1,10 @@
 # New Horizons UI and asset status register
 
+Latest playable: source `9540b0643` delivers12/14 provisional Academy portraits.
+Frozen snapshot `bad986b13d1b1711a93d901a1749b73568d078291a01bb2644f39c2e64342011`
+passes content/map/AI smoke and checksum-verified promotion. Gargoyles remain
+unfinished and no artwork is newly Final. Previous delivery numbers are history.
+
 Latest source:12/14 Academy portraits. Titan v3 is Provisional after native
 anatomy review; five isolated contour uncertainties are deferred, not Final
 approval. Actual twelve-portrait consumer/build pass. Gargoyle revisions remain

@@ -36,6 +36,14 @@ CREATURES = {
         "master": REVISION / "masters/obsidianGargoyle-matte.png",
         "mask": REVISION / "mattes/obsidianGargoyle.png",
     },
+    "obsidianGargoyleV2": {
+        "master": REVISION / "masters/obsidianGargoyle-matte-v2.png",
+        "mask": REVISION / "mattes/obsidianGargoyle-v2.png",
+    },
+    "obsidianGargoyleV3": {
+        "master": REVISION / "masters/obsidianGargoyle-matte-v3.png",
+        "mask": REVISION / "mattes/obsidianGargoyle-v3.png",
+    },
     "ironGolem": {
         "master": REVISION / "masters/ironGolem-matte.png",
         "mask": REVISION / "mattes/ironGolem.png",
