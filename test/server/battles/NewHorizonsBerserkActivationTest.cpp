@@ -10,6 +10,7 @@
 #include "HeroCommandFixture.h"
 #include "../../SpellPointTestUtils.h"
 #include "../../../lib/CRandomGenerator.h"
+#include "../../../lib/GameConstants.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/bonuses/BonusSelector.h"
@@ -23,20 +24,83 @@
 
 #include <vstd/RNG.h>
 
+namespace
+{
+JsonNode magicRulesForVersion(const int version)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	if(version == newHorizonsMagic::CURRENT_RULESET_VERSION)
+		return rules;
+
+	rules["rulesetVersion"].Integer() = version;
+	rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	rules.Struct().erase("spellcraftEfficiencyPercent");
+	for(auto & [spellId, spell] : rules["spells"].Struct())
+	{
+		(void)spellId;
+		spell.Struct().erase("selectedPlacement");
+		spell.Struct().erase("earthquake");
+		spell.Struct().erase("structures");
+		spell.Struct().erase("heroAccess");
+		spell.Struct().erase("restoration");
+		if(spell.Struct().contains("variant"))
+		{
+			spell.Struct().erase("variant");
+			spell["active"].Bool() = false;
+		}
+	}
+	if(version == newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION)
+	{
+		newHorizonsMagic::validateRules(rules);
+		return rules;
+	}
+
+	rules.Struct().erase("spellPoints");
+	rules.Struct().erase("mageGuildGeneration");
+	rules.Struct().erase("physicalDamageReductionCapPercent");
+	rules.Struct().erase("warcasting");
+	for(auto & [factionId, faction] : rules["factions"].Struct())
+	{
+		(void)factionId;
+		faction["major"] = faction["preferredA"];
+		faction["minor"] = faction["preferredB"];
+		faction.Struct().erase("preferredA");
+		faction.Struct().erase("preferredB");
+	}
+	for(auto & [spellId, spell] : rules["spells"].Struct())
+	{
+		(void)spellId;
+		spell.Struct().erase("active");
+		spell.Struct().erase("directDamage");
+		spell.Struct().erase("cureAfflictions");
+	}
+	for(auto it = rules["spells"].Struct().begin(); it != rules["spells"].Struct().end();)
+	{
+		if(it->first.starts_with(GameConstants::NEW_HORIZONS_MOD_SCOPE + ':'))
+			it = rules["spells"].Struct().erase(it);
+		else
+			++it;
+	}
+	rules.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
+	newHorizonsMagic::validateRules(rules);
+	return rules;
+}
+}
+
 class NewHorizonsBerserkActivationTest : public HeroCommandFixture
 {
 protected:
 	static constexpr auto CHAOS_MAGIC_SKILL = "new-horizons:chaosMagic";
 	static constexpr auto FRENZIED_CURSE_PERK = "new-horizons:chaosMagic.frenziedCurse";
 
+	int magicVersion = newHorizonsMagic::CURRENT_RULESET_VERSION;
 	CStack * berserker = nullptr;
 	CStack * casterStack = nullptr;
 
 	void mapLoaded(CMap * map) override
 	{
 		HeroCommandFixture::mapLoaded(map);
-		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRulesForVersion(magicVersion));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
@@ -113,7 +177,8 @@ protected:
 	}
 
 	void prepareRealCast(bool perkOnOriginalCaster, bool perkOnTargetOwner, bool inactiveOriginalCaster,
-		const BattleHex & casterPosition, const BattleHex & berserkerPosition)
+		const BattleHex & casterPosition, const BattleHex & berserkerPosition,
+		const std::string & berserkerCreature = "core:archer")
 	{
 		startGame();
 		if(perkOnOriginalCaster || inactiveOriginalCaster)
@@ -136,7 +201,7 @@ protected:
 			gameHandler->sendAndApply(remove);
 
 		casterStack = addStack(BattleSide::ATTACKER, creatureByName("core:archer"), casterPosition, 1000);
-		berserker = addStack(BattleSide::DEFENDER, creatureByName("core:archer"), berserkerPosition, 1000);
+		berserker = addStack(BattleSide::DEFENDER, creatureByName(berserkerCreature), berserkerPosition, 1000);
 		ASSERT_NE(casterStack, nullptr);
 		ASSERT_NE(berserker, nullptr);
 		casterStack->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
@@ -150,7 +215,10 @@ protected:
 		cast.actionType = EActionType::HERO_SPELL;
 		cast.side = BattleSide::ATTACKER;
 		cast.spell = SpellID::BERSERK;
-		cast.aimToUnit(berserker);
+		if(newHorizonsMagic::berserkUsesSingleCreatureTarget(battle()->getMagicRules()))
+			cast.aimToUnit(berserker);
+		else
+			cast.aimToHex(berserker->getPosition());
 		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), cast));
 		ASSERT_TRUE(berserker->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE));
 		ASSERT_EQ(server.castsOf(SpellID(SpellID::BERSERK)).size(), 1u);
@@ -179,6 +247,46 @@ protected:
 		{
 			return bonus && newHorizonsBerserk::isFrenziedCurseSpeedBonus(bonus.get());
 		});
+	}
+
+	bool hasBerserkSpellMarker() const
+	{
+		return berserker && berserker->hasBonus(Selector::source(BonusSource::SPELL_EFFECT,
+			BonusSourceID(SpellID(SpellID::BERSERK))).And(Selector::type()(BonusType::ATTACKS_NEAREST_CREATURE)));
+	}
+
+	bool hasForcedAttackMarker(const BonusSource source, const BonusSourceID & sourceId) const
+	{
+		return berserker && berserker->hasBonus(Selector::source(source, sourceId)
+			.And(Selector::type()(BonusType::ATTACKS_NEAREST_CREATURE)));
+	}
+
+	void addOtherForcedAttackMarkers()
+	{
+		berserker->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::ATTACKS_NEAREST_CREATURE, BonusSource::CREATURE_ABILITY, 0, BonusSourceID()));
+		berserker->addNewBonus(std::make_shared<Bonus>(BonusDuration::UNTIL_OWN_ATTACK,
+			BonusType::ATTACKS_NEAREST_CREATURE, BonusSource::SPELL_EFFECT, 0,
+			BonusSourceID(SpellID(SpellID::BLIND))));
+	}
+
+	void expectLegacyForcedWalkKeepsUntilOwnAttack(const int version)
+	{
+		magicVersion = version;
+		ASSERT_NO_FATAL_FAILURE(prepareRealCast(false, false, false,
+			BattleHex(4, 5), BattleHex(12, 5), "core:pikeman"));
+		ASSERT_TRUE(hasBerserkSpellMarker());
+		EXPECT_TRUE(newHorizonsBerserk::completedForcedActivationBonuses(*battle(), berserker).empty());
+		const auto candidates = battle()->getBerserkForcedActions(berserker);
+		ASSERT_EQ(candidates.size(), 1u);
+		EXPECT_EQ(candidates.front().type, EActionType::WALK);
+
+		ASSERT_NO_FATAL_FAILURE(finishCasterActivation());
+		const auto * forced = forcedActionForBerserker();
+		ASSERT_NE(forced, nullptr);
+		EXPECT_EQ(forced->ba.actionType, EActionType::WALK);
+		EXPECT_TRUE(hasBerserkSpellMarker())
+			<< "Legacy UNTIL_OWN_ATTACK behavior remains unchanged by the saved-v3 expiry helper";
 	}
 };
 
@@ -264,6 +372,8 @@ TEST_F(NewHorizonsBerserkActivationTest, OriginalCastersSelectedCurseExpandsARea
 	ASSERT_NE(forced, nullptr);
 	EXPECT_EQ(forced->ba.actionType, EActionType::WALK_AND_ATTACK);
 	EXPECT_EQ(forced->ba.side, BattleSide::DEFENDER);
+	EXPECT_FALSE(hasBerserkSpellMarker())
+		<< "A real forced melee continues to consume the ordinary UNTIL_OWN_ATTACK spell marker";
 	const auto forcedAttack = std::ranges::find_if(server.attacks, [this](const auto & attack)
 	{
 		return attack.stackAttacking == berserker->unitId();
@@ -350,4 +460,69 @@ TEST_F(NewHorizonsBerserkActivationTest, ActiveCurseMovementOnlyWalkUsesAndThenR
 		<< "The scoped bonus is removed even after a movement-only forced action";
 	EXPECT_FALSE(hasFrenziedCurseSpeedBonus());
 	EXPECT_TRUE(server.attacks.empty());
+}
+
+TEST_F(NewHorizonsBerserkActivationTest, V3AcceptedForcedWalkExpiresOnlyItsBerserkSpellMarker)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareRealCast(false, false, false, BattleHex(4, 5), BattleHex(12, 5)));
+	ASSERT_TRUE(hasBerserkSpellMarker());
+	addOtherForcedAttackMarkers();
+	ASSERT_TRUE(hasForcedAttackMarker(BonusSource::CREATURE_ABILITY, BonusSourceID()));
+	ASSERT_TRUE(hasForcedAttackMarker(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::BLIND))));
+
+	const auto completionBonuses = newHorizonsBerserk::completedForcedActivationBonuses(*battle(), berserker);
+	ASSERT_EQ(completionBonuses.size(), 1u);
+	EXPECT_EQ(completionBonuses.front().source, BonusSource::SPELL_EFFECT);
+	EXPECT_EQ(completionBonuses.front().sid, BonusSourceID(SpellID(SpellID::BERSERK)));
+	EXPECT_EQ(completionBonuses.front().type, BonusType::ATTACKS_NEAREST_CREATURE);
+	EXPECT_EQ(completionBonuses.front().duration, BonusDuration::UNTIL_OWN_ATTACK);
+	EXPECT_TRUE(hasBerserkSpellMarker()) << "Collecting completion markers must not mutate the live stack";
+
+	ASSERT_NO_FATAL_FAILURE(finishCasterActivation());
+	const auto * forced = forcedActionForBerserker();
+	ASSERT_NE(forced, nullptr);
+	ASSERT_EQ(forced->ba.actionType, EActionType::WALK);
+	EXPECT_FALSE(hasBerserkSpellMarker()) << "The accepted v3 movement-only forced activation completes Berserk";
+	EXPECT_TRUE(hasForcedAttackMarker(BonusSource::CREATURE_ABILITY, BonusSourceID()));
+	EXPECT_TRUE(hasForcedAttackMarker(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::BLIND))))
+		<< "A different spell's forced-attack trait is outside the exact Berserk source filter";
+}
+
+TEST_F(NewHorizonsBerserkActivationTest, V3AcceptedForcedNoActionExpiresOnlyItsBerserkSpellMarker)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareRealCast(false, false, false, BattleHex(4, 5), BattleHex(12, 5)));
+	addOtherForcedAttackMarkers();
+	berserker->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::STACKS_SPEED, BonusSource::OTHER, -20, BonusSourceID()));
+	ASSERT_TRUE(battle()->getBerserkForcedActions(berserker).empty());
+
+	ASSERT_NO_FATAL_FAILURE(finishCasterActivation());
+	const auto * forced = forcedActionForBerserker();
+	ASSERT_NE(forced, nullptr);
+	EXPECT_EQ(forced->ba.actionType, EActionType::NO_ACTION);
+	EXPECT_FALSE(hasBerserkSpellMarker()) << "The server accepted the automatic forced NO_ACTION";
+	EXPECT_TRUE(hasForcedAttackMarker(BonusSource::CREATURE_ABILITY, BonusSourceID()));
+	EXPECT_TRUE(hasForcedAttackMarker(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::BLIND))));
+}
+
+TEST_F(NewHorizonsBerserkActivationTest, RejectedNonActiveRequestDoesNotConsumeBerserkBeforeForcedActivation)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareRealCast(false, false, false, BattleHex(4, 5), BattleHex(12, 5)));
+	ASSERT_TRUE(hasBerserkSpellMarker());
+	ASSERT_EQ(battle()->battleActiveUnit(), casterStack);
+
+	const BattleAction rejected = BattleAction::makeDefend(berserker);
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1), rejected));
+	EXPECT_EQ(forcedActionForBerserker(), nullptr);
+	EXPECT_TRUE(hasBerserkSpellMarker()) << "No accepted forced activation occurred";
+}
+
+TEST_F(NewHorizonsBerserkActivationTest, V1AcceptedForcedWalkKeepsUntilOwnAttackBehavior)
+{
+	ASSERT_NO_FATAL_FAILURE(expectLegacyForcedWalkKeepsUntilOwnAttack(newHorizonsMagic::RULESET_VERSION));
+}
+
+TEST_F(NewHorizonsBerserkActivationTest, V2AcceptedForcedWalkKeepsUntilOwnAttackBehavior)
+{
+	ASSERT_NO_FATAL_FAILURE(expectLegacyForcedWalkKeepsUntilOwnAttack(newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION));
 }

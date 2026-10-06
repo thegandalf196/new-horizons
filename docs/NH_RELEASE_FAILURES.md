@@ -2,6 +2,17 @@
 
 ## Purpose
 
+### 2026-10-06 — Chain Lightning preview rendering include
+
+The first frozen client build failed because the new hop-label renderer used
+Colors without its explicit header. Added render/Colors.h, render/EFont.h and
+gui/TextAlignment.h rather than relying on transitive declarations. The repaired
+client/native build passed, as did15 focused presentation/mechanic cases with
+zero skips. Initial and repaired build receipts are separate under ignored
+`build/nh-chain-ui.VHicYRM1/`; this is not rendered or playable UI acceptance.
+Keep explicit rendering dependencies when adding drawing to a controller that
+previously needed only image/render-handler interfaces.
+
 ### 2026-10-06 — Arcane Reservoir manual AI visit gap
 
 The unique-building audit finds that the Reservoir's manualHeroVisit setting

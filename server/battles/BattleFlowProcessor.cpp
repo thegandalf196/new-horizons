@@ -1246,6 +1246,24 @@ bool BattleFlowProcessor::tryActivateBerserkPenalty(const CBattleInfoCallback & 
 		const auto unitID = next->unitId();
 		const auto unitSide = next->unitSide();
 		const auto forcedActivationSpeed = newHorizonsBerserk::forcedActivationSpeedBonus(battle, next);
+		const auto removeCompletedBerserkActivation = [this, battleID, unitID]()
+		{
+			const auto * currentBattle = gameHandler->gameState().getBattle(battleID);
+			const auto * currentBerserker = currentBattle
+				? currentBattle->battleGetStackByID(unitID, false) : nullptr;
+			if(!currentBattle || !currentBerserker)
+				return;
+
+			auto bonuses = newHorizonsBerserk::completedForcedActivationBonuses(*currentBattle,
+				currentBerserker);
+			if(bonuses.empty())
+				return;
+
+			SetStackEffect remove;
+			remove.battleID = battleID;
+			remove.toRemove.emplace_back(unitID, std::move(bonuses));
+			gameHandler->sendAndApply(remove);
+		};
 		const auto removeFrenziedCurseBonus = [this, battleID, unitID]()
 		{
 			const auto * currentBattle = gameHandler->gameState().getBattle(battleID);
@@ -1310,7 +1328,8 @@ bool BattleFlowProcessor::tryActivateBerserkPenalty(const CBattleInfoCallback & 
 		if(forcedAction.type == EActionType::NO_ACTION)
 		{
 			removeFrenziedCurseBonus();
-			makeStackDoNothing(battle, currentBerserker);
+			if(makeStackDoNothing(battle, currentBerserker))
+				removeCompletedBerserkActivation();
 			return true;
 		}
 		if(grantedFrenziedCurseBonus)
@@ -1330,7 +1349,8 @@ bool BattleFlowProcessor::tryActivateBerserkPenalty(const CBattleInfoCallback & 
 			rangeAttack.side = unitSide;
 			rangeAttack.stackNumber = unitID;
 			rangeAttack.aimToUnit(forcedAction.target);
-			makeAutomaticAction(battle, currentBerserker, rangeAttack);
+			if(makeAutomaticAction(battle, currentBerserker, rangeAttack))
+				removeCompletedBerserkActivation();
 		}
 		else if (forcedAction.type == EActionType::WALK_AND_ATTACK)
 		{
@@ -1340,7 +1360,8 @@ bool BattleFlowProcessor::tryActivateBerserkPenalty(const CBattleInfoCallback & 
 			meleeAttack.stackNumber = unitID;
 			meleeAttack.aimToHex(forcedAction.position);
 			meleeAttack.aimToUnit(forcedAction.target);
-			makeAutomaticAction(battle, currentBerserker, meleeAttack);
+			if(makeAutomaticAction(battle, currentBerserker, meleeAttack))
+				removeCompletedBerserkActivation();
 		} else if (forcedAction.type == EActionType::WALK)
 		{
 			BattleAction movement;
@@ -1348,12 +1369,14 @@ bool BattleFlowProcessor::tryActivateBerserkPenalty(const CBattleInfoCallback & 
 			movement.side = unitSide;
 			movement.stackNumber = unitID;
 			movement.aimToHex(forcedAction.position);
-			makeAutomaticAction(battle, currentBerserker, movement);
+			if(makeAutomaticAction(battle, currentBerserker, movement))
+				removeCompletedBerserkActivation();
 		}
 		else
 		{
 			removeFrenziedCurseBonus();
-			makeStackDoNothing(battle, currentBerserker);
+			if(makeStackDoNothing(battle, currentBerserker))
+				removeCompletedBerserkActivation();
 		}
 		return true;
 	}

@@ -87,4 +87,30 @@ std::optional<Bonus> forcedActivationSpeedBonus(const CBattleInfoCallback & batt
 
 	return std::nullopt;
 }
+
+std::vector<Bonus> completedForcedActivationBonuses(const CBattleInfoCallback & battle,
+	const battle::Unit * unit)
+{
+	std::vector<Bonus> result;
+	if(!unit || !battle.getBattle() || unit->isTimeStopped()
+		|| newHorizonsPuppetMaster::hasValidControlMarker(battle, unit))
+		return result;
+
+	const auto & savedRules = battle.getBattle()->getMagicRules();
+	const auto berserkSpell = berserkSpellID();
+	if(!newHorizonsMagic::berserkUsesSingleCreatureTarget(savedRules)
+		|| !newHorizonsMagic::spellAllowedBySavedRoster(savedRules, berserkSpell))
+		return result;
+
+	const auto markers = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(berserkSpell)).And(Selector::type()(BonusType::ATTACKS_NEAREST_CREATURE)));
+	if(!markers)
+		return result;
+
+	result.reserve(markers->size());
+	for(const auto & marker : *markers)
+		if(marker)
+			result.push_back(*marker);
+	return result;
+}
 }

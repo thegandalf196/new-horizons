@@ -2,6 +2,19 @@
 
 Updated: 2026-10-06
 
+2026-10-06 Berserk lifecycle coverage: accepted saved-v3 forced WALK/NO_ACTION
+now expires only the Berserk spell-origin control marker through normal effect
+transport. Legacy and unrelated markers remain unchanged. Six detached AI
+forecast consumers share the cleanup after projected actions. Client/native
+build passes with12 jobs; focused server/AI suites pass19/19 in5.758s with zero
+skips/errors, plus module drift and independent review. UP062 retains receipts
+and precise scope: rejected non-active requests and detached helper replay are
+tested, not automatic-dispatch rejection or private evaluator-hook execution.
+Activation-start death and broader forecast interactions remain Phase2.
+Negative-Morale skipped-turn policy is unchanged and still held; base Berserk
+remains partial. This closes an existing lifecycle clause, not a new identity;
+counts stay61/67 combat spells and225/310 perks. No playable promotion claimed.
+
 2026-10-06 bounded principal-source audits: Sorcery's three ranks and ten active
 perks have consumers for the current canonical clauses. Ordinary learning uses
 the shared rank gates; applicable Spell Power terms use100/115/130/145 percent.

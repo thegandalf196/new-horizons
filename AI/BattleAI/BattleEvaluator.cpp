@@ -46,6 +46,7 @@
 #include "../../lib/battle/NewHorizonsShadowGift.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/battle/NewHorizonsSoulChain.h"
+#include "../../lib/battle/NewHorizonsBerserk.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
 #include "../../lib/battle/PhysicalAffliction.h"
@@ -413,6 +414,17 @@ float holdFastMoraleGrantValue(const CBattleInfoCallback & battle, const battle:
 	const float after = expectedMoraleActivationChange(*projectedBattle, projected);
 	const float recoveredActivationChance = std::max(0.0f, after - before);
 	return recoveredActivationChance * expectedTargetActivationValue(projected, damageCache, projectedBattle);
+}
+
+void expireCompletedProjectedBerserkActivation(HypotheticBattle & projectedBattle,
+	const battle::Unit * unit)
+{
+	// The caller invokes this only after a forced Berserk action was projected.
+	// Unlike a successful attack, WALK and NO_ACTION do not consume UNTIL_OWN_ATTACK,
+	// so remove only the shared helper's eligible saved-v3 Berserk spell markers.
+	const auto bonuses = newHorizonsBerserk::completedForcedActivationBonuses(projectedBattle, unit);
+	if(unit && !bonuses.empty())
+		projectedBattle.removeUnitBonus(unit->unitId(), bonuses);
 }
 
 float expectedBerserkActivationValue(const battle::Unit * original, const battle::Unit * projected,
@@ -1220,6 +1232,9 @@ float projectedRegenerationValue(
 				PotentialTargets potentialTargets(currentForecastUnit, forecastDamage, forecast);
 				if(!potentialTargets.possibleAttacks.empty())
 					applyProjectedBestAction(*forecast, currentForecastUnit, potentialTargets.bestAction());
+				if(potentialTargets.berserk)
+					expireCompletedProjectedBerserkActivation(*forecast,
+						forecast->battleGetUnitByID(queuedUnit->unitId()));
 			}
 			if(currentForecastUnit)
 				forecast->getForUpdate(queuedUnit->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
@@ -1228,6 +1243,9 @@ float projectedRegenerationValue(
 				PotentialTargets potentialTargets(currentBaselineUnit, baselineDamage, baseline);
 				if(!potentialTargets.possibleAttacks.empty())
 					applyProjectedBestAction(*baseline, currentBaselineUnit, potentialTargets.bestAction());
+				if(potentialTargets.berserk)
+					expireCompletedProjectedBerserkActivation(*baseline,
+						baseline->battleGetUnitByID(queuedUnit->unitId()));
 			}
 			if(currentBaselineUnit)
 				baseline->getForUpdate(queuedUnit->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
@@ -1328,6 +1346,9 @@ float projectedCapacityRegenerationValue(
 				PotentialTargets potentialTargets(currentForecastUnit, forecastDamage, forecast);
 				if(!potentialTargets.possibleAttacks.empty())
 					applyProjectedBestAction(*forecast, currentForecastUnit, potentialTargets.bestAction());
+				if(potentialTargets.berserk)
+					expireCompletedProjectedBerserkActivation(*forecast,
+						forecast->battleGetUnitByID(unitId));
 			}
 			if(currentForecastUnit)
 				forecast->getForUpdate(unitId)->removeUnitBonus(Bonus::UntilActivationEnds);
@@ -1336,6 +1357,9 @@ float projectedCapacityRegenerationValue(
 				PotentialTargets potentialTargets(currentBaselineUnit, baselineDamage, baseline);
 				if(!potentialTargets.possibleAttacks.empty())
 					applyProjectedBestAction(*baseline, currentBaselineUnit, potentialTargets.bestAction());
+				if(potentialTargets.berserk)
+					expireCompletedProjectedBerserkActivation(*baseline,
+						baseline->battleGetUnitByID(unitId));
 			}
 			if(currentBaselineUnit)
 				baseline->getForUpdate(unitId)->removeUnitBonus(Bonus::UntilActivationEnds);
@@ -1401,6 +1425,9 @@ float projectedVampirismValue(
 						}
 						applyProjectedBestAction(*forecast, unit, action);
 					}
+					if(potentialTargets.berserk)
+						expireCompletedProjectedBerserkActivation(*forecast,
+							forecast->battleGetUnitByID(queuedUnit->unitId()));
 				}
 
 				forecast->getForUpdate(queuedUnit->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
@@ -4964,6 +4991,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				if(state->battleGetActionController(unit) != playerID)
 					bav = -bav;
 				values[unit->unitId()] += bav;
+				if(potentialTargets.berserk)
+					expireCompletedProjectedBerserkActivation(*state,
+						state->battleGetUnitByID(unit->unitId()));
 				state->getForUpdate(unit->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
 			}
 

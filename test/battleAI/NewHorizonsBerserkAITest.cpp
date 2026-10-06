@@ -446,6 +446,60 @@ TEST_F(NewHorizonsBerserkAITest, BerserkWithoutSelectedFrenziedCurseKeepsNormalF
 	EXPECT_TRUE(candidates.possibleAttacks.empty());
 }
 
+TEST_F(NewHorizonsBerserkAITest, CompletedForcedActivationRemovalStaysInDetachedReplayBranch)
+{
+	CStack * berserker = nullptr;
+	CStack * forcedTarget = nullptr;
+	ASSERT_NO_FATAL_FAILURE(prepareActualBerserk(true, berserker, forcedTarget));
+	ASSERT_NE(berserker, nullptr);
+	ASSERT_NE(forcedTarget, nullptr);
+
+	const auto otherSpellSource = BonusSourceID(SpellID(SpellID::BLIND));
+	berserker->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::ATTACKS_NEAREST_CREATURE, BonusSource::CREATURE_ABILITY, 0, BonusSourceID()));
+	berserker->addNewBonus(std::make_shared<Bonus>(BonusDuration::UNTIL_OWN_ATTACK,
+		BonusType::ATTACKS_NEAREST_CREATURE, BonusSource::SPELL_EFFECT, 0, otherSpellSource));
+
+	const auto liveBerserkSource = Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(SpellID(SpellID::BERSERK))).And(Selector::type()(BonusType::ATTACKS_NEAREST_CREATURE));
+	const auto intrinsicSource = Selector::source(BonusSource::CREATURE_ABILITY, BonusSourceID())
+		.And(Selector::type()(BonusType::ATTACKS_NEAREST_CREATURE));
+	const auto otherSpellForcedSource = Selector::source(BonusSource::SPELL_EFFECT, otherSpellSource)
+		.And(Selector::type()(BonusType::ATTACKS_NEAREST_CREATURE));
+	ASSERT_TRUE(berserker->hasBonus(liveBerserkSource));
+	ASSERT_TRUE(berserker->hasBonus(intrinsicSource));
+	ASSERT_TRUE(berserker->hasBonus(otherSpellForcedSource));
+
+	auto environment = std::make_shared<BerserkEnvironment>(gameState());
+	auto sourceForecast = makeForecast();
+	const auto projected = sourceForecast->getForUpdate(berserker->unitId());
+	DamageCache damage;
+	PotentialTargets candidates(projected.get(), damage, sourceForecast);
+	ASSERT_TRUE(candidates.berserk);
+	ASSERT_EQ(candidates.forcedBerserkActions.size(), 1u);
+	EXPECT_EQ(candidates.forcedBerserkActions.front().type, EActionType::WALK_AND_ATTACK);
+	ASSERT_EQ(candidates.forcedBerserkActions.front().target->unitId(), forcedTarget->unitId());
+	EXPECT_GT(candidates.expectedBerserkActionValue(), 0.0f);
+
+	const auto * sourceUnit = sourceForecast->battleGetUnitByID(berserker->unitId());
+	const auto completedBonuses = newHorizonsBerserk::completedForcedActivationBonuses(*sourceForecast, sourceUnit);
+	ASSERT_EQ(completedBonuses.size(), 1u);
+	EXPECT_TRUE(sourceUnit->hasBonus(liveBerserkSource));
+
+	// Mirror the AI's queued-activation replay: remove the exact shared-helper
+	// result in a child branch after scoring, without changing the source branch
+	// or live authoritative stack.
+	auto replay = std::make_shared<HypotheticBattle>(environment.get(), sourceForecast);
+	replay->removeUnitBonus(berserker->unitId(), completedBonuses);
+	const auto * replayUnit = replay->battleGetUnitByID(berserker->unitId());
+	ASSERT_NE(replayUnit, nullptr);
+	EXPECT_FALSE(replayUnit->hasBonus(liveBerserkSource));
+	EXPECT_TRUE(replayUnit->hasBonus(intrinsicSource));
+	EXPECT_TRUE(replayUnit->hasBonus(otherSpellForcedSource));
+	EXPECT_TRUE(sourceForecast->battleGetUnitByID(berserker->unitId())->hasBonus(liveBerserkSource));
+	EXPECT_TRUE(berserker->hasBonus(liveBerserkSource));
+}
+
 TEST_F(NewHorizonsBerserkAITest, FullEvaluatorChoosesBerserkWhenItPreventsAShotAndKeepsScoringReadOnly)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareBerserkCaster());
