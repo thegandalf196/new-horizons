@@ -1,5 +1,16 @@
 # New Horizons UI and asset status register
 
+UP253 Cabir rougher standing revision,2026-10-06: **Provisional** v2 master,
+exact prompt and native/4x comparison are retained under
+`assets/new-horizons/creatures/cabir/v2/` and shown to the user. Same design,
+darker/coarser treatment. Not installed; full animation/portrait work remains
+**Not done**.
+
+UP251/252 portrait revisions,2026-10-06: **Not done**. New Golem v2 masks
+fail fringe/shape review; Gargoyle v3 first and corrected passes remove actual
+dark creature pixels. All are rejected, not runtime registrations. Preserve
+the masters/prompts and rejection notes; do not count them as finished art.
+
 UP248 Cabir replacement,2026-10-06: **Provisional** first standing-frame master
 and proposed60px preview, generated using HoMM3 Art from the user's content
 reference. The user approved the design after the first sprite was shown.
@@ -16,21 +27,23 @@ UP247 Astronomy Tower attachment,2026-10-06: **Provisional** placement correctio
 to special2.x402, with unchanged sprites/masks/y/z. Native registered fort,
 citadel and castle comparisons support the connection. Importer parity and
 twelve focused art checks pass; independent review finds no blocker. Playable
-delivery/user acceptance remain pending.
+delivery is selected in snapshot `d5b344341f75675c41b07d8a5b713591113cca106f6de4733d477e7e99112fd4`;
+user visual acceptance remains pending.
 
 UP246 Academy map yellow flags,2026-10-06: **Provisional** flagless Village,
 Fort and Capitol masters/native exports retained under `map-revisions/v3/`.
 All three source runtime bodies now match the pinned exports. Fifteen focused
 Academy art/map checks, reproducible export and independent review pass.
 Registration and engine ownership/shadow overlays are unchanged. Full archive
-reimport, playable delivery and user visual acceptance remain unverified.
+reimport remains unverified. Playable delivery is selected in the same
+`d5b344...` snapshot; user visual acceptance remains pending.
 
 UP241 background correction: **Provisional**, installed in source. The retained
 HoMM3-Art background v2 removes the hall painted beneath the separate building
 sprite, using a bounded ROI with unchanged pixels outside it. Native registered
 scene review, twenty focused Academy checks and independent review pass. The
-actual hall/masks/placement are unchanged. The normal playable delivery still
-contains the duplicate; delivery/user acceptance remain pending. Earlier
+actual hall/masks/placement are unchanged. The corrected background is now in
+the normal `d5b344...` playable snapshot; user acceptance remains pending. Earlier
 roof-only hash evidence does not establish this correction.
 
 UP241 Village Hall roof revision,2026-10-06: **Provisional** artwork.
