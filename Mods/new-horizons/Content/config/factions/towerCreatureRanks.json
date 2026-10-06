@@ -48,6 +48,12 @@
 				}
 			},
 			"buildings": {
+				"dwellingLvl1": {
+					"description": "The Workshop recruits Cabirs and can be upgraded to recruit Cabir Masters."
+				},
+				"dwellingUpLvl1": {
+					"description": "The upgraded Workshop recruits Cabir Masters. Cabirs can be upgraded here."
+				},
 				"special3": {
 					"requires": [ "allOf", [ "dwellingLvl5" ], [ "mageGuild4" ] ]
 				},

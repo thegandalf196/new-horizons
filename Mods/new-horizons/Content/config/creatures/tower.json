@@ -18,6 +18,10 @@
 		},
 		"graphics": {
 			"animation": "NH_Cabir.def",
+			"map": "NH_CabirMap.def",
+			"mapMask": ["VV", "VA"],
+			"mapAttackFromLeft": "NH_CabirEncounterLeft.png",
+			"mapAttackFromRight": "NH_CabirEncounterRight.png",
 			"animationTime": {
 				"attack": 1.0,
 				"walk": 0.75,
@@ -60,6 +64,10 @@
 		},
 		"graphics": {
 			"animation": "NH_CabirMaster.def",
+			"map": "NH_CabirMasterMap.def",
+			"mapMask": ["VV", "VA"],
+			"mapAttackFromLeft": "NH_CabirMasterEncounterLeft.png",
+			"mapAttackFromRight": "NH_CabirMasterEncounterRight.png",
 			"animationTime": {
 				"attack": 1.0,
 				"walk": 0.75,

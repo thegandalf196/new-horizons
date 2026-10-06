@@ -1,0 +1,79 @@
+{
+  "format": 1,
+  "status": "offline provisional original Cabir map-size derivatives; not installed or visually accepted",
+  "family": "cabir",
+  "descriptor": "NH_CabirMap.json",
+  "descriptorLoaderShape": "basepath plus numeric sequences[group].frames, matching the custom animation JSON route",
+  "descriptorBasepath": "NH_cabir_v3_map/",
+  "mapGroup": 0,
+  "mapWalkFrames": 4,
+  "mapCanvas": [
+    64,
+    64
+  ],
+  "targetRootPivot": [
+    32.0,
+    60.0
+  ],
+  "targetVisibleBodyHeight": 42.0,
+  "encounterResources": {
+    "left": "NH_CabirEncounterLeft.png",
+    "right": "NH_CabirEncounterRight.png",
+    "canvas": [
+      64,
+      64
+    ]
+  },
+  "sourcePins": {
+    "standing": {
+      "path": "assets/new-horizons/creatures/cabir/v3/standing-master.png",
+      "sha256": "e9e5cfacb4cafa8f55c0160a400a4f0c6ea3426d77f631c928de27eaa4033060",
+      "promptPath": "assets/new-horizons/creatures/cabir/v3/standing.prompt.txt",
+      "promptSha256": "66a9aa4bf1be4f6f964ace0f038cde03c134556a756d87a7f6bb106a2be0a082"
+    },
+    "walk": {
+      "path": "assets/new-horizons/creatures/cabir/v3/walk-v2/cleaned/candidate-01-alpha-cleaned.png",
+      "sha256": "112c20fb49091bcbf5efc5646b7ce1950f37ade03969a12c3ccedcffdecace2a",
+      "promptPath": "assets/new-horizons/creatures/cabir/v3/walk-v2/candidate-01.prompt.txt",
+      "promptSha256": "255e5baf86275a2d7a91369841b054e896b2d9f006d940c2bc7b45a55d842272",
+      "cleanupReceiptPath": "assets/new-horizons/creatures/cabir/v3/walk-v2/cleaned/cleanup-receipt.json",
+      "cleanupReceiptSha256": "8e14fb7db2c7b2fc0d296a709c6e6b080219c68f6d8b0589092eb0937f2419a2"
+    }
+  },
+  "referenceOnlyOriginalResourceMetadata": {
+    "mapAnimation": {
+      "resource": "AVWgrem0/AVWgrex0",
+      "group": 0,
+      "frameCount": 8,
+      "canvas": [
+        64,
+        64
+      ]
+    },
+    "encounter": {
+      "resource": "AvWattak",
+      "frameIndices": {
+        "right": 56,
+        "left": 57
+      }
+    },
+    "provenanceNote": "Original resource names/geometry metadata only; no purchaser game pixel data is included."
+  },
+  "sourceFilesModified": false,
+  "gameplayOrRuntimeBindingIncluded": false,
+  "files": {
+    "NH_CabirEncounterLeft.png": "9b6394d94e0c08eb815e2cfdf3f1bcf258837ee036f2704e4c5271ce1e3101fe",
+    "NH_CabirEncounterRight.png": "d59da544fce2eb26381696d6318e7f3f4e2638df5c98f87200d4fad5a4c1ee7f",
+    "NH_CabirMap.json": "0fb551dd830ea99e06cd04d2a48005542cd2a45121db051435dd50c7fd316a4b",
+    "NH_cabir_v3_map/walk/frame-00.png": "180d6ce396e653a19c8bc2ea09d30b950735e1a363abf661e7858967cf238670",
+    "NH_cabir_v3_map/walk/frame-01.png": "cfe76ee13138ecc9bae24f05a1809241999b443ee7e6c6f16447719c1c3eff5f",
+    "NH_cabir_v3_map/walk/frame-02.png": "9b02093cae2a6e6a10ef58bbf4fde1256d9e9db3a7f33c24f496bae6b1c62bff",
+    "NH_cabir_v3_map/walk/frame-03.png": "09f5ad812de0c9b30f24d784c8a726e0ccc3a16b6a6435c4aafac372f3e4ea85",
+    "review/alignment.json": "e52f179635310cd1d591db72400fb8c2dc3a1894be52be94e27b630331914524",
+    "review/encounter-facing-contact-1x.png": "35fb5f14d8d2ebdace5c2a8211b0ad80127835c6bca647ad919e9378bfc7f7a9",
+    "review/encounter-facing-contact-4x-nearest.png": "8859535ce1414f2fb6faf41e2754e06ef1552e9776ff83440cf1b1c32f24f4ce",
+    "review/map-walk-contact-1x.png": "388101a2cc9acdbe5cb3cb4ff6156d765da103b70c1f46b0d28c9fc740f7c9dc",
+    "review/map-walk-contact-4x-nearest.png": "96caa9be6c0ae73a40ca42717ee216d381537b4a8dfa4144fb36e4a174697f68",
+    "review/map-walk-preview.gif": "41e1bdc8f900ad34cfc3f4a54747c3bf05e31fdcc4f901966f1d9ecbac3f9331"
+  }
+}

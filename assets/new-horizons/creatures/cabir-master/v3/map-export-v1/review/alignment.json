@@ -1,0 +1,657 @@
+{
+  "status": "offline provisional map-size raster review; no runtime install or motion acceptance",
+  "family": "cabir-master",
+  "canvas": [
+    64,
+    64
+  ],
+  "targetRootPivot": [
+    32.0,
+    60.0
+  ],
+  "targetVisibleBodyHeight": 42.0,
+  "alphaThreshold": 16,
+  "standingScale": 0.03825136612021858,
+  "walkSheetScale": 0.07678244972577697,
+  "standingSource": {
+    "status": "provisional standalone full-body pose; alpha-only exterior cleanup, no source edits",
+    "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/standing-master.png",
+    "sourceSha256": "c1c88872bf0cc8e969f9d883b289aff86071db31241d35a16255b74532fbca15",
+    "promptPath": "assets/new-horizons/creatures/cabir-master/v3/standing.prompt.txt",
+    "promptSha256": "3b97121db995db93b8ec57e775b147c3edfca9da5d0a3696dd471ff67390a5b7",
+    "sourceSize": [
+      1323,
+      1189
+    ],
+    "alphaSeedThreshold": 16,
+    "mainComponentArea": 555382,
+    "mainComponentAlpha16BBox": [
+      194,
+      54,
+      1179,
+      1152
+    ],
+    "externalNonzeroAlphaRemoved": 12665,
+    "maximumRemovedAlpha": 6,
+    "removedAlphaHistogram": {
+      "1": 10732,
+      "2": 1457,
+      "3": 334,
+      "4": 93,
+      "5": 48,
+      "6": 1
+    },
+    "rule": "only nonzero alpha outside the 4px dilation of the largest body component is cleared; alpha must be <=10; RGB preserved",
+    "sourceFileModified": false
+  },
+  "encounterPoses": {
+    "NH_CabirMasterEncounterLeft.png": {
+      "pose": "encounter-left-standing",
+      "sourceRole": "pinned standing master",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/standing-master.png",
+      "sourceSha256": "c1c88872bf0cc8e969f9d883b289aff86071db31241d35a16255b74532fbca15",
+      "sourceOrigin": [
+        0,
+        0
+      ],
+      "sourceImageSize": [
+        1323,
+        1189
+      ],
+      "sourceAlphaThresholdBBox": [
+        194,
+        54,
+        1179,
+        1152
+      ],
+      "sourceBodyHeight": 1098,
+      "sourceContactPivot": [
+        630.0,
+        1152.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          194,
+          54,
+          1179,
+          1152
+        ],
+        "bandTop": 1119,
+        "bandBottomExclusive": 1152,
+        "contactXBounds": [
+          195,
+          1065
+        ],
+        "sourcePivotLocal": [
+          630.0,
+          1152.0
+        ]
+      },
+      "uniformScaleForSourceSheet": 0.03825136612021858,
+      "targetVisibleBodyHeight": 42.0,
+      "resizedSourceSize": [
+        51,
+        45
+      ],
+      "targetRootPivot": [
+        32.0,
+        60.0
+      ],
+      "outputPlacement": [
+        8,
+        16
+      ],
+      "outputAlphaThresholdBBox": [
+        15,
+        18,
+        54,
+        60
+      ],
+      "outputVisibleBodyHeight": 42,
+      "outputCanvas": [
+        64,
+        64
+      ],
+      "sourceArtResizedWith": "Pillow LANCZOS; alpha retained",
+      "orientation": "mechanical horizontal mirror of encounter-right-standing; no redrawing"
+    },
+    "NH_CabirMasterEncounterRight.png": {
+      "pose": "encounter-right-standing",
+      "sourceRole": "pinned standing master",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/standing-master.png",
+      "sourceSha256": "c1c88872bf0cc8e969f9d883b289aff86071db31241d35a16255b74532fbca15",
+      "sourceOrigin": [
+        0,
+        0
+      ],
+      "sourceImageSize": [
+        1323,
+        1189
+      ],
+      "sourceAlphaThresholdBBox": [
+        194,
+        54,
+        1179,
+        1152
+      ],
+      "sourceBodyHeight": 1098,
+      "sourceContactPivot": [
+        630.0,
+        1152.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          194,
+          54,
+          1179,
+          1152
+        ],
+        "bandTop": 1119,
+        "bandBottomExclusive": 1152,
+        "contactXBounds": [
+          195,
+          1065
+        ],
+        "sourcePivotLocal": [
+          630.0,
+          1152.0
+        ]
+      },
+      "uniformScaleForSourceSheet": 0.03825136612021858,
+      "targetVisibleBodyHeight": 42.0,
+      "resizedSourceSize": [
+        51,
+        45
+      ],
+      "targetRootPivot": [
+        32.0,
+        60.0
+      ],
+      "outputPlacement": [
+        8,
+        16
+      ],
+      "outputAlphaThresholdBBox": [
+        15,
+        18,
+        54,
+        60
+      ],
+      "outputVisibleBodyHeight": 42,
+      "outputCanvas": [
+        64,
+        64
+      ],
+      "sourceArtResizedWith": "Pillow LANCZOS; alpha retained",
+      "orientation": "unmirrored generated standing pose, facing the authored rightward direction"
+    }
+  },
+  "walkPoses": [
+    {
+      "pose": "walk-00",
+      "sourceRole": "pinned generated four-pose walk sheet",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/walk-v1/cleaned-v1/candidate-01-alpha-cleaned.png",
+      "sourceSha256": "66c9402eaa19e17a50840a0871150b2ed9db72062dad0511ba7b37c1e272d537",
+      "sourceOrigin": [
+        148,
+        30
+      ],
+      "sourceImageSize": [
+        458,
+        555
+      ],
+      "sourceAlphaThresholdBBox": [
+        4,
+        4,
+        454,
+        551
+      ],
+      "sourceBodyHeight": 547,
+      "sourceContactPivot": [
+        228.0,
+        551.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          454,
+          551
+        ],
+        "bandTop": 534,
+        "bandBottomExclusive": 551,
+        "contactXBounds": [
+          68,
+          388
+        ],
+        "sourcePivotLocal": [
+          228.0,
+          551.0
+        ]
+      },
+      "uniformScaleForSourceSheet": 0.07678244972577697,
+      "targetVisibleBodyHeight": 42.0,
+      "resizedSourceSize": [
+        35,
+        43
+      ],
+      "targetRootPivot": [
+        32.0,
+        60.0
+      ],
+      "outputPlacement": [
+        14,
+        18
+      ],
+      "outputAlphaThresholdBBox": [
+        14,
+        18,
+        49,
+        61
+      ],
+      "outputVisibleBodyHeight": 43,
+      "outputCanvas": [
+        64,
+        64
+      ],
+      "sourceArtResizedWith": "Pillow LANCZOS; alpha retained"
+    },
+    {
+      "pose": "walk-01",
+      "sourceRole": "pinned generated four-pose walk sheet",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/walk-v1/cleaned-v1/candidate-01-alpha-cleaned.png",
+      "sourceSha256": "66c9402eaa19e17a50840a0871150b2ed9db72062dad0511ba7b37c1e272d537",
+      "sourceOrigin": [
+        764,
+        32
+      ],
+      "sourceImageSize": [
+        467,
+        547
+      ],
+      "sourceAlphaThresholdBBox": [
+        4,
+        4,
+        463,
+        543
+      ],
+      "sourceBodyHeight": 539,
+      "sourceContactPivot": [
+        240.0,
+        543.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          463,
+          543
+        ],
+        "bandTop": 526,
+        "bandBottomExclusive": 543,
+        "contactXBounds": [
+          98,
+          382
+        ],
+        "sourcePivotLocal": [
+          240.0,
+          543.0
+        ]
+      },
+      "uniformScaleForSourceSheet": 0.07678244972577697,
+      "targetVisibleBodyHeight": 42.0,
+      "resizedSourceSize": [
+        36,
+        42
+      ],
+      "targetRootPivot": [
+        32.0,
+        60.0
+      ],
+      "outputPlacement": [
+        14,
+        18
+      ],
+      "outputAlphaThresholdBBox": [
+        14,
+        18,
+        50,
+        60
+      ],
+      "outputVisibleBodyHeight": 42,
+      "outputCanvas": [
+        64,
+        64
+      ],
+      "sourceArtResizedWith": "Pillow LANCZOS; alpha retained"
+    },
+    {
+      "pose": "walk-02",
+      "sourceRole": "pinned generated four-pose walk sheet",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/walk-v1/cleaned-v1/candidate-01-alpha-cleaned.png",
+      "sourceSha256": "66c9402eaa19e17a50840a0871150b2ed9db72062dad0511ba7b37c1e272d537",
+      "sourceOrigin": [
+        117,
+        607
+      ],
+      "sourceImageSize": [
+        485,
+        551
+      ],
+      "sourceAlphaThresholdBBox": [
+        4,
+        4,
+        481,
+        547
+      ],
+      "sourceBodyHeight": 543,
+      "sourceContactPivot": [
+        238.5,
+        547.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          481,
+          547
+        ],
+        "bandTop": 530,
+        "bandBottomExclusive": 547,
+        "contactXBounds": [
+          57,
+          420
+        ],
+        "sourcePivotLocal": [
+          238.5,
+          547.0
+        ]
+      },
+      "uniformScaleForSourceSheet": 0.07678244972577697,
+      "targetVisibleBodyHeight": 42.0,
+      "resizedSourceSize": [
+        37,
+        42
+      ],
+      "targetRootPivot": [
+        32.0,
+        60.0
+      ],
+      "outputPlacement": [
+        14,
+        18
+      ],
+      "outputAlphaThresholdBBox": [
+        14,
+        18,
+        51,
+        60
+      ],
+      "outputVisibleBodyHeight": 42,
+      "outputCanvas": [
+        64,
+        64
+      ],
+      "sourceArtResizedWith": "Pillow LANCZOS; alpha retained"
+    },
+    {
+      "pose": "walk-03",
+      "sourceRole": "pinned generated four-pose walk sheet",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/walk-v1/cleaned-v1/candidate-01-alpha-cleaned.png",
+      "sourceSha256": "66c9402eaa19e17a50840a0871150b2ed9db72062dad0511ba7b37c1e272d537",
+      "sourceOrigin": [
+        760,
+        611
+      ],
+      "sourceImageSize": [
+        481,
+        546
+      ],
+      "sourceAlphaThresholdBBox": [
+        4,
+        4,
+        477,
+        542
+      ],
+      "sourceBodyHeight": 538,
+      "sourceContactPivot": [
+        246.5,
+        542.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          477,
+          542
+        ],
+        "bandTop": 525,
+        "bandBottomExclusive": 542,
+        "contactXBounds": [
+          67,
+          426
+        ],
+        "sourcePivotLocal": [
+          246.5,
+          542.0
+        ]
+      },
+      "uniformScaleForSourceSheet": 0.07678244972577697,
+      "targetVisibleBodyHeight": 42.0,
+      "resizedSourceSize": [
+        37,
+        42
+      ],
+      "targetRootPivot": [
+        32.0,
+        60.0
+      ],
+      "outputPlacement": [
+        13,
+        18
+      ],
+      "outputAlphaThresholdBBox": [
+        13,
+        18,
+        50,
+        60
+      ],
+      "outputVisibleBodyHeight": 42,
+      "outputCanvas": [
+        64,
+        64
+      ],
+      "sourceArtResizedWith": "Pillow LANCZOS; alpha retained"
+    }
+  ],
+  "cleanupAndSeparation": {
+    "status": "offline lossless pose separation; alignment/native review pending",
+    "action": "master-walk",
+    "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/walk-v1/cleaned-v1/candidate-01-alpha-cleaned.png",
+    "sourceSha256": "66c9402eaa19e17a50840a0871150b2ed9db72062dad0511ba7b37c1e272d537",
+    "sourceSize": [
+      1323,
+      1189
+    ],
+    "sourceComponentCountAtThreshold": 4,
+    "majorComponentAreaMinimum": 50000,
+    "selectedPoseCount": 4,
+    "componentConnectivity": "8-connected",
+    "ordering": "row-major by component bbox center; top/bottom split at source height/2, then x center",
+    "commonSourceCanvas": {
+      "globalBBox": [
+        117,
+        30,
+        1241,
+        1158
+      ],
+      "size": [
+        1124,
+        1128
+      ],
+      "scale": 1.0,
+      "resized": false,
+      "sourceOffsetsPreserved": true
+    },
+    "policy": {
+      "seed": "four largest-area components meeting area minimum at alpha>=16",
+      "dilationRadius": 4,
+      "dilationShape": "square/Chebyshev radius, clipped to source bounds",
+      "retainedPixels": "original source RGBA bytes copied unchanged",
+      "removedPixels": "only nonzero source pixels outside a unique pose dilation; alpha must be <=10; no recoloring",
+      "maximumRemovedAlphaAllowed": 10,
+      "independentResize": false,
+      "quadrantCropping": false
+    },
+    "removedPixelCount": 0,
+    "maximumRemovedAlpha": 0,
+    "removedAlphaHistogram": {},
+    "poses": [
+      {
+        "frame": "pose-00.png",
+        "row": 0,
+        "column": 0,
+        "seedThreshold": 16,
+        "seedArea": 134580,
+        "seedMaxAlpha": 255,
+        "sourceGlobalBBox": [
+          152,
+          34,
+          602,
+          581
+        ],
+        "paddedSourceBBox": [
+          148,
+          30,
+          606,
+          585
+        ],
+        "sourceOffsetOnCommonCanvas": [
+          31,
+          0
+        ],
+        "poseName": "step-a"
+      },
+      {
+        "frame": "pose-01.png",
+        "row": 0,
+        "column": 1,
+        "seedThreshold": 16,
+        "seedArea": 131530,
+        "seedMaxAlpha": 255,
+        "sourceGlobalBBox": [
+          768,
+          36,
+          1227,
+          575
+        ],
+        "paddedSourceBBox": [
+          764,
+          32,
+          1231,
+          579
+        ],
+        "sourceOffsetOnCommonCanvas": [
+          647,
+          2
+        ],
+        "poseName": "step-b"
+      },
+      {
+        "frame": "pose-02.png",
+        "row": 1,
+        "column": 0,
+        "seedThreshold": 16,
+        "seedArea": 136445,
+        "seedMaxAlpha": 255,
+        "sourceGlobalBBox": [
+          121,
+          611,
+          598,
+          1154
+        ],
+        "paddedSourceBBox": [
+          117,
+          607,
+          602,
+          1158
+        ],
+        "sourceOffsetOnCommonCanvas": [
+          0,
+          577
+        ],
+        "poseName": "step-c"
+      },
+      {
+        "frame": "pose-03.png",
+        "row": 1,
+        "column": 1,
+        "seedThreshold": 16,
+        "seedArea": 131154,
+        "seedMaxAlpha": 255,
+        "sourceGlobalBBox": [
+          764,
+          615,
+          1237,
+          1153
+        ],
+        "paddedSourceBBox": [
+          760,
+          611,
+          1241,
+          1157
+        ],
+        "sourceOffsetOnCommonCanvas": [
+          643,
+          581
+        ],
+        "poseName": "step-d"
+      }
+    ],
+    "sourceFileModified": false,
+    "sourceComponentCountAtAlphaThreshold": 6,
+    "sourceMajorComponentCount": 4,
+    "promptPath": "assets/new-horizons/creatures/cabir-master/v3/walk-v1/candidate-01.prompt.txt",
+    "promptSha256": "088fe9244edce4bcb9401d173aa1b837c7efd31a3fed578e8f9d713721dc6731",
+    "inputPngIsModifiedInMemoryOnlyForPinnedOperations": true,
+    "authorizedAlphaOnlyCleanup": [
+      {
+        "x": 1078,
+        "y": 87,
+        "expectedAlpha": 19,
+        "rgbPreserved": [
+          53,
+          40,
+          40
+        ]
+      },
+      {
+        "x": 437,
+        "y": 1007,
+        "expectedAlpha": 17,
+        "rgbPreserved": [
+          90,
+          45,
+          45
+        ]
+      }
+    ],
+    "auxiliaryComponentsAssigned": [],
+    "upstreamCleanupReceipt": {
+      "path": "assets/new-horizons/creatures/cabir-master/v3/walk-v1/cleaned-v1/cleanup-receipt.json",
+      "sha256": "16669a3e117ebea032c5759fef78d6129f6eab41d25a954ca8fa937010816111"
+    }
+  },
+  "encounterMirrorRule": "left is a mechanical horizontal mirror; right uses the pinned generated standing pose",
+  "limitations": [
+    "map walk is the existing four-frame generated draft, not a claim of complete loop quality",
+    "standing and walk sheets are calibrated independently to the same 42px body height",
+    "no original game sprite pixels are copied; original resource IDs below are metadata references only"
+  ]
+}

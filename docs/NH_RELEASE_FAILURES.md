@@ -2,6 +2,18 @@
 
 ## Purpose
 
+### 2026-10-06 — Cabir portrait guard assumed no other graphics fields
+
+The combined Cabir map/battle/portrait content check found two failures in a
+legacy portrait guard: it compared the entire graphics object to only iconLarge
+and iconSmall, despite dedicated battle and map graphics already being present.
+Scope that assertion to the exact icon-field projection and retain byte/size
+parity. Dedicated animation and map checks cover their own fields; do not delete
+those settings to satisfy an obsolete portrait-only shape. The revised focused
+combined suite passes31/31. Native map/encounter/template checks also pass1/1,
+zero skips. A map-preview fixture dimension expectation was corrected separately;
+neither test issue required changing artwork or gameplay.
+
 ### 2026-10-06 — Incoming-element packet lambda capture
 
 Build18091 and single-object reproduction60457 fail in SetStackEffect.h: a

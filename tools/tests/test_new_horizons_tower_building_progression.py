@@ -37,6 +37,16 @@ def merge_objects(base, patch):
 
 
 class NewHorizonsTowerBuildingProgressionTest(unittest.TestCase):
+    def test_workshop_descriptions_use_cabir_names_without_changing_gameplay(self):
+        patch = load("Mods/new-horizons/Content/config/factions/towerCreatureRanks.json")
+        buildings = patch["core:tower"]["town"]["buildings"]
+        for identifier in ("dwellingLvl1", "dwellingUpLvl1"):
+            with self.subTest(building=identifier):
+                self.assertEqual(set(buildings[identifier]), {"description"})
+                self.assertIn("Cabir", buildings[identifier]["description"])
+                self.assertNotIn("Gremlin", buildings[identifier]["description"])
+        self.assertIn("Cabir Masters", buildings["dwellingUpLvl1"]["description"])
+
     def test_relocated_hall_cards_do_not_reuse_baked_vanilla_frames(self):
         # Source wiring guard only: pixel appearance still requires visual QA.
         source = (ROOT / "client/windows/CCastleInterface.cpp").read_text(encoding="utf-8")

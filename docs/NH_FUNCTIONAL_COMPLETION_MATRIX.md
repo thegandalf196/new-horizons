@@ -2,6 +2,15 @@
 
 Updated: 2026-10-06
 
+Cabir adventure-map source/resource integration closes the remaining map/encounter
+binding gap for both forms. Unique four-frame64x64 animations, both encounter
+facings and eight-slot legacy H3M aliases are original-source derivatives.
+The loaded 2x2 footprint and all eight approach directions are native-verified;
+client/resource builds and31 focused Python checks pass. Inherited Workshop
+descriptions now use Cabir names. Playable delivery and motion acceptance remain
+open; UP253 continues ahead of ordinary missing features. Phase1 counts remain
+225/310 perks,61/67 combat spells and8/8 Orders; no identity credit for art.
+
 Cabir battle source/resource integration now closes the unique custom animation
 binding gap for both forms, including Master shooting and Repair casting.
 Focused offline8/8, pinned export reproduction, client/resource builds, activated native renderer1/1 and

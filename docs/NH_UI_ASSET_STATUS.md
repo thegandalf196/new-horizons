@@ -1,5 +1,14 @@
 # New Horizons UI and asset status register
 
+Cabir map/encounter resources,2026-10-06: **Provisional**, source-integrated
+and natively loadable for both forms. Unique64x64 map descriptors use four
+real walk poses; legacy H3M sprite-name aliases repeat that sequence in eight
+slots. Separate left/right encounter images derive from the pinned original
+standing masters, with mechanical mirroring only. Root reviewed native/enlarged
+contacts. Native resource/template checks preserve footprint/approaches and
+verify bindings/frame parity. Workshop descriptions use Cabir names. Motion,
+cross-role visual fit and playable delivery remain unverified; no Final approval.
+
 Cabir battle resources,2026-10-06: **Provisional**, source-integrated and
 natively loadable. Both forms have unique walk/melee/reaction/death resources;
 Master has fire shooting and separate Repair casting. Native binding/frame

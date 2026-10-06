@@ -1,0 +1,14 @@
+{
+  "basepath": "NH_cabir_master_v3_map/",
+  "sequences": [
+    {
+      "group": 0,
+      "frames": [
+        "walk/frame-00.png",
+        "walk/frame-01.png",
+        "walk/frame-02.png",
+        "walk/frame-03.png"
+      ]
+    }
+  ]
+}

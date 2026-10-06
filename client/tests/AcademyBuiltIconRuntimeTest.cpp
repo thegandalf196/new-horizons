@@ -25,6 +25,9 @@
 #include "../../lib/modding/IdentifierStorage.h"
 #include "../../lib/modding/ModScope.h"
 #include "../../lib/modding/CModHandler.h"
+#include "../../lib/mapObjectConstructors/AObjectTypeHandler.h"
+#include "../../lib/mapObjectConstructors/CObjectClassesHandler.h"
+#include "../../lib/mapObjects/ObjectTemplate.h"
 
 #include "render/Canvas.h"
 #include "render/CAnimation.h"
@@ -203,6 +206,129 @@ ImagePath mountedSpritePath(const ImagePath & image)
 	if(name.rfind("SPRITES/", 0) == 0)
 		return image;
 	return ImagePath::builtin("SPRITES/" + name);
+}
+
+std::vector<ColorRGBA> captureImagePixels(const std::shared_ptr<IImage> & image, const Point & expectedSize,
+		const std::string & description)
+{
+	require(image != nullptr, "Could not load " + description);
+	require(image->dimensions() == expectedSize, description + " has unexpected native dimensions");
+	Canvas canvas(expectedSize, CanvasScalingPolicy::IGNORE);
+	canvas.drawColor(Rect(Point(0, 0), expectedSize), ColorRGBA(0, 0, 0, 0));
+	canvas.draw(image, Point(0, 0));
+
+	std::vector<ColorRGBA> pixels;
+	pixels.reserve(static_cast<size_t>(expectedSize.x * expectedSize.y));
+	for(int y = 0; y < expectedSize.y; ++y)
+		for(int x = 0; x < expectedSize.x; ++x)
+			pixels.push_back(canvas.getPixel(Point(x, y)));
+	return pixels;
+}
+
+void verifyCabirApproachImage(const ImagePath & configuredPath, const char * expectedImageName, const char * side)
+{
+	const ImagePath expectedPath = ImagePath::builtin(expectedImageName);
+	require(configuredPath == expectedPath,
+		std::string("Unexpected Cabir map-encounter image binding from ") + side + " approach");
+	const ImagePath mountedPath = mountedSpritePath(configuredPath);
+	require(CResourceHandler::get()->existsResource(mountedPath),
+		std::string("Cabir map-encounter image resource is missing: ") + expectedImageName);
+	const auto image = ENGINE->renderHandler().loadImage(mountedPath, EImageBlitMode::SIMPLE);
+	const std::vector<ColorRGBA> pixels = captureImagePixels(image, Point(64, 64), expectedImageName);
+	require(std::any_of(pixels.begin(), pixels.end(), [](const ColorRGBA & pixel) { return pixel.a != 0; }),
+		std::string("Cabir map-encounter image is blank: ") + expectedImageName);
+}
+
+void verifyCabirAdventureMap(const CCreature & creature, const char * mapDescriptor,
+		const char * leftEncounterImage, const char * rightEncounterImage)
+{
+	const auto handler = LIBRARY->objtypeh->getHandlerFor(Obj::MONSTER, creature.getId().num);
+	require(handler != nullptr, "Cabir monster object handler is missing");
+	const auto templates = handler->getTemplates();
+	require(templates.size() == 1, "Cabir monster must resolve to one custom adventure-map template");
+	require(templates.front() != nullptr, "Cabir monster template is null");
+	const auto & objectTemplate = *templates.front();
+	require(objectTemplate.id == Obj::MONSTER && objectTemplate.subid == creature.getId().num,
+		"Cabir adventure-map template is not bound to its creature identity");
+	require(objectTemplate.animationFile == AnimationPath::builtin(mapDescriptor),
+		std::string("Cabir monster template does not use map descriptor ") + mapDescriptor);
+	require(objectTemplate.getWidth() == 2 && objectTemplate.getHeight() == 2,
+		"Cabir monster template must preserve its 2x2 adventure-map footprint");
+	require(objectTemplate.isVisitable(), "Cabir monster template must remain visitable");
+
+	for(int y = 0; y < 2; ++y)
+	{
+		for(int x = 0; x < 2; ++x)
+		{
+			const bool anchor = x == 0 && y == 0; // readJson reverses the declared mask into bottom-right-relative coordinates
+			require(objectTemplate.isVisibleAt(x, y), "Cabir mapMask must keep every footprint tile visible");
+			require(objectTemplate.isBlockedAt(x, y) == anchor
+				&& objectTemplate.isVisitableAt(x, y) == anchor,
+				"Cabir mapMask [VV, VA] must block and mark only the A anchor visitable");
+		}
+	}
+
+	for(int dy = -1; dy <= 1; ++dy)
+	{
+		for(int dx = -1; dx <= 1; ++dx)
+		{
+			if(dx != 0 || dy != 0)
+				require(objectTemplate.isVisitableFrom(dx, dy),
+					"Cabir inherited visitableFrom must allow all eight surrounding approach tiles");
+		}
+	}
+
+	auto & renderer = ENGINE->renderHandler();
+	const auto mapAnimation = renderer.loadAnimation(objectTemplate.animationFile, EImageBlitMode::WITH_SHADOW);
+	require(mapAnimation != nullptr && mapAnimation->size(0) >= 4,
+		std::string("Cabir map descriptor must have at least four group-0 frames: ") + mapDescriptor);
+
+	std::vector<std::vector<ColorRGBA>> distinctFrames;
+	std::array<ImagePath, 4> mapFramePaths;
+	for(size_t frame = 0; frame < 4; ++frame)
+	{
+		const auto locator = mapAnimation->getImageLocator(frame, 0);
+		require(locator.image.has_value()
+			&& CResourceHandler::get()->existsResource(mountedSpritePath(*locator.image)),
+			std::string("Cabir map descriptor frame resource is missing: ") + mapDescriptor
+			+ " frame " + std::to_string(frame));
+		mapFramePaths[frame] = *locator.image;
+		const auto pixels = captureImagePixels(mapAnimation->getImage(frame, 0, true), Point(64, 64),
+			std::string(mapDescriptor) + " group-0 frame " + std::to_string(frame));
+		require(std::any_of(pixels.begin(), pixels.end(), [](const ColorRGBA & pixel) { return pixel.a != 0; }),
+			std::string("Cabir map frame is blank: ") + mapDescriptor + " frame " + std::to_string(frame));
+		for(const auto & prior : distinctFrames)
+			require(pixels != prior,
+				std::string("Cabir map animation repeats a placeholder frame: ") + mapDescriptor);
+		distinctFrames.push_back(pixels);
+	}
+
+	const char * compatibilityDescriptor = creature.getIndex() == 28 ? "AVWgrem0" : "AVWgrex0";
+	const auto compatibilityAnimation = renderer.loadAnimation(
+		AnimationPath::builtin(compatibilityDescriptor), EImageBlitMode::WITH_SHADOW);
+	require(compatibilityAnimation && compatibilityAnimation->size(0) == 8,
+		std::string("Cabir compatibility descriptor must preserve the legacy eight-frame group 0: ")
+			+ compatibilityDescriptor);
+	for(size_t frame = 0; frame < 8; ++frame)
+	{
+		const size_t sourceFrame = frame % mapFramePaths.size();
+		const auto locator = compatibilityAnimation->getImageLocator(frame, 0);
+		require(locator.image.has_value() && *locator.image == mapFramePaths[sourceFrame]
+			&& CResourceHandler::get()->existsResource(mountedSpritePath(*locator.image)),
+			std::string("Cabir compatibility frame does not reuse the unique map resource: ")
+				+ compatibilityDescriptor + " frame " + std::to_string(frame));
+		const auto pixels = captureImagePixels(compatibilityAnimation->getImage(frame, 0, true), Point(64, 64),
+			std::string(compatibilityDescriptor) + " group-0 frame " + std::to_string(frame));
+		require(pixels == distinctFrames[sourceFrame],
+			std::string("Cabir compatibility alias changed its source map pixels: ") + compatibilityDescriptor
+			+ " frame " + std::to_string(frame));
+	}
+
+	verifyCabirApproachImage(creature.mapAttackFromLeft, leftEncounterImage, "left");
+	verifyCabirApproachImage(creature.mapAttackFromRight, rightEncounterImage, "right");
+	require(creature.mapAttackFromLeft != creature.mapAttackFromRight,
+		"Cabir left/right encounter images must be separately bound");
+	std::cout << "  " << mapDescriptor << ": 2x2 visitable template, eight approaches, four distinct map frames, legacy alias and left/right encounter images\n";
 }
 
 void verifyAcademyPortrait(const AcademyPortrait & portrait)
@@ -465,10 +591,14 @@ void verifyCabirAnimation(const char * descriptorName, bool master)
 			"Cabir Master projectile should resolve to original CPRGOGX DEF " + expectedDefReference
 			+ "; actual locator is " + describeDefReference(projectileFrame));
 		const auto reverseProjectileFrame = projectile->getImageLocator(0, 1);
-		require(reverseProjectileFrame.defFile.has_value() && *reverseProjectileFrame.defFile == projectilePath,
+			require(reverseProjectileFrame.defFile.has_value() && *reverseProjectileFrame.defFile == projectilePath,
 			"Cabir Master reverse projectile should retain original CPRGOGX DEF " + expectedDefReference
 			+ "; actual locator is " + describeDefReference(reverseProjectileFrame));
 	}
+	verifyCabirAdventureMap(*creature,
+		master ? "NH_CabirMasterMap.def" : "NH_CabirMap.def",
+		master ? "NH_CabirMasterEncounterLeft.png" : "NH_CabirEncounterLeft.png",
+		master ? "NH_CabirMasterEncounterRight.png" : "NH_CabirEncounterRight.png");
 
 	const auto battleAnimation = std::make_shared<CreatureAnimation>(descriptorPath,
 		[](CreatureAnimation *, ECreatureAnimType) { return 1.0f; });

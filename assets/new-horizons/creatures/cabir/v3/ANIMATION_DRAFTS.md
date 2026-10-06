@@ -1,5 +1,16 @@
 # Barehanded animation sources — provisional
 
+Map-role checkpoint: `map-export-v1/` under both creature v3 directories now
+contains pinned64x64 map/encounter derivatives and native/enlarged contacts.
+The map exporter reuses the existing original standing/walk sources and their
+alpha-only cleanup; no new painting or purchaser colour data. Four actual walk
+poses share one scale and ground anchor; encounter facings use a lawful mechanical
+mirror. Production uses unique NH_CabirMap/NH_CabirMasterMap descriptors plus
+AVWgrem0/AVWgrex0 compatibility aliases with four frames repeated twice.
+Native resource/template checks prove bindings, alias pixels and the preserved
+footprint/approaches. Artwork remains Provisional; map/battle motion acceptance
+and normal playable delivery are open, rather than implied by resource loading.
+
 Production resource checkpoint: both `battle-export-v1/` bundles now have
 unique JSON animation bindings (`NH_Cabir`, `NH_CabirMaster`) and source-exact
 runtime PNGs. Movement, holding, hit, defense, death/dead and directional melee

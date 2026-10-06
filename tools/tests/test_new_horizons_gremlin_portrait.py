@@ -116,7 +116,7 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
             with self.subTest(creature=creature):
                 graphics = config[creature]["graphics"]
                 self.assertEqual(
-                    graphics,
+                    {key: graphics[key] for key in ("iconLarge", "iconSmall")},
                     {"iconLarge": paths["large"], "iconSmall": paths["small"]},
                 )
                 for key, size in (("large", (58, 64)), ("small", (32, 32))):
