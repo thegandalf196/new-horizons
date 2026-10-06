@@ -30,7 +30,106 @@ def make_atlas() -> Image.Image:
     return atlas
 
 
+def make_row_major_grid() -> Image.Image:
+    """Place the four standard test cels in a 2x2 row-major atlas."""
+    horizontal = make_atlas()
+    grid = Image.new("RGBA", (24, 24), (11, 22, 33, 0))
+    for index in range(4):
+        cell = horizontal.crop((index * 12, 0, (index + 1) * 12, 12))
+        grid.alpha_composite(cell, ((index % 2) * 12, (index // 2) * 12))
+    return grid
+
+
+def make_odd_grid() -> Image.Image:
+    """A 2x2 atlas whose source cells differ by one pixel on both axes."""
+    atlas = Image.new("RGBA", (25, 25), (0, 0, 0, 0))
+    boundaries = (0, 12, 25)  # round(i * 25 / 2), deterministically
+    colors = ((220, 30, 20, 255), (25, 210, 30, 255), (20, 45, 220, 255), (230, 190, 30, 255))
+    index = 0
+    for row in range(2):
+        for column in range(2):
+            left, right = boundaries[column], boundaries[column + 1]
+            top, bottom = boundaries[row], boundaries[row + 1]
+            atlas.putpixel((left + 2, top + 2), colors[index])
+            atlas.putpixel((left + 3, top + 3), (*colors[index][:3], 96))
+            index += 1
+    return atlas
+
+
 class CabirAnimationExporterTest(unittest.TestCase):
+    def test_grid_rows_are_split_in_row_major_order_with_one_shared_geometry(self):
+        atlas = make_row_major_grid()
+        frames, info = exporter.render_frames(atlas, columns=2, rows=2, height=20)
+
+        self.assertEqual(len(frames), 4)
+        self.assertEqual(info["rows"], 2)
+        self.assertEqual(info["columns"], 2)
+        self.assertEqual(info["sourceFrameCount"], 4)
+        self.assertEqual(info["frameOrder"], "row-major")
+        self.assertEqual(info["sourcePanelSize"], [12, 12])
+        self.assertEqual(info["sharedSourceBounds"], [1, 1, 8, 11])
+        self.assertEqual(info["resizedBodySize"], [14, 20])
+        self.assertEqual(info["placement"], [189, 248])
+
+        source_frames = [
+            atlas.crop((column * 12, row * 12, (column + 1) * 12, (row + 1) * 12))
+            for row in range(2)
+            for column in range(2)
+        ]
+        for actual, source in zip(frames, source_frames):
+            expected_body = source.crop((1, 1, 8, 11)).resize((14, 20), Image.Resampling.LANCZOS)
+            expected = Image.new("RGBA", exporter.LOGICAL_CANVAS, (0, 0, 0, 0))
+            expected.alpha_composite(expected_body, (189, 248))
+            self.assertEqual(actual.tobytes(), expected.tobytes())
+
+    def test_odd_grid_assigns_every_pixel_once_and_pads_only_transparently(self):
+        atlas = make_odd_grid()
+        original = atlas.tobytes()
+        loaded_atlas, frames, _bounds = exporter.load_atlas_from_image(atlas, columns=2, rows=2)
+        x_bounds = (0, 12, 25)
+        y_bounds = (0, 12, 25)
+
+        self.assertIs(loaded_atlas, atlas)
+        self.assertEqual(len(frames), 4)
+        self.assertTrue(all(frame.size == (13, 13) for frame in frames))
+
+        reconstructed = Image.new("RGBA", atlas.size, (0, 0, 0, 0))
+        index = 0
+        for row in range(2):
+            for column in range(2):
+                left, right = x_bounds[column], x_bounds[column + 1]
+                top, bottom = y_bounds[row], y_bounds[row + 1]
+                source_cell = atlas.crop((left, top, right, bottom))
+                self.assertEqual(
+                    frames[index].crop((0, 0, source_cell.width, source_cell.height)).tobytes(),
+                    source_cell.tobytes(),
+                    f"row-major cell {index} changed source pixels",
+                )
+                if source_cell.width < 13:
+                    self.assertTrue(all(frames[index].getpixel((12, y)) == (0, 0, 0, 0) for y in range(13)))
+                if source_cell.height < 13:
+                    self.assertTrue(all(frames[index].getpixel((x, 12)) == (0, 0, 0, 0) for x in range(13)))
+                reconstructed.paste(source_cell, (left, top))
+                index += 1
+
+        self.assertEqual(reconstructed.tobytes(), original)
+
+    def test_grid_export_records_rows_and_keeps_default_export_compatible(self):
+        atlas = make_row_major_grid()
+        with tempfile.TemporaryDirectory(prefix="nh-cabir-grid-") as temp:
+            root = Path(temp)
+            source = root / "grid.png"
+            atlas.save(source)
+            output = root / "grid-export"
+
+            exporter.export_animation(source, output, columns=2, height=20, rows=2)
+
+            metadata = json.loads((output / "export.json").read_text(encoding="utf-8"))
+            self.assertEqual(metadata["sourceFrameCount"], 4)
+            self.assertEqual(metadata["rows"], 2)
+            with Image.open(output / "animation-proof.gif") as opened:
+                self.assertEqual(opened.n_frames, 4)
+
     def test_shared_extent_and_scale_preserve_distinct_cel_geometry_and_anchor(self):
         atlas = make_atlas()
         frames, info = exporter.render_frames(atlas, columns=4, height=20)
@@ -124,6 +223,10 @@ class CabirAnimationExporterTest(unittest.TestCase):
         partial = Image.new("RGBA", (15, 12), (0, 0, 0, 0))
         with self.assertRaisesRegex(ValueError, "not divisible"):
             exporter.load_atlas_from_image(partial, columns=4)
+
+        uneven_columns = Image.new("RGBA", (25, 24), (0, 0, 0, 0))
+        with self.assertRaisesRegex(ValueError, "not divisible into 2 equal columns"):
+            exporter.load_atlas_from_image(uneven_columns, columns=2)
 
         empty_panel = Image.new("RGBA", (48, 12), (0, 0, 0, 0))
         empty_panel.putpixel((2, 2), (255, 0, 0, 255))

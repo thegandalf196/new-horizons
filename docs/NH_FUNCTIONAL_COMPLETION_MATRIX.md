@@ -2,6 +2,15 @@
 
 Updated: 2026-10-06
 
+Explicit user-priority Cabir checkpoint: original four-frame walk now has
+reviewed provisional alpha-only cleanup and common-canvas exports; new melee,
+reaction/death and upgraded standing poses are retained. This advances required
+creature presentation, not production animation completion or a gameplay identity.
+Native-motion/cross-action scale, directional groups, upgraded sequence, portraits,
+resource bindings and playable delivery remain open. Counts unchanged:
+225/310 perks,61/67 combat spells,8/8 Orders. Continue Cabir before ordinary
+missing coverage under UP253; Magi colour changes are queued as UP262.
+
 UP261 required Leadership feedback: proposed additional Leadership, aggregate
 slot demand, legal incoming count and exact point shortfall now use shared
 receiving-hero capacity in recruitment help, transfer hover and split owner help.

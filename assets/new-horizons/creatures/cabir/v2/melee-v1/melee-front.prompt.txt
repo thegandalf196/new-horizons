@@ -1,0 +1,24 @@
+Use case: stylized-concept
+Asset type: four-frame original Heroes III-like creature melee sprite sheet.
+Reference: Cabir v2 standing image defines the creature identity and dark rough
+pixel-reduced late-1990s fantasy finish. Preserve anatomy, camera and clothes.
+Draw exactly four full-body Cabir poses in a 2-by-2 grid, read row-major.
+Each cell has the same body scale and three-quarter right-facing camera.
+Planted feet share the same local baseline. Leave generous transparent margins,
+especially rightward clearance for the striking vessel. No guides or text.
+Top-left: ready stance, both hands hold the brass fire pot at waist height.
+Top-right: wind-up, torso leans slightly backward, both hands pull pot back
+toward the chest, knees bent, ready to thrust.
+Bottom-left: impact, torso leans forward and both arms extend to the RIGHT,
+striking a nearby opponent with the substantial brass pot; feet remain planted,
+the pot reaches beyond the snout. Compact flame remains attached to its mouth.
+Bottom-right: recovery, elbows draw the pot back toward waist, torso halfway
+back to the ready posture. This must be four distinct action poses, not four
+copies of standing. Keep head, spikes, collar, cuffs, trousers, burgundy sash,
+pot proportions, hand grip and eye consistent across all four poses.
+Dark brown/charcoal rough reptilian skin, sparse glowing orange fissures,
+worn brass hardware, cream trousers, low-detail modeled surfaces, heavy shadow,
+restrained fire. Crude dark-fantasy battle sprite treatment, no glossy modern
+render or excessive miniature surface detail. The sheet itself is genuinely
+transparent: exact zero alpha outside each isolated figure, no ground/shadow,
+halo, haze, separated flame particles, extra props, scenery, divider or labels.

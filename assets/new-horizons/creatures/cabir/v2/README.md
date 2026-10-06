@@ -1,5 +1,10 @@
 # Cabir standing draft v2
 
+Animation follow-up: see [ANIMATION_DRAFTS.md](ANIMATION_DRAFTS.md) for the
+reviewed provisional walking loop, additional original action poses and upgraded
+standing draft. The static in-game preview described below remains unchanged;
+new offline art does not yet replace its all-groups standing binding.
+
 User-requested rougher, darker Heroes III-style revision, created with the
 built-in image generator using the HoMM3 Art workflow. The exact edit prompt
 is retained in `standing-master.prompt.txt`. The approved v1 standing master

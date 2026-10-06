@@ -1,5 +1,19 @@
 # New Horizons UI and asset status register
 
+Cabir animation follow-up,2026-10-06: **Provisional** four-frame walk-v2
+after user-approved alpha cleanup/alignment. Source masters remain intact;
+22,851 removed external alpha pixels have opacity at most10; retained RGBA and
+all RGB unchanged. Native PNGs share450x400 canvas/scale/pivot; offline contact
+and GIF inspection plus independent review find no blocking defect. No normal
+runtime installation or final motion approval. New melee-front, reaction/death
+and Cabir Master standing candidates are original HoMM3-Art drafts, not final
+assets. Their alpha is transparent; grid-boundary overlap requires silhouette
+extraction rather than clipping crops. Cross-action scale/directional attacks,
+upgraded animations, portraits/icons and production integration remain **Not done**.
+See `assets/new-horizons/creatures/cabir/v2/ANIMATION_DRAFTS.md` for provenance,
+exact prompts, hashes and remaining scope. Earlier rejection statements below
+describe the older attempts, not the new provisional walk.
+
 Proposed Leadership demand,2026-10-06: **Provisional**. UP261 adds localized
 per-slot requested demand, legal incoming count and capacity shortfall to existing
 recruitment-row help, army-transfer hover and split-dialog owner-marker help.

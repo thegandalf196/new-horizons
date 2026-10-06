@@ -1,0 +1,155 @@
+{
+  "status": "offline lossless pose separation; alignment/native review pending",
+  "action": "reactions",
+  "sourcePath": "assets/new-horizons/creatures/cabir/v2/reactions-v1/candidate-02.png",
+  "sourceSha256": "744691e95d2bcfcb0ba7632ed158f9c24f1ad021edaba9eb13cd78b5dec49349",
+  "sourceSize": [
+    1536,
+    1024
+  ],
+  "sourceComponentCountAtThreshold": 4,
+  "majorComponentAreaMinimum": 50000,
+  "selectedPoseCount": 4,
+  "componentConnectivity": "8-connected",
+  "ordering": "row-major by component bbox center; top/bottom split at source height/2, then x center",
+  "commonSourceCanvas": {
+    "globalBBox": [
+      51,
+      23,
+      1514,
+      969
+    ],
+    "size": [
+      1463,
+      946
+    ],
+    "scale": 1.0,
+    "resized": false,
+    "sourceOffsetsPreserved": true
+  },
+  "policy": {
+    "seed": "four largest-area components meeting area minimum at alpha>=128",
+    "dilationRadius": 4,
+    "dilationShape": "square/Chebyshev radius, clipped to source bounds",
+    "retainedPixels": "original source RGBA bytes copied unchanged",
+    "removedPixels": "only nonzero source pixels outside a unique pose dilation; alpha must be <=10; no recoloring",
+    "maximumRemovedAlphaAllowed": 10,
+    "independentResize": false,
+    "quadrantCropping": false
+  },
+  "removedPixelCount": 7473,
+  "maximumRemovedAlpha": 6,
+  "removedAlphaHistogram": {
+    "1": 6304,
+    "2": 882,
+    "3": 208,
+    "4": 74,
+    "6": 1,
+    "5": 4
+  },
+  "poses": [
+    {
+      "frame": "pose-00.png",
+      "row": 0,
+      "column": 0,
+      "seedThreshold": 128,
+      "seedArea": 130265,
+      "seedMaxAlpha": 254,
+      "sourceGlobalBBox": [
+        203,
+        27,
+        684,
+        550
+      ],
+      "paddedSourceBBox": [
+        199,
+        23,
+        688,
+        554
+      ],
+      "sourceOffsetOnCommonCanvas": [
+        148,
+        0
+      ]
+    },
+    {
+      "frame": "pose-01.png",
+      "row": 0,
+      "column": 1,
+      "seedThreshold": 128,
+      "seedArea": 121041,
+      "seedMaxAlpha": 254,
+      "sourceGlobalBBox": [
+        904,
+        99,
+        1375,
+        550
+      ],
+      "paddedSourceBBox": [
+        900,
+        95,
+        1379,
+        554
+      ],
+      "sourceOffsetOnCommonCanvas": [
+        849,
+        72
+      ]
+    },
+    {
+      "frame": "pose-02.png",
+      "row": 1,
+      "column": 0,
+      "seedThreshold": 128,
+      "seedArea": 112249,
+      "seedMaxAlpha": 254,
+      "sourceGlobalBBox": [
+        55,
+        619,
+        683,
+        962
+      ],
+      "paddedSourceBBox": [
+        51,
+        615,
+        687,
+        966
+      ],
+      "sourceOffsetOnCommonCanvas": [
+        0,
+        592
+      ]
+    },
+    {
+      "frame": "pose-03.png",
+      "row": 1,
+      "column": 1,
+      "seedThreshold": 128,
+      "seedArea": 89039,
+      "seedMaxAlpha": 254,
+      "sourceGlobalBBox": [
+        833,
+        751,
+        1510,
+        965
+      ],
+      "paddedSourceBBox": [
+        829,
+        747,
+        1514,
+        969
+      ],
+      "sourceOffsetOnCommonCanvas": [
+        778,
+        724
+      ]
+    }
+  ],
+  "sourceFileModified": false,
+  "outputFiles": {
+    "pose-00.png": "cc2e0bca456bc760f83552c3cdd05fd71c15c186e894f5711c5654d113deaf06",
+    "pose-01.png": "20ee5280118587f23c108f241344bf8acf369fc15812bd1ed26da8e439e6e71c",
+    "pose-02.png": "8fc4e5335136fa03b96870a2fbae9e118c1bbbad1d114f41cef9f557b6d52dfb",
+    "pose-03.png": "ecb09678fbbfea6960ad82339dcee5d7b2f453bb42aed578bdd010b38d2d0527"
+  }
+}

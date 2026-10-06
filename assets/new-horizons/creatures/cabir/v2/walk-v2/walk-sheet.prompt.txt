@@ -1,0 +1,26 @@
+Use case: stylized-concept
+Asset type: original game creature walk animation sheet.
+Reference image: Cabir v2 standing-master.png defines anatomy, clothing, vessel,
+dark rough late-1990s modeled/pixel-reduced fantasy look. Preserve this identity.
+Create exactly FOUR full-body animation poses in a precise 2-by-2 grid, read
+left-to-right then top-to-bottom. Transparent background, no ground, no cast
+shadow, no text or guide lines, no detached particles or alpha haze.
+Each equal cell contains one same-sized Cabir facing right in exactly the same
+three-quarter view, both hands holding the same brass fire pot near the abdomen.
+Keep skull, muzzle, spikes, collar, wrist cuffs, cream trousers, burgundy sash
+and pot size identical. Compact restrained flame entirely connected to the pot.
+Each pose's planted foot rests on the same local baseline; torso center stays
+in the same local position with only modest natural gait bob. Leave a generous
+clear margin around each complete figure. No cropping or overlap between cells.
+Top-left: contact A, visible near leg forward, far leg back, both feet touching.
+Top-right: passing A, near leg planted underneath torso, far knee lifted crossing
+forward; visibly bent far leg, not merely changed foot position.
+Bottom-left: contact B, near leg back, far leg forward, opposite of contact A.
+Bottom-right: passing B, far leg planted underneath torso, near knee lifted
+crossing forward; visibly bent near leg, opposite of passing A.
+Show a readable weight-bearing walking cycle, not four standing variations.
+Crude, dark, restrained miniature Heroes III-like fantasy creature art; broad
+warm highlights, deep brown/charcoal shadow, simplified texture, clearly grouped
+forms, slight pixelated edges matching the reference. No glossy modern finish.
+Do not change the creature design, add equipment, repaint background scenery,
+or turn the Cabir toward/away from the viewer between poses.

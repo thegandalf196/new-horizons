@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mechanically export a horizontal Cabir frame atlas to battle canvases.
+"""Mechanically export a row-major Cabir frame grid to battle canvases.
 
 Every frame uses one union alpha extent, one scale, and one fixed placement so
 unequal animation silhouettes do not pump or drift. The source atlas is read
@@ -22,6 +22,7 @@ FEET_BASELINE_Y = 268
 MAX_SOURCE_SIDE = 8192
 MAX_SOURCE_PIXELS = 64 * 1024 * 1024
 MAX_COLUMNS = 32
+MAX_ROWS = 32
 MAX_BODY_HEIGHT = FEET_BASELINE_Y
 PROTECTED_RUNTIME = ROOT / "Mods"
 PROTECTED_CONFIG = ROOT / "config"
@@ -68,21 +69,35 @@ def _edge_alpha_count(alpha: Image.Image, side: str) -> int:
     return sum(pixels[x, height - 1] > 0 for x in range(width))
 
 
-def _validate_dimensions(width: int, height: int, columns: int) -> None:
+def _grid_boundaries(dimension: int, parts: int) -> list[int]:
+    """Partition a dimension proportionally, assigning each source pixel once."""
+    return [round(index * dimension / parts) for index in range(parts + 1)]
+
+
+def _validate_dimensions(width: int, height: int, columns: int, rows: int = 1) -> None:
     if columns < 1 or columns > MAX_COLUMNS:
         raise ValueError(f"columns must be between 1 and {MAX_COLUMNS}")
-    if width < columns or height < 2:
+    if rows < 1 or rows > MAX_ROWS:
+        raise ValueError(f"rows must be between 1 and {MAX_ROWS}")
+    if width < columns * 2 or height < rows * 2:
         raise ValueError("atlas dimensions are too small for the requested panels")
     if width > MAX_SOURCE_SIDE or height > MAX_SOURCE_SIDE or width * height > MAX_SOURCE_PIXELS:
         raise ValueError("atlas dimensions exceed the safe source limit")
-    if width % columns:
-        raise ValueError(f"atlas width {width} is not divisible into {columns} equal panels")
-    if width // columns < 2:
-        raise ValueError("atlas panels are too narrow")
+    # Preserve the established one-row horizontal-atlas contract. Multirow
+    # generated grids may differ by a pixel; their cells are proportionally
+    # partitioned and transparently padded after source-edge validation.
+    if rows == 1 and width % columns:
+        raise ValueError(f"atlas width {width} is not divisible into {columns} equal columns")
+    x_bounds = _grid_boundaries(width, columns)
+    y_bounds = _grid_boundaries(height, rows)
+    if min(b - a for a, b in zip(x_bounds, x_bounds[1:])) < 2 or min(
+        b - a for a, b in zip(y_bounds, y_bounds[1:])
+    ) < 2:
+        raise ValueError("atlas panels are too small")
 
 
-def load_atlas(input_path: Path, columns: int = 4) -> tuple[Image.Image, list[Image.Image], tuple[int, int, int, int]]:
-    """Read an RGBA horizontal atlas and compute one shared visible extent."""
+def load_atlas(input_path: Path, columns: int = 4, rows: int = 1) -> tuple[Image.Image, list[Image.Image], tuple[int, int, int, int]]:
+    """Read an RGBA row-major atlas and compute one shared visible extent."""
     try:
         opened = Image.open(input_path)
     except (OSError, ValueError) as error:
@@ -91,13 +106,13 @@ def load_atlas(input_path: Path, columns: int = 4) -> tuple[Image.Image, list[Im
     with opened:
         width, height = opened.size
         # Check the header dimensions before copy() forces pixel decoding/allocation.
-        _validate_dimensions(width, height, columns)
+        _validate_dimensions(width, height, columns, rows)
         if opened.mode != "RGBA":
             raise ValueError("source atlas must contain a real RGBA channel")
         if opened.format == "GIF" or getattr(opened, "is_animated", False):
-            raise ValueError("source must be one static horizontal atlas image")
+            raise ValueError("source must be one static atlas image")
         atlas = opened.copy()
-    return load_atlas_from_image(atlas, columns)
+    return load_atlas_from_image(atlas, columns, rows)
 
 
 def _centered_left(width: int) -> int:
@@ -107,14 +122,18 @@ def _centered_left(width: int) -> int:
     return math.floor(ANCHOR_X - width / 2)
 
 
-def render_frames(atlas: Image.Image, columns: int, height: int) -> tuple[list[Image.Image], dict]:
+def render_frames(atlas: Image.Image, columns: int, height: int, rows: int = 1) -> tuple[list[Image.Image], dict]:
     if height < 1 or height > MAX_BODY_HEIGHT:
         raise ValueError(f"body height must be between 1 and {MAX_BODY_HEIGHT}")
 
-    atlas, source_frames, bounds = load_atlas_from_image(atlas, columns)
+    atlas, source_frames, bounds = load_atlas_from_image(atlas, columns, rows)
     x0, y0, x1, y1 = bounds
     shared_width = x1 - x0
     shared_height = y1 - y0
+    x_boundaries = _grid_boundaries(atlas.width, columns)
+    y_boundaries = _grid_boundaries(atlas.height, rows)
+    widths = [right - left for left, right in zip(x_boundaries, x_boundaries[1:])]
+    heights = [bottom - top for top, bottom in zip(y_boundaries, y_boundaries[1:])]
     scale = height / shared_height
     scaled_width = max(1, round(shared_width * scale))
     left = _centered_left(scaled_width)
@@ -133,7 +152,13 @@ def render_frames(atlas: Image.Image, columns: int, height: int) -> tuple[list[I
 
     metadata = {
         "columns": columns,
-        "sourcePanelSize": [atlas.width // columns, atlas.height],
+        "rows": rows,
+        "sourceFrameCount": rows * columns,
+        "frameOrder": "row-major",
+        "sourcePanelSize": [max(widths), max(heights)],
+        "sourceCellWidths": widths,
+        "sourceCellHeights": heights,
+        "sourceCellBoundaryPolicy": "round(i * dimension / part_count); transparent right/bottom padding",
         "sharedSourceBounds": list(bounds),
         "sharedSourceBodySize": [shared_width, shared_height],
         "scale": scale,
@@ -149,14 +174,19 @@ def render_frames(atlas: Image.Image, columns: int, height: int) -> tuple[list[I
     return rendered, metadata
 
 
-def load_atlas_from_image(atlas: Image.Image, columns: int) -> tuple[Image.Image, list[Image.Image], tuple[int, int, int, int]]:
+def load_atlas_from_image(atlas: Image.Image, columns: int, rows: int = 1) -> tuple[Image.Image, list[Image.Image], tuple[int, int, int, int]]:
     """Validate an already opened atlas using the same geometry contract."""
     width, height = atlas.size
-    _validate_dimensions(width, height, columns)
+    _validate_dimensions(width, height, columns, rows)
     if atlas.mode != "RGBA":
         raise ValueError("source atlas must contain a real RGBA channel")
 
-    cell_width = width // columns
+    x_bounds = _grid_boundaries(width, columns)
+    y_bounds = _grid_boundaries(height, rows)
+    widths = [right - left for left, right in zip(x_bounds, x_bounds[1:])]
+    heights = [bottom - top for top, bottom in zip(y_bounds, y_bounds[1:])]
+    padded_width = max(widths)
+    padded_height = max(heights)
     alpha = atlas.getchannel("A")
     alpha_min, alpha_max = alpha.getextrema()
     if alpha_min == 255 or alpha_max == 0:
@@ -164,20 +194,33 @@ def load_atlas_from_image(atlas: Image.Image, columns: int) -> tuple[Image.Image
 
     frames: list[Image.Image] = []
     frame_bounds: list[tuple[int, int, int, int]] = []
-    for index in range(columns):
-        frame = atlas.crop((index * cell_width, 0, (index + 1) * cell_width, height))
-        frame_alpha = frame.getchannel("A")
-        bbox = frame_alpha.getbbox()
-        if bbox is None:
-            raise ValueError(f"atlas panel {index} is empty")
-        for edge in ("left", "right", "top", "bottom"):
-            if _edge_alpha_count(frame_alpha, edge) > 1:
-                raise ValueError(
-                    f"atlas panel {index} has more than one visible pixel on its {edge} edge; "
-                    "the source may be clipped"
-                )
-        frames.append(frame)
-        frame_bounds.append(bbox)
+    for row in range(rows):
+        for column in range(columns):
+            index = row * columns + column
+            frame = atlas.crop((
+                x_bounds[column],
+                y_bounds[row],
+                x_bounds[column + 1],
+                y_bounds[row + 1],
+            ))
+            frame_alpha = frame.getchannel("A")
+            bbox = frame_alpha.getbbox()
+            if bbox is None:
+                raise ValueError(f"atlas panel {index} is empty")
+            for edge in ("left", "right", "top", "bottom"):
+                if _edge_alpha_count(frame_alpha, edge) > 1:
+                    raise ValueError(
+                        f"atlas panel {index} has more than one visible pixel on its {edge} edge; "
+                        "the source may be clipped"
+                    )
+            if frame.size != (padded_width, padded_height):
+                padded = Image.new("RGBA", (padded_width, padded_height), (0, 0, 0, 0))
+                # Paste without a mask so even transparent source pixels retain
+                # their original RGBA values. Padding adds only transparent pixels.
+                padded.paste(frame, (0, 0))
+                frame = padded
+            frames.append(frame)
+            frame_bounds.append(bbox)
 
     bounds = (
         min(box[0] for box in frame_bounds),
@@ -232,11 +275,11 @@ def _animation_gif(frames: list[Image.Image], crop_bounds: tuple[int, int, int, 
     return gif_frames
 
 
-def export_animation(input_path: Path, output_dir: Path, columns: int = 4, height: int = 60) -> Path:
+def export_animation(input_path: Path, output_dir: Path, columns: int = 4, height: int = 60, rows: int = 1) -> Path:
     output = validate_new_output_directory(input_path, output_dir)
-    atlas, _frames, _bounds = load_atlas(input_path, columns)
+    atlas, _frames, _bounds = load_atlas(input_path, columns, rows)
     source_sha256 = hashlib.sha256(input_path.read_bytes()).hexdigest()
-    frames, metadata = render_frames(atlas, columns, height)
+    frames, metadata = render_frames(atlas, columns, height, rows)
     review_bounds = _review_crop_bounds(frames)
     metadata["sourceName"] = input_path.name
     metadata["sourceSha256"] = source_sha256
@@ -266,13 +309,14 @@ def export_animation(input_path: Path, output_dir: Path, columns: int = 4, heigh
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", type=Path, required=True, help="static RGBA horizontal frame atlas")
+    parser.add_argument("--input", type=Path, required=True, help="static RGBA frame atlas")
     parser.add_argument("--output-dir", type=Path, required=True, help="new export directory (must not exist)")
-    parser.add_argument("--columns", type=int, default=4, help="equal-width horizontal panels (default: 4)")
+    parser.add_argument("--columns", type=int, default=4, help="equal-width grid columns (default: 4)")
+    parser.add_argument("--rows", type=int, default=1, help="equal-height atlas rows read top-to-bottom (default: 1)")
     parser.add_argument("--height", type=int, default=60, help="shared body height in pixels (default: 60)")
     args = parser.parse_args()
     try:
-        output = export_animation(args.input, args.output_dir, args.columns, args.height)
+        output = export_animation(args.input, args.output_dir, args.columns, args.height, args.rows)
     except (FileExistsError, OSError, ValueError) as error:
         parser.error(str(error))
     print(f"Created mechanical Cabir animation exports: {output}")

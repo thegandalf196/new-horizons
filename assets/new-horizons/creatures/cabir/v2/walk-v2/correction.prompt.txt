@@ -1,0 +1,19 @@
+Use case: precise-object-edit
+Edit target: candidate-01.png, the four-pose Cabir walk sheet.
+Keep the same creature design, upper bodies, viewing angle, coarse dark sprite
+finish and four-cell arrangement. Correct only leg alternation and transparency.
+Top-left remains contact A: the large near foot is forward on the right.
+Top-right remains passing A: near leg planted, far knee lifts.
+Bottom-left must become opposite contact B: place the large near leg BACK
+under the left/rear hip, its foot on the LEFT. Place the smaller far leg FORWARD
+to the RIGHT below the fire pot. This must reverse which leg is leading, not
+repeat the top-left stance.
+Bottom-right must become passing B: lift the LARGE NEAR knee/foot visibly up
+and forward on the RIGHT; the small FAR foot is planted beneath the body on
+the LEFT. Do not repeat the top-right pose with the same near foot planted.
+Keep planted feet on one local ground baseline in all cells and skull/pot sizes
+constant. Ensure each complete silhouette fits with broad fully transparent
+margins. Outside the figures alpha must be exactly zero: no translucent checker,
+matte, glow haze, ground shadows or stray pixels anywhere in the empty cell
+margins. The fire is a compact flame attached to the pot, never loose particles.
+No text, scene, guide lines or new props. Preserve the two-by-two row-major grid.
