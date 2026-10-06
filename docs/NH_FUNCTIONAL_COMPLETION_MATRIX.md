@@ -2,6 +2,23 @@
 
 Updated: 2026-10-06
 
+2026-10-06 bounded principal-source audits: Sorcery's three ranks and ten active
+perks have consumers for the current canonical clauses. Ordinary learning uses
+the shared rank gates; applicable Spell Power terms use100/115/130/145 percent.
+Overcharger, Selective Dispel, Temporalist, Matter Shaper, Teleporter, Arcane
+Ballistics, Illusionist, Temporal Field, Chronomancer and Spellbinder reach
+production paths with existing focused fixtures. This source audit did not
+rerun those suites or certify every interaction. Fortress's inherited shooter,
+spell-after-attack, flight, petrification, death-stare, poison and Hydra abilities
+also have configured production consumers, consistent with the canonical
+creature-conversion defaults; species-by-species execution remains unverified.
+No creature-ability denominator or newly implemented identity is inferred.
+Battlecraft Pre-emptive Strike's existing visible log explains the interruption;
+Quartermaster's log and shared scaled Ballista/Tent/Catapult previews provide
+its50% output feedback. Extra readiness badges are not a demonstrated missing
+canonical path. The Reality Warp/Pandemonium preview depends on their existing
+unanswered mechanics rulings. Counts stay61/67 spells and225/310 perks.
+
 2026-10-06 required combat UI coverage: saved-v3 Chain Lightning and Master
 Chain now expose ordered recipient hexes, hop numbers and per-hop damage/kills
 in the existing battlefield/console. Forecasts use shared ordered direct-damage
@@ -3193,7 +3210,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Shadow Magic | 3/0 | 9/1 | Grand Malediction now grants distinct Mass Curse/Sorrow with native cast/forecast evidence, alongside the eight earlier perks. Plaguebearer awaits its normal-limit definition. |
 | Nature Magic | 3/0 | 7/3 | Geomancer's structural/terrain effects and actual AI cast are native verified alongside Venomancer's whole-Base snapshot and independent Toxic Spines. Herbalist, Rootcaller, Beastcaller, Verdant Warden and Verdant Communion active. Mire Shaper, Worldroot and Elemental Conjurer remain planned. |
 | Havoc Magic | 3/0 | 7/3 | Three perks missing; Mine Layer has focused live/detached placement evidence |
-| Sorcery Magic | 3/0 | 10/0 | Evidence audit required |
+| Sorcery Magic | 3/0 | 10/0 | Bounded canonical consumer audit2026-10-06 identifies learning/coefficient paths for all three ranks and production consumers for all ten perks, including distinct Mass Slow. No missing principal clause demonstrated; existing focused fixtures were inspected, not rerun as whole-family execution certification. Wider interactions and rendered/playable acceptance remain separate. |
 | Chaos Magic | 3/0 | 5/5 | Frenzied Curse joins Mindbreaker, Blinkmaster, Weaver and Paradox Shield with focused source/native evidence recorded above; five perks remain planned. Base Berserk lifecycle is still partial. |
 | Spellcraft | 3/0 | 4/6 | Grand Formula scales the first accepted Level 4-or-5 hero spell's SP term by 150%; Arcane Focus, Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold. Basic/Advanced/Expert efficiency is 110/120/130% under saved v3 rules. Planned does not mean entirely unimplemented: Precise Casting has7/7 principal native cases and awaits Time Stop/Earthquake scope; Counterpressure has an accepted-cast map and a no-op trigger boundary. Concentration target-count definition, Cross-School multi-school relation, Extend Spell unusual lifetimes and Overwhelming Formula penetration composition remain explicit rulings, not unmapped features. |
 | Wisdom | 3/0 | 8/2 | Mana Conservation post-combat Normal recovery, Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. One other perk remains missing. Broader interactions and playable acceptance remain open. |
