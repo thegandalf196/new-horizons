@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""Export the authored backdrop and reviewed binary masks for two Academy portraits.
+"""Export the authored backdrop and reviewed binary masks for Academy portraits.
 
 The original TWCRPORT portrait pixels are deliberately never read here. At
 runtime the renderer composites those external frames through the copied masks.
@@ -19,6 +19,8 @@ BACKDROP_EXPORTS = (
     IMAGE_ROOT / "NH_academy_creature_portrait_backdrop.png",
     IMAGE_ROOT / "NH_academy_gremlin_icon_large.png",
     IMAGE_ROOT / "NH_academy_masterGremlin_icon_large.png",
+    IMAGE_ROOT / "NH_academy_ironGolem_icon_large.png",
+    IMAGE_ROOT / "NH_academy_stoneGolem_icon_large.png",
 )
 MASKS = {
     "gremlin": (
@@ -28,6 +30,14 @@ MASKS = {
     "masterGremlin": (
         ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/masterGremlin.png",
         IMAGE_ROOT / "NH_academy_masterGremlin_portrait_mask.png",
+    ),
+    "ironGolem": (
+        ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/ironGolem.png",
+        IMAGE_ROOT / "NH_academy_ironGolem_portrait_mask.png",
+    ),
+    "stoneGolem": (
+        ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/stoneGolem.png",
+        IMAGE_ROOT / "NH_academy_stoneGolem_portrait_mask.png",
     ),
 }
 # Pillow's right/bottom-excluded crop rectangle from the approved composition.
@@ -66,7 +76,7 @@ def verify(check: bool, parser: argparse.ArgumentParser) -> None:
                 values = set(matte.tobytes())
                 if values - {0, 255}:
                     parser.error(f"{creature} approved matte must contain only black and white pixels")
-        print("PASS: Academy Gremlin portrait backdrops and runtime masks match their authored sources")
+        print("PASS: Academy portrait backdrops and runtime masks match their authored sources")
         return
 
     for path in BACKDROP_EXPORTS:
@@ -79,7 +89,7 @@ def verify(check: bool, parser: argparse.ArgumentParser) -> None:
                 parser.error(f"approved matte must be binary grayscale {OUTPUT_SIZE}: {source}")
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_bytes(source.read_bytes())
-    print("Wrote two Academy Gremlin portrait backdrops/fallbacks and byte-identical reviewed matte copies")
+    print(f"Wrote authored backdrop fallbacks and {len(MASKS)} byte-identical reviewed matte copies")
 
 
 def main() -> int:

@@ -13,6 +13,7 @@
 #include "../CMT.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/CConfigHandler.h"
+#include "../../lib/AsyncRunner.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/VCMIDirs.h"
 #include "../../lib/filesystem/Filesystem.h"
@@ -54,6 +55,7 @@ struct AcademyPortrait
 	const char * identifier;
 	const char * image;
 	const char * mask;
+	int internalId;
 	int defFrame;
 };
 
@@ -64,9 +66,11 @@ constexpr std::array<BuiltIcon, 4> academyBuiltIcons{{
 	{"NH_academy_village_small_normal.png", "NH_academy_village_small_built.png", 48, 32},
 }};
 
-constexpr std::array<AcademyPortrait, 2> academyPortraits{{
-	{"gremlin", "NH_academy_gremlin_icon_large.png", "NH_academy_gremlin_portrait_mask.png", 30},
-	{"masterGremlin", "NH_academy_masterGremlin_icon_large.png", "NH_academy_masterGremlin_portrait_mask.png", 31},
+constexpr std::array<AcademyPortrait, 4> academyPortraits{{
+	{"gremlin", "NH_academy_gremlin_icon_large.png", "NH_academy_gremlin_portrait_mask.png", 28, 30},
+	{"masterGremlin", "NH_academy_masterGremlin_icon_large.png", "NH_academy_masterGremlin_portrait_mask.png", 29, 31},
+	{"ironGolem", "NH_academy_ironGolem_icon_large.png", "NH_academy_ironGolem_portrait_mask.png", 32, 34},
+	{"stoneGolem", "NH_academy_stoneGolem_icon_large.png", "NH_academy_stoneGolem_portrait_mask.png", 33, 35},
 }};
 
 void require(bool condition, const std::string & message)
@@ -183,6 +187,8 @@ void verifyAcademyPortrait(const AcademyPortrait & portrait)
 	require(creatureId.has_value(), std::string("Could not resolve core:") + portrait.identifier);
 	const auto * creature = LIBRARY->creh->objects.at(static_cast<size_t>(*creatureId)).get();
 	require(creature != nullptr, std::string("Missing creature core:") + portrait.identifier);
+	require(creature->getIndex() == portrait.internalId,
+		std::string("Creature ID ordering changed unexpectedly for core:") + portrait.identifier);
 	require(creature->largeIconName == portrait.image,
 		std::string("Creature large icon is not bound to generated route: core:") + portrait.identifier);
 	require(creature->smallIconName.empty(),
@@ -306,6 +312,9 @@ void runRuntimeRegression()
 		CBasicLogConfigurator & logging;
 		~RuntimeCleanup()
 		{
+			// SDL image scaling workers may read the global ENGINE; drain them before reset clears it.
+			if(ENGINE)
+				ENGINE->async().wait();
 			ENGINE.reset();
 			delete LIBRARY;
 			LIBRARY = nullptr;
@@ -351,6 +360,8 @@ void runRuntimeRegression()
 
 		// Destroying the backend releases SDL. The next iteration starts it again
 		// under the same dummy environment and verifies the selected driver anew.
+		// Drain image scaling before reset because worker tasks read the global ENGINE.
+		ENGINE->async().wait();
 		ENGINE.reset();
 	}
 

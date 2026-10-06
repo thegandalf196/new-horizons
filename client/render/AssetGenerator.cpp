@@ -75,6 +75,14 @@ void AssetGenerator::initialize()
 	{
 		return createAcademyCreaturePortrait(31, "NH_academy_masterGremlin_portrait_mask.png");
 	};
+	imageFiles[ImagePath::builtin("NH_academy_ironGolem_icon_large.png")] = [this]()
+	{
+		return createAcademyCreaturePortrait(34, "NH_academy_ironGolem_portrait_mask.png");
+	};
+	imageFiles[ImagePath::builtin("NH_academy_stoneGolem_icon_large.png")] = [this]()
+	{
+		return createAcademyCreaturePortrait(35, "NH_academy_stoneGolem_portrait_mask.png");
+	};
 
 	auto addAcademyMapLayers = [this](const std::string & image, const AnimationPath & originalAnimation)
 	{
@@ -242,7 +250,9 @@ bool AssetGenerator::preferGeneratedImage(const ImagePath & image) const
 		|| image == ImagePath::builtin("NH_academy_village_large_built.png")
 		|| image == ImagePath::builtin("NH_academy_village_small_built.png")
 		|| image == ImagePath::builtin("NH_academy_gremlin_icon_large.png")
-		|| image == ImagePath::builtin("NH_academy_masterGremlin_icon_large.png");
+		|| image == ImagePath::builtin("NH_academy_masterGremlin_icon_large.png")
+		|| image == ImagePath::builtin("NH_academy_ironGolem_icon_large.png")
+		|| image == ImagePath::builtin("NH_academy_stoneGolem_icon_large.png");
 }
 
 std::map<ImagePath, std::shared_ptr<ISharedImage>> AssetGenerator::generateAllImages()

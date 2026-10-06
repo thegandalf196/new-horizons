@@ -9,6 +9,17 @@
 			"iconLarge": "NH_academy_masterGremlin_icon_large.png"
 		}
 	},
+	// HOTRAITS.TXT reverses these labels: frame 34 is internal ironGolem ID 32; frame 35 is stoneGolem ID 33.
+	"core:ironGolem": {
+		"graphics": {
+			"iconLarge": "NH_academy_ironGolem_icon_large.png"
+		}
+	},
+	"core:stoneGolem": {
+		"graphics": {
+			"iconLarge": "NH_academy_stoneGolem_icon_large.png"
+		}
+	},
 	"core:mage": {
 		"level": 5,
 		"attack": 13,

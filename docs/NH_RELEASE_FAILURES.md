@@ -2,6 +2,24 @@
 
 ## Purpose
 
+### 2026-10-05 UP239 — Repeated renderer fixture shutdown
+
+The four-portrait dummy-SDL fixture initially segfaulted during its scale-4
+iteration after passing scales 1–3. A GDB rerun and ten unchanged repetitions
+passed; no crash backtrace was captured. Do not claim a confirmed crash cause.
+Source review nevertheless finds an unsafe fixture lifecycle: queued SDL scaling
+tasks read global ENGINE, while unique_ptr reset clears it before destruction
+joins those tasks. Production EntryPoint already drains async work before reset;
+the fixture omitted that established shutdown contract. Add the same drain at
+each scale transition and exceptional cleanup, retaining asynchronous scaling
+and all foreground/background/alias pixel assertions. No production scaling or
+portrait logic is weakened to make the test pass.
+
+Separate Phase 2 finding: SDL2/SDL3 createScaled ignores its integerScaleFactor
+argument and reads the live global screen scale inside its worker instead.
+Track that coupling separately; it is not a proven cause of this crash. Private
+GDB and initial runtime evidence remain under ignored build validation outputs.
+
 ### 2026-10-05 UP237 — Built-town icon recursion at scaled UI
 
 Academy Town Hall construction succeeds in the simulation, then crashes the
