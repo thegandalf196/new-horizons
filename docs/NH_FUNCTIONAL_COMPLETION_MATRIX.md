@@ -2,6 +2,14 @@
 
 Updated: 2026-10-06
 
+2026-10-06 bounded Light source audit: all eleven active school identities have
+principal production and AI consumers in their shared healing/direct-damage,
+timed or dedicated Purify paths. Existing queue/native receipts were inspected,
+not rerun as a whole-school certification. No new unblocked principal omission
+was found within this set; Sanctuary's passive-activation lifetime remains an
+existing design hold. Broader interaction/rendered/playable evidence is separate.
+This changes no coverage count and does not establish whole-Version1.0 completion.
+
 2026-10-06 Reservoir weekly UI coverage: town hover/help now reads the shared
 VISIT_ONCE visitor state and shows authored availability even without a hero.
 The existing VISIT_HERO training behavior is retained. Client/native builds
