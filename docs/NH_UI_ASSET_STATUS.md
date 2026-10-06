@@ -1,5 +1,16 @@
 # New Horizons UI and asset status register
 
+Cabir portrait integration,2026-10-06: **Provisional** original barehanded
+v3 full-body58x64 and deliberate head/upper-body32x32 icons now have unique
+production bindings for compatibility IDs28/29. The complete authored portraits
+use the project Academy backdrop, bypassing legacy Gremlin mask composition;
+old handlers remain available for compatibility. Pinned masters/prompts and
+alpha-only cleanup receipts are preserved. Root inspected native-size exports
+and enlarged previews; focused export/parity tests and independent source review
+pass. Engine routing and playable presentation are still verification/delivery
+gates, not user Final-art approval. Master repair source is also now an original
+HoMM3-Art **Provisional** draft; calibrated animation export is pending.
+
 Barehanded Cabir source expansion: **Provisional** original v3 base directional
 melee and Master front/directional melee/shooting and reaction/death sheets now
 exist, with exact prompts and hashes in v3/ANIMATION_DRAFTS.md. Whole-component

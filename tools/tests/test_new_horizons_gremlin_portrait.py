@@ -98,11 +98,43 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
         )
         self.assertEqual((IMAGE_ROOT / "NH_academy_titan_portrait_mask.png").read_bytes(), titan_bytes)
 
+    def test_cabir_portraits_use_authored_v3_derivatives(self):
+        config = parse_jsonc((ROOT / "Mods/new-horizons/Content/config/creatures/tower.json").read_text())
+        expected = {
+            "core:gremlin": {
+                "large": "NH_cabir_icon_large.png",
+                "small": "NH_cabir_icon_small.png",
+                "sourceDirectory": ROOT / "assets/new-horizons/creatures/cabir/v3/portrait-export-v1",
+            },
+            "core:masterGremlin": {
+                "large": "NH_cabirMaster_icon_large.png",
+                "small": "NH_cabirMaster_icon_small.png",
+                "sourceDirectory": ROOT / "assets/new-horizons/creatures/cabir-master/v3/portrait-export-v1",
+            },
+        }
+        for creature, paths in expected.items():
+            with self.subTest(creature=creature):
+                graphics = config[creature]["graphics"]
+                self.assertEqual(
+                    graphics,
+                    {"iconLarge": paths["large"], "iconSmall": paths["small"]},
+                )
+                for key, size in (("large", (58, 64)), ("small", (32, 32))):
+                    runtime_path = IMAGE_ROOT / paths[key]
+                    authored_path = paths["sourceDirectory"] / paths[key]
+                    self.assertTrue(runtime_path.is_file())
+                    self.assertEqual(runtime_path.read_bytes(), authored_path.read_bytes())
+                    with Image.open(runtime_path) as image:
+                        self.assertEqual(image.mode, "RGB")
+                        self.assertEqual(image.size, size)
+
+        # The existing AssetGenerator portrait-mask paths remain compatibility
+        # routes for old content; these assertions intentionally do not require
+        # those legacy handlers to be removed.
+
     def test_only_reviewed_large_portrait_routes_are_registered(self):
         config = parse_jsonc((ROOT / "Mods/new-horizons/Content/config/creatures/tower.json").read_text())
         expected = {
-            "core:gremlin": "NH_academy_gremlin_icon_large.png",
-            "core:masterGremlin": "NH_academy_masterGremlin_icon_large.png",
             "core:ironGolem": "NH_academy_ironGolem_icon_large.png",
             "core:stoneGolem": "NH_academy_stoneGolem_icon_large.png",
             "core:mage": "NH_academy_mage_icon_large.png",

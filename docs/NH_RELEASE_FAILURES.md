@@ -5538,6 +5538,24 @@ by the strict v2 schema. Strip that field when deriving legacy fixtures, includi
 native fixture adapters; do not relax the old schema. Production v3 validation
 and actual spell acceptance remain separate gates.
 
+### Cabir portrait resource-fixture prefix mismatch (2026-10-06)
+
+The extended native resource fixture builds successfully, but its first run
+fails before checking Cabir portrait pixels: a raw `ImagePath` resource-existence
+check ignores the module's `SPRITES/` mount. Production RenderHandler resolves
+`SPRITES/`, `DATA/`, then the unprefixed image. Correct the fixture's precheck
+to match those actual routes, retaining missing-resource assertions; do not
+change production mounts or replace a missing resource with a placeholder.
+The same precheck correction is required for standalone animation-frame PNGs.
+Corrected fixture rebuild succeeds; the default four-scale portrait/native
+renderer test passes1/1 in2.17s. Animation validation remains separately opt-in
+and pending the complete exported resources.
+The bounded run reports missing music because its isolated profile mounts only
+original Data, and also reports the custom Repair schema rejecting its `type`
+field. These warnings are separate from the proven resource-prefix failure;
+Repair's actual native casting cases already pass. Track schema-warning cleanup
+and profile completeness without claiming that either caused this failure.
+
 No credentials, workstation paths, purchaser content or raw research dumps in
 these notes. Keep historical failures even after repair, but label their scope.
 Do not claim the pipeline is future-proof: tests reduce recurrence and catch more

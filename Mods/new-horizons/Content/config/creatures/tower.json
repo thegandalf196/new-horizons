@@ -1,5 +1,9 @@
 {
 	"core:gremlin": {
+		"name": {
+			"singular": "Cabir",
+			"plural": "Cabirs"
+		},
 		"abilities": {
 			"cabirFireResistance": {
 				"type": "ELEMENTAL_SPELL_DAMAGE_RECEIVED",
@@ -13,10 +17,15 @@
 			}
 		},
 		"graphics": {
-			"iconLarge": "NH_academy_gremlin_icon_large.png"
+			"iconLarge": "NH_cabir_icon_large.png",
+			"iconSmall": "NH_cabir_icon_small.png"
 		}
 	},
 	"core:masterGremlin": {
+		"name": {
+			"singular": "Cabir Master",
+			"plural": "Cabir Masters"
+		},
 		"abilities": {
 			"cabirRepair": {
 				"type": "SPELLCASTER",
@@ -44,7 +53,8 @@
 			}
 		},
 		"graphics": {
-			"iconLarge": "NH_academy_masterGremlin_icon_large.png"
+			"iconLarge": "NH_cabirMaster_icon_large.png",
+			"iconSmall": "NH_cabirMaster_icon_small.png"
 		}
 	},
 	// HOTRAITS.TXT reverses these labels: frame 34 is internal ironGolem ID 32; frame 35 is stoneGolem ID 33.

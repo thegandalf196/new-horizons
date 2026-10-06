@@ -2,6 +2,13 @@
 
 Updated: 2026-10-06
 
+Cabir portrait source integration: both compatibility IDs now use their original
+barehanded Cabir/Cabir Master names and unique large/small portrait resources.
+Full-body and intentional avatar-crop exports are reproducible, source-pinned
+and reviewed. This closes the source binding gap, not native engine routing,
+complete battle/map animation or playable delivery. No denominator credit or
+Phase transition; counts remain225/310 perks,61/67 combat spells,8/8 Orders.
+
 Cabir presentation coverage advances with six original barehanded v3 action
 source sheets (base directional melee; Master front/directional melee/shooting,
 reaction/death) and whole-component base melee/reaction separation. Native

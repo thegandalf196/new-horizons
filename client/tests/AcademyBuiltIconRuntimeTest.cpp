@@ -2,15 +2,19 @@
  * AcademyBuiltIconRuntimeTest.cpp, part of VCMI / New Horizons
  * License: GNU General Public License v2.0 or later; see license.txt.
  *
- * Loads the four runtime-generated Academy town-list icons at each SDL2 image
- * scale. SDL is constrained to its dummy video/audio drivers and software
- * renderer. ScreenHandler's existing constructor clear/present stays on that
- * dummy backend; the fixture has no event, input, or presentation loop.
+ * Loads the runtime-generated Academy town-list icons at each SDL2 image
+ * scale. An opt-in path also checks the detached Cabir animation descriptors
+ * and authored icon bindings. SDL is constrained to its dummy video/audio
+ * drivers and software renderer. ScreenHandler's existing constructor
+ * clear/present stays on that dummy backend; the fixture has no event, input,
+ * or presentation loop.
  */
 #include "../StdInc.h"
 
 #include "../GameEngine.h"
 #include "../CMT.h"
+#include "../battle/BattleConstants.h"
+#include "../battle/CreatureAnimation.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/CConfigHandler.h"
 #include "../../lib/AsyncRunner.h"
@@ -23,6 +27,7 @@
 #include "../../lib/modding/CModHandler.h"
 
 #include "render/Canvas.h"
+#include "render/CAnimation.h"
 #include "render/IRenderHandler.h"
 #include "render/IScreenHandler.h"
 
@@ -34,10 +39,12 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
+#include <vector>
 
 [[noreturn]] void handleFatalError(const std::string & message, bool)
 {
-	throw std::runtime_error("Unexpected VCMI fatal error in Academy icon fixture: " + message);
+	throw std::runtime_error("Unexpected VCMI fatal error in Academy/Cabir resource fixture: " + message);
 }
 
 namespace
@@ -57,6 +64,7 @@ struct AcademyPortrait
 	const char * mask;
 	int internalId;
 	int defFrame;
+	const char * smallImage = nullptr;
 };
 
 constexpr std::array<BuiltIcon, 4> academyBuiltIcons{{
@@ -67,8 +75,8 @@ constexpr std::array<BuiltIcon, 4> academyBuiltIcons{{
 }};
 
 constexpr std::array<AcademyPortrait, 12> academyPortraits{{
-	{"gremlin", "NH_academy_gremlin_icon_large.png", "NH_academy_gremlin_portrait_mask.png", 28, 30},
-	{"masterGremlin", "NH_academy_masterGremlin_icon_large.png", "NH_academy_masterGremlin_portrait_mask.png", 29, 31},
+	{"gremlin", "NH_cabir_icon_large.png", "", 28, 30, "NH_cabir_icon_small.png"},
+	{"masterGremlin", "NH_cabirMaster_icon_large.png", "", 29, 31, "NH_cabirMaster_icon_small.png"},
 	{"ironGolem", "NH_academy_ironGolem_icon_large.png", "NH_academy_ironGolem_portrait_mask.png", 32, 34},
 	{"stoneGolem", "NH_academy_stoneGolem_icon_large.png", "NH_academy_stoneGolem_portrait_mask.png", 33, 35},
 	{"mage", "NH_academy_mage_icon_large.png", "NH_academy_mage_portrait_mask.png", 34, 36},
@@ -189,6 +197,14 @@ void drawImage(Canvas & canvas, const std::shared_ptr<IImage> & image, const Poi
 	canvas.draw(image, Point(0, 0));
 }
 
+ImagePath mountedSpritePath(const ImagePath & image)
+{
+	const std::string name = image.getOriginalName();
+	if(name.rfind("SPRITES/", 0) == 0)
+		return image;
+	return ImagePath::builtin("SPRITES/" + name);
+}
+
 void verifyAcademyPortrait(const AcademyPortrait & portrait)
 {
 	const auto creatureId = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "creature", std::string(portrait.identifier));
@@ -198,11 +214,59 @@ void verifyAcademyPortrait(const AcademyPortrait & portrait)
 	require(creature->getIndex() == portrait.internalId,
 		std::string("Creature ID ordering changed unexpectedly for core:") + portrait.identifier);
 	require(creature->largeIconName == portrait.image,
-		std::string("Creature large icon is not bound to generated route: core:") + portrait.identifier);
+		std::string("Creature large icon is not bound to authored route: core:") + portrait.identifier);
+
+	auto & renderer = ENGINE->renderHandler();
+	if(portrait.smallImage)
+	{
+		require(creature->smallIconName == portrait.smallImage,
+			std::string("Creature small icon is not bound to authored route: core:") + portrait.identifier);
+
+		const auto verifyBinding = [&](const char * imageName, const char * aliasName, const Point & expectedSize,
+				EImageBlitMode mode)
+		{
+			const ImagePath iconPath = mountedSpritePath(ImagePath::builtin(imageName));
+			require(CResourceHandler::get()->existsResource(iconPath),
+				std::string("Authored creature icon resource is missing: ") + imageName);
+			const auto authored = renderer.loadImage(iconPath, mode);
+			const auto alias = renderer.loadImage(AnimationPath::builtin(aliasName), creature->getIconIndex(), 0, mode);
+			require(authored && alias, std::string("Could not load authored creature icon: ") + imageName);
+			require(authored->dimensions() == expectedSize && alias->dimensions() == expectedSize,
+				std::string("Authored creature icon has unexpected native geometry: ") + imageName);
+
+			Canvas authoredCanvas(expectedSize, CanvasScalingPolicy::IGNORE);
+			Canvas aliasCanvas(expectedSize, CanvasScalingPolicy::IGNORE);
+			authoredCanvas.drawColor(Rect(Point(0, 0), expectedSize), ColorRGBA(0, 0, 0, 0));
+			aliasCanvas.drawColor(Rect(Point(0, 0), expectedSize), ColorRGBA(0, 0, 0, 0));
+			authoredCanvas.draw(authored, Point(0, 0));
+			aliasCanvas.draw(alias, Point(0, 0));
+
+			const ColorRGBA firstPixel = authoredCanvas.getPixel(Point(0, 0));
+			size_t nonuniformPixels = 0;
+			for(int y = 0; y < expectedSize.y; ++y)
+			{
+				for(int x = 0; x < expectedSize.x; ++x)
+				{
+					const Point pixel(x, y);
+					const ColorRGBA authoredPixel = authoredCanvas.getPixel(pixel);
+					require(aliasCanvas.getPixel(pixel) == authoredPixel,
+						std::string("Creature icon alias differs from authored pixels: ") + imageName);
+					if(authoredPixel != firstPixel)
+						++nonuniformPixels;
+				}
+			}
+			require(nonuniformPixels > 0, std::string("Authored creature icon is blank: ") + imageName);
+		};
+
+		verifyBinding(portrait.image, "TWCRPORT", Point(58, 64), EImageBlitMode::OPAQUE);
+		verifyBinding(portrait.smallImage, "CPRSMALL", Point(32, 32), EImageBlitMode::COLORKEY);
+		std::cout << "  " << portrait.identifier << ": authored large/small icons bound at 58x64 and 32x32\n";
+		return;
+	}
+
 	require(creature->smallIconName.empty(),
 		std::string("Creature small icon must remain on its original CPRSMALL frame: core:") + portrait.identifier);
 
-	auto & renderer = ENGINE->renderHandler();
 	constexpr Point size(58, 64);
 	const auto generated = renderer.loadImage(ImagePath::builtin(portrait.image), EImageBlitMode::SIMPLE);
 	const auto backdrop = renderer.loadImage(
@@ -288,6 +352,111 @@ void verifyAcademyPortrait(const AcademyPortrait & portrait)
 		<< backdropPixels << " authored backdrop pixels; CPRSMALL unchanged\n";
 }
 
+bool cabirAnimationValidationRequested()
+{
+	const char * value = std::getenv("NH_VALIDATE_CABIR_ANIMATIONS");
+	return value && std::string_view(value) == "1";
+}
+
+void verifyCabirAnimation(const char * descriptorName, bool master)
+{
+	auto & renderer = ENGINE->renderHandler();
+	const AnimationPath descriptorPath = AnimationPath::builtin(descriptorName);
+	const auto animation = renderer.loadAnimation(descriptorPath, EImageBlitMode::WITH_SHADOW_AND_SELECTION);
+	require(animation != nullptr, std::string("Could not load creature animation: ") + descriptorName);
+
+	std::vector<ECreatureAnimType> requiredGroups{
+		ECreatureAnimType::MOVING,
+		ECreatureAnimType::HOLDING,
+		ECreatureAnimType::HITTED,
+		ECreatureAnimType::DEFENCE,
+		ECreatureAnimType::DEATH,
+		ECreatureAnimType::ATTACK_UP,
+		ECreatureAnimType::ATTACK_FRONT,
+		ECreatureAnimType::ATTACK_DOWN,
+	};
+	if(master)
+	{
+		requiredGroups.insert(requiredGroups.end(), {
+			ECreatureAnimType::SHOOT_UP,
+			ECreatureAnimType::SHOOT_FRONT,
+			ECreatureAnimType::SHOOT_DOWN,
+			ECreatureAnimType::CAST_FRONT,
+		});
+	}
+
+	for(const auto group : requiredGroups)
+	{
+		const size_t groupId = static_cast<size_t>(group);
+		const size_t frameCount = animation->size(groupId);
+		require(frameCount > 0, std::string("Required Cabir animation group is empty: ")
+			+ descriptorName + " group " + std::to_string(groupId));
+
+		for(size_t frame = 0; frame < frameCount; ++frame)
+		{
+			const auto locator = animation->getImageLocator(frame, groupId);
+			require(locator.image.has_value()
+				&& CResourceHandler::get()->existsResource(mountedSpritePath(*locator.image)),
+				std::string("Cabir descriptor frame resource is missing: ") + descriptorName
+				+ " group " + std::to_string(groupId) + " frame " + std::to_string(frame));
+			require(animation->getImage(frame, groupId, true) != nullptr,
+				std::string("Could not load Cabir animation frame: ") + descriptorName
+				+ " group " + std::to_string(groupId) + " frame " + std::to_string(frame));
+		}
+	}
+
+	const std::vector<ECreatureAnimType> multiFrameGroups{
+		ECreatureAnimType::MOVING,
+		ECreatureAnimType::ATTACK_UP,
+		ECreatureAnimType::ATTACK_FRONT,
+		ECreatureAnimType::ATTACK_DOWN,
+		ECreatureAnimType::DEATH,
+	};
+	for(const auto group : multiFrameGroups)
+		require(animation->size(static_cast<size_t>(group)) > 1,
+			std::string("Cabir motion group must contain multiple frames: ") + descriptorName
+			+ " group " + std::to_string(static_cast<size_t>(group)));
+
+	if(master)
+	{
+		for(const auto group : {ECreatureAnimType::SHOOT_UP, ECreatureAnimType::SHOOT_FRONT,
+			ECreatureAnimType::SHOOT_DOWN, ECreatureAnimType::CAST_FRONT})
+			require(animation->size(static_cast<size_t>(group)) > 1,
+				std::string("Cabir Master action group must contain multiple frames: ") + descriptorName
+				+ " group " + std::to_string(static_cast<size_t>(group)));
+
+		const AnimationPath projectilePath = AnimationPath::builtin("CPRGOGX.DEF");
+		const auto projectile = renderer.loadAnimation(projectilePath, EImageBlitMode::COLORKEY);
+		require(projectile && projectile->size(0) > 0, "Original CPRGOGX.DEF projectile must load forward frames");
+		if(projectile->size(1) == 0)
+			projectile->createFlippedGroup(0, 1);
+		require(projectile->size(1) == projectile->size(0)
+			&& projectile->getImage(0, 0, true) && projectile->getImage(0, 1, true),
+			"CPRGOGX projectile must provide a reverse group through the runtime flip fallback");
+		const auto projectileFrame = projectile->getImageLocator(0, 0);
+		require(projectileFrame.defFile.has_value()
+			&& projectileFrame.defFile->getOriginalName().find("CPRGOGX.DEF") != std::string::npos,
+			"Cabir Master projectile should resolve to the original CPRGOGX DEF, not copied frames");
+		const auto reverseProjectileFrame = projectile->getImageLocator(0, 1);
+		require(reverseProjectileFrame.defFile.has_value()
+			&& reverseProjectileFrame.defFile->getOriginalName().find("CPRGOGX.DEF") != std::string::npos,
+			"Cabir Master reverse projectile should retain the original CPRGOGX DEF reference");
+	}
+
+	const auto battleAnimation = std::make_shared<CreatureAnimation>(descriptorPath,
+		[](CreatureAnimation *, ECreatureAnimType) { return 1.0f; });
+	require(battleAnimation->framesInGroup(ECreatureAnimType::DEAD) > 0,
+		std::string("Runtime death pose fallback is missing for ") + descriptorName);
+	std::cout << "  " << descriptorName << ": loaded distinct descriptor groups/frames"
+		<< (master ? " and original CPRGOGX projectile" : "") << '\n';
+}
+
+void verifyCabirAnimations()
+{
+	verifyCabirAnimation("NH_Cabir", false);
+	verifyCabirAnimation("NH_CabirMaster", true);
+}
+
 void setUpscalingFilter(const char * name)
 {
 	Settings filter = settings.write["video"]["upscalingFilter"];
@@ -365,6 +534,8 @@ void runRuntimeRegression()
 		}
 		for(const AcademyPortrait & portrait : academyPortraits)
 			verifyAcademyPortrait(portrait);
+		if(factorIndex == 0 && cabirAnimationValidationRequested())
+			verifyCabirAnimations();
 
 		// Destroying the backend releases SDL. The next iteration starts it again
 		// under the same dummy environment and verifies the selected driver anew.

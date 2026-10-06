@@ -16,6 +16,7 @@ New source sheets, viewed by root after generation:
 | Master front shooting | 921c65c91a194dd56da044ed6f6299322e14f083357229f11534c73791e38dfa |
 | Master upward/downward melee | 758899e21dbec3c4417d1832aea4ea792e20073a1afc20af04f31d10f0969d91 |
 | Master upward/downward shooting | a1525239c00440b83fed0c3570f4a48fe2b64868a39b5621e1e325365433a0e4 |
+| Master repair casting | c6232b9f16eb4df4d42e53f8534f0e20053d91c16698b128fd7c0b6f5fb78bc8 |
 
 All six are RGBA PNG sources in their respective v3 action directories. The
 reaction sheet is 1326×1187; the other new sheets are 1323×1189. Each is a 2×2
@@ -45,7 +46,13 @@ maximum alpha 5; reactions 12,534 pixels, maximum alpha 4). Masters and retained
 RGBA are unchanged. Offline native contacts show readable unclipped poses, but
 their per-group reference scales need cross-action calibration before delivery.
 
-Still missing: final common calibration/animation bindings, Master repair pose,
-original ranged projectile treatment, map animation, portrait/icon exports and
+The repair sheet adds ready, reaching, bare-palmed repair focus and recovery
+poses. Its exact prompt has SHA-256
+`9db44d47b0ee986963e9eb9e98d34b3a416a3e9411c8419c45e0e0c4b22673d6`.
+It is original Provisional art; runtime casting group 31 and directional fallback
+bindings still require calibrated export and native resource verification.
+
+Still missing: final common calibration/animation bindings,
+ranged projectile origin/release calibration, map animation, portrait/icon exports and
 playable presentation acceptance. Standing, four-pose walk and action-source
 existence do not establish a finished creature.
