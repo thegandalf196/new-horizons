@@ -6,6 +6,11 @@ reference. The user approved the design after the first sprite was shown.
 Full animation states, upgraded creature, portraits and runtime bindings are
 **Not done**; Gremlins remain in the playable game. Source/prompt/preview are
 retained under `assets/new-horizons/creatures/cabir/v1/`.
+User-approved temporary static in-game preview: an isolated copied module uses
+the standing sprite for both Gremlin identities in all battle states. It does
+not replace the normal playable module. Three focused exporter checks and
+headless content initialization pass; actual battle rendering awaits the user's
+manual preview. Static attacks/death are unfinished, not final animations.
 
 UP247 Astronomy Tower attachment,2026-10-06: **Provisional** placement correction
 to special2.x402, with unchanged sprites/masks/y/z. Native registered fort,
