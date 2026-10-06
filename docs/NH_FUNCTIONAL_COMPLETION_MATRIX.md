@@ -6,8 +6,12 @@ UP240 user-priority art slice: three revised Academy map-body images are integra
 with exact prior geometry, reproducible native reductions and a pinned importer.
 Eight focused art tests, import/export checks and independent review pass. No
 gameplay identity is added: perks remain225/310 and combat identities61/67.
-UP239 has one provisional corrected Gremlin subject matte; the renderer consumer
-and thirteen other large portraits remain missing. Original small cutouts do not
+UP239's two provisional Gremlin portraits have a production compositor and
+actual dummy-SDL pixel/alias acceptance at scales1–4 (1/1 native pass, zero skips).
+Two Python checks and exporter validation pass; twelve other large portraits
+remain missing. Stone
+and Obsidian Gargoyle drafts are rejected for retained scenery, not coverage.
+Original small cutouts do not
 need a snowy-background correction. Native user acceptance and playable delivery
 are tracked separately in the priority queue.
 UP-012 native content-loading gate accepted: all 52 selectively activated

@@ -1,4 +1,14 @@
 {
+	"core:gremlin": {
+		"graphics": {
+			"iconLarge": "NH_academy_gremlin_icon_large.png"
+		}
+	},
+	"core:masterGremlin": {
+		"graphics": {
+			"iconLarge": "NH_academy_masterGremlin_icon_large.png"
+		}
+	},
 	"core:mage": {
 		"level": 5,
 		"attack": 13,

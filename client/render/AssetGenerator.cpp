@@ -67,6 +67,14 @@ void AssetGenerator::initialize()
 	{
 		return createAcademyTownIconBuiltToday("NH_academy_village_small_normal.png", AnimationPath::builtin("ITPA"), 24, 25);
 	};
+	imageFiles[ImagePath::builtin("NH_academy_gremlin_icon_large.png")] = [this]()
+	{
+		return createAcademyCreaturePortrait(30, "NH_academy_gremlin_portrait_mask.png");
+	};
+	imageFiles[ImagePath::builtin("NH_academy_masterGremlin_icon_large.png")] = [this]()
+	{
+		return createAcademyCreaturePortrait(31, "NH_academy_masterGremlin_portrait_mask.png");
+	};
 
 	auto addAcademyMapLayers = [this](const std::string & image, const AnimationPath & originalAnimation)
 	{
@@ -232,7 +240,9 @@ bool AssetGenerator::preferGeneratedImage(const ImagePath & image) const
 	return image == ImagePath::builtin("NH_academy_fort_large_built.png")
 		|| image == ImagePath::builtin("NH_academy_fort_small_built.png")
 		|| image == ImagePath::builtin("NH_academy_village_large_built.png")
-		|| image == ImagePath::builtin("NH_academy_village_small_built.png");
+		|| image == ImagePath::builtin("NH_academy_village_small_built.png")
+		|| image == ImagePath::builtin("NH_academy_gremlin_icon_large.png")
+		|| image == ImagePath::builtin("NH_academy_masterGremlin_icon_large.png");
 }
 
 std::map<ImagePath, std::shared_ptr<ISharedImage>> AssetGenerator::generateAllImages()
@@ -318,6 +328,75 @@ AssetGenerator::CanvasPtr AssetGenerator::createAcademyTownIconBuiltToday(
 		}
 	}
 
+	return result;
+}
+
+AssetGenerator::CanvasPtr AssetGenerator::createAcademyCreaturePortrait(size_t originalFrame, const std::string & maskImage) const
+{
+	static constexpr Point PORTRAIT_SIZE(58, 64);
+	static const ImagePath backdropPath = ImagePath::builtin("NH_academy_creature_portrait_backdrop.png");
+	const ImagePath maskPath = ImagePath::builtin(maskImage);
+	const AnimationPath originalPortrait = AnimationPath::builtin("TWCRPORT");
+	const auto * resources = CResourceHandler::get();
+	auto hasImageResource = [resources](const ImagePath & path)
+	{
+		return resources->existsResource(path.addPrefix("SPRITES/"))
+			|| resources->existsResource(path.addPrefix("DATA/"))
+			|| resources->existsResource(path);
+	};
+	if(!hasImageResource(backdropPath) || !hasImageResource(maskPath)
+		|| !resources->existsResource(originalPortrait.addPrefix("SPRITES/")))
+		return nullptr;
+
+	auto loadAuthoredImage = [&](const ImagePath & path)
+	{
+		ImageLocator locator(path, EImageBlitMode::SIMPLE);
+		locator.scalingFactor = 1;
+		return ENGINE->renderHandler().loadImage(locator);
+	};
+	const auto backdrop = loadAuthoredImage(backdropPath);
+	const auto matte = loadAuthoredImage(maskPath);
+	ImageLocator portraitLocator(originalPortrait, static_cast<int>(originalFrame), 0, EImageBlitMode::OPAQUE);
+	portraitLocator.scalingFactor = 1;
+	portraitLocator.originalDefFrame = true;
+	const auto portrait = ENGINE->renderHandler().loadImage(portraitLocator);
+	if(!backdrop || !matte || !portrait
+		|| backdrop->dimensions() != PORTRAIT_SIZE
+		|| matte->dimensions() != PORTRAIT_SIZE
+		|| portrait->dimensions() != PORTRAIT_SIZE)
+	{
+		logGlobal->warn("New Horizons Academy portrait frame %d or its authored mask/backdrop does not match 58x64 geometry",
+			static_cast<int>(originalFrame));
+		return nullptr;
+	}
+
+	Canvas matteCanvas(PORTRAIT_SIZE, CanvasScalingPolicy::IGNORE);
+	matteCanvas.drawColor(Rect(Point(0, 0), PORTRAIT_SIZE), ColorRGBA(0, 0, 0, 0));
+	matteCanvas.draw(matte, Point(0, 0));
+	Canvas portraitCanvas(PORTRAIT_SIZE, CanvasScalingPolicy::IGNORE);
+	portraitCanvas.drawColor(Rect(Point(0, 0), PORTRAIT_SIZE), ColorRGBA(0, 0, 0, 0));
+	portraitCanvas.draw(portrait, Point(0, 0));
+	Canvas backdropCanvas(PORTRAIT_SIZE, CanvasScalingPolicy::IGNORE);
+	backdropCanvas.drawColor(Rect(Point(0, 0), PORTRAIT_SIZE), ColorRGBA(0, 0, 0, 0));
+	backdropCanvas.draw(backdrop, Point(0, 0));
+
+	auto result = ENGINE->renderHandler().createImage(PORTRAIT_SIZE, CanvasScalingPolicy::IGNORE);
+	Canvas canvas = result->getCanvas();
+	canvas.drawColor(Rect(Point(0, 0), PORTRAIT_SIZE), ColorRGBA(0, 0, 0, 0));
+	for(int y = 0; y < PORTRAIT_SIZE.y; ++y)
+	{
+		for(int x = 0; x < PORTRAIT_SIZE.x; ++x)
+		{
+			const Point pixel(x, y);
+			const ColorRGBA maskPixel = matteCanvas.getPixel(pixel);
+			if(maskPixel.r != maskPixel.g || maskPixel.r != maskPixel.b || (maskPixel.r != 0 && maskPixel.r != 255))
+			{
+				logGlobal->warn("New Horizons Academy portrait mask %s must be binary grayscale", maskImage);
+				return nullptr;
+			}
+			canvas.drawPoint(pixel, maskPixel.r == 255 ? portraitCanvas.getPixel(pixel) : backdropCanvas.getPixel(pixel));
+		}
+	}
 	return result;
 }
 

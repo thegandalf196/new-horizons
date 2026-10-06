@@ -11,11 +11,14 @@
 
 #include "../GameEngine.h"
 #include "../CMT.h"
+#include "../../lib/CCreatureHandler.h"
 #include "../../lib/CConfigHandler.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/VCMIDirs.h"
 #include "../../lib/filesystem/Filesystem.h"
 #include "../../lib/logging/CBasicLogConfigurator.h"
+#include "../../lib/modding/IdentifierStorage.h"
+#include "../../lib/modding/ModScope.h"
 #include "../../lib/modding/CModHandler.h"
 
 #include "render/Canvas.h"
@@ -46,11 +49,24 @@ struct BuiltIcon
 	int nativeHeight;
 };
 
+struct AcademyPortrait
+{
+	const char * identifier;
+	const char * image;
+	const char * mask;
+	int defFrame;
+};
+
 constexpr std::array<BuiltIcon, 4> academyBuiltIcons{{
 	{"NH_academy_fort_large_normal.png", "NH_academy_fort_large_built.png", 58, 64},
 	{"NH_academy_fort_small_normal.png", "NH_academy_fort_small_built.png", 48, 32},
 	{"NH_academy_village_large_normal.png", "NH_academy_village_large_built.png", 58, 64},
 	{"NH_academy_village_small_normal.png", "NH_academy_village_small_built.png", 48, 32},
+}};
+
+constexpr std::array<AcademyPortrait, 2> academyPortraits{{
+	{"gremlin", "NH_academy_gremlin_icon_large.png", "NH_academy_gremlin_portrait_mask.png", 30},
+	{"masterGremlin", "NH_academy_masterGremlin_icon_large.png", "NH_academy_masterGremlin_portrait_mask.png", 31},
 }};
 
 void require(bool condition, const std::string & message)
@@ -153,6 +169,111 @@ void verifyDifferentPixels(const std::shared_ptr<IImage> & normal, const std::sh
 		<< minX << ',' << minY << ".." << maxX << ',' << maxY << '\n';
 }
 
+void drawImage(Canvas & canvas, const std::shared_ptr<IImage> & image, const Point & size)
+{
+	require(image != nullptr, "Could not load image needed for Academy portrait composition check");
+	require(image->dimensions() == size, "Academy portrait input has unexpected native geometry");
+	canvas.drawColor(Rect(Point(0, 0), size), ColorRGBA(0, 0, 0, 0));
+	canvas.draw(image, Point(0, 0));
+}
+
+void verifyAcademyPortrait(const AcademyPortrait & portrait)
+{
+	const auto creatureId = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "creature", std::string(portrait.identifier));
+	require(creatureId.has_value(), std::string("Could not resolve core:") + portrait.identifier);
+	const auto * creature = LIBRARY->creh->objects.at(static_cast<size_t>(*creatureId)).get();
+	require(creature != nullptr, std::string("Missing creature core:") + portrait.identifier);
+	require(creature->largeIconName == portrait.image,
+		std::string("Creature large icon is not bound to generated route: core:") + portrait.identifier);
+	require(creature->smallIconName.empty(),
+		std::string("Creature small icon must remain on its original CPRSMALL frame: core:") + portrait.identifier);
+
+	auto & renderer = ENGINE->renderHandler();
+	constexpr Point size(58, 64);
+	const auto generated = renderer.loadImage(ImagePath::builtin(portrait.image), EImageBlitMode::SIMPLE);
+	const auto backdrop = renderer.loadImage(
+		ImagePath::builtin("NH_academy_creature_portrait_backdrop.png"), EImageBlitMode::SIMPLE);
+	const auto matte = renderer.loadImage(ImagePath::builtin(portrait.mask), EImageBlitMode::SIMPLE);
+	ImageLocator originalLocator(AnimationPath::builtin("TWCRPORT"), portrait.defFrame, 0, EImageBlitMode::OPAQUE);
+	originalLocator.scalingFactor = 1;
+	originalLocator.originalDefFrame = true;
+	const auto original = renderer.loadImage(originalLocator);
+
+	Canvas generatedCanvas(size, CanvasScalingPolicy::IGNORE);
+	Canvas backdropCanvas(size, CanvasScalingPolicy::IGNORE);
+	Canvas matteCanvas(size, CanvasScalingPolicy::IGNORE);
+	Canvas originalCanvas(size, CanvasScalingPolicy::IGNORE);
+	drawImage(generatedCanvas, generated, size);
+	drawImage(backdropCanvas, backdrop, size);
+	drawImage(matteCanvas, matte, size);
+	drawImage(originalCanvas, original, size);
+
+	size_t foregroundPixels = 0;
+	size_t backdropPixels = 0;
+	for(int y = 0; y < size.y; ++y)
+	{
+		for(int x = 0; x < size.x; ++x)
+		{
+			const Point pixel(x, y);
+			const ColorRGBA mask = matteCanvas.getPixel(pixel);
+			require(mask.r == mask.g && mask.r == mask.b && (mask.r == 0 || mask.r == 255),
+				std::string("Portrait matte is not binary grayscale: ") + portrait.mask);
+			if(mask.r == 255)
+			{
+				++foregroundPixels;
+				require(generatedCanvas.getPixel(pixel) == originalCanvas.getPixel(pixel),
+					std::string("Generated portrait changed an original subject pixel: ") + portrait.image);
+			}
+			else
+			{
+				++backdropPixels;
+				require(generatedCanvas.getPixel(pixel) == backdropCanvas.getPixel(pixel),
+					std::string("Generated portrait has a non-authored background pixel: ") + portrait.image);
+			}
+		}
+	}
+	require(foregroundPixels > 0 && backdropPixels > 0, "Portrait matte must select both source and authored background");
+
+	const auto remappedLarge = renderer.loadImage(AnimationPath::builtin("TWCRPORT"), creature->getIconIndex(), 0,
+		EImageBlitMode::OPAQUE);
+	Canvas remappedCanvas(size, CanvasScalingPolicy::IGNORE);
+	drawImage(remappedCanvas, remappedLarge, size);
+	for(int y = 0; y < size.y; ++y)
+		for(int x = 0; x < size.x; ++x)
+			require(remappedCanvas.getPixel(Point(x, y)) == generatedCanvas.getPixel(Point(x, y)),
+				std::string("TWCRPORT creature alias did not route to generated portrait: ") + portrait.identifier);
+
+	ImageLocator originalSmallLocator(AnimationPath::builtin("CPRSMALL"), creature->getIconIndex(), 0,
+		EImageBlitMode::COLORKEY);
+	originalSmallLocator.scalingFactor = 1;
+	originalSmallLocator.originalDefFrame = true;
+	const auto originalSmall = renderer.loadImage(originalSmallLocator);
+	const auto mappedSmall = renderer.loadImage(AnimationPath::builtin("CPRSMALL"), creature->getIconIndex(), 0,
+		EImageBlitMode::COLORKEY);
+	require(originalSmall && mappedSmall && originalSmall->dimensions() == Point(32, 32)
+		&& mappedSmall->dimensions() == Point(32, 32), "Original CPRSMALL creature icon is missing or changed geometry");
+	Canvas originalSmallCanvas(Point(32, 32), CanvasScalingPolicy::IGNORE);
+	Canvas mappedSmallCanvas(Point(32, 32), CanvasScalingPolicy::IGNORE);
+	drawImage(originalSmallCanvas, originalSmall, Point(32, 32));
+	drawImage(mappedSmallCanvas, mappedSmall, Point(32, 32));
+	size_t transparentSmallPixels = 0;
+	for(int y = 0; y < 32; ++y)
+	{
+		for(int x = 0; x < 32; ++x)
+		{
+			const Point pixel(x, y);
+			const ColorRGBA expected = originalSmallCanvas.getPixel(pixel);
+			if(expected.a < 255)
+				++transparentSmallPixels;
+			require(mappedSmallCanvas.getPixel(pixel) == expected,
+				std::string("CPRSMALL transparent cutout changed for core:") + portrait.identifier);
+		}
+	}
+	require(transparentSmallPixels > 0, "CPRSMALL source is expected to remain a transparent cutout");
+	std::cout << "  " << portrait.identifier << ": " << foregroundPixels << " preserved subject pixels, "
+		<< backdropPixels << " authored backdrop pixels; CPRSMALL unchanged\n";
+}
+
 void setUpscalingFilter(const char * name)
 {
 	Settings filter = settings.write["video"]["upscalingFilter"];
@@ -225,13 +346,15 @@ void runRuntimeRegression()
 			auto built = renderer.loadImage(ImagePath::builtin(icon.built), EImageBlitMode::SIMPLE);
 			verifyDifferentPixels(normal, built, icon);
 		}
+		for(const AcademyPortrait & portrait : academyPortraits)
+			verifyAcademyPortrait(portrait);
 
 		// Destroying the backend releases SDL. The next iteration starts it again
 		// under the same dummy environment and verifies the selected driver anew.
 		ENGINE.reset();
 	}
 
-	std::cout << "Academy built-icon runtime regression PASS\n";
+	std::cout << "Academy built-icon and Gremlin portrait runtime regression PASS\n";
 }
 }
 

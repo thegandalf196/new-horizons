@@ -36,8 +36,17 @@ approve a silhouette. Private native/8× compositions remain ignored build outpu
   remains under the wing despite removal of the blue spire. Recognizability is
   not sufficient to approve incorrect background classification.
 
-Only the Gremlin has a runtime-compositor implementation in progress. Remaining
+Both Gremlin variants have a verified runtime-compositor implementation. Remaining
 portraits must be reviewed independently; no complete-family approval is implied.
+
+The runtime exporter `tools/export_new_horizons_academy_gremlin_portraits.py`
+reads only authored sources: the binary masks and the Academy desert backdrop.
+It crops the backdrop at `(0,10,100,120)`, reduces it to58×64 with LANCZOS and
+copies the masks byte-for-byte. The large-icon fallback PNGs deliberately contain
+only this backdrop, never purchaser creature pixels. In ordinary runtime,
+AssetGenerator prefers the generated composition and reads the external raw
+TWCRPORT frames30/31 through the masks. No small-icon overrides are installed.
+Build and actual scaled-consumer verification are recorded separately in the queue.
 
 ## Exact correction prompt
 

@@ -12,8 +12,12 @@ import/reduction checks passing. The Linux launcher now selects the frozen
 separate. UP239's first generated Gremlin matte failed
 native comparison (retained snowy architecture) and is rejected, not new portrait
 coverage or approved artwork. Its corrected geometry-only matte now passes root
-native review provisionally; renderer integration and the other thirteen large
-portraits are Not done, so this is not completed portrait coverage.
+native review provisionally; Master Gremlin's mask is also Provisional. Both
+large portraits now have production integration and actual dummy-SDL scaled
+consumer verification (1/1 native pass); the other twelve are Not done. Gargoyle
+drafts are rejected for scenery retained by their masks, not approved runtime art.
+No small-icon or gameplay changes; full portrait coverage and user approval remain
+unfinished.
 
 UP-238 Academy faction/town-list icons: revised artwork is Provisional pending
 user native-scale acceptance, not Final. The two new HoMM3-Art masters and exact
