@@ -1,5 +1,13 @@
 # New Horizons UI and asset status register
 
+Cabir walking animation,2026-10-06: **Not done**. Two built-in HoMM3-Art
+atlas attempts remain rejected for unclear alternating gait and faint alpha
+debris, not runtime-installed. A shared-scale/anchor mechanical atlas exporter
+and five focused tests now exist; these do not create or approve the animation.
+Native candidate review is under ignored `build/nh-cabir-walk-review.DtidAm/`.
+Do not report large strict-alpha bounding-box differences as proven body-size
+variation: the substantial subject is approximately equal height in all cells.
+
 UP253 Cabir rougher standing revision,2026-10-06: **Provisional** v2 master,
 exact prompt and native/4x comparison are retained under
 `assets/new-horizons/creatures/cabir/v2/` and shown to the user. Same design,

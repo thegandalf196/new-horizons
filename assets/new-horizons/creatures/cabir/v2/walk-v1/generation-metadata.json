@@ -1,0 +1,107 @@
+{
+  "status": "rejected-not-selected",
+  "generator": "built-in image_gen",
+  "generatedAt": "2026-10-06",
+  "designStatus": "The referenced Cabir v2 standing master is provisional and not user-approved.",
+  "promptWordingNote": "The prompt files preserve the original tool-call wording, including the word 'approved'; that wording does not indicate user approval.",
+  "reviewedReferences": [
+    {
+      "path": "assets/new-horizons/creatures/cabir/v2/standing-master.png",
+      "role": "provisional Cabir v2 identity and material reference"
+    },
+    {
+      "path": "assets/new-horizons/creatures/cabir/v2/comparisons/v1-v2-standing.png",
+      "role": "native-size visual/style reference inspected before attempt 1"
+    }
+  ],
+  "requested": {
+    "canvas": [2048, 512],
+    "mode": "RGBA",
+    "transparentBackground": true,
+    "frameCount": 4,
+    "cellSize": [512, 512],
+    "visibleBodyHeight": 350,
+    "feetBaselineY": 430
+  },
+  "attempts": [
+    {
+      "id": "attempt-01",
+      "generatorOutputId": "01a10dfc-b5d8-7451-8b48-7a6076cef4f6/exec-dfdfe699-7936-4466-892c-ea719910cd0d.png",
+      "artifact": "assets/new-horizons/creatures/cabir/v2/walk-v1/candidate-01-rejected.png",
+      "prompt": "assets/new-horizons/creatures/cabir/v2/walk-v1/candidate-01-rejected.prompt.txt",
+      "sha256": "4fc6dff8eb1b42d232d7166853fa7a78e263cc2881115938270e9d21ca24ec47",
+      "referencesUsed": [
+        {
+          "path": "assets/new-horizons/creatures/cabir/v2/standing-master.png",
+          "role": "primary identity and material reference"
+        },
+        {
+          "path": "assets/new-horizons/creatures/cabir/v2/comparisons/v1-v2-standing.png",
+          "role": "native-size visual/style reference"
+        }
+      ],
+      "actual": {
+        "canvas": [2172, 724],
+        "mode": "RGBA",
+        "alphaExtrema": [0, 255],
+        "equalQuarterCellWidth": 543,
+        "rawAlphaBoundsByCell": [
+          [0, 32, 543, 686],
+          [0, 47, 535, 690],
+          [11, 59, 539, 707],
+          [51, 25, 527, 636]
+        ],
+        "alpha16SubjectBoundsByCell": [
+          [26, 91, 535, 636],
+          [115, 89, 517, 630],
+          [19, 92, 537, 636],
+          [99, 91, 521, 631]
+        ],
+        "alpha16SubjectHeights": [545, 541, 544, 540],
+        "alpha16SubjectBottoms": [636, 630, 636, 631]
+      },
+      "rejectionReason": "The returned canvas is 3:1 rather than the requested 4:1, and the main subjects are about 540px high rather than the requested 350px. The contact poses do not clearly read as opposite lead-leg phases."
+    },
+    {
+      "id": "attempt-02",
+      "generatorOutputId": "01a10dfc-b5d8-7451-8b48-7a6076cef4f6/exec-78f48326-de01-4106-b222-3494fae98b6a.png",
+      "artifact": "assets/new-horizons/creatures/cabir/v2/walk-v1/candidate-02-rejected.png",
+      "prompt": "assets/new-horizons/creatures/cabir/v2/walk-v1/candidate-02-rejected.prompt.txt",
+      "sha256": "a347a825e563bed6c13e8ece38628515ae9f53bdd9f50037627142e402227cda",
+      "referencesUsed": [
+        {
+          "path": "assets/new-horizons/creatures/cabir/v2/walk-v1/candidate-01-rejected.png",
+          "role": "first atlas draft; edit target for the single targeted correction"
+        },
+        {
+          "path": "assets/new-horizons/creatures/cabir/v2/standing-master.png",
+          "role": "provisional Cabir v2 identity and material reference"
+        }
+      ],
+      "actual": {
+        "canvas": [2172, 724],
+        "mode": "RGBA",
+        "alphaExtrema": [0, 255],
+        "equalQuarterCellWidth": 543,
+        "rawAlphaBoundsByCell": [
+          [25, 108, 499, 609],
+          [17, 44, 501, 688],
+          [34, 15, 489, 607],
+          [29, 105, 483, 689]
+        ],
+        "alpha16SubjectBoundsByCell": [
+          [54, 111, 496, 601],
+          [128, 108, 487, 598],
+          [37, 111, 482, 601],
+          [129, 108, 480, 599]
+        ],
+        "alpha16SubjectHeights": [490, 490, 490, 491],
+        "alpha16SubjectBottoms": [601, 598, 601, 599]
+      },
+      "rejectionReason": "The returned canvas is 3:1 rather than the requested 4:1; that layout mismatch alone is not treated as fatal. The main alpha>=16 subject bounds show consistent height and feet baseline; faint alpha debris inflates the raw-alpha bounds in some cells. However, the main figures are about 490px high with bottoms near y=600, versus the requested 350px and y=430, and frames 1 and 3 still do not read clearly as opposite contact poses. No pixels were altered, and no per-frame crop, warp, or resize was applied."
+    }
+  ],
+  "noSelectedMaster": true,
+  "noThirdGeneration": true,
+  "noRasterEdits": true
+}

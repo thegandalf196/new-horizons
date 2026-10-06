@@ -2,6 +2,15 @@
 
 Updated: 2026-10-06
 
+Cabir animation export checkpoint: one shared atlas scale/anchor, source
+preservation, alpha/geometry guards and native frame/GIF/contact exports exist;
+five focused synthetic tests and independent review pass. Generated walking
+art fails native review and is withheld; no accepted animation/runtime creature
+replacement or identity-coverage increase is claimed. GIF ordering-pixel
+assertions remain a deferred test refinement, not a reason for a broad suite.
+Windows notice37458491906 succeeds on dc5de4c48; full build37458617656 is live
+on that exact source and is not a completed/downloadable newer package yet.
+
 Continuation selection audit (bounded, not completion): no new principal-path
 omission demonstrated in Brotherhood's inherited Morale, Cover of Darkness's
 daily hide, Castle Gate/Arcane Reservoir/Portal minimum-AI paths, or active
