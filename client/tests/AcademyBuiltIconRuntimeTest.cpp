@@ -1313,6 +1313,15 @@ void verifyCabirAnimation(const char * descriptorName, bool master)
 	const auto * creature = LIBRARY->creh->objects.at(static_cast<size_t>(*creatureId)).get();
 	require(creature != nullptr && creature->getIndex() == expectedCreatureId,
 		std::string("Unexpected Cabir creature binding for core:") + creatureIdentifier);
+	require(creature->hasBonusOfType(BonusType::SHOOTER),
+		std::string("Cabir creature must retain shooter ability: core:") + creatureIdentifier);
+	require(creature->getBaseShots() > 0,
+		std::string("Cabir creature must retain positive ammunition: core:") + creatureIdentifier);
+	require(!creature->hasBonusOfType(BonusType::NO_MELEE_PENALTY),
+		std::string("Cabir shooter must retain the ordinary melee damage penalty: core:") + creatureIdentifier);
+	if(master)
+		require(creature->hasBonusOfType(BonusType::SPELLCASTER),
+			"Cabir Master must retain its creature repair ability");
 
 	auto & renderer = ENGINE->renderHandler();
 	const AnimationPath descriptorPath = AnimationPath::builtin(descriptorName);
@@ -1340,16 +1349,12 @@ void verifyCabirAnimation(const char * descriptorName, bool master)
 		ECreatureAnimType::ATTACK_UP,
 		ECreatureAnimType::ATTACK_FRONT,
 		ECreatureAnimType::ATTACK_DOWN,
+		ECreatureAnimType::SHOOT_UP,
+		ECreatureAnimType::SHOOT_FRONT,
+		ECreatureAnimType::SHOOT_DOWN,
 	};
 	if(master)
-	{
-		requiredGroups.insert(requiredGroups.end(), {
-			ECreatureAnimType::SHOOT_UP,
-			ECreatureAnimType::SHOOT_FRONT,
-			ECreatureAnimType::SHOOT_DOWN,
-			ECreatureAnimType::CAST_FRONT,
-		});
-	}
+		requiredGroups.push_back(ECreatureAnimType::CAST_FRONT);
 
 	for(const auto group : requiredGroups)
 	{
@@ -1376,6 +1381,9 @@ void verifyCabirAnimation(const char * descriptorName, bool master)
 		ECreatureAnimType::ATTACK_UP,
 		ECreatureAnimType::ATTACK_FRONT,
 		ECreatureAnimType::ATTACK_DOWN,
+		ECreatureAnimType::SHOOT_UP,
+		ECreatureAnimType::SHOOT_FRONT,
+		ECreatureAnimType::SHOOT_DOWN,
 		ECreatureAnimType::DEATH,
 	};
 	for(const auto group : multiFrameGroups)
@@ -1385,44 +1393,44 @@ void verifyCabirAnimation(const char * descriptorName, bool master)
 
 	if(master)
 	{
-		for(const auto group : {ECreatureAnimType::SHOOT_UP, ECreatureAnimType::SHOOT_FRONT,
-			ECreatureAnimType::SHOOT_DOWN})
-			require(animation->size(static_cast<size_t>(group)) >= 3,
-				std::string("Cabir Master shooting group must contain the release frame: ") + descriptorName
-				+ " group " + std::to_string(static_cast<size_t>(group)));
 		require(animation->size(static_cast<size_t>(ECreatureAnimType::CAST_FRONT)) > 1,
 			std::string("Cabir Master cast group must contain multiple frames: ") + descriptorName);
-
-		require(creature->animation.projectileImageName == AnimationPath::builtin("CPRGOGX.DEF"),
-			"Cabir Master must use the original Gog missile animation resource");
-		require(creature->animation.attackClimaxFrame == 3,
-			"Cabir Master must release its projectile at the authored attack climax frame 3");
-
-		const AnimationPath projectilePath = AnimationPath::builtin("SPRITES/CPRGOGX.DEF");
-		const auto projectile = renderer.loadAnimation(projectilePath, EImageBlitMode::COLORKEY);
-		require(projectile && projectile->size(0) > 0, "Original CPRGOGX.DEF projectile must load forward frames");
-		if(projectile->size(1) == 0)
-			projectile->createFlippedGroup(0, 1);
-		require(projectile->size(1) == projectile->size(0)
-			&& projectile->getImage(0, 0, true) && projectile->getImage(0, 1, true),
-			"CPRGOGX projectile must provide a reverse group through the runtime flip fallback");
-		const auto describeDefReference = [](const ImageLocator & locator)
-		{
-			if(!locator.defFile)
-				return std::string("<no DEF reference>");
-			return locator.defFile->getOriginalName() + " (canonical " + locator.defFile->getName() + ")";
-		};
-		const std::string expectedDefReference = projectilePath.getOriginalName()
-			+ " (canonical " + projectilePath.getName() + ")";
-		const auto projectileFrame = projectile->getImageLocator(0, 0);
-		require(projectileFrame.defFile.has_value() && *projectileFrame.defFile == projectilePath,
-			"Cabir Master projectile should resolve to original CPRGOGX DEF " + expectedDefReference
-			+ "; actual locator is " + describeDefReference(projectileFrame));
-		const auto reverseProjectileFrame = projectile->getImageLocator(0, 1);
-			require(reverseProjectileFrame.defFile.has_value() && *reverseProjectileFrame.defFile == projectilePath,
-			"Cabir Master reverse projectile should retain original CPRGOGX DEF " + expectedDefReference
-			+ "; actual locator is " + describeDefReference(reverseProjectileFrame));
 	}
+
+	require(creature->animation.projectileImageName == AnimationPath::builtin("CPRGOGX.DEF"),
+		std::string("Cabir creature must use the original Gog missile animation resource: core:")
+			+ creatureIdentifier);
+	require(creature->animation.attackClimaxFrame == 3,
+		std::string("Cabir creature must release at the authored attack climax frame 3: core:") + creatureIdentifier);
+	for(const auto group : {ECreatureAnimType::SHOOT_UP, ECreatureAnimType::SHOOT_FRONT, ECreatureAnimType::SHOOT_DOWN})
+		require(animation->size(static_cast<size_t>(group)) >= static_cast<size_t>(creature->animation.attackClimaxFrame),
+			std::string("Cabir shooting animation must contain its projectile release frame: ") + descriptorName
+			+ " group " + std::to_string(static_cast<size_t>(group)));
+
+	const AnimationPath projectilePath = AnimationPath::builtin("SPRITES/CPRGOGX.DEF");
+	const auto projectile = renderer.loadAnimation(projectilePath, EImageBlitMode::COLORKEY);
+	require(projectile && projectile->size(0) > 0, "Original CPRGOGX.DEF projectile must load forward frames");
+	if(projectile->size(1) == 0)
+		projectile->createFlippedGroup(0, 1);
+	require(projectile->size(1) == projectile->size(0)
+		&& projectile->getImage(0, 0, true) && projectile->getImage(0, 1, true),
+		"CPRGOGX projectile must provide a reverse group through the runtime flip fallback");
+	const auto describeDefReference = [](const ImageLocator & locator)
+	{
+		if(!locator.defFile)
+			return std::string("<no DEF reference>");
+		return locator.defFile->getOriginalName() + " (canonical " + locator.defFile->getName() + ")";
+	};
+	const std::string expectedDefReference = projectilePath.getOriginalName()
+		+ " (canonical " + projectilePath.getName() + ")";
+	const auto projectileFrame = projectile->getImageLocator(0, 0);
+	require(projectileFrame.defFile.has_value() && *projectileFrame.defFile == projectilePath,
+		std::string("Cabir projectile should resolve to original CPRGOGX DEF for core:") + creatureIdentifier
+			+ " " + expectedDefReference + "; actual locator is " + describeDefReference(projectileFrame));
+	const auto reverseProjectileFrame = projectile->getImageLocator(0, 1);
+	require(reverseProjectileFrame.defFile.has_value() && *reverseProjectileFrame.defFile == projectilePath,
+		std::string("Cabir reverse projectile should retain original CPRGOGX DEF for core:") + creatureIdentifier
+			+ " " + expectedDefReference + "; actual locator is " + describeDefReference(reverseProjectileFrame));
 	verifyCabirAdventureMap(*creature,
 		master ? "NH_CabirMasterMap.def" : "NH_CabirMap.def",
 		master ? "NH_CabirMasterEncounterLeft.png" : "NH_CabirEncounterLeft.png",
@@ -1433,7 +1441,7 @@ void verifyCabirAnimation(const char * descriptorName, bool master)
 	require(battleAnimation->framesInGroup(ECreatureAnimType::DEAD) > 0,
 		std::string("Runtime death pose fallback is missing for ") + descriptorName);
 	std::cout << "  " << descriptorName << ": loaded distinct descriptor groups/frames"
-		<< (master ? " and original CPRGOGX projectile" : "") << '\n';
+		<< " and original CPRGOGX projectile\n";
 }
 
 void verifyCabirAnimations()

@@ -10,6 +10,14 @@ prompts are preserved beside each master. All new poses use the HoMM3 Art skill.
 Original project artwork is dedicated under CC0-1.0, as with the earlier Cabir
 drafts. These are not extracted purchaser game sprites.
 
+`shoot-front-v1/` and `shoot-directions-v1/` contain original base-specific
+bare-hand firing sheets generated with the built-in image tool through HoMM3
+Art on2026-10-06. The base standing master is the identity reference; exact prompts
+are saved beside the masters. These keep the unarmored base form distinct from
+the Master. Each sheet contains four full-body poses; whole-component extraction
+avoids quadrant clipping. They are Provisional, not user-approved final artwork
+or a resolution of the separately reported walking/smoothness defects.
+
 `walk-v1/candidate-01.png` is a provisional four-pose barehanded walking atlas,
 generated with the base standing master as its identity reference. Its native
 export is **not complete**: the existing strict horizontal-atlas exporter rejected

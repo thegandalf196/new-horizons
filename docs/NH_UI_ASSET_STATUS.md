@@ -9,7 +9,14 @@ build passes;13 focused Python checks pass; activated dummy-SDL native fixture
 passes1/1 with zero skips in2.64s, including selected/unselected pixel change.
 This is not convincing gait, visual contour approval or playable delivery.
 Two newly generated gait drafts still repeat poses and are too smooth; neither
-is installed. User's both-forms-shoot amendment remains pending implementation.
+is installed. Both-forms shooting is now source-integrated and native-verified.
+The original base shoot-front/directional masters and exact built-in HoMM3-Art
+prompts are stored in cabir/v3/shoot-front-v1 and shoot-directions-v1. Nine native
+PNGs provide actual unarmored base firing poses, retaining Master-only Repair.
+Nine export checks, seven config/repair checks and native1/1, zero skips,2.67s
+pass. Root reviewed both4x contacts; art stays **Provisional**. Gameplay delivery,
+projectile-origin/motion review and the broader cruder-style/gait request remain
+open; new shooting poses do not repair the walk cycle.
 
 Private magic-art handoff,2026-10-06: **Provisional** local integration. The
 v6 ZIP contains eighteen casting sprites by six Schools and nine faction books.

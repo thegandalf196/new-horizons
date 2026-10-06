@@ -31,7 +31,7 @@ def _family(root: Path):
 class CabirBattleV3ExportTest(unittest.TestCase):
     def test_descriptors_are_complete_engine_json_with_existing_frame_bytes(self):
         expected = {
-            "cabir": {0, 2, 3, 4, 5, 22, 11, 12, 13},
+            "cabir": {0, 2, 3, 4, 5, 22, 11, 12, 13, 14, 15, 16},
             "cabir-master": {0, 2, 3, 4, 5, 22, 11, 12, 13, 14, 15, 16, 18, 30, 31, 32},
         }
         for family, root in (("cabir", BASE), ("cabir-master", MASTER)):
@@ -84,18 +84,49 @@ class CabirBattleV3ExportTest(unittest.TestCase):
                 self.assertNotEqual(up[1], up[2])
                 self.assertNotEqual(down[1], down[2])
 
-    def test_master_shots_share_front_ready_release_and_recovery_timing(self):
-        manifest, _descriptor, sequences = _family(MASTER)
-        self.assertEqual(manifest["attackClimaxFrameZeroBased"], 2)
-        front = sequences[15]
-        up = sequences[14]
-        down = sequences[16]
-        for sequence in (front, up, down):
-            self.assertEqual(len(sequence), 4)
-        self.assertEqual(up, [front[0], up[1], up[2], front[3]])
-        self.assertEqual(down, [front[0], down[1], down[2], front[3]])
-        self.assertNotEqual(up[1], up[2])
-        self.assertNotEqual(down[1], down[2])
+    def test_both_forms_have_distinct_shot_groups_with_shared_directional_endpoints(self):
+        for root in (BASE, MASTER):
+            with self.subTest(root=root.name):
+                manifest, _descriptor, sequences = _family(root)
+                self.assertEqual(manifest["attackClimaxFrameZeroBased"], 2)
+                front = sequences[15]
+                up = sequences[14]
+                down = sequences[16]
+                for sequence in (front, up, down):
+                    self.assertEqual(len(sequence), 4)
+                self.assertEqual(up, [front[0], up[1], up[2], front[3]])
+                self.assertEqual(down, [front[0], down[1], down[2], front[3]])
+                self.assertNotEqual(up[1], up[2])
+                self.assertNotEqual(down[1], down[2])
+
+    def test_base_shooting_sources_and_faint_exterior_alpha_are_pinned(self):
+        manifest, _descriptor, _sequences = _family(BASE)
+        expected = {
+            "shoot_front": {
+                "sourcePath": "assets/new-horizons/creatures/cabir/v3/shoot-front-v1/candidate-01.png",
+                "sourceSha256": "d806036bf1bf0b594cda35c8e24d3d33022a58a3f08213e26e20eedb32edcc38",
+                "promptSha256": "3056f56f378a6dc99ab6f347fd9f47861bcbd1b1ff1b063170e9447b510e349e",
+                "sourceSize": [1323, 1189],
+                "removedPixelCount": 10284,
+                "maximumRemovedAlpha": 5,
+            },
+            "shoot_directions": {
+                "sourcePath": "assets/new-horizons/creatures/cabir/v3/shoot-directions-v1/candidate-01.png",
+                "sourceSha256": "fe9b4effd297b7b1483f332939199d4ca7d29d3dece11cb6aa94e8bf3e7c3f95",
+                "promptSha256": "bced008a74ee7dbddde58209652d822118ab7c0cfed82d64d1a39bca49e18a42",
+                "sourceSize": [1222, 1287],
+                "removedPixelCount": 8833,
+                "maximumRemovedAlpha": 3,
+            },
+        }
+        for key, pins in expected.items():
+            with self.subTest(atlas=key):
+                source = manifest["sourceSheets"][key]
+                for field, value in pins.items():
+                    self.assertEqual(source[field], value)
+                self.assertFalse(source["sourceFileModified"])
+                self.assertEqual(source["authorizedAlphaOnlyCleanup"], [])
+                self.assertEqual(source["auxiliaryComponentsAssigned"], [])
 
     def test_master_repair_is_an_explicit_front_gesture_alias(self):
         manifest, _descriptor, sequences = _family(MASTER)

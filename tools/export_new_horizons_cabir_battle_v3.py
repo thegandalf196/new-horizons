@@ -478,13 +478,13 @@ def _build_family(family: str) -> dict[str, bytes]:
         atlas_poses["melee_directions"],
         calibration_pose=atlas_poses["melee_front"][0],
     )
+    add_group("shoot-front", atlas_poses["shoot_front"], reference_index=0)
+    add_group(
+        "shoot-directions",
+        atlas_poses["shoot_directions"],
+        calibration_pose=atlas_poses["shoot_front"][0],
+    )
     if family == "cabir-master":
-        add_group("shoot-front", atlas_poses["shoot_front"], reference_index=0)
-        add_group(
-            "shoot-directions",
-            atlas_poses["shoot_directions"],
-            calibration_pose=atlas_poses["shoot_front"][0],
-        )
         add_group("repair-front", atlas_poses["repair"], reference_index=0)
 
     sprite_files: dict[str, bytes] = {}
@@ -610,22 +610,22 @@ def _build_descriptor(family: str, groups: dict[str, dict], config: dict) -> dic
             frame_path("melee-directions", 4),
             frame_path("melee-front", 3),
         ]),
+        _descriptor_sequence(15, paths("shoot-front")),
+        _descriptor_sequence(14, [
+            frame_path("shoot-front", 0),
+            frame_path("shoot-directions", 1),
+            frame_path("shoot-directions", 2),
+            frame_path("shoot-front", 3),
+        ]),
+        _descriptor_sequence(16, [
+            frame_path("shoot-front", 0),
+            frame_path("shoot-directions", 3),
+            frame_path("shoot-directions", 4),
+            frame_path("shoot-front", 3),
+        ]),
     ]
     if family == "cabir-master":
         sequences.extend([
-            _descriptor_sequence(15, paths("shoot-front")),
-            _descriptor_sequence(14, [
-                frame_path("shoot-front", 0),
-                frame_path("shoot-directions", 1),
-                frame_path("shoot-directions", 2),
-                frame_path("shoot-front", 3),
-            ]),
-            _descriptor_sequence(16, [
-                frame_path("shoot-front", 0),
-                frame_path("shoot-directions", 3),
-                frame_path("shoot-directions", 4),
-                frame_path("shoot-front", 3),
-            ]),
             _descriptor_sequence(18, paths("repair-front")),
             _descriptor_sequence(30, paths("repair-front")),
             _descriptor_sequence(31, paths("repair-front")),
@@ -656,9 +656,11 @@ def _family_specs(root: Path) -> dict[str, dict]:
                 "melee_front": AtlasSpec("base-melee-front", pin(f"assets/new-horizons/creatures/{base}/melee-front-v1/candidate-01.png", "b58a766ea7512b10315b8b82f0aa85b6a161534434745b402706da9547935efb"), pin(f"assets/new-horizons/creatures/{base}/melee-front-v1/candidate-01.prompt.txt", "012b9cdd479940915efed31bddf50a0aa31129790dd68f839c21e5086d29cb5b"), ("ready", "windup", "claw-swipe", "recovery")),
                 "melee_directions": AtlasSpec("base-melee-directions", pin(f"assets/new-horizons/creatures/{base}/melee-directions-v1/candidate-01.png", "c6a7b5831041f977668a3cdb75ff58707dbf31c2fd2c4e5021974fc3c9acbbf6"), pin(f"assets/new-horizons/creatures/{base}/melee-directions-v1/candidate-01.prompt.txt", "0aa19633eeb907fce8b28e0c70f80a0d97aa47dfe662d770711d1ee6365a05e6"), ("up-windup", "up-release", "down-windup", "down-release")),
                 "reactions": AtlasSpec("base-reactions", pin(f"assets/new-horizons/creatures/{base}/reactions-v1/candidate-01.png", "e42feeba9a6019b3685c756280cedf72173842fa2a652ed2ba59a33094ddaa56"), pin(f"assets/new-horizons/creatures/{base}/reactions-v1/candidate-01.prompt.txt", "10855fc06decadba78f3b5d33e234b257d8bc2c5533e298aa2df59eab338360d"), ("hit-recoil", "defend-brace", "dying", "collapsed-dead")),
+                "shoot_front": AtlasSpec("base-shoot-front", pin(f"assets/new-horizons/creatures/{base}/shoot-front-v1/candidate-01.png", "d806036bf1bf0b594cda35c8e24d3d33022a58a3f08213e26e20eedb32edcc38"), pin(f"assets/new-horizons/creatures/{base}/shoot-front-v1/candidate-01.prompt.txt", "3056f56f378a6dc99ab6f347fd9f47861bcbd1b1ff1b063170e9447b510e349e"), ("ready", "windup", "palm-shot", "recovery")),
+                "shoot_directions": AtlasSpec("base-shoot-directions", pin(f"assets/new-horizons/creatures/{base}/shoot-directions-v1/candidate-01.png", "fe9b4effd297b7b1483f332939199d4ca7d29d3dece11cb6aa94e8bf3e7c3f95"), pin(f"assets/new-horizons/creatures/{base}/shoot-directions-v1/candidate-01.prompt.txt", "bced008a74ee7dbddde58209652d822118ab7c0cfed82d64d1a39bca49e18a42"), ("up-windup", "up-release", "down-windup", "down-release")),
             },
             "aliases": {},
-            "not_provided": [1, 6, 7, 8, 14, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 30, 31, 32, 40, 41, 42, 50, 51],
+            "not_provided": [1, 6, 7, 8, 17, 18, 19, 20, 21, 23, 24, 25, 30, 31, 32, 40, 41, 42, 50, 51],
             "warnings": [
                 "Walk atlas is an open-gait draft; it is exported as supplied and is not a completed loop-quality claim.",
                 "The pre-cleaned walk input retains prior reviewed alpha-only output; no new movement artwork or interpolation was added.",

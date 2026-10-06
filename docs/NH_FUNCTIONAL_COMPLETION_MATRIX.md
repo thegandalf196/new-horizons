@@ -2,6 +2,18 @@
 
 Updated: 2026-10-06
 
+UP265 user-priority creature amendment: BOTH Cabir forms are now registered
+shooters with8 shots, ordinary shooter melee penalties and the established fire
+projectile. The base gains real unarmored fire-palm groups14/15/16; Master's
+Repair and both elemental defenses remain. Human/server/AI use the existing
+generic shooting paths. Nine focused export checks, seven config/repair checks,
+fixture rebuild and activated native1/1 pass with zero skips in2.67s. Independent
+source review finds no blocker. This closes the source/config/resource gap for
+the approved ranged amendment, not user motion/art approval or launcher delivery.
+Gait/cruder-style and projectile-origin review remain in the user queue; broad
+cross-system combat interactions remain Phase2. Spell/perk/Order totals do not
+change:225/310 active perks,61/67 combat identities,8/8 Orders.
+
 Selection navigation: [Phase1 hold index](NH_PHASE1_HOLD_INDEX.md) lists all85
 planned perk IDs with queue references and explicitly uncertain rows, plus the
 six missing combat identities. Registry parity is checked independently.

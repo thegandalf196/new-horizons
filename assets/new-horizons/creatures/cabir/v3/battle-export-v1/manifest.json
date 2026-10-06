@@ -681,6 +681,322 @@
       "inputPngIsModifiedInMemoryOnlyForPinnedOperations": false,
       "authorizedAlphaOnlyCleanup": [],
       "auxiliaryComponentsAssigned": []
+    },
+    "shoot_front": {
+      "status": "offline lossless pose separation; alignment/native review pending",
+      "action": "base-shoot-front",
+      "sourcePath": "assets/new-horizons/creatures/cabir/v3/shoot-front-v1/candidate-01.png",
+      "sourceSha256": "d806036bf1bf0b594cda35c8e24d3d33022a58a3f08213e26e20eedb32edcc38",
+      "sourceSize": [
+        1323,
+        1189
+      ],
+      "sourceComponentCountAtThreshold": 7,
+      "majorComponentAreaMinimum": 50000,
+      "selectedPoseCount": 4,
+      "componentConnectivity": "8-connected",
+      "ordering": "row-major by component bbox center; top/bottom split at source height/2, then x center",
+      "commonSourceCanvas": {
+        "globalBBox": [
+          44,
+          14,
+          1299,
+          1169
+        ],
+        "size": [
+          1255,
+          1155
+        ],
+        "scale": 1.0,
+        "resized": false,
+        "sourceOffsetsPreserved": true
+      },
+      "policy": {
+        "seed": "four largest-area components meeting area minimum at alpha>=16",
+        "dilationRadius": 4,
+        "dilationShape": "square/Chebyshev radius, clipped to source bounds",
+        "retainedPixels": "original source RGBA bytes copied unchanged",
+        "removedPixels": "only nonzero source pixels outside a unique pose dilation; alpha must be <=10; no recoloring",
+        "maximumRemovedAlphaAllowed": 10,
+        "independentResize": false,
+        "quadrantCropping": false
+      },
+      "removedPixelCount": 10284,
+      "maximumRemovedAlpha": 5,
+      "removedAlphaHistogram": {
+        "1": 9196,
+        "2": 894,
+        "3": 139,
+        "4": 51,
+        "5": 4
+      },
+      "poses": [
+        {
+          "frame": "pose-00.png",
+          "row": 0,
+          "column": 0,
+          "seedThreshold": 16,
+          "seedArea": 161296,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            48,
+            18,
+            591,
+            599
+          ],
+          "paddedSourceBBox": [
+            44,
+            14,
+            595,
+            603
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            0,
+            0
+          ],
+          "poseName": "ready"
+        },
+        {
+          "frame": "pose-01.png",
+          "row": 0,
+          "column": 1,
+          "seedThreshold": 16,
+          "seedArea": 167800,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            756,
+            31,
+            1295,
+            598
+          ],
+          "paddedSourceBBox": [
+            752,
+            27,
+            1299,
+            602
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            708,
+            13
+          ],
+          "poseName": "windup"
+        },
+        {
+          "frame": "pose-02.png",
+          "row": 1,
+          "column": 0,
+          "seedThreshold": 16,
+          "seedArea": 159527,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            48,
+            606,
+            674,
+            1165
+          ],
+          "paddedSourceBBox": [
+            44,
+            602,
+            678,
+            1169
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            0,
+            588
+          ],
+          "poseName": "palm-shot"
+        },
+        {
+          "frame": "pose-03.png",
+          "row": 1,
+          "column": 1,
+          "seedThreshold": 16,
+          "seedArea": 144102,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            753,
+            613,
+            1241,
+            1165
+          ],
+          "paddedSourceBBox": [
+            749,
+            609,
+            1245,
+            1169
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            705,
+            595
+          ],
+          "poseName": "recovery"
+        }
+      ],
+      "sourceFileModified": false,
+      "sourceComponentCountAtAlphaThreshold": 7,
+      "sourceMajorComponentCount": 4,
+      "promptPath": "assets/new-horizons/creatures/cabir/v3/shoot-front-v1/candidate-01.prompt.txt",
+      "promptSha256": "3056f56f378a6dc99ab6f347fd9f47861bcbd1b1ff1b063170e9447b510e349e",
+      "inputPngIsModifiedInMemoryOnlyForPinnedOperations": false,
+      "authorizedAlphaOnlyCleanup": [],
+      "auxiliaryComponentsAssigned": []
+    },
+    "shoot_directions": {
+      "status": "offline lossless pose separation; alignment/native review pending",
+      "action": "base-shoot-directions",
+      "sourcePath": "assets/new-horizons/creatures/cabir/v3/shoot-directions-v1/candidate-01.png",
+      "sourceSha256": "fe9b4effd297b7b1483f332939199d4ca7d29d3dece11cb6aa94e8bf3e7c3f95",
+      "sourceSize": [
+        1222,
+        1287
+      ],
+      "sourceComponentCountAtThreshold": 14,
+      "majorComponentAreaMinimum": 50000,
+      "selectedPoseCount": 4,
+      "componentConnectivity": "8-connected",
+      "ordering": "row-major by component bbox center; top/bottom split at source height/2, then x center",
+      "commonSourceCanvas": {
+        "globalBBox": [
+          26,
+          19,
+          1210,
+          1207
+        ],
+        "size": [
+          1184,
+          1188
+        ],
+        "scale": 1.0,
+        "resized": false,
+        "sourceOffsetsPreserved": true
+      },
+      "policy": {
+        "seed": "four largest-area components meeting area minimum at alpha>=16",
+        "dilationRadius": 4,
+        "dilationShape": "square/Chebyshev radius, clipped to source bounds",
+        "retainedPixels": "original source RGBA bytes copied unchanged",
+        "removedPixels": "only nonzero source pixels outside a unique pose dilation; alpha must be <=10; no recoloring",
+        "maximumRemovedAlphaAllowed": 10,
+        "independentResize": false,
+        "quadrantCropping": false
+      },
+      "removedPixelCount": 8833,
+      "maximumRemovedAlpha": 3,
+      "removedAlphaHistogram": {
+        "1": 8212,
+        "2": 558,
+        "3": 63
+      },
+      "poses": [
+        {
+          "frame": "pose-00.png",
+          "row": 0,
+          "column": 0,
+          "seedThreshold": 16,
+          "seedArea": 137853,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            30,
+            25,
+            531,
+            589
+          ],
+          "paddedSourceBBox": [
+            26,
+            21,
+            535,
+            593
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            0,
+            2
+          ],
+          "poseName": "up-windup"
+        },
+        {
+          "frame": "pose-01.png",
+          "row": 0,
+          "column": 1,
+          "seedThreshold": 16,
+          "seedArea": 153749,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            621,
+            23,
+            1197,
+            589
+          ],
+          "paddedSourceBBox": [
+            617,
+            19,
+            1201,
+            593
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            591,
+            0
+          ],
+          "poseName": "up-release"
+        },
+        {
+          "frame": "pose-02.png",
+          "row": 1,
+          "column": 0,
+          "seedThreshold": 16,
+          "seedArea": 153458,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            39,
+            625,
+            554,
+            1203
+          ],
+          "paddedSourceBBox": [
+            35,
+            621,
+            558,
+            1207
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            9,
+            602
+          ],
+          "poseName": "down-windup"
+        },
+        {
+          "frame": "pose-03.png",
+          "row": 1,
+          "column": 1,
+          "seedThreshold": 16,
+          "seedArea": 163363,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            632,
+            617,
+            1206,
+            1203
+          ],
+          "paddedSourceBBox": [
+            628,
+            613,
+            1210,
+            1207
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            602,
+            594
+          ],
+          "poseName": "down-release"
+        }
+      ],
+      "sourceFileModified": false,
+      "sourceComponentCountAtAlphaThreshold": 14,
+      "sourceMajorComponentCount": 4,
+      "promptPath": "assets/new-horizons/creatures/cabir/v3/shoot-directions-v1/candidate-01.prompt.txt",
+      "promptSha256": "bced008a74ee7dbddde58209652d822118ab7c0cfed82d64d1a39bca49e18a42",
+      "inputPngIsModifiedInMemoryOnlyForPinnedOperations": false,
+      "authorizedAlphaOnlyCleanup": [],
+      "auxiliaryComponentsAssigned": []
     }
   },
   "groups": {
@@ -757,6 +1073,36 @@
       "referenceBodyHeight": 506,
       "targetBodyHeight": 60.0,
       "uniformScale": 0.11857707509881422,
+      "descriptorFrameStart": 1
+    },
+    "shoot-front": {
+      "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+      "referencePoseIndex": 0,
+      "referencePose": "ready",
+      "referenceAlpha16BBox": [
+        4,
+        4,
+        547,
+        585
+      ],
+      "referenceBodyHeight": 581,
+      "targetBodyHeight": 60.0,
+      "uniformScale": 0.10327022375215146,
+      "descriptorFrameStart": 0
+    },
+    "shoot-directions": {
+      "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+      "referencePoseIndex": 0,
+      "referencePose": "ready",
+      "referenceAlpha16BBox": [
+        4,
+        4,
+        547,
+        585
+      ],
+      "referenceBodyHeight": 581,
+      "targetBodyHeight": 60.0,
+      "uniformScale": 0.10327022375215146,
       "descriptorFrameStart": 1
     }
   },
@@ -836,6 +1182,36 @@
         "frames/melee-directions/frame-04.png",
         "frames/melee-front/frame-03.png"
       ]
+    },
+    {
+      "group": 15,
+      "generateOverlay": 1,
+      "frames": [
+        "frames/shoot-front/frame-00.png",
+        "frames/shoot-front/frame-01.png",
+        "frames/shoot-front/frame-02.png",
+        "frames/shoot-front/frame-03.png"
+      ]
+    },
+    {
+      "group": 14,
+      "generateOverlay": 1,
+      "frames": [
+        "frames/shoot-front/frame-00.png",
+        "frames/shoot-directions/frame-01.png",
+        "frames/shoot-directions/frame-02.png",
+        "frames/shoot-front/frame-03.png"
+      ]
+    },
+    {
+      "group": 16,
+      "generateOverlay": 1,
+      "frames": [
+        "frames/shoot-front/frame-00.png",
+        "frames/shoot-directions/frame-03.png",
+        "frames/shoot-directions/frame-04.png",
+        "frames/shoot-front/frame-03.png"
+      ]
     }
   ],
   "intentionalAliases": {},
@@ -844,9 +1220,6 @@
     6,
     7,
     8,
-    14,
-    15,
-    16,
     17,
     18,
     19,
@@ -869,7 +1242,7 @@
     "The pre-cleaned walk input retains prior reviewed alpha-only output; no new movement artwork or interpolation was added."
   ],
   "files": {
-    "NH_cabir_v3_battle.json": "e1ea0ec768a28bfc16bdd25115b09d007d2d38f89d42d610ed9bd8095eaea9e2",
+    "NH_cabir_v3_battle.json": "72e98d3e2e9f78b6bf41ed6e5d805a77dac0c1e9e14543948c9110198ec9984f",
     "NH_cabir_v3_battle/frames/holding/frame-00.png": "e57d3e920b0fc33d4c88391c2a445f8282844f1ef7b772ffefabd7d417d13186",
     "NH_cabir_v3_battle/frames/melee-directions/frame-00.png": "ad87294e471503ab7918d8c244167c2a3f86eb9f22c4900f8c4fcdaa442b7688",
     "NH_cabir_v3_battle/frames/melee-directions/frame-01.png": "427bd6b77357392e46eae9641b2dbd552c0133507e563a582cdca2fb010b0468",
@@ -888,13 +1261,24 @@
     "NH_cabir_v3_battle/frames/reaction/frame-01.png": "a42a5b7edbd301c2a4523efdf15ade280a8ce3e303413d3da0a43388c1c57ae4",
     "NH_cabir_v3_battle/frames/reaction/frame-02.png": "c00ec0296d26633c54b12c36654c788332fb94c17d50a6338ebf44002d5ef4d5",
     "NH_cabir_v3_battle/frames/reaction/frame-03.png": "7994e6bab115161e82c518e53a3211dcc7bb5cdad4dc971a446efdd77774c2e0",
+    "NH_cabir_v3_battle/frames/shoot-directions/frame-00.png": "4cc66e02f0fed312b8f27a37fe0b0b64e5d57468e729a4ddc7a081f068da4ee2",
+    "NH_cabir_v3_battle/frames/shoot-directions/frame-01.png": "264f85e68434408ebb0b197d7e68ba7a18c3dd848676d28997801c0e0b5ec98b",
+    "NH_cabir_v3_battle/frames/shoot-directions/frame-02.png": "100117f0b363dc7b986250644fa332db09ddab6713ff3314916c4451dddb53fe",
+    "NH_cabir_v3_battle/frames/shoot-directions/frame-03.png": "f210ac8ed5b168ee89335d2245874901c49f00d9d607cf27cfad1f0a02c299f7",
+    "NH_cabir_v3_battle/frames/shoot-directions/frame-04.png": "41eef8a048619026cf3bc4ecfafc3284ca4b5936f12c4d9749a3a19768785c44",
+    "NH_cabir_v3_battle/frames/shoot-front/frame-00.png": "4cc66e02f0fed312b8f27a37fe0b0b64e5d57468e729a4ddc7a081f068da4ee2",
+    "NH_cabir_v3_battle/frames/shoot-front/frame-01.png": "f020eac22b8fdfee2d40f73f984e2f9d57f5f67ae98135b1aa2e2881245b007d",
+    "NH_cabir_v3_battle/frames/shoot-front/frame-02.png": "05191837a4dd90baca6be0124be161d734d07abf85f9199b68d57a766813b15a",
+    "NH_cabir_v3_battle/frames/shoot-front/frame-03.png": "004a8c0f55d7a6ee8c90b78ab24ffea7af790f55264225f0526c3943e4d80b73",
     "review/alignment/holding.json": "cbae8b45564ac6d2c13b322114dca53152b8ff65fd4182a92a7a38f7e72ee1be",
     "review/alignment/melee-directions.json": "265cdcd0d020ca0c72d752ceb86f3c66f67faf294810379fdbc77fb35351f0d1",
     "review/alignment/melee-front.json": "4ff63703f485afe15d76fc883ac778a98284092820d814331a689da920e6bc2c",
     "review/alignment/moving.json": "b6043924ffb36e6788e9f37e6cd5fb82c913c73850142a58d2aa95acdb0f58c4",
     "review/alignment/reaction.json": "949acf263e128dbf1307e93eafb3d7b1bd8576cb345f2efe697a73c464a010b4",
-    "review/contact-master-2x.png": "119f02a65451af69a9be8aa63aad806fa4368b0e1f78946e23561eaf4b0f07e3",
-    "review/family-index.json": "37de782b93bea1cec74d3cad70685eebffbae81acaa8641a202c001c498cd52c",
+    "review/alignment/shoot-directions.json": "975c9019726026de249ce155aeb6af5252d3caed8d1063470287d0cf9cf374b4",
+    "review/alignment/shoot-front.json": "1994741574ab8533933c4bcfcb9dbb3405e64aee1b596df6528969b417fce64e",
+    "review/contact-master-2x.png": "95a6a77ca1cb775d8abce5ad77eeae2bf8a30ca025dc5089eddc2100154efbec",
+    "review/family-index.json": "3defc2a897be1f29b3bacf64e7d109d2c1129a5d92b7c9a8a77e2f0013dd5819",
     "review/groups/holding-contact-4x.png": "d57e35a237b3597a2938502a44eb2dc8bd91a46521cffe8829363546e09056e1",
     "review/groups/melee-directions-animation-proof.gif": "5cb9254bdb2cd27275928da1f682f19813bb145dfe551de69cd3da4c70481ac2",
     "review/groups/melee-directions-contact-4x.png": "141ec3f519a06e8da47c29c8cb67907b229fc14dddeda8afcc046924b295081d",
@@ -903,6 +1287,10 @@
     "review/groups/moving-animation-proof.gif": "88f94a8e87784ffa3abf044279bdf4c2e019cb6023bf808cbaf1883502f08bd6",
     "review/groups/moving-contact-4x.png": "4b3152637297fbe4c995f56e77c3aae494f3f5d270371d7942b850163b44ea29",
     "review/groups/reaction-animation-proof.gif": "8d7590432ff1b121649ab7dfb33cad4414a67753429e32ac9e46a58e25802bf0",
-    "review/groups/reaction-contact-4x.png": "6c8d07a05dacf1c311b287b5d0f5377814c2b98d8ef700533c63884f71d904e3"
+    "review/groups/reaction-contact-4x.png": "6c8d07a05dacf1c311b287b5d0f5377814c2b98d8ef700533c63884f71d904e3",
+    "review/groups/shoot-directions-animation-proof.gif": "826fe5e741aaf11120999fe25f56eaf55e3aff621a676ab358b3f038f3a126e3",
+    "review/groups/shoot-directions-contact-4x.png": "28f4e466867eb2ff19ad336afe0f1bfc4c09e704e96c65b54a5ff6c840a7eb6c",
+    "review/groups/shoot-front-animation-proof.gif": "e454c4f116c3d11a23bfe386bf18689b79fd39072a46433554616b7b62ca7830",
+    "review/groups/shoot-front-contact-4x.png": "6cdb14f0bd1661e483002be56845f00ffe6b1bff33e91a223b70ee2609b6ec7f"
   }
 }

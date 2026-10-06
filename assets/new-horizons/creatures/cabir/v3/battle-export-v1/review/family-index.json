@@ -27,7 +27,15 @@
     "melee-directions:up-windup",
     "melee-directions:up-release",
     "melee-directions:down-windup",
-    "melee-directions:down-release"
+    "melee-directions:down-release",
+    "shoot-front:ready",
+    "shoot-front:windup",
+    "shoot-front:palm-shot",
+    "shoot-front:recovery",
+    "shoot-directions:up-windup",
+    "shoot-directions:up-release",
+    "shoot-directions:down-windup",
+    "shoot-directions:down-release"
   ],
   "calibration": {
     "holding": {
@@ -99,6 +107,34 @@
       "referenceBodyHeight": 506,
       "targetBodyHeight": 60.0,
       "uniformScale": 0.11857707509881422
+    },
+    "shoot-front": {
+      "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+      "referencePoseIndex": 0,
+      "referencePose": "ready",
+      "referenceAlpha16BBox": [
+        4,
+        4,
+        547,
+        585
+      ],
+      "referenceBodyHeight": 581,
+      "targetBodyHeight": 60.0,
+      "uniformScale": 0.10327022375215146
+    },
+    "shoot-directions": {
+      "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+      "referencePoseIndex": 0,
+      "referencePose": "ready",
+      "referenceAlpha16BBox": [
+        4,
+        4,
+        547,
+        585
+      ],
+      "referenceBodyHeight": 581,
+      "targetBodyHeight": 60.0,
+      "uniformScale": 0.10327022375215146
     }
   }
 }

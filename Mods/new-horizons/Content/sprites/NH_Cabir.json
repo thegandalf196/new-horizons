@@ -76,6 +76,36 @@
         "frames/melee-directions/frame-04.png",
         "frames/melee-front/frame-03.png"
       ]
+    },
+    {
+      "group": 15,
+      "generateOverlay": 1,
+      "frames": [
+        "frames/shoot-front/frame-00.png",
+        "frames/shoot-front/frame-01.png",
+        "frames/shoot-front/frame-02.png",
+        "frames/shoot-front/frame-03.png"
+      ]
+    },
+    {
+      "group": 14,
+      "generateOverlay": 1,
+      "frames": [
+        "frames/shoot-front/frame-00.png",
+        "frames/shoot-directions/frame-01.png",
+        "frames/shoot-directions/frame-02.png",
+        "frames/shoot-front/frame-03.png"
+      ]
+    },
+    {
+      "group": 16,
+      "generateOverlay": 1,
+      "frames": [
+        "frames/shoot-front/frame-00.png",
+        "frames/shoot-directions/frame-03.png",
+        "frames/shoot-directions/frame-04.png",
+        "frames/shoot-front/frame-03.png"
+      ]
     }
   ]
 }
