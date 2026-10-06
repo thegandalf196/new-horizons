@@ -443,14 +443,20 @@ TEST_F(NewHorizonsCommandingPresenceTest, SecondWindFloorEndsWithItsExtraActivat
 	giveNegativeMorale(target);
 	giveNegativeMorale(other);
 	target->movedThisRound = true;
-	EXPECT_EQ(battle()->battleGetMorale(target), expectedNegativeMorale());
+	const auto beforeOrder = battle()->battleGetMoraleInfo(target);
+	EXPECT_EQ(beforeOrder.real, expectedNegativeMorale());
+	EXPECT_EQ(beforeOrder.effective, expectedNegativeMorale());
+	EXPECT_FALSE(beforeOrder.commandingPresenceFloorApplied);
 	EXPECT_EQ(battle()->battleGetMorale(other), expectedNegativeMorale());
 	ASSERT_TRUE(issueTargeted(HeroCommand::SECOND_WIND, target));
 	const auto active = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
 	ASSERT_TRUE(active);
 	EXPECT_TRUE(active->secondWindActive);
 	EXPECT_EQ(battle()->battleActiveUnit(), target);
-	EXPECT_EQ(battle()->battleGetMorale(target), 0);
+	const auto duringOrder = battle()->battleGetMoraleInfo(target);
+	EXPECT_EQ(duringOrder.real, expectedNegativeMorale());
+	EXPECT_EQ(duringOrder.effective, 0);
+	EXPECT_TRUE(duringOrder.commandingPresenceFloorApplied);
 	EXPECT_EQ(battle()->battleGetMorale(other), expectedNegativeMorale())
 		<< "Second Wind affects only its designated extra-activation recipient";
 
@@ -458,6 +464,9 @@ TEST_F(NewHorizonsCommandingPresenceTest, SecondWindFloorEndsWithItsExtraActivat
 	const auto spent = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
 	ASSERT_TRUE(spent);
 	EXPECT_FALSE(spent->secondWindActive);
-	EXPECT_EQ(battle()->battleGetMorale(target), expectedNegativeMorale())
+	const auto afterOrder = battle()->battleGetMoraleInfo(target);
+	EXPECT_EQ(afterOrder.real, expectedNegativeMorale());
+	EXPECT_EQ(afterOrder.effective, expectedNegativeMorale())
 		<< "The floor ends as the extra activation is spent, not at round end";
+	EXPECT_FALSE(afterOrder.commandingPresenceFloorApplied);
 }

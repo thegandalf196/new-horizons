@@ -1115,16 +1115,22 @@ bool CBattleInfoCallback::battleHasCommandingPresence(const battle::Unit * unit)
 	});
 }
 
-int CBattleInfoCallback::battleGetMorale(const battle::Unit * unit) const
+BattleMoraleInfo CBattleInfoCallback::battleGetMoraleInfo(const battle::Unit * unit) const
 {
+	BattleMoraleInfo result;
 	if(!unit)
-		return 0;
+		return result;
 
 	if(!getBattle() || !unit->alive() || unit->isGhost())
-		return unit->moraleVal();
+	{
+		result.real = unit->moraleVal();
+		result.effective = result.real;
+		return result;
+	}
 
 	const int32_t firstRoundMoraleModifier = getBattle()->getRound() == 1
 		? getBattle()->getFirstRoundMoraleModifier(unit->unitSide()) : 0;
+	result.firstRoundModifier = firstRoundMoraleModifier;
 	const auto * hero = battleGetOwnerHero(unit);
 	int32_t additionalMorale = 0;
 	if(hero && hero->hasActivePerk("new-horizons:discipline", "new-horizons:discipline.standardBearer"))
@@ -1145,25 +1151,39 @@ int CBattleInfoCallback::battleGetMorale(const battle::Unit * unit) const
 			}
 		}
 	}
+	result.standardBearerBonus = additionalMorale;
 
-	const auto applyMoraleFloor = [this, unit, hero](int morale)
+	const auto applyMoraleFloor = [this, unit, hero, &result](int morale)
 	{
+		result.real = morale;
 		if(morale >= 0)
 			return morale;
 		if(battleHasCommandingPresence(unit))
+		{
+			result.commandingPresenceFloorApplied = true;
 			return 0;
-		return newHorizonsBloodrage::hasFuryUnbound(hero)
-			&& battleGetBloodrageDamagePercent(unit) > 0 ? 0 : morale;
+		}
+		if(newHorizonsBloodrage::hasFuryUnbound(hero)
+			&& battleGetBloodrageDamagePercent(unit) > 0)
+		{
+			result.furyUnboundFloorApplied = true;
+			return 0;
+		}
+		return morale;
 	};
 	if(!newHorizonsDiscipline::hasSteadfast(hero))
 	{
 		if(additionalMorale == 0 && firstRoundMoraleModifier == 0)
-			return applyMoraleFloor(unit->moraleVal());
-		const auto totalAdditionalMorale = static_cast<int64_t>(additionalMorale)
-			+ static_cast<int64_t>(firstRoundMoraleModifier);
-		const auto boundedAdditionalMorale = static_cast<int32_t>(std::clamp<int64_t>(totalAdditionalMorale,
-			std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
-		return applyMoraleFloor(unit->moraleValWithBonus(boundedAdditionalMorale));
+			result.effective = applyMoraleFloor(unit->moraleVal());
+		else
+		{
+			const auto totalAdditionalMorale = static_cast<int64_t>(additionalMorale)
+				+ static_cast<int64_t>(firstRoundMoraleModifier);
+			const auto boundedAdditionalMorale = static_cast<int32_t>(std::clamp<int64_t>(totalAdditionalMorale,
+				std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
+			result.effective = applyMoraleFloor(unit->moraleValWithBonus(boundedAdditionalMorale));
+		}
+		return result;
 	}
 
 	const auto moraleBonuses = unit->getUnstackedBonuses(Selector::type()(BonusType::MORALE));
@@ -1194,10 +1214,18 @@ int CBattleInfoCallback::battleGetMorale(const battle::Unit * unit) const
 	const auto currentMoraleBonuses = unit->getBonusesOfType(BonusType::MORALE);
 	const int64_t moraleDelta = static_cast<int64_t>(adjustedMoraleBonuses.totalValue())
 		- static_cast<int64_t>(currentMoraleBonuses->totalValue());
+	result.steadfastAdjustment = static_cast<int32_t>(std::clamp<int64_t>(moraleDelta,
+		std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
 	const int64_t totalAdditionalMorale = moraleDelta + additionalMorale + firstRoundMoraleModifier;
 	const auto boundedAdditionalMorale = static_cast<int32_t>(std::clamp<int64_t>(totalAdditionalMorale,
 		std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
-	return applyMoraleFloor(unit->moraleValWithBonus(boundedAdditionalMorale));
+	result.effective = applyMoraleFloor(unit->moraleValWithBonus(boundedAdditionalMorale));
+	return result;
+}
+
+int CBattleInfoCallback::battleGetMorale(const battle::Unit * unit) const
+{
+	return battleGetMoraleInfo(unit).effective;
 }
 
 int CBattleInfoCallback::battleGetFearChance(const battle::Unit * affected) const

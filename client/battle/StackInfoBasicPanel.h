@@ -35,6 +35,7 @@ private:
 	std::vector<std::shared_ptr<LRClickableAreaWText>> statusTooltips;
 	std::shared_ptr<CPlayerBattleCallback> battleCallback;
 	newHorizonsBattleStatus::StackInfoStatusSnapshot displayedStatus;
+	newHorizonsBattleStatus::BattleMoraleReadback displayedMoraleReadback;
 	std::string displayedSoulChainSignature;
 	int displayedMorale = 0;
 

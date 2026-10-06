@@ -882,6 +882,46 @@ inline std::string battleFormTooltip(const BattleFormStatus & status)
 	return result;
 }
 
+struct BattleMoraleReadback
+{
+	bool available = false;
+	int32_t real = 0;
+	int32_t effective = 0;
+	int32_t standardBearerBonus = 0;
+	int32_t firstRoundModifier = 0;
+	int32_t steadfastAdjustment = 0;
+	bool commandingPresenceFloorApplied = false;
+	bool furyUnboundFloorApplied = false;
+	bool unaffectedByMorale = false;
+	std::vector<std::string> bonusDescriptions;
+
+	bool active() const { return available; }
+	bool hasSources() const
+	{
+		if(unaffectedByMorale)
+			return false;
+
+		return !bonusDescriptions.empty() || standardBearerBonus != 0 || firstRoundModifier != 0
+			|| steadfastAdjustment != 0 || commandingPresenceFloorApplied || furyUnboundFloorApplied;
+	}
+
+	bool operator==(const BattleMoraleReadback &) const = default;
+};
+
+inline BattleMoraleReadback makeBattleMoraleReadback(bool enabled, int32_t real, int32_t effective,
+	int32_t standardBearerBonus, int32_t firstRoundModifier, int32_t steadfastAdjustment,
+	bool commandingPresenceFloorApplied, bool furyUnboundFloorApplied, bool unaffectedByMorale,
+	std::vector<std::string> bonusDescriptions)
+{
+	if(!enabled)
+		return {};
+	if(unaffectedByMorale)
+		return {true, real, effective, 0, 0, 0, false, false, true, {}};
+
+	return {true, real, effective, standardBearerBonus, firstRoundModifier, steadfastAdjustment,
+		commandingPresenceFloorApplied, furyUnboundFloorApplied, false, std::move(bonusDescriptions)};
+}
+
 struct SylvanLuckStackStatus
 {
 	bool skillPresent = false;

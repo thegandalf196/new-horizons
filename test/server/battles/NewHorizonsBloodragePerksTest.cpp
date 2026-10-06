@@ -330,7 +330,10 @@ TEST_F(NewHorizonsBloodragePerksTest, FuryFloorsNegativeMoraleOnlyForCurrentCont
 
 	// Isolate the zero-increment boundary despite the legally selected War Drums opening increment.
 	battle()->getSide(BattleSide::ATTACKER).bloodrageDamagePercent = 0;
-	ASSERT_EQ(battle()->battleGetMorale(negative), lowerCap);
+	const auto beforeBloodshed = battle()->battleGetMoraleInfo(negative);
+	ASSERT_EQ(beforeBloodshed.real, lowerCap);
+	ASSERT_EQ(beforeBloodshed.effective, lowerCap);
+	ASSERT_FALSE(beforeBloodshed.furyUnboundFloorApplied);
 	const int positiveMorale = battle()->battleGetMorale(positive);
 	ASSERT_GT(positiveMorale, 0);
 	ASSERT_EQ(battle()->battleGetMorale(immune), 0);
@@ -361,18 +364,26 @@ TEST_F(NewHorizonsBloodragePerksTest, FuryFloorsNegativeMoraleOnlyForCurrentCont
 	projectedVictim->damage(lethal);
 	branch->recordBloodrageTransition(projectedVictim, wasAlive);
 	EXPECT_EQ(branch->getBloodrageDamagePercent(BattleSide::ATTACKER), 12);
-	EXPECT_EQ(branch->battleGetMorale(branchNegative.get()), 0);
+	const auto projectedNegative = branch->battleGetMoraleInfo(branchNegative.get());
+	EXPECT_EQ(projectedNegative.real, lowerCap);
+	EXPECT_EQ(projectedNegative.effective, 0);
+	EXPECT_TRUE(projectedNegative.furyUnboundFloorApplied);
 	EXPECT_EQ(parent->battleGetMorale(parentNegative.get()), lowerCap);
 	EXPECT_EQ(sibling->battleGetMorale(siblingNegative.get()), lowerCap);
 	EXPECT_EQ(battle()->battleGetMorale(negative), lowerCap);
 
 	kill({victim});
 	EXPECT_EQ(battle()->getBloodrageDamagePercent(BattleSide::ATTACKER), 12);
-	EXPECT_EQ(battle()->battleGetMorale(negative), 0);
+	const auto afterBloodshed = battle()->battleGetMoraleInfo(negative);
+	EXPECT_EQ(afterBloodshed.real, lowerCap);
+	EXPECT_EQ(afterBloodshed.effective, 0);
+	EXPECT_TRUE(afterBloodshed.furyUnboundFloorApplied);
 	EXPECT_EQ(battle()->battleGetMorale(positive), positiveMorale)
 		<< "Fury does not change positive Morale";
 	EXPECT_EQ(battle()->battleGetMorale(immune), 0)
 		<< "NO_MORALE immunity remains effective while Bloodrage is active";
+	EXPECT_FALSE(battle()->battleGetMoraleInfo(positive).furyUnboundFloorApplied);
+	EXPECT_FALSE(battle()->battleGetMoraleInfo(immune).furyUnboundFloorApplied);
 	EXPECT_EQ(branch->battleGetMorale(branchNegative.get()), 0);
 	EXPECT_EQ(parent->battleGetMorale(parentNegative.get()), lowerCap);
 	EXPECT_EQ(sibling->battleGetMorale(siblingNegative.get()), lowerCap);

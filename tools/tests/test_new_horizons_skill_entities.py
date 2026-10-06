@@ -277,6 +277,29 @@ class NewHorizonsSkillEntitiesTest(unittest.TestCase):
                         },
                     )
 
+    def test_school_rank_descriptions_show_acquisition_caps_without_casting_locks(self):
+        maximum_levels = {"basic": 3, "advanced": 4, "expert": 5}
+        for key in SCHOOL_SKILLS:
+            skill = self.skills[key]
+            school_name = skill["name"][:-len(" Magic")]
+            for rank, maximum_level in maximum_levels.items():
+                with self.subTest(skill=key, rank=rank):
+                    description = skill[rank]["description"]
+                    self.assertIn(
+                        f"Through ordinary learning, this rank unlocks acquisition of {school_name} "
+                        f"spells up to Level {maximum_level}.",
+                        description,
+                    )
+                    self.assertIn(
+                        "A legitimately inscribed combat spell remains castable regardless of School rank.",
+                        description,
+                    )
+                    self.assertNotIn("Wisdom still governs access", description)
+                    self.assertNotRegex(
+                        description,
+                        r"(?i)(?:school rank|this rank).{0,50}(?:locks|requires).{0,30}(?:cast|casting)",
+                    )
+
     def test_metamagic_rank_uses_are_bound_to_metamagic_skill(self):
         """Guard the rank bonus against being copied onto another skill."""
         expected = {"basic": 1, "advanced": 2, "expert": 3}

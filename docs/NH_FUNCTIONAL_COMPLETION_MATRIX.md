@@ -2,6 +2,20 @@
 
 Updated: 2026-10-06
 
+UP257/258 required-UI checkpoint: compact combat Morale help now reads shared
+pre-floor/effective values, actual combat contributions and applied floor
+reasons. Its full cached snapshot refreshes within the existing UI path; no
+new state or polling. All18 School Skill rank descriptions now show ordinary
+Level3/4/5 acquisition caps without locking legitimately inscribed spells,
+preserving exact effects. Both-target build39366 succeeds; the focused native
+filter passes6/6, zero skips, and seven focused Python methods plus module drift
+and wiring guard pass. Independent reviews find no blocker. Rendered help,
+UI refresh/privacy execution and delivery remain open; normal Linux536e86 is
+unchanged. Six unrelated stale Skill-entity test subcases remain recorded for
+Phase2. Required UI breadth increases;225/310 perks,61/67 combat spells and
+8/8 Orders are unchanged. Gargoyle/Golem mask approval and full Cabir animation
+remain separate priority-queue work, not completed by this source checkpoint.
+
 Linux delivery checkpoint: exact committedadf92c01d is built and frozen in
 snapshot536e86, including both required Estates feedback additions below.
 The true-headless managed smoke advances13 player-turn starts through day5

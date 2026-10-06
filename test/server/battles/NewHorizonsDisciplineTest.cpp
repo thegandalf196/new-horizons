@@ -126,3 +126,48 @@ TEST_F(NewHorizonsDisciplineTest, UnselectedInspirationalLeaderDoesNotGrantDamag
 		BonusType::PERCENTAGE_DAMAGE_BOOST,
 		BonusSubtypeID(BonusCustomSubtype::damageTypeRanged)), 0);
 }
+
+TEST_F(NewHorizonsDisciplineTest, BattleMoraleInfoIncludesSteadfastStandardBearerAndOpeningModifier)
+{
+	startGame();
+	const auto disciplineId = std::string("new-horizons:discipline");
+	const auto decoded = SecondarySkill::decode(disciplineId);
+	ASSERT_GE(decoded, 0);
+	const SecondarySkill discipline(decoded);
+	attackerSideHero->setSecSkillLevel(discipline, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({disciplineId, "new-horizons:discipline.steadfast"});
+	attackerSideHero->setSecSkillLevel(discipline, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({disciplineId, "new-horizons:discipline.standardBearer"});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(disciplineId, "new-horizons:discipline.steadfast"));
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(disciplineId, "new-horizons:discipline.standardBearer"));
+
+	const int currentDay = gameState()->getCalendar().getCurrentDay();
+	attackerSideHero->setNewHorizonsForcedMarchState(currentDay, currentDay);
+	startBattle();
+	auto * target = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(7, 5), 10);
+	addStack(BattleSide::ATTACKER, creatureByName("core:sprite"), BattleHex(8, 5), 10);
+	addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(12, 5), 10);
+	ASSERT_NE(target, nullptr);
+
+	const auto ordinaryMorale = std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MORALE, BonusSource::OTHER, -3, BonusSourceID());
+	target->addNewBonus(ordinaryMorale);
+	const auto hostileMorale = std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MORALE, BonusSource::SPELL_EFFECT, -2, BonusSourceID());
+	hostileMorale->appliedByEnemy = true;
+	target->addNewBonus(hostileMorale);
+
+	beginCombat();
+	ASSERT_EQ(battle()->getRound(), 1);
+	ASSERT_EQ(battle()->getFirstRoundMoraleModifier(BattleSide::ATTACKER), -1);
+	const auto moraleInfo = battle()->battleGetMoraleInfo(target);
+	EXPECT_EQ(moraleInfo.steadfastAdjustment, 1);
+	EXPECT_EQ(moraleInfo.standardBearerBonus, 1);
+	EXPECT_EQ(moraleInfo.firstRoundModifier, -1);
+	EXPECT_EQ(moraleInfo.real, target->moraleValWithBonus(
+		moraleInfo.steadfastAdjustment + moraleInfo.standardBearerBonus + moraleInfo.firstRoundModifier));
+	EXPECT_NE(moraleInfo.real, target->moraleVal())
+		<< "The readback includes the current hostile-effect, adjacency and first-round modifiers";
+	EXPECT_FALSE(moraleInfo.commandingPresenceFloorApplied);
+	EXPECT_FALSE(moraleInfo.furyUnboundFloorApplied);
+}

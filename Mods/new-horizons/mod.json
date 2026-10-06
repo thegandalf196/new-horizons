@@ -7942,7 +7942,7 @@
 				"magic": 6
 			},
 			"basic": {
-				"description": "Basic Light Magic grants Basic mastery of Light spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+				"description": "Basic Light Magic grants Basic mastery of Light spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Through ordinary learning, this rank unlocks acquisition of Light spells up to Level 3. A legitimately inscribed combat spell remains castable regardless of School rank.",
 				"images": {
 					"small": "NH_lightMagic_basic_small.png",
 					"medium": "NH_lightMagic_basic_medium.png",
@@ -7959,7 +7959,7 @@
 				}
 			},
 			"advanced": {
-				"description": "Advanced Light Magic grants Advanced mastery of Light spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+				"description": "Advanced Light Magic grants Advanced mastery of Light spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Through ordinary learning, this rank unlocks acquisition of Light spells up to Level 4. A legitimately inscribed combat spell remains castable regardless of School rank.",
 				"images": {
 					"small": "NH_lightMagic_advanced_small.png",
 					"medium": "NH_lightMagic_advanced_medium.png",
@@ -7976,7 +7976,7 @@
 				}
 			},
 			"expert": {
-				"description": "Expert Light Magic grants Expert mastery of Light spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+				"description": "Expert Light Magic grants Expert mastery of Light spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Through ordinary learning, this rank unlocks acquisition of Light spells up to Level 5. A legitimately inscribed combat spell remains castable regardless of School rank.",
 				"images": {
 					"small": "NH_lightMagic_expert_small.png",
 					"medium": "NH_lightMagic_expert_medium.png",
@@ -8004,7 +8004,7 @@
 				"magic": 6
 			},
 			"basic": {
-				"description": "Basic Shadow Magic grants Basic mastery of Shadow spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+				"description": "Basic Shadow Magic grants Basic mastery of Shadow spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Through ordinary learning, this rank unlocks acquisition of Shadow spells up to Level 3. A legitimately inscribed combat spell remains castable regardless of School rank.",
 				"images": {
 					"small": "NH_shadowMagic_basic_small.png",
 					"medium": "NH_shadowMagic_basic_medium.png",
@@ -8021,7 +8021,7 @@
 				}
 			},
 			"advanced": {
-				"description": "Advanced Shadow Magic grants Advanced mastery of Shadow spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+				"description": "Advanced Shadow Magic grants Advanced mastery of Shadow spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Through ordinary learning, this rank unlocks acquisition of Shadow spells up to Level 4. A legitimately inscribed combat spell remains castable regardless of School rank.",
 				"images": {
 					"small": "NH_shadowMagic_advanced_small.png",
 					"medium": "NH_shadowMagic_advanced_medium.png",
@@ -8038,7 +8038,7 @@
 				}
 			},
 			"expert": {
-				"description": "Expert Shadow Magic grants Expert mastery of Shadow spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+				"description": "Expert Shadow Magic grants Expert mastery of Shadow spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Through ordinary learning, this rank unlocks acquisition of Shadow spells up to Level 5. A legitimately inscribed combat spell remains castable regardless of School rank.",
 				"images": {
 					"small": "NH_shadowMagic_expert_small.png",
 					"medium": "NH_shadowMagic_expert_medium.png",
@@ -8066,7 +8066,7 @@
 				"magic": 6
 			},
 			"basic": {
-				"description": "Basic Nature Magic grants Basic mastery of Nature spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+				"description": "Basic Nature Magic grants Basic mastery of Nature spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Through ordinary learning, this rank unlocks acquisition of Nature spells up to Level 3. A legitimately inscribed combat spell remains castable regardless of School rank.",
 				"images": {
 					"small": "NH_natureMagic_basic_small.png",
 					"medium": "NH_natureMagic_basic_medium.png",
@@ -8083,7 +8083,7 @@
 				}
 			},
 			"advanced": {
-				"description": "Advanced Nature Magic grants Advanced mastery of Nature spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+				"description": "Advanced Nature Magic grants Advanced mastery of Nature spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Through ordinary learning, this rank unlocks acquisition of Nature spells up to Level 4. A legitimately inscribed combat spell remains castable regardless of School rank.",
 				"images": {
 					"small": "NH_natureMagic_advanced_small.png",
 					"medium": "NH_natureMagic_advanced_medium.png",
@@ -8100,7 +8100,7 @@
 				}
 			},
 			"expert": {
-				"description": "Expert Nature Magic grants Expert mastery of Nature spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+				"description": "Expert Nature Magic grants Expert mastery of Nature spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Through ordinary learning, this rank unlocks acquisition of Nature spells up to Level 5. A legitimately inscribed combat spell remains castable regardless of School rank.",
 				"images": {
 					"small": "NH_natureMagic_expert_small.png",
 					"medium": "NH_natureMagic_expert_medium.png",
@@ -8128,7 +8128,7 @@
 				"magic": 6
 			},
 			"basic": {
-				"description": "Basic Havoc Magic grants Basic mastery of Havoc spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+				"description": "Basic Havoc Magic grants Basic mastery of Havoc spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Through ordinary learning, this rank unlocks acquisition of Havoc spells up to Level 3. A legitimately inscribed combat spell remains castable regardless of School rank.",
 				"images": {
 					"small": "NH_havocMagic_basic_small.png",
 					"medium": "NH_havocMagic_basic_medium.png",
@@ -8145,7 +8145,7 @@
 				}
 			},
 			"advanced": {
-				"description": "Advanced Havoc Magic grants Advanced mastery of Havoc spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+				"description": "Advanced Havoc Magic grants Advanced mastery of Havoc spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Through ordinary learning, this rank unlocks acquisition of Havoc spells up to Level 4. A legitimately inscribed combat spell remains castable regardless of School rank.",
 				"images": {
 					"small": "NH_havocMagic_advanced_small.png",
 					"medium": "NH_havocMagic_advanced_medium.png",
@@ -8162,7 +8162,7 @@
 				}
 			},
 			"expert": {
-				"description": "Expert Havoc Magic grants Expert mastery of Havoc spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+				"description": "Expert Havoc Magic grants Expert mastery of Havoc spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Through ordinary learning, this rank unlocks acquisition of Havoc spells up to Level 5. A legitimately inscribed combat spell remains castable regardless of School rank.",
 				"images": {
 					"small": "NH_havocMagic_expert_small.png",
 					"medium": "NH_havocMagic_expert_medium.png",
@@ -8190,7 +8190,7 @@
 				"magic": 6
 			},
 			"basic": {
-				"description": "Basic Sorcery Magic grants Basic mastery of Sorcery spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+				"description": "Basic Sorcery Magic grants Basic mastery of Sorcery spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Through ordinary learning, this rank unlocks acquisition of Sorcery spells up to Level 3. A legitimately inscribed combat spell remains castable regardless of School rank.",
 				"images": {
 					"small": "NH_sorceryMagic_basic_small.png",
 					"medium": "NH_sorceryMagic_basic_medium.png",
@@ -8207,7 +8207,7 @@
 				}
 			},
 			"advanced": {
-				"description": "Advanced Sorcery Magic grants Advanced mastery of Sorcery spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+				"description": "Advanced Sorcery Magic grants Advanced mastery of Sorcery spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Through ordinary learning, this rank unlocks acquisition of Sorcery spells up to Level 4. A legitimately inscribed combat spell remains castable regardless of School rank.",
 				"images": {
 					"small": "NH_sorceryMagic_advanced_small.png",
 					"medium": "NH_sorceryMagic_advanced_medium.png",
@@ -8224,7 +8224,7 @@
 				}
 			},
 			"expert": {
-				"description": "Expert Sorcery Magic grants Expert mastery of Sorcery spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+				"description": "Expert Sorcery Magic grants Expert mastery of Sorcery spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Through ordinary learning, this rank unlocks acquisition of Sorcery spells up to Level 5. A legitimately inscribed combat spell remains castable regardless of School rank.",
 				"images": {
 					"small": "NH_sorceryMagic_expert_small.png",
 					"medium": "NH_sorceryMagic_expert_medium.png",
@@ -8252,7 +8252,7 @@
 				"magic": 6
 			},
 			"basic": {
-				"description": "Basic Chaos Magic grants Basic mastery of Chaos spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+				"description": "Basic Chaos Magic grants Basic mastery of Chaos spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Through ordinary learning, this rank unlocks acquisition of Chaos spells up to Level 3. A legitimately inscribed combat spell remains castable regardless of School rank.",
 				"images": {
 					"small": "NH_chaosMagic_basic_small.png",
 					"medium": "NH_chaosMagic_basic_medium.png",
@@ -8269,7 +8269,7 @@
 				}
 			},
 			"advanced": {
-				"description": "Advanced Chaos Magic grants Advanced mastery of Chaos spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+				"description": "Advanced Chaos Magic grants Advanced mastery of Chaos spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Through ordinary learning, this rank unlocks acquisition of Chaos spells up to Level 4. A legitimately inscribed combat spell remains castable regardless of School rank.",
 				"images": {
 					"small": "NH_chaosMagic_advanced_small.png",
 					"medium": "NH_chaosMagic_advanced_medium.png",
@@ -8286,7 +8286,7 @@
 				}
 			},
 			"expert": {
-				"description": "Expert Chaos Magic grants Expert mastery of Chaos spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Wisdom still governs access to higher-level spells.",
+				"description": "Expert Chaos Magic grants Expert mastery of Chaos spells. Spell effects and mana costs use this mastery when the spell provides a corresponding benefit. Through ordinary learning, this rank unlocks acquisition of Chaos spells up to Level 5. A legitimately inscribed combat spell remains castable regardless of School rank.",
 				"images": {
 					"small": "NH_chaosMagic_expert_small.png",
 					"medium": "NH_chaosMagic_expert_medium.png",
@@ -9422,6 +9422,14 @@
 		"new-horizons.combat.physicalPoison.label": "Physical Poison",
 		"new-horizons.combat.physicalPoison.tooltip": "%LABEL\nNext real activation tick: %DAMAGE physical damage.\n%ACTIVATIONS real activations remaining.",
 		"new-horizons.combat.physicalPoison.hiddenEffects": "%COUNT additional active effects are not shown.",
+		"new-horizons.combat.morale.readback.values": "Morale: %REAL% before temporary floors; %EFFECTIVE% effective in combat.",
+		"new-horizons.combat.morale.readback.sourceHeader": "Morale sources:",
+		"new-horizons.combat.morale.readback.noSources": "No active Morale modifiers.",
+		"new-horizons.combat.morale.readback.standardBearer": "Standard Bearer: %VALUE% Morale from an adjacent friendly stack.",
+		"new-horizons.combat.morale.readback.firstRound": "Opening-round effects: %VALUE% Morale.",
+		"new-horizons.combat.morale.readback.steadfast": "Steadfast: %VALUE% Morale from reduced hostile penalties.",
+		"new-horizons.combat.morale.readback.commandingPresence": "Commanding Presence: negative Morale is treated as 0 while the Order benefit applies.",
+		"new-horizons.combat.morale.readback.furyUnbound": "Fury Unbound: negative Morale is treated as 0 while the stack has a Bloodrage damage bonus.",
 		"new-horizons.adventure.dimensionDoor.targetingHint": "Choose a destination. Casting Dimension Door spends all remaining Movement.",
 		"new-horizons.adventure.spellbook.dailyAvailable": "Adventure Spell: available today",
 		"new-horizons.adventure.spellbook.dailyUsed": "Adventure Spell: used today",

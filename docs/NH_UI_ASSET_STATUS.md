@@ -1,5 +1,22 @@
 # New Horizons UI and asset status register
 
+Combat Morale readback,2026-10-06: **Provisional**. UP257 adds localized help
+to the existing compact stack Morale row, with shared pre-floor/effective values,
+bonus sources, actual combat contributions and the applied negative-Morale
+floor. No new raster asset, panel, ornament or action control. The full readback
+participates in the existing refresh cache. Source guard and independent review
+pass. Both-target build39366 and focused native6/6 (zero skips) pass. Rendered
+fit, executed UI refresh/privacy boundaries and playable delivery remain open;
+normal Linux536e86 is unchanged.
+
+School acquisition-cap help,2026-10-06: **Provisional**. UP258 repairs all18
+shared School Skill rank descriptions, identifying ordinary acquisition through
+Levels3/4/5 without locking known spells. Hero Skill help, level-up cards and
+teacher components reuse these descriptions; no artwork/layout changes. The
+18-case text guard, exact-effect preservation and translation/module checks
+pass. Both-target build39366 and isolated current-content loading pass;
+rendered presentation and playable delivery remain separate open gates.
+
 Resource Broker Marketplace contribution tooltip,2026-10-06: **Provisional**.
 UP255 extends only the native Deal control's right-click help with a localized
 rate contribution. No new artwork, panel or economic action button; original

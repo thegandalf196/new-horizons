@@ -2,6 +2,25 @@
 
 ## Purpose
 
+### 2026-10-06 — Morale readback direct-header integration
+
+UP257 client build25692 exits1 because StackInfoBasicPanel uses GAME without
+its declaring GameInstance header. The player-interface and concrete CCallback
+headers are also required for scoped Bonus::Description conversion. Add those
+direct headers rather than weakening visibility or changing callback types.
+Retry39366 builds client and native runner successfully. The exact six-case
+native filter passes6/6 in3.639s, zero skips. The failed gate remains recorded;
+no assertion, gameplay rule or visibility boundary was weakened. Rendered UI
+and delivery acceptance remain separate.
+
+UP258 focused School text/effect checks pass. The broader Skill-entity file
+retains six unrelated subcase failures in
+test_non_school_skills_use_canonical_rank_text_and_declared_effects:
+Spellcraft and Diplomacy's three ranks are active while its test-only expected
+registry still classifies them as planned. Preserve this Phase2 test-maintenance
+finding separately; do not claim the full file passes or revert live ranks to
+satisfy an outdated assertion.
+
 ### 2026-10-06 — Candidate smoke omitted explicit headless mode
 
 The exact adf92c01d candidate536e86 passes its2278-file manifest check, but

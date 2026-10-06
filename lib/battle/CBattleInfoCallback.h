@@ -64,6 +64,18 @@ struct DLL_LINKAGE RangedAttackPenetration
 	int32_t physicalDamageReductionIgnorePercent = 0;
 };
 
+/// Read-only Morale snapshot separating its calculated value from any active combat floor.
+struct DLL_LINKAGE BattleMoraleInfo
+{
+	int32_t real = 0;
+	int32_t effective = 0;
+	int32_t standardBearerBonus = 0;
+	int32_t firstRoundModifier = 0;
+	int32_t steadfastAdjustment = 0;
+	bool commandingPresenceFloorApplied = false;
+	bool furyUnboundFloorApplied = false;
+};
+
 struct DLL_LINKAGE BattleClientInterfaceData
 {
 	std::vector<SpellID> creatureSpellsToCast;
@@ -112,6 +124,8 @@ public:
 	bool battleUnitHasAmmoCart(const battle::Unit * unit) const;
 	/// Effective spell resistance, including allied aura and the saved New Horizons cap.
 	int battleGetMagicResistance(const battle::Unit * unit) const;
+	/// Real and effective Morale, including dynamic bonuses and the applied floor reason.
+	BattleMoraleInfo battleGetMoraleInfo(const battle::Unit * unit) const;
 	/// Effective Morale for the current battle, including dynamic Standard Bearer adjacency.
 	int battleGetMorale(const battle::Unit * unit) const;
 	/// Whether one saved Order state still benefits this living unit, independent of its perk provider.

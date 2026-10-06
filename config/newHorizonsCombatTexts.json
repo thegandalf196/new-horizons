@@ -19,5 +19,13 @@
 	"new-horizons.combat.doom.refreshed": "Doom on %s is refreshed for %d rounds: -%d% damage, retaliation damage, Initiative, and movement; -3 Morale.",
 	"new-horizons.combat.physicalPoison.label": "Physical Poison",
 	"new-horizons.combat.physicalPoison.tooltip": "%LABEL\nNext real activation tick: %DAMAGE physical damage.\n%ACTIVATIONS real activations remaining.",
-	"new-horizons.combat.physicalPoison.hiddenEffects": "%COUNT additional active effects are not shown."
+	"new-horizons.combat.physicalPoison.hiddenEffects": "%COUNT additional active effects are not shown.",
+	"new-horizons.combat.morale.readback.values": "Morale: %REAL% before temporary floors; %EFFECTIVE% effective in combat.",
+	"new-horizons.combat.morale.readback.sourceHeader": "Morale sources:",
+	"new-horizons.combat.morale.readback.noSources": "No active Morale modifiers.",
+	"new-horizons.combat.morale.readback.standardBearer": "Standard Bearer: %VALUE% Morale from an adjacent friendly stack.",
+	"new-horizons.combat.morale.readback.firstRound": "Opening-round effects: %VALUE% Morale.",
+	"new-horizons.combat.morale.readback.steadfast": "Steadfast: %VALUE% Morale from reduced hostile penalties.",
+	"new-horizons.combat.morale.readback.commandingPresence": "Commanding Presence: negative Morale is treated as 0 while the Order benefit applies.",
+	"new-horizons.combat.morale.readback.furyUnbound": "Fury Unbound: negative Morale is treated as 0 while the stack has a Bloodrage damage bonus."
 }
