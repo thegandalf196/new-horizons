@@ -24,6 +24,7 @@
 #include "../../lib/mapObjects/ObjectTemplate.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGCreature.h"
+#include "../../lib/mapObjects/TownBuildingInstance.h"
 #include "../../lib/mapObjects/CGMarket.h"
 #include "../../lib/mapping/TerrainTile.h"
 #include "../../lib/CConfigHandler.h"
@@ -1228,6 +1229,29 @@ void AIGateway::performObjectInteraction(const CGObjectInstance * obj, HeroPtr h
 		if(heroPtr->getVisitedTown()) //we are inside, not just attacking
 		{
 			const auto * visitedTown = heroPtr->getVisitedTown();
+
+			static constexpr BuildingID arcaneReservoir = BuildingID::SPECIAL_4;
+			if(newHorizonsMagic::rulesActive(cc->getMagicRules())
+				&& heroPtr->tempOwner == playerID
+				&& visitedTown->tempOwner == playerID
+				&& visitedTown->getFactionID() == FactionID::TOWER
+				&& visitedTown->hasBuilt(arcaneReservoir))
+			{
+				const auto building = visitedTown->getTown()->buildings.find(arcaneReservoir);
+				const auto reward = visitedTown->rewardableBuildings.find(arcaneReservoir);
+				if(building != visitedTown->getTown()->buildings.end()
+					&& building->second->manualHeroVisit
+					&& reward != visitedTown->rewardableBuildings.end()
+					&& reward->second->configuration.visitMode == Rewardable::VISIT_ONCE
+					&& !reward->second->wasVisited(heroPtr.get())
+					&& !reward->second->getAvailableRewards(
+						heroPtr.get(), Rewardable::EEventType::EVENT_FIRST_VISIT).empty())
+				{
+					// The Reservoir is an explicitly manual town reward; town-entry
+					// processing does not claim it for the AI as it does auto-visits.
+					cc->visitTownBuilding(visitedTown, arcaneReservoir);
+				}
+			}
 
 			makePossibleUpgrades(heroPtr.get());
 

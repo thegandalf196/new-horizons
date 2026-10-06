@@ -288,7 +288,9 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, ArcaneReservoirAllowsExactlyOneHer
 	town->setVisitingHero(firstHero);
 	gameHandler.setManaPoints(firstHero->id, firstManaLimit - 3);
 	ASSERT_TRUE(gameHandler.visitTownBuilding(town->id, BuildingID::SPECIAL_4));
-	EXPECT_EQ(firstHero->getManaAvailable(), firstManaLimit * 2);
+	EXPECT_EQ(firstHero->getNormalSpellPoints(), firstManaLimit - 3);
+	EXPECT_EQ(firstHero->getBufferSpellPoints(), 50);
+	EXPECT_EQ(firstHero->getManaAvailable(), firstManaLimit - 3 + 50);
 	EXPECT_TRUE(reservoir->wasVisited(firstHero));
 
 	// VISIT_ONCE is shared by the physical building, so a different hero is
@@ -299,6 +301,8 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, ArcaneReservoirAllowsExactlyOneHer
 	ASSERT_GT(secondManaLimit, 4);
 	gameHandler.setManaPoints(secondHero->id, secondManaLimit - 4);
 	ASSERT_TRUE(gameHandler.visitTownBuilding(town->id, BuildingID::SPECIAL_4));
+	EXPECT_EQ(secondHero->getNormalSpellPoints(), secondManaLimit - 4);
+	EXPECT_EQ(secondHero->getBufferSpellPoints(), 0);
 	EXPECT_EQ(secondHero->getManaAvailable(), secondManaLimit - 4);
 
 	// The reset fires when the authoritative NewTurn packet advances the map
@@ -313,7 +317,9 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, ArcaneReservoirAllowsExactlyOneHer
 	town->setVisitingHero(secondHero);
 	gameHandler.setManaPoints(secondHero->id, secondManaLimit - 2);
 	ASSERT_TRUE(gameHandler.visitTownBuilding(town->id, BuildingID::SPECIAL_4));
-	EXPECT_EQ(secondHero->getManaAvailable(), secondManaLimit * 2);
+	EXPECT_EQ(secondHero->getNormalSpellPoints(), secondManaLimit - 2);
+	EXPECT_EQ(secondHero->getBufferSpellPoints(), 50);
+	EXPECT_EQ(secondHero->getManaAvailable(), secondManaLimit - 2 + 50);
 	EXPECT_TRUE(reservoir->wasVisited(secondHero));
 }
 

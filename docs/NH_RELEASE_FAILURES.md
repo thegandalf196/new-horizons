@@ -2,6 +2,33 @@
 
 ## Purpose
 
+### 2026-10-06 — Arcane Reservoir manual AI visit gap
+
+The unique-building audit finds that the Reservoir's manualHeroVisit setting
+excludes it from automatic town-entry rewards, while Nullkiller2 never requests
+visitTownBuilding. Human/source weekly availability is not minimum AI coverage.
+An explicit normal request in the AI town-interaction path and actual Buffer/
+Normal acceptance are in progress. Source inspection also finds the earlier
+weekly server fixture still asserts the obsolete twice-maximum total. Replace
+those assertions with unchanged Normal, exactly50 Buffer and their combined
+total; no production balance or restoration rule changes are authorized.
+
+Production client builds5 steps; the repaired existing weekly server case
+passes1/1 in0.653s, zero skips/errors/disabled. The new AI fixture's first
+compile catches an incomplete PlayerState in resource setup: include
+lib/CPlayerState.h explicitly, as the adjacent Adventure Spell unlock fixture
+does. Preserve `reservoir-ai-test-build.log` and its distinct repaired successor;
+AI execution acceptance is still pending at this correction checkpoint.
+
+Repaired successor: new fixture increment builds3 steps; combined current
+filter passes6/6 in2.027s, zero skips/errors/disabled. It includes actual AI
+town-entry interaction/validated manual request, unchanged Normal/+50 Buffer,
+repeat suppression, unbuilt/inactive controls, the weekly reset case and three
+adjacent Guild unlock cases. `reservoir-ai-native.log/.xml` are new receipts;
+the first compiler log and earlier weekly receipt remain intact. Source review
+finds no blocker; full autonomous town-goal valuation and wider visit/resource
+composition remain Phase2, and playable/graphical acceptance remain separate.
+
 ### 2026-10-06 — Castle Gate AI first-use coverage
 
 The principal-path audit finds no Nullkiller2 gate planning or execution. The

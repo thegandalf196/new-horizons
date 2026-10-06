@@ -2,6 +2,14 @@
 
 Updated: 2026-10-06
 
+2026-10-06 minimum AI-hook audit: Castle Gate now has actual Nullkiller2
+planned-route/authoritative-request acceptance (2/2 primary,9/9 adjacent,
+zero skips), committed as `cfd85b678`. The next demonstrated gap is Arcane
+Reservoir's missing manual AI building visit; the normal request hook now builds
+and passes6/6 focused native cases including unchanged Normal/+50 Buffer,
+repeat suppression, weekly reset and adjacent Guild purchase controls. These are functional coverage changes, not added spell
+or perk identities. No playable snapshot promotion is implied.
+
 2026-10-06 prerequisite coverage: Rebirth first-output original aggregate HP
 is now retained in live units, ADD transport, versioned binary metadata and
 detached AI. Client/native build passes; focused runtime/rules/AI25/25 passes
@@ -36,13 +44,13 @@ artifact-regeneration aggregation and Gargoyle redraw choices remain
 unanswered. Do not infer answers from automatic goal continuation or implement
 an EndTurn-only Water Walk rejection that can strand the hero/loop the AI.
 
-Cross-platform gate refresh: full Windows run `37348640988` succeeds on older
-source `0e645f79b`. Current Academy source `9c7c4880f` passes 91 packaging
-preflight cases (zero skips), 19 Academy/Guild/Tower guards and independent
-Windows-oriented source review. Notice run `37403527818` succeeds; full run
-`37403632207` failed before compilation when both GNU libiconv download
-endpoints timed out. A pinned mirror source-cache repair is in progress; no
-unchanged retry or packaged success is claimed. The Linux twelve-portrait delivery
+Cross-platform gate refresh: full Windows successor `37405475795` succeeds
+on exact cache-repair source `975c6f011445049690b39c501128684a0cc64e5b`.
+Artifact `11389625197` carries that exact source; compile, package closure,
+license and corresponding-source checks pass. It excludes newer Rebirth,
+Astronomy and Castle Gate changes and is not Windows gameplay acceptance.
+The earlier `37403632207` GNU libiconv timeout is retained in release-failure
+history, not a current running/failed successor. The Linux twelve-portrait delivery
 is unchanged. Direct registry inspection still finds 225 active and 85 planned
 perks; this checkpoint earns no new gameplay identity coverage.
 
@@ -2805,7 +2813,7 @@ not newly implemented or individually certified content.
 | Rampart Fountain of Fortune | Native: UP201 defender Luck3 and weekly next-combat visitor Luck2 | Wider Luck composition Phase2 |
 | Rampart growth buildings | Baseline: core horde consumers | Row-specific runtime acceptance absent; numbers deferred |
 | Tower Library | Native: Mage/Arch Mage growth1, no Genie growth; source suppresses extra Guild spells | Cost/prerequisite/position are config evidence, not full construction acceptance |
-| Tower Arcane Reservoir | Native: weekly one-hero visit/reset; source grants Buffer50 | Separate Normal/Buffer assertion and rendered refill remain unverified |
+| Tower Arcane Reservoir | Native: AI town interaction submits validated manual visit; unchanged Normal/+50 Buffer, same-week repeat suppression, unbuilt/inactive controls and one-hero weekly reset pass focused6/6 including adjacent Guild purchase controls | Full autonomous town-goal valuation, wider resource/visit composition and rendered/playable delivery remain Phase2 boundaries |
 | Tower Astronomy Tower | Native: construction immediately authors/synchronizes forecast; day-zero preservation, real week-start result and matching dwelling growth pass focused7/7 including wire controls | Month-end, another construction reusing a forecast, normal purchase eligibility, removal/capture composition and rendered/playable delivery remain unverified |
 | Tower Artifact Merchants | Baseline: artifact/resource marketplace modes | Row-specific runtime acceptance absent |
 | Inferno Castle Gate | Native: actual owned Inferno gate travel, daily rejection/reuse, Movement exhaustion and Nullkiller2 planned route executing the normal authoritative request pass2/2; adjacent daily-opportunity/Dimension Door/node-pool cases pass9/9 | Full autonomous goal selection, compound routes, wider ownership changes and rendered/playable delivery remain Phase2 boundaries; daily-state wire coverage alone is not teleport acceptance |
@@ -2865,6 +2873,24 @@ validation is bypassed. Receipts: `castle-gate-native-repaired.log/.xml` and
 `76ecdccecf09fe09c8385f7beb1991507a9d12b4037d8b3cd53857a29e201e3a`.
 Source review has no remaining blocker. Spell/perk totals are unchanged; no
 launcher promotion or GUI acceptance is claimed.
+
+Arcane Reservoir minimum AI acceptance2026-10-06: production client builds5
+steps with12 jobs. Existing weekly fixture is corrected from obsolete doubled
+Mana expectations to unchanged Normal/+50 Buffer and passes1/1 in0.653s.
+New AI fixture's explicit PlayerState include repairs its first compile;
+incremental build3 steps passes. Current combined filter passes6/6 in2.027s,
+zero skips/errors/disabled: two AI request cases, the weekly building case
+and three adjacent Adventure Spell unlock cases. The AI test enters town
+through authoritative movement, then forwards its actual VisitTownBuilding
+request through ordinary ownership/active-player validation and reward queries.
+It does not bypass reward availability or directly grant Mana. Receipts:
+`reservoir-ai-native.log/.xml`, binary SHA-256
+`c64cc7e6b9866e5cb94cb702c21d92feb5cf4765debd2be4b7e2565d4c94fa5b`.
+No source-review blocker remains; no launcher promotion/GUI acceptance.
+Next unblocked coverage investigation: remaining unique-building minimum AI
+consumers, beginning with Portal of Summoning's weekly dwelling selection and
+shared recruitment stock. Do not mistake an inherited verification gap for a
+new missing mechanic or silently decide the three held building policies.
 
 ### Hero specialty conversion item ledger
 
