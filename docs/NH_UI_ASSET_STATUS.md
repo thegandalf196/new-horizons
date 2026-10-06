@@ -25,9 +25,13 @@ Academy art/map checks, reproducible export and independent review pass.
 Registration and engine ownership/shadow overlays are unchanged. Full archive
 reimport, playable delivery and user visual acceptance remain unverified.
 
-UP241 renewed user report: the double-roof visual defect remains **Open** in
-the current delivery despite v2's earlier checks. Do not infer user acceptance
-from the older native/hash evidence below.
+UP241 background correction: **Provisional**, installed in source. The retained
+HoMM3-Art background v2 removes the hall painted beneath the separate building
+sprite, using a bounded ROI with unchanged pixels outside it. Native registered
+scene review, twenty focused Academy checks and independent review pass. The
+actual hall/masks/placement are unchanged. The normal playable delivery still
+contains the duplicate; delivery/user acceptance remain pending. Earlier
+roof-only hash evidence does not establish this correction.
 
 UP241 Village Hall roof revision,2026-10-06: **Provisional** artwork.
 One focused HoMM3-Art edit is preserved with its exact prompt under

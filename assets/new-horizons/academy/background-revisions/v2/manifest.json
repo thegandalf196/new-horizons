@@ -1,0 +1,289 @@
+{
+	"revision": "v2",
+	"status": "Provisional; native composite review only",
+	"sources": {
+		"master": {
+			"path": "assets/new-horizons/academy/background-revisions/v2/landscape-master.png",
+			"sha256": "8df9083e6f09e035ab09733bcb6f0c54361919eff1bdbbdc98f77c7cf191eafd",
+			"dimensions": [
+				1836,
+				857
+			],
+			"mode": "RGB"
+		},
+		"prompt": {
+			"path": "assets/new-horizons/academy/background-revisions/v2/landscape.prompt.txt",
+			"sha256": "4fadd928d1c329d3d052c4f2e4535ddfed42b1dbf5478e547e1c1af28daa4b50"
+		},
+		"preservedNativeLandscape": {
+			"path": "assets/new-horizons/academy/native/town/landscape.png",
+			"sha256": "73387f56e84327e1bd56edbd92c60052390a91ade79671d362f297f7d7cea7b3",
+			"dimensions": [
+				800,
+				374
+			],
+			"mode": "RGB"
+		},
+		"villageHallV2Overlay": {
+			"path": "assets/new-horizons/academy/hall-revisions/v2/exports/village-hall-native.png",
+			"sha256": "117e8ae670dda32e7cee0c76d78d4a12acb3a22bd3467b6b6d2cfd74173763cd",
+			"placement": {
+				"x": 0,
+				"y": 259,
+				"z": 2
+			}
+		},
+		"registeredSceneOtherLayers": [
+			{
+				"structure": "grail",
+				"path": "Mods/new-horizons/Images/NH_academy/town/buildings/tbtwholy.png",
+				"sha256": "1a711a7f35827b2082c5cc15e938677dfb89800ed9acc916a348edc8539093a7",
+				"position": [
+					237,
+					14
+				],
+				"z": -2,
+				"sequence": 0
+			},
+			{
+				"structure": "mageGuild5",
+				"path": "Mods/new-horizons/Images/NH_academy/town/corrections/guild5-top.png",
+				"sha256": "c658a62d460616cc8487073b40bc7027e82f74c1ed3233115dcb814a626d831b",
+				"position": [
+					592,
+					14
+				],
+				"z": -1,
+				"sequence": 1
+			},
+			{
+				"structure": "castle",
+				"path": "Mods/new-horizons/Images/NH_academy/town/buildings/tbtwcas3.png",
+				"sha256": "8c7cb0fa771a7816aa136030ab9256f6a90c7286f8115a3b85c8514412b99040",
+				"position": [
+					301,
+					0
+				],
+				"z": -1,
+				"sequence": 2
+			},
+			{
+				"structure": "dwellingUpLvl7",
+				"path": "Mods/new-horizons/Images/NH_academy/town/buildings/tbtwup_6.png",
+				"sha256": "97bb01e0b7d9280f47fd260feba9ce83f6fbe1d2ede96b21560b3386fbfaed2b",
+				"position": [
+					75,
+					91
+				],
+				"z": -1,
+				"sequence": 3
+			},
+			{
+				"structure": "marketplace",
+				"path": "Mods/new-horizons/Images/NH_academy/town/buildings/tbtwmark.png",
+				"sha256": "95b9f5bbbf1b89369923210667e35f485d41c12fa37dc83d081bf106316cabd4",
+				"position": [
+					614,
+					292
+				],
+				"z": 0,
+				"sequence": 4
+			},
+			{
+				"structure": "blacksmith",
+				"path": "Mods/new-horizons/Images/NH_academy/town/buildings/tbtwblak.png",
+				"sha256": "b0a3ac4a78f23b5e28d78095f88d31dae2d8282309852a999a08b86d2015a5cf",
+				"position": [
+					478,
+					211
+				],
+				"z": 0,
+				"sequence": 5
+			},
+			{
+				"structure": "horde1Upgr",
+				"path": "Mods/new-horizons/Images/NH_academy/town/buildings/tbtwhrd2.png",
+				"sha256": "3ae3398365cbe38decbb5e03bd4c09e50cb4df371a00b7a3b43afd503a11b1ae",
+				"position": [
+					0,
+					28
+				],
+				"z": 0,
+				"sequence": 6
+			},
+			{
+				"structure": "special2",
+				"path": "Mods/new-horizons/Images/NH_academy/town/buildings/tbtwext0.png",
+				"sha256": "3513ac99312f9df3693cccbe409535308f3df1b2317807090e0ce30f07cd9850",
+				"position": [
+					402,
+					82
+				],
+				"z": 0,
+				"sequence": 7
+			},
+			{
+				"structure": "special3",
+				"path": "Mods/new-horizons/Images/NH_academy/town/buildings/tbtwext1.png",
+				"sha256": "a0121d2ae5989032dbc917268ee30d26dca41a221ca1efb3b36a7c99f087428a",
+				"position": [
+					702,
+					115
+				],
+				"z": 0,
+				"sequence": 8
+			},
+			{
+				"structure": "dwellingUpLvl4",
+				"path": "Mods/new-horizons/Images/NH_academy/town/buildings/tbtwup_4.png",
+				"sha256": "2655ea32e83a5839ef8e43325d8a18da96bc53c2f9f22e804ea08c6436b2f87a",
+				"position": [
+					511,
+					8
+				],
+				"z": 0,
+				"sequence": 9
+			},
+			{
+				"structure": "dwellingUpLvl5",
+				"path": "Mods/new-horizons/Images/NH_academy/town/buildings/tbtwup_3.png",
+				"sha256": "d4a89dab27dcfde986524bba9e8af2bd5101502f5e7d88be98aad1c2894c8205",
+				"position": [
+					613,
+					74
+				],
+				"z": 0,
+				"sequence": 10
+			},
+			{
+				"structure": "tavern",
+				"path": "Mods/new-horizons/Images/NH_academy/town/buildings/tbtwtvrn.png",
+				"sha256": "d292fbb53f34718979e8eff0fdf0d6e0f47e4f8fab764dc300dad170ccbfbee0",
+				"position": [
+					375,
+					278
+				],
+				"z": 1,
+				"sequence": 11
+			},
+			{
+				"structure": "special4",
+				"path": "Mods/new-horizons/Images/NH_academy/town/corrections/special4-lower.png",
+				"sha256": "d2239c75c3063046089f897650cd29e1c5f58a621ebdbd3748c87bb596102157",
+				"position": [
+					592,
+					189
+				],
+				"z": 1,
+				"sequence": 12
+			},
+			{
+				"structure": "dwellingUpLvl1",
+				"path": "Mods/new-horizons/Images/NH_academy/town/buildings/tbtwup_0.png",
+				"sha256": "87975725125218f6d9922235b381104f90ad7c7048f05aa2e370f5a7062f3f9b",
+				"position": [
+					446,
+					221
+				],
+				"z": 1,
+				"sequence": 13
+			},
+			{
+				"structure": "dwellingUpLvl3",
+				"path": "Mods/new-horizons/Images/NH_academy/town/buildings/tbtwup_2.png",
+				"sha256": "2b0b8e79430a00161e3c29d783e55e5245d634ccf3c15f3ecc7305fd6e8d3043",
+				"position": [
+					209,
+					177
+				],
+				"z": 1,
+				"sequence": 14
+			},
+			{
+				"structure": "special1",
+				"path": "Mods/new-horizons/Images/NH_academy/town/buildings/tbtwspec.png",
+				"sha256": "42e058f3014bd0493063fced313b330bd4bdc4e0b4327e32072ee2420c27a09d",
+				"position": [
+					674,
+					276
+				],
+				"z": 2,
+				"sequence": 15
+			},
+			{
+				"structure": "dwellingUpLvl6",
+				"path": "Mods/new-horizons/Images/NH_academy/town/buildings/tbtwup_5.png",
+				"sha256": "f86188d597978aae2b0ebd836af4bb9aaf228accb81be85ff71453508c87ecd9",
+				"position": [
+					681,
+					157
+				],
+				"z": 2,
+				"sequence": 16
+			},
+			{
+				"structure": "resourceSilo",
+				"path": "Mods/new-horizons/Images/NH_academy/town/buildings/tbtwsilo.png",
+				"sha256": "f63ddefb638247cd23b7a865adaae0ef51d0aa09a625795f6aa0e79d1a2b26c2",
+				"position": [
+					763,
+					214
+				],
+				"z": 3,
+				"sequence": 17
+			},
+			{
+				"structure": "academyRoof",
+				"path": "Mods/new-horizons/Images/NH_academy/town/corrections/house-roof.png",
+				"sha256": "70fbeaaa6d402a631753a59de871811119c5a46ca38e153673e3a994eda55fae",
+				"position": [
+					665,
+					255
+				],
+				"z": 4,
+				"sequence": 19
+			}
+		]
+	},
+	"export": {
+		"path": "assets/new-horizons/academy/background-revisions/v2/exports/landscape-native.png",
+		"sha256": "1a66adbbfc32d893ea6ec1bf19a7c8b09315615ebb1a4f48dc03b6946e31c45e",
+		"dimensions": [
+			800,
+			374
+		],
+		"mode": "RGB",
+		"resize": {
+			"dimensions": [
+				800,
+				374
+			],
+			"resampling": "Pillow LANCZOS"
+		},
+		"composition": "paste resized-master pixels into the reviewed ROI on preserved baseline; no alpha blend",
+		"roi": [
+			0,
+			254,
+			177,
+			335
+		],
+		"outsideRoi": "pixel-identical to preserved native landscape"
+	},
+	"comparisons": {
+		"native": {
+			"path": "assets/new-horizons/academy/background-revisions/v2/comparisons/landscape-native-before-after.png",
+			"sha256": "867ecb2deb8f15206e97376c267b2ea7b266f245a2d8f4eae47f6b07dbb1e32a"
+		},
+		"roiNearest4x": {
+			"path": "assets/new-horizons/academy/background-revisions/v2/comparisons/landscape-roi-nearest-4x-before-after.png",
+			"sha256": "d20de35f53bab6ddf114b26fdd20870a6cf738e97798043f392df52c6630cb37"
+		},
+		"registeredVillageHallStage": {
+			"path": "assets/new-horizons/academy/background-revisions/v2/comparisons/village-hall-stage-mechanical-composite-before-after.png",
+			"sha256": "13da29e51c6d4f8518cd46622b28780ab7aa2eb31f755f40cd03c0c3ac53610c"
+		}
+	},
+	"registeredSceneNotice": "Mechanical 800x374 composite from the preserved background, registered town layers and the same v2 VillageHall sprite; not a game screenshot. Later townHall/cityHall/capitol stages are excluded.",
+	"runtimeInstallation": false,
+	"userVisualAcceptance": false
+}

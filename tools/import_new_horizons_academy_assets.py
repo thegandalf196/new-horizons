@@ -42,6 +42,8 @@ MAP_REVISION_V3_ROOT = SOURCE_ROOT / "map-revisions/v3"
 MAP_REVISION_V3_MANIFEST = MAP_REVISION_V3_ROOT / "manifest.json"
 HALL_REVISION_ROOT = SOURCE_ROOT / "hall-revisions/v2"
 HALL_REVISION_MANIFEST = HALL_REVISION_ROOT / "manifest.json"
+BACKGROUND_REVISION_ROOT = SOURCE_ROOT / "background-revisions/v2"
+BACKGROUND_REVISION_MANIFEST = BACKGROUND_REVISION_ROOT / "manifest.json"
 # Filled only after the reviewed v2 manifest and all four exports are installed.
 # A non-hash sentinel intentionally makes import/check fail closed in the meantime.
 APPROVED_ICON_REVISION_MANIFEST_SHA256 = "03bd00c50cdb07b488764512a81cf3e1a2fabb0510b70b5660374ca912b46775"
@@ -49,10 +51,13 @@ APPROVED_ICON_REVISION_MANIFEST_SHA256 = "03bd00c50cdb07b488764512a81cf3e1a2fabb
 APPROVED_MAP_REVISION_MANIFEST_SHA256 = "ea2a63637c4383bf5aa499288fc5e1bb56553e98e7cfeea7bc2bb54430505080"
 APPROVED_MAP_REVISION_V3_MANIFEST_SHA256 = "49e31961a0ed65cea2925934bf827b06b290e405b01e01174550145aa393e72d"
 APPROVED_HALL_REVISION_MANIFEST_SHA256 = "80545094b5fccc1e02b0251367ca8388d9d9ab08ad02667b9c2c9ce3a72e1a27"
+APPROVED_BACKGROUND_REVISION_MANIFEST_SHA256 = "2750379b86b4592235610060a2321993f067a3dec177c464b6e890a0c5942efd"
 
 HALL_SOURCE_NATIVE = "native/town/buildings/tbtwhall.png"
 HALL_RUNTIME_IMAGE = "NH_academy/town/buildings/tbtwhall.png"
 HALL_RUNTIME_ALIAS = "NH_ACADEMY_TBTWHALL.json"
+BACKGROUND_SOURCE_NATIVE = "native/town/landscape.png"
+BACKGROUND_RUNTIME_IMAGE = "NH_academy/town/landscape.png"
 HALL_STRUCTURE_MASKS = {
     "area": "NH_academy/town/masks/villageHall-area.png",
     "border": "NH_academy/town/masks/villageHall-border.png",
@@ -270,6 +275,10 @@ def _map_revision_file(root: Path, relative: str, revision_root: Path = MAP_REVI
 
 def _hall_revision_file(root: Path, relative: str) -> Path:
     return _safe_file_below(root / HALL_REVISION_ROOT, relative, "Academy Village Hall revision")
+
+
+def _background_revision_file(root: Path, relative: str) -> Path:
+    return _safe_file_below(root / BACKGROUND_REVISION_ROOT, relative, "Academy town-background revision")
 
 
 def _academy_source_file(root: Path, relative: str) -> Path:
@@ -654,6 +663,186 @@ def load_hall_revision(root: Path, expected_manifest_sha256: str) -> dict:
     }
 
 
+def load_background_revision(root: Path, expected_manifest_sha256: str, hall_revision: dict) -> dict:
+    """Load the exact provisional landscape v2 pin and its bounded pixel ROI."""
+    if not re.fullmatch(r"[0-9a-f]{64}", expected_manifest_sha256 or ""):
+        raise RuntimeError("Academy town-background v2 revision is not enabled: manifest SHA-256 pin is unset")
+
+    manifest_path = _background_revision_file(root, "manifest.json")
+    raw_manifest = manifest_path.read_bytes()
+    manifest_sha256 = sha256_hex(raw_manifest)
+    if manifest_sha256 != expected_manifest_sha256:
+        raise RuntimeError(
+            "Academy town-background v2 manifest changed: "
+            f"expected {expected_manifest_sha256}, got {manifest_sha256}"
+        )
+    try:
+        manifest = json.loads(raw_manifest.decode("utf-8"), object_pairs_hook=_reject_duplicate_json_keys)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("Academy town-background manifest is not valid UTF-8 JSON") from error
+    expected_top_level = {
+        "revision", "status", "sources", "export", "comparisons", "registeredSceneNotice",
+        "runtimeInstallation", "userVisualAcceptance",
+    }
+    if not isinstance(manifest, dict) or set(manifest) != expected_top_level:
+        raise ValueError("Academy town-background manifest has unexpected top-level fields")
+    if manifest["revision"] != "v2" or manifest["status"] != "Provisional; native composite review only":
+        raise ValueError("Academy town-background revision must remain provisional v2")
+    if manifest["runtimeInstallation"] is not False or manifest["userVisualAcceptance"] is not False:
+        raise ValueError("Academy town-background manifest must not claim installation or visual acceptance")
+
+    sources = manifest["sources"]
+    if not isinstance(sources, dict) or set(sources) != {
+        "master", "prompt", "preservedNativeLandscape", "villageHallV2Overlay", "registeredSceneOtherLayers",
+    }:
+        raise ValueError("Academy town-background source set changed")
+
+    master = sources["master"]
+    prompt = sources["prompt"]
+    baseline = sources["preservedNativeLandscape"]
+    hall_overlay = sources["villageHallV2Overlay"]
+    if not isinstance(master, dict) or set(master) != {"path", "sha256", "dimensions", "mode"}:
+        raise ValueError("Academy town-background master pin is invalid")
+    if master != {
+        "path": "assets/new-horizons/academy/background-revisions/v2/landscape-master.png",
+        "sha256": master.get("sha256"),
+        "dimensions": [1836, 857],
+        "mode": "RGB",
+    } or not re.fullmatch(r"[0-9a-f]{64}", master["sha256"] or ""):
+        raise ValueError("Academy town-background master metadata changed")
+    master_path = _safe_file_below(root, master["path"], "Academy town-background master")
+    if sha256_hex(master_path.read_bytes()) != master["sha256"]:
+        raise ValueError("Academy town-background master bytes do not match the manifest")
+    try:
+        with Image.open(master_path) as image:
+            image.load()
+            if list(image.size) != master["dimensions"] or image.mode != master["mode"]:
+                raise ValueError("Academy town-background master dimensions or mode changed")
+    except OSError as error:
+        raise ValueError("Academy town-background master is not a valid image") from error
+
+    if not isinstance(prompt, dict) or set(prompt) != {"path", "sha256"} or prompt.get("path") != (
+        "assets/new-horizons/academy/background-revisions/v2/landscape.prompt.txt"
+    ) or not re.fullmatch(r"[0-9a-f]{64}", prompt.get("sha256", "") or ""):
+        raise ValueError("Academy town-background prompt pin is invalid")
+    prompt_path = _safe_file_below(root, prompt["path"], "Academy town-background prompt")
+    if sha256_hex(prompt_path.read_bytes()) != prompt["sha256"]:
+        raise ValueError("Academy town-background prompt bytes do not match the manifest")
+
+    if not isinstance(baseline, dict) or set(baseline) != {"path", "sha256", "dimensions", "mode"}:
+        raise ValueError("Academy preserved landscape baseline pin is invalid")
+    if baseline != {
+        "path": "assets/new-horizons/academy/native/town/landscape.png",
+        "sha256": baseline.get("sha256"),
+        "dimensions": [800, 374],
+        "mode": "RGB",
+    } or not re.fullmatch(r"[0-9a-f]{64}", baseline["sha256"] or ""):
+        raise ValueError("Academy preserved landscape baseline metadata changed")
+    baseline_path = _safe_file_below(root, baseline["path"], "Academy preserved landscape baseline")
+    baseline_bytes = baseline_path.read_bytes()
+    if sha256_hex(baseline_bytes) != baseline["sha256"]:
+        raise ValueError("Academy preserved landscape baseline bytes do not match the manifest")
+    try:
+        with Image.open(baseline_path) as image:
+            image.load()
+            if list(image.size) != baseline["dimensions"] or image.mode != baseline["mode"]:
+                raise ValueError("Academy preserved landscape baseline dimensions or mode changed")
+    except OSError as error:
+        raise ValueError("Academy preserved landscape baseline is not a valid image") from error
+
+    if not isinstance(hall_overlay, dict) or set(hall_overlay) != {"path", "sha256", "placement"}:
+        raise ValueError("Academy registered VillageHall overlay pin is invalid")
+    if (
+        hall_overlay["path"] != "assets/new-horizons/academy/hall-revisions/v2/exports/village-hall-native.png"
+        or hall_overlay["sha256"] != hall_revision["manifest"]["export"]["sha256"]
+        or hall_overlay["sha256"] != sha256_hex(hall_revision["export_bytes"])
+        or hall_overlay["placement"] != {"x": 0, "y": 259, "z": 2}
+    ):
+        raise ValueError("Academy town-background registered VillageHall overlay changed")
+
+    scene_layers = sources["registeredSceneOtherLayers"]
+    if not isinstance(scene_layers, list):
+        raise ValueError("Academy registered background-scene layer list is invalid")
+    required_layer_fields = {"structure", "path", "sha256", "position", "z", "sequence"}
+    for layer in scene_layers:
+        if not isinstance(layer, dict) or set(layer) != required_layer_fields:
+            raise ValueError("Academy registered background-scene layer metadata is invalid")
+        if (
+            not isinstance(layer["structure"], str)
+            or not isinstance(layer["position"], list)
+            or len(layer["position"]) != 2
+            or any(type(value) is not int for value in layer["position"])
+            or type(layer["z"]) is not int
+            or type(layer["sequence"]) is not int
+            or not re.fullmatch(r"[0-9a-f]{64}", layer["sha256"] or "")
+        ):
+            raise ValueError("Academy registered background-scene layer metadata is malformed")
+        layer_path = _safe_file_below(root, layer["path"], "Academy registered scene layer")
+        if sha256_hex(layer_path.read_bytes()) != layer["sha256"]:
+            raise ValueError(f"Academy registered scene layer changed: {layer['structure']}")
+
+    export = manifest["export"]
+    expected_export_path = "assets/new-horizons/academy/background-revisions/v2/exports/landscape-native.png"
+    if not isinstance(export, dict) or set(export) != {
+        "path", "sha256", "dimensions", "mode", "resize", "composition", "roi", "outsideRoi",
+    }:
+        raise ValueError("Academy town-background export registration is invalid")
+    if (
+        export["path"] != expected_export_path
+        or export["dimensions"] != [800, 374]
+        or export["mode"] != "RGB"
+        or export["resize"] != {"dimensions": [800, 374], "resampling": "Pillow LANCZOS"}
+        or export["composition"] != "paste resized-master pixels into the reviewed ROI on preserved baseline; no alpha blend"
+        or export["roi"] != [0, 254, 177, 335]
+        or export["outsideRoi"] != "pixel-identical to preserved native landscape"
+        or not re.fullmatch(r"[0-9a-f]{64}", export["sha256"] or "")
+    ):
+        raise ValueError("Academy town-background export registration changed")
+    export_path = _safe_file_below(root, export["path"], "Academy town-background export")
+    export_bytes = export_path.read_bytes()
+    if sha256_hex(export_bytes) != export["sha256"]:
+        raise ValueError("Academy town-background native export bytes do not match the manifest")
+    try:
+        with Image.open(export_path) as image:
+            image.load()
+            if list(image.size) != export["dimensions"] or image.mode != export["mode"]:
+                raise ValueError("Academy town-background native export dimensions or mode changed")
+            exported = image.copy()
+        with Image.open(baseline_path) as image:
+            original = image.convert("RGB")
+        left, top, right, bottom = export["roi"]
+        if (
+            original.crop((right, 0, original.width, original.height)).tobytes()
+            != exported.crop((right, 0, exported.width, exported.height)).tobytes()
+            or original.crop((0, 0, original.width, top)).tobytes()
+            != exported.crop((0, 0, exported.width, top)).tobytes()
+            or original.crop((0, bottom, original.width, original.height)).tobytes()
+            != exported.crop((0, bottom, exported.width, exported.height)).tobytes()
+        ):
+            raise ValueError("Academy town-background export changed pixels outside its registered ROI")
+    except OSError as error:
+        raise ValueError("Academy town-background native export is not a valid image") from error
+
+    comparison_records = manifest["comparisons"]
+    if not isinstance(comparison_records, dict) or set(comparison_records) != {"native", "roiNearest4x", "registeredVillageHallStage"}:
+        raise ValueError("Academy town-background comparison set changed")
+    for name, record in comparison_records.items():
+        if not isinstance(record, dict) or set(record) != {"path", "sha256"}:
+            raise ValueError(f"Academy town-background {name} comparison pin is invalid")
+        path = _safe_file_below(root, record["path"], "Academy town-background comparison")
+        if sha256_hex(path.read_bytes()) != record["sha256"]:
+            raise ValueError(f"Academy town-background {name} comparison bytes changed")
+    if not isinstance(manifest["registeredSceneNotice"], str) or "not a game screenshot" not in manifest["registeredSceneNotice"]:
+        raise ValueError("Academy town-background preview disclaimer is missing")
+
+    return {
+        "manifest": manifest,
+        "manifest_sha256": manifest_sha256,
+        "export_bytes": export_bytes,
+        "baseline_native_bytes": baseline_bytes,
+    }
+
+
 def validate_archive(archive: zipfile.ZipFile) -> dict[str, zipfile.ZipInfo]:
     result: dict[str, zipfile.ZipInfo] = {}
     for info in archive.infolist():
@@ -847,6 +1036,35 @@ def install_curated_hall(root: Path, revision: dict, legacy_bytes: bytes, check_
         destination.write_bytes(revision["export_bytes"])
 
 
+def install_curated_background(root: Path, revision: dict, legacy_bytes: bytes, check_only: bool):
+    """Install the pinned landscape only over its exact preserved baseline."""
+    if legacy_bytes != revision["baseline_native_bytes"]:
+        raise ValueError("Academy handoff landscape differs from the preserved native baseline")
+    destination = root / IMAGE_ROOT / BACKGROUND_RUNTIME_IMAGE
+    if destination.is_symlink():
+        raise RuntimeError(f"Refusing to replace symlinked Academy town background: {destination}")
+    if not destination.exists():
+        if check_only:
+            raise RuntimeError(f"Reviewed Academy town background is missing: {destination}")
+        should_write = True
+    elif not destination.is_file():
+        raise RuntimeError(f"Academy town-background destination is not a regular file: {destination}")
+    else:
+        current = destination.read_bytes()
+        if current == revision["export_bytes"]:
+            should_write = False
+        elif current == legacy_bytes:
+            if check_only:
+                raise RuntimeError(f"Reviewed Academy town-background v2 is not installed: {destination}")
+            should_write = True
+        else:
+            raise RuntimeError(f"Refusing to replace unrecognized Academy town-background pixels: {destination}")
+
+    if should_write:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(revision["export_bytes"])
+
+
 def validate_hall_archive_baseline(archive: zipfile.ZipFile, names: dict[str, zipfile.ZipInfo], revision: dict):
     """Reject a handoff whose original Hall pixels or registration differ from the pinned source."""
     manifest = revision["manifest"]
@@ -1009,6 +1227,7 @@ def validate_runtime_routes(
     icon_revision: dict,
     map_revision: dict,
     hall_revision: dict,
+    background_revision: dict,
 ):
     patch = json.loads((root / "Mods/new-horizons/Content/config/factions/academyArt.json").read_text(encoding="utf-8"))
     faction = patch["core:tower"]
@@ -1049,6 +1268,10 @@ def validate_runtime_routes(
     core_hall = core_tower["tower"]["town"]["structures"]["villageHall"]
     if [core_hall.get(axis) for axis in ("x", "y", "z")] != [0, 259, 2]:
         raise ValueError("Academy Village Hall core x/y/z placement differs from the approved registration")
+
+    background_path = root / IMAGE_ROOT / BACKGROUND_RUNTIME_IMAGE
+    if not background_path.is_file() or background_path.read_bytes() != background_revision["export_bytes"]:
+        raise ValueError("Academy town background differs from the pinned provisional v2 export")
 
     for structure_name, structure in structures.items():
         if structure_name == "academyRoof":
@@ -1238,6 +1461,7 @@ def make_runtime_assets(
     map_revision: dict,
     prior_map_revision: dict,
     hall_revision: dict,
+    background_revision: dict,
 ):
     native_paths = sorted(path for path in names if path.startswith("native/") and path.endswith(".png"))
     if not EXCLUDED_NATIVE <= set(native_paths):
@@ -1254,6 +1478,10 @@ def make_runtime_assets(
         if native == HALL_SOURCE_NATIVE:
             # The source handoff remains provenance-only. Runtime installation
             # is handled by the exact v2 pin below, never by this generic loop.
+            continue
+        if native == BACKGROUND_SOURCE_NATIVE:
+            # Preserve the supplied authored comparison baseline, but let the
+            # exact baseline-or-v2 installer own the runtime landscape path.
             continue
         if native in ICON_NORMALS:
             # The original normal export remains provenance-only. Runtime art
@@ -1281,6 +1509,12 @@ def make_runtime_assets(
         root,
         hall_revision,
         archive.read(names[HALL_SOURCE_NATIVE]),
+        check_only,
+    )
+    install_curated_background(
+        root,
+        background_revision,
+        archive.read(names[BACKGROUND_SOURCE_NATIVE]),
         check_only,
     )
 
@@ -1486,6 +1720,11 @@ def main() -> int:
         prior_map_revision = load_map_revision(root, APPROVED_MAP_REVISION_MANIFEST_SHA256, revision="v2")
         map_revision = load_map_revision(root, APPROVED_MAP_REVISION_V3_MANIFEST_SHA256, revision="v3")
         hall_revision = load_hall_revision(root, APPROVED_HALL_REVISION_MANIFEST_SHA256)
+        background_revision = load_background_revision(
+            root,
+            APPROVED_BACKGROUND_REVISION_MANIFEST_SHA256,
+            hall_revision,
+        )
         with zipfile.ZipFile(args.archive) as archive:
             names = validate_archive(archive)
             validate_hall_archive_baseline(archive, names, hall_revision)
@@ -1499,9 +1738,18 @@ def main() -> int:
                 map_revision,
                 prior_map_revision,
                 hall_revision,
+                background_revision,
             )
             build_patch_outputs(root, args.check)
-            validate_runtime_routes(root, archive, names, icon_revision, map_revision, hall_revision)
+            validate_runtime_routes(
+                root,
+                archive,
+                names,
+                icon_revision,
+                map_revision,
+                hall_revision,
+                background_revision,
+            )
             if not args.check:
                 render_all_built_preview(root, archive, names)
     except (OSError, zipfile.BadZipFile, ValueError, RuntimeError, KeyError, TypeError) as error:
