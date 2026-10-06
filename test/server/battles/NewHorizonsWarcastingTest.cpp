@@ -427,6 +427,11 @@ TEST_F(NewHorizonsWarcastingTest, CounterspelledSpellReadiesOrderAndOrderSnapsho
 		return line.find("gains +32% damage, plus 2 percentage points per additional hex, this round.")
 			!= std::string::npos;
 	}));
+	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).recentActions,
+		(std::array<AlternatingHeroActionState::Action, 3>{
+			AlternatingHeroActionState::Action::NONE,
+			AlternatingHeroActionState::Action::SPELL,
+			AlternatingHeroActionState::Action::ORDER}));
 	JsonNode flatOnly = formula;
 	flatOnly["attack"] = JsonNode(0.0);
 	flatOnly["defense"] = JsonNode(0.0);
@@ -447,6 +452,54 @@ TEST_F(NewHorizonsWarcastingTest, CounterspelledSpellReadiesOrderAndOrderSnapsho
 	oldSave.oser.version = ESerializationVersion::NEW_HORIZONS_CURE_AFFLICTION;
 	EXPECT_THROW(oldSave.oser & *battle(), std::runtime_error);
 	EXPECT_TRUE(oldSave.extractBuffer().empty());
+}
+
+TEST_F(NewHorizonsWarcastingTest, AcceptedOrdinaryActionsRecordSpellOrderSpell)
+{
+	prepareWarcasting();
+	const auto side = BattleSide::ATTACKER;
+
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	EXPECT_EQ(battle()->getWarcastingState(side).recentActions,
+		(std::array<AlternatingHeroActionState::Action, 3>{
+			AlternatingHeroActionState::Action::NONE,
+			AlternatingHeroActionState::Action::NONE,
+			AlternatingHeroActionState::Action::SPELL}));
+	advanceRound();
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	advanceRound();
+	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, defender));
+	const auto & state = battle()->getWarcastingState(side);
+	EXPECT_EQ(state.recentActions,
+		(std::array<AlternatingHeroActionState::Action, 3>{
+			AlternatingHeroActionState::Action::SPELL,
+			AlternatingHeroActionState::Action::ORDER,
+			AlternatingHeroActionState::Action::SPELL}));
+	EXPECT_TRUE(state.hasAlternatingSpellOrderSequence());
+}
+
+TEST_F(NewHorizonsWarcastingTest, AcceptedOrdinaryActionsRecordOrderSpellOrder)
+{
+	prepareWarcasting();
+	const auto side = BattleSide::ATTACKER;
+
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	EXPECT_EQ(battle()->getWarcastingState(side).recentActions,
+		(std::array<AlternatingHeroActionState::Action, 3>{
+			AlternatingHeroActionState::Action::NONE,
+			AlternatingHeroActionState::Action::NONE,
+			AlternatingHeroActionState::Action::ORDER}));
+	advanceRound();
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	advanceRound();
+	ASSERT_TRUE(issue(HeroCommand::BRACE));
+	const auto & state = battle()->getWarcastingState(side);
+	EXPECT_EQ(state.recentActions,
+		(std::array<AlternatingHeroActionState::Action, 3>{
+			AlternatingHeroActionState::Action::ORDER,
+			AlternatingHeroActionState::Action::SPELL,
+			AlternatingHeroActionState::Action::ORDER}));
+	EXPECT_TRUE(state.hasAlternatingSpellOrderSequence());
 }
 
 TEST_F(NewHorizonsWarcastingTest, OrderReadinessIsAvailableThroughInclusiveExpiryAndCastRearmsIt)
@@ -689,8 +742,69 @@ TEST_F(NewHorizonsWarcastingTest, AcceptedMetamagicFollowupDoesNotChangeReadines
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
 	const auto beforeFollowup = battle()->getWarcastingState(BattleSide::ATTACKER);
 	ASSERT_EQ(beforeFollowup.empowermentPercent, 20);
+	EXPECT_EQ(beforeFollowup.recentActions,
+		(std::array<AlternatingHeroActionState::Action, 3>{
+			AlternatingHeroActionState::Action::NONE,
+			AlternatingHeroActionState::Action::NONE,
+			AlternatingHeroActionState::Action::SPELL}));
 	ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
 	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER), beforeFollowup);
+}
+
+TEST_F(NewHorizonsWarcastingTest, HeroActionSequenceHistoryRoundTripsAndOldOuterWritersRejectLoss)
+{
+	prepareWarcasting();
+	const auto side = BattleSide::ATTACKER;
+	auto & sequence = battle()->getSide(side).warcastingState;
+	sequence.recentActions = {
+		AlternatingHeroActionState::Action::ORDER,
+		AlternatingHeroActionState::Action::SPELL,
+		AlternatingHeroActionState::Action::ORDER};
+	ASSERT_TRUE(sequence.hasAlternatingSpellOrderSequence());
+
+	SideInBattle currentSide(nullptr);
+	currentSide.warcastingState = sequence;
+	CMemorySerializer currentSideWire;
+	currentSideWire.oser.version = ESerializationVersion::CURRENT;
+	currentSideWire.iser.version = ESerializationVersion::CURRENT;
+	ASSERT_NO_THROW(currentSideWire.oser & currentSide);
+	SideInBattle restoredSide(nullptr);
+	ASSERT_NO_THROW(currentSideWire.iser & restoredSide);
+	EXPECT_EQ(restoredSide.warcastingState, sequence);
+
+	SideInBattle legacyCompatible(nullptr);
+	legacyCompatible.warcastingState.nextEligibleAction = AlternatingHeroActionState::Action::SPELL;
+	legacyCompatible.warcastingState.empowermentPercent = 20;
+	legacyCompatible.warcastingState.expiryRound = 4;
+	CMemorySerializer previousSideWire;
+	previousSideWire.oser.version = ESerializationVersion::NEW_HORIZONS_ASTROLOGY_CONSTRUCTION_PREVIEW;
+	previousSideWire.iser.version = ESerializationVersion::NEW_HORIZONS_ASTROLOGY_CONSTRUCTION_PREVIEW;
+	ASSERT_NO_THROW(previousSideWire.oser & legacyCompatible);
+	SideInBattle olderReadSide(nullptr);
+	ASSERT_NO_THROW(previousSideWire.iser & olderReadSide);
+	EXPECT_EQ(olderReadSide.warcastingState.nextEligibleAction,
+		AlternatingHeroActionState::Action::SPELL);
+	EXPECT_EQ(olderReadSide.warcastingState.empowermentPercent, 20);
+	EXPECT_FALSE(olderReadSide.warcastingState.hasRecentActionHistory());
+
+	CMemorySerializer lossySideWriter;
+	lossySideWriter.oser.version = ESerializationVersion::NEW_HORIZONS_ASTROLOGY_CONSTRUCTION_PREVIEW;
+	EXPECT_THROW(lossySideWriter.oser & currentSide, std::runtime_error);
+	EXPECT_TRUE(lossySideWriter.extractBuffer().empty());
+
+	CMemorySerializer lossyBattleWriter;
+	lossyBattleWriter.oser.version = ESerializationVersion::NEW_HORIZONS_ASTROLOGY_CONSTRUCTION_PREVIEW;
+	EXPECT_THROW(lossyBattleWriter.oser & *battle(), std::runtime_error);
+	EXPECT_TRUE(lossyBattleWriter.extractBuffer().empty());
+
+	BattleStart start;
+	start.battleID = BattleID(0);
+	start.info = CMemorySerializer::deepCopy(*battle(), gameState().get());
+	ASSERT_NE(start.info, nullptr);
+	CMemorySerializer lossyStartWriter;
+	lossyStartWriter.oser.version = ESerializationVersion::NEW_HORIZONS_ASTROLOGY_CONSTRUCTION_PREVIEW;
+	EXPECT_THROW(lossyStartWriter.oser & start, std::runtime_error);
+	EXPECT_TRUE(lossyStartWriter.extractBuffer().empty());
 }
 
 TEST_F(NewHorizonsWarcastingTest, ReadinessAndConsumedOrderBonusRoundTripAndOldReadsAreInert)
@@ -946,6 +1060,11 @@ TEST_F(NewHorizonsWarcastingTest, TypedOrderAfterHeroSpellPreservesMetamagicAndR
 	ASSERT_EQ(afterSpell.castSpellsCount, 1u);
 	ASSERT_EQ(afterSpell.metamagicPendingCount, 1u);
 	ASSERT_EQ(afterSpell.metamagicSequenceSpells, (std::vector<SpellID>{SpellID::HASTE}));
+	EXPECT_EQ(afterSpell.warcastingState.recentActions,
+		(std::array<AlternatingHeroActionState::Action, 3>{
+			AlternatingHeroActionState::Action::NONE,
+			AlternatingHeroActionState::Action::NONE,
+			AlternatingHeroActionState::Action::SPELL}));
 	const auto afterSpellCounts = afterSpell.heroActionAllowances.remainingCounts(round);
 	EXPECT_EQ(afterSpellCounts.heroActions, 0u);
 	EXPECT_EQ(afterSpellCounts.orderActions, 1u);
@@ -965,6 +1084,7 @@ TEST_F(NewHorizonsWarcastingTest, TypedOrderAfterHeroSpellPreservesMetamagicAndR
 	EXPECT_EQ(afterOrder.usedSpellsHistory, (std::vector<SpellID>{SpellID::HASTE}));
 	EXPECT_EQ(afterOrder.metamagicPendingCount, 1u);
 	EXPECT_EQ(afterOrder.metamagicSequenceSpells, (std::vector<SpellID>{SpellID::HASTE}));
+	EXPECT_EQ(afterOrder.warcastingState.recentActions, afterSpell.warcastingState.recentActions);
 	const auto afterOrderCounts = afterOrder.heroActionAllowances.remainingCounts(round);
 	EXPECT_EQ(afterOrderCounts.heroActions, 0u);
 	EXPECT_EQ(afterOrderCounts.orderActions, 0u);
@@ -982,6 +1102,7 @@ TEST_F(NewHorizonsWarcastingTest, TypedOrderAfterHeroSpellPreservesMetamagicAndR
 	EXPECT_EQ(restoredSide.usedSpellsHistory, afterOrder.usedSpellsHistory);
 	EXPECT_EQ(restoredSide.metamagicPendingCount, 1u);
 	EXPECT_EQ(restoredSide.metamagicSequenceSpells, afterOrder.metamagicSequenceSpells);
+	EXPECT_EQ(restoredSide.warcastingState, afterOrder.warcastingState);
 	EXPECT_TRUE(restored->getHeroCommandUsed(side));
 	EXPECT_EQ(restored->getActiveOrder(side), HeroCommand::CHARGE);
 	EXPECT_EQ(restored->getHeroOrderState(side), battle()->getHeroOrderState(side));
@@ -1033,10 +1154,16 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalBattleSpendsTypedAllowancesWithout
 	HypotheticBattle projection(&environment, callback);
 	const auto side = BattleSide::ATTACKER;
 	const auto authoritative = battle()->getHeroActionAllowances(side);
+	const auto authoritativeHistory = battle()->getWarcastingState(side).recentActions;
 	ASSERT_EQ(authoritative.remainingCounts(battle()->getRound()).heroActions, 1u);
 	ASSERT_TRUE(projection.projectHeroSpellAllowance(side, SpellID::HASTE, attacker->unitId(), false, false));
 	EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).heroActions, 0u);
 	EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).spellActions, 1u);
+	EXPECT_EQ(projection.getWarcastingState(side).recentActions,
+		(std::array<AlternatingHeroActionState::Action, 3>{
+			AlternatingHeroActionState::Action::NONE,
+			AlternatingHeroActionState::Action::NONE,
+			AlternatingHeroActionState::Action::SPELL}));
 	EXPECT_FALSE(projection.projectHeroOrderAllowance(side));
 	const auto readiness = projection.getWarcastingState(side);
 	ASSERT_TRUE(projection.projectHeroSpellAllowance(side, SpellID::SLOW, defender->unitId(), true, false));
@@ -1044,12 +1171,19 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalBattleSpendsTypedAllowancesWithout
 	EXPECT_EQ(projection.getMetamagicUsesConsumed(side), 1);
 	EXPECT_EQ(projection.getWarcastingState(side), readiness);
 	EXPECT_EQ(battle()->getHeroActionAllowances(side), authoritative);
+	EXPECT_EQ(battle()->getWarcastingState(side).recentActions, authoritativeHistory);
 	EXPECT_EQ(battle()->getMetamagicUsesConsumed(side), 0);
 	projection.nextRound();
 	EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).heroActions, 1u);
 	EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).spellActions, 0u);
 	ASSERT_TRUE(projection.projectHeroOrderAllowance(side));
 	EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).heroActions, 0u);
+	EXPECT_EQ(projection.getWarcastingState(side).recentActions,
+		(std::array<AlternatingHeroActionState::Action, 3>{
+			AlternatingHeroActionState::Action::NONE,
+			AlternatingHeroActionState::Action::SPELL,
+			AlternatingHeroActionState::Action::ORDER}));
+	EXPECT_EQ(battle()->getWarcastingState(side).recentActions, authoritativeHistory);
 }
 
 TEST_F(NewHorizonsWarcastingTest, HypotheticalGrandMatchesThirdUsedSequenceAndDoesNotRecurse)

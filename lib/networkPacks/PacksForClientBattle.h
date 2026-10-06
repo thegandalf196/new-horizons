@@ -80,6 +80,10 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 			&& (info->getWarcastingState(BattleSide::ATTACKER).hasConsumedBonus
 				|| info->getWarcastingState(BattleSide::DEFENDER).hasConsumedBonus))
 			throw std::runtime_error("Cannot discard Warcasting consumption history from BattleStart");
+		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_ACTION_SEQUENCE)
+			&& (info->getWarcastingState(BattleSide::ATTACKER).hasRecentActionHistory()
+				|| info->getWarcastingState(BattleSide::DEFENDER).hasRecentActionHistory()))
+			throw std::runtime_error("Cannot discard Hero Action sequence history from BattleStart");
 		if(h.saving && info && !h.hasFeature(Handler::Version::BATTLE_FINAL_RELOCATION)
 			&& info->getDeploymentState().hasFinalRelocationState())
 			throw std::runtime_error("Cannot discard final relocation state from BattleStart");

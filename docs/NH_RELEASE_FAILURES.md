@@ -2,6 +2,19 @@
 
 ## Purpose
 
+### 2026-10-06 — Hero Action sequence synthetic reader
+
+UP244's first native rebuild failed because MalformedStateReader assigned its
+scalar integer input to every template field, including the new fixed-size
+action array. Even a runtime-disabled serialization branch must instantiate a
+valid array operation. Preserve the production history representation; repair
+the synthetic reader to handle the array rather than weakening serialization
+or removing malformed-state coverage. Client build passed before this fixture
+compile failure. The repaired array reader is independently reviewed; matching
+client/native builds pass with12 jobs and30/30 focused cases pass, zero skips,
+in2.319s. Receipts remain under ignored `build/nh-action-sequence.QSR769/`.
+Do not run a stale runner or treat source review as execution acceptance.
+
 ### 2026-10-06 — Roof candidate headless CLI harness
 
 The first frozen-roof smoke invocation used unsupported `--savefrequency0`

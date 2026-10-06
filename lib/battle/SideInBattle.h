@@ -411,6 +411,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_SYNTHESIS)
 			&& warcastingState.hasConsumedBonus)
 			throw std::runtime_error("Cannot discard Warcasting consumption history");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_ACTION_SEQUENCE)
+			&& warcastingState.hasRecentActionHistory())
+			throw std::runtime_error("Cannot discard Hero Action sequence history");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_ACTION_ALLOWANCES)
 			&& heroActionAllowances != HeroActionAllowanceState{})
 			throw std::runtime_error("Cannot discard Hero Action allowance battle state");

@@ -1,5 +1,22 @@
 # Serialization
 
+## Ordinary Hero Action sequence (UP244; source/native accepted)
+
+`NEW_HORIZONS_HERO_ACTION_SEQUENCE` appends three right-aligned Action entries
+to `AlternatingHeroActionState`. Leading NONE entries represent fewer than
+three accepted ordinary Hero-paid actions; remaining entries are SPELL or
+ORDER. Unknown entries and internal NONE gaps are invalid. The existing
+receipt-filtered authoritative and detached hooks record the same facts,
+including zero-empowerment actions. Readiness expiry preserves this history.
+Typed Spell/Order grants and creature actions do not enter it.
+
+Older reads start with empty history, not inferred prior actions. Populated
+unsupported state and enclosing SideInBattle/BattleInfo writes reject before
+payload bytes; BattleStart rejects before either packet field. This prerequisite does not activate Perfect Rhythm or choose
+its Master Synthesis stacking rule, and does not lift ongoing-battle save
+restrictions. Focused acceptance and playable delivery are tracked separately
+in UP244.
+
 ## Battlecraft Pre-emptive Strike round state (source/native accepted)
 
 `NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE` protects the new

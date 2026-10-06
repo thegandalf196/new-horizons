@@ -312,6 +312,10 @@ public:
 				&& (sides[BattleSide::ATTACKER].warcastingState.hasConsumedBonus
 					|| sides[BattleSide::DEFENDER].warcastingState.hasConsumedBonus))
 				throw std::runtime_error("Cannot discard Warcasting consumption history in an older format");
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_ACTION_SEQUENCE)
+				&& (sides[BattleSide::ATTACKER].warcastingState.hasRecentActionHistory()
+					|| sides[BattleSide::DEFENDER].warcastingState.hasRecentActionHistory()))
+				throw std::runtime_error("Cannot discard Hero Action sequence history in an older format");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE) && hasChainGateState())
 				throw std::runtime_error("Cannot discard Chain Gate battle state");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_GATE)

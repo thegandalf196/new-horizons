@@ -2,6 +2,23 @@
 
 Updated: 2026-10-06
 
+UP244 prerequisite checkpoint: source and focused fixtures for the last-three
+ordinary Hero-paid Spell/Order sequence are implemented. Readiness expiry keeps
+history; typed allowances remain excluded by existing live/detached receipts.
+Current/old state and enclosing packet serialization are covered by authored
+tests. Repaired final client/native build passes with12 jobs, including the
+BattleStart preflight. Matching isolated native execution passes30/30 in2.319s,
+zero skips/errors. Independent source and fixture review finds no blocker.
+The initial synthetic-reader compile failure and repair remain recorded.
+Perfect Rhythm stays planned pending the Master Synthesis ruling: counts remain
+61/67 combat identities and225/310 active perks. No playable promotion or whole-
+battle save support is inferred. UP244 retains execution and delivery gates.
+
+Windows37429818459 completed successfully on3eda8ac03: game compile, staging,
+packaging and upload pass, with nonexpired preview artifact metadata inspected.
+It excludes newer roof/UP244 changes; independent ZIP-content and Windows
+gameplay acceptance are not inferred. No identity counts change.
+
 UP241 delivery: committed/pushed `cadab569a` builds with12 jobs; frozen
 snapshot `3b7e155aec10506da961d94c6dfce24117bb11700879c903354da078cb23ceac`
 is independently checksum verified and headless-smoked through AI day7 before
