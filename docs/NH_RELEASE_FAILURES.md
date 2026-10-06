@@ -2,6 +2,26 @@
 
 ## Purpose
 
+### 2026-10-05 — Windows libiconv source download timeout
+
+Full Windows run `37403632207`, source `9c7c4880f`, failed before compilation
+in the complete dependency graph/source archive preflight. Both configured GNU
+endpoints timed out downloading `libiconv-1.17.tar.gz` after bounded retries.
+The matching cheap notice run `37403527818` passed; that does not prove source
+archive availability. Retained artifact `Windows-preflight-reports-9c7c4880f00eaaeb722abdd3ea034025af81c241`
+contains the preflight evidence. No C++ compiler failure is established.
+
+Repair in progress: seed the existing content-addressed Conan source cache from
+official GNU mirrors with the exact Conan recipe SHA-256, following the dav1d
+seed pattern. Do not trust a newly computed mirror hash, weaken source/license
+gates, change dependency versions, or blindly retry the unchanged workflow.
+Repair source gate: both mirror downloads match Conan Center Index's libiconv
+1.17 SHA-256 `8f74213b56238c85a50a5329f77e06198771e70dd9a739779f4c02f65d971313`.
+The existing cache helper re-verifies bytes and rejects corrupt entries. All
+92 package regressions pass with zero skips, including the new workflow guard;
+YAML/Bash syntax and independent review pass. Windows runner execution and a
+successful successor remain unproven. No dependency version or gate changed.
+
 ### 2026-10-05 UP239 — Repeated renderer fixture shutdown
 
 The four-portrait dummy-SDL fixture initially segfaulted during its scale-4

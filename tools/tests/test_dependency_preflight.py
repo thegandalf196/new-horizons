@@ -143,6 +143,20 @@ class DependencyPreflightTest(unittest.TestCase):
         self.assertTrue(report['pass'])
         self.assertEqual(count, 1)
 
+    def test_libiconv_cache_fallback_uses_recipe_hash_and_runs_before_preflight(self):
+        workflow_path = Path(__file__).resolve().parents[2] / '.github/workflows/new-horizons-windows.yml'
+        workflow = workflow_path.read_text(encoding='utf-8')
+        step_name = '      - name: Seed verified Conan source cache fallback for GNU libiconv'
+        section = workflow.split(step_name, 1)[1].split('\n      - ', 1)[0]
+
+        self.assertIn('LIBICONV_SOURCE_SHA256: 8f74213b56238c85a50a5329f77e06198771e70dd9a739779f4c02f65d971313', section)
+        self.assertIn('https://mirrors.ocf.berkeley.edu/gnu/libiconv/libiconv-1.17.tar.gz', section)
+        self.assertIn('https://mirror.csclub.uwaterloo.ca/gnu/libiconv/libiconv-1.17.tar.gz', section)
+        self.assertIn('if actual != expected:', section)
+        self.assertIn('seed_source_cache', section)
+        self.assertLess(workflow.index(step_name),
+                        workflow.index('- name: Preflight complete dependency graph and source archives'))
+
 
 if __name__ == '__main__':
     unittest.main()

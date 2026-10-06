@@ -108,6 +108,52 @@ jobs:
           PY
           echo "NH_CONAN_SOURCE_CACHE=$source_cache" >> "$GITHUB_ENV"
 
+      - name: Seed verified Conan source cache fallback for GNU libiconv
+        env:
+          # Pinned by Conan Center Index recipes/libiconv/all/conandata.yml for 1.17.
+          LIBICONV_SOURCE_SHA256: 8f74213b56238c85a50a5329f77e06198771e70dd9a739779f4c02f65d971313
+        run: |
+          set -euo pipefail
+          source_cache="$RUNNER_TEMP/conan-source-cache"
+          archive="$RUNNER_TEMP/libiconv-1.17.tar.gz"
+          downloaded=
+          # These are GNU-listed mirrors; accept only the checksum pinned by
+          # the exact Conan Center Index 1.17 recipe, never the mirror bytes' own hash.
+          for url in \
+            https://mirrors.ocf.berkeley.edu/gnu/libiconv/libiconv-1.17.tar.gz \
+            https://mirror.csclub.uwaterloo.ca/gnu/libiconv/libiconv-1.17.tar.gz; do
+            echo "Fetching libiconv source mirror: $url"
+            if curl --fail --location --retry 3 --retry-all-errors --connect-timeout 20 --max-time 120 \
+                --output "$archive" "$url"; then
+              if python - "$archive" "$LIBICONV_SOURCE_SHA256" <<'PY'
+          import hashlib
+          from pathlib import Path
+          import sys
+
+          path, expected = Path(sys.argv[1]), sys.argv[2]
+          actual = hashlib.sha256(path.read_bytes()).hexdigest()
+          if actual != expected:
+              raise SystemExit(f'libiconv mirror SHA-256 mismatch: {actual}')
+          PY
+              then
+                downloaded=1
+                break
+              fi
+            fi
+            rm -f "$archive"
+          done
+          test "$downloaded" = 1
+          python - "$source_cache" "$archive" "$LIBICONV_SOURCE_SHA256" <<'PY'
+          from pathlib import Path
+          import sys
+
+          sys.path.insert(0, 'tools/ci')
+          from preflight_dependency_sources import seed_source_cache
+
+          print(seed_source_cache(Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]))
+          PY
+          echo "NH_CONAN_SOURCE_CACHE=$source_cache" >> "$GITHUB_ENV"
+
       - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1, upstream; no private-repository subscription gate
         with:
           arch: x64

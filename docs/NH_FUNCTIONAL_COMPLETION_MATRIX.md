@@ -2,12 +2,32 @@
 
 Updated: 2026-10-05
 
+Remaining-item selection audit: direct registry enumeration and independent
+queue/canonical review cover all 85 planned perks (66 generic, 19 faction)
+and the six missing combat identities. Each has a recorded item-specific
+question or dependency; no completely unblocked perk/spell was identified
+within that set. This is not proof that all Version 1.0 work is blocked:
+independent prerequisites, required UI and unverified principal paths remain
+separate. In particular UP046's original Rebirth-output HP/lineage capture is
+confirmed as a missing specified prerequisite, without deciding secondary
+perk composition. The audit does not activate entries or earn coverage.
+
+High-leverage recorded gates include UP072's terrain mapping (Elemental
+Convergence plus three Rebirth/Nature perks), UP117's chain rules (Nature's
+Wrath and Worldroot), UP043/066/179/123's four Chaos identities and dependent
+perks, UP108/149's paired-recipient/Order lifetimes, and UP127/129's recruited
+cohort provenance. Existing Water Walk policy, Basic Toxic Spines reflection,
+artifact-regeneration aggregation and Gargoyle redraw choices remain
+unanswered. Do not infer answers from automatic goal continuation or implement
+an EndTurn-only Water Walk rejection that can strand the hero/loop the AI.
+
 Cross-platform gate refresh: full Windows run `37348640988` succeeds on older
 source `0e645f79b`. Current Academy source `9c7c4880f` passes 91 packaging
 preflight cases (zero skips), 19 Academy/Guild/Tower guards and independent
 Windows-oriented source review. Notice run `37403527818` succeeds; full run
-`37403632207` is confirmed in progress, not a compiled or packaged success.
-Monitor that handle; do not duplicate it. The Linux twelve-portrait delivery
+`37403632207` failed before compilation when both GNU libiconv download
+endpoints timed out. A pinned mirror source-cache repair is in progress; no
+unchanged retry or packaged success is claimed. The Linux twelve-portrait delivery
 is unchanged. Direct registry inspection still finds 225 active and 85 planned
 perks; this checkpoint earns no new gameplay identity coverage.
 
