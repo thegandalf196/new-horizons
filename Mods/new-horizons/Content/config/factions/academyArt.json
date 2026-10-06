@@ -151,6 +151,7 @@
 				"special2": {
 					"animation": "NH_ACADEMY_TBTWEXT0",
 					"campaignBonus": "NH_academy/ui/bonus/botcastw.png",
+					"x": 402,
 					"area": "NH_academy/town/masks/special2-area.png",
 					"border": "NH_academy/town/masks/special2-border.png"
 				},

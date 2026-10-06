@@ -38,6 +38,8 @@ ICON_REVISION_ROOT = SOURCE_ROOT / "icon-revisions/v2"
 ICON_REVISION_MANIFEST = ICON_REVISION_ROOT / "manifest.json"
 MAP_REVISION_ROOT = SOURCE_ROOT / "map-revisions/v2"
 MAP_REVISION_MANIFEST = MAP_REVISION_ROOT / "manifest.json"
+MAP_REVISION_V3_ROOT = SOURCE_ROOT / "map-revisions/v3"
+MAP_REVISION_V3_MANIFEST = MAP_REVISION_V3_ROOT / "manifest.json"
 HALL_REVISION_ROOT = SOURCE_ROOT / "hall-revisions/v2"
 HALL_REVISION_MANIFEST = HALL_REVISION_ROOT / "manifest.json"
 # Filled only after the reviewed v2 manifest and all four exports are installed.
@@ -45,6 +47,7 @@ HALL_REVISION_MANIFEST = HALL_REVISION_ROOT / "manifest.json"
 APPROVED_ICON_REVISION_MANIFEST_SHA256 = "03bd00c50cdb07b488764512a81cf3e1a2fabb0510b70b5660374ca912b46775"
 # Pinned after the three reviewed native map exports and registrations were frozen.
 APPROVED_MAP_REVISION_MANIFEST_SHA256 = "ea2a63637c4383bf5aa499288fc5e1bb56553e98e7cfeea7bc2bb54430505080"
+APPROVED_MAP_REVISION_V3_MANIFEST_SHA256 = "49e31961a0ed65cea2925934bf827b06b290e405b01e01174550145aa393e72d"
 APPROVED_HALL_REVISION_MANIFEST_SHA256 = "80545094b5fccc1e02b0251367ca8388d9d9ab08ad02667b9c2c9ce3a72e1a27"
 
 HALL_SOURCE_NATIVE = "native/town/buildings/tbtwhall.png"
@@ -149,6 +152,16 @@ MAP_REVISION_SLOTS = {
     },
 }
 
+MAP_REVISION_V3_PROMPTS = {
+    "village": "masters/village.prompt.txt",
+    "fort": "masters/fort.prompt.txt",
+    "capitol": "masters/capitol.prompt.txt",
+}
+MAP_REVISION_V3_SLOTS = {
+    name: {**record, "prompt": MAP_REVISION_V3_PROMPTS[name]}
+    for name, record in MAP_REVISION_SLOTS.items()
+}
+
 ICON_NORMALS = {
     "native/ui/icons/fort-large-normal.png": "NH_academy_fort_large_normal.png",
     "native/ui/icons/fort-small-normal.png": "NH_academy_fort_small_normal.png",
@@ -201,6 +214,10 @@ SEMANTIC_STRUCTURE_ASSETS = {
     "dwellingUpLvl5": {"resource": "NH_ACADEMY_TBTWUP_3", "x": 613, "y": 74, "bonus": "botmag2.png"},
 }
 
+# Native fort/citadel/castle scene review: join the Astronomy Tower to the
+# fortification without changing its inherited height or layer order.
+ASTRONOMY_TOWER_X = 402
+
 
 def compact_json(value: object) -> bytes:
     return (json.dumps(value, indent="\t", ensure_ascii=False) + "\n").encode("utf-8")
@@ -247,8 +264,8 @@ def _revision_file(root: Path, relative: str) -> Path:
     return _safe_file_below(root / ICON_REVISION_ROOT, relative, "Academy icon revision")
 
 
-def _map_revision_file(root: Path, relative: str) -> Path:
-    return _safe_file_below(root / MAP_REVISION_ROOT, relative, "Academy map revision")
+def _map_revision_file(root: Path, relative: str, revision_root: Path = MAP_REVISION_ROOT) -> Path:
+    return _safe_file_below(root / revision_root, relative, "Academy map revision")
 
 
 def _hall_revision_file(root: Path, relative: str) -> Path:
@@ -358,17 +375,24 @@ def load_icon_revision(root: Path, expected_manifest_sha256: str) -> dict:
     }
 
 
-def load_map_revision(root: Path, expected_manifest_sha256: str) -> dict:
-    """Load only the explicitly pinned Academy map-material revision."""
+def load_map_revision(root: Path, expected_manifest_sha256: str, revision: str = "v2") -> dict:
+    """Load an explicitly pinned Academy map-material revision."""
+    revision_configs = {
+        "v2": (MAP_REVISION_ROOT, MAP_REVISION_SLOTS),
+        "v3": (MAP_REVISION_V3_ROOT, MAP_REVISION_V3_SLOTS),
+    }
+    if revision not in revision_configs:
+        raise ValueError(f"Unsupported Academy map revision: {revision}")
+    revision_root, revision_slots = revision_configs[revision]
     if not re.fullmatch(r"[0-9a-f]{64}", expected_manifest_sha256 or ""):
-        raise RuntimeError("Academy v2 map revision is not enabled: importer manifest SHA-256 pin is unset")
+        raise RuntimeError(f"Academy {revision} map revision is not enabled: importer manifest SHA-256 pin is unset")
 
-    manifest_path = _map_revision_file(root, "manifest.json")
+    manifest_path = _map_revision_file(root, "manifest.json", revision_root)
     raw_manifest = manifest_path.read_bytes()
     actual_manifest_sha256 = sha256_hex(raw_manifest)
     if actual_manifest_sha256 != expected_manifest_sha256:
         raise RuntimeError(
-            "Academy v2 map revision manifest changed: "
+            f"Academy {revision} map revision manifest changed: "
             f"expected {expected_manifest_sha256}, got {actual_manifest_sha256}"
         )
 
@@ -378,8 +402,8 @@ def load_map_revision(root: Path, expected_manifest_sha256: str) -> dict:
         raise ValueError(f"Academy map revision manifest is not valid UTF-8 JSON: {manifest_path}") from error
     if not isinstance(manifest, dict) or set(manifest) != {"schemaVersion", "revision", "sourceRegistration", "bodies"}:
         raise ValueError("Academy map revision manifest has unexpected top-level fields")
-    if type(manifest["schemaVersion"]) is not int or manifest["schemaVersion"] != 1 or manifest["revision"] != "v2":
-        raise ValueError("Academy map revision manifest must declare schemaVersion 1 and revision v2")
+    if type(manifest["schemaVersion"]) is not int or manifest["schemaVersion"] != 1 or manifest["revision"] != revision:
+        raise ValueError(f"Academy map revision manifest must declare schemaVersion 1 and revision {revision}")
 
     source_registration = manifest["sourceRegistration"]
     if not isinstance(source_registration, dict) or set(source_registration) != {"path", "sha256"}:
@@ -394,14 +418,14 @@ def load_map_revision(root: Path, expected_manifest_sha256: str) -> dict:
         raise ValueError("Academy map revision source registration bytes do not match its manifest")
 
     bodies = manifest["bodies"]
-    if not isinstance(bodies, dict) or set(bodies) != set(MAP_REVISION_SLOTS):
+    if not isinstance(bodies, dict) or set(bodies) != set(revision_slots):
         raise ValueError("Academy map revision must register exactly the village, fort, and capitol bodies")
 
     exports_by_runtime = {}
-    record_fields = set(next(iter(MAP_REVISION_SLOTS.values()))) | {
+    record_fields = set(next(iter(revision_slots.values()))) | {
         "sourceMasterSha256", "masterSha256", "promptSha256", "sha256"
     }
-    for name, expected in MAP_REVISION_SLOTS.items():
+    for name, expected in revision_slots.items():
         record = bodies[name]
         if not isinstance(record, dict) or set(record) != record_fields:
             raise ValueError(f"Academy map revision has an invalid {name} body record")
@@ -417,11 +441,11 @@ def load_map_revision(root: Path, expected_manifest_sha256: str) -> dict:
         if sha256_hex(source_master_path.read_bytes()) != record["sourceMasterSha256"]:
             raise ValueError(f"Academy map revision baseline master bytes do not match the manifest: {record['sourceMaster']}")
 
-        prompt_path = _map_revision_file(root, record["prompt"])
+        prompt_path = _map_revision_file(root, record["prompt"], revision_root)
         if sha256_hex(prompt_path.read_bytes()) != record["promptSha256"]:
             raise ValueError(f"Academy map revision prompt bytes do not match the manifest: {record['prompt']}")
 
-        master_path = _map_revision_file(root, record["master"])
+        master_path = _map_revision_file(root, record["master"], revision_root)
         master_bytes = master_path.read_bytes()
         if sha256_hex(master_bytes) != record["masterSha256"]:
             raise ValueError(f"Academy map revision master bytes do not match the manifest: {record['master']}")
@@ -433,7 +457,7 @@ def load_map_revision(root: Path, expected_manifest_sha256: str) -> dict:
         except OSError as error:
             raise ValueError(f"Academy map revision master is not a valid image: {record['master']}") from error
 
-        export_path = _map_revision_file(root, record["export"])
+        export_path = _map_revision_file(root, record["export"], revision_root)
         export_bytes = export_path.read_bytes()
         if sha256_hex(export_bytes) != record["sha256"]:
             raise ValueError(f"Academy map revision export bytes do not match the manifest: {record['export']}")
@@ -461,6 +485,7 @@ def load_map_revision(root: Path, expected_manifest_sha256: str) -> dict:
         "manifest": manifest,
         "manifest_sha256": actual_manifest_sha256,
         "exports_by_runtime": exports_by_runtime,
+        "revision": revision,
     }
 
 
@@ -750,11 +775,19 @@ def install_curated_map_bodies(
     exports_by_runtime: dict[str, bytes],
     legacy_by_runtime: dict[str, bytes],
     check_only: bool,
+    previously_approved_by_runtime: dict[str, bytes] | None = None,
 ):
-    """Install all three pinned map bodies, accepting only their exact v1 export as prior pixels."""
+    """Install the complete pinned map-body family after exact-byte preflight.
+
+    Only the exact handoff baseline, the previously shipped v2 exports, or the
+    active v3 exports are accepted. Every slot is checked before any write.
+    """
     expected_runtimes = {record["runtime"] for record in MAP_REVISION_SLOTS.values()}
     if set(exports_by_runtime) != expected_runtimes or set(legacy_by_runtime) != expected_runtimes:
         raise ValueError("Academy map-body install set differs from the three approved runtime routes")
+    prior_by_runtime = previously_approved_by_runtime or {}
+    if prior_by_runtime and set(prior_by_runtime) != expected_runtimes:
+        raise ValueError("Academy prior map-body revision differs from the three approved runtime routes")
 
     writes = []
     for runtime_name in sorted(expected_runtimes):
@@ -774,10 +807,11 @@ def install_curated_map_bodies(
         current = destination.read_bytes()
         if current == exports_by_runtime[runtime_name]:
             continue
-        if current != legacy_by_runtime[runtime_name]:
+        accepted_prior = prior_by_runtime.get(runtime_name)
+        if current != legacy_by_runtime[runtime_name] and current != accepted_prior:
             raise RuntimeError(f"Refusing to replace unrecognized Academy map-body pixels: {destination}")
         if check_only:
-            raise RuntimeError(f"Reviewed Academy map body is not installed: {destination}")
+            raise RuntimeError(f"Reviewed Academy map v3 body is not installed: {destination}")
         writes.append(destination)
 
     # Preflight every destination above before mutating any of the three files.
@@ -870,6 +904,8 @@ def academy_patch(root: Path, core_tower: dict, rank_patch: dict) -> dict:
         elif name == "mageGuild5":
             structure["x"] = 592
             structure["y"] = 14
+        elif name == "special2":
+            structure["x"] = ASTRONOMY_TOWER_X
 
         image_path = animation_image_path(root, animation)
         structure["area"] = f"NH_academy/town/masks/{name}-area.png"
@@ -979,6 +1015,17 @@ def validate_runtime_routes(
     town = faction["town"]
     structures = town["structures"]
 
+    astronomy = structures.get("special2", {})
+    if astronomy.get("x") != ASTRONOMY_TOWER_X or any(axis in astronomy for axis in ("y", "z")):
+        raise ValueError("Academy Astronomy Tower must retain its reviewed horizontal-only attachment offset")
+    for field, expected in {
+        "animation": "NH_ACADEMY_TBTWEXT0",
+        "area": "NH_academy/town/masks/special2-area.png",
+        "border": "NH_academy/town/masks/special2-border.png",
+    }.items():
+        if astronomy.get(field) != expected:
+            raise ValueError(f"Academy Astronomy Tower {field} route changed")
+
     hall = structures.get("villageHall")
     if not hall or hall.get("animation") != "NH_ACADEMY_TBTWHALL":
         raise ValueError("Academy Village Hall must retain its registered one-frame animation resource")
@@ -1026,7 +1073,7 @@ def validate_runtime_routes(
         if not runtime_path:
             raise ValueError(f"Missing Academy {name} map body {expected['runtime']}")
         if runtime_path.read_bytes() != map_revision["exports_by_runtime"][expected["runtime"]]:
-            raise ValueError(f"Installed Academy map body differs from its reviewed v2 export: {expected['runtime']}")
+            raise ValueError(f"Installed Academy map body differs from its reviewed v3 export: {expected['runtime']}")
 
     for group_name, group in town["icons"].items():
         for size in ("large", "small"):
@@ -1189,6 +1236,7 @@ def make_runtime_assets(
     check_only: bool,
     icon_revision: dict,
     map_revision: dict,
+    prior_map_revision: dict,
     hall_revision: dict,
 ):
     native_paths = sorted(path for path in names if path.startswith("native/") and path.endswith(".png"))
@@ -1239,8 +1287,8 @@ def make_runtime_assets(
     asset_records = archive_json(archive, names, "integration/academy-assets.json")
     town_layout = archive_json(archive, names, "integration/town-layout.json")
 
-    # The pinned v2 exports win over the prior generated bodies. Reconstruct
-    # v1 only to identify the exact accepted pre-v2 runtime bytes; package
+    # The pinned v3 exports win over the prior generated bodies. Reconstruct
+    # the exact handoff baseline and load v2 as the previously approved state;
     # `native/adventure` composites remain excluded because they restore
     # original-game translucent shadow pixels.
     source_registration = map_revision["manifest"]["sourceRegistration"]
@@ -1265,6 +1313,7 @@ def make_runtime_assets(
         map_revision["exports_by_runtime"],
         legacy_map_bodies,
         check_only,
+        previously_approved_by_runtime=prior_map_revision["exports_by_runtime"],
     )
     for definition in MAP_BODY_REGISTRATIONS.values():
         descriptor = aliased_animation(definition["resource"], definition["png"])
@@ -1434,13 +1483,23 @@ def main() -> int:
     root = args.root.resolve()
     try:
         icon_revision = load_icon_revision(root, APPROVED_ICON_REVISION_MANIFEST_SHA256)
-        map_revision = load_map_revision(root, APPROVED_MAP_REVISION_MANIFEST_SHA256)
+        prior_map_revision = load_map_revision(root, APPROVED_MAP_REVISION_MANIFEST_SHA256, revision="v2")
+        map_revision = load_map_revision(root, APPROVED_MAP_REVISION_V3_MANIFEST_SHA256, revision="v3")
         hall_revision = load_hall_revision(root, APPROVED_HALL_REVISION_MANIFEST_SHA256)
         with zipfile.ZipFile(args.archive) as archive:
             names = validate_archive(archive)
             validate_hall_archive_baseline(archive, names, hall_revision)
             import_provenance(root, archive, names, args.check)
-            make_runtime_assets(root, archive, names, args.check, icon_revision, map_revision, hall_revision)
+            make_runtime_assets(
+                root,
+                archive,
+                names,
+                args.check,
+                icon_revision,
+                map_revision,
+                prior_map_revision,
+                hall_revision,
+            )
             build_patch_outputs(root, args.check)
             validate_runtime_routes(root, archive, names, icon_revision, map_revision, hall_revision)
             if not args.check:

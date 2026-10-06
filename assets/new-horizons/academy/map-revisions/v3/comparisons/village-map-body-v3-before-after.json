@@ -1,0 +1,38 @@
+{
+	"comparison": "left=exact registered v2 export; right=mechanical flagless v3 export",
+	"dimensions": [
+		192,
+		192
+	],
+	"changedPixels": 12802,
+	"pixelCount": 36864,
+	"meanAbsoluteChannelDifference": 2.8635050455729165,
+	"runtimeAcceptance": false,
+	"registration": {
+		"name": "village",
+		"master": "masters/village.png",
+		"masterSize": [
+			1254,
+			1254
+		],
+		"baselineExport": "assets/new-horizons/academy/map-revisions/v2/exports/NH_academy_village_body.png",
+		"masterSolidBox": {
+			"left": 240,
+			"top": 223,
+			"width": 943,
+			"height": 1017
+		},
+		"sourceSolidBox": {
+			"left": 36,
+			"top": 36,
+			"width": 147,
+			"height": 155
+		},
+		"canvasSize": [
+			192,
+			192
+		],
+		"resampling": "LANCZOS",
+		"runtimeAcceptance": false
+	}
+}

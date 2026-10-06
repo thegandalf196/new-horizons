@@ -104,6 +104,21 @@ class NewHorizonsAcademyArtTest(unittest.TestCase):
                 self.assertTrue(built_fallback.is_file())
                 self.assertEqual(built_fallback.read_bytes(), normal.read_bytes())
 
+    def test_astronomy_attachment_survives_generated_patch(self):
+        core = academy_importer.load_jsonc(ROOT / "config/factions/tower.json")
+        ranks = read_json("Mods/new-horizons/Content/config/factions/towerCreatureRanks.json")
+        generated = academy_importer.academy_patch(ROOT, core, ranks)
+        actual = self.structures["special2"]
+        expected = generated["core:tower"]["town"]["structures"]["special2"]
+        expected.pop("_generatedImagePath")
+        self.assertEqual(actual, expected)
+        self.assertEqual(actual["x"], academy_importer.ASTRONOMY_TOWER_X)
+        self.assertNotIn("y", actual)
+        self.assertNotIn("z", actual)
+        self.assertEqual(actual["animation"], "NH_ACADEMY_TBTWEXT0")
+        self.assertEqual(actual["area"], "NH_academy/town/masks/special2-area.png")
+        self.assertEqual(actual["border"], "NH_academy/town/masks/special2-border.png")
+
     def test_reviewed_v2_icon_revision_is_pinned_and_installed_exactly(self):
         revision = academy_importer.load_icon_revision(
             ROOT,
@@ -178,13 +193,14 @@ class NewHorizonsAcademyArtTest(unittest.TestCase):
             self.assertEqual(normal.read_bytes(), reviewed)
             self.assertEqual(built.read_bytes(), unknown)
 
-    def test_reviewed_v2_map_revision_is_pinned_installed_and_native_framed(self):
+    def test_reviewed_v3_map_revision_is_pinned_installed_and_native_framed(self):
         revision = academy_importer.load_map_revision(
             ROOT,
-            academy_importer.APPROVED_MAP_REVISION_MANIFEST_SHA256,
+            academy_importer.APPROVED_MAP_REVISION_V3_MANIFEST_SHA256,
+            revision="v3",
         )
-        self.assertEqual(revision["manifest"]["revision"], "v2")
-        for name, expected in academy_importer.MAP_REVISION_SLOTS.items():
+        self.assertEqual(revision["manifest"]["revision"], "v3")
+        for name, expected in academy_importer.MAP_REVISION_V3_SLOTS.items():
             with self.subTest(body=name):
                 runtime = IMAGES / expected["runtime"]
                 reviewed = revision["exports_by_runtime"][expected["runtime"]]

@@ -1,0 +1,109 @@
+{
+	"schemaVersion": 1,
+	"revision": "v3",
+	"sourceRegistration": {
+		"path": "integration/academy-assets.json",
+		"sha256": "09456282b1b4a8d58970f9cf681ac18f849d627dd50edb4ea2f49f4cc5d8024d"
+	},
+	"bodies": {
+		"village": {
+			"sourceMaster": "masters/adventure/avctowr0.png",
+			"master": "masters/village.png",
+			"prompt": "masters/village.prompt.txt",
+			"resource": "NH_ACADEMY_VILLAGE_BODY",
+			"export": "exports/NH_academy_village_body.png",
+			"runtime": "NH_academy_village_body.png",
+			"masterSize": [
+				1254,
+				1254
+			],
+			"masterSolidBox": {
+				"left": 240,
+				"top": 223,
+				"width": 943,
+				"height": 1017
+			},
+			"sourceSolidBox": {
+				"left": 36,
+				"top": 36,
+				"width": 147,
+				"height": 155
+			},
+			"dimensions": [
+				192,
+				192
+			],
+			"resampling": "LANCZOS",
+			"sourceMasterSha256": "cca4261a03b525cb87aea1e892d53af02eab13e2e50d10c7c64047d484610f81",
+			"masterSha256": "300c9d270e2a8d90a8ad93cabdbbb83f3382f26cde1d7f574fc4827c2afd239a",
+			"promptSha256": "cc3487c05c9acb277751adc6089bc8943163dc9a8e6241b2d4ab6ea7e37c3aee",
+			"sha256": "b2388219947a03c8701aacad5517418e09680863651b03b354a07553185dd8b5"
+		},
+		"fort": {
+			"sourceMaster": "masters/adventure/avctowx0.png",
+			"master": "masters/fort.png",
+			"prompt": "masters/fort.prompt.txt",
+			"resource": "NH_ACADEMY_FORT_BODY",
+			"export": "exports/NH_academy_fort_body.png",
+			"runtime": "NH_academy_fort_body.png",
+			"masterSize": [
+				1254,
+				1254
+			],
+			"masterSolidBox": {
+				"left": 233,
+				"top": 0,
+				"width": 1016,
+				"height": 1254
+			},
+			"sourceSolidBox": {
+				"left": 32,
+				"top": 0,
+				"width": 160,
+				"height": 191
+			},
+			"dimensions": [
+				192,
+				192
+			],
+			"resampling": "LANCZOS",
+			"sourceMasterSha256": "210069de748751460e9e9be7b3b5255b4b8929fe8baee6a13bfc2113ff009a0a",
+			"masterSha256": "2f4b515084c5a6ffcdff3f0743cafa68f6c1723c7bee314480f347ff670b2d03",
+			"promptSha256": "cacc2d0e0baa62cf180d48ae6ec76fbcbf81072cd72866011b7708577073f307",
+			"sha256": "5bf938c3f4e90e8490d2b9d80e318e67dc09bf2a92f76ab4dc758f8a7f89ec51"
+		},
+		"capitol": {
+			"sourceMaster": "masters/adventure/avctowz0.png",
+			"master": "masters/capitol.png",
+			"prompt": "masters/capitol.prompt.txt",
+			"resource": "NH_ACADEMY_CAPITOL_BODY",
+			"export": "exports/NH_academy_capitol_body.png",
+			"runtime": "NH_academy_capitol_body.png",
+			"masterSize": [
+				1254,
+				1254
+			],
+			"masterSolidBox": {
+				"left": 233,
+				"top": 0,
+				"width": 1016,
+				"height": 1254
+			},
+			"sourceSolidBox": {
+				"left": 32,
+				"top": 0,
+				"width": 160,
+				"height": 191
+			},
+			"dimensions": [
+				192,
+				192
+			],
+			"resampling": "LANCZOS",
+			"sourceMasterSha256": "88e52f079fc2b6cc4bf22f0d71c924397201658c75260fc33cc28d8d1af8f9cb",
+			"masterSha256": "ad8094a205287a2f195076f0690a0fd36dabe7afe64ab0c3abc6bbcd1511071c",
+			"promptSha256": "c49b11a80c5fbb52c679ec7eb9193dc07e1721edf19ae36fbd59dec7d5604a51",
+			"sha256": "433ce40f36886da1186a0fffa278f09744280bd0aec20b7fccf2484e8c52116a"
+		}
+	}
+}

@@ -1,5 +1,29 @@
 # New Horizons UI and asset status register
 
+UP248 Cabir replacement,2026-10-06: **Provisional** first standing-frame master
+and proposed60px preview, generated using HoMM3 Art from the user's content
+reference. The user approved the design after the first sprite was shown.
+Full animation states, upgraded creature, portraits and runtime bindings are
+**Not done**; Gremlins remain in the playable game. Source/prompt/preview are
+retained under `assets/new-horizons/creatures/cabir/v1/`.
+
+UP247 Astronomy Tower attachment,2026-10-06: **Provisional** placement correction
+to special2.x402, with unchanged sprites/masks/y/z. Native registered fort,
+citadel and castle comparisons support the connection. Importer parity and
+twelve focused art checks pass; independent review finds no blocker. Playable
+delivery/user acceptance remain pending.
+
+UP246 Academy map yellow flags,2026-10-06: **Provisional** flagless Village,
+Fort and Capitol masters/native exports retained under `map-revisions/v3/`.
+All three source runtime bodies now match the pinned exports. Fifteen focused
+Academy art/map checks, reproducible export and independent review pass.
+Registration and engine ownership/shadow overlays are unchanged. Full archive
+reimport, playable delivery and user visual acceptance remain unverified.
+
+UP241 renewed user report: the double-roof visual defect remains **Open** in
+the current delivery despite v2's earlier checks. Do not infer user acceptance
+from the older native/hash evidence below.
+
 UP241 Village Hall roof revision,2026-10-06: **Provisional** artwork.
 One focused HoMM3-Art edit is preserved with its exact prompt under
 `assets/new-horizons/academy/hall-revisions/v2/`. Root and independent review

@@ -1,0 +1,38 @@
+{
+	"comparison": "left=exact registered v2 export; right=mechanical flagless v3 export",
+	"dimensions": [
+		192,
+		192
+	],
+	"changedPixels": 19445,
+	"pixelCount": 36864,
+	"meanAbsoluteChannelDifference": 3.3146497938368054,
+	"runtimeAcceptance": false,
+	"registration": {
+		"name": "capitol",
+		"master": "masters/capitol.png",
+		"masterSize": [
+			1254,
+			1254
+		],
+		"baselineExport": "assets/new-horizons/academy/map-revisions/v2/exports/NH_academy_capitol_body.png",
+		"masterSolidBox": {
+			"left": 233,
+			"top": 0,
+			"width": 1016,
+			"height": 1254
+		},
+		"sourceSolidBox": {
+			"left": 32,
+			"top": 0,
+			"width": 160,
+			"height": 191
+		},
+		"canvasSize": [
+			192,
+			192
+		],
+		"resampling": "LANCZOS",
+		"runtimeAcceptance": false
+	}
+}
