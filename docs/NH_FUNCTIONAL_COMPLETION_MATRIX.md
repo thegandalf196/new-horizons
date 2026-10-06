@@ -2,6 +2,14 @@
 
 Updated: 2026-10-06
 
+Selection navigation: [Phase1 hold index](NH_PHASE1_HOLD_INDEX.md) lists all85
+planned perk IDs with queue references and explicitly uncertain rows, plus the
+six missing combat identities. Registry parity is checked independently.
+Counterpressure's ordinary accepted-effect/readiness path is selected for
+Partial, inactive implementation; the no-op recipient boundary still needs an
+answer. This preparation changes no coverage counts and is not a whole-project
+blocked declaration. Avoid repeated architecture maps for the cited holds.
+
 Latest UP262 checkpoint: small/encounter/map colour roles have source bindings
 and focused native verification (1/1, zero skips,2.44s), including registered
 CPRSMALL routing, all30 map frames, native pixel/alpha fidelity and original
