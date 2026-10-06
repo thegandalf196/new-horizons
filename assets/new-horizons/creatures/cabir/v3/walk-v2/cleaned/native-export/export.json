@@ -1,0 +1,55 @@
+{
+  "columns": 2,
+  "rows": 2,
+  "sourceFrameCount": 4,
+  "frameOrder": "row-major",
+  "sourcePanelSize": [
+    662,
+    595
+  ],
+  "sourceCellWidths": [
+    662,
+    661
+  ],
+  "sourceCellHeights": [
+    594,
+    595
+  ],
+  "sourceCellBoundaryPolicy": "round(i * dimension / part_count); transparent right/bottom padding",
+  "sharedSourceBounds": [
+    105,
+    21,
+    596,
+    576
+  ],
+  "sharedSourceBodySize": [
+    491,
+    555
+  ],
+  "scale": 0.10810810810810811,
+  "resizedBodySize": [
+    53,
+    60
+  ],
+  "logicalCanvas": [
+    450,
+    400
+  ],
+  "anchorXRequested": 196.5,
+  "anchorXActual": 196.5,
+  "feetBaselineY": 268,
+  "placement": [
+    170,
+    208
+  ],
+  "resampling": "LANCZOS",
+  "alphaPolicy": "preserved; no thresholding or cleanup",
+  "sourceName": "candidate-01-alpha-cleaned.png",
+  "sourceSha256": "112c20fb49091bcbf5efc5646b7ce1950f37ade03969a12c3ccedcffdecace2a",
+  "reviewCropBounds": [
+    162,
+    200,
+    231,
+    276
+  ]
+}

@@ -2,6 +2,21 @@
 
 Updated: 2026-10-06
 
+Superseding Cabir direction: both forms now use bare hands. Pot-based animation
+drafts below are historical and must not be installed as the current design.
+New base/upgraded standing masters exist in v3; full barehanded animation sets
+and runtime bindings remain missing. Accepted 50% Fire reduction, 25% Water/Frost
+vulnerability and upgraded living-stack Golem/Gargoyle repair are implementation
+work in progress, not completed creature mechanics. Explicit element tags are
+independent of Schools. Counts remain 225/310 perks, 61/67 combat spells, 8/8 Orders.
+
+Windows delivery evidence update: run 37483347788 completed successfully for
+48d5a2b3f0a9602c0094e781fa41dca893875520. Downloaded Actions artifact 11425259543
+passes outer checksums, ZIP CRC, all 2,541 payload hashes and static AMD64/import,
+privacy, source and license checks. No Windows binary was executed. This is an
+Actions artifact, not a new Release publication; newer UP261/Cabir source is not
+included. Earlier live-build statements below are historical.
+
 Explicit user-priority Cabir checkpoint: original four-frame walk now has
 reviewed provisional alpha-only cleanup and common-canvas exports; new melee,
 reaction/death and upgraded standing poses are retained. This advances required

@@ -1,5 +1,14 @@
 # New Horizons UI and asset status register
 
+Superseding Cabir art direction,2026-10-06: bare hands for BOTH forms; no pot
+or fire vessel. All pot-based standing/action drafts below are retained as
+superseded references, not active runtime-ready artwork. New v3 base/upgraded
+barehanded standing masters are **Provisional**; base walk and melee pose atlases
+are also provisional sources, not installed animations. Full native actions,
+repair presentation, portraits and runtime bindings remain **Not done**. User also adds elemental
+defenses and upgrade repair abilities; the former unchanged-gameplay constraint
+does not apply to those specific abilities. Do not install superseded frames.
+
 Cabir animation follow-up,2026-10-06: **Provisional** four-frame walk-v2
 after user-approved alpha cleanup/alignment. Source masters remain intact;
 22,851 removed external alpha pixels have opacity at most10; retained RGBA and

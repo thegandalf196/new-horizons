@@ -1,0 +1,450 @@
+{
+  "status": "provisional generated-sheet alpha-only cleanup; visual review required",
+  "sourceSha256": "17224d2db53658eea8c97e355e43fdb324c60a82b3d845c00a5f6eac33ab7e26",
+  "sourceSize": [
+    1323,
+    1189
+  ],
+  "sourcePath": "assets/new-horizons/creatures/cabir/v3/walk-v2/candidate-01.png",
+  "grid": {
+    "rows": 2,
+    "columns": 2,
+    "order": "row-major",
+    "xBoundaries": [
+      0,
+      662,
+      1323
+    ],
+    "yBoundaries": [
+      0,
+      594,
+      1189
+    ]
+  },
+  "policy": {
+    "seed": "largest 8-connected alpha>=16 component in each source cell",
+    "dilation": "3-pixel square/Chebyshev-radius dilation within each cell",
+    "retainedPixels": "original RGBA bytes are preserved inside the dilated seed",
+    "removedPixels": "outside the dilated seed, nonzero alpha is set to zero; RGB bytes are preserved",
+    "maximumRemovedAlphaAllowed": 10,
+    "noGlobalThreshold": true,
+    "noRecoloringOrWarping": true
+  },
+  "cells": [
+    {
+      "index": 0,
+      "row": 0,
+      "column": 0,
+      "sourceBounds": [
+        0,
+        0,
+        662,
+        594
+      ],
+      "size": [
+        662,
+        594
+      ],
+      "alpha16Components": [
+        {
+          "area": 122945,
+          "bbox": [
+            162,
+            34,
+            593,
+            573
+          ],
+          "maxAlpha": 255
+        },
+        {
+          "area": 2,
+          "bbox": [
+            563,
+            285,
+            565,
+            286
+          ],
+          "maxAlpha": 17
+        },
+        {
+          "area": 2,
+          "bbox": [
+            519,
+            350,
+            520,
+            352
+          ],
+          "maxAlpha": 25
+        },
+        {
+          "area": 1,
+          "bbox": [
+            242,
+            165,
+            243,
+            166
+          ],
+          "maxAlpha": 18
+        },
+        {
+          "area": 1,
+          "bbox": [
+            446,
+            254,
+            447,
+            255
+          ],
+          "maxAlpha": 18
+        },
+        {
+          "area": 1,
+          "bbox": [
+            542,
+            337,
+            543,
+            338
+          ],
+          "maxAlpha": 19
+        }
+      ],
+      "seedArea": 122945,
+      "seedBounds": [
+        162,
+        34,
+        593,
+        573
+      ],
+      "sourceEdgeAlphaCounts": {
+        "left": 11,
+        "right": 16,
+        "top": 0,
+        "bottom": 0
+      },
+      "cleanedEdgeAlphaCounts": {
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "removedPixelCount": 6321,
+      "maximumRemovedAlpha": 9,
+      "removedAlphaHistogram": {
+        "1": 4999,
+        "2": 847,
+        "3": 269,
+        "4": 101,
+        "5": 43,
+        "9": 9,
+        "8": 2,
+        "7": 20,
+        "6": 31
+      }
+    },
+    {
+      "index": 1,
+      "row": 0,
+      "column": 1,
+      "sourceBounds": [
+        662,
+        0,
+        1323,
+        594
+      ],
+      "size": [
+        661,
+        594
+      ],
+      "alpha16Components": [
+        {
+          "area": 119130,
+          "bbox": [
+            108,
+            41,
+            554,
+            570
+          ],
+          "maxAlpha": 255
+        },
+        {
+          "area": 1,
+          "bbox": [
+            246,
+            367,
+            247,
+            368
+          ],
+          "maxAlpha": 17
+        },
+        {
+          "area": 1,
+          "bbox": [
+            221,
+            483,
+            222,
+            484
+          ],
+          "maxAlpha": 16
+        },
+        {
+          "area": 1,
+          "bbox": [
+            405,
+            496,
+            406,
+            497
+          ],
+          "maxAlpha": 17
+        }
+      ],
+      "seedArea": 119130,
+      "seedBounds": [
+        108,
+        41,
+        554,
+        570
+      ],
+      "sourceEdgeAlphaCounts": {
+        "left": 4,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "cleanedEdgeAlphaCounts": {
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "removedPixelCount": 5946,
+      "maximumRemovedAlpha": 5,
+      "removedAlphaHistogram": {
+        "1": 4723,
+        "2": 891,
+        "3": 250,
+        "4": 68,
+        "5": 14
+      }
+    },
+    {
+      "index": 2,
+      "row": 1,
+      "column": 0,
+      "sourceBounds": [
+        0,
+        594,
+        662,
+        1189
+      ],
+      "size": [
+        662,
+        595
+      ],
+      "alpha16Components": [
+        {
+          "area": 124513,
+          "bbox": [
+            129,
+            24,
+            588,
+            564
+          ],
+          "maxAlpha": 255
+        },
+        {
+          "area": 1,
+          "bbox": [
+            415,
+            284,
+            416,
+            285
+          ],
+          "maxAlpha": 20
+        }
+      ],
+      "seedArea": 124513,
+      "seedBounds": [
+        129,
+        24,
+        588,
+        564
+      ],
+      "sourceEdgeAlphaCounts": {
+        "left": 0,
+        "right": 2,
+        "top": 0,
+        "bottom": 6
+      },
+      "cleanedEdgeAlphaCounts": {
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "removedPixelCount": 7208,
+      "maximumRemovedAlpha": 8,
+      "removedAlphaHistogram": {
+        "1": 5397,
+        "2": 1169,
+        "3": 320,
+        "4": 161,
+        "5": 87,
+        "6": 55,
+        "7": 18,
+        "8": 1
+      }
+    },
+    {
+      "index": 3,
+      "row": 1,
+      "column": 1,
+      "sourceBounds": [
+        662,
+        594,
+        1323,
+        1189
+      ],
+      "size": [
+        661,
+        595
+      ],
+      "alpha16Components": [
+        {
+          "area": 117184,
+          "bbox": [
+            112,
+            29,
+            556,
+            559
+          ],
+          "maxAlpha": 255
+        },
+        {
+          "area": 1,
+          "bbox": [
+            334,
+            60,
+            335,
+            61
+          ],
+          "maxAlpha": 19
+        },
+        {
+          "area": 1,
+          "bbox": [
+            377,
+            340,
+            378,
+            341
+          ],
+          "maxAlpha": 18
+        },
+        {
+          "area": 1,
+          "bbox": [
+            326,
+            470,
+            327,
+            471
+          ],
+          "maxAlpha": 16
+        },
+        {
+          "area": 1,
+          "bbox": [
+            382,
+            539,
+            383,
+            540
+          ],
+          "maxAlpha": 17
+        }
+      ],
+      "seedArea": 117184,
+      "seedBounds": [
+        112,
+        29,
+        556,
+        559
+      ],
+      "sourceEdgeAlphaCounts": {
+        "left": 0,
+        "right": 1,
+        "top": 0,
+        "bottom": 1
+      },
+      "cleanedEdgeAlphaCounts": {
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "removedPixelCount": 7106,
+      "maximumRemovedAlpha": 8,
+      "removedAlphaHistogram": {
+        "1": 5509,
+        "2": 1131,
+        "3": 368,
+        "4": 79,
+        "5": 13,
+        "6": 4,
+        "8": 1,
+        "7": 1
+      }
+    }
+  ],
+  "removedPixelCount": 26581,
+  "maximumRemovedAlpha": 9,
+  "removedAlphaHistogram": {
+    "1": 20628,
+    "2": 4038,
+    "3": 1207,
+    "4": 409,
+    "5": 157,
+    "9": 9,
+    "8": 4,
+    "7": 39,
+    "6": 90
+  },
+  "export": {
+    "frameCount": 4,
+    "bodyHeight": 60,
+    "canvas": [
+      450,
+      400
+    ],
+    "sharedSourceBounds": [
+      105,
+      21,
+      596,
+      576
+    ],
+    "sharedSourceBodySize": [
+      491,
+      555
+    ],
+    "scale": 0.10810810810810811,
+    "placement": [
+      170,
+      208
+    ],
+    "feetBaselineY": 268,
+    "alphaPolicy": "preserved; no thresholding or cleanup"
+  },
+  "sourceFileModified": false,
+  "sourcePromptPath": "assets/new-horizons/creatures/cabir/v3/walk-v2/candidate-01.prompt.txt",
+  "sourcePromptSha256": "255e5baf86275a2d7a91369841b054e896b2d9f006d940c2bc7b45a55d842272",
+  "cleanupRevision": "cabir-walk-v3-specific-radius-3",
+  "cleanedRgbaSha256": "25e2ca5ed55acd183a5e86d48d06379d3cb63f9fd43bccc05f61effd63189844",
+  "cleanedPngSha256": "112c20fb49091bcbf5efc5646b7ce1950f37ade03969a12c3ccedcffdecace2a",
+  "cleanedPath": "assets/new-horizons/creatures/cabir/v3/walk-v2/cleaned/candidate-01-alpha-cleaned.png",
+  "nativeExportPath": "assets/new-horizons/creatures/cabir/v3/walk-v2/cleaned/native-export",
+  "nativeFiles": {
+    "animation-proof.gif": "56b24f3d622450dfe31495fbb05a972bb5d4b8b33204067540c6910dc9076367",
+    "contact-sheet-4x.png": "f01d6773c98274117db91dd687a875101f8f6a6ff632a183631d5ceffd295bbc",
+    "export.json": "f1bc6e9f461996d39b7baef9ce02872acbf6cf08802468422961b7c5a95c3655",
+    "frame-00.png": "ce21e339944fdc1f95128bf6a218746242bf12637d127e241f7a7ca224f093cb",
+    "frame-01.png": "576feab87113b424ae16dfe1364a52461aa1b157a94488935b912317a2e6602d",
+    "frame-02.png": "c7f4f28cb61d6376318fdc3b87ce572ad596e7f0462d39ca8925705378eb61e4",
+    "frame-03.png": "745c1e5d497de9bce4058cd8c4842b8f90bb9405a9deaf164b8ddfb80b42043d"
+  }
+}

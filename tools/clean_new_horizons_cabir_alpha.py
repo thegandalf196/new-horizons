@@ -29,6 +29,7 @@ ROWS = 2
 COLUMNS = 2
 CORE_ALPHA_THRESHOLD = 16
 DILATION_RADIUS = 2
+MAX_DILATION_RADIUS = 4
 MAX_REMOVED_ALPHA = 10
 BODY_HEIGHT = 60
 
@@ -123,10 +124,22 @@ def _alpha_edge_counts(alpha: Image.Image) -> dict[str, int]:
     }
 
 
-def clean_atlas(image: Image.Image, source_sha256: str | None = None) -> tuple[Image.Image, dict]:
-    """Return one alpha-cleaned copy and an auditable per-cell receipt."""
+def clean_atlas(
+    image: Image.Image,
+    source_sha256: str | None = None,
+    *,
+    dilation_radius: int = DILATION_RADIUS,
+) -> tuple[Image.Image, dict]:
+    """Return one alpha-cleaned copy and an auditable per-cell receipt.
+
+    The optional radius lets a separately pinned generated sheet preserve a
+    slightly broader antialias fringe without changing the established v2
+    default policy.
+    """
     if image.mode != "RGBA":
         raise ValueError("source atlas must contain a real RGBA channel")
+    if not isinstance(dilation_radius, int) or not 0 <= dilation_radius <= MAX_DILATION_RADIUS:
+        raise ValueError(f"dilation radius must be between 0 and {MAX_DILATION_RADIUS}")
 
     width, height = image.size
     animation_exporter._validate_dimensions(width, height, COLUMNS, ROWS)
@@ -147,7 +160,7 @@ def clean_atlas(image: Image.Image, source_sha256: str | None = None) -> tuple[I
             cell_alpha = cell.getchannel("A")
             cell_width, cell_height = cell.size
             seed, components = _connected_components(cell_alpha, CORE_ALPHA_THRESHOLD)
-            retained = _dilate_square(seed, cell_width, cell_height, DILATION_RADIUS)
+            retained = _dilate_square(seed, cell_width, cell_height, dilation_radius)
             alpha_values = cell_alpha.tobytes()
 
             removed_count = 0
@@ -218,7 +231,7 @@ def clean_atlas(image: Image.Image, source_sha256: str | None = None) -> tuple[I
         },
         "policy": {
             "seed": f"largest 8-connected alpha>={CORE_ALPHA_THRESHOLD} component in each source cell",
-            "dilation": f"{DILATION_RADIUS}-pixel square/Chebyshev-radius dilation within each cell",
+            "dilation": f"{dilation_radius}-pixel square/Chebyshev-radius dilation within each cell",
             "retainedPixels": "original RGBA bytes are preserved inside the dilated seed",
             "removedPixels": "outside the dilated seed, nonzero alpha is set to zero; RGB bytes are preserved",
             "maximumRemovedAlphaAllowed": MAX_REMOVED_ALPHA,
