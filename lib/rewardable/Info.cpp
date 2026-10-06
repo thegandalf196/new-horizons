@@ -107,6 +107,9 @@ void Rewardable::Info::init(const JsonNode & objectConfig, const std::string & o
 	loadString(parameters["onSelectMessage"], TextIdentifier(objectName, "onSelect"));
 	loadString(parameters["description"], TextIdentifier(objectName, "description"));
 	loadString(parameters["notVisitedTooltip"], TextIdentifier(objectName, "notVisitedText"));
+	// Keep the historical alias, but also register the identifier consumed by
+	// configureObject when it builds the authored not-visited tooltip.
+	loadString(parameters["notVisitedTooltip"], TextIdentifier(objectName, "notVisitedTooltip"));
 	loadString(parameters["visitedTooltip"], TextIdentifier(objectName, "visitedTooltip"));
 	loadString(parameters["onVisitedMessage"], TextIdentifier(objectName, "onVisited"));
 	loadString(parameters["onEmptyMessage"], TextIdentifier(objectName, "onEmpty"));

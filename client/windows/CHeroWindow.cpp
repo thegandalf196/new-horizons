@@ -13,6 +13,7 @@
 #include "NewHorizonsPerkBrowser.h"
 #include "NewHorizonsPerkIcons.h"
 #include "NewHorizonsPerkHelp.h"
+#include "NewHorizonsPerkAvailability.h"
 #include "HeroSkillOddsWindow.h"
 #include "wiki/WikiWindow.h"
 
@@ -93,6 +94,39 @@ bool useNewHorizonsHeroLayout(const CGHeroInstance * hero)
 		&& settings["general"]["enableUiEnhancements"].Bool()
 		&& !hero->getCommander() && hero->secSkills.size() <= 8
 		&& viewport.x >= 844 && viewport.y >= 668;
+}
+
+std::string shortTierReason(newHorizonsPerkAvailability::Reason reason)
+{
+	using newHorizonsPerkAvailability::Reason;
+	switch(reason)
+	{
+	case Reason::NONE:
+		return "Eligible";
+	case Reason::NO_CATALOGUE:
+		return "No data";
+	case Reason::SKILL_NOT_LEARNED:
+		return "Skill needed";
+	case Reason::PLANNED_INACTIVE:
+		return "Inactive";
+	case Reason::INSUFFICIENT_RANK:
+		return "Rank needed";
+	case Reason::EARLIER_TIER_MISSING:
+		return "Earlier tier";
+	case Reason::TIER_OCCUPIED:
+		return "Tier filled";
+	case Reason::PER_SKILL_CAP:
+		return "Per-Skill limit";
+	}
+	return "Unavailable";
+}
+
+std::string tierSlotText(const newHorizonsPerkAvailability::TierSlot & slot, std::string_view skillName)
+{
+	newHorizonsPerkAvailability::Evaluation evaluation{slot.status, slot.reason, slot.requiredRank};
+	return "Tier: " + newHorizonsPerkAvailability::tierName(slot.requiredRank)
+		+ "\nStatus: " + newHorizonsPerkAvailability::statusName(slot.status)
+		+ "\n" + newHorizonsPerkAvailability::explanation(evaluation, skillName);
 }
 }
 
@@ -404,9 +438,9 @@ void CHeroWindow::configureNewHorizonsLayout()
 			provisionalAbilityIcons[i].push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("NH_perk_neutral"), 0, 0, x + 2, y));
 			provisionalAbilityIcons[i].back()->disable();
 			const std::array cellLabels = {
-				std::make_shared<CLabel>(x + 48, y + 14, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 44),
-				std::make_shared<CLabel>(x + 48, y + 4, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 46),
-				std::make_shared<CLabel>(x + 48, y + 22, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 46)
+				std::make_shared<CLabel>(x + 48, y + 14, FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, "", 44),
+				std::make_shared<CLabel>(x + 48, y + 4, FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, "", 46),
+				std::make_shared<CLabel>(x + 48, y + 22, FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, "", 46)
 			};
 			for(const auto & label : cellLabels)
 			{
@@ -773,52 +807,54 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 				? curHero->secSkills[g + offset].first.toSkill()->getJsonKey() : std::string();
 			const auto skillDefinition = learnedSkill
 				? newHorizonsPerkHelp::skillDefinition(curHero, skillId) : std::nullopt;
-			std::vector<const newHorizonsHeroes::PerkDefinition *> learnedPerks;
-			if(skillDefinition)
-				for(const auto & selection : perkState.selected)
-					if(selection.skillId == skillId)
-						for(const auto & perk : skillDefinition->perks)
-							if(perk.id == selection.perkId)
-							{
-								learnedPerks.push_back(&perk);
-								break;
-							}
+			const int skillRank = learnedSkill ? curHero->getPerkSkillRank(skillId) : 0;
 			for(size_t ability = 0; ability < 3; ++ability)
 			{
 				const auto areaIndex = g * 3 + ability;
 				const auto & area = provisionalAbilityAreas.at(areaIndex);
 				const auto & cellLabels = provisionalAbilityLabels[g];
 				const auto labelIndex = ability * 3;
-				const bool hasPerk = ability < learnedPerks.size();
-				const auto iconKey = newHorizonsPerkIcon(hasPerk ? learnedPerks[ability]->id : std::string());
-				provisionalAbilityIcons[g][ability]->setAnimationPath(AnimationPath::builtin(iconKey), 0);
-				if(learnedSkill && hasPerk)
-					provisionalAbilityIcons[g][ability]->enable();
-				else
-					provisionalAbilityIcons[g][ability]->disable();
 				for(size_t label = 0; label < 3; ++label)
 				{
 					cellLabels.at(labelIndex + label)->setText("");
-					cellLabels.at(labelIndex + label)->setEnabled(learnedSkill && hasPerk);
+					cellLabels.at(labelIndex + label)->setEnabled(false);
 				}
 				area->text.clear();
 				area->hoverText.clear();
 				area->disable();
-				if(!learnedSkill || !hasPerk)
+				provisionalAbilityIcons[g][ability]->disable();
+				if(!learnedSkill || !skillDefinition)
 					continue;
-				area->enable();
 
-				if(hasPerk)
+				const auto slot = newHorizonsPerkAvailability::evaluateTier(
+					perkState, skillId, skillRank, static_cast<int>(ability + 1));
+				cellLabels.at(labelIndex)->setText(slot.selectedPerk
+					? slot.selectedPerk->name : shortTierReason(slot.reason));
+				cellLabels.at(labelIndex + 1)->setText(newHorizonsPerkAvailability::tierName(slot.requiredRank));
+				cellLabels.at(labelIndex + 2)->setText(newHorizonsPerkAvailability::statusName(slot.status));
+				for(size_t label = 0; label < 3; ++label)
+					cellLabels.at(labelIndex + label)->setEnabled(true);
+				if(slot.selectedPerk)
 				{
-					const auto * perk = learnedPerks[ability];
-					const auto description = newHorizonsPerkHelp::format(curHero, skillId,
-						perk->name, newHorizonsPerkHelp::tierName(perk->requiredRank), perk->description);
-					area->text = description;
-					area->hoverText = description;
-					cellLabels.at(labelIndex)->setText("");
-					cellLabels.at(labelIndex + 1)->setText(perk->name);
-					cellLabels.at(labelIndex + 2)->setText("Learned");
+					const auto & perk = *slot.selectedPerk;
+					const auto iconKey = newHorizonsPerkIcon(perk.id);
+					provisionalAbilityIcons[g][ability]->setAnimationPath(AnimationPath::builtin(iconKey), 0);
+					provisionalAbilityIcons[g][ability]->enable();
+					const auto details = newHorizonsPerkHelp::format(curHero, skillId,
+						perk.name, newHorizonsPerkAvailability::tierName(slot.requiredRank), perk.description)
+						+ "\n\n" + newHorizonsPerkAvailability::explanation(
+							{slot.status, slot.reason, slot.requiredRank}, skillDefinition->name);
+					area->text = details;
+					area->hoverText = details;
 				}
+				else
+				{
+					const auto details = tierSlotText(slot, skillDefinition->name)
+						+ "\nClick the Skill to browse its ten perks; browsing never acquires a perk.";
+					area->text = details;
+					area->hoverText = details;
+				}
+				area->enable();
 			}
 		}
 		if(curHero->secSkills.size() < g + offset + 1)

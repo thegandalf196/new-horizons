@@ -2,6 +2,22 @@
 
 Updated: 2026-10-06
 
+2026-10-06 required Hero/town UI coverage: existing Hero tier slots and the
+read-only perk browser now expose acquired/available/locked/unavailable state,
+ordered prerequisite reasons and planned-entry disclosure. Selected perks bind
+authored tiers, not selection order. Town rewardable building hover/help now
+shows authored per-hero training status for the current visitor or garrison
+hero. A localization registration mismatch surfaced in the first native run;
+the canonical notVisitedTooltip key is repaired with its historical alias kept.
+Client/native builds pass with12 jobs; seven focused cases pass7/7 in0.810s,
+zero skips/errors, including actual two-hero Brotherhood visits and saved-rule
+offer/selection consistency. Source guards, module drift and independent review
+pass. UP006/UP242 preserve initial/repaired receipts and runner identity.
+Native rendered fit, translations, live visitor switching and defensive
+out-of-range presentation inputs remain Phase2; no playable promotion claimed.
+Arcane Reservoir weekly availability remains a separate required feedback path.
+This adds two UI paths, not identities: counts stay61/67 spells and225/310 perks.
+
 2026-10-06 Berserk lifecycle coverage: accepted saved-v3 forced WALK/NO_ACTION
 now expires only the Berserk spell-origin control marker through normal effect
 transport. Legacy and unrelated markers remain unchanged. Six detached AI

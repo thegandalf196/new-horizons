@@ -27,6 +27,7 @@
 #include "../../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../../lib/texts/CGeneralTextHandler.h"
 #include "../../../lib/CPlayerState.h"
+#include "../../../client/windows/NewHorizonsBuildingVisitHelp.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/processors/NewTurnProcessor.h"
 #include "../../mock/GameHandlerTestServer.h"
@@ -321,6 +322,60 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, ArcaneReservoirAllowsExactlyOneHer
 	EXPECT_EQ(secondHero->getBufferSpellPoints(), 50);
 	EXPECT_EQ(secondHero->getManaAvailable(), secondManaLimit - 2 + 50);
 	EXPECT_TRUE(reservoir->wasVisited(secondHero));
+}
+
+TEST_F(NewHorizonsUniqueBuildingTrainingTest, BrotherhoodVisitHelpTracksActualPerHeroTraining)
+{
+	const auto castle = faction("core:castle");
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(48, false).playerActive(PlayerColor(0))
+		.town({20, 20, 0}, castle, PlayerColor(0))
+		.hero({5, 5, 0}, heroType("core:christian"), PlayerColor(0))
+		.hero({7, 5, 0}, heroType("core:tyris"), PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	auto * town = findFirst<CGTownInstance>();
+	ASSERT_NE(town, nullptr);
+	town->addBuilding(BuildingID::SPECIAL_3);
+	ASSERT_TRUE(town->rewardableBuildings.contains(BuildingID::SPECIAL_3));
+	const auto & brotherhood = *town->rewardableBuildings.at(BuildingID::SPECIAL_3);
+	ASSERT_EQ(brotherhood.configuration.visitMode, Rewardable::VISIT_HERO);
+
+	auto * firstHero = findHeroAt({5, 5, 0});
+	auto * secondHero = findHeroAt({7, 5, 0});
+	ASSERT_NE(firstHero, nullptr);
+	ASSERT_NE(secondHero, nullptr);
+	ASSERT_NE(firstHero, secondHero);
+
+	const auto visitText = [&brotherhood](const CGHeroInstance * hero)
+	{
+		return newHorizonsBuildingVisitHelp::heroVisitStatus(brotherhood, hero)
+			.toString(LIBRARY->generaltexth.get());
+	};
+	EXPECT_TRUE(newHorizonsBuildingVisitHelp::heroVisitStatus(brotherhood, nullptr).empty());
+	EXPECT_EQ(visitText(firstHero), "Training available for this hero.");
+	EXPECT_EQ(visitText(secondHero), "Training available for this hero.");
+
+	const int firstLeadershipBefore = firstHero->valOfBonuses(BonusType::LEADERSHIP);
+	const int secondLeadershipBefore = secondHero->valOfBonuses(BonusType::LEADERSHIP);
+	GameHandlerTestServer server(gameState(), PlayerColor(0));
+	CGameHandler gameHandler(server, gameState());
+	gameHandler.heroVisitCastle(town, firstHero);
+
+	EXPECT_TRUE(brotherhood.wasVisited(firstHero));
+	EXPECT_FALSE(brotherhood.wasVisited(secondHero));
+	EXPECT_EQ(visitText(firstHero), "This hero has already trained here.");
+	EXPECT_EQ(visitText(secondHero), "Training available for this hero.");
+	EXPECT_EQ(firstHero->valOfBonuses(BonusType::LEADERSHIP), firstLeadershipBefore + 100);
+
+	gameHandler.stopHeroVisitCastle(town, firstHero);
+	gameHandler.heroVisitCastle(town, secondHero);
+
+	EXPECT_TRUE(brotherhood.wasVisited(firstHero));
+	EXPECT_TRUE(brotherhood.wasVisited(secondHero));
+	EXPECT_EQ(visitText(firstHero), "This hero has already trained here.");
+	EXPECT_EQ(visitText(secondHero), "This hero has already trained here.");
+	EXPECT_EQ(secondHero->valOfBonuses(BonusType::LEADERSHIP), secondLeadershipBefore + 100);
 }
 
 TEST_F(NewHorizonsUniqueBuildingTrainingTest, WeeklySpecialRumorFallsBackWhenNoPlayersCanBeRanked)

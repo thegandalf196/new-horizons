@@ -2,6 +2,18 @@
 
 ## Purpose
 
+### 2026-10-06 — Authored rewardable pre-visit tooltip key
+
+The first required training-state UI native run passed six perk cases but failed
+the Brotherhood case: available text resolved to an internal localization key.
+Rewardable::Info registered authored notVisitedTooltip under notVisitedText,
+while configuration consumed notVisitedTooltip. Registering the canonical key
+alongside the historical alias repairs readable output without changing reward
+rules or explicit @references. Repaired build and7/7 focused cases pass, zero
+skips/errors. Initial/repaired evidence stays separate under ignored
+`build/nh-development-ui.AL3Xx2lM/`. Do not weaken text assertions to accept keys;
+trace registration and consumption identities when exposing authored messages.
+
 ### 2026-10-06 — Chain Lightning preview rendering include
 
 The first frozen client build failed because the new hop-label renderer used

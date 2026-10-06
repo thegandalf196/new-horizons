@@ -16,6 +16,7 @@
 #include "GUIClasses.h"
 #include "QuickRecruitmentWindow.h"
 #include "CCreatureWindow.h"
+#include "NewHorizonsBuildingVisitHelp.h"
 #include "NewHorizonsCreatureCategoryUI.h"
 
 #include "../CPlayerInterface.h"
@@ -570,6 +571,27 @@ static std::string getAstrologyWeekPreview(const CGTownInstance * town)
 	return result;
 }
 
+static MetaString getNewHorizonsBuildingVisitStatus(const CGTownInstance * town, BuildingID building)
+{
+	if(!town || !town->getTown() || !town->hasBuilt(building)
+		|| !GAME || !GAME->interface() || !GAME->interface()->cb)
+		return {};
+
+	const auto & callback = static_cast<const IGameInfoCallback &>(*GAME->interface()->cb);
+	if(!newHorizonsMagic::rulesActive(callback.getMagicRules()))
+		return {};
+
+	const auto found = town->rewardableBuildings.find(building);
+	if(found == town->rewardableBuildings.end() || !found->second)
+		return {};
+
+	const CGHeroInstance * hero = town->getVisitingHero();
+	if(!hero)
+		hero = town->getGarrisonHero();
+
+	return newHorizonsBuildingVisitHelp::heroVisitStatus(*found->second, hero);
+}
+
 struct UpgradableSlotsResult
 {
 	bool isCreatureUpgradePossible;
@@ -791,6 +813,10 @@ void CBuildingRect::showPopupWindow(const Point & cursorPosition)
 	if (!bid.isDwelling())
 	{
 		std::string description = bld->getDescriptionTranslated();
+		const auto visitStatus = getNewHorizonsBuildingVisitStatus(town, bid);
+		if(!visitStatus.empty())
+			description += "\n\n" + visitStatus.toString(&GAME->translator());
+
 		if(town->getFactionID() == FactionID::TOWER && bld->bid == BuildingID::SPECIAL_2
 			&& newHorizonsMagic::rulesActive(static_cast<const IGameInfoCallback &>(*GAME->interface()->cb).getMagicRules()))
 		{
@@ -878,6 +904,10 @@ std::string CBuildingRect::getSubtitle()//hover text for building
 	if (!bid.isDwelling())//non-dwellings - only building name
 	{
 		std::string result = town->getTown()->buildings.at(getBuilding()->bid)->getNameTranslated();
+		const auto visitStatus = getNewHorizonsBuildingVisitStatus(town, bid);
+		if(!visitStatus.empty())
+			result += " - " + visitStatus.toString(&GAME->translator());
+
 		if(town->getFactionID() == FactionID::TOWER && getBuilding()->bid == BuildingID::SPECIAL_2
 			&& newHorizonsMagic::rulesActive(static_cast<const IGameInfoCallback &>(*GAME->interface()->cb).getMagicRules()))
 		{
