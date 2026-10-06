@@ -2,6 +2,22 @@
 
 Updated: 2026-10-06
 
+Continuation selection audit (bounded, not completion): no new principal-path
+omission demonstrated in Brotherhood's inherited Morale, Cover of Darkness's
+daily hide, Castle Gate/Arcane Reservoir/Portal minimum-AI paths, or active
+Focus Magic/Arcane Breach status and ranged-hover feedback. Their acceptance
+boundaries are not missing implementations. Field Instructor's UI depends on
+the still-planned cohort rule under UP127. Lighthouse, Skeleton Transformer
+and Glyphs of Fear retain their existing design holds. Identity counts remain
+unchanged; proceed with the queued rougher Cabir isolated-preview delivery,
+without counting static artwork as completed creature animation coverage.
+UP253's rougher v2 now has a separate current-source static preview launcher:
+five exporter checks, exact resource/overlay checks, independent review and
+private8-second headless load through AI day3 pass (deliberate timeout).
+The old preview and normal game are retained. Full base/upgraded animations,
+portraits, rendered acceptance and final approval remain absent; this adds no
+spell, perk or completed-creature identity coverage.
+
 Phase1 resumption audit: current ledger remains225/310 active perks,
 61/67 combat identities and8/8 Orders;5/5 Adventure acquisition is not
 effect completion. Outstanding identities/clauses retain recorded design

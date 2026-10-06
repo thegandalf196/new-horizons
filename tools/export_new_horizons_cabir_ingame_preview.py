@@ -16,6 +16,10 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets/new-horizons/creatures/cabir/v1/previews/standing-preview.png"
 APPROVED_SOURCE_SHA256 = "11639ea1edfa53012299db76f97ae4bd1a0b432ac4062f84f89ef762a7ad4e83"
+V2_SOURCE = ROOT / "assets/new-horizons/creatures/cabir/v2/previews/standing-preview.png"
+V2_SOURCE_SHA256 = "0bdaf72ecab7b53ba892176fc3e83ef1ba22cb7d9281587d71813f3de40c98e2"
+V2_MASTER = ROOT / "assets/new-horizons/creatures/cabir/v2/standing-master.png"
+V2_MASTER_SHA256 = "a9f7e4da6703bb64757d724e714a590daf6ba5d84380dd9e3e8cec25ade10c13"
 LIVE_MODULE = ROOT / "Mods/new-horizons"
 PROTECTED_ASSETS = ROOT / "assets/new-horizons"
 CREATURES_PATH = Path("Content/config/creatures/cabirPreview.json")
@@ -24,8 +28,31 @@ ANIMATION_DIRECTORY = Path("Content/sprites") / ANIMATION_NAME
 ANIMATION_DESCRIPTOR = Path("Content/sprites") / f"{ANIMATION_NAME}.json"
 NATIVE_IMAGE = ANIMATION_DIRECTORY / "00.png"
 LOGICAL_CANVAS = (450, 400)
-SOURCE_PLACEMENT = (163, 210)
-EXPECTED_ALPHA_BOUNDS = (6, 1, 61, 58)
+SOURCE_PLACEMENT = (163, 210)  # v1; retained for existing callers and default behavior.
+EXPECTED_ALPHA_BOUNDS = (6, 1, 61, 58)  # v1.
+VERSION_SOURCES = {
+    "v1": {
+        "source": SOURCE,
+        "source_sha256": APPROVED_SOURCE_SHA256,
+        "master": None,
+        "master_sha256": None,
+        "alpha_bounds": EXPECTED_ALPHA_BOUNDS,
+        "placement": SOURCE_PLACEMENT,
+        "canvas_bounds": (169, 211, 224, 268),
+        "status": "user-approved v1 base Cabir standing sprite",
+    },
+    "v2": {
+        "source": V2_SOURCE,
+        "source_sha256": V2_SOURCE_SHA256,
+        "master": V2_MASTER,
+        "master_sha256": V2_MASTER_SHA256,
+        "alpha_bounds": (5, 0, 60, 60),
+        # Keep the same visual center (x=196.5) and feet baseline (y=268) as v1.
+        "placement": (164, 208),
+        "canvas_bounds": (169, 208, 224, 268),
+        "status": "unapproved rougher/darker v2 draft for static preview only",
+    },
+}
 ALL_CREATURE_GROUPS = (
     (0, "MOVING"),
     (1, "MOUSEON"),
@@ -78,22 +105,37 @@ def validate_detached_path(output_dir: Path) -> Path:
     return resolved
 
 
-def create_native_frame() -> Image.Image:
-    source_bytes = SOURCE.read_bytes()
-    if hashlib.sha256(source_bytes).hexdigest() != APPROVED_SOURCE_SHA256:
-        raise ValueError("approved Cabir standing preview hash changed; review before exporting")
+def source_spec(version: str) -> dict:
+    try:
+        return VERSION_SOURCES[version]
+    except KeyError as error:
+        raise ValueError(f"unknown Cabir preview version: {version}") from error
 
-    with Image.open(SOURCE) as opened:
+
+def _verify_pinned_file(path: Path, expected_sha256: str, label: str) -> None:
+    if hashlib.sha256(path.read_bytes()).hexdigest() != expected_sha256:
+        raise ValueError(f"pinned Cabir {label} hash changed; review before exporting")
+
+
+def create_native_frame(version: str = "v1") -> Image.Image:
+    spec = source_spec(version)
+    if spec["master"] is not None:
+        _verify_pinned_file(spec["master"], spec["master_sha256"], f"{version} master")
+
+    source = spec["source"]
+    _verify_pinned_file(source, spec["source_sha256"], f"{version} standing preview")
+
+    with Image.open(source) as opened:
         sprite = opened.convert("RGBA")
     if sprite.size != (64, 60):
         raise ValueError(f"approved Cabir preview dimensions changed: {sprite.size}")
-    if sprite.getchannel("A").getbbox() != EXPECTED_ALPHA_BOUNDS:
-        raise ValueError("approved Cabir preview alpha bounds changed; review anchor before exporting")
+    if sprite.getchannel("A").getbbox() != spec["alpha_bounds"]:
+        raise ValueError(f"Cabir {version} preview alpha bounds changed; review anchor before exporting")
 
     canvas = Image.new("RGBA", LOGICAL_CANVAS, (0, 0, 0, 0))
-    canvas.alpha_composite(sprite, SOURCE_PLACEMENT)
-    if canvas.getchannel("A").getbbox() != (169, 211, 224, 268):
-        raise ValueError("Cabir preview no longer matches the approved center and feet baseline")
+    canvas.alpha_composite(sprite, spec["placement"])
+    if canvas.getchannel("A").getbbox() != spec["canvas_bounds"]:
+        raise ValueError(f"Cabir {version} preview no longer matches its pinned center and feet baseline")
     return canvas
 
 
@@ -114,12 +156,40 @@ def expected_animation_descriptor() -> dict:
     }
 
 
-def write_bundle(output_dir: Path) -> Path:
+def _preview_readme(version: str) -> str:
+    spec = source_spec(version)
+    bounds = spec["canvas_bounds"]
+    placement = spec["placement"]
+    return (
+        "# Temporary Cabir in-game preview overlay\n\n"
+        "This is a detached graphics-only overlay for a disposable copy of the "
+        "New Horizons module. Do not copy it into the live module. In that "
+        "isolated module copy, add `config/creatures/cabirPreview.json` to the "
+        "module's `creatures` list. The original `core:gremlin` and "
+        "`core:masterGremlin` identities, stats, abilities, recruitment, sounds, "
+        "and gameplay rules are unchanged. Names remain the existing Gremlin names.\n\n"
+        f"Selected art: {spec['status']}. Only this detached module copy receives "
+        "the temporary animation binding; the live/normal module stays untouched. "
+        "This draft is not approved for normal New Horizons bindings or production "
+        "registration.\n\n"
+        "Every one of the 32 declared creature animation groups points to the same "
+        "single standing sprite for both Gremlin identities. This is static only: "
+        "the death/corpse pose remains standing, and movement, attacks, shooting, "
+        "turns, and transitions do not animate. The Master Gremlin's existing "
+        "projectile and sounds are not replaced. This is not a complete creature "
+        "animation set or runtime acceptance.\n\n"
+        f"The pinned 64x60 native preview is placed at {placement} on the "
+        f"450x400 logical battle canvas. Its visible alpha bounds are {bounds}; "
+        "the subject remains centered at x=196.5 with feet at baseline y=268.\n"
+    )
+
+
+def write_bundle(output_dir: Path, version: str = "v1") -> Path:
     output_dir = validate_detached_path(output_dir)
     if output_dir.exists() or output_dir.is_symlink():
         raise FileExistsError(f"output directory must be new: {output_dir}")
 
-    native_frame = create_native_frame()
+    native_frame = create_native_frame(version)
     creatures_path = output_dir / CREATURES_PATH
     descriptor_path = output_dir / ANIMATION_DESCRIPTOR
     frame_path = output_dir / NATIVE_IMAGE
@@ -130,31 +200,11 @@ def write_bundle(output_dir: Path) -> Path:
     creatures_path.write_text(json.dumps(expected_patch(), indent=2) + "\n", encoding="utf-8")
     descriptor_path.write_text(json.dumps(expected_animation_descriptor(), indent=2) + "\n", encoding="utf-8")
     native_frame.save(frame_path)
-    (output_dir / "PREVIEW_README.md").write_text(
-        "# Temporary Cabir in-game preview overlay\n\n"
-        "This is a detached graphics-only overlay for a disposable copy of the "
-        "New Horizons module. Do not copy it into the live module. In that "
-        "isolated module copy, add `config/creatures/cabirPreview.json` to the "
-        "module's `creatures` list. The original `core:gremlin` and "
-        "`core:masterGremlin` identities, stats, abilities, recruitment, sounds, "
-        "and gameplay rules are unchanged. Names remain the existing Gremlin names.\n\n"
-        "The approved base Cabir standing image is used for both identities. "
-        "Every creature animation group points to that same one-frame sprite, "
-        "so no vanilla transition frames are mixed into the preview. This is "
-        "temporary and non-animated: the death/corpse pose remains standing, "
-        "and movement, attacks, shooting, and turns do not animate. The Master "
-        "Gremlin's existing projectile and sounds are not replaced. This is not "
-        "a complete creature animation set or runtime acceptance.\n\n"
-        "The PNG is the unchanged 64x60 approved preview placed at (163,210) on "
-        "the 450x400 logical battle canvas. Its visible alpha bounds are "
-        "(169,211)-(224,268), centering the subject at x=196.5 with feet at "
-        "baseline y=268.\n",
-        encoding="utf-8",
-    )
+    (output_dir / "PREVIEW_README.md").write_text(_preview_readme(version), encoding="utf-8")
     return output_dir
 
 
-def verify_bundle(output_dir: Path) -> Path:
+def verify_bundle(output_dir: Path, version: str = "v1") -> Path:
     output_dir = validate_detached_path(output_dir)
     if not output_dir.is_dir():
         raise FileNotFoundError(f"preview bundle directory does not exist: {output_dir}")
@@ -169,16 +219,17 @@ def verify_bundle(output_dir: Path) -> Path:
 
     with Image.open(frame_path) as opened:
         frame = opened.convert("RGBA")
-    if frame.size != LOGICAL_CANVAS or frame.getchannel("A").getbbox() != (169, 211, 224, 268):
+    if frame.size != LOGICAL_CANVAS or frame.getchannel("A").getbbox() != source_spec(version)["canvas_bounds"]:
         raise ValueError("native Cabir preview canvas or anchor does not match the expected geometry")
-    if frame.tobytes() != create_native_frame().tobytes():
-        raise ValueError("native Cabir preview pixels differ from the approved sprite placement")
+    if frame.tobytes() != create_native_frame(version).tobytes():
+        raise ValueError("native Cabir preview pixels differ from the pinned sprite placement")
     return output_dir
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--version", choices=tuple(VERSION_SOURCES), default="v1")
     parser.add_argument(
         "--verify-only",
         action="store_true",
@@ -187,10 +238,10 @@ def main() -> None:
     args = parser.parse_args()
 
     try:
-        output_dir = verify_bundle(args.output_dir) if args.verify_only else write_bundle(args.output_dir)
+        output_dir = verify_bundle(args.output_dir, args.version) if args.verify_only else write_bundle(args.output_dir, args.version)
     except (FileExistsError, FileNotFoundError, ValueError) as error:
         parser.error(str(error))
-    print(f"{'Verified' if args.verify_only else 'Created'} detached Cabir preview bundle: {output_dir}")
+    print(f"{'Verified' if args.verify_only else 'Created'} detached Cabir {args.version} preview bundle: {output_dir}")
 
 
 if __name__ == "__main__":

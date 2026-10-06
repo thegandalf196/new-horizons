@@ -3,7 +3,12 @@
 UP253 Cabir rougher standing revision,2026-10-06: **Provisional** v2 master,
 exact prompt and native/4x comparison are retained under
 `assets/new-horizons/creatures/cabir/v2/` and shown to the user. Same design,
-darker/coarser treatment. Not installed; full animation/portrait work remains
+darker/coarser treatment. Installed only in a separate static preview under
+ignored `build/nh-cabir-ingame-preview-v2.0iKT62/`, using source4a8729506's
+matching immutable resources/client and its own profile. Default game and
+earlier v1 preview are unchanged. Exact pixels/registration, five focused
+checks, independent review and bounded private headless load pass; rendered
+appearance and user approval remain pending. Full animation/portrait work remains
 **Not done**.
 
 UP251/252 portrait revisions,2026-10-06: **Not done**. New Golem v2 masks
