@@ -35,6 +35,8 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
             "NH_academy_masterGremlin_icon_large.png",
             "NH_academy_ironGolem_icon_large.png",
             "NH_academy_stoneGolem_icon_large.png",
+            "NH_academy_mage_icon_large.png",
+            "NH_academy_archMage_icon_large.png",
         )
         decoded = []
         for path in backdrop_paths:
@@ -44,7 +46,7 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
                 decoded.append(image.tobytes())
         self.assertTrue(all(pixels == decoded[0] for pixels in decoded[1:]))
 
-        for creature in ("gremlin", "masterGremlin", "ironGolem", "stoneGolem"):
+        for creature in ("gremlin", "masterGremlin", "ironGolem", "stoneGolem", "mage", "archMage"):
             runtime = IMAGE_ROOT / f"NH_academy_{creature}_portrait_mask.png"
             source = ROOT / f"assets/new-horizons/academy/portrait-revisions/v1/mattes/{creature}.png"
             self.assertEqual(runtime.read_bytes(), source.read_bytes())
@@ -56,6 +58,8 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
             "core:masterGremlin": "NH_academy_masterGremlin_icon_large.png",
             "core:ironGolem": "NH_academy_ironGolem_icon_large.png",
             "core:stoneGolem": "NH_academy_stoneGolem_icon_large.png",
+            "core:mage": "NH_academy_mage_icon_large.png",
+            "core:archMage": "NH_academy_archMage_icon_large.png",
         }
         for creature, image in expected.items():
             with self.subTest(creature=creature):
@@ -73,9 +77,13 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
         core = parse_jsonc((ROOT / "config/creatures/tower.json").read_text())
         self.assertEqual(core["ironGolem"]["index"], 32)
         self.assertEqual(core["stoneGolem"]["index"], 33)
+        self.assertEqual(core["mage"]["index"], 34)
+        self.assertEqual(core["archMage"]["index"], 35)
         fixture = (ROOT / "client/tests/AcademyBuiltIconRuntimeTest.cpp").read_text(encoding="utf-8")
         self.assertIn('{"ironGolem", "NH_academy_ironGolem_icon_large.png", "NH_academy_ironGolem_portrait_mask.png", 32, 34}', fixture)
         self.assertIn('{"stoneGolem", "NH_academy_stoneGolem_icon_large.png", "NH_academy_stoneGolem_portrait_mask.png", 33, 35}', fixture)
+        self.assertIn('{"mage", "NH_academy_mage_icon_large.png", "NH_academy_mage_portrait_mask.png", 34, 36}', fixture)
+        self.assertIn('{"archMage", "NH_academy_archMage_icon_large.png", "NH_academy_archMage_portrait_mask.png", 35, 37}', fixture)
         config = (ROOT / "Mods/new-horizons/Content/config/creatures/tower.json").read_text(encoding="utf-8")
         self.assertIn("frame 34 is internal ironGolem ID 32; frame 35 is stoneGolem ID 33", config)
 

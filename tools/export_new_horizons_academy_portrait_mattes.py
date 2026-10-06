@@ -52,6 +52,14 @@ CREATURES = {
         "master": REVISION / "masters/archMage-matte.png",
         "mask": REVISION / "mattes/archMage.png",
     },
+    "genie": {
+        "master": REVISION / "masters/genie-matte.png",
+        "mask": REVISION / "mattes/genie.png",
+    },
+    "masterGenie": {
+        "master": REVISION / "masters/masterGenie-matte.png",
+        "mask": REVISION / "mattes/masterGenie.png",
+    },
 }
 
 

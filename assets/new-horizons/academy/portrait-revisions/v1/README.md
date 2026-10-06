@@ -40,9 +40,14 @@ The two Golem mattes pass root native/8× review provisionally and now have sour
 registration through the same compositor. Historical internal identifiers are
 reversed: ironGolem ID32 uses frame34 (displayed Stone Golem), and stoneGolem
 ID33 uses frame35 (displayed Iron Golem). Preserve those identifiers.
-Mage and Arch Mage corrected mattes are reproducible drafts awaiting root native
-composition approval; Genie and Master Genie masters are unexported drafts.
-None of those four drafts is registered as a runtime portrait. Remaining portraits
+Mage and Arch Mage corrected mattes pass root native/8× composition review
+provisionally. Independent pixel comparison confirms the previews use the current
+masks and runtime backdrop: the narrow upper-left spire visible after composition
+belongs to the authored desert scene, not retained Tower snow. Both now have
+runtime source registration, with verification tracked in the queue.
+Genie and Master Genie masks and masters remain unapproved drafts, not runtime
+portraits. Mechanical reductions and private native/8× comparisons exist;
+review luminous contours and small internal gaps before approval. Remaining portraits
 must be reviewed independently; no complete-family approval is implied.
 
 The runtime exporter `tools/export_new_horizons_academy_gremlin_portraits.py`
@@ -51,7 +56,7 @@ It crops the backdrop at `(0,10,100,120)`, reduces it to58×64 with LANCZOS and
 copies the masks byte-for-byte. The large-icon fallback PNGs deliberately contain
 only this backdrop, never purchaser creature pixels. In ordinary runtime,
 AssetGenerator prefers the generated composition and reads the external raw
-TWCRPORT frames30/31/34/35 through the masks. No small-icon overrides are installed.
+TWCRPORT frames30/31/34/35/36/37 through the masks. No small-icon overrides are installed.
 Build and actual scaled-consumer verification are recorded separately in the queue.
 
 ## Exact correction prompt

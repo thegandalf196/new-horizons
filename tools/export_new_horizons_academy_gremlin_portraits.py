@@ -21,6 +21,8 @@ BACKDROP_EXPORTS = (
     IMAGE_ROOT / "NH_academy_masterGremlin_icon_large.png",
     IMAGE_ROOT / "NH_academy_ironGolem_icon_large.png",
     IMAGE_ROOT / "NH_academy_stoneGolem_icon_large.png",
+    IMAGE_ROOT / "NH_academy_mage_icon_large.png",
+    IMAGE_ROOT / "NH_academy_archMage_icon_large.png",
 )
 MASKS = {
     "gremlin": (
@@ -38,6 +40,14 @@ MASKS = {
     "stoneGolem": (
         ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/stoneGolem.png",
         IMAGE_ROOT / "NH_academy_stoneGolem_portrait_mask.png",
+    ),
+    "mage": (
+        ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/mage.png",
+        IMAGE_ROOT / "NH_academy_mage_portrait_mask.png",
+    ),
+    "archMage": (
+        ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/archMage.png",
+        IMAGE_ROOT / "NH_academy_archMage_portrait_mask.png",
     ),
 }
 # Pillow's right/bottom-excluded crop rectangle from the approved composition.

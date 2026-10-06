@@ -34,6 +34,9 @@
 		"cost": {
 			"gold": 600
 		},
+		"graphics": {
+			"iconLarge": "NH_academy_mage_icon_large.png"
+		},
 		"speed": 5,
 		"initiative": 5,
 		"abilities": {
@@ -54,6 +57,9 @@
 		"hitPoints": 35,
 		"shots": 20,
 		"growth": 3,
+		"graphics": {
+			"iconLarge": "NH_academy_archMage_icon_large.png"
+		},
 		"cost": {
 			"gold": 800
 		},
