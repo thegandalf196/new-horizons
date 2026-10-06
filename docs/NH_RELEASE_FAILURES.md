@@ -2,6 +2,48 @@
 
 ## Purpose
 
+### 2026-10-06 — Incoming-element packet lambda capture
+
+Build18091 and single-object reproduction60457 fail in SetStackEffect.h: a
+capture repair was applied to containsNoQuarter instead of containsBonusType.
+The former referred to an absent type; the latter still failed to capture it.
+Root restores NoQuarter's captureless lambda and adds the value capture to the
+specific type-filter lambda. Inspect contextual diffs, not an unqualified first
+matching lambda replacement. Retry and focused native acceptance remain pending.
+Retry96133 reaches the new native test object, then fails because its active-mod
+check dereferences forward-declared CModHandler without its defining header.
+Root adds the explicit CModHandler include; a fixture's transitive includes are
+not an API guarantee. Next build remains pending at this entry.
+Subsequent builds35239 and93239 succeed. Activated focused execution runs nine
+cases with zero skips: the five incoming-element cases and Magi melee-penalty
+case pass, while all three Repair cases fail. Eligible targets are rejected and
+the health forecast is zero. Keep the repair assertions intact and trace actual
+Lua/content execution before claiming the ability works. Receipt: ignored
+UP253-cabir-mechanics-native.log/XML under the Linux build root.
+Trace identifies a fixture mismatch: injected units use the summoned placeholder
+slot even when UnitInfo.summoned is false. Repair intentionally rejects that
+slot. Replace those fixtures with original army-backed stacks; do not remove
+the production exclusion. Fixture rebuild70255 then catches a const-pointer
+return mismatch in the new lookup. Use the authoritative mutable stack lookup,
+and keep unusable-remains controls friendly so ownership rejection cannot mask
+the provenance assertion. Separate adjacent creature-spell controls pass3/3
+for Puppet Master ownership, Sanctuary removal and Hold Fast continuation.
+Fixture retry97219 builds. Native retry passes9/10: real healing, permanent
+restoration, forecast parity, four-species targeting, friendly unusable-remains
+and phantom healing all work. The remaining failure is production: an exhausted
+creature cast request still resolves because target mechanics do not enforce
+CASTS availability. Root adds the existing stack.canCast() check before random
+spell preparation/StartAction, covering charges, suppression and per-activation
+casting restrictions without a Cabir-specific branch. Keep the exhausted-request
+assertions; rebuild and rerun remain required.
+Build6174 succeeds. Its first combined13-case run passes11; two pre-existing
+synthetic spellcaster fixtures lack CASTS. Add the explicit allowance to those
+fixtures and assert cached total refresh; do not weaken the authoritative gate.
+Fixture build31314 succeeds; final activated13-case run passes13/13 in3.478s,
+zero skips. Four content guards and module drift also pass. Actual Repair and
+the three adjacent creature-action controls are verified; no GUI/playable-art
+acceptance is inferred. Final receipt: UP253-cabir-final-native.log/XML.
+
 ### 2026-10-06 — Split-owner geometry lambda capture
 
 UP261 build90062 fails because ownerMarkerY is moved from inside a captureless

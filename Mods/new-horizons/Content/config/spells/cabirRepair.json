@@ -1,0 +1,40 @@
+{
+	"cabirRepair": {
+		"name": "Repair",
+		"type": "ability",
+		"school": {},
+		"level": 0,
+		"power": 0,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "CREATURE",
+		"graphics": {},
+		"animation": {
+			"affect": [{ "defName": "C01SPE0", "transparency": 0.5 }]
+		},
+		"sounds": {
+			"cast": "REGENER"
+		},
+		"levels": {
+			"base": {
+				"range": "0",
+				"description": "Repair one friendly surviving Stone Gargoyle, Obsidian Gargoyle, Iron Golem or Stone Golem stack. It heals and permanently restores eligible casualties for 10 HP per Cabir Master.",
+				"cost": 0,
+				"power": 0,
+				"targetModifier": { "smart": true },
+				"battleEffects": {
+					"repair": { "type": "new-horizons:cabirRepair" }
+				}
+			},
+			"none": {},
+			"basic": {},
+			"advanced": {},
+			"expert": {}
+		},
+		"flags": {
+			"positive": true,
+			"nonMagical": true,
+			"special": true
+		}
+	}
+}

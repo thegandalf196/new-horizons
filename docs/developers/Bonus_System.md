@@ -9,6 +9,14 @@ The New Horizons Orbs use value 25. Untagged spells and physical damage do not
 qualify; no School affinity supplies a fallback element. Equipment removal uses
 ordinary bonus-tree cache invalidation, without a scan or new usage state.
 
+`ELEMENTAL_SPELL_DAMAGE_RECEIVED` is the separate recipient-side modifier, using
+the same explicit element subtypes. Matching signed percentage-point values add:
+`-50` halves incoming Fire damage and `25` increases incoming Water damage to
+125%. The summed multiplier has a zero lower bound and saturating wide arithmetic.
+It applies once after ordinary magical defenses and outgoing damage bonuses,
+but before the per-creature damage cap. Untagged, nonmagical and nondamage spells
+(including healing) are unchanged. No Magic School supplies an implicit element.
+
 ## Explicit status tags
 
 `Bonus::statusTags` records opt-in status classification. `DEBUFF` means the

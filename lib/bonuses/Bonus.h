@@ -169,6 +169,9 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 		if(h.saving && type == BonusType::ELEMENTAL_SPELL_DAMAGE
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_ELEMENTAL_SPELL_DAMAGE))
 			throw std::runtime_error("Cannot discard elemental spell damage state");
+		if(h.saving && type == BonusType::ELEMENTAL_SPELL_DAMAGE_RECEIVED
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_INCOMING_ELEMENTAL_SPELL_DAMAGE))
+			throw std::runtime_error("Cannot discard incoming elemental spell damage state");
 		if(h.saving && (duration & BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION) != 0
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CREATURE_ACTIVATION_DURATION))
 			throw std::runtime_error("Cannot discard New Horizons creature activation bonus duration");

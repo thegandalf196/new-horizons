@@ -84,20 +84,26 @@ struct DLL_LINKAGE SetStackEffect : public CPackForClient
 			&& (containsStatusMetadata(toAdd) || containsStatusMetadata(toUpdate)
 				|| containsStatusMetadata(toRemove)))
 			throw std::runtime_error("Cannot discard bonus status metadata in stack-effect packet");
-		const auto containsElementalDamage = [](const auto & effects)
+		const auto containsBonusType = [](const auto & effects, BonusType type)
 		{
-			return std::ranges::any_of(effects, [](const auto & stackEffects)
+			return std::ranges::any_of(effects, [type](const auto & stackEffects)
 			{
-				return std::ranges::any_of(stackEffects.second, [](const Bonus & bonus)
+				return std::ranges::any_of(stackEffects.second, [type](const Bonus & bonus)
 				{
-					return bonus.type == BonusType::ELEMENTAL_SPELL_DAMAGE;
+					return bonus.type == type;
 				});
 			});
 		};
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_ELEMENTAL_SPELL_DAMAGE)
-			&& (containsElementalDamage(toAdd) || containsElementalDamage(toUpdate)
-				|| containsElementalDamage(toRemove)))
+			&& (containsBonusType(toAdd, BonusType::ELEMENTAL_SPELL_DAMAGE)
+				|| containsBonusType(toUpdate, BonusType::ELEMENTAL_SPELL_DAMAGE)
+				|| containsBonusType(toRemove, BonusType::ELEMENTAL_SPELL_DAMAGE)))
 			throw std::runtime_error("Cannot discard elemental spell damage in stack-effect packet");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_INCOMING_ELEMENTAL_SPELL_DAMAGE)
+			&& (containsBonusType(toAdd, BonusType::ELEMENTAL_SPELL_DAMAGE_RECEIVED)
+				|| containsBonusType(toUpdate, BonusType::ELEMENTAL_SPELL_DAMAGE_RECEIVED)
+				|| containsBonusType(toRemove, BonusType::ELEMENTAL_SPELL_DAMAGE_RECEIVED)))
+			throw std::runtime_error("Cannot discard incoming elemental spell damage in stack-effect packet");
 		h & battleID;
 		h & toAdd;
 		h & toUpdate;

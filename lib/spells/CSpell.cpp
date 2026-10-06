@@ -144,6 +144,51 @@ int64_t CSpell::applyElementalDamageBonus(const spells::Caster * caster, const i
 	return scaledWholeDamage + fractionalDamage;
 }
 
+int64_t CSpell::applyIncomingElementalDamageBonus(const battle::Unit * affectedCreature, const int64_t damage) const
+{
+	if(!affectedCreature || !isMagical() || !isDamage()
+		|| damageElement == SpellDamageElement::NONE || damage <= 0)
+		return damage;
+
+	const auto bonuses = affectedCreature->getBonusesOfType(BonusType::ELEMENTAL_SPELL_DAMAGE_RECEIVED,
+		BonusSubtypeID(BonusCustomSubtype(static_cast<int32_t>(damageElement))));
+	if(bonuses->empty())
+		return damage;
+
+	// This modifier is an additive percentage-point total, applied once after
+	// the ordinary target-side magical defenses. Saturation keeps malformed or
+	// unusually large bonus sets from overflowing the accumulator.
+	int64_t totalPercent = 0;
+	constexpr int64_t maximum = std::numeric_limits<int64_t>::max();
+	constexpr int64_t minimum = std::numeric_limits<int64_t>::min();
+	for(const auto & bonus : *bonuses)
+	{
+		const int64_t value = bonus->val;
+		if(value > 0 && totalPercent > maximum - value)
+			totalPercent = maximum;
+		else if(value < 0 && totalPercent < minimum - value)
+			totalPercent = minimum;
+		else
+			totalPercent += value;
+	}
+
+	if(totalPercent <= -100)
+		return 0;
+	const int64_t multiplier = totalPercent > maximum - 100 ? maximum : totalPercent + 100;
+	const int64_t wholeDamage = damage / 100;
+	const int64_t fractionalDamage = damage % 100;
+	const int64_t wholeMultiplier = multiplier / 100;
+	const int64_t fractionalMultiplier = multiplier % 100;
+	const int64_t scaledFraction = fractionalDamage * wholeMultiplier
+		+ fractionalDamage * fractionalMultiplier / 100;
+	if(wholeDamage > maximum / multiplier)
+		return maximum;
+	const int64_t scaledWholeDamage = wholeDamage * multiplier;
+	if(scaledWholeDamage > maximum - scaledFraction)
+		return maximum;
+	return scaledWholeDamage + scaledFraction;
+}
+
 bool CSpell::hasSchool(SpellSchool which) const
 {
 	return schools.count(which);
@@ -616,6 +661,7 @@ int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Uni
 	}
 	if(applyCasterBonuses)
 		ret = applyElementalDamageBonus(caster, ret);
+	ret = applyIncomingElementalDamageBonus(affectedCreature, ret);
 
 	//cap damage received per single creature (e.g. HotA war machines), same rule as melee/ranged damage
 	if(affectedCreature != nullptr)

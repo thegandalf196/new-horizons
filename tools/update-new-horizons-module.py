@@ -165,11 +165,13 @@ def main():
                       'config/artifacts/adventureMovementCasts.json'],
         'factions': faction_patch_files,
         'objects': ['config/objects/magicSpring.json'],
+        'scripts': ['config/scripts/cabirRepair.json'],
         'spells': [
             'config/spells/newHorizons.json',
             'config/spells/iceBolt.json',
             'config/spells/massVariants.json',
             'config/spells/elementalDamageTags.json',
+            'config/spells/cabirRepair.json',
         ],
         'spellSchools': schools,
         'skills': skills,

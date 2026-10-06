@@ -104,6 +104,12 @@ metadata is loaded with spell definitions and adds no per-hero counter or saved
 spell-state field. Ordinary equipment identity and bonus inheritance remain the
 source of the equipped Orb effect.
 
+`NEW_HORIZONS_INCOMING_ELEMENTAL_SPELL_DAMAGE` separately gates the appended
+recipient-side `ELEMENTAL_SPELL_DAMAGE_RECEIVED` Bonus type. Bonus records and
+stack-effect packets refuse unsupported old writers instead of dropping the
+modifier. The earlier outgoing-element milestone remains sufficient for the
+outgoing type alone. No new per-stack mutable field is introduced.
+
 ## Independent Conflux Core recruitment
 
 The New Horizons Conflux catalogue uses eight recruitment rows, preserving the

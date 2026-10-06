@@ -444,6 +444,10 @@ TEST_F(NewHorizonsPuppetMasterTest, ControlledCreatureActiveSpellUsesControllerT
 	controlled->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::SPELLCASTER, BonusSource::CREATURE_ABILITY, 1, BonusSourceID(),
 		BonusSubtypeID(SpellID(SpellID::HASTE))));
+	controlled->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::CASTS, BonusSource::CREATURE_ABILITY, 1, BonusSourceID()));
+	ASSERT_EQ(controlled->casts.total(), 1)
+		<< "The fixture's explicit CASTS bonus refreshes the unit's cached cast allowance";
 	ASSERT_TRUE(castPuppetMaster());
 	ASSERT_TRUE(activate(controlled));
 	EXPECT_EQ(battle()->battleGetActionController(controlled), PlayerColor(0));

@@ -2,6 +2,19 @@
 
 Updated: 2026-10-06
 
+Cabir mechanics verification checkpoint: client/native build93239 succeeds.
+The activated nine-case filter has zero skips; five incoming-element damage/
+serialization cases and the Magi melee-penalty control pass. Initial Repair
+failures expose summoned-slot fixtures, then a real exhausted-charge admission
+defect. Army-backed fixtures and the shared pre-action canCast gate resolve them.
+Final client/native builds6174/31314 succeed; all13 focused cases pass in3.478s,
+zero skips, including actual permanent Repair/forecast parity and adjacent
+Puppet Master, Sanctuary and Hold Fast execution. Four content guards and module
+drift pass; independent source review has no blocker. Elemental resistance and
+Repair principal paths are verified, but complete creature presentation/playable
+delivery remain open. Counts below remain unchanged. Broader random/global
+creature casts, packet downgrade execution and provenance combinations are Phase2.
+
 Superseding Cabir direction: both forms now use bare hands. Pot-based animation
 drafts below are historical and must not be installed as the current design.
 New base/upgraded standing masters exist in v3; full barehanded animation sets

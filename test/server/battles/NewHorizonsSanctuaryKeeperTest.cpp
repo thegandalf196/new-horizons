@@ -322,6 +322,10 @@ TEST_F(NewHorizonsSanctuaryKeeperTest, MovementAttackAndOffensiveCreatureSpellRe
 	abilityStack->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::SPELLCASTER, BonusSource::CREATURE_ABILITY, 1, BonusSourceID(),
 		BonusSubtypeID(SpellID(SpellID::MAGIC_ARROW))));
+	abilityStack->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::CASTS, BonusSource::CREATURE_ABILITY, 1, BonusSourceID()));
+	ASSERT_EQ(abilityStack->casts.total(), 1)
+		<< "The fixture's explicit CASTS bonus refreshes the unit's cached cast allowance";
 	ASSERT_EQ(morale(abilityStack), abilityMorale + 2);
 	spells::Target enemyTarget{spells::Destination(hostileStack)};
 	ASSERT_TRUE(act(abilityStack,

@@ -173,6 +173,7 @@ class BattleActionProcessor : boost::noncopyable
 	bool doRetreatAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doSurrenderAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool validateHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba);
+	bool prepareUnitSpellAction(const CBattleInfoCallback & battle, BattleAction & ba);
 	bool doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doHeroCommandAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & ba);

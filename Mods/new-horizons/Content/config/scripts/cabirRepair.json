@@ -1,0 +1,12 @@
+{
+	"cabirRepair": {
+		"implements": "spellEffect",
+		"script": "spells/cabirRepair",
+		"patches": [],
+		"schema": {
+			"type": "object",
+			"properties": {},
+			"additionalProperties": false
+		}
+	}
+}

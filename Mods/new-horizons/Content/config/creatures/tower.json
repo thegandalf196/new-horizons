@@ -1,10 +1,48 @@
 {
 	"core:gremlin": {
+		"abilities": {
+			"cabirFireResistance": {
+				"type": "ELEMENTAL_SPELL_DAMAGE_RECEIVED",
+				"subtype": "spellElementFire",
+				"val": -50
+			},
+			"cabirWaterWeakness": {
+				"type": "ELEMENTAL_SPELL_DAMAGE_RECEIVED",
+				"subtype": "spellElementWater",
+				"val": 25
+			}
+		},
 		"graphics": {
 			"iconLarge": "NH_academy_gremlin_icon_large.png"
 		}
 	},
 	"core:masterGremlin": {
+		"abilities": {
+			"cabirRepair": {
+				"type": "SPELLCASTER",
+				"subtype": "new-horizons:cabirRepair",
+				"val": 0
+			},
+			"cabirRepairUses": {
+				"type": "CASTS",
+				"val": 1
+			},
+			"cabirRepairPower": {
+				"type": "SPECIFIC_SPELL_POWER",
+				"subtype": "new-horizons:cabirRepair",
+				"val": 10
+			},
+			"cabirFireResistance": {
+				"type": "ELEMENTAL_SPELL_DAMAGE_RECEIVED",
+				"subtype": "spellElementFire",
+				"val": -50
+			},
+			"cabirWaterWeakness": {
+				"type": "ELEMENTAL_SPELL_DAMAGE_RECEIVED",
+				"subtype": "spellElementWater",
+				"val": 25
+			}
+		},
 		"graphics": {
 			"iconLarge": "NH_academy_masterGremlin_icon_large.png"
 		}

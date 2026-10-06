@@ -270,6 +270,8 @@ set(test_SRCS
 		battle/LeadershipProposalReadbackTest.cpp
 		battle/SylvanLuckStatusPresentationTest.cpp
 		server/battles/NewHorizonsElementalOrbsTest.cpp
+		server/battles/NewHorizonsCabirRepairTest.cpp
+		spells/NewHorizonsIncomingElementDamageTest.cpp
 		server/battles/NewHorizonsMagicResistanceTest.cpp
 		server/battles/NewHorizonsCreatureSpecialtyTest.cpp
 		server/battles/NewHorizonsCastleCreatureStatsTest.cpp

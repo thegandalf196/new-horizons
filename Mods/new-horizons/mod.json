@@ -7414,11 +7414,15 @@
 	"objects": [
 		"config/objects/magicSpring.json"
 	],
+	"scripts": [
+		"config/scripts/cabirRepair.json"
+	],
 	"spells": [
 		"config/spells/newHorizons.json",
 		"config/spells/iceBolt.json",
 		"config/spells/massVariants.json",
-		"config/spells/elementalDamageTags.json"
+		"config/spells/elementalDamageTags.json",
+		"config/spells/cabirRepair.json"
 	],
 	"spellSchools": {
 		"light": {

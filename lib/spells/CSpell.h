@@ -243,6 +243,7 @@ public://internal, for use only by Mechanics classes
 	std::unique_ptr<spells::Mechanics> battleMechanics(const spells::IBattleCast * event) const;
 private:
 	int64_t applyElementalDamageBonus(const spells::Caster * caster, int64_t damage) const;
+	int64_t applyIncomingElementalDamageBonus(const battle::Unit * affectedCreature, int64_t damage) const;
 	void setIsOffensive(const bool val);
 	void setIsRising(const bool val);
 
