@@ -1,5 +1,11 @@
 # New Horizons UI and asset status register
 
+Resource Broker Marketplace contribution tooltip,2026-10-06: **Provisional**.
+UP255 extends only the native Deal control's right-click help with a localized
+rate contribution. No new artwork, panel or economic action button; original
+hover and ordinary help remain intact. Client build, focused wiring/translation
+checks and independent review pass; native fit/input and delivery stay pending.
+
 Investor treasury-popup contribution readback,2026-10-06: **Provisional**.
 UP254 reuses the native resource popup with localized saved-weekly income rows;
 no new raster art or decorative panel is introduced. Client build, focused

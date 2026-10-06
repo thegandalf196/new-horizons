@@ -9429,6 +9429,7 @@
 		"new-horizons.economy.investor.header": "Investor — this week's daily Gold bonus (before income handicap)",
 		"new-horizons.economy.investor.hero": "%HERO: +%GOLD Gold/day",
 		"new-horizons.economy.investor.help": "Fixed at the start of the week: +50 Gold/day per full 5,000 treasury Gold, up to +250 per hero. Changes to your treasury do not change this week's bonus. Already included in the daily income shown in this popup.",
+		"new-horizons.economy.resourceBroker.modifier": "Resource Broker: +%PERCENT% exchange effectiveness. Already included in this quote.",
 		"core.heroClass.alchemist.name": "Battle Mage",
 		"core.heroClass.demoniac.name": "Tyrant",
 		"core.heroClass.heretic.name": "Cultist",

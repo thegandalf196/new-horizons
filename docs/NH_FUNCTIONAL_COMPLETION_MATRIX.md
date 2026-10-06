@@ -2,6 +2,15 @@
 
 Updated: 2026-10-06
 
+UP255 adds the missing Resource Broker contribution to the existing Deal
+right-click help for selected owned-town trades. Percentage comes from shared
+effective/ordinary rates; no copied eligibility, altered quote/rounding or trade
+request. Ineligible/deselected states restore ordinary help; hover is unchanged.
+Client build38007, source wiring guard, six translation/generator checks and
+module drift pass; independent review finds no blocker. Native rendering,
+executed selection/privacy boundaries and playable delivery remain unverified.
+Required Estates UI breadth increases;225/310 perks and61/67 spells do not.
+
 UP254 closes a missing source-level Estates UI consumer: native resource-popup
 help now lists current-owner active Investor heroes' saved weekly bonuses,
 including zero, with localized pre-handicap explanation. Payouts and action
