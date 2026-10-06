@@ -7,8 +7,9 @@ All three masters and their exact HoMM3-Art built-in edit prompts are retained
 under `assets/new-horizons/academy/map-revisions/v2/`. Root and reviewer inspected
 native comparisons; prior geometry and external ownership/shadows are unchanged.
 Pinned exports replace the three runtime bodies, with eight focused tests and
-import/reduction checks passing. Playable delivery and user aesthetic acceptance
-remain separate. UP239's first generated Gremlin matte failed
+import/reduction checks passing. The Linux launcher now selects the frozen
+`a3487aacf` candidate containing these bodies; user aesthetic acceptance remains
+separate. UP239's first generated Gremlin matte failed
 native comparison (retained snowy architecture) and is rejected, not new portrait
 coverage or approved artwork. Its corrected geometry-only matte now passes root
 native review provisionally; renderer integration and the other thirteen large

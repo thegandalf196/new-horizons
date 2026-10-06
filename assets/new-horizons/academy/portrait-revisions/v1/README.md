@@ -1,6 +1,7 @@
 # Academy large-portrait background mattes
 
-Provisional geometry-only art; not installed in the game yet.
+Geometry-only art, with approval tracked per subject. Generated through the
+built-in image tool and HoMM3 Art workflow; it contains no original colour pixels.
 
 The Gremlin subject matte was generated through the built-in image tool and
 HoMM3 Art workflow. Its first draft incorrectly included snowy architecture
@@ -17,6 +18,26 @@ authored Academy desert backdrop. It must not use the original snowy scene as
 a backdrop, commit original colour extracts, or modify the transparent CPRSMALL
 cutouts. Other thirteen large portraits and the renderer consumer are not yet
 implemented. This asset alone is not completion of UP239 or user visual approval.
+
+## Additional drafts, 2026-10-05
+
+Each new master's exact prompt is in its adjacent `.prompt.txt`. The shared
+exporter accepts `--creature` or `--all`; mechanical reproducibility does not
+approve a silhouette. Private native/8× compositions remain ignored build output.
+
+- `masterGremlin`: root inspected the composed native and8× portrait. It removes
+  the blue spire, preserves the recognizable creature and is **Provisional**.
+  It is not installed in the runtime yet.
+- `stoneGargoyle`: **rejected draft**, not runtime art. The mask retains brown
+  architecture below the left wing and pale snowy fringe beside the right wing.
+  The focused v2 correction is preserved separately but still resembles the
+  rejected geometry and is not selected for export or runtime.
+- `obsidianGargoyle`: **rejected draft**, not runtime art. The left snowy building
+  remains under the wing despite removal of the blue spire. Recognizability is
+  not sufficient to approve incorrect background classification.
+
+Only the Gremlin has a runtime-compositor implementation in progress. Remaining
+portraits must be reviewed independently; no complete-family approval is implied.
 
 ## Exact correction prompt
 
