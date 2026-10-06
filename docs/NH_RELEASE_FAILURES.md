@@ -2,6 +2,20 @@
 
 ## Purpose
 
+### 2026-10-06 — Nonfatal Dispel preview invalid-spell diagnostics
+
+The exact bea86a2c3 frozen Linux candidate passes file verification and its
+20-second dummy-SDL All for One smoke through AI day7, but emits three paired
+`spell id -1` / `DISPEL.transformTarget` invalid-index diagnostics during AI
+evaluation. Execution continues; no crash/assertion/server-rejection marker is
+observed. The trace does not yet establish the invalid source or affected
+Dispel behavior. Track recipient/bonus provenance and transformTarget handling
+for Phase2; do not infer a root cause or call the smoke clean. This bounded
+finding does not itself establish corruption or a foundational regression.
+Ignored receipts: `build/nh-action-sequence.QSR769/candidate/run.4pT5lm/`.
+The previous ammunition diagnostic is not observed in this seed/run, not proven
+fixed. No host display/input or user-profile mutation occurred.
+
 ### 2026-10-06 — Hero Action sequence synthetic reader
 
 UP244's first native rebuild failed because MalformedStateReader assigned its

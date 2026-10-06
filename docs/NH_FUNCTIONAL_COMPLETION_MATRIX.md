@@ -2,6 +2,14 @@
 
 Updated: 2026-10-06
 
+UP244 committed/pushed asbea86a2c3, then exact committed Linux source rebuilt,
+frozen, independently2277-file verified and bounded-smoked through AI day7.
+The normal script resolves promoted snapshotc172340f, retaining prior snapshots.
+Three nonfatal Dispel preview invalid-spell diagnostics are tracked for Phase2;
+this is not a clean/full-game or rendered-UI certification. Full Windows successor
+37437598557 is live on the samebea source; older37429818459 is successful.
+No spell/perk identity counts change. UP233 retains delivery evidence/limits.
+
 UP244 prerequisite checkpoint: source and focused fixtures for the last-three
 ordinary Hero-paid Spell/Order sequence are implemented. Readiness expiry keeps
 history; typed allowances remain excluded by existing live/detached receipts.
