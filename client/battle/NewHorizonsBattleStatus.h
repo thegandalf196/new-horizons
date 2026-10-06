@@ -741,6 +741,31 @@ struct BulwarkStatus
 	bool operator==(const BulwarkStatus &) const = default;
 };
 
+struct BattlecraftWaitStatus
+{
+	int32_t damageBonusPercent = 0;
+
+	bool active() const { return damageBonusPercent > 0; }
+	bool operator==(const BattlecraftWaitStatus &) const = default;
+};
+
+inline std::optional<BattlecraftWaitStatus> makeBattlecraftWaitStatus(int32_t damageBonusPercent, bool armed)
+{
+	if(!armed || damageBonusPercent <= 0)
+		return std::nullopt;
+
+	return BattlecraftWaitStatus{damageBonusPercent};
+}
+
+inline std::string battlecraftWaitTooltip(const BattlecraftWaitStatus & status)
+{
+	if(!status.active())
+		return {};
+
+	return "Battlecraft - Wait\nThe next attack or retaliation before the end of this round deals +"
+		+ std::to_string(status.damageBonusPercent) + "% physical damage.";
+}
+
 inline std::optional<BulwarkStatus> makeBulwarkStatus(int rank, int heroDefense, bool mirebornTerrain,
 	bool bogAmbush, bool thickHide, bool preemptiveUsed, bool sharedCoverApplies = false,
 	bool vengefulMire = false)
@@ -773,6 +798,7 @@ inline std::optional<BulwarkStatus> makeBulwarkStatus(int rank, int heroDefense,
 struct DefendStatus
 {
 	bool defending = false;
+	int32_t battlecraftReductionPercent = 0;
 	std::optional<BulwarkStatus> bulwark;
 
 	bool operator==(const DefendStatus &) const = default;
@@ -824,6 +850,7 @@ inline std::string battleFormTooltip(const BattleFormStatus & status)
 struct StackInfoStatusSnapshot
 {
 	DefendStatus defend;
+	std::optional<BattlecraftWaitStatus> battlecraftWait;
 	BattleFormStatus battleForm;
 	PhysicalPoisonStatus physicalPoison;
 	TemporaryCreatureStatus temporaryCreatures;
@@ -844,11 +871,19 @@ inline std::string defendStatusTooltip(const DefendStatus & status)
 	if(!status.defending)
 		return {};
 
+	std::string result = status.bulwark ? "Bulwark of the Mire - Defend\n" : "Defend\n";
+	result += "This stack remains Defending until its next normal Creature Activation.";
+	if(status.battlecraftReductionPercent > 0)
+	{
+		result += "\nBattlecraft physical creature-damage reduction: "
+			+ std::to_string(status.battlecraftReductionPercent)
+			+ "% until this stack's next normal Creature Activation. It applies only to physical creature damage and contributes to the shared Physical Damage Reduction cap.";
+	}
+
 	if(!status.bulwark)
-		return "Defend\nThis stack remains Defending through the end of the current battle round.";
+		return result;
 
 	const auto & bulwark = *status.bulwark;
-	std::string result = "Bulwark of the Mire - Defend\nThis stack remains Defending through the end of the current battle round.";
 	result += "\nPhysical creature damage reduction: " + formatBasisPoints(bulwark.damageReductionBasisPoints) + ".";
 	if(bulwark.mirebornTerrainBonus)
 		result += " Includes Mireborn's +5 percentage points on swamp or rough terrain.";

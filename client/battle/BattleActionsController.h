@@ -69,6 +69,28 @@ struct SoulChainSelectionPreview
 	std::vector<SoulChainTargetPreview> targets;
 };
 
+struct ChainLightningRecipientPreview
+{
+	int32_t hopNumber = 0;
+	uint32_t unitId = 0;
+	BattleHex position = BattleHex::INVALID;
+	BattleHex occupiedHex = BattleHex::INVALID;
+	int64_t cumulativeDamage = 0;
+	int64_t projectedDamage = 0;
+	int64_t estimatedKills = 0;
+};
+
+struct ChainLightningPreview
+{
+	bool active = false;
+	bool assumesNoResistance = false;
+	BattleHex aimedHex = BattleHex::INVALID;
+	SpellID spell = SpellID::NONE;
+	uint64_t castingSession = 0;
+	std::vector<ChainLightningRecipientPreview> recipients;
+	std::string consoleText;
+};
+
 using MagicArrowOverchargeFactory = std::function<std::optional<MagicArrowOverchargeContext>(
 	const BattleAction &, const BattleHex &, const CStack *)>;
 using ShadowGiftFactory = std::function<std::optional<ShadowGiftContext>(
@@ -116,6 +138,32 @@ class BattleActionsController
 
 	/// cached message that was set by this class in status bar
 	std::string currentConsoleMsg;
+
+	/// Ordered, hover-keyed Chain Lightning presentation data. Mechanics are
+	/// evaluated only by updateChainLightningPreview, never by render getters.
+	ChainLightningPreview chainLightningPreview;
+	struct ChainLightningPreviewCacheKey
+	{
+		BattleHex aimedHex = BattleHex::INVALID;
+		SpellID spell = SpellID::NONE;
+		uint64_t session = 0;
+		uint32_t casterUnitId = 0;
+		ObjectInstanceID casterHeroId = ObjectInstanceID::NONE;
+		BattleSide side = BattleSide::NONE;
+		int32_t round = -1;
+		int32_t mode = 0;
+		bool metamagicFollowup = false;
+		bool metamagicGrand = false;
+		int32_t metamagicManaRefund = 0;
+		int32_t spellOvercharge = 0;
+		bool spellSelectiveDispel = false;
+		SpellID spellCureAffliction = SpellID::NONE;
+		bool spellMassSlow = false;
+		int32_t spellShadowGiftSacrificePercent = 0;
+
+		bool operator==(const ChainLightningPreviewCacheKey &) const = default;
+	};
+	std::optional<ChainLightningPreviewCacheKey> chainLightningPreviewCacheKey;
 
 	/// if true, active stack could possibly cast some target spell
 	std::vector<const CSpell *> creatureSpells;
@@ -189,6 +237,8 @@ class BattleActionsController
 
 	void invalidateSkirmisherTargetCache();
 	void invalidateSkirmisherFiringCache();
+	void updateChainLightningPreview(PossiblePlayerBattleAction action, const BattleHex & hoveredHex);
+	void invalidateChainLightningPreview();
 
 	bool isCastingPossibleHere (const CSpell * spell, const CStack *shere, const BattleHex & myNumber);
 	std::vector<PossiblePlayerBattleAction> getPossibleActionsForStack (const CStack *stack) const; //called when stack gets its turn
@@ -307,6 +357,8 @@ public:
 	SoulChainSelectionPreview getSoulChainSelectionPreview() const;
 	void confirmSoulChainTargets();
 	void undoSoulChainTarget();
+	/// Read-only presentation data for the currently hovered saved-v3 Chain Lightning cast.
+	const ChainLightningPreview & getChainLightningPreview() const;
 
 	/// True only for the saved-ruleset canonical Fire Wall selector.
 	bool fireWallPlacementModeActive() const;

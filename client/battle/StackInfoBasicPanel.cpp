@@ -19,9 +19,11 @@
 #include "../../lib/CConfigHandler.h"
 #include "../../lib/CStack.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/battle/NewHorizonsBattlecraft.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/NewHorizonsSoulChain.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
+#include "../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include "../../lib/texts/TextOperations.h"
@@ -33,6 +35,15 @@ namespace
 {
 constexpr std::string_view FRAILTY_SPELL_KEY = "new-horizons:frailty";
 constexpr std::string_view PLAGUE_SPELL_KEY = "new-horizons:plague";
+
+bool usesNewHorizonsBattleRules(const CGHeroInstance * hero)
+{
+	if(!hero)
+		return false;
+
+	const auto & rules = hero->getCapabilityRules();
+	return newHorizonsHeroes::usesRules(rules) && rules["rulesetVersion"].Integer() >= 3;
+}
 
 struct StackStatusEntry
 {
@@ -131,6 +142,8 @@ newHorizonsBattleStatus::DefendStatus currentDefendStatus(
 	const auto * hero = battleCallback->battleGetFightingHero(ownerSide);
 	if(!hero)
 		return result;
+	if(usesNewHorizonsBattleRules(hero))
+		result.battlecraftReductionPercent = newHorizonsBattlecraft::defendReductionPercent(hero);
 
 	const int rank = newHorizonsBulwark::rank(hero);
 	if(rank <= 0)
@@ -158,11 +171,32 @@ newHorizonsBattleStatus::DefendStatus currentDefendStatus(
 	return result;
 }
 
+std::optional<newHorizonsBattleStatus::BattlecraftWaitStatus> currentBattlecraftWaitStatus(
+	const CStack * stack, const CPlayerBattleCallback * battleCallback)
+{
+	if(!stack || !battleCallback || !stack->battlecraftWaitBonusAvailable()
+		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(stack))
+		return std::nullopt;
+
+	const auto ownerSide = battleCallback->playerToSide(battleCallback->battleGetOwner(stack));
+	if(ownerSide != BattleSide::ATTACKER && ownerSide != BattleSide::DEFENDER)
+		return std::nullopt;
+
+	// This player-scoped query hides the opposing hero's private skill data.
+	const auto * hero = battleCallback->battleGetFightingHero(ownerSide);
+	if(!usesNewHorizonsBattleRules(hero))
+		return std::nullopt;
+
+	const int damageBonusPercent = newHorizonsBattlecraft::rankPercent(newHorizonsBattlecraft::rank(hero));
+	return newHorizonsBattleStatus::makeBattlecraftWaitStatus(damageBonusPercent, true);
+}
+
 newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
 	const CStack * stack, const CPlayerBattleCallback * battleCallback)
 {
 	newHorizonsBattleStatus::StackInfoStatusSnapshot result;
 	result.defend = currentDefendStatus(stack, battleCallback);
+	result.battlecraftWait = currentBattlecraftWaitStatus(stack, battleCallback);
 	if(stack)
 	{
 		if(stack->hasBattleForm())
@@ -465,8 +499,16 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 	if(displayedStatus.defend.defending)
 	{
 		const auto badge = displayedStatus.defend.bulwark ? "BULWARK" : "DEFEND";
-		const auto tooltip = newHorizonsBattleStatus::defendStatusTooltip(displayedStatus.defend);
+		auto tooltip = newHorizonsBattleStatus::defendStatusTooltip(displayedStatus.defend);
+		if(displayedStatus.battlecraftWait)
+			tooltip += "\n\n" + newHorizonsBattleStatus::battlecraftWaitTooltip(*displayedStatus.battlecraftWait);
 		labels.push_back(std::make_shared<CLabel>(8, 155, EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::YELLOW, badge));
+		statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(7, 153, 39, 13), tooltip, tooltip));
+	}
+	else if(displayedStatus.battlecraftWait)
+	{
+		const auto tooltip = newHorizonsBattleStatus::battlecraftWaitTooltip(*displayedStatus.battlecraftWait);
+		labels.push_back(std::make_shared<CLabel>(8, 155, EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::YELLOW, "WAIT"));
 		statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(7, 153, 39, 13), tooltip, tooltip));
 	}
 	const auto incomingSoulChain = soulChainIncomingLinks(stack, battleCallback.get());

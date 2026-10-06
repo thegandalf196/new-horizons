@@ -30,9 +30,12 @@
 #include "render/CAnimation.h"
 #include "render/Canvas.h"
 #include "render/CanvasImage.h"
+#include "render/Colors.h"
+#include "render/EFont.h"
 #include "render/IImage.h"
 #include "render/IRenderHandler.h"
 #include "render/IScreenHandler.h"
+#include "../gui/TextAlignment.h"
 
 #include "../../lib/BattleFieldHandler.h"
 #include "../../lib/CConfigHandler.h"
@@ -305,6 +308,7 @@ void BattleFieldController::renderBattlefield(Canvas & canvas)
 	BattleRenderer renderer(owner);
 
 	renderer.execute(clippedCanvas);
+	showChainLightningPreviewNumbers(clippedCanvas);
 	showDemonicGateReservations(clippedCanvas);
 
 	owner.projectilesController->render(clippedCanvas);
@@ -490,6 +494,22 @@ BattleHexArray BattleFieldController::getHighlightedHexesForSpellRange()
 {
 	BattleHexArray result;
 	auto hoveredHex = getHoveredHex();
+	const auto & chainPreview = owner.actionsController->getChainLightningPreview();
+	if(chainPreview.active && chainPreview.aimedHex == hoveredHex)
+	{
+		for(const auto & recipient : chainPreview.recipients)
+		{
+			if(recipient.position.isValid()
+				&& recipient.position.getX() != 0
+				&& recipient.position.getX() != GameConstants::BFIELD_WIDTH - 1)
+				result.insert(recipient.position);
+			if(recipient.occupiedHex.isValid()
+				&& recipient.occupiedHex.getX() != 0
+				&& recipient.occupiedHex.getX() != GameConstants::BFIELD_WIDTH - 1)
+				result.insert(recipient.occupiedHex);
+		}
+		return result;
+	}
 
 	const spells::Caster *caster = nullptr;
 	const CSpell *spell = nullptr;
@@ -534,6 +554,27 @@ BattleHexArray BattleFieldController::getHighlightedHexesForSpellRange()
 		}
 	}
 	return result;
+}
+
+void BattleFieldController::showChainLightningPreviewNumbers(Canvas & canvas)
+{
+	const auto & preview = owner.actionsController->getChainLightningPreview();
+	if(!preview.active)
+		return;
+
+	for(const auto & recipient : preview.recipients)
+	{
+		if(!recipient.position.isValid())
+			continue;
+
+		const auto hexRect = hexPositionLocal(recipient.position);
+		const auto text = std::to_string(recipient.hopNumber);
+		const int badgeWidth = std::max(15, static_cast<int>(text.size()) * 6 + 6);
+		const Rect badge(hexRect.x + 2, hexRect.y + hexRect.h - 15, badgeWidth, 13);
+		canvas.drawColor(badge, ColorRGBA(32, 20, 12, 245));
+		canvas.drawBorder(badge, ColorRGBA(220, 184, 105, 255));
+		canvas.drawText(badge.center(), EFonts::FONT_TINY, Colors::YELLOW, ETextAlignment::CENTER, text);
+	}
 }
 
 BattleHexArray BattleFieldController::getHighlightedHexesForMovementTarget()

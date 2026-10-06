@@ -1,5 +1,15 @@
 # New Horizons UI and asset status register
 
+Chain Lightning propagation and Battlecraft Wait/Defend readback,2026-10-06:
+**Provisional** UI. The chain uses native hex highlights, tiny gold hop numbers
+and the existing two-line console for per-hop damage/kills, with an explicit
+no-resistance assumption. Battlecraft reuses the compact stack status row and
+help regions, showing shared ranked percentages without adding a dialog/control.
+No raster art is created. Client/native builds, focused source guards and15 native
+presentation/mechanic controls pass; independent review finds no blocker.
+Rendered legibility, badge/creature overlap, live refresh and playable delivery
+remain unverified. No artwork or UI is newly Final.
+
 Adventure Spell daily-use indicator (UP056),2026-10-06: **Provisional** UI
 source implementation verified. Uses the existing spellbook page surface and
 native small text, not a new framed panel or raster badge. The localized daily

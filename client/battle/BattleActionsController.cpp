@@ -52,6 +52,7 @@
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsFriendlyFire.h"
+#include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 
 #include <set>
@@ -70,6 +71,8 @@ constexpr std::string_view verdantPrisonJsonKey = "new-horizons:verdantPrison";
 constexpr std::string_view hydrasVitalityJsonKey = "new-horizons:hydrasVitality";
 constexpr std::string_view stormOfDaggersJsonKey = "new-horizons:stormOfDaggers";
 constexpr std::string_view shadowGiftJsonKey = "new-horizons:shadowGift";
+constexpr std::string_view chainLightningJsonKey = "core:chainLightning";
+constexpr std::string_view masterChainLightningJsonKey = "new-horizons:masterChainLightning";
 constexpr int32_t stormOfDaggersMaximumTargets = 5;
 constexpr int32_t vengefulVinesFootprintHexCount = 3;
 
@@ -173,6 +176,12 @@ bool isLifeDrainSpell(const CSpell * spell)
 bool isShadowGiftSpell(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == shadowGiftJsonKey;
+}
+
+bool isChainLightningPreviewSpell(const CSpell * spell)
+{
+	return spell && (spell->getJsonKey() == chainLightningJsonKey
+		|| spell->getJsonKey() == masterChainLightningJsonKey);
 }
 
 bool isCanonicalLandMine(const CBattleInfoCallback & battle, const CSpell * spell)
@@ -796,6 +805,7 @@ void BattleActionsController::updateHeroOrderTargetingStatus(const BattleHex & h
 
 bool BattleActionsController::beginHeroOrderTargeting(HeroCommand command)
 {
+	invalidateChainLightningPreview();
 	cancelHeroOrderTargeting();
 	if(command != HeroCommand::FOCUS_FIRE && command != HeroCommand::PROTECT
 		&& command != HeroCommand::FLANK && command != HeroCommand::SECOND_WIND)
@@ -2413,6 +2423,7 @@ void BattleActionsController::setTemporalFieldFactory(TemporalFieldFactory facto
 
 void BattleActionsController::endCastingSpell()
 {
+	invalidateChainLightningPreview();
 	++castingSession;
 	// The battle's Escape shortcut also reaches this method outside spell mode.
 	cancelHeroOrderTargeting();
@@ -2489,6 +2500,7 @@ bool BattleActionsController::isActiveStackSpellcaster() const
 
 void BattleActionsController::enterCreatureCastingMode()
 {
+	invalidateChainLightningPreview();
 	//silently check for possible errors
 	if (owner.isInTacticsMode())
 		return;
@@ -2680,6 +2692,7 @@ void BattleActionsController::reorderPossibleActionsPriority(const CStack * stac
 
 void BattleActionsController::castThisSpell(SpellID spellID)
 {
+	invalidateChainLightningPreview();
 	cancelHeroOrderTargeting();
 	if(!owner.curInt)
 		return;
@@ -2937,6 +2950,181 @@ const CSpell * BattleActionsController::getCurrentSpell(const BattleHex & hovere
 	if (getHeroSpellToCast())
 		return getHeroSpellToCast();
 	return getStackSpellToCast(hoveredHex);
+}
+
+const ChainLightningPreview & BattleActionsController::getChainLightningPreview() const
+{
+	return chainLightningPreview;
+}
+
+void BattleActionsController::invalidateChainLightningPreview()
+{
+	chainLightningPreview = {};
+	chainLightningPreviewCacheKey.reset();
+}
+
+void BattleActionsController::updateChainLightningPreview(PossiblePlayerBattleAction action, const BattleHex & hoveredHex)
+{
+	if(action.get() != PossiblePlayerBattleAction::AIMED_SPELL_CREATURE || !hoveredHex.isValid())
+	{
+		invalidateChainLightningPreview();
+		return;
+	}
+
+	const auto battle = owner.getBattle();
+	const auto * battleState = battle ? battle->getBattle() : nullptr;
+	const auto * spell = action.spell().toSpell();
+	if(!battle || !battleState || !spell || !isChainLightningPreviewSpell(spell))
+	{
+		invalidateChainLightningPreview();
+		return;
+	}
+
+	const auto & savedRules = battleState->getMagicRules();
+	if(!newHorizonsMagic::rulesActive(savedRules)
+		|| savedRules["rulesetVersion"].Integer() != newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		|| !newHorizonsMagic::spellAllowedBySavedRoster(savedRules, action.spell()))
+	{
+		invalidateChainLightningPreview();
+		return;
+	}
+
+	const auto mode = getCurrentCastMode();
+	const auto * caster = getCurrentSpellcaster();
+	const auto * heroCaster = mode == spells::Mode::HERO ? owner.currentHero() : nullptr;
+	const CStack * creatureCaster = mode == spells::Mode::CREATURE_ACTIVE
+		? (monsterCaster ? monsterCaster : owner.stacksController->getActiveStack()) : nullptr;
+	if(!caster || (mode == spells::Mode::HERO && !heroCaster)
+		|| (mode == spells::Mode::CREATURE_ACTIVE && !creatureCaster))
+	{
+		invalidateChainLightningPreview();
+		return;
+	}
+
+	const auto * targetUnit = battle->battleGetUnitByPos(hoveredHex, false);
+	if(!targetUnit)
+	{
+		invalidateChainLightningPreview();
+		return;
+	}
+
+	ChainLightningPreviewCacheKey cacheKey;
+	cacheKey.aimedHex = hoveredHex;
+	cacheKey.spell = action.spell();
+	cacheKey.session = castingSession;
+	cacheKey.casterUnitId = creatureCaster ? creatureCaster->unitId() : 0;
+	cacheKey.casterHeroId = heroCaster ? heroCaster->id : ObjectInstanceID::NONE;
+	cacheKey.side = heroCaster ? battle->battleGetMySide() : creatureCaster->unitSide();
+	cacheKey.round = battleState->getRound();
+	cacheKey.mode = static_cast<int32_t>(mode);
+	if(heroSpellToCast)
+	{
+		cacheKey.metamagicFollowup = heroSpellToCast->metamagicFollowup;
+		cacheKey.metamagicGrand = heroSpellToCast->metamagicGrand;
+		cacheKey.metamagicManaRefund = heroSpellToCast->metamagicManaRefund;
+		cacheKey.spellOvercharge = heroSpellToCast->spellOvercharge;
+		cacheKey.spellSelectiveDispel = heroSpellToCast->spellSelectiveDispel;
+		cacheKey.spellCureAffliction = heroSpellToCast->spellCureAffliction;
+		cacheKey.spellMassSlow = heroSpellToCast->spellMassSlow;
+		cacheKey.spellShadowGiftSacrificePercent = heroSpellToCast->spellShadowGiftSacrificePercent;
+	}
+
+	if(chainLightningPreview.active && chainLightningPreviewCacheKey
+		&& *chainLightningPreviewCacheKey == cacheKey)
+		return;
+
+	spells::Target aim;
+	aim.emplace_back(hoveredHex);
+	aim.emplace_back(targetUnit);
+
+	spells::BattleCast cast(battle.get(), caster, mode, spell);
+	if(heroSpellToCast && mode == spells::Mode::HERO)
+	{
+		cast.setOvercharge(heroSpellToCast->spellOvercharge);
+		cast.setSelectiveDispel(heroSpellToCast->spellSelectiveDispel);
+		cast.setCureAffliction(heroSpellToCast->spellCureAffliction);
+		cast.setMassSlow(heroSpellToCast->spellMassSlow);
+		cast.setShadowGiftSacrificePercent(heroSpellToCast->spellShadowGiftSacrificePercent);
+		cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
+		cast.setMetamagicGrand(heroSpellToCast->metamagicGrand);
+		cast.setMetamagicManaRefund(heroSpellToCast->metamagicManaRefund);
+		cast.setMetamagicTargetUnitId(targetUnit->unitId());
+	}
+
+	auto mechanics = spell->battleMechanics(&cast);
+	if(!mechanics)
+	{
+		invalidateChainLightningPreview();
+		return;
+	}
+
+	const auto canonicalTarget = mechanics->canonicalizeTarget(aim);
+	ChainLightningPreview preview;
+	preview.aimedHex = hoveredHex;
+	preview.spell = action.spell();
+	preview.castingSession = castingSession;
+	preview.assumesNoResistance = true;
+	bool foundDirectDamage = false;
+	mechanics->forEachEffect([&](const spells::effects::Effect & effect)
+	{
+		if(effect.name != "directDamage" || effect.indirect)
+			return false;
+
+		foundDirectDamage = true;
+		const auto effectTarget = effect.transformTarget(mechanics.get(), aim, canonicalTarget);
+		spells::Target prefix;
+		prefix.reserve(effectTarget.size());
+		int64_t previousCumulativeDamage = 0;
+		int64_t previousCumulativeKills = 0;
+		for(size_t index = 0; index < effectTarget.size(); ++index)
+		{
+			const auto & destination = effectTarget[index];
+			prefix.push_back(destination);
+			const auto value = effect.getHealthChange(mechanics.get(), prefix);
+			const int64_t cumulativeDamage = std::max<int64_t>(0, -value.hpDelta);
+			const int64_t cumulativeKills = std::max<int64_t>(0, -value.unitsDelta);
+			if(destination.unitValue && destination.unitValue->alive())
+			{
+				ChainLightningRecipientPreview recipient;
+				recipient.hopNumber = static_cast<int32_t>(index + 1);
+				recipient.unitId = destination.unitValue->unitId();
+				recipient.position = destination.unitValue->getPosition();
+				recipient.occupiedHex = destination.unitValue->doubleWide()
+					? destination.unitValue->occupiedHex() : BattleHex::INVALID;
+				recipient.cumulativeDamage = cumulativeDamage;
+				recipient.projectedDamage = std::max<int64_t>(0, cumulativeDamage - previousCumulativeDamage);
+				recipient.estimatedKills = std::max<int64_t>(0, cumulativeKills - previousCumulativeKills);
+				preview.recipients.push_back(std::move(recipient));
+			}
+			previousCumulativeDamage = cumulativeDamage;
+			previousCumulativeKills = cumulativeKills;
+		}
+		return true;
+	});
+
+	if(!foundDirectDamage || preview.recipients.empty())
+	{
+		invalidateChainLightningPreview();
+		return;
+	}
+
+	const auto headerTemplate = LIBRARY->generaltexth->translate(
+		"new-horizons.combat.chainLightning.previewHeader");
+	preview.consoleText = replacePlaceholders(headerTemplate,
+		{{"%SPELL", spell->getNameTranslated()}});
+	preview.consoleText += "\n";
+	for(size_t index = 0; index < preview.recipients.size(); ++index)
+	{
+		if(index > 0)
+			preview.consoleText += " ";
+		const auto & recipient = preview.recipients[index];
+		preview.consoleText += std::to_string(recipient.hopNumber) + ":"
+			+ std::to_string(recipient.projectedDamage) + "/"
+			+ std::to_string(recipient.estimatedKills);
+	}
+	preview.active = true;
+	chainLightningPreview = std::move(preview);
+	chainLightningPreviewCacheKey = cacheKey;
 }
 
 const CStack * BattleActionsController::getStackForHex(const BattleHex & hoveredHex)
@@ -3202,6 +3390,10 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 		case PossiblePlayerBattleAction::AIMED_SPELL_CREATURE:
 		{
 			const CSpell * spell = action.spell().toSpell();
+			const auto & chainPreview = getChainLightningPreview();
+			if(chainPreview.active && chainPreview.aimedHex == targetHex && chainPreview.spell == action.spell())
+				return chainPreview.consoleText;
+
 			if(isBlinkSpell(spell))
 			{
 				const auto preview = getBlinkDestinationPreview(spell, targetHex);
@@ -3401,6 +3593,7 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 
 std::string BattleActionsController::actionGetStatusMessageBlocked(PossiblePlayerBattleAction action, const BattleHex & targetHex)
 {
+	invalidateChainLightningPreview();
 	switch (action.get())
 	{
 		case PossiblePlayerBattleAction::AIMED_SPELL_CREATURE:
@@ -3944,10 +4137,17 @@ void BattleActionsController::onHexHovered(const BattleHex & hoveredHex)
 {
 	if (owner.openingPlaying())
 	{
+		invalidateChainLightningPreview();
 		currentConsoleMsg = LIBRARY->generaltexth->translate("vcmi.battleWindow.pressKeyToSkipIntro");
 		ENGINE->statusbar()->write(currentConsoleMsg);
 		return;
 	}
+
+	if(repeatedPlacementModeActive() || stormOfDaggersTargetSelectionModeActive()
+		|| soulChainTargetSelectionModeActive() || lifeDrainTargetSelectionModeActive()
+		|| fireWallPlacementModeActive() || vengefulVinesTargetSelectionModeActive()
+		|| heroOrderTargetingModeActive())
+		invalidateChainLightningPreview();
 
 	if(repeatedPlacementModeActive())
 	{
@@ -4036,10 +4236,14 @@ void BattleActionsController::onHexHovered(const BattleHex & hoveredHex)
 	}
 
 	if (owner.stacksController->getActiveStack() == nullptr && monsterCaster == nullptr)
+	{
+		invalidateChainLightningPreview();
 		return;
+	}
 
 	if (hoveredHex == BattleHex::INVALID)
 	{
+		invalidateChainLightningPreview();
 		if (!currentConsoleMsg.empty())
 			ENGINE->statusbar()->clearIfMatching(currentConsoleMsg);
 
@@ -4055,10 +4259,12 @@ void BattleActionsController::onHexHovered(const BattleHex & hoveredHex)
 	if (actionIsLegal(action, hoveredHex))
 	{
 		actionSetCursor(action, hoveredHex);
+		updateChainLightningPreview(action, hoveredHex);
 		newConsoleMsg = actionGetStatusMessage(action, hoveredHex);
 	}
 	else
 	{
+		invalidateChainLightningPreview();
 		actionSetCursorBlocked(action, hoveredHex);
 		newConsoleMsg = actionGetStatusMessageBlocked(action, hoveredHex);
 	}
@@ -4080,6 +4286,7 @@ void BattleActionsController::onHexHovered(const BattleHex & hoveredHex)
 
 void BattleActionsController::onHoverEnded()
 {
+	invalidateChainLightningPreview();
 	if(repeatedPlacementModeActive())
 	{
 		ENGINE->cursor().set(Cursor::Combat::BLOCKED);
@@ -4329,6 +4536,7 @@ bool BattleActionsController::isCastingPossibleHere(const CSpell * currentSpell,
 
 void BattleActionsController::activateStack()
 {
+	invalidateChainLightningPreview();
 	if(vengefulVinesTargetSelectionModeActive() && !vengefulVinesSelectionContextIsCurrent())
 		endCastingSpell();
 	cancelHeroOrderTargeting();
@@ -4478,6 +4686,7 @@ const std::vector<PossiblePlayerBattleAction> & BattleActionsController::getPoss
 
 void BattleActionsController::setPriorityActions(const std::vector<PossiblePlayerBattleAction> & actions)
 {
+	invalidateChainLightningPreview();
 	skirmisherTargetHex = BattleHex::INVALID;
 	invalidateSkirmisherTargetCache();
 	possibleActions = actions;
@@ -4537,6 +4746,7 @@ void BattleActionsController::selectDemonicGatingCreature(CreatureID creature)
 	if(!creature.hasValue() || !creature.toCreature())
 		return;
 
+	invalidateChainLightningPreview();
 	demonicGatingCreature = creature;
 	demonicGatingMovement = BattleHex::INVALID;
 	possibleActions = {PossiblePlayerBattleAction::DEMONIC_GATE};
@@ -4545,6 +4755,7 @@ void BattleActionsController::selectDemonicGatingCreature(CreatureID creature)
 
 void BattleActionsController::resetCurrentStackPossibleActions()
 {
+	invalidateChainLightningPreview();
 	skirmisherTargetHex = BattleHex::INVALID;
 	invalidateSkirmisherTargetCache();
 	demonicGatingCreature = CreatureID();

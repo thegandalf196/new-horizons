@@ -2,6 +2,24 @@
 
 Updated: 2026-10-06
 
+2026-10-06 required combat UI coverage: saved-v3 Chain Lightning and Master
+Chain now expose ordered recipient hexes, hop numbers and per-hop damage/kills
+in the existing battlefield/console. Forecasts use shared ordered direct-damage
+prefixes and explicitly assume no chance resistance. Presentation is cached on
+hover/action context; rendering does not rerun mechanics. Battlecraft's existing
+stack status row now reports the armed Wait percentage and Defend reduction,
+including Entrench, while retaining Bulwark and Soul Chain feedback. Shared rank
+helpers and player-scoped hero access supply the values; the refresh snapshot
+includes them. Defend help reflects the implemented next-activation lifetime.
+Client/native builds pass with12 jobs; focused native controls pass15/15 in3.421s,
+zero skips/errors. Both new UI source guards and module drift checks pass;
+independent review finds no blocker. These are two required UI paths, not new
+identities: combat spells61/67 and perks225/310 remain unchanged. Native rendered
+fit, live hover/cache refresh after asynchronous state changes, translation width
+and legacy terminology remain Phase2 checks. Overwatch's design hold is excluded.
+No GUI run, visual approval or playable promotion is claimed. UP023 records the
+initial missing-include build failure and repaired build/test receipts.
+
 2026-10-06 Chain Lightning principal-path correction: saved-v3 ordinary casts
 and forecasts now share the specified 100/70/50/35/25 retention instead of
 geometric halving. Integer-percent arithmetic preserves exact boundaries such
