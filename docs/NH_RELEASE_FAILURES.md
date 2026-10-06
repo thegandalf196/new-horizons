@@ -22,6 +22,10 @@ The existing cache helper re-verifies bytes and rejects corrupt entries. All
 YAML/Bash syntax and independent review pass. Windows runner execution and a
 successful successor remain unproven. No dependency version or gate changed.
 
+Reviewed repair pushed as `975c6f011`. Cheap notice successor `37405378013`
+succeeds on that source; full build `37405475795` is confirmed in progress.
+Retain exact-source identity and inspect its terminal result before retrying.
+
 ### 2026-10-05 UP239 — Repeated renderer fixture shutdown
 
 The four-portrait dummy-SDL fixture initially segfaulted during its scale-4
