@@ -27,9 +27,45 @@ OPTIONAL_MAPS = {
     "archEncounter": {"40": [180, 180, 180]},
     "archMap": {"40": [180, 180, 180]},
 }
+REVIEWED_ARCH_ROBE_ADDITIONS = {
+    "191": [81, 81, 81],
+    "192": [73, 73, 73],
+    "200": [65, 65, 65],
+    "203": [65, 65, 65],
+    "209": [65, 65, 65],
+    "210": [65, 65, 65],
+    "212": [57, 57, 57],
+}
 
 
 class NewHorizonsMagiPaletteAliasesTest(unittest.TestCase):
+    def test_archmage_battle_alias_uses_only_reviewed_robe_additions(self):
+        maps_path = ROOT / "assets/new-horizons/creatures/magi-palette/v1/maps.json"
+        authored = aliases.load_authored_maps(maps_path)
+        arch_battle = authored["archBattle"]
+
+        for index, target in REVIEWED_ARCH_ROBE_ADDITIONS.items():
+            with self.subTest(index=index):
+                self.assertEqual(arch_battle[index], target)
+
+        # These palette entries are known staff accents or mixed/uncertain
+        # roles and must not be swept into the robe conversion.
+        self.assertEqual(arch_battle["30"], [248, 72, 58])
+        self.assertEqual(arch_battle["41"], [249, 22, 18])
+        self.assertEqual(arch_battle["67"], [175, 17, 14])
+        self.assertEqual(arch_battle["104"], [103, 19, 14])
+        self.assertNotIn("136", arch_battle)
+        self.assertNotIn("99", arch_battle)
+        self.assertNotIn("149", arch_battle)
+
+        descriptor = aliases.build_descriptors(authored)["NH_ArchMageGrey.json"]
+        self.assertEqual(
+            {index: descriptor["paletteRemap"][index] for index in REVIEWED_ARCH_ROBE_ADDITIONS},
+            REVIEWED_ARCH_ROBE_ADDITIONS,
+        )
+        self.assertEqual(len(descriptor["images"]), 133)
+        self.assertTrue(all(entry["defFile"] == "CAMAGE.DEF" for entry in descriptor["images"]))
+
     def test_aliases_preserve_exact_external_group_frame_routes(self):
         descriptors = aliases.build_descriptors(VALID_MAPS)
         self.assertEqual(

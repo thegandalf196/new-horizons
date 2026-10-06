@@ -296,7 +296,10 @@ std::optional<std::pair<ImagePath, Point>> newHorizonsGuildBookOverlay(const CGT
 		return std::nullopt;
 
 	const auto image = ImagePath::fromJson(imageNode);
-	if(image.empty() || !CResourceHandler::get()->existsResource(image))
+	// Match the renderer's image lookup order for mounted module Images.
+	if(image.empty() || (!CResourceHandler::get()->existsResource(image.addPrefix("SPRITES/"))
+		&& !CResourceHandler::get()->existsResource(image.addPrefix("DATA/"))
+		&& !CResourceHandler::get()->existsResource(image)))
 		return std::nullopt;
 	return std::pair<ImagePath, Point>{image, Point(*x, *y)};
 }

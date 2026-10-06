@@ -113,7 +113,10 @@ std::optional<CastingGlowDefinition> loadCastingGlowDefinition(const std::string
 			return std::nullopt;
 
 		const auto path = ImagePath::fromJson(framePaths.Vector()[frame]);
-		if(path.empty() || !CResourceHandler::get()->existsResource(path))
+		// Match the renderer's image lookup order for mounted module Images.
+		if(path.empty() || (!CResourceHandler::get()->existsResource(path.addPrefix("SPRITES/"))
+			&& !CResourceHandler::get()->existsResource(path.addPrefix("DATA/"))
+			&& !CResourceHandler::get()->existsResource(path)))
 			return std::nullopt;
 		result.frames[frame] = path;
 	}

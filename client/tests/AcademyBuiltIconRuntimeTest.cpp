@@ -3,9 +3,9 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  *
  * Loads the runtime-generated Academy town-list icons at each SDL2 image
- * scale. An opt-in path also checks the detached Cabir animation descriptors
- * and authored icon bindings. SDL is constrained to its dummy video/audio
- * drivers and software renderer. ScreenHandler's existing constructor
+ * scale. Opt-in paths also check detached Cabir animation descriptors,
+ * authored icon bindings and private casting-glow resources. SDL is constrained
+ * to its dummy video/audio drivers and software renderer. ScreenHandler's existing constructor
  * clear/present stays on that dummy backend; the fixture has no event, input,
  * or presentation loop.
  */
@@ -20,6 +20,8 @@
 #include "../../lib/AsyncRunner.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/VCMIDirs.h"
+#include "../../lib/filesystem/AdapterLoaders.h"
+#include "../../lib/filesystem/CFilesystemLoader.h"
 #include "../../lib/filesystem/Filesystem.h"
 #include "../../lib/logging/CBasicLogConfigurator.h"
 #include "../../lib/modding/IdentifierStorage.h"
@@ -41,6 +43,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
@@ -1450,6 +1453,311 @@ void verifyCabirAnimations()
 	verifyCabirAnimation("NH_CabirMaster", true);
 }
 
+bool castingGlowValidationRequested()
+{
+	const char * value = std::getenv("NH_VALIDATE_CASTING_GLOWS");
+	return value && std::string_view(value) == "1";
+}
+
+void mountPrivateCastingGlowAssets()
+{
+	if(!castingGlowValidationRequested())
+		return;
+
+	const char * overlayValue = std::getenv("NH_MAGIC_ASSET_OVERLAY_DIR");
+	require(overlayValue && *overlayValue,
+		"Set NH_MAGIC_ASSET_OVERLAY_DIR to the private casting-glow resource fragment for opt-in validation");
+	const auto overlayRoot = std::filesystem::canonical(overlayValue);
+	const auto configDirectory = overlayRoot / "config";
+	const auto imagesDirectory = overlayRoot / "Mods" / "new-horizons" / "Images";
+	require(std::filesystem::is_directory(configDirectory)
+		&& std::filesystem::is_regular_file(configDirectory / "newHorizonsMagicAssets.json"),
+		"Private casting-glow fragment must contain config/newHorizonsMagicAssets.json");
+	require(std::filesystem::is_directory(imagesDirectory),
+		"Private casting-glow fragment must contain Mods/new-horizons/Images");
+
+	auto overlayFilesystem = std::make_unique<CFilesystemList>();
+	overlayFilesystem->addLoader(std::make_unique<CFilesystemLoader>("CONFIG/",
+		boost::filesystem::path(configDirectory.string())), false);
+	overlayFilesystem->addLoader(std::make_unique<CFilesystemLoader>("SPRITES/",
+		boost::filesystem::path(imagesDirectory.string())), false);
+	CResourceHandler::addFilesystem("data", "nh-casting-glow-validation", std::move(overlayFilesystem));
+
+	require(CResourceHandler::get()->existsResource(JsonPath::builtin("config/newHorizonsMagicAssets.json")),
+		"Private casting-glow metadata was not mounted through the resource resolver");
+}
+
+struct CastingGlowCompositionStats
+{
+	size_t frames = 0;
+	size_t visibleOverlayPixels = 0;
+	size_t changedPixels = 0;
+	size_t mirroredVisibleOverlayPixels = 0;
+	size_t mirroredChangedPixels = 0;
+	size_t partialAlphaBlendSamples = 0;
+	size_t mirroredPartialAlphaBlendSamples = 0;
+};
+
+void verifyCastingGlowComposition(IRenderHandler & renderer, const std::shared_ptr<IImage> & sourceFrame,
+		const ImageLocator & sourceLocator, const ImagePath & overlayPath,
+		const std::shared_ptr<IImage> & overlay, const Point & dimensions,
+		CastingGlowCompositionStats & stats, size_t frame)
+{
+	ImageLocator flippedSourceLocator = sourceLocator;
+	flippedSourceLocator.verticalFlip = true;
+	const auto flippedSource = renderer.loadImage(flippedSourceLocator);
+	ImageLocator flippedOverlayLocator(overlayPath, EImageBlitMode::SIMPLE);
+	flippedOverlayLocator.verticalFlip = true;
+	const auto flippedOverlay = renderer.loadImage(flippedOverlayLocator);
+	require(flippedSource && flippedOverlay && flippedSource->dimensions() == dimensions
+		&& flippedOverlay->dimensions() == dimensions,
+		"Casting-glow mirrored composition lost the native DEF canvas geometry");
+
+	Canvas sourceCanvas(dimensions, CanvasScalingPolicy::IGNORE);
+	Canvas overlayCanvas(dimensions, CanvasScalingPolicy::IGNORE);
+	Canvas compositeCanvas(dimensions, CanvasScalingPolicy::IGNORE);
+	Canvas flippedSourceCanvas(dimensions, CanvasScalingPolicy::IGNORE);
+	Canvas flippedOverlayCanvas(dimensions, CanvasScalingPolicy::IGNORE);
+	Canvas flippedCompositeCanvas(dimensions, CanvasScalingPolicy::IGNORE);
+	for(Canvas * canvas : {&sourceCanvas, &overlayCanvas, &compositeCanvas,
+		&flippedSourceCanvas, &flippedOverlayCanvas, &flippedCompositeCanvas})
+		canvas->drawColor(Rect(Point(0, 0), dimensions), ColorRGBA(0, 0, 0, 0));
+
+	sourceCanvas.draw(sourceFrame, Point(0, 0));
+	overlayCanvas.draw(overlay, Point(0, 0));
+	compositeCanvas.draw(sourceFrame, Point(0, 0));
+	compositeCanvas.draw(overlay, Point(0, 0));
+	flippedSourceCanvas.draw(flippedSource, Point(0, 0));
+	flippedOverlayCanvas.draw(flippedOverlay, Point(0, 0));
+	flippedCompositeCanvas.draw(flippedSource, Point(0, 0));
+	flippedCompositeCanvas.draw(flippedOverlay, Point(0, 0));
+
+	size_t visibleOverlayPixels = 0;
+	size_t changedPixels = 0;
+	size_t mirroredVisibleOverlayPixels = 0;
+	size_t mirroredChangedPixels = 0;
+	size_t partialAlphaBlendSamples = 0;
+	size_t mirroredPartialAlphaBlendSamples = 0;
+	const auto blendChannel = [](uint8_t destination, uint8_t source, uint8_t alpha)
+	{
+		return (static_cast<int>(source) * alpha
+			+ static_cast<int>(destination) * (255 - alpha) + 127) / 255;
+	};
+	const auto closeEnough = [](uint8_t actual, int expected)
+	{
+		return std::abs(static_cast<int>(actual) - expected) <= 1;
+	};
+	for(int y = 0; y < dimensions.y; ++y)
+	{
+		for(int x = 0; x < dimensions.x; ++x)
+		{
+			const Point pixel(x, y);
+			const Point mirroredPixel(dimensions.x - x - 1, y);
+			const ColorRGBA base = sourceCanvas.getPixel(pixel);
+			const ColorRGBA glow = overlayCanvas.getPixel(pixel);
+			const ColorRGBA result = compositeCanvas.getPixel(pixel);
+			const ColorRGBA mirroredBase = flippedSourceCanvas.getPixel(pixel);
+			const ColorRGBA mirroredGlow = flippedOverlayCanvas.getPixel(pixel);
+			const ColorRGBA mirroredResult = flippedCompositeCanvas.getPixel(pixel);
+
+			require(flippedSourceCanvas.getPixel(pixel) == sourceCanvas.getPixel(mirroredPixel)
+				&& mirroredGlow == overlayCanvas.getPixel(mirroredPixel),
+				"Defender casting glow must mirror with the native DEF frame around the vertical axis");
+			if(glow.a == 0)
+				require(result == base, "Transparent casting-glow pixels must not alter the source DEF frame");
+			else
+			{
+				++visibleOverlayPixels;
+				if(result != base)
+					++changedPixels;
+				if(glow.a == 255)
+					require(result == glow, "Opaque casting-glow pixels must replace the source at that pixel");
+				else if(base.a == 255)
+				{
+					require(closeEnough(result.r, blendChannel(base.r, glow.r, glow.a))
+						&& closeEnough(result.g, blendChannel(base.g, glow.g, glow.a))
+						&& closeEnough(result.b, blendChannel(base.b, glow.b, glow.a))
+						&& result.a == 255,
+						"Partially transparent casting-glow pixels must alpha-blend over opaque native DEF pixels");
+					++partialAlphaBlendSamples;
+				}
+			}
+			if(mirroredGlow.a == 0)
+				require(mirroredResult == mirroredBase,
+					"Transparent mirrored casting-glow pixels must not alter the defender DEF frame");
+			else
+			{
+				++mirroredVisibleOverlayPixels;
+				if(mirroredResult != mirroredBase)
+					++mirroredChangedPixels;
+				if(mirroredGlow.a == 255)
+					require(mirroredResult == mirroredGlow,
+						"Opaque mirrored casting-glow pixels must replace the source at that pixel");
+				else if(mirroredBase.a == 255)
+				{
+					require(closeEnough(mirroredResult.r,
+						blendChannel(mirroredBase.r, mirroredGlow.r, mirroredGlow.a))
+						&& closeEnough(mirroredResult.g,
+							blendChannel(mirroredBase.g, mirroredGlow.g, mirroredGlow.a))
+						&& closeEnough(mirroredResult.b,
+							blendChannel(mirroredBase.b, mirroredGlow.b, mirroredGlow.a))
+						&& mirroredResult.a == 255,
+						"Partially transparent mirrored glow must alpha-blend over opaque native DEF pixels");
+					++mirroredPartialAlphaBlendSamples;
+				}
+			}
+		}
+	}
+	++stats.frames;
+	stats.visibleOverlayPixels += visibleOverlayPixels;
+	stats.changedPixels += changedPixels;
+	stats.mirroredVisibleOverlayPixels += mirroredVisibleOverlayPixels;
+	stats.mirroredChangedPixels += mirroredChangedPixels;
+	stats.partialAlphaBlendSamples += partialAlphaBlendSamples;
+	stats.mirroredPartialAlphaBlendSamples += mirroredPartialAlphaBlendSamples;
+	std::cout << "  CH00/light/frame_" << frame << ": alpha-visible=" << visibleOverlayPixels
+		<< ", changed=" << changedPixels << "; mirrored alpha-visible="
+		<< mirroredVisibleOverlayPixels << ", changed=" << mirroredChangedPixels << "; partial blends="
+		<< partialAlphaBlendSamples << ", mirrored=" << mirroredPartialAlphaBlendSamples << '\n';
+}
+
+void verifyCastingGlowResources(IRenderHandler & renderer)
+{
+	static constexpr std::array<std::string_view, 18> supportedDefs = {
+		"CH00", "CH01", "CH02", "CH03", "CH04", "CH05", "CH06", "CH07", "CH08",
+		"CH09", "CH010", "CH11", "CH012", "CH013", "CH014", "CH015", "CH16", "CH17"
+	};
+	static constexpr std::array<std::string_view, 6> supportedSchools = {
+		"light", "nature", "sorcery", "havoc", "chaos", "shadow"
+	};
+	constexpr size_t castSpellGroup = static_cast<size_t>(EHeroAnimType::CAST_SPELL);
+	constexpr size_t castSpellFrames = 8;
+
+	const JsonPath metadataPath = JsonPath::builtin("config/newHorizonsMagicAssets.json");
+	require(CResourceHandler::get()->existsResource(metadataPath),
+		"New Horizons casting-glow metadata is absent from the native resource resolver");
+	const JsonNode metadata(metadataPath);
+	const auto & definitions = metadata["castingGlows"];
+	require(definitions.isStruct() && definitions.Struct().size() == supportedDefs.size(),
+		"Casting-glow metadata must declare the eighteen supported hero DEF variants");
+
+	size_t checkedOverlayFrames = 0;
+	CastingGlowCompositionStats compositionStats;
+	for(size_t defIndex = 0; defIndex < supportedDefs.size(); ++defIndex)
+	{
+		const std::string defKey(supportedDefs[defIndex]);
+		const AnimationPath defPath = AnimationPath::builtin(defKey + ".DEF");
+		const auto animation = renderer.loadAnimation(defPath, EImageBlitMode::WITH_SHADOW);
+		require(animation != nullptr && animation->size(castSpellGroup) == castSpellFrames,
+			"Original hero DEF must provide the exact eight-frame cast group: " + defKey);
+
+		const auto & schools = definitions[defKey];
+		require(schools.isStruct() && schools.Struct().size() == supportedSchools.size(),
+			"Every supported hero DEF must provide all six casting-glow schools: " + defKey);
+
+		for(size_t frame = 0; frame < castSpellFrames; ++frame)
+		{
+			const auto sourceLocator = animation->getImageLocator(frame, castSpellGroup);
+			const auto sourceDefKey = sourceLocator.defFile ? sourceLocator.defFile->getName() : std::string();
+			std::string sourceDefName = sourceDefKey;
+			if(const auto slash = sourceDefName.rfind('/'); slash != std::string::npos)
+				sourceDefName.erase(0, slash + 1);
+			require(sourceDefName == defPath.getName()
+				&& sourceLocator.defGroup == static_cast<int>(castSpellGroup)
+				&& sourceLocator.defFrame == static_cast<int>(frame),
+				"Casting-glow frame must preserve the exact original DEF/group/frame: " + defKey);
+
+			const auto sourceFrame = animation->getImage(frame, castSpellGroup, true);
+			require(sourceFrame != nullptr,
+				"Could not decode original DEF casting frame " + defKey + " frame " + std::to_string(frame));
+			const Point nativeDimensions = sourceFrame->dimensions();
+			const auto originalPixels = captureImagePixels(sourceFrame, nativeDimensions,
+				"Original DEF casting frame " + defKey + " frame " + std::to_string(frame));
+
+			for(size_t schoolIndex = 0; schoolIndex < supportedSchools.size(); ++schoolIndex)
+			{
+				const std::string school(supportedSchools[schoolIndex]);
+				const auto & schoolDefinition = schools[school];
+				require(schoolDefinition.isStruct(),
+					"Missing authored casting-glow variant: " + defKey + "/" + school);
+				const auto & dimensions = schoolDefinition["dimensions"];
+				const auto & framePaths = schoolDefinition["frames"];
+				require(dimensions.isVector() && dimensions.Vector().size() == 2
+					&& dimensions.Vector()[0].isNumber() && dimensions.Vector()[1].isNumber(),
+					"Casting-glow dimensions must be two numeric values: " + defKey + "/" + school);
+				const double widthValue = dimensions.Vector()[0].Float();
+				const double heightValue = dimensions.Vector()[1].Float();
+			require(std::isfinite(widthValue) && std::isfinite(heightValue)
+				&& std::floor(widthValue) == widthValue && std::floor(heightValue) == heightValue
+					&& widthValue > 0 && heightValue > 0 && widthValue <= 4096 && heightValue <= 4096,
+					"Casting-glow dimensions must be positive integers: " + defKey + "/" + school);
+				const Point declaredDimensions(static_cast<int>(widthValue), static_cast<int>(heightValue));
+				require(declaredDimensions == nativeDimensions,
+					"Casting-glow size mismatch for " + defKey + "/" + school + "/frame_"
+					+ std::to_string(frame) + ": manifest " + std::to_string(declaredDimensions.x) + "x"
+					+ std::to_string(declaredDimensions.y) + ", native DEF " + std::to_string(nativeDimensions.x)
+					+ "x" + std::to_string(nativeDimensions.y));
+				require(framePaths.isVector() && framePaths.Vector().size() == castSpellFrames,
+					"Casting-glow sequence must contain exactly eight frames: " + defKey + "/" + school);
+
+				const auto & framePathNode = framePaths.Vector()[frame];
+				require(framePathNode.isString() && !framePathNode.String().empty(),
+					"Casting-glow frame resource path is empty: " + defKey + "/" + school);
+				const ImagePath imagePath = ImagePath::fromJson(framePathNode);
+				const ImagePath mountedPath = imagePath.addPrefix("SPRITES/");
+				require(CResourceHandler::get()->existsResource(mountedPath),
+					"Casting-glow image is not mounted: " + defKey + "/" + school + "/frame_"
+					+ std::to_string(frame));
+				const auto overlay = renderer.loadImage(imagePath, EImageBlitMode::SIMPLE);
+				require(overlay != nullptr && overlay->dimensions() == nativeDimensions,
+					"Casting-glow image geometry does not match the native DEF frame: "
+					+ defKey + "/" + school + "/frame_" + std::to_string(frame));
+				++checkedOverlayFrames;
+
+				if(defIndex == 0 && schoolIndex == 0)
+					verifyCastingGlowComposition(renderer, sourceFrame, sourceLocator, imagePath, overlay,
+						nativeDimensions, compositionStats, frame);
+
+				if(defIndex == 0 && frame == 0)
+				{
+					const auto loadedPixels = captureImagePixels(overlay, nativeDimensions,
+						"Cached casting glow " + defKey + "/" + school);
+					const auto repeatedLoad = renderer.loadImage(imagePath, EImageBlitMode::SIMPLE);
+					require(repeatedLoad && captureImagePixels(repeatedLoad, nativeDimensions,
+						"Repeated casting glow " + defKey + "/" + school) == loadedPixels,
+						"Repeated native overlay load must preserve its cached pixels: " + defKey + "/" + school);
+				}
+			}
+
+			require(captureImagePixels(sourceFrame, nativeDimensions,
+				"Original DEF casting frame after overlay loads " + defKey + " frame " + std::to_string(frame))
+				== originalPixels,
+				"Loading/compositing casting glows must not mutate shared original DEF pixels: " + defKey);
+		}
+	}
+	require(checkedOverlayFrames == supportedDefs.size() * supportedSchools.size() * castSpellFrames,
+		"Native casting-glow resource check did not validate all supported frames");
+	require(compositionStats.frames == castSpellFrames
+		&& compositionStats.visibleOverlayPixels > 0 && compositionStats.changedPixels > 0
+		&& compositionStats.mirroredVisibleOverlayPixels > 0 && compositionStats.mirroredChangedPixels > 0,
+		"The eight-frame native cast overlay sequence must visibly change pixels only where alpha is visible; "
+		+ std::to_string(compositionStats.changedPixels) + "/"
+		+ std::to_string(compositionStats.visibleOverlayPixels) + " changed/visible, mirrored "
+		+ std::to_string(compositionStats.mirroredChangedPixels) + "/"
+		+ std::to_string(compositionStats.mirroredVisibleOverlayPixels) + " changed/visible; partial blends "
+		+ std::to_string(compositionStats.partialAlphaBlendSamples) + ", mirrored "
+		+ std::to_string(compositionStats.mirroredPartialAlphaBlendSamples));
+	std::cout << "  CH00/light eight-frame cast: " << compositionStats.changedPixels << '/'
+		<< compositionStats.visibleOverlayPixels << " changed/alpha-visible pixels; mirrored "
+		<< compositionStats.mirroredChangedPixels << '/'
+		<< compositionStats.mirroredVisibleOverlayPixels << "; partial blends "
+		<< compositionStats.partialAlphaBlendSamples << ", mirrored "
+		<< compositionStats.mirroredPartialAlphaBlendSamples << '\n';
+	std::cout << "  Native casting glow: " << supportedDefs.size() << " DEF variants x "
+		<< supportedSchools.size() << " schools x " << castSpellFrames
+		<< " decoded frames; source geometry and immutability verified\n";
+}
+
 void setUpscalingFilter(const char * name)
 {
 	Settings filter = settings.write["video"]["upscalingFilter"];
@@ -1495,6 +1803,7 @@ void runRuntimeRegression()
 
 	LIBRARY = new GameLibrary;
 	LIBRARY->initializeFilesystem(false);
+	mountPrivateCastingGlowAssets();
 	LIBRARY->initializeLibrary();
 	const auto & activeMods = LIBRARY->modh->getActiveMods();
 	require(std::find(activeMods.begin(), activeMods.end(), "new-horizons") != activeMods.end(),
@@ -1524,6 +1833,8 @@ void runRuntimeRegression()
 		if(factorIndex == 0)
 		{
 			verifyMagiPaletteAliases(renderer);
+			if(castingGlowValidationRequested())
+				verifyCastingGlowResources(renderer);
 			const char * inspectionEnabled = std::getenv("VCMI_MAGI_PALETTE_INSPECTION");
 			if(inspectionEnabled && std::string_view(inspectionEnabled) == "1")
 			{
