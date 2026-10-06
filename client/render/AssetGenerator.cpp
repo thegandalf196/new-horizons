@@ -111,6 +111,10 @@ void AssetGenerator::initialize()
 	{
 		return createAcademyCreaturePortrait(42, "NH_academy_giant_portrait_mask.png");
 	};
+	imageFiles[ImagePath::builtin("NH_academy_titan_icon_large.png")] = [this]()
+	{
+		return createAcademyCreaturePortrait(43, "NH_academy_titan_portrait_mask.png");
+	};
 
 	auto addAcademyMapLayers = [this](const std::string & image, const AnimationPath & originalAnimation)
 	{
@@ -287,7 +291,8 @@ bool AssetGenerator::preferGeneratedImage(const ImagePath & image) const
 		|| image == ImagePath::builtin("NH_academy_masterGenie_icon_large.png")
 		|| image == ImagePath::builtin("NH_academy_naga_icon_large.png")
 		|| image == ImagePath::builtin("NH_academy_nagaQueen_icon_large.png")
-		|| image == ImagePath::builtin("NH_academy_giant_icon_large.png");
+		|| image == ImagePath::builtin("NH_academy_giant_icon_large.png")
+		|| image == ImagePath::builtin("NH_academy_titan_icon_large.png");
 }
 
 std::map<ImagePath, std::shared_ptr<ISharedImage>> AssetGenerator::generateAllImages()

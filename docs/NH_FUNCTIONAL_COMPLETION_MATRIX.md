@@ -2,6 +2,12 @@
 
 Updated: 2026-10-05
 
+Latest UP239 source coverage:12/14, adding provisionally accepted Titan v3.
+Native twelve-portrait consumer, build, export checks and source review pass.
+Five isolated contour uncertainties are deferred aesthetic polish. Two rejected
+Gargoyle families remain missing; latest playable remains10/14. Gameplay counts
+unchanged. Older source checkpoints below retain their historical evidence.
+
 UP239 source coverage now11/14: Giant ID40/frame42 integrated, client/fixture
 build and actual scaled consumer pass (zero skips), plus focused exports/tests
 and independent review. Latest playable delivery remains10/14. Titan revisions

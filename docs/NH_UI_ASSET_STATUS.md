@@ -1,5 +1,10 @@
 # New Horizons UI and asset status register
 
+Latest source:12/14 Academy portraits. Titan v3 is Provisional after native
+anatomy review; five isolated contour uncertainties are deferred, not Final
+approval. Actual twelve-portrait consumer/build pass. Gargoyle revisions remain
+failed drafts, not runtime art. Latest promoted candidate still delivers10/14.
+
 Source checkpoint:11/14 Academy portraits, adding provisionally approved Giant.
 Actual scaled consumer and build pass. Playable remains10/14. Titan v2/v3 are
 unregistered drafts; v3 changes one preserved sky pixel and four contour pixels.

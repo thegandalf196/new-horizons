@@ -43,6 +43,7 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
             "NH_academy_naga_icon_large.png",
             "NH_academy_nagaQueen_icon_large.png",
             "NH_academy_giant_icon_large.png",
+            "NH_academy_titan_icon_large.png",
         )
         decoded = []
         for path in backdrop_paths:
@@ -89,6 +90,13 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
             "2e576469ff77e6c07ad529caedead80bc342e39f7fd5c87bd293dd53a83102bd",
         )
         self.assertEqual((IMAGE_ROOT / "NH_academy_giant_portrait_mask.png").read_bytes(), giant_bytes)
+        titan_source = ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/titan-v3.png"
+        titan_bytes = titan_source.read_bytes()
+        self.assertEqual(
+            hashlib.sha256(titan_bytes).hexdigest(),
+            "df23c30a56d0f08f7b24e16d05d6de2e55acedfa75bcbfe3143577f5fc3b8092",
+        )
+        self.assertEqual((IMAGE_ROOT / "NH_academy_titan_portrait_mask.png").read_bytes(), titan_bytes)
 
     def test_only_reviewed_large_portrait_routes_are_registered(self):
         config = parse_jsonc((ROOT / "Mods/new-horizons/Content/config/creatures/tower.json").read_text())
@@ -104,6 +112,7 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
             "core:naga": "NH_academy_naga_icon_large.png",
             "core:nagaQueen": "NH_academy_nagaQueen_icon_large.png",
             "core:giant": "NH_academy_giant_icon_large.png",
+            "core:titan": "NH_academy_titan_icon_large.png",
         }
         for creature, image in expected.items():
             with self.subTest(creature=creature):
@@ -116,10 +125,8 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
             self.assertIn(f'ImagePath::builtin("{image}")', generator)
         self.assertNotIn("NH_academy_stoneGargoyle_icon_large.png", generator)
         self.assertNotIn("NH_academy_obsidianGargoyle_icon_large.png", generator)
-        self.assertNotIn("NH_academy_titan_icon_large.png", generator)
         self.assertNotIn("core:stoneGargoyle", config)
         self.assertNotIn("core:obsidianGargoyle", config)
-        self.assertNotIn("core:titan", config)
 
     def test_portrait_frame_ids_preserve_hottraits_reversal(self):
         core = parse_jsonc((ROOT / "config/creatures/tower.json").read_text())
@@ -156,6 +163,10 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
         )
         self.assertIn(
             '{"giant", "NH_academy_giant_icon_large.png", "NH_academy_giant_portrait_mask.png", 40, 42}',
+            fixture,
+        )
+        self.assertIn(
+            '{"titan", "NH_academy_titan_icon_large.png", "NH_academy_titan_portrait_mask.png", 41, 43}',
             fixture,
         )
         config = (ROOT / "Mods/new-horizons/Content/config/creatures/tower.json").read_text(encoding="utf-8")

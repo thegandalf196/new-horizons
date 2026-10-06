@@ -120,5 +120,10 @@
 		"graphics": {
 			"iconLarge": "NH_academy_giant_icon_large.png"
 		}
+	},
+	"core:titan": {
+		"graphics": {
+			"iconLarge": "NH_academy_titan_icon_large.png"
+		}
 	}
 }

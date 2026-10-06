@@ -1,5 +1,14 @@
 # Academy large-portrait background mattes
 
+Latest source: Titan v3 provisionally accepted and runtime-integrated, ID41/frame43.
+Its recognizable anatomy and lightning pass native review; five isolated contour
+uncertainties are deferred aesthetic polish rather than Phase1 blockers. All
+twelve runtime portraits pass the actual scale1–4 consumer. Gargoyles remain
+unregistered: Stone v3 fails to remove the left building; Obsidian v2 retains
+that building and v3 invents upper-left geometry/internal holes. Failed drafts
+and exact prompts are preserved, not approved exports. No complete-family or
+Final-art claim is made. Earlier dispositions below are historical checkpoints.
+
 Giant is now runtime-integrated (ID40/frame42), provisionally accepted. Its
 upper-left blue shape in comparisons belongs to the authored backdrop, not
 retained original Tower scenery. Eleven-portrait actual scaled-consumer/build
