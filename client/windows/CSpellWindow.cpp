@@ -33,6 +33,7 @@
 #include "../widgets/GraphicalPrimitiveCanvas.h"
 #include "../widgets/CComponent.h"
 #include "../widgets/CTextInput.h"
+#include "../widgets/MiscWidgets.h"
 #include "../widgets/TextControls.h"
 #include "../widgets/Buttons.h"
 #include "../widgets/VideoWidget.h"
@@ -336,6 +337,16 @@ CSpellWindow::CSpellWindow(const CGHeroInstance * _myHero, CPlayerInterface * _m
 		statusBar = CGStatusBar::create(400, 587);
 	else
 		statusBar = CGStatusBar::create(7, 569, ImagePath::builtin("Spelroll.bmp"));
+
+	const int adventureStatusX = 300 + offR / 2;
+	const int adventureStatusY = 394 + offB;
+	adventureSpellDailyStatusLabel = std::make_shared<CLabel>(adventureStatusX, adventureStatusY,
+		FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW);
+	// Keep the transparent help target within the label row, clear of the native
+	// bottom controls immediately below it.
+	adventureSpellDailyStatusHelp = std::make_shared<LRClickableAreaWText>(
+		Rect(adventureStatusX - 120, adventureStatusY - 7, 240, 14));
+	adventureSpellDailyStatusHelp->removeUsedEvents(LCLICK);
 
 	Rect schoolRect( 549 + pos.x + offR, 94 + pos.y, 45, 35);
 	interactiveAreas.push_back(std::make_shared<InteractiveArea>( Rect( 479 + pos.x + (isBigSpellbook ? 175 : 0), 405 + pos.y + offB, isBigSpellbook ? 60 : 36, 56), std::bind(&CSpellWindow::fexitb,         this),    460, this));
@@ -837,6 +848,7 @@ void CSpellWindow::computeSpellsPerArea()
 				spellAreas[c+2]->setSpell(nullptr);
 		}
 	}
+	updateAdventureSpellDailyStatus();
 	redraw();
 }
 
@@ -898,6 +910,46 @@ void CSpellWindow::setCurrentPage(int value)
 	ENGINE->fakeMouseMove(); // refresh hover state so a stale page-turn hint clears when the corner is disabled under the cursor
 
 	mana->setText(std::to_string(myHero->getManaAvailable()));//just in case, it will be possible to cast spell without closing book
+	updateAdventureSpellDailyStatus();
+}
+
+bool CSpellWindow::isAdventureSpellUsedToday(SpellID spell) const
+{
+	const auto & magicRules = myHero->getMagicRules();
+	return !battleSpellsOnly && !onSpellSelect
+		&& newHorizonsMagic::adventureSpellRulesActive(magicRules)
+		&& newHorizonsMagic::isAdventureSpell(magicRules, spell)
+		&& myHero->hasNewHorizonsAdventureSpellCastToday();
+}
+
+void CSpellWindow::updateAdventureSpellDailyStatus()
+{
+	if(!adventureSpellDailyStatusLabel || !adventureSpellDailyStatusHelp)
+		return;
+
+	const auto & magicRules = myHero->getMagicRules();
+	const bool showStatus = !battleSpellsOnly && !onSpellSelect
+		&& newHorizonsMagic::adventureSpellRulesActive(magicRules);
+	if(!showStatus)
+	{
+		adventureSpellDailyStatusLabel->clear();
+		adventureSpellDailyStatusHelp->hoverText.clear();
+		adventureSpellDailyStatusHelp->text.clear();
+		adventureSpellDailyStatusHelp->setEnabled(false);
+		return;
+	}
+
+	const bool usedToday = myHero->hasNewHorizonsAdventureSpellCastToday();
+	const auto statusKey = usedToday
+		? "new-horizons.adventure.spellbook.dailyUsed"
+		: "new-horizons.adventure.spellbook.dailyAvailable";
+	const auto statusText = LIBRARY->generaltexth->translate(statusKey);
+	adventureSpellDailyStatusLabel->setColor(usedToday ? Colors::ORANGE : Colors::YELLOW);
+	adventureSpellDailyStatusLabel->setText(statusText);
+	adventureSpellDailyStatusHelp->hoverText = statusText;
+	adventureSpellDailyStatusHelp->text = LIBRARY->generaltexth->translate(
+		"new-horizons.adventure.spellbook.dailyHelp");
+	adventureSpellDailyStatusHelp->setEnabled(true);
 }
 
 void CSpellWindow::turnPageLeft()
@@ -1245,7 +1297,8 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 		}
 
 		ColorRGBA firstLineColor, secondLineColor;
-		if(divineMandateLocked || ((spellCost > owner->myHero->getManaAvailable() || schoolLocked) && !owner->onSpellSelect)) //hero cannot cast this spell
+		if(divineMandateLocked || owner->isAdventureSpellUsedToday(mySpell->id)
+			|| ((spellCost > owner->myHero->getManaAvailable() || schoolLocked) && !owner->onSpellSelect)) //hero cannot cast this spell
 		{
 			firstLineColor = Colors::WHITE;
 			secondLineColor = Colors::ORANGE;

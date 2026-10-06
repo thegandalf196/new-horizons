@@ -1,3 +1,6 @@
 {
-	"new-horizons.adventure.dimensionDoor.targetingHint": "Choose a destination. Casting Dimension Door spends all remaining Movement."
+	"new-horizons.adventure.dimensionDoor.targetingHint": "Choose a destination. Casting Dimension Door spends all remaining Movement.",
+	"new-horizons.adventure.spellbook.dailyAvailable": "Adventure Spell: available today",
+	"new-horizons.adventure.spellbook.dailyUsed": "Adventure Spell: used today",
+	"new-horizons.adventure.spellbook.dailyHelp": "A hero may cast one Adventure Spell per day. The opportunity refreshes at the start of the next day."
 }

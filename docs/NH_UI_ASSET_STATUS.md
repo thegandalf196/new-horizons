@@ -1,5 +1,16 @@
 # New Horizons UI and asset status register
 
+Adventure Spell daily-use indicator (UP056),2026-10-06: **Provisional** UI
+source implementation verified. Uses the existing spellbook page surface and
+native small text, not a new framed panel or raster badge. The localized daily
+available/used state comes from the hero's authoritative Adventure Spell state;
+the existing casting policy remains unchanged. Client build, focused daily-use
+source guard, adjacent Guild/centering guards and independent review pass.
+The underlying daily-use/save/next-day state test passes1/1 with zero skips.
+Native-size layout/input review and playable delivery remain separate gates.
+No spell artwork is newly Final and no art asset is created by this text-only
+status addition.
+
 Gargoyle alternative: v2 full-colour Stone Gargoyle portrait is a purpose-made
 Provisional preview, NOT a background-only edit or approved runtime asset.
 Its58×64/8× reductions are inspected and reproducible; newly interpreted anatomy

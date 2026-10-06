@@ -27,6 +27,7 @@ class TransparentFilledRectangle;
 class CToggleButton;
 class CButton;
 class VideoWidgetOnce;
+class LRClickableAreaWText;
 
 /// The spell window
 class CSpellWindow : public CWindowObject, public IVideoHolder
@@ -92,6 +93,8 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 	std::array<std::shared_ptr<SpellArea>, 24> spellAreas;
 	std::shared_ptr<CLabel> mana;
 	std::shared_ptr<CGStatusBar> statusBar;
+	std::shared_ptr<CLabel> adventureSpellDailyStatusLabel;
+	std::shared_ptr<LRClickableAreaWText> adventureSpellDailyStatusHelp;
 
 	std::vector<std::shared_ptr<InteractiveArea>> interactiveAreas;
 
@@ -142,6 +145,8 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 	void processSpells();
 	void searchInput();
 	void computeSpellsPerArea(); //recalculates spellAreas::mySpell
+	void updateAdventureSpellDailyStatus();
+	bool isAdventureSpellUsedToday(SpellID spell) const;
 	bool canUseSpellForCurrentDivineMandateFollowup(SpellID spell) const;
 	std::string currentDivineMandateFollowupText() const;
 	std::string spellActionOpportunityText(SpellID spell) const;

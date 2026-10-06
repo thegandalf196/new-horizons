@@ -2,6 +2,19 @@
 
 Updated: 2026-10-06
 
+2026-10-06 required Adventure UI coverage: the previously missing spellbook
+daily-use indicator is now source implemented. Localized available/used text,
+read-only help and unavailable slot colors read existing replicated hero state;
+legacy, battle-book and acquisition-selection contexts remain unchanged.
+Client build passes with12 jobs; new daily-status and adjacent Guild/centering
+guards plus module drift pass. The existing authoritative shared-opportunity,
+save/load and next-day reset case passes1/1 in1.165s, zero skips; UP056 records
+runner identity and receipts. Independent review finds no blocker. Phase2 retains
+native rendered fit, translated-text width and live input/refresh verification;
+playable delivery is separate. No new state or casting policy is introduced.
+This adds a required UI path, not a spell/perk identity: counts stay61/67 and
+225/310. Remaining Adventure effect decisions are not resolved by this indicator.
+
 2026-10-06 Convergence prerequisite correction: generic legacy health-based
 Summon's floor rounding does not imply missing exact-HP infrastructure.
 Production Summon Trolls and Transfigure Matter already create ceil-count stacks
