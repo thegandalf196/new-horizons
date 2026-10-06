@@ -2,13 +2,17 @@
 
 Last audited: 2026-10-05
 
-UP240 Academy adventure-map material revision: **Provisional draft**, not installed.
-The first fort master and its exact HoMM3-Art built-in edit prompt are retained
-under `assets/new-horizons/academy/map-revisions/v2/`. Master reviewed; native
-registration/comparison and Village/Capitol consistency remain pending. Prior
-runtime sprites remain unchanged. UP239's first generated Gremlin matte failed
+UP240 Academy adventure-map material revision: **Provisional**, installed in source.
+All three masters and their exact HoMM3-Art built-in edit prompts are retained
+under `assets/new-horizons/academy/map-revisions/v2/`. Root and reviewer inspected
+native comparisons; prior geometry and external ownership/shadows are unchanged.
+Pinned exports replace the three runtime bodies, with eight focused tests and
+import/reduction checks passing. Playable delivery and user aesthetic acceptance
+remain separate. UP239's first generated Gremlin matte failed
 native comparison (retained snowy architecture) and is rejected, not new portrait
-coverage or approved artwork.
+coverage or approved artwork. Its corrected geometry-only matte now passes root
+native review provisionally; renderer integration and the other thirteen large
+portraits are Not done, so this is not completed portrait coverage.
 
 UP-238 Academy faction/town-list icons: revised artwork is Provisional pending
 user native-scale acceptance, not Final. The two new HoMM3-Art masters and exact

@@ -178,6 +178,93 @@ class NewHorizonsAcademyArtTest(unittest.TestCase):
             self.assertEqual(normal.read_bytes(), reviewed)
             self.assertEqual(built.read_bytes(), unknown)
 
+    def test_reviewed_v2_map_revision_is_pinned_installed_and_native_framed(self):
+        revision = academy_importer.load_map_revision(
+            ROOT,
+            academy_importer.APPROVED_MAP_REVISION_MANIFEST_SHA256,
+        )
+        self.assertEqual(revision["manifest"]["revision"], "v2")
+        for name, expected in academy_importer.MAP_REVISION_SLOTS.items():
+            with self.subTest(body=name):
+                runtime = IMAGES / expected["runtime"]
+                reviewed = revision["exports_by_runtime"][expected["runtime"]]
+                self.assertEqual(runtime.read_bytes(), reviewed)
+                with Image.open(runtime) as image:
+                    self.assertEqual(list(image.size), [192, 192])
+                    alpha_bounds = image.convert("RGBA").getchannel("A").getbbox()
+                source_box = expected["sourceSolidBox"]
+                self.assertIsNotNone(alpha_bounds)
+                self.assertGreaterEqual(alpha_bounds[0], source_box["left"])
+                self.assertGreaterEqual(alpha_bounds[1], source_box["top"])
+                self.assertLessEqual(alpha_bounds[2], source_box["left"] + source_box["width"])
+                self.assertLessEqual(alpha_bounds[3], source_box["top"] + source_box["height"])
+
+    def test_map_revision_pin_and_three_body_install_fail_closed(self):
+        pin = academy_importer.APPROVED_MAP_REVISION_MANIFEST_SHA256
+        with tempfile.TemporaryDirectory() as temporary:
+            temp_root = Path(temporary)
+            source_revision = ROOT / academy_importer.MAP_REVISION_ROOT
+            target_revision = temp_root / academy_importer.MAP_REVISION_ROOT
+            shutil.copytree(source_revision, target_revision)
+            for relative in ("integration/academy-assets.json",):
+                source = ROOT / academy_importer.SOURCE_ROOT / relative
+                destination = temp_root / academy_importer.SOURCE_ROOT / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(source, destination)
+            for expected in academy_importer.MAP_REVISION_SLOTS.values():
+                source = ROOT / academy_importer.SOURCE_ROOT / expected["sourceMaster"]
+                destination = temp_root / academy_importer.SOURCE_ROOT / expected["sourceMaster"]
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(source, destination)
+
+            manifest_path = temp_root / academy_importer.MAP_REVISION_MANIFEST
+            manifest_bytes = manifest_path.read_bytes()
+            loaded = academy_importer.load_map_revision(temp_root, pin)
+            self.assertEqual(loaded["manifest_sha256"], pin)
+
+            manifest_path.write_bytes(manifest_bytes + b" ")
+            with self.assertRaisesRegex(RuntimeError, "manifest changed"):
+                academy_importer.load_map_revision(temp_root, pin)
+            manifest_path.write_bytes(manifest_bytes)
+
+            altered_manifest = json.loads(manifest_bytes)
+            export_path = target_revision / "exports/NH_academy_village_body.png"
+            export_bytes = export_path.read_bytes()
+            export_path.write_bytes(export_bytes + b"\0")
+            with self.assertRaisesRegex(ValueError, "export bytes do not match"):
+                academy_importer.load_map_revision(temp_root, pin)
+            export_path.write_bytes(export_bytes)
+
+            altered_manifest["bodies"]["village"]["runtime"] = "unapproved.png"
+            altered_bytes = json.dumps(altered_manifest, indent="\t", ensure_ascii=False).encode("utf-8") + b"\n"
+            manifest_path.write_bytes(altered_bytes)
+            altered_pin = hashlib.sha256(altered_bytes).hexdigest()
+            with self.assertRaisesRegex(ValueError, "changed the approved village runtime mapping"):
+                academy_importer.load_map_revision(temp_root, altered_pin)
+
+        runtimes = {record["runtime"] for record in academy_importer.MAP_REVISION_SLOTS.values()}
+        payloads = {runtime: f"reviewed:{runtime}".encode("ascii") for runtime in runtimes}
+        legacy = {runtime: f"legacy:{runtime}".encode("ascii") for runtime in runtimes}
+        with tempfile.TemporaryDirectory() as temporary:
+            temp_root = Path(temporary)
+            for runtime in runtimes:
+                path = temp_root / academy_importer.IMAGE_ROOT / runtime
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(legacy[runtime])
+            academy_importer.install_curated_map_bodies(temp_root, payloads, legacy, check_only=False)
+            academy_importer.install_curated_map_bodies(temp_root, payloads, legacy, check_only=True)
+
+            # If any destination is unrecognized, preflight must leave the other
+            # two exact legacy files untouched rather than partially installing.
+            for runtime in runtimes:
+                (temp_root / academy_importer.IMAGE_ROOT / runtime).write_bytes(legacy[runtime])
+            unknown_runtime = "NH_academy_village_body.png"
+            (temp_root / academy_importer.IMAGE_ROOT / unknown_runtime).write_bytes(b"unrecognized")
+            with self.assertRaisesRegex(RuntimeError, "unrecognized Academy map-body pixels"):
+                academy_importer.install_curated_map_bodies(temp_root, payloads, legacy, check_only=False)
+            for runtime in runtimes - {unknown_runtime}:
+                self.assertEqual((temp_root / academy_importer.IMAGE_ROOT / runtime).read_bytes(), legacy[runtime])
+
     def test_faction_selection_names_stay_white_and_selection_uses_existing_border(self):
         source = OPTIONS_TAB.read_text(encoding="utf-8")
         start = source.index("void OptionsTab::SelectionWindow::genContentFactions()")

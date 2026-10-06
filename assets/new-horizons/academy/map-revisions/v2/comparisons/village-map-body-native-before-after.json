@@ -1,0 +1,43 @@
+{
+	"comparison": "left=registered v1 source baseline; right=mechanical v2 export",
+	"dimensions": [
+		192,
+		192
+	],
+	"changedPixels": 12824,
+	"pixelCount": 36864,
+	"meanAbsoluteChannelDifference": 5.641669379340278,
+	"runtimeAcceptance": false,
+	"registration": {
+		"name": "village",
+		"master": "masters/village.png",
+		"masterSize": [
+			1254,
+			1254
+		],
+		"baselineMaster": "assets/new-horizons/academy/masters/adventure/avctowr0.png",
+		"baselineMasterSize": [
+			1254,
+			1254
+		],
+		"masterSolidBox": {
+			"left": 240,
+			"top": 223,
+			"width": 943,
+			"height": 1017
+		},
+		"sourceSolidBox": {
+			"left": 36,
+			"top": 36,
+			"width": 147,
+			"height": 155
+		},
+		"canvasSize": [
+			192,
+			192
+		],
+		"resampling": "LANCZOS",
+		"runtimeAcceptance": false
+	},
+	"candidateExport": "assets/new-horizons/academy/map-revisions/v2/exports/NH_academy_village_body.png"
+}

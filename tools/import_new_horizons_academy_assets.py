@@ -36,9 +36,13 @@ SOURCE_ROOT = Path("assets/new-horizons/academy")
 IMAGE_ROOT = Path("Mods/new-horizons/Images")
 ICON_REVISION_ROOT = SOURCE_ROOT / "icon-revisions/v2"
 ICON_REVISION_MANIFEST = ICON_REVISION_ROOT / "manifest.json"
+MAP_REVISION_ROOT = SOURCE_ROOT / "map-revisions/v2"
+MAP_REVISION_MANIFEST = MAP_REVISION_ROOT / "manifest.json"
 # Filled only after the reviewed v2 manifest and all four exports are installed.
 # A non-hash sentinel intentionally makes import/check fail closed in the meantime.
 APPROVED_ICON_REVISION_MANIFEST_SHA256 = "03bd00c50cdb07b488764512a81cf3e1a2fabb0510b70b5660374ca912b46775"
+# Pinned after the three reviewed native map exports and registrations were frozen.
+APPROVED_MAP_REVISION_MANIFEST_SHA256 = "ea2a63637c4383bf5aa499288fc5e1bb56553e98e7cfeea7bc2bb54430505080"
 
 PROVENANCE_FILES = (
     "README.md",
@@ -89,6 +93,48 @@ MAP_BODY_REGISTRATIONS = {
         "png": "NH_academy_capitol_body.png",
         "original": "AVCTOWZ0",
         "templates": ("capitol",),
+    },
+}
+
+MAP_REVISION_SLOTS = {
+    "village": {
+        "sourceMaster": "masters/adventure/avctowr0.png",
+        "master": "masters/village.png",
+        "prompt": "masters/village.prompt.txt",
+        "resource": "NH_ACADEMY_VILLAGE_BODY",
+        "export": "exports/NH_academy_village_body.png",
+        "runtime": "NH_academy_village_body.png",
+        "masterSize": [1254, 1254],
+        "masterSolidBox": {"left": 240, "top": 223, "width": 943, "height": 1017},
+        "sourceSolidBox": {"left": 36, "top": 36, "width": 147, "height": 155},
+        "dimensions": [192, 192],
+        "resampling": "LANCZOS",
+    },
+    "fort": {
+        "sourceMaster": "masters/adventure/avctowx0.png",
+        "master": "masters/fort.png",
+        "prompt": "masters/fort.prompt.txt",
+        "resource": "NH_ACADEMY_FORT_BODY",
+        "export": "exports/NH_academy_fort_body.png",
+        "runtime": "NH_academy_fort_body.png",
+        "masterSize": [1254, 1254],
+        "masterSolidBox": {"left": 233, "top": 0, "width": 1016, "height": 1254},
+        "sourceSolidBox": {"left": 32, "top": 0, "width": 160, "height": 191},
+        "dimensions": [192, 192],
+        "resampling": "LANCZOS",
+    },
+    "capitol": {
+        "sourceMaster": "masters/adventure/avctowz0.png",
+        "master": "masters/capitol.png",
+        "prompt": "masters/capitol.prompt.txt",
+        "resource": "NH_ACADEMY_CAPITOL_BODY",
+        "export": "exports/NH_academy_capitol_body.png",
+        "runtime": "NH_academy_capitol_body.png",
+        "masterSize": [1254, 1254],
+        "masterSolidBox": {"left": 233, "top": 0, "width": 1016, "height": 1254},
+        "sourceSolidBox": {"left": 32, "top": 0, "width": 160, "height": 191},
+        "dimensions": [192, 192],
+        "resampling": "LANCZOS",
     },
 }
 
@@ -162,29 +208,40 @@ def _reject_duplicate_json_keys(pairs):
     return result
 
 
-def _revision_file(root: Path, relative: str) -> Path:
+def _safe_file_below(base: Path, relative: str, label: str) -> Path:
     if not isinstance(relative, str) or "\\" in relative:
-        raise ValueError(f"Unsafe Academy icon revision path: {relative!r}")
+        raise ValueError(f"Unsafe {label} path: {relative!r}")
     path = PurePosixPath(relative)
     if path.is_absolute() or path.anchor or not path.parts or any(part in ("", ".", "..") for part in path.parts):
-        raise ValueError(f"Unsafe Academy icon revision path: {relative!r}")
+        raise ValueError(f"Unsafe {label} path: {relative!r}")
 
-    base = root / ICON_REVISION_ROOT
     if base.is_symlink():
-        raise ValueError("Symlinks are not accepted for the Academy icon revision directory")
+        raise ValueError(f"Symlinks are not accepted for the {label} directory")
     candidate = base.joinpath(*path.parts)
     current = base
     for part in path.parts:
         current = current / part
         if current.is_symlink():
-            raise ValueError(f"Symlinks are not accepted in Academy icon revision files: {relative}")
+            raise ValueError(f"Symlinks are not accepted in {label} files: {relative}")
     try:
         candidate.resolve(strict=True).relative_to(base.resolve(strict=True))
     except (OSError, ValueError) as error:
-        raise ValueError(f"Academy icon revision file is missing or escapes its revision directory: {relative}") from error
+        raise ValueError(f"{label} file is missing or escapes its revision directory: {relative}") from error
     if not candidate.is_file():
-        raise ValueError(f"Academy icon revision path is not a file: {relative}")
+        raise ValueError(f"{label} path is not a file: {relative}")
     return candidate
+
+
+def _revision_file(root: Path, relative: str) -> Path:
+    return _safe_file_below(root / ICON_REVISION_ROOT, relative, "Academy icon revision")
+
+
+def _map_revision_file(root: Path, relative: str) -> Path:
+    return _safe_file_below(root / MAP_REVISION_ROOT, relative, "Academy map revision")
+
+
+def _academy_source_file(root: Path, relative: str) -> Path:
+    return _safe_file_below(root / SOURCE_ROOT, relative, "Academy source provenance")
 
 
 def load_icon_revision(root: Path, expected_manifest_sha256: str) -> dict:
@@ -277,6 +334,112 @@ def load_icon_revision(root: Path, expected_manifest_sha256: str) -> dict:
                 image.verify()
         except OSError as error:
             raise ValueError(f"Academy icon revision export is not a valid image: {record['export']}") from error
+        exports_by_runtime[record["runtime"]] = export_bytes
+
+    return {
+        "manifest": manifest,
+        "manifest_sha256": actual_manifest_sha256,
+        "exports_by_runtime": exports_by_runtime,
+    }
+
+
+def load_map_revision(root: Path, expected_manifest_sha256: str) -> dict:
+    """Load only the explicitly pinned Academy map-material revision."""
+    if not re.fullmatch(r"[0-9a-f]{64}", expected_manifest_sha256 or ""):
+        raise RuntimeError("Academy v2 map revision is not enabled: importer manifest SHA-256 pin is unset")
+
+    manifest_path = _map_revision_file(root, "manifest.json")
+    raw_manifest = manifest_path.read_bytes()
+    actual_manifest_sha256 = sha256_hex(raw_manifest)
+    if actual_manifest_sha256 != expected_manifest_sha256:
+        raise RuntimeError(
+            "Academy v2 map revision manifest changed: "
+            f"expected {expected_manifest_sha256}, got {actual_manifest_sha256}"
+        )
+
+    try:
+        manifest = json.loads(raw_manifest.decode("utf-8"), object_pairs_hook=_reject_duplicate_json_keys)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError(f"Academy map revision manifest is not valid UTF-8 JSON: {manifest_path}") from error
+    if not isinstance(manifest, dict) or set(manifest) != {"schemaVersion", "revision", "sourceRegistration", "bodies"}:
+        raise ValueError("Academy map revision manifest has unexpected top-level fields")
+    if type(manifest["schemaVersion"]) is not int or manifest["schemaVersion"] != 1 or manifest["revision"] != "v2":
+        raise ValueError("Academy map revision manifest must declare schemaVersion 1 and revision v2")
+
+    source_registration = manifest["sourceRegistration"]
+    if not isinstance(source_registration, dict) or set(source_registration) != {"path", "sha256"}:
+        raise ValueError("Academy map revision must pin its source registration file")
+    if source_registration["path"] != "integration/academy-assets.json":
+        raise ValueError("Academy map revision changed the approved source registration path")
+    source_registration_sha256 = source_registration["sha256"]
+    if not isinstance(source_registration_sha256, str) or not re.fullmatch(r"[0-9a-f]{64}", source_registration_sha256):
+        raise ValueError("Academy map revision has an invalid source registration hash")
+    registration_path = _academy_source_file(root, source_registration["path"])
+    if sha256_hex(registration_path.read_bytes()) != source_registration_sha256:
+        raise ValueError("Academy map revision source registration bytes do not match its manifest")
+
+    bodies = manifest["bodies"]
+    if not isinstance(bodies, dict) or set(bodies) != set(MAP_REVISION_SLOTS):
+        raise ValueError("Academy map revision must register exactly the village, fort, and capitol bodies")
+
+    exports_by_runtime = {}
+    record_fields = set(next(iter(MAP_REVISION_SLOTS.values()))) | {
+        "sourceMasterSha256", "masterSha256", "promptSha256", "sha256"
+    }
+    for name, expected in MAP_REVISION_SLOTS.items():
+        record = bodies[name]
+        if not isinstance(record, dict) or set(record) != record_fields:
+            raise ValueError(f"Academy map revision has an invalid {name} body record")
+        for key, value in expected.items():
+            if record[key] != value:
+                raise ValueError(f"Academy map revision changed the approved {name} {key} mapping")
+
+        for key in ("sourceMasterSha256", "masterSha256", "promptSha256", "sha256"):
+            if not isinstance(record[key], str) or not re.fullmatch(r"[0-9a-f]{64}", record[key]):
+                raise ValueError(f"Academy map revision has an invalid {name} {key}")
+
+        source_master_path = _academy_source_file(root, record["sourceMaster"])
+        if sha256_hex(source_master_path.read_bytes()) != record["sourceMasterSha256"]:
+            raise ValueError(f"Academy map revision baseline master bytes do not match the manifest: {record['sourceMaster']}")
+
+        prompt_path = _map_revision_file(root, record["prompt"])
+        if sha256_hex(prompt_path.read_bytes()) != record["promptSha256"]:
+            raise ValueError(f"Academy map revision prompt bytes do not match the manifest: {record['prompt']}")
+
+        master_path = _map_revision_file(root, record["master"])
+        master_bytes = master_path.read_bytes()
+        if sha256_hex(master_bytes) != record["masterSha256"]:
+            raise ValueError(f"Academy map revision master bytes do not match the manifest: {record['master']}")
+        try:
+            with Image.open(master_path) as image:
+                if list(image.size) != expected["masterSize"]:
+                    raise ValueError(f"Academy map revision master has unexpected dimensions: {record['master']}")
+                image.verify()
+        except OSError as error:
+            raise ValueError(f"Academy map revision master is not a valid image: {record['master']}") from error
+
+        export_path = _map_revision_file(root, record["export"])
+        export_bytes = export_path.read_bytes()
+        if sha256_hex(export_bytes) != record["sha256"]:
+            raise ValueError(f"Academy map revision export bytes do not match the manifest: {record['export']}")
+        try:
+            with Image.open(export_path) as image:
+                if list(image.size) != expected["dimensions"]:
+                    raise ValueError(f"Academy map revision export has wrong native dimensions: {record['export']}")
+                image.verify()
+            with Image.open(export_path) as image:
+                alpha = image.convert("RGBA").getchannel("A")
+                alpha_bounds = alpha.getbbox()
+                source_box = expected["sourceSolidBox"]
+                if alpha_bounds is None or not (
+                    alpha_bounds[0] >= source_box["left"]
+                    and alpha_bounds[1] >= source_box["top"]
+                    and alpha_bounds[2] <= source_box["left"] + source_box["width"]
+                    and alpha_bounds[3] <= source_box["top"] + source_box["height"]
+                ):
+                    raise ValueError(f"Academy map revision export alpha escapes its registered solid box: {record['export']}")
+        except OSError as error:
+            raise ValueError(f"Academy map revision export is not a valid image: {record['export']}") from error
         exports_by_runtime[record["runtime"]] = export_bytes
 
     return {
@@ -400,6 +563,47 @@ def install_curated_icon(root: Path, runtime_name: str, payload: bytes, legacy_p
     if write_built:
         built_destination.parent.mkdir(parents=True, exist_ok=True)
         built_destination.write_bytes(payload)
+
+
+def install_curated_map_bodies(
+    root: Path,
+    exports_by_runtime: dict[str, bytes],
+    legacy_by_runtime: dict[str, bytes],
+    check_only: bool,
+):
+    """Install all three pinned map bodies, accepting only their exact v1 export as prior pixels."""
+    expected_runtimes = {record["runtime"] for record in MAP_REVISION_SLOTS.values()}
+    if set(exports_by_runtime) != expected_runtimes or set(legacy_by_runtime) != expected_runtimes:
+        raise ValueError("Academy map-body install set differs from the three approved runtime routes")
+
+    writes = []
+    for runtime_name in sorted(expected_runtimes):
+        if Path(runtime_name).name != runtime_name or not runtime_name.endswith("_body.png"):
+            raise ValueError(f"Unexpected Academy map-body runtime name: {runtime_name}")
+        destination = root / IMAGE_ROOT / runtime_name
+        if destination.is_symlink():
+            raise RuntimeError(f"Refusing to replace symlinked Academy map body: {destination}")
+        if not destination.exists():
+            if check_only:
+                raise RuntimeError(f"Reviewed Academy map body is missing: {destination}")
+            writes.append(destination)
+            continue
+        if not destination.is_file():
+            raise RuntimeError(f"Academy map-body destination is not a regular file: {destination}")
+
+        current = destination.read_bytes()
+        if current == exports_by_runtime[runtime_name]:
+            continue
+        if current != legacy_by_runtime[runtime_name]:
+            raise RuntimeError(f"Refusing to replace unrecognized Academy map-body pixels: {destination}")
+        if check_only:
+            raise RuntimeError(f"Reviewed Academy map body is not installed: {destination}")
+        writes.append(destination)
+
+    # Preflight every destination above before mutating any of the three files.
+    for destination in writes:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(exports_by_runtime[destination.name])
 
 
 def aliased_animation(resource: str, image_path: str, frame_count: int = 1) -> bytes:
@@ -541,7 +745,13 @@ def resolve_case_insensitive(base: Path, relative: PurePosixPath) -> Path | None
     return current if current.is_file() else None
 
 
-def validate_runtime_routes(root: Path, archive: zipfile.ZipFile, names: dict[str, zipfile.ZipInfo], icon_revision: dict):
+def validate_runtime_routes(
+    root: Path,
+    archive: zipfile.ZipFile,
+    names: dict[str, zipfile.ZipInfo],
+    icon_revision: dict,
+    map_revision: dict,
+):
     patch = json.loads((root / "Mods/new-horizons/Content/config/factions/academyArt.json").read_text(encoding="utf-8"))
     faction = patch["core:tower"]
     town = faction["town"]
@@ -559,6 +769,18 @@ def validate_runtime_routes(root: Path, archive: zipfile.ZipFile, names: dict[st
 
     for template, definition in town["mapObject"]["templates"].items():
         animation_image_path(root, definition["animation"])
+
+    for name, expected in MAP_REVISION_SLOTS.items():
+        descriptor_path = root / IMAGE_ROOT / f"{expected['resource']}.json"
+        descriptor = json.loads(descriptor_path.read_text(encoding="utf-8"))
+        images = descriptor.get("images", [])
+        if images != [{"group": 0, "frame": 0, "file": expected["runtime"]}]:
+            raise ValueError(f"Academy {name} map-body descriptor changed its approved runtime route")
+        runtime_path = resolve_case_insensitive(root / IMAGE_ROOT, PurePosixPath(expected["runtime"]))
+        if not runtime_path:
+            raise ValueError(f"Missing Academy {name} map body {expected['runtime']}")
+        if runtime_path.read_bytes() != map_revision["exports_by_runtime"][expected["runtime"]]:
+            raise ValueError(f"Installed Academy map body differs from its reviewed v2 export: {expected['runtime']}")
 
     for group_name, group in town["icons"].items():
         for size in ("large", "small"):
@@ -691,7 +913,14 @@ def expected_hall_alias() -> bytes:
     })
 
 
-def make_runtime_assets(root: Path, archive: zipfile.ZipFile, names: dict[str, zipfile.ZipInfo], check_only: bool, icon_revision: dict):
+def make_runtime_assets(
+    root: Path,
+    archive: zipfile.ZipFile,
+    names: dict[str, zipfile.ZipInfo],
+    check_only: bool,
+    icon_revision: dict,
+    map_revision: dict,
+):
     native_paths = sorted(path for path in names if path.startswith("native/") and path.endswith(".png"))
     if not EXCLUDED_NATIVE <= set(native_paths):
         missing = sorted(EXCLUDED_NATIVE - set(native_paths))
@@ -729,12 +958,34 @@ def make_runtime_assets(root: Path, archive: zipfile.ZipFile, names: dict[str, z
     asset_records = archive_json(archive, names, "integration/academy-assets.json")
     town_layout = archive_json(archive, names, "integration/town-layout.json")
 
-    # Three map-object bodies are rebuilt from the supplied generated masters.
-    # Their mixed `native/adventure` package exports are intentionally excluded
-    # because those restore original-game translucent shadow pixels.
-    for master, definition in MAP_BODY_REGISTRATIONS.items():
-        png = map_body_png(archive, names, asset_records, master)
-        safe_write(root, IMAGE_ROOT / definition["png"], png, check_only)
+    # The pinned v2 exports win over the prior generated bodies. Reconstruct
+    # v1 only to identify the exact accepted pre-v2 runtime bytes; package
+    # `native/adventure` composites remain excluded because they restore
+    # original-game translucent shadow pixels.
+    source_registration = map_revision["manifest"]["sourceRegistration"]
+    if archive.read(names[source_registration["path"]]) != _academy_source_file(root, source_registration["path"]).read_bytes():
+        raise ValueError("Academy handoff source registration differs from the pinned map revision baseline")
+    legacy_map_bodies = {}
+    for name, expected in MAP_REVISION_SLOTS.items():
+        registration = next((entry for entry in asset_records if entry.get("master") == expected["sourceMaster"]), None)
+        if registration is None:
+            raise ValueError(f"Academy handoff is missing map registration for {expected['sourceMaster']}")
+        if (
+            registration.get("sourceSolidBox") != expected["sourceSolidBox"]
+            or registration.get("masterSolidBox") != expected["masterSolidBox"]
+            or [registration.get("width"), registration.get("height")] != expected["dimensions"]
+        ):
+            raise ValueError(f"Academy handoff changed the registered geometry for the {name} map body")
+        legacy_map_bodies[expected["runtime"]] = map_body_png(
+            archive, names, asset_records, expected["sourceMaster"]
+        )
+    install_curated_map_bodies(
+        root,
+        map_revision["exports_by_runtime"],
+        legacy_map_bodies,
+        check_only,
+    )
+    for definition in MAP_BODY_REGISTRATIONS.values():
         descriptor = aliased_animation(definition["resource"], definition["png"])
         safe_write(root, IMAGE_ROOT / f"{definition['resource']}.json", descriptor, check_only)
 
@@ -899,12 +1150,13 @@ def main() -> int:
     root = args.root.resolve()
     try:
         icon_revision = load_icon_revision(root, APPROVED_ICON_REVISION_MANIFEST_SHA256)
+        map_revision = load_map_revision(root, APPROVED_MAP_REVISION_MANIFEST_SHA256)
         with zipfile.ZipFile(args.archive) as archive:
             names = validate_archive(archive)
             import_provenance(root, archive, names, args.check)
-            make_runtime_assets(root, archive, names, args.check, icon_revision)
+            make_runtime_assets(root, archive, names, args.check, icon_revision, map_revision)
             build_patch_outputs(root, args.check)
-            validate_runtime_routes(root, archive, names, icon_revision)
+            validate_runtime_routes(root, archive, names, icon_revision, map_revision)
             if not args.check:
                 render_all_built_preview(root, archive, names)
     except (OSError, zipfile.BadZipFile, ValueError, RuntimeError, KeyError, TypeError) as error:
