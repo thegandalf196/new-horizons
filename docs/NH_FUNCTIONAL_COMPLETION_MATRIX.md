@@ -2,6 +2,26 @@
 
 Updated: 2026-10-06
 
+2026-10-06 Chain Lightning principal-path correction: saved-v3 ordinary casts
+and forecasts now share the specified 100/70/50/35/25 retention instead of
+geometric halving. Integer-percent arithmetic preserves exact boundaries such
+as 70% of 90. Legacy contexts and Master Chain keep their configured curves;
+Conductor retains the stronger applicable retention. Client/native build with
+12 jobs passes; seven focused native cases pass7/7 in2.282s, zero skips/errors,
+covering per-hop prefix forecasts, detached/live parity, Mana/action accounting,
+read-only state/RNG, integer boundaries, v1/v2 halving and Conductor/Master.
+Independent source/test review finds no blocker; module drift and diff checks
+pass. This repairs an existing spell clause, not a new identity: counts remain
+61/67 combat spells and225/310 perks. It earns no delivered-UI claim. The required
+ordered propagation/per-stack preview is separately missing. Phase 2 retains
+the canonical rounded-example discrepancy against the existing final floor,
+and chance-resistance/path interactions; no numerical hop range is invented.
+The initial8-case run failed5 cases: four stale legacy-shaped fixtures were
+repaired without loosening production validation; the older
+BattleSpellCastTest.chainLightningChainsToDistinctUnits still rejects casting
+in this curated test context and is retained for separate Phase2 diagnosis.
+Do not report that broader initial run as green. UP023 records receipts.
+
 2026-10-06 required Adventure UI coverage: the previously missing spellbook
 daily-use indicator is now source implemented. Localized available/used text,
 read-only help and unavailable slot colors read existing replicated hero state;

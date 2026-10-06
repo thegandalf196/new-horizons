@@ -9,7 +9,7 @@ local SOUL_REAPER_SPELL = "new-horizons:soulReaper"
 local HAND_OF_FATE_COLLATERAL_TEXT = "new-horizons.combat.handOfFate.collateral"
 local HAND_OF_FATE_BLOCKED_TEXT = "new-horizons.combat.handOfFate.blocked"
 
-local function conductorMultiplier(mechanics, targetIndex)
+local function conductorRetentionPercent(mechanics, targetIndex)
 	if targetIndex <= 0 then return nil end
 	local hero = mechanics:getHeroCaster()
 	local spell = mechanics:getSpell()
@@ -20,13 +20,13 @@ local function conductorMultiplier(mechanics, targetIndex)
 	if key ~= "core:chainLightning" and key ~= "new-horizons:masterChainLightning" then
 		return nil
 	end
-	-- Conductor's values are multipliers from the initial hit, rather than
-	-- another geometric per-hop factor.  The final entry also covers the
-	-- fifth target of Master Chain Lightning.
-	local multipliers = { 1.00, 0.75, 0.55, 0.40, 0.30 }
+	-- Conductor's values are integer retention percentages from the initial hit,
+	-- rather than another geometric per-hop factor. The final entry also covers
+	-- the fifth target of Master Chain Lightning.
+	local retentionPercent = { 100, 75, 55, 40, 30 }
 	-- targetIndex zero is the initial target, so Lua's one-based table index is
 	-- the battle target index plus one: 100% / 75% / 55% / 40% / 30%.
-	return multipliers[targetIndex + 1]
+	return retentionPercent[targetIndex + 1]
 end
 
 function Script:isReceptive(mechanics, unit)
@@ -97,15 +97,28 @@ function Script:damageForTarget(targetIndex, mechanics, unit)
 				chainFactor = math.min(chainFactor, self.chainFactorMaximum)
 			end
 		end
-		local multiplier = chainFactor ^ targetIndex
-		local conductor = conductorMultiplier(mechanics, targetIndex)
-		-- Conductor replaces ordinary Chain Lightning's worse falloff, but it
-		-- must never erase Master Chain Lightning's level-scaled specialty.
-		-- When both apply, retain the better multiplier for this jump.
-		if conductor then
-			multiplier = math.max(multiplier, conductor)
+		local retentionPercent = mechanics:getNewHorizonsChainLightningRetentionPercent(targetIndex)
+		local conductorPercent = conductorRetentionPercent(mechanics, targetIndex)
+		if retentionPercent >= 0 then
+			-- Saved-v3 ordinary Chain Lightning uses authored retention from the
+			-- initial hit, not a repeated geometric factor.
+			-- Compare Conductor in the same integer-percent domain, then multiply
+			-- before dividing so values such as 90 * 70% do not underflow due to
+			-- a binary floating-point approximation of 0.70.
+			if conductorPercent then
+				retentionPercent = math.max(retentionPercent, conductorPercent)
+			end
+			base = math.floor(base * retentionPercent / 100)
+		else
+			-- Legacy and Master Chain keep their configured geometric factor.
+			-- Conductor can improve it, but never erases Master Chain's
+			-- level-scaled specialty.
+			local multiplier = chainFactor ^ targetIndex
+			if conductorPercent then
+				multiplier = math.max(multiplier, conductorPercent / 100)
+			end
+			base = math.floor(multiplier * base)
 		end
-		base = math.floor(multiplier * base)
 	end
 	return base
 end

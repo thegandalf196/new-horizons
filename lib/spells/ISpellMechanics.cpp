@@ -369,6 +369,24 @@ int32_t Mechanics::getEffectiveChainLength(const int32_t configuredLength) const
 		battleState->getMagicRules(), getSpellId(), configuredLength);
 }
 
+int32_t Mechanics::getNewHorizonsChainLightningRetentionPercent(const int32_t targetIndex) const
+{
+	if(targetIndex < 0 || targetIndex >= newHorizonsMagic::CHAIN_LIGHTNING_FIXED_TARGET_COUNT_V3)
+		return -1;
+
+	const auto * battleCallback = battle();
+	const auto * battleState = battleCallback ? battleCallback->getBattle() : nullptr;
+	if(!battleState)
+		return -1;
+	const auto & rules = battleState->getMagicRules();
+	if(!newHorizonsMagic::rulesActive(rules)
+		|| rules["rulesetVersion"].Integer() != newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+		return -1;
+
+	return newHorizonsMagic::chainLightningRetentionPercent(
+		rules, getSpellId(), targetIndex);
+}
+
 static std::shared_ptr<TargetCondition> makeCondition(const CSpell * s)
 {
 	auto res = std::make_shared<TargetCondition>();

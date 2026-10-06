@@ -231,6 +231,10 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		{{"configuredLength", "Target count configured for this spell mastery."}}, {},
 		"Returns the chain-effect target count resolved against the saved battle rules. "
 		"New Horizons v3 fixes core Chain Lightning at five targets; legacy/v1/v2 retain content values.");
+	R.method<&Mechanics::getNewHorizonsChainLightningRetentionPercent>("getNewHorizonsChainLightningRetentionPercent",
+		{{"targetIndex", "Zero-based target index, from the initial hit through the fifth target."}}, {},
+		"Returns saved-v3 ordinary Chain Lightning's damage retention from the initial hit (100/70/50/35/25), "
+		"or -1 outside that spell/profile or index range.");
 	R.method<&Mechanics::isNewHorizonsStormOfDaggers>("isNewHorizonsStormOfDaggers", {},
 		"True when this cast uses the saved v3 New Horizons Storm of Daggers rules.");
 	R.method<&Mechanics::setStormOfDaggersTargetCount>("setStormOfDaggersTargetCount",

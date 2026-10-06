@@ -229,6 +229,9 @@ DLL_LINKAGE int64_t soulReaperDamageAfterExecution(int64_t effectiveMaximumHP,
 /// Applies the saved v3 fixed-five Chain Lightning target count while keeping
 /// the configured, mastery-dependent value for legacy/v1/v2 battles.
 DLL_LINKAGE int chainLightningTargetCount(const JsonNode & rules, SpellID spell, int configuredTargetCount);
+/// Saved-v3 ordinary Chain Lightning retention from the first hit (100/70/50/35/25).
+/// Returns -1 outside that saved spell/profile or for a target index outside [0, 4].
+DLL_LINKAGE int chainLightningRetentionPercent(const JsonNode & rules, SpellID spell, int targetIndex);
 /// True when this v3 saved battle uses the New Horizons single-target Expert
 /// range for one of the 23 core spells whose vanilla Expert data is Mass.
 /// Legacy/v1/v2 snapshots and every other spell retain vanilla static spell data.

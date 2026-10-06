@@ -336,6 +336,9 @@ public:
 	/// Resolves a configured chain-effect target count against the saved battle
 	/// profile, shared by authoritative casts and target previews/evaluators.
 	int32_t getEffectiveChainLength(int32_t configuredLength) const;
+	/// Returns saved-v3 ordinary Chain Lightning's retention from the first hit
+	/// for a zero-based target index, or -1 otherwise.
+	int32_t getNewHorizonsChainLightningRetentionPercent(int32_t targetIndex) const;
 	/// Percentage captured from the matching pre-cast Warcasting readiness.
 	/// Non-hero casts and Metamagic follow-ups return zero.
 	virtual int32_t getWarcastingBonusPercent() const { return 0; }

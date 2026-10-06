@@ -571,6 +571,19 @@ int chainLightningTargetCount(const JsonNode & rules, SpellID spell, int configu
 	return CHAIN_LIGHTNING_FIXED_TARGET_COUNT_V3;
 }
 
+int chainLightningRetentionPercent(const JsonNode & rules, SpellID spell, int targetIndex)
+{
+	if(spell != SpellID(SpellID::CHAIN_LIGHTNING)
+		|| !rulesActive(rules)
+		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		|| !spellAllowedBySavedRoster(rules, spell)
+		|| targetIndex < 0 || targetIndex >= CHAIN_LIGHTNING_FIXED_TARGET_COUNT_V3)
+		return -1;
+
+	constexpr std::array<int, CHAIN_LIGHTNING_FIXED_TARGET_COUNT_V3> retentionPercent{100, 70, 50, 35, 25};
+	return retentionPercent[static_cast<size_t>(targetIndex)];
+}
+
 bool expertRangeIsSingleTarget(const JsonNode & rules, SpellID spell)
 {
 	if(!rulesActive(rules)

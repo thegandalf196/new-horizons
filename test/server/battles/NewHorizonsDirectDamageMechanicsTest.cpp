@@ -1689,6 +1689,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, ConductorUsesAuthoredPerJumpMultipl
 	forceRealHeroScale = true;
 	usePerks = true;
 	selectedSpellKey = "core:chainLightning";
+	authoredRules = savedV3Formula();
 	prepare();
 
 	const auto havoc = SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic"));
@@ -1739,6 +1740,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, ConductorNeverReplacesBetterLevelSc
 	forceRealHeroScale = true;
 	usePerks = true;
 	selectedSpellKey = "new-horizons:masterChainLightning";
+	authoredRules = savedV3Formula();
 	prepare();
 
 	const auto havoc = SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic"));
