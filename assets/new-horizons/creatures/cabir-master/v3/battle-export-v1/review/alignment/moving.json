@@ -1,0 +1,346 @@
+{
+  "group": "moving",
+  "status": "provisional native alignment for visual review; no runtime binding",
+  "canvas": [
+    450,
+    400
+  ],
+  "targetRootPivot": [
+    196.5,
+    268.0
+  ],
+  "alphaThresholdForScaleAndGround": 16,
+  "scaleCalibration": {
+    "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+    "referencePoseIndex": 0,
+    "referencePose": "step-a",
+    "referenceAlpha16BBox": [
+      4,
+      4,
+      454,
+      551
+    ],
+    "referenceBodyHeight": 547,
+    "targetBodyHeight": 60.0,
+    "uniformScale": 0.10968921389396709
+  },
+  "perPosePivotsAreGroundContactNotOverallBBoxCenter": true,
+  "contactBandRule": {
+    "fraction": 0.03,
+    "minimumSourcePixels": 8,
+    "meaning": "lower contact band excludes raised/extended weapon from x-root estimate"
+  },
+  "uncertainty": null,
+  "poses": [
+    {
+      "pose": "step-a",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/walk-v1/cleaned-v1/candidate-01-alpha-cleaned.png",
+      "sourceSha256": "66c9402eaa19e17a50840a0871150b2ed9db72062dad0511ba7b37c1e272d537",
+      "sourceOrigin": [
+        148,
+        30
+      ],
+      "sourceSize": [
+        458,
+        555
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          152,
+          34,
+          602,
+          581
+        ],
+        "sourceGlobalCrop": [
+          148,
+          30,
+          606,
+          585
+        ],
+        "componentArea": 134580,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-00.png",
+        "assignedAuxiliaryEffects": []
+      },
+      "sourcePivotGlobal": [
+        376.0,
+        581.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          454,
+          551
+        ],
+        "bandTop": 534,
+        "bandBottomExclusive": 551,
+        "contactXBounds": [
+          68,
+          388
+        ],
+        "sourcePivotLocal": [
+          228.0,
+          551.0
+        ]
+      },
+      "uniformSheetScale": 0.10968921389396709,
+      "resizedSourceSize": [
+        50,
+        61
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        171,
+        208
+      ],
+      "outputPivotActual": [
+        196.0091407678245,
+        268.4387568555759
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    },
+    {
+      "pose": "step-b",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/walk-v1/cleaned-v1/candidate-01-alpha-cleaned.png",
+      "sourceSha256": "66c9402eaa19e17a50840a0871150b2ed9db72062dad0511ba7b37c1e272d537",
+      "sourceOrigin": [
+        764,
+        32
+      ],
+      "sourceSize": [
+        467,
+        547
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          768,
+          36,
+          1227,
+          575
+        ],
+        "sourceGlobalCrop": [
+          764,
+          32,
+          1231,
+          579
+        ],
+        "componentArea": 131530,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-01.png",
+        "assignedAuxiliaryEffects": []
+      },
+      "sourcePivotGlobal": [
+        1004.0,
+        575.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          463,
+          543
+        ],
+        "bandTop": 526,
+        "bandBottomExclusive": 543,
+        "contactXBounds": [
+          98,
+          382
+        ],
+        "sourcePivotLocal": [
+          240.0,
+          543.0
+        ]
+      },
+      "uniformSheetScale": 0.10968921389396709,
+      "resizedSourceSize": [
+        51,
+        60
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        170,
+        208
+      ],
+      "outputPivotActual": [
+        196.3254113345521,
+        267.5612431444241
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    },
+    {
+      "pose": "step-c",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/walk-v1/cleaned-v1/candidate-01-alpha-cleaned.png",
+      "sourceSha256": "66c9402eaa19e17a50840a0871150b2ed9db72062dad0511ba7b37c1e272d537",
+      "sourceOrigin": [
+        117,
+        607
+      ],
+      "sourceSize": [
+        485,
+        551
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          121,
+          611,
+          598,
+          1154
+        ],
+        "sourceGlobalCrop": [
+          117,
+          607,
+          602,
+          1158
+        ],
+        "componentArea": 136445,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-02.png",
+        "assignedAuxiliaryEffects": []
+      },
+      "sourcePivotGlobal": [
+        355.5,
+        1154.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          481,
+          547
+        ],
+        "bandTop": 530,
+        "bandBottomExclusive": 547,
+        "contactXBounds": [
+          57,
+          420
+        ],
+        "sourcePivotLocal": [
+          238.5,
+          547.0
+        ]
+      },
+      "uniformSheetScale": 0.10968921389396709,
+      "resizedSourceSize": [
+        53,
+        60
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        170,
+        208
+      ],
+      "outputPivotActual": [
+        196.16087751371114,
+        268.0
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    },
+    {
+      "pose": "step-d",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/walk-v1/cleaned-v1/candidate-01-alpha-cleaned.png",
+      "sourceSha256": "66c9402eaa19e17a50840a0871150b2ed9db72062dad0511ba7b37c1e272d537",
+      "sourceOrigin": [
+        760,
+        611
+      ],
+      "sourceSize": [
+        481,
+        546
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          764,
+          615,
+          1237,
+          1153
+        ],
+        "sourceGlobalCrop": [
+          760,
+          611,
+          1241,
+          1157
+        ],
+        "componentArea": 131154,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-03.png",
+        "assignedAuxiliaryEffects": []
+      },
+      "sourcePivotGlobal": [
+        1006.5,
+        1153.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          477,
+          542
+        ],
+        "bandTop": 525,
+        "bandBottomExclusive": 542,
+        "contactXBounds": [
+          67,
+          426
+        ],
+        "sourcePivotLocal": [
+          246.5,
+          542.0
+        ]
+      },
+      "uniformSheetScale": 0.10968921389396709,
+      "resizedSourceSize": [
+        53,
+        60
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        169,
+        209
+      ],
+      "outputPivotActual": [
+        196.0383912248629,
+        268.45155393053017
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    }
+  ],
+  "reviewCropBounds": [
+    161,
+    200,
+    231,
+    277
+  ]
+}

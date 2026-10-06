@@ -1,0 +1,346 @@
+{
+  "group": "melee-front",
+  "status": "provisional native alignment for visual review; no runtime binding",
+  "canvas": [
+    450,
+    400
+  ],
+  "targetRootPivot": [
+    196.5,
+    268.0
+  ],
+  "alphaThresholdForScaleAndGround": 16,
+  "scaleCalibration": {
+    "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+    "referencePoseIndex": 0,
+    "referencePose": "ready",
+    "referenceAlpha16BBox": [
+      4,
+      4,
+      504,
+      510
+    ],
+    "referenceBodyHeight": 506,
+    "targetBodyHeight": 60.0,
+    "uniformScale": 0.11857707509881422
+  },
+  "perPosePivotsAreGroundContactNotOverallBBoxCenter": true,
+  "contactBandRule": {
+    "fraction": 0.03,
+    "minimumSourcePixels": 8,
+    "meaning": "lower contact band excludes raised/extended weapon from x-root estimate"
+  },
+  "uncertainty": null,
+  "poses": [
+    {
+      "pose": "ready",
+      "sourcePath": "assets/new-horizons/creatures/cabir/v3/melee-front-v1/candidate-01.png",
+      "sourceSha256": "b58a766ea7512b10315b8b82f0aa85b6a161534434745b402706da9547935efb",
+      "sourceOrigin": [
+        62,
+        67
+      ],
+      "sourceSize": [
+        508,
+        514
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          66,
+          71,
+          566,
+          577
+        ],
+        "sourceGlobalCrop": [
+          62,
+          67,
+          570,
+          581
+        ],
+        "componentArea": 130964,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-00.png",
+        "assignedAuxiliaryEffects": []
+      },
+      "sourcePivotGlobal": [
+        302.5,
+        577.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          504,
+          510
+        ],
+        "bandTop": 494,
+        "bandBottomExclusive": 510,
+        "contactXBounds": [
+          6,
+          475
+        ],
+        "sourcePivotLocal": [
+          240.5,
+          510.0
+        ]
+      },
+      "uniformSheetScale": 0.11857707509881422,
+      "resizedSourceSize": [
+        60,
+        61
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        168,
+        208
+      ],
+      "outputPivotActual": [
+        196.5177865612648,
+        268.47430830039525
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    },
+    {
+      "pose": "windup",
+      "sourcePath": "assets/new-horizons/creatures/cabir/v3/melee-front-v1/candidate-01.png",
+      "sourceSha256": "b58a766ea7512b10315b8b82f0aa85b6a161534434745b402706da9547935efb",
+      "sourceOrigin": [
+        724,
+        62
+      ],
+      "sourceSize": [
+        567,
+        519
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          728,
+          66,
+          1287,
+          577
+        ],
+        "sourceGlobalCrop": [
+          724,
+          62,
+          1291,
+          581
+        ],
+        "componentArea": 151955,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-01.png",
+        "assignedAuxiliaryEffects": []
+      },
+      "sourcePivotGlobal": [
+        978.0,
+        577.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          563,
+          515
+        ],
+        "bandTop": 499,
+        "bandBottomExclusive": 515,
+        "contactXBounds": [
+          6,
+          502
+        ],
+        "sourcePivotLocal": [
+          254.0,
+          515.0
+        ]
+      },
+      "uniformSheetScale": 0.11857707509881422,
+      "resizedSourceSize": [
+        67,
+        62
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        166,
+        207
+      ],
+      "outputPivotActual": [
+        196.1185770750988,
+        268.0671936758893
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    },
+    {
+      "pose": "claw-swipe",
+      "sourcePath": "assets/new-horizons/creatures/cabir/v3/melee-front-v1/candidate-01.png",
+      "sourceSha256": "b58a766ea7512b10315b8b82f0aa85b6a161534434745b402706da9547935efb",
+      "sourceOrigin": [
+        58,
+        639
+      ],
+      "sourceSize": [
+        740,
+        506
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          62,
+          643,
+          794,
+          1141
+        ],
+        "sourceGlobalCrop": [
+          58,
+          639,
+          798,
+          1145
+        ],
+        "componentArea": 155951,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-02.png",
+        "assignedAuxiliaryEffects": []
+      },
+      "sourcePivotGlobal": [
+        320.5,
+        1141.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          736,
+          502
+        ],
+        "bandTop": 487,
+        "bandBottomExclusive": 502,
+        "contactXBounds": [
+          7,
+          518
+        ],
+        "sourcePivotLocal": [
+          262.5,
+          502.0
+        ]
+      },
+      "uniformSheetScale": 0.11857707509881422,
+      "resizedSourceSize": [
+        88,
+        60
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        165,
+        208
+      ],
+      "outputPivotActual": [
+        196.12648221343875,
+        267.52569169960475
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    },
+    {
+      "pose": "recovery",
+      "sourcePath": "assets/new-horizons/creatures/cabir/v3/melee-front-v1/candidate-01.png",
+      "sourceSha256": "b58a766ea7512b10315b8b82f0aa85b6a161534434745b402706da9547935efb",
+      "sourceOrigin": [
+        751,
+        643
+      ],
+      "sourceSize": [
+        494,
+        504
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          755,
+          647,
+          1241,
+          1143
+        ],
+        "sourceGlobalCrop": [
+          751,
+          643,
+          1245,
+          1147
+        ],
+        "componentArea": 130034,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-03.png",
+        "assignedAuxiliaryEffects": []
+      },
+      "sourcePivotGlobal": [
+        993.0,
+        1143.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          490,
+          500
+        ],
+        "bandTop": 485,
+        "bandBottomExclusive": 500,
+        "contactXBounds": [
+          6,
+          478
+        ],
+        "sourcePivotLocal": [
+          242.0,
+          500.0
+        ]
+      },
+      "uniformSheetScale": 0.11857707509881422,
+      "resizedSourceSize": [
+        59,
+        60
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        168,
+        209
+      ],
+      "outputPivotActual": [
+        196.69565217391303,
+        268.2885375494071
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    }
+  ],
+  "reviewCropBounds": [
+    157,
+    199,
+    261,
+    277
+  ]
+}

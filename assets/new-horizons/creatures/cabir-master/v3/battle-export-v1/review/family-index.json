@@ -1,0 +1,158 @@
+{
+  "status": "offline provisional preview; not installed or accepted",
+  "family": "cabir-master",
+  "logicalCanvas": [
+    450,
+    400
+  ],
+  "targetPivot": [
+    196.5,
+    268.0
+  ],
+  "uniformContactNearestScale": 2,
+  "frames": [
+    "holding:holding",
+    "moving:step-a",
+    "moving:step-b",
+    "moving:step-c",
+    "moving:step-d",
+    "reaction:hit-recoil",
+    "reaction:defend-brace",
+    "reaction:dying",
+    "reaction:collapsed-dead",
+    "melee-front:ready",
+    "melee-front:windup",
+    "melee-front:claw-swipe",
+    "melee-front:recovery",
+    "melee-directions:up-windup",
+    "melee-directions:up-release",
+    "melee-directions:down-windup",
+    "melee-directions:down-release",
+    "shoot-front:ready",
+    "shoot-front:spark-release",
+    "shoot-front:palm-shot",
+    "shoot-front:recovery",
+    "shoot-directions:up-windup",
+    "shoot-directions:up-release",
+    "shoot-directions:down-windup",
+    "shoot-directions:down-release",
+    "repair-front:repair-ready",
+    "repair-front:reach",
+    "repair-front:focus",
+    "repair-front:recovery"
+  ],
+  "calibration": {
+    "holding": {
+      "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+      "referencePoseIndex": 0,
+      "referencePose": "holding",
+      "referenceAlpha16BBox": [
+        194,
+        54,
+        1179,
+        1152
+      ],
+      "referenceBodyHeight": 1098,
+      "targetBodyHeight": 60.0,
+      "uniformScale": 0.0546448087431694
+    },
+    "moving": {
+      "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+      "referencePoseIndex": 0,
+      "referencePose": "step-a",
+      "referenceAlpha16BBox": [
+        4,
+        4,
+        454,
+        551
+      ],
+      "referenceBodyHeight": 547,
+      "targetBodyHeight": 60.0,
+      "uniformScale": 0.10968921389396709
+    },
+    "reaction": {
+      "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+      "referencePoseIndex": 1,
+      "referencePose": "defend-brace",
+      "referenceAlpha16BBox": [
+        4,
+        4,
+        492,
+        496
+      ],
+      "referenceBodyHeight": 492,
+      "targetBodyHeight": 60.0,
+      "uniformScale": 0.12195121951219512
+    },
+    "melee-front": {
+      "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+      "referencePoseIndex": 0,
+      "referencePose": "ready",
+      "referenceAlpha16BBox": [
+        4,
+        4,
+        507,
+        510
+      ],
+      "referenceBodyHeight": 506,
+      "targetBodyHeight": 60.0,
+      "uniformScale": 0.11857707509881422
+    },
+    "melee-directions": {
+      "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+      "referencePoseIndex": 0,
+      "referencePose": "ready",
+      "referenceAlpha16BBox": [
+        4,
+        4,
+        507,
+        510
+      ],
+      "referenceBodyHeight": 506,
+      "targetBodyHeight": 60.0,
+      "uniformScale": 0.11857707509881422
+    },
+    "shoot-front": {
+      "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+      "referencePoseIndex": 0,
+      "referencePose": "ready",
+      "referenceAlpha16BBox": [
+        4,
+        4,
+        527,
+        567
+      ],
+      "referenceBodyHeight": 563,
+      "targetBodyHeight": 60.0,
+      "uniformScale": 0.10657193605683836
+    },
+    "shoot-directions": {
+      "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+      "referencePoseIndex": 0,
+      "referencePose": "ready",
+      "referenceAlpha16BBox": [
+        4,
+        4,
+        527,
+        567
+      ],
+      "referenceBodyHeight": 563,
+      "targetBodyHeight": 60.0,
+      "uniformScale": 0.10657193605683836
+    },
+    "repair-front": {
+      "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+      "referencePoseIndex": 0,
+      "referencePose": "repair-ready",
+      "referenceAlpha16BBox": [
+        4,
+        4,
+        508,
+        571
+      ],
+      "referenceBodyHeight": 567,
+      "targetBodyHeight": 60.0,
+      "uniformScale": 0.10582010582010581
+    }
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "group": "holding",
+  "status": "provisional native alignment for visual review; no runtime binding",
+  "canvas": [
+    450,
+    400
+  ],
+  "targetRootPivot": [
+    196.5,
+    268.0
+  ],
+  "alphaThresholdForScaleAndGround": 16,
+  "scaleCalibration": {
+    "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+    "referencePoseIndex": 0,
+    "referencePose": "holding",
+    "referenceAlpha16BBox": [
+      195,
+      57,
+      1177,
+      1151
+    ],
+    "referenceBodyHeight": 1094,
+    "targetBodyHeight": 60.0,
+    "uniformScale": 0.054844606946983544
+  },
+  "perPosePivotsAreGroundContactNotOverallBBoxCenter": true,
+  "contactBandRule": {
+    "fraction": 0.03,
+    "minimumSourcePixels": 8,
+    "meaning": "lower contact band excludes raised/extended weapon from x-root estimate"
+  },
+  "uncertainty": null,
+  "poses": [
+    {
+      "pose": "holding",
+      "sourcePath": "assets/new-horizons/creatures/cabir/v3/standing-master.png",
+      "sourceSha256": "e9e5cfacb4cafa8f55c0160a400a4f0c6ea3426d77f631c928de27eaa4033060",
+      "sourceOrigin": [
+        0,
+        0
+      ],
+      "sourceSize": [
+        1323,
+        1189
+      ],
+      "sourceExtraction": {
+        "kind": "pinned standalone full-body generated master; no cropping or recoloring",
+        "mainComponentAlpha16BBox": [
+          195,
+          57,
+          1177,
+          1151
+        ],
+        "mainComponentArea": 544139
+      },
+      "sourcePivotGlobal": [
+        631.0,
+        1151.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          195,
+          57,
+          1177,
+          1151
+        ],
+        "bandTop": 1118,
+        "bandBottomExclusive": 1151,
+        "contactXBounds": [
+          201,
+          1061
+        ],
+        "sourcePivotLocal": [
+          631.0,
+          1151.0
+        ]
+      },
+      "uniformSheetScale": 0.054844606946983544,
+      "resizedSourceSize": [
+        73,
+        65
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        162,
+        205
+      ],
+      "outputPivotActual": [
+        196.6069469835466,
+        268.1261425959781
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    }
+  ],
+  "reviewCropBounds": [
+    162,
+    198,
+    238,
+    278
+  ]
+}

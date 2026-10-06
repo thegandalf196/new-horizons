@@ -1,0 +1,346 @@
+{
+  "group": "reaction",
+  "status": "provisional native alignment for visual review; no runtime binding",
+  "canvas": [
+    450,
+    400
+  ],
+  "targetRootPivot": [
+    196.5,
+    268.0
+  ],
+  "alphaThresholdForScaleAndGround": 16,
+  "scaleCalibration": {
+    "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+    "referencePoseIndex": 1,
+    "referencePose": "defend-brace",
+    "referenceAlpha16BBox": [
+      4,
+      4,
+      492,
+      496
+    ],
+    "referenceBodyHeight": 492,
+    "targetBodyHeight": 60.0,
+    "uniformScale": 0.12195121951219512
+  },
+  "perPosePivotsAreGroundContactNotOverallBBoxCenter": true,
+  "contactBandRule": {
+    "fraction": 0.03,
+    "minimumSourcePixels": 8,
+    "meaning": "lower contact band excludes raised/extended weapon from x-root estimate"
+  },
+  "uncertainty": null,
+  "poses": [
+    {
+      "pose": "hit-recoil",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/reactions-v1/candidate-01.png",
+      "sourceSha256": "ed5bc5c94942d7c5c5c7fbc0b1712db52596ce00d94894608fdefa3eb887cf2f",
+      "sourceOrigin": [
+        56,
+        37
+      ],
+      "sourceSize": [
+        565,
+        602
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          60,
+          41,
+          617,
+          635
+        ],
+        "sourceGlobalCrop": [
+          56,
+          37,
+          621,
+          639
+        ],
+        "componentArea": 149107,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-00.png",
+        "assignedAuxiliaryEffects": []
+      },
+      "sourcePivotGlobal": [
+        355.0,
+        635.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          561,
+          598
+        ],
+        "bandTop": 580,
+        "bandBottomExclusive": 598,
+        "contactXBounds": [
+          69,
+          529
+        ],
+        "sourcePivotLocal": [
+          299.0,
+          598.0
+        ]
+      },
+      "uniformSheetScale": 0.12195121951219512,
+      "resizedSourceSize": [
+        69,
+        73
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        160,
+        195
+      ],
+      "outputPivotActual": [
+        196.46341463414635,
+        267.9268292682927
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    },
+    {
+      "pose": "defend-brace",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/reactions-v1/candidate-01.png",
+      "sourceSha256": "ed5bc5c94942d7c5c5c7fbc0b1712db52596ce00d94894608fdefa3eb887cf2f",
+      "sourceOrigin": [
+        726,
+        142
+      ],
+      "sourceSize": [
+        496,
+        500
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          730,
+          146,
+          1218,
+          638
+        ],
+        "sourceGlobalCrop": [
+          726,
+          142,
+          1222,
+          642
+        ],
+        "componentArea": 134648,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-01.png",
+        "assignedAuxiliaryEffects": []
+      },
+      "sourcePivotGlobal": [
+        972.5,
+        638.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          492,
+          496
+        ],
+        "bandTop": 481,
+        "bandBottomExclusive": 496,
+        "contactXBounds": [
+          7,
+          486
+        ],
+        "sourcePivotLocal": [
+          246.5,
+          496.0
+        ]
+      },
+      "uniformSheetScale": 0.12195121951219512,
+      "resizedSourceSize": [
+        60,
+        61
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        166,
+        208
+      ],
+      "outputPivotActual": [
+        196.0609756097561,
+        268.4878048780488
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    },
+    {
+      "pose": "dying",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/reactions-v1/candidate-01.png",
+      "sourceSha256": "ed5bc5c94942d7c5c5c7fbc0b1712db52596ce00d94894608fdefa3eb887cf2f",
+      "sourceOrigin": [
+        31,
+        737
+      ],
+      "sourceSize": [
+        617,
+        385
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          35,
+          741,
+          644,
+          1118
+        ],
+        "sourceGlobalCrop": [
+          31,
+          737,
+          648,
+          1122
+        ],
+        "componentArea": 127001,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-02.png",
+        "assignedAuxiliaryEffects": []
+      },
+      "sourcePivotGlobal": [
+        300.5,
+        1118.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          613,
+          381
+        ],
+        "bandTop": 369,
+        "bandBottomExclusive": 381,
+        "contactXBounds": [
+          46,
+          493
+        ],
+        "sourcePivotLocal": [
+          269.5,
+          381.0
+        ]
+      },
+      "uniformSheetScale": 0.12195121951219512,
+      "resizedSourceSize": [
+        75,
+        47
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        164,
+        222
+      ],
+      "outputPivotActual": [
+        196.8658536585366,
+        268.4634146341463
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    },
+    {
+      "pose": "collapsed-dead",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/reactions-v1/candidate-01.png",
+      "sourceSha256": "ed5bc5c94942d7c5c5c7fbc0b1712db52596ce00d94894608fdefa3eb887cf2f",
+      "sourceOrigin": [
+        665,
+        890
+      ],
+      "sourceSize": [
+        637,
+        234
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          669,
+          894,
+          1298,
+          1120
+        ],
+        "sourceGlobalCrop": [
+          665,
+          890,
+          1302,
+          1124
+        ],
+        "componentArea": 99360,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-03.png",
+        "assignedAuxiliaryEffects": []
+      },
+      "sourcePivotGlobal": [
+        934.5,
+        1120.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          633,
+          230
+        ],
+        "bandTop": 222,
+        "bandBottomExclusive": 230,
+        "contactXBounds": [
+          48,
+          491
+        ],
+        "sourcePivotLocal": [
+          269.5,
+          230.0
+        ]
+      },
+      "uniformSheetScale": 0.12195121951219512,
+      "resizedSourceSize": [
+        78,
+        29
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        164,
+        240
+      ],
+      "outputPivotActual": [
+        196.8658536585366,
+        268.0487804878049
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    }
+  ],
+  "reviewCropBounds": [
+    152,
+    187,
+    250,
+    277
+  ]
+}

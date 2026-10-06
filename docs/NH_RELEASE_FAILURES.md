@@ -5556,6 +5556,16 @@ field. These warnings are separate from the proven resource-prefix failure;
 Repair's actual native casting cases already pass. Track schema-warning cleanup
 and profile completeness without claiming that either caused this failure.
 
+The first animation-enabled run loads both custom descriptors but fails a
+projectile provenance assertion built from an extension-sensitive substring.
+Use canonical prefixed AnimationPath identity instead, preserving the exact
+original-resource assertion and useful actual/expected diagnostics. Rebuild
+and activated retry pass1/1. Independent integration review also catches an
+outdated base descriptor copied before directional sequence completion; copying
+the final descriptor restores exact export/runtime parity. The final activated
+fixture checks actual creature bindings and Master climax3 and passes1/1 in2.28s.
+Neither failure proves a gameplay defect or establishes battlefield motion.
+
 No credentials, workstation paths, purchaser content or raw research dumps in
 these notes. Keep historical failures even after repair, but label their scope.
 Do not claim the pipeline is future-proof: tests reduce recurrence and catch more

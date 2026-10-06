@@ -2,6 +2,14 @@
 
 Updated: 2026-10-06
 
+Cabir battle source/resource integration now closes the unique custom animation
+binding gap for both forms, including Master shooting and Repair casting.
+Focused offline8/8, pinned export reproduction, client/resource builds, activated native renderer1/1 and
+independent byte-parity review pass. Original projectile stays external.
+Adventure-map art and playable motion/delivery remain incomplete; provisional
+timing/gait and projectile alignment are Phase2/presentation follow-ups.
+Coverage totals are unchanged; UP253 still precedes ordinary missing features.
+
 Cabir portrait source integration: both compatibility IDs now use their original
 barehanded Cabir/Cabir Master names and unique large/small portrait resources.
 Full-body and intentional avatar-crop exports are reproducible, source-pinned

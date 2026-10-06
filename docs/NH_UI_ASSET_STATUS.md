@@ -1,5 +1,14 @@
 # New Horizons UI and asset status register
 
+Cabir battle resources,2026-10-06: **Provisional**, source-integrated and
+natively loadable. Both forms have unique walk/melee/reaction/death resources;
+Master has fire shooting and separate Repair casting. Native binding/frame
+checks pass, plus exact four-scale large/small portrait alias checks. Original
+CPRGOGX remains external. Earlier withheld walk exports are superseded only by
+the new pinned-alpha-cleaned bundle, not silently approved. Gait/timing/projectile
+origins, adventure-map roles and playable visual acceptance remain open; no art
+is newly Final.
+
 Cabir portrait integration,2026-10-06: **Provisional** original barehanded
 v3 full-body58x64 and deliberate head/upper-body32x32 icons now have unique
 production bindings for compatibility IDs28/29. The complete authored portraits

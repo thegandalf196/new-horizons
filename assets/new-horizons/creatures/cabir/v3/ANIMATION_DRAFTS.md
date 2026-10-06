@@ -1,5 +1,21 @@
 # Barehanded animation sources — provisional
 
+Production resource checkpoint: both `battle-export-v1/` bundles now have
+unique JSON animation bindings (`NH_Cabir`, `NH_CabirMaster`) and source-exact
+runtime PNGs. Movement, holding, hit, defense, death/dead and directional melee
+exist for both forms; Master adds directional shooting and Repair casting.
+Directional attacks include ready/windup/release/recovery; shooting releases at
+the shared third frame. Repair30/31/32 and18 intentionally share the same
+close-front gesture. The external original `CPRGOGX.DEF` is referenced, not
+copied; provisional palm-origin offsets are in the Tower configuration.
+Root reviewed uniform-zoom native contacts. The dummy-SDL renderer fixture
+passes with actual creature bindings, every required frame, four-scale portraits
+and forward/flipped original projectile references. This proves resource loading,
+not battlefield timing, gait, input, visual approval or playable delivery.
+The earlier withheld Master walk bundle remains historical: the new export
+records alpha-only removal of its two pinned stray pixels, preserving the
+untouched source. Detached shooting/Repair embers are retained with their poses.
+
 These original project images were made with built-in image generation using
 the HoMM3 Art skill. Exact generation/edit prompts accompany every candidate.
 The v3 standing masters are the identity references; base action sheets also

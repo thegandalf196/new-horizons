@@ -1,0 +1,422 @@
+{
+  "group": "melee-directions",
+  "status": "provisional native alignment for visual review; no runtime binding",
+  "canvas": [
+    450,
+    400
+  ],
+  "targetRootPivot": [
+    196.5,
+    268.0
+  ],
+  "alphaThresholdForScaleAndGround": 16,
+  "scaleCalibration": {
+    "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+    "referencePoseIndex": 0,
+    "referencePose": "ready",
+    "referenceAlpha16BBox": [
+      4,
+      4,
+      507,
+      510
+    ],
+    "referenceBodyHeight": 506,
+    "targetBodyHeight": 60.0,
+    "uniformScale": 0.11857707509881422
+  },
+  "perPosePivotsAreGroundContactNotOverallBBoxCenter": true,
+  "contactBandRule": {
+    "fraction": 0.03,
+    "minimumSourcePixels": 8,
+    "meaning": "lower contact band excludes raised/extended weapon from x-root estimate"
+  },
+  "uncertainty": null,
+  "poses": [
+    {
+      "pose": "ready",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/melee-front-v1/candidate-01.png",
+      "sourceSha256": "d3edb6e641348b06e30bcf4c6495c5eb8e18473317b7a300b441b28a2040bd6f",
+      "sourceOrigin": [
+        61,
+        67
+      ],
+      "sourceSize": [
+        511,
+        514
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          65,
+          71,
+          568,
+          577
+        ],
+        "sourceGlobalCrop": [
+          61,
+          67,
+          572,
+          581
+        ],
+        "componentArea": 131652,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-00.png",
+        "assignedAuxiliaryEffects": []
+      },
+      "sourcePivotGlobal": [
+        302.5,
+        577.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          507,
+          510
+        ],
+        "bandTop": 494,
+        "bandBottomExclusive": 510,
+        "contactXBounds": [
+          5,
+          478
+        ],
+        "sourcePivotLocal": [
+          241.5,
+          510.0
+        ]
+      },
+      "uniformSheetScale": 0.11857707509881422,
+      "resizedSourceSize": [
+        61,
+        61
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        168,
+        208
+      ],
+      "outputPivotActual": [
+        196.63636363636363,
+        268.47430830039525
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    },
+    {
+      "pose": "up-windup",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/melee-directions-v1/candidate-01.png",
+      "sourceSha256": "758899e21dbec3c4417d1832aea4ea792e20073a1afc20af04f31d10f0969d91",
+      "sourceOrigin": [
+        94,
+        44
+      ],
+      "sourceSize": [
+        526,
+        559
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          98,
+          48,
+          616,
+          599
+        ],
+        "sourceGlobalCrop": [
+          94,
+          44,
+          620,
+          603
+        ],
+        "componentArea": 142626,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-00.png",
+        "assignedAuxiliaryEffects": []
+      },
+      "sourcePivotGlobal": [
+        349.0,
+        599.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          522,
+          555
+        ],
+        "bandTop": 538,
+        "bandBottomExclusive": 555,
+        "contactXBounds": [
+          7,
+          503
+        ],
+        "sourcePivotLocal": [
+          255.0,
+          555.0
+        ]
+      },
+      "uniformSheetScale": 0.11857707509881422,
+      "resizedSourceSize": [
+        62,
+        66
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        166,
+        202
+      ],
+      "outputPivotActual": [
+        196.23715415019763,
+        267.8102766798419
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    },
+    {
+      "pose": "up-release",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/melee-directions-v1/candidate-01.png",
+      "sourceSha256": "758899e21dbec3c4417d1832aea4ea792e20073a1afc20af04f31d10f0969d91",
+      "sourceOrigin": [
+        703,
+        29
+      ],
+      "sourceSize": [
+        593,
+        575
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          707,
+          33,
+          1292,
+          600
+        ],
+        "sourceGlobalCrop": [
+          703,
+          29,
+          1296,
+          604
+        ],
+        "componentArea": 144557,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-01.png",
+        "assignedAuxiliaryEffects": []
+      },
+      "sourcePivotGlobal": [
+        956.5,
+        600.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          589,
+          571
+        ],
+        "bandTop": 553,
+        "bandBottomExclusive": 571,
+        "contactXBounds": [
+          5,
+          502
+        ],
+        "sourcePivotLocal": [
+          253.5,
+          571.0
+        ]
+      },
+      "uniformSheetScale": 0.11857707509881422,
+      "resizedSourceSize": [
+        70,
+        68
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        166,
+        200
+      ],
+      "outputPivotActual": [
+        196.0592885375494,
+        267.70750988142294
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    },
+    {
+      "pose": "down-windup",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/melee-directions-v1/candidate-01.png",
+      "sourceSha256": "758899e21dbec3c4417d1832aea4ea792e20073a1afc20af04f31d10f0969d91",
+      "sourceOrigin": [
+        75,
+        638
+      ],
+      "sourceSize": [
+        560,
+        501
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          79,
+          642,
+          631,
+          1135
+        ],
+        "sourceGlobalCrop": [
+          75,
+          638,
+          635,
+          1139
+        ],
+        "componentArea": 158336,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-02.png",
+        "assignedAuxiliaryEffects": []
+      },
+      "sourcePivotGlobal": [
+        325.0,
+        1135.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          556,
+          497
+        ],
+        "bandTop": 482,
+        "bandBottomExclusive": 497,
+        "contactXBounds": [
+          7,
+          493
+        ],
+        "sourcePivotLocal": [
+          250.0,
+          497.0
+        ]
+      },
+      "uniformSheetScale": 0.11857707509881422,
+      "resizedSourceSize": [
+        66,
+        59
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        167,
+        209
+      ],
+      "outputPivotActual": [
+        196.64426877470356,
+        267.9328063241107
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    },
+    {
+      "pose": "down-release",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/melee-directions-v1/candidate-01.png",
+      "sourceSha256": "758899e21dbec3c4417d1832aea4ea792e20073a1afc20af04f31d10f0969d91",
+      "sourceOrigin": [
+        690,
+        634
+      ],
+      "sourceSize": [
+        617,
+        505
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          694,
+          638,
+          1303,
+          1135
+        ],
+        "sourceGlobalCrop": [
+          690,
+          634,
+          1307,
+          1139
+        ],
+        "componentArea": 157153,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-03.png",
+        "assignedAuxiliaryEffects": []
+      },
+      "sourcePivotGlobal": [
+        949.5,
+        1135.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          613,
+          501
+        ],
+        "bandTop": 486,
+        "bandBottomExclusive": 501,
+        "contactXBounds": [
+          7,
+          512
+        ],
+        "sourcePivotLocal": [
+          259.5,
+          501.0
+        ]
+      },
+      "uniformSheetScale": 0.11857707509881422,
+      "resizedSourceSize": [
+        73,
+        60
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        166,
+        209
+      ],
+      "outputPivotActual": [
+        196.77075098814228,
+        268.40711462450594
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    }
+  ],
+  "reviewCropBounds": [
+    158,
+    192,
+    247,
+    277
+  ]
+}

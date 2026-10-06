@@ -1,0 +1,373 @@
+{
+  "group": "repair-front",
+  "status": "provisional native alignment for visual review; no runtime binding",
+  "canvas": [
+    450,
+    400
+  ],
+  "targetRootPivot": [
+    196.5,
+    268.0
+  ],
+  "alphaThresholdForScaleAndGround": 16,
+  "scaleCalibration": {
+    "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+    "referencePoseIndex": 0,
+    "referencePose": "repair-ready",
+    "referenceAlpha16BBox": [
+      4,
+      4,
+      508,
+      571
+    ],
+    "referenceBodyHeight": 567,
+    "targetBodyHeight": 60.0,
+    "uniformScale": 0.10582010582010581
+  },
+  "perPosePivotsAreGroundContactNotOverallBBoxCenter": true,
+  "contactBandRule": {
+    "fraction": 0.03,
+    "minimumSourcePixels": 8,
+    "meaning": "lower contact band excludes raised/extended weapon from x-root estimate"
+  },
+  "uncertainty": null,
+  "poses": [
+    {
+      "pose": "repair-ready",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/repair-v1/candidate-01.png",
+      "sourceSha256": "c6232b9f16eb4df4d42e53f8534f0e20053d91c16698b128fd7c0b6f5fb78bc8",
+      "sourceOrigin": [
+        94,
+        21
+      ],
+      "sourceSize": [
+        512,
+        575
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          98,
+          25,
+          602,
+          592
+        ],
+        "sourceGlobalCrop": [
+          94,
+          21,
+          606,
+          596
+        ],
+        "componentArea": 156835,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-00.png",
+        "assignedAuxiliaryEffects": []
+      },
+      "sourcePivotGlobal": [
+        328.5,
+        592.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          508,
+          571
+        ],
+        "bandTop": 553,
+        "bandBottomExclusive": 571,
+        "contactXBounds": [
+          4,
+          465
+        ],
+        "sourcePivotLocal": [
+          234.5,
+          571.0
+        ]
+      },
+      "uniformSheetScale": 0.10582010582010581,
+      "resizedSourceSize": [
+        54,
+        61
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        172,
+        208
+      ],
+      "outputPivotActual": [
+        196.8148148148148,
+        268.4232804232804
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    },
+    {
+      "pose": "reach",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/repair-v1/candidate-01.png",
+      "sourceSha256": "c6232b9f16eb4df4d42e53f8534f0e20053d91c16698b128fd7c0b6f5fb78bc8",
+      "sourceOrigin": [
+        721,
+        117
+      ],
+      "sourceSize": [
+        553,
+        478
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          725,
+          121,
+          1270,
+          591
+        ],
+        "sourceGlobalCrop": [
+          721,
+          117,
+          1274,
+          595
+        ],
+        "componentArea": 143664,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-01.png",
+        "assignedAuxiliaryEffects": []
+      },
+      "sourcePivotGlobal": [
+        921.0,
+        591.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          549,
+          474
+        ],
+        "bandTop": 459,
+        "bandBottomExclusive": 474,
+        "contactXBounds": [
+          5,
+          395
+        ],
+        "sourcePivotLocal": [
+          200.0,
+          474.0
+        ]
+      },
+      "uniformSheetScale": 0.10582010582010581,
+      "resizedSourceSize": [
+        59,
+        51
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        175,
+        218
+      ],
+      "outputPivotActual": [
+        196.16402116402116,
+        268.1587301587302
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    },
+    {
+      "pose": "focus",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/repair-v1/candidate-01.png",
+      "sourceSha256": "c6232b9f16eb4df4d42e53f8534f0e20053d91c16698b128fd7c0b6f5fb78bc8",
+      "sourceOrigin": [
+        98,
+        641
+      ],
+      "sourceSize": [
+        515,
+        530
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          102,
+          645,
+          609,
+          1167
+        ],
+        "sourceGlobalCrop": [
+          98,
+          641,
+          613,
+          1171
+        ],
+        "componentArea": 154341,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-02.png",
+        "assignedAuxiliaryEffects": [
+          {
+            "sourceGlobalBBox": [
+              556,
+              841,
+              597,
+              906
+            ],
+            "externalNonzeroAlphaPixelCount": 747,
+            "maximumAlpha": 239,
+            "assignedPoseIndex": 2,
+            "assignedPoseName": "focus",
+            "reason": "explicitly retained authored detached hand/spark effect; restored byte-for-byte after silhouette separation"
+          },
+          {
+            "sourceGlobalBBox": [
+              505,
+              983,
+              545,
+              1006
+            ],
+            "externalNonzeroAlphaPixelCount": 407,
+            "maximumAlpha": 244,
+            "assignedPoseIndex": 2,
+            "assignedPoseName": "focus",
+            "reason": "explicitly retained authored detached hand/spark effect; restored byte-for-byte after silhouette separation"
+          }
+        ]
+      },
+      "sourcePivotGlobal": [
+        330.0,
+        1167.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          511,
+          526
+        ],
+        "bandTop": 510,
+        "bandBottomExclusive": 526,
+        "contactXBounds": [
+          4,
+          460
+        ],
+        "sourcePivotLocal": [
+          232.0,
+          526.0
+        ]
+      },
+      "uniformSheetScale": 0.10582010582010581,
+      "resizedSourceSize": [
+        54,
+        56
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        172,
+        212
+      ],
+      "outputPivotActual": [
+        196.55026455026456,
+        267.66137566137564
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    },
+    {
+      "pose": "recovery",
+      "sourcePath": "assets/new-horizons/creatures/cabir-master/v3/repair-v1/candidate-01.png",
+      "sourceSha256": "c6232b9f16eb4df4d42e53f8534f0e20053d91c16698b128fd7c0b6f5fb78bc8",
+      "sourceOrigin": [
+        732,
+        606
+      ],
+      "sourceSize": [
+        504,
+        570
+      ],
+      "sourceExtraction": {
+        "kind": "pinned whole connected-component crop; no quadrant clipping",
+        "sourceGlobalSeedBBox": [
+          736,
+          610,
+          1232,
+          1172
+        ],
+        "sourceGlobalCrop": [
+          732,
+          606,
+          1236,
+          1176
+        ],
+        "componentArea": 153235,
+        "componentAlphaThreshold": 16,
+        "separationFrame": "pose-03.png",
+        "assignedAuxiliaryEffects": []
+      },
+      "sourcePivotGlobal": [
+        966.5,
+        1172.0
+      ],
+      "contactLandmark": {
+        "method": "center of alpha>=16 pixels in lower 3% band; pivotY is the alpha>=16 lower edge",
+        "alpha16BBox": [
+          4,
+          4,
+          500,
+          566
+        ],
+        "bandTop": 549,
+        "bandBottomExclusive": 566,
+        "contactXBounds": [
+          5,
+          464
+        ],
+        "sourcePivotLocal": [
+          234.5,
+          566.0
+        ]
+      },
+      "uniformSheetScale": 0.10582010582010581,
+      "resizedSourceSize": [
+        53,
+        60
+      ],
+      "targetPivot": [
+        196.5,
+        268.0
+      ],
+      "outputPlacement": [
+        172,
+        208
+      ],
+      "outputPivotActual": [
+        196.8148148148148,
+        267.8941798941799
+      ],
+      "logicalCanvas": [
+        450,
+        400
+      ]
+    }
+  ],
+  "reviewCropBounds": [
+    164,
+    200,
+    242,
+    277
+  ]
+}

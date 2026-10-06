@@ -1,0 +1,72 @@
+{
+  "basepath": "NH_cabir_v3_battle/",
+  "sequences": [
+    {
+      "group": 0,
+      "frames": [
+        "frames/moving/frame-00.png",
+        "frames/moving/frame-01.png",
+        "frames/moving/frame-02.png",
+        "frames/moving/frame-03.png"
+      ]
+    },
+    {
+      "group": 2,
+      "frames": [
+        "frames/holding/frame-00.png"
+      ]
+    },
+    {
+      "group": 3,
+      "frames": [
+        "frames/reaction/frame-00.png"
+      ]
+    },
+    {
+      "group": 4,
+      "frames": [
+        "frames/reaction/frame-01.png"
+      ]
+    },
+    {
+      "group": 5,
+      "frames": [
+        "frames/reaction/frame-02.png",
+        "frames/reaction/frame-03.png"
+      ]
+    },
+    {
+      "group": 22,
+      "frames": [
+        "frames/reaction/frame-03.png"
+      ]
+    },
+    {
+      "group": 12,
+      "frames": [
+        "frames/melee-front/frame-00.png",
+        "frames/melee-front/frame-01.png",
+        "frames/melee-front/frame-02.png",
+        "frames/melee-front/frame-03.png"
+      ]
+    },
+    {
+      "group": 11,
+      "frames": [
+        "frames/melee-front/frame-00.png",
+        "frames/melee-directions/frame-01.png",
+        "frames/melee-directions/frame-02.png",
+        "frames/melee-front/frame-03.png"
+      ]
+    },
+    {
+      "group": 13,
+      "frames": [
+        "frames/melee-front/frame-00.png",
+        "frames/melee-directions/frame-03.png",
+        "frames/melee-directions/frame-04.png",
+        "frames/melee-front/frame-03.png"
+      ]
+    }
+  ]
+}

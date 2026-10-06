@@ -1,0 +1,899 @@
+{
+  "format": 1,
+  "status": "offline provisional custom-animation export; no runtime binding, gameplay change, or visual acceptance",
+  "family": "cabir",
+  "descriptor": "NH_cabir_v3_battle.json",
+  "descriptorBasepath": "NH_cabir_v3_battle/",
+  "descriptorLoaderShape": "RenderHandler initFromJson: basepath plus numeric sequences[group].frames file list",
+  "canvas": [
+    450,
+    400
+  ],
+  "targetRootPivot": [
+    196.5,
+    268.0
+  ],
+  "referenceTargetHeightPixels": 60.0,
+  "attackClimaxFrameZeroBased": 2,
+  "directionalAttackSequence": "front ready, directional windup, directional release, shared front recovery",
+  "standingSource": {
+    "status": "provisional standalone full-body pose; alpha-only exterior cleanup, no source edits",
+    "sourcePath": "assets/new-horizons/creatures/cabir/v3/standing-master.png",
+    "sourceSha256": "e9e5cfacb4cafa8f55c0160a400a4f0c6ea3426d77f631c928de27eaa4033060",
+    "promptPath": "assets/new-horizons/creatures/cabir/v3/standing.prompt.txt",
+    "promptSha256": "66a9aa4bf1be4f6f964ace0f038cde03c134556a756d87a7f6bb106a2be0a082",
+    "sourceSize": [
+      1323,
+      1189
+    ],
+    "alphaSeedThreshold": 16,
+    "mainComponentArea": 544139,
+    "mainComponentAlpha16BBox": [
+      195,
+      57,
+      1177,
+      1151
+    ],
+    "externalNonzeroAlphaRemoved": 14754,
+    "maximumRemovedAlpha": 8,
+    "removedAlphaHistogram": {
+      "1": 12968,
+      "2": 1422,
+      "3": 272,
+      "5": 14,
+      "4": 77,
+      "8": 1
+    },
+    "rule": "only nonzero alpha outside the 4px dilation of the largest body component is cleared; alpha must be <=10; RGB preserved",
+    "sourceFileModified": false
+  },
+  "sourceSheets": {
+    "walk": {
+      "status": "offline lossless pose separation; alignment/native review pending",
+      "action": "base-walk",
+      "sourcePath": "assets/new-horizons/creatures/cabir/v3/walk-v2/cleaned/candidate-01-alpha-cleaned.png",
+      "sourceSha256": "112c20fb49091bcbf5efc5646b7ce1950f37ade03969a12c3ccedcffdecace2a",
+      "sourceSize": [
+        1323,
+        1189
+      ],
+      "sourceComponentCountAtThreshold": 17,
+      "majorComponentAreaMinimum": 50000,
+      "selectedPoseCount": 4,
+      "componentConnectivity": "8-connected",
+      "ordering": "row-major by component bbox center; top/bottom split at source height/2, then x center",
+      "commonSourceCanvas": {
+        "globalBBox": [
+          125,
+          30,
+          1222,
+          1162
+        ],
+        "size": [
+          1097,
+          1132
+        ],
+        "scale": 1.0,
+        "resized": false,
+        "sourceOffsetsPreserved": true
+      },
+      "policy": {
+        "seed": "four largest-area components meeting area minimum at alpha>=16",
+        "dilationRadius": 4,
+        "dilationShape": "square/Chebyshev radius, clipped to source bounds",
+        "retainedPixels": "original source RGBA bytes copied unchanged",
+        "removedPixels": "only nonzero source pixels outside a unique pose dilation; alpha must be <=10; no recoloring",
+        "maximumRemovedAlphaAllowed": 10,
+        "independentResize": false,
+        "quadrantCropping": false
+      },
+      "removedPixelCount": 0,
+      "maximumRemovedAlpha": 0,
+      "removedAlphaHistogram": {},
+      "poses": [
+        {
+          "frame": "pose-00.png",
+          "row": 0,
+          "column": 0,
+          "seedThreshold": 16,
+          "seedArea": 122945,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            162,
+            34,
+            593,
+            573
+          ],
+          "paddedSourceBBox": [
+            158,
+            30,
+            597,
+            577
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            33,
+            0
+          ],
+          "poseName": "step-a"
+        },
+        {
+          "frame": "pose-01.png",
+          "row": 0,
+          "column": 1,
+          "seedThreshold": 16,
+          "seedArea": 119130,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            770,
+            41,
+            1216,
+            570
+          ],
+          "paddedSourceBBox": [
+            766,
+            37,
+            1220,
+            574
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            641,
+            7
+          ],
+          "poseName": "step-b"
+        },
+        {
+          "frame": "pose-02.png",
+          "row": 1,
+          "column": 0,
+          "seedThreshold": 16,
+          "seedArea": 124513,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            129,
+            618,
+            588,
+            1158
+          ],
+          "paddedSourceBBox": [
+            125,
+            614,
+            592,
+            1162
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            0,
+            584
+          ],
+          "poseName": "step-c"
+        },
+        {
+          "frame": "pose-03.png",
+          "row": 1,
+          "column": 1,
+          "seedThreshold": 16,
+          "seedArea": 117184,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            774,
+            623,
+            1218,
+            1153
+          ],
+          "paddedSourceBBox": [
+            770,
+            619,
+            1222,
+            1157
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            645,
+            589
+          ],
+          "poseName": "step-d"
+        }
+      ],
+      "sourceFileModified": false,
+      "sourceComponentCountAtAlphaThreshold": 17,
+      "sourceMajorComponentCount": 4,
+      "promptPath": "assets/new-horizons/creatures/cabir/v3/walk-v2/candidate-01.prompt.txt",
+      "promptSha256": "255e5baf86275a2d7a91369841b054e896b2d9f006d940c2bc7b45a55d842272",
+      "inputPngIsModifiedInMemoryOnlyForPinnedOperations": false,
+      "authorizedAlphaOnlyCleanup": [],
+      "auxiliaryComponentsAssigned": [],
+      "upstreamCleanupReceipt": {
+        "path": "assets/new-horizons/creatures/cabir/v3/walk-v2/cleaned/cleanup-receipt.json",
+        "sha256": "8e14fb7db2c7b2fc0d296a709c6e6b080219c68f6d8b0589092eb0937f2419a2"
+      }
+    },
+    "melee_front": {
+      "status": "offline lossless pose separation; alignment/native review pending",
+      "action": "base-melee-front",
+      "sourcePath": "assets/new-horizons/creatures/cabir/v3/melee-front-v1/candidate-01.png",
+      "sourceSha256": "b58a766ea7512b10315b8b82f0aa85b6a161534434745b402706da9547935efb",
+      "sourceSize": [
+        1323,
+        1189
+      ],
+      "sourceComponentCountAtThreshold": 11,
+      "majorComponentAreaMinimum": 50000,
+      "selectedPoseCount": 4,
+      "componentConnectivity": "8-connected",
+      "ordering": "row-major by component bbox center; top/bottom split at source height/2, then x center",
+      "commonSourceCanvas": {
+        "globalBBox": [
+          58,
+          62,
+          1291,
+          1147
+        ],
+        "size": [
+          1233,
+          1085
+        ],
+        "scale": 1.0,
+        "resized": false,
+        "sourceOffsetsPreserved": true
+      },
+      "policy": {
+        "seed": "four largest-area components meeting area minimum at alpha>=16",
+        "dilationRadius": 4,
+        "dilationShape": "square/Chebyshev radius, clipped to source bounds",
+        "retainedPixels": "original source RGBA bytes copied unchanged",
+        "removedPixels": "only nonzero source pixels outside a unique pose dilation; alpha must be <=10; no recoloring",
+        "maximumRemovedAlphaAllowed": 10,
+        "independentResize": false,
+        "quadrantCropping": false
+      },
+      "removedPixelCount": 12869,
+      "maximumRemovedAlpha": 5,
+      "removedAlphaHistogram": {
+        "1": 11501,
+        "2": 1139,
+        "3": 161,
+        "4": 44,
+        "5": 24
+      },
+      "poses": [
+        {
+          "frame": "pose-00.png",
+          "row": 0,
+          "column": 0,
+          "seedThreshold": 16,
+          "seedArea": 130964,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            66,
+            71,
+            566,
+            577
+          ],
+          "paddedSourceBBox": [
+            62,
+            67,
+            570,
+            581
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            4,
+            5
+          ],
+          "poseName": "ready"
+        },
+        {
+          "frame": "pose-01.png",
+          "row": 0,
+          "column": 1,
+          "seedThreshold": 16,
+          "seedArea": 151955,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            728,
+            66,
+            1287,
+            577
+          ],
+          "paddedSourceBBox": [
+            724,
+            62,
+            1291,
+            581
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            666,
+            0
+          ],
+          "poseName": "windup"
+        },
+        {
+          "frame": "pose-02.png",
+          "row": 1,
+          "column": 0,
+          "seedThreshold": 16,
+          "seedArea": 155951,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            62,
+            643,
+            794,
+            1141
+          ],
+          "paddedSourceBBox": [
+            58,
+            639,
+            798,
+            1145
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            0,
+            577
+          ],
+          "poseName": "claw-swipe"
+        },
+        {
+          "frame": "pose-03.png",
+          "row": 1,
+          "column": 1,
+          "seedThreshold": 16,
+          "seedArea": 130034,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            755,
+            647,
+            1241,
+            1143
+          ],
+          "paddedSourceBBox": [
+            751,
+            643,
+            1245,
+            1147
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            693,
+            581
+          ],
+          "poseName": "recovery"
+        }
+      ],
+      "sourceFileModified": false,
+      "sourceComponentCountAtAlphaThreshold": 11,
+      "sourceMajorComponentCount": 4,
+      "promptPath": "assets/new-horizons/creatures/cabir/v3/melee-front-v1/candidate-01.prompt.txt",
+      "promptSha256": "012b9cdd479940915efed31bddf50a0aa31129790dd68f839c21e5086d29cb5b",
+      "inputPngIsModifiedInMemoryOnlyForPinnedOperations": false,
+      "authorizedAlphaOnlyCleanup": [],
+      "auxiliaryComponentsAssigned": []
+    },
+    "melee_directions": {
+      "status": "offline lossless pose separation; alignment/native review pending",
+      "action": "base-melee-directions",
+      "sourcePath": "assets/new-horizons/creatures/cabir/v3/melee-directions-v1/candidate-01.png",
+      "sourceSha256": "c6a7b5831041f977668a3cdb75ff58707dbf31c2fd2c4e5021974fc3c9acbbf6",
+      "sourceSize": [
+        1323,
+        1189
+      ],
+      "sourceComponentCountAtThreshold": 14,
+      "majorComponentAreaMinimum": 50000,
+      "selectedPoseCount": 4,
+      "componentConnectivity": "8-connected",
+      "ordering": "row-major by component bbox center; top/bottom split at source height/2, then x center",
+      "commonSourceCanvas": {
+        "globalBBox": [
+          72,
+          37,
+          1294,
+          1144
+        ],
+        "size": [
+          1222,
+          1107
+        ],
+        "scale": 1.0,
+        "resized": false,
+        "sourceOffsetsPreserved": true
+      },
+      "policy": {
+        "seed": "four largest-area components meeting area minimum at alpha>=16",
+        "dilationRadius": 4,
+        "dilationShape": "square/Chebyshev radius, clipped to source bounds",
+        "retainedPixels": "original source RGBA bytes copied unchanged",
+        "removedPixels": "only nonzero source pixels outside a unique pose dilation; alpha must be <=10; no recoloring",
+        "maximumRemovedAlphaAllowed": 10,
+        "independentResize": false,
+        "quadrantCropping": false
+      },
+      "removedPixelCount": 11681,
+      "maximumRemovedAlpha": 6,
+      "removedAlphaHistogram": {
+        "1": 10438,
+        "2": 958,
+        "4": 57,
+        "3": 203,
+        "5": 21,
+        "6": 4
+      },
+      "poses": [
+        {
+          "frame": "pose-00.png",
+          "row": 0,
+          "column": 0,
+          "seedThreshold": 16,
+          "seedArea": 147562,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            76,
+            41,
+            594,
+            597
+          ],
+          "paddedSourceBBox": [
+            72,
+            37,
+            598,
+            601
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            0,
+            0
+          ],
+          "poseName": "up-windup"
+        },
+        {
+          "frame": "pose-01.png",
+          "row": 0,
+          "column": 1,
+          "seedThreshold": 16,
+          "seedArea": 130449,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            735,
+            44,
+            1260,
+            597
+          ],
+          "paddedSourceBBox": [
+            731,
+            40,
+            1264,
+            601
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            659,
+            3
+          ],
+          "poseName": "up-release"
+        },
+        {
+          "frame": "pose-02.png",
+          "row": 1,
+          "column": 0,
+          "seedThreshold": 16,
+          "seedArea": 151562,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            76,
+            643,
+            641,
+            1140
+          ],
+          "paddedSourceBBox": [
+            72,
+            639,
+            645,
+            1144
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            0,
+            602
+          ],
+          "poseName": "down-windup"
+        },
+        {
+          "frame": "pose-03.png",
+          "row": 1,
+          "column": 1,
+          "seedThreshold": 16,
+          "seedArea": 149760,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            715,
+            644,
+            1290,
+            1139
+          ],
+          "paddedSourceBBox": [
+            711,
+            640,
+            1294,
+            1143
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            639,
+            603
+          ],
+          "poseName": "down-release"
+        }
+      ],
+      "sourceFileModified": false,
+      "sourceComponentCountAtAlphaThreshold": 14,
+      "sourceMajorComponentCount": 4,
+      "promptPath": "assets/new-horizons/creatures/cabir/v3/melee-directions-v1/candidate-01.prompt.txt",
+      "promptSha256": "0aa19633eeb907fce8b28e0c70f80a0d97aa47dfe662d770711d1ee6365a05e6",
+      "inputPngIsModifiedInMemoryOnlyForPinnedOperations": false,
+      "authorizedAlphaOnlyCleanup": [],
+      "auxiliaryComponentsAssigned": []
+    },
+    "reactions": {
+      "status": "offline lossless pose separation; alignment/native review pending",
+      "action": "base-reactions",
+      "sourcePath": "assets/new-horizons/creatures/cabir/v3/reactions-v1/candidate-01.png",
+      "sourceSha256": "e42feeba9a6019b3685c756280cedf72173842fa2a652ed2ba59a33094ddaa56",
+      "sourceSize": [
+        1326,
+        1187
+      ],
+      "sourceComponentCountAtThreshold": 11,
+      "majorComponentAreaMinimum": 50000,
+      "selectedPoseCount": 4,
+      "componentConnectivity": "8-connected",
+      "ordering": "row-major by component bbox center; top/bottom split at source height/2, then x center",
+      "commonSourceCanvas": {
+        "globalBBox": [
+          32,
+          39,
+          1301,
+          1124
+        ],
+        "size": [
+          1269,
+          1085
+        ],
+        "scale": 1.0,
+        "resized": false,
+        "sourceOffsetsPreserved": true
+      },
+      "policy": {
+        "seed": "four largest-area components meeting area minimum at alpha>=16",
+        "dilationRadius": 4,
+        "dilationShape": "square/Chebyshev radius, clipped to source bounds",
+        "retainedPixels": "original source RGBA bytes copied unchanged",
+        "removedPixels": "only nonzero source pixels outside a unique pose dilation; alpha must be <=10; no recoloring",
+        "maximumRemovedAlphaAllowed": 10,
+        "independentResize": false,
+        "quadrantCropping": false
+      },
+      "removedPixelCount": 12534,
+      "maximumRemovedAlpha": 4,
+      "removedAlphaHistogram": {
+        "1": 11197,
+        "2": 1047,
+        "3": 253,
+        "4": 37
+      },
+      "poses": [
+        {
+          "frame": "pose-00.png",
+          "row": 0,
+          "column": 0,
+          "seedThreshold": 16,
+          "seedArea": 146519,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            57,
+            43,
+            616,
+            636
+          ],
+          "paddedSourceBBox": [
+            53,
+            39,
+            620,
+            640
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            21,
+            0
+          ],
+          "poseName": "hit-recoil"
+        },
+        {
+          "frame": "pose-01.png",
+          "row": 0,
+          "column": 1,
+          "seedThreshold": 16,
+          "seedArea": 133508,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            731,
+            144,
+            1217,
+            638
+          ],
+          "paddedSourceBBox": [
+            727,
+            140,
+            1221,
+            642
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            695,
+            101
+          ],
+          "poseName": "defend-brace"
+        },
+        {
+          "frame": "pose-02.png",
+          "row": 1,
+          "column": 0,
+          "seedThreshold": 16,
+          "seedArea": 126180,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            36,
+            738,
+            644,
+            1119
+          ],
+          "paddedSourceBBox": [
+            32,
+            734,
+            648,
+            1123
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            0,
+            695
+          ],
+          "poseName": "dying"
+        },
+        {
+          "frame": "pose-03.png",
+          "row": 1,
+          "column": 1,
+          "seedThreshold": 16,
+          "seedArea": 98606,
+          "seedMaxAlpha": 255,
+          "sourceGlobalBBox": [
+            671,
+            896,
+            1297,
+            1120
+          ],
+          "paddedSourceBBox": [
+            667,
+            892,
+            1301,
+            1124
+          ],
+          "sourceOffsetOnCommonCanvas": [
+            635,
+            853
+          ],
+          "poseName": "collapsed-dead"
+        }
+      ],
+      "sourceFileModified": false,
+      "sourceComponentCountAtAlphaThreshold": 11,
+      "sourceMajorComponentCount": 4,
+      "promptPath": "assets/new-horizons/creatures/cabir/v3/reactions-v1/candidate-01.prompt.txt",
+      "promptSha256": "10855fc06decadba78f3b5d33e234b257d8bc2c5533e298aa2df59eab338360d",
+      "inputPngIsModifiedInMemoryOnlyForPinnedOperations": false,
+      "authorizedAlphaOnlyCleanup": [],
+      "auxiliaryComponentsAssigned": []
+    }
+  },
+  "groups": {
+    "holding": {
+      "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+      "referencePoseIndex": 0,
+      "referencePose": "holding",
+      "referenceAlpha16BBox": [
+        195,
+        57,
+        1177,
+        1151
+      ],
+      "referenceBodyHeight": 1094,
+      "targetBodyHeight": 60.0,
+      "uniformScale": 0.054844606946983544,
+      "descriptorFrameStart": 0
+    },
+    "moving": {
+      "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+      "referencePoseIndex": 0,
+      "referencePose": "step-a",
+      "referenceAlpha16BBox": [
+        4,
+        4,
+        435,
+        543
+      ],
+      "referenceBodyHeight": 539,
+      "targetBodyHeight": 60.0,
+      "uniformScale": 0.11131725417439703,
+      "descriptorFrameStart": 0
+    },
+    "reaction": {
+      "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+      "referencePoseIndex": 1,
+      "referencePose": "defend-brace",
+      "referenceAlpha16BBox": [
+        4,
+        4,
+        490,
+        498
+      ],
+      "referenceBodyHeight": 494,
+      "targetBodyHeight": 60.0,
+      "uniformScale": 0.1214574898785425,
+      "descriptorFrameStart": 0
+    },
+    "melee-front": {
+      "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+      "referencePoseIndex": 0,
+      "referencePose": "ready",
+      "referenceAlpha16BBox": [
+        4,
+        4,
+        504,
+        510
+      ],
+      "referenceBodyHeight": 506,
+      "targetBodyHeight": 60.0,
+      "uniformScale": 0.11857707509881422,
+      "descriptorFrameStart": 0
+    },
+    "melee-directions": {
+      "method": "60 native pixels divided by reference pose alpha>=16 body/flame height",
+      "referencePoseIndex": 0,
+      "referencePose": "ready",
+      "referenceAlpha16BBox": [
+        4,
+        4,
+        504,
+        510
+      ],
+      "referenceBodyHeight": 506,
+      "targetBodyHeight": 60.0,
+      "uniformScale": 0.11857707509881422,
+      "descriptorFrameStart": 1
+    }
+  },
+  "mappedGroups": [
+    {
+      "group": 0,
+      "frames": [
+        "frames/moving/frame-00.png",
+        "frames/moving/frame-01.png",
+        "frames/moving/frame-02.png",
+        "frames/moving/frame-03.png"
+      ]
+    },
+    {
+      "group": 2,
+      "frames": [
+        "frames/holding/frame-00.png"
+      ]
+    },
+    {
+      "group": 3,
+      "frames": [
+        "frames/reaction/frame-00.png"
+      ]
+    },
+    {
+      "group": 4,
+      "frames": [
+        "frames/reaction/frame-01.png"
+      ]
+    },
+    {
+      "group": 5,
+      "frames": [
+        "frames/reaction/frame-02.png",
+        "frames/reaction/frame-03.png"
+      ]
+    },
+    {
+      "group": 22,
+      "frames": [
+        "frames/reaction/frame-03.png"
+      ]
+    },
+    {
+      "group": 12,
+      "frames": [
+        "frames/melee-front/frame-00.png",
+        "frames/melee-front/frame-01.png",
+        "frames/melee-front/frame-02.png",
+        "frames/melee-front/frame-03.png"
+      ]
+    },
+    {
+      "group": 11,
+      "frames": [
+        "frames/melee-front/frame-00.png",
+        "frames/melee-directions/frame-01.png",
+        "frames/melee-directions/frame-02.png",
+        "frames/melee-front/frame-03.png"
+      ]
+    },
+    {
+      "group": 13,
+      "frames": [
+        "frames/melee-front/frame-00.png",
+        "frames/melee-directions/frame-03.png",
+        "frames/melee-directions/frame-04.png",
+        "frames/melee-front/frame-03.png"
+      ]
+    }
+  ],
+  "intentionalAliases": {},
+  "notProvided": [
+    1,
+    6,
+    7,
+    8,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    23,
+    24,
+    25,
+    30,
+    31,
+    32,
+    40,
+    41,
+    42,
+    50,
+    51
+  ],
+  "warnings": [
+    "Walk atlas is an open-gait draft; it is exported as supplied and is not a completed loop-quality claim.",
+    "The pre-cleaned walk input retains prior reviewed alpha-only output; no new movement artwork or interpolation was added."
+  ],
+  "files": {
+    "NH_cabir_v3_battle.json": "f6198e1d9beff281d351a2a5ab3fe49ee1ea3e09072ae8d425d34cc048bee1d5",
+    "NH_cabir_v3_battle/frames/holding/frame-00.png": "e57d3e920b0fc33d4c88391c2a445f8282844f1ef7b772ffefabd7d417d13186",
+    "NH_cabir_v3_battle/frames/melee-directions/frame-00.png": "ad87294e471503ab7918d8c244167c2a3f86eb9f22c4900f8c4fcdaa442b7688",
+    "NH_cabir_v3_battle/frames/melee-directions/frame-01.png": "427bd6b77357392e46eae9641b2dbd552c0133507e563a582cdca2fb010b0468",
+    "NH_cabir_v3_battle/frames/melee-directions/frame-02.png": "d476aa036c44adbcc351ebdd3c3f20db67616220e2159de799ffa98c24e7b52d",
+    "NH_cabir_v3_battle/frames/melee-directions/frame-03.png": "a991461b3e06abfb0ab938c59bc138023f0a5fe8b8a55c71310079b821ed6ae3",
+    "NH_cabir_v3_battle/frames/melee-directions/frame-04.png": "90b8ff025e20bc1d6e13b3db872431ee36cebeae39b8e3786701ae7c389026dc",
+    "NH_cabir_v3_battle/frames/melee-front/frame-00.png": "ad87294e471503ab7918d8c244167c2a3f86eb9f22c4900f8c4fcdaa442b7688",
+    "NH_cabir_v3_battle/frames/melee-front/frame-01.png": "3e67a3fd202329e687375f05a1af2da13f2a31ff42a0bc9a8211dcbc0d3814c3",
+    "NH_cabir_v3_battle/frames/melee-front/frame-02.png": "94976eb211fec16efbc92beb117b77c7085c289b19d3e9a5b57cfffa44c2876a",
+    "NH_cabir_v3_battle/frames/melee-front/frame-03.png": "04aee670009eb74a9ca4cae38fa8da01f8595a4df09a38f8a1d3af17c7d19f10",
+    "NH_cabir_v3_battle/frames/moving/frame-00.png": "c6bf6fdcf695cbafcaf70c827ceb3cc08bec1e23ecf397fc4f3bb456ab74efc3",
+    "NH_cabir_v3_battle/frames/moving/frame-01.png": "922068ff196b0adf8aa8a8f57fb6fed112f7ced5967025a04f7e9d2acffc9cc1",
+    "NH_cabir_v3_battle/frames/moving/frame-02.png": "acbe2615217186a0b406c91f61c1ed5aabc47bf7ea2cf3252deac40b5433a449",
+    "NH_cabir_v3_battle/frames/moving/frame-03.png": "fa311b773f72364a544d0ccfb6a4a05f5d46b3a77fa1868b6c86a0fb6d771be8",
+    "NH_cabir_v3_battle/frames/reaction/frame-00.png": "0ee69a79dc851c3a1250542e954dc75bf012fcc23f45619c48f1e0fc29324fe5",
+    "NH_cabir_v3_battle/frames/reaction/frame-01.png": "a42a5b7edbd301c2a4523efdf15ade280a8ce3e303413d3da0a43388c1c57ae4",
+    "NH_cabir_v3_battle/frames/reaction/frame-02.png": "c00ec0296d26633c54b12c36654c788332fb94c17d50a6338ebf44002d5ef4d5",
+    "NH_cabir_v3_battle/frames/reaction/frame-03.png": "7994e6bab115161e82c518e53a3211dcc7bb5cdad4dc971a446efdd77774c2e0",
+    "review/alignment/holding.json": "cbae8b45564ac6d2c13b322114dca53152b8ff65fd4182a92a7a38f7e72ee1be",
+    "review/alignment/melee-directions.json": "265cdcd0d020ca0c72d752ceb86f3c66f67faf294810379fdbc77fb35351f0d1",
+    "review/alignment/melee-front.json": "4ff63703f485afe15d76fc883ac778a98284092820d814331a689da920e6bc2c",
+    "review/alignment/moving.json": "b6043924ffb36e6788e9f37e6cd5fb82c913c73850142a58d2aa95acdb0f58c4",
+    "review/alignment/reaction.json": "949acf263e128dbf1307e93eafb3d7b1bd8576cb345f2efe697a73c464a010b4",
+    "review/contact-master-2x.png": "119f02a65451af69a9be8aa63aad806fa4368b0e1f78946e23561eaf4b0f07e3",
+    "review/family-index.json": "37de782b93bea1cec74d3cad70685eebffbae81acaa8641a202c001c498cd52c",
+    "review/groups/holding-contact-4x.png": "d57e35a237b3597a2938502a44eb2dc8bd91a46521cffe8829363546e09056e1",
+    "review/groups/melee-directions-animation-proof.gif": "5cb9254bdb2cd27275928da1f682f19813bb145dfe551de69cd3da4c70481ac2",
+    "review/groups/melee-directions-contact-4x.png": "141ec3f519a06e8da47c29c8cb67907b229fc14dddeda8afcc046924b295081d",
+    "review/groups/melee-front-animation-proof.gif": "f6499ff74ff8d20f4985b2a0495863d66d14b16f9da2556e7efdb94c183cdb7a",
+    "review/groups/melee-front-contact-4x.png": "1f49416d08a339e513088b92d0522958b79547029ca98808ade79caa157cfe88",
+    "review/groups/moving-animation-proof.gif": "88f94a8e87784ffa3abf044279bdf4c2e019cb6023bf808cbaf1883502f08bd6",
+    "review/groups/moving-contact-4x.png": "4b3152637297fbe4c995f56e77c3aae494f3f5d270371d7942b850163b44ea29",
+    "review/groups/reaction-animation-proof.gif": "8d7590432ff1b121649ab7dfb33cad4414a67753429e32ac9e46a58e25802bf0",
+    "review/groups/reaction-contact-4x.png": "6c8d07a05dacf1c311b287b5d0f5377814c2b98d8ef700533c63884f71d904e3"
+  }
+}
