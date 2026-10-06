@@ -59,6 +59,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_ELEMENTAL_REBIRTH)
 			&& info->hasElementalRebirthBasisState())
 			throw std::runtime_error("Cannot discard Elemental Rebirth battle-start HP basis from BattleStart");
+		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_OUTPUT_ORIGINAL_HP)
+			&& info->hasRebirthOutputOriginalHPState())
+			throw std::runtime_error("Cannot discard Rebirth output original HP from BattleStart");
 		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_FORCED_MARCH)
 			&& info->hasFirstRoundMoraleModifierState())
 			throw std::runtime_error("Cannot discard first-round battle Morale modifier from BattleStart");
@@ -536,6 +539,10 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_OUTPUT_ORIGINAL_HP)
+			&& std::ranges::any_of(changedStacks, [](const UnitChanges & change)
+				{ return change.hasRebirthOriginalAggregateHP(); }))
+			throw std::runtime_error("Cannot discard Rebirth output original HP from a battle unit ADD");
 		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_CASUALTY_PROVENANCE)
 			&& std::ranges::any_of(changedStacks, [](const UnitChanges & change)
 				{ return change.hasCasualtyProvenanceState(); }))

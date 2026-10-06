@@ -1487,12 +1487,22 @@ bool BattleInfo::hasElementalRebirthBasisState() const
 	});
 }
 
+bool BattleInfo::hasRebirthOutputOriginalHPState() const
+{
+	return std::ranges::any_of(stacks, [](const auto & stack)
+	{
+		return stack && stack->getRebirthOriginalAggregateHP() > 0;
+	});
+}
+
 void BattleInfo::addUnit(uint32_t id, const JsonNode & data)
 {
 	if(heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE) && id != nextUnitId())
 		throw std::runtime_error("Invalid New Horizons targeted unit allocation");
 	battle::UnitInfo info;
 	info.load(id, data);
+	if(info.rebirthOriginalAggregateHP < 0)
+		throw std::runtime_error("Invalid Rebirth output original HP");
 	if(info.phantomIntegrity < 0 || info.phantomDuration < 0
 		|| ((info.phantomIntegrity == 0) != (info.phantomDuration == 0)))
 		throw std::runtime_error("Invalid Phantom Army spawn profile");
@@ -1500,6 +1510,21 @@ void BattleInfo::addUnit(uint32_t id, const JsonNode & data)
 		&& (info.count <= 0 || !info.summoned || info.natureSummoned
 			|| !newHorizonsSorcery::phantomArmyDurationSupported(info.phantomDuration)))
 		throw std::runtime_error("Invalid Phantom Army spawn profile");
+	if(info.rebirthOriginalAggregateHP > 0
+		&& (info.count <= 0 || !info.type.hasValue() || !info.type.toCreature()
+			|| !info.summoned || info.natureSummoned || info.phantomIntegrity > 0))
+		throw std::runtime_error("Invalid Rebirth output spawn metadata");
+	if(info.rebirthOriginalAggregateHP > 0)
+	{
+		if(info.side != BattleSide::ATTACKER && info.side != BattleSide::DEFENDER)
+			throw std::runtime_error("Invalid Rebirth output side");
+		const auto effectiveMaxHP = newHorizonsElementalRebirth::effectiveSummonMaxHP(
+			getSideArmy(info.side), info.type, getSidePlayer(info.side), info.side);
+		if(effectiveMaxHP <= 0
+			|| info.count > std::numeric_limits<int64_t>::max() / effectiveMaxHP
+			|| info.rebirthOriginalAggregateHP > static_cast<int64_t>(info.count) * effectiveMaxHP)
+			throw std::runtime_error("Rebirth output original HP exceeds its aggregate capacity");
+	}
 
 	CStackBasicDescriptor base(info.type, info.count);
 
@@ -1517,6 +1542,7 @@ void BattleInfo::addUnit(uint32_t id, const JsonNode & data)
 	// Restore the authoritative packet values before any subsequent bonus query.
 	stacks.back()->summoned = info.summoned;
 	stacks.back()->natureSummoned = info.natureSummoned;
+	stacks.back()->initializeRebirthOriginalAggregateHP(info.rebirthOriginalAggregateHP);
 	if(info.phantomIntegrity > 0)
 		stacks.back()->initializePhantomProfile(info.phantomIntegrity, info.phantomDuration);
 	const auto * orderState = sides.at(info.side).findOrder(HeroCommand::RIPOSTE);

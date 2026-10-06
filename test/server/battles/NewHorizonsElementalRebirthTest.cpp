@@ -20,6 +20,7 @@
 #include "../../../lib/spells/NewHorizonsMagic.h"
 
 #include <algorithm>
+#include <limits>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -201,7 +202,10 @@ protected:
 		EXPECT_TRUE(reborn->isSummoned());
 		EXPECT_EQ(reborn->unitSide(), BattleSide::DEFENDER);
 		EXPECT_EQ(reborn->getPosition(), source->getPosition());
-		EXPECT_EQ(reborn->getAvailableHealth(), expectedHP(basisAtStart, expectedPercent(rank)));
+		const auto initialHP = expectedHP(basisAtStart, expectedPercent(rank));
+		EXPECT_EQ(reborn->getAvailableHealth(), initialHP);
+		EXPECT_EQ(reborn->getRebirthOriginalAggregateHP(), initialHP)
+			<< "The exact spawn target must be retained as immutable Rebirth output provenance";
 		EXPECT_EQ(reborn->getCount(), 1);
 		EXPECT_LT(reborn->getAvailableHealth(), reborn->getMaxHealth())
 			<< "The exact aggregate target should be represented as a wounded final Elemental";
@@ -244,6 +248,26 @@ TEST_F(NewHorizonsElementalRebirthTest, BattleAttackUsesExpertFiftyPercentAfterP
 	expectOneExactWoundedRebirth(MasteryLevel::EXPERT);
 	ASSERT_EQ(server.attacks.size(), 1u);
 	EXPECT_TRUE(server.attacks.front().bsa.front().killed());
+}
+
+TEST_F(NewHorizonsElementalRebirthTest, RebirthOutputOriginalHPRemainsFixedAfterFurtherDamage)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::BASIC, 17));
+	applyInjury(source, source->getAvailableHealth());
+
+	const auto spawns = summonedUnits();
+	ASSERT_EQ(spawns.size(), 1u);
+	auto * reborn = battle()->getStack(spawns.front()->unitId(), false);
+	ASSERT_NE(reborn, nullptr);
+	const auto originalHP = expectedHP(basisAtStart, 25);
+	ASSERT_EQ(reborn->getRebirthOriginalAggregateHP(), originalHP);
+	ASSERT_GT(reborn->getAvailableHealth(), 1);
+
+	const auto liveHP = reborn->getAvailableHealth();
+	applyInjury(reborn, 1, false, false);
+	EXPECT_EQ(reborn->getAvailableHealth(), liveHP - 1);
+	EXPECT_EQ(reborn->getRebirthOriginalAggregateHP(), originalHP)
+		<< "Current wounds must not replace the immutable original Rebirth HP";
 }
 
 TEST_F(NewHorizonsElementalRebirthTest, AdvancedRankAloneDoesNotEnableUnselectedPerks)
@@ -490,6 +514,141 @@ TEST_F(NewHorizonsElementalRebirthTest, BasisRoundTripsAndRejectsOlderSave)
 	CStack restored;
 	currentReader.iser & restored;
 	EXPECT_EQ(restored.getBattleStartMaximumAggregateHP(), basis);
+
+	CMemorySerializer previousWriter;
+	previousWriter.oser.version = ESerializationVersion::NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE;
+	previousWriter.oser & *source;
+	CMemorySerializer previousReader(previousWriter.extractBuffer());
+	previousReader.iser.version = ESerializationVersion::NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE;
+	previousReader.iser.cb = gameState().get();
+	CStack restoredLegacy;
+	previousReader.iser & restoredLegacy;
+	EXPECT_EQ(restoredLegacy.getRebirthOriginalAggregateHP(), 0)
+		<< "Legacy stacks without the output metadata must load with the zero default";
+}
+
+TEST_F(NewHorizonsElementalRebirthTest, RebirthOutputOriginalHPRoundTripsAndRejectsOlderSave)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::BASIC));
+	applyInjury(source, source->getAvailableHealth());
+	const auto spawns = summonedUnits();
+	ASSERT_EQ(spawns.size(), 1u);
+	auto * reborn = battle()->getStack(spawns.front()->unitId(), false);
+	ASSERT_NE(reborn, nullptr);
+	const auto originalHP = expectedHP(basisAtStart, 25);
+	ASSERT_EQ(reborn->getRebirthOriginalAggregateHP(), originalHP);
+	EXPECT_EQ(reborn->getBattleStartMaximumAggregateHP(), 0)
+		<< "The spawned output HP is separate from the original stack's battle-start basis";
+
+	CMemorySerializer oldWriter;
+	oldWriter.oser.version = ESerializationVersion::NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE;
+	EXPECT_THROW(oldWriter.oser & *reborn, std::runtime_error);
+	EXPECT_TRUE(oldWriter.extractBuffer().empty());
+
+	reborn->detachFromAll();
+	CMemorySerializer currentWriter;
+	currentWriter.oser.version = ESerializationVersion::CURRENT;
+	currentWriter.oser & *reborn;
+	CMemorySerializer currentReader(currentWriter.extractBuffer());
+	currentReader.iser.version = ESerializationVersion::CURRENT;
+	currentReader.iser.cb = gameState().get();
+	CStack restored;
+	currentReader.iser & restored;
+	EXPECT_EQ(restored.getRebirthOriginalAggregateHP(), originalHP);
+	EXPECT_EQ(restored.getBattleStartMaximumAggregateHP(), 0);
+}
+
+TEST_F(NewHorizonsElementalRebirthTest, UnitInfoPreservesRebirthOriginalHPAsExactInt64)
+{
+	battle::UnitInfo info;
+	info.id = 99;
+	info.count = 1;
+	info.type = creature("core:fireElemental");
+	info.side = BattleSide::DEFENDER;
+	info.position = BattleHex(0);
+	info.summoned = true;
+	info.rebirthOriginalAggregateHP = 9007199254740993LL; // 2^53 + 1
+
+	JsonNode data;
+	info.save(data);
+	EXPECT_EQ(data["rebirthOriginalAggregateHP"].Integer(), 9007199254740993LL);
+	battle::UnitInfo restored;
+	restored.load(info.id, data);
+	EXPECT_EQ(restored.rebirthOriginalAggregateHP, info.rebirthOriginalAggregateHP);
+
+	BattleUnitsChanged add;
+	add.battleID = BattleID(0);
+	add.changedStacks.emplace_back(info.id, UnitChanges::EOperation::ADD);
+	add.changedStacks.back().data = data;
+	CMemorySerializer legacy;
+	legacy.oser.version = ESerializationVersion::NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE;
+	EXPECT_THROW(legacy.oser & add, std::runtime_error);
+	EXPECT_TRUE(legacy.extractBuffer().empty())
+		<< "The ADD pack must reject unsupported metadata before writing its header";
+
+	CMemorySerializer current;
+	current.oser.version = ESerializationVersion::CURRENT;
+	current.oser & add;
+	CMemorySerializer reader(current.extractBuffer());
+	reader.iser.version = ESerializationVersion::CURRENT;
+	BattleUnitsChanged received;
+	reader.iser & received;
+	ASSERT_EQ(received.changedStacks.size(), 1u);
+	EXPECT_EQ(received.changedStacks.front().data["rebirthOriginalAggregateHP"].Integer(), 9007199254740993LL);
+
+	info.rebirthOriginalAggregateHP = 0;
+	JsonNode legacyData;
+	info.save(legacyData);
+	battle::UnitInfo restoredLegacy;
+	restoredLegacy.load(info.id, legacyData);
+	EXPECT_EQ(restoredLegacy.rebirthOriginalAggregateHP, 0)
+		<< "Older ADD payloads that omit the key retain the zero default";
+}
+
+TEST_F(NewHorizonsElementalRebirthTest, UnitInfoRejectsMalformedRebirthOutputMetadata)
+{
+	battle::UnitInfo info;
+	info.id = 99;
+	info.count = 1;
+	info.type = creature("core:fireElemental");
+	info.side = BattleSide::DEFENDER;
+	info.position = BattleHex(0);
+	info.summoned = true;
+	info.rebirthOriginalAggregateHP = 100;
+	JsonNode data;
+
+	info.rebirthOriginalAggregateHP = -1;
+	EXPECT_THROW(info.save(data), std::runtime_error);
+	info.rebirthOriginalAggregateHP = 100;
+	info.summoned = false;
+	EXPECT_THROW(info.save(data), std::runtime_error);
+	info.summoned = true;
+	info.natureSummoned = true;
+	EXPECT_THROW(info.save(data), std::runtime_error);
+	info.natureSummoned = false;
+	info.count = 0;
+	EXPECT_THROW(info.save(data), std::runtime_error);
+}
+
+TEST_F(NewHorizonsElementalRebirthTest, InvalidRebirthOutputADDDoesNotMutateBattle)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::BASIC));
+	const auto originalStackCount = battle()->battleGetAllUnits(false).size();
+
+	battle::UnitInfo info;
+	info.id = battle()->battleNextUnitId();
+	info.count = 1;
+	info.type = creature("core:fireElemental");
+	info.side = BattleSide::DEFENDER;
+	info.position = BattleHex(0);
+	info.summoned = true;
+	info.rebirthOriginalAggregateHP = std::numeric_limits<int64_t>::max();
+	JsonNode data;
+	info.save(data);
+
+	EXPECT_THROW(battle()->addUnit(info.id, data), std::runtime_error);
+	EXPECT_EQ(battle()->battleGetAllUnits(false).size(), originalStackCount)
+		<< "Invalid Rebirth output metadata must be rejected before publishing a stack";
 }
 
 TEST_F(NewHorizonsElementalRebirthTest, SharedWardBonusReducesMagicArrowDamageAndLeavesUnbonusedStackUnchanged)

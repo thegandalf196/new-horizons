@@ -299,6 +299,7 @@ std::optional<SpawnDescriptor> makeSpawnDescriptor(uint32_t unitId, CreatureID c
 	result.unit.position = corpsePosition;
 	result.unit.summoned = true;
 	result.unit.natureSummoned = false;
+	result.unit.rebirthOriginalAggregateHP = targetAggregateHP;
 	result.health = *health;
 	return result;
 }

@@ -35,6 +35,7 @@ private:
 
 	SlotID slot;  //slot - position in garrison (may be 255 for neutrals/called creatures)
 	int64_t battleStartMaximumAggregateHP = 0; //Elemental Rebirth source basis; zero for legacy/ineligible battles
+	int64_t rebirthOriginalAggregateHP = 0; //Exact first-generation Rebirth output HP; zero for other stacks
 
 	bool doubleWideCached = false;
 	const CCreature * formBonusSource = nullptr; // transient effective native source while polymorphed
@@ -84,8 +85,10 @@ public:
 	const CCreature * unitType() const override;
 	int32_t unitBaseAmount() const override;
 	int64_t getBattleStartMaximumAggregateHP() const override { return battleStartMaximumAggregateHP; }
+	int64_t getRebirthOriginalAggregateHP() const override { return rebirthOriginalAggregateHP; }
 	/// Capture once after battle-start bonus export. Zero-valued/ineligible stacks remain uncaptured.
 	void captureBattleStartMaximumAggregateHP();
+	void initializeRebirthOriginalAggregateHP(int64_t originalHP);
 
 	uint32_t unitId() const override;
 	BattleSide unitSide() const override;
@@ -127,6 +130,9 @@ public:
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_ELEMENTAL_REBIRTH)
 			&& battleStartMaximumAggregateHP != 0)
 			throw std::runtime_error("Cannot discard Elemental Rebirth battle-start HP basis in an older format");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_OUTPUT_ORIGINAL_HP)
+			&& rebirthOriginalAggregateHP != 0)
+			throw std::runtime_error("Cannot discard Rebirth output original HP in an older format");
 		assert(isIndependentNode());
 		h & static_cast<CBonusSystemNode&>(*this);
 		h & typeID;
@@ -152,6 +158,14 @@ public:
 		}
 		else if(!h.saving)
 			battleStartMaximumAggregateHP = 0;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_OUTPUT_ORIGINAL_HP))
+		{
+			h & rebirthOriginalAggregateHP;
+			if(!h.saving && rebirthOriginalAggregateHP < 0)
+				throw std::runtime_error("Invalid saved Rebirth output original HP");
+		}
+		else if(!h.saving)
+			rebirthOriginalAggregateHP = 0;
 	}
 
 private:

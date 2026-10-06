@@ -451,6 +451,15 @@ int32_t CStack::unitBaseAmount() const
 	return baseAmount;
 }
 
+void CStack::initializeRebirthOriginalAggregateHP(const int64_t originalHP)
+{
+	if(originalHP < 0)
+		throw std::invalid_argument("Rebirth output original HP cannot be negative");
+	if(rebirthOriginalAggregateHP != 0 && rebirthOriginalAggregateHP != originalHP)
+		throw std::logic_error("Rebirth output original HP is immutable");
+	rebirthOriginalAggregateHP = originalHP;
+}
+
 void CStack::captureBattleStartMaximumAggregateHP()
 {
 	const auto * combatHero = battle ? battle->battleGetFightingHero(unitSide()) : getMyHero();

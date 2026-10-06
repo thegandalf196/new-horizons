@@ -178,17 +178,20 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_KNIGHTLY_SEQUENCE, // captured Knightly Sequence efficiency on Orders
 	NEW_HORIZONS_MANDATE_OF_HEAVEN, // Divine Mandate supports the Expert-perk fourth sequence
 	NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE, // per-stack first-melee reaction round marker
+	NEW_HORIZONS_REBIRTH_OUTPUT_ORIGINAL_HP, // immutable initial aggregate HP on Elemental Rebirth output stacks
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE,
+	CURRENT = NEW_HORIZONS_REBIRTH_OUTPUT_ORIGINAL_HP,
 };
 
 static_assert(ESerializationVersion::MINIMAL <= ESerializationVersion::CURRENT, "Invalid serialization version definition!");
 static_assert(ESerializationVersion::NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE > ESerializationVersion::NEW_HORIZONS_MANDATE_OF_HEAVEN,
 	"Battlecraft Pre-emptive Strike state must remain append-only");
+static_assert(ESerializationVersion::NEW_HORIZONS_REBIRTH_OUTPUT_ORIGINAL_HP > ESerializationVersion::NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE,
+	"Rebirth output original HP state must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_ELEMENTAL_SPELL_DAMAGE > ESerializationVersion::NEW_HORIZONS_REWARDABLE_NEXT_LEVEL_EXPERIENCE,
 	"Elemental spell damage must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_DIVINE_MANDATE > ESerializationVersion::NEW_HORIZONS_ELEMENTAL_SPELL_DAMAGE,

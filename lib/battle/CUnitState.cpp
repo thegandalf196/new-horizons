@@ -2952,6 +2952,26 @@ int64_t CUnitStateDetached::getBattleStartMaximumAggregateHP() const
 	return sourceBonus ? sourceBonus->getBattleStartMaximumAggregateHP() : 0;
 }
 
+int64_t CUnitStateDetached::getRebirthOriginalAggregateHP() const
+{
+	if(const auto * detachedSource = dynamic_cast<const CUnitStateDetached *>(unit))
+	{
+		const auto originalHP = detachedSource->getRebirthOriginalAggregateHP();
+		if(originalHP > 0)
+			return originalHP;
+	}
+	else if(const auto * sourceUnit = dynamic_cast<const Unit *>(unit))
+	{
+		const auto originalHP = sourceUnit->getRebirthOriginalAggregateHP();
+		if(originalHP > 0)
+			return originalHP;
+	}
+	if(const auto * detachedBonus = dynamic_cast<const CUnitStateDetached *>(bonus))
+		return detachedBonus->getRebirthOriginalAggregateHP();
+	const auto * sourceBonus = dynamic_cast<const Unit *>(bonus);
+	return sourceBonus ? sourceBonus->getRebirthOriginalAggregateHP() : 0;
+}
+
 void CUnitStateDetached::spendMana(ServerCallback * server, const int spellCost) const
 {
 	if(spellCost != 1)

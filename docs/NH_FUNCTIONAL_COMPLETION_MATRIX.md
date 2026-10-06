@@ -1,6 +1,21 @@
 # New Horizons functional completion matrix
 
-Updated: 2026-10-05
+Updated: 2026-10-06
+
+2026-10-06 prerequisite coverage: Rebirth first-output original aggregate HP
+is now retained in live units, ADD transport, versioned binary metadata and
+detached AI. Client/native build passes; focused runtime/rules/AI25/25 passes
+with zero skips after two fixture corrections. This removes an identified
+state prerequisite, not the unresolved Chain/Phoenix perk rules. Registry
+counts remain225 active/310 perks and61/67 combat spells; no inactive identity
+is counted as implemented. Linux playable snapshot remains unchanged.
+
+Deferred Phase2: full mid-combat health/save/resume is not established by the
+binary descriptor metadata roundtrip; test interactions with temporary HP
+modifiers, healing, transformation and completed Chain secondary-spawn policy
+when those paths are available. Current checks establish the principal first-
+output metadata path only. Do not impose originalHP<=currentHP/capacity as a
+persistent invariant: original HP must survive later health/capacity changes.
 
 Remaining-item selection audit: direct registry enumeration and independent
 queue/canonical review cover all 85 planned perks (66 generic, 19 faction)

@@ -255,6 +255,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	sourceCreatureType(Stack->unitType()->getId()),
 	baseAmount(Stack->unitBaseAmount()),
 	battleStartMaximumAggregateHP(Stack->getBattleStartMaximumAggregateHP()),
+	rebirthOriginalAggregateHP(Stack->getRebirthOriginalAggregateHP()),
 	id(Stack->unitId()),
 	side(Stack->unitSide()),
 	player(Stack->unitOwner()),
@@ -275,6 +276,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	sourceCreatureType(Stack->unitType()->getId()),
 	baseAmount(Stack->unitBaseAmount()),
 	battleStartMaximumAggregateHP(Stack->getBattleStartMaximumAggregateHP()),
+	rebirthOriginalAggregateHP(Stack->getRebirthOriginalAggregateHP()),
 	id(Stack->unitId()),
 	side(Stack->unitSide()),
 	player(Stack->unitOwner()),
@@ -295,6 +297,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	type(info.type.toCreature()),
 	sourceCreatureType(info.type),
 	baseAmount(info.count),
+	rebirthOriginalAggregateHP(info.rebirthOriginalAggregateHP),
 	id(info.id),
 	side(info.side),
 	slot(SlotID::SUMMONED_SLOT_PLACEHOLDER),
@@ -327,6 +330,7 @@ StackWithBonuses & StackWithBonuses::operator=(const battle::CUnitState & other)
 {
 	battle::CUnitState::operator=(other);
 	battleStartMaximumAggregateHP = other.getBattleStartMaximumAggregateHP();
+	rebirthOriginalAggregateHP = other.getRebirthOriginalAggregateHP();
 	return *this;
 }
 
@@ -363,6 +367,11 @@ SlotID StackWithBonuses::unitSlot() const
 int64_t StackWithBonuses::getBattleStartMaximumAggregateHP() const
 {
 	return battleStartMaximumAggregateHP;
+}
+
+int64_t StackWithBonuses::getRebirthOriginalAggregateHP() const
+{
+	return rebirthOriginalAggregateHP;
 }
 
 TConstBonusListPtr StackWithBonuses::getAllBonuses(const CSelector & selector, const std::string & cachingStr) const

@@ -174,6 +174,8 @@ public:
 	virtual int32_t getGuardianSpiritRoundsRemaining() const { return 0; }
 	/// Frozen battle-start maximum aggregate HP used by Elemental Rebirth; zero when not captured.
 	virtual int64_t getBattleStartMaximumAggregateHP() const { return 0; }
+	/// Immutable aggregate HP assigned to a first-generation Rebirth output; zero for other units.
+	virtual int64_t getRebirthOriginalAggregateHP() const { return 0; }
 	/// Bloodrage earned personally by this stack, in percentage points.
 	virtual int32_t getPersonalBloodrageIncrement() const { return 0; }
 
@@ -267,6 +269,8 @@ public:
 	int64_t phantomIntegrity = 0;
 	/// Number of battle rounds the Phantom Army profile lasts.
 	int32_t phantomDuration = 0;
+	/// Exact initial aggregate HP for a first-generation Elemental Rebirth output; zero otherwise.
+	int64_t rebirthOriginalAggregateHP = 0;
 
 	void serializeJson(JsonSerializeFormat & handler);
 

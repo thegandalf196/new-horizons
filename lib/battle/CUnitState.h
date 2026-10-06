@@ -556,6 +556,7 @@ public:
 
 	int32_t unitBaseAmount() const override;
 	int64_t getBattleStartMaximumAggregateHP() const override;
+	int64_t getRebirthOriginalAggregateHP() const override;
 
 	void spendMana(ServerCallback * server, const int spellCost) const override;
 

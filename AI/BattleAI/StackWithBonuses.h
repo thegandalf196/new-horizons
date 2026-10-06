@@ -111,6 +111,7 @@ public:
 	PlayerColor unitOwner() const override;
 	SlotID unitSlot() const override;
 	int64_t getBattleStartMaximumAggregateHP() const override;
+	int64_t getRebirthOriginalAggregateHP() const override;
 
 	///IBonusBearer
 	TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr = "") const override;
@@ -178,6 +179,8 @@ private:
 	/// Frozen source HP basis copied from the authoritative unit for detached forecasts.
 	/// A new hypothetical summon has no eligible source basis.
 	int64_t battleStartMaximumAggregateHP = 0;
+	/// Immutable exact HP assigned to a first-generation Elemental Rebirth output.
+	int64_t rebirthOriginalAggregateHP = 0;
 	uint32_t id;
 	BattleSide side;
 	PlayerColor player;

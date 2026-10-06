@@ -270,6 +270,51 @@ TEST_F(NewHorizonsElementalRebirthAITest, ProjectsSpellKilledSourceAsTemporarySt
 		<< "Detached spell projection must not injure the live source";
 }
 
+TEST_F(NewHorizonsElementalRebirthAITest, PreservesExactOriginalHPAcrossProjectedSpawnDamageAndBranches)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::BASIC, 317));
+	auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto snapshot = captureAndKillSource(*projected, source->unitId());
+	ASSERT_TRUE(snapshot.has_value());
+	const auto expectedOriginalHP = newHorizonsElementalRebirth::targetHP(*snapshot);
+	ASSERT_GT(expectedOriginalHP, 0);
+	ASSERT_TRUE(projected->projectElementalRebirth(
+		projected->battleGetUnitByID(source->unitId()), *snapshot, true, false, false));
+
+	const auto spawns = rebirthSpawns(*projected);
+	ASSERT_EQ(spawns.size(), 1u);
+	const auto * reborn = spawns.front();
+	const auto spawnId = reborn->unitId();
+	EXPECT_EQ(reborn->getAvailableHealth(), expectedOriginalHP);
+	EXPECT_EQ(reborn->getRebirthOriginalAggregateHP(), expectedOriginalHP)
+		<< "The actual projected spawn must retain the exact immutable target from UnitInfo";
+	ASSERT_GT(reborn->getMaxHealth(), 0);
+	ASSERT_NE(expectedOriginalHP % reborn->getMaxHealth(), 0)
+		<< "Use a target pool that does not divide evenly into the selected elemental stack";
+
+	const auto * rebornState = dynamic_cast<const battle::CUnitState *>(reborn);
+	ASSERT_NE(rebornState, nullptr);
+	StackWithBonuses copiedFromState(projected.get(), rebornState);
+	EXPECT_EQ(copiedFromState.getRebirthOriginalAggregateHP(), expectedOriginalHP);
+	StackWithBonuses assignedFromState(projected.get(), source);
+	assignedFromState = *rebornState;
+	EXPECT_EQ(assignedFromState.getRebirthOriginalAggregateHP(), expectedOriginalHP);
+
+	auto childProjection = std::make_shared<HypotheticBattle>(environment.get(), projected);
+	const auto * childReborn = childProjection->battleGetUnitByID(spawnId);
+	ASSERT_NE(childReborn, nullptr);
+	EXPECT_EQ(childReborn->getRebirthOriginalAggregateHP(), expectedOriginalHP);
+	auto changedChild = childProjection->getForUpdate(spawnId);
+	EXPECT_EQ(changedChild->getRebirthOriginalAggregateHP(), expectedOriginalHP);
+	int64_t laterDamage = 1;
+	changedChild->damage(laterDamage);
+	EXPECT_EQ(changedChild->getAvailableHealth(), expectedOriginalHP - 1);
+	EXPECT_EQ(changedChild->getRebirthOriginalAggregateHP(), expectedOriginalHP)
+		<< "Later damage changes current health, not the first-generation HP identity";
+	EXPECT_EQ(reborn->getAvailableHealth(), expectedOriginalHP)
+		<< "A child projection's damage must leave its parent branch untouched";
+}
+
 TEST_F(NewHorizonsElementalRebirthAITest, SelectedGreaterEssenceAddsFifteenPointsAtAdvancedAndExpert)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::ADVANCED, 100, GREATER_ESSENCE, true));

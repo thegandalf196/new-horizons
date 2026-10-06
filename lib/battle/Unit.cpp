@@ -305,6 +305,12 @@ void UnitInfo::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeBool("natureSummoned", natureSummoned);
 	handler.serializeInt("phantomIntegrity", phantomIntegrity, 0);
 	handler.serializeInt("phantomDuration", phantomDuration, 0);
+	handler.serializeInt("rebirthOriginalAggregateHP", rebirthOriginalAggregateHP, 0);
+	if(rebirthOriginalAggregateHP < 0)
+		throw std::runtime_error("Invalid Rebirth output original aggregate HP");
+	if(rebirthOriginalAggregateHP > 0
+		&& (count <= 0 || !summoned || natureSummoned || phantomIntegrity > 0))
+		throw std::runtime_error("Invalid Rebirth output spawn metadata");
 }
 
 void UnitInfo::save(JsonNode & data)

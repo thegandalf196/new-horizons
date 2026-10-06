@@ -2,6 +2,22 @@
 
 ## Purpose
 
+### 2026-10-06 — Rebirth metadata fixture acceptance
+
+Review catches an older-format CMemorySerializer buffer read as CURRENT.
+The buffer carries no version header: the reader must use the exact writer
+version to test legacy default-zero behavior. After the full build, fix the
+reader to PREEMPTIVE_STRIKE and rebuild. A valid-profile focused run then finds
+a second fixture assumption: the seven-Peasant Basic Rebirth produces1HP,
+so the planned nonlethal injury is impossible. Use17 source creatures in that
+test, without changing production HP rules. Repaired focused25/25 passes with
+zero skips. Preserve the valid24/25 failure receipt alongside the successor.
+
+Harness lesson: isolated XDG paths must be absolute when changing cwd to the
+test bin directory. One wrong-profile attempt used bin-relative paths and
+its receipts were accidentally overwritten by the corrected-profile run.
+Do not count it as gameplay evidence or reconstruct a claimed receipt.
+
 ### 2026-10-05 — Windows libiconv source download timeout
 
 Full Windows run `37403632207`, source `9c7c4880f`, failed before compilation
@@ -24,6 +40,7 @@ successful successor remain unproven. No dependency version or gate changed.
 
 Reviewed repair pushed as `975c6f011`. Cheap notice successor `37405378013`
 succeeds on that source; full build `37405475795` is confirmed in progress.
+Its source-cache and complete preflight steps pass; client compilation is active.
 Retain exact-source identity and inspect its terminal result before retrying.
 
 ### 2026-10-05 UP239 — Repeated renderer fixture shutdown
