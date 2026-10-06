@@ -146,6 +146,23 @@ void BattleInfo::setReducedExtraActivationState(BattleSide side, const ReducedEx
 	sides.at(side).reducedExtraActivation = state;
 }
 
+void BattleInfo::setSpellResponseState(BattleSide side, const SpellResponseState & state)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::invalid_argument("Invalid side for Spell Response state");
+	state.validate();
+	if(state.hasState() && !state.isReadyAt(round))
+		throw std::runtime_error("Spell Response state is outside its current round window");
+	if(state.hasState())
+	{
+		const auto * hero = getSideHero(side);
+		if(!hero || !hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
+			std::string(newHorizonsMagic::SPELLCRAFT_COUNTERPRESSURE)))
+			throw std::runtime_error("Spell Response state requires the side's Counterpressure perk");
+	}
+	sides.at(side).spellResponseState = state;
+}
+
 const AlternatingHeroActionState & BattleInfo::getWarcastingState(BattleSide side) const
 {
 	static const AlternatingHeroActionState empty;
@@ -1299,6 +1316,9 @@ void BattleInfo::nextRound()
 	round += 1;
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
+		auto & spellResponse = sides.at(side).spellResponseState;
+		if(spellResponse.hasState() && !spellResponse.isReadyAt(round))
+			spellResponse = {};
 		if(heroCommands::supportedByRules(heroCommandRules, HeroCommand::CHARGE))
 			sides.at(side).heroActionAllowances.resetForRound(round);
 		sides.at(side).warcastingState = sides.at(side).warcastingState.clearedIfExpired(round);

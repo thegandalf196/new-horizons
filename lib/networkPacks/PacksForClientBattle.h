@@ -47,6 +47,8 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && info)
+			info->validateSpellResponseStates();
 		if(h.saving && info && info->hasSacredCommandOrderState()
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SACRED_COMMAND))
 			throw std::runtime_error("Cannot discard Sacred Command state from BattleStart");
@@ -108,6 +110,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_NO_QUARTER)
 			&& info->hasNoQuarterState())
 			throw std::runtime_error("Cannot discard No Quarter battle start state");
+		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_SPELL_RESPONSE)
+			&& info->hasSpellResponseState())
+			throw std::runtime_error("Cannot discard Spell Response state from BattleStart");
 		h & battleID;
 		h & info;
 		assert(battleID != BattleID::NONE);
@@ -322,6 +327,55 @@ struct DLL_LINKAGE BattleReducedExtraActivationStateChanged : public CPackForCli
 			throw std::runtime_error(h.saving
 				? "Cannot serialize reduced extra activation update to an older format"
 				: "Cannot deserialize reduced extra activation update from an older format");
+		h & battleID;
+		h & side;
+		h & state;
+		validateShape();
+	}
+};
+
+/// Replicates a side's bounded response window after an accepted enemy spell or
+/// consumes it after that side accepts a hero spell.
+struct DLL_LINKAGE SetSpellResponseState : public CPackForClient
+{
+	BattleID battleID = BattleID::NONE;
+	BattleSide side = BattleSide::NONE;
+	SpellResponseState state;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	void validateShape() const
+	{
+		if(battleID == BattleID::NONE || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+			throw std::runtime_error("Invalid Spell Response state update target");
+		state.validate();
+	}
+
+	void validateTransitionFrom(const SpellResponseState & previous, int32_t currentRound) const
+	{
+		validateShape();
+		if(state == previous)
+			return;
+		if(state.hasState())
+		{
+			if(state.armedInRound != currentRound)
+				throw std::runtime_error("Spell Response state can only be armed in the current round");
+			return;
+		}
+		auto expected = previous;
+		if(!expected.consumeAt(currentRound) || state != expected)
+			throw std::runtime_error("Spell Response state update is not a legal consumption");
+	}
+
+	template <typename Handler>
+	void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SPELL_RESPONSE))
+			throw std::runtime_error(h.saving
+				? "Cannot serialize Spell Response state to an older format"
+				: "Cannot deserialize Spell Response state from an older format");
+		if(h.saving)
+			validateShape();
 		h & battleID;
 		h & side;
 		h & state;

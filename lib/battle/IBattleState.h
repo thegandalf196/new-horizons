@@ -22,6 +22,7 @@
 #include "HeroActionAllowanceState.h"
 #include "AlternatingHeroActionState.h"
 #include "RelentlessAssaultState.h"
+#include "SpellResponseState.h"
 #include "BattleDeploymentState.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
@@ -198,6 +199,12 @@ public:
 		static const ReducedExtraActivationState empty;
 		return empty;
 	}
+	virtual const SpellResponseState & getSpellResponseState(BattleSide side) const
+	{
+		(void)side;
+		static const SpellResponseState empty;
+		return empty;
+	}
 	virtual LuckRollRules getLuckRollRules() const { return {}; }
 	virtual const std::map<CreatureID, TQuantity> & getDemonicReserve(BattleSide side) const
 	{
@@ -291,4 +298,5 @@ public:
 	virtual void setAdverseCombatRerollState(BattleSide, const AdverseCombatRerollState &) {}
 	virtual void setMoraleSuppressionState(BattleSide, const MoraleSuppressionState &) {}
 	virtual void setReducedExtraActivationState(BattleSide, const ReducedExtraActivationState &) {}
+	virtual void setSpellResponseState(BattleSide, const SpellResponseState &) {}
 };

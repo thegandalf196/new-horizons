@@ -5,10 +5,17 @@ Updated: 2026-10-06
 Selection navigation: [Phase1 hold index](NH_PHASE1_HOLD_INDEX.md) lists all85
 planned perk IDs with queue references and explicitly uncertain rows, plus the
 six missing combat identities. Registry parity is checked independently.
-Counterpressure's ordinary accepted-effect/readiness path is selected for
-Partial, inactive implementation; the no-op recipient boundary still needs an
-answer. This preparation changes no coverage counts and is not a whole-project
-blocked declaration. Avoid repeated architecture maps for the cited holds.
+Counterpressure's ordinary accepted-effect/readiness path is verified as a
+Partial, inactive implementation. Per-side state, packet/version plumbing and
+shared Spell Power-component snapshot, authoritative/detached execution and
+15 focused fixtures are source-integrated. Independent source/delta review has
+no blocking finding; client/test builds and15/15 activated native cases pass in
+2.099s, zero skips/errors. Scripted damage provenance and the detached fixture's
+illegal enemy-cast viewpoint were repaired; earlier failed gates remain in UP180.
+The no-op recipient boundary still needs an answer, so
+registration stays planned and completed-identity counts do not increase. This
+is not a whole-project blocked declaration. Avoid repeated architecture maps
+for the cited holds.
 
 Latest UP262 checkpoint: small/encounter/map colour roles have source bindings
 and focused native verification (1/1, zero skips,2.44s), including registered

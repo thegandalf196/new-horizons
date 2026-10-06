@@ -335,4 +335,5 @@ void registerTypes(Serializer &s)
 	s.template registerType<SetPortalDwellingSource>(292);
 	s.template registerType<SetNewHorizonsDiplomacyState>(293);
 	s.template registerType<SetNewHorizonsForcedMarchState>(294);
+	s.template registerType<SetSpellResponseState>(295);
 }

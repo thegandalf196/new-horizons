@@ -48,6 +48,12 @@ constexpr std::string_view NEW_HORIZONS_SUMMON_TROLLS_SPELL = "new-horizons:summ
 constexpr std::string_view NEW_HORIZONS_VERDANT_PRISON_SPELL = "new-horizons:verdantPrison";
 constexpr std::string_view NEW_HORIZONS_HYDRAS_VITALITY_SPELL = "new-horizons:hydrasVitality";
 
+bool hasCounterpressurePerk(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
+		std::string(newHorizonsMagic::SPELLCRAFT_COUNTERPRESSURE));
+}
+
 bool isLivingCureTarget(const battle::Unit * unit)
 {
 	return unit && unit->isValidTarget(false) && unit->alive()
@@ -639,6 +645,41 @@ private:
 		capture(pack.toUpdate);
 	}
 };
+
+bool hasCounterpressureEffect(EffectPacketRecorder & recorder, const CBattleInfoCallback & battle,
+	const CSpell * acceptedSpell, SpellID effectSpell, BattleSide victimSide)
+{
+	for(const auto & injury : recorder.injuries())
+	{
+		// The recorder wraps this spell's effect application. Several ordinary
+		// damage spell scripts emit StacksInjured through damageUnit without the
+		// SPELL_EFFECT flag or spellID, so recorder scope is the source identity;
+		// positive applied damage to the opposing side is the actual-change test.
+		if(injury.damageAmount <= 0)
+			continue;
+		const auto * victim = battle.battleGetUnitByID(injury.stackAttacked);
+		if(victim && victim->unitSide() == victimSide)
+			return true;
+	}
+
+	for(const auto & change : recorder.effectChanges())
+	{
+		const auto * victim = battle.battleGetUnitByID(change.unitId);
+		const auto * changedSpell = change.spell.toSpell();
+		if(!victim || victim->unitSide() != victimSide || !changedSpell)
+			continue;
+		if((change.kind == EffectPacketRecorder::ChangeKind::ADDED
+				|| change.kind == EffectPacketRecorder::ChangeKind::UPDATED)
+			&& changedSpell->isNegative())
+			return true;
+		if(change.kind == EffectPacketRecorder::ChangeKind::REMOVED
+			&& ((acceptedSpell && acceptedSpell->getId() == SpellID::DISPEL)
+				|| effectSpell == SpellID::DISPEL)
+			&& changedSpell->isPositive())
+			return true;
+	}
+	return false;
+}
 
 }
 
@@ -1607,6 +1648,17 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	const auto * battleInfo = battle()->getBattle();
 	const int32_t battleRound = battleInfo->getRound();
 	const bool validHeroSide = casterSide == BattleSide::ATTACKER || casterSide == BattleSide::DEFENDER;
+	// Capture this before beforeCast can turn a successful Magic Mirror redirect
+	// into Mode::MAGIC_MIRROR. The reflected effect is not a second enemy hero cast.
+	const bool originalHeroCast = sc.activeCast && sc.castByHero && casterHero && validHeroSide;
+	const BattleSide originalCasterSide = casterSide;
+	SpellResponseState spellResponseAfterCast;
+	bool consumeSpellResponse = false;
+	if(originalHeroCast && battleRound >= 0 && hasCounterpressurePerk(casterHero))
+	{
+		spellResponseAfterCast = battleInfo->getSpellResponseState(casterSide);
+		consumeSpellResponse = spellResponseAfterCast.consumeAt(battleRound);
+	}
 	const uint8_t divineMandatePairsBeforeSpell = mode == Mode::HERO && casterHero && validHeroSide
 		? battle()->battleGetDivineMandateStatus(casterSide).completedPairs : 0;
 	bool spendsHeroAllowance = !sc.metamagicFollowup;
@@ -1681,6 +1733,14 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		server->apply(castDescription);
 
 	server->apply(sc);
+	if(consumeSpellResponse)
+	{
+		SetSpellResponseState consumedResponse;
+		consumedResponse.battleID = sc.battleID;
+		consumedResponse.side = originalCasterSide;
+		consumedResponse.state = spellResponseAfterCast;
+		server->apply(consumedResponse);
+	}
 	if(mode == Mode::HERO && knightlySequenceSpellCostReduction > 0 && !isCounterspellNegated())
 	{
 		BattleLogMessage knightlySequenceDescription;
@@ -1733,7 +1793,6 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	}
 	if(newHorizonsRegeneration && !isCounterspellNegated())
 		applyRegenerationRateSnapshot(&effectRecorder, battle(), affectedUnits, newHorizonsRegenerationRate(*this));
-
 	if(logMetamagicFollowup)
 	{
 		struct FollowupTargetOutcome
@@ -2134,6 +2193,29 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		}
 	}
 
+	if(originalHeroCast && !sc.counterspellNegated && battleRound >= 0)
+	{
+		const auto victimSide = battle()->otherSide(originalCasterSide);
+		if(hasCounterpressureEffect(effectRecorder, *battle(), owner, effectSpellId, victimSide))
+		{
+			const auto * recipientHero = battleInfo->getSideHero(victimSide);
+			if(hasCounterpressurePerk(recipientHero))
+			{
+				auto armed = battleInfo->getSpellResponseState(victimSide);
+				const auto previous = armed;
+				armed.armAt(battleRound);
+				if(armed != previous)
+				{
+					SetSpellResponseState response;
+					response.battleID = sc.battleID;
+					response.side = victimSide;
+					response.state = armed;
+					server->apply(response);
+				}
+			}
+		}
+	}
+
 	// send empty event to client
 	// temporary(?) workaround to force animations to trigger
 	StacksInjured fakeEvent;
@@ -2407,6 +2489,21 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 	const bool completedHeroProjection = server && mode == Mode::HERO
 		&& (casterSide == BattleSide::ATTACKER || casterSide == BattleSide::DEFENDER)
 		&& getHeroCaster() && canBeCastAt(target);
+	const auto * projectedHeroCaster = completedHeroProjection ? getHeroCaster() : nullptr;
+	const auto projectedCasterSide = casterSide;
+	const auto projectedBattleInfo = battle()->getBattle();
+	const int32_t projectedRound = projectedBattleInfo->getRound();
+	const bool projectedOriginalHeroCast = completedHeroProjection && projectedRound >= 0;
+	SpellResponseState projectedResponseAfterCast;
+	bool consumeProjectedResponse = false;
+	if(projectedOriginalHeroCast && hasCounterpressurePerk(projectedHeroCaster))
+	{
+		projectedResponseAfterCast = projectedBattleInfo->getSpellResponseState(projectedCasterSide);
+		consumeProjectedResponse = projectedResponseAfterCast.consumeAt(projectedRound);
+	}
+	const auto acceptedSpellId = owner->getId();
+	const auto effectSpellId = newHorizonsMagic::spellVariantBase(
+		projectedBattleInfo->getMagicRules(), acceptedSpellId);
 
 	Target spellTarget = transformSpellTarget(target);
 
@@ -2444,7 +2541,40 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 		applyRegenerationRateSnapshot(effectServer, battle(), affectedUnits, newHorizonsRegenerationRate(*this));
 
 	if(completedHeroProjection)
+	{
 		server->recordCompletedHeroSpellCast(casterSide, battle()->battleGetSpellLevel(getSpellId()));
+		if(consumeProjectedResponse)
+		{
+			SetSpellResponseState consumedResponse;
+			consumedResponse.battleID = projectedBattleInfo->getBattleID();
+			consumedResponse.side = projectedCasterSide;
+			consumedResponse.state = projectedResponseAfterCast;
+			server->apply(consumedResponse);
+		}
+
+		if(projectedOriginalHeroCast && !isCounterspellNegated() && effectRecorder)
+		{
+			const auto victimSide = battle()->otherSide(projectedCasterSide);
+			if(hasCounterpressureEffect(*effectRecorder, *battle(), owner, effectSpellId, victimSide))
+			{
+				const auto * recipientHero = projectedBattleInfo->getSideHero(victimSide);
+				if(hasCounterpressurePerk(recipientHero))
+				{
+					auto armed = projectedBattleInfo->getSpellResponseState(victimSide);
+					const auto previous = armed;
+					armed.armAt(projectedRound);
+					if(armed != previous)
+					{
+						SetSpellResponseState response;
+						response.battleID = projectedBattleInfo->getBattleID();
+						response.side = victimSide;
+						response.state = armed;
+						server->apply(response);
+					}
+				}
+			}
+		}
+	}
 }
 
 battle::Units BattleSpellMechanics::collectTargets() const

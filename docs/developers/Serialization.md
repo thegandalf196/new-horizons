@@ -1,5 +1,25 @@
 # Serialization
 
+## Round-bounded spell response (UP180; partial runtime/native accepted)
+
+`NEW_HORIZONS_SPELL_RESPONSE` appends `SpellResponseState` to each battle side.
+Its `armedInRound` is `-1` when empty, otherwise a nonnegative trigger round.
+Readiness includes that round and the following round; checking readiness does
+not mutate state or require polling. A later trigger refreshes the same window,
+not a second charge. Accepted consumption clears it. Detached battle copies
+must retain their own state and apply updates without modifying the live battle.
+
+Older reads default to empty instead of reconstructing a trigger from spell
+history. Unsupported writers must reject populated direct and enclosing records
+before payload bytes; the new state-update packet is unavailable to older wire
+formats. Malformed negative stamps and invalid packet targets are rejected.
+This representation does not enable complete ongoing-battle save/resume.
+
+Counterpressure remains planned/inactive pending its no-op recipient policy.
+Fifteen focused state/packet/live/detached native cases pass with zero skips;
+this does not imply full activation or completed specification coverage.
+Principal-path acceptance and remaining interactions are tracked in UP180.
+
 ## Ordinary Hero Action sequence (UP244; source/native accepted)
 
 `NEW_HORIZONS_HERO_ACTION_SEQUENCE` appends three right-aligned Action entries

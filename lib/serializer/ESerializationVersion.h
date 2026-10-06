@@ -182,14 +182,17 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_ASTROLOGY_CONSTRUCTION_PREVIEW, // immediate authoritative forecast on Astronomy Tower construction
 	NEW_HORIZONS_HERO_ACTION_SEQUENCE, // fixed recent ordinary Spell/Order action history for battle state
 	NEW_HORIZONS_INCOMING_ELEMENTAL_SPELL_DAMAGE, // element-subtyped incoming spell damage modifier
+	NEW_HORIZONS_SPELL_RESPONSE, // round-bounded response readiness from an accepted enemy hero spell
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_INCOMING_ELEMENTAL_SPELL_DAMAGE,
+	CURRENT = NEW_HORIZONS_SPELL_RESPONSE,
 };
 
+static_assert(ESerializationVersion::NEW_HORIZONS_SPELL_RESPONSE > ESerializationVersion::NEW_HORIZONS_INCOMING_ELEMENTAL_SPELL_DAMAGE,
+	"Spell Response readiness must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_INCOMING_ELEMENTAL_SPELL_DAMAGE > ESerializationVersion::NEW_HORIZONS_HERO_ACTION_SEQUENCE,
 	"Incoming elemental spell damage must remain append-only");
 

@@ -123,6 +123,7 @@ public:
 	virtual void visitBattleAdverseRerollStateChanged(BattleAdverseRerollStateChanged & pack) {}
 	virtual void visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack) {}
 	virtual void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) {}
+	virtual void visitSetSpellResponseState(SetSpellResponseState & pack) {}
 	virtual void visitEndAction(EndAction & pack) {}
 	virtual void visitBattleSpellCast(BattleSpellCast & pack) {}
 	virtual void visitSetStackEffect(SetStackEffect & pack) {}

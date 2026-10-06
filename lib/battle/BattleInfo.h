@@ -102,6 +102,13 @@ public:
 			return empty;
 		return sides.at(side).reducedExtraActivation;
 	}
+	const SpellResponseState & getSpellResponseState(BattleSide side) const override
+	{
+		static const SpellResponseState empty;
+		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			return empty;
+		return sides.at(side).spellResponseState;
+	}
 	void setReducedExtraActivationState(BattleSide side, const ReducedExtraActivationState & state) override;
 	LuckRollRules getLuckRollRules() const override { return luckRollRules; }
 	const std::map<CreatureID, TQuantity> & getDemonicReserve(BattleSide side) const override
@@ -136,6 +143,20 @@ public:
 	{
 		return sides[BattleSide::ATTACKER].relentlessAssault.hasState()
 			|| sides[BattleSide::DEFENDER].relentlessAssault.hasState();
+	}
+	bool hasSpellResponseState() const
+	{
+		return sides[BattleSide::ATTACKER].spellResponseState.hasState()
+			|| sides[BattleSide::DEFENDER].spellResponseState.hasState();
+	}
+	void validateSpellResponseStates() const
+	{
+		for(const auto & side : sides)
+		{
+			side.spellResponseState.validate();
+			if(side.spellResponseState.hasState() && !side.spellResponseState.isReadyAt(round))
+				throw std::runtime_error("Spell Response state is outside its saved round window");
+		}
 	}
 	BattleSide gatedDemonicStackSide(uint32_t unitId) const;
 	bool hasGatedDemonicStack(BattleSide side, uint32_t unitId) const;
@@ -211,6 +232,9 @@ public:
 	{
 		if(h.saving)
 		{
+			validateSpellResponseStates();
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SPELL_RESPONSE) && hasSpellResponseState())
+				throw std::runtime_error("Cannot discard Spell Response state in an older battle format");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_ELEMENTAL_REBIRTH)
 				&& hasElementalRebirthBasisState())
 				throw std::runtime_error("Cannot discard Elemental Rebirth battle-start HP basis in an older battle format");
@@ -694,6 +718,7 @@ public:
 
 		if(!h.saving)
 		{
+			validateSpellResponseStates();
 			// Reject null/ambiguous unit references before postDeserialize dereferences
 			// units and resolves their army bindings. Validation does not need those bindings.
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS))
@@ -838,6 +863,7 @@ public:
 	void setHeroOrderState(BattleSide side, const std::optional<HeroOrderState> & state) override;
 	void setDoubleCommandState(BattleSide side, const DoubleCommandState & state) override;
 	void setPreCombatOrderState(BattleSide side, const PreCombatOrderState & state) override;
+	void setSpellResponseState(BattleSide side, const SpellResponseState & state) override;
 	void setRelentlessAssaultState(BattleSide side, const RelentlessAssaultState & state) override
 	{
 		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)

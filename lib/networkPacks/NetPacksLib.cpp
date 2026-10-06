@@ -522,6 +522,11 @@ void BattleReducedExtraActivationStateChanged::visitTyped(ICPackVisitor & visito
 	visitor.visitBattleReducedExtraActivationStateChanged(*this);
 }
 
+void SetSpellResponseState::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitSetSpellResponseState(*this);
+}
+
 void EndAction::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitEndAction(*this);

@@ -878,6 +878,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		reducedExtraActivationStates[side] = realBattle->getBattle()->getReducedExtraActivationState(side);
+		spellResponseStates[side] = realBattle->getBattle()->getSpellResponseState(side);
 		heroOrderStates[side] = realBattle->getBattle()->getHeroOrderStates(side);
 		relentlessAssaultStates[side] = realBattle->getBattle()->getRelentlessAssaultState(side);
 		warcastingStates[side] = realBattle->getBattle()->getWarcastingState(side);
@@ -1138,6 +1139,31 @@ void HypotheticBattle::setDeploymentState(const BattleDeploymentState & state)
 const ReducedExtraActivationState & HypotheticBattle::getReducedExtraActivationState(BattleSide side) const
 {
 	return reducedExtraActivationStates.at(side);
+}
+
+const SpellResponseState & HypotheticBattle::getSpellResponseState(BattleSide side) const
+{
+	static const SpellResponseState empty;
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return empty;
+	return spellResponseStates.at(side);
+}
+
+void HypotheticBattle::setSpellResponseState(BattleSide side, const SpellResponseState & state)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::invalid_argument("Invalid hypothetical Spell Response side");
+	state.validate();
+	if(state.hasState() && !state.isReadyAt(projectedRound))
+		throw std::runtime_error("Hypothetical Spell Response state is outside its round window");
+	if(state.hasState())
+	{
+		const auto * hero = battleGetFightingHero(side);
+		if(!hero || !hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
+			std::string(newHorizonsMagic::SPELLCRAFT_COUNTERPRESSURE)))
+			throw std::runtime_error("Hypothetical Spell Response state requires Counterpressure");
+	}
+	spellResponseStates.at(side) = state;
 }
 
 void HypotheticBattle::setReducedExtraActivationState(BattleSide side,
@@ -1884,6 +1910,9 @@ void HypotheticBattle::nextRound()
 	++projectedRound;
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
+		auto & spellResponse = spellResponseStates.at(side);
+		if(spellResponse.hasState() && !spellResponse.isReadyAt(projectedRound))
+			spellResponse = {};
 		warcastingStates[side] = warcastingStates[side].clearedIfExpired(projectedRound);
 		if(heroActionAllowances[side].currentRound >= 0)
 			heroActionAllowances[side].resetForRound(projectedRound);
@@ -2678,6 +2707,12 @@ bool HypotheticBattle::HypotheticServerCallback::resolveAdverseCombatRoll(const 
 
 void HypotheticBattle::HypotheticServerCallback::apply(CPackForClient & pack)
 {
+	if(dynamic_cast<SetSpellResponseState *>(&pack))
+	{
+		BattleStatePackVisitor visitor(*owner);
+		pack.visit(visitor);
+		return;
+	}
 	logAi->error("Package of type %s is not allowed in battle evaluation", typeid(pack).name());
 }
 

@@ -2,6 +2,28 @@
 
 ## Purpose
 
+### 2026-10-06 — Counterpressure fixture requires the skill-handler definition
+
+The first UP180 client/test build fails only in the new server fixture: calling
+`LIBRARY->skillh->size()` requires `lib/CSkillHandler.h`, not the forward
+declaration in GameLibrary.h. Add the explicit defining include rather than
+depending on transitive headers or weakening the fixture. The incremental retry
+succeeds. The active-module focused run executes15 cases with zero skips, but
+four fail because actual Magic Arrow damage does not arm the new response in
+live or detached resolution. Correct actual damage provenance; do not remove
+the assertions or misreport the11 passing state/debuff controls as acceptance.
+Runtime repair and retest remain pending. Retain both `UP180-build.log` and
+`UP180-build-retry.log` in the ignored Linux build directory.
+Subsequent correction: the cast-local recorder supplies spell provenance even
+when Lua `damageUnit` packets omit SPELL_EFFECT/spellID. Positive recorded damage
+and opposing-side checks fix live arming. Retry passes14/15; the remaining test
+attempts an enemy cast through an attacker-only callback, so general legality
+correctly rejects completion despite castEval applying prepared effects. Use the
+existing spectator callback and assert legality before both projected casts;
+do not weaken production visibility. Final client/test build and native15/15
+pass in2.099s, zero skips/errors. Keep all three native receipts; no-op policy
+and full activation remain unresolved.
+
 ### 2026-10-06 — Cabir candidate profile overlap and known schema diagnostics
 
 The first candidate smoke chooses a profile below the repository, itself below

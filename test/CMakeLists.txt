@@ -51,6 +51,7 @@ set(test_SRCS
 
 		battle/AutocombatPreferencesTest.cpp
 		battle/AlternatingHeroActionStateTest.cpp
+		battle/SpellResponseStateTest.cpp
 		battle/BattleDeploymentOrderTest.cpp
 		battle/CasualtyProvenanceTest.cpp
 		battle/HeroActionAllowanceStateTest.cpp
@@ -358,6 +359,7 @@ set(test_SRCS
 		server/battles/NewHorizonsManaConservationTest.cpp
 		server/battles/NewHorizonsMagicalDamageReductionTest.cpp
 		server/battles/NewHorizonsSpellwardTest.cpp
+		server/battles/NewHorizonsCounterpressureTest.cpp
 		server/battles/NewHorizonsPreciseCastingTest.cpp
 		battleAI/NewHorizonsPreciseCastingAITest.cpp
 		server/battles/NewHorizonsStormOfDaggersTest.cpp

@@ -2721,6 +2721,15 @@ void GameStatePackVisitor::visitBattleReducedExtraActivationStateChanged(BattleR
 	battle->setReducedExtraActivationState(pack.side, pack.state);
 }
 
+void GameStatePackVisitor::visitSetSpellResponseState(SetSpellResponseState & pack)
+{
+	auto * battle = gs.getBattle(pack.battleID);
+	if(!battle)
+		throw std::runtime_error("Missing battle for Spell Response state update");
+	pack.validateTransitionFrom(battle->getSpellResponseState(pack.side), battle->getRound());
+	battle->setSpellResponseState(pack.side, pack.state);
+}
+
 void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 {
 	if(pack.paidHeroManaCost < 0 || pack.paidCounterspellManaCost < 0
@@ -3380,6 +3389,14 @@ void BattleStatePackVisitor::visitBattleReducedExtraActivationStateChanged(Battl
 		throw std::runtime_error("Reduced extra activation state update targets another battle");
 	pack.validateTransitionFrom(battleState.getReducedExtraActivationState(pack.side));
 	battleState.setReducedExtraActivationState(pack.side, pack.state);
+}
+
+void BattleStatePackVisitor::visitSetSpellResponseState(SetSpellResponseState & pack)
+{
+	if(pack.battleID != battleState.getBattleID())
+		throw std::runtime_error("Spell Response state update targets another battle");
+	pack.validateTransitionFrom(battleState.getSpellResponseState(pack.side), battleState.getRound());
+	battleState.setSpellResponseState(pack.side, pack.state);
 }
 
 void BattleStatePackVisitor::visitCatapultAttack(CatapultAttack & pack)

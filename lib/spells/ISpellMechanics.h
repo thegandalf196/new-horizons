@@ -553,6 +553,8 @@ private:
 	int32_t arcaneFocusBonusPercent = 0;
 	/// Consecrated Casting's Spell Power component bonus captured for this cast.
 	int32_t consecratedCastingBonusPercent = 0;
+	/// Counterpressure's ready response captured before this hero cast consumes it.
+	int32_t counterpressureBonusPercent = 0;
 	/// Grand Formula's 150% component multiplier, or 100% when unavailable.
 	int32_t grandFormulaMultiplierPercent = 100;
 	///actual spell-power affecting effect duration

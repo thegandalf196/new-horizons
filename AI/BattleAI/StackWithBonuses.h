@@ -26,6 +26,7 @@
 #include "../../lib/battle/HeroActionAllowanceState.h"
 #include "../../lib/battle/NewHorizonsElementalRebirth.h"
 #include "../../lib/battle/ReducedExtraActivationState.h"
+#include "../../lib/battle/SpellResponseState.h"
 
 class HypotheticBattle;
 class CSpell;
@@ -223,6 +224,8 @@ public:
 	void setDeploymentState(const BattleDeploymentState & state) override;
 	const ReducedExtraActivationState & getReducedExtraActivationState(BattleSide side) const override;
 	void setReducedExtraActivationState(BattleSide side, const ReducedExtraActivationState & state) override;
+	const SpellResponseState & getSpellResponseState(BattleSide side) const override;
+	void setSpellResponseState(BattleSide side, const SpellResponseState & state) override;
 	std::vector<HeroOrderState> getHeroOrderStates(BattleSide side) const override;
 	std::optional<HeroOrderState> getHeroOrderState(BattleSide side, HeroCommand command) const override;
 	std::optional<HeroOrderState> getHeroOrderState(BattleSide side) const override;
@@ -504,6 +507,7 @@ private:
 	void finishProjectedHeroAction(BattleSide side, const ProjectedOrderAllowance & prepared);
 	std::map<BattleSide, std::optional<FocusFireState>> focusFireStates;
 	BattleSideArray<RelentlessAssaultState> relentlessAssaultStates;
+	BattleSideArray<SpellResponseState> spellResponseStates;
 	BattleSideArray<int32_t> bloodrageRanks;
 	BattleSideArray<int32_t> bloodrageDamagePercents;
 	BattleSideArray<int32_t> bloodrageCaps;

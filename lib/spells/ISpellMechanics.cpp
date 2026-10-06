@@ -830,6 +830,12 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 				std::string(newHorizonsMagic::SPELLCRAFT_ARCANE_FOCUS)))
 			arcaneFocusBonusPercent = newHorizonsMagic::SPELLCRAFT_ARCANE_FOCUS_BONUS_PERCENT;
 
+		if(battleInfo && hero && owner && battleInfo->getSideHero(casterSide) == hero
+			&& battleRound >= 0 && battleInfo->getSpellResponseState(casterSide).isReadyAt(battleRound)
+			&& hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
+				std::string(newHorizonsMagic::SPELLCRAFT_COUNTERPRESSURE)))
+			counterpressureBonusPercent = newHorizonsMagic::SPELLCRAFT_COUNTERPRESSURE_BONUS_PERCENT;
+
 		const int spellLevel = battleInfo && owner ? cb->battleGetSpellLevel(owner->getId()) : 0;
 		if(battleInfo && hero && battleInfo->getSideHero(casterSide) == hero
 			&& (spellLevel == 4 || spellLevel == 5)
@@ -1530,7 +1536,8 @@ int32_t BaseMechanics::getConsecratedCastingBonusPercent() const
 int32_t BaseMechanics::getCastSpellPowerComponentBonusPercent() const
 {
 	const int combinedMultiplierPercent = (100 + arcaneFocusBonusPercent)
-		* grandFormulaMultiplierPercent * (100 + consecratedCastingBonusPercent) / 10000;
+		* grandFormulaMultiplierPercent * (100 + consecratedCastingBonusPercent)
+		* (100 + counterpressureBonusPercent) / 1000000;
 	return combinedMultiplierPercent - 100;
 }
 

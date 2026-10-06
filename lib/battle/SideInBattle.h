@@ -30,6 +30,7 @@
 #include "AlternatingHeroActionState.h"
 #include "HeroActionAllowanceState.h"
 #include "RelentlessAssaultState.h"
+#include "SpellResponseState.h"
 #include "../callback/GameCallbackHolder.h"
 
 class CGHeroInstance;
@@ -191,6 +192,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	// Movement fatigue captured at battle setup; applies as an additional Morale
 	// modifier only for the first combat round.
 	int32_t firstRoundMoraleModifier = 0;
+	// Counterpressure's side-owned, round-bounded next-spell response.
+	SpellResponseState spellResponseState;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);
@@ -375,6 +378,11 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		if(h.saving && firstRoundMoraleModifier != 0
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_FORCED_MARCH))
 			throw std::runtime_error("Cannot discard first-round battle Morale modifier");
+		if(h.saving && spellResponseState.hasState()
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SPELL_RESPONSE))
+			throw std::runtime_error("Cannot discard Spell Response state in an older battle format");
+		if(h.saving)
+			spellResponseState.validate();
 		if(h.saving && initialArmyIsWandering && !initialArmyValue)
 			throw std::runtime_error("Wandering battle army has no initial Army Value snapshot");
 		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_INITIAL_ARMY_VALUE)
@@ -690,6 +698,10 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			h & firstRoundMoraleModifier;
 		else if(!h.saving)
 			firstRoundMoraleModifier = 0;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SPELL_RESPONSE))
+			h & spellResponseState;
+		else if(!h.saving)
+			spellResponseState = {};
 		if(!h.saving)
 		{
 			validateDoubleCommandState();
