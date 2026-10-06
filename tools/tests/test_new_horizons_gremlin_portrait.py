@@ -149,7 +149,16 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
         for creature, image in expected.items():
             with self.subTest(creature=creature):
                 graphics = config[creature]["graphics"]
-                self.assertEqual(graphics, {"iconLarge": image})
+                self.assertEqual(graphics["iconLarge"], image)
+                expected_fields = {"iconLarge"}
+                if creature == "core:mage":
+                    expected_fields.add("missile")
+                    self.assertEqual(graphics["missile"], {"projectile": "NH_MageRedProjectile.def"})
+                elif creature == "core:archMage":
+                    expected_fields.update(("animation", "missile"))
+                    self.assertEqual(graphics["animation"], "NH_ArchMageGrey.def")
+                    self.assertEqual(set(graphics["missile"]), {"ray"})
+                self.assertEqual(set(graphics), expected_fields)
                 self.assertTrue((IMAGE_ROOT / image).is_file())
 
         generator = (ROOT / "client/render/AssetGenerator.cpp").read_text(encoding="utf-8")
@@ -176,7 +185,8 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
         self.assertIn('{"ironGolem", "NH_academy_ironGolem_icon_large.png", "NH_academy_ironGolem_portrait_mask.png", 32, 34}', fixture)
         self.assertIn('{"stoneGolem", "NH_academy_stoneGolem_icon_large.png", "NH_academy_stoneGolem_portrait_mask.png", 33, 35}', fixture)
         self.assertIn('{"mage", "NH_academy_mage_icon_large.png", "NH_academy_mage_portrait_mask.png", 34, 36}', fixture)
-        self.assertIn('{"archMage", "NH_academy_archMage_icon_large.png", "NH_academy_archMage_portrait_mask.png", 35, 37}', fixture)
+        self.assertIn('{"archMage", "NH_academy_archMage_icon_large.png", "NH_academy_archMage_portrait_mask.png", 35, 37,', fixture)
+        self.assertIn('nullptr, "NH_ArchMageGreyPortrait", 0}', fixture)
         self.assertIn(
             '{"genie", "NH_academy_genie_icon_large.png", "NH_academy_genie_portrait_mask.png", 36, 38}',
             fixture,

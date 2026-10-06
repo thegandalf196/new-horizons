@@ -78,6 +78,8 @@ struct AcademyPortrait
 	int internalId;
 	int defFrame;
 	const char * smallImage = nullptr;
+	const char * sourceAnimation = nullptr;
+	int sourceFrame = -1;
 };
 
 constexpr std::array<BuiltIcon, 4> academyBuiltIcons{{
@@ -93,7 +95,8 @@ constexpr std::array<AcademyPortrait, 12> academyPortraits{{
 	{"ironGolem", "NH_academy_ironGolem_icon_large.png", "NH_academy_ironGolem_portrait_mask.png", 32, 34},
 	{"stoneGolem", "NH_academy_stoneGolem_icon_large.png", "NH_academy_stoneGolem_portrait_mask.png", 33, 35},
 	{"mage", "NH_academy_mage_icon_large.png", "NH_academy_mage_portrait_mask.png", 34, 36},
-	{"archMage", "NH_academy_archMage_icon_large.png", "NH_academy_archMage_portrait_mask.png", 35, 37},
+	{"archMage", "NH_academy_archMage_icon_large.png", "NH_academy_archMage_portrait_mask.png", 35, 37,
+		nullptr, "NH_ArchMageGreyPortrait", 0},
 	{"genie", "NH_academy_genie_icon_large.png", "NH_academy_genie_portrait_mask.png", 36, 38},
 	{"masterGenie", "NH_academy_masterGenie_icon_large.png", "NH_academy_masterGenie_portrait_mask.png", 37, 39},
 	{"naga", "NH_academy_naga_icon_large.png", "NH_academy_naga_portrait_mask.png", 38, 40},
@@ -695,10 +698,36 @@ void verifyAcademyPortrait(const AcademyPortrait & portrait)
 	const auto backdrop = renderer.loadImage(
 		ImagePath::builtin("NH_academy_creature_portrait_backdrop.png"), EImageBlitMode::SIMPLE);
 	const auto matte = renderer.loadImage(ImagePath::builtin(portrait.mask), EImageBlitMode::SIMPLE);
-	ImageLocator originalLocator(AnimationPath::builtin("TWCRPORT"), portrait.defFrame, 0, EImageBlitMode::OPAQUE);
-	originalLocator.scalingFactor = 1;
-	originalLocator.originalDefFrame = true;
-	const auto original = renderer.loadImage(originalLocator);
+	const AnimationPath portraitSource = portrait.sourceAnimation
+		? AnimationPath::builtin(portrait.sourceAnimation)
+		: AnimationPath::builtin("TWCRPORT");
+	const int portraitSourceFrame = portrait.sourceFrame >= 0 ? portrait.sourceFrame : portrait.defFrame;
+	if(portrait.sourceAnimation)
+	{
+		const JsonPath sourceDescriptor = portraitSource.addPrefix("SPRITES/").toType<EResType::JSON>();
+		require(CResourceHandler::get()->existsResource(sourceDescriptor),
+			std::string("Mapped portrait animation descriptor is missing: ") + portrait.sourceAnimation);
+	}
+	ImageLocator sourceLocator;
+	if(portrait.sourceAnimation)
+	{
+		const auto sourceAnimation = renderer.loadAnimation(portraitSource, EImageBlitMode::OPAQUE);
+		require(sourceAnimation && sourceAnimation->size(0) > static_cast<size_t>(portraitSourceFrame),
+			std::string("Portrait source animation/frame is missing: ") + portraitSource.getOriginalName());
+		sourceLocator = sourceAnimation->getImageLocator(portraitSourceFrame, 0);
+		require(sourceLocator.defFile.has_value()
+			&& sourceLocator.defFile->getOriginalName().find("TWCRPORT") != std::string::npos
+			&& sourceLocator.defFrame == portrait.defFrame && sourceLocator.defGroup == 0
+			&& !sourceLocator.paletteRemap.empty(),
+			"Arch Mage portrait alias must remap its authored TWCRPORT source frame through its palette map");
+	}
+	else
+	{
+		sourceLocator = ImageLocator(portraitSource, portraitSourceFrame, 0, EImageBlitMode::OPAQUE);
+	}
+	sourceLocator.scalingFactor = 1;
+	sourceLocator.originalDefFrame = true;
+	const auto original = renderer.loadImage(sourceLocator);
 
 	Canvas generatedCanvas(size, CanvasScalingPolicy::IGNORE);
 	Canvas backdropCanvas(size, CanvasScalingPolicy::IGNORE);
@@ -812,8 +841,10 @@ void verifyMagiProjectileColors()
 	require(mage != nullptr && archMage != nullptr, "Loaded Tower Mage definitions are missing");
 	require(mage->animDefName == AnimationPath::builtin("CMAGE.DEF"),
 		"Mage must retain its ordinary CMAGE.DEF animation");
-	require(mage->animation.projectileImageName == AnimationPath::builtin("PMAGEX.DEF"),
-		"Mage must retain its ordinary PMAGEX.DEF projectile");
+	require(mage->animation.projectileImageName == AnimationPath::builtin("NH_MageRedProjectile.def"),
+		"Mage must use its palette-remapped PMAGEX projectile alias");
+	require(archMage->animDefName == AnimationPath::builtin("NH_ArchMageGrey.def"),
+		"Arch Mage must use its palette-remapped CAMAGE animation alias");
 	require(mage->animation.projectileRay.empty(),
 		"Mage must not inherit the Arch Mage procedural ray colour override");
 	require(archMage->animation.attackClimaxFrame == 8,
@@ -845,7 +876,182 @@ void verifyMagiProjectileColors()
 		require(creature->hasBonusOfType(BonusType::NO_DISTANCE_PENALTY),
 			"Magi must retain their ranged-distance capability");
 	}
-	std::cout << "  Mage/Arch Mage: loaded PMAGEX projectile and five red Arch Mage rays\n";
+	std::cout << "  Mage/Arch Mage: loaded palette-mapped aliases and five red Arch Mage rays\n";
+}
+
+AnimationPath normalizedAnimationSource(AnimationPath path)
+{
+	constexpr std::string_view spritePrefix = "SPRITES/";
+	std::string name = path.getName();
+	if(name.starts_with(spritePrefix))
+		name.erase(0, spritePrefix.size());
+	return AnimationPath::builtin(name);
+}
+
+AnimationPath animationPathInSprites(AnimationPath path)
+{
+	if(!path.getName().starts_with("SPRITES/"))
+		path = path.addPrefix("SPRITES/");
+	return path;
+}
+
+void verifyPaletteMap(const ImageLocator & locator, const std::string & description)
+{
+	require(locator.defFile.has_value() && locator.originalDefFrame && !locator.paletteRemap.empty(),
+		description + " must use a palette-remapped original DEF frame locator");
+	for(const auto & [index, color] : locator.paletteRemap)
+	{
+		(void)color;
+		require(index >= 8, description + " must not remap reserved palette indices 0-7");
+	}
+}
+
+std::shared_ptr<CAnimation> verifyCompletePaletteAlias(IRenderHandler & renderer,
+	const char * aliasName, const char * sourceName)
+{
+	const AnimationPath aliasPath = AnimationPath::builtin(aliasName);
+	const AnimationPath sourcePath = AnimationPath::builtin(sourceName);
+	const JsonPath descriptorPath = aliasPath.addPrefix("SPRITES/").toType<EResType::JSON>();
+	require(CResourceHandler::get()->existsResource(descriptorPath),
+		std::string("Palette-remapped animation alias descriptor is missing: ") + aliasName);
+	const auto alias = renderer.loadAnimation(aliasPath, EImageBlitMode::OPAQUE);
+	const auto source = renderer.loadAnimation(sourcePath, EImageBlitMode::OPAQUE);
+	require(alias && source, std::string("Could not load mapped animation alias or source: ") + aliasName);
+
+	size_t totalFrames = 0;
+	for(size_t group = 0; group < 64; ++group)
+	{
+		const size_t aliasFrames = alias->size(group);
+		const size_t sourceFrames = source->size(group);
+		require(aliasFrames == sourceFrames,
+			std::string("Animation alias changed source group length: ") + aliasName
+			+ " group " + std::to_string(group));
+		for(size_t frame = 0; frame < aliasFrames; ++frame)
+		{
+			const ImageLocator locator = alias->getImageLocator(frame, group);
+			require(locator.defFile.has_value()
+				&& normalizedAnimationSource(*locator.defFile) == normalizedAnimationSource(sourcePath)
+				&& locator.defGroup == static_cast<int>(group)
+				&& locator.defFrame == static_cast<int>(frame),
+				std::string("Animation alias changed source frame order: ") + aliasName
+				+ " group " + std::to_string(group) + " frame " + std::to_string(frame));
+			verifyPaletteMap(locator, std::string(aliasName) + " frame locator");
+			++totalFrames;
+		}
+	}
+	require(totalFrames > 0, std::string("Palette-remapped animation alias has no frames: ") + aliasName);
+	std::cout << "  " << aliasName << ": " << totalFrames
+		<< " source-matched frames across every group; all preserve reserved palette entries\n";
+	return alias;
+}
+
+std::shared_ptr<CAnimation> verifyArchMagePortraitAlias(IRenderHandler & renderer)
+{
+	const AnimationPath aliasPath = AnimationPath::builtin("NH_ArchMageGreyPortrait");
+	const JsonPath descriptorPath = aliasPath.addPrefix("SPRITES/").toType<EResType::JSON>();
+	require(CResourceHandler::get()->existsResource(descriptorPath),
+		"Arch Mage portrait alias JSON descriptor is missing");
+	const auto alias = renderer.loadAnimation(aliasPath, EImageBlitMode::OPAQUE);
+	require(alias && alias->size(0) == 1,
+		"Arch Mage portrait alias must provide exactly its one authored frame");
+	for(size_t group = 1; group < 64; ++group)
+		require(alias->size(group) == 0, "Arch Mage portrait alias must not expose extra animation groups");
+
+	const ImageLocator locator = alias->getImageLocator(0, 0);
+	require(locator.defFile.has_value()
+		&& normalizedAnimationSource(*locator.defFile) == AnimationPath::builtin("TWCRPORT.DEF")
+		&& locator.defFrame == 37 && locator.defGroup == 0,
+		"Arch Mage portrait alias must resolve to TWCRPORT frame 37");
+	verifyPaletteMap(locator, "Arch Mage portrait alias");
+	return alias;
+}
+
+void verifyMappedPalettePixels(IRenderHandler & renderer, const CAnimation & alias,
+	size_t group, size_t frame, EImageBlitMode mode, const std::string & description, bool requireChangedPixel)
+{
+	ImageLocator mappedLocator = alias.getImageLocator(frame, group);
+	verifyPaletteMap(mappedLocator, description);
+	mappedLocator.layer = mode;
+	mappedLocator.scalingFactor = 1;
+	ImageLocator sourceLocator(*mappedLocator.defFile, mappedLocator.defFrame, mappedLocator.defGroup, mode);
+	sourceLocator.scalingFactor = 1;
+	sourceLocator.originalDefFrame = true;
+
+	const auto mappedImage = renderer.loadImage(mappedLocator);
+	const auto sourceImage = renderer.loadImage(sourceLocator);
+	require(mappedImage && sourceImage, description + " did not load both mapped and original source pixels");
+	const Point nativeSize = sourceImage->dimensions();
+	require(mappedImage->dimensions() == nativeSize, description + " changed source canvas dimensions");
+
+	CDefFile sourceDef(animationPathInSprites(*mappedLocator.defFile));
+	magiPaletteInspection::detail::FrameCapture capture;
+	sourceDef.loadFrame(static_cast<size_t>(mappedLocator.defFrame), static_cast<size_t>(mappedLocator.defGroup), capture);
+	const auto indexedFrame = capture.take();
+	require(nativeSize == Point(indexedFrame.width, indexedFrame.height),
+		description + " changed original DEF canvas geometry");
+	const auto sourcePixels = captureImagePixels(sourceImage, nativeSize, description + " original");
+	const auto mappedPixels = captureImagePixels(mappedImage, nativeSize, description + " mapped");
+	bool changedPixel = false;
+	size_t usedMappedEntries = 0;
+	for(size_t offset = 0; offset < indexedFrame.indices.size(); ++offset)
+	{
+		ColorRGBA expected = sourcePixels[offset];
+		const auto remap = mappedLocator.paletteRemap.find(indexedFrame.indices[offset]);
+		if(remap != mappedLocator.paletteRemap.end())
+		{
+			++usedMappedEntries;
+			expected = ColorRGBA(remap->second[0], remap->second[1], remap->second[2], expected.a);
+			changedPixel = changedPixel || expected != sourcePixels[offset];
+		}
+		require(mappedPixels[offset] == expected,
+			description + " runtime output did not apply only the authored palette map while preserving alpha");
+	}
+	if(requireChangedPixel)
+		require(usedMappedEntries > 0 && changedPixel,
+			description + " palette map did not change any used source color");
+}
+
+void verifyMagiPaletteAliases(IRenderHandler & renderer)
+{
+	const auto archMage = verifyCompletePaletteAlias(renderer, "NH_ArchMageGrey.def", "CAMAGE.DEF");
+	const auto mageProjectile = verifyCompletePaletteAlias(renderer, "NH_MageRedProjectile.def", "PMAGEX.DEF");
+	const auto portrait = verifyArchMagePortraitAlias(renderer);
+
+	verifyMappedPalettePixels(renderer, *archMage, 2, 0, EImageBlitMode::WITH_SHADOW_AND_SELECTION,
+		"Arch Mage holding frame", true);
+	verifyMappedPalettePixels(renderer, *archMage, 14, 8, EImageBlitMode::WITH_SHADOW_AND_SELECTION,
+		"Arch Mage shooting frame", true);
+	verifyMappedPalettePixels(renderer, *mageProjectile, 0, 0, EImageBlitMode::COLORKEY,
+		"Mage projectile frame", true);
+	verifyMappedPalettePixels(renderer, *portrait, 0, 0, EImageBlitMode::OPAQUE,
+		"Arch Mage portrait source frame", true);
+}
+
+void exportMappedMagiPreviews(IRenderHandler & renderer, const std::filesystem::path & destination)
+{
+	const auto previewDirectory = destination / "mapped-runtime-aliases";
+	require(std::filesystem::create_directory(previewDirectory),
+		"Mapped alias preview subdirectory must be new under the explicitly opted-in /tmp destination");
+	const auto exportFrame = [&](const AnimationPath & animationPath, size_t group, size_t frame,
+		EImageBlitMode mode, const std::string & filename)
+	{
+		const auto animation = renderer.loadAnimation(animationPath, mode);
+		require(animation && animation->size(group) > frame,
+			"Opt-in mapped alias preview frame is unavailable: " + filename);
+		const auto image = animation->getImage(frame, group, true);
+		require(image != nullptr, "Could not render opt-in mapped alias preview: " + filename);
+		image->exportBitmap(boost::filesystem::path((previewDirectory / filename).string()));
+	};
+
+	exportFrame(AnimationPath::builtin("NH_ArchMageGrey.def"), 2, 0,
+		EImageBlitMode::WITH_SHADOW_AND_SELECTION, "archmage_standing_g2_f0.png");
+	exportFrame(AnimationPath::builtin("NH_ArchMageGrey.def"), 14, 8,
+		EImageBlitMode::WITH_SHADOW_AND_SELECTION, "archmage_shooting_g14_f8.png");
+	exportFrame(AnimationPath::builtin("NH_ArchMageGreyPortrait"), 0, 0,
+		EImageBlitMode::OPAQUE, "archmage_portrait_source.png");
+	for(size_t frame = 0; frame < 9; ++frame)
+		exportFrame(AnimationPath::builtin("NH_MageRedProjectile.def"), 0, frame,
+			EImageBlitMode::COLORKEY, "mage_projectile_f" + std::to_string(frame) + ".png");
 }
 
 void verifyCabirAnimation(const char * descriptorName, bool master)
@@ -1050,7 +1256,19 @@ void runRuntimeRegression()
 		renderer.onLibraryLoadingFinished(LIBRARY);
 		std::cout << "SDL dummy runtime scale " << expectedScale << "x\n";
 		if(factorIndex == 0)
-			(void)magiPaletteInspection::exportIfOptedIn();
+		{
+			verifyMagiPaletteAliases(renderer);
+			const char * inspectionEnabled = std::getenv("VCMI_MAGI_PALETTE_INSPECTION");
+			if(inspectionEnabled && std::string_view(inspectionEnabled) == "1")
+			{
+				const auto inspectionDirectory = magiPaletteInspection::detail::validateDestination();
+				require(magiPaletteInspection::exportIfOptedIn(),
+					"Opt-in original palette diagnostics unexpectedly declined export");
+				exportMappedMagiPreviews(renderer, inspectionDirectory);
+			}
+			else
+				(void)magiPaletteInspection::exportIfOptedIn();
+		}
 		verifyMagiPaletteRemap(renderer, magiPaletteFixture, expectedScale);
 
 		for(const BuiltIcon & icon : academyBuiltIcons)

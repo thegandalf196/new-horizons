@@ -86,9 +86,16 @@ class NewHorizonsMagiColoursTest(unittest.TestCase):
                 self.assertEqual(len(base_ray["start"]), 4)
                 self.assertEqual(len(base_ray["end"]), 4)
 
-        # This change is Arch Mage beam-only; ordinary Mage's projectile patch stays
-        # untouched, as do the existing Arch Mage portrait and shooter data.
-        self.assertNotIn("missile", module["core:mage"].get("graphics", {}))
+        # Mage changes only the projectile resource; inherited release timing,
+        # offsets and angles remain intact. Its robe animation stays original.
+        mage = copy.deepcopy(core["mage"])
+        merge_objects(mage, module["core:mage"])
+        self.assertEqual(mage["graphics"]["animation"], core["mage"]["graphics"]["animation"])
+        self.assertEqual(mage["graphics"]["missile"]["projectile"], "NH_MageRedProjectile.def")
+        self.assertEqual(
+            {key: value for key, value in mage["graphics"]["missile"].items() if key != "projectile"},
+            {key: value for key, value in core["mage"]["graphics"]["missile"].items() if key != "projectile"},
+        )
         self.assertEqual(
             arch_mage_patch["graphics"]["iconLarge"],
             "NH_academy_archMage_icon_large.png",

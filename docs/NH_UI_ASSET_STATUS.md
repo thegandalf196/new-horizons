@@ -5,7 +5,8 @@ backends support immutable exact-DEF palette mappings without committing sprite
 pixels. SDL2 builds and focused native1x–4x pixel/cache/flip checks pass; SDL3
 execution is deferred because its dependencies are absent. Original Arch Mage
 cloth/trim/staff and Mage projectile were locally inspected, but the requested
-grey-robe/red-glow/red-Mage-projectile content aliases are not yet bound. This
+grey-robe/red-glow/red-Mage-projectile content aliases are now bound for native
+review, with large portrait composition being updated. This
 does not make the Magi artwork Final or change the current playable snapshot.
 
 Magi colour treatment,2026-10-06: **Provisional** Arch Mage procedural beam
@@ -14,13 +15,22 @@ alpha values and inherited timing/geometry. The merged-config check passes1/1;
 the rebuilt native isolated-module fixture also passes1/1 in2.30s, checking all
 loaded ray RGBA values, climax8 and unchanged ordinary Mage binding. Rendered
 verification and playable delivery remain separate gates.
-Ordinary Mage's bitmap projectile, grey Arch Mage robes and red staff glow are
-**Not done**. External DEF metadata identifies separate resources but does not
-establish semantic palette roles. Selective sprite treatment must preserve skin,
+Ordinary Mage's bitmap projectile, grey Arch Mage battle robes/red staff glow
+and large portrait treatment are **Provisional** source bindings; native rendered
+review and playable delivery remain open. Explicit robe/glow palette candidates
+were inspected, but single-frame evidence does not prove animation-wide semantic
+exclusivity. Small portraits and adventure creature sprites are **Not done**.
+Selective sprite treatment must preserve skin,
 staff detail, reserved transparency/shadow colours and all animation groups at
 native and scaled sizes. No extracted purchaser sprites are committed, and no
 artwork is Final. Both ordinary shooter melee penalties are already verified and
 included in the current Linux snapshot30bc6ea.
+Content verification checkpoint: full client builds; ten focused Python checks
+and activated native renderer1/1 pass with zero skips. Root inspected the
+actual mapped holding/shooting/large-portrait/projectile outputs in private
+temporary storage. These show the requested grey/red treatment at native size;
+full motion, small/map roles, normal snapshot delivery and user-final approval
+remain open. No original sprite pixels are committed or included as art assets.
 
 Cabir Linux development delivery,2026-10-06: snapshot30bc6ea from committed
 360b91d06 is selected by the normal Linux script. Original portrait, battle,

@@ -84,7 +84,11 @@ private:
 		const AnimationPath & originalAnimation,
 		size_t normalFrame,
 		size_t builtFrame) const;
-	CanvasPtr createAcademyCreaturePortrait(size_t originalFrame, const std::string & maskImage) const;
+	CanvasPtr createAcademyCreaturePortrait(
+		size_t originalFrame,
+		const std::string & maskImage,
+		const std::string & sourceAnimation = "TWCRPORT",
+		int sourceFrame = -1) const;
 	CanvasPtr createAcademyMapLayer(
 		const AnimationPath & originalAnimation,
 		size_t frame,

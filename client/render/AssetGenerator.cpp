@@ -89,7 +89,7 @@ void AssetGenerator::initialize()
 	};
 	imageFiles[ImagePath::builtin("NH_academy_archMage_icon_large.png")] = [this]()
 	{
-		return createAcademyCreaturePortrait(37, "NH_academy_archMage_portrait_mask.png");
+		return createAcademyCreaturePortrait(37, "NH_academy_archMage_portrait_mask.png", "NH_ArchMageGreyPortrait", 0);
 	};
 	imageFiles[ImagePath::builtin("NH_academy_genie_icon_large.png")] = [this]()
 	{
@@ -381,13 +381,20 @@ AssetGenerator::CanvasPtr AssetGenerator::createAcademyTownIconBuiltToday(
 	return result;
 }
 
-AssetGenerator::CanvasPtr AssetGenerator::createAcademyCreaturePortrait(size_t originalFrame, const std::string & maskImage) const
+AssetGenerator::CanvasPtr AssetGenerator::createAcademyCreaturePortrait(
+	size_t originalFrame,
+	const std::string & maskImage,
+	const std::string & sourceAnimation,
+	int sourceFrame) const
 {
 	static constexpr Point PORTRAIT_SIZE(58, 64);
 	static const ImagePath backdropPath = ImagePath::builtin("NH_academy_creature_portrait_backdrop.png");
 	const ImagePath maskPath = ImagePath::builtin(maskImage);
 	const AnimationPath originalPortrait = AnimationPath::builtin("TWCRPORT");
+	const AnimationPath requestedPortrait = AnimationPath::builtin(sourceAnimation);
 	const auto * resources = CResourceHandler::get();
+	const bool hasRequestedPortraitAlias = requestedPortrait != originalPortrait
+		&& resources->existsResource(requestedPortrait.addPrefix("SPRITES/").toType<EResType::JSON>());
 	auto hasImageResource = [resources](const ImagePath & path)
 	{
 		return resources->existsResource(path.addPrefix("SPRITES/"))
@@ -397,6 +404,11 @@ AssetGenerator::CanvasPtr AssetGenerator::createAcademyCreaturePortrait(size_t o
 	if(!hasImageResource(backdropPath) || !hasImageResource(maskPath)
 		|| !resources->existsResource(originalPortrait.addPrefix("SPRITES/")))
 		return nullptr;
+	if(hasRequestedPortraitAlias && sourceFrame < 0)
+	{
+		logGlobal->warn("New Horizons Academy portrait alias %s has no configured source frame", sourceAnimation);
+		return nullptr;
+	}
 
 	auto loadAuthoredImage = [&](const ImagePath & path)
 	{
@@ -406,9 +418,33 @@ AssetGenerator::CanvasPtr AssetGenerator::createAcademyCreaturePortrait(size_t o
 	};
 	const auto backdrop = loadAuthoredImage(backdropPath);
 	const auto matte = loadAuthoredImage(maskPath);
-	ImageLocator portraitLocator(originalPortrait, static_cast<int>(originalFrame), 0, EImageBlitMode::OPAQUE);
-	portraitLocator.scalingFactor = 1;
-	portraitLocator.originalDefFrame = true;
+	ImageLocator portraitLocator;
+	if(hasRequestedPortraitAlias)
+	{
+		const auto portraitLayout = ENGINE->renderHandler().loadAnimation(requestedPortrait, EImageBlitMode::OPAQUE);
+		if(!portraitLayout || portraitLayout->size(0) <= static_cast<size_t>(sourceFrame))
+		{
+			logGlobal->warn("New Horizons Academy portrait alias %s does not provide source frame %d",
+				sourceAnimation, sourceFrame);
+			return nullptr;
+		}
+		portraitLocator = portraitLayout->getImageLocator(static_cast<size_t>(sourceFrame), 0);
+		if(!portraitLocator.defFile || portraitLocator.defGroup != 0
+			|| portraitLocator.defFrame != static_cast<int>(originalFrame) || portraitLocator.paletteRemap.empty())
+		{
+			logGlobal->warn("New Horizons Academy portrait alias %s does not resolve to its mapped original DEF source frame",
+				sourceAnimation);
+			return nullptr;
+		}
+		portraitLocator.scalingFactor = 1;
+		portraitLocator.originalDefFrame = true;
+	}
+	else
+	{
+		portraitLocator = ImageLocator(originalPortrait, static_cast<int>(originalFrame), 0, EImageBlitMode::OPAQUE);
+		portraitLocator.scalingFactor = 1;
+		portraitLocator.originalDefFrame = true;
+	}
 	const auto portrait = ENGINE->renderHandler().loadImage(portraitLocator);
 	if(!backdrop || !matte || !portrait
 		|| backdrop->dimensions() != PORTRAIT_SIZE

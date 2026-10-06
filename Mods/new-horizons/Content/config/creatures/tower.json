@@ -116,7 +116,10 @@
 			"gold": 600
 		},
 		"graphics": {
-			"iconLarge": "NH_academy_mage_icon_large.png"
+			"iconLarge": "NH_academy_mage_icon_large.png",
+			"missile": {
+				"projectile": "NH_MageRedProjectile.def"
+			}
 		},
 		"speed": 5,
 		"initiative": 5,
@@ -140,6 +143,7 @@
 		"growth": 3,
 		"graphics": {
 			"iconLarge": "NH_academy_archMage_icon_large.png",
+			"animation": "NH_ArchMageGrey.def",
 			"missile": {
 				"ray": [
 					{ "start": [192, 32, 24, 255], "end": [192, 32, 24, 64] },
