@@ -11,6 +11,7 @@
 
 #include "../../lib/battle/BattleSide.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
+#include "../../lib/battle/SylvanLuckState.h"
 #include "../../lib/bonuses/Bonus.h"
 #include "../../lib/bonuses/BonusEnum.h"
 #include "../../lib/bonuses/BonusParameters.h"
@@ -847,10 +848,93 @@ inline std::string battleFormTooltip(const BattleFormStatus & status)
 	return result;
 }
 
+struct SylvanLuckStackStatus
+{
+	bool skillPresent = false;
+	int32_t effectiveCappedLuck = 0;
+	int32_t sharedFortuneLuck = 0;
+	int32_t cascadingFortuneLuck = 0;
+	int32_t forestFavorSpeed = 0;
+	bool serendipityChanceOnlyReady = false;
+	bool forestFavorReady = false;
+	bool fortunateAimConditional = false;
+	bool gamblerAttackReady = false;
+	bool chainFortuneReady = false;
+
+	bool active() const
+	{
+		return sharedFortuneLuck != 0 || cascadingFortuneLuck != 0 || forestFavorSpeed != 0
+			|| serendipityChanceOnlyReady || forestFavorReady || fortunateAimConditional
+			|| gamblerAttackReady || chainFortuneReady;
+	}
+
+	bool operator==(const SylvanLuckStackStatus &) const = default;
+};
+
+inline SylvanLuckStackStatus makeSylvanLuckStackStatus(const SylvanLuckState & state, uint32_t unitId,
+	int32_t effectiveCappedLuck, bool enabled, bool canReceiveFortunateAim)
+{
+	if(!enabled)
+		return {};
+
+	const bool positiveLuckTriggered = state.positiveLuckUnits.contains(unitId);
+	SylvanLuckStackStatus result;
+	result.skillPresent = true;
+	result.effectiveCappedLuck = effectiveCappedLuck;
+	result.sharedFortuneLuck = state.sharedUnits.contains(unitId) ? 1 : 0;
+	result.cascadingFortuneLuck = state.cascadingUnits.contains(unitId) ? 3 : 0;
+	result.forestFavorSpeed = state.speedBonus(unitId);
+	result.serendipityChanceOnlyReady = state.serendipity && !positiveLuckTriggered;
+	result.forestFavorReady = state.forestsFavor && !positiveLuckTriggered;
+	result.fortunateAimConditional = state.fortunateAim && canReceiveFortunateAim;
+	result.gamblerAttackReady = state.gamblerAttackAvailable();
+	result.chainFortuneReady = state.chainFortuneAvailable(unitId);
+	return result;
+}
+
+inline std::string sylvanLuckStackTooltip(const SylvanLuckStackStatus & status,
+	std::string_view skillName, std::string_view serendipityName,
+	std::string_view forestFavorName, std::string_view sharedFortuneName,
+	std::string_view cascadingFortuneName, std::string_view fortunateAimName)
+{
+	if(!status.active())
+		return {};
+
+	const auto signedValue = [](int32_t value)
+	{
+		return value > 0 ? "+" + std::to_string(value) : std::to_string(value);
+	};
+	std::string result = skillName.empty() ? "Sylvan Luck" : std::string(skillName);
+	result += "\n\nCurrent capped Luck for an ordinary attack: " + signedValue(status.effectiveCappedLuck)
+		+ ". This excludes Serendipity's chance-only Luck, Fortunate Aim's Focus Fire target bonus, and automatic Perfect Moment.";
+	if(status.sharedFortuneLuck > 0)
+		result += "\n" + std::string(sharedFortuneName) + ": +1 temporary Luck until this stack's next activation.";
+	if(status.cascadingFortuneLuck > 0)
+		result += "\n" + std::string(cascadingFortuneName) + ": +3 temporary Luck for this stack's current activation.";
+	if(status.forestFavorSpeed > 0)
+		result += "\n" + std::string(forestFavorName) + ": +" + std::to_string(status.forestFavorSpeed)
+			+ " Speed until the next creature activation begins.";
+	else if(status.forestFavorReady)
+		result += "\n" + std::string(forestFavorName)
+			+ ": this stack's first positive Luck trigger this combat grants +2 Speed for the remainder of that activation.";
+	if(status.serendipityChanceOnlyReady)
+		result += "\n" + std::string(serendipityName)
+			+ ": +1 Luck for trigger chance only until this stack triggers positive Luck once this combat; it is not persistent temporary Luck.";
+	if(status.fortunateAimConditional)
+		result += "\n" + std::string(fortunateAimName)
+			+ ": +1 attack Luck only when this shooter attacks the active Focus Fire target; this conditional bonus is not included above.";
+	if(status.gamblerAttackReady)
+		result += "\nGambler: +3 attack Luck is ready for this side's first attack this round, subject to normal Luck caps.";
+	if(status.chainFortuneReady)
+		result += "\nChain of Fortune: this different friendly stack's next attack receives +1 Luck and consumes the gift, subject to normal Luck caps.";
+	return result;
+}
+
 struct StackInfoStatusSnapshot
 {
 	DefendStatus defend;
 	std::optional<BattlecraftWaitStatus> battlecraftWait;
+	SylvanLuckStackStatus sylvanLuck;
 	BattleFormStatus battleForm;
 	PhysicalPoisonStatus physicalPoison;
 	TemporaryCreatureStatus temporaryCreatures;

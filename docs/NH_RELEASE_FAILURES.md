@@ -2,6 +2,16 @@
 
 ## Purpose
 
+### 2026-10-06 — Sylvan Luck client battle-interface include
+
+The first client compile dereferenced IBattleInfo with only its forward
+declaration available. Add lib/battle/IBattleState.h explicitly rather than
+depending on unrelated transitive includes. Repaired client/native builds
+pass, and eight focused presentation/adjacent cases pass with zero skips.
+Initial/repaired logs remain separate under ignored
+`build/nh-sylvan-readback.M9yNqddv/`. Synthetic test Luck inputs include the
+ready Gambler bonus; assertions match actual temporary-Luck/expiry wording.
+
 ### 2026-10-06 — Authored rewardable pre-visit tooltip key
 
 The first required training-state UI native run passed six perk cases but failed

@@ -1,5 +1,13 @@
 # New Horizons UI and asset status register
 
+Sylvan Luck temporary-state readback (UP243),2026-10-06: **Provisional** UI.
+Uses the existing native Luck row/help surface, with a localized Skill label
+and exact temporary Luck/speed contributors and conditional readiness. No new
+panel or raster art. Client/native builds, eight focused presentation/adjacent
+cases, wiring guard and independent review pass. Native tooltip fit, complete
+explanatory localization and controller/privacy UI execution remain unverified;
+source verification does not make this Final artwork or rendered acceptance.
+
 Chain Lightning propagation and Battlecraft Wait/Defend readback,2026-10-06:
 **Provisional** UI. The chain uses native hex highlights, tiny gold hop numbers
 and the existing two-line console for per-hop damage/kills, with an explicit

@@ -21,6 +21,7 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/NewHorizonsBattlecraft.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/IBattleState.h"
 #include "../../lib/battle/NewHorizonsSoulChain.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/entities/hero/NewHorizonsHeroRules.h"
@@ -35,6 +36,7 @@ namespace
 {
 constexpr std::string_view FRAILTY_SPELL_KEY = "new-horizons:frailty";
 constexpr std::string_view PLAGUE_SPELL_KEY = "new-horizons:plague";
+constexpr std::string_view SYLVAN_LUCK_SKILL_KEY = "new-horizons:sylvanLuck";
 
 bool usesNewHorizonsBattleRules(const CGHeroInstance * hero)
 {
@@ -191,12 +193,35 @@ std::optional<newHorizonsBattleStatus::BattlecraftWaitStatus> currentBattlecraft
 	return newHorizonsBattleStatus::makeBattlecraftWaitStatus(damageBonusPercent, true);
 }
 
+newHorizonsBattleStatus::SylvanLuckStackStatus currentSylvanLuckStatus(
+	const CStack * stack, const CPlayerBattleCallback * battleCallback)
+{
+	if(!stack || !battleCallback || !battleCallback->getBattle()
+		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(stack))
+		return {};
+
+	const auto ownerSide = battleCallback->playerToSide(battleCallback->battleGetOwner(stack));
+	if(ownerSide != BattleSide::ATTACKER && ownerSide != BattleSide::DEFENDER)
+		return {};
+
+	// Match the actual attack/speed queries' current controller, and do not
+	// disclose a hidden opposing hero's perk state through the inspector.
+	const auto * hero = battleCallback->battleGetFightingHero(ownerSide);
+	if(!usesNewHorizonsBattleRules(hero) || hero->getPerkSkillRank(std::string(SYLVAN_LUCK_SKILL_KEY)) <= 0)
+		return {};
+
+	return newHorizonsBattleStatus::makeSylvanLuckStackStatus(
+		battleCallback->getBattle()->getSylvanLuckState(ownerSide), stack->unitId(),
+		battleCallback->battleGetAttackLuck(stack, nullptr, false, false), true, stack->isShooter());
+}
+
 newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
 	const CStack * stack, const CPlayerBattleCallback * battleCallback)
 {
 	newHorizonsBattleStatus::StackInfoStatusSnapshot result;
 	result.defend = currentDefendStatus(stack, battleCallback);
 	result.battlecraftWait = currentBattlecraftWaitStatus(stack, battleCallback);
+	result.sylvanLuck = currentSylvanLuckStatus(stack, battleCallback);
 	if(stack)
 	{
 		if(stack->hasBattleForm())
@@ -495,6 +520,15 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 
 	displayedMorale = morale;
 	displayedStatus = currentStackInfoStatus(stack, battleCallback.get());
+	if(displayedStatus.sylvanLuck.active())
+	{
+		const auto tooltip = newHorizonsBattleStatus::sylvanLuckStackTooltip(displayedStatus.sylvanLuck,
+			LIBRARY->generaltexth->translate("skill.new-horizons.sylvanLuck.name"),
+			"Serendipity", "Forest's Favor", "Shared Fortune", "Cascading Fortune", "Fortunate Aim");
+		// The native Luck row remains the single visual surface; its help now
+		// explains synchronized combat-only contributions without adding a panel.
+		statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(7, 141, 67, 14), tooltip, tooltip));
+	}
 	displayedSoulChainSignature = soulChainStatusSignature(stack, battleCallback.get());
 	if(displayedStatus.defend.defending)
 	{

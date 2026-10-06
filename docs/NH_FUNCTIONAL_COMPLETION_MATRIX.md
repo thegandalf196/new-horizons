@@ -2,6 +2,26 @@
 
 Updated: 2026-10-06
 
+2026-10-06 Sylvan Luck required readback: existing Luck-row help now exposes
+synchronized per-stack temporary Luck/speed and conditional readiness, with
+current-controller/visible-hero/legacy guards and snapshot-driven refresh.
+Client/native builds with12 jobs pass after an explicit battle-interface header
+repair; five new presentation cases and three adjacent controls pass8/8 in0.293s,
+zero skips/errors. Source guard, module drift and independent review pass.
+UP243 retains receipts and evidence limits. Rendering, localization and native
+controller/privacy UI execution remain Phase2. No identity counts change:
+combat spells61/67, perks225/310. No whole-faction certification is inferred.
+
+2026-10-06 bounded Shadow source audit: the twelve detailed canonical
+identities have principal production and AI consumers. Frailty replaces legacy
+Weakness in saved-v3; Slow belongs to Sorcery. Existing receipts were inspected,
+not rerun as whole-school certification. Plaguebearer's propagation-limit and
+Sorrow's lower-bound decisions remain held. This earns no new identity count.
+The independent required Faction-status audit instead found a concrete missing
+Sylvan Luck client readback: synchronized temporary Luck/speed state exists but
+has no stack-status consumer. UP243 tracks implementation and acceptance; no
+credit is claimed before the client and focused presentation gates pass.
+
 2026-10-06 bounded Light source audit: all eleven active school identities have
 principal production and AI consumers in their shared healing/direct-damage,
 timed or dedicated Purify paths. Existing queue/native receipts were inspected,
