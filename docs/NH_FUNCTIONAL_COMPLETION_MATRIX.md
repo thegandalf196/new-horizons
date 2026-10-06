@@ -2,6 +2,15 @@
 
 Updated: 2026-10-06
 
+Windows full run37458617656 has completed SUCCESS on exact
+dc5de4c483dfc1975ed83661471fbd151658129d. Compile, staging, packaging and
+downloadable upload pass. Nonexpired artifact11414801242 is
+New-Horizons-Windows-x64-dc5de4c483dfc1975ed83661471fbd151658129d,
+993113981 bytes, created2026-10-06T12:53:54Z. Independent package-content
+inspection is assigned separately; no Windows graphical/gameplay acceptance
+or later-HEAD build is inferred. This advances cross-platform delivery gates,
+not spell/perk identity coverage.
+
 Windows delivery gate,2026-10-06: exact full run37458617656 on
 dc5de4c483dfc1975ed83661471fbd151658129d now reports successful client
 compilation and upstream runtime/resource staging. Packaging remains in
