@@ -1,0 +1,6 @@
+Use case: precise-object-edit
+Asset type: transparent fantasy game creature sprite cutout
+Input images: Image 1: the Cabir Master v1 draft to correct; preserve its character design as-is.
+Primary request: Correct transparency only around this existing Cabir Master. Remove detached bright pixels, ember flecks, and faint alpha haze outside the single connected creature silhouette so the mechanical alpha-bounds crop surrounds the actual body rather than stray marks.
+Subject: Keep the same Cabir Master exactly recognizable: same squat charcoal reptilian body with sparse orange lava cracks and low ridges, slit eye, broad snout, worn heavy brass shoulder/collar, brazier and localized flame held in both hands, ivory trousers, burgundy center sash, dark claw feet.
+Constraints: Change only the exterior transparency. Preserve the creature, facial features, pose, silhouette, proportions, color, materials, lighting, vessel, and flame unchanged. Retain legitimate antialiased edge pixels on the subject contour; do not erode, shrink, recolor, repaint, sharpen, simplify, or add anything. Make all space outside the creature genuinely transparent, with no detached pixels or background haze. No text, border, ground, shadow, scenery, or extra embers.

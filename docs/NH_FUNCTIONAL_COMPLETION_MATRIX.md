@@ -2,6 +2,13 @@
 
 Updated: 2026-10-06
 
+UP248 upgraded-standing art pass: initial Cabir Master candidate and one
+transparency-only correction fail worker/root native review for detached bright
+pixels and exterior alpha haze. Masters/prompts/exports are retained as rejected,
+not installed. No spell/perk/creature identity coverage changes; full base and
+upgraded animation families remain absent. Windows37458617656 remains live
+compiling dc5de4c48; no newer package success is inferred.
+
 Bounded canonical hold review: Skeleton Transformer's aggregate wording settles
 selection pooling, but final integer rounding remains unspecified. Lighthouse
 runtime geometry disproves the proposed exact-town-source slice: standard boats

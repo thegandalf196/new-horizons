@@ -1,5 +1,12 @@
 # New Horizons UI and asset status register
 
+Cabir Master standing art,2026-10-06: **Not done**. First original HoMM3-Art
+candidate and its single transparency-only correction retain detached bright
+pixels and exterior alpha haze in native/4x review. Both are rejected and
+retained under `assets/new-horizons/creatures/cabir-master/`, with unchanged
+masters, exact prompts, relative metadata and mechanical exports. No runtime
+binding, manual cleanup, third generation or complete-animation claim.
+
 Cabir walking animation,2026-10-06: **Not done**. Two built-in HoMM3-Art
 atlas attempts remain rejected for unclear alternating gait and faint alpha
 debris, not runtime-installed. A shared-scale/anchor mechanical atlas exporter

@@ -1,0 +1,41 @@
+{
+  "status": "provisional; rejected for detached bright pixels / exterior alpha haze",
+  "runtime_ready": false,
+  "animation_complete": false,
+  "generated_on": "2026-10-06",
+  "generation": {
+    "tool": "built-in image_gen",
+    "calls": 1,
+    "corrections": 0,
+    "prompt": "standing-master.prompt.txt"
+  },
+  "reference": {
+    "role": "provisional base Cabir v2 identity/style reference; not approved",
+    "path": "assets/new-horizons/creatures/cabir/v2/standing-master.png",
+    "sha256": "a9f7e4da6703bb64757d724e714a590daf6ba5d84380dd9e3e8cec25ade10c13",
+    "prompt_provenance_note": "The retained verbatim prompt incorrectly calls v2 approved. The actual reference file was the provisional Cabir v2 draft; only the earlier Cabir v1 design was user-approved. The prompt is preserved unchanged as the historical generation record."
+  },
+  "master": {
+    "path": "standing-master.png",
+    "size": [1323, 1189],
+    "mode": "RGBA",
+    "sha256": "e6dd64b9e46851223fb6f4505f9e9cc253adc9a182f9a5297ddf8f383bce9bbc",
+    "alpha_bbox_nonzero": [74, 13, 1267, 1189],
+    "alpha_bbox_at_least_16": [198, 59, 1195, 1149],
+    "note": "The nonzero alpha bounds include three alpha=1 pixels on the bottom row; the >=16 subject bounds leave transparent margin below the feet. Pixels were preserved without manual cleanup."
+  },
+  "mechanical_previews": {
+    "method": "tools/export_new_horizons_cabir_preview.py; alpha-bounded LANCZOS reduction to 60px body height, then 4x nearest-neighbor enlargement",
+    "native": {
+      "path": "previews/standing-preview.png",
+      "size": [61, 60],
+      "sha256": "2b53392b4d6cf4259cce3d2a2afc2f7d844bb96bc7506abd8777f71746770ae0"
+    },
+    "nearest_neighbor_4x": {
+      "path": "previews/standing-preview-4x.png",
+      "size": [244, 240],
+      "sha256": "560ad07885ae76ed6ffdadeeb2fde86191e5b068bbd5757d652919ff35b445d9"
+    }
+  },
+  "scope_note": "A standing draft only. Not approved, not runtime-bound, and not evidence of a completed or validated animation set. No original game pixels are included."
+}

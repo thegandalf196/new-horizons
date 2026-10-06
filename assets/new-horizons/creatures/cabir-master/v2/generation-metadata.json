@@ -1,0 +1,40 @@
+{
+  "status": "rejected; transparency correction did not remove exterior alpha haze and detached bright pixels in the native 4x preview",
+  "runtime_ready": false,
+  "animation_complete": false,
+  "generated_on": "2026-10-06",
+  "generation": {
+    "tool": "built-in image_gen",
+    "calls": 1,
+    "corrections": 1,
+    "prompt": "standing-master.prompt.txt"
+  },
+  "edit_target": {
+    "role": "provisional Cabir Master v1 draft; transparency-only correction target",
+    "path": "assets/new-horizons/creatures/cabir-master/v1/standing-master.png",
+    "sha256": "e6dd64b9e46851223fb6f4505f9e9cc253adc9a182f9a5297ddf8f383bce9bbc"
+  },
+  "master": {
+    "path": "standing-master.png",
+    "size": [1323, 1189],
+    "mode": "RGBA",
+    "sha256": "fa8505aaf7204b2a34898bc6039926a382f3862b9c19f272ed030d9fc874939e",
+    "alpha_bbox_nonzero": [76, 21, 1267, 1171],
+    "alpha_bbox_at_least_16": [200, 56, 1194, 1153],
+    "note": "Despite the focused transparency-only request, low-alpha exterior pixels remain far beyond the substantial subject. No manual cleanup was performed."
+  },
+  "mechanical_previews": {
+    "method": "tools/export_new_horizons_cabir_preview.py; alpha-bounded LANCZOS reduction to 60px body height, then 4x nearest-neighbor enlargement",
+    "native": {
+      "path": "previews/standing-preview.png",
+      "size": [62, 60],
+      "sha256": "e8ebf9627610b649314ed9b8bb08239a791ce9a1c161fd2ea718327df1363595"
+    },
+    "nearest_neighbor_4x": {
+      "path": "previews/standing-preview-4x.png",
+      "size": [248, 240],
+      "sha256": "eba99f53007e78218ce365d12feb3f0c7187aba01f8828a2dba48acead3ca486"
+    }
+  },
+  "review_note": "Native-size and 4x preview inspection still shows isolated bright pixels around the head/flame and pale exterior specks. The strict-alpha bounding box remains substantially wider than the opaque body and shrinks the creature in the mechanical crop. Reject this candidate."
+}
