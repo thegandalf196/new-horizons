@@ -2,6 +2,14 @@
 
 Updated: 2026-10-06
 
+Windows delivery gate,2026-10-06: exact full run37458617656 on
+dc5de4c483dfc1975ed83661471fbd151658129d now reports successful client
+compilation and upstream runtime/resource staging. Packaging remains in
+progress; no uploaded artifact, independent package audit or Windows gameplay
+acceptance is inferred. Preserve this live job rather than dispatching a
+replacement. Current HEAD's later offline-art/documentation commits are not
+part of this build. Coverage remains225/310 perks and61/67 combat identities.
+
 UP248 upgraded-standing art pass: initial Cabir Master candidate and one
 transparency-only correction fail worker/root native review for detached bright
 pixels and exterior alpha haze. Masters/prompts/exports are retained as rejected,
