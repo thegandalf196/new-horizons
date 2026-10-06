@@ -199,7 +199,8 @@ std::optional<newHorizonsBattleStatus::BattlecraftWaitStatus> currentBattlecraft
 }
 
 newHorizonsBattleStatus::SylvanLuckStackStatus currentSylvanLuckStatus(
-	const CStack * stack, const CPlayerBattleCallback * battleCallback)
+	const CStack * stack, const CPlayerBattleCallback * battleCallback,
+	const newHorizonsBattleStatus::BattleLuckReadback & luckReadback)
 {
 	if(!stack || !battleCallback || !battleCallback->getBattle()
 		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(stack))
@@ -217,11 +218,30 @@ newHorizonsBattleStatus::SylvanLuckStackStatus currentSylvanLuckStatus(
 
 	return newHorizonsBattleStatus::makeSylvanLuckStackStatus(
 		battleCallback->getBattle()->getSylvanLuckState(ownerSide), stack->unitId(),
-		battleCallback->battleGetAttackLuck(stack, nullptr, false, false), true, stack->isShooter());
+		luckReadback.active() ? luckReadback.ordinaryAttackLuck
+			: battleCallback->battleGetAttackLuck(stack, nullptr, false, false), true, stack->isShooter());
+}
+
+newHorizonsBattleStatus::BattleLuckReadback currentBattleLuckReadback(
+	const CStack * stack, const CPlayerBattleCallback * battleCallback,
+	const std::vector<std::string> & cachedBonusDescriptions)
+{
+	if(!stack || !battleCallback || !battleCallback->getBattle()
+		|| !newHorizonsMagic::rulesActive(battleCallback->getBattle()->getMagicRules()))
+		return {};
+
+	const bool noLuck = stack->hasBonusOfType(BonusType::NO_LUCK);
+	const bool maxLuck = stack->hasBonusOfType(BonusType::MAX_LUCK);
+	const bool maximumLuckLimitPresent = stack->hasBonusOfType(BonusType::MAXIMUM_LUCK);
+
+	return newHorizonsBattleStatus::makeBattleLuckReadback(true,
+		battleCallback->battleGetAttackLuck(stack, nullptr, false, false), noLuck, maxLuck,
+		maximumLuckLimitPresent, stack->valOfBonuses(BonusType::MAXIMUM_LUCK), cachedBonusDescriptions);
 }
 
 newHorizonsBattleStatus::BattleMoraleReadback currentBattleMoraleReadback(
-	const CStack * stack, const CPlayerBattleCallback * battleCallback)
+	const CStack * stack, const CPlayerBattleCallback * battleCallback,
+	const std::vector<std::string> & cachedBonusDescriptions)
 {
 	if(!stack || !battleCallback || !battleCallback->getBattle())
 		return {};
@@ -231,29 +251,11 @@ newHorizonsBattleStatus::BattleMoraleReadback currentBattleMoraleReadback(
 
 	const auto morale = battleCallback->battleGetMoraleInfo(stack);
 	const bool unaffectedByMorale = stack->unaffectedByMorale();
-	std::vector<std::string> bonusDescriptions;
-	const auto * descriptionCallback = GAME->interface() ? GAME->interface()->cb.get() : nullptr;
-	if(!unaffectedByMorale && descriptionCallback)
-	{
-		const auto moraleBonuses = stack->getBonusesOfType(BonusType::MORALE);
-		if(moraleBonuses)
-		{
-			for(const auto & bonus : *moraleBonuses)
-			{
-				if(!bonus || bonus->val == 0)
-					continue;
-
-				auto description = bonus->Description(descriptionCallback);
-				if(!description.empty())
-					bonusDescriptions.push_back(std::move(description));
-			}
-		}
-	}
 
 	return newHorizonsBattleStatus::makeBattleMoraleReadback(true, morale.real, morale.effective,
 		morale.standardBearerBonus, morale.firstRoundModifier, morale.steadfastAdjustment,
 		morale.commandingPresenceFloorApplied, morale.furyUnboundFloorApplied, unaffectedByMorale,
-		std::move(bonusDescriptions));
+		cachedBonusDescriptions);
 }
 
 std::string battleMoraleReadbackTooltip(const newHorizonsBattleStatus::BattleMoraleReadback & status)
@@ -310,13 +312,61 @@ std::string battleMoraleReadbackTooltip(const newHorizonsBattleStatus::BattleMor
 	return result.toString(&GAME->translator());
 }
 
+std::string battleLuckReadbackTooltip(const newHorizonsBattleStatus::BattleLuckReadback & status)
+{
+	if(!status.active())
+		return {};
+
+	MetaString result;
+	result.appendTextID("new-horizons.combat.luck.readback.value");
+	result.replaceTokenNumber("%VALUE%", status.ordinaryAttackLuck);
+	if(status.maxLuck)
+	{
+		result.appendEOL();
+		result.appendTextID(status.noLuck
+			? "new-horizons.combat.luck.readback.maxLuckNoLuck"
+			: "new-horizons.combat.luck.readback.maxLuck");
+	}
+	else if(status.noLuck)
+	{
+		result.appendEOL();
+		result.appendTextID("new-horizons.combat.luck.readback.noLuck");
+	}
+	if(status.maximumLuckLimitPresent && (!status.noLuck || status.maxLuck))
+	{
+		MetaString limit;
+		limit.appendTextID("new-horizons.combat.luck.readback.maximumLuckLimit");
+		limit.replaceTokenNumber("%VALUE%", status.maximumLuckLimit);
+		result.appendEOL();
+		result.append(limit);
+	}
+	if(status.hasSources())
+	{
+		result.appendEOL();
+		result.appendEOL();
+		result.appendTextID("new-horizons.combat.luck.readback.sourceHeader");
+		for(const auto & description : status.bonusDescriptions)
+		{
+			result.appendEOL();
+			result.appendRawString(description);
+		}
+	}
+	else if(!status.noLuck && !status.maxLuck)
+	{
+		result.appendEOL();
+		result.appendTextID("new-horizons.combat.luck.readback.noSources");
+	}
+	return result.toString(&GAME->translator());
+}
+
 newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
-	const CStack * stack, const CPlayerBattleCallback * battleCallback)
+	const CStack * stack, const CPlayerBattleCallback * battleCallback,
+	const newHorizonsBattleStatus::BattleLuckReadback & luckReadback)
 {
 	newHorizonsBattleStatus::StackInfoStatusSnapshot result;
 	result.defend = currentDefendStatus(stack, battleCallback);
 	result.battlecraftWait = currentBattlecraftWaitStatus(stack, battleCallback);
-	result.sylvanLuck = currentSylvanLuckStatus(stack, battleCallback);
+	result.sylvanLuck = currentSylvanLuckStatus(stack, battleCallback, luckReadback);
 	if(stack)
 	{
 		if(stack->hasBattleForm())
@@ -565,9 +615,65 @@ StackInfoBasicPanel::StackInfoBasicPanel(
 	initializeData(stack);
 }
 
+void StackInfoBasicPanel::refreshBonusDescriptionCache(const CStack * stack)
+{
+	const auto clearCache = [this]()
+	{
+		bonusDescriptionCacheKey.reset();
+		cachedLuckBonusDescriptions.clear();
+		cachedMoraleBonusDescriptions.clear();
+	};
+	if(!stack || !battleCallback || !battleCallback->getBattle()
+		|| !newHorizonsMagic::rulesActive(battleCallback->getBattle()->getMagicRules()))
+	{
+		clearCache();
+		return;
+	}
+
+	const auto * descriptionCallback = GAME->interface() ? GAME->interface()->cb.get() : nullptr;
+	if(!descriptionCallback)
+	{
+		clearCache();
+		return;
+	}
+
+	const auto unitId = stack->unitId();
+	const auto treeVersion = stack->CBonusSystemNode::getTreeVersion();
+	const newHorizonsBattleStatus::BattleBonusDescriptionCacheKey cacheKey{
+		unitId, treeVersion, descriptionCallback};
+	if(bonusDescriptionCacheKey && *bonusDescriptionCacheKey == cacheKey)
+		return;
+
+	bonusDescriptionCacheKey = cacheKey;
+	cachedLuckBonusDescriptions.clear();
+	cachedMoraleBonusDescriptions.clear();
+	const auto appendDescriptions = [descriptionCallback](const CStack * source, BonusType type,
+		std::vector<std::string> & destination)
+	{
+		const auto bonuses = source->getBonusesOfType(type);
+		if(!bonuses)
+			return;
+		for(const auto & bonus : *bonuses)
+		{
+			if(!bonus || bonus->val == 0)
+				continue;
+
+			auto description = bonus->Description(descriptionCallback);
+			if(!description.empty())
+				destination.push_back(std::move(description));
+		}
+	};
+
+	if(!stack->hasBonusOfType(BonusType::NO_LUCK) && !stack->hasBonusOfType(BonusType::MAX_LUCK))
+		appendDescriptions(stack, BonusType::LUCK, cachedLuckBonusDescriptions);
+	if(!stack->unaffectedByMorale())
+		appendDescriptions(stack, BonusType::MORALE, cachedMoraleBonusDescriptions);
+}
+
 void StackInfoBasicPanel::initializeData(const CStack * stack)
 {
 	OBJECT_CONSTRUCTION;
+	refreshBonusDescriptionCache(stack);
 
 	icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("TWCRPORT"), stack->creatureId().getNum() + 2, 0, 10, 6));
 	labels.push_back(std::make_shared<CLabel>(10 + 58, 6 + 64, FONT_MEDIUM, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, TextOperations::formatMetric(stack->getCount(), 4)));
@@ -587,7 +693,10 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 	auto defense = std::to_string(LIBRARY->creatures()->getByIndex(stack->creatureIndex())->getDefense(stack->isShooter())) + "(" + std::to_string(stack->getDefense(stack->isShooter())) + ")";
 	auto damage = std::to_string(damageMultiplier * stack->getMinDamage(stack->isShooter())) + "-" + std::to_string(damageMultiplier * stack->getMaxDamage(stack->isShooter()));
 	auto health = stack->getMaxHealth();
-	const auto moraleReadback = currentBattleMoraleReadback(stack, battleCallback.get());
+	const auto moraleReadback = currentBattleMoraleReadback(
+		stack, battleCallback.get(), cachedMoraleBonusDescriptions);
+	const auto luckReadback = currentBattleLuckReadback(
+		stack, battleCallback.get(), cachedLuckBonusDescriptions);
 	int morale = 0;
 	if(moraleReadback.active())
 		morale = moraleReadback.effective;
@@ -595,7 +704,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		morale = battleCallback->battleGetMorale(stack);
 	else
 		morale = stack->moraleVal();
-	auto luck = stack->luckVal();
+	const int luck = luckReadback.active() ? luckReadback.ordinaryAttackLuck : stack->luckVal();
 
 	auto killed = stack->getKilled();
 	auto healthRemaining = TextOperations::formatMetric(stack->getFirstHPleft(), 4);
@@ -622,21 +731,33 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 
 	displayedMorale = morale;
 	displayedMoraleReadback = moraleReadback;
+	displayedLuckReadback = luckReadback;
 	if(displayedMoraleReadback.active())
 	{
 		const auto tooltip = battleMoraleReadbackTooltip(displayedMoraleReadback);
 		statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(7, 129, 67, 12), tooltip, tooltip));
 	}
-	displayedStatus = currentStackInfoStatus(stack, battleCallback.get());
+	displayedStatus = currentStackInfoStatus(stack, battleCallback.get(), luckReadback);
+	auto luckTooltip = battleLuckReadbackTooltip(displayedLuckReadback);
 	if(displayedStatus.sylvanLuck.active())
 	{
-		const auto tooltip = newHorizonsBattleStatus::sylvanLuckStackTooltip(displayedStatus.sylvanLuck,
-			LIBRARY->generaltexth->translate("skill.new-horizons.sylvanLuck.name"),
-			"Serendipity", "Forest's Favor", "Shared Fortune", "Cascading Fortune", "Fortunate Aim");
-		// The native Luck row remains the single visual surface; its help now
-		// explains synchronized combat-only contributions without adding a panel.
-		statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(7, 141, 67, 14), tooltip, tooltip));
+		// Do not advertise faction Luck contributions when effective No Luck
+		// suppression short-circuits those conditional contributions.
+		if(!displayedLuckReadback.noLuck || displayedLuckReadback.maxLuck)
+		{
+			const auto sylvanTooltip = newHorizonsBattleStatus::sylvanLuckStackTooltip(displayedStatus.sylvanLuck,
+				LIBRARY->generaltexth->translate("skill.new-horizons.sylvanLuck.name"),
+				"Serendipity", "Forest's Favor", "Shared Fortune", "Cascading Fortune", "Fortunate Aim");
+			if(!sylvanTooltip.empty())
+			{
+				if(!luckTooltip.empty())
+					luckTooltip += "\n\n";
+				luckTooltip += sylvanTooltip;
+			}
+		}
 	}
+	if(!luckTooltip.empty())
+		statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(7, 141, 67, 14), luckTooltip, luckTooltip));
 	displayedSoulChainSignature = soulChainStatusSignature(stack, battleCallback.get());
 	if(displayedStatus.defend.defending)
 	{
@@ -1037,9 +1158,13 @@ void StackInfoBasicPanel::refreshDefendStatus(const CStack * updatedInfo)
 	if(!updatedInfo)
 		return;
 
-	const auto current = currentStackInfoStatus(updatedInfo, battleCallback.get());
+	refreshBonusDescriptionCache(updatedInfo);
+	const auto currentLuckReadback = currentBattleLuckReadback(
+		updatedInfo, battleCallback.get(), cachedLuckBonusDescriptions);
+	const auto current = currentStackInfoStatus(updatedInfo, battleCallback.get(), currentLuckReadback);
 	const auto soulChainSignature = soulChainStatusSignature(updatedInfo, battleCallback.get());
-	const auto currentMoraleReadback = currentBattleMoraleReadback(updatedInfo, battleCallback.get());
+	const auto currentMoraleReadback = currentBattleMoraleReadback(
+		updatedInfo, battleCallback.get(), cachedMoraleBonusDescriptions);
 	int currentMorale = 0;
 	if(currentMoraleReadback.active())
 		currentMorale = currentMoraleReadback.effective;
@@ -1047,7 +1172,8 @@ void StackInfoBasicPanel::refreshDefendStatus(const CStack * updatedInfo)
 		currentMorale = battleCallback->battleGetMorale(updatedInfo);
 	else
 		currentMorale = updatedInfo->moraleVal();
-	if(current == displayedStatus && soulChainSignature == displayedSoulChainSignature
+	if(current == displayedStatus && currentLuckReadback == displayedLuckReadback
+		&& soulChainSignature == displayedSoulChainSignature
 		&& currentMorale == displayedMorale && currentMoraleReadback == displayedMoraleReadback)
 		return;
 

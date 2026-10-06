@@ -27,5 +27,12 @@
 	"new-horizons.combat.morale.readback.firstRound": "Opening-round effects: %VALUE% Morale.",
 	"new-horizons.combat.morale.readback.steadfast": "Steadfast: %VALUE% Morale from reduced hostile penalties.",
 	"new-horizons.combat.morale.readback.commandingPresence": "Commanding Presence: negative Morale is treated as 0 while the Order benefit applies.",
-	"new-horizons.combat.morale.readback.furyUnbound": "Fury Unbound: negative Morale is treated as 0 while the stack has a Bloodrage damage bonus."
+	"new-horizons.combat.morale.readback.furyUnbound": "Fury Unbound: negative Morale is treated as 0 while the stack has a Bloodrage damage bonus.",
+	"new-horizons.combat.luck.readback.value": "Ordinary attack Luck: %VALUE%. This target-neutral value excludes target-specific and chance-only modifiers.",
+	"new-horizons.combat.luck.readback.sourceHeader": "Luck sources:",
+	"new-horizons.combat.luck.readback.noLuck": "Luck is suppressed for this stack.",
+	"new-horizons.combat.luck.readback.maxLuck": "Maximum Luck sets attack Luck to the highest value supported by the current battle rules, before any cap.",
+	"new-horizons.combat.luck.readback.maxLuckNoLuck": "Maximum Luck takes precedence over No Luck; any attack Luck cap still applies.",
+	"new-horizons.combat.luck.readback.maximumLuckLimit": "Attack Luck is capped at %VALUE%.",
+	"new-horizons.combat.luck.readback.noSources": "No Luck modifiers are listed."
 }

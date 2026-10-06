@@ -12,7 +12,10 @@
 #include "BattleSidePanel.h"
 #include "NewHorizonsBattleStatus.h"
 
+#include <cstdint>
+#include <optional>
 #include <string>
+#include <vector>
 
 class CStack;
 class CPlayerBattleCallback;
@@ -36,8 +39,13 @@ private:
 	std::shared_ptr<CPlayerBattleCallback> battleCallback;
 	newHorizonsBattleStatus::StackInfoStatusSnapshot displayedStatus;
 	newHorizonsBattleStatus::BattleMoraleReadback displayedMoraleReadback;
+	newHorizonsBattleStatus::BattleLuckReadback displayedLuckReadback;
 	std::string displayedSoulChainSignature;
 	int displayedMorale = 0;
+	std::optional<newHorizonsBattleStatus::BattleBonusDescriptionCacheKey> bonusDescriptionCacheKey;
+	std::vector<std::string> cachedLuckBonusDescriptions;
+	std::vector<std::string> cachedMoraleBonusDescriptions;
+	void refreshBonusDescriptionCache(const CStack * stack);
 
 public:
 	StackInfoBasicPanel(

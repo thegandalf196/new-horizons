@@ -2,6 +2,20 @@
 
 Updated: 2026-10-06
 
+UP259/260 required-UI checkpoint: generic compact combat Luck now has exact
+shared target-neutral value and scoped source/override help, composed with
+existing Sylvan details in one native hitbox. Both Luck/Morale source strings
+are cached by unit, bonus-tree version and current player callback, avoiding
+reformatting on unchanged hovered frames without creating a new poller or
+altering live numeric refresh. Both-target build76103,14/14 focused native
+cases (zero skips), two source guards, five translation/generator tests and
+module drift pass; independent reviews have no blocker. Actual GUI refresh,
+visibility/rendered/FPS behavior and delivery remain separate gates; source-
+name/visibility changes without a version/callback change are deferred. The
+Prospector tooltip audit confirms a missing consumer dependent on the existing
+UP166 mechanic/design hold, not a separate unblocked fake-state UI task.
+Required UI breadth increases;225/310 perks,61/67 spells and8/8 Orders remain.
+
 UP257/258 required-UI checkpoint: compact combat Morale help now reads shared
 pre-floor/effective values, actual combat contributions and applied floor
 reasons. Its full cached snapshot refreshes within the existing UI path; no

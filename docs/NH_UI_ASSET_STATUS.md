@@ -1,5 +1,16 @@
 # New Horizons UI and asset status register
 
+Combat Luck readback and source cache,2026-10-06: **Provisional**. UP259 adds
+localized exact target-neutral attack Luck and scoped source/override help to
+the existing compact Luck row, composed with Sylvan details in one hitbox.
+UP260 caches both Luck and Morale source-description formatting by unit,
+bonus-tree version and player callback within the existing hover refresh.
+No new artwork, panel or ornament. Both-target build76103, two row guards,
+14/14 focused native cases (zero skips), module/translation checks and
+independent reviews pass. Rendered fit/FPS, actual UI refresh/privacy execution
+and playable delivery remain open; source-name/visibility-only cache changes
+are a recorded Phase2 edge case.
+
 Combat Morale readback,2026-10-06: **Provisional**. UP257 adds localized help
 to the existing compact stack Morale row, with shared pre-floor/effective values,
 bonus sources, actual combat contributions and the applied negative-Morale

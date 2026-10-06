@@ -2,6 +2,20 @@
 
 ## Purpose
 
+### 2026-10-06 — Hovered-frame source-description formatting
+
+UP260 caller tracing shows updateHoveredStacks refreshes an unchanged inspected
+stack every frame. UP257's source-list equality prevented widget rebuilds but
+not repeated Bonus::Description formatting. This is a source-proven avoidable
+cost, not a reproduced cause of the user's previous game-lag incident. A
+per-panel unit/bonus-tree-version/player-callback key now guards both Morale and
+Luck formatting, after the saved-NH gate. Shared values still refresh in the
+existing path; no new polling loop/state/global scan. Both-target build76103,
+14/14 focused native cases, source guards and independent reviews pass. The
+native key case tests key equality, not actual GUI call counts or FPS. Rendered
+performance and name/visibility changes without a version/callback change
+remain Phase2 validation/invalidation work.
+
 ### 2026-10-06 — Morale readback direct-header integration
 
 UP257 client build25692 exits1 because StackInfoBasicPanel uses GAME without

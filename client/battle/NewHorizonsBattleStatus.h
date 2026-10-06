@@ -922,6 +922,52 @@ inline BattleMoraleReadback makeBattleMoraleReadback(bool enabled, int32_t real,
 		commandingPresenceFloorApplied, furyUnboundFloorApplied, false, std::move(bonusDescriptions)};
 }
 
+/// Version key for the panel's stable, callback-scoped bonus descriptions.
+/// Exact live Luck/Morale values are still read through their shared APIs.
+struct BattleBonusDescriptionCacheKey
+{
+	uint32_t unitId = 0;
+	int32_t bonusTreeVersion = 0;
+	const void * scopedCallbackIdentity = nullptr;
+
+	bool operator==(const BattleBonusDescriptionCacheKey &) const = default;
+};
+
+/// Read-only, player-scoped presentation of the value used by a normal
+/// target-neutral attack. The exact value comes from the shared battle query;
+/// the accompanying flags explain exceptional bonuses without reimplementing
+/// its Luck curve or attack-specific conditions.
+struct BattleLuckReadback
+{
+	bool available = false;
+	int32_t ordinaryAttackLuck = 0;
+	bool noLuck = false;
+	bool maxLuck = false;
+	bool maximumLuckLimitPresent = false;
+	int32_t maximumLuckLimit = 0;
+	std::vector<std::string> bonusDescriptions;
+
+	bool active() const { return available; }
+	bool hasSources() const { return !bonusDescriptions.empty(); }
+	bool operator==(const BattleLuckReadback &) const = default;
+};
+
+inline BattleLuckReadback makeBattleLuckReadback(bool enabled, int32_t ordinaryAttackLuck,
+	bool noLuck, bool maxLuck, bool maximumLuckLimitPresent, int32_t maximumLuckLimit,
+	std::vector<std::string> bonusDescriptions)
+{
+	if(!enabled)
+		return {};
+	// These exceptional bonuses short-circuit the ordinary LUCK list in the
+	// shared attack query. Keep their flags/value, but do not claim raw Luck
+	// bonuses contribute to the returned number.
+	if(noLuck || maxLuck)
+		bonusDescriptions.clear();
+
+	return {true, ordinaryAttackLuck, noLuck, maxLuck, maximumLuckLimitPresent,
+		maximumLuckLimit, std::move(bonusDescriptions)};
+}
+
 struct SylvanLuckStackStatus
 {
 	bool skillPresent = false;

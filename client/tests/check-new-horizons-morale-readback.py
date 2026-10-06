@@ -47,12 +47,29 @@ for token in (
     "morale.commandingPresenceFloorApplied",
     "morale.furyUnboundFloorApplied",
     "stack->unaffectedByMorale()",
-    "GAME->interface()->cb.get()",
-    "bonus->Description(descriptionCallback)",
+    "cachedBonusDescriptions",
 ):
     assert token in readback, f"Missing saved-state or scoped Morale source readback: {token}"
 assert "battleGetFightingHero" not in readback, "Do not require a hero to read neutral/enemy battle Morale"
 assert "stack->moraleVal()" not in readback, "Use shared pre-floor Morale, not a client substitute"
+
+source_cache = PANEL_CPP.split("void StackInfoBasicPanel::refreshBonusDescriptionCache(", 1)[1].split(
+    "void StackInfoBasicPanel::initializeData(", 1
+)[0]
+for token in (
+    "newHorizonsMagic::rulesActive",
+    "stack->unitId()",
+    "stack->CBonusSystemNode::getTreeVersion()",
+    "GAME->interface()->cb.get()",
+    "BonusType::MORALE",
+    "bonus->Description(descriptionCallback)",
+    "*bonusDescriptionCacheKey == cacheKey",
+    "unitId, treeVersion, descriptionCallback",
+):
+    assert token in source_cache, f"Missing saved-state keyed Morale source cache behavior: {token}"
+assert source_cache.index("*bonusDescriptionCacheKey == cacheKey") < source_cache.index("bonus->Description(descriptionCallback)"), (
+    "The cache-key early return must precede source-description formatting"
+)
 
 tooltip = PANEL_CPP.split("std::string battleMoraleReadbackTooltip(", 1)[1].split(
     "newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(", 1
@@ -81,11 +98,11 @@ for include in (
     assert include in PANEL_CPP, f"Missing explicit GUI/callback declaration: {include}"
 
 assert "BattleMoraleReadback displayedMoraleReadback;" in PANEL_H
-assert "currentBattleMoraleReadback(stack, battleCallback.get())" in PANEL_CPP
+assert "stack, battleCallback.get(), cachedMoraleBonusDescriptions" in PANEL_CPP
 assert "displayedMoraleReadback = moraleReadback;" in PANEL_CPP
 assert "Rect(7, 129, 67, 12), tooltip, tooltip" in PANEL_CPP
 assert "currentMoraleReadback == displayedMoraleReadback" in PANEL_CPP
-assert "Rect(7, 141, 67, 14), tooltip, tooltip" in PANEL_CPP, "Preserve Sylvan Luck help"
+assert "Rect(7, 141, 67, 14), luckTooltip, luckTooltip" in PANEL_CPP, "Preserve the single composed Luck/Sylvan help row"
 assert "sylvanLuckStackTooltip" in PANEL_CPP
 
 for text_id in (
