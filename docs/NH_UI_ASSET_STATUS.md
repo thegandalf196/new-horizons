@@ -1,5 +1,28 @@
 # New Horizons UI and asset status register
 
+Cabir user-reference reset,2026-10-06: **Provisional** new design drafts from
+the supplied m7qkfJk sheet. Red-brown scaled skin, heavy tail and blue/brass
+Academy collar/apron replace the older lava-trouser direction; Master uses gold
+scale armor and reinforced cuffs. First original HoMM3-Art base standing draft
+and60px native preview are in ignored output/homm3/cabir-reference-v4, with exact
+prompt preserved. Matching Master standing draft now exists. Native export
+initially rejects six isolated bottom-edge alpha1 specks; a separately receipted
+derivative clears only those six alphas, preserving the original/RGB/other alpha.
+Both60px standing previews export and have root/independent review. Costume, tail
+and upgraded gold armor read; busy fine texture and thin colored contour fringe
+remain open. This is design-review evidence, not completed animation readiness.
+Source-reference provenance is requested before publishing closely derived pixels.
+Neither standing art nor
+the sheet's example poses are a completed gait or installed animation set.
+
+Private magic-art follow-up: **Provisional**, sparse67x85 guild overlays remove
+the old ribbon through a pinned private clean plate, without the opaque rectangle.
+Ten synthetic importer checks and native resource/composition verification pass.
+Casting lookup follows SPRITES/DATA/raw and all864 frames pass geometry checks;
+actual BattleInterface lifecycle execution remains deferred. Private pixels never
+enter public Git. Arch Mage seven additional cloth-only indices are gray; mixed
+robe/staff index136 remains unmapped, so residual-red closure is still open.
+
 Cabir correction,2026-10-06: **Provisional**, user rejects current smooth HD
 treatment and vibrating gait. Transparent large/small portraits for both forms
 now replace baked scenery; original source/crop/alignment is retained in

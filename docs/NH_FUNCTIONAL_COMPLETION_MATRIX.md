@@ -2,6 +2,17 @@
 
 Updated: 2026-10-06
 
+Current resumption audit: registry directly confirms31 Skills,93 active rank
+effects and225 active/85 planned perks (310 total). Spell/Order identity figures
+below remain the existing roster ledger, not credit for image fixes. UP263/264
+optional image lookup,864-frame resource geometry and sparse native guild patches
+are source-integrated in44f7d88ca, with focused native/synthetic checks recorded
+in the queue. Real BattleInterface casting lifecycle and user visual approval
+remain deferred/unverified. UP261 trace confirms atomic portrait-garrison
+admission versus capped stack transfer; the newest interaction/save is unresolved.
+The new user Cabir sheet supersedes the pending older-design gait draft. No new
+spell/perk identity or whole-project completion is claimed from this checkpoint.
+
 UP265 user-priority creature amendment: BOTH Cabir forms are now registered
 shooters with8 shots, ordinary shooter melee penalties and the established fire
 projectile. The base gains real unarmored fire-palm groups14/15/16; Master's
