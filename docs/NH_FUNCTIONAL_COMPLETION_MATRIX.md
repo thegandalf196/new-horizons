@@ -2,6 +2,15 @@
 
 Updated: 2026-10-05
 
+Cross-platform gate refresh: full Windows run `37348640988` succeeds on older
+source `0e645f79b`. Current Academy source `9c7c4880f` passes 91 packaging
+preflight cases (zero skips), 19 Academy/Guild/Tower guards and independent
+Windows-oriented source review. Notice run `37403527818` succeeds; full run
+`37403632207` is confirmed in progress, not a compiled or packaged success.
+Monitor that handle; do not duplicate it. The Linux twelve-portrait delivery
+is unchanged. Direct registry inspection still finds 225 active and 85 planned
+perks; this checkpoint earns no new gameplay identity coverage.
+
 Preview-only Gargoyle redraw does not increase source/runtime coverage. User
 choice is pending because it reinterprets the creature, not only the backdrop.
 The bounded Tower-creature/specialty review finds their specified principal
