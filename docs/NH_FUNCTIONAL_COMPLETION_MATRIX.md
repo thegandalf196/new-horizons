@@ -2,6 +2,23 @@
 
 Updated: 2026-10-06
 
+UP254 closes a missing source-level Estates UI consumer: native resource-popup
+help now lists current-owner active Investor heroes' saved weekly bonuses,
+including zero, with localized pre-handicap explanation. Payouts and action
+semantics remain unchanged. Client build83191 passes with12 jobs; wiring guard,
+six translation/generator checks and module drift pass; independent review
+finds no blocker. Rendered fit/localization and playable delivery remain open.
+This increases required-UI breadth, not perk identities:225/310 and61/67 remain.
+
+Finite planned-item selection audit:30 Martial/Strategic/Hybrid perks outside
+Learning/Estates/Recruitment,19 all-hero Magic perks,19 Faction perks, the15
+previously checked Learning/Estates/Recruitment perks and Wisdom's2 shared
+acquisition holds account for85 planned entries. Each retains a recorded
+design/dependency hold; all six inactive combat identities likewise have queue
+anchors. This is not proof the whole Version1.0 goal is blocked: independent
+review found UP254's required UI gap despite those identity holds. Do not
+activate partial perks or repeatedly remap those same unanswered decisions.
+
 Independent downloaded-package checkpoint: Windows37458617656 artifact
 11414801242 passes outer checksums for game ZIP and both source archives,
 ZIP CRC/path/duplicate/symlink checks, and all2540 internal payload checksums.

@@ -56,6 +56,7 @@ class MasteryDataTest(unittest.TestCase):
             expected.update(load('config/newHorizonsMusterTexts.json'))
             expected.update(load('config/newHorizonsCombatTexts.json'))
             expected.update(load('config/newHorizonsAdventureSpellTexts.json'))
+            expected.update(load('config/newHorizonsEconomyTexts.json'))
             self.assertEqual(metadata['translations'], expected)
             subprocess.run(command + ['--check'], check=True, capture_output=True)
             self.assertNotEqual(subprocess.run(command, capture_output=True).returncode, 0)
@@ -81,7 +82,7 @@ class MasteryDataTest(unittest.TestCase):
         self.assertEqual(schema['definitions']['option']['properties']['effect']['enum'],
                          ['volley', 'precision', 'repair'])
         module = load('Mods/new-horizons/mod.json')
-        self.assertEqual(module['version'], '0.14.0')
+        self.assertEqual(module['version'], load('config/newHorizonsVersion.json')['version'])
         self.assertEqual(module['settings']['heroes']['newHorizonsMasteries'], load('config/newHorizonsMasteries.json'))
         expected = load('config/newHorizonsMasteryTexts.json')
         expected.update(load('config/newHorizonsCreatureCategoryTexts.json'))
@@ -89,6 +90,7 @@ class MasteryDataTest(unittest.TestCase):
         expected.update(load('config/newHorizonsMusterTexts.json'))
         expected.update(load('config/newHorizonsCombatTexts.json'))
         expected.update(load('config/newHorizonsAdventureSpellTexts.json'))
+        expected.update(load('config/newHorizonsEconomyTexts.json'))
         expected.update(load('config/newHorizonsHeroClassTexts.json'))
         self.assertEqual(module['translations'], expected)
 

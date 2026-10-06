@@ -1,5 +1,11 @@
 # New Horizons UI and asset status register
 
+Investor treasury-popup contribution readback,2026-10-06: **Provisional**.
+UP254 reuses the native resource popup with localized saved-weekly income rows;
+no new raster art or decorative panel is introduced. Client build, focused
+wiring/translation checks and independent source review pass. Native rendered
+fit with many heroes/long translations and playable delivery remain pending.
+
 Cabir Master standing art,2026-10-06: **Not done**. First original HoMM3-Art
 candidate and its single transparency-only correction retain detached bright
 pixels and exterior alpha haze in native/4x review. Both are rejected and

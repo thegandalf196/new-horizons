@@ -24,6 +24,7 @@
 #include "../../lib/CConfigHandler.h"
 #include "../../lib/CPlayerState.h"
 #include "../../lib/callback/CCallback.h"
+#include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include "../../lib/ResourceSet.h"
 #include "../../lib/StartInfo.h"
@@ -31,6 +32,46 @@
 #include "../../lib/entities/ResourceTypeHandler.h"
 #include "../../lib/mapObjects/IOwnableObject.h"
 #include "../../lib/networkPacks/Component.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
+
+namespace
+{
+MetaString investorIncomeSummary(const PlayerState & playerState, const JsonNode & magicRules)
+{
+	MetaString summary;
+	if(!newHorizonsMagic::rulesActive(magicRules))
+		return summary;
+
+	bool hasInvestor = false;
+	for(const auto * hero : playerState.getHeroes())
+	{
+		if(!hero || !hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.investor"))
+			continue;
+
+		if(!hasInvestor)
+		{
+			summary.appendTextID("new-horizons.economy.investor.header");
+			summary.appendEOL();
+			hasInvestor = true;
+		}
+
+		MetaString heroContribution;
+		heroContribution.appendTextID("new-horizons.economy.investor.hero");
+		heroContribution.replaceTokenTextID("%HERO", hero->getNameTextID());
+		heroContribution.replaceTokenNumber("%GOLD", hero->getNewHorizonsInvestorDailyGold());
+		summary.append(heroContribution);
+		summary.appendEOL();
+	}
+
+	if(hasInvestor)
+	{
+		summary.appendEOL();
+		summary.appendTextID("new-horizons.economy.investor.help");
+	}
+
+	return summary;
+}
+}
 
 CResDataBar::CResDataBar(const ImagePath & imageName, const Point & position)
 {
@@ -131,5 +172,10 @@ void CResDataBar::showPopupWindow(const Point & cursorPosition)
 		comp.push_back(std::make_shared<CComponent>(ComponentType::RESOURCE, i, text));
 	}
 
-	CRClickPopup::createAndPush(LIBRARY->generaltexth->translate("core.genrltxt.270"), comp);
+	std::string popupText = LIBRARY->generaltexth->translate("core.genrltxt.270");
+	const auto investorSummary = investorIncomeSummary(*playerState, GAME->interface()->cb->getMagicRules());
+	if(!investorSummary.empty())
+		popupText = CInfoWindow::genText(popupText, investorSummary.toString(&GAME->translator()));
+
+	CRClickPopup::createAndPush(popupText, comp);
 }

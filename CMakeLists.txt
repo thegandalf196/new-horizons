@@ -886,6 +886,7 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/config/newHorizonsCombat.json")
 			endforeach()
 			foreach(NH_TEXTS_FILE IN ITEMS
 				"${CMAKE_SOURCE_DIR}/config/newHorizonsCombatTexts.json"
+				"${CMAKE_SOURCE_DIR}/config/newHorizonsEconomyTexts.json"
 				"${CMAKE_SOURCE_DIR}/config/newHorizonsAdventureSpellTexts.json")
 				set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${NH_TEXTS_FILE}")
 				file(READ "${NH_TEXTS_FILE}" NH_TEXTS_JSON)
