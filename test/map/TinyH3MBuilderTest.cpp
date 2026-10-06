@@ -24,6 +24,7 @@
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/entities/artifact/CArtifactInstance.h"
 #include "../../lib/filesystem/CMemoryBuffer.h"
+#include "../../lib/mapObjects/CGCreature.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGResource.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
@@ -42,6 +43,8 @@
 #include "../../lib/serializer/JsonSerializer.h"
 
 #include <cstdlib>
+#include <filesystem>
+#include <limits>
 #include <zlib.h>
 
 namespace
@@ -756,6 +759,143 @@ TEST(TinyH3MBuilderTest, ExportNeutralTownGarrisonFixtures)
 		ASSERT_EQ(gzclose(input.release()), Z_OK);
 		ASSERT_EQ(diskBytes, validatedBytes[i]) << "Exported gzip must contain the exact prevalidated map";
 	}
+}
+
+TEST(TinyH3MBuilderTest, ExportCabirManualPreviewMap)
+{
+	const char * outputEnv = std::getenv("NH_CABIR_MANUAL_PREVIEW_MAP_OUTPUT");
+	if(!outputEnv || outputEnv[0] == '\0')
+		GTEST_SKIP() << "Set NH_CABIR_MANUAL_PREVIEW_MAP_OUTPUT to an unused .h3m path under this repository's build/ directory to export the manual preview map";
+
+	const std::filesystem::path outputPath(outputEnv);
+	ASSERT_TRUE(outputPath.is_absolute()) << outputPath;
+	ASSERT_EQ(outputPath.extension(), ".h3m") << outputPath;
+	ASSERT_FALSE(std::filesystem::exists(outputPath)) << "Refusing to overwrite an existing map: " << outputPath;
+	ASSERT_FALSE(std::filesystem::is_symlink(std::filesystem::symlink_status(outputPath)))
+		<< "Refusing to follow an output symlink: " << outputPath;
+	ASSERT_TRUE(std::filesystem::is_directory(outputPath.parent_path()))
+		<< "Create the private ignored output directory first: " << outputPath.parent_path();
+
+	// Only write an explicit private build artifact. Canonicalize the directory
+	// so a symlink cannot redirect this opt-in export outside the ignored tree.
+	std::filesystem::path repositoryRoot;
+	for(auto candidate = std::filesystem::current_path(); !candidate.empty(); candidate = candidate.parent_path())
+	{
+		if(std::filesystem::exists(candidate / "CMakeLists.txt")
+			&& std::filesystem::exists(candidate / "test/map/TinyH3MBuilderTest.cpp"))
+		{
+			repositoryRoot = candidate;
+			break;
+		}
+		if(candidate == candidate.parent_path())
+			break;
+	}
+	ASSERT_FALSE(repositoryRoot.empty()) << "Could not locate the repository root from the test working directory";
+
+	std::error_code canonicalError;
+	const auto canonicalBuild = std::filesystem::weakly_canonical(repositoryRoot / "build", canonicalError);
+	ASSERT_FALSE(canonicalError) << canonicalError.message();
+	const auto canonicalOutputParent = std::filesystem::weakly_canonical(outputPath.parent_path(), canonicalError);
+	ASSERT_FALSE(canonicalError) << canonicalError.message();
+	const auto relativeOutputParent = canonicalOutputParent.lexically_relative(canonicalBuild);
+	ASSERT_FALSE(relativeOutputParent.empty()) << canonicalOutputParent;
+	ASSERT_FALSE(relativeOutputParent.is_absolute()) << canonicalOutputParent;
+	ASSERT_NE(*relativeOutputParent.begin(), std::filesystem::path(".."))
+		<< "Output must stay below the ignored repository build/ directory: " << outputPath;
+
+	const auto solmyr = HeroTypeID(HeroTypeID::decode("core:solmyr"));
+	const auto valeska = HeroTypeID(HeroTypeID::decode("core:valeska"));
+	const auto cabir = CreatureID(CreatureID::decode("core:gremlin"));
+	const auto cabirMaster = CreatureID(CreatureID::decode("core:masterGremlin"));
+	const auto weakNeutral = CreatureID(CreatureID::decode("core:peasant"));
+	const auto pikeman = CreatureID(CreatureID::decode("core:pikeman"));
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false)
+		.name("New Horizons Cabir Manual Preview")
+		.description("Play Red as Solmyr. The single nearby Peasant is the preview battle; Blue's Valeska is far away so the scenario does not end immediately.")
+		.difficulty(EMapDifficulty::NORMAL)
+		.playerActive(PlayerColor(0))
+		.playerActive(PlayerColor(1))
+		.hero({8, 8, 0}, solmyr, PlayerColor(0))
+		.heroExperience(0)
+		.heroGarrison({{cabir, 5}, {cabirMaster, 5}})
+		.monster({9, 8, 0}, weakNeutral, 1, 3)
+		.hero({30, 30, 0}, valeska, PlayerColor(1))
+		.heroExperience(0)
+		.heroGarrison({{pikeman, 5}});
+
+	const auto bytes = builder.build();
+	ASSERT_FALSE(bytes.empty());
+	ASSERT_LE(bytes.size(), static_cast<size_t>(std::numeric_limits<int>::max()));
+
+	const auto validateLoadedMap = [&](std::vector<uint8_t> mapBytes)
+	{
+		auto loaded = loadMap(std::move(mapBytes));
+		ASSERT_NE(loaded.map, nullptr);
+		ASSERT_EQ(loaded.map->width, 36);
+		ASSERT_EQ(loaded.map->height, 36);
+		ASSERT_EQ(loaded.map->levels(), 1);
+		ASSERT_TRUE(loaded.map->players[0].canHumanPlay);
+		ASSERT_TRUE(loaded.map->players[1].canComputerPlay);
+
+		const auto heroes = findAll<CGHeroInstance>(*loaded.map);
+		ASSERT_EQ(heroes.size(), 2u);
+		const CGHeroInstance * redHero = nullptr;
+		const CGHeroInstance * blueHero = nullptr;
+		for(const auto * hero : heroes)
+		{
+			if(hero->getOwner() == PlayerColor(0))
+				redHero = hero;
+			else if(hero->getOwner() == PlayerColor(1))
+				blueHero = hero;
+		}
+
+		ASSERT_NE(redHero, nullptr);
+		EXPECT_EQ(redHero->getHeroTypeID(), solmyr);
+		EXPECT_EQ(redHero->anchorPos(), int3(8, 8, 0));
+		ASSERT_EQ(redHero->stacksCount(), 2);
+		EXPECT_EQ(redHero->getStack(SlotID(0)).getCreatureID(), cabir);
+		EXPECT_EQ(redHero->getStackCount(SlotID(0)), 5);
+		EXPECT_EQ(redHero->getStack(SlotID(1)).getCreatureID(), cabirMaster);
+		EXPECT_EQ(redHero->getStackCount(SlotID(1)), 5);
+
+		ASSERT_NE(blueHero, nullptr);
+		EXPECT_EQ(blueHero->getHeroTypeID(), valeska);
+		EXPECT_EQ(blueHero->anchorPos(), int3(30, 30, 0));
+
+		const auto monsters = findAll<CGCreature>(*loaded.map);
+		ASSERT_EQ(monsters.size(), 1u);
+		EXPECT_EQ(monsters.front()->anchorPos(), int3(9, 8, 0));
+		EXPECT_EQ(monsters.front()->getCreatureID(), weakNeutral);
+		EXPECT_EQ(monsters.front()->getStackCount(SlotID(0)), 1);
+	};
+
+	// Validate the authored map bytes before creating any output file.
+	ASSERT_NO_FATAL_FAILURE(validateLoadedMap(bytes));
+
+	const gzFile exportStream = gzopen(outputPath.string().c_str(), "wb");
+	ASSERT_NE(exportStream, nullptr) << "Could not create private preview map: " << outputPath;
+	const int written = gzwrite(exportStream, bytes.data(), static_cast<unsigned int>(bytes.size()));
+	const int closeResult = gzclose(exportStream);
+	ASSERT_EQ(written, static_cast<int>(bytes.size()));
+	ASSERT_EQ(closeResult, Z_OK);
+
+	std::unique_ptr<gzFile_s, decltype(&gzclose)> input(gzopen(outputPath.string().c_str(), "rb"), &gzclose);
+	ASSERT_NE(input, nullptr) << outputPath;
+	ASSERT_EQ(gzdirect(input.get()), 0) << "The exported .h3m must be gzip wrapped";
+	std::vector<uint8_t> exportedBytes;
+	std::array<uint8_t, 4096> buffer;
+	int count = 0;
+	while((count = gzread(input.get(), buffer.data(), static_cast<unsigned>(buffer.size()))) > 0)
+		exportedBytes.insert(exportedBytes.end(), buffer.begin(), buffer.begin() + count);
+	int errorCode = Z_OK;
+	const char * error = gzerror(input.get(), &errorCode);
+	ASSERT_EQ(count, 0) << error;
+	ASSERT_TRUE(errorCode == Z_OK || errorCode == Z_STREAM_END) << error;
+	ASSERT_NE(gzeof(input.get()), 0);
+	ASSERT_EQ(gzclose(input.release()), Z_OK);
+	ASSERT_EQ(exportedBytes, bytes) << "The private .h3m must contain exactly the validated map";
+	ASSERT_NO_FATAL_FAILURE(validateLoadedMap(std::move(exportedBytes)));
 }
 
 INSTANTIATE_TEST_SUITE_P(OriginalFormats, TinyH3MTownGarrisonTest,

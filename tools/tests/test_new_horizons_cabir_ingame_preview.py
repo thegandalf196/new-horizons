@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 import re
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -16,6 +17,12 @@ import export_new_horizons_cabir_ingame_preview as preview
 
 
 class CabirIngamePreviewTest(unittest.TestCase):
+    def _write_reference_frame(self, path: Path, color, bounds=(170, 100, 250, 320)) -> bytes:
+        image = Image.new("RGBA", preview.REFERENCE_CANVAS, (0, 0, 0, 0))
+        image.paste(color, bounds)
+        image.save(path, format="PNG")
+        return path.read_bytes()
+
     def test_descriptor_covers_every_creature_animation_group(self):
         descriptor = preview.expected_animation_descriptor()
         groups = [sequence["group"] for sequence in descriptor["sequences"]]
@@ -135,6 +142,143 @@ class CabirIngamePreviewTest(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 preview.write_bundle(output_dir)
             self.assertEqual(marker.read_text(encoding="utf-8"), "preserve")
+
+    def test_paired_reference_bundle_preserves_frames_and_static_runtime_contract(self):
+        with tempfile.TemporaryDirectory(prefix="nh-cabir-reference-test-") as temp:
+            temp_dir = Path(temp)
+            base_input = temp_dir / "base.png"
+            master_input = temp_dir / "master.png"
+            base_bytes = self._write_reference_frame(base_input, (180, 24, 40, 255))
+            master_bytes = self._write_reference_frame(master_input, (230, 170, 30, 255), (155, 80, 280, 350))
+            base_sha = preview._sha256(base_bytes)
+            master_sha = preview._sha256(master_bytes)
+
+            output_dir = temp_dir / "overlay"
+            self.assertEqual(preview.write_reference_bundle(output_dir, base_input, master_input), output_dir)
+            self.assertEqual(preview.verify_reference_bundle(output_dir, base_input, master_input), output_dir)
+            self.assertEqual(base_input.read_bytes(), base_bytes)
+            self.assertEqual(master_input.read_bytes(), master_bytes)
+
+            patch = json.loads((output_dir / preview.REFERENCE_PATCH).read_text(encoding="utf-8"))
+            self.assertEqual(patch, preview.expected_reference_patch())
+            self.assertNotEqual(
+                patch["core:gremlin"]["graphics"]["animation"],
+                patch["core:masterGremlin"]["graphics"]["animation"],
+            )
+
+            expected_groups = {group for group, _name in preview.ALL_CREATURE_GROUPS}
+            for descriptor_path, animation_name in (
+                (preview.REFERENCE_BASE_DESCRIPTOR, preview.REFERENCE_BASE_ANIMATION),
+                (preview.REFERENCE_MASTER_DESCRIPTOR, preview.REFERENCE_MASTER_ANIMATION),
+            ):
+                descriptor = json.loads((output_dir / descriptor_path).read_text(encoding="utf-8"))
+                self.assertEqual(descriptor, preview.expected_reference_animation_descriptor(animation_name))
+                sequences = descriptor["sequences"]
+                self.assertEqual({sequence["group"] for sequence in sequences}, expected_groups)
+                for sequence in sequences:
+                    self.assertEqual(sequence["generateOverlay"], 1)
+                    expected_count = 3 if sequence["group"] in preview.SHOOTING_GROUPS else 2
+                    self.assertEqual(len(sequence["frames"]), expected_count)
+                    self.assertEqual(set(sequence["frames"]), {"frame-00.png"})
+
+            self.assertEqual((output_dir / preview.REFERENCE_BASE_FRAME).read_bytes(), base_bytes)
+            self.assertEqual((output_dir / preview.REFERENCE_MASTER_FRAME).read_bytes(), master_bytes)
+            receipt = json.loads((output_dir / preview.REFERENCE_RECEIPT).read_text(encoding="utf-8"))
+            self.assertEqual(receipt["visibility"], "private-only")
+            self.assertIn("provenance", receipt["sourceProvenance"])
+            self.assertEqual(receipt["sources"]["base"]["sha256"], base_sha)
+            self.assertEqual(receipt["sources"]["master"]["sha256"], master_sha)
+            self.assertEqual(receipt["runtimeFrames"]["base"]["sha256"], base_sha)
+            self.assertEqual(receipt["runtimeFrames"]["master"]["sha256"], master_sha)
+            readme = (output_dir / preview.REFERENCE_README).read_text(encoding="utf-8")
+            self.assertIn("source provenance remains pending", readme.lower())
+            self.assertIn("do not publish or commit", readme)
+            self.assertIn("corpse pose remain static", readme)
+            self.assertIn("repair action remains mechanically available", readme)
+
+            (output_dir / preview.REFERENCE_MASTER_FRAME).write_bytes(base_bytes)
+            with self.assertRaisesRegex(ValueError, "differs from its read-only input"):
+                preview.verify_reference_bundle(output_dir, base_input, master_input)
+
+    def test_paired_reference_validates_both_inputs_before_creating_output(self):
+        with tempfile.TemporaryDirectory(prefix="nh-cabir-reference-invalid-") as temp:
+            temp_dir = Path(temp)
+            valid = temp_dir / "valid.png"
+            self._write_reference_frame(valid, (170, 20, 30, 255))
+            invalid = temp_dir / "invalid.png"
+            Image.new("RGBA", (450, 399), (0, 0, 0, 0)).save(invalid)
+            output_dir = temp_dir / "must-not-exist"
+            with self.assertRaisesRegex(ValueError, "450x400 RGBA"):
+                preview.write_reference_bundle(output_dir, valid, invalid)
+            self.assertFalse(output_dir.exists())
+
+            opaque = temp_dir / "opaque.png"
+            Image.new("RGBA", preview.REFERENCE_CANVAS, (1, 2, 3, 255)).save(opaque)
+            with self.assertRaisesRegex(ValueError, "transparent canvas pixels"):
+                preview.write_reference_bundle(output_dir, valid, opaque)
+            self.assertFalse(output_dir.exists())
+
+            empty = temp_dir / "empty.png"
+            Image.new("RGBA", preview.REFERENCE_CANVAS, (0, 0, 0, 0)).save(empty)
+            with self.assertRaisesRegex(ValueError, "visible pixels"):
+                preview.write_reference_bundle(output_dir, valid, empty)
+            self.assertFalse(output_dir.exists())
+
+    def test_paired_reference_cli_requires_both_explicit_inputs(self):
+        with tempfile.TemporaryDirectory(prefix="nh-cabir-reference-cli-") as temp:
+            temp_dir = Path(temp)
+            valid = temp_dir / "valid.png"
+            self._write_reference_frame(valid, (170, 20, 30, 255))
+            output_dir = temp_dir / "overlay"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "tools/export_new_horizons_cabir_ingame_preview.py"),
+                    "--output-dir",
+                    str(output_dir),
+                    "--base-frame",
+                    str(valid),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("must be supplied together", result.stderr)
+            self.assertFalse(output_dir.exists())
+
+    def test_paired_reference_refuses_protected_existing_and_symlink_outputs(self):
+        with tempfile.TemporaryDirectory(prefix="nh-cabir-reference-paths-") as temp:
+            temp_dir = Path(temp)
+            base_input = temp_dir / "base.png"
+            master_input = temp_dir / "master.png"
+            self._write_reference_frame(base_input, (170, 20, 30, 255))
+            self._write_reference_frame(master_input, (20, 120, 220, 255))
+
+            with self.assertRaises(ValueError):
+                preview.write_reference_bundle(ROOT / "Mods/new-horizons/reference-preview", base_input, master_input)
+            with self.assertRaises(ValueError):
+                preview.write_reference_bundle(
+                    ROOT / "assets/new-horizons/creatures/cabir/reference-preview", base_input, master_input
+                )
+
+            existing = temp_dir / "existing"
+            existing.mkdir()
+            marker = existing / "keep.txt"
+            marker.write_text("preserve", encoding="utf-8")
+            with self.assertRaises(FileExistsError):
+                preview.write_reference_bundle(existing, base_input, master_input)
+            self.assertEqual(marker.read_text(encoding="utf-8"), "preserve")
+
+            target = temp_dir / "real-target"
+            target.mkdir()
+            link = temp_dir / "symlinked-output"
+            try:
+                link.symlink_to(target, target_is_directory=True)
+            except OSError:
+                self.skipTest("directory symlink creation is unavailable")
+            with self.assertRaisesRegex(ValueError, "symlinked preview output"):
+                preview.write_reference_bundle(link / "overlay", base_input, master_input)
 
 
 if __name__ == "__main__":

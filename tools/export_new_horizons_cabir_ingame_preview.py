@@ -7,10 +7,13 @@ installs assets into the live module or changes creature gameplay data.
 
 import argparse
 import hashlib
+from io import BytesIO
 import json
+import os
 from pathlib import Path
+from typing import Any
 
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,6 +33,19 @@ NATIVE_IMAGE = ANIMATION_DIRECTORY / "00.png"
 LOGICAL_CANVAS = (450, 400)
 SOURCE_PLACEMENT = (163, 210)  # v1; retained for existing callers and default behavior.
 EXPECTED_ALPHA_BOUNDS = (6, 1, 61, 58)  # v1.
+REFERENCE_CANVAS = (450, 400)
+REFERENCE_BASE_ANIMATION = "NH_cabir_reference_v4_base"
+REFERENCE_MASTER_ANIMATION = "NH_cabir_reference_v4_master"
+REFERENCE_PATCH = Path("Content/config/creatures/cabirReferenceV4.json")
+REFERENCE_BASE_DESCRIPTOR = Path("Content/sprites") / f"{REFERENCE_BASE_ANIMATION}.json"
+REFERENCE_MASTER_DESCRIPTOR = Path("Content/sprites") / f"{REFERENCE_MASTER_ANIMATION}.json"
+REFERENCE_BASE_FRAME = Path("Content/sprites") / REFERENCE_BASE_ANIMATION / "frame-00.png"
+REFERENCE_MASTER_FRAME = Path("Content/sprites") / REFERENCE_MASTER_ANIMATION / "frame-00.png"
+REFERENCE_README = Path("PREVIEW_README.md")
+REFERENCE_RECEIPT = Path("PREVIEW_RECEIPT.json")
+SHOOTING_GROUPS = frozenset({14, 15, 16})
+STATIC_GROUP_FRAME_COUNT = 2
+SHOOTING_CLIMAX_FRAME_COUNT = 3  # tower.json's attackClimaxFrame is 3 (1-based).
 VERSION_SOURCES = {
     "v1": {
         "source": SOURCE,
@@ -156,6 +172,192 @@ def expected_animation_descriptor() -> dict:
     }
 
 
+def expected_reference_patch() -> dict:
+    """Graphics-only patch for the detached paired-reference preview."""
+    return {
+        "core:gremlin": {"graphics": {"animation": REFERENCE_BASE_ANIMATION}},
+        "core:masterGremlin": {"graphics": {"animation": REFERENCE_MASTER_ANIMATION}},
+    }
+
+
+def _reference_frame_count(group: int) -> int:
+    # Three repeated shoot frames preserve the current 1-based frame-3 release
+    # point. Other groups repeat the still twice to satisfy the existing native
+    # renderer fixture without pretending the art animates.
+    if group in SHOOTING_GROUPS:
+        return max(STATIC_GROUP_FRAME_COUNT, SHOOTING_CLIMAX_FRAME_COUNT)
+    return STATIC_GROUP_FRAME_COUNT
+
+
+def expected_reference_animation_descriptor(animation_name: str) -> dict:
+    return {
+        "basepath": f"{animation_name}/",
+        "sequences": [
+            {
+                "group": group,
+                "generateOverlay": 1,
+                "frames": ["frame-00.png"] * _reference_frame_count(group),
+            }
+            for group, _name in ALL_CREATURE_GROUPS
+        ],
+    }
+
+
+def _sha256(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def _load_reference_frame(path: Path, label: str) -> tuple[bytes, tuple[int, int, int, int]]:
+    path = Path(path)
+    if not path.is_file():
+        raise FileNotFoundError(f"{label} input does not exist or is not a file: {path}")
+    data = path.read_bytes()
+    try:
+        with Image.open(BytesIO(data)) as opened:
+            if opened.format != "PNG" or opened.mode != "RGBA" or opened.size != REFERENCE_CANVAS:
+                raise ValueError(
+                    f"{label} input must be a single 450x400 RGBA PNG; got "
+                    f"{opened.format} {opened.mode} {opened.size}"
+                )
+            if getattr(opened, "is_animated", False) or getattr(opened, "n_frames", 1) != 1:
+                raise ValueError(f"{label} input must be a single-frame PNG")
+            opened.load()
+            frame = opened.copy()
+    except UnidentifiedImageError as error:
+        raise ValueError(f"{label} input is not a readable PNG: {path}") from error
+    except OSError as error:
+        raise ValueError(f"{label} input is not a complete readable PNG: {path}") from error
+
+    alpha = frame.getchannel("A")
+    alpha_min, alpha_max = alpha.getextrema()
+    alpha_bounds = alpha.getbbox()
+    if alpha_bounds is None or alpha_max == 0 or alpha_min != 0:
+        raise ValueError(f"{label} input must contain both visible pixels and transparent canvas pixels")
+    return data, alpha_bounds
+
+
+def _validate_reference_output_path(output_dir: Path) -> Path:
+    lexical = Path(os.path.abspath(output_dir))
+    resolved = lexical.resolve()
+    if lexical != resolved:
+        raise ValueError(f"refusing symlinked preview output path: {lexical}")
+    return validate_detached_path(lexical)
+
+
+def _reference_readme() -> str:
+    return (
+        "# Temporary Cabir reference in-game preview\n\n"
+        "This detached graphics-only overlay is for a disposable New Horizons "
+        "module copy. Add `config/creatures/cabirReferenceV4.json` to that copy's "
+        "creature list; never install this overlay into the live module. The patch "
+        "changes only the two creature `graphics.animation` bindings. Creature "
+        "names, stats, shooting, projectile, defenses, repair, abilities and all "
+        "other gameplay configuration remain unchanged.\n\n"
+        "Both input files are preserved as single 450x400 transparent RGBA frames. "
+        "Every animation group repeats its same still image; the three shooting "
+        "groups repeat it three times to retain the configured frame-3 projectile "
+        "release index. `generateOverlay: 1` is retained for the creature outline. "
+        "This is a static reference preview, not a completed animation: walking, "
+        "attacks, turns, casting, death and the corpse pose remain static. The "
+        "Cabir Master repair action remains mechanically available but its cast "
+        "pose is also static.\n\n"
+        "The source-frame SHA-256 receipts are recorded in `PREVIEW_RECEIPT.json`. "
+        "Source provenance remains pending: keep these derived pixels private and "
+        "do not publish or commit them. This detached preview does not imply approval "
+        "for normal runtime binding or full creature-art completion.\n"
+    )
+
+
+def _reference_receipt(base_data: bytes, base_bounds: tuple[int, int, int, int],
+        master_data: bytes, master_bounds: tuple[int, int, int, int]) -> dict[str, Any]:
+    base_sha = _sha256(base_data)
+    master_sha = _sha256(master_data)
+    return {
+        "format": "new-horizons-cabir-reference-preview-v4",
+        "visibility": "private-only",
+        "sourceProvenance": "pending; provenance unresolved; derived preview pixels must not be published",
+        "canvas": list(REFERENCE_CANVAS),
+        "sources": {
+            "base": {"sha256": base_sha, "alphaBounds": list(base_bounds)},
+            "master": {"sha256": master_sha, "alphaBounds": list(master_bounds)},
+        },
+        "runtimeFrames": {
+            "base": {"path": REFERENCE_BASE_FRAME.as_posix(), "sha256": base_sha},
+            "master": {"path": REFERENCE_MASTER_FRAME.as_posix(), "sha256": master_sha},
+        },
+        "animationNames": {
+            "base": REFERENCE_BASE_ANIMATION,
+            "master": REFERENCE_MASTER_ANIMATION,
+        },
+    }
+
+
+def write_reference_bundle(output_dir: Path, base_frame: Path, master_frame: Path) -> Path:
+    output_dir = _validate_reference_output_path(output_dir)
+    if output_dir.exists() or output_dir.is_symlink():
+        raise FileExistsError(f"output directory must be new: {output_dir}")
+
+    # Validate and retain both source byte streams before creating any outputs.
+    base_data, base_bounds = _load_reference_frame(base_frame, "base Cabir")
+    master_data, master_bounds = _load_reference_frame(master_frame, "Cabir Master")
+    receipt = _reference_receipt(base_data, base_bounds, master_data, master_bounds)
+
+    output_dir.mkdir(parents=True)
+    files = {
+        REFERENCE_PATCH: json.dumps(expected_reference_patch(), indent=2) + "\n",
+        REFERENCE_BASE_DESCRIPTOR: json.dumps(
+            expected_reference_animation_descriptor(REFERENCE_BASE_ANIMATION), indent=2
+        ) + "\n",
+        REFERENCE_MASTER_DESCRIPTOR: json.dumps(
+            expected_reference_animation_descriptor(REFERENCE_MASTER_ANIMATION), indent=2
+        ) + "\n",
+        REFERENCE_README: _reference_readme(),
+        REFERENCE_RECEIPT: json.dumps(receipt, indent=2) + "\n",
+    }
+    for relative, text in files.items():
+        destination = output_dir / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(text, encoding="utf-8")
+
+    for relative, data in ((REFERENCE_BASE_FRAME, base_data), (REFERENCE_MASTER_FRAME, master_data)):
+        destination = output_dir / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(data)
+    return output_dir
+
+
+def verify_reference_bundle(output_dir: Path, base_frame: Path, master_frame: Path) -> Path:
+    output_dir = _validate_reference_output_path(output_dir)
+    if not output_dir.is_dir():
+        raise FileNotFoundError(f"preview bundle directory does not exist: {output_dir}")
+
+    base_data, base_bounds = _load_reference_frame(base_frame, "base Cabir")
+    master_data, master_bounds = _load_reference_frame(master_frame, "Cabir Master")
+    patch_path = output_dir / REFERENCE_PATCH
+    base_descriptor_path = output_dir / REFERENCE_BASE_DESCRIPTOR
+    master_descriptor_path = output_dir / REFERENCE_MASTER_DESCRIPTOR
+    if json.loads(patch_path.read_text(encoding="utf-8")) != expected_reference_patch():
+        raise ValueError("reference preview patch changes fields other than the two graphics animation bindings")
+    if json.loads(base_descriptor_path.read_text(encoding="utf-8")) != expected_reference_animation_descriptor(
+        REFERENCE_BASE_ANIMATION
+    ):
+        raise ValueError("base reference animation descriptor changed its static groups/outline data")
+    if json.loads(master_descriptor_path.read_text(encoding="utf-8")) != expected_reference_animation_descriptor(
+        REFERENCE_MASTER_ANIMATION
+    ):
+        raise ValueError("Master reference animation descriptor changed its static groups/outline data")
+
+    for relative, expected in ((REFERENCE_BASE_FRAME, base_data), (REFERENCE_MASTER_FRAME, master_data)):
+        if (output_dir / relative).read_bytes() != expected:
+            raise ValueError(f"detached runtime frame differs from its read-only input: {relative}")
+    if (output_dir / REFERENCE_README).read_text(encoding="utf-8") != _reference_readme():
+        raise ValueError("reference preview disclaimer changed")
+    expected_receipt = _reference_receipt(base_data, base_bounds, master_data, master_bounds)
+    if json.loads((output_dir / REFERENCE_RECEIPT).read_text(encoding="utf-8")) != expected_receipt:
+        raise ValueError("reference preview source/output hash receipt changed")
+    return output_dir
+
+
 def _preview_readme(version: str) -> str:
     spec = source_spec(version)
     bounds = spec["canvas_bounds"]
@@ -229,7 +431,9 @@ def verify_bundle(output_dir: Path, version: str = "v1") -> Path:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--version", choices=tuple(VERSION_SOURCES), default="v1")
+    parser.add_argument("--version", choices=tuple(VERSION_SOURCES))
+    parser.add_argument("--base-frame", type=Path, help="explicit native RGBA base Cabir canvas")
+    parser.add_argument("--master-frame", type=Path, help="explicit native RGBA Cabir Master canvas")
     parser.add_argument(
         "--verify-only",
         action="store_true",
@@ -238,10 +442,23 @@ def main() -> None:
     args = parser.parse_args()
 
     try:
-        output_dir = verify_bundle(args.output_dir, args.version) if args.verify_only else write_bundle(args.output_dir, args.version)
-    except (FileExistsError, FileNotFoundError, ValueError) as error:
+        paired_reference = args.base_frame is not None or args.master_frame is not None
+        if paired_reference:
+            if args.base_frame is None or args.master_frame is None:
+                raise ValueError("--base-frame and --master-frame must be supplied together")
+            if args.version is not None:
+                raise ValueError("--version cannot be combined with explicit reference-frame inputs")
+            operation = verify_reference_bundle if args.verify_only else write_reference_bundle
+            output_dir = operation(args.output_dir, args.base_frame, args.master_frame)
+            preview_label = "paired Cabir reference"
+        else:
+            version = args.version or "v1"
+            operation = verify_bundle if args.verify_only else write_bundle
+            output_dir = operation(args.output_dir, version)
+            preview_label = f"Cabir {version}"
+    except (FileExistsError, FileNotFoundError, OSError, ValueError) as error:
         parser.error(str(error))
-    print(f"{'Verified' if args.verify_only else 'Created'} detached Cabir {args.version} preview bundle: {output_dir}")
+    print(f"{'Verified' if args.verify_only else 'Created'} detached {preview_label} preview bundle: {output_dir}")
 
 
 if __name__ == "__main__":
