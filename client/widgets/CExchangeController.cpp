@@ -160,7 +160,8 @@ void CExchangeController::moveStack(bool leftToRight, SlotID sourceSlot)
 	{
 		// A same-creature destination is a combine request. The server computes
 		// the legal partial amount and retains a required last source stack.
-		GAME->interface()->cb->mergeStacks(source, target, sourceSlot, targetSlot);
+		if(!UIHelper::hasNoLeadershipCapacityForMerge(source, target, sourceSlot, targetSlot))
+			GAME->interface()->cb->mergeStacks(source, target, sourceSlot, targetSlot);
 		return;
 	}
 

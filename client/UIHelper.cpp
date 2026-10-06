@@ -323,3 +323,24 @@ bool UIHelper::checkLeadershipTransfer(const CArmedInstance * source, const CArm
 		: 0;
 	return checkLeadershipResult(destination, sourceCreature->getId(), existing + amount);
 }
+
+bool UIHelper::hasNoLeadershipCapacityForMerge(const CArmedInstance * source, const CArmedInstance * destination,
+	SlotID sourceSlot, SlotID destinationSlot)
+{
+	if(!source || !destination)
+		return false;
+
+	const auto * sourceCreature = source->getCreature(sourceSlot);
+	if(!sourceCreature || destination->getCreature(destinationSlot) != sourceCreature)
+		return false;
+
+	const auto * hero = dynamic_cast<const CGHeroInstance *>(destination);
+	if(!hero)
+		return false;
+
+	const auto capacity = hero->getLeadershipSlotCapacity(sourceCreature->getId());
+	if(!capacity)
+		return false;
+
+	return destination->getStackCount(destinationSlot) >= capacity->maximum;
+}

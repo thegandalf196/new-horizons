@@ -511,7 +511,10 @@ void CGarrisonSlot::clickPressed(const Point & cursorPosition)
 					GAME->interface()->cb->swapCreatures(owner->army(upg), selectedObj, ID, selection->ID);
 			}
 			else // merge
-				GAME->interface()->cb->mergeStacks(selectedObj, owner->army(upg), selection->ID, ID);
+			{
+				if(!UIHelper::hasNoLeadershipCapacityForMerge(selectedObj, owner->army(upg), selection->ID, ID))
+					GAME->interface()->cb->mergeStacks(selectedObj, owner->army(upg), selection->ID, ID);
+			}
 		}
 		if(refr)
 		{
@@ -857,7 +860,8 @@ void CGarrisonInt::moveStackToAnotherArmy(const CGarrisonSlot * selected)
 	{
 		// This is a combine intent, not a numeric split. The server can move
 		// only the Leadership-legal amount and preserve the source's last stack.
-		GAME->interface()->cb->mergeStacks(srcArmy, destArmy, srcSlot, destSlot);
+		if(!UIHelper::hasNoLeadershipCapacityForMerge(srcArmy, destArmy, srcSlot, destSlot))
+			GAME->interface()->cb->mergeStacks(srcArmy, destArmy, srcSlot, destSlot);
 	}
 	else if(isLastStack)
 	{

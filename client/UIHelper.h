@@ -46,4 +46,9 @@ namespace UIHelper
     bool checkLeadershipResult(const CArmedInstance * destination, CreatureID creature, TQuantity resultingCount);
     bool checkLeadershipTransfer(const CArmedInstance * source, const CArmedInstance * destination,
         SlotID sourceSlot, SlotID destinationSlot, TQuantity amount);
+    /// True when a same-creature merge into an occupied hero stack has no
+    /// Leadership headroom. This is only a UI no-op hint; the server remains
+    /// authoritative for every transfer request.
+    bool hasNoLeadershipCapacityForMerge(const CArmedInstance * source, const CArmedInstance * destination,
+        SlotID sourceSlot, SlotID destinationSlot);
 }

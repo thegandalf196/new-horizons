@@ -8,6 +8,8 @@ import re
 ROOT = Path(__file__).resolve().parents[2]
 EXCHANGE = (ROOT / "client/widgets/CExchangeController.cpp").read_text()
 GARRISON = (ROOT / "client/widgets/CGarrisonInt.cpp").read_text()
+UIHELPER_H = (ROOT / "client/UIHelper.h").read_text()
+UIHELPER_CPP = (ROOT / "client/UIHelper.cpp").read_text()
 
 
 def compact(source: str) -> str:
@@ -19,7 +21,7 @@ def main() -> None:
     exchange = exchange.split("void CExchangeController::moveSingleStackCreature(", 1)[0]
     exchange = compact(exchange)
 
-    occupied = "if(target->getCreature(targetSlot)){GAME->interface()->cb->mergeStacks(source,target,sourceSlot,targetSlot);return;}"
+    occupied = "if(target->getCreature(targetSlot)){if(!UIHelper::hasNoLeadershipCapacityForMerge(source,target,sourceSlot,targetSlot))GAME->interface()->cb->mergeStacks(source,target,sourceSlot,targetSlot);return;}"
     empty_preflight = "if(!UIHelper::checkLeadershipTransfer(source,target,sourceSlot,targetSlot,amountToMove))return;"
     zero_fit = 'if(mustKeepLastSourceCreature&&sourceCount<=1){GAME->interface()->showInfoDialog(LIBRARY->generaltexth->translate("core.tcommand.5"));return;}'
     empty_last_stack = "if(mustKeepLastSourceCreature){GAME->interface()->cb->mergeOrSwapStacks(source,target,sourceSlot,targetSlot);return;}"
@@ -37,13 +39,26 @@ def main() -> None:
     assert exchange.index(zero_fit) < exchange.index(occupied)
     assert exchange.index(empty_last_stack) < exchange.index(empty_preflight)
 
+    helper_decl = "boolhasNoLeadershipCapacityForMerge(constCArmedInstance*source,constCArmedInstance*destination,SlotIDsourceSlot,SlotIDdestinationSlot);"
+    assert helper_decl in compact(UIHELPER_H), "shared no-headroom guard must be exposed for all manual merge routes"
+    helper = UIHELPER_CPP.split("bool UIHelper::hasNoLeadershipCapacityForMerge(", 1)[1]
+    helper = compact(helper.split("\n}", 1)[0])
+    for expected, label in (
+        ("if(!source||!destination)returnfalse;", "null-army fallback"),
+        ("if(!sourceCreature||destination->getCreature(destinationSlot)!=sourceCreature)returnfalse;", "same-creature-only scope"),
+        ("constauto*hero=dynamic_cast<constCGHeroInstance*>(destination);if(!hero)returnfalse;", "hero-only Leadership scope"),
+        ("constautocapacity=hero->getLeadershipSlotCapacity(sourceCreature->getId());if(!capacity)returnfalse;", "unlimited/unknown-capacity fallback"),
+        ("returndestination->getStackCount(destinationSlot)>=capacity->maximum;", "zero-headroom predicate"),
+    ):
+        assert expected in helper, f"missing {label} in shared no-headroom helper"
+
     click = GARRISON.split("void CGarrisonSlot::clickPressed(", 1)[1]
     click = click.split("void CGarrisonSlot::gesture(", 1)[0]
     click = compact(click)
     explicit_split = "if((owner->getSplittingMode()||ENGINE->isKeyboardShiftDown())&&(!creature||creature==selection->creature)){refr=split();}"
     last_stack_reason = 'elseif(lastHeroStackSelected&&selection->myStack->getCount()<=1&&(!creature||creature==selection->creature)){GAME->interface()->showInfoDialog(LIBRARY->generaltexth->translate("core.tcommand.5"));}'
     last_stack_empty = "elseif(!creature&&lastHeroStackSelected){GAME->interface()->cb->mergeOrSwapStacks(selectedObj,owner->army(upg),selection->ID,ID);}"
-    ordinary_merge = "elseGAME->interface()->cb->mergeStacks(selectedObj,owner->army(upg),selection->ID,ID);"
+    ordinary_merge = "else{if(!UIHelper::hasNoLeadershipCapacityForMerge(selectedObj,owner->army(upg),selection->ID,ID))GAME->interface()->cb->mergeStacks(selectedObj,owner->army(upg),selection->ID,ID);}"
     assert explicit_split in click, "Shift/splitting mode must retain numeric split dialog"
     assert "if(selectedObj->stacksCount()==1&&owner->getSelection()->upg!=upg&&selectedObj->needsLastStack()){lastHeroStackSelected=true;}" in click, "last-stack restriction must apply only when moving between armies"
     assert last_stack_reason in click, "exact-one cross-army empty moves and same-creature merges must show the localized explanation before requesting"
@@ -58,7 +73,7 @@ def main() -> None:
     radial = radial.split("void CGarrisonInt::bulkMoveArmy(", 1)[0]
     radial = compact(radial)
     radial_reason = 'if(isLastStack&&selected->myStack->getCount()<=1){GAME->interface()->showInfoDialog(LIBRARY->generaltexth->translate("core.tcommand.5"));return;}'
-    radial_occupied_merge = "if(!isDestSlotEmpty){GAME->interface()->cb->mergeStacks(srcArmy,destArmy,srcSlot,destSlot);}"
+    radial_occupied_merge = "if(!isDestSlotEmpty){if(!UIHelper::hasNoLeadershipCapacityForMerge(srcArmy,destArmy,srcSlot,destSlot))GAME->interface()->cb->mergeStacks(srcArmy,destArmy,srcSlot,destSlot);}"
     radial_empty_last = "elseif(isLastStack){GAME->interface()->cb->mergeOrSwapStacks(srcArmy,destArmy,srcSlot,destSlot);}"
     radial_other_swap = "else{GAME->interface()->cb->swapCreatures(srcArmy,destArmy,srcSlot,destSlot);}"
     assert "constboolisLastStack=srcArmy->stacksCount()==1&&srcArmy->needsLastStack();" in radial
