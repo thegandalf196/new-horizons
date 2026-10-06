@@ -2,6 +2,14 @@
 
 Updated: 2026-10-06
 
+2026-10-06 committed Linux delivery: source3eda8ac03 rebuilt, frozen,
+independently checksum verified and headless-smoked before promotion. Default
+play script now selects snapshota36a456b06, with priorbad986b13 retained.
+The bounded run reaches AI day5 without crash/request rejection; it is not
+rendered UI or full-game acceptance. UP233 retains identity/receipt limits.
+Windows source-only preflight succeeds; full compile/package37429818459 is
+live on the same source. No Windows artifact success is inferred from dispatch.
+
 2026-10-06 Sylvan Luck required readback: existing Luck-row help now exposes
 synchronized per-stack temporary Luck/speed and conditional readiness, with
 current-controller/visible-hero/legacy guards and snapshot-driven refresh.
