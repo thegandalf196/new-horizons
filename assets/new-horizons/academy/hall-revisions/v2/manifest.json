@@ -1,0 +1,104 @@
+{
+	"schemaVersion": 1,
+	"revision": "v2",
+	"status": "provisional",
+	"sourceRegistration": {
+		"path": "integration/town-layout.json",
+		"sha256": "9cd04b3dd13b5e8d941e4837ccc03e0824cb591524b0fc2c56644b2ca071de24",
+		"record": {
+			"name": "tbtwhall.def",
+			"master": "masters/town/buildings/tbtwhall.png",
+			"native": "native/town/buildings/tbtwhall.png",
+			"sourceSize": [177, 75],
+			"masterSize": [1926, 816],
+			"sourceBox": {
+				"left": 0,
+				"top": 0,
+				"width": 177,
+				"height": 75
+			},
+			"generatedBox": {
+				"left": 86,
+				"top": 45,
+				"width": 1758,
+				"height": 725
+			},
+			"originalFrameCount": 1,
+			"originalResource": "tbtwhall.def"
+		}
+	},
+	"baseline": {
+		"master": {
+			"path": "masters/town/buildings/tbtwhall.png",
+			"sha256": "17fca6bcd04b5c15323fefdb8c1658b9d081fa93f17adeb3f17f2b2466d9a80a",
+			"dimensions": [1926, 816]
+		},
+		"native": {
+			"path": "native/town/buildings/tbtwhall.png",
+			"sha256": "a785d625d2aa0eda807c26266967eb7e088daf747ced4e156703f1b9b62f074f",
+			"dimensions": [177, 75],
+			"alphaBounds": [0, 2, 177, 75]
+		}
+	},
+	"master": {
+		"path": "village-hall-master.png",
+		"sha256": "bf2071863bdf35c905cfdd5a525b61f298c9cbded01364253559fb64c388ae88",
+		"dimensions": [1927, 816],
+		"alphaBounds": [78, 21, 1872, 792]
+	},
+	"prompt": {
+		"path": "village-hall.prompt.txt",
+		"sha256": "7f219149d4d9df1803c2f0931358e3fc2ee41f6cbbba3863ac7c098d02c42bec"
+	},
+	"registration": {
+		"method": "crop-master-alpha-bounds; LANCZOS resize to native visible box; fit surviving alpha bounds; composite on transparent native canvas",
+		"resampling": "LANCZOS",
+		"masterCrop": [78, 21, 1872, 792],
+		"visibleBox": {
+			"left": 0,
+			"top": 2,
+			"width": 177,
+			"height": 73
+		},
+		"nativeCanvas": [177, 75]
+	},
+	"export": {
+		"path": "exports/village-hall-native.png",
+		"runtime": "NH_academy/town/buildings/tbtwhall.png",
+		"sha256": "117e8ae670dda32e7cee0c76d78d4a12acb3a22bd3467b6b6d2cfd74173763cd",
+		"dimensions": [177, 75],
+		"alphaBounds": [0, 2, 177, 75]
+	},
+	"preservedRuntime": {
+		"animation": {
+			"path": "NH_ACADEMY_TBTWHALL.json",
+			"sha256": "64e9924576700f4d93f157f5ce323d6c14bc37831e443043dd031028670ea7f4",
+			"images": [
+				{
+					"group": 0,
+					"frame": 0,
+					"file": "NH_academy/town/buildings/tbtwhall.png"
+				}
+			]
+		},
+		"corePlacement": {
+			"config": "config/factions/tower.json",
+			"structure": "villageHall",
+			"x": 0,
+			"y": 259,
+			"z": 2
+		},
+		"masks": {
+			"area": {
+				"path": "NH_academy/town/masks/villageHall-area.png",
+				"sha256": "31d1d329029fc533e5e1a6291eadcd865cae4128cf6fedf16948e8de7a7fdac5",
+				"dimensions": [177, 75]
+			},
+			"border": {
+				"path": "NH_academy/town/masks/villageHall-border.png",
+				"sha256": "9371d4a08275cb7a54acea3ebedd16c2281a2e68d4358076db651effc4d993d9",
+				"dimensions": [177, 75]
+			}
+		}
+	}
+}

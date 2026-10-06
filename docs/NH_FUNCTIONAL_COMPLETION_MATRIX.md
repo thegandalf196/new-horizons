@@ -2,6 +2,14 @@
 
 Updated: 2026-10-06
 
+2026-10-06 user-priority UP241 source correction: one Provisional HoMM3-Art
+Village Hall roof revision is integrated, with original master/native,
+registration and masks preserved. Native and registered-scene comparisons were
+inspected;11 focused art checks and reproducible export pass. This resolves a
+source-art defect, not a gameplay identity or rendered user acceptance. Counts
+remain61/67 combat identities and225/310 perks. UP241 retains delivery/evidence
+limits; Phase1 continues and is not complete.
+
 2026-10-06 committed Linux delivery: source3eda8ac03 rebuilt, frozen,
 independently checksum verified and headless-smoked before promotion. Default
 play script now selects snapshota36a456b06, with priorbad986b13 retained.

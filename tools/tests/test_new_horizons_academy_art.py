@@ -265,6 +265,117 @@ class NewHorizonsAcademyArtTest(unittest.TestCase):
             for runtime in runtimes - {unknown_runtime}:
                 self.assertEqual((temp_root / academy_importer.IMAGE_ROOT / runtime).read_bytes(), legacy[runtime])
 
+    def test_village_hall_v2_is_pinned_installed_and_preserves_registration(self):
+        revision = academy_importer.load_hall_revision(
+            ROOT,
+            academy_importer.APPROVED_HALL_REVISION_MANIFEST_SHA256,
+        )
+        manifest = revision["manifest"]
+        self.assertEqual(revision["manifest_sha256"], "80545094b5fccc1e02b0251367ca8388d9d9ab08ad02667b9c2c9ce3a72e1a27")
+        self.assertEqual(manifest["revision"], "v2")
+        self.assertEqual(manifest["status"], "provisional")
+        self.assertEqual(manifest["master"]["sha256"], "bf2071863bdf35c905cfdd5a525b61f298c9cbded01364253559fb64c388ae88")
+        self.assertEqual(manifest["prompt"]["sha256"], "7f219149d4d9df1803c2f0931358e3fc2ee41f6cbbba3863ac7c098d02c42bec")
+        self.assertEqual(manifest["export"]["sha256"], "117e8ae670dda32e7cee0c76d78d4a12acb3a22bd3467b6b6d2cfd74173763cd")
+
+        # Keep both original artifacts as provenance; only the Academy runtime
+        # copy may be replaced by the reviewed, one-frame export.
+        self.assertEqual(
+            revision["baseline_master_bytes"],
+            (ACADEMY_SOURCE / "masters/town/buildings/tbtwhall.png").read_bytes(),
+        )
+        self.assertEqual(
+            revision["baseline_native_bytes"],
+            (ACADEMY_SOURCE / academy_importer.HALL_SOURCE_NATIVE).read_bytes(),
+        )
+        runtime = IMAGES / academy_importer.HALL_RUNTIME_IMAGE
+        self.assertEqual(runtime.read_bytes(), revision["export_bytes"])
+
+        alias_record = manifest["preservedRuntime"]["animation"]
+        alias_path = IMAGES / alias_record["path"]
+        self.assertEqual(hashlib.sha256(alias_path.read_bytes()).hexdigest(), alias_record["sha256"])
+        self.assertEqual(
+            json.loads(alias_path.read_text(encoding="utf-8"))["images"],
+            [{"group": 0, "frame": 0, "file": academy_importer.HALL_RUNTIME_IMAGE}],
+        )
+
+        placement = manifest["preservedRuntime"]["corePlacement"]
+        core = academy_importer.load_jsonc(ROOT / placement["config"])
+        structure = core["tower"]["town"]["structures"][placement["structure"]]
+        self.assertEqual([structure[axis] for axis in ("x", "y", "z")], [0, 259, 2])
+        for kind, record in manifest["preservedRuntime"]["masks"].items():
+            mask_path = IMAGES / record["path"]
+            self.assertEqual(hashlib.sha256(mask_path.read_bytes()).hexdigest(), record["sha256"], kind)
+            with Image.open(mask_path) as mask:
+                self.assertEqual(list(mask.size), record["dimensions"], kind)
+
+    def test_village_hall_revision_rejects_unpinned_inputs(self):
+        pin = academy_importer.APPROVED_HALL_REVISION_MANIFEST_SHA256
+        with tempfile.TemporaryDirectory() as temporary:
+            temp_root = Path(temporary)
+            revision_root = temp_root / academy_importer.HALL_REVISION_ROOT
+            shutil.copytree(ROOT / academy_importer.HALL_REVISION_ROOT, revision_root)
+            for relative in (
+                "integration/town-layout.json",
+                "masters/town/buildings/tbtwhall.png",
+                academy_importer.HALL_SOURCE_NATIVE,
+            ):
+                source = ROOT / academy_importer.SOURCE_ROOT / relative
+                destination = temp_root / academy_importer.SOURCE_ROOT / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(source, destination)
+            core_path = temp_root / "config/factions/tower.json"
+            core_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / "config/factions/tower.json", core_path)
+
+            manifest_path = temp_root / academy_importer.HALL_REVISION_MANIFEST
+            original_manifest = manifest_path.read_bytes()
+            manifest_path.write_bytes(original_manifest + b" ")
+            with self.assertRaisesRegex(RuntimeError, "manifest changed"):
+                academy_importer.load_hall_revision(temp_root, pin)
+            manifest_path.write_bytes(original_manifest)
+
+            for relative, error in (
+                ("village-hall-master.png", "master bytes do not match"),
+                ("village-hall.prompt.txt", "prompt bytes do not match"),
+                ("exports/village-hall-native.png", "export bytes do not match"),
+            ):
+                with self.subTest(path=relative):
+                    path = revision_root / relative
+                    original = path.read_bytes()
+                    path.write_bytes(original + b" ")
+                    with self.assertRaisesRegex(ValueError, error):
+                        academy_importer.load_hall_revision(temp_root, pin)
+                    path.write_bytes(original)
+
+    def test_village_hall_install_is_idempotent_and_refuses_unknown_runtime(self):
+        revision = academy_importer.load_hall_revision(
+            ROOT,
+            academy_importer.APPROVED_HALL_REVISION_MANIFEST_SHA256,
+        )
+        legacy = revision["baseline_native_bytes"]
+        with tempfile.TemporaryDirectory() as temporary:
+            temp_root = Path(temporary)
+            runtime = temp_root / academy_importer.IMAGE_ROOT / academy_importer.HALL_RUNTIME_IMAGE
+            runtime.parent.mkdir(parents=True)
+            runtime.write_bytes(legacy)
+
+            with self.assertRaisesRegex(RuntimeError, "not installed"):
+                academy_importer.install_curated_hall(temp_root, revision, legacy, check_only=True)
+            self.assertEqual(runtime.read_bytes(), legacy)
+
+            academy_importer.install_curated_hall(temp_root, revision, legacy, check_only=False)
+            installed = runtime.read_bytes()
+            self.assertEqual(installed, revision["export_bytes"])
+            academy_importer.install_curated_hall(temp_root, revision, legacy, check_only=True)
+            academy_importer.install_curated_hall(temp_root, revision, legacy, check_only=False)
+            self.assertEqual(runtime.read_bytes(), installed)
+
+            runtime.write_bytes(b"unrecognized local Village Hall pixels")
+            with self.assertRaisesRegex(RuntimeError, "unrecognized Academy Village Hall pixels"):
+                academy_importer.install_curated_hall(temp_root, revision, legacy, check_only=False)
+            self.assertEqual(runtime.read_bytes(), b"unrecognized local Village Hall pixels")
+
     def test_faction_selection_names_stay_white_and_selection_uses_existing_border(self):
         source = OPTIONS_TAB.read_text(encoding="utf-8")
         start = source.index("void OptionsTab::SelectionWindow::genContentFactions()")

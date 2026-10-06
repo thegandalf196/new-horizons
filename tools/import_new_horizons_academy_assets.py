@@ -38,11 +38,22 @@ ICON_REVISION_ROOT = SOURCE_ROOT / "icon-revisions/v2"
 ICON_REVISION_MANIFEST = ICON_REVISION_ROOT / "manifest.json"
 MAP_REVISION_ROOT = SOURCE_ROOT / "map-revisions/v2"
 MAP_REVISION_MANIFEST = MAP_REVISION_ROOT / "manifest.json"
+HALL_REVISION_ROOT = SOURCE_ROOT / "hall-revisions/v2"
+HALL_REVISION_MANIFEST = HALL_REVISION_ROOT / "manifest.json"
 # Filled only after the reviewed v2 manifest and all four exports are installed.
 # A non-hash sentinel intentionally makes import/check fail closed in the meantime.
 APPROVED_ICON_REVISION_MANIFEST_SHA256 = "03bd00c50cdb07b488764512a81cf3e1a2fabb0510b70b5660374ca912b46775"
 # Pinned after the three reviewed native map exports and registrations were frozen.
 APPROVED_MAP_REVISION_MANIFEST_SHA256 = "ea2a63637c4383bf5aa499288fc5e1bb56553e98e7cfeea7bc2bb54430505080"
+APPROVED_HALL_REVISION_MANIFEST_SHA256 = "80545094b5fccc1e02b0251367ca8388d9d9ab08ad02667b9c2c9ce3a72e1a27"
+
+HALL_SOURCE_NATIVE = "native/town/buildings/tbtwhall.png"
+HALL_RUNTIME_IMAGE = "NH_academy/town/buildings/tbtwhall.png"
+HALL_RUNTIME_ALIAS = "NH_ACADEMY_TBTWHALL.json"
+HALL_STRUCTURE_MASKS = {
+    "area": "NH_academy/town/masks/villageHall-area.png",
+    "border": "NH_academy/town/masks/villageHall-border.png",
+}
 
 PROVENANCE_FILES = (
     "README.md",
@@ -238,6 +249,10 @@ def _revision_file(root: Path, relative: str) -> Path:
 
 def _map_revision_file(root: Path, relative: str) -> Path:
     return _safe_file_below(root / MAP_REVISION_ROOT, relative, "Academy map revision")
+
+
+def _hall_revision_file(root: Path, relative: str) -> Path:
+    return _safe_file_below(root / HALL_REVISION_ROOT, relative, "Academy Village Hall revision")
 
 
 def _academy_source_file(root: Path, relative: str) -> Path:
@@ -449,6 +464,171 @@ def load_map_revision(root: Path, expected_manifest_sha256: str) -> dict:
     }
 
 
+def load_hall_revision(root: Path, expected_manifest_sha256: str) -> dict:
+    """Load the pinned, one-frame Village Hall raster without changing its registration."""
+    if not re.fullmatch(r"[0-9a-f]{64}", expected_manifest_sha256 or ""):
+        raise RuntimeError("Academy Village Hall v2 revision is not enabled: importer manifest SHA-256 pin is unset")
+
+    manifest_path = _hall_revision_file(root, "manifest.json")
+    raw_manifest = manifest_path.read_bytes()
+    manifest_sha256 = sha256_hex(raw_manifest)
+    if manifest_sha256 != expected_manifest_sha256:
+        raise RuntimeError(
+            "Academy Village Hall v2 manifest changed: "
+            f"expected {expected_manifest_sha256}, got {manifest_sha256}"
+        )
+    try:
+        manifest = json.loads(raw_manifest.decode("utf-8"), object_pairs_hook=_reject_duplicate_json_keys)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError(f"Academy Village Hall manifest is not valid UTF-8 JSON: {manifest_path}") from error
+    if not isinstance(manifest, dict) or set(manifest) != {
+        "schemaVersion", "revision", "status", "sourceRegistration", "baseline", "master", "prompt",
+        "registration", "export", "preservedRuntime",
+    }:
+        raise ValueError("Academy Village Hall manifest has unexpected top-level fields")
+    if type(manifest["schemaVersion"]) is not int or manifest["schemaVersion"] != 1:
+        raise ValueError("Academy Village Hall manifest must declare schemaVersion 1")
+    if manifest["revision"] != "v2" or manifest["status"] != "provisional":
+        raise ValueError("Academy Village Hall revision must remain the reviewed provisional v2")
+
+    source_registration = manifest["sourceRegistration"]
+    if not isinstance(source_registration, dict) or set(source_registration) != {"path", "sha256", "record"}:
+        raise ValueError("Academy Village Hall must pin its town-layout source registration")
+    if source_registration["path"] != "integration/town-layout.json":
+        raise ValueError("Academy Village Hall changed its source registration path")
+    registration_path = _academy_source_file(root, source_registration["path"])
+    registration_bytes = registration_path.read_bytes()
+    if sha256_hex(registration_bytes) != source_registration["sha256"]:
+        raise ValueError("Academy Village Hall source registration bytes do not match the manifest")
+    try:
+        registration = json.loads(registration_bytes.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("Academy Village Hall source registration is not valid UTF-8 JSON") from error
+    source_record = next(
+        (item for item in registration.get("assets", []) if item.get("name") == "tbtwhall.def"),
+        None,
+    )
+    if source_record is None or source_record != source_registration["record"] or source_record.get("originalFrameCount") != 1:
+        raise ValueError("Academy Village Hall registration or original one-frame count changed")
+
+    baseline = manifest["baseline"]
+    if not isinstance(baseline, dict) or set(baseline) != {"master", "native"}:
+        raise ValueError("Academy Village Hall manifest must pin its original master and native export")
+    baseline_files = {}
+    for key, expected_path in (
+        ("master", "masters/town/buildings/tbtwhall.png"),
+        ("native", HALL_SOURCE_NATIVE),
+    ):
+        record = baseline[key]
+        if not isinstance(record, dict) or record.get("path") != expected_path:
+            raise ValueError(f"Academy Village Hall baseline {key} path changed")
+        path = _academy_source_file(root, expected_path)
+        payload = path.read_bytes()
+        if sha256_hex(payload) != record.get("sha256"):
+            raise ValueError(f"Academy Village Hall original {key} bytes changed: {expected_path}")
+        try:
+            with Image.open(path) as image:
+                image.load()
+                if list(image.size) != record.get("dimensions"):
+                    raise ValueError(f"Academy Village Hall original {key} dimensions changed: {expected_path}")
+                alpha_bounds = image.convert("RGBA").getchannel("A").getbbox()
+                if "alphaBounds" in record and list(alpha_bounds or ()) != record["alphaBounds"]:
+                    raise ValueError(f"Academy Village Hall original {key} alpha bounds changed: {expected_path}")
+        except OSError as error:
+            raise ValueError(f"Academy Village Hall original {key} is not a valid image: {expected_path}") from error
+        baseline_files[key] = payload
+
+    for key, expected_path in (("master", "village-hall-master.png"), ("prompt", "village-hall.prompt.txt")):
+        record = manifest[key]
+        if not isinstance(record, dict) or record.get("path") != expected_path:
+            raise ValueError(f"Academy Village Hall {key} path changed")
+        path = _hall_revision_file(root, expected_path)
+        if sha256_hex(path.read_bytes()) != record.get("sha256"):
+            raise ValueError(f"Academy Village Hall {key} bytes do not match the manifest: {expected_path}")
+        if key == "master":
+            try:
+                with Image.open(path) as image:
+                    image.load()
+                    if list(image.size) != record.get("dimensions"):
+                        raise ValueError("Academy Village Hall master dimensions changed")
+                    alpha_bounds = image.convert("RGBA").getchannel("A").getbbox()
+                    if list(alpha_bounds or ()) != record.get("alphaBounds"):
+                        raise ValueError("Academy Village Hall master alpha bounds changed")
+            except OSError as error:
+                raise ValueError("Academy Village Hall master is not a valid image") from error
+
+    if manifest["registration"] != {
+        "method": "crop-master-alpha-bounds; LANCZOS resize to native visible box; fit surviving alpha bounds; composite on transparent native canvas",
+        "resampling": "LANCZOS",
+        "masterCrop": [78, 21, 1872, 792],
+        "visibleBox": {"left": 0, "top": 2, "width": 177, "height": 73},
+        "nativeCanvas": [177, 75],
+    }:
+        raise ValueError("Academy Village Hall v2 registration changed")
+
+    export = manifest["export"]
+    if not isinstance(export, dict) or set(export) != {"path", "runtime", "sha256", "dimensions", "alphaBounds"}:
+        raise ValueError("Academy Village Hall export registration is invalid")
+    if export["path"] != "exports/village-hall-native.png" or export["runtime"] != HALL_RUNTIME_IMAGE:
+        raise ValueError("Academy Village Hall export changed its one approved runtime route")
+    export_path = _hall_revision_file(root, export["path"])
+    export_bytes = export_path.read_bytes()
+    if sha256_hex(export_bytes) != export["sha256"]:
+        raise ValueError("Academy Village Hall native export bytes do not match the manifest")
+    try:
+        with Image.open(export_path) as image:
+            image.load()
+            if list(image.size) != export["dimensions"] or export["dimensions"] != [177, 75]:
+                raise ValueError("Academy Village Hall native export dimensions changed")
+            alpha_bounds = image.convert("RGBA").getchannel("A").getbbox()
+            if list(alpha_bounds or ()) != export["alphaBounds"] or export["alphaBounds"] != [0, 2, 177, 75]:
+                raise ValueError("Academy Village Hall native export alpha bounds changed")
+    except OSError as error:
+        raise ValueError("Academy Village Hall native export is not a valid image") from error
+
+    preserved = manifest["preservedRuntime"]
+    if not isinstance(preserved, dict) or set(preserved) != {"animation", "corePlacement", "masks"}:
+        raise ValueError("Academy Village Hall preservation record is invalid")
+    animation = preserved["animation"]
+    expected_animation = aliased_animation("NH_ACADEMY_TBTWHALL", HALL_RUNTIME_IMAGE)
+    if (
+        not isinstance(animation, dict)
+        or set(animation) != {"path", "sha256", "images"}
+        or animation["path"] != HALL_RUNTIME_ALIAS
+        or animation["images"] != [{"group": 0, "frame": 0, "file": HALL_RUNTIME_IMAGE}]
+        or sha256_hex(expected_animation) != animation["sha256"]
+    ):
+        raise ValueError("Academy Village Hall must preserve its existing one-frame animation alias")
+
+    placement = preserved["corePlacement"]
+    if placement != {"config": "config/factions/tower.json", "structure": "villageHall", "x": 0, "y": 259, "z": 2}:
+        raise ValueError("Academy Village Hall scene placement record changed")
+    core = load_jsonc(root / placement["config"])
+    core_placement = core["tower"]["town"]["structures"][placement["structure"]]
+    if [core_placement.get(axis) for axis in ("x", "y", "z")] != [0, 259, 2]:
+        raise RuntimeError("Academy Village Hall core x/y/z placement changed")
+
+    mask_records = preserved["masks"]
+    if not isinstance(mask_records, dict) or set(mask_records) != {"area", "border"}:
+        raise ValueError("Academy Village Hall must preserve exactly its existing interaction masks")
+    for kind, expected_path in HALL_STRUCTURE_MASKS.items():
+        record = mask_records[kind]
+        if not isinstance(record, dict) or set(record) != {"path", "sha256", "dimensions"}:
+            raise ValueError(f"Academy Village Hall {kind} mask pin is invalid")
+        if record["path"] != expected_path or record["dimensions"] != [177, 75]:
+            raise ValueError(f"Academy Village Hall {kind} mask registration changed")
+        if not re.fullmatch(r"[0-9a-f]{64}", record["sha256"] or ""):
+            raise ValueError(f"Academy Village Hall {kind} mask hash is invalid")
+
+    return {
+        "manifest": manifest,
+        "manifest_sha256": manifest_sha256,
+        "export_bytes": export_bytes,
+        "baseline_master_bytes": baseline_files["master"],
+        "baseline_native_bytes": baseline_files["native"],
+    }
+
+
 def validate_archive(archive: zipfile.ZipFile) -> dict[str, zipfile.ZipInfo]:
     result: dict[str, zipfile.ZipInfo] = {}
     for info in archive.infolist():
@@ -606,6 +786,47 @@ def install_curated_map_bodies(
         destination.write_bytes(exports_by_runtime[destination.name])
 
 
+def install_curated_hall(root: Path, revision: dict, legacy_bytes: bytes, check_only: bool):
+    """Install the exact pinned Village Hall frame, accepting only the old or v2 bytes."""
+    destination = root / IMAGE_ROOT / HALL_RUNTIME_IMAGE
+    if destination.is_symlink():
+        raise RuntimeError(f"Refusing to replace symlinked Academy Village Hall image: {destination}")
+    if not destination.exists():
+        if check_only:
+            raise RuntimeError(f"Reviewed Academy Village Hall image is missing: {destination}")
+        should_write = True
+    elif not destination.is_file():
+        raise RuntimeError(f"Academy Village Hall destination is not a regular file: {destination}")
+    else:
+        current = destination.read_bytes()
+        if current == revision["export_bytes"]:
+            should_write = False
+        elif current == legacy_bytes:
+            if check_only:
+                raise RuntimeError(f"Reviewed Academy Village Hall v2 is not installed: {destination}")
+            should_write = True
+        else:
+            raise RuntimeError(f"Refusing to replace unrecognized Academy Village Hall pixels: {destination}")
+
+    if should_write:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(revision["export_bytes"])
+
+
+def validate_hall_archive_baseline(archive: zipfile.ZipFile, names: dict[str, zipfile.ZipInfo], revision: dict):
+    """Reject a handoff whose original Hall pixels or registration differ from the pinned source."""
+    manifest = revision["manifest"]
+    expected_files = {
+        manifest["sourceRegistration"]["path"]: manifest["sourceRegistration"]["sha256"],
+        manifest["baseline"]["master"]["path"]: manifest["baseline"]["master"]["sha256"],
+        manifest["baseline"]["native"]["path"]: manifest["baseline"]["native"]["sha256"],
+    }
+    for path, expected_sha256 in expected_files.items():
+        payload = archive.read(names[path])
+        if sha256_hex(payload) != expected_sha256:
+            raise ValueError(f"Academy handoff changed pinned Village Hall source bytes: {path}")
+
+
 def aliased_animation(resource: str, image_path: str, frame_count: int = 1) -> bytes:
     if frame_count < 1:
         raise ValueError(f"Animation {resource} has invalid frame count {frame_count}")
@@ -751,11 +972,36 @@ def validate_runtime_routes(
     names: dict[str, zipfile.ZipInfo],
     icon_revision: dict,
     map_revision: dict,
+    hall_revision: dict,
 ):
     patch = json.loads((root / "Mods/new-horizons/Content/config/factions/academyArt.json").read_text(encoding="utf-8"))
     faction = patch["core:tower"]
     town = faction["town"]
     structures = town["structures"]
+
+    hall = structures.get("villageHall")
+    if not hall or hall.get("animation") != "NH_ACADEMY_TBTWHALL":
+        raise ValueError("Academy Village Hall must retain its registered one-frame animation resource")
+    if any(axis in hall for axis in ("x", "y", "z")):
+        raise ValueError("Academy Village Hall art patch must not override its original scene placement")
+    mask_pins = hall_revision["manifest"]["preservedRuntime"]["masks"]
+    for kind, path in HALL_STRUCTURE_MASKS.items():
+        if hall.get(kind) != path:
+            raise ValueError(f"Academy Village Hall {kind} route changed")
+        mask_path = root / IMAGE_ROOT / path
+        if not mask_path.is_file() or sha256_hex(mask_path.read_bytes()) != mask_pins[kind]["sha256"]:
+            raise ValueError(f"Academy Village Hall {kind} mask differs from its preserved baseline bytes")
+    hall_image = root / IMAGE_ROOT / HALL_RUNTIME_IMAGE
+    if not hall_image.is_file() or hall_image.read_bytes() != hall_revision["export_bytes"]:
+        raise ValueError("Academy Village Hall runtime pixels differ from the pinned provisional v2 export")
+    hall_alias = root / IMAGE_ROOT / HALL_RUNTIME_ALIAS
+    expected_hall_alias = aliased_animation("NH_ACADEMY_TBTWHALL", HALL_RUNTIME_IMAGE)
+    if not hall_alias.is_file() or hall_alias.read_bytes() != expected_hall_alias:
+        raise ValueError("Academy Village Hall runtime alias is not the preserved one-frame route")
+    core_tower = load_jsonc(root / "config/factions/tower.json")
+    core_hall = core_tower["tower"]["town"]["structures"]["villageHall"]
+    if [core_hall.get(axis) for axis in ("x", "y", "z")] != [0, 259, 2]:
+        raise ValueError("Academy Village Hall core x/y/z placement differs from the approved registration")
 
     for structure_name, structure in structures.items():
         if structure_name == "academyRoof":
@@ -825,14 +1071,20 @@ def validate_runtime_routes(
         raise ValueError("Academy name and user-confirmed sand terrain override must be present")
 
 
-def write_structure_masks(root: Path, structures: dict, check_only: bool):
+def write_structure_masks(root: Path, structures: dict, check_only: bool, hall_revision: dict):
     from PIL import ImageChops, ImageFilter
 
     for name, structure in structures.items():
         if name == "academyRoof":
             continue
         image_path = structure.pop("_generatedImagePath")
-        source = Image.open(root / IMAGE_ROOT / Path(*PurePosixPath(image_path).parts)).convert("RGBA")
+        if name == "villageHall":
+            # Keep the original click/highlight geometry independent of the
+            # revised raster's different alpha contour.
+            source_path = root / SOURCE_ROOT / HALL_SOURCE_NATIVE
+        else:
+            source_path = root / IMAGE_ROOT / Path(*PurePosixPath(image_path).parts)
+        source = Image.open(source_path).convert("RGBA")
         alpha = source.getchannel("A")
         area = Image.new("RGBA", source.size, (255, 255, 255, 0))
         area.putalpha(alpha)
@@ -844,12 +1096,29 @@ def write_structure_masks(root: Path, structures: dict, check_only: bool):
             from io import BytesIO
             buffer = BytesIO()
             image.save(buffer, format="PNG", optimize=False)
-            safe_write(
-                root,
-                IMAGE_ROOT / "NH_academy/town/masks" / f"{name}-{mask_type}.png",
-                buffer.getvalue(),
-                check_only,
-            )
+            payload = buffer.getvalue()
+            if name == "villageHall":
+                record = hall_revision["manifest"]["preservedRuntime"]["masks"][mask_type]
+                if sha256_hex(payload) != record["sha256"]:
+                    raise RuntimeError(f"Baseline-derived Village Hall {mask_type} mask differs from its immutable pin")
+                destination = root / IMAGE_ROOT / record["path"]
+                if destination.is_symlink():
+                    raise RuntimeError(f"Refusing to replace symlinked Village Hall mask: {destination}")
+                if destination.exists():
+                    if not destination.is_file() or destination.read_bytes() != payload:
+                        raise RuntimeError(f"Refusing to modify existing Village Hall {mask_type} mask: {destination}")
+                elif check_only:
+                    raise RuntimeError(f"Expected preserved Village Hall {mask_type} mask is missing: {destination}")
+                else:
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    destination.write_bytes(payload)
+            else:
+                safe_write(
+                    root,
+                    IMAGE_ROOT / "NH_academy/town/masks" / f"{name}-{mask_type}.png",
+                    payload,
+                    check_only,
+                )
 
 
 def map_body_png(archive: zipfile.ZipFile, names: dict[str, zipfile.ZipInfo], assets: list[dict], master_name: str) -> bytes:
@@ -920,6 +1189,7 @@ def make_runtime_assets(
     check_only: bool,
     icon_revision: dict,
     map_revision: dict,
+    hall_revision: dict,
 ):
     native_paths = sorted(path for path in names if path.startswith("native/") and path.endswith(".png"))
     if not EXCLUDED_NATIVE <= set(native_paths):
@@ -933,6 +1203,10 @@ def make_runtime_assets(
             continue
         package_bytes = archive.read(names[native])
         safe_write(root, SOURCE_ROOT / native, package_bytes, check_only)
+        if native == HALL_SOURCE_NATIVE:
+            # The source handoff remains provenance-only. Runtime installation
+            # is handled by the exact v2 pin below, never by this generic loop.
+            continue
         if native in ICON_NORMALS:
             # The original normal export remains provenance-only. Runtime art
             # comes from the separately reviewed and pinned v2 revision below.
@@ -954,6 +1228,13 @@ def make_runtime_assets(
             legacy_bytes,
             check_only,
         )
+
+    install_curated_hall(
+        root,
+        hall_revision,
+        archive.read(names[HALL_SOURCE_NATIVE]),
+        check_only,
+    )
 
     asset_records = archive_json(archive, names, "integration/academy-assets.json")
     town_layout = archive_json(archive, names, "integration/town-layout.json")
@@ -1023,7 +1304,10 @@ def make_runtime_assets(
         stem = Path(native).stem.upper()
         resource = f"NH_ACADEMY_{stem}"
         runtime_path = f"NH_academy/town/buildings/{Path(native).name}"
-        descriptor = aliased_animation(resource, runtime_path, building_frame_counts.get(stem, 1))
+        frame_count = building_frame_counts.get(stem, 1)
+        if native == HALL_SOURCE_NATIVE and frame_count != 1:
+            raise ValueError("Academy Village Hall must retain its original one-frame animation alias")
+        descriptor = aliased_animation(resource, runtime_path, frame_count)
         safe_write(root, IMAGE_ROOT / f"{resource}.json", descriptor, check_only)
 
     roof_path = "NH_academy/town/corrections/house-roof.png"
@@ -1045,7 +1329,7 @@ def make_runtime_assets(
     rank_patch = json.loads((root / "Mods/new-horizons/Content/config/factions/towerCreatureRanks.json").read_text(encoding="utf-8"))
     core_tower = load_jsonc(root / "config/factions/tower.json")
     faction_patch = academy_patch(root, core_tower, rank_patch)
-    write_structure_masks(root, faction_patch["core:tower"]["town"]["structures"], check_only)
+    write_structure_masks(root, faction_patch["core:tower"]["town"]["structures"], check_only, hall_revision)
     safe_write(root, "Mods/new-horizons/Content/config/factions/academyArt.json", compact_json(faction_patch), check_only)
 
 
@@ -1151,12 +1435,14 @@ def main() -> int:
     try:
         icon_revision = load_icon_revision(root, APPROVED_ICON_REVISION_MANIFEST_SHA256)
         map_revision = load_map_revision(root, APPROVED_MAP_REVISION_MANIFEST_SHA256)
+        hall_revision = load_hall_revision(root, APPROVED_HALL_REVISION_MANIFEST_SHA256)
         with zipfile.ZipFile(args.archive) as archive:
             names = validate_archive(archive)
+            validate_hall_archive_baseline(archive, names, hall_revision)
             import_provenance(root, archive, names, args.check)
-            make_runtime_assets(root, archive, names, args.check, icon_revision, map_revision)
+            make_runtime_assets(root, archive, names, args.check, icon_revision, map_revision, hall_revision)
             build_patch_outputs(root, args.check)
-            validate_runtime_routes(root, archive, names, icon_revision, map_revision)
+            validate_runtime_routes(root, archive, names, icon_revision, map_revision, hall_revision)
             if not args.check:
                 render_all_built_preview(root, archive, names)
     except (OSError, zipfile.BadZipFile, ValueError, RuntimeError, KeyError, TypeError) as error:

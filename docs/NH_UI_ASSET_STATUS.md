@@ -1,5 +1,22 @@
 # New Horizons UI and asset status register
 
+UP241 Village Hall roof revision,2026-10-06: **Provisional** artwork.
+One focused HoMM3-Art edit is preserved with its exact prompt under
+`assets/new-horizons/academy/hall-revisions/v2/`. Root and independent review
+inspected native177×75 and nearest4× comparisons: the teal tile plane reads as
+one continuous slope meeting the sunburst pediment. Facade identity is retained,
+not pixel-identical facade painting. The pinned runtime frame is installed;
+original master/native, position, one-frame alias and interaction masks remain
+unchanged. Eleven focused art tests and reproducible reduction pass. Registered
+VillageHall-stage scene differences stay inside its footprint. Original-handoff
+ZIP reimport, user approval and playable delivery are not claimed.
+
+Latest playable checkpoint,2026-10-06: committed source `3eda8ac03` replaces
+the older playable references below. The default Linux script selects verified
+snapshot `a36a456b06bb4991978768107a6539258b4f419794306c714f42bc1c8a5c5f4f`,
+with12/14 Academy portraits and the newer required UI changes. The roof revision
+is not in that snapshot. Rendered/user acceptance remains separate.
+
 Sylvan Luck temporary-state readback (UP243),2026-10-06: **Provisional** UI.
 Uses the existing native Luck row/help surface, with a localized Skill label
 and exact temporary Luck/speed contributors and conditional readiness. No new
