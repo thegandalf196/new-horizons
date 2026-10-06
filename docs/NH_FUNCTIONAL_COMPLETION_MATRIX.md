@@ -9,6 +9,10 @@ map footprint/approaches.11 Python checks and client build pass. Source review
 has no blocker. Playable delivery and full motion/user approval remain open;
 normal Linux stays86eaae127d. Phase1 identity totals remain225/310 perks,
 61/67 combat spells and8/8 Orders. No identity credit for this presentation work.
+Superseding delivery: normal Linux now selects2af95e81a6 from87c630a2b, after
+native1/1,2,358-file manifest verification and explicit-candidate headless smoke
+through day3. Prior86eaae127d remains available. Full motion/user visual approval
+and SDL3 execution remain unverified; Phase1 identity totals are unchanged.
 
 UP262 selective-renderer prerequisite is implemented in both backends and
 focused SDL2 native1x–4x checks pass: immutable palette aliases remain separate,

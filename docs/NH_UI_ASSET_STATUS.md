@@ -46,6 +46,10 @@ isolation, 2x2 map footprint and all8 approaches pass. Full client builds and11
 Python checks pass; independent review has no blocker. Normal snapshot86eaae127d
 does not yet contain this slice. Full motion, SDL3 execution and user-final
 approval remain open; no original pixels are distributed.
+Linux development delivery now selects2af95e81a6 from87c630a2b, including these
+remaining roles.2,358-file verification, native1/1, bounded headless progression
+through day3 and launcher preflight pass; previous86eaae127d is retained.
+Artwork stays **Provisional** pending full motion and user visual approval.
 
 Cabir Linux development delivery,2026-10-06: snapshot30bc6ea from committed
 360b91d06 is selected by the normal Linux script. Original portrait, battle,
