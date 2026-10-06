@@ -2,6 +2,19 @@
 
 ## Purpose
 
+### 2026-10-06 — Optional magic-art metadata and battle defining include
+
+The first casting-hook compile exposed an incomplete IBattleInfo at the
+getMagicRules call. Its definition lives in IBattleState.h. Root's initial
+attempt incorrectly guessed an IBattleInfo.h filename; verify defining headers
+with rg before patching includes. The repaired client/native fixture build passes.
+Independent review also caught nested optional JSON object access before shape
+validation: JsonNode const Struct can assert on malformed non-object values.
+Validate each object before indexing and catch optional metadata parse errors;
+missing/broken optional art must preserve original visuals. The correction is
+reviewed and builds. Logs UP263-magic-assets-build/retry/repaired and
+UP265-cabir-resource-build remain under ignored build storage.
+
 ### 2026-10-06 — Counterpressure fixture requires the skill-handler definition
 
 The first UP180 client/test build fails only in the new server fixture: calling

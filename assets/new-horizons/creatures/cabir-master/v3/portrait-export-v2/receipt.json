@@ -1,0 +1,128 @@
+{
+  "status": "provisional transparent authored portrait derivatives; no user visual acceptance implied",
+  "identity": "cabirMaster",
+  "source": {
+    "path": "assets/new-horizons/creatures/cabir-master/v3/standing-master.png",
+    "sha256": "c1c88872bf0cc8e969f9d883b289aff86071db31241d35a16255b74532fbca15",
+    "promptPath": "assets/new-horizons/creatures/cabir-master/v3/standing.prompt.txt",
+    "promptSha256": "3b97121db995db93b8ec57e775b147c3edfca9da5d0a3696dd471ff67390a5b7",
+    "sourceSize": [
+      1323,
+      1189
+    ],
+    "sourceMode": "RGBA",
+    "artwork": "original HoMM3-Art generated project artwork; CC0-1.0 per standing-master provenance"
+  },
+  "alphaCleanup": {
+    "seedThreshold": 16,
+    "componentConnectivity": "8-connected",
+    "seedComponentCount": 38,
+    "largestSeedArea": 555382,
+    "largestSeedBounds": [
+      194,
+      54,
+      1179,
+      1152
+    ],
+    "dilationRadius": 4,
+    "retainedRgba": "original source RGBA bytes are preserved inside the dilated largest component",
+    "removedPixels": "outside that region, only alpha is set to zero; RGB bytes are unchanged",
+    "removedPixelCount": 12665,
+    "maximumRemovedAlpha": 6,
+    "removedAlphaHistogram": {
+      "1": 10732,
+      "2": 1457,
+      "3": 334,
+      "4": 93,
+      "5": 48,
+      "6": 1
+    },
+    "cleanedAlphaBounds": [
+      192,
+      51,
+      1182,
+      1156
+    ],
+    "sourceMasterModified": false
+  },
+  "backgroundTreatment": "transparent RGBA; the prior baked Academy scenery is not composited",
+  "resampling": "Pillow LANCZOS on premultiplied RGBA for subject reduction; nearest-neighbour 4x review previews",
+  "composition": {
+    "large": {
+      "outputSize": [
+        58,
+        64
+      ],
+      "sourceCrop": [
+        192,
+        51,
+        1182,
+        1156
+      ],
+      "fitBox": [
+        56,
+        62
+      ],
+      "resizedSource": [
+        56,
+        62
+      ],
+      "placement": [
+        1,
+        1
+      ],
+      "intent": "full-body standing portrait; entire cleaned silhouette is contained, not cropped"
+    },
+    "small": {
+      "outputSize": [
+        32,
+        32
+      ],
+      "sourceCrop": [
+        382,
+        51,
+        1182,
+        851
+      ],
+      "resizedSource": [
+        30,
+        30
+      ],
+      "placement": [
+        1,
+        1
+      ],
+      "intent": "intentional right-facing head/upper-body avatar crop; legs and rear silhouette are outside this role by design",
+      "background": "transparent RGBA; no background is composited"
+    }
+  },
+  "purchaserPixels": "none read or copied",
+  "outputs": {
+    "assets/new-horizons/creatures/cabir-master/v3/portrait-export-v2/NH_cabirMaster_icon_large.png": {
+      "pngSha256": "bb9adb813f8e9687ec4ce98f306e1f300bdb3fdb2f5445c859e9e0601182a414",
+      "byteLength": 7788
+    },
+    "assets/new-horizons/creatures/cabir-master/v3/portrait-export-v2/NH_cabirMaster_icon_small.png": {
+      "pngSha256": "07044cad211b69bea48c1ea8ba075159407df9489a9d3dce42e8331c109f1919",
+      "byteLength": 2717
+    },
+    "assets/new-horizons/creatures/cabir-master/v3/portrait-export-v2/previews/NH_cabirMaster_icon_large_4x.png": {
+      "pngSha256": "454fd374ed6d1ee5de9e55ff6f4b3e99da2d171c6f774031aa90cc3545325df1",
+      "byteLength": 11588
+    },
+    "assets/new-horizons/creatures/cabir-master/v3/portrait-export-v2/previews/NH_cabirMaster_icon_small_4x.png": {
+      "pngSha256": "062992ee3a85d55072ae42515493e136f0fa2bb3d1950b715448242b9e673103",
+      "byteLength": 3998
+    }
+  },
+  "runtimeCopies": {
+    "Mods/new-horizons/Images/NH_cabirMaster_icon_large.png": {
+      "pngSha256": "bb9adb813f8e9687ec4ce98f306e1f300bdb3fdb2f5445c859e9e0601182a414",
+      "byteLength": 7788
+    },
+    "Mods/new-horizons/Images/NH_cabirMaster_icon_small.png": {
+      "pngSha256": "07044cad211b69bea48c1ea8ba075159407df9489a9d3dce42e8331c109f1919",
+      "byteLength": 2717
+    }
+  }
+}

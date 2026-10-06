@@ -574,7 +574,9 @@ def _descriptor_sequence(group: int, frame_paths: list[str]) -> dict:
         if not path.startswith(prefix + "frames/"):
             raise ValueError("animation sequence includes a frame outside its pinned basepath")
         relative.append(path[len(prefix):])
-    return {"group": group, "frames": relative}
+    # RGBA sprites have no vanilla DEF palette-selection pixels. Ask both
+    # render backends to derive the native contour from the alpha silhouette.
+    return {"group": group, "generateOverlay": 1, "frames": relative}
 
 
 def _build_descriptor(family: str, groups: dict[str, dict], config: dict) -> dict:

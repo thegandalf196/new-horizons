@@ -27,8 +27,40 @@
 #include "render/IRenderHandler.h"
 
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/IBattleState.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/CStack.h"
+
+namespace
+{
+std::optional<std::string> castingGlowSchool(BattleInterface & owner, const CSpell & spell)
+{
+	const auto battle = owner.getBattle();
+	if(!battle || !battle->getBattle()
+		|| !newHorizonsMagic::rulesActive(battle->getBattle()->getMagicRules()))
+		return std::nullopt;
+
+	const auto schools = battle->battleGetSpellSchools(spell.getId());
+	if(schools.size() != 1)
+		return std::nullopt;
+
+	const auto identifier = SpellSchool::encode(schools.front().getNum());
+	const std::string_view identifierView = identifier;
+	constexpr std::string_view prefix = "new-horizons:";
+	if(!identifierView.starts_with(prefix))
+		return std::nullopt;
+
+	const std::string school(identifierView.substr(prefix.size()));
+	static constexpr std::array<std::string_view, 6> supportedSchools = {
+		"light", "nature", "sorcery", "havoc", "chaos", "shadow"
+	};
+	if(std::ranges::find(supportedSchools, school) == supportedSchools.end())
+		return std::nullopt;
+
+	return school;
+}
+}
 
 static std::optional<std::pair<BattleHex, BattleHex>> getLongWeaponLineHexes(const BattleHex & defenderHex, BattleHex::EDir direction)
 {
@@ -1124,6 +1156,7 @@ HeroCastAnimation::HeroCastAnimation(BattleInterface & owner, std::shared_ptr<Ba
 
 bool HeroCastAnimation::init()
 {
+	hero->setCastingGlowSchool(castingGlowSchool(owner, *spell));
 	hero->setPhase(EHeroAnimType::CAST_SPELL);
 
 	hero->onPhaseFinished([&](){

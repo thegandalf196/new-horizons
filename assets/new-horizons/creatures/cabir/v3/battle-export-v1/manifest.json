@@ -763,6 +763,7 @@
   "mappedGroups": [
     {
       "group": 0,
+      "generateOverlay": 1,
       "frames": [
         "frames/moving/frame-00.png",
         "frames/moving/frame-01.png",
@@ -772,24 +773,28 @@
     },
     {
       "group": 2,
+      "generateOverlay": 1,
       "frames": [
         "frames/holding/frame-00.png"
       ]
     },
     {
       "group": 3,
+      "generateOverlay": 1,
       "frames": [
         "frames/reaction/frame-00.png"
       ]
     },
     {
       "group": 4,
+      "generateOverlay": 1,
       "frames": [
         "frames/reaction/frame-01.png"
       ]
     },
     {
       "group": 5,
+      "generateOverlay": 1,
       "frames": [
         "frames/reaction/frame-02.png",
         "frames/reaction/frame-03.png"
@@ -797,12 +802,14 @@
     },
     {
       "group": 22,
+      "generateOverlay": 1,
       "frames": [
         "frames/reaction/frame-03.png"
       ]
     },
     {
       "group": 12,
+      "generateOverlay": 1,
       "frames": [
         "frames/melee-front/frame-00.png",
         "frames/melee-front/frame-01.png",
@@ -812,6 +819,7 @@
     },
     {
       "group": 11,
+      "generateOverlay": 1,
       "frames": [
         "frames/melee-front/frame-00.png",
         "frames/melee-directions/frame-01.png",
@@ -821,6 +829,7 @@
     },
     {
       "group": 13,
+      "generateOverlay": 1,
       "frames": [
         "frames/melee-front/frame-00.png",
         "frames/melee-directions/frame-03.png",
@@ -860,7 +869,7 @@
     "The pre-cleaned walk input retains prior reviewed alpha-only output; no new movement artwork or interpolation was added."
   ],
   "files": {
-    "NH_cabir_v3_battle.json": "f6198e1d9beff281d351a2a5ab3fe49ee1ea3e09072ae8d425d34cc048bee1d5",
+    "NH_cabir_v3_battle.json": "e1ea0ec768a28bfc16bdd25115b09d007d2d38f89d42d610ed9bd8095eaea9e2",
     "NH_cabir_v3_battle/frames/holding/frame-00.png": "e57d3e920b0fc33d4c88391c2a445f8282844f1ef7b772ffefabd7d417d13186",
     "NH_cabir_v3_battle/frames/melee-directions/frame-00.png": "ad87294e471503ab7918d8c244167c2a3f86eb9f22c4900f8c4fcdaa442b7688",
     "NH_cabir_v3_battle/frames/melee-directions/frame-01.png": "427bd6b77357392e46eae9641b2dbd552c0133507e563a582cdca2fb010b0468",

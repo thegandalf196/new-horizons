@@ -1408,6 +1408,7 @@
   "mappedGroups": [
     {
       "group": 0,
+      "generateOverlay": 1,
       "frames": [
         "frames/moving/frame-00.png",
         "frames/moving/frame-01.png",
@@ -1417,24 +1418,28 @@
     },
     {
       "group": 2,
+      "generateOverlay": 1,
       "frames": [
         "frames/holding/frame-00.png"
       ]
     },
     {
       "group": 3,
+      "generateOverlay": 1,
       "frames": [
         "frames/reaction/frame-00.png"
       ]
     },
     {
       "group": 4,
+      "generateOverlay": 1,
       "frames": [
         "frames/reaction/frame-01.png"
       ]
     },
     {
       "group": 5,
+      "generateOverlay": 1,
       "frames": [
         "frames/reaction/frame-02.png",
         "frames/reaction/frame-03.png"
@@ -1442,12 +1447,14 @@
     },
     {
       "group": 22,
+      "generateOverlay": 1,
       "frames": [
         "frames/reaction/frame-03.png"
       ]
     },
     {
       "group": 12,
+      "generateOverlay": 1,
       "frames": [
         "frames/melee-front/frame-00.png",
         "frames/melee-front/frame-01.png",
@@ -1457,6 +1464,7 @@
     },
     {
       "group": 11,
+      "generateOverlay": 1,
       "frames": [
         "frames/melee-front/frame-00.png",
         "frames/melee-directions/frame-01.png",
@@ -1466,6 +1474,7 @@
     },
     {
       "group": 13,
+      "generateOverlay": 1,
       "frames": [
         "frames/melee-front/frame-00.png",
         "frames/melee-directions/frame-03.png",
@@ -1475,6 +1484,7 @@
     },
     {
       "group": 15,
+      "generateOverlay": 1,
       "frames": [
         "frames/shoot-front/frame-00.png",
         "frames/shoot-front/frame-01.png",
@@ -1484,6 +1494,7 @@
     },
     {
       "group": 14,
+      "generateOverlay": 1,
       "frames": [
         "frames/shoot-front/frame-00.png",
         "frames/shoot-directions/frame-01.png",
@@ -1493,6 +1504,7 @@
     },
     {
       "group": 16,
+      "generateOverlay": 1,
       "frames": [
         "frames/shoot-front/frame-00.png",
         "frames/shoot-directions/frame-03.png",
@@ -1502,6 +1514,7 @@
     },
     {
       "group": 18,
+      "generateOverlay": 1,
       "frames": [
         "frames/repair-front/frame-00.png",
         "frames/repair-front/frame-01.png",
@@ -1511,6 +1524,7 @@
     },
     {
       "group": 30,
+      "generateOverlay": 1,
       "frames": [
         "frames/repair-front/frame-00.png",
         "frames/repair-front/frame-01.png",
@@ -1520,6 +1534,7 @@
     },
     {
       "group": 31,
+      "generateOverlay": 1,
       "frames": [
         "frames/repair-front/frame-00.png",
         "frames/repair-front/frame-01.png",
@@ -1529,6 +1544,7 @@
     },
     {
       "group": 32,
+      "generateOverlay": 1,
       "frames": [
         "frames/repair-front/frame-00.png",
         "frames/repair-front/frame-01.png",
@@ -1573,7 +1589,7 @@
     "Repair groups 18/30/31/32 intentionally alias one close-front repair gesture; this does not claim separate directional repair art."
   ],
   "files": {
-    "NH_cabir_master_v3_battle.json": "ca4028778b9e484f639e6787fc11e1872f61f2ac1ddcebd5ba809bfe50afdba7",
+    "NH_cabir_master_v3_battle.json": "8130a5307cfbee7b79b8a79433fe0040f3f1da2db4fbb9eeeaa1206a28406349",
     "NH_cabir_master_v3_battle/frames/holding/frame-00.png": "c6ee629f4ce3492cbc38cef50a153b5a4a5d972cd91b18a31769e406fec650c7",
     "NH_cabir_master_v3_battle/frames/melee-directions/frame-00.png": "725b999a58aac0edd8b1215b0d424098410990cf6f6d60e6d70ce2449a084498",
     "NH_cabir_master_v3_battle/frames/melee-directions/frame-01.png": "516b7cc9371edd9c7aee8a3943945a34be6e526faa63d89425df5a9265a74be5",

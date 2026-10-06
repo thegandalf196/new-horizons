@@ -1,5 +1,30 @@
 # New Horizons UI and asset status register
 
+Cabir correction,2026-10-06: **Provisional**, user rejects current smooth HD
+treatment and vibrating gait. Transparent large/small portraits for both forms
+now replace baked scenery; original source/crop/alignment is retained in
+portrait-export-v2, with v1 preserved. Both battle descriptors request the
+renderer-generated alpha-silhouette selection overlay. Client/native fixture
+build passes;13 focused Python checks pass; activated dummy-SDL native fixture
+passes1/1 with zero skips in2.64s, including selected/unselected pixel change.
+This is not convincing gait, visual contour approval or playable delivery.
+Two newly generated gait drafts still repeat poses and are too smooth; neither
+is installed. User's both-forms-shoot amendment remains pending implementation.
+
+Private magic-art handoff,2026-10-06: **Provisional** local integration. The
+v6 ZIP contains eighteen casting sprites by six Schools and nine faction books.
+Optional client hooks preserve original casting timing/mirroring and guild vista;
+unsupported or malformed metadata retains original art. The safe importer creates
+873 private PNGs and a normal-resolver manifest in ignored build storage, not Git.
+Five synthetic importer checks and client build pass. Native book edge alignment,
+casting fit/reset visuals and playable delivery remain unverified. Source-derived
+pixels must not enter public package staging. UP263/UP264 retain those gates.
+
+Arch Mage robe detail reopened: user screenshot confirms burgundy remnants in
+the gray cloth. All133 CAMAGE frames are aliased, but the palette-role selection
+is incomplete. Preserve red staff/projectile accents; all-frame semantic colour
+classification and correction remain open under UP262.
+
 Selective runtime palette infrastructure,2026-10-06: **Provisional**. Both SDL
 backends support immutable exact-DEF palette mappings without committing sprite
 pixels. SDL2 builds and focused native1x–4x pixel/cache/flip checks pass; SDL3

@@ -28,12 +28,186 @@
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/entities/hero/CHero.h"
 #include "../../lib/entities/hero/CHeroClass.h"
+#include "../../lib/filesystem/Filesystem.h"
 #include "../../lib/gameState/InfoAboutArmy.h"
+#include "../../lib/json/JsonNode.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+
+#include <cmath>
+
+namespace
+{
+constexpr size_t CASTING_GLOW_FRAME_COUNT = 8;
+constexpr size_t CAST_SPELL_GROUP = static_cast<size_t>(EHeroAnimType::CAST_SPELL);
+
+struct CastingGlowDefinition
+{
+	std::array<ImagePath, CASTING_GLOW_FRAME_COUNT> frames;
+	Point dimensions;
+};
+
+const JsonNode * newHorizonsMagicAssets()
+{
+	static const std::optional<JsonNode> metadata = []() -> std::optional<JsonNode>
+	{
+		try
+		{
+			const auto path = JsonPath::builtin("config/newHorizonsMagicAssets.json");
+			if(!CResourceHandler::get()->existsResource(path))
+				return std::nullopt;
+			return JsonNode(path);
+		}
+		catch(const std::exception &)
+		{
+			return std::nullopt;
+		}
+	}();
+
+	return metadata ? &*metadata : nullptr;
+}
+
+bool readPositiveDimension(const JsonNode & value, int & result)
+{
+	if(!value.isNumber())
+		return false;
+
+	const double number = value.Float();
+	if(!std::isfinite(number) || std::floor(number) != number || number <= 0 || number > 4096)
+		return false;
+
+	result = static_cast<int>(number);
+	return true;
+}
+
+std::optional<CastingGlowDefinition> loadCastingGlowDefinition(const std::string & defKey, const std::string & school)
+{
+	const auto * metadata = newHorizonsMagicAssets();
+	if(!metadata || !metadata->isStruct())
+		return std::nullopt;
+
+	const auto & definitions = (*metadata)["castingGlows"];
+	if(!definitions.isStruct())
+		return std::nullopt;
+	const auto & heroDefinition = definitions[defKey];
+	if(!heroDefinition.isStruct())
+		return std::nullopt;
+	const auto & entry = heroDefinition[school];
+	if(!entry.isStruct())
+		return std::nullopt;
+	const auto & framePaths = entry["frames"];
+	const auto & dimensions = entry["dimensions"];
+	if(!framePaths.isVector() || framePaths.Vector().size() != CASTING_GLOW_FRAME_COUNT
+		|| !dimensions.isVector() || dimensions.Vector().size() != 2)
+		return std::nullopt;
+
+	CastingGlowDefinition result;
+	int width = 0;
+	int height = 0;
+	if(!readPositiveDimension(dimensions.Vector()[0], width) || !readPositiveDimension(dimensions.Vector()[1], height))
+		return std::nullopt;
+	result.dimensions = Point(width, height);
+
+	for(size_t frame = 0; frame < CASTING_GLOW_FRAME_COUNT; ++frame)
+	{
+		if(!framePaths.Vector()[frame].isString() || framePaths.Vector()[frame].String().empty())
+			return std::nullopt;
+
+		const auto path = ImagePath::fromJson(framePaths.Vector()[frame]);
+		if(path.empty() || !CResourceHandler::get()->existsResource(path))
+			return std::nullopt;
+		result.frames[frame] = path;
+	}
+
+	return result;
+}
+
+std::optional<std::string> sourceDefKey(const ImageLocator & locator)
+{
+	if(locator.image || !locator.defFile)
+		return std::nullopt;
+
+	std::string defKey = locator.defFile->getName();
+	const auto separator = defKey.rfind('/');
+	if(separator != std::string::npos)
+		defKey.erase(0, separator + 1);
+
+	if(defKey.ends_with(".DEF"))
+		defKey.resize(defKey.size() - 4);
+
+	static constexpr std::array<std::string_view, 18> supportedDefs = {
+		"CH00", "CH01", "CH02", "CH03", "CH04", "CH05", "CH06", "CH07", "CH08",
+		"CH09", "CH010", "CH11", "CH012", "CH013", "CH014", "CH015", "CH16", "CH17"
+	};
+	if(std::ranges::find(supportedDefs, defKey) == supportedDefs.end())
+		return std::nullopt;
+
+	return defKey;
+}
+}
 
 const CGHeroInstance * BattleHero::instance() const
 {
 	return hero;
+}
+
+void BattleHero::setCastingGlowSchool(std::optional<std::string> school)
+{
+	activeCastingGlow.reset();
+	if(!school || animation->size(CAST_SPELL_GROUP) != CASTING_GLOW_FRAME_COUNT)
+		return;
+
+	const auto firstLocator = animation->getImageLocator(0, CAST_SPELL_GROUP);
+	const auto defKey = sourceDefKey(firstLocator);
+	if(!defKey)
+		return;
+
+	const CastingGlowKey key{*defKey, *school};
+	if(const auto found = castingGlowCache.find(key); found != castingGlowCache.end())
+	{
+		activeCastingGlow = found->second;
+		return;
+	}
+	if(unavailableCastingGlows.contains(key))
+		return;
+
+	const auto definition = loadCastingGlowDefinition(key.first, key.second);
+	if(!definition)
+	{
+		unavailableCastingGlows.insert(key);
+		return;
+	}
+
+	const auto overlays = std::make_shared<CastingGlowFrames>();
+	for(size_t frame = 0; frame < CASTING_GLOW_FRAME_COUNT; ++frame)
+	{
+		const auto source = animation->getImageLocator(frame, CAST_SPELL_GROUP);
+		const auto frameDefKey = sourceDefKey(source);
+		if(!frameDefKey || *frameDefKey != key.first || source.defGroup != static_cast<int>(CAST_SPELL_GROUP)
+			|| source.defFrame != static_cast<int>(frame))
+		{
+			unavailableCastingGlows.insert(key);
+			return;
+		}
+
+		const auto baseFrame = animation->getImage(frame, CAST_SPELL_GROUP, false);
+		if(!baseFrame || baseFrame->dimensions() != definition->dimensions)
+		{
+			unavailableCastingGlows.insert(key);
+			return;
+		}
+
+		ImageLocator overlayLocator(definition->frames[frame], EImageBlitMode::SIMPLE);
+		overlayLocator.verticalFlip = defender;
+		auto overlay = ENGINE->renderHandler().loadImage(overlayLocator);
+		if(!overlay || overlay->dimensions() != definition->dimensions)
+		{
+			unavailableCastingGlows.insert(key);
+			return;
+		}
+		(*overlays)[frame] = std::move(overlay);
+	}
+
+	activeCastingGlow = castingGlowCache.emplace(key, overlays).first->second;
 }
 
 void BattleHero::tick(uint32_t msPassed)
@@ -72,6 +246,17 @@ void BattleHero::render(Canvas & canvas)
 
 	canvas.draw(flagFrame, flagPosition);
 	canvas.draw(heroFrame, heroPosition);
+
+	if(phase == EHeroAnimType::CAST_SPELL && activeCastingGlow)
+	{
+		const auto glowFrame = static_cast<size_t>(currentFrame);
+		if(glowFrame < activeCastingGlow->size())
+		{
+			const auto & overlay = (*activeCastingGlow)[glowFrame];
+			if(overlay && overlay->dimensions() == heroFrame->dimensions())
+				canvas.draw(overlay, heroPosition);
+		}
+	}
 }
 
 void BattleHero::pause()
@@ -157,6 +342,8 @@ void BattleHero::heroRightClicked() const
 void BattleHero::switchToNextPhase()
 {
 	phase = nextPhase;
+	if(phase != EHeroAnimType::CAST_SPELL)
+		activeCastingGlow.reset();
 	currentFrame = 0.f;
 
 	auto copy = phaseFinishedCallback;

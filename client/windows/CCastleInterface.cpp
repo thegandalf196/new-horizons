@@ -70,6 +70,8 @@
 #include "../../lib/entities/creature/NewHorizonsMusterRules.h"
 #include "../../lib/entities/ResourceTypeHandler.h"
 #include "../../lib/entities/hero/NewHorizonsCapabilityRules.h"
+#include "../../lib/filesystem/Filesystem.h"
+#include "../../lib/json/JsonNode.h"
 #include "../../lib/mapObjects/CGDwelling.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
@@ -79,6 +81,8 @@
 #include "wiki/WikiWindow.h"
 
 #include <cmath>
+#include <limits>
+#include <utility>
 
 static std::optional<newHorizonsCreatures::CreatureCategoryView> currentCreatureCategory(const CCreature * creature)
 {
@@ -234,6 +238,67 @@ std::shared_ptr<CPicture> createResponsiveFortCardBackground(const Point & size)
 	canvas.drawBorder(Rect(0, 0, size.x, size.y), ColorRGBA(165, 122, 55));
 	canvas.drawBorder(Rect(2, 2, size.x - 4, size.y - 4), ColorRGBA(70, 46, 28));
 	return std::make_shared<CPicture>(std::static_pointer_cast<IImage>(image), Point(0, 0));
+}
+
+std::optional<std::pair<ImagePath, Point>> newHorizonsGuildBookOverlay(const CGTownInstance * town)
+{
+	if(!town || !town->getTown() || !town->getTown()->faction
+		|| !GAME || !GAME->interface() || !GAME->interface()->cb
+		|| !newHorizonsMagic::rulesActive(GAME->interface()->cb->getMagicRules()))
+		return std::nullopt;
+
+	const auto metadataPath = JsonPath::builtin("config/newHorizonsMagicAssets.json");
+	if(!CResourceHandler::get()->existsResource(metadataPath))
+		return std::nullopt;
+
+	JsonNode metadata;
+	try
+	{
+		metadata = JsonNode(metadataPath);
+	}
+	catch(const std::exception &)
+	{
+		return std::nullopt;
+	}
+	if(!metadata.isStruct())
+		return std::nullopt;
+	const auto & guildBooks = metadata["guildBooks"];
+	if(!guildBooks.isStruct())
+		return std::nullopt;
+
+	const auto & fullFactionKey = town->getTown()->faction->getJsonKey();
+	const auto separator = fullFactionKey.rfind(':');
+	const auto factionKey = separator == std::string::npos
+		? fullFactionKey
+		: fullFactionKey.substr(separator + 1);
+	const auto & entry = guildBooks[factionKey];
+	if(!entry.isStruct())
+		return std::nullopt;
+	const auto & imageNode = entry["image"];
+	const auto & positionNode = entry["position"];
+	if(!imageNode.isString() || imageNode.String().empty()
+		|| !positionNode.isVector() || positionNode.Vector().size() != 2)
+		return std::nullopt;
+
+	const auto coordinate = [](const JsonNode & value) -> std::optional<int>
+	{
+		if(!value.isNumber())
+			return std::nullopt;
+		const double number = value.Float();
+		if(!std::isfinite(number) || std::floor(number) != number
+			|| number < 0 || number >= std::numeric_limits<int>::max())
+			return std::nullopt;
+		return static_cast<int>(number);
+	};
+	const auto x = coordinate(positionNode.Vector()[0]);
+	const auto y = coordinate(positionNode.Vector()[1]);
+	if(!x || !y)
+		return std::nullopt;
+
+	const auto image = ImagePath::fromJson(imageNode);
+	if(image.empty() || !CResourceHandler::get()->existsResource(image))
+		return std::nullopt;
+	return std::pair<ImagePath, Point>{image, Point(*x, *y)};
 }
 
 class MageGuildExteriorHotspot final : public CPicture
@@ -3489,6 +3554,12 @@ CMageGuildScreen::CMageGuildScreen(CCastleInterface * owner, const ImagePath & i
 		window = std::make_shared<MageGuildExteriorHotspot>(selectedGuildWindow, windowPosition, townId);
 	else
 		window = std::make_shared<CPicture>(selectedGuildWindow, windowPosition.x, windowPosition.y);
+
+	if(const auto overlay = newHorizonsGuildBookOverlay(owner->town))
+	{
+		guildBookOverlay = std::make_shared<CPicture>(overlay->first, overlay->second.x, overlay->second.y);
+		guildBookOverlay->setInputEnabled(false);
+	}
 
 	resdatabar = std::make_shared<CMinorResDataBar>();
 	resdatabar->moveBy(pos.topLeft(), true);

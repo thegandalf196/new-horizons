@@ -1321,6 +1321,15 @@ void verifyCabirAnimation(const char * descriptorName, bool master)
 			+ creatureIdentifier);
 	const auto animation = renderer.loadAnimation(descriptorPath, EImageBlitMode::WITH_SHADOW_AND_SELECTION);
 	require(animation != nullptr, std::string("Could not load creature animation: ") + descriptorName);
+	const auto standingGroup = static_cast<size_t>(ECreatureAnimType::HOLDING);
+	const auto standing = animation->getImage(0, standingGroup, true);
+	require(standing != nullptr, "Cabir standing frame is missing");
+	standing->setOverlayColor(ColorRGBA(0, 0, 0, 0));
+	const auto unselected = captureImagePixels(standing, standing->dimensions(), "Cabir unselected contour");
+	standing->setOverlayColor(ColorRGBA(255, 255, 0, 255));
+	const auto selected = captureImagePixels(standing, standing->dimensions(), "Cabir selected contour");
+	standing->setOverlayColor(ColorRGBA(0, 0, 0, 0));
+	require(unselected != selected, "Cabir selection must draw an actual silhouette outline");
 
 	std::vector<ECreatureAnimType> requiredGroups{
 		ECreatureAnimType::MOVING,

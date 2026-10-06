@@ -27,6 +27,21 @@ semantics unless the task explicitly calls for changing them.
   conventions, or modern-style gradients. Painted lighting and shading that
   match the original game are appropriate.
 
+## Creature art and motion — Cabir correction
+
+User direction,2026-10-06: Cabir must fit the original low-resolution
+prerendered-3D creatures, not look like smooth HD illustration. Greg Fulton
+explicitly identifies the original game's sprites as derived from prerendered
+3D models in [Fanstratics newsletter43](https://heroes.thelazy.net/index.php/Greg_Fulton/Fanstratics_Newsletters/43).
+That is production evidence, not proof that arbitrary pixelation recreates its
+style. Our practical art direction: simplified modeled volume, restrained
+material highlights, broad legible shadows, coarser surface detail and a
+native-sized raster silhouette; avoid smooth modern illustration and excessive
+lava filigree. Evaluate beside existing creatures at actual battle/map size.
+Walking must alternate support/advancing legs and show a real stride; different
+PNG hashes or four nearly identical poses do not satisfy animation acceptance.
+Selection feedback follows the creature silhouette, not its rectangular canvas.
+
 ## Spell-symbol presentation
 
 User direction2026-10-04: new spell icons follow original Heroes III spells:

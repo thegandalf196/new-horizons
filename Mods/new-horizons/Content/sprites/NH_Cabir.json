@@ -3,6 +3,7 @@
   "sequences": [
     {
       "group": 0,
+      "generateOverlay": 1,
       "frames": [
         "frames/moving/frame-00.png",
         "frames/moving/frame-01.png",
@@ -12,24 +13,28 @@
     },
     {
       "group": 2,
+      "generateOverlay": 1,
       "frames": [
         "frames/holding/frame-00.png"
       ]
     },
     {
       "group": 3,
+      "generateOverlay": 1,
       "frames": [
         "frames/reaction/frame-00.png"
       ]
     },
     {
       "group": 4,
+      "generateOverlay": 1,
       "frames": [
         "frames/reaction/frame-01.png"
       ]
     },
     {
       "group": 5,
+      "generateOverlay": 1,
       "frames": [
         "frames/reaction/frame-02.png",
         "frames/reaction/frame-03.png"
@@ -37,12 +42,14 @@
     },
     {
       "group": 22,
+      "generateOverlay": 1,
       "frames": [
         "frames/reaction/frame-03.png"
       ]
     },
     {
       "group": 12,
+      "generateOverlay": 1,
       "frames": [
         "frames/melee-front/frame-00.png",
         "frames/melee-front/frame-01.png",
@@ -52,6 +59,7 @@
     },
     {
       "group": 11,
+      "generateOverlay": 1,
       "frames": [
         "frames/melee-front/frame-00.png",
         "frames/melee-directions/frame-01.png",
@@ -61,6 +69,7 @@
     },
     {
       "group": 13,
+      "generateOverlay": 1,
       "frames": [
         "frames/melee-front/frame-00.png",
         "frames/melee-directions/frame-03.png",
