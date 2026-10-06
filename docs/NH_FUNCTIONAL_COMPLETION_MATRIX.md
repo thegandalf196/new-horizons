@@ -2,6 +2,19 @@
 
 Updated: 2026-10-06
 
+2026-10-06 Convergence prerequisite correction: generic legacy health-based
+Summon's floor rounding does not imply missing exact-HP infrastructure.
+Production Summon Trolls and Transfigure Matter already create ceil-count stacks
+and publish the wounded final creature through authoritative state updates.
+Five focused existing native cases pass5/5 in1.733s, zero skips, covering exact
+HP, inherited health bonuses, state transport and detached-AI/resolved parity.
+The first attempt lacked the curated profile and skipped5/5; it is retained
+but not counted. UP072 records the runner identity and both receipts. Reuse
+the existing path instead of refactoring legacy Summon or adding a health mirror.
+Convergence's terrain ruling is still unanswered; the spell and its three
+dependent Rebirth perks remain planned. Counts stay61/67 combat identities and
+225/310 perks. This is prerequisite evidence, not new implementation or delivery.
+
 2026-10-06 post-hook selection audit: independent bounded Portal, artifact and
 custom-creature reviews find no additional unblocked principal omission in
 those areas. Portal AI selection/contextual recruitment is present; artifact
