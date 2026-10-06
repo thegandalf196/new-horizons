@@ -9,10 +9,16 @@
  */
 #pragma once
 
+#include <array>
+#include <cstdint>
+#include <map>
+
 #include "render/IImage.h"
 
 #include "../../lib/filesystem/ResourcePath.h"
 #include "../../lib/constants/EntityIdentifiers.h"
+
+using PaletteRemap = std::map<uint8_t, std::array<uint8_t, 3>>;
 
 struct SharedImageLocator
 {
@@ -39,6 +45,7 @@ struct SharedImageLocator
 
 	std::optional<ShadowMode> generateShadow;
 	std::optional<OverlayMode> generateOverlay;
+	PaletteRemap paletteRemap;
 
 	SharedImageLocator() = default;
 	SharedImageLocator(const AnimationPath & path, int frame, int group, EImageBlitMode layer);

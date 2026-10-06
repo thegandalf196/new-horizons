@@ -1,5 +1,13 @@
 # New Horizons UI and asset status register
 
+Selective runtime palette infrastructure,2026-10-06: **Provisional**. Both SDL
+backends support immutable exact-DEF palette mappings without committing sprite
+pixels. SDL2 builds and focused native1x–4x pixel/cache/flip checks pass; SDL3
+execution is deferred because its dependencies are absent. Original Arch Mage
+cloth/trim/staff and Mage projectile were locally inspected, but the requested
+grey-robe/red-glow/red-Mage-projectile content aliases are not yet bound. This
+does not make the Magi artwork Final or change the current playable snapshot.
+
 Magi colour treatment,2026-10-06: **Provisional** Arch Mage procedural beam
 source override changes only the five ray RGB bands, preserving their original
 alpha values and inherited timing/geometry. The merged-config check passes1/1;

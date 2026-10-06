@@ -119,6 +119,39 @@ This json file allows defining one animation sequence, for example for adventure
 
 TODO
 
+### Selective colours on referenced DEF frames
+
+An `images` entry may reference an installed DEF frame using `defFile`,
+`defGroup` and `defFrame`, instead of `file`. Optional `paletteRemap` replaces
+specific palette RGB values in memory, before native rendering and upscaling:
+
+```json
+{
+    "paletteRemap": { "40": [180, 40, 30] },
+    "images": [
+        { "group": 0, "frame": 0,
+          "defFile": "myExternalAnimation.def", "defGroup": 0, "defFrame": 0 }
+    ]
+}
+```
+
+The animation-level mapping is a default for its `images` entries; entries may
+specify their own mapping, including `{}` to opt out of the default. Keys are
+decimal palette indices from 8 through 255,
+without leading zeroes. Each value is exactly three integer RGB components
+from 0 through 255. Indices 0–7 are reserved for DEF transparency, shadow and
+selection and cannot be changed. Alpha and all unmapped entries are preserved.
+For player-coloured assets, avoid replacing the ownership ramp at 224–255;
+ordinary player-colour application remains separate. Non-player-coloured
+projectiles may use those indices as ordinary palette colours.
+
+A nonempty mapping requires an exact indexed DEF frame and bypasses HD or
+replacement-image substitution. Different mappings of the same frame have
+separate cached images, so they cannot recolour each other or the original.
+No modified source sprites need to be distributed. Malformed mappings are
+rejected rather than silently truncated. An absent or empty mapping leaves the
+existing loading behaviour unchanged.
+
 ## Creature animation groups
 
 Animation for creatures consist from multiple groups, with each group

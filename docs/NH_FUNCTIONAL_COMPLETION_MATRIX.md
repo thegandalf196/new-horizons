@@ -2,6 +2,15 @@
 
 Updated: 2026-10-06
 
+UP262 selective-renderer prerequisite is implemented in both backends and
+focused SDL2 native1x–4x checks pass: immutable palette aliases remain separate,
+source pixels/alpha are preserved and mirrored projectiles retain the mapping.
+The grey-robes/red-glow and ordinary Mage projectile content bindings remain
+missing; SDL3 runtime verification is deferred. Original asset pixels remain
+external, and no normal Linux snapshot changes in this source checkpoint.
+Phase1 identity counts remain225/310 perks,61/67 combat spells and8/8 Orders;
+no coverage credit for another spell or perk follows from renderer infrastructure.
+
 UP262 colour source checkpoint: Arch Mage procedural rays have an isolated red
 override; ordinary Mage projectile and Arch Mage robe/staff sprite treatment
 remain open. Both ordinary shooter melee penalties are already natively verified

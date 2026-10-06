@@ -33,13 +33,23 @@
 #include "render/CAnimation.h"
 #include "render/IRenderHandler.h"
 #include "render/IScreenHandler.h"
+#include "MagiPaletteInspection.h"
+
+#include "../../lib/json/JsonNode.h"
 
 #include <SDL.h>
 
+#include <algorithm>
+#include <array>
+#include <cstdint>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <limits>
+#include <map>
+#include <set>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -223,6 +233,293 @@ std::vector<ColorRGBA> captureImagePixels(const std::shared_ptr<IImage> & image,
 		for(int x = 0; x < expectedSize.x; ++x)
 			pixels.push_back(canvas.getPixel(Point(x, y)));
 	return pixels;
+}
+
+std::vector<ColorRGBA> captureScaledImagePixels(const std::shared_ptr<IImage> & image, const Point & nativeSize,
+		int scale, const std::string & description)
+{
+	require(image != nullptr, "Could not load " + description);
+	require(image->dimensions() == nativeSize, description + " has unexpected native dimensions");
+	const Point renderedSize = nativeSize * scale;
+	Canvas canvas(nativeSize, CanvasScalingPolicy::AUTO);
+	canvas.drawColor(Rect(Point(0, 0), nativeSize), ColorRGBA(0, 0, 0, 0));
+	canvas.draw(image, Point(0, 0));
+
+	std::vector<ColorRGBA> pixels;
+	pixels.reserve(static_cast<size_t>(renderedSize.x * renderedSize.y));
+	for(int y = 0; y < renderedSize.y; ++y)
+		for(int x = 0; x < renderedSize.x; ++x)
+			pixels.push_back(canvas.getPixel(Point(x, y)));
+	return pixels;
+}
+
+using IndexedFrame = magiPaletteInspection::detail::Frame;
+
+struct PaletteRemapFixture
+{
+	IndexedFrame source;
+	PaletteRemap red;
+	PaletteRemap blue;
+};
+
+bool isGreenPaletteColor(const magiPaletteInspection::detail::Rgb & color)
+{
+	return color.g > color.r + 12 && color.g > color.b + 12;
+}
+
+PaletteRemapFixture makeMagiPaletteRemapFixture()
+{
+	CDefFile definition(AnimationPath::builtin("SPRITES/PMAGEX.DEF"));
+	require(definition.hasFrame(0, 0), "PMAGEX must have a first projectile frame for palette-remap checks");
+	magiPaletteInspection::detail::FrameCapture loader;
+	definition.loadFrame(0, 0, loader);
+	PaletteRemapFixture fixture;
+	fixture.source = loader.take();
+	require(fixture.source.width > 0 && fixture.source.height > 0
+		&& fixture.source.indices.size() == static_cast<size_t>(fixture.source.width * fixture.source.height),
+		"PMAGEX indexed frame capture returned invalid source geometry");
+
+	std::array<size_t, 256> populations{};
+	for(int y = fixture.source.dataY; y < fixture.source.dataY + fixture.source.dataHeight; ++y)
+	{
+		for(int x = fixture.source.dataX; x < fixture.source.dataX + fixture.source.dataWidth; ++x)
+		{
+			const size_t offset = static_cast<size_t>(y * fixture.source.width + x);
+			++populations[fixture.source.indices[offset]];
+		}
+	}
+
+	for(size_t index = 8; index < populations.size(); ++index)
+	{
+		const auto & original = fixture.source.palette[index];
+		if(populations[index] == 0 || !isGreenPaletteColor(original))
+			continue;
+
+		// Use only in-memory test mappings. These are conspicuously different so
+		// alias-cache contamination or a late/no-op remap is easy to detect.
+		fixture.red.emplace(static_cast<uint8_t>(index), std::array<uint8_t, 3>{{255, 24, 24}});
+		fixture.blue.emplace(static_cast<uint8_t>(index), std::array<uint8_t, 3>{{24, 64, 255}});
+	}
+	require(!fixture.red.empty(), "PMAGEX frame 0 must contain used green palette entries to exercise recoloring");
+	return fixture;
+}
+
+std::string paletteRemapJson(const PaletteRemap & paletteRemap)
+{
+	std::ostringstream json;
+	json << R"({"defFile":"SPRITES/PMAGEX.DEF","defFrame":0,"defGroup":0,"paletteRemap":{)";
+	bool first = true;
+	for(const auto & [index, color] : paletteRemap)
+	{
+		if(!first)
+			json << ',';
+		first = false;
+		json << '"' << static_cast<unsigned>(index) << "\":["
+			<< static_cast<unsigned>(color[0]) << ','
+			<< static_cast<unsigned>(color[1]) << ','
+			<< static_cast<unsigned>(color[2]) << ']';
+	}
+	json << "}}";
+	return json.str();
+}
+
+ImageLocator parsePaletteRemapLocator(const std::string & jsonText)
+{
+	JsonNode json(jsonText.c_str(), jsonText.size(), "palette-remap-runtime-test.json");
+	return ImageLocator(json, EImageBlitMode::COLORKEY);
+}
+
+void requirePaletteRemapJsonRejected(const std::string & mapText, const std::string & description)
+{
+	const std::string jsonText = R"({"defFile":"SPRITES/PMAGEX.DEF","defFrame":0,"defGroup":0,"paletteRemap":)"
+		+ mapText + '}';
+	bool rejected = false;
+	try
+	{
+		(void)parsePaletteRemapLocator(jsonText);
+	}
+	catch(const std::exception &)
+	{
+		rejected = true;
+	}
+	require(rejected, "Invalid palette remap JSON was accepted: " + description);
+}
+
+void verifyPaletteRemapJsonValidation()
+{
+	requirePaletteRemapJsonRejected(R"({"7":[1,2,3]})", "reserved palette index 7");
+	requirePaletteRemapJsonRejected(R"({"256":[1,2,3]})", "palette index above 255");
+	requirePaletteRemapJsonRejected(R"({"not-an-index":[1,2,3]})", "noninteger palette index");
+	requirePaletteRemapJsonRejected(R"({"32":[1.5,2,3]})", "noninteger RGB channel");
+	requirePaletteRemapJsonRejected(R"({"32":[1,2,256]})", "RGB channel above 255");
+	requirePaletteRemapJsonRejected(R"({"32":[1,2]})", "non-RGB tuple");
+}
+
+struct VisiblePixelBounds
+{
+	int left = std::numeric_limits<int>::max();
+	int top = std::numeric_limits<int>::max();
+	int right = -1;
+	int bottom = -1;
+
+	bool operator==(const VisiblePixelBounds &) const = default;
+};
+
+VisiblePixelBounds visiblePixelBounds(const std::vector<ColorRGBA> & pixels, const Point & size)
+{
+	VisiblePixelBounds bounds;
+	for(int y = 0; y < size.y; ++y)
+	{
+		for(int x = 0; x < size.x; ++x)
+		{
+			if(pixels[static_cast<size_t>(y * size.x + x)].a == 0)
+				continue;
+			bounds.left = std::min(bounds.left, x);
+			bounds.top = std::min(bounds.top, y);
+			bounds.right = std::max(bounds.right, x);
+			bounds.bottom = std::max(bounds.bottom, y);
+		}
+	}
+	return bounds;
+}
+
+int channelValue(const ColorRGBA & pixel, uint8_t channel)
+{
+	switch(channel)
+	{
+		case 0: return pixel.r;
+		case 1: return pixel.g;
+		case 2: return pixel.b;
+		default: throw std::logic_error("Invalid RGB channel in palette-remap check");
+	}
+}
+
+int64_t channelDifference(const std::vector<ColorRGBA> & pixels, uint8_t positive, uint8_t negative)
+{
+	int64_t total = 0;
+	for(const ColorRGBA & pixel : pixels)
+	{
+		if(pixel.a != 0)
+			total += channelValue(pixel, positive) - channelValue(pixel, negative);
+	}
+	return total;
+}
+
+size_t dominantPixelCount(const std::vector<ColorRGBA> & pixels, uint8_t positive, uint8_t negative)
+{
+	return static_cast<size_t>(std::count_if(pixels.begin(), pixels.end(), [positive, negative](const ColorRGBA & pixel)
+	{
+		return pixel.a != 0 && channelValue(pixel, positive) > channelValue(pixel, negative) + 16;
+	}));
+}
+
+void verifyMagiPaletteRemap(IRenderHandler & renderer, const PaletteRemapFixture & fixture, int scale)
+{
+	ImageLocator originalLocator(AnimationPath::builtin("SPRITES/PMAGEX.DEF"), 0, 0, EImageBlitMode::COLORKEY);
+	originalLocator.originalDefFrame = true;
+	ImageLocator redLocator = parsePaletteRemapLocator(paletteRemapJson(fixture.red));
+	ImageLocator blueLocator = parsePaletteRemapLocator(paletteRemapJson(fixture.blue));
+	require(redLocator.originalDefFrame && blueLocator.originalDefFrame,
+		"A mapped DEF frame must force exact-original-frame loading");
+	require(redLocator.paletteRemap == fixture.red && blueLocator.paletteRemap == fixture.blue,
+		"Palette remap JSON did not preserve its authored mappings");
+
+	std::set<SharedImageLocator> cacheKeys;
+	cacheKeys.insert(originalLocator);
+	cacheKeys.insert(redLocator);
+	cacheKeys.insert(blueLocator);
+	require(cacheKeys.size() == 3,
+		"Unmapped and distinct palette-remapped DEF frames must have independent image-cache keys");
+
+	const Point nativeSize(fixture.source.width, fixture.source.height);
+	const Point renderedSize = nativeSize * scale;
+	auto originalBefore = renderer.loadImage(originalLocator);
+	ENGINE->async().wait();
+	const auto originalPixels = captureScaledImagePixels(originalBefore, nativeSize, scale, "original PMAGEX frame before maps");
+	auto red = renderer.loadImage(redLocator);
+	auto blue = renderer.loadImage(blueLocator);
+
+	std::map<size_t, std::vector<ImageLocator>> layout;
+	layout[0].push_back(redLocator);
+	CAnimation flipped(AnimationPath::builtin("SPRITES/PMAGEX.DEF"), std::move(layout), EImageBlitMode::COLORKEY);
+	flipped.createFlippedGroup(0, 1);
+	const ImageLocator flippedLocator = flipped.getImageLocator(0, 1);
+	require(flippedLocator.paletteRemap == fixture.red && flippedLocator.verticalFlip,
+		"A flipped animation group must retain its frame palette map and flip flag");
+	auto flippedRed = flipped.getImage(0, 1, true);
+	auto originalAfter = renderer.loadImage(originalLocator);
+	ENGINE->async().wait();
+
+	const auto redPixels = captureScaledImagePixels(red, nativeSize, scale, "red-remapped PMAGEX frame");
+	const auto bluePixels = captureScaledImagePixels(blue, nativeSize, scale, "blue-remapped PMAGEX frame");
+	const auto originalAfterPixels = captureScaledImagePixels(originalAfter, nativeSize, scale, "original PMAGEX frame after maps");
+	const auto flippedPixels = captureScaledImagePixels(flippedRed, nativeSize, scale, "flipped red-remapped PMAGEX frame");
+	require(originalPixels == originalAfterPixels,
+		"Loading palette-remapped aliases must not mutate or contaminate the original PMAGEX frame");
+	require(visiblePixelBounds(originalPixels, renderedSize) == visiblePixelBounds(redPixels, renderedSize)
+		&& visiblePixelBounds(originalPixels, renderedSize) == visiblePixelBounds(bluePixels, renderedSize),
+		"Palette remapping must preserve the rendered projectile's visible bounds");
+
+	for(int y = 0; y < renderedSize.y; ++y)
+	{
+		for(int x = 0; x < renderedSize.x; ++x)
+		{
+			const size_t offset = static_cast<size_t>(y * renderedSize.x + x);
+			const size_t flipOffset = static_cast<size_t>(y * renderedSize.x + (renderedSize.x - 1 - x));
+			require(flippedPixels[offset] == redPixels[flipOffset],
+				"Flipped animation group must render the same mapped pixels with left/right orientation reversed");
+		}
+	}
+
+	if(scale == 1)
+	{
+		std::array<bool, 256> mapped{};
+		for(const auto & [index, color] : fixture.red)
+			mapped[index] = true;
+
+		size_t mappedSourcePixels = 0;
+		size_t unchangedSourcePixels = 0;
+		for(int y = 0; y < fixture.source.height; ++y)
+		{
+			for(int x = 0; x < fixture.source.width; ++x)
+			{
+				const size_t offset = static_cast<size_t>(y * fixture.source.width + x);
+				const uint8_t index = fixture.source.indices[offset];
+				if(mapped[index])
+				{
+					++mappedSourcePixels;
+					const auto & redColor = fixture.red.at(index);
+					const auto & blueColor = fixture.blue.at(index);
+					const ColorRGBA redExpected(redColor[0], redColor[1], redColor[2], originalPixels[offset].a);
+					const ColorRGBA blueExpected(blueColor[0], blueColor[1], blueColor[2], originalPixels[offset].a);
+					require(redPixels[offset] == redExpected && bluePixels[offset] == blueExpected,
+						"Mapped PMAGEX palette pixels must use the requested RGB while preserving source alpha");
+				}
+				else
+				{
+					++unchangedSourcePixels;
+					require(redPixels[offset] == originalPixels[offset] && bluePixels[offset] == originalPixels[offset],
+						"Unmapped PMAGEX pixels, including structural palette indices 0–7, must remain unchanged at 1x");
+				}
+			}
+		}
+		require(mappedSourcePixels > 0 && unchangedSourcePixels > 0,
+			"Palette-remap check must cover both mapped and unchanged source pixels");
+	}
+	else
+	{
+		// xBRZ interpolates color at enlarged edges, so compare color trends and
+		// geometry at output scale instead of assuming source-index-to-output-pixel
+		// identity. Green source entries should now produce an observable red/blue
+		// signal without changing the projectile footprint.
+		require(channelDifference(redPixels, 0, 1) > channelDifference(originalPixels, 0, 1)
+			&& dominantPixelCount(redPixels, 0, 1) > 0,
+			"Red palette mapping must remain visible after xBRZ upscaling");
+		require(channelDifference(bluePixels, 2, 1) > channelDifference(originalPixels, 2, 1)
+			&& dominantPixelCount(bluePixels, 2, 1) > 0,
+			"Blue palette mapping must remain visible after xBRZ upscaling");
+	}
+	std::cout << "  PMAGEX palette map/cache/flip at " << scale << "x preserves source and geometry\n";
 }
 
 void verifyCabirApproachImage(const ImagePath & configuredPath, const char * expectedImageName, const char * side)
@@ -731,6 +1028,8 @@ void runRuntimeRegression()
 	require(std::find(activeMods.begin(), activeMods.end(), "new-horizons") != activeMods.end(),
 		"Isolated renderer test did not activate New Horizons");
 	verifyMagiProjectileColors();
+	verifyPaletteRemapJsonValidation();
+	const PaletteRemapFixture magiPaletteFixture = makeMagiPaletteRemapFixture();
 
 	constexpr std::array<const char *, 4> upscalingFilters{{"none", "xbrz2", "xbrz3", "xbrz4"}};
 	for(size_t factorIndex = 0; factorIndex < upscalingFilters.size(); ++factorIndex)
@@ -750,6 +1049,9 @@ void runRuntimeRegression()
 		auto & renderer = ENGINE->renderHandler();
 		renderer.onLibraryLoadingFinished(LIBRARY);
 		std::cout << "SDL dummy runtime scale " << expectedScale << "x\n";
+		if(factorIndex == 0)
+			(void)magiPaletteInspection::exportIfOptedIn();
+		verifyMagiPaletteRemap(renderer, magiPaletteFixture, expectedScale);
 
 		for(const BuiltIcon & icon : academyBuiltIcons)
 		{

@@ -10,6 +10,7 @@
 #pragma once
 
 #include "IImage.h"
+#include "render/ImageLocator.h"
 #include "lib/Point.h"
 
 class JsonNode;
@@ -38,12 +39,13 @@ class SDLImageShared final : public ISharedImage, public std::enable_shared_from
 
 	// Keep the original palette, in order to do color switching operation
 	void savePalette();
+	void applyPaletteRemap(const PaletteRemap & paletteRemap);
 
 	void optimizeSurface();
 
 public:
 	//Load image from def file
-	SDLImageShared(const CDefFile *data, size_t frame, size_t group=0);
+	SDLImageShared(const CDefFile *data, size_t frame, size_t group=0, const PaletteRemap & paletteRemap = {});
 	//Load from bitmap file
 	SDLImageShared(const ImagePath & filename, bool optimizeImage=true);
 	//Create using existing surface, extraRef will increase refcount on SDL_Surface

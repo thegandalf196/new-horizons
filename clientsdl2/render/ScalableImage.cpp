@@ -445,6 +445,7 @@ std::shared_ptr<const ISharedImage> ScalableImageShared::loadOrGenerateImage(EIm
 	loadingLocator.image = locator.image;
 	loadingLocator.defFile = locator.defFile;
 	loadingLocator.originalDefFrame = locator.originalDefFrame;
+	loadingLocator.paletteRemap = locator.paletteRemap;
 	loadingLocator.generateShadow = locator.generateShadow;
 	loadingLocator.generateOverlay = locator.generateOverlay;
 	loadingLocator.defFrame = locator.defFrame;

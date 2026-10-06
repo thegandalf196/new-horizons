@@ -15,7 +15,10 @@ add_test(NAME nhStackInfoPanelHoverStateTest COMMAND nhStackInfoPanelHoverStateT
 # Reproduce the Academy built-town-icon load path with every scaling factor. The
 # SDL dummy backend keeps the renderer bootstrap isolated from the host display.
 if(TARGET vcmisdl2 AND UNIX AND NOT APPLE AND NOT ENABLE_SDL3)
-	add_executable(nhAcademyBuiltIconRuntimeTest ../client/tests/AcademyBuiltIconRuntimeTest.cpp)
+	add_executable(nhAcademyBuiltIconRuntimeTest
+		../client/tests/AcademyBuiltIconRuntimeTest.cpp
+		../client/tests/MagiPaletteInspection.h
+	)
 	target_link_libraries(nhAcademyBuiltIconRuntimeTest PRIVATE vcmisdl2)
 	vcmi_set_output_dir(nhAcademyBuiltIconRuntimeTest "")
 	add_test(NAME nhAcademyBuiltIconRuntimeTest COMMAND nhAcademyBuiltIconRuntimeTest)

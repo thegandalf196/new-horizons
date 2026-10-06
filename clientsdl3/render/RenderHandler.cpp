@@ -188,6 +188,10 @@ void RenderHandler::initFromJson(AnimationLayoutMap & source, const JsonNode & c
 
 		JsonNode toAdd = node;
 		JsonUtils::inherit(toAdd, base);
+		if(!node["paletteRemap"].isNull())
+			toAdd["paletteRemap"] = node["paletteRemap"];
+		else if(!config["paletteRemap"].isNull())
+			toAdd["paletteRemap"] = config["paletteRemap"];
 
 		if (toAdd.Struct().count("file"))
 			toAdd["file"].String() = basepath + node["file"].String();
@@ -334,7 +338,7 @@ std::shared_ptr<ISharedImage> RenderHandler::loadImageFromFileUncached(const Ima
 		auto defFile = getAnimationFile(*locator.defFile);
 		if(defFile && defFile->hasFrame(locator.defFrame, locator.defGroup))
 		{
-			auto img = std::make_shared<SDLImageShared>(defFile.get(), locator.defFrame, locator.defGroup);
+			auto img = std::make_shared<SDLImageShared>(defFile.get(), locator.defFrame, locator.defGroup, locator.paletteRemap);
 
 			auto pathForDefFrame = getAnimationFrameName(*locator.defFile, locator.defFrame, locator.defGroup);
 			if(hdImageLoader->exists(pathForDefFrame))
@@ -361,7 +365,7 @@ void RenderHandler::storeCachedImage(const ImageLocator & locator, std::shared_p
 
 std::shared_ptr<SDLImageShared> RenderHandler::loadScaledImage(const ImageLocator & locator)
 {
-	if(locator.originalDefFrame)
+	if(locator.originalDefFrame || !locator.paletteRemap.empty())
 		return nullptr;
 
 	static constexpr std::array scaledDataPath = {
@@ -476,6 +480,13 @@ std::shared_ptr<SDLImageShared> RenderHandler::loadScaledImage(const ImageLocato
 std::shared_ptr<IImage> RenderHandler::loadImage(const ImageLocator & locator)
 {
 	ImageLocator adjustedLocator = locator;
+	if(!adjustedLocator.paletteRemap.empty())
+	{
+		if(!adjustedLocator.defFile || adjustedLocator.image)
+			throw std::invalid_argument("Palette remap requires a DEF frame source");
+
+		adjustedLocator.originalDefFrame = true;
+	}
 
 	if(locator.image)
 	{

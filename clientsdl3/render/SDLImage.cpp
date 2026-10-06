@@ -45,7 +45,7 @@ int IImage::height() const
 	return dimensions().y;
 }
 
-SDLImageShared::SDLImageShared(const CDefFile * data, size_t frame, size_t group)
+SDLImageShared::SDLImageShared(const CDefFile * data, size_t frame, size_t group, const PaletteRemap & paletteRemap)
 	: surf(nullptr),
 	margins(0, 0),
 	fullSize(0, 0),
@@ -54,6 +54,17 @@ SDLImageShared::SDLImageShared(const CDefFile * data, size_t frame, size_t group
 	SDLImageLoader loader(this);
 	data->loadFrame(frame, group, loader);
 
+	try
+	{
+		applyPaletteRemap(paletteRemap);
+	}
+	catch(...)
+	{
+		if(surf)
+			SDL_DestroySurface(surf);
+		surf = nullptr;
+		throw;
+	}
 	savePalette();
 }
 
@@ -665,6 +676,28 @@ void SDLImageShared::savePalette()
 		originalPalette = SDL_CreatePalette(CSDL_Ext::getPalette(surf)->ncolors);
 
 	SDL_SetPaletteColors(originalPalette, CSDL_Ext::getPalette(surf)->colors, 0, CSDL_Ext::getPalette(surf)->ncolors);
+}
+
+void SDLImageShared::applyPaletteRemap(const PaletteRemap & paletteRemap)
+{
+	if(paletteRemap.empty())
+		return;
+
+	SDL_Palette * palette = surf ? CSDL_Ext::getPalette(surf) : nullptr;
+	if(palette == nullptr)
+		throw std::invalid_argument("Palette remap requires an indexed DEF frame");
+
+	for(const auto & [index, replacement] : paletteRemap)
+	{
+		if(index < 8 || index >= palette->ncolors)
+			throw std::invalid_argument("Palette remap index is outside the supported DEF palette range");
+
+		SDL_Color color = palette->colors[index];
+		color.r = replacement[0];
+		color.g = replacement[1];
+		color.b = replacement[2];
+		SDL_SetPaletteColors(palette, &color, index, 1);
+	}
 }
 
 SDLImageShared::~SDLImageShared()

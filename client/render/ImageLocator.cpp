@@ -15,6 +15,67 @@
 
 #include "../../lib/json/JsonNode.h"
 
+namespace
+{
+
+uint8_t parsePaletteIndex(const std::string & key)
+{
+	if(key.empty() || key.front() == '0')
+		throw std::invalid_argument("Palette remap index must be a canonical decimal value from 8 to 255");
+
+	unsigned int index = 0;
+	for(char digit : key)
+	{
+		if(digit < '0' || digit > '9')
+			throw std::invalid_argument("Palette remap index must be a canonical decimal value from 8 to 255");
+
+		index = index * 10 + static_cast<unsigned int>(digit - '0');
+		if(index > 255)
+			throw std::invalid_argument("Palette remap index is outside the palette range");
+	}
+
+	if(index < 8)
+		throw std::invalid_argument("Palette remap cannot replace reserved DEF palette indices 0 to 7");
+
+	return static_cast<uint8_t>(index);
+}
+
+std::array<uint8_t, 3> parsePaletteColor(const JsonNode & node)
+{
+	if(!node.isVector() || node.Vector().size() != 3)
+		throw std::invalid_argument("Palette remap color must be an RGB triple");
+
+	std::array<uint8_t, 3> color{};
+	for(size_t component = 0; component < color.size(); ++component)
+	{
+		const auto & value = node.Vector()[component];
+		if(value.getType() != JsonNode::JsonType::DATA_INTEGER)
+			throw std::invalid_argument("Palette remap RGB components must be integers");
+
+		auto channel = value.Integer();
+		if(channel < 0 || channel > 255)
+			throw std::invalid_argument("Palette remap RGB components must be from 0 to 255");
+
+		color[component] = static_cast<uint8_t>(channel);
+	}
+
+	return color;
+}
+
+PaletteRemap parsePaletteRemap(const JsonNode & node)
+{
+	if(!node.isStruct())
+		throw std::invalid_argument("Palette remap must be an object of palette-index to RGB entries");
+
+	PaletteRemap result;
+	for(const auto & [key, color] : node.Struct())
+		result.emplace(parsePaletteIndex(key), parsePaletteColor(color));
+
+	return result;
+}
+
+}
+
 SharedImageLocator::SharedImageLocator(const JsonNode & config, EImageBlitMode mode)
 	: defFrame(config["defFrame"].Integer())
 	, defGroup(config["defGroup"].Integer())
@@ -31,6 +92,17 @@ SharedImageLocator::SharedImageLocator(const JsonNode & config, EImageBlitMode m
 
 	if(!config["generateOverlay"].isNull())
 		generateOverlay = static_cast<SharedImageLocator::OverlayMode>(config["generateOverlay"].Integer());
+
+	if(!config["paletteRemap"].isNull())
+		paletteRemap = parsePaletteRemap(config["paletteRemap"]);
+
+	if(!paletteRemap.empty())
+	{
+		if(!defFile || image)
+			throw std::invalid_argument("Palette remap requires a DEF frame source");
+
+		originalDefFrame = true;
+	}
 }
 
 SharedImageLocator::SharedImageLocator(const ImagePath & path, EImageBlitMode mode)
@@ -72,6 +144,8 @@ bool SharedImageLocator::operator < (const SharedImageLocator & other) const
 		return generateShadow < other.generateShadow;
 	if(generateOverlay != other.generateOverlay)
 		return generateOverlay < other.generateOverlay;
+	if(paletteRemap != other.paletteRemap)
+		return paletteRemap < other.paletteRemap;
 
 	return false;
 }
