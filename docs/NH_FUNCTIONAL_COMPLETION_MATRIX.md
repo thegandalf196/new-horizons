@@ -2,6 +2,18 @@
 
 Updated: 2026-10-06
 
+Independent downloaded-package checkpoint: Windows37458617656 artifact
+11414801242 passes outer checksums for game ZIP and both source archives,
+ZIP CRC/path/duplicate/symlink checks, and all2540 internal payload checksums.
+Identity matches exactdc5de4c48/run/attempt. Required README, source notice,
+root/dependency/Microsoft/xBRZ notices are present;218 referenced notices
+resolve across32 dependency records. No purchaser Data/Maps/Mp3/Saves/LOD
+content is included. Receipt scope is integrity/metadata/inventory, not full
+source-archive-to-Git comparison or Windows execution/gameplay. Coverage counts
+remain unchanged. The Learning/Estates/Recruitment bounded selection audit
+confirms their remaining planned perks retain existing design holds; no partial
+activation or additional coverage credit is taken.
+
 Windows full run37458617656 has completed SUCCESS on exact
 dc5de4c483dfc1975ed83661471fbd151658129d. Compile, staging, packaging and
 downloadable upload pass. Nonexpired artifact11414801242 is
