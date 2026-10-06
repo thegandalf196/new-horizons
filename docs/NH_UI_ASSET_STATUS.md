@@ -1,5 +1,10 @@
 # New Horizons UI and asset status register
 
+Gargoyle alternative: v2 full-colour Stone Gargoyle portrait is a purpose-made
+Provisional preview, NOT a background-only edit or approved runtime asset.
+Its58×64/8× reductions are inspected and reproducible; newly interpreted anatomy
+requires the user's choice before installation. Live portraits remain12/14.
+
 Latest playable: source `9540b0643` delivers12/14 provisional Academy portraits.
 Frozen snapshot `bad986b13d1b1711a93d901a1749b73568d078291a01bb2644f39c2e64342011`
 passes content/map/AI smoke and checksum-verified promotion. Gargoyles remain

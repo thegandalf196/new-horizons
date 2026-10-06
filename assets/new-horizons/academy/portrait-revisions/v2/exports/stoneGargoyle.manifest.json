@@ -1,0 +1,22 @@
+{
+  "asset": "Academy Stone Gargoyle painted portrait preview",
+  "crop": "none",
+  "export": "assets/new-horizons/academy/portrait-revisions/v2/exports/stoneGargoyle.png",
+  "export_sha256": "f1270876ee8838d3e2579bffc8c3d9258c508dfebf34cc869e6a45db48bbc283",
+  "export_size_px": [
+    58,
+    64
+  ],
+  "prompt": "assets/new-horizons/academy/portrait-revisions/v2/masters/stoneGargoyle-painted.prompt.txt",
+  "prompt_sha256": "437c27eec11f90be373fbd24425c5ea6661485528007009c58efd94bc613b4f2",
+  "repaint": "none",
+  "resampling": "Pillow Image.Resampling.LANCZOS",
+  "runtime_authorized": false,
+  "source": "assets/new-horizons/academy/portrait-revisions/v2/masters/stoneGargoyle-painted.png",
+  "source_sha256": "0d23df17ec4daa51b24c5a54cbf0f0c32442649622a9fce101b0da953cb750b9",
+  "source_size_px": [
+    1194,
+    1317
+  ],
+  "source_to_export_aspect_error_percent": 0.039274
+}
