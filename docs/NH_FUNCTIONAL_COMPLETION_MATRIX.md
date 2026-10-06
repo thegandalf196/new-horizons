@@ -2773,11 +2773,69 @@ allowance/projection/provider tests pass with zero skips. Rank coverage advances
 Wider perk compositions and full battle save/resume are Phase2; graphical
 acceptance and playable snapshot delivery remain separate.
 
-Additional canonical breadth not yet reducible to a defensible completion
-fraction: nine town/faction sections (37 grouped unique-building table rows),
-required combat/hero/
-adventure UI surfaces, save-state representation, and minimum AI hooks. The
-next ledger pass must enumerate these items rather than invent a denominator.
+Additional canonical breadth without a blanket completion fraction: required
+combat/hero/adventure UI surfaces, save-state representation, and minimum AI
+hooks. Unique town buildings are enumerated below; registration or inherited
+behavior alone is not principal-path acceptance.
+
+### Unique town-building item ledger — audit2026-10-06
+
+Canonical source: **Unique-building rebalance**, exactly37 grouped table rows
+across nine factions. This denominator excludes universal Mage Guild depth and
+the separate Tower dwelling swap. Independent source audits found three known
+missing clauses, all already held for design scope: Lighthouse, Skeleton
+Transformer, and Glyphs of Fear's adventure aura. No new missing production
+mechanic was established by the remaining verification gaps.
+
+`Native` means focused principal-path evidence exists, not complete integration
+or graphical acceptance. `Source` means a production path exists but its
+principal acceptance is thin. `Baseline` means retained inherited behavior,
+not newly implemented or individually certified content.
+
+| Faction / canonical row | Status and evidence | Remaining boundary |
+|---|---|---|
+| Castle Brotherhood of the Sword | Native: unique-building training +100 permanent Leadership per hero/building, repeat denial and save | Retained defending +2 Morale scope unverified |
+| Castle Stables | Native: UP201 resident day-start movement, expiry and reacquisition | Wider movement composition Phase2 |
+| Castle Lighthouse | Missing: UP201 | Town-departure waiver and repeated-day benefit scope unresolved; legacy sea500 is not the new rule |
+| Castle Griffin Bastion | Baseline: core horde growth consumer | Row-specific runtime acceptance absent; numbers deferred |
+| Rampart Treasury | Native: NewHorizonsEconomyTest, capped10% independently per Treasury | Wider economy composition Phase2 |
+| Rampart Mystic Pond | Native: exactly two precious resources, saved result and legacy control | Rendered weekly feedback unverified |
+| Rampart Fountain of Fortune | Native: UP201 defender Luck3 and weekly next-combat visitor Luck2 | Wider Luck composition Phase2 |
+| Rampart growth buildings | Baseline: core horde consumers | Row-specific runtime acceptance absent; numbers deferred |
+| Tower Library | Native: Mage/Arch Mage growth1, no Genie growth; source suppresses extra Guild spells | Cost/prerequisite/position are config evidence, not full construction acceptance |
+| Tower Arcane Reservoir | Native: weekly one-hero visit/reset; source grants Buffer50 | Separate Normal/Buffer assertion and rendered refill remain unverified |
+| Tower Astronomy Tower | Source: authoritative NewTurn forecast and castle preview | Wire tests alone do not prove forecast becomes actual following week; principal-path check next |
+| Tower Artifact Merchants | Baseline: artifact/resource marketplace modes | Row-specific runtime acceptance absent |
+| Inferno Castle Gate | Source: owned-gate teleport, daily use and Movement expenditure | Daily-state wire coverage alone is not real teleport acceptance |
+| Inferno Order of Fire | Native: actual visit grants permanent SP5 once per physical building, save | Wider permanent-stat composition Phase2 |
+| Inferno Brimstone Stormclouds | Native: UP023 siege defender SP20, cleanup, Sulfur1 daily | Wider siege composition Phase2 |
+| Inferno Birthing Pool / Cages | Baseline: core growth consumers | Row-specific runtime acceptance absent; numbers deferred |
+| Necropolis Necromancy Amplifier | Native: UP198 visit/refresh/expiry/save and raise consumer | Wider raised-army composition Phase2 |
+| Necropolis Skeleton Transformer | Missing: UP197 | Whole-selection versus per-stack rounding unresolved; old type/count conversion is not HP conversion |
+| Necropolis Cover of Darkness | Baseline: hide/reveal consumer; visible-only Dimension Door has separate coverage | Actual Cover re-shrouding acceptance absent |
+| Necropolis Unearthed Graves / growth | Baseline: horde source map | Whole-family runtime acceptance absent |
+| Dungeon Astral Nexus | Native: repeat ordinary Normal refill and save via unique-building training | Buffer composition unverified; no weekly gate intended |
+| Dungeon Battle Scholar Academy | Native: UP199 remaining-next-level XP25%, preview, real visit and save | Wider advancement composition Phase2 |
+| Dungeon Portal of Summoning | Native: UP177 shared external-dwelling stock, weekly selection and recruitment deduction | Wider dwelling ownership composition Phase2 |
+| Dungeon Artifact Merchants | Baseline: artifact/resource marketplace modes | Row-specific runtime acceptance absent |
+| Stronghold Hall of Valhalla | Native: actual visit grants permanent Attack5 per hero/building, save | Wider permanent-stat composition Phase2 |
+| Stronghold Ballista Yard | Native: UP024 machine shop pricing and weekly Siege20 refresh without stacking | Rendered shop acceptance separate |
+| Stronghold Freelancer's Guild | Baseline: creature/resource market consumer | Row-specific runtime acceptance absent |
+| Stronghold Escape Tunnel | Baseline: BATTLE_CAN_FLEE and battle consumer | Row-specific runtime acceptance absent |
+| Stronghold Mess Hall / growth | Baseline: core horde consumers | Row-specific runtime acceptance absent; numbers deferred |
+| Fortress Blood Obelisk | Native: UP202 siege Attack20 and weekly next-combat physical10%, save and cleanup | Wider Order/damage composition Phase2 |
+| Fortress Glyphs of Fear | Partial: UP200 native siege Defense20 and cleanup | Eight-tile enemy Morale aura missing; geometry/overlap scope unresolved |
+| Fortress Captain's Quarters / growth | Baseline: core growth consumers | Row-specific runtime acceptance absent; numbers deferred |
+| Fortress Shipyard | Baseline: town/generic boat consumer | Row-specific runtime acceptance absent |
+| Conflux House of Wisdom | Native: six distinct saved scroll offers, price1000×level, acquisition validation | Rendered scroll-art acceptance separate |
+| Conflux Artifact Merchants | Baseline: artifact/resource marketplace modes | Row-specific runtime acceptance absent |
+| Conflux Garden of Life / Vault of Ashes | Native: UP211/227 independent Pixie/Sprite stocks and weekly growth | Wider growth modifiers Phase2 |
+| Conflux Shipyard | Baseline: town/generic boat consumer | Row-specific runtime acceptance absent |
+
+All37 rows are accounted for. This is an audit denominator, not a claim of
+37/37 implementation acceptance or a replacement for the user-priority queue.
+Skeleton Transformer and Glyphs policy questions were refreshed2026-10-06;
+preselected suggestions are not submitted user decisions.
 
 ### Hero specialty conversion item ledger
 
