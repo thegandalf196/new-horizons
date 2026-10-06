@@ -2,6 +2,25 @@
 
 Updated: 2026-10-06
 
+Phase1 resumption audit: current ledger remains225/310 active perks,
+61/67 combat identities and8/8 Orders;5/5 Adventure acquisition is not
+effect completion. Outstanding identities/clauses retain recorded design
+holds. UP249 now has a causal debugger capture: BattleAI's exchange-candidate
+forecast obtains shooting eligibility from the prospective defender instead
+of the acting projected stack, producing a zero-shot ranged projection.
+Repair and focused principal-path verification pass. This is a
+required AI correctness path, not a new spell/perk identity. Failed Academy
+cutout drafts remain withheld; Cabir v2 is a provisional standing-art draft.
+UP250 and the Academy background/map-placement fixes are delivered through
+the normal Linux snapshotd5b344341f; manual rendered acceptance remains open.
+The one-line correction builds and a bounded private headless smoke reaches
+AI day6 without ammo-overuse/crash/request-rejection markers. Deterministic
+fixture plus three adjacent controls pass4/4, zero skips, in1.480s; independent
+review finds no blocker. Playable delivery remains pending. Phase2 finding: the same smoke emits
+`Unauthorized obstacles access attempt, assuming massive spell`; retain this
+separately for obstacle/spell-preview access diagnosis, not as an ammo-fix failure
+or permission to broaden this Phase1 slice into a full integration campaign.
+
 UP245 implements the required Flank side identities and proposed-position
 contribution readback in the existing Order help, marked-target tooltip and
 melee hover. Shared contact geometry uses both projected footprints; the same

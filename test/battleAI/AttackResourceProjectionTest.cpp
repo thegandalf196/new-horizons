@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include <atomic>
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/AttackPossibility.h"
 #include "../../AI/BattleAI/BattleExchangeVariant.h"
@@ -16,6 +17,7 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/bonuses/BonusParameters.h"
+#include "../../lib/logging/CLogger.h"
 #include "../../lib/modding/IdentifierStorage.h"
 #include "../../lib/modding/ModScope.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
@@ -30,6 +32,25 @@ public:
 	const Services * services() const override { return LIBRARY; }
 	const BattleCb * battle(const BattleID & id) const override { return state->getBattle(id); }
 	const GameCb * game() const override { return state.get(); }
+};
+
+class AmmoOveruseLogTarget final : public ILogTarget
+{
+public:
+	explicit AmmoOveruseLogTarget(std::weak_ptr<std::atomic_size_t> warningCount)
+		: warningCount(std::move(warningCount))
+	{
+	}
+
+	void write(const LogRecord & record) override
+	{
+		const auto counter = warningCount.lock();
+		if(counter && record.message.find("Stack ammo overuse") != std::string::npos)
+			counter->fetch_add(1);
+	}
+
+private:
+	std::weak_ptr<std::atomic_size_t> warningCount;
 };
 }
 
@@ -113,6 +134,76 @@ TEST_F(AttackResourceProjectionTest, FutureProductionLoopRetaliatesOnlyOnFirstSt
 	ASSERT_GT(expected, repeated);
 	EXPECT_FLOAT_EQ(actual, expected);
 	EXPECT_EQ(defender->counterAttacks.available(), 3);
+}
+
+TEST_F(AttackResourceProjectionTest, MeleeExchangeCandidateScoringDoesNotSpendAmmunition)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareCommands());
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+
+	auto * opening = addStack(BattleSide::ATTACKER, creatureByName("core:grandElf"), BattleHex(7, 5), 1000);
+	auto * followup = addStack(BattleSide::ATTACKER, creatureByName("core:grandElf"), BattleHex(8, 4), 1000);
+	auto * enemyOgre = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(8, 5), 1000);
+	Bonus freeShooting;
+	freeShooting.type = BonusType::FREE_SHOOTING;
+	freeShooting.val = 1;
+	opening->addNewBonus(std::make_shared<Bonus>(freeShooting));
+	followup->addNewBonus(std::make_shared<Bonus>(freeShooting));
+	Bonus speed;
+	speed.type = BonusType::STACKS_SPEED;
+	speed.val = 20;
+	opening->addNewBonus(std::make_shared<Bonus>(speed));
+	speed.val = 10;
+	followup->addNewBonus(std::make_shared<Bonus>(speed));
+
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = opening->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	prepareModel();
+	ASSERT_TRUE(model->battleCanShoot(opening));
+	ASSERT_TRUE(model->battleCanShoot(followup));
+	ASSERT_FALSE(model->battleCanShoot(enemyOgre));
+
+	const auto openingShots = opening->shots.available();
+	const auto followupShots = followup->shots.available();
+	const auto enemyShots = enemyOgre->shots.available();
+	ASSERT_EQ(enemyShots, 0);
+	const auto attack = AttackPossibility::evaluate(BattleAttackInfo(opening, enemyOgre, 0, true),
+		opening->getPosition(), cache, model);
+	ASSERT_NE(attack.attackerState, nullptr);
+	PotentialTargets targets(opening, cache, model);
+	BattleExchangeEvaluator evaluator(callback, environment, 1.0f, 1);
+	evaluator.updateReachabilityMap(model);
+	const auto units = evaluator.getExchangeUnits(attack, 0, targets, model);
+	const auto isScheduled = [&units](const battle::Unit * unit)
+	{
+		return std::any_of(units.units.begin(), units.units.end(), [unit](const auto & entry)
+		{
+			return vstd::contains(entry.second, unit);
+		});
+	};
+	ASSERT_TRUE(isScheduled(opening));
+	ASSERT_TRUE(isScheduled(followup));
+	ASSERT_TRUE(isScheduled(enemyOgre));
+	ASSERT_TRUE(vstd::contains(units.melleeAccessible, opening));
+	ASSERT_TRUE(vstd::contains(units.melleeAccessible, followup));
+	ASSERT_FALSE(vstd::contains(units.shooters, opening));
+	ASSERT_FALSE(vstd::contains(units.shooters, followup));
+
+	auto ammoOveruseWarnings = std::make_shared<std::atomic_size_t>(0);
+	CLogger::getGlobalLogger()->addTarget(std::make_unique<AmmoOveruseLogTarget>(ammoOveruseWarnings));
+	evaluator.evaluateExchange(attack, 0, targets, cache, model);
+
+	EXPECT_EQ(ammoOveruseWarnings->load(), 0u);
+	EXPECT_EQ(opening->shots.available(), openingShots);
+	EXPECT_EQ(followup->shots.available(), followupShots);
+	EXPECT_EQ(enemyOgre->shots.available(), enemyShots);
 }
 
 TEST_F(AttackResourceProjectionTest, TwoStrikeSequenceAllowsOnlyOneRetaliationLikeAuthority)
