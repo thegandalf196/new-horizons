@@ -84,6 +84,9 @@
 		"growth": 4,
 		"cost": {
 			"gold": 450
+		},
+		"graphics": {
+			"iconLarge": "NH_academy_genie_icon_large.png"
 		}
 	},
 	"core:masterGenie": {
@@ -98,6 +101,9 @@
 		"growth": 4,
 		"cost": {
 			"gold": 550
+		},
+		"graphics": {
+			"iconLarge": "NH_academy_masterGenie_icon_large.png"
 		}
 	}
 }

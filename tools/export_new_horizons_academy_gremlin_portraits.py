@@ -7,6 +7,7 @@ runtime the renderer composites those external frames through the copied masks.
 """
 
 import argparse
+import hashlib
 from pathlib import Path
 
 from PIL import Image
@@ -23,6 +24,8 @@ BACKDROP_EXPORTS = (
     IMAGE_ROOT / "NH_academy_stoneGolem_icon_large.png",
     IMAGE_ROOT / "NH_academy_mage_icon_large.png",
     IMAGE_ROOT / "NH_academy_archMage_icon_large.png",
+    IMAGE_ROOT / "NH_academy_genie_icon_large.png",
+    IMAGE_ROOT / "NH_academy_masterGenie_icon_large.png",
 )
 MASKS = {
     "gremlin": (
@@ -49,7 +52,16 @@ MASKS = {
         ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/archMage.png",
         IMAGE_ROOT / "NH_academy_archMage_portrait_mask.png",
     ),
+    "genie": (
+        ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/genie.png",
+        IMAGE_ROOT / "NH_academy_genie_portrait_mask.png",
+    ),
+    "masterGenie": (
+        ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/masterGenie-v2.png",
+        IMAGE_ROOT / "NH_academy_masterGenie_portrait_mask.png",
+    ),
 }
+MASTER_GENIE_V2_SHA256 = "9f5291e7d50b29a4a16d8c54aeba2de9b4566456d5b5823e4d18023ac6659a40"
 # Pillow's right/bottom-excluded crop rectangle from the approved composition.
 SOURCE_CROP = (0, 10, 100, 120)
 OUTPUT_SIZE = (58, 64)
@@ -65,6 +77,12 @@ def render_backdrop() -> Image.Image:
 def verify(check: bool, parser: argparse.ArgumentParser) -> None:
     if not SOURCE_BACKDROP.is_file():
         parser.error(f"missing authored backdrop source: {SOURCE_BACKDROP}")
+    master_genie_matte = MASKS["masterGenie"][0]
+    if not master_genie_matte.is_file():
+        parser.error(f"missing pinned Master Genie v2 matte: {master_genie_matte}")
+    master_genie_sha256 = hashlib.sha256(master_genie_matte.read_bytes()).hexdigest()
+    if master_genie_sha256 != MASTER_GENIE_V2_SHA256:
+        parser.error(f"Master Genie v2 matte SHA256 differs from the reviewed source: {master_genie_matte}")
     expected_backdrop = render_backdrop()
     expected_pixels = expected_backdrop.tobytes()
 

@@ -66,13 +66,15 @@ constexpr std::array<BuiltIcon, 4> academyBuiltIcons{{
 	{"NH_academy_village_small_normal.png", "NH_academy_village_small_built.png", 48, 32},
 }};
 
-constexpr std::array<AcademyPortrait, 6> academyPortraits{{
+constexpr std::array<AcademyPortrait, 8> academyPortraits{{
 	{"gremlin", "NH_academy_gremlin_icon_large.png", "NH_academy_gremlin_portrait_mask.png", 28, 30},
 	{"masterGremlin", "NH_academy_masterGremlin_icon_large.png", "NH_academy_masterGremlin_portrait_mask.png", 29, 31},
 	{"ironGolem", "NH_academy_ironGolem_icon_large.png", "NH_academy_ironGolem_portrait_mask.png", 32, 34},
 	{"stoneGolem", "NH_academy_stoneGolem_icon_large.png", "NH_academy_stoneGolem_portrait_mask.png", 33, 35},
 	{"mage", "NH_academy_mage_icon_large.png", "NH_academy_mage_portrait_mask.png", 34, 36},
 	{"archMage", "NH_academy_archMage_icon_large.png", "NH_academy_archMage_portrait_mask.png", 35, 37},
+	{"genie", "NH_academy_genie_icon_large.png", "NH_academy_genie_portrait_mask.png", 36, 38},
+	{"masterGenie", "NH_academy_masterGenie_icon_large.png", "NH_academy_masterGenie_portrait_mask.png", 37, 39},
 }};
 
 void require(bool condition, const std::string & message)

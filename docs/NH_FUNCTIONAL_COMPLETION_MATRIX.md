@@ -6,12 +6,14 @@ UP240 user-priority art slice: three revised Academy map-body images are integra
 with exact prior geometry, reproducible native reductions and a pinned importer.
 Eight focused art tests, import/export checks and independent review pass. No
 gameplay identity is added: perks remain225/310 and combat identities61/67.
-UP239's six provisional Gremlin/Golem/Mage portraits have a production compositor
+UP239's eight provisional Gremlin/Golem/Mage/Genie portraits have a production compositor
 and actual dummy-SDL pixel/alias acceptance at scales1–4 (three consecutive native
 passes, zero skips; the previous four-portrait checkpoint passed ten repeats
 after restoring the fixture's production async-drain shutdown contract).
-Both Linux targets build; three Python checks and exporter validation pass; eight other large
-portraits remain missing. The initial intermittent fixture failure is retained
+Both Linux targets build; three Python checks and exporter validation pass; six other large
+portraits remain missing. Naga has an accepted provisional mask but no runtime
+registration; Naga Queen's initial mask is rejected for foreground holes/lines.
+The initial intermittent fixture failure is retained
 in the failure ledger, not claimed conclusively diagnosed. Stone
 and Obsidian Gargoyle drafts are rejected for retained scenery, not coverage.
 Original small cutouts do not

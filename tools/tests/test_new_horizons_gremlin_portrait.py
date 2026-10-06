@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Focused wiring and source-exactness checks for Academy large portraits."""
 
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -37,6 +38,8 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
             "NH_academy_stoneGolem_icon_large.png",
             "NH_academy_mage_icon_large.png",
             "NH_academy_archMage_icon_large.png",
+            "NH_academy_genie_icon_large.png",
+            "NH_academy_masterGenie_icon_large.png",
         )
         decoded = []
         for path in backdrop_paths:
@@ -46,10 +49,20 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
                 decoded.append(image.tobytes())
         self.assertTrue(all(pixels == decoded[0] for pixels in decoded[1:]))
 
-        for creature in ("gremlin", "masterGremlin", "ironGolem", "stoneGolem", "mage", "archMage"):
+        creatures = ("gremlin", "masterGremlin", "ironGolem", "stoneGolem", "mage", "archMage", "genie")
+        for creature in creatures:
             runtime = IMAGE_ROOT / f"NH_academy_{creature}_portrait_mask.png"
             source = ROOT / f"assets/new-horizons/academy/portrait-revisions/v1/mattes/{creature}.png"
             self.assertEqual(runtime.read_bytes(), source.read_bytes())
+        master_genie_source = ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/masterGenie-v2.png"
+        master_genie_bytes = master_genie_source.read_bytes()
+        self.assertEqual(
+            hashlib.sha256(master_genie_bytes).hexdigest(),
+            "9f5291e7d50b29a4a16d8c54aeba2de9b4566456d5b5823e4d18023ac6659a40",
+        )
+        self.assertEqual(
+            (IMAGE_ROOT / "NH_academy_masterGenie_portrait_mask.png").read_bytes(), master_genie_bytes
+        )
 
     def test_only_reviewed_large_portrait_routes_are_registered(self):
         config = parse_jsonc((ROOT / "Mods/new-horizons/Content/config/creatures/tower.json").read_text())
@@ -60,6 +73,8 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
             "core:stoneGolem": "NH_academy_stoneGolem_icon_large.png",
             "core:mage": "NH_academy_mage_icon_large.png",
             "core:archMage": "NH_academy_archMage_icon_large.png",
+            "core:genie": "NH_academy_genie_icon_large.png",
+            "core:masterGenie": "NH_academy_masterGenie_icon_large.png",
         }
         for creature, image in expected.items():
             with self.subTest(creature=creature):
@@ -73,17 +88,27 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
         self.assertNotIn("NH_academy_stoneGargoyle_icon_large.png", generator)
         self.assertNotIn("NH_academy_obsidianGargoyle_icon_large.png", generator)
 
-    def test_golem_portrait_frame_ids_preserve_hottraits_reversal(self):
+    def test_portrait_frame_ids_preserve_hottraits_reversal(self):
         core = parse_jsonc((ROOT / "config/creatures/tower.json").read_text())
         self.assertEqual(core["ironGolem"]["index"], 32)
         self.assertEqual(core["stoneGolem"]["index"], 33)
         self.assertEqual(core["mage"]["index"], 34)
         self.assertEqual(core["archMage"]["index"], 35)
+        self.assertEqual(core["genie"]["index"], 36)
+        self.assertEqual(core["masterGenie"]["index"], 37)
         fixture = (ROOT / "client/tests/AcademyBuiltIconRuntimeTest.cpp").read_text(encoding="utf-8")
         self.assertIn('{"ironGolem", "NH_academy_ironGolem_icon_large.png", "NH_academy_ironGolem_portrait_mask.png", 32, 34}', fixture)
         self.assertIn('{"stoneGolem", "NH_academy_stoneGolem_icon_large.png", "NH_academy_stoneGolem_portrait_mask.png", 33, 35}', fixture)
         self.assertIn('{"mage", "NH_academy_mage_icon_large.png", "NH_academy_mage_portrait_mask.png", 34, 36}', fixture)
         self.assertIn('{"archMage", "NH_academy_archMage_icon_large.png", "NH_academy_archMage_portrait_mask.png", 35, 37}', fixture)
+        self.assertIn(
+            '{"genie", "NH_academy_genie_icon_large.png", "NH_academy_genie_portrait_mask.png", 36, 38}',
+            fixture,
+        )
+        self.assertIn(
+            '{"masterGenie", "NH_academy_masterGenie_icon_large.png", "NH_academy_masterGenie_portrait_mask.png", 37, 39}',
+            fixture,
+        )
         config = (ROOT / "Mods/new-horizons/Content/config/creatures/tower.json").read_text(encoding="utf-8")
         self.assertIn("frame 34 is internal ironGolem ID 32; frame 35 is stoneGolem ID 33", config)
 

@@ -13,11 +13,13 @@ separate. UP239's first generated Gremlin matte failed
 native comparison (retained snowy architecture) and is rejected, not new portrait
 coverage or approved artwork. Its corrected geometry-only matte now passes root
 native review provisionally; Master Gremlin's mask is also Provisional. Both
-large portraits, both Golem portraits and both Mage portraits now have production
+large portraits, both Golem portraits, both Mage portraits and both Genie portraits have production
 integration and actual dummy-SDL scaled consumer verification (three repeated
-six-portrait passes after fixture lifecycle repair). All six are Provisional;
-the other eight are Not done. Genie masks and masters remain unregistered drafts
-pending luminous-contour/internal-gap review. Gargoyle
+eight-portrait passes after fixture lifecycle repair). All eight are Provisional;
+the other six portraits are Not done. Naga's mask is provisionally accepted but
+unregistered; Naga Queen's initial mask is rejected for internal foreground holes.
+Master Genie v2 restores the vest hole, with two minor contour changes documented.
+Gargoyle
 drafts are rejected for scenery retained by their masks, not approved runtime art.
 No small-icon or gameplay changes; full portrait coverage and user approval remain
 unfinished.
