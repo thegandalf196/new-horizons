@@ -2,6 +2,23 @@
 
 Updated: 2026-10-07
 
+UP289–291 source checkpoint: garrison admission opens the native local army
+transfer window instead of sending an impossible whole merge; hero remains
+visiting, with shared client/AI prediction and unchanged authoritative checks.
+Wisp dwelling is second-Core ordered, Fort-gated and provisionally priced;
+Phoenix retains its prior transitive Fire/Earth chain. Opt-in solid-alpha
+outlines support glow creatures in both backends, preserving legacy default.
+Actual SDL2 loader/cache/native/2x validation and all110 authored Wisp masks
+pass; SDL3 compile and normal gameplay interaction remain deferred. Approved
+base Cabir fidget has a private group1 overlay; Magi safe-inset and Conflux Wisp
+backdrop exports are staged. Cabir sounds/schema fixes are in source. No new
+spell/perk/Skill identity is completed:228/310 perks,61/67 combat spells,
+31 Skills/93 ranks,8/8 Orders. Ten-job client/test builds and20/20 focused
+garrison checks pass, including authoritative transfer/admission after correcting
+premature single-player fixture victory. Source and playable delivery are
+separate. Four-role Mage, hover/audio and Wisp-turn
+visual acceptance remain pending.
+
 Normal Linux delivery checkpoint: source01ffcf6bd creature snapshot452cbf72
 is now superseded by combined b26652d8. All3120 baseline bytes are preserved;
 874 additive private resources deliver864 casting frames,nine sparse guild-book

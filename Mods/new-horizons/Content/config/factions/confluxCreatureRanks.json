@@ -13,12 +13,30 @@
 				"modify@3": {
 					"modify@3": [ "horde1" ],
 					"appendItems": [ [ "horde2" ] ]
-				}
+				},
+				"modify@4": [ [ "dwellingLvl1", "dwellingUpLvl1" ], [ "dwellingLvl6", "dwellingUpLvl6" ], [ "dwellingLvl2", "dwellingUpLvl2" ], [ "dwellingLvl3", "dwellingUpLvl3" ] ],
+				"modify@5": [ [ "dwellingLvl4", "dwellingUpLvl4" ], [ "dwellingLvl5", "dwellingUpLvl5" ], [ "dwellingLvl7", "dwellingUpLvl7" ] ]
 			},
 			"structures": {
 				"horde1Upgr": null
 			},
 			"buildings": {
+				"dwellingLvl6": {
+					"name": "Altar of Magic",
+					"description": "The Altar of Magic allows you to recruit Wisps, the second Conflux Core creature line.",
+					"requires#override": [ "fort" ],
+					"cost#override": { "gold": 1500, "wood": 5, "ore": 5, "mercury": 0, "sulfur": 0, "crystal": 0, "gems": 0 }
+				},
+				"dwellingUpLvl6": {
+					"name": "Upgraded Altar of Magic",
+					"description": "The Upgraded Altar of Magic allows you to recruit Greater Wisps.",
+					"upgrades": "dwellingLvl6",
+					"requires#override": [ "allOf" ],
+					"cost#override": { "gold": 1000, "wood": 0, "ore": 5, "mercury": 0, "sulfur": 0, "crystal": 0, "gems": 0 }
+				},
+				"dwellingLvl7": {
+					"requires#override": [ "allOf", [ "dwellingLvl4" ], [ "dwellingLvl5" ] ]
+				},
 				"horde1Upgr": null,
 				"horde1": {
 					"description": "The Garden of Life increases weekly Pixie and Sprite growth by 4."

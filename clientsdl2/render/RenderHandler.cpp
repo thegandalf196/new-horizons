@@ -130,6 +130,7 @@ void RenderHandler::initFromJson(AnimationLayoutMap & source, const JsonNode & c
 	base["margins"] = config["margins"];
 	base["width"] = config["width"];
 	base["height"] = config["height"];
+	base["overlayAlphaThreshold"] = config["overlayAlphaThreshold"];
 
 	for(const JsonNode & group : config["sequences"].Vector())
 	{
@@ -141,10 +142,16 @@ void RenderHandler::initFromJson(AnimationLayoutMap & source, const JsonNode & c
 			JsonNode toAdd = frame;
 			JsonUtils::inherit(toAdd, base);
 			toAdd["file"].String() = basepath + frame.String();
+			// String frames replace the inherited object; copy this opt-in after
+			// conversion, before a sequence-specific override.
+			if(!config["overlayAlphaThreshold"].isNull())
+				toAdd["overlayAlphaThreshold"] = config["overlayAlphaThreshold"];
 			if(group["generateShadow"].isNumber())
 				toAdd["generateShadow"].Integer() = group["generateShadow"].Integer();
 			if(group["generateOverlay"].isNumber())
 				toAdd["generateOverlay"].Integer() = group["generateOverlay"].Integer();
+			if(!group["overlayAlphaThreshold"].isNull())
+				toAdd["overlayAlphaThreshold"] = group["overlayAlphaThreshold"];
 			source[groupID].emplace_back(toAdd, mode);
 		}
 	}
@@ -439,7 +446,7 @@ std::shared_ptr<SDLImageShared> RenderHandler::loadScaledImage(const ImageLocato
 		if(isShadow && generateShadow)
 			img = img->drawShadow((*locator.generateShadow) == SharedImageLocator::ShadowMode::SHADOW_SHEAR);
 		if(isOverlay && generateOverlay && (*locator.generateOverlay) == SharedImageLocator::OverlayMode::OVERLAY_OUTLINE)
-			img = img->drawOutline(Colors::WHITE, 1);
+			img = img->drawOutline(Colors::WHITE, 1, locator.overlayAlphaThreshold);
 
 		if(locator.scalingFactor == 1)
 			img->setAsyncUpscale(false); // no base image, needs to be done in sync

@@ -333,6 +333,7 @@ set(vcmiclientcommon_HEADERS
 	render/IFont.h
 	render/IImageLoader.h
 	render/ImageLocator.h
+	render/OutlineMask.h
 	render/IRenderHandler.h
 	render/hdEdition/HdImageLoader.h
 	render/hdEdition/PakLoader.h

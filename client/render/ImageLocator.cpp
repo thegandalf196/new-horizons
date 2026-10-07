@@ -93,6 +93,14 @@ SharedImageLocator::SharedImageLocator(const JsonNode & config, EImageBlitMode m
 	if(!config["generateOverlay"].isNull())
 		generateOverlay = static_cast<SharedImageLocator::OverlayMode>(config["generateOverlay"].Integer());
 
+	if(!config["overlayAlphaThreshold"].isNull())
+	{
+		const auto & value = config["overlayAlphaThreshold"];
+		if(value.getType() != JsonNode::JsonType::DATA_INTEGER || value.Integer() < 0 || value.Integer() > 255)
+			throw std::invalid_argument("Overlay alpha threshold must be an integer from 0 to 255");
+		overlayAlphaThreshold = static_cast<uint8_t>(value.Integer());
+	}
+
 	if(!config["paletteRemap"].isNull())
 		paletteRemap = parsePaletteRemap(config["paletteRemap"]);
 
@@ -144,6 +152,8 @@ bool SharedImageLocator::operator < (const SharedImageLocator & other) const
 		return generateShadow < other.generateShadow;
 	if(generateOverlay != other.generateOverlay)
 		return generateOverlay < other.generateOverlay;
+	if(overlayAlphaThreshold != other.overlayAlphaThreshold)
+		return overlayAlphaThreshold < other.overlayAlphaThreshold;
 	if(paletteRemap != other.paletteRemap)
 		return paletteRemap < other.paletteRemap;
 

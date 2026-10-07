@@ -1,5 +1,16 @@
 # New Horizons UI and asset status register
 
+UP289/291,2026-10-07: base Cabir four-frame hover/fidget is user-approved
+("ok, it is good") and staged as an optional private MOUSEON group1, leaving
+all supplied action groups/HOLDING intact. Matching Master draft is **Provisional**
+and awaits review. Review GIFs live in Downloads/provisory; previews are not
+automatically installed. Magi safe-inset58x64/32 candidates and Wisp large
+portraits composited over actual Conflux TPCASELE scenery are **Provisional**
+placement corrections, not new final art. Wisp opt-in threshold64 produces
+readable silhouette masks without modifying source RGBA; actual loaded SDL2
+1x/2x checks pass. Live gameplay selection/hover/audio and all four reported
+Mage portrait roles still require acceptance in a delivered candidate.
+
 Superseding complete handoffs,2026-10-07, UP288: **Provisional**, source/import
 and private playable delivery verified; rendered approval remains open. Current
 Cabir descriptors use77/83 supplied authored battle frames, with no standing-death

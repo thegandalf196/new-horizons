@@ -2,6 +2,29 @@
 
 ## Purpose
 
+### 2026-10-07 — Wisp Core dwelling requirements and outline inheritance
+
+UP291 upgrade `requires#override: []` crashed during town finalization: the
+logical-expression reader requires a nonempty vector. No extra requirements
+must use `["allOf"]`. Corrected data and focused assertion; detached candidate
+loads successfully and passes actual SDL2 outline/cache/body checks at1x/2x.
+Both renderers also now copy root overlayAlphaThreshold after string-frame
+conversion, before group override; the independent review caught lost inheritance.
+SDL3 local build remains deferred because that backend is unavailable here.
+
+Use a detached complete resource tree and isolated New Horizons test preset.
+Development-bin symlink inventory dropped New Horizons from the preset, causing
+unknown Wisp IDs and skipped authoritative tests; running from repo root lacked
+CONFIG/ROESTRINGMAPPING. These setup failures are not mechanic evidence.
+The old shooter-alias Wisp builder assumes obsolete hall patch shape and fails
+against current Core ordering; defer its retirement to Phase2, without restoring
+obsolete gameplay. Descriptor-only outline staging bypasses that builder.
+
+The first exact garrison chain fixture also had only one active player. Accepted
+ArrangeStacks therefore triggered victory and removed Red from actingPlayers,
+so the next request was correctly denied. Seed an opposing town/player rather
+than bypassing turn validation or changing production victory handling.
+
 ### 2026-10-07 — Transformer consumer compile and snapshot selection
 
 The new AI consumer initially passes HeroPtr's pointer-valued dereference where

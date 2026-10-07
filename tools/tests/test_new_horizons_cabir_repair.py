@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import unittest
 
+from jsonschema import Draft4Validator, ValidationError
+
 
 ROOT = Path(__file__).resolve().parents[2]
 SPELL_PATH = ROOT / "Mods/new-horizons/Content/config/spells/cabirRepair.json"
@@ -37,6 +39,17 @@ class CabirRepairContentTest(unittest.TestCase):
         self.assertEqual("spells/cabirRepair", self.script_config["script"])
         self.assertEqual([], self.script_config["patches"])
         self.assertFalse(self.script_config["schema"]["additionalProperties"])
+
+    def test_effect_parameters_allow_discriminator_but_reject_unknown_fields(self):
+        schema = self.script_config["schema"]
+        effect_parameters = self.spell["levels"]["base"]["battleEffects"]["repair"]
+        validator = Draft4Validator(schema)
+
+        Draft4Validator.check_schema(schema)
+        validator.validate(effect_parameters)
+
+        with self.assertRaises(ValidationError):
+            validator.validate({**effect_parameters, "unexpectedRepairOption": True})
 
     def test_only_the_four_requested_core_creature_ids_are_repairable(self):
         expected = {

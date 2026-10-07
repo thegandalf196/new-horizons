@@ -5,6 +5,10 @@
 			"plural": "Cabirs"
 		},
 		"shots": 8,
+		"sound": {
+			"attack": "TROGATTK.wav",
+			"shoot": "FIRBATTK.wav"
+		},
 		"abilities": {
 			"shooter": {
 				"type": "SHOOTER"
@@ -54,6 +58,10 @@
 			"plural": "Cabir Masters"
 		},
 		"shots": 8,
+		"sound": {
+			"attack": "ITRGATTK.wav",
+			"shoot": "PHOEATTK.wav"
+		},
 		"abilities": {
 			"shooter": {
 				"type": "SHOOTER"

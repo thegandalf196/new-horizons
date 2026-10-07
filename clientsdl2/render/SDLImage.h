@@ -75,7 +75,7 @@ public:
 	[[nodiscard]] std::shared_ptr<const ISharedImage> scaleTo(const Point & size, SDL_Palette * palette) const override;
 
 	std::shared_ptr<SDLImageShared> drawShadow(bool doSheer) const;
-	std::shared_ptr<SDLImageShared> drawOutline(const ColorRGBA & color, int thickness) const;
+	std::shared_ptr<SDLImageShared> drawOutline(const ColorRGBA & color, int thickness, uint8_t alphaThreshold = 0) const;
 
 	void setMargins(const Point & newMargins);
 	void setFullSize(const Point & newSize);

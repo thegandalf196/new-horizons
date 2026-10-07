@@ -8,7 +8,10 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 CORE_TOWER = ROOT / "config/creatures/tower.json"
+CORE_DUNGEON = ROOT / "config/creatures/dungeon.json"
+CORE_CONFLUX = ROOT / "config/creatures/conflux.json"
 MODULE_TOWER = ROOT / "Mods/new-horizons/Content/config/creatures/tower.json"
+CABIR_REPAIR = ROOT / "Mods/new-horizons/Content/config/spells/cabirRepair.json"
 
 
 def _strip_jsonc_comments(source: str) -> str:
@@ -60,7 +63,10 @@ class CabirRangedConfigTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.core = json.loads(_strip_jsonc_comments(CORE_TOWER.read_text(encoding="utf-8")))
+        cls.dungeon = json.loads(_strip_jsonc_comments(CORE_DUNGEON.read_text(encoding="utf-8")))
+        cls.conflux = json.loads(_strip_jsonc_comments(CORE_CONFLUX.read_text(encoding="utf-8")))
         cls.module = json.loads(_strip_jsonc_comments(MODULE_TOWER.read_text(encoding="utf-8")))
+        cls.repair_spell = json.loads(CABIR_REPAIR.read_text(encoding="utf-8"))["cabirRepair"]
         cls.creatures = {
             "core:gremlin": _deep_merge(cls.core["gremlin"], cls.module["core:gremlin"]),
             "core:masterGremlin": _deep_merge(cls.core["masterGremlin"], cls.module["core:masterGremlin"]),
@@ -111,6 +117,28 @@ class CabirRangedConfigTest(unittest.TestCase):
         self.assertEqual(self.core["gremlin"]["upgrades"], ["masterGremlin"])
         self.assertEqual(self.core["masterGremlin"]["shots"], 8)
         self.assertEqual(self.core["masterGremlin"]["abilities"]["shooter"]["type"], "SHOOTER")
+
+    def test_both_forms_use_existing_breath_and_claw_sounds_without_changing_other_cues(self):
+        sound_sources = {
+            "core:gremlin": (self.conflux["firebird"], self.dungeon["troglodyte"]),
+            "core:masterGremlin": (self.conflux["phoenix"], self.dungeon["infernalTroglodyte"]),
+        }
+
+        for creature_id, (breath_source, claw_source) in sound_sources.items():
+            with self.subTest(creature=creature_id):
+                creature = self.creatures[creature_id]
+                self.assertEqual(breath_source["abilities"]["twoHexAttackBreath"]["type"], "TWO_HEX_ATTACK_BREATH")
+                self.assertEqual(creature["sound"]["shoot"], breath_source["sound"]["attack"])
+                self.assertEqual(creature["sound"]["attack"], claw_source["sound"]["attack"])
+                self.assertTrue(creature["sound"]["shoot"].endswith(".wav"))
+                self.assertTrue(creature["sound"]["attack"].endswith(".wav"))
+                for unchanged_sound in ("defend", "killed", "move", "wince"):
+                    self.assertEqual(
+                        creature["sound"][unchanged_sound],
+                        self.core["gremlin" if creature_id == "core:gremlin" else "masterGremlin"]["sound"][unchanged_sound],
+                    )
+
+        self.assertEqual(self.repair_spell["sounds"]["cast"], "REGENER")
 
 
 if __name__ == "__main__":

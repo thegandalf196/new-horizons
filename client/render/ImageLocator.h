@@ -45,6 +45,8 @@ struct SharedImageLocator
 
 	std::optional<ShadowMode> generateShadow;
 	std::optional<OverlayMode> generateOverlay;
+	/// Opt-in solid outline mask; zero retains the original alpha-fringe behavior.
+	uint8_t overlayAlphaThreshold = 0;
 	PaletteRemap paletteRemap;
 
 	SharedImageLocator() = default;

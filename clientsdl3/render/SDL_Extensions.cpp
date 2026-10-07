@@ -17,6 +17,7 @@
 #include "IImage.h"
 #include "IScreenHandler.h"
 #include "render/Colors.h"
+#include "render/OutlineMask.h"
 #include "CMT.h"
 #include "xBRZ/xbrz.h"
 
@@ -793,7 +794,7 @@ void CSDL_Ext::getClipRect(SDL_Surface * src, Rect & other)
 	other = CSDL_Ext::fromSDL(rect);
 }
 
-SDL_Surface* CSDL_Ext::drawOutline(SDL_Surface* sourceSurface, const SDL_Color& color, int thickness)
+SDL_Surface* CSDL_Ext::drawOutline(SDL_Surface* sourceSurface, const SDL_Color& color, int thickness, uint8_t alphaThreshold)
 {
 	if(thickness < 1)
 		return nullptr;
@@ -820,33 +821,9 @@ SDL_Surface* CSDL_Ext::drawOutline(SDL_Surface* sourceSurface, const SDL_Color& 
 		{
 			for (int x = 0; x < width; x++)
 			{
-				Uint8 alpha = getAlpha(x, y);
-				if (alpha != 0)
-					continue; // Skip opaque or semi-transparent pixels
-
-				Uint8 maxNearbyAlpha = 0;
-
-				for (int dy = -thickness; dy <= thickness; ++dy)
+				const Uint8 finalAlpha = outlineMask::pixelAlpha(x, y, width, height, thickness, alphaThreshold, color.a, getAlpha);
+				if(finalAlpha > 0)
 				{
-					for (int dx = -thickness; dx <= thickness; ++dx)
-					{
-						if (dx * dx + dy * dy > thickness * thickness)
-							continue; // circular area
-
-						int nx = x + dx;
-						int ny = y + dy;
-						if (nx < 0 || ny < 0 || nx >= width || ny >= height)
-							continue;
-
-						Uint8 neighborAlpha = getAlpha(nx, ny);
-						if (neighborAlpha > maxNearbyAlpha)
-							maxNearbyAlpha = neighborAlpha;
-					}
-				}
-
-				if (maxNearbyAlpha > 0)
-				{
-					Uint8 finalAlpha = maxNearbyAlpha - alpha; // alpha is 0 here, so effectively maxNearbyAlpha
 					Uint32 newPixel = mapColor(destSurface, { color.r, color.g, color.b, finalAlpha });
 					*((Uint32*)destSurface->pixels + y * width + x) = newPixel;
 				}

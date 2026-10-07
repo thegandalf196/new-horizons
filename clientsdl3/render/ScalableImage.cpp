@@ -570,6 +570,7 @@ std::shared_ptr<const ISharedImage> ScalableImageShared::loadOrGenerateImage(EIm
 	loadingLocator.paletteRemap = locator.paletteRemap;
 	loadingLocator.generateShadow = locator.generateShadow;
 	loadingLocator.generateOverlay = locator.generateOverlay;
+	loadingLocator.overlayAlphaThreshold = locator.overlayAlphaThreshold;
 	loadingLocator.defFrame = locator.defFrame;
 	loadingLocator.defGroup = locator.defGroup;
 	loadingLocator.layer = mode;

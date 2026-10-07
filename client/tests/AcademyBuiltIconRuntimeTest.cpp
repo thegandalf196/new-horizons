@@ -4,7 +4,8 @@
  *
  * Loads the runtime-generated Academy town-list icons at each SDL2 image
  * scale. Opt-in paths also check detached Cabir animation descriptors,
- * authored icon bindings and private casting-glow resources. SDL is constrained
+ * authored icon bindings and private casting-glow resources. NH_VALIDATE_OUTLINE_ALPHA=1
+ * instead checks private generated outline fixtures at native and 2x scale. SDL is constrained
  * to its dummy video/audio drivers and software renderer. ScreenHandler's existing constructor
  * clear/present stays on that dummy backend; the fixture has no event, input,
  * or presentation loop.
@@ -32,6 +33,7 @@
 #include "../../lib/mapObjects/ObjectTemplate.h"
 
 #include "render/Canvas.h"
+#include "render/CanvasImage.h"
 #include "render/CAnimation.h"
 #include "render/IRenderHandler.h"
 #include "render/IScreenHandler.h"
@@ -257,6 +259,101 @@ std::vector<ColorRGBA> captureScaledImagePixels(const std::shared_ptr<IImage> & 
 		for(int x = 0; x < renderedSize.x; ++x)
 			pixels.push_back(canvas.getPixel(Point(x, y)));
 	return pixels;
+}
+
+bool outlineAlphaValidationRequested()
+{
+	const char * value = std::getenv("NH_VALIDATE_OUTLINE_ALPHA");
+	return value && std::string_view(value) == "1";
+}
+
+void mountOutlineAlphaFixture(IRenderHandler & renderer, const std::filesystem::path & profile)
+{
+	const auto directory = profile / "outline-alpha-fixture";
+	std::filesystem::create_directories(directory / "NH_OutlineAlphaFixture");
+	const auto source = renderer.createImage(Point(15, 15), CanvasScalingPolicy::IGNORE);
+	auto canvas = source->getCanvas();
+	canvas.drawColor(Rect(0, 0, 15, 15), ColorRGBA(0, 0, 0, 0));
+	canvas.drawColor(Rect(6, 6, 3, 3), ColorRGBA(32, 96, 224, 96));
+	canvas.drawColor(Rect(5, 7, 1, 1), ColorRGBA(32, 96, 224, 7));
+	const auto sourcePath = directory / "NH_OutlineAlphaFixture" / "source.png";
+	source->exportBitmap(boost::filesystem::path(sourcePath.string()));
+	require(std::filesystem::is_regular_file(sourcePath), "Could not export private outline-alpha fixture");
+	{
+		std::ofstream descriptor(directory / "NH_OutlineAlphaFixture.json");
+		descriptor << R"({"basepath":"NH_OutlineAlphaFixture/","overlayAlphaThreshold":64,"sequences":[
+			{"group":0,"frames":["source.png"],"generateOverlay":1},
+			{"group":1,"frames":["source.png"],"generateOverlay":1,"overlayAlphaThreshold":0},
+			{"group":2,"frames":["source.png"],"generateOverlay":1,"overlayAlphaThreshold":128}]})";
+		require(static_cast<bool>(descriptor), "Could not write private outline-alpha descriptor");
+	}
+	auto filesystem = std::make_unique<CFilesystemList>();
+	filesystem->addLoader(std::make_unique<CFilesystemLoader>("SPRITES/",
+		boost::filesystem::path(directory.string())), false);
+	CResourceHandler::addFilesystem("data", "nh-outline-alpha-validation", std::move(filesystem));
+}
+
+void verifyOutlineAlphaFixture(IRenderHandler & renderer, int scale)
+{
+	const auto animation = renderer.loadAnimation(AnimationPath::builtin("NH_OutlineAlphaFixture"),
+		EImageBlitMode::WITH_SHADOW_AND_SELECTION);
+	require(animation != nullptr, "Could not load private outline-alpha animation");
+	constexpr std::array<uint8_t, 3> thresholds{{64, 0, 128}};
+	std::array<ImageLocator, 3> locators;
+	std::array<std::shared_ptr<IImage>, 3> images;
+	std::array<std::vector<ColorRGBA>, 3> unselected;
+	std::array<std::vector<ColorRGBA>, 3> selected;
+	const Point nativeSize(15, 15);
+	for(size_t group = 0; group < thresholds.size(); ++group)
+	{
+		require(animation->size(group) == 1, "Outline-alpha fixture group must load its string frame");
+		locators[group] = animation->getImageLocator(0, group);
+		require(locators[group].image == ImagePath::builtin("NH_OutlineAlphaFixture/source.png")
+			&& locators[group].generateOverlay == SharedImageLocator::OverlayMode::OVERLAY_OUTLINE
+			&& locators[group].overlayAlphaThreshold == thresholds[group],
+			"Loaded outline-alpha locator lost root inheritance or group override: group " + std::to_string(group));
+		images[group] = animation->getImage(0, group, true);
+		require(images[group] != nullptr, "Could not load outline-alpha fixture frame");
+		images[group]->setOverlayColor(ColorRGBA(0, 0, 0, 0));
+	}
+	std::set<SharedImageLocator> cacheKeys{locators[0], locators[1]};
+	require(cacheKeys.size() == 2, "Threshold 0 and 64 must have distinct image-cache keys for the same source");
+	ENGINE->async().wait();
+	for(size_t group = 0; group < thresholds.size(); ++group)
+	{
+		unselected[group] = captureScaledImagePixels(images[group], nativeSize, scale, "unselected outline-alpha fixture");
+		images[group]->setOverlayColor(ColorRGBA(255, 215, 0, 255));
+		selected[group] = captureScaledImagePixels(images[group], nativeSize, scale, "selected outline-alpha fixture");
+		images[group]->setOverlayColor(ColorRGBA(0, 0, 0, 0));
+	}
+	require(unselected[0] == unselected[1] && unselected[0] == unselected[2],
+		"Outline thresholds must not alter loaded body pixels");
+	require(selected[0] != unselected[0] && selected[1] != unselected[1] && selected[0] != selected[1],
+		"Loaded solid and legacy outlines must differ without sharing cached masks");
+	require(selected[2] == unselected[2], "Threshold 128 must produce no outline for source alpha below 128");
+	const auto maximumAlpha = [](const std::vector<ColorRGBA> & pixels)
+	{
+		return std::max_element(pixels.begin(), pixels.end(), [](const ColorRGBA & left, const ColorRGBA & right)
+			{ return left.a < right.a; })->a;
+	};
+	require(maximumAlpha(selected[0]) == 255 && maximumAlpha(selected[1]) < 255,
+		"Loaded solid outline must remain opaque while the legacy outline preserves faint source alpha");
+	if(scale == 1)
+	{
+		const size_t fringe = 7 * nativeSize.x + 5;
+		const size_t interior = 7 * nativeSize.x + 7;
+		const auto & gold = selected[0][fringe];
+		require(gold.a == 255 && gold.r > gold.g && gold.g > 0 && gold.b == 0,
+			"Loaded solid outline must cover the sub-threshold fringe in gold");
+		require(selected[1][fringe] == unselected[1][fringe]
+			&& selected[0][interior] == unselected[0][interior],
+			"Legacy nonzero fringe and solid silhouette interior must retain their body pixels");
+	}
+	for(size_t group = 0; group < thresholds.size(); ++group)
+		require(captureScaledImagePixels(images[group], nativeSize, scale, "outline-alpha body after selection") == unselected[group],
+			"Selection must not mutate shared outline-alpha body pixels");
+	std::cout << "  Outline alpha: loaded root64/group0/group128, isolated cache, gold fringe and body preservation at "
+		<< scale << "x\n";
 }
 
 using IndexedFrame = magiPaletteInspection::detail::Frame;
@@ -1808,13 +1905,20 @@ void runRuntimeRegression()
 	const auto & activeMods = LIBRARY->modh->getActiveMods();
 	require(std::find(activeMods.begin(), activeMods.end(), "new-horizons") != activeMods.end(),
 		"Isolated renderer test did not activate New Horizons");
-	verifyMagiProjectileColors();
-	verifyPaletteRemapJsonValidation();
-	const PaletteRemapFixture magiPaletteFixture = makeMagiPaletteRemapFixture();
+	const bool outlineAlphaOnly = outlineAlphaValidationRequested();
+	PaletteRemapFixture magiPaletteFixture;
+	if(!outlineAlphaOnly)
+	{
+		verifyMagiProjectileColors();
+		verifyPaletteRemapJsonValidation();
+		magiPaletteFixture = makeMagiPaletteRemapFixture();
+	}
 
 	constexpr std::array<const char *, 4> upscalingFilters{{"none", "xbrz2", "xbrz3", "xbrz4"}};
 	for(size_t factorIndex = 0; factorIndex < upscalingFilters.size(); ++factorIndex)
 	{
+		if(outlineAlphaOnly && factorIndex > 1)
+			break;
 		if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER) != 0)
 			throw std::runtime_error(std::string("SDL dummy initialization failed: ") + SDL_GetError());
 		const char * activeVideoDriver = SDL_GetCurrentVideoDriver();
@@ -1830,34 +1934,43 @@ void runRuntimeRegression()
 		auto & renderer = ENGINE->renderHandler();
 		renderer.onLibraryLoadingFinished(LIBRARY);
 		std::cout << "SDL dummy runtime scale " << expectedScale << "x\n";
-		if(factorIndex == 0)
+		if(outlineAlphaOnly)
 		{
-			verifyMagiPaletteAliases(renderer);
-			if(castingGlowValidationRequested())
-				verifyCastingGlowResources(renderer);
-			const char * inspectionEnabled = std::getenv("VCMI_MAGI_PALETTE_INSPECTION");
-			if(inspectionEnabled && std::string_view(inspectionEnabled) == "1")
+			if(factorIndex == 0)
+				mountOutlineAlphaFixture(renderer, profile.path());
+			verifyOutlineAlphaFixture(renderer, expectedScale);
+		}
+		else
+		{
+			if(factorIndex == 0)
 			{
-				const auto inspectionDirectory = magiPaletteInspection::detail::validateDestination();
-				require(magiPaletteInspection::exportIfOptedIn(),
-					"Opt-in original palette diagnostics unexpectedly declined export");
-				exportMappedMagiPreviews(renderer, inspectionDirectory);
+				verifyMagiPaletteAliases(renderer);
+				if(castingGlowValidationRequested())
+					verifyCastingGlowResources(renderer);
+				const char * inspectionEnabled = std::getenv("VCMI_MAGI_PALETTE_INSPECTION");
+				if(inspectionEnabled && std::string_view(inspectionEnabled) == "1")
+				{
+					const auto inspectionDirectory = magiPaletteInspection::detail::validateDestination();
+					require(magiPaletteInspection::exportIfOptedIn(),
+						"Opt-in original palette diagnostics unexpectedly declined export");
+					exportMappedMagiPreviews(renderer, inspectionDirectory);
+				}
+				else
+					(void)magiPaletteInspection::exportIfOptedIn();
 			}
-			else
-				(void)magiPaletteInspection::exportIfOptedIn();
-		}
-		verifyMagiPaletteRemap(renderer, magiPaletteFixture, expectedScale);
+			verifyMagiPaletteRemap(renderer, magiPaletteFixture, expectedScale);
 
-		for(const BuiltIcon & icon : academyBuiltIcons)
-		{
-			auto normal = renderer.loadImage(ImagePath::builtin(icon.normal), EImageBlitMode::SIMPLE);
-			auto built = renderer.loadImage(ImagePath::builtin(icon.built), EImageBlitMode::SIMPLE);
-			verifyDifferentPixels(normal, built, icon);
+			for(const BuiltIcon & icon : academyBuiltIcons)
+			{
+				auto normal = renderer.loadImage(ImagePath::builtin(icon.normal), EImageBlitMode::SIMPLE);
+				auto built = renderer.loadImage(ImagePath::builtin(icon.built), EImageBlitMode::SIMPLE);
+				verifyDifferentPixels(normal, built, icon);
+			}
+			for(const AcademyPortrait & portrait : academyPortraits)
+				verifyAcademyPortrait(portrait);
+			if(factorIndex == 0 && cabirAnimationValidationRequested())
+				verifyCabirAnimations();
 		}
-		for(const AcademyPortrait & portrait : academyPortraits)
-			verifyAcademyPortrait(portrait);
-		if(factorIndex == 0 && cabirAnimationValidationRequested())
-			verifyCabirAnimations();
 
 		// Destroying the backend releases SDL. The next iteration starts it again
 		// under the same dummy environment and verifies the selected driver anew.
@@ -1866,7 +1979,8 @@ void runRuntimeRegression()
 		ENGINE.reset();
 	}
 
-	std::cout << "Academy built-icon and creature-portrait runtime regression PASS\n";
+	std::cout << (outlineAlphaOnly ? "Outline-alpha runtime regression PASS\n"
+		: "Academy built-icon and creature-portrait runtime regression PASS\n");
 }
 }
 

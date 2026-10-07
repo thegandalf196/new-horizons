@@ -5,7 +5,9 @@
 		"patches": [],
 		"schema": {
 			"type": "object",
-			"properties": {},
+			"properties": {
+				"type": {}
+			},
 			"additionalProperties": false
 		}
 	}

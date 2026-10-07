@@ -27,11 +27,21 @@ class ConfluxGrowthDataTest(unittest.TestCase):
         self.assertNotIn('dwellingLvl8', self.town['buildings'])
         self.assertNotIn('dwellingUpLvl1', self.town['structures'])
         self.assertNotIn('dwellingUpLvl1', self.town['buildings'])
-        self.assertNotIn('modify@5', self.town['hallSlots'])
         originalTown = load('config/factions/conflux.json')['conflux']['town']
         self.assertEqual(
             originalTown['hallSlots'][3][0], ['dwellingLvl1', 'dwellingUpLvl1'])
         self.assertEqual(originalTown['buildings']['dwellingUpLvl1']['upgrades'], 'dwellingLvl1')
+        roster = list(originalTown['creatures'])
+        for row, members in self.town['creatures'].items():
+            roster[int(row.removeprefix('modify@')) - 1] = members
+        categories = load('config/newHorizonsCreatureCategories.json')['creatures']
+        bands = [categories[creature if ':' in creature else f'core:{creature}']
+                 for members in roster for creature in members]
+        self.assertEqual(bands.count('core'), 4, 'Two Core base/upgrade lines')
+        self.assertEqual(bands.count('elite'), 8, 'Four Elemental Elite base/upgrade lines')
+        self.assertEqual(bands.count('champion'), 2)
+        self.assertNotIn('psychicElemental', [creature for members in roster for creature in members])
+        self.assertNotIn('magicElemental', [creature for members in roster for creature in members])
 
     def test_garden_growth_tracks_the_restored_pixie_sprite_core_line(self):
         garden = self.town['buildings']['horde1']
@@ -49,14 +59,45 @@ class ConfluxGrowthDataTest(unittest.TestCase):
 
     def test_hall_uses_default_pixie_upgrade_and_no_eighth_sprite_card(self):
         slots = self.town['hallSlots']
-        self.assertNotIn('modify@4', slots)
-        self.assertNotIn('modify@5', slots)
+        self.assertEqual(slots['modify@4'], [
+            ['dwellingLvl1', 'dwellingUpLvl1'], ['dwellingLvl6', 'dwellingUpLvl6'],
+            ['dwellingLvl2', 'dwellingUpLvl2'], ['dwellingLvl3', 'dwellingUpLvl3']])
+        self.assertEqual(slots['modify@5'], [
+            ['dwellingLvl4', 'dwellingUpLvl4'], ['dwellingLvl5', 'dwellingUpLvl5'],
+            ['dwellingLvl7', 'dwellingUpLvl7']])
         self.assertEqual(slots['modify@3']['modify@3'], ['horde1'])
         self.assertEqual(slots['modify@3']['appendItems'], [['horde2']])
         original = load('config/factions/conflux.json')['conflux']['town']
         self.assertEqual(
             original['hallSlots'][3][0], ['dwellingLvl1', 'dwellingUpLvl1'])
         self.assertNotIn('dwellingLvl8', original['buildings'])
+
+    def test_wisp_dwelling_has_core_access_and_preserves_champion_progression(self):
+        buildings = self.town['buildings']
+        base = buildings['dwellingLvl6']
+        upgrade = buildings['dwellingUpLvl6']
+        self.assertEqual(base['name'], 'Altar of Magic')
+        self.assertIn('Wisps', base['description'])
+        self.assertEqual(base['requires#override'], ['fort'])
+        self.assertEqual(base['cost#override'], {
+            'gold': 1500, 'wood': 5, 'ore': 5, 'mercury': 0,
+            'sulfur': 0, 'crystal': 0, 'gems': 0})
+        self.assertEqual(upgrade['upgrades'], 'dwellingLvl6')
+        self.assertIn('Greater Wisps', upgrade['description'])
+        self.assertEqual(upgrade['requires#override'], ['allOf'])
+        self.assertEqual(upgrade['cost#override'], {
+            'gold': 1000, 'wood': 0, 'ore': 5, 'mercury': 0,
+            'sulfur': 0, 'crystal': 0, 'gems': 0})
+        self.assertEqual(buildings['dwellingLvl7']['requires#override'], [
+            'allOf', ['dwellingLvl4'], ['dwellingLvl5']])
+        # Keep the reused dwelling IDs and original Altar of Magic artwork.
+        original = load('config/factions/conflux.json')['conflux']['town']
+        self.assertEqual(buildings['dwellingLvl7']['requires#override'],
+                         original['buildings']['dwellingLvl6']['requires'])
+        self.assertEqual(original['buildings']['dwellingLvl7']['requires'], ['dwellingLvl6'])
+        self.assertEqual(original['structures']['dwellingUpLvl6']['animation'], 'TBELUP_5.def')
+        self.assertNotIn('dwellingLvl6', self.town['structures'])
+        self.assertNotIn('dwellingUpLvl6', self.town['structures'])
 
     def test_wisp_creatures_use_provisional_stats_and_authored_assets(self):
         creatures = load('Mods/new-horizons/Content/config/creatures/conflux.json')

@@ -473,7 +473,7 @@ std::shared_ptr<SDLImageShared> SDLImageShared::drawShadow(bool doSheer) const
 	return ret;
 }
 
-std::shared_ptr<SDLImageShared> SDLImageShared::drawOutline(const ColorRGBA & color, int thickness) const
+std::shared_ptr<SDLImageShared> SDLImageShared::drawOutline(const ColorRGBA & color, int thickness, uint8_t alphaThreshold) const
 {
 	if(upscalingInProgress)
 		throw std::runtime_error("Attempt to access images that is still being loaded!");
@@ -482,7 +482,7 @@ std::shared_ptr<SDLImageShared> SDLImageShared::drawOutline(const ColorRGBA & co
 		return nullptr;
 
 	SDL_Color sdlColor = { color.r, color.g, color.b, color.a };
-	SDL_Surface * outline = CSDL_Ext::drawOutline(surf, sdlColor, thickness);
+	SDL_Surface * outline = CSDL_Ext::drawOutline(surf, sdlColor, thickness, alphaThreshold);
 	auto ret = std::make_shared<SDLImageShared>(outline);
 	ret->fullSize = fullSize;
 	ret->margins.x = margins.x;
