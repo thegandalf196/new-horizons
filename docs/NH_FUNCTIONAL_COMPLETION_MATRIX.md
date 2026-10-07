@@ -19,6 +19,15 @@ premature single-player fixture victory. Source and playable delivery are
 separate. Four-role Mage, hover/audio and Wisp-turn
 visual acceptance remain pending.
 
+UP289–291 playable delivery: normal Linux launcher now selects5b293ac52e,
+exact functional source46dd80346, with previousb26652d8 retained. Independent
+3998-file inventory/source/resource audit and fresh-profile headless preview
+complete successfully (exit0/day4 victory/clean shutdown); usual launcher
+--verify-only passes. Counts unchanged. Master fidget remains absent, normal
+gameplay visual/audio/modal approval remains separate. Transformer draft source
+was restored only after freezing and is not included. Delivery receipt is
+documentation-only; the executable identity above remains exact.
+
 Normal Linux delivery checkpoint: source01ffcf6bd creature snapshot452cbf72
 is now superseded by combined b26652d8. All3120 baseline bytes are preserved;
 874 additive private resources deliver864 casting frames,nine sparse guild-book
