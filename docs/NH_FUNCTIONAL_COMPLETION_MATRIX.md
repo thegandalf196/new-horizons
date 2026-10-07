@@ -2,6 +2,13 @@
 
 Updated: 2026-10-07
 
+Linux delivery: immutable52867cdf4a/source1c3e854fc now delivers UP286/287 via
+the normal launcher. Independent2367-file identity/inventory audit and bounded
+20s fresh-profile headless progression through day5 pass, with verified owned
+process/runtime/lock cleanup and no crash/request-rejection/ammo-overuse markers.
+Known schema warnings remain, and no rendered/manual/full-game acceptance is
+inferred. Required UI source paths improve without new perk/spell identities.
+
 UP286 implements the specified current -> offered Skill rank on level-up cards,
 gated by saved NH rules. Offered integer/icon/mechanical help, perk and legacy
 paths remain unchanged. Client12-job build45095, scoped source guard/module

@@ -1,5 +1,10 @@
 # New Horizons UI and asset status register
 
+Delivery checkpoint,2026-10-07: UP286 Skill rank captions and UP287 Phantom Army
+readback/highlight are in selected Linux52867cdf4a/source1c3e854fc. Checksum/
+source audit and bounded headless startup/cleanup pass; both visual surfaces
+remain **Provisional**, with actual rendering/fit and approval unverified.
+
 Level-up Skill rank transitions,2026-10-07: **Provisional**, UP286. Existing
 bounded choice cards now show localized current to offered rank text while
 preserving offered-rank art, mechanical help and selection. No new artwork or
