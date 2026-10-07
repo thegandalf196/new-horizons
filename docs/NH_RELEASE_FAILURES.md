@@ -15,6 +15,13 @@ Use an eligible double-wide source with an explicit positive-forecast check.
 The existing SchoolRankScalesOnlySpellPowerIntegrityAndPreviewMatchesCast also
 fails at its second cast; preserve this separate integration finding and failed
 logs under ignored build/nh-recorder-delivery-20261007.klVssUWx.
+Bounded diagnosis of that older case: startPhantomBattle already casts at no
+School rank, then the loop attempts another ordinary Hero Spell in the same
+round. battleCanCastSpell rejects the per-turn limit before checking Mana.
+Repair that fixture with independent battles or genuine new-round allowances;
+do not weaken the production Hero Action limit. The new focused placement2/2
+passes after the eligible-source repair; client/test builds and source/module
+checks pass. No remaining blocker in UP287's declared scope.
 
 ### 2026-10-07 — Detached spell-effect recorder iterated a destroyed bonus list
 
