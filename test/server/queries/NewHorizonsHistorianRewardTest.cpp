@@ -5,6 +5,8 @@
  */
 #include "StdInc.h"
 
+#include "AI/Nullkiller2/Engine/PriorityEvaluator.h"
+
 #include "../../mock/GameHandlerTestServer.h"
 #include "../../mock/TinyH3MBuilder.h"
 #include "../../mock/TinyMapGameTest.h"
@@ -32,6 +34,7 @@
 #include "../../../server/queries/QueriesProcessor.h"
 
 #include <algorithm>
+#include <cmath>
 #include <stdexcept>
 
 namespace
@@ -142,7 +145,10 @@ TEST_F(NewHorizonsHistorianRewardTest, LearningStonePreviewAndAcceptedVisitUsePr
 		return false;
 	};
 	auto stoneObject = gameHandler.createNewObject({12, 12, 0}, Obj::LEARNING_STONE, MapObjectSubID(0));
-	auto * stone = dynamic_cast<CRewardableObject *>(stoneObject.get());
+	ASSERT_NE(stoneObject, nullptr);
+	gameHandler.newObject(stoneObject, PLAYER);
+	const auto stoneId = stoneObject->id;
+	auto * stone = dynamic_cast<CRewardableObject *>(gameState()->getObjInstance(stoneId));
 	ASSERT_NE(stone, nullptr);
 	ASSERT_FALSE(stone->configuration.info.empty());
 	ASSERT_EQ(stone->configuration.visitMode, Rewardable::VISIT_HERO);
@@ -150,7 +156,6 @@ TEST_F(NewHorizonsHistorianRewardTest, LearningStonePreviewAndAcceptedVisitUsePr
 	ASSERT_EQ(stoneReward.heroExperience, 1000);
 	ASSERT_TRUE(stoneReward.primaryExperienceReward);
 	ASSERT_EQ(stoneReward.heroExperienceNextLevelPercent, 0);
-	gameHandler.newObject(stoneObject, PLAYER);
 
 	const auto historianOrdinaryXp = historian->calculateXp(stoneReward.heroExperience);
 	const auto historianExpectedXp = historian->calculateXp(stoneReward.heroExperience, 50);
@@ -193,6 +198,86 @@ TEST_F(NewHorizonsHistorianRewardTest, LearningStonePreviewAndAcceptedVisitUsePr
 	const auto levelGap = LIBRARY->heroh->reqExp(historian->level + 1) - historian->exp;
 	const auto rawPercent = (levelGap / 100) * 25 + (levelGap % 100) * 25 / 100;
 	EXPECT_EQ(percentage.calculateHeroExperience(historian), historian->calculateXp(rawPercent));
+}
+
+TEST_F(NewHorizonsHistorianRewardTest, LearningStoneSkillScoreUsesClassifiedRewardRatioAndKeepsBaselineControls)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PLAYER)
+		.hero({5, 5, 0}, heroType("core:christian"), PLAYER)
+		.hero({7, 5, 0}, heroType("core:tyris"), PLAYER);
+	startWithMap(std::move(builder));
+
+	auto * historian = findHeroAt({5, 5, 0});
+	auto * noHistorian = findHeroAt({7, 5, 0});
+	ASSERT_NE(historian, nullptr);
+	ASSERT_NE(noHistorian, nullptr);
+	selectBasicLearning(historian, true);
+	selectBasicLearning(noHistorian, false);
+
+	GameHandlerTestServer server(gameState(), PLAYER);
+	CGameHandler gameHandler(server, gameState());
+	auto stoneObject = gameHandler.createNewObject({12, 12, 0}, Obj::LEARNING_STONE, MapObjectSubID(0));
+	ASSERT_NE(stoneObject, nullptr);
+	gameHandler.newObject(stoneObject, PLAYER);
+	const auto stoneId = stoneObject->id;
+	auto * stone = dynamic_cast<CRewardableObject *>(gameState()->getObjInstance(stoneId));
+	ASSERT_NE(stone, nullptr);
+	ASSERT_FALSE(stone->configuration.info.empty());
+	ASSERT_EQ(stone->configuration.visitMode, Rewardable::VISIT_HERO);
+	ASSERT_EQ(stone->configuration.info.front().visitType, Rewardable::EEventType::EVENT_FIRST_VISIT);
+	const auto actualReward = stone->configuration.info.front().reward;
+	ASSERT_TRUE(actualReward.primaryExperienceReward);
+	ASSERT_GT(actualReward.heroExperience, 0);
+	ASSERT_EQ(stone->getAvailableRewards(historian, Rewardable::EEventType::EVENT_FIRST_VISIT),
+		(std::vector<ui32>{0}));
+
+	// The Stone-specific scorer is a pure forecast branch and does not need an
+	// initialized AI instance; other target types keep their existing AI context.
+	NK2AI::RewardEvaluator evaluator(nullptr);
+	const auto baselinePriority = [](const CGHeroInstance * hero)
+	{
+		return 1.0f / std::sqrt(static_cast<float>(hero->level));
+	};
+	auto ordinaryReward = actualReward;
+	ordinaryReward.primaryExperienceReward = false;
+	const auto ordinaryExperience = ordinaryReward.calculateHeroExperience(historian);
+	const auto actualExperience = actualReward.calculateHeroExperience(historian);
+	ASSERT_GT(ordinaryExperience, 0);
+	ASSERT_GT(actualExperience, ordinaryExperience);
+	const auto expectedHistorianPriority = baselinePriority(historian)
+		* static_cast<float>(actualExperience) / static_cast<float>(ordinaryExperience);
+
+	const auto historianExperienceBefore = historian->exp;
+	const auto ordinaryExperienceBefore = noHistorian->exp;
+	EXPECT_NEAR(evaluator.getSkillReward(stone, historian, NK2AI::HeroRole::MAIN), expectedHistorianPriority, 1e-6f);
+	EXPECT_NEAR(evaluator.getSkillReward(stone, noHistorian, NK2AI::HeroRole::MAIN), baselinePriority(noHistorian), 1e-6f);
+
+	// An unclassified reward and a reward row unavailable for a first visit keep
+	// the original fixed Learning Stone priority.
+	auto & stoneInfo = stone->configuration.info.front();
+	const bool originalClassification = stoneInfo.reward.primaryExperienceReward;
+	stoneInfo.reward.primaryExperienceReward = false;
+	EXPECT_NEAR(evaluator.getSkillReward(stone, historian, NK2AI::HeroRole::MAIN), baselinePriority(historian), 1e-6f);
+	stoneInfo.reward.primaryExperienceReward = originalClassification;
+
+	const auto originalVisitType = stoneInfo.visitType;
+	stoneInfo.visitType = Rewardable::EEventType::EVENT_ALREADY_VISITED;
+	EXPECT_TRUE(stone->getAvailableRewards(historian, Rewardable::EEventType::EVENT_FIRST_VISIT).empty());
+	EXPECT_NEAR(evaluator.getSkillReward(stone, historian, NK2AI::HeroRole::MAIN), baselinePriority(historian), 1e-6f);
+	stoneInfo.visitType = originalVisitType;
+
+	const auto originalFixedExperience = stoneInfo.reward.heroExperience;
+	stoneInfo.reward.heroExperience = 0;
+	EXPECT_NEAR(evaluator.getSkillReward(stone, historian, NK2AI::HeroRole::MAIN), baselinePriority(historian), 1e-6f);
+	stoneInfo.reward.heroExperience = originalFixedExperience;
+
+	EXPECT_EQ(historian->exp, historianExperienceBefore);
+	EXPECT_EQ(noHistorian->exp, ordinaryExperienceBefore);
+	EXPECT_FALSE(stone->wasVisited(historian));
+	EXPECT_TRUE(stoneInfo.reward.primaryExperienceReward);
+	EXPECT_EQ(stoneInfo.reward.heroExperience, originalFixedExperience);
+	EXPECT_EQ(stoneInfo.visitType, originalVisitType);
 }
 
 TEST_F(NewHorizonsHistorianRewardTest, PrimaryRewardClassificationHasJSONAndVersionedBinaryCompatibility)

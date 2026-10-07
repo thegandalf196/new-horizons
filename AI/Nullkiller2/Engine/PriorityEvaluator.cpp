@@ -16,6 +16,7 @@
 #include "../../../lib/mapObjects/CGMarket.h"
 #include "../../../lib/mapObjects/CGResource.h"
 #include "../../../lib/mapping/TerrainTile.h"
+#include "../../../lib/rewardable/Interface.h"
 #include "../../../lib/CPlayerState.h"
 #include "../../../lib/RoadHandler.h"
 #include "../../../lib/CCreatureHandler.h"
@@ -659,7 +660,31 @@ float RewardEvaluator::getSkillReward(const CGObjectInstance * target, const CGH
 	case Obj::TREE_OF_KNOWLEDGE:
 		return 1;
 	case Obj::LEARNING_STONE:
-		return 1.0f / std::sqrt(hero->level);
+	{
+		const float basePriority = 1.0f / std::sqrt(hero->level);
+		const auto * rewardable = dynamic_cast<const Rewardable::Interface *>(target);
+		if(!rewardable)
+			return basePriority;
+
+		float bestExperienceRatio = 1.0f;
+		for(const auto index : rewardable->getAvailableRewards(hero, Rewardable::EEventType::EVENT_FIRST_VISIT))
+		{
+			const auto & reward = rewardable->configuration.info.at(index).reward;
+			if(!reward.primaryExperienceReward || reward.heroExperience <= 0)
+				continue;
+
+			const TExpType actualExperience = reward.calculateHeroExperience(hero);
+			auto ordinaryReward = reward;
+			ordinaryReward.primaryExperienceReward = false;
+			const TExpType ordinaryExperience = ordinaryReward.calculateHeroExperience(hero);
+			if(ordinaryExperience <= 0)
+				continue;
+
+			bestExperienceRatio = std::max(bestExperienceRatio,
+				static_cast<float>(actualExperience) / static_cast<float>(ordinaryExperience));
+		}
+		return basePriority * bestExperienceRatio;
+	}
 	case Obj::ARENA:
 		return 2;
 	case Obj::SHRINE_OF_MAGIC_INCANTATION:

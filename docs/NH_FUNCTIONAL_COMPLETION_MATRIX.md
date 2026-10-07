@@ -2,6 +2,22 @@
 
 Updated: 2026-10-07
 
+Coverage recount2026-10-07 confirms228 active/82 planned perks; corrected the
+stale summary table's225/85 counts without activating content. A new bounded
+generic-perk audit checks the planned Archery/Battlecraft/Discipline/Command/
+Logistics/Spellcraft/Wisdom families and28 further planned entries outside the
+previous Learning/Luck audit. Each sampled missing path retains a specific
+recorded design ruling, not merely a missing broad test. The Transformer remains
+a real missing aggregate-HP transaction/UI/AI system (UP197); its rounding
+question was narrowed and renewed. UP277 implements the unblocked Learning
+Stone shared-XP AI forecast prerequisite. Client84036/test30300 builds and three
+focused native cases pass in0.996s, zero skips/errors/disabled, with module checks
+and independent review. The direct scorer uses actual/unboosted shared reward
+XP and retains absent/unclassified/unavailable/zero-XP baselines. No full AI turn
+or custom multi-reward/visibility certification; Historian still planned.
+None of these audits proves complete creature/artifact/specialty
+or Version1 coverage; do not treat identity counts as release readiness.
+
 Next-feature audit outside Learning/Luck,2026-10-07: the six missing combat
 identities retain specific open rulings (Confusion UP043, Polymorph UP066,
 Reality Warp UP179, Pandemonium UP123/191, Nature's Wrath UP117 and Elemental
@@ -29,7 +45,7 @@ activation remain UP071 work. Do not call the full perk implemented from this
 foundation or remove its planned registry status. Client/test build44322 and
 two focused native cases pass in0.708s, zero skips/errors/disabled, after retained
 fixture repairs. Accepted visits/preview parity and classification compatibility
-are tested; perk-aware AI valuation, full-world save journeys and other source
+are tested; UP277 adds Stone's direct AI valuation. Full-world save journeys and other source
 classification remain incomplete. Counts stay228/310 perks,31 Skills/93 ranks,
 61/67 combat identities and8/8 Orders; normal Linux snapshot is unchanged.
 
@@ -3549,7 +3565,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | All three ranks per Skill are active; many registered Skills still lack complete perk progression. |
 | Skill rank effects active | 93/93 | Elemental Rebirth's three ranks now have source/native and owning-side AI evidence. Active status does not certify every wider interaction. |
-| Skill perks active | 225/310 | 85 planned; Pre-emptive Strike is the newest source/native-verified activation. Generic154/220, faction71/90. Diplomacy is 7/10; Chaos Magic 5/10; Necromancy 10/10; Learning 3/10; Estates 6/10; Battlecraft 7/10; Logistics 8/10; Command 7/10; Warcasting 6/10. Active status alone does not certify every mechanic. |
+| Skill perks active | 228/310 | 82 planned; current registry recount2026-10-07. Generic157/220, faction71/90. Diplomacy is 7/10; Chaos Magic 5/10; Necromancy 10/10; Learning 3/10; Estates 6/10; Battlecraft 8/10; Logistics 8/10; Command 7/10; Warcasting 7/10. Historian's foundation remains planned and adds no activation count. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 27/27 | All nine faction rank foundations are active; their remaining perks and wider integration are separate work. |
 | Faction perks active | 71/90 | 19 planned perks; Divine Mandate has six accepted perks, including Expert Mandate of Heaven and Advanced Purifying Mandate; Elemental Rebirth has three accepted perks with normal Basic-to-Advanced selection and live/detached evidence. |
 | Canonical combat-spell identities registered | 61/67 | 6 missing/inactive; Puppet Master is the newest source/native-verified identity. Chaos is 7/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |

@@ -2,6 +2,16 @@
 
 ## Purpose
 
+### 2026-10-07 — Historian AI fixture must qualify Nullkiller's role enum
+
+UP277 test build93107 fails because HeroRole belongs to NK2AI. Root qualifies
+the five scorer calls; do not change the production scorer signature. Client
+84036 already builds, but is not fixture/native acceptance. Retain test-build.log
+and the repaired build log under ignored testing/historian-ai-20261007.VZdeE7Uz.
+The first native run passes1/3: both Stone readbacks used the pre-insertion ID,
+but CMap assigns the ID during newObject insertion. Root moves ID capture after
+insertion. Preserve native.log/XML, and rerun all three cases with separate receipts.
+
 ### 2026-10-07 — Historian fixture must use explicit owner and complete serialized types
 
 UP276's combined client/test build2406 fails in the new fixture: TinyH3MBuilder
