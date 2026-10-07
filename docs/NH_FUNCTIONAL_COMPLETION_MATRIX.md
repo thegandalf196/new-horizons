@@ -2,6 +2,13 @@
 
 Updated: 2026-10-07
 
+UP288 playable validation: source4f2f847db exact ten-job build, independent
+3120-file private candidate integrity/reference audit and true-headless scenario
+completion pass (day4 victory, BattleAI). Complete Cabir/Magi animation bindings
+and additive Wisps are present. Final latest-commit launcher selection follows
+the documentation receipt rebuild; normal play is unchanged. Rendered motion,
+sound and historical-save acceptance are not implied by headless completion.
+
 UP288 refreshed-handoff integration supersedes the earlier shooter-alias preview
 below. Source now provides additive Wisp/Greater Wisp definitions and the approved
 two-Core/four-Elite Conflux roster. Static Pass-through separates traversal from
