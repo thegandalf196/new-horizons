@@ -1,5 +1,16 @@
 # New Horizons UI and asset status register
 
+Proportioned Cabir contact studies,2026-10-07: **Provisional**, private and
+uninstalled under UP265. Built-in HoMM3-Art creates one contact-B study and one
+targeted camera/pose revision using the new proportioned shared-rig guide.
+Revision has clearer side-on/trailing-foot presentation, but narrower/taller
+body and more exposed tail than standing identity; exact near/far anatomy and
+shared camera are not verified. Native72x72/56px exports preserve genuine alpha
+and full source bounds; faint fringe pixels remain. Exact prompt/source/ref
+hashes and deterministic checks are private in proportioned-contact-b-v1 and
+proportioned-contact-b-revision-v1. Neither is completed gait, approved artwork
+or playable content. Runtime and normal Linux snapshot remain unchanged.
+
 Creature Order badge source/expiry,2026-10-07: **Provisional** under UP275.
 Existing badge tooltip now names the issuing side and explicit round-end expiry,
 qualified for earlier consumption/breakage. No new art/layout/input behavior.
