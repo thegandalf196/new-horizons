@@ -2,6 +2,18 @@
 
 Updated: 2026-10-07
 
+UP288 source checkpoint: original Wisp base/upgrade art resources are installed
+with32 battle groups each, map/icon/projectile references and generated selection
+overlays. Projectiles use group0 only; group1 is reserved for the engine's mirrored
+direction, not the supplied alternative flicker phase. Focused installation guard,
+independent PNG/reference parity and12-job client build pass. No creature definition
+or recruitment is enabled while the user supplies provisional gameplay rules.
+Approved two-Core/four-Elite Conflux roster is canonical but not yet runtime-swapped.
+Cabir importer produces a private74-file partial fragment, with6 focused tests
+and exact-output check passing; missing states prevent live replacement. Original
+derivative pixels remain private. These asset/preparation changes add no completed
+creature mechanic, perk or spell identities; existing counts remain unchanged.
+
 Bounded required-preview source audit: Chain Lightning already caches its ordered
 shared-target/prefix forecasts per recipient and exposes numbered highlights and
 damage/kills. Summon Trolls already shares legal-hex validity and count/HP/

@@ -1,5 +1,16 @@
 # New Horizons UI and asset status register
 
+Supplied handoffs,2026-10-07, UP288: Cabir home-agent v1 is the current approved
+art baseline (base bare scales, Master light brass, both mouth-spit). It
+supersedes the earlier source-adaptation and generated-art directions below.
+Approved supplied walk/front melee/front shooting/icons/projectile are distinct
+from missing directional, hit, defence, death, turning and repair state art.
+Purchaser-derived Cabir/projectile pixels remain private; not Final full runtime.
+Wisp complete v3 supplies approved original cyan/violet artwork and32 battle
+groups per form plus maps/icons/projectiles. Resource installation/validation
+is separate from gameplay and recruitment: the user will supply provisional
+rules. No art-based inference of shooting, flight, stats or Attunement.
+
 Academy Gargoyle matte review,2026-10-07: **Not done**, UP282. HoMM3 Art
 Stone revisions r6/r7 remain private and unregistered. R7 repairs erroneous torso
 holes but fails independent58x64 silhouette/scenery review in the lower-left

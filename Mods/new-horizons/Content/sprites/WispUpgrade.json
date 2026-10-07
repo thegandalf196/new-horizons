@@ -1,0 +1,312 @@
+{
+  "basepath": "WispUpgrade/",
+  "sequences": [
+    {
+      "group": 0,
+      "frames": [
+        "poses/move-00.png",
+        "poses/move-01.png",
+        "poses/move-02.png",
+        "poses/move-03.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 1,
+      "frames": [
+        "poses/idle-00.png",
+        "poses/idle-01.png",
+        "poses/idle-00.png",
+        "poses/idle-03.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 2,
+      "frames": [
+        "poses/idle-00.png",
+        "poses/idle-01.png",
+        "poses/idle-02.png",
+        "poses/idle-03.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 3,
+      "frames": [
+        "poses/reaction-hit.png",
+        "poses/reaction-compressed.png",
+        "poses/reaction-defence.png",
+        "poses/reaction-recover.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 4,
+      "frames": [
+        "poses/reaction-defence.png",
+        "poses/reaction-recover.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 5,
+      "frames": [
+        "poses/death-unstable.png",
+        "poses/death-split.png",
+        "poses/death-dim.png",
+        "poses/death-embers.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 6,
+      "frames": [
+        "poses/death-unstable.png",
+        "poses/death-split.png",
+        "poses/death-dim.png",
+        "poses/death-embers.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 7,
+      "frames": [
+        "poses/variants/idle-00-rot-+25-opacity-1.00.png",
+        "poses/variants/idle-01-rot-+25-opacity-1.00.png",
+        "poses/variants/idle-02-rot-+25-opacity-1.00.png",
+        "poses/variants/idle-03-rot-+25-opacity-1.00.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 8,
+      "frames": [
+        "poses/variants/idle-00-rot--25-opacity-1.00.png",
+        "poses/variants/idle-01-rot--25-opacity-1.00.png",
+        "poses/variants/idle-02-rot--25-opacity-1.00.png",
+        "poses/variants/idle-03-rot--25-opacity-1.00.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 11,
+      "frames": [
+        "poses/variants/melee-charge-rot-+25-opacity-1.00.png",
+        "poses/variants/melee-pull-rot-+25-opacity-1.00.png",
+        "poses/variants/melee-release-rot-+25-opacity-1.00.png",
+        "poses/variants/melee-recover-rot-+25-opacity-1.00.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 12,
+      "frames": [
+        "poses/melee-charge.png",
+        "poses/melee-pull.png",
+        "poses/melee-release.png",
+        "poses/melee-recover.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 13,
+      "frames": [
+        "poses/variants/melee-charge-rot--25-opacity-1.00.png",
+        "poses/variants/melee-pull-rot--25-opacity-1.00.png",
+        "poses/variants/melee-release-rot--25-opacity-1.00.png",
+        "poses/variants/melee-recover-rot--25-opacity-1.00.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 14,
+      "frames": [
+        "poses/variants/ranged-00-rot-+25-opacity-1.00.png",
+        "poses/variants/ranged-01-rot-+25-opacity-1.00.png",
+        "poses/variants/ranged-02-rot-+25-opacity-1.00.png",
+        "poses/variants/ranged-03-rot-+25-opacity-1.00.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 15,
+      "frames": [
+        "poses/ranged-00.png",
+        "poses/ranged-01.png",
+        "poses/ranged-02.png",
+        "poses/ranged-03.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 16,
+      "frames": [
+        "poses/variants/ranged-00-rot--25-opacity-1.00.png",
+        "poses/variants/ranged-01-rot--25-opacity-1.00.png",
+        "poses/variants/ranged-02-rot--25-opacity-1.00.png",
+        "poses/variants/ranged-03-rot--25-opacity-1.00.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 17,
+      "frames": [
+        "poses/variants/melee-charge-rot-+25-opacity-1.00.png",
+        "poses/variants/melee-pull-rot-+25-opacity-1.00.png",
+        "poses/variants/melee-release-rot-+25-opacity-1.00.png",
+        "poses/variants/melee-recover-rot-+25-opacity-1.00.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 18,
+      "frames": [
+        "poses/melee-charge.png",
+        "poses/melee-pull.png",
+        "poses/melee-release.png",
+        "poses/melee-recover.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 19,
+      "frames": [
+        "poses/variants/melee-charge-rot--25-opacity-1.00.png",
+        "poses/variants/melee-pull-rot--25-opacity-1.00.png",
+        "poses/variants/melee-release-rot--25-opacity-1.00.png",
+        "poses/variants/melee-recover-rot--25-opacity-1.00.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 20,
+      "frames": [
+        "poses/flight-rest.png",
+        "poses/flight-lift.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 21,
+      "frames": [
+        "poses/flight-settle.png",
+        "poses/flight-calm.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 22,
+      "frames": [
+        "poses/death-embers.png",
+        "poses/variants/death-embers-opacity-0.66.png",
+        "poses/variants/death-embers-opacity-0.33.png",
+        "poses/variants/death-embers-opacity-0.00.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 23,
+      "frames": [
+        "poses/death-embers.png",
+        "poses/variants/death-embers-opacity-0.66.png",
+        "poses/variants/death-embers-opacity-0.33.png",
+        "poses/variants/death-embers-opacity-0.00.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 24,
+      "frames": [
+        "poses/death-embers.png",
+        "poses/death-dim.png",
+        "poses/death-split.png",
+        "poses/death-unstable.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 25,
+      "frames": [
+        "poses/idle-00.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 30,
+      "frames": [
+        "poses/variants/idle-00-rot-+25-opacity-1.00.png",
+        "poses/variants/idle-01-rot-+25-opacity-1.00.png",
+        "poses/variants/idle-02-rot-+25-opacity-1.00.png",
+        "poses/variants/idle-03-rot-+25-opacity-1.00.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 31,
+      "frames": [
+        "poses/idle-00.png",
+        "poses/idle-01.png",
+        "poses/idle-02.png",
+        "poses/idle-03.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 32,
+      "frames": [
+        "poses/variants/idle-00-rot--25-opacity-1.00.png",
+        "poses/variants/idle-01-rot--25-opacity-1.00.png",
+        "poses/variants/idle-02-rot--25-opacity-1.00.png",
+        "poses/variants/idle-03-rot--25-opacity-1.00.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 40,
+      "frames": [
+        "poses/variants/melee-charge-rot-+25-opacity-1.00.png",
+        "poses/variants/melee-pull-rot-+25-opacity-1.00.png",
+        "poses/variants/melee-release-rot-+25-opacity-1.00.png",
+        "poses/variants/melee-recover-rot-+25-opacity-1.00.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 41,
+      "frames": [
+        "poses/melee-charge.png",
+        "poses/melee-pull.png",
+        "poses/melee-release.png",
+        "poses/melee-recover.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 42,
+      "frames": [
+        "poses/variants/melee-charge-rot--25-opacity-1.00.png",
+        "poses/variants/melee-pull-rot--25-opacity-1.00.png",
+        "poses/variants/melee-release-rot--25-opacity-1.00.png",
+        "poses/variants/melee-recover-rot--25-opacity-1.00.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 50,
+      "frames": [
+        "poses/flight-rest.png",
+        "poses/flight-lift.png"
+      ],
+      "generateOverlay": 1
+    },
+    {
+      "group": 51,
+      "frames": [
+        "poses/flight-settle.png",
+        "poses/flight-calm.png"
+      ],
+      "generateOverlay": 1
+    }
+  ]
+}

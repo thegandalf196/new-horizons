@@ -1,0 +1,14 @@
+{
+  "basepath": "WispUpgrade/adventure/idle/",
+  "sequences": [
+    {
+      "group": 0,
+      "frames": [
+        "frame-00.png",
+        "frame-01.png",
+        "frame-02.png",
+        "frame-03.png"
+      ]
+    }
+  ]
+}

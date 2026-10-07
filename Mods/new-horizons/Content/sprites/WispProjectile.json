@@ -1,0 +1,19 @@
+{
+  "sequences": [
+    {
+      "group": 0,
+      "frames": [
+        "bolt-phase-00-angle-00.png",
+        "bolt-phase-00-angle-01.png",
+        "bolt-phase-00-angle-02.png",
+        "bolt-phase-00-angle-03.png",
+        "bolt-phase-00-angle-04.png",
+        "bolt-phase-00-angle-05.png",
+        "bolt-phase-00-angle-06.png",
+        "bolt-phase-00-angle-07.png",
+        "bolt-phase-00-angle-08.png"
+      ]
+    }
+  ],
+  "basepath": "WispProjectile/"
+}
