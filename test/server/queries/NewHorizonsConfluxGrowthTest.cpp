@@ -62,6 +62,8 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
+		if(!useNewHorizonsMagicRules)
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
 		loaded->overrideGameSetting(EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES,
 			JsonNode(JsonPath::builtin("config/newHorizonsCreatureCategories")));
 
@@ -84,6 +86,19 @@ protected:
 		}
 	}
 
+	void startTowerMap(bool useMagicRules = true, bool includeConflux = false)
+	{
+		useNewHorizonsMagicRules = useMagicRules;
+
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder.size(36, false).name("NewHorizonsTowerLibraryGrowth")
+			.playerActive(PlayerColor(0))
+			.town({18, 18, 0}, faction("core:tower"), PlayerColor(0));
+		if(includeConflux)
+			builder.town({27, 18, 0}, faction("core:conflux"), PlayerColor(0));
+		startWithMap(std::move(builder));
+	}
+
 	void startConfluxMap()
 	{
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
@@ -93,6 +108,8 @@ protected:
 		startWithMap(std::move(builder));
 	}
 
+	bool useNewHorizonsMagicRules = true;
+
 	static void grantBuildingResources(NewHorizonsConfluxGrowthTest & test)
 	{
 		for(const auto resource : {EGameResID::WOOD, EGameResID::ORE, EGameResID::MERCURY,
@@ -101,6 +118,125 @@ protected:
 	}
 };
 }
+
+TEST_F(NewHorizonsConfluxGrowthTest, TowerLibraryHelperIsScopedToTowerMageLinesAndSavedRules)
+{
+	const auto mage = creature("core:mage");
+	const auto archMage = creature("core:archMage");
+	const auto genie = creature("core:genie");
+	startTowerMap(true, true);
+
+	auto * tower = expectAt<CGTownInstance>({18, 18, 0});
+	auto * conflux = expectAt<CGTownInstance>({27, 18, 0});
+	ASSERT_NE(tower, nullptr);
+	ASSERT_NE(conflux, nullptr);
+
+	EXPECT_EQ(tower->creatureBuildingGrowth(BuildingID::SPECIAL_3, mage), 1);
+	EXPECT_EQ(tower->creatureBuildingGrowth(BuildingID::SPECIAL_3, archMage), 1);
+	EXPECT_EQ(tower->creatureBuildingGrowth(BuildingID::SPECIAL_3, genie), 0);
+	EXPECT_EQ(tower->creatureBuildingGrowth(BuildingID::SPECIAL_2, mage), 0);
+	EXPECT_EQ(conflux->creatureBuildingGrowth(BuildingID::SPECIAL_3, mage), 0);
+}
+
+TEST_F(NewHorizonsConfluxGrowthTest, TowerLibraryHelperIsInactiveWithoutSavedNewHorizonsRules)
+{
+	startTowerMap(false);
+	const auto * tower = expectAt<CGTownInstance>({18, 18, 0});
+	ASSERT_NE(tower, nullptr);
+
+	EXPECT_EQ(tower->creatureBuildingGrowth(BuildingID::SPECIAL_3, creature("core:mage")), 0);
+	EXPECT_EQ(tower->creatureBuildingGrowth(BuildingID::SPECIAL_3, creature("core:archMage")), 0);
+}
+
+#ifdef ENABLE_NULLKILLER2_AI
+TEST_F(NewHorizonsConfluxGrowthTest, LibraryCandidateValuesMageRowAndBuiltLibraryTracksArchMage)
+{
+	const auto mage = creature("core:mage");
+	const auto archMage = creature("core:archMage");
+	startTowerMap();
+	auto * town = expectAt<CGTownInstance>({18, 18, 0});
+	ASSERT_NE(town, nullptr);
+
+	const auto & configuredRows = town->getTown()->creatures;
+	const auto mageRow = std::find_if(configuredRows.begin(), configuredRows.end(), [mage](const auto & row)
+	{
+		return std::find(row.begin(), row.end(), mage) != row.end();
+	});
+	ASSERT_NE(mageRow, configuredRows.end());
+	const auto rowIndex = static_cast<int>(std::distance(configuredRows.begin(), mageRow));
+	ASSERT_EQ(rowIndex, 4) << "The authored Tower row swap places Mages in dwelling row five";
+	ASSERT_EQ(*mageRow, (std::vector<CreatureID>{mage, archMage}));
+
+	const auto mageDwelling = BuildingID::getDwellingFromLevel(rowIndex, 0);
+	const auto upgradedMageDwelling = BuildingID::getDwellingFromLevel(rowIndex, 1);
+	ASSERT_TRUE(town->getTown()->buildings.contains(mageDwelling));
+	ASSERT_TRUE(town->getTown()->buildings.contains(upgradedMageDwelling));
+
+	GameHandlerTestServer server(gameState(), PlayerColor(0));
+	CGameHandler gameHandler(server, gameState());
+	gameHandler.randomizer->setSeed(251);
+	grantBuildingResources(*this);
+	gameHandler.onNewTurn();
+	ASSERT_EQ(gameState()->day, 1);
+
+	// Satisfy the Tower row and Library prerequisites through accepted builds.
+	// The mage row is the fifth dwelling after the authored Genie/Mage swap.
+	const std::array<BuildingID, 10> prerequisites = {
+		BuildingID::FORT,
+		BuildingID::MAGES_GUILD_1,
+		BuildingID::DWELL_LVL_1,
+		BuildingID::MAGES_GUILD_2,
+		BuildingID::DWELL_LVL_2,
+		BuildingID::DWELL_LVL_3,
+		BuildingID::MAGES_GUILD_3,
+		BuildingID::DWELL_LVL_4,
+		BuildingID::MAGES_GUILD_4,
+		mageDwelling
+	};
+	for(const auto building : prerequisites)
+	{
+		if(town->hasBuilt(building))
+			continue;
+		ASSERT_TRUE(gameHandler.buildStructure(town->id, building)) << "failed building " << building;
+		EXPECT_TRUE(town->hasBuilt(building));
+	}
+	ASSERT_FALSE(town->hasBuilt(BuildingID::SPECIAL_3));
+	ASSERT_EQ(town->creatures.at(static_cast<size_t>(rowIndex)).second, (std::vector<CreatureID>{mage}));
+
+	auto callback = makeCallback(PlayerColor(0));
+	auto armyManager = std::make_unique<NK2AI::ArmyManager>(nullptr, nullptr);
+	const auto prospectiveLibrary = NK2AI::BuildAnalyzer::getBuildingOrPrerequisite(
+		town, BuildingID::SPECIAL_3, armyManager, callback);
+	EXPECT_EQ(prospectiveLibrary.id, BuildingID::SPECIAL_3);
+	EXPECT_TRUE(prospectiveLibrary.isBuildable);
+	EXPECT_FALSE(prospectiveLibrary.isBuilt);
+	EXPECT_EQ(prospectiveLibrary.creatureID, mage);
+	EXPECT_EQ(prospectiveLibrary.baseCreatureID, mage);
+	EXPECT_EQ(prospectiveLibrary.creatureGrowth, 1);
+	ASSERT_NE(mage.toCreature(), nullptr);
+	EXPECT_EQ(prospectiveLibrary.armyStrength, mage.toCreature()->getAIValue());
+	EXPECT_EQ(prospectiveLibrary.armyCost, mage.toCreature()->getFullRecruitCost());
+
+	const int mageGrowthBeforeLibrary = town->creatureGrowth(rowIndex);
+	ASSERT_TRUE(gameHandler.buildStructure(town->id, BuildingID::SPECIAL_3));
+	EXPECT_EQ(town->creatureGrowth(rowIndex), mageGrowthBeforeLibrary + 1);
+
+	ASSERT_TRUE(gameHandler.buildStructure(town->id, upgradedMageDwelling));
+	ASSERT_TRUE(vstd::contains(town->creatures.at(static_cast<size_t>(rowIndex)).second, archMage));
+	EXPECT_EQ(town->creatureBuildingGrowth(BuildingID::SPECIAL_3, archMage), 1);
+	EXPECT_EQ(town->creatureGrowth(rowIndex), town->creatureBaseGrowth(archMage) + 1);
+
+	const auto builtLibrary = NK2AI::BuildAnalyzer::getBuildingOrPrerequisite(
+		town, BuildingID::SPECIAL_3, armyManager, callback);
+	EXPECT_TRUE(builtLibrary.isBuilt);
+	EXPECT_EQ(builtLibrary.creatureID, archMage);
+	EXPECT_EQ(builtLibrary.creatureGrowth, 1)
+		<< "A built Library candidate stays a fixed contribution rather than reusing the full row growth";
+	ASSERT_NE(archMage.toCreature(), nullptr);
+	EXPECT_EQ(builtLibrary.armyStrength, archMage.toCreature()->getAIValue());
+	EXPECT_EQ(builtLibrary.armyCost, archMage.toCreature()->getFullRecruitCost());
+}
+#endif
 
 TEST_F(NewHorizonsConfluxGrowthTest, GardenKeepsPixieAndSpriteStocksIndependentAndGrowthSurvivesSave)
 {

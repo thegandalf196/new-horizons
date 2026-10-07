@@ -274,6 +274,8 @@ public:
 	int creatureGrowth(const int & level) const;
 	int creatureBaseGrowth(CreatureID creature) const;
 	int creatureHordeGrowth(CreatureID creature) const;
+	/// Fixed building contribution before Grail and handicap modifiers; independent of build state.
+	int creatureBuildingGrowth(BuildingID building, CreatureID creature) const;
 	GrowthInfo getGrowthInfo(int level) const;
 	bool hasFort() const;
 	bool hasCapitol() const;

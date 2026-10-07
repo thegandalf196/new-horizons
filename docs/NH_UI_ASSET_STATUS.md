@@ -1,5 +1,12 @@
 # New Horizons UI and asset status register
 
+Reference correction,2026-10-07: the two recent proportioned-contact-b studies
+are **Provisional, superseded identity studies**. They mistakenly use the older
+lava/trousers v3 design instead of the selected m7qkfJk red-scaled Academy
+collar/apron/tail direction and paired v4 standing masters. They remain private
+and uninstalled; their silhouette/alpha evidence is not current-design approval.
+Likewise, the proportion-adapted technical rig is not a final current Cabir model.
+
 Proportioned Cabir contact studies,2026-10-07: **Provisional**, private and
 uninstalled under UP265. Built-in HoMM3-Art creates one contact-B study and one
 targeted camera/pose revision using the new proportioned shared-rig guide.

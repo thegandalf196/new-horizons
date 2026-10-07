@@ -185,6 +185,18 @@ int CGTownInstance::creatureHordeGrowth(CreatureID creature) const
 	return cb->getCreatureHordeGrowthOverride(creature).value_or(entity->getHorde());
 }
 
+int CGTownInstance::creatureBuildingGrowth(BuildingID building, CreatureID creature) const
+{
+	if(building != BuildingID::SPECIAL_3
+		|| !newHorizonsMagic::rulesActive(cb->getMagicRules())
+		|| getFactionID() != FactionID::TOWER)
+		return 0;
+
+	const auto mage = CreatureID(CreatureID::decode("core:mage"));
+	const auto archMage = CreatureID(CreatureID::decode("core:archMage"));
+	return creature == mage || creature == archMage ? 1 : 0;
+}
+
 GrowthInfo CGTownInstance::getGrowthInfo(int level) const
 {
 	GrowthInfo ret;
@@ -238,19 +250,13 @@ GrowthInfo CGTownInstance::getGrowthInfo(int level) const
 	for(const auto & b : *bonuses)
 		ret.entries.emplace_back(b->val, b->Description(cb));
 
-	// New Horizons' Tower Library is intentionally narrower than the legacy
-	// library bonus: it affects only Mage and Arch Mage growth.  A generic
-	// CREATURE_GROWTH bonus cannot express that distinction here because this
-	// query runs on the town node (not a creature node), so apply the authored
-	// effect at the authoritative town-growth boundary.
-	if(newHorizonsMagic::rulesActive(cb->getMagicRules())
-		&& getFactionID() == FactionID::TOWER
-		&& hasBuilt(BuildingID::SPECIAL_3))
+	// New Horizons' Tower Library contribution is intentionally narrower than
+	// the legacy library bonus and is shared with prospective AI valuation.
+	if(hasBuilt(BuildingID::SPECIAL_3))
 	{
-		const auto mage = CreatureID(CreatureID::decode("core:mage"));
-		const auto archMage = CreatureID(CreatureID::decode("core:archMage"));
-		if(creature->getId() == mage || creature->getId() == archMage)
-			ret.entries.emplace_back(subID, BuildingID::SPECIAL_3, 1);
+		const auto libraryGrowth = creatureBuildingGrowth(BuildingID::SPECIAL_3, creature->getId());
+		if(libraryGrowth > 0)
+			ret.entries.emplace_back(subID, BuildingID::SPECIAL_3, libraryGrowth);
 	}
 
 	int dwellingBonus = 0;

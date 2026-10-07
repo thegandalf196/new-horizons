@@ -176,16 +176,24 @@ BuildingInfo::BuildingInfo(
 
 		if(isBuilt)
 		{
-			const auto & creatureRows = town->getTown()->creatures;
-			const auto row = std::ranges::find_if(creatureRows, [creature](const auto & members)
+			const int buildingGrowth = town->creatureBuildingGrowth(id, creature->getId());
+			if(buildingGrowth > 0)
 			{
-				return vstd::contains(members, creature->getId());
-			});
-
-			if(row != creatureRows.end())
-				creatureGrowth = town->creatureGrowth(static_cast<int>(std::distance(creatureRows.begin(), row)));
+				creatureGrowth = buildingGrowth;
+			}
 			else
-				creatureGrowth = town->creatureGrowth(creatureLevel - 1);
+			{
+				const auto & creatureRows = town->getTown()->creatures;
+				const auto row = std::ranges::find_if(creatureRows, [creature](const auto & members)
+				{
+					return vstd::contains(members, creature->getId());
+				});
+
+				if(row != creatureRows.end())
+					creatureGrowth = town->creatureGrowth(static_cast<int>(std::distance(creatureRows.begin(), row)));
+				else
+					creatureGrowth = town->creatureGrowth(creatureLevel - 1);
+			}
 		}
 		else
 		{
@@ -200,7 +208,10 @@ BuildingInfo::BuildingInfo(
 			}
 			else
 			{
-				creatureGrowth = town->creatureHordeGrowth(creature->getId());
+				const int buildingGrowth = town->creatureBuildingGrowth(id, creature->getId());
+				creatureGrowth = buildingGrowth > 0
+					? buildingGrowth
+					: town->creatureHordeGrowth(creature->getId());
 			}
 		}
 
@@ -353,8 +364,34 @@ BuildingInfo BuildAnalyzer::getBuildingOrPrerequisite(
 	{
 		creatureLevelIndex = townInfo->hordeLvl.at(1);
 	}
+	else
+	{
+		for(size_t level = 0; level < townInfo->creatures.size(); ++level)
+		{
+			const auto & configuredCreatures = townInfo->creatures[level];
+			if(configuredCreatures.empty()
+				|| !std::ranges::any_of(configuredCreatures, [town, b](CreatureID id)
+					{ return town->creatureBuildingGrowth(b, id) > 0; }))
+				continue;
 
-	if(creatureLevelIndex >= 0)
+			creatureLevelIndex = static_cast<int>(level);
+			baseCreatureID = configuredCreatures.front();
+
+			CreatureID selectedCreature = configuredCreatures.front();
+			if(level < town->creatures.size())
+			{
+				const auto & availableCreatures = town->creatures[level].second;
+				const auto available = std::find_if(availableCreatures.rbegin(), availableCreatures.rend(),
+					[town, b](CreatureID id) { return town->creatureBuildingGrowth(b, id) > 0; });
+				if(available != availableCreatures.rend())
+					selectedCreature = *available;
+			}
+			creature = selectedCreature.toCreature();
+			break;
+		}
+	}
+
+	if(creatureLevelIndex >= 0 && !creature)
 	{
 		auto creatures = townInfo->creatures.at(creatureLevelIndex);
 		auto creatureID = creatures.size() > creatureUpgradeNo

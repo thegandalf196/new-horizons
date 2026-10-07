@@ -2,6 +2,20 @@
 
 Updated: 2026-10-07
 
+Bounded growth-building AI audit2026-10-07 identifies a concrete missing minimum
+hook: Library construction is considered, but its Mage/Arch Mage production
+value was absent. UP278 implements a shared fixed-growth contribution and actual
+configured-row resolution. Client20397/test86567 builds pass; native87272 passes
+6/6 in3.574s, zero skips/errors/disabled, with independent review and Tower data
+guards. The three new cases test public AI candidate value, accepted construction,
+upgraded-row selection and helper scope; three adjacent growth checks also pass.
+Prerequisite propagation is source-reviewed only. Authoritative
+Library gameplay already exists, so this is AI-path coverage, not a new building
+or perk identity. Grail/handicap marginal forecasting and full autonomous purchase
+selection remain Phase2. Generic Horde stock checks are not credited by this
+Library-only audit. Cabir continuity remains separately blocked under UP265;
+superseded identity studies provide no replacement-art completion evidence.
+
 Coverage recount2026-10-07 confirms228 active/82 planned perks; corrected the
 stale summary table's225/85 counts without activating content. A new bounded
 generic-perk audit checks the planned Archery/Battlecraft/Discipline/Command/
