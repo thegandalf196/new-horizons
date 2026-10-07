@@ -180,6 +180,18 @@ Client build and focused source/nominal bounds guards pass, not rendered
 readability or human acceptance. Long label/value truncation and interactive
 visual acceptance remain open; normal Linux launcher is unchanged.
 
+UP289 revision,2026-10-07: **Provisional**, not final visual approval. Adaptive
+three/four/five-column cards use native58x64 TWCRPORT portraits and one aligned
+eight-stat column, separate stock/selected counts, native sliders and compact
+resource costs. One continuous leather surface replaces card-local tile resets,
+thin gold category boxes and the floating decorative total-cost frame. Native
+outer-frame bounds are included (three bands:589px total height at800x600).
+Focused geometry/Muster guards and initial two-object compile pass. Parent
+repaint propagation and zero-cost footer clearing are explicitly corrected after
+independent review. Ten-job linked client build passes (session98065 exits0).
+Actual rendered/interactive readability and playable promotion remain separate
+gates; no new artwork or Final status is claimed.
+
 Rig-guided Cabir atlas v2,2026-10-06: **Provisional rejected study**, not runtime
 art. The targeted built-in revision does not materially correct body continuity
 4→5, return gait6–8 or requested coarse finish. Preserve its exact private master/

@@ -18,13 +18,14 @@
 #include "../widgets/CreatureCostBox.h"
 #include "../widgets/Slider.h"
 #include "../widgets/TextControls.h"
+#include "../widgets/MiscWidgets.h"
 #include "../GameEngine.h"
 #include "../GameInstance.h"
 #include "../gui/Shortcut.h"
-#include "render/Canvas.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/ResourceSet.h"
 #include "../../lib/CCreatureHandler.h"
+#include "../../lib/entities/ResourceTypeHandler.h"
 #include "CreaturePurchaseCard.h"
 #include "NewHorizonsCreatureCategoryUI.h"
 #include "NewHorizonsMusterUI.h"
@@ -33,13 +34,17 @@
 
 namespace
 {
-constexpr int NH_QUICK_CARD_MAX_WIDTH = 150;
-constexpr int NH_QUICK_CARD_HEIGHT = 136;
+constexpr int NH_QUICK_CARD_MAX_WIDTH = 240;
+constexpr int NH_QUICK_CARD_HEIGHT = 142;
 constexpr int NH_QUICK_CARD_GAP = 4;
 constexpr int NH_QUICK_SIDE_MARGIN = 12;
 constexpr int NH_QUICK_CONTENT_TOP = 6;
 constexpr int NH_QUICK_HEADING_GAP = 2;
-constexpr int NH_QUICK_FOOTER_HEIGHT = 124;
+constexpr int NH_QUICK_FOOTER_HEIGHT = 74;
+constexpr int NH_QUICK_HEADER_HEIGHT = 12;
+constexpr int NH_QUICK_BORDER_WIDTH = 28;
+constexpr int NH_QUICK_BORDER_HEIGHT = 29;
+constexpr int NH_QUICK_MIN_WIDTH = 376;
 
 std::optional<newHorizonsCreatures::CreatureCategoryView> currentCreatureCategory(const CCreature * creature)
 {
@@ -90,8 +95,7 @@ bool hasCompleteCategoryContext(const CGTownInstance * town)
 		found = true;
 	}
 
-	// Five cards fit at the compact 150px pitch on the supported 800px logical
-	// canvas. Larger custom category bands retain the legacy usable window.
+	// At most five adaptive cards fit on the supported800px logical canvas.
 	return found && std::ranges::all_of(categoryCounts, [](size_t count){ return count <= 5; });
 }
 
@@ -182,7 +186,6 @@ void QuickRecruitmentWindow::setMusterButton()
 void QuickRecruitmentWindow::setCreaturePurchaseCards()
 {
 	categoryHeaders.fill(nullptr);
-	categoryGroupRects.fill(std::nullopt);
 	cards.clear();
 
 	int availableAmount = getAvailableCreatures();
@@ -218,17 +221,12 @@ void QuickRecruitmentWindow::setCreaturePurchaseCards()
 	};
 	if(grouped)
 	{
-		constexpr int headerHeight = 12;
+		constexpr int headerHeight = NH_QUICK_HEADER_HEIGHT;
 		const int maximumBandSize = static_cast<int>(std::ranges::max_element(categoryLevels,
 			{}, [](const auto & group){ return group.size(); })->size());
 		const int cardWidth = std::min(NH_QUICK_CARD_MAX_WIDTH,
 			(pos.w - NH_QUICK_SIDE_MARGIN * 2 - NH_QUICK_CARD_GAP * (maximumBandSize - 1)) / maximumBandSize);
-		const int cardHeight = std::min(NH_QUICK_CARD_HEIGHT,
-			(pos.h - NH_QUICK_CONTENT_TOP - NH_QUICK_FOOTER_HEIGHT
-				- headerHeight * static_cast<int>(categoryLevels.size())
-				- NH_QUICK_HEADING_GAP * static_cast<int>(categoryLevels.size())
-				- NH_QUICK_CARD_GAP * static_cast<int>(categoryLevels.size()))
-			/ static_cast<int>(categoryLevels.size()));
+		const int cardHeight = NH_QUICK_CARD_HEIGHT;
 		int bandTop = NH_QUICK_CONTENT_TOP;
 		for(size_t index = 0; index < categoryLevels.size(); ++index)
 		{
@@ -247,8 +245,6 @@ void QuickRecruitmentWindow::setCreaturePurchaseCards()
 				{
 					categoryHeaders[index] = std::make_shared<CLabel>(groupStart + groupWidth / 2, bandTop, FONT_SMALL,
 						ETextAlignment::TOPCENTER, Colors::YELLOW, categoryName, groupWidth + 4);
-					categoryGroupRects[index] = Rect(groupStart - 3, bandTop - 1, groupWidth + 6,
-						headerHeight + NH_QUICK_HEADING_GAP + cardHeight + 2);
 				}
 			}
 			const int cardTop = bandTop + headerHeight + NH_QUICK_HEADING_GAP;
@@ -277,28 +273,38 @@ void QuickRecruitmentWindow::setCreaturePurchaseCards()
 		return lhs->recruitmentLevel < rhs->recruitmentLevel;
 	});
 
-	if(grouped)
-		totalCost = std::make_shared<CreatureCostBox>(Rect((this->pos.w - 97) / 2, this->pos.h - NH_QUICK_FOOTER_HEIGHT + 2, 97, 74), "");
-	else
+	if(!grouped)
 		totalCost = std::make_shared<CreatureCostBox>(Rect((this->pos.w/2)-45, position.y+260, 97, 74), "");
 }
 
 void QuickRecruitmentWindow::initWindow(Rect startupPosition)
 {
 	categorizedLayout = hasCompleteCategoryContext(town);
+	const Point viewport = ENGINE->screenDimensions();
+	// The native portrait/stat grid has a fixed minimum footprint. Retain the
+	// existing legacy window below800x600 rather than overlap its controls.
+	if(viewport.x < 800 || viewport.y < 600)
+		categorizedLayout = false;
 	if(categorizedLayout)
 	{
-		const Point viewport = ENGINE->screenDimensions();
-		const Point fallbackSize(800, 600);
-		const Point parentSize = GAME && GAME->interface() && GAME->interface()->castleInt
-			? GAME->interface()->castleInt->pos.dimensions()
-			: fallbackSize;
+		std::array<int, 3> categoryCounts{};
+		for(size_t level = 0; level < town->creatures.size(); ++level)
+		{
+			const auto variants = creatureVariantsAtLevel(town, level);
+			if(!variants.empty())
+				++categoryCounts[categoryIndex(*currentCreatureCategory(variants.front().toCreature()))];
+		}
+		const int maximumBandSize = *std::ranges::max_element(categoryCounts);
+		const int bandCount = static_cast<int>(std::ranges::count_if(categoryCounts, [](int count){ return count > 0; }));
 		pos.x = 0;
 		pos.y = 0;
-		pos.w = std::max(1, std::min(viewport.x - 8, parentSize.x));
-		pos.h = std::max(1, std::min(viewport.y - 8, parentSize.y));
+		pos.w = std::min(viewport.x - NH_QUICK_BORDER_WIDTH,
+			std::max(NH_QUICK_MIN_WIDTH, maximumBandSize * NH_QUICK_CARD_MAX_WIDTH
+				+ (maximumBandSize - 1) * NH_QUICK_CARD_GAP + NH_QUICK_SIDE_MARGIN * 2));
+		pos.h = NH_QUICK_CONTENT_TOP + bandCount * (NH_QUICK_HEADER_HEIGHT + NH_QUICK_HEADING_GAP
+			+ NH_QUICK_CARD_HEIGHT + NH_QUICK_CARD_GAP) + NH_QUICK_FOOTER_HEIGHT;
+		assert(pos.h + NH_QUICK_BORDER_HEIGHT <= viewport.y);
 		backgroundTexture = std::make_shared<CFilledTexture>(ImagePath::builtin("DIBOXBCK.pcx"), Rect(0, 0, pos.w, pos.h));
-		costBackground = std::make_shared<CPicture>(ImagePath::builtin("QuickRecruitmentWindow/costBackground.png"), pos.w / 2 - 113, pos.h - NH_QUICK_FOOTER_HEIGHT);
 		return;
 	}
 	pos.x = startupPosition.x + 238;
@@ -422,8 +428,52 @@ void QuickRecruitmentWindow::updateAllSliders()
 		}
 		i->slider->scrollTo(i->slider->getValue());
 	}
-	totalCost->createItems(GAME->interface()->cb->getResourceAmount() - allAvailableResources);
-	totalCost->set(GAME->interface()->cb->getResourceAmount() - allAvailableResources);
+	const TResources purchaseCost = GAME->interface()->cb->getResourceAmount() - allAvailableResources;
+	if(categorizedLayout)
+		updateCompactTotalCost(purchaseCost);
+	else
+	{
+		totalCost->createItems(purchaseCost);
+		totalCost->set(purchaseCost);
+	}
+}
+
+void QuickRecruitmentWindow::updateCompactTotalCost(const TResources & resources)
+{
+	for(const auto & widget : compactTotalCostWidgets)
+		removeChild(widget.get());
+	compactTotalCostWidgets.clear();
+	OBJECT_CONSTRUCTION;
+	std::vector<GameResID> resourceIds;
+	TResources::nziterator iter(resources);
+	while(iter.valid())
+	{
+		resourceIds.push_back(iter->resType);
+		++iter;
+	}
+	if(resourceIds.empty())
+	{
+		redraw(); // Clear the previous row even when the new selection costs zero.
+		return;
+	}
+	std::ranges::reverse(resourceIds); // Gold first, matching the native cost box.
+	const int cellWidth = std::min(70, (pos.w - NH_QUICK_SIDE_MARGIN * 2) / static_cast<int>(resourceIds.size()));
+	const int start = (pos.w - cellWidth * static_cast<int>(resourceIds.size())) / 2;
+	const int top = pos.h - NH_QUICK_FOOTER_HEIGHT + 5;
+	for(size_t index = 0; index < resourceIds.size(); ++index)
+	{
+		const int x = start + static_cast<int>(index) * cellWidth;
+		auto icon = std::make_shared<CAnimImage>(AnimationPath::builtin("RESOURCE"), resourceIds[index].getNum(), Rect(x, top, 16, 16));
+		auto value = std::make_shared<CLabel>(x + cellWidth - 4, top + 16, FONT_TINY,
+			ETextAlignment::BOTTOMRIGHT, Colors::WHITE, std::to_string(resources[resourceIds[index]]), cellWidth - 22);
+		const std::string exactCost = resourceIds[index].toResource()->getNameTranslated()
+			+ ": " + std::to_string(resources[resourceIds[index]]);
+		auto help = std::make_shared<LRClickableAreaWText>(Rect(x, top, cellWidth, 16), exactCost, exactCost);
+		compactTotalCostWidgets.push_back(icon);
+		compactTotalCostWidgets.push_back(value);
+		compactTotalCostWidgets.push_back(help);
+	}
+	redraw();
 }
 
 QuickRecruitmentWindow::QuickRecruitmentWindow(const CGTownInstance * townd, Rect startupPosition)
@@ -438,14 +488,4 @@ QuickRecruitmentWindow::QuickRecruitmentWindow(const CGTownInstance * townd, Rec
 	maxAllCards(cards);
 
 	center();
-}
-
-void QuickRecruitmentWindow::showAll(Canvas & to)
-{
-	CWindowObject::showAll(to);
-	for(const auto & group : categoryGroupRects)
-	{
-		if(group)
-			to.drawBorder(*group + pos.topLeft(), Colors::METALLIC_GOLD);
-	}
 }

@@ -89,7 +89,6 @@ private:
 	std::vector<CreatureID> upgradesID;
 	std::shared_ptr<CPicture> background;
 	std::shared_ptr<CCreatureClickArea> creatureClickArea;
-	std::shared_ptr<CFilledTexture> compactBackground;
 	std::shared_ptr<CAnimImage> compactPortrait;
 	std::shared_ptr<CLabel> compactName;
 	std::array<std::shared_ptr<CLabel>, 8> compactStatValues;

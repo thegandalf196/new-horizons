@@ -76,9 +76,9 @@ void CreaturePurchaseCard::switchCreatureLevel()
 		compactName->setText(creatureOnTheCard->getNamePluralTranslated());
 		updateCompactStats();
 		removeChild(creatureClickArea.get());
-		creatureClickArea = std::make_shared<CCreatureClickArea>(Point(4, 14), compactPortrait, creatureOnTheCard);
-		creatureClickArea->pos.w = 32;
-		creatureClickArea->pos.h = 32;
+		creatureClickArea = std::make_shared<CCreatureClickArea>(Point(4, 16), compactPortrait, creatureOnTheCard);
+		creatureClickArea->pos.w = 58;
+		creatureClickArea->pos.h = 64;
 		initCompactCostInfo();
 		updateCompactCostInfo(slider->getValue());
 		parent->updateAllSliders();
@@ -104,7 +104,7 @@ void CreaturePurchaseCard::initAmountInfo()
 void CreaturePurchaseCard::updateAmountInfo(int value)
 {
 	if(compactLayout)
-		availableAmount->setText(LIBRARY->generaltexth->allTexts[217] + std::to_string(maxAmount - value));
+		availableAmount->setText(std::to_string(maxAmount - value));
 	else
 		availableAmount->setText(std::to_string(maxAmount-value));
 	purchaseAmount->setText(std::to_string(value));
@@ -177,25 +177,29 @@ void CreaturePurchaseCard::initView()
 void CreaturePurchaseCard::initCompactView()
 {
 	OBJECT_CONSTRUCTION;
-	compactBackground = std::make_shared<CFilledTexture>(ImagePath::builtin("DIBOXBCK.pcx"), Rect(0, 0, cardWidth, cardHeight));
+	// A compact card shares the window's continuous leather surface. Repaint
+	// that owner before changing labels so shorter values clear their old pixels.
+	setRedrawParent(true);
 	compactName = std::make_shared<CLabel>(cardWidth / 2, 0, FONT_TINY, ETextAlignment::TOPCENTER,
 		Colors::WHITE, creatureOnTheCard->getNamePluralTranslated(), cardWidth - 8);
 
 	if(builtDwelling && upgradesID.size() > 1)
 	{
-		creatureSwitcher = std::make_shared<CButton>(Point(cardWidth - 17, 14), AnimationPath::builtin("IGPCRDIV.DEF"),
+		creatureSwitcher = std::make_shared<CButton>(Point(4, 88), AnimationPath::builtin("IGPCRDIV.DEF"),
 			CButton::tooltip(), [&](){ switchCreatureLevel(); }, EShortcut::RECRUITMENT_SWITCH_LEVEL);
 		creatureSwitcher->setImageOrder(2, 3, 3, 3);
 	}
 
-	compactPortrait = std::make_shared<CAnimImage>(AnimationPath::builtin("CPRSMALL"), creatureOnTheCard->getIconIndex(),
-		Rect(4, 14, 32, 32));
-	creatureClickArea = std::make_shared<CCreatureClickArea>(Point(4, 14), compactPortrait, creatureOnTheCard);
-	creatureClickArea->pos.w = 32;
-	creatureClickArea->pos.h = 32;
-	availableAmount = std::make_shared<CLabel>(40, 19, FONT_TINY, ETextAlignment::TOPLEFT, Colors::YELLOW,
-		LIBRARY->generaltexth->allTexts[217] + std::to_string(maxAmount), cardWidth - 60);
-	purchaseAmount = std::make_shared<CLabel>(cardWidth - 4, 43, FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, "0", 32);
+	compactPortrait = std::make_shared<CAnimImage>(AnimationPath::builtin("TWCRPORT"), creatureOnTheCard->getIconIndex(),
+		Rect(4, 16, 58, 64));
+	creatureClickArea = std::make_shared<CCreatureClickArea>(Point(4, 16), compactPortrait, creatureOnTheCard);
+	creatureClickArea->pos.w = 58;
+	creatureClickArea->pos.h = 64;
+	availableAmount = std::make_shared<CLabel>(24, 81, FONT_TINY, ETextAlignment::TOPLEFT, Colors::YELLOW,
+		std::to_string(maxAmount), 38);
+	compactStatHelp.push_back(std::make_shared<LRClickableAreaWText>(Rect(24, 81, 38, 11),
+		LIBRARY->generaltexth->allTexts[217], LIBRARY->generaltexth->allTexts[217]));
+	purchaseAmount = std::make_shared<CLabel>(62, 104, FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, "0", 38);
 
 	const std::array<std::string, 8> statNames =
 	{
@@ -220,16 +224,14 @@ void CreaturePurchaseCard::initCompactView()
 		ImagePath::builtin("stackWindow/iconSpeed"), ImagePath::builtin("stackWindow/iconInitiative"),
 		ImagePath(), ImagePath::builtin("stackWindow/iconGrowth")
 	};
-	constexpr int statTop = 46;
+	constexpr int statTop = 16;
 	constexpr int statRowHeight = 11;
-	constexpr int statSideMargin = 4;
-	constexpr int statColumnGap = 2;
-	const int statColumnWidth = (cardWidth - statSideMargin * 2 - statColumnGap) / 2;
+	constexpr int statLeft = 70;
+	const int statColumnWidth = cardWidth - statLeft - 6;
 	for(size_t index = 0; index < statNames.size(); ++index)
 	{
-		const int column = static_cast<int>(index % 2);
-		const int row = static_cast<int>(index / 2);
-		const int x = statSideMargin + column * (statColumnWidth + statColumnGap);
+		const int row = static_cast<int>(index);
+		const int x = statLeft;
 		const int y = statTop + row * statRowHeight;
 		const int iconSize = 10;
 		if(index == 6)
@@ -241,7 +243,7 @@ void CreaturePurchaseCard::initCompactView()
 			icon->scaleTo(Point(iconSize, iconSize));
 			compactStatIcons[index] = icon;
 		}
-		const int valueX = x + statColumnWidth - 1;
+		const int valueX = x + statColumnWidth;
 		compactStatValues[index] = std::make_shared<CLabel>(valueX, y + statRowHeight - 1,
 			FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, "0", statColumnWidth - iconSize - 3);
 		const std::string help = statNames[index] + ": " + statDescriptions[index];
@@ -250,13 +252,13 @@ void CreaturePurchaseCard::initCompactView()
 	}
 	updateCompactStats();
 
-	slider = std::make_shared<CSlider>(Point(18, 100), cardWidth - 36,
+	slider = std::make_shared<CSlider>(Point(18, 106), cardWidth - 36,
 		std::bind(&CreaturePurchaseCard::sliderMoved, this, _1), 0, maxAmount, 0, Orientation::HORIZONTAL);
-	minButton = std::make_shared<CButton>(Point(1, 100), AnimationPath::builtin("IGPCRDIV.DEF"),
+	minButton = std::make_shared<CButton>(Point(1, 106), AnimationPath::builtin("IGPCRDIV.DEF"),
 		CButton::tooltip(), std::bind(&CSlider::scrollToMin, slider), EShortcut::RECRUITMENT_MIN);
 	minButton->setImageOrder(0, 1, 1, 1);
 	minButton->setSoundDisabled(true);
-	maxButton = std::make_shared<CButton>(Point(cardWidth - 17, 100), AnimationPath::builtin("IGPCRDIV.DEF"),
+	maxButton = std::make_shared<CButton>(Point(cardWidth - 17, 106), AnimationPath::builtin("IGPCRDIV.DEF"),
 		CButton::tooltip(), std::bind(&CSlider::scrollToMax, slider), EShortcut::RECRUITMENT_MAX);
 	maxButton->setImageOrder(2, 3, 3, 3);
 	maxButton->setSoundDisabled(true);

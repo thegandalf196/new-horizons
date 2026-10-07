@@ -2,6 +2,20 @@
 
 Updated: 2026-10-07
 
+Current bounded coverage audit: Protect's canonical two-step targeting requires
+a proposed Protector-to-hovered-Ward adjacency-link preview (canonical Order
+targeting section). Existing legal-hex shading/selected footprint works, and
+BattleFieldController::showProtectLinks draws synchronized active Orders only.
+The pre-commit pair preview remains missing; UP274's active-link receipt does
+not close it. Next unblocked required-combat-UI slice after open user priorities:
+BattleActionsController targeting readback plus shared link geometry/renderer,
+focused legal/illegal/double-wide/cancel/no-state-mutation checks. No additional
+Order identity is counted; all eight Orders already have production execution.
+Recruitment layout revision now passes ten-job linked client compilation,
+focused recruitment/Muster geometry guards and independent Sol High review
+under UP289. Rendered/input acceptance and playable promotion remain
+explicitly outstanding. Coverage remains228/310 perks and61/67 spells.
+
 UP289–291 source checkpoint: garrison admission opens the native local army
 transfer window instead of sending an impossible whole merge; hero remains
 visiting, with shared client/AI prediction and unchanged authoritative checks.

@@ -10,6 +10,7 @@
 #pragma once
 
 #include "CWindowObject.h"
+#include "../../lib/ResourceSet.h"
 
 #include <array>
 #include <optional>
@@ -30,7 +31,6 @@ public:
 	void updateAllSliders();
 	bool isForTown(const CGTownInstance * value) const { return town == value; }
 	QuickRecruitmentWindow(const CGTownInstance * townd, Rect startupPosition);
-	void showAll(Canvas & to) override;
 
 private:
 	void initWindow(Rect startupPosition);
@@ -46,6 +46,7 @@ private:
 	void maxAllCards(std::vector<std::shared_ptr<CreaturePurchaseCard>> cards);
 	void maxAllSlidersAmount(std::vector<std::shared_ptr<CreaturePurchaseCard>> cards);
 	void purchaseUnits();
+	void updateCompactTotalCost(const TResources & resources);
 
 	const CGTownInstance * town;
 	bool categorizedLayout = false;
@@ -57,6 +58,6 @@ private:
 	std::vector<std::shared_ptr<CreaturePurchaseCard>> cards;
 	std::shared_ptr<CFilledTexture> backgroundTexture;
 	std::shared_ptr<CPicture> costBackground;
+	std::vector<std::shared_ptr<CIntObject>> compactTotalCostWidgets;
 	std::array<std::shared_ptr<CLabel>, 3> categoryHeaders;
-	std::array<std::optional<Rect>, 3> categoryGroupRects;
 };

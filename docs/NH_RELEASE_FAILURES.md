@@ -2,6 +2,17 @@
 
 ## Purpose
 
+### 2026-10-07 — Recruitment shared-surface repaint ownership
+
+UP289 review caught a source regression before delivery: removing per-card
+backgrounds without propagating redraw to the window would leave old text on
+the shared leather surface. Replacing CreatureCostBox with compact footer
+widgets also requires an explicit redraw after removing/rebuilding those
+widgets, including the zero-cost path. Preserve parent repaint ownership when
+consolidating backgrounds; geometry guards alone cannot establish repaint
+correctness. The bounded worker corrected both paths; source guards,
+independent re-review and ten-job linked client build pass before integration.
+
 ### 2026-10-07 — Wisp Core dwelling requirements and outline inheritance
 
 UP291 upgrade `requires#override: []` crashed during town finalization: the
