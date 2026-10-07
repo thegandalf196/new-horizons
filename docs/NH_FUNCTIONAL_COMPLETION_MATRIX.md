@@ -2,6 +2,16 @@
 
 Updated: 2026-10-07
 
+UP270 extends the shared real/effective Morale readback to the detailed battle
+creature window, beyond UP257's compact row. Effective icon/value and localized
+floor/source tooltip reuse the existing MoraleLuckBox, while Luck/legacy/world
+handling remains unchanged. Client15101 builds successfully; six shared-Morale
+native cases pass6/6 in3.631s with zero skips/errors/disabled, and extended
+binding guard plus independent source review pass. Native producer checks do
+not establish rendered widget execution. Tooltip fit, open-window refresh and
+broader privacy interactions remain Phase2; no gameplay/state/art or identity
+count changes. Normal Linux delivery remains separate.
+
 UP269 implements the required spellbook Wisdom/cost breakdown: listed/current
 base cost and localized ordered stages come from the shared authoritative
 calculator, with explicit Metamagic follow-up context and separate Overcharge.

@@ -40,6 +40,7 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/IGameSettings.h"
 #include "../../lib/battle/BattleInfo.h"
+#include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/bonuses/Propagators.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/callback/IGameInfoCallback.h"
@@ -51,6 +52,7 @@
 #include "../../lib/gameState/UpgradeInfo.h"
 #include "../../lib/networkPacks/ArtifactLocation.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include "../../lib/texts/TextOperations.h"
 #include "../../lib/texts/Languages.h"
@@ -914,7 +916,15 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 			addStatLabel(EStat::MANA, battleStack->casts.total(), battleStack->casts.available());
 		addStatLabel(EStat::HEALTH_LEFT, battleStack->getFirstHPleft());
 
-		morale->set(battleStack);
+		const auto * battleInfo = battleStack->getBattle();
+		auto battleCallback = battleInfo && GAME->interface() && GAME->interface()->cb
+			? GAME->interface()->cb->getBattle(battleInfo->getBattleID())
+			: nullptr;
+		if(battleCallback && battleCallback->getBattle()
+			&& newHorizonsMagic::rulesActive(battleCallback->getBattle()->getMagicRules()))
+			morale->set(battleStack, battleCallback.get());
+		else
+			morale->set(battleStack);
 		luck->set(battleStack);
 	}
 	else

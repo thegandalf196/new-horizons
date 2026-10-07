@@ -21,6 +21,8 @@ class CArmedInstance;
 class CGTownInstance;
 class CGHeroInstance;
 class AFactionMember;
+class CStack;
+class CBattleInfoCallback;
 
 class CLabel;
 class CTextBox;
@@ -255,6 +257,7 @@ public:
 	bool small;
 
 	void set(const AFactionMember *node);
+	void set(const CStack * stack, const CBattleInfoCallback * battleCallback);
 
 	MoraleLuckBox(bool Morale, const Rect &r, bool Small=false);
 };

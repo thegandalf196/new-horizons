@@ -37,12 +37,16 @@
 
 #include "../../lib/CConfigHandler.h"
 #include "../../lib/IGameSettings.h"
+#include "../../lib/CStack.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/battle/CBattleInfoCallback.h"
+#include "../../lib/battle/IBattleState.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/entities/faction/CTownHandler.h"
 #include "../../lib/gameState/InfoAboutArmy.h"
 #include "../../lib/mapObjects/CGCreature.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include "../../lib/texts/TextOperations.h"
@@ -738,6 +742,99 @@ void MoraleLuckBox::set(const AFactionMember * node)
 	image->moveBy(Point(pos.w/2 - image->pos.w/2, pos.h/2 - image->pos.h/2)); //center icon
 	if(settings["general"]["enableUiEnhancements"].Bool())
 		label = std::make_shared<CLabel>((image->pos.topLeft() - pos.topLeft()).x + (small ? 28 : 40), (image->pos.topLeft() - pos.topLeft()).y + (small ? 20 : 38), EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, std::to_string(modifierList->totalValue()));
+}
+
+void MoraleLuckBox::set(const CStack * stack, const CBattleInfoCallback * battleCallback)
+{
+	set(static_cast<const AFactionMember *>(stack));
+	if(!morale || !stack || !battleCallback || !battleCallback->getBattle()
+		|| !newHorizonsMagic::rulesActive(battleCallback->getBattle()->getMagicRules()))
+		return;
+
+	const auto readback = battleCallback->battleGetMoraleInfo(stack);
+	component.value = readback.effective;
+	image->setFrame(std::clamp(readback.effective + 3, 0, 6));
+	if(label)
+		label->setText(std::to_string(readback.effective));
+
+	const int moraleSign = (readback.effective > 0) - (readback.effective < 0);
+	hoverText = GAME->translator().translate("core.heroscrn", 4 - moraleSign);
+
+	MetaString description;
+	description.appendTextID("new-horizons.combat.morale.readback.values");
+	description.replaceTokenNumber("%REAL%", readback.real);
+	description.replaceTokenNumber("%EFFECTIVE%", readback.effective);
+
+	if(stack->unaffectedByMorale())
+	{
+		description.appendEOL();
+		description.appendTextID("core.arraytxt", 113);
+		text = description.toString(&GAME->translator());
+		return;
+	}
+
+	std::vector<std::string> bonusDescriptions;
+	const auto * descriptionCallback = GAME->interface() ? GAME->interface()->cb.get() : nullptr;
+	if(descriptionCallback)
+	{
+		const auto bonuses = stack->getBonusesOfType(BonusType::MORALE);
+		if(bonuses)
+		{
+			for(const auto & bonus : *bonuses)
+			{
+				if(!bonus || bonus->val == 0)
+					continue;
+
+				auto bonusDescription = bonus->Description(descriptionCallback);
+				if(!bonusDescription.empty())
+					bonusDescriptions.push_back(std::move(bonusDescription));
+			}
+		}
+	}
+
+	const bool hasSources = !bonusDescriptions.empty() || readback.standardBearerBonus != 0
+		|| readback.firstRoundModifier != 0 || readback.steadfastAdjustment != 0
+		|| readback.commandingPresenceFloorApplied || readback.furyUnboundFloorApplied;
+	description.appendEOL();
+	if(!hasSources)
+	{
+		description.appendTextID("new-horizons.combat.morale.readback.noSources");
+		text = description.toString(&GAME->translator());
+		return;
+	}
+
+	description.appendEOL();
+	description.appendTextID("new-horizons.combat.morale.readback.sourceHeader");
+	for(const auto & bonusDescription : bonusDescriptions)
+	{
+		description.appendEOL();
+		description.appendRawString(bonusDescription);
+	}
+	const auto appendModifier = [&description](std::string_view textId, int32_t value)
+	{
+		MetaString line;
+		line.appendTextID(std::string(textId));
+		line.replaceTokenNumber("%VALUE%", value);
+		description.appendEOL();
+		description.append(line);
+	};
+	if(readback.standardBearerBonus != 0)
+		appendModifier("new-horizons.combat.morale.readback.standardBearer", readback.standardBearerBonus);
+	if(readback.firstRoundModifier != 0)
+		appendModifier("new-horizons.combat.morale.readback.firstRound", readback.firstRoundModifier);
+	if(readback.steadfastAdjustment != 0)
+		appendModifier("new-horizons.combat.morale.readback.steadfast", readback.steadfastAdjustment);
+	if(readback.commandingPresenceFloorApplied)
+	{
+		description.appendEOL();
+		description.appendTextID("new-horizons.combat.morale.readback.commandingPresence");
+	}
+	if(readback.furyUnboundFloorApplied)
+	{
+		description.appendEOL();
+		description.appendTextID("new-horizons.combat.morale.readback.furyUnbound");
+	}
+	text = description.toString(&GAME->translator());
 }
 
 MoraleLuckBox::MoraleLuckBox(bool Morale, const Rect &r, bool Small)

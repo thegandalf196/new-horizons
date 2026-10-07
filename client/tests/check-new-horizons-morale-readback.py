@@ -117,4 +117,19 @@ for text_id in (
 ):
     assert f'"{text_id}"' in TEXTS, f"Missing localized config entry: {text_id}"
 
-print("PASS: saved New Horizons battle Morale readback uses shared real/effective data, scoped sources, localized text, and cached refresh")
+detail = (ROOT / "client/windows/CCreatureWindow.cpp").read_text(encoding="utf-8")
+widgets = (ROOT / "client/widgets/MiscWidgets.cpp").read_text(encoding="utf-8")
+assert "morale->set(battleStack, battleCallback.get())" in detail
+detail_readback = widgets.split("void MoraleLuckBox::set(const CStack * stack,", 1)[1].split(
+    "MoraleLuckBox::MoraleLuckBox(", 1
+)[0]
+for token in (
+    "newHorizonsMagic::rulesActive", "battleGetMoraleInfo(stack)",
+    "component.value = readback.effective", "readback.real", "readback.effective",
+    "readback.commandingPresenceFloorApplied", "readback.furyUnboundFloorApplied",
+    "stack->unaffectedByMorale()", "bonus->Description(descriptionCallback)",
+):
+    assert token in detail_readback, f"Detailed battle Morale lacks shared readback: {token}"
+assert "set(static_cast<const AFactionMember *>(stack))" in detail_readback
+
+print("PASS: compact and detailed saved New Horizons battle Morale use shared real/effective data and scoped localized sources (not rendered acceptance)")

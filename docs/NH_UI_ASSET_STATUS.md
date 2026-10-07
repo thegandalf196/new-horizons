@@ -1,5 +1,13 @@
 # New Horizons UI and asset status register
 
+Detailed battle-creature Morale,2026-10-07: **Provisional** presentation under
+UP270. Existing icon/number/tooltip now use shared effective Morale, with real
+value and Commanding Presence/Fury floor explanations. Native frames and UP257
+localized texts are reused; no new artwork. Client15101 and six focused shared
+producer cases pass (3.631s,zero skips), extended binding guard and source review
+pass. Rendered fit and refresh of an already-open window remain unverified;
+native rule checks are not visual acceptance or playable promotion.
+
 Spellbook Mana breakdown,2026-10-07: **Provisional** source presentation under
 UP269. Existing spellbook rows show listed -> current base cost when modifiers
 apply; right-click help names the ordered shared calculation stages. Ordinary
