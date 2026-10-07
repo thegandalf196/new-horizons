@@ -2,6 +2,20 @@
 
 Updated: 2026-10-07
 
+UP272 implements the missing initiative-bar origin distinction for existing
+Morale, Quartermaster and exact-recipient Second Wind extra activations. An
+existing post-apply reason event feeds transient client provenance; same-
+activation returns preserve it, ordinary/automatic activations and rounds
+clear it. Only the authoritative current first queue entry gets a small yellow
+plus and localized hover help. Saved-rule gating preserves legacy presentation.
+Client/test rebuild50608 succeeds with12 jobs after the retained label-API
+failure; four pure cases pass4/4 in0.300s, zero skips/errors/disabled. Source/
+module guards and independent review pass. Executed client dispatch/locking
+and rendered fit remain Phase2; no playable promotion or new identities.
+Registry re-count:31 Skills,93 active ranks,228 active/82 planned perks;
+combat61/67 and Orders8/8 unchanged. Field Workshop's full repair scope still
+awaits its destroyed-target ruling; no partial perk is credited.
+
 UP271 extends shared target-neutral Luck/override/source feedback to the detailed
 battle creature window, beyond UP259's compact row. Saved-rule gating and
 player-visible Sylvan state preserve legacy/world handling and hidden-hero

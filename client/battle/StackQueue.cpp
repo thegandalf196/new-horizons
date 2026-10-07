@@ -18,6 +18,7 @@
 
 #include "../GameEngine.h"
 #include "../gui/WindowHandler.h"
+#include "../render/Colors.h"
 #include "render/Canvas.h"
 #include "render/IFont.h"
 #include "render/IRenderHandler.h"
@@ -28,9 +29,29 @@
 
 #include "../../lib/CConfigHandler.h"
 #include "../../lib/CStack.h"
+#include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
+#include "../../lib/texts/CGeneralTextHandler.h"
 #include "../../lib/texts/TextOperations.h"
+
+namespace
+{
+std::string queueActivationHelp(newHorizonsQueueActivationStatus::Origin origin)
+{
+	switch(origin)
+	{
+		case newHorizonsQueueActivationStatus::Origin::MORALE:
+			return LIBRARY->generaltexth->translate("new-horizons.combat.queueExtraMorale");
+		case newHorizonsQueueActivationStatus::Origin::QUARTERMASTER:
+			return LIBRARY->generaltexth->translate("new-horizons.combat.queueExtraQuartermaster");
+		case newHorizonsQueueActivationStatus::Origin::SECOND_WIND:
+			return LIBRARY->generaltexth->translate("new-horizons.combat.queueExtraSecondWind");
+		default:
+			return {};
+	}
+}
+}
 
 StackQueue::StackQueue(bool Embedded, BattleInterface & owner)
 	: owner(owner)
@@ -91,13 +112,15 @@ void StackQueue::update()
 		for(size_t unitIndex = 0; unitIndex < queueData[turn].size() && boxIndex < stackBoxes.size(); boxIndex++, unitIndex++)
 		{
 			ui32 currentTurn = owner.round + turn;
-			stackBoxes[boxIndex]->setUnit(queueData[turn][unitIndex], turn, tmpTurn != currentTurn && owner.round != 0 && (!embedded || tmpTurn != -1) ? (std::optional<ui32>)currentTurn : std::nullopt);
+			stackBoxes[boxIndex]->setUnit(queueData[turn][unitIndex], turn,
+				tmpTurn != currentTurn && owner.round != 0 && (!embedded || tmpTurn != -1) ? (std::optional<ui32>)currentTurn : std::nullopt,
+				boxIndex);
 			tmpTurn = currentTurn;
 		}
 	}
 
 	for(; boxIndex < stackBoxes.size(); boxIndex++)
-		stackBoxes[boxIndex]->setUnit(nullptr);
+		stackBoxes[boxIndex]->setUnit(nullptr, 0, std::nullopt, boxIndex);
 
 	redraw();
 }
@@ -151,10 +174,14 @@ StackQueue::StackBox::StackBox(StackQueue * owner)
 		defendIcon->setEnabled(false);
 		waitIcon->setEnabled(false);
 	}
+
+	extraActivation = std::make_shared<CLabel>(pos.w - 7, owner->embedded ? 7 : 9,
+		FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "");
+	extraActivation->setEnabled(false);
 	roundRect->disable();
 }
 
-void StackQueue::StackBox::setUnit(const battle::Unit * unit, size_t turn, std::optional<ui32> currentTurn)
+void StackQueue::StackBox::setUnit(const battle::Unit * unit, size_t turn, std::optional<ui32> currentTurn, size_t queueIndex)
 {
 	if(unit)
 	{
@@ -194,6 +221,14 @@ void StackQueue::StackBox::setUnit(const battle::Unit * unit, size_t turn, std::
 			defendIcon->setEnabled(defended);
 			waitIcon->setEnabled(waited);
 		}
+
+		const auto battle = owner->owner.getBattle();
+		const auto * activeUnit = battle ? battle->battleActiveUnit() : nullptr;
+		const auto & activationStatus = owner->owner.getQueueActivationStatus();
+		const bool currentEntry = battle && activeUnit && activationStatus.round == battle->battleGetRound()
+			&& activeUnit->unitId() == unit->unitId()
+			&& newHorizonsQueueActivationStatus::marksCurrentEntry(activationStatus, unit->unitId(), queueIndex);
+		setExtraActivation(currentEntry ? activationStatus.origin : newHorizonsQueueActivationStatus::Origin::NONE);
 	}
 	else
 	{
@@ -207,7 +242,28 @@ void StackQueue::StackBox::setUnit(const battle::Unit * unit, size_t turn, std::
 			defendIcon->setEnabled(false);
 			waitIcon->setEnabled(false);
 		}
+		setExtraActivation(newHorizonsQueueActivationStatus::Origin::NONE);
 	}
+}
+
+void StackQueue::StackBox::setExtraActivation(newHorizonsQueueActivationStatus::Origin origin)
+{
+	const auto nextHelp = queueActivationHelp(origin);
+	if(nextHelp == extraActivationHelp)
+	{
+		extraActivation->setEnabled(!nextHelp.empty());
+		extraActivation->setText(nextHelp.empty() ? "" : "+");
+		return;
+	}
+
+	if(isHovered() && !extraActivationHelp.empty())
+		ENGINE->statusbar()->clearIfMatching(extraActivationHelp);
+
+	extraActivationHelp = nextHelp;
+	extraActivation->setEnabled(!extraActivationHelp.empty());
+	extraActivation->setText(extraActivationHelp.empty() ? "" : "+");
+	if(isHovered() && !extraActivationHelp.empty())
+		ENGINE->statusbar()->write(extraActivationHelp);
 }
 
 std::optional<uint32_t> StackQueue::StackBox::getBoundUnitID() const
@@ -235,6 +291,17 @@ void StackQueue::StackBox::show(Canvas & to)
 
 	if(isBoundUnitHighlighted())
 		to.drawBorder(background->pos, Colors::CYAN, 2);
+}
+
+void StackQueue::StackBox::hover(bool on)
+{
+	if(extraActivationHelp.empty())
+		return;
+
+	if(on)
+		ENGINE->statusbar()->write(extraActivationHelp);
+	else
+		ENGINE->statusbar()->clearIfMatching(extraActivationHelp);
 }
 
 BattleHex StackQueue::StackBox::getBoundUnitHex() const

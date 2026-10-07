@@ -10,7 +10,10 @@
 #pragma once
 
 #include "../../lib/battle/BattleHex.h"
+#include "NewHorizonsQueueActivationStatus.h"
 #include "../gui/CIntObject.h"
+
+#include <string>
 
 namespace battle
 {
@@ -34,6 +37,7 @@ class StackQueue : public CIntObject
 		std::shared_ptr<CPicture> background;
 		std::shared_ptr<CAnimImage> icon;
 		std::shared_ptr<CLabel> amount;
+		std::shared_ptr<CLabel> extraActivation;
 		std::shared_ptr<CPicture> waitIcon;
 		std::shared_ptr<CPicture> defendIcon;
 		std::shared_ptr<CLabel> round;
@@ -41,6 +45,7 @@ class StackQueue : public CIntObject
 
 		void show(Canvas & to) override;
 		void showAll(Canvas & to) override;
+		void hover(bool on) override;
 		void showPopupWindow(const Point & cursorPosition) override;
 		void clickPressed(const Point & cursorPosition) override;
 		bool isBoundUnitHighlighted() const;
@@ -50,8 +55,11 @@ class StackQueue : public CIntObject
 
 	public:
 		StackBox(StackQueue * owner);
-		void setUnit(const battle::Unit * unit, size_t turn = 0, std::optional<ui32> currentTurn = std::nullopt);
+		void setUnit(const battle::Unit * unit, size_t turn, std::optional<ui32> currentTurn, size_t queueIndex);
 		std::optional<uint32_t> getBoundUnitID() const;
+	private:
+		std::string extraActivationHelp;
+		void setExtraActivation(newHorizonsQueueActivationStatus::Origin origin);
 	};
 
 	static const int QUEUE_SIZE_BIG = 10;

@@ -2,6 +2,16 @@
 
 ## Purpose
 
+### 2026-10-07 — Initiative marker used image-only visibility API
+
+UP272's first combined build11477 fails in StackQueue because CLabel has no
+`visible` field. CAnimImage's visibility API is not interchangeable with text
+widgets. Use CIntObject's `setEnabled` for the label instead; do not hide this
+compile failure behind passing source guards or pure-helper tests. Preserve
+build.log and the subsequent build-repaired.log under ignored testing/
+queue-origin-20261007.nyYSMQjB. Executed client dispatch, event locking and
+rendered marker placement remain separate Phase2 checks.
+
 ### 2026-10-07 — Adjacent Wild Chance fixture bypasses prerequisite tier
 
 UP271's eight-case Luck check passes7/8; WildChanceScopesSylvanLuckToNatureSummons

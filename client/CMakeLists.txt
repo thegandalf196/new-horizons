@@ -242,6 +242,7 @@ set(vcmiclientcommon_HEADERS
 	battle/TemporalFieldWindow.h
 	battle/FocusFireTargetWindow.h
 	battle/NewHorizonsBattleStatus.h
+	battle/NewHorizonsQueueActivationStatus.h
 	battle/StackInfoPanelHoverState.h
 	battle/StackInfoStatusPresentation.h
 	battle/BattleInterface.h

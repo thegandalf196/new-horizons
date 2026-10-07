@@ -811,6 +811,17 @@ void CPlayerInterface::battleNewRound(const BattleID & battleID) //called at the
 	battleInt->newRound();
 }
 
+void CPlayerInterface::battleActiveStackReasonChanged(const BattleID & battleID, uint32_t stackID, BattleUnitTurnReason reason)
+{
+	EVENT_HANDLER_CALLED_BY_CLIENT;
+	BATTLE_EVENT_POSSIBLE_RETURN;
+
+	if(!battleInt || battleInt->getBattleID() != battleID)
+		return;
+
+	battleInt->activeStackReasonChanged(stackID, reason);
+}
+
 void CPlayerInterface::actionStarted(const BattleID & battleID, const BattleAction &action)
 {
 	EVENT_HANDLER_CALLED_BY_CLIENT;

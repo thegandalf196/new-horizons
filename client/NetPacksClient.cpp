@@ -872,6 +872,9 @@ void ApplyClientNetPackVisitor::visitBattleNextRound(BattleNextRound & pack)
 
 void ApplyClientNetPackVisitor::visitBattleSetActiveStack(BattleSetActiveStack & pack)
 {
+	callBattleInterfaceIfPresentForBothSides(cl, pack.battleID, &IBattleEventsReceiver::battleActiveStackReasonChanged,
+		pack.battleID, pack.stack, pack.reason);
+
 	if(pack.reason == BattleUnitTurnReason::AUTOMATIC_ACTION)
 		return;
 

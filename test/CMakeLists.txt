@@ -270,6 +270,7 @@ set(test_SRCS
 		server/battles/NewHorizonsChainLightningFalloffTest.cpp
 		battle/BattlecraftStatusPresentationTest.cpp
 		battle/BattleMoraleReadbackTest.cpp
+		battle/NewHorizonsQueueActivationStatusTest.cpp
 		battle/BattleLuckReadbackTest.cpp
 		battle/LeadershipProposalReadbackTest.cpp
 		battle/SylvanLuckStatusPresentationTest.cpp

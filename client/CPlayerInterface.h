@@ -13,6 +13,7 @@
 #include "GameChatHandler.h"
 
 #include "../lib/callback/CGameInterface.h"
+#include "../lib/battle/BattleUnitTurnReason.h"
 #include "../lib/gameState/GameStatistics.h"
 #include "../lib/FunctionList.h"
 #include "gui/CIntObject.h"
@@ -180,6 +181,7 @@ protected: // Call-ins from server, should not be called directly, but only via 
 	void battleEnd(const BattleID & battleID, const BattleResult *br, QueryID queryID) override; //end of battle
 	void battleNewRoundFirst(const BattleID & battleID) override; //called at the beginning of each turn before changes are applied; used for HP regen handling
 	void battleNewRound(const BattleID & battleID) override; //called at the beginning of each turn, round=-1 is the tactic phase, round=0 is the first "normal" turn
+	void battleActiveStackReasonChanged(const BattleID & battleID, uint32_t stackID, BattleUnitTurnReason reason) override;
 	void battleLogMessage(const BattleID & battleID, const std::vector<MetaString> & lines) override;
 	void battleStackMoved(const BattleID & battleID, const CStack * stack, const BattleHexArray & dest, int distance, bool teleport) override;
 	void battleSpellCast(const BattleID & battleID, const BattleSpellCast *sc) override;

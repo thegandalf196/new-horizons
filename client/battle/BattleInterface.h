@@ -14,8 +14,10 @@
 #include "../gui/CIntObject.h"
 
 #include "../../lib/battle/BattleHex.h"
+#include "../../lib/battle/BattleUnitTurnReason.h"
 #include "../../lib/spells/SpellAnimationItem.h"
 #include "../../lib/ConditionalWait.h"
+#include "NewHorizonsQueueActivationStatus.h"
 #include <optional>
 
 class CCreatureSet;
@@ -116,6 +118,7 @@ class BattleInterface
 
 	/// ID of ongoing battle
 	BattleID battleID;
+	newHorizonsQueueActivationStatus::Status queueActivationStatus;
 
 	// Armed by the pre-apply StartAction callback, consumed only after acceptance.
 	std::unique_ptr<BattleAction> pendingHeroOrderPresentation;
@@ -219,6 +222,8 @@ public:
 	void stackAdded(const CStack * stack); //new stack appeared on battlefield
 	void stackRemoved(uint32_t stackID); //stack disappeared from batlefiled
 	void stackActivated(const CStack *stack); //active stack has been changed
+	void activeStackReasonChanged(uint32_t stackID, BattleUnitTurnReason reason);
+	const newHorizonsQueueActivationStatus::Status & getQueueActivationStatus() const;
 	void stackMoved(const CStack *stack, const BattleHexArray & destHex, int distance, bool teleport); //stack with id number moved to destHex
 	void stacksAreAttacked(std::vector<StackAttackedInfo> attackedInfos); //called when a certain amount of stacks has been attacked
 	void stackAttacking(const StackAttackInfo & attackInfo); //called when stack with id ID is attacking something on hex dest

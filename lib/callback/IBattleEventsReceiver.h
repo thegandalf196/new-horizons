@@ -11,6 +11,7 @@
 
 #include "../constants/EntityIdentifiers.h"
 #include "../int3.h"
+#include "../battle/BattleUnitTurnReason.h"
 
 class BattleAction;
 struct BattleAttack;
@@ -43,6 +44,8 @@ public:
 	virtual void battleEnd(const BattleID & battleID, const BattleResult *br, QueryID queryID){};
 	virtual void battleNewRoundFirst(const BattleID & battleID){}; //called at the beginning of each turn before changes are applied;
 	virtual void battleNewRound(const BattleID & battleID){}; //called at the beginning of each turn, round=-1 is the tactic phase, round=0 is the first "normal" turn
+	/// Called after the active-stack reason has been applied to the battle snapshot.
+	virtual void battleActiveStackReasonChanged(const BattleID & battleID, uint32_t stackID, BattleUnitTurnReason reason){};
 	virtual void battleLogMessage(const BattleID & battleID, const std::vector<MetaString> & lines){};
 	virtual void battleStackMoved(const BattleID & battleID, const CStack * stack, const BattleHexArray & dest, int distance, bool teleport){};
 	virtual void battleSpellCast(const BattleID & battleID, const BattleSpellCast *sc){};

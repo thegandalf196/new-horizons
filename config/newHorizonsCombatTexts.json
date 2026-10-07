@@ -53,5 +53,8 @@
 	"new-horizons.combat.leadership.proposal": "Requested addition: +%ADDED% Leadership. Resulting demand: %DEMAND% / %CAPACITY% for this creature slot. Legal maximum: %MAX% creatures; legal incoming count: %LEGAL%.",
 	"new-horizons.combat.leadership.proposalExcess": "This request exceeds this slot's Leadership capacity by %EXCESS%.",
 	"new-horizons.combat.leadership.transfer": " | Leadership: proposed %RESULTING%/%MAX% max; +%ADDED% required; legal incoming %LEGAL%",
-	"new-horizons.combat.leadership.transferExcess": "; %EXCESS% over this slot's capacity"
+	"new-horizons.combat.leadership.transferExcess": "; %EXCESS% over this slot's capacity",
+	"new-horizons.combat.queueExtraMorale": "Extra activation: positive Morale.",
+	"new-horizons.combat.queueExtraQuartermaster": "Extra activation: Quartermaster. Reduced activation output applies.",
+	"new-horizons.combat.queueExtraSecondWind": "Extra activation: Second Wind."
 }

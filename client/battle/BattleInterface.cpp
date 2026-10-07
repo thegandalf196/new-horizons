@@ -1013,6 +1013,44 @@ void BattleInterface::stackActivated(const CStack *stack)
 	stacksController->stackActivated(stack);
 }
 
+void BattleInterface::activeStackReasonChanged(uint32_t stackID, BattleUnitTurnReason reason)
+{
+	const auto battle = getBattle();
+	if(!battle || !battle->getBattle())
+		return;
+
+	const auto * activeUnit = battle->battleGetUnitByID(stackID);
+	if(!activeUnit || !newHorizonsMagic::rulesActive(battle->getBattle()->getMagicRules()))
+	{
+		queueActivationStatus = {};
+		if(windowObject)
+			windowObject->updateQueue();
+		return;
+	}
+
+	bool secondWindRecipient = false;
+	if(reason == BattleUnitTurnReason::HERO_COMMAND)
+	{
+		const auto side = battle->playerToSide(battle->battleGetOwner(activeUnit));
+		if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+		{
+			const auto state = battle->battleGetHeroOrderState(side, HeroCommand::SECOND_WIND);
+			secondWindRecipient = state && state->secondWindActive
+				&& state->primaryTargetUnitId == activeUnit->unitId();
+		}
+	}
+
+	newHorizonsQueueActivationStatus::update(queueActivationStatus, activeUnit->unitId(),
+		battle->battleGetRound(), reason, secondWindRecipient);
+	if(windowObject)
+		windowObject->updateQueue();
+}
+
+const newHorizonsQueueActivationStatus::Status & BattleInterface::getQueueActivationStatus() const
+{
+	return queueActivationStatus;
+}
+
 void BattleInterface::stackMoved(const CStack *stack, const BattleHexArray & destHex, int distance, bool teleport)
 {
 	if (teleport)
@@ -1056,6 +1094,7 @@ void BattleInterface::newRound()
 {
 	console->addText(LIBRARY->generaltexth->allTexts[412]);
 	round++;
+	queueActivationStatus = {};
 	// The BattleNextRound state packet has been applied before this callback.
 	// Refresh transient hero indicators so an inclusive expiry cannot linger
 	// until another spell or Order is issued.
@@ -1067,6 +1106,7 @@ void BattleInterface::newRound()
 	}
 	if(windowObject)
 	{
+		windowObject->updateQueue();
 		// Round-expiry perks mutate Spell Points as part of BattleNextRound,
 		// without a separate SetMana packet. Refresh the displayed pools here.
 		if(attackingHeroInstance)

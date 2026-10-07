@@ -1,5 +1,14 @@
 # New Horizons UI and asset status register
 
+Initiative extra-activation origin,2026-10-07: **Provisional** under UP272.
+Existing queue portraits receive a small yellow plus and localized source help
+for accepted Morale, Quartermaster or Second Wind activations. No new art;
+native queue/text surfaces and click behavior are retained. Saved-rule/current-
+unit/round/first-entry gates prevent speculative or stale repeated markers.
+Client/test rebuild50608 and four pure origin cases pass, with source/module
+guards and independent source review. Actual event-to-widget dispatch, locks,
+native rendered fit and user visual approval remain unverified. No promotion.
+
 Detailed battle-creature Luck,2026-10-07: **Provisional** under UP271. Existing
 icon/value/tooltip now consume shared target-neutral attack Luck, maximum/
 No Luck overrides and player-visible Sylvan explanations. Legacy/world paths
