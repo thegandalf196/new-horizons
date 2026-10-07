@@ -2,6 +2,19 @@
 
 Updated: 2026-10-07
 
+Bounded required-UI source audit,2026-10-07: external dwellings use
+CPlayerInterface::showRecruitmentDialog -> CRecruitmentWindow. Saved category
+cards/groups, hero receiver Leadership proposal/capacity feedback and eligible
+Muster status/amount/category selection already have production consumers;
+UP124/UP261 record prior acceptance. Recruiter's Contacts remains UP126's
+unanswered multirow empty-pool rule, not a new presentation omission. Separate
+Flank audit confirms UP245's active direction help in BattleHeroActionWindow
+and marked-target tooltip in CCreatureWindow, with proposed-hex percentage
+forecast in BattleActionsController using shared CBattleInfoCallback contact
+footprints. No new principal missing path is established in either domain.
+Do not repeatedly reimplement these consumers. This is bounded source evidence,
+not rerun native/whole-layout/graphical acceptance or a coverage-count increase.
+
 UP268 adds the omitted quick-recruitment inline roster display: all categorized
 authored rows, including unbuilt base previews and built zero-stock rows, now
 occupy horizontal Core/Elite/Champion bands. Eight owned creature-stat icons
