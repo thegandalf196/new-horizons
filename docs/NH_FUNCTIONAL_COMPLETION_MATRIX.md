@@ -2,6 +2,14 @@
 
 Updated: 2026-10-07
 
+Renewed Linux delivery: committed recorder repair346c43424 builds and immutable
+08f1828f8c passes independent2367-file identity/inventory checks plus fresh-profile
+20s headless progression through day6 with no SIGSEGV. Normal launcher promoted
+only after owned-process/runtime/lock cleanup. This delivers UP284/285 alongside
+the repair; counts unchanged. One AI Leadership rejection remains Phase2; this
+bounded smoke is not rendered or completed-match acceptance. Next ready P0:
+Phantom Army Integrity and legal landing preview (UP287).
+
 Candidate blocker repaired in source/native: a true-headless AI battle SIGSEGV
 was reproduced in EffectPacketRecorder::snapshot. Retaining the temporary
 shared BonusList fixes its C++20 ownership lifetime; detached AI otherwise

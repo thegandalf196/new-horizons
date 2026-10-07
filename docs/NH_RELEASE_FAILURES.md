@@ -4,6 +4,15 @@
 
 ### 2026-10-07 — Detached spell-effect recorder iterated a destroyed bonus list
 
+Repair delivery: source346c43424 is committed/pushed and rebuilt. New immutable
+08f1828f8c passes independent2367-file inventory/version checks and bounded20s
+fresh-profile headless progression through day6 without SIGSEGV. Timeout124,
+owned client exit, runtime cleanup and released profile lock are verified.
+Normal Linux now selects this payload. Private receipt retained at ignored
+build/nh-recorder-delivery-20261007.klVssUWx/native.log. An AI Leadership-limit
+rejection occurs on day3; keep its integration finding open rather than calling
+the log clean. No rendered/manual/full-game or sanitizer certification.
+
 Linux candidate327a39b90f/sourcefe309b06e passes inventory/version checks but
 true-headless All for One exits139 in an AI battle. A bounded debugger rerun
 reproduces SIGSEGV in EffectPacketRecorder::snapshot at the bonus SpellID read.
