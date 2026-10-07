@@ -949,6 +949,13 @@ std::optional<int> HypotheticBattle::unitMagicResistance(const battle::Unit * un
 	return battleGetMagicResistance(unit);
 }
 
+std::optional<std::pair<int32_t, int32_t>> HypotheticBattle::unitMoraleLimits(const battle::Unit * unit) const
+{
+	if(!unit)
+		return std::nullopt;
+	return newHorizonsMagic::moraleLimits(getMagicRules());
+}
+
 PlayerColor HypotheticBattle::unitEffectiveOwner(const battle::Unit * unit) const
 {
 	return battleGetOwner(unit);

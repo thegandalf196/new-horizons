@@ -29,6 +29,7 @@
 #include "../battle/Unit.h"
 #include "../bonuses/Bonus.h"
 #include "../bonuses/BonusSelector.h"
+#include <array>
 #include <cmath>
 
 namespace
@@ -271,6 +272,93 @@ bool rulesActive(const JsonNode & rules)
 {
 	return !legacy(rules) && rules.isStruct()
 		&& integer(rules["rulesetVersion"], RULESET_VERSION, CURRENT_RULESET_VERSION);
+}
+
+namespace
+{
+constexpr int MORALE_DICE_SIZE_MAX = 46'340;
+
+bool hasMoraleRulesShape(const JsonNode & rules)
+{
+	if(!rulesActive(rules)
+		|| rules["rulesetVersion"].Integer() != CURRENT_RULESET_VERSION
+		|| !rules["morale"].isStruct())
+		return false;
+
+	const auto & morale = rules["morale"];
+	if(morale.Struct().size() != 6
+		|| morale["rulesetVersion"].getType() != JsonNode::JsonType::DATA_INTEGER
+		|| !integer(morale["rulesetVersion"], MORALE_RULESET_VERSION, MORALE_RULESET_VERSION)
+		|| morale["minimum"].getType() != JsonNode::JsonType::DATA_INTEGER
+		|| !integer(morale["minimum"], -10, -10)
+		|| morale["maximum"].getType() != JsonNode::JsonType::DATA_INTEGER
+		|| !integer(morale["maximum"], 10, 10)
+		|| morale["diceSize"].getType() != JsonNode::JsonType::DATA_INTEGER
+		|| !integer(morale["diceSize"], 1, MORALE_DICE_SIZE_MAX))
+		return false;
+
+	for(const auto * key : {"goodChance", "badChance"})
+	{
+		const auto & curve = morale[key];
+		if(!curve.isVector() || curve.Vector().size() != 10)
+			return false;
+	}
+	return true;
+}
+
+bool validMoraleRules(const JsonNode & rules)
+{
+	if(!hasMoraleRulesShape(rules))
+		return false;
+
+	const auto & morale = rules["morale"];
+	const int diceSize = morale["diceSize"].Integer();
+	for(const auto * key : {"goodChance", "badChance"})
+	{
+		const auto & curve = morale[key];
+		for(const auto & chance : curve.Vector())
+			if(chance.getType() != JsonNode::JsonType::DATA_INTEGER || !integer(chance, 0, diceSize))
+				return false;
+	}
+	return true;
+}
+}
+
+std::optional<std::pair<int32_t, int32_t>> moraleLimits(const JsonNode & rules)
+{
+	if(!hasMoraleRulesShape(rules))
+		return std::nullopt;
+	return std::pair<int32_t, int32_t>{
+		static_cast<int32_t>(rules["morale"]["minimum"].Integer()),
+		static_cast<int32_t>(rules["morale"]["maximum"].Integer())};
+}
+
+std::optional<int> moraleChance(const JsonNode & rules, const int32_t signedMorale)
+{
+	if(!hasMoraleRulesShape(rules))
+		return std::nullopt;
+
+	const int32_t clampedMorale = std::clamp(signedMorale,
+		static_cast<int32_t>(rules["morale"]["minimum"].Integer()),
+		static_cast<int32_t>(rules["morale"]["maximum"].Integer()));
+	if(clampedMorale == 0)
+		return 0;
+
+	const auto & morale = rules["morale"];
+	const auto & curve = morale[clampedMorale > 0 ? "goodChance" : "badChance"];
+	const auto index = static_cast<size_t>(clampedMorale > 0 ? clampedMorale - 1 : -clampedMorale - 1);
+	const auto & selectedChance = curve.Vector()[index];
+	if(selectedChance.getType() != JsonNode::JsonType::DATA_INTEGER
+		|| !integer(selectedChance, 0, morale["diceSize"].Integer()))
+		return std::nullopt;
+	return static_cast<int>(selectedChance.Integer());
+}
+
+std::optional<int> moraleDiceSize(const JsonNode & rules)
+{
+	if(!hasMoraleRulesShape(rules))
+		return std::nullopt;
+	return rules["morale"]["diceSize"].Integer();
 }
 
 bool berserkUsesSingleCreatureTarget(const JsonNode & rules)
@@ -1067,7 +1155,7 @@ void validateRules(const JsonNode & rules)
 {
 	if(legacy(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting", "spellPoints", "mageGuildGeneration", "physicalDamageReductionCapPercent", "schoolRankPowerCoefficientPercent", "spellcraftEfficiencyPercent"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting", "spellPoints", "mageGuildGeneration", "physicalDamageReductionCapPercent", "schoolRankPowerCoefficientPercent", "spellcraftEfficiencyPercent", "morale"});
 	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
 	require(integer(rules["rulesetVersion"], RULESET_VERSION, CURRENT_RULESET_VERSION), "rulesetVersion");
 	const int version = rules["rulesetVersion"].Integer();
@@ -1080,6 +1168,12 @@ void validateRules(const JsonNode & rules)
 		require(version == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
 			"Spellcraft efficiency factors require magic rules v3");
 		require(hasCanonicalSpellcraftEfficiencyPercent(rules), "canonical Spellcraft efficiency factors");
+	}
+	if(rules.Struct().contains("morale"))
+	{
+		require(version == CURRENT_RULESET_VERSION, "Morale rolls require magic rules v3");
+		fields(rules["morale"], {"rulesetVersion", "minimum", "maximum", "goodChance", "badChance", "diceSize"});
+		require(validMoraleRules(rules), "valid versioned Morale rules");
 	}
 	if(rules.Struct().contains("physicalDamageReductionCapPercent"))
 	{

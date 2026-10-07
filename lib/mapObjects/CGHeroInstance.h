@@ -30,6 +30,7 @@
 #include <limits>
 #include <optional>
 #include <stdexcept>
+#include <utility>
 
 class CHero;
 class CGBoat;
@@ -94,6 +95,7 @@ private:
 	bool inTownGarrison; // if hero is in town garrison
 
 	IGameInfoCallback * getCallback() const final { return cb; }
+	std::pair<int32_t, int32_t> getMoraleLimits() const override;
 	bool isSpellbinderHatGrantEligible(const SpellID & spell) const;
 	void refreshCreatureLineSpecialtyBonuses(bool createIfMissing);
 	bool canLearnSpellImpl(const spells::Spell * spell, bool allowBanned,

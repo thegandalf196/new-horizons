@@ -15,6 +15,7 @@
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/battle/BattleAction.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
+#include "../../../lib/filesystem/ResourcePath.h"
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/modding/CModHandler.h"
@@ -26,6 +27,14 @@ namespace
 constexpr auto discipline = "new-horizons:discipline";
 constexpr auto standardBearer = "new-horizons:discipline.standardBearer";
 constexpr auto inspirationalLeader = "new-horizons:discipline.inspirationalLeader";
+
+JsonNode fixedMoraleChance(int chance)
+{
+	JsonNode result;
+	for(int index = 0; index < 10; ++index)
+		result.Vector().emplace_back(chance);
+	return result;
+}
 
 class StandardBearerEnvironment final : public Environment
 {
@@ -74,6 +83,12 @@ protected:
 			loaded->overrideGameSetting(setting, std::move(chances));
 		}
 		loaded->overrideGameSetting(EGameSettings::COMBAT_MORALE_DICE_SIZE, JsonNode(100));
+
+		JsonNode magicRules(JsonPath::builtin("config/newHorizonsMagic"));
+		magicRules["morale"]["goodChance"] = fixedMoraleChance(goodChance);
+		magicRules["morale"]["badChance"] = fixedMoraleChance(badChance);
+		magicRules["morale"]["diceSize"] = JsonNode(100);
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, std::move(magicRules));
 	}
 
 	void acceptPerk(CGHeroInstance * hero, const std::string & perkId)
@@ -220,8 +235,8 @@ TEST_F(NewHorizonsStandardBearerTest, NonstackingCurrentControlAndRawBeforeCapPr
 	EXPECT_EQ(battle()->battleGetMorale(recipient), 0);
 	recipient->removeBonus(noMorale);
 	rawMorale(recipient, -20);
-	const int minimumMorale = -static_cast<int>(LIBRARY->engineSettings()->getVector(EGameSettings::COMBAT_BAD_MORALE_CHANCE).size());
-	const int maximumMorale = static_cast<int>(LIBRARY->engineSettings()->getVector(EGameSettings::COMBAT_GOOD_MORALE_CHANCE).size());
+	constexpr int minimumMorale = -10;
+	constexpr int maximumMorale = 10;
 	EXPECT_EQ(battle()->battleGetMorale(recipient), std::clamp(-19, minimumMorale, maximumMorale))
 		<< "Add to raw -20 before clamping, not clamped minimum +1";
 	auto minimum = bonus(recipient, BonusType::MINIMUM_MORALE, 0);

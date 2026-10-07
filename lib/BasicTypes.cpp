@@ -69,6 +69,13 @@ bool AFactionMember::unaffectedByMorale() const
 	return getBonusBearer()->hasBonus(unaffectedByMoraleSelector, cachingStrUn);
 }
 
+std::pair<int32_t, int32_t> AFactionMember::getMoraleLimits() const
+{
+	const int32_t maxGoodMorale = static_cast<int32_t>(LIBRARY->engineSettings()->getVector(EGameSettings::COMBAT_GOOD_MORALE_CHANCE).size());
+	const int32_t maxBadMorale = -static_cast<int32_t>(LIBRARY->engineSettings()->getVector(EGameSettings::COMBAT_BAD_MORALE_CHANCE).size());
+	return {maxBadMorale, maxGoodMorale};
+}
+
 int AFactionMember::moraleValAndBonusList(TConstBonusListPtr & bonusList) const
 {
 	return moraleValAndBonusList(bonusList, 0);
@@ -76,14 +83,13 @@ int AFactionMember::moraleValAndBonusList(TConstBonusListPtr & bonusList) const
 
 int AFactionMember::moraleValAndBonusList(TConstBonusListPtr & bonusList, int32_t additionalMorale) const
 {
-	int32_t maxGoodMorale = LIBRARY->engineSettings()->getVector(EGameSettings::COMBAT_GOOD_MORALE_CHANCE).size();
-	int32_t maxBadMorale = - (int32_t) LIBRARY->engineSettings()->getVector(EGameSettings::COMBAT_BAD_MORALE_CHANCE).size();
+	const auto [minMorale, maxMorale] = getMoraleLimits();
 
 	if(getBonusBearer()->hasBonusOfType(BonusType::MAX_MORALE))
 	{
 		if(bonusList && !bonusList->empty())
 			bonusList = std::make_shared<const BonusList>();
-		return maxGoodMorale;
+		return maxMorale;
 	}
 
 	if(unaffectedByMorale())
@@ -96,10 +102,10 @@ int AFactionMember::moraleValAndBonusList(TConstBonusListPtr & bonusList, int32_
 	bonusList = getBonusBearer()->getBonusesOfType(BonusType::MORALE);
 
 	const int64_t rawMorale = static_cast<int64_t>(bonusList->totalValue()) + additionalMorale;
-	int result = static_cast<int>(std::clamp<int64_t>(rawMorale, maxBadMorale, maxGoodMorale));
+	int result = static_cast<int>(std::clamp<int64_t>(rawMorale, minMorale, maxMorale));
 	if(getBonusBearer()->hasBonusOfType(BonusType::MINIMUM_MORALE))
 		result = std::max(result, getBonusBearer()->valOfBonuses(BonusType::MINIMUM_MORALE));
-	return std::clamp(result, maxBadMorale, maxGoodMorale);
+	return std::clamp(result, minMorale, maxMorale);
 }
 
 int AFactionMember::luckValAndBonusList(TConstBonusListPtr & bonusList) const

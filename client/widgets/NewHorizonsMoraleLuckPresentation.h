@@ -69,7 +69,8 @@ namespace newHorizonsMoraleLuckPresentation
 
 	inline std::optional<MoraleReadback> moraleReadback(bool newHorizonsRulesActive, std::int64_t rawMorale,
 		bool hasNoMorale, bool hasMaxMorale, bool unaffectedByMorale,
-		bool hasMinimumMorale, int minimumMorale)
+		bool hasMinimumMorale, int minimumMorale,
+		int lowerLimit = -ATTRIBUTE_LIMIT, int upperLimit = ATTRIBUTE_LIMIT)
 	{
 		if(!newHorizonsRulesActive)
 			return std::nullopt;
@@ -83,14 +84,14 @@ namespace newHorizonsMoraleLuckPresentation
 
 		std::int64_t value = 0;
 		if(hasMaxMorale)
-			value = ATTRIBUTE_LIMIT;
+			value = upperLimit;
 		else if(!hasNoMorale && !unaffectedByMorale)
 		{
-			value = std::clamp<std::int64_t>(rawMorale, -ATTRIBUTE_LIMIT, ATTRIBUTE_LIMIT);
+			value = std::clamp<std::int64_t>(rawMorale, lowerLimit, upperLimit);
 			if(result.minimumMoralePresent)
 				value = std::max<std::int64_t>(value, minimumMorale);
 		}
-		result.value = static_cast<int>(std::clamp<std::int64_t>(value, -ATTRIBUTE_LIMIT, ATTRIBUTE_LIMIT));
+		result.value = static_cast<int>(std::clamp<std::int64_t>(value, lowerLimit, upperLimit));
 		return result;
 	}
 }

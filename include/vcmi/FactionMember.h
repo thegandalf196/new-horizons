@@ -12,6 +12,8 @@
 
 #include "Entity.h"
 
+#include <utility>
+
 class BonusList;
 class PrimarySkill;
 
@@ -41,7 +43,7 @@ public:
 	virtual int getDefense(bool ranged) const;
 	/**
 	 Returns morale of creature or hero. Taking absolute bonuses into account.
-	 For now, uses range from EGameSettings
+	 Uses the member's saved rules context when available, otherwise engine settings.
 	*/
 	int moraleVal() const;
 	/// Returns morale after applying an additional flat value before morale caps and minimums.
@@ -54,12 +56,16 @@ public:
 	/**
 	 Returns total value of all morale bonuses and sets bonusList as a pointer to the list of selected bonuses.
 	 @param bonusList is the out param it's list of all selected bonuses
-	 @return total value of all morale in the range from EGameSettings and 0 otherwise
+	 @return total value of all morale within this member's accepted range, and 0 otherwise
 	*/
 	int moraleValAndBonusList(std::shared_ptr<const BonusList> & bonusList) const;
 	int luckValAndBonusList(std::shared_ptr<const BonusList> & bonusList) const;
 
 	bool unaffectedByMorale() const;
+
+protected:
+	/// Inclusive minimum and maximum Morale accepted by this member's rules context.
+	virtual std::pair<int32_t, int32_t> getMoraleLimits() const;
 
 private:
 	int moraleValAndBonusList(std::shared_ptr<const BonusList> & bonusList, int32_t additionalMorale) const;

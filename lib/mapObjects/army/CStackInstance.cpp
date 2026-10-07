@@ -20,6 +20,7 @@
 #include "../../texts/CGeneralTextHandler.h"
 #include "../../IBonusTypeHandler.h"
 #include "../../serializer/JsonSerializeFormat.h"
+#include "../../spells/NewHorizonsMagic.h"
 
 CStackInstance::CStackInstance(IGameInfoCallback * cb)
 	: CStackInstance(cb, BonusNodeType::STACK_INSTANCE, false)
@@ -43,6 +44,16 @@ CStackInstance::CStackInstance(IGameInfoCallback * cb, const CreatureID & id, TQ
 {
 	setType(id);
 	setCount(Count);
+}
+
+std::pair<int32_t, int32_t> CStackInstance::getMoraleLimits() const
+{
+	if(cb)
+	{
+		if(const auto limits = newHorizonsMagic::moraleLimits(cb->getMagicRules()))
+			return *limits;
+	}
+	return AFactionMember::getMoraleLimits();
 }
 
 CCreature::CreatureQuantityId CStackInstance::getQuantityID() const

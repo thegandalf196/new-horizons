@@ -177,7 +177,8 @@
 							"maximum": 1000
 						}
 					}
-				}
+				},
+				"morale": {"$ref": "#/definitions/morale"}
 			},
 			"dependencies": {
 				"schemaVersion": [
@@ -207,6 +208,25 @@
 		}
 	],
 	"definitions": {
+		"morale": {
+			"type": "object",
+			"required": ["rulesetVersion", "minimum", "maximum", "goodChance", "badChance", "diceSize"],
+			"additionalProperties": false,
+			"properties": {
+				"rulesetVersion": {"type": "integer", "enum": [1]},
+				"minimum": {"type": "integer", "enum": [-10]},
+				"maximum": {"type": "integer", "enum": [10]},
+				"goodChance": {"$ref": "#/definitions/moraleChanceCurve"},
+				"badChance": {"$ref": "#/definitions/moraleChanceCurve"},
+				"diceSize": {"type": "integer", "minimum": 1, "maximum": 46340}
+			}
+		},
+		"moraleChanceCurve": {
+			"type": "array",
+			"minItems": 10,
+			"maxItems": 10,
+			"items": {"type": "integer", "minimum": 0, "maximum": 46340}
+		},
 		"school": {
 			"type": "string",
 			"enum": [

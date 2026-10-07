@@ -2,6 +2,26 @@
 
 Updated: 2026-10-07
 
+UP285 foundational follow-up is verified in source/native tests: production
+Morale still inherited global three-entry caps and the legacy roll curve after
+UP284's presentation change. A context-aware range policy now covers heroes,
+army stacks, live units and detached AI projections. Optional versioned Morale
+data in saved magic rules supplies -10..+10 and the current experimental3% per
+point curve; absent data preserves legacy limits/rolls. Authoritative rolls and
+stochastic classification consume the same saved curve without global changes.
+The generic tooltip follows actual context bounds, including older contexts.
+Independent production/fixture review finds no blocker;12-job client/test build
+passes after explicit JsonNode fixture repairs. Focused native12/12 passes in
+2.494s with zero skips/failures/errors/disabled. The first native11/12 failed
+because a branch fixture assumed zero instead of the inherent same-faction +1;
+the repair asserts that precondition and retains branch isolation. All failed
+receipts remain under ignored testing/saved-morale-20261007.ltoI0LEl.
+Save round-trip, actual rendered UI and broader interactions remain Phase2.
+Existing magic JSON-schema drift
+(already-present v3 fields absent from its strict root schema) is deferred to
+Phase2; runtime validateRules remains the relevant startup validation gate.
+No feature identities are activated and no playable promotion is claimed.
+
 UP284 closes the generic hero/kingdom/exchange Luck/Morale presentation bypass:
 saved-NH-rules-gated current +/-10 values, source/override text and computed
 labels replace legacy generic caps/sum labels. Legacy worlds and live battle

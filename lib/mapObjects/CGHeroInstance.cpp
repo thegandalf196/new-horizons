@@ -1952,6 +1952,13 @@ const JsonNode & CGHeroInstance::getMagicRules() const
 	return cb ? cb->getMagicRules() : legacy;
 }
 
+std::pair<int32_t, int32_t> CGHeroInstance::getMoraleLimits() const
+{
+	if(const auto limits = newHorizonsMagic::moraleLimits(getMagicRules()))
+		return *limits;
+	return AFactionMember::getMoraleLimits();
+}
+
 std::vector<SpellSchool> CGHeroInstance::getSpellSchools(const spells::Spell * spell) const
 {
 	return newHorizonsMagic::spellSchools(getMagicRules(), spell->getId());

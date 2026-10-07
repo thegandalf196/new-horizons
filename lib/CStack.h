@@ -18,6 +18,8 @@
 #include "battle/CUnitState.h"
 #include "battle/NewHorizonsBloodrage.h"
 
+#include <utility>
+
 struct BattleStackAttacked;
 class BattleInfo;
 class CArmedInstance;
@@ -106,6 +108,7 @@ public:
 	int unitAdditionalRetaliations(const battle::Unit * unit) const override;
 	int unitBloodragePainIncrement(const battle::Unit * unit) const override;
 	std::optional<int> unitMagicResistance(const battle::Unit * unit) const override;
+	std::optional<std::pair<int32_t, int32_t>> unitMoraleLimits(const battle::Unit * unit) const override;
 
 	void spendMana(ServerCallback * server, const int spellCost) const override;
 

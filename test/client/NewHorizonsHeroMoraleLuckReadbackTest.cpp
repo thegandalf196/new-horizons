@@ -69,3 +69,11 @@ TEST(NewHorizonsHeroMoraleLuckReadbackTest, MoraleUsesTenPointRangeAndHonorsFloo
 	EXPECT_FALSE(maximum->noMorale);
 	EXPECT_FALSE(maximum->minimumMoralePresent);
 }
+
+TEST(NewHorizonsHeroMoraleLuckReadbackTest, OlderSavedContextRetainsItsActualMoraleRange)
+{
+	using newHorizonsMoraleLuckPresentation::moraleReadback;
+	EXPECT_EQ(moraleReadback(true, 10, false, false, false, false, 0, -3, 3)->value, 3);
+	EXPECT_EQ(moraleReadback(true, -10, false, false, false, false, 0, -3, 3)->value, -3);
+	EXPECT_EQ(moraleReadback(true, -10, false, true, false, false, 0, -3, 3)->value, 3);
+}

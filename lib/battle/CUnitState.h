@@ -510,7 +510,8 @@ public:
 private:
 	void damageInternal(int64_t & amount, bool destroyRemains, bool bypassTemporaryHitPoints,
 		DamageProvenance provenance = DamageProvenance::OTHER);
-	const IUnitEnvironment * env;
+	std::pair<int32_t, int32_t> getMoraleLimits() const override;
+	const IUnitEnvironment * env = nullptr;
 	int32_t activationMovementBonus = 0;
 	int64_t phantomInitialIntegrity = 0;
 	int64_t phantomIntegrity = 0;

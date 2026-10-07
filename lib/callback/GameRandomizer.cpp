@@ -25,7 +25,23 @@
 #include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../entities/hero/NewHorizonsPrimaryGrowth.h"
 #include "../mapObjects/CGHeroInstance.h"
+#include "../spells/NewHorizonsMagic.h"
 #include "mapObjectConstructors/CObjectClassesHandler.h"
+#include <optional>
+
+namespace
+{
+bool rollSavedMoraleChance(std::map<ObjectInstanceID, RandomGeneratorWithBias> & seeds,
+	const ObjectInstanceID actor, const int successChance, const int diceSize, const int biasValue,
+	vstd::RNG & defaultGenerator)
+{
+	if(successChance <= 0 || diceSize <= 0 || successChance > diceSize)
+		return false;
+	if(!seeds.count(actor))
+		seeds.try_emplace(actor, defaultGenerator.nextInt());
+	return seeds.at(actor).roll(successChance, diceSize, biasValue);
+}
+}
 
 bool RandomizationBias::roll(vstd::RNG & generator, int successChance, int totalWeight, int biasValue)
 {
@@ -83,11 +99,31 @@ bool GameRandomizer::rollMoraleLuck(std::map<ObjectInstanceID, RandomGeneratorWi
 
 bool GameRandomizer::rollGoodMorale(ObjectInstanceID actor, int moraleValue)
 {
+	const auto & rules = gameInfo.getMagicRules();
+	const auto chance = moraleValue > 0
+		? newHorizonsMagic::moraleChance(rules, moraleValue)
+		: std::optional<int>{};
+	const auto diceSize = chance
+		? newHorizonsMagic::moraleDiceSize(rules)
+		: std::optional<int>{};
+	if(chance && diceSize)
+		return rollSavedMoraleChance(goodMoraleSeed, actor, *chance, *diceSize,
+			gameInfo.getSettings().getInteger(EGameSettings::COMBAT_MORALE_BIAS), getDefault());
 	return rollMoraleLuck(goodMoraleSeed, actor, moraleValue, EGameSettings::COMBAT_MORALE_BIAS, EGameSettings::COMBAT_MORALE_DICE_SIZE, EGameSettings::COMBAT_GOOD_MORALE_CHANCE);
 }
 
 bool GameRandomizer::rollBadMorale(ObjectInstanceID actor, int moraleValue)
 {
+	const auto & rules = gameInfo.getMagicRules();
+	const auto chance = moraleValue > 0
+		? newHorizonsMagic::moraleChance(rules, -moraleValue)
+		: std::optional<int>{};
+	const auto diceSize = chance
+		? newHorizonsMagic::moraleDiceSize(rules)
+		: std::optional<int>{};
+	if(chance && diceSize)
+		return rollSavedMoraleChance(badMoraleSeed, actor, *chance, *diceSize,
+			gameInfo.getSettings().getInteger(EGameSettings::COMBAT_MORALE_BIAS), getDefault());
 	return rollMoraleLuck(badMoraleSeed, actor, moraleValue, EGameSettings::COMBAT_MORALE_BIAS, EGameSettings::COMBAT_MORALE_DICE_SIZE, EGameSettings::COMBAT_BAD_MORALE_CHANCE);
 }
 
@@ -122,6 +158,14 @@ bool GameRandomizer::isBadLuckRollStochastic(int magnitude) const
 
 bool GameRandomizer::isBadMoraleRollStochastic(int magnitude) const
 {
+	if(magnitude > 0)
+	{
+		const auto & rules = gameInfo.getMagicRules();
+		const auto chance = newHorizonsMagic::moraleChance(rules, -magnitude);
+		const auto diceSize = chance ? newHorizonsMagic::moraleDiceSize(rules) : std::optional<int>{};
+		if(chance && diceSize)
+			return *chance > 0 && *chance < *diceSize;
+	}
 	return isMoraleLuckRollStochastic(magnitude, EGameSettings::COMBAT_MORALE_DICE_SIZE,
 		EGameSettings::COMBAT_BAD_MORALE_CHANCE);
 }

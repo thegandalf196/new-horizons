@@ -20,6 +20,7 @@
 #include "battle/NewHorizonsCreatureAbilitySuppression.h"
 #include "battle/NewHorizonsOffense.h"
 #include "battle/NewHorizonsElementalRebirth.h"
+#include "spells/NewHorizonsMagic.h"
 #include "GameLibrary.h"
 #include "networkPacks/PacksForClientBattle.h"
 #include "spells/CSpell.h"
@@ -517,6 +518,13 @@ std::optional<int> CStack::unitMagicResistance(const battle::Unit * unit) const
 	if(!battle || !unit)
 		return std::nullopt;
 	return battle->battleGetMagicResistance(unit);
+}
+
+std::optional<std::pair<int32_t, int32_t>> CStack::unitMoraleLimits(const battle::Unit * unit) const
+{
+	if(!battle || !unit)
+		return std::nullopt;
+	return newHorizonsMagic::moraleLimits(battle->getMagicRules());
 }
 
 uint32_t CStack::unitId() const

@@ -20,6 +20,8 @@
 
 #include <vcmi/scripting/ApiTags.h>
 
+#include <utility>
+
 class JsonNode;
 class CCreature;
 class CGHeroInstance;
@@ -29,6 +31,7 @@ class JsonSerializeFormat;
 
 class DLL_LINKAGE CStackInstance : public CBonusSystemNode, public CStackBasicDescriptor, public CArtifactSet, public ACreature, public GameCallbackHolder, public scripting::ApiRawPointer<CStackInstance>
 {
+	std::pair<int32_t, int32_t> getMoraleLimits() const override;
 	BonusValueCache nativeTerrain;
 	BonusValueCache initiative;
 	BonusValueCache initiativePresence;

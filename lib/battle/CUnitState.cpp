@@ -2250,6 +2250,17 @@ void CUnitState::localInit(const IUnitEnvironment * env_)
 	health.init();
 }
 
+std::pair<int32_t, int32_t> CUnitState::getMoraleLimits() const
+{
+	if(env)
+	{
+		const auto savedLimits = env->unitMoraleLimits(this);
+		if(savedLimits)
+			return *savedLimits;
+	}
+	return AFactionMember::getMoraleLimits();
+}
+
 void CUnitState::reset()
 {
 	cloned = false;

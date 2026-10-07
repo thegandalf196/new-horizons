@@ -460,6 +460,36 @@
 			"newHorizons": {
 				"schemaVersion": 1,
 				"rulesetVersion": 3,
+				"morale": {
+					"rulesetVersion": 1,
+					"minimum": -10,
+					"maximum": 10,
+					"goodChance": [
+						3,
+						6,
+						9,
+						12,
+						15,
+						18,
+						21,
+						24,
+						27,
+						30
+					],
+					"badChance": [
+						3,
+						6,
+						9,
+						12,
+						15,
+						18,
+						21,
+						24,
+						27,
+						30
+					],
+					"diceSize": 100
+				},
 				"schoolRankPowerCoefficientPercent": [
 					100,
 					115,

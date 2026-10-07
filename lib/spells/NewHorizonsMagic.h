@@ -13,6 +13,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include "../json/JsonNode.h"
 #include "../constants/EntityIdentifiers.h"
@@ -39,6 +40,7 @@ constexpr int RULESET_VERSION = 1;
 constexpr int DIRECT_DAMAGE_RULESET_VERSION = 2;
 constexpr int SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION = 3;
 constexpr int CURRENT_RULESET_VERSION = SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
+constexpr int MORALE_RULESET_VERSION = 1;
 constexpr int SPELL_POINTS_RULESET_VERSION = 1;
 constexpr int MAGE_GUILD_GENERATION_RULESET_VERSION = 1;
 constexpr int SPELL_POWER_COEFFICIENT_BASIS_POINTS = 10'000;
@@ -164,6 +166,14 @@ DLL_LINKAGE int32_t spellPointsIntelligenceMaximumPercent(const JsonNode & rules
 /// This is intentionally state-backed; installed content alone must not alter
 /// legacy saves.
 DLL_LINKAGE bool rulesActive(const JsonNode & rules);
+/// Saved-v3 New Horizons morale limits. Older snapshots without this optional
+/// rules block return nullopt so callers retain the legacy morale context.
+DLL_LINKAGE std::optional<std::pair<int32_t, int32_t>> moraleLimits(const JsonNode & rules);
+/// Chance numerator for a signed morale value using the saved good/bad curve;
+/// zero morale has zero chance. Returns nullopt when no saved curve is active.
+DLL_LINKAGE std::optional<int> moraleChance(const JsonNode & rules, int32_t signedMorale);
+/// Saved morale roll denominator, or nullopt when no saved curve is active.
+DLL_LINKAGE std::optional<int> moraleDiceSize(const JsonNode & rules);
 /// True only for saved v3 New Horizons battles, where Berserk targets one
 /// enemy creature stack. Older profiles retain core LOCATION/area targeting.
 DLL_LINKAGE bool berserkUsesSingleCreatureTarget(const JsonNode & rules);

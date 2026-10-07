@@ -718,12 +718,16 @@ void MoraleLuckBox::set(const AFactionMember * node)
 		bool hasSpecialExplanation = false;
 		if(morale)
 		{
+			const auto limits = newHorizonsMagic::moraleLimits(callback->getMagicRules()).value_or(
+				std::pair<int32_t, int32_t>{
+					-static_cast<int32_t>(LIBRARY->engineSettings()->getVector(EGameSettings::COMBAT_BAD_MORALE_CHANCE).size()),
+					static_cast<int32_t>(LIBRARY->engineSettings()->getVector(EGameSettings::COMBAT_GOOD_MORALE_CHANCE).size())});
 			const auto readback = newHorizonsMoraleLuckPresentation::moraleReadback(
 				newHorizonsRulesActive, rawValue,
 				bonusBearer->hasBonusOfType(BonusType::NO_MORALE),
 				bonusBearer->hasBonusOfType(BonusType::MAX_MORALE), node->unaffectedByMorale(),
 				bonusBearer->hasBonusOfType(BonusType::MINIMUM_MORALE),
-				bonusBearer->valOfBonuses(BonusType::MINIMUM_MORALE));
+				bonusBearer->valOfBonuses(BonusType::MINIMUM_MORALE), limits.first, limits.second);
 			if(readback)
 			{
 				component.value = readback->value;
