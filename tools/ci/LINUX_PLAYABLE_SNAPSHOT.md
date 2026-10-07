@@ -1,5 +1,25 @@
 # Local Linux playable snapshots
 
+## Isolated Cabir / Wisp art preview
+
+`play-new-horizons-creature-preview-linux.sh` selects the separately checksummed
+`build/new-horizons-linux/cabir-wisp-preview-snapshots` store and uses its own
+`new-horizons-creature-preview` profile. It never changes the ordinary launcher
+pointer. Start a new **Cabir and Wisp Art Preview** scenario as Red/Solmyr: both
+forms of each creature are already in the army, and Peasants stand beside him.
+Do not load normal saves in this preview. Wisp uses temporary borrowed Core
+shooter values and Psychic/Magic Elemental identities; Cabir's missing states
+are supplied-pose aliases, including a standing death/corpse placeholder.
+This is an art preview, not final Wisp gameplay or finished Cabir animation.
+Its purchaser-derived Cabir pixels stay local and must not be published.
+
+The two preview builders emit detached `Mods/new-horizons` overlays, combined
+with `tools/ci/compose_creature_preview.py` and frozen using the normal snapshot
+helper into the separate preview store. Generated maps and payloads remain in
+ignored `build/`; tracked source contains only tools and the opt-in map exporter.
+
+## Ordinary playable snapshots
+
 `linux_playable_snapshot.py` is a development-only helper. It copies the
 currently built `vcmiclient` and neighboring `libvcmi.so`, plus `config`,
 `scripts`, `Mods/vcmi` and `Mods/new-horizons`, into a checksum-verified,

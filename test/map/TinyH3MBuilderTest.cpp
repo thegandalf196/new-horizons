@@ -807,19 +807,31 @@ TEST(TinyH3MBuilderTest, ExportCabirManualPreviewMap)
 	const auto valeska = HeroTypeID(HeroTypeID::decode("core:valeska"));
 	const auto cabir = CreatureID(CreatureID::decode("core:gremlin"));
 	const auto cabirMaster = CreatureID(CreatureID::decode("core:masterGremlin"));
+	const char * combinedEnv = std::getenv("NH_CABIR_WISP_MANUAL_PREVIEW");
+	const bool combined = combinedEnv && std::string_view(combinedEnv) == "1";
+	const auto wispPreview = CreatureID(CreatureID::decode("core:psychicElemental"));
+	const auto wispUpgradePreview = CreatureID(CreatureID::decode("core:magicElemental"));
+	std::vector<std::pair<CreatureID, uint16_t>> previewArmy{{cabir, 5}, {cabirMaster, 5}};
+	if(combined)
+	{
+		previewArmy.emplace_back(wispPreview, 2);
+		previewArmy.emplace_back(wispUpgradePreview, 2);
+	}
 	const auto weakNeutral = CreatureID(CreatureID::decode("core:peasant"));
 	const auto pikeman = CreatureID(CreatureID::decode("core:pikeman"));
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(36, false)
-		.name("New Horizons Cabir Manual Preview")
-		.description("Play Red as Solmyr. The single nearby Peasant is the preview battle; Blue's Valeska is far away so the scenario does not end immediately.")
+		.name(combined ? "Cabir and Wisp Art Preview" : "New Horizons Cabir Manual Preview")
+		.description(combined
+			? "Play Red as Solmyr. Your army has both Cabir and both Wisp forms. Attack the nearby Peasants to preview them. Wisp gameplay is borrowed and Cabir missing states are placeholders. Use only the separate creature-preview launcher and start a new game."
+			: "Play Red as Solmyr. The single nearby Peasant is the preview battle; Blue's Valeska is far away so the scenario does not end immediately.")
 		.difficulty(EMapDifficulty::NORMAL)
 		.playerActive(PlayerColor(0))
 		.playerActive(PlayerColor(1))
 		.hero({8, 8, 0}, solmyr, PlayerColor(0))
 		.heroExperience(0)
-		.heroGarrison({{cabir, 5}, {cabirMaster, 5}})
-		.monster({9, 8, 0}, weakNeutral, 1, 3)
+		.heroGarrison(previewArmy)
+		.monster({9, 8, 0}, weakNeutral, combined ? 40 : 1, 3)
 		.hero({30, 30, 0}, valeska, PlayerColor(1))
 		.heroExperience(0)
 		.heroGarrison({{pikeman, 5}});
@@ -853,11 +865,18 @@ TEST(TinyH3MBuilderTest, ExportCabirManualPreviewMap)
 		ASSERT_NE(redHero, nullptr);
 		EXPECT_EQ(redHero->getHeroTypeID(), solmyr);
 		EXPECT_EQ(redHero->anchorPos(), int3(8, 8, 0));
-		ASSERT_EQ(redHero->stacksCount(), 2);
+		ASSERT_EQ(redHero->stacksCount(), combined ? 4 : 2);
 		EXPECT_EQ(redHero->getStack(SlotID(0)).getCreatureID(), cabir);
 		EXPECT_EQ(redHero->getStackCount(SlotID(0)), 5);
 		EXPECT_EQ(redHero->getStack(SlotID(1)).getCreatureID(), cabirMaster);
 		EXPECT_EQ(redHero->getStackCount(SlotID(1)), 5);
+		if(combined)
+		{
+			EXPECT_EQ(redHero->getStack(SlotID(2)).getCreatureID(), wispPreview);
+			EXPECT_EQ(redHero->getStack(SlotID(3)).getCreatureID(), wispUpgradePreview);
+			EXPECT_EQ(redHero->getStackCount(SlotID(2)), 2);
+			EXPECT_EQ(redHero->getStackCount(SlotID(3)), 2);
+		}
 
 		ASSERT_NE(blueHero, nullptr);
 		EXPECT_EQ(blueHero->getHeroTypeID(), valeska);
@@ -867,7 +886,7 @@ TEST(TinyH3MBuilderTest, ExportCabirManualPreviewMap)
 		ASSERT_EQ(monsters.size(), 1u);
 		EXPECT_EQ(monsters.front()->anchorPos(), int3(9, 8, 0));
 		EXPECT_EQ(monsters.front()->getCreatureID(), weakNeutral);
-		EXPECT_EQ(monsters.front()->getStackCount(SlotID(0)), 1);
+		EXPECT_EQ(monsters.front()->getStackCount(SlotID(0)), combined ? 40 : 1);
 	};
 
 	// Validate the authored map bytes before creating any output file.
