@@ -269,6 +269,12 @@ entries with their evidence. This queue tracks work, not gameplay authority:
 
 ## Heroes III UI visual construction
 
+Artwork awaiting user review must always be copied to
+`$HOME/Downloads/provisory/`, in a clearly named per-artwork subfolder.
+Provide a direct preview link there; keep native-resolution and enlarged previews
+when available. Do not overwrite existing review versions or treat a preview as
+approved or installed gameplay art.
+
 Before creating or revising New Horizons UI, read
 `docs/NH_HOMM3_UI_STYLE_GUIDE.md` and apply its outside-in panel-construction
 and native-resolution review checklist. Treat mockups as layout/interaction

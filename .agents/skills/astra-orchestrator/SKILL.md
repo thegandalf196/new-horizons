@@ -1,6 +1,6 @@
 ---
 name: astra-orchestrator
-description: Orchestrate complex Codex coding work for the Pro profile with GPT-6 Astra at medium reasoning as planner/integrator, Luna subagents for exploration, implementation, testing, and research, and an Astra reviewer. Use for multi-file features, debugging across components, repo-wide changes, parallelizable workstreams, or whenever the user asks to delegate or use subagents. Do not use for trivial one-file edits or simple questions.
+description: Orchestrate complex Codex coding work with the configured root as planner/integrator, GPT-6.1 Sol medium workers for exploration, implementation, testing and research, and GPT-6.1 Sol high reviewers. Use for multi-file features, debugging across components, repo-wide changes, parallelizable workstreams, or whenever the user asks to delegate or use subagents. Do not use for trivial one-file edits or simple questions.
 ---
 
 # Astra Orchestrator — Pro Profile
@@ -15,20 +15,20 @@ Delegate bounded execution work to specialized subagents, then have the root int
 
 The expected default topology is:
 
-- root: GPT-6 Astra at medium reasoning
-- explorer: GPT-6 Luna at max reasoning
-- worker: GPT-6 Luna at max reasoning
-- tester: GPT-6 Luna at max reasoning
-- reviewer: GPT-6 Astra at low reasoning
-- researcher: GPT-6 Luna at max reasoning
+- root: the current configured planner/integrator model
+- explorer: GPT-6.1 Sol at medium reasoning
+- worker: GPT-6.1 Sol at medium reasoning
+- tester: GPT-6.1 Sol at medium reasoning
+- reviewer: GPT-6.1 Sol at high reasoning
+- researcher: GPT-6.1 Sol at medium reasoning
 
-Use Luna for all routine subagent execution.
+Use GPT-6.1 Sol for all subagent execution.
 
 This is a requirement, not a preference.
 
-The root and reviewer use Astra; routine execution subagents use Luna.
+Routine workers use medium reasoning; reviewers use high reasoning.
 
-Do not override a Luna subagent to a more expensive model unless the user explicitly asks for escalation or a Luna worker reports that the task requires higher-level reasoning.
+Do not change these worker models or reasoning efforts without explicit user direction.
 
 ---
 
@@ -99,13 +99,19 @@ The root must not offload architectural ownership to a subagent.
 
 When spawning agents, use these models by default:
 
-- explorer: `gpt-6-luna` at `max` reasoning
-- worker: `gpt-6-luna` at `max` reasoning
-- tester: `gpt-6-luna` at `max` reasoning
-- researcher: `gpt-6-luna` at `max` reasoning
-- reviewer: `gpt-6-astra` at `low` reasoning
+- explorer: `gpt-6.1-sol` at `medium` reasoning
+- worker: `gpt-6.1-sol` at `medium` reasoning
+- tester: `gpt-6.1-sol` at `medium` reasoning
+- researcher: `gpt-6.1-sol` at `medium` reasoning
+- reviewer: `gpt-6.1-sol` at `high` reasoning
 
-The root keeps the Pro profile configuration from `.codex/config.toml`: GPT-6 Astra at medium reasoning. The role files in `.codex/agents/` explicitly set Luna reasoning to `max` and reviewer reasoning to `low`. Preserve those efforts when spawning agents unless the user requests a change. Do not change the root model from within a session.
+Keep the root's current model unchanged. Specify worker model and effort explicitly
+when spawning; do not assume referenced role files exist. Existing threads cannot
+be relabelled or changed in place through the collaboration API. On a user-requested
+model change, stop old-model work at safe checkpoints, preserve its edits/results,
+and spawn replacement threads with the new explicit settings. Do not reuse an
+old-model thread via follow-up and claim that its model changed. If replacement
+spawning fails, report the actual service error rather than claiming a switch.
 
 For every delegated task:
 
@@ -116,15 +122,9 @@ For every delegated task:
 5. retain the returned task name or identifier
 6. wait for required agents before final synthesis
 
-Do not silently substitute the root agent for a required Luna worker.
+Do not silently substitute the root agent for a required Sol worker.
 
-Do not spawn Astra workers except for the `reviewer` role unless:
-
-- the user explicitly requests Astra
-- Luna reports a genuinely difficult reasoning blocker
-- the root determines that a high-risk architectural or security review needs Astra
-
-Routine execution should remain on Luna.
+Do not spawn other worker models unless explicitly requested by the user.
 
 ---
 
@@ -265,14 +265,14 @@ Prefer one writer per file or subsystem.
 
 For non-trivial implementation tasks, prefer this sequence:
 
-1. spawn one or more Luna explorers if repository understanding is needed
+1. spawn one or more Sol medium explorers if repository understanding is needed
 2. wait for exploration results
 3. root decides implementation direction
-4. spawn Luna worker or workers with bounded ownership
+4. spawn Sol medium worker or workers with bounded ownership
 5. wait for implementation
-6. spawn Luna tester
+6. spawn Sol medium tester
 7. wait for validation
-8. spawn Astra reviewer when an independent review is materially useful
+8. spawn Sol high reviewer when an independent review is materially useful
 9. resolve material findings
 10. run final verification
 11. present the result
@@ -293,9 +293,9 @@ For cross-component bugs:
 2. reproduce the issue when possible
 3. collect evidence before selecting a fix
 4. root determines the likely root cause
-5. assign a bounded Luna worker to implement the fix
-6. assign Luna tester to reproduce the original failure and validate the fix
-7. use Astra reviewer for high-risk or non-obvious fixes
+5. assign a bounded Sol medium worker to implement the fix
+6. assign Sol medium tester to reproduce the original failure and validate the fix
+7. use Sol high reviewer for high-risk or non-obvious fixes
 
 Do not let multiple workers independently attempt competing fixes unless the root intentionally requests alternative approaches.
 
@@ -305,7 +305,7 @@ Do not let multiple workers independently attempt competing fixes unless the roo
 
 When current or version-specific external information matters:
 
-1. spawn a Luna researcher
+1. spawn a Sol medium researcher
 2. require primary or authoritative sources when possible
 3. return concise findings and compatibility implications
 4. let the root decide how those findings affect implementation
@@ -316,7 +316,7 @@ Do not mix speculative external claims into implementation decisions without ver
 
 ## Cost and context discipline
 
-Use Luna for routine subagent execution.
+Use Sol medium for routine subagent execution.
 
 Keep the root context focused on:
 
@@ -357,7 +357,7 @@ A subagent should report back instead of expanding scope when it encounters:
 
 The root decides what to do next.
 
-Luna should not independently escalate itself to a more expensive model.
+Workers should not independently change their model or reasoning effort.
 
 The root owns model escalation decisions.
 
@@ -437,4 +437,4 @@ If the user explicitly asks to see delegation, report:
 - assigned task
 - completion status
 
-Do not claim a Luna agent was used unless the trace contains a successful `spawn_agent` call using `gpt-6-luna`.
+Report models from actual successful spawn calls, not role labels or intended settings.
