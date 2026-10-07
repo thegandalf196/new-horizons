@@ -16,6 +16,9 @@ is **Provisional**, not final gameplay or animation coverage. Both forms of
 each creature are present in its dedicated scenario; normal play is unchanged.
 Frozen candidate69304233a933/source932b80162 passes headless scenario completion,
 not rendered animation/alignment acceptance. Cabir death remains standing.
+The corrected selectable preview is b5ec300972e3/source96fdd26c6, with generated
+selection overlays enabled for all32 groups per form. Separate launcher/store
+delivery and2654-file resource audit pass; actual visual approval is pending.
 
 Academy Gargoyle matte review,2026-10-07: **Not done**, UP282. HoMM3 Art
 Stone revisions r6/r7 remain private and unregistered. R7 repairs erroneous torso
