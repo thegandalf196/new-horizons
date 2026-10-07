@@ -21,6 +21,7 @@
 #include "BattleSiegeController.h"
 #include "BattleStacksController.h"
 #include "BattleWindow.h"
+#include "NewHorizonsProtectLink.h"
 
 #include "../CPlayerInterface.h"
 #include "../GameEngine.h"
@@ -304,6 +305,7 @@ void BattleFieldController::renderBattlefield(Canvas & canvas)
 	Canvas clippedCanvas(canvas, renderPos);
 
 	showBackground(clippedCanvas);
+	showProtectLinks(clippedCanvas);
 
 	BattleRenderer renderer(owner);
 
@@ -312,6 +314,60 @@ void BattleFieldController::renderBattlefield(Canvas & canvas)
 	showDemonicGateReservations(clippedCanvas);
 
 	owner.projectilesController->render(clippedCanvas);
+}
+
+void BattleFieldController::showProtectLinks(Canvas & canvas)
+{
+	const auto battle = owner.getBattle();
+	if(!battle)
+		return;
+
+	const auto footprintCenter = [this](BattleHex head, BattleHex rear)
+	{
+		Point center = hexPositionLocal(head).center();
+		if(rear.isAvailable())
+			center = (center + hexPositionLocal(rear).center()) / 2;
+		return center;
+	};
+
+	const auto drawLinkStroke = [&canvas](Point from, Point to)
+	{
+		const ColorRGBA shadow(54, 39, 21, 210);
+		const ColorRGBA amber(220, 177, 91, 224);
+		canvas.drawLine(from + Point(1, 1), to + Point(1, 1), shadow, shadow);
+		canvas.drawLine(from, to, amber, amber);
+	};
+
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto link = newHorizonsProtectLink::activeLink(*battle, side);
+		if(!link)
+			continue;
+
+		const Point protectorCenter = footprintCenter(link->protectorHead, link->protectorRear);
+		const Point wardCenter = footprintCenter(link->wardHead, link->wardRear);
+		const Point direction = wardCenter - protectorCenter;
+		const int length = direction.length();
+		if(length == 0)
+			continue;
+
+		drawLinkStroke(protectorCenter, wardCenter);
+
+		constexpr int arrowInset = 8;
+		constexpr int arrowLength = 7;
+		constexpr int arrowHalfWidth = 4;
+		const Point arrowTip(
+			wardCenter.x - direction.x * arrowInset / length,
+			wardCenter.y - direction.y * arrowInset / length);
+		const Point arrowBase(
+			arrowTip.x - direction.x * arrowLength / length,
+			arrowTip.y - direction.y * arrowLength / length);
+		const Point wingOffset(
+			-direction.y * arrowHalfWidth / length,
+			direction.x * arrowHalfWidth / length);
+		drawLinkStroke(arrowBase + wingOffset, arrowTip);
+		drawLinkStroke(arrowBase - wingOffset, arrowTip);
+	}
 }
 
 void BattleFieldController::showDemonicGateReservations(Canvas & canvas)

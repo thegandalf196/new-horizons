@@ -2,6 +2,20 @@
 
 Updated: 2026-10-07
 
+UP274 supplies the canonical persistent Protector/Ward battlefield link from
+the current synchronized pair, using shared applicability for both units and
+current single/double-wide footprints. A directed amber ground stroke renders
+behind creatures, disappearing with exhausted/broken/expired/ineligible pairs.
+Client/test rebuild85404 succeeds after the retained fixture compile repair;
+six focused native cases pass in1.992s with zero skips/errors/disabled. Source/
+module guards and independent review pass. Rendered backend execution, arrow
+visibility and playable delivery remain separate. No gameplay/state identities
+change: registry re-count31 Skills,93 active ranks,228 active/82 planned perks;
+combat61/67 and Orders8/8 unchanged. Existing creature-detail Order badges
+already cover Charge/Hold/Brace and designated enemy status; do not duplicate
+them merely because they are not always on the battlefield. Explicit per-badge
+expiry text remains a narrow required-UI follow-up, not missing Order mechanics.
+
 UP273 adds omitted current-hero Astral Nexus state to existing Town hover/help:
 Normal/current maximum, missing Normal restored, unchanged Buffer and unlimited
 visits. Authored status tokens are resolved read-only for initialized saved

@@ -2,6 +2,15 @@
 
 ## Purpose
 
+### 2026-10-07 — Protect death fixture passed const damage to an in/out API
+
+UP274's first combined build78888 fails because CUnitState::damage takes an
+int64_t reference and may adjust the applied amount; its death fixture supplied
+a const value. Keep the local damage value mutable rather than changing the
+production API. Failed build.log and subsequent build-repaired.log are retained
+under ignored testing/protect-link-20261007.PexT2J24. Source binding checks alone
+did not establish compile correctness; rendered link fit remains separate.
+
 ### 2026-10-07 — Old Nexus fixture expects forbidden above-capacity Normal Mana
 
 UP273's initial adjacent four-case run8478 passes3/4. The old combined

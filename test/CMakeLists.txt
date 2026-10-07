@@ -231,6 +231,7 @@ set(test_SRCS
 		server/battles/TransmutationTest.cpp
 		server/battles/WarMachineControlTest.cpp
 		server/battles/HeroCommandTest.cpp
+		server/battles/NewHorizonsProtectLinkTest.cpp
 		server/battles/NewHorizonsMultipleOrderPacketsTest.cpp
 		server/battles/NewHorizonsMultipleOrdersTest.cpp
 		server/battles/NewHorizonsDoubleCommandTest.cpp

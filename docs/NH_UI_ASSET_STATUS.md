@@ -1,5 +1,13 @@
 # New Horizons UI and asset status register
 
+Protect ground connector,2026-10-07: **Provisional** under UP274. Native Canvas
+amber line/arrow with dark under-stroke connects current Protector/Ward footprint
+centers behind creature sprites. No bitmap art or targeting/input changes. Shared
+pair lifecycle removes inactive links; client/test rebuild and six focused native
+cases pass with source/module guards and independent review. Rendered SDL2/SDL3
+fit, arrow visibility under sprites and user approval remain unverified; no
+normal Linux promotion or Final visual credit.
+
 Astral Nexus refill state,2026-10-07: **Provisional** under UP273. Existing town
 hover/right-click surfaces append current Normal/max, missing Normal restored,
 Buffer unchanged and unlimited-use status; no new panel/art. Client/test build

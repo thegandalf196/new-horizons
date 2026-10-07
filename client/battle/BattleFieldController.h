@@ -101,6 +101,7 @@ class BattleFieldController : public CIntObject
 	void showBackground(Canvas & canvas);
 	void showBackgroundImage(Canvas & canvas);
 	void showBackgroundImageWithHexes(Canvas & canvas);
+	void showProtectLinks(Canvas & canvas);
 	void showDemonicGateReservations(Canvas & canvas);
 	void showChainLightningPreviewNumbers(Canvas & canvas);
 	void showHighlightedHexes(Canvas & canvas);
