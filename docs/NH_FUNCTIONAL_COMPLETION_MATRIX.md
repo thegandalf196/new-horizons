@@ -2,6 +2,18 @@
 
 Updated: 2026-10-07
 
+UP267 closes the missing Bulwark pre-emptive result attribution. A temporary
+server-local attack flag identifies only that producer, without inferring the
+cause from a percentage shared by Battlecraft. Pre-application names and resolved
+hit damage/casualties feed the existing combat-log packet. Both targets build;
+eight focused native cases pass with zero skips in2.664s, covering Basic/Bog
+Ambush, repeated/non-Defending controls and adjacent reflection/Battlecraft paths.
+Independent source/fixture review has no blocker. No new combat rule, RNG draw,
+saved state or replicated field. Required combat feedback increases; identities
+remain228/310 active perks and61/67 combat spells. Explicit equal-strength
+negative log assertions, localization and rendered acceptance remain Phase2.
+No Linux promotion; live Windows37565586139 excludes this later slice.
+
 UP266 closes a missing required combat-result feedback path: Bulwark reflection
 now logs its source, target and resolved physical damage/casualties after
 authoritative injury preparation, including Guardian-absorbed zero damage.

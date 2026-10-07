@@ -113,6 +113,7 @@ class BattleActionProcessor : boost::noncopyable
 		/// Counterfire is a counter-flagged reaction but does not consume normal retaliation.
 		bool archeryCounterfire = false;
 		bool brace = false;
+		bool bulwarkPreemptive = false;
 		int preemptiveDamagePercent = 0;
 		bool cleaveFollowup = false;
 		int cleaveDamagePercent = 0;

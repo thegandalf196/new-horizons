@@ -30,6 +30,22 @@ const BattleStackAttacked * findInjuryHit(const RecordingGameServer & server, ui
 	return nullptr;
 }
 
+std::string expectedBulwarkPreemptiveLog(std::string_view sourceName, std::string_view targetName,
+	const BattleStackAttacked & hit)
+{
+	return "Bulwark of the Mire pre-emptive strike: " + std::string(sourceName) + " hits "
+		+ std::string(targetName) + " for " + std::to_string(hit.damageAmount) + " physical damage ("
+		+ std::to_string(hit.killedAmount) + " killed).";
+}
+
+std::size_t bulwarkPreemptiveLogCount(const std::vector<std::string> & lines)
+{
+	return static_cast<std::size_t>(std::ranges::count_if(lines, [](const auto & line)
+	{
+		return line.starts_with("Bulwark of the Mire pre-emptive strike:");
+	}));
+}
+
 bool selectBulwarkPerkIfActive(CGHeroInstance * hero, std::string_view perkId)
 {
 	const std::string skillId(newHorizonsBulwark::SKILL_ID);
@@ -247,10 +263,13 @@ TEST_F(NewHorizonsBulwarkRuntimeTest, FirstMeleeAttackTriggersOneScaledPreemptiv
 	defenderSideHero->setSecSkillLevel(bulwark(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	startBattle();
 	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(80), 100);
-	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(81), 100);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:archangel"), BattleHex(81), 100);
 	forceMaximumDamage(defender);
 	blockRetaliation(attacker);
 	defender->defending = true;
+	const auto sourceName = defender->getName();
+	const auto targetName = attacker->getName();
+	ASSERT_NE(sourceName, targetName);
 
 	const BattleAttackInfo normal(defender, attacker, 0, false);
 	const auto normalDamage = battle()->calculateDmgRange(normal).damage.max;
@@ -258,10 +277,16 @@ TEST_F(NewHorizonsBulwarkRuntimeTest, FirstMeleeAttackTriggersOneScaledPreemptiv
 	ASSERT_GE(server.attacks.size(), 2u);
 	EXPECT_EQ(server.attacks.front().stackAttacking, defender->unitId());
 	ASSERT_EQ(server.attacks.front().bsa.size(), 1u);
-	EXPECT_EQ(server.attacks.front().bsa.front().damageAmount, normalDamage * 50 / 100);
+	const auto & preemptiveHit = server.attacks.front().bsa.front();
+	ASSERT_EQ(preemptiveHit.stackAttacked, attacker->unitId());
+	EXPECT_EQ(preemptiveHit.damageAmount, normalDamage * 50 / 100);
 	EXPECT_FALSE(server.attacks.front().counter());
 	EXPECT_EQ(defender->counterAttacks.total(), 1);
 	EXPECT_TRUE(defender->bulwarkPreemptiveUsed);
+	const auto expectedLog = expectedBulwarkPreemptiveLog(sourceName, targetName, preemptiveHit);
+	EXPECT_EQ(std::ranges::count(server.battleLogLines, expectedLog), 1);
+	EXPECT_EQ(bulwarkPreemptiveLogCount(server.battleLogLines), 1u)
+		<< ::testing::PrintToString(server.battleLogLines);
 
 	const auto defenderAttacks = std::count_if(server.attacks.begin(), server.attacks.end(), [&](const auto & result)
 	{
@@ -273,6 +298,8 @@ TEST_F(NewHorizonsBulwarkRuntimeTest, FirstMeleeAttackTriggersOneScaledPreemptiv
 	{
 		return result.stackAttacking == defender->unitId();
 	}), defenderAttacks);
+	EXPECT_EQ(bulwarkPreemptiveLogCount(server.battleLogLines), 1u)
+		<< ::testing::PrintToString(server.battleLogLines);
 }
 
 TEST_F(NewHorizonsBulwarkRuntimeTest, MeleeMagogAttackStillTriggersBulwarkPreemptiveStrike)
@@ -363,6 +390,8 @@ TEST_F(NewHorizonsBulwarkRuntimeTest, AdvancedBulwarkDoesNotLogReflectionForANon
 	{
 		return line.find("Bulwark of the Mire:") != std::string::npos;
 	})) << ::testing::PrintToString(server.battleLogLines);
+	EXPECT_EQ(bulwarkPreemptiveLogCount(server.battleLogLines), 0u)
+		<< ::testing::PrintToString(server.battleLogLines);
 }
 
 TEST_F(NewHorizonsBulwarkRuntimeTest, GuardianSpiritAbsorptionIsReportedAsZeroResolvedReflection)
@@ -995,10 +1024,13 @@ TEST_F(NewHorizonsBulwarkPerkRuntimeTest, BogAmbushStrengthensOnlyItsFirstMeleeP
 		GTEST_SKIP() << "Bog Ambush is not active in the New Horizons perk rules";
 	startBattle();
 	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(80), 100);
-	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(81), 100);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:archangel"), BattleHex(81), 100);
 	forceMaximumDamage(defender);
 	blockRetaliation(attacker);
 	defender->defending = true;
+	const auto sourceName = defender->getName();
+	const auto targetName = attacker->getName();
+	ASSERT_NE(sourceName, targetName);
 
 	const BattleAttackInfo normal(defender, attacker, 0, false);
 	const auto normalDamage = battle()->calculateDmgRange(normal).damage.max;
@@ -1006,8 +1038,14 @@ TEST_F(NewHorizonsBulwarkPerkRuntimeTest, BogAmbushStrengthensOnlyItsFirstMeleeP
 	ASSERT_GE(server.attacks.size(), 2u);
 	EXPECT_EQ(server.attacks.front().stackAttacking, defender->unitId());
 	ASSERT_EQ(server.attacks.front().bsa.size(), 1u);
-	EXPECT_EQ(server.attacks.front().bsa.front().damageAmount, normalDamage * 75 / 100);
+	const auto & preemptiveHit = server.attacks.front().bsa.front();
+	ASSERT_EQ(preemptiveHit.stackAttacked, attacker->unitId());
+	EXPECT_EQ(preemptiveHit.damageAmount, normalDamage * 75 / 100);
 	EXPECT_TRUE(defender->bulwarkPreemptiveUsed);
+	const auto expectedLog = expectedBulwarkPreemptiveLog(sourceName, targetName, preemptiveHit);
+	EXPECT_EQ(std::ranges::count(server.battleLogLines, expectedLog), 1);
+	EXPECT_EQ(bulwarkPreemptiveLogCount(server.battleLogLines), 1u)
+		<< ::testing::PrintToString(server.battleLogLines);
 
 	const auto defenderAttacks = std::count_if(server.attacks.begin(), server.attacks.end(), [&](const auto & result)
 	{
@@ -1019,6 +1057,8 @@ TEST_F(NewHorizonsBulwarkPerkRuntimeTest, BogAmbushStrengthensOnlyItsFirstMeleeP
 	{
 		return result.stackAttacking == defender->unitId();
 	}), defenderAttacks);
+	EXPECT_EQ(bulwarkPreemptiveLogCount(server.battleLogLines), 1u)
+		<< ::testing::PrintToString(server.battleLogLines);
 }
 
 TEST_F(NewHorizonsBulwarkPerkRuntimeTest, MirebornDoesNotAddReductionAgainstSiegeWeaponDamage)

@@ -4145,7 +4145,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			changed.changedStacks.push_back(std::move(update));
 			gameHandler->sendAndApply(changed);
 			makeAttack(battle, defender, attacker, {.targetHex = attacker->getPosition(), .first = true,
-				.counter = true, .retaliation = true, .preemptiveDamagePercent = percent});
+				.counter = true, .retaliation = true, .bulwarkPreemptive = true,
+				.preemptiveDamagePercent = percent});
 			if(!attacker->alive() || armorerLastStandEndedActivation(attacker) || !defender->alive())
 				return;
 		}
@@ -4507,6 +4508,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	// or client-side damage estimates.
 	bat.chainGateTriggered = chainGateKillQualifies(battle, attacker, bat.bsa);
 	MetaString braceLogLine;
+	std::vector<MetaString> bulwarkPreemptiveLogLines;
 	if(attack.brace)
 	{
 		bool wroteTarget = false;
@@ -4541,6 +4543,24 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			braceLogLine.appendRawString(" before the incoming melee attack.");
 		else
 			braceLogLine = MetaString::createFromRawString("Brace triggers, but its preemptive strike deals no damage.");
+	}
+	if(attack.bulwarkPreemptive)
+	{
+		for(const BattleStackAttacked & hit : bat.bsa)
+		{
+			const auto * target = battle.battleGetUnitByID(hit.stackAttacked);
+			if(!target)
+				continue;
+			MetaString line;
+			line.appendRawString("Bulwark of the Mire pre-emptive strike: %s hits %s for ");
+			attacker->addNameReplacement(line, attacker->getCount());
+			target->addNameReplacement(line, target->getCount());
+			line.appendNumber(hit.damageAmount);
+			line.appendRawString(" physical damage (");
+			line.appendNumber(hit.killedAmount);
+			line.appendRawString(" killed).");
+			bulwarkPreemptiveLogLines.push_back(std::move(line));
+		}
 	}
 	// Format provenance while Order state and hero names are still available.
 	// The outgoing BattleAttack may consume the source Order.
@@ -5010,6 +5030,9 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 
 			if(defender)
 				addGenericKilledLog(blm, defender, totalKills, multipleTargets);
+
+			for(auto & line : bulwarkPreemptiveLogLines)
+				blm.lines.push_back(std::move(line));
 
 			for(auto & line : orderDamageLogLines)
 				blm.lines.push_back(std::move(line));
