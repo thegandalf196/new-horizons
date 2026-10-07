@@ -2,6 +2,33 @@
 
 ## Purpose
 
+### 2026-10-07 — Creature capability serializer test needs complete bonus types
+
+UP288 client compiles, but the new isolated capability wire test initially fails
+to instantiate CMemorySerializer for Bonus: BonusParameters, IPropagator and
+IUpdater are only forward-declared by Bonus.h. Include BonusParameters.h,
+Limiters.h, Propagators.h and Updaters.h in the isolated test translation unit.
+Do not change production serializer behavior or remove the downsave guard to
+silence template errors. Retry1 rebuild is running; test compilation and native
+execution remain pending. Logs: ignored build/new-horizons-linux/
+nh-handoff-20261007-build.log and nh-handoff-20261007-build-retry1.log.
+The initial CMake stale-module gate also correctly stops after canonical data
+changes: regenerate with tools/update-new-horizons-module.py before compilation.
+Client and focused-test executable subsequently compile successfully at10 jobs.
+First native execution passes15/18 checks. Three failures are fixture errors:
+the tied-ray test blocked a hex shared by both rays; the single-trap test allowed
+a legal adjacent-column detour; and a six-row malformed stock vector did not
+match the historical eight-row catalogue guard. Correct the ray blocker, use a
+full playable-row trap barrier, and remove the unsupported historical-save
+assertion without claiming migration support. Retain current-roster round-trip,
+growth, upgrade and recruitment checks. Ten-job rebuild and focused rerun pass
+18/18 (nh-handoff-20261007-focused-native-retry1.log); genuine preview
+VMAP export/reload passes with both Cabirs, both Wisps and both Magi.
+The optional modern-map exporter also initially assigns a read-only findAll
+hero result to a mutable authoring pointer. Iterate the owned authored map's
+objects and dynamic_cast their mutable pointers instead; do not cast away const
+from a read-only query helper. Ten-job retry1 contains this narrow fixture repair.
+
 ### 2026-10-07 — Adjacent level-up source guard assumes English literals
 
 UP286 client compile and curated-module check pass. The adjacent existing

@@ -359,6 +359,16 @@ ECreatureAnimType MeleeAttackAnimation::selectGroup(bool multiAttack)
 		}
 	}
 
+	if(mutPos == -1 && attackingStack->hasBonusOfType(BonusType::LONG_REACH))
+	{
+		const auto attackerHex = BattleHex(attackingStackPosBeforeReturn);
+		if(dest.getY() < attackerHex.getY())
+			return getUpwardsGroup(multiAttack);
+		if(dest.getY() > attackerHex.getY())
+			return getDownwardsGroup(multiAttack);
+		return getForwardGroup(multiAttack);
+	}
+
 	if(mutPos < 0 || mutPos > 5)
 		return getForwardGroup(multiAttack);
 

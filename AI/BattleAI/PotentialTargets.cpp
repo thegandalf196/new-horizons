@@ -119,7 +119,7 @@ PotentialTargets::PotentialTargets(
 			{
 				for(const BattleHex & hex : avHexes)
 				{
-					if(!evaluationState->isMeleeAttackPossible(attackerInfo, defender, hex))
+					if(!evaluationState->isMeleeAttackPossibleWithLongReach(attackerInfo, defender, hex))
 						continue;
 
 					auto bai = GenerateAttackInfo(false, hex);

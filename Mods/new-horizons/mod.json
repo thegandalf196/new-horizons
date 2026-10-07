@@ -303,7 +303,9 @@
 					"core:psychicElemental": "elite",
 					"core:magicElemental": "elite",
 					"core:firebird": "champion",
-					"core:phoenix": "champion"
+					"core:phoenix": "champion",
+					"new-horizons:wisp": "core",
+					"new-horizons:wispUpgrade": "core"
 				},
 				"growthLines": {
 					"core:archer": {
@@ -387,13 +389,15 @@
 						"weeklyBaseGrowth": 14,
 						"hordeGrowthOverride": 4,
 						"members": [
-							"core:pixie"
+							"core:pixie",
+							"core:sprite"
 						]
 					},
-					"core:sprite": {
-						"weeklyBaseGrowth": 10,
+					"new-horizons:wisp": {
+						"weeklyBaseGrowth": 8,
 						"members": [
-							"core:sprite"
+							"new-horizons:wisp",
+							"new-horizons:wispUpgrade"
 						]
 					},
 					"core:gnoll": {
@@ -3203,7 +3207,9 @@
 						"core:fireElemental": 220,
 						"core:earthElemental": 240,
 						"core:magicElemental": 320,
-						"core:phoenix": 650
+						"core:phoenix": 650,
+						"new-horizons:wisp": 140,
+						"new-horizons:wispUpgrade": 170
 					}
 				},
 				"siege": {

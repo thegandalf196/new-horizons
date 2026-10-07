@@ -1,5 +1,83 @@
 {
 	"core:pixie": {
-		"upgrades": []
+		"upgrades": ["core:sprite"]
+	},
+	"wisp": {
+		"name": {"singular": "Wisp", "plural": "Wisps"},
+		"faction": "core:conflux",
+		"level": 6,
+		"upgrades": ["new-horizons:wispUpgrade"],
+		"cost": {"gold": 160},
+		"speed": 5,
+		"initiative": 6,
+		"hitPoints": 12,
+		"attack": 7,
+		"defense": 4,
+		"damage": {"min": 2, "max": 3},
+		"fightValue": 240,
+		"aiValue": 260,
+		"growth": 8,
+		"advMapAmount": {"min": 8, "max": 16},
+		"doubleWide": false,
+		"abilities": {
+			"passThrough": {"type": "PASS_THROUGH"},
+			"longReach": {"type": "LONG_REACH", "val": 5},
+			"magicProtection": {"type": "SPELL_DAMAGE_REDUCTION_BASIS_POINTS", "subtype": "any", "val": 9500},
+			"noRetaliation": {"type": "BLOCKS_RETALIATION"}
+		},
+		"graphics": {
+			"animation": "Wisp",
+			"map": "WispMap",
+			"mapAttackFromLeft": "WispMap.def:0:0",
+			"mapAttackFromRight": "WispMap.def:0:0",
+			"iconLarge": "Wisp/icons/wisp-icon-58x64.png",
+			"iconSmall": "Wisp/icons/wisp-icon-32.png",
+			"animationTime": {"attack": 1.0, "walk": 0.75, "idle": 1.0},
+			"timeBetweenFidgets": 1.0
+		},
+		"sound": {
+			"attack": "MAGICBLT.wav",
+			"move": "AELMMOVE.wav",
+			"wince": "AELMWNCE.wav"
+		}
+	},
+	"wispUpgrade": {
+		"name": {"singular": "Greater Wisp", "plural": "Greater Wisps"},
+		"faction": "core:conflux",
+		"level": 6,
+		"upgrades": [],
+		"cost": {"gold": 240},
+		"speed": 6,
+		"initiative": 7,
+		"hitPoints": 16,
+		"attack": 9,
+		"defense": 6,
+		"damage": {"min": 3, "max": 4},
+		"fightValue": 360,
+		"aiValue": 400,
+		"growth": 8,
+		"advMapAmount": {"min": 8, "max": 16},
+		"doubleWide": false,
+		"abilities": {
+			"passThrough": {"type": "PASS_THROUGH"},
+			"longReach": {"type": "LONG_REACH", "val": 5},
+			"magicProtection": {"type": "SPELL_DAMAGE_REDUCTION_BASIS_POINTS", "subtype": "any", "val": 9500},
+			"noRetaliation": {"type": "BLOCKS_RETALIATION"}
+		},
+		"graphics": {
+			"animation": "WispUpgrade",
+			"map": "WispUpgradeMap",
+			"mapAttackFromLeft": "WispUpgradeMap.def:0:0",
+			"mapAttackFromRight": "WispUpgradeMap.def:0:0",
+			"iconLarge": "WispUpgrade/icons/icon-58x64.png",
+			"iconSmall": "WispUpgrade/icons/icon-32x32.png",
+			"animationTime": {"attack": 1.0, "walk": 0.75, "idle": 1.0},
+			"timeBetweenFidgets": 1.0
+		},
+		"sound": {
+			"attack": "MAGICBLT.wav",
+			"move": "AELMMOVE.wav",
+			"wince": "AELMWNCE.wav"
+		}
 	}
 }

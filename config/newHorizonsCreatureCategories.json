@@ -142,7 +142,9 @@
 		"core:psychicElemental": "elite",
 		"core:magicElemental": "elite",
 		"core:firebird": "champion",
-		"core:phoenix": "champion"
+		"core:phoenix": "champion",
+		"new-horizons:wisp": "core",
+		"new-horizons:wispUpgrade": "core"
 	},
 	"growthLines": {
 		"core:archer": {
@@ -192,11 +194,11 @@
 		"core:pixie": {
 			"weeklyBaseGrowth": 14,
 			"hordeGrowthOverride": 4,
-			"members": ["core:pixie"]
+			"members": ["core:pixie", "core:sprite"]
 		},
-		"core:sprite": {
-			"weeklyBaseGrowth": 10,
-			"members": ["core:sprite"]
+		"new-horizons:wisp": {
+			"weeklyBaseGrowth": 8,
+			"members": ["new-horizons:wisp", "new-horizons:wispUpgrade"]
 		},
 		"core:gnoll": {
 			"weeklyBaseGrowth": 14,

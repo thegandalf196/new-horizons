@@ -17,7 +17,8 @@ ReachabilityInfo::Parameters::Parameters(const battle::Unit * Stack, const Battl
 	startPosition(StartPosition),
 	doubleWide(Stack->doubleWide()),
 	side(Stack->unitSide()),
-	flying(Stack->hasBonusOfType(BonusType::FLYING))
+	flying(Stack->hasBonusOfType(BonusType::FLYING)),
+	passThrough(Stack->hasBonusOfType(BonusType::PASS_THROUGH))
 {
 	knownAccessible = & battle::Unit::getHexes(startPosition, doubleWide, side);
 	destructibleEnemyTurns.fill(-1);
@@ -32,6 +33,8 @@ ReachabilityInfo::ReachabilityInfo()
 bool ReachabilityInfo::isReachable(const BattleHex & hex) const
 {
 	if(!hex.isValid())
+		return false;
+	if(params.passThrough && !accessibility.accessibleForMovementEndpoint(hex, params.doubleWide, params.side))
 		return false;
 
 	// Occupied nodes stay in the BFS cache so a path can continue through

@@ -30,6 +30,7 @@ struct DLL_LINKAGE ReachabilityInfo
 		BattleSide side = BattleSide::NONE;
 		bool doubleWide = false;
 		bool flying = false;
+		bool passThrough = false;
 		bool ignoreKnownAccessible = false; //Ignore obstacles if it is in accessible hexes
 		bool bypassEnemyStacks = false; // in case of true will count amount of turns needed to kill enemy and thus move forward
 		// Ghost Walk permits traversing occupied creature hexes, but never

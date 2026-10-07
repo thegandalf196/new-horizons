@@ -187,13 +187,17 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_ARMORER_LAST_STAND, // side-wide Last Stand use and activation-ending lethal retaliation state
 	NEW_HORIZONS_PRIMARY_EXPERIENCE_REWARD, // explicit rewardable primary-XP classification
 	COMPONENT_HELP_REASON, // optional localized reason appended to component help
+	NEW_HORIZONS_CREATURE_TRANSIT_REACH, // static Pass-through and Long Reach creature capabilities
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = COMPONENT_HELP_REASON,
+	CURRENT = NEW_HORIZONS_CREATURE_TRANSIT_REACH,
 };
+
+static_assert(ESerializationVersion::NEW_HORIZONS_CREATURE_TRANSIT_REACH > ESerializationVersion::COMPONENT_HELP_REASON,
+	"Creature traversal and reach capabilities must remain append-only");
 
 static_assert(ESerializationVersion::COMPONENT_HELP_REASON > ESerializationVersion::NEW_HORIZONS_PRIMARY_EXPERIENCE_REWARD,
 	"Component help reasons must remain append-only");

@@ -38,12 +38,14 @@
 #include "../../lib/mapping/CMapHeader.h"
 #include "../../lib/mapping/MapFormat.h"
 #include "../../lib/mapping/MapFormatH3M.h"
+#include "../../lib/mapping/MapFormatJson.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include "../../lib/serializer/JsonDeserializer.h"
 #include "../../lib/serializer/JsonSerializer.h"
 
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <limits>
 #include <zlib.h>
 
@@ -915,6 +917,144 @@ TEST(TinyH3MBuilderTest, ExportCabirManualPreviewMap)
 	ASSERT_EQ(gzclose(input.release()), Z_OK);
 	ASSERT_EQ(exportedBytes, bytes) << "The private .h3m must contain exactly the validated map";
 	ASSERT_NO_FATAL_FAILURE(validateLoadedMap(std::move(exportedBytes)));
+}
+
+TEST(TinyH3MBuilderTest, ExportCabirAndWispCompleteHandoffPreviewVMap)
+{
+	const char * outputEnv = std::getenv("NH_CREATURE_HANDOFF_PREVIEW_MAP_OUTPUT");
+	if(!outputEnv || outputEnv[0] == '\0')
+		GTEST_SKIP() << "Set NH_CREATURE_HANDOFF_PREVIEW_MAP_OUTPUT to an unused absolute .vmap path below build/";
+
+	const std::filesystem::path outputPath(outputEnv);
+	ASSERT_TRUE(outputPath.is_absolute()) << outputPath;
+	ASSERT_EQ(outputPath.extension(), ".vmap") << outputPath;
+	ASSERT_FALSE(std::filesystem::exists(outputPath)) << "Refusing to overwrite an existing map: " << outputPath;
+	ASSERT_FALSE(std::filesystem::is_symlink(std::filesystem::symlink_status(outputPath)))
+		<< "Refusing to follow an output symlink: " << outputPath;
+	ASSERT_TRUE(std::filesystem::is_directory(outputPath.parent_path()))
+		<< "Create the private ignored output directory first: " << outputPath.parent_path();
+
+	std::filesystem::path repositoryRoot;
+	for(auto candidate = std::filesystem::current_path(); !candidate.empty(); candidate = candidate.parent_path())
+	{
+		if(std::filesystem::exists(candidate / "CMakeLists.txt")
+			&& std::filesystem::exists(candidate / "test/map/TinyH3MBuilderTest.cpp"))
+		{
+			repositoryRoot = candidate;
+			break;
+		}
+		if(candidate == candidate.parent_path())
+			break;
+	}
+	ASSERT_FALSE(repositoryRoot.empty()) << "Could not locate the repository root from the test working directory";
+
+	std::error_code canonicalError;
+	const auto canonicalBuild = std::filesystem::weakly_canonical(repositoryRoot / "build", canonicalError);
+	ASSERT_FALSE(canonicalError) << canonicalError.message();
+	const auto canonicalOutputParent = std::filesystem::weakly_canonical(outputPath.parent_path(), canonicalError);
+	ASSERT_FALSE(canonicalError) << canonicalError.message();
+	const auto relativeOutputParent = canonicalOutputParent.lexically_relative(canonicalBuild);
+	ASSERT_FALSE(relativeOutputParent.empty()) << canonicalOutputParent;
+	ASSERT_FALSE(relativeOutputParent.is_absolute()) << canonicalOutputParent;
+	ASSERT_NE(*relativeOutputParent.begin(), std::filesystem::path(".."))
+		<< "Output must stay below the ignored repository build/ directory: " << outputPath;
+
+	const auto solmyr = HeroTypeID(HeroTypeID::decode("core:solmyr"));
+	const auto valeska = HeroTypeID(HeroTypeID::decode("core:valeska"));
+	const auto cabir = CreatureID(CreatureID::decode("core:gremlin"));
+	const auto masterCabir = CreatureID(CreatureID::decode("core:masterGremlin"));
+	const auto wisp = CreatureID(CreatureID::decode("new-horizons:wisp"));
+	const auto greaterWisp = CreatureID(CreatureID::decode("new-horizons:wispUpgrade"));
+	const auto mage = CreatureID(CreatureID::decode("core:mage"));
+	const auto archMage = CreatureID(CreatureID::decode("core:archMage"));
+	const auto psychicElemental = CreatureID(CreatureID::decode("core:psychicElemental"));
+	const auto magicElemental = CreatureID(CreatureID::decode("core:magicElemental"));
+	const auto peasant = CreatureID(CreatureID::decode("core:peasant"));
+	const auto pikeman = CreatureID(CreatureID::decode("core:pikeman"));
+	const std::array<CreatureID, 6> previewCreatures = {
+		cabir, masterCabir, wisp, greaterWisp, mage, archMage
+	};
+	const std::array<TQuantity, 6> previewCounts = {5, 5, 2, 2, 1, 1};
+	for(const auto & creature : previewCreatures)
+		ASSERT_NE(creature.toCreature(), nullptr);
+
+	// H3M cannot encode module creature IDs. Load a normal stock seed first, then
+	// author only the test map's Red hero army before converting it to .vmap.
+	auto seedBytes = TinyH3M::TinyH3MBuilder(EMapFormat::SOD)
+		.size(36, false)
+		.name("New Horizons Cabir and Wisp Preview")
+		.description("Play Red as Solmyr. The nearby 40 Peasants are the preview battle; Blue's Valeska is far away. Red's six forms are Cabir, Master Cabir, Wisp, Greater Wisp, Mage, and Arch Mage; the Wisp identities are not borrowed Psychic or Magic Elemental aliases.")
+		.difficulty(EMapDifficulty::NORMAL)
+		.playerActive(PlayerColor(0))
+		.playerActive(PlayerColor(1))
+		.hero({8, 8, 0}, solmyr, PlayerColor(0))
+		.heroGarrison({{cabir, 5}, {masterCabir, 5}, {psychicElemental, 2}, {magicElemental, 2}, {mage, 1}, {archMage, 1}})
+		.monster({9, 8, 0}, peasant, 40, 3)
+		.hero({30, 30, 0}, valeska, PlayerColor(1))
+		.heroGarrison({{pikeman, 5}})
+		.build();
+	auto authoredMap = loadMap(std::move(seedBytes));
+	ASSERT_NE(authoredMap.map, nullptr);
+	CGHeroInstance * redHero = nullptr;
+	for(const auto & object : authoredMap.map->objects)
+	{
+		auto * hero = dynamic_cast<CGHeroInstance *>(object.get());
+		if(hero && hero->getOwner() == PlayerColor(0))
+			redHero = hero;
+	}
+	ASSERT_NE(redHero, nullptr);
+
+	redHero->clearSlots();
+	for(size_t index = 0; index < previewCreatures.size(); ++index)
+		ASSERT_TRUE(redHero->setCreature(SlotID(static_cast<int>(index)), previewCreatures[index], previewCounts[index]));
+	ASSERT_EQ(redHero->stacksCount(), 6);
+	for(size_t index = 0; index < previewCreatures.size(); ++index)
+	{
+		ASSERT_EQ(redHero->getStack(SlotID(static_cast<int>(index))).getCreatureID(), previewCreatures[index]);
+		ASSERT_EQ(redHero->getStackCount(SlotID(static_cast<int>(index))), previewCounts[index]);
+	}
+
+	CMemoryBuffer serializedMap;
+	{
+		CMapSaverJson saver(&serializedMap);
+		saver.saveMap(authoredMap.map);
+	}
+	ASSERT_GT(serializedMap.getSize(), 0);
+	serializedMap.seek(0);
+	CMapLoaderJson loader(&serializedMap);
+	auto roundTripped = loader.loadMap(nullptr);
+	ASSERT_NE(roundTripped, nullptr);
+	const CGHeroInstance * roundTrippedRed = nullptr;
+	for(const auto * hero : findAll<CGHeroInstance>(*roundTripped))
+		if(hero->getOwner() == PlayerColor(0))
+			roundTrippedRed = hero;
+	ASSERT_NE(roundTrippedRed, nullptr);
+	ASSERT_EQ(roundTrippedRed->stacksCount(), 6);
+	for(size_t index = 0; index < previewCreatures.size(); ++index)
+	{
+		EXPECT_EQ(roundTrippedRed->getStack(SlotID(static_cast<int>(index))).getCreatureID(), previewCreatures[index]);
+		EXPECT_EQ(roundTrippedRed->getStackCount(SlotID(static_cast<int>(index))), previewCounts[index]);
+	}
+	EXPECT_EQ(roundTrippedRed->getStack(SlotID(2)).getCreatureID(), wisp);
+	EXPECT_EQ(roundTrippedRed->getStack(SlotID(3)).getCreatureID(), greaterWisp);
+	const CGHeroInstance * roundTrippedBlue = nullptr;
+	for(const auto * hero : findAll<CGHeroInstance>(*roundTripped))
+		if(hero->getOwner() == PlayerColor(1))
+			roundTrippedBlue = hero;
+	ASSERT_NE(roundTrippedBlue, nullptr);
+	EXPECT_EQ(roundTrippedBlue->getHeroTypeID(), valeska);
+	EXPECT_EQ(roundTrippedBlue->anchorPos(), int3(30, 30, 0));
+	const auto * roundTrippedPeasants = findFirst<CGCreature>(*roundTripped);
+	ASSERT_NE(roundTrippedPeasants, nullptr);
+	EXPECT_EQ(roundTrippedPeasants->getCreatureID(), peasant);
+	EXPECT_EQ(roundTrippedPeasants->getStackCount(SlotID(0)), 40);
+
+	std::ofstream output(outputPath, std::ios::binary);
+	ASSERT_TRUE(output.is_open()) << "Could not create private preview map: " << outputPath;
+	const auto & bytes = serializedMap.getBuffer();
+	output.write(reinterpret_cast<const char *>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
+	output.close();
+	ASSERT_TRUE(output.good()) << "Failed writing private .vmap: " << outputPath;
 }
 
 INSTANTIATE_TEST_SUITE_P(OriginalFormats, TinyH3MTownGarrisonTest,

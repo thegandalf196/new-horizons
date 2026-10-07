@@ -56,8 +56,9 @@ set(test_SRCS
 		battle/CasualtyProvenanceTest.cpp
 		battle/HeroActionAllowanceStateTest.cpp
 		battle/HeroSpellAllowanceTransitionTest.cpp
- 		battle/BattleHexTest.cpp
+		battle/BattleHexTest.cpp
 		battle/BattleFormAccessibilityTest.cpp
+		battle/NewHorizonsPassThroughRangeTest.cpp
 		battle/NewHorizonsBattleFormHealthTest.cpp
  		battle/CBattleInfoCallbackTest.cpp
  		battle/CHealthTest.cpp
@@ -373,6 +374,7 @@ set(test_SRCS
 		server/battles/NewHorizonsSanctuaryKeeperTest.cpp
 		server/battles/NewHorizonsObstacleMovementCostTest.cpp
 		server/battles/NewHorizonsPassingLinesTest.cpp
+		server/battles/NewHorizonsPassThroughLongReachTest.cpp
 		server/battles/NewHorizonsTacticsDeploymentTest.cpp
 		server/battles/NewHorizonsDeploymentOrderRuntimeTest.cpp
 		server/battles/NewHorizonsCorpsePreservationTest.cpp

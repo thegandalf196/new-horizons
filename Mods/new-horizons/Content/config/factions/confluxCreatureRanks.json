@@ -6,46 +6,22 @@
 				"modify@2": 3
 			},
 			"creatures": {
-				"modify@1": [ "pixie" ],
-				"appendItems": [ [ "sprite" ] ]
+				"modify@1": [ "pixie", "sprite" ],
+				"modify@6": [ "new-horizons:wisp", "new-horizons:wispUpgrade" ]
 			},
 			"hallSlots": {
 				"modify@3": {
 					"modify@3": [ "horde1" ],
 					"appendItems": [ [ "horde2" ] ]
-				},
-				"modify@4": {
-					"modify@1": [ "dwellingLvl1" ]
-				},
-				"modify@5": {
-					"appendItems": [ [ "dwellingLvl8" ] ]
 				}
 			},
 			"structures": {
-				"dwellingUpLvl1": null,
-				"horde1Upgr": null,
-				"dwellingLvl8": {
-					"animation": "TBELUP_0.def",
-					"x": 689,
-					"y": 250,
-					"z": 10,
-					"campaignBonus": "BoEup_0.pcx",
-					"border": "TOELUP_0.bmp",
-					"area": "TZELUP_0.bmp"
-				}
+				"horde1Upgr": null
 			},
 			"buildings": {
-				"dwellingUpLvl1": null,
 				"horde1Upgr": null,
 				"horde1": {
-					"description": "The Garden of Life increases weekly Pixie growth by 4 and Sprite growth by 3.",
-					"bonuses": [
-						{
-							"type": "CREATURE_GROWTH",
-							"subtype": "creatureLevel8",
-							"val": 3
-						}
-					]
+					"description": "The Garden of Life increases weekly Pixie and Sprite growth by 4."
 				},
 				"horde2": {
 					"name": "Vault of Ashes",
@@ -55,20 +31,6 @@
 						"gold": 1000,
 						"wood": 0,
 						"ore": 5,
-						"mercury": 0,
-						"sulfur": 0,
-						"crystal": 0,
-						"gems": 0
-					}
-				},
-				"dwellingLvl8": {
-					"name": "Sprite Grove",
-					"description": "The Sprite Grove recruits Sprites.",
-					"requires": [ "fort" ],
-					"cost#override": {
-						"gold": 1000,
-						"wood": 5,
-						"ore": 0,
 						"mercury": 0,
 						"sulfur": 0,
 						"crystal": 0,

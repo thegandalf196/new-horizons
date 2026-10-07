@@ -238,30 +238,25 @@ TEST_F(NewHorizonsConfluxGrowthTest, LibraryCandidateValuesMageRowAndBuiltLibrar
 }
 #endif
 
-TEST_F(NewHorizonsConfluxGrowthTest, GardenKeepsPixieAndSpriteStocksIndependentAndGrowthSurvivesSave)
+TEST_F(NewHorizonsConfluxGrowthTest, GardenKeepsPixieAndSpriteInOneStockRowAcrossUpgradeAndSave)
 {
 	const auto pixie = creature("core:pixie");
 	const auto sprite = creature("core:sprite");
 	const auto firebird = creature("core:firebird");
+	const auto spriteDwelling = BuildingID::getDwellingFromLevel(0, 1);
 	startConfluxMap();
 	auto * town = expectAt<CGTownInstance>({18, 18, 0});
 	ASSERT_NE(town, nullptr);
-	ASSERT_EQ(town->getTown()->creatures.size(), 8u);
-	ASSERT_EQ(town->creatures.size(), 8u);
-	ASSERT_EQ(town->getTown()->creatures.at(0).size(), 1u);
-	ASSERT_EQ(town->getTown()->creatures.at(7).size(), 1u);
-	EXPECT_EQ(town->getTown()->creatures.at(0).front(), pixie);
-	EXPECT_EQ(town->getTown()->creatures.at(7).front(), sprite);
+	ASSERT_EQ(town->getTown()->creatures.size(), 7u);
+	ASSERT_EQ(town->creatures.size(), 7u);
+	EXPECT_EQ(town->getTown()->creatures.at(0), (std::vector<CreatureID>{pixie, sprite}));
 	EXPECT_EQ(town->getTown()->creatures.at(6).front(), firebird);
-	EXPECT_EQ(BuildingID::getLevelIndexFromDwelling(BuildingID::DWELL_LVL_8), 7);
-	EXPECT_EQ(BuildingID::getLevelIndexFromDwelling(BuildingID::DWELL_LVL_7), 6);
 	ASSERT_NE(pixie.toCreature(), nullptr);
-	EXPECT_FALSE(vstd::contains(pixie.toCreature()->upgrades, sprite));
+	EXPECT_TRUE(vstd::contains(pixie.toCreature()->upgrades, sprite));
 	EXPECT_EQ(gameState()->getCreatureBaseGrowth(pixie), 14);
-	EXPECT_EQ(gameState()->getCreatureBaseGrowth(sprite), 10);
+	EXPECT_EQ(gameState()->getCreatureBaseGrowth(sprite), 14);
 
 	const auto pixieDwelling = BuildingID::getDwellingFromLevel(0, 0);
-	const auto spriteDwelling = BuildingID::getDwellingFromLevel(7, 0);
 	ASSERT_TRUE(town->getTown()->buildings.contains(pixieDwelling));
 	ASSERT_TRUE(town->getTown()->buildings.contains(spriteDwelling));
 	ASSERT_TRUE(town->getTown()->buildings.contains(BuildingID::HORDE_1));
@@ -282,17 +277,13 @@ TEST_F(NewHorizonsConfluxGrowthTest, GardenKeepsPixieAndSpriteStocksIndependentA
 	EXPECT_FALSE(town->hasBuilt(spriteDwelling));
 	EXPECT_EQ(gameState()->canBuildStructure(town, spriteDwelling), EBuildingState::PREREQUIRES);
 	EXPECT_TRUE(town->creatures.at(0).second.empty());
-	EXPECT_TRUE(town->creatures.at(7).second.empty());
 
-	// Build the real prerequisite chain through the authoritative handler. This
-	// exercises row8's construction path instead of directly editing town stock.
-	const std::array<BuildingID, 7> prerequisiteAndDwellings = {
+	// Build the ordinary Pixie dwelling and Garden through the authoritative
+	// handler, then recruit a Pixie before upgrading the same stock row.
+	const std::array<BuildingID, 4> prerequisiteAndDwellings = {
 		BuildingID::FORT,
 		BuildingID::MAGES_GUILD_1,
 		pixieDwelling,
-		BuildingID::DWELL_LVL_2,
-		BuildingID::DWELL_LVL_3,
-		spriteDwelling,
 		BuildingID::HORDE_1
 	};
 	for(const auto building : prerequisiteAndDwellings)
@@ -304,24 +295,32 @@ TEST_F(NewHorizonsConfluxGrowthTest, GardenKeepsPixieAndSpriteStocksIndependentA
 	}
 
 	ASSERT_EQ(town->creatures.at(0).second, (std::vector<CreatureID>{pixie}));
-	ASSERT_EQ(town->creatures.at(7).second, (std::vector<CreatureID>{sprite}));
 	ASSERT_EQ(town->creatures.at(0).first, 14u);
-	ASSERT_EQ(town->creatures.at(7).first, 10u);
 	EXPECT_EQ(town->creatureGrowth(0), 18);
-	EXPECT_EQ(town->creatureGrowth(7), 13);
 	const int unrelatedRowGrowth = town->creatureGrowth(2);
 
+	ASSERT_TRUE(gameHandler.recruitCreatures(town->id, town->id, pixie, 1, 0, PlayerColor(0)));
+	EXPECT_EQ(town->creatures.at(0).first, 13u);
+	auto pixieSlot = town->getSlotFor(pixie);
+	ASSERT_TRUE(pixieSlot.validSlot());
+	EXPECT_EQ(town->getStackCount(pixieSlot), 1);
+
+	ASSERT_TRUE(gameHandler.buildStructure(town->id, spriteDwelling));
+	EXPECT_EQ(town->creatures.at(0).second, (std::vector<CreatureID>{pixie, sprite}));
+	EXPECT_EQ(town->creatures.at(0).first, 13u)
+		<< "Upgrading the dwelling changes the available creature, not the shared row stock";
+	EXPECT_EQ(town->creatureGrowth(0), 18);
+
 #ifdef ENABLE_NULLKILLER2_AI
-	// BuildingInfo must use the town's explicit Sprite row, not infer a row from
-	// Sprite's creature level (which can alias Pixie's row).
+	// Both building variants resolve to the same explicit row and shared growth.
 	auto armyManager = std::make_unique<NK2AI::ArmyManager>(nullptr, nullptr);
 	const auto spriteInfo = NK2AI::BuildingInfo(town->getTown()->buildings.at(spriteDwelling).get(),
 		sprite.toCreature(), sprite, town, armyManager);
 	const auto pixieInfo = NK2AI::BuildingInfo(town->getTown()->buildings.at(pixieDwelling).get(),
 		pixie.toCreature(), pixie, town, armyManager);
 	EXPECT_TRUE(spriteInfo.isBuilt);
-	EXPECT_EQ(spriteInfo.creatureGrowth, town->creatureGrowth(7));
-	EXPECT_EQ(spriteInfo.creatureGrowth, 13);
+	EXPECT_EQ(spriteInfo.creatureGrowth, town->creatureGrowth(0));
+	EXPECT_EQ(spriteInfo.creatureGrowth, 18);
 	EXPECT_EQ(pixieInfo.creatureGrowth, town->creatureGrowth(0));
 	EXPECT_EQ(pixieInfo.creatureGrowth, 18);
 #endif
@@ -329,8 +328,7 @@ TEST_F(NewHorizonsConfluxGrowthTest, GardenKeepsPixieAndSpriteStocksIndependentA
 	for(int day = 1; day < 8; ++day)
 		gameHandler.onNewTurn();
 	ASSERT_EQ(gameState()->day, 8);
-	EXPECT_EQ(town->creatures.at(0).first, 32u);
-	EXPECT_EQ(town->creatures.at(7).first, 23u);
+	EXPECT_EQ(town->creatures.at(0).first, 31u);
 	EXPECT_EQ(town->creatureGrowth(2), unrelatedRowGrowth);
 
 	const auto townId = town->id;
@@ -340,58 +338,134 @@ TEST_F(NewHorizonsConfluxGrowthTest, GardenKeepsPixieAndSpriteStocksIndependentA
 	restored.loadFromMemory(saved);
 	const auto * restoredTown = restored.getTown(townId);
 	ASSERT_NE(restoredTown, nullptr);
-	EXPECT_EQ(restoredTown->getTown()->creatures.size(), 8u);
-	ASSERT_EQ(restoredTown->creatures.size(), 8u);
-	EXPECT_EQ(restoredTown->creatures.at(0).second, (std::vector<CreatureID>{pixie}));
-	EXPECT_EQ(restoredTown->creatures.at(7).second, (std::vector<CreatureID>{sprite}));
-	EXPECT_EQ(restoredTown->creatures.at(0).first, 32u);
-	EXPECT_EQ(restoredTown->creatures.at(7).first, 23u);
+	EXPECT_EQ(restoredTown->getTown()->creatures.size(), 7u);
+	ASSERT_EQ(restoredTown->creatures.size(), 7u);
+	EXPECT_EQ(restoredTown->creatures.at(0).second, (std::vector<CreatureID>{pixie, sprite}));
+	EXPECT_EQ(restoredTown->creatures.at(0).first, 31u);
 	EXPECT_EQ(restored.getCreatureBaseGrowth(pixie), 14);
-	EXPECT_EQ(restored.getCreatureBaseGrowth(sprite), 10);
+	EXPECT_EQ(restored.getCreatureBaseGrowth(sprite), 14);
 	EXPECT_EQ(restoredTown->creatureGrowth(0), 18);
-	EXPECT_EQ(restoredTown->creatureGrowth(7), 13);
 
-	const auto pixieStockBeforeRecruitment = town->creatures.at(0).first;
-	const auto spriteStockBeforeRecruitment = town->creatures.at(7).first;
-	ASSERT_TRUE(gameHandler.recruitCreatures(town->id, town->id, pixie, 1, 0, PlayerColor(0)));
-	EXPECT_EQ(town->creatures.at(0).first, pixieStockBeforeRecruitment - 1);
-	EXPECT_EQ(town->creatures.at(7).first, spriteStockBeforeRecruitment);
-	auto pixieSlot = town->getSlotFor(pixie);
-	ASSERT_TRUE(pixieSlot.validSlot());
-	EXPECT_EQ(town->getStackCount(pixieSlot), 1);
-
-	ASSERT_TRUE(gameHandler.recruitCreatures(town->id, town->id, sprite, 1, 7, PlayerColor(0)));
-	EXPECT_EQ(town->creatures.at(0).first, pixieStockBeforeRecruitment - 1);
-	EXPECT_EQ(town->creatures.at(7).first, spriteStockBeforeRecruitment - 1);
+	ASSERT_TRUE(gameHandler.recruitCreatures(town->id, town->id, sprite, 1, 0, PlayerColor(0)));
+	EXPECT_EQ(town->creatures.at(0).first, 30u);
 	auto spriteSlot = town->getSlotFor(sprite);
 	ASSERT_TRUE(spriteSlot.validSlot());
 	EXPECT_EQ(town->getStackCount(spriteSlot), 1);
-
-	// This intentionally malformed current-format payload has the seven-row
-	// stock shape used by pre-Sprite Conflux saves. Loading against the current
-	// eight-row static catalogue must fail instead of reinterpreting its stocks.
-	town->creatures.resize(7);
-	const auto oldRows = gameState()->saveToMemory();
-	CGameState rejected;
-	rejected.preInit(LIBRARY);
-	EXPECT_THROW(rejected.loadFromMemory(oldRows), std::runtime_error);
 }
 
-TEST_F(NewHorizonsConfluxGrowthTest, NewConfluxTownStartsWithEightIndependentStockRows)
+TEST_F(NewHorizonsConfluxGrowthTest, NewConfluxTownStartsWithSevenRowsAndPreservesOldElementalIdentities)
 {
 	const auto pixie = creature("core:pixie");
 	const auto sprite = creature("core:sprite");
+	const auto wisp = creature("new-horizons:wisp");
+	const auto greaterWisp = creature("new-horizons:wispUpgrade");
+	const auto psychic = creature("core:psychicElemental");
+	const auto magic = creature("core:magicElemental");
 	const auto firebird = creature("core:firebird");
 	startConfluxMap();
 	const auto * town = expectAt<CGTownInstance>({18, 18, 0});
 	ASSERT_NE(town, nullptr);
-	EXPECT_EQ(town->getTown()->creatures.size(), 8u);
-	EXPECT_EQ(town->creatures.size(), 8u);
-	EXPECT_EQ(town->getTown()->creatures.at(0).front(), pixie);
-	EXPECT_EQ(town->getTown()->creatures.at(7).front(), sprite);
+	EXPECT_EQ(town->getTown()->creatures.size(), 7u);
+	EXPECT_EQ(town->creatures.size(), 7u);
+	EXPECT_EQ(town->getTown()->creatures.at(0), (std::vector<CreatureID>{pixie, sprite}));
+	EXPECT_EQ(town->getTown()->creatures.at(5), (std::vector<CreatureID>{wisp, greaterWisp}));
 	EXPECT_EQ(town->getTown()->creatures.at(6).front(), firebird);
 	EXPECT_EQ(town->creatures.at(0).second.size(), 0u);
-	EXPECT_EQ(town->creatures.at(7).second.size(), 0u);
+	EXPECT_EQ(town->creatures.at(5).second.size(), 0u);
+	ASSERT_NE(psychic.toCreature(), nullptr);
+	ASSERT_NE(magic.toCreature(), nullptr);
+	EXPECT_EQ(gameState()->getCreatureBaseGrowth(psychic), 3);
+	EXPECT_EQ(gameState()->getCreatureBaseGrowth(magic), 3);
+}
+
+TEST_F(NewHorizonsConfluxGrowthTest, WispUpgradeSharesRowGrowthSaveAndRecruitment)
+{
+	const auto wisp = creature("new-horizons:wisp");
+	const auto greaterWisp = creature("new-horizons:wispUpgrade");
+	const auto psychic = creature("core:psychicElemental");
+	const auto magic = creature("core:magicElemental");
+	const auto wispDwelling = BuildingID::getDwellingFromLevel(5, 0);
+	const auto upgradedWispDwelling = BuildingID::getDwellingFromLevel(5, 1);
+	startConfluxMap();
+	auto * town = expectAt<CGTownInstance>({18, 18, 0});
+	ASSERT_NE(town, nullptr);
+	ASSERT_EQ(town->getTown()->creatures.size(), 7u);
+	ASSERT_EQ(town->creatures.size(), 7u);
+	ASSERT_EQ(town->getTown()->creatures.at(5), (std::vector<CreatureID>{wisp, greaterWisp}));
+	ASSERT_NE(wisp.toCreature(), nullptr);
+	ASSERT_NE(greaterWisp.toCreature(), nullptr);
+	ASSERT_NE(psychic.toCreature(), nullptr);
+	ASSERT_NE(magic.toCreature(), nullptr);
+	EXPECT_EQ(gameState()->getCreatureBaseGrowth(wisp), 8);
+	EXPECT_EQ(gameState()->getCreatureBaseGrowth(greaterWisp), 8);
+	EXPECT_TRUE(town->getTown()->buildings.contains(wispDwelling));
+	EXPECT_TRUE(town->getTown()->buildings.contains(upgradedWispDwelling));
+
+	GameHandlerTestServer server(gameState(), PlayerColor(0));
+	CGameHandler gameHandler(server, gameState());
+	gameHandler.randomizer->setSeed(293);
+	grantBuildingResources(*this);
+	gameHandler.onNewTurn();
+	ASSERT_EQ(gameState()->day, 1);
+
+	const std::array<BuildingID, 8> prerequisites = {
+		BuildingID::FORT,
+		BuildingID::MAGES_GUILD_1,
+		BuildingID::DWELL_LVL_1,
+		BuildingID::DWELL_LVL_2,
+		BuildingID::DWELL_LVL_3,
+		BuildingID::DWELL_LVL_4,
+		BuildingID::DWELL_LVL_5,
+		wispDwelling
+	};
+	for(const auto building : prerequisites)
+	{
+		if(town->hasBuilt(building))
+			continue;
+		ASSERT_TRUE(gameHandler.buildStructure(town->id, building)) << "failed building " << building;
+	}
+
+	ASSERT_EQ(town->creatures.at(5).second, (std::vector<CreatureID>{wisp}));
+	ASSERT_EQ(town->creatures.at(5).first, 8u);
+	EXPECT_EQ(town->creatureGrowth(5), 8);
+	ASSERT_TRUE(gameHandler.recruitCreatures(town->id, town->id, wisp, 1, 5, PlayerColor(0)));
+	EXPECT_EQ(town->creatures.at(5).first, 7u);
+	auto wispSlot = town->getSlotFor(wisp);
+	ASSERT_TRUE(wispSlot.validSlot());
+	EXPECT_EQ(town->getStackCount(wispSlot), 1);
+
+	ASSERT_TRUE(gameHandler.buildStructure(town->id, BuildingID::MAGES_GUILD_2));
+	ASSERT_TRUE(gameHandler.buildStructure(town->id, upgradedWispDwelling));
+	EXPECT_EQ(town->creatures.at(5).second, (std::vector<CreatureID>{wisp, greaterWisp}));
+	EXPECT_EQ(town->creatureGrowth(5), 8);
+
+	for(int day = 1; day < 8; ++day)
+		gameHandler.onNewTurn();
+	ASSERT_EQ(gameState()->day, 8);
+	EXPECT_EQ(town->creatures.at(5).first, 15u);
+
+	const auto townId = town->id;
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	const auto * restoredTown = restored.getTown(townId);
+	ASSERT_NE(restoredTown, nullptr);
+	EXPECT_EQ(restoredTown->getTown()->creatures.size(), 7u);
+	ASSERT_EQ(restoredTown->creatures.size(), 7u);
+	EXPECT_EQ(restoredTown->creatures.at(5).second, (std::vector<CreatureID>{wisp, greaterWisp}));
+	EXPECT_EQ(restoredTown->creatures.at(5).first, 15u);
+	EXPECT_EQ(restoredTown->creatureGrowth(5), 8);
+	EXPECT_EQ(restored.getCreatureBaseGrowth(wisp), 8);
+	EXPECT_EQ(restored.getCreatureBaseGrowth(greaterWisp), 8);
+
+	ASSERT_TRUE(gameHandler.recruitCreatures(town->id, town->id, greaterWisp, 1, 5, PlayerColor(0)));
+	EXPECT_EQ(town->creatures.at(5).first, 14u);
+	auto greaterWispSlot = town->getSlotFor(greaterWisp);
+	ASSERT_TRUE(greaterWispSlot.validSlot());
+	EXPECT_EQ(town->getStackCount(greaterWispSlot), 1);
+	EXPECT_EQ(gameState()->getCreatureBaseGrowth(psychic), 3);
+	EXPECT_EQ(gameState()->getCreatureBaseGrowth(magic), 3);
 }
 
 TEST_F(NewHorizonsConfluxGrowthTest, VaultOfAshesAddsFireLineGrowthAtTheWeeklyBoundary)
@@ -402,8 +476,8 @@ TEST_F(NewHorizonsConfluxGrowthTest, VaultOfAshesAddsFireLineGrowthAtTheWeeklyBo
 	startConfluxMap();
 	auto * town = expectAt<CGTownInstance>({18, 18, 0});
 	ASSERT_NE(town, nullptr);
-	ASSERT_EQ(town->getTown()->creatures.size(), 8u);
-	ASSERT_EQ(town->creatures.size(), 8u);
+	ASSERT_EQ(town->getTown()->creatures.size(), 7u);
+	ASSERT_EQ(town->creatures.size(), 7u);
 	ASSERT_EQ(town->getTown()->hordeLvl.at(1), 3);
 	ASSERT_TRUE(town->getTown()->buildings.contains(BuildingID::HORDE_2));
 	ASSERT_NE(fireElemental.toCreature(), nullptr);
@@ -509,7 +583,7 @@ TEST_F(NewHorizonsConfluxGrowthTest, VaultOfAshesAddsFireLineGrowthAtTheWeeklyBo
 	const auto * restoredTown = restored.getTown(townId);
 	ASSERT_NE(restoredTown, nullptr);
 	ASSERT_EQ(restoredTown->getTown()->hordeLvl.at(1), 3);
-	ASSERT_EQ(restoredTown->creatures.size(), 8u);
+	ASSERT_EQ(restoredTown->creatures.size(), 7u);
 	EXPECT_TRUE(restoredTown->hasBuilt(BuildingID::HORDE_2));
 	EXPECT_EQ(restoredTown->creatureBaseGrowth(fireElemental), 4);
 	EXPECT_EQ(restoredTown->creatureHordeGrowth(fireElemental), 2);

@@ -797,7 +797,9 @@ void BattleStacksController::stackAttacking( const StackAttackInfo & info )
 	auto spellEffect = info.spellEffect;
 	bool needsReverse = false;
 
-	const bool longWeaponMelee = attacker->hasBonusOfType(BonusType::LONG_WEAPON) && !owner.getBattle()->isMeleeAttackPossible(attacker, defender);
+	const bool longWeaponMelee = (attacker->hasBonusOfType(BonusType::LONG_WEAPON)
+		|| attacker->hasBonusOfType(BonusType::LONG_REACH))
+		&& !owner.getBattle()->isMeleeAttackPossible(attacker, defender);
 
 	if (info.indirectAttack || longWeaponMelee)
 	{

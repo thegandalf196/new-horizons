@@ -1516,7 +1516,8 @@ AttackPossibility AttackPossibility::evaluate(
 				if(i == 0 && !attackInfo.shooting && u->unitId() == strikeDefender->unitId()
 					&& retaliatorState->alive() && retaliatorState->ableToRetaliate() && !counterAttacksBlocked
 					&& (!state->battleShroudDeniesRetaliation(victimAttack) || defenderState->hasBonus(firstStrikeSelector))
-					&& !ap.attackerState->isInvincible() && !state->isLongWeaponAttack(ap.attackerState.get(), defenderState.get()))
+					&& !ap.attackerState->isInvincible() && !state->isLongWeaponAttack(ap.attackerState.get(), defenderState.get())
+					&& state->isMeleeAttackPossible(ap.attackerState.get(), defenderState.get()))
 				{
 					retaliation.emplace();
 					retaliation->attackerId = retaliatorState->unitId();

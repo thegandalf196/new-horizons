@@ -1759,7 +1759,7 @@ float blinkDirectAttackValue(const battle::Unit * attacker, const battle::Unit *
 
 	if(includeShooting && battle.battleCanShootAction(attacker, defender->getPosition()))
 		bestValue = std::max(bestValue, valueForAttackMode(true));
-	if(battle.isMeleeAttackPossible(attacker, defender) || battle.isLongWeaponAttack(attacker, defender))
+	if(battle.isMeleeAttackPossibleWithLongReach(attacker, defender) || battle.isLongWeaponAttack(attacker, defender))
 		bestValue = std::max(bestValue, valueForAttackMode(false));
 	return bestValue;
 }
@@ -3309,6 +3309,7 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 					&& !enemy->hasBonusOfType(BonusType::BLOCKS_RETALIATION)
 					&& !enemy->isInvincible()
 					&& !battle.isLongWeaponAttack(enemy, own)
+					&& battle.isMeleeAttackPossible(enemy, own)
 					&& (!battle.battleShroudDeniesRetaliation(incomingAttack)
 						|| own->hasBonus(firstStrikeSelector))
 					&& !newHorizonsOffense::hasVengeanceRetaliationBonus(own))

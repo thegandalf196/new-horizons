@@ -9,6 +9,7 @@
  */
 #pragma once
 #include "BattleHex.h"
+#include "BattleHexArray.h"
 #include "../GameConstants.h"
 #include <optional>
 
@@ -43,6 +44,14 @@ struct DLL_LINKAGE AccessibilityInfo : TAccessibilityArray
 	public:
 		bool accessible(const BattleHex & tile, const battle::Unit * stack) const; //checks for both tiles if stack is double wide
 		bool accessible(const BattleHex & tile, bool doubleWide, BattleSide side) const; //checks for both tiles if stack is double wide
+		/// Pass-through movement may traverse these blocked cells, but may not end on them.
+		bool accessibleForPassThroughTransit(const BattleHex & tile, bool doubleWide, BattleSide side) const;
+		/// Normal movement endpoint validation, ignoring hypothetical destructible-enemy forecasts.
+		bool accessibleForMovementEndpoint(const BattleHex & tile, bool doubleWide, BattleSide side) const;
+		/// True when at least one shortest straight hex ray has no blocking intermediate cell.
+		/// Occupied endpoint-footprint cells may be listed in allowedOccupiedHexes.
+		bool hasClearStraightHexRay(const BattleHex & from, const BattleHex & to,
+			const BattleHexArray & allowedOccupiedHexes = {}) const;
 		/// Magical relocation, not walking/pathfinding. Equal-distance anchors use
 		/// stable battlefield order; an entirely blocked field returns no position.
 		std::optional<BattleHex> nearestLegalPosition(const BattleHex & origin, bool doubleWide, BattleSide side) const;
@@ -51,7 +60,9 @@ struct DLL_LINKAGE AccessibilityInfo : TAccessibilityArray
 		void reserveDemonicGateFootprint(const BattleHex & position, bool doubleWide, BattleSide side);
 		bool isDemonicGateReserved(const BattleHex & tile) const;
 	private:
-		bool tileAccessibleWithGate(const BattleHex & tile, BattleSide side, uint32_t ignoredGateReservations = 0) const;
+		bool tileAccessibleWithGate(const BattleHex & tile, BattleSide side, uint32_t ignoredGateReservations = 0,
+			bool allowDestructibleEnemyTurns = true) const;
 		bool accessibleImpl(const BattleHex & tile, bool doubleWide, BattleSide side,
-			const BattleHex & ignoredReservationPosition, bool ignoredReservationDoubleWide) const;
+		const BattleHex & ignoredReservationPosition, bool ignoredReservationDoubleWide,
+			bool allowDestructibleEnemyTurns = true) const;
 };

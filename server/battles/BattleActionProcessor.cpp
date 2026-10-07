@@ -69,6 +69,16 @@ bool armorerLastStandEndedActivation(const CStack * stack)
 	return state && state->armorerLastStandEndedActivation;
 }
 
+bool isLongReachAttack(const CBattleInfoCallback & battle, const battle::Unit * attacker,
+	const battle::Unit * defender)
+{
+	// Keep the shared helper's adjacency-or-extension contract. Only attacks
+	// which are not legal ordinary melee attacks use Long Reach's no-counter
+	// behavior; adjacent attacks retain the normal retaliation baseline.
+	return !battle.isMeleeAttackPossible(attacker, defender)
+		&& battle.isMeleeAttackPossibleWithLongReach(attacker, defender);
+}
+
 void awardBattlefieldMasteryIfEligible(CGameHandler & gameHandler, const CBattleInfoCallback & battle,
 	const CStack * stack, BattlecraftMasteryAction action)
 {
@@ -1681,7 +1691,8 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 		auto projectedAttacker = stack->acquireState();
 		projectedAttacker->setPosition(attackPos);
 		const bool ordinaryAttackFromPosition = battle.isMeleeAttackPossible(projectedAttacker.get(), destinationStack)
-			|| battle.isLongWeaponAttack(projectedAttacker.get(), destinationStack);
+			|| battle.isLongWeaponAttack(projectedAttacker.get(), destinationStack)
+			|| isLongReachAttack(battle, projectedAttacker.get(), destinationStack);
 		if(!ordinaryAttackFromPosition)
 		{
 			gameHandler->complain("Attack position is not a legal melee hex. Use the explicit Skirmisher action to move and fire.");
@@ -1719,11 +1730,12 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 
 	const bool regularMeleeAttack = battle.isMeleeAttackPossible(stack, destinationStack);
 	const bool longWeaponAttack = battle.isLongWeaponAttack(stack, destinationStack);
+	const bool longReachAttack = isLongReachAttack(battle, stack, destinationStack);
 	const bool skirmisherShot = requestedSkirmisherPosition
 		&& newHorizonsArchery::canUseSkirmisher(skirmisherHero, stack)
 		&& battle.battleCanShootAction(stack, destinationTile);
 
-	if(!regularMeleeAttack && !longWeaponAttack && !skirmisherShot)
+	if(!regularMeleeAttack && !longWeaponAttack && !longReachAttack && !skirmisherShot)
 	{
 		gameHandler->complain("Attack cannot be performed!");
 		return false;
@@ -1807,7 +1819,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 		if(!attackTarget)
 			return false;
 		//first strike
-		if(i == 0 && firstStrike && openingAttackTarget->ableToRetaliate() && !stack->hasBonusOfType(BonusType::BLOCKS_RETALIATION) && !stack->isInvincible() && !longWeaponAttack)
+		if(i == 0 && firstStrike && openingAttackTarget->ableToRetaliate() && !stack->hasBonusOfType(BonusType::BLOCKS_RETALIATION) && !stack->isInvincible() && !longWeaponAttack && !longReachAttack)
 		{
 			makeAttack(battle, openingAttackTarget, stack, {.targetHex = stack->getPosition(), .first = true,
 				.counter = true, .retaliation = true});
@@ -1845,6 +1857,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 			&& !stack->hasBonusOfType(BonusType::BLOCKS_RETALIATION)
 			&& !stack->isInvincible()
 			&& !longWeaponAttack
+			&& !longReachAttack
 			&& (i == 0 && !firstStrike)
 			&& !battle.battleShroudDeniesRetaliation(BattleAttackInfo(stack, attackTarget, movementResult.distance, false))
 			&& attackTarget->ableToRetaliate())
@@ -3036,7 +3049,9 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 			auto moved = unit->acquireState();
 			moved->setPosition(position);
 			legal = (position == unit->getPosition() || battle.battleGetAvailableHexes(unit, false).contains(position))
-				&& (battle.isMeleeAttackPossible(moved.get(), target) || battle.isLongWeaponAttack(moved.get(), target));
+				&& (battle.isMeleeAttackPossible(moved.get(), target)
+					|| battle.isLongWeaponAttack(moved.get(), target)
+					|| isLongReachAttack(battle, moved.get(), target));
 		}
 		if(!legal)
 		{
@@ -3417,10 +3432,16 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 	}
 
 	const auto reachability = battle.getReachability(currentUnit);
+	const bool passThrough = reachability.params.passThrough;
+	if(!reachability.isReachable(dest)
+		|| reachability.predecessors[dest.toInt()] == BattleHex::INVALID)
+	{
+		gameHandler->complain("Given destination is not reachable!");
+		return { 0, 0, false, true };
+	}
 	BattleHexArray unitPath;
 	int pathDistance = 0;
-	if(dest.isValid() && reachability.isReachable(dest)
-		&& reachability.predecessors[dest.toInt()] != BattleHex::INVALID)
+	if(dest.isValid())
 	{
 		BattleHex pathHex = dest;
 		while(pathHex != start)
@@ -3631,12 +3652,21 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 						return occupiedHex.isValid()
 							&& reachability.params.friendlyTransit.test(static_cast<size_t>(occupiedHex.toInt()));
 					});
-					const bool crossingOccupiedStack = ghostWalk && !crossingPassingLinesStack
+					const bool crossingPassThroughStack = passThrough && !crossingPassingLinesStack
+						&& std::ranges::any_of(footprint, [&](const BattleHex & occupiedHex)
+						{
+							if(!occupiedHex.isValid())
+								return false;
+							const auto * occupant = battle.battleGetStackByPos(occupiedHex);
+							return occupant && occupant->unitId() != currentUnit->unitId();
+						});
+					const bool crossingOccupiedStack = crossingPassThroughStack
+						|| (ghostWalk && !crossingPassingLinesStack
 						&& std::ranges::any_of(footprint, [&](const BattleHex & occupiedHex)
 					{
 						return occupiedHex.isValid()
 							&& accessibility[occupiedHex.toInt()] == EAccessibility::ALIVE_STACK;
-					});
+						}));
 
 					const bool openingGateHere = openGateAtHex.isValid() && openGateAtHex == hex;
 					const bool closingGateHere = gateMayCloseAtHex.isValid() && gateMayCloseAtHex == hex;
@@ -3669,8 +3699,18 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 						return !occupiedHex.isValid() || passed.contains(occupiedHex);
 					});
 
+					// PASS_THROUGH traverses solid obstacle cells as well as stacks.
+					// Resolve any obstacle trigger at its crossed footprint without
+					// committing the unit to that non-endpoint tile.
+					if(passThrough && obstacleOnFootprint && !alreadyProcessedObstacle)
+					{
+						resumeMovementLeft = trimToLastLegalTransitEndpoint();
+						transitHazardPositions.insert(hex);
+						deferredTransitHazard = true;
+						obstacleHit = true;
+					}
 					//if we walked onto something, finalize this portion of stack movement check into obstacle
-					if(!crossingOccupiedStack && obstacleOnFootprint && !alreadyProcessedObstacle)
+					else if(!crossingOccupiedStack && obstacleOnFootprint && !alreadyProcessedObstacle)
 					{
 						if(crossingPassingLinesStack)
 						{

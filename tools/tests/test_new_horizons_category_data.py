@@ -31,8 +31,8 @@ class CreatureCategoryDataTest(unittest.TestCase):
 
     def test_complete_roster_is_explicit_not_level_inference(self):
         assignments = self.rules['creatures']
-        self.assertEqual(len(assignments), 126)
-        self.assertEqual(sum(value == 'core' for value in assignments.values()), 50)
+        self.assertEqual(len(assignments), 128)
+        self.assertEqual(sum(value == 'core' for value in assignments.values()), 52)
         self.assertEqual(sum(value == 'elite' for value in assignments.values()), 58)
         self.assertEqual(sum(value == 'champion' for value in assignments.values()), 18)
         self.assertEqual(assignments['core:swordsman'], 'core')
@@ -41,6 +41,8 @@ class CreatureCategoryDataTest(unittest.TestCase):
         self.assertEqual(assignments['core:genie'], 'elite')
         self.assertEqual(assignments['core:pikeman'], 'core')
         self.assertEqual(assignments['core:phoenix'], 'champion')
+        self.assertEqual(assignments['new-horizons:wisp'], 'core')
+        self.assertEqual(assignments['new-horizons:wispUpgrade'], 'core')
         self.assertEqual(set(self.rules['categories']), {'core', 'elite', 'champion'})
 
     def test_fortress_weekly_base_growth_is_authored_once_per_line_and_inherited_by_upgrades(self):
@@ -55,7 +57,8 @@ class CreatureCategoryDataTest(unittest.TestCase):
         }
         lines = self.rules['growthLines']
         fortress = load('config/creatures/fortress.json')
-        self.assertEqual(set(lines), {f'core:{name}' for name in expected} | {'core:pixie', 'core:sprite'})
+        expectedLines = {f'core:{name}' for name in expected}
+        self.assertTrue(expectedLines <= set(lines))
         inherited_members = set()
         for base_name, weekly_growth in expected.items():
             with self.subTest(base_creature=base_name):
@@ -68,11 +71,14 @@ class CreatureCategoryDataTest(unittest.TestCase):
                 inherited_members.update(line['members'])
         self.assertEqual(len(inherited_members), 14)
 
-    def test_conflux_core_lines_have_independent_saved_growth(self):
+    def test_conflux_core_lines_share_upgrade_growth_and_keep_wisp_pool_separate(self):
         self.assertEqual(self.rules['growthLines']['core:pixie'], {
-            'weeklyBaseGrowth': 14, 'hordeGrowthOverride': 4, 'members': ['core:pixie']})
-        self.assertEqual(self.rules['growthLines']['core:sprite'], {
-            'weeklyBaseGrowth': 10, 'members': ['core:sprite']})
+            'weeklyBaseGrowth': 14, 'hordeGrowthOverride': 4,
+            'members': ['core:pixie', 'core:sprite']})
+        self.assertNotIn('core:sprite', self.rules['growthLines'])
+        self.assertEqual(self.rules['growthLines']['new-horizons:wisp'], {
+            'weeklyBaseGrowth': 8,
+            'members': ['new-horizons:wisp', 'new-horizons:wispUpgrade']})
 
     def test_texts_are_complete_and_separate(self):
         texts = load('config/newHorizonsCreatureCategoryTexts.json')

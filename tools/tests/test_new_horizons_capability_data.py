@@ -94,6 +94,8 @@ CANONICAL_LEADERSHIP_REQUIREMENTS = {
     'core:earthElemental': 240,
     'core:magicElemental': 320,
     'core:phoenix': 650,
+    'new-horizons:wisp': 140,
+    'new-horizons:wispUpgrade': 170,
 }
 
 
@@ -183,7 +185,8 @@ class CapabilityDataTest(unittest.TestCase):
         schema = json.loads((ROOT / 'config/schemas/gameSettings.json').read_text())
         self.assertEqual(schema['properties']['heroes']['properties']['newHorizonsCapabilities']['$ref'], 'newHorizonsCapabilities.json')
         module = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())
-        self.assertEqual(module['version'], '0.14.0')
+        productVersion = json.loads((ROOT / 'config/newHorizonsVersion.json').read_text())['version']
+        self.assertEqual(module['version'], productVersion)
         self.assertEqual(module['settings']['heroes']['newHorizonsCapabilities'], self.rules)
 
 

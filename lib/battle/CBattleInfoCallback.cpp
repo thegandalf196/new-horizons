@@ -2282,6 +2282,53 @@ BattleHex CBattleInfoCallback::fromWhichHexAttack(const battle::Unit * attacker,
 		}
 	}
 
+	// Long Reach is a normal melee attack from any reachable position in range.
+	// It is independent of the direction used by legacy Long Weapon attacks.
+	if(attacker->hasBonusOfType(BonusType::LONG_REACH))
+	{
+		const auto * defender = battleGetUnitByPos(target, false);
+		if(defender && defender->alive() && !defender->isDead()
+			&& !defender->isInvincible()
+			&& !isMeleeAttackPossible(attacker, defender))
+		{
+			const auto reachability = getReachability(attacker);
+			const auto availableHexes = battleGetAvailableHexes(reachability, attacker, false);
+			const auto stoppingHexes = getStoppers(reachability.params.perspective);
+
+			auto endsOnStoppingHazard = [&](const BattleHex & position)
+			{
+				if(position == attacker->getPosition() || attacker->hasBonusOfType(BonusType::FLYING))
+					return false;
+
+				for(const auto & occupiedHex : attacker->getHexes(position))
+					if(stoppingHexes.contains(occupiedHex))
+						return true;
+
+				return false;
+			};
+
+			BattleHex bestPosition = BattleHex::INVALID;
+			uint32_t bestMovementCost = ReachabilityInfo::INFINITE_DIST;
+			for(const auto & candidate : availableHexes)
+			{
+				if(endsOnStoppingHazard(candidate)
+					|| isMeleeAttackPossible(attacker, defender, candidate, defender->getPosition())
+					|| !isMeleeAttackPossibleWithLongReach(attacker, defender, candidate, defender->getPosition()))
+					continue;
+
+				const auto movementCost = reachability.distances[candidate.toInt()];
+				if(movementCost < bestMovementCost)
+				{
+					bestPosition = candidate;
+					bestMovementCost = movementCost;
+				}
+			}
+
+			if(bestPosition.isValid())
+				return bestPosition;
+		}
+	}
+
 	bool isAttacker = attacker->unitSide() == BattleSide::ATTACKER;
 	if (attacker->doubleWide())
 	{
@@ -2452,6 +2499,20 @@ bool CBattleInfoCallback::battleCanAttackHex(const BattleHexArray & availableHex
 
 		return true;
 	};
+
+	// Keep the ordinary adjacency/Long Weapon checks below direction-specific.
+	// Long Reach is a separate non-adjacent melee option from any legal reachable
+	// attack position and does not imply the legacy Long Weapon rules.
+	if(attacker->hasBonusOfType(BonusType::LONG_REACH))
+	{
+		const battle::Unit * defender = battleGetUnitByPos(position, false);
+		if(defender && defender->alive() && !defender->isDead() && !defender->isInvincible())
+			for(const auto & attackFrom : availableHexes)
+				if(canAttackFrom(attackFrom)
+					&& !isMeleeAttackPossible(attacker, defender, attackFrom, defender->getPosition())
+					&& isMeleeAttackPossibleWithLongReach(attacker, defender, attackFrom, defender->getPosition()))
+					return true;
+	}
 
 	BattleHex fromHex = fromWhichHexAttack(attacker, position, direction);
 	if (canAttackFrom(fromHex))
@@ -2691,6 +2752,59 @@ bool CBattleInfoCallback::isMeleeAttackPossible(const battle::Unit * attacker, c
 		return false;
 
 	return !meleeAttackHexes(attacker, defender, attackerPos, defenderPos).empty();
+}
+
+bool CBattleInfoCallback::isMeleeAttackPossibleWithLongReach(const battle::Unit * attacker, const battle::Unit * defender,
+	const BattleHex & attackerPosition, const BattleHex & defenderPosition) const
+{
+	if(!attacker || !defender || defender->isInvincible())
+		return false;
+
+	if(isMeleeAttackPossible(attacker, defender, attackerPosition, defenderPosition))
+		return true;
+
+	const int64_t maximumGap = std::max<int64_t>(0, attacker->valOfBonuses(BonusType::LONG_REACH));
+	if(maximumGap == 0)
+		return false;
+
+	const BattleHex attackerPos = attackerPosition.isValid() ? attackerPosition : attacker->getPosition();
+	const BattleHex defenderPos = defenderPosition.isValid() ? defenderPosition : defender->getPosition();
+	const BattleHexArray attackerHexes = attacker->getHexes(attackerPos);
+	const BattleHexArray defenderHexes = defender->getHexes(defenderPos);
+
+	// Long Reach is measured between the closest occupied cells. An overlap is
+	// never an attack position, even if its zero distance falls within the range.
+	for(const BattleHex & attackerHex : attackerHexes)
+		if(defenderHexes.contains(attackerHex))
+			return false;
+
+	const int64_t maximumDistance = 1 + maximumGap;
+	const auto accessibility = getAccessibility();
+	BattleHexArray endpointFootprints = attackerHexes;
+	endpointFootprints.insert(defenderHexes);
+	// Forecasted positions leave the units' live footprints as stale ALIVE_STACK
+	// cells in the battle snapshot; those cells are vacated by the proposed move.
+	endpointFootprints.insert(attacker->getHexes());
+	endpointFootprints.insert(defender->getHexes());
+
+	for(const BattleHex & attackerHex : attackerHexes)
+	{
+		if(!attackerHex.isAvailable())
+			continue;
+
+		for(const BattleHex & defenderHex : defenderHexes)
+		{
+			if(!defenderHex.isAvailable())
+				continue;
+
+			const auto distance = BattleHex::getDistance(attackerHex, defenderHex);
+			if(distance > 1 && distance <= maximumDistance
+				&& accessibility.hasClearStraightHexRay(attackerHex, defenderHex, endpointFootprints))
+				return true;
+		}
+	}
+
+	return false;
 }
 
 bool CBattleInfoCallback::isLongWeaponAttack(const battle::Unit * attacker, const battle::Unit * defender) const
@@ -3844,7 +3958,7 @@ ReachabilityInfo CBattleInfoCallback::makeBFS(const AccessibilityInfo & accessib
 	std::array<int32_t, GameConstants::BFIELD_SIZE> movementCostByHex{};
 	bool hasMovementCost = false;
 	auto traversalAccessibility = accessibility;
-	if(params.ghostWalk)
+	if(params.ghostWalk && !params.passThrough)
 	{
 		// Keep the original accessibility below for endpoint validation, while
 		// letting the BFS treat every occupied creature tile as ordinary floor.
@@ -3852,7 +3966,7 @@ ReachabilityInfo CBattleInfoCallback::makeBFS(const AccessibilityInfo & accessib
 			if(tile == EAccessibility::ALIVE_STACK)
 				tile = EAccessibility::ACCESSIBLE;
 	}
-	else
+	else if(!params.passThrough)
 	{
 		// Passing Lines is narrower than Ghost Walk: only the selected friendly
 		// footprints are relaxed, and only where the final accessibility map
@@ -3863,7 +3977,12 @@ ReachabilityInfo CBattleInfoCallback::makeBFS(const AccessibilityInfo & accessib
 				traversalAccessibility[hex] = EAccessibility::ACCESSIBLE;
 	}
 	for(int hex = 0; hex < GameConstants::BFIELD_SIZE; hex++)
-		accessibleCache[hex] = traversalAccessibility.accessible(hex, params.doubleWide, params.side);
+	{
+		const BattleHex position(static_cast<si16>(hex));
+		accessibleCache[hex] = params.passThrough
+			? traversalAccessibility.accessibleForPassThroughTransit(position, params.doubleWide, params.side)
+			: traversalAccessibility.accessible(position, params.doubleWide, params.side);
+	}
 
 	for(const auto & obstacle : battleGetAllObstacles(params.perspective))
 	{
@@ -3903,7 +4022,7 @@ ReachabilityInfo CBattleInfoCallback::makeBFS(const AccessibilityInfo & accessib
 						additionalCost += movementCostByHex[hex.toInt()];
 			}
 
-			if(params.bypassEnemyStacks)
+			if(params.bypassEnemyStacks && !params.passThrough)
 			{
 				auto enemyToBypass = params.destructibleEnemyTurns.at(neighbour.toInt());
 

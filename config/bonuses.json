@@ -528,6 +528,14 @@
 	"LONG_WEAPON":
 	{
 	},
+	"PASS_THROUGH":
+	{
+		"description": "Pass-through: crosses stacks, solid obstacles and siege walls; movement must end on a legal unoccupied hex. Hazards still apply."
+	},
+	"LONG_REACH":
+	{
+		"description": "Long Reach: physical melee attacks across intervening hexes, requiring a clear direct corridor."
+	},
 
 	"PRISM_HEX_ATTACK_BREATH":
 	{

@@ -2,6 +2,24 @@
 
 Updated: 2026-10-07
 
+UP288 refreshed-handoff integration supersedes the earlier shooter-alias preview
+below. Source now provides additive Wisp/Greater Wisp definitions and the approved
+two-Core/four-Elite Conflux roster. Static Pass-through separates traversal from
+legal endpoints; Long Reach5 uses shared direct-clear-ray melee geometry for
+server validation, client selection and BattleAI candidates. Outgoing retaliation
+is blocked; incoming adjacent counters remain normal. Both forms receive9500
+basis-point magical reduction and supplied sounds. New capability IDs/save feature
+are append-only and reject lossy older writes. Native focused traversal/range,
+server action and Conflux growth/save/recruit fixtures pass18/18 after correcting
+three invalid fixture assumptions. Client/test builds pass at10 jobs. Genuine
+six-form preview VMAP export/reload passes. Exact-latest-commit Linux candidate
+delivery remains pending. Offline data gates
+pass21/21; complete Cabir/Magi private import and merge gates pass14/14. Independent
+source/resource review reports no blocker. Defer rendered/audio/AI-turn acceptance,
+siege/double-wide hazard combinations and historical eight-row save migration.
+Perk/spell/Skill/Order counts are unchanged; this slice adds creature capability
+and roster implementation, not new perk or spell identities.
+
 UP288 combined private art preview is delivered separately from normal play:
 candidate b5ec300972e3e7171b3c65e878466087ccc2dc81229d4c2fc46635c4f91b78ca,
 source96fdd26c677ac524c38bf2272dc7aa26593dbe9d. User explicitly approved

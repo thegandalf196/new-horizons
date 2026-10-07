@@ -299,6 +299,9 @@ public:
 	//hexes of the defender that the attacker can reach in melee; empty if no melee attack is possible
 	BattleHexArray meleeAttackHexes(const battle::Unit * attacker, const battle::Unit * defender, const BattleHex & attackerPos = BattleHex::INVALID, const BattleHex & defenderPos = BattleHex::INVALID) const;
 	bool isMeleeAttackPossible(const battle::Unit * attacker, const battle::Unit * defender, const BattleHex & attackerPos = BattleHex::INVALID, const BattleHex & defenderPos = BattleHex::INVALID) const;
+	/// Adjacency OR the attacker's Long Reach distance; adjacency-only callers should keep using isMeleeAttackPossible.
+	bool isMeleeAttackPossibleWithLongReach(const battle::Unit * attacker, const battle::Unit * defender,
+		const BattleHex & attackerPos = BattleHex::INVALID, const BattleHex & defenderPos = BattleHex::INVALID) const;
 	bool battleIsUnitBlocked(const battle::Unit * unit) const; //returns true if there is neighboring enemy stack
 	battle::Units battleAdjacentUnits(const battle::Unit * unit) const;
 
