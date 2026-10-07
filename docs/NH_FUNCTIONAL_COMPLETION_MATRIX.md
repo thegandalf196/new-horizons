@@ -2,6 +2,14 @@
 
 Updated: 2026-10-07
 
+UP011 diagnostic checkpoint: authoritative Leadership rejection now records
+operation, attempted count and capacity; constrained accepted-neutral joins have
+a debug-only transfer/remainder plan. No admission or gameplay semantics change.
+12-job client/test build and focused native3/3 pass in1.223s; independent review
+passes after scoped DEBUG-level fixture repair. Intermittent AI attribution stays
+open, and normal Linux delivery is unchanged. This is diagnostic evidence, not
+new specification identities:228/310 perks,61/67 combat spells,8/8 Orders.
+
 Linux delivery: immutable52867cdf4a/source1c3e854fc now delivers UP286/287 via
 the normal launcher. Independent2367-file identity/inventory audit and bounded
 20s fresh-profile headless progression through day5 pass, with verified owned

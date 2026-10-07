@@ -354,7 +354,8 @@ private:
 	void grantLearningMentorAward(const std::optional<LearningMentorAward> & award);
 
 	void getVictoryLossMessage(PlayerColor player, const EVictoryLossCheckResult & victoryLossCheckResult, InfoWindow & out) const;
-	bool validateLeadershipStack(const CArmedInstance * destination, CreatureID creature, int64_t resultingCount);
+	bool validateLeadershipStack(const CArmedInstance * destination, CreatureID creature, int64_t resultingCount,
+		const char * operation = "unspecified");
 	bool validateLeadershipArmyAddition(const CGHeroInstance * destination, const CCreatureSet & incoming);
 
 	const std::string complainNoCreatures;

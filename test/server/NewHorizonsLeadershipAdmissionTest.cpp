@@ -8,13 +8,16 @@
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <array>
+#include <mutex>
 #include <string>
 #include <tuple>
+#include <vector>
 
 #include "../../lib/GameConstants.h"
 #include "../../lib/CPlayerState.h"
 #include "../../lib/entities/artifact/CArtifact.h"
 #include "../../lib/entities/hero/CHero.h"
+#include "../../lib/logging/CLogger.h"
 #include "../../lib/mapObjects/CGCreature.h"
 #include "../../lib/mapObjects/CGDwelling.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -32,6 +35,53 @@
 
 namespace
 {
+class LeadershipAdmissionDiagnosticLogTarget final : public ILogTarget
+{
+public:
+	explicit LeadershipAdmissionDiagnosticLogTarget(
+		std::weak_ptr<std::vector<std::string>> messages, std::weak_ptr<std::mutex> messagesMutex)
+		: messages(std::move(messages)), messagesMutex(std::move(messagesMutex))
+	{}
+
+	void write(const LogRecord & record) override
+	{
+		if(record.message.find("Leadership admission rejected:") == std::string::npos)
+			return;
+		const auto capturedMessages = messages.lock();
+		const auto capturedMutex = messagesMutex.lock();
+		if(!capturedMessages || !capturedMutex)
+			return;
+		std::lock_guard lock(*capturedMutex);
+		capturedMessages->push_back(record.message);
+	}
+
+private:
+	std::weak_ptr<std::vector<std::string>> messages;
+	std::weak_ptr<std::mutex> messagesMutex;
+};
+
+class ScopedGlobalLoggerLevel final
+{
+public:
+	explicit ScopedGlobalLoggerLevel(ELogLevel::ELogLevel requestedLevel)
+		: logger(CLogger::getGlobalLogger()), previousLevel(logger->getLevel())
+	{
+		logger->setLevel(requestedLevel);
+	}
+
+	~ScopedGlobalLoggerLevel()
+	{
+		logger->setLevel(previousLevel);
+	}
+
+	ScopedGlobalLoggerLevel(const ScopedGlobalLoggerLevel &) = delete;
+	ScopedGlobalLoggerLevel & operator=(const ScopedGlobalLoggerLevel &) = delete;
+
+private:
+	CLogger * logger;
+	ELogLevel::ELogLevel previousLevel;
+};
+
 class LeadershipRecordingServer final : public IGameServer
 {
 public:
@@ -528,6 +578,11 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, OrdinaryMergeClampsToPerSlotLeadershi
 	ASSERT_TRUE(capacity);
 	ASSERT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
 	ASSERT_EQ(hero->getStackCount(SlotID(1)), 2);
+	ScopedGlobalLoggerLevel debugLogger(ELogLevel::DEBUG);
+	auto leadershipDiagnostics = std::make_shared<std::vector<std::string>>();
+	auto leadershipDiagnosticsMutex = std::make_shared<std::mutex>();
+	CLogger::getGlobalLogger()->addTarget(std::make_unique<LeadershipAdmissionDiagnosticLogTarget>(
+		leadershipDiagnostics, leadershipDiagnosticsMutex));
 
 	LeadershipRecordingServer server(gameState());
 	CGameHandler gameHandler(server, gameState());
@@ -549,6 +604,22 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, OrdinaryMergeClampsToPerSlotLeadershi
 		+ std::to_string(capacity->requirement) + " Leadership each; hero Leadership "
 		+ std::to_string(capacity->leadership) + ").";
 	EXPECT_NE(server.systemMessageTexts.back().find(expectedMessage), std::string::npos);
+	std::string rejectionDiagnostic;
+	{
+		std::lock_guard lock(*leadershipDiagnosticsMutex);
+		ASSERT_EQ(leadershipDiagnostics->size(), 1u);
+		rejectionDiagnostic = leadershipDiagnostics->front();
+	}
+	for(const auto & field : std::array<std::string, 6>{
+			 "operation=merge",
+			 "destinationObjectId=" + std::to_string(hero->id.getNum()),
+			 "destinationHeroId=" + std::to_string(hero->id.getNum()),
+			 "creatureId=" + std::to_string(pikeman.getNum()),
+			 "resultingCount=" + std::to_string(capacity->maximum + 1),
+			 "capacity=" + std::to_string(capacity->maximum)})
+	{
+		EXPECT_NE(rejectionDiagnostic.find(field), std::string::npos) << field;
+	}
 
 	// One legal unit is transferred while the excess stays in its source stack.
 	hero->setStackCount(SlotID(0), capacity->maximum - 1);
