@@ -2,6 +2,19 @@
 
 Updated: 2026-10-07
 
+UP288 combined private art preview is delivered separately from normal play:
+candidate b5ec300972e3e7171b3c65e878466087ccc2dc81229d4c2fc46635c4f91b78ca,
+source96fdd26c677ac524c38bf2272dc7aa26593dbe9d. User explicitly approved
+borrowed Wisp Core shooter rules and Cabir missing-state placeholders. Both
+forms of each creature start in the dedicated preview scenario. Twelve focused
+builder/composition tests, both map export/reload variants,12-job client build,
+independent2654-file resource audit and exact-candidate headless completion
+(exit0/day4 victory with BattleAI) pass. All32 battle groups/form generate
+selection overlays. Normal launcher/profile remain untouched; generated private
+pixels are not committed. Final Wisp rules, complete Cabir art and actual
+rendered acceptance remain open. No completed mechanic/perk/spell identity is
+added:228/310 perks,61/67 combat spells,31 Skills/93 ranks,8/8 Orders.
+
 UP288 source checkpoint: original Wisp base/upgrade art resources are installed
 with32 battle groups each, map/icon/projectile references and generated selection
 overlays. Projectiles use group0 only; group1 is reserved for the engine's mirrored
@@ -21,8 +34,10 @@ footprint readback; Verdant Prison shares its script-filtered legal ring between
 hover and runtime. Existing UP023/039/040 receipts cover these source slices;
 no tests were rerun and no new omission/identity/rendered acceptance is claimed.
 Do not duplicate completed source paths because older matrix notes describe
-their pre-implementation state. Next cross-platform checkpoint is full Windows
-run37637414435, confirmed live on8d8db3eb12e440fce51d89e8f06608a2e76d6b10.
+their pre-implementation state. Full Windows run37637414435 is now terminal
+success on8d8db3eb12e440fce51d89e8f06608a2e76d6b10 (API reconfirmed2026-10-07).
+Its downloadable package excludes the later UP288 handoffs; compile/package
+success does not establish Windows manual gameplay acceptance.
 
 UP011 diagnostic candidate8de7d468/sourceccd2edb3b passes independent2367-file
 checksum/version audit and one fresh-profile20s true-headless check through day6,
