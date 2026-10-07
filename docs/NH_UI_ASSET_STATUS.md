@@ -1,5 +1,12 @@
 # New Horizons UI and asset status register
 
+Academy Gargoyle matte review,2026-10-07: **Not done**, UP282. HoMM3 Art
+Stone revisions r6/r7 remain private and unregistered. R7 repairs erroneous torso
+holes but fails independent58x64 silhouette/scenery review in the lower-left
+region. Prompts/masters/comparisons are retained under ignored
+output/homm3/academy-gargoyle-up282; manual geometry-cleanup permission is
+pending. This is neither approved replacement art nor a delivered portrait fix.
+
 Delivery checkpoint,2026-10-07: UP286 Skill rank captions and UP287 Phantom Army
 readback/highlight are in selected Linux52867cdf4a/source1c3e854fc. Checksum/
 source audit and bounded headless startup/cleanup pass; both visual surfaces
