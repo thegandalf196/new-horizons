@@ -11,6 +11,7 @@
 
 #include "../constants/VariantIdentifier.h"
 #include "../constants/EntityIdentifiers.h"
+#include "../texts/MetaString.h"
 
 enum class ComponentType : int8_t
 {
@@ -35,17 +36,22 @@ enum class ComponentType : int8_t
 
 using ComponentSubType = VariantIdentifier<PrimarySkill, SecondarySkill, GameResID, CreatureID, ArtifactID, SpellID, BuildingTypeUniqueID, HeroTypeID, PlayerColor>;
 
-struct Component
+struct DLL_LINKAGE Component
 {
 	ComponentType type = ComponentType::NONE;
 	ComponentSubType subType;
 	std::optional<int32_t> value; // + give; - take
+	std::optional<MetaString> helpReason;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
 		h & type;
 		h & subType;
 		h & value;
+		if(h.hasFeature(Handler::Version::COMPONENT_HELP_REASON))
+			h & helpReason;
+		else if(!h.saving)
+			helpReason.reset();
 	}
 
 	Component() = default;

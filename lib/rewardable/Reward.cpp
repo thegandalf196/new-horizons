@@ -237,8 +237,35 @@ void Rewardable::Reward::loadComponents(std::vector<Component> & comps, const CG
 
 	for(const auto & entry : spells)
 	{
-		bool learnable = !h || h->canLearnSpell(entry.toEntity(LIBRARY), true);
-		comps.emplace_back(ComponentType::SPELL, entry, learnable ?	0 : -1);
+		const auto * spell = entry.toEntity(LIBRARY);
+		const auto learningStatus = h
+			? h->getSpellLearningStatus(spell, true)
+			: CGHeroInstance::SpellLearningStatus::LEARNABLE;
+		const bool learnable = learningStatus == CGHeroInstance::SpellLearningStatus::LEARNABLE;
+		Component component(ComponentType::SPELL, entry, learnable ? 0 : -1);
+
+		if(h && learningStatus == CGHeroInstance::SpellLearningStatus::INSUFFICIENT_SCHOOL)
+		{
+			const auto & rules = h->getMagicRules();
+			const auto requiredRank = newHorizonsMagic::requiredSchoolRank(rules, entry);
+			const auto schoolSkills = newHorizonsMagic::spellSchoolSkills(rules, entry);
+			if(requiredRank > 0 && !schoolSkills.empty())
+			{
+				MetaString reason;
+				reason.appendTextID("new-horizons.adventure.spellLearning.requires");
+				reason.appendTextID("core.skilllev", requiredRank - 1);
+				reason.appendTextID("new-horizons.adventure.spellLearning.proficiencyIn");
+				for(size_t index = 0; index < schoolSkills.size(); ++index)
+				{
+					if(index > 0)
+						reason.appendTextID("new-horizons.adventure.spellLearning.or");
+					reason.appendTextID(LIBRARY->skillh->getById(schoolSkills[index])->getNameTextID());
+				}
+				component.helpReason = std::move(reason);
+			}
+		}
+
+		comps.push_back(std::move(component));
 	}
 
 	for(const auto & entry : creatures)

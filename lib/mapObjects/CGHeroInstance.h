@@ -96,6 +96,8 @@ private:
 	IGameInfoCallback * getCallback() const final { return cb; }
 	bool isSpellbinderHatGrantEligible(const SpellID & spell) const;
 	void refreshCreatureLineSpecialtyBonuses(bool createIfMissing);
+	bool canLearnSpellImpl(const spells::Spell * spell, bool allowBanned,
+		bool ignoreSchoolProficiency, bool logWarnings) const;
 
 public:
 	//////////////////////////////////////////////////////////////////////////
@@ -240,7 +242,16 @@ public:
 	int32_t getListedSpellCost(const spells::Spell * sp) const;
 	int32_t getSpellCost(const spells::Spell * sp) const; //do not use during battles -> bonuses from army would be ignored
 
-	bool canLearnSpell(const spells::Spell * spell,  bool allowBanned = false) const;
+	/// School insufficiency is reported only when it is the sole failed learning gate.
+	enum class SpellLearningStatus
+	{
+		LEARNABLE,
+		INSUFFICIENT_SCHOOL,
+		UNAVAILABLE
+	};
+
+	SpellLearningStatus getSpellLearningStatus(const spells::Spell * spell, bool allowBanned = false) const;
+	bool canLearnSpell(const spells::Spell * spell, bool allowBanned = false) const;
 	bool canCastThisSpell(const spells::Spell * spell) const; //determines if this hero can cast given spell; takes into account existing spell in spellbook, existing spellbook and artifact bonuses
 
 	/// convert given position between map position (CGObjectInstance::pos) and visitable position used for hero interactions

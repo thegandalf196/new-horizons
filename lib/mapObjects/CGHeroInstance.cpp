@@ -1689,6 +1689,27 @@ bool CGHeroInstance::canCastThisSpell(const spells::Spell * spell) const
 
 bool CGHeroInstance::canLearnSpell(const spells::Spell * spell, bool allowBanned) const
 {
+	return canLearnSpellImpl(spell, allowBanned, false, true);
+}
+
+CGHeroInstance::SpellLearningStatus CGHeroInstance::getSpellLearningStatus(const spells::Spell * spell, bool allowBanned) const
+{
+	if(canLearnSpell(spell, allowBanned))
+		return SpellLearningStatus::LEARNABLE;
+
+	if(!spell || !newHorizonsMagic::rulesActive(getMagicRules())
+		|| newHorizonsMagic::hasSchoolProficiency(this, spell->getId()))
+		return SpellLearningStatus::UNAVAILABLE;
+
+	if(canLearnSpellImpl(spell, allowBanned, true, false))
+		return SpellLearningStatus::INSUFFICIENT_SCHOOL;
+
+	return SpellLearningStatus::UNAVAILABLE;
+}
+
+bool CGHeroInstance::canLearnSpellImpl(const spells::Spell * spell, bool allowBanned,
+	bool ignoreSchoolProficiency, bool logWarnings) const
+{
 	if(!spell || !newHorizonsMagic::spellAllowedByHeroRoster(getMagicRules(), spell->getId()))
 		return false;
 	if(spell->isCommonHeroSpell()
@@ -1701,7 +1722,7 @@ bool CGHeroInstance::canLearnSpell(const spells::Spell * spell, bool allowBanned
 
 	if(newHorizonsMagic::rulesActive(getMagicRules()))
 	{
-		if(!newHorizonsMagic::hasSchoolProficiency(this, spell->getId()))
+		if(!ignoreSchoolProficiency && !newHorizonsMagic::hasSchoolProficiency(this, spell->getId()))
 			return false;
 	}
 	else if(getSpellLevel(spell) > maxSpellLevel()) // legacy Wisdom gate
@@ -1712,19 +1733,22 @@ bool CGHeroInstance::canLearnSpell(const spells::Spell * spell, bool allowBanned
 
 	if(spell->isSpecial())
 	{
-		logGlobal->warn("Hero %s try to learn special spell %s", nodeName(), spell->getNameTextID());
+		if(logWarnings)
+			logGlobal->warn("Hero %s try to learn special spell %s", nodeName(), spell->getNameTextID());
 		return false;//special spells can not be learned
 	}
 
 	if(spell->isCreatureAbility())
 	{
-		logGlobal->warn("Hero %s try to learn creature spell %s", nodeName(), spell->getNameTextID());
+		if(logWarnings)
+			logGlobal->warn("Hero %s try to learn creature spell %s", nodeName(), spell->getNameTextID());
 		return false;//creature abilities can not be learned
 	}
 
 	if(!allowBanned && !cb->isAllowed(spell->getId()))
 	{
-		logGlobal->warn("Hero %s try to learn banned spell %s", nodeName(), spell->getNameTextID());
+		if(logWarnings)
+			logGlobal->warn("Hero %s try to learn banned spell %s", nodeName(), spell->getNameTextID());
 		return false;//banned spells should not be learned
 	}
 

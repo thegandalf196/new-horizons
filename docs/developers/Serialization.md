@@ -1,5 +1,20 @@
 # Serialization
 
+## Optional component help reason (spell-acquisition feedback)
+
+`COMPONENT_HELP_REASON` appends `Component::helpReason`, an optional localized
+`MetaString`, after the existing type, subtype and value. Spell reward components
+carry the actual recipient's missing School rank only when that is the sole
+learning blocker. The client appends this reason to the ordinary spell description;
+it does not infer a selected hero or change learning/casting eligibility.
+
+Older reads clear the optional field, including when reading into a reused
+Component. Older writes omit this presentation-only metadata without changing
+the source Component or its existing identity/value bytes. This omission loses
+only explanatory text, not gameplay state. Focused current/older serialization
+and recipient classification acceptance is tracked under UP280; rendered help
+and playable delivery remain separate gates.
+
 ## Primary Experience reward classification (Historian foundation)
 
 `NEW_HORIZONS_PRIMARY_EXPERIENCE_REWARD` appends the explicit Boolean

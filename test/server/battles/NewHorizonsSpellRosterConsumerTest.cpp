@@ -15,12 +15,16 @@
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/Problem.h"
+#include "../../../lib/CSkillHandler.h"
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/callback/CGameInfoCallback.h"
 #include "../../../lib/mapObjects/CGTownInstance.h"
 #include "../../../lib/entities/hero/CHero.h"
+#include "../../../lib/rewardable/Reward.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+#include "../../../lib/texts/CGeneralTextHandler.h"
+#include "../../../lib/texts/MetaString.h"
 #include "../../../lib/battle/CObstacleInstance.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/bonuses/BonusParameters.h"
@@ -590,4 +594,179 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, CommonCastGateRejectsExcludedBattleDe
 	EXPECT_EQ(defenderSideHero->battle, battle());
 	// Delegated exclusion is synthetic and invalid as a full saved core roster;
 	// actual managed-identity old-save and authoritative rejection gates remain.
+}
+
+TEST_F(NewHorizonsSpellRosterConsumerTest, SpellRewardExplainsTheRecipientsExactSchoolRequirement)
+{
+	prepareHero();
+	const auto chainLightning = spellNamed("core:chainLightning");
+	const SecondarySkill havoc(SecondarySkill::decode("new-horizons:havocMagic"));
+	const auto & rules = gameState()->getMagicRules();
+
+	ASSERT_TRUE(newHorizonsMagic::spellAllowedByHeroRoster(rules, chainLightning));
+	ASSERT_TRUE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(rules, chainLightning));
+	ASSERT_EQ(newHorizonsMagic::requiredSchoolRank(rules, chainLightning), MasteryLevel::ADVANCED);
+	ASSERT_EQ(newHorizonsMagic::spellSchoolSkills(rules, chainLightning), (std::vector<SecondarySkill>{havoc}));
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	ASSERT_EQ(attackerSideHero->getSpellLearningStatus(chainLightning.toSpell()),
+		CGHeroInstance::SpellLearningStatus::INSUFFICIENT_SCHOOL);
+
+	Rewardable::Reward reward;
+	reward.spells.push_back(chainLightning);
+	std::vector<Component> components;
+	reward.loadComponents(components, attackerSideHero);
+	ASSERT_EQ(components.size(), 1u);
+	const auto & unavailable = components.front();
+	EXPECT_EQ(unavailable.type, ComponentType::SPELL);
+	EXPECT_EQ(unavailable.subType.as<SpellID>(), chainLightning);
+	ASSERT_EQ(unavailable.value, std::optional<int32_t>(-1));
+	ASSERT_TRUE(unavailable.helpReason.has_value());
+	const std::string reason = unavailable.helpReason->toString(LIBRARY->staticTexts());
+	const std::string requiredRank = LIBRARY->generaltexth->translate("core.skilllev", MasteryLevel::ADVANCED - 1);
+	const std::string schoolName = LIBRARY->skillh->getById(havoc)->getNameTranslated();
+	EXPECT_NE(reason.find(requiredRank), std::string::npos);
+	EXPECT_NE(reason.find(schoolName), std::string::npos);
+	EXPECT_EQ(reason.find('%'), std::string::npos) << "localized reason must not retain unresolved tokens";
+
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(attackerSideHero->getSpellLearningStatus(chainLightning.toSpell()),
+		CGHeroInstance::SpellLearningStatus::LEARNABLE);
+	components.clear();
+	reward.loadComponents(components, attackerSideHero);
+	ASSERT_EQ(components.size(), 1u);
+	EXPECT_EQ(components.front().value, std::optional<int32_t>(0));
+	EXPECT_FALSE(components.front().helpReason.has_value());
+
+	attackerSideHero->addSpellToSpellbook(chainLightning);
+	EXPECT_EQ(attackerSideHero->getSpellLearningStatus(chainLightning.toSpell()),
+		CGHeroInstance::SpellLearningStatus::UNAVAILABLE);
+	components.clear();
+	reward.loadComponents(components, attackerSideHero);
+	ASSERT_EQ(components.size(), 1u);
+	EXPECT_FALSE(components.front().helpReason.has_value());
+}
+
+TEST_F(NewHorizonsSpellRosterConsumerTest, OtherSpellRewardRestrictionsAndScrollsDoNotClaimSchoolIsTheBlocker)
+{
+	prepareHero(false);
+	const auto chainLightning = spellNamed("core:chainLightning");
+	const SecondarySkill havoc(SecondarySkill::decode("new-horizons:havocMagic"));
+	ASSERT_TRUE(newHorizonsMagic::spellAllowedByHeroRoster(gameState()->getMagicRules(), chainLightning));
+	ASSERT_TRUE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(gameState()->getMagicRules(), chainLightning));
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+
+	const auto expectNoSchoolReason = [&](SpellID spell)
+	{
+		Rewardable::Reward reward;
+		reward.spells.push_back(spell);
+		std::vector<Component> components;
+		reward.loadComponents(components, attackerSideHero);
+		EXPECT_EQ(components.size(), 1u) << spell.toSpell()->getJsonKey();
+		if(components.size() == 1)
+		{
+			EXPECT_FALSE(components.front().helpReason.has_value()) << spell.toSpell()->getJsonKey();
+		}
+	};
+
+	EXPECT_EQ(attackerSideHero->getSpellLearningStatus(chainLightning.toSpell()),
+		CGHeroInstance::SpellLearningStatus::UNAVAILABLE);
+	expectNoSchoolReason(chainLightning); // no spellbook is a separate blocker
+
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	const auto special = spellNamed("core:landMineTrigger");
+	const auto creatureAbility = spellNamed("core:summonDemons");
+	ASSERT_TRUE(special.toSpell()->isSpecial());
+	ASSERT_TRUE(creatureAbility.toSpell()->isCreatureAbility());
+	for(const auto skill : newHorizonsMagic::schoolSkills(gameState()->getMagicRules()))
+		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(attackerSideHero->getSpellLearningStatus(special.toSpell()), CGHeroInstance::SpellLearningStatus::UNAVAILABLE);
+	expectNoSchoolReason(special);
+	EXPECT_EQ(attackerSideHero->getSpellLearningStatus(creatureAbility.toSpell()), CGHeroInstance::SpellLearningStatus::UNAVAILABLE);
+	expectNoSchoolReason(creatureAbility);
+
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	{
+		ScopedHeroSpellExclusion excluded(*attackerSideHero, chainLightning);
+		EXPECT_EQ(attackerSideHero->getSpellLearningStatus(chainLightning.toSpell()), CGHeroInstance::SpellLearningStatus::UNAVAILABLE);
+		expectNoSchoolReason(chainLightning);
+	}
+
+	attackerSideHero->addSpellToSpellbook(chainLightning);
+	EXPECT_EQ(attackerSideHero->getSpellLearningStatus(chainLightning.toSpell()), CGHeroInstance::SpellLearningStatus::UNAVAILABLE);
+	expectNoSchoolReason(chainLightning); // already-known is not a School-rank failure
+	attackerSideHero->removeSpellFromSpellbook(chainLightning);
+
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(gameState()->getMap().allowedSpells.count(chainLightning));
+	gameState()->getMap().allowedSpells.erase(chainLightning);
+	EXPECT_EQ(attackerSideHero->getSpellLearningStatus(chainLightning.toSpell()), CGHeroInstance::SpellLearningStatus::UNAVAILABLE);
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(attackerSideHero->getSpellLearningStatus(chainLightning.toSpell()), CGHeroInstance::SpellLearningStatus::UNAVAILABLE)
+		<< "an explicit map ban remains a blocker even when the hero also lacks School rank";
+	gameState()->getMap().allowedSpells.insert(chainLightning);
+	EXPECT_EQ(attackerSideHero->getSpellLearningStatus(chainLightning.toSpell()), CGHeroInstance::SpellLearningStatus::INSUFFICIENT_SCHOOL);
+
+	Rewardable::Reward scrollReward;
+	scrollReward.grantedScrolls.push_back(chainLightning);
+	std::vector<Component> scrollComponents;
+	scrollReward.loadComponents(scrollComponents, attackerSideHero);
+	ASSERT_EQ(scrollComponents.size(), 1u);
+	EXPECT_EQ(scrollComponents.front().type, ComponentType::SPELL);
+	EXPECT_FALSE(scrollComponents.front().helpReason.has_value());
+
+	LegacyMagicWorld legacy(*gameState());
+	ScopedHeroCallback legacyContext(*attackerSideHero, &legacy);
+	attackerSideHero->setSecSkillLevel(SecondarySkill::WISDOM, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	const auto legacySpell = spellNamed("core:armageddon");
+	EXPECT_EQ(attackerSideHero->getSpellLearningStatus(legacySpell.toSpell()), CGHeroInstance::SpellLearningStatus::LEARNABLE);
+	Rewardable::Reward legacyReward;
+	legacyReward.spells.push_back(legacySpell);
+	std::vector<Component> legacyComponents;
+	legacyReward.loadComponents(legacyComponents, attackerSideHero);
+	ASSERT_EQ(legacyComponents.size(), 1u);
+	EXPECT_EQ(legacyComponents.front().value, std::optional<int32_t>(0));
+	EXPECT_FALSE(legacyComponents.front().helpReason.has_value());
+}
+
+TEST(ComponentHelpReasonSerialization, CurrentRoundTripAndOlderReadKeepComponentIdentity)
+{
+	const auto spell = spellNamed("core:antiMagic");
+	Component original(ComponentType::SPELL, spell, -1);
+	original.helpReason = MetaString::createFromRawString("Requires Advanced Sorcery Magic.");
+
+	CMemorySerializer current;
+	current.oser.version = ESerializationVersion::CURRENT;
+	current.oser & original;
+	CMemorySerializer currentReader(current.extractBuffer());
+	currentReader.iser.version = ESerializationVersion::CURRENT;
+	Component restored;
+	currentReader.iser & restored;
+	EXPECT_EQ(restored.type, original.type);
+	EXPECT_EQ(restored.subType.as<SpellID>(), spell);
+	EXPECT_EQ(restored.value, std::optional<int32_t>(-1));
+	ASSERT_TRUE(restored.helpReason.has_value());
+	EXPECT_EQ(*restored.helpReason, *original.helpReason);
+
+	Component legacySource(ComponentType::SPELL, spell, -1);
+	CMemorySerializer legacy;
+	legacy.oser.version = ESerializationVersion::NEW_HORIZONS_PRIMARY_EXPERIENCE_REWARD;
+	legacy.oser & legacySource;
+	const auto legacyWithoutReason = legacy.extractBuffer();
+
+	CMemorySerializer legacyWriterWithReason;
+	legacyWriterWithReason.oser.version = ESerializationVersion::NEW_HORIZONS_PRIMARY_EXPERIENCE_REWARD;
+	legacyWriterWithReason.oser & original;
+	EXPECT_EQ(*original.helpReason, MetaString::createFromRawString("Requires Advanced Sorcery Magic."));
+	const auto legacyWithReason = legacyWriterWithReason.extractBuffer();
+	EXPECT_EQ(legacyWithReason, legacyWithoutReason) << "older writers omit the unsupported optional field";
+
+	CMemorySerializer legacyReader(legacyWithReason);
+	legacyReader.iser.version = ESerializationVersion::NEW_HORIZONS_PRIMARY_EXPERIENCE_REWARD;
+	Component legacyRestored;
+	legacyRestored.helpReason = MetaString::createFromRawString("stale target value");
+	legacyReader.iser & legacyRestored;
+	EXPECT_EQ(legacyRestored.type, original.type);
+	EXPECT_EQ(legacyRestored.subType.as<SpellID>(), spell);
+	EXPECT_EQ(legacyRestored.value, std::optional<int32_t>(-1));
+	EXPECT_FALSE(legacyRestored.helpReason.has_value());
 }

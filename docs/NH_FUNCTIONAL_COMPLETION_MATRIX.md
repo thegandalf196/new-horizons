@@ -2,6 +2,21 @@
 
 Updated: 2026-10-07
 
+UP280 supplies recipient-specific missing School rank in reward/teacher spell
+component help, using the same learning evaluator rather than client-selected
+hero inference. Only School-as-sole-blocker receives the explanation; existing
+eligibility, disabled values, scrolls and legacy behavior remain intact.
+Versioned optional localized Component metadata appends to normal descriptions.
+Client/test92291 and incremental6213 builds pass with12 jobs; repaired native
+3/3 passes in0.919s with zero skips/errors/disabled, plus module check and
+independent review. Initial1/3 native failure used excluded Anti-Magic; the
+repaired fixture uses active Level4 Chain Lightning with explicit eligibility
+preconditions. All failed receipts are retained. Required acquisition-feedback
+path coverage increases, not identities:228/310 perks,31 Skills/93 ranks,
+61/67 combat identities,8/8 Orders unchanged. Actual rendered tooltip, broader
+query/source execution and multilingual grammar remain Phase2; no playable
+promotion or claim that every acquisition interface is now certified.
+
 UP279 closes a concrete per-slot recruitment omission in server, both AI paths,
 normal/Quick windows and Ctrl/Alt fast-buy: later duplicate stacks and empty
 slots remain usable when the first matching stack is full. One request uses one

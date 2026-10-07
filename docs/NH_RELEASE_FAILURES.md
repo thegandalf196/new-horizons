@@ -2,6 +2,31 @@
 
 ## Purpose
 
+### 2026-10-07 — Reward tooltip helpers dereferenced a forward-declared Spell
+
+UP280 build40468 stops in Reward.cpp: requiredSchoolRank/spellSchoolSkills were
+passed spell->getId(), but this translation unit has only Spell's forward
+declaration. Both helpers already accept the reward's SpellID directly; pass
+entry instead of adding an unnecessary complete-type include or changing APIs.
+The first log remains in ignored testing/spell-reward-help-20261007.4QAy1XE6/
+build.log; retry95391 uses build-repaired.log. Do not claim validation before
+the retry and focused native fixtures finish.
+
+Retry95391 compiles the production reward fix but stops in the new test source:
+Reward needs its Rewardable namespace and the translation call needs the full
+CGeneralTextHandler declaration. Repair only that test TU; retain
+build-repaired.log and keep eligibility/serialization assertions unchanged.
+
+Rebuild92291 succeeds, but the first focused run passes1/3: the two School
+fixtures choose Anti-Magic, whose canonical profile disables hero access and
+ordinary acquisition. UNAVAILABLE is the correct result even with School
+proficiency ignored. Use an active ordinarily acquirable Level4 spell and assert
+those profile preconditions explicitly; do not weaken roster exclusion or the
+sole-blocker classifier. Retain native.log/XML; the serialization case passes.
+
+Focused incremental rebuild6213 and native-repaired rerun now pass3/3 in0.919s,
+zero skips/errors/disabled, preserving all failed receipts and assertions.
+
 ### 2026-10-07 — Portal rejection fixture left legal duplicate slots empty
 
 UP279's first focused native run passes7/8. Portal's

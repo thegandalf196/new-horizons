@@ -55,6 +55,7 @@ CComponent::CComponent(ComponentType Type, ComponentSubType Subtype, const std::
 CComponent::CComponent(const Component & c, ESize imageSize, EFonts font)
 {
 	init(c.type, c.subType, c.value, imageSize, font, "");
+	data.helpReason = c.helpReason;
 }
 
 void CComponent::init(ComponentType Type, ComponentSubType Subtype, std::optional<int32_t> Val, ESize imageSize, EFonts fnt, const std::string & ValText)
@@ -276,7 +277,12 @@ std::string CComponent::getDescription() const
 			return description;
 		}
 		case ComponentType::SPELL:
-			return LIBRARY->spells()->getById(data.subType.as<SpellID>())->getDescriptionTranslated(std::max(0, data.value.value_or(0)));
+		{
+			auto description = LIBRARY->spells()->getById(data.subType.as<SpellID>())->getDescriptionTranslated(std::max(0, data.value.value_or(0)));
+			if(data.helpReason && !data.helpReason->empty())
+				description += "\n" + data.helpReason->toString(&GAME->translator());
+			return description;
+		}
 		case ComponentType::MORALE:
 			return GAME->translator().translate("core.heroscrn", 4 - (data.value.value_or(0)>0) + (data.value.value_or(0)<0));
 		case ComponentType::LUCK:
