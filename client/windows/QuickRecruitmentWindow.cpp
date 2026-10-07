@@ -11,6 +11,8 @@
 #include "QuickRecruitmentWindow.h"
 #include "CCastleInterface.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
+#include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../CPlayerInterface.h"
 #include "../widgets/Buttons.h"
 #include "../widgets/CreatureCostBox.h"
@@ -26,6 +28,8 @@
 #include "CreaturePurchaseCard.h"
 #include "NewHorizonsCreatureCategoryUI.h"
 #include "NewHorizonsMusterUI.h"
+
+#include <limits>
 
 namespace
 {
@@ -89,6 +93,30 @@ bool hasCompleteCategoryContext(const CGTownInstance * town)
 	// Five cards fit at the compact 150px pitch on the supported 800px logical
 	// canvas. Larger custom category bands retain the legacy usable window.
 	return found && std::ranges::all_of(categoryCounts, [](size_t count){ return count <= 5; });
+}
+
+int capByLargestLeadershipSlot(const CGTownInstance * town, CreatureID creature, int requestedMaximum)
+{
+	if(!town)
+		return requestedMaximum;
+
+	const auto * army = town->getUpperArmy();
+	const auto * hero = dynamic_cast<const CGHeroInstance *>(army);
+	if(!hero)
+		return requestedMaximum;
+
+	const auto capacity = hero->getLeadershipSlotCapacity(creature);
+	if(!capacity)
+		return requestedMaximum;
+
+	const auto slot = newHorizonsHeroes::recruitmentSlot(
+		army, creature, std::numeric_limits<int32_t>::max());
+	if(!slot.validSlot())
+		return 0;
+
+	const int64_t existingCount = army->slotEmpty(slot) ? 0 : army->getStackCount(slot);
+	const int64_t headroom = std::max<int64_t>(0, static_cast<int64_t>(capacity->maximum) - existingCount);
+	return static_cast<int>(std::min<int64_t>(requestedMaximum, headroom));
 }
 
 std::vector<CreatureID> displayVariantsAtLevel(const CGTownInstance * town, size_t level, bool built)
@@ -294,6 +322,7 @@ void QuickRecruitmentWindow::maxAllCards(std::vector<std::shared_ptr<CreaturePur
 	{
 		si32 maxAmount = i->creatureOnTheCard->maxAmount(allAvailableResources);
 		vstd::amin(maxAmount, i->maxAmount);
+		maxAmount = capByLargestLeadershipSlot(town, i->creatureOnTheCard->getId(), maxAmount);
 
 		i->slider->setAmount(maxAmount);
 
@@ -321,7 +350,10 @@ void QuickRecruitmentWindow::purchaseUnits()
 		const int level = selected->recruitmentLevel;
 
 		CreatureID crid = selected->creatureOnTheCard->getId();
-		SlotID dstslot = town->getUpperArmy()->getSlotFor(crid);
+		SlotID dstslot = newHorizonsHeroes::recruitmentSlot(
+			town->getUpperArmy(), crid, selected->slider->getValue());
+		if(!dstslot.validSlot())
+			continue;
 
 		if(town->getUpperArmy()->slotEmpty(dstslot))
 		{
@@ -371,12 +403,23 @@ void QuickRecruitmentWindow::updateAllSliders()
 	{
 		si32 maxAmount = i->creatureOnTheCard->maxAmount(allAvailableResources);
 		vstd::amin(maxAmount, i->maxAmount);
+		const int maximumByLeadership = capByLargestLeadershipSlot(
+			town, i->creatureOnTheCard->getId(), i->maxAmount);
+		const int currentAmount = i->slider->getValue();
 		if(maxAmount < 0)
 			continue;
-		if(i->slider->getValue() + maxAmount < i->maxAmount)
-			i->slider->setAmount(i->slider->getValue() + maxAmount);
-		else
-			i->slider->setAmount(i->maxAmount);
+
+		const int64_t affordableTotal = static_cast<int64_t>(currentAmount) + maxAmount;
+		const int maximumTotal = static_cast<int>(std::max<int64_t>(0,
+			std::min<int64_t>({i->maxAmount, maximumByLeadership, affordableTotal})));
+		i->slider->setAmount(maximumTotal);
+		if(currentAmount > maximumTotal)
+		{
+			// Re-enter with the clamped selection so resource availability for the
+			// remaining cards is recomputed from the corrected purchase total.
+			i->slider->scrollTo(maximumTotal);
+			return;
+		}
 		i->slider->scrollTo(i->slider->getValue());
 	}
 	totalCost->createItems(GAME->interface()->cb->getResourceAmount() - allAvailableResources);

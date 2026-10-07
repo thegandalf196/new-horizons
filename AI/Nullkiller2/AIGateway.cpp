@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "../../lib/entities/hero/NewHorizonsDiplomacy.h"
 #include "../../lib/entities/hero/NewHorizonsHeroRules.h"
+#include "../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../../lib/entities/hero/NewHorizonsMasteryEffects.h"
 
 #include "../../lib/AsyncRunner.h"
@@ -1850,8 +1851,18 @@ void AIGateway::recruitCreatures(const CGDwelling * d, const CArmedInstance * re
 
 		int count = d->creatures[i].first;
 		CreatureID creID = d->creatures[i].second.back();
+		SlotID recruitmentDestination = newHorizonsHeroes::recruitmentSlot(recruiter, creID, count);
+		const auto * recruitmentHero = dynamic_cast<const CGHeroInstance *>(recruiter);
+		const auto recruitmentCapacity = recruitmentHero
+			? recruitmentHero->getLeadershipSlotCapacity(creID)
+			: std::nullopt;
+		if(recruitmentCapacity && !recruitmentDestination.validSlot())
+			vstd::amin(count, static_cast<int>(std::min<int64_t>(
+				std::max<int64_t>(0, recruitmentCapacity->maximum), std::numeric_limits<int>::max())));
+		if(count <= 0)
+			continue;
 
-		if(!recruiter->getSlotFor(creID).validSlot())
+		if(!recruitmentDestination.validSlot())
 		{
 			bool freedSlot = false;
 			for(const auto & stack : recruiter->Slots())
@@ -1870,21 +1881,27 @@ void AIGateway::recruitCreatures(const CGDwelling * d, const CArmedInstance * re
 				}
 			}
 
-			if(!freedSlot || !recruiter->getSlotFor(creID).validSlot())
+			if(!freedSlot)
 			{
 				continue;
 			}
+			recruitmentDestination = newHorizonsHeroes::recruitmentSlot(recruiter, creID, count);
+			if(!recruitmentDestination.validSlot())
+				continue;
 		}
 
 		vstd::amin(count, cc->getResourceAmount() / d->getRecruitmentCost(creID));
-		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(recruiter))
+		if(recruitmentCapacity)
 		{
-			if(const auto capacity = hero->getLeadershipSlotCapacity(creID))
-			{
-				const auto slot = recruiter->getSlotFor(creID);
-				const int alreadyPresent = slot.validSlot() ? recruiter->getStackCount(slot) : 0;
-				vstd::amin(count, std::max(0, capacity->maximum - alreadyPresent));
-			}
+			recruitmentDestination = newHorizonsHeroes::recruitmentSlot(recruiter, creID, count);
+			const int64_t alreadyPresent = recruitmentDestination.validSlot()
+				&& recruiter->hasStackAtSlot(recruitmentDestination)
+				? recruiter->getStackCount(recruitmentDestination)
+				: 0;
+			const int64_t headroom = recruitmentDestination.validSlot()
+				? std::max<int64_t>(0, static_cast<int64_t>(recruitmentCapacity->maximum) - alreadyPresent)
+				: std::max<int64_t>(0, recruitmentCapacity->maximum);
+			vstd::amin(count, static_cast<int>(std::min<int64_t>(headroom, std::numeric_limits<int>::max())));
 		}
 		if(count > 0)
 			cc->recruitCreatures(d, recruiter, creID, count, i, portalTownId);

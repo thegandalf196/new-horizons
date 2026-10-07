@@ -9,6 +9,7 @@
 */
 #include "../StdInc.h"
 #include "BuyArmy.h"
+#include "../../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/mapObjects/CGTownInstance.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
@@ -107,15 +108,30 @@ void BuyArmy::accept(AIGateway * aiGw)
 		const auto recruitCost = candidate.source->getRecruitmentCost(ci.creID);
 		if(!recruitCost.empty())
 			vstd::amin(ci.count, res / recruitCost);
-		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(town->getUpperArmy()))
+		const auto * hero = dynamic_cast<const CGHeroInstance *>(town->getUpperArmy());
+		const auto capacity = hero ? hero->getLeadershipSlotCapacity(ci.creID) : std::nullopt;
+		SlotID recruitmentDestination = newHorizonsHeroes::recruitmentSlot(
+			town->getUpperArmy(), ci.creID, ci.count);
+		auto capToRecruitmentDestination = [&]()
 		{
-			if(const auto capacity = hero->getLeadershipSlotCapacity(ci.creID))
+			if(!capacity)
+				return;
+			if(!recruitmentDestination.validSlot())
 			{
-				const auto slot = hero->getSlotFor(ci.creID);
-				const int alreadyPresent = slot.validSlot() ? hero->getStackCount(slot) : 0;
-				vstd::amin(ci.count, std::max(0, capacity->maximum - alreadyPresent));
+				const int64_t emptySlotHeadroom = std::max<int64_t>(0, capacity->maximum);
+				ci.count = static_cast<int>(std::min<int64_t>(ci.count, emptySlotHeadroom));
+				return;
 			}
-		}
+
+			const int64_t alreadyPresent = town->getUpperArmy()->hasStackAtSlot(recruitmentDestination)
+				? town->getUpperArmy()->getStackCount(recruitmentDestination)
+				: 0;
+			const int64_t headroom = std::max<int64_t>(0,
+				static_cast<int64_t>(capacity->maximum) - alreadyPresent);
+			ci.count = static_cast<int>(std::min<int64_t>(
+				ci.count, std::min<int64_t>(headroom, std::numeric_limits<int>::max())));
+		};
+		capToRecruitmentDestination();
 
 		if(ci.count)
 		{
@@ -145,7 +161,11 @@ void BuyArmy::accept(AIGateway * aiGw)
 					aiGw->cc->dismissCreature(town->getUpperArmy(), lowestValueSlot);
 				}
 			}
-			if (town->getUpperArmy()->stacksCount() < GameConstants::ARMY_SIZE || town->getUpperArmy()->getSlotFor(ci.creID).validSlot()) //It is possible we don't scrap despite we wanted to due to not scrapping stacks that fit our faction
+			recruitmentDestination = newHorizonsHeroes::recruitmentSlot(
+				town->getUpperArmy(), ci.creID, ci.count);
+			capToRecruitmentDestination();
+			if (ci.count > 0 && (town->getUpperArmy()->stacksCount() < GameConstants::ARMY_SIZE
+				|| recruitmentDestination.validSlot())) //It is possible we don't scrap despite we wanted to due to not scrapping stacks that fit our faction
 			{
 				if(candidate.portalTownId != ObjectInstanceID::NONE && !portalSourceSelectionSubmitted)
 				{

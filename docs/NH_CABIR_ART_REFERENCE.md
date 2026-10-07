@@ -6,7 +6,19 @@ This is an art-production reference, not gameplay authority. Gameplay remains in
 
 ## Selected direction
 
-The user's latest selected reference is `https://i.imgur.com/m7qkfJk.png`.
+The user's latest direction,2026-10-07, replaces the generated design: adapt
+the original Fortress shooting Lizardman, slightly shorter, with its bow removed
+and body recolored red. Use its real native animation as the motion baseline,
+not the earlier drifting generated walk poses. Purchaser archives stay read-only;
+extracted and derivative pixels remain private, outside public Git. UP281 tracks
+the standing preview and full-animation acceptance separately. Existing shooter,
+fire/Water defenses and Master Repair gameplay are not changed by this art request.
+Both Cabirs use Inferno Gog's original projectile by resource reference; match
+its shooting origin to the edited bare-hand animation without changing damage.
+
+## Superseded generated direction
+
+The user's earlier selected reference was `https://i.imgur.com/m7qkfJk.png`.
 Base: red-brown reptilian scales, orange eye, swept dark crest, long heavy curved
 tail, blue/brass Academy collar, blue apron and belt tools. Master adds gold-scale
 armor, reinforced cuffs and a blue/gold tabard. Both use bare hands and shoot fire.

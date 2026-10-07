@@ -57,6 +57,7 @@
 #include "../lib/entities/faction/CTownHandler.h"
 #include "../lib/entities/hero/CHeroHandler.h"
 #include "../lib/entities/hero/NewHorizonsHeroRules.h"
+#include "../lib/entities/hero/NewHorizonsLeadership.h"
 
 #include "../lib/filesystem/Filesystem.h"
 #include "../lib/filesystem/SavegamePath.h"
@@ -3728,7 +3729,7 @@ bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst
 			break;
 		}
 	}
-	SlotID slot = army->getSlotFor(crid);
+	SlotID slot = newHorizonsHeroes::recruitmentSlot(army, crid, cram);
 	const auto costPerCreature = dwelling->getRecruitmentCost(crid);
 	const auto & resources = gameInfo().getPlayerState(army->tempOwner)->resources;
 	int32_t maxAffordableAmount = std::numeric_limits<int32_t>::max();
@@ -3747,7 +3748,9 @@ bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst
 	}
 	if(!warMachine)
 	{
-		const int recruitedStackSize = army->hasStackAtSlot(slot) ? army->getStackCount(slot) + cram : cram;
+		const int64_t recruitedStackSize = army->hasStackAtSlot(slot)
+			? static_cast<int64_t>(army->getStackCount(slot)) + static_cast<int64_t>(cram)
+			: static_cast<int64_t>(cram);
 		if(!validateLeadershipStack(army, crid, recruitedStackSize))
 			return false;
 	}

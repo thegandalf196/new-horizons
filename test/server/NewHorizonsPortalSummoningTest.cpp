@@ -250,15 +250,33 @@ TEST_F(NewHorizonsPortalSummoningTest, InsufficientFundsAndLeadershipRemainAtomi
 	ResourceSet sufficientResources = unitCost * 2;
 	playerState->resources = sufficientResources;
 	hero->clearSlots();
-	const auto capacity = hero->getLeadershipSlotCapacity(griffin);
-	ASSERT_TRUE(capacity);
-	ASSERT_GT(capacity->maximum, 0);
-	ASSERT_TRUE(hero->setCreature(SlotID(0), griffin, capacity->maximum));
+	const std::array<CreatureID, GameConstants::ARMY_SIZE> fullArmyCreatures = {
+		griffin,
+		pikeman,
+		creature("core:archer"),
+		creature("core:swordsman"),
+		creature("core:monk"),
+		creature("core:cavalier"),
+		creature("core:angel")};
+	std::array<int32_t, GameConstants::ARMY_SIZE> fullArmyCounts{};
+	for(size_t slot = 0; slot < fullArmyCreatures.size(); ++slot)
+	{
+		const auto slotCapacity = hero->getLeadershipSlotCapacity(fullArmyCreatures[slot]);
+		ASSERT_TRUE(slotCapacity);
+		ASSERT_GT(slotCapacity->maximum, 0);
+		ASSERT_TRUE(hero->setCreature(SlotID(slot), fullArmyCreatures[slot], slotCapacity->maximum));
+		fullArmyCounts[slot] = slotCapacity->maximum;
+	}
+	ASSERT_EQ(hero->stacksCount(), GameConstants::ARMY_SIZE);
 	const auto fullArmyResources = playerState->resources;
 	EXPECT_FALSE(handler.recruitCreatures(source->id, hero->id, griffin, 1, 0, PLAYER, town->id));
 	EXPECT_EQ(source->creatures, initialStock);
 	EXPECT_EQ(playerState->resources, fullArmyResources);
-	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
+	for(size_t slot = 0; slot < fullArmyCounts.size(); ++slot)
+	{
+		EXPECT_EQ(hero->getCreature(SlotID(slot)), fullArmyCreatures[slot].toCreature());
+		EXPECT_EQ(hero->getStackCount(SlotID(slot)), fullArmyCounts[slot]);
+	}
 }
 
 TEST_F(NewHorizonsPortalSummoningTest, SelectedLinkAndWireContextRoundTripWithLegacyDefaultsAndLossGuards)

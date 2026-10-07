@@ -10,6 +10,8 @@
 #include "StdInc.h"
 #include "NewHorizonsLeadership.h"
 
+#include "../../mapObjects/CGHeroInstance.h"
+
 #include <algorithm>
 #include <stdexcept>
 
@@ -41,5 +43,59 @@ int leadershipMovement(int unscaledMovement, int movementPercent)
 	if(unscaledMovement < 0 || movementPercent <= 0 || movementPercent > 100)
 		throw std::invalid_argument("Invalid New Horizons leadership movement inputs");
 	return static_cast<int>(int64_t(unscaledMovement) * movementPercent / 100);
+}
+
+SlotID recruitmentSlot(const CArmedInstance * army, CreatureID creature, int64_t requestedAmount)
+{
+	if(!army)
+		return SlotID();
+
+	const auto * creatureType = creature.toCreature();
+	if(!creatureType)
+		return SlotID();
+
+	const SlotID legacySlot = army->getSlotFor(creatureType);
+	const auto * hero = dynamic_cast<const CGHeroInstance *>(army);
+	if(!hero || requestedAmount <= 0)
+		return legacySlot;
+
+	const auto capacity = hero->getLeadershipSlotCapacity(creature);
+	if(!capacity)
+		return legacySlot;
+
+	const int64_t maximumStackCount = std::max<int64_t>(0, capacity->maximum);
+	SlotID bestSlot;
+	int64_t bestHeadroom = -1;
+
+	// Matching stacks take priority when they can accept the whole request;
+	// iteration order preserves the first suitable stack. Otherwise remember
+	// the greatest headroom, with matching stacks winning ties over empty slots.
+	for(const auto slot : army->getCreatureSlots(creatureType, SlotID()))
+	{
+		const int64_t currentCount = army->getStackCount(slot);
+		const int64_t headroom = std::max<int64_t>(0, maximumStackCount - currentCount);
+		if(headroom >= requestedAmount)
+			return slot;
+		if(headroom > bestHeadroom)
+		{
+			bestSlot = slot;
+			bestHeadroom = headroom;
+		}
+	}
+
+	for(const auto slot : army->getFreeSlots())
+	{
+		if(maximumStackCount >= requestedAmount)
+			return slot;
+		if(maximumStackCount > bestHeadroom)
+		{
+			bestSlot = slot;
+			bestHeadroom = maximumStackCount;
+		}
+	}
+
+	// A full matching slot is deliberately retained as a fallback so the
+	// authoritative validation still rejects an oversized direct request.
+	return bestHeadroom >= 0 ? bestSlot : legacySlot;
 }
 }

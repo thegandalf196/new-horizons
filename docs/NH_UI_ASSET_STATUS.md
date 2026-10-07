@@ -1,5 +1,28 @@
 # New Horizons UI and asset status register
 
+Quick-spell pressed underlay,2026-10-07: **Provisional** source correction,
+UP283. Stateful SPELLINT base used Summon Boat frame1 when pressed underneath
+the selected id+1 symbol. Every state now retains neutral0; selected overlay,
+press shift, cast callback and disabled overlay remain. Client builds, source
+state checks2/2 and review pass; actual held-button rendering/playable delivery
+are pending. No new artwork or normal Linux promotion.
+
+Academy portrait follow-up,2026-10-07: **Not done** Gargoyle/Obsidian large
+portrait composition (frames32/33, UP252/282), despite correct generic faction
+background bindings. Arch Mage compact recruitment small icon is **Provisional**:
+CPRSMALL37/NH_ArchMageGreySmall matches source and existing previews, but the
+user reports non-grey pixels there. Inspect that actual role; battle CAMAGE
+palette refinements cannot establish correctness of the small portrait.
+
+Superseding Cabir direction,2026-10-07: **Not done**, UP281. The user rejects
+the generated creature and requests the original Fortress Lizardman, slightly
+shorter, red and without its bow. Preserve its existing native animation; both
+Cabirs retain Gog's CPRGOGX.DEF projectile, already referenced in production.
+Earlier generated masters/rigs remain private references, not the replacement.
+Purchaser-derived source/edited pixels stay outside public Git; original archives
+remain read-only. Standing appearance, complete animation and in-game acceptance
+are separate gates; no new launcher promotion is implied by this direction.
+
 Reference correction,2026-10-07: the two recent proportioned-contact-b studies
 are **Provisional, superseded identity studies**. They mistakenly use the older
 lava/trousers v3 design instead of the selected m7qkfJk red-scaled Academy

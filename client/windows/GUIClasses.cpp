@@ -57,6 +57,7 @@
 #include "../../lib/entities/faction/CTownHandler.h"
 #include "../../lib/entities/hero/CHero.h"
 #include "../../lib/entities/hero/CHeroClass.h"
+#include "../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../../lib/entities/ResourceTypeHandler.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/mapObjectConstructors/CObjectClassesHandler.h"
@@ -345,9 +346,15 @@ void CRecruitmentWindow::select(std::shared_ptr<CCreatureCard> card)
 		{
 			if(const auto capacity = hero->getLeadershipSlotCapacity(card->creature->getId()))
 			{
-				const auto slot = dst->getSlotFor(card->creature->getId());
-				const int alreadyPresent = slot.validSlot() ? dst->getStackCount(slot) : 0;
-				vstd::amin(maxAmount, std::max(0, capacity->maximum - alreadyPresent));
+				const auto slot = newHorizonsHeroes::recruitmentSlot(
+					dst, card->creature->getId(), std::numeric_limits<int32_t>::max());
+				if(slot.validSlot())
+				{
+					const int alreadyPresent = dst->getStackCount(slot);
+					vstd::amin(maxAmount, std::max(0, capacity->maximum - alreadyPresent));
+				}
+				else
+					maxAmount = 0;
 				leadershipLimit->setText("Leadership: " + std::to_string(capacity->maximum)
 					+ " max in slot (" + std::to_string(capacity->requirement) + " each)");
 			}
@@ -409,7 +416,7 @@ void CRecruitmentWindow::updateLeadershipProposalHelp(int proposedCount)
 		return;
 	}
 
-	const auto slot = dst->getSlotFor(selected->creature->getId());
+	const auto slot = newHorizonsHeroes::recruitmentSlot(dst, selected->creature->getId(), proposedCount);
 	const int existing = slot.validSlot() ? dst->getStackCount(slot) : 0;
 	const auto text = UIHelper::getNewHorizonsLeadershipProposalText(*capacity, existing, proposedCount);
 	leadershipHelp->text = text;
@@ -428,7 +435,8 @@ void CRecruitmentWindow::close()
 void CRecruitmentWindow::buy()
 {
 	CreatureID crid =  selected->creature->getId();
-	SlotID dstslot = dst->getSlotFor(crid);
+	const int requestedCount = slider->getValue();
+	SlotID dstslot = newHorizonsHeroes::recruitmentSlot(dst, crid, requestedCount);
 	const CGHeroInstance * hero = dynamic_cast<const CGHeroInstance *>(dst);
 	if(hero)
 	{

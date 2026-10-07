@@ -183,6 +183,8 @@ void QuickSpellPanel::create()
 		};
 
 		auto button = std::make_shared<CButton>(Point(2, 7 + 50 * i), AnimationPath::builtin("spellint"), CButton::tooltip(hoverText), callback);
+		// Keep the button base on the neutral frame in every state; the spell icon is the overlay.
+		button->setImageOrder(0, 0, 0, 0);
 		button->setOverlay(std::make_shared<CAnimImage>(AnimationPath::builtin("spellint"), id != SpellID::NONE ? id.num + 1 : 0));
 		button->addPopupCallback([i, context, heroID](){
 			const auto current = currentQuickSpellContext(context, heroID);

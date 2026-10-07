@@ -2,6 +2,22 @@
 
 Updated: 2026-10-07
 
+UP279 closes a concrete per-slot recruitment omission in server, both AI paths,
+normal/Quick windows and Ctrl/Alt fast-buy: later duplicate stacks and empty
+slots remain usable when the first matching stack is full. One request uses one
+slot; authoritative oversize rejection and legacy/nonhero routing remain intact.
+Client/test build47394/final41564 pass with12 jobs; focused native8/8 pass in
+2.563s, zero skips/errors/disabled. The related Portal fixture was corrected from
+one full slot/six empty to genuinely full per-slot capacity; failed receipt kept.
+UP283 corrects QuickSpellPanel's pressed underlay (SPELLINT frame1=Summon Boat)
+by retaining neutral0 in every state. Source guard2/2 and review pass, but actual
+pressed rendering is not tested. No new mechanic/perk identities:228/310 active
+perks,31 Skills/93 ranks,61/67 combat identities and8/8 Orders unchanged.
+Full AI/UI execution, concurrent-resource/multi-card interactions and playable
+delivery remain Phase2/separate gates. Cabir now follows UP281's original
+Lizardman adaptation; a private71px standing draft is not full animation coverage.
+UP282's reported Gargoyle/Arch Mage recruitment views remain open.
+
 Bounded growth-building AI audit2026-10-07 identifies a concrete missing minimum
 hook: Library construction is considered, but its Mage/Arch Mage production
 value was absent. UP278 implements a shared fixed-growth contribution and actual

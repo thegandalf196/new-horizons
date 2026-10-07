@@ -70,6 +70,7 @@
 #include "../../lib/entities/creature/NewHorizonsMusterRules.h"
 #include "../../lib/entities/ResourceTypeHandler.h"
 #include "../../lib/entities/hero/NewHorizonsCapabilityRules.h"
+#include "../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../../lib/filesystem/Filesystem.h"
 #include "../../lib/json/JsonNode.h"
 #include "../../lib/mapObjects/CGDwelling.h"
@@ -2210,6 +2211,27 @@ void CCreaInfo::clickPressed(const Point & cursorPosition)
 			auto creatureId = ENGINE->isKeyboardCtrlDown() ? town->creatures[i].second.back() : town->creatures[i].second.front();
 			si32 maxAmount = creatureId.toCreature()->maxAmount(GAME->interface()->cb->getResourceAmount());
 			vstd::amin(maxAmount, amount);
+
+			const auto * destination = town->getUpperArmy();
+			if(const auto * hero = dynamic_cast<const CGHeroInstance *>(destination))
+			{
+				if(const auto capacity = hero->getLeadershipSlotCapacity(creatureId))
+				{
+					const auto slot = newHorizonsHeroes::recruitmentSlot(
+						destination, creatureId, std::numeric_limits<int32_t>::max());
+					if(slot.validSlot())
+					{
+						const int64_t existingCount = destination->slotEmpty(slot)
+							? 0
+							: destination->getStackCount(slot);
+						const int64_t headroom = std::max<int64_t>(0,
+							static_cast<int64_t>(capacity->maximum) - existingCount);
+						maxAmount = static_cast<si32>(std::min<int64_t>(maxAmount, headroom));
+					}
+					else
+						maxAmount = 0;
+				}
+			}
 
 			if(maxAmount > 0)
 				GAME->interface()->cb->recruitCreatures(town, town->getUpperArmy(), creatureId, maxAmount, level);

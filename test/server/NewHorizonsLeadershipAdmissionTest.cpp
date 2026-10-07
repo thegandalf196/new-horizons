@@ -7,6 +7,7 @@
 
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <array>
 #include <string>
 #include <tuple>
 
@@ -149,6 +150,33 @@ protected:
     {
         return FactionID(FactionID::decode(id));
     }
+
+    bool startRecruitmentAdmissionMap()
+    {
+        const PlayerColor player(0);
+        const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+        TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+        builder.size(36, false).playerActive(player)
+            .town({12, 12, 0}, faction("core:castle"), player)
+            .hero({5, 5, 0}, heroType("core:christian"), player);
+        startWithMap(std::move(builder));
+
+        recruitmentTown = findFirst<CGTownInstance>();
+        recruitmentHero = findHeroByOwner(player);
+        if(!recruitmentTown || !recruitmentHero)
+            return false;
+
+        recruitmentHero->clearSlots();
+        recruitmentTown->addBuilding(BuildingID::getDwellingFromLevel(0, 0));
+        recruitmentTown->creatures = {{10, {pikeman}}};
+        recruitmentTown->setVisitingHero(recruitmentHero);
+        gameState()->getPlayerState(player)->resources[EGameResID::GOLD] = 100000;
+        gameState()->actingPlayers.insert(player);
+        return true;
+    }
+
+    CGTownInstance * recruitmentTown = nullptr;
+    CGHeroInstance * recruitmentHero = nullptr;
 };
 
 class LegacyLeadershipAdmissionTest : public NewHorizonsLeadershipAdmissionTest
@@ -558,6 +586,234 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, OrdinaryMergeClampsToPerSlotLeadershi
 	ASSERT_EQ(server.responses.size(), 1u);
 	EXPECT_TRUE(server.responses.back().result);
 	EXPECT_EQ(server.systemMessages, 0);
+}
+
+TEST_F(NewHorizonsLeadershipAdmissionTest, RecruitmentUsesLaterMatchingSlotWhenFirstDuplicateIsFull)
+{
+	ASSERT_TRUE(startRecruitmentAdmissionMap());
+	const PlayerColor player(0);
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	auto * hero = recruitmentHero;
+	auto * town = recruitmentTown;
+	const auto capacity = hero->getLeadershipSlotCapacity(pikeman);
+	ASSERT_TRUE(capacity);
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, capacity->maximum));
+	ASSERT_TRUE(hero->setCreature(SlotID(1), pikeman, 2));
+	ASSERT_GT(town->getRecruitmentCost(pikeman)[EGameResID::GOLD], 0);
+	const auto stockBefore = town->creatures.front().first;
+	const auto unitCost = town->getRecruitmentCost(pikeman);
+	const auto resourcesBefore = gameState()->getPlayerState(player)->resources;
+
+	LeadershipRecordingServer server(gameState());
+	CGameHandler handler(server, gameState());
+	RecruitCreatures request(town->id, hero->id, pikeman, 3, 0);
+	request.player = player;
+	request.requestID = 501;
+	handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, request);
+
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_TRUE(server.responses.back().result);
+	EXPECT_EQ(server.responses.back().requestID, request.requestID);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
+	EXPECT_EQ(hero->getStackCount(SlotID(1)), 5);
+	EXPECT_EQ(town->creatures.front().first, stockBefore - 3);
+	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resourcesBefore - unitCost * 3);
+}
+
+TEST_F(NewHorizonsLeadershipAdmissionTest, RecruitmentFallsBackToEmptySlotWhenAllMatchingStacksAreFull)
+{
+	ASSERT_TRUE(startRecruitmentAdmissionMap());
+	const PlayerColor player(0);
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	auto * hero = recruitmentHero;
+	auto * town = recruitmentTown;
+	const auto capacity = hero->getLeadershipSlotCapacity(pikeman);
+	ASSERT_TRUE(capacity);
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, capacity->maximum));
+	ASSERT_TRUE(hero->setCreature(SlotID(1), pikeman, capacity->maximum));
+	ASSERT_EQ(hero->stacksCount(), 2);
+	const auto stockBefore = town->creatures.front().first;
+	const auto unitCost = town->getRecruitmentCost(pikeman);
+	const auto resourcesBefore = gameState()->getPlayerState(player)->resources;
+
+	LeadershipRecordingServer server(gameState());
+	CGameHandler handler(server, gameState());
+	RecruitCreatures request(town->id, hero->id, pikeman, 2, 0);
+	request.player = player;
+	request.requestID = 502;
+	handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, request);
+
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_TRUE(server.responses.back().result);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
+	EXPECT_EQ(hero->getStackCount(SlotID(1)), capacity->maximum);
+	EXPECT_EQ(hero->getStackCount(SlotID(2)), 2);
+	EXPECT_EQ(town->creatures.front().first, stockBefore - 2);
+	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resourcesBefore - unitCost * 2);
+}
+
+TEST_F(NewHorizonsLeadershipAdmissionTest, NoRoomAndOversizedExactRecruitmentRejectAtomically)
+{
+	ASSERT_TRUE(startRecruitmentAdmissionMap());
+	const PlayerColor player(0);
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	const std::array<CreatureID, 5> otherCreatures = {
+		CreatureID(CreatureID::decode("core:archer")),
+		CreatureID(CreatureID::decode("core:swordsman")),
+		CreatureID(CreatureID::decode("core:griffin")),
+		CreatureID(CreatureID::decode("core:monk")),
+		CreatureID(CreatureID::decode("core:cavalier"))
+	};
+	auto * hero = recruitmentHero;
+	auto * town = recruitmentTown;
+	const auto capacity = hero->getLeadershipSlotCapacity(pikeman);
+	ASSERT_TRUE(capacity);
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, capacity->maximum));
+	ASSERT_TRUE(hero->setCreature(SlotID(1), pikeman, capacity->maximum));
+	for(size_t index = 0; index < otherCreatures.size(); ++index)
+		ASSERT_TRUE(hero->setCreature(SlotID(index + 2), otherCreatures[index], 1));
+	ASSERT_EQ(hero->stacksCount(), GameConstants::ARMY_SIZE);
+	const auto fullArmy = std::array<int32_t, GameConstants::ARMY_SIZE>{
+		hero->getStackCount(SlotID(0)), hero->getStackCount(SlotID(1)),
+		hero->getStackCount(SlotID(2)), hero->getStackCount(SlotID(3)),
+		hero->getStackCount(SlotID(4)), hero->getStackCount(SlotID(5)),
+		hero->getStackCount(SlotID(6))};
+
+	LeadershipRecordingServer server(gameState());
+	CGameHandler handler(server, gameState());
+	const auto resourcesBefore = gameState()->getPlayerState(player)->resources;
+	const auto stockBefore = town->creatures.front().first;
+	const auto submit = [&](int32_t amount, uint32_t requestId)
+	{
+		RecruitCreatures request(town->id, hero->id, pikeman, amount, 0);
+		request.player = player;
+		request.requestID = requestId;
+		handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, request);
+	};
+
+	submit(1, 503);
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_FALSE(server.responses.back().result);
+	for(size_t slot = 0; slot < fullArmy.size(); ++slot)
+		EXPECT_EQ(hero->getStackCount(SlotID(slot)), fullArmy[slot]);
+	EXPECT_EQ(town->creatures.front().first, stockBefore);
+	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resourcesBefore);
+
+	server.responses.clear();
+	hero->setStackCount(SlotID(0), capacity->maximum - 1);
+	const auto partiallyAvailableArmy = std::array<int32_t, GameConstants::ARMY_SIZE>{
+		hero->getStackCount(SlotID(0)), hero->getStackCount(SlotID(1)),
+		hero->getStackCount(SlotID(2)), hero->getStackCount(SlotID(3)),
+		hero->getStackCount(SlotID(4)), hero->getStackCount(SlotID(5)),
+		hero->getStackCount(SlotID(6))};
+	submit(2, 504); // exact request exceeds the one creature of remaining capacity
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_FALSE(server.responses.back().result);
+	for(size_t slot = 0; slot < partiallyAvailableArmy.size(); ++slot)
+		EXPECT_EQ(hero->getStackCount(SlotID(slot)), partiallyAvailableArmy[slot]);
+	EXPECT_EQ(town->creatures.front().first, stockBefore);
+	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resourcesBefore);
+}
+
+TEST_F(NewHorizonsLeadershipAdmissionTest, RecruitmentRejectsWhenNoMatchingOrEmptySlotExists)
+{
+	ASSERT_TRUE(startRecruitmentAdmissionMap());
+	const PlayerColor player(0);
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	const std::array<CreatureID, GameConstants::ARMY_SIZE> armyCreatures = {
+		CreatureID(CreatureID::decode("core:archer")),
+		CreatureID(CreatureID::decode("core:swordsman")),
+		CreatureID(CreatureID::decode("core:griffin")),
+		CreatureID(CreatureID::decode("core:monk")),
+		CreatureID(CreatureID::decode("core:cavalier")),
+		CreatureID(CreatureID::decode("core:angel")),
+		CreatureID(CreatureID::decode("core:centaur"))};
+	auto * hero = recruitmentHero;
+	auto * town = recruitmentTown;
+	hero->clearSlots();
+	for(size_t slot = 0; slot < armyCreatures.size(); ++slot)
+		ASSERT_TRUE(hero->setCreature(SlotID(slot), armyCreatures[slot], 1));
+	ASSERT_EQ(hero->stacksCount(), GameConstants::ARMY_SIZE);
+	EXPECT_FALSE(hero->getSlotFor(pikeman).validSlot());
+
+	std::array<int32_t, GameConstants::ARMY_SIZE> armyBefore{};
+	for(size_t slot = 0; slot < armyBefore.size(); ++slot)
+		armyBefore[slot] = hero->getStackCount(SlotID(slot));
+	const auto stockBefore = town->creatures.front().first;
+	const auto resourcesBefore = gameState()->getPlayerState(player)->resources;
+
+	LeadershipRecordingServer server(gameState());
+	CGameHandler handler(server, gameState());
+	RecruitCreatures request(town->id, hero->id, pikeman, 1, 0);
+	request.player = player;
+	request.requestID = 506;
+	handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, request);
+
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_FALSE(server.responses.back().result);
+	for(size_t slot = 0; slot < armyBefore.size(); ++slot)
+		EXPECT_EQ(hero->getStackCount(SlotID(slot)), armyBefore[slot]);
+	EXPECT_EQ(town->creatures.front().first, stockBefore);
+	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resourcesBefore);
+}
+
+TEST_F(NewHorizonsLeadershipAdmissionTest, UncappedTownArmyRecruitmentKeepsFirstDuplicateStack)
+{
+	ASSERT_TRUE(startRecruitmentAdmissionMap());
+	const PlayerColor player(0);
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	auto * town = recruitmentTown;
+	// Direct town-army recruitment is the active-profile nonhero control. With
+	// no hero visiting, it retains the engine's legacy first-matching-slot rule.
+	town->setVisitingHero(nullptr);
+	ASSERT_TRUE(town->setCreature(SlotID(0), pikeman, 17));
+	ASSERT_TRUE(town->setCreature(SlotID(1), pikeman, 2));
+	const auto stockBefore = town->creatures.front().first;
+	const auto unitCost = town->getRecruitmentCost(pikeman);
+	const auto resourcesBefore = gameState()->getPlayerState(player)->resources;
+
+	LeadershipRecordingServer server(gameState());
+	CGameHandler handler(server, gameState());
+	RecruitCreatures request(town->id, town->id, pikeman, 1, 0);
+	request.player = player;
+	request.requestID = 507;
+	handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, request);
+
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_TRUE(server.responses.back().result);
+	EXPECT_EQ(town->getStackCount(SlotID(0)), 18);
+	EXPECT_EQ(town->getStackCount(SlotID(1)), 2);
+	EXPECT_EQ(town->creatures.front().first, stockBefore - 1);
+	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resourcesBefore - unitCost);
+}
+
+TEST_F(LegacyLeadershipAdmissionTest, LegacyRecruitmentRetainsFirstMatchingSlotBehavior)
+{
+	ASSERT_TRUE(startRecruitmentAdmissionMap());
+	const PlayerColor player(0);
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	auto * hero = recruitmentHero;
+	auto * town = recruitmentTown;
+	EXPECT_FALSE(hero->getLeadershipSlotCapacity(pikeman));
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, 17));
+	ASSERT_TRUE(hero->setCreature(SlotID(1), pikeman, 2));
+	const auto stockBefore = town->creatures.front().first;
+	const auto unitCost = town->getRecruitmentCost(pikeman);
+	const auto resourcesBefore = gameState()->getPlayerState(player)->resources;
+
+	LeadershipRecordingServer server(gameState());
+	CGameHandler handler(server, gameState());
+	RecruitCreatures request(town->id, hero->id, pikeman, 1, 0);
+	request.player = player;
+	request.requestID = 505;
+	handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, request);
+
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_TRUE(server.responses.back().result);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), 18);
+	EXPECT_EQ(hero->getStackCount(SlotID(1)), 2);
+	EXPECT_EQ(town->creatures.front().first, stockBefore - 1);
+	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resourcesBefore - unitCost);
 }
 
 TEST_F(NewHorizonsLeadershipAdmissionTest, ExactOneCreatureMergeIntoOccupiedGarrisonCannotEmptyHero)

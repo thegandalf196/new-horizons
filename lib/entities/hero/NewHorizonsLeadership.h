@@ -10,7 +10,10 @@
 #pragma once
 
 #include "../../GameConstants.h"
+#include "../../constants/EntityIdentifiers.h"
 #include <cstdint>
+
+class CArmedInstance;
 
 namespace newHorizonsHeroes
 {
@@ -42,4 +45,9 @@ DLL_LINKAGE LeadershipCapacity leadershipCapacity(int classBase, int classPerLev
 /// this helper: Leadership is per-stack capacity, never a shared movement
 /// budget. Changing armies must not award fresh movement points.
 DLL_LINKAGE int leadershipMovement(int unscaledMovement, int movementPercent);
+
+/// Select the single recruitment destination for one request without splitting
+/// that request across stacks. Uncapped/legacy armies preserve getSlotFor.
+DLL_LINKAGE SlotID recruitmentSlot(const CArmedInstance * army, CreatureID creature,
+	int64_t requestedAmount = 1);
 }

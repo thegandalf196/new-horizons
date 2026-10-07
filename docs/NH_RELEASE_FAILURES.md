@@ -2,6 +2,20 @@
 
 ## Purpose
 
+### 2026-10-07 — Portal rejection fixture left legal duplicate slots empty
+
+UP279's first focused native run passes7/8. Portal's
+InsufficientFundsAndLeadershipRemainAtomic setup fills only the first matching
+stack and leaves six empty slots; the new shared per-slot selector correctly
+recruits into an empty slot, so its old rejection/unchanged-resource assertions
+fail. Make the rejection setup genuinely full, filling all seven slots to their
+individual Leadership caps and asserting every creature/count, stock and Gold
+remain unchanged. Do not restore first-match-only routing or weaken the command
+validation to satisfy an obsolete fixture assumption. Retain native.log/XML
+under ignored testing/recruitment-slots-20261007.XjTSpmCN; final rerun has separate
+native-repaired receipts. This is a related fixture correction, not an AI turn
+or rendered UI acceptance result.
+
 ### 2026-10-07 — Historian AI fixture must qualify Nullkiller's role enum
 
 UP277 test build93107 fails because HeroRole belongs to NK2AI. Root qualifies
