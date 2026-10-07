@@ -2,6 +2,21 @@
 
 ## Purpose
 
+### 2026-10-07 — Reflection fixture assumed zero casualties
+
+UP266's first three-case native run passes the non-reflecting and fully
+Guardian-absorbed controls but fails the ordinary reflection fixture's arbitrary
+zero-casualty assertion: the actual resolved injury kills four Angels. Its exact
+attributed log and HP-loss assertions already pass. Capture the pre-hit creature
+count and compare packet casualties with actual count loss instead; retain the
+nonzero result, exact log, names and HP checks. The failed principal log/XML are
+preserved in the isolated bulwark-log-20261007.DFu6TN2q test profile. This is a
+fixture correction, not a gameplay or damage-formula change.
+The repaired five-case focused run passes with zero skips in1.767s, including
+the two adjacent Vengeful Mire/Toxic Spines cases. Source review also caught
+missing `%s` tokens before `addNameReplacement`; these were repaired before
+the first native run. Exact creature-name assertions prevent recurrence.
+
 ### 2026-10-07 — Stale active-perk expectations in the data fixture
 
 The focused registry-inventory test initially fails on Armorer and Battlecraft:

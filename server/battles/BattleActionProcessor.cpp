@@ -4926,8 +4926,20 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 						static_cast<int32_t>(defender->unitId()));
 				if(poisonApplied)
 					hit.newState.data = reflectedAttackerState->save();
+				BattleLogMessage reflectionLog;
+				reflectionLog.battleID = battle.getBattle()->getBattleID();
+				MetaString reflectionLine;
+				reflectionLine.appendRawString("Bulwark of the Mire: %s reflects ");
+				defender->addNameReplacement(reflectionLine, defender->getCount());
+				reflectionLine.appendNumber(hit.damageAmount);
+				reflectionLine.appendRawString(" physical damage to %s (");
+				attacker->addNameReplacement(reflectionLine, attacker->getCount());
+				reflectionLine.appendNumber(hit.killedAmount);
+				reflectionLine.appendRawString(" killed).");
+				reflectionLog.lines.push_back(std::move(reflectionLine));
 				injury.stacks.push_back(hit);
 				gameHandler->sendAndApply(injury);
+				gameHandler->sendAndApply(reflectionLog);
 				if(toxicSpinesConsumed)
 				{
 					BattleUnitsChanged markerUpdate;

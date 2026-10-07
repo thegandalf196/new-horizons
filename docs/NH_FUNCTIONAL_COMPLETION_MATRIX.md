@@ -2,6 +2,17 @@
 
 Updated: 2026-10-07
 
+UP266 closes a missing required combat-result feedback path: Bulwark reflection
+now logs its source, target and resolved physical damage/casualties after
+authoritative injury preparation, including Guardian-absorbed zero damage.
+Client/test builds pass; five focused native cases pass with zero skips in1.767s,
+including actual count loss, no-reflection exclusion, absorption, Vengeful Mire
+and Toxic Spines. Independent source review finds no blocker. No damage, RNG,
+save-state or AI semantics change. Perk identities remain228/310 active, combat
+identities61/67; rendered/localized feedback and broader mitigation accounting
+remain Phase2. No Linux playable promotion. The live Perfect Rhythm Windows run
+37565586139 predates and excludes this slice.
+
 Latest accepted Phase1 slice: Perfect Rhythm is production-active. Client14693,
 test37210 and activated both-target4309 builds pass. Principal7/7 (2.065s),
 activated7/7 (2.045s) and adjacent11/11 (2.259s) native cases pass, zero skips.

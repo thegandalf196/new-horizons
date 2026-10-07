@@ -17,6 +17,19 @@
 
 namespace
 {
+const BattleStackAttacked * findInjuryHit(const RecordingGameServer & server, ui32 sourceId, ui32 targetId)
+{
+	for(const auto & injury : server.injuries)
+	{
+		for(const auto & hit : injury.stacks)
+		{
+			if(hit.attackerID == sourceId && hit.stackAttacked == targetId)
+				return &hit;
+		}
+	}
+	return nullptr;
+}
+
 bool selectBulwarkPerkIfActive(CGHeroInstance * hero, std::string_view perkId)
 {
 	const std::string skillId(newHorizonsBulwark::SKILL_ID);
@@ -296,19 +309,99 @@ TEST_F(NewHorizonsBulwarkRuntimeTest, AdvancedReflectsActualReducedMeleeDamageWi
 	defenderSideHero->setSecSkillLevel(bulwark(), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 	startBattle();
 	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(80), 100);
-	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(81), 100);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:crusader"), BattleHex(81), 100);
 	forceMaximumDamage(attacker);
 	blockRetaliation(attacker);
 	defender->defending = true;
 	defender->bulwarkPreemptiveUsed = true;
+	const auto sourceName = defender->getName();
+	const auto targetName = attacker->getName();
+	ASSERT_NE(sourceName, targetName);
+	const auto attackerCountBefore = attacker->getCount();
 	const auto attackerHealth = attacker->getAvailableHealth();
 	const auto defenderHealth = defender->getAvailableHealth();
+
+	server.battleLogLines.clear();
+	ASSERT_TRUE(attack(attacker, defender->getPosition()));
+	ASSERT_EQ(server.attacks.size(), 1u);
+	ASSERT_EQ(server.attacks.front().bsa.size(), 1u);
+	const auto & receivedHit = server.attacks.front().bsa.front();
+	ASSERT_EQ(receivedHit.stackAttacked, defender->unitId());
+	const int64_t received = std::min<int64_t>(receivedHit.damageAmount, defenderHealth);
+	const auto expectedReflectedDamage = newHorizonsBulwark::reflectedDamage(received, 2500);
+	const auto * reflectedHit = findInjuryHit(server, defender->unitId(), attacker->unitId());
+	ASSERT_NE(reflectedHit, nullptr) << ::testing::PrintToString(server.injuries);
+	EXPECT_EQ(reflectedHit->damageAmount, expectedReflectedDamage);
+	EXPECT_GT(reflectedHit->killedAmount, 0u);
+	EXPECT_EQ(reflectedHit->killedAmount, attackerCountBefore - attacker->getCount());
+	EXPECT_EQ(attackerHealth - attacker->getAvailableHealth(), reflectedHit->damageAmount);
+	const std::string expectedLog = "Bulwark of the Mire: " + sourceName + " reflects "
+		+ std::to_string(reflectedHit->damageAmount) + " physical damage to " + targetName + " ("
+		+ std::to_string(reflectedHit->killedAmount) + " killed).";
+	EXPECT_NE(std::ranges::find(server.battleLogLines, expectedLog), server.battleLogLines.end())
+		<< "Expected reflection log: " << expectedLog << "\n"
+		<< ::testing::PrintToString(server.battleLogLines);
+}
+
+TEST_F(NewHorizonsBulwarkRuntimeTest, AdvancedBulwarkDoesNotLogReflectionForANonDefendingStack)
+{
+	startGame();
+	defenderSideHero->setSecSkillLevel(bulwark(), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	startBattle();
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(80), 100);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:crusader"), BattleHex(81), 100);
+	forceMaximumDamage(attacker);
+	blockRetaliation(attacker);
+	defender->defending = false;
+	const auto attackerHealth = attacker->getAvailableHealth();
+	server.battleLogLines.clear();
+
+	ASSERT_TRUE(attack(attacker, defender->getPosition()));
+	EXPECT_EQ(attackerHealth, attacker->getAvailableHealth());
+	EXPECT_EQ(findInjuryHit(server, defender->unitId(), attacker->unitId()), nullptr);
+	EXPECT_TRUE(std::ranges::none_of(server.battleLogLines, [](const auto & line)
+	{
+		return line.find("Bulwark of the Mire:") != std::string::npos;
+	})) << ::testing::PrintToString(server.battleLogLines);
+}
+
+TEST_F(NewHorizonsBulwarkRuntimeTest, GuardianSpiritAbsorptionIsReportedAsZeroResolvedReflection)
+{
+	startGame();
+	defenderSideHero->setSecSkillLevel(bulwark(), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	startBattle();
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(80), 100);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:crusader"), BattleHex(81), 100);
+	forceMaximumDamage(attacker);
+	blockRetaliation(attacker);
+	defender->defending = true;
+	defender->bulwarkPreemptiveUsed = true;
+	attacker->guardianSpiritHitPoints = 1000;
+	attacker->guardianSpiritRoundsRemaining = 2;
+	const auto attackerHealth = attacker->getAvailableHealth();
+	const auto defenderHealth = defender->getAvailableHealth();
+	const auto sourceName = defender->getName();
+	const auto targetName = attacker->getName();
+	const auto guardianBefore = attacker->guardianSpiritHitPoints;
+	server.battleLogLines.clear();
 
 	ASSERT_TRUE(attack(attacker, defender->getPosition()));
 	ASSERT_EQ(server.attacks.size(), 1u);
 	ASSERT_EQ(server.attacks.front().bsa.size(), 1u);
-	const int64_t received = std::min<int64_t>(server.attacks.front().bsa.front().damageAmount, defenderHealth);
-	EXPECT_EQ(attackerHealth - attacker->getAvailableHealth(), received * 25 / 100);
+	const auto nominalReflection = newHorizonsBulwark::reflectedDamage(
+		std::min<int64_t>(server.attacks.front().bsa.front().damageAmount, defenderHealth), 2500);
+	ASSERT_GT(nominalReflection, 0);
+	const auto * reflectedHit = findInjuryHit(server, defender->unitId(), attacker->unitId());
+	ASSERT_NE(reflectedHit, nullptr) << ::testing::PrintToString(server.injuries);
+	EXPECT_EQ(reflectedHit->damageAmount, 0);
+	EXPECT_EQ(reflectedHit->killedAmount, 0u);
+	EXPECT_EQ(attacker->guardianSpiritHitPoints, guardianBefore - nominalReflection);
+	EXPECT_EQ(attacker->getAvailableHealth(), attackerHealth);
+	const std::string expectedLog = "Bulwark of the Mire: " + sourceName + " reflects 0 physical damage to "
+		+ targetName + " (0 killed).";
+	EXPECT_NE(std::ranges::find(server.battleLogLines, expectedLog), server.battleLogLines.end())
+		<< "Expected reflection log: " << expectedLog << "\n"
+		<< ::testing::PrintToString(server.battleLogLines);
 }
 
 TEST_F(NewHorizonsBulwarkPerkRuntimeTest, VengefulMireReflectsSeventyFivePercentOfActualExpertMeleeDamage)
