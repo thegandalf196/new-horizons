@@ -2,6 +2,20 @@
 
 Updated: 2026-10-06
 
+Latest accepted Phase1 slice: Perfect Rhythm is production-active. Client14693,
+test37210 and activated both-target4309 builds pass. Principal7/7 (2.065s),
+activated7/7 (2.045s) and adjacent11/11 (2.259s) native cases pass, zero skips.
+Three focused registry/source-identity/module tests and module drift check pass;
+independent source/fixture review has no blocker. Coverage227→228/310 perks,
+generic156→157/220, planned83→82; Warcasting6→7/10. Faction71/90, Skills31/31,
+ranks93/93, combat identities61/67 and Orders8/8 unchanged. Existing accepted
+action history provides candidate-aware third-action doubling for both Spell
+and Order, without new saved state or polling. Flat bases, unmatched/unselected/
+expired controls and detached accepted-spell branch isolation have evidence.
+Master Synthesis cannot coexist in valid single-Expert-slot progression.
+Phase2 retains AI choice quality, rendered status/UI and wider control/extra-
+action interactions. No Linux promotion or Windows package claim for this slice.
+
 Latest accepted Phase1 slice: UP079 Last Stand is production-active. Client/test
 build passes; principal13/13 and activated Last Stand/Mastery/Veteran22/22 native
 cases pass with zero skips (4.124s and7.029s). Module drift and canonical-data

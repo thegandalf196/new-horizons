@@ -103,6 +103,19 @@ struct DLL_LINKAGE AlternatingHeroActionState
 				&& recentActions[2] == Action::ORDER);
 	}
 
+	/// True when an ordinary candidate action would complete Spell / Order / Spell
+	/// or Order / Spell / Order. Does not mutate the accepted-action history.
+	bool wouldCompleteAlternatingSpellOrderSequence(Action candidateAction) const
+	{
+		validateShape();
+		return (recentActions[1] == Action::SPELL
+			&& recentActions[2] == Action::ORDER
+			&& candidateAction == Action::SPELL)
+			|| (recentActions[1] == Action::ORDER
+				&& recentActions[2] == Action::SPELL
+				&& candidateAction == Action::ORDER);
+	}
+
 	bool hasRecentActionHistory() const
 	{
 		return recentActions[0] != Action::NONE

@@ -65,9 +65,16 @@ inline bool hasMasterSynthesis(const CGHeroInstance * hero)
 	return hero && hero->hasActivePerk("new-horizons:warcasting", "new-horizons:warcasting.masterSynthesis");
 }
 
+inline bool hasPerfectRhythm(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk("new-horizons:warcasting", "new-horizons:warcasting.perfectRhythm");
+}
+
 /// Applies Master Synthesis only to an existing, matching Warcasting readiness.
 /// The first accepted consumption is tracked by the shared battle state, so both
-/// spell and Order projections use the same combat-long replacement.
+/// spell and Order projections use the same combat-long replacement. Perfect
+/// Rhythm doubles only a normal matching bonus when this candidate completes its
+/// accepted-action sequence; the two Expert perks cannot be selected together.
 inline int effectiveBonus(const CGHeroInstance * hero, const AlternatingHeroActionState & state,
 	AlternatingHeroActionState::Action action, int32_t round)
 {
@@ -76,6 +83,13 @@ inline int effectiveBonus(const CGHeroInstance * hero, const AlternatingHeroActi
 		return 0;
 	if(hasMasterSynthesis(hero) && !state.hasConsumedBonus)
 		return 50;
+	if(hasPerfectRhythm(hero) && state.wouldCompleteAlternatingSpellOrderSequence(action))
+	{
+		// The shared readiness field is int32_t. Saturate only at that representable
+		// boundary rather than overflowing while doubling a legal positive value.
+		const auto doubled = static_cast<int64_t>(raw) * 2;
+		return static_cast<int>(std::min<int64_t>(doubled, std::numeric_limits<int32_t>::max()));
+	}
 	return raw;
 }
 

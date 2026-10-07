@@ -2235,7 +2235,7 @@
 					"requires": "expert",
 					"description": "If the hero's last three Hero Actions alternate Spell / Order / Spell or Order / Spell / Order, the third action receives double the normal Warcasting bonus.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "If the hero's last three Hero Actions alternate Spell / Order / Spell or Order / Spell / Order, the third action receives double the normal Warcasting bonus."
 					}
 				},

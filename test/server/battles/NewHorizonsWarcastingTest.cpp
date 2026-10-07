@@ -41,6 +41,7 @@ constexpr auto tacticalWeavingPerk = "new-horizons:warcasting.tacticalWeaving";
 constexpr auto battleMeditationPerk = "new-horizons:warcasting.battleMeditation";
 constexpr auto spellwardPerk = "new-horizons:warcasting.spellward";
 constexpr auto masterSynthesisPerk = "new-horizons:warcasting.masterSynthesis";
+constexpr auto perfectRhythmPerk = "new-horizons:warcasting.perfectRhythm";
 constexpr auto sorceryBasicPerk = "new-horizons:sorceryMagic.overcharger";
 
 std::shared_ptr<Bonus> testTimeStopMarker(BattleSide side)
@@ -71,6 +72,7 @@ class NewHorizonsWarcastingTest : public HeroCommandFixture
 protected:
 	bool historicalCounterspell = false;
 	bool activateMasterSynthesisIfPlanned = false;
+	bool activatePerfectRhythmIfPlanned = false;
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
@@ -100,6 +102,19 @@ protected:
 			RecordProperty("master_synthesis_registry_status", (*synthesis)["effect"]["status"].String());
 			if((*synthesis)["effect"]["status"].String() == "planned")
 				(*synthesis)["effect"]["status"].String() = "active";
+		}
+		if(activatePerfectRhythmIfPlanned)
+		{
+			auto & perks = perkRules["skills"][warcastingSkill]["perks"].Vector();
+			const auto perfectRhythm = std::find_if(perks.begin(), perks.end(), [](const auto & perk)
+			{
+				return perk["id"].String() == perfectRhythmPerk;
+			});
+			if(perfectRhythm == perks.end())
+				throw std::runtime_error("Missing Perfect Rhythm in the Warcasting perk registry");
+			RecordProperty("perfect_rhythm_registry_status", (*perfectRhythm)["effect"]["status"].String());
+			if((*perfectRhythm)["effect"]["status"].String() == "planned")
+				(*perfectRhythm)["effect"]["status"].String() = "active";
 		}
 		if(!plannedWarcastingPerkBeforeInit.empty())
 		{
@@ -235,15 +250,40 @@ protected:
 		acceptWarcastingPerkThroughOffer(hero, masterSynthesisPerk, static_cast<int>(MasteryLevel::EXPERT));
 	}
 
+	void acquirePerfectRhythmThroughExpertOffer(CGHeroInstance * hero)
+	{
+		const int decodedWarcasting = SecondarySkill::decode(warcastingSkill);
+		ASSERT_GE(decodedWarcasting, 0);
+		const auto skill = SecondarySkill(decodedWarcasting);
+
+		hero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		acceptWarcastingPerkThroughOffer(hero, spellwardPerk, static_cast<int>(MasteryLevel::BASIC));
+		gameHandler->levelUpHero(hero, skill, false);
+		acceptWarcastingPerkThroughOffer(hero, tacticalWeavingPerk, static_cast<int>(MasteryLevel::ADVANCED));
+		gameHandler->levelUpHero(hero, skill, false);
+		ASSERT_TRUE(offerContains(hero, perfectRhythmPerk))
+			<< "Perfect Rhythm must be offered only after reaching Expert Warcasting";
+		acceptWarcastingPerkThroughOffer(hero, perfectRhythmPerk, static_cast<int>(MasteryLevel::EXPERT));
+	}
+
 	void prepareWarcasting(int rank = 1, bool withMetamagic = false, bool defenderCountermage = false,
-		bool masterSynthesis = false, bool tacticalWeaving = false, bool defenderSorceryBasic = false)
+		bool masterSynthesis = false, bool tacticalWeaving = false, bool defenderSorceryBasic = false,
+		bool perfectRhythm = false, int defenderCount = -1)
 	{
 		activateMasterSynthesisIfPlanned = masterSynthesis;
+		activatePerfectRhythmIfPlanned = perfectRhythm;
 		startGame();
 		const int decodedWarcasting = SecondarySkill::decode(warcastingSkill);
 		ASSERT_GE(decodedWarcasting, 0);
 		ASSERT_FALSE(masterSynthesis && tacticalWeaving);
-		if(masterSynthesis)
+		ASSERT_FALSE(masterSynthesis && perfectRhythm);
+		ASSERT_FALSE(tacticalWeaving && perfectRhythm);
+		if(perfectRhythm)
+		{
+			ASSERT_EQ(rank, static_cast<int>(MasteryLevel::EXPERT));
+			acquirePerfectRhythmThroughExpertOffer(attackerSideHero);
+		}
+		else if(masterSynthesis)
 			acquireMasterSynthesisThroughExpertOffer(attackerSideHero);
 		else if(tacticalWeaving)
 		{
@@ -277,8 +317,9 @@ protected:
 
 		startBattle();
 		attacker = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex), 10);
+		const int initialDefenderCount = defenderCount > 0 ? defenderCount : (masterSynthesis ? 1000 : 10);
 		defender = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex),
-			masterSynthesis ? 1000 : 10);
+			initialDefenderCount);
 		beginCombat();
 
 		BattleUnitsChanged remove;
@@ -288,6 +329,14 @@ protected:
 				remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
 		gameHandler->sendAndApply(remove);
 		activate(attacker);
+	}
+
+	void preparePerfectRhythm(int defenderCount = 10)
+	{
+		prepareWarcasting(static_cast<int>(MasteryLevel::EXPERT), false, false, false, false, false, true,
+			defenderCount);
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(warcastingSkill, perfectRhythmPerk));
+		EXPECT_FALSE(attackerSideHero->hasActivePerk(warcastingSkill, masterSynthesisPerk));
 	}
 
 	void prepareAdvancedTacticalWeaving()
@@ -500,6 +549,141 @@ TEST_F(NewHorizonsWarcastingTest, AcceptedOrdinaryActionsRecordOrderSpellOrder)
 			AlternatingHeroActionState::Action::SPELL,
 			AlternatingHeroActionState::Action::ORDER}));
 	EXPECT_TRUE(state.hasAlternatingSpellOrderSequence());
+}
+
+TEST_F(NewHorizonsWarcastingTest, PerfectRhythmDoublesAcceptedThirdSpellAndPreservesSpellDamageFormula)
+{
+	preparePerfectRhythm(1000);
+	const auto side = BattleSide::ATTACKER;
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 5, ChangeValueMode::ABSOLUTE);
+
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	advanceRound();
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto orderState = battle()->getHeroOrderState(side);
+	ASSERT_TRUE(orderState);
+	EXPECT_EQ(orderState->warcastingBonusPercent, 30);
+	advanceRound();
+
+	const auto liveStateBeforeProjection = battle()->getWarcastingState(side);
+	WarcastingEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	HypotheticBattle projection(&environment, callback);
+	EXPECT_EQ(projection.getWarcastingState(side), liveStateBeforeProjection);
+	EXPECT_EQ(newHorizonsWarcasting::spellBonus(attackerSideHero,
+		projection.getWarcastingState(side), projection.getRound()), 60);
+	EXPECT_EQ(battle()->getWarcastingState(side), liveStateBeforeProjection);
+	EXPECT_EQ(spellWarcastingBonus(SpellID::MAGIC_ARROW), 60);
+	auto preparedSpell = projection.prepareHeroSpellAllowance(side, SpellID::MAGIC_ARROW, false, false);
+	ASSERT_TRUE(preparedSpell);
+	ASSERT_TRUE(projection.beginProjectedHeroAction(side, *preparedSpell));
+	ASSERT_TRUE(projection.projectAcceptedHeroSpell(side, SpellID::MAGIC_ARROW, defender->unitId(),
+		false, false, false, false, *preparedSpell));
+	EXPECT_TRUE(projection.getWarcastingState(side).hasConsumedBonus);
+	EXPECT_TRUE(projection.getWarcastingState(side).hasAlternatingSpellOrderSequence());
+	EXPECT_EQ(battle()->getWarcastingState(side), liveStateBeforeProjection);
+
+	const auto * magicArrow = SpellID(SpellID::MAGIC_ARROW).toSpell();
+	ASSERT_NE(magicArrow, nullptr);
+	spells::BattleCast parameters(battle(), attackerSideHero, spells::Mode::HERO, magicArrow);
+	const auto mechanics = magicArrow->battleMechanics(&parameters);
+	ASSERT_NE(mechanics, nullptr);
+	EXPECT_EQ(mechanics->getWarcastingBonusPercent(), 60);
+	const auto savedFormula = newHorizonsMagic::spellDirectDamage(battle()->getMagicRules(), magicArrow->getJsonKey());
+	ASSERT_TRUE(savedFormula);
+	const int64_t expectedPowerTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
+		static_cast<int64_t>(savedFormula->powerCoefficient) * mechanics->getEffectPower(),
+		mechanics->getEffectPowerDivisor(), mechanics->getSpellPowerCoefficientBasisPoints(),
+		mechanics->getWarcastingBonusPercent(), mechanics->getEmpowerSpellBonusPercent(),
+		attackerSideHero->getDamageSpellSpecialtyBonusPercent(SpellID::MAGIC_ARROW));
+	const int64_t expectedDamage = savedFormula->base + expectedPowerTerm;
+	EXPECT_EQ(mechanics->getEffectValue(), expectedDamage)
+		<< "Perfect Rhythm should scale the Spell Power term, not the fixed authored base";
+	const auto healthBefore = defender->getAvailableHealth();
+	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, defender));
+	EXPECT_EQ(healthBefore - defender->getAvailableHealth(), expectedDamage);
+	EXPECT_EQ(battle()->getWarcastingState(side).recentActions,
+		(std::array<AlternatingHeroActionState::Action, 3>{
+			AlternatingHeroActionState::Action::SPELL,
+			AlternatingHeroActionState::Action::ORDER,
+			AlternatingHeroActionState::Action::SPELL}));
+	EXPECT_TRUE(battle()->getWarcastingState(side).hasConsumedBonus);
+}
+
+TEST_F(NewHorizonsWarcastingTest, PerfectRhythmDoublesAcceptedThirdOrderWithoutScalingItsFlatBase)
+{
+	preparePerfectRhythm();
+	const auto side = BattleSide::ATTACKER;
+
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	advanceRound();
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	advanceRound();
+	EXPECT_EQ(newHorizonsWarcasting::orderBonus(attackerSideHero,
+		battle()->getWarcastingState(side), battle()->battleGetRound()), 60);
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+
+	const auto orderState = battle()->getHeroOrderState(side);
+	ASSERT_TRUE(orderState);
+	EXPECT_EQ(orderState->warcastingBonusPercent, 60);
+	const auto & formula = battle()->getHeroCommandRules()["commands"]["charge"]["effects"]["meleeDamagePercent"];
+	EXPECT_EQ(heroCommands::coefficient(formula, *attackerSideHero, orderState->warcastingBonusPercent), 42);
+	JsonNode flatOnly = formula;
+	flatOnly["attack"] = JsonNode(0.0);
+	flatOnly["defense"] = JsonNode(0.0);
+	EXPECT_EQ(heroCommands::coefficient(flatOnly, *attackerSideHero, orderState->warcastingBonusPercent), 10);
+	EXPECT_EQ(battle()->getWarcastingState(side).recentActions,
+		(std::array<AlternatingHeroActionState::Action, 3>{
+			AlternatingHeroActionState::Action::ORDER,
+			AlternatingHeroActionState::Action::SPELL,
+			AlternatingHeroActionState::Action::ORDER}));
+	EXPECT_TRUE(battle()->getWarcastingState(side).hasConsumedBonus);
+}
+
+TEST_F(NewHorizonsWarcastingTest, PerfectRhythmDoesNotDoubleASequenceWithoutTheSelectedPerk)
+{
+	prepareWarcasting(static_cast<int>(MasteryLevel::EXPERT));
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(warcastingSkill, perfectRhythmPerk));
+
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	advanceRound();
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	advanceRound();
+	EXPECT_EQ(spellWarcastingBonus(SpellID::MAGIC_ARROW), 30);
+	ASSERT_TRUE(cast(SpellID::MAGIC_ARROW, defender));
+	EXPECT_TRUE(battle()->getWarcastingState(BattleSide::ATTACKER).hasAlternatingSpellOrderSequence());
+}
+
+TEST_F(NewHorizonsWarcastingTest, PerfectRhythmDoesNotDoubleANonmatchingCandidate)
+{
+	preparePerfectRhythm();
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	advanceRound();
+	ASSERT_TRUE(cast(SpellID::SLOW, defender));
+	advanceRound();
+	EXPECT_EQ(newHorizonsWarcasting::orderBonus(attackerSideHero,
+		battle()->getWarcastingState(BattleSide::ATTACKER), battle()->battleGetRound()), 30);
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	EXPECT_EQ(battle()->getHeroOrderState(BattleSide::ATTACKER)->warcastingBonusPercent, 30);
+	EXPECT_FALSE(battle()->getWarcastingState(BattleSide::ATTACKER).hasAlternatingSpellOrderSequence());
+}
+
+TEST_F(NewHorizonsWarcastingTest, PerfectRhythmDoesNotRescueExpiredReadiness)
+{
+	preparePerfectRhythm();
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	advanceRound();
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	advanceRound();
+	advanceRound();
+	advanceRound();
+	const auto & expiredSequence = battle()->getWarcastingState(BattleSide::ATTACKER);
+	EXPECT_TRUE(expiredSequence.wouldCompleteAlternatingSpellOrderSequence(
+		AlternatingHeroActionState::Action::ORDER));
+	EXPECT_EQ(newHorizonsWarcasting::orderBonus(attackerSideHero, expiredSequence,
+		battle()->battleGetRound()), 0);
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	EXPECT_EQ(battle()->getHeroOrderState(BattleSide::ATTACKER)->warcastingBonusPercent, 0);
 }
 
 TEST_F(NewHorizonsWarcastingTest, OrderReadinessIsAvailableThroughInclusiveExpiryAndCastRearmsIt)

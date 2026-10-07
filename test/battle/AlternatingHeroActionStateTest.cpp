@@ -100,6 +100,39 @@ TEST(AlternatingHeroActionState, RecognizesBothRightAlignedAlternatingSequencesA
 	EXPECT_TRUE(orderSpellOrder.hasAlternatingSpellOrderSequence());
 }
 
+TEST(AlternatingHeroActionState, PerfectRhythmMatchesOnlyTheCandidateCompletingTheThirdAction)
+{
+	State spellOrder;
+	spellOrder.recordAcceptedAction(Action::SPELL, 1, 10);
+	spellOrder.recordAcceptedAction(Action::ORDER, 2, 10);
+	const auto beforeSpell = spellOrder;
+	EXPECT_TRUE(spellOrder.wouldCompleteAlternatingSpellOrderSequence(Action::SPELL));
+	EXPECT_FALSE(spellOrder.wouldCompleteAlternatingSpellOrderSequence(Action::ORDER));
+	EXPECT_EQ(spellOrder, beforeSpell);
+
+	State orderSpell;
+	orderSpell.recordAcceptedAction(Action::ORDER, 1, 10);
+	orderSpell.recordAcceptedAction(Action::SPELL, 2, 10);
+	const auto beforeOrder = orderSpell;
+	EXPECT_TRUE(orderSpell.wouldCompleteAlternatingSpellOrderSequence(Action::ORDER));
+	EXPECT_FALSE(orderSpell.wouldCompleteAlternatingSpellOrderSequence(Action::SPELL));
+	EXPECT_EQ(orderSpell, beforeOrder);
+}
+
+TEST(AlternatingHeroActionState, PerfectRhythmDoesNotMatchRepeatedOrIncompleteHistories)
+{
+	State repeated;
+	repeated.recordAcceptedAction(Action::SPELL, 1, 10);
+	repeated.recordAcceptedAction(Action::SPELL, 2, 10);
+	EXPECT_FALSE(repeated.wouldCompleteAlternatingSpellOrderSequence(Action::ORDER));
+	EXPECT_FALSE(repeated.wouldCompleteAlternatingSpellOrderSequence(Action::SPELL));
+
+	State incomplete;
+	incomplete.recordAcceptedAction(Action::ORDER, 1, 10);
+	EXPECT_FALSE(incomplete.wouldCompleteAlternatingSpellOrderSequence(Action::ORDER));
+	EXPECT_FALSE(incomplete.wouldCompleteAlternatingSpellOrderSequence(Action::SPELL));
+}
+
 TEST(AlternatingHeroActionState, RepeatedActionsRollThroughTheThreeActionWindow)
 {
 	State state;

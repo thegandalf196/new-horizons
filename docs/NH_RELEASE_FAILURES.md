@@ -2,6 +2,16 @@
 
 ## Purpose
 
+### 2026-10-07 — Stale active-perk expectations in the data fixture
+
+The focused registry-inventory test initially fails on Armorer and Battlecraft:
+its explicit active whitelist omitted the already source/native-verified Last
+Stand and Battlefield Mastery. Those failed subtests also leave a misleading
+307/310 accumulated-ID assertion. Add the two evidenced IDs, alongside the newly
+verified Perfect Rhythm, rather than relaxing status/total assertions. All three
+focused source-identity, complete-registry and module-parity tests then pass.
+Future activation commits must update this fixture's explicit expectation set.
+
 ### 2026-10-06 — Stale canonical-specification hash in the perk registry
 
 The focused source-identity test fails because the registry still records the
