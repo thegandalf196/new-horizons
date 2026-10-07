@@ -26,6 +26,7 @@ class QuickRecruitmentWindow : public CWindowObject
 {
 public:
 	int getAvailableCreatures();
+	int getWeeklyGrowth(int recruitmentLevel) const;
 	void updateAllSliders();
 	bool isForTown(const CGTownInstance * value) const { return town == value; }
 	QuickRecruitmentWindow(const CGTownInstance * townd, Rect startupPosition);
@@ -47,6 +48,7 @@ private:
 	void purchaseUnits();
 
 	const CGTownInstance * town;
+	bool categorizedLayout = false;
 	std::shared_ptr<CButton> maxButton;
 	std::shared_ptr<CButton> musterButton;
 	std::shared_ptr<CButton> buyButton;

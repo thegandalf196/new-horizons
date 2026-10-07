@@ -7,6 +7,7 @@ the active New Horizons classification visible in town and recruitment views.
 """
 
 from pathlib import Path
+import re
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -50,6 +51,40 @@ require(QUICK, "selected->recruitmentLevel", "quick recruitment preserves the or
 require(QUICK_CARD_HEADER, "const int recruitmentLevel", "quick cards own their authoritative dwelling row")
 require(QUICK, "uncategorizedLevels.empty()", "partial custom category contexts retain legacy order")
 require(QUICK_HEADER, "void showAll(Canvas & to) override", "quick recruitment draws group boundaries")
+require(QUICK, "hasCompleteCategoryContext", "compact quick layout requires complete saved category rules")
+require(QUICK, "displayVariantsAtLevel", "unbuilt roster previews use template creature identities")
+require(QUICK, "variants.resize(1)", "unbuilt dwellings do not offer unavailable upgrades")
+require(QUICK, "const int stock = built ? town->creatures[level].first : 0", "unbuilt previews cannot fabricate recruitment stock")
+require(QUICK, "getGrowthInfo(recruitmentLevel).totalGrowth()", "weekly growth is not current stock")
+require(QUICK_CARD, "updateCompactStats()", "switching an upgrade refreshes statistics")
+require(QUICK_CARD, "initCompactCostInfo()", "switching rebuilds resource cost composition")
+require(QUICK_CARD_HEADER, "compactStatIcons", "stat icons have owning references")
+for icon in ("iconAttack", "iconDefense", "iconDamage", "iconHealth", "iconSpeed", "iconInitiative", "iconGrowth"):
+    require(QUICK_CARD, f'"stackWindow/{icon}"', f"quick cards reuse creature stat {icon}")
+require(QUICK_CARD, '"NH_creature_leadership_20"', "quick cards reuse Leadership crown")
+require(QUICK_CARD, "getBaseInitiative()", "quick cards show authored Initiative")
+require(QUICK_CARD, "capabilityCreatureLeadershipRequirement", "quick cards show authoritative Leadership cost")
+
+# Check the production band constants, not a manually invented preview size.
+# This establishes nominal bounds only, not font/asset pixel or rendered acceptance.
+def quick_constant(name: str) -> int:
+    match = re.search(rf"constexpr int {name} = (\d+);", QUICK)
+    if not match:
+        raise AssertionError(f"missing quick-layout constant {name}")
+    return int(match.group(1))
+
+card_width = quick_constant("NH_QUICK_CARD_MAX_WIDTH")
+card_height = quick_constant("NH_QUICK_CARD_HEIGHT")
+gap = quick_constant("NH_QUICK_CARD_GAP")
+margin = quick_constant("NH_QUICK_SIDE_MARGIN")
+heading_gap = quick_constant("NH_QUICK_HEADING_GAP")
+top = quick_constant("NH_QUICK_CONTENT_TOP")
+footer = quick_constant("NH_QUICK_FOOTER_HEIGHT")
+heading = re.search(r"constexpr int headerHeight = (\d+);", QUICK)
+assert heading is not None
+for roster in ((3, 3, 1), (1, 5, 1), (2, 5, 1)):
+    assert max(roster) * card_width + (max(roster) - 1) * gap <= 792 - 2 * margin
+    assert top + 3 * (int(heading.group(1)) + heading_gap + card_height + gap) <= 592 - footer
 require(CASTLE, "getCreatureCategory", "town dwelling presentation reads saved category")
 require(CASTLE, "newHorizonsCreatureCategoryUI::prefix", "town dwelling text is category-aware")
 require(CASTLE, "categoryLabel", "fort recruitment area shows category")

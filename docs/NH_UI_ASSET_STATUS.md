@@ -1,5 +1,15 @@
 # New Horizons UI and asset status register
 
+Quick recruitment roster,2026-10-07: **Provisional** source implementation under
+UP268. Continuous existing leather and yellow category headings replace the
+one-strip categorized arrangement. Native creature portraits, seven existing
+stat symbols and the Leadership crown accompany compact inline values. No
+new artwork is authored. Unbuilt/zero-stock authored rows remain visible;
+upgrade switching updates portrait, stats, popup identity and resource costs.
+Client build and focused source/nominal bounds guards pass, not rendered
+readability or human acceptance. Long label/value truncation and interactive
+visual acceptance remain open; normal Linux launcher is unchanged.
+
 Rig-guided Cabir atlas v2,2026-10-06: **Provisional rejected study**, not runtime
 art. The targeted built-in revision does not materially correct body continuity
 4→5, return gait6–8 or requested coarse finish. Preserve its exact private master/

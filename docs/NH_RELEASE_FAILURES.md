@@ -2,6 +2,18 @@
 
 ## Purpose
 
+### 2026-10-07 — Quick-recruitment UI missing direct includes
+
+UP268's first client build93863 fails because new consumers depend on declarations
+not provided by the existing translation-unit includes: GameLibrary/global
+LIBRARY, general text, hero usesRules, Resource and CCastleInterface. Add direct
+headers rather than relying on another source file's or precompiled header's
+transitive includes. Rebuild87978 succeeds. Preserve both logs under ignored
+testing/quick-recruitment-20261007.3AUTx3Xr. Source guards passing alone did not
+prove compilation. Source review also caught discarded stat-icon ownership,
+wrong label anchors and assumed16px sizing for native48x32 buttons before build;
+retain ownership and use verified-size existing controls.
+
 ### 2026-10-07 — Reflection fixture assumed zero casualties
 
 UP266's first three-case native run passes the non-reflecting and fully

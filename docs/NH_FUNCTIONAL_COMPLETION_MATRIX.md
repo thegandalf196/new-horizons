@@ -2,6 +2,18 @@
 
 Updated: 2026-10-07
 
+UP268 adds the omitted quick-recruitment inline roster display: all categorized
+authored rows, including unbuilt base previews and built zero-stock rows, now
+occupy horizontal Core/Elite/Champion bands. Eight owned creature-stat icons
+and values, name/portrait/availability, actual weekly growth, selected quantity
+and resource costs refresh with upgrade switching. Existing authoritative
+purchase, Leadership, resource-budget and Muster paths remain unchanged.
+Client build87978 passes after include repairs; focused recruitment/Muster
+source guards and nominal792x592 geometry checks pass. Independent source
+review finds no remaining blocker. Rendered readability/interaction acceptance,
+Windows compilation and playable delivery remain pending. Required UI coverage
+increases at source/build level, not identities:228/310 perks,61/67 spells.
+
 UP267 closes the missing Bulwark pre-emptive result attribution. A temporary
 server-local attack flag identifies only that producer, without inferring the
 cause from a percentage shared by Battlecraft. Pre-application names and resolved

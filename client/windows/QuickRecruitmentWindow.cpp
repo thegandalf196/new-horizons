@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "QuickRecruitmentWindow.h"
+#include "CCastleInterface.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../CPlayerInterface.h"
 #include "../widgets/Buttons.h"
@@ -28,6 +29,14 @@
 
 namespace
 {
+constexpr int NH_QUICK_CARD_MAX_WIDTH = 150;
+constexpr int NH_QUICK_CARD_HEIGHT = 136;
+constexpr int NH_QUICK_CARD_GAP = 4;
+constexpr int NH_QUICK_SIDE_MARGIN = 12;
+constexpr int NH_QUICK_CONTENT_TOP = 6;
+constexpr int NH_QUICK_HEADING_GAP = 2;
+constexpr int NH_QUICK_FOOTER_HEIGHT = 124;
+
 std::optional<newHorizonsCreatures::CreatureCategoryView> currentCreatureCategory(const CCreature * creature)
 {
 	if(!creature || !GAME || !GAME->interface() || !GAME->interface()->cb)
@@ -38,6 +47,56 @@ std::optional<newHorizonsCreatures::CreatureCategoryView> currentCreatureCategor
 size_t categoryIndex(const newHorizonsCreatures::CreatureCategoryView & category)
 {
 	return static_cast<size_t>(category.category);
+}
+
+std::vector<CreatureID> creatureVariantsAtLevel(const CGTownInstance * town, size_t level)
+{
+	if(!town)
+		return {};
+	if(level < town->creatures.size() && !town->creatures[level].second.empty())
+		return town->creatures[level].second;
+	if(level < town->getTown()->creatures.size())
+		return town->getTown()->creatures[level];
+	return {};
+}
+
+bool hasCompleteCategoryContext(const CGTownInstance * town)
+{
+	if(!town)
+		return false;
+
+	std::array<size_t, 3> categoryCounts{};
+	bool found = false;
+	for(size_t level = 0; level < town->creatures.size(); ++level)
+	{
+		const auto variants = creatureVariantsAtLevel(town, level);
+		if(variants.empty())
+			continue;
+
+		const auto category = currentCreatureCategory(variants.front().toCreature());
+		if(!category || categoryIndex(*category) >= categoryCounts.size())
+			return false;
+		for(const auto creatureId : variants)
+		{
+			const auto variantCategory = currentCreatureCategory(creatureId.toCreature());
+			if(variantCategory != category)
+				return false;
+		}
+		++categoryCounts[categoryIndex(*category)];
+		found = true;
+	}
+
+	// Five cards fit at the compact 150px pitch on the supported 800px logical
+	// canvas. Larger custom category bands retain the legacy usable window.
+	return found && std::ranges::all_of(categoryCounts, [](size_t count){ return count <= 5; });
+}
+
+std::vector<CreatureID> displayVariantsAtLevel(const CGTownInstance * town, size_t level, bool built)
+{
+	auto variants = creatureVariantsAtLevel(town, level);
+	if(!built && !variants.empty())
+		variants.resize(1); // Show the base creature only until its dwelling is built.
+	return variants;
 }
 }
 
@@ -52,19 +111,25 @@ void QuickRecruitmentWindow::setButtons()
 
 void QuickRecruitmentWindow::setCancelButton()
 {
-	cancelButton = std::make_shared<CButton>(Point((pos.w / 2) + 48, 418), AnimationPath::builtin("ICN6432.DEF"), CButton::tooltip(), [&](){ close(); }, EShortcut::GLOBAL_CANCEL);
+	const int buttonY = categorizedLayout ? pos.h - 39 : 418;
+	cancelButton = std::make_shared<CButton>(Point((pos.w / 2) + 48, buttonY), AnimationPath::builtin("ICN6432.DEF"),
+		CButton::tooltip(), [&](){ close(); }, EShortcut::GLOBAL_CANCEL);
 	cancelButton->setImageOrder(0, 1, 2, 3);
 }
 
 void QuickRecruitmentWindow::setBuyButton()
 {
-	buyButton = std::make_shared<CButton>(Point((pos.w / 2) - 32, 418), AnimationPath::builtin("IBY6432.DEF"), CButton::tooltip(), [&](){ purchaseUnits(); }, EShortcut::GLOBAL_ACCEPT);
+	const int buttonY = categorizedLayout ? pos.h - 39 : 418;
+	buyButton = std::make_shared<CButton>(Point((pos.w / 2) - 32, buttonY), AnimationPath::builtin("IBY6432.DEF"),
+		CButton::tooltip(), [&](){ purchaseUnits(); }, EShortcut::GLOBAL_ACCEPT);
 	buyButton->setImageOrder(0, 1, 2, 3);
 }
 
 void QuickRecruitmentWindow::setMaxButton()
 {
-	maxButton = std::make_shared<CButton>(Point((pos.w/2)-112, 418), AnimationPath::builtin("IRCBTNS.DEF"), CButton::tooltip(), [&](){ maxAllCards(cards); }, EShortcut::RECRUITMENT_MAX);
+	const int buttonY = categorizedLayout ? pos.h - 39 : 418;
+	maxButton = std::make_shared<CButton>(Point((pos.w / 2) - 112, buttonY), AnimationPath::builtin("IRCBTNS.DEF"),
+		CButton::tooltip(), [&](){ maxAllCards(cards); }, EShortcut::RECRUITMENT_MAX);
 	maxButton->setImageOrder(0, 1, 2, 3);
 }
 
@@ -73,7 +138,9 @@ void QuickRecruitmentWindow::setMusterButton()
 	if(!newHorizonsMusterUI::isEligible(town))
 		return;
 
-	musterButton = std::make_shared<CButton>(Point((pos.w / 2) + 92, 418), AnimationPath::builtin("IRCBTNS.DEF"),
+	const int buttonY = categorizedLayout ? pos.h - 39 : 418;
+	const int buttonX = (pos.w / 2) + (categorizedLayout ? 124 : 92);
+	musterButton = std::make_shared<CButton>(Point(buttonX, buttonY), AnimationPath::builtin("IRCBTNS.DEF"),
 		CButton::tooltip("Muster", "Reinforce one town dwelling."),
 		[this](){ newHorizonsMusterUI::open(town); });
 	musterButton->setTextOverlay("M", FONT_SMALL, Colors::WHITE);
@@ -88,27 +155,34 @@ void QuickRecruitmentWindow::setCreaturePurchaseCards()
 {
 	categoryHeaders.fill(nullptr);
 	categoryGroupRects.fill(std::nullopt);
+	cards.clear();
 
 	int availableAmount = getAvailableCreatures();
 	Point position = Point((pos.w - 100*availableAmount - 8*(availableAmount-1))/2,64);
 	std::vector<int> availableLevels;
 	std::array<std::vector<int>, 3> categoryLevels;
 	std::vector<int> uncategorizedLevels;
-	for (int i = 0; i < town->getTown()->creatures.size(); i++)
+	const size_t levelCount = categorizedLayout ? town->creatures.size() : town->getTown()->creatures.size();
+	for (size_t i = 0; i < levelCount; ++i)
 	{
-		if(!town->getTown()->creatures.at(i).empty() && !town->creatures.at(i).second.empty() && town->creatures[i].first)
+		const auto variants = creatureVariantsAtLevel(town, i);
+		const bool built = i < town->creatures.size() && !town->creatures[i].second.empty();
+		const bool legacyAvailable = i < town->getTown()->creatures.size() && !town->getTown()->creatures[i].empty()
+			&& i < town->creatures.size() && built && town->creatures[i].first > 0;
+		if(!variants.empty() && (categorizedLayout || legacyAvailable))
 		{
-			availableLevels.push_back(i);
-			if(const auto category = currentCreatureCategory(town->creatures[i].second.back().toCreature()))
-				categoryLevels[categoryIndex(*category)].push_back(i);
+			availableLevels.push_back(static_cast<int>(i));
+			const auto category = currentCreatureCategory(variants.front().toCreature());
+			if(category && categoryIndex(*category) < categoryLevels.size())
+				categoryLevels[categoryIndex(*category)].push_back(static_cast<int>(i));
 			else
-				uncategorizedLevels.push_back(i);
+				uncategorizedLevels.push_back(static_cast<int>(i));
 		}
 	}
 
-	const bool grouped = uncategorizedLevels.empty()
+	const bool grouped = categorizedLayout && uncategorizedLevels.empty()
 		&& std::ranges::any_of(categoryLevels, [](const auto & group){ return !group.empty(); });
-	auto createCard = [this, &position](int level)
+	auto createLegacyCard = [this, &position](int level)
 	{
 		cards.push_back(std::make_shared<CreaturePurchaseCard>(town->creatures[level].second, position,
 			town->creatures[level].first, level, this));
@@ -116,28 +190,51 @@ void QuickRecruitmentWindow::setCreaturePurchaseCards()
 	};
 	if(grouped)
 	{
+		constexpr int headerHeight = 12;
+		const int maximumBandSize = static_cast<int>(std::ranges::max_element(categoryLevels,
+			{}, [](const auto & group){ return group.size(); })->size());
+		const int cardWidth = std::min(NH_QUICK_CARD_MAX_WIDTH,
+			(pos.w - NH_QUICK_SIDE_MARGIN * 2 - NH_QUICK_CARD_GAP * (maximumBandSize - 1)) / maximumBandSize);
+		const int cardHeight = std::min(NH_QUICK_CARD_HEIGHT,
+			(pos.h - NH_QUICK_CONTENT_TOP - NH_QUICK_FOOTER_HEIGHT
+				- headerHeight * static_cast<int>(categoryLevels.size())
+				- NH_QUICK_HEADING_GAP * static_cast<int>(categoryLevels.size())
+				- NH_QUICK_CARD_GAP * static_cast<int>(categoryLevels.size()))
+			/ static_cast<int>(categoryLevels.size()));
+		int bandTop = NH_QUICK_CONTENT_TOP;
 		for(size_t index = 0; index < categoryLevels.size(); ++index)
 		{
 			const auto & group = categoryLevels[index];
 			if(group.empty())
 				continue;
 
-			const int groupStart = position.x;
-			for(const int level : group)
-				createCard(level);
-
-			const int groupWidth = static_cast<int>(group.size()) * 100 + static_cast<int>(group.size() - 1) * 8;
-			const auto category = currentCreatureCategory(town->creatures[group.front()].second.back().toCreature());
+			const int groupWidth = static_cast<int>(group.size()) * cardWidth + static_cast<int>(group.size() - 1) * NH_QUICK_CARD_GAP;
+			const int groupStart = (pos.w - groupWidth) / 2;
+			const auto variants = creatureVariantsAtLevel(town, static_cast<size_t>(group.front()));
+			const auto category = variants.empty() ? std::nullopt : currentCreatureCategory(variants.front().toCreature());
 			if(category)
 			{
 				const auto categoryName = newHorizonsCreatureCategoryUI::name(category, GAME ? &GAME->translator() : nullptr);
 				if(!categoryName.empty())
 				{
-					categoryHeaders[index] = std::make_shared<CLabel>(groupStart + groupWidth / 2, 7, FONT_SMALL,
-						ETextAlignment::TOPCENTER, Colors::YELLOW, categoryName, groupWidth + 12);
-					categoryGroupRects[index] = Rect(groupStart - 6, 2, groupWidth + 12, 331);
+					categoryHeaders[index] = std::make_shared<CLabel>(groupStart + groupWidth / 2, bandTop, FONT_SMALL,
+						ETextAlignment::TOPCENTER, Colors::YELLOW, categoryName, groupWidth + 4);
+					categoryGroupRects[index] = Rect(groupStart - 3, bandTop - 1, groupWidth + 6,
+						headerHeight + NH_QUICK_HEADING_GAP + cardHeight + 2);
 				}
 			}
+			const int cardTop = bandTop + headerHeight + NH_QUICK_HEADING_GAP;
+			for(size_t column = 0; column < group.size(); ++column)
+			{
+				const int level = group[column];
+				const bool built = level < static_cast<int>(town->creatures.size()) && !town->creatures[level].second.empty();
+				const auto variants = displayVariantsAtLevel(town, static_cast<size_t>(level), built);
+				const int stock = built ? town->creatures[level].first : 0;
+				const Point cardPosition(groupStart + static_cast<int>(column) * (cardWidth + NH_QUICK_CARD_GAP), cardTop);
+				cards.push_back(std::make_shared<CreaturePurchaseCard>(variants, cardPosition, stock, level, this,
+					true, cardWidth, cardHeight, built));
+			}
+			bandTop = cardTop + cardHeight + NH_QUICK_CARD_GAP;
 		}
 	}
 	else
@@ -145,18 +242,37 @@ void QuickRecruitmentWindow::setCreaturePurchaseCards()
 		// No or incomplete saved category view means a legacy/custom game: retain
 		// the original row order and construct every widget at its final position.
 		for(const int level : availableLevels)
-			createCard(level);
+			createLegacyCard(level);
 	}
 	std::stable_sort(cards.begin(), cards.end(), [](const auto & lhs, const auto & rhs)
 	{
 		return lhs->recruitmentLevel < rhs->recruitmentLevel;
 	});
 
-	totalCost = std::make_shared<CreatureCostBox>(Rect((this->pos.w/2)-45, position.y+260, 97, 74), "");
+	if(grouped)
+		totalCost = std::make_shared<CreatureCostBox>(Rect((this->pos.w - 97) / 2, this->pos.h - NH_QUICK_FOOTER_HEIGHT + 2, 97, 74), "");
+	else
+		totalCost = std::make_shared<CreatureCostBox>(Rect((this->pos.w/2)-45, position.y+260, 97, 74), "");
 }
 
 void QuickRecruitmentWindow::initWindow(Rect startupPosition)
 {
+	categorizedLayout = hasCompleteCategoryContext(town);
+	if(categorizedLayout)
+	{
+		const Point viewport = ENGINE->screenDimensions();
+		const Point fallbackSize(800, 600);
+		const Point parentSize = GAME && GAME->interface() && GAME->interface()->castleInt
+			? GAME->interface()->castleInt->pos.dimensions()
+			: fallbackSize;
+		pos.x = 0;
+		pos.y = 0;
+		pos.w = std::max(1, std::min(viewport.x - 8, parentSize.x));
+		pos.h = std::max(1, std::min(viewport.y - 8, parentSize.y));
+		backgroundTexture = std::make_shared<CFilledTexture>(ImagePath::builtin("DIBOXBCK.pcx"), Rect(0, 0, pos.w, pos.h));
+		costBackground = std::make_shared<CPicture>(ImagePath::builtin("QuickRecruitmentWindow/costBackground.png"), pos.w / 2 - 113, pos.h - NH_QUICK_FOOTER_HEIGHT);
+		return;
+	}
 	pos.x = startupPosition.x + 238;
 	pos.y = startupPosition.y + 45;
 	pos.w = 332;
@@ -223,10 +339,27 @@ void QuickRecruitmentWindow::purchaseUnits()
 int QuickRecruitmentWindow::getAvailableCreatures()
 {
 	int creaturesAmount = 0;
-	for (int i=0; i< town->getTown()->creatures.size(); i++)
-		if(!town->getTown()->creatures.at(i).empty() && !town->creatures.at(i).second.empty() && town->creatures[i].first)
-			creaturesAmount++;
+	const size_t levelCount = categorizedLayout ? town->creatures.size() : town->getTown()->creatures.size();
+	for(size_t i = 0; i < levelCount; ++i)
+	{
+		if(categorizedLayout)
+		{
+			if(!creatureVariantsAtLevel(town, i).empty())
+				++creaturesAmount;
+		}
+		else if(i < town->creatures.size() && !town->getTown()->creatures[i].empty()
+			&& !town->creatures[i].second.empty() && town->creatures[i].first)
+			++creaturesAmount;
+	}
 	return creaturesAmount;
+}
+
+int QuickRecruitmentWindow::getWeeklyGrowth(int recruitmentLevel) const
+{
+	if(!town || recruitmentLevel < 0 || static_cast<size_t>(recruitmentLevel) >= town->creatures.size()
+		|| town->creatures[recruitmentLevel].second.empty())
+		return 0;
+	return town->getGrowthInfo(recruitmentLevel).totalGrowth();
 }
 
 void QuickRecruitmentWindow::updateAllSliders()

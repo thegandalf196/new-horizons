@@ -11,11 +11,17 @@
 
 #include "../widgets/Images.h"
 
+#include "../../lib/ResourceSet.h"
+
+#include <array>
+#include <vector>
+
 class CCreaturePic;
 class CSlider;
 class CButton;
 class CreatureCostBox;
 class QuickRecruitmentWindow;
+class LRClickableAreaWText;
 
 class CreaturePurchaseCard : public CIntObject
 {
@@ -27,9 +33,15 @@ public:
 	int maxAmount;
 	void sliderMoved(int to);
 
-	CreaturePurchaseCard(const std::vector<CreatureID> & creaturesID, Point position, int creaturesMaxAmount, int recruitmentLevel, QuickRecruitmentWindow * parents);
+	CreaturePurchaseCard(const std::vector<CreatureID> & creaturesID, Point position, int creaturesMaxAmount,
+		int recruitmentLevel, QuickRecruitmentWindow * parents, bool compactLayout = false,
+		int cardWidth = 100, int cardHeight = 320, bool builtDwelling = true);
 private:
 	void initView();
+	void initCompactView();
+	void updateCompactStats();
+	void initCompactCostInfo();
+	void updateCompactCostInfo(int amount);
 
 	void initButtons();
 	void initMaxButton();
@@ -44,12 +56,19 @@ private:
 
 	void initCostBox();
 
+	struct CompactCostEntry
+	{
+		GameResID resource;
+		std::shared_ptr<CLabel> amount;
+		std::shared_ptr<LRClickableAreaWText> help;
+	};
+
 	// This just wraps a clickeable area. There's a weird layout scheme in the file and
 	// it's easier to just add a separate invisible box on top
 	class CCreatureClickArea : public CIntObject
 	{
 	public:
-		CCreatureClickArea(const Point & pos, const std::shared_ptr<CCreaturePic> creaturePic, const CCreature * creatureOnTheCard);
+		CCreatureClickArea(const Point & pos, const std::shared_ptr<CIntObject> creaturePic, const CCreature * creatureOnTheCard);
 		void showPopupWindow(const Point & cursorPosition) override;
 		const CCreature * creatureOnTheCard;
 
@@ -70,4 +89,16 @@ private:
 	std::vector<CreatureID> upgradesID;
 	std::shared_ptr<CPicture> background;
 	std::shared_ptr<CCreatureClickArea> creatureClickArea;
+	std::shared_ptr<CFilledTexture> compactBackground;
+	std::shared_ptr<CAnimImage> compactPortrait;
+	std::shared_ptr<CLabel> compactName;
+	std::array<std::shared_ptr<CLabel>, 8> compactStatValues;
+	std::array<std::shared_ptr<CIntObject>, 8> compactStatIcons;
+	std::vector<std::shared_ptr<LRClickableAreaWText>> compactStatHelp;
+	std::vector<std::shared_ptr<CIntObject>> compactCostWidgets;
+	std::vector<CompactCostEntry> compactCostEntries;
+	bool compactLayout = false;
+	bool builtDwelling = true;
+	int cardWidth = 100;
+	int cardHeight = 320;
 };
