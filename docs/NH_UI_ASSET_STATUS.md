@@ -1,5 +1,13 @@
 # New Horizons UI and asset status register
 
+Rig-guided Cabir contact study,2026-10-06: **Provisional**, private and
+uninstalled. Original articulated technical guide provides Near contact,
+Near-supported passing and Far contact; it is not runtime art. Initial
+HoMM3-Art imagegen contact repeats the wrong support phase and is rejected.
+One targeted revision shows opposite support and rougher surfaces, but
+native56 confirms proportion/camera drift. Full walking, translated foot
+planting, animation continuity and user acceptance remain open.
+
 Private preview delivery,2026-10-06: **Provisional** paired Cabir standing
 battle preview is available through build/nh-cabir-preview-v4.mjk0wHvH/
 Play-Cabir-Preview.sh and its original manual battle map. Static poses are not
