@@ -2,6 +2,20 @@
 
 ## Purpose
 
+### 2026-10-07 — Old Nexus fixture expects forbidden above-capacity Normal Mana
+
+UP273's initial adjacent four-case run8478 passes3/4. The old combined
+TrainingPersistsAndAstralNexusAlwaysRefillsToNormalMaximum fixture calls
+setManaPoints(maximum+11), then asserts that total remains maximum+11. The
+current SET_NORMAL path correctly clamps Normal to its maximum; it grants no
+Buffer. This unchanged legacy expectation fails before the fixture's later
+visit/save assertions. Do not relax production Normal-capacity rules. Phase2:
+update this fixture to use explicit Buffer grants, assert ordinary Nexus refill
+preserves Buffer, and rerun its full visit/save path. Preserve failed native.log/
+XML under ignored testing/nexus-status-20261007.uILCkRnT. The new translated
+readback plus finite training/weekly controls separately pass3/3 in1.204s;
+that is not full restoration/save certification. UP273 only adds read-only help.
+
 ### 2026-10-07 — Initiative marker used image-only visibility API
 
 UP272's first combined build11477 fails in StackQueue because CLabel has no

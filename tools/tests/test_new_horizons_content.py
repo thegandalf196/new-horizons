@@ -1341,6 +1341,11 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertIn('replenishes', patch['description'])
         configuration = patch['configuration']
         self.assertEqual(configuration['visitMode'], 'unlimited')
+        status = configuration['notVisitedTooltip']
+        for token in ('%NORMAL%', '%MAXIMUM%', '%RESTORED%', '%BUFFER%'):
+            self.assertIn(token, status)
+        self.assertIn('remain unchanged', status)
+        self.assertIn('Unlimited visits', status)
         self.assertNotIn('resetParameters', configuration)
         self.assertEqual(len(configuration['rewards']), 1)
         reward = configuration['rewards'][0]

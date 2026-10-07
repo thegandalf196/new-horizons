@@ -345,6 +345,56 @@ TEST_F(NewHorizonsUniqueBuildingTrainingTest, ArcaneReservoirAllowsExactlyOneHer
 	EXPECT_EQ(visitText(nullptr), usedText);
 }
 
+TEST_F(NewHorizonsUniqueBuildingTrainingTest, AstralNexusStatusPreviewsOnlyNormalSpellPointRestoration)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(48, false).playerActive(PlayerColor(0))
+		.town({20, 20, 0}, faction("core:dungeon"), PlayerColor(0))
+		.hero({5, 5, 0}, heroType("core:christian"), PlayerColor(0));
+	startWithMap(std::move(builder));
+
+	auto * town = findFirst<CGTownInstance>();
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(town, nullptr);
+	ASSERT_NE(hero, nullptr);
+	hero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 50, ChangeValueMode::ABSOLUTE);
+	town->addBuilding(BuildingID::SPECIAL_2);
+	ASSERT_TRUE(town->rewardableBuildings.contains(BuildingID::SPECIAL_2));
+	const auto & nexus = *town->rewardableBuildings.at(BuildingID::SPECIAL_2);
+	ASSERT_EQ(nexus.configuration.visitMode, Rewardable::VISIT_UNLIMITED);
+
+	GameHandlerTestServer server(gameState(), PlayerColor(0));
+	CGameHandler gameHandler(server, gameState());
+	const int32_t maximum = hero->manaLimit();
+	ASSERT_EQ(maximum, 50);
+	const int32_t normal = maximum - 20;
+	gameHandler.setManaPoints(hero->id, normal);
+	gameHandler.grantBufferSpellPoints(hero->id, 25);
+	ASSERT_TRUE(hero->areSpellPointsInitialized());
+	ASSERT_EQ(hero->getNormalSpellPoints(), normal);
+	ASSERT_EQ(hero->getBufferSpellPoints(), 25);
+
+	const auto statusText = [&](const CGHeroInstance * subject)
+	{
+		return newHorizonsBuildingVisitHelp::heroVisitStatus(nexus, subject)
+			.toString(LIBRARY->generaltexth.get());
+	};
+	EXPECT_TRUE(statusText(nullptr).empty());
+	EXPECT_EQ(statusText(hero), "Normal Spell Points: " + std::to_string(normal) + " / "
+		+ std::to_string(maximum) + ". Restores 20 Normal Spell Points. "
+		+ "Buffer Spell Points remain unchanged: +25. Unlimited visits.");
+	EXPECT_EQ(hero->getNormalSpellPoints(), normal)
+		<< "Reading the town preview must not refill or otherwise mutate the hero.";
+	EXPECT_EQ(hero->getBufferSpellPoints(), 25);
+
+	gameHandler.setManaPoints(hero->id, maximum);
+	EXPECT_EQ(statusText(hero), "Normal Spell Points: " + std::to_string(maximum) + " / "
+		+ std::to_string(maximum) + ". Restores 0 Normal Spell Points. "
+		+ "Buffer Spell Points remain unchanged: +25. Unlimited visits.");
+	EXPECT_EQ(hero->getNormalSpellPoints(), maximum);
+	EXPECT_EQ(hero->getBufferSpellPoints(), 25);
+}
+
 TEST_F(NewHorizonsUniqueBuildingTrainingTest, BrotherhoodVisitHelpTracksActualPerHeroTraining)
 {
 	const auto castle = faction("core:castle");

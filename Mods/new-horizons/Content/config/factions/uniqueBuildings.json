@@ -155,6 +155,7 @@
 					"description": "The Astral Nexus immediately replenishes each visiting hero's spell points to their normal maximum.",
 					"configuration": {
 						"visitMode": "unlimited",
+						"notVisitedTooltip": "Normal Spell Points: %NORMAL% / %MAXIMUM%. Restores %RESTORED% Normal Spell Points. Buffer Spell Points remain unchanged: +%BUFFER%. Unlimited visits.",
 						"rewards": [
 							{
 								"message": "The Astral Nexus replenishes this hero's spell points to their normal maximum.",

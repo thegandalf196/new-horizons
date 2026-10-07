@@ -2,6 +2,20 @@
 
 Updated: 2026-10-07
 
+UP273 adds omitted current-hero Astral Nexus state to existing Town hover/help:
+Normal/current maximum, missing Normal restored, unchanged Buffer and unlimited
+visits. Authored status tokens are resolved read-only for initialized saved
+two-pool heroes; finite training/weekly statuses are unchanged. Client/test
+build2077 succeeds; principal3/3 native cases pass in1.204s, zero skips/errors/
+disabled, with data/source/module checks and source review. An adjacent old
+fixture's above-capacity Normal expectation fails3/4 before later save checks;
+repair/rerun is recorded for Phase2, not a runtime rule change. Rendered town
+readability/visibility execution and playable delivery remain separate. Counts
+unchanged:228/310 perks,31/31 Skills,93/93 ranks,61/67 combat spells,8/8 Orders.
+Bounded Movement/Chain Lightning audits find already-covered principal UI paths;
+Surgeon's named automatic cleanse result is already present. Do not duplicate
+these implementations or count deferred rendering as absent production code.
+
 UP272 implements the missing initiative-bar origin distinction for existing
 Morale, Quartermaster and exact-recipient Second Wind extra activations. An
 existing post-apply reason event feeds transient client provenance; same-

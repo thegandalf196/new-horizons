@@ -1,5 +1,13 @@
 # New Horizons UI and asset status register
 
+Astral Nexus refill state,2026-10-07: **Provisional** under UP273. Existing town
+hover/right-click surfaces append current Normal/max, missing Normal restored,
+Buffer unchanged and unlimited-use status; no new panel/art. Client/test build
+and three focused native readback/finite-visit controls pass, as do data/source
+checks and review. The adjacent old above-capacity Normal fixture fails and is
+retained for Phase2 repair. Native shared readback is not actual rendered town
+visibility/fit acceptance; normal Linux launcher remains unchanged.
+
 Initiative extra-activation origin,2026-10-07: **Provisional** under UP272.
 Existing queue portraits receive a small yellow plus and localized source help
 for accepted Morale, Quartermaster or Second Wind activations. No new art;

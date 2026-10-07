@@ -7,14 +7,37 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/TownBuildingInstance.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/texts/MetaString.h"
 
 namespace newHorizonsBuildingVisitHelp
 {
 /// Returns authored town-rewardable state text without changing town or hero state.
 inline MetaString heroVisitStatus(const TownRewardableBuildingInstance & building, const CGHeroInstance * hero)
 {
+	if(building.configuration.visitMode == Rewardable::VISIT_UNLIMITED)
+	{
+		if(!hero || !hero->areSpellPointsInitialized()
+			|| !newHorizonsMagic::spellPointRulesActive(hero->getMagicRules())
+			|| building.configuration.notVisitedTooltip.empty())
+			return {};
+
+		MetaString status = building.configuration.notVisitedTooltip;
+		const int32_t normal = hero->getNormalSpellPoints();
+		const int32_t maximum = hero->manaLimit();
+		const int32_t buffer = hero->getBufferSpellPoints();
+		const int64_t restored = maximum > normal ? static_cast<int64_t>(maximum) - normal : 0;
+		status.replaceTokenNumber("%NORMAL%", normal);
+		status.replaceTokenNumber("%MAXIMUM%", maximum);
+		status.replaceTokenNumber("%RESTORED%", restored);
+		status.replaceTokenNumber("%BUFFER%", buffer);
+		return status;
+	}
+
 	bool visited = false;
 	switch(building.configuration.visitMode)
 	{
