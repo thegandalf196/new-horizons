@@ -2,6 +2,17 @@
 
 Updated: 2026-10-07
 
+Linux delivery refresh: immutable4de7cd42f/sourcef8d593dd3 now supplies UP279/
+280/283 through the unchanged normal launcher. Independent2367-file/version
+checks and bounded20s fresh-profile true-headless map progression/cleanup pass;
+known schema/Dispel/obstacle diagnostics remain Phase2, and no rendered/manual
+or completed-match acceptance is inferred. This is delivery, not new identity
+coverage. A bounded Fortress/Academy creature audit finds configured legacy
+ability consumers, correct nonstacking after-Wisdom Mage discounts and a real
+Cabir repair-versus-attack AI comparison. No new production omission is found
+in this sample; species-by-species live execution is not certified. Keep the
+82 planned-perk/six-spell and specific building holds distinct from these findings.
+
 UP280 supplies recipient-specific missing School rank in reward/teacher spell
 component help, using the same learning evaluator rather than client-selected
 hero inference. Only School-as-sole-blocker receives the explanation; existing

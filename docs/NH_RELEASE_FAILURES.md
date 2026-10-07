@@ -2,6 +2,20 @@
 
 ## Purpose
 
+### 2026-10-07 — Refreshed Linux candidate retains known non-blocking diagnostics
+
+UP233's immutable4de7cd42f/sourcef8d593dd3 bounded20s true-headless smoke
+progresses through days1–4 and starts day5, exits on expected timeout124, and
+passes owned-process/runtime/profile-lock cleanup plus2367-file integrity.
+No crash/assertion, request rejection or ammo-overuse marker is observed.
+The log is not clean: four Cabir Repair effect-discriminator schema warnings,
+six Dispel transformTarget invalid-spell errors,114 obstacle-access warnings and
+one obstacle-placement debug exception remain. Actual repair execution already
+has focused native acceptance; these are recorded Phase2 schema/AI-context
+findings, not permission to infer rendered correctness or completed games.
+Retain the exact command/native/client logs under ignored
+build/nh-delivery-refresh-20261007.upSE5U43/run.VG31HGqM.
+
 ### 2026-10-07 — Reward tooltip helpers dereferenced a forward-declared Spell
 
 UP280 build40468 stops in Reward.cpp: requiredSchoolRank/spellSchoolSkills were
