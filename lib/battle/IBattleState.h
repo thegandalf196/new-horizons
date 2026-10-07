@@ -208,6 +208,13 @@ public:
 		return empty;
 	}
 	virtual int32_t getBattlecraftMasteryAwardRound(BattleSide side) const { (void)side; return -1; }
+	/// Whether this side has already spent Armorer's once-per-combat Last Stand.
+	virtual bool armorerLastStandUsed(BattleSide side) const { (void)side; return false; }
+	virtual void consumeArmorerLastStand(BattleSide side)
+	{
+		(void)side;
+		throw std::logic_error("Battle state does not support Armorer Last Stand updates");
+	}
 	virtual LuckRollRules getLuckRollRules() const { return {}; }
 	virtual const std::map<CreatureID, TQuantity> & getDemonicReserve(BattleSide side) const
 	{
@@ -305,4 +312,9 @@ public:
 	/// Applies the accepted first Wait/Defend Battlefield Mastery award.
 	/// Implementations with detached state should update only their own branch.
 	virtual void awardBattlecraftMastery(BattleSide, uint32_t, int32_t, BattlecraftMasteryAction) {}
+	/// Commits the first accepted Last Stand trigger for a side.
+	virtual void consumeArmorerLastStand(BattleSide)
+	{
+		throw std::runtime_error("Battle state does not support Armorer Last Stand updates");
+	}
 };

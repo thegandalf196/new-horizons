@@ -70,6 +70,7 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsBattlecraft.cpp
 	battle/NewHorizonsDiscipline.cpp
 	battle/NewHorizonsArchery.cpp
+	battle/NewHorizonsArmorer.cpp
 	battle/NewHorizonsCombatSkills.cpp
 	battle/NewHorizonsShroud.cpp
 	battle/NewHorizonsShadowGift.cpp
@@ -530,6 +531,7 @@ set(lib_MAIN_HEADERS
 	battle/NewHorizonsBattlecraft.h
 	battle/NewHorizonsDiscipline.h
 	battle/NewHorizonsArchery.h
+	battle/NewHorizonsArmorer.h
 	battle/NewHorizonsCombatSkills.h
 	battle/NewHorizonsShroud.h
 	battle/BattleLayout.h

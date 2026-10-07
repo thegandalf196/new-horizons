@@ -71,6 +71,9 @@ struct FortuneStrikeProjection
 	uint32_t defenderId = 0;
 	bool shooting = false;
 	bool retaliation = false;
+	/// Captures the actual attack-classification decision for Last Stand; damage
+	/// provenance alone is broader and can include non-attack physical sources.
+	bool eligibleForLastStand = false;
 	battle::DamageProvenance damageProvenance = battle::DamageProvenance::OTHER;
 	bool perfectMoment = false;
 	bool protectIntercepted = false;

@@ -12,6 +12,7 @@
 
 #include "CGameState.h"
 #include "../battle/CBattleInfoCallback.h"
+#include "../battle/NewHorizonsArmorer.h"
 #include "../battle/NewHorizonsOffense.h"
 #include "../battle/NewHorizonsWarcasting.h"
 #include "../bonuses/BonusSelector.h"
@@ -2078,11 +2079,51 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 		throw std::runtime_error("BattleAttack references a missing battle");
 	if(pack.chainGateTriggered && !chainGateKillQualifies(*battle, pack.stackAttacking, pack.bsa))
 		throw std::runtime_error("Invalid Chain Gate attack trigger");
-	if(pack.fortuneState)
-		battle->getSide(pack.fortuneSide).sylvanLuck = *pack.fortuneState;
 	const auto bloodrageCandidates = bloodrageDeathCandidates(*battle, pack.bsa);
 	CStack * attacker = battle->getStack(pack.stackAttacking);
 	assert(attacker);
+	std::array<bool, 2> lastStandSidesToConsume{};
+	bool lastStandEndsActiveActivation = false;
+	for(const BattleStackAttacked & hit : pack.bsa)
+	{
+		const bool endedActivation = hit.newState.data["state"]["armorerLastStandEndedActivation"].Bool();
+		const bool passiveDefend = hit.newState.data["state"]["armorerLastStandDefending"].Bool();
+		if(hit.armorerLastStandEndsActivation
+			&& (hit.armorerLastStandSide == BattleSide::NONE || !endedActivation || !pack.lastStandRetaliation()
+				|| battle->activeStack != static_cast<int32_t>(hit.stackAttacked)))
+			throw std::runtime_error("Last Stand may end only the active stack after a retaliation");
+		lastStandEndsActiveActivation = lastStandEndsActiveActivation || hit.armorerLastStandEndsActivation;
+		if(hit.armorerLastStandSide == BattleSide::NONE)
+			continue;
+		if(hit.armorerLastStandSide != BattleSide::ATTACKER && hit.armorerLastStandSide != BattleSide::DEFENDER)
+			throw std::runtime_error("Invalid Last Stand side in attack packet");
+		const auto sideIndex = static_cast<size_t>(hit.armorerLastStandSide);
+		const auto * target = battle->getStack(hit.stackAttacked, false);
+		const auto * strikeSource = battle->getStack(hit.attackerID, false);
+		const auto * hero = battle->battleGetFightingHero(hit.armorerLastStandSide);
+		const bool physicalDamage = strikeSource && !pack.spellLike()
+			&& !(pack.shot() && strikeSource->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
+		if(lastStandSidesToConsume[sideIndex] || battle->armorerLastStandUsed(hit.armorerLastStandSide)
+			|| !target || !target->alive() || hit.damageAmount < 0 || hit.killed() || hit.willRebirth()
+			|| hit.cloneKilled() || !passiveDefend
+			|| hit.attackerID != pack.stackAttacking || !strikeSource
+			|| !newHorizonsArmorer::isEligiblePhysicalAttack(strikeSource, physicalDamage, pack.spellLike())
+			|| battle->playerToSide(battle->battleGetOwner(target)) != hit.armorerLastStandSide
+			|| !newHorizonsArmorer::canTriggerLastStand(hero, target))
+			throw std::runtime_error("Invalid Last Stand attack trigger");
+		if(hit.newState.id != hit.stackAttacked
+			|| hit.newState.operation != UnitChanges::EOperation::UPDATE)
+			throw std::runtime_error("Last Stand attack update does not identify its surviving stack");
+		auto projectedState = target->acquireState();
+		projectedState->load(hit.newState.data);
+		if(projectedState->unitId() != hit.stackAttacked || !projectedState->alive()
+			|| projectedState->getAvailableHealth() != 1 || projectedState->getCount() != 1
+			|| !projectedState->armorerLastStandDefending)
+			throw std::runtime_error("Last Stand attack snapshot does not preserve one creature at 1 HP");
+		lastStandSidesToConsume[sideIndex] = true;
+	}
+	if(pack.lastStandRetaliation() != lastStandEndsActiveActivation)
+		throw std::runtime_error("Last Stand retaliation marker does not match its activation-ending hit");
 	if(pack.relentlessAssaultState)
 	{
 		pack.relentlessAssaultState->validateShape();
@@ -2107,6 +2148,8 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 			|| (target && target->unitSide() == pack.relentlessAssaultSide))
 			throw std::runtime_error("Invalid Relentless Assault primary target update");
 	}
+	if(pack.fortuneState)
+		battle->getSide(pack.fortuneSide).sylvanLuck = *pack.fortuneState;
 
 	pack.attackerChanges.visit(*this);
 
@@ -2115,6 +2158,18 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 		battle->updateUnit(stack.newState.id, stack.newState.data, stack.newState.healthDelta);
 		removeExhaustedGuardianSpirit(*battle, stack);
 	}
+	for(const BattleStackAttacked & hit : pack.bsa)
+	{
+		if(hit.armorerLastStandSide == BattleSide::NONE)
+			continue;
+		const auto * survivor = battle->getStack(hit.stackAttacked, false);
+		if(!survivor || !survivor->alive() || survivor->getAvailableHealth() != 1
+			|| survivor->getCount() != 1)
+			throw std::runtime_error("Last Stand attack update did not preserve one creature at 1 HP");
+	}
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		if(lastStandSidesToConsume[static_cast<size_t>(side)])
+			battle->consumeArmorerLastStand(side);
 	if(pack.relentlessAssaultState)
 		battle->setRelentlessAssaultState(pack.relentlessAssaultSide, *pack.relentlessAssaultState);
 	recordBloodrageDeaths(*battle, bloodrageCandidates);

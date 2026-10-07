@@ -1,5 +1,23 @@
 # Serialization
 
+## Armorer Last Stand (source/native verified)
+
+`NEW_HORIZONS_ARMORER_LAST_STAND` appends a per-side combat-used flag.
+Accepted physical attack updates carry the selected side and, for lethal
+retaliation saving the acting attacker, activation-ended provenance. UnitChanges
+JSON retains separate Last Stand Defending and activation-ended markers; their
+expiry is the next real activation, not round rollover. Guardian absorption is
+separate from ordinary health in the shared lethal-hit calculation.
+
+Older reads default to unused; populated unsupported direct/enclosing writers
+must reject before payload bytes. Binary battle descriptors omit general
+CUnitState and therefore reject either active Last Stand transient unit marker,
+even in the current format. Side-used history alone may roundtrip; this does
+not add ongoing-battle save/resume or restore omitted health/Defend lifetimes.
+Principal live/packet and detached-AI acceptance passes in UP079:13 focused
+cases and22 activated adjacent cases, zero skips. Broader interactions remain
+deferred; this is not evidence of midcombat save/resume support.
+
 ## Battlefield Mastery round award (source integrated; native validation pending)
 
 `NEW_HORIZONS_BATTLEFIELD_MASTERY` appends two historical per-side award-round

@@ -119,6 +119,11 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLEFIELD_MASTERY)
 			&& info->hasBattlecraftMasteryState())
 			throw std::runtime_error("Cannot discard Battlefield Mastery state from BattleStart");
+		if(h.saving && info && info->hasArmorerLastStandTransientUnitState())
+			throw std::runtime_error("Binary BattleStart cannot preserve active Last Stand unit state");
+		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_ARMORER_LAST_STAND)
+			&& info->hasArmorerLastStandState())
+			throw std::runtime_error("Cannot discard Armorer Last Stand state from BattleStart");
 		h & battleID;
 		h & info;
 		assert(battleID != BattleID::NONE);
@@ -678,6 +683,10 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 			&& std::ranges::any_of(changedStacks, [](const UnitChanges & change)
 				{ return change.hasBattlecraftMasteryState(); }))
 			throw std::runtime_error("Cannot discard Battlefield Mastery unit state update");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_ARMORER_LAST_STAND)
+			&& std::ranges::any_of(changedStacks, [](const UnitChanges & change)
+				{ return change.hasArmorerLastStandUnitTransientState(); }))
+			throw std::runtime_error("Cannot discard Last Stand unit transient state update");
 		h & battleID;
 		h & changedStacks;
 		assert(battleID != BattleID::NONE);
@@ -701,6 +710,25 @@ struct BattleStackAttacked
 	};
 	ui32 flags = 0; //uses EFlags (above)
 	SpellID spellID = SpellID::NONE; //only if flag SPELL_EFFECT is set
+	BattleSide armorerLastStandSide = BattleSide::NONE;
+	bool armorerLastStandEndsActivation = false;
+
+	void validateArmorerLastStandShape() const
+	{
+		if(armorerLastStandSide != BattleSide::NONE
+			&& armorerLastStandSide != BattleSide::ATTACKER
+			&& armorerLastStandSide != BattleSide::DEFENDER)
+			throw std::runtime_error("Invalid Last Stand attack side");
+		const auto & state = newState.data["state"];
+		const bool passiveDefend = state["armorerLastStandDefending"].Bool();
+		const bool endedActivation = state["armorerLastStandEndedActivation"].Bool();
+		if((armorerLastStandSide != BattleSide::NONE
+				&& (!passiveDefend || newState.id != stackAttacked
+					|| newState.operation != UnitChanges::EOperation::UPDATE))
+			|| (armorerLastStandEndsActivation
+				&& (armorerLastStandSide == BattleSide::NONE || !endedActivation)))
+			throw std::runtime_error("Invalid Last Stand unit state in attack hit");
+	}
 
 	bool killed() const//if target stack was killed
 	{
@@ -726,6 +754,8 @@ struct BattleStackAttacked
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+			validateArmorerLastStandShape();
 		const auto & followUpPercent = newState.data["state"]["rangedFollowUpDamagePercent"];
 		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_CASUALTY_PROVENANCE)
 			&& newState.hasCasualtyProvenanceState())
@@ -739,6 +769,10 @@ struct BattleStackAttacked
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLECRAFT_PREEMPTIVE_STRIKE)
 			&& newState.hasBattlecraftPreemptiveStrikeRoundState())
 			throw std::runtime_error("Cannot discard Battlecraft Pre-emptive Strike attack state update");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_ARMORER_LAST_STAND)
+			&& (armorerLastStandSide != BattleSide::NONE || armorerLastStandEndsActivation
+				|| newState.hasArmorerLastStandUnitTransientState()))
+			throw std::runtime_error("Cannot discard Last Stand attack state update");
 		h & stackAttacked;
 		h & attackerID;
 		h & newState;
@@ -746,6 +780,17 @@ struct BattleStackAttacked
 		h & killedAmount;
 		h & damageAmount;
 		h & spellID;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_ARMORER_LAST_STAND))
+		{
+			h & armorerLastStandSide;
+			h & armorerLastStandEndsActivation;
+			validateArmorerLastStandShape();
+		}
+		else if(!h.saving)
+		{
+			armorerLastStandSide = BattleSide::NONE;
+			armorerLastStandEndsActivation = false;
+		}
 	}
 	bool operator<(const BattleStackAttacked & b) const
 	{
@@ -764,7 +809,7 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 	std::vector<BattleStackAttacked> bsa;
 	ui32 stackAttacking = 0;
 	ui32 flags = 0; //uses Eflags (below)
-	enum EFlags { SHOT = 1, COUNTER = 2, LUCKY = 4, UNLUCKY = 8, BALLISTA_DOUBLE_DMG = 16, DEATH_BLOW = 32, SPELL_LIKE = 64, CUSTOM_ANIMATION = 256};
+	enum EFlags { SHOT = 1, COUNTER = 2, LUCKY = 4, UNLUCKY = 8, BALLISTA_DOUBLE_DMG = 16, DEATH_BLOW = 32, SPELL_LIKE = 64, CUSTOM_ANIMATION = 256, LAST_STAND_RETALIATION = 512};
 
 	BattleHex tile;
 	SpellID spellID = SpellID::NONE; //for SPELL_LIKE
@@ -809,11 +854,24 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 	{
 		return flags & CUSTOM_ANIMATION;
 	}
+	bool lastStandRetaliation() const
+	{
+		return flags & LAST_STAND_RETALIATION;
+	}
+	void validateLastStandMarker() const
+	{
+		const bool endedActiveActivation = std::ranges::any_of(bsa, [](const BattleStackAttacked & hit)
+			{ return hit.armorerLastStandEndsActivation; });
+		if(lastStandRetaliation() != endedActiveActivation)
+			throw std::runtime_error("Last Stand retaliation marker does not match its activation-ending hit");
+	}
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+			validateLastStandMarker();
 		const auto hasPersonalBloodrage = [](const UnitChanges & change)
 		{
 			return change.hasRageThroughPainState();
@@ -850,6 +908,14 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 				|| std::ranges::any_of(bsa, [](const BattleStackAttacked & hit)
 					{ return hit.newState.hasBattlecraftMasteryState(); })))
 			throw std::runtime_error("Cannot discard Battlefield Mastery attack state");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_ARMORER_LAST_STAND)
+			&& (std::ranges::any_of(attackerChanges.changedStacks, [](const UnitChanges & change)
+				{ return change.hasArmorerLastStandUnitTransientState(); })
+				|| std::ranges::any_of(bsa, [](const BattleStackAttacked & hit)
+					{ return hit.armorerLastStandSide != BattleSide::NONE
+						|| hit.armorerLastStandEndsActivation
+						|| hit.newState.hasArmorerLastStandUnitTransientState(); })))
+			throw std::runtime_error("Cannot discard Last Stand attack state");
 		if(h.saving && chainGateTriggered && !h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE))
 			throw std::runtime_error("Cannot discard Chain Gate attack state");
 		h & battleID;
@@ -895,6 +961,8 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 			relentlessAssaultSide = BattleSide::NONE;
 			relentlessAssaultState.reset();
 		}
+		if(!h.saving)
+			validateLastStandMarker();
 		assert(battleID != BattleID::NONE);
 	}
 };

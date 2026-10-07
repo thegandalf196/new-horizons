@@ -14,7 +14,10 @@
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsBattlecraft.h"
+#include "../../lib/battle/NewHorizonsArmorer.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
+#include "../../lib/battle/NewHorizonsDiscipline.h"
+#include "../../lib/battle/HeroCommand.h"
 #include "../../lib/battle/NewHorizonsBloodrage.h"
 #include "../../lib/battle/NewHorizonsMagicalAbilityDamage.h"
 #include "../../lib/battle/NewHorizonsCreatureAbilitySuppression.h"
@@ -882,6 +885,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 		heroOrderStates[side] = realBattle->getBattle()->getHeroOrderStates(side);
 		relentlessAssaultStates[side] = realBattle->getBattle()->getRelentlessAssaultState(side);
 		battlecraftMasteryAwardRounds[side] = realBattle->getBattle()->getBattlecraftMasteryAwardRound(side);
+		armorerLastStandUsedStates[side] = realBattle->getBattle()->armorerLastStandUsed(side);
 		warcastingStates[side] = realBattle->getBattle()->getWarcastingState(side);
 		heroActionAllowances[side] = realBattle->getBattle()->getHeroActionAllowances(side);
 		doubleCommandStates[side] = realBattle->getBattle()->getDoubleCommandState(side);
@@ -1891,6 +1895,44 @@ void HypotheticBattle::awardBattlecraftMastery(BattleSide side, uint32_t unitId,
 	battlecraftMasteryAwardRounds.at(side) = round;
 }
 
+bool HypotheticBattle::armorerLastStandUsed(BattleSide side) const
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return false;
+	return armorerLastStandUsedStates.at(side);
+}
+
+void HypotheticBattle::consumeArmorerLastStand(BattleSide side)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::runtime_error("Invalid hypothetical Armorer Last Stand side");
+	if(armorerLastStandUsedStates.at(side))
+		throw std::runtime_error("Hypothetical Armorer Last Stand was already consumed");
+	if(!newHorizonsArmorer::hasLastStand(battleGetFightingHero(side)))
+		throw std::runtime_error("Hypothetical Armorer Last Stand requires the active hero perk");
+	armorerLastStandUsedStates.at(side) = true;
+}
+
+void HypotheticBattle::applyArmorerLastStandDefend(uint32_t unitId)
+{
+	auto unit = getForUpdate(unitId);
+	if(!unit || !unit->alive())
+		throw std::runtime_error("Hypothetical Armorer Last Stand cannot defend a dead unit");
+
+	const auto * hero = battleGetOwnerHero(unit.get());
+	const bool holdFastApplies = heroCommands::isCanonicalRules(getHeroCommandRules())
+		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(unit.get())
+		&& newHorizonsDiscipline::hasHoldFast(hero);
+	const auto stance = newHorizonsArmorer::buildDefendStance(unit.get(), holdFastApplies);
+	unit->defending = true;
+	unit->armorerLastStandDefending = true;
+	unit->defensiveStanceMeleeBonus = stance.meleeDefenseBonus;
+	unit->defensiveStanceRangedBonus = stance.rangedDefenseBonus;
+	updateUnitBonus(unitId, stance.bonuses);
+	if(stance.holdFastBonus)
+		addUnitBonus(unitId, {*stance.holdFastBonus});
+}
+
 int32_t HypotheticBattle::getBloodrageDamagePercent(BattleSide side) const
 {
 	return bloodrageDamagePercents.at(side);
@@ -2087,6 +2129,11 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	}
 	if(newActivation)
 	{
+		// Match the authoritative activation boundary: a rescued unit stops only
+		// this activation, and its temporary Last Stand state expires when it
+		// genuinely receives another one.
+		unit->armorerLastStandEndedActivation = false;
+		unit->armorerLastStandDefending = false;
 		unit->pursuitMovementRemaining = 0;
 		unit->cleaveUsedThisActivation = false;
 		const auto side = playerToSide(battleGetOwner(unit.get()));

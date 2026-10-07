@@ -2,6 +2,48 @@
 
 ## Purpose
 
+### 2026-10-06 — Last Stand native fixture observation boundaries
+
+Initial native run89965 passes7/12, zero skips. A rescued stack may immediately
+receive its next queue activation, expiring Defend and applying Veteran recovery;
+the resulting3HP is not the original hit's capped survivor. Capture accepted
+attack state and arrange another next stack to verify actual Defend bonuses.
+Retaliation tests must not grant BLOCKS_RETALIATION to the acting attacker.
+AI keeps that actor in attackerState, not affectedUnits. Isolate Last Stand
+descriptor markers from existing Veteran-history rejection. Fixture repair19224
+also catches CUnitState::save being nonconst; use a mutable test state reference.
+Final build23204 and principal13/13/activated22/22 pass, zero skips. None of
+these fixes weakens the intended production survival or termination assertions.
+
+### 2026-10-06 — Last Stand fixture typed source and retaliation setup
+
+Client/test build11858 stopped in the new Guardian fixture because
+BonusSourceID's variant needs SpellID(SpellID::HASTE), not the raw enum value.
+The same checkpoint's independent review catches BLOCKS_RETALIATION accidentally
+given to the acting attacker in the own-player lethal-retaliation case. Remove
+that grant rather than weakening the survival assertion. Both are corrected in
+serialized retry45899; logs remain in last-stand-20261006.Y5mzBuFn.
+That retry stops at the AI fixture's missing defining include for testHeroRules;
+Root's first include correction incorrectly guessed SpellPointTestUtils.h;
+retry73215 proves the symbol is still missing. Locate the actual definition:
+test/hero/NewHorizonsHeroRulesFixture.h. Include that defining header explicitly,
+not an unrelated neighboring helper. Preserve both failure logs.
+
+### 2026-10-06 — Last Stand shared interface and detached-state semantics
+
+Client build71389 fails in applyBattleEffects because getBattle() exposes
+IBattleInfo, which has getActiveStackID(), not the concrete activeStack member.
+Use the existing interface rather than casting away the abstraction. The retry
+is49003; both logs remain under testing/last-stand-20261006.Y5mzBuFn.
+
+Pre-build review also catches nextTurn editing acquireState()'s detached copy.
+That helper does not return the live state; use the authoritative stack fields
+for an actual activation reset, and accepted UnitChanges for fixture transitions.
+Do not let descriptor tests pretend that mutating a discarded copy changed the
+stored marker. Native acceptance remains required. Other repaired contracts:
+zero capped damage is valid for a1HP rescue, carried termination state is not a
+new trigger, and SPELL_LIKE_ATTACK excludes its ranged mode, not ordinary melee.
+
 ### 2026-10-06 — Battlefield Mastery AI fixture defining include
 
 The subsequent build stops in the new AI fixture at levelUpHero/sendAndApply:

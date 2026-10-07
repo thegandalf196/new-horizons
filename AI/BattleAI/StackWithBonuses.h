@@ -361,6 +361,9 @@ public:
 	int32_t getBattlecraftMasteryAwardRound(BattleSide side) const override;
 	void awardBattlecraftMastery(BattleSide side, uint32_t unitId, int32_t round,
 		BattlecraftMasteryAction action) override;
+	bool armorerLastStandUsed(BattleSide side) const override;
+	void consumeArmorerLastStand(BattleSide side) override;
+	void applyArmorerLastStandDefend(uint32_t unitId);
 	int32_t getBloodrageDamagePercent(BattleSide side) const override;
 	int32_t getBloodrageCapPercent(BattleSide side) const override;
 	int32_t getBloodrageSpeedBonus(BattleSide side) const override;
@@ -494,6 +497,8 @@ private:
 	BattleSideArray<bool> heroSpellCastCompletedStates;
 	/// Branch-local per-side round stamp for Battlefield Mastery's first Wait/Defend award.
 	BattleSideArray<int32_t> battlecraftMasteryAwardRounds;
+	/// Branch-local once-per-combat consumption for Armorer's first qualifying Last Stand.
+	BattleSideArray<bool> armorerLastStandUsedStates;
 	BattleSideArray<std::uint8_t> completedHeroSpellLevelMasks;
 	BattleSideArray<bool> counterspellArmedStates;
 	BattleSideArray<bool> countersequenceArmedStates;

@@ -1320,6 +1320,8 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	defensiveStanceMeleeBonus = other.defensiveStanceMeleeBonus;
 	defensiveStanceRangedBonus = other.defensiveStanceRangedBonus;
 	battlecraftDefendMasteryDoubled = other.battlecraftDefendMasteryDoubled;
+	armorerLastStandEndedActivation = other.armorerLastStandEndedActivation;
+	armorerLastStandDefending = other.armorerLastStandDefending;
 	bulwarkPreemptiveUsed = other.bulwarkPreemptiveUsed;
 	bulwarkMireGripApplied = other.bulwarkMireGripApplied;
 	bulwarkDefendPhysicalDamage = other.bulwarkDefendPhysicalDamage;
@@ -2147,6 +2149,8 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeInt("defensiveStanceMeleeBonus", defensiveStanceMeleeBonus, 0);
 	handler.serializeInt("defensiveStanceRangedBonus", defensiveStanceRangedBonus, 0);
 	handler.serializeBool("battlecraftDefendMasteryDoubled", battlecraftDefendMasteryDoubled);
+	handler.serializeBool("armorerLastStandEndedActivation", armorerLastStandEndedActivation);
+	handler.serializeBool("armorerLastStandDefending", armorerLastStandDefending);
 	handler.serializeBool("bulwarkPreemptiveUsed", bulwarkPreemptiveUsed);
 	handler.serializeBool("bulwarkMireGripApplied", bulwarkMireGripApplied);
 	handler.serializeInt("bulwarkDefendPhysicalDamage", bulwarkDefendPhysicalDamage, 0);
@@ -2275,6 +2279,8 @@ void CUnitState::reset()
 	defensiveStanceMeleeBonus = 0;
 	defensiveStanceRangedBonus = 0;
 	battlecraftDefendMasteryDoubled = false;
+	armorerLastStandEndedActivation = false;
+	armorerLastStandDefending = false;
 	bulwarkPreemptiveUsed = false;
 	bulwarkMireGripApplied = false;
 	bulwarkDefendPhysicalDamage = 0;
@@ -2803,6 +2809,8 @@ void CUnitState::makeGhost()
 	rangedFollowUpDamagePercent = 0;
 	battlecraftWaitMasteryDoubled = false;
 	battlecraftDefendMasteryDoubled = false;
+	armorerLastStandEndedActivation = false;
+	armorerLastStandDefending = false;
 	veteranPhysicalDamageSinceActivation = 0;
 	guardianSpiritHitPoints = 0;
 	guardianSpiritRoundsRemaining = 0;
@@ -2819,6 +2827,8 @@ void CUnitState::onRemoved()
 	endBattleForm();
 	activationMovementBonus = 0;
 	rangedFollowUpDamagePercent = 0;
+	armorerLastStandEndedActivation = false;
+	armorerLastStandDefending = false;
 	battlecraftWaitMasteryDoubled = false;
 	battlecraftDefendMasteryDoubled = false;
 	// Keep the remains ledger on a ghost until the battle result is captured.

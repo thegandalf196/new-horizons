@@ -155,6 +155,14 @@ public:
 			return -1;
 		return sides.at(side).battlecraftMasteryAwardRound;
 	}
+	bool armorerLastStandUsed(BattleSide side) const override
+	{
+		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			return false;
+		return sides.at(side).armorerLastStandUsed;
+	}
+	bool hasArmorerLastStandTransientUnitState() const;
+	bool hasArmorerLastStandState() const;
 	bool hasBattlecraftMasteryState() const;
 	bool hasBattlecraftMasteryMarkers() const;
 	void validateBattlecraftMasteryState() const;
@@ -249,6 +257,11 @@ public:
 				throw std::runtime_error("Binary battle descriptors cannot preserve active Battlefield Mastery unit markers");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLEFIELD_MASTERY) && hasBattlecraftMasteryState())
 				throw std::runtime_error("Cannot discard Battlefield Mastery battle state in an older format");
+			if(hasArmorerLastStandTransientUnitState())
+				throw std::runtime_error("Binary battle descriptors cannot preserve active Last Stand unit state");
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_ARMORER_LAST_STAND)
+				&& hasArmorerLastStandState())
+				throw std::runtime_error("Cannot discard Armorer Last Stand battle state in an older format");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_ELEMENTAL_REBIRTH)
 				&& hasElementalRebirthBasisState())
 				throw std::runtime_error("Cannot discard Elemental Rebirth battle-start HP basis in an older battle format");
@@ -752,6 +765,26 @@ public:
 			sides[BattleSide::ATTACKER].battlecraftMasteryAwardRound = -1;
 			sides[BattleSide::DEFENDER].battlecraftMasteryAwardRound = -1;
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_ARMORER_LAST_STAND))
+		{
+			std::array<bool, 2> used{};
+			if(h.saving)
+			{
+				used[0] = sides[BattleSide::ATTACKER].armorerLastStandUsed;
+				used[1] = sides[BattleSide::DEFENDER].armorerLastStandUsed;
+			}
+			h & used;
+			if(!h.saving)
+			{
+				sides[BattleSide::ATTACKER].armorerLastStandUsed = used[0];
+				sides[BattleSide::DEFENDER].armorerLastStandUsed = used[1];
+			}
+		}
+		else if(!h.saving)
+		{
+			sides[BattleSide::ATTACKER].armorerLastStandUsed = false;
+			sides[BattleSide::DEFENDER].armorerLastStandUsed = false;
+		}
 
 		if(!h.saving)
 		{
@@ -904,6 +937,7 @@ public:
 	void setSpellResponseState(BattleSide side, const SpellResponseState & state) override;
 	void awardBattlecraftMastery(BattleSide side, uint32_t unitId, int32_t awardRound,
 		BattlecraftMasteryAction action) override;
+	void consumeArmorerLastStand(BattleSide side) override;
 	void setRelentlessAssaultState(BattleSide side, const RelentlessAssaultState & state) override
 	{
 		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)

@@ -8,6 +8,8 @@
  *
  */
 #pragma once
+#include <array>
+
 #include "battle/IBattleInfoCallback.h"
 #include "battle/RelentlessAssaultState.h"
 #include "bonuses/Bonus.h"
@@ -105,6 +107,9 @@ class BattleActionProcessor : boost::noncopyable
 		bool ranged = false;
 		int archeryRangedDamageMultiplierPercent = 100;
 		bool counter = false;
+		/// This attack is a reaction to an incoming attack/action; unlike the
+		/// presentation counter flag, this can end the active stack via Last Stand.
+		bool retaliation = false;
 		/// Counterfire is a counter-flagged reaction but does not consume normal retaliation.
 		bool archeryCounterfire = false;
 		bool brace = false;
@@ -160,7 +165,8 @@ class BattleActionProcessor : boost::noncopyable
 		std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload,
 		const battle::Unit * def, int distance, bool secondary, bool bracePreemptive,
 		int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted,
-		int relentlessAssaultDamagePercent, int archeryRangedDamageMultiplierPercent) const;
+		int relentlessAssaultDamagePercent, int archeryRangedDamageMultiplierPercent,
+		bool retaliation, std::array<bool, 2> & lastStandUsedThisAttack) const;
 	void publishHeroOrderState(const CBattleInfoCallback & battle, BattleSide side) const;
 
 	void addGenericKilledLog(BattleLogMessage & blm, const CStack * defender, int32_t killed, bool multiple) const;
@@ -180,6 +186,7 @@ class BattleActionProcessor : boost::noncopyable
 	bool doWalkAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doWaitAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doDefendAction(const CBattleInfoCallback & battle, const BattleAction & ba);
+	bool applyDefendStance(const CBattleInfoCallback & battle, const CStack * stack, bool voluntary);
 	bool doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation);
 	bool doWalkAndSpellcastAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doShootAction(const CBattleInfoCallback & battle, const BattleAction & ba);

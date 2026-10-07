@@ -286,6 +286,13 @@ public:
 	/// Whether this Defend stance won Battlefield Mastery's per-side round award.
 	/// It expires at the same next-activation boundary as the Defend stance.
 	bool battlecraftDefendMasteryDoubled = false;
+	/// A lethal retaliation was prevented by Last Stand during this activation.
+	/// Turn flow consumes it to suppress remaining attacks/continuations; a real
+	/// next activation clears it deterministically in BattleInfo::nextTurn.
+	bool armorerLastStandEndedActivation = false;
+	/// A passive Last Stand Defend stance has transient CUnitState provenance
+	/// which compact binary BattleInfo stack descriptors do not preserve.
+	bool armorerLastStandDefending = false;
 	/// Whether this Defend stance has already spent Bulwark's first-melee-attack reaction.
 	bool bulwarkPreemptiveUsed;
 	/// Whether Mire Grip has already applied its activation-scoped Speed penalty.

@@ -80,6 +80,12 @@ public:
 			|| data["state"]["battlecraftDefendMasteryDoubled"].Bool();
 	}
 
+	bool hasArmorerLastStandUnitTransientState() const
+	{
+		return data["state"]["armorerLastStandEndedActivation"].Bool()
+			|| data["state"]["armorerLastStandDefending"].Bool();
+	}
+
 	template <typename Handler> void serialize(Handler & h)
 	{
 		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_CASUALTY_PROVENANCE)
@@ -91,6 +97,9 @@ public:
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLEFIELD_MASTERY)
 			&& hasBattlecraftMasteryState())
 			throw std::runtime_error("Cannot discard Battlefield Mastery unit state in an older format");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_ARMORER_LAST_STAND)
+			&& hasArmorerLastStandUnitTransientState())
+			throw std::runtime_error("Cannot discard Last Stand activation-end state in an older unit update format");
 		const auto & veteranDamage = data["state"]["veteranPhysicalDamageSinceActivation"];
 		const auto & activationMovementBonus = data["state"]["activationMovementBonus"];
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_ARMORER_VETERAN)

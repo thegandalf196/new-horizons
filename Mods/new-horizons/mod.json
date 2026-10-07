@@ -3524,10 +3524,10 @@
 								"id": "new-horizons:armorer.lastStand",
 								"name": "Last Stand",
 								"requires": "expert",
-								"description": "Once per combat, the first friendly stack that would be completely destroyed by a physical creature attack instead survives with one creature at 1 HP and immediately Defends.",
+								"description": "Once per combat, the first friendly stack that would be completely destroyed by a physical creature attack instead survives with one creature at 1 HP and immediately Defends. Protects ordinary stack health only, not clones or Phantom Integrity. If lethal retaliation triggers this on the acting attacker, its current activation ends.",
 								"effect": {
-									"status": "planned",
-									"description": "Once per combat, the first friendly stack that would be completely destroyed by a physical creature attack instead survives with one creature at 1 HP and immediately Defends."
+									"status": "active",
+									"description": "Once per combat, the first friendly stack that would be completely destroyed by a physical creature attack instead survives with one creature at 1 HP and immediately Defends. Protects ordinary stack health only, not clones or Phantom Integrity. If lethal retaliation triggers this on the acting attacker, its current activation ends."
 								}
 							},
 							{

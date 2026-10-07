@@ -184,13 +184,17 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_INCOMING_ELEMENTAL_SPELL_DAMAGE, // element-subtyped incoming spell damage modifier
 	NEW_HORIZONS_SPELL_RESPONSE, // round-bounded response readiness from an accepted enemy hero spell
 	NEW_HORIZONS_BATTLEFIELD_MASTERY, // per-round first eligible Wait/Defend award and per-stack provenance
+	NEW_HORIZONS_ARMORER_LAST_STAND, // side-wide Last Stand use and activation-ending lethal retaliation state
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_BATTLEFIELD_MASTERY,
+	CURRENT = NEW_HORIZONS_ARMORER_LAST_STAND,
 };
+
+static_assert(ESerializationVersion::NEW_HORIZONS_ARMORER_LAST_STAND > ESerializationVersion::NEW_HORIZONS_BATTLEFIELD_MASTERY,
+	"Armorer Last Stand state must remain append-only");
 
 static_assert(ESerializationVersion::NEW_HORIZONS_BATTLEFIELD_MASTERY > ESerializationVersion::NEW_HORIZONS_SPELL_RESPONSE,
 	"Battlefield Mastery state must remain append-only");

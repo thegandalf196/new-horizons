@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BattleActionProcessor.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
+#include "../../lib/battle/NewHorizonsArmorer.h"
 #include "../../lib/battle/NewHorizonsBattlecraft.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
@@ -59,6 +60,14 @@
 namespace
 {
 constexpr int MASTER_GUNNER_FOLLOW_UP_DAMAGE_PERCENT = 60;
+
+bool armorerLastStandEndedActivation(const CStack * stack)
+{
+	if(!stack)
+		return false;
+	const auto state = stack->acquireState();
+	return state && state->armorerLastStandEndedActivation;
+}
 
 void awardBattlefieldMasteryIfEligible(CGameHandler & gameHandler, const CBattleInfoCallback & battle,
 	const CStack * stack, BattlecraftMasteryAction action)
@@ -1527,78 +1536,37 @@ bool BattleActionProcessor::doDefendAction(const CBattleInfoCallback & battle, c
 
 	if (!canStackAct(battle, stack))
 		return false;
+	return applyDefendStance(battle, stack, true);
+}
+
+bool BattleActionProcessor::applyDefendStance(const CBattleInfoCallback & battle, const CStack * stack,
+	bool voluntary)
+{
+	if(!stack || !stack->alive())
+		return false;
 
 	//defensive stance, TODO: filter out spell boosts from bonus (stone skin etc.)
 	SetStackEffect sse;
 	sse.battleID = battle.getBattle()->getBattleID();
-
-	Bonus defenseBonusToAdd(BonusDuration::STACK_GETS_TURN, BonusType::PRIMARY_SKILL, BonusSource::OTHER, 20, BonusSourceID(), BonusSubtypeID(PrimarySkill::DEFENSE), BonusValueType::PERCENT_TO_ALL);
-	Bonus bonus2(BonusDuration::STACK_GETS_TURN, BonusType::PRIMARY_SKILL, BonusSource::OTHER, stack->valOfBonuses(BonusType::DEFENSIVE_STANCE), BonusSourceID(), BonusSubtypeID(PrimarySkill::DEFENSE), BonusValueType::ADDITIVE_VALUE);
-	Bonus alternativeWeakCreatureBonus(BonusDuration::STACK_GETS_TURN, BonusType::PRIMARY_SKILL, BonusSource::OTHER, 1, BonusSourceID(), BonusSubtypeID(PrimarySkill::DEFENSE), BonusValueType::ADDITIVE_VALUE);
-	Bonus tagBonus(BonusDuration::STACK_GETS_TURN, BonusType::UNIT_DEFENDING, BonusSource::OTHER, 0, BonusSourceID());
-
-	BonusList defence = *stack->getBonuses(Selector::typeSubtype(BonusType::PRIMARY_SKILL, BonusSubtypeID(PrimarySkill::DEFENSE)));
-	int oldDefenceValue = defence.totalValue();
-
-	defence.push_back(std::make_shared<Bonus>(defenseBonusToAdd));
-	defence.push_back(std::make_shared<Bonus>(bonus2));
-
-	int difference = defence.totalValue() - oldDefenceValue;
-	const bool weakCreatureFallback = difference == 0;
-	std::vector<Bonus> buffer;
-	if(weakCreatureFallback) //give replacement bonus for creatures not reaching 5 defense points (20% of def becomes 0)
-	{
-		difference = 1;
-		buffer.push_back(alternativeWeakCreatureBonus);
-	}
-	else
-	{
-		buffer.push_back(defenseBonusToAdd);
-	}
-
-	// Keep the provenance of this exact Defend contribution in battle state.
-	// STACK_GETS_TURN is a lifetime, not an identity: treating every bonus with
-	// that duration as Defend would let Breakthrough pierce unrelated temporary
-	// effects.  Calculate both combat ranges before publishing the effect so the
-	// damage callback can use the authoritative state instead.
-	const auto stanceBonus = [&](bool ranged)
-	{
-		const auto range = ranged
-			? Selector::effectRange()(BonusLimitEffect::NO_LIMIT)
-				.Or(Selector::effectRange()(BonusLimitEffect::ONLY_DISTANCE_FIGHT))
-			: Selector::effectRange()(BonusLimitEffect::NO_LIMIT)
-				.Or(Selector::effectRange()(BonusLimitEffect::ONLY_MELEE_FIGHT));
-		BonusList projected = *stack->getBonuses(
-			Selector::typeSubtype(BonusType::PRIMARY_SKILL, BonusSubtypeID(PrimarySkill::DEFENSE)).And(range));
-		const int oldValue = projected.totalValue();
-		projected.push_back(std::make_shared<Bonus>(defenseBonusToAdd));
-		projected.push_back(std::make_shared<Bonus>(bonus2));
-		if(weakCreatureFallback)
-			projected.push_back(std::make_shared<Bonus>(alternativeWeakCreatureBonus));
-		return std::max(0, projected.totalValue() - oldValue);
-	};
-	const int stanceMeleeBonus = stanceBonus(false);
-	const int stanceRangedBonus = stanceBonus(true);
-
-	buffer.push_back(bonus2);
-	buffer.push_back(tagBonus);
-
-	sse.toUpdate.emplace_back(ba.stackNumber, buffer);
 	const auto * defendingHero = battle.battleGetOwnerHero(stack);
 	const bool holdFastApplies = heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules())
 		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(stack)
 		&& newHorizonsDiscipline::hasHoldFast(defendingHero);
-	if(holdFastApplies && !stack->hasBonus(newHorizonsDiscipline::holdFastMoraleFloorBonusSelector()))
-		sse.toAdd.emplace_back(ba.stackNumber,
-			std::vector<Bonus>{newHorizonsDiscipline::holdFastMoraleFloorBonus()});
+	const auto stance = newHorizonsArmorer::buildDefendStance(stack, holdFastApplies);
+	sse.toUpdate.emplace_back(stack->unitId(), stance.bonuses);
+	if(stance.holdFastBonus)
+		sse.toAdd.emplace_back(stack->unitId(),
+			std::vector<Bonus>{*stance.holdFastBonus});
 	gameHandler->sendAndApply(sse);
 
 	// Publish the explicit provenance alongside the bonuses.  This is a state
 	// update, not a client-side mutation, and therefore survives save/load and
 	// hypothetical battle copies just like the rest of CUnitState.
 	auto state = stack->acquireState();
-	state->defensiveStanceMeleeBonus = stanceMeleeBonus;
-	state->defensiveStanceRangedBonus = stanceRangedBonus;
+	state->defensiveStanceMeleeBonus = stance.meleeDefenseBonus;
+	state->defensiveStanceRangedBonus = stance.rangedDefenseBonus;
+	if(!voluntary)
+		state->armorerLastStandDefending = true;
 	BattleUnitsChanged stateChanged;
 	stateChanged.battleID = battle.getBattle()->getBattleID();
 	UnitChanges stateUpdate(stack->unitId(), UnitChanges::EOperation::UPDATE);
@@ -1606,7 +1574,8 @@ bool BattleActionProcessor::doDefendAction(const CBattleInfoCallback & battle, c
 	stateChanged.changedStacks.push_back(std::move(stateUpdate));
 	gameHandler->sendAndApply(stateChanged);
 
-	awardBattlefieldMasteryIfEligible(*gameHandler, battle, stack, BattlecraftMasteryAction::DEFEND);
+	if(voluntary)
+		awardBattlefieldMasteryIfEligible(*gameHandler, battle, stack, BattlecraftMasteryAction::DEFEND);
 
 	BattleLogMessage message;
 	message.battleID = battle.getBattle()->getBattleID();
@@ -1614,7 +1583,7 @@ bool BattleActionProcessor::doDefendAction(const CBattleInfoCallback & battle, c
 	MetaString text;
 	stack->addText(text, EMetaText::GENERAL_TXT, 120);
 	stack->addNameReplacement(text);
-	text.replaceNumber(difference);
+	text.replaceNumber(stance.defenseIncrease);
 
 	message.lines.push_back(text);
 	if(newHorizonsCombatSkills::paviseReductionPercent(battle.battleGetOwnerHero(stack)) > 0)
@@ -1624,7 +1593,7 @@ bool BattleActionProcessor::doDefendAction(const CBattleInfoCallback & battle, c
 		stack->addNameReplacement(paviseText);
 		message.lines.push_back(std::move(paviseText));
 	}
-	if(holdFastApplies)
+	if(stance.holdFastApplied)
 	{
 		MetaString holdFastText;
 		holdFastText.appendRawString("Hold Fast lets %s treat negative Morale as 0 until its next Creature Activation.");
@@ -1632,6 +1601,13 @@ bool BattleActionProcessor::doDefendAction(const CBattleInfoCallback & battle, c
 		message.lines.push_back(std::move(holdFastText));
 	}
 
+	if(!voluntary)
+	{
+		MetaString line;
+		line.appendRawString("Last Stand leaves %s at 1 HP and immediately puts it into a defensive stance.");
+		stack->addNameReplacement(line);
+		message.lines.push_back(std::move(line));
+	}
 	gameHandler->sendAndApply(message);
 
 	processBattleEventTriggers(battle, CombatEventType::DEFEND, stack, nullptr);
@@ -1776,14 +1752,14 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 			&& battle.battleCanShoot(destinationStack, stack->getPosition())
 			&& stack->alive())
 			makeAttack(battle, destinationStack, stack, {.targetHex = stack->getPosition(), .first = true,
-				.ranged = true, .counter = true});
+				.ranged = true, .counter = true, .retaliation = true});
 
 		int totalRangedAttacks = stack->getTotalAttacks(true);
 		const auto * attackingHero = battle.battleGetFightingHero(ba.side);
 		if(attackingHero)
 			totalRangedAttacks += attackingHero->valOfBonuses(BonusType::HERO_GRANTS_ATTACKS,
 				BonusSubtypeID(stack->creatureId()));
-		for(int i = firstStrike ? 0 : 1; i < totalRangedAttacks; ++i)
+		for(int i = firstStrike ? 0 : 1; i < totalRangedAttacks && !armorerLastStandEndedActivation(stack); ++i)
 		{
 			if(stack->alive() && destinationStack->alive() && stack->shots.canUse())
 				makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .attackIndex = i,
@@ -1825,7 +1801,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 	static const auto firstStrikeSelector = Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeAll).Or(Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeMelee));
 	const bool firstStrike = openingAttackTarget->hasBonus(firstStrikeSelector) && !openingAttackTarget->hasBonusOfType(BonusType::NOT_ACTIVE);
 
-	for (int i = 0; i < totalAttacks; ++i)
+	for (int i = 0; i < totalAttacks && !armorerLastStandEndedActivation(stack); ++i)
 	{
 		const CStack * attackTarget = resolveAttackTarget();
 		if(!attackTarget)
@@ -1833,7 +1809,10 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 		//first strike
 		if(i == 0 && firstStrike && openingAttackTarget->ableToRetaliate() && !stack->hasBonusOfType(BonusType::BLOCKS_RETALIATION) && !stack->isInvincible() && !longWeaponAttack)
 		{
-			makeAttack(battle, openingAttackTarget, stack, {.targetHex = stack->getPosition(), .first = true, .counter = true});
+			makeAttack(battle, openingAttackTarget, stack, {.targetHex = stack->getPosition(), .first = true,
+				.counter = true, .retaliation = true});
+			if(armorerLastStandEndedActivation(stack))
+				break;
 		}
 
 		//move can cause death, eg. by walking into the moat, first strike can cause death or paralysis/petrification
@@ -1844,6 +1823,8 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 			// consume its first interception atomically; attackTarget is only the
 			// resolved recipient used for local retaliation checks below.
 			makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .distance = (i ? 0 : movementResult.distance), .attackIndex = i, .first = i == 0, .perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE}, &destroyedEnemy, &relentlessAssault);
+			if(armorerLastStandEndedActivation(stack))
+				break;
 
 			if(!ferocityApplied && stack->hasBonusOfType(BonusType::FEROCITY))
 			{
@@ -1868,12 +1849,16 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 			&& !battle.battleShroudDeniesRetaliation(BattleAttackInfo(stack, attackTarget, movementResult.distance, false))
 			&& attackTarget->ableToRetaliate())
 		{
-			makeAttack(battle, attackTarget, stack, {.targetHex = stack->getPosition(), .first = true, .counter = true});
+			makeAttack(battle, attackTarget, stack, {.targetHex = stack->getPosition(), .first = true,
+				.counter = true, .retaliation = true});
+			if(armorerLastStandEndedActivation(stack))
+				break;
 		}
 	}
 
 	//return
-	if(stack->hasBonusOfType(BonusType::RETURN_AFTER_STRIKE)
+	if(!armorerLastStandEndedActivation(stack)
+		&& stack->hasBonusOfType(BonusType::RETURN_AFTER_STRIKE)
 		&& !stack->hasBonusOfType(BonusType::NOT_ACTIVE)
 		&& !stack->hasBonusOfType(BonusType::BIND_EFFECT)
 		&& target.size() == 3
@@ -2182,7 +2167,7 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 			&& battle.battleCanShoot(destinationStack, stack->getPosition())
 			&& stack->alive())
 			makeAttack(battle, destinationStack, stack,
-				{.targetHex = stack->getPosition(), .first = true, .ranged = true, .counter = true});
+				{.targetHex = stack->getPosition(), .first = true, .ranged = true, .counter = true, .retaliation = true});
 		removeBonuses(battle, stack, attackerBonusesToRemove);
 		removeBonuses(battle, destinationStack, defenderBonusesToRemove);
 		resolveRainOfArrows(battle, stack, rainOfArrows);
@@ -2216,7 +2201,7 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 		&& battle.battleCanShoot(destinationStack, stack->getPosition())
 		&& stack->alive()) //attacker may have died (fire shield)
 	{
-		makeAttack(battle, destinationStack, stack, {.targetHex = stack->getPosition(), .first = true, .ranged = true, .counter = true});
+		makeAttack(battle, destinationStack, stack, {.targetHex = stack->getPosition(), .first = true, .ranged = true, .counter = true, .retaliation = true});
 	}
 	//allow more than one additional attack
 
@@ -2233,7 +2218,8 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 	{
 		if(stack->alive()
 			&& (emptyTileAreaAttack || destinationStack->alive())
-			&& stack->shots.canUse())
+		&& stack->shots.canUse()
+		&& !armorerLastStandEndedActivation(stack))
 		{
 			// when the defender strikes first the opening shot above is skipped and this loop makes
 			// it instead, so the shot that abilities fire on is the first one this loop makes
@@ -2248,6 +2234,7 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 	const auto * masterGunnerHero = battle.battleGetOwnerHero(stack);
 	const auto state = stack->acquireState();
 	if(destinationStack && stack->alive() && !stack->isGhost()
+		&& !armorerLastStandEndedActivation(stack)
 		&& !battle.battleMatchOwner(stack, destinationStack, true)
 		&& stack->isBallista() && !stack->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
 		&& state && state->rangedFollowUpDamagePercent == 0
@@ -2611,11 +2598,16 @@ bool BattleActionProcessor::canStackAct(const CBattleInfoCallback & battle, cons
 	}
 	else
 	{
-		if (stack != battle.battleActiveUnit())
+	if (stack != battle.battleActiveUnit())
 		{
 			gameHandler->complain("Action has to be about active stack!");
 			return false;
 		}
+	}
+	if(armorerLastStandEndedActivation(stack))
+	{
+		gameHandler->complain("Last Stand has already ended this creature activation.");
+		return false;
 	}
 	return true;
 }
@@ -3303,11 +3295,12 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		const auto * updatedBattle = gameHandler->gs->getBattle(battle.getBattle()->getBattleID());
 		const auto * updatedStack = updatedBattle && effectiveAction.stackNumber >= 0
 			? updatedBattle->battleGetStackByID(effectiveAction.stackNumber, false) : nullptr;
-		const bool rangedFollowUpStillPending = updatedStack && updatedStack->isBallista()
+		const bool activationEndedByLastStand = armorerLastStandEndedActivation(updatedStack);
+		const bool rangedFollowUpStillPending = updatedStack && !activationEndedByLastStand && updatedStack->isBallista()
 			&& updatedStack->rangedFollowUpDamagePercent > 0;
 		const bool pursuitContinuation = masterGateActivationContinuationOut && result
 			&& effectiveAction.actionType == EActionType::WALK_AND_ATTACK
-			&& updatedStack && updatedStack->pursuitMovementRemaining > 0;
+			&& updatedStack && !activationEndedByLastStand && updatedStack->pursuitMovementRemaining > 0;
 		EndAction endAction;
 		endAction.battleID = battle.getBattle()->getBattleID();
 		endAction.endsFortuneActivation = result && effectiveAction.isUnitAction() && !battle.battleTacticDist()
@@ -4029,6 +4022,10 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut,
 	RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows)
 {
+	if(!attacker || !attacker->alive() || armorerLastStandEndedActivation(attacker)
+		|| (defender && !defender->alive()))
+		return;
+	std::array<bool, 2> lastStandUsedThisAttack{};
 	std::vector<HeroOrderState> orderStatesBeforeAttacker = battle.getBattle()->getHeroOrderStates(BattleSide::ATTACKER);
 	std::vector<HeroOrderState> orderStatesBeforeDefender = battle.getBattle()->getHeroOrderStates(BattleSide::DEFENDER);
 	bool protectIntercepted = attack.protectIntercepted;
@@ -4064,7 +4061,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		attackCasting(battle, attack.ranged, BonusType::SPELL_BEFORE_ATTACK, attacker, defender);
 
 	// If the attacker or defender is not alive before the attack action, the action should be skipped.
-	if((!attacker->alive()) || (defender && !defender->alive()))
+	if((!attacker->alive()) || armorerLastStandEndedActivation(attacker)
+		|| (defender && !defender->alive()))
 		return;
 
 	// Battlecraft's Pre-emptive Strike answers the first eligible melee blow
@@ -4100,8 +4098,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			gameHandler->sendAndApply(message);
 
 			makeAttack(battle, defender, attacker, {.targetHex = attacker->getPosition(), .first = true,
-				.counter = true, .preemptiveDamagePercent = percent});
-			if(!attacker->alive() || !defender->alive())
+				.counter = true, .retaliation = true, .preemptiveDamagePercent = percent});
+			if(!attacker->alive() || armorerLastStandEndedActivation(attacker) || !defender->alive())
 				return;
 		}
 	}
@@ -4122,8 +4120,9 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	if(defender && !attack.ranged && !attack.counter
 		&& battle.battleCanTriggerHeroOrderBrace(attacker, defender, attack.distance, false, false))
 	{
-		makeAttack(battle, defender, attacker, {.targetHex = attacker->getPosition(), .first = true, .counter = true, .brace = true});
-		if(!attacker->alive() || (defender && !defender->alive()))
+		makeAttack(battle, defender, attacker, {.targetHex = attacker->getPosition(), .first = true,
+			.counter = true, .retaliation = true, .brace = true});
+		if(!attacker->alive() || armorerLastStandEndedActivation(attacker) || (defender && !defender->alive()))
 			return;
 	}
 
@@ -4146,8 +4145,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			changed.changedStacks.push_back(std::move(update));
 			gameHandler->sendAndApply(changed);
 			makeAttack(battle, defender, attacker, {.targetHex = attacker->getPosition(), .first = true,
-				.counter = true, .preemptiveDamagePercent = percent});
-			if(!attacker->alive() || !defender->alive())
+				.counter = true, .retaliation = true, .preemptiveDamagePercent = percent});
+			if(!attacker->alive() || armorerLastStandEndedActivation(attacker) || !defender->alive())
 				return;
 		}
 	}
@@ -4342,7 +4341,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			attack.distance, false, attack.brace, attack.preemptiveDamagePercent,
 			attack.cleaveDamagePercent, protectIntercepted,
 			relentlessAssault && relentlessAssault->eligible ? relentlessAssault->damagePercent : 0,
-			attack.archeryRangedDamageMultiplierPercent);
+			attack.archeryRangedDamageMultiplierPercent, attack.retaliation, lastStandUsedThisAttack);
 		appendArcheryFeedback(estimation, defender);
 		appendGuardianSpiritFeedback(estimation, defender);
 		if(relentlessAssault && relentlessAssault->eligible
@@ -4395,7 +4394,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			attack.distance, true, attack.brace, attack.preemptiveDamagePercent,
 			attack.cleaveDamagePercent, false,
 			relentlessAssault && relentlessAssault->eligible ? relentlessAssault->damagePercent : 0,
-			attack.archeryRangedDamageMultiplierPercent);
+			attack.archeryRangedDamageMultiplierPercent, attack.retaliation, lastStandUsedThisAttack);
 		appendArcheryFeedback(estimation, unit);
 		appendGuardianSpiritFeedback(estimation, unit);
 		const auto attackerOrderCauses = damageOrderCauses(estimation, true);
@@ -4639,6 +4638,14 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		}
 	}
 	gameHandler->sendAndApply(bat);
+	for(const BattleStackAttacked & hit : bat.bsa)
+	{
+		if(hit.armorerLastStandSide == BattleSide::NONE)
+			continue;
+		const auto * savedStack = battle.battleGetStackByID(hit.stackAttacked, false);
+		if(savedStack && savedStack->alive())
+			applyDefendStance(battle, savedStack, false);
+	}
 	if(ambusherTriggered)
 	{
 		SetStackEffect ambusherSpent;
@@ -5064,7 +5071,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 
 			makeAttack(battle, reactionShooter, attacker, {.targetHex = attacker->getPosition(), .first = true,
 				.ranged = true, .archeryRangedDamageMultiplierPercent = newHorizonsArchery::COUNTERFIRE_DAMAGE_PERCENT,
-				.counter = true, .archeryCounterfire = true});
+				.counter = true, .retaliation = true, .archeryCounterfire = true});
 		}
 	}
 
@@ -5269,7 +5276,8 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 	std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload,
 	const battle::Unit * def, int distance, bool secondary, bool bracePreemptive,
 	int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted,
-	int relentlessAssaultDamagePercent, int archeryRangedDamageMultiplierPercent) const
+	int relentlessAssaultDamagePercent, int archeryRangedDamageMultiplierPercent,
+	bool retaliation, std::array<bool, 2> & lastStandUsedThisAttack) const
 {
 	BattleStackAttacked bsa;
 	if(secondary)
@@ -5306,10 +5314,37 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 		const int64_t incomingDamage = bsa.damageAmount;
 		const int64_t guardianSpiritBefore = defenderState->guardianSpiritHitPoints;
 		const int64_t healthBeforeAttack = def->getAvailableHealth();
+		bool defenderStateChanged = false;
 		const bool physicalCreatureAttack = bai.physicalDamage
 			&& !attackerState->isTurret()
 			&& !attackerState->hasBonusOfType(BonusType::SIEGE_WEAPON)
 			&& attackerState->unitSlot() != SlotID::WAR_MACHINES_SLOT;
+		const auto standSide = battle.playerToSide(battle.battleGetOwner(def));
+		const bool validStandSide = standSide == BattleSide::ATTACKER || standSide == BattleSide::DEFENDER;
+		const auto standSideIndex = validStandSide ? static_cast<size_t>(standSide) : 0;
+		const auto * targetHero = validStandSide ? battle.battleGetFightingHero(standSide) : nullptr;
+		const bool canCheckLastStand = validStandSide
+			&& newHorizonsArmorer::isEligiblePhysicalAttack(attackerState.get(), bai.physicalDamage, bat.spellLike())
+			&& newHorizonsArmorer::canTriggerLastStand(targetHero, def);
+		const bool sideAlreadyUsed = validStandSide
+			&& (battle.getBattle()->armorerLastStandUsed(standSide) || lastStandUsedThisAttack[standSideIndex]);
+		const auto lastStand = newHorizonsArmorer::resolveLastStandDamage(incomingDamage,
+			defenderState->guardianSpiritHitPoints, defenderState->guardianSpiritRoundsRemaining,
+			def->getAvailableHealth(), canCheckLastStand, sideAlreadyUsed);
+		if(lastStand.triggered)
+		{
+			bsa.damageAmount = lastStand.damageToApply;
+			bsa.armorerLastStandSide = standSide;
+			lastStandUsedThisAttack[standSideIndex] = true;
+			defenderStateChanged = true;
+			defenderState->armorerLastStandDefending = true;
+			if(retaliation && battle.getBattle()->getActiveStackID() == static_cast<int32_t>(def->unitId()))
+			{
+				bsa.armorerLastStandEndsActivation = true;
+				defenderState->armorerLastStandEndedActivation = true;
+				bat.flags |= BattleAttack::LAST_STAND_RETALIATION;
+			}
+		}
 		const bool bastionProtectionConsumed = newHorizonsCombatSkills::isPhysicalCreatureAttack(
 			attackerState.get(), bai.physicalDamage) && battle.battleHasBastionProtection(def);
 		const auto damageProvenance = !bai.physicalDamage
@@ -5324,8 +5359,6 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 			0, guardianSpiritBefore - defenderState->guardianSpiritHitPoints);
 		range.guardianSpiritOverflowDamage = range.guardianSpiritAbsorbedDamage > 0
 			? std::max<int64_t>(0, incomingDamage - range.guardianSpiritAbsorbedDamage) : 0;
-		bool defenderStateChanged = false;
-		const auto * targetHero = battle.battleGetOwnerHero(def);
 		const bool ordinaryPhysicalCreatureAttack = !bat.spellLike()
 			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attackerState.get());
 		if(ordinaryPhysicalCreatureAttack && def->defended()

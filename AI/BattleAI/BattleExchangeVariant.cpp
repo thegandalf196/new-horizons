@@ -18,6 +18,7 @@
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
+#include "../../lib/battle/NewHorizonsArmorer.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
 
 #include <tbb/parallel_for.h>
@@ -271,6 +272,8 @@ float BattleExchangeVariant::trackAttack(
 	const auto primalBurstFirstNewHit = hb->getProjectedPrimalBurstHits().size();
 
 	auto attacker = hb->getForUpdate(ap.attack.attacker->unitId());
+	if(!attacker || attacker->armorerLastStandEndedActivation)
+		return 0;
 	const auto referenceController = hb->battleGetOwner(attacker.get());
 	const auto originalPosition = attacker->getPosition();
 	const auto attackerSide = hb->playerToSide(hb->battleGetOwner(attacker.get()));
@@ -368,10 +371,24 @@ float BattleExchangeVariant::trackAttack(
 			};
 			std::map<uint32_t, PendingRebirth> pendingRebirths;
 			bool enemyStackKilled = false;
+			bool endedActiveActivationThisStrike = false;
 			for(const auto & [unitId, damage] : strike.hits)
 			{
 				auto target = hb->getForUpdate(unitId);
 				auto appliedDamage = std::max<int64_t>(0, damage);
+				const auto standSide = hb->playerToSide(hb->battleGetOwner(target.get()));
+				const bool validStandSide = standSide == BattleSide::ATTACKER || standSide == BattleSide::DEFENDER;
+				const bool eligibleForLastStand = strike.eligibleForLastStand && validStandSide
+					&& newHorizonsArmorer::canTriggerLastStand(hb->battleGetOwnerHero(target.get()), target.get());
+				const auto lastStand = validStandSide
+					? newHorizonsArmorer::resolveLastStandDamage(appliedDamage,
+						target->getGuardianSpiritHitPoints(), target->getGuardianSpiritRoundsRemaining(),
+						target->getAvailableHealth(), eligibleForLastStand,
+						hb->armorerLastStandUsed(standSide))
+					: newHorizonsArmorer::ArmorerLastStandDamageResult{appliedDamage, false};
+				appliedDamage = lastStand.damageToApply;
+				if(lastStand.triggered)
+					hb->consumeArmorerLastStand(standSide);
 				const bool consumesBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
 					projectedAttacker.get(), strike.damageProvenance == battle::DamageProvenance::PHYSICAL_CREATURE)
 					&& hb->battleHasBastionProtection(target.get());
@@ -386,6 +403,17 @@ float BattleExchangeVariant::trackAttack(
 				const auto projectedDamage = battleAIProjectDamage(target.get(), appliedDamage,
 					strike.damageProvenance);
 				target->damage(appliedDamage, false, strike.damageProvenance);
+				if(lastStand.triggered)
+				{
+					hb->applyArmorerLastStandDefend(unitId);
+					const auto activeStackId = hb->getActiveStackID();
+					if(strike.retaliation && activeStackId >= 0
+						&& unitId == static_cast<uint32_t>(activeStackId))
+					{
+						target->armorerLastStandEndedActivation = true;
+						endedActiveActivationThisStrike = true;
+					}
+				}
 				if(consumesBastion)
 					target->armorerBastionRound = hb->battleGetRound();
 				const auto healthLoss = std::max<int64_t>(0,
@@ -432,8 +460,8 @@ float BattleExchangeVariant::trackAttack(
 				projectedAttack.luckyStrike = fortune.consumePerfectMoment();
 				hb->setSylvanLuckState(side, fortune);
 			}
-				hb->projectFortuneStrike(projectedAttack, actualHits, projectedAttacker.get(), enemyStackKilled,
-					strike.resolvedLuck, true);
+			hb->projectFortuneStrike(projectedAttack, actualHits, projectedAttacker.get(), enemyStackKilled,
+				strike.resolvedLuck, true);
 			hb->projectRangedMarkStrike(projectedAttack, actualHits);
 			for(const auto & [unitId, pending] : pendingRebirths)
 			{
@@ -458,6 +486,8 @@ float BattleExchangeVariant::trackAttack(
 					? std::optional<uint32_t>(strike.defenderId) : std::nullopt;
 				projectRelentlessAssaultAttack(*hb, projectedHeroOrderAttack, primaryTarget);
 			}
+			if(endedActiveActivationThisStrike)
+				break;
 		}
 
 		// A preview can contain damage sources which are not represented by a
@@ -529,6 +559,8 @@ float BattleExchangeVariant::trackAttack(
 		unitToUpdate->bulwarkDefendPhysicalDamage = affectedUnit->bulwarkDefendPhysicalDamage;
 		unitToUpdate->bulwarkImmovableRound = affectedUnit->bulwarkImmovableRound;
 		unitToUpdate->armorerBastionRound = affectedUnit->armorerBastionRound;
+		unitToUpdate->armorerLastStandEndedActivation = affectedUnit->armorerLastStandEndedActivation;
+		unitToUpdate->armorerLastStandDefending = affectedUnit->armorerLastStandDefending;
 		unitToUpdate->bulwarkToxicSpinesRound = affectedUnit->bulwarkToxicSpinesRound;
 		unitToUpdate->physicalPoisonBaseDamage = affectedUnit->physicalPoisonBaseDamage;
 		unitToUpdate->physicalPoisonActivationsRemaining = affectedUnit->physicalPoisonActivationsRemaining;
@@ -626,6 +658,9 @@ float BattleExchangeVariant::trackAttack(
 	bool evaluateOnly,
 	bool allowRetaliation)
 {
+	if(!attacker || attacker->armorerLastStandEndedActivation)
+		return 0;
+
 	const auto rebirthSpawnIdsBefore = hb->getElementalRebirthSpawnUnitIds();
 	const auto primalBurstFirstNewHit = hb->getProjectedPrimalBurstHits().size();
 	const auto referenceController = hb->battleGetOwner(attacker.get());
@@ -658,8 +693,40 @@ float BattleExchangeVariant::trackAttack(
 	const auto shadowAssaultSide = !evaluateOnly
 		? qualifyingShadowAssaultSide(*hb, projectedAttack) : std::optional<BattleSide>{};
 	const bool nightProwlerPending = hasNightProwlerBonus(attacker.get());
+	const auto resolveLastStand = [&hb](const BattleAttackInfo & attack,
+		const battle::Unit * target, int64_t incomingDamage)
+	{
+		const auto side = target ? hb->playerToSide(hb->battleGetOwner(target)) : BattleSide::NONE;
+		const bool validSide = side == BattleSide::ATTACKER || side == BattleSide::DEFENDER;
+		if(!validSide)
+			return std::pair{newHorizonsArmorer::ArmorerLastStandDamageResult{incomingDamage, false}, side};
+
+		const bool eligible = newHorizonsArmorer::isEligiblePhysicalAttack(attack.attacker,
+			attack.physicalDamage, attack.shooting && attack.attacker
+				&& attack.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK))
+			&& newHorizonsArmorer::canTriggerLastStand(hb->battleGetOwnerHero(target), target);
+		const auto result = newHorizonsArmorer::resolveLastStandDamage(incomingDamage,
+			target->getGuardianSpiritHitPoints(), target->getGuardianSpiritRoundsRemaining(),
+			target->getAvailableHealth(), eligible, hb->armorerLastStandUsed(side));
+		return std::pair{result, side};
+	};
+	const auto applyLastStandDefend = [&hb, evaluateOnly](StackWithBonuses * target,
+		const newHorizonsArmorer::ArmorerLastStandDamageResult & lastStand,
+		BattleSide side, bool retaliation)
+	{
+		if(evaluateOnly || !lastStand.triggered || !target)
+			return;
+		hb->consumeArmorerLastStand(side);
+		hb->applyArmorerLastStandDefend(target->unitId());
+		const auto activeStackId = hb->getActiveStackID();
+		if(retaliation && activeStackId >= 0
+			&& target->unitId() == static_cast<uint32_t>(activeStackId))
+			target->armorerLastStandEndedActivation = true;
+	};
 
 	int64_t attackDamage = damageCache.getDamage(attacker.get(), defender.get(), hb);
+	const auto attackLastStand = resolveLastStand(projectedAttack, defender.get(), attackDamage);
+	attackDamage = attackLastStand.first.damageToApply;
 	const auto attackDamageProvenance = battleAIDamageProvenance(
 		attacker.get(), projectedAttack.physicalDamage);
 	const bool consumesBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
@@ -700,6 +767,8 @@ float BattleExchangeVariant::trackAttack(
 			dpsScore.ourDamageReduce += defenderDamageReduce;
 
 		defender->damage(attackDamage, false, attackDamageProvenance);
+		applyLastStandDefend(defender.get(), attackLastStand.first, attackLastStand.second,
+			projectedAttack.retaliation);
 		if(nightProwlerPending)
 			attacker->removeUnitBonus(CSelector(newHorizonsShroud::isNightProwlerBonus));
 		if(triggersAmbusher)
@@ -798,6 +867,8 @@ float BattleExchangeVariant::trackAttack(
 			projectedAttacker->cleaveUsedThisActivation = true;
 
 			int64_t cleaveDamage = hb->battleExpectedLuckDamage(cleaveAttack);
+			const auto cleaveLastStand = resolveLastStand(cleaveAttack, targetUnit, cleaveDamage);
+			cleaveDamage = cleaveLastStand.first.damageToApply;
 			const auto projectedCleaveDamage = battleAIProjectDamage(
 				targetUnit, cleaveDamage, cleaveProvenance);
 			const float cleaveDamageReduce = AttackPossibility::calculateDamageReduce(
@@ -820,6 +891,8 @@ float BattleExchangeVariant::trackAttack(
 					? hb->captureElementalRebirthSource(*target) : std::nullopt;
 				const bool targetMayRebirth = hb->hasReadyNativeRebirth(target.get());
 				target->damage(cleaveDamage, false, cleaveProvenance);
+				applyLastStandDefend(target.get(), cleaveLastStand.first,
+					cleaveLastStand.second, cleaveAttack.retaliation);
 				if(triggersCleaveAmbusher)
 					spendAmbusher(*hb, projectedAttacker->unitId());
 				if(cleaveShadowAssaultSide)
@@ -858,6 +931,9 @@ float BattleExchangeVariant::trackAttack(
 		const auto retaliationShadowAssaultSide = qualifyingShadowAssaultSide(*hb, retaliationAttack);
 		const bool retaliationNightProwlerPending = hasNightProwlerBonus(defender.get());
 		auto retaliationDamage = hb->battleExpectedLuckDamage(retaliationAttack);
+		const auto retaliationLastStand = resolveLastStand(
+			retaliationAttack, attacker.get(), retaliationDamage);
+		retaliationDamage = retaliationLastStand.first.damageToApply;
 		const bool consumesRetaliationBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
 			retaliationAttack.attacker, retaliationAttack.physicalDamage)
 			&& hb->battleHasBastionProtection(attacker.get());
@@ -894,6 +970,8 @@ float BattleExchangeVariant::trackAttack(
 			? hb->captureElementalRebirthSource(*attacker) : std::nullopt;
 		const bool attackerMayRebirth = hb->hasReadyNativeRebirth(attacker.get());
 		attacker->damage(retaliationDamage, false, retaliationProvenance);
+		applyLastStandDefend(attacker.get(), retaliationLastStand.first,
+			retaliationLastStand.second, retaliationAttack.retaliation);
 		if(retaliationNightProwlerPending)
 			defender->removeUnitBonus(CSelector(newHorizonsShroud::isNightProwlerBonus));
 		if(triggersRetaliationAmbusher)

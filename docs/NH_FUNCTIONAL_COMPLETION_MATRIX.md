@@ -2,6 +2,17 @@
 
 Updated: 2026-10-06
 
+Latest accepted Phase1 slice: UP079 Last Stand is production-active. Client/test
+build passes; principal13/13 and activated Last Stand/Mastery/Veteran22/22 native
+cases pass with zero skips (4.124s and7.029s). Module drift and canonical-data
+generation pass; independent source review reports no blocking finding. Coverage
+226→227/310 perks, generic155→156/220, planned84→83; Armorer7→8/10. Faction71/90,
+31/31 Skills,93/93 ranks,61/67 combat identities and8/8 Orders unchanged.
+Live attack caps, real passive Defend, Guardian ordering, side-wide use, lethal
+retaliation termination, activation reset, descriptor safeguards and own-player
+detached AI prediction/replay have focused evidence. Broad control/resurrection/
+multi-effect interactions remain Phase2. No normal Linux snapshot promotion.
+
 Latest Phase1 coverage checkpoint: UP156 Battlefield Mastery is production-active
 and source/native verified. Client/test build,4/4 focused live/detached cases
 (1.862s,zero skips),16/16 adjacent Battlecraft/Defend-lifetime/Reserve cases
@@ -3703,7 +3714,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Skill | Active/planned ranks | Active/planned perks | Immediate state |
 |---|---:|---:|---|
 | Offense | 3/0 | 10/0 | Bounded consumer audit found Breakthrough omitted explicit Battlecraft/Bulwark Defend reductions. UP231 repairs those channels with8/8 focused cases, accepted melee and equivalent-view detached parity. Broader mundane-state taxonomy and stale earlier-tier fixture repairs remain deferred; active registration is not whole-family certification. |
-| Armorer | 3/0 | 7/3 | Bastion, Formation Fighting and Veteran have focused live/detached damage evidence. Three perks missing; Last Stand and Defiant await design choices. |
+| Armorer | 3/0 | 8/2 | Last Stand joins Bastion, Formation Fighting and Veteran with focused live/detached evidence. Unyielding lacks a nonmagical displacement producer; Defiant awaits its recorded design choice. |
 | Archery | 3/0 | 10/0 | Bounded canonical consumer audit finds all ten active perks represented in shared payload, authoritative actions/reactions and BattleAI projections; no missing principal source clause identified. This is source evidence, not focused whole-family execution certification. |
 | Battlecraft | 3/0 | 8/2 | Battlefield Mastery joins the seven previously verified perks. UP156 focused4/4 and adjacent16/16 pass with zero skips, including machine exclusion, first-action allocation, distinct Wait/Defend expiry and detached branches. Actual Defend selection, controlled units and death/revival composition remain Phase2. Overwatch and Rapid Response remain planned. |
 | War Machines | 3/0 | 5/5 | Surgeon and Piercing Bolts have focused live/detached evidence; Fortification Engineer has real fortified-town manual-shot evidence; Master Gunner has accepted independently targeted second-shot evidence; Quartermaster has accepted half-output Ballista/Tent/Catapult extra-activation evidence. Five perks remain planned. Battlefield Medic persistence awaits clarification. |

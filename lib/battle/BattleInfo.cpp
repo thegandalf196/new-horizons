@@ -12,6 +12,7 @@
 #include "NewHorizonsElementalRebirth.h"
 #include "NewHorizonsBloodrage.h"
 #include "NewHorizonsBattlecraft.h"
+#include "NewHorizonsArmorer.h"
 #include "NewHorizonsCombatSkills.h"
 #include "NewHorizonsOffense.h"
 #include "PhysicalAffliction.h"
@@ -229,6 +230,35 @@ void BattleInfo::awardBattlecraftMastery(BattleSide side, uint32_t unitId, int32
 	else
 		throw std::invalid_argument("Invalid Battlefield Mastery action");
 	sides.at(side).battlecraftMasteryAwardRound = awardRound;
+}
+
+bool BattleInfo::hasArmorerLastStandTransientUnitState() const
+{
+	return std::any_of(stacks.begin(), stacks.end(), [](const auto & stack)
+	{
+		if(!stack)
+			return false;
+		const auto state = stack->acquireState();
+		return state->armorerLastStandEndedActivation || state->armorerLastStandDefending;
+	});
+}
+
+bool BattleInfo::hasArmorerLastStandState() const
+{
+	return sides[BattleSide::ATTACKER].armorerLastStandUsed
+		|| sides[BattleSide::DEFENDER].armorerLastStandUsed
+		|| hasArmorerLastStandTransientUnitState();
+}
+
+void BattleInfo::consumeArmorerLastStand(BattleSide side)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::invalid_argument("Invalid side for Armorer Last Stand");
+	if(sides.at(side).armorerLastStandUsed)
+		throw std::runtime_error("Armorer Last Stand was already used by this side");
+	if(!newHorizonsArmorer::hasLastStand(battleGetFightingHero(side)))
+		throw std::runtime_error("Armorer Last Stand requires the active hero perk");
+	sides.at(side).armorerLastStandUsed = true;
 }
 
 const AlternatingHeroActionState & BattleInfo::getWarcastingState(BattleSide side) const
@@ -1482,6 +1512,11 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	}
 	if(newActivation)
 	{
+		// Last Stand ends the current activation without removing the surviving
+		// stack. Keep the marker through all continuations, and clear it only
+		// when the stack actually receives a new activation.
+		st->armorerLastStandEndedActivation = false;
+		st->armorerLastStandDefending = false;
 		st->pursuitMovementRemaining = 0;
 		st->cleaveUsedThisActivation = false;
 		st->setRangedFollowUpDamagePercent(0);

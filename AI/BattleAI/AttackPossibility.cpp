@@ -23,6 +23,7 @@
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
+#include "../../lib/battle/NewHorizonsArmorer.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
@@ -825,6 +826,18 @@ AttackPossibility AttackPossibility::evaluate(
 		if(!vstd::contains_if(defenderUnits, [defender](const battle::Unit * unit)
 			{ return unit->unitId() == defender->unitId(); }))
 			defenderUnits.push_back(defender);
+		// Resolve the primary hit before splash targets, as the authoritative
+		// attack path does. Once-per-side defenses depend on that ordering.
+		const auto primaryFirst = [](battle::Units & units, const battle::Unit * primary)
+		{
+			const auto position = std::ranges::find_if(units, [primary](const battle::Unit * unit)
+				{ return unit->unitId() == primary->unitId(); });
+			if(position != units.end())
+				std::rotate(units.begin(), position, std::next(position));
+		};
+		primaryFirst(defenderUnits, defender);
+		primaryFirst(requestedDefenderUnits, requestedDefender);
+		primaryFirst(retaliatedUnits, attacker);
 		const auto hasNightProwlerBonusIn = [](const battle::Units & units)
 		{
 			return std::ranges::any_of(units, [](const battle::Unit * unit)
@@ -842,11 +855,17 @@ AttackPossibility AttackPossibility::evaluate(
 		};
 		const bool physicalCreatureAttack = newHorizonsCombatSkills::isPhysicalCreatureAttack(
 			attacker, attackInfo.physicalDamage);
+		const bool eligibleForLastStandMainAttack = newHorizonsArmorer::isEligiblePhysicalAttack(
+			attacker, attackInfo.physicalDamage,
+			attackInfo.shooting && attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
 		const bool projectsBastionOnAttack = physicalCreatureAttack
 			&& (hasBastionTarget(defenderUnits)
 				|| (projectsProtect && hasBastionTarget(requestedDefenderUnits)));
 		const bool physicalCreatureRetaliation = newHorizonsCombatSkills::isPhysicalCreatureAttack(
 			defender, potentialRetaliation.physicalDamage);
+		const bool eligibleForLastStandRetaliation = newHorizonsArmorer::isEligiblePhysicalAttack(
+			defender, potentialRetaliation.physicalDamage,
+			potentialRetaliation.shooting && defender->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
 		const bool projectsBastionOnRetaliation = physicalCreatureRetaliation
 			&& hasBastionTarget(retaliatedUnits);
 		const bool projectsBastionOnCounterfire = attackInfo.shooting && physicalCreatureAttack
@@ -920,23 +939,73 @@ AttackPossibility AttackPossibility::evaluate(
 			|| projectsBastionOnCounterfire;
 		const bool projectsBulwarkEffects = mayReceiveBattlecraftReaction || mayReceiveBulwarkReaction || mayReflectBulwarkDamage
 			|| projectsImmovable || projectsSwampRenewal || projectsMireGrip;
+		const auto canPotentiallyTriggerLastStand = [&state](const battle::Unit * target)
+		{
+			if(!target)
+				return false;
+			const auto side = state->playerToSide(state->battleGetOwner(target));
+			return (side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+				&& !state->getBattle()->armorerLastStandUsed(side)
+				&& newHorizonsArmorer::canTriggerLastStand(
+					state->battleGetOwnerHero(target), target);
+		};
+		const bool projectsLastStand = (eligibleForLastStandMainAttack || eligibleForLastStandRetaliation)
+			&& std::ranges::any_of(state->battleAliveUnits(), canPotentiallyTriggerLastStand);
 		if(ap.perfectMoment || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 				|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 				|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune
 				|| projectsNoEscape || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
-				|| projectsNightProwler || projectsBloodragePain)
+				|| projectsNightProwler || projectsBloodragePain || projectsLastStand)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
 	if(projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 			|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune
 			|| projectsNoEscape || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
-			|| projectsNightProwler || projectsBloodragePain)
+			|| projectsNightProwler || projectsBloodragePain || projectsLastStand)
 			ap.effectPreview = fortunePreview;
 	if(crossesNightProwlerEnemy && fortunePreview)
 		fortunePreview->addUnitBonus(attacker->unitId(), newHorizonsShroud::nightProwlerDamageBonuses());
 	const CBattleInfoCallback & luckState = fortunePreview
 		? static_cast<const CBattleInfoCallback &>(*fortunePreview) : *state;
+	const auto resolveLastStandDamage = [&fortunePreview](const BattleAttackInfo & projectedAttack,
+		battle::CUnitState * target, int64_t incomingDamage)
+	{
+		newHorizonsArmorer::ArmorerLastStandDamageResult result{incomingDamage, false};
+		if(!fortunePreview || !target)
+			return result;
+
+		const auto side = fortunePreview->playerToSide(fortunePreview->battleGetOwner(target));
+		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			return result;
+		const bool eligible = newHorizonsArmorer::isEligiblePhysicalAttack(
+			projectedAttack.attacker, projectedAttack.physicalDamage,
+			projectedAttack.shooting && projectedAttack.attacker
+				&& projectedAttack.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK))
+			&& newHorizonsArmorer::canTriggerLastStand(
+				fortunePreview->battleGetOwnerHero(target), target);
+		result = newHorizonsArmorer::resolveLastStandDamage(incomingDamage,
+			target->getGuardianSpiritHitPoints(), target->getGuardianSpiritRoundsRemaining(),
+			target->getAvailableHealth(), eligible, fortunePreview->armorerLastStandUsed(side));
+		if(result.triggered)
+			fortunePreview->consumeArmorerLastStand(side);
+		return result;
+	};
+	bool endedActiveActivationByLastStand = false;
+	const auto applyLastStandDefend = [&fortunePreview, &endedActiveActivationByLastStand](
+		battle::CUnitState * target, bool retaliation)
+	{
+		if(!fortunePreview || !target)
+			return;
+		fortunePreview->applyArmorerLastStandDefend(target->unitId());
+		const auto activeStackId = fortunePreview->getActiveStackID();
+		if(retaliation && activeStackId >= 0
+			&& target->unitId() == static_cast<uint32_t>(activeStackId))
+		{
+			target->armorerLastStandEndedActivation = true;
+			endedActiveActivationByLastStand = true;
+		}
+	};
 	const auto qualifiesForNoEscape = [&fortunePreview](const BattleAttackInfo & projectedAttack)
 	{
 		if(!fortunePreview || !fortunePreview->battleIsShroudFlankingAttack(projectedAttack))
@@ -1157,19 +1226,26 @@ AttackPossibility AttackPossibility::evaluate(
 					const auto preemptiveProvenance = battleAIDamageProvenance(
 						strikeDefenderState->second.get(), preemptive.physicalDamage);
 					auto requestedPreemptiveDamage = luckState.battleExpectedLuckDamage(preemptive);
-					auto appliedPreemptiveDamage = requestedPreemptiveDamage;
+					const auto lastStand = resolveLastStandDamage(preemptive,
+						ap.attackerState.get(), requestedPreemptiveDamage);
+					auto appliedPreemptiveDamage = lastStand.damageToApply;
 					const auto projectedPreemptiveDamage = battleAIProjectDamage(
-						ap.attackerState.get(), requestedPreemptiveDamage, preemptiveProvenance);
+						ap.attackerState.get(), appliedPreemptiveDamage, preemptiveProvenance);
 					ap.attackerDamageReduce += calculateDamageReduce(
 						strikeDefenderState->second.get(), ap.attackerState.get(),
 						projectedPreemptiveDamage.healthLoss, damageCache, state);
 					ap.attackerState->damage(appliedPreemptiveDamage, false, preemptiveProvenance);
+					if(lastStand.triggered)
+						applyLastStandDefend(ap.attackerState.get(), preemptive.retaliation);
 					if(fortunePreview)
 					{
 						FortuneStrikeProjection preemptiveStrike;
 						preemptiveStrike.attackerId = strikeDefenderState->second->unitId();
 						preemptiveStrike.defenderId = ap.attackerState->unitId();
 						preemptiveStrike.retaliation = true;
+						preemptiveStrike.eligibleForLastStand = newHorizonsArmorer::isEligiblePhysicalAttack(
+							preemptive.attacker, preemptive.physicalDamage,
+							preemptive.shooting && preemptive.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
 						preemptiveStrike.damageProvenance = preemptiveProvenance;
 						preemptiveStrike.hits.emplace_back(ap.attackerState->unitId(), requestedPreemptiveDamage);
 						preemptiveStrike.resolvedHits.emplace_back(ap.attackerState->unitId(), appliedPreemptiveDamage);
@@ -1179,7 +1255,7 @@ AttackPossibility AttackPossibility::evaluate(
 					}
 				}
 			}
-			if(!ap.attackerState->alive())
+			if(!ap.attackerState->alive() || ap.attackerState->armorerLastStandEndedActivation)
 				break;
 			if(ordinaryAttacker && attackInfo.physicalDamage && !attackInfo.shooting
 				&& !attackInfo.retaliation && !attackInfo.bracePreemptive
@@ -1208,13 +1284,17 @@ AttackPossibility AttackPossibility::evaluate(
 					const auto preemptiveProvenance = battleAIDamageProvenance(
 						strikeDefenderState->second.get(), preemptive.physicalDamage);
 					const auto requestedPreemptiveDamage = preemptiveDamage;
-					auto appliedPreemptiveDamage = requestedPreemptiveDamage;
+					const auto lastStand = resolveLastStandDamage(preemptive,
+						ap.attackerState.get(), requestedPreemptiveDamage);
+					auto appliedPreemptiveDamage = lastStand.damageToApply;
 					const auto projectedPreemptiveDamage = battleAIProjectDamage(
-						ap.attackerState.get(), requestedPreemptiveDamage, preemptiveProvenance);
+						ap.attackerState.get(), appliedPreemptiveDamage, preemptiveProvenance);
 					ap.attackerDamageReduce += calculateDamageReduce(strikeDefenderState->second.get(),
 						ap.attackerState.get(), projectedPreemptiveDamage.healthLoss, damageCache, state);
 					ap.attackerState->damage(appliedPreemptiveDamage, false,
 						preemptiveProvenance);
+					if(lastStand.triggered)
+						applyLastStandDefend(ap.attackerState.get(), preemptive.retaliation);
 					if(fortunePreview && hasNightProwlerBonus(strikeDefenderState->second.get()))
 						if(auto projectedStriker = fortunePreview->getForUpdate(strikeDefenderState->second->unitId()))
 							projectedStriker->removeUnitBonus(CSelector(newHorizonsShroud::isNightProwlerBonus));
@@ -1232,6 +1312,9 @@ AttackPossibility AttackPossibility::evaluate(
 						preemptiveStrike.attackerId = strikeDefenderState->second->unitId();
 						preemptiveStrike.defenderId = ap.attackerState->unitId();
 						preemptiveStrike.retaliation = true;
+						preemptiveStrike.eligibleForLastStand = newHorizonsArmorer::isEligiblePhysicalAttack(
+							preemptive.attacker, preemptive.physicalDamage,
+							preemptive.shooting && preemptive.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
 						preemptiveStrike.damageProvenance = preemptiveProvenance;
 						preemptiveStrike.hits.emplace_back(ap.attackerState->unitId(), requestedPreemptiveDamage);
 						preemptiveStrike.resolvedHits.emplace_back(ap.attackerState->unitId(), appliedPreemptiveDamage);
@@ -1243,7 +1326,7 @@ AttackPossibility AttackPossibility::evaluate(
 					}
 				}
 			}
-			if(!ap.attackerState->alive())
+			if(!ap.attackerState->alive() || ap.attackerState->armorerLastStandEndedActivation)
 				break;
 			const int relentlessAssaultDamagePercent = ordinaryRelentlessAssaultAttack
 				? luckState.battleGetRelentlessAssaultDamagePercent(
@@ -1256,6 +1339,9 @@ AttackPossibility AttackPossibility::evaluate(
 		strike.shooting = attackInfo.shooting;
 		strike.retaliation = attackInfo.retaliation;
 		strike.damageProvenance = battleAIDamageProvenance(ap.attackerState.get(), attackInfo.physicalDamage);
+		strike.eligibleForLastStand = newHorizonsArmorer::isEligiblePhysicalAttack(
+			ap.attackerState.get(), attackInfo.physicalDamage,
+			attackInfo.shooting && ap.attackerState->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
 		strike.perfectMoment = !rangedFollowUp && ap.perfectMoment && i == 0;
 		// The selectable Master Gunner continuation is a second shot inside the
 		// same activation. Keep per-activation strike histories (e.g. Hex of Pain)
@@ -1297,6 +1383,7 @@ AttackPossibility AttackPossibility::evaluate(
 			int64_t bulwarkPrimaryHealthLoss = 0;
 			int bulwarkReflectionRate = 0;
 			std::vector<std::pair<std::shared_ptr<battle::CUnitState>, int64_t>> pendingRetaliationDamage;
+			std::set<uint32_t> pendingLastStandDefends;
 			std::vector<const battle::Unit *> destroyedEnemyUnits;
 
 			for(auto u : *strikeDefenderUnits)
@@ -1341,13 +1428,16 @@ AttackPossibility AttackPossibility::evaluate(
 				else
 					damageDealt = luckState.battleExpectedLuckDamage(victimAttack);
 				const auto incomingDamage = damageDealt;
+				const auto lastStand = resolveLastStandDamage(victimAttack,
+					defenderState.get(), incomingDamage);
+				auto damageToApply = lastStand.damageToApply;
 				const bool consumesBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
 					victimAttack.attacker, victimAttack.physicalDamage)
 					&& luckState.battleHasBastionProtection(defenderState.get());
 				const auto damageProvenance = battleAIDamageProvenance(
 					victimAttack.attacker, victimAttack.physicalDamage);
 				const auto projectedDamage = battleAIProjectDamage(
-					defenderState.get(), incomingDamage, damageProvenance);
+					defenderState.get(), damageToApply, damageProvenance);
 				const auto * targetHero = state->battleGetOwnerHero(defenderState.get());
 				if(projectedDamage.appliedDamage > 0 && victimAttack.physicalDamage && ordinaryAttacker
 					&& defenderState->defended()
@@ -1360,7 +1450,7 @@ AttackPossibility AttackPossibility::evaluate(
 						? std::numeric_limits<int64_t>::max() : currentDamage + projectedDamage.appliedDamage;
 				}
 				auto retaliatorState = defenderState->acquireState();
-				int64_t projectedHit = incomingDamage;
+				int64_t projectedHit = damageToApply;
 				retaliatorState->damage(projectedHit, false,
 					damageProvenance);
 
@@ -1382,9 +1472,11 @@ AttackPossibility AttackPossibility::evaluate(
 
 				const bool wasAlive = defenderState->alive();
 				strike.hits.emplace_back(u->unitId(), incomingDamage);
-				defenderState->damage(damageDealt, false,
+				defenderState->damage(damageToApply, false,
 					damageProvenance);
-				strike.resolvedHits.emplace_back(u->unitId(), damageDealt);
+				strike.resolvedHits.emplace_back(u->unitId(), damageToApply);
+				if(lastStand.triggered)
+					applyLastStandDefend(defenderState.get(), victimAttack.retaliation);
 				if(triggersAmbusher)
 					spendAmbusher(ap.attackerState->unitId());
 				if(shadowAssaultSide)
@@ -1432,6 +1524,10 @@ AttackPossibility AttackPossibility::evaluate(
 					retaliation->retaliation = true;
 					BattleAttackInfo retaliationAttack(retaliatorState.get(), ap.attackerState.get(), 0, false);
 					retaliationAttack.retaliation = true;
+					retaliation->eligibleForLastStand = newHorizonsArmorer::isEligiblePhysicalAttack(
+						retaliationAttack.attacker, retaliationAttack.physicalDamage,
+						retaliationAttack.shooting
+							&& retaliationAttack.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
 					retaliation->damageProvenance = battleAIDamageProvenance(
 						retaliatorState.get(), retaliationAttack.physicalDamage);
 					retaliation->attackIndex = 0;
@@ -1464,7 +1560,7 @@ AttackPossibility AttackPossibility::evaluate(
 						ap.attackerState->unitId(), currentRound);
 				}
 				if(projectsRainOfArrows && u->unitId() == requestedDefender->unitId())
-					projectedRainPrimaryDamage += damageDealt;
+					projectedRainPrimaryDamage += damageToApply;
 				const bool mayRebirth = !defenderState->isClone()
 					&& defenderState->valOfBonuses(BonusType::REBIRTH) > 0
 					&& defenderState->canCast() && defenderState->getPhantomInitialIntegrity() == 0;
@@ -1609,6 +1705,7 @@ AttackPossibility AttackPossibility::evaluate(
 
 					counterShooter->archeryCounterfireRound = state->battleGetRound();
 					BattleAttackInfo counterfire(counterShooter.get(), ap.attackerState.get(), 0, true);
+					counterfire.retaliation = true;
 					counterfire.archeryRangedDamageMultiplierPercent = newHorizonsArchery::COUNTERFIRE_DAMAGE_PERCENT;
 					int64_t counterfireDamage = luckState.battleExpectedLuckDamage(counterfire);
 					const auto requestedCounterfireDamage = counterfireDamage;
@@ -1617,6 +1714,9 @@ AttackPossibility AttackPossibility::evaluate(
 						counterShooter->archeryDeadeyeRound = currentRound;
 					const auto counterfireProvenance = battleAIDamageProvenance(
 						counterShooter.get(), counterfire.physicalDamage);
+					const auto lastStand = resolveLastStandDamage(counterfire,
+						ap.attackerState.get(), requestedCounterfireDamage);
+					counterfireDamage = lastStand.damageToApply;
 					const bool consumesBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
 						counterfire.attacker, counterfire.physicalDamage)
 						&& luckState.battleHasBastionProtection(ap.attackerState.get());
@@ -1626,6 +1726,8 @@ AttackPossibility AttackPossibility::evaluate(
 						projectedCounterfireDamage.healthLoss, damageCache, state);
 					ap.attackerState->damage(counterfireDamage, false,
 						counterfireProvenance);
+					if(lastStand.triggered)
+						applyLastStandDefend(ap.attackerState.get(), counterfire.retaliation);
 					if(consumesBastion)
 						ap.attackerState->armorerBastionRound = currentRound;
 					if(fortunePreview)
@@ -1634,7 +1736,12 @@ AttackPossibility AttackPossibility::evaluate(
 						counterfireStrike.attackerId = counterShooter->unitId();
 						counterfireStrike.defenderId = ap.attackerState->unitId();
 						counterfireStrike.shooting = true;
+						counterfireStrike.retaliation = true;
 						counterfireStrike.damageProvenance = counterfireProvenance;
+						counterfireStrike.eligibleForLastStand = newHorizonsArmorer::isEligiblePhysicalAttack(
+							counterfire.attacker, counterfire.physicalDamage,
+							counterfire.shooting
+								&& counterfire.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
 						counterfireStrike.hits.emplace_back(ap.attackerState->unitId(), requestedCounterfireDamage);
 						counterfireStrike.resolvedHits.emplace_back(ap.attackerState->unitId(), counterfireDamage);
 						captureAndProjectFortuneStrike(counterfire, counterfireStrike.hits,
@@ -1745,24 +1852,33 @@ AttackPossibility AttackPossibility::evaluate(
 					const bool triggersAmbusher = qualifiesForAmbusher(cleaveAttack);
 					const auto shadowAssaultSide = qualifyingShadowAssaultSide(cleaveAttack);
 					int64_t cleaveDamage = luckState.battleExpectedLuckDamage(cleaveAttack);
+					const auto lastStand = resolveLastStandDamage(cleaveAttack,
+						targetState.get(), cleaveDamage);
+					auto cleaveDamageToApply = lastStand.damageToApply;
 					const auto cleaveProvenance = battleAIDamageProvenance(
 						ap.attackerState.get(), cleaveAttack.physicalDamage);
 					const bool consumesBastion = newHorizonsCombatSkills::isPhysicalCreatureAttack(
 						cleaveAttack.attacker, cleaveAttack.physicalDamage)
 						&& luckState.battleHasBastionProtection(targetState.get());
 					const auto projectedCleaveDamage = battleAIProjectDamage(
-						targetState.get(), cleaveDamage, cleaveProvenance);
+						targetState.get(), cleaveDamageToApply, cleaveProvenance);
 					ap.defenderDamageReduce += calculateDamageReduce(ap.attackerState.get(), targetState.get(),
 						projectedCleaveDamage.healthLoss, damageCache, state);
 
 					cleave.emplace();
 					cleave->attackerId = ap.attackerState->unitId();
 					cleave->defenderId = targetState->unitId();
+					cleave->eligibleForLastStand = newHorizonsArmorer::isEligiblePhysicalAttack(
+						cleaveAttack.attacker, cleaveAttack.physicalDamage,
+						cleaveAttack.shooting
+							&& cleaveAttack.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
 					cleave->damageProvenance = cleaveProvenance;
 					cleave->attackIndex = 0;
 					cleave->cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
 					cleave->hits.emplace_back(targetState->unitId(), cleaveDamage);
-					targetState->damage(cleaveDamage, false, cleave->damageProvenance);
+					targetState->damage(cleaveDamageToApply, false, cleave->damageProvenance);
+					if(lastStand.triggered)
+						applyLastStandDefend(targetState.get(), cleaveAttack.retaliation);
 					if(triggersAmbusher)
 						spendAmbusher(ap.attackerState->unitId());
 					if(shadowAssaultSide)
@@ -1771,7 +1887,7 @@ AttackPossibility AttackPossibility::evaluate(
 						refreshEvasiveShroud(ap.attackerState->unitId());
 					if(consumesBastion)
 						targetState->armorerBastionRound = currentRound;
-					cleave->resolvedHits.emplace_back(targetState->unitId(), cleaveDamage);
+					cleave->resolvedHits.emplace_back(targetState->unitId(), cleaveDamageToApply);
 					captureAndProjectFortuneStrike(cleaveAttack, cleave->hits,
 						ap.attackerState.get(), cleave->resolvedLuck);
 					if(cleaveDamage > 0 && state->battleCanTriggerNoQuarter(cleaveAttack) && !targetState->isTimeStopped()
@@ -1809,6 +1925,7 @@ AttackPossibility AttackPossibility::evaluate(
 				{
 					retaliation.reset();
 					pendingRetaliationDamage.clear();
+					pendingLastStandDefends.clear();
 				}
 				else
 				{
@@ -1831,6 +1948,11 @@ AttackPossibility AttackPossibility::evaluate(
 							? targetState->getPosition() : ap.attack.attackerPos;
 						rawDamage = luckState.battleExpectedLuckDamage(retaliationAttack);
 						retaliation->hits.emplace_back(targetState->unitId(), rawDamage);
+						const auto lastStand = resolveLastStandDamage(retaliationAttack,
+							targetState.get(), rawDamage);
+						rawDamage = lastStand.damageToApply;
+						if(lastStand.triggered)
+							pendingLastStandDefends.insert(targetState->unitId());
 
 						const auto projectedRetaliationDamage = battleAIProjectDamage(
 							targetState.get(), rawDamage, retaliation->damageProvenance);
@@ -1897,6 +2019,8 @@ AttackPossibility AttackPossibility::evaluate(
 				}
 				targetState->damage(actualDamage, false,
 					retaliation ? retaliation->damageProvenance : battle::DamageProvenance::OTHER);
+				if(retaliation && pendingLastStandDefends.contains(targetState->unitId()))
+					applyLastStandDefend(targetState.get(), retaliation->retaliation);
 				if(triggersAmbusher && retaliation)
 					spendAmbusher(retaliation->attackerId);
 				if(shadowAssaultSide && retaliation)
@@ -2003,6 +2127,8 @@ AttackPossibility AttackPossibility::evaluate(
 					fortune.recordStrike(attacker->unitId(), true, false);
 				fortunePreview->setSylvanLuckState(attackerSide, fortune);
 			}
+			if(endedActiveActivationByLastStand)
+				break;
 		}
 		if(ap.bulwarkMireGripTriggered && ap.attackerState->alive() && fortunePreview)
 		{
