@@ -2,6 +2,19 @@
 
 Updated: 2026-10-07
 
+Candidate blocker repaired in source/native: a true-headless AI battle SIGSEGV
+was reproduced in EffectPacketRecorder::snapshot. Retaining the temporary
+shared BonusList fixes its C++20 ownership lifetime; detached AI otherwise
+returns an uncached list destroyed before iteration. Client66261/test55280 build,
+focused recorder/Counterpressure7/7 passes in2.404s without skips/errors/disabled,
+and review finds no blocker. Renewed committed-candidate smoke/delivery remains
+pending; no blanket gameplay or sanitizer certification. The bounded audit
+identifies genuine required UI omissions in Phantom Army Integrity/legal landing
+(UP287,P0) and level-up current-to-offered rank (UP286,P1), recorded for after
+the blocker. Artifact qualitative/movement exceptions have existing principal
+consumers/receipts; no new missing rule is demonstrated in that sample.
+Counts remain228/310 perks,61/67 combat identities and8/8 Orders.
+
 UP285 foundational follow-up is verified in source/native tests: production
 Morale still inherited global three-entry caps and the legacy roll curve after
 UP284's presentation change. A context-aware range policy now covers heroes,

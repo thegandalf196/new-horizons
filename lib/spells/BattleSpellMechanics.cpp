@@ -484,8 +484,11 @@ private:
 		if(!unit)
 			return result;
 
-		for(const auto & bonus : *unit->getBonuses(Selector::sourceType()(BonusSource::SPELL_EFFECT)))
+		const auto bonuses = unit->getBonuses(Selector::sourceType()(BonusSource::SPELL_EFFECT));
+		for(const auto & bonus : *bonuses)
 		{
+			if(!bonus)
+				continue;
 			if(!bonus->sid.as<SpellID>().hasValue())
 				continue;
 			const SpellID spell = bonus->sid.as<SpellID>();

@@ -2,6 +2,35 @@
 
 ## Purpose
 
+### 2026-10-07 — Detached spell-effect recorder iterated a destroyed bonus list
+
+Linux candidate327a39b90f/sourcefe309b06e passes inventory/version checks but
+true-headless All for One exits139 in an AI battle. A bounded debugger rerun
+reproduces SIGSEGV in EffectPacketRecorder::snapshot at the bonus SpellID read.
+The loop dereferences getBonuses()' temporary shared_ptr; detached AI allocates
+an uncached merged BonusList. Under C++20 that owner can die before range-for
+iteration. Retain the shared pointer in a named local, then iterate it. Valid
+entries still become value snapshots; no effect, balance or action rule changes.
+Independent review confirms the ownership defect and narrow repair.
+Client66261/test55280 build; focused recorder/Counterpressure7/7 passes in2.404s,
+zero skips/errors/disabled. New case refreshes existing detached Slow and
+preserves authoritative state without selecting the planned perk. Source/fixture
+review finds no blocker. Renewed committed-candidate smoke remains pending;
+ordinary tests do not constitute ASan lifetime certification.
+Do not infer candidate health from12/12 separate Morale tests or promote
+the crashing payload. Normal4de7cd42f remains selected. Native/gdb evidence is
+private under ignored build/nh-morale-delivery-20261007.rMByhchB.
+
+### 2026-10-07 — Morale fixtures require explicit JSON values and real baseline
+
+UP285's first build stops on implicit integer assignment to JsonNode, whose
+constructors are explicit. Use JsonNode(9)/JsonNode(100); production compiled.
+The first native run passes11/12, with detached isolation expecting zero despite
+the same-faction army's inherent +1 Morale. Assert that baseline and preserve it
+in untouched live/parent/sibling branches; keep modified branch's -10 assertion.
+Repaired builds and12/12 native pass without weakened rules or removed checks.
+Retain first/repaired receipts under ignored testing/saved-morale-20261007.ltoI0LEl.
+
 ### 2026-10-07 — Refreshed Linux candidate retains known non-blocking diagnostics
 
 UP233's immutable4de7cd42f/sourcef8d593dd3 bounded20s true-headless smoke

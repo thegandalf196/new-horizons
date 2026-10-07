@@ -119,7 +119,7 @@ protected:
 		ASSERT_TRUE(hero->hasActivePerk(std::string(spellcraftSkillId), std::string(counterpressureId)));
 	}
 
-	void prepare()
+	void prepare(bool selectCounterpressure = true)
 	{
 		startGame();
 		for(auto * hero : {attackerSideHero, defenderSideHero})
@@ -132,7 +132,8 @@ protected:
 			hero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
 			setTestSpellPointTotal(hero, 1000);
 		}
-		grantCounterpressure(attackerSideHero);
+		if(selectCounterpressure)
+			grantCounterpressure(attackerSideHero);
 
 		startBattle();
 		removeDeployedUnits();
@@ -345,6 +346,48 @@ TEST_F(NewHorizonsCounterpressureTest, DetachedEnemyDamageArmsOnlyTheRecipientAn
 	const auto projectedOwnHealth = projected.battleGetUnitByID(defenderVictim->unitId())->getAvailableHealth();
 	EXPECT_EQ(liveDefenderHealth - projectedOwnHealth, projectedDamage)
 		<< "Detached next-cast damage must use the consumed response snapshot exactly once";
+}
+
+TEST_F(NewHorizonsCounterpressureTest, DetachedStatusRefreshSnapshotsAnExistingSpellEffectWithoutChangingLiveBattle)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false));
+
+	// Seed a real SPELL_EFFECT bonus in the detached target. The refresh is
+	// evaluated through the normal projected spell/effect-recorder path, but no
+	// hero has Counterpressure selected for this regression.
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor::SPECTATOR);
+	CounterpressurePredictionEnvironment environment(gameState());
+	HypotheticBattle projected(&environment, callback);
+	const auto slowSelector = Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(SpellID(SpellID::SLOW))).And(Selector::type()(BonusType::STACKS_INITIATIVE));
+	Bonus priorSlow(BonusDuration::N_TURNS, BonusType::STACKS_INITIATIVE,
+		BonusSource::SPELL_EFFECT, -10, BonusSourceID(SpellID(SpellID::SLOW)));
+	priorSlow.turnsRemain = 1;
+	projected.addUnitBonus(attackerVictim->unitId(), {priorSlow});
+
+	const auto * projectedTarget = projected.battleGetUnitByID(attackerVictim->unitId());
+	ASSERT_NE(projectedTarget, nullptr);
+	const auto existingSlow = projectedTarget->getBonuses(slowSelector);
+	ASSERT_TRUE(existingSlow && existingSlow->size() == 1);
+	EXPECT_EQ(existingSlow->front()->turnsRemain, 1);
+	const auto liveTargetHealth = attackerVictim->getAvailableHealth();
+	EXPECT_TRUE(attackerVictim->getBonuses(slowSelector)->empty());
+
+	const auto * slow = SpellID(SpellID::SLOW).toSpell();
+	ASSERT_NE(slow, nullptr);
+	spells::BattleCast cast(&projected, defenderSideHero, spells::Mode::HERO, slow);
+	const auto mechanics = slow->battleMechanics(&cast);
+	spells::Target aim{spells::Destination(projectedTarget)};
+	ASSERT_TRUE(mechanics->canBeCastAt(aim));
+	mechanics->castEval(projected.getServerCallback(), aim);
+
+	const auto refreshedSlow = projected.battleGetUnitByID(attackerVictim->unitId())->getBonuses(slowSelector);
+	ASSERT_TRUE(refreshedSlow && refreshedSlow->size() == 1);
+	EXPECT_GT(refreshedSlow->front()->turnsRemain, 1)
+		<< "The projected accepted Slow refreshes the existing timed spell effect";
+	EXPECT_EQ(attackerVictim->getAvailableHealth(), liveTargetHealth);
+	EXPECT_TRUE(attackerVictim->getBonuses(slowSelector)->empty())
+		<< "Applying the projected refresh must not mutate the authoritative stack";
 }
 
 TEST_F(NewHorizonsCounterpressureTest, DebuffArmsThroughTheNextRoundButNotAfterIt)
