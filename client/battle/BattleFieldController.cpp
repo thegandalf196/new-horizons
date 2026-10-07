@@ -596,6 +596,9 @@ BattleHexArray BattleFieldController::getHighlightedHexesForSpellRange()
 		if(BattleActionsController::isVerdantPrisonSpell(spell))
 			return owner.actionsController->getVerdantPrisonTargetHexes(spell, hoveredHex);
 
+		if(BattleActionsController::isPhantomArmySpell(spell))
+			return owner.actionsController->getPhantomArmyTargetHexes(spell, hoveredHex);
+
 		if(BattleActionsController::isTransfigureMatterSpell(spell))
 			return owner.actionsController->getTransfigureMatterTargetHexes(spell);
 

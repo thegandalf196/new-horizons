@@ -12,6 +12,7 @@
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/battle/BattleAttackInfo.h"
 #include "../../../lib/battle/BattleAction.h"
+#include "../../../lib/battle/Unit.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/modding/CModHandler.h"
@@ -109,7 +110,8 @@ protected:
 	bool startPhantomBattle(CStack *& source, CStack *& phantom, int32_t sourceCount = 1000,
 		bool sourceHasExtraHealth = false, bool selectIllusionist = false,
 		int32_t spellPower = 100, int64_t sourceDamageBeforeCast = 0, bool selectEchoedDuration = false,
-		int sorceryRank = MasteryLevel::NONE)
+		int sorceryRank = MasteryLevel::NONE, std::string_view sourceCreatureName = "core:pikeman",
+		bool castImmediately = true)
 	{
 		const SpellID spell = phantomArmySpell();
 		if(spell == SpellID::NONE)
@@ -153,7 +155,8 @@ protected:
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, spellPower, ChangeValueMode::ABSOLUTE);
 		startBattle();
 
-		source = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex), sourceCount);
+		source = addStack(BattleSide::ATTACKER, creatureByName(std::string(sourceCreatureName)),
+			BattleHex(leftHex), sourceCount);
 		if(!source)
 			return false;
 		if(sourceHasExtraHealth)
@@ -181,17 +184,86 @@ protected:
 				|| !submitHeroSpellAction(spell, source, true))
 				return false;
 		}
-		else if(!castOn(attackerSideHero, spell, source))
+		else if(castImmediately && !castOn(attackerSideHero, spell, source))
 			return false;
 
 		const auto phantoms = battle()->battleGetStacksIf([](const CStack * unit)
 		{
 			return unit->getPhantomInitialIntegrity() > 0;
 		});
-		if(phantoms.size() != 1)
+		if(phantoms.size() != (castImmediately ? 1u : 0u))
 			return false;
-		phantom = const_cast<CStack *>(phantoms.front());
+		if(!phantoms.empty())
+			phantom = const_cast<CStack *>(phantoms.front());
 		return true;
+	}
+
+	void expectPreviewLandingMatchesSpawn(std::string_view sourceCreatureName, bool doubleWide,
+		bool blockFirstLanding = false)
+	{
+		CStack * source = nullptr;
+		CStack * phantom = nullptr;
+		ASSERT_TRUE(startPhantomBattle(source, phantom, 100, false, false, 40, 0, false,
+			MasteryLevel::NONE, sourceCreatureName, false));
+		ASSERT_NE(source, nullptr);
+		ASSERT_EQ(phantom, nullptr);
+		ASSERT_EQ(source->unitType()->isDoubleWide(), doubleWide);
+		ASSERT_TRUE(source->alive());
+		ASSERT_TRUE(source->isValidTarget(false));
+		ASSERT_FALSE(source->isClone());
+		ASSERT_EQ(source->getPhantomInitialIntegrity(), 0);
+
+		const auto firstLanding = battle()->getAvailableHex(source->unitType(), BattleSide::ATTACKER,
+			source->getPosition());
+		ASSERT_TRUE(firstLanding.isValid());
+		if(blockFirstLanding)
+		{
+			auto * blocker = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), firstLanding, 1);
+			ASSERT_NE(blocker, nullptr);
+		}
+		const auto expectedLanding = battle()->getAvailableHex(source->unitType(), BattleSide::ATTACKER,
+			source->getPosition());
+		ASSERT_TRUE(expectedLanding.isValid());
+		if(blockFirstLanding)
+		{
+			EXPECT_NE(expectedLanding, firstLanding)
+				<< "The legal landing query must avoid the occupied candidate";
+		}
+
+		const auto unitCountBeforePreview = battle()->battleGetAllUnits(false).size();
+		const auto additionsBeforePreview = server.unitAdditionRounds.size();
+		const auto sourceCountBeforePreview = source->getCount();
+		const auto sourceHealthBeforePreview = source->getAvailableHealth();
+		const auto manaBeforePreview = attackerSideHero->getManaAvailable();
+		const auto roundBeforePreview = battle()->getRound();
+		const auto * definition = phantomArmySpell().toSpell();
+		ASSERT_NE(definition, nullptr);
+		const auto preview = battle()->getSpellEffectValue(definition, attackerSideHero,
+			spells::Mode::HERO, source->getPosition());
+		ASSERT_NE(preview, nullptr);
+		ASSERT_GT(preview->hpDelta, 0);
+		ASSERT_EQ(preview->unitsDelta, sourceCountBeforePreview);
+		ASSERT_EQ(preview->unitType, source->unitType());
+		EXPECT_EQ(battle()->battleGetAllUnits(false).size(), unitCountBeforePreview);
+		EXPECT_EQ(server.unitAdditionRounds.size(), additionsBeforePreview);
+		EXPECT_EQ(source->getCount(), sourceCountBeforePreview);
+		EXPECT_EQ(source->getAvailableHealth(), sourceHealthBeforePreview);
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforePreview);
+		EXPECT_FALSE(battle()->hasCompletedHeroSpellCast(BattleSide::ATTACKER));
+		EXPECT_EQ(battle()->getRound(), roundBeforePreview);
+
+		ASSERT_TRUE(castOn(attackerSideHero, phantomArmySpell(), source));
+		const auto phantoms = battle()->battleGetStacksIf([](const CStack * unit)
+		{
+			return unit->getPhantomInitialIntegrity() > 0;
+		});
+		ASSERT_EQ(phantoms.size(), 1u);
+		phantom = const_cast<CStack *>(phantoms.front());
+		const auto expectedFootprint = battle::Unit::getHexes(expectedLanding, doubleWide, BattleSide::ATTACKER);
+		EXPECT_EQ(phantom->getPosition(), expectedLanding);
+		EXPECT_EQ(phantom->getHexes(), expectedFootprint);
+		EXPECT_EQ(phantom->getCount(), preview->unitsDelta);
+		EXPECT_EQ(phantom->getPhantomIntegrity(), preview->hpDelta);
 	}
 
 	void activateStack(const CStack * stack)
@@ -319,6 +391,16 @@ TEST_F(NewHorizonsPhantomArmyTest, SchoolRankScalesOnlySpellPowerIntegrityAndPre
 
 	const auto description = newHorizonsMagic::spellDescriptionForHero(attackerSideHero, definition, 0);
 	EXPECT_NE(description.find("Expert School: 145% Spell Power-derived Phantom Integrity."), std::string::npos);
+}
+
+TEST_F(NewHorizonsPhantomArmyTest, SingleHexLandingPreviewMatchesTheActualCloneAndSkipsAnOccupiedLanding)
+{
+	expectPreviewLandingMatchesSpawn("core:pikeman", false, true);
+}
+
+TEST_F(NewHorizonsPhantomArmyTest, DoubleHexLandingPreviewMatchesTheActualClone)
+{
+	expectPreviewLandingMatchesSpawn("core:cavalier", true);
 }
 
 TEST_F(NewHorizonsPhantomArmyTest, BasicRankPreservesFractionalBasisPointsUntilFinalHealthFloor)

@@ -2,6 +2,20 @@
 
 ## Purpose
 
+### 2026-10-07 — Phantom preview validation setup and target eligibility
+
+UP287's first compile is stopped by the stale-curated-translation guard after
+direct module text edits. Author combat text in config/newHorizonsCombatTexts.json
+and regenerate the module instead. The first native invocation from repository
+root cannot find CONFIG/FILESYSTEM and runs no tests; use the development binary
+directory as working directory. The corrected invocation passes the single-hex
+placement case, but Black Dragon is an immune double-wide fixture (zero shared
+forecast and correctly rejected cast), not evidence of a landing defect.
+Use an eligible double-wide source with an explicit positive-forecast check.
+The existing SchoolRankScalesOnlySpellPowerIntegrityAndPreviewMatchesCast also
+fails at its second cast; preserve this separate integration finding and failed
+logs under ignored build/nh-recorder-delivery-20261007.klVssUWx.
+
 ### 2026-10-07 — Detached spell-effect recorder iterated a destroyed bonus list
 
 Repair delivery: source346c43424 is committed/pushed and rebuilt. New immutable

@@ -45,6 +45,7 @@
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
+#include "../../lib/spells/NewHorizonsSorcery.h"
 #include "lib/spells/NewHorizonsBlink.h"
 #include "../../lib/spells/NewHorizonsVengefulVines.h"
 #include "../../lib/spells/OrientedSpellPattern.h"
@@ -497,6 +498,45 @@ static std::string prepareVerdantPrisonText(
 	}
 
 	return result;
+}
+
+static std::string preparePhantomArmyText(
+	const CSpell * spell,
+	const CStack * source,
+	const spells::effects::SpellEffectValue * value,
+	const std::optional<PhantomArmyPlacementPreview> & placement)
+{
+	if(!spell || !source)
+		return {};
+
+	auto templateText = MetaString::createFromTextID("core.genrltxt", 27);
+	templateText.replaceRawString(spell->getNameTranslated());
+	templateText.replaceRawString(source->getName());
+	std::string result = templateText.toString(&GAME->translator());
+
+	// Invalid sources produce a zero shared SpellEffectValue; keep the ordinary
+	// cast lead-in instead of showing stale or fabricated count/Integrity data.
+	if(!value || value->unitsDelta <= 0 || value->hpDelta <= 0 || !value->unitType)
+		return result;
+
+	if(!placement || !placement->landingHex.isAvailable() || placement->footprint.empty())
+		return result + "\n" + LIBRARY->generaltexth->translate(
+			"new-horizons.combat.phantomArmy.noLegalPlacement");
+
+	const auto coordinate = "(" + std::to_string(placement->landingHex.getX() + 1)
+		+ ", " + std::to_string(placement->landingHex.getY() + 1) + ")";
+	const auto detailTemplate = LIBRARY->generaltexth->translate(
+		"new-horizons.combat.phantomArmy.preview");
+	MetaString detail = MetaString::createFromRawString(detailTemplate);
+	detail.replaceRawString(value->unitsDelta == 1
+		? value->unitType->getNameSingularTranslated()
+		: value->unitType->getNamePluralTranslated());
+	detail.replaceRawString(std::to_string(value->unitsDelta));
+	detail.replaceRawString(std::to_string(value->hpDelta));
+	detail.replaceRawString(coordinate);
+	detail.replaceRawString(std::to_string(placement->footprint.size()));
+
+	return result + "\n" + detail.toString(&GAME->translator());
 }
 
 static std::string formatPercentMillionths(int64_t percentMillionths)
@@ -2276,6 +2316,57 @@ bool BattleActionsController::isVerdantPrisonSpell(const CSpell * spell)
 	return spell && spell->getJsonKey() == verdantPrisonJsonKey;
 }
 
+bool BattleActionsController::isPhantomArmySpell(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == newHorizonsSorcery::PHANTOM_ARMY_SPELL;
+}
+
+std::optional<PhantomArmyPlacementPreview> BattleActionsController::getPhantomArmyPlacementPreview(
+	const CStack * source) const
+{
+	const auto battle = owner.getBattle();
+	if(!battle || !source || !source->alive())
+		return std::nullopt;
+	const auto * creature = source->unitType();
+	if(!creature)
+		return std::nullopt;
+
+	const auto side = battle->battleGetMySide();
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return std::nullopt;
+
+	// This is the same read-only landing query used by phantomArmy.lua during
+	// validity checks and creation. Do not choose or mutate a destination here.
+	const BattleHex landingHex = battle->getAvailableHex(creature, side, source->getPosition());
+	if(!landingHex.isAvailable())
+		return std::nullopt;
+
+	PhantomArmyPlacementPreview preview;
+	preview.landingHex = landingHex;
+	const bool doubleWide = creature->isDoubleWide();
+	const auto & footprint = battle::Unit::getHexes(landingHex, doubleWide, side);
+	for(const auto & hex : footprint)
+		if(hex.isAvailable())
+			preview.footprint.insert(hex);
+
+	const size_t expectedFootprintSize = doubleWide ? 2 : 1;
+	if(preview.footprint.size() != expectedFootprintSize)
+		return std::nullopt;
+
+	return preview;
+}
+
+BattleHexArray BattleActionsController::getPhantomArmyTargetHexes(const CSpell * spell, const BattleHex & targetHex)
+{
+	if(!isPhantomArmySpell(spell) || !owner.getBattle() || !heroSpellcastingModeActive()
+		|| !targetHex.isValid() || !isCastingPossibleHere(spell, nullptr, targetHex))
+		return {};
+
+	const auto * source = getStackForHex(targetHex);
+	const auto preview = getPhantomArmyPlacementPreview(source);
+	return preview ? preview->footprint : BattleHexArray{};
+}
+
 bool BattleActionsController::isHydrasVitalitySpell(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == hydrasVitalityJsonKey;
@@ -3431,7 +3522,11 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 			}
 
 			auto spellEffectValue =
-					owner.getBattle()->getSpellEffectValue(spell, getCurrentSpellcaster(), getCurrentCastMode(), targetHex);
+				owner.getBattle()->getSpellEffectValue(spell, getCurrentSpellcaster(), getCurrentCastMode(), targetHex);
+			if(isPhantomArmySpell(spell))
+				return preparePhantomArmyText(spell, targetStack, spellEffectValue.get(),
+					getPhantomArmyPlacementPreview(targetStack));
+
 			if(isHydrasVitalitySpell(spell))
 			{
 				spells::BattleCast cast(owner.getBattle().get(), getCurrentSpellcaster(), getCurrentCastMode(), spell);
@@ -3614,6 +3709,22 @@ std::string BattleActionsController::actionGetStatusMessageBlocked(PossiblePlaye
 		case PossiblePlayerBattleAction::AIMED_SPELL_CREATURE:
 		case PossiblePlayerBattleAction::RANDOM_GENIE_SPELL:
 		case PossiblePlayerBattleAction::LIFE_DRAIN:
+			if(action.get() == PossiblePlayerBattleAction::AIMED_SPELL_CREATURE
+				&& isPhantomArmySpell(action.spell().toSpell()) && targetHex.isValid())
+			{
+				const auto battle = owner.getBattle();
+				const auto * caster = getCurrentSpellcaster();
+				const auto * source = getStackForHex(targetHex);
+				if(battle && caster && source)
+				{
+					const auto effectValue = battle->getSpellEffectValue(
+						action.spell().toSpell(), caster, getCurrentCastMode(), targetHex);
+					if(effectValue && effectValue->unitsDelta > 0 && effectValue->hpDelta > 0
+						&& effectValue->unitType && !getPhantomArmyPlacementPreview(source))
+						return LIBRARY->generaltexth->translate(
+							"new-horizons.combat.phantomArmy.noLegalPlacement");
+				}
+			}
 			return LIBRARY->generaltexth->allTexts[23];
 			break;
 		case PossiblePlayerBattleAction::TELEPORT:

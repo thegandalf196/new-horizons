@@ -2,6 +2,17 @@
 
 Updated: 2026-10-07
 
+UP287 fills the required Phantom Army targeting readback in source: shared
+copied count/Integrity, legal landing coordinate and one/two-hex footprint now
+appear through existing hover/highlight surfaces. No spell semantics/art change.
+Client/test12-job builds pass; focused new placement native2/2 passes with zero
+skips/failures/errors, shared forecast-to-spawn parity and no preview state
+mutation. Source wiring/module checks pass, independent review finds no blocker.
+Rendered fit, actual controller/highlight execution and delivery remain open.
+Existing school-rank repeated-cast fixture fails separately and is retained for
+Phase2 alongside the AI Leadership rejection. Counts stay228/310 perks,61/67
+combat identities and8/8 Orders; next ready P1 is UP286 rank transition cards.
+
 Renewed Linux delivery: committed recorder repair346c43424 builds and immutable
 08f1828f8c passes independent2367-file identity/inventory checks plus fresh-profile
 20s headless progression through day6 with no SIGSEGV. Normal launcher promoted

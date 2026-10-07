@@ -91,6 +91,12 @@ struct ChainLightningPreview
 	std::string consoleText;
 };
 
+struct PhantomArmyPlacementPreview
+{
+	BattleHex landingHex = BattleHex::INVALID;
+	BattleHexArray footprint;
+};
+
 using MagicArrowOverchargeFactory = std::function<std::optional<MagicArrowOverchargeContext>(
 	const BattleAction &, const BattleHex &, const CStack *)>;
 using ShadowGiftFactory = std::function<std::optional<ShadowGiftContext>(
@@ -464,6 +470,12 @@ public:
 	/// the shared spell effect geometry for the currently hovered enemy stack.
 	static bool isVerdantPrisonSpell(const CSpell * spell);
 	BattleHexArray getVerdantPrisonTargetHexes(const CSpell * spell, const BattleHex & targetHex);
+
+	/// Phantom Army targets an eligible friendly stack but creates its copy on
+	/// the nearest legal footprint returned by the shared battle placement query.
+	static bool isPhantomArmySpell(const CSpell * spell);
+	std::optional<PhantomArmyPlacementPreview> getPhantomArmyPlacementPreview(const CStack * source) const;
+	BattleHexArray getPhantomArmyTargetHexes(const CSpell * spell, const BattleHex & targetHex);
 
 	/// New Horizons Hydra's Vitality reports its shared mechanics value in
 	/// percent-millionths; it is never previewed as immediate healing.

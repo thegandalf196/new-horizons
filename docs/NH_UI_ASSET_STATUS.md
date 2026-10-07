@@ -1,5 +1,12 @@
 # New Horizons UI and asset status register
 
+Phantom Army targeting readback,2026-10-07: **Provisional**, UP287. Source now
+shows shared copied count/Integrity, landing coordinate and footprint; existing
+hex overlay shades the shared legal summon landing, not the source. No new art
+or panel. Client/test builds, focused placement parity2/2, wiring/module checks
+and review pass. Actual console fit/controller/highlight rendering and approval
+remain unverified; normal Linux08f1828f8c excludes this source slice.
+
 Quick-spell pressed underlay,2026-10-07: **Provisional** source correction,
 UP283. Stateful SPELLINT base used Summon Boat frame1 when pressed underneath
 the selected id+1 symbol. Every state now retains neutral0; selected overlay,
