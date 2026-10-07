@@ -362,6 +362,7 @@ set(vcmiclientcommon_HEADERS
 	widgets/GraphicalPrimitiveCanvas.h
 	widgets/Images.h
 	widgets/MiscWidgets.h
+	widgets/NewHorizonsMoraleLuckPresentation.h
 	widgets/CViewport.h
 	widgets/ObjectLists.h
 	widgets/TextControls.h

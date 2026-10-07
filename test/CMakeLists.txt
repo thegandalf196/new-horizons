@@ -106,6 +106,7 @@ set(test_SRCS
 		client/NewHorizonsEntangleStatusTest.cpp
 		client/NewHorizonsBattleFormStatusTest.cpp
 		client/NewHorizonsFlankReadbackTest.cpp
+		client/NewHorizonsHeroMoraleLuckReadbackTest.cpp
 		hero/NewHorizonsLeadershipTest.cpp
 		hero/NewHorizonsMovementRulesTest.cpp
 		hero/NewHorizonsCapabilityRulesTest.cpp

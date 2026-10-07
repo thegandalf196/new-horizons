@@ -2,6 +2,15 @@
 
 Updated: 2026-10-07
 
+UP284 closes the generic hero/kingdom/exchange Luck/Morale presentation bypass:
+saved-NH-rules-gated current +/-10 values, source/override text and computed
+labels replace legacy generic caps/sum labels. Legacy worlds and live battle
+readbacks remain separate; no gameplay state/global curve is changed.
+Client/test75669 builds; focused pure readback3/3 passes with zero skips/errors,
+and independent review finds no blocker. Actual widget/bonus collection,
+rendering/refresh and playable delivery remain unverified. Required UI path
+coverage improves; counts remain228/310 perks,61/67 combat spells and8/8 Orders.
+
 Linux delivery refresh: immutable4de7cd42f/sourcef8d593dd3 now supplies UP279/
 280/283 through the unchanged normal launcher. Independent2367-file/version
 checks and bounded20s fresh-profile true-headless map progression/cleanup pass;

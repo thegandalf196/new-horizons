@@ -11,6 +11,7 @@
 #include "MiscWidgets.h"
 
 #include "CComponent.h"
+#include "NewHorizonsMoraleLuckPresentation.h"
 
 #include "../GameEngine.h"
 #include "../GameInstance.h"
@@ -687,6 +688,147 @@ void MoraleLuckBox::set(const AFactionMember * node)
 	const std::array componentType = {ComponentType::LUCK, ComponentType::MORALE};
 	const std::array hoverTextBase = {7, 4};
 	TConstBonusListPtr modifierList = std::make_shared<const BonusList>();
+	const auto * callback = GAME->interface() && GAME->interface()->cb ? GAME->interface()->cb.get() : nullptr;
+	const bool newHorizonsRulesActive = node && callback
+		&& newHorizonsMagic::rulesActive(callback->getMagicRules());
+
+	if(newHorizonsRulesActive)
+	{
+		const auto * bonusBearer = node->getBonusBearer();
+		const BonusType sourceType = morale ? BonusType::MORALE : BonusType::LUCK;
+		const auto sourceBonuses = bonusBearer->getBonusesOfType(sourceType);
+		const int64_t rawValue = sourceBonuses ? sourceBonuses->totalValue() : 0;
+		const auto descriptionCallback = callback;
+
+		std::vector<std::string> sourceDescriptions;
+		if(sourceBonuses && descriptionCallback)
+		{
+			for(const auto & bonus : *sourceBonuses)
+			{
+				if(!bonus || bonus->val == 0)
+					continue;
+
+				auto description = bonus->Description(descriptionCallback);
+				if(!description.empty())
+					sourceDescriptions.push_back(std::move(description));
+			}
+		}
+
+		MetaString description;
+		bool hasSpecialExplanation = false;
+		if(morale)
+		{
+			const auto readback = newHorizonsMoraleLuckPresentation::moraleReadback(
+				newHorizonsRulesActive, rawValue,
+				bonusBearer->hasBonusOfType(BonusType::NO_MORALE),
+				bonusBearer->hasBonusOfType(BonusType::MAX_MORALE), node->unaffectedByMorale(),
+				bonusBearer->hasBonusOfType(BonusType::MINIMUM_MORALE),
+				bonusBearer->valOfBonuses(BonusType::MINIMUM_MORALE));
+			if(readback)
+			{
+				component.value = readback->value;
+				const int sign = (readback->value > 0) - (readback->value < 0);
+				hoverText = GAME->translator().translate("core.heroscrn", hoverTextBase[morale] - sign);
+
+				description.appendTextID("new-horizons.hero.morale.value");
+				description.replaceTokenNumber("%VALUE%", readback->value);
+				description.appendEOL();
+				description.appendTextID("new-horizons.hero.morale.context");
+
+				if(readback->maxMorale)
+				{
+					description.appendEOL();
+					description.appendTextID("new-horizons.hero.morale.maxMorale");
+				}
+				else if(readback->noMorale)
+				{
+					description.appendEOL();
+					description.appendTextID("new-horizons.hero.morale.noMorale");
+				}
+				else if(readback->moraleImmune)
+				{
+					description.appendEOL();
+					description.appendTextID("core.arraytxt", 113);
+				}
+				if(readback->minimumMoralePresent)
+				{
+					description.appendEOL();
+					description.appendTextID("new-horizons.hero.morale.minimum");
+					description.replaceTokenNumber("%VALUE%", readback->minimumMorale);
+				}
+				hasSpecialExplanation = readback->hasSpecialExplanation();
+			}
+		}
+		else
+		{
+			const auto readback = newHorizonsMoraleLuckPresentation::luckReadback(
+				newHorizonsRulesActive, rawValue,
+				bonusBearer->hasBonusOfType(BonusType::NO_LUCK),
+				bonusBearer->hasBonusOfType(BonusType::MAX_LUCK),
+				bonusBearer->hasBonusOfType(BonusType::MAXIMUM_LUCK),
+				bonusBearer->valOfBonuses(BonusType::MAXIMUM_LUCK));
+			if(readback)
+			{
+				component.value = readback->value;
+				const int sign = (readback->value > 0) - (readback->value < 0);
+				hoverText = GAME->translator().translate("core.heroscrn", hoverTextBase[morale] - sign);
+
+				description.appendTextID("new-horizons.hero.luck.value");
+				description.replaceTokenNumber("%VALUE%", readback->value);
+				description.appendEOL();
+				description.appendTextID("new-horizons.hero.luck.context");
+				if(readback->maxLuck)
+				{
+					description.appendEOL();
+					description.appendTextID("new-horizons.hero.luck.maxLuck");
+				}
+				else if(readback->noLuck)
+				{
+					description.appendEOL();
+					description.appendTextID("new-horizons.hero.luck.noLuck");
+				}
+				if(readback->maximumLuckLimitPresent)
+				{
+					description.appendEOL();
+					description.appendTextID("new-horizons.hero.luck.maximum");
+					description.replaceTokenNumber("%VALUE%", readback->maximumLuckLimit);
+				}
+				hasSpecialExplanation = readback->hasSpecialExplanation();
+			}
+		}
+
+		if(!sourceDescriptions.empty())
+		{
+			description.appendEOL();
+			description.appendEOL();
+			description.appendTextID(morale ? "new-horizons.combat.morale.readback.sourceHeader"
+				: "new-horizons.combat.luck.readback.sourceHeader");
+			for(const auto & sourceDescription : sourceDescriptions)
+			{
+				description.appendEOL();
+				description.appendRawString(sourceDescription);
+			}
+		}
+		else if(!hasSpecialExplanation)
+		{
+			description.appendEOL();
+			description.appendTextID(morale ? "new-horizons.combat.morale.readback.noSources"
+				: "new-horizons.combat.luck.readback.noSources");
+		}
+
+		text = description.toString(&GAME->translator());
+		component.type = componentType[morale];
+		const std::string imageName = small ? (morale ? "IMRL30" : "ILCK30")
+			: (morale ? "IMRL42" : "ILCK42");
+		image = std::make_shared<CAnimImage>(AnimationPath::builtin(imageName),
+			std::clamp(*component.value + 3, 0, 6));
+		image->moveBy(Point(pos.w / 2 - image->pos.w / 2, pos.h / 2 - image->pos.h / 2));
+		if(settings["general"]["enableUiEnhancements"].Bool())
+			label = std::make_shared<CLabel>((image->pos.topLeft() - pos.topLeft()).x + (small ? 28 : 40),
+				(image->pos.topLeft() - pos.topLeft()).y + (small ? 20 : 38), EFonts::FONT_TINY,
+				ETextAlignment::BOTTOMRIGHT, Colors::WHITE, std::to_string(*component.value));
+		return;
+	}
 
 	component.value = 0;
 
