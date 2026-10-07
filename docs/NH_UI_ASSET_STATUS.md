@@ -1,5 +1,15 @@
 # New Horizons UI and asset status register
 
+Rig-guided eight-pose Cabir sheet,2026-10-06: **Provisional**, private and
+uninstalled. Built-in HoMM3-Art master has genuineRGBA and no meaningful
+cell-edge clipping; faint edge residue is alpha1. Eight native PNGs use one
+56px-reference scale and waist-buckle translation anchors, not limb warping or
+per-frame scaling. Independent review permits an explicitly provisional human
+preview: contact1/5 and rear-foot advancement improve, but return-half6–8,
+torso/arm discontinuity4→5, requested crude-style approval and in-game stride
+remain unverified. Do not transfer the technical rig's foot-plant proof to the
+generated figures or call the full Cabir animation set complete.
+
 Rig-guided Cabir contact study,2026-10-06: **Provisional**, private and
 uninstalled. Original articulated technical guide provides Near contact,
 Near-supported passing and Far contact; it is not runtime art. Initial
