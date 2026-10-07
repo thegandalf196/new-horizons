@@ -108,6 +108,7 @@
 				
 				"heroExperience" : { "$ref" : "#/definitions/value" },
 				"heroExperienceNextLevelPercent" : { "type" : "integer", "minimum" : 0, "maximum" : 100 },
+				"primaryExperienceReward" : { "type" : "boolean", "description" : "Explicitly classifies fixed Experience as the primary adventure-object reward; defaults to false." },
 				"heroLevel" : { "$ref" : "#/definitions/value" },
 				"movePercentage" : { "$ref" : "#/definitions/value" },
 				"movePoints" : { "$ref" : "#/definitions/value" },

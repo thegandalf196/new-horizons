@@ -65,6 +65,8 @@ struct DLL_LINKAGE Reward final
 
 	/// received experience
 	si32 heroExperience;
+	/// Fixed positive Experience from this reward is treated as primary Experience.
+	bool primaryExperienceReward = false;
 	/// experience as a percentage of the hero's current gap to the next level
 	si32 heroExperienceNextLevelPercent = 0;
 
@@ -150,6 +152,9 @@ struct DLL_LINKAGE Reward final
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_REWARDABLE_NEXT_LEVEL_EXPERIENCE)
 			&& heroExperienceNextLevelPercent != 0)
 			throw std::runtime_error("Next-level Experience reward requires the New Horizons reward save format");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_PRIMARY_EXPERIENCE_REWARD)
+			&& primaryExperienceReward)
+			throw std::runtime_error("Primary Experience reward requires the New Horizons primary Experience save format");
 
 		h & resources;
 		h & extraComponents;
@@ -202,6 +207,11 @@ struct DLL_LINKAGE Reward final
 		}
 		else if(!h.saving)
 			heroExperienceNextLevelPercent = 0;
+
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PRIMARY_EXPERIENCE_REWARD))
+			h & primaryExperienceReward;
+		else if(!h.saving)
+			primaryExperienceReward = false;
 	}
 	
 	void serializeJson(JsonSerializeFormat & handler);

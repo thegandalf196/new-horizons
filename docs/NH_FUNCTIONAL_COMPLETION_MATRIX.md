@@ -2,6 +2,37 @@
 
 Updated: 2026-10-07
 
+Next-feature audit outside Learning/Luck,2026-10-07: the six missing combat
+identities retain specific open rulings (Confusion UP043, Polymorph UP066,
+Reality Warp UP179, Pandemonium UP123/191, Nature's Wrath UP117 and Elemental
+Convergence UP072). The19 planned faction perks likewise retain recorded
+recipient/lifetime, movement-reaction producer, threshold overlap, displacement,
+terrain or Rebirth rulings. No new full-feature activation was justified by
+this bounded sample; it is not proof that the entire82-perk backlog is blocked.
+Preserve partial foundations and pursue another unblocked requirement rather
+than treating an unresolved boundary as permission to invent a different perk.
+
+Bounded active-spell minimum-AI source audit,2026-10-07: Nature Poison has
+legal target enumeration and marginal tick valuation; Plague has delayed/spread
+valuation; Hand of Fate has expected collateral scoring; Frailty has projected
+physical-damage scoring; Puppet Master has candidate control/action valuation.
+Their source hooks and existing focused fixtures were inspected, not rerun.
+No missing principal hook is demonstrated in this five-spell sample. Actual
+Frailty choice, wider propagation/control interactions and tactical quality
+remain Phase2; this is not whole-roster AI certification or identity credit.
+
+Learning/Luck planned-perk audit finds no stale hold among their7/4 planned
+entries. Scholar's reciprocal/week scope is resolved but acquisition/no-op/order
+boundaries remain open. UP276 verifies Historian's unambiguous Learning Stone
+primary-XP foundation; full mixed/alternative/level-reward classifications and
+activation remain UP071 work. Do not call the full perk implemented from this
+foundation or remove its planned registry status. Client/test build44322 and
+two focused native cases pass in0.708s, zero skips/errors/disabled, after retained
+fixture repairs. Accepted visits/preview parity and classification compatibility
+are tested; perk-aware AI valuation, full-world save journeys and other source
+classification remain incomplete. Counts stay228/310 perks,31 Skills/93 ranks,
+61/67 combat identities and8/8 Orders; normal Linux snapshot is unchanged.
+
 UP275 adds localized issuing-side and explicit round-end expiry to existing
 creature Order badge help, with earlier consumption/breakage qualified. Shared
 issuedRound/current-round metadata is read only; hidden hero identity/perks are

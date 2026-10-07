@@ -1,5 +1,17 @@
 # Serialization
 
+## Primary Experience reward classification (Historian foundation)
+
+`NEW_HORIZONS_PRIMARY_EXPERIENCE_REWARD` appends the explicit Boolean
+`Reward::primaryExperienceReward`. Missing JSON and older binary reads default
+false; non-Boolean authored/map JSON is rejected. Unsupported true direct Reward
+writes reject before that Reward's payload. This is not a zero-byte guarantee
+for an enclosing world save. Ordinary reward previews and grants share the same
+classified fixed-XP calculation. Learning Stone is the first authored source;
+Historian remains planned pending the other source classifications, and this
+representation does not activate the perk or classify mixed/level rewards.
+Focused execution/serialization acceptance is tracked under UP276.
+
 ## Armorer Last Stand (source/native verified)
 
 `NEW_HORIZONS_ARMORER_LAST_STAND` appends a per-side combat-used flag.

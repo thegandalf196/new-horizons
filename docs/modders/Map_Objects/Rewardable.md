@@ -39,6 +39,17 @@ Rewardable object is defined similarly to other objects, with key difference bei
 
 ### Experience rewards
 
+`primaryExperienceReward` is an optional Boolean, defaulting to false. It
+explicitly classifies the positive fixed `heroExperience` portion as the
+adventure object's primary reward. With a saved active Historian perk, that
+portion receives 50 additional percentage points in the ordinary Experience-
+gain calculation; preview components and the authoritative grant agree.
+It does not affect negative Experience, `heroLevel`, or percentage-next-level
+rewards. Non-Boolean values are rejected. Learning Stone is currently the only
+authored classification; Historian remains unavailable in the production perk
+registry pending the other source decisions. Do not infer primary status merely
+because a mixed reward contains some Experience.
+
 In addition to the fixed `heroExperience` amount, a reward may specify
 `heroExperienceNextLevelPercent` as an integer from 0 to 100. The game computes
 that percentage of the Experience the visiting hero currently lacks for the

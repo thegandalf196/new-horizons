@@ -178,6 +178,15 @@ void Rewardable::Info::configureReward(Rewardable::Configuration & object, IGame
 	reward.resources = randomizer.loadResources(source["resources"], variables);
 
 	reward.heroExperience = randomizer.loadValue(source["heroExperience"], variables);
+	if(source.Struct().contains("primaryExperienceReward"))
+	{
+		const auto & primaryExperienceReward = source["primaryExperienceReward"];
+		if(primaryExperienceReward.getType() != JsonNode::JsonType::DATA_BOOL)
+			throw std::runtime_error("Reward primaryExperienceReward must be a boolean");
+		reward.primaryExperienceReward = primaryExperienceReward.Bool();
+	}
+	else
+		reward.primaryExperienceReward = false;
 	if(source.Struct().contains("heroExperienceNextLevelPercent"))
 	{
 		const auto & experiencePercent = source["heroExperienceNextLevelPercent"];

@@ -2,6 +2,41 @@
 
 ## Purpose
 
+### 2026-10-07 — Historian fixture must use explicit owner and complete serialized types
+
+UP276's combined client/test build2406 fails in the new fixture: TinyH3MBuilder
+requires an explicit player owner for hero creation, and binary Reward
+serialization requires concrete BonusParameters/Limiters/Propagators/Updaters
+headers, not forward declarations. Repair the fixture, not production APIs or
+serializer contracts. Retain build.log and the incremental repair log under
+ignored testing/historian-foundation-20261007.WJF9wFMe. Source review/module
+checks alone do not establish compilation or accepted reward execution.
+
+The subsequent native52479 exits139 without XML. A bounded debugger run
+localizes the crash to the fixture's retained reference into the Learning
+Stone reward configuration; newObject calls initObj and regenerates that
+configuration after the fixture captured its reference.
+Use a value snapshot for preview comparisons across visits; do not remove the
+accepted-visit checks or change reward publication. Retain native.log and
+native-crash-gdb.log; later passing execution must have separate receipts.
+The first crash-repaired run executes2 cases and passes only JSON/binary
+compatibility: the second accepted visit is rejected because the first visit's
+query has not been closed. Preserve native-repaired.log/XML (1/2), and exercise
+the normal query lifecycle before retrying the same principal assertions.
+The query-lifecycle repair initially fails compilation85189 because it omitted
+QueriesProcessor's concrete header. Root adds QueriesProcessor.h/CQuery.h;
+retain build-query-repaired.log and build-query-headers-repaired.log separately.
+The resulting native-query-repaired run remains1/2: its arbitrary four-query
+bound is exhausted before all legitimate level-ups resolve. Derive the bound
+from the supported hero-level range and require visit closure before continuing;
+do not reduce the authored reward to conceal the lifecycle failure.
+The native-final run still fails1/2 after25.543s. Root traces the repeated queries
+to missing adventure-interface readiness: level-up onAdded/onExposure does not
+publish HeroLevelUp until onAdvInterfaceReady is received, so replying to an
+unprompted query leaves the level unchanged. Initialize the fixture through
+onAdvInterfaceReady(PLAYER), then resolve normally. Do not increase bounds again
+or change XP formulas. Defensive rejection of unprompted replies is Phase2.
+
 ### 2026-10-07 — Order-badge fixture needs concrete translator inheritance
 
 UP275 combined build83580 fails when converting CGeneralTextHandler* to

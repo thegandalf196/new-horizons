@@ -384,7 +384,8 @@
 				"rewards" : [
 					{
 						"message" : 143,
-						"heroExperience" : 1000
+						"heroExperience" : 1000,
+						"primaryExperienceReward" : true
 					}
 				]
 			}

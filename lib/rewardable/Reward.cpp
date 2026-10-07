@@ -55,7 +55,11 @@ TExpType Rewardable::Reward::calculateHeroExperience(const CGHeroInstance * hero
 {
 	TExpType result = 0;
 	if(heroExperience > 0)
-		result = hero ? hero->calculateXp(heroExperience) : heroExperience;
+	{
+		const bool historianBonus = primaryExperienceReward && hero
+			&& hero->hasActivePerk("new-horizons:learning", "new-horizons:learning.historian");
+		result = hero ? hero->calculateXp(heroExperience, historianBonus ? 50 : 0) : heroExperience;
+	}
 
 	if(!hero || heroExperienceNextLevelPercent <= 0)
 		return result;
@@ -249,6 +253,13 @@ void Rewardable::Reward::loadComponents(std::vector<Component> & comps, const CG
 
 void Rewardable::Reward::serializeJson(JsonSerializeFormat & handler)
 {
+	if(!handler.saving)
+	{
+		const auto & rewardNode = handler.getCurrent();
+		if(rewardNode.isStruct() && rewardNode.Struct().contains("primaryExperienceReward")
+			&& rewardNode["primaryExperienceReward"].getType() != JsonNode::JsonType::DATA_BOOL)
+			throw std::runtime_error("Reward primaryExperienceReward must be a boolean");
+	}
 	if(handler.saving && manaBuffer < 0)
 		throw std::runtime_error("Buffer reward cannot be negative");
 	if(handler.saving && (heroExperienceNextLevelPercent < 0
@@ -262,6 +273,7 @@ void Rewardable::Reward::serializeJson(JsonSerializeFormat & handler)
 	if(!handler.saving && manaBuffer < 0)
 		throw std::runtime_error("Buffer reward cannot be negative");
 	handler.serializeInt("heroExperience", heroExperience);
+	handler.serializeBool("primaryExperienceReward", primaryExperienceReward, false);
 	handler.serializeInt("heroExperienceNextLevelPercent", heroExperienceNextLevelPercent, 0);
 	if(!handler.saving && (heroExperienceNextLevelPercent < 0
 		|| heroExperienceNextLevelPercent > MAX_HERO_EXPERIENCE_NEXT_LEVEL_PERCENT))
