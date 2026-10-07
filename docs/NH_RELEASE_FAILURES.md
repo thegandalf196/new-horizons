@@ -2,6 +2,15 @@
 
 ## Purpose
 
+### 2026-10-07 — Order-badge fixture needs concrete translator inheritance
+
+UP275 combined build83580 fails when converting CGeneralTextHandler* to
+ITranslator*: GameLibrary.h only forward-declares the handler, so the fixture
+must include lib/texts/CGeneralTextHandler.h before that conversion. Do not
+change MetaString's interface or cast around missing type information. Retain
+failed build.log and repaired build-repaired.log under ignored testing/
+order-badge-20261007.MM5ju8m8. Metadata/source guards are not compile evidence.
+
 ### 2026-10-07 — Protect death fixture passed const damage to an in/out API
 
 UP274's first combined build78888 fails because CUnitState::damage takes an

@@ -2,6 +2,16 @@
 
 Updated: 2026-10-07
 
+UP275 adds localized issuing-side and explicit round-end expiry to existing
+creature Order badge help, with earlier consumption/breakage qualified. Shared
+issuedRound/current-round metadata is read only; hidden hero identity/perks are
+not queried. Rebuild20554 succeeds after retained translator-header repair;
+two focused translation/metadata cases pass in0.915s, zero skips/errors/disabled,
+with binding/module checks and independent review. Badge eligibility/layout is
+unchanged; executed badge rendering/privacy/round transitions remain Phase2.
+No gameplay identity/count changes or playable promotion. This closes UP274's
+explicit per-badge source/expiry wording follow-up, not broader Order hardening.
+
 UP274 supplies the canonical persistent Protector/Ward battlefield link from
 the current synchronized pair, using shared applicability for both units and
 current single/double-wide footprints. A directed amber ground stroke renders

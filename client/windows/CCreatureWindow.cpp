@@ -28,6 +28,7 @@
 #include "../widgets/ObjectLists.h"
 #include "GUIClasses.h"
 #include "InfoWindows.h"
+#include "NewHorizonsOrderBadgeHelp.h"
 #include "../gui/WindowHandler.h"
 #include "../GameEngine.h"
 #include "../GameInstance.h"
@@ -441,10 +442,15 @@ std::vector<OrderIndicator> activeOrderIndicators(const CStack * stack)
 		if(applies)
 		{
 			const auto name = orderName(state->command);
+			std::string description = name + (suffix.empty() ? "" : " — " + suffix)
+				+ (detail.empty() ? "" : "\n" + detail);
+			const auto sourceExpiry = newHorizonsOrderBadgeHelp::sourceAndExpiry(
+				*state, side, battle->battleGetRound());
+			if(!sourceExpiry.empty())
+				description += "\n" + sourceExpiry.toString(&GAME->translator());
+			description += "\nTactical Order: presentation only; not a spell and cannot be dispelled.";
 			result.push_back({state->command, suffix.empty() ? name : name + ": " + suffix,
-				name + (suffix.empty() ? "" : " — " + suffix)
-				+ (detail.empty() ? "" : "\n" + detail)
-				+ "\nTactical Order: presentation only; not a spell and cannot be dispelled."});
+				std::move(description)});
 		}
 	}
 	return result;

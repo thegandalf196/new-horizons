@@ -1,4 +1,7 @@
 {
+	"new-horizons.combat.orderBadge.sourceExpiry": "Issued by the %SOURCE% hero. Expires at the end of round %ROUND%; its benefit may end earlier when used or broken.",
+	"new-horizons.combat.orderBadge.attacker": "attacking",
+	"new-horizons.combat.orderBadge.defender": "defending",
 	"new-horizons.spellCost.row": "SP %d -> %d",
 	"new-horizons.spellCost.listed": "Listed Spell Points: %d",
 	"new-horizons.spellCost.current": "Current base cost: %d",

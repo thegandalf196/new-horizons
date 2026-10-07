@@ -1,5 +1,12 @@
 # New Horizons UI and asset status register
 
+Creature Order badge source/expiry,2026-10-07: **Provisional** under UP275.
+Existing badge tooltip now names the issuing side and explicit round-end expiry,
+qualified for earlier consumption/breakage. No new art/layout/input behavior.
+Client/test rebuild and two translation/metadata checks pass with guards and
+review; rendered tooltip fit/round-transition execution and approval remain
+unverified. Normal Linux launcher remains unchanged.
+
 Protect ground connector,2026-10-07: **Provisional** under UP274. Native Canvas
 amber line/arrow with dark under-stroke connects current Protector/Ward footprint
 centers behind creature sprites. No bitmap art or targeting/input changes. Shared

@@ -399,6 +399,7 @@ set(vcmiclientcommon_HEADERS
 	windows/NewHorizonsPerkHelp.h
 	windows/NewHorizonsPerkAvailability.h
 	windows/NewHorizonsBuildingVisitHelp.h
+	windows/NewHorizonsOrderBadgeHelp.h
 	windows/SpellPointPresentation.h
 	windows/HeroMasteryWindow.h
 	windows/HeroMasteryDialogState.h
