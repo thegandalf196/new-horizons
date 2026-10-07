@@ -22,6 +22,7 @@
 #include "../battle/AdverseCombatRerollState.h"
 #include "../battle/MoraleSuppressionState.h"
 #include "../battle/ReducedExtraActivationState.h"
+#include "../battle/NewHorizonsBattlecraft.h"
 #include "../battle/BattleInfo.h"
 #include "../battle/BattleDeploymentState.h"
 #include "../battle/BattleHexArray.h"
@@ -49,6 +50,8 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 	{
 		if(h.saving && info)
 			info->validateSpellResponseStates();
+		if(h.saving && info && info->hasBattlecraftMasteryMarkers())
+			throw std::runtime_error("Binary BattleStart descriptors cannot preserve active Battlefield Mastery unit markers");
 		if(h.saving && info && info->hasSacredCommandOrderState()
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SACRED_COMMAND))
 			throw std::runtime_error("Cannot discard Sacred Command state from BattleStart");
@@ -113,6 +116,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_SPELL_RESPONSE)
 			&& info->hasSpellResponseState())
 			throw std::runtime_error("Cannot discard Spell Response state from BattleStart");
+		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLEFIELD_MASTERY)
+			&& info->hasBattlecraftMasteryState())
+			throw std::runtime_error("Cannot discard Battlefield Mastery state from BattleStart");
 		h & battleID;
 		h & info;
 		assert(battleID != BattleID::NONE);
@@ -383,6 +389,50 @@ struct DLL_LINKAGE SetSpellResponseState : public CPackForClient
 	}
 };
 
+/// Replicates the first eligible accepted Wait/Defend action of a side's round.
+struct DLL_LINKAGE SetBattlecraftMasteryAward : public CPackForClient
+{
+	BattleID battleID = BattleID::NONE;
+	BattleSide side = BattleSide::NONE;
+	uint32_t unitId = std::numeric_limits<uint32_t>::max();
+	int32_t round = -1;
+	BattlecraftMasteryAction action = BattlecraftMasteryAction::WAIT;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	void validateShape() const
+	{
+		if(battleID == BattleID::NONE || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			|| unitId == std::numeric_limits<uint32_t>::max() || round < 1
+			|| (action != BattlecraftMasteryAction::WAIT && action != BattlecraftMasteryAction::DEFEND))
+			throw std::runtime_error("Invalid Battlefield Mastery award update");
+	}
+
+	void validateTransitionFrom(int32_t previousAwardRound, int32_t currentRound) const
+	{
+		validateShape();
+		if(round != currentRound || previousAwardRound >= currentRound)
+			throw std::runtime_error("Battlefield Mastery award is not the first action in the current round");
+	}
+
+	template <typename Handler>
+	void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLEFIELD_MASTERY))
+			throw std::runtime_error(h.saving
+				? "Cannot serialize Battlefield Mastery award to an older format"
+				: "Cannot deserialize Battlefield Mastery award from an older format");
+		if(h.saving)
+			validateShape();
+		h & battleID;
+		h & side;
+		h & unitId;
+		h & round;
+		h & action;
+		validateShape();
+	}
+};
+
 struct DLL_LINKAGE BattleSetActiveStack : public CPackForClient
 {
 	BattleID battleID = BattleID::NONE;
@@ -624,6 +674,10 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 			&& std::ranges::any_of(changedStacks, [](const UnitChanges & change)
 				{ return change.hasBattlecraftPreemptiveStrikeRoundState(); }))
 			throw std::runtime_error("Cannot discard Battlecraft Pre-emptive Strike unit state update");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLEFIELD_MASTERY)
+			&& std::ranges::any_of(changedStacks, [](const UnitChanges & change)
+				{ return change.hasBattlecraftMasteryState(); }))
+			throw std::runtime_error("Cannot discard Battlefield Mastery unit state update");
 		h & battleID;
 		h & changedStacks;
 		assert(battleID != BattleID::NONE);
@@ -790,6 +844,12 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 				|| std::ranges::any_of(bsa, [](const BattleStackAttacked & hit)
 					{ return hit.newState.hasBattlecraftPreemptiveStrikeRoundState(); })))
 			throw std::runtime_error("Cannot discard Battlecraft Pre-emptive Strike attack state");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLEFIELD_MASTERY)
+			&& (std::ranges::any_of(attackerChanges.changedStacks, [](const UnitChanges & change)
+				{ return change.hasBattlecraftMasteryState(); })
+				|| std::ranges::any_of(bsa, [](const BattleStackAttacked & hit)
+					{ return hit.newState.hasBattlecraftMasteryState(); })))
+			throw std::runtime_error("Cannot discard Battlefield Mastery attack state");
 		if(h.saving && chainGateTriggered && !h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE))
 			throw std::runtime_error("Cannot discard Chain Gate attack state");
 		h & battleID;

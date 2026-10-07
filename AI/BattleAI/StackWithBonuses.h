@@ -358,6 +358,9 @@ public:
 
 	int32_t getActiveStackID() const override;
 	int32_t getRound() const override;
+	int32_t getBattlecraftMasteryAwardRound(BattleSide side) const override;
+	void awardBattlecraftMastery(BattleSide side, uint32_t unitId, int32_t round,
+		BattlecraftMasteryAction action) override;
 	int32_t getBloodrageDamagePercent(BattleSide side) const override;
 	int32_t getBloodrageCapPercent(BattleSide side) const override;
 	int32_t getBloodrageSpeedBonus(BattleSide side) const override;
@@ -489,6 +492,8 @@ private:
 	BattleSideArray<DoubleCommandState> doubleCommandStates;
 	BattleSideArray<PreCombatOrderState> preCombatOrderStates;
 	BattleSideArray<bool> heroSpellCastCompletedStates;
+	/// Branch-local per-side round stamp for Battlefield Mastery's first Wait/Defend award.
+	BattleSideArray<int32_t> battlecraftMasteryAwardRounds;
 	BattleSideArray<std::uint8_t> completedHeroSpellLevelMasks;
 	BattleSideArray<bool> counterspellArmedStates;
 	BattleSideArray<bool> countersequenceArmedStates;

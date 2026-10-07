@@ -1315,9 +1315,11 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	waiting = other.waiting;
 	waitedThisTurn = other.waitedThisTurn;
 	battlecraftWaitBonusUsed = other.battlecraftWaitBonusUsed;
+	battlecraftWaitMasteryDoubled = other.battlecraftWaitMasteryDoubled;
 	battlecraftPreemptiveStrikeRound = other.battlecraftPreemptiveStrikeRound;
 	defensiveStanceMeleeBonus = other.defensiveStanceMeleeBonus;
 	defensiveStanceRangedBonus = other.defensiveStanceRangedBonus;
+	battlecraftDefendMasteryDoubled = other.battlecraftDefendMasteryDoubled;
 	bulwarkPreemptiveUsed = other.bulwarkPreemptiveUsed;
 	bulwarkMireGripApplied = other.bulwarkMireGripApplied;
 	bulwarkDefendPhysicalDamage = other.bulwarkDefendPhysicalDamage;
@@ -2135,6 +2137,7 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeBool("waiting", waiting);
 	handler.serializeBool("waitedThisTurn", waitedThisTurn);
 	handler.serializeBool("battlecraftWaitBonusUsed", battlecraftWaitBonusUsed);
+	handler.serializeBool("battlecraftWaitMasteryDoubled", battlecraftWaitMasteryDoubled);
 	handler.serializeInt("battlecraftPreemptiveStrikeRound", battlecraftPreemptiveStrikeRound, -1);
 	if(battlecraftPreemptiveStrikeRound < -1)
 		throw std::runtime_error("Invalid Battlecraft Pre-emptive Strike round marker");
@@ -2143,6 +2146,7 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 		throw std::runtime_error("Invalid negative activation movement bonus");
 	handler.serializeInt("defensiveStanceMeleeBonus", defensiveStanceMeleeBonus, 0);
 	handler.serializeInt("defensiveStanceRangedBonus", defensiveStanceRangedBonus, 0);
+	handler.serializeBool("battlecraftDefendMasteryDoubled", battlecraftDefendMasteryDoubled);
 	handler.serializeBool("bulwarkPreemptiveUsed", bulwarkPreemptiveUsed);
 	handler.serializeBool("bulwarkMireGripApplied", bulwarkMireGripApplied);
 	handler.serializeInt("bulwarkDefendPhysicalDamage", bulwarkDefendPhysicalDamage, 0);
@@ -2266,9 +2270,11 @@ void CUnitState::reset()
 	waiting = false;
 	waitedThisTurn = false;
 	battlecraftWaitBonusUsed = false;
+	battlecraftWaitMasteryDoubled = false;
 	battlecraftPreemptiveStrikeRound = -1;
 	defensiveStanceMeleeBonus = 0;
 	defensiveStanceRangedBonus = 0;
+	battlecraftDefendMasteryDoubled = false;
 	bulwarkPreemptiveUsed = false;
 	bulwarkMireGripApplied = false;
 	bulwarkDefendPhysicalDamage = 0;
@@ -2692,7 +2698,10 @@ void CUnitState::afterAttack(bool ranged, bool counter, bool physical)
 		shots.use();
 
 	if(physical && waitedThisTurn)
+	{
 		battlecraftWaitBonusUsed = true;
+		battlecraftWaitMasteryDoubled = false;
+	}
 }
 
 void CUnitState::afterWait()
@@ -2702,7 +2711,10 @@ void CUnitState::afterWait()
 	// round; the authoritative action validator remains responsible for rejecting
 	// that request, but state application must not re-arm the effect.
 	if(!waitedThisTurn)
+	{
 		battlecraftWaitBonusUsed = false;
+		battlecraftWaitMasteryDoubled = false;
+	}
 	waiting = true;
 	waitedThisTurn = true;
 }
@@ -2739,6 +2751,7 @@ void CUnitState::afterNewRound(bool isFirstRound)
 	waiting = false;
 	waitedThisTurn = false;
 	battlecraftWaitBonusUsed = false;
+	battlecraftWaitMasteryDoubled = false;
 	timeStopTurnConsumedFlag = false;
 	movedThisRound = false;
 	pursuitMovementRemaining = 0;
@@ -2764,6 +2777,7 @@ void CUnitState::afterGetsTurn(BattleUnitTurnReason reason)
 	defending = false;
 	defensiveStanceMeleeBonus = 0;
 	defensiveStanceRangedBonus = 0;
+	battlecraftDefendMasteryDoubled = false;
 	if(reason == BattleUnitTurnReason::MORALE)
 	{
 		hadMorale = true;
@@ -2787,6 +2801,8 @@ void CUnitState::makeGhost()
 	pursuitMovementRemaining = 0;
 	cleaveUsedThisActivation = false;
 	rangedFollowUpDamagePercent = 0;
+	battlecraftWaitMasteryDoubled = false;
+	battlecraftDefendMasteryDoubled = false;
 	veteranPhysicalDamageSinceActivation = 0;
 	guardianSpiritHitPoints = 0;
 	guardianSpiritRoundsRemaining = 0;
@@ -2803,6 +2819,8 @@ void CUnitState::onRemoved()
 	endBattleForm();
 	activationMovementBonus = 0;
 	rangedFollowUpDamagePercent = 0;
+	battlecraftWaitMasteryDoubled = false;
+	battlecraftDefendMasteryDoubled = false;
 	// Keep the remains ledger on a ghost until the battle result is captured.
 	// Ghost stacks can be removed from the battlefield before the final result
 	// is assembled; clearing the ledger here would make those direct-hit

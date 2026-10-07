@@ -527,10 +527,10 @@
 					"id": "new-horizons:battlecraft.battlefieldMastery",
 					"name": "Battlefield Mastery",
 					"requires": "expert",
-					"description": "The first friendly stack each round to Wait or Defend receives double the normal Battlecraft rank bonus for that action.",
+					"description": "The first eligible ordinary friendly stack each round to Wait or Defend receives double the normal Battlecraft rank bonus for that action. Ineligible War Machines neither receive nor consume the opportunity; other perk contributions are not doubled.",
 					"effect": {
-						"status": "planned",
-						"description": "The first friendly stack each round to Wait or Defend receives double the normal Battlecraft rank bonus for that action."
+						"status": "active",
+						"description": "The first eligible ordinary friendly stack each round to Wait or Defend receives double the normal Battlecraft rank bonus for that action. Ineligible War Machines neither receive nor consume the opportunity; other perk contributions are not doubled."
 					}
 				}
 			]

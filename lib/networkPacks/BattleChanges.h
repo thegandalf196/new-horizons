@@ -74,6 +74,12 @@ public:
 		return originalHP.getType() == JsonNode::JsonType::DATA_INTEGER && originalHP.Integer() != 0;
 	}
 
+	bool hasBattlecraftMasteryState() const
+	{
+		return data["state"]["battlecraftWaitMasteryDoubled"].Bool()
+			|| data["state"]["battlecraftDefendMasteryDoubled"].Bool();
+	}
+
 	template <typename Handler> void serialize(Handler & h)
 	{
 		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_CASUALTY_PROVENANCE)
@@ -82,6 +88,9 @@ public:
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_OUTPUT_ORIGINAL_HP)
 			&& hasRebirthOriginalAggregateHP())
 			throw std::runtime_error("Cannot discard Rebirth output original HP in an older unit update format");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLEFIELD_MASTERY)
+			&& hasBattlecraftMasteryState())
+			throw std::runtime_error("Cannot discard Battlefield Mastery unit state in an older format");
 		const auto & veteranDamage = data["state"]["veteranPhysicalDamageSinceActivation"];
 		const auto & activationMovementBonus = data["state"]["activationMovementBonus"];
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_ARMORER_VETERAN)

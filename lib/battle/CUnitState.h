@@ -266,6 +266,9 @@ public:
 	/// Whether the one-shot Battlecraft Wait damage bonus has already been spent this round.
 	/// The availability is the conjunction of waitedThisTurn and !battlecraftWaitBonusUsed.
 	bool battlecraftWaitBonusUsed;
+	/// Whether this accepted Wait won Battlefield Mastery's per-side round award.
+	/// The normal Wait lifetime remains authoritative; this only doubles its rank term.
+	bool battlecraftWaitMasteryDoubled = false;
 	/// Round in which this stack received Battlecraft's Pre-emptive Strike.
 	/// Unlike Bulwark's Defend-scoped marker, this is not reset by Defend.
 	int32_t battlecraftPreemptiveStrikeRound = -1;
@@ -280,6 +283,9 @@ public:
 	/// temporary effect may also use STACK_GETS_TURN.
 	int32_t defensiveStanceMeleeBonus;
 	int32_t defensiveStanceRangedBonus;
+	/// Whether this Defend stance won Battlefield Mastery's per-side round award.
+	/// It expires at the same next-activation boundary as the Defend stance.
+	bool battlecraftDefendMasteryDoubled = false;
 	/// Whether this Defend stance has already spent Bulwark's first-melee-attack reaction.
 	bool bulwarkPreemptiveUsed;
 	/// Whether Mire Grip has already applied its activation-scoped Speed penalty.

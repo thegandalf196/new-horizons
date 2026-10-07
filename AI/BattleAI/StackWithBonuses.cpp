@@ -881,6 +881,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 		spellResponseStates[side] = realBattle->getBattle()->getSpellResponseState(side);
 		heroOrderStates[side] = realBattle->getBattle()->getHeroOrderStates(side);
 		relentlessAssaultStates[side] = realBattle->getBattle()->getRelentlessAssaultState(side);
+		battlecraftMasteryAwardRounds[side] = realBattle->getBattle()->getBattlecraftMasteryAwardRound(side);
 		warcastingStates[side] = realBattle->getBattle()->getWarcastingState(side);
 		heroActionAllowances[side] = realBattle->getBattle()->getHeroActionAllowances(side);
 		doubleCommandStates[side] = realBattle->getBattle()->getDoubleCommandState(side);
@@ -1850,6 +1851,46 @@ int32_t HypotheticBattle::getRound() const
 	return projectedRound;
 }
 
+int32_t HypotheticBattle::getBattlecraftMasteryAwardRound(BattleSide side) const
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return -1;
+	return battlecraftMasteryAwardRounds.at(side);
+}
+
+void HypotheticBattle::awardBattlecraftMastery(BattleSide side, uint32_t unitId, int32_t round,
+	BattlecraftMasteryAction action)
+{
+	if((side != BattleSide::ATTACKER && side != BattleSide::DEFENDER) || round != getRound())
+		throw std::runtime_error("Invalid hypothetical Battlefield Mastery award context");
+
+	auto unit = getForUpdate(unitId);
+	if(!unit || playerToSide(battleGetOwner(unit.get())) != side)
+		throw std::runtime_error("Hypothetical Battlefield Mastery award targets the wrong side");
+
+	const auto previousAwardRound = battlecraftMasteryAwardRounds.at(side);
+	if(!newHorizonsBattlecraft::canAwardBattlefieldMastery(
+		battleGetOwnerHero(unit.get()), unit.get(), round, previousAwardRound, action))
+		throw std::runtime_error("Invalid hypothetical Battlefield Mastery award");
+	if((action == BattlecraftMasteryAction::WAIT && unit->battlecraftWaitMasteryDoubled)
+		|| (action == BattlecraftMasteryAction::DEFEND && unit->battlecraftDefendMasteryDoubled))
+		throw std::runtime_error("Hypothetical Battlefield Mastery action marker is already set");
+
+	switch(action)
+	{
+	case BattlecraftMasteryAction::WAIT:
+		unit->battlecraftWaitMasteryDoubled = true;
+		break;
+	case BattlecraftMasteryAction::DEFEND:
+		unit->battlecraftDefendMasteryDoubled = true;
+		break;
+	default:
+		throw std::runtime_error("Unknown hypothetical Battlefield Mastery action");
+	}
+
+	battlecraftMasteryAwardRounds.at(side) = round;
+}
+
 int32_t HypotheticBattle::getBloodrageDamagePercent(BattleSide side) const
 {
 	return bloodrageDamagePercents.at(side);
@@ -2619,6 +2660,11 @@ void HypotheticBattle::makeWait(const battle::Unit * activeStack)
 
 	resetActiveUnit();
 	unit->afterWait();
+	const auto side = playerToSide(battleGetOwner(unit.get()));
+	const auto round = getRound();
+	if(newHorizonsBattlecraft::canAwardBattlefieldMastery(battleGetOwnerHero(unit.get()), unit.get(),
+		round, getBattlecraftMasteryAwardRound(side), BattlecraftMasteryAction::WAIT))
+		awardBattlecraftMastery(side, unit->unitId(), round, BattlecraftMasteryAction::WAIT);
 	unit->setActivationMovementBonus(newHorizonsBattlecraft::delayedActivationMovementBonus(
 		battleGetOwnerHero(unit.get()), unit.get(), BattleUnitTurnReason::TURN_QUEUE));
 }

@@ -2730,6 +2730,15 @@ void GameStatePackVisitor::visitSetSpellResponseState(SetSpellResponseState & pa
 	battle->setSpellResponseState(pack.side, pack.state);
 }
 
+void GameStatePackVisitor::visitSetBattlecraftMasteryAward(SetBattlecraftMasteryAward & pack)
+{
+	auto * battle = gs.getBattle(pack.battleID);
+	if(!battle)
+		throw std::runtime_error("Missing battle for Battlefield Mastery award");
+	pack.validateTransitionFrom(battle->getBattlecraftMasteryAwardRound(pack.side), battle->getRound());
+	battle->awardBattlecraftMastery(pack.side, pack.unitId, pack.round, pack.action);
+}
+
 void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 {
 	if(pack.paidHeroManaCost < 0 || pack.paidCounterspellManaCost < 0
@@ -3397,6 +3406,14 @@ void BattleStatePackVisitor::visitSetSpellResponseState(SetSpellResponseState & 
 		throw std::runtime_error("Spell Response state update targets another battle");
 	pack.validateTransitionFrom(battleState.getSpellResponseState(pack.side), battleState.getRound());
 	battleState.setSpellResponseState(pack.side, pack.state);
+}
+
+void BattleStatePackVisitor::visitSetBattlecraftMasteryAward(SetBattlecraftMasteryAward & pack)
+{
+	if(pack.battleID != battleState.getBattleID())
+		throw std::runtime_error("Battlefield Mastery award targets another battle");
+	pack.validateTransitionFrom(battleState.getBattlecraftMasteryAwardRound(pack.side), battleState.getRound());
+	battleState.awardBattlecraftMastery(pack.side, pack.unitId, pack.round, pack.action);
 }
 
 void BattleStatePackVisitor::visitCatapultAttack(CatapultAttack & pack)

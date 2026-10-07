@@ -520,6 +520,8 @@ float BattleExchangeVariant::trackAttack(
 		static_cast<battle::CAmmo &>(unitToUpdate->shots) = affectedUnit->shots;
 		static_cast<battle::CAmmo &>(unitToUpdate->counterAttacks) = affectedUnit->counterAttacks;
 		unitToUpdate->battlecraftWaitBonusUsed = affectedUnit->battlecraftWaitBonusUsed;
+		unitToUpdate->battlecraftWaitMasteryDoubled = affectedUnit->battlecraftWaitMasteryDoubled;
+		unitToUpdate->battlecraftDefendMasteryDoubled = affectedUnit->battlecraftDefendMasteryDoubled;
 		unitToUpdate->battlecraftPreemptiveStrikeRound = affectedUnit->battlecraftPreemptiveStrikeRound;
 		unitToUpdate->cleaveUsedThisActivation = affectedUnit->cleaveUsedThisActivation;
 		unitToUpdate->bulwarkPreemptiveUsed = affectedUnit->bulwarkPreemptiveUsed;

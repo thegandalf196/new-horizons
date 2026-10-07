@@ -60,6 +60,30 @@ namespace
 {
 constexpr int MASTER_GUNNER_FOLLOW_UP_DAMAGE_PERCENT = 60;
 
+void awardBattlefieldMasteryIfEligible(CGameHandler & gameHandler, const CBattleInfoCallback & battle,
+	const CStack * stack, BattlecraftMasteryAction action)
+{
+	const auto * state = battle.getBattle();
+	if(!state || !stack)
+		return;
+	const auto side = battle.playerToSide(battle.battleGetOwner(stack));
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return;
+	const auto round = state->getRound();
+	const auto previousAwardRound = state->getBattlecraftMasteryAwardRound(side);
+	if(!newHorizonsBattlecraft::canAwardBattlefieldMastery(battle.battleGetOwnerHero(stack), stack,
+		round, previousAwardRound, action))
+		return;
+
+	SetBattlecraftMasteryAward award;
+	award.battleID = state->getBattleID();
+	award.side = side;
+	award.unitId = stack->unitId();
+	award.round = round;
+	award.action = action;
+	gameHandler.sendAndApply(award);
+}
+
 BattleSide activeDeploymentSide(const CBattleInfoCallback & battle)
 {
 	const auto * state = battle.getBattle();
@@ -952,6 +976,8 @@ bool BattleActionProcessor::doWaitAction(const CBattleInfoCallback & battle, con
 	if (!canStackAct(battle, stack))
 		return false;
 
+	awardBattlefieldMasteryIfEligible(*gameHandler, battle, stack, BattlecraftMasteryAction::WAIT);
+
 	processBattleEventTriggers(battle, CombatEventType::WAIT, stack, nullptr);
 	return true;
 }
@@ -1579,6 +1605,8 @@ bool BattleActionProcessor::doDefendAction(const CBattleInfoCallback & battle, c
 	stateUpdate.data = state->save();
 	stateChanged.changedStacks.push_back(std::move(stateUpdate));
 	gameHandler->sendAndApply(stateChanged);
+
+	awardBattlefieldMasteryIfEligible(*gameHandler, battle, stack, BattlecraftMasteryAction::DEFEND);
 
 	BattleLogMessage message;
 	message.battleID = battle.getBattle()->getBattleID();

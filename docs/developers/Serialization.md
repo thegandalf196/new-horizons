@@ -1,5 +1,20 @@
 # Serialization
 
+## Battlefield Mastery round award (source integrated; native validation pending)
+
+`NEW_HORIZONS_BATTLEFIELD_MASTERY` appends two historical per-side award-round
+stamps to BattleInfo. Each defaults to -1; nonnegative stamps must not exceed
+the current round. Rollover does not reset them. UnitChanges JSON carries separate
+Wait/Defend doubled-rank markers with their existing effect lifetimes, and a
+validated SetBattlecraftMasteryAward update changes marker plus side stamp
+atomically. Unsupported writers reject populated state before payload bytes.
+
+Binary battle descriptors do not retain general CUnitState Wait/Defend lifetime;
+even current BattleInfo/BattleStart writers reject active mastery unit markers
+rather than pretend to restore an ongoing battle. A historical side stamp alone
+can round-trip in the current format. Older reads start at -1. This extension
+does not add midbattle save/resume; focused acceptance is tracked in UP-156.
+
 ## Round-bounded spell response (UP180; partial runtime/native accepted)
 
 `NEW_HORIZONS_SPELL_RESPONSE` appends `SpellResponseState` to each battle side.

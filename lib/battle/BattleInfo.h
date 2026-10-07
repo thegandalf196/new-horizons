@@ -149,6 +149,15 @@ public:
 		return sides[BattleSide::ATTACKER].spellResponseState.hasState()
 			|| sides[BattleSide::DEFENDER].spellResponseState.hasState();
 	}
+	int32_t getBattlecraftMasteryAwardRound(BattleSide side) const override
+	{
+		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			return -1;
+		return sides.at(side).battlecraftMasteryAwardRound;
+	}
+	bool hasBattlecraftMasteryState() const;
+	bool hasBattlecraftMasteryMarkers() const;
+	void validateBattlecraftMasteryState() const;
 	void validateSpellResponseStates() const
 	{
 		for(const auto & side : sides)
@@ -235,6 +244,11 @@ public:
 			validateSpellResponseStates();
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SPELL_RESPONSE) && hasSpellResponseState())
 				throw std::runtime_error("Cannot discard Spell Response state in an older battle format");
+			validateBattlecraftMasteryState();
+			if(hasBattlecraftMasteryMarkers())
+				throw std::runtime_error("Binary battle descriptors cannot preserve active Battlefield Mastery unit markers");
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLEFIELD_MASTERY) && hasBattlecraftMasteryState())
+				throw std::runtime_error("Cannot discard Battlefield Mastery battle state in an older format");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_ELEMENTAL_REBIRTH)
 				&& hasElementalRebirthBasisState())
 				throw std::runtime_error("Cannot discard Elemental Rebirth battle-start HP basis in an older battle format");
@@ -716,6 +730,29 @@ public:
 		else if(!h.saving)
 			deploymentState = {};
 
+		// CStack's binary descriptor does not carry CUnitState. Preserve only the
+		// historical per-side round stamp; active unit markers are rejected above.
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLEFIELD_MASTERY))
+		{
+			std::array<int32_t, 2> awardRounds{};
+			if(h.saving)
+			{
+				awardRounds[0] = sides[BattleSide::ATTACKER].battlecraftMasteryAwardRound;
+				awardRounds[1] = sides[BattleSide::DEFENDER].battlecraftMasteryAwardRound;
+			}
+			h & awardRounds;
+			if(!h.saving)
+			{
+				sides[BattleSide::ATTACKER].battlecraftMasteryAwardRound = awardRounds[0];
+				sides[BattleSide::DEFENDER].battlecraftMasteryAwardRound = awardRounds[1];
+			}
+		}
+		else if(!h.saving)
+		{
+			sides[BattleSide::ATTACKER].battlecraftMasteryAwardRound = -1;
+			sides[BattleSide::DEFENDER].battlecraftMasteryAwardRound = -1;
+		}
+
 		if(!h.saving)
 		{
 			validateSpellResponseStates();
@@ -726,6 +763,7 @@ public:
 			validateFocusFireStates();
 			validateRelentlessAssaultStates();
 			postDeserialize();
+			validateBattlecraftMasteryState();
 			validateDoubleCommandStructure();
 			validatePreCombatOrderStructure();
 		}
@@ -864,6 +902,8 @@ public:
 	void setDoubleCommandState(BattleSide side, const DoubleCommandState & state) override;
 	void setPreCombatOrderState(BattleSide side, const PreCombatOrderState & state) override;
 	void setSpellResponseState(BattleSide side, const SpellResponseState & state) override;
+	void awardBattlecraftMastery(BattleSide side, uint32_t unitId, int32_t awardRound,
+		BattlecraftMasteryAction action) override;
 	void setRelentlessAssaultState(BattleSide side, const RelentlessAssaultState & state) override
 	{
 		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)

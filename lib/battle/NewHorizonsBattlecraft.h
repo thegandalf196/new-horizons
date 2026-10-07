@@ -7,6 +7,8 @@
 
 #include "BattleUnitTurnReason.h"
 
+#include <cstdint>
+
 class CGHeroInstance;
 
 namespace battle
@@ -15,11 +17,22 @@ class CUnitState;
 class Unit;
 }
 
+enum class BattlecraftMasteryAction : uint8_t
+{
+	WAIT,
+	DEFEND,
+};
+
 namespace newHorizonsBattlecraft
 {
 DLL_LINKAGE int rank(const CGHeroInstance * hero);
 DLL_LINKAGE int rankPercent(int rank);
 DLL_LINKAGE bool hasEntrench(const CGHeroInstance * hero);
+DLL_LINKAGE bool hasBattlefieldMastery(const CGHeroInstance * hero);
+DLL_LINKAGE bool canAwardBattlefieldMastery(const CGHeroInstance * hero, const battle::Unit * stack,
+	int32_t round, int32_t previousAwardRound, BattlecraftMasteryAction action);
+DLL_LINKAGE int waitDamagePercent(const CGHeroInstance * hero, const battle::CUnitState * stack);
+DLL_LINKAGE int defendReductionPercent(const CGHeroInstance * hero, const battle::CUnitState * stack);
 DLL_LINKAGE bool hasPreemptiveStrike(const CGHeroInstance * hero);
 DLL_LINKAGE int preemptiveStrikeDamagePercent(const CGHeroInstance * defenderHero,
 	const battle::Unit * defender, int32_t round);

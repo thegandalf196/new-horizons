@@ -140,6 +140,7 @@ public:
 	void visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack) override;
 	void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) override;
 	void visitSetSpellResponseState(SetSpellResponseState & pack) override;
+	void visitSetBattlecraftMasteryAward(SetBattlecraftMasteryAward & pack) override;
 	void visitSetRewardableConfiguration(SetRewardableConfiguration & pack) override;
 	void visitBattleSetStackProperty(BattleSetStackProperty & pack) override;
 	void visitBattleNextRound(BattleNextRound & pack) override;
@@ -171,4 +172,5 @@ public:
 	void visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack) override;
 	void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) override;
 	void visitSetSpellResponseState(SetSpellResponseState & pack) override;
+	void visitSetBattlecraftMasteryAward(SetBattlecraftMasteryAward & pack) override;
 };

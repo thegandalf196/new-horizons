@@ -10,6 +10,7 @@
 
 #pragma once
 #include <algorithm>
+#include <cstdint>
 #include <limits>
 #include "CBattleInfoEssentials.h"
 #include "BattleUnitTurnReason.h"
@@ -34,6 +35,7 @@ class JsonNode;
 class JsonSerializeFormat;
 class BattleField;
 class int3;
+enum class BattlecraftMasteryAction : uint8_t;
 
 namespace vstd
 {
@@ -205,6 +207,7 @@ public:
 		static const SpellResponseState empty;
 		return empty;
 	}
+	virtual int32_t getBattlecraftMasteryAwardRound(BattleSide side) const { (void)side; return -1; }
 	virtual LuckRollRules getLuckRollRules() const { return {}; }
 	virtual const std::map<CreatureID, TQuantity> & getDemonicReserve(BattleSide side) const
 	{
@@ -299,4 +302,7 @@ public:
 	virtual void setMoraleSuppressionState(BattleSide, const MoraleSuppressionState &) {}
 	virtual void setReducedExtraActivationState(BattleSide, const ReducedExtraActivationState &) {}
 	virtual void setSpellResponseState(BattleSide, const SpellResponseState &) {}
+	/// Applies the accepted first Wait/Defend Battlefield Mastery award.
+	/// Implementations with detached state should update only their own branch.
+	virtual void awardBattlecraftMastery(BattleSide, uint32_t, int32_t, BattlecraftMasteryAction) {}
 };

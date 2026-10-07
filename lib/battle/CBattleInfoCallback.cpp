@@ -3047,8 +3047,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			payload.newHorizonsArcheryDamagePercent = newHorizonsCombatSkills::archeryDamagePercent(
 				battleGetOwnerHero(info.attacker));
 		if(ordinaryCreatureAttack && info.attacker->battlecraftWaitBonusAvailable())
-			payload.battlecraftWaitDamagePercent = newHorizonsBattlecraft::rankPercent(
-				newHorizonsBattlecraft::rank(battleGetOwnerHero(info.attacker)));
+			payload.battlecraftWaitDamagePercent = newHorizonsBattlecraft::waitDamagePercent(
+				battleGetOwnerHero(info.attacker), dynamic_cast<const battle::CUnitState *>(info.attacker));
 		if(ordinaryCreatureAttack)
 			payload.newHorizonsArmorerReductionPercent = newHorizonsCombatSkills::armorerReductionPercent(
 				battleGetOwnerHero(info.defender));
@@ -3058,7 +3058,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		if(ordinaryCreatureAttack && info.defender && info.defender->defended())
 		{
 			payload.battlecraftDefendReductionPercent = newHorizonsBattlecraft::defendReductionPercent(
-				battleGetOwnerHero(info.defender));
+				battleGetOwnerHero(info.defender), dynamic_cast<const battle::CUnitState *>(info.defender));
 			if(info.shooting)
 				payload.paviseDamageReductionPercent = newHorizonsCombatSkills::paviseReductionPercent(
 					battleGetOwnerHero(info.defender));

@@ -317,6 +317,7 @@ set(test_SRCS
 		server/battles/NewHorizonsBattlecraftTest.cpp
 		server/battles/NewHorizonsBattlecraftPreemptiveStrikeTest.cpp
 		server/battles/NewHorizonsBattlecraftDefendLifetimeTest.cpp
+		server/battles/NewHorizonsBattlefieldMasteryTest.cpp
 		server/battles/NewHorizonsGuardianSpiritTest.cpp
 		server/battles/NewHorizonsCommandTest.cpp
 		server/battles/NewHorizonsCombatSkillsTest.cpp
@@ -565,6 +566,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsRelentlessAssaultAITest.cpp
 		battleAI/NewHorizonsBulwarkAITest.cpp
 		battleAI/NewHorizonsBattlecraftPreemptiveStrikeAITest.cpp
+		battleAI/NewHorizonsBattlefieldMasteryAITest.cpp
 		battleAI/NewHorizonsArmorerVeteranAITest.cpp
 		battleAI/NewHorizonsPaviseAITest.cpp
 		battleAI/NewHorizonsArcheryAITest.cpp

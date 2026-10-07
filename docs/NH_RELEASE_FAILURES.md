@@ -2,6 +2,31 @@
 
 ## Purpose
 
+### 2026-10-06 — Battlefield Mastery AI fixture defining include
+
+The subsequent build stops in the new AI fixture at levelUpHero/sendAndApply:
+CGameHandler is only forward-declared through BattleTestFixture. Include
+server/CGameHandler.h explicitly in that fixture; do not rely on PCH/transitive
+includes or remove the legal perk-acquisition path. Full captured retry log:
+build/new-horizons-linux/testing/mastery-20261006.afdT3E6Y/build-retry.log.
+Focused native execution remains required after the compile repair.
+
+The first native run passes3/4 but the historical-stamp binary check uses
+getStack(id)'s default alive-only filter. Binary CStack descriptors intentionally
+omit CUnitState/health, so query with onlyAlive=false and assert descriptor
+identity, historical stamp and absent consumed marker. This does not certify
+midcombat save restoration; active markers still fail closed. The16 relevant
+Battlecraft/Defend-lifetime/Reserve regressions pass with zero skips.
+
+### 2026-10-06 — Battlefield Mastery free-function callback context
+
+The first client/test build stopped in BattleEvaluator's free Defend-scoring
+function: unqualified playerToSide is a callback member, not a free function.
+Use defendedPreview->playerToSide with that branch's effective owner. Root fixes
+the one call and starts the incremental build; do not change controller policy
+or fall back to original unitSide merely to satisfy compilation. Focused runtime
+and detached tests remain required before coverage credit.
+
 ### 2026-10-06 — Private magic-art lookup and native-image validation
 
 Raw image existence checks did not follow the renderer's SPRITES/, DATA/, raw

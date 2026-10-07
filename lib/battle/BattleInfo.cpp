@@ -163,6 +163,74 @@ void BattleInfo::setSpellResponseState(BattleSide side, const SpellResponseState
 	sides.at(side).spellResponseState = state;
 }
 
+bool BattleInfo::hasBattlecraftMasteryMarkers() const
+{
+	return std::any_of(stacks.begin(), stacks.end(), [](const auto & stack)
+	{
+		return stack && (stack->battlecraftWaitMasteryDoubled || stack->battlecraftDefendMasteryDoubled);
+	});
+}
+
+bool BattleInfo::hasBattlecraftMasteryState() const
+{
+	return sides[BattleSide::ATTACKER].battlecraftMasteryAwardRound >= 0
+		|| sides[BattleSide::DEFENDER].battlecraftMasteryAwardRound >= 0
+		|| hasBattlecraftMasteryMarkers();
+}
+
+void BattleInfo::validateBattlecraftMasteryState() const
+{
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto awardRound = sides.at(side).battlecraftMasteryAwardRound;
+		if(awardRound < -1 || awardRound > round)
+			throw std::runtime_error("Battlefield Mastery award is outside the current round");
+	}
+	for(const auto & stack : stacks)
+	{
+		if(stack && stack->battlecraftWaitMasteryDoubled && !stack->battlecraftWaitBonusAvailable())
+			throw std::runtime_error("Battlefield Mastery Wait marker has no available Wait bonus");
+		if(stack && stack->battlecraftDefendMasteryDoubled && !stack->defended())
+			throw std::runtime_error("Battlefield Mastery Defend marker has no active defensive stance");
+	}
+}
+
+void BattleInfo::awardBattlecraftMastery(BattleSide side, uint32_t unitId, int32_t awardRound,
+	BattlecraftMasteryAction action)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::invalid_argument("Invalid Battlefield Mastery side");
+	if(awardRound != round)
+		throw std::runtime_error("Battlefield Mastery award must use the current round");
+	const auto previousAwardRound = sides.at(side).battlecraftMasteryAwardRound;
+	if(previousAwardRound >= awardRound)
+		throw std::runtime_error("Battlefield Mastery already awarded this side this round");
+	const auto found = std::find_if(stacks.begin(), stacks.end(), [unitId](const auto & stack)
+	{
+		return stack && stack->unitId() == unitId;
+	});
+	if(found == stacks.end())
+		throw std::runtime_error("Battlefield Mastery award references a missing stack");
+	auto * stack = found->get();
+	if(playerToSide(battleGetOwner(stack)) != side)
+		throw std::runtime_error("Battlefield Mastery award does not match the stack's controlling side");
+	const auto * hero = battleGetOwnerHero(stack);
+	if(!newHorizonsBattlecraft::canAwardBattlefieldMastery(hero, stack, awardRound,
+		previousAwardRound, action))
+		throw std::runtime_error("Battlefield Mastery award does not match an eligible accepted action");
+	if((action == BattlecraftMasteryAction::WAIT && stack->battlecraftWaitMasteryDoubled)
+		|| (action == BattlecraftMasteryAction::DEFEND && stack->battlecraftDefendMasteryDoubled))
+		throw std::runtime_error("Battlefield Mastery action marker is already set");
+
+	if(action == BattlecraftMasteryAction::WAIT)
+		stack->battlecraftWaitMasteryDoubled = true;
+	else if(action == BattlecraftMasteryAction::DEFEND)
+		stack->battlecraftDefendMasteryDoubled = true;
+	else
+		throw std::invalid_argument("Invalid Battlefield Mastery action");
+	sides.at(side).battlecraftMasteryAwardRound = awardRound;
+}
+
 const AlternatingHeroActionState & BattleInfo::getWarcastingState(BattleSide side) const
 {
 	static const AlternatingHeroActionState empty;

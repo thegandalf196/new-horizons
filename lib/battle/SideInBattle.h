@@ -194,6 +194,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	int32_t firstRoundMoraleModifier = 0;
 	// Counterpressure's side-owned, round-bounded next-spell response.
 	SpellResponseState spellResponseState;
+	// Round in which Battlefield Mastery awarded its first eligible Wait/Defend.
+	// BattleInfo owns the append-only binary representation.
+	int32_t battlecraftMasteryAwardRound = -1;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);

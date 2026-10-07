@@ -2,6 +2,33 @@
 
 Updated: 2026-10-06
 
+Latest Phase1 coverage checkpoint: UP156 Battlefield Mastery is production-active
+and source/native verified. Client/test build,4/4 focused live/detached cases
+(1.862s,zero skips),16/16 adjacent Battlecraft/Defend-lifetime/Reserve cases
+(4.556s,zero skips), module drift and canonical-data generator checks pass.
+Independent source review has no blocker. Coverage225→226/310 perks,
+generic154→155/220; faction71/90,31/31 Skills,93/93 ranks,61/67 combat identities
+and8/8 Orders are unchanged. Planned85→84; Battlecraft7→8/10.
+The per-side historical round stamp and unit Wait/Defend provenance are
+event-driven, copied into detached AI branches and replicated through packets/
+UnitChangesJSON. Active unit markers fail closed in binary battle descriptors,
+which do not serialize general CUnitState health/lifetimes; no midcombat world
+save/resume claim. Phase2: actual Defend selection, controlled units, death/
+revival composition and graphical feedback. Playable delivery remains pending.
+UP265 Cabir gait still lacks an opposite planted-leg contact; it remains Open.
+Earlier checkpoints below retain their historical counts.
+
+Delivery-only checkpoint: separate paired standing-Cabir preview and combined
+private casting-glow/guild-book preview now have manual launchers, frozen resource
+receipts and focused/headless checks. Normal snapshot and saves remain untouched.
+No missing perk/spell identity is completed by these presentation deliveries:
+225/310 active perks,61/67 combat identities and8/8 Orders remain unchanged.
+Cabir gait and user visual approval are still open. Battlefield Mastery's ordinary
+path is being implemented; the user resolved machine allocation in favor of the
+first eligible ordinary stack. Last Stand's retaliation/clone choices are also
+resolved and canonical; its implementation follows this overlapping runtime slice.
+Counterpressure already has its verified ordinary partial and is not reimplemented.
+
 Current resumption audit: registry directly confirms31 Skills,93 active rank
 effects and225 active/85 planned perks (310 total). Spell/Order identity figures
 below remain the existing roster ledger, not credit for image fixes. UP263/264
@@ -25,7 +52,7 @@ Gait/cruder-style and projectile-origin review remain in the user queue; broad
 cross-system combat interactions remain Phase2. Spell/perk/Order totals do not
 change:225/310 active perks,61/67 combat identities,8/8 Orders.
 
-Selection navigation: [Phase1 hold index](NH_PHASE1_HOLD_INDEX.md) lists all85
+Selection navigation: [Phase1 hold index](NH_PHASE1_HOLD_INDEX.md) lists all84
 planned perk IDs with queue references and explicitly uncertain rows, plus the
 six missing combat identities. Registry parity is checked independently.
 Counterpressure's ordinary accepted-effect/readiness path is verified as a
@@ -3678,7 +3705,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Offense | 3/0 | 10/0 | Bounded consumer audit found Breakthrough omitted explicit Battlecraft/Bulwark Defend reductions. UP231 repairs those channels with8/8 focused cases, accepted melee and equivalent-view detached parity. Broader mundane-state taxonomy and stale earlier-tier fixture repairs remain deferred; active registration is not whole-family certification. |
 | Armorer | 3/0 | 7/3 | Bastion, Formation Fighting and Veteran have focused live/detached damage evidence. Three perks missing; Last Stand and Defiant await design choices. |
 | Archery | 3/0 | 10/0 | Bounded canonical consumer audit finds all ten active perks represented in shared payload, authoritative actions/reactions and BattleAI projections; no missing principal source clause identified. This is source evidence, not focused whole-family execution certification. |
-| Battlecraft | 3/0 | 7/3 | Pre-emptive Strike joins Entrench, Reserve, Passing Lines, Tactics, Redeployment and Grand Tactics. UP157 focused22/22 zero skips covers accepted pre-hit50%, retained retaliation, same-round re-Defend/next-round eligibility, disabled/ranged/no-perk controls, replicated state and detached AI exchange/Defend hooks. Broader Bulwark composition and rendered/actualAI deployment execution remain Phase2. Three perks remain planned. |
+| Battlecraft | 3/0 | 8/2 | Battlefield Mastery joins the seven previously verified perks. UP156 focused4/4 and adjacent16/16 pass with zero skips, including machine exclusion, first-action allocation, distinct Wait/Defend expiry and detached branches. Actual Defend selection, controlled units and death/revival composition remain Phase2. Overwatch and Rapid Response remain planned. |
 | War Machines | 3/0 | 5/5 | Surgeon and Piercing Bolts have focused live/detached evidence; Fortification Engineer has real fortified-town manual-shot evidence; Master Gunner has accepted independently targeted second-shot evidence; Quartermaster has accepted half-output Ballista/Tent/Catapult extra-activation evidence. Five perks remain planned. Battlefield Medic persistence awaits clarification. |
 | Discipline | 3/0 | 7/3 | Steadfast joins Unbreakable, Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless with focused authoritative and detached evidence. Three perks remain planned; Esprit de Corps composition scope, Heroic Spirit activation timing and Veteran Cohesion HP reference await clarification. |
 | Recruitment | 3/0 | 6/4 | Four perks missing |

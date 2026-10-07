@@ -3466,8 +3466,10 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 	const bool hasBastion = hero && hero->hasActivePerk(
 		std::string(newHorizonsCombatSkills::ARMORER_SKILL_ID),
 		std::string(newHorizonsCombatSkills::BASTION_PERK_ID));
-	if(bulwarkRank == 0 && paviseReduction == 0 && !hasBattlecraftPreemptiveStrike
-		&& !hasHoldFast && !hasBastion)
+	const bool hasBattlefieldMastery = newHorizonsBattlecraft::hasBattlefieldMastery(hero);
+	const bool hasExistingDefendValue = bulwarkRank > 0 || paviseReduction > 0
+		|| hasBattlecraftPreemptiveStrike || hasHoldFast || hasBastion;
+	if(!hasExistingDefendValue && !hasBattlefieldMastery)
 		return false;
 
 	auto defendedPreview = std::make_shared<HypotheticBattle>(environment, battle);
@@ -3477,6 +3479,17 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 	projectedTarget->defending = true;
 	projectedTarget->addUnitBonus(std::vector<Bonus>{
 		Bonus(BonusDuration::STACK_GETS_TURN, BonusType::UNIT_DEFENDING, BonusSource::OTHER, 0, BonusSourceID())});
+	const auto masterySide = defendedPreview->playerToSide(defendedPreview->battleGetOwner(projectedTarget.get()));
+	const auto masteryRound = defendedPreview->getRound();
+	const bool awardsBattlefieldMastery = newHorizonsBattlecraft::canAwardBattlefieldMastery(hero,
+		projectedTarget.get(), masteryRound, defendedPreview->getBattlecraftMasteryAwardRound(masterySide),
+		BattlecraftMasteryAction::DEFEND);
+	if(awardsBattlefieldMastery)
+		defendedPreview->awardBattlecraftMastery(masterySide, projectedTarget->unitId(), masteryRound,
+			BattlecraftMasteryAction::DEFEND);
+	if(!hasExistingDefendValue && !awardsBattlefieldMastery)
+		return false;
+
 	bool bastionForecastAvailable = defendedPreview->battleHasBastionProtection(projectedTarget.get());
 	float holdFastMoraleValue = 0.0f;
 	if(hasHoldFast && !stack->unaffectedByMorale() && battle->battleGetMorale(stack) < 0)

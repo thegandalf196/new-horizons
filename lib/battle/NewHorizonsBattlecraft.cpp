@@ -36,6 +36,50 @@ bool hasEntrench(const CGHeroInstance * hero)
 	return hero && hero->hasActivePerk("new-horizons:battlecraft", "new-horizons:battlecraft.entrench");
 }
 
+bool hasBattlefieldMastery(const CGHeroInstance * hero)
+{
+	return rank(hero) >= 3
+		&& hero->hasActivePerk("new-horizons:battlecraft", "new-horizons:battlecraft.battlefieldMastery");
+}
+
+bool canAwardBattlefieldMastery(const CGHeroInstance * hero, const battle::Unit * stack,
+	int32_t round, int32_t previousAwardRound, BattlecraftMasteryAction action)
+{
+	if(round < 1 || previousAwardRound >= round || !hasBattlefieldMastery(hero)
+		|| !stack || !stack->alive() || stack->isGhost()
+		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(stack)
+		|| stack->unitSlot() == SlotID::WAR_MACHINES_SLOT)
+		return false;
+
+	const auto * state = dynamic_cast<const battle::CUnitState *>(stack);
+	if(!state)
+		return false;
+
+	switch(action)
+	{
+	case BattlecraftMasteryAction::WAIT:
+		return state->waitedThisTurn;
+	case BattlecraftMasteryAction::DEFEND:
+		return stack->defended();
+	}
+	return false;
+}
+
+int waitDamagePercent(const CGHeroInstance * hero, const battle::CUnitState * stack)
+{
+	const int bonus = rankPercent(rank(hero));
+	return stack && stack->battlecraftWaitMasteryDoubled && stack->battlecraftWaitBonusAvailable()
+		? bonus * 2 : bonus;
+}
+
+int defendReductionPercent(const CGHeroInstance * hero, const battle::CUnitState * stack)
+{
+	const int rankBonus = rankPercent(rank(hero));
+	const int reduction = stack && stack->defended() && stack->battlecraftDefendMasteryDoubled
+		? rankBonus * 2 : rankBonus;
+	return reduction > 0 ? reduction + (hasEntrench(hero) ? 5 : 0) : 0;
+}
+
 bool hasPreemptiveStrike(const CGHeroInstance * hero)
 {
 	return rank(hero) >= 2

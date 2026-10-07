@@ -1,5 +1,15 @@
 # New Horizons UI and asset status register
 
+Private preview delivery,2026-10-06: **Provisional** paired Cabir standing
+battle preview is available through build/nh-cabir-preview-v4.mjk0wHvH/
+Play-Cabir-Preview.sh and its original manual battle map. Static poses are not
+a completed animation. Separate build/nh-magic-preview.awlVtY6Y/
+Play-Magic-Preview.sh delivers all six-school glows and nine sparse guild-book
+patches privately, preserving the normal launcher/saves. Hash/build, importer
+and native casting checks pass; bounded headless map/AI smoke is not visual
+approval. Native fixture does not exercise real guild-window construction or
+BattleInterface casting lifecycle. Derived pixels stay ignored, not public.
+
 Cabir user-reference reset,2026-10-06: **Provisional** new design drafts from
 the supplied m7qkfJk sheet. Red-brown scaled skin, heavy tail and blue/brass
 Academy collar/apron replace the older lava-trouser direction; Master uses gold
@@ -17,7 +27,7 @@ the sheet's example poses are a completed gait or installed animation set.
 
 Private magic-art follow-up: **Provisional**, sparse67x85 guild overlays remove
 the old ribbon through a pinned private clean plate, without the opaque rectangle.
-Ten synthetic importer checks and native resource/composition verification pass.
+Ten synthetic importer checks and native casting resource/composition verification pass.
 Casting lookup follows SPRITES/DATA/raw and all864 frames pass geometry checks;
 actual BattleInterface lifecycle execution remains deferred. Private pixels never
 enter public Git. Arch Mage seven additional cloth-only indices are gray; mixed
