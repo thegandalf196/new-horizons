@@ -1,5 +1,18 @@
 # New Horizons UI and asset status register
 
+Superseding complete handoffs,2026-10-07, UP288: **Provisional**, source/import
+and private playable delivery verified; rendered approval remains open. Current
+Cabir descriptors use77/83 supplied authored battle frames, with no standing-death
+placeholder. Magi/Arch Magi use133 authored battle frames each, grey Arch Mage
+cloth and red magic, supplied map/recruitment portraits and inherited timing.
+Both Wisps are additive original creatures, not borrowed elemental shooters.
+Candidate452cbf72/source01ffcf6bd is selected by the creature-preview launcher;
+normal launcher now selects its additive magic-resource successor b26652d8.
+All3120 baseline packaged files verify and a headless
+scenario completes normally. These checks prove bindings/loading, not motion,
+sound, selection outline aesthetics or final artistic acceptance. Private
+original-derived Cabir/Magi colour pixels remain excluded from Git/public packs.
+
 Supplied handoffs,2026-10-07, UP288: Cabir home-agent v1 is the current approved
 art baseline (base bare scales, Master light brass, both mouth-spit). It
 supersedes the earlier source-adaptation and generated-art directions below.
@@ -179,6 +192,16 @@ HoMM3-Art imagegen contact repeats the wrong support phase and is rejected.
 One targeted revision shows opposite support and rougher surfaces, but
 native56 confirms proportion/camera drift. Full walking, translated foot
 planting, animation continuity and user acceptance remain open.
+
+Normal local delivery,2026-10-07: **Provisional** casting glows and sparse
+preferred-school guild-book patches now accompany the complete supplied
+Cabir/Magi and real Wisp build in immutable snapshot b26652d8/source01ffcf6bd.
+The usual Linux launcher selects it; all3120 baseline files remain unchanged,
+with874 private resource additions. Independent integrity review, headless
+scenario victory/clean shutdown and launcher preflight pass. The matching
+historical native fixture establishes864-frame geometry/immutability only.
+Actual guild UI and battle casting lifecycle/rendered approval remain open.
+This supersedes separate-preview-only delivery below, not its art status.
 
 Private preview delivery,2026-10-06: **Provisional** paired Cabir standing
 battle preview is available through build/nh-cabir-preview-v4.mjk0wHvH/

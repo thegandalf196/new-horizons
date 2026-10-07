@@ -2,6 +2,17 @@
 
 ## Purpose
 
+### 2026-10-07 — Transformer consumer compile and snapshot selection
+
+The new AI consumer initially passes HeroPtr's pointer-valued dereference where
+the shared planner needs CArmedInstance&, and empty braced trade arguments make
+the scalar/vector overload ambiguous. Use *heroPtr.get() and explicit empty
+TradeItemBuy/ui32 vectors in both AI and UI requests. The planner must receive
+getHeroCapabilityRules(), not getMagicRules(); the latter would silently leave
+this consumer in legacy mode. Object compile retry is separate from a linked
+or native-tested conversion. The shared runtime planner remains pending output
+allocation/zero-output rulings; do not claim complete Transformer functionality.
+
 ### 2026-10-07 — Creature capability serializer test needs complete bonus types
 
 UP288 client compiles, but the new isolated capability wire test initially fails
@@ -6008,6 +6019,19 @@ outdated base descriptor copied before directional sequence completion; copying
 the final descriptor restores exact export/runtime parity. The final activated
 fixture checks actual creature bindings and Master climax3 and passes1/1 in2.28s.
 Neither failure proves a gameplay defect or establishes battlefield motion.
+
+### Casting fixture/runtime ABI mismatch (2026-10-07)
+
+The existing casting fixture could not start against the current development
+library: its older binary referenced the old battleGetSpellCost signature.
+That dynamic-link failure happened before any asset test and is not evidence
+of defective casting artwork. Run frozen fixtures with their matching frozen
+runtime, or rebuild the fixture and library together before drawing conclusions.
+The matching historical-runtime retry passes864-frame geometry/immutability.
+Separately, exact combined candidate b26652d8/source01ffcf6bd completes its
+headless scenario with victory and clean shutdown. Neither check establishes
+current rendered guild/casting UI acceptance. Keep existing schema diagnostics
+and isolated-fixture missing music as deferred findings, not diagnostic-free claims.
 
 No credentials, workstation paths, purchaser content or raw research dumps in
 these notes. Keep historical failures even after repair, but label their scope.

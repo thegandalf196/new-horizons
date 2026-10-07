@@ -2,11 +2,23 @@
 
 Updated: 2026-10-07
 
+Normal Linux delivery checkpoint: source01ffcf6bd creature snapshot452cbf72
+is now superseded by combined b26652d8. All3120 baseline bytes are preserved;
+874 additive private resources deliver864 casting frames,nine sparse guild-book
+patches and their optional config. Independent digest/reference review,
+exact-candidate headless day4 victory/clean shutdown and ordinary-launcher
+preflight pass. Matching historical-runtime native frame checks pass, but do
+not prove current BattleHero lifecycle or rendered guild acceptance. Previous
+snapshot is retained; unfinished Transformer source is not included. No new
+perk/spell identity is completed:228/310 perks,61/67 combat spells,31 Skills/
+93 ranks,8/8 Orders. Required resource delivery improves; visual acceptance and
+existing schema diagnostics remain deferred. Earlier delivery notes are history.
+
 UP288 playable validation: source4f2f847db exact ten-job build, independent
 3120-file private candidate integrity/reference audit and true-headless scenario
 completion pass (day4 victory, BattleAI). Complete Cabir/Magi animation bindings
-and additive Wisps are present. Final latest-commit launcher selection follows
-the documentation receipt rebuild; normal play is unchanged. Rendered motion,
+and additive Wisps are present. Latest functional source01ffcf6bd is now
+delivered by the normal launcher in the combined candidate above. Rendered motion,
 sound and historical-save acceptance are not implied by headless completion.
 
 UP288 refreshed-handoff integration supersedes the earlier shooter-alias preview
