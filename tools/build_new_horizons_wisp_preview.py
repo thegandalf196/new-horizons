@@ -192,6 +192,11 @@ def _copy_sprite_descriptor(package_root, pins, outputs, descriptor_name, source
     sequences = descriptor.get("sequences")
     if not isinstance(basepath, str) or not isinstance(sequences, list) or not sequences:
         raise ValueError(f"invalid Wisp sprite descriptor shape: {source_descriptor}")
+    if descriptor_name in {"Wisp.json", "WispUpgrade.json"}:
+        if len(sequences) != 32:
+            raise ValueError(f"{descriptor_name} must provide all 32 battle animation groups")
+        for sequence in sequences:
+            sequence["generateOverlay"] = 1
     output_base = _checked_relative(basepath)
     for sequence in sequences:
         frames = sequence.get("frames")

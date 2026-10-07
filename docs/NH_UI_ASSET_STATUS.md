@@ -10,6 +10,12 @@ Wisp complete v3 supplies approved original cyan/violet artwork and32 battle
 groups per form plus maps/icons/projectiles. Resource installation/validation
 is separate from gameplay and recruitment: the user will supply provisional
 rules. No art-based inference of shooting, flight, stats or Attunement.
+User subsequently approved a separate combined art preview with borrowed Wisp
+Core shooter profiles and Cabir missing-state aliases. Preview implementation
+is **Provisional**, not final gameplay or animation coverage. Both forms of
+each creature are present in its dedicated scenario; normal play is unchanged.
+Frozen candidate69304233a933/source932b80162 passes headless scenario completion,
+not rendered animation/alignment acceptance. Cabir death remains standing.
 
 Academy Gargoyle matte review,2026-10-07: **Not done**, UP282. HoMM3 Art
 Stone revisions r6/r7 remain private and unregistered. R7 repairs erroneous torso

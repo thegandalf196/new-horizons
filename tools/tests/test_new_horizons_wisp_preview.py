@@ -56,6 +56,17 @@ class WispPreviewOverlayTest(unittest.TestCase):
         self.assertEqual(self.metadata["projectiles"]["runtimeGroups"], [0])
         self.assertEqual(self.metadata["projectiles"]["framesPerForm"], 9)
 
+    def test_all_battle_groups_generate_selection_overlays(self):
+        for descriptor_name in ("Wisp.json", "WispUpgrade.json"):
+            descriptor = self._json_output(
+                self.outputs, f"Mods/new-horizons/Content/sprites/{descriptor_name}"
+            )
+            self.assertEqual(len(descriptor["sequences"]), 32)
+            self.assertTrue(
+                all(sequence.get("generateOverlay") == 1 for sequence in descriptor["sequences"]),
+                descriptor_name,
+            )
+
     def test_preview_roster_and_borrowed_profile_are_explicit_and_isolated(self):
         creature_config = self._json_output(
             self.outputs, "Mods/new-horizons/Content/config/creatures/conflux.json"
