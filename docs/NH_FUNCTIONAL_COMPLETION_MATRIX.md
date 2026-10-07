@@ -2,6 +2,12 @@
 
 Updated: 2026-10-07
 
+UP011 diagnostic candidate8de7d468/sourceccd2edb3b passes independent2367-file
+checksum/version audit and one fresh-profile20s true-headless check through day6,
+with verified process/runtime/lock cleanup. No rejection is reproduced, so this
+does not identify or fix the intermittent AI problem. Existing schema warnings
+remain Phase2. Candidate retained without normal promotion; counts unchanged.
+
 UP011 diagnostic checkpoint: authoritative Leadership rejection now records
 operation, attempted count and capacity; constrained accepted-neutral joins have
 a debug-only transfer/remainder plan. No admission or gameplay semantics change.
