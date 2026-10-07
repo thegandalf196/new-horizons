@@ -2,6 +2,16 @@
 
 Updated: 2026-10-07
 
+Bounded required-preview source audit: Chain Lightning already caches its ordered
+shared-target/prefix forecasts per recipient and exposes numbered highlights and
+damage/kills. Summon Trolls already shares legal-hex validity and count/HP/
+footprint readback; Verdant Prison shares its script-filtered legal ring between
+hover and runtime. Existing UP023/039/040 receipts cover these source slices;
+no tests were rerun and no new omission/identity/rendered acceptance is claimed.
+Do not duplicate completed source paths because older matrix notes describe
+their pre-implementation state. Next cross-platform checkpoint is full Windows
+run37637414435, confirmed live on8d8db3eb12e440fce51d89e8f06608a2e76d6b10.
+
 UP011 diagnostic candidate8de7d468/sourceccd2edb3b passes independent2367-file
 checksum/version audit and one fresh-profile20s true-headless check through day6,
 with verified process/runtime/lock cleanup. No rejection is reproduced, so this
