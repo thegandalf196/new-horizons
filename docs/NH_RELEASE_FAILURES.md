@@ -2,6 +2,17 @@
 
 ## Purpose
 
+### 2026-10-06 — Stale canonical-specification hash in the perk registry
+
+The focused source-identity test fails because the registry still records the
+previous document hash after b9fe600c4 changed Last Stand/Battlefield Mastery
+wording. Git history confirms the current canonical bytes were already committed;
+this is not an uncommitted user edit or line-ending workaround. Update only the
+registry hash to the actual canonical SHA256 and regenerate curated module
+metadata. The same focused test and module drift check then pass. No perk behavior
+or coverage changes from this metadata repair. Future specification edits must
+refresh this provenance field and run its focused identity check.
+
 ### 2026-10-06 — Last Stand native fixture observation boundaries
 
 Initial native run89965 passes7/12, zero skips. A rescued stack may immediately
