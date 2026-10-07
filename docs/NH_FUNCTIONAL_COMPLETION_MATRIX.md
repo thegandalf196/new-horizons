@@ -2,6 +2,14 @@
 
 Updated: 2026-10-07
 
+UP286 implements the specified current -> offered Skill rank on level-up cards,
+gated by saved NH rules. Offered integer/icon/mechanical help, perk and legacy
+paths remain unchanged. Client12-job build45095, scoped source guard/module
+check and independent review pass. Actual widget/rendered fit and delivery are
+not established by these checks. The adjacent existing layout guard's English
+"Learned" literal assumption is deferred validation drift. Required UI source
+coverage improves; counts remain228/310 perks,61/67 combat identities,8/8 Orders.
+
 UP287 fills the required Phantom Army targeting readback in source: shared
 copied count/Integrity, legal landing coordinate and one/two-hex footprint now
 appear through existing hover/highlight surfaces. No spell semantics/art change.

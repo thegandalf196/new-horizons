@@ -1,5 +1,12 @@
 # New Horizons UI and asset status register
 
+Level-up Skill rank transitions,2026-10-07: **Provisional**, UP286. Existing
+bounded choice cards now show localized current to offered rank text while
+preserving offered-rank art, mechanical help and selection. No new artwork or
+panel. Client build, focused source guard/module check and review pass; actual
+widget/native rendering, long translated labels and delivery remain unverified.
+This does not mark the whole level-up UI Final.
+
 Phantom Army targeting readback,2026-10-07: **Provisional**, UP287. Source now
 shows shared copied count/Integrity, landing coordinate and footprint; existing
 hex overlay shades the shared legal summon landing, not the source. No new art

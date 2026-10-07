@@ -1,4 +1,6 @@
 {
+	"new-horizons.levelUp.skill.unlearned": "Unlearned",
+	"new-horizons.levelUp.skill.rankTransition": "%s -> %s",
 	"new-horizons.hero.morale.value": "Morale: %VALUE%.",
 	"new-horizons.hero.luck.value": "Luck: %VALUE%.",
 	"new-horizons.hero.morale.context": "Army value before battlefield and temporary combat modifiers.",

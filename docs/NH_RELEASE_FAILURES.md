@@ -2,6 +2,15 @@
 
 ## Purpose
 
+### 2026-10-07 — Adjacent level-up source guard assumes English literals
+
+UP286 client compile and curated-module check pass. The adjacent existing
+check-new-horizons-level-up-layout.py stops on a literal "Learned" expected in
+the Hero perk browser, which already uses localized labels. That file is not
+changed by UP286. Record this stale guard as Phase2 validation maintenance,
+not a new rank-card regression or permission to revert localization. The new
+rank-transition guard checks this slice independently; rendered fit is separate.
+
 ### 2026-10-07 — Phantom preview validation setup and target eligibility
 
 UP287's first compile is stopped by the stale-curated-translation guard after

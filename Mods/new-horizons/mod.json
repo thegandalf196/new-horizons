@@ -9435,6 +9435,8 @@
 		"new-horizons.muster.externalTargetUsed": "Muster already used at this dwelling",
 		"new-horizons.muster.externalRecruiterNote": "Choose one owned external Core dwelling to reinforce.",
 		"new-horizons.muster.noExternalTargets": "No legal Core recruit is available in this external dwelling.",
+		"new-horizons.levelUp.skill.unlearned": "Unlearned",
+		"new-horizons.levelUp.skill.rankTransition": "%s -> %s",
 		"new-horizons.hero.morale.value": "Morale: %VALUE%.",
 		"new-horizons.hero.luck.value": "Luck: %VALUE%.",
 		"new-horizons.hero.morale.context": "Army value before battlefield and temporary combat modifiers.",

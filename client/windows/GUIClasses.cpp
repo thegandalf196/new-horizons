@@ -72,6 +72,7 @@
 #include "../../lib/gameState/SThievesGuildInfo.h"
 #include "../../lib/gameState/TavernHeroesPool.h"
 #include "../../lib/gameState/UpgradeInfo.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include "../../lib/texts/TextOperations.h"
 #include "../../lib/IGameSettings.h"
@@ -1088,8 +1089,22 @@ void CLevelWindow::createSkillBox()
 			if(originalIndex < skills.size())
 			{
 				const auto skill = skills[originalIndex];
+				const int currentRank = hero->getSecSkillLevel(skill);
+				const int offeredRank = currentRank + 1;
 				comp = std::make_shared<CSelectableComponent>(ComponentType::SEC_SKILL, skill,
-					hero->getSecSkillLevel(skill) + 1, CComponent::medium);
+					offeredRank, CComponent::medium);
+				if(newHorizonsMagic::rulesActive(hero->getMagicRules()))
+				{
+					const auto currentRankText = currentRank == 0
+						? GAME->translator().translate("new-horizons.levelUp.skill.unlearned")
+						: GAME->translator().translate("core.skilllev", currentRank - 1);
+					const auto offeredRankText = GAME->translator().translate("core.skilllev", offeredRank - 1);
+					MetaString transition = MetaString::createFromTextID("new-horizons.levelUp.skill.rankTransition");
+					transition.replaceRawString(currentRankText);
+					transition.replaceRawString(offeredRankText);
+					comp->customSubtitle = transition.toString(&GAME->translator()) + "\n"
+						+ LIBRARY->skillh->getById(skill)->getNameTranslated();
+				}
 				skillComps.push_back(comp);
 			}
 			else
