@@ -922,10 +922,15 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 			: nullptr;
 		if(battleCallback && battleCallback->getBattle()
 			&& newHorizonsMagic::rulesActive(battleCallback->getBattle()->getMagicRules()))
+		{
 			morale->set(battleStack, battleCallback.get());
+			luck->set(battleStack, battleCallback.get());
+		}
 		else
+		{
 			morale->set(battleStack);
-		luck->set(battleStack);
+			luck->set(battleStack);
+		}
 	}
 	else
 	{

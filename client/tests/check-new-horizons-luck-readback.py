@@ -111,4 +111,21 @@ assert PANEL_CPP.count("Rect(7, 141, 67, 14), luckTooltip, luckTooltip") == 1, (
 assert "currentStackInfoStatus(stack, battleCallback.get(), luckReadback)" in PANEL_CPP
 assert "currentStackInfoStatus(updatedInfo, battleCallback.get(), currentLuckReadback)" in PANEL_CPP
 
-print("PASS: saved New Horizons battle Luck value, exceptional overrides, scoped sources, cache refresh, and single native tooltip row")
+detail = (ROOT / "client/windows/CCreatureWindow.cpp").read_text()
+widgets = (ROOT / "client/widgets/MiscWidgets.cpp").read_text()
+assert "luck->set(battleStack, battleCallback.get())" in detail
+detail_luck = widgets.split("void MoraleLuckBox::set(const CStack * stack,", 1)[1].split(
+    "const auto readback = battleCallback->battleGetMoraleInfo(stack);", 1
+)[0]
+for token in (
+    "newHorizonsMagic::rulesActive", "battleGetAttackLuck(stack, nullptr, false, false)",
+    "makeBattleLuckReadback", "component.value = readback.ordinaryAttackLuck",
+    "7 - luckSign", "BonusType::NO_LUCK", "BonusType::MAX_LUCK", "BonusType::MAXIMUM_LUCK",
+    "bonus->Description(descriptionCallback)", "battleGetFightingHero(ownerSide)",
+    "makeSylvanLuckStackStatus", "sylvanLuckStackTooltip",
+):
+    assert token in detail_luck, f"Detailed battle Luck lacks shared/scoped readback: {token}"
+assert "if(hero)" in detail_luck
+assert "(!readback.noLuck || readback.maxLuck)" in detail_luck
+
+print("PASS: compact/detailed saved New Horizons battle Luck share values, overrides and scoped sources (not rendered acceptance)")

@@ -14,6 +14,7 @@
 
 #include "../GameEngine.h"
 #include "../GameInstance.h"
+#include "../battle/NewHorizonsBattleStatus.h"
 #include "../gui/CursorHandler.h"
 
 #include "../CMT.h"
@@ -41,7 +42,9 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/IBattleState.h"
+#include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/callback/CCallback.h"
+#include "../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../lib/entities/faction/CTownHandler.h"
 #include "../../lib/gameState/InfoAboutArmy.h"
 #include "../../lib/mapObjects/CGCreature.h"
@@ -49,6 +52,7 @@
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
+#include "../../lib/texts/MetaString.h"
 #include "../../lib/texts/TextOperations.h"
 
 void CHoverableArea::hover (bool on)
@@ -747,9 +751,120 @@ void MoraleLuckBox::set(const AFactionMember * node)
 void MoraleLuckBox::set(const CStack * stack, const CBattleInfoCallback * battleCallback)
 {
 	set(static_cast<const AFactionMember *>(stack));
-	if(!morale || !stack || !battleCallback || !battleCallback->getBattle()
+	if(!stack || !battleCallback || !battleCallback->getBattle()
 		|| !newHorizonsMagic::rulesActive(battleCallback->getBattle()->getMagicRules()))
+	{
 		return;
+	}
+
+	if(!morale)
+	{
+		const int32_t ordinaryAttackLuck = battleCallback->battleGetAttackLuck(stack, nullptr, false, false);
+		const bool noLuck = stack->hasBonusOfType(BonusType::NO_LUCK);
+		const bool maxLuck = stack->hasBonusOfType(BonusType::MAX_LUCK);
+		const bool maximumLuckLimitPresent = stack->hasBonusOfType(BonusType::MAXIMUM_LUCK);
+		std::vector<std::string> bonusDescriptions;
+		const auto * descriptionCallback = GAME->interface() ? GAME->interface()->cb.get() : nullptr;
+		if(descriptionCallback)
+		{
+			const auto bonuses = stack->getBonusesOfType(BonusType::LUCK);
+			if(bonuses)
+			{
+				for(const auto & bonus : *bonuses)
+				{
+					if(!bonus || bonus->val == 0)
+						continue;
+
+					auto bonusDescription = bonus->Description(descriptionCallback);
+					if(!bonusDescription.empty())
+						bonusDescriptions.push_back(std::move(bonusDescription));
+				}
+			}
+		}
+
+		const auto readback = newHorizonsBattleStatus::makeBattleLuckReadback(true, ordinaryAttackLuck,
+			noLuck, maxLuck, maximumLuckLimitPresent, stack->valOfBonuses(BonusType::MAXIMUM_LUCK),
+			std::move(bonusDescriptions));
+		component.value = readback.ordinaryAttackLuck;
+		image->setFrame(std::clamp(readback.ordinaryAttackLuck + 3, 0, 6));
+		if(label)
+			label->setText(std::to_string(readback.ordinaryAttackLuck));
+
+		const int luckSign = (readback.ordinaryAttackLuck > 0) - (readback.ordinaryAttackLuck < 0);
+		hoverText = GAME->translator().translate("core.heroscrn", 7 - luckSign);
+
+		MetaString description;
+		description.appendTextID("new-horizons.combat.luck.readback.value");
+		description.replaceTokenNumber("%VALUE%", readback.ordinaryAttackLuck);
+		if(readback.maxLuck)
+		{
+			description.appendEOL();
+			description.appendTextID(readback.noLuck
+				? "new-horizons.combat.luck.readback.maxLuckNoLuck"
+				: "new-horizons.combat.luck.readback.maxLuck");
+		}
+		else if(readback.noLuck)
+		{
+			description.appendEOL();
+			description.appendTextID("new-horizons.combat.luck.readback.noLuck");
+		}
+		if(readback.maximumLuckLimitPresent && (!readback.noLuck || readback.maxLuck))
+		{
+			MetaString limit;
+			limit.appendTextID("new-horizons.combat.luck.readback.maximumLuckLimit");
+			limit.replaceTokenNumber("%VALUE%", readback.maximumLuckLimit);
+			description.appendEOL();
+			description.append(limit);
+		}
+		if(readback.hasSources())
+		{
+			description.appendEOL();
+			description.appendEOL();
+			description.appendTextID("new-horizons.combat.luck.readback.sourceHeader");
+			for(const auto & bonusDescription : readback.bonusDescriptions)
+			{
+				description.appendEOL();
+				description.appendRawString(bonusDescription);
+			}
+		}
+		else if(!readback.noLuck && !readback.maxLuck)
+		{
+			description.appendEOL();
+			description.appendTextID("new-horizons.combat.luck.readback.noSources");
+		}
+
+		const auto ownerSide = battleCallback->playerToSide(battleCallback->battleGetOwner(stack));
+		if((ownerSide == BattleSide::ATTACKER || ownerSide == BattleSide::DEFENDER)
+			&& (!readback.noLuck || readback.maxLuck)
+			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(stack))
+		{
+			// This callback is player-scoped; the fighting-hero query returns null
+			// for a hidden opposing hero rather than exposing that hero's perk state.
+			const auto * hero = battleCallback->battleGetFightingHero(ownerSide);
+			if(hero)
+			{
+				const auto & heroRules = hero->getCapabilityRules();
+				if(newHorizonsHeroes::usesRules(heroRules) && heroRules["rulesetVersion"].Integer() >= 3
+					&& hero->getPerkSkillRank(std::string("new-horizons:sylvanLuck")) > 0)
+				{
+					const auto sylvanLuck = newHorizonsBattleStatus::makeSylvanLuckStackStatus(
+						battleCallback->getBattle()->getSylvanLuckState(ownerSide), stack->unitId(),
+						readback.ordinaryAttackLuck, true, stack->isShooter());
+					const auto sylvanTooltip = newHorizonsBattleStatus::sylvanLuckStackTooltip(sylvanLuck,
+						LIBRARY->generaltexth->translate("skill.new-horizons.sylvanLuck.name"),
+						"Serendipity", "Forest's Favor", "Shared Fortune", "Cascading Fortune", "Fortunate Aim");
+					if(!sylvanTooltip.empty())
+					{
+						description.appendEOL();
+						description.appendEOL();
+						description.appendRawString(sylvanTooltip);
+					}
+				}
+			}
+		}
+		text = description.toString(&GAME->translator());
+		return;
+	}
 
 	const auto readback = battleCallback->battleGetMoraleInfo(stack);
 	component.value = readback.effective;

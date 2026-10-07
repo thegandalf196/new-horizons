@@ -2,6 +2,20 @@
 
 ## Purpose
 
+### 2026-10-07 — Adjacent Wild Chance fixture bypasses prerequisite tier
+
+UP271's eight-case Luck check passes7/8; WildChanceScopesSylvanLuckToNatureSummons
+throws "Earlier New Horizons perk tier is still required" before its Wild Chance
+behavior assertions. Its fixture promotes Sylvan Luck directly to Advanced,
+then selects wildChance without selecting a Basic perk. UP271 changes only
+client presentation, not progression or the tested production effect. Keep the
+failed native-luck.log/XML under ignored testing/spell-cost-20261007.fvX8ZAvh.
+Phase2: repair this fixture through legal prerequisite progression and rerun
+the Nature-summon behavior; do not relax runtime validation or infer a passing
+summon test. The seven direct readback/target-neutral cases are separately run
+as native-luck-principal. This non-blocking fixture issue does not consume the
+Phase1 implementation loop.
+
 ### 2026-10-07 — Quick-recruitment UI missing direct includes
 
 UP268's first client build93863 fails because new consumers depend on declarations

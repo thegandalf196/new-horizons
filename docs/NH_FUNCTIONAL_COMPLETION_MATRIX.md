@@ -2,6 +2,18 @@
 
 Updated: 2026-10-07
 
+UP271 extends shared target-neutral Luck/override/source feedback to the detailed
+battle creature window, beyond UP259's compact row. Saved-rule gating and
+player-visible Sylvan state preserve legacy/world handling and hidden-hero
+privacy. Client19490 builds; seven focused direct readback/shared-query/Sylvan
+cases pass7/7 in0.917s, zero skips/errors/disabled; source guards/review pass.
+An adjacent Wild Chance fixture fails before behavior assertions because it
+bypasses earlier-perk prerequisites; legal fixture repair/Nature-summon rerun
+are Phase2, with failed receipts retained in NH_RELEASE_FAILURES. No new state,
+gameplay or identity count. Rendered/open-window/privacy execution and playable
+delivery remain separate. Perks228/310, combat61/67, Skills31/31, ranks93/93,
+Orders8/8 unchanged; these three slices increase required UI source coverage.
+
 UP270 extends the shared real/effective Morale readback to the detailed battle
 creature window, beyond UP257's compact row. Effective icon/value and localized
 floor/source tooltip reuse the existing MoraleLuckBox, while Luck/legacy/world

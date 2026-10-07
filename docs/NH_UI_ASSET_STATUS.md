@@ -1,5 +1,14 @@
 # New Horizons UI and asset status register
 
+Detailed battle-creature Luck,2026-10-07: **Provisional** under UP271. Existing
+icon/value/tooltip now consume shared target-neutral attack Luck, maximum/
+No Luck overrides and player-visible Sylvan explanations. Legacy/world paths
+are unchanged; no new art. Client19490 and seven focused shared checks pass
+(0.917s,zero skips), binding guards and source review pass. One adjacent Wild
+Chance fixture fails its missing earlier-tier prerequisite and is deferred,
+not treated as a passing effect test. Rendered fit/open-window refresh and
+executed privacy boundaries remain unverified; no playable promotion.
+
 Detailed battle-creature Morale,2026-10-07: **Provisional** presentation under
 UP270. Existing icon/number/tooltip now use shared effective Morale, with real
 value and Commanding Presence/Fury floor explanations. Native frames and UP257
