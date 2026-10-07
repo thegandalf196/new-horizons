@@ -147,6 +147,7 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 	void computeSpellsPerArea(); //recalculates spellAreas::mySpell
 	void updateAdventureSpellDailyStatus();
 	bool isAdventureSpellUsedToday(SpellID spell) const;
+	bool hasMetamagicFollowupForSpell(SpellID spell) const;
 	bool canUseSpellForCurrentDivineMandateFollowup(SpellID spell) const;
 	std::string currentDivineMandateFollowupText() const;
 	std::string spellActionOpportunityText(SpellID spell) const;

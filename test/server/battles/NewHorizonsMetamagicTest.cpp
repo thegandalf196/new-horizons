@@ -17,7 +17,9 @@
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/spells/NewHorizonsSorcery.h"
 #include "../../../lib/spells/Problem.h"
+#include "../../../lib/spells/SpellCostBreakdown.h"
 
+#include <algorithm>
 #include <limits>
 
 namespace
@@ -733,6 +735,26 @@ TEST_F(NewHorizonsMetamagicTest, MagicArrowFollowupUsesArcaneEconomyInAuthoritat
 	spells::detail::ProblemImpl problem;
 	ASSERT_TRUE(preview.getSpell()->battleMechanics(&preview)->canBeCast(problem));
 
+	const auto * magicArrowSpell = magicArrow.toSpell();
+	const auto ordinaryBreakdown = battle()->battleGetSpellCostBreakdown(magicArrowSpell, attackerSideHero);
+	const auto followupBreakdown = battle()->battleGetSpellCostBreakdown(magicArrowSpell, attackerSideHero, 1, true);
+	EXPECT_EQ(ordinaryBreakdown.listedCost, attackerSideHero->getListedSpellCost(magicArrowSpell));
+	EXPECT_EQ(ordinaryBreakdown.finalCost, ordinaryCost);
+	EXPECT_EQ(ordinaryBreakdown.finalCost, battle()->battleGetSpellCost(magicArrowSpell, attackerSideHero));
+	EXPECT_TRUE(std::none_of(ordinaryBreakdown.stages.begin(), ordinaryBreakdown.stages.end(), [](const auto & stage)
+	{
+		return stage.kind == SpellCostStage::Kind::METAMAGIC_ARCANE_ECONOMY;
+	}));
+	EXPECT_EQ(followupBreakdown.listedCost, ordinaryBreakdown.listedCost);
+	EXPECT_EQ(followupBreakdown.finalCost, std::max(1, ordinaryBreakdown.finalCost - 2));
+	const auto economyStage = std::find_if(followupBreakdown.stages.begin(), followupBreakdown.stages.end(), [](const auto & stage)
+	{
+		return stage.kind == SpellCostStage::Kind::METAMAGIC_ARCANE_ECONOMY;
+	});
+	ASSERT_NE(economyStage, followupBreakdown.stages.end());
+	EXPECT_EQ(economyStage->before, ordinaryBreakdown.finalCost);
+	EXPECT_EQ(economyStage->after, followupBreakdown.finalCost);
+
 	const auto manaBefore = attackerSideHero->getManaAvailable();
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
@@ -741,7 +763,7 @@ TEST_F(NewHorizonsMetamagicTest, MagicArrowFollowupUsesArcaneEconomyInAuthoritat
 	action.metamagicFollowup = true;
 	action.aimToUnit(defender);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - std::max(1, ordinaryCost - 2));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - followupBreakdown.finalCost);
 }
 
 TEST_F(NewHorizonsMetamagicTest, FollowupLogNamesSecondAndThirdMagicArrowDamage)

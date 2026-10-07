@@ -2,6 +2,19 @@
 
 Updated: 2026-10-07
 
+UP269 implements the required spellbook Wisdom/cost breakdown: listed/current
+base cost and localized ordered stages come from the shared authoritative
+calculator, with explicit Metamagic follow-up context and separate Overcharge.
+Client51094/test35093 build successfully; seven focused native cases pass7/7
+in2.472s, zero skips/errors/disabled, covering Wisdom/Prepared/Archmage, army
+floor, Adventure/world callback distinction and accepted follow-up charge.
+Scalar cast/AI legality calls do not allocate trace vectors; no new state,
+polling or gameplay formula. Binding/module guards and independent review pass.
+Required UI coverage increases, not identities:228/310 perks,31/31 Skills,
+93/93 ranks,61/67 combat spells and8/8 Orders unchanged. Rendered fit,
+permission/interaction breadth and playable delivery remain Phase2/separate.
+Normal Linux snapshot is unchanged; Windows37577480623 builds earlier UP268.
+
 Bounded required-UI source audit,2026-10-07: external dwellings use
 CPlayerInterface::showRecruitmentDialog -> CRecruitmentWindow. Saved category
 cards/groups, hero receiver Leadership proposal/capacity feedback and eligible
@@ -563,7 +576,11 @@ offer/selection consistency. Source guards, module drift and independent review
 pass. UP006/UP242 preserve initial/repaired receipts and runner identity.
 Native rendered fit, translations, live visitor switching and defensive
 out-of-range presentation inputs remain Phase2; no playable promotion claimed.
-Arcane Reservoir weekly availability remains a separate required feedback path.
+At that earlier checkpoint Arcane Reservoir weekly availability remained a
+separate required feedback path; UP242's later weekly UI checkpoint above closes
+its source/native implementation. Astronomy Tower's replicated next-Week
+preview also has town hover/right-click consumers. The 2026-10-07 bounded
+consumer audit confirms both paths; rendered fit/live refresh remain deferred.
 This adds two UI paths, not identities: counts stay61/67 spells and225/310 perks.
 
 2026-10-06 Berserk lifecycle coverage: accepted saved-v3 forced WALK/NO_ACTION

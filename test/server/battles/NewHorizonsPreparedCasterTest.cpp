@@ -23,6 +23,7 @@
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/SpellCostBreakdown.h"
 #include "../../../server/CGameHandler.h"
 
 #include <algorithm>
@@ -38,6 +39,8 @@ constexpr auto PREPARED_CASTER = "new-horizons:wisdom.preparedCaster";
 constexpr auto DEEP_KNOWLEDGE = "new-horizons:wisdom.deepKnowledge";
 constexpr auto ARCHMAGE = "new-horizons:wisdom.archmage";
 constexpr auto HAVOC_MAGIC = "new-horizons:havocMagic";
+constexpr auto METAMAGIC_SKILL = "new-horizons:metamagic";
+constexpr auto ARCANE_ECONOMY = "new-horizons:metamagic.arcaneEconomy";
 
 class NewHorizonsPreparedCasterTest : public HeroCommandFixture
 {
@@ -118,6 +121,15 @@ protected:
 		ASSERT_TRUE(hero->hasActivePerk(WISDOM_SKILL, PREPARED_CASTER));
 	}
 
+	void grantArcaneEconomy(CGHeroInstance * hero)
+	{
+		const int decoded = SecondarySkill::decode(METAMAGIC_SKILL);
+		ASSERT_GE(decoded, 0);
+		hero->setSecSkillLevel(SecondarySkill(decoded), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		hero->applyPerkSelection({METAMAGIC_SKILL, ARCANE_ECONOMY});
+		ASSERT_TRUE(hero->hasActivePerk(METAMAGIC_SKILL, ARCANE_ECONOMY));
+	}
+
 	void grantArchmage(CGHeroInstance * hero, bool includePreparedCaster = false)
 	{
 		hero->setSecSkillLevel(wisdomSkill(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
@@ -169,10 +181,42 @@ protected:
 		hero->setSecSkillLevel(SecondarySkill(decoded), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 	}
 
-	CStack * prepareBattleWithPreparedCaster(int wisdomRank = MasteryLevel::BASIC)
+	SpellCostBreakdown readSpellCostBreakdown(const spells::Spell * spell, int32_t expectedListedCost)
+	{
+		const auto manaBefore = attackerSideHero->getManaAvailable();
+		const bool castCompletedBefore = battle()->hasCompletedHeroSpellCast(BattleSide::ATTACKER);
+		const bool levelFourCompletedBefore = battle()->hasCompletedHeroSpellLevel(BattleSide::ATTACKER, 4);
+		const bool levelFiveCompletedBefore = battle()->hasCompletedHeroSpellLevel(BattleSide::ATTACKER, 5);
+		const auto breakdown = battle()->battleGetSpellCostBreakdown(spell, attackerSideHero);
+
+		EXPECT_EQ(breakdown.listedCost, expectedListedCost);
+		EXPECT_EQ(breakdown.finalCost, battle()->battleGetSpellCost(spell, attackerSideHero));
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+		EXPECT_EQ(battle()->hasCompletedHeroSpellCast(BattleSide::ATTACKER), castCompletedBefore);
+		EXPECT_EQ(battle()->hasCompletedHeroSpellLevel(BattleSide::ATTACKER, 4), levelFourCompletedBefore);
+		EXPECT_EQ(battle()->hasCompletedHeroSpellLevel(BattleSide::ATTACKER, 5), levelFiveCompletedBefore);
+
+		if(breakdown.stages.empty())
+		{
+			// An unchanged cost legitimately has no recorded stages.
+			EXPECT_EQ(breakdown.finalCost, breakdown.listedCost);
+		}
+		else
+		{
+			EXPECT_EQ(breakdown.stages.front().before, breakdown.listedCost);
+			for(size_t index = 1; index < breakdown.stages.size(); ++index)
+				EXPECT_EQ(breakdown.stages[index].before, breakdown.stages[index - 1].after);
+			EXPECT_EQ(breakdown.stages.back().after, breakdown.finalCost);
+		}
+		return breakdown;
+	}
+
+	CStack * prepareBattleWithPreparedCaster(int wisdomRank = MasteryLevel::BASIC, bool includeArcaneEconomy = false)
 	{
 		startGame();
 		grantPreparedCaster(attackerSideHero, wisdomRank);
+		if(includeArcaneEconomy)
+			grantArcaneEconomy(attackerSideHero);
 		prepareAttackerSpellbook(attackerSideHero);
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
 		startBattle();
@@ -226,11 +270,28 @@ TEST_F(NewHorizonsPreparedCasterTest, AcceptedFirstSpellGetsDiscountAndTheGatePe
 {
 	auto * target = prepareBattleWithPreparedCaster(MasteryLevel::EXPERT);
 	ASSERT_NE(target, nullptr);
-	ASSERT_EQ(attackerSideHero->getListedSpellCost(SpellID(SpellID::MAGIC_ARROW).toSpell()), 4);
+	const auto * magicArrow = SpellID(SpellID::MAGIC_ARROW).toSpell();
+	ASSERT_EQ(attackerSideHero->getListedSpellCost(magicArrow), 4);
 	const auto wisdomCost = newHorizonsMagic::wisdomAdjustedCost(
-		attackerSideHero->getListedSpellCost(SpellID(SpellID::MAGIC_ARROW).toSpell()), 1, MasteryLevel::EXPERT);
+		attackerSideHero->getListedSpellCost(magicArrow), 1, MasteryLevel::EXPERT);
 	ASSERT_EQ(wisdomCost, 3);
-	EXPECT_EQ(battle()->battleGetSpellCost(SpellID(SpellID::MAGIC_ARROW).toSpell(), attackerSideHero), 1);
+	const auto breakdown = readSpellCostBreakdown(magicArrow, 4);
+	EXPECT_EQ(breakdown.finalCost, 1);
+	const auto wisdomStage = std::find_if(breakdown.stages.begin(), breakdown.stages.end(), [](const auto & stage)
+	{
+		return stage.kind == SpellCostStage::Kind::WISDOM;
+	});
+	const auto preparedStage = std::find_if(breakdown.stages.begin(), breakdown.stages.end(), [](const auto & stage)
+	{
+		return stage.kind == SpellCostStage::Kind::PREPARED_CASTER;
+	});
+	ASSERT_NE(wisdomStage, breakdown.stages.end());
+	ASSERT_NE(preparedStage, breakdown.stages.end());
+	EXPECT_LT(std::distance(breakdown.stages.begin(), wisdomStage),
+		std::distance(breakdown.stages.begin(), preparedStage));
+	EXPECT_EQ(wisdomStage->before, 4);
+	EXPECT_EQ(wisdomStage->after, 3);
+	EXPECT_EQ(preparedStage->after, breakdown.finalCost);
 	EXPECT_FALSE(battle()->hasCompletedHeroSpellCast(BattleSide::ATTACKER));
 
 	const auto firstMana = attackerSideHero->getManaAvailable();
@@ -249,6 +310,69 @@ TEST_F(NewHorizonsPreparedCasterTest, AcceptedFirstSpellGetsDiscountAndTheGatePe
 	ASSERT_TRUE(issueMagicArrow(target));
 	EXPECT_EQ(laterMana - attackerSideHero->getManaAvailable(), wisdomCost)
 		<< "The battle-long marker survives round transition and no longer discounts later spells";
+}
+
+TEST_F(NewHorizonsPreparedCasterTest, AdventureSpellBreakdownIgnoresWisdomAndMetamagicFollowup)
+{
+	auto * target = prepareBattleWithPreparedCaster(MasteryLevel::EXPERT, true);
+	ASSERT_NE(target, nullptr);
+	attackerSideHero->addSpellToSpellbook(SpellID(SpellID::TOWN_PORTAL));
+	const auto * townPortal = SpellID(SpellID::TOWN_PORTAL).toSpell();
+	const auto adventureBreakdown = readSpellCostBreakdown(townPortal,
+		attackerSideHero->getListedSpellCost(townPortal));
+	const auto adventureFollowupBreakdown = battle()->battleGetSpellCostBreakdown(
+		townPortal, attackerSideHero, 1, true);
+
+	EXPECT_TRUE(newHorizonsMagic::isAdventureSpell(attackerSideHero->getMagicRules(), townPortal->getId()));
+	EXPECT_EQ(adventureFollowupBreakdown.finalCost, adventureBreakdown.finalCost);
+	EXPECT_EQ(adventureFollowupBreakdown.finalCost, battle()->battleGetSpellCost(townPortal, attackerSideHero));
+	EXPECT_TRUE(std::none_of(adventureFollowupBreakdown.stages.begin(), adventureFollowupBreakdown.stages.end(),
+		[](const auto & stage)
+		{
+			return stage.kind == SpellCostStage::Kind::WISDOM
+				|| stage.kind == SpellCostStage::Kind::METAMAGIC_ARCANE_ECONOMY;
+		}));
+}
+
+TEST_F(NewHorizonsPreparedCasterTest, WorldSpellCostBreakdownSeparatesAdventureAndWisdomStages)
+{
+	startGame();
+	grantPreparedCaster(attackerSideHero, MasteryLevel::EXPERT);
+	grantArcaneEconomy(attackerSideHero);
+	prepareAttackerSpellbook(attackerSideHero);
+	attackerSideHero->addSpellToSpellbook(SpellID(SpellID::TOWN_PORTAL));
+
+	const auto * townPortal = SpellID(SpellID::TOWN_PORTAL).toSpell();
+	const auto * magicArrow = SpellID(SpellID::MAGIC_ARROW).toSpell();
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	const auto adventure = gameState()->getSpellCostBreakdown(townPortal, attackerSideHero);
+	const auto adventureFollowup = gameState()->getSpellCostBreakdown(townPortal, attackerSideHero, true);
+	const auto ordinary = gameState()->getSpellCostBreakdown(magicArrow, attackerSideHero);
+
+	EXPECT_TRUE(newHorizonsMagic::isAdventureSpell(attackerSideHero->getMagicRules(), townPortal->getId()));
+	EXPECT_EQ(adventure.listedCost, attackerSideHero->getListedSpellCost(townPortal));
+	EXPECT_EQ(adventure.finalCost, attackerSideHero->getSpellCost(townPortal));
+	EXPECT_EQ(adventureFollowup.finalCost, adventure.finalCost)
+		<< "World-map spells do not receive an Arcane Economy follow-up discount";
+	EXPECT_TRUE(std::none_of(adventure.stages.begin(), adventure.stages.end(), [](const auto & stage)
+	{
+		return stage.kind == SpellCostStage::Kind::WISDOM
+			|| stage.kind == SpellCostStage::Kind::METAMAGIC_ARCANE_ECONOMY;
+	}));
+	EXPECT_TRUE(std::none_of(adventureFollowup.stages.begin(), adventureFollowup.stages.end(), [](const auto & stage)
+	{
+		return stage.kind == SpellCostStage::Kind::WISDOM
+			|| stage.kind == SpellCostStage::Kind::METAMAGIC_ARCANE_ECONOMY;
+	}));
+
+	EXPECT_EQ(ordinary.listedCost, attackerSideHero->getListedSpellCost(magicArrow));
+	EXPECT_EQ(ordinary.finalCost, attackerSideHero->getSpellCost(magicArrow));
+	ASSERT_EQ(ordinary.stages.size(), 1u);
+	EXPECT_EQ(ordinary.stages.front().kind, SpellCostStage::Kind::WISDOM);
+	EXPECT_EQ(ordinary.stages.front().before, ordinary.listedCost);
+	EXPECT_EQ(ordinary.stages.front().after, ordinary.finalCost);
+	EXPECT_NE(ordinary.stages.front().before, ordinary.stages.front().after);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
 }
 
 TEST_F(NewHorizonsPreparedCasterTest, RejectedHeroAndAcceptedCreatureCastsDoNotConsumeTheMarker)
@@ -309,8 +433,17 @@ TEST_F(NewHorizonsPreparedCasterTest, FloorAndBattlefieldCostModifiersApplyAfter
 	const auto * magicArrow = SpellID(SpellID::MAGIC_ARROW).toSpell();
 	friendly->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::CHANGES_SPELL_COST_FOR_ALLY, BonusSource::OTHER, 100, BonusSourceID()));
-	EXPECT_EQ(battle()->battleGetSpellCost(magicArrow, attackerSideHero), 1)
+	const auto floorBreakdown = readSpellCostBreakdown(magicArrow,
+		attackerSideHero->getListedSpellCost(magicArrow));
+	EXPECT_EQ(floorBreakdown.finalCost, 1)
 		<< "Prepared Caster and allied battlefield reductions cannot make an ordinary spell free";
+	const auto minimumStage = std::find_if(floorBreakdown.stages.begin(), floorBreakdown.stages.end(), [](const auto & stage)
+	{
+		return stage.kind == SpellCostStage::Kind::MINIMUM_COST;
+	});
+	ASSERT_NE(minimumStage, floorBreakdown.stages.end());
+	EXPECT_LT(minimumStage->before, 1);
+	EXPECT_EQ(minimumStage->after, floorBreakdown.finalCost);
 }
 
 TEST_F(NewHorizonsPreparedCasterTest, WizardSelectsArchmageThroughTheNormalExpertOffer)
@@ -427,7 +560,21 @@ TEST_F(NewHorizonsPreparedCasterTest, FirstHighSpellConsumesSharedLevelFourOrFiv
 	const auto * armageddon = SpellID(SpellID::ARMAGEDDON).toSpell();
 	const int chainWisdomCost = newHorizonsMagic::wisdomAdjustedCost(
 		attackerSideHero->getListedSpellCost(chainLightning), 1, MasteryLevel::EXPERT);
-	EXPECT_EQ(battle()->battleGetSpellCost(chainLightning, attackerSideHero), std::max(1, chainWisdomCost - 2 - 3));
+	const auto chainBreakdown = readSpellCostBreakdown(chainLightning,
+		attackerSideHero->getListedSpellCost(chainLightning));
+	EXPECT_EQ(chainBreakdown.finalCost, std::max(1, chainWisdomCost - 2 - 3));
+	const auto preparedStage = std::find_if(chainBreakdown.stages.begin(), chainBreakdown.stages.end(), [](const auto & stage)
+	{
+		return stage.kind == SpellCostStage::Kind::PREPARED_CASTER;
+	});
+	const auto archmageStage = std::find_if(chainBreakdown.stages.begin(), chainBreakdown.stages.end(), [](const auto & stage)
+	{
+		return stage.kind == SpellCostStage::Kind::ARCHMAGE;
+	});
+	ASSERT_NE(preparedStage, chainBreakdown.stages.end());
+	ASSERT_NE(archmageStage, chainBreakdown.stages.end());
+	EXPECT_LT(std::distance(chainBreakdown.stages.begin(), preparedStage),
+		std::distance(chainBreakdown.stages.begin(), archmageStage));
 	const auto firstHighMana = attackerSideHero->getManaAvailable();
 	ASSERT_TRUE(issueHeroSpell(SpellID::CHAIN_LIGHTNING, target));
 	EXPECT_EQ(firstHighMana - attackerSideHero->getManaAvailable(), std::max(1, chainWisdomCost - 2 - 3));

@@ -156,21 +156,14 @@ void BattleInterface::installMagicArrowOverchargeUI()
 				callback->getBattle()->getMagicRules(), spell->id, spellPower,
 				newHorizonsMagic::magicArrowOverchargeModifiers(hero));
 			const bool metamagicFollowup = pending.metamagicFollowup;
-			const auto metamagicBaseCost = [metamagicFollowup](const CGHeroInstance * currentHero, int listedCost)
-			{
-				if(metamagicFollowup && newHorizonsMagic::hasMetamagicPerk(currentHero, newHorizonsMagic::METAMAGIC_ARCANE_ECONOMY))
-					return std::max(1, listedCost - 2);
-				return listedCost;
-			};
-			const int baseMana = metamagicBaseCost(hero, callback->battleGetSpellCost(spell, hero));
+			const int baseMana = callback->battleGetSpellCostBreakdown(spell, hero, 1, metamagicFollowup).finalCost;
 			const int maximumOvercharge = static_cast<int>(std::min<int64_t>(formulaMaximumOvercharge,
 				std::max<int64_t>(0, hero->getManaAvailable() - baseMana)));
 
-			// battleGetSpellCost is the authoritative ordinary cost. Runtime owns
-			// Wisdom and other modifiers; apply the same Metamagic discount as the
-			// BattleSpellMechanics path before adding the optional surcharge.
+			// The shared breakdown supplies the follow-up-aware base cost; optional
+			// Overcharge remains a separate post-target surcharge.
 			const auto evaluate = [this, localBattleID, targetUnitID, spell, maximumOvercharge,
-				metamagicFollowup, metamagicBaseCost]
+				metamagicFollowup]
 				(int overcharge)
 				-> MagicArrowOverchargeValues
 			{
@@ -188,7 +181,7 @@ void BattleInterface::installMagicArrowOverchargeUI()
 				if(!target)
 					return values;
 
-				values.baseMana = metamagicBaseCost(hero, callback->battleGetSpellCost(spell, hero));
+				values.baseMana = callback->battleGetSpellCostBreakdown(spell, hero, 1, metamagicFollowup).finalCost;
 				values.additionalMana = values.overcharge;
 				values.totalMana = values.baseMana + values.additionalMana;
 				values.availableMana = hero->getManaAvailable();
@@ -254,7 +247,7 @@ void BattleInterface::installMagicArrowOverchargeUI()
 			context.initial = evaluate(0);
 			context.evaluate = evaluate;
 			context.confirm = [this, pending, localBattleID, targetUnitID, spell, formulaMaximumOvercharge,
-				metamagicBaseCost](int overcharge)
+				metamagicFollowup](int overcharge)
 				-> bool
 			{
 				if(!curInt || !curInt->cb || curInt->cb->getBattle(localBattleID) == nullptr)
@@ -268,7 +261,7 @@ void BattleInterface::installMagicArrowOverchargeUI()
 				if(!target)
 					return false;
 
-				const int baseCost = metamagicBaseCost(hero, callback->battleGetSpellCost(spell, hero));
+				const int baseCost = callback->battleGetSpellCostBreakdown(spell, hero, 1, metamagicFollowup).finalCost;
 				if(baseCost < 0 || baseCost + overcharge > hero->getManaAvailable())
 					return false;
 

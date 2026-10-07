@@ -22,6 +22,7 @@
 #include "../mapObjects/CGTownInstance.h"
 #include "../mapObjects/MiscObjects.h"
 #include "../spells/CSpell.h"
+#include "../spells/NewHorizonsMagic.h"
 #include "../StartInfo.h"
 #include "../battle/BattleInfo.h"
 #include "../IGameSettings.h"
@@ -252,6 +253,30 @@ int32_t CGameInfoCallback::getSpellCost(const spells::Spell * sp, const CGHeroIn
 
 	//if there is no battle
 	return caster->getSpellCost(sp);
+}
+
+SpellCostBreakdown CGameInfoCallback::getSpellCostBreakdown(const spells::Spell * sp,
+	const CGHeroInstance * caster, bool metamagicFollowup) const
+{
+	SpellCostBreakdown denied;
+	denied.finalCost = -1;
+	ERROR_RET_VAL_IF(!canGetFullInfo(caster), "Cannot get info about caster!", denied);
+
+	if(auto casterBattle = gameState().getBattle(caster->getOwner()))
+		return casterBattle->battleGetSpellCostBreakdown(sp, caster, 1, metamagicFollowup);
+
+	SpellCostBreakdown result;
+	result.listedCost = caster->getListedSpellCost(sp);
+	result.finalCost = caster->getSpellCost(sp);
+	if(newHorizonsMagic::isAdventureSpell(caster->getMagicRules(), sp->getId()))
+	{
+		if(result.finalCost != result.listedCost)
+			result.stages.push_back({SpellCostStage::Kind::ADVENTURE_ARTIFACT, result.listedCost, result.finalCost});
+	}
+	else if(newHorizonsMagic::wisdomRank(caster) != MasteryLevel::NONE)
+		result.stages.push_back({SpellCostStage::Kind::WISDOM, result.listedCost, result.finalCost});
+
+	return result;
 }
 
 int64_t CGameInfoCallback::estimateSpellDamage(const CSpell * sp, const CGHeroInstance * hero) const

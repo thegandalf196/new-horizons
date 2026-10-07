@@ -872,6 +872,7 @@ set(lib_MAIN_HEADERS
 	spells/Problem.h
 	spells/ProxyCaster.h
 	spells/SpellAnimationItem.h
+	spells/SpellCostBreakdown.h
 	spells/SpellSchoolHandler.h
 	spells/TargetCondition.h
 	spells/ViewSpellInt.h

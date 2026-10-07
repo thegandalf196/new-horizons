@@ -47,6 +47,7 @@
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/SpellCostBreakdown.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/spells/adventure/AdventureSpellEffect.h"
 #include "../../lib/spells/Problem.h"
@@ -73,6 +74,51 @@ std::string spellAllowanceSourceName(HeroActionAllowanceState::GrantSource sourc
 		case HeroActionAllowanceState::GrantSource::DIVINE_MANDATE: return "Divine Mandate";
 	}
 	return "Additional ability";
+}
+
+const char * spellCostStageTextKey(SpellCostStage::Kind kind)
+{
+	switch(kind)
+	{
+		case SpellCostStage::Kind::LISTED_MULTIPLIER: return "new-horizons.spellCost.modifier.listedMultiplier";
+		case SpellCostStage::Kind::WISDOM: return "new-horizons.spellCost.modifier.wisdom";
+		case SpellCostStage::Kind::ADVENTURE_ARTIFACT: return "new-horizons.spellCost.modifier.adventureArtifact";
+		case SpellCostStage::Kind::KNIGHTLY_SEQUENCE: return "new-horizons.spellCost.modifier.knightlySequence";
+		case SpellCostStage::Kind::PREPARED_CASTER: return "new-horizons.spellCost.modifier.preparedCaster";
+		case SpellCostStage::Kind::ARCHMAGE: return "new-horizons.spellCost.modifier.archmage";
+		case SpellCostStage::Kind::ALLIED_ARMY: return "new-horizons.spellCost.modifier.alliedArmy";
+		case SpellCostStage::Kind::ENEMY_ARMY: return "new-horizons.spellCost.modifier.enemyArmy";
+		case SpellCostStage::Kind::MINIMUM_COST: return "new-horizons.spellCost.modifier.minimumCost";
+		case SpellCostStage::Kind::METAMAGIC_ARCANE_ECONOMY: return "new-horizons.spellCost.modifier.arcaneEconomy";
+	}
+	return "new-horizons.spellCost.current";
+}
+
+bool hasSpellCostBreakdown(const SpellCostBreakdown & breakdown)
+{
+	return breakdown.listedCost != breakdown.finalCost || !breakdown.stages.empty();
+}
+
+std::string spellCostBreakdownText(const SpellCostBreakdown & breakdown)
+{
+	if(!hasSpellCostBreakdown(breakdown))
+		return {};
+
+	MetaString listed = MetaString::createFromTextID("new-horizons.spellCost.listed");
+	listed.replaceNumber(breakdown.listedCost);
+	MetaString current = MetaString::createFromTextID("new-horizons.spellCost.current");
+	current.replaceNumber(breakdown.finalCost);
+
+	std::string result = listed.toString(&GAME->translator()) + "\n" + current.toString(&GAME->translator());
+	for(const auto & stage : breakdown.stages)
+	{
+		MetaString stageText = MetaString::createFromTextID("new-horizons.spellCost.stage");
+		stageText.replaceRawString(LIBRARY->generaltexth->translate(spellCostStageTextKey(stage.kind)));
+		stageText.replaceNumber(stage.before);
+		stageText.replaceNumber(stage.after);
+		result += "\n" + stageText.toString(&GAME->translator());
+	}
+	return result;
 }
 }
 
@@ -922,6 +968,25 @@ bool CSpellWindow::isAdventureSpellUsedToday(SpellID spell) const
 		&& myHero->hasNewHorizonsAdventureSpellCastToday();
 }
 
+bool CSpellWindow::hasMetamagicFollowupForSpell(SpellID spell) const
+{
+	if(!battleSpellsOnly || !myInt || !myInt->battleInt)
+		return false;
+
+	try
+	{
+		const auto battle = myInt->battleInt->getBattle();
+		if(!battle)
+			return false;
+		const auto side = battle->battleGetMySide();
+		return side != BattleSide::NONE && battle->battleCanUseMetamagicFollowup(side, spell);
+	}
+	catch(const std::runtime_error &)
+	{
+		return false;
+	}
+}
+
 void CSpellWindow::updateAdventureSpellDailyStatus()
 {
 	if(!adventureSpellDailyStatusLabel || !adventureSpellDailyStatusHelp)
@@ -1064,12 +1129,9 @@ void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)
 
 		const auto battleInterface = owner->myInt->battleInt;
 		const auto battleCallback = battleInterface ? battleInterface->getBattle() : nullptr;
-		const auto metamagicSide = battleCallback ? battleCallback->battleGetMySide() : BattleSide::NONE;
-		const bool metamagicFollowup = battleCallback && metamagicSide != BattleSide::NONE
-			&& battleCallback->battleCanUseMetamagicFollowup(metamagicSide, mySpell->id);
-		auto spellCost = owner->myInt->cb->getSpellCost(mySpell, owner->myHero);
-		if(metamagicFollowup && newHorizonsMagic::hasMetamagicPerk(owner->myHero, newHorizonsMagic::METAMAGIC_ARCANE_ECONOMY))
-			spellCost = std::max(1, spellCost - 2);
+		const bool metamagicFollowup = owner->hasMetamagicFollowupForSpell(mySpell->id);
+		const auto costBreakdown = owner->myInt->cb->getSpellCostBreakdown(mySpell, owner->myHero, metamagicFollowup);
+		const int spellCost = costBreakdown.finalCost;
 		if(spellCost > owner->myHero->getManaAvailable() && !metamagicFollowup) //insufficient mana; follow-ups use authoritative preview below
 		{
 			MetaString message = MetaString::createFromTextID("core.genrltxt.206"); // That spell costs %d spell points. Your hero only has %d spell points...
@@ -1180,8 +1242,21 @@ void CSpellWindow::SpellArea::showPopupWindow(const Point & cursorPosition)
 			requirements += "\n\n" + divineMandateRequirementText;
 		const auto followup = owner->spellActionOpportunityText(mySpell->id);
 		const auto followupInfo = followup.empty() ? std::string() : "\n\n" + followup;
+		std::string costInfo;
+		if(newHorizonsMagic::rulesActive(owner->myHero->getMagicRules()))
+		{
+			const auto metamagicFollowup = owner->hasMetamagicFollowupForSpell(mySpell->id);
+			const auto breakdown = owner->myInt->cb->getSpellCostBreakdown(mySpell, owner->myHero, metamagicFollowup);
+			costInfo = spellCostBreakdownText(breakdown);
+			if(!costInfo.empty())
+				costInfo = "\n\n" + costInfo;
+
+			if(newHorizonsMagic::magicArrowOverchargeEnabled(owner->myHero->getMagicRules(), mySpell->id))
+				costInfo += (costInfo.empty() ? "\n\n" : "\n")
+					+ LIBRARY->generaltexth->translate("new-horizons.spellCost.overcharge");
+		}
 		CRClickPopup::createAndPush(newHorizonsMagic::spellDescriptionForHero(owner->myHero, mySpell, schoolLevel)
-			+ dmgInfo + requirements + followupInfo,
+			+ costInfo + dmgInfo + requirements + followupInfo,
 			std::make_shared<CComponent>(ComponentType::SPELL, mySpell->id));
 	}
 }
@@ -1253,15 +1328,9 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 		}
 		SpellSchool whichSchool;
 		schoolLevel = owner->myHero->getSpellSchoolLevel(mySpell, &whichSchool);
-		auto spellCost = owner->myInt->cb->getSpellCost(mySpell, owner->myHero);
-		if(owner->myInt->battleInt)
-		{
-			const auto battle = owner->myInt->battleInt->getBattle();
-			const auto side = battle->battleGetMySide();
-			if(side != BattleSide::NONE && battle->battleCanUseMetamagicFollowup(side, mySpell->id)
-				&& newHorizonsMagic::hasMetamagicPerk(owner->myHero, newHorizonsMagic::METAMAGIC_ARCANE_ECONOMY))
-				spellCost = std::max(1, spellCost - 2);
-		}
+		const bool metamagicFollowup = owner->hasMetamagicFollowupForSpell(mySpell->id);
+		const auto costBreakdown = owner->myInt->cb->getSpellCostBreakdown(mySpell, owner->myHero, metamagicFollowup);
+		const int spellCost = costBreakdown.finalCost;
 
 		image->setFrame(mySpell->id.getNum());
 		image->visible = true;
@@ -1334,9 +1403,16 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 			cost->setText("Light spells only");
 		else
 		{
-			MetaString costText = MetaString::createFromRawString("%s: %d");
-			costText.replaceTextID("core.genrltxt.387"); // Spell Points
-			costText.replaceNumber(spellCost);
+			const bool showBreakdown = newHorizonsMagic::rulesActive(owner->myHero->getMagicRules())
+				&& hasSpellCostBreakdown(costBreakdown);
+			MetaString costText = showBreakdown
+				? MetaString::createFromTextID("new-horizons.spellCost.row")
+				: MetaString::createFromRawString("%s: %d");
+			if(showBreakdown)
+				costText.replaceNumber(costBreakdown.listedCost);
+			else
+				costText.replaceTextID("core.genrltxt.387"); // Spell Points
+			costText.replaceNumber(costBreakdown.finalCost);
 			cost->setText(costText.toString(&GAME->translator()));
 		}
 	}

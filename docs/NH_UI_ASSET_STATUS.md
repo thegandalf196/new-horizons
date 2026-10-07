@@ -1,5 +1,15 @@
 # New Horizons UI and asset status register
 
+Spellbook Mana breakdown,2026-10-07: **Provisional** source presentation under
+UP269. Existing spellbook rows show listed -> current base cost when modifiers
+apply; right-click help names the ordered shared calculation stages. Ordinary
+and Metamagic follow-up costs share authoritative arithmetic, and Magic Arrow
+keeps optional Overcharge separate. Existing native text/popup surfaces are
+reused; no new artwork. Client51094/test35093 builds pass with12 jobs and seven
+focused native cases pass in2.472s with zero skips. Binding/module guards and
+independent review pass. Rendered fit and playable delivery remain pending;
+source/native correctness is not final visual approval.
+
 Quick recruitment roster,2026-10-07: **Provisional** source implementation under
 UP268. Continuous existing leather and yellow category headings replace the
 one-strip categorized arrangement. Native creature portraits, seven existing

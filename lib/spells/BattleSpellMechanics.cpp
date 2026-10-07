@@ -999,10 +999,8 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 				genProblem = ESpellCastProblem::HERO_DOESNT_KNOW_SPELL;
 			else
 			{
-				int requiredMana = battle()->battleGetSpellCost(owner, castingHero, massSlow ? 3 : 1);
-				if(isMetamagicFollowup()
-					&& newHorizonsMagic::hasMetamagicPerk(castingHero, newHorizonsMagic::METAMAGIC_ARCANE_ECONOMY))
-					requiredMana = std::max(1, requiredMana - 2);
+				int requiredMana = battle()->battleGetSpellCost(owner, castingHero,
+					massSlow ? 3 : 1, isMetamagicFollowup());
 				if(adjustableMagicArrow)
 					requiredMana += selectedOvercharge;
 				if(castingHero->getManaAvailable() < requiredMana) //not enough Spell Points
@@ -1611,10 +1609,8 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 				knightlySequenceSpellCostReduction =
 					newHorizonsDivineMandate::knightlySequenceSpellCostReduction(casterHero);
 		}
-		spellCost = battle()->battleGetSpellCost(owner, casterHero, isMassSlow() ? 3 : 1);
-		if(isMetamagicFollowup()
-			&& newHorizonsMagic::hasMetamagicPerk(casterHero, newHorizonsMagic::METAMAGIC_ARCANE_ECONOMY))
-			spellCost = std::max(1, spellCost - 2);
+		spellCost = battle()->battleGetSpellCost(owner, casterHero,
+			isMassSlow() ? 3 : 1, isMetamagicFollowup());
 		if(newHorizonsMagic::magicArrowOverchargeEnabled(battle()->getBattle()->getMagicRules(), owner->getId()))
 			spellCost += getOvercharge();
 

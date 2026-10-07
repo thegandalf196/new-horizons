@@ -4699,18 +4699,60 @@ BattleHexArray CBattleInfoCallback::getAttackableWallParts() const
 	return attackableBattleHexes;
 }
 
-int32_t CBattleInfoCallback::battleGetSpellCost(const spells::Spell * sp, const CGHeroInstance * caster, int32_t listedCostMultiplier) const
+SpellCostBreakdown CBattleInfoCallback::battleGetSpellCostBreakdown(const spells::Spell * sp,
+	const CGHeroInstance * caster, int32_t listedCostMultiplier, bool metamagicFollowup) const
+{
+	SpellCostBreakdown breakdown;
+	if(!duringBattle())
+	{
+		logGlobal->error("%s called when no battle!", __FUNCTION__);
+		breakdown.finalCost = -1;
+		return breakdown;
+	}
+	calculateBattleSpellCost(sp, caster, listedCostMultiplier, metamagicFollowup, &breakdown);
+	return breakdown;
+}
+
+int32_t CBattleInfoCallback::battleGetSpellCost(const spells::Spell * sp, const CGHeroInstance * caster,
+	int32_t listedCostMultiplier, bool metamagicFollowup) const
 {
 	RETURN_IF_NOT_BATTLE(-1);
+	return calculateBattleSpellCost(sp, caster, listedCostMultiplier, metamagicFollowup, nullptr);
+}
+
+int32_t CBattleInfoCallback::calculateBattleSpellCost(const spells::Spell * sp, const CGHeroInstance * caster,
+	int32_t listedCostMultiplier, bool metamagicFollowup, SpellCostBreakdown * breakdown) const
+{
+	if(breakdown)
+	{
+		breakdown->listedCost = 0;
+		breakdown->finalCost = 0;
+		breakdown->stages.clear();
+	}
 	//TODO should be replaced using bonus system facilities (propagation onto battle node)
 	if(listedCostMultiplier < 1)
 		throw std::invalid_argument("Spell cost multiplier must be positive");
 
 	const int32_t listedCost = caster->getListedSpellCost(sp);
+	if(breakdown)
+		breakdown->listedCost = listedCost;
+	auto recordStage = [breakdown](SpellCostStage::Kind kind, int32_t before, int32_t after)
+	{
+		if(breakdown)
+			breakdown->stages.push_back({kind, before, after});
+	};
 	const int wisdom = newHorizonsMagic::isAdventureSpell(caster->getMagicRules(), sp->getId())
 		? MasteryLevel::NONE : newHorizonsMagic::wisdomRank(caster);
 	int32_t ret = wisdom == MasteryLevel::NONE ? listedCost * listedCostMultiplier
 		: newHorizonsMagic::wisdomAdjustedCost(listedCost, listedCostMultiplier, wisdom);
+	if(breakdown)
+	{
+		const int32_t multipliedListedCost = static_cast<int32_t>(static_cast<int64_t>(listedCost) * listedCostMultiplier);
+		if(listedCostMultiplier != 1)
+			recordStage(SpellCostStage::Kind::LISTED_MULTIPLIER, listedCost, multipliedListedCost);
+		if(wisdom != MasteryLevel::NONE)
+			recordStage(SpellCostStage::Kind::WISDOM, multipliedListedCost, ret);
+	}
 	const bool newHorizonsOrdinarySpell = newHorizonsMagic::rulesActive(caster->getMagicRules())
 		&& sp->isCommonHeroSpell() && sp->isCombat() && !sp->isAdventure();
 	const BattleSide casterSide = playerToSide(caster->tempOwner);
@@ -4722,12 +4764,20 @@ int32_t CBattleInfoCallback::battleGetSpellCost(const spells::Spell * sp, const 
 	if(spellAllowance
 		&& spellAllowance->allowance == HeroActionAllowanceState::AllowanceKind::SPELL
 		&& spellAllowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE)
+	{
+		const int32_t before = ret;
 		ret = std::max(1, ret - newHorizonsDivineMandate::knightlySequenceSpellCostReduction(caster));
+		recordStage(SpellCostStage::Kind::KNIGHTLY_SEQUENCE, before, ret);
+	}
 	const bool preparedCaster = ordinarySideHero
 		&& caster->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.preparedCaster")
 		&& !getBattle()->hasCompletedHeroSpellCast(casterSide);
 	if(preparedCaster)
+	{
+		const int32_t before = ret;
 		ret = std::max(1, ret - 2);
+		recordStage(SpellCostStage::Kind::PREPARED_CASTER, before, ret);
+	}
 
 	const int spellLevel = battleGetSpellLevel(sp->getId());
 	const bool archmage = ordinarySideHero
@@ -4736,7 +4786,11 @@ int32_t CBattleInfoCallback::battleGetSpellCost(const spells::Spell * sp, const 
 		&& !getBattle()->hasCompletedHeroSpellLevel(casterSide, 4)
 		&& !getBattle()->hasCompletedHeroSpellLevel(casterSide, 5);
 	if(archmage)
+	{
+		const int32_t before = ret;
 		ret = std::max(1, ret - 3);
+		recordStage(SpellCostStage::Kind::ARCHMAGE, before, ret);
+	}
 
 	//checking for friendly stacks reducing cost of the spell and
 	//enemy stacks increasing it
@@ -4755,7 +4809,29 @@ int32_t CBattleInfoCallback::battleGetSpellCost(const spells::Spell * sp, const 
 		}
 	}
 
-	return std::max(newHorizonsOrdinarySpell ? 1 : 0, ret - manaReduction + manaIncrease);
+	const int32_t afterAllies = ret - manaReduction;
+	if(manaReduction != 0)
+		recordStage(SpellCostStage::Kind::ALLIED_ARMY, ret, afterAllies);
+	const int32_t beforeMinimum = afterAllies + manaIncrease;
+	if(manaIncrease != 0)
+		recordStage(SpellCostStage::Kind::ENEMY_ARMY, afterAllies, beforeMinimum);
+	const int32_t minimum = newHorizonsOrdinarySpell ? 1 : 0;
+	int32_t finalCost = std::max(minimum, beforeMinimum);
+	if(finalCost != beforeMinimum)
+		recordStage(SpellCostStage::Kind::MINIMUM_COST, beforeMinimum, finalCost);
+
+	const bool metamagicArcaneEconomy = metamagicFollowup && newHorizonsOrdinarySpell
+		&& !newHorizonsMagic::isAdventureSpell(caster->getMagicRules(), sp->getId())
+		&& newHorizonsMagic::hasMetamagicPerk(caster, newHorizonsMagic::METAMAGIC_ARCANE_ECONOMY);
+	if(metamagicArcaneEconomy)
+	{
+		const int32_t before = finalCost;
+		finalCost = std::max(1, finalCost - 2);
+		recordStage(SpellCostStage::Kind::METAMAGIC_ARCANE_ECONOMY, before, finalCost);
+	}
+	if(breakdown)
+		breakdown->finalCost = finalCost;
+	return finalCost;
 }
 
 bool CBattleInfoCallback::battleHasShootingPenalty(const battle::Unit * shooter, const BattleHex & destHex) const

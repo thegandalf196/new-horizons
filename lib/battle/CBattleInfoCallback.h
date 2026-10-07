@@ -21,6 +21,7 @@
 #include "BattleUnitTurnReason.h"
 #include "ReducedExtraActivationState.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
+#include "../spells/SpellCostBreakdown.h"
 
 class CGHeroInstance;
 class CStack;
@@ -335,7 +336,12 @@ public:
 	si8 battleMaxSpellLevel(BattleSide side) const; //calculates minimum spell level possible to be cast on battlefield - takes into account artifacts of both heroes; if no effects are set, 0 is returned
 	/// Returns battle-adjusted mana cost. listedCostMultiplier is applied to the
 	/// spell's listed cost before stack-based reductions/increases.
-	int32_t battleGetSpellCost(const spells::Spell * sp, const CGHeroInstance * caster, int32_t listedCostMultiplier = 1) const;
+	int32_t battleGetSpellCost(const spells::Spell * sp, const CGHeroInstance * caster,
+		int32_t listedCostMultiplier = 1, bool metamagicFollowup = false) const;
+	/// Read-only ordered breakdown of the same cost. The follow-up flag is explicit so
+	/// ordinary card costs are not confused with an eligible Metamagic follow-up.
+	SpellCostBreakdown battleGetSpellCostBreakdown(const spells::Spell * sp, const CGHeroInstance * caster,
+		int32_t listedCostMultiplier = 1, bool metamagicFollowup = false) const;
 	ESpellCastProblem battleCanCastSpell(const spells::Caster * caster, spells::Mode mode) const; //returns true if there are no general issues preventing from casting a spell
 
 	SpellID getRandomBeneficialSpell(vstd::RNG & rand, const battle::Unit * caster, const battle::Unit * target) const;
@@ -393,6 +399,8 @@ public:
 	/// find free hex suitable to place new unit. If no initial position was provided, hex located on left size (attacker) or right side (defender) will be selected
 	BattleHex getAvailableHex(const Creature * creature, BattleSide side, BattleHex initialPos = {}) const override;
 protected:
+	int32_t calculateBattleSpellCost(const spells::Spell * sp, const CGHeroInstance * caster,
+		int32_t listedCostMultiplier, bool metamagicFollowup, SpellCostBreakdown * breakdown) const;
 	bool battleHeroCommandCommonAvailable(BattleSide side, HeroCommand command) const;
 	bool battleIsFocusFireRecipient(const battle::Unit * unit, BattleSide side) const;
 	ReachabilityInfo getFlyingReachability(const ReachabilityInfo::Parameters & params) const;
