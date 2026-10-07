@@ -1316,10 +1316,14 @@ void HeroSlots::swapArmies()
 
 	if(!town->getGarrisonHero() && town->getVisitingHero()) //visiting => garrison, merge armies: town army => hero army
 	{
-		if(!town->getVisitingHero()->canBeMergedWith(*town))
+		if(!newHorizonsHeroes::canMergeArmies(town, town->getVisitingHero()))
 		{
-			GAME->interface()->showInfoDialog(LIBRARY->generaltexth->allTexts[275], std::vector<std::shared_ptr<CComponent>>(), soundBase::sound_todo);
-			allow = false;
+			garrisonedHero->setHighlight(false);
+			visitingHero->setHighlight(false);
+			// This is a local transfer window, not a server query. Keep the hero
+			// visiting and let the player retry admission after arranging troops.
+			ENGINE->windows().createAndPushWindow<CGarrisonWindow>(town, town->getVisitingHero(), true, MetaString());
+			return;
 		}
 	}
 

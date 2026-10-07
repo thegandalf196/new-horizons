@@ -50,4 +50,9 @@ DLL_LINKAGE int leadershipMovement(int unscaledMovement, int movementPercent);
 /// that request across stacks. Uncapped/legacy armies preserve getSlotFor.
 DLL_LINKAGE SlotID recruitmentSlot(const CArmedInstance * army, CreatureID creature,
 	int64_t requestedAmount = 1);
+
+/// Predict full atomic army admission with moveArmy's matching, empty-slot and
+/// duplicate-consolidation order. No splitting, partial transfer or mutation.
+/// Shared by client preflight and AI; authoritative validation remains required.
+DLL_LINKAGE bool canMergeArmies(const CArmedInstance * source, const CArmedInstance * destination);
 }

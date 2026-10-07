@@ -13,6 +13,7 @@
 #include "../../mapObjects/CGHeroInstance.h"
 
 #include <algorithm>
+#include <array>
 #include <stdexcept>
 
 namespace newHorizonsHeroes
@@ -43,6 +44,109 @@ int leadershipMovement(int unscaledMovement, int movementPercent)
 	if(unscaledMovement < 0 || movementPercent <= 0 || movementPercent > 100)
 		throw std::invalid_argument("Invalid New Horizons leadership movement inputs");
 	return static_cast<int>(int64_t(unscaledMovement) * movementPercent / 100);
+}
+
+bool canMergeArmies(const CArmedInstance * source, const CArmedInstance * destination)
+{
+	if(!source || !destination || source == destination)
+		return false;
+
+	// Keep the ordinary slot/merge rule identical to garrisonSwap/moveArmy.
+	// Leadership is checked below against the same projected slots that the
+	// server builds before applying any move.
+	if(!destination->canBeMergedWith(*source, true))
+		return false;
+
+	const auto * hero = dynamic_cast<const CGHeroInstance *>(destination);
+	const auto acceptsProjectedStack = [hero](CreatureID creature, int64_t count)
+	{
+		const auto capacity = hero ? hero->getLeadershipSlotCapacity(creature) : std::nullopt;
+		return !capacity || (count >= 0 && count <= capacity->maximum);
+	};
+
+	struct ProjectedSlot
+	{
+		CreatureID creature;
+		int64_t count = 0;
+		bool occupied = false;
+	};
+	std::array<ProjectedSlot, GameConstants::ARMY_SIZE> projected;
+
+	for(const auto & [slot, stack] : destination->Slots())
+		projected[slot.getNum()] = {stack->getCreatureID(), stack->getCount(), true};
+
+	for(const auto & [sourceSlot, sourceStack] : source->Slots())
+	{
+		int target = -1;
+		for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
+		{
+			if(projected[i].occupied && projected[i].creature == sourceStack->getCreatureID())
+			{
+				target = i;
+				break;
+			}
+		}
+
+		if(target < 0)
+		{
+			for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
+			{
+				if(!projected[i].occupied)
+				{
+					target = i;
+					break;
+				}
+			}
+		}
+
+		if(target < 0)
+		{
+			// moveArmy frees one occupied destination slot by merging another
+			// pair, then uses that slot for this source stack. Match that
+			// deterministic fallback rather than merely counting creature types.
+			int mergeSource = -1;
+			int mergeDestination = -1;
+			const int preferred = sourceSlot.getNum();
+			if(sourceSlot.validSlot() && projected[preferred].occupied)
+				for(int j = 0; j < GameConstants::ARMY_SIZE; ++j)
+					if(j != preferred && projected[j].occupied
+						&& projected[j].creature == projected[preferred].creature)
+					{
+						mergeSource = preferred;
+						mergeDestination = j;
+						break;
+					}
+			for(int i = 0; i < GameConstants::ARMY_SIZE && mergeSource < 0; ++i)
+				for(int j = 0; j < GameConstants::ARMY_SIZE; ++j)
+					if(i != j && projected[i].occupied && projected[j].occupied
+						&& projected[i].creature == projected[j].creature)
+					{
+						mergeSource = i;
+						mergeDestination = j;
+						break;
+					}
+
+			if(mergeSource >= 0)
+			{
+				projected[mergeDestination].count += projected[mergeSource].count;
+				if(!acceptsProjectedStack(projected[mergeDestination].creature,
+					projected[mergeDestination].count))
+					return false;
+				projected[mergeSource] = {};
+				target = mergeSource;
+			}
+		}
+
+		if(target < 0)
+			return false;
+		if(!projected[target].occupied)
+			projected[target] = {sourceStack->getCreatureID(), 0, true};
+		projected[target].count += sourceStack->getCount();
+		if(!acceptsProjectedStack(projected[target].creature, projected[target].count))
+			return false;
+	}
+
+	return true;
 }
 
 SlotID recruitmentSlot(const CArmedInstance * army, CreatureID creature, int64_t requestedAmount)

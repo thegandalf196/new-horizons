@@ -14,6 +14,7 @@
 #include "nullkiller2/NullkillerTest.h"
 
 #include "lib/mapObjects/CGHeroInstance.h"
+#include "lib/entities/hero/NewHorizonsLeadership.h"
 #include "lib/networkPacks/PacksForClient.h"
 
 #include <chrono>
@@ -152,6 +153,67 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, GarrisonSwapPreflightChecksTheAct
 	EXPECT_FALSE(NK2AI::armyFormation::canMergeArmies(town, visitingHero));
 }
 
+TEST_F(NewHorizonsArmyFormationLeadershipTest, WizardMageGarrisonAdmissionPreservesSurplusUntilArranged)
+{
+	const CreatureID mage(CreatureID::decode("core:mage"));
+	const CreatureID gremlin(CreatureID::decode("core:gremlin"));
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder
+		.size(36, false)
+		.playerActive(PLAYER)
+		.town({9, 5, 0}, FactionID::TOWER, PLAYER)
+		.townGarrison({{mage, 1}})
+		.hero(HERO_POS, HeroTypeID(HeroTypeID::decode("core:solmyr")), PLAYER)
+		.heroExperience(0)
+		.heroGarrison({{mage, 2}});
+	startWithMap(std::move(builder));
+
+	auto * town = findFirst<CGTownInstance>();
+	auto * hero = findHeroByOwner(PLAYER);
+	ASSERT_NE(town, nullptr);
+	ASSERT_NE(hero, nullptr);
+	ChangeObjPos moveHero;
+	moveHero.objid = hero->id;
+	moveHero.nPos = town->visitablePos();
+	moveHero.initiator = PLAYER;
+	gameState()->apply(moveHero);
+	SetHeroesInTown setHeroes;
+	setHeroes.tid = town->id;
+	setHeroes.visiting = hero->id;
+	setHeroes.garrison = ObjectInstanceID::NONE;
+	gameState()->apply(setHeroes);
+
+	const auto capacity = hero->getLeadershipSlotCapacity(mage);
+	ASSERT_TRUE(capacity);
+	ASSERT_EQ(capacity->leadership, 650);
+	ASSERT_EQ(capacity->requirement, 300);
+	ASSERT_EQ(capacity->maximum, 2);
+	EXPECT_TRUE(hero->canBeMergedWith(*town)); // Slots alone miss this overflow.
+	EXPECT_FALSE(newHorizonsHeroes::canMergeArmies(town, hero));
+	EXPECT_FALSE(NK2AI::armyFormation::canSwapGarrisonHero(town));
+	EXPECT_EQ(town->getVisitingHero(), hero);
+	EXPECT_EQ(town->getGarrisonHero(), nullptr);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), 2);
+	EXPECT_EQ(town->getStackCount(SlotID(0)), 1);
+
+	// The transfer dialog can place the surplus in a separate hero slot.
+	town->clearSlots();
+	ASSERT_TRUE(hero->setCreature(SlotID(1), mage, 1));
+	EXPECT_TRUE(newHorizonsHeroes::canMergeArmies(town, hero));
+	EXPECT_TRUE(NK2AI::armyFormation::canSwapGarrisonHero(town));
+
+	// Full-slot admission uses moveArmy's duplicate consolidation, including
+	// the capacity of the merged pair before admitting a new creature type.
+	hero->clearSlots();
+	for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
+		ASSERT_TRUE(hero->setCreature(SlotID(i), mage, 1));
+	ASSERT_TRUE(town->setCreature(SlotID(1), gremlin, 1));
+	EXPECT_TRUE(newHorizonsHeroes::canMergeArmies(town, hero));
+	for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
+		hero->setStackCount(SlotID(i), 2);
+	EXPECT_FALSE(newHorizonsHeroes::canMergeArmies(town, hero));
+}
+
 TEST_F(NewHorizonsArmyFormationLeadershipTest, SplitPreflightAllowsOnlyTheLegalFinalDestinationCount)
 {
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
@@ -187,6 +249,7 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, LegacyHeroesRemainUnrestrictedByT
 
 	EXPECT_TRUE(NK2AI::armyFormation::canMergeOrSwapStacks(
 		&source, &destination, SlotID(0), SlotID(0)));
+	EXPECT_TRUE(newHorizonsHeroes::canMergeArmies(&source, &destination));
 }
 
 TEST_F(NewHorizonsArmyFormationLeadershipTest, ReinforcementValuationReturnsZeroWhenEverySameTypeSlotIsAtCapacity)

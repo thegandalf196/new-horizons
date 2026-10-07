@@ -17,6 +17,7 @@
 #include "../../lib/CPlayerState.h"
 #include "../../lib/entities/artifact/CArtifact.h"
 #include "../../lib/entities/hero/CHero.h"
+#include "../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../../lib/logging/CLogger.h"
 #include "../../lib/mapObjects/CGCreature.h"
 #include "../../lib/mapObjects/CGDwelling.h"
@@ -1436,4 +1437,97 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, GarrisonSwapRejectsAnOversizedTownSta
 	ASSERT_EQ(server.responses.size(), 1u);
 	EXPECT_FALSE(server.responses.back().result);
 	EXPECT_EQ(server.systemMessages, 1);
+}
+
+TEST_F(NewHorizonsLeadershipAdmissionTest, WizardMageSurplusTransferThenGarrisonSwapUsesAuthoritativeRequests)
+{
+	const CreatureID mage(CreatureID::decode("core:mage"));
+	const PlayerColor player(0);
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(player)
+		.playerActive(PlayerColor(1))
+		.town({12, 12, 0}, faction("core:tower"), player)
+		.townGarrison({{mage, 1}})
+		.hero({5, 5, 0}, heroType("core:solmyr"), player)
+		.heroExperience(0)
+		.heroGarrison({{mage, 2}})
+		// Army transfers check victory. Keep an opponent in play so the first
+		// accepted request does not end this fixture before the garrison swap.
+		.town({26, 26, 0}, faction("core:castle"), PlayerColor(1));
+	startWithMap(std::move(builder));
+
+	auto * town = findFirst<CGTownInstance>();
+	auto * hero = findHeroByOwner(player);
+	ASSERT_NE(town, nullptr);
+	ASSERT_NE(hero, nullptr);
+	ChangeObjPos moveHero;
+	moveHero.objid = hero->id;
+	moveHero.nPos = town->visitablePos();
+	moveHero.initiator = player;
+	gameState()->apply(moveHero);
+	SetHeroesInTown setHeroes;
+	setHeroes.tid = town->id;
+	setHeroes.visiting = hero->id;
+	setHeroes.garrison = ObjectInstanceID::NONE;
+	gameState()->apply(setHeroes);
+
+	const auto capacity = hero->getLeadershipSlotCapacity(mage);
+	ASSERT_TRUE(capacity);
+	ASSERT_EQ(capacity->leadership, 650);
+	ASSERT_EQ(capacity->requirement, 300);
+	ASSERT_EQ(capacity->maximum, 2);
+	LeadershipRecordingServer server(gameState());
+	CGameHandler gameHandler(server, gameState());
+	gameState()->actingPlayers.insert(player);
+
+	// The client preflight stops before requesting the oversized full merge.
+	EXPECT_FALSE(newHorizonsHeroes::canMergeArmies(town, hero));
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), 2);
+	EXPECT_EQ(town->getStackCount(SlotID(0)), 1);
+	EXPECT_EQ(hero->stacksCount(), 1);
+	EXPECT_EQ(town->stacksCount(), 1);
+	EXPECT_EQ(town->getVisitingHero(), hero);
+	EXPECT_EQ(town->getGarrisonHero(), nullptr);
+	EXPECT_TRUE(server.responses.empty());
+	EXPECT_EQ(server.rebalancePacks, 0);
+	EXPECT_FALSE(server.hasLeadershipLimitMessage());
+
+	// Ordinary transfer-window drag: move the town Mage to an empty hero slot.
+	ArrangeStacks transfer(1, SlotID(1), SlotID(0), hero->id, town->id, 0);
+	transfer.player = player;
+	transfer.requestID = 81;
+	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, transfer);
+	ASSERT_EQ(server.responses.size(), 1u);
+	ASSERT_EQ(server.responses.back().requestID, transfer.requestID);
+	ASSERT_TRUE(server.responses.back().result);
+	ASSERT_TRUE(server.playerEndsGamePacks.empty());
+	ASSERT_TRUE(gameState()->actingPlayers.contains(player));
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), 2);
+	EXPECT_EQ(hero->getStackCount(SlotID(1)), 1);
+	EXPECT_EQ(town->stacksCount(), 0);
+	EXPECT_EQ(town->getVisitingHero(), hero);
+	EXPECT_EQ(town->getGarrisonHero(), nullptr);
+	ASSERT_TRUE(newHorizonsHeroes::canMergeArmies(town, hero));
+
+	GarrisonHeroSwap swap(town->id);
+	swap.player = player;
+	swap.requestID = 82;
+	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, swap);
+	ASSERT_EQ(server.responses.size(), 2u);
+	ASSERT_EQ(server.responses.back().requestID, swap.requestID);
+	ASSERT_TRUE(server.responses.back().result);
+	EXPECT_EQ(town->getVisitingHero(), nullptr);
+	EXPECT_EQ(town->getGarrisonHero(), hero);
+	EXPECT_EQ(hero->getOwner(), player);
+	EXPECT_EQ(town->getOwner(), player);
+	EXPECT_EQ(town->stacksCount(), 0);
+	EXPECT_EQ(hero->stacksCount(), 2);
+	EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), mage);
+	EXPECT_EQ(hero->getCreature(SlotID(1))->getId(), mage);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), 2);
+	EXPECT_EQ(hero->getStackCount(SlotID(1)), 1);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)) + hero->getStackCount(SlotID(1)), 3);
+	EXPECT_EQ(server.systemMessages, 0);
+	EXPECT_FALSE(server.hasLeadershipLimitMessage());
+	EXPECT_EQ(server.garrisonDialogs, 0); // The local UI did not invent a query.
 }
