@@ -1,5 +1,11 @@
 # New Horizons UI and asset status register
 
+Rig-guided Cabir atlas v2,2026-10-06: **Provisional rejected study**, not runtime
+art. The targeted built-in revision does not materially correct body continuity
+4→5, return gait6–8 or requested coarse finish. Preserve its exact private master/
+prompt; no installation, Final approval or completed animation credit. Repeating
+the full-sheet prompt is not the next accepted producer strategy.
+
 Rig-guided eight-pose Cabir sheet,2026-10-06: **Provisional**, private and
 uninstalled. Built-in HoMM3-Art master has genuineRGBA and no meaningful
 cell-edge clipping; faint edge residue is alpha1. Eight native PNGs use one
