@@ -227,6 +227,11 @@ std::shared_ptr<CIntObject> AdventureMapWidget::buildMapContainer(const JsonNode
 	for(const auto & entry : input["items"].Vector())
 	{
 		auto widget = buildWidget(entry);
+		// This builder deliberately omits containers outside their screen-size
+		// bounds. Nested omissions must not become null children of the parent.
+		// Do not conceal a missing/unknown builder for another widget type.
+		if(!widget && entry["type"].String() == "adventureMapContainer" && !entry["exists"].isNull())
+			continue;
 
 		addWidget(entry["name"].String(), widget);
 		result->ownedChildren.push_back(widget);
