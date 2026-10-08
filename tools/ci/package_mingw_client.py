@@ -216,7 +216,7 @@ def main():
     (embedded / 'ATTRIBUTION.txt').write_bytes(committed_file(root, revision, 'client/xBRZ/xbrz.cpp').split(b'#include "xbrz.h"', 1)[0])
     runtimes = stage_gnu_runtime(package)
     alias = stage_ogg_loader_alias(package)
-    images = audit_directory(package)
+    images = audit_directory(package, client_name)
     require_clean(package)
     required_media, media = common.media_runtime_roots(args.conan_graph, allow_mingw_import_archive_links=True)
     if not required_media <= {p.name.lower() for p in package.iterdir()}:

@@ -90,13 +90,17 @@ def stage_ogg_loader_alias(destination):
             'reason': 'Original export directory and import archive explicitly name ogg.dll'}
 
 
-def audit_directory(directory):
+def audit_directory(directory, client_name='new-horizons.exe'):
     """Validate all shipped images, including delay imports and forwarded symbols."""
+    if client_name not in ('new-horizons.exe', 'VCMI_client.exe'):
+        raise RuntimeError('Unsupported client image identity')
     files = [p for p in directory.iterdir() if p.is_file() and p.suffix.lower() in {'.exe', '.dll'}]
     by_name = {p.name.lower(): p for p in files}
     if len(by_name) != len(files):
         raise RuntimeError('Case-insensitive PE filename collision')
-    if not {'vcmi_client.exe', 'vcmi_lib.dll'} <= by_name.keys():
+    if any(path.suffix.lower() == '.exe' and path.name.lower() != client_name.lower() for path in files):
+        raise RuntimeError('Unexpected executable identity in Windows package')
+    if not {client_name.lower(), 'vcmi_lib.dll'} <= by_name.keys():
         raise RuntimeError('Missing client/facade image')
     parsed = {name: inspect_pe(path) for name, path in by_name.items()}
     report = {}

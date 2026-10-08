@@ -14,11 +14,13 @@ spec.loader.exec_module(packager)
 
 
 class WindowsImportAuditTest(unittest.TestCase):
-    def audit(self, extra_import):
+    def audit(self, extra_import, client="new-horizons.exe", extra_client=None):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            for name in ("VCMI_Client.exe", "VCMI_lib.dll", "avformat-63.dll"):
+            for name in (client, "VCMI_lib.dll", "avformat-63.dll"):
                 (root / name).write_bytes(b"synthetic; not executable")
+            if extra_client:
+                (root / extra_client).write_bytes(b"synthetic; not executable")
 
             def dumpbin(tool, option, *arguments):
                 # Actual calls include /nologo before the operation.
@@ -31,7 +33,7 @@ class WindowsImportAuditTest(unittest.TestCase):
                     return ""
                 self.assertEqual(operation, "/dependents")
                 imports = {
-                    "vcmi_client.exe": "VCMI_lib.dll",
+                    "new-horizons.exe": "VCMI_lib.dll",
                     "vcmi_lib.dll": "avformat-63.dll",
                     "avformat-63.dll": extra_import,
                 }
@@ -46,6 +48,15 @@ class WindowsImportAuditTest(unittest.TestCase):
         self.assertEqual(report["avformat-63.dll"]["NCrypt.DLL"],
                          "Windows system/API contract")
         self.assertEqual(report["VCMI_lib.dll"]["avformat-63.dll"], "bundled")
+        self.assertEqual(report["new-horizons.exe"]["VCMI_lib.dll"], "bundled")
+
+    def test_old_client_is_not_an_implicit_fallback(self):
+        with self.assertRaisesRegex(RuntimeError, "Unexpected executable identity"):
+            self.audit("kernel32.dll", client="VCMI_Client.exe")
+
+    def test_mixed_old_and_current_client_is_not_silently_pruned(self):
+        with self.assertRaisesRegex(RuntimeError, "Unexpected executable identity"):
+            self.audit("kernel32.dll", extra_client="VCMI_Client.exe")
 
     def test_unknown_transitive_dependency_still_fails(self):
         with self.assertRaisesRegex(RuntimeError, "Unresolved non-system PE import.*missing-codec.dll"):

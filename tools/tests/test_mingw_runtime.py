@@ -16,7 +16,7 @@ class MinGWRuntimeTest(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary.name)
         self.addCleanup(self.temporary.cleanup)
-        for name in ('VCMI_client.exe', 'VCMI_lib.dll'):
+        for name in ('new-horizons.exe', 'VCMI_lib.dll'):
             (self.root / name).write_bytes(name.encode())
         self.image = {'machine': 'AMD64', 'subsystem': 3, 'imports': [], 'forwarders': [],
                       'export_names': {'entry'}, 'export_ordinals': {1}, 'export_dll_name': 'vcmi_lib.dll'}
@@ -30,8 +30,24 @@ class MinGWRuntimeTest(unittest.TestCase):
     def test_resolves_bundled_delay_import_and_checks_export(self):
         with patch.object(runtime, 'inspect_pe', side_effect=self.inspect):
             report = runtime.audit_directory(self.root)
-        self.assertEqual(report['vcmi_client.exe']['checked_imports_and_forwarders'], 1)
-        self.assertIn('requested exports present', report['vcmi_client.exe']['dependencies']['vcmi_lib.dll'])
+        self.assertEqual(report['new-horizons.exe']['checked_imports_and_forwarders'], 1)
+        self.assertIn('requested exports present', report['new-horizons.exe']['dependencies']['vcmi_lib.dll'])
+
+    def test_legacy_requires_explicit_client_argument(self):
+        (self.root / 'new-horizons.exe').rename(self.root / 'VCMI_client.exe')
+        with patch.object(runtime, 'inspect_pe', side_effect=self.inspect):
+            with self.assertRaisesRegex(RuntimeError, 'Unexpected executable identity'):
+                runtime.audit_directory(self.root)
+            report = runtime.audit_directory(self.root, 'VCMI_client.exe')
+        self.assertIn('vcmi_client.exe', report)
+
+    def test_ambiguous_and_invalid_client_identity_rejects_before_pe_parsing(self):
+        (self.root / 'VCMI_client.exe').write_bytes(b'legacy fixture')
+        with patch.object(runtime, 'inspect_pe', side_effect=AssertionError('Must reject before parsing')) as inspect:
+            for client in ('new-horizons.exe', 'VCMI_client.exe', 'other.exe', '../new-horizons.exe'):
+                with self.subTest(client=client), self.assertRaises(RuntimeError):
+                    runtime.audit_directory(self.root, client)
+        inspect.assert_not_called()
 
     def test_missing_export_rejected(self):
         self.image['export_names'] = set()
@@ -48,7 +64,7 @@ class MinGWRuntimeTest(unittest.TestCase):
         # Model an input listing from a case-sensitive build host even when
         # this regression runs on NTFS, which cannot create both directory entries.
         directory = Mock()
-        directory.iterdir.return_value = [self.root / 'VCMI_lib.dll', self.root / 'VCMI_LIB.DLL', self.root / 'VCMI_client.exe']
+        directory.iterdir.return_value = [self.root / 'VCMI_lib.dll', self.root / 'VCMI_LIB.DLL', self.root / 'new-horizons.exe']
         with patch.object(runtime, 'inspect_pe', side_effect=AssertionError('Collision must reject before PE parsing')) as inspect:
             with self.assertRaisesRegex(RuntimeError, 'collision'):
                 runtime.audit_directory(directory)

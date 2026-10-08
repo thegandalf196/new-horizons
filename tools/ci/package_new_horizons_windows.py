@@ -110,8 +110,10 @@ def audit_pe_tree(package, runtime_roots=()):
     by_name = {p.name.lower(): p for p in binaries}
     if len(by_name) != len(binaries):
         raise RuntimeError("Case-insensitive PE filename collision")
+    if any(binary.suffix.lower() == ".exe" and binary.name.lower() != "new-horizons.exe" for binary in binaries):
+        raise RuntimeError("Unexpected executable identity in current Windows package")
     report = {}
-    pending = ["vcmi_client.exe", "vcmi_lib.dll", *runtime_roots]
+    pending = ["new-horizons.exe", "vcmi_lib.dll", *runtime_roots]
     missing = set(pending) - by_name.keys()
     if missing:
         raise RuntimeError("Declared runtime-loaded media DLLs absent from install: " + ", ".join(sorted(missing)))

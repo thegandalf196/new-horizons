@@ -1,5 +1,20 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Windows recursive PE audit retains the old client name
+
+Run37818325794 compiles the exact `b11e69844` source and installs runtime
+resources successfully, then fails in the player-package step. The recursive
+PE audit still seeds its dependency queue with `vcmi_client.exe`; the installed
+desktop client is correctly named `new-horizons.exe`. No playable artifact was
+uploaded. Fix the current-client audit root and cover the branded executable
+with focused PE fixtures; preserve strict missing-file/closure checks rather
+than skipping the audit or accepting an ambiguous pair of client binaries.
+Compilation and resource staging are passing gates, not downloadable delivery.
+The repair also updates the MinGW audit's current default and passes its
+already source-pinned historical client selection explicitly. Worker focused
+checks pass49/49; root reruns28/28 PE/MinGW checks and independent review finds
+no blocker. A fresh Windows run remains required before player-package claims.
+
 ### 2026-10-08 — Windows checkout rewrites pinned dependency bytes
 
 Windows Actions run37817348559 stops at the preserved dependency integrity gate,
