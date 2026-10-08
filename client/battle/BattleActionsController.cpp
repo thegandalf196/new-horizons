@@ -3071,6 +3071,73 @@ const CSpell * BattleActionsController::getCurrentSpell(const BattleHex & hovere
 	return getStackSpellToCast(hoveredHex);
 }
 
+const CSpell * BattleActionsController::getTeleportSelectedSpell() const
+{
+	if(!selectedStack)
+		return nullptr;
+	if(heroSpellToCast)
+		return heroSpellToCast->spell == SpellID::TELEPORT ? heroSpellToCast->spell.toSpell() : nullptr;
+	// Selecting the unit deactivates the creature caster. Read the retained
+	// action rather than requiring an active stack or a hovered destination.
+	if(monsterCaster)
+		for(const auto & action : possibleActions)
+			if(action.get() == PossiblePlayerBattleAction::TELEPORT && action.spell() == SpellID::TELEPORT)
+				return action.spell().toSpell();
+	return nullptr;
+}
+
+const CStack * BattleActionsController::getTeleportSelectedStack(const CSpell * spell) const
+{
+	const auto battle = owner.getBattle();
+	if(!spell || spell->getId() != SpellID::TELEPORT || !selectedStack || !battle
+		|| (!heroSpellToCast && !monsterCaster))
+		return nullptr;
+	// A removal may arrive while selecting a destination. Compare pointers
+	// against the live roster before dereferencing the transient selection.
+	const auto stacks = battle->battleGetAllStacks();
+	if(std::ranges::find(stacks, selectedStack) == stacks.end() || !selectedStack->alive())
+		return nullptr;
+	return selectedStack;
+}
+
+std::optional<TeleportPreviewCasterIdentity> BattleActionsController::getTeleportPreviewCasterIdentity() const
+{
+	const auto battle = owner.getBattle();
+	if(!battle)
+		return std::nullopt;
+	if(heroSpellToCast)
+	{
+		const auto * hero = owner.currentHero();
+		if(!hero)
+			return std::nullopt;
+		return TeleportPreviewCasterIdentity{hero, hero->getOwner(), hero->getTreeVersion()};
+	}
+	const auto * creature = monsterCaster ? monsterCaster : owner.stacksController->getActiveStack();
+	const auto stacks = battle->battleGetAllStacks();
+	if(!creature || std::ranges::find(stacks, creature) == stacks.end() || !creature->alive())
+		return std::nullopt;
+	// getCurrentSpellcaster reconstructs its controller proxy. Cache identity
+	// must instead use the stable unit and its current action controller.
+	return TeleportPreviewCasterIdentity{creature, battle->battleGetActionController(creature), creature->getTreeVersion()};
+}
+
+BattleHexArray BattleActionsController::getTeleportDestinationHexes(const CSpell * spell)
+{
+	BattleHexArray result;
+	const auto * selected = getTeleportSelectedStack(spell);
+	if(!selected || !getCurrentSpellcaster())
+		return result;
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		const BattleHex hex(index);
+		// Shared spell prediction handles occupied cells, both halves of wide
+		// units, walls/moats and spell restrictions; do not substitute movement.
+		if(hex.isAvailable() && isCastingPossibleHere(spell, selected, hex))
+			result.insert(hex);
+	}
+	return result;
+}
+
 const ChainLightningPreview & BattleActionsController::getChainLightningPreview() const
 {
 	return chainLightningPreview;

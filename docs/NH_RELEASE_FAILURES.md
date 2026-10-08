@@ -1,5 +1,30 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Consumer validation preset and stale Teleport mocks
+
+Fresh native profile defaults to core/vcmi/vcmi-test and did not activate NH:
+eight Orb cases skipped and five Genie fixtures failed identifier initialization.
+Repair only the disposable testModSettings preset to include new-horizons; never
+replace the user's real preset or relax identifier validation. Repaired adjacent
+gate passes22/27, zero skips. Five old Teleport mocks still fail on unstubbed
+getSpell/getSpellId (nullptr/-1); source/paths are unchanged by this slice and
+independent review classifies them DEFERRED. Their assertions remain intact and
+provide no passing evidence. Keep native.log and native-profile-repaired.log/XML
+under build/nh-preview-ai-validation.jUrtT2RY. Separate feature gate14/14 in6.494s
+proves the nine Orb and five Genie cases, not the failing adjacent fixtures.
+
+### 2026-10-08 — Teleport preview cache identity caught before delivery
+
+Independent review found the first destination-preview draft keyed its cache
+with getCurrentSpellcaster(), which reconstructs a temporary creature controller
+proxy. Enumeration recreates that proxy, so pointer identity is unstable and
+can cause repeated full battlefield scans. Repair uses stable underlying caster,
+current action-controller identity and caster/selected bonus-node versions;
+snapshots are captured after prediction. Six focused structural guards pass.
+Do not key cached previews with temporary wrappers. This fork's getTreeVersion
+is node-local; global-version churn was investigated but not demonstrated.
+Compile/render validation remains in progress; no unverified lag fix is claimed.
+
 ## Purpose
 
 Transformer final retry80809 exits0; focused repaired native8195 passes34/34

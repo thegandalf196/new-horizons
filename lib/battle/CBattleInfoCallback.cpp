@@ -4991,9 +4991,11 @@ battle::Units CBattleInfoCallback::battleAdjacentUnits(const battle::Unit * unit
 	return units;
 }
 
-SpellID CBattleInfoCallback::getRandomBeneficialSpell(vstd::RNG & rand, const battle::Unit * caster, const battle::Unit * subject) const
+std::vector<SpellID> CBattleInfoCallback::getAvailableBeneficialSpells(const battle::Unit * caster, const battle::Unit * subject) const
 {
-	RETURN_IF_NOT_BATTLE(SpellID::NONE);
+	RETURN_IF_NOT_BATTLE({});
+	if(!caster || !subject)
+		return {};
 	//This is complete list. No spells from mods.
 	//todo: this should be Spellbook of caster Stack
 	static const std::set<SpellID> allPossibleSpells =
@@ -5125,6 +5127,12 @@ SpellID CBattleInfoCallback::getRandomBeneficialSpell(vstd::RNG & rand, const ba
 		beneficialSpells.push_back(spellID);
 	}
 
+	return beneficialSpells;
+}
+
+SpellID CBattleInfoCallback::getRandomBeneficialSpell(vstd::RNG & rand, const battle::Unit * caster, const battle::Unit * subject) const
+{
+	const auto beneficialSpells = getAvailableBeneficialSpells(caster, subject);
 	if(!beneficialSpells.empty())
 	{
 		return *RandomGeneratorUtil::nextItem(beneficialSpells, rand);

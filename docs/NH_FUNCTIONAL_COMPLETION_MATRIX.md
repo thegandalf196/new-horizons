@@ -2,6 +2,26 @@
 
 Updated: 2026-10-07
 
+2026-10-08 required-consumer checkpoint: UP297 converts elemental Orb equipment
+scoring from an unrecognized bonus to a positive, actual-element-aware score
+for eligible known combat spells; unrelated/untagged/banned spells do not supply
+relevance. UP298 gives Master Genie BattleAI a real random-beneficial support
+path, using the complete eligible pool's expected value on detached state while
+the server retains its unchanged single random draw. Actual submitted support,
+cast/activation spending, exhausted controls, mean and RNG/state isolation pass.
+Ten-job linked build12145 exits0; focused native77828 passes14/14 in6.494s,
+zero skips. Native receipts: build/nh-preview-ai-validation.jUrtT2RY/
+native-feature.log/XML. Independent review has no blocking finding. These add
+two minimum AI consumers, not perk/spell identities:231/310,61/67,8/8 unchanged.
+UP296 adds all-legal Teleport destination shading with stable cached caster/
+controller/node identities and unchanged shared legality/click semantics; six
+structural guards and linked compilation pass. Rendered acceptance is pending.
+Adjacent native gate22/27, zero skips: five unchanged Teleport mocks have stale
+getSpell/getSpellId contracts and supply no passing evidence. Preserve for
+Phase2; do not weaken their assertions or report27/27. Wider equipment strategy,
+Genie tactical/performance tuning and negative-outcome execution remain Phase2.
+Normal selected0c6af Linux launcher is unchanged.
+
 Overwhelming Formula source/native verified: first actual hostile magical injury
 against applicable current MDR chooses one cast, not merely the first accepted
 spell. All its targets and later Plague/SoulChain/hazard damage retain that cast's

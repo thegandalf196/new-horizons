@@ -391,6 +391,22 @@ double getArtifactBonusRelevance(const CGHeroInstance * hero, const std::shared_
 		case BonusType::SPELL_DAMAGE:
 		case BonusType::SPELL_DURATION:
 			return hero->hasSpellbook() ? relevant : notRelevant;
+		case BonusType::ELEMENTAL_SPELL_DAMAGE:
+		{
+			if(!hero->hasSpellbook())
+				return notRelevant;
+			for(const auto spellID : LIBRARY->spellh->getDefaultAllowed())
+			{
+				const auto * spell = spellID.toSpell();
+				if(spell && spell->isCombat() && spell->isCommonHeroSpell() && spell->isMagical()
+					&& spell->getDamageElement() != SpellDamageElement::NONE
+					&& static_cast<int>(spell->getDamageElement()) == bonus->subtype.getNum()
+					&& newHorizonsMagic::spellAllowedBySavedRoster(hero->getMagicRules(), spellID)
+					&& hero->cb->isAllowed(spellID) && hero->canCastThisSpell(spell))
+					return relevant;
+			}
+			return notRelevant;
+		}
 		case BonusType::PERCENTAGE_DAMAGE_BOOST:
 			if (bonus->subtype == BonusCustomSubtype::damageTypeRanged)
 				return veryRelevant * getArmyPercentageWithBonus(BonusType::SHOOTER);
@@ -481,6 +497,11 @@ int32_t getArtifactBonusScoreImpl(const std::shared_ptr<Bonus> & bonus)
 		case BonusType::SPELLS_OF_LEVEL:
 			return bonus->subtype.getNum() * 6000;
 		case BonusType::SPELL_DAMAGE:
+			return bonus->val * 120;
+		case BonusType::ELEMENTAL_SPELL_DAMAGE:
+			if(bonus->subtype.getNum() < static_cast<int>(SpellDamageElement::AIR)
+				|| bonus->subtype.getNum() > static_cast<int>(SpellDamageElement::EARTH))
+				return 0;
 			return bonus->val * 120;
 		case BonusType::SIGHT_RADIUS:
 			return bonus->val * 1000;

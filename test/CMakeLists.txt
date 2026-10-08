@@ -533,6 +533,7 @@ if(ENABLE_BATTLE_AI)
 	list(APPEND test_SRCS
 		${BATTLE_AI_TEST_SRCS}
 		battleAI/HeroCommandAITest.cpp
+		battleAI/NewHorizonsGenieSupportAITest.cpp
 		battleAI/NewHorizonsDoubleCommandAITest.cpp
 		battleAI/NewHorizonsDivineMandateAITest.cpp
 		battleAI/NewHorizonsElementalRebirthAITest.cpp
@@ -592,6 +593,7 @@ endif()
 if(ENABLE_NULLKILLER2_AI)
 	list(APPEND test_SRCS
 		nullkiller2/AIUtilityTest.cpp
+		battleAI/NewHorizonsElementalOrbAITest.cpp
 		nullkiller2/Analyzers/HeroManagerTest.cpp
 		nullkiller2/Analyzers/ObjectClusterizerTest.cpp
 		nullkiller2/Behaviors/DefenceBehaviorTest.cpp

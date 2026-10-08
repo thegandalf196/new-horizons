@@ -43,6 +43,13 @@ struct StormOfDaggersTargetPreview
 	std::optional<int64_t> projectedDamage;
 };
 
+struct TeleportPreviewCasterIdentity
+{
+	const spells::Caster * caster = nullptr;
+	PlayerColor actionController = PlayerColor::CANNOT_DETERMINE;
+	int32_t treeVersion = -1;
+};
+
 struct StormOfDaggersSelectionPreview
 {
 	int32_t selectedTargetCount = 0;
@@ -460,6 +467,13 @@ public:
 	const spells::Caster * getCurrentSpellcaster() const;
 	const CSpell * getCurrentSpell(const BattleHex & hoveredHex);
 	spells::Mode getCurrentCastMode() const;
+
+	/// Read-only second-stage Teleport preview. Destination legality is the
+	/// same full [selected unit, destination] prediction used by normal clicks.
+	const CSpell * getTeleportSelectedSpell() const;
+	const CStack * getTeleportSelectedStack(const CSpell * spell) const;
+	std::optional<TeleportPreviewCasterIdentity> getTeleportPreviewCasterIdentity() const;
+	BattleHexArray getTeleportDestinationHexes(const CSpell * spell);
 
 	/// New Horizons Transfigure Matter targets ordinary visible scenery only.
 	/// These helpers keep the client overlay and click-time legality check in

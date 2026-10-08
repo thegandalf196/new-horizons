@@ -347,6 +347,8 @@ public:
 		int32_t listedCostMultiplier = 1, bool metamagicFollowup = false) const;
 	ESpellCastProblem battleCanCastSpell(const spells::Caster * caster, spells::Mode mode) const; //returns true if there are no general issues preventing from casting a spell
 
+	/// Complete, uniformly weighted random-beneficial pool, without selecting an outcome or using RNG.
+	std::vector<SpellID> getAvailableBeneficialSpells(const battle::Unit * caster, const battle::Unit * target) const;
 	SpellID getRandomBeneficialSpell(vstd::RNG & rand, const battle::Unit * caster, const battle::Unit * target) const;
 	SpellID getRandomCastedSpell(vstd::RNG & rand, const CStack * caster) const; //called at the beginning of turn for Faerie Dragon
 

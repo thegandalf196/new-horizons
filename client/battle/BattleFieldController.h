@@ -14,7 +14,9 @@
 #include "../gui/CIntObject.h"
 
 class CStack;
+class CSpell;
 class Rect;
+namespace spells { class Caster; }
 
 class BattleHero;
 class CAnimation;
@@ -65,6 +67,22 @@ class BattleFieldController : public CIntObject
 
 	/// hexes to which the currently active stack can move (for double-wide units only the head is considered)
 	BattleHexArray availableHexes;
+
+	/// Expensive Teleport destination prediction is rebuilt only on selection,
+	/// spell-session/bonus changes or the existing battlefield refresh path.
+	BattleHexArray teleportDestinationHexes;
+	const CStack * teleportPreviewStack = nullptr;
+	const CSpell * teleportPreviewSpell = nullptr;
+	const spells::Caster * teleportPreviewCaster = nullptr;
+	int32_t teleportPreviewController = -1;
+	int32_t teleportPreviewCasterTreeVersion = -1;
+	const void * teleportPreviewBattle = nullptr;
+	uint64_t teleportPreviewSession = 0;
+	int32_t teleportPreviewTreeVersion = -1;
+	int32_t teleportPreviewRound = -1;
+	bool teleportPreviewNeedsRefresh = true;
+
+	bool showTeleportDestinationHexes(Canvas & canvas);
 
 	/// hexes that when in front of a unit cause it's amount box to move back
 	std::array<bool, GameConstants::BFIELD_SIZE> stackCountOutsideHexes;

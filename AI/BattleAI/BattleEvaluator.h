@@ -41,12 +41,21 @@ class DLL_EXPORT BattleEvaluator
 	DamageCache damageCache;
 	float strengthRatio;
 	int simulationTurnsCount;
+	float beneficialCreaturePressure(const std::shared_ptr<HypotheticBattle> & state,
+		uint32_t spentCasterId, DamageCache & cache) const;
+	float beneficialCreatureOutcomeValue(const CStack * caster, const battle::Unit * recipient,
+		const CSpell * spell, float baselinePressure) const;
 
 public:
 	BattleAction selectStackAction(const CStack * stack);
 	bool attemptCastingSpell(const CStack * stack, bool allowSpells = true);
 	bool canCastSpell();
 	std::optional<PossibleSpellcast> findBestCreatureSpell(const CStack * stack);
+	/// Deterministic full-pool forecast; does not choose the eventual random spell.
+	float expectedBeneficialCreatureSpellValue(const CStack * caster, const battle::Unit * recipient) const;
+	/// One detached outcome in the same forecast scale, exposed for deterministic parity tests.
+	float beneficialCreatureSpellOutcomeValue(const CStack * caster, const battle::Unit * recipient,
+		const CSpell * spell) const;
 	BattleAction goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets);
 	std::vector<BattleHex> getBrokenWallMoatHexes() const;
 	bool hasWorkingTowers() const;

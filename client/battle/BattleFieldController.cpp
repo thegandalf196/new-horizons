@@ -470,6 +470,7 @@ void BattleFieldController::redrawBackgroundWithHexes()
 	// Only marks the background stale - callers are netpack handlers on the network thread,
 	// which must not take the GL context away from the rendering thread.
 	backgroundNeedsRebuild = true;
+	teleportPreviewNeedsRefresh = true;
 }
 
 void BattleFieldController::rebuildBackgroundWithHexes()
@@ -807,6 +808,10 @@ void BattleFieldController::calculateRangeLimitAndHighlightImages(uint8_t distan
 
 void BattleFieldController::showHighlightedHexes(Canvas & canvas)
 {
+	// A selected Teleport unit exposes every legal destination even while the
+	// pointer is outside the field. Do not rebuild prediction on mouse motion.
+	if(showTeleportDestinationHexes(canvas))
+		return;
 	// Skirmisher is a player-directed two-click choice: first mark an enemy,
 	// then pick any legal half-Speed firing position. Keep these candidates
 	// distinct from the ordinary direct-shot and melee actions.
@@ -1018,6 +1023,53 @@ void BattleFieldController::showHighlightedHexes(Canvas & canvas)
 			showHighlightedHex(canvas, shootingRangeLimitHexesHighlights[hexIndexInShootingRangeLimit], hex, false);
 		}
 	}
+}
+
+bool BattleFieldController::showTeleportDestinationHexes(Canvas & canvas)
+{
+	const auto * spell = owner.actionsController->getTeleportSelectedSpell();
+	const auto * selected = owner.actionsController->getTeleportSelectedStack(spell);
+	const auto casterIdentity = owner.actionsController->getTeleportPreviewCasterIdentity();
+	const auto battle = owner.getBattle();
+	if(!selected || !casterIdentity || !battle || !battle->getBattle())
+	{
+		teleportDestinationHexes.clear();
+		teleportPreviewStack = nullptr;
+		teleportPreviewNeedsRefresh = true;
+		return false;
+	}
+	const auto session = owner.actionsController->getCastingSession();
+	const auto treeVersion = selected->getTreeVersion();
+	const auto round = battle->battleGetRound();
+	if(teleportPreviewNeedsRefresh || teleportPreviewStack != selected
+		|| teleportPreviewSpell != spell || teleportPreviewCaster != casterIdentity->caster
+		|| teleportPreviewController != casterIdentity->actionController.getNum()
+		|| teleportPreviewCasterTreeVersion != casterIdentity->treeVersion
+		|| teleportPreviewBattle != battle->getBattle() || teleportPreviewSession != session
+		|| teleportPreviewTreeVersion != treeVersion || teleportPreviewRound != round)
+	{
+		teleportDestinationHexes = owner.actionsController->getTeleportDestinationHexes(spell);
+		const auto afterPrediction = owner.actionsController->getTeleportPreviewCasterIdentity();
+		if(!afterPrediction)
+		{
+			teleportDestinationHexes.clear();
+			teleportPreviewNeedsRefresh = true;
+			return false;
+		}
+		teleportPreviewStack = selected;
+		teleportPreviewSpell = spell;
+		teleportPreviewCaster = afterPrediction->caster;
+		teleportPreviewController = afterPrediction->actionController.getNum();
+		teleportPreviewCasterTreeVersion = afterPrediction->treeVersion;
+		teleportPreviewBattle = battle->getBattle();
+		teleportPreviewSession = session;
+		teleportPreviewTreeVersion = selected->getTreeVersion();
+		teleportPreviewRound = round;
+		teleportPreviewNeedsRefresh = false;
+	}
+	for(const auto & hex : teleportDestinationHexes)
+		showHighlightedHex(canvas, cellShade, hex, true);
+	return true;
 }
 
 Rect BattleFieldController::hexPositionLocal(const BattleHex & hex) const

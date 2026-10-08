@@ -50,6 +50,7 @@
 #include "../../lib/battle/NewHorizonsBerserk.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
+#include "../../lib/battle/NewHorizonsPuppetMaster.h"
 #include "../../lib/battle/PhysicalAffliction.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/gameState/InfoAboutArmy.h"
@@ -3987,6 +3988,37 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CS
 {
 	if(!stack->canCast())
 		return std::nullopt;
+	if(stack->hasBonusOfType(BonusType::RANDOM_SPELLCASTER))
+	{
+		const auto battle = cb->getBattle(battleID);
+		auto baseline = std::make_shared<HypotheticBattle>(env.get(), battle);
+		DamageCache baselineCache;
+		const float baselinePressure = beneficialCreaturePressure(baseline, stack->unitId(), baselineCache);
+		std::optional<PossibleSpellcast> best;
+		for(const auto * recipient : battle->battleAliveUnits())
+		{
+			if(!battle->battleMatchActionController(stack, recipient, true))
+				continue;
+			const auto pool = battle->getAvailableBeneficialSpells(stack, recipient);
+			if(pool.empty())
+				continue;
+			double total = 0;
+			for(const auto spell : pool)
+				total += beneficialCreatureOutcomeValue(stack, recipient, spell.toSpell(), baselinePressure);
+			const float value = static_cast<float>(total / pool.size());
+			if(std::isfinite(value) && value > 0 && (!best || value > best->value))
+			{
+				PossibleSpellcast candidate;
+				// The server replaces this representative ID with its own random
+				// outcome from the same recipient-specific pool upon acceptance.
+				candidate.spell = pool.front().toSpell();
+				candidate.dest = {spells::Destination(recipient)};
+				candidate.value = value;
+				best = std::move(candidate);
+			}
+		}
+		return best;
+	}
 
 	std::vector<SpellID> spellsToCast;
 	TConstBonusListPtr bl = stack->getBonusesOfType(BonusType::SPELLCASTER);
@@ -4033,6 +4065,84 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CS
 		return possibleCasts.front();
 
 	return std::nullopt;
+}
+
+float BattleEvaluator::beneficialCreaturePressure(const std::shared_ptr<HypotheticBattle> & state,
+	uint32_t spentCasterId, DamageCache & cache) const
+{
+	float value = 0;
+	cache.buildDamageCache(state, side);
+	for(const auto * unit : state->getUnitsIf([&](const battle::Unit * unit)
+	{
+		return unit->alive() && unit->unitId() != spentCasterId && !unit->isTimeStopped();
+	}))
+	{
+		// Reuse ordinary spell evaluation's physical-attack valuation, without
+		// advancing turns or running a battle queue for each random outcome.
+		PotentialTargets targets(unit, cache, state);
+		if(targets.possibleAttacks.empty())
+			continue;
+		const float pressure = static_cast<float>(targets.bestActionValue());
+		value += state->battleGetActionController(unit) == playerID ? pressure : -pressure;
+	}
+	return value;
+}
+
+float BattleEvaluator::beneficialCreatureOutcomeValue(const CStack * caster,
+	const battle::Unit * recipient, const CSpell * spell, float baselinePressure) const
+{
+	const auto battle = cb->getBattle(battleID);
+	const auto ability = caster->getBonus(Selector::type()(BonusType::RANDOM_SPELLCASTER));
+	if(!ability || !recipient || !spell)
+		return 0;
+	auto state = std::make_shared<HypotheticBattle>(env.get(), battle);
+	const auto * projectedCaster = state->battleGetUnitByID(caster->unitId());
+	const auto * projectedRecipient = state->battleGetUnitByID(recipient->unitId());
+	newHorizonsPuppetMaster::ActionControllerCaster actionCaster(projectedCaster,
+		state->battleGetActionController(projectedCaster));
+	spells::BattleCast cast(state.get(), &actionCaster, spells::Mode::CREATURE_ACTIVE, spell);
+	int spellLevel = std::max(0, ability->val);
+	if(spell->getLevel() > 0)
+		vstd::amax(spellLevel, caster->valOfBonuses(BonusType::MAGIC_SCHOOL_SKILL, BonusSubtypeID(SpellSchool::ANY)));
+	cast.setSpellLevel(spellLevel);
+	cast.castEval(state->getServerCallback(), {spells::Destination(projectedRecipient)});
+	DamageCache cache;
+	const float pressure = beneficialCreaturePressure(state, caster->unitId(), cache) - baselinePressure;
+	const auto * restored = state->battleGetUnitByID(recipient->unitId());
+	const int64_t healed = restored->getAvailableHealth() - recipient->getAvailableHealth();
+	const float healingValue = healed > 0
+		? AttackPossibility::calculateDamageReduce(nullptr, recipient, healed, cache, state) : 0;
+	return (pressure + healingValue) * scoreEvaluator.getPositiveEffectMultiplier();
+}
+
+float BattleEvaluator::expectedBeneficialCreatureSpellValue(const CStack * caster,
+	const battle::Unit * recipient) const
+{
+	const auto battle = cb->getBattle(battleID);
+	if(!caster || !caster->canCast() || !recipient
+		|| !battle->battleMatchActionController(caster, recipient, true))
+		return 0;
+	const auto pool = battle->getAvailableBeneficialSpells(caster, recipient);
+	if(pool.empty())
+		return 0;
+	auto baseline = std::make_shared<HypotheticBattle>(env.get(), battle);
+	DamageCache cache;
+	const float baselinePressure = beneficialCreaturePressure(baseline, caster->unitId(), cache);
+	double total = 0;
+	for(const auto spell : pool)
+		total += beneficialCreatureOutcomeValue(caster, recipient, spell.toSpell(), baselinePressure);
+	return static_cast<float>(total / pool.size());
+}
+
+float BattleEvaluator::beneficialCreatureSpellOutcomeValue(const CStack * caster,
+	const battle::Unit * recipient, const CSpell * spell) const
+{
+	if(!caster || !recipient || !spell)
+		return 0;
+	auto baseline = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
+	DamageCache cache;
+	return beneficialCreatureOutcomeValue(caster, recipient, spell,
+		beneficialCreaturePressure(baseline, caster->unitId(), cache));
 }
 
 BattleAction BattleEvaluator::selectStackAction(const CStack * stack)
