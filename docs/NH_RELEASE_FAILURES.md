@@ -40,6 +40,16 @@ legacy Cabir-animation validation still needs a separate handoff migration;
 it was not enabled or represented as passing here. Actual UI acceptance remains
 distinct from this dummy-SDL native gate.
 
+Exact-source cbc64905e relink95114 exits0 and the portrait fixture rerun15120
+exits0. Its bootstrap validator still reports the two generated Gargoyle image
+names as absent because validation precedes renderer-generated resources;
+actual native lookup, alias and pixel checks pass. Track this generated-resource
+validation mismatch for Phase2 rather than claiming warning-free startup or
+adding duplicate loose artwork. A guarded silent replay also establishes that
+the unscoped Learning console identifier does not resolve in this ruleset;
+maintained private-input text support is now reviewed and tested22/22 for the
+scoped identifier, without a clipboard or host-input fallback.
+
 ### 2026-10-08 — Full-hero serialization fixture needs complete graph types
 
 The Master Teacher linked build stopped at the new server fixture's direct
