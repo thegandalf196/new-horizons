@@ -2,6 +2,16 @@
 
 Updated: 2026-10-08
 
+UP291 gold active-turn silhouettes now have actual rendered evidence for both
+additive Wisp forms. Isolated corrective run42632 exits0 after normal controls;
+root inspected screenshots with pointer outside units. SDL2 software800x600,
+current compiled runtime plus retained private art/map/refreshed data/threshold64
+descriptors only; not whole-current-package, SDL3 or normal-delivery acceptance.
+Receipt: /tmp/nh-wisp-active-corrective.hOKXI5/RECEIPT.json; review copies under
+Downloads/provisory/wisp-active-turn-20261008.2X6ULY. First98002 timed out before
+starting combat and is not counted. All owned processes cleaned. Portrait and
+dwelling graphical clauses remain open; no identity or art-approval credit.
+
 UP309 implements pending Confusion readback in existing creature status
 surfaces. Its marker is not a zero-round buff: remaining lifetime is the target's
 next activation. Captured Confounder/history must be explained without an active

@@ -1,5 +1,12 @@
 # New Horizons UI and asset status register
 
+UP291,2026-10-08: actual additive Wisp/Greater Wisp gold active-turn silhouette
+contours are verified in isolated SDL2 software800x600 combat with threshold64
+descriptors. Root inspected both screenshots after ordinary controls, pointer
+outside units. Review copies: Downloads/provisory/wisp-active-turn-20261008.2X6ULY.
+This proves the outline correction's private rendered path, not new artwork
+approval, SDL3, Conflux portrait placement, dwelling UI or normal delivery.
+
 UP308,2026-10-08: Confusion's inactive registered identity uses borrowed
 Hypnotize book/scroll/effect symbols and animation/sound references solely for
 the private functional fixture. Confusion-specific artwork is **Not done**;

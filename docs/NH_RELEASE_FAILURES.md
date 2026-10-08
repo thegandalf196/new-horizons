@@ -1,5 +1,27 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — A pre-start battle screenshot is not active-turn evidence
+
+UP291 bounded isolated Wisp run98002 reached actual additive Wisp/Greater Wisp
+combat, but its90-second limit expired before advancing the pre-start prompt.
+Root inspected battle-choice.png under /tmp/nh-wisp-active-9e674.iWdOay:
+"Press any key to start battle immediately" remains visible. Do not count it
+as a gold active-turn outline test or close the report. Exact owned Xvfb and
+launcher processes were cleaned; normal launcher/profile stayed unchanged.
+A single corrective retry is authorized with the known menu path and immediate
+pre-start keypress, removing exploratory screenshot delays. Its result is
+pending, not inferred. Startup schema warnings remain separate non-blocking
+findings; no gameplay/asset change was made merely to force a visual pass.
+
+Corrective42632 exits0, finishes within88 seconds and cleans exact owned
+Xvfb/launcher/socket. Root inspects actual Greater Wisp and base Wisp active
+screenshots in /tmp/nh-wisp-active-corrective.hOKXI5; both have gold silhouette
+contours with pointer outside units. Normal pre-start keypress and two Defend
+actions replace the previous delayed exploratory path. Copies retained under
+Downloads/provisory/wisp-active-turn-20261008.2X6ULY. Scope is SDL2 Wisp outline
+only on the documented private mixed-resource candidate, not normal delivery,
+whole-current-package or SDL3. Portrait/dwelling clauses remain unverified.
+
 ### 2026-10-08 — Next-activation statuses are not zero-round buffs
 
 UP309 corrects Confusion feedback without changing its pending marker lifetime:
