@@ -2,6 +2,19 @@
 
 Updated: 2026-10-08
 
+UP004 Metamagic principal UI path verified2026-10-08: ordinary canonical Solmyr
+on frozen normal5d1c66b6/source7e09 shows1/1 + Hero Action Available, accepts
+normal Arrow with1/1 + Spent, then ordinary additional Arrow with0/1 + Spent.
+Actual log explicitly identifies the second Metamagic cast; no creature/round
+advance is needed. Root inspected native800×600 half-fit battle/help captures
+under Downloads/provisory/generic-combat-resource-up004-metamagic-S48YibTc.
+New opt-in scenario exporter passes1/1 zero skips after linked34412, actual
+initialization/access/path/export checks, not direct state injection. Independent
+review passes; all owned GUI processes/profile locks are cleaned up. The run
+exceeds its90-second interaction contract (124s) and does not establish timing-
+bound acceptance. Bloodrage, contextual Spell-control expiry capture and wider
+layout/status combinations remain open; no new spell/perk identity credit.
+
 UP004 required-UI acceptance advances2026-10-08 without new identity credit:
 the ordinary Divine Mandate provider on current normal Linux snapshot5d1c66b6
 renders1/1 with Hero Action Available, updates after accepted Bless to Spent

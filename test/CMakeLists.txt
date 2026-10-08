@@ -267,6 +267,7 @@ set(test_SRCS
 		server/battles/TransfigureMatterPerkTest.cpp
 		server/battles/NewHorizonsMagicStateTest.cpp
 		server/battles/NewHorizonsMagicFixtureExportTest.cpp
+		server/battles/NewHorizonsMetamagicUIFixtureExportTest.cpp
 		server/battles/NewHorizonsMetamagicTest.cpp
 		server/battles/NewHorizonsSkillRewardTest.cpp
 		server/battles/NewHorizonsRewardSkillFilterTest.cpp

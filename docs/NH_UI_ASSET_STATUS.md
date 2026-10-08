@@ -1,5 +1,14 @@
 # New Horizons UI and asset status register
 
+2026-10-08 UP004 Metamagic UI principal path: **Provisional**, actual ordinary
+normal/additional Magic Arrow sequence updates1/1→0/1 while normal Hero Action
+stays Spent after its first use. Root inspected05/10/12/13/14 under
+Downloads/provisory/generic-combat-resource-up004-metamagic-S48YibTc. Help
+describes consume-on-additional-cast and round-end expiry. The contextual
+Spell-control source/expiry popup, Bloodrage and wider layout matrix remain
+unverified;800×600 capture uses half-fit embedded combat, not full-scale art.
+No raster changes or Final approval; normal candidate5d1/source7e09 unchanged.
+
 2026-10-08 UP004 partial runtime acceptance: the existing generic leather/
 red/gold resource panel remains **Provisional**, but actual Divine Mandate
 1/1→0/1 and single Hero Action Available→Spent rendering/help now pass an

@@ -1,5 +1,17 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Metamagic UI run exceeded the interaction contract
+
+The bounded UP004 Metamagic run proves the accepted normal/additional cast and
+resource/action updates, but battle-ready→extra-cast takes124 seconds versus
+the90-second delegated interaction budget. First-to-extra cast is51 seconds;
+the rest includes book navigation, animation/capture waits and help inspection.
+Both owned processes exit0 and profile/runtime cleanup passes; no host inputs.
+Do not describe this as timing-bound acceptance or repeat it for extra polish.
+Future similar runs need a monotonic interaction deadline checked before each
+input/capture, with enough time reserved for termination and cleanup. Stop at
+the deadline and report partial evidence instead of finishing extra screenshots.
+
 ### 2026-10-08 — Metamagic preview guard has a stale keyword exclusion
 
 The UP004 source gate check-new-horizons-metamagic-prompt.py fails on the added
