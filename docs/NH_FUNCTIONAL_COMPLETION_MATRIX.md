@@ -2,6 +2,21 @@
 
 Updated: 2026-10-08
 
+UP085/UP130 verified active checkpoint: generic Luck Serendipity and Discipline Esprit
+de Corps now have production runtime, shared readback and AI consumers. Existing
+canonical wording settles their earlier holds: a real previous round is required
+for Serendipity, and each friendly negative ARMY composition contribution is
+reduced toward zero for Esprit. Linked build12383 and fixture rebuild78579 pass
+at 10 jobs; repaired native11125 passes35/35 and activated19265 passes51/51
+in12.893s, zero skips. Data17/17, generated-module drift and final independent
+review pass. The two fixture repairs preserve production rules and all useful
+assertions. Coverage236->238/310, generic165->167/220, planned74->72; Discipline
+and Luck each7->8/10. Faction71/90, combat61/67 and Orders8/8 are unchanged.
+Receipts: build/nh-esprit-serendipity-native.piwyqh7R/active.log and XML.
+Deferred: broader reaction/controller transitions, multi-round AI forecasts,
+and an explicit Serendipity damage-cache bypass for nonstandard rulesets without
+Focus Fire. Normal playable promotion is a separate delivery gate.
+
 UP289 base Cabir hover principal acceptance passes2026-10-08 on current normal
 1c720/source0b53: ordinary human pointer entry triggers the approved MOUSEON
 sequence and returns to holding; all four pinned frames load on the transition.
@@ -4346,7 +4361,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | All three ranks per Skill are active; many registered Skills still lack complete perk progression. |
 | Skill rank effects active | 93/93 | Elemental Rebirth's three ranks now have source/native and owning-side AI evidence. Active status does not certify every wider interaction. |
-| Skill perks active | 236/310 | 74 planned; current registry recount2026-10-08. Generic165/220, faction71/90. Armorer9/10; War Machines7/10; Spellcraft6/10; Luck7/10; Diplomacy7/10; Chaos Magic5/10; Necromancy10/10; Learning3/10; Estates6/10; Battlecraft8/10; Logistics8/10; Command7/10; Warcasting9/10. Historian's foundation remains planned and adds no activation count. Active status alone does not certify every mechanic. |
+| Skill perks active | 238/310 | 72 planned; current registry recount2026-10-08. Generic167/220, faction71/90. Discipline8/10; Armorer9/10; War Machines7/10; Spellcraft6/10; Luck8/10; Diplomacy7/10; Chaos Magic5/10; Necromancy10/10; Learning3/10; Estates6/10; Battlecraft8/10; Logistics8/10; Command7/10; Warcasting9/10. Historian's foundation remains planned and adds no activation count. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 27/27 | All nine faction rank foundations are active; their remaining perks and wider integration are separate work. |
 | Faction perks active | 71/90 | 19 planned perks; Divine Mandate has six accepted perks, including Expert Mandate of Heaven and Advanced Purifying Mandate; Elemental Rebirth has three accepted perks with normal Basic-to-Advanced selection and live/detached evidence. |
 | Canonical combat-spell identities registered | 61/67 | 6 missing/inactive; Puppet Master is the newest source/native-verified identity. Chaos is 7/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -4699,7 +4714,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Archery | 3/0 | 10/0 | Bounded canonical consumer audit finds all ten active perks represented in shared payload, authoritative actions/reactions and BattleAI projections; no missing principal source clause identified. This is source evidence, not focused whole-family execution certification. |
 | Battlecraft | 3/0 | 8/2 | Battlefield Mastery joins the seven previously verified perks. UP156 focused4/4 and adjacent16/16 pass with zero skips, including machine exclusion, first-action allocation, distinct Wait/Defend expiry and detached branches. Actual Defend selection, controlled units and death/revival composition remain Phase2. Overwatch and Rapid Response remain planned. |
 | War Machines | 3/0 | 7/3 | Battlefield Medic joins Counter-Battery, Surgeon, Piercing Bolts, Fortification Engineer, Master Gunner and Quartermaster. UP098 verifies permanent restoration, ordinary Tent healing first, shared UI/AI and actual choice/result paths, active native17/17. Counter-Battery has actual scoped Citadel-tower/Ballista shots and shared AI candidate/forecast evidence. Three perks remain planned. |
-| Discipline | 3/0 | 7/3 | Steadfast joins Unbreakable, Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless with focused authoritative and detached evidence. Three perks remain planned; Esprit de Corps composition scope, Heroic Spirit activation timing and Veteran Cohesion HP reference await clarification. |
+| Discipline | 3/0 | 8/2 | Esprit de Corps joins Steadfast, Unbreakable, Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless with focused live/readback and receiving-hero NK2 evidence. Heroic Spirit activation timing and Veteran Cohesion HP reference remain held. |
 | Recruitment | 3/0 | 6/4 | Four perks missing |
 | Command | 3/0 | 7/3 | Aggressive/Defensive, Veteran, Combined Arms, Commanding Presence, Battle Plan and Double Command have focused runtime/AI evidence. Iron Will, Crisis Command and Seize Initiative remain planned pending their recorded narrow design rulings. |
 | Light Magic | 3/0 | 9/1 | Sanctuary Keeper's linked Morale lifetime and actual AI cast are native verified; Litany grants distinct Mass Bless, alongside Benediction, Healer, Guardian, Aegis, Purifier, Retributionist and Crusader. Miracle Worker remains planned. |
@@ -4715,7 +4730,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Diplomacy | 3/0 | 7/3 | Foundation, Envoy, Peacemaker, Tribute and Recruitment Pact verified; three perks remain missing |
 | Estates | 3/0 | 6/4 | Resource Broker joins Land Surveyor, Tax Collector, Investor, Estate Network and Financier. Local Marketplace rate, accepted AI trade, mine-capture grants, daily income, weekly Wood/Ore, weekly treasury interest and Investor's pre-income treasury snapshot have focused native evidence. Broader interactions and playable delivery remain separate. |
 | Learning | 3/0 | 3/7 | Mentor, Quick Study and Field Study supply working Basic/Advanced perks and open ordinary Expert-rank progression. Meetings, weekly persistence, initial offer reroll, stronger-opponent awarded XP and query/RNG parity are native verified. Academic Study awaits first-visit timing. |
-| Luck | 3/0 | 7/3 | Perfect Fortune joins Fortune's Favor, Lucky Aim, Second Chance, Gambler, Chain of Fortune and Twist of Fate with focused accepted-strike and detached candidate/replay evidence; three perks remain planned. |
+| Luck | 3/0 | 8/2 | Generic Serendipity joins Perfect Fortune, Fortune's Favor, Lucky Aim, Second Chance, Gambler, Chain of Fortune and Twist of Fate with focused accepted-strike and detached candidate/replay evidence; two perks remain planned. |
 | Divine Mandate | 3/0 | 6/4 | Paired rank foundation, Chaplain's Reserve, Consecrated Casting, Sacred Command, Knightly Sequence, Mandate of Heaven and Purifying Mandate source/native verified; four perks remain missing. Legal progression reaches the implemented Expert perk. |
 | Sylvan Luck | 3/0 | 10/0 | Principal-path audit identifies consumers for all ten perks. Perfect Moment's missing automatic first eligible attack and +5 current-Luck threshold are repaired under UP023: client/native builds pass, focused19/19 zero skips, including server/AI/Skirmisher. Broader35-case run passes31 with four unrelated fixture/compatibility guard failures recorded for Phase2; this is not whole-family integration or playable acceptance. |
 | Metamagic | 3/0 | 10/0 | Bounded source audit2026-10-05 identifies consumers for all ranks and ten active perks: HeroSpellAllowanceTransition, ISpellMechanics, BattleSpellMechanics, BaseMechanics, Focus Magic and GameStatePackVisitor; existing focused fixtures cover sequences, costs, duration, marks, closure rewards and automatic Grand continuation, including AI. No missing principal source clause verified. This audit did not rerun native tests or establish playable delivery; wider interactions remain Phase2. |

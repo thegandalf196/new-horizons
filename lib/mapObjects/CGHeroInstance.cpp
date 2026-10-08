@@ -30,6 +30,7 @@
 #include "../IGameSettings.h"
 #include "../CSoundBase.h"
 #include "../CSkillHandler.h"
+#include "../battle/NewHorizonsDiscipline.h"
 #include "../gameState/CGameState.h"
 #include "../gameState/UpgradeInfo.h"
 #include "../CCreatureHandler.h"
@@ -1972,6 +1973,11 @@ std::pair<int32_t, int32_t> CGHeroInstance::getMoraleLimits() const
 	if(const auto limits = newHorizonsMagic::moraleLimits(getMagicRules()))
 		return *limits;
 	return AFactionMember::getMoraleLimits();
+}
+
+TConstBonusListPtr CGHeroInstance::getMoraleBonuses() const
+{
+	return newHorizonsDiscipline::espritDeCorpsMoraleBonuses(this, *this);
 }
 
 std::vector<SpellSchool> CGHeroInstance::getSpellSchools(const spells::Spell * spell) const

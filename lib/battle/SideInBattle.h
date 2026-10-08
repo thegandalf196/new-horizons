@@ -33,6 +33,7 @@
 #include "SpellResponseState.h"
 #include "OverwhelmingFormulaState.h"
 #include "PerfectFortuneState.h"
+#include "LuckSerendipityState.h"
 #include "ArmorerDefiantState.h"
 #include "../callback/GameCallbackHolder.h"
 
@@ -206,6 +207,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	OverwhelmingFormulaState overwhelmingFormulaState;
 	PerfectFortuneState perfectFortune;
 	ArmorerDefiantState armorerDefiant;
+	LuckSerendipityState luckSerendipity;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);
@@ -382,6 +384,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			armorerDefiant.validateSerialization(h);
 		if(h.saving)
 			perfectFortune.validateSerialization(h);
+		if(h.saving)
+			luckSerendipity.validateSerialization(h);
 		if(h.saving && hasSacredCommandOrderState()
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SACRED_COMMAND))
 			throw std::runtime_error("Cannot discard Sacred Command battle Order state");
@@ -731,6 +735,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			overwhelmingFormulaState = {};
 		h & perfectFortune;
 		h & armorerDefiant;
+		h & luckSerendipity;
 		if(!h.saving)
 		{
 			validateDoubleCommandState();

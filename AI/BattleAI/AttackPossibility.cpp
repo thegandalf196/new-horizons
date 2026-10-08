@@ -835,6 +835,11 @@ AttackPossibility AttackPossibility::evaluate(
 				return hero && hero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.defiant")
 					&& state->getBattle()->getArmorerDefiantState(side).availableAt(state->battleGetRound());
 			});
+		const bool projectsLuckSerendipity = std::ranges::any_of(
+			std::array{BattleSide::ATTACKER, BattleSide::DEFENDER}, [&state](BattleSide side)
+			{
+				return state->getBattle()->getLuckSerendipityState(side).enabled;
+			});
 		const bool projectsCleave = !attackInfo.shooting && !attackInfo.retaliation
 			&& !attackInfo.secondaryAttack && !attackInfo.bracePreemptive
 			&& attackInfo.preemptiveDamagePercent <= 0 && attackInfo.cleaveDamagePercent <= 0
@@ -1008,14 +1013,14 @@ AttackPossibility AttackPossibility::evaluate(
 				|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 				|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune || projectsPerfectFortune
 				|| projectsNoEscape || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
-				|| projectsNightProwler || projectsBloodragePain || projectsLastStand || projectsDefiant)
+				|| projectsNightProwler || projectsBloodragePain || projectsLastStand || projectsDefiant || projectsLuckSerendipity)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
 	if(projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 			|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune || projectsPerfectFortune
 			|| projectsNoEscape || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
-			|| projectsNightProwler || projectsBloodragePain || projectsLastStand || projectsDefiant)
+			|| projectsNightProwler || projectsBloodragePain || projectsLastStand || projectsDefiant || projectsLuckSerendipity)
 			ap.effectPreview = fortunePreview;
 	if(crossesNightProwlerEnemy && fortunePreview)
 		fortunePreview->addUnitBonus(attacker->unitId(), newHorizonsShroud::nightProwlerDamageBonuses());
@@ -1130,9 +1135,11 @@ AttackPossibility AttackPossibility::evaluate(
 	};
 	const auto captureAndProjectFortuneStrike = [&fortunePreview](const BattleAttackInfo & attack,
 		const std::vector<std::pair<uint32_t, int64_t>> & hits,
-		battle::CUnitState * attackerState, std::optional<ProjectedLuckOutcome> & resolvedLuck,
-		bool perfectFortune, BattleSide perfectFortuneSide)
+		battle::CUnitState * attackerState, FortuneStrikeProjection & receipt)
 	{
+		receipt.luckSerendipitySide = receipt.perfectFortuneSide;
+		receipt.luckSerendipityOrdinaryAttack = !attack.secondaryAttack
+			&& newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attack.attacker, attack.physicalDamage);
 		if(!fortunePreview || !attack.attacker || !attack.defender)
 			return false;
 		const auto side = fortunePreview->playerToSide(fortunePreview->battleGetOwner(attack.attacker));
@@ -1142,12 +1149,16 @@ AttackPossibility AttackPossibility::evaluate(
 			? fortunePreview->getSylvanLuckState(side) : SylvanLuckState{};
 		const bool chainEnabled = fortune.chainOfFortune;
 		const bool chainAvailable = chainEnabled && fortune.chainFortuneAvailable(attack.attacker->unitId());
-		const auto outcome = perfectFortune ? ProjectedLuckOutcome::POSITIVE
+		const auto outcome = receipt.perfectFortune ? ProjectedLuckOutcome::POSITIVE
 			: fortunePreview->captureFortuneStrikeOutcome(attack);
-		resolvedLuck = outcome;
+		receipt.resolvedLuck = outcome;
 		const bool certainNegative = outcome == ProjectedLuckOutcome::NEGATIVE;
 		const bool knownPositiveChainTrigger = chainEnabled && outcome == ProjectedLuckOutcome::POSITIVE;
-		if(!perfectFortune && !certainNegative && !gamblerAvailable && !chainAvailable && !knownPositiveChainTrigger)
+		const bool serendipityEnabled = (receipt.luckSerendipitySide == BattleSide::ATTACKER
+			|| receipt.luckSerendipitySide == BattleSide::DEFENDER)
+			&& fortunePreview->getLuckSerendipityState(receipt.luckSerendipitySide).enabled;
+		if(!receipt.perfectFortune && !certainNegative && !gamblerAvailable && !chainAvailable
+			&& !knownPositiveChainTrigger && !serendipityEnabled)
 			return false;
 
 		// Capture Luck before one-strike bonuses are consumed, then update only
@@ -1156,7 +1167,8 @@ AttackPossibility AttackPossibility::evaluate(
 		// An unresolved eligible Chain strike consumes the gift without arming
 		// another one; only the known positive result can arm a pending source.
 		fortunePreview->projectFortuneStrike(attack, hits, attackerState, false,
-			resolvedLuck, false, perfectFortune, perfectFortuneSide);
+			receipt.resolvedLuck, false, receipt.perfectFortune, receipt.perfectFortuneSide,
+			receipt.luckSerendipitySide, receipt.luckSerendipityOrdinaryAttack);
 		return true;
 	};
 	const auto scoreHexPain = [&](battle::CUnitState * recipient, int64_t damage)
@@ -1309,7 +1321,7 @@ AttackPossibility AttackPossibility::evaluate(
 						preemptiveStrike.hits.emplace_back(ap.attackerState->unitId(), requestedPreemptiveDamage);
 						preemptiveStrike.resolvedHits.emplace_back(ap.attackerState->unitId(), appliedPreemptiveDamage);
 						captureAndProjectFortuneStrike(preemptive, preemptiveStrike.hits,
-							strikeDefenderState->second.get(), preemptiveStrike.resolvedLuck, preemptiveStrike.perfectFortune, preemptiveStrike.perfectFortuneSide);
+							strikeDefenderState->second.get(), preemptiveStrike);
 						ap.fortuneStrikes.push_back(std::move(preemptiveStrike));
 					}
 				}
@@ -1382,7 +1394,7 @@ AttackPossibility AttackPossibility::evaluate(
 						preemptiveStrike.hits.emplace_back(ap.attackerState->unitId(), requestedPreemptiveDamage);
 						preemptiveStrike.resolvedHits.emplace_back(ap.attackerState->unitId(), appliedPreemptiveDamage);
 						captureAndProjectFortuneStrike(preemptive, preemptiveStrike.hits,
-							strikeDefenderState->second.get(), preemptiveStrike.resolvedLuck, preemptiveStrike.perfectFortune, preemptiveStrike.perfectFortuneSide);
+							strikeDefenderState->second.get(), preemptiveStrike);
 						// Preserve the reaction's position in the resolved sequence for the
 						// detached branch replay, including a zero-damage Luck result.
 						ap.fortuneStrikes.push_back(std::move(preemptiveStrike));
@@ -1677,7 +1689,7 @@ AttackPossibility AttackPossibility::evaluate(
 			projectedStrikeAttack.attackerPos = ap.attackerState->getPosition();
 			projectedStrikeAttack.defenderPos = strikeDefenderState->second->getPosition();
 			const bool projectedFortuneStrike = captureAndProjectFortuneStrike(
-				projectedStrikeAttack, strike.hits, ap.attackerState.get(), strike.resolvedLuck, strike.perfectFortune, strike.perfectFortuneSide);
+				projectedStrikeAttack, strike.hits, ap.attackerState.get(), strike);
 			if(ap.perfectMoment && i == 0)
 				perfectMomentStrikeRecorded = projectedFortuneStrike;
 			// The server resolves every victim of a breath/splash strike before it
@@ -1834,7 +1846,7 @@ AttackPossibility AttackPossibility::evaluate(
 						counterfireStrike.hits.emplace_back(ap.attackerState->unitId(), requestedCounterfireDamage);
 						counterfireStrike.resolvedHits.emplace_back(ap.attackerState->unitId(), counterfireDamage);
 						captureAndProjectFortuneStrike(counterfire, counterfireStrike.hits,
-							counterShooter.get(), counterfireStrike.resolvedLuck, counterfireStrike.perfectFortune, counterfireStrike.perfectFortuneSide);
+							counterShooter.get(), counterfireStrike);
 						counterfireStrikes.push_back(std::move(counterfireStrike));
 					}
 					projectVampirismHealing(counterShooter.get(), counterfireDamage,
@@ -1982,7 +1994,7 @@ AttackPossibility AttackPossibility::evaluate(
 						targetState->armorerBastionRound = currentRound;
 					cleave->resolvedHits.emplace_back(targetState->unitId(), cleaveDamageToApply);
 					captureAndProjectFortuneStrike(cleaveAttack, cleave->hits,
-						ap.attackerState.get(), cleave->resolvedLuck, cleave->perfectFortune, cleave->perfectFortuneSide);
+						ap.attackerState.get(), *cleave);
 					if(cleaveDamage > 0 && state->battleCanTriggerNoQuarter(cleaveAttack) && !targetState->isTimeStopped()
 						&& state->battleMatchOwner(ap.attackerState.get(), targetState.get())
 						&& targetState->alive()
@@ -2091,7 +2103,7 @@ AttackPossibility AttackPossibility::evaluate(
 				retaliationAttack.attackerPos = retaliatorState->getPosition();
 				retaliationAttack.defenderPos = retaliationTarget->getPosition();
 				captureAndProjectFortuneStrike(retaliationAttack, retaliation->hits,
-					retaliatorState.get(), retaliation->resolvedLuck, retaliation->perfectFortune, retaliation->perfectFortuneSide);
+					retaliatorState.get(), *retaliation);
 			}
 
 			if(ap.effectPreview)

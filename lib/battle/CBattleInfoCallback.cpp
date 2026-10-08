@@ -916,6 +916,13 @@ int CBattleInfoCallback::battleGetAttackLuck(const battle::Unit * attacker, cons
 		&& battleIsFocusFireTargetActive(side) && mark && mark->targetUnitId == target->unitId();
 	const auto & fortune = getBattle()->getSylvanLuckState(side);
 	int luck = fortune.chanceLuck(baseLuck, attacker->unitId(), focused);
+	const auto controllerSide = playerToSide(battleGetActionController(attacker));
+	if((controllerSide == BattleSide::ATTACKER || controllerSide == BattleSide::DEFENDER)
+		&& getBattle()->getLuckSerendipityState(controllerSide).availableAt(battleGetRound())
+		&& !battleTacticDist() && attacker->alive() && !attacker->isTimeStopped()
+		&& newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attacker,
+			!(shooting && attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK))))
+		luck += 2;
 	if(!includeChanceOnlySerendipity && fortune.serendipity
 		&& !fortune.positiveLuckUnits.contains(attacker->unitId()))
 		--luck;
@@ -1322,7 +1329,9 @@ BattleMoraleInfo CBattleInfoCallback::battleGetMoraleInfo(const battle::Unit * u
 		}
 		return morale;
 	};
-	if(!newHorizonsDiscipline::hasSteadfast(hero))
+	const bool steadfast = newHorizonsDiscipline::hasSteadfast(hero);
+	const bool espritDeCorps = newHorizonsDiscipline::hasEspritDeCorps(hero);
+	if(!steadfast && !espritDeCorps)
 	{
 		if(additionalMorale == 0 && firstRoundMoraleModifier == 0)
 			result.effective = applyMoraleFloor(unit->moraleVal());
@@ -1337,7 +1346,13 @@ BattleMoraleInfo CBattleInfoCallback::battleGetMoraleInfo(const battle::Unit * u
 		return result;
 	}
 
-	const auto moraleBonuses = unit->getUnstackedBonuses(Selector::type()(BonusType::MORALE));
+	const auto currentMoraleBonuses = unit->getBonusesOfType(BonusType::MORALE);
+	const auto compositionBonuses = newHorizonsDiscipline::espritDeCorpsMoraleBonuses(hero, *unit);
+	const int64_t compositionDelta = static_cast<int64_t>(compositionBonuses->totalValue())
+		- currentMoraleBonuses->totalValue();
+	result.espritDeCorpsAdjustment = static_cast<int32_t>(std::clamp<int64_t>(compositionDelta,
+		std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
+	const auto moraleBonuses = newHorizonsDiscipline::espritDeCorpsMoraleBonuses(hero, *unit, false);
 	BonusList adjustedMoraleBonuses;
 	std::unordered_map<const Bonus *, std::shared_ptr<Bonus>> adjustedByOriginal;
 	const PlayerColor targetAuraOwner = unit->unitOwner() == PlayerColor::UNFLAGGABLE
@@ -1347,7 +1362,7 @@ BattleMoraleInfo CBattleInfoCallback::battleGetMoraleInfo(const battle::Unit * u
 		const bool hostileCreatureAura = bonus->source == BonusSource::CREATURE_ABILITY
 			&& bonus->bonusOwner != PlayerColor::CANNOT_DETERMINE
 			&& bonus->bonusOwner != targetAuraOwner;
-		if(bonus->val < 0 && (bonus->appliedByEnemy || hostileCreatureAura))
+		if(steadfast && bonus->val < 0 && (bonus->appliedByEnemy || hostileCreatureAura))
 		{
 			auto & adjusted = adjustedByOriginal[bonus.get()];
 			if(!adjusted)
@@ -1362,10 +1377,9 @@ BattleMoraleInfo CBattleInfoCallback::battleGetMoraleInfo(const battle::Unit * u
 	}
 	adjustedMoraleBonuses.stackBonuses();
 
-	const auto currentMoraleBonuses = unit->getBonusesOfType(BonusType::MORALE);
 	const int64_t moraleDelta = static_cast<int64_t>(adjustedMoraleBonuses.totalValue())
 		- static_cast<int64_t>(currentMoraleBonuses->totalValue());
-	result.steadfastAdjustment = static_cast<int32_t>(std::clamp<int64_t>(moraleDelta,
+	result.steadfastAdjustment = static_cast<int32_t>(std::clamp<int64_t>(moraleDelta - compositionDelta,
 		std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
 	const int64_t totalAdditionalMorale = moraleDelta + additionalMorale + firstRoundMoraleModifier;
 	const auto boundedAdditionalMorale = static_cast<int32_t>(std::clamp<int64_t>(totalAdditionalMorale,

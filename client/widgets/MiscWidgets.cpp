@@ -696,7 +696,10 @@ void MoraleLuckBox::set(const AFactionMember * node)
 	{
 		const auto * bonusBearer = node->getBonusBearer();
 		const BonusType sourceType = morale ? BonusType::MORALE : BonusType::LUCK;
-		const auto sourceBonuses = bonusBearer->getBonusesOfType(sourceType);
+		auto sourceBonuses = bonusBearer->getBonusesOfType(sourceType);
+		const int64_t originalMorale = morale && sourceBonuses ? sourceBonuses->totalValue() : 0;
+		if(morale)
+			node->moraleValAndBonusList(sourceBonuses);
 		const int64_t rawValue = sourceBonuses ? sourceBonuses->totalValue() : 0;
 		const auto descriptionCallback = callback;
 
@@ -738,6 +741,13 @@ void MoraleLuckBox::set(const AFactionMember * node)
 				description.replaceTokenNumber("%VALUE%", readback->value);
 				description.appendEOL();
 				description.appendTextID("new-horizons.hero.morale.context");
+				const auto compositionAdjustment = rawValue - originalMorale;
+				if(compositionAdjustment != 0 && !readback->maxMorale && !readback->noMorale && !readback->moraleImmune)
+				{
+					description.appendEOL();
+					description.appendTextID("new-horizons.combat.morale.readback.espritDeCorps");
+					description.replaceTokenNumber("%VALUE%", compositionAdjustment);
+				}
 
 				if(readback->maxMorale)
 				{
@@ -760,7 +770,7 @@ void MoraleLuckBox::set(const AFactionMember * node)
 					description.appendTextID("new-horizons.hero.morale.minimum");
 					description.replaceTokenNumber("%VALUE%", readback->minimumMorale);
 				}
-				hasSpecialExplanation = readback->hasSpecialExplanation();
+				hasSpecialExplanation = readback->hasSpecialExplanation() || compositionAdjustment != 0;
 			}
 		}
 		else
@@ -1055,6 +1065,7 @@ void MoraleLuckBox::set(const CStack * stack, const CBattleInfoCallback * battle
 
 	const bool hasSources = !bonusDescriptions.empty() || readback.standardBearerBonus != 0
 		|| readback.firstRoundModifier != 0 || readback.steadfastAdjustment != 0
+		|| readback.espritDeCorpsAdjustment != 0
 		|| readback.commandingPresenceFloorApplied || readback.furyUnboundFloorApplied;
 	description.appendEOL();
 	if(!hasSources)
@@ -1085,6 +1096,8 @@ void MoraleLuckBox::set(const CStack * stack, const CBattleInfoCallback * battle
 		appendModifier("new-horizons.combat.morale.readback.firstRound", readback.firstRoundModifier);
 	if(readback.steadfastAdjustment != 0)
 		appendModifier("new-horizons.combat.morale.readback.steadfast", readback.steadfastAdjustment);
+	if(readback.espritDeCorpsAdjustment != 0)
+		appendModifier("new-horizons.combat.morale.readback.espritDeCorps", readback.espritDeCorpsAdjustment);
 	if(readback.commandingPresenceFloorApplied)
 	{
 		description.appendEOL();

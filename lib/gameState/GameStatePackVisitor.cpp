@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "GameStatePackVisitor.h"
+#include "../battle/NewHorizonsCombatSkills.h"
 
 #include "CGameState.h"
 #include "../battle/CBattleInfoCallback.h"
@@ -2078,6 +2079,21 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 	if(!battle)
 		throw std::runtime_error("BattleAttack references a missing battle");
 	pack.validatePerfectFortuneMarker();
+	pack.validateLuckSerendipityMarker();
+	if(pack.luckSerendipityState)
+	{
+		const auto * source = battle->getStack(pack.stackAttacking, false);
+		if(!source || battle->playerToSide(battle->battleGetActionController(source)) != pack.luckSerendipitySide)
+			throw std::runtime_error("Invalid Luck Serendipity strike controller");
+		auto expected = battle->getLuckSerendipityState(pack.luckSerendipitySide);
+		const bool physical = !pack.spellLike()
+			&& !(pack.shot() && source->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
+		expected.recordStrike(newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(source, physical), pack.lucky());
+		if(expected != *pack.luckSerendipityState)
+			throw std::runtime_error("Invalid Luck Serendipity accepted-strike history");
+		pack.luckSerendipityState->validateTransitionFrom(
+			battle->getLuckSerendipityState(pack.luckSerendipitySide), battle->getRound());
+	}
 	if(pack.perfectFortuneState)
 	{
 		const auto * strikeSource = battle->getStack(pack.stackAttacking, false);
@@ -2161,6 +2177,8 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 		battle->getSide(pack.fortuneSide).sylvanLuck = *pack.fortuneState;
 	if(pack.perfectFortuneState)
 		battle->setPerfectFortuneState(pack.perfectFortuneSide, *pack.perfectFortuneState);
+	if(pack.luckSerendipityState)
+		battle->setLuckSerendipityState(pack.luckSerendipitySide, *pack.luckSerendipityState);
 
 	pack.attackerChanges.visit(*this);
 

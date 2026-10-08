@@ -74,6 +74,7 @@ struct DLL_LINKAGE BattleMoraleInfo
 	int32_t standardBearerBonus = 0;
 	int32_t firstRoundModifier = 0;
 	int32_t steadfastAdjustment = 0;
+	int32_t espritDeCorpsAdjustment = 0;
 	bool commandingPresenceFloorApplied = false;
 	bool furyUnboundFloorApplied = false;
 };

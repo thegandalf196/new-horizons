@@ -15,6 +15,8 @@ from jsonschema import Draft4Validator
 ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
+    "new-horizons:discipline.espritDeCorps",
+    "new-horizons:luck.serendipity",
     "new-horizons:battlecraft.preEmptiveStrike",
     "new-horizons:chaosMagic.frenziedCurse",
     "new-horizons:divineMandate.sacredCommand",

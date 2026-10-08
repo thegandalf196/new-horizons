@@ -250,6 +250,7 @@ set(test_SRCS
 		server/battles/NewHorizonsRelentlessAssaultTest.cpp
 		server/battles/NewHorizonsPursuitTest.cpp
 		server/battles/NewHorizonsDisciplineTest.cpp
+		server/battles/NewHorizonsEspritDeCorpsTest.cpp
 		server/battles/HeroCommandPersistenceTest.cpp
 		server/battles/HeroCommandFixtureExportTest.cpp
 		server/battles/NewHorizonsDemonicGatingFixtureExportTest.cpp
@@ -284,6 +285,7 @@ set(test_SRCS
 		battle/BattleLuckReadbackTest.cpp
 		battle/LeadershipProposalReadbackTest.cpp
 		battle/SylvanLuckStatusPresentationTest.cpp
+		battle/LuckSerendipityStateTest.cpp
 		server/battles/NewHorizonsElementalOrbsTest.cpp
 		server/battles/NewHorizonsCabirRepairTest.cpp
 		spells/NewHorizonsIncomingElementDamageTest.cpp
@@ -417,6 +419,7 @@ set(test_SRCS
 		server/battles/NewHorizonsShadowAssaultTest.cpp
 		server/battles/NewHorizonsNightProwlerTest.cpp
 		server/battles/NewHorizonsSylvanLuckTest.cpp
+		server/battles/NewHorizonsLuckSerendipityTest.cpp
 		server/battles/NewHorizonsFortunesFavorTest.cpp
 		server/NewHorizonsPerfectFortuneTest.cpp
 		server/NewHorizonsCounterBatteryTest.cpp
@@ -625,6 +628,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/Goals/CompositionTest.cpp
 		nullkiller2/Goals/ExploreNeighbourTileTest.cpp
 		nullkiller2/ArmyFormationLeadershipTest.cpp
+		nullkiller2/EspritDeCorpsArmySelectionTest.cpp
 		nullkiller2/Helpers/ExplorationHelperTest.cpp
 		nullkiller2/Helpers/NewHorizonsMusterTest.cpp
 		nullkiller2/NewHorizonsAdventureSpellUnlockAITest.cpp

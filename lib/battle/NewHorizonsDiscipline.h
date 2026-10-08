@@ -17,10 +17,17 @@ namespace newHorizonsDiscipline
 {
 inline constexpr const char * SKILL = "new-horizons:discipline";
 inline constexpr const char * STEADFAST = "new-horizons:discipline.steadfast";
+inline constexpr const char * ESPRIT_DE_CORPS = "new-horizons:discipline.espritDeCorps";
 inline constexpr const char * HOLD_FAST = "new-horizons:discipline.holdFast";
 inline constexpr const char * FEARLESS = "new-horizons:discipline.fearless";
 
 DLL_LINKAGE bool hasSteadfast(const CGHeroInstance * hero);
+DLL_LINKAGE bool hasEspritDeCorps(const CGHeroInstance * hero);
+/// Clone negative army-composition contributions before ordinary stacking.
+/// The unstacked form permits the battle's separate Steadfast adjustment.
+DLL_LINKAGE TConstBonusListPtr espritDeCorpsMoraleBonuses(const CGHeroInstance * hero,
+	const IBonusBearer & bearer, bool stackBonuses = true);
+DLL_LINKAGE int32_t espritDeCorpsMoraleAdjustment(const CGHeroInstance * hero, const IBonusBearer & bearer);
 DLL_LINKAGE bool hasHoldFast(const CGHeroInstance * hero);
 DLL_LINKAGE bool hasFearless(const CGHeroInstance * hero);
 DLL_LINKAGE Bonus holdFastMoraleFloorBonus();

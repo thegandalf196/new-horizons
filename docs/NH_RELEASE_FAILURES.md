@@ -1,5 +1,46 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Generic Serendipity integration boundaries
+
+Resolved focused checkpoint: initial live crash was a fixture mistake, not a
+normal-game state failure. BLOCKS_RETALIATION belongs on the attacking source;
+the fixture put it on the 10,000-creature target, whose retaliation killed the
+100-creature source before reactivation. Root corrected that one binding and
+added a fail-cleanly live-source assertion after the worker resume remained in
+pending initialization. No production guard was weakened. The captured-cap
+fixture correction also preserves all assertions. Rebuild78579 exits0;
+repaired11125 passes35/35; activated19265 passes51/51 in12.893s, zero skips.
+The native battle-metadata copy also passes here; the earlier potential guard
+concern did not occur in this fixture. This is not general combat-health
+save/resume certification. Original failed receipts remain retained below.
+
+The first linked native gate exits139: seven Esprit cases and eight independent
+Serendipity state/packet cases pass, then the first live Serendipity case reads
+Luck0 instead of2 and crashes while reactivating its cached unit. GDB locates a
+null stack in BattleInfo::nextTurn for that fixture's second strike. Root keeps
+both entries planned and diagnoses unit lifetime/accepted-action causality before
+changing mechanics or guards. Receipts remain under
+build/nh-esprit-serendipity-native.piwyqh7R/principal.log and crash-backtrace.log;
+the aborted run has no complete XML and is not a passing principal gate.
+The separate Esprit/NK2/adjacent gate passes19/21, including all eight new
+execution/receiver cases and three Morale readbacks. Independent comparison to
+HEAD identifies the two adjacent Steadfast failures as stale fixture caps:
+global engine chance-vector lengths give +/-3, whereas the installed saved
+New Horizons battle rules and unchanged unit limits give +/-10. Correct the
+fixture's expectation source; preserve all cap/immunity assertions and do not
+change production rules to satisfy the test.
+
+Independent production review finds no Phase1 blocker in UP085/UP130. Keep
+Phase2 coverage for controller/reaction transitions and stochastic multi-round
+forecasts. DamageCache currently recomputes for canonical Focus Fire support;
+nonstandard rulesets without that support need an explicit generic Serendipity
+enabled-state bypass to prevent an ID-only premium surviving consumption.
+Do not conflate the generic per-round history with Sylvan's combat-long perk.
+The focused post-strike whole-battle-copy fixture may encounter the existing
+Veteran-history save guard: preserve that guard and prove consumed side/packet
+representation separately if native execution establishes the limitation.
+That possibility is not yet a test failure or a broader save-resume claim.
+
 ### 2026-10-08 — Windows recursive PE audit retains the old client name
 
 Run37818325794 compiles the exact `b11e69844` source and installs runtime

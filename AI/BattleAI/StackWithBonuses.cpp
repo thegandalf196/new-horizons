@@ -963,6 +963,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 		focusFireStates[side] = realBattle->battleGetFocusFireState(side);
 		fortuneStates[side] = realBattle->getBattle()->getSylvanLuckState(side);
 		perfectFortuneStates[side] = realBattle->getBattle()->getPerfectFortuneState(side);
+		luckSerendipityStates[side] = realBattle->getBattle()->getLuckSerendipityState(side);
 		adverseRerollStates[side] = realBattle->getBattle()->getAdverseCombatRerollState(side);
 		moraleSuppressionStates[side] = realBattle->getBattle()->getMoraleSuppressionState(side);
 		bloodrageRanks[side] = realBattle->getBattle()->getBloodrageRank(side);
@@ -1071,8 +1072,22 @@ void HypotheticBattle::projectFortuneStrike(const BattleAttackInfo & attack,
 	const std::vector<std::pair<uint32_t, int64_t>> & hits,
 	battle::CUnitState * attackerState, bool enemyStackKilled,
 	std::optional<ProjectedLuckOutcome> resolvedLuck, bool applyAftermath,
-	std::optional<bool> capturedPerfectFortune, BattleSide capturedPerfectFortuneSide)
+	std::optional<bool> capturedPerfectFortune, BattleSide capturedPerfectFortuneSide,
+	BattleSide capturedLuckSerendipitySide, std::optional<bool> capturedLuckSerendipityOrdinaryAttack)
 {
+	const auto serendipitySide = capturedLuckSerendipitySide == BattleSide::ATTACKER
+		|| capturedLuckSerendipitySide == BattleSide::DEFENDER
+		? capturedLuckSerendipitySide : playerToSide(battleGetActionController(attack.attacker));
+	// Resolve before consuming the one-strike bonus; UNKNOWN remains unknown.
+	const auto serendipityOutcome = resolvedLuck.value_or(captureFortuneStrikeOutcome(attack));
+	if(serendipitySide == BattleSide::ATTACKER || serendipitySide == BattleSide::DEFENDER)
+	{
+		auto token = luckSerendipityStates.at(serendipitySide);
+		token.recordStrike(capturedLuckSerendipityOrdinaryAttack.value_or(!attack.secondaryAttack
+			&& newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attack.attacker, attack.physicalDamage)),
+			serendipityOutcome == ProjectedLuckOutcome::POSITIVE);
+		setLuckSerendipityState(serendipitySide, token);
+	}
 	const auto perfectFortuneSide = capturedPerfectFortune.value_or(false)
 		&& (capturedPerfectFortuneSide == BattleSide::ATTACKER || capturedPerfectFortuneSide == BattleSide::DEFENDER)
 		? capturedPerfectFortuneSide : playerToSide(battleGetActionController(attack.attacker));
@@ -2114,6 +2129,7 @@ void HypotheticBattle::nextRound()
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		fortuneStates[side].nextRound();
+		luckSerendipityStates[side].nextRound(projectedRound + 1);
 		moraleSuppressionStates[side].nextRound();
 		heroOrderStates[side].clear();
 	}

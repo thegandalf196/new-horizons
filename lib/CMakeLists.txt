@@ -514,6 +514,7 @@ set(lib_MAIN_HEADERS
 	battle/HeroCommand.h
 	battle/FocusFireState.h
 	battle/SylvanLuckState.h
+	battle/LuckSerendipityState.h
 	battle/PerfectFortuneState.h
 	battle/ArmorerDefiantState.h
 	battle/AdverseCombatRerollState.h

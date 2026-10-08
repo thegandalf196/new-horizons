@@ -10,6 +10,11 @@
 #include "NewHorizonsDiscipline.h"
 
 #include "../mapObjects/CGHeroInstance.h"
+#include "../bonuses/BonusList.h"
+
+#include <unordered_map>
+#include <limits>
+#include <algorithm>
 
 namespace
 {
@@ -26,6 +31,54 @@ namespace newHorizonsDiscipline
 bool hasSteadfast(const CGHeroInstance * hero)
 {
 	return hero && hero->hasActivePerk(std::string(SKILL), std::string(STEADFAST));
+}
+
+bool hasEspritDeCorps(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(SKILL), std::string(ESPRIT_DE_CORPS));
+}
+
+TConstBonusListPtr espritDeCorpsMoraleBonuses(const CGHeroInstance * hero,
+	const IBonusBearer & bearer, bool stackBonuses)
+{
+	const auto selector = Selector::type()(BonusType::MORALE);
+	if(!hasEspritDeCorps(hero))
+		return stackBonuses ? bearer.getBonuses(selector) : bearer.getUnstackedBonuses(selector);
+
+	auto adjusted = std::make_shared<BonusList>();
+	std::unordered_map<const Bonus *, std::shared_ptr<Bonus>> copies;
+	const auto bonuses = bearer.getUnstackedBonuses(selector);
+	for(const auto & bonus : *bonuses)
+	{
+		const bool hostile = bonus->appliedByEnemy
+			|| (bonus->bonusOwner != PlayerColor::CANNOT_DETERMINE && bonus->bonusOwner != hero->tempOwner);
+		if(bonus->source == BonusSource::ARMY && bonus->val < 0 && !hostile)
+		{
+			auto & copy = copies[bonus.get()];
+			if(!copy)
+			{
+				copy = std::make_shared<Bonus>(*bonus);
+				++copy->val;
+			}
+			adjusted->push_back(copy);
+		}
+		else
+			adjusted->push_back(bonus);
+	}
+	if(stackBonuses)
+		adjusted->stackBonuses();
+	return adjusted;
+}
+
+int32_t espritDeCorpsMoraleAdjustment(const CGHeroInstance * hero, const IBonusBearer & bearer)
+{
+	if(!hasEspritDeCorps(hero))
+		return 0;
+	const auto adjusted = espritDeCorpsMoraleBonuses(hero, bearer);
+	const auto original = bearer.getBonusesOfType(BonusType::MORALE);
+	const int64_t difference = static_cast<int64_t>(adjusted->totalValue()) - original->totalValue();
+	return static_cast<int32_t>(std::clamp<int64_t>(difference,
+		std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
 }
 
 bool hasHoldFast(const CGHeroInstance * hero)

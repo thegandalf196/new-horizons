@@ -380,6 +380,12 @@ public:
 	int32_t getBloodragePainIncrement(BattleSide side) const override;
 	SylvanLuckState getSylvanLuckState(BattleSide side) const override { return fortuneStates.at(side); }
 	PerfectFortuneState getPerfectFortuneState(BattleSide side) const override { return perfectFortuneStates.at(side); }
+	LuckSerendipityState getLuckSerendipityState(BattleSide side) const override { return luckSerendipityStates.at(side); }
+	void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override
+	{
+		state.validateTransitionFrom(luckSerendipityStates.at(side), getRound());
+		luckSerendipityStates.at(side) = state;
+	}
 	void setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state) override
 	{
 		state.validate();
@@ -432,7 +438,9 @@ public:
 		battle::CUnitState * attackerState, bool enemyStackKilled,
 		std::optional<ProjectedLuckOutcome> resolvedLuck = std::nullopt, bool applyAftermath = true,
 		std::optional<bool> capturedPerfectFortune = std::nullopt,
-		BattleSide capturedPerfectFortuneSide = BattleSide::NONE);
+		BattleSide capturedPerfectFortuneSide = BattleSide::NONE,
+		BattleSide capturedLuckSerendipitySide = BattleSide::NONE,
+		std::optional<bool> capturedLuckSerendipityOrdinaryAttack = std::nullopt);
 	/// Project only New Horizons Hex of Pain's registered AFTER_ATTACK trigger.
 	/// Other COMBAT_EVENT_TRIGGER effects are intentionally outside this model.
 	int64_t projectHexOfPainStrike(const BattleAttackInfo & attack,
@@ -546,6 +554,7 @@ private:
 	std::set<uint32_t> bloodrageDestroyedUnits;
 	BattleSideArray<SylvanLuckState> fortuneStates;
 	BattleSideArray<PerfectFortuneState> perfectFortuneStates;
+	BattleSideArray<LuckSerendipityState> luckSerendipityStates;
 	BattleSideArray<AdverseCombatRerollState> adverseRerollStates;
 	BattleSideArray<MoraleSuppressionState> moraleSuppressionStates;
 	LuckRollRules fortuneRollRules;

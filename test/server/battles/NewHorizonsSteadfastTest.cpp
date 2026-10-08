@@ -17,6 +17,7 @@
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 
 #include <algorithm>
 #include <iterator>
@@ -182,11 +183,15 @@ protected:
 
 	int minimumMorale() const
 	{
+		if(const auto limits = newHorizonsMagic::moraleLimits(battle()->getMagicRules()))
+			return limits->first;
 		return -static_cast<int>(LIBRARY->engineSettings()->getVector(EGameSettings::COMBAT_BAD_MORALE_CHANCE).size());
 	}
 
 	int maximumMorale() const
 	{
+		if(const auto limits = newHorizonsMagic::moraleLimits(battle()->getMagicRules()))
+			return limits->second;
 		return static_cast<int>(LIBRARY->engineSettings()->getVector(EGameSettings::COMBAT_GOOD_MORALE_CHANCE).size());
 	}
 

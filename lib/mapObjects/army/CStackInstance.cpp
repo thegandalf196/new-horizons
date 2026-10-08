@@ -11,6 +11,9 @@
 #include "CStackInstance.h"
 
 #include "CArmedInstance.h"
+#include "../CGHeroInstance.h"
+#include "../CGTownInstance.h"
+#include "../../battle/NewHorizonsDiscipline.h"
 
 #include "../../CConfigHandler.h"
 #include "../../GameLibrary.h"
@@ -54,6 +57,15 @@ std::pair<int32_t, int32_t> CStackInstance::getMoraleLimits() const
 			return *limits;
 	}
 	return AFactionMember::getMoraleLimits();
+}
+
+TConstBonusListPtr CStackInstance::getMoraleBonuses() const
+{
+	const auto * hero = dynamic_cast<const CGHeroInstance *>(getArmy());
+	if(!hero)
+		if(const auto * town = dynamic_cast<const CGTownInstance *>(getArmy()))
+			hero = town->getGarrisonHero();
+	return newHorizonsDiscipline::espritDeCorpsMoraleBonuses(hero, *this);
 }
 
 CCreature::CreatureQuantityId CStackInstance::getQuantityID() const

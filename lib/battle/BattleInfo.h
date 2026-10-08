@@ -125,6 +125,22 @@ public:
 		return sides.at(side).perfectFortune;
 	}
 	void setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state) override;
+	LuckSerendipityState getLuckSerendipityState(BattleSide side) const override
+	{
+		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			throw std::runtime_error("Invalid Luck Serendipity side");
+		return sides.at(side).luckSerendipity;
+	}
+	void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override;
+	template<typename Handler> void validateLuckSerendipitySerialization(Handler & h) const
+	{
+		for(const auto & side : sides)
+		{
+			side.luckSerendipity.validateSerialization(h);
+			if(side.luckSerendipity.enabled && side.luckSerendipity.round != round)
+				throw std::runtime_error("Luck Serendipity history does not match battle round");
+		}
+	}
 	ArmorerDefiantState getArmorerDefiantState(BattleSide side) const override
 	{
 		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
@@ -299,6 +315,8 @@ public:
 			validateDefiantSerialization(h);
 		if(h.saving)
 			validatePerfectFortuneSerialization(h);
+		if(h.saving)
+			validateLuckSerendipitySerialization(h);
 		if(h.saving)
 		{
 			validateConfusionStates();
@@ -573,6 +591,8 @@ public:
 				side.bloodragePainIncrement = 0;
 		}
 		h & round;
+		if(!h.saving)
+			validateLuckSerendipitySerialization(h);
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_FIRE_WALL))
 			h & activationSerial;
 		else if(!h.saving)

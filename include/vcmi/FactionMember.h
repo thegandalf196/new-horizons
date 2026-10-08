@@ -66,6 +66,8 @@ public:
 protected:
 	/// Inclusive minimum and maximum Morale accepted by this member's rules context.
 	virtual std::pair<int32_t, int32_t> getMoraleLimits() const;
+	/// Effective Morale contributions; overrides must not mutate exported bonuses.
+	virtual std::shared_ptr<const BonusList> getMoraleBonuses() const;
 
 private:
 	int moraleValAndBonusList(std::shared_ptr<const BonusList> & bonusList, int32_t additionalMorale) const;

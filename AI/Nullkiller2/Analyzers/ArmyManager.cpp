@@ -17,6 +17,7 @@
 #include "../../../lib/IGameSettings.h"
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/TerrainHandler.h"
+#include "../../../lib/battle/NewHorizonsDiscipline.h"
 
 namespace NK2AI
 {
@@ -251,7 +252,9 @@ std::vector<SlotInfo> ArmyManager::getBestArmy(const IBonusBearer * armyCarrier,
 
 		for(auto & slot : newArmyInstance.Slots())
 		{
-			auto morale = slot.second->moraleVal();
+			const auto compositionAdjustment = newHorizonsDiscipline::espritDeCorpsMoraleAdjustment(
+				receiverHero, *slot.second);
+			auto morale = slot.second->moraleValWithBonus(compositionAdjustment);
 			auto multiplier = 1.0f;
 
 			if(morale < 0 && !badMoraleChance.empty())

@@ -973,6 +973,7 @@ struct BattleMoraleReadback
 	int32_t standardBearerBonus = 0;
 	int32_t firstRoundModifier = 0;
 	int32_t steadfastAdjustment = 0;
+	int32_t espritDeCorpsAdjustment = 0;
 	bool commandingPresenceFloorApplied = false;
 	bool furyUnboundFloorApplied = false;
 	bool unaffectedByMorale = false;
@@ -985,7 +986,8 @@ struct BattleMoraleReadback
 			return false;
 
 		return !bonusDescriptions.empty() || standardBearerBonus != 0 || firstRoundModifier != 0
-			|| steadfastAdjustment != 0 || commandingPresenceFloorApplied || furyUnboundFloorApplied;
+			|| steadfastAdjustment != 0 || espritDeCorpsAdjustment != 0
+			|| commandingPresenceFloorApplied || furyUnboundFloorApplied;
 	}
 
 	bool operator==(const BattleMoraleReadback &) const = default;
@@ -994,14 +996,14 @@ struct BattleMoraleReadback
 inline BattleMoraleReadback makeBattleMoraleReadback(bool enabled, int32_t real, int32_t effective,
 	int32_t standardBearerBonus, int32_t firstRoundModifier, int32_t steadfastAdjustment,
 	bool commandingPresenceFloorApplied, bool furyUnboundFloorApplied, bool unaffectedByMorale,
-	std::vector<std::string> bonusDescriptions)
+	std::vector<std::string> bonusDescriptions, int32_t espritDeCorpsAdjustment = 0)
 {
 	if(!enabled)
 		return {};
 	if(unaffectedByMorale)
-		return {true, real, effective, 0, 0, 0, false, false, true, {}};
+		return {true, real, effective, 0, 0, 0, 0, false, false, true, {}};
 
-	return {true, real, effective, standardBearerBonus, firstRoundModifier, steadfastAdjustment,
+	return {true, real, effective, standardBearerBonus, firstRoundModifier, steadfastAdjustment, espritDeCorpsAdjustment,
 		commandingPresenceFloorApplied, furyUnboundFloorApplied, false, std::move(bonusDescriptions)};
 }
 

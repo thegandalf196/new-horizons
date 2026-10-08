@@ -748,3 +748,22 @@ earlier state-format gate. This does not enable the unfinished forced-action
 consumer. The registered effect type `newHorizonsConfusion` accepts only `type`,
 `indirect` and `optional`; production saved-roster availability remains inactive
 until the entire execution/AI/feedback path is complete.
+
+### New Horizons generic Luck Serendipity
+
+`NEW_HORIZONS_LUCK_SERENDIPITY` appends an independent
+`LuckSerendipityState` to each `SideInBattle`: enabled capability, round number,
+previous/current-round positive Luck history, and first-ordinary-attack use.
+It is separate from the combat-long Sylvan perk with the same display name.
+Round one has no previous-round opportunity; eligibility begins in round two.
+
+Accepted `BattleAttack` packets carry the captured controlling side and its
+post-strike history. The visitor validates causal attribution and monotonic
+same-round transitions before applying mutations. Detached AI copies carry
+independent histories and replay the captured controlling side, not a later
+owner inferred after the strike.
+
+Older reads default to empty history. Older writers reject meaningful state
+before writing enclosing side, battle or attack payloads. This preserves the
+existing fail-closed compatibility policy; it does not establish general
+ongoing-battle health/save-resume support.

@@ -96,6 +96,7 @@ private:
 
 	IGameInfoCallback * getCallback() const final { return cb; }
 	std::pair<int32_t, int32_t> getMoraleLimits() const override;
+	TConstBonusListPtr getMoraleBonuses() const override;
 	bool isSpellbinderHatGrantEligible(const SpellID & spell) const;
 	void refreshCreatureLineSpecialtyBonuses(bool createIfMissing);
 	bool canLearnSpellImpl(const spells::Spell * spell, bool allowBanned,

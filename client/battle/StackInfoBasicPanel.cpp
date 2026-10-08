@@ -255,7 +255,7 @@ newHorizonsBattleStatus::BattleMoraleReadback currentBattleMoraleReadback(
 	return newHorizonsBattleStatus::makeBattleMoraleReadback(true, morale.real, morale.effective,
 		morale.standardBearerBonus, morale.firstRoundModifier, morale.steadfastAdjustment,
 		morale.commandingPresenceFloorApplied, morale.furyUnboundFloorApplied, unaffectedByMorale,
-		cachedBonusDescriptions);
+		cachedBonusDescriptions, morale.espritDeCorpsAdjustment);
 }
 
 std::string battleMoraleReadbackTooltip(const newHorizonsBattleStatus::BattleMoraleReadback & status)
@@ -299,6 +299,8 @@ std::string battleMoraleReadbackTooltip(const newHorizonsBattleStatus::BattleMor
 		appendModifier("new-horizons.combat.morale.readback.firstRound", status.firstRoundModifier);
 	if(status.steadfastAdjustment != 0)
 		appendModifier("new-horizons.combat.morale.readback.steadfast", status.steadfastAdjustment);
+	if(status.espritDeCorpsAdjustment != 0)
+		appendModifier("new-horizons.combat.morale.readback.espritDeCorps", status.espritDeCorpsAdjustment);
 	if(status.commandingPresenceFloorApplied)
 	{
 		result.appendEOL();

@@ -81,6 +81,9 @@ struct FortuneStrikeProjection
 	/// Capture before damage: death or post-hit status changes cannot undo an accepted use.
 	bool perfectFortune = false;
 	BattleSide perfectFortuneSide = BattleSide::NONE;
+	/// Accepted controller/attack classification, captured before hit effects.
+	BattleSide luckSerendipitySide = BattleSide::NONE;
+	bool luckSerendipityOrdinaryAttack = false;
 	uint32_t attackerId = 0;
 	uint32_t defenderId = 0;
 	bool shooting = false;

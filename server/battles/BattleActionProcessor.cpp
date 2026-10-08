@@ -3998,6 +3998,8 @@ void BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, 
 	const bool perfectFortune = physicalCreatureLuckAttack
 		&& battle.battleCanUsePerfectFortune(attacker, defender, bat.shot());
 	const auto perfectFortuneSide = battle.playerToSide(battle.battleGetActionController(attacker));
+	auto serendipity = (perfectFortuneSide == BattleSide::ATTACKER || perfectFortuneSide == BattleSide::DEFENDER)
+		? battle.getBattle()->getLuckSerendipityState(perfectFortuneSide) : LuckSerendipityState{};
 	const bool guaranteedPositiveLuck = perfectMoment || perfectFortune;
 
 	if(guaranteedPositiveLuck || (attackerLuck > 0 && gameHandler->randomizer->rollGoodLuck(ownerArmy, attackerLuck)))
@@ -4023,6 +4025,12 @@ void BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, 
 		token.used = true;
 		bat.perfectFortuneSide = perfectFortuneSide;
 		bat.perfectFortuneState = token;
+	}
+	if(serendipity.enabled && serendipity.round >= 1)
+	{
+		serendipity.recordStrike(physicalCreatureLuckAttack, bat.lucky());
+		bat.luckSerendipitySide = perfectFortuneSide;
+		bat.luckSerendipityState = serendipity;
 	}
 	if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
 	{

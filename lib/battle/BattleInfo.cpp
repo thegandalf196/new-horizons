@@ -183,6 +183,14 @@ void BattleInfo::setOverwhelmingFormulaState(BattleSide side, const Overwhelming
 	sides.at(side).overwhelmingFormulaState = state;
 }
 
+void BattleInfo::setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::runtime_error("Invalid Luck Serendipity side");
+	state.validateTransitionFrom(sides.at(side).luckSerendipity, round);
+	sides.at(side).luckSerendipity = state;
+}
+
 void BattleInfo::setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state)
 {
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
@@ -747,6 +755,8 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 			currentBattle->sides[i].preCombatOrderState.phase = PreCombatOrderState::Phase::AVAILABLE;
 		if(heroes[i])
 		{
+			currentBattle->sides[i].luckSerendipity.enabled = heroes[i]->hasActivePerk(
+				"new-horizons:luck", "new-horizons:luck.serendipity");
 			currentBattle->sides[i].perfectFortune.enabled = heroes[i]->hasActivePerk(
 				"new-horizons:luck", "new-horizons:luck.perfectFortune");
 			currentBattle->sides[i].adverseCombatReroll.enabled = heroes[i]->hasActivePerk(
@@ -1426,6 +1436,7 @@ void BattleInfo::nextRound()
 		extraActivation.outputPercent = 100;
 		sides.at(i).reducedExtraActivation = extraActivation;
 		sides.at(i).sylvanLuck.nextRound();
+		sides.at(i).luckSerendipity.nextRound(round + 1);
 		sides.at(i).castSpellsCount = 0;
 		sides.at(i).moraleSuppression.nextRound();
 		sides.at(i).heroCommandUsed = false;

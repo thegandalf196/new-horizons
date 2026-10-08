@@ -84,6 +84,7 @@
 	"new-horizons.combat.morale.readback.standardBearer": "Standard Bearer: %VALUE% Morale from an adjacent friendly stack.",
 	"new-horizons.combat.morale.readback.firstRound": "Opening-round effects: %VALUE% Morale.",
 	"new-horizons.combat.morale.readback.steadfast": "Steadfast: %VALUE% Morale from reduced hostile penalties.",
+	"new-horizons.combat.morale.readback.espritDeCorps": "Esprit de Corps: %VALUE% Morale from reduced army-composition penalties.",
 	"new-horizons.combat.morale.readback.commandingPresence": "Commanding Presence: negative Morale is treated as 0 while the Order benefit applies.",
 	"new-horizons.combat.morale.readback.furyUnbound": "Fury Unbound: negative Morale is treated as 0 while the stack has a Bloodrage damage bonus.",
 	"new-horizons.combat.luck.readback.value": "Ordinary attack Luck: %VALUE%. This target-neutral value excludes target-specific and chance-only modifiers.",

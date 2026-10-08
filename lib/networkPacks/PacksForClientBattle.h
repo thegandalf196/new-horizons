@@ -51,6 +51,8 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info)
 			info->validatePerfectFortuneSerialization(h);
 		if(h.saving && info)
+			info->validateLuckSerendipitySerialization(h);
+		if(h.saving && info)
 			info->validateDefiantSerialization(h);
 		if(h.saving && info)
 		{
@@ -925,6 +927,8 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 	std::optional<SylvanLuckState> fortuneState;
 	BattleSide perfectFortuneSide = BattleSide::NONE;
 	std::optional<PerfectFortuneState> perfectFortuneState;
+	BattleSide luckSerendipitySide = BattleSide::NONE;
+	std::optional<LuckSerendipityState> luckSerendipityState;
 
 	BattleID battleID = BattleID::NONE;
 	std::vector<BattleStackAttacked> bsa;
@@ -979,6 +983,19 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 	{
 		return flags & LAST_STAND_RETALIATION;
 	}
+	void validateLuckSerendipityMarker() const
+	{
+		const bool validSide = luckSerendipitySide == BattleSide::ATTACKER || luckSerendipitySide == BattleSide::DEFENDER;
+		if(luckSerendipityState.has_value() != validSide
+			|| (!luckSerendipityState && luckSerendipitySide != BattleSide::NONE))
+			throw std::runtime_error("Invalid Luck Serendipity attack side");
+		if(luckSerendipityState)
+		{
+			luckSerendipityState->validate();
+			if(!luckSerendipityState->enabled || luckSerendipityState->round < 1 || bsa.empty())
+				throw std::runtime_error("Invalid Luck Serendipity strike snapshot");
+		}
+	}
 	void validatePerfectFortuneMarker() const
 	{
 		const bool validSide = perfectFortuneSide == BattleSide::ATTACKER || perfectFortuneSide == BattleSide::DEFENDER;
@@ -1007,6 +1024,9 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 		if(h.saving)
 		{
 			validatePerfectFortuneMarker();
+			validateLuckSerendipityMarker();
+			if(luckSerendipityState && !h.hasFeature(Handler::Version::NEW_HORIZONS_LUCK_SERENDIPITY))
+				throw std::runtime_error("Cannot discard Luck Serendipity strike history");
 			if(perfectFortuneState && !h.hasFeature(Handler::Version::NEW_HORIZONS_PERFECT_FORTUNE))
 				throw std::runtime_error("Cannot discard Perfect Fortune strike state");
 			for(const auto & change : attackerChanges.changedStacks)
@@ -1115,9 +1135,20 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 			perfectFortuneSide = BattleSide::NONE;
 			perfectFortuneState.reset();
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_LUCK_SERENDIPITY))
+		{
+			h & luckSerendipitySide;
+			h & luckSerendipityState;
+		}
+		else if(!h.saving)
+		{
+			luckSerendipitySide = BattleSide::NONE;
+			luckSerendipityState.reset();
+		}
 		if(!h.saving)
 		{
 			validateLastStandMarker();
+			validateLuckSerendipityMarker();
 			validatePerfectFortuneMarker();
 		}
 		assert(battleID != BattleID::NONE);

@@ -81,6 +81,11 @@ int AFactionMember::moraleValAndBonusList(TConstBonusListPtr & bonusList) const
 	return moraleValAndBonusList(bonusList, 0);
 }
 
+TConstBonusListPtr AFactionMember::getMoraleBonuses() const
+{
+	return getBonusBearer()->getBonusesOfType(BonusType::MORALE);
+}
+
 int AFactionMember::moraleValAndBonusList(TConstBonusListPtr & bonusList, int32_t additionalMorale) const
 {
 	const auto [minMorale, maxMorale] = getMoraleLimits();
@@ -99,7 +104,7 @@ int AFactionMember::moraleValAndBonusList(TConstBonusListPtr & bonusList, int32_
 		return 0;
 	}
 
-	bonusList = getBonusBearer()->getBonusesOfType(BonusType::MORALE);
+	bonusList = getMoraleBonuses();
 
 	const int64_t rawMorale = static_cast<int64_t>(bonusList->totalValue()) + additionalMorale;
 	int result = static_cast<int>(std::clamp<int64_t>(rawMorale, minMorale, maxMorale));
