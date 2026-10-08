@@ -18,6 +18,7 @@
 #include "NewHorizonsBlink.h"
 #include "NewHorizonsSorcery.h"
 #include "NewHorizonsVengefulVines.h"
+#include "NewHorizonsOverwhelmingFormula.h"
 #include "TargetCondition.h"
 
 #include "../battle/IBattleState.h"
@@ -370,6 +371,10 @@ private:
 
 	void record(const StacksInjured & pack)
 	{
+		const auto * spell = dynamic_cast<const CSpell *>(mechanics.getSpell());
+		if(auto claim = overwhelmingFormulaClaim(battle, spell,
+			mechanics.getCapturedMdrPenetration(), pack.stacks))
+			delegate.apply(*claim);
 		recordedInjuries.insert(recordedInjuries.end(), pack.stacks.begin(), pack.stacks.end());
 	}
 
@@ -1678,6 +1683,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		&& newHorizonsWarcasting::battleMeditationEligible(battleInfo->getMagicRules(), casterHero,
 			battleInfo->getWarcastingState(casterSide), battleRound);
 
+	registerOverwhelmingFormulaCast(server);
 	if(!isCounterspellNegated())
 		beforeCast(server, sc, *server->getRNG(), target);
 
@@ -2504,6 +2510,8 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 	const auto effectSpellId = newHorizonsMagic::spellVariantBase(
 		projectedBattleInfo->getMagicRules(), acceptedSpellId);
 
+	if(completedHeroProjection)
+		registerOverwhelmingFormulaCast(server);
 	Target spellTarget = transformSpellTarget(target);
 
 	effectsToApply = effects->prepare(this, target, spellTarget);

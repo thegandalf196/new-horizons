@@ -8,17 +8,34 @@
 #pragma once
 
 #include "../../Global.h"
+#include "../battle/BattleSide.h"
 
 #include <cstdint>
+#include <optional>
 #include <vector>
 
 class JsonNode;
+class IBattleInfo;
 
 namespace spells
 {
-/// Validates optional saved cast provenance. Missing or malformed contributions
-/// yield no penetration; Focused Pairing applies only to its captured stack ID.
-DLL_LINKAGE std::vector<int> capturedMdrPenetrations(const JsonNode & captured, uint32_t targetUnitId);
+struct DLL_LINKAGE CapturedOverwhelmingFormula
+{
+	BattleSide side;
+	uint64_t token = 0;
+
+	bool operator==(const CapturedOverwhelmingFormula &) const = default;
+};
+
+/// Both metadata fields must be valid. Tokens use canonical decimal strings
+/// so Lua's floating-point number representation cannot lose cast identity.
+DLL_LINKAGE std::optional<CapturedOverwhelmingFormula> capturedOverwhelmingFormula(const JsonNode & captured);
+/// Formula contributes 50% dynamically only when the battle admits its saved
+/// token. Missing context retains the historical captured-array behavior.
+/// Malformed ordinary contributors retain their fail-closed behavior; invalid
+/// Formula metadata contributes no 50% while valid ordinary sources remain.
+DLL_LINKAGE std::vector<int> capturedMdrPenetrations(const JsonNode & captured, uint32_t targetUnitId,
+	const IBattleInfo * battle = nullptr);
 struct DLL_LINKAGE MagicalDamageReductionResult
 {
 	int64_t damageWithoutPenetration = 0;

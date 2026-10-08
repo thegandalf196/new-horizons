@@ -24,6 +24,7 @@
 #include "AlternatingHeroActionState.h"
 #include "RelentlessAssaultState.h"
 #include "SpellResponseState.h"
+#include "OverwhelmingFormulaState.h"
 #include "BattleDeploymentState.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
@@ -208,6 +209,12 @@ public:
 		return empty;
 	}
 	virtual int32_t getBattlecraftMasteryAwardRound(BattleSide side) const { (void)side; return -1; }
+	virtual const OverwhelmingFormulaState & getOverwhelmingFormulaState(BattleSide side) const
+	{
+		(void)side;
+		static const OverwhelmingFormulaState empty;
+		return empty;
+	}
 	/// Whether this side has already spent Armorer's once-per-combat Last Stand.
 	virtual bool armorerLastStandUsed(BattleSide side) const { (void)side; return false; }
 	virtual void consumeArmorerLastStand(BattleSide side)
@@ -309,6 +316,7 @@ public:
 	virtual void setMoraleSuppressionState(BattleSide, const MoraleSuppressionState &) {}
 	virtual void setReducedExtraActivationState(BattleSide, const ReducedExtraActivationState &) {}
 	virtual void setSpellResponseState(BattleSide, const SpellResponseState &) {}
+	virtual void setOverwhelmingFormulaState(BattleSide, const OverwhelmingFormulaState &) {}
 	/// Applies the accepted first Wait/Defend Battlefield Mastery award.
 	/// Implementations with detached state should update only their own branch.
 	virtual void awardBattlecraftMastery(BattleSide, uint32_t, int32_t, BattlecraftMasteryAction) {}

@@ -12,6 +12,7 @@
 #include "ISpellMechanics.h"
 #include "NewHorizonsMagic.h"
 #include "MagicalDamageReduction.h"
+#include "../networkPacks/PacksForClientBattle.h"
 #include "../battle/NewHorizonsShadowGift.h"
 #include "NewHorizonsSpellAvailability.h"
 
@@ -19,6 +20,7 @@
 #include "TargetCondition.h"
 #include "Problem.h"
 #include "CSpell.h"
+#include "ObstacleCasterProxy.h"
 
 #include "adventure/AdventureSpellMechanics.h"
 #include "effects/Effects.h"
@@ -826,6 +828,13 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 				battleInfo->getWarcastingState(casterSide), battleInfo->getRound());
 		combatCastingEligible = warcastingBonusPercent > 0 && hero
 			&& hero->hasActivePerk("new-horizons:warcasting", "new-horizons:warcasting.combatCasting");
+		overwhelmingFormulaEligible = battleInfo && hero && owner
+			&& (owner->isNegative() || newHorizonsMagic::isLandMine(owner->getId())
+				|| newHorizonsMagic::isFireWall(owner->getId()))
+			&& owner->isMagical() && newHorizonsMagic::rulesActive(battleInfo->getMagicRules())
+			&& battleInfo->getSideHero(casterSide) == hero
+			&& hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
+				"new-horizons:spellcraft.overwhelmingFormula");
 
 		if(battleInfo && hero && battleInfo->getSideHero(casterSide) == hero
 			&& !battleInfo->hasCompletedHeroSpellCast(casterSide)
@@ -1352,11 +1361,32 @@ JsonNode Mechanics::getCapturedMdrPenetration() const
 	return {};
 }
 
+void BaseMechanics::registerOverwhelmingFormulaCast(ServerCallback * server)
+{
+	if(!server || mode != Mode::HERO || !overwhelmingFormulaEligible || isCounterspellNegated()
+		|| overwhelmingFormulaToken != 0 || !cb || !cb->getBattle())
+		return;
+	auto state = cb->getBattle()->getOverwhelmingFormulaState(casterSide);
+	const auto token = state.registerAcceptedEligibleCast();
+	if(token == 0)
+		return;
+	SetOverwhelmingFormulaState registration;
+	registration.battleID = cb->getBattle()->getBattleID();
+	registration.side = casterSide;
+	registration.state = state;
+	server->apply(registration);
+	// The token becomes usable only after the real or detached state accepts it.
+	overwhelmingFormulaToken = token;
+}
+
 JsonNode BaseMechanics::getCapturedMdrPenetration() const
 {
+	if(mode == Mode::PASSIVE)
+		if(const auto * obstacle = dynamic_cast<const ObstacleCasterProxy *>(caster))
+			return obstacle->getCapturedMdrPenetration();
 	JsonNode result;
 	const auto * hero = caster ? caster->getHeroCaster() : nullptr;
-	if(mode != Mode::HERO || !isNegativeSpell() || !hero
+	if(mode != Mode::HERO || (!isNegativeSpell() && !overwhelmingFormulaEligible) || !hero
 		|| !newHorizonsMagic::rulesActive(hero->getMagicRules()))
 		return result;
 	const auto add = [&result](int percent)
@@ -1370,6 +1400,21 @@ JsonNode BaseMechanics::getCapturedMdrPenetration() const
 		add(20);
 	if(combatCastingEligible)
 		add(15);
+	if(overwhelmingFormulaEligible && overwhelmingFormulaToken != 0)
+	{
+		result["overwhelmingFormulaSide"].Integer() = static_cast<int32_t>(casterSide);
+		// A decimal string survives Lua's double-only numerical representation.
+		result["overwhelmingFormulaToken"].String() = std::to_string(overwhelmingFormulaToken);
+	}
+	else if(overwhelmingFormulaEligible && cb && cb->getBattle()
+		&& cb->getBattle()->getOverwhelmingFormulaState(casterSide).winningCastToken == 0
+		&& cb->getBattle()->getOverwhelmingFormulaState(casterSide).lastCandidateCastToken
+			!= std::numeric_limits<uint64_t>::max())
+	{
+		// Unaccepted UI prediction is read-only. Execution registers above before
+		// preparing effects, so this temporary contribution is never saved on one.
+		add(50);
+	}
 	if(metamagicFollowup && metamagicFocusedPairingEligible
 		&& metamagicFirstTargetUnitId != std::numeric_limits<uint32_t>::max())
 	{
@@ -1392,7 +1437,8 @@ int64_t Mechanics::adjustRecipientDamage(const battle::Unit * target, int64_t ra
 	const bool hostileRecipient = callback && caster
 		&& callback->battleGetOwner(target) != caster->getCasterOwner();
 	const auto penetrations = hostileRecipient
-		? capturedMdrPenetrations(getCapturedMdrPenetration(), target->unitId()) : std::vector<int>{};
+		? capturedMdrPenetrations(getCapturedMdrPenetration(), target->unitId(),
+			callback ? callback->getBattle() : nullptr) : std::vector<int>{};
 	return spell->adjustRawDamage(caster, target, rawDamage, 0,
 		holdReductionBasisPoints, 100, usesNewHorizonsMultiplicativeMDR(),
 		usesNewHorizonsMagicV3(), false, perkReductionBasisPoints, penetrations);
@@ -1428,6 +1474,16 @@ int64_t BaseMechanics::adjustEffectValueImpl(const battle::Unit * target, const 
 		penetrations.push_back(20);
 	if(combatCastingEligible && mode == Mode::HERO && isNegativeSpell() && hostileRecipient)
 		penetrations.push_back(15);
+	if(overwhelmingFormulaEligible && mode == Mode::HERO && hostileRecipient && cb && cb->getBattle())
+	{
+		const auto & state = cb->getBattle()->getOverwhelmingFormulaState(casterSide);
+		if(overwhelmingFormulaToken != 0 ? state.canPenetrate(overwhelmingFormulaToken)
+			: state.winningCastToken == 0 && state.lastCandidateCastToken != std::numeric_limits<uint64_t>::max())
+			penetrations.push_back(50);
+	}
+	if(mode == Mode::PASSIVE && dynamic_cast<const ObstacleCasterProxy *>(caster) && hostileRecipient)
+		penetrations = capturedMdrPenetrations(getCapturedMdrPenetration(), target->unitId(),
+			cb ? cb->getBattle() : nullptr);
 	const int holdReductionBasisPoints = cb && owner->isMagical() && target
 		? cb->battleGetHoldTheLineMagicalReductionBasisPoints(target) : 0;
 	const int perkReductionBasisPoints = cb && owner->isMagical() && target

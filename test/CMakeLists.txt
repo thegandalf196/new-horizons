@@ -396,6 +396,9 @@ set(test_SRCS
 		server/NewHorizonsSkeletonTransformerTest.cpp
 		battle/NewHorizonsEnchantedCommandTest.cpp
 		battle/OverwhelmingFormulaStateTest.cpp
+		battle/OverwhelmingFormulaProtocolTest.cpp
+		spells/OverwhelmingFormulaDamageTest.cpp
+		server/battles/OverwhelmingFormulaTest.cpp
 		server/battles/WarcastingScriptSpellTest.cpp
 		server/battles/NewHorizonsShroudTest.cpp
 		server/battles/NewHorizonsShroudNoEscapeTest.cpp
@@ -688,6 +691,11 @@ if(ENABLE_NULLKILLER2_AI)
 	# Nullkiller tests use internal AI symbols, so embed AI objects in vcmitest
 	# instead of linking the facade and loading a second copy of lib globals.
 	target_sources(vcmitest PRIVATE $<TARGET_OBJECTS:Nullkiller2>)
+	if(TARGET vcmiLua)
+		# This fixture exercises the internal Lua descriptor materializer, which
+		# is not an exported facade symbol in configurations without embedded AI.
+		target_sources(vcmitest PRIVATE spells/OverwhelmingFormulaObstacleTest.cpp)
+	endif()
 	set(vcmitest_LIBS gtest gmock vcmiMain vcmiservercommon TBB::tbb ${SYSTEM_LIBS})
 	foreach(optional_vcmitest_target IN ITEMS vcmiLua EmptyAI StupidAI MMAI)
 		if(TARGET ${optional_vcmitest_target})

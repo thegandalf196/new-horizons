@@ -527,6 +527,11 @@ void SetSpellResponseState::visitTyped(ICPackVisitor & visitor)
 	visitor.visitSetSpellResponseState(*this);
 }
 
+void SetOverwhelmingFormulaState::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitSetOverwhelmingFormulaState(*this);
+}
+
 void SetBattlecraftMasteryAward::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitSetBattlecraftMasteryAward(*this);

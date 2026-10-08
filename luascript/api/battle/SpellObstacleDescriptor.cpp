@@ -36,6 +36,7 @@ SpellCreatedObstacle SpellObstacleDescriptor::toObstacle() const
 	obstacle.casterSide       = casterSide;
 	obstacle.minimalDamage    = minimalDamage;
 	obstacle.movementCost     = movementCost;
+	obstacle.capturedMdrPenetration = capturedMdrPenetration;
 
 	obstacle.hidden          = hidden;
 	obstacle.passable        = passable;

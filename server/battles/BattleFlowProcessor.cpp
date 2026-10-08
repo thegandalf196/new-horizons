@@ -40,6 +40,7 @@
 #include "../../lib/spells/BonusCaster.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsOverwhelmingFormula.h"
 #include "../../lib/spells/ObstacleCasterProxy.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/battle/CObstacleInstance.h"
@@ -1836,6 +1837,9 @@ void applyPlagueEndOfActivation(CGameHandler * gameHandler, const CBattleInfoCal
 		StacksInjured injury;
 		injury.battleID = battle.getBattle()->getBattleID();
 		injury.stacks.push_back(hit);
+		if(auto claim = spells::overwhelmingFormulaClaim(battle, plagueRuntimeSpellId().toSpell(),
+			parameters["mdrPenetration"], injury.stacks))
+			gameHandler->sendAndApply(*claim);
 		gameHandler->sendAndApply(injury);
 	}
 

@@ -5291,7 +5291,7 @@
 								"requires": "expert",
 								"description": "The first hostile spell each combat that deals magical damage to one or more stacks with Magical Damage Reduction ignores 50% of each affected target's current Magical Damage Reduction.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The first hostile spell each combat that deals magical damage to one or more stacks with Magical Damage Reduction ignores 50% of each affected target's current Magical Damage Reduction."
 								}
 							}

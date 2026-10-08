@@ -104,6 +104,7 @@
 
 #include "../lib/spells/CSpell.h"
 #include "../lib/spells/NewHorizonsMagic.h"
+#include "../lib/spells/NewHorizonsOverwhelmingFormula.h"
 #include "../lib/spells/NewHorizonsSpellAvailability.h"
 
 #include <vstd/RNG.h>
@@ -2475,6 +2476,9 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 		StacksInjured injury;
 		injury.battleID = echo.battleID;
 		injury.stacks.push_back(hit);
+		if(auto claim = spells::overwhelmingFormulaClaim(*battleInfo, soulChainSpell.toSpell(),
+			echo.mdrPenetration, injury.stacks))
+			sendAndApply(*claim);
 		// Re-enter this bounded hook with an explicit spell-tagged packet; the
 		// capture path above rejects it before another echo can be scheduled.
 		sendAndApply(injury);

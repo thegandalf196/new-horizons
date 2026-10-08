@@ -2,6 +2,26 @@
 
 Updated: 2026-10-07
 
+Overwhelming Formula source/native verified: first actual hostile magical injury
+against applicable current MDR chooses one cast, not merely the first accepted
+spell. All its targets and later Plague/SoulChain/hazard damage retain that cast's
+entitlement; another pending cast cannot inherit it. Real and detached state,
+monotonic packets, decimal marker identities and uint32-limb save representation
+are connected. Mine/FireWall creation does not consume the perk; friendly damage
+does not consume it, and current defenses are resolved on hostile triggers.
+Final ten-job linked84117 build exits0. Native16877 passes53/53 in4.540s, zero
+skips;17 Python registry guards/module drift pass. Independent Sol High review
+has no blocking finding. Receipts: build/nh-overwhelming-validation.Ujdl7M9b/
+native-feature.log/XML. Coverage advances230→231/310 (generic160/220,
+faction71/90);31 Skills/93 ranks,61/67 combat spells and8/8 Orders unchanged.
+The broader adjacent gate passes56/57: one stale v2 fixture retains v3 Morale
+and fails before damage assertions; preserve that failure for Phase2. Movement
+trigger routing, full detached AI action lifecycle and broader controller/status
+matrices remain Phase2. Actual server Plague-tick/SoulChain-echo Formula claims
+have source/shared-helper review, not new live delayed-event certification in
+the53-case gate; retain that execution coverage for Phase2.
+Normal0c6af Linux delivery remains unchanged.
+
 UP197 source/native completion: Skeleton Transformer now pools selected
 adventure HP, floors50% to whole Skeletons, fills retained Skeleton stacks then
 freed selected slots, and rejects zero/residual overflow without mutation.
@@ -71,7 +91,7 @@ remaining starting-profile authoring is a genuine design gap. Reviewed biography
 data contains52 rewrites/92 inheritances, not144 approved new mechanics.
 
 Current registry audit,2026-10-07: config/newHorizonsPerks.json contains31 Skills
-and93 active ranks,159 active/61 planned generic perks (220 total),71 active/19
+and93 active ranks,160 active/60 planned generic perks (220 total),71 active/19
 planned faction perks (90 total). Activation status is not proof of exhaustive
 cross-system or playable verification. Required UI work below does not add perk,
 spell or Order identities.
@@ -4267,7 +4287,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Havoc Magic | 3/0 | 7/3 | Three perks missing; Mine Layer has focused live/detached placement evidence |
 | Sorcery Magic | 3/0 | 10/0 | Bounded canonical consumer audit2026-10-06 identifies learning/coefficient paths for all three ranks and production consumers for all ten perks, including distinct Mass Slow. No missing principal clause demonstrated; existing focused fixtures were inspected, not rerun as whole-family execution certification. Wider interactions and rendered/playable acceptance remain separate. |
 | Chaos Magic | 3/0 | 5/5 | Frenzied Curse joins Mindbreaker, Blinkmaster, Weaver and Paradox Shield with focused source/native evidence recorded above; five perks remain planned. Base Berserk lifecycle is still partial. |
-| Spellcraft | 3/0 | 4/6 | Grand Formula scales the first accepted Level 4-or-5 hero spell's SP term by 150%; Arcane Focus, Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold. Basic/Advanced/Expert efficiency is 110/120/130% under saved v3 rules. Planned does not mean entirely unimplemented: Precise Casting has7/7 principal native cases and awaits Time Stop/Earthquake scope; Counterpressure has an accepted-cast map and a no-op trigger boundary. Concentration target-count definition, Cross-School multi-school relation, Extend Spell unusual lifetimes and Overwhelming Formula penetration composition remain explicit rulings, not unmapped features. |
+| Spellcraft | 3/0 | 5/5 | Overwhelming Formula now selects the first actual hostile magical injury against a target with applicable MDR, retaining the winning cast across targets and delayed hazards; its 50% penetration combines independently with other contributors. Focused Formula/MDR native gate passes53/53; full movement-trigger routing remains Phase2. Grand Formula, Arcane Focus, Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold. Basic/Advanced/Expert efficiency is 110/120/130% under saved v3 rules. Precise Casting has7/7 principal native cases and awaits Time Stop/Earthquake scope; Counterpressure has an accepted-cast map and a no-op trigger boundary. Concentration target-count definition, Cross-School multi-school relation and Extend Spell unusual lifetimes remain explicit rulings. |
 | Wisdom | 3/0 | 8/2 | Mana Conservation post-combat Normal recovery, Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. One other perk remains missing. Broader interactions and playable acceptance remain open. |
 | Warcasting | 3/0 | 7/3 | Perfect Rhythm has accepted third-Spell/third-Order, flat-base preservation, unmatched/unselected/expired controls and detached branch evidence: principal7/7, active7/7 and adjacent11/11 pass with zero skips. Valid one-per-tier selection prevents coexistence with Master Synthesis; the former stacking hold is inapplicable. Spellward and Master Synthesis retain their focused evidence. Combat Casting, Enchanted Command and Reactive Weave remain planned pending recorded shared-rule decisions. Rendered status and wider interactions remain Phase2. |
 | Logistics | 3/0 | 8/2 | Rapid Embarkation and Pursuit March remain missing. Master Logistician has actual day/boat/Stables/save/pathfinder evidence alongside Forced March, Roadmaster, Wayfarer and Mountaineer. Future-day strategic carry and unspent-burst forecasting remain Phase2. |

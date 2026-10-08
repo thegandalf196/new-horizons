@@ -6200,6 +6200,29 @@ headless scenario with victory and clean shutdown. Neither check establishes
 current rendered guild/casting UI acceptance. Keep existing schema diagnostics
 and isolated-fixture missing music as deferred findings, not diagnostic-free claims.
 
+### Overwhelming Formula unsigned-token serialization (2026-10-07)
+
+Final repaired84117 linked build exits0. Focused16877 native gate53/53 in4.540s,
+zero skips;17 Python guards/module drift pass. Independent review confirms the
+broader native76082 gate56/57 failure is the existing SpellPenetration fixture's
+v2 savedFormula retaining installed v3-only Morale. It throws during prepare,
+before any new damage path. Preserve native.log/XML as the failed adjacent
+receipt and native-feature.log/XML as the distinct53-case passing gate; do not
+claim57/57. This synthetic legacy fixture repair belongs to Phase2.
+
+Final incremental9865 fails only in the added descriptor fixture: Lua's API
+headers assume the Lua precompiled header has supplied declarations. Include
+luascript/StdInc.h in that fixture as well as the test header, retaining its real
+descriptor assertions; do not relax compiler diagnostics or alter production
+headers to hide this test setup mistake. The preceding linked70995 build exits0.
+
+Build84613 is terminal1 at SerializerReflection: BinaryDeserializer deliberately
+rejects uint64 direct deserialization. The foundation's toy round-trip tests did
+not exercise this framework restriction. Encode each cast token as two uint32
+limbs and reconstruct its full unsigned domain on load; do not weaken the shared
+guard or narrow valid identities. Add actual CMemorySerializer full-domain packet
+and pending/winning-state cases. Linked repaired validation remains pending.
+
 No credentials, workstation paths, purchaser content or raw research dumps in
 these notes. Keep historical failures even after repair, but label their scope.
 Do not claim the pipeline is future-proof: tests reduce recurrence and catch more

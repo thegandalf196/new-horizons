@@ -208,6 +208,7 @@ void SpellCreatedObstacle::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeInt("spellLevel", spellLevel);
 	handler.serializeInt("casterSide", casterSide);
 	handler.serializeInt("minimalDamage", minimalDamage);
+	handler.serializeRaw("mdrPenetration", capturedMdrPenetration, std::nullopt);
 	handler.serializeInt("type", obstacleType);
 
 	handler.serializeBool("hidden", hidden);

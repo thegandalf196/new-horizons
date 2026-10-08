@@ -260,6 +260,7 @@ local function buildDescriptor(self, mechanics, side, hex, customSize)
 		casterPowerDivisor = mechanics:getEffectPowerDivisor(),
 		spellLevel       = mechanics:getEffectLevel(),
 		casterSide       = side,
+		mdrPenetration   = mechanics:getCapturedMdrPenetration(),
 		-- Canonical Land Mine and Fire Wall direct-damage values are evaluated by
 		-- the authoritative cast mechanics and retained in the generic obstacle
 		-- damage floor.  The trigger proxy recognizes these sources and uses the

@@ -164,6 +164,14 @@ void BattleInfo::setSpellResponseState(BattleSide side, const SpellResponseState
 	sides.at(side).spellResponseState = state;
 }
 
+void BattleInfo::setOverwhelmingFormulaState(BattleSide side, const OverwhelmingFormulaState & state)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::invalid_argument("Invalid side for Overwhelming Formula state");
+	state.validateShape();
+	sides.at(side).overwhelmingFormulaState = state;
+}
+
 bool BattleInfo::hasBattlecraftMasteryMarkers() const
 {
 	return std::any_of(stacks.begin(), stacks.end(), [](const auto & stack)

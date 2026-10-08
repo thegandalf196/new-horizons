@@ -50,6 +50,13 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 	{
 		if(h.saving && info)
 			info->validateSpellResponseStates();
+		if(h.saving && info)
+		{
+			info->validateOverwhelmingFormulaStates();
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWHELMING_FORMULA)
+				&& info->hasOverwhelmingFormulaState())
+				throw std::runtime_error("Cannot discard Overwhelming Formula state from BattleStart");
+		}
 		if(h.saving && info && info->hasBattlecraftMasteryMarkers())
 			throw std::runtime_error("Binary BattleStart descriptors cannot preserve active Battlefield Mastery unit markers");
 		if(h.saving && info && info->hasSacredCommandOrderState()
@@ -385,6 +392,55 @@ struct DLL_LINKAGE SetSpellResponseState : public CPackForClient
 			throw std::runtime_error(h.saving
 				? "Cannot serialize Spell Response state to an older format"
 				: "Cannot deserialize Spell Response state from an older format");
+		if(h.saving)
+			validateShape();
+		h & battleID;
+		h & side;
+		h & state;
+		validateShape();
+	}
+};
+
+/// Registers an eligible accepted cast or claims the first actual qualifying
+/// injury. Tokens are never rewound or reassigned during a combat.
+struct DLL_LINKAGE SetOverwhelmingFormulaState : public CPackForClient
+{
+	BattleID battleID = BattleID::NONE;
+	BattleSide side = BattleSide::NONE;
+	OverwhelmingFormulaState state;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	void validateShape() const
+	{
+		if(battleID == BattleID::NONE || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+			throw std::runtime_error("Invalid Overwhelming Formula state update target");
+		state.validateShape();
+	}
+
+	void validateTransitionFrom(const OverwhelmingFormulaState & previous) const
+	{
+		validateShape();
+		previous.validateShape();
+		if(state == previous)
+			return;
+		if(previous.lastCandidateCastToken != std::numeric_limits<OverwhelmingFormulaState::CastToken>::max()
+			&& state.lastCandidateCastToken == previous.lastCandidateCastToken + 1
+			&& state.winningCastToken == previous.winningCastToken)
+			return;
+		if(state.lastCandidateCastToken == previous.lastCandidateCastToken
+			&& previous.winningCastToken == OverwhelmingFormulaState::INVALID_CAST_TOKEN
+			&& state.winningCastToken != OverwhelmingFormulaState::INVALID_CAST_TOKEN)
+			return;
+		throw std::runtime_error("Invalid Overwhelming Formula state transition");
+	}
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWHELMING_FORMULA))
+			throw std::runtime_error(h.saving
+				? "Cannot serialize Overwhelming Formula state to an older format"
+				: "Cannot deserialize Overwhelming Formula state from an older format");
 		if(h.saving)
 			validateShape();
 		h & battleID;

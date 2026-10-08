@@ -12,6 +12,7 @@
 
 #include "../constants/EntityIdentifiers.h"
 #include "../filesystem/ResourcePath.h"
+#include "../json/JsonNode.h"
 #include "../networkPacks/BattleChanges.h"
 #include "../serializer/Serializeable.h"
 
@@ -85,6 +86,9 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 	int32_t casterPowerDivisor = 1;
 	int32_t spellLevel;
 	int32_t minimalDamage; //How many damage should it do regardless of power and level of caster
+	/// Original-cast penetration contributors and Formula identity. Resolve the
+	/// token dynamically when this obstacle deals damage, never at placement.
+	JsonNode capturedMdrPenetration;
 	BattleSide casterSide;
 
 	SpellID trigger;
@@ -134,6 +138,10 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWHELMING_FORMULA)
+			&& !capturedMdrPenetration.isNull()
+			&& !(capturedMdrPenetration.isStruct() && capturedMdrPenetration.Struct().empty()))
+			throw std::runtime_error("Cannot discard obstacle cast penetration in an older protocol");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_OBSTACLE_MOVEMENT_COST)
 			&& movementCost != 0)
 			throw std::runtime_error("Cannot discard spell obstacle movement cost in an older protocol");
@@ -194,5 +202,9 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 
 		if(movementCost < 0 || movementCost > MAX_MOVEMENT_COST)
 			throw std::runtime_error("Invalid spell obstacle movement cost");
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWHELMING_FORMULA))
+			h & capturedMdrPenetration;
+		else if(!h.saving)
+			capturedMdrPenetration = JsonNode();
 	}
 };

@@ -337,4 +337,5 @@ void registerTypes(Serializer &s)
 	s.template registerType<SetNewHorizonsForcedMarchState>(294);
 	s.template registerType<SetSpellResponseState>(295);
 	s.template registerType<SetBattlecraftMasteryAward>(296);
+	s.template registerType<SetOverwhelmingFormulaState>(297);
 }

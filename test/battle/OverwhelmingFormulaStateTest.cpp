@@ -13,10 +13,10 @@ namespace
 struct FormulaStateHandler
 {
 	bool saving;
-	std::array<uint64_t, 2> fields{};
+	std::array<uint32_t, 4> fields{};
 	size_t position = 0;
 
-	void operator&(uint64_t & field)
+	void operator&(uint32_t & field)
 	{
 		if(saving)
 			fields.at(position++) = field;
@@ -113,7 +113,7 @@ TEST(OverwhelmingFormulaState, SavedStatePreservesDelayedEntitlementAndResetStar
 	ASSERT_TRUE(original.claimActualDamage(winner, true, 10, true));
 	FormulaStateHandler writer{true};
 	original.serialize(writer);
-	EXPECT_EQ(writer.position, 2u);
+	EXPECT_EQ(writer.position, 4u);
 
 	OverwhelmingFormulaState restored;
 	FormulaStateHandler reader{false, writer.fields};
@@ -161,6 +161,6 @@ TEST(OverwhelmingFormulaState, InvalidSavedWinnerIsRejectedOnSaveAndLoad)
 	EXPECT_EQ(writer.position, 0u);
 
 	OverwhelmingFormulaState restored;
-	FormulaStateHandler reader{false, {1, 2}};
+	FormulaStateHandler reader{false, {0, 1, 0, 2}};
 	EXPECT_THROW(restored.serialize(reader), std::runtime_error);
 }

@@ -31,6 +31,7 @@
 #include "HeroActionAllowanceState.h"
 #include "RelentlessAssaultState.h"
 #include "SpellResponseState.h"
+#include "OverwhelmingFormulaState.h"
 #include "../callback/GameCallbackHolder.h"
 
 class CGHeroInstance;
@@ -200,6 +201,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	// Last Stand's once-per-combat allowance belongs to the side, not to the
 	// stack it protects. BattleInfo owns its versioned binary representation.
 	bool armorerLastStandUsed = false;
+	OverwhelmingFormulaState overwhelmingFormulaState;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);
@@ -389,6 +391,13 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			throw std::runtime_error("Cannot discard Spell Response state in an older battle format");
 		if(h.saving)
 			spellResponseState.validate();
+		if(h.saving)
+		{
+			overwhelmingFormulaState.validateShape();
+			if(overwhelmingFormulaState.hasState()
+				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWHELMING_FORMULA))
+				throw std::runtime_error("Cannot discard Overwhelming Formula state in an older battle format");
+		}
 		if(h.saving && initialArmyIsWandering && !initialArmyValue)
 			throw std::runtime_error("Wandering battle army has no initial Army Value snapshot");
 		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_INITIAL_ARMY_VALUE)
@@ -708,6 +717,10 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			h & spellResponseState;
 		else if(!h.saving)
 			spellResponseState = {};
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWHELMING_FORMULA))
+			h & overwhelmingFormulaState;
+		else if(!h.saving)
+			overwhelmingFormulaState = {};
 		if(!h.saving)
 		{
 			validateDoubleCommandState();

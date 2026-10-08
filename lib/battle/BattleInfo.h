@@ -110,6 +110,14 @@ public:
 		return sides.at(side).spellResponseState;
 	}
 	void setReducedExtraActivationState(BattleSide side, const ReducedExtraActivationState & state) override;
+	const OverwhelmingFormulaState & getOverwhelmingFormulaState(BattleSide side) const override
+	{
+		static const OverwhelmingFormulaState empty;
+		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			return empty;
+		return sides.at(side).overwhelmingFormulaState;
+	}
+	void setOverwhelmingFormulaState(BattleSide side, const OverwhelmingFormulaState & state) override;
 	LuckRollRules getLuckRollRules() const override { return luckRollRules; }
 	const std::map<CreatureID, TQuantity> & getDemonicReserve(BattleSide side) const override
 	{
@@ -148,6 +156,16 @@ public:
 	{
 		return sides[BattleSide::ATTACKER].spellResponseState.hasState()
 			|| sides[BattleSide::DEFENDER].spellResponseState.hasState();
+	}
+	bool hasOverwhelmingFormulaState() const
+	{
+		return sides[BattleSide::ATTACKER].overwhelmingFormulaState.hasState()
+			|| sides[BattleSide::DEFENDER].overwhelmingFormulaState.hasState();
+	}
+	void validateOverwhelmingFormulaStates() const
+	{
+		for(const auto & side : sides)
+			side.overwhelmingFormulaState.validateShape();
 	}
 	int32_t getBattlecraftMasteryAwardRound(BattleSide side) const override
 	{
@@ -250,6 +268,9 @@ public:
 		if(h.saving)
 		{
 			validateSpellResponseStates();
+			validateOverwhelmingFormulaStates();
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWHELMING_FORMULA) && hasOverwhelmingFormulaState())
+				throw std::runtime_error("Cannot discard Overwhelming Formula state in an older battle format");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SPELL_RESPONSE) && hasSpellResponseState())
 				throw std::runtime_error("Cannot discard Spell Response state in an older battle format");
 			validateBattlecraftMasteryState();
@@ -789,6 +810,7 @@ public:
 		if(!h.saving)
 		{
 			validateSpellResponseStates();
+			validateOverwhelmingFormulaStates();
 			// Reject null/ambiguous unit references before postDeserialize dereferences
 			// units and resolves their army bindings. Validation does not need those bindings.
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS))

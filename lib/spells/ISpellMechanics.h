@@ -537,6 +537,8 @@ public:
 protected:
 	const CSpell * owner;
 	Mode mode;
+	/// Register only at an accepted execution seam, never during UI prediction.
+	void registerOverwhelmingFormulaCast(ServerCallback * server);
 	int64_t adjustEffectValueImpl(const battle::Unit * target, bool applyExecution) const;
 	bool forceNonSmartTargeting = false;
 	bool usesNewHorizonsBerserkTargeting() const;
@@ -581,6 +583,8 @@ private:
 	uint32_t metamagicFirstTargetUnitId = std::numeric_limits<uint32_t>::max();
 	bool metamagicFocusedPairingEligible = false;
 	bool combatCastingEligible = false;
+	bool overwhelmingFormulaEligible = false;
+	uint64_t overwhelmingFormulaToken = 0;
 	int32_t metamagicManaRefund = 0;
 
 	bool forceMassive = false;

@@ -8,6 +8,7 @@
 #include "StdInc.h"
 #include "MagicalDamageReduction.h"
 #include "../json/JsonNode.h"
+#include "../battle/IBattleState.h"
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <cmath>
@@ -16,7 +17,35 @@
 
 namespace spells
 {
-std::vector<int> capturedMdrPenetrations(const JsonNode & captured, uint32_t targetUnitId)
+std::optional<CapturedOverwhelmingFormula> capturedOverwhelmingFormula(const JsonNode & captured)
+{
+	if(!captured.isStruct())
+		return std::nullopt;
+	const auto & side = captured["overwhelmingFormulaSide"];
+	const auto & token = captured["overwhelmingFormulaToken"];
+	if(!side.isNumber() || !std::isfinite(side.Float())
+		|| (side.Float() != static_cast<int>(BattleSide::ATTACKER)
+			&& side.Float() != static_cast<int>(BattleSide::DEFENDER))
+		|| !token.isString())
+		return std::nullopt;
+	const auto & decimal = token.String();
+	if(decimal.empty() || decimal.size() > 20 || decimal.front() == '0')
+		return std::nullopt;
+	uint64_t value = 0;
+	for(const char character : decimal)
+	{
+		if(character < '0' || character > '9')
+			return std::nullopt;
+		const auto digit = static_cast<uint64_t>(character - '0');
+		if(value > (std::numeric_limits<uint64_t>::max() - digit) / 10)
+			return std::nullopt;
+		value = value * 10 + digit;
+	}
+	return CapturedOverwhelmingFormula{static_cast<BattleSide>(side.Integer()), value};
+}
+
+std::vector<int> capturedMdrPenetrations(const JsonNode & captured, uint32_t targetUnitId,
+	const IBattleInfo * battle)
 {
 	if(!captured.isStruct())
 		return {};
@@ -50,6 +79,12 @@ std::vector<int> capturedMdrPenetrations(const JsonNode & captured, uint32_t tar
 			return {};
 		if(static_cast<uint32_t>(focusedTarget.Integer()) == targetUnitId)
 			result.push_back(static_cast<int>(focusedPercent.Integer()));
+	}
+	if(battle)
+	{
+		const auto formula = capturedOverwhelmingFormula(captured);
+		if(formula && battle->getOverwhelmingFormulaState(formula->side).canPenetrate(formula->token))
+			result.push_back(50);
 	}
 	return result;
 }

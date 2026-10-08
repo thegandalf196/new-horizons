@@ -519,6 +519,8 @@ set(lib_MAIN_HEADERS
 	battle/TimeStopState.h
 	battle/NewHorizonsWarcasting.h
 	battle/OverwhelmingFormulaState.h
+	spells/NewHorizonsOverwhelmingFormula.h
+	spells/NewHorizonsOverwhelmingFormula.cpp
 	battle/BattleInfo.h
 	battle/BattleDeploymentState.h
 	battle/PhysicalAffliction.h

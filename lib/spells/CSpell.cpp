@@ -506,6 +506,77 @@ void CSpell::getEffects(std::vector<Bonus> & lst, const int schoolLevel, const b
 	}
 }
 
+std::vector<int> CSpell::magicalDamageReductionSourcesBasisPoints(const battle::Unit * affectedCreature,
+	int magicalDamageReductionBasisPoints, int perkMagicalDamageReductionBasisPoints,
+	bool useFractionalMagicalDamageReduction) const
+{
+	std::vector<int> sources;
+	if(!affectedCreature || !isMagical())
+		return sources;
+	const auto * bearer = affectedCreature->getBonusBearer();
+	// Preserve the existing multi-school rule: the first matching school
+	// supplies school-specific sources; each bonus remains independent.
+	forEachSchool([&](const SpellSchool & school, bool & stop)
+	{
+		const BonusSubtypeID subtype(school);
+		const auto reductions = bearer->getBonusesOfType(BonusType::SPELL_DAMAGE_REDUCTION, subtype);
+		const auto fractional = bearer->getBonusesOfType(BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS, subtype);
+		if(!reductions->empty() || (useFractionalMagicalDamageReduction && !fractional->empty()))
+		{
+			for(const auto & bonus : *reductions)
+			{
+				const int reduction = std::clamp(bonus->val, 0, 100);
+				if(reduction > 0)
+					sources.push_back(reduction * 100);
+			}
+			if(useFractionalMagicalDamageReduction)
+			{
+				for(const auto & bonus : *fractional)
+				{
+					const int reduction = std::clamp(bonus->val, 0, 10000);
+					if(reduction > 0)
+						sources.push_back(reduction);
+				}
+			}
+			stop = true;
+		}
+	});
+	const auto anySchool = bearer->getBonuses(
+		Selector::typeSubtype(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(SpellSchool::ANY)),
+		"type_SPELL_DAMAGE_REDUCTION_s_ANY");
+	for(const auto & bonus : *anySchool)
+	{
+		const int reduction = std::clamp(bonus->val, 0, 100);
+		if(reduction > 0)
+			sources.push_back(reduction * 100);
+	}
+	if(useFractionalMagicalDamageReduction)
+	{
+		const auto anySchoolFractional = bearer->getBonuses(
+			Selector::typeSubtype(BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS, BonusSubtypeID(SpellSchool::ANY)),
+			"type_SPELL_DAMAGE_REDUCTION_BASIS_POINTS_s_ANY");
+		for(const auto & bonus : *anySchoolFractional)
+		{
+			const int reduction = std::clamp(bonus->val, 0, 10000);
+			if(reduction > 0)
+				sources.push_back(reduction);
+		}
+	}
+	if(magicalDamageReductionBasisPoints > 0)
+		sources.push_back(std::clamp(magicalDamageReductionBasisPoints, 0, 10000));
+	if(perkMagicalDamageReductionBasisPoints > 0)
+		sources.push_back(std::clamp(perkMagicalDamageReductionBasisPoints, 0, 10000));
+	return sources;
+}
+
+bool CSpell::hasApplicableMagicalDamageReduction(const battle::Unit * affectedCreature,
+	int magicalDamageReductionBasisPoints, int perkMagicalDamageReductionBasisPoints,
+	bool useFractionalMagicalDamageReduction) const
+{
+	return !magicalDamageReductionSourcesBasisPoints(affectedCreature, magicalDamageReductionBasisPoints,
+		perkMagicalDamageReductionBasisPoints, useFractionalMagicalDamageReduction).empty();
+}
+
 int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Unit * affectedCreature, int64_t rawDamage,
 	int ignoreSpellDamageReductionPercent, int magicalDamageReductionBasisPoints,
 	int finalDamageMultiplierPercent, bool useIndependentMagicalDamageReduction,
@@ -521,73 +592,9 @@ int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Uni
 		const auto * bearer = affectedCreature->getBonusBearer();
 		if(useIndependentMagicalDamageReduction && isMagical())
 		{
-			std::vector<int> reductionSourcesBasisPoints;
-
-			// Preserve the existing multi-school rule: the first matching school
-			// supplies school-specific sources; each bonus for that school remains
-			// an independent reduction source.
-			forEachSchool([&](const SpellSchool & school, bool & stop)
-			{
-				const BonusSubtypeID subtype(school);
-				const auto schoolReductions = bearer->getBonusesOfType(BonusType::SPELL_DAMAGE_REDUCTION, subtype);
-				const auto schoolReductionsBasisPoints = bearer->getBonusesOfType(
-					BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS, subtype);
-				const bool hasFractionalReductions = useFractionalMagicalDamageReduction
-					&& !schoolReductionsBasisPoints->empty();
-				if(!schoolReductions->empty() || hasFractionalReductions)
-				{
-					for(const auto & bonus : *schoolReductions)
-					{
-						const int reduction = std::clamp(bonus->val, 0, 100);
-						if(reduction > 0)
-							reductionSourcesBasisPoints.push_back(reduction * 100);
-					}
-					if(useFractionalMagicalDamageReduction)
-					{
-						for(const auto & bonus : *schoolReductionsBasisPoints)
-						{
-							const int reduction = std::clamp(bonus->val, 0, 10000);
-							if(reduction > 0)
-								reductionSourcesBasisPoints.push_back(reduction);
-						}
-					}
-					stop = true;
-				}
-			});
-
-			const CSelector selector = Selector::typeSubtype(
-				BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(SpellSchool::ANY));
-			const auto anySchoolReductions = bearer->getBonuses(
-				selector, "type_SPELL_DAMAGE_REDUCTION_s_ANY");
-			for(const auto & bonus : *anySchoolReductions)
-			{
-				const int reduction = std::clamp(bonus->val, 0, 100);
-				if(reduction > 0)
-					reductionSourcesBasisPoints.push_back(reduction * 100);
-			}
-			if(useFractionalMagicalDamageReduction)
-			{
-				const auto anySchoolReductionsBasisPoints = bearer->getBonuses(
-					Selector::typeSubtype(BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS,
-						BonusSubtypeID(SpellSchool::ANY)), "type_SPELL_DAMAGE_REDUCTION_BASIS_POINTS_s_ANY");
-				for(const auto & bonus : *anySchoolReductionsBasisPoints)
-				{
-					const int reduction = std::clamp(bonus->val, 0, 10000);
-					if(reduction > 0)
-						reductionSourcesBasisPoints.push_back(reduction);
-				}
-			}
-
-			// Hold the Line's saved Iron Discipline value is an independent magical
-			// reduction. Keep its fractional percentage points exact.
-			if(magicalDamageReductionBasisPoints > 0)
-				reductionSourcesBasisPoints.push_back(std::clamp(magicalDamageReductionBasisPoints, 0, 10000));
-
-			// Spellward is resolved from the target's current controller by the
-			// battle callback, then supplied here as its own multiplicative source.
-			if(perkMagicalDamageReductionBasisPoints > 0)
-				reductionSourcesBasisPoints.push_back(
-					std::clamp(perkMagicalDamageReductionBasisPoints, 0, 10000));
+			const auto reductionSourcesBasisPoints = magicalDamageReductionSourcesBasisPoints(affectedCreature,
+				magicalDamageReductionBasisPoints, perkMagicalDamageReductionBasisPoints,
+				useFractionalMagicalDamageReduction);
 
 			auto penetrations = independentPenetrationsPercent;
 			if(ignoreSpellDamageReductionPercent > 0)

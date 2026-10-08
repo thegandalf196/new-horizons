@@ -132,7 +132,7 @@ int64_t adjustedTickDamage(const CBattleInfoCallback & battle, BattleSide caster
 
 	const auto penetrations = capturedPenetration
 		&& battle.battleGetOwner(target) != caster->getCasterOwner()
-		? spells::capturedMdrPenetrations(*capturedPenetration, target->unitId()) : std::vector<int>{};
+		? spells::capturedMdrPenetrations(*capturedPenetration, target->unitId(), battle.getBattle()) : std::vector<int>{};
 	return spell->adjustRawDamage(caster, target, rawDamage, 0,
 		battle.battleGetHoldTheLineMagicalReductionBasisPoints(target), 100, true,
 		newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())

@@ -98,6 +98,7 @@ ACTIVE_PERKS = {
     "new-horizons:shroudOfMalassa.nightProwler",
     "new-horizons:spellcraft.empowerSpell",
     "new-horizons:spellcraft.spellPenetration",
+    "new-horizons:spellcraft.overwhelmingFormula",
     "new-horizons:natureMagic.herbalist",
     "new-horizons:bulwarkOfTheMire.mireborn",
     "new-horizons:bulwarkOfTheMire.thickHide",

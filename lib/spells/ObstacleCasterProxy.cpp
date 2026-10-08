@@ -86,6 +86,11 @@ int64_t ObstacleCasterProxy::getEffectRange(const Spell * spell) const
 	return 0;
 }
 
+const JsonNode & ObstacleCasterProxy::getCapturedMdrPenetration() const
+{
+	return obs.capturedMdrPenetration;
+}
+
 int32_t SilentCaster::manaLimit() const
 {
 	return 0;

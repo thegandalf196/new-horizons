@@ -79,9 +79,22 @@ struct DLL_LINKAGE OverwhelmingFormulaState
 	{
 		if(h.saving)
 			validateShape();
-		h & lastCandidateCastToken;
-		h & winningCastToken;
+		// The binary serializer deliberately rejects uint64_t fields. Preserve
+		// the full token domain with two exactly representable unsigned limbs.
+		constexpr auto limbBits = std::numeric_limits<uint32_t>::digits;
+		uint32_t candidateHigh = static_cast<uint32_t>(lastCandidateCastToken >> limbBits);
+		uint32_t candidateLow = static_cast<uint32_t>(lastCandidateCastToken);
+		uint32_t winnerHigh = static_cast<uint32_t>(winningCastToken >> limbBits);
+		uint32_t winnerLow = static_cast<uint32_t>(winningCastToken);
+		h & candidateHigh;
+		h & candidateLow;
+		h & winnerHigh;
+		h & winnerLow;
 		if(!h.saving)
+		{
+			lastCandidateCastToken = (static_cast<CastToken>(candidateHigh) << limbBits) | candidateLow;
+			winningCastToken = (static_cast<CastToken>(winnerHigh) << limbBits) | winnerLow;
 			validateShape();
+		}
 	}
 };

@@ -178,7 +178,7 @@ int64_t adjustedEchoDamage(const CBattleInfoCallback & battle, const BattleSide 
 
 	const auto penetrations = capturedPenetration
 		&& battle.battleGetOwner(primary) != caster->getCasterOwner()
-		? spells::capturedMdrPenetrations(*capturedPenetration, primary->unitId()) : std::vector<int>{};
+		? spells::capturedMdrPenetrations(*capturedPenetration, primary->unitId(), battle.getBattle()) : std::vector<int>{};
 	return definition->adjustRawDamage(caster, primary, rawDamage, 0,
 		battle.battleGetHoldTheLineMagicalReductionBasisPoints(primary), 100, true,
 		newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())

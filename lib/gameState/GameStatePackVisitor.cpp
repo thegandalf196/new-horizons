@@ -2785,6 +2785,15 @@ void GameStatePackVisitor::visitSetSpellResponseState(SetSpellResponseState & pa
 	battle->setSpellResponseState(pack.side, pack.state);
 }
 
+void GameStatePackVisitor::visitSetOverwhelmingFormulaState(SetOverwhelmingFormulaState & pack)
+{
+	auto * battle = gs.getBattle(pack.battleID);
+	if(!battle)
+		throw std::runtime_error("Missing battle for Overwhelming Formula state update");
+	pack.validateTransitionFrom(battle->getOverwhelmingFormulaState(pack.side));
+	battle->setOverwhelmingFormulaState(pack.side, pack.state);
+}
+
 void GameStatePackVisitor::visitSetBattlecraftMasteryAward(SetBattlecraftMasteryAward & pack)
 {
 	auto * battle = gs.getBattle(pack.battleID);
@@ -3461,6 +3470,14 @@ void BattleStatePackVisitor::visitSetSpellResponseState(SetSpellResponseState & 
 		throw std::runtime_error("Spell Response state update targets another battle");
 	pack.validateTransitionFrom(battleState.getSpellResponseState(pack.side), battleState.getRound());
 	battleState.setSpellResponseState(pack.side, pack.state);
+}
+
+void BattleStatePackVisitor::visitSetOverwhelmingFormulaState(SetOverwhelmingFormulaState & pack)
+{
+	if(pack.battleID != battleState.getBattleID())
+		throw std::runtime_error("Overwhelming Formula state update targets another battle");
+	pack.validateTransitionFrom(battleState.getOverwhelmingFormulaState(pack.side));
+	battleState.setOverwhelmingFormulaState(pack.side, pack.state);
 }
 
 void BattleStatePackVisitor::visitSetBattlecraftMasteryAward(SetBattlecraftMasteryAward & pack)

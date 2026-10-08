@@ -188,13 +188,17 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_PRIMARY_EXPERIENCE_REWARD, // explicit rewardable primary-XP classification
 	COMPONENT_HELP_REASON, // optional localized reason appended to component help
 	NEW_HORIZONS_CREATURE_TRANSIT_REACH, // static Pass-through and Long Reach creature capabilities
+	NEW_HORIZONS_OVERWHELMING_FORMULA, // side-owned candidate cast tokens and first actual-damage winner
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_CREATURE_TRANSIT_REACH,
+	CURRENT = NEW_HORIZONS_OVERWHELMING_FORMULA,
 };
+
+static_assert(ESerializationVersion::NEW_HORIZONS_OVERWHELMING_FORMULA > ESerializationVersion::NEW_HORIZONS_CREATURE_TRANSIT_REACH,
+	"Overwhelming Formula state must remain append-only");
 
 static_assert(ESerializationVersion::NEW_HORIZONS_CREATURE_TRANSIT_REACH > ESerializationVersion::COMPONENT_HELP_REASON,
 	"Creature traversal and reach capabilities must remain append-only");

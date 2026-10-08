@@ -892,6 +892,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	{
 		reducedExtraActivationStates[side] = realBattle->getBattle()->getReducedExtraActivationState(side);
 		spellResponseStates[side] = realBattle->getBattle()->getSpellResponseState(side);
+		overwhelmingFormulaStates[side] = realBattle->getBattle()->getOverwhelmingFormulaState(side);
 		heroOrderStates[side] = realBattle->getBattle()->getHeroOrderStates(side);
 		relentlessAssaultStates[side] = realBattle->getBattle()->getRelentlessAssaultState(side);
 		battlecraftMasteryAwardRounds[side] = realBattle->getBattle()->getBattlecraftMasteryAwardRound(side);
@@ -1186,6 +1187,22 @@ void HypotheticBattle::setSpellResponseState(BattleSide side, const SpellRespons
 			throw std::runtime_error("Hypothetical Spell Response state requires Counterpressure");
 	}
 	spellResponseStates.at(side) = state;
+}
+
+const OverwhelmingFormulaState & HypotheticBattle::getOverwhelmingFormulaState(BattleSide side) const
+{
+	static const OverwhelmingFormulaState empty;
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return empty;
+	return overwhelmingFormulaStates.at(side);
+}
+
+void HypotheticBattle::setOverwhelmingFormulaState(BattleSide side, const OverwhelmingFormulaState & state)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::invalid_argument("Invalid hypothetical Overwhelming Formula side");
+	state.validateShape();
+	overwhelmingFormulaStates.at(side) = state;
 }
 
 void HypotheticBattle::setReducedExtraActivationState(BattleSide side,
@@ -2829,7 +2846,7 @@ bool HypotheticBattle::HypotheticServerCallback::resolveAdverseCombatRoll(const 
 
 void HypotheticBattle::HypotheticServerCallback::apply(CPackForClient & pack)
 {
-	if(dynamic_cast<SetSpellResponseState *>(&pack))
+	if(dynamic_cast<SetSpellResponseState *>(&pack) || dynamic_cast<SetOverwhelmingFormulaState *>(&pack))
 	{
 		BattleStatePackVisitor visitor(*owner);
 		pack.visit(visitor);

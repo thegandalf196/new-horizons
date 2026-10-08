@@ -236,6 +236,11 @@ public://internal, for use only by Mechanics classes
 		bool useFractionalMagicalDamageReduction = false, bool applyCasterBonuses = true,
 		int perkMagicalDamageReductionBasisPoints = 0,
 		const std::vector<int> & independentPenetrationsPercent = {}) const;
+	/// Exact current source presence, independent of integer damage rounding.
+	/// Uses the same matching-school/ANY, Hold the Line and perk sources as damage.
+	bool hasApplicableMagicalDamageReduction(const battle::Unit * affectedCreature,
+		int magicalDamageReductionBasisPoints = 0, int perkMagicalDamageReductionBasisPoints = 0,
+		bool useFractionalMagicalDamageReduction = true) const;
 
 	///returns raw damage or healed HP
 	int64_t calculateRawEffectValue(int32_t effectLevel, int32_t basePowerMultiplier, int32_t levelPowerMultiplier, int32_t powerDivisor = 1) const;
@@ -243,6 +248,9 @@ public://internal, for use only by Mechanics classes
 	const IAdventureSpellMechanics & getAdventureMechanics() const;
 	std::unique_ptr<spells::Mechanics> battleMechanics(const spells::IBattleCast * event) const;
 private:
+	std::vector<int> magicalDamageReductionSourcesBasisPoints(const battle::Unit * affectedCreature,
+		int magicalDamageReductionBasisPoints, int perkMagicalDamageReductionBasisPoints,
+		bool useFractionalMagicalDamageReduction) const;
 	int64_t applyElementalDamageBonus(const spells::Caster * caster, int64_t damage) const;
 	int64_t applyIncomingElementalDamageBonus(const battle::Unit * affectedCreature, int64_t damage) const;
 	void setIsOffensive(const bool val);
