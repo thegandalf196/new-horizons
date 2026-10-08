@@ -10,6 +10,7 @@
 #pragma once
 
 #include "CWindowWithArtifacts.h"
+#include "ExchangeSecondarySkillSlots.h"
 #include "../widgets/CExchangeController.h"
 
 class CGarrisonSlot;
@@ -28,7 +29,7 @@ class CExchangeWindow : public CStatusbarWindow, public IGarrisonHolder, public 
 	std::array<std::shared_ptr<CLabel>, 2> manaValues;
 
 	std::vector<std::shared_ptr<LRClickableAreaWTextComp>> primSkillAreas;
-	std::array<std::vector<std::shared_ptr<CSecSkillPlace>>, 2> secSkills;
+	std::array<std::array<std::shared_ptr<CSecSkillPlace>, EXCHANGE_SECONDARY_SKILL_SLOTS>, 2> secSkills;
 	std::array<std::shared_ptr<CMultiLineLabel>, 2> secSkillsFull;
 	std::array<std::shared_ptr<LRClickableAreaWText>, 2> secSkillsFullArea;
 

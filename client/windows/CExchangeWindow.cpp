@@ -84,9 +84,9 @@ CExchangeWindow::CExchangeWindow(ObjectInstanceID hero1, ObjectInstanceID hero2,
 			primSkillValues[leftRight].push_back(std::make_shared<CLabel>(352 + (qeLayout ? 96 : 93) * leftRight, (qeLayout ? 22 : 35) + (qeLayout ? 26 : 36) * m, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE));
 
 
-		for(int m=0; m < std::min(static_cast<int>(hero->secSkills.size()), 8); ++m)
-			secSkills[leftRight].push_back(std::make_shared<CSecSkillPlace>(Point(32 + 36 * m + 454 * leftRight, qeLayout ? 80 : 88), CSecSkillPlace::ImageSize::SMALL,
-				hero->secSkills[m].first, hero->secSkills[m].second));
+		for(std::size_t m = 0; m < EXCHANGE_SECONDARY_SKILL_SLOTS; ++m)
+			secSkills[leftRight][m] = std::make_shared<CSecSkillPlace>(
+				Point(32 + 36 * m + 454 * leftRight, qeLayout ? 80 : 88), CSecSkillPlace::ImageSize::SMALL);
 
 		specImages[leftRight] = std::make_shared<CAnimImage>(AnimationPath::builtin("UN32"), hero->getHeroType()->imageIndex, 0, 67 + 490 * leftRight, qeLayout ? 41 : 45);
 
@@ -400,31 +400,27 @@ void CExchangeWindow::updateArtifacts()
 			primSkillValues[leftRight][m]->setText(std::to_string(value));
 		}
 
-		int slots = 8;
-		bool isMoreSkillsThanSlots = hero->secSkills.size() > slots;
-		for(int m=0; m < std::min(static_cast<int>(hero->secSkills.size()), 8); ++m)
+		const bool overflow = refreshExchangeSecondarySkillSlots(hero->secSkills,
+			[this, leftRight](std::size_t index, const auto * skill)
 		{
-			if(m == slots - 1)
+			if(skill)
+				secSkills[leftRight][index]->setSkill(skill->first, skill->second);
+			else
+				secSkills[leftRight][index]->setSkill(SecondarySkill::NONE);
+		});
+		if(overflow)
+		{
+			if(!secSkillsFull[leftRight])
 			{
-				if(isMoreSkillsThanSlots)
-				{
-					Rect r(Point(32 + 36 * m + 454 * leftRight, qeLayout ? 83 : 88), Point(34, 28));
-					secSkillsFull[leftRight] = std::make_shared<CMultiLineLabel>(r, EFonts::FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, "...");
-					secSkillsFullArea[leftRight] = std::make_shared<LRClickableAreaWText>(r, LIBRARY->generaltexth->translate("vcmi.kingdomOverview.secSkillOverflow.hover"), LIBRARY->generaltexth->translate("vcmi.kingdomOverview.secSkillOverflow.help"));
-					secSkills[leftRight][m]->setSkill(SecondarySkill::NONE);
-					continue;
-				}
-				else
-				{
-					secSkillsFull[leftRight].reset();
-					secSkillsFullArea[leftRight].reset();
-				}
+				Rect r(Point(32 + 36 * (EXCHANGE_SECONDARY_SKILL_SLOTS - 1) + 454 * leftRight, qeLayout ? 83 : 88), Point(34, 28));
+				secSkillsFull[leftRight] = std::make_shared<CMultiLineLabel>(r, EFonts::FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, "...");
+				secSkillsFullArea[leftRight] = std::make_shared<LRClickableAreaWText>(r, LIBRARY->generaltexth->translate("vcmi.kingdomOverview.secSkillOverflow.hover"), LIBRARY->generaltexth->translate("vcmi.kingdomOverview.secSkillOverflow.help"));
 			}
-
-			int id = hero->secSkills[m].first;
-			int level = hero->secSkills[m].second;
-
-			secSkills[leftRight][m]->setSkill(id, level);
+		}
+		else
+		{
+			secSkillsFull[leftRight].reset();
+			secSkillsFullArea[leftRight].reset();
 		}
 
 		expValues[leftRight]->setText(TextOperations::formatMetric(hero->exp, 3));

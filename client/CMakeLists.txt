@@ -392,6 +392,7 @@ set(vcmiclientcommon_HEADERS
 	windows/CCreatureWindow.h
 	windows/CStackExperienceDetailsWindow.h
 	windows/CExchangeWindow.h
+	windows/ExchangeSecondarySkillSlots.h
 	windows/CHeroOverview.h
 	windows/CHeroWindow.h
 	windows/HeroGrowthWindow.h

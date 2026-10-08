@@ -7,6 +7,8 @@ option(ENABLE_NEW_HORIZONS_MANAGED_TESTS
 # Pure saved-view navigation state; no renderer or gameplay fixture implied.
 add_executable(nhHeroDevelopmentNavigationTest ../client/tests/HeroDevelopmentNavigationTest.cpp)
 add_test(NAME nhHeroDevelopmentNavigationTest COMMAND nhHeroDevelopmentNavigationTest)
+add_executable(nhExchangeSecondarySkillSlotsTest ../client/tests/ExchangeSecondarySkillSlotsTest.cpp)
+add_test(NAME nhExchangeSecondarySkillSlotsTest COMMAND nhExchangeSecondarySkillSlotsTest)
 
 # Pure UI-state test for the stack hover-to-panel travel grace period.
 add_executable(nhStackInfoPanelHoverStateTest ../client/tests/StackInfoPanelHoverStateTest.cpp)
