@@ -194,14 +194,17 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_PERFECT_FORTUNE, // captured Luck perk and independent first eligible physical strike token
 	NEW_HORIZONS_ARMORER_DEFIANT, // hero-side historical round stamp for accepted non-magical retaliation denial
 	NEW_HORIZONS_LUCK_SERENDIPITY, // previous-round positive Luck history and first-attack opportunity
+	NEW_HORIZONS_LEARNING_MASTER_TEACHER, // fixed weekly Mentor recipient identities
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_LUCK_SERENDIPITY,
+	CURRENT = NEW_HORIZONS_LEARNING_MASTER_TEACHER,
 };
 
+static_assert(ESerializationVersion::NEW_HORIZONS_LEARNING_MASTER_TEACHER > ESerializationVersion::NEW_HORIZONS_LUCK_SERENDIPITY,
+	"Learning Master Teacher recipient state must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_LUCK_SERENDIPITY > ESerializationVersion::NEW_HORIZONS_ARMORER_DEFIANT,
 	"Serendipity round history must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_ARMORER_DEFIANT > ESerializationVersion::NEW_HORIZONS_PERFECT_FORTUNE,

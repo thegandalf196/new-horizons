@@ -2002,24 +2002,18 @@ std::optional<CGameHandler::LearningMentorAward> CGameHandler::prepareLearningMe
 	if(gameInfo().getPlayerRelations(first->getOwner(), second->getOwner()) == PlayerRelations::ENEMIES)
 		return std::nullopt;
 
-	const std::string learningSkillId = "new-horizons:learning";
-	const std::string mentorPerkId = "new-horizons:learning.mentor";
 	const auto week = newHorizonsMuster::absoluteWeek(gameInfo().getCalendar().getCurrentDay(),
 		gameInfo().getCalendar().getDaysInWeek());
-	constexpr TExpType baseExperiencePerMentorLevel = 250;
 
 	const auto tryMentor = [&](const CGHeroInstance * mentor, const CGHeroInstance * recipient)
 		-> std::optional<LearningMentorAward>
 	{
 		const int32_t mentorLevel = mentor->level;
 		const int32_t recipientLevel = recipient->level;
-		if(mentorLevel <= recipientLevel)
-			return std::nullopt;
-		if(mentor->getPerkSkillRank(learningSkillId) <= 0
-			|| !mentor->hasActivePerk(learningSkillId, mentorPerkId)
-			|| mentor->hasUsedNewHorizonsLearningMentor(week))
+		if(!mentor->canGrantNewHorizonsLearningMentorTo(*recipient, week))
 			return std::nullopt;
 
+		const auto baseExperiencePerMentorLevel = mentor->getNewHorizonsLearningMentorExperiencePerLevel();
 		const auto baseExperience = baseExperiencePerMentorLevel * mentorLevel;
 		return LearningMentorAward{
 			mentor->id,
@@ -2027,6 +2021,7 @@ std::optional<CGameHandler::LearningMentorAward> CGameHandler::prepareLearningMe
 			mentorLevel,
 			recipientLevel,
 			week,
+			baseExperiencePerMentorLevel,
 			recipient->calculateXp(baseExperience)
 		};
 	};
@@ -2043,12 +2038,23 @@ void CGameHandler::grantLearningMentorAward(const std::optional<LearningMentorAw
 
 	const auto * mentor = gameInfo().getHero(award->mentorId);
 	const auto * recipient = gameInfo().getHero(award->recipientId);
-	if(!mentor || !recipient || mentor->hasUsedNewHorizonsLearningMentor(award->week))
+	const auto currentWeek = newHorizonsMuster::absoluteWeek(gameInfo().getCalendar().getCurrentDay(),
+		gameInfo().getCalendar().getDaysInWeek());
+	if(!mentor || !recipient || award->week != currentWeek
+		|| gameInfo().getPlayerRelations(mentor->getOwner(), recipient->getOwner()) == PlayerRelations::ENEMIES
+		|| !mentor->hasNewHorizonsLearningMentorUseFor(recipient->id, award->week)
+		|| mentor->getNewHorizonsLearningMentorExperiencePerLevel() != award->experiencePerMentorLevel)
 		return;
 
 	SetNewHorizonsLearningMentorState state;
 	state.heroId = award->mentorId;
 	state.lastUseWeek = award->week;
+	if(mentor->getNewHorizonsLearningMentorLastWeek() == award->week)
+		state.recipientIds = mentor->getNewHorizonsLearningMentorRecipients();
+	const auto nextRecipient = std::find(state.recipientIds.begin(), state.recipientIds.end(), ObjectInstanceID::NONE);
+	if(nextRecipient == state.recipientIds.end())
+		return;
+	*nextRecipient = recipient->id;
 	// Mark before Experience is applied so nested encounter paths cannot spend
 	// the same weekly use again while a level-up query is being created.
 	sendAndApply(state);

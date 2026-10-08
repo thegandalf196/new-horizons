@@ -2773,7 +2773,7 @@
 					"requires": "expert",
 					"description": "Mentor automatically triggers for the first two different lower-level allied heroes met each week and grants Experience equal to 500 times the mentor's level to each.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Mentor automatically triggers for the first two different lower-level allied heroes met each week and grants Experience equal to 500 times the mentor's level to each."
 					}
 				}

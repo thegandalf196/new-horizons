@@ -1,5 +1,17 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Full-hero serialization fixture needs complete graph types
+
+The Master Teacher linked build stopped at the new server fixture's direct
+old-writer refusal assertion: instantiating the full hero serializer needs
+complete ObjectTemplate, BonusParameters and updater definitions. The fixture
+now includes the existing `battles/FullGameSnapshotTypes.h` dependency set,
+matching other full-hero serialization fixtures. No production serialization
+guard or test assertion was weakened. Preserve the failed build receipt in
+`build/nh-master-teacher-linked-build.log`; the focused rebuild and native
+acceptance are separate gates. Do not run an older test binary after a failed
+build or infer build success from a logging pipeline without `pipefail`.
+
 ### 2026-10-08 — Generic Serendipity integration boundaries
 
 Resolved focused checkpoint: initial live crash was a fixture mistake, not a

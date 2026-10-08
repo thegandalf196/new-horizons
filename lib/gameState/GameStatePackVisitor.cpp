@@ -687,8 +687,12 @@ void GameStatePackVisitor::visitSetNewHorizonsMusterState(SetNewHorizonsMusterSt
 
 void GameStatePackVisitor::visitSetNewHorizonsLearningMentorState(SetNewHorizonsLearningMentorState & pack)
 {
-	if(auto * hero = gs.getHero(pack.heroId))
-		hero->markNewHorizonsLearningMentorUsed(pack.lastUseWeek);
+	if(!pack.hasValidState())
+		throw std::runtime_error("Invalid New Horizons Learning Mentor state packet");
+	auto * hero = gs.getHero(pack.heroId);
+	if(!hero)
+		throw std::runtime_error("New Horizons Learning Mentor state references a missing hero");
+	hero->setNewHorizonsLearningMentorState(pack.lastUseWeek, pack.recipientIds);
 }
 
 void GameStatePackVisitor::visitSetNewHorizonsDiplomacyState(SetNewHorizonsDiplomacyState & pack)

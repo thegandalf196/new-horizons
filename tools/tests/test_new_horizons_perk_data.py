@@ -76,6 +76,7 @@ ACTIVE_PERKS = {
     "new-horizons:estates.financier",
     "new-horizons:estates.landSurveyor",
     "new-horizons:learning.mentor",
+    "new-horizons:learning.masterTeacher",
     "new-horizons:learning.quickStudy",
     "new-horizons:learning.fieldStudy",
     "new-horizons:chaosMagic.paradoxShield",

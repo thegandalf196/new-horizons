@@ -326,7 +326,19 @@ public:
 	}
 	int32_t getNewHorizonsLearningMentorLastWeek() const { return newHorizonsLearningMentorLastWeek; }
 	bool hasUsedNewHorizonsLearningMentor(int32_t week) const { return newHorizonsLearningMentorLastWeek == week; }
-	void markNewHorizonsLearningMentorUsed(int32_t week) { newHorizonsLearningMentorLastWeek = week < 0 ? -1 : week; }
+	using LearningMentorRecipients = std::array<ObjectInstanceID, 2>;
+	const LearningMentorRecipients & getNewHorizonsLearningMentorRecipients() const { return newHorizonsLearningMentorRecipients; }
+	static bool isValidNewHorizonsLearningMentorState(ObjectInstanceID heroId, int32_t week,
+		const LearningMentorRecipients & recipients);
+	void setNewHorizonsLearningMentorState(int32_t week, const LearningMentorRecipients & recipients);
+	void markNewHorizonsLearningMentorUsed(int32_t week)
+	{
+		setNewHorizonsLearningMentorState(week < 0 ? -1 : week, {ObjectInstanceID::NONE, ObjectInstanceID::NONE});
+	}
+	/// Shared candidate/quota rule; callers must additionally establish allied ownership.
+	bool canGrantNewHorizonsLearningMentorTo(const CGHeroInstance & recipient, int32_t week) const;
+	bool hasNewHorizonsLearningMentorUseFor(ObjectInstanceID recipientId, int32_t week) const;
+	TExpType getNewHorizonsLearningMentorExperiencePerLevel() const;
 	int32_t getNewHorizonsLandSurveyorLastWeek() const { return newHorizonsLandSurveyorLastWeek; }
 	bool hasUsedNewHorizonsLandSurveyor(int32_t week) const { return newHorizonsLandSurveyorLastWeek == week; }
 	int32_t getNewHorizonsPeacemakerLastWeek() const { return newHorizonsPeacemakerLastWeek; }
@@ -552,6 +564,7 @@ private:
 	int32_t newHorizonsMusterLastWeek = -1;
 	int32_t newHorizonsMusterUsesThisWeek = 0;
 	int32_t newHorizonsLearningMentorLastWeek = -1;
+	LearningMentorRecipients newHorizonsLearningMentorRecipients{ObjectInstanceID::NONE, ObjectInstanceID::NONE};
 	int32_t newHorizonsLandSurveyorLastWeek = -1;
 	int32_t newHorizonsPeacemakerLastWeek = -1;
 	ObjectInstanceID newHorizonsPacifiedCreatureId = ObjectInstanceID::NONE;
@@ -585,6 +598,12 @@ public:
 	{
 		if(h.saving)
 		{
+			if(!isValidNewHorizonsLearningMentorState(id, newHorizonsLearningMentorLastWeek,
+				newHorizonsLearningMentorRecipients))
+				throw std::runtime_error("Invalid New Horizons Learning Mentor state");
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_LEARNING_MASTER_TEACHER)
+				&& newHorizonsLearningMentorRecipients[0] != ObjectInstanceID::NONE)
+				throw std::runtime_error("New Horizons Master Teacher state requires the new save format");
 			if(!isValidNewHorizonsDiplomacyState(newHorizonsPeacemakerLastWeek,
 				newHorizonsPacifiedCreatureId, newHorizonsTributeLastWeek, newHorizonsRecruitmentPactExpiryDay))
 				throw std::runtime_error("Invalid New Horizons Diplomacy weekly state");
@@ -800,6 +819,15 @@ public:
 		if(!h.saving && !isValidNewHorizonsForcedMarchState(newHorizonsForcedMarchLastUseDay,
 			newHorizonsForcedMarchPenaltyDay))
 			throw std::runtime_error("Invalid New Horizons Forced March state");
+
+		// Append recipient identities without shifting any older hero fields.
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_LEARNING_MASTER_TEACHER))
+			h & newHorizonsLearningMentorRecipients;
+		else if(!h.saving)
+			newHorizonsLearningMentorRecipients = {ObjectInstanceID::NONE, ObjectInstanceID::NONE};
+		if(!h.saving && !isValidNewHorizonsLearningMentorState(id, newHorizonsLearningMentorLastWeek,
+			newHorizonsLearningMentorRecipients))
+			throw std::runtime_error("Invalid New Horizons Learning Mentor state");
 
 		if(!h.saving)
 		{

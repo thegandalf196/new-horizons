@@ -1910,21 +1910,51 @@ struct DLL_LINKAGE SetPortalDwellingSource : public CPackForClient
 /// Authoritative weekly Learning Mentor use for one hero.
 struct DLL_LINKAGE SetNewHorizonsLearningMentorState : public CPackForClient
 {
-	ObjectInstanceID heroId;
+	ObjectInstanceID heroId = ObjectInstanceID::NONE;
 	int32_t lastUseWeek = -1;
+	std::array<ObjectInstanceID, 2> recipientIds{ObjectInstanceID::NONE, ObjectInstanceID::NONE};
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
+	bool hasValidState() const
+	{
+		if(!heroId.hasValue() || lastUseWeek < -1)
+			return false;
+		bool foundEmpty = false;
+		for(const auto recipientId : recipientIds)
+		{
+			if(recipientId == ObjectInstanceID::NONE)
+			{
+				foundEmpty = true;
+				continue;
+			}
+			if(lastUseWeek == -1 || !recipientId.hasValue() || recipientId == heroId || foundEmpty)
+				return false;
+		}
+		return recipientIds[0] == ObjectInstanceID::NONE || recipientIds[0] != recipientIds[1];
+	}
+
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !hasValidState())
+			throw std::runtime_error("Invalid New Horizons Learning Mentor state packet");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_LEARNING_MENTOR))
 			throw std::runtime_error("New Horizons Learning Mentor packet requires the new wire format");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_LEARNING_MASTER_TEACHER)
+			&& recipientIds[0] != ObjectInstanceID::NONE)
+			throw std::runtime_error("New Horizons Master Teacher packet requires the new wire format");
 
 		h & heroId;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_LEARNING_MENTOR))
 			h & lastUseWeek;
 		else if(!h.saving)
 			lastUseWeek = -1;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_LEARNING_MASTER_TEACHER))
+			h & recipientIds;
+		else if(!h.saving)
+			recipientIds = {ObjectInstanceID::NONE, ObjectInstanceID::NONE};
+		if(!h.saving && !hasValidState())
+			throw std::runtime_error("Invalid New Horizons Learning Mentor state packet");
 	}
 };
 

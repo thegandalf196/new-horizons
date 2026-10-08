@@ -2590,6 +2590,69 @@ bool CGHeroInstance::gainsLevel() const
 	return level < LIBRARY->heroh->maxSupportedLevel() && exp >= static_cast<TExpType>(LIBRARY->heroh->reqExp(level+1));
 }
 
+bool CGHeroInstance::isValidNewHorizonsLearningMentorState(ObjectInstanceID heroId, int32_t week,
+	const LearningMentorRecipients & recipients)
+{
+	if(week < -1)
+		return false;
+	bool foundEmpty = false;
+	for(const auto recipientId : recipients)
+	{
+		if(recipientId == ObjectInstanceID::NONE)
+		{
+			foundEmpty = true;
+			continue;
+		}
+		if(week == -1 || !heroId.hasValue() || !recipientId.hasValue()
+			|| recipientId == heroId || foundEmpty)
+			return false;
+	}
+	return recipients[0] == ObjectInstanceID::NONE || recipients[0] != recipients[1];
+}
+
+void CGHeroInstance::setNewHorizonsLearningMentorState(int32_t week, const LearningMentorRecipients & recipients)
+{
+	if(!isValidNewHorizonsLearningMentorState(id, week, recipients))
+		throw std::runtime_error("Invalid New Horizons Learning Mentor state");
+	newHorizonsLearningMentorLastWeek = week;
+	newHorizonsLearningMentorRecipients = recipients;
+}
+
+TExpType CGHeroInstance::getNewHorizonsLearningMentorExperiencePerLevel() const
+{
+	const std::string learningSkillId = "new-horizons:learning";
+	const auto rank = getPerkSkillRank(learningSkillId);
+	if(rank >= MasteryLevel::EXPERT && hasActivePerk(learningSkillId, "new-horizons:learning.masterTeacher"))
+		return 500;
+	if(rank >= MasteryLevel::BASIC && hasActivePerk(learningSkillId, "new-horizons:learning.mentor"))
+		return 250;
+	return 0;
+}
+
+bool CGHeroInstance::hasNewHorizonsLearningMentorUseFor(ObjectInstanceID recipientId, int32_t week) const
+{
+	const auto experiencePerLevel = getNewHorizonsLearningMentorExperiencePerLevel();
+	if(week < 0 || !id.hasValue() || !recipientId.hasValue() || recipientId == id
+		|| experiencePerLevel == 0
+		|| !isValidNewHorizonsLearningMentorState(id, newHorizonsLearningMentorLastWeek,
+			newHorizonsLearningMentorRecipients))
+		return false;
+	if(newHorizonsLearningMentorLastWeek != week)
+		return true;
+	// A legacy used-week marker has unknown recipients: never refill it on load or resave.
+	if(newHorizonsLearningMentorRecipients[0] == ObjectInstanceID::NONE)
+		return false;
+	if(std::find(newHorizonsLearningMentorRecipients.begin(), newHorizonsLearningMentorRecipients.end(),
+		recipientId) != newHorizonsLearningMentorRecipients.end())
+		return false;
+	return experiencePerLevel == 500 && newHorizonsLearningMentorRecipients[1] == ObjectInstanceID::NONE;
+}
+
+bool CGHeroInstance::canGrantNewHorizonsLearningMentorTo(const CGHeroInstance & recipient, int32_t week) const
+{
+	return this != &recipient && level > recipient.level && hasNewHorizonsLearningMentorUseFor(recipient.id, week);
+}
+
 int CGHeroInstance::getPerkSkillRank(const std::string & skillId) const
 {
 	const int decoded = SecondarySkill::decode(skillId);

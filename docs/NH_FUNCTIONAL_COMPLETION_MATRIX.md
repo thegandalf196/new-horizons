@@ -2,6 +2,20 @@
 
 Updated: 2026-10-08
 
+UP164 Master Teacher is now active after linked retry50625 and independent
+native acceptance:6/6 principal cases in3.660s and6/6 adjacent Mentor cases
+in3.022s, zero skips. Production registration is asserted; standalone fixtures
+label their unrelated Basic prerequisite as test-only. Ordinary tier selection,
+two distinct lower-level allied recipients/week, captured-level XP, Mentor
+upgrade history, current save/typed replication and legacy unknown-week guards
+pass. NK2 accepts a real server perk query and the subsequent authoritative
+meeting awards XP; autonomous meeting scheduling is not claimed. Data17/17,
+module drift and independent review pass. Coverage238->239/310, generic167->
+168/220, planned72->71, Learning3->4/10. Combat61/67, faction71/90 and Orders8/8
+are unchanged. Receipts:build/nh-master-teacher-native.Llds7K9W/.
+Deferred: actual old-format hero-save fixtures and autonomous AI meeting choice.
+The usual Linux playable snapshot is not yet promoted with this source change.
+
 UP085/UP130 verified active checkpoint: generic Luck Serendipity and Discipline Esprit
 de Corps now have production runtime, shared readback and AI consumers. Existing
 canonical wording settles their earlier holds: a real previous round is required
@@ -4361,7 +4375,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | All three ranks per Skill are active; many registered Skills still lack complete perk progression. |
 | Skill rank effects active | 93/93 | Elemental Rebirth's three ranks now have source/native and owning-side AI evidence. Active status does not certify every wider interaction. |
-| Skill perks active | 238/310 | 72 planned; current registry recount2026-10-08. Generic167/220, faction71/90. Discipline8/10; Armorer9/10; War Machines7/10; Spellcraft6/10; Luck8/10; Diplomacy7/10; Chaos Magic5/10; Necromancy10/10; Learning3/10; Estates6/10; Battlecraft8/10; Logistics8/10; Command7/10; Warcasting9/10. Historian's foundation remains planned and adds no activation count. Active status alone does not certify every mechanic. |
+| Skill perks active | 239/310 | 71 planned; current registry recount2026-10-08. Generic168/220, faction71/90. Discipline8/10; Armorer9/10; War Machines7/10; Spellcraft6/10; Luck8/10; Diplomacy7/10; Chaos Magic5/10; Necromancy10/10; Learning4/10; Estates6/10; Battlecraft8/10; Logistics8/10; Command7/10; Warcasting9/10. Historian's foundation remains planned and adds no activation count. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 27/27 | All nine faction rank foundations are active; their remaining perks and wider integration are separate work. |
 | Faction perks active | 71/90 | 19 planned perks; Divine Mandate has six accepted perks, including Expert Mandate of Heaven and Advanced Purifying Mandate; Elemental Rebirth has three accepted perks with normal Basic-to-Advanced selection and live/detached evidence. |
 | Canonical combat-spell identities registered | 61/67 | 6 missing/inactive; Puppet Master is the newest source/native-verified identity. Chaos is 7/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |

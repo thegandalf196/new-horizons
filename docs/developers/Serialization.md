@@ -767,3 +767,24 @@ Older reads default to empty history. Older writers reject meaningful state
 before writing enclosing side, battle or attack payloads. This preserves the
 existing fail-closed compatibility policy; it does not establish general
 ongoing-battle health/save-resume support.
+
+### New Horizons Learning Master Teacher
+
+`NEW_HORIZONS_LEARNING_MASTER_TEACHER` appends two fixed recipient object IDs
+to the hero's existing absolute-week Mentor history and to its typed state
+packet. Empty slots use `ObjectInstanceID::NONE`, occupy the trailing positions,
+and cannot accompany week `-1` with a populated recipient. Recipients must be
+distinct nonnegative IDs different from the mentor. Packet application rejects
+malformed state and a missing mentor before changing the hero.
+
+Ordinary Mentor records its recipient as well, so later Master Teacher
+acquisition cannot repeat or top up that award. Older reads clear recipient IDs.
+An older used-week marker with unknown recipients stays spent for that week,
+including across resaves; a later week's accepted meeting starts fresh history.
+Known recipient IDs cannot be down-saved: direct hero and packet writers reject
+that loss before their payload. This is not a zero-byte guarantee for enclosing
+world saves. Week rollover requires no scan or state-reset polling.
+
+Master Teacher uses the existing meeting/town authority and recipient Experience
+modifier, not a new action. Source integration and focused native acceptance are
+tracked separately in UP164.
