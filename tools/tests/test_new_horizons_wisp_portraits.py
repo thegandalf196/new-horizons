@@ -2,6 +2,7 @@
 """Mechanical checks only; synthetic images, never purchaser resource fixtures."""
 
 import importlib.util
+import json
 from pathlib import Path
 import struct
 import tempfile
@@ -37,6 +38,36 @@ def def_portrait(width, height):
 
 
 class WispPortraitTests(unittest.TestCase):
+    def synthetic_export(self, root):
+        images, data, output = root / "images", root / "data", root / "export"
+        data.mkdir()
+        for archive in ("H3ab_bmp.lod", "H3ab_spr.lod"):
+            (data / archive).write_bytes(b"synthetic archive")
+        for names in TOOL.FORMS.values():
+            for relative, size in zip(names, ((58, 64), (32, 32))):
+                path = images / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                image = Image.new("RGBA", size)
+                image.putpixel((5, 6), (255, 40, 180, 255))
+                image.putpixel((6, 6), (80, 180, 250, 128))
+                image.save(path)
+        resources = {"TPCASELE.pcx": pcx(), "CRBKGELE.pcx": pcx(100, 130),
+                     "TWCRPORT.def": def_portrait(58, 64), "CPRSMALL.def": def_portrait(32, 32)}
+        with patch.object(TOOL, "read_lod_entry", side_effect=lambda _, name: resources[name]):
+            TOOL.export(images, data, output)
+        return output
+
+    @staticmethod
+    def file_bytes(root):
+        return {path.relative_to(root): path.read_bytes() for path in root.rglob("*") if path.is_file()}
+
+    @staticmethod
+    def refresh_output_hash(export_root, name):
+        manifest_path = export_root / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["outputs"][name]["sha256"] = TOOL.digest((export_root / name).read_bytes())
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
     def test_alpha_composition_preserves_source_geometry_and_opaque_pixels(self):
         source = Image.new("RGBA", (3, 1))
         source.putdata([(250, 20, 5, 255), (60, 120, 230, 128), (7, 8, 9, 0)])
@@ -120,6 +151,101 @@ class WispPortraitTests(unittest.TestCase):
                 self.assertEqual(path.read_bytes(), original)
             with self.assertRaises(ValueError):
                 TOOL.export(images, data, output)
+
+    def test_stage_runtime_preserves_exact_large_bytes_and_only_existing_bindings(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            export_root = self.synthetic_export(root)
+            before = self.file_bytes(root)
+            overlay = root / "fresh-overlay"
+            receipt = TOOL.stage_runtime(export_root, overlay)
+            staged_files = set(self.file_bytes(overlay))
+            expected = {
+                Path("Mods/new-horizons/Images/Wisp/icons/wisp-icon-58x64.png"): "wisp-large.png",
+                Path("Mods/new-horizons/Images/WispUpgrade/icons/icon-58x64.png"): "greater-wisp-large.png",
+            }
+            self.assertEqual(staged_files, set(expected))
+            self.assertEqual(receipt["exportManifestSha256"], TOOL.digest((export_root / "manifest.json").read_bytes()))
+            for relative, source in expected.items():
+                self.assertEqual((overlay / relative).read_bytes(), (export_root / source).read_bytes())
+            for relative, original in before.items():
+                self.assertEqual((root / relative).read_bytes(), original)
+            self.assertFalse(any("32" in str(path) for path in staged_files))
+            self.assertFalse(any("battle" in str(path).lower() for path in staged_files))
+
+    def test_stage_runtime_rejects_existing_or_nested_destination_without_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            export_root = self.synthetic_export(root)
+            existing = root / "existing-overlay"
+            existing.mkdir()
+            (existing / "sentinel").write_bytes(b"do not overwrite")
+            before = self.file_bytes(root)
+            with self.assertRaises(ValueError):
+                TOOL.stage_runtime(export_root, existing)
+            nested = export_root / "nested-overlay"
+            with self.assertRaises(ValueError):
+                TOOL.stage_runtime(export_root, nested)
+            self.assertFalse(nested.exists())
+            self.assertEqual(self.file_bytes(root), before)
+
+    def test_stage_runtime_rejects_stale_hash_before_creating_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            export_root = self.synthetic_export(root)
+            changed = export_root / "greater-wisp-large.png"
+            changed.write_bytes(changed.read_bytes() + b"stale synthetic bytes")
+            before = self.file_bytes(root)
+            overlay = root / "fresh-overlay"
+            with self.assertRaises(ValueError):
+                TOOL.stage_runtime(export_root, overlay)
+            self.assertFalse(overlay.exists())
+            self.assertEqual(self.file_bytes(root), before)
+
+    def test_stage_runtime_rejects_malformed_manifest_binding_before_creating_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            export_root = self.synthetic_export(root)
+            manifest_path = export_root / "manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["outputs"]["greater-wisp-large.png"]["source"] = "WispUpgrade/icons/icon-32x32.png"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            before = self.file_bytes(root)
+            overlay = root / "fresh-overlay"
+            with self.assertRaises(ValueError):
+                TOOL.stage_runtime(export_root, overlay)
+            self.assertFalse(overlay.exists())
+            self.assertEqual(self.file_bytes(root), before)
+
+    def test_stage_runtime_rejects_wrong_native_geometry_before_creating_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            export_root = self.synthetic_export(root)
+            name = "greater-wisp-large.png"
+            Image.new("RGBA", (57, 64), (10, 20, 30, 255)).save(export_root / name)
+            self.refresh_output_hash(export_root, name)
+            before = self.file_bytes(root)
+            overlay = root / "fresh-overlay"
+            with self.assertRaises(ValueError):
+                TOOL.stage_runtime(export_root, overlay)
+            self.assertFalse(overlay.exists())
+            self.assertEqual(self.file_bytes(root), before)
+
+    def test_stage_runtime_rejects_nonopaque_large_portrait_before_creating_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            export_root = self.synthetic_export(root)
+            name = "greater-wisp-large.png"
+            image = Image.new("RGBA", (58, 64), (10, 20, 30, 255))
+            image.putpixel((0, 0), (10, 20, 30, 254))
+            image.save(export_root / name)
+            self.refresh_output_hash(export_root, name)
+            before = self.file_bytes(root)
+            overlay = root / "fresh-overlay"
+            with self.assertRaises(ValueError):
+                TOOL.stage_runtime(export_root, overlay)
+            self.assertFalse(overlay.exists())
+            self.assertEqual(self.file_bytes(root), before)
 
 
 if __name__ == "__main__":

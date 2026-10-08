@@ -35,3 +35,20 @@ Rendered appearance, gameplay, saves, public rights and final art are separate
 gates. The Orders placeholder is not replaced without a new approved commission.
 
 Tests: `python3 -B tools/tests/test_private_preview.py` (synthetic fixtures only).
+
+## Cached Wisp portrait overlay (private, opt-in)
+
+The existing Wisp export tool can stage verified cached large portraits without
+re-extracting original archives:
+
+```
+python3 tools/fit_new_horizons_wisp_portraits.py \
+  --stage-export PRIVATE_WISP_EXPORT_DIRECTORY \
+  --runtime-overlay NEW_PRIVATE_OVERLAY_DIRECTORY
+```
+
+Only the two existing 58×64 `Images` bindings are copied after manifest, hash,
+geometry and opacity checks. Small portraits and battle frames are not changed.
+Keep composites and receipts private. This creates an overlay, not a playable
+installation or launcher promotion; verify both compact portraits on an isolated
+candidate before delivery. It does not fix Academy Gargoyle portraits.

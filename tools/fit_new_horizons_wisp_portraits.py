@@ -6,13 +6,15 @@ Large portraits use TPCASELE, the actual configured Conflux creature scenery,
 mechanically reduced with nearest-neighbour sampling. Small portraits preserve
 the stock CPRSMALL transparent-cutout policy. Source foregrounds are never
 resized, cropped, recolored or modified. Original resources and composites must
-remain private; this tool does not install assets or change creature bindings.
+remain private. Optional staging copies only the two verified large exports into
+a fresh private runtime overlay; it does not change creature bindings or profiles.
 """
 
 from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import json
 from pathlib import Path
 import struct
@@ -202,12 +204,86 @@ def export(source_images: Path, data_dir: Path, output: Path) -> dict:
     return manifest
 
 
+def stage_runtime(export_root: Path, fresh_overlay: Path) -> dict:
+    """Stage cached large portraits only, after validating both without writes."""
+    export_root = Path(export_root)
+    fresh_overlay = Path(fresh_overlay)
+    if export_root.is_symlink() or not export_root.is_dir():
+        raise ValueError("export root must be an existing non-symlink directory")
+    if fresh_overlay.exists() or fresh_overlay.is_symlink():
+        raise ValueError("runtime overlay already exists")
+    for path in (export_root, fresh_overlay):
+        if any(parent.is_symlink() for parent in path.absolute().parents):
+            raise ValueError("runtime staging paths must not traverse symlinks")
+    source_root = export_root.resolve()
+    overlay_root = fresh_overlay.resolve()
+    if source_root.is_relative_to(overlay_root) or overlay_root.is_relative_to(source_root):
+        raise ValueError("runtime overlay and cached export must be disjoint")
+    manifest_path = source_root / "manifest.json"
+    if manifest_path.is_symlink():
+        raise ValueError("export manifest must not be a symlink")
+    try:
+        manifest_bytes = manifest_path.read_bytes()
+        manifest = json.loads(manifest_bytes)
+    except (OSError, ValueError) as error:
+        raise ValueError("cannot read cached export manifest") from error
+    if not isinstance(manifest, dict) or manifest.get("inputsUnchanged") is not True:
+        raise ValueError("cached export has no unchanged-source provenance")
+    records = manifest.get("outputs")
+    if not isinstance(records, dict):
+        raise ValueError("cached export output manifest is malformed")
+    staged = {}
+    payloads = {}
+    for form, (large, _) in FORMS.items():
+        name = f"{form}-large.png"
+        record = records.get(name)
+        if not isinstance(record, dict) or record.get("source") != large or record.get("size") != [58, 64]:
+            raise ValueError(f"cached export has incorrect runtime binding: {name}")
+        source = source_root / name
+        if source.is_symlink() or not source.is_file():
+            raise ValueError(f"cached portrait must be an existing regular file: {name}")
+        payload = source.read_bytes()
+        if digest(payload) != record.get("sha256"):
+            raise ValueError(f"cached portrait hash mismatch: {name}")
+        try:
+            with Image.open(io.BytesIO(payload)) as portrait:
+                if portrait.format != "PNG" or portrait.mode != "RGBA" or portrait.size != (58, 64):
+                    raise ValueError(f"cached portrait has invalid native geometry or format: {name}")
+                if portrait.getchannel("A").getextrema() != (255, 255):
+                    raise ValueError(f"cached large portrait is not fully opaque: {name}")
+        except (OSError, SyntaxError) as error:
+            raise ValueError(f"cannot decode cached portrait: {name}") from error
+        relative = Path("Mods/new-horizons/Images") / large
+        payloads[relative] = payload
+        staged[relative.as_posix()] = {"export": name, "sha256": digest(payload), "size": [58, 64]}
+    # No output exists until every cached file and binding has passed preflight.
+    overlay_root.mkdir(parents=True, exist_ok=False)
+    for relative, payload in payloads.items():
+        target = overlay_root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with target.open("xb") as stream:
+            stream.write(payload)
+    return {"runtimeOverlay": str(overlay_root), "exportManifestSha256": digest(manifest_bytes),
+            "privateOnly": True, "unchangedCreatureBindings": True, "outputs": staged}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source-images", type=Path, required=True)
-    parser.add_argument("--data-dir", type=Path, required=True)
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--source-images", type=Path)
+    parser.add_argument("--data-dir", type=Path)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--stage-export", type=Path, help="stage verified cached exports without reading original archives")
+    parser.add_argument("--runtime-overlay", type=Path, help="fresh private overlay destination; never installs or promotes")
     args = parser.parse_args()
+    if args.stage_export is not None:
+        if args.runtime_overlay is None or any(value is not None for value in (args.source_images, args.data_dir, args.output)):
+            parser.error("--stage-export requires --runtime-overlay and cannot be mixed with export inputs")
+        print(json.dumps(stage_runtime(args.stage_export, args.runtime_overlay)))
+        return
+    if any(value is None for value in (args.source_images, args.data_dir, args.output)):
+        parser.error("export requires --source-images, --data-dir and --output")
+    if args.runtime_overlay is not None:
+        parser.error("--runtime-overlay requires --stage-export cached staging mode")
     manifest = export(args.source_images, args.data_dir, args.output)
     print(json.dumps({"output": str(args.output), "inputsUnchanged": manifest["inputsUnchanged"], "outputs": manifest["outputs"]}))
 
