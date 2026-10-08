@@ -354,7 +354,8 @@ jobs:
           @'
           ## New Horizons Windows x64 preview
           Download the artifact above; extract the Windows ZIP and follow README-New-Horizons.txt.
-          Original Heroes III Complete assets are required, external and NOT redistributed.
+          An original Heroes III Complete installation is required; unchanged original archives are not bundled.
+          NewHorizons.nhart includes selected New Horizons modifications and composites, with provenance notices.
           Includes exact identity, SHA256 checksums, source archives and dependency license texts.
           Compile/package/import validation is NOT Windows graphical or gameplay acceptance.
           Unsigned preview. GitHub Release publication remains a separate integrator action.
