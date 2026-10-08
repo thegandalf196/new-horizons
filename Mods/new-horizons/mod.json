@@ -3954,7 +3954,7 @@
 								"requires": "advanced",
 								"description": "After the First Aid Tent heals surviving creatures in its target stack, up to 50% of the Tent's calculated healing is automatically applied to restore casualties. The stack may not exceed its battle-start count.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "After the First Aid Tent heals surviving creatures in its target stack, up to 50% of the Tent's calculated healing is automatically applied to restore casualties. The stack may not exceed its battle-start count."
 								}
 							},
@@ -9458,6 +9458,7 @@
 		"new-horizons.muster.externalTargetUsed": "Muster already used at this dwelling",
 		"new-horizons.muster.externalRecruiterNote": "Choose one owned external Core dwelling to reinforce.",
 		"new-horizons.muster.noExternalTargets": "No legal Core recruit is available in this external dwelling.",
+		"new-horizons.combat.firstAid.permanentRestoration": "Permanently restores %s HP (%s creatures).",
 		"new-horizons.combat.orders.targetRejection.unavailable": "This Order is no longer available.",
 		"new-horizons.combat.orders.targetRejection.targetCount": "Select the required number of stacks.",
 		"new-horizons.combat.orders.targetRejection.noStack": "Select a stack.",

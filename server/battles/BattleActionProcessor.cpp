@@ -2438,8 +2438,7 @@ bool BattleActionProcessor::doHealAction(const CBattleInfoCallback & battle, con
 		if(stack->isFirstAidTent())
 		{
 			if(tentOwner && tentOwner->getCapabilityRules()["rulesetVersion"].Integer() >= 3
-				&& battle.battleMatchOwner(stack, destStack, true)
-				&& destCreatureStack && destCreatureStack->canBeHealed())
+				&& battle.battleCanHealWithFirstAidTent(stack, destStack))
 				parameters.setEffectValue(battle.battleGetFirstAidHealingOutput(stack));
 		}
 		auto dest = battle::Destination(destStack, target.at(0).hexValue);
@@ -2447,10 +2446,30 @@ bool BattleActionProcessor::doHealAction(const CBattleInfoCallback & battle, con
 		parameters.cast(gameHandler->spellcastEnvironment(), {dest});
 
 		const auto * healedStack = battle.battleGetStackByID(destinationUnitId, false);
+		const bool survivorHealingOccurred = healedStack
+			&& healedStack->getAvailableHealth() > healthBeforeHealing;
+		auto restorationBudget = battle.battleGetBattlefieldMedicRestorationBudget(stack, healedStack);
+		if(restorationBudget > 0)
+		{
+			auto restoredState = healedStack->acquireState();
+			const auto restored = restoredState->heal(restorationBudget,
+				EHealLevel::RESURRECT, EHealPower::PERMANENT);
+			if(restored.healedHealthPoints > 0)
+			{
+				BattleUnitsChanged changed;
+				changed.battleID = battle.getBattle()->getBattleID();
+				UnitChanges update(destinationUnitId, UnitChanges::EOperation::UPDATE);
+				update.data = restoredState->save();
+				update.healthDelta = restored.healedHealthPoints;
+				changed.changedStacks.push_back(std::move(update));
+				gameHandler->sendAndApply(changed);
+				healedStack = battle.battleGetStackByID(destinationUnitId, false);
+			}
+		}
 		const auto * healedCreatureStack = dynamic_cast<const CStack *>(healedStack);
 		if(surgeon && friendlyLivingTentTarget && healedCreatureStack && healedCreatureStack->alive()
 			&& battle.battleMatchOwner(stack, healedStack, true)
-			&& healedStack->getAvailableHealth() > healthBeforeHealing)
+			&& survivorHealingOccurred)
 		{
 			const auto affliction = physicalAfflictions::first(*healedStack);
 			if(affliction)

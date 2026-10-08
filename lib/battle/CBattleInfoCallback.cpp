@@ -213,6 +213,62 @@ int64_t CBattleInfoCallback::battleGetFirstAidHealingOutput(const battle::Unit *
 		battleGetActivationOutputPercent(healer));
 }
 
+int64_t CBattleInfoCallback::battleGetBattlefieldMedicRestorationBudget(
+	const battle::Unit * healer, const battle::Unit * target) const
+{
+	if(!getBattle() || !healer || !healer->isFirstAidTent() || !healer->alive()
+		|| !target || !target->alive() || !target->isValidTarget()
+		|| target->hasBonusOfType(BonusType::SIEGE_WEAPON) || target->isTurret()
+		|| target->isSummoned() || target->isClone() || target->getPhantomInitialIntegrity() > 0
+		|| static_cast<int64_t>(target->unitBaseAmount()) - target->getCount() <= target->getUnusableRemains()
+		|| !battleMatchActionController(healer, target, true))
+		return 0;
+
+	const auto * hero = battleGetOwnerHero(healer);
+	if(!hero || hero->getCapabilityRules()["rulesetVersion"].Integer() < 3
+		|| !hero->hasActivePerk("new-horizons:warMachines", "new-horizons:warMachines.battlefieldMedic"))
+		return 0;
+
+	// Calculated output, not the HP actually healed or the unused healing remainder.
+	return battleGetFirstAidHealingOutput(healer) / 2;
+}
+
+FirstAidHealingPreview CBattleInfoCallback::battleGetFirstAidHealingPreview(
+	const battle::Unit * healer, const battle::Unit * target) const
+{
+	FirstAidHealingPreview result;
+	if(!getBattle() || !healer || !healer->isFirstAidTent() || !healer->alive()
+		|| !target || !target->alive() || !target->isValidTarget()
+		|| target->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| !battleMatchActionController(healer, target, true))
+		return result;
+
+	auto state = target->acquireState();
+	auto healing = battleGetFirstAidHealingOutput(healer);
+	result.survivorHealedHP = state->heal(healing, EHealLevel::HEAL,
+		EHealPower::PERMANENT).healedHealthPoints;
+	auto restoration = battleGetBattlefieldMedicRestorationBudget(healer, target);
+	const auto restored = state->heal(restoration, EHealLevel::RESURRECT, EHealPower::PERMANENT);
+	result.restoredHP = restored.healedHealthPoints;
+	result.restoredCount = restored.resurrectedCount;
+	return result;
+}
+
+bool CBattleInfoCallback::battleCanHealWithFirstAidTent(
+	const battle::Unit * healer, const battle::Unit * target) const
+{
+	if(!healer || !healer->isFirstAidTent() || !target
+		|| !battleMatchActionController(healer, target, true))
+		return false;
+
+	// Preserve ordinary Tent admission; only Medic introduces casualty-only recipients.
+	const auto * stack = dynamic_cast<const CStack *>(target);
+	if(stack && stack->canBeHealed())
+		return true;
+	return battleGetBattlefieldMedicRestorationBudget(healer, target) > 0
+		&& battleGetFirstAidHealingPreview(healer, target).restoredHP > 0;
+}
+
 int32_t CBattleInfoCallback::battleGetCatapultStructuralDamage(
 	const battle::Unit * attacker, int32_t hitQuality) const
 {

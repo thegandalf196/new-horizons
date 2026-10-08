@@ -3778,10 +3778,27 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 
 		case PossiblePlayerBattleAction::HEAL:
 		{
+			const auto * healer = owner.stacksController->getActiveStack();
 			spells::effects::SpellEffectValue value = {};
-			value.hpDelta = owner.getBattle()->getFirstAidHealValue(owner.currentHero(), targetStack);
+			// HEAL is also offered to ordinary HEALER creatures, whose existing
+			// targeting and prediction must not inherit Tent-only perk rules.
+			if(!healer || !healer->isFirstAidTent())
+			{
+				value.hpDelta = owner.getBattle()->getFirstAidHealValue(owner.currentHero(), targetStack);
+				return prepareSpellEffectText(419, value, "", targetStack->getName());
+			}
+			const auto preview = owner.getBattle()->battleGetFirstAidHealingPreview(healer, targetStack);
+			value.hpDelta = preview.survivorHealedHP;
 			//Apply first aid to the %s plus heal value
-			return prepareSpellEffectText(419, value, "", targetStack->getName());
+			auto text = prepareSpellEffectText(419, value, "", targetStack->getName());
+			if(preview.restoredHP > 0)
+			{
+				auto restoration = MetaString::createFromTextID("new-horizons.combat.firstAid.permanentRestoration");
+				restoration.replaceRawString(std::to_string(preview.restoredHP));
+				restoration.replaceRawString(std::to_string(preview.restoredCount));
+				text += " " + restoration.toString(&GAME->translator());
+			}
+			return text;
 		}
 
 		case PossiblePlayerBattleAction::CATAPULT:
@@ -4069,7 +4086,14 @@ bool BattleActionsController::actionIsLegal(PossiblePlayerBattleAction action, c
 			return owner.siegeController && owner.siegeController->isAttackableByCatapult(targetHex);
 
 		case PossiblePlayerBattleAction::HEAL:
-			return targetStack && targetStackOwned && targetStack->canBeHealed();
+		{
+			if(!targetStack || !targetStackOwned)
+				return false;
+			const auto * healer = owner.stacksController->getActiveStack();
+			if(healer && healer->isFirstAidTent())
+				return owner.getBattle()->battleCanHealWithFirstAidTent(healer, targetStack);
+			return targetStack->canBeHealed();
+		}
 	}
 
 	assert(0);

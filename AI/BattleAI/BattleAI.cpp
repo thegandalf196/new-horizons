@@ -173,24 +173,20 @@ BattleAction CBattleAI::useHealingTent(const BattleID & battleID, const CStack *
 	for(const auto * unit : battle->battleGetAllUnits(false))
 	{
 		const auto * target = dynamic_cast<const CStack *>(unit);
-		if(!target || !target->alive() || !target->canBeHealed()
-			|| !battle->battleMatchActionController(stack, target, true))
+		if(!target || !battle->battleCanHealWithFirstAidTent(stack, target))
 			continue;
 
-		auto projectedTarget = target->acquireState();
-		auto healingAmount = healingOutput;
-		const auto healing = projectedTarget->heal(healingAmount, EHealLevel::HEAL,
-			EHealPower::PERMANENT).healedHealthPoints;
-		if(healing <= 0)
+		const auto preview = battle->battleGetFirstAidHealingPreview(stack, target);
+		if(preview.totalHealedHP() <= 0)
 			continue;
 
 		const auto missingHealth = std::max<int64_t>(0,
 			target->getMaxHealth() - target->getFirstHPleft());
-		const HealingRank rank{healing, missingHealth};
+		const HealingRank rank{preview.totalHealedHP(), missingHealth};
 		const auto candidate = std::pair{rank, target};
 		if(!bestControllerTarget || candidate.first > bestControllerTarget->first)
 			bestControllerTarget = candidate;
-		if(surgeon && physicalAfflictions::first(*target)
+		if(surgeon && preview.survivorHealedHP > 0 && physicalAfflictions::first(*target)
 			&& (!bestAfflictionTarget || candidate.first > bestAfflictionTarget->first))
 			bestAfflictionTarget = candidate;
 	}

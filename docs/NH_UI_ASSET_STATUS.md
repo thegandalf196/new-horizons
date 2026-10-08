@@ -1,5 +1,11 @@
 # New Horizons UI and asset status register
 
+2026-10-08 Battlefield Medic: production hover text now distinguishes normal
+survivor healing from permanent restoration HP/count using the shared runtime
+preview. Native mechanic/AI tests pass; rendered hover verification remains
+pending. No bespoke perk icon was created by this change (**Not done**).
+This checkpoint is not visual approval or normal playable delivery.
+
 UP097 Counter-Battery and UP180 Counterpressure purpose-made perk icons remain
 **Not done**. Their implementation uses existing perk browsing, legal shot
 target feedback and spell-response readback; no raster artwork or new panel is

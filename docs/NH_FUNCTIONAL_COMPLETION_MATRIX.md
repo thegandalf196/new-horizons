@@ -2,6 +2,22 @@
 
 Updated: 2026-10-08
 
+UP098 Battlefield Medic is active and source/native verified. Normal Tent
+survivor healing precedes an independent floor(calculated output/2) permanent
+restoration pool. Shared UI/AI preview and eligibility admit full-health
+survivors with casualties while preserving battle-start caps and unusable
+remains. Seven principal cases cover accepted activation, actual AI healing
+choice, post-battle army count, partial survivor wounds, no-perk controls and
+temporary Re-animate cohorts. Final linked build4052 exits0; native75673 and
+active-registry59555 each pass17/17 Medic/Surgeon/Quartermaster cases, zero
+skips (5.519s/5.506s). Data17/17 and module drift pass. Independent source review
+has no blocking finding; historical no-effect Tent actions remain compatible.
+Coverage is now235/310 perks: generic164/220, faction71/90,75 planned;
+War Machines7/10. Wider controller/Quartermaster/cohort combinations and the
+restoration hover rendering remain Phase2 verification. No normal playable
+delivery is claimed; a separately tested human Adventure Map startup crash
+currently blocks promotion of the magic-art-restored candidate0106d5d0.
+
 UP097 Counter-Battery and UP180 Counterpressure are active and source/native
 verified. Real Citadel tower and Ballista shots, scoped manual targeting,
 150% final machine damage, shared AI candidates/forecast and accepted-shot

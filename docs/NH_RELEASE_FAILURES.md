@@ -1,5 +1,45 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Optional magic artwork lost during resource assembly
+
+Latest committed binary 52decee72 retains the production casting/Guild hooks,
+but promoted resource snapshot 8c26a omitted all 874 optional magic resources
+previously delivered in b26652. Preserve prior resource inventories explicitly:
+the new freeze --retain-resources-from guard rejects missing paths without
+copying stale gameplay data. Focused helper tests pass 13/13. Restored candidate
+0106d5d0 keeps all 3,136 baseline resources unchanged and adds exactly the
+874 hash-verified files. It is not promoted: isolated human-map startup crashes
+during Adventure Map widget construction, before Guild/casting acceptance.
+Logs are in /tmp/nh-magic-restoration.166gSSAy; Apport discarded the core.
+Sibling debugger attach is blocked by ptrace_scope=1; use an explicit managed
+debugger-as-parent path, not global policy changes or an unchanged blind replay.
+
+### 2026-10-08 — Battlefield Medic focused integration corrections
+
+The first build failed because getStack returns a reference, not a pointer;
+the fixture now checks hasStackAtSlot and uses reference access. First focused
+native run passed all seven Medic and six Quartermaster cases, but two Surgeon
+assertions expected historical accepted no-effect healthy/enemy healing actions.
+Remove only the added all-Tent early rejection; preserve ordinary spell
+applicability, independent Medic eligibility and Surgeon actual-healing checks.
+Independent review confirms accepted no-ops still consume their activation.
+Final linked build4052 exits0; focused native75673 passes17/17, zero skips,
+5.519s. Original failed receipts remain available; no test assertion weakened.
+
+### 2026-10-08 — Latest Linux delivery retains nonfatal schema diagnostics
+
+UP311 pinned52decee72 clean build75657 and version-only relink59630 succeed.
+Private20-second headless smoke reaches day3 through nine player-turn starts,
+with actual AI building/recruiting/moving/fighting and no observed crash, script/
+server exception or missing graphics. Startup/map replication emits762 stale
+schema lines (including saved-v3 magic fields and preferredA/B versus obsolete
+major/minor requirements), plus Shield of Chaos missing positiveness assumed
+NEUTRAL. Record for Phase2; do not equate functioning principal paths to clean
+diagnostics or make this smoke a complete-game/graphical certification.
+Receipt: build/nh-linux-play-52decee72-DELIVERY.json, original logs retained in
+/tmp/nh-linux-52-headless.3dWpl6tb. The managed profile lock and runtime cleanup
+were verified after expected timeout124. No user saves touched.
+
 ### 2026-10-08 — Attack packets publish capped damage, not raw overkill
 
 Lifetime-repair linked15832 exits0; native73654 passes43/44. The remaining AI

@@ -1,4 +1,5 @@
 {
+	"new-horizons.combat.firstAid.permanentRestoration": "Permanently restores %s HP (%s creatures).",
 	"new-horizons.combat.orders.targetRejection.unavailable": "This Order is no longer available.",
 	"new-horizons.combat.orders.targetRejection.targetCount": "Select the required number of stacks.",
 	"new-horizons.combat.orders.targetRejection.noStack": "Select a stack.",

@@ -1686,9 +1686,9 @@ bool BattleFlowProcessor::tryMakeAutomaticActionOfFirstAidTent(const CBattleInfo
 	const CGHeroInstance * curOwner = battle.battleGetOwnerHero(next);
 	if (next->isFirstAidTent())
 	{
-		TStacks possibleStacks = battle.battleGetStacksIf([&next](const CStack * s)
+		TStacks possibleStacks = battle.battleGetStacksIf([&battle, &next](const CStack * s)
 		{
-			return s->unitOwner() == next->unitOwner() && s->canBeHealed();
+			return battle.battleCanHealWithFirstAidTent(next, s);
 		});
 
 		if (possibleStacks.empty())

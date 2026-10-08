@@ -631,7 +631,7 @@
 					"requires": "advanced",
 					"description": "After the First Aid Tent heals surviving creatures in its target stack, up to 50% of the Tent's calculated healing is automatically applied to restore casualties. The stack may not exceed its battle-start count.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "After the First Aid Tent heals surviving creatures in its target stack, up to 50% of the Tent's calculated healing is automatically applied to restore casualties. The stack may not exceed its battle-start count."
 					}
 				},

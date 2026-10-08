@@ -77,6 +77,19 @@ struct DLL_LINKAGE BattleMoraleInfo
 	bool furyUnboundFloorApplied = false;
 };
 
+/// Detached First Aid result, separating ordinary healing from permanent casualty restoration.
+struct DLL_LINKAGE FirstAidHealingPreview
+{
+	int64_t survivorHealedHP = 0;
+	int64_t restoredHP = 0;
+	int32_t restoredCount = 0;
+
+	int64_t totalHealedHP() const
+	{
+		return survivorHealedHP + restoredHP;
+	}
+};
+
 struct DLL_LINKAGE BattleClientInterfaceData
 {
 	std::vector<SpellID> creatureSpellsToCast;
@@ -117,6 +130,9 @@ public:
 	int32_t battleGetActivationOutputPercent(const battle::Unit * unit) const;
 	/// First Aid Tent raw healing after activation output modifiers, before target HP caps.
 	int64_t battleGetFirstAidHealingOutput(const battle::Unit * healer) const;
+	bool battleCanHealWithFirstAidTent(const battle::Unit * healer, const battle::Unit * target) const;
+	int64_t battleGetBattlefieldMedicRestorationBudget(const battle::Unit * healer, const battle::Unit * target) const;
+	FirstAidHealingPreview battleGetFirstAidHealingPreview(const battle::Unit * healer, const battle::Unit * target) const;
 	/// Raw Catapult structural output after activation modifiers, before wall HP caps.
 	int32_t battleGetCatapultStructuralDamage(const battle::Unit * attacker, int32_t hitQuality = 1) const;
 	/// Whether the earned shot can currently be used against at least one legal enemy.

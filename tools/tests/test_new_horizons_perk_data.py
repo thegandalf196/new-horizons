@@ -63,6 +63,7 @@ ACTIVE_PERKS = {
     "new-horizons:warMachines.piercingBolts",
     "new-horizons:warMachines.fortificationEngineer",
     "new-horizons:warMachines.counterBattery",
+    "new-horizons:warMachines.battlefieldMedic",
     "new-horizons:spellcraft.counterpressure",
     "new-horizons:spellcraft.arcaneFocus",
     "new-horizons:spellcraft.grandFormula",
