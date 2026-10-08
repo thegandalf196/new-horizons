@@ -2,6 +2,21 @@
 
 Updated: 2026-10-08
 
+Post-Defiant selection audit,2026-10-08: direct registry recount confirms
+236 active/74 planned perks, Armorer9/10 and War Machines7/10; the summary
+and family tables below now match these accepted checkpoints. Independent
+bounded starting-profile review finds Solmyr's three-development start and
+Halon's authored replacement implemented, while canonical3253/5349 prohibit
+inventing unauthored replacement armies or Skill choices. UP012's workbook
+biography scope is not approval of its mechanical proposals. Separate Dungeon
+review verifies all14 category forms and the inherited Harpy return/retaliation
+consumers; canonical conversion defaults retain other legacy statistics and
+abilities. Neither sample established a new missing principal feature, and
+neither certifies the whole hero/creature roster. No new coverage credit.
+The next major unfinished combat identity remains Confusion, whose already
+mapped zero-advance Attack endpoint needs its recorded design ruling; do not
+activate it or claim forced-action/AI completion from its existing foundations.
+
 UP136 Defiant is active and source/native verified. One hero-side allowance per
 round ignores one nonmagical retaliation-denial cause, including innate blocking,
 the complete No Quarter application and Expert Shroud denial. Ordinary reach,
@@ -4252,7 +4267,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | All three ranks per Skill are active; many registered Skills still lack complete perk progression. |
 | Skill rank effects active | 93/93 | Elemental Rebirth's three ranks now have source/native and owning-side AI evidence. Active status does not certify every wider interaction. |
-| Skill perks active | 234/310 | 76 planned; current registry recount2026-10-08. Generic163/220, faction71/90. War Machines6/10; Spellcraft6/10; Luck7/10; Diplomacy7/10; Chaos Magic5/10; Necromancy10/10; Learning3/10; Estates6/10; Battlecraft8/10; Logistics8/10; Command7/10; Warcasting9/10. Historian's foundation remains planned and adds no activation count. Active status alone does not certify every mechanic. |
+| Skill perks active | 236/310 | 74 planned; current registry recount2026-10-08. Generic165/220, faction71/90. Armorer9/10; War Machines7/10; Spellcraft6/10; Luck7/10; Diplomacy7/10; Chaos Magic5/10; Necromancy10/10; Learning3/10; Estates6/10; Battlecraft8/10; Logistics8/10; Command7/10; Warcasting9/10. Historian's foundation remains planned and adds no activation count. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 27/27 | All nine faction rank foundations are active; their remaining perks and wider integration are separate work. |
 | Faction perks active | 71/90 | 19 planned perks; Divine Mandate has six accepted perks, including Expert Mandate of Heaven and Advanced Purifying Mandate; Elemental Rebirth has three accepted perks with normal Basic-to-Advanced selection and live/detached evidence. |
 | Canonical combat-spell identities registered | 61/67 | 6 missing/inactive; Puppet Master is the newest source/native-verified identity. Chaos is 7/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -4601,10 +4616,10 @@ interactions, and rendered/playable acceptance remain separate.
 | Skill | Active/planned ranks | Active/planned perks | Immediate state |
 |---|---:|---:|---|
 | Offense | 3/0 | 10/0 | Bounded consumer audit found Breakthrough omitted explicit Battlecraft/Bulwark Defend reductions. UP231 repairs those channels with8/8 focused cases, accepted melee and equivalent-view detached parity. Broader mundane-state taxonomy and stale earlier-tier fixture repairs remain deferred; active registration is not whole-family certification. |
-| Armorer | 3/0 | 8/2 | Last Stand joins Bastion, Formation Fighting and Veteran with focused live/detached evidence. Unyielding lacks a nonmagical displacement producer; Defiant is implementation-ready under the canonical cause-specific denial contract recorded in UP136. |
+| Armorer | 3/0 | 9/1 | Defiant joins Last Stand, Bastion, Formation Fighting and Veteran with focused live/detached evidence. UP136 verifies one side-shared nonmagical denial exemption per round, complete No Quarter exemption and ordinary/magical legality, active native10/10. Unyielding lacks a nonmagical displacement producer. |
 | Archery | 3/0 | 10/0 | Bounded canonical consumer audit finds all ten active perks represented in shared payload, authoritative actions/reactions and BattleAI projections; no missing principal source clause identified. This is source evidence, not focused whole-family execution certification. |
 | Battlecraft | 3/0 | 8/2 | Battlefield Mastery joins the seven previously verified perks. UP156 focused4/4 and adjacent16/16 pass with zero skips, including machine exclusion, first-action allocation, distinct Wait/Defend expiry and detached branches. Actual Defend selection, controlled units and death/revival composition remain Phase2. Overwatch and Rapid Response remain planned. |
-| War Machines | 3/0 | 6/4 | Counter-Battery has actual scoped Citadel-tower/Ballista shots and shared AI candidate/forecast evidence. Surgeon, Piercing Bolts, Fortification Engineer, Master Gunner and Quartermaster remain active. Four perks remain planned. Battlefield Medic is implementation-ready; canonical ordinary restoration is permanent and Re-animate supplies the temporary exception. |
+| War Machines | 3/0 | 7/3 | Battlefield Medic joins Counter-Battery, Surgeon, Piercing Bolts, Fortification Engineer, Master Gunner and Quartermaster. UP098 verifies permanent restoration, ordinary Tent healing first, shared UI/AI and actual choice/result paths, active native17/17. Counter-Battery has actual scoped Citadel-tower/Ballista shots and shared AI candidate/forecast evidence. Three perks remain planned. |
 | Discipline | 3/0 | 7/3 | Steadfast joins Unbreakable, Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless with focused authoritative and detached evidence. Three perks remain planned; Esprit de Corps composition scope, Heroic Spirit activation timing and Veteran Cohesion HP reference await clarification. |
 | Recruitment | 3/0 | 6/4 | Four perks missing |
 | Command | 3/0 | 7/3 | Aggressive/Defensive, Veteran, Combined Arms, Commanding Presence, Battle Plan and Double Command have focused runtime/AI evidence. Iron Will, Crisis Command and Seize Initiative remain planned pending their recorded narrow design rulings. |
