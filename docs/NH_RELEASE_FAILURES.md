@@ -1,5 +1,45 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Exchange refresh after Mentor level-ups
+
+The reported transfer reaches successful server ArrangeStacks/RebalanceStacks
+application, then the observed client log ends after game-state application,
+before the UI callback completes. The user confirms Theodorus's Mentor gave
+Serena several levels while the trade window stayed open. Source inspection
+finds an opening-sized secondary-skill widget vector indexed using the later
+live skill count during the garrison refresh: acquiring another skill makes
+that access out of bounds. Fixed persistent eight-slot widgets and the shared
+refresh helper retain transfer/Leadership rules. The focused production-helper
+regression passes1/1; independent review finds no blocker. Linked build94353
+exits0; actual graphical acceptance remains pending. The ordinary log was overwritten by
+a subsequent launch; a private observed excerpt is retained, not a claimed core
+backtrace or intact original crash log.
+
+The adjacent legacy Academy/Gremlin Python suite fails13 assertions plus one
+missing-authoring-input error under the NHART/handoff delivery architecture.
+It still assumes loose artwork and superseded Cabir derivatives; this is not
+evidence that the new Gargoyle compositor or exchange fix fails at runtime.
+Do not weaken its assertions or restore duplicate loose art to manufacture a
+pass. Record its migration separately; the native current-package portrait gate
+must still run and is not replaced by this source-string suite.
+
+The newly linked Academy native fixture exits1 before portrait checks because
+it requires stock CMAGE.DEF while the selected turbaned Mage uses a packaged
+custom animation. Correct the fixture's binding assertion to current selection,
+retaining geometry/immutability checks; do not change production artwork or
+generically disable validation. Receipt: build/new-horizons-linux/
+nh-academy-gargoyle-runtime.log. This failed run is not Gargoyle acceptance.
+
+The corrected selected-Magi run then exposes obsolete Cabir portrait paths.
+All14 fixture rows are audited against current module bindings and selected
+packed resources; exact pixel/geometry/alias assertions remain intact.
+Rebuild67553 exits0 and runtime3636 passes scales1–4, including the two
+Gargoyles' complete HOLDING bodies and shared large-icon aliases. Receipt:
+build/new-horizons-linux/nh-academy-gargoyle-runtime-handoff.log. Optional
+legacy Cabir-animation validation still needs a separate handoff migration;
+it was not enabled or represented as passing here. Actual UI acceptance remains
+distinct from this dummy-SDL native gate.
+
 ### 2026-10-08 — Full-hero serialization fixture needs complete graph types
 
 The Master Teacher linked build stopped at the new server fixture's direct

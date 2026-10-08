@@ -77,6 +77,16 @@ void AssetGenerator::initialize()
 	{
 		return createAcademyCreaturePortrait(31, "NH_academy_masterGremlin_portrait_mask.png");
 	};
+	imageFiles[ImagePath::builtin("NH_academy_stoneGargoyle_icon_large.png")] = [this]()
+	{
+		return createCreatureFramePortrait(AnimationPath::builtin("CGARGO"), static_cast<size_t>(ECreatureAnimType::HOLDING), 0,
+			ImagePath::builtin("NH_academy_creature_portrait_backdrop.png"), Point(58, 64), 2);
+	};
+	imageFiles[ImagePath::builtin("NH_academy_obsidianGargoyle_icon_large.png")] = [this]()
+	{
+		return createCreatureFramePortrait(AnimationPath::builtin("COGARG"), static_cast<size_t>(ECreatureAnimType::HOLDING), 0,
+			ImagePath::builtin("NH_academy_creature_portrait_backdrop.png"), Point(58, 64), 2);
+	};
 	imageFiles[ImagePath::builtin("NH_academy_ironGolem_icon_large.png")] = [this]()
 	{
 		return createAcademyCreaturePortrait(34, "NH_academy_ironGolem_portrait_mask.png");
@@ -287,6 +297,8 @@ bool AssetGenerator::preferGeneratedImage(const ImagePath & image) const
 		|| image == ImagePath::builtin("NH_academy_village_small_built.png")
 		|| image == ImagePath::builtin("NH_academy_gremlin_icon_large.png")
 		|| image == ImagePath::builtin("NH_academy_masterGremlin_icon_large.png")
+		|| image == ImagePath::builtin("NH_academy_stoneGargoyle_icon_large.png")
+		|| image == ImagePath::builtin("NH_academy_obsidianGargoyle_icon_large.png")
 		|| image == ImagePath::builtin("NH_academy_ironGolem_icon_large.png")
 		|| image == ImagePath::builtin("NH_academy_stoneGolem_icon_large.png")
 		|| image == ImagePath::builtin("NH_academy_mage_icon_large.png")

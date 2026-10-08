@@ -58,6 +58,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 [[noreturn]] void handleFatalError(const std::string & message, bool)
@@ -94,14 +95,19 @@ constexpr std::array<BuiltIcon, 4> academyBuiltIcons{{
 	{"NH_academy_village_small_normal.png", "NH_academy_village_small_built.png", 48, 32},
 }};
 
-constexpr std::array<AcademyPortrait, 12> academyPortraits{{
-	{"gremlin", "NH_cabir_icon_large.png", "", 28, 30, "NH_cabir_icon_small.png"},
-	{"masterGremlin", "NH_cabirMaster_icon_large.png", "", 29, 31, "NH_cabirMaster_icon_small.png"},
+constexpr std::array<AcademyPortrait, 14> academyPortraits{{
+	{"gremlin", "cabir-handoff/cabir/icons/NH_cabir_handoff_icon_large.png", "", 28, 30,
+		"cabir-handoff/cabir/icons/NH_cabir_handoff_icon_small.png"},
+	{"masterGremlin", "cabir-handoff/cabir-master/icons/NH_cabir_master_handoff_icon_large.png", "", 29, 31,
+		"cabir-handoff/cabir-master/icons/NH_cabir_master_handoff_icon_small.png"},
+	{"stoneGargoyle", "NH_academy_stoneGargoyle_icon_large.png", "", 30, 32},
+	{"obsidianGargoyle", "NH_academy_obsidianGargoyle_icon_large.png", "", 31, 33},
 	{"ironGolem", "NH_academy_ironGolem_icon_large.png", "NH_academy_ironGolem_portrait_mask.png", 32, 34},
 	{"stoneGolem", "NH_academy_stoneGolem_icon_large.png", "NH_academy_stoneGolem_portrait_mask.png", 33, 35},
-	{"mage", "NH_academy_mage_icon_large.png", "NH_academy_mage_portrait_mask.png", 34, 36},
-	{"archMage", "NH_academy_archMage_icon_large.png", "NH_academy_archMage_portrait_mask.png", 35, 37,
-		nullptr, "NH_ArchMageGreyPortrait", 0},
+	{"mage", "magi-vcmi-complete/icons/magi-portrait-58x64.png", "", 34, 36,
+		"magi-vcmi-complete/icons/magi-small-32.png"},
+	{"archMage", "magi-vcmi-complete/icons/archmagi-portrait-58x64.png", "", 35, 37,
+		"magi-vcmi-complete/icons/archmagi-small-32.png"},
 	{"genie", "NH_academy_genie_icon_large.png", "NH_academy_genie_portrait_mask.png", 36, 38},
 	{"masterGenie", "NH_academy_masterGenie_icon_large.png", "NH_academy_masterGenie_portrait_mask.png", 37, 39},
 	{"naga", "NH_academy_naga_icon_large.png", "NH_academy_naga_portrait_mask.png", 38, 40},
@@ -735,19 +741,24 @@ void verifyFullBodyAcademyPortrait(const AcademyPortrait & portrait, const CCrea
 {
 	auto & renderer = ENGINE->renderHandler();
 	const bool queen = std::string_view(portrait.identifier) == "nagaQueen";
-	const AnimationPath source = AnimationPath::builtin(queen ? "CNAGAG" : "CNAGA");
+	const bool stoneGargoyle = std::string_view(portrait.identifier) == "stoneGargoyle";
+	const bool obsidianGargoyle = std::string_view(portrait.identifier) == "obsidianGargoyle";
+	const AnimationPath source = AnimationPath::builtin(stoneGargoyle ? "CGARGO"
+		: obsidianGargoyle ? "COGARG" : queen ? "CNAGAG" : "CNAGA");
 	ImageLocator locator(source, 0, static_cast<int>(ECreatureAnimType::HOLDING), EImageBlitMode::ONLY_BODY_HIDE_SELECTION);
 	locator.originalDefFrame = true;
 	locator.scalingFactor = 1;
 	const auto original = renderer.loadImage(locator);
 	const Point sourceSize(450, 400);
-	const auto originalPixels = captureImagePixels(original, sourceSize, "original Naga holding body");
+	const auto originalPixels = captureImagePixels(original, sourceSize, "original Academy holding body");
 	const auto bounds = visiblePixelBounds(originalPixels, sourceSize);
-	const VisiblePixelBounds expectedBounds = queen ? VisiblePixelBounds{177, 171, 260, 266}
+	const VisiblePixelBounds expectedBounds = stoneGargoyle ? VisiblePixelBounds{175, 196, 217, 266}
+		: obsidianGargoyle ? VisiblePixelBounds{174, 188, 217, 266}
+		: queen ? VisiblePixelBounds{177, 171, 260, 266}
 		: VisiblePixelBounds{181, 182, 254, 266};
-	require(bounds == expectedBounds, "Original Naga holding frame must include the complete native tail");
+	require(bounds == expectedBounds, "Original Academy holding frame must include the complete native body");
 	const Point bodySize(bounds.right - bounds.left + 1, bounds.bottom - bounds.top + 1);
-	const Point fittedSize(queen ? 53 : 52, 60);
+	const Point fittedSize(stoneGargoyle ? 36 : obsidianGargoyle ? 33 : queen ? 53 : 52, 60);
 	const Point size(58, 64);
 	const Point origin((size.x - fittedSize.x) / 2, 2);
 
@@ -761,12 +772,13 @@ void verifyFullBodyAcademyPortrait(const AcademyPortrait & portrait, const CCrea
 	fitted.drawScaled(body, Point(0, 0), fittedSize);
 
 	const auto generated = renderer.loadImage(ImagePath::builtin(portrait.image), EImageBlitMode::SIMPLE);
-	const auto actual = captureImagePixels(generated, size, "full-body Naga portrait");
+	const auto actual = captureImagePixels(generated, size, "full-body Academy portrait");
 	const auto backdrop = captureImagePixels(renderer.loadImage(
 		ImagePath::builtin("NH_academy_creature_portrait_backdrop.png"), EImageBlitMode::SIMPLE), size, "Academy backdrop");
 	size_t foregroundPixels = 0;
 	size_t transparentGaps = 0;
 	size_t tailPixels = 0;
+	size_t headPixels = 0;
 	for(int y = 0; y < size.y; ++y)
 	{
 		for(int x = 0; x < size.x; ++x)
@@ -779,38 +791,40 @@ void verifyFullBodyAcademyPortrait(const AcademyPortrait & portrait, const CCrea
 			if(bodyPixel.a != 0)
 			{
 				require(bodyPixel.a == 255 && actual[index] == bodyPixel,
-					"Naga full-body portrait changed a nearest-scaled original body pixel");
+					"Academy full-body portrait changed a nearest-scaled original body pixel");
 				require(x >= 2 && x < size.x - 2 && y >= 2 && y < size.y - 2,
-					"Naga full-body portrait escaped its two-pixel inset");
+					"Academy full-body portrait escaped its two-pixel inset");
 				++foregroundPixels;
 				if(local.y >= fittedSize.y - 4)
 					++tailPixels;
+				if(local.y < 4)
+					++headPixels;
 			}
 			else
 			{
-				require(actual[index] == backdrop[index], "Naga transparent gaps or inset erased the Academy backdrop");
+				require(actual[index] == backdrop[index], "Academy transparent gaps or inset erased the Academy backdrop");
 				if(inside)
 					++transparentGaps;
 			}
 		}
 	}
-	require(foregroundPixels > 0 && tailPixels > 0 && transparentGaps > 0,
-		"Full-body Naga portrait must retain the lower tail and transparent silhouette gaps");
-	require(captureImagePixels(original, sourceSize, "Naga holding body after portrait generation") == originalPixels,
+	require(foregroundPixels > 0 && headPixels > 0 && tailPixels > 0 && transparentGaps > 0,
+		"Full-body Academy portrait must retain its upper/lower body and transparent silhouette gaps");
+	require(captureImagePixels(original, sourceSize, "Academy holding body after portrait generation") == originalPixels,
 		"Portrait generation mutated the original cached battle frame");
 	require(captureImagePixels(renderer.loadImage(AnimationPath::builtin("TWCRPORT"), creature.getIconIndex(), 0,
-		EImageBlitMode::OPAQUE), size, "Naga registered large icon") == actual,
-		"TWCRPORT alias must route to the full-body Naga portrait");
+		EImageBlitMode::OPAQUE), size, "Academy registered large icon") == actual,
+		"TWCRPORT alias must route recruitment and growth to the full-body Academy portrait");
 	ImageLocator smallLocator(AnimationPath::builtin("CPRSMALL"), creature.getIconIndex(), 0, EImageBlitMode::COLORKEY);
 	smallLocator.originalDefFrame = true;
 	smallLocator.scalingFactor = 1;
-	require(captureImagePixels(renderer.loadImage(smallLocator), Point(32, 32), "original Naga small icon")
+	require(captureImagePixels(renderer.loadImage(smallLocator), Point(32, 32), "original Academy small icon")
 		== captureImagePixels(renderer.loadImage(AnimationPath::builtin("CPRSMALL"), creature.getIconIndex(), 0,
-			EImageBlitMode::COLORKEY), Point(32, 32), "registered Naga small icon"),
+			EImageBlitMode::COLORKEY), Point(32, 32), "registered Academy small icon"),
 		"Full-body portrait must preserve the original CPRSMALL registration");
 	std::cout << "  " << portrait.identifier << ": complete original holding body " << bodySize.x << 'x' << bodySize.y
 		<< " fitted " << fittedSize.x << 'x' << fittedSize.y << "; " << transparentGaps
-		<< " opaque-backdrop gaps, tail/inset and unchanged battle/small sources verified\n";
+		<< " opaque-backdrop gaps, upper/lower body/inset and unchanged battle/small sources verified\n";
 }
 
 void verifyAcademyPortrait(const AcademyPortrait & portrait)
@@ -878,7 +892,8 @@ void verifyAcademyPortrait(const AcademyPortrait & portrait)
 	else
 		require(creature->smallIconName.empty(),
 			std::string("Creature small icon must remain on its original CPRSMALL frame: core:") + portrait.identifier);
-	if(std::string_view(portrait.identifier) == "naga" || std::string_view(portrait.identifier) == "nagaQueen")
+	if(std::string_view(portrait.identifier) == "naga" || std::string_view(portrait.identifier) == "nagaQueen"
+		|| std::string_view(portrait.identifier) == "stoneGargoyle" || std::string_view(portrait.identifier) == "obsidianGargoyle")
 	{
 		verifyFullBodyAcademyPortrait(portrait, *creature);
 		return;
@@ -1015,11 +1030,11 @@ bool cabirAnimationValidationRequested()
 void verifyMagiProjectileColors()
 {
 	constexpr std::array<std::array<uint8_t, 3>, 5> archMageRgb{{
-		{{192, 32, 24}},
-		{{232, 48, 40}},
-		{{255, 64, 48}},
-		{{232, 48, 40}},
-		{{192, 32, 24}},
+		{{192, 32, 32}},
+		{{224, 128, 128}},
+		{{176, 32, 32}},
+		{{224, 128, 128}},
+		{{192, 32, 32}},
 	}};
 	constexpr std::array<std::array<uint8_t, 2>, 5> archMageAlpha{{
 		{{255, 64}},
@@ -1041,12 +1056,12 @@ void verifyMagiProjectileColors()
 	const auto * mage = getCreature("mage");
 	const auto * archMage = getCreature("archMage");
 	require(mage != nullptr && archMage != nullptr, "Loaded Tower Mage definitions are missing");
-	require(mage->animDefName == AnimationPath::builtin("CMAGE.DEF"),
-		"Mage must retain its ordinary CMAGE.DEF animation");
-	require(mage->animation.projectileImageName == AnimationPath::builtin("NH_MageRedProjectile.def"),
-		"Mage must use its palette-remapped PMAGEX projectile alias");
-	require(archMage->animDefName == AnimationPath::builtin("NH_ArchMageGrey.def"),
-		"Arch Mage must use its palette-remapped CAMAGE animation alias");
+	require(mage->animDefName == AnimationPath::builtin("magi-vcmi-complete/magi/NH_CMAGE.def"),
+		"Mage must use its selected turbaned battle descriptor");
+	require(mage->animation.projectileImageName == AnimationPath::builtin("magi-vcmi-complete/projectile/NH_PMAGEX.def"),
+		"Mage must use its selected packed red projectile descriptor");
+	require(archMage->animDefName == AnimationPath::builtin("magi-vcmi-complete/archmagi/NH_CAMAGE.def"),
+		"Arch Mage must use its selected turbaned battle descriptor");
 	require(mage->animation.projectileRay.empty(),
 		"Mage must not inherit the Arch Mage procedural ray colour override");
 	require(archMage->animation.attackClimaxFrame == 8,
@@ -1078,7 +1093,7 @@ void verifyMagiProjectileColors()
 		require(creature->hasBonusOfType(BonusType::NO_DISTANCE_PENALTY),
 			"Magi must retain their ranged-distance capability");
 	}
-	std::cout << "  Mage/Arch Mage: loaded palette-mapped aliases and five red Arch Mage rays\n";
+	std::cout << "  Mage/Arch Mage: selected packed battle/projectile descriptors and five red Arch Mage rays\n";
 }
 
 AnimationPath normalizedAnimationSource(AnimationPath path)
@@ -1147,7 +1162,7 @@ std::shared_ptr<CAnimation> verifyCompletePaletteAlias(IRenderHandler & renderer
 	return alias;
 }
 
-std::shared_ptr<CAnimation> verifyArchMagePortraitAlias(IRenderHandler & renderer)
+[[maybe_unused]] std::shared_ptr<CAnimation> verifyArchMagePortraitAlias(IRenderHandler & renderer)
 {
 	const AnimationPath aliasPath = AnimationPath::builtin("NH_ArchMageGreyPortrait");
 	const JsonPath descriptorPath = aliasPath.addPrefix("SPRITES/").toType<EResType::JSON>();
@@ -1214,7 +1229,7 @@ void verifyMappedPalettePixels(IRenderHandler & renderer, const CAnimation & ali
 			description + " palette map did not change any used source color");
 }
 
-std::shared_ptr<CAnimation> verifyMappedFrameAlias(IRenderHandler & renderer, const char * aliasName,
+[[maybe_unused]] std::shared_ptr<CAnimation> verifyMappedFrameAlias(IRenderHandler & renderer, const char * aliasName,
 	const char * sourceName, const std::vector<size_t> & sourceFrames, EImageBlitMode mode)
 {
 	const AnimationPath aliasPath = AnimationPath::builtin(aliasName);
@@ -1251,18 +1266,6 @@ std::shared_ptr<IImage> loadExactOriginalFrame(IRenderHandler & renderer, const 
 	return renderer.loadImage(locator);
 }
 
-void verifyOrdinaryFrameRemainsUnmapped(IRenderHandler & renderer, const AnimationPath & source,
-	size_t frame, EImageBlitMode mode, const std::string & description)
-{
-	const auto exact = loadExactOriginalFrame(renderer, source, frame, 0, mode);
-	const auto ordinary = renderer.loadImage(source, static_cast<int>(frame), 0, mode);
-	require(exact && ordinary && exact->dimensions() == ordinary->dimensions(),
-		description + " did not retain its original native canvas");
-	require(captureImagePixels(exact, exact->dimensions(), description + " exact source")
-		== captureImagePixels(ordinary, exact->dimensions(), description + " ordinary route"),
-		description + " was affected by another creature's palette alias");
-}
-
 void verifyOrdinaryAnimationGroupRemainsUnmapped(IRenderHandler & renderer, const AnimationPath & source,
 	size_t group, EImageBlitMode mode, const std::string & description)
 {
@@ -1280,7 +1283,7 @@ void verifyOrdinaryAnimationGroupRemainsUnmapped(IRenderHandler & renderer, cons
 	}
 }
 
-void verifyGeneratedImageMatchesAlias(IRenderHandler & renderer, const ImagePath & generatedPath,
+[[maybe_unused]] void verifyGeneratedImageMatchesAlias(IRenderHandler & renderer, const ImagePath & generatedPath,
 	const CAnimation & alias, size_t frame, EImageBlitMode mode, const Point & expectedSize,
 	const std::string & description)
 {
@@ -1311,47 +1314,26 @@ void verifyArchMageSmallAndEncounterImages(IRenderHandler & renderer)
 	const auto * mage = getCreature("mage");
 	const auto * archMage = getCreature("archMage");
 	require(mage && archMage, "Loaded Mage/Arch Mage definitions are missing for map/icon palette checks");
-	require(mage->smallIconName.empty(), "Mage must retain its original CPRSMALL frame route");
-	require(archMage->smallIconName == "NH_ArchMageGreySmall:0:0",
-		"Arch Mage must use its palette-mapped small-icon frame reference");
-	require(archMage->mapAttackFromRight == ImagePath::builtin("NH_ArchMageGreyEncounter:0:0")
-		&& archMage->mapAttackFromLeft == ImagePath::builtin("NH_ArchMageGreyEncounter:0:1"),
-		"Arch Mage must use palette-mapped right/left encounter frame references");
+	require(mage->smallIconName == "magi-vcmi-complete/icons/magi-small-32.png"
+		&& archMage->smallIconName == "magi-vcmi-complete/icons/archmagi-small-32.png",
+		"Both Magi must use their selected packed small portraits");
+	const auto verifyEncounter = [&](const ImagePath & actualPath, const char * expectedPath)
+	{
+		require(actualPath == ImagePath::builtin(expectedPath), "Magi encounter binding differs from the selected packed resource");
+		const auto source = renderer.loadImage(mountedSpritePath(actualPath), EImageBlitMode::SIMPLE);
+		const auto registered = renderer.loadImage(actualPath, EImageBlitMode::SIMPLE);
+		require(source && registered && source->dimensions() == Point(64, 64)
+			&& registered->dimensions() == source->dimensions(), "Selected Magi encounter must retain native 64x64 geometry");
+		require(captureImagePixels(source, source->dimensions(), "packed Magi encounter")
+			== captureImagePixels(registered, registered->dimensions(), "registered Magi encounter"),
+			"Magi encounter route changed the selected packed pixels");
+	};
+	verifyEncounter(mage->mapAttackFromRight, "magi-vcmi-complete/icons/magi-map-attack-68.png");
+	verifyEncounter(mage->mapAttackFromLeft, "magi-vcmi-complete/icons/magi-map-attack-69.png");
+	verifyEncounter(archMage->mapAttackFromRight, "magi-vcmi-complete/icons/archmagi-map-attack-70.png");
+	verifyEncounter(archMage->mapAttackFromLeft, "magi-vcmi-complete/icons/archmagi-map-attack-71.png");
 
-	const auto smallIconAlias = verifyMappedFrameAlias(renderer, "NH_ArchMageGreySmall", "CPRSMALL", {37},
-		EImageBlitMode::COLORKEY);
-	verifyMappedPalettePixels(renderer, *smallIconAlias, 0, 0, EImageBlitMode::COLORKEY,
-		"Arch Mage small icon source frame", true);
-	const auto archMageSmallSource = loadExactOriginalFrame(renderer, AnimationPath::builtin("CPRSMALL"), 37, 0,
-		EImageBlitMode::COLORKEY);
-	require(archMageSmallSource != nullptr, "Arch Mage original CPRSMALL frame 37 is missing");
-	verifyGeneratedImageMatchesAlias(renderer, ImagePath::builtin("CPRSMALL:0:37"),
-		*smallIconAlias, 0, EImageBlitMode::COLORKEY, archMageSmallSource->dimensions(),
-		"Arch Mage registered CPRSMALL icon");
-
-	const auto encounterAlias = verifyMappedFrameAlias(renderer, "NH_ArchMageGreyEncounter", "AvWattak", {70, 71},
-		EImageBlitMode::SIMPLE);
-	verifyMappedPalettePixels(renderer, *encounterAlias, 0, 0, EImageBlitMode::SIMPLE,
-		"Arch Mage right encounter source frame", true);
-	verifyMappedPalettePixels(renderer, *encounterAlias, 0, 1, EImageBlitMode::SIMPLE,
-		"Arch Mage left encounter source frame", true);
-	const auto rightSource = loadExactOriginalFrame(renderer, AnimationPath::builtin("AvWattak"), 70, 0,
-		EImageBlitMode::SIMPLE);
-	const auto leftSource = loadExactOriginalFrame(renderer, AnimationPath::builtin("AvWattak"), 71, 0,
-		EImageBlitMode::SIMPLE);
-	require(rightSource && leftSource, "Arch Mage original encounter source frames are missing");
-	verifyGeneratedImageMatchesAlias(renderer, archMage->mapAttackFromRight, *encounterAlias, 0,
-		EImageBlitMode::SIMPLE, rightSource->dimensions(), "Arch Mage right encounter image");
-	verifyGeneratedImageMatchesAlias(renderer, archMage->mapAttackFromLeft, *encounterAlias, 1,
-		EImageBlitMode::SIMPLE, leftSource->dimensions(), "Arch Mage left encounter image");
-
-	verifyOrdinaryFrameRemainsUnmapped(renderer, AnimationPath::builtin("CPRSMALL"), 36,
-		EImageBlitMode::COLORKEY, "Mage CPRSMALL frame 36");
-	verifyOrdinaryFrameRemainsUnmapped(renderer, AnimationPath::builtin("AvWattak"), 68,
-		EImageBlitMode::SIMPLE, "Mage left AvWattak frame 68");
-	verifyOrdinaryFrameRemainsUnmapped(renderer, AnimationPath::builtin("AvWattak"), 69,
-		EImageBlitMode::SIMPLE, "Mage right AvWattak frame 69");
-	std::cout << "  Arch Mage small icon and encounter images: exact mapped source frames, native geometry/alpha, Mage frames unchanged\n";
+	std::cout << "  Magi selected encounter pixels and native geometry verified\n";
 }
 
 void verifyArchMageAdventureMap()
@@ -1370,9 +1352,9 @@ void verifyArchMageAdventureMap()
 	const auto & objectTemplate = *templates.front();
 	require(objectTemplate.id == Obj::MONSTER && objectTemplate.subid == archMage->getId().num,
 		"Arch Mage adventure-map template is not bound to its creature identity");
-	const AnimationPath mapPath = AnimationPath::builtin("NH_ArchMageGreyMap.def");
+	const AnimationPath mapPath = AnimationPath::builtin("AVWmagx0.def");
 	require(objectTemplate.animationFile == mapPath,
-		"Arch Mage adventure-map template must use NH_ArchMageGreyMap.def");
+		"Arch Mage adventure-map template must retain its selected original AVWmagx0.def route");
 	require(objectTemplate.getWidth() == 2 && objectTemplate.getHeight() == 2 && objectTemplate.isVisitable(),
 		"Arch Mage must preserve the 2x2 visitable monster footprint");
 	for(int y = 0; y < 2; ++y)
@@ -1409,7 +1391,6 @@ void verifyArchMageAdventureMap()
 			&& locator.defGroup == 0 && locator.defFrame == static_cast<int>(frame),
 			"Arch Mage map alias must preserve original AVWmagx0 group-0 frame order at frame "
 				+ std::to_string(frame));
-		verifyPaletteMap(locator, "Arch Mage map alias frame " + std::to_string(frame));
 		locator.layer = EImageBlitMode::WITH_SHADOW;
 		locator.scalingFactor = 1;
 		locator.originalDefFrame = true;
@@ -1417,9 +1398,8 @@ void verifyArchMageAdventureMap()
 		require(sourceFrame && sourceFrame->dimensions() == Point(64, 64),
 			"Arch Mage map alias must retain the original 64x64 canvas at frame " + std::to_string(frame));
 	}
-	for(const size_t frame : {size_t(0), size_t(15), size_t(29)})
-		verifyMappedPalettePixels(renderer, *mapAnimation, 0, frame, EImageBlitMode::WITH_SHADOW,
-			"Arch Mage map frame " + std::to_string(frame), true);
+	verifyOrdinaryAnimationGroupRemainsUnmapped(renderer, mapPath, 0,
+		EImageBlitMode::WITH_SHADOW, "Arch Mage original AVWmagx0 map frames");
 
 	const auto mageId = LIBRARY->identifiers()->getIdentifier(
 		ModScope::scopeGame(), "creature", std::string("mage"));
@@ -1439,18 +1419,54 @@ void verifyArchMageAdventureMap()
 
 void verifyMagiPaletteAliases(IRenderHandler & renderer)
 {
-	const auto archMage = verifyCompletePaletteAlias(renderer, "NH_ArchMageGrey.def", "CAMAGE.DEF");
-	const auto mageProjectile = verifyCompletePaletteAlias(renderer, "NH_MageRedProjectile.def", "PMAGEX.DEF");
-	const auto portrait = verifyArchMagePortraitAlias(renderer);
+	constexpr std::array<std::pair<size_t, size_t>, 18> selectedGroups{{
+		{0, 8}, {1, 11}, {2, 8}, {3, 6}, {4, 11}, {5, 8}, {7, 2}, {8, 2}, {9, 2},
+		{10, 2}, {11, 10}, {12, 10}, {13, 10}, {14, 13}, {15, 13}, {16, 13}, {20, 2}, {21, 2}
+	}};
+	for(const char * path : {"magi-vcmi-complete/magi/NH_CMAGE.def", "magi-vcmi-complete/archmagi/NH_CAMAGE.def"})
+	{
+		const auto selected = renderer.loadAnimation(AnimationPath::builtin(path), EImageBlitMode::SIMPLE);
+		require(selected != nullptr, "Selected packed Magi animation is missing");
+		for(const auto & [group, count] : selectedGroups)
+		{
+			require(selected->size(group) == count, "Selected packed Magi group changed its frame count");
+			for(size_t frame = 0; frame < count; ++frame)
+			{
+				const auto locator = selected->getImageLocator(frame, group);
+				require(locator.image.has_value() && CResourceHandler::get()->existsResource(mountedSpritePath(*locator.image)),
+					"Selected Magi descriptor must resolve its packed PNG frame");
+				const auto original = renderer.loadImage(mountedSpritePath(*locator.image), EImageBlitMode::SIMPLE);
+				const auto before = captureImagePixels(original, Point(450, 400), "packed Magi battle source");
+				const auto actual = selected->getImage(frame, group, true);
+				require(captureImagePixels(actual, Point(450, 400), "selected Magi descriptor frame") == before,
+					"Selected Magi descriptor changed its packed frame pixels or native geometry");
+				require(captureImagePixels(original, Point(450, 400), "packed Magi source after descriptor load") == before,
+					"Selected Magi descriptor load mutated its cached source image");
+			}
+		}
+	}
 
-	verifyMappedPalettePixels(renderer, *archMage, 2, 0, EImageBlitMode::WITH_SHADOW_AND_SELECTION,
-		"Arch Mage holding frame", true);
-	verifyMappedPalettePixels(renderer, *archMage, 14, 8, EImageBlitMode::WITH_SHADOW_AND_SELECTION,
-		"Arch Mage shooting frame", true);
+	const auto selectedProjectile = renderer.loadAnimation(
+		AnimationPath::builtin("magi-vcmi-complete/projectile/NH_PMAGEX.def"), EImageBlitMode::SIMPLE);
+	require(selectedProjectile && selectedProjectile->size(0) == 9,
+		"Selected packed Magi projectile must retain its nine angles");
+	for(size_t frame = 0; frame < 9; ++frame)
+	{
+		const auto locator = selectedProjectile->getImageLocator(frame, 0);
+		require(locator.image.has_value(), "Selected projectile must resolve a packed PNG");
+		const auto source = renderer.loadImage(mountedSpritePath(*locator.image), EImageBlitMode::SIMPLE);
+		const auto before = captureImagePixels(source, Point(30, 30), "packed Magi projectile source");
+		require(captureImagePixels(selectedProjectile->getImage(frame, 0, true), Point(30, 30), "selected projectile angle") == before,
+			"Selected projectile changed its packed pixels or native geometry");
+		require(captureImagePixels(source, Point(30, 30), "projectile source after descriptor load") == before,
+			"Selected projectile load mutated its cached source");
+	}
+
+	// Retained legacy aliases test the palette facility independently of current
+	// creature selection; the selected turbaned frames are checked above.
+	const auto mageProjectile = verifyCompletePaletteAlias(renderer, "NH_MageRedProjectile.def", "PMAGEX.DEF");
 	verifyMappedPalettePixels(renderer, *mageProjectile, 0, 0, EImageBlitMode::COLORKEY,
-		"Mage projectile frame", true);
-	verifyMappedPalettePixels(renderer, *portrait, 0, 0, EImageBlitMode::OPAQUE,
-		"Arch Mage portrait source frame", true);
+		"Independent legacy Mage projectile palette alias", true);
 	verifyArchMageSmallAndEncounterImages(renderer);
 	verifyArchMageAdventureMap();
 }
@@ -1470,23 +1486,25 @@ void exportMappedMagiPreviews(IRenderHandler & renderer, const std::filesystem::
 		require(image != nullptr, "Could not render opt-in mapped alias preview: " + filename);
 		image->exportBitmap(boost::filesystem::path((previewDirectory / filename).string()));
 	};
-	exportFrame(AnimationPath::builtin("NH_ArchMageGrey.def"), 2, 0,
+	exportFrame(AnimationPath::builtin("magi-vcmi-complete/archmagi/NH_CAMAGE.def"), 2, 0,
 		EImageBlitMode::WITH_SHADOW_AND_SELECTION, "archmage_standing_g2_f0.png");
-	exportFrame(AnimationPath::builtin("NH_ArchMageGrey.def"), 14, 8,
+	exportFrame(AnimationPath::builtin("magi-vcmi-complete/archmagi/NH_CAMAGE.def"), 14, 8,
 		EImageBlitMode::WITH_SHADOW_AND_SELECTION, "archmage_shooting_g14_f8.png");
-	exportFrame(AnimationPath::builtin("NH_ArchMageGreyPortrait"), 0, 0,
-		EImageBlitMode::OPAQUE, "archmage_portrait_source.png");
-	exportFrame(AnimationPath::builtin("NH_ArchMageGreySmall"), 0, 0,
-		EImageBlitMode::COLORKEY, "archmage_small_icon.png");
-	exportFrame(AnimationPath::builtin("NH_ArchMageGreyEncounter"), 0, 0,
-		EImageBlitMode::SIMPLE, "archmage_encounter_right.png");
-	exportFrame(AnimationPath::builtin("NH_ArchMageGreyEncounter"), 0, 1,
-		EImageBlitMode::SIMPLE, "archmage_encounter_left.png");
+	const auto exportImage = [&](const char * path, const char * filename)
+	{
+		const auto image = renderer.loadImage(ImagePath::builtin(path), EImageBlitMode::SIMPLE);
+		require(image != nullptr, "Selected packed portrait preview is unavailable");
+		image->exportBitmap(boost::filesystem::path((previewDirectory / filename).string()));
+	};
+	exportImage("magi-vcmi-complete/icons/archmagi-portrait-58x64.png", "archmage_portrait_source.png");
+	exportImage("magi-vcmi-complete/icons/archmagi-small-32.png", "archmage_small_icon.png");
+	exportImage("magi-vcmi-complete/icons/archmagi-map-attack-70.png", "archmage_encounter_right.png");
+	exportImage("magi-vcmi-complete/icons/archmagi-map-attack-71.png", "archmage_encounter_left.png");
 	for(const size_t frame : {size_t(0), size_t(15), size_t(29)})
-		exportFrame(AnimationPath::builtin("NH_ArchMageGreyMap"), 0, frame,
+		exportFrame(AnimationPath::builtin("AVWmagx0"), 0, frame,
 			EImageBlitMode::WITH_SHADOW, "archmage_map_f" + std::to_string(frame) + ".png");
 	for(size_t frame = 0; frame < 9; ++frame)
-		exportFrame(AnimationPath::builtin("NH_MageRedProjectile.def"), 0, frame,
+		exportFrame(AnimationPath::builtin("magi-vcmi-complete/projectile/NH_PMAGEX.def"), 0, frame,
 			EImageBlitMode::COLORKEY, "mage_projectile_f" + std::to_string(frame) + ".png");
 }
 

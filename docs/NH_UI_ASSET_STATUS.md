@@ -1,5 +1,17 @@
 # New Horizons UI and asset status register
 
+2026-10-08 renewed UP282 source checkpoint: both Gargoyle large portraits are
+**Provisional**, using unchanged original HOLDING frames fitted with a two-pixel
+inset over the existing packaged Academy backdrop. Shared TWCRPORT32/33 module
+aliases serve recruitment and growth popups. This deliberately uses shipped
+composition code plus external original DEFs, not missing private loose inputs.
+Linked build94353 passes; rebuilt current-selection native3636 passes all14
+portraits at scales1–4 with complete body/inset/backdrop/alias/source checks.
+Actual recruitment/growth acceptance and playable delivery remain pending.
+Magi face draft v3 is **Not done /
+withheld** after root rejection of its disconnected neck/beard treatment; no
+replacement approval or delivered Mage fix is claimed.
+
 2026-10-08 UP004 Bloodrage principal rendered acceptance: **Provisional**,
 ordinary Crag Hack's generic resource row/help updates+0/20%→+5/20% after an
 accepted whole-stack Peasant death; normal human Hero Action remains Available.

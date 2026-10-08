@@ -145,6 +145,16 @@
 			"iconSmall": "cabir-handoff/cabir-master/icons/NH_cabir_master_handoff_icon_small.png"
 		}
 	},
+	"core:stoneGargoyle": {
+		"graphics": {
+			"iconLarge": "NH_academy_stoneGargoyle_icon_large.png"
+		}
+	},
+	"core:obsidianGargoyle": {
+		"graphics": {
+			"iconLarge": "NH_academy_obsidianGargoyle_icon_large.png"
+		}
+	},
 	// HOTRAITS.TXT reverses these labels: frame 34 is internal ironGolem ID 32; frame 35 is stoneGolem ID 33.
 	"core:ironGolem": {
 		"graphics": {
