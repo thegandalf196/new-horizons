@@ -9,7 +9,9 @@ import subprocess
 import sys
 import unittest
 
-from PIL import Image
+from PIL import Image, ImageChops
+
+from tools.export_new_horizons_academy_portrait_mattes import render_matte
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -53,7 +55,7 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
                 decoded.append(image.tobytes())
         self.assertTrue(all(pixels == decoded[0] for pixels in decoded[1:]))
 
-        creatures = ("gremlin", "masterGremlin", "ironGolem", "stoneGolem", "mage", "archMage", "genie", "naga", "giant")
+        creatures = ("gremlin", "masterGremlin", "ironGolem", "stoneGolem", "mage", "archMage", "genie", "naga")
         for creature in creatures:
             runtime = IMAGE_ROOT / f"NH_academy_{creature}_portrait_mask.png"
             source = ROOT / f"assets/new-horizons/academy/portrait-revisions/v1/mattes/{creature}.png"
@@ -83,11 +85,11 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
         self.assertEqual(
             (IMAGE_ROOT / "NH_academy_nagaQueen_portrait_mask.png").read_bytes(), naga_queen_bytes
         )
-        giant_source = ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/giant.png"
+        giant_source = ROOT / "assets/new-horizons/academy/portrait-revisions/v4/mattes/giant-sword.png"
         giant_bytes = giant_source.read_bytes()
         self.assertEqual(
             hashlib.sha256(giant_bytes).hexdigest(),
-            "2e576469ff77e6c07ad529caedead80bc342e39f7fd5c87bd293dd53a83102bd",
+            "5cb48b0f40db757569d6e500d2d199c9724d10d942942e6322f5dfecef1f29dc",
         )
         self.assertEqual((IMAGE_ROOT / "NH_academy_giant_portrait_mask.png").read_bytes(), giant_bytes)
         titan_source = ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/titan-v3.png"
@@ -97,6 +99,32 @@ class NewHorizonsGremlinPortraitTest(unittest.TestCase):
             "df23c30a56d0f08f7b24e16d05d6de2e55acedfa75bcbfe3143577f5fc3b8092",
         )
         self.assertEqual((IMAGE_ROOT / "NH_academy_titan_portrait_mask.png").read_bytes(), titan_bytes)
+
+    def test_giant_sword_revision_preserves_body_and_generated_provenance(self):
+        revision = ROOT / "assets/new-horizons/academy/portrait-revisions/v4"
+        old_path = ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/giant.png"
+        self.assertEqual(hashlib.sha256(old_path.read_bytes()).hexdigest(),
+                         "2e576469ff77e6c07ad529caedead80bc342e39f7fd5c87bd293dd53a83102bd")
+        with Image.open(old_path) as old_image, Image.open(revision / "mattes/giant-sword.png") as new_image:
+            self.assertEqual(new_image.mode, "L")
+            self.assertEqual(new_image.size, (58, 64))
+            old = old_image.copy()
+            new = new_image.copy()
+        roi = (4, 0, 11, 28)
+        generated = render_matte(revision / "masters/giant-sword-matte.png")
+        expected = old.copy()
+        expected.paste(ImageChops.lighter(old.crop(roi), generated.crop(roi)), roi)
+        self.assertEqual(new.tobytes(), expected.tobytes())
+        additions = []
+        for y in range(64):
+            for x in range(58):
+                previous, current = old.getpixel((x, y)), new.getpixel((x, y))
+                self.assertIn(current, (0, 255))
+                self.assertGreaterEqual(current, previous)
+                if previous != current:
+                    additions.append((x, y))
+                    self.assertTrue(roi[0] <= x < roi[2] and roi[1] <= y < roi[3])
+        self.assertEqual(len(additions), 73)
 
     def test_cabir_portraits_use_authored_v3_derivatives(self):
         config = parse_jsonc((ROOT / "Mods/new-horizons/Content/config/creatures/tower.json").read_text())

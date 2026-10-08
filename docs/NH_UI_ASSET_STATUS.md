@@ -1,5 +1,18 @@
 # New Horizons UI and asset status register
 
+2026-10-08 UP312 source checkpoint: Giant sword v4 matte is **Provisional**,
+adding 73 pixels in the narrow blade ROI while preserving every existing body
+pixel. Naga and Naga Queen now use their complete purchaser-supplied standing
+DEF frames, fitted without cropping over the Academy backdrop. Native SDL checks
+pass at scales 1–4, including alpha continuity, full tails and immutable cached
+battle frames. Actual recruitment-screen acceptance and playable delivery remain
+open; neither change is Final artwork approval.
+
+Magi head-only drafts v1/v2 remain **Not done / withheld**: the native face is
+still insufficiently readable. Stone Gargoyle ROI r9 is likewise withheld after
+residual architecture was visible in enlarged review. These attempts are retained
+under Downloads/provisory and are not installed or represented as fixes.
+
 2026-10-08 rendered delivery checkpoint: source 6c9b9df7c / Linux snapshot
 4c887972 is promoted after actual six-school CH00 casting and Castle Mage Guild
 checks. Root inspected the visible yellow/green/blue/orange/purple/red glows,

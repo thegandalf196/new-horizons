@@ -13,9 +13,14 @@
 #include "../../../lib/CPlayerState.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/VCMIDirs.h"
+#include "../../../lib/constants/StringConstants.h"
+#include "../../../lib/entities/faction/CFaction.h"
+#include "../../../lib/entities/faction/CTown.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/mapObjects/CGCreature.h"
+#include "../../../lib/mapObjects/CGTownInstance.h"
 #include "../../../lib/mapObjects/army/CStackInstance.h"
+#include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/mapping/TerrainTile.h"
 #include "../../../lib/pathfinder/PathfinderCache.h"
 #include "../../../lib/pathfinder/PathfinderOptions.h"
@@ -129,6 +134,95 @@ TEST_F(NewHorizonsCreatureCategoryFixtureExportTest, ExportOrdinaryFourSlotArmyW
 	ASSERT_NE(node, nullptr);
 	EXPECT_EQ(node->turns, 0) << "Neutral must be reachable in the current turn";
 	EXPECT_EQ(node->action, EPathNodeAction::BATTLE);
+	ASSERT_EQ(builder.buildAndDump(name), expected);
+	const auto output = VCMIDirs::get().userCachePath() / "testMaps" / (name + ".h3m");
+	std::unique_ptr<gzFile_s, decltype(&gzclose)> input(gzopen(output.string().c_str(), "rb"), &gzclose);
+	ASSERT_NE(input, nullptr);
+	std::vector<uint8_t> actual;
+	std::array<uint8_t, 4096> chunk;
+	int count = 0;
+	while((count = gzread(input.get(), chunk.data(), chunk.size())) > 0)
+		actual.insert(actual.end(), chunk.begin(), chunk.begin() + count);
+	ASSERT_EQ(count, 0);
+	ASSERT_TRUE(gzeof(input.get()));
+	ASSERT_EQ(gzclose(input.release()), Z_OK);
+	ASSERT_EQ(actual, expected);
+	MapServiceTinyH3M exported(actual, nullptr);
+	ASSERT_NE(exported.loadMap(ResourcePath(name), gameState().get()), nullptr);
+}
+
+TEST_F(NewHorizonsCreatureCategoryFixtureExportTest, ExportOrdinaryAcademyPortraitScenario)
+{
+	const auto * enabled = std::getenv("NH_EXPORT_ACADEMY_PORTRAITS");
+	if(!enabled || std::string(enabled) != "1")
+		GTEST_SKIP() << "Build-owned opt-in export requires NH_EXPORT_ACADEMY_PORTRAITS=1";
+	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires actual curated New Horizons module initialization";
+	const std::string name = "NHAcademyPortraits";
+	const auto * faction = FactionID(FactionID::TOWER).toFaction();
+	ASSERT_NE(faction, nullptr);
+	ASSERT_NE(faction->town, nullptr);
+	const auto & roster = faction->town->creatures;
+	ASSERT_EQ(roster.size(), 7);
+	std::vector<std::pair<CreatureID, uint16_t>> garrison;
+	for(const auto & tier : roster)
+	{
+		ASSERT_FALSE(tier.empty());
+		ASSERT_NE(tier.front(), CreatureID::NONE);
+		ASSERT_NE(tier.front().toCreature(), nullptr);
+		garrison.emplace_back(tier.front(), 1);
+	}
+	const auto solmyr = HeroTypeID(HeroTypeID::decode("core:solmyr"));
+	ASSERT_NE(solmyr, HeroTypeID::NONE);
+	const auto pikeman = creatureByName("core:pikeman");
+	ASSERT_NE(pikeman, CreatureID::NONE);
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).name(name)
+		.description("Ordinary Academy portrait diagnostic. Red human owns the Academy at8,10; "
+			"open the town and central Recruit All to inspect native purchase-card portraits, "
+			"including unbuilt roster entries, and Fort creature information. The town garrison "
+			"contains one of each of the seven actually registered Academy base creatures. "
+			"Solmyr stands outside at5,11 with one Pikeman. Blue computer owns Castle at30,30. "
+			"No all-built town, scripted rules, injected saved state or gameplay cheats are supplied.")
+		.playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
+		.town({8, 10, 0}, FactionID::TOWER, PlayerColor(0)).townGarrison(garrison)
+		.town({30, 30, 0}, FactionID::CASTLE, PlayerColor(1)).townGarrison({})
+		.hero({5, 11, 0}, solmyr, PlayerColor(0)).heroExperience(0)
+		.heroGarrison({{pikeman, 1}});
+	const auto expected = builder.build();
+	MapServiceTinyH3M parser(expected, nullptr);
+	const auto header = parser.loadMapHeader(ResourcePath(name));
+	ASSERT_NE(header, nullptr);
+	ASSERT_EQ(header->version, EMapFormat::SOD);
+	// Exercise normal H3M/module initialization, without a mapLoaded override.
+	startWithMap(builder);
+	ASSERT_TRUE(gameState()->getPlayerState(PlayerColor(0))->isHuman());
+	ASSERT_FALSE(gameState()->getPlayerState(PlayerColor(1))->isHuman());
+	const auto * town = dynamic_cast<const CGTownInstance *>(findObjectAt({8, 10, 0}));
+	ASSERT_NE(town, nullptr);
+	ASSERT_EQ(town->getFactionID(), FactionID::TOWER);
+	ASSERT_EQ(town->getOwner(), PlayerColor(0));
+	ASSERT_NE(town->getTown(), nullptr);
+	ASSERT_EQ(town->getTown()->creatures, roster);
+	ASSERT_EQ(town->stacksCount(), garrison.size());
+	for(size_t index = 0; index < garrison.size(); ++index)
+	{
+		const auto * stack = town->getStackPtr(SlotID(static_cast<int>(index)));
+		ASSERT_NE(stack, nullptr);
+		EXPECT_EQ(stack->getCreatureID(), garrison[index].first);
+		EXPECT_EQ(stack->getCount(), 1);
+	}
+	const auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	ASSERT_EQ(hero->getHeroTypeID(), solmyr);
+	ASSERT_EQ(hero->stacksCount(), 1);
+	ASSERT_NE(hero->getStackPtr(SlotID(0)), nullptr);
+	ASSERT_EQ(hero->getStackPtr(SlotID(0))->getCreatureID(), pikeman);
+	ASSERT_EQ(hero->getStackCount(SlotID(0)), 1);
+	const auto * blueTown = dynamic_cast<const CGTownInstance *>(findObjectAt({30, 30, 0}));
+	ASSERT_NE(blueTown, nullptr);
+	ASSERT_EQ(blueTown->getFactionID(), FactionID::CASTLE);
+	ASSERT_EQ(blueTown->getOwner(), PlayerColor(1));
 	ASSERT_EQ(builder.buildAndDump(name), expected);
 	const auto output = VCMIDirs::get().userCachePath() / "testMaps" / (name + ".h3m");
 	std::unique_ptr<gzFile_s, decltype(&gzclose)> input(gzopen(output.string().c_str(), "rb"), &gzclose);

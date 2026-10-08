@@ -731,6 +731,88 @@ void verifyCabirAdventureMap(const CCreature & creature, const char * mapDescrip
 	std::cout << "  " << mapDescriptor << ": 2x2 visitable template, eight approaches, four distinct map frames, legacy alias and left/right encounter images\n";
 }
 
+void verifyFullBodyAcademyPortrait(const AcademyPortrait & portrait, const CCreature & creature)
+{
+	auto & renderer = ENGINE->renderHandler();
+	const bool queen = std::string_view(portrait.identifier) == "nagaQueen";
+	const AnimationPath source = AnimationPath::builtin(queen ? "CNAGAG" : "CNAGA");
+	ImageLocator locator(source, 0, static_cast<int>(ECreatureAnimType::HOLDING), EImageBlitMode::ONLY_BODY_HIDE_SELECTION);
+	locator.originalDefFrame = true;
+	locator.scalingFactor = 1;
+	const auto original = renderer.loadImage(locator);
+	const Point sourceSize(450, 400);
+	const auto originalPixels = captureImagePixels(original, sourceSize, "original Naga holding body");
+	const auto bounds = visiblePixelBounds(originalPixels, sourceSize);
+	const VisiblePixelBounds expectedBounds = queen ? VisiblePixelBounds{177, 171, 260, 266}
+		: VisiblePixelBounds{181, 182, 254, 266};
+	require(bounds == expectedBounds, "Original Naga holding frame must include the complete native tail");
+	const Point bodySize(bounds.right - bounds.left + 1, bounds.bottom - bounds.top + 1);
+	const Point fittedSize(queen ? 53 : 52, 60);
+	const Point size(58, 64);
+	const Point origin((size.x - fittedSize.x) / 2, 2);
+
+	Canvas body(bodySize, CanvasScalingPolicy::IGNORE);
+	body.drawColor(Rect(Point(0, 0), bodySize), ColorRGBA(0, 0, 0, 0));
+	for(int y = 0; y < bodySize.y; ++y)
+		for(int x = 0; x < bodySize.x; ++x)
+			body.drawPoint(Point(x, y), originalPixels[static_cast<size_t>((bounds.top + y) * sourceSize.x + bounds.left + x)]);
+	Canvas fitted(fittedSize, CanvasScalingPolicy::IGNORE);
+	fitted.drawColor(Rect(Point(0, 0), fittedSize), ColorRGBA(0, 0, 0, 0));
+	fitted.drawScaled(body, Point(0, 0), fittedSize);
+
+	const auto generated = renderer.loadImage(ImagePath::builtin(portrait.image), EImageBlitMode::SIMPLE);
+	const auto actual = captureImagePixels(generated, size, "full-body Naga portrait");
+	const auto backdrop = captureImagePixels(renderer.loadImage(
+		ImagePath::builtin("NH_academy_creature_portrait_backdrop.png"), EImageBlitMode::SIMPLE), size, "Academy backdrop");
+	size_t foregroundPixels = 0;
+	size_t transparentGaps = 0;
+	size_t tailPixels = 0;
+	for(int y = 0; y < size.y; ++y)
+	{
+		for(int x = 0; x < size.x; ++x)
+		{
+			const Point local(x - origin.x, y - origin.y);
+			const size_t index = static_cast<size_t>(y * size.x + x);
+			const bool inside = local.x >= 0 && local.y >= 0 && local.x < fittedSize.x && local.y < fittedSize.y;
+			const ColorRGBA bodyPixel = inside ? fitted.getPixel(local) : ColorRGBA(0, 0, 0, 0);
+			require(actual[index].a == 255, "Full-body portrait must keep its opaque Academy backdrop");
+			if(bodyPixel.a != 0)
+			{
+				require(bodyPixel.a == 255 && actual[index] == bodyPixel,
+					"Naga full-body portrait changed a nearest-scaled original body pixel");
+				require(x >= 2 && x < size.x - 2 && y >= 2 && y < size.y - 2,
+					"Naga full-body portrait escaped its two-pixel inset");
+				++foregroundPixels;
+				if(local.y >= fittedSize.y - 4)
+					++tailPixels;
+			}
+			else
+			{
+				require(actual[index] == backdrop[index], "Naga transparent gaps or inset erased the Academy backdrop");
+				if(inside)
+					++transparentGaps;
+			}
+		}
+	}
+	require(foregroundPixels > 0 && tailPixels > 0 && transparentGaps > 0,
+		"Full-body Naga portrait must retain the lower tail and transparent silhouette gaps");
+	require(captureImagePixels(original, sourceSize, "Naga holding body after portrait generation") == originalPixels,
+		"Portrait generation mutated the original cached battle frame");
+	require(captureImagePixels(renderer.loadImage(AnimationPath::builtin("TWCRPORT"), creature.getIconIndex(), 0,
+		EImageBlitMode::OPAQUE), size, "Naga registered large icon") == actual,
+		"TWCRPORT alias must route to the full-body Naga portrait");
+	ImageLocator smallLocator(AnimationPath::builtin("CPRSMALL"), creature.getIconIndex(), 0, EImageBlitMode::COLORKEY);
+	smallLocator.originalDefFrame = true;
+	smallLocator.scalingFactor = 1;
+	require(captureImagePixels(renderer.loadImage(smallLocator), Point(32, 32), "original Naga small icon")
+		== captureImagePixels(renderer.loadImage(AnimationPath::builtin("CPRSMALL"), creature.getIconIndex(), 0,
+			EImageBlitMode::COLORKEY), Point(32, 32), "registered Naga small icon"),
+		"Full-body portrait must preserve the original CPRSMALL registration");
+	std::cout << "  " << portrait.identifier << ": complete original holding body " << bodySize.x << 'x' << bodySize.y
+		<< " fitted " << fittedSize.x << 'x' << fittedSize.y << "; " << transparentGaps
+		<< " opaque-backdrop gaps, tail/inset and unchanged battle/small sources verified\n";
+}
+
 void verifyAcademyPortrait(const AcademyPortrait & portrait)
 {
 	const auto creatureId = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "creature", std::string(portrait.identifier));
@@ -796,6 +878,11 @@ void verifyAcademyPortrait(const AcademyPortrait & portrait)
 	else
 		require(creature->smallIconName.empty(),
 			std::string("Creature small icon must remain on its original CPRSMALL frame: core:") + portrait.identifier);
+	if(std::string_view(portrait.identifier) == "naga" || std::string_view(portrait.identifier) == "nagaQueen")
+	{
+		verifyFullBodyAcademyPortrait(portrait, *creature);
+		return;
+	}
 
 	constexpr Point size(58, 64);
 	const auto generated = renderer.loadImage(ImagePath::builtin(portrait.image), EImageBlitMode::SIMPLE);

@@ -11,6 +11,7 @@
 #include "AssetGenerator.h"
 
 #include "../GameEngine.h"
+#include "../battle/BattleConstants.h"
 #include "render/IImage.h"
 #include "IImageLoader.h"
 #include "render/Canvas.h"
@@ -18,6 +19,7 @@
 #include "ColorFilter.h"
 #include "IRenderHandler.h"
 #include "CAnimation.h"
+#include "CDefFile.h"
 #include "Colors.h"
 
 #include "../../lib/filesystem/Filesystem.h"
@@ -101,11 +103,13 @@ void AssetGenerator::initialize()
 	};
 	imageFiles[ImagePath::builtin("NH_academy_naga_icon_large.png")] = [this]()
 	{
-		return createAcademyCreaturePortrait(40, "NH_academy_naga_portrait_mask.png");
+		return createCreatureFramePortrait(AnimationPath::builtin("CNAGA"), static_cast<size_t>(ECreatureAnimType::HOLDING), 0,
+			ImagePath::builtin("NH_academy_creature_portrait_backdrop.png"), Point(58, 64), 2);
 	};
 	imageFiles[ImagePath::builtin("NH_academy_nagaQueen_icon_large.png")] = [this]()
 	{
-		return createAcademyCreaturePortrait(41, "NH_academy_nagaQueen_portrait_mask.png");
+		return createCreatureFramePortrait(AnimationPath::builtin("CNAGAG"), static_cast<size_t>(ECreatureAnimType::HOLDING), 0,
+			ImagePath::builtin("NH_academy_creature_portrait_backdrop.png"), Point(58, 64), 2);
 	};
 	imageFiles[ImagePath::builtin("NH_academy_giant_icon_large.png")] = [this]()
 	{
@@ -483,6 +487,82 @@ AssetGenerator::CanvasPtr AssetGenerator::createAcademyCreaturePortrait(
 			canvas.drawPoint(pixel, maskPixel.r == 255 ? portraitCanvas.getPixel(pixel) : backdropCanvas.getPixel(pixel));
 		}
 	}
+	return result;
+}
+
+AssetGenerator::CanvasPtr AssetGenerator::createCreatureFramePortrait(
+	const AnimationPath & originalAnimation,
+	size_t group,
+	size_t frame,
+	const ImagePath & backdropPath,
+	const Point & size,
+	int inset) const
+{
+	const auto * resources = CResourceHandler::get();
+	const AnimationPath originalDef = originalAnimation.addPrefix("SPRITES/");
+	const bool hasBackdrop = resources->existsResource(backdropPath.addPrefix("SPRITES/"))
+		|| resources->existsResource(backdropPath.addPrefix("DATA/"))
+		|| resources->existsResource(backdropPath);
+	if(inset < 0 || size.x <= 0 || size.y <= 0 || inset > (std::min(size.x, size.y) - 1) / 2
+		|| frame > static_cast<size_t>(std::numeric_limits<int>::max())
+		|| group > static_cast<size_t>(std::numeric_limits<int>::max())
+		|| !resources->existsResource(originalDef) || !hasBackdrop || imageFiles.count(backdropPath) != 0)
+		return nullptr;
+
+	// Validate the original DEF, rather than an animation alias or the loader's missing-frame stand-in.
+	const CDefFile definition(originalDef);
+	if(!definition.hasFrame(frame, group))
+		return nullptr;
+	ImageLocator bodyLocator(originalAnimation, static_cast<int>(frame), static_cast<int>(group), EImageBlitMode::ONLY_BODY_HIDE_SELECTION);
+	bodyLocator.originalDefFrame = true;
+	bodyLocator.scalingFactor = 1;
+	ImageLocator backdropLocator(backdropPath, EImageBlitMode::SIMPLE);
+	backdropLocator.scalingFactor = 1;
+	const auto body = ENGINE->renderHandler().loadImage(bodyLocator);
+	const auto backdrop = ENGINE->renderHandler().loadImage(backdropLocator);
+	if(!body || !backdrop || body->dimensions().x <= 0 || body->dimensions().y <= 0 || backdrop->dimensions() != size)
+		return nullptr;
+
+	// A private canvas strips shadow/selection without changing a shared cached battle image.
+	const Point bodySize = body->dimensions();
+	Canvas bodyCanvas(bodySize, CanvasScalingPolicy::IGNORE);
+	bodyCanvas.drawColor(Rect(Point(0, 0), bodySize), ColorRGBA(0, 0, 0, 0));
+	bodyCanvas.draw(body, Point(0, 0));
+	int left = bodySize.x;
+	int top = bodySize.y;
+	int right = -1;
+	int bottom = -1;
+	for(int y = 0; y < bodySize.y; ++y)
+		for(int x = 0; x < bodySize.x; ++x)
+			if(bodyCanvas.getPixel(Point(x, y)).a != 0)
+			{
+				left = std::min(left, x);
+				top = std::min(top, y);
+				right = std::max(right, x);
+				bottom = std::max(bottom, y);
+			}
+	if(right < left || bottom < top)
+		return nullptr;
+
+	const Point bounds(right - left + 1, bottom - top + 1);
+	const Point interior(size.x - 2 * inset, size.y - 2 * inset);
+	const double scale = std::min(static_cast<double>(interior.x) / bounds.x, static_cast<double>(interior.y) / bounds.y);
+	const Point fitted(
+		std::clamp(static_cast<int>(std::lround(bounds.x * scale)), 1, interior.x),
+		std::clamp(static_cast<int>(std::lround(bounds.y * scale)), 1, interior.y));
+	const Point origin((size.x - fitted.x) / 2, (size.y - fitted.y) / 2);
+	Canvas croppedBody(bounds, CanvasScalingPolicy::IGNORE);
+	croppedBody.drawColor(Rect(Point(0, 0), bounds), ColorRGBA(0, 0, 0, 0));
+	croppedBody.draw(bodyCanvas, Point(-left, -top));
+	auto result = ENGINE->renderHandler().createImage(size, CanvasScalingPolicy::IGNORE);
+	Canvas canvas = result->getCanvas();
+	canvas.drawColor(Rect(Point(0, 0), size), ColorRGBA(0, 0, 0, 0));
+	canvas.draw(backdrop, Point(0, 0));
+	// Canvas scaling uses native coordinates here; CanvasImage::scaleTo would apply GUI scale again.
+	Canvas fittedBody(fitted, CanvasScalingPolicy::IGNORE);
+	fittedBody.drawColor(Rect(Point(0, 0), fitted), ColorRGBA(0, 0, 0, 0));
+	fittedBody.drawScaled(croppedBody, Point(0, 0), fitted);
+	canvas.drawTransparent(fittedBody, origin, 1.0);
 	return result;
 }
 

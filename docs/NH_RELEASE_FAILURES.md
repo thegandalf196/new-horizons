@@ -1,5 +1,26 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Native portrait scaling erased backdrop alpha
+
+Independent review caught a new Naga portrait helper drawing a scaled transparent
+Canvas directly over the Academy backdrop. Fresh Canvas surfaces use blend mode
+NONE, so transparent gaps overwrote the backdrop. Scale into a private transparent
+intermediate, then drawTransparent over the background; do not mutate cached
+battle images or change global Canvas behavior. Corrected client/runtime-test
+build succeeds and the actual SDL fixture passes at UI scales 1–4, checking all
+output alpha, backdrop gaps, complete tail bounds and unchanged source pixels.
+
+The Academy map exporter initially ran from the build root and could not find
+CONFIG/ROESTRINGMAPPING. Running from bin fixed resource lookup, but the proposed
+private profile omitted new-horizons and skipped the test. A skipped native export
+is not acceptance; use an isolated explicitly curated test preset and require
+zero skips before rendered verification.
+
+Two existing Cabir PNG byte-parity assertions in the wider portrait Python file
+fail against RGB versus RGBA encodings. The Giant-focused preservation/source
+checks pass; Cabir files and assertions were not changed. Record this separately
+for Phase 2 rather than weakening unrelated tests.
+
 ### 2026-10-08 — Validation-map spell lookup duplicated scope
 
 The opt-in six-school casting map initially failed its nonempty-spell assertion:

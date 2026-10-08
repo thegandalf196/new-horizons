@@ -89,6 +89,13 @@ private:
 		const std::string & maskImage,
 		const std::string & sourceAnimation = "TWCRPORT",
 		int sourceFrame = -1) const;
+	CanvasPtr createCreatureFramePortrait(
+		const AnimationPath & originalAnimation,
+		size_t group,
+		size_t frame,
+		const ImagePath & backdrop,
+		const Point & size,
+		int inset) const;
 	CanvasPtr createAcademyMapLayer(
 		const AnimationPath & originalAnimation,
 		size_t frame,

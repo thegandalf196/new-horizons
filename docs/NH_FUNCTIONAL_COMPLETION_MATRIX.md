@@ -2,6 +2,19 @@
 
 Updated: 2026-10-08
 
+UP313/314 local delivery is now verified, superseding the historical startup
+blocker recorded below. Source 6c9b9df7c / promoted Linux snapshot 4c887972
+contains Battlefield Medic, the narrow conditional-container crash fix and the
+scoped-school casting selector. Actual casts exercise all six school colors;
+Castle Guild bookmarks render again. The 20-second headless smoke reaches day 5,
+and both isolated GUI runs clean up normally. This is required UI/delivery
+coverage, not an increase in spell/perk identities: 235/310 active perks and
+61/67 combat spells are unchanged. Public casting glows are bundled; public
+Guild component recovery and Windows run 37769575838 remain open under UP315.
+Other caster variants and existing nonfatal diagnostics remain Phase 2 checks.
+UP312 four-portrait corrections are the current user-priority implementation
+slice; do not silently return to the ordinary backlog while they are actionable.
+
 UP098 Battlefield Medic is active and source/native verified. Normal Tent
 survivor healing precedes an independent floor(calculated output/2) permanent
 restoration pool. Shared UI/AI preview and eligibility admit full-health

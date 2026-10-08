@@ -73,7 +73,7 @@ MASKS = {
         IMAGE_ROOT / "NH_academy_nagaQueen_portrait_mask.png",
     ),
     "giant": (
-        ROOT / "assets/new-horizons/academy/portrait-revisions/v1/mattes/giant.png",
+        ROOT / "assets/new-horizons/academy/portrait-revisions/v4/mattes/giant-sword.png",
         IMAGE_ROOT / "NH_academy_giant_portrait_mask.png",
     ),
     "titan": (
@@ -84,7 +84,7 @@ MASKS = {
 MASTER_GENIE_V2_SHA256 = "9f5291e7d50b29a4a16d8c54aeba2de9b4566456d5b5823e4d18023ac6659a40"
 NAGA_SHA256 = "c4e58bcf3c9b84f63ec7137c37da23fe3bc898a0e77e653ee6ad016c3997e453"
 NAGA_QUEEN_V2_SHA256 = "aa282c71f59b720ccc2604e81b3bc1527b8e58b7ab60403eee9fb28eb9f64c30"
-GIANT_SHA256 = "2e576469ff77e6c07ad529caedead80bc342e39f7fd5c87bd293dd53a83102bd"
+GIANT_SHA256 = "5cb48b0f40db757569d6e500d2d199c9724d10d942942e6322f5dfecef1f29dc"
 TITAN_V3_SHA256 = "df23c30a56d0f08f7b24e16d05d6de2e55acedfa75bcbfe3143577f5fc3b8092"
 # Pillow's right/bottom-excluded crop rectangle from the approved composition.
 SOURCE_CROP = (0, 10, 100, 120)
@@ -98,7 +98,7 @@ def render_backdrop() -> Image.Image:
         return source.crop(SOURCE_CROP).resize(OUTPUT_SIZE, Image.Resampling.LANCZOS)
 
 
-def verify(check: bool, parser: argparse.ArgumentParser) -> None:
+def verify(check: bool, parser: argparse.ArgumentParser, creature: str | None = None) -> None:
     if not SOURCE_BACKDROP.is_file():
         parser.error(f"missing authored backdrop source: {SOURCE_BACKDROP}")
     master_genie_matte = MASKS["masterGenie"][0]
@@ -155,9 +155,11 @@ def verify(check: bool, parser: argparse.ArgumentParser) -> None:
         print("PASS: Academy portrait backdrops and runtime masks match their authored sources")
         return
 
-    for path in BACKDROP_EXPORTS:
-        expected_backdrop.save(path, format="PNG")
-    for source, output in MASKS.values():
+    if creature is None:
+        for path in BACKDROP_EXPORTS:
+            expected_backdrop.save(path, format="PNG")
+    selected_masks = MASKS if creature is None else {creature: MASKS[creature]}
+    for source, output in selected_masks.values():
         if not source.is_file():
             parser.error(f"missing approved matte: {source}")
         with Image.open(source) as matte:
@@ -165,14 +167,16 @@ def verify(check: bool, parser: argparse.ArgumentParser) -> None:
                 parser.error(f"approved matte must be binary grayscale {OUTPUT_SIZE}: {source}")
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_bytes(source.read_bytes())
-    print(f"Wrote authored backdrop fallbacks and {len(MASKS)} byte-identical reviewed matte copies")
+    print(f"Wrote {len(selected_masks)} byte-identical reviewed matte copies"
+          + (" and authored backdrop fallbacks" if creature is None else ""))
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="verify exports without writing")
+    parser.add_argument("--creature", choices=tuple(MASKS), help="write only this runtime mask, leaving other exports untouched")
     args = parser.parse_args()
-    verify(args.check, parser)
+    verify(args.check, parser, args.creature)
     return 0
 
 
