@@ -1,5 +1,22 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Next-activation statuses are not zero-round buffs
+
+UP309 corrects Confusion feedback without changing its pending marker lifetime:
+turnsRemain0 is not an expired/zero-round timed effect. Existing compact/full
+spell rows now show NEXT and next-activation help. Readback requires valid state
+and exactly one canonical Confusion source-bound marker with matching captured
+caster/Confounder; retained history alone is not an active effect. Snapshot
+equality includes these fields. Linked20969 exits0 at10 jobs, native52415
+passes26/26 in5.799s, zero skips; Sol High review has no blocker. Receipts:
+build/nh-confusion-feedback-build.log and
+build/nh-preview-ai-validation.jUrtT2RY/native-up309.log/XML. Build has fixture
+overloaded-virtual hiding warnings for its local apply helper, not a compile
+failure; ordinary packet behavior is unchanged. Native-size rendering, help
+fit/localization and wider effect-limit combinations remain unverified. Full
+Confusion forced dispatch/minimum AI remain Phase1, not inferred from UI or
+helper tests. No active identity, art approval or launcher promotion.
+
 ### 2026-10-08 — Confusion pending control must be source-bound and removable
 
 UP308 adds a dedicated marker instead of an unrelated bonus or automatic

@@ -249,6 +249,7 @@ CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int
 	{
 		const auto spellKey = effect.toSpell()->getJsonKey();
 		return newHorizonsBattleStatus::isTimeStop(spellKey)
+			|| newHorizonsBattleStatus::isConfusion(spellKey)
 			|| newHorizonsBattleStatus::isDoom(spellKey)
 			|| newHorizonsBattleStatus::isFocusMagic(spellKey)
 			|| newHorizonsBattleStatus::isArcaneBreach(spellKey);
@@ -277,6 +278,12 @@ CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int
 
 			int duration = spellBonuses->front()->turnsRemain;
 			const auto spellKey = spell->getJsonKey();
+			const bool confusion = newHorizonsBattleStatus::isConfusion(spellKey);
+			const auto confusionStatus = confusion
+				? newHorizonsBattleStatus::confusionStatus(*spellBonuses, battleStack->confusionState)
+				: newHorizonsBattleStatus::ConfusionStatus{};
+			if(confusion && !confusionStatus.active())
+				continue;
 			const bool timeStop = newHorizonsBattleStatus::isTimeStop(spellKey);
 			const bool focusMagic = newHorizonsBattleStatus::isFocusMagic(spellKey);
 			const bool arcaneBreach = newHorizonsBattleStatus::isArcaneBreach(spellKey);
@@ -291,13 +298,15 @@ CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int
 			MetaString spellText;
 			spellText.appendTextID(spell->getDescriptionTextID(0)); // TODO: select correct mastery level?
 			spellText.appendRawString("\n");
-			if(!timeStop)
+			if(!timeStop && !confusion)
 			{
 				spellText.appendTextID(Languages::getPluralFormTextID( preferredLanguage, duration, "vcmi.battleResultsWindow.spellDurationRemaining"));
 				spellText.replaceNumber(duration);
 			}
 			std::string spellDescription = spellText.toString(&GAME->translator());
-			if(timeStop)
+			if(confusion)
+				spellDescription = newHorizonsBattleStatus::confusionTooltip(spell->getDescriptionTranslated(0), confusionStatus);
+			else if(timeStop)
 				spellDescription = newHorizonsBattleStatus::timeStopTooltip(spellDescription);
 			else if(focusMagic)
 			{
@@ -309,7 +318,7 @@ CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int
 				spellDescription = newHorizonsBattleStatus::arcaneBreachTooltip(arcaneStatus);
 
 			spellIcons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect + 1, 0, firstPos.x + offset.x * printed, firstPos.y + offset.y * printed));
-			const std::string badge = timeStop
+			const std::string badge = confusion ? std::string(newHorizonsBattleStatus::CONFUSION_BADGE) : timeStop
 				? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE)
 				: arcaneBreach ? std::to_string(arcaneStatus.markCount())
 				: doom && doomEffect.active()
@@ -1362,8 +1371,14 @@ void CStackWindow::initBonusesList()
 			+ " aggregate HP next activation; " + std::to_string(marker.turnsRemain) + " rounds left.";
 	};
 
-	auto bonusToString = [bonusSource, hydrasVitalityStatusText](const std::shared_ptr<Bonus> & bonus) -> std::string
+	const auto confusionMarkers = bonusSource->getBonuses(Selector::type()(BonusType::CONFUSION_PENDING));
+	const auto confusion = info->stack
+		? newHorizonsBattleStatus::confusionStatus(*confusionMarkers, info->stack->confusionState)
+		: newHorizonsBattleStatus::ConfusionStatus{};
+	auto bonusToString = [bonusSource, hydrasVitalityStatusText, confusion](const std::shared_ptr<Bonus> & bonus) -> std::string
 	{
+		if(bonus->type == BonusType::CONFUSION_PENDING)
+			return newHorizonsBattleStatus::confusionTooltip({}, confusion);
 		if(bonus->type == BonusType::HP_REGENERATION
 			&& bonus->source == BonusSource::SPELL_EFFECT
 			&& bonus->sid.toString() == "new-horizons:hydrasVitality")

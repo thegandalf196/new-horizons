@@ -11,6 +11,8 @@
 
 #include "../../lib/battle/BattleSide.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
+#include "../../lib/battle/NewHorizonsConfusionControl.h"
+#include "../../lib/battle/NewHorizonsConfusionState.h"
 #include "../../lib/battle/SylvanLuckState.h"
 #include "../../lib/bonuses/Bonus.h"
 #include "../../lib/bonuses/BonusEnum.h"
@@ -120,6 +122,87 @@ inline bool isDivineRetribution(std::string_view spellKey)
 inline bool isTimeStop(std::string_view spellKey)
 {
 	return spellKey == TIME_STOP_SPELL_KEY;
+}
+
+inline constexpr std::string_view CONFUSION_SPELL_KEY = "new-horizons:confusion";
+
+inline bool isConfusion(std::string_view spellKey)
+{
+	return spellKey == CONFUSION_SPELL_KEY;
+}
+
+inline constexpr std::string_view CONFUSION_BADGE = "NEXT";
+
+struct ConfusionStatus
+{
+	bool pending = false;
+	bool confounder = false;
+	PlayerColor caster = PlayerColor::CANNOT_DETERMINE;
+	battle::ConfusionBehavior previousResolved = battle::ConfusionBehavior::NONE;
+	bool active() const
+	{
+		return pending;
+	}
+	bool operator==(const ConfusionStatus &) const = default;
+};
+
+template <typename BonusListLike>
+inline ConfusionStatus confusionStatus(const BonusListLike & bonuses, const battle::ConfusionState & state)
+{
+	ConfusionStatus result;
+	try
+	{
+		state.validate();
+	}
+	catch(const std::runtime_error &)
+	{
+		return result;
+	}
+	result.previousResolved = state.previousResolved;
+	if(!state.pending)
+		return result;
+	const Bonus * selected = nullptr;
+	for(const auto & bonus : bonuses)
+	{
+		if(!bonus || bonus->type != BonusType::CONFUSION_PENDING)
+			continue;
+		if(selected || !newHorizonsConfusionControl::isPendingMarker(bonus.get()))
+			return result;
+		selected = bonus.get();
+	}
+	if(!selected || selected->spellCasterOwner != state.pendingCaster
+		|| (selected->val == 2) != state.pendingConfounder)
+		return result;
+	const SpellID confusion(SpellID::decode(std::string(CONFUSION_SPELL_KEY)));
+	if(!confusion.hasValue() || selected->sid != BonusSourceID(confusion))
+		return result;
+	result.pending = true;
+	result.confounder = state.pendingConfounder;
+	result.caster = state.pendingCaster;
+	return result;
+}
+
+inline std::string confusionTooltip(std::string_view spellDescription, const ConfusionStatus & status)
+{
+	if(!status.active())
+		return {};
+	std::string result = "Confusion - pending next activation\n";
+	result += spellDescription;
+	result += "\n\nThe next Creature Activation is forced: Attack, Defend, or Wander, with equal initial chances."
+		" Dispel removes the pending effect. Negative Morale forfeiture consumes it without recording a behavior.";
+	if(status.confounder)
+	{
+		result += "\nCaptured Confounder: the previous resolved behavior cannot repeat when a different legal behavior is available."
+			" The sole legal behavior may repeat.";
+	}
+	if(status.previousResolved != battle::ConfusionBehavior::NONE)
+	{
+		const auto previous = status.previousResolved == battle::ConfusionBehavior::ATTACK ? "Attack"
+			: status.previousResolved == battle::ConfusionBehavior::DEFEND ? "Defend" : "Wander";
+		result += std::string("\nPrevious resolved behavior: ") + previous
+			+ ". This is history, not an additional active effect.";
+	}
+	return result;
 }
 
 inline std::string timeStopTooltip(std::string_view spellDescription)
@@ -1066,6 +1149,7 @@ struct StackInfoStatusSnapshot
 	ShadowGiftStatus shadowGift;
 	VampirismStatus vampirism;
 	DoomStatus doom;
+	ConfusionStatus confusion;
 
 	bool operator==(const StackInfoStatusSnapshot &) const = default;
 };

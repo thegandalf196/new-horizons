@@ -369,6 +369,8 @@ newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
 	result.sylvanLuck = currentSylvanLuckStatus(stack, battleCallback, luckReadback);
 	if(stack)
 	{
+		const auto confusionMarkers = stack->getBonuses(Selector::type()(BonusType::CONFUSION_PENDING));
+		result.confusion = newHorizonsBattleStatus::confusionStatus(*confusionMarkers, stack->confusionState);
 		if(stack->hasBattleForm())
 		{
 			const auto currentCreature = stack->battleFormCreature();
@@ -542,6 +544,8 @@ std::string soulChainStatusSignature(const CStack * stack, const CPlayerBattleCa
 newHorizonsBattleStatus::StackStatusIconKind statusIconKind(SpellID effect)
 {
 	const auto spellKey = effect.toSpell()->getJsonKey();
+	if(newHorizonsBattleStatus::isConfusion(spellKey))
+		return newHorizonsBattleStatus::StackStatusIconKind::CONFUSION;
 	if(newHorizonsBattleStatus::isTimeStop(spellKey))
 		return newHorizonsBattleStatus::StackStatusIconKind::TIME_STOP;
 	if(newHorizonsBattleStatus::isEntangle(spellKey))
@@ -801,6 +805,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 	std::vector<newHorizonsBattleStatus::StackStatusIconKind> statusKinds;
 	std::size_t hiddenReanimateSpellEffects = 0;
 	std::size_t hiddenJudgedSpellEffects = 0;
+	std::size_t hiddenConfusionSpellEffects = 0;
 	for(const auto effect : spells)
 	{
 		//not all effects have graphics (for eg. Acid Breath)
@@ -810,6 +815,12 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		if(!hasGraphics)
 			continue;
 		const auto * spell = effect.toSpell();
+		if(spell && newHorizonsBattleStatus::isConfusion(spell->getJsonKey())
+			&& !displayedStatus.confusion.active())
+		{
+			++hiddenConfusionSpellEffects;
+			continue;
+		}
 		if(spell && newHorizonsBattleStatus::isReanimate(spell->getJsonKey()))
 		{
 			// One-battle resurrected creatures are shown once as a generic temporary
@@ -862,7 +873,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		statusEntries.insert(statusEntries.begin(), battleFormEntry);
 		statusKinds.insert(statusKinds.begin(), newHorizonsBattleStatus::StackStatusIconKind::BATTLE_FORM);
 	}
-	const auto totalEffectCount = spells.size() - hiddenReanimateSpellEffects - hiddenJudgedSpellEffects
+	const auto totalEffectCount = spells.size() - hiddenReanimateSpellEffects - hiddenJudgedSpellEffects - hiddenConfusionSpellEffects
 		+ (temporaryCreatures.active() ? 1 : 0) + (physicalPoison.active() ? 1 : 0)
 		+ (displayedStatus.shadowGift.hasMaximumHealthLoss() ? 1 : 0)
 		+ (retributionJudged.active() ? 1 : 0) + (battleForm.active() ? 1 : 0);
@@ -952,6 +963,9 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 
 		int duration = spellBonuses->front()->turnsRemain;
 		const auto spellKey = effect.toSpell()->getJsonKey();
+		const bool confusion = newHorizonsBattleStatus::isConfusion(spellKey);
+		if(confusion && !displayedStatus.confusion.active())
+			continue;
 		const bool timeStop = newHorizonsBattleStatus::isTimeStop(spellKey);
 		const bool entangle = newHorizonsBattleStatus::isEntangle(spellKey);
 		const bool spellLock = newHorizonsBattleStatus::isSpellLock(spellKey);
@@ -984,9 +998,9 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			: newHorizonsBattleStatus::ArcaneBreachStatus{};
 
 		icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect.getNum() + 1, 0, slotX, slotY));
-		if(settings["general"]["enableUiEnhancements"].Bool() || timeStop || (entangle && displayedStatus.entangle.active()) || spellLock || arcaneBreach || frailty || plague || soulChain || shadowGift || divineRetribution || vampirism || doom || guardianSpirit || heavenlyGale || crusade)
+		if(settings["general"]["enableUiEnhancements"].Bool() || confusion || timeStop || (entangle && displayedStatus.entangle.active()) || spellLock || arcaneBreach || frailty || plague || soulChain || shadowGift || divineRetribution || vampirism || doom || guardianSpirit || heavenlyGale || crusade)
 		{
-			const std::string badge = timeStop
+			const std::string badge = confusion ? std::string(newHorizonsBattleStatus::CONFUSION_BADGE) : timeStop
 				? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE)
 				: entangle && displayedStatus.entangle.active()
 					? std::to_string(displayedStatus.entangle.remainingRounds)
@@ -1012,7 +1026,13 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, timeStop ? Colors::YELLOW : Colors::WHITE, badge));
 		}
 
-		if(timeStop)
+		if(confusion)
+		{
+			const auto tooltip = newHorizonsBattleStatus::confusionTooltip(
+				effect.toSpell()->getDescriptionTranslated(0), displayedStatus.confusion);
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+		}
+		else if(timeStop)
 		{
 			const std::string tooltip = newHorizonsBattleStatus::timeStopTooltip(effect.toSpell()->getDescriptionTranslated(0));
 			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
@@ -1123,7 +1143,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		++printed;
 	}
 
-	if(spells.size() == hiddenReanimateSpellEffects + hiddenJudgedSpellEffects && !temporaryCreatures.active()
+	if(spells.size() == hiddenReanimateSpellEffects + hiddenJudgedSpellEffects + hiddenConfusionSpellEffects && !temporaryCreatures.active()
 		&& !battleForm.active() && !physicalPoison.active() && !displayedStatus.shadowGift.hasMaximumHealthLoss()
 		&& !retributionJudged.active())
 		labelsMultiline.push_back(std::make_shared<CMultiLineLabel>(Rect(firstPos.x, firstPos.y, 48, 36), EFonts::FONT_TINY, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->allTexts[674]));

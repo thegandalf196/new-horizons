@@ -104,6 +104,7 @@ set(test_SRCS
 		hero/SpellPointRewardTest.cpp
 		hero/SpellPointPresentationTest.cpp
 		client/NewHorizonsCrusadeStatusTest.cpp
+		client/NewHorizonsConfusionStatusTest.cpp
 		client/NewHorizonsEntangleStatusTest.cpp
 		client/NewHorizonsBattleFormStatusTest.cpp
 		client/NewHorizonsFlankReadbackTest.cpp

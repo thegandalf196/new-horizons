@@ -124,6 +124,7 @@ enum class StackStatusIconKind
 {
 	BATTLE_FORM,
 	TIME_STOP,
+	CONFUSION,
 	ENTANGLE,
 	SPELL_LOCK,
 	DOOM,
@@ -155,6 +156,7 @@ inline int stackStatusPriority(StackStatusIconKind kind)
 	{
 		case StackStatusIconKind::BATTLE_FORM: return -1;
 		case StackStatusIconKind::TIME_STOP: return 0;
+		case StackStatusIconKind::CONFUSION: return 0;
 		case StackStatusIconKind::ENTANGLE: return 1;
 		case StackStatusIconKind::SPELL_LOCK: return 1;
 		case StackStatusIconKind::DOOM: return 0;

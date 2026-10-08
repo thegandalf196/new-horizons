@@ -2,6 +2,22 @@
 
 Updated: 2026-10-08
 
+UP309 implements pending Confusion readback in existing creature status
+surfaces. Its marker is not a zero-round buff: remaining lifetime is the target's
+next activation. Captured Confounder/history must be explained without an active
+history-only badge or a selected random result. Shared helper, compact snapshot
+and full spell/bonus help are separate from forced-action implementation.
+Linked20969 exits0 at10 jobs; native52415 passes26/26 in5.799s, zero skips:
+seven new readback cases plus12 application/seven adjacent status controls.
+Independent Sol High review has no blocker; module drift/diff gates pass.
+Receipts: build/nh-confusion-feedback-build.log and
+build/nh-preview-ai-validation.jUrtT2RY/native-up309.log/XML. Real marker
+addition/removal, strict stale/malformed matching and snapshot refresh equality
+are verified, not rendered widget construction/refresh. Native NEXT/help fit,
+localization and wider display-limit combinations remain unverified.
+61/67 spells and231/310 perks remain unchanged.
+No new icon approval, runtime activation or playable promotion is claimed.
+
 UP308 implements Confusion's actual application/removal consumer: dedicated
 spell-sourced pending marker, recast/caster/Confounder capture, Berserk removal,
 live and detached state synchronization, Dispel cleanup and consumption only
