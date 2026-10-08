@@ -66,6 +66,7 @@
 #include "../../lib/mapObjects/army/CArmedInstance.h"
 #include "../../lib/mapObjects/CGMarket.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
+#include "../../lib/mapObjects/SkeletonTransformer.h"
 #include "../../lib/mapObjects/ObjectTemplate.h"
 #include "../../lib/mapping/CMap.h"
 #include "../../lib/gameState/CGameState.h"
@@ -1591,13 +1592,33 @@ void CTransformerWindow::CItem::move()
 
 void CTransformerWindow::CItem::clickPressed(const Point & cursorPosition)
 {
+	if(!parent->army || !parent->army->hasStackAtSlot(SlotID(id)))
+		return;
+
 	move();
+	parent->updateConversionPreview();
 	parent->redraw();
 }
 
-void CTransformerWindow::CItem::update()
+bool CTransformerWindow::CItem::update()
 {
-	icon->setFrame(parent->army->getCreature(SlotID(id))->getId() + 2);
+	if(!parent->army || !parent->army->hasStackAtSlot(SlotID(id)))
+		return false;
+
+	const auto * creature = parent->army->getCreature(SlotID(id));
+	if(!creature)
+		return false;
+
+	const auto currentSize = parent->army->getStackCount(SlotID(id));
+	// A slot is not a persistent stack identity. Never silently sacrifice a
+	// replacement or changed stack under the previous displayed selection.
+	if(!left && (displayedCreature != creature->getId() || size != currentSize))
+		move();
+	size = currentSize;
+	displayedCreature = creature->getId();
+	icon->setFrame(creature->getIconIndex());
+	count->setText(std::to_string(size));
+	return true;
 }
 
 CTransformerWindow::CItem::CItem(CTransformerWindow * parent_, int size_, int id_)
@@ -1607,49 +1628,205 @@ CTransformerWindow::CItem::CItem(CTransformerWindow * parent_, int size_, int id
 	parent(parent_)
 {
 	OBJECT_CONSTRUCTION;
+	setRedrawParent(true);
 	left = true;
+	displayedCreature = parent->army->getCreature(SlotID(id))->getId();
 	pos.w = 58;
 	pos.h = 64;
 
 	pos.x += 45  + (id%3)*83 + id/6*83;
 	pos.y += 109 + (id/3)*98;
-	icon = std::make_shared<CAnimImage>(AnimationPath::builtin("TWCRPORT"), parent->army->getCreature(SlotID(id))->getId() + 2);
+	icon = std::make_shared<CAnimImage>(AnimationPath::builtin("TWCRPORT"), parent->army->getCreature(SlotID(id))->getIconIndex());
 	count = std::make_shared<CLabel>(28, 76,FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, std::to_string(size));
 }
 
 void CTransformerWindow::makeDeal()
 {
+	if(!GAME || !GAME->interface() || !GAME->interface()->cb || !army || !market)
+		return;
+	updateGarrisons();
+	const auto selectedSlots = selectedSourceSlots();
+	if(selectedSlots.empty())
+		return;
+
+	const auto * callback = GAME && GAME->interface() ? GAME->interface()->cb.get() : nullptr;
+	if(callback && army)
+	{
+		const auto preview = newHorizonsSkeletonTransformer::plan(
+			*army, selectedSlots, callback->getHeroCapabilityRules());
+		if(preview.status != newHorizonsSkeletonTransformer::PlanStatus::LEGACY_RULES)
+		{
+			if(!preview.isReady())
+			{
+				updateConversionPreview();
+				return;
+			}
+
+			std::vector<TradeItemSell> sources;
+			sources.reserve(selectedSlots.size());
+			for(const auto slot : selectedSlots)
+				sources.emplace_back(slot);
+
+			GAME->interface()->cb->trade(market->getObjInstanceID(), EMarketMode::CREATURE_UNDEAD,
+				sources, std::vector<TradeItemBuy>{}, std::vector<ui32>{}, hero);
+
+			// Submission is asynchronous, not confirmation. Do not play the
+			// source's death cue before authoritative acceptance.
+
+			// The callback is asynchronous. Clear the submitted selection now so
+			// reopening the same modal state cannot submit it a second time.
+			for(auto & item : items)
+				if(!item->left)
+					item->move();
+			updateConversionPreview();
+			redraw();
+			return;
+		}
+	}
+
 	for(auto & elem : items)
 	{
-		if(!elem->left)
+		if(!elem->left && army && army->hasStackAtSlot(SlotID(elem->id)))
 		{
 			GAME->interface()->cb->trade(market->getObjInstanceID(), EMarketMode::CREATURE_UNDEAD, SlotID(elem->id), {}, {}, hero);
-			const auto & sound = army->getCreature(SlotID(elem->id))->sounds.killed;
-			if(!sound.empty())
-				ENGINE->sound().playSound(sound);
+			if(const auto * source = army->getCreature(SlotID(elem->id)))
+			{
+				const auto & sound = source->sounds.killed;
+				if(!sound.empty())
+					ENGINE->sound().playSound(sound);
+			}
 		}
 	}
 }
 
 void CTransformerWindow::addAll()
 {
+	updateGarrisons();
 	for(auto & elem : items)
 	{
-		if(elem->left)
+		if(elem->left && army && army->hasStackAtSlot(SlotID(elem->id)))
 			elem->move();
 	}
+	updateConversionPreview();
 	redraw();
 }
 
 void CTransformerWindow::updateGarrisons()
 {
-	for(auto & item : items)
-		item->update();
+	for(auto it = items.begin(); it != items.end();)
+	{
+		if(!(*it)->update())
+		{
+			removeChild(it->get());
+			it = items.erase(it);
+		}
+		else
+			++it;
+	}
+
+	if(army)
+	{
+		for(const auto & [slot, stack] : army->Slots())
+		{
+			if(!slot.validSlot() || !stack || !stack->getCreature())
+				continue;
+			const bool alreadyShown = std::any_of(items.begin(), items.end(), [slot](const auto & item)
+			{
+				return item->id == slot.getNum();
+			});
+			if(alreadyShown)
+				continue;
+
+			OBJECT_CONSTRUCTION;
+			items.push_back(std::make_shared<CItem>(this, stack->getCount(), slot.getNum()));
+		}
+	}
+
+	updateConversionPreview();
+	redraw();
+}
+
+std::vector<SlotID> CTransformerWindow::selectedSourceSlots() const
+{
+	std::vector<SlotID> result;
+	if(!army)
+		return result;
+
+	for(const auto & item : items)
+	{
+		const SlotID slot(item->id);
+		if(!item->left && army->hasStackAtSlot(slot))
+			result.push_back(slot);
+	}
+	return result;
+}
+
+void CTransformerWindow::updateConversionPreview()
+{
+	if(!army || !GAME || !GAME->interface() || !GAME->interface()->cb)
+		return;
+
+	const auto selectedSlots = selectedSourceSlots();
+	const auto preview = newHorizonsSkeletonTransformer::plan(
+		*army, selectedSlots, GAME->interface()->cb->getHeroCapabilityRules());
+	if(preview.status == newHorizonsSkeletonTransformer::PlanStatus::LEGACY_RULES)
+	{
+		helpRight->setText(LIBRARY->generaltexth->allTexts[488]);
+		convert->block(false);
+		statusbar->clear();
+		return;
+	}
+
+	MetaString text = MetaString::createFromTextID("new-horizons.ui.skeletonTransformer.preview");
+	text.replaceNumber(preview.skeletonCount);
+	helpRight->setText(text.toString(&GAME->translator()));
+	convert->block(!preview.isReady());
+
+	const char * statusText = nullptr;
+	using PlanStatus = newHorizonsSkeletonTransformer::PlanStatus;
+	switch(preview.status)
+	{
+	case PlanStatus::READY:
+		break;
+	case PlanStatus::LEGACY_RULES:
+		return;
+	case PlanStatus::EMPTY_SELECTION:
+		statusText = "new-horizons.ui.skeletonTransformer.empty";
+		break;
+	case PlanStatus::INVALID_SLOT:
+	case PlanStatus::DUPLICATE_SLOT:
+	case PlanStatus::INVALID_COUNT:
+		statusText = "new-horizons.ui.skeletonTransformer.invalid";
+		break;
+	case PlanStatus::HP_OVERFLOW:
+		statusText = "new-horizons.ui.skeletonTransformer.overflow";
+		break;
+	case PlanStatus::ZERO_OUTPUT:
+		statusText = "new-horizons.ui.skeletonTransformer.zero";
+		break;
+	case PlanStatus::LAST_STACK:
+		statusText = "new-horizons.ui.skeletonTransformer.lastStack";
+		break;
+	case PlanStatus::LEADERSHIP_LIMIT:
+		statusText = "new-horizons.ui.skeletonTransformer.leadership";
+		break;
+	case PlanStatus::OUTPUT_CAPACITY:
+		statusText = "new-horizons.ui.skeletonTransformer.capacity";
+		break;
+	}
+
+	if(statusText)
+	{
+		MetaString message = MetaString::createFromTextID(statusText);
+		statusbar->write(message.toString(&GAME->translator()));
+	}
+	else
+		statusbar->clear();
 }
 
 bool CTransformerWindow::holdsGarrison(const CArmedInstance * army)
 {
-	return army == hero;
+	return army == this->army;
 }
 
 CTransformerWindow::CTransformerWindow(const IMarket * _market, const CGHeroInstance * _hero, const std::function<void()> & onWindowClosed)
@@ -1682,6 +1859,7 @@ CTransformerWindow::CTransformerWindow(const IMarket * _market, const CGHeroInst
 	titleRight = std::make_shared<CLabel>(153+295, 29, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, LIBRARY->generaltexth->allTexts[486]);//transformer
 	helpLeft = std::make_shared<CTextBox>(LIBRARY->generaltexth->allTexts[487], Rect(26,  56, 255, 40), 0, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW);//move creatures to create skeletons
 	helpRight = std::make_shared<CTextBox>(LIBRARY->generaltexth->allTexts[488], Rect(320, 56, 255, 40), 0, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW);//creatures here will become skeletons
+	updateConversionPreview();
 }
 
 void CTransformerWindow::close()

@@ -393,6 +393,7 @@ set(test_SRCS
 		server/battles/NewHorizonsChainLightningProfileTest.cpp
 		server/battles/NewHorizonsBlessTest.cpp
 		server/battles/NewHorizonsWarcastingTest.cpp
+		server/NewHorizonsSkeletonTransformerTest.cpp
 		battle/NewHorizonsEnchantedCommandTest.cpp
 		battle/OverwhelmingFormulaStateTest.cpp
 		server/battles/WarcastingScriptSpellTest.cpp

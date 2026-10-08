@@ -204,6 +204,7 @@ set(lib_MAIN_SRCS
 	mapObjects/CRewardableObject.cpp
 	mapObjects/FlaggableMapObject.cpp
 	mapObjects/IMarket.cpp
+	mapObjects/SkeletonTransformer.cpp
 	mapObjects/IObjectInterface.cpp
 	mapObjects/MiscObjects.cpp
 	mapObjects/ObjectTemplate.cpp
@@ -705,6 +706,7 @@ set(lib_MAIN_HEADERS
 	mapObjects/CRewardableObject.h
 	mapObjects/FlaggableMapObject.h
 	mapObjects/IMarket.h
+	mapObjects/SkeletonTransformer.h
 	mapObjects/IObjectInterface.h
 	mapObjects/IOwnableObject.h
 	mapObjects/MapObjects.h

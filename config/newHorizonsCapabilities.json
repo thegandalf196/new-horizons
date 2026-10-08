@@ -1,6 +1,7 @@
 {
 	"schemaVersion": 1,
 	"rulesetVersion": 4,
+	"skeletonTransformer": {"aggregateHealthPercent": 50},
 	"classProfiles": {
 		"core:knight": {"base": 1025, "perLevel": 55},
 		"core:cleric": {"base": 725, "perLevel": 35},

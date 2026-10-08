@@ -2,6 +2,24 @@
 
 Updated: 2026-10-07
 
+UP197 source/native completion: Skeleton Transformer now pools selected
+adventure HP, floors50% to whole Skeletons, fills retained Skeleton stacks then
+freed selected slots, and rejects zero/residual overflow without mutation.
+Shared preview and a bounded strict-gain AI request path are connected.
+Ten-job linked build and repaired34-case native gate pass in6.456s:21 conversion
+cases (12 planner,8 NH serialized requests,1 legacy request) plus13 capability
+cases.13 Python data/UI/inventory guards and module drift pass; independent
+review has no blocker. One missing town-building mechanic becomes native
+verified; perk/spell/Order identity counts remain230/310,61/67,8/8.
+Rendered Transformer UI, autonomous AI visit sequencing, in-flight reselection
+locking and broader strategic valuation remain delivery/Phase2 boundaries.
+
+UP290 rendered partial acceptance on frozen selected0c6af: overflow transition
+opens Leave Guards and closing keeps Solmyr visiting with unchanged armies,
+without repeated Leadership rejection. Root inspected actual modal screenshot.
+Capacity-fitting transfer and subsequent admission remain separate pending
+evidence; this validates a user-reported UI path, not additional perk identities.
+
 Current Phase1 integration checkpoint: user-resolved Enchanted Command and
 Combat Casting now pass linked compilation and focused native execution.
 Verified perk coverage advances228→230/310 (generic159/220; faction71/90).
@@ -3950,7 +3968,7 @@ not newly implemented or individually certified content.
 | Inferno Brimstone Stormclouds | Native: UP023 siege defender SP20, cleanup, Sulfur1 daily | Wider siege composition Phase2 |
 | Inferno Birthing Pool / Cages | Baseline: core growth consumers | Row-specific runtime acceptance absent; numbers deferred |
 | Necropolis Necromancy Amplifier | Native: UP198 visit/refresh/expiry/save and raise consumer | Wider raised-army composition Phase2 |
-| Necropolis Skeleton Transformer | Missing: UP197 | Whole-selection versus per-stack rounding unresolved; old type/count conversion is not HP conversion |
+| Necropolis Skeleton Transformer | Native: UP197 pooled HP/shared preview/atomic admission;21 conversion cases plus13 capability cases pass; bounded strict-gain AI request | Rendered Transformer UI, in-flight selection lock and autonomous AI visit sequencing remain separate; source not yet promoted |
 | Necropolis Cover of Darkness | Baseline: hide/reveal consumer; visible-only Dimension Door has separate coverage | Actual Cover re-shrouding acceptance absent |
 | Necropolis Unearthed Graves / growth | Baseline: horde source map | Whole-family runtime acceptance absent |
 | Dungeon Astral Nexus | Native: repeat ordinary Normal refill and save via unique-building training | Buffer composition unverified; no weekly gate intended |

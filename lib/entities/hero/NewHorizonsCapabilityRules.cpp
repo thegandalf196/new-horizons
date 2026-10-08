@@ -134,6 +134,12 @@ void common(const JsonNode & rules)
 {
 	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
 	require(integer(rules["rulesetVersion"], 1, CAPABILITY_RULESET_VERSION), "rulesetVersion");
+	if(!rules["skeletonTransformer"].isNull())
+	{
+		require(rules["rulesetVersion"].Integer() >= 4, "Skeleton Transformer requires ruleset v4");
+		fields(rules["skeletonTransformer"], {"aggregateHealthPercent"});
+		require(integer(rules["skeletonTransformer"]["aggregateHealthPercent"], 1, 100), "Skeleton Transformer health percent");
+	}
 	if(rules["rulesetVersion"].Integer() == 1)
 	{
 		fields(rules["leadership"], {"skillBonusPercent", "minimumMovementPercent"});
@@ -199,7 +205,7 @@ void validateCapabilityRules(const JsonNode & rules, bool requireAllClasses)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "classProfiles", "leadership", "siege", "warMachineShop"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "classProfiles", "leadership", "siege", "warMachineShop", "skeletonTransformer"});
 	common(rules);
 	require(rules["classProfiles"].isStruct() && !rules["classProfiles"].Struct().empty(), "class profiles");
 	std::set<int> seen;
@@ -218,7 +224,7 @@ void validateResolvedCapabilityRules(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "profile", "leadership", "siege", "warMachineShop"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "profile", "leadership", "siege", "warMachineShop", "skeletonTransformer"});
 	common(rules);
 	profile(rules["profile"]);
 }
@@ -233,11 +239,24 @@ JsonNode resolveCapabilityRules(const JsonNode & rules, HeroClassID heroClass)
 		result[key] = rules[key];
 	if(rules["rulesetVersion"].Integer() >= 4)
 		result["warMachineShop"] = rules["warMachineShop"];
+	if(!rules["skeletonTransformer"].isNull())
+		result["skeletonTransformer"] = rules["skeletonTransformer"];
 	for(const auto & [key, value] : rules["classProfiles"].Struct())
 		if(resolveClass(key) == heroClass.getNum())
 			result["profile"] = value;
 	validateResolvedCapabilityRules(result);
 	return result;
+}
+
+std::optional<int> capabilitySkeletonTransformerHealthPercent(const JsonNode & rules)
+{
+	if(!usesRules(rules) || rules["skeletonTransformer"].isNull())
+		return std::nullopt;
+	if(rules.Struct().contains("classProfiles"))
+		validateCapabilityRules(rules, false);
+	else
+		validateResolvedCapabilityRules(rules);
+	return static_cast<int>(rules["skeletonTransformer"]["aggregateHealthPercent"].Integer());
 }
 
 LeadershipCapacity capabilityLeadership(const JsonNode & rules, int level, int leadershipRank, uint64_t used)

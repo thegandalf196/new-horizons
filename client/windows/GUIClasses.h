@@ -413,13 +413,14 @@ class CTransformerWindow : public CStatusbarWindow, public IGarrisonHolder
 		int id;//position of creature in hero army
 		bool left;//position of the item
 		int size; //size of creature stack
+		CreatureID displayedCreature;
 		CTransformerWindow * parent;
 		std::shared_ptr<CAnimImage> icon;
 		std::shared_ptr<CLabel> count;
 
 		void move();
 		void clickPressed(const Point & cursorPosition) override;
-		void update();
+		bool update();
 		CItem(CTransformerWindow * parent, int size, int id);
 	};
 
@@ -439,6 +440,8 @@ class CTransformerWindow : public CStatusbarWindow, public IGarrisonHolder
 	std::shared_ptr<CButton> cancel;
 
 	std::function<void()> onWindowClosed;
+	std::vector<SlotID> selectedSourceSlots() const;
+	void updateConversionPreview();
 public:
 
 	void makeDeal();

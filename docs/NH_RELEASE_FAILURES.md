@@ -2,6 +2,42 @@
 
 ## Purpose
 
+Transformer final retry80809 exits0; focused repaired native8195 passes34/34
+in6.456s, zero skips. The legacy request retains its original3/5 counts while
+new requests exercise pooled HP and unchanged zero/overflow rejection.13 Python
+guards/module drift pass and independent review has no blocker. Repaired receipt:
+build/nh-transformer-validation.FNcIzo6A/native-repaired.log/XML. No playable
+promotion or complete GUI/AI integration certification is inferred.
+
+### 2026-10-07 — Transformer legacy map-patch fixture
+
+Linked identifier retry exits0. Focused34-case gate passes33; the legacy fixture
+incorrectly erases an optional marker from a new-map override PATCH, whose merge
+retains the installed default. Explicitly null that patch leaf to request legacy
+behavior, retain initialized-world/legacy-count assertions and round-trip a
+genuinely absent-marker saved snapshot. Real CGameState load directly restores
+heroCapabilityRules; it does not recapture new-game defaults. No production
+validation or save handling is relaxed. Keep the initial native.log/XML under
+build/nh-transformer-validation.FNcIzo6A and use separate repaired receipts.
+
+### 2026-10-07 — Transformer fixture identifier compile failure
+
+PTY retry13081 survives the earlier unexplained termination but fails on the
+dedicated native fixture: CreatureID has no PIKEMAN constant. Resolve authored
+core:pikeman/core:halberdier identities instead of inventing numeric constants;
+do not weaken creature/type/count assertions. Production objects compiled.
+Preserve nh-transformer-integration-retry-session.log; resume incrementally
+after the bounded test-only repair, not a clean rebuild.
+
+### 2026-10-07 — Transformer integration build termination
+
+Linked build8944 returned143 (SIGTERM) after308/727 successful steps with no
+compiler error. One GUIClasses compiler child survived the terminal Ninja
+process; inspect that exact process to completion before resuming the same
+incremental build. Keep nh-transformer-integration-build.log. Repeated external
+termination is not proof of compilation failure, memory exhaustion or tester
+interference; cause remains unproven. Preserve ten-job maximum.
+
 ### 2026-10-07 — Warcasting focused native fixture rejection
 
 The linked retry builds successfully. Its first focused native run passes26/33

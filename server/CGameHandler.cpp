@@ -57,6 +57,7 @@
 #include "../lib/entities/faction/CTownHandler.h"
 #include "../lib/entities/hero/CHeroHandler.h"
 #include "../lib/entities/hero/NewHorizonsHeroRules.h"
+#include "../lib/entities/hero/NewHorizonsCapabilityRules.h"
 #include "../lib/entities/hero/NewHorizonsLeadership.h"
 
 #include "../lib/filesystem/Filesystem.h"
@@ -79,6 +80,7 @@
 #include "../lib/mapObjects/TownBuildingInstance.h"
 #include "../lib/mapObjects/CGHeroInstance.h"
 #include "../lib/mapObjects/CGTownInstance.h"
+#include "../lib/mapObjects/SkeletonTransformer.h"
 #include "../lib/mapObjects/MiscObjects.h"
 #include "../lib/mapObjectConstructors/AObjectTypeHandler.h"
 #include "../lib/mapObjectConstructors/CObjectClassesHandler.h"
@@ -4902,6 +4904,89 @@ bool CGameHandler::transformInUndead(const IMarket *market, const CGHeroInstance
 		resCreature = customTargerBonus->front()->subtype.as<CreatureID>();
 
 	changeStackType(StackLocation(army->id, slot), resCreature.toCreature());
+	return true;
+}
+
+bool CGameHandler::transformInUndead(const IMarket * market, const CGHeroInstance * hero,
+	const std::vector<SlotID> & slots)
+{
+	const CArmedInstance * army = hero;
+	if(!army)
+		army = dynamic_cast<const CGTownInstance *>(market);
+	if(!army || !market)
+		COMPLAIN_RET("Incorrect call to transform in undead!");
+
+	const auto & savedRules = gameInfo().getHeroCapabilityRules();
+	if(!newHorizonsHeroes::capabilitySkeletonTransformerHealthPercent(savedRules))
+	{
+		bool success = true;
+		for(const auto slot : slots)
+			success &= transformInUndead(market, hero, slot);
+		return success;
+	}
+	if(!market->allowsTrade(EMarketMode::CREATURE_UNDEAD))
+		COMPLAIN_RET("Skeleton Transformer is not available at this market!");
+	const auto projection = newHorizonsSkeletonTransformer::plan(*army, slots, savedRules);
+	if(!projection.isReady())
+		COMPLAIN_RET("Skeleton Transformer selection cannot be converted!");
+	if(projection.projectedArmy.empty() && army->needsLastStack())
+		COMPLAIN_RET("Cannot erase the last stack!");
+
+	std::array<bool, GameConstants::ARMY_SIZE> outputSlots{};
+	for(const auto & output : projection.outputs)
+	{
+		if(!output.slot.validSlot() || !army->hasStackAtSlot(output.slot)
+			|| outputSlots[output.slot.getNum()] || output.count <= 0
+			|| output.count > std::numeric_limits<TQuantity>::max())
+			COMPLAIN_RET("Invalid Skeleton Transformer output!");
+		if(!validateLeadershipStack(army, CreatureID::SKELETON, output.count, "skeletontransformer"))
+			return false;
+		outputSlots[output.slot.getNum()] = true;
+	}
+	for(const auto & stack : projection.projectedArmy)
+	{
+		if(!stack.slot.validSlot() || stack.count <= 0 || stack.count > std::numeric_limits<TQuantity>::max())
+			COMPLAIN_RET("Invalid Skeleton Transformer projected army!");
+	}
+
+	// Allocate and validate the entire request before the first state change.
+	// Establish positive output stacks before removing surplus sacrificed slots,
+	// so even conversion of the hero's last stack never empties its army.
+	std::vector<std::unique_ptr<CGarrisonOperationPack>> changes;
+	for(const auto & output : projection.outputs)
+	{
+		if(army->getCreature(output.slot)->getId() != CreatureID::SKELETON)
+		{
+			auto change = std::make_unique<SetStackType>();
+			change->army = army->id;
+			change->slot = output.slot;
+			change->type = CreatureID::SKELETON;
+			changes.push_back(std::move(change));
+		}
+		if(army->getStackCount(output.slot) != output.count)
+		{
+			auto change = std::make_unique<ChangeStackCount>();
+			change->army = army->id;
+			change->slot = output.slot;
+			change->count = static_cast<TQuantity>(output.count);
+			change->mode = ChangeValueMode::ABSOLUTE;
+			changes.push_back(std::move(change));
+		}
+	}
+	for(const auto slot : slots)
+	{
+		if(outputSlots[slot.getNum()])
+			continue;
+		auto change = std::make_unique<EraseStack>();
+		change->army = army->id;
+		change->slot = slot;
+		changes.push_back(std::move(change));
+	}
+	// Ordinary authoritative packets still synchronize each update. Run derived
+	// victory/loss processing once, on the complete admitted transaction.
+	for(auto & change : changes)
+		sendAndApply(static_cast<CPackForClient &>(*change));
+	checkVictoryLossConditionsForAll();
 	return true;
 }
 

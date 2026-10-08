@@ -78,6 +78,30 @@ TEST(NewHorizonsCapabilityRules, ActualCanonicalDataHasFullDeclaredMightAndMagic
 		EXPECT_EQ(newHorizonsHeroes::capabilityBallistaMultiplier(knight, rank), rank + 1);
 }
 
+TEST(NewHorizonsCapabilityRules, SkeletonTransformerRequiresExplicitSavedMarkerAndPreservesIt)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsCapabilities"));
+	EXPECT_EQ(newHorizonsHeroes::capabilitySkeletonTransformerHealthPercent(rules), 50);
+	const auto resolved = newHorizonsHeroes::resolveCapabilityRules(rules,
+		HeroClassID(HeroClassID::decode("core:necromancer")));
+	EXPECT_EQ(newHorizonsHeroes::capabilitySkeletonTransformerHealthPercent(resolved), 50);
+	CMemorySerializer serializer;
+	serializer.oser & resolved;
+	JsonNode restored;
+	serializer.iser & restored;
+	EXPECT_EQ(newHorizonsHeroes::capabilitySkeletonTransformerHealthPercent(restored), 50);
+	auto historical = rules;
+	historical.Struct().erase("skeletonTransformer");
+	EXPECT_FALSE(newHorizonsHeroes::capabilitySkeletonTransformerHealthPercent(historical));
+	EXPECT_FALSE(newHorizonsHeroes::capabilitySkeletonTransformerHealthPercent(JsonNode()));
+	for(double value : {0.0, 101.0, 50.5})
+	{
+		auto invalid = rules;
+		invalid["skeletonTransformer"]["aggregateHealthPercent"].Float() = value;
+		EXPECT_THROW(newHorizonsHeroes::validateCapabilityRules(invalid, false), std::runtime_error);
+	}
+}
+
 TEST(NewHorizonsCapabilityRules, CanonicalLeadershipUsesIndependentPerSlotLimits)
 {
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsCapabilities"));
@@ -168,6 +192,7 @@ TEST(NewHorizonsCapabilityRules, SavedBlacksmithInventoryPricesAndLegacyFallback
 	JsonNode legacy = rules;
 	legacy["rulesetVersion"].Integer() = 3;
 	legacy.Struct().erase("warMachineShop");
+	legacy.Struct().erase("skeletonTransformer");
 	EXPECT_TRUE(newHorizonsHeroes::capabilityWarMachineShopInventory(legacy).empty());
 	EXPECT_FALSE(newHorizonsHeroes::capabilityWarMachineShopPrice(
 		legacy, FactionID(FactionID::decode("core:castle")), ArtifactID::BALLISTA, 2500));

@@ -26,6 +26,7 @@
 #include "../lib/battle/IBattleState.h"
 #include "../lib/battle/Unit.h"
 #include "../lib/bonuses/BonusEnum.h"
+#include "../lib/entities/hero/NewHorizonsCapabilityRules.h"
 #include "../lib/spells/ISpellMechanics.h"
 #include "../lib/spells/CSpell.h"
 
@@ -377,8 +378,21 @@ void ApplyGhNetPackVisitor::visitTradeOnMarketplace(TradeOnMarketplace & pack)
 			result &= gh.sellArtifact(market, hero, pack.r1[i].as<ArtifactInstanceID>(), pack.r2[i].as<GameResID>());
 		break;
 	case EMarketMode::CREATURE_UNDEAD:
-		for(int i = 0; i < pack.r1.size(); ++i)
-			result &= gh.transformInUndead(market, hero, pack.r1[i].as<SlotID>());
+		if(newHorizonsHeroes::capabilitySkeletonTransformerHealthPercent(gh.gameInfo().getHeroCapabilityRules()))
+		{
+			if(!market->allowsTrade(EMarketMode::CREATURE_UNDEAD))
+				gh.throwAndComplain(connection, "Skeleton Transformer is not available at this market!");
+			std::vector<SlotID> selectedSlots;
+			selectedSlots.reserve(pack.r1.size());
+			for(const auto & item : pack.r1)
+				selectedSlots.push_back(item.as<SlotID>());
+			result = gh.transformInUndead(market, hero, selectedSlots);
+		}
+		else
+		{
+			for(int i = 0; i < pack.r1.size(); ++i)
+				result &= gh.transformInUndead(market, hero, pack.r1[i].as<SlotID>());
+		}
 		break;
 	case EMarketMode::RESOURCE_SKILL:
 		for(int i = 0; i < pack.r2.size(); ++i)

@@ -74,4 +74,6 @@ DLL_LINKAGE std::vector<ArtifactID> capabilityWarMachineShopInventory(const Json
 /// Returns a saved-rules shop price only for an artifact in the v4 ordinary inventory.
 DLL_LINKAGE std::optional<int> capabilityWarMachineShopPrice(
 	const JsonNode & rules, FactionID faction, ArtifactID artifact, int ordinaryPrice);
+/// Explicit saved opt-in; absent markers retain legacy count-based conversion.
+DLL_LINKAGE std::optional<int> capabilitySkeletonTransformerHealthPercent(const JsonNode & rules);
 }

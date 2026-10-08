@@ -32,6 +32,7 @@
 #include "../../lib/IGameSettings.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/gameState/UpgradeInfo.h"
+#include "../../lib/mapObjects/SkeletonTransformer.h"
 #include "../../lib/serializer/CTypeList.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/networkPacks/PacksForClient.h"
@@ -121,6 +122,104 @@ namespace
 		}
 
 		return std::nullopt;
+	}
+
+	std::optional<std::vector<SlotID>> chooseSkeletonTransformerSelection(
+		const CArmedInstance & army,
+		const IArmyManager & armyManager,
+		const JsonNode & savedRules)
+	{
+		std::vector<SlotID> availableSlots;
+		availableSlots.reserve(GameConstants::ARMY_SIZE);
+		for(const auto & slot : army.Slots())
+		{
+			if(slot.second && slot.second->getCount() > 0)
+			{
+				if(!slot.second->getCreature())
+					return std::nullopt;
+				availableSlots.push_back(slot.first);
+			}
+		}
+
+		if(availableSlots.empty() || availableSlots.size() > GameConstants::ARMY_SIZE)
+			return std::nullopt;
+
+		// Use the same manager valuation for both sides of the comparison;
+		// getArmyStrength() need not match a specialized manager's heuristic.
+		const auto evaluateArmy = [&armyManager](const auto & stacks) -> std::optional<uint64_t>
+		{
+			uint64_t power = 0;
+			for(const auto & stack : stacks)
+			{
+				if(stack.count <= 0 || stack.count > std::numeric_limits<int>::max())
+					return std::nullopt;
+				const auto * creature = stack.creature.toCreature();
+				if(!creature)
+					return std::nullopt;
+				// The existing manager multiplies signed int operands before
+				// widening. Reject unsafe admission here without changing its API.
+				const auto aiValue = creature->getAIValue();
+				if(aiValue <= 0 || stack.count > std::numeric_limits<int>::max() / aiValue)
+					return std::nullopt;
+				const uint64_t stackPower = armyManager.evaluateStackPower(creature, static_cast<int>(stack.count));
+				if(stackPower > std::numeric_limits<uint64_t>::max() - power)
+					return std::nullopt;
+				power += stackPower;
+			}
+			return power;
+		};
+		std::vector<newHorizonsSkeletonTransformer::ProjectedStack> currentArmy;
+		currentArmy.reserve(availableSlots.size());
+		for(const auto slot : availableSlots)
+			currentArmy.push_back({slot, army.getCreature(slot)->getId(), army.getStackCount(slot)});
+		const auto currentPower = evaluateArmy(currentArmy);
+		if(!currentPower)
+			return std::nullopt;
+		std::optional<std::vector<SlotID>> bestSelection;
+		uint64_t bestGain = 0;
+		uint16_t bestMask = 0;
+		const uint16_t maskLimit = static_cast<uint16_t>(1u << availableSlots.size());
+
+		for(uint16_t mask = 1; mask < maskLimit; ++mask)
+		{
+			std::vector<SlotID> selectedSlots;
+			selectedSlots.reserve(availableSlots.size());
+			bool includesNonSkeleton = false;
+			for(size_t index = 0; index < availableSlots.size(); ++index)
+			{
+				if((mask & (1u << index)) == 0)
+					continue;
+
+				const auto slot = availableSlots[index];
+				selectedSlots.push_back(slot);
+				includesNonSkeleton |= army.getCreature(slot)->getId() != CreatureID::SKELETON;
+			}
+
+			if(!includesNonSkeleton)
+				continue;
+
+			const auto projection = newHorizonsSkeletonTransformer::plan(army, selectedSlots, savedRules);
+			if(!projection.isReady() || projection.skeletonCount <= 0)
+				continue;
+
+			const auto projectedPower = evaluateArmy(projection.projectedArmy);
+			// A tie spends creatures without improving this army's valuation.
+			if(!projectedPower || *projectedPower <= *currentPower)
+				continue;
+
+			const uint64_t gain = *projectedPower - *currentPower;
+			if(!bestSelection
+				|| gain > bestGain
+				|| (gain == bestGain && selectedSlots.size() < bestSelection->size())
+				|| (gain == bestGain && selectedSlots.size() == bestSelection->size() && mask < bestMask))
+			{
+				bestSelection = std::move(selectedSlots);
+				bestGain = gain;
+				bestMask = mask;
+			}
+		}
+
+		return bestSelection;
 	}
 }
 
@@ -1340,6 +1439,32 @@ void AIGateway::performObjectInteraction(const CGObjectInstance * obj, HeroPtr h
 
 			if(visitedTown && heroPtr->tempOwner == playerID && visitedTown->tempOwner == playerID)
 				purchaseUsefulWarMachines(visitedTown, heroPtr.get(), availableResources[EGameResID::GOLD]);
+
+			if(heroPtr->tempOwner == playerID
+				&& visitedTown->getVisitingHero() == heroPtr.get()
+				&& visitedTown->tempOwner.isValidPlayer()
+				&& cc->getPlayerRelations(heroPtr->tempOwner, visitedTown->tempOwner) != PlayerRelations::ENEMIES
+				&& visitedTown->getFactionID() == FactionID::NECROPOLIS
+				&& visitedTown->hasBuilt(BuildingID::SPECIAL_3))
+			{
+				const auto * transformerMarket = cc->getMarket(visitedTown->id);
+				if(transformerMarket && transformerMarket->allowsTrade(EMarketMode::CREATURE_UNDEAD))
+				{
+					const auto selectedSlots = chooseSkeletonTransformerSelection(
+						*heroPtr.get(), *nullkiller->armyManager, cc->getHeroCapabilityRules());
+					if(selectedSlots)
+					{
+						std::vector<TradeItemSell> selectedItems;
+						selectedItems.reserve(selectedSlots->size());
+						for(const auto slot : *selectedSlots)
+							selectedItems.emplace_back(slot);
+
+						// Keep conversion on the ordinary, validated market request path.
+						cc->trade(visitedTown->getObjInstanceID(), EMarketMode::CREATURE_UNDEAD,
+							selectedItems, std::vector<TradeItemBuy>{}, std::vector<ui32>{}, heroPtr.get());
+					}
+				}
+			}
 		}
 		break;
 	case Obj::HILL_FORT:

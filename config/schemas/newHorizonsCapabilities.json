@@ -8,6 +8,9 @@
 		{
 			"required": ["schemaVersion", "rulesetVersion", "classProfiles", "leadership", "siege"],
 			"additionalProperties": false,
+			"dependencies": {
+				"skeletonTransformer": {"properties": {"rulesetVersion": {"enum": [4]}}}
+			},
 			"allOf": [{
 				"oneOf": [
 					{
@@ -45,6 +48,12 @@
 				]
 			}],
 			"properties": {
+				"skeletonTransformer": {
+					"type": "object",
+					"required": ["aggregateHealthPercent"],
+					"additionalProperties": false,
+					"properties": {"aggregateHealthPercent": {"type": "integer", "minimum": 1, "maximum": 100}}
+				},
 				"schemaVersion": {"type": "integer", "enum": [1]},
 				"rulesetVersion": {"type": "integer", "enum": [1, 2, 3, 4]},
 				"classProfiles": {

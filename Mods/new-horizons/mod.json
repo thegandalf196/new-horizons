@@ -3065,6 +3065,9 @@
 			"newHorizonsCapabilities": {
 				"schemaVersion": 1,
 				"rulesetVersion": 4,
+				"skeletonTransformer": {
+					"aggregateHealthPercent": 50
+				},
 				"classProfiles": {
 					"core:knight": {
 						"base": 1025,
@@ -9441,6 +9444,14 @@
 		"new-horizons.muster.externalTargetUsed": "Muster already used at this dwelling",
 		"new-horizons.muster.externalRecruiterNote": "Choose one owned external Core dwelling to reinforce.",
 		"new-horizons.muster.noExternalTargets": "No legal Core recruit is available in this external dwelling.",
+		"new-horizons.ui.skeletonTransformer.preview": "50% of combined HP, rounded down.\nSkeletons: %d",
+		"new-horizons.ui.skeletonTransformer.empty": "Select creatures to transform.",
+		"new-horizons.ui.skeletonTransformer.invalid": "The selected army has changed. Select the creatures again.",
+		"new-horizons.ui.skeletonTransformer.overflow": "The selected army is too large to transform safely.",
+		"new-horizons.ui.skeletonTransformer.zero": "The selected creatures would yield no whole Skeletons.",
+		"new-horizons.ui.skeletonTransformer.lastStack": "The hero must retain at least one creature.",
+		"new-horizons.ui.skeletonTransformer.leadership": "The resulting Skeleton stacks exceed this hero's Leadership.",
+		"new-horizons.ui.skeletonTransformer.capacity": "There is not enough army space for all resulting Skeletons.",
 		"new-horizons.levelUp.skill.unlearned": "Unlearned",
 		"new-horizons.levelUp.skill.rankTransition": "%s -> %s",
 		"new-horizons.hero.morale.value": "Morale: %VALUE%.",

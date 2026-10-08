@@ -245,6 +245,7 @@ public:
 	void informPlayerAboutSentResources(PlayerColor player, PlayerColor playerReceiver, const ResourceSet & resources);
 	bool sellCreatures(ui32 count, const IMarket *market, const CGHeroInstance * hero, SlotID slot, GameResID resourceID);
 	bool transformInUndead(const IMarket *market, const CGHeroInstance * hero, SlotID slot);
+	bool transformInUndead(const IMarket * market, const CGHeroInstance * hero, const std::vector<SlotID> & slots);
 	bool assembleArtifacts (ObjectInstanceID heroID, ArtifactPosition artifactSlot, bool assemble, ArtifactID assembleTo);
 	bool buyArtifact( ObjectInstanceID hid, ArtifactID aid ); //for blacksmith and mage guild only -> buying for gold in common buildings
 	bool buyArtifact( const IMarket *m, const CGHeroInstance *h, GameResID rid, ArtifactID aid); //for artifact merchant and black market -> buying for any resource in special building / advobject
