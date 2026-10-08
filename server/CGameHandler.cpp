@@ -2129,6 +2129,7 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 		BattleSide victimSide = BattleSide::NONE;
 		int32_t echoBasisPoints = 0;
 		int64_t actualSecondaryDamage = 0;
+		JsonNode mdrPenetration;
 	};
 	std::vector<SoulChainEcho> echoes;
 	struct PersonalBloodrageGain
@@ -2202,7 +2203,7 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 				continue;
 
 			echoes.push_back({battleID, link->primaryUnitId, link->casterSide,
-				secondary->unitSide(), link->echoBasisPoints, hit.damageAmount});
+				secondary->unitSide(), link->echoBasisPoints, hit.damageAmount, link->mdrPenetration});
 		}
 	};
 
@@ -2446,7 +2447,7 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 			continue;
 
 		const int64_t adjustedDamage = newHorizonsSoulChain::adjustedEchoDamage(*battleInfo,
-			echo.casterSide, primary, echo.actualSecondaryDamage, echo.echoBasisPoints);
+			echo.casterSide, primary, echo.actualSecondaryDamage, echo.echoBasisPoints, &echo.mdrPenetration);
 		if(adjustedDamage <= 0)
 			continue;
 

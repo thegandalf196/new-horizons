@@ -11,6 +11,7 @@
 #include "StdInc.h"
 #include "ISpellMechanics.h"
 #include "NewHorizonsMagic.h"
+#include "MagicalDamageReduction.h"
 #include "../battle/NewHorizonsShadowGift.h"
 #include "NewHorizonsSpellAvailability.h"
 
@@ -823,6 +824,8 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 			&& newHorizonsWarcasting::enabled(battleInfo->getMagicRules()))
 			warcastingBonusPercent = newHorizonsWarcasting::spellBonus(hero,
 				battleInfo->getWarcastingState(casterSide), battleInfo->getRound());
+		combatCastingEligible = warcastingBonusPercent > 0 && hero
+			&& hero->hasActivePerk("new-horizons:warcasting", "new-horizons:warcasting.combatCasting");
 
 		if(battleInfo && hero && battleInfo->getSideHero(casterSide) == hero
 			&& !battleInfo->hasCompletedHeroSpellCast(casterSide)
@@ -1344,6 +1347,38 @@ bool BaseMechanics::isMagicalEffect() const
 	return owner->isMagical();
 }
 
+JsonNode Mechanics::getCapturedMdrPenetration() const
+{
+	return {};
+}
+
+JsonNode BaseMechanics::getCapturedMdrPenetration() const
+{
+	JsonNode result;
+	const auto * hero = caster ? caster->getHeroCaster() : nullptr;
+	if(mode != Mode::HERO || !isNegativeSpell() || !hero
+		|| !newHorizonsMagic::rulesActive(hero->getMagicRules()))
+		return result;
+	const auto add = [&result](int percent)
+	{
+		result["penetrations"].Vector().emplace_back(percent);
+	};
+	if(hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
+		"new-horizons:spellcraft.spellPenetration"))
+		add(20);
+	if(newHorizonsMagic::hasAnnihilatorPerk(hero, owner))
+		add(20);
+	if(combatCastingEligible)
+		add(15);
+	if(metamagicFollowup && metamagicFocusedPairingEligible
+		&& metamagicFirstTargetUnitId != std::numeric_limits<uint32_t>::max())
+	{
+		result["focusedTargetUnitId"].Integer() = metamagicFirstTargetUnitId;
+		result["focusedPenetrationPercent"].Integer() = 20;
+	}
+	return result;
+}
+
 int64_t Mechanics::adjustRecipientDamage(const battle::Unit * target, int64_t rawDamage) const
 {
 	const auto * spell = dynamic_cast<const CSpell *>(getSpell());
@@ -1354,9 +1389,13 @@ int64_t Mechanics::adjustRecipientDamage(const battle::Unit * target, int64_t ra
 		? callback->battleGetHoldTheLineMagicalReductionBasisPoints(target) : 0;
 	const int perkReductionBasisPoints = callback && spell->isMagical()
 		? callback->battleGetPerkMagicalReductionBasisPoints(target) : 0;
+	const bool hostileRecipient = callback && caster
+		&& callback->battleGetOwner(target) != caster->getCasterOwner();
+	const auto penetrations = hostileRecipient
+		? capturedMdrPenetrations(getCapturedMdrPenetration(), target->unitId()) : std::vector<int>{};
 	return spell->adjustRawDamage(caster, target, rawDamage, 0,
 		holdReductionBasisPoints, 100, usesNewHorizonsMultiplicativeMDR(),
-		usesNewHorizonsMagicV3(), false, perkReductionBasisPoints);
+		usesNewHorizonsMagicV3(), false, perkReductionBasisPoints, penetrations);
 }
 
 int64_t BaseMechanics::adjustEffectValue(const battle::Unit * target) const
@@ -1372,24 +1411,30 @@ int64_t BaseMechanics::adjustEffectValueBeforeExecution(const battle::Unit * tar
 int64_t BaseMechanics::adjustEffectValueImpl(const battle::Unit * target, const bool applyExecution) const
 {
 	const auto * hero = caster ? caster->getHeroCaster() : nullptr;
+	const bool hostileRecipient = cb && caster && target
+		&& cb->battleGetOwner(target) != caster->getCasterOwner();
 	const bool spellPenetration = mode == Mode::HERO && isNegativeSpell() && target
-		&& !ownerMatches(target, true) && hero
+		&& hostileRecipient && hero
 		&& newHorizonsMagic::rulesActive(hero->getMagicRules())
 		&& hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
 			"new-horizons:spellcraft.spellPenetration");
-	const int ignoreReduction = std::max(
-		std::max(
-			metamagicFollowup && isNegativeSpell() && target
-			&& metamagicFocusedPairingEligible && target->unitId() == metamagicFirstTargetUnitId
-			? 20 : 0,
-			newHorizonsMagic::hasAnnihilatorPerk(hero, owner) ? 20 : 0),
-		spellPenetration ? 20 : 0);
+	std::vector<int> penetrations;
+	if(metamagicFollowup && isNegativeSpell() && target
+		&& metamagicFocusedPairingEligible && target->unitId() == metamagicFirstTargetUnitId)
+		penetrations.push_back(20);
+	if(newHorizonsMagic::hasAnnihilatorPerk(hero, owner))
+		penetrations.push_back(20);
+	if(spellPenetration)
+		penetrations.push_back(20);
+	if(combatCastingEligible && mode == Mode::HERO && isNegativeSpell() && hostileRecipient)
+		penetrations.push_back(15);
 	const int holdReductionBasisPoints = cb && owner->isMagical() && target
 		? cb->battleGetHoldTheLineMagicalReductionBasisPoints(target) : 0;
 	const int perkReductionBasisPoints = cb && owner->isMagical() && target
 		? cb->battleGetPerkMagicalReductionBasisPoints(target) : 0;
 	const auto * battleState = cb ? cb->getBattle() : nullptr;
 	const bool useIndependentMagicalDamageReduction = usesNewHorizonsMultiplicativeMDR();
+	const int legacyIgnoreReduction = penetrations.empty() ? 0 : *std::max_element(penetrations.begin(), penetrations.end());
 	int finalDamageMultiplierPercent = 100;
 	if(target && owner->getJsonKey() == "new-horizons:holyWrath")
 	{
@@ -1421,9 +1466,11 @@ int64_t BaseMechanics::adjustEffectValueImpl(const battle::Unit * target, const 
 				rawDamage += *missingHealthDamage;
 		}
 	}
-	int64_t adjustedDamage = owner->adjustRawDamage(caster, target, rawDamage, ignoreReduction,
+	int64_t adjustedDamage = owner->adjustRawDamage(caster, target, rawDamage,
+		useIndependentMagicalDamageReduction ? 0 : legacyIgnoreReduction,
 		holdReductionBasisPoints, finalDamageMultiplierPercent, useIndependentMagicalDamageReduction,
-		usesNewHorizonsMagicV3(), true, perkReductionBasisPoints);
+		usesNewHorizonsMagicV3(), true, perkReductionBasisPoints,
+		useIndependentMagicalDamageReduction ? penetrations : std::vector<int>{});
 	if(applyExecution && target && battleState && newHorizonsMagic::soulReaperEnabled(
 		battleState->getMagicRules(), owner->getId()))
 		adjustedDamage = newHorizonsMagic::soulReaperDamageAfterExecution(

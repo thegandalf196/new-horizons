@@ -2,7 +2,60 @@
 
 ## Purpose
 
+### 2026-10-07 — Warcasting focused native fixture rejection
+
+The linked retry builds successfully. Its first focused native run passes26/33
+cases and rejects seven fixtures before their intended assertions: five skip
+the required Basic perk when selecting Advanced Enchanted Command; two direct
+damage fixtures construct incompatible saved magic rules (v3-only Morale in an
+older profile, and an out-of-range Soul Chain echo percentage). Repair legitimate
+fixture setup, not production progression/schema validation. Preserve the first
+receipt in build/nh-warcasting-validation.0v7WcW/native.log and native.xml.
+The Overwhelming Formula foundation was accidentally omitted by a test filter
+suffix: its actual suite is OverwhelmingFormulaState, not
+OverwhelmingFormulaStateTest. Include all nine cases on retry; no production
+perk completion follows from that isolated foundation.
+
+The repaired fixture build exits0; corrected native filter runs42 cases,
+40 pass. Two Enchanted Command assertions now reach their intended runtime
+checks and fail: live/projected Morale diverges after a later live Order, and
+the projected Second Wind bonus survives immediate activation. Investigate
+detached subject/cache isolation and activation cleanup; do not remove parity
+or lifetime assertions. Keep native-repaired.log/XML as a separate receipt.
+
+Root-reviewed repair captures exact Enchanted bonuses in the existing detached
+effect snapshot before local addition, preventing later live acceptance from
+duplicating them. SecondWind's fixture explicitly installs its accepted active
+Order before testing activation expiry; it does not certify full production
+extra-activation prediction. Ten-job build exits0; final42/42 native cases pass
+in7.157s, zero skips, with native-projection-repaired.log/XML retained. Sol High
+review finds no blocker. Full SecondWind projection and neutral hazard capture
+remain deferred rather than silently counted as verified.
+
+### 2026-10-07 — Canonical text and artwork-inventory drift
+
+New Enchanted helper's isolated compile initially failed on incomplete hero/
+unit declarations. Include the defining headers directly instead of relying on
+transitive/PCH exposure. The native fixture object compiled independently;
+linked/native gates remain pending. Receipt: build/nh-enchanted-helper-compile.log.
+
+Focused Warcasting data gates exposed stale canonical fingerprints/descriptions
+after approved rule integration, plus three already-active perks still marked
+planned in the artwork inventory. Reconcile exact canonical text and fingerprint,
+preserve planned Confounder status, and synchronize artwork rows without claiming
+purpose-made icons exist. The Enchanted helper source guard also wrongly banned
+all melee checks after Combined Arms coverage was added: limit that assertion to
+the melee-capable army Orders and explicitly check Focus Fire's expansion.
+Initial failing receipt: build/nh-warcasting-data-initial.log. Native behavior
+still requires separate compilation/execution; metadata alignment is not coverage.
+
 ### 2026-10-07 — Acquisition build external termination
+
+Warcasting build32479 likewise returned143 at303/306, after client link and
+without a compiler error. Exact process inspection shows no surviving Ninja/
+compiler children. Cause remains unproven; do not blame background tester from
+timing alone. Preserve nh-warcasting-two-perks-build.log; finish bounded review
+repairs before one incremental retry. This is a terminal build, not a timeout.
 
 Build26962 returns143 (SIGTERM) at427/700, without compiler failure. Ninja is
 terminal; orphan compiler children were inspected and allowed to finish before

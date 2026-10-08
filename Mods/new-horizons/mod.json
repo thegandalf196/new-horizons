@@ -3309,7 +3309,7 @@
 				"schemaVersion": 1,
 				"rulesetVersion": 2,
 				"sourceDocument": "docs/design-sources/New Horizons.md",
-				"sourceSha256": "731ecd4030e4615a90ad4de6ba6ce1b11de76ea1e20ea0cddcb8a78414b02fb8",
+				"sourceSha256": "1f330a4572b94e8b91c1ded6ac3871e45cbed02a45d44d968cf97fb85b0d335e",
 				"maxSkillChoices": 2,
 				"maxPerkChoices": 2,
 				"maxPerksPerSkill": 3,
@@ -3834,10 +3834,10 @@
 								"id": "new-horizons:battlecraft.battlefieldMastery",
 								"name": "Battlefield Mastery",
 								"requires": "expert",
-								"description": "The first eligible ordinary friendly stack each round to Wait or Defend receives double the normal Battlecraft rank bonus for that action. Ineligible War Machines neither receive nor consume the opportunity; other perk contributions are not doubled.",
+								"description": "The first eligible ordinary friendly stack each round to Wait or Defend receives double the normal Battlecraft rank bonus for that action. An ineligible War Machine neither receives nor consumes this opportunity. Other perk contributions are not doubled.",
 								"effect": {
 									"status": "active",
-									"description": "The first eligible ordinary friendly stack each round to Wait or Defend receives double the normal Battlecraft rank bonus for that action. Ineligible War Machines neither receive nor consume the opportunity; other perk contributions are not doubled."
+									"description": "The first eligible ordinary friendly stack each round to Wait or Defend receives double the normal Battlecraft rank bonus for that action. An ineligible War Machine neither receives nor consumes this opportunity. Other perk contributions are not doubled."
 								}
 							}
 						]
@@ -5084,10 +5084,10 @@
 								"id": "new-horizons:chaosMagic.confounder",
 								"name": "Confounder",
 								"requires": "basic",
-								"description": "Confusion cannot produce the same behavior twice consecutively on the same target. If its random result matches that target's previous Confusion result, reroll until a different legal result is obtained.",
+								"description": "Confusion cannot produce the same resolved behavior twice consecutively on the same target when a different legal behavior is available. If its random result matches that target's previous Confusion result, reroll until a different legal result is obtained. If only one legal behavior exists, allow that result even if it repeats; never reroll indefinitely. Trapped Wander resolves as Defend.",
 								"effect": {
 									"status": "planned",
-									"description": "Confusion cannot produce the same behavior twice consecutively on the same target. If its random result matches that target's previous Confusion result, reroll until a different legal result is obtained."
+									"description": "Confusion cannot produce the same resolved behavior twice consecutively on the same target when a different legal behavior is available. If its random result matches that target's previous Confusion result, reroll until a different legal result is obtained. If only one legal behavior exists, allow that result even if it repeats; never reroll indefinitely. Trapped Wander resolves as Defend."
 								}
 							},
 							{
@@ -5500,10 +5500,10 @@
 								"id": "new-horizons:warcasting.enchantedCommand",
 								"name": "Enchanted Command",
 								"requires": "advanced",
-								"description": "A friendly stack affected by an Order empowered by Warcasting gains +1 Morale until its next activation.",
+								"description": "A friendly stack affected by an Order empowered by Warcasting gains +1 Morale until its next activation. Protect grants this only to its Protector/Ward pair; Second Wind grants it only to its selected stack, not the entire army.",
 								"effect": {
-									"status": "planned",
-									"description": "A friendly stack affected by an Order empowered by Warcasting gains +1 Morale until its next activation."
+									"status": "active",
+									"description": "A friendly stack affected by an Order empowered by Warcasting gains +1 Morale until its next activation. Protect grants this only to its Protector/Ward pair; Second Wind grants it only to its selected stack, not the entire army."
 								}
 							},
 							{
@@ -5512,7 +5512,7 @@
 								"requires": "advanced",
 								"description": "A hostile spell empowered by Warcasting ignores 15% of the target's Magical Damage Reduction.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "A hostile spell empowered by Warcasting ignores 15% of the target's Magical Damage Reduction."
 								}
 							},

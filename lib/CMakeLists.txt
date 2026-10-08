@@ -72,6 +72,7 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsArchery.cpp
 	battle/NewHorizonsArmorer.cpp
 	battle/NewHorizonsCombatSkills.cpp
+	battle/NewHorizonsEnchantedCommand.cpp
 	battle/NewHorizonsShroud.cpp
 	battle/NewHorizonsShadowGift.cpp
 	battle/BattleLayout.cpp
@@ -516,6 +517,7 @@ set(lib_MAIN_HEADERS
 	battle/SpellResponseState.h
 	battle/TimeStopState.h
 	battle/NewHorizonsWarcasting.h
+	battle/OverwhelmingFormulaState.h
 	battle/BattleInfo.h
 	battle/BattleDeploymentState.h
 	battle/PhysicalAffliction.h
@@ -533,6 +535,7 @@ set(lib_MAIN_HEADERS
 	battle/NewHorizonsArchery.h
 	battle/NewHorizonsArmorer.h
 	battle/NewHorizonsCombatSkills.h
+	battle/NewHorizonsEnchantedCommand.h
 	battle/NewHorizonsShroud.h
 	battle/BattleLayout.h
 	battle/BattleSide.h

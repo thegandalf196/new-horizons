@@ -15,6 +15,7 @@
 #include "../bonuses/BonusParameters.h"
 #include "../spells/CSpell.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../spells/MagicalDamageReduction.h"
 #include "../spells/NewHorizonsSpellAvailability.h"
 #include "../networkPacks/PacksForClientBattle.h"
 
@@ -131,7 +132,7 @@ std::optional<Link> linkFor(const battle::Unit * secondary)
 			if(!validBattleSide(side))
 				continue;
 
-			return Link{static_cast<uint32_t>(primaryValue), side, marker->val};
+			return Link{static_cast<uint32_t>(primaryValue), side, marker->val, parameters["mdrPenetration"]};
 		}
 		catch(const std::exception &)
 		{
@@ -148,7 +149,8 @@ bool isEchoHit(const BattleStackAttacked & hit)
 }
 
 int64_t adjustedEchoDamage(const CBattleInfoCallback & battle, const BattleSide casterSide,
-	const battle::Unit * primary, const int64_t actualSecondaryDamage, const int32_t echoBasisPoints)
+	const battle::Unit * primary, const int64_t actualSecondaryDamage, const int32_t echoBasisPoints,
+	const JsonNode * capturedPenetration)
 {
 	if(!primary || !primary->alive())
 		return 0;
@@ -174,11 +176,14 @@ int64_t adjustedEchoDamage(const CBattleInfoCallback & battle, const BattleSide 
 	if(!caster)
 		return rawDamage;
 
+	const auto penetrations = capturedPenetration
+		&& battle.battleGetOwner(primary) != caster->getCasterOwner()
+		? spells::capturedMdrPenetrations(*capturedPenetration, primary->unitId()) : std::vector<int>{};
 	return definition->adjustRawDamage(caster, primary, rawDamage, 0,
 		battle.battleGetHoldTheLineMagicalReductionBasisPoints(primary), 100, true,
 		newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
 			&& battle.getBattle()->getMagicRules()["rulesetVersion"].Integer()
 				== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
-		true, battle.battleGetPerkMagicalReductionBasisPoints(primary));
+		true, battle.battleGetPerkMagicalReductionBasisPoints(primary), penetrations);
 }
 }

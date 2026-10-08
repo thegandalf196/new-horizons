@@ -17,6 +17,7 @@
 #include "../../lib/battle/NewHorizonsArmorer.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsDiscipline.h"
+#include "../../lib/battle/NewHorizonsEnchantedCommand.h"
 #include "../../lib/battle/HeroCommand.h"
 #include "../../lib/battle/NewHorizonsBloodrage.h"
 #include "../../lib/battle/NewHorizonsMagicalAbilityDamage.h"
@@ -62,7 +63,8 @@ bool isDivineMandateLightSpell(const CBattleInfoCallback & battle, SpellID spell
 
 bool projectedEffect(const Bonus * bonus)
 {
-	return bonus && (bonus->source == BonusSource::SPELL_EFFECT || bonus->source == BonusSource::HERO_COMMAND);
+	return bonus && (bonus->source == BonusSource::SPELL_EFFECT || bonus->source == BonusSource::HERO_COMMAND
+		|| newHorizonsEnchantedCommand::isMoraleBonus(bonus));
 }
 
 bool isInPhysicalAfflictionGroup(const Bonus * bonus,
@@ -528,6 +530,14 @@ void StackWithBonuses::onBattleFormChanged()
 
 void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 {
+	// The original bearer is live-backed. Snapshot this temporary perk effect
+	// before adding its local forecast, so later live acceptance/expiry cannot
+	// enter the branch a second time or change its independent activation life.
+	if(std::any_of(bonus.begin(), bonus.end(), [](const Bonus & entry)
+	{
+		return newHorizonsEnchantedCommand::isMoraleBonus(&entry);
+	}))
+		captureEffects();
 	const auto stampedBonuses = physicalAfflictions::stampApplicationOrder(*this, bonus);
 	for(const auto & stamped : stampedBonuses)
 		if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
@@ -1646,6 +1656,12 @@ bool HypotheticBattle::projectAcceptedHeroOrder(BattleSide side, HeroCommand com
 	}
 	else if(projectingCommand && action.receipt.source == HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND)
 		return false;
+	// Capture empowerment before accepted-action completion replaces readiness.
+	const auto enchantedOrder = projectingCommand
+		? battlePrepareHeroOrderState(side, command, commandTargets) : std::optional<HeroOrderState>();
+	const auto enchantedRecipients = enchantedOrder
+		&& newHorizonsEnchantedCommand::eligible(getMagicRules(), getSideHero(side), *enchantedOrder)
+		? newHorizonsEnchantedCommand::recipientIds(*this, side, *enchantedOrder) : std::vector<uint32_t>();
 	if(action.typedLedger)
 	{
 		auto nextLedger = prepared.allowancesAfter;
@@ -1699,6 +1715,12 @@ bool HypotheticBattle::projectAcceptedHeroOrder(BattleSide side, HeroCommand com
 				});
 			}
 		}
+	}
+	for(const auto id : enchantedRecipients)
+	{
+		auto unit = getForUpdate(id);
+		if(!unit->hasBonus(newHorizonsEnchantedCommand::moraleBonusSelector()))
+			unit->addUnitBonus(std::vector<Bonus>{newHorizonsEnchantedCommand::moraleBonus()});
 	}
 	finishProjectedHeroAction(side, prepared);
 	return true;

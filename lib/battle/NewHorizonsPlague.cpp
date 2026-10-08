@@ -16,6 +16,7 @@
 #include "../spells/CSpell.h"
 #include "../spells/ISpellMechanics.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../spells/MagicalDamageReduction.h"
 
 namespace
 {
@@ -108,7 +109,7 @@ int64_t rawTickDamage(const int32_t rawSpellPower, const int32_t coefficientBasi
 }
 
 int64_t adjustedTickDamage(const CBattleInfoCallback & battle, BattleSide casterSide,
-	const battle::Unit * target, const int64_t rawDamage)
+	const battle::Unit * target, const int64_t rawDamage, const JsonNode * capturedPenetration)
 {
 	if(!target || rawDamage <= 0)
 		return 0;
@@ -129,11 +130,14 @@ int64_t adjustedTickDamage(const CBattleInfoCallback & battle, BattleSide caster
 	if(!caster)
 		return rawDamage;
 
+	const auto penetrations = capturedPenetration
+		&& battle.battleGetOwner(target) != caster->getCasterOwner()
+		? spells::capturedMdrPenetrations(*capturedPenetration, target->unitId()) : std::vector<int>{};
 	return spell->adjustRawDamage(caster, target, rawDamage, 0,
 		battle.battleGetHoldTheLineMagicalReductionBasisPoints(target), 100, true,
 		newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
 			&& battle.getBattle()->getMagicRules()["rulesetVersion"].Integer()
 				== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
-		true, battle.battleGetPerkMagicalReductionBasisPoints(target));
+		true, battle.battleGetPerkMagicalReductionBasisPoints(target), penetrations);
 }
 }

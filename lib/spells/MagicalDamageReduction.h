@@ -12,8 +12,13 @@
 #include <cstdint>
 #include <vector>
 
+class JsonNode;
+
 namespace spells
 {
+/// Validates optional saved cast provenance. Missing or malformed contributions
+/// yield no penetration; Focused Pairing applies only to its captured stack ID.
+DLL_LINKAGE std::vector<int> capturedMdrPenetrations(const JsonNode & captured, uint32_t targetUnitId);
 struct DLL_LINKAGE MagicalDamageReductionResult
 {
 	int64_t damageWithoutPenetration = 0;
@@ -34,4 +39,13 @@ DLL_LINKAGE MagicalDamageReductionResult calculateMagicalDamageReduction(
 /// percentage points, such as Iron Discipline's captured magical reduction.
 DLL_LINKAGE MagicalDamageReductionResult calculateMagicalDamageReductionBasisPoints(
 	int64_t rawDamage, const std::vector<int> & independentReductionsBasisPoints, int penetrationPercent);
+
+/// Independent penetration sources multiply their remaining fractions exactly;
+/// damage is floored only after both reduction and penetration products.
+DLL_LINKAGE MagicalDamageReductionResult calculateMagicalDamageReduction(
+	int64_t rawDamage, const std::vector<int> & independentReductionsPercent,
+	const std::vector<int> & independentPenetrationsPercent);
+DLL_LINKAGE MagicalDamageReductionResult calculateMagicalDamageReductionBasisPoints(
+	int64_t rawDamage, const std::vector<int> & independentReductionsBasisPoints,
+	const std::vector<int> & independentPenetrationsPercent);
 }

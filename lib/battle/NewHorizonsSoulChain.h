@@ -11,6 +11,7 @@
 
 #include "BattleSide.h"
 #include "Destination.h"
+#include "../json/JsonNode.h"
 
 class CBattleInfoCallback;
 class JsonNode;
@@ -34,6 +35,7 @@ struct DLL_LINKAGE Link
 	uint32_t primaryUnitId = 0;
 	BattleSide casterSide = BattleSide::NONE;
 	int32_t echoBasisPoints = 0;
+	JsonNode mdrPenetration;
 };
 
 /// True only when the saved battle ruleset admits the Soul Chain spell.
@@ -70,5 +72,6 @@ DLL_LINKAGE int64_t adjustedEchoDamage(
 	BattleSide casterSide,
 	const battle::Unit * primary,
 	int64_t actualSecondaryDamage,
-	int32_t echoBasisPoints);
+	int32_t echoBasisPoints,
+	const JsonNode * capturedPenetration = nullptr);
 }

@@ -13,6 +13,7 @@
 #include "BattleSide.h"
 
 class CBattleInfoCallback;
+class JsonNode;
 
 namespace battle
 {
@@ -60,5 +61,6 @@ DLL_LINKAGE int64_t adjustedTickDamage(
 	const CBattleInfoCallback & battle,
 	BattleSide casterSide,
 	const battle::Unit * target,
-	int64_t rawDamage);
+	int64_t rawDamage,
+	const JsonNode * capturedPenetration = nullptr);
 }

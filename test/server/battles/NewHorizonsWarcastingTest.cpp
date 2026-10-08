@@ -13,6 +13,7 @@
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/battle/HeroActionAllowanceState.h"
 #include "../../../lib/battle/NewHorizonsWarcasting.h"
+#include "../../../lib/battle/NewHorizonsEnchantedCommand.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/battle/CObstacleInstance.h"
@@ -42,6 +43,7 @@ constexpr auto battleMeditationPerk = "new-horizons:warcasting.battleMeditation"
 constexpr auto spellwardPerk = "new-horizons:warcasting.spellward";
 constexpr auto masterSynthesisPerk = "new-horizons:warcasting.masterSynthesis";
 constexpr auto perfectRhythmPerk = "new-horizons:warcasting.perfectRhythm";
+constexpr auto enchantedCommandPerk = "new-horizons:warcasting.enchantedCommand";
 constexpr auto sorceryBasicPerk = "new-horizons:sorceryMagic.overcharger";
 
 std::shared_ptr<Bonus> testTimeStopMarker(BattleSide side)
@@ -210,6 +212,17 @@ protected:
 		acceptWarcastingPerkThroughOffer(hero, spellwardPerk, static_cast<int>(MasteryLevel::BASIC));
 		gameHandler->levelUpHero(hero, skill, false);
 		acceptWarcastingPerkThroughOffer(hero, tacticalWeavingPerk, static_cast<int>(MasteryLevel::ADVANCED));
+	}
+
+	void acquireEnchantedCommandThroughAdvancedOffer(CGHeroInstance * hero)
+	{
+		const int decodedWarcasting = SecondarySkill::decode(warcastingSkill);
+		ASSERT_GE(decodedWarcasting, 0);
+		const auto skill = SecondarySkill(decodedWarcasting);
+		ASSERT_EQ(hero->getPerkSkillRank(warcastingSkill), static_cast<int>(MasteryLevel::BASIC));
+		acceptWarcastingPerkThroughOffer(hero, spellwardPerk, static_cast<int>(MasteryLevel::BASIC));
+		gameHandler->levelUpHero(hero, skill, false);
+		acceptWarcastingPerkThroughOffer(hero, enchantedCommandPerk, static_cast<int>(MasteryLevel::ADVANCED));
 	}
 
 	void acquireBasicSorceryPrerequisite(CGHeroInstance * hero)
@@ -431,6 +444,187 @@ protected:
 	std::string plannedWarcastingPerkBeforeInit;
 	bool activateBattleMeditationBeforeInit = false;
 };
+}
+
+TEST_F(NewHorizonsWarcastingTest, EnchantedCommandRequiresLegalAdvancedAcquisition)
+{
+	prepareWarcasting(1);
+	const auto & definition = savedPerkDefinition(enchantedCommandPerk);
+	EXPECT_EQ(definition["requires"].String(), "advanced");
+	EXPECT_EQ(definition["effect"]["status"].String(), "active");
+	EXPECT_FALSE(offerContains(attackerSideHero, enchantedCommandPerk));
+	EXPECT_THROW(attackerSideHero->applyPerkSelection({warcastingSkill, enchantedCommandPerk}), std::exception);
+	acceptWarcastingPerkThroughOffer(attackerSideHero, spellwardPerk, static_cast<int>(MasteryLevel::BASIC));
+	gameHandler->levelUpHero(attackerSideHero, SecondarySkill(SecondarySkill::decode(warcastingSkill)), false);
+	acceptWarcastingPerkThroughOffer(attackerSideHero, enchantedCommandPerk, static_cast<int>(MasteryLevel::ADVANCED));
+}
+
+TEST_F(NewHorizonsWarcastingTest, EnchantedCommandAcceptedEmpoweredOrderAndDetachedParity)
+{
+	prepareWarcasting(1);
+	acquireEnchantedCommandThroughAdvancedOffer(attackerSideHero);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	advanceRound();
+	const auto side = BattleSide::ATTACKER;
+	const auto baseMorale = battle()->battleGetMorale(attacker);
+	const auto selector = newHorizonsEnchantedCommand::moraleBonusSelector();
+	WarcastingEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	HypotheticBattle projection(&environment, callback);
+	const auto allowance = projection.prepareHeroOrderAllowance(side);
+	ASSERT_TRUE(allowance);
+	ASSERT_TRUE(projection.beginProjectedHeroAction(side, *allowance));
+	ASSERT_TRUE(projection.projectAcceptedHeroOrder(side, HeroCommand::CHARGE, {}, *allowance));
+	const auto * projected = projection.battleGetUnitByID(attacker->unitId());
+	ASSERT_TRUE(projected->hasBonus(selector));
+	EXPECT_EQ(projection.battleGetMorale(projected), baseMorale + 1);
+	const auto projectedMoraleBeforeLiveOrder = projection.battleGetMorale(projected);
+	EXPECT_FALSE(attacker->hasBonus(selector));
+	EXPECT_FALSE(projection.projectAcceptedHeroOrder(side, HeroCommand::CHARGE, {}, *allowance));
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	EXPECT_EQ(battle()->getHeroOrderState(side)->warcastingBonusPercent, 20);
+	ASSERT_TRUE(attacker->hasBonus(selector));
+	EXPECT_FALSE(defender->hasBonus(selector));
+	EXPECT_EQ(projection.battleGetMorale(projected), projectedMoraleBeforeLiveOrder)
+		<< "Live acceptance must not reimport the same temporary perk grant into the detached branch";
+	EXPECT_EQ(battle()->battleGetMorale(attacker), projection.battleGetMorale(projected));
+	advanceRound();
+	EXPECT_TRUE(attacker->hasBonus(selector));
+	projection.nextTurn(attacker->unitId(), BattleUnitTurnReason::ACTION_REJECTED);
+	EXPECT_TRUE(projected->hasBonus(selector));
+	activate(attacker);
+	projection.nextTurn(attacker->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+	EXPECT_FALSE(attacker->hasBonus(selector));
+	EXPECT_FALSE(projected->hasBonus(selector));
+}
+
+TEST_F(NewHorizonsWarcastingTest, EnchantedCommandRejectsUnempoweredOrders)
+{
+	prepareWarcasting(1);
+	acquireEnchantedCommandThroughAdvancedOffer(attackerSideHero);
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	EXPECT_FALSE(attacker->hasBonus(newHorizonsEnchantedCommand::moraleBonusSelector()));
+	EXPECT_FALSE(issue(static_cast<HeroCommand>(127)));
+	EXPECT_FALSE(attacker->hasBonus(newHorizonsEnchantedCommand::moraleBonusSelector()));
+}
+
+TEST_F(NewHorizonsWarcastingTest, EnchantedCommandSavedPlannedRulesCannotActivate)
+{
+	markPerkPlannedBeforeInitialization(enchantedCommandPerk);
+	prepareWarcasting(2);
+	EXPECT_EQ(savedPerkDefinition(enchantedCommandPerk)["effect"]["status"].String(), "planned");
+	EXPECT_THROW(attackerSideHero->applyPerkSelection({warcastingSkill, enchantedCommandPerk}), std::exception);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	advanceRound();
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	EXPECT_FALSE(attacker->hasBonus(newHorizonsEnchantedCommand::moraleBonusSelector()));
+}
+
+TEST_F(NewHorizonsWarcastingTest, EnchantedCommandProtectHasOnlyPairInLiveAndDetachedState)
+{
+	prepareWarcasting(1);
+	acquireEnchantedCommandThroughAdvancedOffer(attackerSideHero);
+	auto * ward = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"),
+		BattleHex(leftHex - 1), 10);
+	auto * bystander = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"),
+		BattleHex(leftHex + 18), 10);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	advanceRound();
+	const auto side = BattleSide::ATTACKER;
+	const auto selector = newHorizonsEnchantedCommand::moraleBonusSelector();
+	WarcastingEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	HypotheticBattle projection(&environment, callback);
+	const auto allowance = projection.prepareHeroOrderAllowance(side);
+	ASSERT_TRUE(allowance);
+	ASSERT_TRUE(projection.beginProjectedHeroAction(side, *allowance));
+	ASSERT_TRUE(projection.projectAcceptedHeroOrder(side, HeroCommand::PROTECT,
+		{attacker->unitId(), ward->unitId()}, *allowance));
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makePairedHeroCommand(side, HeroCommand::PROTECT, attacker->unitId(), ward->unitId())));
+	for(const auto * unit : {attacker, ward, bystander, defender})
+	{
+		const bool expected = unit == attacker || unit == ward;
+		EXPECT_EQ(unit->hasBonus(selector), expected);
+		EXPECT_EQ(projection.battleGetUnitByID(unit->unitId())->hasBonus(selector), expected);
+	}
+}
+
+TEST_F(NewHorizonsWarcastingTest, EnchantedCommandSecondWindSelectedGrantExpiresAtImmediateActivation)
+{
+	prepareWarcasting(1);
+	acquireEnchantedCommandThroughAdvancedOffer(attackerSideHero);
+	auto * target = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"),
+		BattleHex(leftHex + 18), 10);
+	target->defending = true;
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	advanceRound();
+	// Keep the selected stack eligible after the fixture's round transition.
+	target->defending = true;
+	const auto side = BattleSide::ATTACKER;
+	const auto selector = newHorizonsEnchantedCommand::moraleBonusSelector();
+	WarcastingEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	HypotheticBattle projection(&environment, callback);
+	const auto preparedOrder = projection.battlePrepareHeroOrderState(side, HeroCommand::SECOND_WIND,
+		{target->unitId()});
+	ASSERT_TRUE(preparedOrder);
+	const auto allowance = projection.prepareHeroOrderAllowance(side);
+	ASSERT_TRUE(allowance);
+	ASSERT_TRUE(projection.beginProjectedHeroAction(side, *allowance));
+	ASSERT_TRUE(projection.projectAcceptedHeroOrder(side, HeroCommand::SECOND_WIND,
+		{target->unitId()}, *allowance));
+	EXPECT_TRUE(projection.battleGetUnitByID(target->unitId())->hasBonus(selector));
+	EXPECT_FALSE(projection.battleGetUnitByID(attacker->unitId())->hasBonus(selector));
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeTargetedHeroCommand(side, HeroCommand::SECOND_WIND, target->unitId())));
+	EXPECT_EQ(battle()->getHeroOrderState(side, HeroCommand::SECOND_WIND)->warcastingBonusPercent, 20);
+	EXPECT_EQ(battle()->battleActiveUnit()->unitId(), target->unitId());
+	EXPECT_FALSE(target->hasBonus(selector));
+	EXPECT_FALSE(attacker->hasBonus(selector));
+	// projectAcceptedHeroOrder commits the allowance and grant, not the Order's
+	// activation snapshot. Mirror the server's setHeroOrderSecondWindActive
+	// transition before asking the shared callback whether HERO_COMMAND begins
+	// a genuine extra activation; ordinary command continuations must not expire it.
+	// This manually exercises the lifecycle boundary. The production canonical
+	// heuristic excludes Second Wind Morale value and does not simulate this phase.
+	auto activatingOrder = *preparedOrder;
+	activatingOrder.secondWindActive = true;
+	projection.setHeroOrderState(side, activatingOrder);
+	projection.nextTurn(target->unitId(), BattleUnitTurnReason::HERO_COMMAND);
+	EXPECT_FALSE(projection.battleGetUnitByID(target->unitId())->hasBonus(selector));
+}
+
+TEST_F(NewHorizonsWarcastingTest, EnchantedCommandFocusFireIncludesCombinedArmsMeleeRecipients)
+{
+	prepareWarcasting(1);
+	acquireEnchantedCommandThroughAdvancedOffer(attackerSideHero);
+	const auto commandSkill = SecondarySkill(SecondarySkill::decode("new-horizons:command"));
+	attackerSideHero->setSecSkillLevel(commandSkill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	acceptPerkThroughOffer(attackerSideHero, "new-horizons:command",
+		"new-horizons:command.aggressiveCommander", static_cast<int>(MasteryLevel::BASIC));
+	gameHandler->levelUpHero(attackerSideHero, commandSkill, false);
+	acceptPerkThroughOffer(attackerSideHero, "new-horizons:command",
+		"new-horizons:command.combinedArms", static_cast<int>(MasteryLevel::ADVANCED));
+	ASSERT_TRUE(heroCommands::hasCombinedArms(attackerSideHero));
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	advanceRound();
+	const auto side = BattleSide::ATTACKER;
+	WarcastingEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	HypotheticBattle projection(&environment, callback);
+	const auto allowance = projection.prepareHeroOrderAllowance(side);
+	ASSERT_TRUE(allowance);
+	ASSERT_TRUE(projection.beginProjectedHeroAction(side, *allowance));
+	ASSERT_TRUE(projection.projectAcceptedHeroOrder(side, HeroCommand::FOCUS_FIRE,
+		{defender->unitId()}, *allowance));
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeTargetedHeroCommand(side, HeroCommand::FOCUS_FIRE, defender->unitId())));
+	const auto selector = newHorizonsEnchantedCommand::moraleBonusSelector();
+	EXPECT_TRUE(attacker->hasBonus(selector));
+	EXPECT_FALSE(defender->hasBonus(selector));
+	EXPECT_TRUE(projection.battleGetUnitByID(attacker->unitId())->hasBonus(selector));
+	EXPECT_FALSE(projection.battleGetUnitByID(defender->unitId())->hasBonus(selector));
 }
 
 TEST_F(NewHorizonsWarcastingTest, CounterspelledSpellReadiesOrderAndOrderSnapshotsTheBonus)

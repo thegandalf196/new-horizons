@@ -17,6 +17,7 @@
 #include "../../lib/battle/NewHorizonsDiscipline.h"
 #include "../../lib/battle/NewHorizonsCreatureAbilitySuppression.h"
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
+#include "../../lib/battle/NewHorizonsEnchantedCommand.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
 #include "../../lib/battle/NewHorizonsShadowGift.h"
@@ -2797,14 +2798,29 @@ bool BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & ba
 bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & battle, const BattleAction & ba)
 {
 	// Canonical Orders are represented by an immutable StartAction snapshot and
-	// evaluated from that snapshot by the battle callback.  There is no broad
-	// SetStackEffect to emit here: doing so would turn conditional Orders into
-	// unconditional bonuses and would lose their one-shot trigger state.
+	// evaluated from that snapshot by the battle callback. Perk bonuses are
+	// emitted separately and do not replace the conditional Order state.
 	if(heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules()))
 	{
 		const auto state = battle.getBattle()->getHeroOrderState(ba.side, ba.command);
 		if(!state || state->command != ba.command)
 			return false;
+		const auto * orderHero = battle.battleGetFightingHero(ba.side);
+		if(newHorizonsEnchantedCommand::eligible(battle.getBattle()->getMagicRules(), orderHero, *state))
+		{
+			SetStackEffect update;
+			update.battleID = battle.getBattle()->getBattleID();
+			const auto selector = newHorizonsEnchantedCommand::moraleBonusSelector();
+			for(const auto id : newHorizonsEnchantedCommand::recipientIds(battle, ba.side, *state))
+			{
+				const auto * unit = battle.battleGetUnitByID(id);
+				if(unit->hasBonus(selector))
+					continue;
+				update.toAdd.emplace_back(id, std::vector<Bonus>{newHorizonsEnchantedCommand::moraleBonus()});
+			}
+			if(!update.toAdd.empty())
+				gameHandler->sendAndApply(update);
+		}
 		size_t holdFastRecipientCount = 0;
 		if(ba.command == HeroCommand::RIPOSTE)
 		{

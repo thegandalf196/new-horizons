@@ -510,7 +510,8 @@ int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Uni
 	int ignoreSpellDamageReductionPercent, int magicalDamageReductionBasisPoints,
 	int finalDamageMultiplierPercent, bool useIndependentMagicalDamageReduction,
 	bool useFractionalMagicalDamageReduction, bool applyCasterBonuses,
-	int perkMagicalDamageReductionBasisPoints) const
+	int perkMagicalDamageReductionBasisPoints,
+	const std::vector<int> & independentPenetrationsPercent) const
 {
 	auto ret = rawDamage;
 	ignoreSpellDamageReductionPercent = std::clamp(ignoreSpellDamageReductionPercent, 0, 100);
@@ -588,8 +589,11 @@ int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Uni
 				reductionSourcesBasisPoints.push_back(
 					std::clamp(perkMagicalDamageReductionBasisPoints, 0, 10000));
 
+			auto penetrations = independentPenetrationsPercent;
+			if(ignoreSpellDamageReductionPercent > 0)
+				penetrations.push_back(ignoreSpellDamageReductionPercent);
 			ret = spells::calculateMagicalDamageReductionBasisPoints(
-				ret, reductionSourcesBasisPoints, ignoreSpellDamageReductionPercent).damageWithPenetration;
+				ret, reductionSourcesBasisPoints, penetrations).damageWithPenetration;
 		}
 		else
 		{

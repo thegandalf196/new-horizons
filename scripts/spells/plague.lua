@@ -54,6 +54,7 @@ function Script:apply(mechanics, server, target)
 				sourceID = spellKey,
 				stacking = spellKey,
 				addInfo = {
+					mdrPenetration = mechanics:getCapturedMdrPenetration(),
 					casterSide = casterSide,
 					spreadAttempts = 0,
 					lastProcessedRound = mechanics:getBattleRound() - 1,

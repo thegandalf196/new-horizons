@@ -145,6 +145,8 @@ ACTIVE_PERKS = {
     "new-horizons:warcasting.battleMeditation",
     "new-horizons:warcasting.masterSynthesis",
     "new-horizons:warcasting.perfectRhythm",
+    "new-horizons:warcasting.enchantedCommand",
+    "new-horizons:warcasting.combatCasting",
     "new-horizons:archery.targetCaller",
     "new-horizons:archery.skirmisher",
     "new-horizons:archery.pointBlankShot",

@@ -1810,7 +1810,8 @@ void applyPlagueEndOfActivation(CGameHandler * gameHandler, const CBattleInfoCal
 		return; // Morale/Second Wind and other extra activations still tick once per round.
 
 	const auto rawDamage = std::max<int64_t>(0, marker->val);
-	const auto adjustedDamage = newHorizonsPlague::adjustedTickDamage(battle, casterSide, stack, rawDamage);
+	const auto adjustedDamage = newHorizonsPlague::adjustedTickDamage(
+		battle, casterSide, stack, rawDamage, &parameters["mdrPenetration"]);
 	int64_t actualDamage = 0;
 	if(stack->alive() && adjustedDamage > 0)
 	{

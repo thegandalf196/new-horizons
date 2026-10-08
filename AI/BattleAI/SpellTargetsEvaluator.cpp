@@ -708,9 +708,10 @@ float expectedSoulChainEchoValue(const Mechanics * spellMechanics,
 		return 0.0f;
 
 	auto projectedPrimary = primary->acquireState();
+	const auto capturedPenetration = spellMechanics->getCapturedMdrPenetration();
 	const auto adjustedEcho = newHorizonsSoulChain::adjustedEchoDamage(
 		*battle, spellMechanics->getCasterSide(), projectedPrimary.get(),
-		expectedSecondaryDamage, echoBasisPoints);
+		expectedSecondaryDamage, echoBasisPoints, &capturedPenetration);
 	const auto primaryApplicationChance = spellApplicationChance(spellMechanics, primary);
 	const auto expectedEcho = static_cast<int64_t>(std::llround(
 		static_cast<double>(adjustedEcho) * primaryApplicationChance));
@@ -2263,8 +2264,9 @@ float SpellTargetEvaluator::plagueDelayedDamageValue(const Mechanics * spellMech
 		float value = 0.0f;
 		for(int tick = 0; tick < 3 && projectedState->alive(); ++tick)
 		{
+			const auto capturedPenetration = spellMechanics->getCapturedMdrPenetration();
 			const auto adjustedDamage = newHorizonsPlague::adjustedTickDamage(
-				*battleCallback, casterSide, unit, rawDamage);
+				*battleCallback, casterSide, unit, rawDamage, &capturedPenetration);
 			const auto actualDamage = std::min<int64_t>(
 				std::max<int64_t>(0, adjustedDamage),
 				std::max<int64_t>(0, projectedState->getAvailableHealth()));
@@ -2357,8 +2359,9 @@ float SpellTargetEvaluator::soulChainDelayedDamageValue(const Mechanics * spellM
 		if(expectedSecondaryDamage <= 0)
 			continue;
 
+		const auto capturedPenetration = spellMechanics->getCapturedMdrPenetration();
 		const auto adjustedEcho = newHorizonsSoulChain::adjustedEchoDamage(
-			*battle, casterSide, projectedPrimary.get(), expectedSecondaryDamage, echoBasisPoints);
+			*battle, casterSide, projectedPrimary.get(), expectedSecondaryDamage, echoBasisPoints, &capturedPenetration);
 		const auto expectedEcho = static_cast<int64_t>(std::llround(
 			static_cast<double>(adjustedEcho) * primaryApplicationChance));
 		const auto actualEcho = std::min<int64_t>(

@@ -8,6 +8,7 @@
 #include "StdInc.h"
 
 #include "../../lib/spells/MagicalDamageReduction.h"
+#include "../../lib/json/JsonNode.h"
 
 #include <limits>
 #include <stdexcept>
@@ -15,6 +16,28 @@
 using spells::MagicalDamageReductionResult;
 using spells::calculateMagicalDamageReduction;
 using spells::calculateMagicalDamageReductionBasisPoints;
+
+TEST(MagicalDamageReductionTest, CapturedContributorsAreOptionalValidatedAndTargetQualified)
+{
+	EXPECT_TRUE(spells::capturedMdrPenetrations(JsonNode(), 7).empty());
+	JsonNode payload;
+	payload["penetrations"].Vector() = {JsonNode(20), JsonNode(15)};
+	EXPECT_EQ(spells::capturedMdrPenetrations(payload, 7), (std::vector<int>{20, 15}));
+	payload["focusedTargetUnitId"].Integer() = 7;
+	payload["focusedPenetrationPercent"].Integer() = 20;
+	EXPECT_EQ(spells::capturedMdrPenetrations(payload, 7), (std::vector<int>{20, 15, 20}));
+	EXPECT_EQ(spells::capturedMdrPenetrations(payload, 8), (std::vector<int>{20, 15}));
+	payload["penetrations"].Vector().emplace_back(101);
+	EXPECT_TRUE(spells::capturedMdrPenetrations(payload, 7).empty());
+	payload["penetrations"].Vector().back() = JsonNode(15.5);
+	EXPECT_TRUE(spells::capturedMdrPenetrations(payload, 7).empty());
+	payload["penetrations"].Vector().pop_back();
+	payload["penetrations"].Vector().back() = JsonNode(15.0);
+	payload["focusedTargetUnitId"] = JsonNode(7.0);
+	EXPECT_EQ(spells::capturedMdrPenetrations(payload, 7), (std::vector<int>{20, 15, 20}));
+	payload["focusedTargetUnitId"].Integer() = -1;
+	EXPECT_TRUE(spells::capturedMdrPenetrations(payload, 7).empty());
+}
 
 TEST(MagicalDamageReductionTest, IndependentSourcesMultiply)
 {
@@ -28,6 +51,22 @@ TEST(MagicalDamageReductionTest, PenetrationScalesTheAggregateMdrRelatively)
 	const auto result = calculateMagicalDamageReduction(100, {50, 20}, 15);
 	EXPECT_EQ(result.damageWithoutPenetration, 40); // Aggregate MDR is 60%.
 	EXPECT_EQ(result.damageWithPenetration, 49); // 60% * (1 - 15%) = 51% MDR.
+}
+
+TEST(MagicalDamageReductionTest, IndependentPenetrationUsesExactRemainingProductAndFinalFloor)
+{
+	const std::vector<int> penetrations{20, 15};
+	const auto result = calculateMagicalDamageReduction(10000, {50}, penetrations);
+	EXPECT_EQ(result.damageWithoutPenetration, 5000);
+	EXPECT_EQ(result.damageWithPenetration, 6600); // 32% penetration, rather than 35% or 20%.
+	EXPECT_EQ(calculateMagicalDamageReduction(10000, {50}, std::vector<int>{15, 20}), result);
+	EXPECT_EQ(calculateMagicalDamageReduction(10000, {50}, std::vector<int>{20, 20, 15}).damageWithPenetration, 7280);
+	EXPECT_EQ(calculateMagicalDamageReduction(10000, {50}, std::vector<int>{20, 20, 20, 15}).damageWithPenetration, 7824);
+	EXPECT_EQ(calculateMagicalDamageReduction(7, {50}, penetrations).damageWithPenetration, 4);
+	EXPECT_EQ(calculateMagicalDamageReductionBasisPoints(10000, {5050}, penetrations).damageWithPenetration, 6566);
+	EXPECT_EQ(calculateMagicalDamageReduction(10000, {100}, penetrations).damageWithPenetration, 3540);
+	EXPECT_EQ(calculateMagicalDamageReduction(100, {50}, std::vector<int>{20, 100, 15}).damageWithPenetration, 100);
+	EXPECT_THROW(calculateMagicalDamageReduction(0, {}, std::vector<int>{100, -1}), std::invalid_argument);
 }
 
 TEST(MagicalDamageReductionTest, AggregateMdrIsCappedBeforePenetration)

@@ -8,6 +8,7 @@
 
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/battle/NewHorizonsPlague.h"
+#include "../../../lib/spells/MagicalDamageReduction.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/modding/CModHandler.h"
@@ -46,6 +47,8 @@ protected:
 		HeroCommandFixture::mapLoaded(map);
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		map->overrideGameSetting(EGameSettings::COMBAT_GOOD_MORALE_CHANCE, certainMorale());
 		map->overrideGameSetting(EGameSettings::COMBAT_MORALE_DICE_SIZE, JsonNode(100));
 	}
@@ -211,6 +214,45 @@ protected:
 	CStack * friendlyVictim = nullptr;
 	CStack * enemyVictim = nullptr;
 };
+}
+
+TEST_F(NewHorizonsPlagueTest, CombatCastingIsSavedOnMarkerAndRetainedAfterReadinessConsumption)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto warcasting = SecondarySkill(SecondarySkill::decode("new-horizons:warcasting"));
+	ASSERT_TRUE(warcasting.hasValue());
+	attackerSideHero->setSecSkillLevel(warcasting, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:warcasting", "new-horizons:warcasting.martialChanneling"});
+	attackerSideHero->applyPerkSelection({"new-horizons:warcasting", "new-horizons:warcasting.combatCasting"});
+	afflicted->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::CREATURE_ABILITY, 50,
+		BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+	battle()->getSide(BattleSide::ATTACKER).warcastingState.recordAcceptedAction(
+		AlternatingHeroActionState::Action::ORDER, battle()->getRound(), 20);
+	ASSERT_TRUE(castOn(attackerSideHero, plagueSpell(), afflicted));
+	const auto marker = plagueStatus(afflicted);
+	ASSERT_NE(marker, nullptr);
+	ASSERT_NE(marker->parameters, nullptr);
+	const auto parameters = marker->parameters->toCustom<JsonNode>();
+	const auto & captured = parameters["mdrPenetration"];
+	EXPECT_EQ(spells::capturedMdrPenetrations(captured, afflicted->unitId()), (std::vector<int>{15}));
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).warcastingState.bonusFor(
+		AlternatingHeroActionState::Action::SPELL, battle()->getRound()), 0);
+	const auto expected = spells::calculateMagicalDamageReduction(marker->val, {50}, std::vector<int>{15}).damageWithPenetration;
+	EXPECT_EQ(newHorizonsPlague::adjustedTickDamage(*battle(), BattleSide::ATTACKER,
+		afflicted, marker->val, &captured), expected);
+	const auto firstInjury = server.injuries.size();
+	ASSERT_TRUE(finishTargetTurn(afflicted));
+	EXPECT_EQ(damageTo(afflicted->unitId(), firstInjury), expected);
+	CMemorySerializer wire;
+	wire.oser.version = ESerializationVersion::CURRENT;
+	wire.iser.version = ESerializationVersion::CURRENT;
+	Bonus saved(*marker);
+	wire.oser & saved;
+	Bonus restored;
+	wire.iser & restored;
+	ASSERT_NE(restored.parameters, nullptr);
+	EXPECT_EQ(restored.parameters->toCustom<JsonNode>()["mdrPenetration"], captured);
 }
 
 TEST_F(NewHorizonsPlagueTest, CanonicalShadowRosterAndRawDamageAreRegistered)

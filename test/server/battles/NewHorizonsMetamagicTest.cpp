@@ -1763,6 +1763,30 @@ TEST_F(NewHorizonsMetamagicTest, FocusedPairingIgnoresTwentyPercentOfMagicalRedu
 	EXPECT_EQ(healthBefore - defender->getAvailableHealth(), raw * 60 / 100);
 }
 
+TEST_F(NewHorizonsMetamagicTest, FocusedPairingCombinesIndependentlyWithSpellPenetration)
+{
+	prepare(1, {newHorizonsMagic::METAMAGIC_FOCUSED_PAIRING.data()});
+	const auto spellcraft = SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft"));
+	ASSERT_TRUE(spellcraft.hasValue());
+	attackerSideHero->setSecSkillLevel(spellcraft, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({
+		"new-horizons:spellcraft", "new-horizons:spellcraft.spellPenetration"});
+	ASSERT_TRUE(cast(SpellID::SLOW, defender));
+	defender->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::OTHER, 50, BonusSourceID(),
+		BonusSubtypeID(SpellSchool::ANY)));
+	const SpellID magicArrow(SpellID::MAGIC_ARROW);
+	spells::BattleCast event(battle(), attackerSideHero, spells::Mode::HERO, magicArrow.toSpell());
+	event.setMetamagicFollowup(true);
+	event.setMetamagicTargetUnitId(defender->unitId());
+	const auto mechanics = magicArrow.toSpell()->battleMechanics(&event);
+	const auto expected = mechanics->getEffectValue() * 68 / 100;
+	EXPECT_EQ(mechanics->adjustEffectValue(defender), expected);
+	const auto before = defender->getAvailableHealth();
+	ASSERT_TRUE(cast(magicArrow, defender, true));
+	EXPECT_EQ(before - defender->getAvailableHealth(), expected);
+}
+
 TEST_F(NewHorizonsMetamagicTest, SpellActionDoesNotBlockControlledHypnotizedStack)
 {
 	prepare(1);

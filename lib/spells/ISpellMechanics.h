@@ -306,6 +306,8 @@ public:
 	virtual IBattleCast::Value getRangeLevel() const = 0;
 
 	virtual IBattleCast::Value getEffectPower() const = 0;
+	/// Serializable cast-local MDR contributors for delayed spell markers.
+	virtual JsonNode getCapturedMdrPenetration() const;
 	virtual int32_t getEffectPowerDivisor() const { return 1; }
 	/// Effective saved-rules school-rank coefficient for this spell and caster.
 	int32_t getSchoolRankPowerCoefficientPercent() const;
@@ -490,6 +492,7 @@ public:
 	int64_t getStormOfDaggersTotalDamage(int32_t selectedTargetCount) const override;
 	bool isMetamagicFollowup() const override;
 	bool isMetamagicGrand() const;
+	JsonNode getCapturedMdrPenetration() const override;
 	uint32_t getMetamagicTargetUnitId() const;
 	int32_t getMetamagicManaRefund() const;
 	bool usesNewHorizonsMagic() const override;
@@ -577,6 +580,7 @@ private:
 	uint32_t metamagicTargetUnitId = std::numeric_limits<uint32_t>::max();
 	uint32_t metamagicFirstTargetUnitId = std::numeric_limits<uint32_t>::max();
 	bool metamagicFocusedPairingEligible = false;
+	bool combatCastingEligible = false;
 	int32_t metamagicManaRefund = 0;
 
 	bool forceMassive = false;

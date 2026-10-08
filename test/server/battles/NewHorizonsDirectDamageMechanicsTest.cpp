@@ -13,6 +13,8 @@
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/battle/CObstacleInstance.h"
+#include "../../../lib/battle/NewHorizonsPlague.h"
+#include "../../../lib/battle/NewHorizonsSoulChain.h"
 #include "../../../lib/battle/BattleHexArray.h"
 #include "../../../lib/battle/CUnitState.h"
 #include "../../../lib/battle/Destination.h"
@@ -506,6 +508,22 @@ protected:
 			"new-horizons:spellcraft", "new-horizons:spellcraft.spellPenetration"});
 		ASSERT_TRUE(attackerSideHero->hasActivePerk(
 			"new-horizons:spellcraft", "new-horizons:spellcraft.spellPenetration"));
+	}
+
+	void selectCombatCasting()
+	{
+		const auto warcasting = SecondarySkill(SecondarySkill::decode("new-horizons:warcasting"));
+		ASSERT_TRUE(warcasting.hasValue());
+		attackerSideHero->setSecSkillLevel(warcasting, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		EXPECT_THROW(attackerSideHero->applyPerkSelection({
+			"new-horizons:warcasting", "new-horizons:warcasting.combatCasting"}), std::runtime_error);
+		attackerSideHero->applyPerkSelection({
+			"new-horizons:warcasting", "new-horizons:warcasting.martialChanneling"});
+		attackerSideHero->setSecSkillLevel(warcasting, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({
+			"new-horizons:warcasting", "new-horizons:warcasting.combatCasting"});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(
+			"new-horizons:warcasting", "new-horizons:warcasting.combatCasting"));
 	}
 
 	void selectEmpowerSpell()
@@ -1787,6 +1805,11 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, AnnihilatorIgnoresTwentyPercentMagi
 	forceRealHeroScale = true;
 	usePerks = true;
 	selectedSpellKey = "new-horizons:disintegrate";
+	// Isolate mitigation with the same 240 raw damage as the old v2 fixture,
+	// but retain the current, coherent v3 schema and its Morale payload.
+	authoredRules = savedV3Formula();
+	authoredRules["spells"][selectedSpellKey]["directDamage"]["base"].Integer() = 240;
+	authoredRules["spells"][selectedSpellKey]["directDamage"]["powerCoefficient"].Integer() = 0;
 	prepare();
 
 	const auto havoc = SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic"));
@@ -1819,6 +1842,13 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, AnnihilatorIgnoresTwentyPercentMagi
 	const auto actual = apply(caster);
 	EXPECT_EQ(predicted, actual);
 	EXPECT_EQ(actual, 144);
+	selectSpellPenetration();
+	spells::BattleCast combined(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	combined.setEffectValue(10000);
+	const auto combinedMechanics = spell->battleMechanics(&combined);
+	ASSERT_EQ(combinedMechanics->getEffectValue(), 10000);
+	EXPECT_EQ(combinedMechanics->adjustEffectValue(target), 6800)
+		<< "Annihilator and Spell Penetration combine to 36%, rather than strongest-only 20%";
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, SpellPenetrationIgnoresTwentyPercentOfHostileTargetReductionAndMatchesPrediction)
@@ -1876,6 +1906,97 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, SpellPenetrationIgnoresTwentyPercen
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(targetHealthBefore - target->getAvailableHealth(), 40);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - spellCostBefore);
+}
+
+TEST_F(NewHorizonsDirectDamageMechanicsTest, CombatCastingCapturesEmpowermentAndCombinesWithSpellPenetration)
+{
+	forceRealHeroScale = true;
+	usePerks = true;
+	authoredRules = savedV3Formula(10000, 0);
+	prepare();
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
+	const auto reduction = std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::CREATURE_ABILITY, 50,
+		BonusSourceID(), BonusSubtypeID(SpellSchool::ANY));
+	target->addNewBonus(reduction);
+	auto * friendly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"),
+		BattleHex(leftHex - 1), 1000);
+	ASSERT_NE(friendly, nullptr);
+	friendly->addNewBonus(std::make_shared<Bonus>(*reduction));
+	selectCombatCasting();
+	spells::BattleCast plain(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	EXPECT_EQ(spell->battleMechanics(&plain)->adjustEffectValue(target), 5000);
+	auto & readiness = battle()->getSide(BattleSide::ATTACKER).warcastingState;
+	readiness.recordAcceptedAction(AlternatingHeroActionState::Action::ORDER, battle()->getRound(), 20);
+	spells::BattleCast empowered(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto captured = spell->battleMechanics(&empowered);
+	ASSERT_EQ(captured->getWarcastingBonusPercent(), 20);
+	EXPECT_EQ(captured->getEffectValue(), 10000);
+	EXPECT_EQ(captured->adjustEffectValue(target), 5750);
+	EXPECT_EQ(captured->adjustEffectValue(friendly), 5000);
+	readiness = AlternatingHeroActionState{};
+	EXPECT_EQ(captured->adjustEffectValue(target), 5750)
+		<< "The accepted spell must use captured empowerment after readiness is consumed";
+	spells::BattleCast afterConsumption(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	EXPECT_EQ(spell->battleMechanics(&afterConsumption)->adjustEffectValue(target), 5000);
+	selectSpellPenetration();
+	EXPECT_EQ(captured->adjustEffectValue(target), 6600);
+	EXPECT_EQ(captured->adjustEffectValue(friendly), 5000);
+
+	readiness.recordAcceptedAction(AlternatingHeroActionState::Action::ORDER, battle()->getRound(), 20);
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	DamageEnvironment environment(gameState(), nullptr);
+	HypotheticBattle predicted(&environment, callback);
+	const auto * projectedTarget = predicted.battleGetUnitByID(target->unitId());
+	ASSERT_NE(projectedTarget, nullptr);
+	spells::BattleCast prediction(&predicted, attackerSideHero, spells::Mode::HERO, spell);
+	const auto predictedMechanics = spell->battleMechanics(&prediction);
+	EXPECT_EQ(predictedMechanics->getWarcastingBonusPercent(), 20);
+	EXPECT_EQ(predictedMechanics->adjustEffectValue(projectedTarget), 6600);
+	const auto delayedCapture = captured->getCapturedMdrPenetration();
+	EXPECT_EQ(newHorizonsPlague::adjustedTickDamage(*battle(), BattleSide::ATTACKER,
+		target, 10000), 5000);
+	EXPECT_EQ(newHorizonsSoulChain::adjustedEchoDamage(*battle(), BattleSide::ATTACKER,
+		target, 40000, 2500), 5000);
+	EXPECT_EQ(newHorizonsPlague::adjustedTickDamage(*battle(), BattleSide::ATTACKER,
+		target, 10000, &delayedCapture), 6600);
+	EXPECT_EQ(newHorizonsPlague::adjustedTickDamage(predicted, BattleSide::ATTACKER,
+		projectedTarget, 10000, &delayedCapture), 6600);
+	EXPECT_EQ(newHorizonsSoulChain::adjustedEchoDamage(predicted, BattleSide::ATTACKER,
+		projectedTarget, 40000, 2500, &delayedCapture), 6600);
+	EXPECT_EQ(newHorizonsPlague::adjustedTickDamage(*battle(), BattleSide::ATTACKER,
+		friendly, 10000, &delayedCapture), 5000);
+	EXPECT_EQ(newHorizonsSoulChain::adjustedEchoDamage(*battle(), BattleSide::ATTACKER,
+		friendly, 40000, 2500, &delayedCapture), 5000);
+	const auto hypnosis = std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID());
+	target->addNewBonus(hypnosis);
+	friendly->addNewBonus(std::make_shared<Bonus>(*hypnosis));
+	ASSERT_EQ(battle()->battleGetOwner(target), attackerSideHero->getOwner());
+	ASSERT_EQ(battle()->battleGetOwner(friendly), defenderSideHero->getOwner());
+	EXPECT_EQ(captured->adjustEffectValue(target), 5000);
+	EXPECT_EQ(captured->adjustEffectValue(friendly), 6600);
+	EXPECT_EQ(captured->adjustRecipientDamage(target, 10000), 5000);
+	EXPECT_EQ(captured->adjustRecipientDamage(friendly, 10000), 6600);
+	EXPECT_EQ(newHorizonsPlague::adjustedTickDamage(*battle(), BattleSide::ATTACKER,
+		target, 10000, &delayedCapture), 5000);
+	EXPECT_EQ(newHorizonsSoulChain::adjustedEchoDamage(*battle(), BattleSide::ATTACKER,
+		friendly, 40000, 2500, &delayedCapture), 6600);
+	target->removeBonus(hypnosis);
+	friendly->removeBonuses(Selector::type()(BonusType::HYPNOTIZED));
+	const auto healthBefore = target->getAvailableHealth();
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	predictedMechanics->castEval(predicted.getServerCallback(), {spells::Destination(projectedTarget)});
+	EXPECT_EQ(healthBefore - predicted.battleGetUnitByID(target->unitId())->getAvailableHealth(), 6600);
+	EXPECT_EQ(target->getAvailableHealth(), healthBefore);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell->getId();
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(healthBefore - target->getAvailableHealth(), 6600);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, SpellPenetrationDoesNotBypassMagicResistanceOrSpellImmunity)

@@ -2,6 +2,37 @@
 
 Updated: 2026-10-07
 
+Current Phase1 integration checkpoint: user-resolved Enchanted Command and
+Combat Casting now pass linked compilation and focused native execution.
+Verified perk coverage advances228→230/310 (generic159/220; faction71/90).
+Ten-job incremental build exits0 and42 focused native cases pass in7.157s,
+including nine isolated Overwhelming Formula foundation cases, which do not
+complete that perk.28 focused Python guards and module drift checks pass.
+Enchanted uses captured
+Order empowerment with Protect pair/SecondWind selected-only recipients and
+genuine-activation expiry. Independent MDR composition uses exact remaining
+fractions (20%+15%=32%); delayed Plague/SoulChain capture is being completed,
+not replaced with live post-consumption readiness. Overwhelming Formula's
+first qualifying actual damage lifecycle remains missing. No spell/rank/Order
+identity increase. Initial stale text/hash/inventory failures are recorded and
+repaired. Native projection exposed live-backed Morale duplication; the exact
+perk bonus now uses the existing detached effect snapshot and parity passes.
+Source/native status is not playable delivery. Phase2 retains full detached
+SecondWind lifecycle simulation (the current heuristic excludes its Morale
+value), queued/extra-Morale heuristic nuances and Mine/Firewall penetration
+capture. The latter are neutral hazard paths, not verified delayed markers.
+
+Private Linux candidate0c6af31a uses exact committed3d5ac169e binaries/data,
+preserving private creature bindings while adding native Cabir map derivatives
+and both Gog ranged cues. Independent4014-file audit passes. One isolated
+first human run selected Arrogance instead of the target preview. A subsequent
+authored isolated scenario verifies the native-sized base Cabir adventure sprite
+and the complete58x64 Magi quick-recruit portrait. Root inspected both screenshots;
+the normal Linux launcher now selects0c6af and its verify-only gate passes.
+Master Cabir map rendering, other Magi portrait roles, hover/audio audition and
+garrison overflow interaction remain unverified. This delivery contains committed
+3d5ac169e runtime, not the current uncommitted Warcasting work.
+
 Acquisition audit checkpoint: paid fixed Adventure Spell unlocks can be bypassed
 by default starting-hero spells (Gem/Summon Boat) and ordinary Shrine/Scholar
 learning. Canonical3163–3165/3807 requires separate paid Guild acquisition.
@@ -22,7 +53,7 @@ remaining starting-profile authoring is a genuine design gap. Reviewed biography
 data contains52 rewrites/92 inheritances, not144 approved new mechanics.
 
 Current registry audit,2026-10-07: config/newHorizonsPerks.json contains31 Skills
-and93 active ranks,157 active/63 planned generic perks (220 total),71 active/19
+and93 active ranks,159 active/61 planned generic perks (220 total),71 active/19
 planned faction perks (90 total). Activation status is not proof of exhaustive
 cross-system or playable verification. Required UI work below does not add perk,
 spell or Order identities.

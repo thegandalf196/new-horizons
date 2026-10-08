@@ -307,6 +307,8 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"True when the authoritative saved spell-school mapping classifies this cast as Nature.");
 	R.method<&Mechanics::getEffectValue>("getEffectValue", {},
 		"Returns the computed effect value (e.g. damage / health amount).");
+	R.method<&Mechanics::getCapturedMdrPenetration>("getCapturedMdrPenetration", {},
+		"Returns cast-local penetration contributors and an optional Focused Pairing stack ID for delayed markers.");
 	R.method<&Mechanics::getCasterColor>("getCasterColor", {},
 		"Returns the player color of the caster.");
 	R.method<&Mechanics::getCasterSide>("getCasterSide", {},

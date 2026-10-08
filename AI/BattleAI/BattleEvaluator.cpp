@@ -38,6 +38,7 @@
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/HeroCommand.h"
 #include "../../lib/battle/NewHorizonsWarcasting.h"
+#include "../../lib/battle/NewHorizonsEnchantedCommand.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsBattlecraft.h"
@@ -3092,7 +3093,7 @@ float publicEnemyHeroSpellThreat(const CBattleInfoCallback & battle, BattleSide 
 	return std::min(static_cast<float>(alliedHealth) * 0.04f, 500.0f);
 }
 
-float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide side,
+float canonicalOrderBaseHeuristic(const CBattleInfoCallback & battle, BattleSide side,
 	HeroCommand command, const std::vector<uint32_t> & targetIds,
 	std::optional<int> focusFireSnapshotPercent, const Environment * environment,
 	DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> realBattle)
@@ -3450,6 +3451,56 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 	}
 
 	return 0.0f;
+}
+
+float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide side,
+	HeroCommand command, const std::vector<uint32_t> & targetIds,
+	std::optional<int> focusFireSnapshotPercent, const Environment * environment,
+	DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> realBattle)
+{
+	const auto baseValue = canonicalOrderBaseHeuristic(battle, side, command, targetIds,
+		focusFireSnapshotPercent, environment, damageCache, realBattle);
+	// Second Wind starts its extra activation immediately, expiring the grant
+	// without another Morale roll. Preserve that existing action economy.
+	if(command == HeroCommand::SECOND_WIND || !environment || !realBattle || !battle.getBattle())
+		return baseValue;
+	const auto prepared = battle.battlePrepareHeroOrderState(side, command, targetIds);
+	const auto * hero = battle.battleGetFightingHero(side);
+	if(!prepared || !newHorizonsEnchantedCommand::eligible(battle.getBattle()->getMagicRules(), hero, *prepared))
+		return baseValue;
+	auto preview = std::make_shared<HypotheticBattle>(environment, realBattle);
+	float moraleValue = 0.0f;
+	for(const auto id : newHorizonsEnchantedCommand::recipientIds(battle, side, *prepared))
+	{
+		const auto * original = battle.battleGetUnitByID(id);
+		if(original->unaffectedByMorale() || original->isTimeStopped()
+			|| original->hasBonus(newHorizonsEnchantedCommand::moraleBonusSelector()))
+			continue;
+		auto projected = preview->getForUpdate(id);
+		projected->addUnitBonus(std::vector<Bonus>{newHorizonsEnchantedCommand::moraleBonus()});
+		auto before = expectedMoraleActivationChange(battle, original);
+		auto after = expectedMoraleActivationChange(*preview, projected.get());
+		const auto * active = battle.battleActiveUnit();
+		if(!active || active->unitId() != id)
+		{
+			// On queued stacks the grant protects the pre-activation bad-Morale
+			// roll, then expires before the post-action good-Morale roll.
+			before = std::min(0.0f, before);
+			after = std::min(0.0f, after);
+		}
+		else
+		{
+			const auto state = original->acquireState();
+			if(state->hadMorale || state->fear || original->waited() || original->defended() || !original->canMove())
+				continue;
+			before = std::max(0.0f, before);
+			after = std::max(0.0f, after);
+		}
+		const auto delta = preview->projectMoraleActivationDelta(original, projected.get(), before, after, 1.0f);
+		moraleValue += std::max(0.0f, delta)
+			* expectedTargetActivationValue(projected.get(), damageCache, preview);
+	}
+	return baseValue + moraleValue;
 }
 
 bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
