@@ -259,6 +259,10 @@ that limitation accurately. Use the configured worker and reviewer model setting
 The playtester must use an isolated background Xvfb display and disposable
 profile/saves. Never use the host display, focus, mouse or keyboard, and never
 fall back to visible interaction. Keep runs bounded and resource-conscious.
+Background graphical tests must also be silent. Launch through the maintained
+guarded private-launch helper, which pins both SDL audio-driver variables to
+`dummy`; verify those variables in the actual child process before sending input.
+Do not bypass that helper with a custom launch inheriting host audio routes.
 
 ## Persistent user-priority queue
 
