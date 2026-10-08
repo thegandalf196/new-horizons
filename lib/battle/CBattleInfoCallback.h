@@ -91,6 +91,16 @@ struct DLL_LINKAGE ForcedAction {
 
 using SpellEffectValUptr = std::unique_ptr<spells::effects::SpellEffectValue>;
 
+namespace heroCommands
+{
+enum class TargetRejection
+{
+	NONE, UNAVAILABLE, TARGET_COUNT, NO_STACK, NOT_LIVING, TARGET_UNAVAILABLE, FRIENDLY_REQUIRED,
+	ENEMY_REQUIRED, ORDINARY_REQUIRED, INVULNERABLE, NO_FOCUS_RECIPIENT,
+	NO_MELEE_RECIPIENT, SAME_STACK, NOT_ADJACENT, NO_ADJACENT_WARD, ACTIVATION_UNSPENT, NO_RECIPIENT
+};
+}
+
 class DLL_LINKAGE CBattleInfoCallback : public virtual CBattleInfoEssentials
 {
 public:
@@ -191,6 +201,10 @@ public:
 	/// Validates target coverage and snapshots all transient state for a canonical Order.
 	std::optional<HeroOrderState> battlePrepareHeroOrderState(BattleSide side, HeroCommand command,
 		const std::vector<uint32_t> & targetUnitIds) const;
+	/// Same read-only validation as preparation (legacy Focus Fire uses its own
+	/// preparation API); Protect's first stage requires a legal adjacent Ward.
+	heroCommands::TargetRejection battleGetHeroOrderTargetRejection(BattleSide side, HeroCommand command,
+		const std::vector<uint32_t> & targetUnitIds, bool selectingProtector = false) const;
 	/// Returns the actual melee defender after a valid Protect interception, without consuming it.
 	const battle::Unit * battleResolveHeroOrderTarget(const battle::Unit * attacker,
 		const battle::Unit * defender, bool shooting) const;
@@ -404,6 +418,11 @@ public:
 	/// find free hex suitable to place new unit. If no initial position was provided, hex located on left size (attacker) or right side (defender) will be selected
 	BattleHex getAvailableHex(const Creature * creature, BattleSide side, BattleHex initialPos = {}) const override;
 protected:
+	heroCommands::TargetRejection battleFocusFireTargetRejection(BattleSide side, HeroCommand command,
+		uint32_t targetUnitId) const;
+	heroCommands::TargetRejection battleOwnOrderUnitRejection(BattleSide side, const battle::Unit * unit) const;
+	std::optional<HeroOrderState> battlePrepareHeroOrderStateImpl(BattleSide side, HeroCommand command,
+		const std::vector<uint32_t> & targetUnitIds, heroCommands::TargetRejection & rejection) const;
 	int32_t calculateBattleSpellCost(const spells::Spell * sp, const CGHeroInstance * caster,
 		int32_t listedCostMultiplier, bool metamagicFollowup, SpellCostBreakdown * breakdown) const;
 	bool battleHeroCommandCommonAvailable(BattleSide side, HeroCommand command) const;

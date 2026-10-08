@@ -206,6 +206,8 @@ public:
 	void pickBestCreatures(const CArmedInstance * army, const CArmedInstance * source); //called when we can't find a slot for new stack
 
 	void moveCreaturesToHero(const CGTownInstance * t);
+	/// Prepare one usable reserve from owned town surplus, never an isolated army.
+	void prepareDemonicReserve(const CGTownInstance * town);
 	/// Submit a garrison swap only after the AI-side whole-army Leadership
 	/// preflight. The server remains authoritative and validates the request.
 	void swapGarrisonHero(const CGTownInstance * town);

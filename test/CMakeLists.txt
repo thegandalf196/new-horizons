@@ -326,6 +326,7 @@ set(test_SRCS
 		server/battles/NewHorizonsLastStandTest.cpp
 		server/battles/NewHorizonsGuardianSpiritTest.cpp
 		server/battles/NewHorizonsCommandTest.cpp
+		server/battles/HeroOrderTargetRejectionTest.cpp
 		server/battles/NewHorizonsCombatSkillsTest.cpp
 		server/battles/NewHorizonsFormationFightingTest.cpp
 		server/battles/NewHorizonsArmorerVeteranTest.cpp
@@ -633,6 +634,10 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/Nulkiller2TestUtils.h
 		nullkiller2/NullkillerTest.h
 	)
+	# This fixture follows adventure preparation into the combat AI consumer.
+	if(ENABLE_BATTLE_AI)
+		list(APPEND test_SRCS nullkiller2/NewHorizonsDemonicReserveAITest.cpp)
+	endif()
 endif()
 
 if(ENABLE_NH_PERF_EXPERIMENTS)

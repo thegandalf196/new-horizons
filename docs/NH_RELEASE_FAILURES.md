@@ -1,5 +1,42 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Mixed AI fixture registration and target-reason wording
+
+UP303 review caught registration under ENABLE_NULLKILLER2_AI alone, although
+its principal path constructs CBattleAI. ENABLE_BATTLE_AI is independent:
+register mixed fixtures under both options to avoid unresolved symbols in
+NK2-only test builds. Fixed before validation; current build enables both.
+This is a source-review finding, not an observed CI failure. UP302 review
+also caught NOT_LIVING wording covering living Time-Stopped targets; split
+the unchanged rejection predicate into accurate reason codes, with a focused
+living/dead case and17 exact registered-text checks. No legality changed.
+
+Phase2 checks retained for UP303: asynchronous state drift/rejected callbacks,
+duplicate-stack withdrawal layout, autonomous reserve strategy, post-battle
+return/casualties. UP302 rendered targeting/status-bar journeys and broader
+controller/perk matrices are separate from native shared-validation evidence.
+
+First linked23498 and registration-regeneration63935 exit0 at10 jobs. Native
+50317 passes25/26 in10.193s, zero skips; all eight Reserve AI cases pass, including
+actual acquisition/Gate/arrival. The new living/dead rejection fixture attempts
+lethal damage while TIME_STOP is still present; CUnitState::damageInternal
+correctly ignores it. The target remains alive, so TARGET_UNAVAILABLE is correct.
+Repair the fixture by ending its test Time Stop before injury and explicitly
+asserting death before expecting NOT_LIVING; preserve production damage rules.
+Retain native-up302-up303.log/XML as failed evidence, not acceptance.
+
+Fixture-repair build5083 fails at the new SetStackEffect local: its full header
+is not included by the fixture's other packet headers. Include SetStackEffect.h
+directly; do not depend on forward declarations/transitive includes. Preserve
+build/nh-order-reasons-demonic-reserve-fixture-repaired-build.log. Production
+sources remain unchanged and the previous linked build still passed.
+
+Final linked73953 exits0 at10 jobs; repaired native15322 passes26/26 in9.994s,
+zero skips. Time Stop removal, actual death and original rejection assertions
+pass; all Reserve AI acquisition/Gate/rollback controls remain passing. Independent
+review approves the packet-based fixture correction. Receipts: final-fixture-build
+log and native-up302-up303-repaired.log/XML; neither failed receipt was overwritten.
+
 ### 2026-10-08 — Peacemaker exploration fixture assumed a mutable blocked flag
 
 UP301 build54703 fails in the new fixture because TerrainTile::blocked() is a

@@ -2,6 +2,35 @@
 
 Updated: 2026-10-08
 
+2026-10-08 UP302/303 checkpoint: specific Order rejection reasons share existing
+legality and appear in the existing status-bar consumer. Demonic Reserve now has
+an acquisition-time minimum adventure AI producer using owned town surplus,
+validated transfers/deposits, non-weaker active army and rejected-refill withdrawal.
+Linked73953 exits0 at10 jobs; native15322 passes26/26 in9.994s, zero skips,
+including nine new reason/text/isolation cases and eight new reserve AI cases.
+Actual recruitment→reserve preparation→BattleAI Gate→authoritative arrival passes;
+independent Sol High review has no remaining blocker. Initial fixture and include
+failures are preserved in release lessons. Receipts: build/nh-order-reasons-
+demonic-reserve-final-fixture-build.log and build/nh-preview-ai-validation.jUrtT2RY/
+native-up302-up303-repaired.log/XML. No normal launcher promotion/rendered UI claim.
+Asynchronous drift, duplicate rollback layouts, strategy, post-battle returns and
+broader controller/perk/rendered journeys remain Phase2. Coverage identities stay
+231/310 perks,61/67 combat spells,8/8 Orders; two required consumers added.
+Next ready functional item UP304: Pasis/Monere's fixed creature specialty packages
+bypass alias conversion provenance; preserve their line while applying canonical
+conversion through existing infrastructure. Estates(6/10) and Armorer(8/10) sampled
+planned perks retain recorded choices/producers; this does not prove all remaining
+Version1.0 work blocked.
+
+2026-10-08 required-UI audit: UP302 is an uncovered Order targeting clause,
+not another Order identity. Existing target rejection text is generic despite
+the canonical requirement to explain invalid targets. Shared reason readback
+and the existing battlefield status-bar consumer are now native-verified above.
+Protect's first selection must have at least one legal adjacent Ward;
+pair checks and Second Wind spent-activation checks must remain unchanged.
+Coverage counts231/310 perks,61/67 combat spells and8/8 Orders are unchanged.
+Rendered and playable delivery are not established by this audit.
+
 2026-10-08 UP301 minimum-AI checkpoint: FuzzyHelper now propagates its visitor
 to both tile and known subterranean-exit guard queries. Shared passableFor rules
 remove Peacemaker's pacified guardian only for its protected hero/current week;

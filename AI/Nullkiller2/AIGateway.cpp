@@ -1478,6 +1478,191 @@ void AIGateway::moveCreaturesToHero(const CGTownInstance * t)
 	if(t->getVisitingHero() && t->armedGarrison() && t->getVisitingHero()->tempOwner == t->tempOwner)
 	{
 		pickBestCreatures(t->getVisitingHero(), t->getUpperArmy());
+		prepareDemonicReserve(t);
+	}
+}
+
+void AIGateway::prepareDemonicReserve(const CGTownInstance * town)
+{
+	const auto * hero = town ? town->getVisitingHero() : nullptr;
+	// A garrison hero's army is not surplus town stock, even when both heroes
+	// belong to us. Do not undo another task's defence lock either.
+	if(!hero || town->getUpperArmy() != town || town->getOwner() != playerID
+		|| hero->getOwner() != playerID || nullkiller->isHeroLocked(hero))
+		return;
+	const int rank = hero->getPerkSkillRank("new-horizons:demonicGating");
+	const auto inferno = [](CreatureID creature)
+	{
+		return creature.toCreature() && creature.toCreature()->getFactionID() == FactionID::INFERNO;
+	};
+	const auto eligible = [&](CreatureID creature)
+	{
+		const auto category = cc->getCreatureCategory(creature);
+		return inferno(creature) && category && static_cast<int>(category->category) < rank;
+	};
+	if(rank <= 0 || town->Slots().empty()
+		|| std::ranges::none_of(hero->Slots(), [&](const auto & slot)
+			{ return slot.second->getCount() > 0 && inferno(slot.second->getCreatureID()); })
+		|| std::ranges::any_of(hero->getDemonicReserve(), [&](const auto & entry)
+			{ return entry.second > 0 && eligible(entry.first); }))
+		return;
+
+	using ArmySnapshot = std::map<SlotID, std::pair<CreatureID, TQuantity>>;
+	const auto snapshot = [](const CArmedInstance * army)
+	{
+		ArmySnapshot result;
+		for(const auto & [slot, stack] : army->Slots())
+			result.emplace(slot, std::make_pair(stack->getCreatureID(), stack->getCount()));
+		return result;
+	};
+	const auto power = [&](CreatureID creature, TQuantity count) -> std::optional<uint64_t>
+	{
+		const auto * definition = creature.toCreature();
+		// ArmyManager's ordinary valuation multiplies int operands first.
+		if(!definition || count <= 0 || definition->getAIValue() <= 0
+			|| count > std::numeric_limits<int>::max() / definition->getAIValue())
+			return std::nullopt;
+		return nullkiller->armyManager->evaluateStackPower(definition, count);
+	};
+	const auto originalHero = snapshot(hero);
+	const auto originalTown = snapshot(town);
+	const auto originalReserve = hero->getDemonicReserve();
+	uint64_t baseline = 0;
+	for(const auto & [slot, stack] : originalHero)
+	{
+		const auto value = power(stack.first, stack.second);
+		if(!value || *value > std::numeric_limits<uint64_t>::max() - baseline)
+			return;
+		baseline += *value;
+	}
+	struct Candidate
+	{
+		SlotID source;
+		SlotID destination;
+		CreatureID refill;
+		TQuantity amount;
+		CreatureID deposit;
+		TQuantity depositCount;
+		bool staged;
+	};
+	std::optional<Candidate> chosen;
+	const auto freeSlots = hero->getFreeSlots();
+	if(!freeSlots.empty())
+	{
+		for(const auto & [slot, stack] : originalTown)
+		{
+			if(!eligible(stack.first))
+				continue;
+			const auto amount = armyFormation::maxLegalTransferCount(town, hero, slot, freeSlots.front());
+			if(amount > 0 && power(stack.first, amount)
+				&& hero->getDemonicReserveCount(stack.first) <= std::numeric_limits<TQuantity>::max() - amount)
+			{
+				chosen = Candidate{slot, freeSlots.front(), stack.first, amount, stack.first, amount, true};
+				break;
+			}
+		}
+	}
+	else
+	{
+		// Prefer a same-creature refill, but a normal nonduplicate army can use
+		// any legal non-weaker leftover town stack. No percentage split.
+		for(const bool sameCreature : {true, false})
+		{
+			for(const auto & [destination, active] : originalHero)
+			{
+				if(!eligible(active.first) || hero->stacksCount() <= 1
+					|| hero->getDemonicReserveCount(active.first) > std::numeric_limits<TQuantity>::max() - active.second)
+					continue;
+				// Withdrawal chooses the first matching stack before an empty
+				// slot. Ensure that authoritative rollback can admit the deposit
+				// even when an existing duplicate would be that destination.
+				bool canWithdraw = true;
+				for(const auto & [otherSlot, other] : originalHero)
+					if(otherSlot != destination && other.first == active.first)
+					{
+						canWithdraw = other.second <= std::numeric_limits<TQuantity>::max() - active.second
+							&& armyFormation::canReceiveStack(hero, active.first, other.second + active.second);
+						break;
+					}
+				if(!canWithdraw)
+					continue;
+				for(const auto & [source, stock] : originalTown)
+				{
+					if((stock.first == active.first) != sameCreature)
+						continue;
+					const auto capacity = hero->getLeadershipSlotCapacity(stock.first);
+					const auto amount = capacity ? std::min(stock.second, capacity->maximum) : stock.second;
+					const auto value = power(stock.first, amount);
+					const auto removed = power(active.first, active.second);
+					if(!value || !removed || *value < *removed
+						|| *value > std::numeric_limits<uint64_t>::max() - (baseline - *removed)
+						|| !armyFormation::canReceiveStack(hero, stock.first, amount))
+						continue;
+					const bool opener = inferno(stock.first) || std::ranges::any_of(originalHero, [&](const auto & other)
+						{ return other.first != destination && inferno(other.second.first); });
+					if(!opener)
+						continue;
+					chosen = Candidate{source, destination, stock.first, amount, active.first, active.second, false};
+					break;
+				}
+				if(chosen)
+					break;
+			}
+			if(chosen)
+				break;
+		}
+	}
+	if(!chosen)
+		return;
+	const auto plan = *chosen;
+	const bool previousWait = cc->waitTillRealize;
+	cc->waitTillRealize = true;
+	const auto restoreWait = vstd::makeScopeGuard([&]() { cc->waitTillRealize = previousWait; });
+	auto expectedHero = originalHero;
+	auto expectedTown = originalTown;
+	auto expectedReserve = originalReserve;
+	const auto matches = [&]()
+	{
+		return town->getVisitingHero() == hero && town->getUpperArmy() == town
+			&& town->getOwner() == playerID && hero->getOwner() == playerID
+			&& hero->getPerkSkillRank("new-horizons:demonicGating") == rank
+			&& !nullkiller->isHeroLocked(hero)
+			&& snapshot(hero) == expectedHero && snapshot(town) == expectedTown
+			&& hero->getDemonicReserve() == expectedReserve;
+	};
+	const auto transfer = [&]()
+	{
+		if(!matches() || hero->hasStackAtSlot(plan.destination)
+			|| armyFormation::maxLegalTransferCount(town, hero, plan.source, plan.destination) < plan.amount)
+			return false;
+		if(plan.amount == expectedTown.at(plan.source).second)
+			cc->mergeOrSwapStacks(town, hero, plan.source, plan.destination);
+		else
+			cc->splitStack(town, hero, plan.source, plan.destination, plan.amount);
+		expectedHero[plan.destination] = {plan.refill, plan.amount};
+		expectedTown.at(plan.source).second -= plan.amount;
+		if(expectedTown.at(plan.source).second == 0)
+			expectedTown.erase(plan.source);
+		return matches();
+	};
+	if(plan.staged && !transfer())
+		return;
+	if(!matches())
+		return;
+	cc->arrangeDemonicReserve(hero, plan.destination, plan.deposit, plan.depositCount, true);
+	expectedHero.erase(plan.destination);
+	expectedReserve[plan.deposit] += plan.depositCount;
+	if(!matches())
+		return;
+	if(!plan.staged && !transfer())
+	{
+		// A callback is not an atomic multi-request transaction. On a rejected
+		// refill, request the ordinary validated withdrawal of exactly our whole
+		// deposit and stop. Never treat a failed replacement as preparation.
+		cc->arrangeDemonicReserve(hero, SlotID(), plan.deposit, plan.depositCount, false);
+		logAi->warn("Demonic Reserve refill changed or failed; requested withdrawal and stopped");
+		if(hero->getDemonicReserve() != originalReserve || snapshot(hero) != originalHero)
+			logAi->warn("Demonic Reserve withdrawal did not restore the original active army; leaving authoritative state intact");
 	}
 }
 

@@ -475,13 +475,27 @@ bool CBattleInfoCallback::battleIsFocusFireRecipient(const battle::Unit * unit, 
 
 bool CBattleInfoCallback::battleCanConfirmHeroCommand(BattleSide side, HeroCommand command, uint32_t targetUnitId) const
 {
+	return battleFocusFireTargetRejection(side, command, targetUnitId) == heroCommands::TargetRejection::NONE;
+}
+
+heroCommands::TargetRejection CBattleInfoCallback::battleFocusFireTargetRejection(
+	BattleSide side, HeroCommand command, uint32_t targetUnitId) const
+{
+	using Reason = heroCommands::TargetRejection;
 	if(command != HeroCommand::FOCUS_FIRE || !battleHeroCommandCommonAvailable(side, command)
 		|| battleGetRound() < 1 || targetUnitId > static_cast<uint32_t>(std::numeric_limits<int32_t>::max()))
-		return false;
+		return Reason::UNAVAILABLE;
 	const auto * target = battleGetUnitByID(targetUnitId);
-	if(!target || target->isGhost() || !target->isValidTarget() || target->isInvincible()
-		|| battleGetOwner(target) == sideToPlayer(side))
-		return false;
+	if(!target)
+		return Reason::NO_STACK;
+	if(!target->alive() || target->isGhost())
+		return Reason::NOT_LIVING;
+	if(!target->isValidTarget())
+		return Reason::TARGET_UNAVAILABLE;
+	if(target->isInvincible())
+		return Reason::INVULNERABLE;
+	if(battleGetOwner(target) == sideToPlayer(side))
+		return Reason::ENEMY_REQUIRED;
 	const auto * hero = battleGetFightingHero(side);
 	const bool combinedArms = getBattle()
 		&& heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
@@ -490,16 +504,16 @@ bool CBattleInfoCallback::battleCanConfirmHeroCommand(BattleSide side, HeroComma
 	{
 		// Shot legality is static: already-acted units do not disable issuing.
 		if(battleIsFocusFireRecipient(unit, side) && battleCanShoot(unit, target->getPosition()))
-			return true;
+			return Reason::NONE;
 		// Combined Arms also lets a melee-only army mark an enemy. Keep the
 		// same ordinary-unit exclusions as the saved cohort below.
 		if(combinedArms && unit && unit->alive() && !unit->isGhost() && unit->isMeleeAttacker()
 			&& battleGetOwner(unit) == sideToPlayer(side) && !unit->isTurret()
 			&& !unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
 			&& unit->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER)
-			return true;
+			return Reason::NONE;
 	}
-	return false;
+	return Reason::NO_FOCUS_RECIPIENT;
 }
 
 std::vector<uint32_t> CBattleInfoCallback::battleGetHeroCommandTargets(BattleSide side, HeroCommand command) const
@@ -1258,25 +1272,83 @@ bool CBattleInfoCallback::battleShroudDeniesRetaliation(const BattleAttackInfo &
 std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderState(BattleSide side,
 	HeroCommand command, const std::vector<uint32_t> & targetUnitIds) const
 {
+	heroCommands::TargetRejection rejection;
+	return battlePrepareHeroOrderStateImpl(side, command, targetUnitIds, rejection);
+}
+
+heroCommands::TargetRejection CBattleInfoCallback::battleOwnOrderUnitRejection(
+	BattleSide side, const battle::Unit * unit) const
+{
+	using Reason = heroCommands::TargetRejection;
+	if(!unit)
+		return Reason::NO_STACK;
+	if(!unit->alive() || unit->isGhost())
+		return Reason::NOT_LIVING;
+	if(battleGetOwner(unit) != sideToPlayer(side))
+		return Reason::FRIENDLY_REQUIRED;
+	if(unit->isTurret() || unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| unit->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER)
+		return Reason::ORDINARY_REQUIRED;
+	return Reason::NONE;
+}
+
+heroCommands::TargetRejection CBattleInfoCallback::battleGetHeroOrderTargetRejection(
+	BattleSide side, HeroCommand command, const std::vector<uint32_t> & targetUnitIds, bool selectingProtector) const
+{
+	using Reason = heroCommands::TargetRejection;
+	if(command == HeroCommand::FOCUS_FIRE)
+		return targetUnitIds.size() == 1
+			? battleFocusFireTargetRejection(side, command, targetUnitIds.front()) : Reason::TARGET_COUNT;
+	if(selectingProtector && command == HeroCommand::PROTECT)
+	{
+		if(!battleHeroCommandCommonAvailable(side, command))
+			return Reason::UNAVAILABLE;
+		if(targetUnitIds.size() != 1)
+			return Reason::TARGET_COUNT;
+		const auto id = targetUnitIds.front();
+		const auto ordinary = battleOwnOrderUnitRejection(side, battleGetUnitByID(id));
+		if(ordinary != Reason::NONE)
+			return ordinary;
+		const auto candidates = battleGetHeroCommandTargets(side, command);
+		if(std::ranges::find(candidates, id) == candidates.end())
+			return Reason::ORDINARY_REQUIRED;
+		for(const auto ward : candidates)
+			if(id != ward && battlePrepareHeroOrderState(side, command, {id, ward}))
+				return Reason::NONE;
+		return Reason::NO_ADJACENT_WARD;
+	}
+	Reason rejection;
+	battlePrepareHeroOrderStateImpl(side, command, targetUnitIds, rejection);
+	return rejection;
+}
+
+std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderStateImpl(BattleSide side,
+	HeroCommand command, const std::vector<uint32_t> & targetUnitIds, heroCommands::TargetRejection & rejection) const
+{
+	using Reason = heroCommands::TargetRejection;
+	rejection = Reason::NONE;
+	const auto reject = [&rejection](Reason reason) -> std::optional<HeroOrderState>
+	{
+		rejection = reason;
+		return {};
+	};
 	if(!getBattle() || !heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
 		|| !heroCommands::isActive(command) || !battleHeroCommandCommonAvailable(side, command))
-		return {};
+		return reject(Reason::UNAVAILABLE);
 	const auto * hero = battleGetFightingHero(side);
 	if(!hero)
-		return {};
+		return reject(Reason::UNAVAILABLE);
 	const auto owner = sideToPlayer(side);
-	const auto ownCombatUnit = [this, owner](const battle::Unit * unit)
+	const auto ownCombatUnit = [this, side](const battle::Unit * unit)
 	{
-		return unit && unit->alive() && !unit->isGhost() && battleGetOwner(unit) == owner
-			&& !unit->isTurret() && !unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
-			&& unit->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER;
+		return battleOwnOrderUnitRejection(side, unit) == Reason::NONE;
 	};
 	const auto * rules = &getBattle()->getHeroCommandRules()["commands"][heroCommands::key(command)];
 	HeroOrderState result;
 	result.command = command;
 	result.issuedRound = battleGetRound();
 	if(result.issuedRound < 1)
-		return {};
+		return reject(Reason::UNAVAILABLE);
 	const auto allowance = battleGetOrderActionAllowance(side);
 	if(newHorizonsWarcasting::enabled(getBattle()->getMagicRules())
 		&& allowance && allowance->allowance == HeroActionAllowanceState::AllowanceKind::HERO)
@@ -1302,38 +1374,53 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderState(B
 
 	if(command == HeroCommand::FOCUS_FIRE)
 	{
-		if(targetUnitIds.size() != 1 || !battleCanConfirmHeroCommand(side, command, targetUnitIds.front()))
-			return {};
+		if(targetUnitIds.size() != 1)
+			return reject(Reason::TARGET_COUNT);
+		const auto reason = battleFocusFireTargetRejection(side, command, targetUnitIds.front());
+		if(reason != Reason::NONE)
+			return reject(reason);
 		result.primaryTargetUnitId = targetUnitIds.front();
 		return result;
 	}
 	if(command == HeroCommand::FLANK)
 	{
 		if(targetUnitIds.size() != 1)
-			return {};
+			return reject(Reason::TARGET_COUNT);
 		const auto * target = battleGetUnitByID(targetUnitIds.front());
-		if(!target || !target->alive() || target->isGhost() || target->isTurret()
-			|| battleGetOwner(target) == owner)
-			return {};
+		if(!target)
+			return reject(Reason::NO_STACK);
+		if(!target->alive() || target->isGhost())
+			return reject(Reason::NOT_LIVING);
+		if(target->isTurret())
+			return reject(Reason::ORDINARY_REQUIRED);
+		if(battleGetOwner(target) == owner)
+			return reject(Reason::ENEMY_REQUIRED);
 		bool hasMelee = false;
 		for(const auto * unit : battleAliveUnits())
 			if(ownCombatUnit(unit) && unit->isMeleeAttacker())
 				hasMelee = true;
 		if(!hasMelee)
-			return {};
+			return reject(Reason::NO_MELEE_RECIPIENT);
 		result.primaryTargetUnitId = target->unitId();
 		result.flankTargets.push_back({target->unitId(), 0});
 		return result;
 	}
 	if(command == HeroCommand::PROTECT)
 	{
-		if(targetUnitIds.size() != 2 || targetUnitIds.front() == targetUnitIds.back())
-			return {};
+		if(targetUnitIds.size() != 2)
+			return reject(Reason::TARGET_COUNT);
+		if(targetUnitIds.front() == targetUnitIds.back())
+			return reject(Reason::SAME_STACK);
 		const auto * protector = battleGetUnitByID(targetUnitIds.front());
 		const auto * ward = battleGetUnitByID(targetUnitIds.back());
-		if(!ownCombatUnit(protector) || !ownCombatUnit(ward)
-			|| !orderUnitsAdjacent(protector, ward))
-			return {};
+		for(const auto * unit : {protector, ward})
+		{
+			const auto reason = battleOwnOrderUnitRejection(side, unit);
+			if(reason != Reason::NONE)
+				return reject(reason);
+		}
+		if(!orderUnitsAdjacent(protector, ward))
+			return reject(Reason::NOT_ADJACENT);
 		result.primaryTargetUnitId = protector->unitId();
 		result.secondaryTargetUnitId = ward->unitId();
 		result.protectInterceptionLimit = hero->hasActivePerk(
@@ -1345,19 +1432,22 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderState(B
 	if(command == HeroCommand::SECOND_WIND)
 	{
 		if(targetUnitIds.size() != 1)
-			return {};
+			return reject(Reason::TARGET_COUNT);
 		const auto * target = battleGetUnitByID(targetUnitIds.front());
 		const bool canonicalRules = heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules());
 		const auto targetState = target ? target->acquireState() : nullptr;
 		const bool hasSpentActivation = target
 			&& (target->moved() || (canonicalRules && targetState && targetState->defending));
-		if(!ownCombatUnit(target) || !hasSpentActivation)
-			return {};
+		const auto reason = battleOwnOrderUnitRejection(side, target);
+		if(reason != Reason::NONE)
+			return reject(reason);
+		if(!hasSpentActivation)
+			return reject(Reason::ACTIVATION_UNSPENT);
 		result.primaryTargetUnitId = target->unitId();
 		return result;
 	}
 	if(!targetUnitIds.empty())
-		return {};
+		return reject(Reason::TARGET_COUNT);
 	bool hasRecipient = false;
 	for(const auto * unit : battleAliveUnits())
 	{
@@ -1368,7 +1458,7 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderState(B
 			result.anchors.push_back({unit->unitId(), unit->getPosition().toInt()});
 	}
 	if(!hasRecipient)
-		return {};
+		return reject(Reason::NO_RECIPIENT);
 	(void)rules;
 	result.validateShape();
 	return result;

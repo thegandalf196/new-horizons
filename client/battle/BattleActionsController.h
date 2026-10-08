@@ -322,6 +322,7 @@ class BattleActionsController
 	std::vector<uint32_t> heroOrderTargetIds() const;
 	bool heroOrderTargetIdIsLegal(uint32_t unitId) const;
 	void updateHeroOrderTargetingStatus(const BattleHex & hoveredHex);
+	std::string heroOrderTargetRejectionText(heroCommands::TargetRejection reason) const;
 	void selectHeroOrderTarget(const BattleHex & clickedHex);
 	/// Sends an ordinary hero spell immediately, or opens the generic New
 	/// Horizons friendly-fire confirmation when its live effect preview requires it.

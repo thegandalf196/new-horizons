@@ -816,6 +816,33 @@ BattleHexArray BattleActionsController::getHeroOrderTargetingSelectedHexes() con
 	return result;
 }
 
+std::string BattleActionsController::heroOrderTargetRejectionText(heroCommands::TargetRejection reason) const
+{
+	using Reason = heroCommands::TargetRejection;
+	const char * key = "generic";
+	switch(reason)
+	{
+		case Reason::UNAVAILABLE: key = "unavailable"; break;
+		case Reason::TARGET_COUNT: key = "targetCount"; break;
+		case Reason::NO_STACK: key = "noStack"; break;
+		case Reason::NOT_LIVING: key = "notLiving"; break;
+		case Reason::TARGET_UNAVAILABLE: key = "targetUnavailable"; break;
+		case Reason::FRIENDLY_REQUIRED: key = "friendlyRequired"; break;
+		case Reason::ENEMY_REQUIRED: key = "enemyRequired"; break;
+		case Reason::ORDINARY_REQUIRED: key = "ordinaryRequired"; break;
+		case Reason::INVULNERABLE: key = "invulnerable"; break;
+		case Reason::NO_FOCUS_RECIPIENT: key = "noFocusRecipient"; break;
+		case Reason::NO_MELEE_RECIPIENT: key = "noMeleeRecipient"; break;
+		case Reason::SAME_STACK: key = "sameStack"; break;
+		case Reason::NOT_ADJACENT: key = "notAdjacent"; break;
+		case Reason::NO_ADJACENT_WARD: key = "noAdjacentWard"; break;
+		case Reason::ACTIVATION_UNSPENT: key = "activationUnspent"; break;
+		case Reason::NO_RECIPIENT: key = "noRecipient"; break;
+		case Reason::NONE: break;
+	}
+	return LIBRARY->generaltexth->translate(std::string("new-horizons.combat.orders.targetRejection.") + key);
+}
+
 void BattleActionsController::updateHeroOrderTargetingStatus(const BattleHex & hoveredHex)
 {
 	if(!selectedHeroOrderCommand)
@@ -839,7 +866,20 @@ void BattleActionsController::updateHeroOrderTargetingStatus(const BattleHex & h
 		if(stack && heroOrderTargetIdIsLegal(stack->unitId()))
 			message += " Click to confirm.";
 		else
-			message += " This stack is not a legal target.";
+		{
+			auto reason = heroCommands::TargetRejection::NO_STACK;
+			if(stack)
+			{
+				std::vector<uint32_t> targets;
+				if(heroOrderTargetingFirst)
+					targets.push_back(*heroOrderTargetingFirst);
+				targets.push_back(stack->unitId());
+				reason = owner.getBattle()->battleGetHeroOrderTargetRejection(heroOrderTargetingSide,
+					*selectedHeroOrderCommand, targets,
+					isHeroOrderPair(*selectedHeroOrderCommand) && !heroOrderTargetingFirst);
+			}
+			message += " " + heroOrderTargetRejectionText(reason);
+		}
 	}
 
 	if(!currentConsoleMsg.empty())
