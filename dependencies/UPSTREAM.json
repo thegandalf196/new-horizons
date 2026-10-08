@@ -1,0 +1,589 @@
+{
+  "format": 1,
+  "origin": "https://github.com/vcmi/vcmi-dependencies.git",
+  "revision": "f61de7b5e1cbfc3d916a600b7468b5d9c2492995",
+  "scope": "Exact tracked upstream recipe/profile/patch snapshot; not third-party implementations or binary cache",
+  "licenseStatus": "No repository-wide LICENSE/COPYING file exists in this pinned snapshot. Preserve original notices/comments and upstream attribution; do not assign a new blanket license.",
+  "files": {
+    ".github/workflows/rebuildDependencies.yml": {
+      "sha256": "ffa59a4cfcfd60732016cd50f944864da38d55341e510dc91f8b4b9b2426473e",
+      "size": 6326
+    },
+    ".github/workflows/releaseFromRun.yml": {
+      "sha256": "f7a704ddaff7a10ebc38d3c93069bdc79da9e21b35f2825a2261daec13ffa3ae",
+      "size": 2050
+    },
+    ".gitignore": {
+      "sha256": "fc4d7b20631dad02433fa618876ce926d995d583e24367cd9052b6082c676254",
+      "size": 19
+    },
+    "README.md": {
+      "sha256": "edb522843fd7890f713f02c75ba8c16ca808105f0af2e433530221d95e299416",
+      "size": 2438
+    },
+    "build.sh": {
+      "sha256": "75e648ec1e324ac0d3c6b52cec4c9067da7a69ed7439a0d476e7ea4fbbcd5fbb",
+      "size": 8048
+    },
+    "ci/android-32.sh": {
+      "sha256": "991f4961e637dd6c488c63de89c9728e583c6133506d507f4d183c08ed9fd3d4",
+      "size": 73
+    },
+    "ci/macos.sh": {
+      "sha256": "d7211acfacf7c7163e5ecc38da7fb282a54080af6f83d089ced8b6c784d1be36",
+      "size": 74
+    },
+    "conan_patches/minizip/conandata.yml": {
+      "sha256": "9a9c61715ccdbcd2dd9e5fdda7ee49775cf87f450eefc9648e2a9aa9b0d63b74",
+      "size": 131
+    },
+    "conan_patches/minizip/patches/android-pre-24.diff": {
+      "sha256": "aac510461b8ef7409bc9c3f87b22fb5d8fb5b906f76797df04f74ffc1fb6205d",
+      "size": 640
+    },
+    "conan_patches/onnx/conandata.yml": {
+      "sha256": "4f36783165bc5381fdb474f45f213fbb62ed9aa9f3c15756d75d0c2dc586066c",
+      "size": 285
+    },
+    "conan_patches/onnx/patches/apple-pre-2019.diff": {
+      "sha256": "a2a74110fa22c88f19e0aaa4cec870164d5de6c2331f7e44e52725581d452097",
+      "size": 568
+    },
+    "conan_patches/onnxruntime/conandata.yml": {
+      "sha256": "3cc4e0ffd620cb499e0f2491dccb9cffe3b430c7d6d8bbc4d88162ed062a3d86",
+      "size": 542
+    },
+    "conan_patches/onnxruntime/patches/android-64.diff": {
+      "sha256": "b2010cd529f6e6cbde1522aa0f6df136b462fc383871ff19b27e198f7282d4c0",
+      "size": 2539
+    },
+    "conan_patches/onnxruntime/patches/msvc-x86.diff": {
+      "sha256": "dc4765bf6b6118151a71fa92d56aab06ed65b26c2876506bdc81632caca4ad1d",
+      "size": 2722
+    },
+    "conan_patches/onnxruntime/patches/win7.diff": {
+      "sha256": "f885f42074ca76e032bf6fea345f8c5fd39caf3258bb3d3d27eaf9f55005adf4",
+      "size": 8075
+    },
+    "conan_patches/onnxruntime/recipe.diff": {
+      "sha256": "18fb01c6b80ac3218790787b178e51e23c6675cd4d5abd06f6925b07eebec300",
+      "size": 501
+    },
+    "conan_patches/qt/conandata.yml": {
+      "sha256": "9912ee6523b5f51ede23c5c2eb1e19008dccb052afece2e461ae219fba888078",
+      "size": 11860
+    },
+    "conan_patches/qt/patches/_kde.md": {
+      "sha256": "ea4ef10b7742b14548536513611d8c6bdc082ed34eee5834b45277e48f4fd744",
+      "size": 332
+    },
+    "conan_patches/qt/patches/android-21-22.diff": {
+      "sha256": "12bffc912c06d1a9163567beb4ecf5bd84d9585c283140f1582d86faad8c46b3",
+      "size": 3105
+    },
+    "conan_patches/qt/patches/kde/0001-Fix-get-out-of-bounds-index-in-QSortFilterProxyModel.patch": {
+      "sha256": "f5cf271698f101ed7b6d6293ddbd82684907101bde719ca702df9e7b266e5bd4",
+      "size": 3585
+    },
+    "conan_patches/qt/patches/kde/0002-Fix-handling-of-surrogates-in-QBidiAlgorithm.patch": {
+      "sha256": "7f6d2a0cf95e9f03f94e86739008cf116de874ddb968db43f468bea08ea01752",
+      "size": 1346
+    },
+    "conan_patches/qt/patches/kde/0003-Don-t-own-unique-name-for-QDBusTrayIcon.patch": {
+      "sha256": "d34b24c62b0174d12644f113ce1e54395824116bd48261c7c935016f983e7754",
+      "size": 3984
+    },
+    "conan_patches/qt/patches/kde/0004-Deprecate-QMutex-in-recursive-mode.patch": {
+      "sha256": "247d8858ed111f57635ca61cdcf8953bd83d6527ebd01bc8d487b0f6e157bc16",
+      "size": 3348
+    },
+    "conan_patches/qt/patches/kde/0005-Fix-QAbstractItemModelTester-false-positive.patch": {
+      "sha256": "57965e385880131ef0ad3771397be012ab30e9888437c0e15057a8084183d485",
+      "size": 2201
+    },
+    "conan_patches/qt/patches/kde/0006-QTableView-honor-spans-when-calculating-height-width.patch": {
+      "sha256": "8e635b6bfaf9a44d1d625f4f007a3815d4af6ede8326de0228965c404528107e",
+      "size": 5792
+    },
+    "conan_patches/qt/patches/kde/0007-Fix-no-mapping-for-SysReq-key.patch": {
+      "sha256": "4c2f068ac89b78774e81b1da8339690d0ef5fa7c0f95d077705d107489062295",
+      "size": 1693
+    },
+    "conan_patches/qt/patches/kde/0008-fix-Optimize-the-performance-of-the-inotify-file-sys.patch": {
+      "sha256": "ef50a03bec039ca664be6da509a41781f4f9cd8b55af1b1082843d8f20f5c44d",
+      "size": 1904
+    },
+    "conan_patches/qt/patches/kde/0009-Fix-copy-and-paste-bug-in-QDTEP-getMaximum.patch": {
+      "sha256": "1fd777b1d3a6c790e41d4a2e1c8d3e3c1ed737b77aafd8b56e1d2b248266da42",
+      "size": 1230
+    },
+    "conan_patches/qt/patches/kde/0010-Optimize-quadratic-time-insertion-in-QSortFilterProx.patch": {
+      "sha256": "816e0bb830c2b19d472195655d83e0c03142001bffaf44a3e1c938bdfeb4e0db",
+      "size": 2608
+    },
+    "conan_patches/qt/patches/kde/0011-xcb-Remove-need-for-QXCBScreen-to-resolve-QXcbGlInte.patch": {
+      "sha256": "841adbc698b80cda50878fcd40d63c61c8f49d789b3347fee3fddc25c5bb317a",
+      "size": 1436
+    },
+    "conan_patches/qt/patches/kde/0012-Fix-memory-leak-of-QOffscreenScreen-in-QOffscreenInt.patch": {
+      "sha256": "e80eedad0ba878a8a302a8c2aa3184903b68a859dda1c5c800acffa9830e1f36",
+      "size": 3672
+    },
+    "conan_patches/qt/patches/kde/0013-Remove-another-usage-of-mysql_get_client_version.patch": {
+      "sha256": "df9d764076e63e142be9ce6c8aa98e973d7f8b04fa12659e7c6e3d3cab870c5d",
+      "size": 2263
+    },
+    "conan_patches/qt/patches/kde/0014-linux-clang-qplatformdefs-fix-building-with-musl-lib.patch": {
+      "sha256": "a44f721e8ad2c2948565c7cf453f932c7157631ee0c0537746b86497f11864ae",
+      "size": 1140
+    },
+    "conan_patches/qt/patches/kde/0015-Remove-checks-for-glibc-2-from-qplatformdefs.h-files.patch": {
+      "sha256": "a1924db5b550cbba064641f5a5017af6dd27075e582e893cbdc66c20143e232b",
+      "size": 4583
+    },
+    "conan_patches/qt/patches/kde/0016-Cater-for-upstream-changes-in-eglplatform.h.patch": {
+      "sha256": "a3e901d3a90b9ae7d82a4465a1f7b446870a5a9f418366f9635d6bcd7745f72b",
+      "size": 2180
+    },
+    "conan_patches/qt/patches/kde/0018-Fix-QPainterPath-with-QFont-SmallCaps.patch": {
+      "sha256": "a8c2d8e9d18ca330f807a046a688a954c04e97050bd1eb7bee84b2def87f7b58",
+      "size": 1581
+    },
+    "conan_patches/qt/patches/kde/0019-Respect-font-stretch-if-set-together-with-font-style.patch": {
+      "sha256": "052962e3e36190ffc0e761b8cf808b8b521d8eadb695a670072a5adcb32fe034",
+      "size": 2844
+    },
+    "conan_patches/qt/patches/kde/0020-Support-transformations-in-pattern-texture-brushes-i.patch": {
+      "sha256": "13913a2aa359b306d7f8575e9658e995c9cda69bb62b110c2cdc8cbb92bde16e",
+      "size": 1416
+    },
+    "conan_patches/qt/patches/kde/0021-Fix-highdpi-conversion-of-QTabletEvent-coordinates-o.patch": {
+      "sha256": "e25c95b7451ef79e11c626fe9572dd70aeab547fc4dfc756645719b20835deaa",
+      "size": 2465
+    },
+    "conan_patches/qt/patches/kde/0022-Revert-Fix-highdpi-conversion-of-QTabletEvent-coordi.patch": {
+      "sha256": "4e056e42ec7bf6141dd825f60e5361e86c881fd9de1b8bc35da0d9922e5d0fb4",
+      "size": 1897
+    },
+    "conan_patches/qt/patches/kde/0024-Dont-s-use-DTLS_MAX_VERSION-when-setting-SSL_CTX.patch": {
+      "sha256": "542ae26e4a82ad8433451e8e6a46c03300d1d6fdd563d1cdc0208d4c5aa717d5",
+      "size": 1538
+    },
+    "conan_patches/qt/patches/kde/0025-Diffie-Hellman-parameters-remove-useless-fix.patch": {
+      "sha256": "4a9288174f6fe003c9758e57bdf5ef9d769a2f0f7850262f24e022519d0cf715",
+      "size": 5026
+    },
+    "conan_patches/qt/patches/kde/0026-Respect-AT_SPI_BUS_ADDRESS-env-var-on-Linux.patch": {
+      "sha256": "3530294ac362838738470e2ab7458bf9b628a94b23de4dbaf2ada1093f33d795",
+      "size": 1485
+    },
+    "conan_patches/qt/patches/kde/0027-Fix-check-for-malformed-input-when-decoding-translat.patch": {
+      "sha256": "103f53ab14ec5a40dbaaa21985c0b2eac93abe8ea1ac1cbea3988b2caa396c83",
+      "size": 1557
+    },
+    "conan_patches/qt/patches/kde/0028-Qt-namespace-fix-QT_Q_FLAG-declaration-for-Qt-MouseE.patch": {
+      "sha256": "0cd6cedf29a6eb145b46a5616a73a8239ee579e395dde519576efbaea3577cd4",
+      "size": 1273
+    },
+    "conan_patches/qt/patches/kde/0029-QAction-Add-NOTIFY-changed-declaration-to-priority-p.patch": {
+      "sha256": "9b4341346963d530fb24534121e2b8001b53c268ab472dc178fa1dbebb097ece",
+      "size": 1420
+    },
+    "conan_patches/qt/patches/kde/0030-QPA-add-ButtonPressKeys-ThemeHint.patch": {
+      "sha256": "e2d67803488aac77f9485c6963a892ffbcd6227da0187a1d89d102b307b69524",
+      "size": 2232
+    },
+    "conan_patches/qt/patches/kde/0031-QGnomeTheme-Allow-Space-Return-Enter-and-Select-to-p.patch": {
+      "sha256": "20b662848562ed426cc06cf67945e7788d4256bd434db303094dba279938ac7c",
+      "size": 1906
+    },
+    "conan_patches/qt/patches/kde/0032-QGnomeTheme-remove-unneeded-Q_D.patch": {
+      "sha256": "693c768f574782d607f931f288d981a5ae06c78ae4cda1e77cc3603fdbba79b0",
+      "size": 1142
+    },
+    "conan_patches/qt/patches/kde/0033-testlib-qasciikey-Add-keypad-navigation-keys.patch": {
+      "sha256": "9807f8f4b3c323d8463d99ff565eb52ab66fe80aaafce12c21f0f66b5e0be279",
+      "size": 1170
+    },
+    "conan_patches/qt/patches/kde/0034-Prevent-crashing-when-FcFontList-fails.patch": {
+      "sha256": "d3f15a19bb8c0cbac21ec080a6ecefd573c499e3d5bad2eea366a2df93d9d1c7",
+      "size": 1307
+    },
+    "conan_patches/qt/patches/kde/0035-QPushButton-fusion-style-don-t-ignore-QIcon-On-icon.patch": {
+      "sha256": "35b865e33214e034fd42ffa4c6122b57136ba96d5cf514b5f2f771c9bd47bbd1",
+      "size": 1860
+    },
+    "conan_patches/qt/patches/kde/0036-CUPS-Add-support-for-accessible-IPP-printers.patch": {
+      "sha256": "01f58f5961298b04cb4892c41a0af837563fc0bae784fe97c4b0f86292d98c0a",
+      "size": 1919
+    },
+    "conan_patches/qt/patches/kde/0037-QShader-fix-memory-leak-in-detach.patch": {
+      "sha256": "2c0f2de234570f30404fc0f503da03d74d2a9df14295c121c4b131de0113aafc",
+      "size": 3183
+    },
+    "conan_patches/qt/patches/kde/0038-QDBusMenuConnection-Close-open-D-Bus-connection.patch": {
+      "sha256": "c85f570d208e603d60ff1c9a9f6fd5bbe498df6a8c1a43b18b799de9bbbd5bf2",
+      "size": 3322
+    },
+    "conan_patches/qt/patches/kde/0039-Widgets-use-QPlatformTheme-ButtonPressKeys-for-press.patch": {
+      "sha256": "275c08ea336532bf6404117bc48f0844b0fb474f73d9bd8f157d05b00dbf492c",
+      "size": 18075
+    },
+    "conan_patches/qt/patches/kde/0040-QAbstractButton-QComboBox-QGroupBox-static_cast-even.patch": {
+      "sha256": "151b9c5344db1d4a5927895078ff555fac06eaf1aeb1df5c8cc1daca7d6159f1",
+      "size": 4008
+    },
+    "conan_patches/qt/patches/kde/0041-Drop-call-to-setPlatformScreen-in-QHighDpiScaling-se.patch": {
+      "sha256": "d7facc24a7f8075895916fe7d9e8005bd4527678815739a83cc0301285ed48a5",
+      "size": 3028
+    },
+    "conan_patches/qt/patches/kde/0042-Fallback-to-another-file-dialog-implementation-when-.patch": {
+      "sha256": "90011c00ac29f36dca87b805466f4b996a9f7af2582b069e7407a2ba22246cd2",
+      "size": 10388
+    },
+    "conan_patches/qt/patches/kde/0043-Fix-compile-with-MinGW-W64-9.0.0-Redefinition-of-str.patch": {
+      "sha256": "f27c0371ca1d3ecde7dcb3fadd70c209760ddf81b5a056e332ec1a3c3bf4a064",
+      "size": 1699
+    },
+    "conan_patches/qt/patches/kde/0044-Revert-CUPS-Add-support-for-accessible-IPP-printers.patch": {
+      "sha256": "82581affd7dca37d275844cbb1619985a17bf1c10244868b0abc3a441d6c211a",
+      "size": 1784
+    },
+    "conan_patches/qt/patches/kde/0045-xcb-Update-_NET_SUPPORTED-when-the-window-manager-ch.patch": {
+      "sha256": "54176c3107a9d60df65a2f039fc26ddad8a8edfe4465c45cab1affad0e7ad3a9",
+      "size": 1667
+    },
+    "conan_patches/qt/patches/kde/0046-fix-AT_SPI_BUS_ADDRESS-actually-working.patch": {
+      "sha256": "7ddd0c40cd3d4255b8aaf7e17e3a17972b925ad95a5fc11f5366c8f007269f83",
+      "size": 2052
+    },
+    "conan_patches/qt/patches/kde/0047-Use-class-scope-to-refer-to-static-function.patch": {
+      "sha256": "5be8229dd31c52189f48a389eb7d40acc53f9a819ef00429b0ac95cc3b63222e",
+      "size": 1474
+    },
+    "conan_patches/qt/patches/kde/0048-add-color-picking-support-on-wayland-using-the-XDG-d.patch": {
+      "sha256": "2f235f00380613cc3cc07b5e8ce467b55201323689fb95a329e884b6659764c8",
+      "size": 13221
+    },
+    "conan_patches/qt/patches/kde/0049-Fix-build-without-dbus-support.patch": {
+      "sha256": "d297eb4d07a8c7ec45a0f8757ad25ac9e35ad34e4902f85cade6ad072f684c6c",
+      "size": 1346
+    },
+    "conan_patches/qt/patches/kde/0050-Assert-validity-in-QStringIterator-s-unchecked-metho.patch": {
+      "sha256": "3c883bd408728d8d549d8541c536e48b2e439d74c251ec824403af03dca970f0",
+      "size": 3326
+    },
+    "conan_patches/qt/patches/kde/0051-ANGLE-Fix-compilation-on-GCC-11.patch": {
+      "sha256": "c475a2fc7fa677ebc666d198b3ee94039a714f5762f2234f54a71f409b274b72",
+      "size": 1029
+    },
+    "conan_patches/qt/patches/kde/0052-Send-string-to-Atspi-DBus-interface-on-value-changed.patch": {
+      "sha256": "8cfc97a3ea3a30a2fe07b274f8650dc7dee99fece2b5b5b2d62758a477a46d63",
+      "size": 1926
+    },
+    "conan_patches/qt/patches/kde/0053-Send-string-to-Atspi-DBus-interface-on-name-descript.patch": {
+      "sha256": "d024c17bf5bae9343d076b0e0e86fb046c52334de1e86242bd999ffeddee7749",
+      "size": 3591
+    },
+    "conan_patches/qt/patches/kde/0054-offer-an-opt-out-of-automatic-xdg-desktop-portal-use.patch": {
+      "sha256": "907a2caf99c5fb4f31faf9c7e38d12a3aab30daea54f2456f6de45a6c10772eb",
+      "size": 1459
+    },
+    "conan_patches/qt/patches/kde/0055-a11y-support-GetAccessibleId-for-at-spi.patch": {
+      "sha256": "5fecf89ae6426cfa97e65feb623d795119071d98113dd13f54aaa092fa073699",
+      "size": 5352
+    },
+    "conan_patches/qt/patches/kde/0057-Send-accessible-focus-event-after-list-view-has-focu.patch": {
+      "sha256": "3f2fbbd1baad7f8db99e76fe65be58687807fadac8921a262ced62351b1e6a28",
+      "size": 1724
+    },
+    "conan_patches/qt/patches/kde/0058-Scale-BMP-color-samples-with-periodic-bit-expansion.patch": {
+      "sha256": "097daa5ff872623ef229917374883acccb3a37d61d3bae34892471c8bd806ad1",
+      "size": 5567
+    },
+    "conan_patches/qt/patches/kde/0059-QKeySequence-Add-missing-modifier-names.patch": {
+      "sha256": "d3a666d5bfe215151d7d95d924c54db0d6ff1529cec5e9ea626561e93908fb10",
+      "size": 3536
+    },
+    "conan_patches/qt/patches/kde/0060-TLS-backend-SecureTransport-properly-clear-SSLContex.patch": {
+      "sha256": "a3faa3231565f77626b8b1aa5b61ae1f6eac6a415e0368e7b220f7b59e1946df",
+      "size": 1243
+    },
+    "conan_patches/qt/patches/kde/0061-xcb-correctly-disconnect-xsettings-callbacks.patch": {
+      "sha256": "580e38b56a73be12723c1092f6fdd7399ddf66bc4136bedb340e3f2fa6a7a881",
+      "size": 2489
+    },
+    "conan_patches/qt/patches/kde/0062-QSysInfo-prettyProductName-add-missing-macOS-product.patch": {
+      "sha256": "6ced67a9f5b2e3528a3e41b08117470937852afe19a905881da865f9a68d497e",
+      "size": 2447
+    },
+    "conan_patches/qt/patches/kde/0063-QSysInfo-prettyProductName-Add-macOS-Ventura-product.patch": {
+      "sha256": "a4ffb73487774e734361a49628522e28ba9f2549c4e975c67e45466e5ecc8198",
+      "size": 1241
+    },
+    "conan_patches/qt/patches/kde/0064-QToolButton-reimplement-the-fix-for-QTBUG-95255.patch": {
+      "sha256": "6bb26c6e3877ba9b8d0dec386b73a8a8c42ca59f2d65ecef09d59a6034ede8de",
+      "size": 2126
+    },
+    "conan_patches/qt/patches/kde/0065-Do-not-set-Qt-ToolTip-flag-for-QShapedPixmapWindow.patch": {
+      "sha256": "bd62e9e38802305f4b0b8c1b7c2702516f75b97237664ff633e11f88638e05c8",
+      "size": 1806
+    },
+    "conan_patches/qt/patches/kde/0066-Add-QImage-null-check-when-QOpenGLTexture-converts.patch": {
+      "sha256": "9b0782e8096d54d977cf45165f4de58d8d2dfb95830a143bcbc63e080407f6a1",
+      "size": 1856
+    },
+    "conan_patches/qt/patches/kde/0067-QCborValue-fix-incorrect-to-Array-Map-when-the-value.patch": {
+      "sha256": "f19a8d8697d5247c52a104a6088710018f701aeeafea6b01a1bf2a358c70af84",
+      "size": 5611
+    },
+    "conan_patches/qt/patches/kde/0068-Use-pkgconfig-in-order-to-find-libproxy-configuratio.patch": {
+      "sha256": "f6129fe20dfa6e815ab910fbf7f496b37b0511434c05a7aba0e04080fe0207ae",
+      "size": 1006
+    },
+    "conan_patches/qt/patches/kde/0069-qxcbwindow.cpp-Fix-sign-compare-and-another-warnings.patch": {
+      "sha256": "45f712045cd527dfd57d81480370e1e4f46193c7da9753c0bf52b4b7dd16f88d",
+      "size": 2964
+    },
+    "conan_patches/qt/patches/kde/0070-Fix-tst_moc-for-C-17.patch": {
+      "sha256": "3df6883756834be807de63db450bc1b2fa0162872200dac164c1edf3064e5868",
+      "size": 7687
+    },
+    "conan_patches/qt/patches/kde/0071-Revert-Draw-the-cursor-considering-the-descent-is-0.patch": {
+      "sha256": "eedf478e4a24c60a25e9d86eaf5b0b56a277f57972e889465b2df2ca2b411678",
+      "size": 1579
+    },
+    "conan_patches/qt/patches/kde/0072-Fix-Croatia-s-currency.patch": {
+      "sha256": "e6ec18bd2c31dee0bf9f9f8bd78aeb2758efbc4be9512116ba68521fd58fee1f",
+      "size": 4853
+    },
+    "conan_patches/qt/patches/kde/0073-QColorDialog-Ignore-mouse-move-events-when-no-mouse-.patch": {
+      "sha256": "971823a22822b1f7953d3fa111d2316f7ad5776cb83c6dbace2fc00e2f178039",
+      "size": 2327
+    },
+    "conan_patches/qt/patches/kde/0074-Qt3DRender-includemocs.patch": {
+      "sha256": "d372affe0b6c3e5e15e79abcadfbc9843a276461b263df4659bb2cecc14b46f8",
+      "size": 845
+    },
+    "conan_patches/qt/patches/kde/0075-Fix-UB-signed-char-passed-to-cctype-function.patch": {
+      "sha256": "860f503201d895b27107d7ae6309775875d4ac72f0af273038c3d717dabc36ba",
+      "size": 1583
+    },
+    "conan_patches/qt/patches/kde/0076-Fix-highdpi-conversion-of-QTabletEvent-coordinates-o.patch": {
+      "sha256": "50f08cd35cf1c5d37d3743fe4d5af1861c4f75f7e30bd9d3d1b3f9c0253b278a",
+      "size": 2748
+    },
+    "conan_patches/qt/patches/kde/0077-a11y-atspi-Fix-incorrect-use-of-x-instead-of-y-posit.patch": {
+      "sha256": "80f064b432b0105cb5883ced9a659fb0a3118a0388f0d62560ffa93853b6d8c2",
+      "size": 1222
+    },
+    "conan_patches/qt/patches/kde/0078-a11y-atspi-Take-dialog-into-account-as-top-level-win.patch": {
+      "sha256": "f0df63d6d230b7f9001aca306b0d5da00e4a62aa535acdb5e95365bb3b2ff679",
+      "size": 1826
+    },
+    "conan_patches/qt/patches/kde/0079-a11y-atspi-translate-coords-for-GetOffsetAtPoint-the.patch": {
+      "sha256": "67a5e19f6740031aa4caeb907482614e5be224ed95c1d76e46c79cd3eec57797",
+      "size": 1903
+    },
+    "conan_patches/qt/patches/kde/0080-Fix-QTextEdit-cursor-rectangle-vertical-positioning.patch": {
+      "sha256": "e3d1f428e29e4292f609ca46d63239bf4a65ccff7017b944f603dd600f1313f5",
+      "size": 3231
+    },
+    "conan_patches/qt/patches/kde/0081-QTextLayout-Reconsider-cursor-drawing-on-TextObject.patch": {
+      "sha256": "fc6f63f2b5d8fe32d80ab6d2246df74656491a3484f52f5b64b4f68d05db5e6e",
+      "size": 3834
+    },
+    "conan_patches/qt/patches/kde/0082-a11y-atspi-Map-ButtonMenu-role-to-AT-SPI-equivalent.patch": {
+      "sha256": "9f664a257728f287768a7fb04ae268567effa81a7e6e01c34f1bd37e19715f3a",
+      "size": 2976
+    },
+    "conan_patches/qt/patches/kde/0083-QPluginLoader-report-the-right-load-hints.patch": {
+      "sha256": "4002f2c91654831fa30edac996283cbf6a5e6bb5ce16b14cf49aac2fb87686f3",
+      "size": 3826
+    },
+    "conan_patches/qt/patches/kde/0084-QLibraryPrivate-Actually-merge-load-hints.patch": {
+      "sha256": "0795f329e454b110c332e54619701f0b06fbba22542ba3f8f3fb83c43dd9ada9",
+      "size": 9353
+    },
+    "conan_patches/qt/patches/kde/0085-QStandardItemModel-don-t-leak-in-mimeData.patch": {
+      "sha256": "aabe351f91bdcb45e9b6c161cda54cd062c858b9b6a581d2f01b76b74be3f360",
+      "size": 1816
+    },
+    "conan_patches/qt/patches/kde/0086-QDial-don-t-crash-when-min-max-and-setting-a-value-m.patch": {
+      "sha256": "83d866a5413243bbe5275b081eea2c95f7dac2615c7e29b51924ea78ca610dd9",
+      "size": 2043
+    },
+    "conan_patches/qt/patches/kde/0087-OpenFile-portal-do-not-use-O_PATH-fds.patch": {
+      "sha256": "c674fc9f21f79adeea2be45bc34ab9db8d9f58834d76b2c8d14d013b20d07586",
+      "size": 2567
+    },
+    "conan_patches/qt/patches/kde/0088-Revert-xcb-only-set-base-size-when-it-s-valid.patch": {
+      "sha256": "52ebafebf98e809df1d02aa1f6ecafcecbb2d2cdca579122373e7eb703c2aec4",
+      "size": 1394
+    },
+    "conan_patches/qt/patches/kde/0089-qxkbcommon-fix-isKeypad.patch": {
+      "sha256": "f4e27ddab0054323fe7f36b222a017f5c002c30afbd2631b121a30f6e051554b",
+      "size": 2520
+    },
+    "conan_patches/qt/patches/kde/0090-xcb-Avoid-repeatedly-registering-xsettings-callbacks.patch": {
+      "sha256": "4d9c796aaae3b96b292df256cbe988394b490ae69fc1a2418f132acd8b6ec28a",
+      "size": 1223
+    },
+    "conan_patches/qt/patches/kde/0091-Doc-note-QWindow-winId-will-cause-platform-window-cr.patch": {
+      "sha256": "be3b11700277933f5af5820e3b745173ab620536b2217d3bda2bb41a74cef625",
+      "size": 1533
+    },
+    "conan_patches/qt/patches/kde/0092-Opt-out-of-standard-library-memory_resource-on-macOS.patch": {
+      "sha256": "8970a2b3f18188faaee9b875cfe2acb7c0e2df748b42ccd47e4ad79ff1e96296",
+      "size": 903
+    },
+    "conan_patches/qt/patches/kde/0093-Protect-headers-against-min-max-macros.patch": {
+      "sha256": "54b25843b616b6b9ef5b6239eb6ef3fce25ac21516ba52ced2e26fdcf3ce19d7",
+      "size": 5924
+    },
+    "conan_patches/qt/patches/kde/0094-Update-shared-mime-info-to-the-2.1-release-adjust-im.patch": {
+      "sha256": "cbece96811240e4d0688541b35c37cb92962c39418c78176356eb84928aecfd2",
+      "size": 4600091
+    },
+    "conan_patches/qt/patches/kde/0095-QMimeDatabase-fix-detection-of-pattern-conflict-in-d.patch": {
+      "sha256": "1dfb600c87fa83cca5ff0b389ccf6ad98e3b990153b8f475926eb20e7fb54114",
+      "size": 7977
+    },
+    "conan_patches/qt/patches/kde/0096-QMimeDatabase-handle-buggy-type-definitions-with-cir.patch": {
+      "sha256": "cf9a8e000d48349d30be51bb94f60fa058ce92a7cd6a86d8cf511360a50d6cc7",
+      "size": 6141
+    },
+    "conan_patches/qt/patches/xiaomi.diff": {
+      "sha256": "b46f4dd48cfaec58fb5cddb49c85091869605cfe223b35c8cd22f6ac67f915a1",
+      "size": 1321
+    },
+    "conan_profiles/android-32": {
+      "sha256": "70565a120fa0b8f74084c6514aac0b8c03eca4fea1225102a03cac4e55f94b49",
+      "size": 335
+    },
+    "conan_profiles/android-32-ndk": {
+      "sha256": "42817e71ac5ccc98ea08cdcde5adc49533d0335e794b291fbcfa2f08cb6513e0",
+      "size": 46
+    },
+    "conan_profiles/android-64": {
+      "sha256": "82fadb7438dbde7d01586e057c0e712b64f6e3640fb736c79e0e7f576d44b085",
+      "size": 61
+    },
+    "conan_profiles/android-64-ndk": {
+      "sha256": "6f076b18b1e95b16ba71397cdf1159c4896b888aa19b1e189d87b81580f6739e",
+      "size": 46
+    },
+    "conan_profiles/android-x64": {
+      "sha256": "589a81bfd1a0fcb6e37ca045003c869c18fa07878fe090a0a4a6c7085964a6b2",
+      "size": 62
+    },
+    "conan_profiles/android-x64-ndk": {
+      "sha256": "f9e9be38358e81e6a1fa266dfe7d0162988123b919c17cc9cf23c3d2efb3c25e",
+      "size": 47
+    },
+    "conan_profiles/base/android": {
+      "sha256": "c73c655872c17dcd0db7d6019d2eeef20741b0ee964f6922a22235b17a6ec6af",
+      "size": 802
+    },
+    "conan_profiles/base/android-ndk": {
+      "sha256": "7342d8ef8dfc77cfc14ee08dc4ca5306b640f4f1513604e48bd4286d532f4359",
+      "size": 32
+    },
+    "conan_profiles/base/android-system": {
+      "sha256": "e4216836512f39ff626917716c98f05925ed598895b6e6a3ef8ce7db62b5b744",
+      "size": 43
+    },
+    "conan_profiles/base/apple": {
+      "sha256": "a935000f63f7e5218054968ab69e7bfd9b313ebbe914c0f7ac824f71afea980c",
+      "size": 426
+    },
+    "conan_profiles/base/apple-system": {
+      "sha256": "34026fbe1bf0a5b0719ecda875a0b47dce64f47b3d00ca54db3922d53139fa6a",
+      "size": 131
+    },
+    "conan_profiles/base/common": {
+      "sha256": "a1cc96284ebf41aa242a8f6f7819dd2d5e8960f55fdef9484c7822480c693c3b",
+      "size": 6265
+    },
+    "conan_profiles/base/ios": {
+      "sha256": "ee058fa162a774c065be69e3c451b3e96717ab6bbd5a4d509ee7f35061ae811e",
+      "size": 478
+    },
+    "conan_profiles/base/linux": {
+      "sha256": "fd3ca4ee0c636435133dc0e5ea8a58f5706461086b7091cac8dc839ae0f30dab",
+      "size": 657
+    },
+    "conan_profiles/base/macos": {
+      "sha256": "699b9e1a3edf9c35734a3a024f8d924ab658e12f2686755ba4a82263b32523e0",
+      "size": 36
+    },
+    "conan_profiles/base/meson_workaround.txt": {
+      "sha256": "365a05ebca208a21fd6d44c5cc880ac1870405198535adb702313dd88a9939a0",
+      "size": 27
+    },
+    "conan_profiles/base/msvc": {
+      "sha256": "48410f8311a293b3c669c36e6fd3f1c4f003f06afdf503d5ce47bcc14a6ebccf",
+      "size": 225
+    },
+    "conan_profiles/base/msvc-intel": {
+      "sha256": "6fd7bd2cb796c562f71718aa8d8b1d49d1cd9f6874ac5b5d38b1fbc32ac82fc3",
+      "size": 692
+    },
+    "conan_profiles/base/msvc-user": {
+      "sha256": "fef4adbd68d30002a8bfa78983b28d5afb89ac5c7408109a8ca893255629e3c8",
+      "size": 161
+    },
+    "conan_profiles/base/vars.jinja": {
+      "sha256": "e18b7570160ca9fff7e94ed3bd415371a239580ed397c3d32513bbffbf915fe0",
+      "size": 78
+    },
+    "conan_profiles/base/windows.jinja": {
+      "sha256": "6a40293b336bf2f2e64cdfade8649d66d95419cdb9e629c325709616395a8718",
+      "size": 514
+    },
+    "conan_profiles/ios-arm64": {
+      "sha256": "2f08d8d7b74550fe8d935b304b3366a9b5cfeb5a596ab46dc63737f4c9db48ce",
+      "size": 57
+    },
+    "conan_profiles/ios-armv7": {
+      "sha256": "36b803dd990cb4cb541ddff7928b6081f9c80614c8668fcec7288d7c8f9149a2",
+      "size": 136
+    },
+    "conan_profiles/linux-arm64": {
+      "sha256": "8beaa82c5ccb4068f576b1b537da578fceced2a4312f75c62d0cda2d30f7b421",
+      "size": 43
+    },
+    "conan_profiles/linux-x64": {
+      "sha256": "2127a8e664cdc926eba3652a9023dc21ab85b72a93a91b5f77191c113581b83c",
+      "size": 44
+    },
+    "conan_profiles/macos-arm": {
+      "sha256": "88547f637e959c2d43bd9ba574e736d839d89751652ef2a8d30751826869eb24",
+      "size": 59
+    },
+    "conan_profiles/macos-intel": {
+      "sha256": "fb26554191254927e10f28ca2e5cf9e37cb14e66c56fa609a44a5820d6ddbea9",
+      "size": 61
+    },
+    "conan_profiles/msvc-arm64": {
+      "sha256": "a9462b74f086af74abd9c5c47f271ad3c5121ed1f005005e8d55e5f3e0aaa8b8",
+      "size": 282
+    },
+    "conan_profiles/msvc-x64": {
+      "sha256": "f332fcc61714799726d0e1958c530b2b3ded239559e94ca4370e94553f06e59f",
+      "size": 49
+    },
+    "conan_profiles/msvc-x86": {
+      "sha256": "9067612186a6f21454a351ddef593341deaca41f9bc5d806af2e81dfd1f0a70f",
+      "size": 123
+    },
+    "conanfile.py": {
+      "sha256": "f0091ccc68b7a650770707a5efc43d82ede8e5af0a9586bc96576d1aba725e8b",
+      "size": 5220
+    },
+    "luajit_version": {
+      "sha256": "b2be6c90691d741083a182f12b3997364959117544c94dff5f9a578291b5d731",
+      "size": 41
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{% import 'windows.jinja' as windows %}
+
+include(msvc)
+
+[settings]
+# https://blog.knatten.org/2022/08/26/microsoft-c-versions-explained/
+# https://learn.microsoft.com/en-us/cpp/overview/compiler-versions
+# v142 / 14.29 / 19.29
+compiler.version=192
+
+[conf]
+{% set _WIN32_WINNT_WIN7 = '0x0601' %}
+{% set NTDDI_WIN7 = '0x06010000' %}
+{{ windows.set_defines(
+    _WIN32_WINNT_WIN7,
+    NTDDI_WIN7,
+) }}
+
+# SDL v3 must be compiled against the newest SDK headers (e.g. WASAPI uses fields that
+# don't exist with the Win7 NTDDI_VERSION targeted here), it checks the OS version at
+# runtime instead. Profiles targeting Windows 10 headers (e.g. msvc-arm64) are unaffected
+sdl/*:tools.build:defines=[]

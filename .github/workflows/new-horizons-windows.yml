@@ -39,6 +39,9 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
+      - name: Verify preserved dependency recipes without upstream lookup
+        run: python tools/ci/verify_vendored_dependencies.py
+
       - name: Install upstream MSVC v142 toolset
         shell: pwsh
         run: |

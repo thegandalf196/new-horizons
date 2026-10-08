@@ -1,0 +1,3 @@
+[settings]
+{% set compiler, version, _ = detect_api.detect_default_compiler() %}
+&:compiler.version={{ detect_api.default_compiler_version(compiler, version) }}

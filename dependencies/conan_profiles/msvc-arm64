@@ -1,0 +1,15 @@
+{% import 'base/windows.jinja' as windows %}
+
+include(base/msvc)
+
+[settings]
+arch=armv8
+
+[conf]
+# Windows 10 1709 "Redstone 3"
+{% set _WIN32_WINNT_WIN10 = '0x0A00' %}
+{% set NTDDI_WIN10_RS3 = '0x0A000004' %}
+{{ windows.set_defines(
+    _WIN32_WINNT_WIN10,
+    NTDDI_WIN10_RS3,
+) }}
