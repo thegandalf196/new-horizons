@@ -1,5 +1,28 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Peacemaker exploration fixture assumed a mutable blocked flag
+
+UP301 build54703 fails in the new fixture because TerrainTile::blocked() is a
+computed getter over blockingObjects, not a writable boolean. Production Fuzzy
+guard-query changes compile. Use blocked() for inspection and real impassable
+terrain/authored blockers for scenario geometry, following existing NK2 fixtures;
+do not invent a flag or fake the danger/selector result. Preserve compiler receipt
+build/nh-peacemaker-danger-ai-build.log. No runtime acceptance follows this build.
+
+Repaired linked45784 passes, but first native47537 passes5/6: the new expiry
+fixture adds seven days to a TinyMap baseline without asserting that normalized
+absolute week changes. Day0 and day7 can both belong to the normalized first
+week. Match the already passing authoritative Diplomacy fixture: set the first
+day of the next absolute week and explicitly assert a changed week before
+checking expired passability/danger. Preserve native-up301.log/XML; keep all
+expiry/army assertions and production calendar rules unchanged. The actual
+exploration selector/serialized movement case already passes in this failed gate.
+
+Final linked34865/native44037 pass6/6 in2.423s, zero skips. The repaired explicit
+calendar-boundary assertion passes before unchanged expired-danger/army checks.
+Independent review confirms actual terrain/selector/request semantics; no normal
+launcher promotion or full autonomous-turn acceptance is claimed.
+
 ### 2026-10-08 — Wisp AI fixture passed a raw battle to detached forecasting
 
 First native gate33876 passes27/30, failing the three principal distant cases.

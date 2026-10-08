@@ -1,6 +1,34 @@
 # New Horizons functional completion matrix
 
-Updated: 2026-10-07
+Updated: 2026-10-08
+
+2026-10-08 UP301 minimum-AI checkpoint: FuzzyHelper now propagates its visitor
+to both tile and known subterranean-exit guard queries. Shared passableFor rules
+remove Peacemaker's pacified guardian only for its protected hero/current week;
+direct object danger and null-visitor behavior remain unchanged. Real exploration
+selection and serialized ordinary movement produce authoritative safe arrival
+without battle or neutral-army change. Linked34865 exits0 at10 jobs; native44037
+passes6/6 in2.423s, zero skips, including pre-trigger/other/null/direct/expiry
+controls and adjacent authoritative state cases. Independent review has no
+blocker; module/whitespace checks pass. Receipts: build/nh-peacemaker-danger-ai-
+build-calendar-fixture.log and build/nh-preview-ai-validation.jUrtT2RY/
+native-up301-repaired.log/XML. Subterranean native execution and full autonomous
+turn/save-expiry matrices remain Phase2. One required minimum AI consumer added,
+no perk identity credit:231/310,61/67,8/8 unchanged. No normal launcher promotion.
+
+2026-10-08 bounded town-consumer audit afterb1ad7cee8: Reservoir has an explicit
+validated NK2 visit request; House of Wisdom has RESOURCE_SKILL purchases and
+ordinary scroll equipment selection; Ballista Yard has shared useful-machine
+purchase and automatic authoritative Siege visit reward. Sampled faction
+training/blessings use automatic rewardable visits, and BuildAnalyzer considers
+SPECIAL1..4. Separate UI audit confirms weekly Reservoir, unlimited Normal-only
+Nexus and replicated next-Week Astronomy hover/help paths. No missing principal
+consumer was demonstrated in this sample; do not invent a feature or count
+source inspection as new runtime acceptance. Autonomous House/Yard sequences,
+strategic visit valuation and rendered/live-refresh/delivery remain Phase2 or
+their existing delivery entries. Glyphs adventure aura remains genuinely missing
+and held on geometry/overlap; its two questions were renewed. This sample is not
+a complete town/faction or Version1.0 coverage audit; identity counts unchanged.
 
 2026-10-08 UP300 minimum-AI checkpoint: Wisp Long Reach candidates now survive
 AttackPossibility's adjacent-only target enumeration. Legal distant attacks use
@@ -3979,12 +4007,12 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | All three ranks per Skill are active; many registered Skills still lack complete perk progression. |
 | Skill rank effects active | 93/93 | Elemental Rebirth's three ranks now have source/native and owning-side AI evidence. Active status does not certify every wider interaction. |
-| Skill perks active | 228/310 | 82 planned; current registry recount2026-10-07. Generic157/220, faction71/90. Diplomacy is 7/10; Chaos Magic 5/10; Necromancy 10/10; Learning 3/10; Estates 6/10; Battlecraft 8/10; Logistics 8/10; Command 7/10; Warcasting 7/10. Historian's foundation remains planned and adds no activation count. Active status alone does not certify every mechanic. |
+| Skill perks active | 231/310 | 79 planned; current registry recount2026-10-08. Generic160/220, faction71/90. Diplomacy is 7/10; Chaos Magic 5/10; Necromancy 10/10; Learning 3/10; Estates 6/10; Battlecraft 8/10; Logistics 8/10; Command 7/10; Warcasting 9/10. Historian's foundation remains planned and adds no activation count. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 27/27 | All nine faction rank foundations are active; their remaining perks and wider integration are separate work. |
 | Faction perks active | 71/90 | 19 planned perks; Divine Mandate has six accepted perks, including Expert Mandate of Heaven and Advanced Purifying Mandate; Elemental Rebirth has three accepted perks with normal Basic-to-Advanced selection and live/detached evidence. |
 | Canonical combat-spell identities registered | 61/67 | 6 missing/inactive; Puppet Master is the newest source/native-verified identity. Chaos is 7/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
-| Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. The five-spell effect audit finds missing canonical clauses in every spell (UP-056); no blanket effect-complete claim. Rendered/playable purchase remains unverified. |
+| Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. UP056's refreshed effect audit verifies Summon Boat existing-only/adjacent placement, Town Portal exhaustion, Dimension Door visibility/radius8/exhaustion/warning and shared1.5x Water Walk/Fly costs. Protected barriers, Water Walk end-day land policy and Town Portal nearest-town/admission scope retain explicit holds. Acquisition count is not an effect-complete count; rendered/playable purchase remains separate. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree. UP-146 adds native-verified independent simultaneous state/effects and action/AI/UI hooks; broader per-Order interaction coverage remains Phase2. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; UP021 ordinary/radial transfer principal paths pass13 focused native cases. Broader and rendered/playable acceptance remain pending. |
 | Creature base-line Leadership requirements | 64/64 | Data coverage only; individual creature mechanics remain unaudited. |
@@ -4343,7 +4371,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Chaos Magic | 3/0 | 5/5 | Frenzied Curse joins Mindbreaker, Blinkmaster, Weaver and Paradox Shield with focused source/native evidence recorded above; five perks remain planned. Base Berserk lifecycle is still partial. |
 | Spellcraft | 3/0 | 5/5 | Overwhelming Formula now selects the first actual hostile magical injury against a target with applicable MDR, retaining the winning cast across targets and delayed hazards; its 50% penetration combines independently with other contributors. Focused Formula/MDR native gate passes53/53; full movement-trigger routing remains Phase2. Grand Formula, Arcane Focus, Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold. Basic/Advanced/Expert efficiency is 110/120/130% under saved v3 rules. Precise Casting has7/7 principal native cases and awaits Time Stop/Earthquake scope; Counterpressure has an accepted-cast map and a no-op trigger boundary. Concentration target-count definition, Cross-School multi-school relation and Extend Spell unusual lifetimes remain explicit rulings. |
 | Wisdom | 3/0 | 8/2 | Mana Conservation post-combat Normal recovery, Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. One other perk remains missing. Broader interactions and playable acceptance remain open. |
-| Warcasting | 3/0 | 7/3 | Perfect Rhythm has accepted third-Spell/third-Order, flat-base preservation, unmatched/unselected/expired controls and detached branch evidence: principal7/7, active7/7 and adjacent11/11 pass with zero skips. Valid one-per-tier selection prevents coexistence with Master Synthesis; the former stacking hold is inapplicable. Spellward and Master Synthesis retain their focused evidence. Combat Casting, Enchanted Command and Reactive Weave remain planned pending recorded shared-rule decisions. Rendered status and wider interactions remain Phase2. |
+| Warcasting | 3/0 | 9/1 | Combat Casting and Enchanted Command now join the seven earlier active perks, with accepted authority/detached evidence in the42-case focused gate recorded above; resolved shared-rule decisions are not pending. Perfect Rhythm retains accepted third-Spell/third-Order, flat-base preservation and unmatched/unselected/expired controls. Valid one-per-tier selection prevents coexistence with Master Synthesis; the former stacking hold is inapplicable. Reactive Weave alone remains planned on its stronger-only versus additive readiness ruling. Rendered status and wider interactions remain Phase2. |
 | Logistics | 3/0 | 8/2 | Rapid Embarkation and Pursuit March remain missing. Master Logistician has actual day/boat/Stables/save/pathfinder evidence alongside Forced March, Roadmaster, Wayfarer and Mountaineer. Future-day strategic carry and unspent-burst forecasting remain Phase2. |
 | Diplomacy | 3/0 | 7/3 | Foundation, Envoy, Peacemaker, Tribute and Recruitment Pact verified; three perks remain missing |
 | Estates | 3/0 | 6/4 | Resource Broker joins Land Surveyor, Tax Collector, Investor, Estate Network and Financier. Local Marketplace rate, accepted AI trade, mine-capture grants, daily income, weekly Wood/Ore, weekly treasury interest and Investor's pre-income treasury snapshot have focused native evidence. Broader interactions and playable delivery remain separate. |

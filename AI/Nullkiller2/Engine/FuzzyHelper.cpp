@@ -68,7 +68,7 @@ ui64 FuzzyHelper::evaluateDanger(const int3 & tile, const CGHeroInstance * visit
 			auto it = aiNk->memory->knownSubterraneanGates.find(dangerousObject);
 			if(it != aiNk->memory->knownSubterraneanGates.end())
 			{
-				auto guards = cb->getGuardingCreatures(it->second->visitablePos());
+				auto guards = cb->getGuardingCreatures(it->second->visitablePos(), visitor);
 
 				for(auto cre : guards)
 					vstd::amax(guardDanger, evaluateDanger(cre, visitor));
@@ -78,7 +78,7 @@ ui64 FuzzyHelper::evaluateDanger(const int3 & tile, const CGHeroInstance * visit
 
 	if(checkGuards)
 	{
-		auto guards = cb->getGuardingCreatures(tile);
+		auto guards = cb->getGuardingCreatures(tile, visitor);
 		for(auto cre : guards)
 			vstd::amax(guardDanger, evaluateDanger(cre, visitor)); //we are interested in strongest monster around
 	}

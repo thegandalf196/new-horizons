@@ -616,6 +616,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/Helpers/NewHorizonsMusterTest.cpp
 		nullkiller2/NewHorizonsAdventureSpellUnlockAITest.cpp
 		nullkiller2/NewHorizonsArcaneReservoirAITest.cpp
+		nullkiller2/NewHorizonsPeacemakerDangerAITest.cpp
 		nullkiller2/NewHorizonsEstatesIncomeAITest.cpp
 		nullkiller2/NewHorizonsMarketSelectionAITest.cpp
 		nullkiller2/NewHorizonsLearningMentorAITest.cpp
