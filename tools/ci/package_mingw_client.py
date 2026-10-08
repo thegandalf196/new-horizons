@@ -67,6 +67,12 @@ def verify_bundle(bundle):
 
 
 def stage_committed_resources(root, revision, destination, legacy_frozen_loose_art=False):
+    expected = None
+    excluded_sources = set()
+    if not legacy_frozen_loose_art:
+        expected = common.nhart.validate_manifest(common.nhart.read_json(
+            committed_file(root, revision, common.RUNTIME_ART_MANIFEST)))
+        excluded_sources = {entry['source'] for entry in expected['entries']}
     data = git(root, 'archive', revision, '--', *RESOURCES)
     with tarfile.open(fileobj=io.BytesIO(data)) as archive:
         for member in archive:
@@ -77,6 +83,11 @@ def stage_committed_resources(root, revision, destination, legacy_frozen_loose_a
                 continue
             if not member.isfile():
                 raise RuntimeError('Linked/nonregular committed resource is not accepted')
+            # Selected resources are shipped solely inside the verified pack.
+            # In particular, the readable authoring config can intentionally
+            # differ from the complete selected resolver embedded in NHART.
+            if member.name in excluded_sources:
+                continue
             target = destination / member.name
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(archive.extractfile(member).read())
@@ -90,7 +101,6 @@ def stage_committed_resources(root, revision, destination, legacy_frozen_loose_a
         if files or (destination / common.RUNTIME_ART_PACK).exists():
             raise RuntimeError('Legacy loose-art mode cannot bypass a declared NHART package')
         return
-    expected = common.nhart.read_json(committed_file(root, revision, common.RUNTIME_ART_MANIFEST))
     packed_sources = common.verify_runtime_art(destination, expected)
     for name in packed_sources:
         path = destination / name

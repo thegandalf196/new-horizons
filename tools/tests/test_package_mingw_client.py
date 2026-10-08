@@ -129,6 +129,23 @@ class MinGWArtStagingTest(unittest.TestCase):
             with self.subTest(source=source):
                 self.assertEqual((self.destination / target).read_bytes(), ('notice from pinned source: ' + source).encode())
 
+    def test_selected_config_can_differ_from_unshipped_authoring_copy(self):
+        source = 'config/newHorizonsMagicAssets.json'
+        selected = b'{"castingGlows":{},"guildBooks":{"selected":"complete"}}'
+        self.manifest['entries'].append({
+            'source': source, 'resource': 'CONFIG/newHorizonsMagicAssets.json', 'size': len(selected),
+            'sha256': hashlib.sha256(selected).hexdigest(), 'family': 'fixture',
+            'origin': 'synthetic test', 'selection': 'complete selected config', 'approval': 'test only'})
+        self.manifest['requiredFamilyCounts']['fixture'] = 2
+        (self.inputs / source).write_bytes(selected)
+        package_mingw.common.nhart.pack(self.manifest, self.inputs, self.inputs / package_mingw.common.RUNTIME_ART_PACK)
+        self.files[package_mingw.common.RUNTIME_ART_PACK] = (self.inputs / package_mingw.common.RUNTIME_ART_PACK).read_bytes()
+        self.files[source] = b'{"castingGlows":{"legacy":"authoring only"}}'
+        self.stage()
+        self.assertFalse((self.destination / source).exists())
+        self.assertEqual((self.destination / 'config/fixture.json').read_bytes(), b'{}')
+        package_mingw.common.verify_runtime_art(self.destination, self.manifest)
+
 
 class MinGWBundleTest(unittest.TestCase):
     def setUp(self):

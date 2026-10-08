@@ -5,6 +5,10 @@
 *.bat text eol=crlf
 /android/gradlew text eol=lf
 
+# Preserve the exact pinned upstream recipe inventory on every platform.
+# Windows core.autocrlf must not rewrite hashes or existing line endings.
+/dependencies/** -text
+
 # Match the reviewed corresponding-source snapshot's privacy exclusions.
 /CI/deploy_rsa.enc export-ignore
 /docs/NH_* export-ignore

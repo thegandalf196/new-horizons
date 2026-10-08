@@ -1,5 +1,19 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Windows checkout rewrites pinned dependency bytes
+
+Windows Actions run37817348559 stops at the preserved dependency integrity gate,
+before compilation. The first mismatch is the upstream recipe workflow
+`.github/workflows/rebuildDependencies.yml`. A disposable Git checkout with
+`core.autocrlf=true` reproduces the same mismatch: LF source bytes become CRLF.
+The narrow `/dependencies/** -text` attribute preserves the exact pinned subtree,
+including any existing CRLF bytes, without changing upstream files or hashes or
+disabling platform conversion elsewhere. Focused tests require all145 actual
+upstream hashes to survive Windows-style checkout and a synthetic mixed LF/CRLF
+inventory to remain byte-identical. The unprotected negative control must still
+fail. Source repair and synthetic checks are not a passing Windows rebuild;
+the corrected published commit needs a fresh CI run.
+
 ### 2026-10-08 — Fresh private Cabir imports can omit the approved hover overlay
 
 The selected normal1c720 snapshot retains the approved four-frame base MOUSEON

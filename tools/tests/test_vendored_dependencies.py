@@ -2,7 +2,9 @@
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
 from unittest import mock
@@ -11,6 +13,31 @@ SPEC = importlib.util.spec_from_file_location('vendored_dependencies',
     Path(__file__).resolve().parents[1] / 'ci/verify_vendored_dependencies.py')
 vendor = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(vendor)
+
+
+def windows_checkout(root, payload, attributes=None):
+    """Exercise real Git conversion in disposable repos, never the worktree."""
+    source = root / 'source'
+    source.mkdir()
+    for name, data in payload.items():
+        path = source / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+    if attributes is not None:
+        (source / '.gitattributes').write_bytes(attributes)
+    environment = dict(os.environ, GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=os.devnull)
+    def git(*args, cwd=source):
+        return subprocess.check_output(['git', *args], cwd=cwd, env=environment,
+                                       stderr=subprocess.STDOUT)
+    git('init', '--quiet')
+    git('config', 'core.autocrlf', 'false')
+    git('add', '--all')
+    git('-c', 'user.name=Synthetic fixture', '-c', 'user.email=fixture@example.invalid',
+        'commit', '--quiet', '-m', 'Private checkout fixture')
+    checkout = root / 'checkout'
+    git('clone', '--quiet', '--no-local', '--config', 'core.autocrlf=true',
+        str(source), str(checkout))
+    return checkout
 
 
 class VendoredDependencyTest(unittest.TestCase):
@@ -84,6 +111,26 @@ class VendoredDependencyTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Duplicate'):
             vendor.verify(self.root)
 
+    def test_windows_checkout_preserves_mixed_raw_line_endings(self):
+        upstream = {'lf.py': b'# LF attribution\nvalue = 1\n',
+                    'crlf.bat': b'@rem CRLF attribution\r\n@echo original\r\n'}
+        self.manifest['files'] = {name: {'size': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
+                                  for name, data in upstream.items()}
+        self.save()
+        digest = hashlib.sha256(json.dumps(self.manifest, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+        payload = {'dependencies/' + name: data for name, data in upstream.items()}
+        payload['dependencies/UPSTREAM.json'] = (self.root / 'UPSTREAM.json').read_bytes()
+        payload['dependencies/VENDORED.md'] = b'Synthetic provenance\n'
+        payload['ordinary.txt'] = b'ordinary platform text\n'
+        with tempfile.TemporaryDirectory() as temporary, mock.patch.object(vendor, 'MANIFEST_SHA256', digest):
+            checkout = windows_checkout(Path(temporary), payload,
+                (Path(__file__).resolve().parents[2] / '.gitattributes').read_bytes())
+            result = vendor.verify(checkout / 'dependencies')
+            self.assertEqual(result['files'], 2)
+            for name, data in upstream.items():
+                self.assertEqual((checkout / 'dependencies' / name).read_bytes(), data)
+            self.assertEqual((checkout / 'ordinary.txt').read_bytes(), b'ordinary platform text\r\n')
+
 
 class ActualPreservedDependencyTest(unittest.TestCase):
     def test_pinned_upstream_tree_is_intact_and_local(self):
@@ -92,6 +139,23 @@ class ActualPreservedDependencyTest(unittest.TestCase):
         self.assertEqual(result, {'revision': vendor.REVISION, 'files': 145, 'bytes': 4945402})
         self.assertNotIn('[submodule "dependencies"]', (root / '.gitmodules').read_text())
         self.assertIn('from dependencies.conanfile import VCMI', (root / 'conanfile.py').read_text())
+
+    def test_actual_inventory_survives_windows_autocrlf_checkout(self):
+        root = Path(__file__).resolve().parents[2]
+        inventory = json.loads((root / 'dependencies/UPSTREAM.json').read_text())['files']
+        payload = {'dependencies/' + name: (root / 'dependencies' / name).read_bytes()
+                   for name in (*inventory, 'UPSTREAM.json', 'VENDORED.md')}
+        # The unprotected control reproduces the runner's first failing file.
+        with tempfile.TemporaryDirectory() as temporary:
+            checkout = windows_checkout(Path(temporary), payload)
+            with self.assertRaisesRegex(ValueError, r'Changed or missing dependency source: \.github/workflows/rebuildDependencies.yml'):
+                vendor.verify(checkout / 'dependencies')
+        with tempfile.TemporaryDirectory() as temporary:
+            checkout = windows_checkout(Path(temporary), payload, (root / '.gitattributes').read_bytes())
+            self.assertEqual(vendor.verify(checkout / 'dependencies'),
+                             {'revision': vendor.REVISION, 'files': 145, 'bytes': 4945402})
+            for name in inventory:
+                self.assertEqual((checkout / 'dependencies' / name).read_bytes(), payload['dependencies/' + name])
 
 
 if __name__ == '__main__':
