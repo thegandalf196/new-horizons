@@ -15,6 +15,7 @@
 #include "../../Goals/Invalid.h"
 #include "../../Goals/BuildBoat.h"
 #include "../../../../lib/mapObjects/MapObjects.h"
+#include "../../../../lib/mapObjects/MiscObjects.h"
 #include "../../../../lib/spells/CSpell.h"
 #include "../AINodeStorage.h"
 #include "BoatActions.h"
@@ -94,7 +95,53 @@ namespace AIPathfinding
 
 	void SummonBoatAction::execute(AIGateway * aiGw, const CGHeroInstance * hero) const
 	{
-		Goals::AdventureSpellCast(hero, usedSpell).accept(aiGw);
+		if(!usesSharedDailyOpportunity || destination == int3(-1, -1, -1))
+		{
+			Goals::AdventureSpellCast(hero, usedSpell).accept(aiGw);
+			return;
+		}
+
+		try
+		{
+			if(!aiGw->cc->isInTheMap(destination))
+				throw cannotFulfillGoalException("Summon Boat destination is outside the map.");
+
+			auto goal = Goals::AdventureSpellCast(hero, usedSpell);
+			goal.tile = destination;
+			try
+			{
+				goal.accept(aiGw);
+			}
+			catch(const goalFulfilledException &)
+			{
+				// An accepted Summon Boat can fail its retained success roll.
+				// Never let that failure fulfill a virtual embarkation route.
+				for(const auto * object : aiGw->cc->getVisitableObjs(destination))
+				{
+					const auto * boat = dynamic_cast<const CGBoat *>(object);
+					if(boat && boat->visitablePos() == destination
+						&& boat->layer == EPathfindingLayer::SAIL && !boat->getBoardedHero())
+						return; // Continue this node's planned embarkation after the cast.
+				}
+				throw cannotFulfillGoalException("Summon Boat did not provide the planned available boat.");
+			}
+			throw cannotFulfillGoalException("Summon Boat did not complete the planned cast.");
+		}
+		catch(const cannotFulfillGoalException &)
+		{
+			// Rebuild from replicated Mana/daily-use state, rather than retrying
+			// a forecast whose probabilistic boat never materialized.
+			aiGw->invalidatePaths();
+			throw;
+		}
+	}
+
+	std::shared_ptr<const SummonBoatAction> SummonBoatAction::boundToDestination(const int3 & target) const
+	{
+		auto result = std::make_shared<SummonBoatAction>(*this);
+		if(usesSharedDailyOpportunity)
+			result->destination = target;
+		return result;
 	}
 
 	const ChainActor * SummonBoatAction::getActor(const ChainActor * sourceActor) const

@@ -2,6 +2,22 @@
 
 Updated: 2026-10-08
 
+UP305 audit: ordinary known Summon Boat with no School rank has a missing
+minimum AI route because AILayerTransitionRule requires100% legacy chance.
+Existing fixtures artificially supply mastery3. Positive-chance NH attempts
+and exact-destination actual-boat verification are being implemented, without
+changing authoritative success rolls or daily/Mana spending. Success must
+continue to embark; failure must stop the virtual route. Linked40329 exits0 at
+10 jobs; native28876 passes10/10 in3.299s, zero skips, including seven Summon
+Boat and three daily/Mana cases. Actual School0 known-spell selection, accepted
+success/failure and separate ordinary embark pass with boat conservation and
+real resource/daily spending; occupancy/Mana/legacy/no-retry controls pass.
+Independent Sol High review passes. Receipts: build/nh-summon-boat-ai-geometry-
+repaired-build.log and build/nh-preview-ai-validation.jUrtT2RY/native-up305-geometry-
+repaired.log/XML. Full chain/autonomous, async competing boats and save/day
+matrices remain Phase2; no normal promotion. Five-spell acquisition count
+remains5/5, not effect-complete.
+
 UP304 implementation audit: existing creature-line conversion covers legacy
 alias-generated specialties, but eleven authored fixed single-line packages
 bypass that provenance. Pasis/Monere, Lacus/Kalt, Thunar/Erdamon, Ignissa/Fiur,

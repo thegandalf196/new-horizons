@@ -26,12 +26,18 @@ namespace AIPathfinding
 	{
 		SpellID usedSpell;
 		bool usesSharedDailyOpportunity;
+		int3 destination;
 	public:
-		SummonBoatAction(SpellID usedSpell, bool usesSharedDailyOpportunity)
+		SummonBoatAction(SpellID usedSpell, bool usesSharedDailyOpportunity,
+			int3 destination = int3(-1, -1, -1))
 			: usedSpell(usedSpell)
 			, usesSharedDailyOpportunity(usesSharedDailyOpportunity)
+			, destination(destination)
 		{
 		}
+
+		std::shared_ptr<const SummonBoatAction> boundToDestination(const int3 & target) const;
+		const int3 & getDestination() const { return destination; }
 
 		void execute(AIGateway * aiGw, const CGHeroInstance * hero) const override;
 

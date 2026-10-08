@@ -203,7 +203,7 @@ namespace AIPathfinding
 				const bool canCreateReliableBoat = effect->canCreateNewBoat(hero) && effect->getSuccessChance(hero) == 100;
 				const bool canSummonKnownBoat = usesNewHorizonsDailyAllowance
 					&& hasKnownUnoccupiedBoat
-					&& effect->getSuccessChance(hero) == 100;
+					&& effect->getSuccessChance(hero) > 0;
 				if(canCreateReliableBoat || canSummonKnownBoat)
 				{
 					// TODO: For lower school level we might need to check the existence of some boat
@@ -230,7 +230,7 @@ namespace AIPathfinding
 			if(summonableVirtualBoats.contains(hero)
 				&& summonableVirtualBoats.at(hero)->canAct(aiNk, nodeStorage->getAINode(source.node), destination.turn))
 			{
-				virtualBoat = summonableVirtualBoats.at(hero);
+				virtualBoat = summonableVirtualBoats.at(hero)->boundToDestination(destination.coord);
 			}
 		}
 

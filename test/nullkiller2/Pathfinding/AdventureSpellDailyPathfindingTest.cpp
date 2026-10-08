@@ -15,6 +15,7 @@
 #include "AI/Nullkiller2/Pathfinding/AINodeStorage.h"
 #include "AI/Nullkiller2/Pathfinding/Actors.h"
 #include "AI/Nullkiller2/Pathfinding/AIPathfinder.h"
+#include "AI/Nullkiller2/Goals/AbstractGoal.h"
 #include "SpellPointTestUtils.h"
 #include "mock/TinyH3MBuilder.h"
 #include "nullkiller2/NullkillerTest.h"
@@ -23,6 +24,7 @@
 #include "lib/GameConstants.h"
 #include "lib/IGameSettings.h"
 #include "lib/CPlayerState.h"
+#include "lib/callback/IClient.h"
 #include "lib/bonuses/Bonus.h"
 #include "lib/entities/artifact/CArtifact.h"
 #include "lib/mapObjectConstructors/AObjectTypeHandler.h"
@@ -36,10 +38,55 @@
 #include "lib/pathfinder/PathfinderOptions.h"
 #include "lib/spells/NewHorizonsMagic.h"
 #include "lib/spells/CSpell.h"
+#include "lib/spells/ISpellMechanics.h"
+#include "lib/spells/adventure/SummonBoatEffect.h"
+#include "lib/networkPacks/PacksForServer.h"
+#include "lib/serializer/CMemorySerializer.h"
+#include "mock/GameHandlerTestServer.h"
+#include "server/CGameHandler.h"
 
 namespace
 {
 const PlayerColor PLAYER(0);
+
+class SummonBoatLoopbackClient final : public IClient
+{
+	CGameHandler & handler;
+	int lastRequestId = 0;
+public:
+	int requests = 0;
+	int embarkRequests = 0;
+	int3 lastTarget = int3(-1, -1, -1);
+
+	explicit SummonBoatLoopbackClient(CGameHandler & handler)
+		: handler(handler)
+	{}
+
+	std::optional<BattleAction> makeSurrenderRetreatDecision(
+		PlayerColor, const BattleID &, const BattleStateInfoForRetreat &) override
+	{
+		return std::nullopt;
+	}
+
+	int sendRequest(const CPackForServer & request, PlayerColor player, bool) override
+	{
+		const auto * cast = dynamic_cast<const CastAdvSpell *>(&request);
+		if(cast)
+		{
+			lastTarget = cast->pos;
+			++requests;
+		}
+		else if(dynamic_cast<const MoveHero *>(&request))
+			++embarkRequests;
+		else
+			throw std::runtime_error("Summon Boat fixture refuses unrelated requests");
+		auto serverRequest = CMemorySerializer::deepCopy(request);
+		serverRequest->player = player;
+		serverRequest->requestID = ++lastRequestId;
+		handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, *serverRequest);
+		return lastRequestId;
+	}
+};
 
 SpellID spell(const char * identity)
 {
@@ -79,6 +126,15 @@ protected:
 	static constexpr int MOVEMENT_POINTS_BELOW_ONE_STEP = 1;
 
 	bool useNewHorizonsRules = true;
+	std::unique_ptr<GameHandlerTestServer> summonServer;
+	std::unique_ptr<CGameHandler> summonHandler;
+
+	void TearDown() override
+	{
+		summonHandler.reset();
+		summonServer.reset();
+		NullkillerTest::TearDown();
+	}
 
 	void SetUp() override
 	{
@@ -255,9 +311,110 @@ protected:
 		ASSERT_FALSE(templates.empty());
 		auto boat = handler->create(gameState().get(), templates.front());
 		ASSERT_NE(boat, nullptr);
-		boat->setAnchorPos(position);
+		boat->setAnchorPos(position + boat->getVisitableOffset());
+		ASSERT_EQ(boat->visitablePos(), position) << "boat fixture must occupy the requested visitable water tile";
 		map()->generateUniqueInstanceName(boat.get());
 		map()->addNewObject(std::move(boat));
+	}
+
+	void prepareSummonBoatServer(int successChance, bool successfulRoll)
+	{
+		gameState()->actingPlayers.insert(PLAYER);
+		summonServer = std::make_unique<GameHandlerTestServer>(gameState(), PLAYER);
+		summonHandler = std::make_unique<CGameHandler>(*summonServer, gameState());
+		// minstd's first outputs for small adjacent seeds are clustered. Spread
+		// candidates over its seed range, then seed the real server identically.
+		for(uint64_t candidate = 1; candidate <= 10000; ++candidate)
+		{
+			const int seed = static_cast<int>((candidate * 104729 * 7919) % 2147483647);
+			CRandomGenerator expected(seed);
+			if((expected.nextInt(0, 99) < successChance) == successfulRoll)
+			{
+				summonHandler->randomizer->setSeed(seed);
+				return;
+			}
+		}
+		FAIL() << "No deterministic seed for requested Summon Boat outcome";
+	}
+
+	std::shared_ptr<const NK2AI::AIPathfinding::SummonBoatAction> summonActionTo(
+		const std::vector<NK2AI::AIPath> & paths, const int3 & target)
+	{
+		for(const auto & path : paths)
+			for(const auto & node : path.nodes)
+				if(node.turns == 0 && !node.actionIsBlocked)
+				{
+					const auto action = std::dynamic_pointer_cast<const NK2AI::AIPathfinding::SummonBoatAction>(node.specialAction);
+					if(action && action->getDestination() == target)
+						return action;
+				}
+		return nullptr;
+	}
+
+	void verifyOrdinarySummonExecution(bool successfulRoll)
+	{
+		const auto summon = spell("core:summonBoat");
+		auto * hero = startHeroWithSpells(true, {summon});
+		ASSERT_NE(hero, nullptr);
+		ASSERT_TRUE(hero->spellbookContainsSpell(summon));
+		ASSERT_EQ(hero->getSpellSchoolLevel(summon.toSpell()), 0);
+		const auto effect = summon.toSpell()->getAdventureMechanics().getEffectAs<SummonBoatEffect>(hero);
+		ASSERT_NE(effect, nullptr);
+		const int chance = effect->getSuccessChance(hero);
+		ASSERT_GT(chance, 0);
+		ASSERT_LT(chance, 100);
+		const int3 source = hero->visitablePos();
+		surroundWithWater(source);
+		const int3 boatPosition = source + int3(2, 1, 0);
+		map()->getTile(boatPosition).terrainType = ETerrainId::WATER;
+		ASSERT_NO_FATAL_FAILURE(addAvailableBoat(boatPosition));
+		setMapVisibility(PLAYER, true);
+		const int3 target = source + int3(0, -1, 0);
+		const auto boats = map()->getObjects<CGBoat>();
+		ASSERT_EQ(boats.size(), 1u);
+		const auto * boat = boats.front();
+		const auto boatId = boat->id;
+		const auto originalBoatPosition = boat->visitablePos();
+		ASSERT_NO_FATAL_FAILURE(prepareSummonBoatServer(chance, successfulRoll));
+		SummonBoatLoopbackClient client(*summonHandler);
+		auto gateway = makeGateway(makeCallback(PLAYER, &client));
+		const auto paths = pathsTo(*gateway, hero, target);
+		const auto action = summonActionTo(paths, target);
+		ASSERT_NE(action, nullptr) << "ordinary School-0 hero must receive an exact destination-bound route";
+		const auto mana = hero->getManaAvailable();
+		const auto movement = hero->movementPointsRemaining();
+		if(successfulRoll)
+			EXPECT_NO_THROW(action->execute(gateway.get(), hero));
+		else
+			EXPECT_THROW(action->execute(gateway.get(), hero), NK2AI::cannotFulfillGoalException);
+		EXPECT_EQ(client.requests, 1);
+		EXPECT_EQ(client.lastTarget, target);
+		ASSERT_EQ(map()->getObjects<CGBoat>().size(), 1u);
+		EXPECT_EQ(boat->id, boatId);
+		EXPECT_EQ(boat->visitablePos(), successfulRoll ? target : originalBoatPosition);
+		EXPECT_EQ(boat->getBoardedHero(), nullptr);
+		EXPECT_EQ(hero->visitablePos(), source);
+		EXPECT_EQ(hero->movementPointsRemaining(), movement);
+		EXPECT_EQ(hero->getManaAvailable(), mana - hero->getSpellCost(summon.toSpell()));
+		EXPECT_TRUE(hero->hasNewHorizonsAdventureSpellCastToday());
+		const auto pathsAfter = pathsTo(*gateway, hero, target);
+		EXPECT_EQ(summonActionTo(pathsAfter, target), nullptr) << "no second same-day cast after either outcome";
+		if(!successfulRoll)
+		{
+			EXPECT_THROW(action->execute(gateway.get(), hero), NK2AI::cannotFulfillGoalException);
+			EXPECT_EQ(client.requests, 1) << "spent opportunity must stop a stale action before a second request";
+			EXPECT_EQ(boat->visitablePos(), originalBoatPosition);
+			EXPECT_EQ(hero->getManaAvailable(), mana - hero->getSpellCost(summon.toSpell()));
+			EXPECT_EQ(client.embarkRequests, 0);
+		}
+		else
+		{
+			gateway->cc->moveHero(hero, hero->convertFromVisitablePos(target), false, EPathfindingLayer::SAIL);
+			EXPECT_EQ(client.embarkRequests, 1);
+			EXPECT_EQ(boat->getBoardedHero(), hero);
+			EXPECT_EQ(hero->visitablePos(), target);
+			EXPECT_EQ(map()->getObjects<CGBoat>().size(), 1u);
+		}
 	}
 
 	template<typename TAction>
@@ -363,7 +520,7 @@ TEST_F(AdventureSpellDailyPathfindingTest, NewHorizonsSummonBoatDoesNotForecastC
 	const SpellID summonBoatSpell = spell("core:summonBoat");
 	auto * hero = startHeroWithSpells(true, {summonBoatSpell});
 	ASSERT_NE(hero, nullptr);
-	makeSummonBoatSuccessCertain(hero);
+	ASSERT_EQ(hero->getSpellSchoolLevel(summonBoatSpell.toSpell()), 0);
 
 	const int3 source = hero->visitablePos();
 	surroundWithWater(source);
@@ -382,7 +539,7 @@ TEST_F(AdventureSpellDailyPathfindingTest, NewHorizonsSummonBoatPathUsesAKnownAv
 	const SpellID summonBoatSpell = spell("core:summonBoat");
 	auto * hero = startHeroWithSpells(true, {summonBoatSpell});
 	ASSERT_NE(hero, nullptr);
-	makeSummonBoatSuccessCertain(hero);
+	ASSERT_EQ(hero->getSpellSchoolLevel(summonBoatSpell.toSpell()), 0);
 
 	const int3 source = hero->visitablePos();
 	surroundWithWater(source);
@@ -400,6 +557,114 @@ TEST_F(AdventureSpellDailyPathfindingTest, NewHorizonsSummonBoatPathUsesAKnownAv
 	{
 		return hasAvailableActionOnTurn<NK2AI::AIPathfinding::SummonBoatAction>(path, 0);
 	}));
+}
+
+TEST_F(AdventureSpellDailyPathfindingTest, OrdinarySummonBoatAIExecutesAcceptedSuccessfulRollAtPlannedTile)
+{
+	verifyOrdinarySummonExecution(true);
+}
+
+TEST_F(AdventureSpellDailyPathfindingTest, OrdinarySummonBoatAIFailedRollStopsBeforeEmbarkAndCannotRetryToday)
+{
+	verifyOrdinarySummonExecution(false);
+}
+
+TEST_F(AdventureSpellDailyPathfindingTest, OrdinarySummonBoatPlannerRejectsManaSpentDayAndOccupiedDestination)
+{
+	const auto summon = spell("core:summonBoat");
+	auto * hero = startHeroWithSpells(true, {summon});
+	ASSERT_NE(hero, nullptr);
+	ASSERT_EQ(hero->getSpellSchoolLevel(summon.toSpell()), 0);
+	const int3 source = hero->visitablePos();
+	surroundWithWater(source);
+	const int3 boatPosition = source + int3(2, 1, 0);
+	map()->getTile(boatPosition).terrainType = ETerrainId::WATER;
+	ASSERT_NO_FATAL_FAILURE(addAvailableBoat(boatPosition));
+	setMapVisibility(PLAYER, true);
+	const int3 target = source + int3(0, -1, 0);
+	auto gateway = makeGateway(PLAYER);
+	ASSERT_NE(summonActionTo(pathsTo(*gateway, hero, target), target), nullptr);
+	setTestSpellPointTotal(hero, hero->getSpellCost(summon.toSpell()) - 1);
+	EXPECT_EQ(summonActionTo(pathsTo(*gateway, hero, target), target), nullptr);
+	setTestSpellPointTotal(hero, 200);
+	hero->setNewHorizonsAdventureSpellCastToday(true);
+	EXPECT_EQ(summonActionTo(pathsTo(*gateway, hero, target), target), nullptr);
+	hero->setNewHorizonsAdventureSpellCastToday(false);
+	ASSERT_NO_FATAL_FAILURE(addAvailableBoat(target));
+	ASSERT_TRUE(map()->getTile(target).visitable());
+	// Direct authored-fixture insertion sends no object-added event to an
+	// existing AI memory; rebuild the gateway so this is current-world evidence.
+	gateway = makeGateway(PLAYER);
+	EXPECT_EQ(summonActionTo(pathsTo(*gateway, hero, target), target), nullptr);
+	EXPECT_EQ(map()->getObjects<CGBoat>().size(), 2u);
+	EXPECT_EQ(hero->visitablePos(), source);
+	EXPECT_EQ(hero->getManaAvailable(), 200);
+	EXPECT_FALSE(hero->hasNewHorizonsAdventureSpellCastToday());
+}
+
+TEST_F(AdventureSpellDailyPathfindingTest, OrdinarySummonBoatCannotPlanRetrievingAnActuallyBoardedBoat)
+{
+	const auto summon = spell("core:summonBoat");
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PLAYER)
+		.hero({5, 5, 0}, HeroTypeID(0), PLAYER)
+		.heroGarrison({{CreatureID(27), 1}}).heroSpells({summon})
+		.heroEquipped({{ArtifactPosition::SPELLBOOK, ArtifactID::SPELLBOOK}})
+		.hero({7, 7, 0}, HeroTypeID(1), PLAYER).heroGarrison({{CreatureID(27), 1}});
+	startWithMap(std::move(builder));
+	auto * hero = findHeroAt({5, 5, 0});
+	auto * sailor = findHeroAt({7, 7, 0});
+	ASSERT_NE(hero, nullptr);
+	ASSERT_NE(sailor, nullptr);
+	ASSERT_EQ(hero->getSpellSchoolLevel(summon.toSpell()), 0);
+	setTestSpellPointTotal(hero, 200);
+	hero->setMovementPoints(2000);
+	sailor->setMovementPoints(2000);
+	const int3 source = hero->visitablePos();
+	surroundWithWater(source);
+	const int3 boatPosition = source + int3(2, 1, 0);
+	map()->getTile(boatPosition).terrainType = ETerrainId::WATER;
+	ASSERT_NO_FATAL_FAILURE(addAvailableBoat(boatPosition));
+	setMapVisibility(PLAYER, true);
+	ASSERT_NO_FATAL_FAILURE(prepareSummonBoatServer(50, true));
+	SummonBoatLoopbackClient client(*summonHandler);
+	auto boardingGateway = makeGateway(makeCallback(PLAYER, &client));
+	boardingGateway->cc->moveHero(sailor, sailor->convertFromVisitablePos(boatPosition), false, EPathfindingLayer::SAIL);
+	const auto boats = map()->getObjects<CGBoat>();
+	ASSERT_EQ(boats.size(), 1u);
+	ASSERT_EQ(boats.front()->getBoardedHero(), sailor) << "control requires actual authoritative boarding";
+	EXPECT_EQ(client.embarkRequests, 1);
+	EXPECT_EQ(client.requests, 0);
+	auto gateway = makeGateway(PLAYER);
+	const int3 target = source + int3(0, -1, 0);
+	EXPECT_EQ(summonActionTo(pathsTo(*gateway, hero, target), target), nullptr);
+	EXPECT_EQ(hero->visitablePos(), source);
+	EXPECT_EQ(hero->getManaAvailable(), 200);
+	EXPECT_FALSE(hero->hasNewHorizonsAdventureSpellCastToday());
+}
+
+TEST_F(AdventureSpellDailyPathfindingTest, LegacySummonBoatPlannerRetainsCertainCreationGate)
+{
+	const auto summon = spell("core:summonBoat");
+	auto * hero = startHeroWithSpells(false, {summon});
+	ASSERT_NE(hero, nullptr);
+	const int3 source = hero->visitablePos();
+	surroundWithWater(source);
+	const int3 boatPosition = source + int3(2, 1, 0);
+	map()->getTile(boatPosition).terrainType = ETerrainId::WATER;
+	ASSERT_NO_FATAL_FAILURE(addAvailableBoat(boatPosition));
+	const int3 target = source + int3(0, -1, 0);
+	auto gateway = makeGateway(PLAYER);
+	const auto hasTodaySummon = [&](const std::vector<NK2AI::AIPath> & paths)
+	{
+		return std::ranges::any_of(paths, [](const NK2AI::AIPath & path)
+		{
+			return hasAvailableActionOnTurn<NK2AI::AIPathfinding::SummonBoatAction>(path, 0);
+		});
+	};
+	EXPECT_FALSE(hasTodaySummon(pathsTo(*gateway, hero, target)));
+	makeSummonBoatSuccessCertain(hero);
+	EXPECT_TRUE(hasTodaySummon(pathsTo(*gateway, hero, target)));
 }
 
 TEST_F(AdventureSpellDailyPathfindingTest, NewHorizonsDimensionDoorPathExhaustsMovementBeforeTheFollowingTile)

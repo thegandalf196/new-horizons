@@ -1,5 +1,43 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Summon Boat accepted cast is not guaranteed effect success
+
+UP305 architecture review: a failed summon roll intentionally returns OK and
+consumes Mana and the shared daily opportunity. AdventureSpellCast nevertheless
+throws goalFulfilledException after the awaited request. Bound NH boat actions
+must intercept that sentinel, verify an actual unoccupied SAIL boat at the exact
+planned tile, and return normally on success so ExecuteHeroChain can embark.
+Rethrowing the sentinel skips that node. Missing boats must throw cannotFulfill
+and invalidate paths, with no refund or retry. Production review caught this
+before the linked/native gate; no observed CI failure is claimed.
+
+UP305 client3798 and linked1883 exit0 at10 jobs. First native80942 passes7/9
+in2.969s, zero skips, including real successful School0 cast and embark. Failure
+roll fixture tries adjacent small seeds0..9999; their first generator outputs
+never reach the retained summon failure range. Use dispersed deterministic
+seeds without altering production chance. The destination control adds an
+unoccupied available boat, not the occupied boat claimed by its test name,
+after initializing the gateway; investigate intended occupancy and cached
+object/path data before changing expectations. Receipts: build/nh-summon-boat-ai-
+linked-build.log and build/nh-preview-ai-validation.jUrtT2RY/native-up305.log/XML.
+This failed run is not acceptance and must not be overwritten.
+
+Repaired-fixture linked95552 exits0; native67050 passes8/10 in3.214s, zero
+skips. Actual failed-roll spending/no-embark/retry now passes. Both remaining
+controls fail their own setup assertions: destination is not visitable, and the
+sailor did not board. addAvailableBoat assigns an anchor, while boat visitablePos
+is anchor minus getVisitableOffset; the boat is not at the requested tile. Fix
+fixture geometry and assert exact placement before diagnosing planner behavior.
+Receipt: native-up305-fixture-repaired.log/XML; retain it as failed evidence.
+
+Final geometry-repaired linked40329 exits0 at10 jobs; native28876 passes10/10
+in3.299s, zero skips. Real successful and failed School0 casts, separate ordinary
+embark and unchanged negative/legacy assertions pass. Sol High review approves
+both fixture repairs; no production probability or assertion was weakened.
+Receipts: build/nh-summon-boat-ai-geometry-repaired-build.log and native-up305-
+geometry-repaired.log/XML. Full ExecuteHeroChain/autonomous execution, async
+competing boat changes and save/day matrices remain Phase2.
+
 ### 2026-10-08 — Fixed-specialty malformed fixture accessed protected loader
 
 UP304 linked97485 exits1 in NewHorizonsCreatureSpecialtyTest: malformed-config
