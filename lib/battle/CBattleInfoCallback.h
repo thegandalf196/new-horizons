@@ -156,6 +156,11 @@ public:
 		bool includeChanceOnlySerendipity = true) const;
 	bool battleCanUsePerfectMoment(const battle::Unit * attacker, const battle::Unit * target = nullptr,
 		bool shooting = false) const;
+	/// Current action controller's unspent token; no natural-Luck or active-unit threshold.
+	bool battleCanUsePerfectFortune(const battle::Unit * attacker, const battle::Unit * target = nullptr,
+		bool shooting = false) const;
+	/// Pre-strike eligibility only. Consumers retain this answer through projected casualties.
+	bool battleCanTriggerPerfectFortune(const BattleAttackInfo & attack) const;
 	bool battleCanTriggerCleave(const battle::Unit * attacker) const;
 	bool battleCanTriggerNoQuarter(const BattleAttackInfo & attack) const;
 	const battle::Unit * battleSelectCleaveTarget(const battle::Unit * attacker,

@@ -6228,7 +6228,7 @@
 								"requires": "expert",
 								"description": "The first eligible attack made by the hero's army each combat triggers positive Luck automatically.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The first eligible attack made by the hero's army each combat triggers positive Luck automatically."
 								}
 							}

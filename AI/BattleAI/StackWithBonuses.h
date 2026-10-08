@@ -28,6 +28,7 @@
 #include "../../lib/battle/ReducedExtraActivationState.h"
 #include "../../lib/battle/SpellResponseState.h"
 #include "../../lib/battle/OverwhelmingFormulaState.h"
+#include "../../lib/battle/PerfectFortuneState.h"
 
 class HypotheticBattle;
 class CSpell;
@@ -375,6 +376,12 @@ public:
 	int32_t getBloodrageLowHealthIncrement(BattleSide side) const override;
 	int32_t getBloodragePainIncrement(BattleSide side) const override;
 	SylvanLuckState getSylvanLuckState(BattleSide side) const override { return fortuneStates.at(side); }
+	PerfectFortuneState getPerfectFortuneState(BattleSide side) const override { return perfectFortuneStates.at(side); }
+	void setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state) override
+	{
+		state.validate();
+		perfectFortuneStates.at(side) = state;
+	}
 	void setSylvanLuckState(BattleSide side, const SylvanLuckState & state) { fortuneStates.at(side) = state; }
 	AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override
 	{
@@ -420,7 +427,9 @@ public:
 	void projectFortuneStrike(const BattleAttackInfo & attack,
 		const std::vector<std::pair<uint32_t, int64_t>> & hits,
 		battle::CUnitState * attackerState, bool enemyStackKilled,
-		std::optional<ProjectedLuckOutcome> resolvedLuck = std::nullopt, bool applyAftermath = true);
+		std::optional<ProjectedLuckOutcome> resolvedLuck = std::nullopt, bool applyAftermath = true,
+		std::optional<bool> capturedPerfectFortune = std::nullopt,
+		BattleSide capturedPerfectFortuneSide = BattleSide::NONE);
 	/// Project only New Horizons Hex of Pain's registered AFTER_ATTACK trigger.
 	/// Other COMBAT_EVENT_TRIGGER effects are intentionally outside this model.
 	int64_t projectHexOfPainStrike(const BattleAttackInfo & attack,
@@ -532,6 +541,7 @@ private:
 	BattleSideArray<int32_t> bloodragePainIncrements;
 	std::set<uint32_t> bloodrageDestroyedUnits;
 	BattleSideArray<SylvanLuckState> fortuneStates;
+	BattleSideArray<PerfectFortuneState> perfectFortuneStates;
 	BattleSideArray<AdverseCombatRerollState> adverseRerollStates;
 	BattleSideArray<MoraleSuppressionState> moraleSuppressionStates;
 	LuckRollRules fortuneRollRules;

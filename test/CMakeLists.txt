@@ -413,6 +413,7 @@ set(test_SRCS
 		server/battles/NewHorizonsNightProwlerTest.cpp
 		server/battles/NewHorizonsSylvanLuckTest.cpp
 		server/battles/NewHorizonsFortunesFavorTest.cpp
+		server/NewHorizonsPerfectFortuneTest.cpp
 		server/battles/NewHorizonsLuckyAimTest.cpp
 		server/battles/NewHorizonsSecondChanceTest.cpp
 		server/battles/NewHorizonsGamblerTest.cpp

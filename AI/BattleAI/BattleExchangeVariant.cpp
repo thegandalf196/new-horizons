@@ -461,7 +461,7 @@ float BattleExchangeVariant::trackAttack(
 				hb->setSylvanLuckState(side, fortune);
 			}
 			hb->projectFortuneStrike(projectedAttack, actualHits, projectedAttacker.get(), enemyStackKilled,
-				strike.resolvedLuck, true);
+				strike.resolvedLuck, true, strike.perfectFortune, strike.perfectFortuneSide);
 			hb->projectRangedMarkStrike(projectedAttack, actualHits);
 			for(const auto & [unitId, pending] : pendingRebirths)
 			{
@@ -686,6 +686,9 @@ float BattleExchangeVariant::trackAttack(
 	}
 	BattleAttackInfo projectedAttack(attacker.get(), defender.get(), 0, shooting);
 	projectedAttack.protectIntercepted = protectIntercepted;
+	const bool perfectFortune = hb->battleCanTriggerPerfectFortune(projectedAttack);
+	const auto perfectFortuneSide = hb->playerToSide(hb->battleGetActionController(projectedAttack.attacker));
+	const auto resolvedLuck = hb->captureFortuneStrikeOutcome(projectedAttack);
 	const bool triggersEvasiveShroud = !evaluateOnly
 		&& qualifiesForEvasiveShroud(*hb, projectedAttack);
 	const bool triggersAmbusher = !evaluateOnly
@@ -783,7 +786,8 @@ float BattleExchangeVariant::trackAttack(
 			projectNoQuarterAfterHit(*hb, projectedAttack, *defender);
 		hb->recordBloodrageTransition(defender, defenderWasAlive);
 		hb->projectFortuneStrike(projectedAttack, {{defender->unitId(), actualDamage}}, attacker.get(),
-			defenderWasAlive && !defender->alive() && hb->battleMatchOwner(attacker.get(), defender.get()));
+			defenderWasAlive && !defender->alive() && hb->battleMatchOwner(attacker.get(), defender.get()),
+			resolvedLuck, true, perfectFortune, perfectFortuneSide);
 		hb->projectRangedMarkStrike(projectedAttack, {{defender->unitId(), actualDamage}});
 		if(defenderRebirthSource)
 			hb->projectElementalRebirth(defender.get(), *defenderRebirthSource,
@@ -866,6 +870,9 @@ float BattleExchangeVariant::trackAttack(
 				&& hb->battleHasBastionProtection(targetUnit);
 			projectedAttacker->cleaveUsedThisActivation = true;
 
+			const bool cleavePerfectFortune = hb->battleCanTriggerPerfectFortune(cleaveAttack);
+			const auto cleavePerfectFortuneSide = hb->playerToSide(hb->battleGetActionController(cleaveAttack.attacker));
+			const auto cleaveResolvedLuck = hb->captureFortuneStrikeOutcome(cleaveAttack);
 			int64_t cleaveDamage = hb->battleExpectedLuckDamage(cleaveAttack);
 			const auto cleaveLastStand = resolveLastStand(cleaveAttack, targetUnit, cleaveDamage);
 			cleaveDamage = cleaveLastStand.first.damageToApply;
@@ -906,7 +913,8 @@ float BattleExchangeVariant::trackAttack(
 					projectNoQuarterAfterHit(*hb, cleaveAttack, *target);
 				hb->recordBloodrageTransition(target, targetWasAlive);
 				hb->projectFortuneStrike(cleaveAttack, {{target->unitId(), cleaveDamage}}, attacker.get(),
-					targetWasAlive && !target->alive() && hb->battleMatchOwner(attacker.get(), target.get()));
+					targetWasAlive && !target->alive() && hb->battleMatchOwner(attacker.get(), target.get()),
+					cleaveResolvedLuck, true, cleavePerfectFortune, cleavePerfectFortuneSide);
 				hb->projectRangedMarkStrike(cleaveAttack, {{target->unitId(), cleaveDamage}});
 				if(targetRebirthSource)
 					hb->projectElementalRebirth(target.get(), *targetRebirthSource,
@@ -926,6 +934,9 @@ float BattleExchangeVariant::trackAttack(
 	{
 		BattleAttackInfo retaliationAttack(defender.get(), attacker.get(), 0, false);
 		retaliationAttack.retaliation = true;
+		const bool retaliationPerfectFortune = hb->battleCanTriggerPerfectFortune(retaliationAttack);
+		const auto retaliationPerfectFortuneSide = hb->playerToSide(hb->battleGetActionController(retaliationAttack.attacker));
+		const auto retaliationResolvedLuck = hb->captureFortuneStrikeOutcome(retaliationAttack);
 		const bool triggersRetaliationEvasiveShroud = qualifiesForEvasiveShroud(*hb, retaliationAttack);
 		const bool triggersRetaliationAmbusher = qualifiesForAmbusher(*hb, retaliationAttack);
 		const auto retaliationShadowAssaultSide = qualifyingShadowAssaultSide(*hb, retaliationAttack);
@@ -986,7 +997,8 @@ float BattleExchangeVariant::trackAttack(
 			projectNoQuarterAfterHit(*hb, retaliationAttack, *attacker);
 		hb->recordBloodrageTransition(attacker, attackerWasAlive);
 		hb->projectFortuneStrike(retaliationAttack, {{attacker->unitId(), actualDamage}}, defender.get(),
-			attackerWasAlive && !attacker->alive() && hb->battleMatchOwner(defender.get(), attacker.get()));
+			attackerWasAlive && !attacker->alive() && hb->battleMatchOwner(defender.get(), attacker.get()),
+			retaliationResolvedLuck, true, retaliationPerfectFortune, retaliationPerfectFortuneSide);
 		if(attackerRebirthSource)
 			hb->projectElementalRebirth(attacker.get(), *attackerRebirthSource,
 				attackerWasAlive && !attacker->alive(), attacker->isClone(), attackerMayRebirth);

@@ -3935,11 +3935,15 @@ void BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, 
 	if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
 		fortune = battle.getBattle()->getSylvanLuckState(side);
 	const bool negativeLuckPrevented = fortune.canIgnoreNegativeLuck(physicalCreatureLuckAttack);
+	const bool perfectFortune = physicalCreatureLuckAttack
+		&& battle.battleCanUsePerfectFortune(attacker, defender, bat.shot());
+	const auto perfectFortuneSide = battle.playerToSide(battle.battleGetActionController(attacker));
+	const bool guaranteedPositiveLuck = perfectMoment || perfectFortune;
 
-	if(perfectMoment || (attackerLuck > 0 && gameHandler->randomizer->rollGoodLuck(ownerArmy, attackerLuck)))
+	if(guaranteedPositiveLuck || (attackerLuck > 0 && gameHandler->randomizer->rollGoodLuck(ownerArmy, attackerLuck)))
 		bat.flags |= BattleAttack::LUCKY;
 
-	if(!perfectMoment && attackerLuck < 0)
+	if(!guaranteedPositiveLuck && attackerLuck < 0)
 	{
 		const auto drawBadLuck = [this, ownerArmy, attackerLuck]()
 		{
@@ -3953,6 +3957,13 @@ void BattleActionProcessor::rollAttackFlags(const CBattleInfoCallback & battle, 
 			bat.flags |= BattleAttack::UNLUCKY;
 	}
 
+	if(perfectFortune)
+	{
+		auto token = battle.getBattle()->getPerfectFortuneState(perfectFortuneSide);
+		token.used = true;
+		bat.perfectFortuneSide = perfectFortuneSide;
+		bat.perfectFortuneState = token;
+	}
 	if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
 	{
 		if(fortune.active())

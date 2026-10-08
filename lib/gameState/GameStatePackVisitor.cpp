@@ -2077,6 +2077,15 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 	auto * battle = gs.getBattle(pack.battleID);
 	if(!battle)
 		throw std::runtime_error("BattleAttack references a missing battle");
+	pack.validatePerfectFortuneMarker();
+	if(pack.perfectFortuneState)
+	{
+		const auto * strikeSource = battle->getStack(pack.stackAttacking, false);
+		if(!strikeSource || !battle->getPerfectFortuneState(pack.perfectFortuneSide).available()
+			|| battle->playerToSide(battle->battleGetActionController(strikeSource)) != pack.perfectFortuneSide
+			|| !battle->battleCanUsePerfectFortune(strikeSource, nullptr, pack.shot()))
+			throw std::runtime_error("Invalid Perfect Fortune strike transition");
+	}
 	if(pack.chainGateTriggered && !chainGateKillQualifies(*battle, pack.stackAttacking, pack.bsa))
 		throw std::runtime_error("Invalid Chain Gate attack trigger");
 	const auto bloodrageCandidates = bloodrageDeathCandidates(*battle, pack.bsa);
@@ -2150,6 +2159,8 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 	}
 	if(pack.fortuneState)
 		battle->getSide(pack.fortuneSide).sylvanLuck = *pack.fortuneState;
+	if(pack.perfectFortuneState)
+		battle->setPerfectFortuneState(pack.perfectFortuneSide, *pack.perfectFortuneState);
 
 	pack.attackerChanges.visit(*this);
 

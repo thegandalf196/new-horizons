@@ -67,6 +67,9 @@ struct FortuneStrikeProjection
 	/// nullopt retains legacy inference; a captured UNKNOWN must stay unknown
 	/// when a consumed Gambler bonus changes the next strike's Luck value.
 	std::optional<ProjectedLuckOutcome> resolvedLuck;
+	/// Capture before damage: death or post-hit status changes cannot undo an accepted use.
+	bool perfectFortune = false;
+	BattleSide perfectFortuneSide = BattleSide::NONE;
 	uint32_t attackerId = 0;
 	uint32_t defenderId = 0;
 	bool shooting = false;

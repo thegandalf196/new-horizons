@@ -49,6 +49,8 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 	template <typename Handler> void serialize(Handler & h)
 	{
 		if(h.saving && info)
+			info->validatePerfectFortuneSerialization(h);
+		if(h.saving && info)
 		{
 			info->validateConfusionStates();
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_CONFUSION_STATE) && info->hasConfusionState())
@@ -873,6 +875,8 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 	/// Server-authored post-roll snapshot, shared by every target of the strike.
 	BattleSide fortuneSide = BattleSide::NONE;
 	std::optional<SylvanLuckState> fortuneState;
+	BattleSide perfectFortuneSide = BattleSide::NONE;
+	std::optional<PerfectFortuneState> perfectFortuneState;
 
 	BattleID battleID = BattleID::NONE;
 	std::vector<BattleStackAttacked> bsa;
@@ -927,6 +931,19 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 	{
 		return flags & LAST_STAND_RETALIATION;
 	}
+	void validatePerfectFortuneMarker() const
+	{
+		const bool validSide = perfectFortuneSide == BattleSide::ATTACKER || perfectFortuneSide == BattleSide::DEFENDER;
+		if(perfectFortuneState.has_value() != validSide
+			|| (!perfectFortuneState && perfectFortuneSide != BattleSide::NONE))
+			throw std::runtime_error("Invalid Perfect Fortune attack side");
+		if(perfectFortuneState)
+		{
+			perfectFortuneState->validate();
+			if(!perfectFortuneState->enabled || !perfectFortuneState->used || !lucky() || unlucky() || spellLike() || bsa.empty())
+				throw std::runtime_error("Invalid Perfect Fortune consumed strike snapshot");
+		}
+	}
 	void validateLastStandMarker() const
 	{
 		const bool endedActiveActivation = std::ranges::any_of(bsa, [](const BattleStackAttacked & hit)
@@ -941,6 +958,9 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 	{
 		if(h.saving)
 		{
+			validatePerfectFortuneMarker();
+			if(perfectFortuneState && !h.hasFeature(Handler::Version::NEW_HORIZONS_PERFECT_FORTUNE))
+				throw std::runtime_error("Cannot discard Perfect Fortune strike state");
 			for(const auto & change : attackerChanges.changedStacks)
 				change.validateConfusionSerialization(h);
 			for(const auto & hit : bsa)
@@ -1037,8 +1057,21 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 			relentlessAssaultSide = BattleSide::NONE;
 			relentlessAssaultState.reset();
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PERFECT_FORTUNE))
+		{
+			h & perfectFortuneSide;
+			h & perfectFortuneState;
+		}
+		else if(!h.saving)
+		{
+			perfectFortuneSide = BattleSide::NONE;
+			perfectFortuneState.reset();
+		}
 		if(!h.saving)
+		{
 			validateLastStandMarker();
+			validatePerfectFortuneMarker();
+		}
 		assert(battleID != BattleID::NONE);
 	}
 };

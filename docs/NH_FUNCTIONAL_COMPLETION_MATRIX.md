@@ -2,6 +2,22 @@
 
 Updated: 2026-10-08
 
+UP081 Perfect Fortune is now active and source/native verified. First eligible
+physical creature attack or retaliation receives guaranteed positive Luck,
+independently per current-controller side; Misfortune/No Luck, machines and
+nonphysical/indirect strikes preserve the token. Detached forecast, candidate
+and replay share the state. Linked99001 and incremental10288 exit0 at10 jobs;
+final active-registry native55696 passes16/16 in5.537s, zero skips, including
+ten new cases and six adjacent Luck cases. Actual Cleave candidate/replay/live
+parity and pre-attack battle/used-side/attack-packet state are verified, not
+ongoing post-attack full-battle save/resume. Data17/17 and module drift pass;
+independent review has no remaining blocker. Receipt:
+build/nh-preview-ai-validation.jUrtT2RY/native-up081-active.log/XML.
+Perk coverage rises231→232/310 (78 planned), generic160→161/220; Luck7/10.
+Faction71/90 and combat61/67 do not change. Autonomous choice and broader
+controller/death/reaction/full-game-save combinations remain Phase2.
+Normal playable delivery and purpose-made perk art remain separate.
+
 UP310 compact Wisp portraits now have actual rendered Conflux-background
 evidence for both forms in isolated SDL2 run4564. Root inspected the TWCRPORT
 panel screenshots, not the unrelated full animation panel, under
@@ -4153,7 +4169,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | All three ranks per Skill are active; many registered Skills still lack complete perk progression. |
 | Skill rank effects active | 93/93 | Elemental Rebirth's three ranks now have source/native and owning-side AI evidence. Active status does not certify every wider interaction. |
-| Skill perks active | 231/310 | 79 planned; current registry recount2026-10-08. Generic160/220, faction71/90. Diplomacy is 7/10; Chaos Magic 5/10; Necromancy 10/10; Learning 3/10; Estates 6/10; Battlecraft 8/10; Logistics 8/10; Command 7/10; Warcasting 9/10. Historian's foundation remains planned and adds no activation count. Active status alone does not certify every mechanic. |
+| Skill perks active | 232/310 | 78 planned; current registry recount2026-10-08. Generic161/220, faction71/90. Luck7/10; Diplomacy7/10; Chaos Magic5/10; Necromancy10/10; Learning3/10; Estates6/10; Battlecraft8/10; Logistics8/10; Command7/10; Warcasting9/10. Historian's foundation remains planned and adds no activation count. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 27/27 | All nine faction rank foundations are active; their remaining perks and wider integration are separate work. |
 | Faction perks active | 71/90 | 19 planned perks; Divine Mandate has six accepted perks, including Expert Mandate of Heaven and Advanced Purifying Mandate; Elemental Rebirth has three accepted perks with normal Basic-to-Advanced selection and live/detached evidence. |
 | Canonical combat-spell identities registered | 61/67 | 6 missing/inactive; Puppet Master is the newest source/native-verified identity. Chaos is 7/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -4522,7 +4538,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Diplomacy | 3/0 | 7/3 | Foundation, Envoy, Peacemaker, Tribute and Recruitment Pact verified; three perks remain missing |
 | Estates | 3/0 | 6/4 | Resource Broker joins Land Surveyor, Tax Collector, Investor, Estate Network and Financier. Local Marketplace rate, accepted AI trade, mine-capture grants, daily income, weekly Wood/Ore, weekly treasury interest and Investor's pre-income treasury snapshot have focused native evidence. Broader interactions and playable delivery remain separate. |
 | Learning | 3/0 | 3/7 | Mentor, Quick Study and Field Study supply working Basic/Advanced perks and open ordinary Expert-rank progression. Meetings, weekly persistence, initial offer reroll, stronger-opponent awarded XP and query/RNG parity are native verified. Academic Study awaits first-visit timing. |
-| Luck | 3/0 | 6/4 | Fortune's Favor, Lucky Aim, Second Chance, Gambler, Chain of Fortune and Twist of Fate source/native verified; four perks remain planned. |
+| Luck | 3/0 | 7/3 | Perfect Fortune joins Fortune's Favor, Lucky Aim, Second Chance, Gambler, Chain of Fortune and Twist of Fate with focused accepted-strike and detached candidate/replay evidence; three perks remain planned. |
 | Divine Mandate | 3/0 | 6/4 | Paired rank foundation, Chaplain's Reserve, Consecrated Casting, Sacred Command, Knightly Sequence, Mandate of Heaven and Purifying Mandate source/native verified; four perks remain missing. Legal progression reaches the implemented Expert perk. |
 | Sylvan Luck | 3/0 | 10/0 | Principal-path audit identifies consumers for all ten perks. Perfect Moment's missing automatic first eligible attack and +5 current-Luck threshold are repaired under UP023: client/native builds pass, focused19/19 zero skips, including server/AI/Skirmisher. Broader35-case run passes31 with four unrelated fixture/compatibility guard failures recorded for Phase2; this is not whole-family integration or playable acceptance. |
 | Metamagic | 3/0 | 10/0 | Bounded source audit2026-10-05 identifies consumers for all ranks and ten active perks: HeroSpellAllowanceTransition, ISpellMechanics, BattleSpellMechanics, BaseMechanics, Focus Magic and GameStatePackVisitor; existing focused fixtures cover sequences, costs, duration, marks, closure rewards and automatic Grand continuation, including AI. No missing principal source clause verified. This audit did not rerun native tests or establish playable delivery; wider interactions remain Phase2. |

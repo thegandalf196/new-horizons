@@ -712,6 +712,29 @@ bool CBattleInfoCallback::battleCanUsePerfectMoment(const battle::Unit * attacke
 		&& battleGetAttackLuck(attacker, target, shooting, false) >= 5;
 }
 
+bool CBattleInfoCallback::battleCanUsePerfectFortune(const battle::Unit * attacker,
+	const battle::Unit * target, bool shooting) const
+{
+	(void)target;
+	if(!getBattle() || battleTacticDist() || !attacker || !attacker->alive() || attacker->isGhost()
+		|| attacker->isTimeStopped()
+		|| !newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attacker,
+			!(shooting && attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)))
+		|| attacker->hasBonusOfType(BonusType::NO_LUCK)
+		|| (attacker->hasBonusOfType(BonusType::MAXIMUM_LUCK)
+			&& attacker->valOfBonuses(BonusType::MAXIMUM_LUCK) <= 0))
+		return false;
+	const auto side = playerToSide(battleGetActionController(attacker));
+	return (side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+		&& getBattle()->getPerfectFortuneState(side).available();
+}
+
+bool CBattleInfoCallback::battleCanTriggerPerfectFortune(const BattleAttackInfo & attack) const
+{
+	return attack.physicalDamage && !attack.secondaryAttack
+		&& battleCanUsePerfectFortune(attack.attacker, attack.defender, attack.shooting);
+}
+
 bool CBattleInfoCallback::battleCanTriggerCleave(const battle::Unit * attacker) const
 {
 	if(!attacker || !getBattle() || !attacker->alive() || attacker->isGhost()
@@ -799,7 +822,16 @@ int64_t CBattleInfoCallback::battleExpectedLuckDamage(const BattleAttackInfo & a
 	const auto average = [](const DamageRange & range) { return range.min + (range.max - range.min) / 2; };
 	const auto normal = average(calculateDmgRange(attack).damage);
 	const auto side = playerToSide(battleGetOwner(attack.attacker));
-	if((side != BattleSide::ATTACKER && side != BattleSide::DEFENDER) || attack.luckyStrike || attack.unluckyStrike)
+	if(attack.luckyStrike || attack.unluckyStrike)
+		return normal;
+	if(battleCanTriggerPerfectFortune(attack))
+	{
+		auto guaranteed = attack;
+		guaranteed.luckyStrike = true;
+		guaranteed.unluckyStrike = false;
+		return average(calculateDmgRange(guaranteed).damage);
+	}
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return normal;
 	const auto fortune = getBattle()->getSylvanLuckState(side);
 	const int luck = battleGetAttackLuck(attack.attacker, attack.defender, attack.shooting);

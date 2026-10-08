@@ -194,6 +194,7 @@ ACTIVE_PERKS = {
     "new-horizons:luck.gambler",
     "new-horizons:luck.chainOfFortune",
     "new-horizons:luck.twistOfFate",
+    "new-horizons:luck.perfectFortune",
     "new-horizons:sorceryMagic.overcharger",
     "new-horizons:sorceryMagic.matterShaper",
     "new-horizons:sorceryMagic.selectiveDispel",

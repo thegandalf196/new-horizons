@@ -118,6 +118,18 @@ public:
 		return sides.at(side).overwhelmingFormulaState;
 	}
 	void setOverwhelmingFormulaState(BattleSide side, const OverwhelmingFormulaState & state) override;
+	PerfectFortuneState getPerfectFortuneState(BattleSide side) const override
+	{
+		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			return {};
+		return sides.at(side).perfectFortune;
+	}
+	void setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state) override;
+	template <typename Handler> void validatePerfectFortuneSerialization(Handler & h) const
+	{
+		for(const auto & side : sides)
+			side.perfectFortune.validateSerialization(h);
+	}
 	LuckRollRules getLuckRollRules() const override { return luckRollRules; }
 	const std::map<CreatureID, TQuantity> & getDemonicReserve(BattleSide side) const override
 	{
@@ -267,6 +279,8 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validatePerfectFortuneSerialization(h);
 		if(h.saving)
 		{
 			validateConfusionStates();

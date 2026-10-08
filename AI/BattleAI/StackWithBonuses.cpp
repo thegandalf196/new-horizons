@@ -961,6 +961,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 		meta.sequence = realBattle->getBattle()->getMetamagicSequenceSpells(side);
 		focusFireStates[side] = realBattle->battleGetFocusFireState(side);
 		fortuneStates[side] = realBattle->getBattle()->getSylvanLuckState(side);
+		perfectFortuneStates[side] = realBattle->getBattle()->getPerfectFortuneState(side);
 		adverseRerollStates[side] = realBattle->getBattle()->getAdverseCombatRerollState(side);
 		moraleSuppressionStates[side] = realBattle->getBattle()->getMoraleSuppressionState(side);
 		bloodrageRanks[side] = realBattle->getBattle()->getBloodrageRank(side);
@@ -1017,6 +1018,8 @@ PlayerColor HypotheticBattle::unitEffectiveOwner(const battle::Unit * unit) cons
 
 bool HypotheticBattle::fortuneStrikeIsCertain(const BattleAttackInfo & attack) const
 {
+	if(battleCanTriggerPerfectFortune(attack))
+		return true;
 	if(attack.luckyStrike)
 		return true;
 
@@ -1037,6 +1040,8 @@ bool HypotheticBattle::fortuneStrikeIsCertain(const BattleAttackInfo & attack) c
 
 ProjectedLuckOutcome HypotheticBattle::captureFortuneStrikeOutcome(const BattleAttackInfo & attack) const
 {
+	if(battleCanTriggerPerfectFortune(attack))
+		return ProjectedLuckOutcome::POSITIVE;
 	if(attack.luckyStrike)
 		return ProjectedLuckOutcome::POSITIVE;
 	if(attack.unluckyStrike)
@@ -1064,12 +1069,21 @@ ProjectedLuckOutcome HypotheticBattle::captureFortuneStrikeOutcome(const BattleA
 void HypotheticBattle::projectFortuneStrike(const BattleAttackInfo & attack,
 	const std::vector<std::pair<uint32_t, int64_t>> & hits,
 	battle::CUnitState * attackerState, bool enemyStackKilled,
-	std::optional<ProjectedLuckOutcome> resolvedLuck, bool applyAftermath)
+	std::optional<ProjectedLuckOutcome> resolvedLuck, bool applyAftermath,
+	std::optional<bool> capturedPerfectFortune, BattleSide capturedPerfectFortuneSide)
 {
+	const auto perfectFortuneSide = capturedPerfectFortune.value_or(false)
+		&& (capturedPerfectFortuneSide == BattleSide::ATTACKER || capturedPerfectFortuneSide == BattleSide::DEFENDER)
+		? capturedPerfectFortuneSide : playerToSide(battleGetActionController(attack.attacker));
+	const bool perfectFortune = capturedPerfectFortune.value_or(battleCanTriggerPerfectFortune(attack));
+	if(perfectFortune && (perfectFortuneSide == BattleSide::ATTACKER || perfectFortuneSide == BattleSide::DEFENDER)
+		&& perfectFortuneStates.at(perfectFortuneSide).available())
+		perfectFortuneStates.at(perfectFortuneSide).used = true;
+	// Existing Luck aftermath follows allegiance, while the new guarantee token
+	// belongs to the current action controller, as in the accepted live strike.
 	const auto side = playerToSide(battleGetOwner(attack.attacker));
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return;
-
 	auto & fortune = fortuneStates.at(side);
 	if(!fortune.active())
 		return;
@@ -1079,7 +1093,8 @@ void HypotheticBattle::projectFortuneStrike(const BattleAttackInfo & attack,
 	const bool chainFortuneAvailable = fortune.chainFortuneAvailable(attack.attacker->unitId());
 	// Resolve this attack with the pre-consumption Luck snapshot. Candidate
 	// metadata carries that result through replay after one-strike bonuses expire.
-	const auto outcome = resolvedLuck ? *resolvedLuck : captureFortuneStrikeOutcome(attack);
+	const auto outcome = perfectFortune ? ProjectedLuckOutcome::POSITIVE
+		: (resolvedLuck ? *resolvedLuck : captureFortuneStrikeOutcome(attack));
 	const bool positive = outcome == ProjectedLuckOutcome::POSITIVE;
 	const bool negative = outcome == ProjectedLuckOutcome::NEGATIVE;
 	const bool guaranteedNonPositive = outcome == ProjectedLuckOutcome::NEGATIVE

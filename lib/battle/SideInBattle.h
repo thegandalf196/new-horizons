@@ -32,6 +32,7 @@
 #include "RelentlessAssaultState.h"
 #include "SpellResponseState.h"
 #include "OverwhelmingFormulaState.h"
+#include "PerfectFortuneState.h"
 #include "../callback/GameCallbackHolder.h"
 
 class CGHeroInstance;
@@ -202,6 +203,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	// stack it protects. BattleInfo owns its versioned binary representation.
 	bool armorerLastStandUsed = false;
 	OverwhelmingFormulaState overwhelmingFormulaState;
+	PerfectFortuneState perfectFortune;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);
@@ -374,6 +376,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			perfectFortune.validateSerialization(h);
 		if(h.saving && hasSacredCommandOrderState()
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SACRED_COMMAND))
 			throw std::runtime_error("Cannot discard Sacred Command battle Order state");
@@ -721,6 +725,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			h & overwhelmingFormulaState;
 		else if(!h.saving)
 			overwhelmingFormulaState = {};
+		h & perfectFortune;
 		if(!h.saving)
 		{
 			validateDoubleCommandState();

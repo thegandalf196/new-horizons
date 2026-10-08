@@ -1,5 +1,37 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Guaranteed Luck needs shared forecasts and initialized projections
+
+UP081 independent pre-build review found two blocking defects: shared
+battleExpectedLuckDamage omitted the Perfect Fortune guarantee at natural Luck0,
+and a projected Cleave wrote through a disengaged optional before emplace.
+Source fixes add the shared eligible guaranteed-damage branch and capture
+metadata locally before assigning it to the initialized Cleave projection.
+These are review-discovered correctness defects, not failed runtime receipts.
+An actual lethal-primary/Cleave candidate regression is required before
+activation. Initial fixture object gate95861 compiled successfully but emitted
+two dangling-else warnings from assertion macros; explicit braces repair those
+branches without changing assertions. Linked/native acceptance remains pending.
+Linked build70379 exits1 after147/789 steps: AttackPossibility.cpp2008 calls
+getLuckRollRules on CBattleInfoCallback, which has no such member. Use the
+existing battle-state accessor rather than expanding the callback API just for
+this call. Receipt: build/nh-perfect-fortune-build.log. Native tests have not run
+and the perk is not activated; retry only after the corrected source freezes.
+Corrected linked99001 exits0. Native17062 passes15/16 in5.541s, zero skips,
+including nine Perfect Fortune cases and all six adjacent Luck controls. The
+remaining fixture incorrectly deep-copies the full battle after injury and hits
+the existing Veteran-history save guard. Preserve that guard and actual damage
+history; verify the untouched battle snapshot before the strike and consumed
+token/packet/side state separately. Do not claim ongoing post-attack battle save
+acceptance or erase history to make the fixture green. Receipt:
+build/nh-preview-ai-validation.jUrtT2RY/native-up081.log/XML.
+Fixture-only linked10288 exits0 and repaired native14046 passes16/16 in5.553s.
+After registry activation, native55696 passes16/16 in5.537s, zero skips, without
+fixture activation override; all recorded registry properties are active.
+Data17/17/module drift pass. No production save guard was weakened. Receipts:
+native-up081-repaired.log/XML and native-up081-active.log/XML in the same
+validation directory. Phase2 boundaries remain explicit.
+
 ### 2026-10-08 — A regenerated matte can preserve the same bad fragment
 
 UP282 Stone Gargoyle r8 built-in HoMM3 Art revision changes only26 native mask

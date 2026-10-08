@@ -173,6 +173,14 @@ void BattleInfo::setOverwhelmingFormulaState(BattleSide side, const Overwhelming
 	sides.at(side).overwhelmingFormulaState = state;
 }
 
+void BattleInfo::setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::invalid_argument("Invalid side for Perfect Fortune state");
+	state.validate();
+	sides.at(side).perfectFortune = state;
+}
+
 bool BattleInfo::hasBattlecraftMasteryMarkers() const
 {
 	return std::any_of(stacks.begin(), stacks.end(), [](const auto & stack)
@@ -729,6 +737,8 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 			currentBattle->sides[i].preCombatOrderState.phase = PreCombatOrderState::Phase::AVAILABLE;
 		if(heroes[i])
 		{
+			currentBattle->sides[i].perfectFortune.enabled = heroes[i]->hasActivePerk(
+				"new-horizons:luck", "new-horizons:luck.perfectFortune");
 			currentBattle->sides[i].adverseCombatReroll.enabled = heroes[i]->hasActivePerk(
 				"new-horizons:luck", "new-horizons:luck.twistOfFate");
 			currentBattle->sides[i].moraleSuppression.enabled = heroes[i]->hasActivePerk(

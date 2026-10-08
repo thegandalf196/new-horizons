@@ -1,5 +1,10 @@
 # New Horizons UI and asset status register
 
+UP081 Perfect Fortune purpose-made perk artwork is **Not done**. Source/native
+mechanic is active with ordinary positive-Luck combat feedback and existing
+perk browsing/selection; that does not approve a bespoke icon, graphical fit
+or normal playable delivery. No raster artwork was created for this mechanic.
+
 UP282 Stone Gargoyle r8 remains **Not done**: single focused HoMM3 Art revision
 still includes lower-left architecture after native/enlarged review. Preserved
 private comparison: Downloads/provisory/academy-gargoyle-up282-mask-r8. Nothing
