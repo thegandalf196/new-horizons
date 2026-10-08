@@ -34,11 +34,14 @@ verified; perk/spell/Order identity counts remain230/310,61/67,8/8.
 Rendered Transformer UI, autonomous AI visit sequencing, in-flight reselection
 locking and broader strategic valuation remain delivery/Phase2 boundaries.
 
-UP290 rendered partial acceptance on frozen selected0c6af: overflow transition
-opens Leave Guards and closing keeps Solmyr visiting with unchanged armies,
-without repeated Leadership rejection. Root inspected actual modal screenshot.
-Capacity-fitting transfer and subsequent admission remain separate pending
-evidence; this validates a user-reported UI path, not additional perk identities.
+UP290 rendered acceptance on frozen selected0c6af: overflow transition opens
+Leave Guards and closing keeps Solmyr visiting with unchanged armies. Retrying
+the remaining Mage onto a full2Magi stack is a local no-op, not a rejected server
+request. Legal transfers conserve3Magi and1Cabir; final GarrisonHeroSwap ID23
+succeeds and root-inspected screenshot shows Solmyr in the garrison row, empty
+visiting row. No dismissal or Leadership rejection; owned background processes
+cleaned. The reported transition is resolved, not all army/control/AI combinations
+certified. This required interaction acceptance adds no perk identities.
 
 Current Phase1 integration checkpoint: user-resolved Enchanted Command and
 Combat Casting now pass linked compilation and focused native execution.
