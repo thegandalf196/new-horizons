@@ -1,5 +1,13 @@
 # New Horizons UI and asset status register
 
+2026-10-08 rendered delivery checkpoint: source 6c9b9df7c / Linux snapshot
+4c887972 is promoted after actual six-school CH00 casting and Castle Mage Guild
+checks. Root inspected the visible yellow/green/blue/orange/purple/red glows,
+their alignment and idle clearing. All eighteen variants remain inventory/native
+geometry checked, not an eighteen-caster rendered matrix. Castle's two ribbons
+and separate vista render correctly. This closes local resource/selector defects,
+not public Guild provenance recovery or a new Final artwork approval.
+
 2026-10-08 school casting/Guild delivery: authorized standalone casting overlays
 are committed (864 PNGs, all eighteen hero variants/six schools/eight frames),
 with a casting-only builtin resolver configuration. Windows/Linux installation

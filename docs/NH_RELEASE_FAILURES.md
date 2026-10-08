@@ -9,6 +9,13 @@ Use the existing scoped spell key directly; retain eligibility, castability,
 school, Mana and ordinary-map initialization assertions. This is a test-fixture
 repair, not permission to relax production acquisition rules.
 
+The first actual casting run also demonstrated that Red 5000 versus Blue 1500
+Dendroid Guards ended combat after four school casts: Defend still retaliates.
+Do not infer six-round durability from a large friendly army. The corrected
+test-only map uses 5000 on both sides and passes its unchanged export/eligibility
+checks. Verify only the two missing casts next, without modifying production
+combat rules or repeating the already verified four-color matrix.
+
 ### 2026-10-08 — Bare school IDs silently disabled casting overlays
 
 The restored bundle alone did not prove the feature: actual Magic Arrow/Bless

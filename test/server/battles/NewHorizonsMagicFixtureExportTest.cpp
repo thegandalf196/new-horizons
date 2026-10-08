@@ -203,7 +203,7 @@ TEST_F(NewHorizonsMagicFixtureExportTest, ExportOrdinarySixSchoolCastingScenario
 		.hero({19, 10, 0}, HeroTypeID(2), PlayerColor(1))
 		.heroExperience(0).heroPrimary(2, 2, 3, 10)
 		.heroSecondarySkills({{SecondarySkill::PATHFINDING, 1}})
-		.heroGarrison({{creatureByName("dendroidGuard"), 1500}}).heroSpells({});
+		.heroGarrison({{creatureByName("dendroidGuard"), 5000}}).heroSpells({});
 	const auto expected = builder.build();
 	startWithMap(builder); // Ordinary module initialization; no mapLoaded override.
 	ASSERT_TRUE(gameState()->getPlayerState(PlayerColor(0))->isHuman());
@@ -218,7 +218,7 @@ TEST_F(NewHorizonsMagicFixtureExportTest, ExportOrdinarySixSchoolCastingScenario
 	ASSERT_EQ(human->getSpellsInSpellbook(), std::set<SpellID>(spells.begin(), spells.end()));
 	ASSERT_EQ(human->getStackCount(SlotID(0)), 5000);
 	ASSERT_EQ(human->getStackCount(SlotID(1)), 10);
-	ASSERT_EQ(computer->getStackCount(SlotID(0)), 1500);
+	ASSERT_EQ(computer->getStackCount(SlotID(0)), 5000);
 	const std::set<std::string> expectedSchools{
 		"new-horizons:light", "new-horizons:nature", "new-horizons:sorcery",
 		"new-horizons:havoc", "new-horizons:shadow", "new-horizons:chaos"};
