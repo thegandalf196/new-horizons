@@ -681,10 +681,23 @@ AttackPossibility AttackPossibility::evaluate(
 	AttackPossibility bestAp(hex, BattleHex::INVALID, attackInfo);
 
 	BattleHexArray defenderHex;
+	bool longReachAttack = false;
 	if(attackInfo.shooting)
 		defenderHex.insert(requestedDefender->getPosition());
 	else
+	{
 		defenderHex = state->meleeAttackHexes(attacker, requestedDefender, hex);
+		// Ordinary adjacent attacks retain their exact target-cell candidates.
+		// Long Reach legality already checks both complete footprints and the
+		// direct corridor; use the requested target's normal action anchor rather
+		// than inventing an adjacent cell or duplicating those shared rules.
+		if(defenderHex.empty()
+			&& state->isMeleeAttackPossibleWithLongReach(attacker, requestedDefender, hex))
+		{
+			defenderHex.insert(requestedDefender->getPosition());
+			longReachAttack = true;
+		}
+	}
 
 	for(const BattleHex & defHex : defenderHex)
 	{
@@ -807,6 +820,14 @@ AttackPossibility AttackPossibility::evaluate(
 		battle::Units retaliatedUnits = {attacker};
 		if(attackInfo.shooting)
 			defenderUnits = state->getAttackedBattleUnits(attacker, defender, defHex, true, hex, defender->getPosition());
+		else if(longReachAttack)
+		{
+			// The server does not enumerate adjacency-based breath/sweep targets
+			// or counters for a distant Long Reach strike. Those shared collateral
+			// helpers require a mutual adjacent direction and must not be called.
+			defenderUnits = {defender};
+			requestedDefenderUnits = {requestedDefender};
+		}
 		else
 		{
 			defenderUnits = state->getAttackedBattleUnits(attacker, defender, defHex, false, hex, defender->getPosition());
@@ -924,6 +945,8 @@ AttackPossibility AttackPossibility::evaluate(
 				return false;
 			if(qualifiesForMireGrip(primaryTarget))
 				return true;
+			if(longReachAttack)
+				return false;
 			const auto possibleVictims = state->getAttackedBattleUnits(attacker, primaryTarget,
 				defHex, false, hex, primaryTarget->getPosition());
 			return std::ranges::any_of(possibleVictims, qualifiesForMireGrip);
@@ -1513,7 +1536,7 @@ AttackPossibility AttackPossibility::evaluate(
 					strike.noQuarterTargets.emplace_back(u->unitId(), moraleActivations);
 				}
 
-				if(i == 0 && !attackInfo.shooting && u->unitId() == strikeDefender->unitId()
+				if(i == 0 && !attackInfo.shooting && !longReachAttack && u->unitId() == strikeDefender->unitId()
 					&& retaliatorState->alive() && retaliatorState->ableToRetaliate() && !counterAttacksBlocked
 					&& (!state->battleShroudDeniesRetaliation(victimAttack) || defenderState->hasBonus(firstStrikeSelector))
 					&& !ap.attackerState->isInvincible() && !state->isLongWeaponAttack(ap.attackerState.get(), defenderState.get())

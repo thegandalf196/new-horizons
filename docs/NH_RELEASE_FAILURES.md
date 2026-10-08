@@ -1,5 +1,42 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Wisp AI fixture passed a raw battle to detached forecasting
+
+First native gate33876 passes27/30, failing the three principal distant cases.
+Two forecasts throw the adjacency-only collateral helper's runtime_error;
+the third fixture incorrectly places a defender double-wide tail away from the
+attacker. Repair recognizes legal nonadjacent Long Reach and skips adjacency-only
+collateral/counters while retaining primary damage. Server preserves the original
+requested targetHex even when Protect redirects damage, so its collateral path
+also yields no secondary targets. Independent review confirms this boundary;
+no shared gameplay change or broad exception swallowing is introduced. Place
+the double-wide attacker on the opposite side to prove anchor distance7 and
+closest tail distance6. Preserve native-up300.log/XML as failed evidence.
+
+Repaired native58815 passes29/30: movement-plus candidate is legal, but the
+existing tactical exchange policy chooses WAIT before attacking. Preserve
+native-up300-repaired.log/XML. Do not tune AI coefficients to satisfy an
+immediate-attack fixture. The final fixture asserts the positive legal forecast,
+accepts actual AI WAIT and a scripted enemy DEFEND, then uses the authoritative
+waited activation to require the actual AI movement-plus attack and server damage.
+No direct activation/flag shortcut or weaker final action assertion is used.
+
+Next native65620 still passes29/30; all attack/movement/damage assertions pass,
+but active-unit pointer inequality is not a valid completion invariant for a last
+waited stack that can begin the next round or receive Morale. Preserve
+native-up300-final.log/XML. Correct completion proof requires a new recorded
+activation packet and increased serial, with Morale or next-round queue reason,
+if the same unit remains active. Final linked58248/native28760 then pass30/30
+in11.353s, zero skips. Independent review confirms actual packet/serial semantics;
+normal gameplay progression is retained rather than disabled for the fixture.
+
+UP300 build67526 failed only in the new fixture: HypotheticBattle requires the
+shared BattleCb Subject handle, not gameState()->getBattle's raw BattleInfo*.
+Use callback->getBattle, matching existing AI fixtures; keep all gameplay
+assertions and production code unchanged. Preserve first compiler receipt
+build/nh-wisp-long-reach-ai-build.log. Production AttackPossibility compiled;
+this compile failure is not an accepted runtime test or a Wisp mechanic failure.
+
 ### 2026-10-08 — Authored Teleport render fixture replaced required hero Skills
 
 Private candidate a18bc063 passed4014-file freeze verification, but its authored

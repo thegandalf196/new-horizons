@@ -2,6 +2,22 @@
 
 Updated: 2026-10-07
 
+2026-10-08 UP300 minimum-AI checkpoint: Wisp Long Reach candidates now survive
+AttackPossibility's adjacent-only target enumeration. Legal distant attacks use
+shared range/corridor/full-footprint validation, retain the requested target
+anchor and skip adjacency-only collateral/counters like the server. Adjacent
+attacks remain on their previous path. Seven new cases establish actual accepted
+stationary/movement-plus/two-hex AI attacks, isolated positive forecasts and
+blocked/range/non-Reach/no-retaliation controls. Linked58248 exits0 at10 jobs;
+native28760 passes30/30 in11.353s, zero skips, including four server LongReach,
+nine attack projections and ten Ogre/Genie cases. Independent review has no
+blocker. Receipts: build/nh-wisp-long-reach-ai-build-activation-fixture.log and
+build/nh-preview-ai-validation.jUrtT2RY/native-up300-activation.log/XML.
+Earlier failed gates remain in release lessons; no assertions were weakened to
+accept WAIT instead of the final attack. Wider controller/Protect/faction-perk
+matrices remain Phase2. One additional minimum AI consumer, no content identity
+increase:231/310 perks,61/67 combat spells,8/8 Orders. No launcher promotion.
+
 2026-10-08 UP299 minimum-AI checkpoint: ordinary positive single-recipient
 unweighted creature buffs with zero HP-only score now receive detached pressure
 valuation. Ogre Mage's actual AI Bloodlust request is accepted with Advanced

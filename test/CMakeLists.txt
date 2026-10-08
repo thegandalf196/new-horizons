@@ -535,6 +535,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/HeroCommandAITest.cpp
 		battleAI/NewHorizonsGenieSupportAITest.cpp
 		battleAI/NewHorizonsBeneficialCreatureAITest.cpp
+		battleAI/NewHorizonsWispLongReachAITest.cpp
 		battleAI/NewHorizonsDoubleCommandAITest.cpp
 		battleAI/NewHorizonsDivineMandateAITest.cpp
 		battleAI/NewHorizonsElementalRebirthAITest.cpp
