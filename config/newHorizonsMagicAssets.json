@@ -1,0 +1,1768 @@
+{
+  "castingGlows": {
+    "CH00": {
+      "light": {
+        "frames": [
+          "NH_magic_assets/casting/CH00/light/frame_00.png",
+          "NH_magic_assets/casting/CH00/light/frame_01.png",
+          "NH_magic_assets/casting/CH00/light/frame_02.png",
+          "NH_magic_assets/casting/CH00/light/frame_03.png",
+          "NH_magic_assets/casting/CH00/light/frame_04.png",
+          "NH_magic_assets/casting/CH00/light/frame_05.png",
+          "NH_magic_assets/casting/CH00/light/frame_06.png",
+          "NH_magic_assets/casting/CH00/light/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "nature": {
+        "frames": [
+          "NH_magic_assets/casting/CH00/nature/frame_00.png",
+          "NH_magic_assets/casting/CH00/nature/frame_01.png",
+          "NH_magic_assets/casting/CH00/nature/frame_02.png",
+          "NH_magic_assets/casting/CH00/nature/frame_03.png",
+          "NH_magic_assets/casting/CH00/nature/frame_04.png",
+          "NH_magic_assets/casting/CH00/nature/frame_05.png",
+          "NH_magic_assets/casting/CH00/nature/frame_06.png",
+          "NH_magic_assets/casting/CH00/nature/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "sorcery": {
+        "frames": [
+          "NH_magic_assets/casting/CH00/sorcery/frame_00.png",
+          "NH_magic_assets/casting/CH00/sorcery/frame_01.png",
+          "NH_magic_assets/casting/CH00/sorcery/frame_02.png",
+          "NH_magic_assets/casting/CH00/sorcery/frame_03.png",
+          "NH_magic_assets/casting/CH00/sorcery/frame_04.png",
+          "NH_magic_assets/casting/CH00/sorcery/frame_05.png",
+          "NH_magic_assets/casting/CH00/sorcery/frame_06.png",
+          "NH_magic_assets/casting/CH00/sorcery/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "havoc": {
+        "frames": [
+          "NH_magic_assets/casting/CH00/havoc/frame_00.png",
+          "NH_magic_assets/casting/CH00/havoc/frame_01.png",
+          "NH_magic_assets/casting/CH00/havoc/frame_02.png",
+          "NH_magic_assets/casting/CH00/havoc/frame_03.png",
+          "NH_magic_assets/casting/CH00/havoc/frame_04.png",
+          "NH_magic_assets/casting/CH00/havoc/frame_05.png",
+          "NH_magic_assets/casting/CH00/havoc/frame_06.png",
+          "NH_magic_assets/casting/CH00/havoc/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "chaos": {
+        "frames": [
+          "NH_magic_assets/casting/CH00/chaos/frame_00.png",
+          "NH_magic_assets/casting/CH00/chaos/frame_01.png",
+          "NH_magic_assets/casting/CH00/chaos/frame_02.png",
+          "NH_magic_assets/casting/CH00/chaos/frame_03.png",
+          "NH_magic_assets/casting/CH00/chaos/frame_04.png",
+          "NH_magic_assets/casting/CH00/chaos/frame_05.png",
+          "NH_magic_assets/casting/CH00/chaos/frame_06.png",
+          "NH_magic_assets/casting/CH00/chaos/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "shadow": {
+        "frames": [
+          "NH_magic_assets/casting/CH00/shadow/frame_00.png",
+          "NH_magic_assets/casting/CH00/shadow/frame_01.png",
+          "NH_magic_assets/casting/CH00/shadow/frame_02.png",
+          "NH_magic_assets/casting/CH00/shadow/frame_03.png",
+          "NH_magic_assets/casting/CH00/shadow/frame_04.png",
+          "NH_magic_assets/casting/CH00/shadow/frame_05.png",
+          "NH_magic_assets/casting/CH00/shadow/frame_06.png",
+          "NH_magic_assets/casting/CH00/shadow/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      }
+    },
+    "CH01": {
+      "light": {
+        "frames": [
+          "NH_magic_assets/casting/CH01/light/frame_00.png",
+          "NH_magic_assets/casting/CH01/light/frame_01.png",
+          "NH_magic_assets/casting/CH01/light/frame_02.png",
+          "NH_magic_assets/casting/CH01/light/frame_03.png",
+          "NH_magic_assets/casting/CH01/light/frame_04.png",
+          "NH_magic_assets/casting/CH01/light/frame_05.png",
+          "NH_magic_assets/casting/CH01/light/frame_06.png",
+          "NH_magic_assets/casting/CH01/light/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "nature": {
+        "frames": [
+          "NH_magic_assets/casting/CH01/nature/frame_00.png",
+          "NH_magic_assets/casting/CH01/nature/frame_01.png",
+          "NH_magic_assets/casting/CH01/nature/frame_02.png",
+          "NH_magic_assets/casting/CH01/nature/frame_03.png",
+          "NH_magic_assets/casting/CH01/nature/frame_04.png",
+          "NH_magic_assets/casting/CH01/nature/frame_05.png",
+          "NH_magic_assets/casting/CH01/nature/frame_06.png",
+          "NH_magic_assets/casting/CH01/nature/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "sorcery": {
+        "frames": [
+          "NH_magic_assets/casting/CH01/sorcery/frame_00.png",
+          "NH_magic_assets/casting/CH01/sorcery/frame_01.png",
+          "NH_magic_assets/casting/CH01/sorcery/frame_02.png",
+          "NH_magic_assets/casting/CH01/sorcery/frame_03.png",
+          "NH_magic_assets/casting/CH01/sorcery/frame_04.png",
+          "NH_magic_assets/casting/CH01/sorcery/frame_05.png",
+          "NH_magic_assets/casting/CH01/sorcery/frame_06.png",
+          "NH_magic_assets/casting/CH01/sorcery/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "havoc": {
+        "frames": [
+          "NH_magic_assets/casting/CH01/havoc/frame_00.png",
+          "NH_magic_assets/casting/CH01/havoc/frame_01.png",
+          "NH_magic_assets/casting/CH01/havoc/frame_02.png",
+          "NH_magic_assets/casting/CH01/havoc/frame_03.png",
+          "NH_magic_assets/casting/CH01/havoc/frame_04.png",
+          "NH_magic_assets/casting/CH01/havoc/frame_05.png",
+          "NH_magic_assets/casting/CH01/havoc/frame_06.png",
+          "NH_magic_assets/casting/CH01/havoc/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "chaos": {
+        "frames": [
+          "NH_magic_assets/casting/CH01/chaos/frame_00.png",
+          "NH_magic_assets/casting/CH01/chaos/frame_01.png",
+          "NH_magic_assets/casting/CH01/chaos/frame_02.png",
+          "NH_magic_assets/casting/CH01/chaos/frame_03.png",
+          "NH_magic_assets/casting/CH01/chaos/frame_04.png",
+          "NH_magic_assets/casting/CH01/chaos/frame_05.png",
+          "NH_magic_assets/casting/CH01/chaos/frame_06.png",
+          "NH_magic_assets/casting/CH01/chaos/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "shadow": {
+        "frames": [
+          "NH_magic_assets/casting/CH01/shadow/frame_00.png",
+          "NH_magic_assets/casting/CH01/shadow/frame_01.png",
+          "NH_magic_assets/casting/CH01/shadow/frame_02.png",
+          "NH_magic_assets/casting/CH01/shadow/frame_03.png",
+          "NH_magic_assets/casting/CH01/shadow/frame_04.png",
+          "NH_magic_assets/casting/CH01/shadow/frame_05.png",
+          "NH_magic_assets/casting/CH01/shadow/frame_06.png",
+          "NH_magic_assets/casting/CH01/shadow/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      }
+    },
+    "CH010": {
+      "light": {
+        "frames": [
+          "NH_magic_assets/casting/CH010/light/frame_00.png",
+          "NH_magic_assets/casting/CH010/light/frame_01.png",
+          "NH_magic_assets/casting/CH010/light/frame_02.png",
+          "NH_magic_assets/casting/CH010/light/frame_03.png",
+          "NH_magic_assets/casting/CH010/light/frame_04.png",
+          "NH_magic_assets/casting/CH010/light/frame_05.png",
+          "NH_magic_assets/casting/CH010/light/frame_06.png",
+          "NH_magic_assets/casting/CH010/light/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "nature": {
+        "frames": [
+          "NH_magic_assets/casting/CH010/nature/frame_00.png",
+          "NH_magic_assets/casting/CH010/nature/frame_01.png",
+          "NH_magic_assets/casting/CH010/nature/frame_02.png",
+          "NH_magic_assets/casting/CH010/nature/frame_03.png",
+          "NH_magic_assets/casting/CH010/nature/frame_04.png",
+          "NH_magic_assets/casting/CH010/nature/frame_05.png",
+          "NH_magic_assets/casting/CH010/nature/frame_06.png",
+          "NH_magic_assets/casting/CH010/nature/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "sorcery": {
+        "frames": [
+          "NH_magic_assets/casting/CH010/sorcery/frame_00.png",
+          "NH_magic_assets/casting/CH010/sorcery/frame_01.png",
+          "NH_magic_assets/casting/CH010/sorcery/frame_02.png",
+          "NH_magic_assets/casting/CH010/sorcery/frame_03.png",
+          "NH_magic_assets/casting/CH010/sorcery/frame_04.png",
+          "NH_magic_assets/casting/CH010/sorcery/frame_05.png",
+          "NH_magic_assets/casting/CH010/sorcery/frame_06.png",
+          "NH_magic_assets/casting/CH010/sorcery/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "havoc": {
+        "frames": [
+          "NH_magic_assets/casting/CH010/havoc/frame_00.png",
+          "NH_magic_assets/casting/CH010/havoc/frame_01.png",
+          "NH_magic_assets/casting/CH010/havoc/frame_02.png",
+          "NH_magic_assets/casting/CH010/havoc/frame_03.png",
+          "NH_magic_assets/casting/CH010/havoc/frame_04.png",
+          "NH_magic_assets/casting/CH010/havoc/frame_05.png",
+          "NH_magic_assets/casting/CH010/havoc/frame_06.png",
+          "NH_magic_assets/casting/CH010/havoc/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "chaos": {
+        "frames": [
+          "NH_magic_assets/casting/CH010/chaos/frame_00.png",
+          "NH_magic_assets/casting/CH010/chaos/frame_01.png",
+          "NH_magic_assets/casting/CH010/chaos/frame_02.png",
+          "NH_magic_assets/casting/CH010/chaos/frame_03.png",
+          "NH_magic_assets/casting/CH010/chaos/frame_04.png",
+          "NH_magic_assets/casting/CH010/chaos/frame_05.png",
+          "NH_magic_assets/casting/CH010/chaos/frame_06.png",
+          "NH_magic_assets/casting/CH010/chaos/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "shadow": {
+        "frames": [
+          "NH_magic_assets/casting/CH010/shadow/frame_00.png",
+          "NH_magic_assets/casting/CH010/shadow/frame_01.png",
+          "NH_magic_assets/casting/CH010/shadow/frame_02.png",
+          "NH_magic_assets/casting/CH010/shadow/frame_03.png",
+          "NH_magic_assets/casting/CH010/shadow/frame_04.png",
+          "NH_magic_assets/casting/CH010/shadow/frame_05.png",
+          "NH_magic_assets/casting/CH010/shadow/frame_06.png",
+          "NH_magic_assets/casting/CH010/shadow/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      }
+    },
+    "CH012": {
+      "light": {
+        "frames": [
+          "NH_magic_assets/casting/CH012/light/frame_00.png",
+          "NH_magic_assets/casting/CH012/light/frame_01.png",
+          "NH_magic_assets/casting/CH012/light/frame_02.png",
+          "NH_magic_assets/casting/CH012/light/frame_03.png",
+          "NH_magic_assets/casting/CH012/light/frame_04.png",
+          "NH_magic_assets/casting/CH012/light/frame_05.png",
+          "NH_magic_assets/casting/CH012/light/frame_06.png",
+          "NH_magic_assets/casting/CH012/light/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "nature": {
+        "frames": [
+          "NH_magic_assets/casting/CH012/nature/frame_00.png",
+          "NH_magic_assets/casting/CH012/nature/frame_01.png",
+          "NH_magic_assets/casting/CH012/nature/frame_02.png",
+          "NH_magic_assets/casting/CH012/nature/frame_03.png",
+          "NH_magic_assets/casting/CH012/nature/frame_04.png",
+          "NH_magic_assets/casting/CH012/nature/frame_05.png",
+          "NH_magic_assets/casting/CH012/nature/frame_06.png",
+          "NH_magic_assets/casting/CH012/nature/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "sorcery": {
+        "frames": [
+          "NH_magic_assets/casting/CH012/sorcery/frame_00.png",
+          "NH_magic_assets/casting/CH012/sorcery/frame_01.png",
+          "NH_magic_assets/casting/CH012/sorcery/frame_02.png",
+          "NH_magic_assets/casting/CH012/sorcery/frame_03.png",
+          "NH_magic_assets/casting/CH012/sorcery/frame_04.png",
+          "NH_magic_assets/casting/CH012/sorcery/frame_05.png",
+          "NH_magic_assets/casting/CH012/sorcery/frame_06.png",
+          "NH_magic_assets/casting/CH012/sorcery/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "havoc": {
+        "frames": [
+          "NH_magic_assets/casting/CH012/havoc/frame_00.png",
+          "NH_magic_assets/casting/CH012/havoc/frame_01.png",
+          "NH_magic_assets/casting/CH012/havoc/frame_02.png",
+          "NH_magic_assets/casting/CH012/havoc/frame_03.png",
+          "NH_magic_assets/casting/CH012/havoc/frame_04.png",
+          "NH_magic_assets/casting/CH012/havoc/frame_05.png",
+          "NH_magic_assets/casting/CH012/havoc/frame_06.png",
+          "NH_magic_assets/casting/CH012/havoc/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "chaos": {
+        "frames": [
+          "NH_magic_assets/casting/CH012/chaos/frame_00.png",
+          "NH_magic_assets/casting/CH012/chaos/frame_01.png",
+          "NH_magic_assets/casting/CH012/chaos/frame_02.png",
+          "NH_magic_assets/casting/CH012/chaos/frame_03.png",
+          "NH_magic_assets/casting/CH012/chaos/frame_04.png",
+          "NH_magic_assets/casting/CH012/chaos/frame_05.png",
+          "NH_magic_assets/casting/CH012/chaos/frame_06.png",
+          "NH_magic_assets/casting/CH012/chaos/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "shadow": {
+        "frames": [
+          "NH_magic_assets/casting/CH012/shadow/frame_00.png",
+          "NH_magic_assets/casting/CH012/shadow/frame_01.png",
+          "NH_magic_assets/casting/CH012/shadow/frame_02.png",
+          "NH_magic_assets/casting/CH012/shadow/frame_03.png",
+          "NH_magic_assets/casting/CH012/shadow/frame_04.png",
+          "NH_magic_assets/casting/CH012/shadow/frame_05.png",
+          "NH_magic_assets/casting/CH012/shadow/frame_06.png",
+          "NH_magic_assets/casting/CH012/shadow/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      }
+    },
+    "CH013": {
+      "light": {
+        "frames": [
+          "NH_magic_assets/casting/CH013/light/frame_00.png",
+          "NH_magic_assets/casting/CH013/light/frame_01.png",
+          "NH_magic_assets/casting/CH013/light/frame_02.png",
+          "NH_magic_assets/casting/CH013/light/frame_03.png",
+          "NH_magic_assets/casting/CH013/light/frame_04.png",
+          "NH_magic_assets/casting/CH013/light/frame_05.png",
+          "NH_magic_assets/casting/CH013/light/frame_06.png",
+          "NH_magic_assets/casting/CH013/light/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "nature": {
+        "frames": [
+          "NH_magic_assets/casting/CH013/nature/frame_00.png",
+          "NH_magic_assets/casting/CH013/nature/frame_01.png",
+          "NH_magic_assets/casting/CH013/nature/frame_02.png",
+          "NH_magic_assets/casting/CH013/nature/frame_03.png",
+          "NH_magic_assets/casting/CH013/nature/frame_04.png",
+          "NH_magic_assets/casting/CH013/nature/frame_05.png",
+          "NH_magic_assets/casting/CH013/nature/frame_06.png",
+          "NH_magic_assets/casting/CH013/nature/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "sorcery": {
+        "frames": [
+          "NH_magic_assets/casting/CH013/sorcery/frame_00.png",
+          "NH_magic_assets/casting/CH013/sorcery/frame_01.png",
+          "NH_magic_assets/casting/CH013/sorcery/frame_02.png",
+          "NH_magic_assets/casting/CH013/sorcery/frame_03.png",
+          "NH_magic_assets/casting/CH013/sorcery/frame_04.png",
+          "NH_magic_assets/casting/CH013/sorcery/frame_05.png",
+          "NH_magic_assets/casting/CH013/sorcery/frame_06.png",
+          "NH_magic_assets/casting/CH013/sorcery/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "havoc": {
+        "frames": [
+          "NH_magic_assets/casting/CH013/havoc/frame_00.png",
+          "NH_magic_assets/casting/CH013/havoc/frame_01.png",
+          "NH_magic_assets/casting/CH013/havoc/frame_02.png",
+          "NH_magic_assets/casting/CH013/havoc/frame_03.png",
+          "NH_magic_assets/casting/CH013/havoc/frame_04.png",
+          "NH_magic_assets/casting/CH013/havoc/frame_05.png",
+          "NH_magic_assets/casting/CH013/havoc/frame_06.png",
+          "NH_magic_assets/casting/CH013/havoc/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "chaos": {
+        "frames": [
+          "NH_magic_assets/casting/CH013/chaos/frame_00.png",
+          "NH_magic_assets/casting/CH013/chaos/frame_01.png",
+          "NH_magic_assets/casting/CH013/chaos/frame_02.png",
+          "NH_magic_assets/casting/CH013/chaos/frame_03.png",
+          "NH_magic_assets/casting/CH013/chaos/frame_04.png",
+          "NH_magic_assets/casting/CH013/chaos/frame_05.png",
+          "NH_magic_assets/casting/CH013/chaos/frame_06.png",
+          "NH_magic_assets/casting/CH013/chaos/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "shadow": {
+        "frames": [
+          "NH_magic_assets/casting/CH013/shadow/frame_00.png",
+          "NH_magic_assets/casting/CH013/shadow/frame_01.png",
+          "NH_magic_assets/casting/CH013/shadow/frame_02.png",
+          "NH_magic_assets/casting/CH013/shadow/frame_03.png",
+          "NH_magic_assets/casting/CH013/shadow/frame_04.png",
+          "NH_magic_assets/casting/CH013/shadow/frame_05.png",
+          "NH_magic_assets/casting/CH013/shadow/frame_06.png",
+          "NH_magic_assets/casting/CH013/shadow/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      }
+    },
+    "CH014": {
+      "light": {
+        "frames": [
+          "NH_magic_assets/casting/CH014/light/frame_00.png",
+          "NH_magic_assets/casting/CH014/light/frame_01.png",
+          "NH_magic_assets/casting/CH014/light/frame_02.png",
+          "NH_magic_assets/casting/CH014/light/frame_03.png",
+          "NH_magic_assets/casting/CH014/light/frame_04.png",
+          "NH_magic_assets/casting/CH014/light/frame_05.png",
+          "NH_magic_assets/casting/CH014/light/frame_06.png",
+          "NH_magic_assets/casting/CH014/light/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "nature": {
+        "frames": [
+          "NH_magic_assets/casting/CH014/nature/frame_00.png",
+          "NH_magic_assets/casting/CH014/nature/frame_01.png",
+          "NH_magic_assets/casting/CH014/nature/frame_02.png",
+          "NH_magic_assets/casting/CH014/nature/frame_03.png",
+          "NH_magic_assets/casting/CH014/nature/frame_04.png",
+          "NH_magic_assets/casting/CH014/nature/frame_05.png",
+          "NH_magic_assets/casting/CH014/nature/frame_06.png",
+          "NH_magic_assets/casting/CH014/nature/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "sorcery": {
+        "frames": [
+          "NH_magic_assets/casting/CH014/sorcery/frame_00.png",
+          "NH_magic_assets/casting/CH014/sorcery/frame_01.png",
+          "NH_magic_assets/casting/CH014/sorcery/frame_02.png",
+          "NH_magic_assets/casting/CH014/sorcery/frame_03.png",
+          "NH_magic_assets/casting/CH014/sorcery/frame_04.png",
+          "NH_magic_assets/casting/CH014/sorcery/frame_05.png",
+          "NH_magic_assets/casting/CH014/sorcery/frame_06.png",
+          "NH_magic_assets/casting/CH014/sorcery/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "havoc": {
+        "frames": [
+          "NH_magic_assets/casting/CH014/havoc/frame_00.png",
+          "NH_magic_assets/casting/CH014/havoc/frame_01.png",
+          "NH_magic_assets/casting/CH014/havoc/frame_02.png",
+          "NH_magic_assets/casting/CH014/havoc/frame_03.png",
+          "NH_magic_assets/casting/CH014/havoc/frame_04.png",
+          "NH_magic_assets/casting/CH014/havoc/frame_05.png",
+          "NH_magic_assets/casting/CH014/havoc/frame_06.png",
+          "NH_magic_assets/casting/CH014/havoc/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "chaos": {
+        "frames": [
+          "NH_magic_assets/casting/CH014/chaos/frame_00.png",
+          "NH_magic_assets/casting/CH014/chaos/frame_01.png",
+          "NH_magic_assets/casting/CH014/chaos/frame_02.png",
+          "NH_magic_assets/casting/CH014/chaos/frame_03.png",
+          "NH_magic_assets/casting/CH014/chaos/frame_04.png",
+          "NH_magic_assets/casting/CH014/chaos/frame_05.png",
+          "NH_magic_assets/casting/CH014/chaos/frame_06.png",
+          "NH_magic_assets/casting/CH014/chaos/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "shadow": {
+        "frames": [
+          "NH_magic_assets/casting/CH014/shadow/frame_00.png",
+          "NH_magic_assets/casting/CH014/shadow/frame_01.png",
+          "NH_magic_assets/casting/CH014/shadow/frame_02.png",
+          "NH_magic_assets/casting/CH014/shadow/frame_03.png",
+          "NH_magic_assets/casting/CH014/shadow/frame_04.png",
+          "NH_magic_assets/casting/CH014/shadow/frame_05.png",
+          "NH_magic_assets/casting/CH014/shadow/frame_06.png",
+          "NH_magic_assets/casting/CH014/shadow/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      }
+    },
+    "CH015": {
+      "light": {
+        "frames": [
+          "NH_magic_assets/casting/CH015/light/frame_00.png",
+          "NH_magic_assets/casting/CH015/light/frame_01.png",
+          "NH_magic_assets/casting/CH015/light/frame_02.png",
+          "NH_magic_assets/casting/CH015/light/frame_03.png",
+          "NH_magic_assets/casting/CH015/light/frame_04.png",
+          "NH_magic_assets/casting/CH015/light/frame_05.png",
+          "NH_magic_assets/casting/CH015/light/frame_06.png",
+          "NH_magic_assets/casting/CH015/light/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "nature": {
+        "frames": [
+          "NH_magic_assets/casting/CH015/nature/frame_00.png",
+          "NH_magic_assets/casting/CH015/nature/frame_01.png",
+          "NH_magic_assets/casting/CH015/nature/frame_02.png",
+          "NH_magic_assets/casting/CH015/nature/frame_03.png",
+          "NH_magic_assets/casting/CH015/nature/frame_04.png",
+          "NH_magic_assets/casting/CH015/nature/frame_05.png",
+          "NH_magic_assets/casting/CH015/nature/frame_06.png",
+          "NH_magic_assets/casting/CH015/nature/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "sorcery": {
+        "frames": [
+          "NH_magic_assets/casting/CH015/sorcery/frame_00.png",
+          "NH_magic_assets/casting/CH015/sorcery/frame_01.png",
+          "NH_magic_assets/casting/CH015/sorcery/frame_02.png",
+          "NH_magic_assets/casting/CH015/sorcery/frame_03.png",
+          "NH_magic_assets/casting/CH015/sorcery/frame_04.png",
+          "NH_magic_assets/casting/CH015/sorcery/frame_05.png",
+          "NH_magic_assets/casting/CH015/sorcery/frame_06.png",
+          "NH_magic_assets/casting/CH015/sorcery/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "havoc": {
+        "frames": [
+          "NH_magic_assets/casting/CH015/havoc/frame_00.png",
+          "NH_magic_assets/casting/CH015/havoc/frame_01.png",
+          "NH_magic_assets/casting/CH015/havoc/frame_02.png",
+          "NH_magic_assets/casting/CH015/havoc/frame_03.png",
+          "NH_magic_assets/casting/CH015/havoc/frame_04.png",
+          "NH_magic_assets/casting/CH015/havoc/frame_05.png",
+          "NH_magic_assets/casting/CH015/havoc/frame_06.png",
+          "NH_magic_assets/casting/CH015/havoc/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "chaos": {
+        "frames": [
+          "NH_magic_assets/casting/CH015/chaos/frame_00.png",
+          "NH_magic_assets/casting/CH015/chaos/frame_01.png",
+          "NH_magic_assets/casting/CH015/chaos/frame_02.png",
+          "NH_magic_assets/casting/CH015/chaos/frame_03.png",
+          "NH_magic_assets/casting/CH015/chaos/frame_04.png",
+          "NH_magic_assets/casting/CH015/chaos/frame_05.png",
+          "NH_magic_assets/casting/CH015/chaos/frame_06.png",
+          "NH_magic_assets/casting/CH015/chaos/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "shadow": {
+        "frames": [
+          "NH_magic_assets/casting/CH015/shadow/frame_00.png",
+          "NH_magic_assets/casting/CH015/shadow/frame_01.png",
+          "NH_magic_assets/casting/CH015/shadow/frame_02.png",
+          "NH_magic_assets/casting/CH015/shadow/frame_03.png",
+          "NH_magic_assets/casting/CH015/shadow/frame_04.png",
+          "NH_magic_assets/casting/CH015/shadow/frame_05.png",
+          "NH_magic_assets/casting/CH015/shadow/frame_06.png",
+          "NH_magic_assets/casting/CH015/shadow/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      }
+    },
+    "CH02": {
+      "light": {
+        "frames": [
+          "NH_magic_assets/casting/CH02/light/frame_00.png",
+          "NH_magic_assets/casting/CH02/light/frame_01.png",
+          "NH_magic_assets/casting/CH02/light/frame_02.png",
+          "NH_magic_assets/casting/CH02/light/frame_03.png",
+          "NH_magic_assets/casting/CH02/light/frame_04.png",
+          "NH_magic_assets/casting/CH02/light/frame_05.png",
+          "NH_magic_assets/casting/CH02/light/frame_06.png",
+          "NH_magic_assets/casting/CH02/light/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "nature": {
+        "frames": [
+          "NH_magic_assets/casting/CH02/nature/frame_00.png",
+          "NH_magic_assets/casting/CH02/nature/frame_01.png",
+          "NH_magic_assets/casting/CH02/nature/frame_02.png",
+          "NH_magic_assets/casting/CH02/nature/frame_03.png",
+          "NH_magic_assets/casting/CH02/nature/frame_04.png",
+          "NH_magic_assets/casting/CH02/nature/frame_05.png",
+          "NH_magic_assets/casting/CH02/nature/frame_06.png",
+          "NH_magic_assets/casting/CH02/nature/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "sorcery": {
+        "frames": [
+          "NH_magic_assets/casting/CH02/sorcery/frame_00.png",
+          "NH_magic_assets/casting/CH02/sorcery/frame_01.png",
+          "NH_magic_assets/casting/CH02/sorcery/frame_02.png",
+          "NH_magic_assets/casting/CH02/sorcery/frame_03.png",
+          "NH_magic_assets/casting/CH02/sorcery/frame_04.png",
+          "NH_magic_assets/casting/CH02/sorcery/frame_05.png",
+          "NH_magic_assets/casting/CH02/sorcery/frame_06.png",
+          "NH_magic_assets/casting/CH02/sorcery/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "havoc": {
+        "frames": [
+          "NH_magic_assets/casting/CH02/havoc/frame_00.png",
+          "NH_magic_assets/casting/CH02/havoc/frame_01.png",
+          "NH_magic_assets/casting/CH02/havoc/frame_02.png",
+          "NH_magic_assets/casting/CH02/havoc/frame_03.png",
+          "NH_magic_assets/casting/CH02/havoc/frame_04.png",
+          "NH_magic_assets/casting/CH02/havoc/frame_05.png",
+          "NH_magic_assets/casting/CH02/havoc/frame_06.png",
+          "NH_magic_assets/casting/CH02/havoc/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "chaos": {
+        "frames": [
+          "NH_magic_assets/casting/CH02/chaos/frame_00.png",
+          "NH_magic_assets/casting/CH02/chaos/frame_01.png",
+          "NH_magic_assets/casting/CH02/chaos/frame_02.png",
+          "NH_magic_assets/casting/CH02/chaos/frame_03.png",
+          "NH_magic_assets/casting/CH02/chaos/frame_04.png",
+          "NH_magic_assets/casting/CH02/chaos/frame_05.png",
+          "NH_magic_assets/casting/CH02/chaos/frame_06.png",
+          "NH_magic_assets/casting/CH02/chaos/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "shadow": {
+        "frames": [
+          "NH_magic_assets/casting/CH02/shadow/frame_00.png",
+          "NH_magic_assets/casting/CH02/shadow/frame_01.png",
+          "NH_magic_assets/casting/CH02/shadow/frame_02.png",
+          "NH_magic_assets/casting/CH02/shadow/frame_03.png",
+          "NH_magic_assets/casting/CH02/shadow/frame_04.png",
+          "NH_magic_assets/casting/CH02/shadow/frame_05.png",
+          "NH_magic_assets/casting/CH02/shadow/frame_06.png",
+          "NH_magic_assets/casting/CH02/shadow/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      }
+    },
+    "CH03": {
+      "light": {
+        "frames": [
+          "NH_magic_assets/casting/CH03/light/frame_00.png",
+          "NH_magic_assets/casting/CH03/light/frame_01.png",
+          "NH_magic_assets/casting/CH03/light/frame_02.png",
+          "NH_magic_assets/casting/CH03/light/frame_03.png",
+          "NH_magic_assets/casting/CH03/light/frame_04.png",
+          "NH_magic_assets/casting/CH03/light/frame_05.png",
+          "NH_magic_assets/casting/CH03/light/frame_06.png",
+          "NH_magic_assets/casting/CH03/light/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "nature": {
+        "frames": [
+          "NH_magic_assets/casting/CH03/nature/frame_00.png",
+          "NH_magic_assets/casting/CH03/nature/frame_01.png",
+          "NH_magic_assets/casting/CH03/nature/frame_02.png",
+          "NH_magic_assets/casting/CH03/nature/frame_03.png",
+          "NH_magic_assets/casting/CH03/nature/frame_04.png",
+          "NH_magic_assets/casting/CH03/nature/frame_05.png",
+          "NH_magic_assets/casting/CH03/nature/frame_06.png",
+          "NH_magic_assets/casting/CH03/nature/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "sorcery": {
+        "frames": [
+          "NH_magic_assets/casting/CH03/sorcery/frame_00.png",
+          "NH_magic_assets/casting/CH03/sorcery/frame_01.png",
+          "NH_magic_assets/casting/CH03/sorcery/frame_02.png",
+          "NH_magic_assets/casting/CH03/sorcery/frame_03.png",
+          "NH_magic_assets/casting/CH03/sorcery/frame_04.png",
+          "NH_magic_assets/casting/CH03/sorcery/frame_05.png",
+          "NH_magic_assets/casting/CH03/sorcery/frame_06.png",
+          "NH_magic_assets/casting/CH03/sorcery/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "havoc": {
+        "frames": [
+          "NH_magic_assets/casting/CH03/havoc/frame_00.png",
+          "NH_magic_assets/casting/CH03/havoc/frame_01.png",
+          "NH_magic_assets/casting/CH03/havoc/frame_02.png",
+          "NH_magic_assets/casting/CH03/havoc/frame_03.png",
+          "NH_magic_assets/casting/CH03/havoc/frame_04.png",
+          "NH_magic_assets/casting/CH03/havoc/frame_05.png",
+          "NH_magic_assets/casting/CH03/havoc/frame_06.png",
+          "NH_magic_assets/casting/CH03/havoc/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "chaos": {
+        "frames": [
+          "NH_magic_assets/casting/CH03/chaos/frame_00.png",
+          "NH_magic_assets/casting/CH03/chaos/frame_01.png",
+          "NH_magic_assets/casting/CH03/chaos/frame_02.png",
+          "NH_magic_assets/casting/CH03/chaos/frame_03.png",
+          "NH_magic_assets/casting/CH03/chaos/frame_04.png",
+          "NH_magic_assets/casting/CH03/chaos/frame_05.png",
+          "NH_magic_assets/casting/CH03/chaos/frame_06.png",
+          "NH_magic_assets/casting/CH03/chaos/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "shadow": {
+        "frames": [
+          "NH_magic_assets/casting/CH03/shadow/frame_00.png",
+          "NH_magic_assets/casting/CH03/shadow/frame_01.png",
+          "NH_magic_assets/casting/CH03/shadow/frame_02.png",
+          "NH_magic_assets/casting/CH03/shadow/frame_03.png",
+          "NH_magic_assets/casting/CH03/shadow/frame_04.png",
+          "NH_magic_assets/casting/CH03/shadow/frame_05.png",
+          "NH_magic_assets/casting/CH03/shadow/frame_06.png",
+          "NH_magic_assets/casting/CH03/shadow/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      }
+    },
+    "CH04": {
+      "light": {
+        "frames": [
+          "NH_magic_assets/casting/CH04/light/frame_00.png",
+          "NH_magic_assets/casting/CH04/light/frame_01.png",
+          "NH_magic_assets/casting/CH04/light/frame_02.png",
+          "NH_magic_assets/casting/CH04/light/frame_03.png",
+          "NH_magic_assets/casting/CH04/light/frame_04.png",
+          "NH_magic_assets/casting/CH04/light/frame_05.png",
+          "NH_magic_assets/casting/CH04/light/frame_06.png",
+          "NH_magic_assets/casting/CH04/light/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "nature": {
+        "frames": [
+          "NH_magic_assets/casting/CH04/nature/frame_00.png",
+          "NH_magic_assets/casting/CH04/nature/frame_01.png",
+          "NH_magic_assets/casting/CH04/nature/frame_02.png",
+          "NH_magic_assets/casting/CH04/nature/frame_03.png",
+          "NH_magic_assets/casting/CH04/nature/frame_04.png",
+          "NH_magic_assets/casting/CH04/nature/frame_05.png",
+          "NH_magic_assets/casting/CH04/nature/frame_06.png",
+          "NH_magic_assets/casting/CH04/nature/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "sorcery": {
+        "frames": [
+          "NH_magic_assets/casting/CH04/sorcery/frame_00.png",
+          "NH_magic_assets/casting/CH04/sorcery/frame_01.png",
+          "NH_magic_assets/casting/CH04/sorcery/frame_02.png",
+          "NH_magic_assets/casting/CH04/sorcery/frame_03.png",
+          "NH_magic_assets/casting/CH04/sorcery/frame_04.png",
+          "NH_magic_assets/casting/CH04/sorcery/frame_05.png",
+          "NH_magic_assets/casting/CH04/sorcery/frame_06.png",
+          "NH_magic_assets/casting/CH04/sorcery/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "havoc": {
+        "frames": [
+          "NH_magic_assets/casting/CH04/havoc/frame_00.png",
+          "NH_magic_assets/casting/CH04/havoc/frame_01.png",
+          "NH_magic_assets/casting/CH04/havoc/frame_02.png",
+          "NH_magic_assets/casting/CH04/havoc/frame_03.png",
+          "NH_magic_assets/casting/CH04/havoc/frame_04.png",
+          "NH_magic_assets/casting/CH04/havoc/frame_05.png",
+          "NH_magic_assets/casting/CH04/havoc/frame_06.png",
+          "NH_magic_assets/casting/CH04/havoc/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "chaos": {
+        "frames": [
+          "NH_magic_assets/casting/CH04/chaos/frame_00.png",
+          "NH_magic_assets/casting/CH04/chaos/frame_01.png",
+          "NH_magic_assets/casting/CH04/chaos/frame_02.png",
+          "NH_magic_assets/casting/CH04/chaos/frame_03.png",
+          "NH_magic_assets/casting/CH04/chaos/frame_04.png",
+          "NH_magic_assets/casting/CH04/chaos/frame_05.png",
+          "NH_magic_assets/casting/CH04/chaos/frame_06.png",
+          "NH_magic_assets/casting/CH04/chaos/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "shadow": {
+        "frames": [
+          "NH_magic_assets/casting/CH04/shadow/frame_00.png",
+          "NH_magic_assets/casting/CH04/shadow/frame_01.png",
+          "NH_magic_assets/casting/CH04/shadow/frame_02.png",
+          "NH_magic_assets/casting/CH04/shadow/frame_03.png",
+          "NH_magic_assets/casting/CH04/shadow/frame_04.png",
+          "NH_magic_assets/casting/CH04/shadow/frame_05.png",
+          "NH_magic_assets/casting/CH04/shadow/frame_06.png",
+          "NH_magic_assets/casting/CH04/shadow/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      }
+    },
+    "CH05": {
+      "light": {
+        "frames": [
+          "NH_magic_assets/casting/CH05/light/frame_00.png",
+          "NH_magic_assets/casting/CH05/light/frame_01.png",
+          "NH_magic_assets/casting/CH05/light/frame_02.png",
+          "NH_magic_assets/casting/CH05/light/frame_03.png",
+          "NH_magic_assets/casting/CH05/light/frame_04.png",
+          "NH_magic_assets/casting/CH05/light/frame_05.png",
+          "NH_magic_assets/casting/CH05/light/frame_06.png",
+          "NH_magic_assets/casting/CH05/light/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "nature": {
+        "frames": [
+          "NH_magic_assets/casting/CH05/nature/frame_00.png",
+          "NH_magic_assets/casting/CH05/nature/frame_01.png",
+          "NH_magic_assets/casting/CH05/nature/frame_02.png",
+          "NH_magic_assets/casting/CH05/nature/frame_03.png",
+          "NH_magic_assets/casting/CH05/nature/frame_04.png",
+          "NH_magic_assets/casting/CH05/nature/frame_05.png",
+          "NH_magic_assets/casting/CH05/nature/frame_06.png",
+          "NH_magic_assets/casting/CH05/nature/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "sorcery": {
+        "frames": [
+          "NH_magic_assets/casting/CH05/sorcery/frame_00.png",
+          "NH_magic_assets/casting/CH05/sorcery/frame_01.png",
+          "NH_magic_assets/casting/CH05/sorcery/frame_02.png",
+          "NH_magic_assets/casting/CH05/sorcery/frame_03.png",
+          "NH_magic_assets/casting/CH05/sorcery/frame_04.png",
+          "NH_magic_assets/casting/CH05/sorcery/frame_05.png",
+          "NH_magic_assets/casting/CH05/sorcery/frame_06.png",
+          "NH_magic_assets/casting/CH05/sorcery/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "havoc": {
+        "frames": [
+          "NH_magic_assets/casting/CH05/havoc/frame_00.png",
+          "NH_magic_assets/casting/CH05/havoc/frame_01.png",
+          "NH_magic_assets/casting/CH05/havoc/frame_02.png",
+          "NH_magic_assets/casting/CH05/havoc/frame_03.png",
+          "NH_magic_assets/casting/CH05/havoc/frame_04.png",
+          "NH_magic_assets/casting/CH05/havoc/frame_05.png",
+          "NH_magic_assets/casting/CH05/havoc/frame_06.png",
+          "NH_magic_assets/casting/CH05/havoc/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "chaos": {
+        "frames": [
+          "NH_magic_assets/casting/CH05/chaos/frame_00.png",
+          "NH_magic_assets/casting/CH05/chaos/frame_01.png",
+          "NH_magic_assets/casting/CH05/chaos/frame_02.png",
+          "NH_magic_assets/casting/CH05/chaos/frame_03.png",
+          "NH_magic_assets/casting/CH05/chaos/frame_04.png",
+          "NH_magic_assets/casting/CH05/chaos/frame_05.png",
+          "NH_magic_assets/casting/CH05/chaos/frame_06.png",
+          "NH_magic_assets/casting/CH05/chaos/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "shadow": {
+        "frames": [
+          "NH_magic_assets/casting/CH05/shadow/frame_00.png",
+          "NH_magic_assets/casting/CH05/shadow/frame_01.png",
+          "NH_magic_assets/casting/CH05/shadow/frame_02.png",
+          "NH_magic_assets/casting/CH05/shadow/frame_03.png",
+          "NH_magic_assets/casting/CH05/shadow/frame_04.png",
+          "NH_magic_assets/casting/CH05/shadow/frame_05.png",
+          "NH_magic_assets/casting/CH05/shadow/frame_06.png",
+          "NH_magic_assets/casting/CH05/shadow/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      }
+    },
+    "CH06": {
+      "light": {
+        "frames": [
+          "NH_magic_assets/casting/CH06/light/frame_00.png",
+          "NH_magic_assets/casting/CH06/light/frame_01.png",
+          "NH_magic_assets/casting/CH06/light/frame_02.png",
+          "NH_magic_assets/casting/CH06/light/frame_03.png",
+          "NH_magic_assets/casting/CH06/light/frame_04.png",
+          "NH_magic_assets/casting/CH06/light/frame_05.png",
+          "NH_magic_assets/casting/CH06/light/frame_06.png",
+          "NH_magic_assets/casting/CH06/light/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "nature": {
+        "frames": [
+          "NH_magic_assets/casting/CH06/nature/frame_00.png",
+          "NH_magic_assets/casting/CH06/nature/frame_01.png",
+          "NH_magic_assets/casting/CH06/nature/frame_02.png",
+          "NH_magic_assets/casting/CH06/nature/frame_03.png",
+          "NH_magic_assets/casting/CH06/nature/frame_04.png",
+          "NH_magic_assets/casting/CH06/nature/frame_05.png",
+          "NH_magic_assets/casting/CH06/nature/frame_06.png",
+          "NH_magic_assets/casting/CH06/nature/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "sorcery": {
+        "frames": [
+          "NH_magic_assets/casting/CH06/sorcery/frame_00.png",
+          "NH_magic_assets/casting/CH06/sorcery/frame_01.png",
+          "NH_magic_assets/casting/CH06/sorcery/frame_02.png",
+          "NH_magic_assets/casting/CH06/sorcery/frame_03.png",
+          "NH_magic_assets/casting/CH06/sorcery/frame_04.png",
+          "NH_magic_assets/casting/CH06/sorcery/frame_05.png",
+          "NH_magic_assets/casting/CH06/sorcery/frame_06.png",
+          "NH_magic_assets/casting/CH06/sorcery/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "havoc": {
+        "frames": [
+          "NH_magic_assets/casting/CH06/havoc/frame_00.png",
+          "NH_magic_assets/casting/CH06/havoc/frame_01.png",
+          "NH_magic_assets/casting/CH06/havoc/frame_02.png",
+          "NH_magic_assets/casting/CH06/havoc/frame_03.png",
+          "NH_magic_assets/casting/CH06/havoc/frame_04.png",
+          "NH_magic_assets/casting/CH06/havoc/frame_05.png",
+          "NH_magic_assets/casting/CH06/havoc/frame_06.png",
+          "NH_magic_assets/casting/CH06/havoc/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "chaos": {
+        "frames": [
+          "NH_magic_assets/casting/CH06/chaos/frame_00.png",
+          "NH_magic_assets/casting/CH06/chaos/frame_01.png",
+          "NH_magic_assets/casting/CH06/chaos/frame_02.png",
+          "NH_magic_assets/casting/CH06/chaos/frame_03.png",
+          "NH_magic_assets/casting/CH06/chaos/frame_04.png",
+          "NH_magic_assets/casting/CH06/chaos/frame_05.png",
+          "NH_magic_assets/casting/CH06/chaos/frame_06.png",
+          "NH_magic_assets/casting/CH06/chaos/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "shadow": {
+        "frames": [
+          "NH_magic_assets/casting/CH06/shadow/frame_00.png",
+          "NH_magic_assets/casting/CH06/shadow/frame_01.png",
+          "NH_magic_assets/casting/CH06/shadow/frame_02.png",
+          "NH_magic_assets/casting/CH06/shadow/frame_03.png",
+          "NH_magic_assets/casting/CH06/shadow/frame_04.png",
+          "NH_magic_assets/casting/CH06/shadow/frame_05.png",
+          "NH_magic_assets/casting/CH06/shadow/frame_06.png",
+          "NH_magic_assets/casting/CH06/shadow/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      }
+    },
+    "CH07": {
+      "light": {
+        "frames": [
+          "NH_magic_assets/casting/CH07/light/frame_00.png",
+          "NH_magic_assets/casting/CH07/light/frame_01.png",
+          "NH_magic_assets/casting/CH07/light/frame_02.png",
+          "NH_magic_assets/casting/CH07/light/frame_03.png",
+          "NH_magic_assets/casting/CH07/light/frame_04.png",
+          "NH_magic_assets/casting/CH07/light/frame_05.png",
+          "NH_magic_assets/casting/CH07/light/frame_06.png",
+          "NH_magic_assets/casting/CH07/light/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "nature": {
+        "frames": [
+          "NH_magic_assets/casting/CH07/nature/frame_00.png",
+          "NH_magic_assets/casting/CH07/nature/frame_01.png",
+          "NH_magic_assets/casting/CH07/nature/frame_02.png",
+          "NH_magic_assets/casting/CH07/nature/frame_03.png",
+          "NH_magic_assets/casting/CH07/nature/frame_04.png",
+          "NH_magic_assets/casting/CH07/nature/frame_05.png",
+          "NH_magic_assets/casting/CH07/nature/frame_06.png",
+          "NH_magic_assets/casting/CH07/nature/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "sorcery": {
+        "frames": [
+          "NH_magic_assets/casting/CH07/sorcery/frame_00.png",
+          "NH_magic_assets/casting/CH07/sorcery/frame_01.png",
+          "NH_magic_assets/casting/CH07/sorcery/frame_02.png",
+          "NH_magic_assets/casting/CH07/sorcery/frame_03.png",
+          "NH_magic_assets/casting/CH07/sorcery/frame_04.png",
+          "NH_magic_assets/casting/CH07/sorcery/frame_05.png",
+          "NH_magic_assets/casting/CH07/sorcery/frame_06.png",
+          "NH_magic_assets/casting/CH07/sorcery/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "havoc": {
+        "frames": [
+          "NH_magic_assets/casting/CH07/havoc/frame_00.png",
+          "NH_magic_assets/casting/CH07/havoc/frame_01.png",
+          "NH_magic_assets/casting/CH07/havoc/frame_02.png",
+          "NH_magic_assets/casting/CH07/havoc/frame_03.png",
+          "NH_magic_assets/casting/CH07/havoc/frame_04.png",
+          "NH_magic_assets/casting/CH07/havoc/frame_05.png",
+          "NH_magic_assets/casting/CH07/havoc/frame_06.png",
+          "NH_magic_assets/casting/CH07/havoc/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "chaos": {
+        "frames": [
+          "NH_magic_assets/casting/CH07/chaos/frame_00.png",
+          "NH_magic_assets/casting/CH07/chaos/frame_01.png",
+          "NH_magic_assets/casting/CH07/chaos/frame_02.png",
+          "NH_magic_assets/casting/CH07/chaos/frame_03.png",
+          "NH_magic_assets/casting/CH07/chaos/frame_04.png",
+          "NH_magic_assets/casting/CH07/chaos/frame_05.png",
+          "NH_magic_assets/casting/CH07/chaos/frame_06.png",
+          "NH_magic_assets/casting/CH07/chaos/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "shadow": {
+        "frames": [
+          "NH_magic_assets/casting/CH07/shadow/frame_00.png",
+          "NH_magic_assets/casting/CH07/shadow/frame_01.png",
+          "NH_magic_assets/casting/CH07/shadow/frame_02.png",
+          "NH_magic_assets/casting/CH07/shadow/frame_03.png",
+          "NH_magic_assets/casting/CH07/shadow/frame_04.png",
+          "NH_magic_assets/casting/CH07/shadow/frame_05.png",
+          "NH_magic_assets/casting/CH07/shadow/frame_06.png",
+          "NH_magic_assets/casting/CH07/shadow/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      }
+    },
+    "CH08": {
+      "light": {
+        "frames": [
+          "NH_magic_assets/casting/CH08/light/frame_00.png",
+          "NH_magic_assets/casting/CH08/light/frame_01.png",
+          "NH_magic_assets/casting/CH08/light/frame_02.png",
+          "NH_magic_assets/casting/CH08/light/frame_03.png",
+          "NH_magic_assets/casting/CH08/light/frame_04.png",
+          "NH_magic_assets/casting/CH08/light/frame_05.png",
+          "NH_magic_assets/casting/CH08/light/frame_06.png",
+          "NH_magic_assets/casting/CH08/light/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "nature": {
+        "frames": [
+          "NH_magic_assets/casting/CH08/nature/frame_00.png",
+          "NH_magic_assets/casting/CH08/nature/frame_01.png",
+          "NH_magic_assets/casting/CH08/nature/frame_02.png",
+          "NH_magic_assets/casting/CH08/nature/frame_03.png",
+          "NH_magic_assets/casting/CH08/nature/frame_04.png",
+          "NH_magic_assets/casting/CH08/nature/frame_05.png",
+          "NH_magic_assets/casting/CH08/nature/frame_06.png",
+          "NH_magic_assets/casting/CH08/nature/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "sorcery": {
+        "frames": [
+          "NH_magic_assets/casting/CH08/sorcery/frame_00.png",
+          "NH_magic_assets/casting/CH08/sorcery/frame_01.png",
+          "NH_magic_assets/casting/CH08/sorcery/frame_02.png",
+          "NH_magic_assets/casting/CH08/sorcery/frame_03.png",
+          "NH_magic_assets/casting/CH08/sorcery/frame_04.png",
+          "NH_magic_assets/casting/CH08/sorcery/frame_05.png",
+          "NH_magic_assets/casting/CH08/sorcery/frame_06.png",
+          "NH_magic_assets/casting/CH08/sorcery/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "havoc": {
+        "frames": [
+          "NH_magic_assets/casting/CH08/havoc/frame_00.png",
+          "NH_magic_assets/casting/CH08/havoc/frame_01.png",
+          "NH_magic_assets/casting/CH08/havoc/frame_02.png",
+          "NH_magic_assets/casting/CH08/havoc/frame_03.png",
+          "NH_magic_assets/casting/CH08/havoc/frame_04.png",
+          "NH_magic_assets/casting/CH08/havoc/frame_05.png",
+          "NH_magic_assets/casting/CH08/havoc/frame_06.png",
+          "NH_magic_assets/casting/CH08/havoc/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "chaos": {
+        "frames": [
+          "NH_magic_assets/casting/CH08/chaos/frame_00.png",
+          "NH_magic_assets/casting/CH08/chaos/frame_01.png",
+          "NH_magic_assets/casting/CH08/chaos/frame_02.png",
+          "NH_magic_assets/casting/CH08/chaos/frame_03.png",
+          "NH_magic_assets/casting/CH08/chaos/frame_04.png",
+          "NH_magic_assets/casting/CH08/chaos/frame_05.png",
+          "NH_magic_assets/casting/CH08/chaos/frame_06.png",
+          "NH_magic_assets/casting/CH08/chaos/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "shadow": {
+        "frames": [
+          "NH_magic_assets/casting/CH08/shadow/frame_00.png",
+          "NH_magic_assets/casting/CH08/shadow/frame_01.png",
+          "NH_magic_assets/casting/CH08/shadow/frame_02.png",
+          "NH_magic_assets/casting/CH08/shadow/frame_03.png",
+          "NH_magic_assets/casting/CH08/shadow/frame_04.png",
+          "NH_magic_assets/casting/CH08/shadow/frame_05.png",
+          "NH_magic_assets/casting/CH08/shadow/frame_06.png",
+          "NH_magic_assets/casting/CH08/shadow/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      }
+    },
+    "CH09": {
+      "light": {
+        "frames": [
+          "NH_magic_assets/casting/CH09/light/frame_00.png",
+          "NH_magic_assets/casting/CH09/light/frame_01.png",
+          "NH_magic_assets/casting/CH09/light/frame_02.png",
+          "NH_magic_assets/casting/CH09/light/frame_03.png",
+          "NH_magic_assets/casting/CH09/light/frame_04.png",
+          "NH_magic_assets/casting/CH09/light/frame_05.png",
+          "NH_magic_assets/casting/CH09/light/frame_06.png",
+          "NH_magic_assets/casting/CH09/light/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "nature": {
+        "frames": [
+          "NH_magic_assets/casting/CH09/nature/frame_00.png",
+          "NH_magic_assets/casting/CH09/nature/frame_01.png",
+          "NH_magic_assets/casting/CH09/nature/frame_02.png",
+          "NH_magic_assets/casting/CH09/nature/frame_03.png",
+          "NH_magic_assets/casting/CH09/nature/frame_04.png",
+          "NH_magic_assets/casting/CH09/nature/frame_05.png",
+          "NH_magic_assets/casting/CH09/nature/frame_06.png",
+          "NH_magic_assets/casting/CH09/nature/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "sorcery": {
+        "frames": [
+          "NH_magic_assets/casting/CH09/sorcery/frame_00.png",
+          "NH_magic_assets/casting/CH09/sorcery/frame_01.png",
+          "NH_magic_assets/casting/CH09/sorcery/frame_02.png",
+          "NH_magic_assets/casting/CH09/sorcery/frame_03.png",
+          "NH_magic_assets/casting/CH09/sorcery/frame_04.png",
+          "NH_magic_assets/casting/CH09/sorcery/frame_05.png",
+          "NH_magic_assets/casting/CH09/sorcery/frame_06.png",
+          "NH_magic_assets/casting/CH09/sorcery/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "havoc": {
+        "frames": [
+          "NH_magic_assets/casting/CH09/havoc/frame_00.png",
+          "NH_magic_assets/casting/CH09/havoc/frame_01.png",
+          "NH_magic_assets/casting/CH09/havoc/frame_02.png",
+          "NH_magic_assets/casting/CH09/havoc/frame_03.png",
+          "NH_magic_assets/casting/CH09/havoc/frame_04.png",
+          "NH_magic_assets/casting/CH09/havoc/frame_05.png",
+          "NH_magic_assets/casting/CH09/havoc/frame_06.png",
+          "NH_magic_assets/casting/CH09/havoc/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "chaos": {
+        "frames": [
+          "NH_magic_assets/casting/CH09/chaos/frame_00.png",
+          "NH_magic_assets/casting/CH09/chaos/frame_01.png",
+          "NH_magic_assets/casting/CH09/chaos/frame_02.png",
+          "NH_magic_assets/casting/CH09/chaos/frame_03.png",
+          "NH_magic_assets/casting/CH09/chaos/frame_04.png",
+          "NH_magic_assets/casting/CH09/chaos/frame_05.png",
+          "NH_magic_assets/casting/CH09/chaos/frame_06.png",
+          "NH_magic_assets/casting/CH09/chaos/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "shadow": {
+        "frames": [
+          "NH_magic_assets/casting/CH09/shadow/frame_00.png",
+          "NH_magic_assets/casting/CH09/shadow/frame_01.png",
+          "NH_magic_assets/casting/CH09/shadow/frame_02.png",
+          "NH_magic_assets/casting/CH09/shadow/frame_03.png",
+          "NH_magic_assets/casting/CH09/shadow/frame_04.png",
+          "NH_magic_assets/casting/CH09/shadow/frame_05.png",
+          "NH_magic_assets/casting/CH09/shadow/frame_06.png",
+          "NH_magic_assets/casting/CH09/shadow/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      }
+    },
+    "CH11": {
+      "light": {
+        "frames": [
+          "NH_magic_assets/casting/CH11/light/frame_00.png",
+          "NH_magic_assets/casting/CH11/light/frame_01.png",
+          "NH_magic_assets/casting/CH11/light/frame_02.png",
+          "NH_magic_assets/casting/CH11/light/frame_03.png",
+          "NH_magic_assets/casting/CH11/light/frame_04.png",
+          "NH_magic_assets/casting/CH11/light/frame_05.png",
+          "NH_magic_assets/casting/CH11/light/frame_06.png",
+          "NH_magic_assets/casting/CH11/light/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "nature": {
+        "frames": [
+          "NH_magic_assets/casting/CH11/nature/frame_00.png",
+          "NH_magic_assets/casting/CH11/nature/frame_01.png",
+          "NH_magic_assets/casting/CH11/nature/frame_02.png",
+          "NH_magic_assets/casting/CH11/nature/frame_03.png",
+          "NH_magic_assets/casting/CH11/nature/frame_04.png",
+          "NH_magic_assets/casting/CH11/nature/frame_05.png",
+          "NH_magic_assets/casting/CH11/nature/frame_06.png",
+          "NH_magic_assets/casting/CH11/nature/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "sorcery": {
+        "frames": [
+          "NH_magic_assets/casting/CH11/sorcery/frame_00.png",
+          "NH_magic_assets/casting/CH11/sorcery/frame_01.png",
+          "NH_magic_assets/casting/CH11/sorcery/frame_02.png",
+          "NH_magic_assets/casting/CH11/sorcery/frame_03.png",
+          "NH_magic_assets/casting/CH11/sorcery/frame_04.png",
+          "NH_magic_assets/casting/CH11/sorcery/frame_05.png",
+          "NH_magic_assets/casting/CH11/sorcery/frame_06.png",
+          "NH_magic_assets/casting/CH11/sorcery/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "havoc": {
+        "frames": [
+          "NH_magic_assets/casting/CH11/havoc/frame_00.png",
+          "NH_magic_assets/casting/CH11/havoc/frame_01.png",
+          "NH_magic_assets/casting/CH11/havoc/frame_02.png",
+          "NH_magic_assets/casting/CH11/havoc/frame_03.png",
+          "NH_magic_assets/casting/CH11/havoc/frame_04.png",
+          "NH_magic_assets/casting/CH11/havoc/frame_05.png",
+          "NH_magic_assets/casting/CH11/havoc/frame_06.png",
+          "NH_magic_assets/casting/CH11/havoc/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "chaos": {
+        "frames": [
+          "NH_magic_assets/casting/CH11/chaos/frame_00.png",
+          "NH_magic_assets/casting/CH11/chaos/frame_01.png",
+          "NH_magic_assets/casting/CH11/chaos/frame_02.png",
+          "NH_magic_assets/casting/CH11/chaos/frame_03.png",
+          "NH_magic_assets/casting/CH11/chaos/frame_04.png",
+          "NH_magic_assets/casting/CH11/chaos/frame_05.png",
+          "NH_magic_assets/casting/CH11/chaos/frame_06.png",
+          "NH_magic_assets/casting/CH11/chaos/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "shadow": {
+        "frames": [
+          "NH_magic_assets/casting/CH11/shadow/frame_00.png",
+          "NH_magic_assets/casting/CH11/shadow/frame_01.png",
+          "NH_magic_assets/casting/CH11/shadow/frame_02.png",
+          "NH_magic_assets/casting/CH11/shadow/frame_03.png",
+          "NH_magic_assets/casting/CH11/shadow/frame_04.png",
+          "NH_magic_assets/casting/CH11/shadow/frame_05.png",
+          "NH_magic_assets/casting/CH11/shadow/frame_06.png",
+          "NH_magic_assets/casting/CH11/shadow/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      }
+    },
+    "CH16": {
+      "light": {
+        "frames": [
+          "NH_magic_assets/casting/CH16/light/frame_00.png",
+          "NH_magic_assets/casting/CH16/light/frame_01.png",
+          "NH_magic_assets/casting/CH16/light/frame_02.png",
+          "NH_magic_assets/casting/CH16/light/frame_03.png",
+          "NH_magic_assets/casting/CH16/light/frame_04.png",
+          "NH_magic_assets/casting/CH16/light/frame_05.png",
+          "NH_magic_assets/casting/CH16/light/frame_06.png",
+          "NH_magic_assets/casting/CH16/light/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "nature": {
+        "frames": [
+          "NH_magic_assets/casting/CH16/nature/frame_00.png",
+          "NH_magic_assets/casting/CH16/nature/frame_01.png",
+          "NH_magic_assets/casting/CH16/nature/frame_02.png",
+          "NH_magic_assets/casting/CH16/nature/frame_03.png",
+          "NH_magic_assets/casting/CH16/nature/frame_04.png",
+          "NH_magic_assets/casting/CH16/nature/frame_05.png",
+          "NH_magic_assets/casting/CH16/nature/frame_06.png",
+          "NH_magic_assets/casting/CH16/nature/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "sorcery": {
+        "frames": [
+          "NH_magic_assets/casting/CH16/sorcery/frame_00.png",
+          "NH_magic_assets/casting/CH16/sorcery/frame_01.png",
+          "NH_magic_assets/casting/CH16/sorcery/frame_02.png",
+          "NH_magic_assets/casting/CH16/sorcery/frame_03.png",
+          "NH_magic_assets/casting/CH16/sorcery/frame_04.png",
+          "NH_magic_assets/casting/CH16/sorcery/frame_05.png",
+          "NH_magic_assets/casting/CH16/sorcery/frame_06.png",
+          "NH_magic_assets/casting/CH16/sorcery/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "havoc": {
+        "frames": [
+          "NH_magic_assets/casting/CH16/havoc/frame_00.png",
+          "NH_magic_assets/casting/CH16/havoc/frame_01.png",
+          "NH_magic_assets/casting/CH16/havoc/frame_02.png",
+          "NH_magic_assets/casting/CH16/havoc/frame_03.png",
+          "NH_magic_assets/casting/CH16/havoc/frame_04.png",
+          "NH_magic_assets/casting/CH16/havoc/frame_05.png",
+          "NH_magic_assets/casting/CH16/havoc/frame_06.png",
+          "NH_magic_assets/casting/CH16/havoc/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "chaos": {
+        "frames": [
+          "NH_magic_assets/casting/CH16/chaos/frame_00.png",
+          "NH_magic_assets/casting/CH16/chaos/frame_01.png",
+          "NH_magic_assets/casting/CH16/chaos/frame_02.png",
+          "NH_magic_assets/casting/CH16/chaos/frame_03.png",
+          "NH_magic_assets/casting/CH16/chaos/frame_04.png",
+          "NH_magic_assets/casting/CH16/chaos/frame_05.png",
+          "NH_magic_assets/casting/CH16/chaos/frame_06.png",
+          "NH_magic_assets/casting/CH16/chaos/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "shadow": {
+        "frames": [
+          "NH_magic_assets/casting/CH16/shadow/frame_00.png",
+          "NH_magic_assets/casting/CH16/shadow/frame_01.png",
+          "NH_magic_assets/casting/CH16/shadow/frame_02.png",
+          "NH_magic_assets/casting/CH16/shadow/frame_03.png",
+          "NH_magic_assets/casting/CH16/shadow/frame_04.png",
+          "NH_magic_assets/casting/CH16/shadow/frame_05.png",
+          "NH_magic_assets/casting/CH16/shadow/frame_06.png",
+          "NH_magic_assets/casting/CH16/shadow/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      }
+    },
+    "CH17": {
+      "light": {
+        "frames": [
+          "NH_magic_assets/casting/CH17/light/frame_00.png",
+          "NH_magic_assets/casting/CH17/light/frame_01.png",
+          "NH_magic_assets/casting/CH17/light/frame_02.png",
+          "NH_magic_assets/casting/CH17/light/frame_03.png",
+          "NH_magic_assets/casting/CH17/light/frame_04.png",
+          "NH_magic_assets/casting/CH17/light/frame_05.png",
+          "NH_magic_assets/casting/CH17/light/frame_06.png",
+          "NH_magic_assets/casting/CH17/light/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "nature": {
+        "frames": [
+          "NH_magic_assets/casting/CH17/nature/frame_00.png",
+          "NH_magic_assets/casting/CH17/nature/frame_01.png",
+          "NH_magic_assets/casting/CH17/nature/frame_02.png",
+          "NH_magic_assets/casting/CH17/nature/frame_03.png",
+          "NH_magic_assets/casting/CH17/nature/frame_04.png",
+          "NH_magic_assets/casting/CH17/nature/frame_05.png",
+          "NH_magic_assets/casting/CH17/nature/frame_06.png",
+          "NH_magic_assets/casting/CH17/nature/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "sorcery": {
+        "frames": [
+          "NH_magic_assets/casting/CH17/sorcery/frame_00.png",
+          "NH_magic_assets/casting/CH17/sorcery/frame_01.png",
+          "NH_magic_assets/casting/CH17/sorcery/frame_02.png",
+          "NH_magic_assets/casting/CH17/sorcery/frame_03.png",
+          "NH_magic_assets/casting/CH17/sorcery/frame_04.png",
+          "NH_magic_assets/casting/CH17/sorcery/frame_05.png",
+          "NH_magic_assets/casting/CH17/sorcery/frame_06.png",
+          "NH_magic_assets/casting/CH17/sorcery/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "havoc": {
+        "frames": [
+          "NH_magic_assets/casting/CH17/havoc/frame_00.png",
+          "NH_magic_assets/casting/CH17/havoc/frame_01.png",
+          "NH_magic_assets/casting/CH17/havoc/frame_02.png",
+          "NH_magic_assets/casting/CH17/havoc/frame_03.png",
+          "NH_magic_assets/casting/CH17/havoc/frame_04.png",
+          "NH_magic_assets/casting/CH17/havoc/frame_05.png",
+          "NH_magic_assets/casting/CH17/havoc/frame_06.png",
+          "NH_magic_assets/casting/CH17/havoc/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "chaos": {
+        "frames": [
+          "NH_magic_assets/casting/CH17/chaos/frame_00.png",
+          "NH_magic_assets/casting/CH17/chaos/frame_01.png",
+          "NH_magic_assets/casting/CH17/chaos/frame_02.png",
+          "NH_magic_assets/casting/CH17/chaos/frame_03.png",
+          "NH_magic_assets/casting/CH17/chaos/frame_04.png",
+          "NH_magic_assets/casting/CH17/chaos/frame_05.png",
+          "NH_magic_assets/casting/CH17/chaos/frame_06.png",
+          "NH_magic_assets/casting/CH17/chaos/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      },
+      "shadow": {
+        "frames": [
+          "NH_magic_assets/casting/CH17/shadow/frame_00.png",
+          "NH_magic_assets/casting/CH17/shadow/frame_01.png",
+          "NH_magic_assets/casting/CH17/shadow/frame_02.png",
+          "NH_magic_assets/casting/CH17/shadow/frame_03.png",
+          "NH_magic_assets/casting/CH17/shadow/frame_04.png",
+          "NH_magic_assets/casting/CH17/shadow/frame_05.png",
+          "NH_magic_assets/casting/CH17/shadow/frame_06.png",
+          "NH_magic_assets/casting/CH17/shadow/frame_07.png"
+        ],
+        "dimensions": [
+          150,
+          175
+        ]
+      }
+    }
+  }
+}

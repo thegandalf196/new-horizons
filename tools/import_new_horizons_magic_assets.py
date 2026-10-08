@@ -2,10 +2,12 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Import the user's private magic-art handoff into a NEW local resource overlay.
 
-Only this recipe belongs in Git. The resulting pixels are private derivatives
-of purchaser assets, not redistributable New Horizons content. No archive code
-is executed, original installations are untouched, and an existing destination
-is never overwritten. Requires Pillow.
+The complete output includes purchaser-derived Guild background composites
+and remains a private overlay. The standalone casting glows were separately
+authorized for redistribution on 2026-10-08; see
+assets/new-horizons/magic-assets/README.md. Do not extend that authorization to
+original-game backgrounds. No archive code is executed, original installations
+are untouched, and an existing destination is never overwritten. Requires Pillow.
 """
 import argparse
 from collections import deque
