@@ -2,6 +2,21 @@
 
 Updated: 2026-10-07
 
+2026-10-08 UP299 minimum-AI checkpoint: ordinary positive single-recipient
+unweighted creature buffs with zero HP-only score now receive detached pressure
+valuation. Ogre Mage's actual AI Bloodlust request is accepted with Advanced
+effect/duration and creature-only costs. Linked37618 passes at10 jobs; native
+68648 passes20/20 in8.472s, zero skips (five Ogre, five Genie, nine Orb and one
+existing restoration/controller regression). Independent Sol High review finds
+no blocker; broader buff/controller and tactical matrices remain Phase2.
+One more minimum AI consumer completed; identities231/310 perks,61/67 spells,
+8/8 Orders unchanged. Receipts: build/nh-beneficial-creature-ai-build.log and
+build/nh-preview-ai-validation.jUrtT2RY/native-up299.log/XML. No normal promotion.
+Teleport one-/two-hex broad shading and Escape cancellation are now rendered on
+privatea18bc063; root inspected screenshots in Downloads/provisory/
+nh-teleport-private-a18bc063/rendered-v3. No cast or exhaustive legality matrix
+was exercised; earlier failed runs remain failed. Normal0c6af stays selected.
+
 2026-10-08 required-consumer checkpoint: UP297 converts elemental Orb equipment
 scoring from an unrecognized bonus to a positive, actual-element-aware score
 for eligible known combat spells; unrelated/untagged/banned spells do not supply

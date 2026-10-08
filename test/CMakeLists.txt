@@ -534,6 +534,7 @@ if(ENABLE_BATTLE_AI)
 		${BATTLE_AI_TEST_SRCS}
 		battleAI/HeroCommandAITest.cpp
 		battleAI/NewHorizonsGenieSupportAITest.cpp
+		battleAI/NewHorizonsBeneficialCreatureAITest.cpp
 		battleAI/NewHorizonsDoubleCommandAITest.cpp
 		battleAI/NewHorizonsDivineMandateAITest.cpp
 		battleAI/NewHorizonsElementalRebirthAITest.cpp

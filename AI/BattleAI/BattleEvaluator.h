@@ -44,7 +44,8 @@ class DLL_EXPORT BattleEvaluator
 	float beneficialCreaturePressure(const std::shared_ptr<HypotheticBattle> & state,
 		uint32_t spentCasterId, DamageCache & cache) const;
 	float beneficialCreatureOutcomeValue(const CStack * caster, const battle::Unit * recipient,
-		const CSpell * spell, float baselinePressure) const;
+		const CSpell * spell, int spellLevel, float baselinePressure) const;
+	static int creatureAbilitySpellLevel(const CStack * caster, const CSpell * spell, int abilityLevel);
 
 public:
 	BattleAction selectStackAction(const CStack * stack);

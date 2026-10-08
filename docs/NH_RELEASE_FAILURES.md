@@ -1,5 +1,16 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Authored Teleport render fixture replaced required hero Skills
+
+Private candidate a18bc063 passed4014-file freeze verification, but its authored
+map gave Solmyr Sorcery alone, replacing his required Havoc/Metamagic starting
+profile. Starting-perk validation correctly rejected missing Havoc before battle.
+Preserve canonical authored starting Skills/perk prerequisites and add the test
+School rather than replacing them. Do not loosen production validation. The
+failed run is not a Teleport crash or rendered acceptance; preserve its log and
+error screenshot under Downloads/provisory/nh-teleport-private-a18bc063.
+Owned processes cleaned; selected normal0c6af snapshot remains unchanged.
+
 ### 2026-10-08 — Consumer validation preset and stale Teleport mocks
 
 Fresh native profile defaults to core/vcmi/vcmi-test and did not activate NH:

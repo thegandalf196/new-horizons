@@ -3988,7 +3988,7 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CS
 {
 	if(!stack->canCast())
 		return std::nullopt;
-	if(stack->hasBonusOfType(BonusType::RANDOM_SPELLCASTER))
+	if(const auto randomAbility = stack->getBonus(Selector::type()(BonusType::RANDOM_SPELLCASTER)))
 	{
 		const auto battle = cb->getBattle(battleID);
 		auto baseline = std::make_shared<HypotheticBattle>(env.get(), battle);
@@ -4004,7 +4004,8 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CS
 				continue;
 			double total = 0;
 			for(const auto spell : pool)
-				total += beneficialCreatureOutcomeValue(stack, recipient, spell.toSpell(), baselinePressure);
+				total += beneficialCreatureOutcomeValue(stack, recipient, spell.toSpell(),
+					creatureAbilitySpellLevel(stack, spell.toSpell(), randomAbility->val), baselinePressure);
 			const float value = static_cast<float>(total / pool.size());
 			if(std::isfinite(value) && value > 0 && (!best || value > best->value))
 			{
@@ -4034,6 +4035,7 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CS
 		spellsToCast.push_back(creatureSpellToCast);
 
 	std::vector<PossibleSpellcast> possibleCasts;
+	std::optional<float> beneficialBaseline;
 
 	for(const auto spellID : spellsToCast)
 	{
@@ -4049,6 +4051,24 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CS
 			ps.dest = target;
 			ps.spell = spell;
 			evaluateCreatureSpellcast(stack, ps);
+			const auto ability = stack->getBonus(Selector::typeSubtype(BonusType::SPELLCASTER,
+				BonusSubtypeID(spellID)));
+			// Only fill the existing zero-HP blind spot for an ordinary friendly
+			// single-target buff. Damage, healing, summons and weighted abilities
+			// retain their existing scoring and selection policies.
+			if(ps.value == 0 && spell->isPositive() && ability && !ability->parameters
+				&& target.size() == 1 && target.front().unitValue
+				&& cb->getBattle(battleID)->battleMatchActionController(stack, target.front().unitValue, true))
+			{
+				if(!beneficialBaseline)
+				{
+					auto baseline = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
+					DamageCache cache;
+					beneficialBaseline = beneficialCreaturePressure(baseline, stack->unitId(), cache);
+				}
+				ps.value = beneficialCreatureOutcomeValue(stack, target.front().unitValue, spell,
+					creatureAbilitySpellLevel(stack, spell, ability->val), *beneficialBaseline);
+			}
 			possibleCasts.push_back(ps);
 		}
 	}
@@ -4088,12 +4108,21 @@ float BattleEvaluator::beneficialCreaturePressure(const std::shared_ptr<Hypothet
 	return value;
 }
 
+int BattleEvaluator::creatureAbilitySpellLevel(const CStack * caster, const CSpell * spell, int abilityLevel)
+{
+	int spellLevel = std::max(0, abilityLevel);
+	// Match BattleActionProcessor: only the ANY-school battlefield raise is
+	// applied to creature casts, not school-specific hero proficiency.
+	if(spell->getLevel() > 0)
+		vstd::amax(spellLevel, caster->valOfBonuses(BonusType::MAGIC_SCHOOL_SKILL, BonusSubtypeID(SpellSchool::ANY)));
+	return spellLevel;
+}
+
 float BattleEvaluator::beneficialCreatureOutcomeValue(const CStack * caster,
-	const battle::Unit * recipient, const CSpell * spell, float baselinePressure) const
+	const battle::Unit * recipient, const CSpell * spell, int spellLevel, float baselinePressure) const
 {
 	const auto battle = cb->getBattle(battleID);
-	const auto ability = caster->getBonus(Selector::type()(BonusType::RANDOM_SPELLCASTER));
-	if(!ability || !recipient || !spell)
+	if(!recipient || !spell)
 		return 0;
 	auto state = std::make_shared<HypotheticBattle>(env.get(), battle);
 	const auto * projectedCaster = state->battleGetUnitByID(caster->unitId());
@@ -4101,9 +4130,6 @@ float BattleEvaluator::beneficialCreatureOutcomeValue(const CStack * caster,
 	newHorizonsPuppetMaster::ActionControllerCaster actionCaster(projectedCaster,
 		state->battleGetActionController(projectedCaster));
 	spells::BattleCast cast(state.get(), &actionCaster, spells::Mode::CREATURE_ACTIVE, spell);
-	int spellLevel = std::max(0, ability->val);
-	if(spell->getLevel() > 0)
-		vstd::amax(spellLevel, caster->valOfBonuses(BonusType::MAGIC_SCHOOL_SKILL, BonusSubtypeID(SpellSchool::ANY)));
 	cast.setSpellLevel(spellLevel);
 	cast.castEval(state->getServerCallback(), {spells::Destination(projectedRecipient)});
 	DamageCache cache;
@@ -4123,14 +4149,16 @@ float BattleEvaluator::expectedBeneficialCreatureSpellValue(const CStack * caste
 		|| !battle->battleMatchActionController(caster, recipient, true))
 		return 0;
 	const auto pool = battle->getAvailableBeneficialSpells(caster, recipient);
-	if(pool.empty())
+	const auto ability = caster->getBonus(Selector::type()(BonusType::RANDOM_SPELLCASTER));
+	if(pool.empty() || !ability)
 		return 0;
 	auto baseline = std::make_shared<HypotheticBattle>(env.get(), battle);
 	DamageCache cache;
 	const float baselinePressure = beneficialCreaturePressure(baseline, caster->unitId(), cache);
 	double total = 0;
 	for(const auto spell : pool)
-		total += beneficialCreatureOutcomeValue(caster, recipient, spell.toSpell(), baselinePressure);
+		total += beneficialCreatureOutcomeValue(caster, recipient, spell.toSpell(),
+			creatureAbilitySpellLevel(caster, spell.toSpell(), ability->val), baselinePressure);
 	return static_cast<float>(total / pool.size());
 }
 
@@ -4139,9 +4167,15 @@ float BattleEvaluator::beneficialCreatureSpellOutcomeValue(const CStack * caster
 {
 	if(!caster || !recipient || !spell)
 		return 0;
+	const auto randomAbility = caster->getBonus(Selector::type()(BonusType::RANDOM_SPELLCASTER));
+	const auto ability = randomAbility ? randomAbility : caster->getBonus(Selector::typeSubtype(
+		BonusType::SPELLCASTER, BonusSubtypeID(spell->getId())));
+	if(!ability)
+		return 0;
 	auto baseline = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
 	DamageCache cache;
 	return beneficialCreatureOutcomeValue(caster, recipient, spell,
+		creatureAbilitySpellLevel(caster, spell, ability->val),
 		beneficialCreaturePressure(baseline, caster->unitId(), cache));
 }
 
