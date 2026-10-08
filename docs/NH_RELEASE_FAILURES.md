@@ -1,5 +1,27 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Validation-map spell lookup duplicated scope
+
+The opt-in six-school casting map initially failed its nonempty-spell assertion:
+unlike SpellSchoolType's bare key, CSpell::getJsonKey already includes scope.
+Prepending getModScope produced core:core:bless and rejected every roster entry.
+Use the existing scoped spell key directly; retain eligibility, castability,
+school, Mana and ordinary-map initialization assertions. This is a test-fixture
+repair, not permission to relax production acquisition rules.
+
+### 2026-10-08 — Bare school IDs silently disabled casting overlays
+
+The restored bundle alone did not prove the feature: actual Magic Arrow/Bless
+casts were accepted, but the client log showed no casting PNG loads.
+SpellSchool::encode returns the bare getJsonKey; the casting selector required
+a new-horizons: prefix and therefore returned null before asset lookup. Use
+SpellSchool::serializationKey, which includes the existing scope. Keep saved
+rules, exact-one-school, namespace and supported-school guards unchanged.
+Independent source review clears the fix; client build68127 exits0. Existing
+native geometry tests used school strings directly and missed this producer
+path. Verify actual accepted casts and capture colored animation frames with
+ordinary high-Mana validation-map setup before declaring delivered acceptance.
+
 ### 2026-10-08 — Optional magic artwork lost during resource assembly
 
 Latest committed binary 52decee72 retains the production casting/Guild hooks,

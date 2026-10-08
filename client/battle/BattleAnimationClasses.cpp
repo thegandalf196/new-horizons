@@ -45,7 +45,9 @@ std::optional<std::string> castingGlowSchool(BattleInterface & owner, const CSpe
 	if(schools.size() != 1)
 		return std::nullopt;
 
-	const auto identifier = SpellSchool::encode(schools.front().getNum());
+	// encode() is a bare JSON key; use the scoped identity to distinguish
+	// curated schools from legacy or third-party schools with the same name.
+	const auto identifier = schools.front().serializationKey();
 	const std::string_view identifierView = identifier;
 	constexpr std::string_view prefix = "new-horizons:";
 	if(!identifierView.starts_with(prefix))

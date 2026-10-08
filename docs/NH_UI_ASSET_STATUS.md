@@ -1,5 +1,14 @@
 # New Horizons UI and asset status register
 
+2026-10-08 school casting/Guild delivery: authorized standalone casting overlays
+are committed (864 PNGs, all eighteen hero variants/six schools/eight frames),
+with a casting-only builtin resolver configuration. Windows/Linux installation
+rules include these resources. Public Guild publication still needs separation
+of new book/ribbon art from original room/repair pixels. Private Castle Guild
+rendering is verified in13cc's isolated candidate; full six-school casting
+rendering remains pending after a scoped-school selector bug was identified.
+Packaging/source verification is not a new Final artwork or platform approval.
+
 2026-10-08 Battlefield Medic: production hover text now distinguishes normal
 survivor healing from permanent restoration HP/count using the shared runtime
 preview. Native mechanic/AI tests pass; rendered hover verification remains
