@@ -2899,6 +2899,12 @@ bool CBattleInfoCallback::isMeleeAttackPossibleWithLongReach(const battle::Unit 
 
 bool CBattleInfoCallback::isLongWeaponAttack(const battle::Unit * attacker, const battle::Unit * defender) const
 {
+	return isLongWeaponAttack(attacker, defender, BattleHex::INVALID);
+}
+
+bool CBattleInfoCallback::isLongWeaponAttack(const battle::Unit * attacker, const battle::Unit * defender,
+	const BattleHex & attackerPosition) const
+{
 	RETURN_IF_NOT_BATTLE(false);
 
 	if(!attacker)
@@ -2909,8 +2915,29 @@ bool CBattleInfoCallback::isLongWeaponAttack(const battle::Unit * attacker, cons
 	if(!attacker->hasBonusOfType(BonusType::LONG_WEAPON))
 		return false;
 
-	if(isMeleeAttackPossible(attacker, defender))
+	if(isMeleeAttackPossible(attacker, defender, attackerPosition))
 		return false;
+
+	const auto projectedHexes = attackerPosition.isValid()
+		? attacker->getHexes(attackerPosition) : attacker->getHexes();
+	auto accessibility = getAccessibility();
+	if(attackerPosition.isValid() && attackerPosition != attacker->getPosition())
+	{
+		for(const auto & originalHex : attacker->getHexes())
+		{
+			if(!originalHex.isAvailable() || projectedHexes.contains(originalHex)
+				|| accessibility[originalHex.toInt()] != EAccessibility::ALIVE_STACK
+				|| accessibility.isDemonicGateReserved(originalHex))
+				continue;
+			// Stacks overwrite the gate's base accessibility. Moving the actor
+			// must not turn a closed or blocked gate into an open attack corridor.
+			if((originalHex == BattleHex::GATE_OUTER || originalHex == BattleHex::GATE_INNER)
+				&& battleGetFortifications().wallsHealth > 0
+				&& (battleGetGateState() == EGateState::CLOSED || battleGetGateState() == EGateState::BLOCKED))
+				continue;
+			accessibility[originalHex.toInt()] = EAccessibility::ACCESSIBLE;
+		}
+	}
 
 	for(const BattleHex & defenderHex : defender->getHexes())
 	{
@@ -2921,7 +2948,9 @@ bool CBattleInfoCallback::isLongWeaponAttack(const battle::Unit * attacker, cons
 				continue;
 
 			const auto [middleHex, attackerHex] = *longLine;
-			if(attacker->coversPos(attackerHex) && isLongWeaponMiddleHexClear(*this, middleHex))
+			if(projectedHexes.contains(attackerHex) && middleHex.isValid()
+				&& !projectedHexes.contains(middleHex)
+				&& accessibility[middleHex.toInt()] == EAccessibility::ACCESSIBLE)
 				return true;
 		}
 	}

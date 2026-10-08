@@ -299,6 +299,7 @@ set(test_SRCS
 		server/battles/NewHorizonsHeroSpellAccessTest.cpp
 		battle/NewHorizonsMagicArrowActionTest.cpp
 		battle/NewHorizonsBerserkForcedActionTest.cpp
+		battle/NewHorizonsConfusionChoicesTest.cpp
 		battle/NewHorizonsCounterspellActionTest.cpp
 		server/battles/NewHorizonsSpellRosterContextTest.cpp
 		server/battles/NewHorizonsSpellRosterConsumerTest.cpp

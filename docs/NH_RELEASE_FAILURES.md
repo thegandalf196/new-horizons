@@ -1,5 +1,43 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Confusion forecasting must preserve ordinary action semantics
+
+UP306 source review caught two legality risks before native acceptance. Physical
+ownership is not the current action controller; enemy grouping must use the
+same controller predicates as validated ordinary attacks. A moved Skirmisher
+shot needs explicit metadata and must reject visible stopping-hazard endpoints:
+the authoritative move can stop there before any shot. The repaired helper
+uses the same stationary/flying exceptions as melee forecasting. Long Weapon
+forecasting also needs to vacate only the actor's former footprint locally,
+without clearing obstacles, reserved landings or closed gates. Do not fabricate
+a full BattleProxy with unrelated mutators to solve a single position forecast.
+
+Production and focused fixture are frozen; serialized build2788 is currently
+running at10 jobs, receipt build/nh-confusion-choices-build.log. The last fixture
+hazard addition preceded its compilation; a final stable-input rebuild must
+confirm no stale object. Reviewer flags potentially incoherent fake shooter
+ammunition for detached Skirmisher projection. Native results, not mocked
+canShoot flags, must establish that setup; repair the fixture if necessary,
+never weaken attack legality or expected hazard rejection. No acceptance claim
+or active Confusion/Confounder identity is made by this note.
+
+UP306 build2788 exits0. Native47778 exits1:32/33 in1.459s, zero skips.
+All other Confusion geometry cases and adjacent Berserk/Long Weapon controls
+pass. Skirmisher fails its setup assertion (ordinary legal firing positions
+empty) before the intended metadata/hazard assertions, confirming the reviewed
+fake-ammunition risk. Sole fixture repair is authorized; do not weaken expected
+shooting or stopping-hazard behavior. Failed receipts retained separately:
+build/nh-preview-ai-validation.jUrtT2RY/native-up306.log/XML.
+
+Final UP306 repaired linked34243 exits0 at10 jobs. Native84923 passes33/33
+in1.326s, zero skips. The fixture now has real SHOTS/SHOOTER, base health/count,
+initialized environment and independent acquired-state copies. Exact shot,
+movement and hazard assertions are unchanged and pass. Sol High reviews the
+repair without a blocker. Receipts: build/nh-confusion-choices-fixture-repaired-
+build.log and native-up306-fixture-repaired.log/XML in the same validation
+directory. Full spell activation/state/save/AI are still Phase1 implementation
+requirements, not Phase2-deferred mechanics; no playable promotion occurs.
+
 ### 2026-10-08 — Summon Boat accepted cast is not guaranteed effect success
 
 UP305 architecture review: a failed summon roll intentionally returns OK and

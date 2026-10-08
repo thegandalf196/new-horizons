@@ -310,6 +310,9 @@ public:
 	bool battleCanShootAction(const battle::Unit * attacker, const BattleHex & dest) const;
 	bool battleCanShoot(const battle::Unit * attacker) const; //determines if stack with given ID shoot in principle
 	bool isLongWeaponAttack(const battle::Unit * attacker, const battle::Unit * defender) const;
+	/// Forecast a moved actor without treating its vacated footprint as a corridor blocker.
+	bool isLongWeaponAttack(const battle::Unit * attacker, const battle::Unit * defender,
+		const BattleHex & attackerPosition) const;
 	//hexes of the defender that the attacker can reach in melee; empty if no melee attack is possible
 	BattleHexArray meleeAttackHexes(const battle::Unit * attacker, const battle::Unit * defender, const BattleHex & attackerPos = BattleHex::INVALID, const BattleHex & defenderPos = BattleHex::INVALID) const;
 	bool isMeleeAttackPossible(const battle::Unit * attacker, const battle::Unit * defender, const BattleHex & attackerPos = BattleHex::INVALID, const BattleHex & defenderPos = BattleHex::INVALID) const;

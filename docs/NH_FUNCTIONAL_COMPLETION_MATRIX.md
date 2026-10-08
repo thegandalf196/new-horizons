@@ -2,6 +2,24 @@
 
 Updated: 2026-10-08
 
+UP306 starts Confusion's missing shared legal-choice foundation rather than
+repeating unchanged perk-hold audits. The helper enumerates enemy-grouped
+ordinary attacks, legal advances and Wander destinations without RNG or state
+mutation. Trapped Wander has the accepted Defend fallback; a selected enemy
+with no possible attack or advance remains explicitly unresolved. This is
+partial infrastructure, not an active spell: authoritative pending/history
+state, consumption, binary/packet saves, detached outcome evaluation and
+registration remain necessary. Confusion/Confounder stay inactive and counts
+remain61/67 combat identities and231/310 perks. Linked34243 exits0 at10 jobs;
+native84923 passes33/33 in1.326s, zero skips:16 new geometry and17 adjacent
+Berserk/Long Weapon checks. Independent Sol High review has no blocker. Initial
+fake-shooter ammunition/state failure is preserved, then corrected without
+weakening assertions. Receipts: build/nh-confusion-choices-fixture-repaired-build.log
+and build/nh-preview-ai-validation.jUrtT2RY/native-up306-fixture-repaired.log/XML.
+Full activation/state/save/AI consumers remain Phase1 requirements; broader
+interactions and per-position geometry performance remain Phase2. No playable
+delivery or whole-spell acceptance is claimed.
+
 UP305 audit: ordinary known Summon Boat with no School rank has a missing
 minimum AI route because AILayerTransitionRule requires100% legacy chance.
 Existing fixtures artificially supply mastery3. Positive-chance NH attempts
