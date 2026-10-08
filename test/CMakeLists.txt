@@ -268,6 +268,7 @@ set(test_SRCS
 		server/battles/NewHorizonsMagicStateTest.cpp
 		server/battles/NewHorizonsMagicFixtureExportTest.cpp
 		server/battles/NewHorizonsMetamagicUIFixtureExportTest.cpp
+		server/battles/NewHorizonsBloodrageUIFixtureExportTest.cpp
 		server/battles/NewHorizonsMetamagicTest.cpp
 		server/battles/NewHorizonsSkillRewardTest.cpp
 		server/battles/NewHorizonsRewardSkillFilterTest.cpp

@@ -2,6 +2,23 @@
 
 Updated: 2026-10-08
 
+UP004 Bloodrage principal required-UI gate passes2026-10-08: ordinary canonical
+Crag Hack on current normal1c720/source0b53 renders+0/20% and Hero Action
+Available, then an accepted Orc shot destroys one whole Peasant stack and updates
+the generic row/help to+5/20% with the human Hero Action still Available.
+Dendroids remain alive; Blue AI's independent Brace is not a human action.
+Root inspected native06/07/08 in Downloads/provisory/generic-combat-resource-
+up004-bloodrage-hYK6homf. Evidence27.134s/cleanup56.591s respect the90-second
+guarded private interaction contract; owned client/Xvfb exit0 and profile/runtime
+cleanup passes. The ordinary opt-in map fixture passes1/1 zero skips0.672s after
+linked54033 at10 jobs; the initial erroneous Peasant capacity assumption is
+repaired against the explicit production unrestricted-legacy contract, not by
+changing gameplay or skipping army validation. Independent review passes.
+Required-UI principal evidence now covers all three currently declared typed
+Faction-Skill providers (Divine Mandate, Metamagic, Bloodrage), not every faction
+status surface or the wider layout/control matrix. Counts remain236/310 perks,
+61/67 combat spells and8/8 Orders; no full UI/art/completion certification.
+
 Phase1 playable delivery advances2026-10-08: usual Linux launcher selects
 checksum-frozen1c720ae7/source0b53fabcd after a10-job exact-source relink,
 independent4010-resource retention/gameplay-equality audit and bounded20-second

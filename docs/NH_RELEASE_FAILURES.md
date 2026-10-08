@@ -1,5 +1,21 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Bloodrage UI fixture assumed every creature has a capacity
+
+The initial opt-in scenario native check fails1/1 at its Peasant capacity
+assertion, before export or GUI execution. Peasant is absent from the captured
+faction Leadership requirement table: production resolves requirement0 and no
+optional capacity, and authoritative initialization/admission treats that case
+as unrestricted. The repair explicitly asserts active v2+ captured rules,
+Peasant requirement0/absent capacity and exact retained army; it does not
+generically skip capacity checks. Orc and Dendroid positive capacity checks
+remain strict. No production rules change. Original log/XML are retained in
+build/nh-bloodrage-ui-export.qY6fY9rA; repaired native passes1/1 zero skips
+in0.672s after linked54033 at10 jobs, with independent review. Ordinary GUI
+acceptance subsequently verifies whole-stack death and0→5/20% resource feedback.
+Future authored-scenario fixtures must distinguish unrestricted legacy units
+from invalid armies instead of assuming an optional capacity is always present.
+
 ### 2026-10-08 — Metamagic UI run exceeded the interaction contract
 
 The bounded UP004 Metamagic run proves the accepted normal/additional cast and
