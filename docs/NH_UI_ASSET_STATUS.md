@@ -1,5 +1,19 @@
 # New Horizons UI and asset status register
 
+2026-10-08 UP312 local delivery: the usual Linux launcher now selects verified
+5d1c66b6 / 7e09da9dd after scoped rendered acceptance and private-process cleanup.
+Giant/Naga corrections are delivered provisionally; Magi/Gargoyle remain open.
+Previous snapshot retained; receipt build/nh-up312-7e09da9dd-DELIVERY.json.
+
+2026-10-08 UP312 rendered checkpoint: pushed source 7e09da9dd / frozen Linux
+candidate 5d1c66b6 shows the Giant sword and complete Naga coil in the ordinary
+Academy Recruit All window. Root inspected actual screenshots 03/04 and Fort
+05 in Downloads/provisory/academy-portrait-runtime-7e09da9dd-newversion.
+The 800×600 run fits purchase portraits to 29×32; native 58×64 geometry remains
+covered by the SDL fixture, not by enlarging that screenshot. Naga Queen has
+native renderer coverage only, not this base-roster GUI run. Magi face and snowy
+Gargoyle recruitment portrait remain open. No Final artwork approval inferred.
+
 2026-10-08 UP312 source checkpoint: Giant sword v4 matte is **Provisional**,
 adding 73 pixels in the narrow blade ROI while preserving every existing body
 pixel. Naga and Naga Queen now use their complete purchaser-supplied standing
