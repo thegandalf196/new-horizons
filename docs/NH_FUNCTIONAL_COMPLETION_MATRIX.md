@@ -2,6 +2,16 @@
 
 Updated: 2026-10-08
 
+UP310 compact Wisp portraits now have actual rendered Conflux-background
+evidence for both forms in isolated SDL2 run4564. Root inspected the TWCRPORT
+panel screenshots, not the unrelated full animation panel, under
+Downloads/provisory/wisp-compact-runtime-up310-20261008.ClgktO. Safe cached
+staging passes12/12 focused tests with no blocking independent review finding.
+Only two58px Images files change; every other candidate byte is preserved.
+Normal delivery remains pending, Gargoyle artwork remains open, and identity
+coverage does not increase. CLI/symlink negatives and mid-copy failure cleanup
+remain deferred hardening.
+
 UP291 gold active-turn silhouettes now have actual rendered evidence for both
 additive Wisp forms. Isolated corrective run42632 exits0 after normal controls;
 root inspected screenshots with pointer outside units. SDL2 software800x600,

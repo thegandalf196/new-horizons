@@ -1,5 +1,14 @@
 # New Horizons UI and asset status register
 
+UP310,2026-10-08: Wisp and Greater Wisp **Provisional**58×64 Conflux
+composites are now staged at their unchanged private Images bindings and verified
+in the actual compact battle panel. Root inspected both native screenshots in
+Downloads/provisory/wisp-compact-runtime-up310-20261008.ClgktO; isolated run4564
+exits0 and cleans its owned display/processes. Only two files differ from the
+previous candidate;32px icons and all battle frames remain unchanged. Normal
+launcher delivery, SDL3 and final art approval remain pending. Gargoyle snowy
+portrait defect is separate and still open.
+
 UP291,2026-10-08: actual additive Wisp/Greater Wisp gold active-turn silhouette
 contours are verified in isolated SDL2 software800x600 combat with threshold64
 descriptors. Root inspected both screenshots after ordinary controls, pointer
