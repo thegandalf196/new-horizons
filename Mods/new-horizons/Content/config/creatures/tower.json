@@ -7,7 +7,7 @@
 		"shots": 8,
 		"sound": {
 			"attack": "TROGATTK.wav",
-			"shoot": "FIRBATTK.wav"
+			"shoot": "GOGGSHOT.wav"
 		},
 		"abilities": {
 			"shooter": {
@@ -60,7 +60,7 @@
 		"shots": 8,
 		"sound": {
 			"attack": "ITRGATTK.wav",
-			"shoot": "PHOEATTK.wav"
+			"shoot": "GOGGSHOT.wav"
 		},
 		"abilities": {
 			"shooter": {

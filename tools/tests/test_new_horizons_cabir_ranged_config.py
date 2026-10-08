@@ -118,17 +118,17 @@ class CabirRangedConfigTest(unittest.TestCase):
         self.assertEqual(self.core["masterGremlin"]["shots"], 8)
         self.assertEqual(self.core["masterGremlin"]["abilities"]["shooter"]["type"], "SHOOTER")
 
-    def test_both_forms_use_existing_breath_and_claw_sounds_without_changing_other_cues(self):
+    def test_both_forms_use_gog_shot_and_claw_sounds_without_changing_other_cues(self):
+        inferno = json.loads(_strip_jsonc_comments((CORE_TOWER.parent / "inferno.json").read_text(encoding="utf-8")))
         sound_sources = {
-            "core:gremlin": (self.conflux["firebird"], self.dungeon["troglodyte"]),
-            "core:masterGremlin": (self.conflux["phoenix"], self.dungeon["infernalTroglodyte"]),
+            "core:gremlin": self.dungeon["troglodyte"],
+            "core:masterGremlin": self.dungeon["infernalTroglodyte"],
         }
 
-        for creature_id, (breath_source, claw_source) in sound_sources.items():
+        for creature_id, claw_source in sound_sources.items():
             with self.subTest(creature=creature_id):
                 creature = self.creatures[creature_id]
-                self.assertEqual(breath_source["abilities"]["twoHexAttackBreath"]["type"], "TWO_HEX_ATTACK_BREATH")
-                self.assertEqual(creature["sound"]["shoot"], breath_source["sound"]["attack"])
+                self.assertEqual(creature["sound"]["shoot"], inferno["gog"]["sound"]["shoot"])
                 self.assertEqual(creature["sound"]["attack"], claw_source["sound"]["attack"])
                 self.assertTrue(creature["sound"]["shoot"].endswith(".wav"))
                 self.assertTrue(creature["sound"]["attack"].endswith(".wav"))
