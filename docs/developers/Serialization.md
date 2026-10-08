@@ -734,3 +734,17 @@ attack/injury wrapper or battle payloads are written, instead of dropping it.
 `CStack::localInit` restores the explicitly carried metadata after ordinary
 unit initialization. This does **not** serialize the otherwise omitted general
 combat health state or establish full ongoing-battle save/resume support.
+
+`NEW_HORIZONS_CONFUSION_MARKER` adds the dedicated `CONFUSION_PENDING` bonus.
+It uses a battle-long `SPELL_EFFECT` marker sourced to the actual spell, with
+captured caster provenance, value 1 (ordinary) or 2 (Confounder), and a Debuff
+status identity. Marker addition/refresh synchronizes pending control without
+erasing history. Accepted removal clears pending only when no marker remains;
+Dispel and projected AI removals use the same event-driven lifecycle.
+The marker does not use automatic next-activation expiry, which precedes forced
+resolution. Direct bonuses, enclosing effect packets and pending-state writers
+reject older formats before their payloads. History-only metadata retains the
+earlier state-format gate. This does not enable the unfinished forced-action
+consumer. The registered effect type `newHorizonsConfusion` accepts only `type`,
+`indirect` and `optional`; production saved-roster availability remains inactive
+until the entire execution/AI/feedback path is complete.

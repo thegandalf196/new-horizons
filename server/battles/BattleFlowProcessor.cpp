@@ -24,6 +24,7 @@
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/battle/NewHorizonsBerserk.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
+#include "../../lib/battle/NewHorizonsConfusionControl.h"
 #include "../../lib/battle/NewHorizonsDiscipline.h"
 #include "../../lib/battle/NewHorizonsPuppetMaster.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
@@ -1226,7 +1227,22 @@ bool BattleFlowProcessor::tryActivateMoralePenalty(const CBattleInfoCallback & b
 			ba.side = next->unitSide();
 			ba.stackNumber = next->unitId();
 
-			makeAutomaticAction(battle, next, ba);
+			std::vector<Bonus> pendingConfusion;
+			const auto markers = next->getBonusesOfType(BonusType::CONFUSION_PENDING);
+			if(markers)
+				for(const auto & marker : *markers)
+					if(newHorizonsConfusionControl::isPendingMarker(marker.get()))
+						pendingConfusion.emplace_back(*marker);
+
+			if(!makeAutomaticAction(battle, next, ba))
+				return false;
+			if(!pendingConfusion.empty())
+			{
+				SetStackEffect effect;
+				effect.battleID = battle.getBattle()->getBattleID();
+				effect.toRemove.emplace_back(ba.stackNumber, std::move(pendingConfusion));
+				gameHandler->sendAndApply(effect);
+			}
 			return true;
 		}
 	}

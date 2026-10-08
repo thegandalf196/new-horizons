@@ -3530,6 +3530,7 @@ void BattleStatePackVisitor::visitBattleObstaclesChanged(BattleObstaclesChanged 
 
 void BattleStatePackVisitor::visitSetStackEffect(SetStackEffect & pack)
 {
+	pack.validateConfusionMarkers();
 	const SpellID hydrasVitality(SpellID::decode("new-horizons:hydrasVitality"));
 	const auto hydrasVitalitySource = BonusSourceID(hydrasVitality);
 	std::set<uint32_t> capacityAffectedStacks;

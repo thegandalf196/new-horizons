@@ -190,14 +190,17 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_CREATURE_TRANSIT_REACH, // static Pass-through and Long Reach creature capabilities
 	NEW_HORIZONS_OVERWHELMING_FORMULA, // side-owned candidate cast tokens and first actual-damage winner
 	NEW_HORIZONS_CONFUSION_STATE, // pending forced activation provenance and target resolved-behavior history
+	NEW_HORIZONS_CONFUSION_MARKER, // source-bound pending Confusion marker and captured Confounder
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_CONFUSION_STATE,
+	CURRENT = NEW_HORIZONS_CONFUSION_MARKER,
 };
 
+static_assert(ESerializationVersion::NEW_HORIZONS_CONFUSION_MARKER > ESerializationVersion::NEW_HORIZONS_CONFUSION_STATE,
+	"Confusion pending marker must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_CONFUSION_STATE > ESerializationVersion::NEW_HORIZONS_OVERWHELMING_FORMULA,
 	"Confusion pending/history state must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_OVERWHELMING_FORMULA > ESerializationVersion::NEW_HORIZONS_CREATURE_TRANSIT_REACH,

@@ -361,6 +361,12 @@
 			"level": 1,
 			"costs": [4, 4, 4, 4]
 		},
+		"new-horizons:confusion": {
+			"schools": ["new-horizons:chaos"],
+			"level": 1,
+			"costs": [5, 5, 5, 5],
+			"active": false
+		},
 		"new-horizons:puppetMaster": {
 			"schools": ["new-horizons:chaos"],
 			"level": 4,

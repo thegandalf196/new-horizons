@@ -26,9 +26,38 @@ struct DLL_LINKAGE SetStackEffect : public CPackForClient
 	std::vector<std::pair<ui32, std::vector<Bonus>>> toRemove;
 
 	void visitTyped(ICPackVisitor & visitor) override;
+	void validateConfusionMarkers() const
+	{
+		for(const auto * changes : {&toAdd, &toUpdate, &toRemove})
+		{
+			for(const auto & entry : *changes)
+			{
+				for(const Bonus & bonus : entry.second)
+					bonus.validateConfusionPendingMarker();
+			}
+		}
+	}
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+		{
+			validateConfusionMarkers();
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_CONFUSION_MARKER))
+			{
+				for(const auto * changes : {&toAdd, &toUpdate, &toRemove})
+				{
+					for(const auto & entry : *changes)
+					{
+						for(const Bonus & bonus : entry.second)
+						{
+							if(bonus.type == BonusType::CONFUSION_PENDING)
+								throw std::runtime_error("Cannot discard Confusion pending stack effect");
+						}
+					}
+				}
+			}
+		}
 		const auto containsNoQuarter = [](const auto & effects)
 		{
 			return std::ranges::any_of(effects, [](const auto & stackEffects)
@@ -108,6 +137,8 @@ struct DLL_LINKAGE SetStackEffect : public CPackForClient
 		h & toAdd;
 		h & toUpdate;
 		h & toRemove;
+		if(!h.saving)
+			validateConfusionMarkers();
 		assert(battleID != BattleID::NONE);
 	}
 };

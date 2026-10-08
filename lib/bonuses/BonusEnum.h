@@ -240,6 +240,7 @@ class JsonNode;
 	BONUS_NAME(ELEMENTAL_SPELL_DAMAGE_RECEIVED) /*incoming magical damage percentage; subtype is explicit SpellDamageElement*/ \
 	BONUS_NAME(PASS_THROUGH) /*may traverse stacks, solid obstacles, intact walls and closed gates; destinations remain normally legal*/ \
 	BONUS_NAME(LONG_REACH) /*maximum gap hexes for physical melee attack range; does not alter adjacency-only queries*/ \
+	BONUS_NAME(CONFUSION_PENDING) /*source-bound next-activation Confusion, with captured caster and Confounder*/ \
 
 	/* end of list */
 

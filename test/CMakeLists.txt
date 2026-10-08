@@ -301,6 +301,7 @@ set(test_SRCS
 		battle/NewHorizonsBerserkForcedActionTest.cpp
 		battle/NewHorizonsConfusionChoicesTest.cpp
 		battle/NewHorizonsConfusionStateTest.cpp
+		server/battles/NewHorizonsConfusionApplicationTest.cpp
 		battle/NewHorizonsCounterspellActionTest.cpp
 		server/battles/NewHorizonsSpellRosterContextTest.cpp
 		server/battles/NewHorizonsSpellRosterConsumerTest.cpp

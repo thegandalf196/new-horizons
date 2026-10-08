@@ -16,6 +16,7 @@
 #include "../../lib/battle/NewHorizonsBattlecraft.h"
 #include "../../lib/battle/NewHorizonsArmorer.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
+#include "../../lib/battle/NewHorizonsConfusionControl.h"
 #include "../../lib/battle/NewHorizonsDiscipline.h"
 #include "../../lib/battle/NewHorizonsEnchantedCommand.h"
 #include "../../lib/battle/HeroCommand.h"
@@ -530,6 +531,9 @@ void StackWithBonuses::onBattleFormChanged()
 
 void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 {
+	for(const auto & entry : bonus)
+		if(entry.type == BonusType::CONFUSION_PENDING)
+			newHorizonsConfusionControl::validateMarker(entry);
 	// The original bearer is live-backed. Snapshot this temporary perk effect
 	// before adding its local forecast, so later live acceptance/expiry cannot
 	// enter the branch a second time or change its independent activation life.
@@ -544,7 +548,17 @@ void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 			capturedPhysicalAfflictionGroups.emplace(stamped.source, stamped.sid);
 	for(const auto & stamped : stampedBonuses)
 	{
-		if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
+		if(stamped.type == BonusType::CONFUSION_PENDING)
+		{
+			if(isTimeStopped())
+				continue;
+			auto next = confusionState;
+			next.applyPending(stamped.spellCasterOwner, stamped.val == 2);
+			removeUnitBonus(Selector::type()(BonusType::CONFUSION_PENDING));
+			bonusesToAdd.emplace_back(stamped);
+			confusionState = next;
+		}
+		else if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
 			replacePhysicalAfflictionMarker(*this, stamped);
 		else
 			bonusesToAdd.emplace_back(stamped);
@@ -555,6 +569,9 @@ void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 
 void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 {
+	for(const auto & entry : bonus)
+		if(entry.type == BonusType::CONFUSION_PENDING)
+			newHorizonsConfusionControl::validateMarker(entry);
 	const auto stampedBonuses = physicalAfflictions::stampApplicationOrder(*this, bonus);
 	// Preserve operation order: a preceding local ADD must be visible to refresh.
 	captureEffects();
@@ -563,7 +580,17 @@ void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 			capturedPhysicalAfflictionGroups.emplace(stamped.source, stamped.sid);
 	for(const auto & stamped : stampedBonuses)
 	{
-		if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
+		if(stamped.type == BonusType::CONFUSION_PENDING)
+		{
+			if(isTimeStopped())
+				continue;
+			auto next = confusionState;
+			next.applyPending(stamped.spellCasterOwner, stamped.val == 2);
+			removeUnitBonus(Selector::type()(BonusType::CONFUSION_PENDING));
+			bonusesToAdd.emplace_back(stamped);
+			confusionState = next;
+		}
+		else if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
 			replacePhysicalAfflictionMarker(*this, stamped);
 		else
 			bonusesToUpdate.emplace_back(stamped);
@@ -574,6 +601,9 @@ void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 
 void StackWithBonuses::removeUnitBonus(const std::vector<Bonus> & bonus)
 {
+	for(const auto & entry : bonus)
+		if(entry.type == BonusType::CONFUSION_PENDING)
+			newHorizonsConfusionControl::validateMarker(entry);
 	for(auto & one : bonus)
 	{
 		CSelector selector([&one](const Bonus * b) -> bool
@@ -586,7 +616,8 @@ void StackWithBonuses::removeUnitBonus(const std::vector<Bonus> & bonus)
 				&& one.val == b->val
 				&& one.sid == b->sid
 				&& one.valType == b->valType
-				&& one.effectRange == b->effectRange;
+				&& one.effectRange == b->effectRange
+				&& (one.type != BonusType::CONFUSION_PENDING || one.spellCasterOwner == b->spellCasterOwner);
 		});
 
 		removeUnitBonus(selector);
@@ -642,28 +673,40 @@ bool StackWithBonuses::removeFirstPhysicalAffliction()
 
 void StackWithBonuses::removeUnitBonus(const CSelector & selector)
 {
+	const bool timeStopped = isTimeStopped();
+	const CSelector effectiveSelector([&selector, timeStopped](const Bonus * bonus)
+	{
+		return selector(bonus) && !(timeStopped && bonus && bonus->type == BonusType::CONFUSION_PENDING);
+	});
+	const auto confusionMarkers = getBonuses(Selector::type()(BonusType::CONFUSION_PENDING));
+	const bool removesConfusion = std::ranges::any_of(*confusionMarkers, [&](const auto & marker)
+	{
+		return newHorizonsConfusionControl::isPendingMarker(marker.get()) && effectiveSelector(marker.get());
+	});
 	const auto guardianSpiritBonuses = getBonuses(guardianSpiritSelector());
 	const bool removesGuardianSpirit = std::ranges::any_of(*guardianSpiritBonuses,
-		[&](const auto & bonus) { return bonus && selector(bonus.get()); });
+		[&](const auto & bonus) { return bonus && effectiveSelector(bonus.get()); });
 
 	// Parent models materialize fresh bonus pointers. Capture effect values before
 	// suppressing them, including non-timed spells and legacy battle-long effects.
 	captureEffects();
-	TConstBonusListPtr toRemove = origBearer->getBonuses(selector);
+	TConstBonusListPtr toRemove = origBearer->getBonuses(effectiveSelector);
 
 	for(auto b : *toRemove)
 		bonusesToRemove.insert(b);
 
-	vstd::erase_if(bonusesToAdd, [&](const Bonus & b){return selector(&b);});
-	vstd::erase_if(bonusesToUpdate, [&](const Bonus & b){return selector(&b);});
+	vstd::erase_if(bonusesToAdd, [&](const Bonus & b){return effectiveSelector(&b);});
+	vstd::erase_if(bonusesToUpdate, [&](const Bonus & b){return effectiveSelector(&b);});
 	if(projectedEffects)
-		vstd::erase_if(*projectedEffects, [&](const Bonus & b){return selector(&b);});
+		vstd::erase_if(*projectedEffects, [&](const Bonus & b){return effectiveSelector(&b);});
 	if(projectedUnstackedEffects)
 		vstd::erase_if(*projectedUnstackedEffects, [&](const std::shared_ptr<Bonus> & b)
 		{
-			return !b || selector(b.get());
+			return !b || effectiveSelector(b.get());
 		});
 	++treeVersionLocal;
+	if(removesConfusion && !hasBonusOfType(BonusType::CONFUSION_PENDING))
+		confusionState.clearPending();
 	if(removesGuardianSpirit)
 		restoreGuardianSpiritFromExistingBonuses(*this);
 }

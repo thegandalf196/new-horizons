@@ -115,6 +115,7 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 	}
 
 	bool hidden = false;
+	void validateConfusionPendingMarker() const;
 
 	Bonus(BonusDuration::Type Duration, BonusType Type, BonusSource Src, si32 Val, BonusSourceID sourceID);
 	Bonus(BonusDuration::Type Duration, BonusType Type, BonusSource Src, si32 Val, BonusSourceID sourceID, BonusSubtypeID subtype);
@@ -124,6 +125,13 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+		{
+			validateConfusionPendingMarker();
+			if(type == BonusType::CONFUSION_PENDING
+				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CONFUSION_MARKER))
+				throw std::runtime_error("Cannot discard Confusion pending marker");
+		}
 		if(h.saving && !isValidSpellCasterOwner(spellCasterOwner))
 			throw std::runtime_error("Invalid bonus spell caster owner provenance");
 		if(h.saving && appliedByEnemy
@@ -238,6 +246,13 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 
 		if (!h.saving && !h.hasFeature(Handler::Version::COMBAT_ABILITY_SCRIPTS))
 			BonusMigration::migrateCombatAbility(*this);
+		if(!h.saving)
+		{
+			validateConfusionPendingMarker();
+			if(type == BonusType::CONFUSION_PENDING
+				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CONFUSION_MARKER))
+				throw std::runtime_error("Unsupported Confusion pending marker");
+		}
 	}
 
 	void convertAddInfo(const std::vector<int> & oldAddInfo);

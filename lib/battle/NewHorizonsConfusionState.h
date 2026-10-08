@@ -48,6 +48,8 @@ struct DLL_LINKAGE ConfusionState
 	template <typename Handler> void validateSerialization(Handler & h) const
 	{
 		validate();
+		if(pending && !h.hasFeature(Handler::Version::NEW_HORIZONS_CONFUSION_MARKER))
+			throw std::runtime_error("Cannot discard source-bound Confusion pending state in an older format");
 		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_CONFUSION_STATE) && hasState())
 			throw std::runtime_error("Cannot discard Confusion pending state or history in an older format");
 	}
@@ -63,7 +65,7 @@ struct DLL_LINKAGE ConfusionState
 			h & pendingConfounder;
 			h & previousResolved;
 			if(!h.saving)
-				validate();
+				validateSerialization(h);
 		}
 		else if(!h.saving)
 			*this = {};

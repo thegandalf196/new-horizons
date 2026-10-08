@@ -207,6 +207,16 @@
 					},
 					"additionalProperties" : false
 				}
+			}, {
+				"if" : { "properties" : { "type" : { "const" : "newHorizonsConfusion" } } },
+				"then" : {
+					"properties" : {
+						"type" : {},
+						"indirect" : { "type" : "boolean" },
+						"optional" : { "type" : "boolean" }
+					},
+					"additionalProperties" : false
+				}
 			}]
 		},
 		"flags" : {

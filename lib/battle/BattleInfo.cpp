@@ -14,6 +14,7 @@
 #include "NewHorizonsBattlecraft.h"
 #include "NewHorizonsArmorer.h"
 #include "NewHorizonsCombatSkills.h"
+#include "NewHorizonsConfusionControl.h"
 #include "NewHorizonsOffense.h"
 #include "PhysicalAffliction.h"
 #include "NewHorizonsPlague.h"
@@ -1904,6 +1905,9 @@ void BattleInfo::removeUnit(uint32_t id)
 
 void BattleInfo::addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 {
+	for(const auto & entry : bonus)
+		if(entry.type == BonusType::CONFUSION_PENDING)
+			newHorizonsConfusionControl::validateMarker(entry);
 	CStack * sta = getStack(id, false);
 
 	if(!sta)
@@ -1919,6 +1923,9 @@ void BattleInfo::addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 
 void BattleInfo::updateUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 {
+	for(const auto & entry : bonus)
+		if(entry.type == BonusType::CONFUSION_PENDING)
+			newHorizonsConfusionControl::validateMarker(entry);
 	CStack * sta = getStack(id, false);
 
 	if(!sta)
@@ -1934,6 +1941,9 @@ void BattleInfo::updateUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 
 void BattleInfo::removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 {
+	for(const auto & entry : bonus)
+		if(entry.type == BonusType::CONFUSION_PENDING)
+			newHorizonsConfusionControl::validateMarker(entry);
 	CStack * sta = getStack(id, false);
 
 	if(!sta)
@@ -1961,9 +1971,17 @@ void BattleInfo::removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 			&& one.val == b->val
 			&& one.sid == b->sid
 			&& one.valType == b->valType
-			&& one.effectRange == b->effectRange;
+			&& one.effectRange == b->effectRange
+			&& (one.type != BonusType::CONFUSION_PENDING || one.spellCasterOwner == b->spellCasterOwner);
 		};
+		const auto confusionMarkers = sta->getBonuses(Selector::type()(BonusType::CONFUSION_PENDING));
+		const bool removesConfusion = std::ranges::any_of(*confusionMarkers, [&](const auto & marker)
+		{
+			return newHorizonsConfusionControl::isPendingMarker(marker.get()) && selector(marker.get());
+		});
 		sta->removeBonusesRecursive(selector);
+		if(removesConfusion && !sta->hasBonusOfType(BonusType::CONFUSION_PENDING))
+			sta->confusionState.clearPending();
 		if(one.type == BonusType::GUARDIAN_SPIRIT)
 		{
 			const auto remaining = sta->getBonuses(Selector::type()(BonusType::GUARDIAN_SPIRIT));
@@ -2076,12 +2094,23 @@ uint32_t BattleInfo::nextUnitId() const
 
 void BattleInfo::addOrUpdateUnitBonus(CStack * sta, const Bonus & value, bool forceAdd)
 {
+	if(value.type == BonusType::CONFUSION_PENDING)
+		newHorizonsConfusionControl::validateMarker(value);
 	if(value.type == BonusType::PHYSICAL_AFFLICTION)
 		physicalAfflictions::markerMetadata(value);
 
 	if(sta->isTimeStopped() && !timeStopState::isStateBonus(value))
 	{
 		logNetwork->warn("Ignoring new effect on Time Stop unit %d", sta->unitId());
+		return;
+	}
+	if(value.type == BonusType::CONFUSION_PENDING)
+	{
+		auto next = sta->confusionState;
+		next.applyPending(value.spellCasterOwner, value.val == 2);
+		sta->removeBonusesRecursive(Selector::type()(BonusType::CONFUSION_PENDING));
+		sta->addNewBonus(std::make_shared<Bonus>(value));
+		sta->confusionState = next;
 		return;
 	}
 	if(value.type == BonusType::PHYSICAL_AFFLICTION)

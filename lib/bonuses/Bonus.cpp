@@ -24,10 +24,17 @@
 #include "../mapObjects/CGObjectInstance.h"
 #include "../mapObjectConstructors/CObjectClassesHandler.h"
 #include "../battle/BattleInfo.h"
+#include "../battle/NewHorizonsConfusionControl.h"
 #include "../constants/StringConstants.h"
 #include "../entities/hero/CHero.h"
 #include "../modding/ModUtility.h"
 #include "../texts/CGeneralTextHandler.h"
+
+void Bonus::validateConfusionPendingMarker() const
+{
+	if(type == BonusType::CONFUSION_PENDING)
+		newHorizonsConfusionControl::validateMarker(*this);
+}
 
 std::string Bonus::Description(const IGameInfoCallback * cb, std::optional<si32> customValue) const
 {

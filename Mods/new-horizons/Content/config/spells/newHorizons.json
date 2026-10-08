@@ -2,6 +2,47 @@
 	"core:berserk": {
 		"targetCondition": {"noneOf": {"bonus.LUCIDITY": "absolute"}}
 	},
+	"confusion": {
+		"name": "Confusion",
+		"type": "combat",
+		"school": {"new-horizons:chaos": true},
+		"level": 1,
+		"power": 0,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "CREATURE",
+		"graphics": {
+			"iconBook": "SPELLS.def:0:60",
+			"iconScroll": "SPELLSCR.def:0:60",
+			"iconEffect": "SPELLINT.def:0:61",
+			"iconImmune": "SPELLINT.def:0:61",
+			"iconScenarioBonus": "SPELLBON.def:0:60"
+		},
+		"animation": {"affect": ["C10SPA0"]},
+		"sounds": {"cast": "HYPNOTIZ"},
+		"levels": {
+			"base": {
+				"range": "0",
+				"description": "The target's next activation becomes Attack, Defend or Wander, chosen randomly. Applying Confusion removes Berserk. A negative Morale forfeiture consumes Confusion. Dispel removes pending Confusion. This spell is unavailable until its forced activation and AI implementation are complete.",
+				"cost": 5,
+				"power": 0,
+				"targetModifier": {"smart": true},
+				"battleEffects": {"confusion": {"type": "newHorizonsConfusion"}}
+			},
+			"none": {},
+			"basic": {},
+			"advanced": {},
+			"expert": {}
+		},
+		"flags": {"negative": true},
+		"targetCondition": {
+			"noneOf": {
+				"bonus.LUCIDITY": "absolute",
+				"bonus.MIND_IMMUNITY": "normal",
+				"bonus.SIEGE_WEAPON": "absolute"
+			}
+		}
+	},
 	"puppetMaster": {
 		"name": "Puppet Master",
 		"type": "combat",

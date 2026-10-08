@@ -1,5 +1,26 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Confusion pending control must be source-bound and removable
+
+UP308 adds a dedicated marker instead of an unrelated bonus or automatic
+next-activation duration: ordinary expiry occurs before forced resolution.
+Live and detached additions/removals synchronize pending state, preserve
+history on refresh/Dispel, and avoid stale-caster or TimeStop-blocked removals.
+Validate all marker entries before an effect packet starts mutating units and
+before its wire payload. A final adverse-Morale action consumes pending only
+after acceptance; Rally/Twist cancellation and stopped no-ops do not.
+
+Object gate38963 and linked61187 exit0 at10 jobs. Native91897 passes46/46 in
+5.932s, zero skips (12 application/34 state+geometry); Sol High review has no
+blocker. Receipts: build/nh-confusion-application-compile-gate.log,
+build/nh-confusion-application-build.log and
+build/nh-preview-ai-validation.jUrtT2RY/native-up308.log/XML. No compile/native
+failure in this slice. Broader control/status/death and enclosing save matrices
+remain Phase2. Forced behavior selection/dispatch, detached mean outcome
+valuation and feedback remain missing Phase1 consumers; registration stays
+inactive and the normal launcher is unchanged. No full spell/AI or graphical
+gameplay acceptance is inferred.
+
 ### 2026-10-08 — PlayerColor sentinels are not a numeric player range
 
 UP307 independent source review caught a pre-build blocker in Confusion JSON:

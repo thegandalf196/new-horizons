@@ -2,6 +2,23 @@
 
 Updated: 2026-10-08
 
+UP308 implements Confusion's actual application/removal consumer: dedicated
+spell-sourced pending marker, recast/caster/Confounder capture, Berserk removal,
+live and detached state synchronization, Dispel cleanup and consumption only
+after accepted negative-Morale forfeiture. The new identity is registered but
+its saved-roster row is inactive; the private fixture alone opts in. Object
+gate38963 and linked61187 exit0 at10 jobs; native91897 passes46/46 in5.932s,
+zero skips (12 application/34 state+geometry). Sol High review has no blocker.
+Receipts: build/nh-confusion-application-build.log and
+build/nh-preview-ai-validation.jUrtT2RY/native-up308.log/XML. Actual cast costs,
+HeroAction, Berserk/recast/Dispel, private Confounder, bad-Morale cleanup,
+Rally/TimeStop preservation and detached castEval isolation pass. Broader control/
+status/death and enclosing save matrices remain Phase2. Forced dispatch, Confounder result
+selection, mean detached AI outcome evaluation and feedback are still Phase1
+requirements. Combat identity61/67 and perk231/310 coverage do not increase
+merely because a producer exists. Wider wrapper/save interaction matrices are
+Phase2, not a substitute for implementing those missing principal consumers.
+
 UP307 continues Confusion beyond geometry with explicit pending activation and
 per-target resolved-behavior history. The intended state contract preserves
 history across reapplication and ordinary rounds; Morale forfeiture clears only

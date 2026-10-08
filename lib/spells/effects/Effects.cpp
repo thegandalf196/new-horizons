@@ -21,9 +21,11 @@
 #include "../../GameLibrary.h"
 #include "../../CStack.h"
 #include "../../battle/CUnitState.h"
+#include "../../battle/NewHorizonsConfusionControl.h"
 #include "../../battle/NewHorizonsPuppetMaster.h"
 #include "../../battle/NewHorizonsBulwark.h"
 #include "../../json/JsonNode.h"
+#include "../../mapObjects/CGHeroInstance.h"
 #include "../../modding/IdentifierStorage.h"
 #include "../../networkPacks/PacksForClientBattle.h"
 #include "../../networkPacks/SetStackEffect.h"
@@ -38,6 +40,119 @@ namespace effects
 
 namespace
 {
+class NewHorizonsConfusionEffect final : public Effect
+{
+	bool isValidTarget(const Mechanics * mechanics, const battle::Unit * unit) const
+	{
+		if(!mechanics || !mechanics->battle() || !mechanics->battle()->getBattle()
+			|| !newHorizonsMagic::rulesActive(mechanics->battle()->getBattle()->getMagicRules())
+			|| !newHorizonsMagic::spellAllowedByBattleRoster(*mechanics->battle(), mechanics->getSpellId())
+			|| !unit || !unit->alive() || !unit->isValidTarget(false) || !mechanics->isReceptive(unit))
+			return false;
+
+		const auto casterSide = mechanics->battle()->playerToSide(mechanics->getCasterColor());
+		return (casterSide == BattleSide::ATTACKER || casterSide == BattleSide::DEFENDER)
+			&& mechanics->battle()->battleGetActionController(unit) != mechanics->getCasterColor();
+	}
+
+public:
+	void adjustAffectedHexes(BattleHexArray & hexes, const Mechanics *, const Target & spellTarget) const override
+	{
+		for(const auto & destination : spellTarget)
+		{
+			const auto hex = destination.unitValue ? destination.unitValue->getPosition() : destination.hexValue;
+			if(hex.isValid())
+				hexes.insert(hex);
+		}
+	}
+
+	bool applicableGeneral(Problem & problem, const Mechanics * mechanics) const override
+	{
+		if(mechanics && mechanics->battle())
+			for(const auto * unit : mechanics->battle()->battleGetAllUnits(false))
+				if(isValidTarget(mechanics, unit))
+					return true;
+		if(mechanics)
+			mechanics->adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
+		return false;
+	}
+
+	bool applicableTarget(Problem & problem, const Mechanics * mechanics, const Target & target) const override
+	{
+		if(!filterTarget(mechanics, target).empty())
+			return true;
+		if(mechanics)
+			mechanics->adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
+		return false;
+	}
+
+	void apply(ServerCallback * server, const Mechanics * mechanics, const Target & target) const override
+	{
+		if(!server || !mechanics)
+			return;
+		for(const auto & destination : filterTarget(mechanics, target))
+		{
+			const auto * unit = destination.unitValue;
+			std::vector<Bonus> berserkBonuses;
+			const auto existingBerserk = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
+				BonusSourceID(SpellID(SpellID::BERSERK))));
+			if(existingBerserk)
+				for(const auto & bonus : *existingBerserk)
+					if(bonus)
+						berserkBonuses.emplace_back(*bonus);
+
+			const auto * hero = mechanics->getHeroCaster();
+			const bool confounder = hero && hero->hasActivePerk(
+				"new-horizons:chaosMagic", "new-horizons:chaosMagic.confounder");
+			auto marker = newHorizonsConfusionControl::pendingMarker(
+				mechanics->getSpellId(), mechanics->getCasterColor(), confounder);
+			SetStackEffect effect;
+			effect.battleID = mechanics->getBattleID();
+			if(!berserkBonuses.empty())
+				effect.toRemove.emplace_back(unit->unitId(), std::move(berserkBonuses));
+			effect.toAdd.emplace_back(unit->unitId(), std::vector<Bonus>{std::move(marker)});
+			server->apply(effect);
+		}
+	}
+
+	Target filterTarget(const Mechanics * mechanics, const Target & target) const override
+	{
+		Target filtered;
+		for(const auto & destination : target)
+		{
+			const battle::Unit * unit = destination.unitValue;
+			if(!unit && destination.hexValue.isValid() && mechanics && mechanics->battle())
+				unit = mechanics->battle()->battleGetUnitByPos(destination.hexValue, true);
+			if(isValidTarget(mechanics, unit))
+			{
+				auto resolved = destination;
+				resolved.unitValue = unit;
+				filtered.push_back(std::move(resolved));
+				break;
+			}
+		}
+		return filtered;
+	}
+
+	Target transformTarget(const Mechanics * mechanics, const Target & aimPoint, const Target & spellTarget) const override
+	{
+		return filterTarget(mechanics, spellTarget.empty() ? aimPoint : spellTarget);
+	}
+
+protected:
+	void initImpl(JsonNode data) override
+	{
+		if(data["type"].String() != "newHorizonsConfusion")
+			throw std::runtime_error("Confusion effect requires type 'newHorizonsConfusion'");
+		for(const auto & [key, value] : data.Struct())
+		{
+			(void)value;
+			if(key != "type" && key != "indirect" && key != "optional")
+				throw std::runtime_error("Unknown Confusion effect parameter: " + key);
+		}
+	}
+};
+
 class NewHorizonsPuppetMasterEffect final : public Effect
 {
 	bool isValidTarget(const Mechanics * mechanics, const battle::Unit * unit) const
@@ -739,6 +854,8 @@ Effects::EffectsMap Effects::loadJson(const JsonNode & effectMap, const std::str
 			effect = std::make_shared<BattleFormEffect>();
 		else if(rawType == "newHorizonsPuppetMaster")
 			effect = std::make_shared<NewHorizonsPuppetMasterEffect>();
+		else if(rawType == "newHorizonsConfusion")
+			effect = std::make_shared<NewHorizonsConfusionEffect>();
 		else
 		{
 			auto identifier = LIBRARY->identifiers()->getIdentifier("script", raw["type"]);

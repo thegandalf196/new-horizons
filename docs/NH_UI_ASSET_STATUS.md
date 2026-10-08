@@ -1,5 +1,11 @@
 # New Horizons UI and asset status register
 
+UP308,2026-10-08: Confusion's inactive registered identity uses borrowed
+Hypnotize book/scroll/effect symbols and animation/sound references solely for
+the private functional fixture. Confusion-specific artwork is **Not done**;
+this is not approved art, spell activation or playable delivery. Replace the
+borrowed bindings before final visual acceptance.
+
 UP289/291,2026-10-07: base Cabir four-frame hover/fidget is user-approved
 ("ok, it is good") and staged as an optional private MOUSEON group1, leaving
 all supplied action groups/HOLDING intact. Matching Master draft is **Provisional**
