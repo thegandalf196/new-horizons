@@ -1,5 +1,60 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Defiant opposing-side simulation lookup
+
+The first focused linked native gate passes6/7; its actual detached AI candidate
+has no effectPreview. The legitimate defender perk is present, but the preview
+gate and inherited BattleProxy side-hero lookup use player-filtered hero access.
+The bounded repair uses the internal IBattleInfo side-hero contract for the
+hypothetical simulation, retaining the shared subject lifetime. Public
+battleGetFightingHero still filters visibility before accessing the side hero;
+no UI visibility change is intended. Independent source review finds no blocker.
+The repaired build19185 exits0. Isolated15741 passes7/7 unchanged principal
+assertions; active-registry26881 passes10/10 including three adjacent cases,
+zero skips. Activation follows that accepted AI path, not the initial six passes.
+
+### 2026-10-08 — Defiant fixture typed IDs and nested model construction
+
+The first linked-target build31842 stops on two fixture-only API errors:
+BonusSourceID needs SpellID(SpellID::HYPNOTIZE), not its enum value directly;
+HypotheticBattle's nested branch constructor needs Environment plus parent
+Subject, not a one-argument shared_ptr. The fixture writer corrected only those
+usages, preserving all assertions and parent-branch isolation. Production
+contracts were not loosened. Original log: build/nh-defiant-build.log.
+Prefer a new-fixture object compilation gate before a costly full relink when
+shared headers invalidate the native target broadly; retain already compiled
+objects and resume incrementally rather than clearing the build cache.
+
+### 2026-10-08 — Defiant deferred integration review (UP136)
+
+Independent source review found no blocking issue in the cause-specific runtime,
+historical side state, validated consumption packet or detached AI receipts.
+The linked build and native gate were still pending when this review was recorded;
+source inspection is not passing native, graphical or playable acceptance.
+The following findings are DEFERRED to Phase 2, not additional design holds:
+
+- Add actual accepted-action coverage for innate denial against FIRST_STRIKE,
+  overlapping innate plus Expert Shroud, and mixed innate plus spell-sourced
+  BLOCKS_RETALIATION. Verify that one side allowance ignores one cause only,
+  leaving the other denial intact; also exercise malformed/future packet rejection.
+- The existing BattleAI First Strike timing is not repaired by this slice:
+  its ordinary attack forecast models that retaliation after incoming damage,
+  while the authoritative first strike occurs before the incoming hit. Defiant's
+  live pre-hit innate exemption does not establish complete AI timing parity.
+- The scalar `CBattleInfoCallback::battleEstimateDamage` still does not model
+  post-hit No Quarter application and its allowance consumption. On a hit that
+  qualifies for No Quarter while the attacker also has innate blocking, it can
+  forecast an innate exemption and retaliation although the live/receipt path
+  spends Defiant on the complete No Quarter package, leaving innate denial intact.
+  This pre-existing estimator boundary is separate from the causal production
+  AI candidate/replay path reviewed here.
+- Full ongoing-battle save/resume and autonomous AI action selection remain
+  unverified. The focused fixture covers a pre-strike full-battle copy and used
+  side/state/packet roundtrips; it does not bypass the existing Veteran physical
+  damage-history guard to claim a complete post-strike battle snapshot. Its AI
+  case exercises a real candidate and branch replay followed by an accepted live
+  strike, not autonomous choice among competing actions.
+
 ### 2026-10-08 — Native portrait scaling erased backdrop alpha
 
 Independent review caught a new Naga portrait helper drawing a scaled transparent

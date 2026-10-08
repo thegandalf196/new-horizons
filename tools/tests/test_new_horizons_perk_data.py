@@ -190,6 +190,7 @@ ACTIVE_PERKS = {
     "new-horizons:armorer.pavise",
     "new-horizons:armorer.formationFighting",
     "new-horizons:armorer.veteran",
+    "new-horizons:armorer.defiant",
     "new-horizons:armorer.lastStand",
     "new-horizons:luck.fortuneSFavor",
     "new-horizons:luck.luckyAim",

@@ -2,6 +2,42 @@
 
 Updated: 2026-10-08
 
+UP136 Defiant is active and source/native verified. One hero-side allowance per
+round ignores one nonmagical retaliation-denial cause, including innate blocking,
+the complete No Quarter application and Expert Shroud denial. Ordinary reach,
+capacity and magical restrictions remain; Basic Shroud damage remains independent.
+Linked repaired build19185 exits0 at10 jobs. Isolated principal15741 passes7/7;
+active-registry26881 passes10/10 including three adjacent No Quarter/Shroud cases,
+zero skips in3.527s. Data17/17 and generated-module drift pass. Independent Sol
+High review finds no blocker, including the internal hypothetical side-hero
+lookup repair; public hero visibility stays filtered. Receipts:
+build/nh-defiant-native.qDWZg4c3/defiant-active.log and XML.
+Coverage235→236/310 perks, generic164→165/220, planned75→74; Armorer8→9/10.
+Faction71/90, combat61/67 and rank/Order counts are unchanged. Deferred integration
+findings are under Defiant in NH_RELEASE_FAILURES.md. Normal playable snapshot
+promotion is separate and is not claimed by this source/native checkpoint.
+
+Current checkpoint: Giant sword and Naga full-tail corrections are committed
+in7e09da9dd and locally delivered in snapshot5d1c66b6 after native SDL and
+ordinary Recruit All/Fort checks. Magi/Gargoyle remain open; rejected drafts
+were not installed. UP315 Windows run37769575838 now succeeds and publishes an
+Actions artifact for6c9b9df7c; actual archive artwork audit passes all3704 manifest
+entries and all864 declared transparent casting frames. Public
+Guild separation still awaits distinct authored components. These checks do
+not change identity counts. UP136 Defiant's separate runtime/state, minimum AI
+and focused fixture have now passed the gates recorded above. Confusion remains
+held on zero-advance Attack resolution.
+
+Bounded Castle creature audit,2026-10-08: the canonical Units section gives
+category rules and four experimental stat/economy rows, not a separate fourteen-
+form ability specification. Those overlays preserve inherited Crusader double
+attack, Griffin two retaliations and Royal Griffin unlimited retaliations, with
+actual attack-loop/CRetaliations consumers. Other inherited Castle abilities
+retain source consumers for shooting, charge immunity/Jousting, flight, Morale,
+hatred and Archangel creature casting. No missing specified principal consumer
+was established in this slice; no fresh row-specific runtime certification or
+invented ability denominator is implied by the126/126 category figure.
+
 UP313/314 local delivery is now verified, superseding the historical startup
 blocker recorded below. Source 6c9b9df7c / promoted Linux snapshot 4c887972
 contains Battlefield Medic, the narrow conditional-container crash fix and the
@@ -10,7 +46,8 @@ Castle Guild bookmarks render again. The 20-second headless smoke reaches day 5,
 and both isolated GUI runs clean up normally. This is required UI/delivery
 coverage, not an increase in spell/perk identities: 235/310 active perks and
 61/67 combat spells are unchanged. Public casting glows are bundled; public
-Guild component recovery and Windows run 37769575838 remain open under UP315.
+Guild component recovery remains open under UP315. Windows run37769575838 and
+its downloaded package pass source/resource identity checks, not gameplay tests.
 Other caster variants and existing nonfatal diagnostics remain Phase 2 checks.
 UP312 four-portrait corrections are the current user-priority implementation
 slice; do not silently return to the ordinary backlog while they are actionable.

@@ -25,18 +25,44 @@
 
 namespace
 {
+bool projectDefiant(HypotheticBattle & battle, const BattleAttackInfo & attack,
+	newHorizonsArmorer::DefiantDenialCause cause)
+{
+	if(!battle.battleCanUseDefiant(attack, cause))
+		return false;
+	const auto side = battle.playerToSide(battle.battleGetActionController(attack.defender));
+	auto state = battle.getArmorerDefiantState(side);
+	if(!state.consumeAt(battle.battleGetRound()))
+		return false;
+	battle.setArmorerDefiantState(side, state);
+	return true;
+}
+
+void replayDefiant(HypotheticBattle & battle, const DefiantDenialProjection & receipt)
+{
+	if(receipt.round != battle.battleGetRound()
+		|| (receipt.side != BattleSide::ATTACKER && receipt.side != BattleSide::DEFENDER))
+		throw std::runtime_error("Invalid projected Defiant consumption receipt");
+	auto state = battle.getArmorerDefiantState(receipt.side);
+	if(!state.consumeAt(receipt.round))
+		throw std::runtime_error("Projected Defiant allowance was already consumed");
+	battle.setArmorerDefiantState(receipt.side, state);
+}
+
 bool hasNightProwlerBonus(const battle::Unit * unit)
 {
 	return unit && unit->hasBonus(CSelector(newHorizonsShroud::isNightProwlerBonus));
 }
 
-bool projectNoQuarterAfterHit(const CBattleInfoCallback & battle, const BattleAttackInfo & attack,
+bool projectNoQuarterAfterHit(HypotheticBattle & battle, const BattleAttackInfo & attack,
 	StackWithBonuses & target)
 {
 	if(!battle.battleCanTriggerNoQuarter(attack) || !target.alive() || target.isTimeStopped()
 		|| !battle.battleMatchOwner(attack.attacker, &target)
 		|| !newHorizonsOffense::belowNoQuarterThreshold(
 			target.getAvailableHealth(), battle::getMaximumHealth(target)))
+		return false;
+	if(projectDefiant(battle, attack, newHorizonsArmorer::DefiantDenialCause::NO_QUARTER))
 		return false;
 
 	const int32_t moraleActivations = battle.getBattle()->getActiveStackID()
@@ -361,6 +387,9 @@ float BattleExchangeVariant::trackAttack(
 				&& newHorizonsShroud::hasEvasiveShroud(attackingHero);
 			if(strike.protectIntercepted)
 				hb->consumeHeroOrderProtectInterception(ap.attack.defender->unitId(), strike.defenderId);
+			for(const auto & receipt : strike.defiantDenials)
+				if(receipt.phase == DefiantDenialProjection::Phase::BEFORE_HITS)
+					replayDefiant(*hb, receipt);
 			std::vector<std::pair<uint32_t, int64_t>> actualHits;
 			actualHits.reserve(strike.hits.size());
 			struct PendingRebirth
@@ -403,6 +432,9 @@ float BattleExchangeVariant::trackAttack(
 				const auto projectedDamage = battleAIProjectDamage(target.get(), appliedDamage,
 					strike.damageProvenance);
 				target->damage(appliedDamage, false, strike.damageProvenance);
+				for(const auto & receipt : strike.defiantDenials)
+					if(receipt.phase == DefiantDenialProjection::Phase::AFTER_TARGET_HIT && receipt.targetId == unitId)
+						replayDefiant(*hb, receipt);
 				if(lastStand.triggered)
 				{
 					hb->applyArmorerLastStandDefend(unitId);
@@ -928,9 +960,19 @@ float BattleExchangeVariant::trackAttack(
 			}
 	}
 
+	bool ignoredInnate = false;
+	bool ignoredShroud = false;
+	if(!evaluateOnly && allowRetaliation && !shooting)
+	{
+		if(counterAttacksBlocked)
+			ignoredInnate = projectDefiant(*hb, projectedAttack, newHorizonsArmorer::DefiantDenialCause::INNATE_BLOCK);
+		if(!defender->hasBonus(firstStrikeSelector) && hb->battleShroudDeniesRetaliation(projectedAttack))
+			ignoredShroud = projectDefiant(*hb, projectedAttack, newHorizonsArmorer::DefiantDenialCause::EXPERT_SHROUD);
+	}
 	if(!evaluateOnly && allowRetaliation && attacker->alive() && defender->alive()
-		&& defender->ableToRetaliate() && !counterAttacksBlocked && !shooting
-		&& (!hb->battleShroudDeniesRetaliation(projectedAttack) || defender->hasBonus(firstStrikeSelector)))
+		&& defender->ableToRetaliate() && !shooting
+		&& (!counterAttacksBlocked || (ignoredInnate && !hb->battleHasMagicalRetaliationBlock(attacker.get())))
+		&& (!hb->battleShroudDeniesRetaliation(projectedAttack) || defender->hasBonus(firstStrikeSelector) || ignoredShroud))
 	{
 		BattleAttackInfo retaliationAttack(defender.get(), attacker.get(), 0, false);
 		retaliationAttack.retaliation = true;

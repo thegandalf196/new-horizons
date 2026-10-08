@@ -245,6 +245,7 @@ set(test_SRCS
 		server/battles/NewHorizonsVengeanceTest.cpp
 		server/battles/NewHorizonsCleaveTest.cpp
 		server/battles/NewHorizonsNoQuarterTest.cpp
+		server/battles/NewHorizonsDefiantTest.cpp
 		server/battles/NewHorizonsRelentlessAssaultTest.cpp
 		server/battles/NewHorizonsPursuitTest.cpp
 		server/battles/NewHorizonsDisciplineTest.cpp

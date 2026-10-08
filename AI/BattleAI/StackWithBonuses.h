@@ -367,6 +367,9 @@ public:
 	void awardBattlecraftMastery(BattleSide side, uint32_t unitId, int32_t round,
 		BattlecraftMasteryAction action) override;
 	bool armorerLastStandUsed(BattleSide side) const override;
+	ArmorerDefiantState getArmorerDefiantState(BattleSide side) const override;
+	const CGHeroInstance * getSideHero(BattleSide side) const override;
+	void setArmorerDefiantState(BattleSide side, const ArmorerDefiantState & state) override;
 	void consumeArmorerLastStand(BattleSide side) override;
 	void applyArmorerLastStandDefend(uint32_t unitId);
 	int32_t getBloodrageDamagePercent(BattleSide side) const override;
@@ -512,6 +515,7 @@ private:
 	BattleSideArray<int32_t> battlecraftMasteryAwardRounds;
 	/// Branch-local once-per-combat consumption for Armorer's first qualifying Last Stand.
 	BattleSideArray<bool> armorerLastStandUsedStates;
+	BattleSideArray<ArmorerDefiantState> armorerDefiantStates;
 	BattleSideArray<std::uint8_t> completedHeroSpellLevelMasks;
 	BattleSideArray<bool> counterspellArmedStates;
 	BattleSideArray<bool> countersequenceArmedStates;

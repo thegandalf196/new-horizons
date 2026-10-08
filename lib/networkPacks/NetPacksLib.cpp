@@ -522,6 +522,27 @@ void BattleReducedExtraActivationStateChanged::visitTyped(ICPackVisitor & visito
 	visitor.visitBattleReducedExtraActivationStateChanged(*this);
 }
 
+void SetArmorerDefiantState::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitSetArmorerDefiantState(*this);
+}
+
+void SetArmorerDefiantState::validateAgainst(const CBattleInfoCallback & battle) const
+{
+	const auto * current = battle.getBattle();
+	if(!current || current->getBattleID() != battleID)
+		throw std::runtime_error("Defiant consumption targets another battle");
+	validateTransitionFrom(current->getArmorerDefiantState(side), current->getRound());
+	const auto * attacker = battle.battleGetUnitByID(attackerId);
+	const auto * target = battle.battleGetUnitByID(targetId);
+	if(!attacker || !target)
+		throw std::runtime_error("Defiant consumption references a missing unit");
+	BattleAttackInfo attack(attacker, target, 0, false);
+	if(battle.playerToSide(battle.battleGetActionController(target)) != side
+		|| !battle.battleCanUseDefiant(attack, cause))
+		throw std::runtime_error("Defiant consumption has no eligible enemy denial");
+}
+
 void SetSpellResponseState::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitSetSpellResponseState(*this);

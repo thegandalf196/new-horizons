@@ -1400,6 +1400,55 @@ int CBattleInfoCallback::battleGetFearChance(const battle::Unit * affected) cons
 	return bonuses ? bonuses->totalValue() : 0;
 }
 
+bool CBattleInfoCallback::battleHasMagicalRetaliationBlock(const battle::Unit * attacker) const
+{
+	return attacker && attacker->hasBonus(CSelector([](const Bonus * bonus)
+	{
+		return bonus->type == BonusType::BLOCKS_RETALIATION && bonus->source == BonusSource::SPELL_EFFECT;
+	}));
+}
+
+bool CBattleInfoCallback::battleCanUseDefiant(
+	const BattleAttackInfo & attack, newHorizonsArmorer::DefiantDenialCause cause) const
+{
+	using Cause = newHorizonsArmorer::DefiantDenialCause;
+	const auto * current = getBattle();
+	const auto * attacker = attack.attacker;
+	const auto * target = attack.defender;
+	if(!current || !attacker || !target || !attack.physicalDamage || attack.shooting
+		|| !heroCommands::isCanonicalRules(current->getHeroCommandRules())
+		|| !attacker->alive() || !target->alive() || target->isTimeStopped()
+		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(target)
+		|| !target->ableToRetaliate())
+		return false;
+	const auto controller = battleGetActionController(target);
+	const auto side = playerToSide(controller);
+	const auto enemySide = playerToSide(battleGetActionController(attacker));
+	if(side == BattleSide::NONE || enemySide == BattleSide::NONE || side == enemySide
+		|| !current->getArmorerDefiantState(side).availableAt(current->getRound()))
+		return false;
+	const auto * hero = current->getSideHero(side);
+	if(!hero || !hero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.defiant"))
+		return false;
+	// No Quarter is a complete applied status affecting later retaliation capacity;
+	// ignoring it is not permission to retaliate against an out-of-reach current blow.
+	if(cause == Cause::NO_QUARTER)
+		return battleCanTriggerNoQuarter(attack)
+			&& newHorizonsOffense::belowNoQuarterThreshold(target->getAvailableHealth(), battle::getMaximumHealth(*target));
+	if(attack.retaliation || attack.secondaryAttack || attack.bracePreemptive || attacker->isInvincible()
+		|| !isMeleeAttackPossible(attacker, target, attack.attackerPos, attack.defenderPos)
+		|| isLongWeaponAttack(attacker, target, attack.attackerPos))
+		return false;
+	if(cause == Cause::INNATE_BLOCK)
+		return attacker->hasBonus(CSelector([](const Bonus * bonus)
+		{
+			return bonus->type == BonusType::BLOCKS_RETALIATION && bonus->source != BonusSource::SPELL_EFFECT;
+		}));
+	if(cause == Cause::EXPERT_SHROUD)
+		return battleShroudDeniesRetaliation(attack);
+	return false;
+}
+
 bool CBattleInfoCallback::battleShroudDeniesRetaliation(const BattleAttackInfo & attack) const
 {
 	return battleIsShroudFlankingAttack(attack)
@@ -3877,12 +3926,16 @@ DamageEstimation CBattleInfoCallback::battleEstimateDamage(const BattleAttackInf
 	if (!bai.defender->ableToRetaliate())	//FIXME: handle situation when NO_RETALIATION bonus is removed during attack
 		return ret;
 
-	if (bai.attacker->hasBonusOfType(BonusType::BLOCKS_RETALIATION) || bai.attacker->isInvincible() || isLongWeaponAttack(bai.attacker, bai.defender))
+	const bool ignoreInnate = battleCanUseDefiant(bai, newHorizonsArmorer::DefiantDenialCause::INNATE_BLOCK);
+	const bool blocked = bai.attacker->hasBonusOfType(BonusType::BLOCKS_RETALIATION)
+		&& (!ignoreInnate || battleHasMagicalRetaliationBlock(bai.attacker));
+	if(blocked || bai.attacker->isInvincible() || isLongWeaponAttack(bai.attacker, bai.defender))
 		return ret;
 
 	static const auto firstStrikeSelector = Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeAll)
 		.Or(Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeMelee));
-	if(battleShroudDeniesRetaliation(bai) && !bai.defender->hasBonus(firstStrikeSelector))
+	if(battleShroudDeniesRetaliation(bai) && !bai.defender->hasBonus(firstStrikeSelector)
+		&& (ignoreInnate || !battleCanUseDefiant(bai, newHorizonsArmorer::DefiantDenialCause::EXPERT_SHROUD)))
 		return ret;
 
 	//TODO: rewire once more using interval-based fuzzy arithmetic

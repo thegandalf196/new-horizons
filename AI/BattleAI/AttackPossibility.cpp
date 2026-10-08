@@ -28,6 +28,8 @@
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 
+#include <array>
+
 #include "../../lib/GameLibrary.h"
 
 #include <vcmi/spells/Service.h>
@@ -36,6 +38,22 @@
 
 namespace
 {
+bool projectDefiant(HypotheticBattle & battle, const BattleAttackInfo & attack,
+	newHorizonsArmorer::DefiantDenialCause cause, FortuneStrikeProjection & strike)
+{
+	if(!battle.battleCanUseDefiant(attack, cause))
+		return false;
+	const auto side = battle.playerToSide(battle.battleGetActionController(attack.defender));
+	const auto round = battle.battleGetRound();
+	auto state = battle.getArmorerDefiantState(side);
+	if(!state.consumeAt(round))
+		return false;
+	battle.setArmorerDefiantState(side, state);
+	strike.defiantDenials.push_back({side, cause, attack.defender->unitId(), round,
+		DefiantDenialProjection::Phase::AFTER_TARGET_HIT});
+	return true;
+}
+
 bool hasPendingRangedFollowUp(const battle::Unit * unit)
 {
 	const auto * state = unit ? dynamic_cast<const battle::CUnitState *>(unit) : nullptr;
@@ -810,6 +828,13 @@ AttackPossibility AttackPossibility::evaluate(
 		const bool projectsNoQuarter = !attackInfo.shooting && attackInfo.physicalDamage
 			&& (state->battleCanTriggerNoQuarter(attackInfo)
 				|| state->battleCanTriggerNoQuarter(potentialRetaliation));
+		const bool projectsDefiant = !attackInfo.shooting && attackInfo.physicalDamage
+			&& std::ranges::any_of(std::array{BattleSide::ATTACKER, BattleSide::DEFENDER}, [&state](BattleSide side)
+			{
+				const auto * hero = state->getBattle()->getSideHero(side);
+				return hero && hero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.defiant")
+					&& state->getBattle()->getArmorerDefiantState(side).availableAt(state->battleGetRound());
+			});
 		const bool projectsCleave = !attackInfo.shooting && !attackInfo.retaliation
 			&& !attackInfo.secondaryAttack && !attackInfo.bracePreemptive
 			&& attackInfo.preemptiveDamagePercent <= 0 && attackInfo.cleaveDamagePercent <= 0
@@ -983,14 +1008,14 @@ AttackPossibility AttackPossibility::evaluate(
 				|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 				|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune || projectsPerfectFortune
 				|| projectsNoEscape || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
-				|| projectsNightProwler || projectsBloodragePain || projectsLastStand)
+				|| projectsNightProwler || projectsBloodragePain || projectsLastStand || projectsDefiant)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
 	if(projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 			|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune || projectsPerfectFortune
 			|| projectsNoEscape || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
-			|| projectsNightProwler || projectsBloodragePain || projectsLastStand)
+			|| projectsNightProwler || projectsBloodragePain || projectsLastStand || projectsDefiant)
 			ap.effectPreview = fortunePreview;
 	if(crossesNightProwlerEnemy && fortunePreview)
 		fortunePreview->addUnitBonus(attacker->unitId(), newHorizonsShroud::nightProwlerDamageBonuses());
@@ -1552,13 +1577,29 @@ AttackPossibility AttackPossibility::evaluate(
 				}
 				if(appliesNoQuarter && defenderState->alive())
 				{
-					fortunePreview->getForUpdate(u->unitId())->applyNoQuarter(moraleActivations, true);
-					strike.noQuarterTargets.emplace_back(u->unitId(), moraleActivations);
+					if(!projectDefiant(*fortunePreview, victimAttack, newHorizonsArmorer::DefiantDenialCause::NO_QUARTER, strike))
+					{
+						fortunePreview->getForUpdate(u->unitId())->applyNoQuarter(moraleActivations, true);
+						strike.noQuarterTargets.emplace_back(u->unitId(), moraleActivations);
+					}
+				}
+				bool ignoredInnate = false;
+				bool ignoredShroud = false;
+				if(fortunePreview && i == 0 && !attackInfo.shooting && !longReachAttack
+					&& u->unitId() == strikeDefender->unitId())
+				{
+					if(counterAttacksBlocked)
+						ignoredInnate = projectDefiant(*fortunePreview, victimAttack,
+							newHorizonsArmorer::DefiantDenialCause::INNATE_BLOCK, strike);
+					if(!defenderState->hasBonus(firstStrikeSelector) && fortunePreview->battleShroudDeniesRetaliation(victimAttack))
+						ignoredShroud = projectDefiant(*fortunePreview, victimAttack,
+							newHorizonsArmorer::DefiantDenialCause::EXPERT_SHROUD, strike);
 				}
 
 				if(i == 0 && !attackInfo.shooting && !longReachAttack && u->unitId() == strikeDefender->unitId()
-					&& retaliatorState->alive() && retaliatorState->ableToRetaliate() && !counterAttacksBlocked
-					&& (!state->battleShroudDeniesRetaliation(victimAttack) || defenderState->hasBonus(firstStrikeSelector))
+					&& retaliatorState->alive() && retaliatorState->ableToRetaliate()
+					&& (!counterAttacksBlocked || (ignoredInnate && !fortunePreview->battleHasMagicalRetaliationBlock(ap.attackerState.get())))
+					&& (!state->battleShroudDeniesRetaliation(victimAttack) || defenderState->hasBonus(firstStrikeSelector) || ignoredShroud)
 					&& !ap.attackerState->isInvincible() && !state->isLongWeaponAttack(ap.attackerState.get(), defenderState.get())
 					&& state->isMeleeAttackPossible(ap.attackerState.get(), defenderState.get()))
 				{
@@ -1949,8 +1990,11 @@ AttackPossibility AttackPossibility::evaluate(
 							targetState->getAvailableHealth(), battle::getMaximumHealth(*targetState)))
 					{
 						const int32_t moraleActivations = noQuarterMoraleActivations(*state, targetState->unitId());
-						fortunePreview->getForUpdate(targetState->unitId())->applyNoQuarter(moraleActivations, true);
-						cleave->noQuarterTargets.emplace_back(targetState->unitId(), moraleActivations);
+						if(!projectDefiant(*fortunePreview, cleaveAttack, newHorizonsArmorer::DefiantDenialCause::NO_QUARTER, *cleave))
+						{
+							fortunePreview->getForUpdate(targetState->unitId())->applyNoQuarter(moraleActivations, true);
+							cleave->noQuarterTargets.emplace_back(targetState->unitId(), moraleActivations);
+						}
 					}
 					if(targetState->unitId() == defender->unitId())
 						ap.defenderDead = !targetState->alive();
@@ -2112,8 +2156,11 @@ AttackPossibility AttackPossibility::evaluate(
 							targetState->getAvailableHealth(), battle::getMaximumHealth(*targetState)))
 					{
 						const int32_t moraleActivations = noQuarterMoraleActivations(*state, targetState->unitId());
-						fortunePreview->getForUpdate(targetState->unitId())->applyNoQuarter(moraleActivations, true);
-						retaliation->noQuarterTargets.emplace_back(targetState->unitId(), moraleActivations);
+						if(!projectDefiant(*fortunePreview, retaliationAttack, newHorizonsArmorer::DefiantDenialCause::NO_QUARTER, *retaliation))
+						{
+							fortunePreview->getForUpdate(targetState->unitId())->applyNoQuarter(moraleActivations, true);
+							retaliation->noQuarterTargets.emplace_back(targetState->unitId(), moraleActivations);
+						}
 					}
 				}
 				if(retaliation && (targetState->unitId() == retaliation->defenderId

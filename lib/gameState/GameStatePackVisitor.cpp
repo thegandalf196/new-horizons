@@ -2787,6 +2787,15 @@ void GameStatePackVisitor::visitBattleReducedExtraActivationStateChanged(BattleR
 	battle->setReducedExtraActivationState(pack.side, pack.state);
 }
 
+void GameStatePackVisitor::visitSetArmorerDefiantState(SetArmorerDefiantState & pack)
+{
+	auto * battle = gs.getBattle(pack.battleID);
+	if(!battle)
+		throw std::runtime_error("Missing battle for Defiant consumption");
+	pack.validateAgainst(*battle);
+	battle->setArmorerDefiantState(pack.side, pack.state);
+}
+
 void GameStatePackVisitor::visitSetSpellResponseState(SetSpellResponseState & pack)
 {
 	auto * battle = gs.getBattle(pack.battleID);
@@ -3473,6 +3482,15 @@ void BattleStatePackVisitor::visitBattleReducedExtraActivationStateChanged(Battl
 		throw std::runtime_error("Reduced extra activation state update targets another battle");
 	pack.validateTransitionFrom(battleState.getReducedExtraActivationState(pack.side));
 	battleState.setReducedExtraActivationState(pack.side, pack.state);
+}
+
+void BattleStatePackVisitor::visitSetArmorerDefiantState(SetArmorerDefiantState & pack)
+{
+	const auto * battle = dynamic_cast<const CBattleInfoCallback *>(&battleState);
+	if(!battle)
+		throw std::runtime_error("Defiant consumption requires a shared battle callback");
+	pack.validateAgainst(*battle);
+	battleState.setArmorerDefiantState(pack.side, pack.state);
 }
 
 void BattleStatePackVisitor::visitSetSpellResponseState(SetSpellResponseState & pack)

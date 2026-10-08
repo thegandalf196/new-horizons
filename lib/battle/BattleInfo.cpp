@@ -148,6 +148,16 @@ void BattleInfo::setReducedExtraActivationState(BattleSide side, const ReducedEx
 	sides.at(side).reducedExtraActivation = state;
 }
 
+void BattleInfo::setArmorerDefiantState(BattleSide side, const ArmorerDefiantState & state)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::invalid_argument("Invalid side for Defiant state");
+	state.validate();
+	if(state.lastConsumedRound > round || state.lastConsumedRound < sides.at(side).armorerDefiant.lastConsumedRound)
+		throw std::runtime_error("Defiant consumption history cannot be rewound or set in the future");
+	sides.at(side).armorerDefiant = state;
+}
+
 void BattleInfo::setSpellResponseState(BattleSide side, const SpellResponseState & state)
 {
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)

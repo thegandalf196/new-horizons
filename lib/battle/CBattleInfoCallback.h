@@ -20,6 +20,7 @@
 #include "FocusFireState.h"
 #include "BattleUnitTurnReason.h"
 #include "ReducedExtraActivationState.h"
+#include "ArmorerDefiantState.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 #include "../spells/SpellCostBreakdown.h"
 
@@ -223,6 +224,8 @@ public:
 	bool battleHasBastionProtection(const battle::Unit * defender) const;
 	/// Expert Shroud flanks deny the defender's normal retaliation.
 	bool battleShroudDeniesRetaliation(const BattleAttackInfo & attack) const;
+	bool battleCanUseDefiant(const BattleAttackInfo & attack, newHorizonsArmorer::DefiantDenialCause cause) const;
+	bool battleHasMagicalRetaliationBlock(const battle::Unit * attacker) const;
 	/// Validates target coverage and snapshots all transient state for a canonical Order.
 	std::optional<HeroOrderState> battlePrepareHeroOrderState(BattleSide side, HeroCommand command,
 		const std::vector<uint32_t> & targetUnitIds) const;

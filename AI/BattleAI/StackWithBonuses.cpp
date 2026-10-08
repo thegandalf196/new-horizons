@@ -940,6 +940,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 		relentlessAssaultStates[side] = realBattle->getBattle()->getRelentlessAssaultState(side);
 		battlecraftMasteryAwardRounds[side] = realBattle->getBattle()->getBattlecraftMasteryAwardRound(side);
 		armorerLastStandUsedStates[side] = realBattle->getBattle()->armorerLastStandUsed(side);
+		armorerDefiantStates[side] = realBattle->getBattle()->getArmorerDefiantState(side);
 		warcastingStates[side] = realBattle->getBattle()->getWarcastingState(side);
 		heroActionAllowances[side] = realBattle->getBattle()->getHeroActionAllowances(side);
 		doubleCommandStates[side] = realBattle->getBattle()->getDoubleCommandState(side);
@@ -2004,6 +2005,33 @@ bool HypotheticBattle::armorerLastStandUsed(BattleSide side) const
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return false;
 	return armorerLastStandUsedStates.at(side);
+}
+
+const CGHeroInstance * HypotheticBattle::getSideHero(BattleSide side) const
+{
+	// Internal IBattleInfo rule resolution needs both actual side heroes. Public
+	// battleGetFightingHero still applies the callback's player visibility gate.
+	return subject->getBattle()->getSideHero(side);
+}
+
+ArmorerDefiantState HypotheticBattle::getArmorerDefiantState(BattleSide side) const
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::runtime_error("Invalid hypothetical Defiant side");
+	return armorerDefiantStates.at(side);
+}
+
+void HypotheticBattle::setArmorerDefiantState(BattleSide side, const ArmorerDefiantState & state)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::runtime_error("Invalid hypothetical Defiant side");
+	state.validate();
+	const auto previous = armorerDefiantStates.at(side);
+	if(state == previous)
+		return;
+	if(state.lastConsumedRound != battleGetRound() || !previous.availableAt(battleGetRound()))
+		throw std::runtime_error("Invalid hypothetical Defiant consumption transition");
+	armorerDefiantStates.at(side) = state;
 }
 
 void HypotheticBattle::consumeArmorerLastStand(BattleSide side)

@@ -70,6 +70,25 @@ bool armorerLastStandEndedActivation(const CStack * stack)
 	return state && state->armorerLastStandEndedActivation;
 }
 
+bool consumeDefiant(CGameHandler & gameHandler, const CBattleInfoCallback & battle,
+	const BattleAttackInfo & attack, newHorizonsArmorer::DefiantDenialCause cause)
+{
+	if(!battle.battleCanUseDefiant(attack, cause))
+		return false;
+	const auto side = battle.playerToSide(battle.battleGetActionController(attack.defender));
+	SetArmorerDefiantState update;
+	update.battleID = battle.getBattle()->getBattleID();
+	update.side = side;
+	update.attackerId = attack.attacker->unitId();
+	update.targetId = attack.defender->unitId();
+	update.cause = cause;
+	update.state = battle.getBattle()->getArmorerDefiantState(side);
+	if(!update.state.consumeAt(battle.getBattle()->getRound()))
+		return false;
+	gameHandler.sendAndApply(update);
+	return true;
+}
+
 bool isLongReachAttack(const CBattleInfoCallback & battle, const battle::Unit * attacker,
 	const battle::Unit * defender)
 {
@@ -1820,7 +1839,16 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 		if(!attackTarget)
 			return false;
 		//first strike
-		if(i == 0 && firstStrike && openingAttackTarget->ableToRetaliate() && !stack->hasBonusOfType(BonusType::BLOCKS_RETALIATION) && !stack->isInvincible() && !longWeaponAttack && !longReachAttack)
+		bool firstStrikeBlocked = stack->hasBonusOfType(BonusType::BLOCKS_RETALIATION);
+		if(i == 0 && firstStrike && openingAttackTarget->ableToRetaliate()
+			&& !stack->isInvincible() && !longWeaponAttack && !longReachAttack)
+		{
+			const BattleAttackInfo denial(stack, openingAttackTarget, movementResult.distance, false);
+			if(consumeDefiant(*gameHandler, battle, denial, newHorizonsArmorer::DefiantDenialCause::INNATE_BLOCK))
+				firstStrikeBlocked = battle.battleHasMagicalRetaliationBlock(stack);
+		}
+		if(i == 0 && firstStrike && openingAttackTarget->ableToRetaliate() && !firstStrikeBlocked
+			&& !stack->isInvincible() && !longWeaponAttack && !longReachAttack)
 		{
 			makeAttack(battle, openingAttackTarget, stack, {.targetHex = stack->getPosition(), .first = true,
 				.counter = true, .retaliation = true});
@@ -1854,13 +1882,26 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 
 		//counterattack
 		//we check retaliation twice, so if it unblocked during attack it will work only on next attack
+		bool counterBlocked = stack->hasBonusOfType(BonusType::BLOCKS_RETALIATION);
+		bool shroudBlocked = battle.battleShroudDeniesRetaliation(
+			BattleAttackInfo(stack, attackTarget, movementResult.distance, false));
+		if(stack->alive() && !stack->isInvincible() && !longWeaponAttack && !longReachAttack
+			&& i == 0 && !firstStrike && attackTarget->ableToRetaliate())
+		{
+			const BattleAttackInfo denial(stack, attackTarget, movementResult.distance, false);
+			if(consumeDefiant(*gameHandler, battle, denial, newHorizonsArmorer::DefiantDenialCause::INNATE_BLOCK))
+				counterBlocked = battle.battleHasMagicalRetaliationBlock(stack);
+			if(shroudBlocked && consumeDefiant(*gameHandler, battle, denial,
+				newHorizonsArmorer::DefiantDenialCause::EXPERT_SHROUD))
+				shroudBlocked = false;
+		}
 		if(stack->alive()
-			&& !stack->hasBonusOfType(BonusType::BLOCKS_RETALIATION)
+			&& !counterBlocked
 			&& !stack->isInvincible()
 			&& !longWeaponAttack
 			&& !longReachAttack
 			&& (i == 0 && !firstStrike)
-			&& !battle.battleShroudDeniesRetaliation(BattleAttackInfo(stack, attackTarget, movementResult.distance, false))
+			&& !shroudBlocked
 			&& attackTarget->ableToRetaliate())
 		{
 			makeAttack(battle, attackTarget, stack, {.targetHex = stack->getPosition(), .first = true,
@@ -4943,6 +4984,13 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 				|| !battle.battleMatchOwner(attacker, target)
 				|| !newHorizonsOffense::belowNoQuarterThreshold(
 					target->getAvailableHealth(), battle::getMaximumHealth(*target)))
+				continue;
+
+			// Ignore this complete application, not an earlier package or an unrelated denial.
+			auto defiantApplication = noQuarterAttack;
+			defiantApplication.defender = target;
+			if(consumeDefiant(*gameHandler, battle, defiantApplication,
+				newHorizonsArmorer::DefiantDenialCause::NO_QUARTER))
 				continue;
 
 			SetStackEffect effects;

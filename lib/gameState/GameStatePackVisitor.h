@@ -140,6 +140,7 @@ public:
 	void visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack) override;
 	void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) override;
 	void visitSetSpellResponseState(SetSpellResponseState & pack) override;
+	void visitSetArmorerDefiantState(SetArmorerDefiantState & pack) override;
 	void visitSetOverwhelmingFormulaState(SetOverwhelmingFormulaState & pack) override;
 	void visitSetBattlecraftMasteryAward(SetBattlecraftMasteryAward & pack) override;
 	void visitSetRewardableConfiguration(SetRewardableConfiguration & pack) override;
@@ -173,6 +174,7 @@ public:
 	void visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack) override;
 	void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) override;
 	void visitSetSpellResponseState(SetSpellResponseState & pack) override;
+	void visitSetArmorerDefiantState(SetArmorerDefiantState & pack) override;
 	void visitSetOverwhelmingFormulaState(SetOverwhelmingFormulaState & pack) override;
 	void visitSetBattlecraftMasteryAward(SetBattlecraftMasteryAward & pack) override;
 };

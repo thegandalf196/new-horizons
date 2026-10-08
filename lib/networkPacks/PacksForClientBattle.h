@@ -51,6 +51,8 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info)
 			info->validatePerfectFortuneSerialization(h);
 		if(h.saving && info)
+			info->validateDefiantSerialization(h);
+		if(h.saving && info)
 		{
 			info->validateConfusionStates();
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_CONFUSION_STATE) && info->hasConfusionState())
@@ -355,6 +357,52 @@ struct DLL_LINKAGE BattleReducedExtraActivationStateChanged : public CPackForCli
 				: "Cannot deserialize reduced extra activation update from an older format");
 		h & battleID;
 		h & side;
+		h & state;
+		validateShape();
+	}
+};
+
+/// Consumes one cause-specific exemption after validating the actual enemy denial.
+struct DLL_LINKAGE SetArmorerDefiantState : public CPackForClient
+{
+	BattleID battleID = BattleID::NONE;
+	BattleSide side = BattleSide::NONE;
+	uint32_t attackerId = std::numeric_limits<uint32_t>::max();
+	uint32_t targetId = std::numeric_limits<uint32_t>::max();
+	newHorizonsArmorer::DefiantDenialCause cause = newHorizonsArmorer::DefiantDenialCause::INNATE_BLOCK;
+	ArmorerDefiantState state;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+	void validateAgainst(const CBattleInfoCallback & battle) const;
+	void validateShape() const
+	{
+		using Cause = newHorizonsArmorer::DefiantDenialCause;
+		if(battleID == BattleID::NONE || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			|| attackerId == std::numeric_limits<uint32_t>::max() || targetId == std::numeric_limits<uint32_t>::max()
+			|| attackerId == targetId || state.lastConsumedRound < 0
+			|| (cause != Cause::INNATE_BLOCK && cause != Cause::NO_QUARTER && cause != Cause::EXPERT_SHROUD))
+			throw std::runtime_error("Invalid Defiant consumption packet");
+		state.validate();
+	}
+	void validateTransitionFrom(const ArmorerDefiantState & previous, int32_t currentRound) const
+	{
+		validateShape();
+		previous.validate();
+		auto expected = previous;
+		if(!expected.consumeAt(currentRound) || expected != state)
+			throw std::runtime_error("Defiant packet is not a first current-round consumption");
+	}
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_ARMORER_DEFIANT))
+			throw std::runtime_error("Defiant consumption packet requires the Defiant serialization feature");
+		if(h.saving)
+			validateShape();
+		h & battleID;
+		h & side;
+		h & attackerId;
+		h & targetId;
+		h & cause;
 		h & state;
 		validateShape();
 	}

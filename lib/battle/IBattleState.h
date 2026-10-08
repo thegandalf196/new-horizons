@@ -26,6 +26,7 @@
 #include "SpellResponseState.h"
 #include "OverwhelmingFormulaState.h"
 #include "PerfectFortuneState.h"
+#include "ArmorerDefiantState.h"
 #include "BattleDeploymentState.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
@@ -196,6 +197,7 @@ public:
 	virtual int32_t getBloodragePainIncrement(BattleSide side) const { (void)side; return 0; }
 	virtual SylvanLuckState getSylvanLuckState(BattleSide side) const { return {}; }
 	virtual PerfectFortuneState getPerfectFortuneState(BattleSide side) const { (void)side; return {}; }
+	virtual ArmorerDefiantState getArmorerDefiantState(BattleSide side) const { (void)side; return {}; }
 	virtual AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const { (void)side; return {}; }
 	virtual MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const { (void)side; return {}; }
 	virtual const ReducedExtraActivationState & getReducedExtraActivationState(BattleSide side) const
@@ -320,6 +322,7 @@ public:
 	virtual void setSpellResponseState(BattleSide, const SpellResponseState &) {}
 	virtual void setOverwhelmingFormulaState(BattleSide, const OverwhelmingFormulaState &) {}
 	virtual void setPerfectFortuneState(BattleSide, const PerfectFortuneState &) {}
+	virtual void setArmorerDefiantState(BattleSide, const ArmorerDefiantState &) {}
 	/// Applies the accepted first Wait/Defend Battlefield Mastery award.
 	/// Implementations with detached state should update only their own branch.
 	virtual void awardBattlecraftMastery(BattleSide, uint32_t, int32_t, BattlecraftMasteryAction) {}

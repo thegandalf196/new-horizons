@@ -124,6 +124,7 @@ public:
 	virtual void visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack) {}
 	virtual void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) {}
 	virtual void visitSetSpellResponseState(SetSpellResponseState & pack) {}
+	virtual void visitSetArmorerDefiantState(SetArmorerDefiantState & pack) {}
 	virtual void visitSetOverwhelmingFormulaState(SetOverwhelmingFormulaState & pack) {}
 	virtual void visitSetBattlecraftMasteryAward(SetBattlecraftMasteryAward & pack) {}
 	virtual void visitEndAction(EndAction & pack) {}

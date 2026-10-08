@@ -245,7 +245,7 @@
 					"requires": "advanced",
 					"description": "The first non-magical enemy effect each round that would prevent a friendly stack from retaliating is ignored.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The first non-magical enemy effect each round that would prevent a friendly stack from retaliating is ignored."
 					}
 				},

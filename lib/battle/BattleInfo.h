@@ -125,6 +125,22 @@ public:
 		return sides.at(side).perfectFortune;
 	}
 	void setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state) override;
+	ArmorerDefiantState getArmorerDefiantState(BattleSide side) const override
+	{
+		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			return {};
+		return sides.at(side).armorerDefiant;
+	}
+	void setArmorerDefiantState(BattleSide side, const ArmorerDefiantState & state) override;
+	template <typename Handler> void validateDefiantSerialization(Handler & h) const
+	{
+		for(const auto & side : sides)
+		{
+			side.armorerDefiant.validateSerialization(h);
+			if(side.armorerDefiant.lastConsumedRound > round)
+				throw std::runtime_error("Defiant consumption history is in a future round");
+		}
+	}
 	template <typename Handler> void validatePerfectFortuneSerialization(Handler & h) const
 	{
 		for(const auto & side : sides)
@@ -279,6 +295,8 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateDefiantSerialization(h);
 		if(h.saving)
 			validatePerfectFortuneSerialization(h);
 		if(h.saving)
@@ -829,6 +847,7 @@ public:
 		if(!h.saving)
 		{
 			validateConfusionStates();
+			validateDefiantSerialization(h);
 			validateSpellResponseStates();
 			validateOverwhelmingFormulaStates();
 			// Reject null/ambiguous unit references before postDeserialize dereferences

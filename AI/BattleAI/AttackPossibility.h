@@ -58,6 +58,17 @@ inline BattleAIDamageProjection battleAIProjectDamage(const battle::Unit * targe
 	return {appliedDamage, appliedDamage};
 }
 
+/// Accepted branch-local exemption, not a persistent ignore-retaliation flag.
+struct DefiantDenialProjection
+{
+	enum class Phase : uint8_t { BEFORE_HITS, AFTER_TARGET_HIT };
+	BattleSide side = BattleSide::NONE;
+	newHorizonsArmorer::DefiantDenialCause cause = newHorizonsArmorer::DefiantDenialCause::INNATE_BLOCK;
+	uint32_t targetId = 0;
+	int32_t round = -1;
+	Phase phase = Phase::AFTER_TARGET_HIT;
+};
+
 /// One physical attack (or its retaliation) in the read-only attack preview.
 /// Keeping these deltas lets a committed preview replay Fortune aftermath at
 /// the same boundaries as the authoritative action instead of collapsing a
@@ -90,6 +101,9 @@ struct FortuneStrikeProjection
 	/// Targets receiving No Quarter after these hits, paired with remaining
 	/// accepted activations before the projected Morale penalty expires.
 	std::vector<std::pair<uint32_t, int32_t>> noQuarterTargets;
+	/// Causal side/cause receipts survive recipient death/control changes and
+	/// omission of the whole ignored No Quarter package. Replay in event order.
+	std::vector<DefiantDenialProjection> defiantDenials;
 };
 
 class DamageCache
