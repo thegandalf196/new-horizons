@@ -30,21 +30,10 @@ struct Link
 	bool operator==(const Link &) const = default;
 };
 
-/// Returns the current effective Protect pair without inspecting hero visibility or mutating battle state.
-inline std::optional<Link> activeLink(const CBattleInfoCallback & battle, BattleSide side)
+/// Current occupied endpoints, shared by effective and proposed pairs.
+inline std::optional<Link> footprintLink(const battle::Unit * protector, const battle::Unit * ward)
 {
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		return std::nullopt;
-
-	const auto order = battle.battleGetHeroOrderState(side, HeroCommand::PROTECT);
-	if(!order)
-		return std::nullopt;
-
-	const auto * protector = battle.battleGetUnitByID(order->primaryTargetUnitId);
-	const auto * ward = battle.battleGetUnitByID(order->secondaryTargetUnitId);
-	if(!protector || !ward
-		|| !battle.battleOrderBenefitAppliesTo(*order, side, protector)
-		|| !battle.battleOrderBenefitAppliesTo(*order, side, ward))
+	if(!protector || !ward)
 		return std::nullopt;
 
 	Link result;
@@ -60,5 +49,33 @@ inline std::optional<Link> activeLink(const CBattleInfoCallback & battle, Battle
 		return std::nullopt;
 
 	return result;
+}
+
+/// Returns the current effective Protect pair without inspecting hero visibility or mutating battle state.
+inline std::optional<Link> activeLink(const CBattleInfoCallback & battle, BattleSide side)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return std::nullopt;
+	const auto order = battle.battleGetHeroOrderState(side, HeroCommand::PROTECT);
+	if(!order)
+		return std::nullopt;
+	const auto * protector = battle.battleGetUnitByID(order->primaryTargetUnitId);
+	const auto * ward = battle.battleGetUnitByID(order->secondaryTargetUnitId);
+	if(!protector || !ward
+		|| !battle.battleOrderBenefitAppliesTo(*order, side, protector)
+		|| !battle.battleOrderBenefitAppliesTo(*order, side, ward))
+		return std::nullopt;
+	return footprintLink(protector, ward);
+}
+
+/// Read-only legal Protector->Ward preview, using authoritative live-footprint adjacency and action admission.
+inline std::optional<Link> proposedLink(const CBattleInfoCallback & battle, BattleSide side,
+	uint32_t protectorUnitId, uint32_t wardUnitId)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return std::nullopt;
+	if(!battle.battlePrepareHeroOrderState(side, HeroCommand::PROTECT, {protectorUnitId, wardUnitId}))
+		return std::nullopt;
+	return footprintLink(battle.battleGetUnitByID(protectorUnitId), battle.battleGetUnitByID(wardUnitId));
 }
 }

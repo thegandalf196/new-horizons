@@ -2,14 +2,26 @@
 
 Updated: 2026-10-07
 
+Current registry audit,2026-10-07: config/newHorizonsPerks.json contains31 Skills
+and93 active ranks,157 active/63 planned generic perks (220 total),71 active/19
+planned faction perks (90 total). Activation status is not proof of exhaustive
+cross-system or playable verification. Required UI work below does not add perk,
+spell or Order identities.
+
 Current bounded coverage audit: Protect's canonical two-step targeting requires
 a proposed Protector-to-hovered-Ward adjacency-link preview (canonical Order
 targeting section). Existing legal-hex shading/selected footprint works, and
 BattleFieldController::showProtectLinks draws synchronized active Orders only.
-The pre-commit pair preview remains missing; UP274's active-link receipt does
-not close it. Next unblocked required-combat-UI slice after open user priorities:
-BattleActionsController targeting readback plus shared link geometry/renderer,
-focused legal/illegal/double-wide/cancel/no-state-mutation checks. No additional
+The pre-commit pair preview is now implemented in source under UP274 but awaits
+playable verification: BattleActionsController targeting readback,
+shared authoritative pair legality/current-footprint geometry and existing amber
+renderer. Invalid hover/cancel/stale round, battle, hero or player suppresses
+the proposal; repeated readback must not spend an action or create an Order.
+Seven new focused native cases plus six existing active-link cases pass13/13
+after ten-job client/test build78164 exits0. Source guard and independent Sol
+High review pass. Rendered controller/input
+acceptance is unverified. UP274's earlier active-link receipt alone did not close
+this distinct requirement. No additional
 Order identity is counted; all eight Orders already have production execution.
 Recruitment layout revision now passes ten-job linked client compilation,
 focused recruitment/Muster geometry guards and independent Sol High review

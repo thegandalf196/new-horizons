@@ -118,6 +118,12 @@ Client/test rebuild and two translation/metadata checks pass with guards and
 review; rendered tooltip fit/round-transition execution and approval remain
 unverified. Normal Linux launcher remains unchanged.
 
+Protect targeting extension,2026-10-07: **Provisional** under UP274. It now
+previews the selected Protector and legal hovered Ward
+using the same current footprint geometry and amber stroke as an active pair.
+Source guard and independent source review pass; linked native checks and actual
+rendered/input acceptance remain pending. No new artwork or Final status.
+
 Protect ground connector,2026-10-07: **Provisional** under UP274. Native Canvas
 amber line/arrow with dark under-stroke connects current Protector/Ward footprint
 centers behind creature sprites. No bitmap art or targeting/input changes. Shared

@@ -338,18 +338,14 @@ void BattleFieldController::showProtectLinks(Canvas & canvas)
 		canvas.drawLine(from, to, amber, amber);
 	};
 
-	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	const auto drawLink = [&](const newHorizonsProtectLink::Link & link)
 	{
-		const auto link = newHorizonsProtectLink::activeLink(*battle, side);
-		if(!link)
-			continue;
-
-		const Point protectorCenter = footprintCenter(link->protectorHead, link->protectorRear);
-		const Point wardCenter = footprintCenter(link->wardHead, link->wardRear);
+		const Point protectorCenter = footprintCenter(link.protectorHead, link.protectorRear);
+		const Point wardCenter = footprintCenter(link.wardHead, link.wardRear);
 		const Point direction = wardCenter - protectorCenter;
 		const int length = direction.length();
 		if(length == 0)
-			continue;
+			return;
 
 		drawLinkStroke(protectorCenter, wardCenter);
 
@@ -367,7 +363,19 @@ void BattleFieldController::showProtectLinks(Canvas & canvas)
 			direction.x * arrowHalfWidth / length);
 		drawLinkStroke(arrowBase + wingOffset, arrowTip);
 		drawLinkStroke(arrowBase - wingOffset, arrowTip);
+	};
+	auto proposed = owner.actionsController->getProposedProtectLink(getHoveredHex());
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto link = newHorizonsProtectLink::activeLink(*battle, side);
+		if(!link)
+			continue;
+		drawLink(*link);
+		if(proposed && *proposed == *link)
+			proposed.reset(); // Same directed footprint pair is already painted.
 	}
+	if(proposed)
+		drawLink(*proposed);
 }
 
 void BattleFieldController::showDemonicGateReservations(Canvas & canvas)

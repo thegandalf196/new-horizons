@@ -16,6 +16,7 @@
 #include "SelectiveDispelWindow.h"
 #include "ShadowGiftWindow.h"
 #include "TemporalFieldWindow.h"
+#include "NewHorizonsProtectLink.h"
 
 #include "lib/spells/NewHorizonsBlink.h"
 
@@ -226,6 +227,11 @@ class BattleActionsController
 	/// selected unit identities.
 	std::optional<HeroCommand> selectedHeroOrderCommand;
 	std::optional<uint32_t> heroOrderTargetingFirst;
+	BattleID heroOrderTargetingBattleID;
+	BattleSide heroOrderTargetingSide = BattleSide::NONE;
+	int32_t heroOrderTargetingRound = -1;
+	ObjectInstanceID heroOrderTargetingHeroID = ObjectInstanceID::NONE;
+	std::optional<PlayerColor> heroOrderTargetingPlayer;
 	/// Presentation-only reserve choice for the next Demonic Gate placement.
 	CreatureID demonicGatingCreature;
 	/// Mobile Gate's first battlefield click. INVALID means the player is still
@@ -391,6 +397,7 @@ public:
 	bool heroOrderTargetingFirstSelected() const;
 	BattleHexArray getHeroOrderTargetingLegalHexes() const;
 	BattleHexArray getHeroOrderTargetingSelectedHexes() const;
+	std::optional<newHorizonsProtectLink::Link> getProposedProtectLink(const BattleHex & hoveredHex) const;
 	bool heroOrderTargetingHexIsLegal(const BattleHex & hex) const;
 	void cancelHeroOrderTargeting();
 

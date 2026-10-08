@@ -188,3 +188,133 @@ TEST_F(NewHorizonsProtectLinkTest, LegacyBattleDoesNotExposeProtectLink)
 	EXPECT_FALSE(newHorizonsProtectLink::activeLink(*battle(), BattleSide::ATTACKER));
 	EXPECT_FALSE(newHorizonsProtectLink::activeLink(*battle(), BattleSide::NONE));
 }
+
+TEST_F(NewHorizonsProtectLinkTest, ProposedAdjacentPairExistsBeforeAnOrderIsIssued)
+{
+	preparePair();
+	ASSERT_TRUE(battle()->battlePrepareHeroOrderState(BattleSide::ATTACKER, HeroCommand::PROTECT,
+		{protector->unitId(), ward->unitId()}));
+	EXPECT_FALSE(newHorizonsProtectLink::activeLink(*battle(), BattleSide::ATTACKER));
+	const auto link = newHorizonsProtectLink::proposedLink(*battle(), BattleSide::ATTACKER,
+		protector->unitId(), ward->unitId());
+	ASSERT_TRUE(link);
+	EXPECT_EQ(link->protectorUnitId, protector->unitId());
+	EXPECT_EQ(link->wardUnitId, ward->unitId());
+	EXPECT_EQ(link->protectorHead, protector->getPosition());
+	EXPECT_EQ(link->protectorRear, protector->occupiedHex());
+	EXPECT_EQ(link->wardHead, ward->getPosition());
+	EXPECT_EQ(link->wardRear, ward->occupiedHex());
+	EXPECT_FALSE(newHorizonsProtectLink::activeLink(*battle(), BattleSide::ATTACKER));
+}
+
+TEST_F(NewHorizonsProtectLinkTest, ProposedPairRejectsInvalidSidesIdsAndTargets)
+{
+	preparePair();
+	const auto preview = [this](BattleSide side, uint32_t first, uint32_t second)
+	{
+		return newHorizonsProtectLink::proposedLink(*battle(), side, first, second);
+	};
+	EXPECT_FALSE(preview(BattleSide::NONE, protector->unitId(), ward->unitId()));
+	EXPECT_FALSE(preview(static_cast<BattleSide>(127), protector->unitId(), ward->unitId()));
+	EXPECT_FALSE(preview(BattleSide::DEFENDER, protector->unitId(), ward->unitId()));
+	EXPECT_FALSE(preview(BattleSide::ATTACKER, std::numeric_limits<uint32_t>::max(), ward->unitId()));
+	EXPECT_FALSE(preview(BattleSide::ATTACKER, protector->unitId(), std::numeric_limits<uint32_t>::max()));
+	EXPECT_FALSE(preview(BattleSide::ATTACKER, protector->unitId(), protector->unitId()));
+	EXPECT_FALSE(preview(BattleSide::ATTACKER, protector->unitId(), enemy->unitId()));
+	EXPECT_FALSE(preview(BattleSide::ATTACKER, enemy->unitId(), ward->unitId()));
+	moveTo(ward, BattleHex(120));
+	ASSERT_FALSE(footprintsTouch(protector->getHexes(), ward->getHexes()));
+	EXPECT_FALSE(preview(BattleSide::ATTACKER, protector->unitId(), ward->unitId()));
+}
+
+TEST_F(NewHorizonsProtectLinkTest, ProposedPairTracksCurrentDoubleWideFootprints)
+{
+	preparePair();
+	const auto original = newHorizonsProtectLink::proposedLink(*battle(), BattleSide::ATTACKER,
+		protector->unitId(), ward->unitId());
+	ASSERT_TRUE(original);
+	const BattleHex protectorDestination(54);
+	const BattleHex wardDestination(56);
+	ASSERT_TRUE(footprintsTouch(protector->getHexes(protectorDestination), ward->getHexes()));
+	moveTo(protector, protectorDestination);
+	ASSERT_TRUE(footprintsTouch(protector->getHexes(), ward->getHexes(wardDestination)));
+	moveTo(ward, wardDestination);
+	const auto moved = newHorizonsProtectLink::proposedLink(*battle(), BattleSide::ATTACKER,
+		protector->unitId(), ward->unitId());
+	ASSERT_TRUE(moved);
+	EXPECT_EQ(moved->protectorHead, protectorDestination);
+	EXPECT_EQ(moved->protectorRear, protector->occupiedHex());
+	EXPECT_EQ(moved->wardHead, wardDestination);
+	EXPECT_EQ(moved->wardRear, ward->occupiedHex());
+	EXPECT_NE(*moved, *original);
+	EXPECT_FALSE(newHorizonsProtectLink::activeLink(*battle(), BattleSide::ATTACKER));
+}
+
+TEST_F(NewHorizonsProtectLinkTest, RepeatedProposedPairReadbackDoesNotSpendOrMutate)
+{
+	preparePair();
+	const auto allowancesBefore = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	const auto protectorBefore = protector->acquireState()->save();
+	const auto wardBefore = ward->acquireState()->save();
+	const auto normalSpellPointsBefore = attackerSideHero->getNormalSpellPoints();
+	const auto bufferSpellPointsBefore = attackerSideHero->getBufferSpellPoints();
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	const auto actionsBefore = server.startedActions.size();
+	const auto ordersBefore = server.orderStateUpdates.size();
+	const auto first = newHorizonsProtectLink::proposedLink(*battle(), BattleSide::ATTACKER,
+		protector->unitId(), ward->unitId());
+	ASSERT_TRUE(first);
+	for(int i = 0; i < 5; ++i)
+		EXPECT_EQ(newHorizonsProtectLink::proposedLink(*battle(), BattleSide::ATTACKER,
+			protector->unitId(), ward->unitId()), first);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), allowancesBefore);
+	EXPECT_EQ(protector->acquireState()->save(), protectorBefore);
+	EXPECT_EQ(ward->acquireState()->save(), wardBefore);
+	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), normalSpellPointsBefore);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), bufferSpellPointsBefore);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_EQ(server.startedActions.size(), actionsBefore);
+	EXPECT_EQ(server.orderStateUpdates.size(), ordersBefore);
+	EXPECT_FALSE(battle()->battleGetHeroOrderState(BattleSide::ATTACKER, HeroCommand::PROTECT));
+	ASSERT_TRUE(issueProtect()); // Readback retained the actual action opportunity.
+	EXPECT_TRUE(newHorizonsProtectLink::activeLink(*battle(), BattleSide::ATTACKER));
+}
+
+TEST_F(NewHorizonsProtectLinkTest, ProposedPairRequiresAnAvailableHeroAction)
+{
+	preparePair();
+	ASSERT_TRUE(newHorizonsProtectLink::proposedLink(*battle(), BattleSide::ATTACKER,
+		protector->unitId(), ward->unitId()));
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	ASSERT_FALSE(battle()->battlePrepareHeroOrderState(BattleSide::ATTACKER, HeroCommand::PROTECT,
+		{protector->unitId(), ward->unitId()}));
+	EXPECT_FALSE(newHorizonsProtectLink::proposedLink(*battle(), BattleSide::ATTACKER,
+		protector->unitId(), ward->unitId()));
+}
+
+TEST_F(NewHorizonsProtectLinkTest, DeadWardCannotBeProposed)
+{
+	preparePair();
+	auto deadWard = ward->acquireState();
+	int64_t lethalDamage = deadWard->getAvailableHealth();
+	ASSERT_GT(lethalDamage, 0);
+	deadWard->damage(lethalDamage);
+	ASSERT_FALSE(deadWard->alive());
+	BattleUnitsChanged killed;
+	killed.battleID = BattleID(0);
+	killed.changedStacks.emplace_back(ward->unitId(), UnitChanges::EOperation::UPDATE);
+	killed.changedStacks.back().data = deadWard->save();
+	killed.changedStacks.back().healthDelta = -lethalDamage;
+	gameHandler->sendAndApply(killed);
+	EXPECT_FALSE(newHorizonsProtectLink::proposedLink(*battle(), BattleSide::ATTACKER,
+		protector->unitId(), ward->unitId()));
+	EXPECT_FALSE(newHorizonsProtectLink::proposedLink(*battle(), BattleSide::ATTACKER,
+		ward->unitId(), protector->unitId()));
+}
+
+TEST_F(NewHorizonsProtectLinkTest, LegacyBattleDoesNotExposeProposedPair)
+{
+	preparePair(true);
+	EXPECT_FALSE(newHorizonsProtectLink::proposedLink(*battle(), BattleSide::ATTACKER,
+		protector->unitId(), ward->unitId()));
+}

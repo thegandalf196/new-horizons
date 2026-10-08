@@ -252,6 +252,14 @@ workers with follow-up tasks before claiming a lower worker limit. Completed
 threads may remain allocated. Do not exceed the configured worker capacity or
 interrupt unrelated user tasks to reclaim capacity.
 
+Maintain specialist assignments for skills/perks, spells, hero redesigns,
+legacy-content access auditing, background playtesting, and independent review.
+Actual service capacity may be lower than authorization; rotate roles and report
+that limitation accurately. Use the configured worker and reviewer model settings.
+The playtester must use an isolated background Xvfb display and disposable
+profile/saves. Never use the host display, focus, mouse or keyboard, and never
+fall back to visible interaction. Keep runs bounded and resource-conscious.
+
 ## Persistent user-priority queue
 
 Read `docs/NH_USER_PRIORITY_QUEUE.md` before choosing or resuming work, including

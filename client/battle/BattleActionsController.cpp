@@ -705,7 +705,12 @@ bool BattleActionsController::heroOrderTargetingContextIsCurrent() const
 		return false;
 
 	const auto side = owner.getBattle()->battleGetMySide();
-	return side == BattleSide::ATTACKER || side == BattleSide::DEFENDER;
+	return (side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+		&& owner.getBattleID() == heroOrderTargetingBattleID
+		&& side == heroOrderTargetingSide
+		&& owner.getBattle()->battleGetRound() == heroOrderTargetingRound
+		&& owner.currentHero()->id == heroOrderTargetingHeroID
+		&& owner.curInt->playerID == heroOrderTargetingPlayer;
 }
 
 std::vector<uint32_t> BattleActionsController::heroOrderTargetIds() const
@@ -799,7 +804,7 @@ BattleHexArray BattleActionsController::getHeroOrderTargetingLegalHexes() const
 BattleHexArray BattleActionsController::getHeroOrderTargetingSelectedHexes() const
 {
 	BattleHexArray result;
-	if(!heroOrderTargetingFirst || !owner.getBattle())
+	if(!heroOrderTargetingFirst || !heroOrderTargetingContextIsCurrent())
 		return result;
 
 	const auto * stack = owner.getBattle()->battleGetStackByID(*heroOrderTargetingFirst, true);
@@ -851,7 +856,14 @@ bool BattleActionsController::beginHeroOrderTargeting(HeroCommand command)
 		&& command != HeroCommand::FLANK && command != HeroCommand::SECOND_WIND)
 		return false;
 
+	if(!owner.curInt || !owner.curInt->cb || !owner.getBattle() || !owner.currentHero())
+		return false;
 	selectedHeroOrderCommand = command;
+	heroOrderTargetingBattleID = owner.getBattleID();
+	heroOrderTargetingSide = owner.getBattle()->battleGetMySide();
+	heroOrderTargetingRound = owner.getBattle()->battleGetRound();
+	heroOrderTargetingHeroID = owner.currentHero()->id;
+	heroOrderTargetingPlayer = owner.curInt->playerID;
 	if(!heroOrderTargetingContextIsCurrent()
 		|| !owner.getBattle()->battleCanBeginHeroCommand(owner.getBattle()->battleGetMySide(), command))
 	{
@@ -880,8 +892,24 @@ bool BattleActionsController::heroOrderTargetingFirstSelected() const
 	return heroOrderTargetingFirst.has_value();
 }
 
+std::optional<newHorizonsProtectLink::Link> BattleActionsController::getProposedProtectLink(const BattleHex & hoveredHex) const
+{
+	if(!heroOrderTargetingContextIsCurrent() || *selectedHeroOrderCommand != HeroCommand::PROTECT
+		|| !heroOrderTargetingFirst || !hoveredHex.isValid())
+		return std::nullopt;
+	const auto * ward = owner.getBattle()->battleGetStackByPos(hoveredHex, true);
+	if(!ward)
+		return std::nullopt;
+	return newHorizonsProtectLink::proposedLink(*owner.getBattle(), heroOrderTargetingSide,
+		*heroOrderTargetingFirst, ward->unitId());
+}
+
 void BattleActionsController::cancelHeroOrderTargeting()
 {
+	heroOrderTargetingSide = BattleSide::NONE;
+	heroOrderTargetingRound = -1;
+	heroOrderTargetingHeroID = ObjectInstanceID::NONE;
+	heroOrderTargetingPlayer.reset();
 	if(!selectedHeroOrderCommand)
 		return;
 	selectedHeroOrderCommand.reset();

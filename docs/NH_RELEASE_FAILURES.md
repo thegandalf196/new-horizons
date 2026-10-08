@@ -2,6 +2,29 @@
 
 ## Purpose
 
+### 2026-10-07 — Private handoff graphics overwritten during Linux assembly
+
+Snapshot5b293 retained handoff pixels but source Tower configuration replaced
+their graphics bindings, loading old Cabir v3 and vanilla Mage. Recovery409acc
+restores only four graphics objects; all other payload files and new sounds are
+unchanged. Six merge tests pass, including source-refresh preservation. Check
+actual bound descriptors, not only asset inventory, before future promotion.
+Independent audit and bounded AI scenario pass; normal launcher now selects
+recovery. Rendered acceptance remains separate.
+
+### 2026-10-07 — Protect preview fixture Spell Point access
+
+Build94195 failed in the new nonmutation fixture because CGHeroInstance no
+longer exposes a public mana field. Use its supported Spell Point state/readback
+API, preserving the Normal/Buffer invariant assertion rather than removing it.
+Production preview translation units compiled. Failed receipt:
+build/nh-protect-preview-build.log. Correct the fixture and resume the same
+focused build; this does not call for a broad integration suite.
+Retry78164 exits0; all13 focused Protect-link native cases pass with supported
+Normal/Buffer readback. The first test invocation used a cwd-relative XDG root
+and failed mod identifier resolution; absolute existing profile roots correct
+the harness without production changes.
+
 ### 2026-10-07 — Recruitment shared-surface repaint ownership
 
 UP289 review caught a source regression before delivery: removing per-card
