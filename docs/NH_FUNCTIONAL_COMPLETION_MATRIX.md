@@ -2,6 +2,24 @@
 
 Updated: 2026-10-08
 
+Phase1 playable delivery advances2026-10-08: usual Linux launcher selects
+checksum-frozen1c720ae7/source0b53fabcd after a10-job exact-source relink,
+independent4010-resource retention/gameplay-equality audit and bounded20-second
+headless All for One progression through day5/13 turn starts. This brings the
+already source/native-verified Defiant into the ordinary playable selection,
+without replacing the retained Cabir/Magi/Wisp/private Guild artwork. Current
+864 public casting frames and Giant/Naga art are unchanged. Owned processes,
+lock and runtime links are cleaned; previous5d1 remains retained and wrapper
+verify-only passes without executing the game. Evidence:
+build/nh-linux-play-0b53fabcd-DELIVERY.json and the referenced assembly/validation
+receipts. Existing schema/positiveness diagnostics remain Phase2 issues; no new
+rendered UI/full-game/Windows/art approval is inferred. Identity counts stay
+236/310 perks,61/67 combat spells,31 Skills/93 ranks and8/8 Orders.
+Bounded artifact/town/siege/adventure selection finds no fresh unambiguous
+principal gap in those samples; it does not certify whole-system completeness.
+The next missing combat identity remains Confusion, whose zero-advance Attack
+endpoint has been resurfaced alongside artifact-regeneration aggregation.
+
 UP004 Metamagic principal UI path verified2026-10-08: ordinary canonical Solmyr
 on frozen normal5d1c66b6/source7e09 shows1/1 + Hero Action Available, accepts
 normal Arrow with1/1 + Spent, then ordinary additional Arrow with0/1 + Spent.
