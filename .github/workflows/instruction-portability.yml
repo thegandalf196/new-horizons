@@ -1,0 +1,45 @@
+name: Instruction portability
+
+on:
+  push:
+    paths:
+      - '**/*.md'
+      - '**/*.txt'
+      - 'tools/check_instruction_home_paths.py'
+      - 'tools/tests/test_instruction_home_paths.py'
+      - '.github/workflows/instruction-portability.yml'
+  pull_request:
+    paths:
+      - '**/*.md'
+      - '**/*.txt'
+      - 'tools/check_instruction_home_paths.py'
+      - 'tools/tests/test_instruction_home_paths.py'
+      - '.github/workflows/instruction-portability.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Check portable instruction paths
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          # A rewritten push can name an obsolete base outside current ancestry.
+          # Never restore that ancestry merely to run the documentation guard.
+          base="$BASE_SHA"
+          if ! git rev-parse --verify --quiet "$base^{commit}" >/dev/null || ! git merge-base --is-ancestor "$base" HEAD; then
+            base=$(git rev-parse HEAD^)
+          fi
+          python3 tools/check_instruction_home_paths.py --base "$base"
+      - name: Test synthetic examples
+        run: python3 -m unittest discover -s tools/tests -p test_instruction_home_paths.py

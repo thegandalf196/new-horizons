@@ -277,8 +277,8 @@ entries with their evidence. This queue tracks work, not gameplay authority:
 
 ## Heroes III UI visual construction
 
-Artwork awaiting user review must always be copied to
-`$HOME/Downloads/provisory/`, in a clearly named per-artwork subfolder.
+Artwork awaiting user review must always be copied to `$HOME/Downloads/provisory/`. Resolve `$HOME` to the current user's home directory at runtime. Create the destination directory if it does not exist.
+Use a clearly named per-artwork subfolder.
 Provide a direct preview link there; keep native-resolution and enlarged previews
 when available. Do not overwrite existing review versions or treat a preview as
 approved or installed gameplay art.
