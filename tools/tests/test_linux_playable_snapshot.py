@@ -4,12 +4,14 @@ import io
 import json
 from pathlib import Path
 import sys
+import subprocess
 import tempfile
 import unittest
 from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "ci"))
-from linux_playable_snapshot import freeze, make_removable, promote, resolve, verify_snapshot
+from linux_playable_snapshot import (freeze, make_removable, package_files, promote,
+                                     resolve, verify_snapshot, write_metadata)
 
 
 class LinuxPlayableSnapshotTest(unittest.TestCase):
@@ -48,11 +50,12 @@ class LinuxPlayableSnapshotTest(unittest.TestCase):
                 if path.is_dir() and not path.is_symlink():
                     make_removable(path)
 
-    def freeze_candidate(self):
+    def freeze_candidate(self, retain_resources_from=None):
         output = io.StringIO()
         with redirect_stdout(output):
             freeze(SimpleNamespace(client=self.client, resources=self.resources,
-                                   store=self.store, promote=False))
+                                   store=self.store, promote=False,
+                                   retain_resources_from=retain_resources_from))
         return Path(output.getvalue().strip())
 
     def promote_candidate(self, snapshot):
@@ -142,6 +145,94 @@ class LinuxPlayableSnapshotTest(unittest.TestCase):
             self.promote_candidate(snapshot)
         with self.assertRaisesRegex(RuntimeError, "No frozen Linux playable snapshot"):
             self.selected_snapshot()
+
+    def add_optional_magic_resources(self):
+        manifest = self.source / "config/newHorizonsMagicAssets.json"
+        image = self.source / "Mods/new-horizons/Images/NH_magic_assets/casting/nature/frame.png"
+        image.parent.mkdir(parents=True)
+        manifest.write_text('{"casting": "NH_magic_assets/casting/nature/frame.png"}')
+        image.write_bytes(b"synthetic optional casting art")
+        return manifest, image
+
+    def test_retention_blocks_optional_manifest_and_art_omissions_before_copy(self):
+        manifest, image = self.add_optional_magic_resources()
+        baseline = self.freeze_candidate()
+        self.promote_candidate(baseline)
+        manifest.unlink()
+        image.unlink()
+        with self.assertRaisesRegex(RuntimeError, "omits retained baseline resources") as failure:
+            self.freeze_candidate(baseline)
+        self.assertIn("config/newHorizonsMagicAssets.json", str(failure.exception))
+        self.assertIn("Images/NH_magic_assets/casting/nature/frame.png", str(failure.exception))
+        self.assertEqual(self.selected_snapshot(), baseline)
+        self.assertEqual(list(self.store.glob("snapshot-*")), [baseline])
+        self.assertFalse(list(self.store.glob(".snapshot-*")))
+        self.assertFalse(manifest.exists(), "Guard must not auto-copy old configuration")
+        self.assertFalse(image.exists(), "Guard must not auto-copy old artwork")
+
+    def test_retention_allows_updated_gameplay_and_new_binaries_at_existing_paths(self):
+        self.add_optional_magic_resources()
+        baseline = self.freeze_candidate()
+        changed = self.source / "config/newHorizonsMagic.json"
+        changed.write_text('{"updatedGameplay": true}')
+        self.client.write_text("#!/bin/sh\nexit 1\n")
+        (self.bin / "libvcmi.so").write_bytes(b"new matching library")
+        candidate = self.freeze_candidate(baseline)
+        self.assertNotEqual(candidate, baseline)
+        self.assertEqual((candidate / "config/newHorizonsMagic.json").read_text(), changed.read_text())
+        self.assertEqual((candidate / "vcmiclient").read_text(), self.client.read_text())
+        self.assertEqual((candidate / "libvcmi.so").read_bytes(), b"new matching library")
+        verify_snapshot(candidate)
+
+    def test_retention_rejects_tampered_baseline(self):
+        baseline = self.freeze_candidate()
+        image = baseline / "Mods/new-horizons/Images/icon.png"
+        image.chmod(0o644)
+        image.write_bytes(b"tampered baseline")
+        with self.assertRaisesRegex(RuntimeError, "inventory or checksum mismatch"):
+            self.freeze_candidate(baseline)
+        self.assertFalse(list(self.store.glob(".snapshot-*")))
+
+    def test_retention_rejects_baseline_symlink(self):
+        baseline = self.freeze_candidate()
+        link = self.root / "baseline-link"
+        link.symlink_to(baseline, target_is_directory=True)
+        with self.assertRaisesRegex(RuntimeError, "missing or is a symlink"):
+            self.freeze_candidate(link)
+
+    def test_retention_checks_only_curated_resource_roots(self):
+        baseline = self.freeze_candidate()
+        make_removable(baseline)
+        (baseline / "operator-notes.txt").write_text("Verified baseline note, not a resource")
+        digest = write_metadata(baseline, package_files(baseline))
+        renamed = self.store / ("snapshot-" + digest)
+        baseline.rename(renamed)
+        verify_snapshot(renamed)
+        candidate = self.freeze_candidate(renamed)
+        self.assertFalse((candidate / "operator-notes.txt").exists())
+        verify_snapshot(candidate)
+
+    def test_without_retention_option_preserves_existing_omission_behavior(self):
+        manifest, image = self.add_optional_magic_resources()
+        baseline = self.freeze_candidate()
+        manifest.unlink()
+        image.unlink()
+        candidate = self.freeze_candidate()
+        self.assertNotEqual(candidate, baseline)
+        self.assertFalse((candidate / "config/newHorizonsMagicAssets.json").exists())
+        verify_snapshot(candidate)
+
+    def test_cli_retention_option_reports_missing_optional_resources(self):
+        manifest, _ = self.add_optional_magic_resources()
+        baseline = self.freeze_candidate()
+        manifest.unlink()
+        script = Path(__file__).resolve().parents[1] / "ci/linux_playable_snapshot.py"
+        result = subprocess.run([sys.executable, str(script), "freeze", "--client", str(self.client),
+                                 "--resources", str(self.resources), "--store", str(self.store),
+                                 "--retain-resources-from", str(baseline)],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("config/newHorizonsMagicAssets.json", result.stderr)
 
 
 if __name__ == "__main__":

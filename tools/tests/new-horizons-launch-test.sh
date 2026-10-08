@@ -300,6 +300,32 @@ grep -q 'Unexpected non-regular or symlink profile lock.' "$tmp/output"
 [[ $(< "$profile/lock-original") == 'lock sentinel' ]]
 rm -- "$profile/.nh-lock"
 mv -- "$profile/lock-original" "$profile/.nh-lock"
+# Exercise debugger argv/status/log ownership using a stub, never a game or GUI.
+mkdir -- "$tmp/debugger-bin"
+cat > "$tmp/debugger-bin/gdb" <<'DEBUGGER'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ $1 == --nx && $2 == --batch && $3 == --return-child-result ]]
+[[ $4 == -ex && $5 == run && $6 == -ex && $7 == 'thread apply all bt' && $8 == --args ]]
+shift 8
+printf 'synthetic gdb backtrace log\n'
+exec "$@"
+DEBUGGER
+chmod +x -- "$tmp/debugger-bin/gdb"
+debug_path="$tmp/debugger-bin:$PATH"
+PATH=$debug_path bash "$launcher" "${args[@]}" --debugger-log "$profile/verify-debug.log" --verify-only > "$tmp/output"
+[[ ! -e "$profile/verify-debug.log" ]]
+PATH=$debug_path bash "$launcher" "${args[@]}" --debugger-log "$profile/debug.log" > "$tmp/output"
+grep -q 'synthetic gdb backtrace log' "$profile/debug.log"
+[[ $(stat -c %a "$profile/debug.log") == 600 ]]
+[[ -z $(find "$profile" -maxdepth 1 -name 'runtime.*' -print) ]]
+expect_fail "${args[@]}" --debugger-log "$profile/debug.log"
+expect_fail "${args[@]}" --debugger-log "$tmp/outside.log" --verify-only
+[[ ! -e "$tmp/outside.log" ]]
+debug_status=0
+PATH=$debug_path STUB_EXIT=23 bash "$launcher" "${args[@]}" --debugger-log "$profile/nonzero-debug.log" > "$tmp/output" || debug_status=$?
+[[ $debug_status == 23 ]]
+[[ -z $(find "$profile" -maxdepth 1 -name 'runtime.*' -print) ]]
 mkdir -- "$profile/data/vcmi/Mods"
 expect_fail "${args[@]}" --verify-only
 rmdir -- "$profile/data/vcmi/Mods"

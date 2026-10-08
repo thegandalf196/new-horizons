@@ -154,6 +154,8 @@ def _parser():
                         help="purchaser-supplied Heroes III Complete asset directory")
     parser.add_argument("--verify-only", "--dry-run", dest="verify_only", action="store_true",
                         help="validate via the managed launcher without executing the game")
+    parser.add_argument("--debugger-log", type=Path,
+                        help="new exclusive gdb log inside the managed private profile")
     return parser
 
 
@@ -205,6 +207,8 @@ def main(argv=None):
         ]
         if args.verify_only:
             command.append("--verify-only")
+        if args.debugger_log is not None:
+            command.extend(["--debugger-log", str(args.debugger_log.expanduser())])
         if client_args:
             command.extend(["--", *client_args])
 

@@ -89,6 +89,19 @@ class PrivateLaunchTest(unittest.TestCase):
             *tail,
         ]
 
+    def test_debugger_is_explicitly_forwarded_on_managed_route(self):
+        log = self.profile / "debugger log.txt"
+        with self._patch_boundaries(), \
+                mock.patch.object(HELPER.subprocess, "run", return_value=mock.Mock(returncode=255)) as run:
+            result = HELPER.main(self._args("--debugger-log", str(log), "--", "--disable-video"))
+        self.assertEqual(result, 255)
+        command = run.call_args.args[0]
+        self.assertEqual(command[0], str(self.launcher))
+        boundary = command.index("--debugger-log")
+        self.assertEqual(command[boundary:boundary + 2], ["--debugger-log", str(log)])
+        self.assertEqual(command[-2:], ["--", "--disable-video"])
+        self.assertEqual(run.call_args.kwargs["env"]["DISPLAY"], HELPER.PRIVATE_DISPLAY)
+
     def test_parent_host_display_is_never_inherited(self):
         with self._patch_boundaries(), \
                 mock.patch.dict(os.environ, {

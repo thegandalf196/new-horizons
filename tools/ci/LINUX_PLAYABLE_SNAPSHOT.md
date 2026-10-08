@@ -36,6 +36,14 @@ candidate=$(python3 tools/ci/linux_playable_snapshot.py freeze --no-promote \
 ```
 
 Validate that exact candidate with the managed launcher and a private profile.
+When replacing an existing candidate, add
+`--retain-resources-from /absolute/path/to/verified/previous/snapshot` to `freeze`.
+This verifies the previous snapshot and refuses missing curated resource paths
+before copying. Updated files and binaries are permitted; old gameplay data is
+never copied automatically. Assemble required private artwork explicitly first.
+This catches optional artwork being silently lost in a newer build, including
+the school-casting/Guild bundle omitted from the October 8 candidate.
+
 Pass `--client "$candidate/vcmiclient" --resources "$candidate"` explicitly,
 so validation cannot accidentally select the currently promoted snapshot. After
 the required headless new-game validation succeeds, promote the same candidate:

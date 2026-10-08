@@ -5,11 +5,12 @@ set -euo pipefail
 umask 077
 fail() { printf 'New Horizons: %s\n' "$*" >&2; exit 1; }
 usage() {
-	printf '%s\n' 'Usage: new-horizons-launch.sh --assets DIR --profile DIR [--client FILE] [--resources DIR] [--verify-only] [-- CLIENT_ARG ...]' \
+	printf '%s\n' 'Usage: new-horizons-launch.sh --assets DIR --profile DIR [--client FILE] [--resources DIR] [--debugger-log FILE] [--verify-only] [-- CLIENT_ARG ...]' \
 		'Purchaser Complete installation: Data, Maps, Mp3 (case-insensitive names).' \
 		'Profile must be new or previously created by this script; do not use a VCMI profile.' \
 		'Arguments after -- are forwarded verbatim to vcmiclient after the mandatory --nointro.' \
 		'--verify-only checks paths without creating a profile or executing the client.' \
+		'--debugger-log uses installed gdb and a new exclusive log inside the managed profile.' \
 		'Without --verify-only this manually invoked command launches the game.'
 }
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
@@ -18,14 +19,16 @@ resources=''
 assets=''
 profile=''
 verify=false
+debugger_log=''
 client_args=()
 while (($#)); do
 	case $1 in
-		--assets|--profile|--client|--resources)
+		--assets|--profile|--client|--resources|--debugger-log)
 			(($# >= 2)) && [[ -n $2 ]] || fail "Missing value for $1"
 			case $1 in
 				--assets) assets=$2;; --profile) profile=$2;;
 				--client) client=$2;; --resources) resources=$2;;
+				--debugger-log) [[ -z $debugger_log ]] || fail 'Duplicate --debugger-log'; debugger_log=$2;;
 			esac
 			shift 2;;
 		--verify-only) verify=true; shift;;
@@ -48,6 +51,14 @@ client=$(realpath -e -- "$client")
 resources=$(realpath -e -- "$resources")
 assets=$(realpath -e -- "$assets")
 profile=$(realpath -m -- "$profile")
+if [[ -n $debugger_log ]]; then
+	debugger_log=$(realpath -m -- "$debugger_log")
+	[[ $debugger_log == "$profile/"* ]] || fail 'Debugger log must be inside the managed profile.'
+	[[ ! -e $debugger_log && ! -L $debugger_log ]] || fail 'Debugger log must be a new exclusive path.'
+	debugger_parent=$(dirname -- "$debugger_log")
+	[[ $debugger_parent == "$profile" || -d $debugger_parent ]] || fail 'Debugger log parent must exist or be the profile root.'
+	debugger=$(command -v gdb) || fail 'Debugger mode requires installed gdb.'
+fi
 # Reject overlap in either direction: never create writable files in source assets/build.
 for source in "$assets" "$resources" "$(dirname -- "$client")"; do
 	[[ $profile != "$source" && $profile != "$source/"* && $source != "$profile/"* ]] || fail 'Profile overlaps input assets or engine files.'
@@ -187,6 +198,12 @@ if ! $lockHeld; then
 	flock -n 9 || fail 'This NH profile is already in use.'
 fi
 printf '%s\n' "$marker" > "$profile/.nh-profile"
+if [[ -n $debugger_log ]]; then
+	# noclobber also refuses an existing path created since read-only preflight.
+	set -C
+	exec 8> "$debugger_log" || fail 'Cannot create exclusive debugger log.'
+	set +C
+fi
 # Root mods are not auto-enabled merely by mounting them. This managed profile
 # owns its fixed preset; discard cached validation/optional preset selections,
 # not game settings or saves. Saved games retain their own versioned rules.
@@ -241,11 +258,25 @@ if [[ -n $received_signal ]]; then
 fi
 # Do not inherit XDG VCMI settings, optional mods, or loader injection variables.
 # This is a curated launch profile, not a sandbox or global mod prohibition.
-env --default-signal=INT -u LD_PRELOAD -u LD_AUDIT \
+launch_command=("$runtime/vcmiclient" --nointro "${client_args[@]}")
+if [[ -n $debugger_log ]]; then
+	# Do not source host/profile .gdbinit. Preserve inferior exit status; a
+	# signal-stopped crash returns nonzero instead of gdb's usual batch success.
+	launch_command=("$debugger" --nx --batch --return-child-result
+		-ex run -ex 'thread apply all bt' --args "${launch_command[@]}")
+fi
+launch_managed_client() {
+	exec env --default-signal=INT -u LD_PRELOAD -u LD_AUDIT \
 	LD_LIBRARY_PATH="$(dirname -- "$client")" \
 	XDG_DATA_HOME="$profile/data" XDG_CONFIG_HOME="$profile/config" \
 	XDG_CACHE_HOME="$profile/cache" XDG_DATA_DIRS="$runtime" \
-	"$runtime/vcmiclient" --nointro "${client_args[@]}" &
+	"${launch_command[@]}"
+}
+if [[ -n $debugger_log ]]; then
+	launch_managed_client >&8 2>&1 &
+else
+	launch_managed_client &
+fi
 client_pid=$!
 # Cover a signal that arrived between the pre-start check and PID assignment.
 if [[ -n $received_signal ]] && kill -0 "$client_pid" 2>/dev/null; then

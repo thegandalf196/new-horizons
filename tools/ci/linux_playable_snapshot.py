@@ -100,6 +100,21 @@ def inventory(source_files):
     return {name: sha256_file(path) for name, path in sorted(source_files.items())}
 
 
+def require_retained_resources(source_files, baseline):
+    """Require verified baseline resource paths, not baseline bytes or binaries.
+
+    This is an omission guard only: callers must deliberately assemble all
+    resources before freezing. Never copy old gameplay or binaries implicitly.
+    """
+    metadata = verify_snapshot(Path(baseline).absolute())
+    resource_roots = PAYLOAD_ROOTS[2:]
+    missing = sorted(name for name in metadata["files"]
+                     if any(name.startswith(root + "/") for root in resource_roots)
+                     and name not in source_files)
+    if missing:
+        fail("Candidate omits retained baseline resources: " + ", ".join(missing))
+
+
 def write_payload(source_files, target):
     for name, source in sorted(source_files.items()):
         destination = target / name
@@ -286,6 +301,9 @@ def freeze(args):
         fail("Snapshot store cannot be a symlink")
     with store_lock(store, exclusive=True):
         sources = source_payload(args.client, args.resources)
+        baseline = getattr(args, "retain_resources_from", None)
+        if baseline is not None:
+            require_retained_resources(sources, baseline)
         before = inventory(sources)
         temporary = Path(tempfile.mkdtemp(prefix=".snapshot-", dir=store))
         try:
@@ -343,6 +361,8 @@ def main():
     freeze_parser.add_argument("--resources", type=Path, required=True,
                                help="build bin directory containing config/scripts/Mods resource links")
     freeze_parser.add_argument("--store", type=Path, required=True)
+    freeze_parser.add_argument("--retain-resources-from", type=Path,
+                               help="verified snapshot whose curated resource paths must all be present; updated bytes are allowed, nothing is auto-copied")
     freeze_parser.add_argument("--no-promote", dest="promote", action="store_false",
                                help="leave the candidate unselected for headless validation (default)")
     freeze_parser.add_argument("--promote", dest="promote", action="store_true",
