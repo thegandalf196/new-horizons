@@ -2,6 +2,13 @@
 
 ## Isolated Cabir / Wisp art preview
 
+The separate preview described here is historical, with unselected prototype
+art/gameplay. It is not the current normal-game delivery route. Selected Cabirs,
+Wisps, turbaned Magi, Guild composites and other runtime visuals now ship in
+`Mods/new-horizons/NewHorizons.nhart`; do not apply this prototype's private-only
+exclusion to those selected assets. Unchanged original installation data remains
+external. Preserve prototype masters and old preview snapshots as reference.
+
 `play-new-horizons-creature-preview-linux.sh` selects the separately checksummed
 `build/new-horizons-linux/cabir-wisp-preview-snapshots` store and uses its own
 `new-horizons-creature-preview` profile. It never changes the ordinary launcher
@@ -21,17 +28,24 @@ ignored `build/`; tracked source contains only tools and the opt-in map exporter
 ## Ordinary playable snapshots
 
 `linux_playable_snapshot.py` is a development-only helper. It copies the
-currently built `vcmiclient` and neighboring `libvcmi.so`, plus `config`,
+currently built `new-horizons` and neighboring `libvcmi.so`, plus `config`,
 `scripts`, `Mods/vcmi` and `Mods/new-horizons`, into a checksum-verified,
 read-only snapshot. It is separate from `stage_linux_client.py`, which prepares
 audited distribution packages.
 
 After a successful build, create a candidate without changing the default:
 
+For NHART candidates, `--resources` must point to a detached, verified resource
+stage with packed source files excluded, not the development `bin/config` link
+to authoring inputs. Verify it with `tools/verify_new_horizons_art_install.py`.
+In particular, the packed casting/Guild descriptor must not also exist loose.
+Preserve the authoring source and committed package; do not repack to make an
+incomplete development view pass. The example below assumes that stage is ready.
+
 ```sh
 candidate=$(python3 tools/ci/linux_playable_snapshot.py freeze --no-promote \
-  --client build/new-horizons-linux/bin/vcmiclient \
-  --resources build/new-horizons-linux/bin \
+  --client build/new-horizons-linux/bin/new-horizons \
+  --resources "$nh_resource_stage" \
   --store build/new-horizons-linux/playable-snapshots)
 ```
 
@@ -40,11 +54,13 @@ When replacing an existing candidate, add
 `--retain-resources-from /absolute/path/to/verified/previous/snapshot` to `freeze`.
 This verifies the previous snapshot and refuses missing curated resource paths
 before copying. Updated files and binaries are permitted; old gameplay data is
-never copied automatically. Assemble required private artwork explicitly first.
+never copied automatically. Historical private-overlay candidates required
+explicit artwork assembly before freezing.
 This catches optional artwork being silently lost in a newer build, including
-the school-casting/Guild bundle omitted from the October 8 candidate.
+the historical school-casting/Guild omission. Current normal candidates use the
+committed NHART package and bootstrap mounts, not undistributed private overlays.
 
-Pass `--client "$candidate/vcmiclient" --resources "$candidate"` explicitly,
+Pass `--client "$candidate/new-horizons" --resources "$candidate"` explicitly,
 so validation cannot accidentally select the currently promoted snapshot. After
 the required headless new-game validation succeeds, promote the same candidate:
 
@@ -64,7 +80,7 @@ env -u DISPLAY -u WAYLAND_DISPLAY \
   tools/new-horizons-launch.sh \
   --assets /path/to/original-Complete-installation \
   --profile /path/to/fresh-private-profile \
-  --client "$candidate/vcmiclient" --resources "$candidate" -- \
+  --client "$candidate/new-horizons" --resources "$candidate" -- \
   --testmap 'Maps/All for One.h3m' --headless --disable-video --savefrequency 0
 ```
 
