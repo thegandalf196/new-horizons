@@ -156,6 +156,10 @@ public:
 		bool includeChanceOnlySerendipity = true) const;
 	bool battleCanUsePerfectMoment(const battle::Unit * attacker, const battle::Unit * target = nullptr,
 		bool shooting = false) const;
+	bool battleCanUseCounterBattery(const battle::Unit * attacker) const;
+	bool battleIsCounterBatteryMachineTarget(const battle::Unit * attacker, const battle::Unit * target) const;
+	bool battleHasCounterBatteryMachineTarget(const battle::Unit * attacker) const;
+	bool battleCounterBatteryControlsMachineTargetsOnly(const battle::Unit * attacker) const;
 	/// Current action controller's unspent token; no natural-Luck or active-unit threshold.
 	bool battleCanUsePerfectFortune(const battle::Unit * attacker, const battle::Unit * target = nullptr,
 		bool shooting = false) const;
@@ -426,6 +430,7 @@ public:
 	/// find free hex suitable to place new unit. If no initial position was provided, hex located on left size (attacker) or right side (defender) will be selected
 	BattleHex getAvailableHex(const Creature * creature, BattleSide side, BattleHex initialPos = {}) const override;
 protected:
+	bool battleCanShootActionWithoutCounterBatteryRestriction(const battle::Unit * attacker, const BattleHex & dest) const;
 	heroCommands::TargetRejection battleFocusFireTargetRejection(BattleSide side, HeroCommand command,
 		uint32_t targetUnitId) const;
 	heroCommands::TargetRejection battleOwnOrderUnitRejection(BattleSide side, const battle::Unit * unit) const;

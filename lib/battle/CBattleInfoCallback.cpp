@@ -712,6 +712,55 @@ bool CBattleInfoCallback::battleCanUsePerfectMoment(const battle::Unit * attacke
 		&& battleGetAttackLuck(attacker, target, shooting, false) >= 5;
 }
 
+bool CBattleInfoCallback::battleCanUseCounterBattery(const battle::Unit * attacker) const
+{
+	if(!getBattle() || !attacker || !attacker->alive() || attacker->isGhost()
+		|| attacker->isTimeStopped() || !(attacker->isBallista() || attacker->isTurret()))
+		return false;
+	const auto side = playerToSide(battleGetActionController(attacker));
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return false;
+	const auto * hero = battleGetFightingHero(side);
+	return hero && newHorizonsHeroes::usesRules(hero->getCapabilityRules())
+		&& hero->getCapabilityRules()["rulesetVersion"].Integer() >= 3
+		&& hero->hasActivePerk("new-horizons:warMachines", "new-horizons:warMachines.counterBattery");
+}
+
+bool CBattleInfoCallback::battleIsCounterBatteryMachineTarget(const battle::Unit * attacker,
+	const battle::Unit * target) const
+{
+	return battleCanUseCounterBattery(attacker) && target && target->alive() && !target->isGhost()
+		&& (target->isBallista() || target->isCatapult() || target->isFirstAidTent() || target->isAmmoCart())
+		&& battleMatchActionController(attacker, target, false);
+}
+
+bool CBattleInfoCallback::battleHasCounterBatteryMachineTarget(const battle::Unit * attacker) const
+{
+	if(!battleCanUseCounterBattery(attacker))
+		return false;
+	for(const auto * target : battleGetAllUnits(false))
+	{
+		if(battleIsCounterBatteryMachineTarget(attacker, target)
+			&& battleCanShootActionWithoutCounterBatteryRestriction(attacker, target->getPosition()))
+			return true;
+	}
+	return false;
+}
+
+bool CBattleInfoCallback::battleCounterBatteryControlsMachineTargetsOnly(const battle::Unit * attacker) const
+{
+	if(!attacker || !attacker->isTurret() || !battleHasCounterBatteryMachineTarget(attacker)
+		|| battleCanUseFortificationEngineer(attacker))
+		return false;
+	// Match the existing automatic-control provider lookup exactly; this
+	// exception preserves permissions, independently of the new perk's controller.
+	const auto * hero = battleGetOwnerHero(attacker);
+	// Preserve all existing general-control providers. Fractional third-party
+	// provider rolls have no shared captured mode; do not narrow their permission.
+	return !hero || hero->valOfBonuses(BonusType::MANUAL_CONTROL,
+		BonusSubtypeID(attacker->unitType()->getId())) <= 0;
+}
+
 bool CBattleInfoCallback::battleCanUsePerfectFortune(const battle::Unit * attacker,
 	const battle::Unit * target, bool shooting) const
 {
@@ -3051,6 +3100,17 @@ bool CBattleInfoCallback::battleCanShoot(const battle::Unit * attacker, const Ba
 
 bool CBattleInfoCallback::battleCanShootAction(const battle::Unit * attacker, const BattleHex & dest) const
 {
+	if(!getBattle() || !dest.isAvailable() || !attacker)
+		return false;
+	if(battleCounterBatteryControlsMachineTargetsOnly(attacker)
+		&& !battleIsCounterBatteryMachineTarget(attacker, battleGetUnitByPos(dest)))
+		return false;
+	return battleCanShootActionWithoutCounterBatteryRestriction(attacker, dest);
+}
+
+bool CBattleInfoCallback::battleCanShootActionWithoutCounterBatteryRestriction(
+	const battle::Unit * attacker, const BattleHex & dest) const
+{
 	RETURN_IF_NOT_BATTLE(false);
 	if(!dest.isAvailable() || !attacker)
 		return false;
@@ -3244,6 +3304,9 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		payload.archeryIgnoreObstaclePenalty = true;
 	}
 	const auto * archeryHero = info.attacker ? battleGetOwnerHero(info.attacker) : nullptr;
+	if(info.physicalDamage && info.shooting
+		&& battleIsCounterBatteryMachineTarget(info.attacker, info.defender))
+		payload.counterBatteryFinalDamageMultiplier = 150;
 	if(info.physicalDamage && info.shooting && info.attacker && info.attacker->isBallista() && info.defender)
 	{
 		const auto * controllerHero = battleGetOwnerHero(info.attacker);

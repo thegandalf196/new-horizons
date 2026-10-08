@@ -235,13 +235,15 @@ public:
 	};
 
 	EffectPacketRecorder(ServerCallback & delegate, const CBattleInfoCallback & battle,
-		const Mechanics & mechanics, PlayerColor casterOwner, SpellID castSpellId, SpellID effectSpellId)
+		const Mechanics & mechanics, PlayerColor casterOwner, SpellID castSpellId, SpellID effectSpellId,
+		bool captureArmyChanges)
 		: delegate(delegate)
 		, battle(battle)
 		, mechanics(mechanics)
 		, casterOwner(casterOwner)
 		, castSpellId(castSpellId)
 		, effectSpellId(effectSpellId)
+		, captureArmyChanges(captureArmyChanges)
 	{
 	}
 
@@ -275,18 +277,30 @@ public:
 			record(*units);
 			return;
 		}
-		if(const auto * injured = dynamic_cast<const StacksInjured *>(&pack))
-			record(*injured);
+		if(auto * moved = dynamic_cast<BattleStackMoved *>(&pack))
+		{
+			apply(*moved);
+			return;
+		}
+		if(auto * injured = dynamic_cast<StacksInjured *>(&pack))
+		{
+			applyInjuries(*injured);
+			return;
+		}
 		delegate.apply(pack);
 	}
 	void apply(BattleLogMessage & pack) override { delegate.apply(pack); }
-	void apply(BattleStackMoved & pack) override { delegate.apply(pack); }
+	void apply(BattleStackMoved & pack) override
+	{
+		const auto before = armySnapshot(pack.stack);
+		delegate.apply(pack);
+		recordArmyChange(before);
+	}
 	void apply(BattleUnitsChanged & pack) override { record(pack); }
 	void apply(SetStackEffect & pack) override { record(pack); }
 	void apply(StacksInjured & pack) override
 	{
-		record(pack);
-		delegate.apply(pack);
+		applyInjuries(pack);
 	}
 	void apply(BattleObstaclesChanged & pack) override { delegate.apply(pack); }
 	void apply(CatapultAttack & pack) override { delegate.apply(pack); }
@@ -315,6 +329,22 @@ public:
 		return result;
 	}
 	bool touchedStackEffects() const { return stackEffectsTouched; }
+	bool changedArmy(BattleSide side) const
+	{
+		if(actualArmyChanges.count(side) != 0)
+			return true;
+		// Timed effects may implement an identical refresh as remove + add.
+		// Finalize bonus semantics once after all effects of this cast have applied;
+		// intermediate transport absence is not a lasting effect on the army.
+		for(const auto & [unitId, before] : initialArmyStates)
+		{
+			const auto after = armySnapshot(unitId);
+			if((before.exists && before.side == side) || (after.exists && after.side == side))
+				if(!sameArmyBonuses(before, after))
+					return true;
+		}
+		return false;
+	}
 	const std::vector<EffectChange> & effectChanges()
 	{
 		if(effectChangesFinalized)
@@ -368,6 +398,107 @@ private:
 	std::vector<std::pair<uint32_t, std::vector<EffectState>>> initialEffectStates;
 	bool effectChangesFinalized = false;
 	bool stackEffectsTouched = false;
+	bool captureArmyChanges;
+	std::set<BattleSide> actualArmyChanges;
+
+	struct ArmySnapshot
+	{
+		uint32_t unitId;
+		bool exists = false;
+		BattleSide side = BattleSide::NONE;
+		CreatureID creature;
+		BattleHex position;
+		int32_t count = 0;
+		int64_t health = 0;
+		JsonNode state;
+		std::vector<JsonNode> bonuses;
+	};
+	std::map<uint32_t, ArmySnapshot> initialArmyStates;
+
+	ArmySnapshot armySnapshot(uint32_t unitId) const
+	{
+		ArmySnapshot result;
+		result.unitId = unitId;
+		if(!captureArmyChanges)
+			return result;
+		const auto * unit = battle.battleGetUnitByID(unitId);
+		if(!unit)
+			return result;
+		result.exists = true;
+		result.side = unit->unitSide();
+		result.creature = unit->creatureId();
+		result.position = unit->getPosition();
+		result.count = unit->getCount();
+		result.health = unit->getAvailableHealth();
+		if(auto state = unit->acquireState())
+			result.state = state->save(); // Includes health, count, position and unit-owned state.
+		const auto bonuses = unit->getBonuses(Selector::all);
+		for(const auto & bonus : *bonuses)
+		{
+			if(!bonus)
+				continue;
+			// Attribution/icon bookkeeping alone is not an effect on the army.
+			// Keep gameplay provenance (including appliedByEnemy and parameters).
+			auto semantic = bonus->toJsonNode();
+			semantic.Struct().erase("spellCasterOwner");
+			semantic.Struct().erase("description");
+			semantic.Struct().erase("hidden");
+			semantic["bonusOwner"].Integer() = bonus->bonusOwner.getNum();
+			if(bonus->propagationUpdater)
+				semantic["propagationUpdater"] = bonus->propagationUpdater->toJsonNode();
+			// Snapshot values now: shared limiter/parameter pointers may later mutate.
+			result.bonuses.push_back(std::move(semantic));
+		}
+		return result;
+	}
+
+	static bool sameArmyBonuses(const ArmySnapshot & before, const ArmySnapshot & after)
+	{
+		if(before.bonuses.size() != after.bonuses.size())
+			return false;
+		std::vector<bool> matched(after.bonuses.size(), false);
+		for(const auto & bonus : before.bonuses)
+		{
+			size_t index = 0;
+			for(; index < after.bonuses.size(); ++index)
+				if(!matched[index] && bonus == after.bonuses[index])
+					break;
+			if(index == after.bonuses.size())
+				return false;
+			matched[index] = true;
+		}
+		return true;
+	}
+
+	void recordArmyChange(const ArmySnapshot & before)
+	{
+		if(!captureArmyChanges)
+			return;
+		initialArmyStates.try_emplace(before.unitId, before);
+		const auto after = armySnapshot(before.unitId);
+		if(before.exists == after.exists && before.side == after.side
+			&& before.creature == after.creature && before.position == after.position
+			&& before.count == after.count && before.health == after.health
+			&& before.state == after.state)
+			return;
+		// Sticky per applied packet: a later reversal does not erase an actual
+		// effect of this cast. Retain the old side even if the unit was removed.
+		if(before.exists)
+			actualArmyChanges.insert(before.side);
+		if(after.exists)
+			actualArmyChanges.insert(after.side);
+	}
+
+	void applyInjuries(StacksInjured & pack)
+	{
+		std::vector<ArmySnapshot> before;
+		for(const auto & injury : pack.stacks)
+			before.push_back(armySnapshot(injury.stackAttacked));
+		record(pack);
+		delegate.apply(pack);
+		for(const auto & previous : before)
+			recordArmyChange(previous);
+	}
 
 	void record(const StacksInjured & pack)
 	{
@@ -380,6 +511,9 @@ private:
 
 	void record(BattleUnitsChanged & pack)
 	{
+		std::vector<ArmySnapshot> armyBefore;
+		for(const auto & change : pack.changedStacks)
+			armyBefore.push_back(armySnapshot(change.id));
 		struct UnitState
 		{
 			uint32_t unitId;
@@ -413,6 +547,8 @@ private:
 		// Outcomes below are derived from the resulting battle state, never from a
 		// speculative copy of the spell effect.
 		delegate.apply(pack);
+		for(const auto & previous : armyBefore)
+			recordArmyChange(previous);
 
 		for(const auto unitId : updatedUnits)
 		{
@@ -580,6 +716,9 @@ private:
 		collect(pack.toAdd);
 		collect(pack.toUpdate);
 		collect(pack.toRemove);
+		std::vector<ArmySnapshot> armyBefore;
+		for(const auto unitId : touched)
+			armyBefore.push_back(armySnapshot(unitId));
 
 		for(const auto unitId : touched)
 		{
@@ -591,6 +730,8 @@ private:
 		}
 
 		delegate.apply(pack);
+		for(const auto & previous : armyBefore)
+			recordArmyChange(previous);
 		effectChangesFinalized = false;
 	}
 
@@ -654,39 +795,9 @@ private:
 	}
 };
 
-bool hasCounterpressureEffect(EffectPacketRecorder & recorder, const CBattleInfoCallback & battle,
-	const CSpell * acceptedSpell, SpellID effectSpell, BattleSide victimSide)
+bool hasCounterpressureEffect(const EffectPacketRecorder & recorder, BattleSide victimSide)
 {
-	for(const auto & injury : recorder.injuries())
-	{
-		// The recorder wraps this spell's effect application. Several ordinary
-		// damage spell scripts emit StacksInjured through damageUnit without the
-		// SPELL_EFFECT flag or spellID, so recorder scope is the source identity;
-		// positive applied damage to the opposing side is the actual-change test.
-		if(injury.damageAmount <= 0)
-			continue;
-		const auto * victim = battle.battleGetUnitByID(injury.stackAttacked);
-		if(victim && victim->unitSide() == victimSide)
-			return true;
-	}
-
-	for(const auto & change : recorder.effectChanges())
-	{
-		const auto * victim = battle.battleGetUnitByID(change.unitId);
-		const auto * changedSpell = change.spell.toSpell();
-		if(!victim || victim->unitSide() != victimSide || !changedSpell)
-			continue;
-		if((change.kind == EffectPacketRecorder::ChangeKind::ADDED
-				|| change.kind == EffectPacketRecorder::ChangeKind::UPDATED)
-			&& changedSpell->isNegative())
-			return true;
-		if(change.kind == EffectPacketRecorder::ChangeKind::REMOVED
-			&& ((acceptedSpell && acceptedSpell->getId() == SpellID::DISPEL)
-				|| effectSpell == SpellID::DISPEL)
-			&& changedSpell->isPositive())
-			return true;
-	}
-	return false;
+	return recorder.changedArmy(victimSide);
 }
 
 }
@@ -1727,7 +1838,9 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	// the original spell caster; use the effective side for application provenance.
 	const auto effectCasterOwner = battle()->sideToPlayer(effectiveCasterSide());
 	EffectPacketRecorder effectRecorder(*server, *battle(), *this, effectCasterOwner,
-		acceptedSpellId, effectSpellId);
+		acceptedSpellId, effectSpellId,
+		originalHeroCast && !sc.counterspellNegated && battleRound >= 0
+			&& hasCounterpressurePerk(battleInfo->getSideHero(battle()->otherSide(originalCasterSide))));
 	if(!isCounterspellNegated())
 		doRemoveEffects(&effectRecorder, affectedUnits, std::bind(&BattleSpellMechanics::counteringSelector, this, _1));
 
@@ -2201,7 +2314,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	if(originalHeroCast && !sc.counterspellNegated && battleRound >= 0)
 	{
 		const auto victimSide = battle()->otherSide(originalCasterSide);
-		if(hasCounterpressureEffect(effectRecorder, *battle(), owner, effectSpellId, victimSide))
+		if(hasCounterpressureEffect(effectRecorder, victimSide))
 		{
 			const auto * recipientHero = battleInfo->getSideHero(victimSide);
 			if(hasCounterpressurePerk(recipientHero))
@@ -2506,10 +2619,6 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 		projectedResponseAfterCast = projectedBattleInfo->getSpellResponseState(projectedCasterSide);
 		consumeProjectedResponse = projectedResponseAfterCast.consumeAt(projectedRound);
 	}
-	const auto acceptedSpellId = owner->getId();
-	const auto effectSpellId = newHorizonsMagic::spellVariantBase(
-		projectedBattleInfo->getMagicRules(), acceptedSpellId);
-
 	if(completedHeroProjection)
 		registerOverwhelmingFormulaCast(server);
 	Target spellTarget = transformSpellTarget(target);
@@ -2535,7 +2644,9 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 		// Keep hypothetical/reflected casts aligned with the live effective source.
 		const auto effectCasterOwner = battle()->sideToPlayer(effectiveCasterSide());
 		effectRecorder.emplace(*server, *battle(), *this, effectCasterOwner,
-			acceptedSpellId, effectSpellId);
+			acceptedSpellId, effectSpellId,
+			projectedOriginalHeroCast && !isCounterspellNegated()
+				&& hasCounterpressurePerk(projectedBattleInfo->getSideHero(battle()->otherSide(projectedCasterSide))));
 		effectServer = &*effectRecorder;
 	}
 
@@ -2562,7 +2673,7 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 		if(projectedOriginalHeroCast && !isCounterspellNegated() && effectRecorder)
 		{
 			const auto victimSide = battle()->otherSide(projectedCasterSide);
-			if(hasCounterpressureEffect(*effectRecorder, *battle(), owner, effectSpellId, victimSide))
+			if(hasCounterpressureEffect(*effectRecorder, victimSide))
 			{
 				const auto * recipientHero = projectedBattleInfo->getSideHero(victimSide);
 				if(hasCounterpressurePerk(recipientHero))

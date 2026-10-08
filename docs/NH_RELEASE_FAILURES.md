@@ -1,5 +1,64 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Attack packets publish capped damage, not raw overkill
+
+Lifetime-repair linked15832 exits0; native73654 passes43/44. The remaining AI
+fixture expected published damage318 while its Ballista had300HP. CStack's
+prepareAttacked passes damageAmount by reference into CHealth::damage, which
+caps it by available health. Assert published damage equals actual HP loss and
+lies within capped forecast bounds; retain raw forecast150% and AI-choice
+controls. Final linked98331 exits0; native90122 passes44/44 in11.306s, zero
+skips. Receipts: build/nh-counter-battery-final-packet-build.log and
+build/nh-preview-ai-validation.jUrtT2RY/native-up097-up180-final.log/XML.
+The earlier instruction to retain uncapped published-damage bounds below was
+incorrect and is superseded by this authoritative trace. No production damage
+rule was weakened to satisfy the fixture. Data17/17 and module drift pass.
+
+### 2026-10-08 — Concrete effect packets need their own headers
+
+Counter-Battery/Counterpressure linked build43905 exits1 after297/455 steps.
+The new Counterpressure fixture instantiates SetStackEffect while relying on a
+forward declaration in PacksForClientBattle.h; its concrete definition lives in
+lib/networkPacks/SetStackEffect.h. Include that exact header, rather than expanding
+the umbrella header or weakening the actual-effect fixture. The same build
+reports a newly unused outer castEval effectSpellId; remove the dead outer IDs,
+retaining the inner recorder's IDs. Source and fixture refreeze separately.
+Receipt: build/nh-counter-battery-counterpressure-build.log. Repaired incremental
+build89409 is pending; no native success or activation is claimed yet.
+
+Repaired89409 exits0. Native86700 passes32/36 in9.077s, zero skips. One
+production failure: saved-v3 Slow removes its initiative marker before adding an
+identical replacement (timed.lua657-683); sticky per-packet bonus tracking falsely
+re-arms Counterpressure despite unchanged final state. Compare initial versus
+completed-cast semantic bonuses, while preserving sticky actual health/count,
+movement/existence/unit-state changes. The fixture strengthens full state and
+unordered bonus equality; do not remove the no-rearm assertion. Three other
+failed cases expose fixture assumptions: HP loss is capped by remaining health
+when forecast damage overkills, rejection still emits a start notification, and
+different friendly/enemy target positions can carry different range penalties.
+Retain raw published-damage bounds, verify rejected requests leave damage/active
+unit unchanged, and explicitly equalize range penalties. Receipt:
+build/nh-preview-ai-validation.jUrtT2RY/native-up097-up180.log/XML.
+Native-repair build42281 is pending; no activation or successful native rerun yet.
+
+Build42281 exits0, but repaired native60939 terminates with SIGSEGV139 in the
+strengthened fixture's all-bonus snapshot helper. Targeted gdb70013 reproduces
+Bonus::toJsonNode through that helper with an invalid Bonus pointer. The C++20
+range-for dereferences a temporary getBonuses shared owner; its lifetime is not
+extended through the dereference. Retain a named BonusList owner before iteration
+(production already does). Preserve every identity/no-rearm assertion. Receipts:
+native-up097-up180-repaired.log and native-up180-refresh-gdb.log in the same
+validation directory. Debugger exit0 is not a passing test. Fixture-only rebuild
+and full focused rerun are still required; nothing is activated from this crash.
+
+Fixture-only27821 exits0 after retaining the named shared owner. Independent
+review identifies the same pre-existing production lifetime risk in
+BattleFlowProcessor.cpp timeStopMarkerSide. Its TIME_STOP bonus list also needs
+a named owner before range iteration; preserve marker/caster-side semantics.
+Apply that bounded repair before acceptance and include existing Time Stop
+principal cases in the focused rerun. No engine-wide lifetime audit or runtime
+crash attribution to that pre-existing helper is claimed from source inspection.
+
 ### 2026-10-08 — Guaranteed Luck needs shared forecasts and initialized projections
 
 UP081 independent pre-build review found two blocking defects: shared

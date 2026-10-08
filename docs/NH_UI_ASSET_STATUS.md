@@ -1,5 +1,11 @@
 # New Horizons UI and asset status register
 
+UP097 Counter-Battery and UP180 Counterpressure purpose-made perk icons remain
+**Not done**. Their implementation uses existing perk browsing, legal shot
+target feedback and spell-response readback; no raster artwork or new panel is
+created in this cycle. Native mechanic gates do not establish graphical fit,
+art approval or normal playable delivery.
+
 UP081 Perfect Fortune purpose-made perk artwork is **Not done**. Source/native
 mechanic is active with ordinary positive-Luck combat feedback and existing
 perk browsing/selection; that does not approve a bespoke icon, graphical fit

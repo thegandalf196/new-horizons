@@ -3984,7 +3984,7 @@
 								"requires": "expert",
 								"description": "Ballistae and defensive towers may deliberately target enemy war machines and deal increased damage against them.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Ballistae and defensive towers may deliberately target enemy war machines and deal increased damage against them."
 								}
 							}
@@ -5284,7 +5284,7 @@
 								"requires": "advanced",
 								"description": "After an enemy hero casts a spell that affects your army, your next spell before the end of the next round receives +20% to its Spell Power-derived component.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "After an enemy hero casts a spell that affects your army, your next spell before the end of the next round receives +20% to its Spell Power-derived component."
 								}
 							},

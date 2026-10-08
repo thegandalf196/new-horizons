@@ -17,12 +17,15 @@
 #include "../../../lib/CRandomGenerator.h"
 #include "../../../lib/CSkillHandler.h"
 #include "../../../lib/bonuses/Bonus.h"
+#include "../../../lib/bonuses/Updaters.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
+#include "../../../lib/battle/CUnitState.h"
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/mapping/CMap.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/networkPacks/PacksForClientBattle.h"
+#include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
@@ -128,6 +131,7 @@ protected:
 			hero->removeAllSpells();
 			hero->addSpellToSpellbook(SpellID(SpellID::MAGIC_ARROW));
 			hero->addSpellToSpellbook(SpellID(SpellID::SLOW));
+			hero->addSpellToSpellbook(SpellID(SpellID::DISPEL));
 			hero->setPrimarySkill(PrimarySkill::SPELL_POWER, 50, ChangeValueMode::ABSOLUTE);
 			hero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
 			setTestSpellPointTotal(hero, 1000);
@@ -238,6 +242,79 @@ protected:
 		BattleNextRound next;
 		next.battleID = BattleID(0);
 		gameHandler->sendAndApply(next);
+	}
+
+	void addCurse(CStack * target)
+	{
+		Bonus curse(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
+			BonusSource::SPELL_EFFECT, -2, BonusSourceID(SpellID(SpellID::CURSE)));
+		curse.turnsRemain = 3;
+		SetStackEffect effect;
+		effect.battleID = BattleID(0);
+		effect.toAdd.emplace_back(target->unitId(), std::vector<Bonus>{curse});
+		gameHandler->sendAndApply(effect);
+	}
+
+	bool hasCurse(const battle::Unit * target) const
+	{
+		return target->hasBonus(Selector::source(BonusSource::SPELL_EFFECT,
+			BonusSourceID(SpellID(SpellID::CURSE))));
+	}
+
+	void checkDetachedDispel(bool seedCurse)
+	{
+		if(seedCurse)
+			addCurse(attackerVictim);
+		auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor::SPECTATOR);
+		CounterpressurePredictionEnvironment environment(gameState());
+		HypotheticBattle projected(&environment, callback);
+		projected.addUnitBonus(attackerVictim->unitId(), {Bonus(BonusDuration::ONE_BATTLE,
+			BonusType::MORALE, BonusSource::OTHER, 0, BonusSourceID())});
+		projected.addUnitBonus(defenderVictim->unitId(), {Bonus(BonusDuration::ONE_BATTLE,
+			BonusType::MORALE, BonusSource::OTHER, 0, BonusSourceID())});
+		const auto liveHealth = attackerVictim->getAvailableHealth();
+		const auto liveMana = defenderSideHero->getManaAvailable();
+		const auto * dispel = SpellID(SpellID::DISPEL).toSpell();
+		spells::BattleCast cast(&projected, defenderSideHero, spells::Mode::HERO, dispel);
+		const auto mechanics = dispel->battleMechanics(&cast);
+		spells::Target aim{spells::Destination(projected.battleGetUnitByID(attackerVictim->unitId()))};
+		if(seedCurse)
+		{
+			ASSERT_TRUE(mechanics->canBeCastAt(aim));
+			mechanics->castEval(projected.getServerCallback(), aim);
+		}
+		else
+		{
+			// Dispel's actual Lua target contract requires a removable effect.
+			// Do not manufacture an accepted empty cast by bypassing that gate.
+			EXPECT_FALSE(mechanics->canBeCastAt(aim));
+		}
+		EXPECT_FALSE(hasCurse(projected.battleGetUnitByID(attackerVictim->unitId())));
+		EXPECT_EQ(projected.getSpellResponseState(BattleSide::ATTACKER).isReadyAt(projected.getRound()), seedCurse);
+		EXPECT_EQ(castSpellPowerBonus(attackerSideHero, SpellID(SpellID::MAGIC_ARROW), &projected),
+			seedCurse ? newHorizonsMagic::SPELLCRAFT_COUNTERPRESSURE_BONUS_PERCENT : 0);
+		EXPECT_EQ(hasCurse(attackerVictim), seedCurse);
+		EXPECT_EQ(attackerVictim->getAvailableHealth(), liveHealth);
+		EXPECT_EQ(defenderSideHero->getManaAvailable(), liveMana);
+		EXPECT_FALSE(battle()->getSpellResponseState(BattleSide::ATTACKER).hasState());
+		EXPECT_FALSE(projected.getSpellResponseState(BattleSide::DEFENDER).hasState());
+
+		const auto * arrow = SpellID(SpellID::MAGIC_ARROW).toSpell();
+		const auto * target = projected.battleGetUnitByID(defenderVictim->unitId());
+		const auto targetHealth = target->getAvailableHealth();
+		const auto liveTargetHealth = defenderVictim->getAvailableHealth();
+		spells::BattleCast response(&projected, attackerSideHero, spells::Mode::HERO, arrow);
+		const auto responseMechanics = arrow->battleMechanics(&response);
+		spells::Target responseAim{spells::Destination(target)};
+		ASSERT_TRUE(responseMechanics->canBeCastAt(responseAim));
+		const auto expectedDamage = responseMechanics->adjustEffectValue(target);
+		responseMechanics->castEval(projected.getServerCallback(), responseAim);
+		EXPECT_EQ(targetHealth - projected.battleGetUnitByID(defenderVictim->unitId())->getAvailableHealth(), expectedDamage);
+		EXPECT_FALSE(projected.getSpellResponseState(BattleSide::ATTACKER).hasState());
+		EXPECT_EQ(castSpellPowerBonus(attackerSideHero, SpellID(SpellID::MAGIC_ARROW), &projected), 0);
+		EXPECT_EQ(defenderVictim->getAvailableHealth(), liveTargetHealth);
+		EXPECT_EQ(hasCurse(attackerVictim), seedCurse);
+		EXPECT_FALSE(battle()->getSpellResponseState(BattleSide::ATTACKER).hasState());
 	}
 };
 }
@@ -477,4 +554,132 @@ TEST_F(NewHorizonsCounterpressureTest, AcceptedButResistedEnemySpellDoesNotArmRe
 		<< "The accepted enemy cast was fully resisted and applied no damage";
 	EXPECT_FALSE(battle()->getSpellResponseState(BattleSide::ATTACKER).hasState());
 	EXPECT_EQ(castSpellPowerBonus(attackerSideHero, SpellID(SpellID::MAGIC_ARROW)), 0);
+}
+
+TEST_F(NewHorizonsCounterpressureTest, AcceptedEnemyDispelRemovingOurCurseArmsAndNextSpellConsumesResponse)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	addCurse(attackerVictim);
+	ASSERT_TRUE(hasCurse(attackerVictim));
+	const auto health = attackerVictim->getAvailableHealth();
+	ASSERT_TRUE(castPaid(BattleSide::DEFENDER, defenderCaster, SpellID(SpellID::DISPEL), attackerVictim));
+	EXPECT_FALSE(hasCurse(attackerVictim));
+	EXPECT_EQ(attackerVictim->getAvailableHealth(), health);
+	EXPECT_TRUE(battle()->getSpellResponseState(BattleSide::ATTACKER).isReadyAt(battle()->getRound()))
+		<< "A legal enemy Dispel actually affects our army even though removing Curse helps it";
+	EXPECT_EQ(castSpellPowerBonus(attackerSideHero, SpellID(SpellID::MAGIC_ARROW)),
+		newHorizonsMagic::SPELLCRAFT_COUNTERPRESSURE_BONUS_PERCENT);
+	const auto expectedDamage = forecastDamage(attackerSideHero, SpellID(SpellID::MAGIC_ARROW), defenderVictim);
+	const auto targetHealth = defenderVictim->getAvailableHealth();
+	ASSERT_TRUE(castPaid(BattleSide::ATTACKER, attackerCaster, SpellID(SpellID::MAGIC_ARROW), defenderVictim));
+	EXPECT_EQ(targetHealth - defenderVictim->getAvailableHealth(), expectedDamage);
+	EXPECT_FALSE(battle()->getSpellResponseState(BattleSide::ATTACKER).hasState());
+	EXPECT_EQ(castSpellPowerBonus(attackerSideHero, SpellID(SpellID::MAGIC_ARROW)), 0);
+}
+
+TEST_F(NewHorizonsCounterpressureTest, RejectedEmptyEnemyDispelDoesNotArmResponse)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_FALSE(hasCurse(attackerVictim));
+	const auto health = attackerVictim->getAvailableHealth();
+	const auto position = attackerVictim->getPosition();
+	EXPECT_FALSE(castPaid(BattleSide::DEFENDER, defenderCaster, SpellID(SpellID::DISPEL), attackerVictim));
+	EXPECT_EQ(attackerVictim->getAvailableHealth(), health);
+	EXPECT_EQ(attackerVictim->getPosition(), position);
+	EXPECT_FALSE(battle()->getSpellResponseState(BattleSide::ATTACKER).hasState());
+	EXPECT_EQ(castSpellPowerBonus(attackerSideHero, SpellID(SpellID::MAGIC_ARROW)), 0);
+}
+
+TEST_F(NewHorizonsCounterpressureTest, DetachedEnemyDispelRemovalArmsAndConsumesOnlyProjectedResponse)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(checkDetachedDispel(true));
+}
+
+TEST_F(NewHorizonsCounterpressureTest, DetachedRejectedEmptyEnemyDispelDoesNotArmOrChangeLiveBattle)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(checkDetachedDispel(false));
+}
+
+TEST_F(NewHorizonsCounterpressureTest, IdenticalDetachedEnemySlowRefreshDoesNotRearmConsumedResponse)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor::SPECTATOR);
+	CounterpressurePredictionEnvironment environment(gameState());
+	HypotheticBattle projected(&environment, callback);
+	for(const auto * target : {attackerVictim, defenderVictim})
+		projected.addUnitBonus(target->unitId(), {Bonus(BonusDuration::ONE_BATTLE,
+			BonusType::MORALE, BonusSource::OTHER, 0, BonusSourceID())});
+	const auto * slow = SpellID(SpellID::SLOW).toSpell();
+	spells::BattleCast first(&projected, defenderSideHero, spells::Mode::HERO, slow);
+	spells::Target aim{spells::Destination(projected.battleGetUnitByID(attackerVictim->unitId()))};
+	const auto firstMechanics = slow->battleMechanics(&first);
+	ASSERT_TRUE(firstMechanics->canBeCastAt(aim));
+	firstMechanics->castEval(projected.getServerCallback(), aim);
+	ASSERT_TRUE(projected.getSpellResponseState(BattleSide::ATTACKER).isReadyAt(projected.getRound()));
+
+	const auto * arrow = SpellID(SpellID::MAGIC_ARROW).toSpell();
+	spells::BattleCast response(&projected, attackerSideHero, spells::Mode::HERO, arrow);
+	spells::Target responseAim{spells::Destination(projected.battleGetUnitByID(defenderVictim->unitId()))};
+	const auto responseMechanics = arrow->battleMechanics(&response);
+	ASSERT_TRUE(responseMechanics->canBeCastAt(responseAim));
+	responseMechanics->castEval(projected.getServerCallback(), responseAim);
+	ASSERT_FALSE(projected.getSpellResponseState(BattleSide::ATTACKER).hasState());
+
+	const auto selector = Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::SLOW)));
+	const auto before = projected.battleGetUnitByID(attackerVictim->unitId())->getBonuses(selector);
+	ASSERT_FALSE(before->empty());
+	std::vector<Bonus> saved;
+	for(const auto & bonus : *before)
+		saved.push_back(*bonus);
+	const auto * beforeUnit = projected.battleGetUnitByID(attackerVictim->unitId());
+	const auto beforeState = beforeUnit->acquireState()->save();
+	const auto allBonusSnapshots = [](const battle::Unit * unit)
+	{
+		std::vector<JsonNode> result;
+		const auto bonuses = unit->getBonuses(Selector::all);
+		for(const auto & bonus : *bonuses)
+		{
+			auto value = bonus->toJsonNode();
+			value["bonusOwner"].Integer() = bonus->bonusOwner.getNum();
+			value["spellCasterOwner"].Integer() = bonus->spellCasterOwner.getNum();
+			value["appliedByEnemy"].Bool() = bonus->appliedByEnemy;
+			if(bonus->propagationUpdater)
+				value["propagationUpdater"] = bonus->propagationUpdater->toJsonNode();
+			result.push_back(std::move(value));
+		}
+		return result;
+	};
+	const auto allBefore = allBonusSnapshots(beforeUnit);
+	spells::BattleCast identical(&projected, defenderSideHero, spells::Mode::HERO, slow);
+	const auto identicalMechanics = slow->battleMechanics(&identical);
+	ASSERT_TRUE(identicalMechanics->canBeCastAt(aim));
+	identicalMechanics->castEval(projected.getServerCallback(), aim);
+	const auto * afterUnit = projected.battleGetUnitByID(attackerVictim->unitId());
+	EXPECT_EQ(afterUnit->acquireState()->save(), beforeState)
+		<< "An identical refresh must not change unit-owned state";
+	const auto allAfter = allBonusSnapshots(afterUnit);
+	ASSERT_EQ(allAfter.size(), allBefore.size());
+	std::vector<bool> matched(allAfter.size(), false);
+	for(const auto & value : allBefore)
+	{
+		size_t index = 0;
+		for(; index < allAfter.size(); ++index)
+			if(!matched[index] && value == allAfter[index])
+				break;
+		EXPECT_LT(index, allAfter.size()) << "Full bonus snapshot changed: " << value.toString();
+		if(index < allAfter.size())
+			matched[index] = true;
+	}
+	const auto after = projected.battleGetUnitByID(attackerVictim->unitId())->getBonuses(selector);
+	ASSERT_EQ(after->size(), saved.size());
+	for(size_t index = 0; index < saved.size(); ++index)
+	{
+		EXPECT_EQ((*after)[index]->toJsonNode(), saved[index].toJsonNode());
+		EXPECT_EQ((*after)[index]->turnsRemain, saved[index].turnsRemain);
+	}
+	EXPECT_FALSE(projected.getSpellResponseState(BattleSide::ATTACKER).hasState());
+	EXPECT_FALSE(battle()->getSpellResponseState(BattleSide::ATTACKER).hasState());
+	EXPECT_TRUE(attackerVictim->getBonuses(selector)->empty());
 }

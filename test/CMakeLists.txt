@@ -52,6 +52,7 @@ set(test_SRCS
 		battle/AutocombatPreferencesTest.cpp
 		battle/AlternatingHeroActionStateTest.cpp
 		battle/SpellResponseStateTest.cpp
+		battle/NewHorizonsCounterBatteryAITest.cpp
 		battle/BattleDeploymentOrderTest.cpp
 		battle/CasualtyProvenanceTest.cpp
 		battle/HeroActionAllowanceStateTest.cpp
@@ -414,6 +415,7 @@ set(test_SRCS
 		server/battles/NewHorizonsSylvanLuckTest.cpp
 		server/battles/NewHorizonsFortunesFavorTest.cpp
 		server/NewHorizonsPerfectFortuneTest.cpp
+		server/NewHorizonsCounterBatteryTest.cpp
 		server/battles/NewHorizonsLuckyAimTest.cpp
 		server/battles/NewHorizonsSecondChanceTest.cpp
 		server/battles/NewHorizonsGamblerTest.cpp

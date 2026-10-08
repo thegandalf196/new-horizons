@@ -147,7 +147,8 @@ namespace
 
 	std::optional<BattleSide> timeStopMarkerSide(const battle::Unit & unit)
 	{
-		for(const auto & marker : *unit.getBonuses(Selector::type()(BonusType::TIME_STOP)))
+		const auto markers = unit.getBonuses(Selector::type()(BonusType::TIME_STOP));
+		for(const auto & marker : *markers)
 		{
 			if(!marker || !marker->parameters)
 				continue;
@@ -1426,10 +1427,12 @@ bool BattleFlowProcessor::tryMakeAutomaticActionOfRangedUnit(const CBattleInfoCa
 	const auto canonicalControl = fortificationEngineerControl
 		? std::optional<bool>(true)
 		: canonicalWarMachineControl(curOwner, stackCreatureId);
-	const bool manualControl = curOwner && (canonicalControl
+	const bool ordinaryManualControl = curOwner && (canonicalControl
 		? *canonicalControl
 		: gameHandler->randomizer->rollCombatAbility(curOwner->id,
 			curOwner->valOfBonuses(BonusType::MANUAL_CONTROL, BonusSubtypeID(stackCreatureId))));
+	const bool counterBatteryControl = next->isTurret() && battle.battleHasCounterBatteryMachineTarget(next);
+	const bool manualControl = ordinaryManualControl || counterBatteryControl;
 	if (next->hasBonusOfType(BonusType::CPU_CONTROLLED) && (battle.battleCanShoot(next) || !next->isMeleeAttacker())
 		&& !manualControl)
 	{

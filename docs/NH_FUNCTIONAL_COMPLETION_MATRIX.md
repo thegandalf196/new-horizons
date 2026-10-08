@@ -2,6 +2,23 @@
 
 Updated: 2026-10-08
 
+UP097 Counter-Battery and UP180 Counterpressure are active and source/native
+verified. Real Citadel tower and Ballista shots, scoped manual targeting,
+150% final machine damage, shared AI candidates/forecast and accepted-shot
+parity pass. Counterpressure tracks actual army changes regardless of polarity;
+beneficial Dispel qualifies, rejected empty Dispel and identical Slow refresh
+do not. Live/detached response consumption and expiry remain intact. Linked
+98331 exits0 at10 jobs; native90122 passes44/44, zero skips. Data17/17 and
+module drift pass. Active-registry native89197 also passes44/44 in11.051s,
+zero skips; receipt: build/nh-preview-ai-validation.jUrtT2RY/
+native-up097-up180-active.log/XML. Delivery remains separate.
+Independent Sol High review reports no blocker. Coverage232→234/310,
+generic161→163/220, planned78→76; War Machines6/10 and Spellcraft6/10.
+Faction71/90, combat61/67, Orders8/8 and31 Skills/93 rank effects are unchanged.
+Phase2 retains custom fractional control providers, wider reflection/control/
+hazard/lifecycle combinations and autonomous AI turn choice. Normal launcher
+and purpose-made artwork are not promoted by native acceptance.
+
 UP081 Perfect Fortune is now active and source/native verified. First eligible
 physical creature attack or retaliation receives guaranteed positive Luck,
 independently per current-controller side; Misfortune/No Luck, machines and
@@ -4169,7 +4186,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | All three ranks per Skill are active; many registered Skills still lack complete perk progression. |
 | Skill rank effects active | 93/93 | Elemental Rebirth's three ranks now have source/native and owning-side AI evidence. Active status does not certify every wider interaction. |
-| Skill perks active | 232/310 | 78 planned; current registry recount2026-10-08. Generic161/220, faction71/90. Luck7/10; Diplomacy7/10; Chaos Magic5/10; Necromancy10/10; Learning3/10; Estates6/10; Battlecraft8/10; Logistics8/10; Command7/10; Warcasting9/10. Historian's foundation remains planned and adds no activation count. Active status alone does not certify every mechanic. |
+| Skill perks active | 234/310 | 76 planned; current registry recount2026-10-08. Generic163/220, faction71/90. War Machines6/10; Spellcraft6/10; Luck7/10; Diplomacy7/10; Chaos Magic5/10; Necromancy10/10; Learning3/10; Estates6/10; Battlecraft8/10; Logistics8/10; Command7/10; Warcasting9/10. Historian's foundation remains planned and adds no activation count. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 27/27 | All nine faction rank foundations are active; their remaining perks and wider integration are separate work. |
 | Faction perks active | 71/90 | 19 planned perks; Divine Mandate has six accepted perks, including Expert Mandate of Heaven and Advanced Purifying Mandate; Elemental Rebirth has three accepted perks with normal Basic-to-Advanced selection and live/detached evidence. |
 | Canonical combat-spell identities registered | 61/67 | 6 missing/inactive; Puppet Master is the newest source/native-verified identity. Chaos is 7/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -4518,10 +4535,10 @@ interactions, and rendered/playable acceptance remain separate.
 | Skill | Active/planned ranks | Active/planned perks | Immediate state |
 |---|---:|---:|---|
 | Offense | 3/0 | 10/0 | Bounded consumer audit found Breakthrough omitted explicit Battlecraft/Bulwark Defend reductions. UP231 repairs those channels with8/8 focused cases, accepted melee and equivalent-view detached parity. Broader mundane-state taxonomy and stale earlier-tier fixture repairs remain deferred; active registration is not whole-family certification. |
-| Armorer | 3/0 | 8/2 | Last Stand joins Bastion, Formation Fighting and Veteran with focused live/detached evidence. Unyielding lacks a nonmagical displacement producer; Defiant awaits its recorded design choice. |
+| Armorer | 3/0 | 8/2 | Last Stand joins Bastion, Formation Fighting and Veteran with focused live/detached evidence. Unyielding lacks a nonmagical displacement producer; Defiant is implementation-ready under the canonical cause-specific denial contract recorded in UP136. |
 | Archery | 3/0 | 10/0 | Bounded canonical consumer audit finds all ten active perks represented in shared payload, authoritative actions/reactions and BattleAI projections; no missing principal source clause identified. This is source evidence, not focused whole-family execution certification. |
 | Battlecraft | 3/0 | 8/2 | Battlefield Mastery joins the seven previously verified perks. UP156 focused4/4 and adjacent16/16 pass with zero skips, including machine exclusion, first-action allocation, distinct Wait/Defend expiry and detached branches. Actual Defend selection, controlled units and death/revival composition remain Phase2. Overwatch and Rapid Response remain planned. |
-| War Machines | 3/0 | 5/5 | Surgeon and Piercing Bolts have focused live/detached evidence; Fortification Engineer has real fortified-town manual-shot evidence; Master Gunner has accepted independently targeted second-shot evidence; Quartermaster has accepted half-output Ballista/Tent/Catapult extra-activation evidence. Five perks remain planned. Battlefield Medic persistence awaits clarification. |
+| War Machines | 3/0 | 6/4 | Counter-Battery has actual scoped Citadel-tower/Ballista shots and shared AI candidate/forecast evidence. Surgeon, Piercing Bolts, Fortification Engineer, Master Gunner and Quartermaster remain active. Four perks remain planned. Battlefield Medic is implementation-ready; canonical ordinary restoration is permanent and Re-animate supplies the temporary exception. |
 | Discipline | 3/0 | 7/3 | Steadfast joins Unbreakable, Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless with focused authoritative and detached evidence. Three perks remain planned; Esprit de Corps composition scope, Heroic Spirit activation timing and Veteran Cohesion HP reference await clarification. |
 | Recruitment | 3/0 | 6/4 | Four perks missing |
 | Command | 3/0 | 7/3 | Aggressive/Defensive, Veteran, Combined Arms, Commanding Presence, Battle Plan and Double Command have focused runtime/AI evidence. Iron Will, Crisis Command and Seize Initiative remain planned pending their recorded narrow design rulings. |
@@ -4531,7 +4548,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Havoc Magic | 3/0 | 7/3 | Three perks missing; Mine Layer has focused live/detached placement evidence |
 | Sorcery Magic | 3/0 | 10/0 | Bounded canonical consumer audit2026-10-06 identifies learning/coefficient paths for all three ranks and production consumers for all ten perks, including distinct Mass Slow. No missing principal clause demonstrated; existing focused fixtures were inspected, not rerun as whole-family execution certification. Wider interactions and rendered/playable acceptance remain separate. |
 | Chaos Magic | 3/0 | 5/5 | Frenzied Curse joins Mindbreaker, Blinkmaster, Weaver and Paradox Shield with focused source/native evidence recorded above; five perks remain planned. Base Berserk lifecycle is still partial. |
-| Spellcraft | 3/0 | 5/5 | Overwhelming Formula now selects the first actual hostile magical injury against a target with applicable MDR, retaining the winning cast across targets and delayed hazards; its 50% penetration combines independently with other contributors. Focused Formula/MDR native gate passes53/53; full movement-trigger routing remains Phase2. Grand Formula, Arcane Focus, Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted 12-Mana threshold. Basic/Advanced/Expert efficiency is 110/120/130% under saved v3 rules. Precise Casting has7/7 principal native cases and awaits Time Stop/Earthquake scope; Counterpressure has an accepted-cast map and a no-op trigger boundary. Concentration target-count definition, Cross-School multi-school relation and Extend Spell unusual lifetimes remain explicit rulings. |
+| Spellcraft | 3/0 | 6/4 | Counterpressure has actual live/detached polarity-independent effects, response consumption and no-op controls. Overwhelming Formula selects the first hostile magical injury against applicable MDR, retaining the winning cast across targets and delayed hazards; its50% penetration combines independently. Grand Formula, Arcane Focus, Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted12-Mana threshold. Basic/Advanced/Expert efficiency is110/120/130% under saved v3 rules. Precise Casting awaits Time Stop/Earthquake scope; Concentration target-count definition, Cross-School multi-school relation and Extend Spell unusual lifetimes remain explicit rulings. Wider movement/hazard routing remains Phase2. |
 | Wisdom | 3/0 | 8/2 | Mana Conservation post-combat Normal recovery, Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. One other perk remains missing. Broader interactions and playable acceptance remain open. |
 | Warcasting | 3/0 | 9/1 | Combat Casting and Enchanted Command now join the seven earlier active perks, with accepted authority/detached evidence in the42-case focused gate recorded above; resolved shared-rule decisions are not pending. Perfect Rhythm retains accepted third-Spell/third-Order, flat-base preservation and unmatched/unselected/expired controls. Valid one-per-tier selection prevents coexistence with Master Synthesis; the former stacking hold is inapplicable. Reactive Weave alone remains planned on its stronger-only versus additive readiness ruling. Rendered status and wider interactions remain Phase2. |
 | Logistics | 3/0 | 8/2 | Rapid Embarkation and Pursuit March remain missing. Master Logistician has actual day/boat/Stables/save/pathfinder evidence alongside Forced March, Roadmaster, Wayfarer and Mountaineer. Future-day strategic carry and unspent-burst forecasting remain Phase2. |
