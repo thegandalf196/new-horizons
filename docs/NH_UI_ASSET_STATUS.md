@@ -131,6 +131,17 @@ readable silhouette masks without modifying source RGBA; actual loaded SDL2
 1x/2x checks pass. Live gameplay selection/hover/audio and all four reported
 Mage portrait roles still require acceptance in a delivered candidate.
 
+Superseding base-hover checkpoint,2026-10-08: selected normal1c720/source0b53
+contains all four approved base frames. Ordinary mouse entry actually triggers
+MOUSEON then holding; root inspected native hover/cursor-away and enlarged pose
+contact in Downloads/provisory/cabir-base-hover-up289-BvcZHF72. Approximate6fps
+captures do not establish every pose or full-size battle layout. Guarded private
+run cleans up by59.239s. The private CompleteHandoff importer now offers explicit
+--approved-base-fidget composition before manifests;13 focused checks and
+independent review pass without new artwork or live installation. Matching Master
+draft remains Provisional/unapproved/uninstalled; audio and other Mage roles stay
+open. Base artwork approval is unchanged, not a blanket Final animation claim.
+
 Superseding complete handoffs,2026-10-07, UP288: **Provisional**, source/import
 and private playable delivery verified; rendered approval remains open. Current
 Cabir descriptors use77/83 supplied authored battle frames, with no standing-death

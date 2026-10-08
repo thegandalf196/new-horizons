@@ -9,6 +9,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from PIL import Image, ImageDraw
 
@@ -141,7 +142,7 @@ class CabirCompleteHandoffTest(unittest.TestCase):
 		path = f"{prior.CONTENT_PREFIX}/sprites/{prior.PROJECTILE_DESCRIPTOR.replace('.def', '.json')}"
 		self.prior_outputs[path] = (json.dumps(projectile_descriptor) + "\n").encode("utf-8")
 
-	def _build(self):
+	def _build(self, **options):
 		return importer.build_overlay(
 			self.package,
 			expected_package_sha256=None,
@@ -149,7 +150,81 @@ class CabirCompleteHandoffTest(unittest.TestCase):
 			expected_package_file_count=None,
 			prior_outputs_override=self.prior_outputs,
 			prior_metadata_override={"handoffManifestSha256": importer.EXPECTED_PRIOR_HANDOFF_MANIFEST_SHA256},
+			**options,
 		)
+
+	def _approved_fidget(self):
+		folder = self.root / "approved-fidget"
+		folder.mkdir()
+		pins = []
+		for index in range(4):
+			image = Image.new("RGBA", (450, 400))
+			ImageDraw.Draw(image).rectangle((180 + index, 210, 209, 266), fill=(150 + index, 80, 30, 255))
+			buffer = BytesIO()
+			image.save(buffer, format="PNG")
+			data = buffer.getvalue()
+			(folder / f"frame-{index:02d}.png").write_bytes(data)
+			pins.append(hashlib.sha256(data).hexdigest())
+		return folder, tuple(pins)
+
+	def test_opted_in_fidget_preserves_handoff_and_has_precise_manifest(self):
+		original, baseline = self._build()
+		folder, pins = self._approved_fidget()
+		with patch.object(importer.approved_fidget, "FRAME_HASHES", pins):
+			outputs, metadata = self._build(approved_base_fidget=folder)
+		descriptor_path = str(importer.approved_fidget.DESCRIPTOR)
+		before = _json(original[descriptor_path])
+		after = _json(outputs[descriptor_path])
+		self.assertEqual(after["sequences"][:-1], before["sequences"])
+		self.assertEqual(after["sequences"][-1]["group"], 1)
+		for path, data in original.items():
+			if path not in (descriptor_path, importer.MANIFEST_NAME):
+				self.assertEqual(outputs[path], data)
+		for index, frame in enumerate(after["sequences"][-1]["frames"]):
+			path = f"{importer.IMAGE_PREFIX}/{after['basepath']}{frame}"
+			self.assertEqual(outputs[path], (folder / f"frame-{index:02d}.png").read_bytes())
+			self.assertEqual(metadata["outputHashes"][path], pins[index])
+		self.assertEqual(metadata["allAuthoredGroupIds"], baseline["allAuthoredGroupIds"])
+		self.assertNotIn(1, metadata["allAuthoredGroupIds"])
+		self.assertIn(1, metadata["allComposedGroupIds"])
+		self.assertNotIn("1", metadata["optionalGroupsNotEmitted"])
+		self.assertNotIn("1", metadata["optionalGroupsNotEmittedByForm"]["cabir"])
+		self.assertIn("1", metadata["optionalGroupsNotEmittedByForm"]["cabir-master"])
+		self.assertEqual(metadata["creatures"]["cabir"]["nativeFrameCount"], 81)
+		self.assertEqual(metadata["creatures"]["cabir"]["suppliedNativeFrameCount"], 77)
+		self.assertFalse(metadata["approvedBaseFidget"]["runtimeInstalled"])
+		self.assertFalse(metadata["approvedBaseFidget"]["distributionApproved"])
+		self.assertEqual(_json(outputs[importer.MANIFEST_NAME]), metadata)
+		self.assertNotIn("approvedBaseFidget", baseline)
+		destination = self.root / "candidate"
+		importer._check_or_write_outputs(outputs, destination, check=False)
+		importer._check_or_write_outputs(outputs, destination, check=True)
+		(destination / descriptor_path).write_bytes(b"foreign descriptor")
+		with self.assertRaisesRegex(ValueError, "output differs"):
+			importer._check_or_write_outputs(outputs, destination, check=True)
+		self.assertEqual((destination / descriptor_path).read_bytes(), b"foreign descriptor")
+
+	def test_fidget_composition_rejects_wrong_creature_descriptor(self):
+		folder, pins = self._approved_fidget()
+		with patch.object(importer.approved_fidget, "FRAME_HASHES", pins):
+			with self.assertRaisesRegex(ValueError, "complete base Cabir"):
+				importer.approved_fidget.compose_approved_fidget(
+					{"basepath": "NH_cabir_v3_battle/", "sequences": [{"group": 2, "frames": []}]}, folder)
+		self.assertFalse((self.root / "candidate").exists())
+
+	def test_bad_fidget_hash_and_geometry_fail_before_output(self):
+		folder, pins = self._approved_fidget()
+		first = folder / "frame-00.png"
+		first.write_bytes(first.read_bytes() + b"changed")
+		with patch.object(importer.approved_fidget, "FRAME_HASHES", pins):
+			with self.assertRaisesRegex(ValueError, "hash mismatch"):
+				self._build(approved_base_fidget=folder)
+		first.write_bytes(_png((58, 64), (100, 80, 20, 255)))
+		modified = (hashlib.sha256(first.read_bytes()).hexdigest(), *pins[1:])
+		with patch.object(importer.approved_fidget, "FRAME_HASHES", modified):
+			with self.assertRaisesRegex(ValueError, "RGBA450x400"):
+				self._build(approved_base_fidget=folder)
+		self.assertFalse((self.root / "candidate").exists())
 
 	def test_actual_groups_are_emitted_without_placeholder_aliases(self):
 		outputs, metadata = self._build()

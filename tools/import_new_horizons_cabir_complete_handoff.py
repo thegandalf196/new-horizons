@@ -5,6 +5,8 @@ The refreshed handoff supplies every production-required battle group. This
 tool copies those native RGBA frames without changing pixels, and reuses only
 the previously retained map, icon, and projectile resources. It emits a
 graphics-only patch for root integration; it never edits the live module.
+An explicit approved-base-fidget input can compose the separately approved,
+hash-pinned group1 before manifests are assembled; default imports omit it.
 """
 
 from __future__ import annotations
@@ -22,6 +24,7 @@ from typing import Any
 from PIL import Image, UnidentifiedImageError
 
 import import_new_horizons_cabir_handoff as prior_import
+import install_new_horizons_cabir_fidget as approved_fidget
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -469,12 +472,25 @@ def assemble_overlay(
 	prior_outputs: dict[str, bytes],
 	prior_metadata: dict,
 	refreshed_source_hashes: dict[str, str],
+	*, approved_base_fidget: Path | None = None,
 ) -> tuple[dict[str, bytes], dict]:
 	"""Assemble already-verified handoff bytes into a private New Horizons overlay."""
 	outputs = _select_preserved_prior_outputs(prior_outputs)
 	form_reports = {}
+	fidget_receipt = None
 	for form_key, form in FORM_SPECS.items():
 		descriptor, groups = _descriptor_for_form(form, state_assets, outputs)
+		if form_key == "cabir" and approved_base_fidget is not None:
+			composed, additions, frames, inputs = approved_fidget.compose_approved_fidget(
+				json.loads(descriptor), approved_base_fidget)
+			descriptor = _json_bytes(composed)
+			for path, data in additions.items():
+				_add_output(outputs, path.as_posix(), data)
+			if any(_sha256(Path(path).read_bytes()) != digest for path, digest in inputs.items()):
+				raise ValueError("approved fidget input changed during composition")
+			fidget_receipt = {"group": 1, "creatureId": form["creatureId"], "frames": frames,
+				"method": "Hash-pinned approved native bytes; base group1 only; supplied action groups unchanged",
+				"runtimeInstalled": False, "distributionApproved": False}
 		descriptor_path = f"{SPRITE_PREFIX}/{form['battleDescriptor'].replace('.def', '.json')}"
 		_add_output(outputs, descriptor_path, descriptor)
 		form_reports[form_key] = {
@@ -485,6 +501,11 @@ def assemble_overlay(
 			"nativeFrameCount": sum(state.count for state in form["states"]),
 			"aliasesEmitted": False,
 		}
+		if form_key == "cabir" and fidget_receipt is not None:
+			form_reports[form_key]["suppliedNativeFrameCount"] = form_reports[form_key]["nativeFrameCount"]
+			form_reports[form_key]["nativeFrameCount"] += len(fidget_receipt["frames"])
+			form_reports[form_key]["actualGroupCount"] += 1
+			form_reports[form_key]["actualComposedGroupIds"] = groups + [1]
 
 	patch = _json_bytes(_graphics_patch())
 	_add_output(outputs, PATCH_NAME, patch)
@@ -529,6 +550,17 @@ def assemble_overlay(
 		"sourceHashes": dict(sorted(state_hashes.items())),
 		"outputHashes": {relative: _sha256(data) for relative, data in sorted(outputs.items())},
 	}
+	if fidget_receipt is not None:
+		metadata["approvedBaseFidget"] = fidget_receipt
+		# Authored IDs above describe the supplied handoff, not this later approved addition.
+		metadata["allComposedGroupIds"] = sorted(set(all_groups) | {1})
+		metadata["optionalGroupsNotEmitted"].pop("1", None)
+		metadata["optionalGroupsNotEmittedByForm"] = {
+			key: {str(group): {"name": name, "engineBehavior": OPTIONAL_GROUP_NOTES[group]}
+				for group, name in ENGINE_GROUPS if group in OPTIONAL_GROUP_NOTES
+				and group not in report.get("actualComposedGroupIds", report["actualAuthoredGroupIds"])}
+			for key, report in form_reports.items()
+		}
 	outputs[MANIFEST_NAME] = _json_bytes(metadata)
 	return outputs, metadata
 
@@ -542,6 +574,7 @@ def build_overlay(
 	expected_package_file_count: int | None = EXPECTED_PACKAGE_FILE_COUNT,
 	prior_outputs_override: dict[str, bytes] | None = None,
 	prior_metadata_override: dict | None = None,
+	approved_base_fidget: Path | None = None,
 ) -> tuple[dict[str, bytes], dict]:
 	state_assets, state_hashes, source = _load_refreshed_package(
 		package_dir,
@@ -562,7 +595,8 @@ def build_overlay(
 	refreshed_source_hashes = _assert_prior_resources_match_refreshed_inputs(
 		prior_outputs, source["packageRoot"], source["packagePins"]
 	)
-	return assemble_overlay(state_assets, state_hashes, prior_outputs, prior_metadata, refreshed_source_hashes)
+	return assemble_overlay(state_assets, state_hashes, prior_outputs, prior_metadata, refreshed_source_hashes,
+		approved_base_fidget=approved_base_fidget)
 
 
 def _safe_output(output_dir: Path) -> Path:
@@ -622,8 +656,9 @@ def write_overlay(
 	output_dir: Path,
 	*,
 	check: bool = False,
+	approved_base_fidget: Path | None = None,
 ) -> dict:
-	outputs, metadata = build_overlay(package_dir, prior_package_dir)
+	outputs, metadata = build_overlay(package_dir, prior_package_dir, approved_base_fidget=approved_base_fidget)
 	destination = _safe_output(output_dir)
 	_check_or_write_outputs(outputs, destination, check=check)
 	return metadata
@@ -635,9 +670,12 @@ def main(argv: list[str] | None = None) -> int:
 	parser.add_argument("--prior-package", type=Path, default=DEFAULT_PRIOR_PACKAGE)
 	parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
 	parser.add_argument("--check", action="store_true", help="verify an existing private output without changing it")
+	parser.add_argument("--approved-base-fidget", type=Path,
+		help="explicit private directory containing the four hash-pinned approved base Cabir frames")
 	args = parser.parse_args(argv)
 	try:
-		metadata = write_overlay(args.package, args.prior_package, args.output, check=args.check)
+		metadata = write_overlay(args.package, args.prior_package, args.output, check=args.check,
+			approved_base_fidget=args.approved_base_fidget)
 	except (OSError, ValueError) as error:
 		print(f"Cabir complete handoff import error: {error}", file=sys.stderr)
 		return 2

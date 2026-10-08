@@ -1,5 +1,20 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Fresh private Cabir imports can omit the approved hover overlay
+
+The selected normal1c720 snapshot retains the approved four-frame base MOUSEON
+overlay, but the pristine CompleteHandoff importer does not include that separate
+approval. Replacing its descriptor with a fresh import can lose group1. The
+code-only repair adds explicit --approved-base-fidget input and shares the pinned
+frame/geometry validation before output manifests or writes. Default imports and
+all supplied action/Master resources remain unchanged;13 focused checks pass and
+independent review has no blocker. Do not merge these poses into the older
+tracked creature design or assume private handoff pixels are publishable.
+Actual hover is verified separately on the already selected frozen snapshot,
+not implied by importer tests. Phase2: broader symlink/filesystem-race and
+interrupted-write hardening remains inherited staging work; the current check
+path rejects changed inventories/bytes and refuses overwriting existing output.
+
 ### 2026-10-08 — Bloodrage UI fixture assumed every creature has a capacity
 
 The initial opt-in scenario native check fails1/1 at its Peasant capacity

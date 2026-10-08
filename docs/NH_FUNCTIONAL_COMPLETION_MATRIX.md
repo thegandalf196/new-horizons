@@ -2,6 +2,24 @@
 
 Updated: 2026-10-08
 
+UP289 base Cabir hover principal acceptance passes2026-10-08 on current normal
+1c720/source0b53: ordinary human pointer entry triggers the approved MOUSEON
+sequence and returns to holding; all four pinned frames load on the transition.
+Root inspects native captures and pose contact under Downloads/provisory/
+cabir-base-hover-up289-BvcZHF72. Evidence53.413s/cleanup59.239s fits the guarded
+90-second private run; owned client/Xvfb exit0 and lock/runtime cleanup passes.
+Actual6fps sampling does not isolate every pose or certify full-size layout.
+Fresh private CompleteHandoff imports can now opt into the approved base fidget
+before manifests via --approved-base-fidget, preserving every supplied action,
+Master and default import. Root focused13/13 checks and independent review pass;
+real pinned inputs compose in memory, without installing art or rebuilding.
+Magi/Gargoyle portraits, Master draft approval and audio acceptance remain open.
+The bounded Bulwark audit confirms an existing owner-visible BULWARK Defend
+badge and rank/reflection/pre-emptive tooltip, not a new missing principal UI
+consumer; richer per-perk readiness is optional, while Basic Toxic Spines'
+reflection dependency remains the separate UP065 design hold. Counts remain
+236/310 perks,61/67 combat spells and8/8 Orders; no new mechanic identity credit.
+
 UP004 Bloodrage principal required-UI gate passes2026-10-08: ordinary canonical
 Crag Hack on current normal1c720/source0b53 renders+0/20% and Hero Action
 Available, then an accepted Orc shot destroys one whole Peasant stack and updates

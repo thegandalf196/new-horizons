@@ -40,17 +40,8 @@ def relative(value: str) -> Path:
     return Path(path)
 
 
-def stage(source_mount: Path, approved_frames: Path, output: Path) -> dict:
-    source_mount = source_mount.resolve()
-    approved_frames = approved_frames.resolve()
-    output = output.resolve()
-    if output == source_mount or output.is_relative_to(source_mount) or source_mount.is_relative_to(output):
-        raise ValueError("output must be separate from source mount")
-    if output == approved_frames or output.is_relative_to(approved_frames) or approved_frames.is_relative_to(output):
-        raise ValueError("output must be separate from approved input frames")
-    descriptor_path = source_mount / DESCRIPTOR
-    descriptor_bytes = descriptor_path.read_bytes()
-    descriptor = json.loads(descriptor_bytes)
+def compose_approved_fidget(descriptor: dict, approved_frames: Path) -> tuple[dict, dict, list, dict]:
+    """Validate/copy approved bytes in memory; never write or approve an installation."""
     if descriptor.get("basepath") != EXPECTED_BASEPATH:
         raise ValueError("expected the complete base Cabir handoff descriptor")
     sequences = descriptor.get("sequences", [])
@@ -59,14 +50,7 @@ def stage(source_mount: Path, approved_frames: Path, output: Path) -> dict:
         raise ValueError("descriptor requires unique groups and original HOLDING group2")
     if 1 in groups:
         raise ValueError("source already contains group1; preserve it and use the pristine handoff")
-    inputs = {str(descriptor_path): digest(descriptor_bytes)}
-    # Pin the referenced original frames as preservation evidence. They are
-    # deliberately absent from this sparse overlay and remain in its base mount.
-    for sequence in sequences:
-        for frame in sequence["frames"]:
-            path = source_mount / IMAGE_ROOT / EXPECTED_BASEPATH / relative(frame)
-            inputs[str(path)] = digest(path.read_bytes())
-
+    inputs = {}
     new_frames = []
     payloads = {}
     frame_receipts = []
@@ -84,7 +68,7 @@ def stage(source_mount: Path, approved_frames: Path, output: Path) -> dict:
             if meaningful_bounds is None or meaningful_bounds[3] != 267:
                 raise ValueError(f"approved frame feet no longer end at baseline267: {name}")
             frame_receipts.append({"frame": name, "sha256": expected,
-                                   "alphaBounds": alpha.getbbox(), "alpha128Bounds": meaningful_bounds})
+                                   "alphaBounds": list(alpha.getbbox()), "alpha128Bounds": list(meaningful_bounds)})
         inputs[str(path)] = expected
         frame_reference = f"fidget-approved-v1/{name}"
         new_frames.append(frame_reference)
@@ -94,6 +78,27 @@ def stage(source_mount: Path, approved_frames: Path, output: Path) -> dict:
     result["sequences"].append({"group": 1, "generateOverlay": 1, "frames": new_frames})
     if result["sequences"][:-1] != sequences:
         raise AssertionError("original descriptor groups changed")
+    return result, payloads, frame_receipts, inputs
+
+
+def stage(source_mount: Path, approved_frames: Path, output: Path) -> dict:
+    source_mount = source_mount.resolve()
+    approved_frames = approved_frames.resolve()
+    output = output.resolve()
+    if output == source_mount or output.is_relative_to(source_mount) or source_mount.is_relative_to(output):
+        raise ValueError("output must be separate from source mount")
+    if output == approved_frames or output.is_relative_to(approved_frames) or approved_frames.is_relative_to(output):
+        raise ValueError("output must be separate from approved input frames")
+    descriptor_path = source_mount / DESCRIPTOR
+    descriptor_bytes = descriptor_path.read_bytes()
+    descriptor = json.loads(descriptor_bytes)
+    result, payloads, frame_receipts, inputs = compose_approved_fidget(descriptor, approved_frames)
+    inputs[str(descriptor_path)] = digest(descriptor_bytes)
+    # Pin original frames; they remain in the base mount, not this sparse overlay.
+    for sequence in descriptor["sequences"]:
+        for frame in sequence["frames"]:
+            path = source_mount / IMAGE_ROOT / EXPECTED_BASEPATH / relative(frame)
+            inputs[str(path)] = digest(path.read_bytes())
     payloads[DESCRIPTOR] = (json.dumps(result, indent=2) + "\n").encode()
     for path, expected in inputs.items():
         if digest(Path(path).read_bytes()) != expected:
