@@ -1,5 +1,22 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Fixed-specialty malformed fixture accessed protected loader
+
+UP304 linked97485 exits1 in NewHorizonsCreatureSpecialtyTest: malformed-config
+checks call protected CHeroHandler::loadFromJson directly. Production sources
+compile; do not make the loader public to satisfy a test. Expose it in a local
+test-only subclass and retain the full malformed-input assertions, then rebuild.
+Receipt: build/nh-fixed-creature-specialties-build.log. This failed attempt is
+not feature acceptance; focused native and final linked verification are pending.
+
+Repaired linked26469 exits0 at10 jobs. Native20930 passes29/29 in19.973s,
+zero skips, including all eleven actual single-root producers in canonical and
+legacy modes. The test-local subclass exposes only the inherited loader; no
+production visibility or assertion was weakened. Independent Sol High review
+passes. Final receipts: build/nh-fixed-creature-specialties-fixture-repaired-build.log
+and build/nh-preview-ai-validation.jUrtT2RY/native-up304.log/XML. Broader mod
+composition and playable delivery remain separate Phase2 checks.
+
 ### 2026-10-08 — Mixed AI fixture registration and target-reason wording
 
 UP303 review caught registration under ENABLE_NULLKILLER2_AI alone, although

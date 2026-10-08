@@ -2,6 +2,21 @@
 
 Updated: 2026-10-08
 
+UP304 implementation audit: existing creature-line conversion covers legacy
+alias-generated specialties, but eleven authored fixed single-line packages
+bypass that provenance. Pasis/Monere, Lacus/Kalt, Thunar/Erdamon, Ignissa/Fiur,
+Kilgor, Undead Haart and Xeron are being connected through explicit named original
+bonus pointers. Their legacy packages remain intact without saved conversion
+rules; no new state or polling. Linked26469 exits0 at10 jobs; native20930
+passes29/29 in19.973s, zero skips, including22 actual-package canonical/legacy
+cases and seven specialty/invalid-input/old-save/adjacent controls. Independent
+Sol High review has no blocker. Receipts: build/nh-fixed-creature-specialties-
+fixture-repaired-build.log and build/nh-preview-ai-validation.jUrtT2RY/native-up304.log/XML.
+Broader mod composition and playable verification remain Phase2.
+Mutare/Mutare Drake's dragon-wide membership is outside the single-root converter;
+upgrade-grant specialties are not treated as stat-line packages. No identity
+count increase or whole-family completion is inferred.
+
 2026-10-08 UP302/303 checkpoint: specific Order rejection reasons share existing
 legality and appear in the existing status-bar consumer. Demonic Reserve now has
 an acquisition-time minimum adventure AI producer using owned town surplus,
@@ -4185,7 +4200,7 @@ no whole-family completion fraction is inferred.
 | Canonical row | Current evidence | Remaining boundary |
 |---|---|---|
 | Primary Attribute specialty: legacy flat1 becomes5 | UP226's bounded audit found no eligible built-in flat hero-stat source; Fiur/Ignissa/Thunar/Erdamon entries are creature-limited | Requires an authored eligible producer, not conversion of creature stats into hero stats; no completion credit. |
-| Creature-line: Speed1/Initiative1, Attack/Defense per5 levels capped6 | UP216: actual line/upgrades/thresholds/cache/save/legacy, native85455 7/7 | Prototype-only descriptions and broader combat composition remain Phase2; source/native evidence is not rendered acceptance. |
+| Creature-line: Speed1/Initiative1, Attack/Defense per5 levels capped6 | UP216: actual alias line/upgrades/thresholds/cache/save/legacy, native85455 7/7; UP304 connects eleven fixed packages, linked26469/native20930 29/29 with canonical/legacy/save/prototype controls | Dragon-wide Mutare membership remains unresolved; prototype-only descriptions, broader mod/combat composition and playable verification remain Phase2; source/native evidence is not rendered acceptance. |
 | Damage spell: SP component15% | UP217: nine surviving heroes/eight effects; native23804 11/11 includes actual Ciele/Deemer/Luna casts and stored Fire Wall trigger | Explicit replacement specialties remain untouched; broader detached execution, proxy/modifier composition and prototype tooltips remain Phase2. |
 | Non-damage spell: SP component20%, otherwise duration1 | UP224: Uland/Cure, Alamar/Jeddite/Resurrection and Adela/Bless component conversion accepted, including actual casts/forecasts and historical lists | Haste access and inactive Weakness/Animate Dead aliases retain their recorded blockers; not full-family completion. Bless has a numerical SP duration term, so its fallback duration1 does not apply. |
 | Skill: core numerical contribution20%, not perks | UP218/219/221/222/223: surviving Logistics, Armorer, Offense, Archery and Estates aliases, real ranks/core/perk controls/save/legacy | UP228 confirms five old Sorcery aliases were intentionally replaced; do not restore them. Broader composition and prototype tooltips remain Phase2. |

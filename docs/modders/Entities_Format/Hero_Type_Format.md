@@ -133,6 +133,15 @@ In order to make functional hero you also need:
 		// Can be combined with bonuses-based specialty if desired
 		"creature" : "griffin",
 
+		// Alternative to creature: opt an authored fixed package into the
+		// saved New Horizons creature-line conversion rules. Adds no bonuses
+		// by itself: the named bonuses above remain unchanged in legacy mode.
+		// Do not combine with creature; every name must exist and be unique.
+		"creatureLineConversion" : {
+			"creature" : "psychicElemental",
+			"bonuses" : [ "someBonus", "anotherOne" ]
+		},
+
 		// Shortcut for defining specialty in secondary skill, using standard H3 rules
 		// Can be combined with bonuses-based specialty if desired
 		"secondary" : "offence",

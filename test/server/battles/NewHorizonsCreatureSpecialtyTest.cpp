@@ -15,6 +15,7 @@
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/bonuses/Limiters.h"
 #include "../../../lib/entities/hero/CHero.h"
+#include "../../../lib/entities/hero/CHeroHandler.h"
 #include "../../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../../lib/gameState/GameStatePackVisitor.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
@@ -33,6 +34,12 @@ namespace
 {
 constexpr std::string_view SPECIALTY_MARKER_PREFIX = "new-horizons:creature-line-specialty:";
 constexpr std::string_view AUTHORED_SPECIALTY_MARKER = "fixture:authored-creature-specialty";
+
+class FixtureHeroHandler : public CHeroHandler
+{
+public:
+	using CHeroHandler::loadFromJson;
+};
 
 CreatureID creature(const char * identifier)
 {
@@ -139,7 +146,380 @@ protected:
 			.heroExperience(0).heroGarrison({{archer, 1}, {marksman, 1}, {pikeman, 1}});
 		startWithMap(std::move(builder));
 	}
+
+	void startFixedConfluxSpecialtyMap()
+	{
+		const auto psychic = creature("core:psychicElemental");
+		const auto magic = creature("core:magicElemental");
+		const auto air = creature("core:airElemental");
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder.size(36, false).playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
+			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:pasis")), PlayerColor(0))
+			.heroExperience(0).heroGarrison({{psychic, 1}, {magic, 1}, {air, 1}})
+			.hero({6, 5, 0}, HeroTypeID(HeroTypeID::decode("core:monere")), PlayerColor(0))
+			.heroExperience(0).heroGarrison({{psychic, 1}, {magic, 1}, {air, 1}})
+			.hero({7, 7, 0}, HeroTypeID(HeroTypeID::decode("core:solmyr")), PlayerColor(1))
+			.heroExperience(0).heroGarrison({{psychic, 1}, {magic, 1}, {air, 1}});
+		startWithMap(std::move(builder));
+	}
+
+	void expectFixedConfluxLine(const CGHeroInstance & hero, const CGHeroInstance & control, bool canonical)
+	{
+		const int attribute = canonical ? std::min<ui32>(6, hero.level / 5) : 3;
+		for(int slot : {0, 1})
+			expectStackDelta(hero.getStackPtr(SlotID(slot)), control.getStackPtr(SlotID(slot)),
+				canonical ? 1 : 0, canonical ? 1 : 0, attribute, attribute);
+		expectStackDelta(hero.getStackPtr(SlotID(2)), control.getStackPtr(SlotID(2)), 0, 0, 0, 0);
+		EXPECT_EQ(specialtyMarkerCount(hero), canonical ? 4 : 0);
+		EXPECT_EQ(specialtyMarkers(hero).size(), specialtyMarkerCount(hero));
+	}
 };
+
+TEST_F(NewHorizonsCreatureSpecialtyTest, FixedConfluxPackagesConvertWithoutStackingAndSurviveSave)
+{
+	startFixedConfluxSpecialtyMap();
+	auto * pasis = findHeroAt({5, 5, 0});
+	auto * monere = findHeroAt({6, 5, 0});
+	auto * control = findHeroAt({7, 7, 0});
+	ASSERT_NE(pasis, nullptr);
+	ASSERT_NE(monere, nullptr);
+	ASSERT_NE(control, nullptr);
+	const auto originalPasis = pasis->getHeroType()->specialty;
+	const auto originalMonere = monere->getHeroType()->specialty;
+	for(const auto * hero : {pasis, monere})
+	{
+		ASSERT_TRUE(hero->getHeroType()->creatureLineSpecialtyAlias);
+		const auto & provenance = *hero->getHeroType()->creatureLineSpecialtyAlias;
+		EXPECT_EQ(provenance.creature, creature("core:psychicElemental"));
+		ASSERT_EQ(provenance.bonuses.size(), 2);
+		for(const auto & original : provenance.bonuses)
+		{
+			EXPECT_EQ(original->type, BonusType::PRIMARY_SKILL);
+			EXPECT_EQ(original->val, 3);
+			EXPECT_TRUE(std::any_of(hero->getHeroType()->specialty.begin(), hero->getHeroType()->specialty.end(),
+				[&original](const auto & bonus) { return bonus == original; }));
+			EXPECT_FALSE(std::any_of(hero->getExportedBonusList().begin(), hero->getExportedBonusList().end(),
+				[&original](const auto & bonus) { return bonus == original; }));
+		}
+	}
+	for(int level = 1; level <= 35; ++level)
+	{
+		ASSERT_EQ(pasis->level, level);
+		ASSERT_EQ(monere->level, level);
+		if(level == 1 || level == 5 || level == 30 || level == 35)
+			for(const auto * hero : {pasis, monere})
+				expectFixedConfluxLine(*hero, *control, true);
+		if(level == 4)
+		{
+			CMemorySerializer memory;
+			memory.oser & *gameState();
+			CGameState restored;
+			memory.iser.cb = &restored;
+			memory.iser.loadingGamestate = true;
+			memory.iser & restored;
+			auto * loadedControl = restored.getHero(control->id);
+			ASSERT_NE(loadedControl, nullptr);
+			applyLevelUp(restored, *loadedControl);
+			for(const auto * hero : {pasis, monere})
+			{
+				auto * loaded = restored.getHero(hero->id);
+				ASSERT_NE(loaded, nullptr);
+				EXPECT_EQ(specialtyMarkers(*loaded), specialtyMarkers(*hero));
+				applyLevelUp(restored, *loaded);
+				ASSERT_EQ(loaded->level, 5);
+				expectFixedConfluxLine(*loaded, *loadedControl, true);
+			}
+		}
+		if(level == 35)
+			break;
+		for(auto * hero : {pasis, monere, control})
+			applyLevelUp(*gameState(), *hero);
+	}
+	for(const auto & entry : {std::make_pair(pasis, originalPasis), std::make_pair(monere, originalMonere)})
+	{
+		ASSERT_EQ(entry.first->getHeroType()->specialty.size(), entry.second.size());
+		for(size_t i = 0; i < entry.second.size(); ++i)
+		{
+			EXPECT_EQ(entry.first->getHeroType()->specialty[i], entry.second[i]);
+			EXPECT_EQ(entry.second[i]->val, 3);
+			EXPECT_TRUE(entry.second[i]->stacking.empty());
+		}
+	}
+}
+
+TEST_F(NewHorizonsCreatureSpecialtyTest, FixedConfluxMissingRulesKeepOriginalFlatPackageAcrossSaveAndLevels)
+{
+	omitCreatureLineRules = true;
+	startFixedConfluxSpecialtyMap();
+	auto * pasis = findHeroAt({5, 5, 0});
+	auto * monere = findHeroAt({6, 5, 0});
+	auto * control = findHeroAt({7, 7, 0});
+	ASSERT_NE(pasis, nullptr);
+	ASSERT_NE(monere, nullptr);
+	ASSERT_NE(control, nullptr);
+	for(const auto * hero : {pasis, monere})
+	{
+		ASSERT_TRUE(hero->getHeroType()->creatureLineSpecialtyAlias);
+		EXPECT_FALSE(newHorizonsHeroes::creatureLineSpecialtyRules(hero->getPrimaryGrowthRules()));
+		for(const auto & original : hero->getHeroType()->creatureLineSpecialtyAlias->bonuses)
+			EXPECT_TRUE(std::any_of(hero->getExportedBonusList().begin(), hero->getExportedBonusList().end(),
+				[&original](const auto & bonus) { return bonus == original; }));
+	}
+	for(int level = 1; level <= 35; ++level)
+	{
+		if(level == 1 || level == 5 || level == 30 || level == 35)
+			for(const auto * hero : {pasis, monere})
+				expectFixedConfluxLine(*hero, *control, false);
+		if(level == 4)
+		{
+			CMemorySerializer memory;
+			memory.oser & *gameState();
+			CGameState restored;
+			memory.iser.cb = &restored;
+			memory.iser.loadingGamestate = true;
+			memory.iser & restored;
+			auto * loadedControl = restored.getHero(control->id);
+			ASSERT_NE(loadedControl, nullptr);
+			applyLevelUp(restored, *loadedControl);
+			for(const auto * hero : {pasis, monere})
+			{
+				auto * loaded = restored.getHero(hero->id);
+				ASSERT_NE(loaded, nullptr);
+				EXPECT_FALSE(newHorizonsHeroes::creatureLineSpecialtyRules(loaded->getPrimaryGrowthRules()));
+				applyLevelUp(restored, *loaded);
+				expectFixedConfluxLine(*loaded, *loadedControl, false);
+			}
+		}
+		if(level == 35)
+			break;
+		for(auto * hero : {pasis, monere, control})
+			applyLevelUp(*gameState(), *hero);
+	}
+}
+
+TEST_F(NewHorizonsCreatureSpecialtyTest, FixedConfluxProvenanceRejectsAmbiguousOrMissingNames)
+{
+	JsonNode node;
+	auto & specialty = node["specialty"];
+	specialty["bonuses"]["attack"]["type"].String() = "PRIMARY_SKILL";
+	specialty["creatureLineConversion"]["creature"].String() = "core:psychicElemental";
+	specialty["creatureLineConversion"]["bonuses"].Vector().push_back(JsonNode("attack"));
+	FixtureHeroHandler handler;
+	auto ambiguous = node;
+	ambiguous["specialty"]["creature"].String() = "core:psychicElemental";
+	EXPECT_THROW(handler.loadFromJson("new-horizons", ambiguous, "fixtureAmbiguousLine", 0), std::runtime_error);
+	auto duplicate = node;
+	duplicate["specialty"]["creatureLineConversion"]["bonuses"].Vector().push_back(JsonNode("attack"));
+	EXPECT_THROW(handler.loadFromJson("new-horizons", duplicate, "fixtureDuplicateLine", 0), std::runtime_error);
+	auto missing = node;
+	missing["specialty"]["creatureLineConversion"]["bonuses"].Vector().push_back(JsonNode("missing"));
+	EXPECT_THROW(handler.loadFromJson("new-horizons", missing, "fixtureMissingLine", 0), std::runtime_error);
+	auto empty = node;
+	empty["specialty"]["creatureLineConversion"]["bonuses"].Vector().clear();
+	EXPECT_THROW(handler.loadFromJson("new-horizons", empty, "fixtureEmptyList", 0), std::runtime_error);
+	for(const auto & malformed : {JsonNode(""), JsonNode(true), JsonNode(7)})
+	{
+		auto invalidName = node;
+		invalidName["specialty"]["creatureLineConversion"]["bonuses"].Vector().push_back(malformed);
+		EXPECT_THROW(handler.loadFromJson("new-horizons", invalidName, "fixtureInvalidName", 0), std::runtime_error);
+		auto invalidCreature = node;
+		invalidCreature["specialty"]["creatureLineConversion"]["creature"] = malformed;
+		EXPECT_THROW(handler.loadFromJson("new-horizons", invalidCreature, "fixtureInvalidCreature", 0), std::runtime_error);
+	}
+	for(const auto & malformed : {JsonNode(true), JsonNode(7), JsonNode("invalid"), JsonNode()})
+	{
+		auto invalidMap = node;
+		invalidMap["specialty"]["bonuses"] = malformed;
+		EXPECT_THROW(handler.loadFromJson("new-horizons", invalidMap, "fixtureInvalidBonusMap", 0), std::runtime_error);
+		auto invalidList = node;
+		invalidList["specialty"]["creatureLineConversion"]["bonuses"] = malformed;
+		EXPECT_THROW(handler.loadFromJson("new-horizons", invalidList, "fixtureInvalidList", 0), std::runtime_error);
+		auto invalidBonus = node;
+		invalidBonus["specialty"]["bonuses"]["attack"] = malformed;
+		EXPECT_THROW(handler.loadFromJson("new-horizons", invalidBonus, "fixtureInvalidBonus", 0), std::runtime_error);
+		if(!malformed.isNull())
+		{
+			auto invalidDeclaration = node;
+			invalidDeclaration["specialty"]["creatureLineConversion"] = malformed;
+			EXPECT_THROW(handler.loadFromJson("new-horizons", invalidDeclaration, "fixtureInvalidDeclaration", 0),
+				std::runtime_error);
+		}
+	}
+}
+
+TEST_F(NewHorizonsCreatureSpecialtyTest, FixedConfluxUnmarkedSavedPackagesAreNotConvertedByCurrentRules)
+{
+	startFixedConfluxSpecialtyMap();
+	auto * pasis = findHeroAt({5, 5, 0});
+	auto * monere = findHeroAt({6, 5, 0});
+	auto * control = findHeroAt({7, 7, 0});
+	ASSERT_NE(pasis, nullptr);
+	ASSERT_NE(monere, nullptr);
+	ASSERT_NE(control, nullptr);
+	// Simulate the exported package of a hero saved before this producer was
+	// annotated, while retaining the installed canonical development rules.
+	for(auto * hero : {pasis, monere})
+	{
+		ASSERT_TRUE(newHorizonsHeroes::creatureLineSpecialtyRules(hero->getPrimaryGrowthRules()));
+		ASSERT_TRUE(hero->getHeroType()->creatureLineSpecialtyAlias);
+		hero->removeBonuses(CSelector([](const Bonus * bonus)
+		{
+			return bonus && bonus->stacking.starts_with(SPECIALTY_MARKER_PREFIX);
+		}));
+		for(const auto & original : hero->getHeroType()->creatureLineSpecialtyAlias->bonuses)
+			hero->addNewBonus(original);
+		expectFixedConfluxLine(*hero, *control, false);
+	}
+	CMemorySerializer memory;
+	memory.oser & *gameState();
+	CGameState restored;
+	memory.iser.cb = &restored;
+	memory.iser.loadingGamestate = true;
+	memory.iser & restored;
+	auto * loadedControl = restored.getHero(control->id);
+	ASSERT_NE(loadedControl, nullptr);
+	for(int level = 1; level <= 35; ++level)
+	{
+		for(const auto * hero : {pasis, monere})
+		{
+			auto * loaded = restored.getHero(hero->id);
+			ASSERT_NE(loaded, nullptr);
+			ASSERT_EQ(loaded->level, level);
+			ASSERT_TRUE(newHorizonsHeroes::creatureLineSpecialtyRules(loaded->getPrimaryGrowthRules()));
+			if(level == 1 || level == 5 || level == 30 || level == 35)
+				expectFixedConfluxLine(*loaded, *loadedControl, false);
+			if(level != 35)
+				applyLevelUp(restored, *loaded);
+		}
+		if(level != 35)
+			applyLevelUp(restored, *loadedControl);
+	}
+}
+
+namespace
+{
+struct FixedCreaturePackage
+{
+	const char * hero;
+	const char * creature;
+	const char * upgrade;
+	int attack;
+	int defense;
+	int damage;
+	int speed;
+	int bonusCount;
+};
+}
+
+class NewHorizonsFixedCreaturePackageTest : public NewHorizonsCreatureSpecialtyTest,
+	public ::testing::WithParamInterface<std::tuple<FixedCreaturePackage, bool>>
+{
+};
+
+TEST_P(NewHorizonsFixedCreaturePackageTest, ActualPackageCanonicalAndLegacyThresholdsAndSave)
+{
+	const auto & [package, canonical] = GetParam();
+	omitCreatureLineRules = !canonical;
+	const auto base = creature(package.creature);
+	const auto upgraded = creature(package.upgrade);
+	const auto unrelated = creature("core:airElemental");
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
+		.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode(package.hero)), PlayerColor(0))
+		.heroExperience(0).heroGarrison({{base, 1}, {upgraded, 1}, {unrelated, 1}})
+		.hero({7, 7, 0}, HeroTypeID(HeroTypeID::decode("core:solmyr")), PlayerColor(1))
+		.heroExperience(0).heroGarrison({{base, 1}, {upgraded, 1}, {unrelated, 1}});
+	startWithMap(std::move(builder));
+	auto * hero = findHeroAt({5, 5, 0});
+	auto * control = findHeroAt({7, 7, 0});
+	ASSERT_NE(hero, nullptr);
+	ASSERT_NE(control, nullptr);
+	ASSERT_EQ(hero->getHeroType()->getJsonKey(), package.hero);
+	ASSERT_TRUE(hero->getHeroType()->creatureLineSpecialtyAlias);
+	const auto & provenance = *hero->getHeroType()->creatureLineSpecialtyAlias;
+	ASSERT_EQ(provenance.creature, base);
+	ASSERT_EQ(provenance.bonuses.size(), package.bonusCount);
+	const auto originalPackage = hero->getHeroType()->specialty;
+	std::vector<std::tuple<const Bonus *, int, std::string>> originalSnapshot;
+	for(const auto & bonus : originalPackage)
+		originalSnapshot.emplace_back(bonus.get(), bonus->val, bonus->stacking);
+	for(const auto & original : provenance.bonuses)
+		EXPECT_EQ(std::any_of(hero->getExportedBonusList().begin(), hero->getExportedBonusList().end(),
+			[&original](const auto & bonus) { return bonus == original; }), !canonical);
+
+	const auto check = [&](const CGHeroInstance & specialized, const CGHeroInstance & ordinary)
+	{
+		const int attribute = std::min<ui32>(6, specialized.level / 5);
+		for(int slot : {0, 1, 2})
+		{
+			const auto * stack = specialized.getStackPtr(SlotID(slot));
+			const auto * controlStack = ordinary.getStackPtr(SlotID(slot));
+			ASSERT_NE(stack, nullptr);
+			ASSERT_NE(controlStack, nullptr);
+			const bool affected = slot != 2;
+			const int legacyInitiative = stack->hasBonusOfType(BonusType::STACKS_INITIATIVE_BASE) ? 0 : package.speed;
+			expectStackDelta(stack, controlStack,
+				affected ? (canonical ? 1 : package.speed) : 0,
+				affected ? (canonical ? 1 : legacyInitiative) : 0,
+				affected ? (canonical ? attribute : package.attack) : 0,
+				affected ? (canonical ? attribute : package.defense) : 0);
+			EXPECT_EQ(stack->valOfBonuses(BonusType::CREATURE_DAMAGE) - controlStack->valOfBonuses(BonusType::CREATURE_DAMAGE),
+				affected && !canonical ? package.damage : 0);
+		}
+		EXPECT_EQ(specialtyMarkerCount(specialized), canonical ? 4 : 0);
+		EXPECT_EQ(specialtyMarkers(specialized).size(), specialtyMarkerCount(specialized));
+	};
+	for(int level = 1; level <= 35; ++level)
+	{
+		ASSERT_EQ(hero->level, level);
+		if(level == 1 || level == 5 || level == 30 || level == 35)
+			check(*hero, *control);
+		if(level == 4)
+		{
+			CMemorySerializer memory;
+			memory.oser & *gameState();
+			CGameState restored;
+			memory.iser.cb = &restored;
+			memory.iser.loadingGamestate = true;
+			memory.iser & restored;
+			auto * loaded = restored.getHero(hero->id);
+			auto * loadedControl = restored.getHero(control->id);
+			ASSERT_NE(loaded, nullptr);
+			ASSERT_NE(loadedControl, nullptr);
+			EXPECT_EQ(specialtyMarkers(*loaded), specialtyMarkers(*hero));
+			EXPECT_EQ(newHorizonsHeroes::creatureLineSpecialtyRules(loaded->getPrimaryGrowthRules()).has_value(), canonical);
+			applyLevelUp(restored, *loaded);
+			applyLevelUp(restored, *loadedControl);
+			ASSERT_EQ(loaded->level, 5);
+			check(*loaded, *loadedControl);
+		}
+		if(level == 35)
+			break;
+		applyLevelUp(*gameState(), *hero);
+		applyLevelUp(*gameState(), *control);
+	}
+	ASSERT_EQ(hero->getHeroType()->specialty.size(), originalSnapshot.size());
+	for(size_t i = 0; i < originalSnapshot.size(); ++i)
+	{
+		EXPECT_EQ(hero->getHeroType()->specialty[i].get(), std::get<0>(originalSnapshot[i]));
+		EXPECT_EQ(hero->getHeroType()->specialty[i]->val, std::get<1>(originalSnapshot[i]));
+		EXPECT_EQ(hero->getHeroType()->specialty[i]->stacking, std::get<2>(originalSnapshot[i]));
+	}
+}
+
+INSTANTIATE_TEST_SUITE_P(SingleRootPackages, NewHorizonsFixedCreaturePackageTest,
+	::testing::Combine(::testing::Values(
+		FixedCreaturePackage{"core:pasis", "core:psychicElemental", "core:magicElemental", 3, 3, 0, 0, 2},
+		FixedCreaturePackage{"core:monere", "core:psychicElemental", "core:magicElemental", 3, 3, 0, 0, 2},
+		FixedCreaturePackage{"core:lacus", "core:waterElemental", "core:iceElemental", 2, 0, 0, 0, 1},
+		FixedCreaturePackage{"core:kalt", "core:waterElemental", "core:iceElemental", 2, 0, 0, 0, 1},
+		FixedCreaturePackage{"core:thunar", "core:earthElemental", "core:magmaElemental", 2, 1, 5, 0, 3},
+		FixedCreaturePackage{"core:erdamon", "core:earthElemental", "core:magmaElemental", 2, 1, 5, 0, 3},
+		FixedCreaturePackage{"core:ignissa", "core:fireElemental", "core:energyElemental", 1, 2, 2, 0, 3},
+		FixedCreaturePackage{"core:fiur", "core:fireElemental", "core:energyElemental", 1, 2, 2, 0, 3},
+		FixedCreaturePackage{"core:kilgor", "core:behemoth", "core:ancientBehemoth", 5, 5, 10, 0, 3},
+		FixedCreaturePackage{"core:undeadHaart", "core:blackKnight", "core:dreadKnight", 5, 5, 10, 0, 3},
+		FixedCreaturePackage{"core:xeron", "core:devil", "core:archDevil", 4, 2, 0, 1, 3}), ::testing::Bool()));
 
 TEST_F(NewHorizonsCreatureSpecialtyTest, MageLineRefreshesAtCanonicalThresholdsAndSurvivesSaveAndNextLevel)
 {

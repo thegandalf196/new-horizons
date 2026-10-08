@@ -101,6 +101,7 @@ def main():
     # manifest so the curated module cannot silently omit the retired-skill
     # audit fixes.
     hero_patch_files = [
+        'config/heroes/fixedCreatureSpecialties.json',
         'config/heroes/biographies.json',
         'config/heroes/fafner.json',
         'config/heroes/halon.json',

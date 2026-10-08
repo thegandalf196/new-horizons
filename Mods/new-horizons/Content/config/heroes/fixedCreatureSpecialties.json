@@ -1,0 +1,45 @@
+{
+	"core:pasis": {
+		"specialty": {
+			"creatureLineConversion": {
+				"creature": "core:psychicElemental",
+				"bonuses": ["attack", "defence"]
+			}
+		}
+	},
+	"core:monere": {
+		"specialty": {
+			"creatureLineConversion": {
+				"creature": "core:psychicElemental",
+				"bonuses": ["attack", "defence"]
+			}
+		}
+	},
+	"core:lacus": {
+		"specialty": {"creatureLineConversion": {"creature": "core:waterElemental", "bonuses": ["attack"]}}
+	},
+	"core:kalt": {
+		"specialty": {"creatureLineConversion": {"creature": "core:waterElemental", "bonuses": ["attack"]}}
+	},
+	"core:thunar": {
+		"specialty": {"creatureLineConversion": {"creature": "core:earthElemental", "bonuses": ["damage", "attack", "defence"]}}
+	},
+	"core:erdamon": {
+		"specialty": {"creatureLineConversion": {"creature": "core:earthElemental", "bonuses": ["damage", "attack", "defence"]}}
+	},
+	"core:ignissa": {
+		"specialty": {"creatureLineConversion": {"creature": "core:fireElemental", "bonuses": ["damage", "attack", "defence"]}}
+	},
+	"core:fiur": {
+		"specialty": {"creatureLineConversion": {"creature": "core:fireElemental", "bonuses": ["damage", "attack", "defence"]}}
+	},
+	"core:kilgor": {
+		"specialty": {"creatureLineConversion": {"creature": "core:behemoth", "bonuses": ["damage", "attack", "defence"]}}
+	},
+	"core:undeadHaart": {
+		"specialty": {"creatureLineConversion": {"creature": "core:blackKnight", "bonuses": ["damage", "attack", "defence"]}}
+	},
+	"core:xeron": {
+		"specialty": {"creatureLineConversion": {"creature": "core:devil", "bonuses": ["attack", "defence", "speed"]}}
+	}
+}

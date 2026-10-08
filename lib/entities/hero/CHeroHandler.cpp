@@ -322,6 +322,8 @@ void CHeroHandler::loadHeroSpecialty(CHero * hero, const JsonNode & node) const
 {
 	auto prepSpec = [=](std::shared_ptr<Bonus> bonus)
 	{
+		if(!bonus)
+			throw std::runtime_error("Hero specialty contains an invalid bonus");
 		bonus->duration = BonusDuration::PERMANENT;
 		bonus->source = BonusSource::HERO_SPECIAL;
 		bonus->sid = BonusSourceID(hero->getId());
@@ -337,6 +339,30 @@ void CHeroHandler::loadHeroSpecialty(CHero * hero, const JsonNode & node) const
 	}
 
 	//creature specialty - alias for simplicity
+	const JsonNode & creatureLineConversion = specialtyNode["creatureLineConversion"];
+	std::set<std::string> creatureLineBonusNames;
+	std::vector<std::shared_ptr<Bonus>> creatureLineBonuses;
+	if(!creatureLineConversion.isNull())
+	{
+		if(!specialtyNode["creature"].isNull())
+			throw std::runtime_error("Hero specialty cannot combine creature and creatureLineConversion");
+		if(!creatureLineConversion.isStruct() || !creatureLineConversion["creature"].isString()
+			|| creatureLineConversion["creature"].String().empty()
+			|| !creatureLineConversion["bonuses"].isVector() || creatureLineConversion["bonuses"].Vector().empty()
+			|| !specialtyNode["bonuses"].isStruct())
+			throw std::runtime_error("Hero creatureLineConversion requires a creature and nonempty named bonuses");
+		for(const auto & entry : creatureLineConversion.Struct())
+			if(entry.first != "creature" && entry.first != "bonuses")
+				throw std::runtime_error("Unknown hero creatureLineConversion field");
+		for(const auto & name : creatureLineConversion["bonuses"].Vector())
+		{
+			if(!name.isString() || name.String().empty() || !creatureLineBonusNames.insert(name.String()).second)
+				throw std::runtime_error("Hero creatureLineConversion bonus names must be nonempty and unique");
+			const auto bonus = specialtyNode["bonuses"].Struct().find(name.String());
+			if(bonus == specialtyNode["bonuses"].Struct().end() || !bonus->second.isStruct())
+				throw std::runtime_error("Hero creatureLineConversion references a missing specialty bonus");
+		}
+	}
 	if(!specialtyNode["creature"].isNull())
 	{
 		const JsonNode & creatureNode = specialtyNode["creature"];
@@ -415,6 +441,8 @@ void CHeroHandler::loadHeroSpecialty(CHero * hero, const JsonNode & node) const
 		{
 			auto prepared = prepSpec(JsonUtils::parseBonus(keyValue.second));
 			hero->specialty.push_back(prepared);
+			if(creatureLineBonusNames.contains(keyValue.first))
+				creatureLineBonuses.push_back(prepared);
 			if(exactAdelaBlessSpecialtyBonus(hero, keyValue.first, keyValue.second))
 				hero->nonDamageSpellSpecialtyProducers.push_back({SpellID(SpellID::BLESS), prepared, true});
 
@@ -436,6 +464,18 @@ void CHeroHandler::loadHeroSpecialty(CHero * hero, const JsonNode & node) const
 						});
 				});
 		}
+	}
+	if(!creatureLineConversion.isNull())
+	{
+		if(creatureLineBonuses.size() != creatureLineBonusNames.size())
+			throw std::runtime_error("Hero creatureLineConversion did not resolve its complete bonus package");
+		// Mark the exact original package, without generating alias bonuses or
+		// changing legacy instances. Saved-rule conversion owns its replacement.
+		LIBRARY->identifiers()->requestIdentifier("creature", creatureLineConversion["creature"],
+			[hero, creatureLineBonuses](si32 creature)
+			{
+				hero->creatureLineSpecialtyAlias = CHero::CreatureLineSpecialtyAlias{CreatureID(creature), creatureLineBonuses};
+			});
 	}
 }
 
