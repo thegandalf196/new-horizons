@@ -99,7 +99,7 @@ private:
 	bool isSpellbinderHatGrantEligible(const SpellID & spell) const;
 	void refreshCreatureLineSpecialtyBonuses(bool createIfMissing);
 	bool canLearnSpellImpl(const spells::Spell * spell, bool allowBanned,
-		bool ignoreSchoolProficiency, bool logWarnings) const;
+		bool ignoreSchoolProficiency, bool logWarnings, bool allowAdventureGuildUnlock) const;
 
 public:
 	//////////////////////////////////////////////////////////////////////////
@@ -254,6 +254,8 @@ public:
 
 	SpellLearningStatus getSpellLearningStatus(const spells::Spell * spell, bool allowBanned = false) const;
 	bool canLearnSpell(const spells::Spell * spell, bool allowBanned = false) const;
+	/// Paid Adventure spells may only be taught by an owned, unlocked Guild being visited.
+	bool canLearnAdventureSpellFromGuild(const spells::Spell * spell, const CGTownInstance * town) const;
 	bool canCastThisSpell(const spells::Spell * spell) const; //determines if this hero can cast given spell; takes into account existing spell in spellbook, existing spellbook and artifact bonuses
 
 	/// convert given position between map position (CGObjectInstance::pos) and visitable position used for hero interactions

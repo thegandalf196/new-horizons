@@ -67,6 +67,19 @@ TEST(NewHorizonsSpellAvailabilityTest, OrdinaryAcquisitionDefaultsTrueForOlderRo
 		adventureProfile, "core:townPortal", true));
 }
 
+TEST(NewHorizonsSpellAvailabilityTest, PaidAdventureUnlocksAreNotOrdinaryAcquisition)
+{
+	JsonNode paid;
+	paid["rulesetVersion"] = JsonNode(3);
+	paid["spells"] = JsonNode(JsonMap{});
+	paid["adventureSpells"]["core:summonBoat"]["guildLevel"] = JsonNode(1);
+	paid["adventureSpells"]["core:summonBoat"]["unlockCost"] = JsonNode(JsonMap{});
+	EXPECT_TRUE(spellBelongsToRules(paid, "core:summonBoat", true));
+	EXPECT_FALSE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(paid, "core:summonBoat", true));
+	paid["adventureSpells"]["core:summonBoat"].Struct().erase("unlockCost");
+	EXPECT_TRUE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(paid, "core:summonBoat", true));
+}
+
 TEST(NewHorizonsSpellAvailabilityTest, OrdinaryAcquisitionPolicyIsSeparateFromSavedSpellAvailability)
 {
 	JsonNode current;

@@ -26,6 +26,7 @@ DLL_LINKAGE bool spellBelongsToRules(const JsonNode & rules, const std::string &
 /// Saved ordinary-acquisition policy for a common hero spell. Missing
 /// ordinaryAcquisition markers preserve old snapshots as eligible; the saved
 /// roster's active marker still controls whether the spell exists in that world.
+/// Saved paid Adventure unlocks are excluded from ordinary acquisition.
 DLL_LINKAGE bool spellAvailableForOrdinaryAcquisition(const JsonNode & rules,
 	const std::string & scopedIdentity, bool commonHeroSpell);
 /// Copied admission only: no map bans, possession, mana or targeting decisions.

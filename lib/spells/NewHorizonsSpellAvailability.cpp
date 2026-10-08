@@ -189,6 +189,11 @@ bool spellAvailableForOrdinaryAcquisition(const JsonNode & rules,
 {
 	if(!commonHeroSpell)
 		return false;
+	// Paid Adventure unlocks have their own authoritative Guild teaching path.
+	// Older snapshots without a saved purchase contract retain their admission.
+	if(adventureSpellRulesActive(rules)
+		&& rules["adventureSpells"][scopedIdentity]["unlockCost"].isStruct())
+		return false;
 
 	bool ordinaryAcquisition = true;
 	if(rules.isStruct() && rules["spells"].isStruct())

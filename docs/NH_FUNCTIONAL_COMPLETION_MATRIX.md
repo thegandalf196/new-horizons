@@ -2,6 +2,25 @@
 
 Updated: 2026-10-07
 
+Acquisition audit checkpoint: paid fixed Adventure Spell unlocks can be bypassed
+by default starting-hero spells (Gem/Summon Boat) and ordinary Shrine/Scholar
+learning. Canonical3163–3165/3807 requires separate paid Guild acquisition.
+Dedicated authorized Guild-learning boundary is implemented in source;
+independent Sol High review finds no blocker. Saved/map-authored inscriptions
+and non-NewHorizons behavior are retained. Ten-job retry55025 exits0 after
+external termination of26962. Focused native gate runs41 cases:36pass, four
+old school fixtures use retired AnimateDead/AntiMagic identities, and the new
+teacher fixture lacks a town. Fixture repair retains equivalent School rank
+checks with canonical Plague/PhantomArmy and explicit removed-identity rejection.
+Six-target incremental build55179 exits0; native12527 passes41/41 in10.877s,
+including allfive paid Guild purchases and save/load. Source correction is
+verified; playable delivery and broader teacher/UI integration remain separate.
+
+Hero audit checkpoint: workbook mechanical profiles/armies remain proposals,
+not activation authority. Canonical authored Solmyr already matches source;
+remaining starting-profile authoring is a genuine design gap. Reviewed biography
+data contains52 rewrites/92 inheritances, not144 approved new mechanics.
+
 Current registry audit,2026-10-07: config/newHorizonsPerks.json contains31 Skills
 and93 active ranks,157 active/63 planned generic perks (220 total),71 active/19
 planned faction perks (90 total). Activation status is not proof of exhaustive

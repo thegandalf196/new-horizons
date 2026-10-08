@@ -146,6 +146,7 @@ protected:
 				5 + static_cast<int32_t>(index / 6) * 4, 0},
 				heroTypeNamed(HERO_STARTING_SPELLS[index].hero), PlayerColor(0));
 
+		builder.hero({25, 8, 0}, heroTypeNamed("core:gem"), PlayerColor(0));
 		builder.hero({30, 5, 0}, heroTypeNamed("core:christian"), PlayerColor(1))
 			.heroGarrison({{token, 1}});
 		startWithMap(std::move(builder));
@@ -240,6 +241,31 @@ TEST_F(NewHorizonsHeroSpellAccessTest, CurrentProfileFiltersGuildHouseAndFreshHe
 		EXPECT_TRUE(hero->getSourcesForSpell(spell).empty());
 		EXPECT_FALSE(hero->canCastThisSpell(spell.toSpell()));
 	}
+}
+
+TEST_F(NewHorizonsHeroSpellAccessTest, FreshGemDoesNotReceiveFreeAdventureSpellButKnownInscriptionPersists)
+{
+	startRosterGame();
+	auto * gem = heroNamed("core:gem");
+	ASSERT_NE(gem, nullptr);
+	ASSERT_TRUE(gem->hasSpellbook());
+	const auto summonBoat = spellNamed("core:summonBoat");
+	EXPECT_FALSE(gem->spellbookContainsSpell(summonBoat));
+	EXPECT_FALSE(gem->canCastThisSpell(summonBoat.toSpell()));
+	gem->initHero(*gameHandler->randomizer);
+	EXPECT_FALSE(gem->spellbookContainsSpell(summonBoat))
+		<< "Reinitializing a captured hero must not restore a free default Adventure grant";
+	// An explicit map-authored inscription remains legitimate casting state.
+	gem->addSpellToSpellbook(summonBoat);
+	EXPECT_TRUE(gem->canCastThisSpell(summonBoat.toSpell()));
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	const auto * restoredGem = restored.getHero(gem->id);
+	ASSERT_NE(restoredGem, nullptr);
+	EXPECT_TRUE(restoredGem->spellbookContainsSpell(summonBoat));
+	EXPECT_TRUE(restoredGem->canCastThisSpell(summonBoat.toSpell()));
 }
 
 TEST_F(NewHorizonsHeroSpellAccessTest, ExplicitKnownSpellAndScrollCannotBypassHeroAccess)

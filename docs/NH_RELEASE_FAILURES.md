@@ -2,6 +2,21 @@
 
 ## Purpose
 
+### 2026-10-07 — Acquisition build external termination
+
+Build26962 returns143 (SIGTERM) at427/700, without compiler failure. Ninja is
+terminal; orphan compiler children were inspected and allowed to finish before
+resuming incremental build. Background playtest cleanup scopes were audited:
+only its own recorded groups were signaled; causation is unproven. Prefer exact
+owned PIDs over shared/ancestor groups. Preserve original build log and separate
+retry log; do not restart a build merely because observation times out.
+Retry55025 exits0. Focused41-case gate initially fails five cases: four old
+school fixtures used retired AnimateDead/AntiMagic, one new teacher fixture
+failed to create its town. Replace only samples with canonical eligible
+Plague/PhantomArmy, preserve rank assertions and removed-identity rejection,
+create the intended fortified-town fixture. Incremental55179 exits0;
+native12527 passes41/41, including allfive paid unlocks and save/load.
+
 ### 2026-10-07 — Private handoff graphics overwritten during Linux assembly
 
 Snapshot5b293 retained handoff pixels but source Tower configuration replaced
@@ -11,6 +26,12 @@ unchanged. Six merge tests pass, including source-refresh preservation. Check
 actual bound descriptors, not only asset inventory, before future promotion.
 Independent audit and bounded AI scenario pass; normal launcher now selects
 recovery. Rendered acceptance remains separate.
+Subsequent isolated spectator battle renders all six supplied creature forms
+and demand-loads corrected descriptors/projectiles; root screenshot inspection
+confirms missing-creature delivery repair. Background spectator prints
+"Cannot answer the query -1!" after battle and needs timeout shutdown while
+quit confirmation is open. Record spectator result-query/shutdown investigation
+for Phase2; do not treat bounded exit137 as spontaneous creature crash.
 
 ### 2026-10-07 — Protect preview fixture Spell Point access
 

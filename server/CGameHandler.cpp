@@ -1016,7 +1016,7 @@ void CGameHandler::giveSpells(const CGTownInstance *t, const CGHeroInstance *h, 
 
 			const auto spellID = newHorizonsMagic::adventureSpellForGuildLevel(magicRules, guildLevel);
 			const auto * spell = spellID.toSpell();
-			if(spell && gameInfo().isAllowed(spellID) && h->canLearnSpell(spell))
+			if(spell && gameInfo().isAllowed(spellID) && h->canLearnAdventureSpellFromGuild(spell, t))
 				cs.spells.insert(spellID);
 		}
 	}

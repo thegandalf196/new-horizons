@@ -835,6 +835,9 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 		// hero starts with default spells
 		for(const auto & spellID : getHeroType()->spells)
 		{
+			if(newHorizonsMagic::isAdventureSpell(getMagicRules(), spellID)
+				&& !newHorizonsMagic::spellAvailableForOrdinaryAcquisition(getMagicRules(), spellID))
+				continue;
 			if(!newHorizonsMagic::rulesActive(getMagicRules())
 				|| newHorizonsMagic::spellAllowedByHeroRoster(getMagicRules(), spellID))
 				spells.insert(spellID);
@@ -1689,7 +1692,18 @@ bool CGHeroInstance::canCastThisSpell(const spells::Spell * spell) const
 
 bool CGHeroInstance::canLearnSpell(const spells::Spell * spell, bool allowBanned) const
 {
-	return canLearnSpellImpl(spell, allowBanned, false, true);
+	return canLearnSpellImpl(spell, allowBanned, false, true, false);
+}
+
+bool CGHeroInstance::canLearnAdventureSpellFromGuild(const spells::Spell * spell, const CGTownInstance * town) const
+{
+	if(!spell || !town || town->getOwner() != getOwner() || town->getVisitingHero() != this)
+		return false;
+	const auto guildLevel = newHorizonsMagic::adventureSpellGuildLevel(getMagicRules(), spell->getId());
+	if(!guildLevel || town->mageGuildLevel() < *guildLevel
+		|| !town->hasNewHorizonsAdventureSpellUnlocked(*guildLevel))
+		return false;
+	return canLearnSpellImpl(spell, false, false, true, true);
 }
 
 CGHeroInstance::SpellLearningStatus CGHeroInstance::getSpellLearningStatus(const spells::Spell * spell, bool allowBanned) const
@@ -1701,18 +1715,19 @@ CGHeroInstance::SpellLearningStatus CGHeroInstance::getSpellLearningStatus(const
 		|| newHorizonsMagic::hasSchoolProficiency(this, spell->getId()))
 		return SpellLearningStatus::UNAVAILABLE;
 
-	if(canLearnSpellImpl(spell, allowBanned, true, false))
+	if(canLearnSpellImpl(spell, allowBanned, true, false, false))
 		return SpellLearningStatus::INSUFFICIENT_SCHOOL;
 
 	return SpellLearningStatus::UNAVAILABLE;
 }
 
 bool CGHeroInstance::canLearnSpellImpl(const spells::Spell * spell, bool allowBanned,
-	bool ignoreSchoolProficiency, bool logWarnings) const
+	bool ignoreSchoolProficiency, bool logWarnings, bool allowAdventureGuildUnlock) const
 {
 	if(!spell || !newHorizonsMagic::spellAllowedByHeroRoster(getMagicRules(), spell->getId()))
 		return false;
 	if(spell->isCommonHeroSpell()
+		&& !allowAdventureGuildUnlock
 		&& !newHorizonsMagic::spellAvailableForOrdinaryAcquisition(getMagicRules(), spell->getId()))
 		return false;
 	if(isNewHorizonsSpellExcluded(spell->getId()))

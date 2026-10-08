@@ -19,6 +19,7 @@
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/callback/CGameInfoCallback.h"
 #include "../../../lib/mapObjects/CGTownInstance.h"
+#include "../../../lib/mapObjects/CRewardableObject.h"
 #include "../../../lib/entities/hero/CHero.h"
 #include "../../../lib/rewardable/Reward.h"
 #include "../../../lib/GameSettings.h"
@@ -36,6 +37,13 @@
 namespace
 {
 SpellID spellNamed(const std::string & name) { return SpellID(SpellID::decode(name)); }
+
+class MapSpellTeacher : public CRewardableObject
+{
+public:
+	using CRewardableObject::CRewardableObject;
+	using Rewardable::Interface::grantRewardAfterLevelup;
+};
 
 // Intentionally adversarial read context, not a valid partial-core save. Actual
 // managed-identity import and valid old/new saved-roster tests are a later gate.
@@ -133,9 +141,9 @@ protected:
 		HeroCommandFixture::mapLoaded(map);
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 	}
-	void prepareHero(bool book = true)
+	void prepareHero(bool book = true, bool fortifiedTown = false)
 	{
-		startGame();
+		startGame(fortifiedTown);
 		attackerSideHero->removeAllSpells();
 		if(book)
 			giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
@@ -331,8 +339,8 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, AllowBannedCannotLearnAnExcludedUnkno
 TEST_F(NewHorizonsSpellRosterConsumerTest, SixSchoolRanksGateLearningButNotInscribedSpells)
 {
 	prepareHero();
-	const auto animateDead = spellNamed("core:animateDead");
-	const auto antiMagic = spellNamed("core:antiMagic");
+	const auto plague = spellNamed("new-horizons:plague");
+	const auto phantomArmy = spellNamed("new-horizons:phantomArmy");
 	const auto armageddon = spellNamed("core:armageddon");
 	const auto airElemental = spellNamed("core:airElemental");
 	const auto summonBoat = spellNamed("core:summonBoat");
@@ -344,13 +352,15 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, SixSchoolRanksGateLearningButNotInscr
 	for(const auto skill : {shadow, sorcery, havoc, nature})
 		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
 
-	EXPECT_EQ(newHorizonsMagic::requiredSchoolRank(gameState()->getMagicRules(), animateDead), MasteryLevel::BASIC);
-	EXPECT_EQ(newHorizonsMagic::requiredSchoolRank(gameState()->getMagicRules(), antiMagic), MasteryLevel::ADVANCED);
+	EXPECT_EQ(newHorizonsMagic::requiredSchoolRank(gameState()->getMagicRules(), plague), MasteryLevel::BASIC);
+	EXPECT_EQ(newHorizonsMagic::requiredSchoolRank(gameState()->getMagicRules(), phantomArmy), MasteryLevel::ADVANCED);
 	EXPECT_EQ(newHorizonsMagic::requiredSchoolRank(gameState()->getMagicRules(), armageddon), MasteryLevel::EXPERT);
 	EXPECT_EQ(newHorizonsMagic::requiredSchoolRank(gameState()->getMagicRules(), summonBoat), MasteryLevel::NONE);
-	EXPECT_FALSE(attackerSideHero->canLearnSpell(animateDead.toSpell(), true));
-	EXPECT_FALSE(attackerSideHero->canLearnSpell(antiMagic.toSpell(), true));
+	EXPECT_FALSE(attackerSideHero->canLearnSpell(plague.toSpell(), true));
+	EXPECT_FALSE(attackerSideHero->canLearnSpell(phantomArmy.toSpell(), true));
 	EXPECT_FALSE(attackerSideHero->canLearnSpell(armageddon.toSpell(), true));
+	EXPECT_FALSE(newHorizonsMagic::spellAllowedByHeroRoster(gameState()->getMagicRules(), spellNamed("core:animateDead")));
+	EXPECT_FALSE(newHorizonsMagic::spellAllowedByHeroRoster(gameState()->getMagicRules(), spellNamed("core:antiMagic")));
 	EXPECT_TRUE(newHorizonsMagic::hasSchoolProficiency(attackerSideHero, summonBoat));
 
 	attackerSideHero->addSpellToSpellbook(armageddon);
@@ -407,8 +417,8 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, CanLearnSpellAcceptsEachRequiredSchoo
 		int required;
 	};
 	const std::array cases{
-		SchoolCase{spellNamed("core:animateDead"), SecondarySkill(SecondarySkill::decode("new-horizons:shadowMagic")), MasteryLevel::BASIC},
-		SchoolCase{spellNamed("core:antiMagic"), SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), MasteryLevel::ADVANCED},
+		SchoolCase{spellNamed("new-horizons:plague"), SecondarySkill(SecondarySkill::decode("new-horizons:shadowMagic")), MasteryLevel::BASIC},
+		SchoolCase{spellNamed("new-horizons:phantomArmy"), SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), MasteryLevel::ADVANCED},
 		SchoolCase{spellNamed("core:armageddon"), SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic")), MasteryLevel::EXPERT},
 		SchoolCase{spellNamed("new-horizons:spellLock"), SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), MasteryLevel::EXPERT},
 	};
@@ -435,12 +445,12 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, MageGuildGrantUsesSchoolProficiencyBe
 	town->addBuilding(BuildingID::MAGES_GUILD_5);
 	ASSERT_EQ(town->mageGuildLevel(), 5);
 
-	const auto animateDead = spellNamed("core:animateDead");
-	const auto antiMagic = spellNamed("core:antiMagic");
+	const auto plague = spellNamed("new-horizons:plague");
+	const auto phantomArmy = spellNamed("new-horizons:phantomArmy");
 	const auto armageddon = spellNamed("core:armageddon");
 	town->spells.assign(GameConstants::SPELL_LEVELS, {});
-	town->spells[2] = {animateDead};
-	town->spells[3] = {antiMagic};
+	town->spells[2] = {plague};
+	town->spells[3] = {phantomArmy};
 	town->spells[4] = {armageddon};
 
 	const SecondarySkill shadow(SecondarySkill::decode("new-horizons:shadowMagic"));
@@ -452,16 +462,16 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, MageGuildGrantUsesSchoolProficiencyBe
 	// This is the authoritative guild path, which emits and applies ChangeSpells;
 	// none of the three rows may bypass its school-rank gate.
 	gameHandler->giveSpells(town, attackerSideHero);
-	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(animateDead));
-	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(antiMagic));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(plague));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(phantomArmy));
 	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(armageddon));
 
 	attackerSideHero->setSecSkillLevel(shadow, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 	gameHandler->giveSpells(town, attackerSideHero);
-	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(animateDead));
-	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(antiMagic));
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(plague));
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(phantomArmy));
 	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(armageddon));
 }
 
@@ -487,8 +497,8 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, OrdinaryAcquisitionPolicyRejectsFresh
 	const auto summonBoat = spellNamed("core:summonBoat");
 	ASSERT_TRUE(summonBoat.toSpell()->isAdventure());
 	ASSERT_FALSE(attackerSideHero->spellbookContainsSpell(summonBoat));
-	EXPECT_TRUE(attackerSideHero->canLearnSpell(summonBoat.toSpell()))
-		<< "Adventure Spell acquisition follows the fixed Guild unlock rules, not the school-spell policy";
+	EXPECT_FALSE(attackerSideHero->canLearnSpell(summonBoat.toSpell()))
+		<< "Adventure Spell acquisition requires its separate fixed Guild unlock";
 
 	auto * town = findFirst<CGTownInstance>();
 	ASSERT_NE(town, nullptr);
@@ -504,14 +514,70 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, OrdinaryAcquisitionPolicyRejectsFresh
 	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(counterspell));
 }
 
+TEST_F(NewHorizonsSpellRosterConsumerTest, AdventureSpellsRejectMapTeachersAndRequireOwnedUnlockedVisitingGuild)
+{
+	prepareHero(true, true);
+	const auto summonBoat = spellNamed("core:summonBoat");
+	ASSERT_TRUE(newHorizonsMagic::spellAllowedByHeroRoster(gameState()->getMagicRules(), summonBoat));
+	EXPECT_FALSE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(gameState()->getMagicRules(), summonBoat));
+	EXPECT_FALSE(attackerSideHero->canLearnSpell(summonBoat.toSpell(), true));
+	EXPECT_EQ(attackerSideHero->getSpellLearningStatus(summonBoat.toSpell()),
+		CGHeroInstance::SpellLearningStatus::UNAVAILABLE);
+
+	MapSpellTeacher teacher(attackerSideHero->cb);
+	Rewardable::VisitInfo reward;
+	reward.reward.spells.push_back(summonBoat);
+	teacher.grantRewardAfterLevelup(*gameHandler, reward, attackerSideHero, attackerSideHero);
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(summonBoat));
+	{
+		LegacyMagicWorld legacy(*gameState());
+		ScopedHeroCallback context(*attackerSideHero, &legacy);
+		EXPECT_TRUE(attackerSideHero->canLearnSpell(summonBoat.toSpell(), true));
+		teacher.grantRewardAfterLevelup(*gameHandler, reward, attackerSideHero, attackerSideHero);
+		EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(summonBoat));
+	}
+	attackerSideHero->removeAllSpells();
+
+	auto * town = findFirst<CGTownInstance>();
+	ASSERT_NE(town, nullptr);
+	town->tempOwner = attackerSideHero->getOwner();
+	town->setVisitingHero(attackerSideHero);
+	town->addBuilding(BuildingID::MAGES_GUILD_1);
+	gameHandler->giveSpells(town, attackerSideHero, true);
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(summonBoat));
+	town->setNewHorizonsAdventureSpellUnlocked(1);
+	town->setVisitingHero(nullptr);
+	gameHandler->giveSpells(town, attackerSideHero, true);
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(summonBoat));
+	town->setVisitingHero(attackerSideHero);
+	town->tempOwner = defenderSideHero->getOwner();
+	gameHandler->giveSpells(town, attackerSideHero, true);
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(summonBoat));
+	town->tempOwner = attackerSideHero->getOwner();
+	gameHandler->giveSpells(town, attackerSideHero, false);
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(summonBoat));
+	gameHandler->giveSpells(town, attackerSideHero, true);
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(summonBoat));
+	EXPECT_TRUE(attackerSideHero->canCastThisSpell(summonBoat.toSpell()));
+
+	const auto saved = gameState()->saveToMemory();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(saved);
+	const auto * restoredHero = restored.getHero(attackerSideHero->id);
+	ASSERT_NE(restoredHero, nullptr);
+	EXPECT_TRUE(restoredHero->spellbookContainsSpell(summonBoat));
+	EXPECT_TRUE(restoredHero->canCastThisSpell(summonBoat.toSpell()));
+}
+
 TEST_F(NewHorizonsSpellRosterConsumerTest, ScholarGrantUsesSchoolProficiencyBeforeApplyingChangeSpells)
 {
 	prepareHero();
 	defenderSideHero->removeAllSpells();
 	giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 
-	const auto animateDead = spellNamed("core:animateDead");
-	defenderSideHero->addSpellToSpellbook(animateDead);
+	const auto plague = spellNamed("new-horizons:plague");
+	defenderSideHero->addSpellToSpellbook(plague);
 	// New Horizons migrates the legacy Scholar skill to a Learning perk. Inject
 	// the server bonus directly so this still exercises the authoritative,
 	// legacy-compatible exchange path without changing the canonical roster.
@@ -522,11 +588,11 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, ScholarGrantUsesSchoolProficiencyBefo
 	const SecondarySkill shadow(SecondarySkill::decode("new-horizons:shadowMagic"));
 	attackerSideHero->setSecSkillLevel(shadow, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
 	gameHandler->useScholarSkill(defenderSideHero->id, attackerSideHero->id);
-	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(animateDead));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(plague));
 
 	attackerSideHero->setSecSkillLevel(shadow, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	gameHandler->useScholarSkill(defenderSideHero->id, attackerSideHero->id);
-	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(animateDead));
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(plague));
 }
 
 TEST_F(NewHorizonsSpellRosterConsumerTest, BothAllowedSpellEnumeratorsFilterBeforeLevelLookup)
