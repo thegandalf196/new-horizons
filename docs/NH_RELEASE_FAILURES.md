@@ -1,5 +1,23 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — Metamagic preview guard has a stale keyword exclusion
+
+The UP004 source gate check-new-horizons-metamagic-prompt.py fails on the added
+Chain Lightning cache/preview metamagicGrand fields in BattleActionsController.
+Independent review confirms these are passive preview passthrough, not a manual
+Grand mode: ordinary casting derives only the eligible follow-up, the action
+defaults Grand to false, and the server rejects an explicitly requested Grand
+while computing its automatic continuation. Grand changes the allowance, not
+chain damage/geometry. Classification: non-blocking Phase2 test maintenance.
+Retain this failure; do not relax the guard globally. A future repair should
+allow only the exact cache/preview reads while still rejecting action assignment,
+toggles and a client-selected Grand request. check-warcasting-status.py passes.
+
+The first UP004 background invocation used --testmap and entered spectator/all-AI
+mode; it is excluded from human acceptance. The owned client exited normally
+before a corrected ordinary scenario-selection invocation established Bless→Brace
+and resource/help updates. Private display/profile only; no host-input fallback.
+
 ### 2026-10-08 — Defiant opposing-side simulation lookup
 
 The first focused linked native gate passes6/7; its actual detached AI candidate

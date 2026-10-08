@@ -1,5 +1,15 @@
 # New Horizons UI and asset status register
 
+2026-10-08 UP004 partial runtime acceptance: the existing generic leather/
+red/gold resource panel remains **Provisional**, but actual Divine Mandate
+1/1→0/1 and single Hero Action Available→Spent rendering/help now pass an
+ordinary Bless→Brace sequence on normal Linux snapshot5d1c66b6/source7e09da9dd.
+Root inspected pending and completed help/status screenshots in
+Downloads/provisory/generic-combat-resource-up004-dm-zDukT8s5. Capture is native
+800×600 with half-fit embedded combat, not full-scale icon certification.
+Metamagic/Bloodrage, other placements/viewports and the broader status matrix
+remain open. No new raster, Final art approval or latest-source promotion.
+
 2026-10-08 UP312 local delivery: the usual Linux launcher now selects verified
 5d1c66b6 / 7e09da9dd after scoped rendered acceptance and private-process cleanup.
 Giant/Naga corrections are delivered provisionally; Magi/Gargoyle remain open.

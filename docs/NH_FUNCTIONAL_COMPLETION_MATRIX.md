@@ -2,6 +2,19 @@
 
 Updated: 2026-10-08
 
+UP004 required-UI acceptance advances2026-10-08 without new identity credit:
+the ordinary Divine Mandate provider on current normal Linux snapshot5d1c66b6
+renders1/1 with Hero Action Available, updates after accepted Bless to Spent
+with pending Order source/expiry help, then accepted Brace completes the pair
+and renders0/1 with completed-pair help. Root inspected native800×600 captures
+(half-fit embedded battle) in Downloads/provisory/generic-combat-resource-up004-
+dm-zDukT8s5. Both owned client/Xvfb exit0 and disposable profile cleanup passes.
+The exact source7e09da9dd UI blobs remain unchanged through eac5056b5. This
+establishes one actual provider/control/update path, not Metamagic/Bloodrage or
+the full viewport/status matrix. Perks236/310, combat61/67 and Orders8/8 unchanged.
+Independent source review finds no blocking issue. The stale Grand Metamagic
+preview-keyword guard failure is recorded for Phase2 in NH_RELEASE_FAILURES.md.
+
 Post-Defiant selection audit,2026-10-08: direct registry recount confirms
 236 active/74 planned perks, Armorer9/10 and War Machines7/10; the summary
 and family tables below now match these accepted checkpoints. Independent
