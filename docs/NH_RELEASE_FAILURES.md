@@ -1,5 +1,15 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — A regenerated matte can preserve the same bad fragment
+
+UP282 Stone Gargoyle r8 built-in HoMM3 Art revision changes only26 native mask
+pixels from r7 and retains lower-left architecture. Root inspected the enlarged
+comparison in Downloads/provisory/academy-gargoyle-up282-mask-r8 and rejected
+it. No failed mask is installed. Prompt, master, mechanical reduction and hashes
+remain private. Do not repeat unchanged generation or treat file creation as a
+background fix. The creature's native silhouette must be preserved while actual
+scenery is excluded; staged and rendered recruitment evidence remains required.
+
 ### 2026-10-08 — A pre-start battle screenshot is not active-turn evidence
 
 UP291 bounded isolated Wisp run98002 reached actual additive Wisp/Greater Wisp

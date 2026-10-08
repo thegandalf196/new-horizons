@@ -1,5 +1,10 @@
 # New Horizons UI and asset status register
 
+UP282 Stone Gargoyle r8 remains **Not done**: single focused HoMM3 Art revision
+still includes lower-left architecture after native/enlarged review. Preserved
+private comparison: Downloads/provisory/academy-gargoyle-up282-mask-r8. Nothing
+registered or installed; snowy Gargoyle portraits remain an open delivered defect.
+
 UP310,2026-10-08: Wisp and Greater Wisp **Provisional**58×64 Conflux
 composites are now staged at their unchanged private Images bindings and verified
 in the actual compact battle panel. Root inspected both native screenshots in
