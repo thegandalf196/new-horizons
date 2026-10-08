@@ -7,6 +7,10 @@
 	// - some locations are hardcoded (user config directory, cache/tmp directory, saved games location)
 	"filesystem":
 	{
+		"":
+		[
+			{"type": "nhart", "path": "Mods/new-horizons/NewHorizons.nhart", "overlay": true}
+		],
 		"DATA/" :
 		[
 			{"type" : "lod", "path" : "Data/H3ab_bmp.lod"}, // Contains H3:AB data

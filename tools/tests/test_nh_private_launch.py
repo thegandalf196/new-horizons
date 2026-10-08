@@ -47,7 +47,7 @@ class PrivateLaunchTest(unittest.TestCase):
 
         self.snapshot = self.root / "candidate snapshot"
         self.snapshot.mkdir()
-        client = self.snapshot / "vcmiclient"
+        client = self.snapshot / "new-horizons"
         client.write_text("synthetic client placeholder\n", encoding="utf-8")
         client.chmod(0o755)
         (self.snapshot / "libvcmi.so").write_bytes(b"synthetic library placeholder\n")
@@ -119,7 +119,7 @@ class PrivateLaunchTest(unittest.TestCase):
         command = run.call_args.args[0]
         environment = run.call_args.kwargs["env"]
         self.assertEqual(command[1:], [
-            "--client", str(self.snapshot / "vcmiclient"),
+            "--client", str(self.snapshot / "new-horizons"),
             "--resources", str(self.snapshot),
             "--profile", str(self.profile),
             "--assets", str(self.assets),
@@ -131,6 +131,23 @@ class PrivateLaunchTest(unittest.TestCase):
         self.assertEqual(environment["SDL_VIDEO_DRIVER"], "x11")
         self.assertEqual(environment["SDL_AUDIO_DRIVER"], "dummy")
         self.assertNotIn("WAYLAND_DISPLAY", environment)
+
+    def test_historical_client_name_is_preserved(self):
+        (self.snapshot / 'new-horizons').rename(self.snapshot / 'vcmiclient')
+        with self._patch_boundaries(), mock.patch.object(HELPER.subprocess, 'run') as run:
+            run.return_value.returncode = 0
+            result = HELPER.main(self._args('--verify-only'))
+        self.assertEqual(result, 0)
+        command = run.call_args.args[0]
+        self.assertEqual(command[command.index('--client') + 1], str(self.snapshot / 'vcmiclient'))
+
+    def test_ambiguous_current_and_legacy_clients_refused(self):
+        (self.snapshot / 'vcmiclient').write_bytes((self.snapshot / 'new-horizons').read_bytes())
+        (self.snapshot / 'vcmiclient').chmod(0o755)
+        with self._patch_boundaries(), mock.patch.object(HELPER.subprocess, 'run') as run:
+            with self.assertRaises(SystemExit):
+                HELPER.main(self._args('--verify-only'))
+        run.assert_not_called()
 
     def test_missing_and_stale_guards_refuse_before_subprocess(self):
         with self._patch_boundaries(), mock.patch.object(

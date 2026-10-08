@@ -20,6 +20,30 @@ from mingw_runtime import audit_directory, stage_gnu_runtime, stage_ogg_loader_a
 
 HELPERS = ('Play-New-Horizons.cmd', 'Start-New-Horizons.ps1', 'README-New-Horizons.txt', 'dirs.json')
 RESOURCES = ('config', 'scripts', 'Mods/vcmi', 'Mods/new-horizons')
+NOTICE_FAMILIES = ('', 'academy', 'magic-assets', 'Mage Guilds', 'creatures/wisp/handoff-v3',
+                   'creatures/cabir-master', 'creatures/cabir-master/v3', 'creatures/cabir/v3',
+                   'creatures/magi-palette/v1')
+RUNTIME_NOTICES = {
+    'docs/NHART_FORMAT.md': 'Mods/new-horizons/notices/NHART_FORMAT.md',
+    'docs/NHART_DELIVERY.md': 'Mods/new-horizons/notices/NHART_DELIVERY.md',
+    'assets/new-horizons/sorcery-art/LICENSE': 'Mods/new-horizons/notices/sorcery-art/LICENSE',
+}
+for _family in NOTICE_FAMILIES:
+    _relative = (PurePosixPath(_family) / 'README.md').as_posix()
+    RUNTIME_NOTICES['assets/new-horizons/' + _relative] = 'Mods/new-horizons/notices/provenance/' + _relative
+
+
+def compiled_client_name(root, revision, legacy_source=None):
+    """Never relabel an old compiled output as the newly branded client."""
+    cmake = committed_file(root, revision, 'clientapp/CMakeLists.txt')
+    branded = b'OUTPUT_NAME "new-horizons"' in cmake
+    if legacy_source is not None:
+        if legacy_source != revision or branded or b'OUTPUT_NAME "VCMI_client"' not in cmake:
+            raise RuntimeError('Legacy client pin must match an unbranded compiled source')
+        return 'VCMI_client.exe'
+    if not branded:
+        raise RuntimeError('Unbranded compiled source requires an explicit legacy client source pin')
+    return 'new-horizons.exe'
 
 
 def committed_file(root, revision, name):
@@ -42,7 +66,7 @@ def verify_bundle(bundle):
     return manifest
 
 
-def stage_committed_resources(root, revision, destination):
+def stage_committed_resources(root, revision, destination, legacy_frozen_loose_art=False):
     data = git(root, 'archive', revision, '--', *RESOURCES)
     with tarfile.open(fileobj=io.BytesIO(data)) as archive:
         for member in archive:
@@ -59,6 +83,27 @@ def stage_committed_resources(root, revision, destination):
     for name in RESOURCES:
         if not (destination / name).is_dir():
             raise RuntimeError('Required curated resource tree missing: ' + name)
+    if legacy_frozen_loose_art:
+        # Historical binaries/resources retain their original loose representation.
+        # This opt-in is forbidden for a revision declaring the new pack contract.
+        files = git(root, 'ls-tree', '--name-only', revision, '--', common.RUNTIME_ART_MANIFEST).decode().strip()
+        if files or (destination / common.RUNTIME_ART_PACK).exists():
+            raise RuntimeError('Legacy loose-art mode cannot bypass a declared NHART package')
+        return
+    expected = common.nhart.read_json(committed_file(root, revision, common.RUNTIME_ART_MANIFEST))
+    packed_sources = common.verify_runtime_art(destination, expected)
+    for name in packed_sources:
+        path = destination / name
+        if path.is_file():
+            path.unlink()
+    common.verify_runtime_art(destination, expected)
+    # These notices are installed by CMake, not present in the archived Mods
+    # source tree. Read the exact compiled revision, never the working checkout.
+    notices = {target: committed_file(root, revision, source) for source, target in RUNTIME_NOTICES.items()}
+    for name, payload in notices.items():
+        target = destination / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(payload)
 
 
 def stage_gnu_notices(package):
@@ -110,6 +155,10 @@ def main():
                  'gnu-source-dir', 'engine-source-archive', 'submodule-cache', 'output-dir'):
         parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--packaging-commit', required=True)
+    parser.add_argument('--legacy-frozen-loose-art', action='store_true',
+                        help='Explicit historical compiled-source lane only; cannot bypass a declared NHART manifest')
+    parser.add_argument('--legacy-frozen-client-source',
+                        help='Exact compiled source commit for an explicitly retained old VCMI_client.exe')
     args = parser.parse_args()
     root = Path(common.run('git', 'rev-parse', '--show-toplevel'))
     packaging_commit = git(root, 'rev-parse', '--verify', '--end-of-options', args.packaging_commit + '^{commit}').decode().strip()
@@ -117,14 +166,19 @@ def main():
                  'collect_mingw_sources.py', 'git_source_snapshot.py', 'binary_privacy.py'):
         if (Path(__file__).parent / name).read_bytes() != committed_file(root, packaging_commit, 'tools/ci/' + name):
             raise RuntimeError('Executing packaging code is not its declared committed source: ' + name)
+    if not args.legacy_frozen_loose_art:
+        verifier = root / 'tools/nhart.py'
+        if verifier.read_bytes() != committed_file(root, packaging_commit, 'tools/nhart.py'):
+            raise RuntimeError('Executing NHART verifier is not its declared committed source')
     build = json.loads(args.build_identity.read_text())
     revision = build['source_commit']
     if len(revision) != 40 or any(c not in '0123456789abcdef' for c in revision) or build['build_install_exit'] != 0:
         raise RuntimeError('Missing successful compiled identity')
+    client_name = compiled_client_name(root, revision, args.legacy_frozen_client_source)
     for name, digest in build['binaries'].items():
-        if name not in {'VCMI_client.exe', 'VCMI_lib.dll'} or common.sha256(args.install_dir / name) != digest:
+        if name not in {client_name, 'VCMI_lib.dll'} or common.sha256(args.install_dir / name) != digest:
             raise RuntimeError('Compiled artifact differs from build identity')
-    if set(build['binaries']) != {'VCMI_client.exe', 'VCMI_lib.dll'}:
+    if set(build['binaries']) != {client_name, 'VCMI_lib.dll'}:
         raise RuntimeError('Incomplete compiled binary identity')
     if revision.encode() not in (args.install_dir / 'VCMI_lib.dll').read_bytes():
         raise RuntimeError('Facade does not embed declared source revision')
@@ -139,12 +193,8 @@ def main():
     name = 'New-Horizons-Windows-x64-' + revision[:12]
     package = args.output_dir / name
     package.mkdir()
-    for path in sorted(args.install_dir.iterdir()):
-        if path.is_file() and path.suffix.lower() in {'.exe', '.dll'}:
-            if path.is_symlink() or (path.suffix.lower() == '.exe' and path.name != 'VCMI_client.exe'):
-                raise RuntimeError('Unexpected installed executable/link')
-            shutil.copyfile(path, package / path.name)
-    stage_committed_resources(root, revision, package)
+    common.stage_windows_binaries(args.install_dir, package, client_name)
+    stage_committed_resources(root, revision, package, args.legacy_frozen_loose_art)
     for helper in HELPERS:
         target = package / ('config/dirs.json' if helper == 'dirs.json' else helper)
         target.write_bytes(committed_file(root, packaging_commit, 'tools/windows/' + helper))
@@ -194,14 +244,16 @@ def main():
         raise RuntimeError('Compiler/configuration differs from the audited local lane')
     common.write_json(package / 'BUILD-IDENTITY.json', {
         'project': 'Heroes III: New Horizons', 'source_commit': revision,
+        'client_executable': client_name, 'legacy_client_source_commit': args.legacy_frozen_client_source,
         'packaging_source_commit': packaging_commit, 'source_companions': identities,
         'source_repository': 'https://github.com/thegandalf196/vcmi',
         'compiler': 'Local MinGW-w64 GNU C++13 POSIX/SEH; NOT MSVC or Windows82 cache',
         'build_provenance': provenance, 'execution_identity': build,
         'platform': 'Windows x64', 'configuration': 'Release', 'render_backend': 'SDL3',
         'transport': 'authoritative in-process simulation', 'engine_resource_scope': list(RESOURCES),
+        'runtime_art_format': 'legacy-frozen-loose' if args.legacy_frozen_loose_art else 'NHART1',
         'acceptance': 'Incremental commands/schools preview; static PE closure is not native Windows gameplay acceptance',
-        'proprietary_assets_included': False, 'signed': False,
+        **common.runtime_art_identity(not args.legacy_frozen_loose_art), 'signed': False,
     })
     (package / 'SOURCE-NOTICE.txt').write_text(
         'VCMI-derived GPL-covered fork. Preserve license.txt, AUTHORS.h and licenses/.\n'
@@ -210,7 +262,8 @@ def main():
         'GNU runtimes: complete exact distro/upstream sources, original signed descriptors and licenses/GNU.\n'
         'GCC Runtime Library Exception is included; embedded xBRZ GPLv3 terms are in licenses/xBRZ.\n'
         'No MSVC redistribution claim: this is a separate local MinGW build, not the repaired old Windows82 executable.\n'
-        'Original Heroes III Complete assets are required, external and not redistributed.\n'
+        'An original Heroes III Complete installation is required; unchanged original archives are not bundled.\n'
+        'Selected original-based modifications and composites in NHART are described by its provenance notices.\n'
         'Unsigned incremental preview; full redesign and native Windows gameplay acceptance remain separate gates.\n')
     for path in package.rglob('*'):
         if path.is_symlink() or (path.is_file() and path.suffix.lower() in common.FORBIDDEN_ASSETS):

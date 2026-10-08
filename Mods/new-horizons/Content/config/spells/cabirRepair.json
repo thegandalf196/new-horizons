@@ -8,7 +8,9 @@
 		"defaultGainChance": 0,
 		"gainChance": {},
 		"targetType": "CREATURE",
-		"graphics": {},
+		"graphics": {
+			"iconEffect": "SPELLINT.def:0:38"
+		},
 		"animation": {
 			"affect": [{ "defName": "C01SPE0", "transparency": 0.5 }]
 		},

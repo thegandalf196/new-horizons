@@ -1,6 +1,7 @@
 """Integrity checks for the local Linux playable snapshot helper."""
 from contextlib import redirect_stdout
 import io
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -8,10 +9,12 @@ import subprocess
 import tempfile
 import unittest
 from types import SimpleNamespace
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "ci"))
 from linux_playable_snapshot import (freeze, make_removable, package_files, promote,
-                                     resolve, verify_snapshot, write_metadata)
+                                     resolve, verify_snapshot, write_metadata, snapshot_client)
+import linux_playable_snapshot as snapshot_tools
 
 
 class LinuxPlayableSnapshotTest(unittest.TestCase):
@@ -21,7 +24,7 @@ class LinuxPlayableSnapshotTest(unittest.TestCase):
         self.root = Path(self.temporary.name)
         self.bin = self.root / "build" / "bin"
         self.bin.mkdir(parents=True)
-        self.client = self.bin / "vcmiclient"
+        self.client = self.bin / "new-horizons"
         self.client.write_text("#!/bin/sh\nexit 0\n")
         self.client.chmod(0o755)
         (self.bin / "libvcmi.so").write_bytes(b"matching library")
@@ -69,6 +72,108 @@ class LinuxPlayableSnapshotTest(unittest.TestCase):
         with redirect_stdout(output):
             resolve(SimpleNamespace(store=self.store))
         return Path(output.getvalue().strip())
+
+    def activate_nhart(self, selected=None):
+        selected = selected or ['Mods/new-horizons/Images/icon.png']
+        manifest = {'format': 1, 'requiredFamilies': ['fixture'],
+                    'requiredFamilyCounts': {'fixture': len(selected)}, 'entries': []}
+        for name in selected:
+            payload = (self.source / name).read_bytes()
+            resource = ('CONFIG/' if name.startswith('config/') else 'SPRITES/') + Path(name).name
+            manifest['entries'].append({'source': name, 'resource': resource,
+                'size': len(payload), 'sha256': hashlib.sha256(payload).hexdigest(),
+                'family': 'fixture', 'origin': 'synthetic test', 'selection': 'explicit fixture',
+                'approval': 'test only'})
+        self.art_manifest = self.root / 'expected-art.json'
+        self.art_manifest.write_text(json.dumps(manifest))
+        patcher = mock.patch.object(snapshot_tools, 'ART_MANIFEST', self.art_manifest)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.pack = self.source / snapshot_tools.RUNTIME_ART_PACK
+        snapshot_tools.nhart.pack(manifest, self.source, self.pack)
+        for name in selected:
+            (self.source / name).unlink()
+        (self.source / 'config/filesystem.json').write_text(json.dumps({'filesystem': {'': [
+            {'type': 'nhart', 'path': snapshot_tools.RUNTIME_ART_PACK, 'overlay': True}]}}))
+        (self.source / 'Mods/new-horizons/mod.json').write_text(json.dumps({'filesystem': {'': [
+            {'type': 'dir', 'path': '/Content'}, {'type': 'nhart', 'path': '/NewHorizons.nhart'}]}}))
+
+    def test_nhart_freeze_without_loose_images_and_source_link_support(self):
+        self.activate_nhart()
+        candidate = self.freeze_candidate()
+        self.assertEqual((candidate / snapshot_tools.RUNTIME_ART_PACK).read_bytes(), self.pack.read_bytes())
+        self.assertFalse((candidate / 'Mods/new-horizons/Images/icon.png').exists())
+        verify_snapshot(candidate)
+
+    def test_declared_nhart_missing_pack_cannot_use_legacy_fallback(self):
+        self.activate_nhart()
+        self.pack.unlink()
+        (self.source / 'Mods/new-horizons/Images/icon.png').write_bytes(b'fallback')
+        with self.assertRaisesRegex(RuntimeError, 'pack missing'):
+            self.freeze_candidate()
+        self.assertFalse(list(self.store.glob('snapshot-*')))
+
+    def test_nhart_corruption_rejected_before_freeze(self):
+        self.activate_nhart()
+        data = bytearray(self.pack.read_bytes())
+        data[snapshot_tools.nhart.HEADER.size] ^= 1
+        self.pack.write_bytes(data)
+        with self.assertRaises(snapshot_tools.nhart.NHArtError):
+            self.freeze_candidate()
+
+    def test_nhart_duplicate_loose_art_rejected(self):
+        payload = (self.source / 'Mods/new-horizons/Images/icon.png').read_bytes()
+        self.activate_nhart()
+        (self.source / 'Mods/new-horizons/Images/icon.png').write_bytes(payload)
+        with self.assertRaisesRegex(RuntimeError, 'still installed loose'):
+            self.freeze_candidate()
+
+    def test_loose_baseline_maps_selected_path_to_current_verified_pack(self):
+        baseline = self.freeze_candidate()
+        (self.source / 'Mods/new-horizons/Images/icon.png').write_bytes(b'deliberately updated art')
+        self.activate_nhart()
+        candidate = self.freeze_candidate(baseline)
+        self.assertFalse((candidate / 'Mods/new-horizons/Images/icon.png').exists())
+        self.assertEqual((candidate / snapshot_tools.RUNTIME_ART_PACK).read_bytes(), self.pack.read_bytes())
+        verify_snapshot(candidate)
+
+    def test_nhart_retention_does_not_waive_unmapped_old_art(self):
+        old = self.source / 'Mods/new-horizons/Images/unselected-old.png'
+        old.write_bytes(b'baseline-only art')
+        baseline = self.freeze_candidate()
+        old.unlink()
+        self.activate_nhart()
+        with self.assertRaisesRegex(RuntimeError, 'unselected-old.png'):
+            self.freeze_candidate(baseline)
+
+    def test_nhart_retention_never_waives_missing_gameplay_config(self):
+        gameplay = self.source / 'config/optionalGameplay.json'
+        gameplay.write_bytes(b'{"gameplay":true}')
+        baseline = self.freeze_candidate()
+        gameplay.unlink()
+        self.activate_nhart()
+        with self.assertRaisesRegex(RuntimeError, 'optionalGameplay.json'):
+            self.freeze_candidate(baseline)
+
+    def test_selected_art_configuration_and_casting_files_are_retained_inside_pack(self):
+        art_config, frame = self.add_optional_magic_resources()
+        baseline = self.freeze_candidate()
+        selected = ['Mods/new-horizons/Images/icon.png',
+                    art_config.relative_to(self.source).as_posix(),
+                    frame.relative_to(self.source).as_posix()]
+        self.activate_nhart(selected)
+        candidate = self.freeze_candidate(baseline)
+        self.assertFalse((candidate / selected[1]).exists())
+        self.assertFalse((candidate / selected[2]).exists())
+        self.assertTrue((candidate / snapshot_tools.RUNTIME_ART_PACK).is_file())
+
+    def test_nhart_must_match_expected_current_manifest(self):
+        self.activate_nhart()
+        changed = json.loads(self.art_manifest.read_text())
+        changed['entries'][0]['approval'] = 'different selected inventory'
+        self.art_manifest.write_text(json.dumps(changed))
+        with self.assertRaisesRegex(RuntimeError, 'expected source manifest'):
+            self.freeze_candidate()
 
     def test_requires_explicit_snapshot_and_does_not_fall_back_to_build_bin(self):
         with self.assertRaisesRegex(RuntimeError, "No frozen Linux playable snapshot"):
@@ -180,9 +285,46 @@ class LinuxPlayableSnapshotTest(unittest.TestCase):
         candidate = self.freeze_candidate(baseline)
         self.assertNotEqual(candidate, baseline)
         self.assertEqual((candidate / "config/newHorizonsMagic.json").read_text(), changed.read_text())
-        self.assertEqual((candidate / "vcmiclient").read_text(), self.client.read_text())
+        self.assertEqual((candidate / "new-horizons").read_text(), self.client.read_text())
         self.assertEqual((candidate / "libvcmi.so").read_bytes(), b"new matching library")
         verify_snapshot(candidate)
+
+    def test_new_snapshot_uses_actual_branded_client_name(self):
+        candidate = self.freeze_candidate()
+        self.assertEqual(snapshot_client(candidate), candidate / 'new-horizons')
+        self.assertFalse((candidate / 'vcmiclient').exists())
+
+    def test_legacy_immutable_snapshot_client_remains_unchanged(self):
+        candidate = self.freeze_candidate()
+        make_removable(candidate)
+        (candidate / 'new-horizons').rename(candidate / 'vcmiclient')
+        digest = write_metadata(candidate, package_files(candidate))
+        legacy = self.store / ('snapshot-' + digest)
+        candidate.rename(legacy)
+        before = (legacy / 'SNAPSHOT.json').read_bytes()
+        self.promote_candidate(legacy)
+        self.assertEqual(snapshot_client(legacy), legacy / 'vcmiclient')
+        self.assertEqual(self.selected_snapshot(), legacy)
+        self.assertEqual((legacy / 'SNAPSHOT.json').read_bytes(), before)
+
+    def test_new_freeze_does_not_rename_legacy_executable_silently(self):
+        old = self.client.with_name('vcmiclient')
+        self.client.rename(old)
+        self.client = old
+        with self.assertRaisesRegex(RuntimeError, 'actual new-horizons executable'):
+            self.freeze_candidate()
+
+    def test_verified_snapshot_with_ambiguous_client_names_is_refused(self):
+        candidate = self.freeze_candidate()
+        make_removable(candidate)
+        legacy = candidate / 'vcmiclient'
+        legacy.write_bytes((candidate / 'new-horizons').read_bytes())
+        legacy.chmod(0o755)
+        digest = write_metadata(candidate, package_files(candidate))
+        renamed = self.store / ('snapshot-' + digest)
+        candidate.rename(renamed)
+        with self.assertRaisesRegex(RuntimeError, 'exactly one current or legacy client'):
+            snapshot_client(renamed)
 
     def test_retention_rejects_tampered_baseline(self):
         baseline = self.freeze_candidate()

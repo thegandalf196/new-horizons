@@ -18,6 +18,9 @@ mkdir -p -- "$repo/tools/ci" "$repo/tools" "$bin" "$repo/build/linux-current-cli
 	"$sourceTree/Mods/new-horizons/Images" "$temporary/Data" "$temporary/Maps" "$temporary/Mp3"
 cp -- "$repoRoot/play-new-horizons-linux.sh" "$repo/play-new-horizons-linux.sh"
 cp -- "$repoRoot/tools/ci/linux_playable_snapshot.py" "$repo/tools/ci/linux_playable_snapshot.py"
+cp -- "$repoRoot/tools/verify_new_horizons_art_install.py" "$repo/tools/verify_new_horizons_art_install.py"
+cp -- "$repoRoot/tools/nhart.py" "$repo/tools/nhart.py"
+cp -- "$repoRoot/tools/ci/package_new_horizons_windows.py" "$repo/tools/ci/package_new_horizons_windows.py"
 cp -- "$repoRoot/tools/new-horizons-launch.sh" "$repo/tools/new-horizons-launch.sh"
 
 cat > "$repo/tools/new-horizons-launch.sh" <<'STUB'
@@ -32,6 +35,7 @@ cat > "$bin/vcmiclient" <<'OLD'
 exit 91
 OLD
 chmod +x -- "$bin/vcmiclient"
+cp -- "$bin/vcmiclient" "$bin/new-horizons"
 printf 'old library\n' > "$bin/libvcmi.so"
 cat > "$repo/build/linux-current-client1/stage/New-Horizons-Linux-x64/vcmiclient" <<'OLD_STAGE'
 #!/usr/bin/env bash
@@ -67,8 +71,8 @@ grep -q 'No frozen Linux playable snapshot is selected' "$expectedFailure"
 [[ ! -e $temporary/argv ]]
 
 candidate=$(python3 "$repo/tools/ci/linux_playable_snapshot.py" freeze --no-promote \
-	--client "$bin/vcmiclient" --resources "$bin" --store "$store")
-[[ -f $candidate/vcmiclient && -f $candidate/libvcmi.so ]]
+	--client "$bin/new-horizons" --resources "$bin" --store "$store")
+[[ -f $candidate/new-horizons && ! -e $candidate/vcmiclient && -f $candidate/libvcmi.so ]]
 [[ $(< "$candidate/config/filesystem.json") == '{"source":"editable"}' ]]
 
 # A frozen but unvalidated candidate must remain opt-in until promotion.
@@ -95,12 +99,40 @@ HOME="$temporary/home" SNAPSHOT_TEST_ARGV="$temporary/argv" \
 	--testmap "$expectedMap" --disable-video
 mapfile -d '' -t actual < "$temporary/argv"
 expected=(--assets "$temporary" --profile "$temporary/home/.local/share/new-horizons-play" \
-	--client "$candidate/vcmiclient" --resources "$candidate" --verify-only -- \
+	--client "$candidate/new-horizons" --resources "$candidate" --verify-only -- \
 	--testmap "$expectedMap" --disable-video)
 [[ ${#actual[@]} == ${#expected[@]} ]]
 for index in "${!expected[@]}"; do
 	[[ ${actual[$index]} == "${expected[$index]}" ]]
 done
+
+# Model an immutable historical snapshot; selecting it must not rename its
+# executable or rewrite its manifest. This modifies only the synthetic fixture.
+legacy=$(python3 - "$repo/tools/ci" "$candidate" <<'PY'
+import sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+from linux_playable_snapshot import make_removable, package_files, readonly_tree, write_metadata
+candidate = Path(sys.argv[2])
+make_removable(candidate)
+(candidate / 'new-horizons').rename(candidate / 'vcmiclient')
+digest = write_metadata(candidate, package_files(candidate))
+legacy = candidate.parent / ('snapshot-' + digest)
+candidate.rename(legacy)
+readonly_tree(legacy)
+print(legacy)
+PY
+)
+python3 "$repo/tools/ci/linux_playable_snapshot.py" promote \
+	--snapshot "$legacy" --store "$store" > /dev/null
+legacy_manifest=$(cksum < "$legacy/SNAPSHOT.json")
+HOME="$temporary/home" SNAPSHOT_TEST_ARGV="$temporary/legacy-argv" \
+	bash "$repo/play-new-horizons-linux.sh" --verify-only
+mapfile -d '' -t legacy_args < "$temporary/legacy-argv"
+[[ ${legacy_args[5]} == "$legacy/vcmiclient" ]]
+[[ ${legacy_args[7]} == "$legacy" ]]
+[[ $(cksum < "$legacy/SNAPSHOT.json") == "$legacy_manifest" ]]
+[[ -f $legacy/vcmiclient && ! -e $legacy/new-horizons ]]
 
 # Explicit runtime overrides still bypass snapshot selection and keep their args.
 custom="$temporary/custom-engine"

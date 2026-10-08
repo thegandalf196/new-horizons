@@ -499,7 +499,7 @@ SDL_Window * ScreenHandler::createWindowImpl(Point dimensions, uint64_t flags, b
 	}
 
 	// SDL3 no longer takes the position on creation, it has to be applied afterwards
-	SDL_Window * result = SDL_CreateWindow(GameConstants::VCMI_PROJECT_NAME_VERSIONED, dimensions.x, dimensions.y, flags);
+	SDL_Window * result = SDL_CreateWindow("New Horizons", dimensions.x, dimensions.y, flags);
 
 	if (result != nullptr)
 		SDL_SetWindowPosition(result, positionFlags, positionFlags);

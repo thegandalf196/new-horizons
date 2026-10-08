@@ -25,7 +25,8 @@ done
 if ! $show_help && ! $has_custom_client; then
 	snapshot=$(python3 "$root/tools/ci/linux_playable_snapshot.py" resolve \
 		--store "$root/build/new-horizons-linux/playable-snapshots")
-	snapshot_args=(--client "$snapshot/vcmiclient")
+	snapshot_client=$(python3 "$root/tools/ci/linux_playable_snapshot.py" client --snapshot "$snapshot")
+	snapshot_args=(--client "$snapshot_client")
 	if ! $has_custom_resources; then
 		snapshot_args+=(--resources "$snapshot")
 	fi

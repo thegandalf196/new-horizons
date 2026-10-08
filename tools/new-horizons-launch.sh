@@ -8,13 +8,13 @@ usage() {
 	printf '%s\n' 'Usage: new-horizons-launch.sh --assets DIR --profile DIR [--client FILE] [--resources DIR] [--debugger-log FILE] [--verify-only] [-- CLIENT_ARG ...]' \
 		'Purchaser Complete installation: Data, Maps, Mp3 (case-insensitive names).' \
 		'Profile must be new or previously created by this script; do not use a VCMI profile.' \
-		'Arguments after -- are forwarded verbatim to vcmiclient after the mandatory --nointro.' \
+		'Arguments after -- are forwarded verbatim to New Horizons after the mandatory --nointro.' \
 		'--verify-only checks paths without creating a profile or executing the client.' \
 		'--debugger-log uses installed gdb and a new exclusive log inside the managed profile.' \
 		'Without --verify-only this manually invoked command launches the game.'
 }
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
-client="$root/build/new-horizons-linux/bin/vcmiclient"
+client="$root/build/new-horizons-linux/bin/new-horizons"
 resources=''
 assets=''
 profile=''
@@ -74,7 +74,14 @@ if [[ -e $resources/config/newHorizonsCombat.json || -e $resources/Mods/new-hori
 	for item in config/newHorizonsCombat.json Mods/new-horizons/mod.json; do
 		[[ -f $resources/$item && -r $resources/$item ]] || fail "Missing curated resource: $item"
 	done
-	[[ -d $resources/Mods/new-horizons/Images ]] || fail 'Missing curated command artwork directory.'
+	if grep -q '"nhart"' "$resources/config/filesystem.json" "$resources/Mods/new-horizons/mod.json"; then
+		art_pack="$resources/Mods/new-horizons/NewHorizons.nhart"
+		[[ -f $art_pack && ! -L $art_pack && -r $art_pack ]] || fail 'Missing curated NewHorizons.nhart artwork package.'
+		[[ $(head -c 5 -- "$art_pack") == NHART ]] || fail 'Invalid curated NHART artwork package header.'
+	else
+		# Historical frozen previews predate NHART; retain their explicit legacy path.
+		[[ -d $resources/Mods/new-horizons/Images ]] || fail 'Missing legacy curated command artwork directory.'
+	fi
 	curatedCommands=true
 fi
 [[ -r $(dirname -- "$client")/libvcmi.so ]] || fail 'Missing matching libvcmi.so beside client.'
@@ -137,9 +144,10 @@ if [[ -e $profile ]]; then
 		for staleRuntime in "$profile"/runtime.????????; do
 			[[ -d $staleRuntime && ! -L $staleRuntime ]] || continue
 			managedRuntime=true
-			for entry in "$staleRuntime"/*; do
+			for entry in "$staleRuntime"/* "$staleRuntime"/.[!.]* "$staleRuntime"/..?*; do
+				[[ -e $entry || -L $entry ]] || continue
 				case ${entry##*/} in
-					vcmiclient) expected=$client;;
+					vcmiclient|new-horizons) expected=$client;;
 					libvcmi.so) expected=$(dirname -- "$client")/libvcmi.so;;
 					config) expected=$resources/config;;
 					scripts) expected=$resources/scripts;;
@@ -154,11 +162,18 @@ if [[ -e $profile ]]; then
 				[[ -L $entry && $(realpath -e -- "$entry") == $(realpath -e -- "$expected") ]] \
 					|| { managedRuntime=false; break; }
 			done
-			for name in vcmiclient libvcmi.so config scripts Data Maps Mp3 Mods; do
+			if [[ -L $staleRuntime/new-horizons && ! -e $staleRuntime/vcmiclient && ! -L $staleRuntime/vcmiclient ]] \
+				|| [[ -L $staleRuntime/vcmiclient && ! -e $staleRuntime/new-horizons && ! -L $staleRuntime/new-horizons ]]; then
+				:
+			else
+				managedRuntime=false
+			fi
+			for name in libvcmi.so config scripts Data Maps Mp3 Mods; do
 				[[ -e $staleRuntime/$name || -L $staleRuntime/$name ]] || managedRuntime=false
 			done
 			if $managedRuntime; then
-				for entry in "$staleRuntime/Mods"/*; do
+				for entry in "$staleRuntime/Mods"/* "$staleRuntime/Mods"/.[!.]* "$staleRuntime/Mods"/..?*; do
+					[[ -e $entry || -L $entry ]] || continue
 					case ${entry##*/} in
 						vcmi) expected=$resources/Mods/vcmi;;
 						new-horizons)
@@ -237,7 +252,7 @@ trap 'forward_signal HUP' HUP
 trap 'forward_signal INT' INT
 trap 'forward_signal TERM' TERM
 mkdir -- "$runtime/Mods"
-ln -s -- "$client" "$runtime/vcmiclient"
+ln -s -- "$client" "$runtime/new-horizons"
 ln -s -- "$(dirname -- "$client")/libvcmi.so" "$runtime/libvcmi.so"
 ln -s -- "$resources/config" "$runtime/config"
 ln -s -- "$resources/scripts" "$runtime/scripts"
@@ -258,7 +273,7 @@ if [[ -n $received_signal ]]; then
 fi
 # Do not inherit XDG VCMI settings, optional mods, or loader injection variables.
 # This is a curated launch profile, not a sandbox or global mod prohibition.
-launch_command=("$runtime/vcmiclient" --nointro "${client_args[@]}")
+launch_command=("$runtime/new-horizons" --nointro "${client_args[@]}")
 if [[ -n $debugger_log ]]; then
 	# Do not source host/profile .gdbinit. Preserve inferior exit status; a
 	# signal-stopped crash returns nonzero instead of gdb's usual batch success.

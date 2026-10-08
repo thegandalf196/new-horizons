@@ -89,6 +89,7 @@ set(test_SRCS
 		events/EventBusTest.cpp
 
 		filesystem/FilesystemTest.cpp
+		filesystem/CNhArtLoaderTest.cpp
 		filesystem/SavegamePathTest.cpp
 
 		game/BattleSpellCastTest.cpp

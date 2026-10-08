@@ -9416,16 +9416,14 @@
 		}
 	},
 	"filesystem": {
-		"SPRITES/": [
-			{
-				"type": "dir",
-				"path": "/Images"
-			}
-		],
 		"": [
 			{
 				"type": "dir",
 				"path": "/Content"
+			},
+			{
+				"type": "nhart",
+				"path": "/NewHorizons.nhart"
 			}
 		]
 	},

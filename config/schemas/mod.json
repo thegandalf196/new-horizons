@@ -163,13 +163,17 @@
 					"type" : "object",
 					"additionalProperties" : false,
 					"properties" : {
+						"overlay" : {
+							"type" : "boolean",
+							"description" : "Mount after ordinary data sources across all prefixes"
+						},
 						"path" : {
 							"type" : "string",
 							"description" : "Path to data source"
 						},
 						"type" : {
 							"type" : "string",
-							"enum" : [ "dir", "lod", "snd", "vid", "map", "zip" ],
+							"enum" : [ "dir", "lod", "snd", "vid", "map", "zip", "nhart" ],
 							"description" : "Type of data source"
 						}
 					}

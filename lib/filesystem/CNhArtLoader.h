@@ -1,0 +1,35 @@
+/*
+ * CNhArtLoader.h, part of VCMI engine
+ *
+ * License: GNU General Public License v2.0 or later; see license.txt
+ */
+#pragma once
+
+#include "ISimpleResourceLoader.h"
+#include "ResourcePath.h"
+
+/// Read-only, uncompressed NHART resource archive. Payload integrity is checked
+/// by the packaging verifier; runtime validates all index structure and bounds.
+class DLL_LINKAGE CNhArtLoader : public ISimpleResourceLoader
+{
+public:
+	CNhArtLoader(std::string mountPoint, boost::filesystem::path archive);
+	std::unique_ptr<CInputStream> load(const ResourcePath & resourceName) const override;
+	bool existsResource(const ResourcePath & resourceName) const override;
+	std::string getMountPoint() const override;
+	void updateFilteredFiles(std::function<bool(const std::string &)> filter) override {}
+	std::unordered_set<ResourcePath> getFilteredFiles(std::function<bool(const ResourcePath &)> filter) const override;
+	std::string getFullFileURI(const ResourcePath & resourceName) const override;
+	std::time_t getLastWriteTime(const ResourcePath & resourceName) const override;
+
+private:
+	struct Entry
+	{
+		std::string name;
+		si64 offset;
+		si64 length;
+	};
+	boost::filesystem::path archive;
+	std::string mountPoint;
+	std::unordered_map<ResourcePath, Entry> entries;
+};

@@ -5,17 +5,28 @@
 Requires jsonschema. No purchaser assets, game executable or compiler is used.
 """
 import copy
+import contextlib
+import importlib.util
+import io
 import json
 from pathlib import Path
 import re
 import struct
+import sys
 import unittest
+from unittest.mock import patch
 import zlib
 
 from jsonschema import Draft4Validator, ValidationError
 from referencing import Registry, Resource
 
+if __package__:
+    from .nhart_test_resources import ArtPath
+else:
+    from nhart_test_resources import ArtPath
+
 ROOT = Path(__file__).resolve().parents[2]
+ART = ArtPath("SPRITES")
 SCHOOLS = ('light', 'nature', 'sorcery', 'havoc', 'shadow', 'chaos')
 RANKS = ('basic', 'advanced', 'expert')
 NEW_HORIZONS_SPELLS = {
@@ -195,6 +206,48 @@ class NewHorizonsContentTest(unittest.TestCase):
     def setUp(self):
         self.rules = load('config/newHorizonsMagic.json')
 
+    def test_shipping_and_diagnostic_modules_mount_the_selected_pack(self):
+        expected_pack = {'type': 'nhart', 'path': '/NewHorizons.nhart'}
+        self.assertEqual(load('Mods/new-horizons/mod.json')['filesystem'], {
+            '': [{'type': 'dir', 'path': '/Content'}, expected_pack],
+        })
+        spec = importlib.util.spec_from_file_location(
+            'nh_content_module_generator', ROOT / 'tools/update-new-horizons-module.py')
+        generator = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(generator)
+        destination = ROOT / 'build/nhart-content-test-diagnostic/mod.json'
+        captured = {}
+        def capture_write(path, text, **kwargs):
+            captured[path] = text
+            return len(text)
+        # Exercise the actual diagnostic generator without creating a fixture,
+        # extracting artwork or changing the shipping module.
+        with patch.object(sys, 'argv', ['update-new-horizons-module.py',
+                                       '--hero-preview-output', str(destination)]), \
+                patch.object(Path, 'mkdir'), \
+                patch.object(Path, 'write_text', capture_write), \
+                contextlib.redirect_stdout(io.StringIO()):
+            generator.main()
+        self.assertEqual(json.loads(captured[destination])['filesystem'], {
+            '': [expected_pack],
+        })
+
+    def test_selected_cabir_and_turbaned_magi_bindings_resolve_in_pack(self):
+        creatures = load('Mods/new-horizons/Content/config/creatures/tower.json')
+        for name in ('core:gremlin', 'core:masterGremlin', 'core:mage', 'core:archMage'):
+            with self.subTest(creature=name):
+                graphics = creatures[name]['graphics']
+                prefix = 'magi-vcmi-complete/' if name in ('core:mage', 'core:archMage') else 'cabir-handoff/'
+                for role, dimensions in (('iconLarge', (58, 64)), ('iconSmall', (32, 32))):
+                    self.assertTrue(graphics[role].startswith(prefix))
+                    payload = (ART / graphics[role]).read_bytes()
+                    self.assertEqual(payload[:8], b'\x89PNG\r\n\x1a\n')
+                    self.assertEqual(struct.unpack('>II', payload[16:24]), dimensions)
+                # Runtime .def identifiers are provided by selected JSON
+                # animation descriptors, not an unshipped gray Mage fallback.
+                descriptor = str(Path(graphics['animation']).with_suffix('.json'))
+                self.assertTrue((ART / descriptor).is_file())
+
     def test_nature_poison_is_a_distinct_hero_spell_with_provisional_art(self):
         spell_id = 'new-horizons:poison'
         row = self.rules['spells'][spell_id]
@@ -223,7 +276,7 @@ class NewHorizonsContentTest(unittest.TestCase):
             with self.subTest(role=role):
                 self.assertTrue(filename.startswith('NH_nature_poison_'))
                 self.assertEqual(struct.unpack('>II',
-                    (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                    (ART / filename).read_bytes()[16:24]),
                     (size, size))
 
     def test_hex_of_pain_has_roster_effect_and_purpose_made_art(self):
@@ -242,7 +295,7 @@ class NewHorizonsContentTest(unittest.TestCase):
             filename = spell['graphics'][role]
             self.assertEqual(filename, f'NH_hex_of_pain_{size}.png')
             self.assertEqual(struct.unpack('>II',
-                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (ART / filename).read_bytes()[16:24]),
                 (size, size))
 
     def test_frailty_has_roster_effect_and_purpose_made_art(self):
@@ -261,7 +314,7 @@ class NewHorizonsContentTest(unittest.TestCase):
             filename = spell['graphics'][role]
             self.assertEqual(filename, f'NH_frailty_{size}.png')
             self.assertEqual(struct.unpack('>II',
-                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (ART / filename).read_bytes()[16:24]),
                 (size, size))
 
     def test_soul_chain_has_roster_effect_and_purpose_made_art(self):
@@ -280,7 +333,7 @@ class NewHorizonsContentTest(unittest.TestCase):
             filename = spell['graphics'][role]
             self.assertEqual(filename, f'NH_spell_soul_chain_{size}.png')
             self.assertEqual(struct.unpack('>II',
-                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (ART / filename).read_bytes()[16:24]),
                 (size, size))
 
     def test_shadow_gift_has_roster_effect_dark_gift_and_purpose_made_art(self):
@@ -300,7 +353,7 @@ class NewHorizonsContentTest(unittest.TestCase):
             filename = spell['graphics'][role]
             self.assertEqual(filename, f'NH_spell_shadow_gift_{size}.png')
             self.assertEqual(struct.unpack('>II',
-                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (ART / filename).read_bytes()[16:24]),
                 (size, size))
         shadow_perks = load('config/newHorizonsPerks.json')['skills']['new-horizons:shadowMagic']['perks']
         dark_gift = next(perk for perk in shadow_perks
@@ -324,7 +377,7 @@ class NewHorizonsContentTest(unittest.TestCase):
             filename = spell['graphics'][role]
             self.assertIn('vampirism', filename)
             self.assertEqual(struct.unpack('>II',
-                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (ART / filename).read_bytes()[16:24]),
                 (size, size))
         shadow_perks = load('config/newHorizonsPerks.json')['skills']['new-horizons:shadowMagic']['perks']
         night_feeder = next(perk for perk in shadow_perks
@@ -357,7 +410,7 @@ class NewHorizonsContentTest(unittest.TestCase):
             filename = spell['graphics'][role]
             self.assertEqual(filename, f'NH_spell_reanimate_{size}.png')
             self.assertEqual(struct.unpack('>II',
-                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (ART / filename).read_bytes()[16:24]),
                 (size, size))
         shadow_perks = load('config/newHorizonsPerks.json')['skills']['new-horizons:shadowMagic']['perks']
         reanimator = next(perk for perk in shadow_perks
@@ -389,7 +442,7 @@ class NewHorizonsContentTest(unittest.TestCase):
             filename = spell['graphics'][role]
             self.assertEqual(filename, f'NH_spell_soul_reaper_{size}.png')
             self.assertEqual(struct.unpack('>II',
-                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (ART / filename).read_bytes()[16:24]),
                 (size, size))
         texts = load('config/newHorizonsCombatTexts.json')
         for form in (0, 1, 2):
@@ -416,7 +469,7 @@ class NewHorizonsContentTest(unittest.TestCase):
             filename = spell['graphics'][role]
             self.assertEqual(filename, f'NH_spell_doom_{size}.png')
             self.assertEqual(struct.unpack('>II',
-                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (ART / filename).read_bytes()[16:24]),
                 (size, size))
         texts = load('config/newHorizonsCombatTexts.json')
         self.assertIn('new-horizons.combat.doom.applied', texts)
@@ -442,7 +495,7 @@ class NewHorizonsContentTest(unittest.TestCase):
             filename = spell['graphics'][role]
             self.assertEqual(filename, f'NH_spell_sanctuary_{size}.png')
             self.assertEqual(struct.unpack('>II',
-                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (ART / filename).read_bytes()[16:24]),
                 (size, size))
 
     def test_guardian_spirit_is_a_timed_light_physical_shield(self):
@@ -465,7 +518,7 @@ class NewHorizonsContentTest(unittest.TestCase):
             filename = spell['graphics'][role]
             self.assertEqual(filename, f'NH_spell_guardian_spirit_{size}.png')
             self.assertEqual(struct.unpack('>II',
-                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (ART / filename).read_bytes()[16:24]),
                 (size, size))
 
     def test_heavenly_gale_is_army_wide_fractional_ranged_protection(self):
@@ -492,7 +545,7 @@ class NewHorizonsContentTest(unittest.TestCase):
             filename = spell['graphics'][role]
             self.assertEqual(filename, f'NH_spell_heavenly_gale_{size}.png')
             self.assertEqual(struct.unpack('>II',
-                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (ART / filename).read_bytes()[16:24]),
                 (size, size))
 
     def test_divine_retribution_is_rostered_delayed_light_protection(self):
@@ -520,7 +573,7 @@ class NewHorizonsContentTest(unittest.TestCase):
             filename = spell['graphics'][role]
             self.assertEqual(filename, f'NH_spell_divine_retribution_{size}.png')
             self.assertEqual(struct.unpack('>II',
-                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (ART / filename).read_bytes()[16:24]),
                 (size, size))
 
     def test_entangle_is_ground_enemy_root_with_independent_movement(self):
@@ -560,7 +613,7 @@ class NewHorizonsContentTest(unittest.TestCase):
         for size, key in ((44, 'iconBook'), (32, 'iconScroll'), (30, 'iconEffect')):
             self.assertEqual(spell['graphics'][key], f'NH_spell_summon_trolls_{size}.png')
             self.assertEqual(struct.unpack('>II',
-                (ROOT / 'Mods/new-horizons/Images' / spell['graphics'][key]).read_bytes()[16:24]),
+                (ART / spell['graphics'][key]).read_bytes()[16:24]),
                 (size, size))
         perks = load('config/newHorizonsPerks.json')['skills']['new-horizons:natureMagic']['perks']
         self.assertEqual(next(p for p in perks if p['id'].endswith('.beastcaller'))
@@ -586,7 +639,7 @@ class NewHorizonsContentTest(unittest.TestCase):
         for size, key in ((44, 'iconBook'), (32, 'iconScroll'), (30, 'iconEffect')):
             self.assertEqual(spell['graphics'][key], f'NH_spell_blink_{size}.png')
             self.assertEqual(struct.unpack('>II',
-                (ROOT / 'Mods/new-horizons/Images' / spell['graphics'][key]).read_bytes()[16:24]),
+                (ART / spell['graphics'][key]).read_bytes()[16:24]),
                 (size, size))
 
     def test_hydras_vitality_registers_single_target_capacity_effect(self):
@@ -612,7 +665,7 @@ class NewHorizonsContentTest(unittest.TestCase):
         for size, key in ((44, 'iconBook'), (32, 'iconScroll'), (30, 'iconEffect')):
             self.assertEqual(spell['graphics'][key], f'NH_spell_hydras_vitality_{size}.png')
             self.assertEqual(struct.unpack('>II',
-                (ROOT / 'Mods/new-horizons/Images' / spell['graphics'][key]).read_bytes()[16:24]),
+                (ART / spell['graphics'][key]).read_bytes()[16:24]),
                 (size, size))
 
     def test_verdant_prison_uses_temporary_ring_effect_and_purpose_made_art(self):
@@ -630,7 +683,7 @@ class NewHorizonsContentTest(unittest.TestCase):
         for size, key in ((44, 'iconBook'), (32, 'iconScroll'), (30, 'iconEffect')):
             self.assertEqual(spell['graphics'][key], f'NH_spell_verdant_prison_{size}.png')
             self.assertEqual(struct.unpack('>II',
-                (ROOT / 'Mods/new-horizons/Images' / spell['graphics'][key]).read_bytes()[16:24]),
+                (ART / spell['graphics'][key]).read_bytes()[16:24]),
                 (size, size))
         perks = load('config/newHorizonsPerks.json')['skills']['new-horizons:natureMagic']['perks']
         self.assertEqual(next(p for p in perks if p['id'].endswith('.verdantWarden'))
@@ -657,7 +710,7 @@ class NewHorizonsContentTest(unittest.TestCase):
         for size, key in ((44, 'iconBook'), (32, 'iconScroll'), (30, 'iconEffect')):
             filename = spell['graphics'][key]
             self.assertEqual(struct.unpack('>II',
-                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]), (size, size))
+                (ART / filename).read_bytes()[16:24]), (size, size))
 
     def test_shield_of_chaos_is_neutral_single_target_with_separate_defenses(self):
         row = self.rules['spells']['new-horizons:shieldOfChaos']
@@ -726,7 +779,7 @@ class NewHorizonsContentTest(unittest.TestCase):
             filename = spell['graphics'][role]
             self.assertEqual(filename, f'NH_spell_purify_{size}.png')
             self.assertEqual(struct.unpack('>II',
-                (ROOT / 'Mods/new-horizons/Images' / filename).read_bytes()[16:24]),
+                (ART / filename).read_bytes()[16:24]),
                 (size, size))
 
     def test_hand_of_fate_is_a_rostered_chaos_spell_with_recipient_only_spill(self):
@@ -764,8 +817,8 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(definition['graphics']['iconScroll'], 'NH_holyWrath_44.png')
         self.assertEqual(definition['graphics']['iconEffect'], 'NH_holyWrath_30.png')
         self.assertEqual(definition['graphics']['iconImmune'], 'NH_holyWrath_30.png')
-        self.assertTrue((ROOT / 'Mods/new-horizons/Images/NH_holyWrath_44.png').is_file())
-        self.assertTrue((ROOT / 'Mods/new-horizons/Images/NH_holyWrath_30.png').is_file())
+        self.assertTrue((ART / 'NH_holyWrath_44.png').is_file())
+        self.assertTrue((ART / 'NH_holyWrath_30.png').is_file())
         self.assertEqual(set(definition['levels']), {'none', 'basic', 'advanced', 'expert'})
         for rank, level in definition['levels'].items():
             with self.subTest(rank=rank):
@@ -1391,21 +1444,21 @@ class NewHorizonsContentTest(unittest.TestCase):
                 elif icon_stem == 'metamagic':
                     expected_small = 'NH_metamagic_prism_basic_small.png'
                     expected_large = 'NH_metamagic_prism_basic_medium.png'
-                    self.assertTrue((ROOT / 'Mods/new-horizons/Images' /
+                    self.assertTrue((ART /
                                      expected_small).is_file())
-                    self.assertTrue((ROOT / 'Mods/new-horizons/Images' /
+                    self.assertTrue((ART /
                                      expected_large).is_file())
                 else:
                     expected_small = 'NH_' + icon_stem + '_basic_small.png'
                     expected_large = 'NH_' + icon_stem + '_basic_medium.png'
-                    self.assertTrue((ROOT / 'Mods/new-horizons/Images' /
+                    self.assertTrue((ART /
                                      expected_small).is_file())
-                    self.assertTrue((ROOT / 'Mods/new-horizons/Images' /
+                    self.assertTrue((ART /
                                      expected_large).is_file())
                 self.assertEqual(patch['images']['specialtySmall'], expected_small)
                 self.assertEqual(patch['images']['specialtyLarge'], expected_large)
                 if expected_large.endswith('.png'):
-                    self.assertEqual(png_size(ROOT / 'Mods/new-horizons/Images' /
+                    self.assertEqual(png_size(ART /
                                               expected_large), (44, 44))
         for hero in ('jaegar', 'rosic', 'axsis'):
             with self.subTest(mysticism_bonus=hero):
@@ -1651,7 +1704,7 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertIn('Overcharge', module['description'])
         self.assertEqual(module['spellSchools'], load('config/newHorizonsSchools.json'))
         self.assertEqual(module['skills'], load('config/newHorizonsSkills.json'))
-        self.assertEqual(module['filesystem']['SPRITES/'], [{'type': 'dir', 'path': '/Images'}])
+        self.assertEqual(set(module['filesystem']), {''})
         translations = load('config/newHorizonsMasteryTexts.json')
         translations.update(load('config/newHorizonsCreatureCategoryTexts.json'))
         translations.update(load('config/newHorizonsFortTexts.json'))
@@ -1662,7 +1715,10 @@ class NewHorizonsContentTest(unittest.TestCase):
         translations.update(load('config/newHorizonsEconomyTexts.json'))
         self.assertEqual(module['translations'], translations)
         self.assertEqual(module['bonuses'], load('config/newHorizonsConvenienceBonuses.json'))
-        self.assertEqual(module['filesystem'][''], [{'type': 'dir', 'path': '/Content'}])
+        self.assertEqual(module['filesystem'][''], [
+            {'type': 'dir', 'path': '/Content'},
+            {'type': 'nhart', 'path': '/NewHorizons.nhart'},
+        ])
         self.assertFalse(module['keepDisabled'])
         magic_schema = load('config/schemas/gameSettings.json')['properties']['magic']['properties']['newHorizons']
         self.assertEqual(magic_schema['anyOf'], [
@@ -1684,7 +1740,7 @@ class NewHorizonsContentTest(unittest.TestCase):
                 Draft4Validator(load('config/schemas/spellSchool.json')).validate(school)
                 self.assertNotIn('index', school)
                 for field in ('schoolHeader', 'schoolBookmark'):
-                    self.assertTrue((ROOT / 'Mods/new-horizons/Images' / school[field]).is_file())
+                    self.assertTrue((ART / school[field]).is_file())
                 skill = skills[name + 'Magic']
                 self.assertNotIn('index', skill)
                 self.assertEqual(skill['gainChance'], {'might': 2, 'magic': 6})
@@ -1696,7 +1752,7 @@ class NewHorizonsContentTest(unittest.TestCase):
                     for size, dimensions in SIZES.items():
                         image = skill[rank]['images'][size]
                         self.assertEqual(image, f'NH_{name}Magic_{rank}_{size}.png')
-                        self.assertEqual(png_size(ROOT / 'Mods/new-horizons/Images' / image), dimensions)
+                        self.assertEqual(png_size(ART / image), dimensions)
         legacy = load('config/spellSchools.json')
         self.assertEqual({k: v['index'] for k, v in legacy.items()},
                          {'air': 0, 'fire': 1, 'earth': 2, 'water': 3})

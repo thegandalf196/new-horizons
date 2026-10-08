@@ -34,6 +34,10 @@ if(ANDROID)
 	endif()
 else()
 	add_executable(vcmiclient ${clientapp_SRCS} ${clientapp_HEADERS})
+	if(NOT IOS)
+		# Keep the engine target name stable; brand only the desktop executable.
+		set_target_properties(vcmiclient PROPERTIES OUTPUT_NAME "new-horizons")
+	endif()
 	if(USING_CONAN)
 		vcmi_copy_conan_runtime_deps(vcmiclient)
 	endif()
@@ -65,16 +69,21 @@ target_include_directories(vcmiclient
 )
 
 if(WIN32)
-	set(VCMI_FILE_DESCRIPTION "VCMI Client")
-	set(VCMI_ORIGINAL_FILENAME "VCMI_client.exe")
+	set(VCMI_FILE_DESCRIPTION "New Horizons")
+	set(VCMI_ORIGINAL_FILENAME "new-horizons.exe")
 	set(VCMI_ICON_RESOURCE "IDI_ICON1 ICON \"${CMAKE_CURRENT_SOURCE_DIR}/icons/vcmi.ico\"")
 	set(client_VERSIONINFO_RC "${CMAKE_CURRENT_BINARY_DIR}/VCMI_client_versioninfo.rc")
-	configure_file("${CMAKE_SOURCE_DIR}/win/WindowsFileInfo.rc.in" "${client_VERSIONINFO_RC}" @ONLY)
+	# Product metadata only: do not rename the upstream project or shared library.
+	function(configure_new_horizons_version_info)
+		set(VCMI_PROJECT_NAME "New Horizons")
+		configure_file("${CMAKE_SOURCE_DIR}/win/WindowsFileInfo.rc.in" "${client_VERSIONINFO_RC}" @ONLY)
+	endfunction()
+	configure_new_horizons_version_info()
 	target_sources(vcmiclient PRIVATE "${client_VERSIONINFO_RC}")
 	set_target_properties(vcmiclient
 		PROPERTIES
-			OUTPUT_NAME "VCMI_client"
-			PROJECT_LABEL "VCMI_client"
+			OUTPUT_NAME "new-horizons"
+			PROJECT_LABEL "New Horizons"
 	)
 	set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT vcmiclient)
 	if(NOT ENABLE_DEBUG_CONSOLE)
@@ -152,5 +161,6 @@ if(NOT WIN32 AND NOT APPLE AND NOT ANDROID)
 	)
 	install(FILES icons/vcmiclient.desktop
 		DESTINATION share/applications
+		RENAME new-horizons.desktop
 	)
 endif()

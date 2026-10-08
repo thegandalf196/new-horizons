@@ -190,7 +190,7 @@ std::vector<bfs::path> VCMIDirsWIN32::dataPaths() const
 	return std::vector<bfs::path>(1, bfs::path("."));
 }
 
-bfs::path VCMIDirsWIN32::clientPath() const { return binaryPath() / "VCMI_client.exe"; }
+bfs::path VCMIDirsWIN32::clientPath() const { return binaryPath() / "new-horizons.exe"; }
 bfs::path VCMIDirsWIN32::mapEditorPath() const { return binaryPath() / "VCMI_mapeditor.exe"; }
 bfs::path VCMIDirsWIN32::serverPath() const { return binaryPath() / "VCMI_server.exe"; }
 
@@ -210,7 +210,7 @@ bool IVCMIDirsUNIX::developmentMode() const
 {
 	// We want to be able to run VCMI from single directory. E.g to run from build output directory
 	const bool hasConfigs = bfs::exists("config") && bfs::exists("Mods");
-	const bool hasBinaries = bfs::exists("vcmiclient")
+	const bool hasBinaries = bfs::exists("new-horizons") || bfs::exists("vcmiclient")
 		|| bfs::exists("vcmiserver")
 		|| bfs::exists("vcmilobby")
 		|| bfs::exists("vcmieditor")
@@ -218,7 +218,14 @@ bool IVCMIDirsUNIX::developmentMode() const
 	return hasConfigs && hasBinaries;
 }
 
-bfs::path IVCMIDirsUNIX::clientPath() const { return binaryPath() / "vcmiclient"; }
+bfs::path IVCMIDirsUNIX::clientPath() const
+{
+#ifdef VCMI_IOS
+	return binaryPath() / "vcmiclient";
+#else
+	return binaryPath() / "new-horizons";
+#endif
+}
 bfs::path IVCMIDirsUNIX::mapEditorPath() const { return binaryPath() / "vcmieditor"; }
 bfs::path IVCMIDirsUNIX::serverPath() const { return binaryPath() / "vcmiserver"; }
 

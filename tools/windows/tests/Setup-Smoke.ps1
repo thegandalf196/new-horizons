@@ -114,7 +114,7 @@ try {
     $invalid = Join-Path $fixture ('invalid ' + $oddName)
     $null = [IO.Directory]::CreateDirectory($privateData)
     $null = [IO.Directory]::CreateDirectory($invalid)
-    Write-FixtureFile (Join-Path $package 'VCMI_client.exe') 'SYNTHETIC PLACEHOLDER, NOT AN EXECUTABLE'
+    Write-FixtureFile (Join-Path $package 'new-horizons.exe') 'SYNTHETIC PLACEHOLDER, NOT AN EXECUTABLE'
     Write-FixtureFile (Join-Path $package 'VCMI_lib.dll') 'SYNTHETIC PLACEHOLDER, NOT A DLL'
     Write-FixtureFile (Join-Path $package 'config\filesystem.json') '{}'
     [IO.File]::Copy((Join-Path $sourceDir 'dirs.json'), (Join-Path $package 'config\dirs.json'))

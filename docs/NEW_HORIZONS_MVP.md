@@ -16,7 +16,7 @@ publication alongside feature work, without replacing its frozen payload.
 
 Working title: Heroes III: New Horizons. This is a VCMI-derived, GPL-covered project, separate from the Reconstruction repository. Preserve upstream license notices and attribution. Naming/public distribution rights require separate review.
 
-Deliver a fully playable ordinary single-player game using purchaser-supplied original Heroes III Complete assets. No original assets or executables may be committed, modified, or redistributed.
+Deliver a fully playable ordinary single-player game using purchaser-supplied original Heroes III Complete assets. Unchanged original resources and executables remain external. The selected New Horizons creations, deliberate modifications and composites are shipped in `NewHorizons.nhart` under the user's explicit packaging direction; this operational category does not assert independent authorship or change underlying license obligations. Do not bundle original archives or wholesale extracted collections. Preserve source, attribution and provenance notices.
 
 Single-player must use one game process, with no separate vcmiserver child and no loopback TCP/UDP connection or listener. Keep authoritative simulation, AI, commands and presentation ordering intact. An in-process simulation thread is permitted. Current upstream ServerThreadRunner and createInternalConnection are the first implementation candidates, not a mandate to replace working logic.
 

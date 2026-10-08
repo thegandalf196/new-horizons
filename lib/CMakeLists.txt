@@ -3,6 +3,7 @@ set(lib_SRCS
 
 	filesystem/AdapterLoaders.cpp
 	filesystem/CArchiveLoader.cpp
+	filesystem/CNhArtLoader.cpp
 	filesystem/CBinaryReader.cpp
 	filesystem/CCompressedStream.cpp
 	filesystem/CFileInputStream.cpp
@@ -409,6 +410,7 @@ set(lib_HEADERS
 
 	filesystem/AdapterLoaders.h
 	filesystem/CArchiveLoader.h
+	filesystem/CNhArtLoader.h
 	filesystem/CBinaryReader.h
 	filesystem/CCompressedStream.h
 	filesystem/CFileInputStream.h

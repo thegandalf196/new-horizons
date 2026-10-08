@@ -20,6 +20,10 @@ import tempfile
 import urllib.request
 import xml.etree.ElementTree as ET
 import zipfile
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import nhart
 
 
 # NCrypt is supplied by Windows, not FFmpeg or the application:
@@ -490,17 +494,93 @@ def source_archive(root, output, revision):
 
 
 CURATED_RESOURCE_TREES = ('config', 'scripts', 'Mods/vcmi', 'Mods/new-horizons')
+RUNTIME_ART_PACK = 'Mods/new-horizons/NewHorizons.nhart'
+RUNTIME_ART_MANIFEST = 'assets/new-horizons/runtime-art-manifest.json'
+LOOSE_ART_TREES = ('Mods/new-horizons/Images', 'Mods/new-horizons/Content/sprites',
+                   'Mods/new-horizons/Content/data')
 
 
-def stage_engine_resources(install, package):
+def verify_runtime_art(resources, expected_manifest):
+    """Require the selected pack, never a loose-art fallback or self-declared inventory."""
+    resources = Path(resources)
+    if resources.is_symlink() or not resources.is_dir():
+        raise RuntimeError('Runtime resources must be a real directory')
+    for directory in CURATED_RESOURCE_TREES:
+        source = resources / directory
+        if source.is_symlink() or not source.is_dir() or any(p.is_symlink() for p in source.rglob('*')):
+            raise RuntimeError('Missing or linked curated runtime resources: ' + directory)
+    pack = resources / RUNTIME_ART_PACK
+    if pack.is_symlink() or not pack.is_file():
+        raise RuntimeError('Required runtime art pack missing or linked: ' + RUNTIME_ART_PACK)
+    expected = nhart.validate_manifest(expected_manifest)
+    verified = nhart.verify(pack)
+    if verified['manifest'] != expected:
+        raise RuntimeError('Runtime art pack differs from expected source manifest')
+    packed_sources = set()
+    for entry in expected['entries']:
+        name = entry['source']
+        if not any(name.startswith(tree + '/') for tree in CURATED_RESOURCE_TREES):
+            raise RuntimeError('Packed source outside curated resource scope: ' + name)
+        if name == RUNTIME_ART_PACK:
+            raise RuntimeError('Runtime art pack cannot contain itself')
+        packed_sources.add(name)
+        loose = resources / name
+        if loose.is_symlink():
+            raise RuntimeError('Linked packed loose source: ' + name)
+        if loose.exists() and (not loose.is_file() or loose.stat().st_size != entry['size']
+                               or sha256(loose) != entry['sha256']):
+            raise RuntimeError('Packed loose source differs from selected art: ' + name)
+    for tree in LOOSE_ART_TREES:
+        for path in (resources / tree).rglob('*'):
+            if path.is_file() and path.relative_to(resources).as_posix() not in packed_sources:
+                raise RuntimeError('Undeclared loose runtime art fallback: ' + path.relative_to(resources).as_posix())
+    return packed_sources
+
+
+def stage_engine_resources(install, package, expected_manifest=None):
     """Only the fixed curated resources; never demo/mod collections or user data."""
+    install, package = Path(install), Path(package)
     for directory in CURATED_RESOURCE_TREES:
         source = install / directory
         if not source.is_dir() or source.is_symlink():
             raise RuntimeError(f'Required engine resources missing or linked: {directory}')
         if any(path.is_symlink() for path in source.rglob('*')):
             raise RuntimeError(f'Linked engine resource payload: {directory}')
-        shutil.copytree(source, package / directory)
+    if expected_manifest is None:
+        expected_manifest = nhart.read_json((Path(__file__).resolve().parents[2] / RUNTIME_ART_MANIFEST).read_bytes())
+    packed_sources = verify_runtime_art(install, expected_manifest)
+    def ignore_packed(directory, names):
+        return [name for name in names
+                if (Path(directory) / name).relative_to(install).as_posix() in packed_sources]
+    for directory in CURATED_RESOURCE_TREES:
+        shutil.copytree(install / directory, package / directory, ignore=ignore_packed)
+    verify_runtime_art(package, expected_manifest)
+
+
+def runtime_art_identity(nhart_art=True):
+    """Factual packaging scope, not a copyright/ownership or blanket-rights claim."""
+    return {
+        "original_installation_required": True,
+        "unchanged_original_archives_included": False,
+        "selected_original_based_and_composite_art_in_nhart": nhart_art,
+    }
+
+
+def stage_windows_binaries(install, package, client_name="new-horizons.exe"):
+    """Copy exact desktop output names; a caller must authorize any legacy lane."""
+    if client_name not in {"new-horizons.exe", "VCMI_client.exe"}:
+        raise RuntimeError("Unsupported desktop client identity")
+    candidates = [source for source in sorted(Path(install).iterdir())
+                  if source.suffix.lower() in {".exe", ".dll"}]
+    for source in candidates:
+        if source.is_symlink() or not source.is_file():
+            raise RuntimeError("Linked/non-file installed binary: " + source.name)
+        if source.suffix.lower() == ".exe" and source.name != client_name:
+            raise RuntimeError("Unexpected executable in standalone install: " + source.name)
+    if not {client_name, "VCMI_lib.dll"} <= {source.name for source in candidates}:
+        raise RuntimeError("Required installed binary identity missing")
+    for source in candidates:
+        shutil.copyfile(source, Path(package) / source.name)
 
 
 def main():
@@ -530,14 +610,7 @@ def main():
         package = Path(temporary) / package_name
         package.mkdir()
         # Explicit allowlist: never copy a user profile, Data, Maps, Saves, demo or optional mods.
-        for source in sorted(install.iterdir()):
-            if source.is_file() and source.suffix.lower() in {".exe", ".dll"}:
-                if source.suffix.lower() == ".exe" and source.name.lower() != "vcmi_client.exe":
-                    raise RuntimeError(f"Unexpected executable in standalone install: {source.name}")
-                shutil.copyfile(source, package / source.name)
-        for filename in ("VCMI_client.exe", "VCMI_lib.dll"):
-            if not (package / filename).is_file():
-                raise RuntimeError(f"Required installed binary missing: {filename}")
+        stage_windows_binaries(install, package)
         stage_engine_resources(install, package)
         # Never ship synthetic smoke tests or future development files alongside the launcher.
         for filename in ("Play-New-Horizons.cmd", "Start-New-Horizons.ps1", "README-New-Horizons.txt", "dirs.json"):
@@ -573,6 +646,7 @@ def main():
         excluded = source_archive(root, args.output_dir / source_name, revision)
         write_json(package / "BUILD-IDENTITY.json", {
             "project": "Heroes III: New Horizons", "source_commit": revision,
+            "client_executable": "new-horizons.exe",
             "source_repository": "https://github.com/thegandalf196/vcmi",
             "source_archive": source_name, "source_archive_sha256": sha256(args.output_dir / source_name),
             "source_exclusions": excluded,
@@ -590,7 +664,7 @@ def main():
             "preset": "new-horizons-windows-x64", "render_backend": "SDL3",
             "engine_resource_scope": list(CURATED_RESOURCE_TREES),
             "acceptance": "Compile/package/import audit only; Windows graphical gameplay unverified",
-            "proprietary_assets_included": False, "signed": False,
+            **runtime_art_identity(), "signed": False,
         })
         (package / "SOURCE-NOTICE.txt").write_text(
             "Heroes III: New Horizons is a VCMI-derived GPL-covered fork. Preserve license.txt and AUTHORS.h.\n"
@@ -601,7 +675,8 @@ def main():
             "Embedded xBRZ has GPLv3 terms and attribution in licenses/xBRZ; root license alone is not the entire inventory.\n"
             "MSVC/UCRT runtime files are Microsoft redistributables; installed redistribution terms are in licenses/Microsoft.\n"
             "MEDIA-RUNTIME.json records conservative dynamic-codec retention; runtime media behavior remains unverified.\n"
-            "Original Heroes III Complete assets are required, external, and not redistributed here.\n"
+            "An original Heroes III Complete installation is required; unchanged original archives are not bundled.\n"
+            "Selected original-based modifications and composites are delivered in NewHorizons.nhart; see its provenance notices.\n"
             "Unsigned diagnostic preview; compilation is not Windows gameplay acceptance.\n", encoding="utf-8")
         for path in package.rglob("*"):
             if path.is_file() and path.suffix.lower() in FORBIDDEN_ASSETS:

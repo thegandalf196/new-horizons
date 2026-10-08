@@ -176,7 +176,9 @@ def main():
         ],
         'spellSchools': schools,
         'skills': skills,
-        'filesystem': {'SPRITES/': [{'type': 'dir', 'path': '/Images'}]},
+        # Selected runtime art retains its full virtual paths in one container.
+        # Bootstrap UI also mounts this pack in builtin scope (filesystem.json).
+        'filesystem': {'': [{'type': 'nhart', 'path': '/NewHorizons.nhart'}]},
     }
     metadata['description'] += (' Primary growth grants a fixed twenty-point class vector on every level, '
                                 'plus independent configured skill-based bonus rolls. Older saved profiles retain their original growth rules. '
@@ -230,7 +232,10 @@ def main():
         # Random artifact exclusions change new-game content; managed profiles
         # must not silently retain the older module settings.
         metadata['bonuses'] = canonical('newHorizonsConvenienceBonuses.json')
-        metadata['filesystem'][''] = [{'type': 'dir', 'path': '/Content'}]
+        metadata['filesystem'][''] = [
+            {'type': 'dir', 'path': '/Content'},
+            {'type': 'nhart', 'path': '/NewHorizons.nhart'},
+        ]
         metadata['description'] += (' Includes the canonical 31-Skill, ten-perk registry; active entries '
                                     'are backed by their corresponding runtime systems while remaining entries '
                                     'stay planned. '

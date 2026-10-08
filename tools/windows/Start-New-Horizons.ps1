@@ -162,8 +162,22 @@ function Select-CompleteFolder {
 
 try {
     $packageRoot = [IO.Path]::GetFullPath($PSScriptRoot)
-    $client = Join-Path $packageRoot 'VCMI_client.exe'
-    foreach ($required in @('VCMI_client.exe', 'VCMI_lib.dll', 'config\dirs.json', 'config\filesystem.json')) {
+    $clientName = 'new-horizons.exe'
+    $identityPath = Join-Path $packageRoot 'BUILD-IDENTITY.json'
+    if (Test-Path -LiteralPath $identityPath -PathType Leaf) {
+        $identity = [IO.File]::ReadAllText($identityPath, [Text.Encoding]::UTF8) | ConvertFrom-Json
+        $names = @($identity.PSObject.Properties.Name)
+        if ($names -contains 'client_executable' -and $identity.client_executable -eq 'VCMI_client.exe') {
+            if ($names -notcontains 'legacy_client_source_commit' -or $names -notcontains 'source_commit' -or
+                $identity.source_commit -notmatch '^[0-9a-f]{40}$' -or
+                $identity.legacy_client_source_commit -ne $identity.source_commit) {
+                throw 'Legacy client requires an explicit matching frozen source identity.'
+            }
+            $clientName = 'VCMI_client.exe'
+        }
+    }
+    $client = Join-Path $packageRoot $clientName
+    foreach ($required in @($clientName, 'VCMI_lib.dll', 'config\dirs.json', 'config\filesystem.json')) {
         if (-not (Test-Path -LiteralPath (Join-Path $packageRoot $required) -PathType Leaf)) {
             throw "Incomplete download/extraction: missing $required. Extract the entire New Horizons Windows ZIP, then use Play-New-Horizons.cmd inside it."
         }
@@ -294,7 +308,7 @@ try {
     $game = Start-Process -FilePath $client -WorkingDirectory $packageRoot -PassThru -Wait
     $game.Refresh()
     if ($game.ExitCode -ne 0) {
-        throw "VCMI_client.exe exited with code $($game.ExitCode). Check $profileRoot\logs. If a DLL is missing, re-extract the full matching Windows package."
+        throw "$clientName exited with code $($game.ExitCode). Check $profileRoot\logs. If a DLL is missing, re-extract the full matching Windows package."
     }
 } catch {
     [Console]::Error.WriteLine('New Horizons: ' + $_.Exception.Message)

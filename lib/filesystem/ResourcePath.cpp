@@ -119,6 +119,7 @@ EResType EResTypeHelper::getTypeFromExtension(std::string extension)
 		{".MPG",   EResType::VIDEO},
 		{".MJPG",  EResType::VIDEO},
 		{".ZIP",   EResType::ARCHIVE_ZIP},
+		{".NHART", EResType::ARCHIVE_NHART},
 		{".LOD",   EResType::ARCHIVE_LOD},
 		{".PAC",   EResType::ARCHIVE_LOD},
 		{".VID",   EResType::ARCHIVE_VID},
@@ -157,6 +158,7 @@ std::string EResTypeHelper::getEResTypeAsString(EResType type)
 		MAP_ENUM(VIDEO_LOW_QUALITY)
 		MAP_ENUM(SOUND)
 		MAP_ENUM(ARCHIVE_ZIP)
+		MAP_ENUM(ARCHIVE_NHART)
 		MAP_ENUM(ARCHIVE_LOD)
 		MAP_ENUM(ARCHIVE_SND)
 		MAP_ENUM(ARCHIVE_VID)

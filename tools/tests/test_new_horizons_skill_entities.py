@@ -15,6 +15,10 @@ import re
 import unittest
 
 from jsonschema import Draft4Validator, RefResolver
+if __package__:
+    from .nhart_test_resources import ArtPath
+else:
+    from nhart_test_resources import ArtPath
 
 ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
@@ -215,7 +219,7 @@ def image_is_module_file_or_core_skill(image):
     """Accept explicit core DEF frame references alongside module PNGs."""
     if CORE_SKILL_IMAGE.fullmatch(image):
         return True
-    return (ROOT / "Mods/new-horizons/Images" / image).is_file()
+    return (ArtPath() / image).is_file()
 
 
 def parse_jsonc(text):
@@ -276,6 +280,13 @@ class NewHorizonsSkillEntitiesTest(unittest.TestCase):
                             }
                         },
                     )
+
+    def test_all_rank_images_resolve_to_selected_pack_or_core_frames(self):
+        for key, skill in self.skills.items():
+            for rank in RANKS:
+                for slot, image in skill[rank]["images"].items():
+                    with self.subTest(skill=key, rank=rank, slot=slot):
+                        self.assertTrue(image_is_module_file_or_core_skill(image))
 
     def test_school_rank_descriptions_show_acquisition_caps_without_casting_locks(self):
         maximum_levels = {"basic": 3, "advanced": 4, "expert": 5}

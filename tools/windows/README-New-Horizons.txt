@@ -134,10 +134,15 @@ symlink, elevation, development environment or optional mod setup is needed.
    content.previous-... name (keep it as backup), then rename content.new to
    content. If that rename fails, restore the previous content name. Leave
    config, cache, logs and especially Saves alone.
-6. Double-click VCMI_client.exe in the EXTRACTED NEW HORIZONS PACKAGE, not the
+6. Double-click new-horizons.exe in the EXTRACTED NEW HORIZONS PACKAGE, not the
    original game EXE. The client sets its own working directory to that folder.
    It finds the private assets via config\dirs.json and creates private writable
    directories as needed. Use that direct EXE for subsequent manual-route play.
+
+Explicitly retained frozen historical previews may still contain VCMI_client.exe.
+Their BUILD-IDENTITY.json must declare that original filename and a matching
+legacy_client_source_commit/source_commit. Use the included helper; do not rename
+old executables or mix them with new client/library files.
 
 The manual route does not create the helper's verified import record. Using
 Play-New-Horizons.cmd afterwards will request a fresh verified import; this is

@@ -195,6 +195,27 @@ protected:
 };
 }
 
+TEST_F(NewHorizonsCabirRepairTest, RepairToolbarRegistersExistingCureSymbolAtItsOwnEffectSlot)
+{
+	// Provisional repair presentation reuses the original Cure symbol. It must
+	// register at Repair's assigned ID+1, not request that missing native frame.
+	const auto id = repairSpell();
+	const auto * spell = id.toSpell();
+	const auto expectedIcon = "SPELLINT.def:0:" + std::to_string(SpellID(SpellID::CURE).getNum() + 1);
+	EXPECT_EQ(spell->getIconEffect(), expectedIcon);
+	bool effectRegistered = false;
+	spell->registerIcons([&](size_t index, size_t group, const std::string & listName, const std::string & imageName)
+	{
+		if(listName != "SPELLINT")
+			return;
+		effectRegistered = true;
+		EXPECT_EQ(index, id.getNum() + 1);
+		EXPECT_EQ(group, 0);
+		EXPECT_EQ(imageName, expectedIcon);
+	});
+	EXPECT_TRUE(effectRegistered);
+}
+
 TEST_F(NewHorizonsCabirRepairTest, AcceptedCastPermanentlyRepairsGolemAndMatchesGenericHealthForecast)
 {
 	prepare();

@@ -20,15 +20,35 @@ import re
 import shutil
 import stat
 import tempfile
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from verify_new_horizons_art_install import verify_install, read_jsonc, nhart, RUNTIME_ART_PACK
 
 
 FORMAT_VERSION = 1
 SNAPSHOT_RE = re.compile(r"snapshot-([0-9a-f]{64})\Z")
-PAYLOAD_ROOTS = ("vcmiclient", "libvcmi.so", "config", "scripts",
+CLIENT_NAME = 'new-horizons'
+LEGACY_CLIENT_NAME = 'vcmiclient'
+PAYLOAD_ROOTS = (CLIENT_NAME, "libvcmi.so", "config", "scripts",
                  "Mods/vcmi", "Mods/new-horizons")
 REQUIRED_FILES = ("config/filesystem.json", "config/newHorizonsCombat.json",
                   "config/newHorizonsMagic.json", "scripts/damage/damageCalculator.lua",
                   "Mods/vcmi/mod.json", "Mods/new-horizons/mod.json")
+ART_MANIFEST = Path(__file__).resolve().parents[2] / 'assets/new-horizons/runtime-art-manifest.json'
+
+
+def uses_nhart(files):
+    if RUNTIME_ART_PACK in files:
+        return True
+    for name in ('config/filesystem.json', 'Mods/new-horizons/mod.json'):
+        data = read_jsonc(files[name])
+        filesystem = data.get('filesystem', {}) if isinstance(data, dict) else {}
+        if isinstance(filesystem, dict) and any(
+            isinstance(row, dict) and row.get('type') == 'nhart'
+            for rows in filesystem.values() if isinstance(rows, list) for row in rows):
+            return True
+    return False
 
 
 def fail(message):
@@ -78,20 +98,28 @@ def source_payload(client, resources):
     resources = Path(resources)
     if client.is_symlink() or not client.is_file() or not os.access(client, os.X_OK):
         fail("Client must be a regular executable file")
+    if client.name != CLIENT_NAME:
+        fail('New candidates require an actual new-horizons executable; legacy immutable snapshots remain usable')
     if resources.is_symlink() or not resources.is_dir():
         fail("Resource root must be a regular directory")
     library = client.parent / "libvcmi.so"
     if library.is_symlink() or not library.is_file():
         fail("Matching libvcmi.so must be a regular file beside the client")
-    files = {"vcmiclient": client, "libvcmi.so": library}
+    files = {CLIENT_NAME: client, "libvcmi.so": library}
     for name in PAYLOAD_ROOTS[2:]:
         source = resources / name
         files.update(checked_tree_files(source, name))
     missing = [name for name in REQUIRED_FILES if name not in files]
     if missing:
         fail("Candidate is missing required curated resources: " + ", ".join(missing))
-    images = "Mods/new-horizons/Images"
-    if not any(name.startswith(images + "/") for name in files):
+    if uses_nhart(files):
+        # Development builds intentionally have top-level resource directory links.
+        # Verify a regular private view, without relaxing final-install link guards.
+        with tempfile.TemporaryDirectory(prefix='nhart-source-check-') as temporary:
+            view = Path(temporary)
+            write_payload(files, view)
+            verify_install(view, ART_MANIFEST)
+    elif not any(name.startswith("Mods/new-horizons/Images/") for name in files):
         fail("Candidate is missing curated New Horizons artwork")
     return files
 
@@ -111,6 +139,13 @@ def require_retained_resources(source_files, baseline):
     missing = sorted(name for name in metadata["files"]
                      if any(name.startswith(root + "/") for root in resource_roots)
                      and name not in source_files)
+    if missing and uses_nhart(source_files):
+        expected = nhart.read_json(ART_MANIFEST.read_bytes())
+        packed = nhart.verify(source_files[RUNTIME_ART_PACK], expected)
+        entries = {entry['source']: entry for entry in packed['manifest']['entries']}
+        # Retention has always permitted deliberate byte updates at retained paths.
+        # The canonical selection now proves that path's current packed identity/hash.
+        missing = [name for name in missing if name not in entries]
     if missing:
         fail("Candidate omits retained baseline resources: " + ", ".join(missing))
 
@@ -188,6 +223,18 @@ def verify_snapshot(root, expected_digest=None):
     if not match or match.group(1) != digest:
         fail("Snapshot directory name does not match its contents")
     return metadata
+
+
+def snapshot_client(root):
+    root = Path(root).absolute()
+    metadata = verify_snapshot(root)
+    names = [name for name in (CLIENT_NAME, LEGACY_CLIENT_NAME) if name in metadata['files']]
+    if len(names) != 1:
+        fail('Snapshot must declare exactly one current or legacy client')
+    client = root / names[0]
+    if not os.access(client, os.X_OK):
+        fail('Snapshot client is not executable')
+    return client
 
 
 @contextmanager
@@ -372,6 +419,9 @@ def main():
     resolve_parser = subparsers.add_parser("resolve", help="verify and print the currently selected snapshot")
     resolve_parser.add_argument("--store", type=Path, required=True)
     resolve_parser.set_defaults(run=resolve)
+    client_parser = subparsers.add_parser('client', help='verify and print a snapshot client, preserving legacy names')
+    client_parser.add_argument('--snapshot', type=Path, required=True)
+    client_parser.set_defaults(run=lambda args: print(snapshot_client(args.snapshot)))
     promote_parser = subparsers.add_parser("promote", help="select a previously frozen candidate after validation")
     promote_parser.add_argument("--snapshot", type=Path, required=True)
     promote_parser.add_argument("--store", type=Path, required=True)

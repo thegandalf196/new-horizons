@@ -11,6 +11,7 @@
 #include "Filesystem.h"
 
 #include "CArchiveLoader.h"
+#include "CNhArtLoader.h"
 #include "CFilesystemLoader.h"
 #include "AdapterLoaders.h"
 #include "CZipLoader.h"
@@ -43,30 +44,45 @@ CFilesystemGenerator::TLoadFunctorMap CFilesystemGenerator::genFunctorMap()
 	map["snd"] = std::bind(&CFilesystemGenerator::loadArchive<EResType::ARCHIVE_SND>, this, _1, _2);
 	map["vid"] = std::bind(&CFilesystemGenerator::loadArchive<EResType::ARCHIVE_VID>, this, _1, _2);
 	map["zip"] = std::bind(&CFilesystemGenerator::loadZipArchive, this, _1, _2);
+	map["nhart"] = [this](const std::string & mountPoint, const JsonNode & config)
+	{
+		const ResourcePath resource(prefix + config["path"].String(), EResType::ARCHIVE_NHART);
+		const auto filename = CResourceHandler::get("initial")->getResourceName(resource);
+		if(filename)
+			filesystem->addLoader(std::make_unique<CNhArtLoader>(mountPoint, *filename), false);
+	};
 	return map;
 }
 
 void CFilesystemGenerator::loadConfig(const JsonNode & config)
 {
-	for(const auto & mountPoint : config.Struct())
+	// Explicit overlays are mounted after ordinary sources across all prefixes.
+	// This keeps a full-path archive from losing DATA entries to later LOD mounts.
+	for(const bool overlayPass : {false, true})
 	{
-		for(const auto & entry : mountPoint.second.Vector())
+		for(const auto & mountPoint : config.Struct())
 		{
-			CStopWatch timer;
-			logGlobal->trace("\t\tLoading resource at %s%s", prefix, entry["path"].String());
-
-			auto map = genFunctorMap();
-			auto typeName = entry["type"].String();
-			auto functor = map.find(typeName);
-
-			if (functor != map.end())
+			for(const auto & entry : mountPoint.second.Vector())
 			{
-				functor->second(mountPoint.first, entry);
-				logGlobal->trace("Resource loaded in %d ms", timer.getDiff());
-			}
-			else
-			{
-				logGlobal->error("Unknown filesystem format: %s", typeName);
+				const bool overlay = !entry["overlay"].isNull() && entry["overlay"].Bool();
+				if(overlay != overlayPass)
+					continue;
+				CStopWatch timer;
+				logGlobal->trace("\t\tLoading resource at %s%s", prefix, entry["path"].String());
+
+				auto map = genFunctorMap();
+				auto typeName = entry["type"].String();
+				auto functor = map.find(typeName);
+
+				if(functor != map.end())
+				{
+					functor->second(mountPoint.first, entry);
+					logGlobal->trace("Resource loaded in %d ms", timer.getDiff());
+				}
+				else
+				{
+					logGlobal->error("Unknown filesystem format: %s", typeName);
+				}
 			}
 		}
 	}

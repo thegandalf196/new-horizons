@@ -292,6 +292,20 @@ gameplay behavior unless the user separately requests a functional change.
 
 # New Horizons Development Phases
 
+## Selected runtime artwork delivery
+
+The selected New Horizons runtime visuals, including deliberate modifications
+of original-based artwork and finished composites, belong in
+`Mods/new-horizons/NewHorizons.nhart`. The manifest records selection, approval
+and origin separately. Earlier automatic private-only exclusions must not strip
+selected Cabirs, turbaned Magi, Guild composites or custom interface resources
+from this package. This packaging direction does not change copyright ownership
+or license obligations. Unchanged original archives/resources remain external.
+Do not rebuild the committed pack from incomplete local inputs during ordinary
+builds. Preserve authoring masters and review materials. Verify distribution
+from the committed pack without private overlays, loose custom-art fallbacks or
+developer caches; source/container checks are not rendered acceptance.
+
 New Horizons is being developed in explicit phases.
 
 The root orchestrator owns the current phase, task prioritization, delegation,

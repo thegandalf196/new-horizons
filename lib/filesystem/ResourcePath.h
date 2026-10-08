@@ -58,6 +58,7 @@ enum class EResType
 	AI_MODEL,
 	OTHER,
 	UNDEFINED,
+	ARCHIVE_NHART,
 };
 
 /**

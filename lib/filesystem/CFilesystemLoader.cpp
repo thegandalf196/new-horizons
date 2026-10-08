@@ -142,7 +142,8 @@ std::unordered_map<ResourcePath, boost::filesystem::path> CFilesystemLoader::lis
 		EResType::ARCHIVE_LOD,
 		EResType::ARCHIVE_VID,
 		EResType::ARCHIVE_SND,
-		EResType::ARCHIVE_ZIP };
+		EResType::ARCHIVE_ZIP,
+		EResType::ARCHIVE_NHART };
 	static const std::set<EResType> initialTypes(initArray, initArray + std::size(initArray));
 	std::unordered_map<ResourcePath, boost::filesystem::path> fileList;
 

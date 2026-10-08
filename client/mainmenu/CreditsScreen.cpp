@@ -79,6 +79,9 @@ CreditsScreen::CreditsScreen(Rect rect)
 	});
 
 	text = "{- " + LIBRARY->generaltexth->translate("vcmi.credits.vcmi") + " -}\r\n" + contributorsText + "\r\n\r\n{" + LIBRARY->generaltexth->translate("vcmi.credits.website") + ":}\r\nhttps://vcmi.eu\r\n\r\n\r\n\r\n\r\n{- " + LIBRARY->generaltexth->translate("vcmi.credits.heroes") + " -}\r\n\r\n\r\n" + text;
+	text = "{- New Horizons -}\r\n\r\nPowered by the VCMI engine.\r\n\r\n"
+		"Thank you to the VCMI team and contributors for making New Horizons possible.\r\n\r\n"
+		"VCMI is free software under the GNU General Public License v2.0 or later.\r\n\r\n" + text;
 	credits = std::make_shared<CMultiLineLabel>(Rect(pos.w - 350, 0, 350, 600), FONT_CREDITS, ETextAlignment::CENTER, Colors::WHITE, text);
 	credits->scrollTextTo(-600); // move all text below the screen
 }

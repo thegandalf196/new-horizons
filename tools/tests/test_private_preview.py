@@ -67,7 +67,7 @@ class PrivatePreviewTest(unittest.TestCase):
 
     def test_windows_contract_and_determinism(self):
         (self.engine / 'SHA256SUMS').unlink()
-        (self.engine / 'VCMI_client.exe').write_bytes(b'Windows engine fixture')
+        (self.engine / 'new-horizons.exe').write_bytes(b'Windows engine fixture')
         (self.engine / 'Play-New-Horizons.cmd').write_text('@echo off\n')
         (self.engine / 'Start-New-Horizons.ps1').write_text("$profile = 'HeroesIII-NewHorizons'\n")
         (self.engine / 'config').mkdir()
@@ -78,8 +78,31 @@ class PrivatePreviewTest(unittest.TestCase):
         b = recipe.package(self.engine, self.images, self.manifest, self.pin, 'test-source', 'windows', self.root / 'win-b')
         self.assertEqual(a['archive_sha256'], b['archive_sha256'])
         self.assertEqual(before, recipe.inventory(self.engine))
-        self.assertEqual(a['engine_binaries']['VCMI_client.exe'], before['VCMI_client.exe'])
+        self.assertEqual(a['engine_binaries']['new-horizons.exe'], before['new-horizons.exe'])
         self.assertIn('new-horizons-private-', (self.root / 'win-a/New-Horizons-Private-Preview/config/dirs.json').read_text())
+
+    def test_windows_legacy_requires_explicit_matching_source_pin_and_keeps_name(self):
+        source = 'a' * 40
+        (self.engine / 'BUILD-IDENTITY.json').write_text(json.dumps({'source': source}))
+        (self.engine / 'SHA256SUMS').unlink()
+        (self.engine / 'VCMI_client.exe').write_bytes(b'Frozen legacy Windows fixture')
+        (self.engine / 'Play-New-Horizons.cmd').write_text('@echo off\n')
+        (self.engine / 'Start-New-Horizons.ps1').write_text("$profile = 'HeroesIII-NewHorizons'\n")
+        (self.engine / 'config').mkdir()
+        (self.engine / 'config/dirs.json').write_text('{"path":"HeroesIII-NewHorizons"}')
+        (self.engine / 'SHA256SUMS.txt').write_text(''.join(h + '  ' + n + '\n' for n, h in recipe.inventory(self.engine).items()))
+        for pin in (None, 'b' * 40):
+            with self.subTest(pin=pin), self.assertRaises(ValueError):
+                recipe.package(self.engine, self.images, self.manifest, self.pin, source,
+                               'windows', self.root / 'rejected', legacy_frozen_client_source=pin)
+            self.assertFalse((self.root / 'rejected').exists())
+        recipe.package(self.engine, self.images, self.manifest, self.pin, source,
+                       'windows', self.root / 'legacy', legacy_frozen_client_source=source)
+        stage = self.root / 'legacy/New-Horizons-Private-Preview'
+        self.assertTrue((stage / 'VCMI_client.exe').is_file())
+        self.assertFalse((stage / 'new-horizons.exe').exists())
+        identity = json.loads((stage / 'BUILD-IDENTITY.json').read_text())
+        self.assertEqual(identity['legacy_client_source_commit'], source)
 
     def test_binaries_and_base_unchanged_and_deterministic(self):
         before = recipe.inventory(self.engine)

@@ -1,5 +1,12 @@
 # Original New Horizons provisional UI artwork
 
+Current delivery: selected runtime exports are in `NewHorizons.nhart`, not an
+installed loose `Images` mount. Earlier output paths below describe authoring
+history. Retained exports are development/reference inputs outside the shipped
+module; use the explicit manifest and packer documented in `docs/NHART_DELIVERY.md`.
+The CC0 dedication below applies to the identified original UI work, not every
+original-derived or contributor-supplied visual in the complete runtime pack.
+
 These are newly authored geometric/vector medallions, **not** final commissioned
 illustrations. They are not traced from Heroes assets or the supplied concept
 images. Colors and symbolic geometry were chosen for this implementation; no

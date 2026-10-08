@@ -7,7 +7,7 @@ an explicit owned-Xvfb guard, frozen snapshot, private profile, and purchaser
 asset directory. It invokes tools/new-horizons-launch.sh with argv (never a
 shell command), pins the child display/video/audio drivers, and removes the
 host Wayland display. Future GUI sessions must enter through this helper; do
-not start raw vcmiclient or manually bypass the managed launcher. This helper
+not start a raw client or manually bypass the managed launcher. This helper
 delegates the game launch to tools/new-horizons-launch.sh. --verify-only/--dry-run
 asks the managed launcher to validate paths without executing the game. Bound
 real runs in the caller.
@@ -147,7 +147,7 @@ def _parser():
     parser.add_argument("--guard", required=True, type=Path,
                         help="explicit JSON identity guard for the owned :191 Xvfb")
     parser.add_argument("--snapshot", required=True, type=Path,
-                        help="frozen snapshot directory containing vcmiclient and resources")
+                        help="frozen snapshot directory containing new-horizons (or historical vcmiclient) and resources")
     parser.add_argument("--profile", required=True, type=Path,
                         help="dedicated writable New Horizons private profile")
     parser.add_argument("--assets", required=True, type=Path,
@@ -189,10 +189,14 @@ def main(argv=None):
         snapshot = snapshot_input.resolve(strict=True)
         assets = assets_input.resolve(strict=True)
         profile = profile_input.resolve(strict=False)
-        client = snapshot / "vcmiclient"
+        clients = [snapshot / name for name in ("new-horizons", "vcmiclient")
+                   if (snapshot / name).exists() or (snapshot / name).is_symlink()]
+        if len(clients) != 1:
+            raise Refusal("Frozen snapshot must contain exactly one current or legacy client")
+        client = clients[0]
         library = snapshot / "libvcmi.so"
         if client.is_symlink() or not client.is_file() or not os.access(client, os.X_OK):
-            raise Refusal("Frozen snapshot must contain an executable regular vcmiclient")
+            raise Refusal("Frozen snapshot must contain an executable regular New Horizons client")
         if library.is_symlink() or not library.is_file():
             raise Refusal("Frozen snapshot must contain its matching regular libvcmi.so")
         if not LAUNCHER.is_file() or not os.access(LAUNCHER, os.X_OK):

@@ -1,5 +1,12 @@
 # Standalone hero casting glows
 
+Current delivery: selected casting glows and Guild composites are included in
+`Mods/new-horizons/NewHorizons.nhart` with the selected resolver configuration.
+The user's later explicit package direction supersedes the private-only Guild
+exclusion below. The remainder records this earlier casting-only import's
+provenance, not a current rule to strip selected composites from distribution.
+See `docs/NHART_DELIVERY.md`; no ownership or license is changed by packaging.
+
 The user explicitly authorized redistribution of the supplied new symbols and
 glows on 2026-10-08 (UP315). That authorization is the publication basis; visual
 similarity or inclusion in a supplied archive is not itself a rights clearance.

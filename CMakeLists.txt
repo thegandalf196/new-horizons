@@ -801,6 +801,24 @@ vcmi_install_conan_deps()
 
 # Curated settings are authored once; never build a silently stale module copy.
 if(EXISTS "${CMAKE_SOURCE_DIR}/config/newHorizonsCombat.json")
+	# Distribution consumes the committed pack, never a partial workstation export.
+	find_package(Python3 REQUIRED COMPONENTS Interpreter)
+	set(NH_ART_PACK "${CMAKE_SOURCE_DIR}/Mods/new-horizons/NewHorizons.nhart")
+	set(NH_ART_MANIFEST "${CMAKE_SOURCE_DIR}/assets/new-horizons/runtime-art-manifest.json")
+	execute_process(
+		COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/tools/nhart.py"
+			verify "${NH_ART_PACK}" --manifest "${NH_ART_MANIFEST}"
+		RESULT_VARIABLE NH_ART_VERIFY_RESULT
+		OUTPUT_VARIABLE NH_ART_VERIFY_OUTPUT
+		ERROR_VARIABLE NH_ART_VERIFY_ERROR)
+	if(NOT NH_ART_VERIFY_RESULT EQUAL 0)
+		message(FATAL_ERROR "New Horizons artwork verification failed: ${NH_ART_VERIFY_ERROR}")
+	endif()
+	add_custom_target(verify_new_horizons_art ALL
+		COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/tools/nhart.py"
+			verify "${NH_ART_PACK}" --manifest "${NH_ART_MANIFEST}"
+		COMMENT "Verifying committed New Horizons runtime artwork"
+		VERBATIM)
 	set(NH_RULES_FILE "${CMAKE_SOURCE_DIR}/config/newHorizonsCombat.json")
 	set(NH_MODULE_FILE "${CMAKE_SOURCE_DIR}/Mods/new-horizons/mod.json")
 	set(NH_MAGIC_FILE "${CMAKE_SOURCE_DIR}/config/newHorizonsMagic.json")
@@ -849,7 +867,7 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/config/newHorizonsCombat.json")
 	if(NH_CONTENT_ERROR)
 		message(FATAL_ERROR "Missing curated Content root mount")
 	endif()
-	string(JSON NH_CONTENT_MATCH EQUAL "${NH_CONTENT_MOUNT}" "[{\"type\":\"dir\",\"path\":\"/Content\"}]")
+	string(JSON NH_CONTENT_MATCH EQUAL "${NH_CONTENT_MOUNT}" "[{\"type\":\"dir\",\"path\":\"/Content\"},{\"type\":\"nhart\",\"path\":\"/NewHorizons.nhart\"}]")
 	if(NOT NH_CONTENT_MATCH)
 		message(FATAL_ERROR "Stale curated Content root mount")
 	endif()
@@ -917,9 +935,21 @@ if(ANDROID)
 	endif()
 else()
 	install(DIRECTORY scripts DESTINATION ${DATA_DIR})
-	install(DIRECTORY config DESTINATION ${DATA_DIR})
+	install(DIRECTORY config DESTINATION ${DATA_DIR}
+		PATTERN "newHorizonsMagicAssets.json" EXCLUDE)
 	if (ENABLE_CLIENT OR ENABLE_SERVER)
-		install(DIRECTORY Mods DESTINATION ${DATA_DIR})
+		install(DIRECTORY Mods DESTINATION ${DATA_DIR}
+			REGEX "/new-horizons/(Images|Content/(sprites|data))(/|$)" EXCLUDE)
+		install(FILES docs/NHART_FORMAT.md docs/NHART_DELIVERY.md
+			DESTINATION ${DATA_DIR}/Mods/new-horizons/notices)
+		foreach(NH_NOTICE_FAMILY IN ITEMS "" "academy" "magic-assets" "Mage Guilds"
+			"creatures/wisp/handoff-v3" "creatures/cabir-master" "creatures/cabir-master/v3"
+			"creatures/cabir/v3" "creatures/magi-palette/v1")
+			install(FILES "assets/new-horizons/${NH_NOTICE_FAMILY}/README.md"
+				DESTINATION "${DATA_DIR}/Mods/new-horizons/notices/provenance/${NH_NOTICE_FAMILY}")
+		endforeach()
+		install(FILES assets/new-horizons/sorcery-art/LICENSE
+			DESTINATION ${DATA_DIR}/Mods/new-horizons/notices/sorcery-art)
 	endif()
 endif()
 

@@ -25,31 +25,44 @@
 			}
 		},
 		"graphics": {
-			"animation": "NH_Cabir.def",
-			"map": "NH_CabirMap.def",
-			"mapMask": ["VV", "VA"],
-			"mapAttackFromLeft": "NH_CabirEncounterLeft.png",
-			"mapAttackFromRight": "NH_CabirEncounterRight.png",
+			"animation": "NH_CabirCompleteHandoff.def",
+			"map": "NH_CabirHandoffNativeMap.def",
+			"mapMask": [
+				"VV",
+				"VA"
+			],
+			"mapAttackFromLeft": "NH_CabirHandoffMap:0:0",
+			"mapAttackFromRight": "NH_CabirHandoffMap:0:0",
 			"animationTime": {
-				"attack": 1.0,
+				"attack": 1,
 				"walk": 0.75,
-				"idle": 1.0
+				"idle": 1
 			},
 			"missile": {
-				"projectile": "CPRGOGX.DEF",
-				"frameAngles": [90, 72, 45, 27, 0, -27, -45, -72, -90],
-				"attackClimaxFrame": 3,
+				"projectile": "NH_CabirHandoffFireball.def",
+				"frameAngles": [
+					90,
+					72,
+					45,
+					27,
+					0,
+					-27,
+					-45,
+					-72,
+					-90
+				],
+				"attackClimaxFrame": 4,
 				"offset": {
-					"upperX": 28,
-					"upperY": -45,
-					"middleX": 40,
-					"middleY": -34,
-					"lowerX": 31,
-					"lowerY": -18
+					"upperX": 26,
+					"upperY": -48,
+					"middleX": 33,
+					"middleY": -42,
+					"lowerX": 33,
+					"lowerY": -28
 				}
 			},
-			"iconLarge": "NH_cabir_icon_large.png",
-			"iconSmall": "NH_cabir_icon_small.png"
+			"iconLarge": "cabir-handoff/cabir/icons/NH_cabir_handoff_icon_large.png",
+			"iconSmall": "cabir-handoff/cabir/icons/NH_cabir_handoff_icon_small.png"
 		}
 	},
 	"core:masterGremlin": {
@@ -92,31 +105,44 @@
 			}
 		},
 		"graphics": {
-			"animation": "NH_CabirMaster.def",
-			"map": "NH_CabirMasterMap.def",
-			"mapMask": ["VV", "VA"],
-			"mapAttackFromLeft": "NH_CabirMasterEncounterLeft.png",
-			"mapAttackFromRight": "NH_CabirMasterEncounterRight.png",
+			"animation": "NH_CabirMasterCompleteHandoff.def",
+			"map": "NH_CabirMasterHandoffNativeMap.def",
+			"mapMask": [
+				"VV",
+				"VA"
+			],
+			"mapAttackFromLeft": "NH_CabirMasterHandoffMap:0:0",
+			"mapAttackFromRight": "NH_CabirMasterHandoffMap:0:0",
 			"animationTime": {
-				"attack": 1.0,
+				"attack": 1,
 				"walk": 0.75,
-				"idle": 1.0
+				"idle": 1
 			},
 			"missile": {
-				"projectile": "CPRGOGX.DEF",
-				"frameAngles": [90, 72, 45, 27, 0, -27, -45, -72, -90],
-				"attackClimaxFrame": 3,
+				"projectile": "NH_CabirHandoffFireball.def",
+				"frameAngles": [
+					90,
+					72,
+					45,
+					27,
+					0,
+					-27,
+					-45,
+					-72,
+					-90
+				],
+				"attackClimaxFrame": 4,
 				"offset": {
-					"upperX": 28,
-					"upperY": -45,
-					"middleX": 40,
-					"middleY": -34,
-					"lowerX": 31,
-					"lowerY": -18
+					"upperX": 26,
+					"upperY": -48,
+					"middleX": 33,
+					"middleY": -42,
+					"lowerX": 33,
+					"lowerY": -28
 				}
 			},
-			"iconLarge": "NH_cabirMaster_icon_large.png",
-			"iconSmall": "NH_cabirMaster_icon_small.png"
+			"iconLarge": "cabir-handoff/cabir-master/icons/NH_cabir_master_handoff_icon_large.png",
+			"iconSmall": "cabir-handoff/cabir-master/icons/NH_cabir_master_handoff_icon_small.png"
 		}
 	},
 	// HOTRAITS.TXT reverses these labels: frame 34 is internal ironGolem ID 32; frame 35 is stoneGolem ID 33.
@@ -145,10 +171,14 @@
 			"gold": 600
 		},
 		"graphics": {
-			"iconLarge": "NH_academy_mage_icon_large.png",
+			"iconLarge": "magi-vcmi-complete/icons/magi-portrait-58x64.png",
 			"missile": {
-				"projectile": "NH_MageRedProjectile.def"
-			}
+				"projectile": "magi-vcmi-complete/projectile/NH_PMAGEX.def"
+			},
+			"animation": "magi-vcmi-complete/magi/NH_CMAGE.def",
+			"iconSmall": "magi-vcmi-complete/icons/magi-small-32.png",
+			"mapAttackFromRight": "magi-vcmi-complete/icons/magi-map-attack-68.png",
+			"mapAttackFromLeft": "magi-vcmi-complete/icons/magi-map-attack-69.png"
 		},
 		"speed": 5,
 		"initiative": 5,
@@ -171,22 +201,86 @@
 		"shots": 20,
 		"growth": 3,
 		"graphics": {
-			"map": "NH_ArchMageGreyMap.def",
-			"mapMask": ["VV", "VA"],
-			"iconLarge": "NH_academy_archMage_icon_large.png",
-			"iconSmall": "NH_ArchMageGreySmall:0:0",
-			"mapAttackFromRight": "NH_ArchMageGreyEncounter:0:0",
-			"mapAttackFromLeft": "NH_ArchMageGreyEncounter:0:1",
-			"animation": "NH_ArchMageGrey.def",
+			"iconLarge": "magi-vcmi-complete/icons/archmagi-portrait-58x64.png",
+			"iconSmall": "magi-vcmi-complete/icons/archmagi-small-32.png",
+			"animation": "magi-vcmi-complete/archmagi/NH_CAMAGE.def",
 			"missile": {
 				"ray": [
-					{ "start": [192, 32, 24, 255], "end": [192, 32, 24, 64] },
-					{ "start": [232, 48, 40, 255], "end": [232, 48, 40, 128] },
-					{ "start": [255, 64, 48, 255], "end": [255, 64, 48, 255] },
-					{ "start": [232, 48, 40, 255], "end": [232, 48, 40, 128] },
-					{ "start": [192, 32, 24, 255], "end": [192, 32, 24, 64] }
-				]
-			}
+					{
+						"start": [
+							192,
+							32,
+							32,
+							255
+						],
+						"end": [
+							192,
+							32,
+							32,
+							64
+						]
+					},
+					{
+						"start": [
+							224,
+							128,
+							128,
+							255
+						],
+						"end": [
+							224,
+							128,
+							128,
+							128
+						]
+					},
+					{
+						"start": [
+							176,
+							32,
+							32,
+							255
+						],
+						"end": [
+							176,
+							32,
+							32,
+							255
+						]
+					},
+					{
+						"start": [
+							224,
+							128,
+							128,
+							255
+						],
+						"end": [
+							224,
+							128,
+							128,
+							128
+						]
+					},
+					{
+						"start": [
+							192,
+							32,
+							32,
+							255
+						],
+						"end": [
+							192,
+							32,
+							32,
+							64
+						]
+					}
+				],
+				"attackClimaxFrame": 8
+			},
+			"mapAttackFromRight": "magi-vcmi-complete/icons/archmagi-map-attack-70.png",
+			"mapAttackFromLeft": "magi-vcmi-complete/icons/archmagi-map-attack-71.png"
 		},
 		"cost": {
 			"gold": 800

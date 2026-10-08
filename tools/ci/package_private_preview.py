@@ -8,6 +8,7 @@ import argparse
 import gzip
 import hashlib
 import json
+import re
 from pathlib import Path
 import shutil
 import tarfile
@@ -58,7 +59,10 @@ def validate_art(images, manifest, approved_digest):
     return files
 
 
-def package(engine, images, manifest, approved_digest, source, platform, output):
+def package(engine, images, manifest, approved_digest, source, platform, output, legacy_frozen_client_source=None):
+    packed_art = engine / 'Mods/new-horizons/NewHorizons.nhart'
+    if packed_art.exists() or packed_art.is_symlink():
+        raise ValueError('Historical loose-art private preview cannot overlay an NHART engine')
     destination = output.resolve()
     for protected in (engine, images, manifest):
         resolved = protected.resolve()
@@ -90,11 +94,20 @@ def package(engine, images, manifest, approved_digest, source, platform, output)
                 if n in ('vcmiclient', 'libvcmi.so') or n.lower().endswith(('.dll', '.exe'))}
     if not binaries or (platform == 'linux' and not {'vcmiclient', 'libvcmi.so'} <= binaries.keys()):
         raise ValueError('Missing engine binaries')
-    if platform == 'windows' and 'VCMI_client.exe' not in binaries:
-        raise ValueError('Missing Windows client')
+    if platform == 'windows':
+        client_name = 'new-horizons.exe'
+        if legacy_frozen_client_source is not None:
+            if legacy_frozen_client_source != source or not re.fullmatch('[0-9a-f]{40}', source):
+                raise ValueError('Legacy client pin must match the frozen source identity')
+            client_name = 'VCMI_client.exe'
+        if client_name not in binaries or ({'new-horizons.exe', 'VCMI_client.exe'} - {client_name}) & binaries.keys():
+            raise ValueError('Missing or ambiguous Windows client identity')
     output.mkdir(parents=True, exist_ok=False)
     stage = output / 'New-Horizons-Private-Preview'
     shutil.copytree(engine, stage)
+    if platform == 'windows':
+        identity.update(source_commit=source, client_executable=client_name,
+                        legacy_client_source_commit=legacy_frozen_client_source)
     for name in files:
         shutil.copyfile(images / name, stage / 'Mods/new-horizons/Images' / name)
     mod_path = stage / 'Mods/new-horizons/mod.json'
@@ -182,4 +195,5 @@ if __name__ == '__main__':
     parser.add_argument('--approved-digest', required=True)
     parser.add_argument('--source', required=True)
     parser.add_argument('--platform', choices=('linux', 'windows'), required=True)
+    parser.add_argument('--legacy-frozen-client-source', help='Exact source pin for an old Windows executable; never rename it')
     print(json.dumps(package(**vars(parser.parse_args())), indent=2))

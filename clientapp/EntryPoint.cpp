@@ -129,7 +129,7 @@ static void prog_help(const po::options_description &opts)
 {
 	auto time = std::time(nullptr);
 	std::tm tm = vstd::safeLocalTime(time);
-	printf("%s - A Heroes of Might and Magic 3 clone\n", GameConstants::VCMI_PROJECT_NAME_VERSIONED);
+	printf("New Horizons - powered by %s\n", GameConstants::VCMI_PROJECT_NAME_VERSIONED);
 	printf("Copyright (C) 2007-%d VCMI dev team - see AUTHORS file\n", tm.tm_year + 1900);
 	printf("This is free software; see the source for copying conditions. There is NO\n");
 	printf("warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n");

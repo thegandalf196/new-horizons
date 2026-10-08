@@ -66,7 +66,7 @@ else
 fi
 # Mimic EntryPoint's argv[0]-based chdir without running VCMI.
 cd -- "$(dirname -- "$0")"
-[[ -e vcmiclient && -e config && -d Mods && -e scripts ]]
+[[ -e new-horizons && ! -e vcmiclient && -e config && -d Mods && -e scripts ]]
 [[ -e Mods/vcmi/mod.json && ! -e Mods/unwanted && ! -e Mods/roe-demo ]]
 if [[ ${EXPECTED_COMMANDS:-0} == 1 ]]; then
 	[[ -e Mods/new-horizons/mod.json && -d Mods/new-horizons/Images ]]
@@ -262,8 +262,31 @@ ln -s -- "$engine/Mods/new-horizons" "$stale/Mods/new-horizons"
 ln -s -- "$assets/dAtA" "$stale/Data"
 ln -s -- "$assets/MAPS" "$stale/Maps"
 ln -s -- "$assets/mp3" "$stale/Mp3"
+# Neither dual client aliases nor unexpected hidden files are safe to reclaim.
+ln -s -- "$engine/vcmiclient" "$stale/new-horizons"
+expect_fail "${args[@]}"
+[[ -L $stale/vcmiclient && -L $stale/new-horizons ]]
+rm -- "$stale/new-horizons"
+printf 'must preserve\n' > "$stale/Mods/.unexpected"
+expect_fail "${args[@]}"
+[[ $(< "$stale/Mods/.unexpected") == 'must preserve' ]]
+rm -- "$stale/Mods/.unexpected"
 bash "$launcher" "${args[@]}" > "$tmp/output"
 [[ $(wc -l < "$STUB_RECEIPT") == 5 ]]
+[[ ! -e $stale ]]
+# The current branded layout is reclaimed with the same exact-target contract.
+mkdir -- "$stale" "$stale/Mods"
+ln -s -- "$engine/vcmiclient" "$stale/new-horizons"
+ln -s -- "$engine/libvcmi.so" "$stale/libvcmi.so"
+ln -s -- "$engine/config" "$stale/config"
+ln -s -- "$engine/scripts" "$stale/scripts"
+ln -s -- "$engine/Mods/vcmi" "$stale/Mods/vcmi"
+ln -s -- "$engine/Mods/new-horizons" "$stale/Mods/new-horizons"
+ln -s -- "$assets/dAtA" "$stale/Data"
+ln -s -- "$assets/MAPS" "$stale/Maps"
+ln -s -- "$assets/mp3" "$stale/Mp3"
+bash "$launcher" "${args[@]}" > "$tmp/output"
+[[ $(wc -l < "$STUB_RECEIPT") == 6 ]]
 [[ ! -e $stale ]]
 # A live profile contains runtime symlinks: diagnose its lock before scanning
 # those links, and do not truncate/write the lock even during verify-only.
@@ -281,7 +304,7 @@ for mode in launch verify; do
 	grep -q 'This NH profile is already in use.' "$tmp/output"
 	[[ $(< "$profile/.nh-lock") == 'lock sentinel' ]]
 	[[ -L $profile/runtime.synthetic/Data ]]
-	[[ $(wc -l < "$STUB_RECEIPT") == 5 ]]
+	[[ $(wc -l < "$STUB_RECEIPT") == 6 ]]
 done
 flock -u 8
 exec 8<&-
