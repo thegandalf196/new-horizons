@@ -1294,6 +1294,7 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	ghost = other.ghost;
 	ghostPending = other.ghostPending;
 	movedThisRound = other.movedThisRound;
+	confusionState = other.confusionState;
 	pursuitMovementRemaining = other.pursuitMovementRemaining;
 	cleaveUsedThisActivation = other.cleaveUsedThisActivation;
 	rangedFollowUpDamagePercent = other.rangedFollowUpDamagePercent;
@@ -2095,6 +2096,12 @@ std::shared_ptr<CUnitState> CUnitState::acquireState() const
 
 void CUnitState::serializeJson(JsonSerializeFormat & handler)
 {
+	JsonNode confusion;
+	if(handler.saving)
+		confusion = confusionState.toJson();
+	handler.serializeRaw("confusion", confusion, std::nullopt);
+	if(!handler.saving)
+		confusionState = ConfusionState::fromJson(confusion);
 	handler.serializeBool("cloned", cloned);
 	handler.serializeBool("defending", defending);
 	handler.serializeBool("drainedMana", drainedMana);
@@ -2263,6 +2270,7 @@ std::pair<int32_t, int32_t> CUnitState::getMoraleLimits() const
 
 void CUnitState::reset()
 {
+	confusionState = {};
 	cloned = false;
 	personalBloodrageIncrement = 0;
 	activationMovementBonus = 0;
@@ -2374,6 +2382,8 @@ JsonNode CUnitState::save()
 
 void CUnitState::load(const JsonNode & data)
 {
+	// Check metadata before any existing unit state is changed by deserialization.
+	const auto incomingConfusion = confusionStateFromUnitJson(data);
 	//TODO: use instance resolver
 	const auto & savedPainIncrement = data["state"]["personalBloodrageIncrement"];
 	if(!savedPainIncrement.isNull())
@@ -2392,6 +2402,7 @@ void CUnitState::load(const JsonNode & data)
 		onBattleFormChanged();
 	JsonDeserializer deser(nullptr, data);
 	deser.serializeStruct("state", *this);
+	confusionState = incomingConfusion;
 	if(phantomInitialIntegrity < 0 || phantomIntegrity < 0 || phantomRoundsRemaining < 0
 		|| !newHorizonsBloodrage::isValidPersonalIncrement(personalBloodrageIncrement)
 		|| guardianSpiritHitPoints < 0 || guardianSpiritRoundsRemaining < 0

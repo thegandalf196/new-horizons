@@ -189,14 +189,17 @@ enum class ESerializationVersion : int32_t
 	COMPONENT_HELP_REASON, // optional localized reason appended to component help
 	NEW_HORIZONS_CREATURE_TRANSIT_REACH, // static Pass-through and Long Reach creature capabilities
 	NEW_HORIZONS_OVERWHELMING_FORMULA, // side-owned candidate cast tokens and first actual-damage winner
+	NEW_HORIZONS_CONFUSION_STATE, // pending forced activation provenance and target resolved-behavior history
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_OVERWHELMING_FORMULA,
+	CURRENT = NEW_HORIZONS_CONFUSION_STATE,
 };
 
+static_assert(ESerializationVersion::NEW_HORIZONS_CONFUSION_STATE > ESerializationVersion::NEW_HORIZONS_OVERWHELMING_FORMULA,
+	"Confusion pending/history state must remain append-only");
 static_assert(ESerializationVersion::NEW_HORIZONS_OVERWHELMING_FORMULA > ESerializationVersion::NEW_HORIZONS_CREATURE_TRANSIT_REACH,
 	"Overwhelming Formula state must remain append-only");
 

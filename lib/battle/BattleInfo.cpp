@@ -1602,6 +1602,23 @@ bool BattleInfo::hasRageThroughPainState() const
 	});
 }
 
+bool BattleInfo::hasConfusionState() const
+{
+	return std::ranges::any_of(stacks, [](const auto & stack)
+	{
+		return stack && stack->confusionState.hasState();
+	});
+}
+
+void BattleInfo::validateConfusionStates() const
+{
+	for(const auto & stack : stacks)
+	{
+		if(stack)
+			stack->confusionState.validate();
+	}
+}
+
 bool BattleInfo::hasCasualtyProvenanceState() const
 {
 	return std::ranges::any_of(stacks, [](const auto & stack)

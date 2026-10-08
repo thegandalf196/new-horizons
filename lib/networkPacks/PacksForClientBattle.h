@@ -49,6 +49,12 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 	template <typename Handler> void serialize(Handler & h)
 	{
 		if(h.saving && info)
+		{
+			info->validateConfusionStates();
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_CONFUSION_STATE) && info->hasConfusionState())
+				throw std::runtime_error("Cannot discard Confusion pending state or history from BattleStart");
+		}
+		if(h.saving && info)
 			info->validateSpellResponseStates();
 		if(h.saving && info)
 		{
@@ -708,6 +714,11 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+		{
+			for(const auto & change : changedStacks)
+				change.validateConfusionSerialization(h);
+		}
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_OUTPUT_ORIGINAL_HP)
 			&& std::ranges::any_of(changedStacks, [](const UnitChanges & change)
 				{ return change.hasRebirthOriginalAggregateHP(); }))
@@ -810,6 +821,8 @@ struct BattleStackAttacked
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+			newState.validateConfusionSerialization(h);
 		if(h.saving)
 			validateArmorerLastStandShape();
 		const auto & followUpPercent = newState.data["state"]["rangedFollowUpDamagePercent"];
@@ -926,6 +939,13 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+		{
+			for(const auto & change : attackerChanges.changedStacks)
+				change.validateConfusionSerialization(h);
+			for(const auto & hit : bsa)
+				hit.newState.validateConfusionSerialization(h);
+		}
 		if(h.saving)
 			validateLastStandMarker();
 		const auto hasPersonalBloodrage = [](const UnitChanges & change)
@@ -1357,6 +1377,11 @@ struct DLL_LINKAGE StacksInjured : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+		{
+			for(const auto & hit : stacks)
+				hit.newState.validateConfusionSerialization(h);
+		}
 		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_CASUALTY_PROVENANCE)
 			&& std::ranges::any_of(stacks, [](const BattleStackAttacked & hit)
 				{ return hit.newState.hasCasualtyProvenanceState(); }))

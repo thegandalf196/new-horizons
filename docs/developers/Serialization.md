@@ -713,3 +713,24 @@ Foo *loadedA, *loadedB;
 The feature recognizes pointers by addresses. Therefore it allows mixing pointers to base and derived classes. However, it does not allow serializing classes with multiple inheritance using a "non-first" base (other bases have a certain address offset from the actual object).
 
 Pointer cycles are properly handled. This feature makes sense for savegames and is turned on for them.
+
+### New Horizons Confusion metadata
+
+`NEW_HORIZONS_CONFUSION_STATE` appends `battle::ConfusionState` to the binary
+`CStack` descriptor. Unit snapshots carry the same value in `state.confusion`:
+`pending`, `pendingCaster`, `pendingConfounder`, and `previousResolved`.
+Pending control and the last actually resolved Attack/Defend/Wander are separate.
+Reapplication and ordinary round boundaries preserve history; a forfeited
+activation clears pending control without inventing a resolved result.
+
+Absent older JSON/binary metadata defaults to an empty value. Present fields
+have strict types and identifiers. Pending caster provenance accepts a player
+or Neutral; an empty pending effect requires `CANNOT_DETERMINE` and no
+Confounder flag. These negative sentinel IDs are not numeric player bounds.
+Older writers reject meaningful pending state or history before stack, update,
+attack/injury wrapper or battle payloads are written, instead of dropping it.
+
+`CUnitState` copies and detached JSON loads retain independent values, and
+`CStack::localInit` restores the explicitly carried metadata after ordinary
+unit initialization. This does **not** serialize the otherwise omitted general
+combat health state or establish full ongoing-battle save/resume support.

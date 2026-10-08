@@ -67,6 +67,7 @@ void CStack::localInit(BattleInfo * battleInfo)
 	battle = battleInfo;
 	assert(typeID.hasValue());
 	const int32_t restoredPersonalBloodrageIncrement = personalBloodrageIncrement;
+	const auto restoredConfusionState = confusionState;
 
 	exportBonuses();
 	if(base) //stack originating from "real" stack in garrison -> attach to it
@@ -86,6 +87,9 @@ void CStack::localInit(BattleInfo * battleInfo)
 	// CUnitState::localInit resets ordinary per-battle transient state; preserve
 	// the one personal increment explicitly carried by this binary stack snapshot.
 	personalBloodrageIncrement = restoredPersonalBloodrageIncrement;
+	// Binary stack descriptors carry pending Confusion and target history too;
+	// rebinding the stack to the battle must not consume either value.
+	confusionState = restoredConfusionState;
 	position = initialPosition;
 }
 

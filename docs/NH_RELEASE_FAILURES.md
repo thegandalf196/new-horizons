@@ -1,5 +1,42 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-08 — PlayerColor sentinels are not a numeric player range
+
+UP307 independent source review caught a pre-build blocker in Confusion JSON:
+`NEUTRAL` is -1, not a maximum player ID. A range ending there rejects players
+0..7 and the empty `CANNOT_DETERMINE` sentinel (-3). Check integer
+representability first, then exact permitted identities/provenance. Pending
+neutral spellcasters are valid; `UNFLAGGABLE` (-2) is not. The fixture's malformed
+neutral case was corrected to UNFLAGGABLE and an explicit neutral JSON
+roundtrip added. No native/CI failure is claimed: the defect was repaired before
+the build. Sol High re-review finds no remaining blocker; linked/native gates
+remain pending. Full Confusion activation is a separate Phase1 requirement.
+
+UP307 build93421 then exits1 on the new fixture's compilation, before native
+execution. `using namespace testing` makes unqualified `Environment` ambiguous;
+the actual unit API returns JSON from `save()` and its private reset is reached
+through public initialization, not a test-only access change. Repair the fixture
+against those production APIs without weakening assertions or loosening engine
+visibility. Failed receipt: build/nh-confusion-state-build.log. The production
+source remains frozen; a distinct repaired build/native receipt must establish
+acceptance.
+
+Repaired build20027 also exits1 before native execution: the detached fixture
+passes `BattleInfo*` where `HypotheticBattle` requires a shared battle callback.
+Construct the ordinary callback with its real battle state, preserving the
+nested-copy/live-isolation assertions. Receipt: build/nh-confusion-state-fixture-
+repaired-build.log. Do not add an engine overload merely to accommodate the
+fixture or treat the previous source review as executable test evidence.
+
+Final UP307 callback-repaired build40888 exits0 at10 jobs. Native88113 passes
+34/34 in2.476s, zero skips:18 new state cases and16 geometry controls. All
+original lifecycle/JSON/wire/descriptor/localInit/detached-isolation assertions
+remain. Receipts: build/nh-confusion-state-callback-repaired-build.log and
+build/nh-preview-ai-validation.jUrtT2RY/native-up307.log/XML. Sol High review
+has no remaining blocker. Direct enclosing battle/attack/injury wrapper matrices
+remain Phase2; full Confusion producer/forced activation/AI/UI remain missing
+Phase1 work. No active identity or normal playable promotion is implied.
+
 ### 2026-10-08 — Confusion forecasting must preserve ordinary action semantics
 
 UP306 source review caught two legality risks before native acceptance. Physical

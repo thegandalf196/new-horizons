@@ -2,6 +2,21 @@
 
 Updated: 2026-10-08
 
+UP307 continues Confusion beyond geometry with explicit pending activation and
+per-target resolved-behavior history. The intended state contract preserves
+history across reapplication and ordinary rounds; Morale forfeiture clears only
+pending control. Strict JSON/copy, current binary descriptor preservation and
+old-format loss rejection are being implemented through existing UnitChanges
+and detached load paths. CStack local initialization must restore the explicitly
+carried metadata. Linked40888 exits0 at10 jobs; native88113 passes34/34 in
+2.476s, zero skips (18 state/16 geometry). Sol High review has no remaining
+blocker. Receipts: build/nh-confusion-state-callback-repaired-build.log and
+build/nh-preview-ai-validation.jUrtT2RY/native-up307.log/XML. Failed fixture
+compilations remain recorded; direct battle/attack/injury wrapper matrices are
+Phase2. This is verified metadata propagation, not full health/save-resume
+support, an active Confusion identity or a completed AI consumer. Full producer,
+forced activation, outcome evaluation and feedback remain Phase1 requirements.
+
 UP306 starts Confusion's missing shared legal-choice foundation rather than
 repeating unchanged perk-hold audits. The helper enumerates enemy-grouped
 ordinary attacks, legal advances and Wander destinations without RNG or state

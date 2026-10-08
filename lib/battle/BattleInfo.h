@@ -144,6 +144,8 @@ public:
 	bool hasCleaveState() const;
 	bool hasNoQuarterState() const;
 	bool hasRageThroughPainState() const;
+	bool hasConfusionState() const;
+	void validateConfusionStates() const;
 	bool hasCasualtyProvenanceState() const;
 	bool hasElementalRebirthBasisState() const;
 	bool hasRebirthOutputOriginalHPState() const;
@@ -267,6 +269,9 @@ public:
 	{
 		if(h.saving)
 		{
+			validateConfusionStates();
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_CONFUSION_STATE) && hasConfusionState())
+				throw std::runtime_error("Cannot discard Confusion pending state or history from a battle snapshot");
 			validateSpellResponseStates();
 			validateOverwhelmingFormulaStates();
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWHELMING_FORMULA) && hasOverwhelmingFormulaState())
@@ -809,6 +814,7 @@ public:
 
 		if(!h.saving)
 		{
+			validateConfusionStates();
 			validateSpellResponseStates();
 			validateOverwhelmingFormulaStates();
 			// Reject null/ambiguous unit references before postDeserialize dereferences

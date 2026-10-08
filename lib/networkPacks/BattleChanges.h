@@ -45,6 +45,16 @@ public:
 	{
 	}
 
+	bool hasConfusionState() const
+	{
+		return battle::hasConfusionState(data);
+	}
+
+	template <typename Handler> void validateConfusionSerialization(Handler & h) const
+	{
+		battle::confusionStateFromUnitJson(data).validateSerialization(h);
+	}
+
 	bool hasNoQuarterMoraleState() const
 	{
 		const auto & remaining = data["state"]["noQuarterMoraleActivationsRemaining"];
@@ -88,6 +98,8 @@ public:
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+			validateConfusionSerialization(h);
 		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_CASUALTY_PROVENANCE)
 			&& hasCasualtyProvenanceState())
 			throw std::runtime_error("Cannot discard casualty provenance in an older unit update format");
@@ -118,6 +130,8 @@ public:
 		h & healthDelta;
 		h & data;
 		h & operation;
+		if(!h.saving)
+			validateConfusionSerialization(h);
 	}
 };
 

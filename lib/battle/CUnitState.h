@@ -11,6 +11,7 @@
 #pragma once
 
 #include "BattleUnitTurnReason.h"
+#include "NewHorizonsConfusionState.h"
 #include "Unit.h"
 #include "../bonuses/BonusCache.h"
 
@@ -225,6 +226,9 @@ public:
 	bool ghost;
 	bool ghostPending;
 	bool movedThisRound;
+	/// Pending forced activation and battle-long Confusion result history.
+	/// Ordinary round/activation boundaries do not clear this value implicitly.
+	ConfusionState confusionState;
 	/// Movement still available during an Offense: Pursuit continuation.
 	/// A positive value means this unit is in the movement-only tail of its
 	/// current activation; it must never grant another attack.

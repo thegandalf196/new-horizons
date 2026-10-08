@@ -123,6 +123,8 @@ public:
 	{
 		//this assumes that stack objects is newly created
 		//CUnitState is not serialized here except for explicit battle-long fields.
+		if(h.saving)
+			confusionState.validateSerialization(h);
 		if(h.saving && hasCasualtyProvenanceState())
 			throw std::runtime_error("Cannot save magical casualty provenance without its health state");
 		if(h.saving && !newHorizonsBloodrage::isValidPersonalIncrement(personalBloodrageIncrement))
@@ -169,6 +171,7 @@ public:
 		}
 		else if(!h.saving)
 			rebirthOriginalAggregateHP = 0;
+		h & confusionState;
 	}
 
 private:
