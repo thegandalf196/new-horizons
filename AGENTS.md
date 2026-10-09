@@ -274,6 +274,17 @@ do not silently substitute another workstream or drop an item from memory.
 If blocked, record the blocker and work on another unblocked queue item. Ask for
 direction if all queue items are blocked; do not silently bypass this priority.
 Preserve safely running processes and unrelated changes when switching work.
+Priority is not an exclusive single-worker lane. Keep independent missing
+Version1.0 feature workers progressing in parallel while the root, tester and
+reviewer handle priority fixes and delivery. Use non-overlapping ownership or
+isolated worktrees so feature work cannot change a frozen test candidate.
+Do not idle implementation workers merely because a crash reproduction,
+artwork revision, build or graphical acceptance is pending. Pause only affected
+workstreams when there is a concrete dependency, foundational failure, unsafe
+ownership overlap, resource constraint or genuine design ambiguity; record the
+reason and reassess it at each checkpoint. Never invent filler work to occupy
+slots. User-priority fixes retain integration/delivery precedence, and critical
+crash/corruption findings still require immediate repair.
 Distinguish source implementation, verification, and playable delivery. A source
 edit or build alone does not close a reported visual/runtime defect. Keep resolved
 entries with their evidence. This queue tracks work, not gameplay authority:
