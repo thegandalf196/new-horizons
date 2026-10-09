@@ -1,0 +1,26 @@
+# Loose New Horizons artwork is local authoring/review material, not public
+# distribution. Ship selected runtime visuals through NewHorizons.nhart.
+*.png
+*.PNG
+*.gif
+*.GIF
+*.bmp
+*.BMP
+*.jpg
+*.jpeg
+*.webp
+*.pcx
+*.def
+*.msk
+*.pal
+*.svg
+*.psd
+*.xcf
+*.kra
+*.ora
+*.ase
+*.aseprite
+*.blend
+*.tif
+*.tiff
+*.zip

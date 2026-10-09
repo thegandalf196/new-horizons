@@ -24,9 +24,6 @@ MAX_SOURCE_PIXELS = 64 * 1024 * 1024
 MAX_COLUMNS = 32
 MAX_ROWS = 32
 MAX_BODY_HEIGHT = FEET_BASELINE_Y
-PROTECTED_RUNTIME = ROOT / "Mods"
-PROTECTED_CONFIG = ROOT / "config"
-CABIR_ASSETS = ROOT / "assets/new-horizons/creatures/cabir"
 GIF_BACKGROUND = (42, 31, 34, 255)
 
 
@@ -47,11 +44,8 @@ def validate_new_output_directory(input_path: Path, output_dir: Path) -> Path:
         raise ValueError("output directory must not be the source atlas parent")
     if _within(source, output):
         raise ValueError("output directory must not contain the source atlas")
-    if _within(output, PROTECTED_RUNTIME.resolve()) or _within(output, PROTECTED_CONFIG.resolve()):
-        raise ValueError(f"refusing to write inside runtime/configuration content: {output}")
-    assets_root = (ROOT / "assets").resolve()
-    if _within(output, assets_root) and not _within(output, CABIR_ASSETS.resolve()):
-        raise ValueError(f"refusing to write outside the Cabir source-asset area: {output}")
+    if _within(output, ROOT.resolve()) or _within(output_dir.expanduser().absolute(), ROOT.absolute()):
+        raise ValueError(f"output directory must be outside the checkout: {output}")
     if output_dir.is_symlink() or output.exists():
         raise FileExistsError(f"output directory must be new: {output}")
     return output

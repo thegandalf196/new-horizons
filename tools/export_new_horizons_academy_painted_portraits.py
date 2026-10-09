@@ -14,6 +14,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CHECKOUT = ROOT
 REVISION_ROOT = ROOT / "assets/new-horizons/academy/portrait-revisions/v2"
 SOURCE = REVISION_ROOT / "masters/stoneGargoyle-painted.png"
 PROMPT = REVISION_ROOT / "masters/stoneGargoyle-painted.prompt.txt"
@@ -22,6 +23,26 @@ MANIFEST = REVISION_ROOT / "exports/stoneGargoyle.manifest.json"
 PREVIEW_DIR = ROOT / "build/nh-up239-validation/stoneGargoyle-painted"
 SIZE = (58, 64)
 EXPECTED_SOURCE_SHA256 = "0d23df17ec4daa51b24c5a54cbf0f0c32442649622a9fce101b0da953cb750b9"
+
+
+def configure_private_root(private_root: Path) -> None:
+    global ROOT
+    resolved = private_root.resolve()
+    if resolved.is_relative_to(CHECKOUT) or CHECKOUT.is_relative_to(resolved):
+        raise ValueError("authoring requires a private project root outside and not overlapping the checkout")
+    previous = ROOT
+    for name, value in list(globals().items()):
+        if name not in ("ROOT", "CHECKOUT") and isinstance(value, Path) and value.is_absolute() and value.is_relative_to(previous):
+            globals()[name] = resolved / value.relative_to(previous)
+    ROOT = resolved
+
+
+def require_private_outputs() -> None:
+    if ROOT.is_relative_to(CHECKOUT) or CHECKOUT.is_relative_to(ROOT):
+        raise ValueError("authoring requires an explicit private project root outside the checkout")
+    for path in (OUTPUT, MANIFEST, PREVIEW_DIR):
+        if not path.resolve().is_relative_to(ROOT):
+            raise ValueError(f"authoring output escapes the private project root: {path}")
 
 
 def sha256(data: bytes) -> str:
@@ -98,6 +119,7 @@ def render_private_previews(native: Image.Image) -> dict[str, bytes]:
 
 
 def write_outputs(check: bool, parser: argparse.ArgumentParser) -> None:
+    require_private_outputs()
     if not SOURCE.is_file() or not PROMPT.is_file():
         parser.error("the authored master and its prompt must both be present")
 
@@ -136,8 +158,15 @@ def write_outputs(check: bool, parser: argparse.ArgumentParser) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--private-root", required=True, type=Path,
+                        help="private project-shaped input/output workspace outside the checkout")
     parser.add_argument("--check", action="store_true", help="verify exports and private previews without writing")
     args = parser.parse_args()
+    try:
+        configure_private_root(args.private_root)
+        require_private_outputs()
+    except ValueError as error:
+        parser.error(str(error))
     write_outputs(args.check, parser)
     return 0
 

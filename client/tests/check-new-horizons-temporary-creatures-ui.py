@@ -3,15 +3,18 @@
 
 from pathlib import Path
 import unittest
+import sys
 
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "tools/tests"))
+from nhart_test_resources import ArtPath
 STATUS = (ROOT / "client/battle/NewHorizonsBattleStatus.h").read_text(encoding="utf-8")
 PRESENTATION = (ROOT / "client/battle/StackInfoStatusPresentation.h").read_text(encoding="utf-8")
 PANEL = (ROOT / "client/battle/StackInfoBasicPanel.cpp").read_text(encoding="utf-8")
 PANEL_H = (ROOT / "client/battle/StackInfoBasicPanel.h").read_text(encoding="utf-8")
 PERK_ICONS = (ROOT / "client/windows/NewHorizonsPerkIcons.h").read_text(encoding="utf-8")
-REANIMATE_ICON = ROOT / "Mods/new-horizons/Images/NH_spell_reanimate_30.png"
+REANIMATE_ICON = ArtPath() / "NH_spell_reanimate_30.png"
 
 
 class TemporaryCreatureStatusUiTest(unittest.TestCase):

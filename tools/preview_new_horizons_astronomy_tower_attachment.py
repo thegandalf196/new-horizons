@@ -4,6 +4,10 @@
 This is a visual/check artifact generator only. It combines the current 800x374
 town background with the already-authored fortification and Astronomy Tower
 sprites; it does not alter or resample any runtime art.
+
+Supply a read-only external workspace containing Mods/new-horizons/Images and
+a separate, new external --output-dir. There is no checkout/build output or
+loose-art fallback; current placement metadata remains read from the checkout.
 """
 
 from __future__ import annotations
@@ -19,7 +23,6 @@ from import_new_horizons_academy_assets import IMAGE_ROOT, animation_image_path,
 
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT_DIR = ROOT / "build/nh-up247-validation"
 CORE_TOWER = ROOT / "config/factions/tower.json"
 RANK_PATCH = ROOT / "Mods/new-horizons/Content/config/factions/towerCreatureRanks.json"
 ART_PATCH = ROOT / "Mods/new-horizons/Content/config/factions/academyArt.json"
@@ -30,6 +33,30 @@ EXPECTED_STAGE_POSITIONS = {
 	"castle": (301, 0, -1),
 }
 EXPECTED_TOWER_POSITION = (409, 82, 0)
+
+
+def _within(path: Path, parent: Path) -> bool:
+	return path == parent or parent in path.parents
+
+
+def validate_external_path(path: Path) -> Path:
+	expanded = path.expanduser().absolute()
+	resolved = expanded.resolve()
+	if _within(expanded, ROOT.absolute()) or _within(resolved, ROOT.resolve()):
+		raise ValueError(f"path must be outside the checkout: {path}")
+	return resolved
+
+
+def validate_workspace_and_output(input_workspace: Path, output_dir: Path) -> tuple[Path, Path]:
+	workspace = validate_external_path(input_workspace)
+	output = validate_external_path(output_dir)
+	if not workspace.is_dir():
+		raise ValueError(f"input workspace must be an existing external directory: {workspace}")
+	if _within(output, workspace) or _within(workspace, output):
+		raise ValueError("output must be separate from the read-only input workspace")
+	if output_dir.is_symlink() or output.exists():
+		raise FileExistsError(f"output directory must be new: {output}")
+	return workspace, output
 
 
 def open_rgba(path: Path) -> Image.Image:
@@ -55,16 +82,16 @@ def effective_structures() -> tuple[dict, dict]:
 	return effective, art.get("special2", {})
 
 
-def structure_image(structure: dict) -> Image.Image:
+def structure_image(structure: dict, input_workspace: Path) -> Image.Image:
 	resource = structure.get("animation")
 	if not resource:
 		raise ValueError("Registered Academy structure has no animation")
-	path = ROOT / IMAGE_ROOT / animation_image_path(ROOT, resource)
+	path = input_workspace / IMAGE_ROOT / animation_image_path(input_workspace, resource)
 	return open_rgba(path)
 
 
-def scene_background() -> Image.Image:
-	background = open_rgba(ROOT / IMAGE_ROOT / "NH_academy/town/landscape.png")
+def scene_background(input_workspace: Path) -> Image.Image:
+	background = open_rgba(input_workspace / IMAGE_ROOT / "NH_academy/town/landscape.png")
 	if background.size != (800, 374):
 		raise ValueError(f"Expected native 800x374 Academy landscape, got {background.size}")
 	return background
@@ -84,10 +111,10 @@ def overlap_count(stage_image: Image.Image, stage_position: tuple[int, int, int]
 	return sum(ImageChops.multiply(stage_mask, tower_mask).histogram()[1:])
 
 
-def render_stage(stage_config: dict, tower_config: dict, tower_x: int, *, show_hit_area: bool = False) -> Image.Image:
-	background = scene_background()
-	stage_image = structure_image(stage_config)
-	tower_image = structure_image(tower_config)
+def render_stage(stage_config: dict, tower_config: dict, tower_x: int, *, input_workspace: Path, show_hit_area: bool = False) -> Image.Image:
+	background = scene_background(input_workspace)
+	stage_image = structure_image(stage_config, input_workspace)
+	tower_image = structure_image(tower_config, input_workspace)
 	stage_pos = (stage_config["x"], stage_config["y"], stage_config.get("z", 0))
 	tower_pos = (tower_x, tower_config["y"], tower_config.get("z", 0))
 	layers = [
@@ -99,8 +126,8 @@ def render_stage(stage_config: dict, tower_config: dict, tower_x: int, *, show_h
 
 	if show_hit_area:
 		art_special2 = json.loads(ART_PATCH.read_text(encoding="utf-8"))["core:tower"]["town"]["structures"]["special2"]
-		area_path = ROOT / IMAGE_ROOT / art_special2["area"]
-		border_path = ROOT / IMAGE_ROOT / art_special2["border"]
+		area_path = input_workspace / IMAGE_ROOT / art_special2["area"]
+		border_path = input_workspace / IMAGE_ROOT / art_special2["border"]
 		area = open_rgba(area_path)
 		border = open_rgba(border_path)
 		if area.size != tower_image.size or border.size != tower_image.size:
@@ -128,6 +155,9 @@ def labeled_pair(before: Image.Image, after: Image.Image, stage: str) -> Image.I
 
 
 def save_preview(path: Path, image: Image.Image) -> None:
+	validate_external_path(path)
+	if path.is_symlink() or path.exists():
+		raise FileExistsError(f"preview must be new: {path}")
 	path.parent.mkdir(parents=True, exist_ok=True)
 	image.save(path, format="PNG", optimize=False)
 	try:
@@ -140,9 +170,11 @@ def save_preview(path: Path, image: Image.Image) -> None:
 def main() -> int:
 	parser = argparse.ArgumentParser(description=__doc__)
 	parser.add_argument("--candidate-x", type=int, help="preview a candidate X before editing academyArt.json")
-	parser.add_argument("--output-dir", type=Path, default=OUTPUT_DIR)
+	parser.add_argument("--output-dir", type=Path, required=True, help="new directory outside the checkout")
+	parser.add_argument("--input-workspace", type=Path, required=True,
+					help="external read-only workspace containing Mods/new-horizons/Images resources")
 	args = parser.parse_args()
-	output_dir = args.output_dir if args.output_dir.is_absolute() else ROOT / args.output_dir
+	input_workspace, output_dir = validate_workspace_and_output(args.input_workspace, args.output_dir)
 
 	structures, art_special2 = effective_structures()
 	core_tower = load_jsonc(CORE_TOWER)
@@ -162,9 +194,9 @@ def main() -> int:
 	if art_special2.get("z", core_special2.get("z", 0)) != core_special2.get("z", 0):
 		raise ValueError("Astronomy Tower draw order must remain unchanged")
 
-	tower_image = structure_image(structures["special2"])
-	area_path = ROOT / IMAGE_ROOT / art_special2["area"]
-	border_path = ROOT / IMAGE_ROOT / art_special2["border"]
+	tower_image = structure_image(structures["special2"], input_workspace)
+	area_path = input_workspace / IMAGE_ROOT / art_special2["area"]
+	border_path = input_workspace / IMAGE_ROOT / art_special2["border"]
 	area = open_rgba(area_path)
 	border = open_rgba(border_path)
 	if area.size != tower_image.size or border.size != tower_image.size:
@@ -173,20 +205,20 @@ def main() -> int:
 
 	for stage in STAGE_STRUCTURES:
 		stage_config = structures[stage]
-		stage_image = structure_image(stage_config)
+		stage_image = structure_image(stage_config, input_workspace)
 		stage_position = (stage_config["x"], stage_config["y"], stage_config.get("z", 0))
 		tower_position_before = (core_special2["x"], core_special2["y"], core_special2.get("z", 0))
 		tower_position_after = (after_x, core_special2["y"], core_special2.get("z", 0))
 		before_overlap = overlap_count(stage_image, stage_position, tower_image, tower_position_before)
 		after_overlap = overlap_count(stage_image, stage_position, tower_image, tower_position_after)
 		print(f"{stage}: opaque sprite overlap {before_overlap} -> {after_overlap} pixels")
-		before = render_stage(stage_config, structures["special2"], core_special2["x"])
-		after = render_stage(stage_config, structures["special2"], after_x)
+		before = render_stage(stage_config, structures["special2"], core_special2["x"], input_workspace=input_workspace)
+		after = render_stage(stage_config, structures["special2"], after_x, input_workspace=input_workspace)
 		after.info["tower_x"] = after_x
 		save_preview(output_dir / f"astronomy-{stage}-before-after.png", labeled_pair(before, after, stage))
 		if stage == "fort":
-			mask_before = render_stage(stage_config, structures["special2"], core_special2["x"], show_hit_area=True)
-			mask_after = render_stage(stage_config, structures["special2"], after_x, show_hit_area=True)
+			mask_before = render_stage(stage_config, structures["special2"], core_special2["x"], input_workspace=input_workspace, show_hit_area=True)
+			mask_after = render_stage(stage_config, structures["special2"], after_x, input_workspace=input_workspace, show_hit_area=True)
 			mask_after.info["tower_x"] = after_x
 			save_preview(output_dir / "astronomy-fort-hit-mask-anchor.png",
 					labeled_pair(mask_before, mask_after, "fort hit-mask"))

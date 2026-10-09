@@ -6,10 +6,14 @@ from pathlib import Path
 from pathlib import PurePosixPath
 import re
 import unittest
+import tempfile
 from zipfile import ZipFile
+from tools.tests.nhart_test_resources import ArtPath, open_image
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTENT = ROOT / "Mods/new-horizons/Content"
+SPRITES = ArtPath("SPRITES")
+DATA = ArtPath("DATA")
 SOURCE = ROOT / "assets/new-horizons/Mage Guilds"
 PACKAGES = {
     "castle": ("castle-mage-guild-level5", "castle-mage-guild.json", "HALLCSTL", {4}),
@@ -46,58 +50,98 @@ def load(path):
 
 
 class MageGuildAssetsTest(unittest.TestCase):
-    def test_raw_asset_bytes_match_supplied_archives_and_pngs_decode(self):
-        from PIL import Image
+    @staticmethod
+    def synthetic_packages(module, source):
+        source.mkdir()
+        for index, package in enumerate(module.PACKAGES):
+            with ZipFile(source / (package + ".zip"), "w") as archive:
+                archive.writestr(f"guild/Content/Sprites/fixture-{index}.bin", bytes([index + 1]) * 20)
+        with ZipFile(source / (module.FORTRESS_V8 + ".zip"), "w") as archive:
+            for relative in module._expected_obsolete_fortress_paths():
+                payload = b"{}\n" if relative.suffix == ".json" else b"synthetic obsolete"
+                archive.writestr("guild/Content/" + relative.as_posix(), payload)
+
+    def test_import_requires_explicit_external_roots_before_read_or_write(self):
         module = importer()
-        counts = {".png": 0, ".def": 0, ".pcx": 0, ".bmp": 0}
-        for package, _, _, _ in PACKAGES.values():
-            with ZipFile(SOURCE / (package + ".zip")) as archive:
-                for relative, data in module._runtime_assets(archive):
-                    extension = relative.suffix.casefold()
-                    if extension not in counts:
-                        continue
-                    target = CONTENT / relative
-                    self.assertEqual(target.read_bytes(), data, relative.as_posix())
-                    counts[extension] += 1
-                    if extension == ".png":
-                        with Image.open(BytesIO(data)) as image:
-                            image.verify()
-        self.assertEqual(counts, {".png": 41, ".def": 5, ".pcx": 5, ".bmp": 10})
+        with self.assertRaisesRegex(ValueError, "Explicit external"):
+            module.import_assets()
+        with self.assertRaisesRegex(ValueError, "outside the checkout"):
+            list(module.assets(ROOT))
+        with tempfile.TemporaryDirectory() as temporary:
+            with self.assertRaisesRegex(ValueError, "outside the checkout"):
+                module.import_assets(Path(temporary), CONTENT)
+
+    def test_synthetic_external_import_is_idempotent_and_removes_only_known_bytes(self):
+        module = importer()
+        with tempfile.TemporaryDirectory() as temporary:
+            source, output = Path(temporary) / "inputs", Path(temporary) / "output"
+            self.synthetic_packages(module, source)
+            obsolete = output / "sprites/TBFRMAG4.json"
+            obsolete.parent.mkdir(parents=True)
+            obsolete.write_bytes(b"{}\n")
+            self.assertEqual(module.import_assets(source, output), (3, 1))
+            self.assertFalse(obsolete.exists())
+            self.assertEqual(module.import_assets(source, output), (3, 0))
+            for index in range(3):
+                self.assertEqual((output / f"sprites/fixture-{index}.bin").read_bytes(), bytes([index + 1]) * 20)
+            obsolete.write_bytes(b"unknown local work")
+            with self.assertRaisesRegex(ValueError, "changed obsolete Fortress asset"):
+                module.import_assets(source, output)
+            self.assertEqual(obsolete.read_bytes(), b"unknown local work")
+
+    def test_synthetic_import_rejects_output_symlink_escape_before_mutation(self):
+        module = importer()
+        with tempfile.TemporaryDirectory() as temporary:
+            source, output, outside = (Path(temporary) / name for name in ("inputs", "output", "outside"))
+            self.synthetic_packages(module, source)
+            output.mkdir()
+            outside.mkdir()
+            (output / "sprites").symlink_to(outside, target_is_directory=True)
+            with self.assertRaisesRegex(ValueError, "escapes external output root"):
+                module.import_assets(source, output)
+            self.assertEqual(list(outside.iterdir()), [])
+
+    def test_shipped_fortress_binary_resources_are_present_and_verified(self):
+        for level in range(1, 6):
+            self.assertGreater(len((SPRITES / ("TBFRMAGE.def" if level == 1 else f"TBFRMAG{level}.def")).read_bytes()), 100)
+            for name in (f"BoFMage{level}.pcx", f"TOFMAG{level}A.bmp", f"TZFMAG{level}A.bmp"):
+                self.assertGreater(len((DATA / name).read_bytes()), 100)
 
     def test_v9_archive_root_and_directory_case_are_normalized(self):
         module = importer()
-        archive_path = SOURCE / "fortress-mage-guild-v9.zip"
-        with ZipFile(archive_path) as archive:
+        payload = BytesIO()
+        with ZipFile(payload, "w") as archive:
+            archive.writestr("fortress-mage-guild/content/Data/BoFMage1.pcx", b"synthetic pcx")
+            archive.writestr("fortress-mage-guild/content/Sprites/TBFRMAGE.def", b"synthetic def")
+        with ZipFile(payload) as archive:
             self.assertEqual(module._content_root(archive), ("fortress-mage-guild", "content"))
             self.assertTrue(any(name.startswith("fortress-mage-guild/content/Data/") for name in archive.namelist()))
             self.assertTrue(any(name.startswith("fortress-mage-guild/content/Sprites/") for name in archive.namelist()))
 
         for name in ("TBFRMAGE.def", "TBFRMAG2.def", "TBFRMAG3.def", "TBFRMAG4.def", "TBFRMAG5.def"):
-            self.assertTrue((CONTENT / "sprites" / name).is_file(), name)
+            self.assertTrue((SPRITES / name).is_file(), name)
         for name in ("BoFMage1.pcx", "TOFMAG1A.bmp", "TZFMAG1A.bmp"):
-            self.assertTrue((CONTENT / "data" / name).is_file(), name)
+            self.assertTrue((DATA / name).is_file(), name)
 
-    def test_fortress_hall_cards_are_native_size_and_imported_unchanged(self):
-        from PIL import Image
-        module = importer()
-        with ZipFile(SOURCE / "fortress-mage-guild-v9.zip") as archive:
-            for relative, data in module._runtime_assets(archive):
-                if relative.name not in {f"fortress-mage-guild-hall-{level}.png" for level in range(1, 6)}:
-                    continue
-                self.assertEqual((CONTENT / relative).read_bytes(), data)
-                with Image.open(BytesIO(data)) as image:
-                    self.assertEqual(image.size, (150, 70), relative.name)
-                    self.assertEqual(image.mode, "RGB", relative.name)
+    def test_shipped_fortress_hall_cards_are_native_size(self):
+        for level in range(1, 6):
+            image = open_image(f"SPRITES/fortress-mage-guild-hall-{level}.png")
+            self.assertEqual(image.size, (150, 70))
+            self.assertEqual(image.mode, "RGB")
 
-    def test_reproducible_import(self):
+    def test_synthetic_import_preserves_binary_and_normalizes_descriptor_paths(self):
         module = importer()
-        assets = list(module.assets())
-        self.assertEqual(len(assets), 71)
-        for path, data in assets:
-            self.assertEqual((CONTENT / path).read_bytes(), data, str(path))
+        payload = BytesIO()
+        with ZipFile(payload, "w") as archive:
+            archive.writestr("guild/Content/Sprites/test.json", json.dumps({"basepath": "nested\\frames", "images": []}))
+            archive.writestr("guild/Content/Data/test.bin", b"unchanged synthetic binary")
+        with ZipFile(payload) as archive:
+            assets = dict(module._runtime_assets(archive))
+        self.assertEqual(assets[Path("data/test.bin")], b"unchanged synthetic binary")
+        self.assertEqual(json.loads(assets[Path("sprites/test.json")])["basepath"], "nested/frames/")
 
     def test_all_animation_frames_resolve_with_preserved_counts(self):
-        sprites = CONTENT / "sprites"
+        sprites = SPRITES
         expected = {"TBCSMAG5": 11, "SVAHSW": 1}
         expected.update({f"SMAGSW{level}": 1 for level in range(1, 6)})
         for name, count in expected.items():
@@ -130,10 +174,10 @@ class MageGuildAssetsTest(unittest.TestCase):
                 "border": border,
                 "area": area,
             })
-            self.assertTrue((CONTENT / "sprites" / animation).is_file())
-            self.assertTrue((CONTENT / "data" / campaign).is_file())
-            self.assertTrue((CONTENT / "data" / border).is_file())
-            self.assertTrue((CONTENT / "data" / area).is_file())
+            self.assertTrue((SPRITES / animation).is_file())
+            self.assertTrue((DATA / campaign).is_file())
+            self.assertTrue((DATA / border).is_file())
+            self.assertTrue((DATA / area).is_file())
 
         obsolete = [CONTENT / "sprites" / f"TBFRMAG{level}.json" for level in (4, 5)]
         obsolete.extend(CONTENT / "sprites" / f"TBFRMAG{level}" for level in (4, 5))
@@ -182,21 +226,28 @@ class MageGuildAssetsTest(unittest.TestCase):
 
     def test_hall_overrides_only_replace_intended_frames(self):
         for _, _, hall, expected in PACKAGES.values():
-            descriptor = load(CONTENT / "sprites" / (hall + ".json"))
+            descriptor = load(SPRITES / (hall + ".json"))
             self.assertNotIn("sequences", descriptor)
             self.assertEqual({item["frame"] for item in descriptor["images"]}, expected)
             for item in descriptor["images"]:
                 self.assertEqual(item["group"], 0)
-                self.assertTrue((CONTENT / "sprites" / (descriptor.get("basepath", "") + item["file"])).is_file())
+                if "file" in item:
+                    self.assertTrue((SPRITES / (descriptor.get("basepath", "") + item["file"])).is_file())
+                else:
+                    # Selected Castle card is an explicit original-resource
+                    # alias; unchanged purchaser assets are intentionally external.
+                    self.assertEqual(hall, "HALLCSTL")
+                    self.assertEqual(item, {"group": 0, "frame": 4, "defFile": "HALLCSTL.def", "defGroup": 0, "defFrame": 3})
 
-    def test_structure_placement_matches_packages_without_changing_nh_rules(self):
+    def test_shipped_structure_registration_preserves_nh_rules(self):
         overlay = load(CONTENT / "config/factions/universalMageGuilds.json")
-        module = importer()
         for faction, (package, config, hall, _) in PACKAGES.items():
-            with ZipFile(SOURCE / (package + ".zip")) as archive:
-                supplied = package_config(archive, config, module)["core:" + faction]["town"]
             actual = overlay["core:" + faction]["town"]
-            self.assertEqual(actual["structures"], supplied["structures"])
+            self.assertTrue(actual["structures"])
+            for structure in actual["structures"].values():
+                self.assertIn("animation", structure)
+                self.assertIsInstance(structure["x"], int)
+                self.assertIsInstance(structure["y"], int)
             self.assertEqual(actual["buildingsIcons"], hall)
             self.assertEqual(actual["mageGuild"], 5)
             self.assertEqual([len(row) for row in actual["guildSpellPositions"]], [6, 5, 4, 3, 2])

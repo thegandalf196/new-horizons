@@ -8,6 +8,11 @@ import re
 import unittest
 
 
+if __package__:
+    from .nhart_test_resources import ArtPath
+else:
+    from nhart_test_resources import ArtPath
+
 ROOT = Path(__file__).resolve().parents[2]
 STRING = r'"(?:\\.|[^"\\])*"'
 
@@ -166,7 +171,7 @@ class NewHorizonsTowerBuildingProgressionTest(unittest.TestCase):
                 self.assertEqual(profile["description"], description)
                 self.assertEqual(profile["cost"], cost)
 
-        descriptor = load("Mods/new-horizons/Images/NH_tower_buildings.json")["images"]
+        descriptor = parse_jsonc((ArtPath() / "NH_tower_buildings.json").read_text())["images"]
         self.assertEqual([frame["frame"] for frame in descriptor], list(range(44)))
         source_frame = {frame: frame for frame in range(44)}
         for left, right in ((33, 34), (40, 41)):
@@ -180,7 +185,7 @@ class NewHorizonsTowerBuildingProgressionTest(unittest.TestCase):
                 )
                 self.assertNotIn("defFile", image)
                 self.assertTrue(
-                    (ROOT / "Mods/new-horizons/Images" / image["file"]).is_file()
+                    (ArtPath() / image["file"]).is_file()
                 )
 
         creature_profiles = load("Mods/new-horizons/Content/config/creatures/tower.json")

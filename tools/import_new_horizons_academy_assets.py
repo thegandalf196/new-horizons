@@ -1712,9 +1712,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--archive", required=True, type=Path)
     parser.add_argument("--check", action="store_true", help="verify generated/imported outputs without writing")
-    parser.add_argument("--root", type=Path, default=ROOT, help=argparse.SUPPRESS)
+    parser.add_argument("--root", required=True, type=Path,
+                        help="private project-shaped authoring workspace outside the checkout")
     args = parser.parse_args()
     root = args.root.resolve()
+    if root.is_relative_to(ROOT):
+        parser.error("authoring requires a private workspace outside the checkout")
     try:
         icon_revision = load_icon_revision(root, APPROVED_ICON_REVISION_MANIFEST_SHA256)
         prior_map_revision = load_map_revision(root, APPROVED_MAP_REVISION_MANIFEST_SHA256, revision="v2")

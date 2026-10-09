@@ -20,19 +20,34 @@ runtime container inputs. Existing source/provenance/license records remain
 applicable. Earlier private-only import classifications do not remove selected
 Cabirs, turbaned Magi, Guild composites or interface resources from this pack.
 
-Retained loose exports are development/reference material under
-`assets/new-horizons/runtime-development-inputs`, not mounted or installed.
-They are not a complete set of selected authoring inputs. Their previous copies
-remain in Git history. Review files and authoring masters have not been removed.
+Selected runtime artwork is published through `NewHorizons.nhart`.
+Loose authoring files, runtime staging inputs, alternatives and review materials
+are maintained locally and are not committed by default. The public repository
+retains the package, tools, manifests and records. Calling an export reference,
+development-only or superseded is not permission to publish it as a loose image.
+This includes deliberate original-based modifications and finished composites.
+
+Before removing tracked artwork, preserve and SHA256-verify recoverable copies
+outside the repository. Keep the local input root explicitly configurable; do
+not depend on a particular workstation path. Pulling an artwork-removal commit
+can remove the tracked files from another worktree: back up its local work first.
+Existing Git history, other branches, tags and releases can still contain older
+loose copies. This current-tree policy does not erase those copies or prevent
+extraction from the package.
 
 ## Maintenance
 
 Prepare an explicit input staging root containing the exact source-relative
 paths in the manifest. New artwork updates require reviewed inputs; a normal
 build must not regenerate the pack from an incomplete local collection.
+The manifest's `source` paths describe authoring/import inputs, not files that
+must exist in a fresh checkout. Read selected resource bytes through NHART when
+testing delivery. Use synthetic images when testing an authoring algorithm.
+Generation and review workflows must use an explicit local output root rather
+than recreate loose artwork in publicly tracked directories.
 
 ```sh
-python3 tools/nhart.py pack --manifest assets/new-horizons/runtime-art-manifest.json --input-root selected-inputs --output Mods/new-horizons/NewHorizons.nhart
+python3 tools/nhart.py pack --manifest assets/new-horizons/runtime-art-manifest.json --input-root "$NH_ART_INPUT_ROOT" --output Mods/new-horizons/NewHorizons.nhart
 python3 tools/nhart.py inspect Mods/new-horizons/NewHorizons.nhart
 python3 tools/nhart.py verify Mods/new-horizons/NewHorizons.nhart --manifest assets/new-horizons/runtime-art-manifest.json
 python3 tools/verify_new_horizons_art_install.py --resources installed-data --manifest assets/new-horizons/runtime-art-manifest.json
@@ -41,6 +56,8 @@ python3 tools/verify_new_horizons_art_install.py --resources installed-data --ma
 See [NHART_FORMAT.md](NHART_FORMAT.md) for byte fields and tool contracts.
 Verification of a committed distribution needs no handoffs or authoring inputs.
 The packer stages and verifies its output before replacement.
+For repacking, set `NH_ART_INPUT_ROOT` to the verified external staging directory;
+do not use this command during an ordinary build or with incomplete inputs.
 
 Builtin bootstrap and module scope mount the same full-path pack. Explicit
 overlay ordering gives builtin custom art precedence over original archives;

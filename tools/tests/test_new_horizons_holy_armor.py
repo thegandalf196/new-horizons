@@ -7,6 +7,11 @@ import re
 import struct
 import unittest
 
+if __package__:
+    from .nhart_test_resources import ArtPath
+else:
+    from nhart_test_resources import ArtPath
+
 ROOT = Path(__file__).resolve().parents[2]
 STRING = r'"(?:\\.|[^"\\])*"'
 
@@ -77,7 +82,7 @@ class HolyArmorContentTest(unittest.TestCase):
         for role, (filename, size) in expected.items():
             with self.subTest(role=role):
                 self.assertEqual(definition["graphics"][role], filename)
-                self.assertEqual(png_size(ROOT / "Mods/new-horizons/Images" / filename), size)
+                self.assertEqual(png_size(ArtPath() / filename), size)
 
     def test_timed_script_scales_only_the_spell_power_term_and_keeps_aegis_inactive(self):
         script = (ROOT / "scripts/spells/timed.lua").read_text(encoding="utf-8")

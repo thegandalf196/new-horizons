@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 from pathlib import Path
@@ -19,8 +20,15 @@ def sha256(path: Path) -> str:
 
 
 def main() -> None:
-    source_root = Path(__file__).resolve().parent
-    repository = source_root.parents[3]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--staging-root", type=Path, required=True, help="External authoring mirror; never installs shipping art")
+    args = parser.parse_args()
+    repository_path = Path(__file__).resolve().parents[4]
+    staging = args.staging_root.resolve()
+    if staging == repository_path or repository_path in staging.parents:
+        parser.error("Authoring staging must be outside the checkout")
+    source_root = staging / "assets/new-horizons/art-source/withering-touch-v1"
+    repository = staging
     image_root = repository / "Mods/new-horizons/Images"
     normal_path = source_root / "exports/withering-touch/withering-touch-44.png"
     normal = Image.open(normal_path).convert("RGBA")

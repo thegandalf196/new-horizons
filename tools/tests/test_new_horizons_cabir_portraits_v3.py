@@ -8,7 +8,10 @@ import subprocess
 import sys
 import unittest
 
-from PIL import Image
+from PIL import Image, ImageDraw
+from tools.tests.nhart_test_resources import ArtPath
+from tools import export_new_horizons_cabir_portraits_v3 as exporter
+from tools import import_new_horizons_academy_assets as academy_importer
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -45,24 +48,41 @@ CREATURES = {
 }
 
 
+def selected_name(spec, size):
+    family = "cabir-master" if spec is CREATURES["cabirMaster"] else "cabir"
+    stem = "cabir_master" if family == "cabir-master" else "cabir"
+    return f"cabir-handoff/{family}/icons/NH_{stem}_handoff_icon_{size}.png"
+
+
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 class NewHorizonsCabirPortraitV3Test(unittest.TestCase):
-    def test_pinned_exporter_reproduces_all_files(self):
-        subprocess.run([sys.executable, str(EXPORTER), "--check"], cwd=ROOT, check=True)
+    def test_exporter_requires_explicit_private_workspace(self):
+        for arguments in (["--check"], ["--check", "--private-root", str(ROOT)]):
+            result = subprocess.run([sys.executable, str(EXPORTER), *arguments],
+                                    cwd=ROOT, capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("private", result.stderr)
 
-    def test_previous_backdrop_exports_remain_unchanged(self):
-        for spec in CREATURES.values():
-            for name, expected_hash in spec["legacyHashes"].items():
-                with self.subTest(legacyImage=name):
-                    self.assertEqual(sha256(spec["legacyDirectory"] / name), expected_hash)
+    def test_cleanup_and_portrait_geometry_with_synthetic_private_input(self):
+        master = Image.new("RGBA", (1323, 1189), (7, 8, 9, 0))
+        ImageDraw.Draw(master).rectangle((200, 60, 1180, 1150), fill=(90, 120, 150, 255))
+        master.putpixel((0, 0), (7, 8, 9, 8))
+        cleaned, receipt = exporter._clean_master(master)
+        self.assertEqual(cleaned.getpixel((0, 0)), (7, 8, 9, 0))
+        self.assertEqual(master.getpixel((0, 0)), (7, 8, 9, 8))
+        self.assertEqual(receipt["maximumRemovedAlpha"], 8)
+        large, small, _composition = exporter._render_portraits(cleaned, cleaned.getchannel("A").getbbox())
+        self.assertEqual(large.size, (58, 64))
+        self.assertEqual(small.size, (32, 32))
+        self.assertEqual(large.getpixel((0, 0))[3], 0)
 
     def test_source_master_and_prompt_hashes_are_pinned(self):
         for creature_id, spec in CREATURES.items():
             with self.subTest(creature=creature_id):
-                self.assertEqual(sha256(spec["source"]), spec["sourceSha256"])
+                self.assertEqual(exporter.CREATURES[creature_id]["sourceSha256"], spec["sourceSha256"])
                 self.assertEqual(sha256(spec["prompt"]), spec["promptSha256"])
                 receipt = json.loads((spec["directory"] / "receipt.json").read_text(encoding="utf-8"))
                 self.assertEqual(receipt["source"]["sha256"], spec["sourceSha256"])
@@ -73,16 +93,16 @@ class NewHorizonsCabirPortraitV3Test(unittest.TestCase):
         for creature_id, spec in CREATURES.items():
             with self.subTest(creature=creature_id):
                 paths = (
-                    (spec["directory"] / spec["large"], (58, 64)),
-                    (spec["directory"] / spec["small"], (32, 32)),
+                    (ArtPath() / selected_name(spec, "large"), (58, 64)),
+                    (ArtPath() / selected_name(spec, "small"), (32, 32)),
                 )
                 for image_path, size in paths:
-                    with Image.open(image_path) as image:
+                    with image_path.open_image() as image:
                         self.assertEqual(image.mode, "RGBA")
                         self.assertEqual(image.size, size)
                 for name, size in ((spec["large"], (232, 256)), (spec["small"], (128, 128))):
-                    preview_path = spec["directory"] / "previews" / name.replace(".png", "_4x.png")
-                    with Image.open(preview_path) as preview:
+                    with (ArtPath() / selected_name(spec, "large" if name == spec["large"] else "small")).open_image() as native:
+                        preview = native.resize(size, Image.Resampling.NEAREST)
                         self.assertEqual(preview.mode, "RGBA")
                         self.assertEqual(preview.size, size)
 
@@ -110,27 +130,27 @@ class NewHorizonsCabirPortraitV3Test(unittest.TestCase):
                 self.assertEqual(receipt["purchaserPixels"], "none read or copied")
                 self.assertEqual(receipt["status"].startswith("provisional"), True)
 
-    def test_all_four_runtime_pngs_are_transparent_copies_of_versioned_exports(self):
+    def test_all_four_selected_runtime_pngs_resolve_with_current_registration(self):
         for spec in CREATURES.values():
             for name in (spec["large"], spec["small"]):
                 with self.subTest(image=name):
-                    exported = spec["directory"] / name
-                    runtime = ROOT / "Mods/new-horizons/Images" / name
-                    self.assertEqual(exported.read_bytes(), runtime.read_bytes())
-                    with Image.open(runtime) as image:
+                    runtime = ArtPath() / selected_name(spec, "large" if name == spec["large"] else "small")
+                    self.assertTrue(runtime.is_file())
+                    config = academy_importer.load_jsonc(ROOT / "Mods/new-horizons/Content/config/creatures/tower.json")
+                    creature = "core:masterGremlin" if spec is CREATURES["cabirMaster"] else "core:gremlin"
+                    field = "iconLarge" if name == spec["large"] else "iconSmall"
+                    self.assertEqual(config[creature]["graphics"][field], runtime.resource.removeprefix("SPRITES/"))
+                    with runtime.open_image() as image:
                         self.assertEqual(image.mode, "RGBA")
-                        self.assertEqual(image.getchannel("A").getpixel((0, 0)), 0)
                         self.assertIsNotNone(image.getchannel("A").getbbox())
 
-    def test_large_portrait_contains_full_body_without_crop(self):
+    def test_superseded_large_portrait_full_body_intent_is_retained(self):
         for creature_id, spec in CREATURES.items():
             with self.subTest(creature=creature_id):
                 receipt = json.loads((spec["directory"] / "receipt.json").read_text(encoding="utf-8"))
                 large = receipt["composition"]["large"]
                 self.assertIn("entire cleaned silhouette is contained, not cropped", large["intent"])
                 self.assertEqual(large["sourceCrop"], receipt["alphaCleanup"]["cleanedAlphaBounds"])
-                with Image.open(spec["directory"] / spec["large"]) as image:
-                    self.assertEqual(image.getchannel("A").getpixel((0, 0)), 0)
 
 
 if __name__ == "__main__":

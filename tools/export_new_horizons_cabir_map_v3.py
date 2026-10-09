@@ -355,19 +355,27 @@ def _build_family(family: str) -> dict[str, bytes]:
     return artifacts
 
 
-def _output_path(family: str) -> Path:
+def _external_workspace(workspace_root: Path | None) -> Path:
+    if workspace_root is None:
+        raise ValueError("explicit external workspace root is required")
+    resolved = Path(workspace_root).resolve()
+    if resolved == ROOT or ROOT in resolved.parents:
+        raise ValueError("map authoring workspace must be outside the checkout")
+    return resolved
+
+
+def _output_path(family: str, workspace_root: Path | None = None) -> Path:
+    workspace = _external_workspace(workspace_root)
     try:
-        return ROOT / FAMILIES[family].output_relative
+        return workspace / FAMILIES[family].output_relative
     except KeyError as error:
         raise ValueError(f"unknown Cabir map family: {family}") from error
 
 
 def _validate_output_path(output: Path) -> None:
     resolved = output.resolve()
-    try:
-        resolved.relative_to(ASSET_ROOT.resolve())
-    except ValueError as error:
-        raise ValueError("map export output must remain under the Cabir generated-art tree") from error
+    if resolved == ROOT or ROOT in resolved.parents:
+        raise ValueError("map export output must be outside the checkout")
     if output.is_symlink() or output.exists():
         raise FileExistsError(f"refusing to replace existing Cabir map export: {output}")
 
@@ -400,20 +408,31 @@ def _check_artifacts(output: Path, artifacts: dict[str, bytes]) -> None:
             raise ValueError(f"map export artifact differs from its pinned source/reduction: {relative}")
 
 
-def build_family(family: str) -> tuple[Path, dict[str, bytes]]:
+def build_family(family: str, workspace_root: Path | None = None) -> tuple[Path, dict[str, bytes]]:
     if family not in FAMILIES:
         raise ValueError(f"unknown Cabir map family: {family}")
-    return _output_path(family), _build_family(family)
+    workspace = _external_workspace(workspace_root)
+    # Reuse the pinned extraction implementation on an explicit external source
+    # mirror. Its global root is restored even when a pin or geometry fails.
+    previous_source_root = battle_export.ROOT
+    try:
+        battle_export.ROOT = workspace
+        return _output_path(family, workspace), _build_family(family)
+    finally:
+        battle_export.ROOT = previous_source_root
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--family", choices=("cabir", "cabir-master", "all"), default="all")
     parser.add_argument("--check", action="store_true", help="recompute and verify exact existing output bytes")
+    parser.add_argument("--workspace-root", type=Path, required=True,
+                        help="External authoring mirror for source inputs and staged map exports")
     args = parser.parse_args()
     names = tuple(FAMILIES) if args.family == "all" else (args.family,)
     try:
-        built = [build_family(name) for name in names]
+        workspace = _external_workspace(args.workspace_root)
+        built = [build_family(name, workspace) for name in names]
         if args.check:
             for output, artifacts in built:
                 _check_artifacts(output, artifacts)
@@ -425,7 +444,7 @@ def main() -> None:
     except (FileExistsError, FileNotFoundError, OSError, ValueError, RuntimeError) as error:
         parser.error(str(error))
     for output, _artifacts in built:
-        print(f"{'Verified' if args.check else 'Created'} offline Cabir map export: {output.relative_to(ROOT)}")
+        print(f"{'Verified' if args.check else 'Created'} offline Cabir map export: {output.relative_to(workspace)}")
 
 
 if __name__ == "__main__":

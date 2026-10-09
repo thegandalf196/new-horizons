@@ -19,6 +19,33 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CHECKOUT = ROOT
+
+
+def _require_external_path(path: Path) -> Path:
+    requested = path.expanduser()
+    resolved = requested.resolve()
+    if (requested.absolute().is_relative_to(CHECKOUT)
+            or resolved.is_relative_to(CHECKOUT) or CHECKOUT.is_relative_to(resolved)):
+        raise ValueError("authoring requires an explicit external workspace outside the checkout")
+    if any(parent.is_symlink() for parent in (requested, *requested.parents)):
+        raise ValueError("authoring paths must not traverse symlinks")
+    return resolved
+
+
+def configure_private_root(private_root: Path) -> None:
+    """Rebase project-shaped authoring paths without changing the checkout."""
+    global ROOT
+    resolved = _require_external_path(private_root)
+    previous = ROOT
+    for name, value in list(globals().items()):
+        if name not in ("ROOT", "CHECKOUT") and isinstance(value, Path) and value.is_absolute():
+            if value.is_relative_to(previous):
+                globals()[name] = resolved / value.relative_to(previous)
+    ROOT = resolved
+    if "FAMILIES" in globals():
+        globals()["FAMILIES"] = _family_specs(resolved)
+
 ASSET_ROOT = ROOT / "assets/new-horizons/creatures"
 sys.path.insert(0, str(ROOT / "tools"))
 
@@ -708,12 +735,7 @@ FAMILIES = _family_specs(ROOT)
 
 
 def _validate_detached_output(path: Path) -> None:
-    resolved = path.resolve()
-    assets_root = (ROOT / "assets/new-horizons/creatures").resolve()
-    try:
-        resolved.relative_to(assets_root)
-    except ValueError as error:
-        raise ValueError("battle export output must remain under the pinned Cabir generated-art tree") from error
+    _require_external_path(path)
     if path.is_symlink() or path.exists():
         raise FileExistsError(f"refusing to replace existing Cabir battle export: {path}")
 
@@ -786,10 +808,12 @@ def _next_refresh_backup(backup_root: Path, family: str) -> Path:
 
 
 def _refresh_known_export(output: Path, artifacts: dict[str, bytes], family: str) -> Path:
-    """Refresh a manifest-verified prior output, preserving it in ignored build/."""
+    """Refresh an external bundle while preserving its previous bytes externally."""
+    _require_external_path(output)
     _validate_previous_export(output, family)
     stage = output.with_name(f".{output.name}.stage")
-    backup_root = ROOT / "build/nh-cabir-battle-v3-refresh"
+    backup_root = output.parent / "cabir-battle-export-history"
+    _require_external_path(backup_root)
     backup = _next_refresh_backup(backup_root, family)
     if stage.exists() or stage.is_symlink() or backup.exists() or backup.is_symlink():
         raise FileExistsError("known-export refresh staging/backup path already exists")
@@ -813,15 +837,20 @@ def build_family(family: str) -> tuple[Path, dict[str, bytes]]:
 
 
 def main() -> None:
+    global FAMILIES
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--project-root", required=True, type=Path,
+                        help="external project-shaped authoring workspace")
     parser.add_argument("--family", choices=("cabir", "cabir-master", "all"), default="all")
     parser.add_argument("--check", action="store_true", help="verify exact existing export bytes without writing")
-    parser.add_argument("--refresh-known", action="store_true", help="refresh only manifest-verified outputs and preserve their prior bytes under ignored build/")
+    parser.add_argument("--refresh-known", action="store_true", help="refresh verified external outputs and preserve their prior bytes beside the bundle")
     args = parser.parse_args()
     if args.check and args.refresh_known:
         parser.error("--check and --refresh-known are mutually exclusive")
-    names = tuple(FAMILIES) if args.family == "all" else (args.family,)
     try:
+        configure_private_root(args.project_root)
+        FAMILIES = _family_specs(ROOT)
+        names = tuple(FAMILIES) if args.family == "all" else (args.family,)
         built = [build_family(name) for name in names]
         if args.check:
             for output, artifacts in built:

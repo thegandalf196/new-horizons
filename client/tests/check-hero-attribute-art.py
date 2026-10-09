@@ -3,11 +3,13 @@
 
 from pathlib import Path
 import json
-from PIL import Image
+import sys
 
 
 ROOT = Path(__file__).resolve().parents[2]
-IMAGES = ROOT / "Mods/new-horizons/Images"
+sys.path.insert(0, str(ROOT / "tools/tests"))
+from nhart_test_resources import ArtPath
+IMAGES = ArtPath()
 HERO = (ROOT / "client/windows/CHeroWindow.cpp").read_text(encoding="utf-8")
 GROWTH = (ROOT / "client/windows/HeroGrowthWindow.cpp").read_text(encoding="utf-8")
 
@@ -21,7 +23,7 @@ def verify_image(stem: str, size: int) -> None:
     descriptor_path = IMAGES / f"{stem}.json"
     descriptor = json.loads(descriptor_path.read_text(encoding="utf-8"))
     assert descriptor["images"] == [{"group": 0, "frame": 0, "file": f"{stem}.png"}], stem
-    with Image.open(IMAGES / f"{stem}.png") as image:
+    with (IMAGES / f"{stem}.png").open_image() as image:
         assert image.size == (size, size), (stem, image.size)
 
 

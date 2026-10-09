@@ -23,6 +23,31 @@ import export_new_horizons_cabir_animation as animation_exporter
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CHECKOUT = ROOT
+
+
+def _require_external_path(path: Path) -> Path:
+    requested = path.expanduser()
+    resolved = requested.resolve()
+    if (requested.absolute().is_relative_to(CHECKOUT)
+            or resolved.is_relative_to(CHECKOUT) or CHECKOUT.is_relative_to(resolved)):
+        raise ValueError("authoring requires an explicit external workspace outside the checkout")
+    if any(parent.is_symlink() for parent in (requested, *requested.parents)):
+        raise ValueError("authoring paths must not traverse symlinks")
+    return resolved
+
+
+def configure_private_root(private_root: Path) -> None:
+    """Rebase project-shaped authoring paths without changing the checkout."""
+    global ROOT
+    resolved = _require_external_path(private_root)
+    previous = ROOT
+    for name, value in list(globals().items()):
+        if name not in ("ROOT", "CHECKOUT") and isinstance(value, Path) and value.is_absolute():
+            if value.is_relative_to(previous):
+                globals()[name] = resolved / value.relative_to(previous)
+    ROOT = resolved
+
 VERSION_DIRECTORY = ROOT / "assets/new-horizons/creatures/cabir-master/v3"
 WALK_DIRECTORY = VERSION_DIRECTORY / "walk-v1"
 SOURCE_ATLAS = WALK_DIRECTORY / "candidate-01.png"
@@ -44,7 +69,10 @@ DILATION_RADIUS = 3
 
 
 def _relative(path: Path) -> str:
-    return path.resolve().relative_to(ROOT).as_posix()
+    try:
+        return path.resolve().relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.name
 
 
 def _read_pinned(path: Path, expected_sha256: str, description: str) -> bytes:
@@ -109,7 +137,8 @@ def build_review_files() -> dict[str, bytes]:
     receipt["cleanedPngSha256"] = hashlib.sha256(cleaned_bytes).hexdigest()
     receipt["cleanedPath"] = "candidate-01-alpha-cleaned.png"
 
-    with tempfile.TemporaryDirectory(prefix="nh-cabir-master-walk-v1-") as temporary:
+    temporary_parent = _require_external_path(SOURCE_ATLAS.parent)
+    with tempfile.TemporaryDirectory(prefix="nh-cabir-master-walk-v1-", dir=temporary_parent) as temporary:
         temporary_root = Path(temporary)
         temporary_atlas = temporary_root / "candidate-01-alpha-cleaned.png"
         temporary_atlas.write_bytes(cleaned_bytes)
@@ -142,18 +171,15 @@ def build_review_files() -> dict[str, bytes]:
 
 def _validate_output_path(output: Path) -> Path:
     requested = output.expanduser()
-    if requested.resolve() != OUTPUT_DIRECTORY.resolve():
-        raise ValueError(f"output must be {_relative(OUTPUT_DIRECTORY)}")
+    _require_external_path(requested)
     if requested.is_symlink() or requested.exists():
         raise FileExistsError(f"output directory must be new: {_relative(requested)}")
-    if requested.parent.resolve() != WALK_DIRECTORY.resolve():
-        raise ValueError("output parent must remain the pinned walk-v1 directory")
     return requested
 
 
-def export_review_bundle(output: Path = OUTPUT_DIRECTORY) -> Path:
+def export_review_bundle(output: Path | None = None) -> Path:
     """Write a new alpha-cleaned atlas and provisional native review bundle."""
-    output = _validate_output_path(output)
+    output = _validate_output_path(OUTPUT_DIRECTORY if output is None else output)
     files = build_review_files()
     staging = Path(tempfile.mkdtemp(prefix=".cleaned-v1-staging-", dir=output.parent))
     try:
@@ -168,11 +194,12 @@ def export_review_bundle(output: Path = OUTPUT_DIRECTORY) -> Path:
     return output
 
 
-def check_review_bundle(output: Path = OUTPUT_DIRECTORY) -> None:
+def check_review_bundle(output: Path | None = None) -> None:
     """Verify that the checked-in review bundle exactly matches current pins."""
-    requested = output.expanduser()
-    if requested.resolve() != OUTPUT_DIRECTORY.resolve() or requested.is_symlink() or not requested.is_dir():
-        raise ValueError(f"expected existing review bundle at {_relative(OUTPUT_DIRECTORY)}")
+    requested = (OUTPUT_DIRECTORY if output is None else output).expanduser()
+    _require_external_path(requested)
+    if requested.is_symlink() or not requested.is_dir():
+        raise ValueError("expected an existing external review bundle")
     expected = build_review_files()
     actual_paths = {path.relative_to(requested).as_posix() for path in requested.rglob("*") if path.is_file()}
     if actual_paths != set(expected):
@@ -184,14 +211,18 @@ def check_review_bundle(output: Path = OUTPUT_DIRECTORY) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--project-root", required=True, type=Path,
+                        help="external project-shaped authoring workspace")
+    parser.add_argument("--output-dir", type=Path, help="external review bundle directory")
     parser.add_argument("--check", action="store_true", help="verify the existing pinned bundle without writing")
     args = parser.parse_args()
     try:
+        configure_private_root(args.project_root)
         if args.check:
-            check_review_bundle()
+            check_review_bundle(args.output_dir)
             print(f"Verified provisional Cabir Master walk export: {_relative(OUTPUT_DIRECTORY)}")
         else:
-            output = export_review_bundle()
+            output = export_review_bundle(args.output_dir)
             receipt = json.loads((output / "cleanup-receipt.json").read_text(encoding="utf-8"))
             print(
                 f"Created provisional Cabir Master walk export: {_relative(output)} "

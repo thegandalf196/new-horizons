@@ -6,6 +6,7 @@ with a basepath receive a trailing slash because VCMI concatenates the basepath
 and frame filenames literally. Faction rules are deliberately not imported
 from these standalone mod packages.
 """
+import argparse
 import json
 from pathlib import Path, PurePosixPath
 from zipfile import ZipFile
@@ -19,6 +20,23 @@ PACKAGES = (
 	"stronghold-mage-guild-ridge-swap",
 )
 FORTRESS_V8 = "fortress-mage-guild-v8"
+
+
+def _external_root(path, label):
+	if path is None:
+		raise ValueError(f"Explicit external {label} is required")
+	resolved = Path(path).resolve()
+	if resolved == ROOT or ROOT in resolved.parents:
+		raise ValueError(f"{label} must be outside the checkout")
+	return resolved
+
+
+def _destination(content_root, relative):
+	path = content_root / relative
+	resolved = path.resolve()
+	if content_root not in resolved.parents or resolved == ROOT or ROOT in resolved.parents:
+		raise ValueError(f"Asset destination escapes external output root: {path}")
+	return path
 
 
 def _member_path(name):
@@ -73,10 +91,11 @@ def _runtime_assets(archive):
 		yield relative, data
 
 
-def assets():
+def assets(source_root=None):
+	source_root = _external_root(source_root, "input root")
 	seen = {}
 	for package in PACKAGES:
-		with ZipFile(SOURCES / (package + ".zip")) as archive:
+		with ZipFile(source_root / (package + ".zip")) as archive:
 			for relative, data in _runtime_assets(archive):
 				key = relative.as_posix().casefold()
 				if key in seen:
@@ -99,10 +118,11 @@ def _expected_obsolete_fortress_paths():
 	return paths
 
 
-def _obsolete_fortress_assets():
-	with ZipFile(SOURCES / (FORTRESS_V8 + ".zip")) as old_archive:
+def _obsolete_fortress_assets(source_root=None):
+	source_root = _external_root(source_root, "input root")
+	with ZipFile(source_root / (FORTRESS_V8 + ".zip")) as old_archive:
 		old_assets = dict(_runtime_assets(old_archive))
-	with ZipFile(SOURCES / "fortress-mage-guild-v9.zip") as new_archive:
+	with ZipFile(source_root / "fortress-mage-guild-v9.zip") as new_archive:
 		new_paths = {relative for relative, _ in _runtime_assets(new_archive)}
 
 	obsolete = {relative: data for relative, data in old_assets.items() if relative not in new_paths}
@@ -111,12 +131,13 @@ def _obsolete_fortress_assets():
 	return obsolete
 
 
-def remove_obsolete_fortress_assets():
-	obsolete = _obsolete_fortress_assets()
+def remove_obsolete_fortress_assets(source_root=None, content_root=None):
+	content_root = _external_root(content_root, "output root")
+	obsolete = _obsolete_fortress_assets(source_root)
 	to_remove = []
 
 	for relative, expected in obsolete.items():
-		target = CONTENT / relative
+		target = _destination(content_root, relative)
 		if target.is_symlink():
 			raise ValueError(f"Refusing to remove changed obsolete Fortress asset: {target}")
 		if not target.exists():
@@ -126,7 +147,7 @@ def remove_obsolete_fortress_assets():
 		to_remove.append(target)
 
 	for level in (4, 5):
-		directory = CONTENT / "sprites" / f"TBFRMAG{level}"
+		directory = _destination(content_root, Path("sprites") / f"TBFRMAG{level}")
 		if not directory.exists():
 			continue
 		if directory.is_symlink() or not directory.is_dir():
@@ -140,24 +161,43 @@ def remove_obsolete_fortress_assets():
 		target.unlink()
 
 	for level in (4, 5):
-		directory = CONTENT / "sprites" / f"TBFRMAG{level}"
+		directory = _destination(content_root, Path("sprites") / f"TBFRMAG{level}")
 		if directory.exists():
 			directory.rmdir()
 
 	return len(to_remove)
 
 
-def import_assets():
+def import_assets(source_root=None, content_root=None):
+	source_root = _external_root(source_root, "input root")
+	content_root = _external_root(content_root, "output root")
 	# Validate every source package and destination before removing obsolete files.
-	prepared = list(assets())
-	removed = remove_obsolete_fortress_assets()
+	prepared = list(assets(source_root))
+	for relative, _ in prepared:
+		_destination(content_root, relative)
+	removed = remove_obsolete_fortress_assets(source_root, content_root)
 	for relative, data in prepared:
-		destination = CONTENT / relative
+		destination = _destination(content_root, relative)
 		destination.parent.mkdir(parents=True, exist_ok=True)
 		destination.write_bytes(data)
 	return len(prepared), removed
 
 
-if __name__ == "__main__":
-	count, removed = import_assets()
+def main():
+	parser = argparse.ArgumentParser(description=__doc__)
+	parser.add_argument("--source-root", type=Path, required=True,
+		help="External directory containing the retained Mage Guild ZIP inputs")
+	parser.add_argument("--output-root", type=Path, required=True,
+		help="External staged Content directory; never installs shipping artwork")
+	args = parser.parse_args()
+	try:
+		source_root = _external_root(args.source_root, "input root")
+		content_root = _external_root(args.output_root, "output root")
+	except ValueError as error:
+		parser.error(str(error))
+	count, removed = import_assets(source_root, content_root)
 	print(f"Imported {count} runtime assets; removed {removed} obsolete Fortress v8 assets; faction gameplay rules unchanged.")
+
+
+if __name__ == "__main__":
+	main()

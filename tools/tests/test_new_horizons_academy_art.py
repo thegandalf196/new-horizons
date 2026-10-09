@@ -5,15 +5,17 @@ import hashlib
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
 
-from PIL import Image
+from PIL import Image, ImageDraw
+from tools.tests.nhart_test_resources import ArtPath
 
 
 ROOT = Path(__file__).resolve().parents[2]
-IMAGES = ROOT / "Mods/new-horizons/Images"
+IMAGES = ArtPath()
 ACADEMY_SOURCE = ROOT / "assets/new-horizons/academy"
 ART_PATCH = ROOT / "Mods/new-horizons/Content/config/factions/academyArt.json"
 OPTIONS_TAB = ROOT / "client/lobby/OptionsTab.cpp"
@@ -22,10 +24,96 @@ import import_new_horizons_academy_assets as academy_importer
 
 
 def read_json(relative):
+    if relative.startswith("Mods/new-horizons/Images/"):
+        return json.loads((IMAGES / relative.removeprefix("Mods/new-horizons/Images/")).read_text())
     return json.loads((ROOT / relative).read_text(encoding="utf-8"))
 
 
+def shipping_revision(kind, revision="v2"):
+    """Verify retained selection receipts against real shipping bytes, not masters."""
+    paths = {
+        "icon": (academy_importer.ICON_REVISION_MANIFEST, academy_importer.APPROVED_ICON_REVISION_MANIFEST_SHA256),
+        "map": ((academy_importer.MAP_REVISION_V3_MANIFEST if revision == "v3" else academy_importer.MAP_REVISION_MANIFEST),
+                (academy_importer.APPROVED_MAP_REVISION_V3_MANIFEST_SHA256 if revision == "v3" else academy_importer.APPROVED_MAP_REVISION_MANIFEST_SHA256)),
+        "hall": (academy_importer.HALL_REVISION_MANIFEST, academy_importer.APPROVED_HALL_REVISION_MANIFEST_SHA256),
+    }
+    relative, pin = paths[kind]
+    raw = (ROOT / relative).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != pin:
+        raise AssertionError("selection manifest pin changed")
+    manifest = json.loads(raw)
+    records = manifest["icons"].values() if kind == "icon" else manifest["bodies"].values() if kind == "map" else [manifest["export"]]
+    payloads = {}
+    for record in records:
+        payload = (IMAGES / record["runtime"]).read_bytes()
+        if hashlib.sha256(payload).hexdigest() != record["sha256"]:
+            raise AssertionError("selected runtime bytes do not match receipt")
+        payloads[record["runtime"]] = payload
+    result = {"manifest": manifest, "manifest_sha256": pin, "exports_by_runtime": payloads}
+    if kind == "hall":
+        result["export_bytes"] = payloads[academy_importer.HALL_RUNTIME_IMAGE]
+    return result
+
+
+def private_revision_fixture(root, kind, revision="v2"):
+    """Minimal synthetic private input; never reconstruct/copy authored artwork."""
+    revision_root = {"icon": academy_importer.ICON_REVISION_ROOT,
+                     "map": academy_importer.MAP_REVISION_V3_ROOT if revision == "v3" else academy_importer.MAP_REVISION_ROOT,
+                     "hall": academy_importer.HALL_REVISION_ROOT}[kind]
+    shutil.copytree(ROOT / revision_root, root / revision_root)
+    manifest_path = root / revision_root / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    def image(relative, size, bounds=None):
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        canvas = Image.new("RGBA", tuple(size), (0, 0, 0, 0))
+        box = bounds or [0, 0, size[0], size[1]]
+        ImageDraw.Draw(canvas).rectangle((box[0], box[1], box[2]-1, box[3]-1), fill=(17, 41, 73, 255))
+        canvas.save(path)
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    if kind == "icon":
+        for record in manifest["masters"].values():
+            record["sha256"] = image(revision_root / record["path"], [32, 32])
+        for record in manifest["icons"].values():
+            record["sha256"] = image(revision_root / record["export"], record["dimensions"])
+    else:
+        registration = manifest["sourceRegistration"]["path"]
+        destination = root / academy_importer.SOURCE_ROOT / registration
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(ROOT / academy_importer.SOURCE_ROOT / registration, destination)
+        if kind == "map":
+            for record in manifest["bodies"].values():
+                record["sourceMasterSha256"] = image(academy_importer.SOURCE_ROOT / record["sourceMaster"], [1, 1])
+                record["masterSha256"] = image(revision_root / record["master"], record["masterSize"])
+                box = record["sourceSolidBox"]
+                bounds = [box["left"], box["top"], box["left"]+box["width"], box["top"]+box["height"]]
+                record["sha256"] = image(revision_root / record["export"], record["dimensions"], bounds)
+        else:
+            for record in manifest["baseline"].values():
+                record["sha256"] = image(academy_importer.SOURCE_ROOT / record["path"], record["dimensions"], record.get("alphaBounds"))
+            for key in ("master", "export"):
+                record = manifest[key]
+                record["sha256"] = image(revision_root / record["path"], record["dimensions"], record["alphaBounds"])
+            destination = root / "config/factions/tower.json"
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / "config/factions/tower.json", destination)
+    manifest_path.write_text(json.dumps(manifest))
+    return hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+
+
 class NewHorizonsAcademyArtTest(unittest.TestCase):
+    def test_authoring_tools_require_external_workspace(self):
+        for tool, arguments in (
+            ("export_new_horizons_academy_gremlin_portraits.py", ["--check", "--private-root", str(ROOT)]),
+            ("export_new_horizons_academy_portrait_mattes.py", ["--check", "--private-root", str(ROOT)]),
+            ("import_new_horizons_academy_assets.py", ["--archive", "unused.zip", "--root", str(ROOT)]),
+        ):
+            with self.subTest(tool=tool):
+                result = subprocess.run([sys.executable, str(ROOT / "tools" / tool), *arguments],
+                                        capture_output=True, text=True)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("private", result.stderr)
+
     @classmethod
     def setUpClass(cls):
         cls.patch = read_json("Mods/new-horizons/Content/config/factions/academyArt.json")["core:tower"]
@@ -69,8 +157,8 @@ class NewHorizonsAcademyArtTest(unittest.TestCase):
                         self.assertTrue((IMAGES / structure[field]).is_file())
                 descriptor = read_json(f"Mods/new-horizons/Images/{structure['animation']}.json")
                 image_path = descriptor["images"][0]["file"]
-                with Image.open(IMAGES / structure["area"]) as area, Image.open(IMAGES / structure["border"]) as border:
-                    with Image.open(IMAGES / image_path) as art:
+                with (IMAGES / structure["area"]).open_image() as area, (IMAGES / structure["border"]).open_image() as border:
+                    with (IMAGES / image_path).open_image() as art:
                         self.assertEqual(area.size, art.size, name)
                         self.assertEqual(border.size, art.size, name)
                     self.assertGreater(area.getchannel("A").getbbox()[2], 0, name)
@@ -91,7 +179,7 @@ class NewHorizonsAcademyArtTest(unittest.TestCase):
             ("NH_ACADEMY_CAPITOL_BODY", "NH_academy_capitol_body.png"),
         ):
             descriptor = read_json(f"Mods/new-horizons/Images/{resource}.json")
-            with Image.open(IMAGES / descriptor["images"][0]["file"]) as body:
+            with (IMAGES / descriptor["images"][0]["file"]).open_image() as body:
                 self.assertEqual(body.size, (192, 192))
             self.assertTrue((IMAGES / filename).is_file())
 
@@ -107,7 +195,25 @@ class NewHorizonsAcademyArtTest(unittest.TestCase):
     def test_astronomy_attachment_survives_generated_patch(self):
         core = academy_importer.load_jsonc(ROOT / "config/factions/tower.json")
         ranks = read_json("Mods/new-horizons/Content/config/factions/towerCreatureRanks.json")
-        generated = academy_importer.academy_patch(ROOT, core, ranks)
+        # Patch-generation requires authoring files; use disposable synthetic
+        # pixels while keeping the real registered descriptor routes.
+        with tempfile.TemporaryDirectory() as temporary:
+            private = Path(temporary)
+            bonus = private / "assets/new-horizons/academy/native/ui/bonus"
+            bonus.mkdir(parents=True)
+            for name, structure in core["tower"]["town"]["structures"].items():
+                effective = {**structure, **ranks["core:tower"]["town"].get("structures", {}).get(name, {})}
+                Image.new("RGBA", (1, 1)).save(bonus / (Path(effective["campaignBonus"]).stem.lower() + ".png"))
+            for descriptor in IMAGES.glob("NH_ACADEMY*.json"):
+                target = private / academy_importer.IMAGE_ROOT / descriptor.name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(descriptor.read_bytes())
+                payload = json.loads(descriptor.read_text())
+                for record in payload.get("images", []):
+                    image = private / academy_importer.IMAGE_ROOT / record["file"]
+                    image.parent.mkdir(parents=True, exist_ok=True)
+                    Image.new("RGBA", (1, 1)).save(image)
+            generated = academy_importer.academy_patch(private, core, ranks)
         actual = self.structures["special2"]
         expected = generated["core:tower"]["town"]["structures"]["special2"]
         expected.pop("_generatedImagePath")
@@ -120,10 +226,7 @@ class NewHorizonsAcademyArtTest(unittest.TestCase):
         self.assertEqual(actual["border"], "NH_academy/town/masks/special2-border.png")
 
     def test_reviewed_v2_icon_revision_is_pinned_and_installed_exactly(self):
-        revision = academy_importer.load_icon_revision(
-            ROOT,
-            academy_importer.APPROVED_ICON_REVISION_MANIFEST_SHA256,
-        )
+        revision = shipping_revision("icon")
         self.assertEqual(revision["manifest"]["revision"], "v2")
         self.assertEqual(
             revision["manifest"]["builtFallbackPolicy"],
@@ -142,9 +245,8 @@ class NewHorizonsAcademyArtTest(unittest.TestCase):
         pin = academy_importer.APPROVED_ICON_REVISION_MANIFEST_SHA256
         with tempfile.TemporaryDirectory() as temporary:
             temp_root = Path(temporary)
-            source_revision = ROOT / academy_importer.ICON_REVISION_ROOT
+            pin = private_revision_fixture(temp_root, "icon")
             target_revision = temp_root / academy_importer.ICON_REVISION_ROOT
-            shutil.copytree(source_revision, target_revision)
 
             manifest_path = temp_root / academy_importer.ICON_REVISION_MANIFEST
             manifest_bytes = manifest_path.read_bytes()
@@ -194,18 +296,14 @@ class NewHorizonsAcademyArtTest(unittest.TestCase):
             self.assertEqual(built.read_bytes(), unknown)
 
     def test_reviewed_v3_map_revision_is_pinned_installed_and_native_framed(self):
-        revision = academy_importer.load_map_revision(
-            ROOT,
-            academy_importer.APPROVED_MAP_REVISION_V3_MANIFEST_SHA256,
-            revision="v3",
-        )
+        revision = shipping_revision("map", "v3")
         self.assertEqual(revision["manifest"]["revision"], "v3")
         for name, expected in academy_importer.MAP_REVISION_V3_SLOTS.items():
             with self.subTest(body=name):
                 runtime = IMAGES / expected["runtime"]
                 reviewed = revision["exports_by_runtime"][expected["runtime"]]
                 self.assertEqual(runtime.read_bytes(), reviewed)
-                with Image.open(runtime) as image:
+                with runtime.open_image() as image:
                     self.assertEqual(list(image.size), [192, 192])
                     alpha_bounds = image.convert("RGBA").getchannel("A").getbbox()
                 source_box = expected["sourceSolidBox"]
@@ -219,19 +317,8 @@ class NewHorizonsAcademyArtTest(unittest.TestCase):
         pin = academy_importer.APPROVED_MAP_REVISION_MANIFEST_SHA256
         with tempfile.TemporaryDirectory() as temporary:
             temp_root = Path(temporary)
-            source_revision = ROOT / academy_importer.MAP_REVISION_ROOT
+            pin = private_revision_fixture(temp_root, "map")
             target_revision = temp_root / academy_importer.MAP_REVISION_ROOT
-            shutil.copytree(source_revision, target_revision)
-            for relative in ("integration/academy-assets.json",):
-                source = ROOT / academy_importer.SOURCE_ROOT / relative
-                destination = temp_root / academy_importer.SOURCE_ROOT / relative
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(source, destination)
-            for expected in academy_importer.MAP_REVISION_SLOTS.values():
-                source = ROOT / academy_importer.SOURCE_ROOT / expected["sourceMaster"]
-                destination = temp_root / academy_importer.SOURCE_ROOT / expected["sourceMaster"]
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(source, destination)
 
             manifest_path = temp_root / academy_importer.MAP_REVISION_MANIFEST
             manifest_bytes = manifest_path.read_bytes()
@@ -282,10 +369,7 @@ class NewHorizonsAcademyArtTest(unittest.TestCase):
                 self.assertEqual((temp_root / academy_importer.IMAGE_ROOT / runtime).read_bytes(), legacy[runtime])
 
     def test_village_hall_v2_is_pinned_installed_and_preserves_registration(self):
-        revision = academy_importer.load_hall_revision(
-            ROOT,
-            academy_importer.APPROVED_HALL_REVISION_MANIFEST_SHA256,
-        )
+        revision = shipping_revision("hall")
         manifest = revision["manifest"]
         self.assertEqual(revision["manifest_sha256"], "80545094b5fccc1e02b0251367ca8388d9d9ab08ad02667b9c2c9ce3a72e1a27")
         self.assertEqual(manifest["revision"], "v2")
@@ -294,16 +378,9 @@ class NewHorizonsAcademyArtTest(unittest.TestCase):
         self.assertEqual(manifest["prompt"]["sha256"], "7f219149d4d9df1803c2f0931358e3fc2ee41f6cbbba3863ac7c098d02c42bec")
         self.assertEqual(manifest["export"]["sha256"], "117e8ae670dda32e7cee0c76d78d4a12acb3a22bd3467b6b6d2cfd74173763cd")
 
-        # Keep both original artifacts as provenance; only the Academy runtime
-        # copy may be replaced by the reviewed, one-frame export.
-        self.assertEqual(
-            revision["baseline_master_bytes"],
-            (ACADEMY_SOURCE / "masters/town/buildings/tbtwhall.png").read_bytes(),
-        )
-        self.assertEqual(
-            revision["baseline_native_bytes"],
-            (ACADEMY_SOURCE / academy_importer.HALL_SOURCE_NATIVE).read_bytes(),
-        )
+        # Private baseline masters remain identified in the retained receipt.
+        for record in manifest["baseline"].values():
+            self.assertRegex(record["sha256"], r"^[0-9a-f]{64}$")
         runtime = IMAGES / academy_importer.HALL_RUNTIME_IMAGE
         self.assertEqual(runtime.read_bytes(), revision["export_bytes"])
 
@@ -322,27 +399,16 @@ class NewHorizonsAcademyArtTest(unittest.TestCase):
         for kind, record in manifest["preservedRuntime"]["masks"].items():
             mask_path = IMAGES / record["path"]
             self.assertEqual(hashlib.sha256(mask_path.read_bytes()).hexdigest(), record["sha256"], kind)
-            with Image.open(mask_path) as mask:
+            with mask_path.open_image() as mask:
                 self.assertEqual(list(mask.size), record["dimensions"], kind)
 
     def test_village_hall_revision_rejects_unpinned_inputs(self):
         pin = academy_importer.APPROVED_HALL_REVISION_MANIFEST_SHA256
         with tempfile.TemporaryDirectory() as temporary:
             temp_root = Path(temporary)
+            pin = private_revision_fixture(temp_root, "hall")
             revision_root = temp_root / academy_importer.HALL_REVISION_ROOT
-            shutil.copytree(ROOT / academy_importer.HALL_REVISION_ROOT, revision_root)
-            for relative in (
-                "integration/town-layout.json",
-                "masters/town/buildings/tbtwhall.png",
-                academy_importer.HALL_SOURCE_NATIVE,
-            ):
-                source = ROOT / academy_importer.SOURCE_ROOT / relative
-                destination = temp_root / academy_importer.SOURCE_ROOT / relative
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(source, destination)
-            core_path = temp_root / "config/factions/tower.json"
-            core_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(ROOT / "config/factions/tower.json", core_path)
+            academy_importer.load_hall_revision(temp_root, pin)
 
             manifest_path = temp_root / academy_importer.HALL_REVISION_MANIFEST
             original_manifest = manifest_path.read_bytes()
@@ -365,11 +431,8 @@ class NewHorizonsAcademyArtTest(unittest.TestCase):
                     path.write_bytes(original)
 
     def test_village_hall_install_is_idempotent_and_refuses_unknown_runtime(self):
-        revision = academy_importer.load_hall_revision(
-            ROOT,
-            academy_importer.APPROVED_HALL_REVISION_MANIFEST_SHA256,
-        )
-        legacy = revision["baseline_native_bytes"]
+        revision = shipping_revision("hall")
+        legacy = b"synthetic recognized prior hall export"
         with tempfile.TemporaryDirectory() as temporary:
             temp_root = Path(temporary)
             runtime = temp_root / academy_importer.IMAGE_ROOT / academy_importer.HALL_RUNTIME_IMAGE
@@ -404,12 +467,12 @@ class NewHorizonsAcademyArtTest(unittest.TestCase):
         self.assertIn("lobby/townBorderBigActivated", faction_renderer)
 
     def test_siege_uses_direct_images_and_provenance_exceptions_stay_out(self):
-        siege_images = sorted(IMAGES.glob("SGTW*.png"))
+        siege_images = sorted(IMAGES.glob("SGTW*.png"), key=str)
         self.assertGreater(len(siege_images), 0)
         for image in siege_images:
-            self.assertFalse(image.with_suffix(".json").exists(), image.name)
+            self.assertFalse(image.with_suffix(".json").is_file(), image.name)
         for original_gate in ("SGTWDRW1.png", "SGTWDRW2.png", "SGTWDRW3.png", "SGTWDRWC.png"):
-            self.assertFalse((IMAGES / original_gate).exists(), original_gate)
+            self.assertFalse((IMAGES / original_gate).is_file(), original_gate)
 
         excluded = (
             "native/adventure/avctowr0.png",
@@ -425,7 +488,7 @@ class NewHorizonsAcademyArtTest(unittest.TestCase):
             "native/ui/icons/village-small-built.png",
         )
         for relative in excluded:
-            self.assertFalse((ACADEMY_SOURCE / relative).exists(), relative)
+            self.assertFalse((ACADEMY_SOURCE / relative).is_file(), relative)
 
         validation = read_json("assets/new-horizons/academy/handoff/VALIDATION.json")
         export_validation = read_json("assets/new-horizons/academy/integration/export-validation.json")

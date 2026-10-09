@@ -102,6 +102,8 @@ def expected_files() -> list[Path]:
 
 
 def export() -> dict:
+    if ROOT == Path(__file__).resolve().parents[3]:
+        raise ValueError("Configure explicit external staging through main before exporting")
     manifest: dict = {
         "schema_version": 1,
         "license": "CC0-1.0",
@@ -168,9 +170,18 @@ def check() -> dict:
 
 
 def main() -> int:
+    global ROOT, SOURCE, IMAGES
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true", help="verify files and manifest without rewriting")
+    parser.add_argument("--staging-root", type=Path, required=True, help="External authoring mirror; never installs shipping art")
     args = parser.parse_args()
+    repository_path = Path(__file__).resolve().parents[3]
+    staging = args.staging_root.resolve()
+    if staging == repository_path or repository_path in staging.parents:
+        parser.error("Authoring staging must be outside the checkout")
+    ROOT = staging
+    SOURCE = staging / "assets/new-horizons/art-source"
+    IMAGES = staging / "Mods/new-horizons/Images"
     result = check() if args.check else export()
     print(f"PASS: {len(result['skills'])} provisional skill masters; {len(expected_files())} RGBA exports")
     return 0

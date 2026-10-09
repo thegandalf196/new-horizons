@@ -51,6 +51,10 @@ def main() -> int:
     parser.add_argument("--source-root", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
     args = parser.parse_args()
+    repository = Path(__file__).resolve().parents[4]
+    args.output_root = args.output_root.resolve()
+    if args.output_root == repository or repository in args.output_root.parents:
+        parser.error("Authoring output must be outside the checkout")
     args.output_root.mkdir(parents=True, exist_ok=True)
 
     for slug, stem in ORDERS.items():

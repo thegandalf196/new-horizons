@@ -5,13 +5,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+import argparse
 from pathlib import Path
 import re
+import sys
 
 from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "tools/tests"))
+from nhart_test_resources import ArtPath
 SOURCE_V2 = ROOT / "assets/new-horizons/art-source/active-perks-v2"
 SOURCE_V3 = ROOT / "assets/new-horizons/art-source/active-perks-v3"
 SOURCE_V5 = ROOT / "assets/new-horizons/art-source/active-perks-v5"
@@ -24,7 +28,7 @@ SOURCE_IRON_DISCIPLINE = ROOT / "assets/new-horizons/art-source/iron-discipline-
 SOURCE_PAVISE = ROOT / "assets/new-horizons/art-source/pavise-v1"
 SOURCE_SPELL_PENETRATION = ROOT / "assets/new-horizons/art-source/spell-penetration-v1"
 SOURCE_EMPOWER_SPELL = ROOT / "assets/new-horizons/art-source/empower-spell-v1"
-IMAGES = ROOT / "Mods/new-horizons/Images"
+IMAGES = ArtPath()
 ICONS = ROOT / "client/windows/NewHorizonsPerkIcons.h"
 DEFINITIONS = ROOT / "config/newHorizonsPerks.json"
 
@@ -208,12 +212,16 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def image_size(path: Path) -> tuple[int, int]:
-    with Image.open(path) as image:
+def image_size(path: Path | ArtPath) -> tuple[int, int]:
+    with (path.open_image() if isinstance(path, ArtPath) else Image.open(path)) as image:
         return image.size
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--source-root", type=Path,
+                        help="Optional private art-source directory for master/export byte checks")
+    args = parser.parse_args()
     mapping = dict(re.findall(r'\{"(new-horizons:[^"]+)", "([^"]+)"\}', ICONS.read_text(encoding="utf-8")))
     for source, expected in (
         (SOURCE_V2, V2_EXPECTED),
@@ -235,42 +243,42 @@ def main() -> None:
         assert generation["status"].startswith("provisional"), "provisional art must be labeled honestly"
         for perk_id, (key, slug) in expected.items():
             asset = by_id[perk_id]
-            master = source / asset["master"]
-            assert master.is_file(), master
-            assert image_size(master) == tuple(asset["dimensions"]) == (1254, 1254)
-            assert digest(master) == asset["source_sha256"], (perk_id, "master hash")
+            assert tuple(asset["dimensions"]) == (1254, 1254)
+            assert re.fullmatch(r"[0-9a-f]{64}", asset["source_sha256"]), (perk_id, "master hash")
             prompt_name = asset.get("prompt_file", generation.get("prompt_file"))
             assert prompt_name, (perk_id, "missing prompt provenance")
             prompt = source / prompt_name
             assert prompt.is_file() and prompt.read_text(encoding="utf-8").strip(), prompt
 
             export = source / "exports" / slug
+            export_manifest = json.loads(
+                (export / f"{slug}-manifest.json").read_text(encoding="utf-8")
+            )
+            outputs = {item["file"]: item for item in export_manifest["outputs"]}
+            assert export_manifest["source"]["sha256"] == asset["source_sha256"]
+            assert export_manifest["source"]["dimensions"] == asset["dimensions"]
             for filename in (
                 "master.png",
                 f"{slug}-44.png",
                 f"{slug}-32.png",
                 f"{slug}-comparison.png",
-                f"{slug}-manifest.json",
             ):
-                assert (export / filename).is_file(), export / filename
-            assert image_size(export / f"{slug}-44.png") == (44, 44)
-            assert image_size(export / f"{slug}-32.png") == (32, 32)
-            if perk_id in {
-                "new-horizons:armorer.countercharge",
-                "new-horizons:armorer.shieldMaster",
-                "new-horizons:armorer.ironDiscipline",
-                "new-horizons:armorer.pavise",
-                "new-horizons:spellcraft.spellPenetration",
-                "new-horizons:spellcraft.empowerSpell",
-            }:
-                export_manifest = json.loads(
-                    (export / f"{slug}-manifest.json").read_text(encoding="utf-8")
-                )
-                assert export_manifest["source"]["sha256"] == asset["source_sha256"]
+                assert filename in outputs, (perk_id, "missing export provenance", filename)
+                assert re.fullmatch(r"[0-9a-f]{64}", outputs[filename]["sha256"])
+            assert outputs["master.png"]["sha256"] == asset["source_sha256"]
+            assert outputs["master.png"]["dimensions"] == asset["dimensions"]
+            assert outputs[f"{slug}-44.png"]["dimensions"] == [44, 44]
+            assert outputs[f"{slug}-32.png"]["dimensions"] == [32, 32]
+            if args.source_root is not None:
+                private_source = args.source_root / source.relative_to(ROOT / "assets/new-horizons/art-source")
+                private_master = private_source / asset["master"]
+                assert digest(private_master) == asset["source_sha256"], (perk_id, "master hash")
+                assert image_size(private_master) == tuple(asset["dimensions"])
                 for item in export_manifest["outputs"]:
-                    output = export / item["file"]
+                    output = private_source / "exports" / slug / item["file"]
                     assert output.is_file(), output
                     assert digest(output) == item["sha256"], (output, "export hash")
+                    assert list(image_size(output)) == item["dimensions"], (output, "export dimensions")
 
             assert mapping.get(perk_id) == key, (perk_id, mapping.get(perk_id), key)
             descriptor = json.loads((IMAGES / f"{key}.json").read_text(encoding="utf-8"))
@@ -305,7 +313,7 @@ def main() -> None:
     for manifest_path, expected_hash in cleave_manifest["files"].items():
         filename = Path(manifest_path).name
         if manifest_path.startswith("source/"):
-            path = SOURCE_CLEAVE / "runtime" / filename
+            path = IMAGES / filename
         elif manifest_path.startswith("Mods/"):
             path = IMAGES / filename
         else:
@@ -322,7 +330,7 @@ def main() -> None:
     for manifest_path, expected_hash in countercharge_manifest["files"].items():
         filename = Path(manifest_path).name
         if manifest_path.startswith("source/"):
-            path = SOURCE_COUNTERCHARGE / "runtime" / filename
+            path = IMAGES / filename
         elif manifest_path.startswith("Mods/"):
             path = IMAGES / filename
         else:
@@ -342,7 +350,7 @@ def main() -> None:
     for manifest_path, expected_hash in shield_master_manifest["files"].items():
         filename = Path(manifest_path).name
         if manifest_path.startswith("source/"):
-            path = SOURCE_SHIELD_MASTER / "runtime" / filename
+            path = IMAGES / filename
         elif manifest_path.startswith("Mods/"):
             path = IMAGES / filename
         else:
@@ -362,7 +370,7 @@ def main() -> None:
     for manifest_path, expected_hash in iron_discipline_manifest["files"].items():
         filename = Path(manifest_path).name
         if manifest_path.startswith("source/"):
-            path = SOURCE_IRON_DISCIPLINE / "runtime" / filename
+            path = IMAGES / filename
         elif manifest_path.startswith("Mods/"):
             path = IMAGES / filename
         else:
@@ -382,7 +390,7 @@ def main() -> None:
     for manifest_path, expected_hash in pavise_manifest["files"].items():
         filename = Path(manifest_path).name
         if manifest_path.startswith("source/"):
-            path = SOURCE_PAVISE / "runtime" / filename
+            path = IMAGES / filename
         elif manifest_path.startswith("Mods/"):
             path = IMAGES / filename
         else:
@@ -402,7 +410,7 @@ def main() -> None:
     for manifest_path, expected_hash in spell_penetration_manifest["files"].items():
         filename = Path(manifest_path).name
         if manifest_path.startswith("source/"):
-            path = SOURCE_SPELL_PENETRATION / "runtime" / filename
+            path = IMAGES / filename
         elif manifest_path.startswith("Mods/"):
             path = IMAGES / filename
         else:
@@ -422,7 +430,7 @@ def main() -> None:
     for manifest_path, expected_hash in empower_spell_manifest["files"].items():
         filename = Path(manifest_path).name
         if manifest_path.startswith("source/"):
-            path = SOURCE_EMPOWER_SPELL / "runtime" / filename
+            path = IMAGES / filename
         elif manifest_path.startswith("Mods/"):
             path = IMAGES / filename
         else:
@@ -453,7 +461,8 @@ def main() -> None:
         assert value not in normal_hashes, f"duplicate active normal art: {perk_id}"
         normal_hashes.add(value)
 
-    print(f"PASS: active-perk sources, previews, runtime states, bindings, and {len(active)}-icon uniqueness")
+    print(f"PASS: active-perk provenance/export metadata, packaged runtime hashes/states, bindings, and {len(active)}-icon uniqueness"
+          + ("; private source bytes verified" if args.source_root else ""))
 
 
 if __name__ == "__main__":

@@ -57,10 +57,18 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for rank in ("basic", "advanced", "expert"):
         parser.add_argument(f"--{rank}-exports", type=Path, required=True)
+    parser.add_argument("--staging-root", type=Path, required=True, help="External authoring mirror; never installs shipping art")
     args = parser.parse_args()
+    repository_path = Path(__file__).resolve().parents[3]
+    staging = args.staging_root.resolve()
+    if staging == repository_path or repository_path in staging.parents:
+        parser.error("Authoring staging must be outside the checkout")
+    SOURCE = staging / "assets/new-horizons/art-source/metamagic-prisms-v2"
+    IMAGES = staging / "Mods/new-horizons/Images"
     if SOURCE.exists():
         raise FileExistsError(f"Refusing to replace retained source directory: {SOURCE}")
-    SOURCE.mkdir()
+    SOURCE.mkdir(parents=True)
+    IMAGES.mkdir(parents=True, exist_ok=True)
     manifest = {"status": "provisional; rendered acceptance pending",
                 "method": "HoMM3 Art generation/edit; skill export_art.py LANCZOS squares; centered transparent padding, no stretching",
                 "ranks": {}}

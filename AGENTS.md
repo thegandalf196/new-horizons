@@ -325,6 +325,17 @@ gameplay behavior unless the user separately requests a functional change.
 
 ## Selected runtime artwork delivery
 
+Selected runtime artwork is published through NewHorizons.nhart. Loose
+authoring files, runtime staging inputs, alternatives and review materials are
+maintained locally outside the repository and are not committed by default.
+The public repository retains the package, tools, manifests and records.
+Original-based edits and composites are included in this rule. Development or
+reference labels do not authorize public loose exports. Preserve and verify
+local originals before removing tracked copies; warn other worktree owners
+that pulling a removal commit can delete their tracked files. Authoring tools
+require explicitly configured local inputs/outputs; ordinary builds use the
+committed package without those inputs.
+
 The selected New Horizons runtime visuals, including deliberate modifications
 of original-based artwork and finished composites, belong in
 `Mods/new-horizons/NewHorizons.nhart`. The manifest records selection, approval

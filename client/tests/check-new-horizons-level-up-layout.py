@@ -5,10 +5,12 @@ from pathlib import Path
 import hashlib
 import json
 import re
-from PIL import Image
+import sys
 
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "tools/tests"))
+from nhart_test_resources import ArtPath
 LEVEL = (ROOT / "client/windows/GUIClasses.cpp").read_text(encoding="utf-8")
 LEVEL_HEADER = (ROOT / "client/windows/GUIClasses.h").read_text(encoding="utf-8")
 HERO = (ROOT / "client/windows/CHeroWindow.cpp").read_text(encoding="utf-8")
@@ -177,11 +179,11 @@ def main() -> None:
         "NH_perk_bone_collector": (44, 44),
         "NH_perk_neutral": (44, 44),
     }.items():
-        animation = ROOT / "Mods/new-horizons/Images" / f"{stem}.json"
+        animation = ArtPath() / f"{stem}.json"
         if not animation.is_file():
             raise AssertionError(f"missing {stem} animation asset")
         for state in ("normal", "pressed", "disabled", "highlighted"):
-            with Image.open(ROOT / "Mods/new-horizons/Images" / f"{stem}_{state}.png") as image:
+            with (ArtPath() / f"{stem}_{state}.png").open_image() as image:
                 if image.size != size:
                     raise AssertionError(f"wrong {stem} {state} dimensions: {image.size}")
     mapping = dict(re.findall(r'\{"(new-horizons:[^"]+)", "([^"]+)"\}', PERK_ICONS))
@@ -190,14 +192,14 @@ def main() -> None:
               for perk in skill["perks"] if perk["effect"]["status"] == "active"}
     assert active <= mapping.keys(), f"Active perks lack art: {active - mapping.keys()}"
     assert len({mapping[perk] for perk in active}) == len(active), "Active perks share an icon"
-    images = ROOT / "Mods/new-horizons/Images"
+    images = ArtPath()
     hashes = set()
     for perk in sorted(active):
         key = mapping[perk]
         descriptor = json.loads((images / f"{key}.json").read_text())
         assert [frame["frame"] for frame in descriptor["images"]] == list(range(4))
         for frame in descriptor["images"]:
-            with Image.open(images / frame["file"]) as image:
+            with (images / frame["file"]).open_image() as image:
                 assert image.size == (44, 44), (perk, image.size)
         digest = hashlib.sha256((images / descriptor["images"][0]["file"]).read_bytes()).hexdigest()
         assert digest not in hashes, f"Duplicate active perk painting: {perk}"
@@ -206,11 +208,11 @@ def main() -> None:
         descriptor = json.loads((images / f"NH_capability_{capability}_32.json").read_text())
         assert descriptor["images"] == [{"group": 0, "frame": 0, "file": f"NH_capability_{capability}_32.png"}]
         for suffix, size in (("_normal", 44), ("_32", 32)):
-            with Image.open(images / f"NH_capability_{capability}{suffix}.png") as image:
+            with (images / f"NH_capability_{capability}{suffix}.png").open_image() as image:
                 assert image.size == (size, size)
     movement = json.loads((images / "NH_hero_movement_32.json").read_text())
     assert movement["images"] == [{"group": 0, "frame": 0, "file": "NH_hero_movement_32.png"}]
-    with Image.open(images / "NH_hero_movement_32.png") as image:
+    with (images / "NH_hero_movement_32.png").open_image() as image:
         assert image.size == (32, 32)
     print(f"New Horizons level-up layout and {len(active)} distinct active perk icons passed")
 

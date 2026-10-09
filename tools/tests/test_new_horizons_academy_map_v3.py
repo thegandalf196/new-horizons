@@ -9,10 +9,12 @@ import tempfile
 import unittest
 
 from PIL import Image
+from tools.tests.nhart_test_resources import ArtPath
+from tools.tests.test_new_horizons_academy_art import shipping_revision, private_revision_fixture
 
 
 ROOT = Path(__file__).resolve().parents[2]
-IMAGES = ROOT / "Mods/new-horizons/Images"
+IMAGES = ArtPath()
 ART_PATCH = ROOT / "Mods/new-horizons/Content/config/factions/academyArt.json"
 sys.path.insert(0, str(ROOT / "tools"))
 import import_new_horizons_academy_assets as academy_importer
@@ -20,16 +22,8 @@ import import_new_horizons_academy_assets as academy_importer
 
 class NewHorizonsAcademyMapV3Test(unittest.TestCase):
     def test_v3_pin_and_runtime_preserve_v2_registration_and_engine_layers(self):
-        v2 = academy_importer.load_map_revision(
-            ROOT,
-            academy_importer.APPROVED_MAP_REVISION_MANIFEST_SHA256,
-            revision="v2",
-        )
-        v3 = academy_importer.load_map_revision(
-            ROOT,
-            academy_importer.APPROVED_MAP_REVISION_V3_MANIFEST_SHA256,
-            revision="v3",
-        )
+        v2 = {"manifest": json.loads((ROOT / academy_importer.MAP_REVISION_MANIFEST).read_text())}
+        v3 = shipping_revision("map", "v3")
         self.assertEqual(v2["manifest"]["revision"], "v2")
         self.assertEqual(v3["manifest"]["revision"], "v3")
         self.assertEqual(v3["manifest_sha256"], academy_importer.APPROVED_MAP_REVISION_V3_MANIFEST_SHA256)
@@ -52,7 +46,7 @@ class NewHorizonsAcademyMapV3Test(unittest.TestCase):
                     self.assertEqual(new_record[field], old_record[field], field)
                 runtime = IMAGES / expected["runtime"]
                 self.assertEqual(runtime.read_bytes(), v3["exports_by_runtime"][expected["runtime"]])
-                with Image.open(runtime) as image:
+                with runtime.open_image() as image:
                     self.assertEqual(list(image.size), [192, 192])
                     alpha_bounds = image.convert("RGBA").getchannel("A").getbbox()
                 source_box = expected["sourceSolidBox"]
@@ -89,16 +83,7 @@ class NewHorizonsAcademyMapV3Test(unittest.TestCase):
         pin = academy_importer.APPROVED_MAP_REVISION_V3_MANIFEST_SHA256
         with tempfile.TemporaryDirectory() as temporary:
             temp_root = Path(temporary)
-            shutil.copytree(ROOT / academy_importer.MAP_REVISION_V3_ROOT, temp_root / academy_importer.MAP_REVISION_V3_ROOT)
-            source_registration = ROOT / academy_importer.SOURCE_ROOT / "integration/academy-assets.json"
-            target_registration = temp_root / academy_importer.SOURCE_ROOT / "integration/academy-assets.json"
-            target_registration.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(source_registration, target_registration)
-            for record in academy_importer.MAP_REVISION_V3_SLOTS.values():
-                source = ROOT / academy_importer.SOURCE_ROOT / record["sourceMaster"]
-                destination = temp_root / academy_importer.SOURCE_ROOT / record["sourceMaster"]
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(source, destination)
+            pin = private_revision_fixture(temp_root, "map", "v3")
 
             manifest_path = temp_root / academy_importer.MAP_REVISION_V3_MANIFEST
             manifest_bytes = manifest_path.read_bytes()
@@ -119,16 +104,10 @@ class NewHorizonsAcademyMapV3Test(unittest.TestCase):
 
     def test_family_install_accepts_v2_and_legacy_then_rejects_unknown_atomically(self):
         runtimes = {record["runtime"] for record in academy_importer.MAP_REVISION_SLOTS.values()}
-        v3 = academy_importer.load_map_revision(
-            ROOT,
-            academy_importer.APPROVED_MAP_REVISION_V3_MANIFEST_SHA256,
-            revision="v3",
-        )["exports_by_runtime"]
-        v2 = academy_importer.load_map_revision(
-            ROOT,
-            academy_importer.APPROVED_MAP_REVISION_MANIFEST_SHA256,
-            revision="v2",
-        )["exports_by_runtime"]
+        v3 = shipping_revision("map", "v3")["exports_by_runtime"]
+        # Installation preflight is byte-identity based; recognized prior bytes
+        # are a synthetic fixture, not privately reconstructed v2 artwork.
+        v2 = {runtime: f"synthetic prior:{runtime}".encode("ascii") for runtime in runtimes}
         legacy = {runtime: f"legacy:{runtime}".encode("ascii") for runtime in runtimes}
 
         with tempfile.TemporaryDirectory() as temporary:

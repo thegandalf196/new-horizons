@@ -1,5 +1,16 @@
 # Barehanded Cabir Master — provisional standing master
 
+Public checkout policy: only prompts, receipts, licenses and provenance remain
+here. Masters, drafts, layered/vector inputs and previews are preserved privately
+outside the repository; historical paths below describe that private workspace.
+Selected runtime bytes ship in `NewHorizons.nhart`, with the registered complete
+handoff superseding these draft exports. Ordinary builds/tests need neither
+private inputs nor loose-art overlays. Portrait authoring requires an explicit
+external `--private-root` project-shaped workspace and rejects checkout paths.
+Public tests verify packaged resources and disposable synthetic authoring
+fixtures; exact private-master reproduction is a separate opt-in workflow.
+Never rebuild the committed pack from incomplete inputs or republish loose art.
+
 Front/directional melee and shooting plus reaction/death source sheets now
 exist as original **Provisional** HoMM3-Art drafts. Their exact prompts accompany
 the images. See `../../cabir/v3/ANIMATION_DRAFTS.md` for hashes and outstanding

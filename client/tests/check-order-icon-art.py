@@ -3,13 +3,18 @@
 
 import hashlib
 import json
+import argparse
 from pathlib import Path
+import re
+import sys
 
 from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parents[2]
-IMAGES = ROOT / "Mods/new-horizons/Images"
+sys.path.insert(0, str(ROOT / "tools/tests"))
+from nhart_test_resources import ArtPath
+IMAGES = ArtPath()
 SOURCES = ROOT / "assets/new-horizons/art-source/orders-v1"
 ORDERS = {
     "charge": "NH_charge",
@@ -24,8 +29,8 @@ ORDERS = {
 STATES = ("normal", "pressed", "disabled", "highlighted")
 
 
-def assert_icon(path: Path) -> None:
-    with Image.open(path) as image:
+def assert_icon(path: ArtPath) -> None:
+    with path.open_image() as image:
         assert image.size == (64, 64), f"{path.name}: expected 64x64"
         assert image.mode == "RGBA", f"{path.name}: expected RGBA"
         low, high = image.getchannel("A").getextrema()
@@ -34,18 +39,36 @@ def assert_icon(path: Path) -> None:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--source-root", type=Path,
+                        help="Optional private orders-v1 directory for master/export byte checks")
+    args = parser.parse_args()
     runtime_normal_hashes = []
     master_hashes = []
     for slug, stem in ORDERS.items():
         source = SOURCES / slug
         assert (source / "prompt.txt").is_file(), f"{slug}: missing generation prompt"
-        master = source / "master.png"
-        assert master.is_file(), f"{slug}: missing master"
-        master_hashes.append(hashlib.sha256(master.read_bytes()).hexdigest())
+        # Public provenance stays auditable without requiring private artwork.
+        manifest = json.loads((source / f"{slug}-manifest.json").read_text())
+        outputs = {item["file"]: item for item in manifest["outputs"]}
+        master = outputs["master.png"]
+        assert master["sha256"] == manifest["source"]["sha256"]
+        assert master["dimensions"] == manifest["source"]["dimensions"] == [1254, 1254]
+        assert re.fullmatch(r"[0-9a-f]{64}", master["sha256"])
+        master_hashes.append(master["sha256"])
         for suffix in ("44", "32"):
-            with Image.open(source / f"{slug}-{suffix}.png") as image:
-                assert image.size == (int(suffix), int(suffix)), f"{slug}: bad {suffix}px export"
-                assert image.mode == "RGBA", f"{slug}: {suffix}px export is not RGBA"
+            item = outputs[f"{slug}-{suffix}.png"]
+            assert item["dimensions"] == [int(suffix), int(suffix)], f"{slug}: bad {suffix}px export"
+            assert item["mode"] == "RGBA", f"{slug}: {suffix}px export is not RGBA"
+            assert re.fullmatch(r"[0-9a-f]{64}", item["sha256"])
+        if args.source_root is not None:
+            for item in manifest["outputs"]:
+                private = args.source_root / slug / item["file"]
+                assert hashlib.sha256(private.read_bytes()).hexdigest() == item["sha256"], private
+                with Image.open(private) as image:
+                    assert list(image.size) == item["dimensions"], private
+                    if "mode" in item:
+                        assert image.mode == item["mode"], private
 
         descriptor = json.loads((IMAGES / f"{stem}_button.json").read_text(encoding="utf-8"))
         assert descriptor == {
@@ -65,7 +88,8 @@ def main() -> None:
     assert "NH_hero_actions_entry" not in action, "generic hero-action placeholder still bound"
     for stem in ORDERS.values():
         assert f'"{stem}_button"' in action, f"{stem}: client binding missing"
-    print("PASS: eight distinct Order masters, 44/32 previews, 64px runtime states and client bindings")
+    print("PASS: eight distinct Order provenance hashes, 44/32 export metadata, packaged 64px runtime states and client bindings"
+          + ("; private source bytes verified" if args.source_root else ""))
 
 
 if __name__ == "__main__":

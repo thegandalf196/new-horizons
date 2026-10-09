@@ -2,12 +2,15 @@
 """Guard Academy runtime-composed icons and clean authored fallbacks."""
 
 from pathlib import Path
+import sys
 
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "tools/tests"))
+from nhart_test_resources import ArtPath
 GENERATOR = (ROOT / "client/render/AssetGenerator.cpp").read_text(encoding="utf-8")
 HEADER = (ROOT / "client/render/AssetGenerator.h").read_text(encoding="utf-8")
-IMAGES = ROOT / "Mods/new-horizons/Images"
+IMAGES = ArtPath()
 SDL2 = (ROOT / "clientsdl2/render/RenderHandler.cpp").read_text(encoding="utf-8")
 SDL3 = (ROOT / "clientsdl3/render/RenderHandler.cpp").read_text(encoding="utf-8")
 
@@ -73,8 +76,8 @@ MAP_ROUTES = {
 }
 for body, original_def in MAP_ROUTES.items():
     assert f'addAcademyMapLayers("{body}", AnimationPath::builtin("{original_def}"))' in GENERATOR
-    assert not (IMAGES / f"{body}-SHADOW.png").exists(), f"committed original shadow: {body}"
-    assert not (IMAGES / f"{body}-OVERLAY.png").exists(), f"committed original overlay: {body}"
+    assert not (IMAGES / f"{body}-SHADOW.png").is_file(), f"packaged original shadow: {body}"
+    assert not (IMAGES / f"{body}-OVERLAY.png").is_file(), f"packaged original overlay: {body}"
 
 assert "ONLY_SHADOW_HIDE_FLAG_COLOR" in GENERATOR
 assert "ONLY_FLAG_COLOR" in GENERATOR

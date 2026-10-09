@@ -2,8 +2,11 @@
 """Source/layout guard, not a rendered-UI or probability-engine test."""
 from pathlib import Path
 import struct
+import sys
 
 root = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(root / "tools/tests"))
+from nhart_test_resources import read_resource
 hero = (root / "client/windows/CHeroWindow.cpp").read_text()
 window = (root / "client/windows/HeroSkillOddsWindow.cpp").read_text()
 assert "createAndPushWindow<HeroSkillOddsWindow>(*curHero)" in hero
@@ -19,7 +22,7 @@ assert resize < overlay, "Overlay must be centered after the button is resized"
 assert 'pos = Rect(0, 0, 16, 16);' in hero
 assert 'movementArea = std::make_shared<LRClickableAreaWText>(Rect(152, 132, 140, 44)' in hero
 assert 'legacySiegeArea = std::make_shared<LRClickableAreaWText>(Rect(292, 132, 140, 44)' in hero
-data = (root / "Mods/new-horizons/Images/NH_hero_growth_entry_normal.png").read_bytes()
+data = read_resource("SPRITES/NH_hero_growth_entry_normal.png")
 width, height = struct.unpack(">II", data[16:24])
 assert (width, height) == (24, 24), "Legacy entry-control frame size changed"
 info_mark_size = 16

@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Selected shipping casting-art contract, not rendered acceptance or rights proof."""
-from io import BytesIO
 import json
 from pathlib import Path, PurePosixPath
 import unittest
 
-from PIL import Image
 if __package__:
-    from .nhart_test_resources import read_resource, resource_names
+    from .nhart_test_resources import open_image, read_resource, resource_names
 else:
-    from nhart_test_resources import read_resource, resource_names
+    from nhart_test_resources import open_image, read_resource, resource_names
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -67,7 +65,7 @@ class NewHorizonsCastingArtTest(unittest.TestCase):
 
     def test_all_frames_are_native_transparent_rgba_png(self):
         for reference in self.references():
-            with self.subTest(reference=reference), Image.open(BytesIO(read_resource("SPRITES/" + reference))) as image:
+            with self.subTest(reference=reference), open_image("SPRITES/" + reference) as image:
                 self.assertEqual(image.format, "PNG")
                 self.assertFalse(getattr(image, "is_animated", False))
                 self.assertEqual(image.mode, "RGBA")
@@ -87,7 +85,7 @@ class NewHorizonsCastingArtTest(unittest.TestCase):
                 self.assertEqual(definition["position"], [378, 344])
                 name = "SPRITES/" + definition["image"]
                 expected.add(name)
-                with Image.open(BytesIO(read_resource(name))) as image:
+                with open_image(name) as image:
                     self.assertEqual(image.format, "PNG")
                     self.assertFalse(getattr(image, "is_animated", False))
                     image.load()

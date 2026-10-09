@@ -4,13 +4,21 @@ SPDX-License-Identifier: CC0-1.0
 Requires Pillow only. No purchaser assets or concept images are read.
 """
 from pathlib import Path
+import argparse
 import hashlib
 import json
 from PIL import Image, ImageDraw, ImageColor
 
 HERE = Path(__file__).resolve().parent
-OUT = HERE.parent.parent / 'Mods/new-horizons/Images'
-SOURCE = HERE / 'svg'
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--output-root', type=Path, required=True,
+                    help='Explicit local authoring root outside the checkout; never installs shipping art')
+OUTPUT_ROOT = parser.parse_args().output_root.resolve()
+REPOSITORY = HERE.parent.parent.resolve()
+if OUTPUT_ROOT == REPOSITORY or REPOSITORY in OUTPUT_ROOT.parents:
+    parser.error('Authoring output must be outside the checkout')
+OUT = OUTPUT_ROOT / 'Mods/new-horizons/Images'
+SOURCE = OUTPUT_ROOT / 'assets/new-horizons/svg'
 SCALE = 4
 APPROVED_MANIFEST = HERE / 'approved-six-school-assets.json'
 APPROVED_FILES = json.loads(APPROVED_MANIFEST.read_text())['files']
@@ -21,7 +29,9 @@ def preserve_approved(path):
     if expected is None:
         return False
     if not path.is_file():
-        raise RuntimeError(f'Missing approved artwork: {path}')
+        # Selected paintings belong to NHART, not to this geometric generator.
+        # A fresh authoring output must not recreate or substitute those bytes.
+        return True
     actual = hashlib.sha256(path.read_bytes()).hexdigest()
     if actual != expected:
         raise RuntimeError(f'Approved artwork differs from its manifest: {path}')

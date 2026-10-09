@@ -6,18 +6,18 @@ import struct
 from pathlib import Path
 import unittest
 
-from PIL import Image
+from tools.tests.nhart_test_resources import ArtPath
 
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "assets/new-horizons/art-source/creature-stat-glyphs-v1"
-RUNTIME = ROOT / "Mods/new-horizons/Images"
+RUNTIME = ArtPath("SPRITES")
 
 
 class CreatureGlyphTests(unittest.TestCase):
-    def test_retained_master_and_export_hashes(self):
+    def test_shipping_export_hashes_dimensions_alpha_and_png_chunks(self):
         manifest = json.loads((SOURCE / "manifest.json").read_text())
-        for group, directory in (("masters", SOURCE), ("runtime", RUNTIME)):
+        for group, directory in (("runtime", RUNTIME),):
             for filename, expected in manifest[group].items():
                 with self.subTest(filename=filename):
                     path = directory / filename
@@ -28,7 +28,7 @@ class CreatureGlyphTests(unittest.TestCase):
                         size = struct.unpack(">I", data[offset:offset + 4])[0]
                         self.assertIn(data[offset + 4:offset + 8], (b"IHDR", b"IDAT", b"IEND"))
                         offset += size + 12
-                    with Image.open(path) as image:
+                    with path.open_image() as image:
                         self.assertEqual(image.mode, "RGBA")
                         self.assertEqual(list(image.size), manifest["dimensions"][group])
                         alpha_min, alpha_max = image.getchannel("A").getextrema()
@@ -45,13 +45,14 @@ class CreatureGlyphTests(unittest.TestCase):
                 {"group": 0, "frame": 0, "file": f"{stem}.png"}
             ]})
 
-    def test_export_pixels_reproduce_from_master(self):
-        for subject in ("rank", "leadership"):
-            with self.subTest(subject=subject):
-                with Image.open(SOURCE / f"{subject}-master.png") as master:
-                    expected = master.resize((20, 20), Image.Resampling.LANCZOS)
-                with Image.open(RUNTIME / f"NH_creature_{subject}_20.png") as actual:
-                    self.assertEqual(actual.tobytes(), expected.tobytes())
+    def test_private_master_provenance_is_retained_as_metadata_not_shipping_input(self):
+        manifest = json.loads((SOURCE / "manifest.json").read_text())
+        self.assertEqual(manifest["masters"], {
+            "rank-master.png": "23a1a79e53eac0fe442be9748e057ced9fa00b1d1b6b001c5bfb997ff403c1c1",
+            "leadership-master.png": "6c83f35f9e74a90e673571555f9070cc878c7da852726150d54a3e9fc6dc9147",
+        })
+        self.assertEqual(manifest["dimensions"], {"masters": [1254, 1254], "runtime": [20, 20]})
+        self.assertIn("LANCZOS", manifest["method"])
 
 
 if __name__ == "__main__":

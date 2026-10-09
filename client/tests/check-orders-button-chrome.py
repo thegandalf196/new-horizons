@@ -3,9 +3,11 @@
 """Preserve the commissioned subject and require runtime classic button chrome."""
 import hashlib
 from pathlib import Path
-from PIL import Image
+import sys
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "tools/tests"))
+from nhart_test_resources import ArtPath
 generator = (ROOT / "client/render/AssetGenerator.cpp").read_text()
 button = generator.split("AssetGenerator::AnimationLayoutMap AssetGenerator::createNewHorizonsOrdersButton()", 1)[1].split(
     "AssetGenerator::AnimationLayoutMap AssetGenerator::createGSPButtonClear()", 1)[0]
@@ -30,9 +32,9 @@ hashes = {
     "highlighted": "00499102f5d757964d6d130fcc24a669f3b9c18e4450d8779dc41ec14c671d58",
 }
 for state, digest in hashes.items():
-    path = ROOT / "Mods/new-horizons/Images" / f"NH_orders_gauntlet_{state}.png"
+    path = ArtPath() / f"NH_orders_gauntlet_{state}.png"
     assert hashlib.sha256(path.read_bytes()).hexdigest() == digest, "commissioned art changed"
-    with Image.open(path) as image:
+    with path.open_image() as image:
         assert image.size == (48, 36) and image.mode == "RGBA"
         assert image.getchannel("A").getextrema()[0] <= 1, "subject alpha was lost"
 print("PASS: four preserved gauntlet states, classic runtime chrome, bounded battle-bar geometry")

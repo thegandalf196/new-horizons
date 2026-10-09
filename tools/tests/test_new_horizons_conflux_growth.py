@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Conflux content/asset wiring guards; native tests establish actual growth."""
+import json
 import unittest
 
 from jsonschema import Draft4Validator, RefResolver
-from test_new_horizons_content import ROOT, load
+if __package__:
+    from .test_new_horizons_content import ROOT, load
+    from .nhart_test_resources import ArtPath
+else:
+    from test_new_horizons_content import ROOT, load
+    from nhart_test_resources import ArtPath
 
 
 class ConfluxGrowthDataTest(unittest.TestCase):
@@ -162,8 +168,8 @@ class ConfluxGrowthDataTest(unittest.TestCase):
                 self.assertEqual(graphics['mapAttackFromRight'], f"{values['map']}.def:0:0")
                 self.assertEqual(graphics['iconLarge'], values['iconLarge'])
                 self.assertEqual(graphics['iconSmall'], values['iconSmall'])
-                sprites = ROOT / 'Mods/new-horizons/Content/sprites'
-                images = ROOT / 'Mods/new-horizons/Images'
+                sprites = ArtPath()
+                images = ArtPath()
                 self.assertTrue((sprites / f"{values['animation']}.json").is_file())
                 self.assertTrue((sprites / f"{values['map']}.json").is_file())
                 self.assertTrue((images / values['iconLarge']).is_file())
@@ -215,7 +221,7 @@ class ConfluxGrowthDataTest(unittest.TestCase):
 
     def test_original_building_icons_are_referenced_not_replaced_or_extracted(self):
         self.assertEqual(self.town['buildingsIcons'], 'NH_conflux_buildings')
-        images = load('Mods/new-horizons/Images/NH_conflux_buildings.json')['images']
+        images = json.loads((ArtPath() / 'NH_conflux_buildings.json').read_text())['images']
         self.assertEqual(len(images), 45)
         frames = {image['frame']: image for image in images}
         self.assertEqual(set(frames), set(range(44)) | {150})

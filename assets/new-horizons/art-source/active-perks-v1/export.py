@@ -17,9 +17,14 @@ from PIL import Image, ImageEnhance
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--export-helper", required=True, type=Path)
+    parser.add_argument("--staging-root", type=Path, required=True, help="External authoring mirror; never installs shipping art")
     args = parser.parse_args()
-    here = Path(__file__).resolve().parent
-    root = here.parents[3]
+    repository_path = Path(__file__).resolve().parents[4]
+    staging = args.staging_root.resolve()
+    if staging == repository_path or repository_path in staging.parents:
+        parser.error("Authoring staging must be outside the checkout")
+    here = staging / "assets/new-horizons/art-source/active-perks-v1"
+    root = staging
     live = root / "Mods/new-horizons/Images"
     generation = json.loads((here / "generation.json").read_text())
     masters = here / "cells"

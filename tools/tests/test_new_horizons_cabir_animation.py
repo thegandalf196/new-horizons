@@ -283,11 +283,31 @@ class CabirAnimationExporterTest(unittest.TestCase):
             self.assertEqual(marker.read_text(encoding="utf-8"), "keep")
 
             protected = exporter.ROOT / "Mods/new-horizons/animation-export-test"
-            with self.assertRaisesRegex(ValueError, "runtime/configuration"):
+            with self.assertRaisesRegex(ValueError, "outside the checkout"):
                 exporter.validate_new_output_directory(source, protected)
 
             self.assertEqual(source.read_bytes(), source_bytes)
             self.assertFalse((root / "frame-00.png").exists())
+
+    def test_every_checkout_output_including_former_cabir_exception_is_rejected(self):
+        with tempfile.TemporaryDirectory(prefix="nh-cabir-checkout-guard-") as temp:
+            source = Path(temp) / "atlas.png"
+            for relative in ("assets/new-horizons/creatures/cabir/new-export", "build/new-export", "tools/new-export"):
+                output = exporter.ROOT / relative
+                with self.assertRaisesRegex(ValueError, "outside the checkout"):
+                    exporter.validate_new_output_directory(source, output)
+                self.assertFalse(output.exists())
+
+    def test_existing_and_dangling_output_symlinks_are_rejected(self):
+        with tempfile.TemporaryDirectory(prefix="nh-cabir-symlink-guard-") as temp:
+            root = Path(temp)
+            source = root / "atlas.png"
+            for name, target in (("dangling", root / "missing"), ("checkout", exporter.ROOT / "build")):
+                link = root / name
+                link.symlink_to(target, target_is_directory=True)
+                with self.assertRaises((ValueError, FileExistsError)):
+                    exporter.validate_new_output_directory(source, link)
+                self.assertTrue(link.is_symlink())
 
 
 if __name__ == "__main__":

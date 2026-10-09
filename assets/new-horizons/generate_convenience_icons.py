@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Independent original NH convenience artwork. SPDX-License-Identifier: CC0-1.0.
 Pillow only; no input artwork, fonts, Extras files or held mastery generator.
-Run separately from generate_icons.py. --output-root permits isolated reproduction.
+Run separately from generate_icons.py. An explicit external --output-root is required.
 """
 from pathlib import Path
 import argparse
@@ -192,8 +192,12 @@ def button(p, load, state):
 
 def main():
     parser=argparse.ArgumentParser()
-    parser.add_argument('--output-root',type=Path,default=Path(__file__).resolve().parents[2])
-    root=parser.parse_args().output_root
+    parser.add_argument('--output-root',type=Path,required=True,
+                        help='Explicit local authoring root outside the checkout; never installs shipping art')
+    root=parser.parse_args().output_root.resolve()
+    repository=Path(__file__).resolve().parents[2]
+    if root == repository or repository in root.parents:
+        parser.error('Authoring output must be outside the checkout')
     for name, draw in STATUS.items():
         p=Paint(50);draw(p);p.save(root,f'NH_status_{name}_50')
     for name,load in (('qsave',False),('qload',True)):

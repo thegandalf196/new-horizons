@@ -1,5 +1,17 @@
 # Barehanded Cabir — provisional source art
 
+Public checkout policy: this directory retains prompts, receipts and provenance,
+not loose visual inputs. Masters, drafts and previews are preserved privately
+outside the repository. Historical filenames below refer to those private
+inputs. Selected runtime artwork ships only in `NewHorizons.nhart`; the current
+registered complete handoff supersedes these v3 draft exports. No private or
+loose-art overlay is required for normal builds/tests. The portrait exporter
+requires an explicit external `--private-root` project-shaped authoring
+workspace and rejects checkout destinations. Reproduction checks require the
+recorded private inputs; public tests verify selected package bytes and exercise
+authoring algorithms with disposable synthetic fixtures. Do not repack from
+incomplete inputs or publish newly generated development artwork as loose files.
+
 See [ANIMATION_DRAFTS.md](ANIMATION_DRAFTS.md) for the new directional melee
 sources, upgraded action sheets and current separation/remaining-work evidence.
 

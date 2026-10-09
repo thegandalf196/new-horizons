@@ -16,6 +16,7 @@ from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CHECKOUT = ROOT
 REVISION = ROOT / "assets/new-horizons/academy/portrait-revisions/v1"
 SIZE = (58, 64)
 THRESHOLD = 128
@@ -103,6 +104,8 @@ def render_matte(master: Path) -> Image.Image:
 
 
 def export(creature: str, check: bool, parser: argparse.ArgumentParser) -> None:
+    if ROOT.resolve().is_relative_to(CHECKOUT):
+        parser.error("authoring requires an explicit private workspace outside the checkout")
     paths = CREATURES[creature]
     master = paths["master"]
     mask = paths["mask"]
@@ -130,7 +133,10 @@ def export(creature: str, check: bool, parser: argparse.ArgumentParser) -> None:
 
 
 def main() -> int:
+    global ROOT, REVISION, CREATURES
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--private-root", required=True, type=Path,
+                        help="private project-shaped input/output workspace outside the checkout")
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument(
         "--creature",
@@ -148,6 +154,13 @@ def main() -> int:
         help="verify selected native mask(s) without writing them",
     )
     args = parser.parse_args()
+    private_root = args.private_root.resolve()
+    if private_root.is_relative_to(CHECKOUT):
+        parser.error("private workspace must be outside the checkout")
+    CREATURES = {name: {key: private_root / path.relative_to(ROOT) for key, path in paths.items()}
+                 for name, paths in CREATURES.items()}
+    ROOT = private_root
+    REVISION = ROOT / "assets/new-horizons/academy/portrait-revisions/v1"
     selected = tuple(CREATURES) if args.all else (args.creature or "gremlin",)
     for creature in selected:
         export(creature, args.check, parser)

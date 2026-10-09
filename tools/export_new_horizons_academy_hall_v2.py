@@ -19,6 +19,7 @@ from import_new_horizons_academy_assets import IMAGE_ROOT, animation_image_path,
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CHECKOUT = ROOT
 REVISION = ROOT / "assets/new-horizons/academy/hall-revisions/v2"
 MASTER_PATH = REVISION / "village-hall-master.png"
 ORIGINAL_PATH = ROOT / "assets/new-horizons/academy/native/town/buildings/tbtwhall.png"
@@ -38,6 +39,27 @@ NATIVE_SIZE = (177, 75)
 NATIVE_ALPHA_BBOX = (0, 2, 177, 75)
 VISIBLE_SIZE = (177, 73)
 VISIBLE_ORIGIN = (0, 2)
+
+
+def configure_private_root(private_root: Path) -> None:
+	"""Keep the project-shaped authoring tree entirely outside the checkout."""
+	global ROOT
+	resolved = private_root.resolve()
+	if resolved.is_relative_to(CHECKOUT) or CHECKOUT.is_relative_to(resolved):
+		raise ValueError("authoring requires a private project root outside and not overlapping the checkout")
+	previous = ROOT
+	for name, value in list(globals().items()):
+		if name not in ("ROOT", "CHECKOUT") and isinstance(value, Path) and value.is_absolute() and value.is_relative_to(previous):
+			globals()[name] = resolved / value.relative_to(previous)
+	ROOT = resolved
+
+
+def require_private_outputs() -> None:
+	if ROOT.is_relative_to(CHECKOUT) or CHECKOUT.is_relative_to(ROOT):
+		raise ValueError("authoring requires an explicit private project root outside the checkout")
+	for path in (EXPORT_PATH, NATIVE_COMPARISON_PATH, UPSCALED_COMPARISON_PATH, SCENE_NATIVE_PATH, SCENE_V2_PATH):
+		if not path.resolve().is_relative_to(ROOT):
+			raise ValueError(f"authoring output escapes the private project root: {path}")
 
 
 def open_rgba(path: Path) -> Image.Image:
@@ -199,6 +221,7 @@ def render_registered_village_hall_scene(layers: list[tuple[int, int, str, int, 
 
 
 def write_scene_preview(exported_hall: Image.Image) -> None:
+	require_private_outputs()
 	layers = effective_village_hall_layers()
 	native_hall = open_rgba(NATIVE_HALL_PATH)
 	if native_hall.size != NATIVE_SIZE or native_hall.getchannel("A").getbbox() != NATIVE_ALPHA_BBOX:
@@ -218,9 +241,16 @@ def write_scene_preview(exported_hall: Image.Image) -> None:
 
 def main() -> int:
 	parser = argparse.ArgumentParser(description=__doc__)
+	parser.add_argument("--private-root", required=True, type=Path,
+		help="private project-shaped input/output workspace outside the checkout")
 	parser.add_argument("--check", action="store_true", help="verify saved outputs without rewriting")
 	parser.add_argument("--scene-preview", action="store_true", help="write the ignored native/v2 registered VillageHall-stage scene pair")
 	args = parser.parse_args()
+	try:
+		configure_private_root(args.private_root)
+		require_private_outputs()
+	except ValueError as error:
+		parser.error(str(error))
 
 	expected = build_expected()
 	if args.check:

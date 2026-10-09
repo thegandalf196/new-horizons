@@ -108,7 +108,14 @@ def specs():
 
 def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def main():
- ap=argparse.ArgumentParser();ap.add_argument('--render-only',action='store_true');args=ap.parse_args()
+ global ROOT
+ ap=argparse.ArgumentParser();ap.add_argument('--render-only',action='store_true')
+ ap.add_argument('--staging-root', type=Path, required=True, help='External authoring mirror; never installs shipping art')
+ args=ap.parse_args()
+ repository=Path(__file__).resolve().parents[3]
+ staging=args.staging_root.resolve()
+ if staging == repository or repository in staging.parents: ap.error('Authoring staging must be outside the checkout')
+ ROOT=staging/'assets/new-horizons/sorcery-art'
  records=[]
  for direction in ('meridian','aperture'):
   folder=ROOT/direction; (folder/'svg').mkdir(parents=True,exist_ok=True);(folder/'png').mkdir(exist_ok=True)

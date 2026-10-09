@@ -18,6 +18,7 @@ from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CHECKOUT = ROOT
 TOOLS = ROOT / "tools"
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
@@ -253,6 +254,8 @@ def build_outputs(creature_id: str) -> dict[Path, bytes]:
 
 
 def verify_or_write(write: bool, parser: argparse.ArgumentParser) -> None:
+    if ROOT.resolve().is_relative_to(CHECKOUT):
+        parser.error("authoring requires an explicit private workspace outside the checkout")
     expected: dict[Path, bytes] = {}
     for creature_id, spec in CREATURES.items():
         try:
@@ -291,11 +294,15 @@ def verify_or_write(write: bool, parser: argparse.ArgumentParser) -> None:
 
 
 def main() -> int:
+    global ROOT
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--private-root", required=True, type=Path,
+                        help="private project-shaped input/output workspace outside the checkout")
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--write", action="store_true", help="create the new portrait-export directories and replace the four pinned runtime portraits")
     mode.add_argument("--check", action="store_true", help="recompute and verify every pinned output without writing")
     args = parser.parse_args()
+    ROOT = args.private_root.resolve()
     verify_or_write(args.write, parser)
     return 0
 

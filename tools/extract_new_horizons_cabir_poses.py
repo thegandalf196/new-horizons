@@ -8,7 +8,7 @@ the original source-space placement. It does not resize or bind runtime art.
 """
 
 import argparse
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
 import json
 from pathlib import Path
@@ -17,6 +17,38 @@ from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CHECKOUT = ROOT
+
+
+def _require_external_path(path: Path) -> Path:
+    requested = path.expanduser()
+    resolved = requested.resolve()
+    if (requested.absolute().is_relative_to(CHECKOUT)
+            or resolved.is_relative_to(CHECKOUT) or CHECKOUT.is_relative_to(resolved)):
+        raise ValueError("authoring requires an explicit external workspace outside the checkout")
+    if any(parent.is_symlink() for parent in (requested, *requested.parents)):
+        raise ValueError("authoring paths must not traverse symlinks")
+    return resolved
+
+
+def configure_private_root(private_root: Path) -> None:
+    """Rebase project-shaped authoring paths without changing the checkout."""
+    global ROOT, SOURCES
+    resolved = _require_external_path(private_root)
+    previous = ROOT
+    for name, value in list(globals().items()):
+        if name not in ("ROOT", "CHECKOUT") and isinstance(value, Path) and value.is_absolute():
+            if value.is_relative_to(previous):
+                globals()[name] = resolved / value.relative_to(previous)
+    SOURCES = {
+        action: replace(spec,
+                        source_path=resolved / spec.source_path.relative_to(previous),
+                        output_dir=resolved / spec.output_dir.relative_to(previous),
+                        allowed_source_root=resolved / spec.allowed_source_root.relative_to(previous))
+        for action, spec in SOURCES.items()
+    }
+    ROOT = resolved
+
 CABIR_ROOT = ROOT / "assets/new-horizons/creatures/cabir"
 V2_ROOT = CABIR_ROOT / "v2"
 V3_ROOT = CABIR_ROOT / "v3"
@@ -384,6 +416,7 @@ def separate_poses(image: Image.Image, spec: PoseSource, source_sha256: str | No
 
 
 def _export_native_alignment(frames: list[Image.Image], receipt: dict, spec: PoseSource, output: Path) -> dict[str, str]:
+    _require_external_path(output)
     """Reuse the established Cabir 60px/ground-pivot alignment for v3 previews."""
     native = NATIVE_GROUPS.get(spec.action)
     if native is None:
@@ -446,14 +479,15 @@ def _read_source(path: Path) -> Image.Image:
         return opened.copy()
 
 
-def export_action(action: str) -> Path:
+def export_action(action: str, output_dir: Path | None = None) -> Path:
     try:
         spec = SOURCES[action]
     except KeyError as error:
         raise ValueError(f"unknown Cabir action source: {action}") from error
 
     source = spec.source_path.resolve()
-    output = spec.output_dir
+    output = spec.output_dir if output_dir is None else output_dir
+    _require_external_path(output)
     _validate_source_location(spec, source)
     if output.is_symlink() or output.exists():
         raise FileExistsError(f"refusing to replace existing separated output: {output}")
@@ -482,10 +516,14 @@ def export_action(action: str) -> Path:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--project-root", required=True, type=Path,
+                        help="external project-shaped authoring workspace")
+    parser.add_argument("--output-dir", type=Path, help="new external pose bundle directory")
     parser.add_argument("--action", required=True, choices=sorted(SOURCES), help="pinned source action sheet")
     args = parser.parse_args()
     try:
-        output = export_action(args.action)
+        configure_private_root(args.project_root)
+        output = export_action(args.action, args.output_dir)
     except (FileExistsError, OSError, ValueError, RuntimeError) as error:
         parser.error(str(error))
     print(f"Created offline Cabir pose separation: {output}")

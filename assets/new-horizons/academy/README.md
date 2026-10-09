@@ -1,10 +1,26 @@
 # New Horizons Academy art handoff
 
-This directory preserves the user-supplied generated masters, prompts, safe
-native-size exports, and the package's registration/provenance metadata. The
+This directory preserves prompts, selection receipts, licenses and the
+package's registration/provenance metadata. Loose masters, exports, composites
+and review images are preserved privately outside the checkout, not published
+as development inputs. Selected runtime bytes ship only in
+`Mods/new-horizons/NewHorizons.nhart`; ordinary builds and tests use that pack
+without a private overlay or source-image fallback. Historical source paths
+below identify private authoring inputs, not files promised in a fresh checkout.
+The
 author-supplied art remains under its author's rights; this directory does not
 assign it a CC0 or other license. The VCMI code and import tooling retain the
 repository's existing licensing.
+
+Authoring is opt-in: `import_new_horizons_academy_assets.py` requires an explicit
+external `--root`; portrait exporters require external `--private-root`.
+Use a private project-shaped workspace containing the recorded inputs and
+metadata. These tools reject checkout-local destinations, including `--check`.
+Never regenerate the shipping pack from incomplete local inputs. Public tests
+verify actual NHART payloads and use minimal disposable synthetic images for
+importer pin, geometry and safe-install tests; they do not claim to reproduce
+private masters. Retained hashes preserve provenance independently of runtime
+selection or visual approval.
 
 The archive is a visual-art handoff, not an installable mod or compatibility
 certificate. Its own `VALIDATION.json` and

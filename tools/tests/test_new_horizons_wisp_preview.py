@@ -5,6 +5,10 @@ import json
 from pathlib import Path
 import sys
 import unittest
+import tempfile
+from io import BytesIO
+from unittest.mock import patch
+from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -23,7 +27,56 @@ class WispPreviewOverlayTest(unittest.TestCase):
         cls.source_hashes_before = {
             path: hashlib.sha256(path.read_bytes()).hexdigest() for path in cls.source_files
         }
-        cls.outputs, cls.metadata = wisp_preview.build_overlay()
+        # Exercise the actual pinned handoff reader/copier with a complete,
+        # synthetic handoff, not the removed private artist submission.
+        with tempfile.TemporaryDirectory() as temporary:
+            package = Path(temporary)
+            files = {}
+            image = BytesIO()
+            Image.new("RGBA", (32, 32), (50, 100, 150, 255)).save(image, format="PNG")
+            def add(name, data):
+                destination = package / name
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(data)
+                files[name] = {"sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data)}
+            for name, descriptor, assets in wisp_preview.SPRITE_SPECS:
+                groups = 32 if name in {"Wisp.json", "WispUpgrade.json"} else 1
+                sequences = [{"group": group, "frames": ["fixture.png"]} for group in range(groups)]
+                add(descriptor, json.dumps({"basepath": name[:-5] + "/", "sequences": sequences}).encode())
+                add(assets + "/fixture.png", image.getvalue())
+            for name, descriptor, assets, basepath in wisp_preview.PROJECTILE_SPECS:
+                frames = [f"bolt-phase-00-angle-{angle}.png" for angle in range(9)]
+                add(descriptor, json.dumps({"sequences": [{"group": group, "frames": frames} for group in range(4)]}).encode())
+                for frame in frames:
+                    add(assets + "/" + frame, image.getvalue())
+            for icon in ("base/art/Wisp/icons/wisp-icon-32.png", "base/art/Wisp/icons/wisp-icon-58x64.png", "upgraded/icons/icon-32x32.png", "upgraded/icons/icon-58x64.png"):
+                add(icon, image.getvalue())
+            manifest = json.dumps({"files": files}).encode()
+            (package / "HANDOFF_MANIFEST.json").write_bytes(manifest)
+            # This historical preview builder expects its original overlay
+            # patch shape. Current shipped gameplay has since evolved; test
+            # transformation of an explicit synthetic input, not that roster.
+            mod_source = package / "synthetic-module"
+            seed = {
+                "mod.json": {"description": "Fixture", "settings": {
+                    "creatures": {"newHorizonsCategories": {"creatures": {}, "growthLines": {
+                        "core:pixie": {}, "core:psychicElemental": {}}}},
+                    "heroes": {"newHorizonsCapabilities": {"leadership": {"creatureRequirements": {}}}}}},
+                "Content/config/creatures/conflux.json": {},
+                "Content/config/factions/confluxCreatureRanks.json": {"core:conflux": {"town": {
+                    "hallSlots": {"modify@4": {}, "modify@5": {}},
+                    "structures": {"dwellingLvl8": {}, "dwellingUpLvl1": {}},
+                    "buildings": {"dwellingLvl8": {}, "dwellingUpLvl1": {}, "horde1": {}}}}},
+            }
+            for name, value in seed.items():
+                path = mod_source / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(value))
+            with patch.object(wisp_preview, "HANDOFF_MANIFEST_SHA256", hashlib.sha256(manifest).hexdigest()):
+                cls.outputs, cls.metadata = wisp_preview.build_overlay(package, mod_source)
+                (package / "base/art/Wisp/fixture.png").write_bytes(b"tampered")
+                with unittest.TestCase().assertRaisesRegex(ValueError, "hash/size mismatch"):
+                    wisp_preview.build_overlay(package, mod_source)
         cls.source_hashes_after = {
             path: hashlib.sha256(path.read_bytes()).hexdigest() for path in cls.source_files
         }

@@ -2,8 +2,10 @@
 
 Current delivery: selected runtime exports are in `NewHorizons.nhart`, not an
 installed loose `Images` mount. Earlier output paths below describe authoring
-history. Retained exports are development/reference inputs outside the shipped
-module; use the explicit manifest and packer documented in `docs/NHART_DELIVERY.md`.
+history. Loose authoring files, runtime staging inputs, alternatives and review
+materials are maintained locally and are not committed by default. The public
+repository retains the package, tools, manifests and records. Use the explicit
+manifest and packer documented in `docs/NHART_DELIVERY.md`.
 The CC0 dedication below applies to the identified original UI work, not every
 original-derived or contributor-supplied visual in the complete runtime pack.
 
@@ -20,19 +22,22 @@ To the extent possible under law, the creators waive copyright and related right
 in these new assets. No rights in Heroes III artwork or user concept art are
 asserted or transferred by this dedication. VCMI product source retains its GPL.
 
-`svg/` contains editable vectors. The original shape definitions also live in
-`generate_icons.py`; running it regenerates SVGs and PNGs, overwriting manual SVG
-changes. Artists may instead edit SVGs and export them with an SVG renderer.
+Editable vectors are retained in the private authoring workspace. The original
+shape definitions also live in `generate_icons.py`; running it regenerates SVGs
+and PNGs in an explicitly selected external output root, overwriting manual SVG
+changes there. Artists may instead edit local SVGs and export them with an SVG renderer.
 
-Run `python3 assets/new-horizons/generate_icons.py` from the repository root.
+Run `python3 assets/new-horizons/generate_icons.py --output-root "$HOME/Downloads/provisory/icon-generation"`
+from the repository root, choosing a fresh local destination for each review.
 It requires Pillow, does not invoke the game or any GUI, and reads **no original
 asset input**. Raster exports are 4x supersampled then reduced with Lanczos to
-8-bit/channel RGBA PNGs. The mod's `Images/` mount is registered by the integrator
-at `SPRITES/`; no purchaser files are copied into this module.
+8-bit/channel RGBA PNGs. Generated files are authoring inputs, not a player mount.
+Ordinary builds use the committed NHART package without regenerating artwork.
 
 ## Runtime names and states
 
-Outputs: `Mods/new-horizons/Images/NH_*`.
+Historical resource names: `NH_*`, now resolved through the NHART resource mount.
+The names below document presentation and bindings, not loose output locations.
 
 - Charge, Hold the Line, Advance, Aggressive, Defensive, Spells and Cancel:
   `NH_<id>_button.json` references 64x64 states in VCMI Button order:

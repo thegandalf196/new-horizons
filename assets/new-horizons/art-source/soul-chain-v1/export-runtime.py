@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 from pathlib import Path
@@ -16,8 +17,15 @@ def sha256(path: Path) -> str:
 
 
 def main() -> None:
-    source_root = Path(__file__).resolve().parent
-    repo_root = source_root.parents[3]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--staging-root", type=Path, required=True, help="External authoring mirror; never installs shipping art")
+    args = parser.parse_args()
+    repository_path = Path(__file__).resolve().parents[4]
+    staging = args.staging_root.resolve()
+    if staging == repository_path or repository_path in staging.parents:
+        parser.error("Authoring staging must be outside the checkout")
+    source_root = staging / "assets/new-horizons/art-source/soul-chain-v1"
+    repo_root = staging
     image_dir = repo_root / "Mods/new-horizons/Images"
     exports = source_root / "exports/soul-chain"
     sizes = (44, 32, 30)

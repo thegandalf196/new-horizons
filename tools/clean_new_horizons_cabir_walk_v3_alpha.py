@@ -22,6 +22,31 @@ import export_new_horizons_cabir_animation as animation_exporter
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CHECKOUT = ROOT
+
+
+def _require_external_path(path: Path) -> Path:
+    requested = path.expanduser()
+    resolved = requested.resolve()
+    if (requested.absolute().is_relative_to(CHECKOUT)
+            or resolved.is_relative_to(CHECKOUT) or CHECKOUT.is_relative_to(resolved)):
+        raise ValueError("authoring requires an explicit external workspace outside the checkout")
+    if any(parent.is_symlink() for parent in (requested, *requested.parents)):
+        raise ValueError("authoring paths must not traverse symlinks")
+    return resolved
+
+
+def configure_private_root(private_root: Path) -> None:
+    """Rebase project-shaped authoring paths without changing the checkout."""
+    global ROOT
+    resolved = _require_external_path(private_root)
+    previous = ROOT
+    for name, value in list(globals().items()):
+        if name not in ("ROOT", "CHECKOUT") and isinstance(value, Path) and value.is_absolute():
+            if value.is_relative_to(previous):
+                globals()[name] = resolved / value.relative_to(previous)
+    ROOT = resolved
+
 WALK_DIRECTORY = ROOT / "assets/new-horizons/creatures/cabir/v3/walk-v2"
 SOURCE_ATLAS = WALK_DIRECTORY / "candidate-01.png"
 SOURCE_PROMPT = WALK_DIRECTORY / "candidate-01.prompt.txt"
@@ -88,14 +113,15 @@ def _pinned_prompt_sha256() -> str:
     return prompt_sha256
 
 
-def export_review_bundle(input_path: Path = SOURCE_ATLAS, output_dir: Path = OUTPUT_DIRECTORY) -> Path:
+def export_review_bundle(input_path: Path | None = None, output_dir: Path | None = None) -> Path:
     """Write a new alpha-cleaned copy, 4 native frames and review previews."""
+    input_path = SOURCE_ATLAS if input_path is None else input_path
+    output_dir = OUTPUT_DIRECTORY if output_dir is None else output_dir
+    _require_external_path(output_dir)
     image, source_sha256 = _read_pinned_source(input_path)
     prompt_sha256 = _pinned_prompt_sha256()
 
     requested_output = output_dir.expanduser()
-    if requested_output.resolve() != OUTPUT_DIRECTORY.resolve():
-        raise ValueError(f"output must be {_path_label(OUTPUT_DIRECTORY)}")
     output = animation_exporter.validate_new_output_directory(input_path, requested_output)
 
     cleaned, receipt = alpha_cleaner.clean_atlas(
@@ -139,10 +165,13 @@ def export_review_bundle(input_path: Path = SOURCE_ATLAS, output_dir: Path = OUT
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", type=Path, default=SOURCE_ATLAS, help="pinned immutable RGBA source atlas")
-    parser.add_argument("--output-dir", type=Path, default=OUTPUT_DIRECTORY, help="new provisional output directory")
+    parser.add_argument("--project-root", required=True, type=Path,
+                        help="external project-shaped authoring workspace")
+    parser.add_argument("--input", type=Path, help="pinned immutable RGBA source atlas")
+    parser.add_argument("--output-dir", type=Path, help="new external provisional output directory")
     args = parser.parse_args()
     try:
+        configure_private_root(args.project_root)
         output = export_review_bundle(args.input, args.output_dir)
     except (FileExistsError, OSError, ValueError, RuntimeError) as error:
         parser.error(str(error))

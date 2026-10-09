@@ -7,6 +7,10 @@ import struct
 import unittest
 from collections import Counter
 from pathlib import Path
+if __package__:
+    from .nhart_test_resources import ArtPath
+else:
+    from nhart_test_resources import ArtPath
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -66,7 +70,7 @@ class NewHorizonsMenuTitleTests(unittest.TestCase):
 
         for row in rows:
             with self.subTest(resource=row["resource"], crc32=row["crc32"]):
-                patch_path = ROOT / "Mods/new-horizons/Images" / f"{row['image']}.png"
+                patch_path = ArtPath() / f"{row['image']}.png"
                 self.assertTrue(patch_path.is_file(), f"missing generated patch {patch_path.name}")
                 self.assertEqual(png_dimensions(patch_path), (row["width"], row["height"]))
                 self.assertGreaterEqual(row["x"], 0)

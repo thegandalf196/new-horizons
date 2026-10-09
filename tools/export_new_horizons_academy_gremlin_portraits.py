@@ -14,6 +14,7 @@ from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CHECKOUT = ROOT
 IMAGE_ROOT = ROOT / "Mods/new-horizons/Images"
 SOURCE_BACKDROP = IMAGE_ROOT / "NH_academy/ui/crbkgtow.png"
 BACKDROP_EXPORTS = (
@@ -99,6 +100,8 @@ def render_backdrop() -> Image.Image:
 
 
 def verify(check: bool, parser: argparse.ArgumentParser, creature: str | None = None) -> None:
+    if ROOT.resolve().is_relative_to(CHECKOUT):
+        parser.error("authoring requires an explicit private workspace outside the checkout")
     if not SOURCE_BACKDROP.is_file():
         parser.error(f"missing authored backdrop source: {SOURCE_BACKDROP}")
     master_genie_matte = MASKS["masterGenie"][0]
@@ -172,10 +175,22 @@ def verify(check: bool, parser: argparse.ArgumentParser, creature: str | None = 
 
 
 def main() -> int:
+    global ROOT, IMAGE_ROOT, SOURCE_BACKDROP, BACKDROP_EXPORTS, MASKS
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--private-root", required=True, type=Path,
+                        help="private project-shaped input/output workspace outside the checkout")
     parser.add_argument("--check", action="store_true", help="verify exports without writing")
     parser.add_argument("--creature", choices=tuple(MASKS), help="write only this runtime mask, leaving other exports untouched")
     args = parser.parse_args()
+    private_root = args.private_root.resolve()
+    if private_root.is_relative_to(CHECKOUT):
+        parser.error("private workspace must be outside the checkout")
+    SOURCE_BACKDROP = private_root / SOURCE_BACKDROP.relative_to(ROOT)
+    BACKDROP_EXPORTS = tuple(private_root / path.relative_to(ROOT) for path in BACKDROP_EXPORTS)
+    MASKS = {name: tuple(private_root / path.relative_to(ROOT) for path in paths)
+             for name, paths in MASKS.items()}
+    ROOT = private_root
+    IMAGE_ROOT = ROOT / "Mods/new-horizons/Images"
     verify(args.check, parser, args.creature)
     return 0
 

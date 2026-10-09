@@ -77,10 +77,15 @@ def make_export(helper: Path, here: Path, slug: str) -> Path:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--export-helper", required=True, type=Path)
+    parser.add_argument("--staging-root", type=Path, required=True, help="External authoring mirror; never installs shipping art")
     args = parser.parse_args()
+    repository_path = Path(__file__).resolve().parents[4]
+    staging = args.staging_root.resolve()
+    if staging == repository_path or repository_path in staging.parents:
+        parser.error("Authoring staging must be outside the checkout")
 
-    here = Path(__file__).resolve().parent
-    root = here.parents[3]
+    here = staging / "assets/new-horizons/art-source/active-perks-v2"
+    root = staging
     live = root / "Mods/new-horizons/Images"
     helper = args.export_helper.resolve(strict=True)
     live.mkdir(parents=True, exist_ok=True)

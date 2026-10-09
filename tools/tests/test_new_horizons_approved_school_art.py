@@ -4,11 +4,15 @@
 import hashlib
 import json
 from pathlib import Path
+if __package__:
+    from .nhart_test_resources import ArtPath
+else:
+    from nhart_test_resources import ArtPath
 
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "assets/new-horizons/approved-six-school-assets.json"
-IMAGES = ROOT / "Mods/new-horizons/Images"
+IMAGES = ArtPath()
 SCHOOLS = ("light", "nature", "sorcery", "havoc", "shadow", "chaos")
 
 

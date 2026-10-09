@@ -5,59 +5,25 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
-
-from PIL import Image, ImageChops
-
+from tools.tests.nhart_test_resources import open_image, read_resource
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools"))
-import export_new_horizons_academy_background_v2 as background_exporter
 import import_new_horizons_academy_assets as academy_importer
 
 
 class NewHorizonsAcademyBackgroundImportTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.hall = academy_importer.load_hall_revision(
-            ROOT,
-            academy_importer.APPROVED_HALL_REVISION_MANIFEST_SHA256,
-        )
-        cls.background = academy_importer.load_background_revision(
-            ROOT,
-            academy_importer.APPROVED_BACKGROUND_REVISION_MANIFEST_SHA256,
-            cls.hall,
-        )
+        # Installation is a byte identity gate, independent of private masters.
+        cls.background = {"baseline_native_bytes": b"synthetic original landscape",
+                          "export_bytes": read_resource("SPRITES/NH_academy/town/landscape.png")}
 
-    def test_pinned_sources_and_export_match_mechanical_roi_registration(self):
-        manifest = self.background["manifest"]
-        self.assertEqual(self.background["manifest_sha256"], "2750379b86b4592235610060a2321993f067a3dec177c464b6e890a0c5942efd")
-        self.assertEqual(manifest["sources"]["master"]["dimensions"], [1836, 857])
-        self.assertEqual(manifest["sources"]["prompt"]["path"], "assets/new-horizons/academy/background-revisions/v2/landscape.prompt.txt")
-        self.assertEqual(manifest["export"]["sha256"], "1a66adbbfc32d893ea6ec1bf19a7c8b09315615ebb1a4f48dc03b6946e31c45e")
-        self.assertEqual(manifest["export"]["roi"], list(background_exporter.ROI))
-        self.assertFalse(manifest["runtimeInstallation"])
-        self.assertFalse(manifest["userVisualAcceptance"])
-        self.assertEqual(
-            manifest["sources"]["villageHallV2Overlay"]["placement"],
-            {"x": 0, "y": 259, "z": 2},
-        )
-
-        baseline, exported = background_exporter.make_export()
-        with Image.open(background_exporter.EXPORT_PATH) as pinned:
-            pinned_rgb = pinned.convert("RGB")
-        self.assertEqual(exported.tobytes(), pinned_rgb.tobytes())
-        self.assertEqual(self.background["export_bytes"], background_exporter.EXPORT_PATH.read_bytes())
-        self.assertEqual(self.background["baseline_native_bytes"], background_exporter.BASELINE_PATH.read_bytes())
-
-        difference = ImageChops.difference(baseline, exported)
-        left, top, right, bottom = background_exporter.ROI
-        self.assertEqual(
-            difference.crop((right, 0, baseline.width, baseline.height)).getbbox(),
-            None,
-        )
-        self.assertEqual(difference.crop((0, 0, baseline.width, top)).getbbox(), None)
-        self.assertEqual(difference.crop((0, bottom, baseline.width, baseline.height)).getbbox(), None)
-        self.assertIsNotNone(difference.crop((left, top, right, bottom)).getbbox())
+    def test_selected_runtime_landscape_has_native_dimensions(self):
+        image = open_image("SPRITES/NH_academy/town/landscape.png")
+        self.assertEqual(image.size, (800, 374))
+        self.assertEqual(image.mode, "RGB")
+        self.assertEqual(academy_importer.BACKGROUND_RUNTIME_IMAGE, "NH_academy/town/landscape.png")
 
     def test_install_is_idempotent_and_rejects_unknown_or_wrong_baseline(self):
         baseline = self.background["baseline_native_bytes"]
@@ -71,6 +37,16 @@ class NewHorizonsAcademyBackgroundImportTest(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "v2 is not installed"):
                 academy_importer.install_curated_background(root, self.background, baseline, check_only=True)
             self.assertEqual(destination.read_bytes(), baseline)
+
+            destination.unlink()
+            outside = root / "unrelated.png"
+            outside.write_bytes(b"untouched")
+            destination.symlink_to(outside)
+            with self.assertRaisesRegex(RuntimeError, "symlinked Academy town background"):
+                academy_importer.install_curated_background(root, self.background, baseline, check_only=False)
+            self.assertEqual(outside.read_bytes(), b"untouched")
+            destination.unlink()
+            destination.write_bytes(baseline)
 
             academy_importer.install_curated_background(root, self.background, baseline, check_only=False)
             self.assertEqual(destination.read_bytes(), export)

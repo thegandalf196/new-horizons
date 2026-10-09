@@ -21,6 +21,7 @@ from PIL import Image, ImageChops, ImageDraw
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CHECKOUT = ROOT
 REVISION_ROOT = ROOT / "assets/new-horizons/academy/background-revisions/v2"
 MASTER_PATH = REVISION_ROOT / "landscape-master.png"
 PROMPT_PATH = REVISION_ROOT / "landscape.prompt.txt"
@@ -43,6 +44,26 @@ EXPECTED_MASTER_SHA256 = "8df9083e6f09e035ab09733bcb6f0c54361919eff1bdbbdc98f77c
 EXPECTED_PROMPT_SHA256 = "4fadd928d1c329d3d052c4f2e4535ddfed42b1dbf5478e547e1c1af28daa4b50"
 EXPECTED_BASELINE_SHA256 = "73387f56e84327e1bd56edbd92c60052390a91ade79671d362f297f7d7cea7b3"
 EXPECTED_HALL_V2_SHA256 = "117e8ae670dda32e7cee0c76d78d4a12acb3a22bd3467b6b6d2cfd74173763cd"
+
+
+def configure_private_root(private_root: Path) -> None:
+    global ROOT
+    resolved = private_root.resolve()
+    if resolved.is_relative_to(CHECKOUT) or CHECKOUT.is_relative_to(resolved):
+        raise ValueError("authoring requires a private project root outside and not overlapping the checkout")
+    previous = ROOT
+    for name, value in list(globals().items()):
+        if name not in ("ROOT", "CHECKOUT") and isinstance(value, Path) and value.is_absolute() and value.is_relative_to(previous):
+            globals()[name] = resolved / value.relative_to(previous)
+    ROOT = resolved
+
+
+def require_private_outputs() -> None:
+    if ROOT.is_relative_to(CHECKOUT) or CHECKOUT.is_relative_to(ROOT):
+        raise ValueError("authoring requires an explicit private project root outside the checkout")
+    for path in (EXPORT_PATH, MANIFEST_PATH, NATIVE_COMPARISON_PATH, ROI_COMPARISON_PATH, SCENE_COMPARISON_PATH):
+        if not path.resolve().is_relative_to(ROOT):
+            raise ValueError(f"authoring output escapes the private project root: {path}")
 
 
 def file_sha256(path: Path) -> str:
@@ -126,9 +147,9 @@ def make_roi_comparison(baseline: Image.Image, exported: Image.Image) -> Image.I
 
 def effective_village_hall_layers() -> list[tuple[int, int, str, int, int, Path]]:
     """Reuse the already-reviewed town-layout/config merge for stage preview."""
-    sys.path.insert(0, str(ROOT / "tools"))
+    sys.path.insert(0, str(CHECKOUT / "tools"))
     import export_new_horizons_academy_hall_v2 as hall_exporter
-
+    hall_exporter.configure_private_root(ROOT)
     return hall_exporter.effective_village_hall_layers()
 
 
@@ -265,6 +286,7 @@ def build_artifacts() -> dict[Path, bytes]:
 
 
 def process(check_only: bool) -> None:
+    require_private_outputs()
     artifacts = build_artifacts()
     for path, expected in artifacts.items():
         if check_only:
@@ -278,9 +300,12 @@ def process(check_only: bool) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--private-root", required=True, type=Path,
+                        help="private project-shaped input/output workspace outside the checkout")
     parser.add_argument("--check", action="store_true", help="verify exports/manifest without rewriting")
     args = parser.parse_args()
     try:
+        configure_private_root(args.private_root)
         process(args.check)
     except (FileNotFoundError, OSError, ValueError, RuntimeError, KeyError) as error:
         parser.exit(1, f"Academy background v2 export failed: {error}\n")

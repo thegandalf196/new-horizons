@@ -1,4 +1,8 @@
-"""Validate the detached static Cabir battle-preview bundle and loader groups."""
+"""Validate the detached Cabir preview algorithm with synthetic historical inputs.
+
+Selected v3 shipping artwork is verified by the Cabir NHART tests; historical
+v1/v2 drafts are private authoring material, not fresh-checkout dependencies.
+"""
 
 import json
 from pathlib import Path
@@ -7,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from PIL import Image
 
@@ -17,6 +22,28 @@ import export_new_horizons_cabir_ingame_preview as preview
 
 
 class CabirIngamePreviewTest(unittest.TestCase):
+    def setUp(self):
+        self.fixture_dir = tempfile.TemporaryDirectory(prefix="nh-cabir-preview-source-")
+        self.addCleanup(self.fixture_dir.cleanup)
+        self.sources = {}
+        for version, color in (("v1", (180, 24, 40, 255)), ("v2", (90, 70, 30, 255))):
+            spec = dict(preview.source_spec(version))
+            source = Path(self.fixture_dir.name) / (version + ".png")
+            image = Image.new("RGBA", (64, 60), (0, 0, 0, 0))
+            image.paste(color, spec["alpha_bounds"])
+            image.save(source)
+            spec["source"] = source
+            spec["source_sha256"] = preview._sha256(source.read_bytes())
+            if spec["master"] is not None:
+                master = Path(self.fixture_dir.name) / (version + "-master.png")
+                Image.new("RGBA", (128, 128), color).save(master)
+                spec["master"] = master
+                spec["master_sha256"] = preview._sha256(master.read_bytes())
+            self.sources[version] = spec
+        self.source_patch = patch.dict(preview.VERSION_SOURCES, self.sources)
+        self.source_patch.start()
+        self.addCleanup(self.source_patch.stop)
+
     def _write_reference_frame(self, path: Path, color, bounds=(170, 100, 250, 320)) -> bytes:
         image = Image.new("RGBA", preview.REFERENCE_CANVAS, (0, 0, 0, 0))
         image.paste(color, bounds)
@@ -45,7 +72,7 @@ class CabirIngamePreviewTest(unittest.TestCase):
         self.assertIn('group["group"].Integer()', loader)
         self.assertIn('group["frames"].Vector()', loader)
 
-    def test_bundle_keeps_gameplay_unchanged_and_places_approved_sprite(self):
+    def test_bundle_keeps_gameplay_unchanged_and_places_pinned_synthetic_sprite(self):
         with tempfile.TemporaryDirectory(prefix="nh-cabir-preview-test-") as temp:
             output_dir = Path(temp) / "overlay"
             preview.write_bundle(output_dir)
@@ -57,7 +84,7 @@ class CabirIngamePreviewTest(unittest.TestCase):
             for creature in patch.values():
                 self.assertEqual(creature, {"graphics": {"animation": preview.ANIMATION_NAME}})
 
-            with Image.open(preview.SOURCE) as opened:
+            with Image.open(preview.source_spec("v1")["source"]) as opened:
                 source = opened.convert("RGBA")
             expected = Image.new("RGBA", preview.LOGICAL_CANVAS, (0, 0, 0, 0))
             expected.alpha_composite(source, preview.SOURCE_PLACEMENT)
@@ -81,10 +108,10 @@ class CabirIngamePreviewTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "pixels differ"):
                 preview.verify_bundle(output_dir)
 
-    def test_v2_bundle_uses_pinned_rougher_draft_with_same_center_and_feet_baseline(self):
+    def test_v2_bundle_uses_pinned_synthetic_input_with_same_center_and_feet_baseline(self):
         spec = preview.source_spec("v2")
-        self.assertEqual(spec["source"], preview.V2_SOURCE)
-        self.assertEqual(spec["master"], preview.V2_MASTER)
+        self.assertEqual(spec["source"], self.sources["v2"]["source"])
+        self.assertEqual(spec["master"], self.sources["v2"]["master"])
         self.assertEqual(spec["placement"], (164, 208))
         self.assertEqual(spec["canvas_bounds"], (169, 208, 224, 268))
 
@@ -106,7 +133,7 @@ class CabirIngamePreviewTest(unittest.TestCase):
             self.assertEqual(len(descriptor["sequences"]), 32)
             self.assertTrue(all(sequence["frames"] == ["00.png"] for sequence in descriptor["sequences"]))
 
-            with Image.open(preview.V2_SOURCE) as opened:
+            with Image.open(preview.source_spec("v2")["source"]) as opened:
                 source = opened.convert("RGBA")
             expected = Image.new("RGBA", preview.LOGICAL_CANVAS, (0, 0, 0, 0))
             expected.alpha_composite(source, spec["placement"])
@@ -127,6 +154,26 @@ class CabirIngamePreviewTest(unittest.TestCase):
     def test_unknown_version_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "unknown Cabir preview version"):
             preview.create_native_frame("v99")
+
+    def test_pinned_source_and_master_changes_are_rejected(self):
+        source = self.sources["v1"]["source"]
+        source.write_bytes(source.read_bytes() + b"altered synthetic input")
+        with self.assertRaisesRegex(ValueError, "standing preview hash changed"):
+            preview.create_native_frame("v1")
+        master = self.sources["v2"]["master"]
+        master.write_bytes(master.read_bytes() + b"altered synthetic master")
+        with self.assertRaisesRegex(ValueError, "master hash changed"):
+            preview.create_native_frame("v2")
+
+    def test_changed_alpha_geometry_is_rejected_even_with_matching_input_hash(self):
+        spec = dict(self.sources["v1"])
+        image = Image.new("RGBA", (64, 60), (0, 0, 0, 0))
+        image.paste((180, 24, 40, 255), (5, 1, 61, 58))
+        image.save(spec["source"])
+        spec["source_sha256"] = preview._sha256(spec["source"].read_bytes())
+        with patch.dict(preview.VERSION_SOURCES, {"v1": spec}):
+            with self.assertRaisesRegex(ValueError, "alpha bounds changed"):
+                preview.create_native_frame("v1")
 
     def test_generator_refuses_live_module_and_existing_output_paths(self):
         with self.assertRaises(ValueError):
