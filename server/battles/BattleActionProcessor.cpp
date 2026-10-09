@@ -4677,7 +4677,9 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	}
 
 	markSpellLikeAttack(attacker, bat);
-	if(bat.lucky() && bat.fortuneState)
+	const bool genericLuckyRecovery = newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attacker, !bat.spellLike())
+		&& newHorizonsCombatSkills::hasLuckyRecovery(attackerHero);
+	if(bat.lucky() && (bat.fortuneState || genericLuckyRecovery))
 	{
 		int64_t actualDamage = 0;
 		bool enemyStackKilled = false;
@@ -4696,11 +4698,14 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			if(destroyed && battle.battleMatchOwner(attacker, target.unit))
 				enemyStackKilled = true;
 		}
-		bat.fortuneState->finishPositiveStrike(adjacentFriends, enemyStackKilled);
-		if(!attack.ranged && bat.fortuneState->luckyRecovery && attackerState->alive())
+		if(bat.fortuneState)
+			bat.fortuneState->finishPositiveStrike(adjacentFriends, enemyStackKilled);
+		if(!attack.ranged && attackerState->alive())
 		{
-			auto healing = SylvanLuckState::recoveryAmount(actualDamage);
-			attackerState->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
+			auto healing = newHorizonsCombatSkills::luckyRecoveryAmount(actualDamage,
+				genericLuckyRecovery, bat.fortuneState && bat.fortuneState->luckyRecovery);
+			if(healing > 0)
+				attackerState->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
 		}
 	}
 

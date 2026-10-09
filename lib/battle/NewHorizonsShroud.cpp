@@ -57,6 +57,14 @@ int rank(const CGHeroInstance * hero)
 	}
 }
 
+bool hasVeiledMovement(const CGHeroInstance * hero)
+{
+	// hasActivePerk reads the hero's saved registry, not installed defaults.
+	// Rank additionally requires the Ghost Walk capability itself to be active.
+	return rank(hero) > 0 && hero->hasActivePerk(std::string(SKILL_ID),
+		std::string(VEILED_MOVEMENT_PERK_ID));
+}
+
 int flankingDamagePercent(int value)
 {
 	switch(value)

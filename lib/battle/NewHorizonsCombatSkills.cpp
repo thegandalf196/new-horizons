@@ -30,6 +30,21 @@ int rank(const CGHeroInstance * hero, const char * skill)
 
 namespace newHorizonsCombatSkills
 {
+bool hasLuckyRecovery(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk(std::string(LUCK_SKILL_ID),
+		std::string(LUCKY_RECOVERY_PERK_ID));
+}
+
+int64_t luckyRecoveryAmount(int64_t actualDamage, bool genericRecovery, bool sylvanRecovery)
+{
+	const int contributions = static_cast<int>(genericRecovery) + static_cast<int>(sylvanRecovery);
+	const int64_t damage = std::max<int64_t>(0, actualDamage);
+	// Do not multiply an unbounded HP amount before dividing. With one source
+	// this is precisely the existing Sylvan floor(actualDamage / 10).
+	return damage / 10 * contributions + damage % 10 * contributions / 10;
+}
+
 Bonus gamblerLuckPenalty()
 {
 	const auto skill = SecondarySkill(SecondarySkill::decode(std::string(LUCK_SKILL_ID)));

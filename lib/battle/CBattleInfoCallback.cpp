@@ -3180,6 +3180,10 @@ bool CBattleInfoCallback::battleCanOverwatch(const battle::Unit * shooter, const
 		|| !battleMatchOwner(shooter, mover) || mover->isInvincible()
 		|| (mover->hasBonusOfType(BonusType::SANCTIFIED) && battleMatchOwner(shooter, mover)))
 		return false;
+	// Ghost Walk is supplied by the mover's current controller. Veiled
+	// Movement suppresses movement reactions, not ordinary ranged attacks.
+	if(newHorizonsShroud::hasVeiledMovement(battleGetOwnerHero(mover)))
+		return false;
 	const int range = newHorizonsBattlecraft::overwatchRange(shooter);
 	if(range <= 0)
 		return false;
@@ -3549,6 +3553,23 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	if(info.physicalDamage)
 	{
 		payload.bloodrageDamagePercent = battleGetBloodrageDamagePercent(info.attacker, info.defender);
+		if(info.defender && newHorizonsCombatSkills::isPhysicalCreatureAttack(info.attacker, info.physicalDamage)
+			&& battleGetOwner(info.attacker) != battleGetOwner(info.defender)
+			&& newHorizonsBloodrage::hasAvatarOfRage(battleGetOwnerHero(info.attacker)))
+		{
+			const auto side = playerToSide(battleGetOwner(info.attacker));
+			if((side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+				&& newHorizonsBloodrage::atMaximumForAttack(payload.bloodrageDamagePercent,
+					getBattle()->getBloodrageCapPercent(side)))
+			{
+				// Blood Scent's higher Rage belongs to this attack only. Reuse the
+				// target Creature Defense channels, never hero attributes or Frenzy.
+				if(info.shooting)
+					payload.archeryRangedDefenseIgnorePercent += newHorizonsBloodrage::AVATAR_DEFENSE_IGNORE_PERCENT;
+				else
+					payload.meleeDefenseIgnorePercent += newHorizonsBloodrage::AVATAR_DEFENSE_IGNORE_PERCENT;
+			}
+		}
 		const bool ordinaryCreatureAttack = newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.attacker);
 		if(info.shooting && ordinaryCreatureAttack)
 			payload.newHorizonsArcheryDamagePercent = newHorizonsCombatSkills::archeryDamagePercent(

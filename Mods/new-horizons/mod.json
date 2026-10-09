@@ -6265,7 +6265,7 @@
 								"requires": "advanced",
 								"description": "When a melee attack triggers positive Luck, surviving creatures in the attacker recover HP equal to 10% of actual damage dealt.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "When a melee attack triggers positive Luck, surviving creatures in the attacker recover HP equal to 10% of actual damage dealt."
 								}
 							},
@@ -6743,7 +6743,7 @@
 								"requires": "basic",
 								"description": "Ghost Walk movement does not trigger explicitly movement-based reaction attacks.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Ghost Walk movement does not trigger explicitly movement-based reaction attacks."
 								}
 							},
@@ -7219,7 +7219,7 @@
 								"requires": "expert",
 								"description": "At maximum Bloodrage, friendly creature attacks ignore 25% Creature Defense.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "At maximum Bloodrage, friendly creature attacks ignore 25% Creature Defense."
 								}
 							},

@@ -865,6 +865,9 @@ AttackPossibility AttackPossibility::evaluate(
 		const bool projectsPerfectFortune = state->getBattle()
 			&& (state->getBattle()->getPerfectFortuneState(BattleSide::ATTACKER).enabled
 				|| state->getBattle()->getPerfectFortuneState(BattleSide::DEFENDER).enabled);
+		const bool projectsLuckyRecovery = newHorizonsCombatSkills::hasLuckyRecovery(
+			state->battleGetOwnerHero(attacker))
+			|| newHorizonsCombatSkills::hasLuckyRecovery(state->battleGetOwnerHero(defender));
 		const auto * battleInfo = state->getBattle();
 		const bool attackerSideHasBloodragePain = battleInfo
 			&& (attackerSide == BattleSide::ATTACKER || attackerSide == BattleSide::DEFENDER)
@@ -1072,7 +1075,7 @@ AttackPossibility AttackPossibility::evaluate(
 				|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 				|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune || projectsPerfectFortune
 				|| projectsNoEscape || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
-				|| projectsNightProwler || projectsBloodragePain || projectsLastStand || projectsDefiant || projectsLuckSerendipity || projectsFrozen)
+				|| projectsNightProwler || projectsBloodragePain || projectsLastStand || projectsDefiant || projectsLuckSerendipity || projectsFrozen || projectsLuckyRecovery)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
 	if(projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
@@ -1972,14 +1975,19 @@ AttackPossibility AttackPossibility::evaluate(
 						: (strike.perfectMoment || ap.attack.luckyStrike
 							|| (luck > 0 && rules.diceSize > 0 && !rules.goodChance.empty()
 								&& rules.goodChance[chanceIndex] >= rules.diceSize));
-					if(fortune.luckyRecovery && certainlyLucky && ap.attackerState->alive())
+					const bool genericRecovery = newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(
+						attacker, attackInfo.physicalDamage)
+						&& newHorizonsCombatSkills::hasLuckyRecovery(state->battleGetOwnerHero(attacker));
+					if((genericRecovery || fortune.luckyRecovery) && certainlyLucky && ap.attackerState->alive())
 					{
 						int64_t actualDamage = 0;
 						for(const auto & [unitId, damage] : strike.resolvedHits)
 							if(unitId == strike.defenderId || rules.affectsAllTargets)
 								actualDamage += std::max<int64_t>(0, damage);
-						auto healing = SylvanLuckState::recoveryAmount(actualDamage);
-						ap.attackerState->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
+						auto healing = newHorizonsCombatSkills::luckyRecoveryAmount(
+							actualDamage, genericRecovery, fortune.luckyRecovery);
+						if(healing > 0)
+							ap.attackerState->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
 					}
 				}
 			}
@@ -2326,10 +2334,15 @@ AttackPossibility AttackPossibility::evaluate(
 						: (retaliationAttack.luckyStrike
 							|| (luck > 0 && rules.diceSize > 0 && !rules.goodChance.empty()
 								&& rules.goodChance[chanceIndex] >= rules.diceSize));
-					if(fortune.luckyRecovery && certainlyLucky && retaliatorState->alive())
+					const bool genericRecovery = newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(
+						retaliatorState.get(), retaliationAttack.physicalDamage)
+						&& newHorizonsCombatSkills::hasLuckyRecovery(state->battleGetOwnerHero(defender));
+					if((genericRecovery || fortune.luckyRecovery) && certainlyLucky && retaliatorState->alive())
 					{
-						auto healing = SylvanLuckState::recoveryAmount(retaliationActualDamage);
-						retaliatorState->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
+						auto healing = newHorizonsCombatSkills::luckyRecoveryAmount(
+							retaliationActualDamage, genericRecovery, fortune.luckyRecovery);
+						if(healing > 0)
+							retaliatorState->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
 					}
 				}
 			}

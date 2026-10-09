@@ -14,6 +14,7 @@
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/callback/CBattleCallback.h"
 #include "../../../lib/battle/NewHorizonsBattlecraft.h"
+#include "../../../lib/battle/NewHorizonsShroud.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/mapObjects/army/CStackBasicDescriptor.h"
 #include "../../../lib/networkPacks/SetStackEffect.h"
@@ -77,6 +78,10 @@ protected:
 	CStack * mover = nullptr;
 	CStack * secondMover = nullptr;
 	std::vector<std::byte> beforeBattle;
+	bool grantGhostWalk = false;
+	bool selectVeiledMovement = false;
+	bool attackerOverwatch = false;
+	bool legacyPerkRules = false;
 
 	void SetUp() override
 	{
@@ -89,6 +94,22 @@ protected:
 	{
 		HeroCommandFixture::mapLoaded(loaded);
 		const JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+		if(legacyPerkRules)
+		{
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
+			return;
+		}
+		if(selectVeiledMovement)
+		{
+			bool foundVeiled = false;
+			for(const auto & perk : perks["skills"][std::string(newHorizonsShroud::SKILL_ID)]["perks"].Vector())
+				if(perk["id"].String() == newHorizonsShroud::VEILED_MOVEMENT_PERK_ID)
+				{
+					ASSERT_EQ(perk["effect"]["status"].String(), "active");
+					foundVeiled = true;
+				}
+			ASSERT_TRUE(foundVeiled);
+		}
 		bool registered = false;
 		for(const auto & perk : perks["skills"][skillKey]["perks"].Vector())
 			if(perk["id"].String() == perkKey)
@@ -126,6 +147,22 @@ protected:
 			ASSERT_TRUE(accepted) << "Active Overwatch must be legally offered";
 		}
 		ASSERT_EQ(newHorizonsBattlecraft::hasOverwatch(defenderSideHero), selected);
+		if(grantGhostWalk)
+		{
+			const SecondarySkill shroud(SecondarySkill::decode(std::string(newHorizonsShroud::SKILL_ID)));
+			ASSERT_TRUE(shroud.hasValue());
+			attackerSideHero->setSecSkillLevel(shroud, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+			if(selectVeiledMovement)
+				attackerSideHero->applyPerkSelection({std::string(newHorizonsShroud::SKILL_ID),
+					std::string(newHorizonsShroud::VEILED_MOVEMENT_PERK_ID)});
+			ASSERT_EQ(newHorizonsShroud::hasVeiledMovement(attackerSideHero), selectVeiledMovement);
+		}
+		if(attackerOverwatch)
+		{
+			attackerSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+			attackerSideHero->applyPerkSelection({skillKey, perkKey});
+			ASSERT_TRUE(newHorizonsBattlecraft::hasOverwatch(attackerSideHero));
+		}
 		if(counterfireMover)
 		{
 			const SecondarySkill archery(SecondarySkill::decode("new-horizons:archery"));
@@ -191,6 +228,92 @@ protected:
 		gameHandler->sendAndApply(pack);
 	}
 };
+
+TEST_F(NewHorizonsOverwatchTest, SelectedVeiledMovementSuppressesLiveDetachedAndHazardReactions)
+{
+	grantGhostWalk = selectVeiledMovement = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_TRUE(wait(shooter));
+	ASSERT_TRUE(battle()->battleOverwatchReady(shooter));
+	EXPECT_FALSE(battle()->battleCanOverwatch(shooter, mover, BattleHex(3, 5), BattleHex(4, 5)));
+	EXPECT_TRUE(battle()->battleGetOverwatchReactors(mover, BattleHex(3, 5), BattleHex(4, 5)).empty());
+	const auto ammo = shooter->shots.available();
+	const auto health = mover->getAvailableHealth();
+	OverwatchEnvironment environment(gameState());
+	auto callback = std::make_shared<OverwatchCallback>();
+	callback->onBattleStarted(battle());
+	auto parent = std::make_shared<HypotheticBattle>(&environment, callback->getBattle(BattleID(0)));
+	auto child = std::make_shared<HypotheticBattle>(&environment, parent);
+	EXPECT_TRUE(child->projectVoluntaryMovement(mover->unitId(), BattleHex(4, 5)).empty());
+	EXPECT_EQ(child->battleGetUnitByID(mover->unitId())->getPosition(), BattleHex(4, 5));
+	EXPECT_EQ(child->battleGetUnitByID(mover->unitId())->getAvailableHealth(), health);
+	EXPECT_EQ(child->getForUpdate(shooter->unitId())->shots.available(), ammo);
+	EXPECT_EQ(parent->battleGetUnitByID(mover->unitId())->getPosition(), BattleHex(2, 5));
+	ASSERT_TRUE(move(mover, BattleHex(4, 5)));
+	EXPECT_EQ(mover->getPosition(), BattleHex(4, 5));
+	EXPECT_EQ(mover->getAvailableHealth(), health);
+	EXPECT_EQ(shooter->shots.available(), ammo);
+	EXPECT_EQ(shotsRecorded(), 0u);
+	EXPECT_TRUE(battle()->battleOverwatchReady(shooter));
+	EXPECT_EQ(shooter->battlecraftOverwatchUsedRound, -1);
+}
+
+TEST_F(NewHorizonsOverwatchTest, UnselectedVeiledMovementDoesNotHideOrdinaryGhostWalk)
+{
+	grantGhostWalk = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_TRUE(wait(shooter));
+	ASSERT_GT(newHorizonsShroud::rank(attackerSideHero), 0);
+	ASSERT_FALSE(newHorizonsShroud::hasVeiledMovement(attackerSideHero));
+	EXPECT_TRUE(battle()->battleCanOverwatch(shooter, mover, BattleHex(3, 5), BattleHex(4, 5)));
+	const auto ammo = shooter->shots.available();
+	ASSERT_TRUE(move(mover, BattleHex(4, 5)));
+	EXPECT_EQ(shotsRecorded(), 1u);
+	EXPECT_EQ(shooter->shots.available(), ammo - 1);
+}
+
+TEST_F(NewHorizonsOverwatchTest, VeilingUsesCurrentControllerRatherThanOriginalArmySide)
+{
+	grantGhostWalk = selectVeiledMovement = attackerOverwatch = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_TRUE(wait(shooter));
+	EXPECT_FALSE(battle()->battleCanOverwatch(shooter, mover, BattleHex(3, 5), BattleHex(4, 5)));
+	const auto shooterControl = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID());
+	shooter->addNewBonus(shooterControl);
+	mover->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID()));
+	ASSERT_EQ(battle()->battleGetOwnerHero(mover), defenderSideHero);
+	ASSERT_EQ(battle()->battleGetOwnerHero(shooter), attackerSideHero);
+	ASSERT_FALSE(newHorizonsShroud::hasVeiledMovement(defenderSideHero));
+	ASSERT_TRUE(battle()->battleOverwatchReady(shooter));
+	// Vanilla Hypnotize targeting compares the actor's controller against the
+	// target's original army. Switching both units therefore makes this target
+	// ineligible before Veiled Movement is considered.
+	ASSERT_FALSE(battle()->battleMatchOwner(shooter, mover));
+	EXPECT_FALSE(battle()->battleCanOverwatch(shooter, mover, BattleHex(3, 5), BattleHex(4, 5)));
+	shooter->removeBonus(shooterControl);
+	ASSERT_EQ(battle()->battleGetOwnerHero(shooter), defenderSideHero);
+	ASSERT_EQ(battle()->battleGetOwnerHero(mover), defenderSideHero);
+	ASSERT_TRUE(battle()->battleMatchOwner(shooter, mover));
+	ASSERT_TRUE(battle()->battleOverwatchReady(shooter));
+	EXPECT_TRUE(battle()->battleCanOverwatch(shooter, mover, BattleHex(3, 5), BattleHex(4, 5)));
+	EXPECT_EQ(battle()->battleGetOverwatchReactors(mover, BattleHex(3, 5), BattleHex(4, 5)),
+		(std::vector<uint32_t>{shooter->unitId()}));
+}
+
+TEST_F(NewHorizonsOverwatchTest, AbsentSavedPerkRulesDoNotAdmitVeiledMovementOrOverwatch)
+{
+	legacyPerkRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepare(false));
+	EXPECT_FALSE(newHorizonsShroud::hasVeiledMovement(attackerSideHero));
+	EXPECT_FALSE(newHorizonsShroud::hasVeiledMovement(nullptr));
+	ASSERT_TRUE(wait(shooter));
+	const auto ammo = shooter->shots.available();
+	ASSERT_TRUE(move(mover, BattleHex(4, 5)));
+	EXPECT_EQ(shotsRecorded(), 0u);
+	EXPECT_EQ(shooter->shots.available(), ammo);
+}
 
 TEST_F(NewHorizonsOverwatchTest, AcceptedWaitReactsOnFirstEntryAtHalfDamageSpendsAmmoAndOnlyOnce)
 {

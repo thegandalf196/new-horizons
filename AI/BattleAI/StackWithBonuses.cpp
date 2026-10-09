@@ -1209,6 +1209,25 @@ void HypotheticBattle::projectFortuneStrike(const BattleAttackInfo & attack,
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return;
 	auto & fortune = fortuneStates.at(side);
+	const bool genericLuckyRecovery = newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(
+		attack.attacker, attack.physicalDamage)
+		&& newHorizonsCombatSkills::hasLuckyRecovery(battleGetOwnerHero(attack.attacker));
+	// Generic Recovery does not require an active Sylvan history. Record-only
+	// projections must never heal; selected replay supplies actual HP losses.
+	if(applyAftermath && !attack.shooting && attackerState && attackerState->alive()
+		&& (perfectFortune || serendipityOutcome == ProjectedLuckOutcome::POSITIVE)
+		&& (genericLuckyRecovery || fortune.luckyRecovery))
+	{
+		int64_t actualDamage = 0;
+		const auto rules = getLuckRollRules();
+		for(const auto & [unitId, damage] : hits)
+			if((attack.defender && unitId == attack.defender->unitId()) || rules.affectsAllTargets)
+				actualDamage += std::max<int64_t>(0, damage);
+		auto healing = newHorizonsCombatSkills::luckyRecoveryAmount(actualDamage,
+			genericLuckyRecovery, fortune.luckyRecovery);
+		if(healing > 0)
+			attackerState->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
+	}
 	if(!fortune.active())
 		return;
 
@@ -1252,24 +1271,17 @@ void HypotheticBattle::projectFortuneStrike(const BattleAttackInfo & attack,
 		return;
 
 	std::vector<uint32_t> adjacentFriends = battleFortuneAdjacentFriends(attack.attacker);
-	int64_t actualDamage = 0;
 	for(const auto & [unitId, damage] : hits)
 	{
 		const bool primary = unitId == attack.defender->unitId();
 		if(!primary && !rules.affectsAllTargets)
 			continue;
-		actualDamage += std::max<int64_t>(0, damage);
 		const auto * target = battleGetUnitByID(unitId);
 		if(target && !target->alive())
 			vstd::erase(adjacentFriends, unitId);
 	}
 
 	fortune.finishPositiveStrike(adjacentFriends, enemyStackKilled);
-	if(!attack.shooting && fortune.luckyRecovery && attackerState && attackerState->alive())
-	{
-		auto healing = SylvanLuckState::recoveryAmount(actualDamage);
-		attackerState->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
-	}
 }
 
 std::shared_ptr<StackWithBonuses> HypotheticBattle::getForUpdate(uint32_t id)

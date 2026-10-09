@@ -2,6 +2,23 @@
 
 Updated: 2026-10-09
 
+Accepted three-perk checkpoint:Veiled Movement,generic Lucky Recovery and
+Avatar of Rage pass30/30 principal native cases in11.512s after linked71404,
+with8/8 adjacent Sylvan/Bloodrage controls in2.459s on the identical engine.
+Zero errors/skips; root checks XML and copied test/library hashes. Data17/17,
+module parity, independent review and binary privacy pass. Coverage is now
+perks258/310 (generic181/220,faction77/90),planned52 (39 generic,13 faction).
+Combat67/67,Orders8/8,Skills31/31 and ranks93/93 are unchanged. Survivor-only
+generic recovery and independently selected Sylvan recovery compose to20%,
+rounding once; Avatar reads attack-local effective Rage/captured cap; Veiled
+suppresses only movement Overwatch through the current controller's perk.
+These interpretations remain reviewable. First28/30 evidence is preserved;
+both failures were corrected fixture assumptions, not production changes.
+Legacy original-target allegiance, broader stochastic/multi-strike composition
+and rendered verification remain Phase2/visual work. No new Linux promotion or
+downloadable release is claimed. Next bounded private candidate:Learning Eagle
+Eye, with11 authored but uncompiled cases. Earlier checkpoints are historical.
+
 Current Phase1 source/native checkpoint: Reality Warp and Reality Breaker are
 accepted after linked6035 and matching73/73 principal native cases (12.290s),
 plus15/15 adjacent target-condition cases (0.310s), zero errors/skips. Captured

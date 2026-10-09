@@ -570,6 +570,7 @@ if(ENABLE_BATTLE_AI)
 
 	list(APPEND test_SRCS
 		${BATTLE_AI_TEST_SRCS}
+		server/battles/NewHorizonsAvatarOfRageTest.cpp
 		battleAI/HeroCommandAITest.cpp
 		battleAI/NewHorizonsGenieSupportAITest.cpp
 		battleAI/NewHorizonsBeneficialCreatureAITest.cpp

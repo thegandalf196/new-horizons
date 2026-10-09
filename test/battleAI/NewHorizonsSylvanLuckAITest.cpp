@@ -7,6 +7,7 @@
 #include "../../AI/BattleAI/BattleExchangeVariant.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/NewHorizonsCombatSkills.h"
 
 namespace
 {
@@ -53,6 +54,113 @@ protected:
 			BonusSource::OTHER, value, BonusSourceID()));
 	}
 };
+}
+
+class NewHorizonsGenericLuckyRecoveryAITest : public NewHorizonsSylvanLuckAITest
+{
+protected:
+	CStack * source = nullptr;
+	CStack * victim = nullptr;
+
+	void mapLoaded(CMap * map) override
+	{
+		NewHorizonsSylvanLuckAITest::mapLoaded(map);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+	}
+
+	void prepareRecovery(bool sylvan = false)
+	{
+		startGame();
+		const std::string skillKey(newHorizonsCombatSkills::LUCK_SKILL_ID);
+		const SecondarySkill skill(SecondarySkill::decode(skillKey));
+		ASSERT_TRUE(skill.hasValue());
+		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({skillKey, "new-horizons:luck.fortuneSFavor"});
+		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({skillKey, std::string(newHorizonsCombatSkills::LUCKY_RECOVERY_PERK_ID)});
+		ASSERT_TRUE(newHorizonsCombatSkills::hasLuckyRecovery(attackerSideHero));
+		if(sylvan)
+		{
+			const std::string sylvanSkill = "new-horizons:sylvanLuck";
+			attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(sylvanSkill)),
+				MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+			attackerSideHero->applyPerkSelection({sylvanSkill, "new-horizons:sylvanLuck.luckyRecovery"});
+		}
+		startBattle();
+		beginCombat();
+		source = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(leftHex), 3);
+		victim = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), 1);
+		blockRetaliation(victim);
+		forceMaximumDamage(source);
+		int64_t wound = source->getMaxHealth() + 50;
+		source->damage(wound);
+		battle()->activeStack = source->unitId();
+	}
+
+	void verifyForecast(bool sylvan)
+	{
+		ASSERT_NO_FATAL_FAILURE(prepareRecovery(sylvan));
+		const auto health = source->getAvailableHealth();
+		const auto victimHealth = victim->getAvailableHealth();
+		SylvanEnvironment environment(gameState());
+		auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+		auto model = std::make_shared<HypotheticBattle>(&environment, callback);
+		DamageCache cache;
+		const auto preview = AttackPossibility::evaluate(BattleAttackInfo(source, victim, 0, false),
+			source->getPosition(), cache, model);
+		ASSERT_TRUE(preview.attackerState);
+		ASSERT_TRUE(preview.defenderDead);
+		ASSERT_FALSE(preview.fortuneStrikes.empty());
+		EXPECT_EQ(preview.attackerState->getAvailableHealth(),
+			health + std::min<int64_t>(50, sylvan ? victimHealth / 5 : victimHealth / 10));
+		EXPECT_EQ(model->getForUpdate(source->unitId())->getAvailableHealth(), health);
+		EXPECT_EQ(source->getAvailableHealth(), health);
+		BattleExchangeVariant exchange;
+		exchange.trackAttack(preview, model, cache);
+		EXPECT_EQ(model->getForUpdate(source->unitId())->getAvailableHealth(),
+			preview.attackerState->getAvailableHealth());
+		EXPECT_EQ(model->getForUpdate(source->unitId())->getCount(), 2);
+		EXPECT_EQ(source->getAvailableHealth(), health);
+	}
+};
+
+TEST_F(NewHorizonsGenericLuckyRecoveryAITest, GenericOnlyForecastAndSelectedReplayHealExactlyOnce)
+{
+	ASSERT_NO_FATAL_FAILURE(verifyForecast(false));
+}
+
+TEST_F(NewHorizonsGenericLuckyRecoveryAITest, CombinedForecastAndSelectedReplayHealTwentyPercent)
+{
+	ASSERT_NO_FATAL_FAILURE(verifyForecast(true));
+}
+
+TEST_F(NewHorizonsGenericLuckyRecoveryAITest, NeutralUnknownRangedDeadAndRecordOnlyBranchesDoNotHeal)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareRecovery());
+	SylvanEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	auto parent = std::make_shared<HypotheticBattle>(&environment, callback);
+	for(int scenario = 0; scenario < 6; ++scenario)
+	{
+		auto model = std::make_shared<HypotheticBattle>(&environment, parent);
+		auto striker = model->getForUpdate(source->unitId());
+		auto target = model->getForUpdate(victim->unitId());
+		if(scenario == 4)
+		{
+			int64_t damage = striker->getAvailableHealth();
+			striker->damage(damage);
+		}
+		const auto before = striker->getAvailableHealth();
+		BattleAttackInfo attack(striker.get(), target.get(), 0, scenario == 3);
+		const auto outcome = scenario == 0 ? ProjectedLuckOutcome::NEUTRAL
+			: scenario == 1 ? ProjectedLuckOutcome::NEGATIVE
+			: scenario == 2 ? ProjectedLuckOutcome::UNKNOWN : ProjectedLuckOutcome::POSITIVE;
+		model->projectFortuneStrike(attack, {{target->unitId(), 200}}, striker.get(), false,
+			outcome, scenario != 5);
+		EXPECT_EQ(striker->getAvailableHealth(), before) << "scenario " << scenario;
+		EXPECT_EQ(parent->getForUpdate(source->unitId())->getAvailableHealth(), source->getAvailableHealth());
+	}
 }
 
 TEST_F(NewHorizonsSylvanLuckAITest, CertainStrikeCommitsRecoveryAndSharedCascadeOnlyToTheModel)

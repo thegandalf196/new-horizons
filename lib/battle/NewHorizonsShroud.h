@@ -21,6 +21,7 @@ class Unit;
 namespace newHorizonsShroud
 {
 constexpr std::string_view SKILL_ID = "new-horizons:shroudOfMalassa";
+constexpr std::string_view VEILED_MOVEMENT_PERK_ID = "new-horizons:shroudOfMalassa.veiledMovement";
 constexpr std::string_view BACKSTAB_PERK_ID = "new-horizons:shroudOfMalassa.backstab";
 constexpr std::string_view AMBUSHER_PERK_ID = "new-horizons:shroudOfMalassa.ambusher";
 constexpr std::string_view SHADOW_ASSAULT_PERK_ID = "new-horizons:shroudOfMalassa.shadowAssault";
@@ -40,6 +41,7 @@ constexpr int EVASIVE_SHROUD_REDUCTION_BASIS_POINTS = 1500;
 constexpr int NIGHT_PROWLER_DAMAGE_PERCENT = 10;
 
 DLL_LINKAGE int rank(const CGHeroInstance * hero);
+DLL_LINKAGE bool hasVeiledMovement(const CGHeroInstance * hero);
 DLL_LINKAGE int flankingDamagePercent(int rank);
 DLL_LINKAGE int backstabDamagePercent(const CGHeroInstance * hero);
 DLL_LINKAGE bool hasAmbusher(const CGHeroInstance * hero);

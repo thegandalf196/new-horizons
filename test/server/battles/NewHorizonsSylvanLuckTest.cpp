@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "BattleTestFixture.h"
+#include "../../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
 #include "../../../lib/GameLibrary.h"
@@ -19,6 +20,7 @@
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../AI/BattleAI/AttackPossibility.h"
+#include <limits>
 
 namespace
 {
@@ -89,6 +91,79 @@ protected:
 	}
 };
 
+class NewHorizonsGenericLuckyRecoveryTest : public NewHorizonsSylvanLuckTest
+{
+protected:
+	CStack * source = nullptr;
+	CStack * victim = nullptr;
+	int64_t healthBefore = 0;
+	int64_t victimBefore = 0;
+	int survivorCount = 0;
+
+	void prepareRecovery(bool selected = true, bool sylvan = false, bool ranged = false)
+	{
+		const std::string skillKey(newHorizonsCombatSkills::LUCK_SKILL_ID);
+		const SecondarySkill skill(SecondarySkill::decode(skillKey));
+		ASSERT_TRUE(skill.hasValue());
+		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({skillKey, "new-horizons:luck.fortuneSFavor"});
+		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+		if(selected)
+			attackerSideHero->applyPerkSelection({skillKey, std::string(newHorizonsCombatSkills::LUCKY_RECOVERY_PERK_ID)});
+		ASSERT_EQ(newHorizonsCombatSkills::hasLuckyRecovery(attackerSideHero), selected);
+		if(sylvan)
+		{
+			const std::string sylvanSkill = "new-horizons:sylvanLuck";
+			attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(sylvanSkill)),
+				MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+			attackerSideHero->applyPerkSelection({sylvanSkill, "new-horizons:sylvanLuck.luckyRecovery"});
+		}
+		startBattle();
+		source = addStack(BattleSide::ATTACKER, creatureByName(ranged ? "core:titan" : "core:angel"),
+			BattleHex(leftHex), 3);
+		victim = addStack(BattleSide::DEFENDER, creatureByName("core:angel"),
+			BattleHex(ranged ? rightHex + 4 : rightHex), 1);
+		// BLOCKS_RETALIATION prevents counters against its attacking bearer.
+		// The neutral strike leaves the victim alive, unlike the lethal Lucky hit.
+		blockRetaliation(source);
+		ASSERT_TRUE(source->hasBonusOfType(BonusType::BLOCKS_RETALIATION));
+		forceMaximumDamage(source);
+		int64_t wound = source->getMaxHealth() + 50;
+		source->damage(wound);
+		healthBefore = source->getAvailableHealth();
+		victimBefore = victim->getAvailableHealth();
+		survivorCount = source->getCount();
+		ASSERT_EQ(survivorCount, 2);
+		beginCombat();
+	}
+
+	void verifyRecovery(int contributions, bool positiveLuck, bool ranged = false)
+	{
+		if(ranged)
+		{
+			battle()->activeStack = source->unitId();
+			const auto action = BattleAction::makeShotAttack(source, victim);
+			ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
+				battle()->sideToPlayer(source->unitSide()), action));
+		}
+		else
+			ASSERT_TRUE(attack(source, victim->getPosition()));
+		const auto shot = std::ranges::find_if(server.attacks, [this](const BattleAttack & attack)
+			{ return attack.stackAttacking == source->unitId(); });
+		ASSERT_NE(shot, server.attacks.end());
+		ASSERT_EQ(shot->shot(), ranged);
+		ASSERT_EQ(shot->lucky(), positiveLuck);
+		EXPECT_FALSE(std::ranges::any_of(server.attacks, [this](const BattleAttack & attack)
+			{ return attack.stackAttacking == victim->unitId() && attack.counter(); }))
+			<< "Recovery measurement must not include an unrelated retaliation loss";
+		const auto actualLoss = victimBefore - victim->getAvailableHealth();
+		ASSERT_GT(actualLoss, 0);
+		const int64_t healing = actualLoss / 10 * contributions + actualLoss % 10 * contributions / 10;
+		EXPECT_EQ(source->getAvailableHealth(), healthBefore + std::min<int64_t>(50, healing));
+		EXPECT_EQ(source->getCount(), survivorCount) << "Recovery must not resurrect the lost creature";
+	}
+};
+
 class NewHorizonsSylvanLuckLegacySaveTest : public NewHorizonsSylvanLuckTest
 {
 protected:
@@ -102,6 +177,51 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
 	}
 };
+}
+
+TEST(NewHorizonsLuckyRecoveryRulesTest, IndependentContributionsFloorOnceAndPreserveSylvanOnly)
+{
+	EXPECT_EQ(newHorizonsCombatSkills::luckyRecoveryAmount(19, true, false), 1);
+	EXPECT_EQ(newHorizonsCombatSkills::luckyRecoveryAmount(19, false, true), 1);
+	EXPECT_EQ(newHorizonsCombatSkills::luckyRecoveryAmount(19, true, true), 3);
+	EXPECT_EQ(newHorizonsCombatSkills::luckyRecoveryAmount(19, false, false), 0);
+	EXPECT_EQ(newHorizonsCombatSkills::luckyRecoveryAmount(-19, true, true), 0);
+	EXPECT_EQ(newHorizonsCombatSkills::luckyRecoveryAmount(std::numeric_limits<int64_t>::max(), true, true),
+		std::numeric_limits<int64_t>::max() / 5);
+}
+
+TEST_F(NewHorizonsGenericLuckyRecoveryTest, GenericOnlyPositiveMeleeUsesActualNonOverkillLossAndHealsSurvivors)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareRecovery());
+	ASSERT_FALSE(battle()->getSylvanLuckState(BattleSide::ATTACKER).luckyRecovery);
+	ASSERT_NO_FATAL_FAILURE(verifyRecovery(1, true));
+}
+
+TEST_F(NewHorizonsGenericLuckyRecoveryTest, NeutralMeleeDoesNotRecover)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareRecovery());
+	luck(source, -battle()->battleGetAttackLuck(source, victim, false));
+	ASSERT_EQ(battle()->battleGetAttackLuck(source, victim, false), 0);
+	ASSERT_NO_FATAL_FAILURE(verifyRecovery(0, false));
+}
+
+TEST_F(NewHorizonsGenericLuckyRecoveryTest, PositiveRangedAttackDoesNotRecover)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareRecovery(true, false, true));
+	ASSERT_NO_FATAL_FAILURE(verifyRecovery(0, true, true));
+}
+
+TEST_F(NewHorizonsGenericLuckyRecoveryTest, GenericAndSylvanContributeTwentyPercentWithoutResurrection)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareRecovery(true, true));
+	ASSERT_TRUE(battle()->getSylvanLuckState(BattleSide::ATTACKER).luckyRecovery);
+	ASSERT_NO_FATAL_FAILURE(verifyRecovery(2, true));
+}
+
+TEST_F(NewHorizonsGenericLuckyRecoveryTest, UnselectedGenericPerkDoesNotRecover)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareRecovery(false));
+	ASSERT_NO_FATAL_FAILURE(verifyRecovery(0, true));
 }
 
 TEST(SylvanLuckRulesTest, ChanceOnlyHistoryAndRoundProtection)
