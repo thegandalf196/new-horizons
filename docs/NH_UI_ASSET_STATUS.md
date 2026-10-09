@@ -1,5 +1,21 @@
 # New Horizons UI and asset status register
 
+2026-10-09 actual Linux delivery: **Provisional** Mage face/upper-torso and
+Stone Gargoyle Academy-backdrop compositions now pass ordinary human
+recruitment and Stone weekly-growth rendering on snapshot5938709/source69004.
+Root inspected native screenshots; non-overwriting review copies are under
+Downloads/provisory/nh-69004-portraits. Normal launcher is promoted after bounded
+new-game/AI smoke and cleanup. No new raster export, private overlay or pack
+rebuild is involved. Obsidian GUI remains unverified: the upgrade ended the
+single-player seed before its portrait view; do not count that screenshot as
+acceptance. Native14-portrait/scales1-4 checks remain separate evidence.
+Mage lower robe/staff cropping is intentional portrait framing, not Final approval.
+
+The exchange Level4 heading refresh also passes actual Mentor levels1->4,
+new skills2->5 and legal16-Pikeman transfer/back on the same immutable candidate.
+The fresh genuine-GUI presave/receipt is retained in ignored build/; this is not
+the missing older temporary presave or a new same-presave baseline comparison.
+
 2026-10-08 Mage large portrait source checkpoint: **Provisional** head/upper-
 torso framing of the unchanged selected packed HOLDING frame replaces the
 whole-body thumbnail at the shared TWCRPORT route. Rect(178,174,36,49) fits44×60

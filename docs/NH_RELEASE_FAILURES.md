@@ -1,5 +1,30 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-09 — Linux delivery harness distinctions and bounded smoke
+
+Client1989 links108/108 at69004. Fresh resource staging must exclude the copied
+authoring magic-assets descriptor, use the committed pack unchanged, and retain
+all12 required notices. Frozen5938709 verifies3137 entries, no loose duplicates,
+both mounts and previous-resource paths. Never silently repack incomplete inputs.
+
+The initial portrait --testmap run is AI-driven, not ordinary human GUI; it is
+explicitly stopped (exit255) and yields no acceptance. Retry through ordinary
+menu passes Mage/Stone recruitment, Stone growth and New Horizons window title.
+Obsidian attempt shows victory, not its portrait, so stays unverified. A fresh
+real Mentor GUI setup passes5skills/Level4/16-Pikeman transfer and reverse,
+normal exits0, guarded silent child checks and complete cleanup.
+
+The earlier temporary replay directory is gone. Keep its documented historical
+result distinct from current durable ignored-build screenshots, receipt and GUI
+save. Do not claim the missing old raw evidence is still retained.
+
+Headless All for One reaches day4 and several battles, then expected timeout124
+at20 seconds; child absence, runtime removal and free profile lock are verified.
+Generic schema unknown-entry messages (heroAccess, variant, restoration, etc.)
+and NK2 nodeAllocationFailures are non-blocking findings for Phase2 investigation;
+no crash or Leadership rejection was observed in this bounded smoke. This is
+not a broad integration pass or a completed-match result.
+
 ### 2026-10-09 — Script-complete candidate and final focused repairs
 
 Closure: build3248 passes and candidate99462 passes95/95 in16.414s, zero skips.

@@ -2,6 +2,15 @@
 
 Updated: 2026-10-09
 
+Playable delivery checkpoint: normal Linux launcher now points to immutable
+5938709/source69004cc23. Actual ordinary Mage/Stone recruitment, Stone growth
+background and Mentor skills2->5/levels1->4/16-Pikeman transfer/back plus title
+refresh pass. Root inspects screenshots; owned GUI exits0 and silent isolation/
+cleanup are verified. Headless All for One reaches day4 before bounded timeout,
+with lock/runtime/process cleanup confirmed. This is scoped playable acceptance,
+not Windows, complete-match or whole-family integration certification. Obsidian
+GUI and recorded schema/NK2 diagnostic follow-up remain open. Counts unchanged.
+
 Verified active checkpoint: Confusion, Confounder and Rebirth Chain now use
 production registration. Linked build30644 passes; native16522 passes96/96
 in16.817s, zero skips. Shipped statuses, legal perk acquisition, paid cast and
@@ -4410,10 +4419,10 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | All three ranks per Skill are active; many registered Skills still lack complete perk progression. |
 | Skill rank effects active | 93/93 | Elemental Rebirth's three ranks now have source/native and owning-side AI evidence. Active status does not certify every wider interaction. |
-| Skill perks active | 239/310 | 71 planned; current registry recount2026-10-08. Generic168/220, faction71/90. Discipline8/10; Armorer9/10; War Machines7/10; Spellcraft6/10; Luck8/10; Diplomacy7/10; Chaos Magic5/10; Necromancy10/10; Learning4/10; Estates6/10; Battlecraft8/10; Logistics8/10; Command7/10; Warcasting9/10. Historian's foundation remains planned and adds no activation count. Active status alone does not certify every mechanic. |
+| Skill perks active | 241/310 | 69 planned; current registry recount2026-10-09. Generic169/220, faction72/90. Discipline8/10; Armorer9/10; War Machines7/10; Spellcraft6/10; Luck8/10; Diplomacy7/10; Chaos Magic6/10; Necromancy10/10; Learning4/10; Estates6/10; Battlecraft8/10; Logistics8/10; Command7/10; Warcasting9/10. Historian's foundation remains planned and adds no activation count. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 27/27 | All nine faction rank foundations are active; their remaining perks and wider integration are separate work. |
-| Faction perks active | 71/90 | 19 planned perks; Divine Mandate has six accepted perks, including Expert Mandate of Heaven and Advanced Purifying Mandate; Elemental Rebirth has three accepted perks with normal Basic-to-Advanced selection and live/detached evidence. |
-| Canonical combat-spell identities registered | 61/67 | 6 missing/inactive; Puppet Master is the newest source/native-verified identity. Chaos is 7/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
+| Faction perks active | 72/90 | 18 planned perks; Divine Mandate has six accepted perks, including Expert Mandate of Heaven and Advanced Purifying Mandate; Elemental Rebirth has four accepted perks with normal Basic-to-Advanced selection and live/detached evidence, including Rebirth Chain. |
+| Canonical combat-spell identities registered | 62/67 | 5 missing/inactive; Confusion is the newest source/native-verified identity. Chaos is 8/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. UP056's refreshed effect audit verifies Summon Boat existing-only/adjacent placement, Town Portal exhaustion, Dimension Door visibility/radius8/exhaustion/warning and shared1.5x Water Walk/Fly costs. Protected barriers, Water Walk end-day land policy and Town Portal nearest-town/admission scope retain explicit holds. Acquisition count is not an effect-complete count; rendered/playable purchase remains separate. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree. UP-146 adds native-verified independent simultaneous state/effects and action/AI/UI hooks; broader per-Order interaction coverage remains Phase2. |
@@ -4645,7 +4654,7 @@ remain separately tracked rather than silently assumed.
 
 ## Skills and perks baseline
 
-Historical baseline and implementation trace follow. Current registration is
+Historical baseline and implementation trace follow. Registration at that time was
 31 Skills,87 active/6 planned ranks and214 active/96 planned perks, verified
 from the registry on2026-10-04. Later accepted UP183 implements casualty
 provenance and Corpse Preservation; earlier descriptions of its inert flag below
@@ -4771,14 +4780,14 @@ interactions, and rendered/playable acceptance remain separate.
 | Nature Magic | 3/0 | 7/3 | Geomancer's structural/terrain effects and actual AI cast are native verified alongside Venomancer's whole-Base snapshot and independent Toxic Spines. Herbalist, Rootcaller, Beastcaller, Verdant Warden and Verdant Communion active. Mire Shaper, Worldroot and Elemental Conjurer remain planned. |
 | Havoc Magic | 3/0 | 7/3 | Three perks missing; Mine Layer has focused live/detached placement evidence |
 | Sorcery Magic | 3/0 | 10/0 | Bounded canonical consumer audit2026-10-06 identifies learning/coefficient paths for all three ranks and production consumers for all ten perks, including distinct Mass Slow. No missing principal clause demonstrated; existing focused fixtures were inspected, not rerun as whole-family execution certification. Wider interactions and rendered/playable acceptance remain separate. |
-| Chaos Magic | 3/0 | 5/5 | Frenzied Curse joins Mindbreaker, Blinkmaster, Weaver and Paradox Shield with focused source/native evidence recorded above; five perks remain planned. Base Berserk lifecycle is still partial. |
+| Chaos Magic | 3/0 | 6/4 | Confounder joins Frenzied Curse, Mindbreaker, Blinkmaster, Weaver and Paradox Shield with focused source/native evidence recorded above; four perks remain planned. Confusion has authoritative forced activation and paid AI evidence. Base Berserk lifecycle is still partial. |
 | Spellcraft | 3/0 | 6/4 | Counterpressure has actual live/detached polarity-independent effects, response consumption and no-op controls. Overwhelming Formula selects the first hostile magical injury against applicable MDR, retaining the winning cast across targets and delayed hazards; its50% penetration combines independently. Grand Formula, Arcane Focus, Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted12-Mana threshold. Basic/Advanced/Expert efficiency is110/120/130% under saved v3 rules. Precise Casting awaits Time Stop/Earthquake scope; Concentration target-count definition, Cross-School multi-school relation and Extend Spell unusual lifetimes remain explicit rulings. Wider movement/hazard routing remains Phase2. |
 | Wisdom | 3/0 | 8/2 | Mana Conservation post-combat Normal recovery, Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. One other perk remains missing. Broader interactions and playable acceptance remain open. |
 | Warcasting | 3/0 | 9/1 | Combat Casting and Enchanted Command now join the seven earlier active perks, with accepted authority/detached evidence in the42-case focused gate recorded above; resolved shared-rule decisions are not pending. Perfect Rhythm retains accepted third-Spell/third-Order, flat-base preservation and unmatched/unselected/expired controls. Valid one-per-tier selection prevents coexistence with Master Synthesis; the former stacking hold is inapplicable. Reactive Weave alone remains planned on its stronger-only versus additive readiness ruling. Rendered status and wider interactions remain Phase2. |
 | Logistics | 3/0 | 8/2 | Rapid Embarkation and Pursuit March remain missing. Master Logistician has actual day/boat/Stables/save/pathfinder evidence alongside Forced March, Roadmaster, Wayfarer and Mountaineer. Future-day strategic carry and unspent-burst forecasting remain Phase2. |
 | Diplomacy | 3/0 | 7/3 | Foundation, Envoy, Peacemaker, Tribute and Recruitment Pact verified; three perks remain missing |
 | Estates | 3/0 | 6/4 | Resource Broker joins Land Surveyor, Tax Collector, Investor, Estate Network and Financier. Local Marketplace rate, accepted AI trade, mine-capture grants, daily income, weekly Wood/Ore, weekly treasury interest and Investor's pre-income treasury snapshot have focused native evidence. Broader interactions and playable delivery remain separate. |
-| Learning | 3/0 | 3/7 | Mentor, Quick Study and Field Study supply working Basic/Advanced perks and open ordinary Expert-rank progression. Meetings, weekly persistence, initial offer reroll, stronger-opponent awarded XP and query/RNG parity are native verified. Academic Study awaits first-visit timing. |
+| Learning | 3/0 | 4/6 | Master Teacher joins Mentor, Quick Study and Field Study with normal tier acquisition, meeting awards and saved weekly recipient evidence. Meetings, weekly persistence, initial offer reroll, stronger-opponent awarded XP and query/RNG parity are native verified. Academic Study awaits first-visit timing. |
 | Luck | 3/0 | 8/2 | Generic Serendipity joins Perfect Fortune, Fortune's Favor, Lucky Aim, Second Chance, Gambler, Chain of Fortune and Twist of Fate with focused accepted-strike and detached candidate/replay evidence; two perks remain planned. |
 | Divine Mandate | 3/0 | 6/4 | Paired rank foundation, Chaplain's Reserve, Consecrated Casting, Sacred Command, Knightly Sequence, Mandate of Heaven and Purifying Mandate source/native verified; four perks remain missing. Legal progression reaches the implemented Expert perk. |
 | Sylvan Luck | 3/0 | 10/0 | Principal-path audit identifies consumers for all ten perks. Perfect Moment's missing automatic first eligible attack and +5 current-Luck threshold are repaired under UP023: client/native builds pass, focused19/19 zero skips, including server/AI/Skirmisher. Broader35-case run passes31 with four unrelated fixture/compatibility guard failures recorded for Phase2; this is not whole-family integration or playable acceptance. |
@@ -4788,7 +4797,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Necromancy | 3/0 | 10/0 | All ten perks are active. UP184/185/186/187/188/189 record accepted category conversion, Master of Bones, casualty-derived XP/Mana, atomic Ossuary fallback and Bone Dragon conversion evidence. Broader save/control/result-UI interactions and playable delivery remain separate. |
 | Bloodrage | 3/0 | 7/3 | War Drums, Fury Unbound, Endless Bloodshed, Unrelenting, Berserker, Blood Scent and Rage Through Pain have focused live/AI evidence and legal progression; First Blood, Slayer and Avatar of Rage remain planned. |
 | Bulwark of the Mire | 3/0 | 9/1 | Nine perks are active in committed source; 53/53 native regressions pass; persistent Poison status builds and passes focused tests; Deep Bulwark and rendered/playable evidence remain open |
-| Elemental Rebirth | 3/0 | 3/7 | Base ranks plus Primal Burst, Greater Essence and Elemental Ward source/native verified. Normal Basic-to-Advanced perk selection, exact HP, magical mitigation and owning-side AI are exercised; seven perks remain planned. |
+| Elemental Rebirth | 3/0 | 4/6 | Base ranks plus Primal Burst, Greater Essence, Elemental Ward and Rebirth Chain source/native verified. Normal Basic-to-Advanced perk selection, exact HP, magical mitigation, one-per-side Chain quota/replication and owning-side AI are exercised; six perks remain planned. |
 
 Ordinary progression requires a perk at the preceding rank before the next Skill
 rank; canonical exceptional external rank advancement remains permitted.
@@ -5114,7 +5123,7 @@ from the active identity row.
 | Light | 11 | 11 | No missing identity; Crusade! has focused runtime/native evidence. Rendered/playable and broader interaction evidence remain open. |
 | Shadow | 12 | 12 | None by identity; rendered/playable and broader interaction evidence remain open |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
-| Chaos | 11 | 7 | Confusion; Polymorph; Reality Warp; Pandemonium |
+| Chaos | 11 | 8 | Polymorph; Reality Warp; Pandemonium |
 | Nature | 11 | 9 | Nature's Wrath; Elemental Convergence |
 | Havoc | 11 | 11 | None by identity; exact-effect evidence still required |
 
