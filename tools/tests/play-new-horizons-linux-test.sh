@@ -11,6 +11,7 @@ cleanup() {
 trap cleanup EXIT
 repo="$temporary/project"
 store="$repo/build/new-horizons-linux/playable-snapshots"
+export NH_PLAYABLE_STORE="$store"
 bin="$repo/build/new-horizons-linux/bin"
 sourceTree="$repo/editable-resources"
 mkdir -p -- "$repo/tools/ci" "$repo/tools" "$bin" "$repo/build/linux-current-client1/stage/New-Horizons-Linux-x64" \

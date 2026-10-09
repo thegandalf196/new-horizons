@@ -5,6 +5,7 @@ set -euo pipefail
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 assets=$(dirname -- "$root")
 profile=${XDG_DATA_HOME:-$HOME/.local/share}/new-horizons-play
+store=${NH_PLAYABLE_STORE:-${XDG_DATA_HOME:-$HOME/.local/share}/new-horizons/playable-snapshots}
 snapshot_args=()
 
 # The build tree's resource directories are symlinks into the editable source
@@ -24,7 +25,7 @@ for arg in "$@"; do
 done
 if ! $show_help && ! $has_custom_client; then
 	snapshot=$(python3 "$root/tools/ci/linux_playable_snapshot.py" resolve \
-		--store "$root/build/new-horizons-linux/playable-snapshots")
+		--store "$store")
 	snapshot_client=$(python3 "$root/tools/ci/linux_playable_snapshot.py" client --snapshot "$snapshot")
 	snapshot_args=(--client "$snapshot_client")
 	if ! $has_custom_resources; then

@@ -266,6 +266,15 @@ Do not bypass that helper with a custom launch inheriting host audio routes.
 
 ## Persistent user-priority queue
 
+Keep build directories disposable. Do not store unique artwork, handoffs,
+authoring masters, saves, development worktrees or the selected playable delivery
+inside them. Keep those in explicitly configured local storage outside the
+repository's build tree. Prefer one reusable build directory and incremental
+validation; do not accumulate full candidate builds or copied debug binaries.
+Before removing an old build tree, verify recoverable preservation of unique
+material and check worktree, launcher and live-process references. Build with
+at most ten jobs unless the user explicitly changes that limit.
+
 Read `docs/NH_USER_PRIORITY_QUEUE.md` before choosing or resuming work, including
 after context compaction or an automatic goal continuation. Immediately record
 new user-assigned tasks there, with concrete requirements and acceptance evidence.

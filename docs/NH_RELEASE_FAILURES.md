@@ -1,5 +1,40 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-09 — Warp health snapshot nesting and capacity fixture validity
+
+The clean build succeeds, but initial Warp acceptance passes41/73 with no skips
+or crashes. Unit JSON wraps serialized health under state.health; both live and
+detached effect capture incorrectly read top-level health and produced null.
+Fix both captures and the stale-health fixture path; keep the structured-health
+guard and exact recipient HP assertions. The capacity carry fixture must first
+establish a valid recipient-local capacity ledger before assigning a nonzero
+remainder. Preserve the effective capacity getter: incoming Hydra needs the
+recipient's old native HP basis, not an inactive raw zero. Retain original failed
+pair/logs and rerun after a matched relink; a compile pass is not runtime acceptance.
+
+### 2026-10-09 — Clean rebuild declaration and binding checks
+
+The disposable Release rebuild exposed three bounded compile issues: Lua
+registration metadata must use the existing name/description parameter shape
+and explicit return metadata; a value member requires the complete Rect header;
+BonusSourceID requires a typed SpellID, not its enum constant. Each fix was
+applied only after the corresponding build reached terminal failure. Assertions
+and gameplay were not weakened. Continue incremental retries in one build tree,
+with at most ten jobs and private logs outside that tree. Successful compilation
+and native acceptance remain separate gates.
+
+### 2026-10-09 — Reality Warp concrete types and read-only health capture
+
+First candidate build72461 terminates1 in BattleEffectExchange.cpp. Full typed
+Bonus serialization requires concrete BonusList, BonusParameters, propagator
+and updater definitions at its instantiation site; forward declarations are
+insufficient. The bounded include-only repair compiles that object on retry.
+Retry68670 terminates1 in BattleInfo.cpp: a const recipient cannot call the
+non-const JSON save API. Capture through its detached acquired state, never
+cast away constness or mutate the live endpoint for a preview/stale guard.
+Private complete logs remain in the Reality Warp runner. Neither failure is
+native acceptance or a reason to weaken exact metadata/health assertions.
+
 ### 2026-10-09 — Fate Dealer pre-build fixture and ruleset parity
 
 Initial review suggested scaling fixture power by the divisor. Native evidence

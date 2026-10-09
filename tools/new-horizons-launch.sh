@@ -14,7 +14,7 @@ usage() {
 		'Without --verify-only this manually invoked command launches the game.'
 }
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
-client="$root/build/new-horizons-linux/bin/new-horizons"
+client=''
 resources=''
 assets=''
 profile=''
@@ -42,6 +42,12 @@ while (($#)); do
 done
 [[ $(uname -s) == Linux ]] || fail 'Only the native Linux/XDG build is supported.'
 [[ -n $assets && -n $profile ]] || { usage >&2; exit 1; }
+if [[ -z $client ]]; then
+	store=${NH_PLAYABLE_STORE:-${XDG_DATA_HOME:-$HOME/.local/share}/new-horizons/playable-snapshots}
+	snapshot=$(python3 "$root/tools/ci/linux_playable_snapshot.py" resolve --store "$store")
+	client=$(python3 "$root/tools/ci/linux_playable_snapshot.py" client --snapshot "$snapshot")
+	[[ -n $resources ]] || resources=$snapshot
+fi
 [[ -d $assets ]] || fail 'Asset installation directory does not exist.'
 [[ -f $client && -x $client ]] || fail 'Client is not an executable file; consult NH_BUILD_HANDOFF.md.'
 client=$(realpath -e -- "$client")
