@@ -6,8 +6,14 @@
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
+#include "../../../AI/BattleAI/BattleEvaluator.h"
+#include "../../../AI/BattleAI/SpellTargetsEvaluator.h"
+#include "../../../lib/callback/CBattleCallback.h"
+#include "../../../lib/CRandomGenerator.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/battle/NewHorizonsConfusionControl.h"
+#include "../../../lib/battle/NewHorizonsConfusionResolution.h"
+#include "../../../lib/battle/NewHorizonsBulwark.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/networkPacks/SetStackEffect.h"
@@ -34,10 +40,33 @@ public:
 	const GameCb * game() const override { return state.get(); }
 };
 
+class ConfusionAICallback final : public CBattleCallback
+{
+public:
+	std::vector<BattleAction> submitted;
+	ConfusionAICallback() : CBattleCallback(PlayerColor(0), nullptr) {}
+	void battleMakeSpellAction(const BattleID &, const BattleAction & action) override { submitted.push_back(action); }
+};
+
+struct ConfusionRandomArchive
+{
+	bool saving = true;
+	std::string state;
+	void operator&(std::string & value) { state = value; }
+};
+
+std::string randomState(CRandomGenerator & generator)
+{
+	ConfusionRandomArchive archive;
+	generator.serialize(archive);
+	return archive.state;
+}
+
 class NewHorizonsConfusionApplicationTest : public HeroCommandFixture
 {
 protected:
 	bool privateActive = true;
+	bool useShippedRegistration = false;
 	bool confounder = false;
 	bool rally = false;
 	CStack * friendly = nullptr;
@@ -51,12 +80,13 @@ protected:
 		HeroCommandFixture::mapLoaded(map);
 		JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
 		if(magic["spells"][CONFUSION].isNull())
-			throw std::runtime_error("Registered inactive Confusion profile is missing");
-		magic["spells"][CONFUSION]["active"].Bool() = privateActive;
+			throw std::runtime_error("Registered Confusion profile is missing");
+		if(!useShippedRegistration)
+			magic["spells"][CONFUSION]["active"].Bool() = privateActive;
 		newHorizonsMagic::validateRules(magic);
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, std::move(magic));
 		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
-		if(confounder)
+		if(confounder && !useShippedRegistration)
 		{
 			bool found = false;
 			for(auto & row : perks["skills"][CHAOS]["perks"].Vector())
@@ -164,7 +194,7 @@ protected:
 };
 }
 
-TEST_F(NewHorizonsConfusionApplicationTest, NormalProfileDoesNotPermitIncompleteSpell)
+TEST_F(NewHorizonsConfusionApplicationTest, ExplicitInactiveProfileRejectsBeforeManaAndHeroAction)
 {
 	privateActive = false;
 	ASSERT_NO_FATAL_FAILURE(prepare());
@@ -173,6 +203,34 @@ TEST_F(NewHorizonsConfusionApplicationTest, NormalProfileDoesNotPermitIncomplete
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
 	EXPECT_FALSE(pending(target));
+}
+
+TEST_F(NewHorizonsConfusionApplicationTest, ShippedRegistrationAllowsLegalConfounderAndPaidConfusion)
+{
+	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
+	ASSERT_TRUE(magic["spells"][CONFUSION]["active"].isBool());
+	ASSERT_TRUE(magic["spells"][CONFUSION]["active"].Bool())
+		<< "Production Confusion must be active without a private fixture override";
+	const JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+	const auto & pool = perks["skills"][CHAOS]["perks"].Vector();
+	const auto row = std::ranges::find_if(pool, [](const JsonNode & value)
+	{ return value["id"].String() == CONFOUNDER; });
+	ASSERT_NE(row, pool.end());
+	ASSERT_EQ((*row)["effect"]["status"].String(), "active")
+		<< "Production Confounder must be active without a private fixture override";
+	useShippedRegistration = true;
+	confounder = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(CHAOS, CONFOUNDER));
+	history(battle::ConfusionBehavior::DEFEND);
+	const auto mana = attackerSideHero->getManaAvailable();
+	const auto cost = battle()->battleGetSpellCost(confusion().toSpell(), attackerSideHero);
+	ASSERT_TRUE(cast(confusion(), target));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - cost);
+	EXPECT_TRUE(target->confusionState.pendingConfounder);
+	ASSERT_NO_FATAL_FAILURE(advanceUntil([this]() { return !pending(target); }));
+	EXPECT_FALSE(target->confusionState.pending);
+	EXPECT_NE(target->confusionState.previousResolved, battle::ConfusionBehavior::DEFEND);
 }
 
 TEST_F(NewHorizonsConfusionApplicationTest, AcceptedRequestSpendsManaAndHeroActionOnlyOnSelectedTarget)
@@ -261,19 +319,194 @@ TEST_F(NewHorizonsConfusionApplicationTest, ActualBadMoraleForfeitureClearsPendi
 	EXPECT_EQ(target->confusionState.previousResolved, battle::ConfusionBehavior::ATTACK);
 }
 
-TEST_F(NewHorizonsConfusionApplicationTest, RallyCancellationDoesNotConsumePendingConfusion)
+TEST_F(NewHorizonsConfusionApplicationTest, RallyCancellationAllowsConfusionToResolveInsteadOfConsumingForMorale)
 {
 	rally = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	history(battle::ConfusionBehavior::WANDER);
 	ASSERT_TRUE(cast(confusion(), target));
 	negativeMorale();
-	ASSERT_NO_FATAL_FAILURE(advanceUntil([this]() { return battle()->battleActiveUnit() == target; }));
+	ASSERT_NO_FATAL_FAILURE(advanceUntil([this]() { return !pending(target); }));
 	EXPECT_TRUE(battle()->getMoraleSuppressionState(BattleSide::DEFENDER).used);
 	EXPECT_FALSE(sawAction(EActionType::BAD_MORALE));
-	EXPECT_TRUE(pending(target));
-	EXPECT_TRUE(target->confusionState.pending);
+	EXPECT_FALSE(target->confusionState.pending);
+	EXPECT_NE(target->confusionState.previousResolved, battle::ConfusionBehavior::NONE);
+}
+
+TEST_F(NewHorizonsConfusionApplicationTest, NextActivationIsForcedAndConsumesPendingExactlyOnce)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_TRUE(cast(confusion(), target));
+	ASSERT_NO_FATAL_FAILURE(advanceUntil([this]() { return !pending(target); }));
+	EXPECT_FALSE(target->confusionState.pending);
+	const auto resolved = target->confusionState.previousResolved;
+	EXPECT_NE(resolved, battle::ConfusionBehavior::NONE);
+	EXPECT_TRUE(sawAction(resolved == battle::ConfusionBehavior::DEFEND ? EActionType::DEFEND : EActionType::WALK));
+	EXPECT_TRUE(std::ranges::any_of(server.battleLogLines, [](const auto & line)
+	{ return line.find("Confusion makes") != std::string::npos; }));
+	EXPECT_EQ(battle()->battleGetOwner(target), PlayerColor(1));
+}
+
+TEST_F(NewHorizonsConfusionApplicationTest, StartupPoisonDeathConsumesPendingWithoutResolvedHistory)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	history(battle::ConfusionBehavior::ATTACK);
+	ASSERT_TRUE(cast(confusion(), target));
+	auto state = target->acquireState();
+	ASSERT_TRUE(newHorizonsBulwark::applyPhysicalPoison(state.get(), 100, friendly->unitId()));
+	BattleUnitsChanged poison;
+	poison.battleID = BattleID(0);
+	UnitChanges change(target->unitId(), UnitChanges::EOperation::UPDATE);
+	change.data = state->save();
+	poison.changedStacks.push_back(std::move(change));
+	gameHandler->sendAndApply(poison);
+	ASSERT_NO_FATAL_FAILURE(advanceUntil([this]() { return !pending(target); }));
+	EXPECT_FALSE(target->alive());
+	EXPECT_FALSE(target->confusionState.pending);
+	EXPECT_EQ(target->confusionState.previousResolved, battle::ConfusionBehavior::ATTACK);
+	EXPECT_FALSE(sawAction(EActionType::DEFEND));
+	EXPECT_FALSE(sawAction(EActionType::WALK));
+}
+
+TEST_F(NewHorizonsConfusionApplicationTest, ManaDrainAndPhysicalPoisonRunOnceOnForcedActivation)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_TRUE(cast(confusion(), target));
+	target->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::MANA_DRAIN,
+		BonusSource::OTHER, 7, BonusSourceID()));
+	auto state = target->acquireState();
+	ASSERT_TRUE(newHorizonsBulwark::applyPhysicalPoison(state.get(), 2, friendly->unitId()));
+	BattleUnitsChanged poison;
+	poison.battleID = BattleID(0);
+	UnitChanges change(target->unitId(), UnitChanges::EOperation::UPDATE);
+	change.data = state->save();
+	poison.changedStacks.push_back(std::move(change));
+	gameHandler->sendAndApply(poison);
+	const auto mana = attackerSideHero->getManaAvailable();
+	const auto hp = target->getAvailableHealth();
+	const auto activationBefore = server.stackActivations.size();
+	const auto roundBefore = battle()->getRound();
+	ASSERT_NO_FATAL_FAILURE(advanceUntil([this]() { return !pending(target); }));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 7);
+	EXPECT_EQ(target->drainedMana, battle()->getRound() == roundBefore)
+		<< "afterNewRound resets the per-round Mana Drain flag";
+	EXPECT_EQ(target->getAvailableHealth(), hp - 2);
+	EXPECT_EQ(target->physicalPoisonActivationsRemaining, 2);
+	int activations = 0;
+	for(size_t i = activationBefore; i < server.stackActivations.size(); ++i)
+		if(server.stackActivations[i].stack == target->unitId()
+			&& server.stackActivations[i].reason == BattleUnitTurnReason::AUTOMATIC_ACTION)
+			++activations;
+	EXPECT_EQ(activations, 1);
+}
+
+TEST_F(NewHorizonsConfusionApplicationTest, ExpiredBindingIsRemovedBeforeForcedMovementEnumeration)
+{
+	confounder = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	history(battle::ConfusionBehavior::DEFEND);
+	Bonus binding(BonusDuration::ONE_BATTLE, BonusType::BIND_EFFECT, BonusSource::OTHER, 1, BonusSourceID());
+	binding.parameters = std::make_shared<BonusParameters>(static_cast<int>(friendly->unitId()));
+	target->addNewBonus(std::make_shared<Bonus>(binding));
+	ASSERT_TRUE(target->hasBonusOfType(BonusType::BIND_EFFECT));
+	ASSERT_TRUE(cast(confusion(), target));
+	ASSERT_NO_FATAL_FAILURE(advanceUntil([this]() { return !pending(target); }));
+	EXPECT_FALSE(target->hasBonusOfType(BonusType::BIND_EFFECT));
+	EXPECT_NE(target->confusionState.previousResolved, battle::ConfusionBehavior::DEFEND);
+	EXPECT_TRUE(sawAction(EActionType::WALK));
+}
+
+TEST_F(NewHorizonsConfusionApplicationTest, OrdinaryFearForfeitureConsumesPendingWithoutResolvedHistory)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	history(battle::ConfusionBehavior::WANDER);
+	ASSERT_TRUE(cast(confusion(), target));
+	target->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::FEARFUL,
+		BonusSource::OTHER, 100, BonusSourceID()));
+	const auto roundBefore = battle()->getRound();
+	ASSERT_NO_FATAL_FAILURE(advanceUntil([this]() { return !pending(target); }));
+	EXPECT_EQ(target->fear, battle()->getRound() == roundBefore)
+		<< "afterNewRound resets the per-round Fear flag";
+	EXPECT_TRUE(sawAction(EActionType::NO_ACTION));
+	EXPECT_FALSE(target->confusionState.pending);
 	EXPECT_EQ(target->confusionState.previousResolved, battle::ConfusionBehavior::WANDER);
+}
+
+TEST_F(NewHorizonsConfusionApplicationTest, ImpossibleAttackAndWanderAllowConfounderSoleDefendRepeat)
+{
+	confounder = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	history(battle::ConfusionBehavior::DEFEND);
+	target->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::STACKS_SPEED,
+		BonusSource::OTHER, -100, BonusSourceID()));
+	ASSERT_TRUE(cast(confusion(), target));
+	ASSERT_NO_FATAL_FAILURE(advanceUntil([this]() { return !pending(target); }));
+	EXPECT_TRUE(sawAction(EActionType::DEFEND));
+	EXPECT_EQ(target->confusionState.previousResolved, battle::ConfusionBehavior::DEFEND);
+	EXPECT_FALSE(target->confusionState.pending);
+}
+
+TEST_F(NewHorizonsConfusionApplicationTest, ConfounderForcedAttackUsesEnemyOnlyOrdinaryAttack)
+{
+	confounder = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	history(battle::ConfusionBehavior::DEFEND);
+	const auto * victim = addStack(BattleSide::ATTACKER, creatureByName("core:peasant"), BattleHex(11, 5), 100);
+	for(const auto hex : BattleHexArray::getNeighbouringTiles(target->getPosition()))
+		if(hex.isAvailable() && !battle()->battleGetUnitByPos(hex, true))
+			addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), hex, 10);
+	ASSERT_TRUE(newHorizonsConfusion::enumerateChoices(*battle(), target).wanderDestinations.empty());
+	const auto allyHealth = adjacent->getAvailableHealth();
+	const auto victimHealth = victim->getAvailableHealth();
+	ASSERT_TRUE(cast(confusion(), target));
+	ASSERT_NO_FATAL_FAILURE(advanceUntil([this]() { return !pending(target); }));
+	EXPECT_TRUE(sawAction(EActionType::WALK_AND_ATTACK));
+	EXPECT_EQ(target->confusionState.previousResolved, battle::ConfusionBehavior::ATTACK);
+	EXPECT_EQ(adjacent->getAvailableHealth(), allyHealth);
+	EXPECT_LT(victim->getAvailableHealth(), victimHealth);
+}
+
+TEST_F(NewHorizonsConfusionApplicationTest, DetachedExpectationAndActualAIChoosePaidLegalConfusion)
+{
+	// Exercise Confusion discovery/submission independently of Order ranking;
+	// a higher-valued legal Order is not a failed spell implementation.
+	useCommands = false;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	for(const auto spell : attackerSideHero->getSpellsInSpellbook())
+		if(spell != confusion()) attackerSideHero->removeSpellFromSpellbook(spell);
+	const auto * shooter = addStack(BattleSide::DEFENDER, creatureByName("core:archer"), BattleHex(10, 2), 100);
+	auto environment = std::make_shared<ConfusionApplicationEnvironment>(gameState());
+	auto callback = std::make_shared<ConfusionAICallback>();
+	callback->onBattleStarted(battle());
+	spells::BattleCast preview(battle(), attackerSideHero, spells::Mode::HERO, confusion().toSpell());
+	const auto mechanics = confusion().toSpell()->battleMechanics(&preview);
+	const auto hp = friendly->getAvailableHealth();
+	const auto mana = attackerSideHero->getManaAvailable();
+	auto * rng = dynamic_cast<CRandomGenerator *>(&gameHandler->getRandomGenerator());
+	ASSERT_NE(rng, nullptr);
+	const auto randomBefore = randomState(*rng);
+	const auto expected = SpellTargetEvaluator::confusionExpectedActivationValue(mechanics.get(),
+		spells::Target{spells::Destination(shooter)}, environment.get());
+	ASSERT_TRUE(expected);
+	EXPECT_GT(*expected, 0);
+	EXPECT_FALSE(shooter->confusionState.pending);
+	EXPECT_EQ(friendly->getAvailableHealth(), hp);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	BattleEvaluator evaluator(environment, callback, friendly, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(friendly);
+	ASSERT_TRUE(evaluator.canCastSpell());
+	ASSERT_TRUE(evaluator.attemptCastingSpell(friendly));
+	ASSERT_EQ(callback->submitted.size(), 1);
+	EXPECT_EQ(randomState(*rng), randomBefore);
+	const auto & action = callback->submitted.front();
+	ASSERT_EQ(action.spell, confusion());
+	const auto aim = action.getTarget(battle());
+	ASSERT_EQ(aim.size(), 1);
+	ASSERT_NE(aim.front().unitValue, nullptr);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - battle()->battleGetSpellCost(confusion().toSpell(), attackerSideHero));
+	EXPECT_TRUE(aim.front().unitValue->hasBonusOfType(BonusType::CONFUSION_PENDING));
 }
 
 TEST_F(NewHorizonsConfusionApplicationTest, TimeStopNoActionDoesNotConsumePendingConfusionOrRollBadMorale)

@@ -1667,6 +1667,13 @@ bool BattleInfo::hasElementalRebirthBasisState() const
 	});
 }
 
+void BattleInfo::setRebirthChainUsed(BattleSide side, bool used)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::runtime_error("Invalid Rebirth Chain side");
+	sides.at(side).rebirthChainUsed = used;
+}
+
 bool BattleInfo::hasRebirthOutputOriginalHPState() const
 {
 	return std::ranges::any_of(stacks, [](const auto & stack)

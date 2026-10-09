@@ -66,6 +66,7 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsBulwark.cpp
 	battle/NewHorizonsBerserk.cpp
 	battle/NewHorizonsConfusion.cpp
+	battle/NewHorizonsConfusionResolution.cpp
 	battle/NewHorizonsConfusionControl.cpp
 	battle/NewHorizonsConfusionState.cpp
 	battle/NewHorizonsPlague.cpp
@@ -540,6 +541,7 @@ set(lib_MAIN_HEADERS
 	battle/NewHorizonsBulwark.h
 	battle/NewHorizonsBerserk.h
 	battle/NewHorizonsConfusion.h
+	battle/NewHorizonsConfusionResolution.h
 	battle/NewHorizonsConfusionControl.h
 	battle/NewHorizonsConfusionState.h
 	battle/NewHorizonsSoulChain.h

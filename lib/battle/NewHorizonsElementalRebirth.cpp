@@ -12,6 +12,7 @@
 
 #include "../CStack.h"
 #include "CBattleInfoCallback.h"
+#include "IBattleState.h"
 #include "../GameLibrary.h"
 #include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../entities/hero/NewHorizonsPerkRules.h"
@@ -36,6 +37,7 @@ constexpr std::array<int, 3> HEALTH_PERCENTAGES = {25, 40, 50};
 constexpr std::string_view PRIMAL_BURST_ID = "new-horizons:elementalRebirth.primalBurst";
 constexpr std::string_view GREATER_ESSENCE_ID = "new-horizons:elementalRebirth.greaterEssence";
 constexpr std::string_view ELEMENTAL_WARD_ID = "new-horizons:elementalRebirth.elementalWard";
+constexpr std::string_view REBIRTH_CHAIN_ID = "new-horizons:elementalRebirth.rebirthChain";
 constexpr int GREATER_ESSENCE_HEALTH_PERCENTAGE_POINTS = 15;
 constexpr int ELEMENTAL_WARD_REDUCTION_BASIS_POINTS = 2000;
 
@@ -56,11 +58,26 @@ bool isNormalSlot(const battle::Unit & unit)
 	return unit.unitSlot().validSlot();
 }
 
+bool isCanonicalElemental(CreatureID creature)
+{
+	const auto & ids = canonicalElementals();
+	return creature.hasValue() && creature.toCreature()
+		&& std::find(ids.begin(), ids.end(), creature) != ids.end();
+}
+
+bool isFirstGenerationOutput(const battle::Unit & unit)
+{
+	return unit.unitType() && unit.isSummoned() && !unit.isClone()
+		&& unit.getPhantomInitialIntegrity() == 0
+		&& unit.getRebirthOriginalAggregateHP() > 0
+		&& isCanonicalElemental(unit.creatureId());
+}
+
 bool isValidProfile(const ActiveProfile & profile)
 {
 	return profile.rank >= 1 && profile.rank <= 3
 		&& profile.healthPercent == HEALTH_PERCENTAGES[static_cast<size_t>(profile.rank - 1)]
-		&& (profile.rank >= 2 || (!profile.greaterEssence && !profile.elementalWard));
+		&& (profile.rank >= 2 || (!profile.greaterEssence && !profile.elementalWard && !profile.rebirthChain));
 }
 }
 
@@ -96,7 +113,8 @@ std::optional<ActiveProfile> activeProfile(const CGHeroInstance * hero)
 	return ActiveProfile{rank, HEALTH_PERCENTAGES[static_cast<size_t>(rank - 1)],
 		hero->hasActivePerk(std::string(SKILL_ID), std::string(PRIMAL_BURST_ID)),
 		hero->hasActivePerk(std::string(SKILL_ID), std::string(GREATER_ESSENCE_ID)),
-		hero->hasActivePerk(std::string(SKILL_ID), std::string(ELEMENTAL_WARD_ID))};
+		hero->hasActivePerk(std::string(SKILL_ID), std::string(ELEMENTAL_WARD_ID)),
+		rank >= MasteryLevel::ADVANCED && hero->hasActivePerk(std::string(SKILL_ID), std::string(REBIRTH_CHAIN_ID))};
 }
 
 int64_t primalBurstDamageBudget(int64_t rebornAggregateHP)
@@ -165,27 +183,39 @@ bool isEligibleSource(const battle::Unit & unit)
 		&& unit.getPhantomInitialIntegrity() == 0;
 }
 
-std::optional<DeathSnapshot> captureDeathSource(const battle::Unit & unit, const CGHeroInstance * hero)
+std::optional<DeathSnapshot> captureDeathSource(const battle::Unit & unit, const CGHeroInstance * hero,
+	bool chainUsed)
 {
-	if(!isEligibleSource(unit))
-		return std::nullopt;
 	const auto profile = activeProfile(hero);
+	if(!profile)
+		return std::nullopt;
+	if(!isEligibleSource(unit))
+	{
+		if(chainUsed || !profile->rebirthChain || !unit.alive() || unit.isGhost()
+			|| !unit.getPosition().isValid() || !isFirstGenerationOutput(unit))
+			return std::nullopt;
+		return DeathSnapshot{unit.unitId(), unit.unitSide(), unit.getPosition(), 0, *profile,
+			true, unit.getRebirthOriginalAggregateHP()};
+	}
 	const auto basis = unit.getBattleStartMaximumAggregateHP();
-	if(!profile || basis <= 0)
+	if(basis <= 0)
 		return std::nullopt;
 
 	return DeathSnapshot{unit.unitId(), unit.unitSide(), unit.getPosition(), basis, *profile};
 }
 
 bool stillEligibleDeath(const battle::Unit * postHitUnit, const DeathSnapshot & snapshot,
-	bool hitKilled, bool cloneKilled, bool nativeRebirth)
+	bool hitKilled, bool cloneKilled, bool nativeRebirth, bool chainUsed)
 {
-	return hitKilled && !cloneKilled && !nativeRebirth
-		&& postHitUnit
-		&& postHitUnit->unitId() == snapshot.unitId
-		&& postHitUnit->unitSide() == snapshot.side
-		&& postHitUnit->getPosition() == snapshot.corpsePosition
-		&& !postHitUnit->alive()
+	if(!hitKilled || cloneKilled || nativeRebirth || !postHitUnit
+		|| postHitUnit->unitId() != snapshot.unitId || postHitUnit->unitSide() != snapshot.side
+		|| postHitUnit->getPosition() != snapshot.corpsePosition || postHitUnit->alive()
+		|| !isValidProfile(snapshot.profile))
+		return false;
+	if(snapshot.chain)
+		return !chainUsed && snapshot.profile.rebirthChain && isFirstGenerationOutput(*postHitUnit)
+			&& snapshot.rebirthOriginalAggregateHP == postHitUnit->getRebirthOriginalAggregateHP();
+	return snapshot.rebirthOriginalAggregateHP == 0
 		&& !postHitUnit->isSummoned()
 		&& !postHitUnit->isClone()
 		&& postHitUnit->getPhantomInitialIntegrity() == 0
@@ -196,8 +226,75 @@ bool stillEligibleDeath(const battle::Unit * postHitUnit, const DeathSnapshot & 
 		&& !postHitUnit->isAmmoCart()
 		&& !postHitUnit->hasBonusOfType(BonusType::SIEGE_WEAPON)
 		&& isNormalSlot(*postHitUnit)
-		&& snapshot.battleStartMaximumAggregateHP > 0
-		&& isValidProfile(snapshot.profile);
+		&& snapshot.battleStartMaximumAggregateHP > 0;
+}
+
+void ChainConsumption::validateShape() const
+{
+	if((side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| sourceUnitId == std::numeric_limits<uint32_t>::max()
+		|| spawnUnitId == std::numeric_limits<uint32_t>::max() || sourceUnitId == spawnUnitId)
+		throw std::runtime_error("Invalid Rebirth Chain consumption provenance");
+}
+
+void validateChainConsumption(const IBattleInfo & battle, const ChainConsumption & consumption,
+	const battle::UnitInfo & spawn)
+{
+	consumption.validateShape();
+	if(consumption.rollback)
+		throw std::runtime_error("Rebirth Chain ADD cannot restore its combat token");
+	const auto sources = battle.getUnitsIf([&](const battle::Unit * unit)
+	{
+		return unit && unit->unitId() == consumption.sourceUnitId;
+	});
+	const auto profile = activeProfile(battle.getSideHero(consumption.side));
+	if(sources.size() != 1 || !profile || !profile->rebirthChain || battle.getRebirthChainUsed(consumption.side))
+		throw std::runtime_error("Unavailable Rebirth Chain consumption");
+	const auto * source = sources.front();
+	const auto existingOutput = battle.getUnitsIf([&](const battle::Unit * unit)
+	{
+		return unit && unit->unitId() == consumption.spawnUnitId;
+	});
+	if(source->alive() || source->unitSide() != consumption.side || !isFirstGenerationOutput(*source)
+		|| !existingOutput.empty() || !spawn.position.isValid()
+		|| spawn.id != consumption.spawnUnitId || spawn.side != consumption.side
+		|| spawn.position != source->getPosition() || !spawn.summoned || spawn.natureSummoned
+		|| spawn.phantomIntegrity != 0 || spawn.phantomDuration != 0 || spawn.rebirthOriginalAggregateHP != 0
+		|| !isCanonicalElemental(spawn.type))
+		throw std::runtime_error("Invalid Rebirth Chain source or output");
+	const auto category = battle.getCreatureCategoryRules().lookup(spawn.type.toCreature()->getJsonKey());
+	const auto sourceCategory = battle.getCreatureCategoryRules().lookup(source->unitType()->getJsonKey());
+	const auto maximumHP = effectiveSummonMaxHP(battle.getSideArmy(consumption.side), spawn.type,
+		battle.getSidePlayer(consumption.side), consumption.side);
+	const auto health = spawnHealth(std::max<int64_t>(1, source->getRebirthOriginalAggregateHP() / 4), maximumHP);
+	if(!category || category->category != newHorizonsCreatures::CreatureCategory::ELITE
+		|| !sourceCategory || sourceCategory->category != newHorizonsCreatures::CreatureCategory::ELITE
+		|| !health || spawn.count != health->count)
+		throw std::runtime_error("Invalid Rebirth Chain output health or category");
+}
+
+void validateChainRollback(const IBattleInfo & battle, const ChainConsumption & consumption)
+{
+	consumption.validateShape();
+	const auto sources = battle.getUnitsIf([&](const battle::Unit * unit)
+	{
+		return unit && unit->unitId() == consumption.sourceUnitId;
+	});
+	const auto outputs = battle.getUnitsIf([&](const battle::Unit * unit)
+	{
+		return unit && unit->unitId() == consumption.spawnUnitId;
+	});
+	if(!consumption.rollback || !battle.getRebirthChainUsed(consumption.side)
+		|| sources.size() != 1 || outputs.size() != 1)
+		throw std::runtime_error("Unavailable Rebirth Chain rollback");
+	const auto * source = sources.front();
+	const auto * output = outputs.front();
+	if(source->alive() || source->unitSide() != consumption.side || !isFirstGenerationOutput(*source)
+		|| !output->alive() || output->unitSide() != consumption.side || !output->isSummoned() || output->isClone()
+		|| output->getPhantomInitialIntegrity() != 0 || output->getRebirthOriginalAggregateHP() != 0
+		|| output->getPosition() != source->getPosition() || !isCanonicalElemental(output->creatureId())
+		|| output->getAvailableHealth() != static_cast<int64_t>(output->getCount()) * output->getMaxHealth())
+		throw std::runtime_error("Invalid Rebirth Chain rollback source or output");
 }
 
 std::vector<CreatureID> legalCandidatePool(const newHorizonsCreatures::CreatureCategoryRules & categoryRules,
@@ -226,6 +323,9 @@ std::vector<CreatureID> legalCandidatePool(const newHorizonsCreatures::CreatureC
 
 int64_t targetHP(const DeathSnapshot & snapshot)
 {
+	if(snapshot.chain)
+		return isValidProfile(snapshot.profile) && snapshot.profile.rebirthChain && snapshot.rebirthOriginalAggregateHP > 0
+			? std::max<int64_t>(1, snapshot.rebirthOriginalAggregateHP / 4) : 0;
 	if(snapshot.battleStartMaximumAggregateHP <= 0
 		|| !isValidProfile(snapshot.profile))
 		return 0;
@@ -282,7 +382,8 @@ std::optional<SpawnHealth> spawnHealth(int64_t targetAggregateHP, int32_t effect
 }
 
 std::optional<SpawnDescriptor> makeSpawnDescriptor(uint32_t unitId, CreatureID creature,
-	BattleSide side, BattleHex corpsePosition, int64_t targetAggregateHP, int32_t effectiveCreatureMaxHP)
+	BattleSide side, BattleHex corpsePosition, int64_t targetAggregateHP, int32_t effectiveCreatureMaxHP,
+	bool chainOutput)
 {
 	if(!creature.hasValue() || !creature.toCreature() || !corpsePosition.isValid()
 		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
@@ -299,7 +400,7 @@ std::optional<SpawnDescriptor> makeSpawnDescriptor(uint32_t unitId, CreatureID c
 	result.unit.position = corpsePosition;
 	result.unit.summoned = true;
 	result.unit.natureSummoned = false;
-	result.unit.rebirthOriginalAggregateHP = targetAggregateHP;
+	result.unit.rebirthOriginalAggregateHP = chainOutput ? 0 : targetAggregateHP;
 	result.health = *health;
 	return result;
 }

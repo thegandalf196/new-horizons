@@ -45,6 +45,7 @@ else()
 endif()
 
 set(test_SRCS
+		rmg/NewHorizonsRandomScrollTest.cpp
  		StdInc.cpp
  		main.cpp
  		CMemoryBufferTest.cpp
@@ -223,6 +224,7 @@ set(test_SRCS
 		server/battles/NewHorizonsForgetfulnessTest.cpp
 		server/battles/NewHorizonsSoulChainTest.cpp
 		server/battles/NewHorizonsElementalRebirthTest.cpp
+		server/battles/NewHorizonsRebirthChainTest.cpp
 		server/battles/NewHorizonsChaplainReserveTest.cpp
 		server/battles/NewHorizonsConsecratedCastingTest.cpp
 		server/battles/NewHorizonsSacredCommandTest.cpp
@@ -310,6 +312,7 @@ set(test_SRCS
 		battle/NewHorizonsMagicArrowActionTest.cpp
 		battle/NewHorizonsBerserkForcedActionTest.cpp
 		battle/NewHorizonsConfusionChoicesTest.cpp
+		battle/NewHorizonsConfusionResolutionTest.cpp
 		battle/NewHorizonsConfusionStateTest.cpp
 		server/battles/NewHorizonsConfusionApplicationTest.cpp
 		battle/NewHorizonsCounterspellActionTest.cpp
@@ -558,6 +561,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsDoubleCommandAITest.cpp
 		battleAI/NewHorizonsDivineMandateAITest.cpp
 		battleAI/NewHorizonsElementalRebirthAITest.cpp
+		battleAI/NewHorizonsRebirthChainAITest.cpp
 		battleAI/NewHorizonsBattlePlanAITest.cpp
 		battleAI/AttackResourceProjectionTest.cpp
 		battleAI/DamageReductionControlTest.cpp

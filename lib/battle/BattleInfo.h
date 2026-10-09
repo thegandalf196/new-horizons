@@ -125,6 +125,13 @@ public:
 		return sides.at(side).perfectFortune;
 	}
 	void setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state) override;
+	bool getRebirthChainUsed(BattleSide side) const override
+	{
+		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			throw std::runtime_error("Invalid Rebirth Chain side");
+		return sides.at(side).rebirthChainUsed;
+	}
+	void setRebirthChainUsed(BattleSide side, bool used) override;
 	LuckSerendipityState getLuckSerendipityState(BattleSide side) const override
 	{
 		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
@@ -311,6 +318,9 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_CHAIN)
+			&& (sides[BattleSide::ATTACKER].rebirthChainUsed || sides[BattleSide::DEFENDER].rebirthChainUsed))
+			throw std::runtime_error("Cannot discard Rebirth Chain combat use from a battle snapshot");
 		if(h.saving)
 			validateDefiantSerialization(h);
 		if(h.saving)

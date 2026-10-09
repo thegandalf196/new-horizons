@@ -208,6 +208,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	PerfectFortuneState perfectFortune;
 	ArmorerDefiantState armorerDefiant;
 	LuckSerendipityState luckSerendipity;
+	bool rebirthChainUsed = false;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);
@@ -380,6 +381,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && rebirthChainUsed && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_CHAIN))
+			throw std::runtime_error("Cannot discard Rebirth Chain combat use");
 		if(h.saving)
 			armorerDefiant.validateSerialization(h);
 		if(h.saving)
@@ -736,6 +739,10 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		h & perfectFortune;
 		h & armorerDefiant;
 		h & luckSerendipity;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_CHAIN))
+			h & rebirthChainUsed;
+		else if(!h.saving)
+			rebirthChainUsed = false;
 		if(!h.saving)
 		{
 			validateDoubleCommandState();

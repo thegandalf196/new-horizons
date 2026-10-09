@@ -1,6 +1,41 @@
 # New Horizons functional completion matrix
 
-Updated: 2026-10-08
+Updated: 2026-10-09
+
+Verified active checkpoint: Confusion, Confounder and Rebirth Chain now use
+production registration. Linked build30644 passes; native16522 passes96/96
+in16.817s, zero skips. Shipped statuses, legal perk acquisition, paid cast and
+forced resolution are asserted without private activation. Chain uses the
+unchanged shipped registry, typed quota replication, immutable original HP,
+second-generation suppression and branch-local AI parity. Random-scroll
+producer3/3 also passes. Data17/17, generated-module parity and independent
+review pass. Receipts:build/nh-confusion-rebirth-native.8ZbuyL7f/production-active.log
+and XML. Coverage239->241/310 perks: generic168->169/220, faction71->72/90,
+planned71->69. Combat61->62/67; Orders8/8 and31 Skills/93 ranks unchanged.
+
+Deferred to Phase2: full battle save/resume, nested cross-side bursts,
+Enchanter/FireWall and movement-bonus expiry combinations, guaranteed live
+SHOOT/Skirmisher/Wander cases and full-profile Order-versus-Confusion ranking.
+No graphical or usual-launcher delivery is claimed by this native checkpoint.
+The earlier candidate records below are historical, not current failures.
+
+Current candidate integration: Confusion's final impossible-Attack question is
+settled as ordinary Defend. Full weighted resolver, authoritative forced action
+and detached paid-cast AI consumer are integrated, along with Rebirth Chain's
+side quota, exact immutable-basis HP and branch-local AI state. Independent
+reviews find no principal blocker. Registry activation and coverage credit are
+withheld until focused native execution; the10-job build is still running.
+Random-map scroll admission now uses generated-map ordinary-acquisition rules,
+with three focused producer fixtures awaiting that same native build. This
+producer repair does not create a new combat spell identity. Existing counts
+remain239/310 perks,61/67 combat spells,8/8 Orders and31 skills/93 ranks.
+Deferred interactions and actual compiler failures are recorded separately in
+NH_RELEASE_FAILURES; no broad regression-suite or graphical acceptance claim.
+
+Focused candidate run41216 now provides actual runtime evidence:95 tests,
+85 pass,10 fail,zero skips in15.242s. Random-scroll producer3/3 passes; Confusion
+and Chain registration remain inactive while separate workers repair concrete
+failures. No spell/perk identity is newly credited from this partial pass.
 
 UP164 Master Teacher is now active after linked retry50625 and independent
 native acceptance:6/6 principal cases in3.660s and6/6 adjacent Mentor cases

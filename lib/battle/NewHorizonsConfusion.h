@@ -30,9 +30,9 @@ struct DLL_LINKAGE AttackTargetChoices
 	/// Existing ordinary approach geometry yields at most one advance endpoint.
 	/// This remains separate from attacks: advancing resolves the Attack family.
 	std::vector<BattleHex> furthestAdvances;
-	/// No attack and no legal nonstationary advance. Deliberately not mapped to
-	/// Defend or NO_ACTION until the canonical zero-advance endpoint is resolved.
-	bool zeroAdvanceUnresolved = false;
+	/// No attack and no legal nonstationary advance. The shared resolver maps
+	/// this selected Attack enemy to the approved ordinary Defend fallback.
+	bool zeroAdvanceDefends = false;
 };
 
 struct DLL_LINKAGE Choices

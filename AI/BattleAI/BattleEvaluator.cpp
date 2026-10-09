@@ -4859,6 +4859,14 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							ps.spellBattleFormExpectedValue = *expectedValue
 								* scoreEvaluator.getPositiveEffectMultiplier();
 						}
+						if(spell->getJsonKey() == "new-horizons:confusion")
+						{
+							const auto value = SpellTargetEvaluator::confusionExpectedActivationValue(
+								candidateMechanics.get(), ps.dest, env.get(), cb->getBattle(battleID));
+							if(!value || *value <= 0.0f)
+								continue;
+							ps.spellConfusionExpectedValue = *value * scoreEvaluator.getPositiveEffectMultiplier();
+						}
 						if(isCanonicalPuppetMaster(spell))
 						{
 							const auto expectedValue = expectedPuppetMasterActivationSwing(
@@ -5382,6 +5390,23 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + *ps.spellBattleFormExpectedValue;
+					continue;
+				}
+				if(ps.command == HeroCommand::NONE && ps.spellConfusionExpectedValue.has_value())
+				{
+					if(ps.dest.size() != 1 || !ps.dest.front().unitValue)
+					{
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
+					}
+					targetId = ps.dest.front().unitValue->unitId();
+					if(counterspellNegated
+						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
+							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
+							counterspellNegated, *spellAllowance))
+						ps.value = std::numeric_limits<float>::lowest();
+					else
+						ps.value = baseline + *ps.spellConfusionExpectedValue;
 					continue;
 				}
 				// Puppet Master has no immediate HP delta. Value the target's

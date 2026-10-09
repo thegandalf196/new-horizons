@@ -940,6 +940,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 		relentlessAssaultStates[side] = realBattle->getBattle()->getRelentlessAssaultState(side);
 		battlecraftMasteryAwardRounds[side] = realBattle->getBattle()->getBattlecraftMasteryAwardRound(side);
 		armorerLastStandUsedStates[side] = realBattle->getBattle()->armorerLastStandUsed(side);
+		rebirthChainUsedStates[side] = realBattle->getBattle()->getRebirthChainUsed(side);
 		armorerDefiantStates[side] = realBattle->getBattle()->getArmorerDefiantState(side);
 		warcastingStates[side] = realBattle->getBattle()->getWarcastingState(side);
 		heroActionAllowances[side] = realBattle->getBattle()->getHeroActionAllowances(side);
@@ -2080,6 +2081,20 @@ void HypotheticBattle::applyArmorerLastStandDefend(uint32_t unitId)
 		addUnitBonus(unitId, {*stance.holdFastBonus});
 }
 
+bool HypotheticBattle::getRebirthChainUsed(BattleSide side) const
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return false;
+	return rebirthChainUsedStates.at(side);
+}
+
+void HypotheticBattle::setRebirthChainUsed(BattleSide side, bool used)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::invalid_argument("Invalid hypothetical Rebirth Chain side");
+	rebirthChainUsedStates.at(side) = used;
+}
+
 int32_t HypotheticBattle::getBloodrageDamagePercent(BattleSide side) const
 {
 	return bloodrageDamagePercents.at(side);
@@ -2576,7 +2591,8 @@ std::optional<newHorizonsElementalRebirth::DeathSnapshot> HypotheticBattle::capt
 	const auto side = unit.unitSide();
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return {};
-	return newHorizonsElementalRebirth::captureDeathSource(unit, battleGetFightingHero(side));
+	return newHorizonsElementalRebirth::captureDeathSource(
+		unit, battleGetFightingHero(side), getRebirthChainUsed(side));
 }
 
 bool HypotheticBattle::hasReadyNativeRebirth(const battle::Unit * unit) const
@@ -2592,7 +2608,8 @@ std::optional<uint32_t> HypotheticBattle::projectElementalRebirth(const battle::
 	const bool cloneKilled, const bool nativeRebirth)
 {
 	if(!newHorizonsElementalRebirth::stillEligibleDeath(
-		postHitUnit, snapshot, hitKilled, cloneKilled, nativeRebirth))
+		postHitUnit, snapshot, hitKilled, cloneKilled, nativeRebirth,
+		getRebirthChainUsed(snapshot.side)))
 		return {};
 
 	const auto candidates = newHorizonsElementalRebirth::legalCandidatePool(
@@ -2614,13 +2631,29 @@ std::optional<uint32_t> HypotheticBattle::projectElementalRebirth(const battle::
 	const auto effectiveMaxHP = newHorizonsElementalRebirth::effectiveSummonMaxHP(
 		sourceArmy, creature, owner, snapshot.side);
 	auto descriptor = newHorizonsElementalRebirth::makeSpawnDescriptor(nextUnitId(), creature,
-		snapshot.side, snapshot.corpsePosition, newHorizonsElementalRebirth::targetHP(snapshot), effectiveMaxHP);
+		snapshot.side, snapshot.corpsePosition, newHorizonsElementalRebirth::targetHP(snapshot),
+		effectiveMaxHP, snapshot.chain);
 	if(!descriptor)
 		return {};
 
-	JsonNode data;
-	descriptor->unit.save(data);
-	addUnit(descriptor->unit.id, data);
+	if(snapshot.chain)
+	{
+		// The shared ADD visitor reserves this branch's quota before publishing the
+		// second generation. Nested Primal Burst deaths must observe the spent use.
+		BattleUnitsChanged add;
+		add.battleID = getBattleID();
+		add.rebirthChainConsumption = newHorizonsElementalRebirth::ChainConsumption{
+			snapshot.side, snapshot.unitId, descriptor->unit.id};
+		auto & added = add.changedStacks.emplace_back(descriptor->unit.id, UnitChanges::EOperation::ADD);
+		descriptor->unit.save(added.data);
+		getServerCallback()->apply(add);
+	}
+	else
+	{
+		JsonNode data;
+		descriptor->unit.save(data);
+		addUnit(descriptor->unit.id, data);
+	}
 	if(const auto ward = newHorizonsElementalRebirth::elementalWardBonus(snapshot.profile))
 		addUnitBonus(descriptor->unit.id, {*ward});
 	auto projected = getForUpdate(descriptor->unit.id);
@@ -2628,6 +2661,8 @@ std::optional<uint32_t> HypotheticBattle::projectElementalRebirth(const battle::
 	if(fullHealth < descriptor->health.targetAggregateHP)
 	{
 		removeUnit(descriptor->unit.id);
+		if(snapshot.chain)
+			setRebirthChainUsed(snapshot.side, false);
 		return {};
 	}
 	const auto wound = fullHealth - descriptor->health.targetAggregateHP;
@@ -2639,6 +2674,8 @@ std::optional<uint32_t> HypotheticBattle::projectElementalRebirth(const battle::
 	if(projected->getAvailableHealth() != descriptor->health.targetAggregateHP)
 	{
 		removeUnit(descriptor->unit.id);
+		if(snapshot.chain)
+			setRebirthChainUsed(snapshot.side, false);
 		return {};
 	}
 	elementalRebirthSpawnUnitIds.insert(descriptor->unit.id);

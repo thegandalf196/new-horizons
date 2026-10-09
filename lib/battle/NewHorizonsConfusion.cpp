@@ -122,7 +122,7 @@ Choices enumerateChoices(const CBattleInfoCallback & battle, const battle::Unit 
 			}
 			if(advance.isAvailable() && advance != unit->getPosition() && available.contains(advance))
 				group.furthestAdvances.push_back(advance);
-			group.zeroAdvanceUnresolved = group.furthestAdvances.empty();
+			group.zeroAdvanceDefends = group.furthestAdvances.empty();
 		}
 		result.attacks.push_back(std::move(group));
 	}

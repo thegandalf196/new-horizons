@@ -14,6 +14,8 @@
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/ReachabilityInfo.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
+#include "../../lib/battle/NewHorizonsConfusionResolution.h"
+#include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/battle/NewHorizonsShadowGift.h"
 #include "../../lib/battle/NewHorizonsSoulChain.h"
 #include "AttackPossibility.h"
@@ -2604,6 +2606,62 @@ SpellTargetEvaluator::handOfFateExpectedDamageValue(const Mechanics * spellMecha
 	result.hostileDamageValue += expectedHostileSpillValue * primaryHitProbability;
 	result.friendlyDamageValue += expectedFriendlySpillValue * primaryHitProbability;
 	return result;
+}
+
+std::optional<float> SpellTargetEvaluator::confusionExpectedActivationValue(
+	Mechanics * spellMechanics, const Target & target, const Environment * environment,
+	std::shared_ptr<CBattleInfoCallback> battleState)
+{
+	if(!spellMechanics || !spellMechanics->getSpell()
+		|| spellMechanics->getSpell()->getJsonKey() != "new-horizons:confusion")
+		return std::nullopt;
+	if(!environment || !spellMechanics->battle() || target.size() != 1 || !target.front().unitValue)
+		return std::nullopt;
+	detail::ProblemImpl problem;
+	if(!spellMechanics->canBeCastAt(target, problem))
+		return std::nullopt;
+	if(!battleState)
+		battleState = std::shared_ptr<CBattleInfoCallback>(
+			const_cast<CBattleInfoCallback *>(spellMechanics->battle()), [](CBattleInfoCallback *) {});
+	const auto unitID = target.front().unitValue->unitId();
+	const auto pressure = [unitID](const std::shared_ptr<HypotheticBattle> & board) -> float
+	{
+		const auto unit = board->getForUpdate(unitID);
+		if(!unit || !unit->alive() || (!unit->willMove() && !unit->willMove(1)))
+			return 0.0f;
+		DamageCache damage;
+		if(!unit->confusionState.pending)
+		{
+			PotentialTargets attacks(unit.get(), damage, board);
+			return attacks.berserk ? attacks.expectedBerserkActionValue()
+				: attacks.possibleAttacks.empty() ? 0.0f : static_cast<float>(attacks.bestActionValue());
+		}
+		const auto reachability = board->getReachability(unit.get());
+		double value = 0.0;
+		for(const auto & outcome : newHorizonsConfusion::enumerateOutcomes(*board, unit.get(),
+			unit->confusionState.previousResolved, unit->confusionState.pendingConfounder))
+		{
+			const auto & action = outcome.action;
+			if(!action.target || (action.type != EActionType::SHOOT && action.type != EActionType::WALK_AND_ATTACK))
+				continue;
+			const bool shooting = action.type == EActionType::SHOOT;
+			const auto from = shooting && !action.skirmisher ? BattleHex::INVALID : action.position;
+			const int distance = from.isValid() ? std::max(0, physicalTravelDistance(reachability, from)) : 0;
+			BattleAttackInfo attack(unit.get(), action.target, distance, shooting);
+			if(action.skirmisher)
+				attack.archeryRangedDamageMultiplierPercent = newHorizonsArchery::SKIRMISHER_DAMAGE_PERCENT;
+			value += outcome.probability * AttackPossibility::evaluate(attack, from, damage, board).attackValue();
+		}
+		return static_cast<float>(value);
+	};
+	auto baseline = std::make_shared<HypotheticBattle>(environment, battleState);
+	const float before = pressure(baseline);
+	auto projected = std::make_shared<HypotheticBattle>(environment, battleState);
+	const auto projectedUnit = projected->getForUpdate(unitID);
+	// Use the production effect for source-bound Confounder provenance and
+	// Berserk removal. The pending producer does not consume a random draw.
+	spellMechanics->castEval(projected->getServerCallback(), Target{Destination(projectedUnit.get())});
+	return (before - pressure(projected)) * spellApplicationChance(spellMechanics, target.front().unitValue);
 }
 
 std::optional<float> SpellTargetEvaluator::battleFormExpectedOffensiveValue(

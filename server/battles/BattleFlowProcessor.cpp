@@ -25,6 +25,7 @@
 #include "../../lib/battle/NewHorizonsBerserk.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsConfusionControl.h"
+#include "../../lib/battle/NewHorizonsConfusionResolution.h"
 #include "../../lib/battle/NewHorizonsDiscipline.h"
 #include "../../lib/battle/NewHorizonsPuppetMaster.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
@@ -1149,13 +1150,18 @@ bool BattleFlowProcessor::tryMakeAutomaticAction(const CBattleInfoCallback & bat
 	if(tryActivateMoralePenalty(battle, next))
 		return true;
 
+	bool turnTriggersProcessed = false;
+	if(tryActivateConfusion(battle, next, turnTriggersProcessed))
+		return true;
+
 	if(tryActivateBerserkPenalty(battle, next))
 		return true;
 
 	if(handleForcedCpuControlledUnit(battle, next))
 		return true;
 
-	stackTurnTrigger(battle, next); //various effects
+	if(!turnTriggersProcessed)
+		stackTurnTrigger(battle, next); //various effects
 
 	if(next->fear)
 	{
@@ -1248,6 +1254,106 @@ bool BattleFlowProcessor::tryActivateMoralePenalty(const CBattleInfoCallback & b
 		}
 	}
 	return false;
+}
+
+bool BattleFlowProcessor::tryActivateConfusion(const CBattleInfoCallback & battle, const CStack * next,
+	bool & turnTriggersProcessed)
+{
+	if(!next || !battle.getBattle() || !next->confusionState.pending)
+		return false;
+	std::vector<Bonus> markers;
+	for(const auto & marker : *next->getBonusesOfType(BonusType::CONFUSION_PENDING))
+		if(newHorizonsConfusionControl::isPendingMarker(marker.get()))
+			markers.emplace_back(*marker);
+	if(markers.empty())
+		return false;
+
+	// Confusion replaces tactical choice, not the stack's ordinary turn
+	// triggers. Unbind/Enchanter may change legality or remove pending state.
+	stackTurnTrigger(battle, next);
+	turnTriggersProcessed = true;
+	if(!next->confusionState.pending)
+		return false;
+	const auto battleID = battle.getBattle()->getBattleID();
+	const auto unitID = next->unitId();
+	const auto consumePending = [&]()
+	{
+		std::vector<Bonus> currentMarkers;
+		for(const auto & marker : *next->getBonusesOfType(BonusType::CONFUSION_PENDING))
+			if(newHorizonsConfusionControl::isPendingMarker(marker.get()))
+				currentMarkers.emplace_back(*marker);
+		if(currentMarkers.empty())
+			currentMarkers = markers; // Retain exact source identity through startup death.
+		if(!currentMarkers.empty())
+		{
+			SetStackEffect remove;
+			remove.battleID = battleID;
+			remove.toRemove.emplace_back(unitID, std::move(currentMarkers));
+			gameHandler->sendAndApply(remove);
+		}
+		// Startup death can remove/hide the bonus before this consumer runs.
+		// The saved pending state still must be cleared on the dead stack.
+		if(next->confusionState.pending)
+		{
+			auto spentState = next->acquireState();
+			spentState->confusionState.clearPending();
+			BattleUnitsChanged spent;
+			spent.battleID = battleID;
+			UnitChanges update(unitID, UnitChanges::EOperation::UPDATE);
+			update.data = spentState->save();
+			spent.changedStacks.push_back(std::move(update));
+			gameHandler->sendAndApply(spent);
+		}
+	};
+	if(next->fear)
+	{
+		// An ordinary Fear forfeiture consumes this next activation without
+		// manufacturing an Attack/Defend/Wander history entry.
+		consumePending();
+		return makeStackDoNothing(battle, next);
+	}
+	if(!beginAutomaticActivation(battle, next))
+	{
+		consumePending();
+		return true;
+	}
+	// Expiring activation bonuses and start-of-activation damage have now
+	// resolved. Choose only from the surviving stack's current legal actions.
+	const auto outcomes = newHorizonsConfusion::enumerateOutcomes(battle, next,
+		next->confusionState.previousResolved, next->confusionState.pendingConfounder);
+	const auto outcome = newHorizonsConfusion::selectOutcome(outcomes,
+		gameHandler->getRandomGenerator().nextDouble(1.0));
+	consumePending();
+	auto state = next->acquireState();
+	state->confusionState.recordResolved(outcome.behavior);
+	BattleUnitsChanged record;
+	record.battleID = battleID;
+	UnitChanges update(unitID, UnitChanges::EOperation::UPDATE);
+	update.data = state->save();
+	record.changedStacks.push_back(std::move(update));
+	gameHandler->sendAndApply(record);
+
+	BattleLogMessage message;
+	message.battleID = battleID;
+	MetaString line;
+	line.appendRawString("Confusion makes %s ");
+	next->addNameReplacement(line);
+	line.appendRawString(outcome.behavior == battle::ConfusionBehavior::ATTACK ? "Attack."
+		: outcome.behavior == battle::ConfusionBehavior::WANDER ? "Wander." : "Defend.");
+	message.lines.push_back(std::move(line));
+	gameHandler->sendAndApply(message);
+
+	BattleAction action;
+	action.side = next->unitSide();
+	action.stackNumber = unitID;
+	action.actionType = outcome.action.skirmisher ? EActionType::WALK_AND_ATTACK : outcome.action.type;
+	if(outcome.action.type == EActionType::WALK || outcome.action.type == EActionType::WALK_AND_ATTACK
+		|| outcome.action.skirmisher)
+		action.aimToHex(outcome.action.position);
+	if(outcome.action.target)
+		action.aimToUnit(outcome.action.target);
+	action.archerySkirmisherAttack = outcome.action.skirmisher;
+	return owner->makeAutomaticBattleAction(battle, action);
 }
 
 bool BattleFlowProcessor::tryActivateBerserkPenalty(const CBattleInfoCallback & battle, const CStack * next)
@@ -2354,6 +2460,13 @@ bool BattleFlowProcessor::makeStackDoNothing(const CBattleInfoCallback & battle,
 
 bool BattleFlowProcessor::makeAutomaticAction(const CBattleInfoCallback & battle, const CStack *stack, const BattleAction &ba)
 {
+	if(!beginAutomaticActivation(battle, stack))
+		return true;
+	return owner->makeAutomaticBattleAction(battle, ba);
+}
+
+bool BattleFlowProcessor::beginAutomaticActivation(const CBattleInfoCallback & battle, const CStack * stack)
+{
 	BattleSetActiveStack bsa;
 	bsa.battleID = battle.getBattle()->getBattleID();
 	bsa.stack = stack->unitId();
@@ -2362,7 +2475,7 @@ bool BattleFlowProcessor::makeAutomaticAction(const CBattleInfoCallback & battle
 	if(battle.battleBeginsActivation(stack, bsa.reason))
 		applyStartOfActivationEffects(gameHandler, battle, stack);
 	if(!stack->alive())
-		return true;
+		return false;
 	// Automatic actions still represent a fresh creature activation. Trigger
 	// passable Fire Wall footprints after the authoritative nextTurn packet so
 	// their activation serial is current and movement callbacks cannot repeat
@@ -2370,10 +2483,8 @@ bool BattleFlowProcessor::makeAutomaticAction(const CBattleInfoCallback & battle
 	if(!stack->isTimeStopped() && canonicalFireWallCoversUnit(battle, *stack))
 		battle.handleObstacleTriggersForUnit(*gameHandler->spellEnv, *stack);
 	if(!stack->alive())
-		return true;
-
-	bool ret = owner->makeAutomaticBattleAction(battle, ba);
-	return ret;
+		return false;
+	return true;
 }
 
 void BattleFlowProcessor::removeObstacle(const CBattleInfoCallback & battle, const CObstacleInstance & obstacle)

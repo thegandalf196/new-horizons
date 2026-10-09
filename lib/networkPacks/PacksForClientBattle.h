@@ -23,6 +23,7 @@
 #include "../battle/MoraleSuppressionState.h"
 #include "../battle/ReducedExtraActivationState.h"
 #include "../battle/NewHorizonsBattlecraft.h"
+#include "../battle/NewHorizonsElementalRebirth.h"
 #include "../battle/BattleInfo.h"
 #include "../battle/BattleDeploymentState.h"
 #include "../battle/BattleHexArray.h"
@@ -761,6 +762,28 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 {
 	BattleID battleID = BattleID::NONE;
 	std::vector<UnitChanges> changedStacks;
+	std::optional<newHorizonsElementalRebirth::ChainConsumption> rebirthChainConsumption;
+
+	void validateRebirthChainShape() const
+	{
+		if(!rebirthChainConsumption)
+			return;
+		rebirthChainConsumption->validateShape();
+		const auto expectedOperation = rebirthChainConsumption->rollback
+			? UnitChanges::EOperation::REMOVE : UnitChanges::EOperation::ADD;
+		if(battleID == BattleID::NONE || changedStacks.size() != 1
+			|| changedStacks.front().operation != expectedOperation
+			|| changedStacks.front().id != rebirthChainConsumption->spawnUnitId)
+			throw std::runtime_error("Rebirth Chain provenance must accompany exactly its output operation");
+		if(rebirthChainConsumption->rollback)
+			return;
+		battle::UnitInfo output;
+		output.load(changedStacks.front().id, changedStacks.front().data);
+		if(output.side != rebirthChainConsumption->side || !output.summoned || output.natureSummoned
+			|| output.count <= 0 || output.phantomIntegrity != 0 || output.phantomDuration != 0
+			|| output.rebirthOriginalAggregateHP != 0)
+			throw std::runtime_error("Invalid Rebirth Chain output ADD");
+	}
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
@@ -768,6 +791,9 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 	{
 		if(h.saving)
 		{
+			validateRebirthChainShape();
+			if(rebirthChainConsumption && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_CHAIN))
+				throw std::runtime_error("Cannot discard Rebirth Chain consumption from an older packet");
 			for(const auto & change : changedStacks)
 				change.validateConfusionSerialization(h);
 		}
@@ -808,6 +834,12 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 			throw std::runtime_error("Cannot discard Last Stand unit transient state update");
 		h & battleID;
 		h & changedStacks;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_CHAIN))
+			h & rebirthChainConsumption;
+		else if(!h.saving)
+			rebirthChainConsumption.reset();
+		if(!h.saving)
+			validateRebirthChainShape();
 		assert(battleID != BattleID::NONE);
 	}
 };

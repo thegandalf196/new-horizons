@@ -1013,7 +1013,7 @@
 							5,
 							5
 						],
-						"active": false
+						"active": true
 					},
 					"new-horizons:puppetMaster": {
 						"schools": [
@@ -5102,7 +5102,7 @@
 								"requires": "basic",
 								"description": "Confusion cannot produce the same resolved behavior twice consecutively on the same target when a different legal behavior is available. If its random result matches that target's previous Confusion result, reroll until a different legal result is obtained. If only one legal behavior exists, allow that result even if it repeats; never reroll indefinitely. Trapped Wander resolves as Defend.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Confusion cannot produce the same resolved behavior twice consecutively on the same target when a different legal behavior is available. If its random result matches that target's previous Confusion result, reroll until a different legal result is obtained. If only one legal behavior exists, allow that result even if it repeats; never reroll indefinitely. Trapped Wander resolves as Defend."
 								}
 							},
@@ -7396,7 +7396,7 @@
 								"requires": "advanced",
 								"description": "Once per combat, when a reborn Elemental is destroyed, summon a second random Elite Elemental with 25% of that reborn stack's original HP. This second Elemental cannot trigger Rebirth.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Once per combat, when a reborn Elemental is destroyed, summon a second random Elite Elemental with 25% of that reborn stack's original HP. This second Elemental cannot trigger Rebirth."
 								}
 							},

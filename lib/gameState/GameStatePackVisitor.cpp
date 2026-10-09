@@ -3640,6 +3640,31 @@ void BattleStatePackVisitor::visitStacksInjured(StacksInjured & pack)
 
 void BattleStatePackVisitor::visitBattleUnitsChanged(BattleUnitsChanged & pack)
 {
+	pack.validateRebirthChainShape();
+	if(pack.rebirthChainConsumption)
+	{
+		if(pack.rebirthChainConsumption->rollback)
+		{
+			newHorizonsElementalRebirth::validateChainRollback(battleState, *pack.rebirthChainConsumption);
+			battleState.removeUnit(pack.rebirthChainConsumption->spawnUnitId);
+			battleState.setRebirthChainUsed(pack.rebirthChainConsumption->side, false);
+			return;
+		}
+		battle::UnitInfo output;
+		output.load(pack.changedStacks.front().id, pack.changedStacks.front().data);
+		newHorizonsElementalRebirth::validateChainConsumption(battleState, *pack.rebirthChainConsumption, output);
+		battleState.setRebirthChainUsed(pack.rebirthChainConsumption->side, true);
+		try
+		{
+			battleState.addUnit(output.id, pack.changedStacks.front().data);
+		}
+		catch(...)
+		{
+			battleState.setRebirthChainUsed(pack.rebirthChainConsumption->side, false);
+			throw;
+		}
+		return;
+	}
 	for(auto & elem : pack.changedStacks)
 	{
 		switch(elem.operation)

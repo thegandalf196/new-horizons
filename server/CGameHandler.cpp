@@ -2187,7 +2187,8 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 			if(!unit)
 				continue;
 			const auto * hero = battleInfo->getSideHero(unit->unitSide());
-			const auto snapshot = newHorizonsElementalRebirth::captureDeathSource(*unit, hero);
+			const auto snapshot = newHorizonsElementalRebirth::captureDeathSource(*unit, hero,
+				battleInfo->getRebirthChainUsed(unit->unitSide()));
 			if(snapshot)
 				elementalRebirthTriggers.try_emplace(unit->unitId(), ElementalRebirthTrigger{battleID, *snapshot});
 		}
@@ -2270,7 +2271,7 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 		const auto * battleInfo = gameState().getBattle(trigger.battleID);
 		const auto * unit = battleInfo ? battleInfo->battleGetUnitByID(unitId) : nullptr;
 		if(!battleInfo || !newHorizonsElementalRebirth::stillEligibleDeath(unit, trigger.snapshot,
-			true, false, false))
+			true, false, false, battleInfo->getRebirthChainUsed(trigger.snapshot.side)))
 			continue;
 
 		const auto candidates = newHorizonsElementalRebirth::legalCandidatePool(
@@ -2290,7 +2291,7 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 			battleInfo->getSidePlayer(trigger.snapshot.side), trigger.snapshot.side);
 		auto spawn = newHorizonsElementalRebirth::makeSpawnDescriptor(
 			battleInfo->battleNextUnitId(), creature, trigger.snapshot.side, trigger.snapshot.corpsePosition,
-			desiredHP, effectiveMaxHP);
+			desiredHP, effectiveMaxHP, trigger.snapshot.chain);
 		if(!spawn)
 		{
 			logGlobal->error("Elemental Rebirth could not represent %lld HP for creature id %d",
@@ -2302,6 +2303,9 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 		add.battleID = trigger.battleID;
 		auto & addedUnit = add.changedStacks.emplace_back(spawn->unit.id, UnitChanges::EOperation::ADD);
 		spawn->unit.save(addedUnit.data);
+		if(trigger.snapshot.chain)
+			add.rebirthChainConsumption = newHorizonsElementalRebirth::ChainConsumption{
+				trigger.snapshot.side, trigger.snapshot.unitId, spawn->unit.id};
 		sendAndApply(add);
 
 		const auto * reborn = gameState().getBattle(trigger.battleID)->battleGetUnitByID(spawn->unit.id);
@@ -2315,6 +2319,9 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 			BattleUnitsChanged remove;
 			remove.battleID = trigger.battleID;
 			remove.changedStacks.emplace_back(spawn->unit.id, UnitChanges::EOperation::REMOVE);
+			if(trigger.snapshot.chain)
+				remove.rebirthChainConsumption = newHorizonsElementalRebirth::ChainConsumption{
+					trigger.snapshot.side, trigger.snapshot.unitId, spawn->unit.id, true};
 			sendAndApply(remove);
 			continue;
 		}
@@ -2334,7 +2341,18 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 			int64_t wound = actualWound;
 			state->damage(wound);
 			if(state->getAvailableHealth() != spawn->health.targetAggregateHP)
+			{
+				if(trigger.snapshot.chain)
+				{
+					BattleUnitsChanged rollback;
+					rollback.battleID = trigger.battleID;
+					rollback.changedStacks.emplace_back(spawn->unit.id, UnitChanges::EOperation::REMOVE);
+					rollback.rebirthChainConsumption = newHorizonsElementalRebirth::ChainConsumption{
+						trigger.snapshot.side, trigger.snapshot.unitId, spawn->unit.id, true};
+					sendAndApply(rollback);
+				}
 				throw std::runtime_error("Elemental Rebirth failed to apply its exact aggregate HP target");
+			}
 
 			UnitChanges update(spawn->unit.id, UnitChanges::EOperation::UPDATE);
 			update.data = state->save();
@@ -2347,7 +2365,7 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 
 		BattleLogMessage log;
 		log.battleID = trigger.battleID;
-		MetaString line = MetaString::createFromRawString("Elemental Rebirth summons ");
+		MetaString line = MetaString::createFromRawString(trigger.snapshot.chain ? "Rebirth Chain summons " : "Elemental Rebirth summons ");
 		line.appendNumber(spawn->health.count);
 		line.appendRawString(" ");
 		line.appendName(creature, spawn->health.count);

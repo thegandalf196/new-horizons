@@ -138,6 +138,9 @@ public:
 		const spells::Target & target,
 		const Environment * environment,
 		std::shared_ptr<CBattleInfoCallback> battleState = {});
+	static std::optional<float> confusionExpectedActivationValue(
+		spells::Mechanics * spellMechanics, const spells::Target & target,
+		const Environment * environment, std::shared_ptr<CBattleInfoCallback> battleState = {});
 
 private:
 	enum Compare

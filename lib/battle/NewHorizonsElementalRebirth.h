@@ -15,12 +15,14 @@
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
 #include <cstddef>
+#include <limits>
 #include <optional>
 #include <vector>
 
 class CArmedInstance;
 class CBattleInfoCallback;
 class CGHeroInstance;
+class IBattleInfo;
 
 namespace newHorizonsElementalRebirth
 {
@@ -33,6 +35,7 @@ struct DLL_LINKAGE ActiveProfile
 	bool primalBurst = false;
 	bool greaterEssence = false;
 	bool elementalWard = false;
+	bool rebirthChain = false;
 };
 
 /// Immutable pre-hit facts needed to decide and resolve one destruction reaction.
@@ -43,6 +46,30 @@ struct DLL_LINKAGE DeathSnapshot
 	BattleHex corpsePosition;
 	int64_t battleStartMaximumAggregateHP = 0;
 	ActiveProfile profile;
+	bool chain = false;
+	int64_t rebirthOriginalAggregateHP = 0;
+};
+
+/// Atomic provenance for one second-generation ADD and its side-owned combat token.
+struct DLL_LINKAGE ChainConsumption
+{
+	BattleSide side = BattleSide::NONE;
+	uint32_t sourceUnitId = std::numeric_limits<uint32_t>::max();
+	uint32_t spawnUnitId = std::numeric_limits<uint32_t>::max();
+	bool rollback = false;
+
+	void validateShape() const;
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(h.saving)
+			validateShape();
+		h & side;
+		h & sourceUnitId;
+		h & spawnUnitId;
+		h & rollback;
+		if(!h.saving)
+			validateShape();
+	}
 };
 
 /// Exact-health arithmetic for a temporary Elemental stack. `damageFromFull` is applied
@@ -83,12 +110,17 @@ DLL_LINKAGE bool isEligibleSource(const battle::Unit & unit);
 
 /// Captures the source identity, current corpse hex, frozen battle-start HP basis and active rank.
 DLL_LINKAGE std::optional<DeathSnapshot> captureDeathSource(
-	const battle::Unit & unit, const CGHeroInstance * hero);
+	const battle::Unit & unit, const CGHeroInstance * hero, bool chainUsed = false);
 
 /// Revalidates a captured source after applying the hit. A native Rebirth survivor and clone
 /// death are rejected even if the triggering hit packet reported a lethal amount.
 DLL_LINKAGE bool stillEligibleDeath(const battle::Unit * postHitUnit, const DeathSnapshot & snapshot,
-	bool hitKilled, bool cloneKilled, bool nativeRebirth);
+	bool hitKilled, bool cloneKilled, bool nativeRebirth, bool chainUsed = false);
+
+/// Validates source lineage, available side quota and exact second-output ADD before mutation.
+DLL_LINKAGE void validateChainConsumption(const IBattleInfo & battle, const ChainConsumption & consumption,
+	const battle::UnitInfo & spawn);
+DLL_LINKAGE void validateChainRollback(const IBattleInfo & battle, const ChainConsumption & consumption);
 
 /// Five canonical Conflux Elite Elemental result types that fit at the exact corpse anchor.
 DLL_LINKAGE std::vector<CreatureID> legalCandidatePool(
@@ -101,5 +133,6 @@ DLL_LINKAGE int32_t effectiveSummonMaxHP(const CArmedInstance * sourceArmy,
 	CreatureID creature, PlayerColor owner, BattleSide side);
 DLL_LINKAGE std::optional<SpawnHealth> spawnHealth(int64_t targetAggregateHP, int32_t effectiveCreatureMaxHP);
 DLL_LINKAGE std::optional<SpawnDescriptor> makeSpawnDescriptor(uint32_t unitId, CreatureID creature,
-	BattleSide side, BattleHex corpsePosition, int64_t targetAggregateHP, int32_t effectiveCreatureMaxHP);
+	BattleSide side, BattleHex corpsePosition, int64_t targetAggregateHP, int32_t effectiveCreatureMaxHP,
+	bool chainOutput = false);
 }

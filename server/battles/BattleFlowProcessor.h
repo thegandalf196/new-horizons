@@ -38,6 +38,7 @@ class BattleFlowProcessor : boost::noncopyable
 	bool tryMakeAutomaticAction(const CBattleInfoCallback & battle, const CStack * stack);
 	bool tryActivateMoralePenalty(const CBattleInfoCallback & battle, const CStack * stack);
 	bool tryActivateBerserkPenalty(const CBattleInfoCallback & battle, const CStack * stack);
+	bool tryActivateConfusion(const CBattleInfoCallback & battle, const CStack * stack, bool & turnTriggersProcessed);
 	bool handleForcedCpuControlledUnit(const CBattleInfoCallback & battle, const CStack * stack);
 	bool tryMakeAutomaticActionOfRangedUnit(const CBattleInfoCallback & battle, const CStack * stack);
 	bool tryMakeAutomaticActionOfMeleeUnit(const CBattleInfoCallback& battle, const CStack* actingStack);
@@ -59,6 +60,7 @@ class BattleFlowProcessor : boost::noncopyable
 	void resolveDivineRetribution(const CBattleInfoCallback & battle);
 
 	bool makeStackDoNothing(const CBattleInfoCallback & battle, const CStack * next);
+	bool beginAutomaticActivation(const CBattleInfoCallback & battle, const CStack * stack);
 	bool makeAutomaticAction(const CBattleInfoCallback & battle, const CStack * stack, const BattleAction & ba); //used when action is taken by stack without volition of player (eg. unguided catapult attack)
 
 public:

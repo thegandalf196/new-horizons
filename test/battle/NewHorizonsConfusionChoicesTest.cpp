@@ -213,7 +213,7 @@ TEST_F(NewHorizonsConfusionChoicesTest, OpenMeleeReturnsEveryLegalPositionNotOnl
 	EXPECT_EQ(meleePositions(*target), expected);
 	EXPECT_EQ(target->attacks.size(), expected.size());
 	EXPECT_TRUE(target->furthestAdvances.empty());
-	EXPECT_FALSE(target->zeroAdvanceUnresolved);
+	EXPECT_FALSE(target->zeroAdvanceDefends);
 }
 
 TEST_F(NewHorizonsConfusionChoicesTest, OrdinaryShooterRetainsBothShotAndLegalMeleeAlternatives)
@@ -271,7 +271,7 @@ TEST_F(NewHorizonsConfusionChoicesTest, UnreachableEnemyUsesSharedFurthestLegalA
 	EXPECT_NE(advance, actor.getPosition());
 	EXPECT_TRUE(reachability.isReachable(advance));
 	EXPECT_LE(reachability.distances[advance.toInt()], actor.getMovementRange());
-	EXPECT_FALSE(target->zeroAdvanceUnresolved);
+	EXPECT_FALSE(target->zeroAdvanceDefends);
 }
 
 TEST_F(NewHorizonsConfusionChoicesTest, WanderListsAllAndOnlyOrdinaryNonstationaryMovementEndpoints)
@@ -294,7 +294,7 @@ TEST_F(NewHorizonsConfusionChoicesTest, WanderListsAllAndOnlyOrdinaryNonstationa
 	EXPECT_TRUE(choices.attacks.empty());
 }
 
-TEST_F(NewHorizonsConfusionChoicesTest, TrappedWanderDefendsButZeroAdvanceAttackRemainsExplicitlyUnresolved)
+TEST_F(NewHorizonsConfusionChoicesTest, TrappedWanderAndZeroAdvanceAttackResolveAsDefend)
 {
 	auto & actor = addUnit(1, BattleSide::ATTACKER, BattleHex(4, 5), 3);
 	auto & enemy = addUnit(2, BattleSide::DEFENDER, BattleHex(12, 5));
@@ -307,7 +307,7 @@ TEST_F(NewHorizonsConfusionChoicesTest, TrappedWanderDefendsButZeroAdvanceAttack
 	ASSERT_NE(target, nullptr);
 	EXPECT_TRUE(target->attacks.empty());
 	EXPECT_TRUE(target->furthestAdvances.empty());
-	EXPECT_TRUE(target->zeroAdvanceUnresolved);
+	EXPECT_TRUE(target->zeroAdvanceDefends);
 }
 
 TEST_F(NewHorizonsConfusionChoicesTest, DoubleWideWanderRejectsBlockedSecondFootprint)

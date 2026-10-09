@@ -33,6 +33,8 @@
 #include "../../mapping/CMap.h"
 #include "../../mapping/CMapEditManager.h"
 #include "../../spells/CSpellHandler.h"
+#include "../../spells/NewHorizonsSpellAvailability.h"
+#include "../../IGameSettings.h"
 
 
 #include <vstd/RNG.h>
@@ -290,18 +292,25 @@ void TreasurePlacer::addScrolls()
 
 	for(int i = 0; i < generator.getConfig().scrollValues.size(); i++)
 	{
-		oi.generateObject = [i, this]() -> std::shared_ptr<CGObjectInstance>
+		// Generation precedes CGameState's captured rules. Use this generated
+		// map's settings, including template overrides, for ordinary random loot.
+		const auto & rules = map.mapInstance->getSettings().getValue(EGameSettings::MAGIC_NEW_HORIZONS);
+		std::vector<SpellID> spells;
+		for(auto spellID : LIBRARY->spellh->getDefaultAllowed())
+		{
+			if(map.isAllowedSpell(spellID) && spellID.toSpell()->getLevel() == i + 1
+				&& newHorizonsMagic::spellAvailableForOrdinaryAcquisition(rules, spellID))
+				spells.push_back(spellID);
+		}
+		// Do not register a generator that can draw from an empty pool.
+		if(spells.empty())
+			continue;
+
+		oi.generateObject = [spells = std::move(spells), this]() -> std::shared_ptr<CGObjectInstance>
 		{
 			auto factory = LIBRARY->objtypeh->getHandlerFor(Obj::SPELL_SCROLL, 0);
 			auto obj = std::dynamic_pointer_cast<CGArtifact>(factory->create(map.mapInstance->cb, nullptr));
-			std::vector<SpellID> out;
-			
-			for(auto spellID : LIBRARY->spellh->getDefaultAllowed())
-			{
-				if(map.isAllowedSpell(spellID) && spellID.toSpell()->getLevel() == i + 1)
-					out.push_back(spellID);
-			}
-			auto * a = mapProxy->createScroll(*RandomGeneratorUtil::nextItem(out, zone.getRand()));
+			auto * a = mapProxy->createScroll(*RandomGeneratorUtil::nextItem(spells, zone.getRand()));
 			obj->setArtifactInstance(a);
 			return obj;
 		};

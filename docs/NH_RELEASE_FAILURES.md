@@ -1,5 +1,102 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-09 — Script-complete candidate and final focused repairs
+
+Closure: build3248 passes and candidate99462 passes95/95 in16.414s, zero skips.
+Production activation and shipped-registry proofs then build30644 and pass
+native16522:96/96 in16.817s, zero skips. Data17/17, generated-module parity and
+independent review pass. Preserve both failed and successful private receipts;
+the failure descriptions below are historical, not remaining test failures.
+
+The private native runner also needs the shipped scripts mount, not only
+configuration, Mods and original data. Restoring it makes the unchanged damage,
+Dispel and three existing Rebirth AI cases pass. Run8996 completes95 tests:
+90 pass,5 fail,zero skips. Retain candidate-with-scripts.log/XML privately.
+
+The remaining defects are separated: startup death leaves serialized Confusion
+pending after its bonus disappears; clear exact source markers and saved pending
+through authoritative packets. Mana Drain/Fear flags reset at round transition,
+so fixtures assert their round lifetime while retaining exact mana, damage,
+action and history checks. Confusion's AI fixture disables competing Orders
+without changing spell valuation. Chain's packet fixture must kill its source
+before selecting a legal empty corpse anchor. Independent review finds no
+blocking defect in these repairs; full-profile AI ranking remains Phase2 work.
+
+Build79451 catches a fixture access to private BattleInfo::round. Use its existing
+getRound() API; do not expand production visibility. Focused retry remains
+pending, and registration/coverage are not yet credited.
+
+### 2026-10-08 — Candidate native gate, retained failed evidence
+
+Linked build15385 passes94/94 after the fixture include repairs. The first
+native invocation used the wrong working directory and lacked bootstrap
+CONFIG/ROESTRINGMAPPING. The second used a preset from which the missing module
+had already been removed, so skips/unresolved identifiers are not mechanic
+acceptance. Independent bootstrap1/1 verifies the private runner topology;
+restore New Horizons in the actual XDG configuration, not only runner/config.
+
+Correctly enabled candidate run41216 finishes95 tests,85 pass,10 fail,zero skips
+in15.242s. All three real random-scroll registration/generation cases pass.
+Retain candidate-enabled.log/XML under the private ignored native directory.
+Failing cases include dead-stack Confusion pending cleanup, three transient/
+random-target assertions, actual AI/Dispel fixtures, one occupied-square Chain
+packet fixture and three existing Rebirth AI cases. Separate workers own
+evidence-based corrections; registration remains inactive. Do not weaken legal
+candidate pools, destruction-transition checks or authoritative admission merely
+to make these failures disappear. No graphical/playable acceptance is implied.
+
+### 2026-10-08 — Complete native fixture dependency types
+
+The random-scroll fixture instantiates RmgMap destruction and therefore needs
+TileInfo.h, not only RmgMap's forward declaration. The Chain AI fixture passes
+a shared CPlayerBattleCallback to HypotheticBattle and therefore needs its
+complete header for the base-class shared_ptr conversion. Repair fixture
+includes only; do not weaken production types or add casts. The resumed
+serialized build preserves compiled objects and includes the newer Confusion
+activation-order repair. Native results remain pending.
+
+### 2026-10-08 — Rebirth candidate descriptor fixture constness
+
+The first serialized candidate build stops in the new Chain fixture: UnitInfo's
+existing JSON save method is non-const, but the fixture declared its optional
+spawn descriptor const. Make only that fixture descriptor mutable; do not
+change the production serialization API or cast away constness. The resumed
+10-job build retains already compiled objects. Native acceptance is pending.
+
+The approved Confusion wording changes the canonical document hash. The focused
+perk-data gate correctly detects the stale sourceSha256; update that identity
+and regenerate the module. The repaired data gate passes17/17; this does not
+stand in for the runtime candidate tests.
+
+### 2026-10-08 — Confusion integration findings reserved for Phase 2
+
+Independent runtime/AI review finds no blocking defect in the candidate's
+principal forced-action path. Record the following unverified interactions,
+without claiming that candidate-only registration tests prove ordinary access:
+
+- Forced Confusion currently precedes existing stackTurnTrigger effects,
+  as existing automatic Berserk does. Check binding removal, Mana Drain,
+  Enchanter, Fear and legacy Poison activation ordering.
+- Pending/history packets precede automatic-action start effects and final
+  validation. Check that a later rejected forced action cannot release ordinary
+  player control after consuming Confusion.
+- Add guaranteed authoritative SHOOT, Skirmisher and Wander scenarios at the
+  integration checkpoint; weighted geometry tests alone are not those scenarios.
+
+Production Confusion/Confounder registration remains inactive until focused
+native candidate execution succeeds. Shared resolver and forced dispatch source
+are integrated alongside Rebirth Chain; the serialized 10-job build is pending.
+
+Follow-up worker assessment confirms plain-stack paths work, but stale Bind,
+Mana Drain and Enchanter omissions plus selection before activation expiry are
+real ordinary-activation defects. Promote these from deferred to pre-activation
+repair: run existing turn triggers once for Confusion and choose fresh legality
+after automatic activation startup. Retain ordinary Fear forfeiture, consuming
+the pending next-activation effect without inventing resolved history; do not
+globally reorder existing Berserk/CPU paths. Physical Poison/start healing already
+run in makeAutomaticAction and must not be duplicated. The isolated worker owns
+the incremental repair while the current linked build continues.
+
 ### 2026-10-08 — Exchange refresh after Mentor level-ups
 
 Controlled real-GUI comparison now confirms the cause: immutable17a5 crashes
