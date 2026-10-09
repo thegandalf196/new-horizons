@@ -1,5 +1,14 @@
 # New Horizons UI and asset status register
 
+2026-10-09 Obsidian follow-up: **Provisional** complete original HOLDING subject
+on the packaged Academy backdrop is now verified in actual ordinary recruitment
+and weekly-growth UI on promoted5938709. Existing two-player Academy exporter
+passes1/1 and avoids the earlier single-player victory. Root inspects both native
+captures; review copies under Downloads/provisory/nh-5938709-obsidian. The test
+uses scoped vcmibuild setup; no production/art change or Final approval. All
+owned processes are stopped and lock free, but deadline cleanup gives124 rather
+than a clean-exit result. Earlier unverified Obsidian notes below are historical.
+
 2026-10-09 actual Linux delivery: **Provisional** Mage face/upper-torso and
 Stone Gargoyle Academy-backdrop compositions now pass ordinary human
 recruitment and Stone weekly-growth rendering on snapshot5938709/source69004.

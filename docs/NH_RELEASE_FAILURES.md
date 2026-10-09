@@ -1,5 +1,21 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-09 — Obsidian portrait follow-up without single-player victory
+
+Use the existing opt-in ExportOrdinaryAcademyPortraitScenario (native1/1), which
+retains an actual Blue opponent, rather than patching the previous one-player
+seed or repeating its instant-victory attempt. Ordinary human5938709 recruitment
+and growth screenshots now show Obsidian on Academy scenery; root inspects both.
+Scoped vcmibuild is test setup only. Both dummy audio variables are verified in
+the actual owned child before input; no host display/audio is touched.
+
+Cleanup commands reach the140-second deadline: managed status124, not normal
+exit0. All owned game/debugger/Xvfb processes are absent and profile lock free.
+Keep sufficient cleanup reserve and stop optional inputs earlier in future
+bounded runs. This limitation does not invalidate the captured visual check,
+but must not be described as graceful shutdown or a broad gameplay pass.
+Private durable receipt:build/nh-obsidian-gui-5938709.R1KZUa3S/receipt.md.
+
 ### 2026-10-09 — Linux delivery harness distinctions and bounded smoke
 
 Client1989 links108/108 at69004. Fresh resource staging must exclude the copied

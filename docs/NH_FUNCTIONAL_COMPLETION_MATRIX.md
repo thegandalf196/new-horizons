@@ -2,6 +2,13 @@
 
 Updated: 2026-10-09
 
+Scoped Obsidian visual follow-up: recruitment and weekly-growth UI now show
+the complete Gargoyle over Academy scenery on promoted5938709. Root inspects
+native captures from a real two-player human scenario; its existing exporter
+passes1/1. Artwork stays Provisional. Owned process/lock cleanup is verified,
+but deadline exit124 is not normal-exit acceptance. No new mechanic/identity
+coverage or production change; the earlier Obsidian-unverified notes are superseded.
+
 Bounded source-selection audit at658dbd804: Fortress conversion defaults retain
 legacy abilities; Wisp PASS_THROUGH/LONG_REACH/9500-basis-point magical reduction,
 retaliation policy and actual AI attacks are present (UP300 prior native gates).
