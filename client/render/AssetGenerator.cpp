@@ -99,6 +99,11 @@ void AssetGenerator::initialize()
 	{
 		return createAcademyCreaturePortrait(36, "NH_academy_mage_portrait_mask.png");
 	};
+	imageFiles[ImagePath::builtin("NH_academy_mageHolding_icon_large.png")] = [this]()
+	{
+		return createCreatureImagePortrait(ImagePath::builtin("magi-vcmi-complete/battle/magi/idle/000.png"),
+			Rect(178, 174, 36, 49), ImagePath::builtin("NH_academy_creature_portrait_backdrop.png"), Point(58, 64), 2);
+	};
 	imageFiles[ImagePath::builtin("NH_academy_archMage_icon_large.png")] = [this]()
 	{
 		return createAcademyCreaturePortrait(37, "NH_academy_archMage_portrait_mask.png", "NH_ArchMageGreyPortrait", 0);
@@ -302,6 +307,7 @@ bool AssetGenerator::preferGeneratedImage(const ImagePath & image) const
 		|| image == ImagePath::builtin("NH_academy_ironGolem_icon_large.png")
 		|| image == ImagePath::builtin("NH_academy_stoneGolem_icon_large.png")
 		|| image == ImagePath::builtin("NH_academy_mage_icon_large.png")
+		|| image == ImagePath::builtin("NH_academy_mageHolding_icon_large.png")
 		|| image == ImagePath::builtin("NH_academy_archMage_icon_large.png")
 		|| image == ImagePath::builtin("NH_academy_genie_icon_large.png")
 		|| image == ImagePath::builtin("NH_academy_masterGenie_icon_large.png")
@@ -512,13 +518,9 @@ AssetGenerator::CanvasPtr AssetGenerator::createCreatureFramePortrait(
 {
 	const auto * resources = CResourceHandler::get();
 	const AnimationPath originalDef = originalAnimation.addPrefix("SPRITES/");
-	const bool hasBackdrop = resources->existsResource(backdropPath.addPrefix("SPRITES/"))
-		|| resources->existsResource(backdropPath.addPrefix("DATA/"))
-		|| resources->existsResource(backdropPath);
-	if(inset < 0 || size.x <= 0 || size.y <= 0 || inset > (std::min(size.x, size.y) - 1) / 2
-		|| frame > static_cast<size_t>(std::numeric_limits<int>::max())
+	if(frame > static_cast<size_t>(std::numeric_limits<int>::max())
 		|| group > static_cast<size_t>(std::numeric_limits<int>::max())
-		|| !resources->existsResource(originalDef) || !hasBackdrop || imageFiles.count(backdropPath) != 0)
+		|| !resources->existsResource(originalDef))
 		return nullptr;
 
 	// Validate the original DEF, rather than an animation alias or the loader's missing-frame stand-in.
@@ -528,6 +530,41 @@ AssetGenerator::CanvasPtr AssetGenerator::createCreatureFramePortrait(
 	ImageLocator bodyLocator(originalAnimation, static_cast<int>(frame), static_cast<int>(group), EImageBlitMode::ONLY_BODY_HIDE_SELECTION);
 	bodyLocator.originalDefFrame = true;
 	bodyLocator.scalingFactor = 1;
+	return composeCreaturePortrait(bodyLocator, backdropPath, size, inset);
+}
+
+AssetGenerator::CanvasPtr AssetGenerator::createCreatureImagePortrait(
+	const ImagePath & sourceImage,
+	const Rect & sourceCrop,
+	const ImagePath & backdropPath,
+	const Point & size,
+	int inset) const
+{
+	// Selected standalone frames must exist; never admit a generated portrait or
+	// the renderer's missing-image stand-in as its own source.
+	if(!CResourceHandler::get()->existsResource(sourceImage.addPrefix("SPRITES/"))
+		|| imageFiles.count(sourceImage) != 0)
+		return nullptr;
+	ImageLocator bodyLocator(sourceImage, EImageBlitMode::SIMPLE);
+	bodyLocator.scalingFactor = 1;
+	return composeCreaturePortrait(bodyLocator, backdropPath, size, inset, sourceCrop, true);
+}
+
+AssetGenerator::CanvasPtr AssetGenerator::composeCreaturePortrait(
+	const ImageLocator & bodyLocator,
+	const ImagePath & backdropPath,
+	const Point & size,
+	int inset,
+	const std::optional<Rect> & sourceCrop,
+	bool opaqueBodyOnly) const
+{
+	const auto * resources = CResourceHandler::get();
+	const bool hasBackdrop = resources->existsResource(backdropPath.addPrefix("SPRITES/"))
+		|| resources->existsResource(backdropPath.addPrefix("DATA/"))
+		|| resources->existsResource(backdropPath);
+	if(inset < 0 || size.x <= 0 || size.y <= 0 || inset > (std::min(size.x, size.y) - 1) / 2
+		|| !hasBackdrop || imageFiles.count(backdropPath) != 0)
+		return nullptr;
 	ImageLocator backdropLocator(backdropPath, EImageBlitMode::SIMPLE);
 	backdropLocator.scalingFactor = 1;
 	const auto body = ENGINE->renderHandler().loadImage(bodyLocator);
@@ -537,6 +574,10 @@ AssetGenerator::CanvasPtr AssetGenerator::createCreatureFramePortrait(
 
 	// A private canvas strips shadow/selection without changing a shared cached battle image.
 	const Point bodySize = body->dimensions();
+	if(sourceCrop && (sourceCrop->x < 0 || sourceCrop->y < 0 || sourceCrop->w <= 0 || sourceCrop->h <= 0
+		|| sourceCrop->w > bodySize.x || sourceCrop->h > bodySize.y
+		|| sourceCrop->x > bodySize.x - sourceCrop->w || sourceCrop->y > bodySize.y - sourceCrop->h))
+		return nullptr;
 	Canvas bodyCanvas(bodySize, CanvasScalingPolicy::IGNORE);
 	bodyCanvas.drawColor(Rect(Point(0, 0), bodySize), ColorRGBA(0, 0, 0, 0));
 	bodyCanvas.draw(body, Point(0, 0));
@@ -546,15 +587,31 @@ AssetGenerator::CanvasPtr AssetGenerator::createCreatureFramePortrait(
 	int bottom = -1;
 	for(int y = 0; y < bodySize.y; ++y)
 		for(int x = 0; x < bodySize.x; ++x)
-			if(bodyCanvas.getPixel(Point(x, y)).a != 0)
+		{
+			const Point pixel(x, y);
+			const auto alpha = bodyCanvas.getPixel(pixel).a;
+			if(opaqueBodyOnly && alpha != 255)
+				bodyCanvas.drawPoint(pixel, ColorRGBA(0, 0, 0, 0));
+			else if(alpha != 0 && (!sourceCrop || (x >= sourceCrop->x && x < sourceCrop->x + sourceCrop->w
+				&& y >= sourceCrop->y && y < sourceCrop->y + sourceCrop->h)))
 			{
 				left = std::min(left, x);
 				top = std::min(top, y);
 				right = std::max(right, x);
 				bottom = std::max(bottom, y);
 			}
+		}
 	if(right < left || bottom < top)
 		return nullptr;
+	if(sourceCrop)
+	{
+		// Rect is x/y/width/height, not opposite corners. Keep the authored
+		// framing rectangle, including transparent space; do not tighten it.
+		left = sourceCrop->x;
+		top = sourceCrop->y;
+		right = left + sourceCrop->w - 1;
+		bottom = top + sourceCrop->h - 1;
+	}
 
 	const Point bounds(right - left + 1, bottom - top + 1);
 	const Point interior(size.x - 2 * inset, size.y - 2 * inset);

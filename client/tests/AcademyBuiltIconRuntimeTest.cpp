@@ -104,7 +104,7 @@ constexpr std::array<AcademyPortrait, 14> academyPortraits{{
 	{"obsidianGargoyle", "NH_academy_obsidianGargoyle_icon_large.png", "", 31, 33},
 	{"ironGolem", "NH_academy_ironGolem_icon_large.png", "NH_academy_ironGolem_portrait_mask.png", 32, 34},
 	{"stoneGolem", "NH_academy_stoneGolem_icon_large.png", "NH_academy_stoneGolem_portrait_mask.png", 33, 35},
-	{"mage", "magi-vcmi-complete/icons/magi-portrait-58x64.png", "", 34, 36,
+	{"mage", "NH_academy_mageHolding_icon_large.png", "", 34, 36,
 		"magi-vcmi-complete/icons/magi-small-32.png"},
 	{"archMage", "magi-vcmi-complete/icons/archmagi-portrait-58x64.png", "", 35, 37,
 		"magi-vcmi-complete/icons/archmagi-small-32.png"},
@@ -827,6 +827,77 @@ void verifyFullBodyAcademyPortrait(const AcademyPortrait & portrait, const CCrea
 		<< " opaque-backdrop gaps, upper/lower body/inset and unchanged battle/small sources verified\n";
 }
 
+void verifyMageHoldingPortrait(const AcademyPortrait & portrait, const CCreature & creature)
+{
+	auto & renderer = ENGINE->renderHandler();
+	const ImagePath sourcePath = ImagePath::builtin("magi-vcmi-complete/battle/magi/idle/000.png");
+	const auto animation = renderer.loadAnimation(creature.animDefName, EImageBlitMode::SIMPLE);
+	require(animation && animation->size(static_cast<size_t>(ECreatureAnimType::HOLDING)) > 0,
+		"Selected Mage HOLDING group is missing");
+	const auto frame = animation->getImageLocator(0, static_cast<size_t>(ECreatureAnimType::HOLDING));
+	require(frame.image.has_value() && mountedSpritePath(*frame.image) == mountedSpritePath(sourcePath),
+		"Mage portrait must use the selected HOLDING frame0 PNG, not a stock or generated head");
+	ImageLocator sourceLocator(sourcePath, EImageBlitMode::SIMPLE);
+	sourceLocator.scalingFactor = 1;
+	const auto source = renderer.loadImage(sourceLocator);
+	const Point sourceSize(450, 400);
+	const auto before = captureImagePixels(source, sourceSize, "selected Mage HOLDING source before portrait");
+	const Rect roi(178, 174, 36, 49); // exclusive opposite corner (214,223)
+	const Point fittedSize(44, 60);
+	const Point origin(7, 2);
+	const Point size(58, 64);
+	Canvas cropped(roi.dimensions(), CanvasScalingPolicy::IGNORE);
+	cropped.drawColor(Rect(Point(0, 0), roi.dimensions()), ColorRGBA(0, 0, 0, 0));
+	const auto sourceShadowPixels = std::count_if(before.begin(), before.end(), [](const ColorRGBA & pixel)
+	{
+		return pixel.a == 64 || pixel.a == 128;
+	});
+	require(sourceShadowPixels > 0, "Selected Mage battle source must retain its original shadow-alpha pixels");
+	for(int y = 0; y < roi.h; ++y)
+		for(int x = 0; x < roi.w; ++x)
+		{
+			const auto pixel = before[static_cast<size_t>((roi.y + y) * sourceSize.x + roi.x + x)];
+			if(pixel.a == 255)
+				cropped.drawPoint(Point(x, y), pixel);
+		}
+	Canvas fitted(fittedSize, CanvasScalingPolicy::IGNORE);
+	fitted.drawColor(Rect(Point(0, 0), fittedSize), ColorRGBA(0, 0, 0, 0));
+	fitted.drawScaled(cropped, Point(0, 0), fittedSize);
+	const auto backdrop = renderer.loadImage(ImagePath::builtin("NH_academy_creature_portrait_backdrop.png"), EImageBlitMode::SIMPLE);
+	const auto backdropPixels = captureImagePixels(backdrop, size, "unchanged Mage Academy backdrop");
+	Canvas expected(size, CanvasScalingPolicy::IGNORE);
+	expected.drawColor(Rect(Point(0, 0), size), ColorRGBA(0, 0, 0, 0));
+	expected.draw(backdrop, Point(0, 0));
+	expected.drawTransparent(fitted, origin, 1.0);
+	const auto generated = renderer.loadImage(ImagePath::builtin(portrait.image), EImageBlitMode::SIMPLE);
+	const auto actual = captureImagePixels(generated, size, "generated Mage upper-torso portrait");
+	size_t bodyPixels = 0;
+	for(int y = 0; y < size.y; ++y)
+		for(int x = 0; x < size.x; ++x)
+		{
+			const size_t index = static_cast<size_t>(y * size.x + x);
+			require(actual[index] == expected.getPixel(Point(x, y)) && actual[index].a == 255,
+				"Mage portrait must match exact selected crop/fit pixels over opaque Academy backdrop");
+			const Point local(x - origin.x, y - origin.y);
+			const bool inside = local.x >= 0 && local.y >= 0 && local.x < fittedSize.x && local.y < fittedSize.y;
+			if(inside && fitted.getPixel(local).a != 0)
+			{
+				require(x >= 2 && x < size.x - 2 && y >= 2 && y < size.y - 2,
+					"Mage upper-torso body escaped its two-pixel inset");
+				++bodyPixels;
+			}
+			else
+				require(actual[index] == backdropPixels[index], "Mage portrait changed backdrop pixels in silhouette gaps/inset");
+		}
+	require(bodyPixels > 0, "Mage upper-torso portrait cannot be blank");
+	require(captureImagePixels(renderer.loadImage(AnimationPath::builtin("TWCRPORT"), creature.getIconIndex(), 0,
+		EImageBlitMode::OPAQUE), size, "registered Mage upper-torso icon") == actual,
+		"Mage recruitment/growth TWCRPORT route must resolve the generated upper-torso composition");
+	require(captureImagePixels(source, sourceSize, "selected Mage source after composition") == before,
+		"Mage portrait composition mutated the shared battle source");
+	std::cout << "  Mage: unchanged selected HOLDING source, ROI(178,174,36,49), fitted44x60 at7,2, backdrop and TWCRPORT verified\n";
+}
+
 void verifyAcademyPortrait(const AcademyPortrait & portrait)
 {
 	const auto creatureId = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "creature", std::string(portrait.identifier));
@@ -880,7 +951,10 @@ void verifyAcademyPortrait(const AcademyPortrait & portrait)
 			require(nonuniformPixels > 0, std::string("Authored creature icon is blank: ") + imageName);
 		};
 
-		verifyBinding(portrait.image, "TWCRPORT", Point(58, 64), EImageBlitMode::OPAQUE);
+		if(std::string_view(portrait.identifier) == "mage")
+			verifyMageHoldingPortrait(portrait, *creature);
+		else
+			verifyBinding(portrait.image, "TWCRPORT", Point(58, 64), EImageBlitMode::OPAQUE);
 		verifyBinding(portrait.smallImage, "CPRSMALL", Point(32, 32), EImageBlitMode::COLORKEY);
 		std::cout << "  " << portrait.identifier << ": authored large/small icons bound at 58x64 and 32x32\n";
 		return;

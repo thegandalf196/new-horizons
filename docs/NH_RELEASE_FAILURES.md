@@ -2,6 +2,17 @@
 
 ### 2026-10-08 — Exchange refresh after Mentor level-ups
 
+Controlled real-GUI comparison now confirms the cause: immutable17a5 crashes
+in CSecSkillPlace::setSkill from CExchangeWindow::updateArtifacts after a
+Mentor recipient's skill count grows2→5 in the open window and a legal transfer
+is accepted. Exactcbc64905e/frozen1ba7b341 repeats the same presave/offers,
+accepts the13-Pikeman transfer and its reverse, refreshes allfive skills and
+exits0. Root inspected screenshots and debugger frames. Test audio isolation
+is verified in both actual children; all owned processes/display are stopped.
+The initial user log remains overwritten, but the controlled crash debugger
+receipt is retained privately. A stale level heading is a separate display
+defect, not a stale Leadership allowance; source refresh is being added.
+
 The reported transfer reaches successful server ArrangeStacks/RebalanceStacks
 application, then the observed client log ends after game-state application,
 before the UI callback completes. The user confirms Theodorus's Mentor gave

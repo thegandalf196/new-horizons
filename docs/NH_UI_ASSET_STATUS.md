@@ -1,5 +1,17 @@
 # New Horizons UI and asset status register
 
+2026-10-08 Mage large portrait source checkpoint: **Provisional** head/upper-
+torso framing of the unchanged selected packed HOLDING frame replaces the
+whole-body thumbnail at the shared TWCRPORT route. Rect(178,174,36,49) fits44×60
+at7,2 on the existing58×64 Academy backdrop; the complete turban, face, beard
+and attached neck are visible. No repainting, gameplay or small/map/battle/
+projectile change; lower robe/staff shaft intentionally exit the portrait bottom.
+Root inspected native/half-size and8× comparisons under Downloads/provisory/
+nh-mage-holding-upperbody-20261008-v1. Linked49727 and native45888 pass allfour
+scales with exact selected-source pixels, crop/backdrop/alias and cache checks.
+Actual recruitment/growth acceptance and playable promotion remain pending.
+Generated v3/v4 drafts remain **Not done / withheld**, retained non-destructively.
+
 2026-10-08 renewed UP282 source checkpoint: both Gargoyle large portraits are
 **Provisional**, using unchanged original HOLDING frames fitted with a two-pixel
 inset over the existing packaged Academy backdrop. Shared TWCRPORT32/33 module

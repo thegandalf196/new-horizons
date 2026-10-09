@@ -44,6 +44,15 @@ static bool isQuickExchangeLayoutAvailable()
 	return CResourceHandler::get()->existsResource(ImagePath::builtin("SPRITES/" + QUICK_EXCHANGE_BG));
 }
 
+static std::string exchangeHeroTitle(const CGHeroInstance * hero)
+{
+	MetaString title = MetaString::createFromTextID("core.genrltxt.138"); // %s, Level %d %s
+	title.replaceTextID(hero->getNameTextID());
+	title.replaceNumber(hero->level);
+	title.replaceTextID(hero->getClassNameTextID());
+	return title.toString(&GAME->translator());
+}
+
 CExchangeWindow::CExchangeWindow(ObjectInstanceID hero1, ObjectInstanceID hero2, QueryID queryID)
 	: CWindowObject(PLAYER_COLORED | BORDERED, ImagePath::builtin(isQuickExchangeLayoutAvailable() ? QUICK_EXCHANGE_BG : (ENGINE->isRoeData() ? "TRADE" : "TRADE2"))),
 	controller(hero1, hero2)
@@ -56,17 +65,8 @@ CExchangeWindow::CExchangeWindow(ObjectInstanceID hero1, ObjectInstanceID hero2,
 	heroInst[0] = GAME->interface()->cb->getHero(hero1);
 	heroInst[1] = GAME->interface()->cb->getHero(hero2);
 
-	auto genTitle = [](const CGHeroInstance * h)
-	{
-		MetaString title = MetaString::createFromTextID("core.genrltxt.138"); // %s, Level %d %s
-		title.replaceTextID(h->getNameTextID());
-		title.replaceNumber(h->level);
-		title.replaceTextID(h->getClassNameTextID());
-		return title.toString(&GAME->translator());
-	};
-
-	titles[0] = std::make_shared<CLabel>(147, qeLayout ? 21 : 25, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, genTitle(heroInst[0]));
-	titles[1] = std::make_shared<CLabel>(653, qeLayout ? 21 : 25, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, genTitle(heroInst[1]));
+	titles[0] = std::make_shared<CLabel>(147, qeLayout ? 21 : 25, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, exchangeHeroTitle(heroInst[0]));
+	titles[1] = std::make_shared<CLabel>(653, qeLayout ? 21 : 25, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, exchangeHeroTitle(heroInst[1]));
 
 	for(int g = 0; g < 4; ++g)
 	{
@@ -393,6 +393,7 @@ void CExchangeWindow::updateArtifacts()
 	for(size_t leftRight : {0, 1})
 	{
 		const CGHeroInstance * hero = heroInst.at(leftRight);
+		titles[leftRight]->setText(exchangeHeroTitle(hero));
 
 		for(int m=0; m<GameConstants::PRIMARY_SKILLS; ++m)
 		{

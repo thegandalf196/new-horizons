@@ -181,7 +181,7 @@
 			"gold": 600
 		},
 		"graphics": {
-			"iconLarge": "magi-vcmi-complete/icons/magi-portrait-58x64.png",
+			"iconLarge": "NH_academy_mageHolding_icon_large.png",
 			"missile": {
 				"projectile": "magi-vcmi-complete/projectile/NH_PMAGEX.def"
 			},

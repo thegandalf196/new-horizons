@@ -10,6 +10,7 @@
 #pragma once
 
 #include "ImageLocator.h"
+#include "../../lib/Rect.h"
 
 #include <cstdint>
 #include <map>
@@ -96,6 +97,19 @@ private:
 		const ImagePath & backdrop,
 		const Point & size,
 		int inset) const;
+	CanvasPtr createCreatureImagePortrait(
+		const ImagePath & sourceImage,
+		const Rect & sourceCrop,
+		const ImagePath & backdrop,
+		const Point & size,
+		int inset) const;
+	CanvasPtr composeCreaturePortrait(
+		const ImageLocator & bodyLocator,
+		const ImagePath & backdrop,
+		const Point & size,
+		int inset,
+		const std::optional<Rect> & sourceCrop = std::nullopt,
+		bool opaqueBodyOnly = false) const;
 	CanvasPtr createAcademyMapLayer(
 		const AnimationPath & originalAnimation,
 		size_t frame,
