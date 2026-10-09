@@ -1,5 +1,36 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-09 — Four-perk fixture compile admission
+
+Build55392 stopped on Academic Study and Magnate test TUs that instantiated
+hero serialization without the concrete CGHeroInstance definition. Include it
+before FullGameSnapshotTypes; the snapshot umbrella is not a substitute for
+every concrete serialized type. Academic Study also compared sets of global
+visitor records using unavailable element operator==. Use exact ranges equality
+over both id and subID, preserving length and ordered membership instead of
+weakening the no-player/team-history assertion. The original log is preserved
+privately outside build. Incremental ten-job retry21118 successfully compiles
+both repaired TUs; final link/native evidence is pending. Do not restart a live
+build on observation timeout or create another candidate directory.
+
+Retry21118 links successfully and binary privacy passes. Its matching native
+pair passes25/36: Academic Study10 including AI, Elemental Memory8, Veteran
+Cohesion6 and one Magnate protocol case. Eleven Magnate cases stop before perk
+assertions because the initial hero occupies a town's blocked footprint;
+placeHeroesInTowns legitimately relocates it to the town entrance. Move only
+the fixture's initial hero and corresponding lookup to a clear tile. Preserve
+the actual visit/reward/history/ownership/save assertions. The failed native
+receipt remains private; layout-only build90928 and native retry are pending.
+
+### 2026-10-09 — Archivist nested acquisition review
+
+Private source review found normal battle loot is delivered through nested
+BattleResultsApplied.movingArtifacts, not a top-level BulkMoveArtifacts pack.
+An inventory-acquisition hook must cover accepted enclosing results as well as
+direct pickup/gift/transfer packs. A top-level-only hook is incomplete even if
+its direct receipt tests pass. A bounded nested-receipt repair and actual result
+control are assigned privately; no integration or acceptance is claimed yet.
+
 ### 2026-10-09 — Focused Frozen/Warp relink evidence
 
 Matched clean pair20712 discovers47 Frozen/Conflux,73 Warp and15 adjacent

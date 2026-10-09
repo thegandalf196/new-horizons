@@ -34,6 +34,7 @@ public:
 	virtual int unitSpeedBonus(const Unit *) const { return 0; }
 	virtual int unitAdditionalRetaliations(const Unit *) const { return 0; }
 	virtual int unitBloodragePainIncrement(const Unit *) const { return 0; }
+	virtual bool unitHasVeteranCohesion(const Unit *) const { return false; }
 	/// Saved-context Morale range for this unit, or nullopt to use legacy engine limits.
 	virtual std::optional<std::pair<int32_t, int32_t>> unitMoraleLimits(const Unit *) const { return std::nullopt; }
 };

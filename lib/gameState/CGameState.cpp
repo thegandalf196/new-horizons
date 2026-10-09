@@ -1937,6 +1937,12 @@ void CGameState::validateNewHorizonsProspectorSerialization(bool supported) cons
 		map->validateNewHorizonsProspectorSerialization(supported);
 }
 
+void CGameState::validateNewHorizonsMagnateSerialization(bool supported) const
+{
+	if(map)
+		map->validateNewHorizonsMagnateSerialization(supported);
+}
+
 void CGameState::saveGame(CSaveFile & file) const
 {
 	ActiveModsInSaveList activeModsDummy;

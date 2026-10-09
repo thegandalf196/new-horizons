@@ -16,6 +16,7 @@
 #include "NewHorizonsWarcasting.h"
 #include "NewHorizonsOffense.h"
 #include "NewHorizonsBloodrage.h"
+#include "NewHorizonsDiscipline.h"
 
 #include "../callback/GameCallbackHolder.h"
 #include "../bonuses/Bonus.h"
@@ -336,6 +337,17 @@ public:
 				stack->validateSwiftRebirthSerialization(h);
 	}
 
+	template <typename Handler> void validateVeteranCohesionSerialization(Handler & h) const
+	{
+		for(const auto & stack : stacks)
+			if(stack)
+				stack->validateVeteranCohesionSerialization(h);
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_VETERAN_COHESION))
+			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+				if(newHorizonsDiscipline::hasVeteranCohesion(getSideHero(side)))
+					throw std::runtime_error("Cannot discard selected Veteran Cohesion from an older battle format");
+	}
+
 	template <typename Handler> void validateBloodrageDeathPerksSerialization(Handler & h) const
 	{
 		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_BLOODRAGE_DEATH_PERKS))
@@ -351,6 +363,8 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateVeteranCohesionSerialization(h);
 		if(h.saving)
 			validateSwiftRebirthSerialization(h);
 		if(h.saving)

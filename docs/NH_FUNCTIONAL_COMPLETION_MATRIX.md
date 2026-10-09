@@ -2,6 +2,17 @@
 
 Updated: 2026-10-09
 
+Accepted four-perk checkpoint: incremental layout-only build90928 links after
+full retry21118. Exact native85299 passes36/36 in12.615s, zero failures/errors/
+disabled/skips: Magnate12, Academic Study7 and minimum AI3, Elemental Memory8,
+Veteran Cohesion6. Shared prior-path native68621 passes33/33 in10.845s on the
+same frozen pair. Registry21/module parity, binary privacy and independent
+review pass. Accepted perks269/310 (generic188/220,faction81/90),41 planned
+(32 generic,9 faction). Combat67/67,Orders8/8,Skills31/31,ranks93/93 unchanged.
+Previous failures remain private; only fixture includes, exact history comparison
+and initial hero placement were repaired, without weakening production gates.
+Source publication and playable promotion remain separate. NHART bytes unchanged.
+
 Accepted Estates/Swift checkpoint: linked82853 and exact matching native39826
 pass33/33 in10.755s, zero failures/errors/skips: Prospector9, minimum owned-mine
 AI5, Steward9 and Swift Rebirth10. Weekly typed receipts, actual rewards,
@@ -11,8 +22,19 @@ actual Ice retaliation Freeze, Chain and nested detached receipts are verified.
 Perks265/310 (generic185/220,faction80/90),45 planned (35 generic,10 faction).
 Combat67/67,Orders8/8,Skills31/31,ranks93/93 unchanged. Review and registry/module
 checks pass; prior fixture failures remain private without weakening production.
-No new rendered/playable delivery is claimed. Magnate, Elemental Memory and
-Academic Study remain private reviewed candidates; Veteran Cohesion progresses.
+Source6757ac8f3 is pushed and the ordinary Linux launcher selects snapshot3a2cade1
+after a fresh silent headless smoke reaches day2. No new rendered acceptance is
+claimed. Magnate, Elemental Memory, Academic Study and Veteran Cohesion are
+integrated and source-reviewed, with36 authored principal cases awaiting active
+ten-job build55392/native gates. Their registry activation is not accepted
+coverage; the265/310 count above remains the verified baseline.
+
+Hero coverage is separate:52 reviewed biography overrides and92 deliberate
+inheritances pass production loading, not144 mechanically redesigned profiles.
+The workbook's starting-profile proposals are not canonical activation authority.
+Cyra/Brissa's retained Haste conversion is an actionable private implementation;
+other removed-specialty/starting replacements need explicitly authored identities.
+Do not report a whole Phase1 percentage from perk completion alone.
 
 Accepted Merchant Prince checkpoint: incremental build77224 succeeds. The
 matching test/library pair passes11/11 native cases in3.763s: eight Merchant

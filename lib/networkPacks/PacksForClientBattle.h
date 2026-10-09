@@ -52,6 +52,8 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info)
 			info->validateSwiftRebirthSerialization(h);
 		if(h.saving && info)
+			info->validateVeteranCohesionSerialization(h);
+		if(h.saving && info)
 			info->validateBloodrageDeathPerksSerialization(h);
 		if(h.saving && info)
 			info->validateFrozenSerialization(h);
@@ -803,6 +805,7 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 			for(const auto & change : changedStacks)
 			{
 				change.validateOverwatchSerialization(h);
+				change.validateVeteranCohesionSerialization(h);
 				change.validateFrozenSerialization(h);
 				change.validateBattleFormSerialization(h);
 				change.validateConfusionSerialization(h);
@@ -924,6 +927,7 @@ struct BattleStackAttacked
 		if(h.saving)
 		{
 			newState.validateOverwatchSerialization(h);
+			newState.validateVeteranCohesionSerialization(h);
 			newState.validateFrozenSerialization(h);
 			newState.validateBattleFormSerialization(h);
 			newState.validateConfusionSerialization(h);
@@ -1087,6 +1091,7 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 			for(const auto & change : attackerChanges.changedStacks)
 			{
 				change.validateOverwatchSerialization(h);
+				change.validateVeteranCohesionSerialization(h);
 				change.validateFrozenSerialization(h);
 				change.validateBattleFormSerialization(h);
 				change.validateConfusionSerialization(h);
@@ -1094,6 +1099,7 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 			for(const auto & hit : bsa)
 			{
 				hit.newState.validateOverwatchSerialization(h);
+				hit.newState.validateVeteranCohesionSerialization(h);
 				hit.newState.validateFrozenSerialization(h);
 				if(hit.shattered() && !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN))
 					throw std::runtime_error("Cannot discard Frozen Shatter in an older battle attack format");
@@ -1561,6 +1567,7 @@ struct DLL_LINKAGE StacksInjured : public CPackForClient
 			for(const auto & hit : stacks)
 			{
 				hit.newState.validateOverwatchSerialization(h);
+				hit.newState.validateVeteranCohesionSerialization(h);
 				hit.newState.validateFrozenSerialization(h);
 				if(hit.shattered() && !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN))
 					throw std::runtime_error("Cannot discard Frozen Shatter in an older injury format");

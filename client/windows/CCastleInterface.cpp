@@ -2652,8 +2652,27 @@ void CCastleInterface::recreateIcons()
 		MetaString contribution = MetaString::createFromTextID("new-horizons.economy.steward.contribution");
 		contribution.replaceNumber(town->getStewardGoldBeforeHandicap());
 		MetaString help = MetaString::createFromTextID("new-horizons.economy.steward.help");
+		MetaString magnate = MetaString::createFromTextID("new-horizons.economy.magnate.contribution");
+		magnate.replaceNumber(town->getMagnateGoldBeforeHandicap());
+		std::string magnateDescription = magnate.toString(&GAME->translator());
+		if(town->getMagnateGoldBeforeHandicap() > 0)
+		{
+			MetaString beneficiary = MetaString::createFromTextID("new-horizons.economy.magnate.beneficiary");
+			beneficiary.replaceTextID(town->getNameTextID());
+			beneficiary.replaceNumber(static_cast<int64_t>(town->getNewHorizonsMagnateIncome().startDay)
+				+ newHorizonsEconomy::MagnateIncome::DURATION_DAYS - 1);
+			magnateDescription += "\n\n" + beneficiary.toString(&GAME->translator());
+		}
+		else
+		{
+			MetaString none = MetaString::createFromTextID("new-horizons.economy.magnate.none");
+			magnateDescription += "\n\n" + none.toString(&GAME->translator());
+		}
+		MetaString magnateHelp = MetaString::createFromTextID("new-horizons.economy.magnate.help");
+		magnateDescription += "\n\n" + magnateHelp.toString(&GAME->translator());
 		CRClickPopup::createAndPush(CInfoWindow::genText(total.toString(&GAME->translator()),
-			contribution.toString(&GAME->translator()) + "\n\n" + help.toString(&GAME->translator())));
+			contribution.toString(&GAME->translator()) + "\n\n" + help.toString(&GAME->translator())
+			+ "\n\n" + magnateDescription));
 	});
 	{
 		const std::string factionKey = town->getTown()->faction->getJsonKey();

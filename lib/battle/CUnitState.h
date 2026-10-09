@@ -29,6 +29,8 @@ namespace vstd
 namespace battle
 {
 class CUnitState;
+/// Validate the typed JSON receipt, including absent legacy state.
+DLL_LINKAGE bool hasVeteranCohesionState(const JsonNode & unitSnapshot);
 
 class DLL_LINKAGE CAmmo
 {
@@ -262,6 +264,8 @@ public:
 	int32_t noQuarterMoraleActivationsRemaining;
 	/// One personal Bloodrage increment earned the first time this unit crosses below half HP.
 	int32_t personalBloodrageIncrement = 0;
+	/// Battle-long one-shot receipt; healing, death and round changes never rearm it.
+	bool veteranCohesionEarned = false;
 	/// Tenths of a hit point per creature carried between capacity-regeneration activations.
 	int32_t capacityRegenerationRemainderTenths = 0;
 	bool timeStopTurnConsumedFlag;

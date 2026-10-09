@@ -56,6 +56,12 @@ public:
 		battle::confusionStateFromUnitJson(data).validateSerialization(h);
 	}
 
+	template <typename Handler> void validateVeteranCohesionSerialization(Handler & h) const
+	{
+		if(battle::hasVeteranCohesionState(data) && !h.hasFeature(Handler::Version::NEW_HORIZONS_VETERAN_COHESION))
+			throw std::runtime_error("Cannot discard Veteran Cohesion receipt in an older unit update format");
+	}
+
 	template <typename Handler> void validateOverwatchSerialization(Handler & h) const
 	{
 		if(battle::hasOverwatchState(data) && !h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWATCH))
@@ -137,6 +143,8 @@ public:
 	template <typename Handler> void serialize(Handler & h)
 	{
 		if(h.saving)
+			validateVeteranCohesionSerialization(h);
+		if(h.saving)
 			validateFrozenSerialization(h);
 		if(h.saving)
 			validateOverwatchSerialization(h);
@@ -174,6 +182,8 @@ public:
 		h & healthDelta;
 		h & data;
 		h & operation;
+		if(!h.saving)
+			validateVeteranCohesionSerialization(h);
 		if(!h.saving)
 			validateOverwatchSerialization(h);
 		if(!h.saving)

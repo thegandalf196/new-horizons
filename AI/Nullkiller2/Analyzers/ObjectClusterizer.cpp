@@ -8,6 +8,7 @@
 *
 */
 #include "StdInc.h"
+#include "../../../lib/mapObjects/NewHorizonsAcademicStudy.h"
 #include "ObjectClusterizer.h"
 #include "../Goals/ExecuteHeroChain.h"
 #include "../AIGateway.h"
@@ -296,13 +297,20 @@ bool ObjectClusterizer::shouldVisitObject(const CGObjectInstance * obj) const
 
 	// Mine revisits are hero-specific rewards, not globally weekly objects.
 	const auto heroes = aiNk->cc->getHeroesInfo();
+	const bool academicVisit = obj->ID == Obj::TOWN
+		&& std::ranges::any_of(heroes, [this, obj](const CGHeroInstance * hero)
+		{
+			const auto * town = dynamic_cast<const CGTownInstance *>(obj);
+			return town && hero->getOwner() == aiNk->playerID
+				&& newHorizonsLearning::academicStudyExperience(*hero, *town) > 0;
+		});
 	const bool prospectorVisit = (obj->ID == Obj::MINE || obj->ID == Obj::ABANDONED_MINE)
 		&& obj->getOwner() == aiNk->playerID
 		&& std::ranges::any_of(heroes, [this, obj](const CGHeroInstance * hero)
 		{
 			return hero->getOwner() == aiNk->playerID && shouldVisit(aiNk, hero, obj);
 		});
-	if(!prospectorVisit && ((obj->ID != Obj::CREATURE_GENERATOR1 && vstd::contains(aiNk->memory->alreadyVisited, obj->id))
+	if(!academicVisit && !prospectorVisit && ((obj->ID != Obj::CREATURE_GENERATOR1 && vstd::contains(aiNk->memory->alreadyVisited, obj->id))
 		|| obj->wasVisited(aiNk->playerID)))
 	{
 		return false;
@@ -310,7 +318,7 @@ bool ObjectClusterizer::shouldVisitObject(const CGObjectInstance * obj) const
 
 	auto playerRelations = aiNk->cc->getPlayerRelations(aiNk->playerID, obj->tempOwner);
 
-	if(!prospectorVisit && playerRelations != PlayerRelations::ENEMIES && !isWeeklyRevisitable(aiNk->playerID, obj))
+	if(!academicVisit && !prospectorVisit && playerRelations != PlayerRelations::ENEMIES && !isWeeklyRevisitable(aiNk->playerID, obj))
 	{
 		return false;
 	}

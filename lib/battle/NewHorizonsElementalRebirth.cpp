@@ -11,6 +11,7 @@
 #include "NewHorizonsElementalRebirth.h"
 
 #include "../CStack.h"
+#include "../bonuses/BonusList.h"
 #include "CBattleInfoCallback.h"
 #include "IBattleState.h"
 #include "../GameLibrary.h"
@@ -42,6 +43,7 @@ constexpr std::string_view REBIRTH_CHAIN_ID = "new-horizons:elementalRebirth.reb
 constexpr std::string_view ELEMENTAL_ATTUNEMENT_ID = "new-horizons:elementalRebirth.elementalAttunement";
 constexpr std::string_view ADAPTIVE_ELEMENT_ID = "new-horizons:elementalRebirth.adaptiveElement";
 constexpr std::string_view PERFECT_CONVERGENCE_ID = "new-horizons:elementalRebirth.perfectConvergence";
+constexpr std::string_view ELEMENTAL_MEMORY_ID = "new-horizons:elementalRebirth.elementalMemory";
 constexpr int GREATER_ESSENCE_HEALTH_PERCENTAGE_POINTS = 15;
 constexpr int ELEMENTAL_WARD_REDUCTION_BASIS_POINTS = 2000;
 
@@ -85,6 +87,18 @@ bool isValidProfile(const ActiveProfile & profile)
 			&& !profile.rebirthChain && !profile.adaptiveElement))
 		&& (profile.rank >= 3 || !profile.perfectConvergence);
 }
+
+DeathSnapshot withElementalMemory(DeathSnapshot snapshot, const battle::Unit & unit)
+{
+	if(snapshot.profile.elementalMemory)
+	{
+		// Copy current net modifiers before immunity/cap evaluation. In particular,
+		// an Elemental's normal NO_MORALE must not be silently removed or bypassed.
+		snapshot.positiveMoraleModifier = std::max(0, unit.valOfBonuses(BonusType::MORALE));
+		snapshot.positiveLuckModifier = std::max(0, unit.valOfBonuses(BonusType::LUCK));
+	}
+	return snapshot;
+}
 }
 
 std::optional<ActiveProfile> activeProfile(const CGHeroInstance * hero)
@@ -124,7 +138,8 @@ std::optional<ActiveProfile> activeProfile(const CGHeroInstance * hero)
 		hero->hasActivePerk(std::string(SKILL_ID), std::string(ELEMENTAL_ATTUNEMENT_ID)),
 		rank >= MasteryLevel::ADVANCED && hero->hasActivePerk(std::string(SKILL_ID), std::string(ADAPTIVE_ELEMENT_ID)),
 		rank >= MasteryLevel::EXPERT && hero->hasActivePerk(std::string(SKILL_ID), std::string(PERFECT_CONVERGENCE_ID)),
-		hero->hasActivePerk(std::string(SKILL_ID), "new-horizons:elementalRebirth.swiftRebirth")};
+		hero->hasActivePerk(std::string(SKILL_ID), "new-horizons:elementalRebirth.swiftRebirth"),
+		hero->hasActivePerk(std::string(SKILL_ID), std::string(ELEMENTAL_MEMORY_ID))};
 }
 
 int64_t primalBurstDamageBudget(int64_t rebornAggregateHP)
@@ -193,6 +208,52 @@ bool isEligibleSource(const battle::Unit & unit)
 		&& unit.getPhantomInitialIntegrity() == 0;
 }
 
+bool isElementalMemoryBonus(const Bonus & bonus)
+{
+	const SecondarySkill skill(SecondarySkill::decode(std::string(SKILL_ID)));
+	const auto key = std::string(ELEMENTAL_MEMORY_ID)
+		+ (bonus.type == BonusType::MORALE ? ".morale" : ".luck");
+	return (bonus.type == BonusType::MORALE || bonus.type == BonusType::LUCK)
+		&& skill.getNum() >= 0 && bonus.source == BonusSource::SECONDARY_SKILL
+		&& bonus.sid == BonusSourceID(skill) && bonus.duration == BonusDuration::N_TURNS
+		&& bonus.valType == BonusValueType::ADDITIVE_VALUE && bonus.val > 0
+		&& bonus.stacking == key && !bonus.parameters && !bonus.hasStatusMetadata();
+}
+
+std::vector<Bonus> elementalMemoryBonuses(const DeathSnapshot & snapshot, const battle::Unit & reborn)
+{
+	std::vector<Bonus> result;
+	if(!isValidProfile(snapshot.profile) || !snapshot.profile.elementalMemory)
+		return result;
+	const SecondarySkill skill(SecondarySkill::decode(std::string(SKILL_ID)));
+	if(skill.getNum() < 0)
+		return result;
+	const auto add = [&](BonusType type, int32_t captured)
+	{
+		if(captured <= 0)
+			return;
+		// Count existing positive contributions separately: subtracting its net
+		// modifier would compensate a new Elemental-specific negative effect.
+		// Aggregation still uses the ordinary limiter/stacking-correct bonus view.
+		const auto positive = reborn.getAllBonuses(Selector::type()(type).And(CSelector([](const Bonus * bonus)
+		{
+			return bonus && bonus->val > 0;
+		})));
+		const auto increment = static_cast<int64_t>(captured) - positive->totalValue();
+		if(increment <= 0)
+			return;
+		Bonus bonus(BonusDuration::N_TURNS, type, BonusSource::SECONDARY_SKILL,
+			static_cast<int32_t>(std::min<int64_t>(increment, std::numeric_limits<int32_t>::max())), BonusSourceID(skill));
+		bonus.turnsRemain = 1;
+		bonus.stacking = std::string(ELEMENTAL_MEMORY_ID) + (type == BonusType::MORALE ? ".morale" : ".luck");
+		bonus.description.appendRawString("Elemental Memory: inherited positive modifier until round end");
+		result.push_back(std::move(bonus));
+	};
+	add(BonusType::MORALE, snapshot.positiveMoraleModifier);
+	add(BonusType::LUCK, snapshot.positiveLuckModifier);
+	return result;
+}
+
 std::optional<DeathSnapshot> captureDeathSource(const battle::Unit & unit, const CGHeroInstance * hero,
 	bool chainUsed)
 {
@@ -204,14 +265,14 @@ std::optional<DeathSnapshot> captureDeathSource(const battle::Unit & unit, const
 		if(chainUsed || !profile->rebirthChain || !unit.alive() || unit.isGhost()
 			|| !unit.getPosition().isValid() || !isFirstGenerationOutput(unit))
 			return std::nullopt;
-		return DeathSnapshot{unit.unitId(), unit.unitSide(), unit.getPosition(), 0, *profile,
-			true, unit.getRebirthOriginalAggregateHP()};
+		return withElementalMemory(DeathSnapshot{unit.unitId(), unit.unitSide(), unit.getPosition(), 0, *profile,
+			true, unit.getRebirthOriginalAggregateHP()}, unit);
 	}
 	const auto basis = unit.getBattleStartMaximumAggregateHP();
 	if(basis <= 0)
 		return std::nullopt;
 
-	return DeathSnapshot{unit.unitId(), unit.unitSide(), unit.getPosition(), basis, *profile};
+	return withElementalMemory(DeathSnapshot{unit.unitId(), unit.unitSide(), unit.getPosition(), basis, *profile}, unit);
 }
 
 bool stillEligibleDeath(const battle::Unit * postHitUnit, const DeathSnapshot & snapshot,

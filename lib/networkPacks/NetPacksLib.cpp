@@ -920,6 +920,12 @@ void LobbyStartGame::validateNewHorizonsProspectorSerialization(bool supported) 
 		initializedGameState->validateNewHorizonsProspectorSerialization(supported);
 }
 
+void LobbyStartGame::validateNewHorizonsMagnateSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsMagnateSerialization(supported);
+}
+
 void LobbyStartGame::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitLobbyStartGame(*this);

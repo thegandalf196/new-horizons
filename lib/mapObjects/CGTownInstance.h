@@ -11,6 +11,7 @@
 
 #include "IMarket.h"
 #include "CGDwelling.h"
+#include "NewHorizonsMagnateIncome.h"
 #include "../entities/faction/CFaction.h" // TODO: remove
 #include "../entities/faction/CTown.h" // TODO: remove
 
@@ -89,6 +90,7 @@ public:
 	/// New Horizons' most recent weekly Mystic Pond picks, kept on the town so
 	/// the result remains visible after the week-start packet and after saves.
 	std::vector<GameResID> newHorizonsMysticPondResources;
+	newHorizonsEconomy::MagnateIncome newHorizonsMagnateIncome;
 	/// House of Wisdom storefront.  The generated stock belongs to the town,
 	/// rather than to a client window, so purchases and saves remain
 	/// authoritative and deterministic.
@@ -108,6 +110,8 @@ public:
 	//////////////////////////////////////////////////////////////////////////
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			newHorizonsMagnateIncome.validateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGNATE));
 		if(h.saving && ((portalSourceDwellingId == ObjectInstanceID::NONE && portalLastSelectionWeek != -1)
 			|| (portalSourceDwellingId != ObjectInstanceID::NONE && portalLastSelectionWeek < 0)))
 			throw std::runtime_error("Invalid New Horizons Portal source state");
@@ -206,6 +210,11 @@ public:
 		else if(!h.saving)
 			newHorizonsAdventureSpellGuildLevelsUnlocked.clear();
 
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGNATE))
+			h & newHorizonsMagnateIncome;
+		else if(!h.saving)
+			newHorizonsMagnateIncome = {};
+
 		if(!h.saving)
 			for(const auto guildLevel : newHorizonsAdventureSpellGuildLevelsUnlocked)
 				if(guildLevel < 1 || guildLevel > 5)
@@ -294,6 +303,14 @@ public:
 	/// Included in dailyIncome; this subtotal precedes the ordinary handicap.
 	int32_t getStewardGoldBeforeHandicap() const;
 	ResourceSet dailyIncome() const override;
+	ResourceSet dailyIncomeWithMagnate(const newHorizonsEconomy::MagnateIncome & snapshot, int32_t day) const;
+	const newHorizonsEconomy::MagnateIncome & getNewHorizonsMagnateIncome() const { return newHorizonsMagnateIncome; }
+	void setNewHorizonsMagnateIncome(const newHorizonsEconomy::MagnateIncome & snapshot)
+	{
+		snapshot.validate();
+		newHorizonsMagnateIncome = snapshot;
+	}
+	int32_t getMagnateGoldBeforeHandicap() const;
 	std::vector<CreatureID> providedCreatures() const override;
 
 	int spellsAtLevel(int level, bool checkGuild) const; //levels are counted from 1 (1 - 5)

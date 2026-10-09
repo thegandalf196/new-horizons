@@ -20,6 +20,7 @@
 #include "battle/NewHorizonsCreatureAbilitySuppression.h"
 #include "battle/NewHorizonsOffense.h"
 #include "battle/NewHorizonsElementalRebirth.h"
+#include "battle/NewHorizonsDiscipline.h"
 #include "spells/NewHorizonsMagic.h"
 #include "GameLibrary.h"
 #include "networkPacks/PacksForClientBattle.h"
@@ -67,6 +68,7 @@ void CStack::localInit(BattleInfo * battleInfo)
 	battle = battleInfo;
 	assert(typeID.hasValue());
 	const int32_t restoredPersonalBloodrageIncrement = personalBloodrageIncrement;
+	const bool restoredVeteranCohesion = veteranCohesionEarned;
 	const auto restoredConfusionState = confusionState;
 	const int32_t restoredOverwatchReadyRound = battlecraftOverwatchReadyRound;
 	const int32_t restoredOverwatchUsedRound = battlecraftOverwatchUsedRound;
@@ -90,6 +92,7 @@ void CStack::localInit(BattleInfo * battleInfo)
 	// CUnitState::localInit resets ordinary per-battle transient state; preserve
 	// the one personal increment explicitly carried by this binary stack snapshot.
 	personalBloodrageIncrement = restoredPersonalBloodrageIncrement;
+	veteranCohesionEarned = restoredVeteranCohesion;
 	// Binary stack descriptors carry pending Confusion and target history too;
 	// rebinding the stack to the battle must not consume either value.
 	confusionState = restoredConfusionState;
@@ -158,16 +161,17 @@ bool CStack::acceptsBonus(const Bonus & bonus) const
 TConstBonusListPtr CStack::getBonusesBeforeCreatureAbilitySuppression(const CSelector & selector,
 	const std::string & cachingStr, const bool unstacked) const
 {
-	return unstacked
+	const auto raw = unstacked
 		? CBonusSystemNode::getUnstackedBonuses(selector)
 		: CBonusSystemNode::getAllBonuses(selector, cachingStr);
+	return newHorizonsDiscipline::veteranCohesionBonuses(raw, selector, veteranCohesionEarned);
 }
 
 TConstBonusListPtr CStack::getAllBonuses(const CSelector & selector, const std::string & cachingStr) const
 {
 	const int32_t level = newHorizonsCreatureAbilitySuppression::suppressionLevel(*this);
 	if(level == 0)
-		return CBonusSystemNode::getAllBonuses(selector, cachingStr);
+		return getBonusesBeforeCreatureAbilitySuppression(selector, cachingStr);
 
 	const auto baseline = getBonusesBeforeCreatureAbilitySuppression(selector, cachingStr, true);
 	return newHorizonsCreatureAbilitySuppression::filterBonuses(*this, baseline, level, true);
@@ -177,7 +181,7 @@ TConstBonusListPtr CStack::getUnstackedBonuses(const CSelector & selector) const
 {
 	const int32_t level = newHorizonsCreatureAbilitySuppression::suppressionLevel(*this);
 	if(level == 0)
-		return CBonusSystemNode::getUnstackedBonuses(selector);
+		return getBonusesBeforeCreatureAbilitySuppression(selector, {}, true);
 
 	const auto baseline = getBonusesBeforeCreatureAbilitySuppression(selector, {}, true);
 	return newHorizonsCreatureAbilitySuppression::filterBonuses(*this, baseline, level, false);
@@ -476,7 +480,8 @@ void CStack::captureBattleStartMaximumAggregateHP()
 	const auto * combatHero = battle ? battle->battleGetFightingHero(unitSide()) : getMyHero();
 	if(battleStartMaximumAggregateHP > 0
 		|| !newHorizonsElementalRebirth::isEligibleSource(*this)
-		|| !newHorizonsElementalRebirth::activeProfile(combatHero))
+		|| (!newHorizonsElementalRebirth::activeProfile(combatHero)
+			&& !newHorizonsDiscipline::hasVeteranCohesion(combatHero)))
 		return;
 
 	const auto maximumPerCreature = getMaxHealth();
@@ -521,6 +526,17 @@ int CStack::unitAdditionalRetaliations(const battle::Unit * unit) const
 int CStack::unitBloodragePainIncrement(const battle::Unit * unit) const
 {
 	return battle ? battle->battleBloodragePainIncrement(unit) : 0;
+}
+
+bool CStack::unitHasVeteranCohesion(const battle::Unit * unit) const
+{
+	if(!battle || !unit)
+		return false;
+	const auto owner = battle->battleGetOwner(unit);
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		if(battle->getSidePlayer(side) == owner)
+			return newHorizonsDiscipline::hasVeteranCohesion(battle->battleGetFightingHero(side));
+	return false;
 }
 
 std::optional<int> CStack::unitMagicResistance(const battle::Unit * unit) const

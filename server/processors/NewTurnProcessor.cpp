@@ -29,6 +29,7 @@
 #include "../../lib/mapObjectConstructors/CObjectClassesHandler.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
+#include "../../lib/entities/creature/NewHorizonsMusterRules.h"
 #include "../../lib/mapObjects/IOwnableObject.h"
 #include "../../lib/mapObjects/MiscObjects.h"
 #include "../../lib/mapping/CMap.h"
@@ -255,7 +256,8 @@ void NewTurnProcessor::onPlayerTurnEnded(PlayerColor which)
 
 ResourceSet NewTurnProcessor::generatePlayerIncome(PlayerColor playerID, bool newWeek,
 	std::map<ObjectInstanceID, std::vector<GameResID>> & mysticPondResults,
-	const std::map<ObjectInstanceID, int32_t> & investorDailyGold)
+	const std::map<ObjectInstanceID, int32_t> & investorDailyGold,
+	const std::map<ObjectInstanceID, newHorizonsEconomy::MagnateIncome> & magnateTownIncome)
 {
 	const auto & playerSettings = gameHandler->gameInfo().getPlayerSettings(playerID);
 	const PlayerState & state = gameHandler->gameState().players.at(playerID);
@@ -339,6 +341,13 @@ ResourceSet NewTurnProcessor::generatePlayerIncome(PlayerColor playerID, bool ne
 
 	for (const auto * obj : state.getOwnedObjects())
 	{
+		if(const auto * town = dynamic_cast<const CGTownInstance *>(obj))
+		{
+			const auto prospective = magnateTownIncome.find(town->id);
+			const auto & snapshot = prospective != magnateTownIncome.end() ? prospective->second : town->getNewHorizonsMagnateIncome();
+			incomeHandicapped += town->dailyIncomeWithMagnate(snapshot, gameHandler->gameState().day + 1);
+			continue;
+		}
 		const auto * hero = dynamic_cast<const CGHeroInstance *>(obj);
 		const auto investorSnapshot = hero && newWeek ? investorDailyGold.find(hero->id) : investorDailyGold.end();
 		if(investorSnapshot != investorDailyGold.end())
@@ -875,9 +884,33 @@ NewTurn NewTurnProcessor::generateNewTurnPack()
 
 	int additionalGrowth = 0;
 	std::map<ObjectInstanceID, int32_t> investorDailyGold;
+	std::map<ObjectInstanceID, newHorizonsEconomy::MagnateIncome> magnateTownIncome;
 
 	if(newWeek)
 	{
+		const auto & state = gameHandler->gameState();
+		const int previousWeek = newHorizonsMuster::absoluteWeek(n.day, calendar.getDaysInWeek()) - 1;
+		for(const auto * town : state.getMap().getObjects<CGTownInstance>())
+			magnateTownIncome.emplace(town->id, newHorizonsEconomy::MagnateIncome{});
+		for(const auto * hero : state.getMap().getObjects<CGHeroInstance>())
+		{
+			if(!newHorizonsMagic::rulesActive(state.getMagicRules())
+				|| !hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.magnate")
+				|| previousWeek < 0 || hero->getNewHorizonsMagnateVisitWeek() != previousWeek)
+				continue;
+			const auto * town = state.getTown(hero->getNewHorizonsMagnateLastTown());
+			if(!town || !hero->getOwner().isValidPlayer() || town->getOwner() != hero->getOwner())
+				continue;
+			auto & award = magnateTownIncome.at(town->id);
+			if(award.dailyGold > std::numeric_limits<int32_t>::max() - newHorizonsEconomy::MagnateIncome::GOLD_PER_HOLDER)
+				throw std::runtime_error("New Horizons Magnate award overflow");
+			award.dailyGold += newHorizonsEconomy::MagnateIncome::GOLD_PER_HOLDER;
+			award.startDay = n.day;
+			award.awardOwner = hero->getOwner();
+		}
+		for(const auto * town : state.getMap().getObjects<CGTownInstance>())
+			if(magnateTownIncome.at(town->id) != town->getNewHorizonsMagnateIncome())
+				n.newHorizonsMagnateTownIncome.emplace(town->id, magnateTownIncome.at(town->id));
 		static constexpr int64_t treasuryGoldPerInvestorTier = 5000;
 		static constexpr int32_t dailyGoldPerInvestorTier = 50;
 		static constexpr int32_t maximumInvestorDailyGold = 250;
@@ -906,7 +939,7 @@ NewTurn NewTurnProcessor::generateNewTurnPack()
 	{
 		for (const auto & player : gameHandler->gameState().players)
 			n.playerIncome[player.first] = generatePlayerIncome(player.first, newWeek,
-				n.newHorizonsMysticPondResults, investorDailyGold);
+				n.newHorizonsMysticPondResults, investorDailyGold, magnateTownIncome);
 	}
 
 	// Estate Network and Financier are fixed weekly grants. Apply them after

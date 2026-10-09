@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "../callback/Calendar.h"
+#include "../entities/creature/NewHorizonsMusterRules.h"
 #include "GameStatePackVisitor.h"
 #include "../battle/NewHorizonsCombatSkills.h"
 
@@ -831,6 +833,14 @@ void GameStatePackVisitor::visitChangeObjectVisitors(ChangeObjectVisitors & pack
 
 	switch (pack.mode)
 	{
+		case ChangeObjectVisitors::VISITOR_ADD_HERO_ONLY:
+		{
+			auto * hero = gs.getHero(pack.hero);
+			if(!objectPtr || !hero)
+				throw std::runtime_error("Invalid hero-only visit endpoints");
+			hero->visitedObjects.insert(pack.object);
+			break;
+		}
 		case ChangeObjectVisitors::VISITOR_ADD_HERO:
 			gs.getHero(pack.hero)->visitedObjects.insert(pack.object);
 			[[fallthrough]];
@@ -1665,6 +1675,17 @@ void GameStatePackVisitor::visitDisassembledArtifact(DisassembledArtifact & pack
 
 void GameStatePackVisitor::visitHeroVisit(HeroVisit & pack)
 {
+	if(pack.newHorizonsMagnateOwnedTownVisitWeek < 0)
+		return;
+	auto * hero = gs.getHero(pack.heroId);
+	const auto * town = gs.getTown(pack.objId);
+	const auto calendar = gs.getCalendar();
+	const int week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+	if(!pack.starting || !hero || !town || town->getOwner() != hero->getOwner()
+		|| hero->getOwner() != pack.player || pack.newHorizonsMagnateOwnedTownVisitWeek != week
+		|| !newHorizonsMagic::rulesActive(gs.getMagicRules()))
+		throw std::runtime_error("Invalid New Horizons Magnate owned-town visit");
+	hero->recordNewHorizonsMagnateTownVisit(town->id, week);
 }
 
 void GameStatePackVisitor::visitSetAvailableArtifacts(SetAvailableArtifacts & pack)
@@ -1710,6 +1731,14 @@ void GameStatePackVisitor::visitSetNewHorizonsAdventureSpellUnlock(SetNewHorizon
 
 void GameStatePackVisitor::visitNewTurn(NewTurn & pack)
 {
+	// Validate the entire award set before changing the day or any recipient.
+	for(const auto & [townID, snapshot] : pack.newHorizonsMagnateTownIncome)
+	{
+		snapshot.validate();
+		const auto * town = gs.getTown(townID);
+		if(!town || (!snapshot.empty() && (snapshot.startDay != pack.day || snapshot.awardOwner != town->getOwner())))
+			throw std::runtime_error("Invalid New Horizons Magnate week-start award");
+	}
 	static constexpr int32_t goldPerInvestorStep = 50;
 	static constexpr int32_t maximumInvestorDailyGold = 250;
 	for(const auto & [heroID, investorDailyGold] : pack.newHorizonsInvestorDailyGold)
@@ -1729,6 +1758,8 @@ void GameStatePackVisitor::visitNewTurn(NewTurn & pack)
 
 	spellPointBonusGraphChanged = true;
 	gs.day = pack.day;
+	for(const auto & [townID, snapshot] : pack.newHorizonsMagnateTownIncome)
+		gs.getTown(townID)->setNewHorizonsMagnateIncome(snapshot);
 	gs.nextAstrologyWeek = pack.nextAstrologyWeek;
 	for(const auto & [heroID, investorDailyGold] : pack.newHorizonsInvestorDailyGold)
 		gs.getHero(heroID)->setNewHorizonsInvestorDailyGold(investorDailyGold);

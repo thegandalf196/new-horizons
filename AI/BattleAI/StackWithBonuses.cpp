@@ -70,7 +70,16 @@ bool projectedEffect(const Bonus * bonus)
 {
 	return bonus && (bonus->source == BonusSource::SPELL_EFFECT || bonus->source == BonusSource::HERO_COMMAND
 		|| newHorizonsEnchantedCommand::isMoraleBonus(bonus)
-		|| newHorizonsSwiftRebirth::isLifecycleMarker(*bonus));
+		|| newHorizonsSwiftRebirth::isLifecycleMarker(*bonus)
+		|| newHorizonsElementalRebirth::isElementalMemoryBonus(*bonus));
+}
+
+bool hasElementalMemory(const battle::Unit & unit)
+{
+	return unit.hasBonus(CSelector([](const Bonus * bonus)
+	{
+		return bonus && newHorizonsElementalRebirth::isElementalMemoryBonus(*bonus);
+	}));
 }
 
 bool isInPhysicalAfflictionGroup(const Bonus * bonus,
@@ -277,7 +286,8 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	localInit(Owner);
 
 	battle::CUnitState::operator=(*Stack);
-	if(newHorizonsFrozen::isFrozen(*this) || newHorizonsSwiftRebirth::lifecycle(*this))
+	if(newHorizonsFrozen::isFrozen(*this) || newHorizonsSwiftRebirth::lifecycle(*this)
+		|| hasElementalMemory(*this))
 		captureEffects();
 }
 
@@ -301,7 +311,8 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 
 	auto state = Stack->acquireState();
 	battle::CUnitState::operator=(*state);
-	if(newHorizonsFrozen::isFrozen(*this) || newHorizonsSwiftRebirth::lifecycle(*this))
+	if(newHorizonsFrozen::isFrozen(*this) || newHorizonsSwiftRebirth::lifecycle(*this)
+		|| hasElementalMemory(*this))
 		captureEffects();
 }
 
@@ -435,7 +446,7 @@ TConstBonusListPtr StackWithBonuses::mergeBonuses(const CSelector & selector,
 					ret->push_back(std::make_shared<Bonus>(bonus));
 		if(!unstacked)
 			ret->stackBonuses();
-		return ret;
+		return newHorizonsDiscipline::veteranCohesionBonuses(ret, selector, veteranCohesionEarned);
 	}
 	const CreatureID effectiveCreature = battleFormCreature();
 	const bool replaceNativeCreatureBonuses = effectiveCreature != sourceCreatureType;
@@ -524,13 +535,13 @@ TConstBonusListPtr StackWithBonuses::mergeBonuses(const CSelector & selector,
 	if(!bonusesToUpdate.empty())
 		ret->remove_if([&](const Bonus * bonus){ return !selector(bonus); });
 	//TODO limiters?
-	return ret;
+	return newHorizonsDiscipline::veteranCohesionBonuses(ret, selector, veteranCohesionEarned);
 }
 
 int32_t StackWithBonuses::getTreeVersion() const
 {
 	auto result = owner->getTreeVersion();
-	return result + treeVersionLocal + getBattleFormViewRevision();
+	return result + treeVersionLocal + getBattleFormViewRevision() + (veteranCohesionEarned ? 1 : 0);
 }
 
 void StackWithBonuses::onBattleFormChanged()
@@ -1119,6 +1130,17 @@ bool HypotheticBattle::unitHasAmmoCart(const battle::Unit * unit) const
 int HypotheticBattle::unitBloodragePainIncrement(const battle::Unit * unit) const
 {
 	return battleBloodragePainIncrement(unit);
+}
+
+bool HypotheticBattle::unitHasVeteranCohesion(const battle::Unit * unit) const
+{
+	if(!unit)
+		return false;
+	const auto owner = battleGetOwner(unit);
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		if(getSidePlayer(side) == owner)
+			return newHorizonsDiscipline::hasVeteranCohesion(getSideHero(side));
+	return false;
 }
 
 std::optional<int> HypotheticBattle::unitMagicResistance(const battle::Unit * unit) const
@@ -3006,6 +3028,9 @@ std::optional<uint32_t> HypotheticBattle::projectElementalRebirth(const battle::
 	elementalRebirthSpawnUnitIds.insert(descriptor->unit.id);
 	if(snapshot.profile.swiftRebirth)
 		addUnitBonus(descriptor->unit.id, {newHorizonsSwiftRebirth::marker(getRound())});
+	const auto memory = newHorizonsElementalRebirth::elementalMemoryBonuses(snapshot, *projected);
+	if(!memory.empty())
+		addUnitBonus(descriptor->unit.id, memory);
 
 	if(snapshot.profile.primalBurst)
 	{

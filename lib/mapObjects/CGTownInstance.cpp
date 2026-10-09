@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "../callback/Calendar.h"
 #include "CGTownInstance.h"
 
 #include "TownBuildingInstance.h"
@@ -307,6 +308,20 @@ int32_t CGTownInstance::getStewardGoldBeforeHandicap() const
 
 TResources CGTownInstance::dailyIncome() const
 {
+	const int32_t day = newHorizonsMagnateIncome.empty() ? 0 : cb->getCalendar().getCurrentDay();
+	return dailyIncomeWithMagnate(newHorizonsMagnateIncome, day);
+}
+
+int32_t CGTownInstance::getMagnateGoldBeforeHandicap() const
+{
+	if(newHorizonsMagnateIncome.empty())
+		return 0;
+	return newHorizonsMagnateIncome.goldOnDay(cb->getCalendar().getCurrentDay(), getOwner());
+}
+
+TResources CGTownInstance::dailyIncomeWithMagnate(const newHorizonsEconomy::MagnateIncome & snapshot, int32_t day) const
+{
+	snapshot.validate();
 	ResourceSet ret;
 
 	for (GameResID k : LIBRARY->resourceTypeHandler->getAllObjects())
@@ -332,6 +347,7 @@ TResources CGTownInstance::dailyIncome() const
 	if (!getOwner().isValidPlayer())
 		return ret;
 
+	ret[EGameResID::GOLD] += snapshot.goldOnDay(day, getOwner());
 	ret[EGameResID::GOLD] += getStewardGoldBeforeHandicap();
 	const auto & playerSettings = cb->getPlayerSettings(getOwner());
 	ret.applyHandicap(playerSettings->handicap.percentIncome);

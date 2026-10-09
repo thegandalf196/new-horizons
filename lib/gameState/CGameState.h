@@ -233,9 +233,12 @@ public:
 	/// Identity of this object is preserved, so all shared_ptr's to it stay valid.
 	void loadFromMemory(std::vector<std::byte> data);
 	void validateNewHorizonsProspectorSerialization(bool supported) const;
+	void validateNewHorizonsMagnateSerialization(bool supported) const;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateNewHorizonsMagnateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGNATE));
 		if(h.saving)
 			validateNewHorizonsProspectorSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROSPECTOR));
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN)

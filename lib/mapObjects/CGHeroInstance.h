@@ -351,6 +351,23 @@ public:
 	bool hasUsedNewHorizonsLandSurveyor(int32_t week) const { return newHorizonsLandSurveyorLastWeek == week; }
 	int32_t getNewHorizonsProspectorLastWeek() const { return newHorizonsProspectorLastWeek; }
 	bool hasUsedNewHorizonsProspector(int32_t week) const { return newHorizonsProspectorLastWeek == week; }
+	ObjectInstanceID getNewHorizonsMagnateLastTown() const { return newHorizonsMagnateLastTown; }
+	int32_t getNewHorizonsMagnateVisitWeek() const { return newHorizonsMagnateVisitWeek; }
+	void recordNewHorizonsMagnateTownVisit(ObjectInstanceID town, int32_t week)
+	{
+		if(town.getNum() < 0 || week < 0)
+			throw std::runtime_error("Invalid New Horizons Magnate town visit");
+		newHorizonsMagnateLastTown = town;
+		newHorizonsMagnateVisitWeek = week;
+	}
+	void validateNewHorizonsMagnateSerialization(bool supported) const
+	{
+		if((newHorizonsMagnateLastTown == ObjectInstanceID::NONE) != (newHorizonsMagnateVisitWeek == -1)
+			|| newHorizonsMagnateVisitWeek < -1 || newHorizonsMagnateLastTown.getNum() < -1)
+			throw std::runtime_error("Invalid New Horizons Magnate visit receipt");
+		if(!supported && newHorizonsMagnateLastTown != ObjectInstanceID::NONE)
+			throw std::runtime_error("Cannot discard New Horizons Magnate visit receipt");
+	}
 	int32_t getNewHorizonsPeacemakerLastWeek() const { return newHorizonsPeacemakerLastWeek; }
 	ObjectInstanceID getNewHorizonsPacifiedCreatureId() const { return newHorizonsPacifiedCreatureId; }
 	bool hasUsedNewHorizonsPeacemaker(int32_t week) const { return week >= 0 && newHorizonsPeacemakerLastWeek == week; }
@@ -578,6 +595,8 @@ private:
 	LearningMentorRecipients newHorizonsLearningMentorRecipients{ObjectInstanceID::NONE, ObjectInstanceID::NONE};
 	int32_t newHorizonsLandSurveyorLastWeek = -1;
 	int32_t newHorizonsProspectorLastWeek = -1;
+	ObjectInstanceID newHorizonsMagnateLastTown = ObjectInstanceID::NONE;
+	int32_t newHorizonsMagnateVisitWeek = -1;
 	int32_t newHorizonsPeacemakerLastWeek = -1;
 	ObjectInstanceID newHorizonsPacifiedCreatureId = ObjectInstanceID::NONE;
 	int32_t newHorizonsTributeLastWeek = -1;
@@ -608,6 +627,8 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateNewHorizonsMagnateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGNATE));
 		if(h.saving && (newHorizonsProspectorLastWeek < -1
 			|| (!h.hasFeature(Handler::Version::NEW_HORIZONS_PROSPECTOR) && newHorizonsProspectorLastWeek != -1)))
 			throw std::runtime_error("Invalid or unsupported New Horizons Prospector receipt");
@@ -781,6 +802,18 @@ public:
 		}
 		else if(!h.saving)
 			newHorizonsProspectorLastWeek = -1;
+
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGNATE))
+		{
+			h & newHorizonsMagnateLastTown;
+			h & newHorizonsMagnateVisitWeek;
+			validateNewHorizonsMagnateSerialization(true);
+		}
+		else if(!h.saving)
+		{
+			newHorizonsMagnateLastTown = ObjectInstanceID::NONE;
+			newHorizonsMagnateVisitWeek = -1;
+		}
 
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE))
 		{

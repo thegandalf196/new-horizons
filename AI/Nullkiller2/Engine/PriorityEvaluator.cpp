@@ -8,6 +8,7 @@
 *
 */
 #include "StdInc.h"
+#include "../../../lib/mapObjects/NewHorizonsAcademicStudy.h"
 #include <limits>
 
 #include "Nullkiller.h"
@@ -658,6 +659,16 @@ float RewardEvaluator::getSkillReward(const CGObjectInstance * target, const CGH
 
 	switch(target->ID)
 	{
+	case Obj::TOWN:
+	{
+		const auto * town = dynamic_cast<const CGTownInstance *>(target);
+		if(!town || !hero)
+			return 0;
+		// Same units as an ordinary 1000-XP learning-stone benefit, including
+		// the recipient's actual Learning composition, without capture duplication.
+		return static_cast<float>(newHorizonsLearning::academicStudyExperience(*hero, *town))
+			/ (1000.0f * std::sqrt(hero->level));
+	}
 	case Obj::STAR_AXIS:
 	case Obj::SCHOLAR:
 	case Obj::SCHOOL_OF_MAGIC:

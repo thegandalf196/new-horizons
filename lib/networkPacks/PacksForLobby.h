@@ -139,9 +139,12 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 
 	void visitTyped(ICPackVisitor & visitor) override;
 	void validateNewHorizonsProspectorSerialization(bool supported) const;
+	void validateNewHorizonsMagnateSerialization(bool supported) const;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateNewHorizonsMagnateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGNATE));
 		if(h.saving)
 			validateNewHorizonsProspectorSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROSPECTOR));
 		if (!h.saving)

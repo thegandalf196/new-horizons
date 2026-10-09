@@ -91,6 +91,38 @@ bool hasFearless(const CGHeroInstance * hero)
 	return hero && hero->hasActivePerk(std::string(SKILL), std::string(FEARLESS));
 }
 
+bool hasVeteranCohesion(const CGHeroInstance * hero)
+{
+	return hero && hero->getSecSkillLevel(SecondarySkill(SecondarySkill::decode(std::string(SKILL)))) >= MasteryLevel::ADVANCED
+		&& hero->hasActivePerk(std::string(SKILL), std::string(VETERAN_COHESION));
+}
+
+TConstBonusListPtr veteranCohesionBonuses(TConstBonusListPtr original, const CSelector & selector, bool earned)
+{
+	const auto isPersonalModifier = [](const Bonus * bonus)
+	{
+		return bonus && bonus->type == BonusType::MORALE && bonus->source == BonusSource::SECONDARY_SKILL
+			&& bonus->sid == disciplineSkillSource() && bonus->duration == BonusDuration::ONE_BATTLE
+			&& bonus->val == 2 && bonus->valType == BonusValueType::ADDITIVE_VALUE
+			&& bonus->stacking == VETERAN_COHESION && !bonus->parameters && !bonus->hasStatusMetadata();
+	};
+	Bonus modifier(BonusDuration::ONE_BATTLE, BonusType::MORALE, BonusSource::SECONDARY_SKILL,
+		2, disciplineSkillSource());
+	modifier.stacking = VETERAN_COHESION;
+	modifier.description.appendRawString("Veteran Cohesion: +2 Morale for the rest of combat");
+	const bool inherited = std::any_of(original->begin(), original->end(), [&](const auto & bonus)
+	{ return isPersonalModifier(bonus.get()); });
+	if(!inherited && (!earned || !selector(&modifier)))
+		return original;
+	auto result = std::make_shared<BonusList>();
+	for(const auto & bonus : *original)
+		if(!isPersonalModifier(bonus.get()))
+			result->push_back(bonus);
+	if(earned && selector(&modifier))
+		result->push_back(std::make_shared<Bonus>(std::move(modifier)));
+	return result;
+}
+
 Bonus holdFastMoraleFloorBonus()
 {
 	Bonus bonus(BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION, BonusType::MINIMUM_MORALE,

@@ -108,6 +108,7 @@ public:
 	int unitSpeedBonus(const battle::Unit * unit) const override;
 	int unitAdditionalRetaliations(const battle::Unit * unit) const override;
 	int unitBloodragePainIncrement(const battle::Unit * unit) const override;
+	bool unitHasVeteranCohesion(const battle::Unit * unit) const override;
 	std::optional<int> unitMagicResistance(const battle::Unit * unit) const override;
 	std::optional<std::pair<int32_t, int32_t>> unitMoraleLimits(const battle::Unit * unit) const override;
 
@@ -138,10 +139,18 @@ public:
 				bonus->validateSwiftRebirthSerialization(h);
 	}
 
+	template <typename Handler> void validateVeteranCohesionSerialization(Handler & h) const
+	{
+		if(veteranCohesionEarned && !h.hasFeature(Handler::Version::NEW_HORIZONS_VETERAN_COHESION))
+			throw std::runtime_error("Cannot discard Veteran Cohesion receipt in an older stack format");
+	}
+
 	template <typename Handler> void serialize(Handler & h)
 	{
 		//this assumes that stack objects is newly created
 		//CUnitState is not serialized here except for explicit battle-long fields.
+		if(h.saving)
+			validateVeteranCohesionSerialization(h);
 		if(h.saving)
 			validateFrozenSerialization(h);
 		if(h.saving)
@@ -221,6 +230,10 @@ public:
 		}
 		else if(!h.saving)
 			restoreFrozenApplicationRound(-1);
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_VETERAN_COHESION))
+			h & veteranCohesionEarned;
+		else if(!h.saving)
+			veteranCohesionEarned = false;
 	}
 
 private:

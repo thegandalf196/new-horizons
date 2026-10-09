@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../lib/mapObjects/NewHorizonsAcademicStudy.h"
 #include "CGameHandler.h"
 
 #include "CVCMIServer.h"
@@ -1722,7 +1723,9 @@ void CGameHandler::takeCreatures(ObjectInstanceID objid, const std::vector<CStac
 
 void CGameHandler::heroVisitCastle(const CGTownInstance * obj, const CGHeroInstance * hero)
 {
-	if (obj->getVisitingHero() != hero && obj->getGarrisonHero() != hero)
+	const bool arrival = obj->getVisitingHero() != hero && obj->getGarrisonHero() != hero;
+	const auto academicExperience = arrival ? newHorizonsLearning::academicStudyExperience(*hero, *obj) : 0;
+	if (arrival)
 	{
 		HeroVisitCastle vc;
 		vc.hid = hero->id;
@@ -1733,6 +1736,15 @@ void CGameHandler::heroVisitCastle(const CGTownInstance * obj, const CGHeroInsta
 	// Snapshot the meeting before visiting buildings, since those visits may
 	// award experience or otherwise change a hero's level before Mentor resolves.
 	auto learningMentorAward = prepareLearningMentorAward(obj->getVisitingHero(), obj->getGarrisonHero());
+	if(arrival && newHorizonsMagic::rulesActive(gameState().getMagicRules()) && !hero->visitedObjects.contains(obj->id))
+	{
+		ChangeObjectVisitors marker(ChangeObjectVisitors::VISITOR_ADD_HERO_ONLY, obj->id, hero->id);
+		// Record zero-guild and pre-acquisition first visits too. Marker precedes
+		// Experience and all building callbacks, including level-up reentry.
+		sendAndApply(marker);
+		if(academicExperience > 0)
+			giveExperience(hero, academicExperience);
+	}
 	visitCastleObjects(obj, hero);
 
 	if (obj->getVisitingHero() && obj->getGarrisonHero())
@@ -2371,6 +2383,14 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 			swift.toAdd.emplace_back(spawn->unit.id, std::vector<Bonus>{
 				newHorizonsSwiftRebirth::marker(battleInfo->getRound())});
 			sendAndApply(swift);
+		}
+		const auto memory = newHorizonsElementalRebirth::elementalMemoryBonuses(trigger.snapshot, *reborn);
+		if(!memory.empty())
+		{
+			SetStackEffect inherited;
+			inherited.battleID = trigger.battleID;
+			inherited.toAdd.emplace_back(spawn->unit.id, memory);
+			sendAndApply(inherited);
 		}
 
 		BattleLogMessage log;
@@ -5328,6 +5348,13 @@ void CGameHandler::objectVisited(const CGObjectInstance * visitedObject, const C
 	hv.heroId = h->id;
 	hv.player = h->tempOwner;
 	hv.starting = true;
+	if(const auto * town = dynamic_cast<const CGTownInstance *>(visitedObject);
+		town && town->getOwner() == h->getOwner() && newHorizonsMagic::rulesActive(gameState().getMagicRules()))
+	{
+		const auto calendar = gameInfo().getCalendar();
+		hv.newHorizonsMagnateOwnedTownVisitWeek =
+			newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+	}
 	sendAndApply(hv);
 
 	std::string scriptHandler = visitedObject->getVisitScriptHandler();

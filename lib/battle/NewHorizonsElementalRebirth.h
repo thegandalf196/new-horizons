@@ -40,6 +40,7 @@ struct DLL_LINKAGE ActiveProfile
 	bool adaptiveElement = false;
 	bool perfectConvergence = false;
 	bool swiftRebirth = false;
+	bool elementalMemory = false;
 };
 
 /// Immutable pre-hit facts needed to decide and resolve one destruction reaction.
@@ -52,6 +53,8 @@ struct DLL_LINKAGE DeathSnapshot
 	ActiveProfile profile;
 	bool chain = false;
 	int64_t rebirthOriginalAggregateHP = 0;
+	int32_t positiveMoraleModifier = 0;
+	int32_t positiveLuckModifier = 0;
 };
 
 /// Atomic provenance for one second-generation ADD and its side-owned combat token.
@@ -108,6 +111,12 @@ DLL_LINKAGE std::vector<uint32_t> adjacentHostileUnitIds(
 
 /// Bonus applied to each reborn stack when Elemental Ward was active at source death.
 DLL_LINKAGE std::optional<Bonus> elementalWardBonus(const ActiveProfile & profile);
+
+/// Round-local positive modifier increment, after the spawned unit's normal inherited
+/// bonuses are attached. This copies modifiers without changing Morale/Luck immunity.
+DLL_LINKAGE std::vector<Bonus> elementalMemoryBonuses(const DeathSnapshot & snapshot, const battle::Unit & reborn);
+/// Exact provenance used by detached round snapshots; other skill stats stay inherited.
+DLL_LINKAGE bool isElementalMemoryBonus(const Bonus & bonus);
 
 /// Whether a pre-hit unit can be a source (ordinary, non-summoned, non-clone creature stack).
 DLL_LINKAGE bool isEligibleSource(const battle::Unit & unit);

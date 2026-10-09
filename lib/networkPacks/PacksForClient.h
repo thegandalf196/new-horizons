@@ -20,6 +20,7 @@
 #include "ObjProperty.h"
 
 #include "../ResourceSet.h"
+#include "../mapObjects/NewHorizonsMagnateIncome.h"
 #include "../TurnTimerInfo.h"
 #include "../bonuses/Bonus.h"
 #include "../gameState/EVictoryLossCheckResult.h"
@@ -1334,15 +1335,30 @@ struct DLL_LINKAGE HeroVisit : public CPackForClient
 	ObjectInstanceID objId;
 
 	bool starting; //false -> ending
+	/// Captured only for an already-owned town, before capture/visit effects.
+	int32_t newHorizonsMagnateOwnedTownVisitWeek = -1;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(newHorizonsMagnateOwnedTownVisitWeek < -1
+			|| (newHorizonsMagnateOwnedTownVisitWeek >= 0 && (!starting || heroId.getNum() < 0 || objId.getNum() < 0 || !player.isValidPlayer())))
+			throw std::runtime_error("Invalid New Horizons Magnate visit packet");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_MAGNATE)
+			&& newHorizonsMagnateOwnedTownVisitWeek != -1)
+			throw std::runtime_error("Cannot write New Horizons Magnate visit to an older format");
 		h & player;
 		h & heroId;
 		h & objId;
 		h & starting;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGNATE))
+			h & newHorizonsMagnateOwnedTownVisitWeek;
+		else if(!h.saving)
+			newHorizonsMagnateOwnedTownVisitWeek = -1;
+		if(newHorizonsMagnateOwnedTownVisitWeek < -1
+			|| (newHorizonsMagnateOwnedTownVisitWeek >= 0 && (!starting || heroId.getNum() < 0 || objId.getNum() < 0 || !player.isValidPlayer())))
+			throw std::runtime_error("Invalid New Horizons Magnate visit packet");
 	}
 };
 
@@ -1394,6 +1410,7 @@ struct DLL_LINKAGE NewTurn : public CPackForClient
 	AstrologyWeek nextAstrologyWeek;
 	/// Changed per-hero Investor daily-Gold snapshots authored at week start.
 	std::map<ObjectInstanceID, int32_t> newHorizonsInvestorDailyGold;
+	std::map<ObjectInstanceID, newHorizonsEconomy::MagnateIncome> newHorizonsMagnateTownIncome;
 
 	NewTurn() = default;
 
@@ -1401,6 +1418,17 @@ struct DLL_LINKAGE NewTurn : public CPackForClient
 	{
 		static constexpr int32_t goldPerInvestorStep = 50;
 		static constexpr int32_t maximumInvestorDailyGold = 250;
+		if(h.saving)
+		{
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_MAGNATE) && !newHorizonsMagnateTownIncome.empty())
+				throw std::runtime_error("Cannot write New Horizons Magnate awards to an older format");
+			for(const auto & [townID, snapshot] : newHorizonsMagnateTownIncome)
+			{
+				if(townID.getNum() < 0)
+					throw std::runtime_error("Invalid New Horizons Magnate beneficiary");
+				snapshot.validate();
+			}
+		}
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_INVESTOR_INCOME)
 			&& !newHorizonsInvestorDailyGold.empty())
 			throw std::runtime_error("Cannot write New Horizons Investor snapshots to an older format");
@@ -1441,6 +1469,18 @@ struct DLL_LINKAGE NewTurn : public CPackForClient
 		}
 		else if(!h.saving)
 			newHorizonsInvestorDailyGold.clear();
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGNATE))
+		{
+			h & newHorizonsMagnateTownIncome;
+			for(const auto & [townID, snapshot] : newHorizonsMagnateTownIncome)
+			{
+				if(townID.getNum() < 0)
+					throw std::runtime_error("Invalid New Horizons Magnate beneficiary");
+				snapshot.validate();
+			}
+		}
+		else if(!h.saving)
+			newHorizonsMagnateTownIncome.clear();
 	}
 };
 
@@ -1501,10 +1541,11 @@ struct DLL_LINKAGE ChangeObjectVisitors : public CPackForClient
 		VISITOR_ADD_PLAYER, // mark player as one that have visited this object instance
 		VISITOR_SCOUTED,    // marks targeted team as having scouted this object
 		VISITOR_CLEAR,      // clear all visitors from this object (object reset)
+		VISITOR_ADD_HERO_ONLY, // hero-local provenance, without player/team effects
 	};
 	VisitMode mode = VISITOR_CLEAR; // uses VisitMode enum
 	ObjectInstanceID object;
-	ObjectInstanceID hero; // note: hero owner will be also marked as "visited" this object
+	ObjectInstanceID hero; // recipient; legacy ADD_HERO/ADD_PLAYER also mark its owner
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
@@ -1519,9 +1560,19 @@ struct DLL_LINKAGE ChangeObjectVisitors : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && mode == VISITOR_ADD_HERO_ONLY)
+		{
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_ACADEMIC_STUDY))
+				throw std::runtime_error("Cannot write hero-only town visit to an older format");
+			if(object.getNum() < 0 || hero.getNum() < 0)
+				throw std::runtime_error("Invalid hero-only visit endpoints");
+		}
 		h & object;
 		h & hero;
 		h & mode;
+		if(mode == VISITOR_ADD_HERO_ONLY && (!h.hasFeature(Handler::Version::NEW_HORIZONS_ACADEMIC_STUDY)
+			|| object.getNum() < 0 || hero.getNum() < 0))
+			throw std::runtime_error("Invalid or unsupported hero-only visit");
 	}
 };
 

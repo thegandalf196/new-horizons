@@ -11,6 +11,7 @@
 
 #include "CUnitState.h"
 #include "NewHorizonsBloodrage.h"
+#include "NewHorizonsDiscipline.h"
 #include "NewHorizonsCreatureAbilitySuppression.h"
 #include "NewHorizonsFrozen.h"
 
@@ -150,6 +151,21 @@ bool hasOverwatchState(const JsonNode & unitSnapshot)
 		present |= value->Integer() != -1;
 	}
 	return present;
+}
+
+bool hasVeteranCohesionState(const JsonNode & unitSnapshot)
+{
+	const auto * state = findJsonField(unitSnapshot, "state");
+	if(!state)
+		return false;
+	if(!state->isStruct())
+		throw std::runtime_error("Invalid Veteran Cohesion unit state");
+	const auto * earned = findJsonField(*state, "veteranCohesionEarned");
+	if(!earned)
+		return false;
+	if(earned->getType() != JsonNode::JsonType::DATA_BOOL)
+		throw std::runtime_error("Invalid Veteran Cohesion receipt");
+	return earned->Bool();
 }
 
 ///CAmmo
@@ -1353,6 +1369,7 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	archeryCrossfireDefenders = other.archeryCrossfireDefenders;
 	noQuarterMoraleActivationsRemaining = other.noQuarterMoraleActivationsRemaining;
 	personalBloodrageIncrement = other.personalBloodrageIncrement;
+	veteranCohesionEarned = other.veteranCohesionEarned;
 	capacityRegenerationRemainderTenths = other.capacityRegenerationRemainderTenths;
 	timeStopTurnConsumedFlag = other.timeStopTurnConsumedFlag;
 	regenerationRateMillionths = other.regenerationRateMillionths;
@@ -2224,6 +2241,7 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	if(noQuarterMoraleActivationsRemaining < 0 || noQuarterMoraleActivationsRemaining > 2)
 		throw std::runtime_error("Invalid No Quarter morale lifetime");
 	handler.serializeInt("personalBloodrageIncrement", personalBloodrageIncrement, 0);
+	handler.serializeBool("veteranCohesionEarned", veteranCohesionEarned);
 	if(!newHorizonsBloodrage::isValidPersonalIncrement(personalBloodrageIncrement))
 		throw std::runtime_error("Invalid personal Bloodrage increment");
 	handler.serializeInt("capacityRegenerationRemainderTenths", capacityRegenerationRemainderTenths, 0);
@@ -2381,6 +2399,7 @@ void CUnitState::reset()
 	battlecraftOverwatchUsedRound = -1;
 	cloned = false;
 	personalBloodrageIncrement = 0;
+	veteranCohesionEarned = false;
 	activationMovementBonus = 0;
 	defending = false;
 	drainedMana = false;
@@ -2491,6 +2510,10 @@ JsonNode CUnitState::save()
 
 void CUnitState::load(const JsonNode & data)
 {
+	// Validate before reset/conversion, and never erase an already earned receipt
+	// when rebinding from a partial/legacy state update.
+	const bool incomingVeteranCohesion = hasVeteranCohesionState(data);
+	const bool retainedVeteranCohesion = veteranCohesionEarned || incomingVeteranCohesion;
 	// Check metadata before any existing unit state is changed by deserialization.
 	const auto * incomingState = findJsonField(data, "state");
 	const auto * frozenRound = incomingState ? findJsonField(*incomingState, "frozenAppliedRound") : nullptr;
@@ -2534,6 +2557,7 @@ void CUnitState::load(const JsonNode & data)
 		onBattleFormChanged();
 	JsonDeserializer deser(nullptr, data);
 	deser.serializeStruct("state", *this);
+	veteranCohesionEarned = retainedVeteranCohesion;
 	confusionState = incomingConfusion;
 	if(phantomInitialIntegrity < 0 || phantomIntegrity < 0 || phantomRoundsRemaining < 0
 		|| !newHorizonsBloodrage::isValidPersonalIncrement(personalBloodrageIncrement)
@@ -2583,6 +2607,10 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 	}
 	const int64_t maximumHealthBefore = battle::getMaximumHealth(*this);
 	const int64_t availableHealthBefore = getAvailableHealth();
+	const auto cohesionBasis = getBattleStartMaximumAggregateHP();
+	const auto cohesionHalf = cohesionBasis / 2 + cohesionBasis % 2;
+	const bool eligibleCohesion = !veteranCohesionEarned && env && cohesionBasis > 0
+		&& availableHealthBefore >= cohesionHalf && env->unitHasVeteranCohesion(this);
 	const int64_t halfHealthCeiling = maximumHealthBefore > 0
 		? maximumHealthBefore / 2 + maximumHealthBefore % 2 : 0;
 	int32_t eligiblePainIncrement = 0;
@@ -2673,6 +2701,9 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 		ghostPending = true;
 
 	const int64_t availableHealthAfter = getAvailableHealth();
+	if(eligibleCohesion && availableHealthAfter < availableHealthBefore
+		&& availableHealthAfter < cohesionHalf)
+		veteranCohesionEarned = true;
 	if(personalBloodrageIncrement == 0 && eligiblePainIncrement > 0
 		&& availableHealthAfter < availableHealthBefore
 		&& availableHealthBefore >= halfHealthCeiling
@@ -3041,9 +3072,11 @@ TConstBonusListPtr CUnitStateDetached::getBonusesBeforeCreatureAbilitySuppressio
 	const auto sourceBonuses = [this, &selector, &cachingStr, unstacked]()
 	{
 		if(const auto * sourceUnit = dynamic_cast<const Unit *>(bonus))
-			return sourceUnit->getBonusesBeforeCreatureAbilitySuppression(selector, cachingStr, unstacked);
+			return newHorizonsDiscipline::veteranCohesionBonuses(
+				sourceUnit->getBonusesBeforeCreatureAbilitySuppression(selector, cachingStr, unstacked), selector, veteranCohesionEarned);
 
-		return unstacked ? bonus->getUnstackedBonuses(selector) : bonus->getAllBonuses(selector, cachingStr);
+		return newHorizonsDiscipline::veteranCohesionBonuses(unstacked
+			? bonus->getUnstackedBonuses(selector) : bonus->getAllBonuses(selector, cachingStr), selector, veteranCohesionEarned);
 	};
 
 	if(!hasBattleFormState())
@@ -3086,7 +3119,7 @@ TConstBonusListPtr CUnitStateDetached::getBonusesBeforeCreatureAbilitySuppressio
 
 int32_t CUnitStateDetached::getTreeVersion() const
 {
-	return bonus->getTreeVersion() + getBattleFormViewRevision();
+	return bonus->getTreeVersion() + getBattleFormViewRevision() + (veteranCohesionEarned ? 1 : 0);
 }
 
 CUnitStateDetached & CUnitStateDetached::operator=(const CUnitState & other)

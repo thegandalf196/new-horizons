@@ -204,12 +204,15 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_BLOODRAGE_DEATH_PERKS, // once-combat First Blood destruction receipt
 	NEW_HORIZONS_PROSPECTOR, // independent per-hero weekly owned-mine visit receipt
 	NEW_HORIZONS_SWIFT_REBIRTH, // reborn normal-activation priority and birth-round cap
+	NEW_HORIZONS_MAGNATE, // owned-town visit history and seven-day income awards
+	NEW_HORIZONS_ACADEMIC_STUDY, // hero-only town visitor protocol admission
+	NEW_HORIZONS_VETERAN_COHESION, // once-combat personal Morale threshold receipt
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_SWIFT_REBIRTH,
+	CURRENT = NEW_HORIZONS_VETERAN_COHESION,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_SWIFT_REBIRTH > ESerializationVersion::NEW_HORIZONS_PROSPECTOR,

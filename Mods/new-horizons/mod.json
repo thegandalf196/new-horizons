@@ -4163,7 +4163,7 @@
 								"requires": "advanced",
 								"description": "The first time a friendly stack falls below 50% of its maximum HP during combat, it gains +2 Morale for the rest of that combat.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The first time a friendly stack falls below 50% of its maximum HP during combat, it gains +2 Morale for the rest of that combat."
 								}
 							},
@@ -6041,7 +6041,7 @@
 								"requires": "expert",
 								"description": "At the start of each week, the most recently visited owned town from the previous week produces +500 Gold per day for the next 7 days. If no owned town was visited, the perk has no effect that week.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "At the start of each week, the most recently visited owned town from the previous week produces +500 Gold per day for the next 7 days. If no owned town was visited, the perk has no effect that week."
 								}
 							}
@@ -6123,7 +6123,7 @@
 								"requires": "advanced",
 								"description": "The first time the hero visits each town, gain 250 Experience for each Mage Guild level already constructed in that town.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The first time the hero visits each town, gain 250 Experience for each Mage Guild level already constructed in that town."
 								}
 							},
@@ -7423,7 +7423,7 @@
 								"requires": "basic",
 								"description": "A reborn Elemental inherits the destroyed stack's current positive Morale and Luck modifiers until the end of the round.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "A reborn Elemental inherits the destroyed stack's current positive Morale and Luck modifiers until the end of the round."
 								}
 							},
@@ -9666,6 +9666,10 @@
 		"new-horizons.economy.steward.total": "Projected town income: %d Gold/day (after income handicap)",
 		"new-horizons.economy.steward.contribution": "Steward: +%d Gold/day before income handicap. Already included in the projected total.",
 		"new-horizons.economy.steward.help": "Each selected Steward who ends the day visiting or garrisoned in this owned town contributes +250 Gold on the next day. Two distinct holders contribute +500. This preview uses current residents; moving them before the day ends changes the next day's income.",
+		"new-horizons.economy.magnate.contribution": "Magnate: +%d Gold/day before income handicap. Already included in the total.",
+		"new-horizons.economy.magnate.beneficiary": "Current beneficiary: %s, through day %d inclusive.",
+		"new-horizons.economy.magnate.none": "This town is not currently receiving a Magnate award.",
+		"new-horizons.economy.magnate.help": "At week start, each selected Magnate awards the most recently visited owned town from the previous week +500 Gold/day for seven days. Two holders may award the same town. The town must still be owned at week start; later visits do not redirect this fixed award.",
 		"core.heroClass.alchemist.name": "Battle Mage",
 		"core.heroClass.demoniac.name": "Tyrant",
 		"core.heroClass.heretic.name": "Cultist",
