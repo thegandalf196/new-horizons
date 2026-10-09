@@ -20,6 +20,22 @@ local function isIneligibleNewHorizonsResurrectionTarget(mechanics, unit)
 		and (unit:isSummoned() or unit:isClone() or unit:getPhantomInitialIntegrity() > 0)
 end
 
+-- Miracle Worker strengthens casualty restoration, not the wound healing
+-- reserved first by Resurrection. Use the ordinary survivor-only heal probe
+-- so capacity/Battle Form health obeys the same rules as real healing.
+local function healingAmount(mechanics, unit)
+	local amount = mechanics:applySpellBonus(mechanics:getEffectValue(), unit)
+	if not mechanics:isNewHorizonsResurrection() then return amount end
+	local hero = mechanics:getHeroCaster()
+	if hero == nil or not hero:hasActivePerk("new-horizons:lightMagic", "new-horizons:lightMagic.miracleWorker") then
+		return amount
+	end
+	local probe = unit:copy()
+	local woundedHealing = probe:heal(amount, ENUM.HealLevel.heal, ENUM.HealPower.permanent)
+	local casualtyPool = math.max(0, amount - woundedHealing)
+	return woundedHealing + casualtyPool + math.floor(casualtyPool / 4)
+end
+
 function Script:getHealLevel()
 	return HEAL_LEVEL_FROM_STRING[self.healLevel] or ENUM.HealLevel.heal
 end
@@ -72,7 +88,7 @@ function Script:isValidTarget(mechanics, unit)
 
 	local mfu = self:getEffectiveMinFullUnits(mechanics)
 	if mfu > 0 then
-		local hpGained = math.min(mechanics:applySpellBonus(mechanics:getEffectValue(), unit), injuries)
+		local hpGained = math.min(healingAmount(mechanics, unit), injuries)
 		if hpGained < mfu * unit:getMaxHealth() then return false end
 	end
 
@@ -100,7 +116,7 @@ function Script:getHealthChange(mechanics, spellTarget)
 		if unit and not (phantomCaster and unit:isDead())
 			and not isIneligibleNewHorizonsResurrectionTarget(mechanics, unit) then
 			local copy = unit:copy()
-			local healedHP, resurrected = copy:heal(mechanics:applySpellBonus(mechanics:getEffectValue(), unit),
+			local healedHP, resurrected = copy:heal(healingAmount(mechanics, unit),
 				healLevel, self:getEffectiveHealPower(mechanics))
 			result.hpDelta   = result.hpDelta   + healedHP
 			result.unitsDelta = result.unitsDelta + resurrected
@@ -122,7 +138,7 @@ function Script:apply(mechanics, server, target)
 		if unit and not (phantomCaster and unit:isDead())
 			and not isIneligibleNewHorizonsResurrectionTarget(mechanics, unit) then
 			local healedHP, resurrected = server:healUnit(
-				battle, unit, mechanics:applySpellBonus(mechanics:getEffectValue(), unit), healLevel, self:getEffectiveHealPower(mechanics))
+				battle, unit, healingAmount(mechanics, unit), healLevel, self:getEffectiveHealPower(mechanics))
 
 			if resurrected > 0 then
 				local textID = resurrected == 1 and "core.genrltxt.117" or "core.genrltxt.116"

@@ -34,6 +34,8 @@
 
 namespace
 {
+constexpr std::string_view NATURE_MIRE_SHAPER = "new-horizons:natureMagic.mireShaper";
+
 const JsonNode & battleMagicRules(const CBattleInfoCallback & callback)
 {
 	static const JsonNode legacy;
@@ -929,6 +931,20 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 			result += " Granted by Grand Malediction; costs three times Sorrow before Mana reductions.";
 	}
 
+	if(hero && resurrectionRestorationEnabled(hero->getMagicRules(), spell->getId()))
+	{
+		const auto & rules = hero->getMagicRules();
+		result = "Restoration pool: " + std::to_string(RESURRECTION_BASE_POOL_HP)
+			+ " + " + std::to_string(RESURRECTION_SPELL_POWER_HP_PER_POINT)
+			+ " HP per Spell Power. School and Spellcraft scale only the Spell Power term; the current combined factor is "
+			+ percentFromBasisPoints(spellPowerCoefficientBasisPoints(rules, hero, spell->getId()))
+			+ ". Empower and battle-only Warcasting may further strengthen that term; eligible spell bonuses may modify the resulting pool. "
+			"The pool first heals the wounded surviving creature, then permanently restores casualties, "
+			"without exceeding the stack's battle-start capacity. Summoned, cloned, and Phantom stacks are ineligible.";
+		if(hero->hasActivePerk("new-horizons:lightMagic", "new-horizons:lightMagic.miracleWorker"))
+			result += " Miracle Worker adds 25% to the casualty HP pool only, rounded down after reserving the wound healing; it does not increase wound healing.";
+	}
+
 	if(hero && spell->getId() == SpellID(SpellID::QUICKSAND)
 		&& rulesActive(hero->getMagicRules())
 		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
@@ -944,6 +960,8 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 				+ " concealed Quicksand patches on legal empty ground hexes. The saved v3 base count is min(5, "
 				+ "2 + floor(Spell Power / 60)); Nature rank, Spellcraft, and Empower strengthen only the Spell Power term. "
 				+ "The current count excludes battle-only Warcasting, which may further strengthen the Spell Power term.";
+			if(hero->hasActivePerk(std::string(NATURE_MAGIC_SKILL), std::string(NATURE_MIRE_SHAPER)))
+				result += " Mire Shaper adds one patch after the ordinary five-patch cap, allowing up to six patches.";
 		}
 	}
 
@@ -1658,8 +1676,13 @@ std::optional<int> quicksandPatchCount(const JsonNode & rules, const CGHeroInsta
 	const int32_t divisor = spellPowerDivisor * QUICKSAND_SPELL_POWER_PER_PATCH_V3;
 	const int64_t spellPowerPatches = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
 		spellPower, divisor, coefficientBasisPoints, warcastingBonusPercent, empowerBonusPercent);
-	return QUICKSAND_BASE_PATCH_COUNT_V3 + static_cast<int>(std::min<int64_t>(
+	const int baseCount = QUICKSAND_BASE_PATCH_COUNT_V3 + static_cast<int>(std::min<int64_t>(
 		QUICKSAND_MAX_PATCH_COUNT_V3 - QUICKSAND_BASE_PATCH_COUNT_V3, spellPowerPatches));
+	// The additional patch is independent of Spell Power and follows the
+	// ordinary cap, allowing six patches without changing unselected heroes.
+	const bool mireShaper = hero && hero->hasActivePerk(
+		std::string(NATURE_MAGIC_SKILL), std::string(NATURE_MIRE_SHAPER));
+	return baseCount + (mireShaper ? 1 : 0);
 }
 
 bool quicksandSelectedPlacementEnabled(const JsonNode & rules, const SpellID spell)

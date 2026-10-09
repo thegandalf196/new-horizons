@@ -2,6 +2,28 @@
 
 Updated: 2026-10-09
 
+Mire Shaper and Miracle Worker are source/native accepted after linked50268
+and fixture-only relink74808. Final24/24 passes, zero skips/failures/errors:
+Mire10/10 in2.587s and Miracle14/14 in5.580s. Root checks XML and matching
+source/private engine hashes. Receipt: build/nh-mire-miracle-native.lBbjTbsn/
+receipt.md. After-cap six-patch count, malformed-placement rejection, paid
+placement and actual AI submission pass; casualty-only124/125HP, wound-only,
+caps/remains, inactive/legacy, detached projection and paid AI with Orders pass.
+Data17/17, module parity and independent review pass. Perks250->252/310,
+generic175->177/220, faction75/90 unchanged; planned60->58 (43 generic,15 faction).
+Light and Nature perks each10/10. Combat65/67, Orders8/8, Skills31/31/ranks93/93
+are unchanged. Source/native acceptance is not rendered, NHART or launcher
+promotion. Phase2 retains broader capacity/casualty composition, crowded
+placement quality and extreme numeric bounds. Next: Polymorph and Shapeshifter.
+Earlier in-progress notes below are historical and superseded here.
+
+Mire Shaper and Miracle Worker source integration is frozen for build52816.
+Shared after-cap extra patch and casualty-only restoration boost have their
+client/AI consumers and help text; focused gates are Mire10 and Miracle14.
+Data17/17, generated module parity and independent source review pass. The
+ten-job build is live; accepted totals stay65/67 spells and250/310 perks until
+native24 passes. No new bitmap, rendered acceptance or launcher promotion.
+
 Pandemonium and Pandemonium Master are source/native accepted after linked3540.
 Principal25/25 passes in5.621s, zero skips/failures; root checks XML and exact
 source/private engine hashes. Receipt: build/nh-pandemonium-native.aatz4JzE/

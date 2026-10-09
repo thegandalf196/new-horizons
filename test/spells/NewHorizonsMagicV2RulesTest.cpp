@@ -334,6 +334,9 @@ TEST(NewHorizonsMagicV2RulesTest, QuicksandPatchCountUsesSavedSchoolAndSpellcraf
 	EXPECT_FALSE(newHorizonsMagic::quicksandPatchCount(v1, &hero, quicksand, 180));
 	EXPECT_FALSE(newHorizonsMagic::quicksandPatchCount(v2, &hero, quicksand, 180));
 	EXPECT_FALSE(newHorizonsMagic::quicksandPatchCount(current, &hero, SpellID(SpellID::HASTE), 180));
+	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(current, nullptr, quicksand, 0), 2);
+	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(current, nullptr, quicksand, 1000, 1, 100, 100), 5)
+		<< "Without a selected hero perk, scaling cannot raise the ordinary five-patch cap";
 }
 
 TEST(NewHorizonsMagicV2RulesTest, QuicksandSelectedPlacementIsStrictSavedV3OptIn)

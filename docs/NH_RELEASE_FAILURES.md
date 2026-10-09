@@ -1,5 +1,48 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-09 — Quicksand fixture concrete spell declaration
+
+Build52816 terminates1 at623/779: the new Quicksand help assertion passes a
+CSpell pointer through the spells::Spell interface while only its forward
+declaration is visible. Add CSpell.h directly at the test consumer. Production
+library and Miracle fixtures compile; this is not a full linked/native pass.
+No assertion, production API or gameplay contract is weakened. Serialized
+retry follows the frozen one-include correction; native24 remains pending.
+
+Retry50268 exits0 at148/148, including the corrected Quicksand fixture and
+both client/test links. Native24 acceptance is assigned on the exact frozen
+engine/config pair; no focused runtime pass is claimed yet.
+
+Exact-pair native gate: Miracle14/14 passes in5.537s with zero skips; Mire9/10
+passes in2.366s, zero skips. Mire's actual AI fixture sees five patches where
+six are required. Preserve its failed log/XML; owner diagnoses profile/consumer
+parity without weakening the six-patch contract. Accepted coverage stays at
+the previous checkpoint until the joint gate is resolved. Private evidence:
+build/nh-mire-miracle-native.lBbjTbsn/{mire,miracle}.{xml,log}.
+
+Cause: AI fixture disables current hero rules, so legacy primary ratings clamp
+Spell Power to99. Advanced Nature correctly gives five including Mire Shaper.
+Fixture now uses current expanded hero ratings with Orders enabled, and asserts
+saved v3, active perk, raw power1800 and divisor10 before expecting six. The
+gameplay formula/expected six-patch contract is unchanged; bounded relink74808
+follows. Preserve the first failed run as evidence, not a runtime regression.
+
+Relink74808 exits0. Final exact-pair gates pass24/24, zero skips/errors/failures:
+Mire10 in2.587s, Miracle14 in5.580s. Root checks XML and source/private hashes;
+the original failed receipts and initial engine pair remain private. This
+closes the principal compile/fixture issue, not broader integration coverage.
+
+### 2026-10-09 — Avoid needless shared-header timestamp churn
+
+Mire Shaper's identifier was initially added to NewHorizonsMagic.h, then moved
+to a private constexpr because no public consumer required it. The header's
+final bytes match HEAD, but the edit/revert timestamp invalidates dependent
+objects and build52816 schedules779 steps. Keep bounded identifiers local from
+the outset when no shared API is needed; a clean Git diff does not prove an
+unchanged incremental-build dependency timestamp. Do not disturb a live build
+just to erase the evidence. This is rebuild overhead, not a runtime regression
+or a reason to weaken the required focused native gate.
+
 ### 2026-10-09 — Pandemonium fixture typed source ID
 
 Linked build51420 terminates1 at174/482. The new snapshot-cleanup fixture passes

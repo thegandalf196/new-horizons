@@ -32,6 +32,13 @@
 #include "../../../lib/spells/effects/Effect.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
+#ifdef ENABLE_BATTLE_AI
+#include "../../../AI/BattleAI/BattleEvaluator.h"
+#include "../../../AI/BattleAI/SpellTargetsEvaluator.h"
+#include "../../../AI/BattleAI/StackWithBonuses.h"
+#include "../../../lib/battle/CPlayerBattleCallback.h"
+#include "../../../lib/callback/CBattleCallback.h"
+#endif
 
 #include <array>
 #include <memory>
@@ -44,6 +51,26 @@ namespace
 constexpr std::string_view RESURRECTION_KEY = "core:resurrection";
 constexpr int LEGACY_RESURRECTION_LEVEL = 3;
 constexpr std::array<int, 4> LEGACY_RESURRECTION_COSTS = {12, 12, 10, 10};
+
+#ifdef ENABLE_BATTLE_AI
+class MiracleWorkerEnvironment final : public Environment
+{
+	std::shared_ptr<CGameState> state;
+public:
+	explicit MiracleWorkerEnvironment(std::shared_ptr<CGameState> value) : state(std::move(value)) {}
+	const Services * services() const override { return LIBRARY; }
+	const BattleCb * battle(const BattleID & id) const override { return state->getBattle(id); }
+	const GameCb * game() const override { return state.get(); }
+};
+
+class MiracleWorkerCallback final : public CBattleCallback
+{
+public:
+	std::vector<BattleAction> submitted;
+	MiracleWorkerCallback() : CBattleCallback(PlayerColor(0), nullptr) {}
+	void battleMakeSpellAction(const BattleID &, const BattleAction & action) override { submitted.push_back(action); }
+};
+#endif
 
 HeroTypeID heroType(std::string_view identifier)
 {
@@ -93,7 +120,7 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
 	}
 
-	void prepare(int spellPower = 25, int32_t friendlyCount = 3)
+	void prepare(int spellPower = 25, int32_t friendlyCount = 3, int32_t enemyCount = 1)
 	{
 		startGame();
 		// Solmyr's historical specialty is unrelated to Resurrection; neither side
@@ -106,7 +133,7 @@ protected:
 		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(1), creature("core:pikeman"), 1));
 		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(2), creature("core:archangel"), 1));
 		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(3), creature("core:archangel"), 1));
-		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), creature("core:peasant"), 1));
+		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), creature("core:peasant"), enemyCount));
 
 		for(auto * hero : {attackerSideHero, defenderSideHero})
 		{
@@ -155,11 +182,22 @@ protected:
 		return SpellID(SpellID::RESURRECTION).toSpell();
 	}
 
-	void damage(CStack * stack, int64_t requestedDamage)
+	void selectMiracleWorker()
+	{
+		attackerSideHero->setSecSkillLevel(lightMagic(), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->setSecSkillLevel(spellcraft(), MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({"new-horizons:lightMagic", "new-horizons:lightMagic.guardian"});
+		attackerSideHero->applyPerkSelection({"new-horizons:lightMagic", "new-horizons:lightMagic.aegis"});
+		attackerSideHero->applyPerkSelection({"new-horizons:lightMagic", "new-horizons:lightMagic.miracleWorker"});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:lightMagic", "new-horizons:lightMagic.miracleWorker"))
+			<< "Requires shipped perk admission, not a fixture activation override";
+	}
+
+	void damage(CStack * stack, int64_t requestedDamage, bool destroyRemains = false)
 	{
 		auto state = stack->acquireState();
 		int64_t appliedDamage = requestedDamage;
-		state->damage(appliedDamage);
+		state->damage(appliedDamage, destroyRemains);
 		UnitChanges change(stack->unitId(), UnitChanges::EOperation::UPDATE);
 		change.data = state->save();
 		change.healthDelta = -appliedDamage;
@@ -264,6 +302,26 @@ protected:
 		action.spell = SpellID::RESURRECTION;
 		action.aimToUnit(target);
 		return action;
+	}
+
+	void expectPaidRestoration(CStack * target, int64_t expectedHP)
+	{
+		spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, resurrection());
+		const auto mechanics = resurrection()->battleMechanics(&cast);
+		ASSERT_TRUE(mechanics->canBeCastAt({spells::Destination(target)}));
+		const auto forecast = healthForecast(target, mechanics.get());
+		EXPECT_EQ(forecast.hpDelta, expectedHP);
+		const auto before = target->getAvailableHealth();
+		const auto countBefore = target->getCount();
+		const auto manaBefore = attackerSideHero->getManaAvailable();
+		const auto cost = battle()->battleGetSpellCost(resurrection(), attackerSideHero);
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), resurrectionAction(target)));
+		EXPECT_EQ(target->getAvailableHealth() - before, expectedHP);
+		EXPECT_EQ(target->getCount() - countBefore, forecast.unitsDelta);
+		EXPECT_EQ(manaBefore - attackerSideHero->getManaAvailable(), cost);
+		EXPECT_EQ(target->health.getResurrected(), 0);
+		EXPECT_LE(target->getCount(), target->unitBaseAmount());
+		EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), resurrectionAction(target)));
 	}
 
 	void expectRejected(const CStack * target)
@@ -532,3 +590,153 @@ TEST_F(NewHorizonsResurrectionFoundationTest, MarkerlessSavedV3SnapshotKeepsLega
 	EXPECT_FALSE(newHorizonsMagic::resurrectionRestorationEnabled(
 		restored.getMagicRules(), SpellID::RESURRECTION));
 }
+
+TEST_F(NewHorizonsResurrectionFoundationTest, MiracleWorkerPaidPartialStackReservesWoundAndFloorsCasualtyPoolOnce)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0, 5));
+	ASSERT_NO_FATAL_FAILURE(selectMiracleWorker());
+	ASSERT_NO_FATAL_FAILURE(damage(friendly, 2 * friendly->getMaxHealth() + 3));
+	// 100 HP pool: reserve 3 HP, then floor(97 * 1.25) = 121.
+	ASSERT_NO_FATAL_FAILURE(expectPaidRestoration(friendly, 124));
+}
+
+TEST_F(NewHorizonsResurrectionFoundationTest, MiracleWorkerPaidFullCorpseUsesWholePoolAndKeepsLocation)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0, 5));
+	ASSERT_NO_FATAL_FAILURE(selectMiracleWorker());
+	ASSERT_NO_FATAL_FAILURE(damage(friendly, friendly->getAvailableHealth()));
+	ASSERT_TRUE(friendly->isDead());
+	ASSERT_NO_FATAL_FAILURE(activate(survivingAlly));
+	const auto position = friendly->getPosition();
+	ASSERT_NO_FATAL_FAILURE(expectPaidRestoration(friendly, 125));
+	EXPECT_EQ(friendly->getCount(), 1) << "The bonus is HP-based, not rounded integer casualty count";
+	EXPECT_EQ(friendly->getPosition(), position);
+}
+
+TEST_F(NewHorizonsResurrectionFoundationTest, MiracleWorkerWoundOnlyHealingIsUnchanged)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0));
+	ASSERT_NO_FATAL_FAILURE(selectMiracleWorker());
+	ASSERT_NO_FATAL_FAILURE(damage(friendly, 3));
+	ASSERT_NO_FATAL_FAILURE(expectPaidRestoration(friendly, 3));
+}
+
+TEST_F(NewHorizonsResurrectionFoundationTest, MiracleWorkerRespectsBattleStartCapAndUnusableRemains)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(1000, 5));
+	ASSERT_NO_FATAL_FAILURE(selectMiracleWorker());
+	const auto health = friendly->getMaxHealth();
+	ASSERT_NO_FATAL_FAILURE(damage(friendly, 2 * health, true));
+	ASSERT_EQ(friendly->getUnusableRemains(), 2);
+	ASSERT_NO_FATAL_FAILURE(damage(friendly, 2 * health + 3));
+	ASSERT_NO_FATAL_FAILURE(expectPaidRestoration(friendly, 2 * health + 3));
+	EXPECT_EQ(friendly->getCount(), 3);
+	EXPECT_EQ(friendly->getUnusableRemains(), 2);
+}
+
+TEST_F(NewHorizonsResurrectionFoundationTest, MiracleWorkerBelowRequiredRankDoesNotBoostRestoration)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0, 5));
+	ASSERT_NO_FATAL_FAILURE(selectMiracleWorker());
+	attackerSideHero->setSecSkillLevel(lightMagic(), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	ASSERT_FALSE(attackerSideHero->hasActivePerk("new-horizons:lightMagic", "new-horizons:lightMagic.miracleWorker"));
+	ASSERT_NO_FATAL_FAILURE(damage(friendly, 2 * friendly->getMaxHealth() + 3));
+	ASSERT_NO_FATAL_FAILURE(expectPaidRestoration(friendly, 100));
+}
+
+TEST_F(NewHorizonsResurrectionFoundationTest, MiracleWorkerSelectedPerkPreservesMarkerlessLegacyRestoration)
+{
+	useRestorationMarker = false;
+	ASSERT_NO_FATAL_FAILURE(prepare(100, 20));
+	attackerSideHero->setSecSkillLevel(lightMagic(), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(spellcraft(), MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	ASSERT_NO_FATAL_FAILURE(damage(friendly, 5 * friendly->getMaxHealth()));
+	spells::BattleCast beforeCast(battle(), attackerSideHero, spells::Mode::HERO, resurrection());
+	const auto beforeMechanics = resurrection()->battleMechanics(&beforeCast);
+	const auto before = healthForecast(friendly, beforeMechanics.get());
+	ASSERT_GT(before.hpDelta, 0);
+	ASSERT_NO_FATAL_FAILURE(selectMiracleWorker());
+	ASSERT_NO_FATAL_FAILURE(expectPaidRestoration(friendly, before.hpDelta));
+}
+
+TEST_F(NewHorizonsResurrectionFoundationTest, MiracleWorkerStillRejectsSummonsClonesAndPhantoms)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0));
+	ASSERT_NO_FATAL_FAILURE(selectMiracleWorker());
+	ASSERT_NO_FATAL_FAILURE(activate(survivingAlly));
+	auto * summoned = addTemporaryStack(BattleSide::ATTACKER, BattleHex(8, 3), true);
+	ASSERT_NE(summoned, nullptr);
+	ASSERT_NO_FATAL_FAILURE(damage(summoned, 3));
+	ASSERT_NO_FATAL_FAILURE(damage(cloneCandidate, 3));
+	markClone(cloneCandidate);
+	markPhantom(phantomCandidate);
+	ASSERT_NO_FATAL_FAILURE(damage(phantomCandidate, 3));
+	for(const auto * temporary : {summoned, cloneCandidate, phantomCandidate})
+		expectRejected(temporary);
+}
+
+#ifdef ENABLE_BATTLE_AI
+TEST_F(NewHorizonsResurrectionFoundationTest, MiracleWorkerDetachedProjectionMatchesPaidCastWithoutMutatingLiveState)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0, 5));
+	ASSERT_NO_FATAL_FAILURE(selectMiracleWorker());
+	ASSERT_NO_FATAL_FAILURE(damage(friendly, 2 * friendly->getMaxHealth() + 3));
+	auto callback = std::make_shared<MiracleWorkerCallback>();
+	callback->onBattleStarted(battle());
+	MiracleWorkerEnvironment environment(gameState());
+	HypotheticBattle projected(&environment, callback->getBattle(BattleID(0)));
+	const auto before = friendly->getAvailableHealth();
+	const auto mana = attackerSideHero->getManaAvailable();
+	CMemorySerializer rngBefore;
+	rngBefore.oser & *gameHandler->randomizer;
+	spells::BattleCast cast(&projected, attackerSideHero, spells::Mode::HERO, resurrection());
+	const auto mechanics = resurrection()->battleMechanics(&cast);
+	const auto candidates = SpellTargetEvaluator::getViableTargets(mechanics.get());
+	ASSERT_TRUE(std::ranges::any_of(candidates, [this](const spells::Target & target)
+	{
+		return target.size() == 1 && target.front().unitValue
+			&& target.front().unitValue->unitId() == friendly->unitId();
+	}));
+	mechanics->castEval(projected.getServerCallback(),
+		{spells::Destination(projected.battleGetUnitByID(friendly->unitId()))});
+	EXPECT_EQ(friendly->getAvailableHealth(), before);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	CMemorySerializer rngAfter;
+	rngAfter.oser & *gameHandler->randomizer;
+	EXPECT_EQ(rngBefore.extractBuffer(), rngAfter.extractBuffer());
+	ASSERT_NO_FATAL_FAILURE(expectPaidRestoration(friendly, 124));
+	EXPECT_EQ(friendly->getAvailableHealth(), projected.battleGetUnitByID(friendly->unitId())->getAvailableHealth());
+}
+
+TEST_F(NewHorizonsResurrectionFoundationTest, MiracleWorkerActualAIChoosesPaidRestorationWithOrdersCompeting)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(100, 20, 1000));
+	ASSERT_NO_FATAL_FAILURE(selectMiracleWorker());
+	attackerSideHero->removeAllSpells();
+	attackerSideHero->addSpellToSpellbook(SpellID::RESURRECTION);
+	ASSERT_NO_FATAL_FAILURE(damage(friendly, 19 * friendly->getMaxHealth()));
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -survivingAlly->getMovementRange();
+	survivingAlly->addNewBonus(std::make_shared<Bonus>(immobilized));
+	ASSERT_NO_FATAL_FAILURE(activate(survivingAlly));
+	auto callback = std::make_shared<MiracleWorkerCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<MiracleWorkerEnvironment>(gameState());
+	BattleEvaluator evaluator(environment, callback, survivingAlly, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(survivingAlly);
+	const auto before = friendly->getAvailableHealth();
+	const auto mana = attackerSideHero->getManaAvailable();
+	ASSERT_TRUE(evaluator.attemptCastingSpell(survivingAlly));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto & action = callback->submitted.front();
+	ASSERT_EQ(action.actionType, EActionType::HERO_SPELL);
+	ASSERT_EQ(action.spell, SpellID::RESURRECTION);
+	EXPECT_EQ(friendly->getAvailableHealth(), before);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_GT(friendly->getAvailableHealth(), before);
+	EXPECT_EQ(mana - attackerSideHero->getManaAvailable(), 22);
+}
+#endif

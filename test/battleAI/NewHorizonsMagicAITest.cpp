@@ -488,7 +488,7 @@ protected:
 		setTestSpellPointTotal(attackerSideHero, 1000);
 	}
 
-	bool selectShadowMagicPerkThroughLegalOffer(const std::string & perkId)
+	bool selectMagicPerkThroughLegalOffer(const std::string & skillId, const std::string & perkId)
 	{
 		const auto rankLookup = [this](const std::string & skillId)
 		{
@@ -500,7 +500,7 @@ protected:
 			const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed);
 			const auto selected = std::find_if(offer.begin(), offer.end(), [&](const auto & candidate)
 			{
-				return candidate.selection.skillId == shadowMagicSkill
+				return candidate.selection.skillId == skillId
 					&& candidate.selection.perkId == perkId;
 			});
 			if(selected == offer.end())
@@ -508,9 +508,14 @@ protected:
 
 			const auto choice = static_cast<size_t>(std::distance(offer.begin(), selected));
 			gameHandler->levelUpHero(attackerSideHero, offer, choice, seed, false);
-			return attackerSideHero->hasActivePerk(shadowMagicSkill, perkId);
+			return attackerSideHero->hasActivePerk(skillId, perkId);
 		}
 		return false;
+	}
+
+	bool selectShadowMagicPerkThroughLegalOffer(const std::string & perkId)
+	{
+		return selectMagicPerkThroughLegalOffer(shadowMagicSkill, perkId);
 	}
 };
 
@@ -2952,6 +2957,84 @@ TEST_F(NewHorizonsMagicAITest, QuicksandAISelectsExactLegalGroundAndValuesHostil
 	ASSERT_EQ(recordingCallback->submitted.size(), 1u);
 	EXPECT_EQ(recordingCallback->submitted.front().spell, SpellID::QUICKSAND);
 	EXPECT_EQ(recordingCallback->submitted.front().target.size(), first.size());
+}
+
+TEST_F(NewHorizonsMagicAITest, QuicksandMireShaperAISelectsAndSubmitsSixLegalPatches)
+{
+	// Use the current expanded primary ratings with their required Orders.
+	// Legacy primary ratings clamp Spell Power below the six-patch threshold.
+	useRealHeroScale = true;
+	useCurrentMagicRules = true;
+	useSavedPerkRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const std::string skill(newHorizonsMagic::NATURE_MAGIC_SKILL);
+	const auto skillId = SecondarySkill(SecondarySkill::decode(skill));
+	ASSERT_NE(skillId, SecondarySkill::NONE);
+	attackerSideHero->setSecSkillLevel(skillId, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(selectMagicPerkThroughLegalOffer(skill, std::string(newHorizonsMagic::NATURE_HERBALIST)));
+	attackerSideHero->setSecSkillLevel(skillId, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(selectMagicPerkThroughLegalOffer(skill, "new-horizons:natureMagic.mireShaper"));
+	for(const auto known : attackerSideHero->getSpellsInSpellbook())
+		attackerSideHero->removeSpellFromSpellbook(known);
+	attackerSideHero->addSpellToSpellbook(SpellID::QUICKSAND);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 1800, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+
+	auto * ally = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+	{
+		if(unit != ally && unit != enemy)
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	}
+	gameHandler->sendAndApply(remove);
+
+	const auto * spell = SpellID(SpellID::QUICKSAND).toSpell();
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(skill, "new-horizons:natureMagic.mireShaper"));
+	ASSERT_EQ(battle()->getMagicRules()["rulesetVersion"].Integer(),
+		newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION);
+	ASSERT_EQ(attackerSideHero->getEffectPower(spell), 1800);
+	ASSERT_EQ(attackerSideHero->getEffectPowerDivisor(spell), 10);
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&cast);
+	ASSERT_EQ(mechanics->getNewHorizonsQuicksandPatchCount(), 6);
+	const auto targets = SpellTargetEvaluator::getViableTargets(mechanics.get());
+	ASSERT_EQ(targets.size(), 1u);
+	ASSERT_EQ(targets.front().size(), 6u);
+	std::set<int> selected;
+	for(const auto & destination : targets.front())
+	{
+		EXPECT_EQ(destination.unitValue, nullptr);
+		EXPECT_TRUE(selected.insert(destination.hexValue.toInt()).second);
+		EXPECT_TRUE(newHorizonsMagic::quicksandPlacementHexIsLegal(*battle(), destination.hexValue));
+	}
+	ASSERT_TRUE(mechanics->canBeCastAt(targets.front()));
+	EXPECT_GT(SpellTargetEvaluator::quicksandPlacementValue(mechanics.get(), targets.front()), 0.0f);
+
+	Bonus immobilized;
+	immobilized.type = BonusType::STACKS_SPEED;
+	immobilized.duration = BonusDuration::ONE_BATTLE;
+	immobilized.val = -static_cast<int32_t>(ally->getMovementRange());
+	ally->addNewBonus(std::make_shared<Bonus>(immobilized));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = ally->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	auto environment = std::make_shared<MagicEnvironment>(gameState());
+	auto callback = std::make_shared<MagicCallback>();
+	callback->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, callback, ally, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(ally);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(ally));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	EXPECT_EQ(callback->submitted.front().spell, SpellID::QUICKSAND);
+	EXPECT_EQ(callback->submitted.front().target.size(), 6u);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_TRUE(battle()->getAllObstacles().empty());
 }
 
 TEST_F(NewHorizonsMagicAITest, QuicksandAIKeepsLegacyNoTargetSelection)

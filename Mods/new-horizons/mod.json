@@ -4541,7 +4541,7 @@
 								"requires": "expert",
 								"description": "Resurrection restores 25% more casualties than its normal calculated amount.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Resurrection restores 25% more casualties than its normal calculated amount."
 								}
 							},
@@ -4785,7 +4785,7 @@
 								"requires": "advanced",
 								"description": "Quicksand creates one additional patch.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Quicksand creates one additional patch."
 								}
 							},
