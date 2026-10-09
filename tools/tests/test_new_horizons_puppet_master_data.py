@@ -47,6 +47,21 @@ class PuppetMasterDataTest(unittest.TestCase):
             "noneOf": {"bonus.LUCIDITY": "absolute"},
         })
 
+    def test_hover_acquires_controller_caster_after_mutating_action_selection(self):
+        # Lifetime/source contract only; actual popup-close acceptance is graphical.
+        source = (ROOT / "client/battle/BattleStacksController.cpp").read_text()
+        body = source.split("BattleStacksController::selectHoveredStacks()", 1)[1]
+        body = body.split("BattleStacksController::getHoveredStacksUnitIds()", 1)[0]
+        acquire = body.index("getCurrentSpellcaster()")
+        construct = body.index("spells::BattleCast event(", acquire)
+        for selector in ("currentActionSpellcasting(", "creatureSpellcastingModeActive()",
+                         "getCurrentSpell(", "getCurrentCastMode()"):
+            self.assertLess(body.index(selector), acquire)
+            self.assertNotIn(selector, body[acquire:construct])
+        self.assertEqual(body.count("getCurrentSpellcaster()"), 1)
+        self.assertIn("if(caster)", body[acquire:construct])
+        self.assertIn("battleGetStackByPos(hoveredHex, true)", body[construct:])
+
 
 if __name__ == "__main__":
     unittest.main()

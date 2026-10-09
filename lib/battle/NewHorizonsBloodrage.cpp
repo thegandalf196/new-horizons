@@ -20,6 +20,8 @@ constexpr std::string_view UNRELENTING = "new-horizons:bloodrage.unrelenting";
 constexpr std::string_view BERSERKER = "new-horizons:bloodrage.berserker";
 constexpr std::string_view BLOOD_SCENT = "new-horizons:bloodrage.bloodScent";
 constexpr std::string_view AVATAR_OF_RAGE = "new-horizons:bloodrage.avatarOfRage";
+constexpr std::string_view FIRST_BLOOD = "new-horizons:bloodrage.firstBlood";
+constexpr std::string_view SLAYER = "new-horizons:bloodrage.slayer";
 constexpr std::string_view RAGE_THROUGH_PAIN = "new-horizons:bloodrage.rageThroughPain";
 }
 
@@ -100,6 +102,16 @@ bool hasAvatarOfRage(const CGHeroInstance * hero)
 int capForHero(const CGHeroInstance * hero)
 {
 	return capForRank(rank(hero), hasEndlessBloodshed(hero));
+}
+
+bool hasFirstBlood(const CGHeroInstance * hero)
+{
+	return hero && rank(hero) > 0 && hero->hasActivePerk(std::string(SKILL), std::string(FIRST_BLOOD));
+}
+
+bool hasSlayer(const CGHeroInstance * hero)
+{
+	return hero && rank(hero) >= 2 && hero->hasActivePerk(std::string(SKILL), std::string(SLAYER));
 }
 
 bool hasWarDrums(const CGHeroInstance * hero)

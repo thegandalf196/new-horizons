@@ -313,6 +313,8 @@ public:
 	BattleSide tacticsSide; //which side is requested to play tactics phase
 	ui8 tacticDistance; //how many hexes we can go forward (1 = only hexes adjacent to margin line)
 	std::set<uint32_t> bloodrageDestroyedUnits;
+	// Resurrection clears the duplicate-death set, never this combat receipt.
+	bool bloodrageFirstBloodUsed = false;
 	LuckRollRules luckRollRules;
 	// Append new transient snapshot fields to preserve preceding BattleInfo offsets.
 	BattleDeploymentState deploymentState;
@@ -327,8 +329,23 @@ public:
 				stack->validateFrozenSerialization(h);
 	}
 
+	template <typename Handler> void validateBloodrageDeathPerksSerialization(Handler & h) const
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_BLOODRAGE_DEATH_PERKS))
+		{
+			if(bloodrageFirstBloodUsed)
+				throw std::runtime_error("Cannot discard First Blood combat receipt in an older battle format");
+			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+				if(newHorizonsBloodrage::hasFirstBlood(getSideHero(side))
+					|| newHorizonsBloodrage::hasSlayer(getSideHero(side)))
+					throw std::runtime_error("Cannot discard selected Bloodrage death perks in an older battle format");
+		}
+	}
+
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateBloodrageDeathPerksSerialization(h);
 		if(h.saving)
 			validateFrozenSerialization(h);
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_CHAIN)
@@ -541,6 +558,10 @@ public:
 			h & sides[BattleSide::ATTACKER].bloodrageRank;
 			h & sides[BattleSide::DEFENDER].bloodrageRank;
 			h & bloodrageDestroyedUnits;
+			if(h.hasFeature(Handler::Version::NEW_HORIZONS_BLOODRAGE_DEATH_PERKS))
+				h & bloodrageFirstBloodUsed;
+			else if(!h.saving)
+				bloodrageFirstBloodUsed = false;
 			if(h.hasFeature(Handler::Version::NEW_HORIZONS_BLOODRAGE_CAP))
 			{
 				h & sides[BattleSide::ATTACKER].bloodrageCapPercent;

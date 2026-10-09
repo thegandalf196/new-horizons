@@ -7139,7 +7139,7 @@
 								"requires": "basic",
 								"description": "The first qualifying stack destroyed in each combat grants two Bloodrage increments instead of one.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The first qualifying stack destroyed in each combat grants two Bloodrage increments instead of one."
 								}
 							},
@@ -7179,7 +7179,7 @@
 								"requires": "advanced",
 								"description": "Destroying an Elite or Champion stack grants two Bloodrage increments.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Destroying an Elite or Champion stack grants two Bloodrage increments."
 								}
 							},

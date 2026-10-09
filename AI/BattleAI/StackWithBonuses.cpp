@@ -991,7 +991,10 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	{
 		elementalRebirthSpawnUnitIds = parent->elementalRebirthSpawnUnitIds;
 		projectedPrimalBurstHits = parent->projectedPrimalBurstHits;
+		bloodrageFirstBloodUsed = parent->bloodrageFirstBloodUsed;
 	}
+	else if(const auto * concrete = dynamic_cast<const BattleInfo *>(realBattle->getBattle()))
+		bloodrageFirstBloodUsed = concrete->bloodrageFirstBloodUsed;
 	auto activeUnit = realBattle->battleActiveUnit();
 	activeUnitId = activeUnit ? activeUnit->unitId() : -1;
 	projectedRound = realBattle->battleGetRound();
@@ -2657,9 +2660,20 @@ void HypotheticBattle::recordBloodrageTransition(const std::shared_ptr<StackWith
 	}
 	if(!wasAlive || unit->summoned || unit->isClone() || !bloodrageDestroyedUnits.insert(unit->unitId()).second)
 		return;
+	const auto category = getCreatureCategoryRules().lookup(unit->unitType()->getJsonKey());
+	const bool eliteOrChampion = category
+		&& category->category != newHorizonsCreatures::CreatureCategory::CORE;
+	bool firstBloodSelected = false;
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const bool firstBlood = newHorizonsBloodrage::hasFirstBlood(getSideHero(side));
+		firstBloodSelected |= firstBlood;
+		const int increments = newHorizonsBloodrage::deathIncrementCount(!bloodrageFirstBloodUsed,
+			eliteOrChampion, firstBlood, newHorizonsBloodrage::hasSlayer(getSideHero(side)));
 		bloodrageDamagePercents[side] = std::min(bloodrageCaps[side],
-			bloodrageDamagePercents[side] + newHorizonsBloodrage::incrementForRank(bloodrageRanks[side]));
+			bloodrageDamagePercents[side] + increments * newHorizonsBloodrage::incrementForRank(bloodrageRanks[side]));
+	}
+	bloodrageFirstBloodUsed |= firstBloodSelected;
 }
 
 battle::BattleEffectSnapshot HypotheticBattle::captureBattleEffects(uint32_t id) const

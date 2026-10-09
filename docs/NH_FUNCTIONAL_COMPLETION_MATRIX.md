@@ -2,6 +2,21 @@
 
 Updated: 2026-10-09
 
+Accepted First Blood/Slayer checkpoint: linked61073 succeeds; exact matching
+native25/25 in6.290s covers both new perks (11 cases), core map-origin/header
+(3) and Eagle Eye (11), with zero failures/errors/skips. Registry/static21
+and module/privacy/review gates pass. Perks261/310: generic182/220,
+faction79/90;49 planned (38 generic,11 faction). Bloodrage is10/10. Combat67/67,
+Orders8/8,Skills31/31,ranks93/93 unchanged. Both holders share the first event,
+independent extras add to three increments, caps spend the receipt, clone/
+summon exclusions, resurrection, detached branches and new/older serialization
+are verified. Additive composition is recorded provisionally, not canonicalized.
+Adjacent13 checks pass10; three older-format controls hit the preexisting
+Frozen captured-ability downsave guard. Those fixture/format interactions are
+recorded for Phase2, not bypassed. The hover caster use-after-free fix compiles
+and passes4 static controls; repaired rendered close and playable promotion
+remain pending. Merchant Prince and Prospector are private, unaccepted candidates.
+
 Accepted Eagle Eye checkpoint:linked11731 succeeds;11 perk cases plus the late-
 generated-map case pass12/12 in3.546s, with5/5 adjacent filesystem/Field Study
 controls in1.383s, zero errors/skips. Data17/17,module parity, shell isolation
@@ -15,12 +30,17 @@ remain Phase2. Initial10/11 evidence preserves the fixture's incorrect Level2
 school expectation, corrected using genuinely school-gated Level3 Inferno.
 
 A guarded Battle-only start exposed a separate generated-map mount crash.
-The dedicated refreshable local Maps loader and safe private-profile allowance
-are source/native verified, without purchaser-map writes or optional Mods.
-Actual rendered Battle-only recheck remains required; Frozen/help observation
-is not claimed. Ordinary Linux remains the verifiedb3cd snapshot until a new
-committed candidate passes its delivery gates. First Blood/Slayer's reviewed
-private candidate is next, not accepted coverage. Older checkpoints follow.
+The dedicated refreshable Maps loader is now mounted in core so origin lookup
+and root streams agree, without purchaser-map writes or optional Mods. Source
+231c1da21 passes14/14 actual-origin/header/Eagle Eye native controls. Guarded
+bc9 manual combat and compact Freezing Touch20% / Shatter+25% help are observed.
+However releasing the card exposes a hover caster-proxy use-after-free, proven
+by a guarded debugger trace. Its lifetime-ordering fix is independently clear
+and passes4 static controls; actual repaired close remains pending. Frozen and
+Shatter effects are not observed. Ordinary Linux remains verifiedb3cd until
+delivery gates pass. First Blood/Slayer are applied/registered, not accepted:
+their11 native cases await linked60237. Merchant Prince is reviewed privately
+but unapplied. Older checkpoints follow.
 
 Accepted three-perk checkpoint:Veiled Movement,generic Lucky Recovery and
 Avatar of Rage pass30/30 principal native cases in11.512s after linked71404,

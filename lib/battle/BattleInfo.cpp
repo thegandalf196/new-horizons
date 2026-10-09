@@ -347,12 +347,24 @@ void BattleInfo::recordBloodrageStackDeath(uint32_t unitId)
 		return;
 	if(!bloodrageDestroyedUnits.insert(unitId).second)
 		return;
+	const auto * unit = getStack(unitId, false);
+	const auto category = unit
+		? getCreatureCategoryRules().lookup(unit->unitType()->getJsonKey()) : std::nullopt;
+	const bool eliteOrChampion = category
+		&& category->category != newHorizonsCreatures::CreatureCategory::CORE;
+	bool firstBloodSelected = false;
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		auto & state = sides.at(side);
+		const bool firstBlood = newHorizonsBloodrage::hasFirstBlood(getSideHero(side));
+		firstBloodSelected |= firstBlood;
+		const int increments = newHorizonsBloodrage::deathIncrementCount(!bloodrageFirstBloodUsed,
+			eliteOrChampion, firstBlood, newHorizonsBloodrage::hasSlayer(getSideHero(side)));
 		state.bloodrageDamagePercent = std::min(state.bloodrageCapPercent,
-			state.bloodrageDamagePercent + newHorizonsBloodrage::incrementForRank(state.bloodrageRank));
+			state.bloodrageDamagePercent + increments * newHorizonsBloodrage::incrementForRank(state.bloodrageRank));
 	}
+	// A capped grant still spends First Blood; revived stacks never restore it.
+	bloodrageFirstBloodUsed |= firstBloodSelected;
 }
 
 void BattleInfo::clearBloodrageStackDeath(uint32_t unitId)

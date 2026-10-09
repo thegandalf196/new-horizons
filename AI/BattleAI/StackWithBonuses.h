@@ -574,6 +574,7 @@ private:
 	BattleSideArray<int32_t> bloodrageLowHealthIncrements;
 	BattleSideArray<int32_t> bloodragePainIncrements;
 	std::set<uint32_t> bloodrageDestroyedUnits;
+	bool bloodrageFirstBloodUsed = false;
 	BattleSideArray<SylvanLuckState> fortuneStates;
 	BattleSideArray<PerfectFortuneState> perfectFortuneStates;
 	BattleSideArray<LuckSerendipityState> luckSerendipityStates;

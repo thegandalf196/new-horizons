@@ -34,6 +34,14 @@ DLL_LINKAGE bool hasUnrelenting(const CGHeroInstance * hero);
 DLL_LINKAGE bool hasBerserker(const CGHeroInstance * hero);
 DLL_LINKAGE bool hasBloodScent(const CGHeroInstance * hero);
 DLL_LINKAGE bool hasAvatarOfRage(const CGHeroInstance * hero);
+DLL_LINKAGE bool hasFirstBlood(const CGHeroInstance * hero);
+DLL_LINKAGE bool hasSlayer(const CGHeroInstance * hero);
+/// Independent perks add one extra increment each to the ordinary death grant.
+constexpr int deathIncrementCount(bool firstQualifyingDeath, bool eliteOrChampion,
+	bool firstBlood, bool slayer)
+{
+	return 1 + (firstQualifyingDeath && firstBlood ? 1 : 0) + (eliteOrChampion && slayer ? 1 : 0);
+}
 DLL_LINKAGE bool hasRageThroughPain(const CGHeroInstance * hero);
 constexpr bool isValidPersonalIncrement(int value)
 {

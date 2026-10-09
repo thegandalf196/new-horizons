@@ -50,6 +50,8 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 	template <typename Handler> void serialize(Handler & h)
 	{
 		if(h.saving && info)
+			info->validateBloodrageDeathPerksSerialization(h);
+		if(h.saving && info)
 			info->validateFrozenSerialization(h);
 		if(h.saving && info)
 			info->validatePerfectFortuneSerialization(h);
