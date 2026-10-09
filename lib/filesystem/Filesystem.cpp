@@ -196,20 +196,15 @@ void CResourceHandler::initialize()
 
 	auto savesLoader = std::make_unique<CFilesystemLoader>("SAVES/", VCMIDirs::get().userSavePath());
 	auto configLoader = std::make_unique<CFilesystemLoader>("CONFIG/", VCMIDirs::get().userConfigPath());
-	// Generated maps may be created after initialization (Battle Only mode).
-	// Keep a refreshable local loader even when the directory does not yet exist.
-	auto mapsLoader = std::make_unique<CFilesystemLoader>("MAPS/", VCMIDirs::get().userDataPath() / "Maps");
 
 	globalResourceHandler.rootLoader = std::make_unique<CFilesystemList>();
 	knownLoaders["root"] = globalResourceHandler.rootLoader.get();
 	knownLoaders["saves"] = savesLoader.get();
 	knownLoaders["config"] = configLoader.get();
-	knownLoaders["maps"] = mapsLoader.get();
 
 	auto localFS = std::make_unique<CFilesystemList>();
 	localFS->addLoader(std::move(savesLoader), true);
 	localFS->addLoader(std::move(configLoader), true);
-	localFS->addLoader(std::move(mapsLoader), true);
 
 	addFilesystem("root", "initial", createInitial());
 	addFilesystem("root", "data", std::make_unique<CFilesystemList>());
@@ -239,7 +234,16 @@ void CResourceHandler::load(const std::string &fsConfigURI, bool extractArchives
 
 	const JsonNode fsConfig(reinterpret_cast<std::byte *>(fsConfigData.first.get()), fsConfigData.second, fsConfigURI);
 
-	addFilesystem("data", ModScope::scopeBuiltin(), createFileSystem("", fsConfig["filesystem"], extractArchives));
+	auto core = std::make_unique<CFilesystemList>();
+	core->addLoader(createFileSystem("", fsConfig["filesystem"], extractArchives), false);
+	// Generated maps may be created after initialization (Battle Only mode).
+	// Mount them in core: map loading resolves origin there before reading the
+	// root stream. A local-only mount is visible to root but has no mod origin.
+	// Append after installed maps, preserving user-map override precedence.
+	auto mapsLoader = std::make_unique<CFilesystemLoader>("MAPS/", VCMIDirs::get().userDataPath() / "Maps");
+	knownLoaders["maps"] = mapsLoader.get();
+	core->addLoader(std::move(mapsLoader), true);
+	addFilesystem("data", ModScope::scopeBuiltin(), std::move(core));
 }
 
 void CResourceHandler::addFilesystem(const std::string & parent, const std::string & identifier, std::unique_ptr<ISimpleResourceLoader> loader)
