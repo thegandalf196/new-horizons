@@ -298,6 +298,14 @@ public:
 	void resetNewHorizonsAdventureSpellCastToday() { newHorizonsAdventureSpellState.castToday = false; }
 	bool hasUsedNewHorizonsCastleGateToday(int32_t day) const { return newHorizonsCastleGateLastUseDay == day; }
 	void markNewHorizonsCastleGateUsed(int32_t day) { newHorizonsCastleGateLastUseDay = day; }
+	int32_t getNewHorizonsPursuitMarchLastUseDay() const { return newHorizonsPursuitMarchLastUseDay; }
+	bool hasUsedNewHorizonsPursuitMarchToday(int32_t day) const { return newHorizonsPursuitMarchLastUseDay == day; }
+	void setNewHorizonsPursuitMarchLastUseDay(int32_t day)
+	{
+		if(day < -1)
+			throw std::runtime_error("Invalid New Horizons Pursuit March use day");
+		newHorizonsPursuitMarchLastUseDay = day;
+	}
 	int32_t getNewHorizonsForcedMarchLastUseDay() const { return newHorizonsForcedMarchLastUseDay; }
 	int32_t getNewHorizonsForcedMarchPenaltyDay() const { return newHorizonsForcedMarchPenaltyDay; }
 	void setNewHorizonsForcedMarchState(int32_t lastUseDay, int32_t penaltyDay)
@@ -559,6 +567,7 @@ private:
 	JsonNode primaryGrowthRules;
 	newHorizonsMagic::AdventureSpellState newHorizonsAdventureSpellState;
 	int32_t newHorizonsCastleGateLastUseDay = -1;
+	int32_t newHorizonsPursuitMarchLastUseDay = -1;
 	int32_t newHorizonsForcedMarchLastUseDay = -1;
 	int32_t newHorizonsForcedMarchPenaltyDay = -1;
 	int32_t newHorizonsMusterLastWeek = -1;
@@ -625,6 +634,13 @@ public:
 		if(h.saving && (!h.hasFeature(Handler::Version::NEW_HORIZONS_INVESTOR_INCOME)
 			&& newHorizonsInvestorDailyGold != 0))
 			throw std::runtime_error("New Horizons Investor state requires the new save format");
+		if(h.saving)
+		{
+			setNewHorizonsPursuitMarchLastUseDay(newHorizonsPursuitMarchLastUseDay);
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_PURSUIT_MARCH)
+				&& newHorizonsPursuitMarchLastUseDay != -1)
+				throw std::runtime_error("New Horizons Pursuit March use requires the new save format");
+		}
 		if(h.saving)
 			setNewHorizonsInvestorDailyGold(newHorizonsInvestorDailyGold);
 		if(!h.saving)
@@ -828,6 +844,13 @@ public:
 		if(!h.saving && !isValidNewHorizonsLearningMentorState(id, newHorizonsLearningMentorLastWeek,
 			newHorizonsLearningMentorRecipients))
 			throw std::runtime_error("Invalid New Horizons Learning Mentor state");
+
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PURSUIT_MARCH))
+			h & newHorizonsPursuitMarchLastUseDay;
+		else if(!h.saving)
+			newHorizonsPursuitMarchLastUseDay = -1;
+		if(!h.saving)
+			setNewHorizonsPursuitMarchLastUseDay(newHorizonsPursuitMarchLastUseDay);
 
 		if(!h.saving)
 		{

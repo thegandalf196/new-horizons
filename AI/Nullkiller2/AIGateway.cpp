@@ -494,6 +494,10 @@ void AIGateway::showRecruitmentDialog(const CGDwelling * dwelling, const CArmedI
 void AIGateway::heroMovePointsChanged(const CGHeroInstance * hero)
 {
 	LOG_TRACE(logAi);
+	// Restored Movement changes which same-day routes the hero can complete.
+	// Mark paths dirty on the authoritative event; rebuild at the next AI update.
+	if(nullkiller && hero && hero->getOwner() == playerID)
+		nullkiller->invalidatePathfinderData();
 }
 
 void AIGateway::garrisonsChanged(ObjectInstanceID id1, ObjectInstanceID id2)

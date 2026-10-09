@@ -12,6 +12,7 @@
 #include "ISpellMechanics.h"
 #include "NewHorizonsMagic.h"
 #include "NewHorizonsElementalTerrain.h"
+#include "NewHorizonsNaturesWrath.h"
 #include "MagicalDamageReduction.h"
 #include "../networkPacks/PacksForClientBattle.h"
 #include "../battle/NewHorizonsShadowGift.h"
@@ -761,6 +762,21 @@ Mechanics::Mechanics()
 
 Mechanics::~Mechanics() = default;
 
+Target Mechanics::getNaturesWrathRoute(const battle::Unit * first) const
+{
+	return newHorizonsNaturesWrath::route(*this, first);
+}
+
+int64_t Mechanics::getNaturesWrathHopPower(int32_t hopIndex) const
+{
+	return newHorizonsNaturesWrath::hopPower(*this, hopIndex);
+}
+
+int64_t Mechanics::getNaturesWrathDamage(const battle::Unit * recipient, int32_t hopIndex) const
+{
+	return newHorizonsNaturesWrath::damage(*this, recipient, hopIndex);
+}
+
 const Creature * Mechanics::getElementalConvergenceCreature() const
 {
 	const auto * battleInfo = battle() ? battle()->getBattle() : nullptr;
@@ -1396,7 +1412,8 @@ JsonNode BaseMechanics::getCapturedMdrPenetration() const
 			return obstacle->getCapturedMdrPenetration();
 	JsonNode result;
 	const auto * hero = caster ? caster->getHeroCaster() : nullptr;
-	if(mode != Mode::HERO || (!isNegativeSpell() && !overwhelmingFormulaEligible) || !hero
+	if(mode != Mode::HERO || (!isNegativeSpell() && !overwhelmingFormulaEligible
+		&& !newHorizonsNaturesWrath::enabled(*this)) || !hero
 		|| !newHorizonsMagic::rulesActive(hero->getMagicRules()))
 		return result;
 	const auto add = [&result](int percent)

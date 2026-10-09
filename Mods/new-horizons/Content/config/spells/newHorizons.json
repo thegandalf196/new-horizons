@@ -1143,6 +1143,40 @@
 		"flags": {"indifferent": true},
 		"targetCondition": {}
 	},
+	"naturesWrath": {
+		"name": "Nature's Wrath",
+		"type": "combat",
+		"school": {"new-horizons:nature": true},
+		"level": 5,
+		"power": 0,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "CREATURE",
+		"graphics": {
+			"iconBook": "SPELLS.def:0:19",
+			"iconScroll": "SPELLSCR.def:0:19",
+			"iconScenarioBonus": "SPELLBON.def:0:19",
+			"iconEffect": "SPELLINT.def:0:20",
+			"iconImmune": "SPELLINT.def:0:20"
+		},
+		"animation": {"affect": [{"defName": "C11SPA0", "verticalPosition": "bottom"}, "C11SPA1"]},
+		"sounds": {"cast": "CHAINLTE"},
+		"levels": {
+			"base": {
+				"range": "0",
+				"description": "Choose the first living stack. Nature's Wrath chains to the nearest unvisited stack, through at most 17 distinct stacks. Each enemy suffers Nature magical damage; each ally receives healing without resurrection. Power starts at 110 + 2 x Spell Power and retains 93% per hop, rounding only each final effect. Nature rank strengthens the Spell Power term. Worldroot adds two recipients and 10% to that term. Defended recipients consume their hop without stopping the chain.",
+				"cost": 23,
+				"power": 0,
+				"battleEffects": {"naturesWrath": {"type": "core:naturesWrath"}}
+			},
+			"none": {},
+			"basic": {},
+			"advanced": {},
+			"expert": {}
+		},
+		"flags": {"indifferent": true},
+		"targetCondition": {}
+	},
 	"summonTrolls": {
 		"name": "Summon Trolls",
 		"type": "combat",

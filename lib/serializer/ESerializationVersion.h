@@ -197,13 +197,17 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_LEARNING_MASTER_TEACHER, // fixed weekly Mentor recipient identities
 	NEW_HORIZONS_REBIRTH_CHAIN, // once-per-side secondary Elemental Rebirth history
 	NEW_HORIZONS_OVERWATCH, // armed/consumed movement reaction provenance
+	NEW_HORIZONS_PURSUIT_MARCH, // atomic Movement recovery and per-hero daily victory use
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_OVERWATCH,
+	CURRENT = NEW_HORIZONS_PURSUIT_MARCH,
 };
+
+static_assert(ESerializationVersion::NEW_HORIZONS_PURSUIT_MARCH > ESerializationVersion::NEW_HORIZONS_OVERWATCH,
+	"Pursuit March history must remain append-only");
 
 static_assert(ESerializationVersion::NEW_HORIZONS_OVERWATCH > ESerializationVersion::NEW_HORIZONS_REBIRTH_CHAIN,
 	"Overwatch state must remain append-only");

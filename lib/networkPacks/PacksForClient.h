@@ -506,13 +506,33 @@ struct DLL_LINKAGE SetMovePoints : public CPackForClient
 
 	ObjectInstanceID hid;
 	si32 val = 0;
+	/// Present only for an atomic, positive Pursuit March recovery and daily-use stamp.
+	std::optional<int32_t> pursuitMarchUseDay;
+
+	void validatePursuitMarchShape() const
+	{
+		if(pursuitMarchUseDay && (!hid.hasValue() || val < 0 || *pursuitMarchUseDay < 0))
+			throw std::runtime_error("Invalid Pursuit March Movement packet");
+	}
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+		{
+			validatePursuitMarchShape();
+			if(pursuitMarchUseDay && !h.hasFeature(Handler::Version::NEW_HORIZONS_PURSUIT_MARCH))
+				throw std::runtime_error("Cannot discard Pursuit March use from an older Movement packet");
+		}
 		h & val;
 		h & hid;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PURSUIT_MARCH))
+			h & pursuitMarchUseDay;
+		else if(!h.saving)
+			pursuitMarchUseDay.reset();
+		if(!h.saving)
+			validatePursuitMarchShape();
 	}
 };
 

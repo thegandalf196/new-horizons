@@ -398,6 +398,9 @@ public:
 	int32_t getSummonedCreatureMaxHealth(const Creature * creature, bool natureSummoned) const;
 	/// Terrain-selected temporary creature shared with Elemental Rebirth.
 	const Creature * getElementalConvergenceCreature() const;
+	Target getNaturesWrathRoute(const battle::Unit * first) const;
+	int64_t getNaturesWrathHopPower(int32_t hopIndex) const;
+	int64_t getNaturesWrathDamage(const battle::Unit * recipient, int32_t hopIndex) const;
 
 	virtual bool isSmart() const = 0;
 	virtual bool isMassive() const = 0;

@@ -2,6 +2,27 @@
 
 Updated: 2026-10-09
 
+Nature's Wrath, Worldroot and Pursuit March are source/native accepted after
+linked14275. Principal29/29 passes with zero skips: Nature16/16 in4.760s and
+Pursuit13/13 in3.881s. Root checks both XML files and exact engine hashes.
+Receipt: build/nh-natures-wrath-native.sc7iZDtv/receipt.md. Paid mixed casts,
+17/19 stable recipients, exact attenuation, survivor-only healing, defended-hop
+continuation, detached/actual AI with Orders, accepted victory/retreat/surrender,
+atomic daily recovery and save/wire guards pass. Data17/17/module parity and
+independent review pass. Combat63->64/67; perks247->249/310, generic172->174/220,
+faction75/90 unchanged; planned63->61 (46 generic,15 faction). Nature spells11/11,
+Nature perks9/10, Logistics10/10. Orders8/8, Skills31/31 and ranks93/93 unchanged.
+Borrowed Wrath artwork stays Not done; no NHART, rendered or launcher promotion.
+Advanced lethal/reroll interactions and naval/postbattle movement compositions
+remain Phase2. Pandemonium prerequisites are next, not accepted coverage.
+
+Nature's Wrath/Worldroot integration is in progress: shared immutable proximity
+route and exact attenuation, mixed authoritative effects, AI and ordered UI
+readback, production registration and16 focused fixtures are ready for compile.
+Pursuit March proceeds independently. Accepted counts remain63/67 combat spells
+and247/310 perks until linked/native gates pass; source activation alone is not
+coverage. Data17/17 passes. No launcher, NHART or rendered promotion is claimed.
+
 Overwatch and Rapid Embarkation are source/native accepted after linked48629
 and fixture-only relinks13033/37069. Final primary29/29 passes in8.983s with
 zero skips; root checks XML. Principal reactions, ammo/expiry/death-stop, saved

@@ -28,6 +28,7 @@
 #include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/spells/NewHorizonsVengefulVines.h"
+#include "../../lib/spells/NewHorizonsNaturesWrath.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/CRandomGenerator.h"
@@ -1140,6 +1141,25 @@ std::vector<Target> SpellTargetEvaluator::canonicalSoulChainTargets(Mechanics * 
 
 std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMechanics)
 {
+	if(spellMechanics && spellMechanics->getSpell()
+		&& spellMechanics->getSpell()->getJsonKey() == newHorizonsNaturesWrath::SPELL_KEY)
+	{
+		std::vector<Target> result;
+		if(!newHorizonsNaturesWrath::enabled(*spellMechanics))
+			return result;
+		// A healthy or immune first conductor can still produce valuable later
+		// recipients. Only the shared cast legality may exclude a starting stack.
+		for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+		{
+			if(!newHorizonsNaturesWrath::validConductor(unit))
+				continue;
+			Target target{Destination(unit)};
+			detail::ProblemImpl problem;
+			if(spellMechanics->canBeCastAt(target, problem))
+				result.push_back(std::move(target));
+		}
+		return result;
+	}
 	// Installed spell content must not broaden a pre-v3 saved battle's target
 	// roster. For active v3 casts, let the authoritative heal effect decide which
 	// friendly stacks have usable remains, wounds, and an accessible corpse hex.

@@ -85,6 +85,8 @@ struct ChainLightningRecipientPreview
 	BattleHex occupiedHex = BattleHex::INVALID;
 	int64_t cumulativeDamage = 0;
 	int64_t projectedDamage = 0;
+	int64_t projectedHealing = 0;
+	bool friendly = false;
 	int64_t estimatedKills = 0;
 };
 

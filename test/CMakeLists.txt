@@ -223,6 +223,8 @@ set(test_SRCS
 		server/battles/NewHorizonsForcedMarchTest.cpp
 		server/battles/NewHorizonsForgetfulnessTest.cpp
 		server/battles/NewHorizonsSoulChainTest.cpp
+		server/battles/NewHorizonsNaturesWrathTest.cpp
+		server/battles/NewHorizonsPursuitMarchTest.cpp
 		server/battles/NewHorizonsElementalRebirthTest.cpp
 		server/battles/NewHorizonsElementalConvergenceTest.cpp
 		server/battles/NewHorizonsRebirthTerrainTest.cpp
@@ -601,6 +603,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsLevelGrantAITest.cpp
 		battleAI/NewHorizonsTimeStopAITest.cpp
 		battleAI/NewHorizonsSpellLockAITest.cpp
+		battleAI/NewHorizonsNaturesWrathAITest.cpp
 		battleAI/SpellTargetsEvaluatorTest.cpp
 		battleAI/HypotheticCloneTest.cpp
 		battleAI/HypotheticTimedSpellTest.cpp

@@ -48,6 +48,7 @@
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "lib/spells/NewHorizonsBlink.h"
 #include "../../lib/spells/NewHorizonsVengefulVines.h"
+#include "../../lib/spells/NewHorizonsNaturesWrath.h"
 #include "../../lib/spells/OrientedSpellPattern.h"
 #include "../../lib/spells/effects/Effect.h"
 #include "../../lib/spells/Problem.h"
@@ -205,7 +206,8 @@ bool isShadowGiftSpell(const CSpell * spell)
 bool isChainLightningPreviewSpell(const CSpell * spell)
 {
 	return spell && (spell->getJsonKey() == chainLightningJsonKey
-		|| spell->getJsonKey() == masterChainLightningJsonKey);
+		|| spell->getJsonKey() == masterChainLightningJsonKey
+		|| spell->getJsonKey() == newHorizonsNaturesWrath::SPELL_KEY);
 }
 
 bool isCanonicalLandMine(const CBattleInfoCallback & battle, const CSpell * spell)
@@ -3319,7 +3321,44 @@ void BattleActionsController::updateChainLightningPreview(PossiblePlayerBattleAc
 	preview.castingSession = castingSession;
 	preview.assumesNoResistance = true;
 	bool foundDirectDamage = false;
-	mechanics->forEachEffect([&](const spells::effects::Effect & effect)
+	const bool naturesWrath = newHorizonsNaturesWrath::enabled(*mechanics);
+	if(naturesWrath)
+	{
+		const auto recipients = newHorizonsNaturesWrath::route(*mechanics, targetUnit);
+		for(size_t index = 0; index < recipients.size(); ++index)
+		{
+			const auto * unit = recipients[index].unitValue;
+			ChainLightningRecipientPreview recipient;
+			recipient.hopNumber = static_cast<int32_t>(index + 1);
+			recipient.unitId = unit->unitId();
+			recipient.position = unit->getPosition();
+			recipient.occupiedHex = unit->doubleWide() ? unit->occupiedHex() : BattleHex::INVALID;
+			recipient.friendly = mechanics->ownerMatches(unit, true);
+			if(recipient.friendly)
+			{
+				if(mechanics->isReceptive(unit) && !unit->isInvincible())
+				{
+					const auto projected = unit->acquireState();
+					auto healing = mechanics->applySpellBonus(
+						newHorizonsNaturesWrath::hopPower(*mechanics, static_cast<int32_t>(index)), unit);
+					projected->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
+					recipient.projectedHealing = std::max<int64_t>(0,
+						projected->getAvailableHealth() - unit->getAvailableHealth());
+				}
+			}
+			else
+			{
+				recipient.projectedDamage = std::min(unit->getAvailableHealth(),
+					newHorizonsNaturesWrath::damage(*mechanics, unit, static_cast<int32_t>(index)));
+				const auto remaining = unit->getAvailableHealth() - recipient.projectedDamage;
+				recipient.estimatedKills = unit->getCount()
+					- (remaining + unit->getMaxHealth() - 1) / unit->getMaxHealth();
+			}
+			preview.recipients.push_back(std::move(recipient));
+		}
+		foundDirectDamage = true;
+	}
+	else mechanics->forEachEffect([&](const spells::effects::Effect & effect)
 	{
 		if(effect.name != "directDamage" || effect.indirect)
 			return false;
@@ -3363,7 +3402,8 @@ void BattleActionsController::updateChainLightningPreview(PossiblePlayerBattleAc
 	}
 
 	const auto headerTemplate = LIBRARY->generaltexth->translate(
-		"new-horizons.combat.chainLightning.previewHeader");
+		naturesWrath ? "new-horizons.combat.naturesWrath.previewHeader"
+			: "new-horizons.combat.chainLightning.previewHeader");
 	preview.consoleText = replacePlaceholders(headerTemplate,
 		{{"%SPELL", spell->getNameTranslated()}});
 	preview.consoleText += "\n";
@@ -3372,9 +3412,12 @@ void BattleActionsController::updateChainLightningPreview(PossiblePlayerBattleAc
 		if(index > 0)
 			preview.consoleText += " ";
 		const auto & recipient = preview.recipients[index];
-		preview.consoleText += std::to_string(recipient.hopNumber) + ":"
-			+ std::to_string(recipient.projectedDamage) + "/"
-			+ std::to_string(recipient.estimatedKills);
+		preview.consoleText += std::to_string(recipient.hopNumber) + ":";
+		if(naturesWrath && recipient.friendly)
+			preview.consoleText += "+" + std::to_string(recipient.projectedHealing) + "HP";
+		else
+			preview.consoleText += std::to_string(recipient.projectedDamage) + "/"
+				+ std::to_string(recipient.estimatedKills);
 	}
 	preview.active = true;
 	chainLightningPreview = std::move(preview);

@@ -24,6 +24,13 @@ int rapidEmbarkationCost(int maximumDailyMovement)
 	return maximumDailyMovement / 10 + (maximumDailyMovement % 10 != 0 ? 1 : 0);
 }
 
+int pursuitMarchRestoration(int remainingMovement, int maximumDailyMovement)
+{
+	if(remainingMovement < 0 || maximumDailyMovement <= 0 || remainingMovement >= maximumDailyMovement)
+		return 0;
+	return std::min(maximumDailyMovement / 10, maximumDailyMovement - remainingMovement);
+}
+
 namespace
 {
 int ceilRational(const int64_t numerator, const int64_t denominator)

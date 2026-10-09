@@ -19,6 +19,7 @@
 #include "../bonuses/BonusSelector.h"
 #include "../spells/NewHorizonsMagic.h"
 #include "../spells/NewHorizonsSpellAvailability.h"
+#include "../pathfinder/NewHorizonsMovement.h"
 #include "TavernHeroesPool.h"
 
 #include "../CPlayerState.h"
@@ -727,7 +728,24 @@ void GameStatePackVisitor::visitSetPortalDwellingSource(SetPortalDwellingSource 
 
 void GameStatePackVisitor::visitSetMovePoints(SetMovePoints & pack)
 {
+	pack.validatePursuitMarchShape();
 	CGHeroInstance *hero = gs.getHero(pack.hid);
+	if(pack.pursuitMarchUseDay)
+	{
+		const auto day = gs.getCalendar().getCurrentDay();
+		if(!hero || *pack.pursuitMarchUseDay != day || !hero->usesNewHorizonsMovement()
+			|| !hero->hasActivePerk("new-horizons:logistics", "new-horizons:logistics.pursuitMarch")
+			|| hero->hasUsedNewHorizonsPursuitMarchToday(day))
+			throw std::runtime_error("Unavailable Pursuit March recovery");
+		const int before = hero->movementPointsRemaining();
+		const int recovered = newHorizonsMovement::pursuitMarchRestoration(before, hero->movementPointsLimit());
+		if(recovered <= 0 || pack.val != before + recovered)
+			throw std::runtime_error("Invalid Pursuit March recovery amount");
+		// All provenance and amount checks precede either mutation.
+		hero->setMovementPoints(pack.val);
+		hero->setNewHorizonsPursuitMarchLastUseDay(*pack.pursuitMarchUseDay);
+		return;
+	}
 	assert(hero);
 	hero->setMovementPoints(pack.val);
 }

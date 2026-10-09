@@ -1,5 +1,43 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-09 — Nature's Wrath bounded integration checkpoint
+
+Source review finds no blocking route, mixed-effect or AI/UI defect. Deferred
+Phase2 checks include nonlinear lethal/Rebirth/Guardian valuation, adverse reroll
+interactions, detailed clone/battle-form kill previews and stronger RNG/payload
+assertions. These are not claimed certified by the16 principal fixtures.
+Standalone Lua syntax tooling is unavailable; the linked engine's Lua loading
+and paid-cast tests remain the required execution gate. Registry/data17/17 and
+generated module parity pass. Build14876 stops at127/837: the new helper calls
+spellAllowedBySavedRoster but omitted its declaring NewHorizonsSpellAvailability
+header. Include the actual API declaration rather than relying on transitive
+headers; retry remains pending. No complete build/native acceptance is claimed.
+
+Retry38283 stops at665/711 after production objects and the live Wrath fixture
+compile. Isolated81364 confirms the AI fixture cannot convert a forward-declared
+CPlayerBattleCallback shared pointer to CBattleInfoCallback for HypotheticBattle.
+Include the concrete callback declaration at the test consumer; do not change
+the production projection constructor or weaken callback contracts. A second
+linked retry and the focused native gate remain pending.
+
+Retry67618 stops on the newly registered Pursuit fixture. Isolated12023 confirms
+its retreat/surrender setup calls private BattleProcessor::setBattleResult.
+Exercise the public accepted player-action path with its ordinary turn and Gold
+prerequisites; do not expose an internal result mutator just for a fixture.
+Production objects remain compiled; no linked/native pass is claimed.
+
+Fixture now advances through legal Defend actions, verifies the losing side's
+turn, supplies surrender Gold through the authoritative handler and submits
+public retreat/surrender requests. Linked retry14275 exits0 for both client and
+vcmitest. Focused native execution remains pending; compile success is not a
+mechanic or rendered acceptance claim.
+
+Final principal native gate passes29/29 with zero skips: Nature16/16 in4.760s,
+Pursuit13/13 in3.881s, both exit0. Root checks XML and exact matching engine hashes.
+No post-run fix is needed. Failed candidates remain recorded; the successful
+receipt is build/nh-natures-wrath-native.sc7iZDtv/receipt.md. Broader Phase2
+boundaries above and absence of rendered/playable promotion remain explicit.
+
 ### 2026-10-09 — Overwatch focused fixture constructor
 
 Linked candidate90398 stops at the new Overwatch fixture; isolated object build

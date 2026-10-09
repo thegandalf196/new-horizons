@@ -1443,7 +1443,7 @@
 					"requires": "expert",
 					"description": "Nature's Wrath may chain through two additional valid stacks and its Spell Power-derived effect is increased by 10%.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Nature's Wrath may chain through two additional valid stacks and its Spell Power-derived effect is increased by 10%."
 					}
 				},
@@ -2357,7 +2357,7 @@
 					"requires": "advanced",
 					"description": "After winning a combat, recover 10% of maximum daily Movement. Once per day.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "After winning a combat, recover 10% of maximum daily Movement. Once per day."
 					}
 				},

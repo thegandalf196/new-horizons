@@ -1,5 +1,11 @@
 # New Horizons UI and asset status register
 
+Nature's Wrath source checkpoint: **Not done** bespoke spell artwork. The
+functional spell temporarily references the player's original Chain Lightning
+icons/effect and sound; no extracted pixels or new pack entries are shipped.
+Ordered damage/healing route readback is implemented, with rendered acceptance
+still pending. Borrowed icons are not purpose-made or approved artwork.
+
 Elemental Convergence source checkpoint: **Not done** bespoke spell artwork.
 The functional spell uses external original Summon Air Elemental icon/scroll
 frames as an explicit temporary reference, plus an existing summon effect.

@@ -30,6 +30,7 @@
 #include "../../lib/spells/NewHorizonsBlink.h"
 #include "../../lib/spells/NewHorizonsElementalTerrain.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
+#include "../../lib/spells/NewHorizonsNaturesWrath.h"
 #include "../../lib/spells/effects/BattleForm.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
@@ -6131,7 +6132,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							state);
 						const bool ourUnit = state->battleGetOwner(unit) == playerID;
 						const bool goodEffect = newHealth > oldHealth;
-						if(ps.spellStormOfDaggers && !ourUnit && original)
+						const bool naturesWrath = ps.spell
+							&& ps.spell->getJsonKey() == newHorizonsNaturesWrath::SPELL_KEY;
+						if((ps.spellStormOfDaggers || naturesWrath) && !ourUnit && original && !goodEffect)
 						{
 							// The authoritative cast independently resists each hostile
 							// target. castEval uses the shared ranked damage amount but leaves
@@ -6147,7 +6150,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 								|| unit->isGhost()
 								|| phantomArmyStack;
 
-							if(ourUnit && goodEffect && isMagical)
+							if(ourUnit && goodEffect && isMagical && !naturesWrath)
 								continue;
 
 							damageToHostilesScore += dpsReduce * scoreEvaluator.getPositiveEffectMultiplier();

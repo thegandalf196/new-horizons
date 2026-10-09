@@ -16,6 +16,7 @@
 #include "NewHorizonsSpellAvailability.h"
 #include "NewHorizonsMagic.h"
 #include "NewHorizonsBlink.h"
+#include "NewHorizonsNaturesWrath.h"
 #include "NewHorizonsSorcery.h"
 #include "NewHorizonsVengefulVines.h"
 #include "NewHorizonsOverwhelmingFormula.h"
@@ -962,6 +963,7 @@ BattleSpellMechanics::~BattleSpellMechanics() = default;
 void BattleSpellMechanics::applyEffects(ServerCallback * server, const Target & targets, bool indirect, bool ignoreImmunity) const
 {
 	Target unlockedTargets = targets;
+	const bool naturesWrath = newHorizonsNaturesWrath::enabled(*this);
 	const auto * battleState = battle() ? battle()->getBattle() : nullptr;
 	if(battleState && isNewHorizonsMassRegenerationSpell(owner, battleState->getMagicRules()))
 		vstd::erase_if(unlockedTargets, [](const Destination & destination)
@@ -981,10 +983,17 @@ void BattleSpellMechanics::applyEffects(ServerCallback * server, const Target & 
 			});
 		if(compoundTargetLocked)
 			return;
-		vstd::erase_if(unlockedTargets, [](const Destination & destination)
+		if(naturesWrath)
 		{
-			return destination.unitValue && isSpellLocked(destination.unitValue);
-		});
+			for(auto & destination : unlockedTargets)
+				if(destination.unitValue && isSpellLocked(destination.unitValue))
+					destination = Destination(destination.hexValue);
+		}
+		else
+			vstd::erase_if(unlockedTargets, [](const Destination & destination)
+			{
+				return destination.unitValue && isSpellLocked(destination.unitValue);
+			});
 	}
 
 	auto callback = [&](const effects::Effect * effect, bool & stop)
@@ -1024,6 +1033,11 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 		return adaptGenericProblem(problem);
 
 	if(!newHorizonsMagic::spellAllowedByBattleRoster(*battle(), owner->getId()))
+		return adaptGenericProblem(problem);
+	// The mixed route/power contract belongs to saved-v3 rules. A legacy cast
+	// must fail before costs, rather than paying for the Lua guard's empty route.
+	if(owner->getJsonKey() == newHorizonsNaturesWrath::SPELL_KEY
+		&& !newHorizonsNaturesWrath::enabled(*this))
 		return adaptGenericProblem(problem);
 	// Blink's target geometry and School-scaled radius are defined by the saved
 	// v3 snapshot. Do not let a legacy-profile cast spend resources as a no-op.
@@ -1345,6 +1359,7 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		return false;
 
 	const bool newHorizonsCure = isNewHorizonsCure();
+	const bool naturesWrath = newHorizonsNaturesWrath::enabled(*this);
 	const bool newHorizonsHydrasVitality = owner->getJsonKey() == NEW_HORIZONS_HYDRAS_VITALITY_SPELL;
 	const bool newHorizonsPhysicalPoison = mode == Mode::HERO && getHeroCaster()
 		&& newHorizonsMagic::physicalPoisonEnabled(battle()->getBattle()->getMagicRules(), owner->getId());
@@ -1360,6 +1375,16 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 	const bool vengefulVinesEnabled = isNewHorizonsVengefulVinesSpell(owner,
 		battle()->getBattle()->getMagicRules());
 	Target spellTarget = transformSpellTarget(target);
+	if(naturesWrath)
+	{
+		if(target.size() != 1 || spellTarget.size() != 1)
+			return false;
+		const auto * first = spellTarget.front().unitValue;
+		if(!first && spellTarget.front().hexValue.isAvailable())
+			first = battle()->battleGetUnitByPos(spellTarget.front().hexValue, true);
+		if(!newHorizonsNaturesWrath::validConductor(first) || isSpellLocked(first))
+			return false;
+	}
 	if(newHorizonsBlink)
 	{
 		if(mode != Mode::HERO || target.size() != 1)
@@ -1584,6 +1609,7 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 	if(newHorizonsCure || newHorizonsRegeneration || newHorizonsHydrasVitality
 		|| newHorizonsPhysicalPoison || newHorizonsLifeDrain
 		|| newHorizonsSoulChain || vengefulVinesEnabled
+		|| naturesWrath
 		|| newHorizonsMagic::isCounterspell(owner))
 		return true;
 
@@ -1844,8 +1870,11 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	if(!isCounterspellNegated())
 		doRemoveEffects(&effectRecorder, affectedUnits, std::bind(&BattleSpellMechanics::counteringSelector, this, _1));
 
-	for(auto & unit : affectedUnits)
-		sc.affectedCres.push_back(unit->unitId());
+	// Wrath captures every conductor in route order, including blocked hops,
+	// while affectedUnits remains limited to actual recipients for effect cleanup.
+	if(!newHorizonsNaturesWrath::enabled(*this))
+		for(auto & unit : affectedUnits)
+			sc.affectedCres.push_back(unit->unitId());
 
 	if(!castDescription.lines.empty())
 		server->apply(castDescription);
@@ -2355,6 +2384,15 @@ void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast &
 		battle()->getBattle()->getMagicRules());
 
 	Target spellTarget = transformSpellTarget(target);
+	const bool naturesWrath = newHorizonsNaturesWrath::enabled(*this);
+	// Unlike generic negative spells, this mixed current rolls only for hostile
+	// members of its already captured route. Routing itself never queries RNG.
+	if(naturesWrath)
+		effectsToApply = effects->prepare(this, target, spellTarget);
+	const auto wrathConductors = naturesWrath ? collectTargets() : battle::Units{};
+	if(naturesWrath)
+		for(const auto * unit : wrathConductors)
+			sc.affectedCres.push_back(unit->unitId());
 
 	std::vector <const battle::Unit *> resisted;
 
@@ -2363,16 +2401,19 @@ void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast &
 	// eligible recipient (including chain routing and scripted collateral).
 	resistanceRolls.clear();
 	resistantUnitIds.clear();
-	if(isNegativeSpell() && isMagicalEffect())
+	if((isNegativeSpell() || naturesWrath) && isMagicalEffect())
 	{
 		//magic resistance
-		for (const auto * unit : battle()->battleGetAllUnits(false))
+		const auto resistanceCandidates = naturesWrath ? wrathConductors : battle()->battleGetAllUnits(false);
+		for(const auto * unit : resistanceCandidates)
 		{
-		if(isMagicalEffect() && isSpellLocked(unit))
+			if(isMagicalEffect() && isSpellLocked(unit))
 			{
 				resistantUnitIds.insert(unit->unitId());
 				continue;
 			}
+			if(naturesWrath && (ownerMatches(unit, true) || unit->isInvincible() || !isReceptive(unit)))
+				continue;
 			// Life Drain has a hostile damage target and a friendly healing target.
 			// The latter is not resisting a hostile effect; Spell Lock above still
 			// blocks either half of the paired spell.
@@ -2418,7 +2459,8 @@ void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast &
 	}
 
 	//prepare targets
-	effectsToApply = effects->prepare(this, target, spellTarget);
+	if(!naturesWrath)
+		effectsToApply = effects->prepare(this, target, spellTarget);
 	const auto spellLockedUnits = filterSpellLockedEffects(target);
 	if(newHorizonsMassRegeneration)
 		filterMassRegenerationTargets(effectsToApply);
@@ -2437,6 +2479,13 @@ void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast &
 	//and update targets
 	for(auto & p : effectsToApply)
 	{
+		if(naturesWrath)
+		{
+			for(auto & destination : p.second)
+				if(destination.unitValue && vstd::contains(resisted, destination.unitValue))
+					destination = Destination(destination.hexValue);
+			continue;
+		}
 		vstd::erase_if(p.second, [&](const Destination & d)
 		{
 			if(!d.unitValue)
@@ -2463,6 +2512,21 @@ battle::Units BattleSpellMechanics::filterSpellLockedEffects(const Target & aimP
 	battle::Units rejected;
 	if(!isMagicalEffect())
 		return rejected;
+	if(newHorizonsNaturesWrath::enabled(*this))
+	{
+		for(auto & effect : effectsToApply)
+			for(auto & destination : effect.second)
+			{
+				const auto * unit = destination.unitValue;
+				if(unit && isSpellLocked(unit))
+				{
+					if(!vstd::contains(rejected, unit))
+						rejected.push_back(unit);
+					destination = Destination(destination.hexValue);
+				}
+			}
+		return rejected;
+	}
 
 	const auto targetTypes = getTargetTypes();
 	const bool compoundCreatureTarget = targetTypes == std::vector<AimType>{AimType::CREATURE, AimType::LOCATION}
@@ -2863,6 +2927,15 @@ std::vector<AimType> BattleSpellMechanics::getTargetTypes() const
 
 bool BattleSpellMechanics::isReceptive(const battle::Unit * target) const
 {
+	if(target && newHorizonsNaturesWrath::enabled(*this))
+	{
+		if(isMagicalEffect() && isSpellLocked(target))
+			return false;
+		// The ordered hostile-recipient consumer handles resistance, not the
+		// routing or heal immunity check. All other immunity conditions remain.
+		if(const auto * conditions = dynamic_cast<const TargetCondition *>(targetCondition.get()))
+			return conditions->isReceptiveIgnoringMagicResistance(this, target);
+	}
 	if(target && newHorizonsPuppetMaster::isMentalControlSpell(owner->getJsonKey())
 		&& newHorizonsPuppetMaster::hasLucidity(target))
 		return false;
@@ -2902,7 +2975,7 @@ bool BattleSpellMechanics::wouldResist(const battle::Unit * unit) const
 	const BattleSide spellCasterSide = effectiveCasterSide();
 	const bool validSides = (recipientControllerSide == BattleSide::ATTACKER || recipientControllerSide == BattleSide::DEFENDER)
 		&& (spellCasterSide == BattleSide::ATTACKER || spellCasterSide == BattleSide::DEFENDER);
-	if(!isNegativeSpell() || !isMagicalEffect() || !validSides
+	if((!isNegativeSpell() && !newHorizonsNaturesWrath::enabled(*this)) || !isMagicalEffect() || !validSides
 		|| recipientControllerSide == spellCasterSide
 		|| !unit->isValidTarget(false) || !isReceptive(unit)
 		|| resistance->probability <= 0 || resistance->probability >= 100)

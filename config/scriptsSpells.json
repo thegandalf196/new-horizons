@@ -410,6 +410,19 @@
 			"additionalProperties" : false
 		}
 	},
+	"naturesWrath" : {
+		"implements" : "spellEffect",
+		"script" : "spells/naturesWrath",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {}
+			},
+			"additionalProperties" : false
+		}
+	},
 	"blink" : {
 		"implements" : "spellEffect",
 		"script" : "spells/blink",

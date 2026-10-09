@@ -1003,6 +1003,19 @@
 						],
 						"active": true
 					},
+					"new-horizons:naturesWrath": {
+						"schools": [
+							"new-horizons:nature"
+						],
+						"level": 5,
+						"costs": [
+							23,
+							23,
+							23,
+							23
+						],
+						"active": true
+					},
 					"new-horizons:blink": {
 						"schools": [
 							"new-horizons:chaos"
@@ -4779,7 +4792,7 @@
 								"requires": "expert",
 								"description": "Nature's Wrath may chain through two additional valid stacks and its Spell Power-derived effect is increased by 10%.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Nature's Wrath may chain through two additional valid stacks and its Spell Power-derived effect is increased by 10%."
 								}
 							},
@@ -5693,7 +5706,7 @@
 								"requires": "advanced",
 								"description": "After winning a combat, recover 10% of maximum daily Movement. Once per day.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "After winning a combat, recover 10% of maximum daily Movement. Once per day."
 								}
 							},
@@ -9526,6 +9539,8 @@
 		"new-horizons.spellCost.modifier.minimumCost": "Minimum cost",
 		"new-horizons.spellCost.modifier.arcaneEconomy": "Arcane Economy follow-up",
 		"new-horizons.combat.chainLightning.previewHeader": "%SPELL: damage/kills (no resistance assumed)",
+		"new-horizons.combat.naturesWrath.previewHeader": "%SPELL: damage/kills or +HP healing (no resistance assumed)",
+		"new-horizons.combat.naturesWrath.healed": "Nature's Wrath restores %d health to %s.",
 		"new-horizons.combat.phantomArmy.preview": "%s (count: %s); Phantom Integrity: %s; landing: %s; hex footprint: %s.",
 		"new-horizons.combat.phantomArmy.noLegalPlacement": "No legal placement for the Phantom stack.",
 		"new-horizons.combat.handOfFate.collateral": "Hand of Fate's spill chooses %s: %d base damage becomes %d after defenses, dealing %d actual damage.",

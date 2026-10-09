@@ -33,6 +33,7 @@
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/entities/hero/NewHorizonsNecromancy.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/pathfinder/NewHorizonsMovement.h"
 
 #include <vcmi/spells/Spell.h>
 
@@ -1154,6 +1155,26 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 		defenderIsWinner || defenderEscapes || (drawHeroesRetreat && defenderHero));
 	if(!manaConservationRewards.lines.empty())
 		gameHandler->sendAndApply(manaConservationRewards);
+
+	// The declared surviving winner also qualifies when the opponent escapes or
+	// surrenders. Apply recovery after ordinary battle cleanup, before removal.
+	if(!finishingBattle->isDraw() && winnerHero && winnerHasUnitsLeft
+		&& winnerHero->usesNewHorizonsMovement()
+		&& winnerHero->hasActivePerk("new-horizons:logistics", "new-horizons:logistics.pursuitMarch"))
+	{
+		const auto day = gameHandler->gameState().getCalendar().getCurrentDay();
+		if(!winnerHero->hasUsedNewHorizonsPursuitMarchToday(day))
+		{
+			const int before = winnerHero->movementPointsRemaining();
+			const int recovery = newHorizonsMovement::pursuitMarchRestoration(before, winnerHero->movementPointsLimit());
+			if(recovery > 0)
+			{
+				SetMovePoints restore(winnerHero->id, before + recovery);
+				restore.pursuitMarchUseDay = day;
+				gameHandler->sendAndApply(restore);
+			}
+		}
+	}
 
 	// Remove beaten hero
 	if(loserHero)

@@ -322,6 +322,15 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"without adding a unit to the live battle or bonus graph.");
 	R.method<&Mechanics::getElementalConvergenceCreature>("getElementalConvergenceCreature", {},
 		"Returns the elemental selected by the captured battlefield and terrain, or nil for unmapped terrain.");
+	R.method<&Mechanics::getNaturesWrathRoute>("getNaturesWrathRoute",
+		{{"first", "Caster-selected first living conductor."}}, {},
+		"Returns the immutable ordered Nature's Wrath route, with stable unit-ID proximity ties.");
+	R.method<&Mechanics::getNaturesWrathHopPower>("getNaturesWrathHopPower",
+		{{"hopIndex", "Zero-based position in the captured route."}}, {},
+		"Returns exact rank- and Worldroot-scaled hop power, floored once after geometric attenuation.");
+	R.method<&Mechanics::getNaturesWrathDamage>("getNaturesWrathDamage",
+		{{"recipient", "Hostile living recipient."}, {"hopIndex", "Zero-based captured route position."}}, {},
+		"Returns recipient-adjusted Nature's Wrath damage without drawing or resolving resistance.");
 	R.method<&Mechanics::getUnitCaster>("getUnitCaster", {},
 		"Returns the unit performing the cast, or nil if cast by a hero.");
 	R.method<&Mechanics::getCasterNameTextID>("getCasterNameTextID", {},

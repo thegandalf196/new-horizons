@@ -23,6 +23,18 @@ TEST(NewHorizonsMovementRules, RapidEmbarkationRoundsFinalTenPercentCostUp)
 	EXPECT_EQ(rapidEmbarkationCost(std::numeric_limits<int>::max()), 214748365);
 }
 
+TEST(NewHorizonsMovementRules, PursuitMarchFloorsTenPercentAndCapsOnlyTheAddition)
+{
+	using newHorizonsMovement::pursuitMarchRestoration;
+	EXPECT_EQ(pursuitMarchRestoration(100, 221), 22);
+	EXPECT_EQ(pursuitMarchRestoration(219, 221), 2);
+	EXPECT_EQ(pursuitMarchRestoration(221, 221), 0);
+	EXPECT_EQ(pursuitMarchRestoration(300, 221), 0);
+	EXPECT_EQ(pursuitMarchRestoration(0, 9), 0);
+	EXPECT_EQ(pursuitMarchRestoration(0, 0), 0);
+	EXPECT_EQ(pursuitMarchRestoration(0, std::numeric_limits<int>::max()), 214748364);
+}
+
 TEST(NewHorizonsMovementRules, DailyMovementUsesBasePercentageAndFlatBonuses)
 {
 	using newHorizonsMovement::maximumDailyMovement;
