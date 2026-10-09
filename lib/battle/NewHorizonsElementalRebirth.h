@@ -39,6 +39,7 @@ struct DLL_LINKAGE ActiveProfile
 	bool elementalAttunement = false;
 	bool adaptiveElement = false;
 	bool perfectConvergence = false;
+	bool swiftRebirth = false;
 };
 
 /// Immutable pre-hit facts needed to decide and resolve one destruction reaction.

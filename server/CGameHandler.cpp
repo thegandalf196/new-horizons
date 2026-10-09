@@ -42,6 +42,7 @@
 #include "../lib/battle/PhysicalAffliction.h"
 #include "../lib/battle/NewHorizonsDivineMandate.h"
 #include "../lib/battle/NewHorizonsElementalRebirth.h"
+#include "../lib/battle/NewHorizonsSwiftRebirth.h"
 #include "../lib/battle/NewHorizonsMagicalAbilityDamage.h"
 #include "../lib/battle/NewHorizonsSoulChain.h"
 #include "../lib/bonuses/BonusParameters.h"
@@ -2361,6 +2362,15 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 			damaged.battleID = trigger.battleID;
 			damaged.changedStacks.push_back(std::move(update));
 			sendAndApply(damaged);
+		}
+
+		if(trigger.snapshot.profile.swiftRebirth)
+		{
+			SetStackEffect swift;
+			swift.battleID = trigger.battleID;
+			swift.toAdd.emplace_back(spawn->unit.id, std::vector<Bonus>{
+				newHorizonsSwiftRebirth::marker(battleInfo->getRound())});
+			sendAndApply(swift);
 		}
 
 		BattleLogMessage log;

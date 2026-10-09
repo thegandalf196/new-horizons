@@ -63,6 +63,7 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsBloodrage.cpp
 	battle/NewHorizonsDivineMandate.cpp
 	battle/NewHorizonsElementalRebirth.cpp
+	battle/NewHorizonsSwiftRebirth.cpp
 	battle/NewHorizonsMagicalAbilityDamage.cpp
 	battle/NewHorizonsCreatureAbilitySuppression.cpp
 	battle/NewHorizonsBulwark.cpp
@@ -545,6 +546,7 @@ set(lib_MAIN_HEADERS
 	battle/NewHorizonsBloodrage.h
 	battle/NewHorizonsDivineMandate.h
 	battle/NewHorizonsElementalRebirth.h
+	battle/NewHorizonsSwiftRebirth.h
 	battle/NewHorizonsMagicalAbilityDamage.h
 	battle/NewHorizonsCreatureAbilitySuppression.h
 	battle/NewHorizonsBulwark.h

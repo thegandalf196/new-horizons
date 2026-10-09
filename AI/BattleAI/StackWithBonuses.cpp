@@ -26,6 +26,7 @@
 #include "../../lib/battle/NewHorizonsMagicalAbilityDamage.h"
 #include "../../lib/battle/NewHorizonsCreatureAbilitySuppression.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
+#include "../../lib/battle/NewHorizonsSwiftRebirth.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/PhysicalAffliction.h"
 #include "../../lib/battle/TimeStopState.h"
@@ -68,7 +69,8 @@ bool isDivineMandateLightSpell(const CBattleInfoCallback & battle, SpellID spell
 bool projectedEffect(const Bonus * bonus)
 {
 	return bonus && (bonus->source == BonusSource::SPELL_EFFECT || bonus->source == BonusSource::HERO_COMMAND
-		|| newHorizonsEnchantedCommand::isMoraleBonus(bonus));
+		|| newHorizonsEnchantedCommand::isMoraleBonus(bonus)
+		|| newHorizonsSwiftRebirth::isLifecycleMarker(*bonus));
 }
 
 bool isInPhysicalAfflictionGroup(const Bonus * bonus,
@@ -275,7 +277,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	localInit(Owner);
 
 	battle::CUnitState::operator=(*Stack);
-	if(newHorizonsFrozen::isFrozen(*this))
+	if(newHorizonsFrozen::isFrozen(*this) || newHorizonsSwiftRebirth::lifecycle(*this))
 		captureEffects();
 }
 
@@ -299,7 +301,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 
 	auto state = Stack->acquireState();
 	battle::CUnitState::operator=(*state);
-	if(newHorizonsFrozen::isFrozen(*this))
+	if(newHorizonsFrozen::isFrozen(*this) || newHorizonsSwiftRebirth::lifecycle(*this))
 		captureEffects();
 }
 
@@ -538,6 +540,14 @@ void StackWithBonuses::onBattleFormChanged()
 
 void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 {
+	int swiftMarkers = 0;
+	for(const auto & entry : bonus)
+		if(newHorizonsSwiftRebirth::isLifecycleMarker(entry))
+		{
+			if(++swiftMarkers > 1)
+				throw std::invalid_argument("Duplicate Swift Rebirth ADD");
+			newHorizonsSwiftRebirth::validateTransition(newHorizonsSwiftRebirth::lifecycle(*this), entry, true);
+		}
 	captureLocalSpellEffects();
 	for(const auto & entry : bonus)
 		if(entry.type == BonusType::CONFUSION_PENDING)
@@ -582,6 +592,14 @@ void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 
 void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 {
+	int swiftMarkers = 0;
+	for(const auto & entry : bonus)
+		if(newHorizonsSwiftRebirth::isLifecycleMarker(entry))
+		{
+			if(++swiftMarkers > 1)
+				throw std::invalid_argument("Duplicate Swift Rebirth UPDATE");
+			newHorizonsSwiftRebirth::validateTransition(newHorizonsSwiftRebirth::lifecycle(*this), entry, false);
+		}
 	captureLocalSpellEffects();
 	for(const auto & entry : bonus)
 		if(entry.type == BonusType::CONFUSION_PENDING)
@@ -595,7 +613,15 @@ void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 			capturedPhysicalAfflictionGroups.emplace(stamped.source, stamped.sid);
 	for(const auto & stamped : stampedBonuses)
 	{
-		if(stamped.type == BonusType::CONFUSION_PENDING)
+		if(newHorizonsSwiftRebirth::isLifecycleMarker(stamped))
+		{
+			removeUnitBonus(CSelector([](const Bonus * candidate)
+			{
+				return newHorizonsSwiftRebirth::isLifecycleMarker(*candidate);
+			}));
+			bonusesToAdd.emplace_back(stamped);
+		}
+		else if(stamped.type == BonusType::CONFUSION_PENDING)
 		{
 			if(isTimeStopped())
 				continue;
@@ -2345,9 +2371,32 @@ void HypotheticBattle::nextRound()
 
 void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 {
-	activeUnitId = unitId;
 	auto unit = getForUpdate(unitId);
+	bool extra = reason == BattleUnitTurnReason::MORALE
+		|| reason == BattleUnitTurnReason::REDUCED_EXTRA_ACTIVATION;
+	if(reason == BattleUnitTurnReason::HERO_COMMAND)
+	{
+		const auto side = playerToSide(battleGetOwner(unit.get()));
+		if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+		{
+			const auto secondWind = getHeroOrderState(side, HeroCommand::SECOND_WIND);
+			extra = secondWind && secondWind->secondWindActive && secondWind->primaryTargetUnitId == unitId;
+		}
+	}
+	if(extra && newHorizonsSwiftRebirth::blocksAdditionalActivation(*unit, getRound()))
+		return;
+	if(reason == BattleUnitTurnReason::TURN_QUEUE || reason == BattleUnitTurnReason::AUTOMATIC_ACTION)
+	{
+		if(newHorizonsSwiftRebirth::normalActivationCompleted(*unit, getRound()))
+			return;
+		if(const auto next = newHorizonsSwiftRebirth::reserveNormalActivationPlan(*unit, getRound()))
+			updateUnitBonus(unitId, {*next});
+	}
+	activeUnitId = unitId;
 	const bool frozenNormalSlot = newHorizonsFrozen::forfeitsNormalActivation(*unit, reason);
+	if(frozenNormalSlot || (unit->isTimeStopped()
+		&& (reason == BattleUnitTurnReason::TURN_QUEUE || reason == BattleUnitTurnReason::AUTOMATIC_ACTION)))
+		completeSwiftNormalActivation(unitId);
 	// An extra opportunity cannot spend the normal-slot incapacitation receipt.
 	if(newHorizonsFrozen::isFrozen(*unit) && !frozenNormalSlot)
 		return;
@@ -2955,6 +3004,8 @@ std::optional<uint32_t> HypotheticBattle::projectElementalRebirth(const battle::
 		return {};
 	}
 	elementalRebirthSpawnUnitIds.insert(descriptor->unit.id);
+	if(snapshot.profile.swiftRebirth)
+		addUnitBonus(descriptor->unit.id, {newHorizonsSwiftRebirth::marker(getRound())});
 
 	if(snapshot.profile.primalBurst)
 	{
@@ -3165,6 +3216,8 @@ const scripting::Pool & HypotheticBattle::getScriptContextPool() const
 void HypotheticBattle::makeWait(const battle::Unit * activeStack)
 {
 	auto unit = getForUpdate(activeStack->unitId());
+	if(const auto next = newHorizonsSwiftRebirth::reserveNormalActivationPlan(*unit, getRound()))
+		updateUnitBonus(unit->unitId(), {*next});
 
 	resetActiveUnit();
 	unit->afterWait();
@@ -3183,6 +3236,13 @@ void HypotheticBattle::makeWait(const battle::Unit * activeStack)
 HypotheticBattle::HypotheticServerCallback::HypotheticServerCallback(HypotheticBattle * owner_)
 	:owner(owner_)
 {
+}
+
+void HypotheticBattle::completeSwiftNormalActivation(uint32_t unitId)
+{
+	const auto unit = getForUpdate(unitId);
+	if(const auto next = newHorizonsSwiftRebirth::completeNormalActivationPlan(*unit, getRound()))
+		updateUnitBonus(unitId, {*next});
 }
 
 void HypotheticBattle::HypotheticServerCallback::complain(const std::string & problem)

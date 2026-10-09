@@ -15,8 +15,10 @@
 #include "../../lib/UnlockGuard.h"
 #include "../../lib/CConfigHandler.h"
 #include "../../lib/CPlayerState.h"
+#include "../../lib/callback/Calendar.h"
 #include "../../lib/entities/artifact/CArtifact.h"
 #include "../../lib/entities/hero/CHero.h"
+#include "../../lib/entities/creature/NewHorizonsMusterRules.h"
 #include "../../lib/entities/ResourceTypeHandler.h"
 #include "../../lib/mapObjects/MapObjects.h"
 #include "../../lib/mapObjects/Quest.h"
@@ -670,6 +672,18 @@ bool shouldVisit(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGO
 
 	switch(obj->ID)
 	{
+	case Obj::MINE:
+	case Obj::ABANDONED_MINE:
+		if(relations == PlayerRelations::SAME_PLAYER)
+		{
+			const auto * mine = dynamic_cast<const CGMine *>(obj);
+			const auto calendar = aiNk->cc->getCalendar();
+			const int week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+			return mine && mine->prospectorQuantity() > 0
+				&& hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.prospector")
+				&& !hero->hasUsedNewHorizonsProspector(week);
+		}
+		break;
 	case Obj::TOWN:
 	case Obj::HERO: //never visit our heroes at random
 		return relations == PlayerRelations::ENEMIES; //do not visit our towns at random

@@ -131,12 +131,21 @@ public:
 				bonus->validateFrozenSerialization(h);
 	}
 
+	template <typename Handler> void validateSwiftRebirthSerialization(Handler & h) const
+	{
+		for(const auto & bonus : getExportedBonusList())
+			if(bonus)
+				bonus->validateSwiftRebirthSerialization(h);
+	}
+
 	template <typename Handler> void serialize(Handler & h)
 	{
 		//this assumes that stack objects is newly created
 		//CUnitState is not serialized here except for explicit battle-long fields.
 		if(h.saving)
 			validateFrozenSerialization(h);
+		if(h.saving)
+			validateSwiftRebirthSerialization(h);
 		if(h.saving && (battlecraftOverwatchReadyRound < -1 || battlecraftOverwatchUsedRound < -1))
 			throw std::runtime_error("Invalid Overwatch round marker");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWATCH)

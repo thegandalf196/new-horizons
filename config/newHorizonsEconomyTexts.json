@@ -2,5 +2,11 @@
 	"new-horizons.economy.investor.header": "Investor — this week's daily Gold bonus (before income handicap)",
 	"new-horizons.economy.investor.hero": "%HERO: +%GOLD Gold/day",
 	"new-horizons.economy.investor.help": "Fixed at the start of the week: +50 Gold/day per full 5,000 treasury Gold, up to +250 per hero. Changes to your treasury do not change this week's bonus. Already included in the daily income shown in this popup.",
-	"new-horizons.economy.resourceBroker.modifier": "Resource Broker: +%PERCENT% exchange effectiveness. Already included in this quote."
+	"new-horizons.economy.resourceBroker.modifier": "Resource Broker: +%PERCENT% exchange effectiveness. Already included in this quote.",
+	"new-horizons.economy.prospector.ready": "Prospector: this hero's next eligible owned-mine visit this week grants +%d %s.",
+	"new-horizons.economy.prospector.used": "Prospector: this hero has already received this week's mine bonus.",
+	"new-horizons.economy.prospector.ineligible": "Prospector: this resource is neither common nor rare; visiting does not consume this week's bonus.",
+	"new-horizons.economy.steward.total": "Projected town income: %d Gold/day (after income handicap)",
+	"new-horizons.economy.steward.contribution": "Steward: +%d Gold/day before income handicap. Already included in the projected total.",
+	"new-horizons.economy.steward.help": "Each selected Steward who ends the day visiting or garrisoned in this owned town contributes +250 Gold on the next day. Two distinct holders contribute +500. This preview uses current residents; moving them before the day ends changes the next day's income."
 }

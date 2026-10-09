@@ -349,6 +349,8 @@ public:
 	TExpType getNewHorizonsLearningMentorExperiencePerLevel() const;
 	int32_t getNewHorizonsLandSurveyorLastWeek() const { return newHorizonsLandSurveyorLastWeek; }
 	bool hasUsedNewHorizonsLandSurveyor(int32_t week) const { return newHorizonsLandSurveyorLastWeek == week; }
+	int32_t getNewHorizonsProspectorLastWeek() const { return newHorizonsProspectorLastWeek; }
+	bool hasUsedNewHorizonsProspector(int32_t week) const { return newHorizonsProspectorLastWeek == week; }
 	int32_t getNewHorizonsPeacemakerLastWeek() const { return newHorizonsPeacemakerLastWeek; }
 	ObjectInstanceID getNewHorizonsPacifiedCreatureId() const { return newHorizonsPacifiedCreatureId; }
 	bool hasUsedNewHorizonsPeacemaker(int32_t week) const { return week >= 0 && newHorizonsPeacemakerLastWeek == week; }
@@ -575,6 +577,7 @@ private:
 	int32_t newHorizonsLearningMentorLastWeek = -1;
 	LearningMentorRecipients newHorizonsLearningMentorRecipients{ObjectInstanceID::NONE, ObjectInstanceID::NONE};
 	int32_t newHorizonsLandSurveyorLastWeek = -1;
+	int32_t newHorizonsProspectorLastWeek = -1;
 	int32_t newHorizonsPeacemakerLastWeek = -1;
 	ObjectInstanceID newHorizonsPacifiedCreatureId = ObjectInstanceID::NONE;
 	int32_t newHorizonsTributeLastWeek = -1;
@@ -605,6 +608,9 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && (newHorizonsProspectorLastWeek < -1
+			|| (!h.hasFeature(Handler::Version::NEW_HORIZONS_PROSPECTOR) && newHorizonsProspectorLastWeek != -1)))
+			throw std::runtime_error("Invalid or unsupported New Horizons Prospector receipt");
 		if(h.saving)
 		{
 			if(!isValidNewHorizonsLearningMentorState(id, newHorizonsLearningMentorLastWeek,
@@ -766,6 +772,15 @@ public:
 			throw std::runtime_error("New Horizons Land Surveyor state requires the new save format");
 		else if(!h.saving)
 			newHorizonsLandSurveyorLastWeek = -1;
+
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PROSPECTOR))
+		{
+			h & newHorizonsProspectorLastWeek;
+			if(newHorizonsProspectorLastWeek < -1)
+				throw std::runtime_error("Invalid New Horizons Prospector receipt");
+		}
+		else if(!h.saving)
+			newHorizonsProspectorLastWeek = -1;
 
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE))
 		{

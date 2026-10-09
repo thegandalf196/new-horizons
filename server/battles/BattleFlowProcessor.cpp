@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BattleFlowProcessor.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
+#include "../../lib/battle/NewHorizonsSwiftRebirth.h"
 
 #include "BattleProcessor.h"
 
@@ -52,6 +53,22 @@
 
 namespace
 {
+	void publishSwiftLifecycle(CGameHandler * gameHandler, const CBattleInfoCallback & battle,
+		const battle::Unit * unit, bool completed)
+	{
+		if(!unit)
+			return;
+		const auto next = completed
+			? newHorizonsSwiftRebirth::completeNormalActivationPlan(*unit, battle.battleGetRound())
+			: newHorizonsSwiftRebirth::reserveNormalActivationPlan(*unit, battle.battleGetRound());
+		if(next)
+		{
+			SetStackEffect update;
+			update.battleID = battle.getBattle()->getBattleID();
+			update.toUpdate.emplace_back(unit->unitId(), std::vector<Bonus>{*next});
+			gameHandler->sendAndApply(update);
+		}
+	}
 	class ProspectiveBattlePlanProxy final : public BattleProxy
 	{
 	public:
@@ -1146,10 +1163,14 @@ bool BattleFlowProcessor::tryMakeAutomaticAction(const CBattleInfoCallback & bat
 	// any other activation-side effect while outside time.
 	if(next->isTimeStopped())
 	{
+		publishSwiftLifecycle(gameHandler, battle, next, true);
 		return makeStackDoNothing(battle, next);
 	}
 	if(newHorizonsFrozen::forfeitsNormalActivation(*next, BattleUnitTurnReason::TURN_QUEUE))
+	{
+		publishSwiftLifecycle(gameHandler, battle, next, true);
 		return makeStackDoNothing(battle, next);
+	}
 
 	if(tryActivateMoralePenalty(battle, next))
 		return true;
@@ -1832,6 +1853,8 @@ bool BattleFlowProcessor::tryMakeAutomaticActionOfFirstAidTent(const CBattleInfo
 
 bool BattleFlowProcessor::rollGoodMorale(const CBattleInfoCallback & battle, const CStack * next)
 {
+	if(newHorizonsSwiftRebirth::blocksAdditionalActivation(*next, battle.battleGetRound()))
+		return false; // Check the birth-round cap before drawing Morale RNG.
 	//check for good morale
 	auto nextStackMorale = battle.battleGetMorale(next);
 	if(    !next->hadMorale
@@ -2087,6 +2110,7 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 	{
 		if(!unit || ba.actionType == EActionType::WAIT)
 			return false;
+		publishSwiftLifecycle(gameHandler, battle, unit, true);
 		if(quartermasterActiveSide(battle, unit->unitId()))
 		{
 			clearQuartermasterActivation(gameHandler, battle, unit->unitId());
@@ -2242,6 +2266,7 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 			? battle.battleGetStackByID(targetId, false) : nullptr;
 		if(const auto * stateInfo = dynamic_cast<const BattleInfo *>(battle.getBattle());
 			target && target->alive() && stateInfo
+			&& !newHorizonsSwiftRebirth::blocksAdditionalActivation(*target, battle.battleGetRound())
 			&& const_cast<BattleInfo *>(stateInfo)->setHeroOrderSecondWindActive(ba.side, true))
 		{
 			publishHeroOrderState(battle, ba.side);
@@ -2360,6 +2385,12 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 	{
 		assert(activeStack != nullptr);
 		assert(actedStack != nullptr);
+
+		// Continuations and free creature casts returned above. A completed
+		// accepted action still spends Swift's normal slot if its retaliation
+		// or end effects incapacitated the actor before reaching this boundary.
+		if(ba.actionType != EActionType::WAIT)
+			publishSwiftLifecycle(gameHandler, battle, actedStack, true);
 
 		if(actedStack->isTimeStopped())
 		{
@@ -2509,6 +2540,8 @@ bool BattleFlowProcessor::makeAutomaticAction(const CBattleInfoCallback & battle
 
 bool BattleFlowProcessor::beginAutomaticActivation(const CBattleInfoCallback & battle, const CStack * stack)
 {
+	if(!newHorizonsSwiftRebirth::normalActivationCompleted(*stack, battle.battleGetRound()))
+		publishSwiftLifecycle(gameHandler, battle, stack, false);
 	BattleSetActiveStack bsa;
 	bsa.battleID = battle.getBattle()->getBattleID();
 	bsa.stack = stack->unitId();
@@ -2697,6 +2730,34 @@ void BattleFlowProcessor::stackTurnTrigger(const CBattleInfoCallback & battle, c
 void BattleFlowProcessor::setActiveStack(const CBattleInfoCallback & battle, const battle::Unit * stack, BattleUnitTurnReason reason)
 {
 	assert(stack);
+	bool swiftExtra = reason == BattleUnitTurnReason::MORALE
+		|| reason == BattleUnitTurnReason::REDUCED_EXTRA_ACTIVATION;
+	if(reason == BattleUnitTurnReason::HERO_COMMAND)
+	{
+		const auto side = battle.playerToSide(battle.battleGetOwner(stack));
+		if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+		{
+			const auto secondWind = battle.getBattle()->getHeroOrderState(side, HeroCommand::SECOND_WIND);
+			swiftExtra = secondWind && secondWind->secondWindActive
+				&& secondWind->primaryTargetUnitId == stack->unitId();
+		}
+	}
+	if(swiftExtra && newHorizonsSwiftRebirth::blocksAdditionalActivation(*stack, battle.battleGetRound()))
+	{
+		clearQuartermasterActivation(gameHandler, battle, stack->unitId());
+		if(reason == BattleUnitTurnReason::HERO_COMMAND)
+		{
+			const auto side = battle.playerToSide(battle.battleGetOwner(stack));
+			if(const auto * state = dynamic_cast<const BattleInfo *>(battle.getBattle()); state
+				&& (side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+				&& const_cast<BattleInfo *>(state)->setHeroOrderSecondWindActive(side, false))
+				publishHeroOrderState(battle, side);
+		}
+		activateNextStack(battle);
+		return;
+	}
+	if(reason == BattleUnitTurnReason::TURN_QUEUE)
+		publishSwiftLifecycle(gameHandler, battle, stack, false);
 	if(newHorizonsFrozen::isFrozen(*stack) && reason != BattleUnitTurnReason::TURN_QUEUE
 		&& reason != BattleUnitTurnReason::AUTOMATIC_ACTION)
 	{

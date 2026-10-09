@@ -49,7 +49,8 @@ enum class ObjProperty : int8_t
 	REWARD_CLEARED,
 
 	//hero-specific, authoritative weekly economic allowance
-	NEW_HORIZONS_LAND_SURVEYOR_LAST_WEEK
+	NEW_HORIZONS_LAND_SURVEYOR_LAST_WEEK,
+	NEW_HORIZONS_PROSPECTOR_LAST_WEEK
 };
 
 class NumericID : public StaticIdentifier<NumericID>

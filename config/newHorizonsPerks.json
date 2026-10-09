@@ -2571,7 +2571,7 @@
 					"requires": "basic",
 					"description": "The first owned mine visited by this hero each week immediately produces +2 of its common resource or +1 of its rare resource, according to the mine's normal output type.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "The first owned mine visited by this hero each week immediately produces +2 of its common resource or +1 of its rare resource, according to the mine's normal output type."
 					}
 				},
@@ -2591,7 +2591,7 @@
 					"requires": "advanced",
 					"description": "If the hero ends the day in an owned town, that town produces +250 Gold on the next day.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "If the hero ends the day in an owned town, that town produces +250 Gold on the next day."
 					}
 				},
@@ -4013,7 +4013,7 @@
 					"requires": "basic",
 					"description": "A newly reborn Elemental is inserted into the current Initiative cycle immediately after the current Creature Activation, but cannot receive more than one activation in the round.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "A newly reborn Elemental is inserted into the current Initiative cycle immediately after the current Creature Activation, but cannot receive more than one activation in the round."
 					}
 				},

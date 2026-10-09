@@ -1062,6 +1062,25 @@ std::shared_ptr<CGHeroInstance> CMap::tryTakeFromHeroPool(HeroTypeID hero)
 	return result;
 }
 
+void CMap::validateNewHorizonsProspectorSerialization(bool supported) const
+{
+	const auto validate = [supported](const CGHeroInstance * hero)
+	{
+		if(!hero)
+			return;
+		const auto week = hero->getNewHorizonsProspectorLastWeek();
+		if(week < -1 || (!supported && week != -1))
+			throw std::runtime_error("Invalid or unsupported New Horizons Prospector map receipt");
+	};
+	// objects includes heroes in prisons, unlike the heroesOnMap index.
+	for(const auto & object : objects)
+		validate(dynamic_cast<const CGHeroInstance *>(object.get()));
+	// TavernHeroesPool serializes identities only. These are the actual off-map
+	// hero objects serialized by CMap, including currently offered tavern heroes.
+	for(const auto & hero : heroesPool)
+		validate(hero.get());
+}
+
 std::vector<HeroTypeID> CMap::getHeroesInPool() const
 {
 	std::vector<HeroTypeID> result;

@@ -16,6 +16,7 @@
 #include "PacksForLobby.h"
 #include "SetStackEffect.h"
 #include "NetPackVisitor.h"
+#include "../gameState/CGameState.h"
 
 void CPack::visit(ICPackVisitor & visitor)
 {
@@ -911,6 +912,12 @@ void LobbyLoadProgress::visitTyped(ICPackVisitor & visitor)
 void LobbyRestartGame::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitLobbyRestartGame(*this);
+}
+
+void LobbyStartGame::validateNewHorizonsProspectorSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsProspectorSerialization(supported);
 }
 
 void LobbyStartGame::visitTyped(ICPackVisitor & visitor)

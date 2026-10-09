@@ -1690,6 +1690,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 				if(fortuneActivation)
 				{
 					exchangeBattle->endFortuneActivation();
+					exchangeBattle->completeSwiftNormalActivation(attacker->unitId());
 					fortuneActivation = false;
 				}
 			};

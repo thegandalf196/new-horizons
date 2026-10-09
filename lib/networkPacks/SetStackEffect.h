@@ -58,6 +58,10 @@ struct DLL_LINKAGE SetStackEffect : public CPackForClient
 			for(const auto * changes : {&toAdd, &toUpdate, &toRemove})
 				for(const auto & entry : *changes)
 					for(const Bonus & bonus : entry.second)
+						bonus.validateSwiftRebirthSerialization(h);
+			for(const auto * changes : {&toAdd, &toUpdate, &toRemove})
+				for(const auto & entry : *changes)
+					for(const Bonus & bonus : entry.second)
 						bonus.validateFrozenSerialization(h);
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_REALITY_WARP_EXCHANGE))
 				for(const auto * changes : {&toAdd, &toUpdate, &toRemove})

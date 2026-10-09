@@ -123,7 +123,8 @@ std::optional<ActiveProfile> activeProfile(const CGHeroInstance * hero)
 		rank >= MasteryLevel::ADVANCED && hero->hasActivePerk(std::string(SKILL_ID), std::string(REBIRTH_CHAIN_ID)),
 		hero->hasActivePerk(std::string(SKILL_ID), std::string(ELEMENTAL_ATTUNEMENT_ID)),
 		rank >= MasteryLevel::ADVANCED && hero->hasActivePerk(std::string(SKILL_ID), std::string(ADAPTIVE_ELEMENT_ID)),
-		rank >= MasteryLevel::EXPERT && hero->hasActivePerk(std::string(SKILL_ID), std::string(PERFECT_CONVERGENCE_ID))};
+		rank >= MasteryLevel::EXPERT && hero->hasActivePerk(std::string(SKILL_ID), std::string(PERFECT_CONVERGENCE_ID)),
+		hero->hasActivePerk(std::string(SKILL_ID), "new-horizons:elementalRebirth.swiftRebirth")};
 }
 
 int64_t primalBurstDamageBudget(int64_t rebornAggregateHP)

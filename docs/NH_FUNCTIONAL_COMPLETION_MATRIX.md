@@ -2,6 +2,18 @@
 
 Updated: 2026-10-09
 
+Accepted Estates/Swift checkpoint: linked82853 and exact matching native39826
+pass33/33 in10.755s, zero failures/errors/skips: Prospector9, minimum owned-mine
+AI5, Steward9 and Swift Rebirth10. Weekly typed receipts, actual rewards,
+full-world/map/lobby guards, resident day-transition income/handicap, immediate
+normal-turn priority, real earned Morale, WAIT/cap, Frozen/Time Stop forfeiture,
+actual Ice retaliation Freeze, Chain and nested detached receipts are verified.
+Perks265/310 (generic185/220,faction80/90),45 planned (35 generic,10 faction).
+Combat67/67,Orders8/8,Skills31/31,ranks93/93 unchanged. Review and registry/module
+checks pass; prior fixture failures remain private without weakening production.
+No new rendered/playable delivery is claimed. Magnate, Elemental Memory and
+Academic Study remain private reviewed candidates; Veteran Cohesion progresses.
+
 Accepted Merchant Prince checkpoint: incremental build77224 succeeds. The
 matching test/library pair passes11/11 native cases in3.763s: eight Merchant
 Prince and three adjacent Resource Broker controls, zero failures/errors/skips.
@@ -16,9 +28,11 @@ failure is retained privately; no production assertion or guard was weakened.
 Both reported map-entry/hover crashes are now closed on source8d2dd92c0:
 guarded rendered card release, separate Escape and legal creature-spell hover
 survive, and a fresh silent headless run reaches day6. The ordinary Linux
-launcher selects verified a711d609. Merchant Prince is source/native accepted,
-not yet included in that playable snapshot. Frozen/Shatter actual rendering
-remains unobserved. Prospector and Swift Rebirth are private next candidates.
+launcher now selects verified11a681ee containing Merchant Prince/source5091ea62c,
+after a fresh silent20s headless run reaches day3 with actual child isolation,
+matched executable/library and cleanup checked. Frozen/Shatter actual rendering
+remains unobserved. The Estates/Swift batch above is source/native accepted;
+the ordinary Linux delivery still selects source5091ea62c until refreshed.
 
 Accepted First Blood/Slayer checkpoint: linked61073 succeeds; exact matching
 native25/25 in6.290s covers both new perks (11 cases), core map-origin/header

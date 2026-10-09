@@ -40,6 +40,11 @@ namespace BonusMigration
 DLL_LINKAGE bool migrateCombatAbility(Bonus & bonus);
 }
 
+namespace newHorizonsSwiftRebirth
+{
+DLL_LINKAGE bool isLifecycleMarker(const Bonus & bonus);
+}
+
 using TBonusListPtr = std::shared_ptr<BonusList>;
 using TConstBonusListPtr = std::shared_ptr<const BonusList>;
 using TPropagatorPtr = std::shared_ptr<const IPropagator>;
@@ -137,8 +142,17 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 			throw std::runtime_error("Cannot discard Frozen marker in an older bonus format");
 	}
 
+	template <typename Handler> void validateSwiftRebirthSerialization(Handler & h) const
+	{
+		if(newHorizonsSwiftRebirth::isLifecycleMarker(*this)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SWIFT_REBIRTH))
+			throw std::runtime_error("Cannot discard Swift Rebirth lifecycle in an older bonus format");
+	}
+
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateSwiftRebirthSerialization(h);
 		if(h.saving)
 			validateFrozenSerialization(h);
 		if(h.saving)
@@ -271,6 +285,7 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 		if(!h.saving)
 		{
 			validateFrozenSerialization(h);
+			validateSwiftRebirthSerialization(h);
 			validateConfusionPendingMarker();
 			if(type == BonusType::CONFUSION_PENDING
 				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CONFUSION_MARKER))

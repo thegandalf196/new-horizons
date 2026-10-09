@@ -500,6 +500,13 @@ float RewardEvaluator::getStrategicalValue(const CGObjectInstance * target, cons
 	{
 		auto mine = dynamic_cast<const CGMine *>(target);
 		TResources res;
+		if(mine->getOwner() == aiNk->playerID)
+		{
+			if(!hero || !shouldVisit(aiNk, hero, mine))
+				return 0;
+			res[mine->producedResource] = mine->prospectorQuantity();
+			return getCombinedResourceRequirementStrength(res);
+		}
 		res[mine->producedResource] = mine->producedQuantity;
 
 		// Mines should have higher priority than resources
@@ -805,6 +812,14 @@ int32_t RewardEvaluator::getGoldReward(const CGObjectInstance * target, const CG
 	case Obj::ABANDONED_MINE:
 	{
 		auto * mine = dynamic_cast<const CGMine*>(target);
+		if(mine->getOwner() == aiNk->playerID)
+		{
+			if(!shouldVisit(aiNk, hero, mine))
+				return 0;
+			TResources reward;
+			reward[mine->producedResource] = mine->prospectorQuantity();
+			return getResourcesGoldReward(reward);
+		}
 		return dailyIncomeMultiplier * (mine->producedResource == GameResID::GOLD ? 1000 : 75);
 	}
 	case Obj::PANDORAS_BOX:

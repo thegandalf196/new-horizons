@@ -1807,7 +1807,8 @@ void GameStatePackVisitor::visitSetQuestHint(SetQuestHint & pack)
 void GameStatePackVisitor::visitSetObjectProperty(SetObjectProperty & pack)
 {
 	// A weekly use marker does not alter the bonus graph or Mana capacity.
-	if(pack.what != ObjProperty::NEW_HORIZONS_LAND_SURVEYOR_LAST_WEEK)
+	if(pack.what != ObjProperty::NEW_HORIZONS_LAND_SURVEYOR_LAST_WEEK
+		&& pack.what != ObjProperty::NEW_HORIZONS_PROSPECTOR_LAST_WEEK)
 		spellPointBonusGraphChanged = true;
 	CGObjectInstance *obj = gs.getObjInstance(pack.id);
 	if(!obj)

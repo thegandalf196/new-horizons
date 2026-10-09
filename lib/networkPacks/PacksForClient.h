@@ -1457,12 +1457,20 @@ struct DLL_LINKAGE SetObjectProperty : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && what == ObjProperty::NEW_HORIZONS_PROSPECTOR_LAST_WEEK
+			&& (!h.hasFeature(Handler::Version::NEW_HORIZONS_PROSPECTOR)
+				|| identifier != ObjPropertyID(NumericID(identifier.getNum())) || identifier.getNum() < -1))
+			throw std::runtime_error("Invalid or unsupported New Horizons Prospector property");
 		if(h.saving && what == ObjProperty::NEW_HORIZONS_LAND_SURVEYOR_LAST_WEEK
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_LAND_SURVEYOR))
 			throw std::runtime_error("New Horizons Land Surveyor property requires the new wire format");
 		h & id;
 		h & what;
 		h & identifier;
+		if(what == ObjProperty::NEW_HORIZONS_PROSPECTOR_LAST_WEEK
+			&& (!h.hasFeature(Handler::Version::NEW_HORIZONS_PROSPECTOR)
+				|| identifier != ObjPropertyID(NumericID(identifier.getNum())) || identifier.getNum() < -1))
+			throw std::runtime_error("Invalid or unsupported New Horizons Prospector property");
 		if(what == ObjProperty::NEW_HORIZONS_LAND_SURVEYOR_LAST_WEEK
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_LAND_SURVEYOR))
 			throw std::runtime_error("New Horizons Land Surveyor property requires the new wire format");

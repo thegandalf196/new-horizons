@@ -138,9 +138,12 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 	std::shared_ptr<CGameState> initializedGameState;
 
 	void visitTyped(ICPackVisitor & visitor) override;
+	void validateNewHorizonsProspectorSerialization(bool supported) const;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateNewHorizonsProspectorSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROSPECTOR));
 		if (!h.saving)
 			h.loadingGamestate = true;
 		h & initializedStartInfo;

@@ -289,6 +289,22 @@ int CGTownInstance::getDwellingBonus(const std::vector<CreatureID>& creatureIds,
 	return totalBonus;
 }
 
+int32_t CGTownInstance::getStewardGoldBeforeHandicap() const
+{
+	if(!getOwner().isValidPlayer())
+		return 0;
+	constexpr int32_t goldPerHero = 250;
+	const auto qualifies = [this](const CGHeroInstance * hero)
+	{
+		return hero && hero->getVisitedTown() == this && hero->getOwner() == getOwner()
+			&& hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.steward");
+	};
+	const auto * visitor = getVisitingHero();
+	const auto * garrison = getGarrisonHero();
+	return (qualifies(visitor) ? goldPerHero : 0)
+		+ (garrison != visitor && qualifies(garrison) ? goldPerHero : 0);
+}
+
 TResources CGTownInstance::dailyIncome() const
 {
 	ResourceSet ret;
@@ -316,6 +332,7 @@ TResources CGTownInstance::dailyIncome() const
 	if (!getOwner().isValidPlayer())
 		return ret;
 
+	ret[EGameResID::GOLD] += getStewardGoldBeforeHandicap();
 	const auto & playerSettings = cb->getPlayerSettings(getOwner());
 	ret.applyHandicap(playerSettings->handicap.percentIncome);
 	return ret;

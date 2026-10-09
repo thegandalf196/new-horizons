@@ -232,9 +232,12 @@ public:
 	/// Replaces contents of this gamestate with a snapshot made by saveToMemory().
 	/// Identity of this object is preserved, so all shared_ptr's to it stay valid.
 	void loadFromMemory(std::vector<std::byte> data);
+	void validateNewHorizonsProspectorSerialization(bool supported) const;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateNewHorizonsProspectorSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROSPECTOR));
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN)
 			&& magicRules.isStruct() && magicRules.Struct().count("creatureAbilities") != 0)
 			throw std::runtime_error("Cannot discard captured creature ability rules in an older world format");

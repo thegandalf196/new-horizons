@@ -88,6 +88,17 @@ void CGMine::onHeroVisit(IGameEventCallback & gameEvents, const CGHeroInstance *
 
 	if(relations == PlayerRelations::SAME_PLAYER) //we're visiting our mine
 	{
+		const int quantity = prospectorQuantity();
+		const auto calendar = cb->getCalendar();
+		const int week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+		if(quantity > 0 && h->hasActivePerk("new-horizons:estates", "new-horizons:estates.prospector")
+			&& !h->hasUsedNewHorizonsProspector(week))
+		{
+			gameEvents.setObjPropertyValue(h->id, ObjProperty::NEW_HORIZONS_PROSPECTOR_LAST_WEEK, week);
+			ResourceSet reward;
+			reward[producedResource] = quantity;
+			gameEvents.giveResources(h->tempOwner, reward);
+		}
 		gameEvents.showGarrisonDialog(id, h->id, true, MetaString());
 		return;
 	}
@@ -206,6 +217,45 @@ MetaString CGMine::getHoverText(PlayerColor player) const
 		hoverName.append(getArmyDescription());
 	}
 	return hoverName;
+}
+
+int CGMine::prospectorQuantity() const
+{
+	switch(producedResource.toEnum())
+	{
+	case EGameResID::WOOD:
+	case EGameResID::ORE:
+		return 2;
+	case EGameResID::MERCURY:
+	case EGameResID::SULFUR:
+	case EGameResID::CRYSTAL:
+	case EGameResID::GEMS:
+		return 1;
+	default:
+		return 0; // Gold and unclassified resources neither pay nor consume a use.
+	}
+}
+
+MetaString CGMine::getHoverText(const CGHeroInstance * hero) const
+{
+	auto text = getHoverText(hero->tempOwner);
+	if(tempOwner == hero->tempOwner && hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.prospector"))
+	{
+		const auto calendar = cb->getCalendar();
+		const int week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+		text.appendEOL();
+		if(prospectorQuantity() == 0)
+			text.appendTextID("new-horizons.economy.prospector.ineligible");
+		else if(hero->hasUsedNewHorizonsProspector(week))
+			text.appendTextID("new-horizons.economy.prospector.used");
+		else
+		{
+			text.appendTextID("new-horizons.economy.prospector.ready");
+			text.replaceNumber(prospectorQuantity());
+			text.replaceName(producedResource);
+		}
+	}
+	return text;
 }
 
 void CGMine::flagMine(IGameEventCallback & gameEvents, const CGHeroInstance * capturingHero) const

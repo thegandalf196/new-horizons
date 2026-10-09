@@ -1931,6 +1931,12 @@ CArtifactInstance * CGameState::createArtifact(const ArtifactID & artID, const S
 	return map->createArtifact(artID, spellId);
 }
 
+void CGameState::validateNewHorizonsProspectorSerialization(bool supported) const
+{
+	if(map)
+		map->validateNewHorizonsProspectorSerialization(supported);
+}
+
 void CGameState::saveGame(CSaveFile & file) const
 {
 	ActiveModsInSaveList activeModsDummy;

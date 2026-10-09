@@ -202,13 +202,18 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_REALITY_WARP_EXCHANGE, // atomic exact effect replacement and non-transferable metadata
 	NEW_HORIZONS_FROZEN, // physical Freeze recipient history and Shatter feedback
 	NEW_HORIZONS_BLOODRAGE_DEATH_PERKS, // once-combat First Blood destruction receipt
+	NEW_HORIZONS_PROSPECTOR, // independent per-hero weekly owned-mine visit receipt
+	NEW_HORIZONS_SWIFT_REBIRTH, // reborn normal-activation priority and birth-round cap
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_BLOODRAGE_DEATH_PERKS,
+	CURRENT = NEW_HORIZONS_SWIFT_REBIRTH,
 };
+
+static_assert(ESerializationVersion::NEW_HORIZONS_SWIFT_REBIRTH > ESerializationVersion::NEW_HORIZONS_PROSPECTOR,
+	"Swift Rebirth lifecycle must remain append-only after Prospector");
 
 static_assert(ESerializationVersion::NEW_HORIZONS_REALITY_WARP_EXCHANGE > ESerializationVersion::NEW_HORIZONS_SAFE_BATTLE_FORMS,
 	"Atomic spell-effect exchange must remain append-only");

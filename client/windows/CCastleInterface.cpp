@@ -2413,6 +2413,8 @@ void CCastleInterface::updateGarrisons()
 	garr->setArmy(town->getVisitingHero(), EGarrisonType::LOWER);
 	garr->recreateSlots();
 	heroes->update();
+	if(income)
+		income->setText(std::to_string(town->dailyIncome()[EGameResID::GOLD]));
 
 	redraw();
 }
@@ -2643,7 +2645,16 @@ void CCastleInterface::recreateIcons()
 	fastArmyPurchase = std::make_shared<CButton>(Point(122, 413), AnimationPath::builtin("castleInterfaceQuickAccess"), CButton::tooltip(), [this](){ builds->enterToTheQuickRecruitmentWindow(); }, EShortcut::TOWN_OPEN_RECRUITMENT);
 	fastArmyPurchase->setOverlay(std::make_shared<CAnimImage>(AnimationPath::builtin("itmcl"), imageIndex));
 
-	fastMarket = std::make_shared<LRClickableArea>(Rect(163, 410, 64, 42), [this]() { builds->enterAnyMarket(); });
+	fastMarket = std::make_shared<LRClickableArea>(Rect(163, 410, 64, 42), [this]() { builds->enterAnyMarket(); }, [this]()
+	{
+		MetaString total = MetaString::createFromTextID("new-horizons.economy.steward.total");
+		total.replaceNumber(town->dailyIncome()[EGameResID::GOLD]);
+		MetaString contribution = MetaString::createFromTextID("new-horizons.economy.steward.contribution");
+		contribution.replaceNumber(town->getStewardGoldBeforeHandicap());
+		MetaString help = MetaString::createFromTextID("new-horizons.economy.steward.help");
+		CRClickPopup::createAndPush(CInfoWindow::genText(total.toString(&GAME->translator()),
+			contribution.toString(&GAME->translator()) + "\n\n" + help.toString(&GAME->translator())));
+	});
 	{
 		const std::string factionKey = town->getTown()->faction->getJsonKey();
 		fastWiki = std::make_shared<LRClickableArea>(Rect(15, 387, 58, 64), [factionKey]()

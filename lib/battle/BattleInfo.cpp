@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BattleInfo.h"
 #include "NewHorizonsFrozen.h"
+#include "NewHorizonsSwiftRebirth.h"
 #include "BattleForm.h"
 #include "NewHorizonsElementalRebirth.h"
 #include "NewHorizonsBloodrage.h"
@@ -2058,6 +2059,14 @@ void BattleInfo::addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 		logGlobal->error("Cannot find stack %d", id);
 		return;
 	}
+	int swiftMarkers = 0;
+	for(const auto & entry : bonus)
+		if(newHorizonsSwiftRebirth::isLifecycleMarker(entry))
+		{
+			if(++swiftMarkers > 1)
+				throw std::invalid_argument("Duplicate Swift Rebirth ADD");
+			newHorizonsSwiftRebirth::validateTransition(newHorizonsSwiftRebirth::lifecycle(*sta), entry, true);
+		}
 
 	const auto stampedBonuses = physicalAfflictions::stampApplicationOrder(*sta, bonus);
 	const auto frozenApplication = newHorizonsFrozen::prepareApplication(*sta, bonus);
@@ -2079,6 +2088,14 @@ void BattleInfo::updateUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 		logGlobal->error("Cannot find stack %d", id);
 		return;
 	}
+	int swiftMarkers = 0;
+	for(const auto & entry : bonus)
+		if(newHorizonsSwiftRebirth::isLifecycleMarker(entry))
+		{
+			if(++swiftMarkers > 1)
+				throw std::invalid_argument("Duplicate Swift Rebirth UPDATE");
+			newHorizonsSwiftRebirth::validateTransition(newHorizonsSwiftRebirth::lifecycle(*sta), entry, false);
+		}
 
 	const auto stampedBonuses = physicalAfflictions::stampApplicationOrder(*sta, bonus);
 	const auto frozenApplication = newHorizonsFrozen::prepareApplication(*sta, bonus);
@@ -2254,6 +2271,20 @@ uint32_t BattleInfo::nextUnitId() const
 
 void BattleInfo::addOrUpdateUnitBonus(CStack * sta, const Bonus & value, bool forceAdd)
 {
+	if(newHorizonsSwiftRebirth::isLifecycleMarker(value))
+	{
+		newHorizonsSwiftRebirth::validateTransition(newHorizonsSwiftRebirth::lifecycle(*sta), value, forceAdd);
+		std::shared_ptr<Bonus> previous;
+		for(const auto & existing : sta->getExportedBonusList())
+			if(existing && newHorizonsSwiftRebirth::isLifecycleMarker(*existing))
+				previous = existing;
+		if(!forceAdd && !previous)
+			throw std::invalid_argument("Swift Rebirth update requires a local lifecycle");
+		if(previous)
+			sta->removeBonus(previous);
+		sta->addNewBonus(std::make_shared<Bonus>(value));
+		return; // Lifecycle bookkeeping remains writable during Time Stop.
+	}
 	if(value.type == BonusType::CONFUSION_PENDING)
 		newHorizonsConfusionControl::validateMarker(value);
 	if(value.type == BonusType::PHYSICAL_AFFLICTION)

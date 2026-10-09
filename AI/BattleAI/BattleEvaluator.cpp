@@ -5246,6 +5246,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					expireCompletedProjectedBerserkActivation(*state,
 						state->battleGetUnitByID(unit->unitId()));
 				state->getForUpdate(unit->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
+				state->completeSwiftNormalActivation(unit->unitId());
 			}
 
 			firstRound = false;

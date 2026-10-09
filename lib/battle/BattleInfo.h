@@ -329,6 +329,13 @@ public:
 				stack->validateFrozenSerialization(h);
 	}
 
+	template <typename Handler> void validateSwiftRebirthSerialization(Handler & h) const
+	{
+		for(const auto & stack : stacks)
+			if(stack)
+				stack->validateSwiftRebirthSerialization(h);
+	}
+
 	template <typename Handler> void validateBloodrageDeathPerksSerialization(Handler & h) const
 	{
 		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_BLOODRAGE_DEATH_PERKS))
@@ -344,6 +351,8 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateSwiftRebirthSerialization(h);
 		if(h.saving)
 			validateBloodrageDeathPerksSerialization(h);
 		if(h.saving)

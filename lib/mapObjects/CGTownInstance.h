@@ -290,6 +290,9 @@ public:
 	std::set<BuildingID> getBuildings() const;
 
 	ResourceSet getBuildingCost(const BuildingID & buildingID) const;
+	/// Current resident projection, sampled by NewTurn at the day boundary.
+	/// Included in dailyIncome; this subtotal precedes the ordinary handicap.
+	int32_t getStewardGoldBeforeHandicap() const;
 	ResourceSet dailyIncome() const override;
 	std::vector<CreatureID> providedCreatures() const override;
 

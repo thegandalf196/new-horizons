@@ -194,6 +194,8 @@ public:
 
 	/// Returns list of identities of heroes currently present in pool
 	std::vector<HeroTypeID> getHeroesInPool() const;
+	/// Validate all serialized hero receipts before an enclosing writer's prefix.
+	void validateNewHorizonsProspectorSerialization(bool supported) const;
 
 	CGObjectInstance * getObject(ObjectInstanceID obj);
 	const CGObjectInstance * getObject(ObjectInstanceID obj) const;
@@ -315,6 +317,8 @@ public:
 	template <typename Handler>
 	void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateNewHorizonsProspectorSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROSPECTOR));
 		h & static_cast<CMapHeader&>(*this);
 		h & triggeredEvents; //from CMapHeader
 		h & rumors;

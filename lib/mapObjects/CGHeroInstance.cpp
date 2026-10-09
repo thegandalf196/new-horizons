@@ -1309,6 +1309,15 @@ void CGHeroInstance::setPropertyDer(ObjProperty what, ObjPropertyID identifier)
 		setStackCount(SlotID(0), identifier.getNum());
 	else if(what == ObjProperty::NEW_HORIZONS_LAND_SURVEYOR_LAST_WEEK)
 		newHorizonsLandSurveyorLastWeek = std::max<int32_t>(-1, identifier.as<NumericID>().getNum());
+	else if(what == ObjProperty::NEW_HORIZONS_PROSPECTOR_LAST_WEEK)
+	{
+		if(identifier != ObjPropertyID(NumericID(identifier.getNum())))
+			throw std::runtime_error("Invalid New Horizons Prospector receipt identifier type");
+		const auto week = identifier.as<NumericID>().getNum();
+		if(week < -1)
+			throw std::runtime_error("Invalid New Horizons Prospector receipt");
+		newHorizonsProspectorLastWeek = week;
+	}
 }
 
 bool CGHeroInstance::usesPrimaryGrowth() const

@@ -426,6 +426,8 @@ public:
 				getForUpdate(unitId)->setActivationMovementBonus(0);
 		}
 	}
+	/// A completed forecast action, not WAIT or a same-activation continuation.
+	void completeSwiftNormalActivation(uint32_t unitId);
 	MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const override
 	{
 		return moraleSuppressionStates.at(side);

@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "CBattleInfoCallback.h"
 #include "NewHorizonsFrozen.h"
+#include "NewHorizonsSwiftRebirth.h"
 
 #include <vcmi/scripting/Service.h>
 #include <vstd/RNG.h>
@@ -1642,6 +1643,8 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderStateIm
 		const auto reason = battleOwnOrderUnitRejection(side, target);
 		if(reason != Reason::NONE)
 			return reject(reason);
+		if(newHorizonsSwiftRebirth::blocksAdditionalActivation(*target, battleGetRound()))
+			return reject(Reason::ACTIVATION_UNSPENT);
 		if(!hasSpentActivation)
 			return reject(Reason::ACTIVATION_UNSPENT);
 		result.primaryTargetUnitId = target->unitId();
@@ -2407,7 +2410,8 @@ void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & turns,
 	if(activeUnit)
 	{
 		//its first turn and active unit hasn't taken any action yet - must be placed at the beginning of queue, no matter what
-		if(turn == 0 && (activeUnit->willMove() || stoppedTurnReady(activeUnit)
+		if(turn == 0 && !newHorizonsSwiftRebirth::normalActivationCompleted(*activeUnit, battleGetRound())
+			&& (activeUnit->willMove() || stoppedTurnReady(activeUnit)
 			|| frozenTurnReady(activeUnit, 0)))
 		{
 			turns.back().push_back(activeUnit);
@@ -2438,6 +2442,8 @@ void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & turns,
 
 	for(const auto * unit : allUnits)
 	{
+		if(actualTurn == 0 && newHorizonsSwiftRebirth::normalActivationCompleted(*unit, battleGetRound()))
+			continue;
 		if((actualTurn == 0 && !unit->willMove() && !stoppedTurnReady(unit) && !frozenTurnReady(unit, 0)) //we are considering current round and unit won't move
 		|| (actualTurn > 0 && !unit->canMove(turn) && !frozenTurnReady(unit, turn)) //unit won't be able to move in later rounds
 		|| (actualTurn == 0 && unit == activeUnit && !turns.at(0).empty() && unit == turns.front().front())) //it's active unit already added at the beginning of queue
@@ -2448,6 +2454,28 @@ void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & turns,
 		int unitPhase = unit->battleQueuePhase(turn);
 
 		phases[unitPhase].push_back(unit);
+	}
+
+	if(actualTurn == 0)
+	{
+		battle::Units swift;
+		for(auto & phaseUnits : phases)
+		{
+			for(const auto * unit : phaseUnits)
+				if(newHorizonsSwiftRebirth::priorityEligible(*unit, battleGetRound()))
+					swift.push_back(unit);
+			vstd::erase_if(phaseUnits, [this](const battle::Unit * unit)
+			{
+				return newHorizonsSwiftRebirth::priorityEligible(*unit, battleGetRound());
+			});
+		}
+		std::ranges::sort(swift, {}, &battle::Unit::unitId);
+		for(const auto * unit : swift)
+		{
+			turns.back().push_back(unit);
+			if(turnsIsFull())
+				return;
+		}
 	}
 
 	std::ranges::sort(phases[BattlePhases::SIEGE], CMP_stack(BattlePhases::SIEGE, actualTurn, sideThatLastMoved));

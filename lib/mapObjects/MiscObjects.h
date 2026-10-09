@@ -162,6 +162,7 @@ private:
 
 	MetaString getObjectName() const override;
 	MetaString getHoverText(PlayerColor player) const override;
+	MetaString getHoverText(const CGHeroInstance * hero) const override;
 
 public:
 	template <typename Handler> void serialize(Handler &h)
@@ -175,6 +176,7 @@ public:
 	}
 	ui32 defaultResProduction() const;
 	ui32 getProducedQuantity() const;
+	int prospectorQuantity() const;
 
 	const IOwnableObject * asOwnable() const final;
 	ResourceSet dailyIncome() const override;

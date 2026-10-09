@@ -294,15 +294,23 @@ bool ObjectClusterizer::shouldVisitObject(const CGObjectInstance * obj) const
 
 	const int3 pos = obj->visitablePos();
 
-	if((obj->ID != Obj::CREATURE_GENERATOR1 && vstd::contains(aiNk->memory->alreadyVisited, obj->id))
-		|| obj->wasVisited(aiNk->playerID))
+	// Mine revisits are hero-specific rewards, not globally weekly objects.
+	const auto heroes = aiNk->cc->getHeroesInfo();
+	const bool prospectorVisit = (obj->ID == Obj::MINE || obj->ID == Obj::ABANDONED_MINE)
+		&& obj->getOwner() == aiNk->playerID
+		&& std::ranges::any_of(heroes, [this, obj](const CGHeroInstance * hero)
+		{
+			return hero->getOwner() == aiNk->playerID && shouldVisit(aiNk, hero, obj);
+		});
+	if(!prospectorVisit && ((obj->ID != Obj::CREATURE_GENERATOR1 && vstd::contains(aiNk->memory->alreadyVisited, obj->id))
+		|| obj->wasVisited(aiNk->playerID)))
 	{
 		return false;
 	}
 
 	auto playerRelations = aiNk->cc->getPlayerRelations(aiNk->playerID, obj->tempOwner);
 
-	if(playerRelations != PlayerRelations::ENEMIES && !isWeeklyRevisitable(aiNk->playerID, obj))
+	if(!prospectorVisit && playerRelations != PlayerRelations::ENEMIES && !isWeeklyRevisitable(aiNk->playerID, obj))
 	{
 		return false;
 	}
