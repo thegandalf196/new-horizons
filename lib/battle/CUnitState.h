@@ -241,6 +241,10 @@ public:
 	int32_t rangedFollowUpDamagePercent = 0;
 	/// Round in which this stack last used Archery's once-per-round Counterfire.
 	int32_t archeryCounterfireRound = -1;
+	/// Accepted Wait arms Overwatch until the next genuine activation. Usage is
+	/// independent of Counterfire and survives readiness expiry within a round.
+	int32_t battlecraftOverwatchReadyRound = -1;
+	int32_t battlecraftOverwatchUsedRound = -1;
 	/// Round in which this stack first spent Deadeye on an ordinary ranged shot.
 	int32_t archeryDeadeyeRound = -1;
 	/// Global activation serial in which this stack first triggered Suppression.
@@ -549,6 +553,9 @@ private:
 /// Check a serialized Unit::save() snapshot for nonlegacy magical casualty
 /// provenance before forwarding it through an older wire format.
 DLL_LINKAGE bool hasCasualtyProvenanceState(const JsonNode & unitSnapshot);
+/// Validates raw Overwatch round markers without modifying a unit. Missing
+/// legacy fields mean inactive; noninteger/out-of-range markers are rejected.
+DLL_LINKAGE bool hasOverwatchState(const JsonNode & unitSnapshot);
 
 class DLL_LINKAGE CUnitStateDetached final : public CUnitState
 {

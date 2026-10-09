@@ -130,6 +130,27 @@ bool hasCasualtyProvenanceState(const JsonNode & unitSnapshot)
 	return hasMagicalCasualties;
 }
 
+bool hasOverwatchState(const JsonNode & unitSnapshot)
+{
+	const auto * state = findJsonField(unitSnapshot, "state");
+	if(!state)
+		return false;
+	if(!state->isStruct())
+		throw std::runtime_error("Invalid serialized Overwatch unit state");
+	bool present = false;
+	for(const auto * name : {"battlecraftOverwatchReadyRound", "battlecraftOverwatchUsedRound"})
+	{
+		const auto * value = findJsonField(*state, name);
+		if(!value)
+			continue;
+		if(value->getType() != JsonNode::JsonType::DATA_INTEGER
+			|| value->Integer() < -1 || value->Integer() > std::numeric_limits<int32_t>::max())
+			throw std::runtime_error("Invalid serialized Overwatch round marker");
+		present |= value->Integer() != -1;
+	}
+	return present;
+}
+
 ///CAmmo
 CAmmo::CAmmo(const battle::Unit * Owner, CSelector totalSelector):
 	used(0),
@@ -1316,6 +1337,8 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	waiting = other.waiting;
 	waitedThisTurn = other.waitedThisTurn;
 	battlecraftWaitBonusUsed = other.battlecraftWaitBonusUsed;
+	battlecraftOverwatchReadyRound = other.battlecraftOverwatchReadyRound;
+	battlecraftOverwatchUsedRound = other.battlecraftOverwatchUsedRound;
 	battlecraftWaitMasteryDoubled = other.battlecraftWaitMasteryDoubled;
 	battlecraftPreemptiveStrikeRound = other.battlecraftPreemptiveStrikeRound;
 	defensiveStanceMeleeBonus = other.defensiveStanceMeleeBonus;
@@ -2146,6 +2169,10 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeBool("waiting", waiting);
 	handler.serializeBool("waitedThisTurn", waitedThisTurn);
 	handler.serializeBool("battlecraftWaitBonusUsed", battlecraftWaitBonusUsed);
+	handler.serializeInt("battlecraftOverwatchReadyRound", battlecraftOverwatchReadyRound, -1);
+	handler.serializeInt("battlecraftOverwatchUsedRound", battlecraftOverwatchUsedRound, -1);
+	if(battlecraftOverwatchReadyRound < -1 || battlecraftOverwatchUsedRound < -1)
+		throw std::runtime_error("Invalid Overwatch round marker");
 	handler.serializeBool("battlecraftWaitMasteryDoubled", battlecraftWaitMasteryDoubled);
 	handler.serializeInt("battlecraftPreemptiveStrikeRound", battlecraftPreemptiveStrikeRound, -1);
 	if(battlecraftPreemptiveStrikeRound < -1)
@@ -2271,6 +2298,8 @@ std::pair<int32_t, int32_t> CUnitState::getMoraleLimits() const
 void CUnitState::reset()
 {
 	confusionState = {};
+	battlecraftOverwatchReadyRound = -1;
+	battlecraftOverwatchUsedRound = -1;
 	cloned = false;
 	personalBloodrageIncrement = 0;
 	activationMovementBonus = 0;
@@ -2383,6 +2412,7 @@ JsonNode CUnitState::save()
 void CUnitState::load(const JsonNode & data)
 {
 	// Check metadata before any existing unit state is changed by deserialization.
+	hasOverwatchState(data);
 	const auto incomingConfusion = confusionStateFromUnitJson(data);
 	//TODO: use instance resolver
 	const auto & savedPainIncrement = data["state"]["personalBloodrageIncrement"];
@@ -2749,6 +2779,8 @@ void CUnitState::afterWait()
 
 void CUnitState::afterNewRound(bool isFirstRound)
 {
+	battlecraftOverwatchReadyRound = -1;
+	battlecraftOverwatchUsedRound = -1;
 	if(!isFirstRound && hasBattleForm())
 	{
 		// The preserved initiative only represents the remainder of the round
@@ -2798,6 +2830,7 @@ void CUnitState::afterNewRound(bool isFirstRound)
 
 void CUnitState::afterGetsTurn(BattleUnitTurnReason reason)
 {
+	battlecraftOverwatchReadyRound = -1;
 	// The corresponding STACK_GETS_TURN bonuses are removed by BattleInfo just
 	// before this hook.  Clear the explicit provenance alongside them; it must
 	// never survive merely because another temporary bonus used the same
@@ -2824,6 +2857,7 @@ void CUnitState::afterGetsTurn(BattleUnitTurnReason reason)
 
 void CUnitState::makeGhost()
 {
+	battlecraftOverwatchReadyRound = -1;
 	endBattleForm();
 	activationMovementBonus = 0;
 	pursuitMovementRemaining = 0;

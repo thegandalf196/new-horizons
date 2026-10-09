@@ -17,6 +17,7 @@
 #include "../../lib/mapping/TerrainTile.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/pathfinder/CGPathNode.h"
+#include "../../lib/pathfinder/CPathfinder.h"
 #include "../../lib/pathfinder/NewHorizonsMovement.h"
 #include "../../lib/pathfinder/PathfinderCache.h"
 #include "../../lib/pathfinder/PathfinderOptions.h"
@@ -32,6 +33,7 @@ constexpr auto NAVIGATION_PERK = "new-horizons:logistics.navigation";
 constexpr auto ROADMASTER_PERK = "new-horizons:logistics.roadmaster";
 constexpr auto WAYFARER_PERK = "new-horizons:logistics.wayfarer";
 constexpr auto MOUNTAINEER_PERK = "new-horizons:logistics.mountaineer";
+constexpr auto RAPID_EMBARKATION_PERK = "new-horizons:logistics.rapidEmbarkation";
 
 HeroTypeID heroType(const char * id)
 {
@@ -91,6 +93,9 @@ protected:
 		auto activePerkRules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
 		setPerkStatus(activePerkRules, ROADMASTER_PERK, "active");
 		setPerkStatus(activePerkRules, WAYFARER_PERK, "active");
+		const auto rapidRegistryStatus = getPerkStatus(activePerkRules, RAPID_EMBARKATION_PERK);
+		RecordProperty("rapid_embarkation_registry_status", rapidRegistryStatus);
+		ASSERT_EQ(rapidRegistryStatus, "active") << "Rapid Embarkation must be active in the shipped registry";
 		const auto mountaineerRegistryStatus = getPerkStatus(activePerkRules, MOUNTAINEER_PERK);
 		RecordProperty("mountaineer_registry_status", mountaineerRegistryStatus);
 		if(mountaineerRegistryStatus == "planned")
@@ -207,6 +212,7 @@ protected:
 		setPerkStatus(legacyPerkRules, ROADMASTER_PERK, "planned");
 		setPerkStatus(legacyPerkRules, WAYFARER_PERK, "planned");
 		setPerkStatus(legacyPerkRules, MOUNTAINEER_PERK, "planned");
+		setPerkStatus(legacyPerkRules, RAPID_EMBARKATION_PERK, "planned");
 		auto savedState = hero->getPerkState().toJson();
 		savedState["rules"] = legacyPerkRules;
 		auto restoredState = newHorizonsHeroes::PerkState::fromJson(savedState);
@@ -219,6 +225,94 @@ protected:
 	std::unique_ptr<GameHandlerTestServer> server;
 	std::unique_ptr<CGameHandler> handler;
 };
+}
+
+TEST_F(NewHorizonsLogisticsMovementPerksTest, RapidEmbarkationForecastMatchesAcceptedEmbarkAndDisembark)
+{
+	startGame();
+	advanceLogistics();
+	ASSERT_TRUE(chooseOfferedPerk(SCOUTING_PERK));
+	advanceLogistics();
+	CPathfinderHelper unselected(*gameState(), hero, PathfinderOptions(*gameState()));
+	EXPECT_FALSE(unselected.getTurnInfo()->hasNewHorizonsRapidEmbarkation());
+	EXPECT_EQ(hero->movementPointsAfterEmbark(200, 10, false, unselected.getTurnInfo()), 0);
+	ASSERT_TRUE(chooseOfferedPerk(RAPID_EMBARKATION_PERK));
+	const auto shore = hero->visitablePos();
+	const auto sea = shore + int3(1, 0, 0);
+	setTile(sea, ETerrainId::WATER, RoadId::NO_ROAD);
+	handler->createBoat(sea, BoatId::CASTLE, hero->getOwner());
+	CPathfinderHelper helper(*gameState(), hero, PathfinderOptions(*gameState()));
+	ASSERT_TRUE(helper.getTurnInfo()->hasNewHorizonsRapidEmbarkation());
+	ASSERT_FALSE(helper.getTurnInfo()->hasNewHorizonsNavigation());
+	const int landMaximum = helper.getTurnInfo()->getMaxMovePoints(EPathfindingLayer::LAND);
+	const int seaMaximum = helper.getTurnInfo()->getMaxMovePoints(EPathfindingLayer::SAIL);
+	handler->setMovePoints(hero->id, landMaximum);
+	const int embarkCost = newHorizonsMovement::rapidEmbarkationCost(landMaximum);
+	EXPECT_EQ(helper.getMovementCost(shore, sea, EPathfindingLayer::SAIL, landMaximum, false), embarkCost);
+	PathfinderCache cache(gameState().get(), PathfinderOptions(*gameState()));
+	const auto paths = cache.getPathsInfo(hero);
+	const auto * node = paths->getNode(sea, EPathfindingLayer::SAIL);
+	ASSERT_NE(node, nullptr);
+	ASSERT_TRUE(node->reachable());
+	ASSERT_EQ(node->turns, 0);
+	const int predicted = node->moveRemains;
+	EXPECT_EQ(predicted, static_cast<int>(static_cast<int64_t>(landMaximum - embarkCost) * seaMaximum / landMaximum));
+	ASSERT_TRUE(handler->moveHero(hero->id, hero->convertFromVisitablePos(sea),
+		EMovementMode::STANDARD, false, hero->getOwner(), EPathfindingLayer::SAIL));
+	EXPECT_EQ(hero->movementPointsRemaining(), predicted);
+	ASSERT_TRUE(hero->inBoat());
+	CPathfinderHelper aboard(*gameState(), hero, PathfinderOptions(*gameState()));
+	const int landingCost = newHorizonsMovement::rapidEmbarkationCost(seaMaximum);
+	EXPECT_EQ(aboard.getMovementCost(sea, shore, EPathfindingLayer::LAND, predicted, false), landingCost);
+	PathfinderCache landingCache(gameState().get(), PathfinderOptions(*gameState()));
+	const auto landingPaths = landingCache.getPathsInfo(hero);
+	const auto * landing = landingPaths->getNode(shore, EPathfindingLayer::LAND);
+	ASSERT_NE(landing, nullptr);
+	ASSERT_TRUE(landing->reachable());
+	ASSERT_EQ(landing->turns, 0);
+	const int predictedLanding = landing->moveRemains;
+	ASSERT_TRUE(handler->moveHero(hero->id, hero->convertFromVisitablePos(shore),
+		EMovementMode::STANDARD, false, hero->getOwner(), EPathfindingLayer::LAND));
+	EXPECT_EQ(hero->movementPointsRemaining(), predictedLanding);
+	EXPECT_EQ(predictedLanding, static_cast<int>(static_cast<int64_t>(predicted - landingCost) * landMaximum / seaMaximum));
+}
+
+TEST_F(NewHorizonsLogisticsMovementPerksTest, RapidEmbarkationUsesFinalCostWithNavigationAndPreservesFreeBoarding)
+{
+	startGame();
+	advanceLogistics();
+	ASSERT_TRUE(chooseOfferedPerk(NAVIGATION_PERK));
+	advanceLogistics();
+	ASSERT_TRUE(chooseOfferedPerk(RAPID_EMBARKATION_PERK));
+	const auto shore = hero->visitablePos();
+	const auto sea = shore + int3(1, 0, 0);
+	setTile(sea, ETerrainId::WATER, RoadId::NO_ROAD);
+	handler->createBoat(sea, BoatId::CASTLE, hero->getOwner());
+	CPathfinderHelper helper(*gameState(), hero, PathfinderOptions(*gameState()));
+	const auto * info = helper.getTurnInfo();
+	ASSERT_TRUE(info->hasNewHorizonsNavigation());
+	ASSERT_TRUE(info->hasNewHorizonsRapidEmbarkation());
+	const int landMaximum = info->getMaxMovePoints(EPathfindingLayer::LAND);
+	const int seaMaximum = info->getMaxMovePoints(EPathfindingLayer::SAIL);
+	const int cost = newHorizonsMovement::rapidEmbarkationCost(landMaximum);
+	EXPECT_EQ(helper.getMovementCost(shore, sea, EPathfindingLayer::SAIL, landMaximum, false), cost);
+	EXPECT_EQ(hero->movementPointsAfterEmbark(landMaximum, cost, false, info),
+		static_cast<int>(static_cast<int64_t>(landMaximum - cost) * seaMaximum / landMaximum));
+	handler->setMovePoints(hero->id, cost - 1);
+	ASSERT_FALSE(handler->moveHero(hero->id, hero->convertFromVisitablePos(sea),
+		EMovementMode::STANDARD, false, hero->getOwner(), EPathfindingLayer::SAIL));
+	EXPECT_FALSE(hero->inBoat());
+	EXPECT_EQ(hero->movementPointsRemaining(), cost - 1);
+	hero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::FREE_SHIP_BOARDING, BonusSource::OTHER, 1, BonusSourceID()));
+	CPathfinderHelper freeBoarding(*gameState(), hero, PathfinderOptions(*gameState()));
+	const int freeCost = freeBoarding.getMovementCost(shore, sea, EPathfindingLayer::SAIL, landMaximum, false);
+	EXPECT_EQ(freeCost, 5) << "Free boarding preserves the ordinary 10-point step, halved by Navigation";
+	EXPECT_EQ(hero->movementPointsAfterEmbark(landMaximum, freeCost, false, freeBoarding.getTurnInfo()),
+		static_cast<int>(static_cast<int64_t>(landMaximum - freeCost) * seaMaximum / landMaximum));
+	installLegacyPlannedSnapshot();
+	CPathfinderHelper legacy(*gameState(), hero, PathfinderOptions(*gameState()));
+	EXPECT_FALSE(legacy.getTurnInfo()->hasNewHorizonsRapidEmbarkation());
 }
 
 TEST_F(NewHorizonsLogisticsMovementPerksTest, RoadmasterForecastMatchesOrthogonalDiagonalAndOffroadMovement)

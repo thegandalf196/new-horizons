@@ -1016,6 +1016,19 @@ bool BattleActionProcessor::doWaitAction(const CBattleInfoCallback & battle, con
 		return false;
 
 	awardBattlefieldMasteryIfEligible(*gameHandler, battle, stack, BattlecraftMasteryAction::WAIT);
+	if(newHorizonsBattlecraft::hasOverwatch(battle.battleGetOwnerHero(stack))
+		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(stack) && stack->isShooter()
+		&& stack->battlecraftOverwatchUsedRound != battle.battleGetRound())
+	{
+		auto state = stack->acquireState();
+		state->battlecraftOverwatchReadyRound = battle.battleGetRound();
+		BattleUnitsChanged changed;
+		changed.battleID = battle.getBattle()->getBattleID();
+		UnitChanges update(stack->unitId(), UnitChanges::EOperation::UPDATE);
+		update.data = state->save();
+		changed.changedStacks.push_back(std::move(update));
+		gameHandler->sendAndApply(changed);
+	}
 
 	processBattleEventTriggers(battle, CombatEventType::WAIT, stack, nullptr);
 	return true;
@@ -1528,7 +1541,7 @@ bool BattleActionProcessor::doWalkAction(const CBattleInfoCallback & battle, con
 
 	processBattleEventTriggers(battle, CombatEventType::BEFORE_MOVE, stack, nullptr);
 
-	auto movementResult = moveStack(battle, ba.stackNumber, target.at(0).hexValue); //move
+	auto movementResult = moveStack(battle, ba.stackNumber, target.at(0).hexValue, voluntaryMovementAction); //move
 	if (movementResult.invalidRequest)
 	{
 		gameHandler->complain("Stack failed movement!");
@@ -1719,7 +1732,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 			return false;
 		}
 	}
-	const auto movementResult = moveStack(battle, ba.stackNumber, attackPos);
+	const auto movementResult = moveStack(battle, ba.stackNumber, attackPos, voluntaryMovementAction);
 	int movementSpent = movementResult.movementCost;
 
 	logGlobal->trace("%s will attack %s", stack->nodeName(), destinationStack->nodeName());
@@ -2613,7 +2626,7 @@ bool BattleActionProcessor::doWalkAndSpellcastAction(const CBattleInfoCallback &
 		return false;
 	}
 
-	const auto movementResult = moveStack(battle, ba.stackNumber, movementDestinationTile);
+	const auto movementResult = moveStack(battle, ba.stackNumber, movementDestinationTile, voluntaryMovementAction);
 
 	if (movementResult.invalidRequest)
 	{
@@ -2967,8 +2980,15 @@ bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & batt
 }
 
 bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & battle, const BattleAction &ba,
-	bool * masterGateActivationContinuationOut)
+	bool * masterGateActivationContinuationOut, bool voluntary)
 {
+	struct MovementProvenanceGuard
+	{
+		bool & value;
+		bool previous;
+		~MovementProvenanceGuard() { value = previous; }
+	} movementGuard{voluntaryMovementAction, voluntaryMovementAction};
+	voluntaryMovementAction = voluntary;
 	if(masterGateActivationContinuationOut)
 		*masterGateActivationContinuationOut = false;
 	const BattleSide deploymentSide = activeDeploymentSide(battle);
@@ -3452,7 +3472,42 @@ void BattleActionProcessor::breakSanctuary(const CBattleInfoCallback & battle, c
 	gameHandler->sendAndApply(message);
 }
 
-BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest)
+void BattleActionProcessor::resolveOverwatch(const CBattleInfoCallback & battle, const CStack * mover,
+	const BattleHex & from, const BattleHex & to)
+{
+	const auto reactors = battle.battleGetOverwatchReactors(mover, from, to);
+	for(const auto id : reactors)
+	{
+		if(!mover->alive() || armorerLastStandEndedActivation(mover))
+			break;
+		const auto * shooter = battle.battleGetStackByID(id, false);
+		if(!shooter || !battle.battleCanOverwatch(shooter, mover, from, to)
+			|| !battle.battleCanShoot(shooter, mover->getPosition()))
+			continue;
+		auto state = shooter->acquireState();
+		state->battlecraftOverwatchReadyRound = -1;
+		state->battlecraftOverwatchUsedRound = battle.battleGetRound();
+		BattleUnitsChanged changed;
+		changed.battleID = battle.getBattle()->getBattleID();
+		UnitChanges update(id, UnitChanges::EOperation::UPDATE);
+		update.data = state->save();
+		changed.changedStacks.push_back(std::move(update));
+		gameHandler->sendAndApply(changed);
+
+		BattleLogMessage message;
+		message.battleID = battle.getBattle()->getBattleID();
+		MetaString line;
+		line.appendRawString("Overwatch: %s fires one reaction at 50% normal damage.");
+		shooter->addNameReplacement(line, shooter->getCount());
+		message.lines.push_back(std::move(line));
+		gameHandler->sendAndApply(message);
+		makeAttack(battle, shooter, mover, {.targetHex = mover->getPosition(), .first = true,
+			.ranged = true, .archeryRangedDamageMultiplierPercent = newHorizonsBattlecraft::OVERWATCH_DAMAGE_PERCENT,
+			.counter = true, .retaliation = true, .battlecraftOverwatch = true});
+	}
+}
+
+BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)
 {
 	const CStack *currentUnit = battle.battleGetStackByID(stack);
 	if(!currentUnit || !dest.isValid())
@@ -3462,6 +3517,7 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 	}
 
 	const BattleSide deploymentSide = activeDeploymentSide(battle);
+	voluntary = voluntary && deploymentSide == BattleSide::NONE && battle.battleTacticDist() == 0;
 	if(deploymentSide != BattleSide::NONE && currentUnit->unitSide() != deploymentSide)
 	{
 		gameHandler->complain("Only a stack belonging to the current deployment side may move!");
@@ -3601,6 +3657,9 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 			gameHandler->sendAndApply(sm);
 			result.distance = pathDistance;
 			result.movementCost = pathDistance;
+			if(voluntary)
+				resolveOverwatch(battle, currentUnit, start, currentUnit->getPosition());
+			movementSuccess = currentUnit->alive() && !armorerLastStandEndedActivation(currentUnit);
 		}
 	}
 	else //for non-flying creatures
@@ -3812,6 +3871,15 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 
 					if(!obstacleHit)
 						passed.insert(hex);
+
+					// Stop the presentation segment at the first legal endpoint
+					// entering a waiting shooter's range. Occupied transit hexes
+					// cannot be published as a stack position; defer to the next
+					// legal endpoint rather than corrupting the battle occupancy.
+					if(voluntary && !crossingOccupiedStack && !crossingPassingLinesStack
+						&& accessibility.accessible(hex, currentUnit)
+						&& !battle.battleGetOverwatchReactors(currentUnit, lastCommittedPosition, hex).empty())
+						obstacleHit = true;
 				}
 			}
 			if(resumeMovementLeft >= 0)
@@ -3820,6 +3888,7 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 			if (!tiles.empty())
 			{
 				//commit movement
+				const BattleHex previousSegmentPosition = currentUnit->getPosition();
 				int segmentDistance = 0;
 				for(const auto & hex : tiles)
 				{
@@ -3868,6 +3937,13 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 						message.lines.push_back(std::move(line));
 						gameHandler->sendAndApply(message);
 						nightProwlerGrantedThisMove = true;
+					}
+					if(voluntary)
+						resolveOverwatch(battle, currentUnit, previousSegmentPosition, currentUnit->getPosition());
+					if(!currentUnit->alive() || armorerLastStandEndedActivation(currentUnit))
+					{
+						movementSuccess = false;
+						break;
 					}
 				}
 				tiles.clear();
@@ -3969,7 +4045,8 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 	if(dest == start) 	//If dest is equal to start, then we should handle obstacles for it anyway
 		passed.clear();	//Just empty passed, obstacles will handled automatically
 	//handling obstacle on the final field (separate, because it affects both flying and walking stacks)
-	movementSuccess &= battle.handleObstacleTriggersForUnit(*gameHandler->spellEnv, *currentUnit, passed);
+	if(currentUnit->alive() && !armorerLastStandEndedActivation(currentUnit))
+		movementSuccess &= battle.handleObstacleTriggersForUnit(*gameHandler->spellEnv, *currentUnit, passed);
 	if(orderStatesBeforeAttacker != battle.getBattle()->getHeroOrderStates(BattleSide::ATTACKER))
 		publishHeroOrderState(battle, BattleSide::ATTACKER);
 	if(orderStatesBeforeDefender != battle.getBattle()->getHeroOrderStates(BattleSide::DEFENDER))
@@ -4350,7 +4427,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	// that it happens before the incoming blow, but it must not consume the
 	// defender's normal retaliation. Keep the two notions separate here.
 	const bool counterAttack = attack.counter && !attack.brace && attack.preemptiveDamagePercent <= 0;
-	const bool normalCounter = counterAttack && !attack.archeryCounterfire;
+	const bool normalCounter = counterAttack && !attack.archeryCounterfire && !attack.battlecraftOverwatch;
 	blm.battleID = battle.getBattle()->getBattleID();
 	bat.battleID = battle.getBattle()->getBattleID();
 	bat.attackerChanges.battleID = battle.getBattle()->getBattleID();
@@ -5630,7 +5707,7 @@ void BattleActionProcessor::addGenericDamageLog(BattleLogMessage& blm, const std
 
 bool BattleActionProcessor::makeAutomaticBattleAction(const CBattleInfoCallback & battle, const BattleAction & ba)
 {
-	return makeBattleActionImpl(battle, ba);
+	return makeBattleActionImpl(battle, ba, nullptr, false);
 }
 
 bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & battle, PlayerColor player,

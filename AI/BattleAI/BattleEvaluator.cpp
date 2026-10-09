@@ -4402,7 +4402,15 @@ BattleAction BattleEvaluator::moveOrAttack(const CStack * stack, const BattleHex
 		if(stack->position == hex)
 			return BattleAction::makeDefend(stack);
 		else
+		{
+			// Pure movement has no attack preview to carry an Overwatch death.
+			// Reject a deterministically lethal route without spending live ammo/RNG.
+			auto movement = std::make_shared<HypotheticBattle>(env.get(), hb);
+			movement->projectVoluntaryMovement(stack->unitId(), hex);
+			if(!movement->battleGetUnitByID(stack->unitId())->alive())
+				return BattleAction::makeDefend(stack);
 			return BattleAction::makeMove(stack, hex);
+		}
 	}
 }
 

@@ -1,5 +1,47 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-09 — Overwatch focused fixture constructor
+
+Linked candidate90398 stops at the new Overwatch fixture; isolated object build
+27100 reproduces the error. Its limited-shooting-range Bonus used four arguments,
+but this branch requires a fifth typed source ID. The fixture now supplies
+BonusSourceID(), without changing the production Bonus API or gameplay rule.
+Shared/server/AI production objects compiled before the failure. Retry48629 is
+pending; no complete build or native acceptance is claimed yet. Check existing
+constructor signatures before adding synthetic bonuses.
+
+Linked retry48629 exits0. Primary native29 runs28pass/1fail with zero skips in
+9.046s: the second Overwatch used-marker snapshot follows physical damage and
+hits the existing Veteran-history binary snapshot guard. Initial Ready restore
+and principal runtime/AI/movement cases pass. Preserve that guard; take the
+second snapshot after an accepted mover activation clears its transient history,
+without directly clearing state or weakening serialization. This is a bounded
+Overwatch marker/rebind test, not certification of arbitrary mid-action binary
+battle snapshots. The failed XML/log remain private under MHQdPpt8.
+
+Adjacent41 runs38pass/3fail with zero skips in11.726s. A focused comparison
+against the preserved Convergence binary/library pair and its own frozen config
+reproduces all three Counterfire signatures (3/3fail,1.252s): unavailable spell
+index, missing two-shot/Crossfire expectations, and the earlier-perk-tier guard.
+Shared Mods/scripts/test resource symlinks remain current as in that original
+runner; this is a scoped unchanged-engine/config comparison, not a hermetic
+historical checkout. Record these fixtures for Phase2 rather than claim41/41
+or weaken production rules. Retry13033 links successfully after the accepted
+save-boundary fixture correction; repaired primary execution remains pending.
+
+Repaired primary still runs28/29 (8.968s): the fixture's typed active-stack
+packet is not the full BattleFlow activation producer and does not clear Veteran
+history. Do not mistake packet application for the complete lifecycle. Instead,
+isolate used-marker binary rebinding after a legal lethal reaction, with another
+defender alive; death avoids that preexisting unsupported transient snapshot.
+Keep first Ready restore unchanged and retain separate nonlethal damage tests.
+Arbitrary wounded mid-action binary snapshots remain unverified/guarded.
+
+Final fixture-only relink37069 succeeds and primary29/29 passes8.983s with
+zero skips. Both Ready and Used marker rebinding pass after the legal lethal
+reaction boundary. All failed receipts remain retained; this does not broaden
+the save claim beyond the tested markers and existing snapshot constraints.
+
 ### 2026-10-09 — Obsidian portrait follow-up without single-player victory
 
 Use the existing opt-in ExportOrdinaryAcademyPortraitScenario (native1/1), which

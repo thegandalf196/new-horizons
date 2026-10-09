@@ -368,6 +368,8 @@ newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
 	newHorizonsBattleStatus::StackInfoStatusSnapshot result;
 	result.defend = currentDefendStatus(stack, battleCallback);
 	result.battlecraftWait = currentBattlecraftWaitStatus(stack, battleCallback);
+	if(stack && battleCallback && battleCallback->battleOverwatchReady(stack))
+		result.overwatchRange = newHorizonsBattlecraft::overwatchRange(stack);
 	result.sylvanLuck = currentSylvanLuckStatus(stack, battleCallback, luckReadback);
 	if(stack)
 	{
@@ -774,10 +776,15 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		labels.push_back(std::make_shared<CLabel>(8, 155, EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::YELLOW, badge));
 		statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(7, 153, 39, 13), tooltip, tooltip));
 	}
-	else if(displayedStatus.battlecraftWait)
+	else if(displayedStatus.battlecraftWait || displayedStatus.overwatchRange > 0)
 	{
-		const auto tooltip = newHorizonsBattleStatus::battlecraftWaitTooltip(*displayedStatus.battlecraftWait);
-		labels.push_back(std::make_shared<CLabel>(8, 155, EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::YELLOW, "WAIT"));
+		auto tooltip = displayedStatus.battlecraftWait
+			? newHorizonsBattleStatus::battlecraftWaitTooltip(*displayedStatus.battlecraftWait) : std::string();
+		if(displayedStatus.overwatchRange > 0)
+			tooltip += "\n\nOverwatch ready: one 50%-damage ranged reaction when a legal enemy voluntarily enters range "
+				+ std::to_string(displayedStatus.overwatchRange) + ". Ends at the delayed activation; once per round.";
+		labels.push_back(std::make_shared<CLabel>(8, 155, EFonts::FONT_TINY, ETextAlignment::TOPLEFT,
+			Colors::YELLOW, displayedStatus.overwatchRange > 0 ? "WATCH" : "WAIT"));
 		statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(7, 153, 39, 13), tooltip, tooltip));
 	}
 	const auto incomingSoulChain = soulChainIncomingLinks(stack, battleCallback.get());

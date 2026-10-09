@@ -339,6 +339,7 @@ set(test_SRCS
 		server/battles/NewHorizonsBulwarkRuntimeTest.cpp
 		server/battles/NewHorizonsBattlecraftTest.cpp
 		server/battles/NewHorizonsBattlecraftPreemptiveStrikeTest.cpp
+		server/battles/NewHorizonsOverwatchTest.cpp
 		server/battles/NewHorizonsBattlecraftDefendLifetimeTest.cpp
 		server/battles/NewHorizonsBattlefieldMasteryTest.cpp
 		server/battles/NewHorizonsLastStandTest.cpp

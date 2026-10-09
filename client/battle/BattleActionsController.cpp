@@ -78,6 +78,28 @@ constexpr std::string_view masterChainLightningJsonKey = "new-horizons:masterCha
 constexpr int32_t stormOfDaggersMaximumTargets = 5;
 constexpr int32_t vengefulVinesFootprintHexCount = 3;
 
+static std::string overwatchMovementWarning(const CBattleInfoCallback & battle,
+	const battle::Unit * mover, const BattleHex & destination)
+{
+	if(!mover || !destination.isAvailable() || destination == mover->getPosition())
+		return {};
+	const auto path = mover->hasBonusOfType(BonusType::FLYING)
+		? BattleHexArray{destination} : battle.getPath(mover->getPosition(), destination, mover).first;
+	std::set<uint32_t> reactors;
+	auto from = mover->getPosition();
+	for(size_t index = path.size(); index > 0; --index)
+	{
+		const auto to = path[index - 1];
+		for(const auto id : battle.battleGetOverwatchReactors(mover, from, to))
+			reactors.insert(id);
+		from = to;
+	}
+	if(reactors.empty())
+		return {};
+	return "\nOverwatch hazard: " + std::to_string(reactors.size())
+		+ " ready shooter(s) may react at 50% damage before arrival.";
+}
+
 struct FriendlyFirePreview
 {
 	newHorizonsFriendlyFire::ConfirmationSnapshot snapshot;
@@ -3527,10 +3549,10 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 		case PossiblePlayerBattleAction::MOVE_STACK:
 		{
 			const CStack * activeStack = owner.stacksController->getActiveStack();
-			if (activeStack->hasBonusOfType(BonusType::FLYING))
-				return formatWithStackName("core.genrltxt.295", activeStack); //Fly %s here
-			else
-				return formatWithStackName("core.genrltxt.294", activeStack); //Move %s here
+			const auto text = formatWithStackName(activeStack->hasBonusOfType(BonusType::FLYING)
+				? "core.genrltxt.295" : "core.genrltxt.294", activeStack);
+			return text + (action.get() == PossiblePlayerBattleAction::MOVE_STACK
+				? overwatchMovementWarning(*owner.getBattle(), activeStack, targetHex) : std::string());
 		}
 
 		case PossiblePlayerBattleAction::ATTACK:
@@ -3581,7 +3603,8 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 					flankPrefix = "Flank +" + std::to_string(flankPercent) + "% here (included): ";
 				}
 				return flankPrefix + formatMeleeAttack(estimation, targetStack->getName())
-					+ "\n" + formatRetaliation(retaliation, enemyMayBeKilled);
+					+ "\n" + formatRetaliation(retaliation, enemyMayBeKilled)
+					+ overwatchMovementWarning(*owner.getBattle(), attacker, attackFromHex);
 			}
 
 		case PossiblePlayerBattleAction::SHOOT:

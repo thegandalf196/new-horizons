@@ -11,6 +11,7 @@
 #include "StackWithBonuses.h"
 #include "NewHorizonsHexOfPain.h"
 #include "../../lib/battle/BattleInfo.h"
+#include "../../lib/battle/BattleAttackInfo.h"
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsBattlecraft.h"
@@ -2397,6 +2398,53 @@ void HypotheticBattle::moveUnit(uint32_t id, const BattleHex & destination)
 	}
 }
 
+std::vector<ProjectedOverwatchHit> HypotheticBattle::projectVoluntaryMovement(uint32_t id,
+	const BattleHex & destination)
+{
+	std::vector<ProjectedOverwatchHit> result;
+	auto mover = getForUpdate(id);
+	if(!mover || !mover->alive() || destination == mover->getPosition() || !destination.isAvailable())
+		return result;
+	const auto start = mover->getPosition();
+	auto path = mover->hasBonusOfType(BonusType::FLYING)
+		? BattleHexArray{destination} : getPath(start, destination, mover.get()).first;
+	// getPath stores destination first; traverse the same committed endpoints
+	// as the authoritative voluntary mover, while flying only checks landing.
+	for(size_t index = path.size(); index > 0 && mover->alive(); --index)
+	{
+		const auto from = mover->getPosition();
+		const auto to = path[index - 1];
+		moveUnit(id, to);
+		for(const auto shooterId : battleGetOverwatchReactors(mover.get(), from, to))
+		{
+			auto shooter = getForUpdate(shooterId);
+			if(!mover->alive() || !battleCanOverwatch(shooter.get(), mover.get(), from, to))
+				continue;
+			BattleAttackInfo attack(shooter.get(), mover.get(), 0, true);
+			attack.retaliation = true;
+			attack.archeryRangedDamageMultiplierPercent = newHorizonsBattlecraft::OVERWATCH_DAMAGE_PERCENT;
+			int64_t damage = battleExpectedLuckDamage(attack);
+			shooter->battlecraftOverwatchReadyRound = -1;
+			shooter->battlecraftOverwatchUsedRound = getRound();
+			shooter->afterAttack(true, false, true);
+			shooter->removeUnitBonus(Bonus::UntilAttack);
+			shooter->removeUnitBonus(Bonus::UntilOwnAttack);
+			const auto source = captureElementalRebirthSource(*mover);
+			const bool nativeRebirth = hasReadyNativeRebirth(mover.get());
+			const auto healthBefore = mover->getAvailableHealth();
+			mover->damage(damage, false, battle::DamageProvenance::PHYSICAL_CREATURE);
+			const auto healthLoss = std::max<int64_t>(0, healthBefore - mover->getAvailableHealth());
+			if(healthLoss > 0)
+				mover->removeUnitBonus(Bonus::UntilBeingAttacked);
+			result.push_back({shooterId, to, healthLoss});
+			recordBloodrageTransition(mover, true);
+			if(source)
+				projectElementalRebirth(mover.get(), *source, !mover->alive(), mover->isClone(), nativeRebirth);
+		}
+	}
+	return result;
+}
+
 void HypotheticBattle::updateUnit(uint32_t id, const JsonNode & data, int64_t healthDelta)
 {
 	std::shared_ptr<StackWithBonuses> changed = getForUpdate(id);
@@ -2896,6 +2944,9 @@ void HypotheticBattle::makeWait(const battle::Unit * activeStack)
 
 	resetActiveUnit();
 	unit->afterWait();
+	if(newHorizonsBattlecraft::hasOverwatch(battleGetOwnerHero(unit.get()))
+		&& unit->isShooter() && unit->battlecraftOverwatchUsedRound != getRound())
+		unit->battlecraftOverwatchReadyRound = getRound();
 	const auto side = playerToSide(battleGetOwner(unit.get()));
 	const auto round = getRound();
 	if(newHorizonsBattlecraft::canAwardBattlefieldMastery(battleGetOwnerHero(unit.get()), unit.get(),

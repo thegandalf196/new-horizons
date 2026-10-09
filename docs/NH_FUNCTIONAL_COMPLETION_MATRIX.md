@@ -2,6 +2,24 @@
 
 Updated: 2026-10-09
 
+Overwatch and Rapid Embarkation are source/native accepted after linked48629
+and fixture-only relinks13033/37069. Final primary29/29 passes in8.983s with
+zero skips; root checks XML. Principal reactions, ammo/expiry/death-stop, saved
+markers/rebind, detached AI and accepted boarding/pathfinder parity are exercised.
+Data17/17 and module parity pass; independent review has no remaining blocker.
+Receipt: build/nh-overwatch-movement-native.MHQdPpt8/receipt.md. Perks245->247/310,
+generic170->172/220; faction75/90 unchanged; planned65->63 (48 generic,15 faction).
+Battlecraft and Logistics each9/10. Combat63/67, Orders8/8 and31 Skills/93 ranks
+unchanged. No rendered acceptance or normal-launcher promotion is claimed.
+
+Adjacent38/41 has three Counterfire failures reproduced on the preserved prior
+binary/config pair, with shared resource symlinks noted in the receipt. Phase2
+retains those fixtures, occupied-transit AI/UI parity, advanced reaction effects,
+no-reactor projection overhead, custom-vehicle boarding and arbitrary wounded
+mid-action binary snapshots. The new marker test isolates Ready and Used rebind
+without weakening the existing Veteran-history guard. Nature's Wrath/Worldroot
+remain missing: new unregistered helper/script preparation is not coverage.
+
 UP072 Elemental Convergence and four terrain-dependent perks are source/native
 verified with production registration. Ten-job builds15278 and40484 exit0;
 final primary native25/25 passes in7.627s, zero skips, independently checked
@@ -4465,7 +4483,7 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | All three ranks per Skill are active; many registered Skills still lack complete perk progression. |
 | Skill rank effects active | 93/93 | Elemental Rebirth's three ranks now have source/native and owning-side AI evidence. Active status does not certify every wider interaction. |
-| Skill perks active | 245/310 | 65 planned; current registry recount2026-10-09. Generic170/220, faction75/90. Discipline8/10; Armorer9/10; War Machines7/10; Spellcraft6/10; Luck8/10; Diplomacy7/10; Chaos Magic6/10; Nature Magic8/10; Necromancy10/10; Learning4/10; Estates6/10; Battlecraft8/10; Logistics8/10; Command7/10; Warcasting9/10. Historian's foundation remains planned and adds no activation count. Active status alone does not certify every mechanic. |
+| Skill perks active | 247/310 | 63 planned; current registry recount2026-10-09. Generic172/220, faction75/90. Discipline8/10; Armorer9/10; War Machines7/10; Spellcraft6/10; Luck8/10; Diplomacy7/10; Chaos Magic6/10; Nature Magic8/10; Necromancy10/10; Learning4/10; Estates6/10; Battlecraft9/10; Logistics9/10; Command7/10; Warcasting9/10. Historian's foundation remains planned and adds no activation count. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 27/27 | All nine faction rank foundations are active; their remaining perks and wider integration are separate work. |
 | Faction perks active | 75/90 | 15 planned perks; Divine Mandate has six accepted perks, including Expert Mandate of Heaven and Advanced Purifying Mandate; Elemental Rebirth has seven accepted perks with live/detached evidence, including Rebirth Chain and the three terrain perks. |
 | Canonical combat-spell identities registered | 63/67 | 4 missing/inactive; Elemental Convergence is the newest source/native-verified identity. Chaos is 8/11, Light 11/11 and Nature is 10/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
@@ -4816,7 +4834,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Offense | 3/0 | 10/0 | Bounded consumer audit found Breakthrough omitted explicit Battlecraft/Bulwark Defend reductions. UP231 repairs those channels with8/8 focused cases, accepted melee and equivalent-view detached parity. Broader mundane-state taxonomy and stale earlier-tier fixture repairs remain deferred; active registration is not whole-family certification. |
 | Armorer | 3/0 | 9/1 | Defiant joins Last Stand, Bastion, Formation Fighting and Veteran with focused live/detached evidence. UP136 verifies one side-shared nonmagical denial exemption per round, complete No Quarter exemption and ordinary/magical legality, active native10/10. Unyielding lacks a nonmagical displacement producer. |
 | Archery | 3/0 | 10/0 | Bounded canonical consumer audit finds all ten active perks represented in shared payload, authoritative actions/reactions and BattleAI projections; no missing principal source clause identified. This is source evidence, not focused whole-family execution certification. |
-| Battlecraft | 3/0 | 8/2 | Battlefield Mastery joins the seven previously verified perks. UP156 focused4/4 and adjacent16/16 pass with zero skips, including machine exclusion, first-action allocation, distinct Wait/Defend expiry and detached branches. Actual Defend selection, controlled units and death/revival composition remain Phase2. Overwatch and Rapid Response remain planned. |
+| Battlecraft | 3/0 | 9/1 | Overwatch joins prior verified perks after29/29 principal cases including actual Wait/entry reactions, ammo, expiry, death-stop, marker/rebind and detached AI. Rapid Response remains planned. Occupied-transit forecasts, advanced reaction effects and broader controlled-unit/death-revival composition remain Phase2. |
 | War Machines | 3/0 | 7/3 | Battlefield Medic joins Counter-Battery, Surgeon, Piercing Bolts, Fortification Engineer, Master Gunner and Quartermaster. UP098 verifies permanent restoration, ordinary Tent healing first, shared UI/AI and actual choice/result paths, active native17/17. Counter-Battery has actual scoped Citadel-tower/Ballista shots and shared AI candidate/forecast evidence. Three perks remain planned. |
 | Discipline | 3/0 | 8/2 | Esprit de Corps joins Steadfast, Unbreakable, Inspirational Leader, Rally, Standard Bearer, Hold Fast and Fearless with focused live/readback and receiving-hero NK2 evidence. Heroic Spirit activation timing and Veteran Cohesion HP reference remain held. |
 | Recruitment | 3/0 | 6/4 | Four perks missing |
@@ -4830,7 +4848,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Spellcraft | 3/0 | 6/4 | Counterpressure has actual live/detached polarity-independent effects, response consumption and no-op controls. Overwhelming Formula selects the first hostile magical injury against applicable MDR, retaining the winning cast across targets and delayed hazards; its50% penetration combines independently. Grand Formula, Arcane Focus, Spell Penetration and Empower Spell remain active. Empower Spell uses the final Wisdom-adjusted12-Mana threshold. Basic/Advanced/Expert efficiency is110/120/130% under saved v3 rules. Precise Casting awaits Time Stop/Earthquake scope; Concentration target-count definition, Cross-School multi-school relation and Extend Spell unusual lifetimes remain explicit rulings. Wider movement/hazard routing remains Phase2. |
 | Wisdom | 3/0 | 8/2 | Mana Conservation post-combat Normal recovery, Archmage first accepted Level 4/5 discount, Arcane Reservoir flat capacity, Deep Knowledge shared bonus-growth chance, Meditation completed-day Movement recovery, Prepared Caster's first accepted combat-cast discount, Mysticism daily Normal recovery and Intelligence capacity are implemented. Arcane Memory source passes focused scroll/provenance/completion cases but remains planned pending neutral Adventure acquisition policy. One other perk remains missing. Broader interactions and playable acceptance remain open. |
 | Warcasting | 3/0 | 9/1 | Combat Casting and Enchanted Command now join the seven earlier active perks, with accepted authority/detached evidence in the42-case focused gate recorded above; resolved shared-rule decisions are not pending. Perfect Rhythm retains accepted third-Spell/third-Order, flat-base preservation and unmatched/unselected/expired controls. Valid one-per-tier selection prevents coexistence with Master Synthesis; the former stacking hold is inapplicable. Reactive Weave alone remains planned on its stronger-only versus additive readiness ruling. Rendered status and wider interactions remain Phase2. |
-| Logistics | 3/0 | 8/2 | Rapid Embarkation and Pursuit March remain missing. Master Logistician has actual day/boat/Stables/save/pathfinder evidence alongside Forced March, Roadmaster, Wayfarer and Mountaineer. Future-day strategic carry and unspent-burst forecasting remain Phase2. |
+| Logistics | 3/0 | 9/1 | Rapid Embarkation has accepted embark/disembark, affordability, Navigation/free-boarding and pathfinder parity in29/29 primary cases. Pursuit March remains missing. Master Logistician retains prior day/boat/Stables/save evidence. Custom vehicles, future-day strategic carry and unspent-burst forecasting remain Phase2. |
 | Diplomacy | 3/0 | 7/3 | Foundation, Envoy, Peacemaker, Tribute and Recruitment Pact verified; three perks remain missing |
 | Estates | 3/0 | 6/4 | Resource Broker joins Land Surveyor, Tax Collector, Investor, Estate Network and Financier. Local Marketplace rate, accepted AI trade, mine-capture grants, daily income, weekly Wood/Ore, weekly treasury interest and Investor's pre-income treasury snapshot have focused native evidence. Broader interactions and playable delivery remain separate. |
 | Learning | 3/0 | 4/6 | Master Teacher joins Mentor, Quick Study and Field Study with normal tier acquisition, meeting awards and saved weekly recipient evidence. Meetings, weekly persistence, initial offer reroll, stronger-opponent awarded XP and query/RNG parity are native verified. Academic Study awaits first-visit timing. |
@@ -5170,7 +5188,7 @@ from the active identity row.
 | Shadow | 12 | 12 | None by identity; rendered/playable and broader interaction evidence remain open |
 | Sorcery | 11 | 11 | None by identity; exact-effect evidence still required for other spells |
 | Chaos | 11 | 8 | Polymorph; Reality Warp; Pandemonium |
-| Nature | 11 | 9 | Nature's Wrath; Elemental Convergence |
+| Nature | 11 | 10 | Nature's Wrath |
 | Havoc | 11 | 11 | None by identity; exact-effect evidence still required |
 
 All five Adventure spell effects have partial or substantial runtime support,

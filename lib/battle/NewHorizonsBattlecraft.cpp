@@ -9,6 +9,7 @@
 #include "CUnitState.h"
 #include "NewHorizonsCombatSkills.h"
 #include "../mapObjects/CGHeroInstance.h"
+#include "../bonuses/Bonus.h"
 
 namespace newHorizonsBattlecraft
 {
@@ -34,6 +35,29 @@ int rankPercent(int value)
 bool hasEntrench(const CGHeroInstance * hero)
 {
 	return hero && hero->hasActivePerk("new-horizons:battlecraft", "new-horizons:battlecraft.entrench");
+}
+
+bool hasOverwatch(const CGHeroInstance * hero)
+{
+	return rank(hero) >= 1
+		&& hero->hasActivePerk("new-horizons:battlecraft", "new-horizons:battlecraft.overwatch");
+}
+
+bool overwatchReady(const CGHeroInstance * hero, const battle::Unit * shooter, int32_t round)
+{
+	const auto * state = dynamic_cast<const battle::CUnitState *>(shooter);
+	return round >= 1 && hasOverwatch(hero) && state && shooter->alive() && !shooter->isGhost()
+		&& shooter->canMove() && shooter->isShooter() && shooter->canShoot()
+		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(shooter)
+		&& state->battlecraftOverwatchReadyRound == round && state->battlecraftOverwatchUsedRound != round;
+}
+
+int overwatchRange(const battle::Unit * shooter)
+{
+	if(!shooter)
+		return 0;
+	const auto limited = shooter->getBonus(Selector::type()(BonusType::LIMITED_SHOOTING_RANGE));
+	return limited ? std::clamp(static_cast<int>(limited->val), 0, OVERWATCH_RANGE) : OVERWATCH_RANGE;
 }
 
 bool hasBattlefieldMastery(const CGHeroInstance * hero)

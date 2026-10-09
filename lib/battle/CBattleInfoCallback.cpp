@@ -3158,6 +3158,58 @@ bool CBattleInfoCallback::isLongWeaponAttack(const battle::Unit * attacker, cons
 	return false;
 }
 
+bool CBattleInfoCallback::battleOverwatchReady(const battle::Unit * shooter) const
+{
+	return shooter && getBattle() && heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
+		&& newHorizonsBattlecraft::overwatchReady(battleGetOwnerHero(shooter), shooter, battleGetRound());
+}
+
+bool CBattleInfoCallback::battleCanOverwatch(const battle::Unit * shooter, const battle::Unit * mover,
+	const BattleHex & from, const BattleHex & to) const
+{
+	if(!shooter || !mover || shooter->unitId() == mover->unitId() || !from.isAvailable() || !to.isAvailable()
+		|| from == to || !battleOverwatchReady(shooter) || !mover->alive() || mover->isGhost()
+		|| !battleMatchOwner(shooter, mover) || mover->isInvincible()
+		|| (mover->hasBonusOfType(BonusType::SANCTIFIED) && battleMatchOwner(shooter, mover)))
+		return false;
+	const int range = newHorizonsBattlecraft::overwatchRange(shooter);
+	if(range <= 0)
+		return false;
+	auto target = mover->acquireState();
+	target->setPosition(from);
+	if(isEnemyUnitWithinSpecifiedRange(shooter->getPosition(), target.get(), range))
+		return false;
+	target->setPosition(to);
+	if(!isEnemyUnitWithinSpecifiedRange(shooter->getPosition(), target.get(), range))
+		return false;
+
+	// Use the same blocked-shooter and adjacent-target exception as ordinary
+	// shots, but inspect the proposed mover footprint rather than a live hex
+	// lookup. This also makes the predicate usable by detached path forecasts.
+	const bool adjacent = isMeleeAttackPossible(shooter, target.get());
+	const bool pointBlank = adjacent && shooter->canShoot()
+		&& !shooter->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
+		&& newHorizonsArchery::hasPointBlankShot(battleGetOwnerHero(shooter));
+	if(!battleCanShoot(shooter) && !pointBlank)
+		return false;
+	if(adjacent && !canShootAdjacentUnits(shooter) && !pointBlank)
+		return false;
+	return true;
+}
+
+std::vector<uint32_t> CBattleInfoCallback::battleGetOverwatchReactors(const battle::Unit * mover,
+	const BattleHex & from, const BattleHex & to) const
+{
+	std::vector<uint32_t> result;
+	if(!getBattle() || !mover)
+		return result;
+	for(const auto * shooter : battleAliveUnits())
+		if(battleCanOverwatch(shooter, mover, from, to))
+			result.push_back(shooter->unitId());
+	std::sort(result.begin(), result.end());
+	return result;
+}
+
 bool CBattleInfoCallback::battleCanShoot(const battle::Unit * attacker, const BattleHex & dest) const
 {
 	RETURN_IF_NOT_BATTLE(false);

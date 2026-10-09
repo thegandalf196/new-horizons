@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "../pathfinder/NewHorizonsMovement.h"
 #include "../battle/HeroCommand.h"
 #include "CGHeroInstance.h"
 
@@ -2511,7 +2512,8 @@ CBonusSystemNode & CGHeroInstance::whereShouldBeAttached(CGameState & gs)
 
 int CGHeroInstance::movementPointsAfterEmbark(int MPsBefore, int basicCost, bool disembark, const TurnInfo * ti) const
 {
-	if(!ti->hasFreeShipBoarding() && !ti->hasNewHorizonsNavigation())
+	if(!ti->hasFreeShipBoarding() && !ti->hasNewHorizonsNavigation()
+		&& !ti->hasNewHorizonsRapidEmbarkation())
 		return 0; // take all MPs by default
 	
 	auto boatLayer = inBoat() ? getBoat()->layer : EPathfindingLayer::SAIL;
@@ -2521,6 +2523,14 @@ int CGHeroInstance::movementPointsAfterEmbark(int MPsBefore, int basicCost, bool
 
 	int mp1 = ti->getMaxMovePoints(disembark ? EPathfindingLayer::LAND : boatLayer);
 	int mp2 = ti->getMaxMovePoints(disembark ? boatLayer : EPathfindingLayer::LAND);
+	if(ti->hasNewHorizonsRapidEmbarkation() && !ti->hasFreeShipBoarding())
+	{
+		// The perk specifies a final cost. Navigation does not halve it again;
+		// free boarding retains its stronger ordinary-step-only exception.
+		const int remaining = std::max(0, MPsBefore - newHorizonsMovement::rapidEmbarkationCost(mp2));
+		return mp2 > 0 ? static_cast<int>(std::min<int64_t>(
+			static_cast<int64_t>(remaining) * mp1 / mp2, std::numeric_limits<int>::max())) : 0;
+	}
 	if(ti->hasNewHorizonsNavigation())
 	{
 		// The shared step-cost helper already discounted basicCost. Without

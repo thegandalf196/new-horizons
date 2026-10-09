@@ -55,6 +55,12 @@ public:
 		battle::confusionStateFromUnitJson(data).validateSerialization(h);
 	}
 
+	template <typename Handler> void validateOverwatchSerialization(Handler & h) const
+	{
+		if(battle::hasOverwatchState(data) && !h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWATCH))
+			throw std::runtime_error("Cannot discard Overwatch state in an older unit update format");
+	}
+
 	bool hasNoQuarterMoraleState() const
 	{
 		const auto & remaining = data["state"]["noQuarterMoraleActivationsRemaining"];
@@ -99,6 +105,8 @@ public:
 	template <typename Handler> void serialize(Handler & h)
 	{
 		if(h.saving)
+			validateOverwatchSerialization(h);
+		if(h.saving)
 			validateConfusionSerialization(h);
 		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_CASUALTY_PROVENANCE)
 			&& hasCasualtyProvenanceState())
@@ -130,6 +138,8 @@ public:
 		h & healthDelta;
 		h & data;
 		h & operation;
+		if(!h.saving)
+			validateOverwatchSerialization(h);
 		if(!h.saving)
 			validateConfusionSerialization(h);
 	}

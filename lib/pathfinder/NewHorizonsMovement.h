@@ -47,6 +47,9 @@ DLL_LINKAGE std::optional<DailyMovementBreakdown> currentDailyMovementBreakdown(
 /// boundaries.
 DLL_LINKAGE int maximumDailyMovement(std::int64_t percentage, std::int64_t flat = 0);
 
+/// Fixed final sea embark/disembark cost: ceil(10% of the source-layer daily budget).
+DLL_LINKAGE int rapidEmbarkationCost(int maximumDailyMovement);
+
 /// Evaluates the BonusList-compatible movement stages: base value, percentage
 /// to base, additive/flat value, then percentage to all.  The two-argument
 /// overload above is the canonical shorthand for a 200-point base with no

@@ -38,7 +38,8 @@ struct DLL_LINKAGE BattleAttackInfo
 	int preemptiveDamagePercent = 0; // Explicit final multiplier for a pre-emptive reaction.
 	int cleaveDamagePercent = 0; // Independent final multiplier for an automatic Cleave strike.
 	int relentlessAssaultDamagePercent = 0; // Side-chain additive bonus for this physical attack action.
-	/// Separate damage coefficient for an explicitly reduced-strength Archery attack (Skirmisher/Counterfire).
+	/// Separate damage coefficient for an explicitly reduced-strength ranged
+	/// attack (Skirmisher, Counterfire or Battlecraft Overwatch).
 	int archeryRangedDamageMultiplierPercent = 100;
 	bool luckyStrike   = false;
 	bool unluckyStrike = false;

@@ -1139,6 +1139,7 @@ struct StackInfoStatusSnapshot
 {
 	DefendStatus defend;
 	std::optional<BattlecraftWaitStatus> battlecraftWait;
+	int overwatchRange = 0;
 	SylvanLuckStackStatus sylvanLuck;
 	BattleFormStatus battleForm;
 	PhysicalPoisonStatus physicalPoison;

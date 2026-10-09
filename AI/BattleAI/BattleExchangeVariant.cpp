@@ -300,6 +300,7 @@ float BattleExchangeVariant::trackAttack(
 	auto attacker = hb->getForUpdate(ap.attack.attacker->unitId());
 	if(!attacker || attacker->armorerLastStandEndedActivation)
 		return 0;
+
 	const auto referenceController = hb->battleGetOwner(attacker.get());
 	const auto originalPosition = attacker->getPosition();
 	const auto attackerSide = hb->playerToSide(hb->battleGetOwner(attacker.get()));
@@ -317,7 +318,9 @@ float BattleExchangeVariant::trackAttack(
 		&& hb->battleNightProwlerCrossesEnemy(attacker.get(), nightProwlerPath);
 	if(crossesNightProwlerEnemy)
 		attacker->addUnitBonus(newHorizonsShroud::nightProwlerDamageBonuses());
-	if(!ap.attack.shooting && ap.from.isValid())
+	if(!ap.overwatchHits.empty())
+		hb->projectVoluntaryMovement(attacker->unitId(), ap.from);
+	if(!ap.attack.shooting && ap.from.isValid() && attacker->alive())
 		attacker->setPosition(ap.from);
 
 	float attackValue = ap.attackValue();
@@ -586,6 +589,8 @@ float BattleExchangeVariant::trackAttack(
 		unitToUpdate->battlecraftWaitMasteryDoubled = affectedUnit->battlecraftWaitMasteryDoubled;
 		unitToUpdate->battlecraftDefendMasteryDoubled = affectedUnit->battlecraftDefendMasteryDoubled;
 		unitToUpdate->battlecraftPreemptiveStrikeRound = affectedUnit->battlecraftPreemptiveStrikeRound;
+		unitToUpdate->battlecraftOverwatchReadyRound = affectedUnit->battlecraftOverwatchReadyRound;
+		unitToUpdate->battlecraftOverwatchUsedRound = affectedUnit->battlecraftOverwatchUsedRound;
 		unitToUpdate->cleaveUsedThisActivation = affectedUnit->cleaveUsedThisActivation;
 		unitToUpdate->bulwarkPreemptiveUsed = affectedUnit->bulwarkPreemptiveUsed;
 		unitToUpdate->bulwarkMireGripApplied = affectedUnit->bulwarkMireGripApplied;
@@ -693,6 +698,45 @@ float BattleExchangeVariant::trackAttack(
 {
 	if(!attacker || attacker->armorerLastStandEndedActivation)
 		return 0;
+
+	// Future exchange actors need the same move-before-hit reaction forecast
+	// as the selected action. Leave the historical shortcut unchanged when no
+	// ready reactor is involved, and never mutate evaluateOnly's parent branch.
+	if(!shooting && allowRetaliation
+		&& !attacker->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)
+		&& !attacker->hasBonusOfType(BonusType::CONFUSION_PENDING)
+		&& std::ranges::any_of(hb->battleAliveUnits(), [&](const battle::Unit * unit)
+			{ return hb->battleOverwatchReady(unit); }))
+	{
+		const auto reachable = hb->getReachability(attacker.get());
+		const auto available = hb->battleGetAvailableHexes(reachable, attacker.get(), true);
+		BattleHex approach;
+		int distance = GameConstants::BFIELD_SIZE;
+		for(const auto hex : defender->getAttackableHexes(attacker.get()))
+			if(available.contains(hex) && reachable.distances[hex.toInt()] < distance)
+			{
+				approach = hex;
+				distance = reachable.distances[hex.toInt()];
+			}
+		if(approach.isAvailable() && approach != attacker->getPosition())
+		{
+			auto branch = evaluateOnly ? std::make_shared<HypotheticBattle>(hb->env, hb) : hb;
+			BattleAttackInfo attack(attacker.get(), defender.get(), distance, false);
+			auto projected = AttackPossibility::evaluate(attack, approach, damageCache, branch);
+			if(!projected.overwatchHits.empty())
+			{
+				BattleExchangeVariant reactionExchange;
+				const auto value = reactionExchange.trackAttack(projected, branch, damageCache);
+				if(!evaluateOnly)
+				{
+					const auto & score = reactionExchange.getScore();
+					dpsScore.ourDamageReduce += isOurAttack ? score.ourDamageReduce : score.enemyDamageReduce;
+					dpsScore.enemyDamageReduce += isOurAttack ? score.enemyDamageReduce : score.ourDamageReduce;
+				}
+				return value;
+			}
+		}
+	}
 
 	const auto rebirthSpawnIdsBefore = hb->getElementalRebirthSpawnUnitIds();
 	const auto primalBurstFirstNewHit = hb->getProjectedPrimalBurstHits().size();

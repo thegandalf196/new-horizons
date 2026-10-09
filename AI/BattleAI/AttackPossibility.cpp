@@ -686,6 +686,43 @@ AttackPossibility AttackPossibility::evaluate(
 	// is now automatic and cannot be opted out of or forced by this hint.
 	(void)perfectMoment;
 	auto attacker = attackInfo.attacker;
+	// Ordinary movement is projected before the attack, not as a post-attack
+	// penalty: a lethal reaction must prevent the intended strike entirely.
+	if(attacker && hex.isAvailable() && hex != attacker->getPosition()
+		&& !attackInfo.retaliation && (!attackInfo.shooting || attackInfo.attackerPos == hex)
+		&& !attacker->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)
+		&& !attacker->hasBonusOfType(BonusType::CONFUSION_PENDING)
+		&& std::ranges::any_of(state->battleAliveUnits(), [&](const battle::Unit * unit)
+			{ return state->battleOverwatchReady(unit); }))
+	{
+		if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
+		{
+			auto projected = std::make_shared<HypotheticBattle>(model->env, state);
+			auto hits = projected->projectVoluntaryMovement(attacker->unitId(), hex);
+			if(!hits.empty())
+			{
+				auto moved = projected->getForUpdate(attacker->unitId());
+				BattleAttackInfo following = attackInfo;
+				following.attacker = moved.get();
+				following.defender = projected->battleGetUnitByID(attackInfo.defender->unitId());
+				auto result = moved->alive()
+					? evaluate(following, hex, damageCache, projected, perfectMoment)
+					: AttackPossibility(hex, BattleHex::INVALID, following);
+				if(!result.effectPreview)
+					result.effectPreview = projected;
+				if(!result.attackerState)
+					result.attackerState = moved;
+				for(const auto & hit : hits)
+				{
+					result.attackerDamageReduce += calculateDamageReduce(
+						state->battleGetUnitByID(hit.shooterId), attacker, hit.healthLoss, damageCache, state);
+					result.affectedUnits.push_back(result.effectPreview->getForUpdate(hit.shooterId));
+				}
+				result.overwatchHits = std::move(hits);
+				return result;
+			}
+		}
+	}
 	const bool rangedFollowUp = attackInfo.shooting && hasPendingRangedFollowUp(attacker);
 	const auto * requestedDefender = attackInfo.defender;
 	const auto * redirectedDefender = state->battleResolveHeroOrderTarget(attacker, requestedDefender,

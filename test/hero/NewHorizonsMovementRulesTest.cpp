@@ -13,6 +13,16 @@
 #include <cstdint>
 #include <limits>
 
+TEST(NewHorizonsMovementRules, RapidEmbarkationRoundsFinalTenPercentCostUp)
+{
+	using newHorizonsMovement::rapidEmbarkationCost;
+	EXPECT_EQ(rapidEmbarkationCost(200), 20);
+	EXPECT_EQ(rapidEmbarkationCost(221), 23);
+	EXPECT_EQ(rapidEmbarkationCost(1), 1);
+	EXPECT_EQ(rapidEmbarkationCost(0), 0);
+	EXPECT_EQ(rapidEmbarkationCost(std::numeric_limits<int>::max()), 214748365);
+}
+
 TEST(NewHorizonsMovementRules, DailyMovementUsesBasePercentageAndFlatBonuses)
 {
 	using newHorizonsMovement::maximumDailyMovement;

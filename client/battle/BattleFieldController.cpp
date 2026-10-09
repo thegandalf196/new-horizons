@@ -22,6 +22,7 @@
 #include "BattleStacksController.h"
 #include "BattleWindow.h"
 #include "NewHorizonsProtectLink.h"
+#include "../../lib/battle/NewHorizonsBattlecraft.h"
 
 #include "../CPlayerInterface.h"
 #include "../GameEngine.h"
@@ -962,7 +963,8 @@ void BattleFieldController::showHighlightedHexes(Canvas & canvas)
 		calculateRangeLimitAndHighlightImages(rangedFullDamageDistance, rangedFullDamageLimitImages, rangedFullDamageLimitHexes, rangedFullDamageLimitHexesHighlights);
 
 		// calculate array with highlight images for shooting range limit
-		auto shootingRangeDistance = hoveredStack->getShootingRangeDistance();
+		auto shootingRangeDistance = owner.getBattle()->battleOverwatchReady(hoveredStack)
+			? newHorizonsBattlecraft::overwatchRange(hoveredStack) : hoveredStack->getShootingRangeDistance();
 		calculateRangeLimitAndHighlightImages(shootingRangeDistance, shootingRangeLimitImages, shootingRangeLimitHexes, shootingRangeLimitHexesHighlights);
 	}
 

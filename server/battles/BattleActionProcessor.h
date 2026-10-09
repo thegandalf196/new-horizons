@@ -62,6 +62,9 @@ class BattleActionProcessor : boost::noncopyable
 
 	BattleProcessor * owner;
 	CGameHandler * gameHandler;
+	/// Scoped dispatch provenance, never gameplay/save state. Automatic forced
+	/// actions cannot be mistaken for voluntary movement by shared moveStack.
+	bool voluntaryMovementAction = false;
 
 	/// One reaction to a combat event that is about to run. Which script it is and how it is ordered
 	/// are decided when it is collected, so that running it is nothing but a dispatch. Units are kept
@@ -112,6 +115,7 @@ class BattleActionProcessor : boost::noncopyable
 		bool retaliation = false;
 		/// Counterfire is a counter-flagged reaction but does not consume normal retaliation.
 		bool archeryCounterfire = false;
+		bool battlecraftOverwatch = false;
 		bool brace = false;
 		bool bulwarkPreemptive = false;
 		int preemptiveDamagePercent = 0;
@@ -131,7 +135,9 @@ class BattleActionProcessor : boost::noncopyable
 		int64_t actualPrimaryDamage = 0;
 	};
 
-	MovementResult moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest);
+	MovementResult moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary = false);
+	void resolveOverwatch(const CBattleInfoCallback & battle, const CStack * mover,
+		const BattleHex & from, const BattleHex & to);
 	void breakSanctuary(const CBattleInfoCallback & battle, const battle::Unit * stack);
 	void makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender,
 		const AttackDescriptor & attack, bool * destroyedEnemyOut = nullptr,
@@ -197,7 +203,7 @@ class BattleActionProcessor : boost::noncopyable
 
 	bool dispatchBattleAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation);
 	bool makeBattleActionImpl(const CBattleInfoCallback & battle, const BattleAction & ba,
-		bool * masterGateActivationContinuationOut = nullptr);
+		bool * masterGateActivationContinuationOut = nullptr, bool voluntary = true);
 	void removeBonuses(const CBattleInfoCallback & battle, const battle::Unit * stack, BonusList bonuses);
 
 public:

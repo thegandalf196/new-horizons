@@ -65,6 +65,7 @@
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/battle/NewHorizonsBattlecraft.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 
@@ -1594,6 +1595,15 @@ void BattleWindow::updateBattleTargetSelectionControls()
 		!canUndo && !vengefulVinesCanUndo && !stormCanUndo && !soulChainCanUndo);
 	widget<CButton>("wait")->setEnabled(!rangedFollowUpPending
 		&& !active && !vengefulVinesActive && !stormActive && !soulChainActive);
+	const auto * overwatchStack = owner.stacksController->getActiveStack();
+	if(overwatchStack && overwatchStack->isShooter()
+		&& newHorizonsBattlecraft::hasOverwatch(owner.getBattle()->battleGetOwnerHero(overwatchStack)))
+		widget<CButton>("wait")->setHelp(CButton::tooltip("Wait / Overwatch",
+			"Wait arms one 50%-damage ranged reaction against the first legal enemy voluntarily entering range "
+			+ std::to_string(newHorizonsBattlecraft::overwatchRange(overwatchStack))
+			+ " before the delayed activation. Uses one shot; once per round."));
+	else
+		widget<CButton>("wait")->setHelp(CButton::tooltipLocalized("core.help.386"));
 	if(rangedFollowUpPending)
 		widget<CButton>("defence")->setHelp(CButton::tooltip(
 			"End activation", "Decline the pending Master Gunner second shot and end this activation."));

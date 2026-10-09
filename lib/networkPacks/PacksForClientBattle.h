@@ -795,7 +795,10 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 			if(rebirthChainConsumption && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_CHAIN))
 				throw std::runtime_error("Cannot discard Rebirth Chain consumption from an older packet");
 			for(const auto & change : changedStacks)
+			{
+				change.validateOverwatchSerialization(h);
 				change.validateConfusionSerialization(h);
+			}
 		}
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_OUTPUT_ORIGINAL_HP)
 			&& std::ranges::any_of(changedStacks, [](const UnitChanges & change)
@@ -906,7 +909,10 @@ struct BattleStackAttacked
 	template <typename Handler> void serialize(Handler & h)
 	{
 		if(h.saving)
+		{
+			newState.validateOverwatchSerialization(h);
 			newState.validateConfusionSerialization(h);
+		}
 		if(h.saving)
 			validateArmorerLastStandShape();
 		const auto & followUpPercent = newState.data["state"]["rangedFollowUpDamagePercent"];
@@ -1062,9 +1068,15 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 			if(perfectFortuneState && !h.hasFeature(Handler::Version::NEW_HORIZONS_PERFECT_FORTUNE))
 				throw std::runtime_error("Cannot discard Perfect Fortune strike state");
 			for(const auto & change : attackerChanges.changedStacks)
+			{
+				change.validateOverwatchSerialization(h);
 				change.validateConfusionSerialization(h);
+			}
 			for(const auto & hit : bsa)
+			{
+				hit.newState.validateOverwatchSerialization(h);
 				hit.newState.validateConfusionSerialization(h);
+			}
 		}
 		if(h.saving)
 			validateLastStandMarker();
@@ -1524,7 +1536,10 @@ struct DLL_LINKAGE StacksInjured : public CPackForClient
 		if(h.saving)
 		{
 			for(const auto & hit : stacks)
+			{
+				hit.newState.validateOverwatchSerialization(h);
 				hit.newState.validateConfusionSerialization(h);
+			}
 		}
 		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_CASUALTY_PROVENANCE)
 			&& std::ranges::any_of(stacks, [](const BattleStackAttacked & hit)

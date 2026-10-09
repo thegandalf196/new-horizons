@@ -17,6 +17,13 @@
 
 namespace newHorizonsMovement
 {
+int rapidEmbarkationCost(int maximumDailyMovement)
+{
+	if(maximumDailyMovement <= 0)
+		return 0;
+	return maximumDailyMovement / 10 + (maximumDailyMovement % 10 != 0 ? 1 : 0);
+}
+
 namespace
 {
 int ceilRational(const int64_t numerator, const int64_t denominator)

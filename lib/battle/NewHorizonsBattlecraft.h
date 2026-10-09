@@ -28,6 +28,11 @@ namespace newHorizonsBattlecraft
 DLL_LINKAGE int rank(const CGHeroInstance * hero);
 DLL_LINKAGE int rankPercent(int rank);
 DLL_LINKAGE bool hasEntrench(const CGHeroInstance * hero);
+constexpr int OVERWATCH_DAMAGE_PERCENT = 50;
+constexpr int OVERWATCH_RANGE = 10;
+DLL_LINKAGE bool hasOverwatch(const CGHeroInstance * hero);
+DLL_LINKAGE bool overwatchReady(const CGHeroInstance * hero, const battle::Unit * shooter, int32_t round);
+DLL_LINKAGE int overwatchRange(const battle::Unit * shooter);
 DLL_LINKAGE bool hasBattlefieldMastery(const CGHeroInstance * hero);
 DLL_LINKAGE bool canAwardBattlefieldMastery(const CGHeroInstance * hero, const battle::Unit * stack,
 	int32_t round, int32_t previousAwardRound, BattlecraftMasteryAction action);

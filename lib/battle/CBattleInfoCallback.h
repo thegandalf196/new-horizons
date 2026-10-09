@@ -335,6 +335,13 @@ public:
 	/// Exact legality test for a player-selected Skirmisher firing destination.
 	bool battleCanSkirmisherAttackFromHex(const battle::Unit * attacker, const BattleHex & targetHex, const BattleHex & attackFromHex) const;
 	bool battleCanShoot(const battle::Unit * attacker, const BattleHex & dest) const; //determines if stack with given ID shoot at the selected destination
+	bool battleOverwatchReady(const battle::Unit * shooter) const;
+	/// Strict outside-to-inside entry, evaluated using the mover's proposed
+	/// footprint. Instant relocation and movement cause are handled by callers.
+	bool battleCanOverwatch(const battle::Unit * shooter, const battle::Unit * mover,
+		const BattleHex & from, const BattleHex & to) const;
+	std::vector<uint32_t> battleGetOverwatchReactors(const battle::Unit * mover,
+		const BattleHex & from, const BattleHex & to) const;
 	/// Direct player shot legality, using the action controller rather than changing damage/effect relationships.
 	bool battleCanShootAction(const battle::Unit * attacker, const BattleHex & dest) const;
 	bool battleCanShoot(const battle::Unit * attacker) const; //determines if stack with given ID shoot in principle

@@ -469,7 +469,7 @@
 					"requires": "basic",
 					"description": "A shooter that Waits automatically makes one 50%-damage ranged reaction against the first enemy that voluntarily moves into its range before the delayed activation, if that enemy is a legal target. Once per round.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "A shooter that Waits automatically makes one 50%-damage ranged reaction against the first enemy that voluntarily moves into its range before the delayed activation, if that enemy is a legal target. Once per round."
 					}
 				},
@@ -2347,7 +2347,7 @@
 					"requires": "advanced",
 					"description": "Embarking or disembarking costs only 10% of maximum daily Movement.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Embarking or disembarking costs only 10% of maximum daily Movement."
 					}
 				},

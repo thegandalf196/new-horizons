@@ -123,6 +123,11 @@ public:
 	{
 		//this assumes that stack objects is newly created
 		//CUnitState is not serialized here except for explicit battle-long fields.
+		if(h.saving && (battlecraftOverwatchReadyRound < -1 || battlecraftOverwatchUsedRound < -1))
+			throw std::runtime_error("Invalid Overwatch round marker");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWATCH)
+			&& (battlecraftOverwatchReadyRound != -1 || battlecraftOverwatchUsedRound != -1))
+			throw std::runtime_error("Cannot discard Overwatch state in an older format");
 		if(h.saving)
 			confusionState.validateSerialization(h);
 		if(h.saving && hasCasualtyProvenanceState())
@@ -172,6 +177,18 @@ public:
 		else if(!h.saving)
 			rebirthOriginalAggregateHP = 0;
 		h & confusionState;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWATCH))
+		{
+			h & battlecraftOverwatchReadyRound;
+			h & battlecraftOverwatchUsedRound;
+			if(battlecraftOverwatchReadyRound < -1 || battlecraftOverwatchUsedRound < -1)
+				throw std::runtime_error("Invalid saved Overwatch round marker");
+		}
+		else if(!h.saving)
+		{
+			battlecraftOverwatchReadyRound = -1;
+			battlecraftOverwatchUsedRound = -1;
+		}
 	}
 
 private:

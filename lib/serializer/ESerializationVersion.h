@@ -196,13 +196,17 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_LUCK_SERENDIPITY, // previous-round positive Luck history and first-attack opportunity
 	NEW_HORIZONS_LEARNING_MASTER_TEACHER, // fixed weekly Mentor recipient identities
 	NEW_HORIZONS_REBIRTH_CHAIN, // once-per-side secondary Elemental Rebirth history
+	NEW_HORIZONS_OVERWATCH, // armed/consumed movement reaction provenance
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_REBIRTH_CHAIN,
+	CURRENT = NEW_HORIZONS_OVERWATCH,
 };
+
+static_assert(ESerializationVersion::NEW_HORIZONS_OVERWATCH > ESerializationVersion::NEW_HORIZONS_REBIRTH_CHAIN,
+	"Overwatch state must remain append-only");
 
 static_assert(ESerializationVersion::NEW_HORIZONS_REBIRTH_CHAIN > ESerializationVersion::NEW_HORIZONS_LEARNING_MASTER_TEACHER,
 	"Rebirth Chain history must remain append-only");

@@ -68,6 +68,8 @@ void CStack::localInit(BattleInfo * battleInfo)
 	assert(typeID.hasValue());
 	const int32_t restoredPersonalBloodrageIncrement = personalBloodrageIncrement;
 	const auto restoredConfusionState = confusionState;
+	const int32_t restoredOverwatchReadyRound = battlecraftOverwatchReadyRound;
+	const int32_t restoredOverwatchUsedRound = battlecraftOverwatchUsedRound;
 
 	exportBonuses();
 	if(base) //stack originating from "real" stack in garrison -> attach to it
@@ -90,6 +92,8 @@ void CStack::localInit(BattleInfo * battleInfo)
 	// Binary stack descriptors carry pending Confusion and target history too;
 	// rebinding the stack to the battle must not consume either value.
 	confusionState = restoredConfusionState;
+	battlecraftOverwatchReadyRound = restoredOverwatchReadyRound;
+	battlecraftOverwatchUsedRound = restoredOverwatchUsedRound;
 	position = initialPosition;
 }
 

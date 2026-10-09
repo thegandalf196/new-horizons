@@ -67,6 +67,7 @@ private:
 	bool freeShipBoardingTest;
 	bool newHorizonsPathfinding;
 	bool newHorizonsNavigation;
+	bool newHorizonsRapidEmbarkation;
 	bool newHorizonsRoadmaster;
 	bool newHorizonsWayfarer;
 
@@ -86,6 +87,7 @@ public:
 	bool usesNewHorizonsMovement() const;
 	bool hasNewHorizonsPathfinding() const { return newHorizonsPathfinding; }
 	bool hasNewHorizonsNavigation() const { return newHorizonsNavigation; }
+	bool hasNewHorizonsRapidEmbarkation() const { return newHorizonsRapidEmbarkation; }
 	bool hasNewHorizonsRoadmaster() const { return newHorizonsRoadmaster; }
 	bool hasNewHorizonsWayfarer() const { return newHorizonsWayfarer; }
 

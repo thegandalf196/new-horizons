@@ -837,7 +837,7 @@ int CPathfinderHelper::getMovementCost(
 			return remainingMovePoints;
 	}
 
-	if(ti->hasNewHorizonsNavigation())
+	if(ti->hasNewHorizonsNavigation() || ti->hasNewHorizonsRapidEmbarkation())
 	{
 		const bool disembarking = sourceSailing && dstLayer == EPathfindingLayer::LAND;
 		bool embarking = false;
@@ -848,7 +848,12 @@ int CPathfinderHelper::getMovementCost(
 			embarking = object && object->ID == Obj::BOAT;
 		}
 		if(embarking || disembarking)
-			movementCost = movementCost / 2 + movementCost % 2;
+		{
+			if(ti->hasNewHorizonsRapidEmbarkation() && !ti->hasFreeShipBoarding())
+				movementCost = newHorizonsMovement::rapidEmbarkationCost(ti->getMaxMovePoints(sourceLayer));
+			else if(ti->hasNewHorizonsNavigation())
+				movementCost = movementCost / 2 + movementCost % 2;
+		}
 	}
 	return movementCost;
 }

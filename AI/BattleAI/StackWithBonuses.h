@@ -197,6 +197,13 @@ struct ProjectedPrimalBurstHit
 	int64_t actualDamage = 0;
 };
 
+struct ProjectedOverwatchHit
+{
+	uint32_t shooterId = 0;
+	BattleHex position;
+	int64_t healthLoss = 0;
+};
+
 class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironment
 {
 public:
@@ -456,6 +463,8 @@ public:
 	void addUnit(uint32_t id, const JsonNode & data) override;
 	void updateUnit(uint32_t id, const JsonNode & data, int64_t healthDelta) override;
 	void moveUnit(uint32_t id, const BattleHex & destination) override;
+	/// Explicit ordinary movement only: spell/forced moveUnit callers never react.
+	std::vector<ProjectedOverwatchHit> projectVoluntaryMovement(uint32_t id, const BattleHex & destination);
 	void removeUnit(uint32_t id) override;
 	void recordBloodrageTransition(const std::shared_ptr<StackWithBonuses> & unit, bool wasAlive);
 
