@@ -5,9 +5,6 @@ Script.__index = Script
 local SPELL_ID = "new-horizons:reanimate"
 local SHADOW_MAGIC_SKILL = "new-horizons:shadowMagic"
 local REANIMATOR_PERK = "new-horizons:shadowMagic.reanimator"
-local BASE_HP = 220
-local HP_PER_SPELL_POWER = 5
-local SCHOOL_SPELLCRAFT_BASIS_POINTS = 10000
 
 local function reject(problem, mechanics)
 	if problem then
@@ -73,13 +70,9 @@ end
 
 local function healingPool(mechanics, unit)
 	local hero = mechanics:getHeroCaster()
-	local rawSpellPower = math.max(0, hero:getPrimarySkill(ENUM.PrimarySkill.spellpower))
-	local coefficientBasisPoints = mechanics:getSpellPowerCoefficientBasisPoints()
-	-- These integer inputs keep the product below 2^53; the coefficient's
-	-- 1/10000 granularity also stays wider than a floating-point ULP here.
-	local scaledPower = math.floor(HP_PER_SPELL_POWER * rawSpellPower
-		* coefficientBasisPoints / SCHOOL_SPELLCRAFT_BASIS_POINTS)
-	local pool = BASE_HP + scaledPower
+	-- The shared base pool preserves ordinary School/Spellcraft results and
+	-- scales only a captured specialty's SP term, at one integral HP boundary.
+	local pool = mechanics:getEffectValue()
 	if hero:hasActivePerk(SHADOW_MAGIC_SKILL, REANIMATOR_PERK) then
 		pool = pool + math.floor(math.max(0, pool - survivorWounds(unit)) / 4)
 	end

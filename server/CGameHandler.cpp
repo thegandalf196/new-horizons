@@ -1890,6 +1890,27 @@ void CGameHandler::useScholarSkill(ObjectInstanceID fromHero, ObjectInstanceID t
 {
 	const CGHeroInstance * h1 = gameInfo().getHero(fromHero);
 	const CGHeroInstance * h2 = gameInfo().getHero(toHero);
+	if(!h1 || !h2 || h1 == h2)
+		return;
+	if(newHorizonsMagic::rulesActive(gameInfo().getMagicRules()))
+	{
+		const auto & calendar = gameInfo().getCalendar();
+		const auto week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+		if(!h1->canExchangeNewHorizonsScholarWith(*h2, week))
+			return;
+		const auto firstTeaches = h1->getNewHorizonsScholarSpellFor(*h2);
+		const auto secondTeaches = h2->getNewHorizonsScholarSpellFor(*h1);
+		SetNewHorizonsScholarMeeting receipt;
+		receipt.first = std::min(fromHero, toHero);
+		receipt.second = std::max(fromHero, toHero);
+		receipt.week = week;
+		sendAndApply(receipt);
+		if(firstTeaches)
+			changeSpells(h2, true, {*firstTeaches});
+		if(secondTeaches)
+			changeSpells(h1, true, {*secondTeaches});
+		return;
+	}
 	int h1_scholarSpellLevel = h1->valOfBonuses(BonusType::LEARN_MEETING_SPELL_LIMIT);
 	int h2_scholarSpellLevel = h2->valOfBonuses(BonusType::LEARN_MEETING_SPELL_LIMIT);
 
@@ -2076,6 +2097,51 @@ void CGameHandler::grantLearningMentorAward(const std::optional<LearningMentorAw
 
 void CGameHandler::sendAndApply(CPackForClient & pack)
 {
+	// Capture only artifact receipt events. Inventory identity, not slot changes,
+	// distinguishes acquisition from same-hero equipment/backpack rearrangement.
+	const auto scrollInventory = [](const CGHeroInstance & hero)
+	{
+		std::map<ArtifactInstanceID, SpellID> result;
+		const auto collect = [&result](const auto & slot)
+		{
+			const auto * artifact = slot.getArt();
+			if(artifact && artifact->isScroll())
+				result.emplace(artifact->getId(), artifact->getScrollSpellID());
+		};
+		for(const auto & entry : hero.artifactsWorn)
+			collect(entry.second);
+		for(const auto & slot : hero.artifactsInBackpack)
+			collect(slot);
+		collect(hero.artifactsTransitionPos);
+		return result;
+	};
+	std::map<ObjectInstanceID, std::map<ArtifactInstanceID, SpellID>> archivistBefore;
+	const auto captureArchivist = [this, &archivistBefore, &scrollInventory](ObjectInstanceID id)
+	{
+		const auto * hero = gameInfo().getHero(id);
+		if(hero && hero->hasActivePerk("new-horizons:learning", "new-horizons:learning.archivist"))
+			archivistBefore.emplace(id, scrollInventory(*hero));
+	};
+	if(const auto * received = dynamic_cast<const NewArtifact *>(&pack))
+		captureArchivist(received->artHolder);
+	else if(const auto * received = dynamic_cast<const PutArtifact *>(&pack))
+		captureArchivist(received->al.artHolder);
+	else if(const auto * moved = dynamic_cast<const BulkMoveArtifacts *>(&pack))
+	{
+		captureArchivist(moved->srcArtHolder);
+		captureArchivist(moved->dstArtHolder);
+	}
+	else if(const auto * results = dynamic_cast<const BattleResultsApplied *>(&pack))
+	{
+		// Loot moves are applied inside the result visitor, not sent as their
+		// own packets. Capture those endpoints before cleanup and nested moves.
+		for(const auto & moved : results->movingArtifacts)
+		{
+			captureArchivist(moved.srcArtHolder);
+			captureArchivist(moved.dstArtHolder);
+		}
+	}
+
 	struct ChaplainsReserveOrder
 	{
 		BattleID battleID = BattleID::NONE;
@@ -2248,6 +2314,18 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 	}
 
 	gameServer().applyPack(pack);
+	for(const auto & [heroId, before] : archivistBefore)
+	{
+		const auto * hero = gameInfo().getHero(heroId);
+		if(!hero)
+			continue;
+		std::set<SpellID> learned;
+		for(const auto & [artifactId, spell] : scrollInventory(*hero))
+			if(!before.contains(artifactId) && hero->canLearnSpellFromAcquiredScroll(spell))
+				learned.insert(spell);
+		if(!learned.empty())
+			changeSpells(hero, true, learned);
+	}
 	if(chaplainsReserveOrder)
 	{
 		const auto * battleInfo = gameState().getBattle(chaplainsReserveOrder->battleID);

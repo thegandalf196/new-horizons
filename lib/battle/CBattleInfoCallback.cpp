@@ -1098,6 +1098,64 @@ bool CBattleInfoCallback::battleIsShroudFlankingAttack(const BattleAttackInfo & 
 	return isToReverse(attack.attacker, attack.defender, attackerHex, defenderHex);
 }
 
+double CBattleInfoCallback::battleDeepFlankDamagePercent(const BattleAttackInfo & attack) const
+{
+	if(!getBattle() || !attack.attacker || !attack.defender || !attack.shooting
+		|| !attack.physicalDamage || attack.secondaryAttack
+		|| !newHorizonsArchery::isOrdinaryPhysicalShooter(attack.attacker)
+		|| !attack.attacker->alive() || attack.attacker->isGhost()
+		|| !attack.defender->alive() || attack.defender->isGhost()
+		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attack.defender)
+		|| attack.defender->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
+		|| battleGetOwner(attack.attacker) == battleGetOwner(attack.defender))
+		return 0.0;
+	const auto * hero = battleGetOwnerHero(attack.attacker);
+	if(!newHorizonsShroud::hasDeepFlank(hero))
+		return 0.0;
+	const auto targetPosition = attack.defenderPos.isValid()
+		? attack.defenderPos : attack.defender->getPosition();
+	if(battleHasFormationFightingProtection(attack.defender, targetPosition))
+		return 0.0;
+	const auto sides = battleShroudMeleeContactSideCount(attack);
+	return sides >= 2 ? newHorizonsShroud::deepFlankDamagePercent(newHorizonsShroud::rank(hero)) : 0.0;
+}
+
+int CBattleInfoCallback::battleShroudMeleeContactSideCount(const BattleAttackInfo & attack) const
+{
+	if(!getBattle() || !attack.attacker || !attack.defender
+		|| !attack.attacker->alive() || !attack.defender->alive()
+		|| attack.attacker->isGhost() || attack.defender->isGhost()
+		|| battleGetOwner(attack.attacker) == battleGetOwner(attack.defender))
+		return 0;
+	const auto targetPosition = attack.defenderPos.isValid()
+		? attack.defenderPos : attack.defender->getPosition();
+	uint8_t contactSides = 0;
+	for(const auto * contact : battleAliveUnits())
+	{
+		if(contact->isGhost() || !contact->isMeleeAttacker()
+			|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(contact)
+			|| contact->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
+			|| battleGetOwner(contact) != battleGetOwner(attack.attacker))
+			continue;
+		const auto position = contact->unitId() == attack.attacker->unitId() && attack.attackerPos.isValid()
+			? attack.attackerPos : contact->getPosition();
+		contactSides |= orderContactingSideMask(contact, attack.defender, position, targetPosition);
+	}
+	// Count distinct footprint directions, never creatures or repeated contacts.
+	int sides = 0;
+	for(auto bits = contactSides; bits; bits &= static_cast<uint8_t>(bits - 1))
+		++sides;
+	return sides;
+}
+
+int CBattleInfoCallback::battleEncircledDoomDamagePercent(const BattleAttackInfo & attack) const
+{
+	if(!battleIsShroudFlankingAttack(attack)
+		|| !newHorizonsShroud::hasEncircledDoom(battleGetOwnerHero(attack.attacker)))
+		return 0;
+	return newHorizonsShroud::encircledDoomDamagePercent(battleShroudMeleeContactSideCount(attack));
+}
+
 bool CBattleInfoCallback::battleNightProwlerCrossesEnemy(
 	const battle::Unit * mover, const BattleHexArray & committedPath) const
 {
@@ -1322,6 +1380,18 @@ BattleMoraleInfo CBattleInfoCallback::battleGetMoraleInfo(const battle::Unit * u
 		{
 			result.commandingPresenceFloorApplied = true;
 			return 0;
+		}
+		const auto side = playerToSide(battleGetOwner(unit));
+		if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+		{
+			const auto orders = battleGetHeroOrderStates(side);
+			if(std::ranges::any_of(orders, [this, unit](const HeroOrderState & order)
+			{
+				return order.issuedRound == battleGetRound()
+					&& std::binary_search(order.royalStandardRecipientUnitIds.begin(),
+						order.royalStandardRecipientUnitIds.end(), unit->unitId());
+			}))
+				return 0;
 		}
 		if(newHorizonsBloodrage::hasFuryUnbound(hero)
 			&& battleGetBloodrageDamagePercent(unit) > 0)
@@ -1574,6 +1644,47 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderStateIm
 			* newHorizonsIronDiscipline::BASIS_POINTS_PER_PHYSICAL_PERCENT);
 	}
 
+	const auto finish = [&]() -> std::optional<HeroOrderState>
+	{
+		if(allowance && allowance->allowance == HeroActionAllowanceState::AllowanceKind::ORDER
+			&& allowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
+			&& newHorizonsDivineMandate::hasRoyalStandardPerk(hero))
+		{
+			for(const auto * unit : battleAliveUnits())
+			{
+				if(!ownCombatUnit(unit))
+					continue;
+				bool recipient = true;
+				switch(command)
+				{
+				case HeroCommand::FOCUS_FIRE:
+					recipient = battleIsFocusFireRecipient(unit, side)
+						|| (heroCommands::hasCombinedArms(hero) && unit->isMeleeAttacker()
+							&& !unit->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
+					break;
+				case HeroCommand::FLANK:
+					recipient = unit->isMeleeAttacker() || (heroCommands::hasCombinedArms(hero)
+						&& newHorizonsArchery::isOrdinaryPhysicalShooter(unit));
+					break;
+				case HeroCommand::PROTECT:
+					recipient = unit->unitId() == result.primaryTargetUnitId
+						|| unit->unitId() == result.secondaryTargetUnitId;
+					break;
+				case HeroCommand::SECOND_WIND:
+					recipient = unit->unitId() == result.primaryTargetUnitId;
+					break;
+				default:
+					break;
+				}
+				if(recipient)
+					result.royalStandardRecipientUnitIds.push_back(unit->unitId());
+			}
+			std::sort(result.royalStandardRecipientUnitIds.begin(), result.royalStandardRecipientUnitIds.end());
+		}
+		result.validateShape();
+		return result;
+	};
+
 	if(command == HeroCommand::FOCUS_FIRE)
 	{
 		if(targetUnitIds.size() != 1)
@@ -1582,7 +1693,7 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderStateIm
 		if(reason != Reason::NONE)
 			return reject(reason);
 		result.primaryTargetUnitId = targetUnitIds.front();
-		return result;
+		return finish();
 	}
 	if(command == HeroCommand::FLANK)
 	{
@@ -1605,7 +1716,7 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderStateIm
 			return reject(Reason::NO_MELEE_RECIPIENT);
 		result.primaryTargetUnitId = target->unitId();
 		result.flankTargets.push_back({target->unitId(), 0});
-		return result;
+		return finish();
 	}
 	if(command == HeroCommand::PROTECT)
 	{
@@ -1629,7 +1740,7 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderStateIm
 			newHorizonsShieldMaster::SKILL, newHorizonsShieldMaster::PERK)
 			? newHorizonsShieldMaster::SHIELD_MASTER_PROTECT_INTERCEPTION_LIMIT
 			: newHorizonsShieldMaster::ORDINARY_PROTECT_INTERCEPTION_LIMIT;
-		return result;
+		return finish();
 	}
 	if(command == HeroCommand::SECOND_WIND)
 	{
@@ -1648,7 +1759,7 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderStateIm
 		if(!hasSpentActivation)
 			return reject(Reason::ACTIVATION_UNSPENT);
 		result.primaryTargetUnitId = target->unitId();
-		return result;
+		return finish();
 	}
 	if(!targetUnitIds.empty())
 		return reject(Reason::TARGET_COUNT);
@@ -1665,7 +1776,7 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderStateIm
 		return reject(Reason::NO_RECIPIENT);
 	(void)rules;
 	result.validateShape();
-	return result;
+	return finish();
 }
 
 const battle::Unit * CBattleInfoCallback::battleResolveHeroOrderTarget(const battle::Unit * attacker,
@@ -3629,9 +3740,11 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				newHorizonsShroud::rank(attackerHero))
 				+ newHorizonsShroud::backstabDamagePercent(attackerHero)
 				+ newHorizonsShroud::ambusherDamagePercent(attackerHero, info.attacker);
+			payload.shroudFlankingDamagePercent += battleEncircledDoomDamagePercent(info);
 			payload.meleeDefenseIgnorePercent += newHorizonsShroud::shadowAssaultDefenseIgnorePercent(
 				attackerHero, info.defender, playerToSide(battleGetOwner(info.attacker)));
 		}
+		payload.shroudDeepFlankDamagePercent = battleDeepFlankDamagePercent(info);
 		if(info.defender && info.defender->defended() && ordinaryCreatureAttack
 			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.defender)
 			&& (!info.shooting || !info.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)))

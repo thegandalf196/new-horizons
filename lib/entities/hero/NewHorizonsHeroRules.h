@@ -113,6 +113,11 @@ DLL_LINKAGE std::optional<DamageSpellSpecialtyRules> damageSpellSpecialtyRules(c
 /// Returns the converted non-damage spell specialties captured by this hero.
 /// Missing rules intentionally preserve legacy specialty behavior for older saves.
 DLL_LINKAGE std::optional<NonDamageSpellSpecialtyRules> nonDamageSpellSpecialtyRules(const JsonNode & resolvedRules);
+/// Checks the captured raw supported list without consulting installed defaults.
+DLL_LINKAGE bool hasHasteSpecialtyRules(const JsonNode & rules);
+DLL_LINKAGE void validateHasteSpecialtySerialization(const JsonNode & rules, bool supported);
+DLL_LINKAGE bool hasReanimateSpecialtyRules(const JsonNode & rules);
+DLL_LINKAGE void validateReanimateSpecialtySerialization(const JsonNode & rules, bool supported);
 /// Returns the converted skill specialties captured by this hero. Missing
 /// rules intentionally preserve legacy specialty behavior for older saves.
 DLL_LINKAGE std::optional<SkillSpecialtyRules> skillSpecialtyRules(const JsonNode & resolvedRules);

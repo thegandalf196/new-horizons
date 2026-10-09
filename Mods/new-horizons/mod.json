@@ -3007,7 +3007,9 @@
 					"spells": [
 						"core:cure",
 						"core:resurrection",
-						"core:bless"
+						"core:bless",
+						"core:haste",
+						"new-horizons:reanimate"
 					]
 				},
 				"skillSpecialties": {
@@ -6083,7 +6085,7 @@
 								"requires": "basic",
 								"description": "When two allied heroes meet, each automatically teaches the other the highest-level spell they know that the recipient does not know and could legally learn. Ties use canonical spellbook order. Once per hero pair per week.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "When two allied heroes meet, each automatically teaches the other the highest-level spell they know that the recipient does not know and could legally learn. Ties use canonical spellbook order. Once per hero pair per week."
 								}
 							},
@@ -6103,7 +6105,7 @@
 								"requires": "basic",
 								"description": "Adventure-map objects whose primary reward is Experience grant 50% more Experience.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Adventure-map objects whose primary reward is Experience grant 50% more Experience."
 								}
 							},
@@ -6153,7 +6155,7 @@
 								"requires": "advanced",
 								"description": "When the hero acquires a spell scroll, permanently learn its spell immediately if legally eligible.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "When the hero acquires a spell scroll, permanently learn its spell immediately if legally eligible."
 								}
 							},
@@ -6417,7 +6419,7 @@
 								"requires": "advanced",
 								"description": "Friendly stacks affected by an Order issued through Divine Mandate treat negative Morale as 0 for that Order's duration.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Friendly stacks affected by an Order issued through Divine Mandate treat negative Morale as 0 for that Order's duration."
 								}
 							},
@@ -6803,7 +6805,7 @@
 								"requires": "advanced",
 								"description": "Friendly ranged attacks against a target currently attacked from at least two distinct melee sides gain half the Shroud's current flanking damage bonus.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Friendly ranged attacks against a target currently attacked from at least two distinct melee sides gain half the Shroud's current flanking damage bonus."
 								}
 							},
@@ -6823,7 +6825,7 @@
 								"requires": "expert",
 								"description": "Each additional distinct melee attack side beyond the first adds +10% damage to the Shroud flanking attack.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Each additional distinct melee attack side beyond the first adds +10% damage to the Shroud flanking attack."
 								}
 							},
@@ -6833,7 +6835,7 @@
 								"requires": "expert",
 								"description": "After destroying an enemy with a flanking melee attack, the attacker may move up to half its Speed. It gains no additional attack.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "After destroying an enemy with a flanking melee attack, the attacker may move up to half its Speed. It gains no additional attack."
 								}
 							}

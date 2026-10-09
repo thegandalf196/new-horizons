@@ -52,6 +52,8 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info)
 			info->validateSwiftRebirthSerialization(h);
 		if(h.saving && info)
+			info->validateRoyalStandardSerialization(h);
+		if(h.saving && info)
 			info->validateVeteranCohesionSerialization(h);
 		if(h.saving && info)
 			info->validateBloodrageDeathPerksSerialization(h);
@@ -1252,6 +1254,8 @@ struct DLL_LINKAGE StartAction : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(orderState)
+			orderState->validateRoyalStandardSerialization(h);
 		if(h.saving && orderState && orderState->sacredCommandEfficiencyBonusPercent != 0
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SACRED_COMMAND))
 			throw std::runtime_error("Cannot discard Sacred Command StartAction state");
@@ -1338,6 +1342,11 @@ struct DLL_LINKAGE BattleHeroOrderStateChanged : public CPackForClient
 		{
 			return order.sacredCommandEfficiencyBonusPercent != 0;
 		};
+		if(state)
+			state->validateRoyalStandardSerialization(h);
+		if(states)
+			for(const auto & order : *states)
+				order.validateRoyalStandardSerialization(h);
 		const auto hasKnightlySequenceBonus = [](const HeroOrderState & order)
 		{
 			return order.knightlySequenceEfficiencyBonusPercent != 0;

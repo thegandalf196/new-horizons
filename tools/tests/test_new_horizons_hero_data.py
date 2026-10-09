@@ -289,14 +289,17 @@ class HeroDataTest(unittest.TestCase):
     def test_cmake_guard_accepts_activation_and_rejects_rule_drift(self):
         source = (ROOT / 'CMakeLists.txt').read_text()
         block = source.split('# Curated settings are authored once;', 1)[1]
-        block = block[block.index('if(EXISTS'):].split('\nif(ANDROID)', 1)[0]
-        with tempfile.TemporaryDirectory(dir=ROOT / 'build') as temporary:
+        # This oracle exercises settings/definition drift, not the independent
+        # committed-art verification target, which needs its complete package.
+        block = ('if(EXISTS "${CMAKE_SOURCE_DIR}/config/newHorizonsCombat.json")\n'
+                 + block[block.index('\tset(NH_RULES_FILE'):].split('\nif(ANDROID)', 1)[0])
+        with tempfile.TemporaryDirectory(prefix='nh-hero-settings-guard-') as temporary:
             root = Path(temporary)
             (root / 'config').mkdir()
             (root / 'Mods/new-horizons').mkdir(parents=True)
             for name in ('Combat', 'Artifacts', 'Magic', 'CreatureCategories', 'Schools', 'Skills', 'Heroes', 'Capabilities',
                          'Masteries', 'Perks', 'MasteryTexts', 'CreatureCategoryTexts', 'FortTexts', 'MusterTexts',
-                         'HeroClassTexts', 'CombatTexts', 'AdventureSpellTexts', 'ConvenienceBonuses'):
+                         'HeroClassTexts', 'CombatTexts', 'EconomyTexts', 'AdventureSpellTexts', 'ConvenienceBonuses'):
                 shutil.copyfile(ROOT / f'config/newHorizons{name}.json', root / f'config/newHorizons{name}.json')
             shutil.copyfile(ROOT / 'Mods/new-horizons/mod.json', root / 'Mods/new-horizons/mod.json')
             script = root / 'check.cmake'
@@ -314,7 +317,8 @@ class HeroDataTest(unittest.TestCase):
                     self.assertNotEqual(result.returncode, 0)
                     self.assertIn('Stale curated module settings', result.stderr)
                     path.write_bytes(before)
-            for name, field in (('MasteryTexts', 'translations'), ('ConvenienceBonuses', 'bonuses')):
+            for name, field in (('MasteryTexts', 'translations'), ('EconomyTexts', 'translations'),
+                                ('ConvenienceBonuses', 'bonuses')):
                 with self.subTest(definitions=name):
                     path = root / f'config/newHorizons{name}.json'
                     before = path.read_bytes()

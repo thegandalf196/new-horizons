@@ -196,7 +196,10 @@ public:
 	std::vector<HeroTypeID> getHeroesInPool() const;
 	/// Validate all serialized hero receipts before an enclosing writer's prefix.
 	void validateNewHorizonsProspectorSerialization(bool supported) const;
+	void validateNewHorizonsScholarSerialization(bool supported) const;
 	void validateNewHorizonsMagnateSerialization(bool supported) const;
+	void validateNewHorizonsHasteSpecialtySerialization(bool supported) const;
+	void validateNewHorizonsThantReanimateSerialization(bool supported) const;
 
 	CGObjectInstance * getObject(ObjectInstanceID obj);
 	const CGObjectInstance * getObject(ObjectInstanceID obj) const;
@@ -319,9 +322,15 @@ public:
 	void serialize(Handler &h)
 	{
 		if(h.saving)
+			validateNewHorizonsThantReanimateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
+		if(h.saving)
+			validateNewHorizonsHasteSpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_HASTE_SPECIALTIES));
+		if(h.saving)
 			validateNewHorizonsMagnateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGNATE));
 		if(h.saving)
 			validateNewHorizonsProspectorSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROSPECTOR));
+		if(h.saving)
+			validateNewHorizonsScholarSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LEARNING_SCHOLAR));
 		h & static_cast<CMapHeader&>(*this);
 		h & triggeredEvents; //from CMapHeader
 		h & rumors;

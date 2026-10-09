@@ -2,6 +2,22 @@
 
 Updated: 2026-10-09
 
+Accepted seven-perk/hero checkpoint: ten-job build25787 links after reviewed
+fixture-only repairs. Exact native88843 passes79/79 in25.252s; adjacent3070
+passes15/15 in6.590s, zero failures/errors/disabled/skips. Scholar8, Historian7,
+Archivist9, Royal Standard8, Deep Flank8, Encircled Doom6 and Vanish10 establish
+the seven principal perks; Haste13 and Thant10 establish specialty paths.
+Accepted perks276/310 (generic191/220,faction85/90),34 remain (29 generic,
+5 faction). Combat67/67,Orders8/8,Skills31/31,ranks93/93 unchanged. Independent
+review, static38, module parity and binary privacy pass. Prior failing logs/XML
+remain private; legal fixture prerequisites, initialized input state and complete
+occupancy/footprint setup were repaired without changing production rules or
+weakening outcomes. Shared Purpose, both Sage perks and four Frailty hero
+replacements are source-clear private candidates, not accepted. Phoenix Spark
+and Recruiter's Contacts are in private implementation. This new checkpoint is
+not yet a committed/playable delivery; ordinary Linux still selects source6db2f1534.
+No new rendered or Windows acceptance is claimed; NHART bytes are unchanged.
+
 Accepted four-perk checkpoint: incremental layout-only build90928 links after
 full retry21118. Exact native85299 passes36/36 in12.615s, zero failures/errors/
 disabled/skips: Magnate12, Academic Study7 and minimum AI3, Elemental Memory8,
@@ -11,7 +27,10 @@ review pass. Accepted perks269/310 (generic188/220,faction81/90),41 planned
 (32 generic,9 faction). Combat67/67,Orders8/8,Skills31/31,ranks93/93 unchanged.
 Previous failures remain private; only fixture includes, exact history comparison
 and initial hero placement were repaired, without weakening production gates.
-Source publication and playable promotion remain separate. NHART bytes unchanged.
+Source6db2f1534 is normally pushed; Linux snapshot568b1029 is promoted after
+committed metadata/resources, privacy and fresh silent headless day3 smoke with
+actual child isolation and cleanup verified. No new rendered or Windows package
+acceptance is claimed. NHART bytes unchanged.
 
 Accepted Estates/Swift checkpoint: linked82853 and exact matching native39826
 pass33/33 in10.755s, zero failures/errors/skips: Prospector9, minimum owned-mine
@@ -32,7 +51,8 @@ coverage; the265/310 count above remains the verified baseline.
 Hero coverage is separate:52 reviewed biography overrides and92 deliberate
 inheritances pass production loading, not144 mechanically redesigned profiles.
 The workbook's starting-profile proposals are not canonical activation authority.
-Cyra/Brissa's retained Haste conversion is an actionable private implementation;
+Cyra, Brissa and Terek's retained Haste conversion and Thant's authored replacement
+pass their focused specialty gates in the checkpoint above;
 other removed-specialty/starting replacements need explicitly authored identities.
 Do not report a whole Phase1 percentage from perk completion alone.
 

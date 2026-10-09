@@ -267,6 +267,12 @@ public:
 		return sides[BattleSide::ATTACKER].hasKnightlySequenceOrderState()
 			|| sides[BattleSide::DEFENDER].hasKnightlySequenceOrderState();
 	}
+	template <typename Handler> void validateRoyalStandardSerialization(Handler & h) const
+	{
+		for(const auto & side : sides)
+			for(const auto & order : side.orderStates)
+				order.validateRoyalStandardSerialization(h);
+	}
 	bool hasMandateOfHeavenState() const
 	{
 		return sides[BattleSide::ATTACKER].hasMandateOfHeavenState()
@@ -363,6 +369,7 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		validateRoyalStandardSerialization(h);
 		if(h.saving)
 			validateVeteranCohesionSerialization(h);
 		if(h.saving)

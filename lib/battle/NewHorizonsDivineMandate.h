@@ -31,4 +31,6 @@ DLL_LINKAGE int32_t knightlySequenceSpellCostReduction(const CGHeroInstance * he
 DLL_LINKAGE int32_t consecratedCastingBonusPercent(const CGHeroInstance * hero);
 /// True when Divine Mandate and Purifying Mandate are active for this hero.
 DLL_LINKAGE bool hasPurifyingMandatePerk(const CGHeroInstance * hero);
+/// Captured only for an actual Divine Mandate Order follow-up.
+DLL_LINKAGE bool hasRoyalStandardPerk(const CGHeroInstance * hero);
 }

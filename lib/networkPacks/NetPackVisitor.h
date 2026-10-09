@@ -144,6 +144,7 @@ public:
 	virtual void visitSetNewHorizonsForcedMarchState(SetNewHorizonsForcedMarchState & pack) {}
 	virtual void visitSetNewHorizonsMusterState(SetNewHorizonsMusterState & pack) {}
 	virtual void visitSetNewHorizonsLearningMentorState(SetNewHorizonsLearningMentorState & pack) {}
+	virtual void visitSetNewHorizonsScholarMeeting(SetNewHorizonsScholarMeeting & pack) {}
 	virtual void visitSetNewHorizonsDiplomacyState(SetNewHorizonsDiplomacyState & pack) {}
 	virtual void visitSetNewHorizonsDemonicReserve(SetNewHorizonsDemonicReserve & pack) {}
 	virtual void visitSetPortalDwellingSource(SetPortalDwellingSource & pack) {}

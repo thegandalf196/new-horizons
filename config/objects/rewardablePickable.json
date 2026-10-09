@@ -345,6 +345,7 @@
 						"appearChance" : { "max" : 32 },
 						"mapDice" : 0,
 						"heroExperience" : 500,
+						"primaryExperienceReward" : true,
 						"removeObject" : true,
 					},
 					{
@@ -357,6 +358,7 @@
 						"appearChance" : { "min" : 32, "max" : 64 },
 						"mapDice" : 1,
 						"heroExperience" : 1000,
+						"primaryExperienceReward" : true,
 						"removeObject" : true,
 					},
 					{
@@ -369,6 +371,7 @@
 						"appearChance" : { "min" : 64, "max" : 95 },
 						"mapDice" : 2,
 						"heroExperience" : 1500,
+						"primaryExperienceReward" : true,
 						"removeObject" : true,
 					},
 					{

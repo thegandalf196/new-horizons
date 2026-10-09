@@ -95,7 +95,7 @@ TEST_F(NewHorizonsPursuitTest, LethalMeleePreservesOnlyUnusedMovementAndRejectsA
 	ASSERT_FALSE(server.stackActivations.empty());
 	EXPECT_EQ(server.stackActivations.back().reason, BattleUnitTurnReason::PURSUIT_CONTINUATION);
 
-	BattleClientInterfaceData clientData;
+	BattleClientInterfaceData clientData{};
 	const auto actions = battle()->getClientActionsForStack(attacker, clientData);
 	ASSERT_EQ(actions.size(), 1u);
 	EXPECT_EQ(actions.front(), PossiblePlayerBattleAction::MOVE_STACK);

@@ -73,4 +73,10 @@ bool hasPurifyingMandatePerk(const CGHeroInstance * hero)
 	return hasActiveDivineMandate(hero) && hero->hasActivePerk("new-horizons:divineMandate",
 		"new-horizons:divineMandate.purifyingMandate");
 }
+
+bool hasRoyalStandardPerk(const CGHeroInstance * hero)
+{
+	return hasActiveDivineMandate(hero) && hero->hasActivePerk("new-horizons:divineMandate",
+		"new-horizons:divineMandate.royalStandard");
+}
 }

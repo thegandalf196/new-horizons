@@ -252,7 +252,8 @@
 						"message" : 148,
 						"mapDice" : 0,
 						"appearChance" : { "max" : 34 },
-						"heroLevel" : 1
+						"heroLevel" : 1,
+						"primaryExperienceReward" : true
 					},
 					{
 						"description" : "@core.arraytxt.203",
@@ -261,7 +262,8 @@
 						"appearChance" : { "min" : 34, "max" : 67 },
 						"limiter" : { "resources" : { "gold" : 2000 } },
 						"resources" : { "gold" : -2000 },
-						"heroLevel" : 1
+						"heroLevel" : 1,
+						"primaryExperienceReward" : true
 					},
 					{
 						"description" : "@core.arraytxt.204",
@@ -270,7 +272,8 @@
 						"appearChance" : { "min" : 67 },
 						"limiter" : { "resources" : { "gems" : 10 } },
 						"resources" : { "gems" : -10 },
-						"heroLevel" : 1
+						"heroLevel" : 1,
+						"primaryExperienceReward" : true
 					},
 				]	
 			}

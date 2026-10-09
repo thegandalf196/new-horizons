@@ -255,6 +255,8 @@ public:
 
 	SpellLearningStatus getSpellLearningStatus(const spells::Spell * spell, bool allowBanned = false) const;
 	bool canLearnSpell(const spells::Spell * spell, bool allowBanned = false) const;
+	/// Shared acquisition eligibility for an accepted newly received scroll.
+	bool canLearnSpellFromAcquiredScroll(SpellID spell) const;
 	/// Paid Adventure spells may only be taught by an owned, unlocked Guild being visited.
 	bool canLearnAdventureSpellFromGuild(const spells::Spell * spell, const CGTownInstance * town) const;
 	bool canCastThisSpell(const spells::Spell * spell) const; //determines if this hero can cast given spell; takes into account existing spell in spellbook, existing spellbook and artifact bonuses
@@ -333,6 +335,20 @@ public:
 		newHorizonsMusterUsesThisWeek = std::clamp<int32_t>(usesThisWeek, 0, 2);
 	}
 	int32_t getNewHorizonsLearningMentorLastWeek() const { return newHorizonsLearningMentorLastWeek; }
+	int32_t getNewHorizonsScholarWeek() const { return newHorizonsScholarWeek; }
+	const std::vector<ObjectInstanceID> & getNewHorizonsScholarPartners() const { return newHorizonsScholarPartners; }
+	static bool isValidNewHorizonsScholarState(ObjectInstanceID hero, int32_t week, const std::vector<ObjectInstanceID> & partners);
+	void validateNewHorizonsScholarSerialization(bool supported) const
+	{
+		if(!isValidNewHorizonsScholarState(id, newHorizonsScholarWeek, newHorizonsScholarPartners))
+			throw std::runtime_error("Invalid New Horizons Scholar state");
+		if(!supported && newHorizonsScholarWeek != -1)
+			throw std::runtime_error("New Horizons Scholar state requires the new save format");
+	}
+	void markNewHorizonsScholarMeeting(ObjectInstanceID partner, int32_t week);
+	bool hasNewHorizonsScholarMeeting(ObjectInstanceID partner, int32_t week) const;
+	bool canExchangeNewHorizonsScholarWith(const CGHeroInstance & partner, int32_t week) const;
+	std::optional<SpellID> getNewHorizonsScholarSpellFor(const CGHeroInstance & recipient) const;
 	bool hasUsedNewHorizonsLearningMentor(int32_t week) const { return newHorizonsLearningMentorLastWeek == week; }
 	using LearningMentorRecipients = std::array<ObjectInstanceID, 2>;
 	const LearningMentorRecipients & getNewHorizonsLearningMentorRecipients() const { return newHorizonsLearningMentorRecipients; }
@@ -592,6 +608,8 @@ private:
 	int32_t newHorizonsMusterLastWeek = -1;
 	int32_t newHorizonsMusterUsesThisWeek = 0;
 	int32_t newHorizonsLearningMentorLastWeek = -1;
+	int32_t newHorizonsScholarWeek = -1;
+	std::vector<ObjectInstanceID> newHorizonsScholarPartners;
 	LearningMentorRecipients newHorizonsLearningMentorRecipients{ObjectInstanceID::NONE, ObjectInstanceID::NONE};
 	int32_t newHorizonsLandSurveyorLastWeek = -1;
 	int32_t newHorizonsProspectorLastWeek = -1;
@@ -628,12 +646,19 @@ public:
 	template <typename Handler> void serialize(Handler &h)
 	{
 		if(h.saving)
+			newHorizonsHeroes::validateReanimateSpecialtySerialization(primaryGrowthRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
+		if(h.saving)
+			newHorizonsHeroes::validateHasteSpecialtySerialization(primaryGrowthRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_HASTE_SPECIALTIES));
+		if(h.saving)
 			validateNewHorizonsMagnateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGNATE));
 		if(h.saving && (newHorizonsProspectorLastWeek < -1
 			|| (!h.hasFeature(Handler::Version::NEW_HORIZONS_PROSPECTOR) && newHorizonsProspectorLastWeek != -1)))
 			throw std::runtime_error("Invalid or unsupported New Horizons Prospector receipt");
 		if(h.saving)
 		{
+			validateNewHorizonsScholarSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LEARNING_SCHOLAR));
 			if(!isValidNewHorizonsLearningMentorState(id, newHorizonsLearningMentorLastWeek,
 				newHorizonsLearningMentorRecipients))
 				throw std::runtime_error("Invalid New Horizons Learning Mentor state");
@@ -734,7 +759,13 @@ public:
 			h & primaryGrowthRules;
 			h & lastPrimaryGains;
 			if(!h.saving)
+			{
+				newHorizonsHeroes::validateReanimateSpecialtySerialization(primaryGrowthRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
+				newHorizonsHeroes::validateHasteSpecialtySerialization(primaryGrowthRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_HASTE_SPECIALTIES));
 				newHorizonsHeroes::validateResolvedHeroRules(primaryGrowthRules);
+			}
 		}
 		else if(!h.saving)
 		{
@@ -899,6 +930,19 @@ public:
 			newHorizonsPursuitMarchLastUseDay = -1;
 		if(!h.saving)
 			setNewHorizonsPursuitMarchLastUseDay(newHorizonsPursuitMarchLastUseDay);
+
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_LEARNING_SCHOLAR))
+		{
+			h & newHorizonsScholarWeek;
+			h & newHorizonsScholarPartners;
+		}
+		else if(!h.saving)
+		{
+			newHorizonsScholarWeek = -1;
+			newHorizonsScholarPartners.clear();
+		}
+		if(!h.saving)
+			validateNewHorizonsScholarSerialization(true);
 
 		if(!h.saving)
 		{

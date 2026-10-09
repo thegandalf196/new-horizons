@@ -998,9 +998,11 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 				const int64_t rawSpellPower = std::max<int32_t>(0, caster->getEffectPower(owner));
 				const int64_t originalPowerTerm = std::max<int64_t>(1, rawSpellPower / divisor);
 				const int64_t flatDuration = static_cast<int64_t>(effectDuration) - originalPowerTerm;
+				const int specialtyPercent = familyID == SpellID::HASTE
+					? heroCaster->getNonDamageSpellSpecialtyBonusPercent(familyID) : 0;
 				const int64_t scaledPowerTerm = std::max<int64_t>(1,
-					scaleSpellPowerComponentWithCoefficientBasisPoints(rawSpellPower, divisor,
-						getSpellPowerCoefficientBasisPoints()));
+					scaleDamageSpellPowerComponentWithCoefficientBasisPoints(rawSpellPower, divisor,
+						getSpellPowerCoefficientBasisPoints(), specialtyPercent));
 				const int64_t duration = scaledPowerTerm + flatDuration;
 				effectDuration = static_cast<decltype(effectDuration)>(std::clamp<int64_t>(duration, 0,
 					std::numeric_limits<decltype(effectDuration)>::max()));
@@ -1115,7 +1117,20 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		effectPower = effectPower * 115 / 100;
 	{
 		const auto value = event->getEffectValue();
-		if(value.has_value())
+		const auto * reanimateBattle = cb->getBattle();
+		const auto * reanimateHero = caster->getHeroCaster();
+		if(reanimateBattle && reanimateHero && newHorizonsMagic::reanimateEnabled(
+			reanimateBattle->getMagicRules(), owner->getId()))
+		{
+			// Re-animate historically derives its pool from raw hero Attributes,
+			// ignoring generic effect-value overrides. Keep that contract while
+			// sharing the same rational pool with its preview and specialty.
+			effectValue = *newHorizonsMagic::reanimateBaseHealingPool(
+				reanimateBattle->getMagicRules(), reanimateHero, owner->getId(),
+				std::max(reanimateHero->getPrimSkillLevel(PrimarySkill::SPELL_POWER), 0),
+				getCastSpellPowerComponentBonusPercent());
+		}
+		else if(value.has_value())
 			effectValue = *value; // Explicit zero is an override, not absence.
 		else if(const auto casterValue = caster->getEffectValue(owner); casterValue != 0)
 			effectValue = casterValue; // Legacy numeric caster zero means absence.

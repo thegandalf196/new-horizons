@@ -142,7 +142,7 @@ class BattleActionProcessor : boost::noncopyable
 	void makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender,
 		const AttackDescriptor & attack, bool * destroyedEnemyOut = nullptr,
 		RelentlessAssaultActionContext * relentlessAssault = nullptr,
-		RainOfArrowsAction * rainOfArrows = nullptr);
+		RainOfArrowsAction * rainOfArrows = nullptr, bool * vanishKillOut = nullptr);
 	RainOfArrowsAction beginRainOfArrows(const CBattleInfoCallback & battle,
 		const CStack * attacker, const CStack * primaryTarget) const;
 	void resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker,

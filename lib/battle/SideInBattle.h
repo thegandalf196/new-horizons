@@ -381,6 +381,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		for(const auto & order : orderStates)
+			order.validateRoyalStandardSerialization(h);
 		if(h.saving && rebirthChainUsed && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_CHAIN))
 			throw std::runtime_error("Cannot discard Rebirth Chain combat use");
 		if(h.saving)

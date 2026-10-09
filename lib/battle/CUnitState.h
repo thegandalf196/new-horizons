@@ -233,7 +233,7 @@ public:
 	/// Pending forced activation and battle-long Confusion result history.
 	/// Ordinary round/activation boundaries do not clear this value implicitly.
 	ConfusionState confusionState;
-	/// Movement still available during an Offense: Pursuit continuation.
+	/// Movement still available during a Pursuit/Vanish movement-only continuation.
 	/// A positive value means this unit is in the movement-only tail of its
 	/// current activation; it must never grant another attack.
 	int32_t pursuitMovementRemaining;

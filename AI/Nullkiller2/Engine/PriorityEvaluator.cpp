@@ -15,6 +15,7 @@
 #include "../../../lib/entities/artifact/CArtifact.h"
 #include "../../../lib/entities/ResourceTypeHandler.h"
 #include "../../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
+#include "../../../lib/entities/creature/NewHorizonsMusterRules.h"
 #include "../../../lib/mapObjects/CGMarket.h"
 #include "../../../lib/mapObjects/CGResource.h"
 #include "../../../lib/mapping/TerrainTile.h"
@@ -240,9 +241,11 @@ int getDwellingArmyCost(const CGObjectInstance * target)
 	return cost;
 }
 
-static uint64_t evaluateSpellScrollArmyValue(const SpellID &)
+static uint64_t evaluateSpellScrollArmyValue(const SpellID & spell, const CGHeroInstance * hero)
 {
-	return 1500;
+	// The reusable scroll remains useful; Archivist additionally retains the
+	// legally learnable spell after the scroll is traded or otherwise removed.
+	return hero && hero->canLearnSpellFromAcquiredScroll(spell) ? 3000 : 1500;
 }
 
 static uint64_t evaluateArtifactArmyValue(const CArtifact * art)
@@ -275,7 +278,7 @@ uint64_t RewardEvaluator::getArmyReward(
 	case Obj::CREATURE_GENERATOR4:
 		return getDwellingArmyValue(aiNk->cc.get(), target, checkGold);
 	case Obj::SPELL_SCROLL:
-		return evaluateSpellScrollArmyValue(dynamic_cast<const CGArtifact *>(target)->getArtifactInstance()->getScrollSpellID());
+		return evaluateSpellScrollArmyValue(dynamic_cast<const CGArtifact *>(target)->getArtifactInstance()->getScrollSpellID(), hero);
 	case Obj::ARTIFACT:
 		return evaluateArtifactArmyValue(dynamic_cast<const CGArtifact *>(target)->getArtifactInstance()->getType());
 	case Obj::HERO:
@@ -305,7 +308,7 @@ uint64_t RewardEvaluator::getArmyReward(
 				rewardValue += evaluateArtifactArmyValue(artID.toArtifact());
 
 			for(auto scroll : info.reward.grantedScrolls)
-				rewardValue += evaluateSpellScrollArmyValue(scroll);
+				rewardValue += evaluateSpellScrollArmyValue(scroll, hero);
 
 			for(const auto & stackInfo : info.reward.creatures)
 				rewardValue += stackInfo.getType()->getAIValue() * stackInfo.getCount();
@@ -676,11 +679,11 @@ float RewardEvaluator::getSkillReward(const CGObjectInstance * target, const CGH
 	case Obj::GARDEN_OF_REVELATION:
 	case Obj::MARLETTO_TOWER:
 	case Obj::MERCENARY_CAMP:
-	case Obj::TREE_OF_KNOWLEDGE:
 		return 1;
+	case Obj::TREE_OF_KNOWLEDGE:
 	case Obj::LEARNING_STONE:
 	{
-		const float basePriority = 1.0f / std::sqrt(hero->level);
+		const float basePriority = target->ID == Obj::TREE_OF_KNOWLEDGE ? 1.0f : 1.0f / std::sqrt(hero->level);
 		const auto * rewardable = dynamic_cast<const Rewardable::Interface *>(target);
 		if(!rewardable)
 			return basePriority;
@@ -689,13 +692,11 @@ float RewardEvaluator::getSkillReward(const CGObjectInstance * target, const CGH
 		for(const auto index : rewardable->getAvailableRewards(hero, Rewardable::EEventType::EVENT_FIRST_VISIT))
 		{
 			const auto & reward = rewardable->configuration.info.at(index).reward;
-			if(!reward.primaryExperienceReward || reward.heroExperience <= 0)
+			if(!reward.primaryExperienceReward)
 				continue;
 
 			const TExpType actualExperience = reward.calculateHeroExperience(hero);
-			auto ordinaryReward = reward;
-			ordinaryReward.primaryExperienceReward = false;
-			const TExpType ordinaryExperience = ordinaryReward.calculateHeroExperience(hero);
+			const TExpType ordinaryExperience = reward.calculateHeroExperience(hero, false);
 			if(ordinaryExperience <= 0)
 				continue;
 
@@ -720,9 +721,21 @@ float RewardEvaluator::getSkillReward(const CGObjectInstance * target, const CGH
 		//Can contains experience, spells, or skills (only on custom maps)
 		return 2.5f;
 	case Obj::HERO:
-		return aiNk->cc->getPlayerRelations(target->tempOwner, aiNk->playerID) == PlayerRelations::ENEMIES
-			? enemyHeroEliminationSkillRewardRatio * dynamic_cast<const CGHeroInstance *>(target)->level
-			: 0;
+	{
+		const auto * other = dynamic_cast<const CGHeroInstance *>(target);
+		if(aiNk->cc->getPlayerRelations(target->tempOwner, aiNk->playerID) == PlayerRelations::ENEMIES)
+			return enemyHeroEliminationSkillRewardRatio * other->level;
+		const auto & calendar = aiNk->cc->getCalendar();
+		const auto week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+		if(!hero->canExchangeNewHorizonsScholarWith(*other, week))
+			return 0;
+		float value = 0;
+		if(const auto incoming = other->getNewHorizonsScholarSpellFor(*hero))
+			value += hero->getSpellLevel(incoming->toSpell()) * 0.5f;
+		if(const auto outgoing = hero->getNewHorizonsScholarSpellFor(*other))
+			value += other->getSpellLevel(outgoing->toSpell()) * 0.25f;
+		return value;
+	}
 
 	default:
 		break;

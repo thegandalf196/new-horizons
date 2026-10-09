@@ -428,6 +428,7 @@ function Script:getOffenseArcheryFactor(info)
 		+ targetedPremium + (info.executionerDamagePercent or 0) + (info.heroOrderDamagePercent or 0)
 		+ (info.combinedArmsDamagePercent or 0)
 		+ (info.bloodrageDamagePercent or 0) + (info.shroudFlankingDamagePercent or 0)
+		+ (info.shroudDeepFlankDamagePercent or 0)
 		+ (info.newHorizonsArcheryDamagePercent or 0) + (info.battlecraftWaitDamagePercent or 0)
 		+ (info.relentlessAssaultDamagePercent or 0) + (info.archeryCrossfireDamagePercent or 0)) / 100
 end

@@ -15,6 +15,13 @@ from jsonschema import Draft4Validator
 ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
+    "new-horizons:learning.scholar",
+    "new-horizons:learning.historian",
+    "new-horizons:learning.archivist",
+    "new-horizons:divineMandate.royalStandard",
+    "new-horizons:shroudOfMalassa.deepFlank",
+    "new-horizons:shroudOfMalassa.encircledDoom",
+    "new-horizons:shroudOfMalassa.vanish",
     "new-horizons:estates.magnate",
     "new-horizons:learning.academicStudy",
     "new-horizons:elementalRebirth.elementalMemory",

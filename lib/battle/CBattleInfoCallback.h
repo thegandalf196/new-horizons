@@ -214,6 +214,10 @@ public:
 		const battle::Unit * primaryTarget) const;
 	/// True for an ordinary hostile melee blow delivered from behind the defender.
 	bool battleIsShroudFlankingAttack(const BattleAttackInfo & attack) const;
+	/// Current positional melee engagement, independent of FLANK Order hit history.
+	double battleDeepFlankDamagePercent(const BattleAttackInfo & attack) const;
+	int battleShroudMeleeContactSideCount(const BattleAttackInfo & attack) const;
+	int battleEncircledDoomDamagePercent(const BattleAttackInfo & attack) const;
 	/// Whether an accepted non-flying Ghost Walk route crosses a living hostile footprint
 	/// while the current controlling hero has Night Prowler.
 	bool battleNightProwlerCrossesEnemy(const battle::Unit * mover, const BattleHexArray & committedPath) const;

@@ -413,6 +413,8 @@ void CHeroHandler::loadHeroSpecialty(CHero * hero, const JsonNode & node) const
 					hero->damageSpellSpecialtyProducers.push_back({*family, prepared, true});
 				if(const auto family = nonDamageSpellSpecialtyTarget(SpellID(spell)))
 					hero->nonDamageSpellSpecialtyProducers.push_back({*family, prepared, true});
+				else if(hero->getJsonKey() == "core:thant" && spell == SpellID::ANIMATE_DEAD)
+					hero->nonDamageSpellSpecialtyProducers.push_back({SpellID(spell), prepared, true});
 			}
 		});
 	}
@@ -428,7 +430,14 @@ void CHeroHandler::loadHeroSpecialty(CHero * hero, const JsonNode & node) const
 		LIBRARY->identifiers()->requestIdentifier("spell", spellNode, [this, hero, prepSpec, values](si32 spell)
 		{
 			for (const auto & bonus : createSpellFixedSpecialty(SpellID(spell), values))
-				hero->specialty.push_back(prepSpec(bonus));
+			{
+				auto prepared = prepSpec(bonus);
+				hero->specialty.push_back(prepared);
+				if(spell == SpellID::HASTE && values.empty()
+					&& (hero->getJsonKey() == "core:cyra" || hero->getJsonKey() == "core:brissa"
+						|| hero->getJsonKey() == "core:terek"))
+					hero->nonDamageSpellSpecialtyProducers.push_back({SpellID(spell), prepared, true});
+			}
 		});
 	}
 

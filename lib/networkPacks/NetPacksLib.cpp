@@ -644,6 +644,11 @@ void SetNewHorizonsLearningMentorState::visitTyped(ICPackVisitor & visitor)
 	visitor.visitSetNewHorizonsLearningMentorState(*this);
 }
 
+void SetNewHorizonsScholarMeeting::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitSetNewHorizonsScholarMeeting(*this);
+}
+
 void SetNewHorizonsDiplomacyState::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitSetNewHorizonsDiplomacyState(*this);
@@ -918,6 +923,24 @@ void LobbyStartGame::validateNewHorizonsProspectorSerialization(bool supported) 
 {
 	if(initializedGameState)
 		initializedGameState->validateNewHorizonsProspectorSerialization(supported);
+}
+
+void LobbyStartGame::validateNewHorizonsHasteSpecialtySerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsHasteSpecialtySerialization(supported);
+}
+
+void LobbyStartGame::validateNewHorizonsScholarSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsScholarSerialization(supported);
+}
+
+void LobbyStartGame::validateNewHorizonsThantReanimateSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsThantReanimateSerialization(supported);
 }
 
 void LobbyStartGame::validateNewHorizonsMagnateSerialization(bool supported) const

@@ -114,6 +114,7 @@ public:
 	void visitSetNewHorizonsForcedMarchState(SetNewHorizonsForcedMarchState & pack) override;
 	void visitSetNewHorizonsMusterState(SetNewHorizonsMusterState & pack) override;
 	void visitSetNewHorizonsLearningMentorState(SetNewHorizonsLearningMentorState & pack) override;
+	void visitSetNewHorizonsScholarMeeting(SetNewHorizonsScholarMeeting & pack) override;
 	void visitSetNewHorizonsDiplomacyState(SetNewHorizonsDiplomacyState & pack) override;
 	void visitSetNewHorizonsDemonicReserve(SetNewHorizonsDemonicReserve & pack) override;
 	void visitSetPortalDwellingSource(SetPortalDwellingSource & pack) override;

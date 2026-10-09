@@ -65,7 +65,7 @@ struct DLL_LINKAGE Reward final
 
 	/// received experience
 	si32 heroExperience;
-	/// Fixed positive Experience from this reward is treated as primary Experience.
+	/// Positive Experience from this reward is treated as its primary reward.
 	bool primaryExperienceReward = false;
 	/// experience as a percentage of the hero's current gap to the next level
 	si32 heroExperienceNextLevelPercent = 0;
@@ -134,7 +134,7 @@ struct DLL_LINKAGE Reward final
 	void loadComponents(std::vector<Component> & comps, const CGHeroInstance * h) const;
 	
 	Component getDisplayedComponent(const CGHeroInstance * h) const;
-	TExpType calculateHeroExperience(const CGHeroInstance * hero) const;
+	TExpType calculateHeroExperience(const CGHeroInstance * hero, bool includePrimaryExperienceBonus = true) const;
 
 	si32 calculateManaPoints(const CGHeroInstance * h) const;
 	si32 calculateMovePoints(const CGHeroInstance * h) const;

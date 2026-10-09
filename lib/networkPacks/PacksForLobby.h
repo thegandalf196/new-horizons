@@ -139,14 +139,23 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 
 	void visitTyped(ICPackVisitor & visitor) override;
 	void validateNewHorizonsProspectorSerialization(bool supported) const;
+	void validateNewHorizonsScholarSerialization(bool supported) const;
 	void validateNewHorizonsMagnateSerialization(bool supported) const;
+	void validateNewHorizonsHasteSpecialtySerialization(bool supported) const;
+	void validateNewHorizonsThantReanimateSerialization(bool supported) const;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
 		if(h.saving)
+			validateNewHorizonsThantReanimateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
+		if(h.saving)
+			validateNewHorizonsHasteSpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_HASTE_SPECIALTIES));
+		if(h.saving)
 			validateNewHorizonsMagnateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGNATE));
 		if(h.saving)
 			validateNewHorizonsProspectorSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROSPECTOR));
+		if(h.saving)
+			validateNewHorizonsScholarSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LEARNING_SCHOLAR));
 		if (!h.saving)
 			h.loadingGamestate = true;
 		h & initializedStartInfo;

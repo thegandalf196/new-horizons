@@ -102,6 +102,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int bloodrageDamagePercent = 0;
 	/// Additive melee premium from a positional Shroud of Malassa flank.
 	int shroudFlankingDamagePercent = 0;
+	/// Half-rank ranged premium preserves fractional percentage points.
+	double shroudDeepFlankDamagePercent = 0.0;
 	/// Canonical New Horizons Archery premium for this physical ranged blow.
 	int newHorizonsArcheryDamagePercent = 0;
 	/// Canonical New Horizons Armorer reduction for this physical creature blow.
@@ -218,6 +220,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Battle-long additive creature attack and retaliation damage from Bloodrage.");
 		s("shroudFlankingDamagePercent", shroudFlankingDamagePercent,
 			"Positional melee damage premium supplied by Shroud of Malassa.");
+		s("shroudDeepFlankDamagePercent", shroudDeepFlankDamagePercent,
+			"Fractional ranged premium against current multi-side melee engagement.");
 		s("newHorizonsArcheryDamagePercent", newHorizonsArcheryDamagePercent,
 			"Canonical New Horizons Archery ranged damage premium.");
 		s("newHorizonsArmorerReductionPercent", newHorizonsArmorerReductionPercent,

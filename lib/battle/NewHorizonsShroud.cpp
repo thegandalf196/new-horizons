@@ -82,6 +82,36 @@ int backstabDamagePercent(const CGHeroInstance * hero)
 		? BACKSTAB_DAMAGE_PERCENT : 0;
 }
 
+bool hasDeepFlank(const CGHeroInstance * hero)
+{
+	return rank(hero) >= 2 && hero->hasActivePerk(std::string(SKILL_ID), std::string(DEEP_FLANK_PERK_ID));
+}
+
+double deepFlankDamagePercent(int value)
+{
+	return flankingDamagePercent(value) / 2.0;
+}
+
+bool hasEncircledDoom(const CGHeroInstance * hero)
+{
+	return rank(hero) == 3 && hero->hasActivePerk(std::string(SKILL_ID), std::string(ENCIRCLED_DOOM_PERK_ID));
+}
+
+int encircledDoomDamagePercent(int distinctSides)
+{
+	return std::max(0, std::clamp(distinctSides, 0, 6) - 1) * 10;
+}
+
+bool hasVanish(const CGHeroInstance * hero)
+{
+	return rank(hero) == 3 && hero->hasActivePerk(std::string(SKILL_ID), std::string(VANISH_PERK_ID));
+}
+
+int vanishMovementAllowance(int speed)
+{
+	return std::max(0, speed) / 2;
+}
+
 bool hasAmbusher(const CGHeroInstance * hero)
 {
 	return hero && hero->hasActivePerk(std::string(SKILL_ID), std::string(AMBUSHER_PERK_ID));

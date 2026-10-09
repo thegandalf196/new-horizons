@@ -113,6 +113,15 @@ struct DLL_LINKAGE HeroOrderState
 	int32_t sacredCommandEfficiencyBonusPercent = 0;
 	/// Knightly Sequence's additional attribute-efficiency increment, captured when this Order is issued.
 	int32_t knightlySequenceEfficiencyBonusPercent = 0;
+	/// Original friendly recipients: scheduled expiry, not benefit consumption.
+	std::vector<uint32_t> royalStandardRecipientUnitIds;
+
+	template <typename Handler> void validateRoyalStandardSerialization(Handler & h) const
+	{
+		if(h.saving && !royalStandardRecipientUnitIds.empty()
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_ROYAL_STANDARD))
+			throw std::runtime_error("Cannot discard Royal Standard Order recipients");
+	}
 
 	/// Combined Divine Mandate efficiency used by existing Order formulas.
 	int32_t divineMandateEfficiencyBonusPercent() const
@@ -176,6 +185,12 @@ struct DLL_LINKAGE HeroOrderState
 	void validateShape() const
 	{
 		const auto maxWireId = static_cast<uint32_t>(std::numeric_limits<int32_t>::max());
+		if(!std::is_sorted(royalStandardRecipientUnitIds.begin(), royalStandardRecipientUnitIds.end())
+			|| std::adjacent_find(royalStandardRecipientUnitIds.begin(), royalStandardRecipientUnitIds.end())
+				!= royalStandardRecipientUnitIds.end()
+			|| std::any_of(royalStandardRecipientUnitIds.begin(), royalStandardRecipientUnitIds.end(),
+				[maxWireId](uint32_t id) { return id > maxWireId; }))
+			throw std::runtime_error("Invalid Royal Standard recipient identities");
 		if(command == HeroCommand::NONE || issuedRound < 1
 			|| warcastingBonusPercent < 0 || warcastingBonusPercent > 100
 			|| (sacredCommandEfficiencyBonusPercent != 0 && sacredCommandEfficiencyBonusPercent != 10)
@@ -223,6 +238,7 @@ struct DLL_LINKAGE HeroOrderState
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		validateRoyalStandardSerialization(h);
 		if(h.saving && (protectInterceptionsConsumed > 1 || protectInterceptionLimit > 1)
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SHIELD_MASTER))
 			throw std::runtime_error("Cannot discard Shield Master Protect state");
@@ -283,6 +299,10 @@ struct DLL_LINKAGE HeroOrderState
 			h & knightlySequenceEfficiencyBonusPercent;
 		else if(!h.saving)
 			knightlySequenceEfficiencyBonusPercent = 0;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_ROYAL_STANDARD))
+			h & royalStandardRecipientUnitIds;
+		else if(!h.saving)
+			royalStandardRecipientUnitIds.clear();
 		if(!h.saving)
 			validateShape();
 	}

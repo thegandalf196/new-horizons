@@ -604,21 +604,35 @@ bool hasReanimatorPerk(const CGHeroInstance * hero)
 	return hero && hero->hasActivePerk(std::string(SHADOW_MAGIC_SKILL), std::string(SHADOW_REANIMATOR_PERK));
 }
 
-std::optional<int64_t> reanimateHealingPool(const JsonNode & rules, const CGHeroInstance * hero,
-	const SpellID spell, const int32_t rawSpellPower, const int64_t survivorWounds,
+std::optional<int64_t> reanimateBaseHealingPool(const JsonNode & rules, const CGHeroInstance * hero,
+	const SpellID spell, const int32_t rawSpellPower,
 	const int additionalSpellPowerComponentPercent)
 {
 	if(!reanimateEnabled(rules, spell))
 		return std::nullopt;
-	if(rawSpellPower < 0 || survivorWounds < 0)
+	if(rawSpellPower < 0)
 		throw std::invalid_argument("Invalid Re-animate healing-pool input");
 
 	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(
 		rules, hero, spell, additionalSpellPowerComponentPercent);
 	const int64_t scaledPowerTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
 		static_cast<int64_t>(REANIMATE_SPELL_POWER_HP_PER_POINT) * rawSpellPower, 1,
-		coefficientBasisPoints);
-	const int64_t basePool = REANIMATE_BASE_HEALING_HP + scaledPowerTerm;
+		coefficientBasisPoints, 0, 0,
+		hero ? hero->getNonDamageSpellSpecialtyBonusPercent(spell) : 0);
+	return REANIMATE_BASE_HEALING_HP + scaledPowerTerm;
+}
+
+std::optional<int64_t> reanimateHealingPool(const JsonNode & rules, const CGHeroInstance * hero,
+	const SpellID spell, const int32_t rawSpellPower, const int64_t survivorWounds,
+	const int additionalSpellPowerComponentPercent)
+{
+	const auto pool = reanimateBaseHealingPool(rules, hero, spell, rawSpellPower,
+		additionalSpellPowerComponentPercent);
+	if(!pool)
+		return std::nullopt;
+	if(survivorWounds < 0)
+		throw std::invalid_argument("Invalid Re-animate healing-pool input");
+	const int64_t basePool = *pool;
 	if(!hasReanimatorPerk(hero))
 		return basePool;
 

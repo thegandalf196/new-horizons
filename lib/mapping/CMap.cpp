@@ -1081,6 +1081,42 @@ void CMap::validateNewHorizonsProspectorSerialization(bool supported) const
 		validate(hero.get());
 }
 
+void CMap::validateNewHorizonsHasteSpecialtySerialization(bool supported) const
+{
+	if(gameSettings)
+		gameSettings->validateNewHorizonsHasteSpecialtySerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsHeroes::validateHasteSpecialtySerialization(hero->getPrimaryGrowthRules(), supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			newHorizonsHeroes::validateHasteSpecialtySerialization(hero->getPrimaryGrowthRules(), supported);
+}
+
+void CMap::validateNewHorizonsScholarSerialization(bool supported) const
+{
+	// Match existing hero-receipt preflight coverage: actual serialized objects
+	// include prisons; actual off-map heroes live in this private pool.
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			hero->validateNewHorizonsScholarSerialization(supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			hero->validateNewHorizonsScholarSerialization(supported);
+}
+
+void CMap::validateNewHorizonsThantReanimateSerialization(bool supported) const
+{
+	if(gameSettings)
+		gameSettings->validateNewHorizonsThantReanimateSerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsHeroes::validateReanimateSpecialtySerialization(hero->getPrimaryGrowthRules(), supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			newHorizonsHeroes::validateReanimateSpecialtySerialization(hero->getPrimaryGrowthRules(), supported);
+}
+
 void CMap::validateNewHorizonsMagnateSerialization(bool supported) const
 {
 	for(const auto & object : objects)

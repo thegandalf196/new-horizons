@@ -339,4 +339,5 @@ void registerTypes(Serializer &s)
 	s.template registerType<SetBattlecraftMasteryAward>(296);
 	s.template registerType<SetOverwhelmingFormulaState>(297);
 	s.template registerType<SetArmorerDefiantState>(298);
+	s.template registerType<SetNewHorizonsScholarMeeting>(299);
 }

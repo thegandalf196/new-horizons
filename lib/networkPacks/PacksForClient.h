@@ -1987,6 +1987,27 @@ struct DLL_LINKAGE SetPortalDwellingSource : public CPackForClient
 };
 
 /// Authoritative weekly Learning Mentor use for one hero.
+struct DLL_LINKAGE SetNewHorizonsScholarMeeting : public CPackForClient
+{
+	ObjectInstanceID first = ObjectInstanceID::NONE;
+	ObjectInstanceID second = ObjectInstanceID::NONE;
+	int32_t week = -1;
+	void visitTyped(ICPackVisitor & visitor) override;
+	bool hasValidState() const { return first.hasValue() && second.hasValue() && first < second && week >= 0; }
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_LEARNING_SCHOLAR))
+			throw std::runtime_error("New Horizons Scholar meeting requires the new wire format");
+		if(h.saving && !hasValidState())
+			throw std::runtime_error("Invalid New Horizons Scholar meeting packet");
+		h & first;
+		h & second;
+		h & week;
+		if(!h.saving && !hasValidState())
+			throw std::runtime_error("Invalid New Horizons Scholar meeting packet");
+	}
+};
+
 struct DLL_LINKAGE SetNewHorizonsLearningMentorState : public CPackForClient
 {
 	ObjectInstanceID heroId = ObjectInstanceID::NONE;

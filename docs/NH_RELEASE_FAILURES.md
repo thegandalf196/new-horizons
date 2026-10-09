@@ -1,5 +1,51 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-09 — Scholar fixture type and public-access admission
+
+Combined ten-job build88029 terminates1 at the Scholar fixture only. Concrete
+CSpell and GameSettings definitions are needed for spell-interface conversion
+and full-map serialization; forward declarations are insufficient. Inspect
+permanently learned spells through the public known-spell view, not the private
+storage set. These are fixture repairs, not permission to expose state publicly.
+The old-format Scholar control must also exclude the later Reanimate opt-in
+while retaining Haste and Scholar rules; otherwise the correct newer admission
+guard masks the intended check. Archivist's school-negative control must use a
+school-gated spell, not deliberately rank-zero Magic Arrow. Preserve positive
+controls and all receipt/save assertions. The full failed log is retained
+privately outside build; incremental retry/native acceptance remain pending.
+
+Retry62589 stops1 in three additional principal fixtures: Royal Standard must
+construct callback-bound SideInBattle/BattleInfo objects with the legitimate
+game callback; Vanish's std::max operands need consistent integer types; Haste's
+off-map hero must enter through the public pool API instead of private storage.
+Keep the actual off-map serialization assertion, not a substitute on-map hero.
+Its complete log is also preserved outside build. These remain test compilation
+issues, not evidence of accepted mechanics or a reason to weaken production APIs.
+
+Retry50443 stops1 at Thant's test-only call to private GameSettings raw override
+storage. Use public raw-feature validation and old-format serialization, then
+decode the emitted JsonNode to assert exact equality and absence of the new
+opt-in. Do not substitute the merged settings view, which cannot establish the
+old-reader no-invention invariant. The reviewed correction preserves all cases;
+the failed log remains private and same-directory retry82917 is underway.
+
+Retry82917's final fixture error is nonexistent ArtifactInstanceID::NONE. The
+canonical default typed identifier is invalid; explicitly check hasValue before
+and after real scroll creation while retaining exact instance equality. Retry3269
+then links successfully. All failed logs remain private; no production state or
+eligibility guard was weakened. Matching principal native acceptance is pending.
+
+Matching native33683 passes66/79 and adjacent30005 passes14/15, no crashes.
+Use the saved School-to-Skill mapping: Sorcery is a school identity, while its
+proficiency skill is sorceryMagic. Select mandatory lower perk tiers before
+Advanced/Expert fixture perks. Value-initialize BattleClientInterfaceData so
+uninitialized tacticsMode cannot bypass the move-only continuation branch.
+For path previews, relocating only a projected unit does not free the live
+landing tile; use a consistent battle/occupancy setup. Double-wide melee/flank
+placement must search legal heads with complete footprints, not only the victim's
+single-hex neighbors. The frozen logs/XML remain private; all expected outcomes
+and exact movement/receipt/forged-action assertions are retained in repairs.
+
 ### 2026-10-09 — Four-perk fixture compile admission
 
 Build55392 stopped on Academic Study and Magnate test TUs that instantiated

@@ -46,6 +46,7 @@ constexpr auto HISTORIAN_PERK = "new-horizons:learning.historian";
 class NewHorizonsHistorianRewardTest : public TinyMapGameTest
 {
 protected:
+	bool legacyRules = false;
 	void SetUp() override
 	{
 		TinyMapGameTest::SetUp();
@@ -56,18 +57,23 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
+		if(legacyRules)
+		{
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, JsonNode());
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+			return;
+		}
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
 			JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
+			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 
-		// Historian is activated only in this saved-world fixture. Production
-		// registration remains planned; no other perk definition is changed.
-		auto perkRules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
-		for(auto & perk : perkRules["skills"][LEARNING_SKILL]["perks"].Vector())
-			if(perk["id"].String() == HISTORIAN_PERK)
-				perk["effect"]["status"].String() = "active";
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
 
 	static HeroTypeID heroType(const char * id)
@@ -184,8 +190,7 @@ TEST_F(NewHorizonsHistorianRewardTest, LearningStonePreviewAndAcceptedVisitUsePr
 		return;
 	ASSERT_EQ(gameHandler.getVisitingHero(stone), nullptr);
 
-	// An active Historian does not promote an unclassified fixed-XP reward or
-	// a next-level percentage reward into the primary fixed-XP category.
+	// Only explicitly classified primary Experience receives Historian.
 	const auto currentHistorianOrdinaryXp = historian->calculateXp(stoneReward.heroExperience);
 	Rewardable::Reward unclassified;
 	unclassified.heroExperience = stoneReward.heroExperience;
@@ -197,6 +202,9 @@ TEST_F(NewHorizonsHistorianRewardTest, LearningStonePreviewAndAcceptedVisitUsePr
 	percentage.primaryExperienceReward = true;
 	const auto levelGap = LIBRARY->heroh->reqExp(historian->level + 1) - historian->exp;
 	const auto rawPercent = (levelGap / 100) * 25 + (levelGap % 100) * 25 / 100;
+	EXPECT_EQ(percentage.calculateHeroExperience(historian), historian->calculateXp(rawPercent, 50));
+	EXPECT_EQ(percentage.calculateHeroExperience(historian, false), historian->calculateXp(rawPercent));
+	percentage.primaryExperienceReward = false;
 	EXPECT_EQ(percentage.calculateHeroExperience(historian), historian->calculateXp(rawPercent));
 }
 
@@ -278,6 +286,167 @@ TEST_F(NewHorizonsHistorianRewardTest, LearningStoneSkillScoreUsesClassifiedRewa
 	EXPECT_TRUE(stoneInfo.reward.primaryExperienceReward);
 	EXPECT_EQ(stoneInfo.reward.heroExperience, originalFixedExperience);
 	EXPECT_EQ(stoneInfo.visitType, originalVisitType);
+}
+
+TEST_F(NewHorizonsHistorianRewardTest, TreePreviewAcceptedRewardAndAIUseTheSamePrimaryExperience)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PLAYER)
+		.hero({5, 5, 0}, heroType("core:christian"), PLAYER);
+	startWithMap(std::move(builder));
+	auto * hero = findHeroAt({5, 5, 0});
+	ASSERT_NE(hero, nullptr);
+	selectBasicLearning(hero, true);
+	GameHandlerTestServer server(gameState(), PLAYER);
+	CGameHandler gameHandler(server, gameState());
+	gameHandler.onAdvInterfaceReady(PLAYER);
+	gameHandler.giveResource(PLAYER, GameResID(GameResID::GOLD), 10000);
+	gameHandler.giveResource(PLAYER, GameResID(GameResID::GEMS), 100);
+	auto object = gameHandler.createNewObject({12, 12, 0}, Obj::TREE_OF_KNOWLEDGE, MapObjectSubID(0));
+	ASSERT_NE(object, nullptr);
+	gameHandler.newObject(object, PLAYER);
+	auto * tree = dynamic_cast<CRewardableObject *>(gameState()->getObjInstance(object->id));
+	ASSERT_NE(tree, nullptr);
+	const auto available = tree->getAvailableRewards(hero, Rewardable::EEventType::EVENT_FIRST_VISIT);
+	ASSERT_EQ(available.size(), 1);
+	const auto reward = tree->configuration.info.at(available.front()).reward;
+	ASSERT_EQ(reward.heroLevel, 1);
+	ASSERT_TRUE(reward.primaryExperienceReward);
+	const TExpType base = LIBRARY->heroh->reqExp(hero->level + 1) - LIBRARY->heroh->reqExp(hero->level);
+	const auto expected = hero->calculateXp(base, 50);
+	EXPECT_EQ(reward.calculateHeroExperience(hero), expected);
+	EXPECT_EQ(reward.calculateHeroExperience(hero, false), hero->calculateXp(base));
+	EXPECT_EQ(experiencePreview(reward, hero), expected);
+	NK2AI::RewardEvaluator evaluator(nullptr);
+	EXPECT_NEAR(evaluator.getSkillReward(tree, hero, NK2AI::HeroRole::MAIN),
+		static_cast<float>(expected) / hero->calculateXp(base), 1e-6f);
+	const auto before = hero->exp;
+	gameHandler.objectVisited(tree, hero);
+	const auto confirmation = gameHandler.queries->topQuery(PLAYER);
+	ASSERT_NE(confirmation, nullptr);
+	ASSERT_EQ(confirmation->getType(), QueryType::BlockingDialog);
+	ASSERT_TRUE(gameHandler.queryReply(confirmation->queryID, 1, PLAYER));
+	EXPECT_EQ(hero->exp - before, expected);
+	EXPECT_TRUE(tree->wasVisited(hero));
+	for(ui32 i = 0; i < LIBRARY->heroh->maxSupportedLevel(); ++i)
+	{
+		const auto query = gameHandler.queries->topQuery(PLAYER);
+		if(!query)
+			break;
+		ASSERT_EQ(query->getType(), QueryType::HeroLevelUpDialog);
+		ASSERT_TRUE(gameHandler.queryReply(query->queryID, 0, PLAYER));
+	}
+	EXPECT_EQ(gameHandler.queries->topQuery(PLAYER), nullptr);
+	EXPECT_EQ(gameHandler.getVisitingHero(tree), nullptr);
+}
+
+TEST_F(NewHorizonsHistorianRewardTest, PrimaryLevelRewardPreservesLegacyDeltaAndUsesLearningWithoutHistorian)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PLAYER)
+		.hero({5, 5, 0}, heroType("core:christian"), PLAYER);
+	startWithMap(std::move(builder));
+	auto * hero = findHeroAt({5, 5, 0});
+	ASSERT_NE(hero, nullptr);
+	selectBasicLearning(hero, false);
+	Rewardable::Reward reward;
+	reward.heroLevel = 1;
+	const TExpType base = LIBRARY->heroh->reqExp(hero->level + 1) - LIBRARY->heroh->reqExp(hero->level);
+	EXPECT_EQ(reward.calculateHeroExperience(hero), base);
+	reward.primaryExperienceReward = true;
+	EXPECT_EQ(reward.calculateHeroExperience(hero), hero->calculateXp(base));
+	EXPECT_EQ(experiencePreview(reward, hero), hero->calculateXp(base));
+	hero->applyPerkSelection({LEARNING_SKILL, HISTORIAN_PERK});
+	EXPECT_EQ(reward.calculateHeroExperience(hero), hero->calculateXp(base, 50));
+	EXPECT_EQ(reward.calculateHeroExperience(hero, false), hero->calculateXp(base));
+	// Tree preserves the existing level-threshold delta, not the visitor's gap.
+	++hero->exp;
+	EXPECT_EQ(reward.calculateHeroExperience(hero), hero->calculateXp(base, 50));
+	hero->level = LIBRARY->heroh->maxSupportedLevel();
+	EXPECT_EQ(reward.calculateHeroExperience(hero), 0);
+	EXPECT_EQ(experiencePreview(reward, hero), 0);
+}
+
+TEST_F(NewHorizonsHistorianRewardTest, FreshClassifiedTreeKeepsLegacyLevelGrantPreviewAndAIPriority)
+{
+	legacyRules = true;
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36, false).playerActive(PLAYER)
+		.hero({5, 5, 0}, heroType("core:christian"), PLAYER);
+	startWithMap(std::move(builder));
+	auto * hero = findHeroAt({5, 5, 0});
+	ASSERT_NE(hero, nullptr);
+	hero->setSecSkillLevel(SecondarySkill(SecondarySkill::LEARNING), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	GameHandlerTestServer server(gameState(), PLAYER);
+	CGameHandler gameHandler(server, gameState());
+	gameHandler.onAdvInterfaceReady(PLAYER);
+	gameHandler.giveResource(PLAYER, GameResID(GameResID::GOLD), 10000);
+	gameHandler.giveResource(PLAYER, GameResID(GameResID::GEMS), 100);
+	auto object = gameHandler.createNewObject({12, 12, 0}, Obj::TREE_OF_KNOWLEDGE, MapObjectSubID(0));
+	ASSERT_NE(object, nullptr);
+	gameHandler.newObject(object, PLAYER);
+	auto * tree = dynamic_cast<CRewardableObject *>(gameState()->getObjInstance(object->id));
+	ASSERT_NE(tree, nullptr);
+	const auto available = tree->getAvailableRewards(hero, Rewardable::EEventType::EVENT_FIRST_VISIT);
+	ASSERT_EQ(available.size(), 1);
+	const auto reward = tree->configuration.info.at(available.front()).reward;
+	ASSERT_TRUE(reward.primaryExperienceReward);
+	ASSERT_EQ(reward.heroLevel, 1);
+	const TExpType base = LIBRARY->heroh->reqExp(hero->level + 1) - LIBRARY->heroh->reqExp(hero->level);
+	ASSERT_GT(hero->calculateXp(base), base);
+	EXPECT_EQ(reward.calculateHeroExperience(hero), base);
+	EXPECT_EQ(reward.calculateHeroExperience(hero, false), base);
+	EXPECT_EQ(experiencePreview(reward, hero), 0);
+	std::vector<Component> components;
+	reward.loadComponents(components, hero);
+	EXPECT_TRUE(std::ranges::any_of(components, [](const Component & component)
+	{
+		return component.type == ComponentType::LEVEL && component.value == 1;
+	}));
+	NK2AI::RewardEvaluator evaluator(nullptr);
+	EXPECT_FLOAT_EQ(evaluator.getSkillReward(tree, hero, NK2AI::HeroRole::MAIN), 1.0f);
+	const auto before = hero->exp;
+	gameHandler.objectVisited(tree, hero);
+	const auto confirmation = gameHandler.queries->topQuery(PLAYER);
+	ASSERT_NE(confirmation, nullptr);
+	ASSERT_EQ(confirmation->getType(), QueryType::BlockingDialog);
+	ASSERT_TRUE(gameHandler.queryReply(confirmation->queryID, 1, PLAYER));
+	EXPECT_EQ(hero->exp - before, base);
+	for(ui32 i = 0; i < LIBRARY->heroh->maxSupportedLevel(); ++i)
+	{
+		const auto query = gameHandler.queries->topQuery(PLAYER);
+		if(!query)
+			break;
+		ASSERT_EQ(query->getType(), QueryType::HeroLevelUpDialog);
+		ASSERT_TRUE(gameHandler.queryReply(query->queryID, 0, PLAYER));
+	}
+	EXPECT_EQ(gameHandler.queries->topQuery(PLAYER), nullptr);
+}
+
+TEST_F(NewHorizonsHistorianRewardTest, ShippedChestAndTreeClassifyOnlyExperienceOptions)
+{
+	const JsonNode pickable(JsonPath::builtin("config/objects/rewardablePickable"));
+	const auto & chest = pickable["treasureChest"]["types"]["treasureChest"]["rewards"].Vector();
+	size_t experienceOptions = 0;
+	for(const auto & row : chest)
+	{
+		if(row["heroExperience"].Integer() > 0)
+		{
+			++experienceOptions;
+			EXPECT_TRUE(row["primaryExperienceReward"].Bool());
+		}
+		else
+			EXPECT_FALSE(row["primaryExperienceReward"].Bool());
+	}
+	EXPECT_EQ(experienceOptions, 3);
+	const JsonNode once(JsonPath::builtin("config/objects/rewardableOncePerHero"));
+	const auto & tree = once["treeOfKnowledge"]["types"]["treeOfKnowledge"]["rewards"].Vector();
+	ASSERT_EQ(tree.size(), 3);
+	for(const auto & row : tree)
+	{
+		EXPECT_EQ(row["heroLevel"].Integer(), 1);
+		EXPECT_TRUE(row["primaryExperienceReward"].Bool());
+	}
 }
 
 TEST_F(NewHorizonsHistorianRewardTest, PrimaryRewardClassificationHasJSONAndVersionedBinaryCompatibility)

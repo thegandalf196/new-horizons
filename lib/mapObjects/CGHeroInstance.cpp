@@ -75,6 +75,18 @@ namespace
 constexpr int32_t bootsOfLevitationWaterWalkCost = 20;
 constexpr int32_t angelWingsFlyCost = 40;
 
+std::optional<SpellID> thantReanimateReplacement(const CGHeroInstance & hero)
+{
+	if(!hero.getHeroType() || hero.getHeroType()->getJsonKey() != "core:thant")
+		return std::nullopt;
+	const auto rules = newHorizonsHeroes::nonDamageSpellSpecialtyRules(hero.getPrimaryGrowthRules());
+	if(rules)
+		for(const auto spell : rules->spells)
+			if(newHorizonsMagic::reanimateEnabled(hero.getMagicRules(), spell))
+				return spell;
+	return std::nullopt;
+}
+
 std::string creatureLineSpecialtyMarker(HeroTypeID heroType, CreatureID creature, std::string_view stat)
 {
 	return "new-horizons:creature-line-specialty:" + std::to_string(heroType.getNum()) + ":"
@@ -636,18 +648,24 @@ std::string CGHeroInstance::getSpecialtyDescriptionTranslated() const
 
 	if(const auto rules = newHorizonsHeroes::nonDamageSpellSpecialtyRules(primaryGrowthRules))
 		for(const auto & producer : heroType->nonDamageSpellSpecialtyProducers)
-			if(getNonDamageSpellSpecialtyBonusPercent(producer.spell) > 0)
+		{
+			const auto target = producer.spell == SpellID::ANIMATE_DEAD
+				? thantReanimateReplacement(*this).value_or(producer.spell) : producer.spell;
+			if(getNonDamageSpellSpecialtyBonusPercent(target) > 0)
 			{
 				MetaString description;
-				description.appendName(producer.spell);
+				description.appendName(target);
 				description.appendRawString(" gains +");
 				description.appendNumber(rules->componentPercent);
 				if(producer.spell == SpellID::BLESS)
 					description.appendRawString("% to its Spell Power-derived duration component before its normal duration cap.");
+				else if(producer.spell == SpellID::HASTE)
+					description.appendRawString("% to its Spell Power-derived duration component. Its Speed bonus is unchanged.");
 				else
 					description.appendRawString("% to its Spell Power-derived healing component.");
 				return description.toString(LIBRARY->generaltexth.get());
 			}
+		}
 
 	if(const auto rules = newHorizonsHeroes::skillSpecialtyRules(primaryGrowthRules))
 		if(heroType->secondarySkillSpecialtyAlias
@@ -837,6 +855,12 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 		// hero starts with default spells
 		for(const auto & spellID : getHeroType()->spells)
 		{
+			if(creationInitialization && spellID == SpellID::ANIMATE_DEAD)
+				if(const auto replacement = thantReanimateReplacement(*this))
+				{
+					spells.insert(*replacement);
+					continue;
+				}
 			if(newHorizonsMagic::isAdventureSpell(getMagicRules(), spellID)
 				&& !newHorizonsMagic::spellAvailableForOrdinaryAcquisition(getMagicRules(), spellID))
 				continue;
@@ -988,6 +1012,7 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	const bool convertsDamageSpellSpecialty = newHorizonsHeroes::damageSpellSpecialtyRules(primaryGrowthRules).has_value();
 	const auto nonDamageSpellSpecialtyRules = newHorizonsHeroes::nonDamageSpellSpecialtyRules(primaryGrowthRules);
 	const bool convertsNonDamageSpellSpecialty = nonDamageSpellSpecialtyRules.has_value();
+	const auto reanimateReplacement = thantReanimateReplacement(*this);
 	const bool convertsSkillSpecialty = hasSupportedSkillSpecialty
 		&& getSkillSpecialtyCoreBonusPercent(heroType->secondarySkillSpecialtyAlias->skill) > 0;
 	for(const std::shared_ptr<Bonus> & b : heroType->specialty)
@@ -1017,11 +1042,12 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 		if(convertsNonDamageSpellSpecialty)
 		{
 			const auto producer = std::ranges::find_if(heroType->nonDamageSpellSpecialtyProducers,
-				[&b, &nonDamageSpellSpecialtyRules](const auto & candidate)
+				[&b, &nonDamageSpellSpecialtyRules, &reanimateReplacement](const auto & candidate)
 				{
 					return candidate.bonus == b
-						&& std::ranges::find(nonDamageSpellSpecialtyRules->spells, candidate.spell)
-							!= nonDamageSpellSpecialtyRules->spells.end();
+						&& (std::ranges::find(nonDamageSpellSpecialtyRules->spells, candidate.spell)
+							!= nonDamageSpellSpecialtyRules->spells.end()
+							|| (candidate.spell == SpellID::ANIMATE_DEAD && reanimateReplacement));
 				});
 			if(producer != heroType->nonDamageSpellSpecialtyProducers.end())
 			{
@@ -1029,7 +1055,14 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 					throw std::runtime_error("New Horizons cannot convert a non-damage spell specialty with limiters, updaters, propagation, or a non-base value type");
 				auto converted = std::make_shared<Bonus>(*b);
 				converted->val = 0;
-				converted->stacking = nonDamageSpellSpecialtyMarker(heroType->getId(), producer->spell);
+				const auto target = producer->spell == SpellID::ANIMATE_DEAD
+					? *reanimateReplacement : producer->spell;
+				converted->stacking = nonDamageSpellSpecialtyMarker(heroType->getId(), target);
+				// Peculiar enchants read their parameters, not val. An explicit
+				// zero prevents the legacy tier fallback without changing the
+				// shared prototype or marker-free historical producers.
+				if(producer->spell == SpellID::HASTE)
+					converted->parameters = std::make_shared<BonusParameters>(std::vector<int32_t>{0});
 				addNewBonus(converted);
 				continue;
 			}
@@ -1704,6 +1737,13 @@ bool CGHeroInstance::canCastThisSpell(const spells::Spell * spell) const
 bool CGHeroInstance::canLearnSpell(const spells::Spell * spell, bool allowBanned) const
 {
 	return canLearnSpellImpl(spell, allowBanned, false, true, false);
+}
+
+bool CGHeroInstance::canLearnSpellFromAcquiredScroll(SpellID spell) const
+{
+	return spell != SpellID::NONE
+		&& hasActivePerk("new-horizons:learning", "new-horizons:learning.archivist")
+		&& canLearnSpell(spell.toSpell());
 }
 
 bool CGHeroInstance::canLearnAdventureSpellFromGuild(const spells::Spell * spell, const CGTownInstance * town) const
@@ -2627,6 +2667,75 @@ bool CGHeroInstance::isValidNewHorizonsLearningMentorState(ObjectInstanceID hero
 			return false;
 	}
 	return recipients[0] == ObjectInstanceID::NONE || recipients[0] != recipients[1];
+}
+
+bool CGHeroInstance::isValidNewHorizonsScholarState(ObjectInstanceID hero, int32_t week, const std::vector<ObjectInstanceID> & partners)
+{
+	if(week < -1 || (week == -1) != partners.empty())
+		return false;
+	ObjectInstanceID previous = ObjectInstanceID::NONE;
+	for(const auto partner : partners)
+	{
+		if(!hero.hasValue() || !partner.hasValue() || partner == hero || partner <= previous)
+			return false;
+		previous = partner;
+	}
+	return true;
+}
+
+void CGHeroInstance::markNewHorizonsScholarMeeting(ObjectInstanceID partner, int32_t week)
+{
+	if(!id.hasValue() || !partner.hasValue() || partner == id || week < 0 || week < newHorizonsScholarWeek
+		|| !isValidNewHorizonsScholarState(id, newHorizonsScholarWeek, newHorizonsScholarPartners))
+		throw std::runtime_error("Invalid New Horizons Scholar meeting");
+	if(week != newHorizonsScholarWeek)
+	{
+		newHorizonsScholarWeek = week;
+		newHorizonsScholarPartners.clear();
+	}
+	const auto position = std::lower_bound(newHorizonsScholarPartners.begin(), newHorizonsScholarPartners.end(), partner);
+	if(position == newHorizonsScholarPartners.end() || *position != partner)
+		newHorizonsScholarPartners.insert(position, partner);
+}
+
+bool CGHeroInstance::hasNewHorizonsScholarMeeting(ObjectInstanceID partner, int32_t week) const
+{
+	return week == newHorizonsScholarWeek
+		&& std::binary_search(newHorizonsScholarPartners.begin(), newHorizonsScholarPartners.end(), partner);
+}
+
+std::optional<SpellID> CGHeroInstance::getNewHorizonsScholarSpellFor(const CGHeroInstance & recipient) const
+{
+	if(this == &recipient || !hasSpellbook() || !recipient.hasSpellbook())
+		return std::nullopt;
+	std::optional<SpellID> selected;
+	for(const auto spell : getSpellsInSpellbook())
+	{
+		if(!spells.contains(spell) || !newHorizonsMagic::spellAllowedByHeroRoster(getMagicRules(), spell)
+			|| !recipient.canLearnSpell(spell.toSpell()))
+			continue;
+		if(!selected || recipient.getSpellLevel(spell.toSpell()) > recipient.getSpellLevel(selected->toSpell())
+			|| (recipient.getSpellLevel(spell.toSpell()) == recipient.getSpellLevel(selected->toSpell())
+				&& spell.toSpell()->getJsonKey() < selected->toSpell()->getJsonKey()))
+			selected = spell;
+	}
+	return selected;
+}
+
+bool CGHeroInstance::canExchangeNewHorizonsScholarWith(const CGHeroInstance & partner, int32_t week) const
+{
+	if(!cb || !newHorizonsMagic::rulesActive(getMagicRules())
+		|| !id.hasValue() || !partner.id.hasValue() || id == partner.id || week < 0
+		|| week < newHorizonsScholarWeek || week < partner.newHorizonsScholarWeek
+		|| !isValidNewHorizonsScholarState(id, newHorizonsScholarWeek, newHorizonsScholarPartners)
+		|| !isValidNewHorizonsScholarState(partner.id, partner.newHorizonsScholarWeek, partner.newHorizonsScholarPartners)
+		|| cb->getPlayerRelations(getOwner(), partner.getOwner()) == PlayerRelations::ENEMIES
+		|| hasNewHorizonsScholarMeeting(partner.id, week) || partner.hasNewHorizonsScholarMeeting(id, week))
+		return false;
+	if(!hasActivePerk("new-horizons:learning", "new-horizons:learning.scholar")
+		&& !partner.hasActivePerk("new-horizons:learning", "new-horizons:learning.scholar"))
+		return false;
+	return getNewHorizonsScholarSpellFor(partner).has_value() || partner.getNewHorizonsScholarSpellFor(*this).has_value();
 }
 
 void CGHeroInstance::setNewHorizonsLearningMentorState(int32_t week, const LearningMentorRecipients & recipients)

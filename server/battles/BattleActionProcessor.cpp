@@ -996,7 +996,7 @@ bool BattleActionProcessor::doEmptyAction(const CBattleInfoCallback & battle, co
 		BattleLogMessage message;
 		message.battleID = battle.getBattle()->getBattleID();
 		MetaString line;
-		line.appendRawString("%s forgo Pursuit movement.");
+		line.appendRawString("%s forgo post-attack movement.");
 		stack->addNameReplacement(line, stack->getCount());
 		message.lines.push_back(std::move(line));
 		gameHandler->sendAndApply(message);
@@ -1565,7 +1565,7 @@ bool BattleActionProcessor::doWalkAction(const CBattleInfoCallback & battle, con
 		BattleLogMessage message;
 		message.battleID = battle.getBattle()->getBattleID();
 		MetaString line;
-		line.appendRawString("%s use Pursuit to move ");
+		line.appendRawString("%s use post-attack movement to move ");
 		stack->addNameReplacement(line, stack->getCount());
 		line.appendNumber(movementResult.distance);
 		line.appendRawString(movementResult.distance == 1 ? " hex." : " hexes.");
@@ -1674,7 +1674,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 	const auto perfectMomentSide = battle.playerToSide(battle.battleGetOwner(stack));
 	if(stack->pursuitMovementRemaining > 0)
 	{
-		gameHandler->complain("Pursuit allows movement only; it does not grant another attack");
+		gameHandler->complain("Post-attack movement does not grant another attack");
 		return false;
 	}
 
@@ -1834,6 +1834,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 
 	bool ferocityApplied = false;
 	bool destroyedEnemy = false;
+	bool vanishKill = false;
 	RelentlessAssaultActionContext relentlessAssault;
 	int32_t defenderInitialQuantity = destinationStack->getCount();
 
@@ -1884,7 +1885,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 			// Pass the originally selected Ward to makeAttack so Protect can
 			// consume its first interception atomically; attackTarget is only the
 			// resolved recipient used for local retaliation checks below.
-			makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .distance = (i ? 0 : movementResult.distance), .attackIndex = i, .first = i == 0, .perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE}, &destroyedEnemy, &relentlessAssault);
+			makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .distance = (i ? 0 : movementResult.distance), .attackIndex = i, .first = i == 0, .perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE}, &destroyedEnemy, &relentlessAssault, nullptr, &vanishKill);
 			if(armorerLastStandEndedActivation(stack))
 				break;
 
@@ -1972,20 +1973,29 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 	const auto * resolvedAttacker = battle.battleGetStackByID(ba.stackNumber, false);
 	const auto * ownerHero = resolvedAttacker ? battle.battleGetOwnerHero(resolvedAttacker) : nullptr;
 	const int remainingMovement = std::max(0, beforeAttackSpeed - movementSpent);
-	if(allowPursuitContinuation && destroyedEnemy && remainingMovement > 0
+	const int pursuitAllowance = destroyedEnemy && ownerHero
+		&& ownerHero->hasActivePerk("new-horizons:offense", "new-horizons:offense.pursuit")
+		? remainingMovement : 0;
+	const int vanishAllowance = vanishKill && resolvedAttacker && !newHorizonsFrozen::isFrozen(*resolvedAttacker)
+		&& !armorerLastStandEndedActivation(resolvedAttacker)
+		? newHorizonsShroud::vanishMovementAllowance(resolvedAttacker->getMovementRange(0)) : 0;
+	const int movementAllowance = std::max(pursuitAllowance, vanishAllowance);
+	if(allowPursuitContinuation && movementAllowance > 0
 		&& resolvedAttacker && resolvedAttacker->alive()
-		&& resolvedAttacker->canMove() && !resolvedAttacker->isTimeStopped() && ownerHero
-		&& ownerHero->hasActivePerk("new-horizons:offense", "new-horizons:offense.pursuit"))
+		&& resolvedAttacker->canMove() && !resolvedAttacker->isTimeStopped())
 	{
-		setPursuitMovementRemaining(battle, resolvedAttacker, remainingMovement);
+		setPursuitMovementRemaining(battle, resolvedAttacker, movementAllowance);
 
 		BattleLogMessage message;
 		message.battleID = battle.getBattle()->getBattleID();
 		MetaString line;
-		line.appendRawString("%s trigger Pursuit and may move up to ");
+		line.appendRawString(vanishAllowance > 0
+			? (pursuitAllowance > 0 ? "%s trigger Pursuit and Vanish and may move up to "
+				: "%s trigger Vanish and may move up to ")
+			: "%s trigger Pursuit and may move up to ");
 		resolvedAttacker->addNameReplacement(line, resolvedAttacker->getCount());
-		line.appendNumber(remainingMovement);
-		line.appendRawString(remainingMovement == 1 ? " hex." : " hexes.");
+		line.appendNumber(movementAllowance);
+		line.appendRawString(movementAllowance == 1 ? " hex." : " hexes.");
 		message.lines.push_back(std::move(line));
 		gameHandler->sendAndApply(message);
 	}
@@ -4241,7 +4251,8 @@ void BattleActionProcessor::markSpellLikeAttack(const CStack * attacker, BattleA
 
 void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker,
 	const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut,
-	RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows)
+	RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows,
+	bool * vanishKillOut)
 {
 	if(!attacker || !attacker->alive() || newHorizonsFrozen::isFrozen(*attacker) || armorerLastStandEndedActivation(attacker)
 		|| (defender && !defender->alive()))
@@ -4869,6 +4880,11 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			shroudAttack.retaliation = counterAttack;
 			const bool flankingAttack = battle.battleIsShroudFlankingAttack(shroudAttack);
 			const auto * attackingHero = battle.battleGetOwnerHero(attacker);
+			if(vanishKillOut && flankingAttack && !counterAttack && !attack.brace
+				&& attack.preemptiveDamagePercent <= 0 && primaryHit->killed() && !primaryHit->willRebirth()
+				&& battle.battleActiveUnit() && battle.battleActiveUnit()->unitId() == attacker->unitId()
+				&& newHorizonsShroud::hasVanish(attackingHero))
+				*vanishKillOut = true;
 			noEscapeTriggered = newHorizonsShroud::hasNoEscape(attackingHero) && flankingAttack;
 			evasiveShroudTriggered = newHorizonsShroud::hasEvasiveShroud(attackingHero) && flankingAttack;
 			ambusherTriggered = flankingAttack
@@ -5432,7 +5448,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 
 				makeAttack(battle, resolvedAttacker, cleaveTarget,
 					{.targetHex = cleaveTarget->getPosition(), .cleaveFollowup = true,
-						.cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT});
+						.cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT},
+					nullptr, nullptr, nullptr, vanishKillOut);
 				break;
 			}
 		}
@@ -5909,7 +5926,7 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 			}
 			if(ba.isUnitAction() && ba.actionType != EActionType::WALK)
 			{
-				gameHandler->complain("Pursuit continuation permits only movement or ending the creature activation");
+				gameHandler->complain("Post-attack continuation permits only movement or ending the creature activation");
 				return false;
 			}
 		}

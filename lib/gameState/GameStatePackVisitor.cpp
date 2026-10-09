@@ -698,6 +698,21 @@ void GameStatePackVisitor::visitSetNewHorizonsLearningMentorState(SetNewHorizons
 	hero->setNewHorizonsLearningMentorState(pack.lastUseWeek, pack.recipientIds);
 }
 
+void GameStatePackVisitor::visitSetNewHorizonsScholarMeeting(SetNewHorizonsScholarMeeting & pack)
+{
+	auto * first = gs.getHero(pack.first);
+	auto * second = gs.getHero(pack.second);
+	const auto & calendar = gs.getCalendar();
+	const auto week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+	if(!pack.hasValidState() || !first || !second || pack.week != week
+		|| !first->canExchangeNewHorizonsScholarWith(*second, week))
+		throw std::runtime_error("Invalid or stale New Horizons Scholar meeting");
+	// Validate the entire pair before either mutation. Both sides remember the
+	// receipt, including a hero who only later selects Scholar during this week.
+	first->markNewHorizonsScholarMeeting(second->id, week);
+	second->markNewHorizonsScholarMeeting(first->id, week);
+}
+
 void GameStatePackVisitor::visitSetNewHorizonsDiplomacyState(SetNewHorizonsDiplomacyState & pack)
 {
 	if(!pack.hasValidState())

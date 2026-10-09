@@ -210,6 +210,10 @@ DLL_LINKAGE std::optional<int> vampirismHealBasisPoints(const JsonNode & rules,
 DLL_LINKAGE bool reanimateEnabled(const JsonNode & rules, SpellID spell);
 /// True only when the hero has selected Reanimator at its registered rank.
 DLL_LINKAGE bool hasReanimatorPerk(const CGHeroInstance * hero);
+/// Base pool before per-recipient surviving wounds and Reanimator composition.
+DLL_LINKAGE std::optional<int64_t> reanimateBaseHealingPool(const JsonNode & rules,
+	const CGHeroInstance * hero, SpellID spell, int32_t rawSpellPower,
+	int additionalSpellPowerComponentPercent = 0);
 /// Integer Re-animate HP pool, including Reanimator's 25% bonus after
 /// satisfying surviving-unit wounds. School × Spellcraft is kept exact until
 /// the base pool's final HP floor; legacy/non-canonical rows return nullopt.

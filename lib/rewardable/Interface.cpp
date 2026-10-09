@@ -265,12 +265,7 @@ void Rewardable::Interface::grantRewardBeforeLevelup(IGameEventCallback & gameEv
 		if (info.reward.primary[i] != 0)
 			gameEvents.changePrimSkill(hero, static_cast<PrimarySkill>(i), info.reward.primary[i], ChangeValueMode::RELATIVE);
 
-	TExpType expToGive = 0;
-
-	if (info.reward.heroLevel > 0)
-		expToGive += LIBRARY->heroh->reqExp(hero->level+info.reward.heroLevel) - LIBRARY->heroh->reqExp(hero->level);
-
-	expToGive += info.reward.calculateHeroExperience(hero);
+	const TExpType expToGive = info.reward.calculateHeroExperience(hero);
 
 	if(expToGive)
 		gameEvents.giveExperience(hero, expToGive);

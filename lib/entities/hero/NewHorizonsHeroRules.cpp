@@ -118,16 +118,20 @@ void validateNonDamageSpellSpecialtyRules(const JsonNode & rules)
 	require(integer(rules["version"], 1, 1), "non-damage-spell specialty version");
 	require(integer(rules["componentPercent"], 20, 20), "non-damage-spell specialty component percentage");
 	const auto & spells = rules["spells"];
-	require(spells.isVector() && !spells.Vector().empty() && spells.Vector().size() <= 3,
-		"version 1 non-damage spell specialties must list one to three supported spells");
+	require(spells.isVector() && !spells.Vector().empty() && spells.Vector().size() <= 5,
+		"version 1 non-damage spell specialties must list one to five supported spells");
 	std::set<int> seen;
 	for(const auto & spell : spells.Vector())
 	{
 		require(spell.isString()
-			&& (spell.String() == "core:cure" || spell.String() == "core:resurrection" || spell.String() == "core:bless"),
-			"version 1 non-damage spell specialties support only core:cure, core:resurrection, and core:bless");
+			&& (spell.String() == "core:cure" || spell.String() == "core:resurrection"
+				|| spell.String() == "core:bless" || spell.String() == "core:haste"
+				|| spell.String() == "new-horizons:reanimate"),
+			"Unsupported version 1 non-damage spell specialty");
 		const int spellId = resolve("spell", spell.String());
-		require(spellId == SpellID::CURE || spellId == SpellID::RESURRECTION || spellId == SpellID::BLESS,
+		require(spellId == SpellID::CURE || spellId == SpellID::RESURRECTION
+			|| spellId == SpellID::BLESS || spellId == SpellID::HASTE
+			|| spell.String() == "new-horizons:reanimate",
 			"unknown version 1 non-damage spell specialty");
 		require(seen.insert(spellId).second, "duplicate version 1 non-damage spell specialty");
 	}
@@ -467,6 +471,44 @@ std::optional<DamageSpellSpecialtyRules> damageSpellSpecialtyRules(const JsonNod
 		.version = static_cast<int>(found->second["version"].Integer()),
 		.componentPercent = static_cast<int>(found->second["componentPercent"].Integer())
 	};
+}
+
+bool hasHasteSpecialtyRules(const JsonNode & rules)
+{
+	if(!rules.isStruct())
+		return false;
+	const auto & specialties = rules["nonDamageSpellSpecialties"];
+	if(!specialties.isStruct() || !specialties["spells"].isVector())
+		return false;
+	return std::ranges::any_of(specialties["spells"].Vector(), [](const JsonNode & spell)
+	{
+		return spell.isString() && spell.String() == "core:haste";
+	});
+}
+
+void validateHasteSpecialtySerialization(const JsonNode & rules, bool supported)
+{
+	if(!supported && hasHasteSpecialtyRules(rules))
+		throw std::runtime_error("Haste specialty rules require the new save format");
+}
+
+bool hasReanimateSpecialtyRules(const JsonNode & rules)
+{
+	if(!rules.isStruct())
+		return false;
+	const auto & specialties = rules["nonDamageSpellSpecialties"];
+	if(!specialties.isStruct() || !specialties["spells"].isVector())
+		return false;
+	return std::ranges::any_of(specialties["spells"].Vector(), [](const JsonNode & spell)
+	{
+		return spell.isString() && spell.String() == "new-horizons:reanimate";
+	});
+}
+
+void validateReanimateSpecialtySerialization(const JsonNode & rules, bool supported)
+{
+	if(!supported && hasReanimateSpecialtyRules(rules))
+		throw std::runtime_error("Re-animate specialty rules require the new save format");
 }
 
 std::optional<NonDamageSpellSpecialtyRules> nonDamageSpellSpecialtyRules(const JsonNode & resolvedRules)

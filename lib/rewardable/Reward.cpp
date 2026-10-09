@@ -22,6 +22,14 @@
 #include "../constants/StringConstants.h"
 #include "../CSkillHandler.h"
 
+namespace
+{
+bool scalesPrimaryLevelExperience(const Rewardable::Reward & reward, const CGHeroInstance * hero)
+{
+	return hero && reward.primaryExperienceReward && newHorizonsMagic::rulesActive(hero->getMagicRules());
+}
+}
+
 void Rewardable::RewardRevealTiles::serializeJson(JsonSerializeFormat & handler)
 {
 	handler.serializeBool("hide", hide);
@@ -51,18 +59,20 @@ Rewardable::Reward::Reward()
 
 Rewardable::Reward::~Reward() = default;
 
-TExpType Rewardable::Reward::calculateHeroExperience(const CGHeroInstance * hero) const
+TExpType Rewardable::Reward::calculateHeroExperience(const CGHeroInstance * hero, bool includePrimaryExperienceBonus) const
 {
+	const bool historianBonus = includePrimaryExperienceBonus && primaryExperienceReward && hero
+		&& hero->hasActivePerk("new-horizons:learning", "new-horizons:learning.historian");
 	TExpType result = 0;
 	if(heroExperience > 0)
 	{
-		const bool historianBonus = primaryExperienceReward && hero
-			&& hero->hasActivePerk("new-horizons:learning", "new-horizons:learning.historian");
 		result = hero ? hero->calculateXp(heroExperience, historianBonus ? 50 : 0) : heroExperience;
 	}
 
-	if(!hero || heroExperienceNextLevelPercent <= 0)
+	if(!hero)
 		return result;
+	if(heroLevel > 0 && !scalesPrimaryLevelExperience(*this, hero))
+		result += LIBRARY->heroh->reqExp(hero->level + heroLevel) - LIBRARY->heroh->reqExp(hero->level);
 
 	ui32 maximumLevel = LIBRARY->heroh->maxSupportedLevel();
 	if(hero->cb)
@@ -74,13 +84,26 @@ TExpType Rewardable::Reward::calculateHeroExperience(const CGHeroInstance * hero
 	if(hero->level >= maximumLevel)
 		return result;
 
+	if(heroLevel > 0 && scalesPrimaryLevelExperience(*this, hero))
+	{
+		// Keep legacy level rewards unscaled. Primary Experience objects use
+		// the same Learning/Historian composition as fixed Experience rewards.
+		const ui32 targetLevel = std::min<uint64_t>(maximumLevel,
+			static_cast<uint64_t>(hero->level) + heroLevel);
+		const TExpType levelExperience = LIBRARY->heroh->reqExp(targetLevel) - LIBRARY->heroh->reqExp(hero->level);
+		result += hero->calculateXp(levelExperience, historianBonus ? 50 : 0);
+	}
+
+	if(heroExperienceNextLevelPercent <= 0)
+		return result;
+
 	const TExpType nextLevelExperience = LIBRARY->heroh->reqExp(hero->level + 1);
 	const TExpType missingExperience = nextLevelExperience > hero->exp ? nextLevelExperience - hero->exp : 0;
 	const TExpType percent = heroExperienceNextLevelPercent;
 	const TExpType percentageExperience = (missingExperience / 100) * percent
 		+ (missingExperience % 100) * percent / 100;
 
-	return result + hero->calculateXp(percentageExperience);
+	return result + hero->calculateXp(percentageExperience, historianBonus ? 50 : 0);
 }
 
 si32 Rewardable::Reward::calculateManaPoints(const CGHeroInstance * hero) const
@@ -164,9 +187,12 @@ void Rewardable::Reward::loadComponents(std::vector<Component> & comps, const CG
 			comps.emplace_back(ComponentType::LUCK, bonus->val);
 	}
 	
-	if (heroExperience || heroExperienceNextLevelPercent)
+	if (heroExperience || heroExperienceNextLevelPercent || (scalesPrimaryLevelExperience(*this, h) && heroLevel > 0))
 	{
 		TExpType experience = h ? calculateHeroExperience(h) : heroExperience;
+		// Unclassified level rewards retain their separate legacy Level component.
+		if(h && !scalesPrimaryLevelExperience(*this, h) && heroLevel > 0)
+			experience -= LIBRARY->heroh->reqExp(h->level + heroLevel) - LIBRARY->heroh->reqExp(h->level);
 		// Negative fixed Experience rewards were historically previewed even though
 		// grantRewardBeforeLevelup only grants positive fixed Experience.
 		if(h && heroExperience < 0 && heroExperienceNextLevelPercent == 0)
@@ -176,7 +202,7 @@ void Rewardable::Reward::loadComponents(std::vector<Component> & comps, const CG
 		comps.emplace_back(ComponentType::EXPERIENCE, componentExperience);
 	}
 
-	if (heroLevel)
+	if (heroLevel && !(scalesPrimaryLevelExperience(*this, h) && heroLevel > 0))
 		comps.emplace_back(ComponentType::LEVEL, heroLevel);
 
 	if (manaDiff || manaPercentage >= 0 || manaBuffer != 0)

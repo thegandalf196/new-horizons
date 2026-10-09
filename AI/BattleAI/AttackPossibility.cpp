@@ -801,6 +801,11 @@ AttackPossibility AttackPossibility::evaluate(
 			? state->battleGetFightingHero(defenderSide) : nullptr;
 		const bool projectsNoEscape = newHorizonsShroud::hasNoEscape(raHero)
 			|| newHorizonsShroud::hasNoEscape(defenderHero);
+		const bool projectsVanish = newHorizonsShroud::hasVanish(raHero)
+			&& !attackInfo.shooting && attackInfo.physicalDamage && !attackInfo.retaliation
+			&& !attackInfo.secondaryAttack && !attackInfo.bracePreemptive
+			&& attackInfo.preemptiveDamagePercent <= 0
+			&& state->battleActiveUnit() && state->battleActiveUnit()->unitId() == attacker->unitId();
 		const bool projectsEvasiveShroud = newHorizonsShroud::hasEvasiveShroud(raHero)
 			|| newHorizonsShroud::hasEvasiveShroud(defenderHero);
 		const bool projectsAmbusher = newHorizonsShroud::hasAmbusher(raHero)
@@ -1074,14 +1079,14 @@ AttackPossibility AttackPossibility::evaluate(
 		if(ap.perfectMoment || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 				|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 				|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune || projectsPerfectFortune
-				|| projectsNoEscape || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
+				|| projectsNoEscape || projectsVanish || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
 				|| projectsNightProwler || projectsBloodragePain || projectsLastStand || projectsDefiant || projectsLuckSerendipity || projectsFrozen || projectsLuckyRecovery)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
 	if(projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 			|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune || projectsPerfectFortune
-			|| projectsNoEscape || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
+			|| projectsNoEscape || projectsVanish || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
 			|| projectsNightProwler || projectsBloodragePain || projectsLastStand || projectsDefiant || projectsLuckSerendipity || projectsFrozen)
 			ap.effectPreview = fortunePreview;
 	if(crossesNightProwlerEnemy && fortunePreview)
@@ -1249,6 +1254,7 @@ AttackPossibility AttackPossibility::evaluate(
 			? std::static_pointer_cast<battle::CUnitState>(ap.effectPreview->getForUpdate(attacker->unitId()))
 			: attacker->acquireState();
 	ap.shootersBlockedDmg = bestAp.shootersBlockedDmg;
+	bool vanishKill = false;
 
 		const int totalAttacks = getAttackCount(*ap.attackerState, attackInfo.shooting, *state);
 
@@ -1564,6 +1570,8 @@ AttackPossibility AttackPossibility::evaluate(
 				}
 				victimAttack.defenderPos = defenderState->getPosition();
 				const bool triggersNoEscape = qualifiesForNoEscape(victimAttack);
+				const bool triggersVanish = projectsVanish && !victimAttack.secondaryAttack
+					&& luckState.battleIsShroudFlankingAttack(victimAttack);
 				const bool triggersEvasiveShroud = qualifiesForEvasiveShroud(victimAttack);
 				const bool triggersAmbusher = qualifiesForAmbusher(victimAttack);
 				const auto shadowAssaultSide = qualifyingShadowAssaultSide(victimAttack);
@@ -1750,6 +1758,8 @@ AttackPossibility AttackPossibility::evaluate(
 					&& !mayRebirth
 					&& state->battleMatchOwner(ap.attackerState.get(), u))
 					destroyedEnemyUnits.push_back(u);
+				if(wasAlive && !defenderState->alive() && !mayRebirth && triggersVanish)
+					vanishKill = true;
 
 				if(u->unitId() == strikeDefender->unitId())
 				{
@@ -2039,6 +2049,11 @@ AttackPossibility AttackPossibility::evaluate(
 					cleaveAttack.attackerPos = ap.attackerState->getPosition();
 					cleaveAttack.defenderPos = targetState->getPosition();
 					cleaveAttack.cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
+					const bool cleaveTriggersVanish = projectsVanish
+						&& luckState.battleIsShroudFlankingAttack(cleaveAttack);
+					const bool cleaveMayRebirth = !targetState->isClone() && targetState->canCast()
+						&& targetState->valOfBonuses(BonusType::REBIRTH) > 0
+						&& targetState->getPhantomInitialIntegrity() == 0;
 					const bool triggersEvasiveShroud = qualifiesForEvasiveShroud(cleaveAttack);
 					const bool triggersAmbusher = qualifiesForAmbusher(cleaveAttack);
 					const auto shadowAssaultSide = qualifyingShadowAssaultSide(cleaveAttack);
@@ -2072,6 +2087,8 @@ AttackPossibility AttackPossibility::evaluate(
 					cleave->cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
 					cleave->hits.emplace_back(targetState->unitId(), cleaveDamage);
 					targetState->damage(cleaveDamageToApply, false, cleave->damageProvenance);
+					if(cleaveTriggersVanish && !targetState->alive() && !cleaveMayRebirth)
+						vanishKill = true;
 					if(lastStand.triggered)
 						applyLastStandDefend(targetState.get(), cleaveAttack.retaliation);
 					if(triggersAmbusher)
@@ -2376,6 +2393,13 @@ AttackPossibility AttackPossibility::evaluate(
 			const Bonus slow(BonusDuration::ONE_BATTLE, BonusType::STACKS_SPEED,
 				BonusSource::OTHER, -2, BonusSourceID(SecondarySkill(bulwarkSkillId)));
 			fortunePreview->addUnitBonus(ap.attackerState->unitId(), {slow});
+		}
+		if(vanishKill && ap.attackerState->alive() && ap.attackerState->canMove()
+			&& !ap.attackerState->isTimeStopped() && !newHorizonsFrozen::isFrozen(*ap.attackerState)
+			&& !endedActiveActivationByLastStand)
+		{
+			ap.attackerState->pursuitMovementRemaining = std::max(ap.attackerState->pursuitMovementRemaining,
+				newHorizonsShroud::vanishMovementAllowance(ap.attackerState->getMovementRange(0)));
 		}
 		if(projectsRainOfArrows && projectedRainPrimaryDamage > 0 && fortunePreview)
 		{

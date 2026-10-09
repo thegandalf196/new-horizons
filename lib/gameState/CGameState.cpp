@@ -1937,6 +1937,26 @@ void CGameState::validateNewHorizonsProspectorSerialization(bool supported) cons
 		map->validateNewHorizonsProspectorSerialization(supported);
 }
 
+void CGameState::validateNewHorizonsHasteSpecialtySerialization(bool supported) const
+{
+	newHorizonsHeroes::validateHasteSpecialtySerialization(heroDevelopmentRules, supported);
+	if(map)
+		map->validateNewHorizonsHasteSpecialtySerialization(supported);
+}
+
+void CGameState::validateNewHorizonsScholarSerialization(bool supported) const
+{
+	if(map)
+		map->validateNewHorizonsScholarSerialization(supported);
+}
+
+void CGameState::validateNewHorizonsThantReanimateSerialization(bool supported) const
+{
+	newHorizonsHeroes::validateReanimateSpecialtySerialization(heroDevelopmentRules, supported);
+	if(map)
+		map->validateNewHorizonsThantReanimateSerialization(supported);
+}
+
 void CGameState::validateNewHorizonsMagnateSerialization(bool supported) const
 {
 	if(map)

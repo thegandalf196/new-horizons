@@ -11,6 +11,7 @@
 
 #include "IGameSettings.h"
 #include "json/JsonNode.h"
+#include "entities/hero/NewHorizonsHeroRules.h"
 #include <optional>
 
 class DLL_LINKAGE GameSettings final : public IGameSettings, boost::noncopyable
@@ -56,6 +57,16 @@ public:
 	std::optional<JsonNode> getMagicOverride() const;
 	JsonNode getFullConfig() const override;
 	const JsonNode & getValue(EGameSettings option) const override;
+	void validateNewHorizonsHasteSpecialtySerialization(bool supported) const
+	{
+		newHorizonsHeroes::validateHasteSpecialtySerialization(
+			getAllOverrides()["heroes"]["newHorizons"], supported);
+	}
+	void validateNewHorizonsThantReanimateSerialization(bool supported) const
+	{
+		newHorizonsHeroes::validateReanimateSpecialtySerialization(
+			getAllOverrides()["heroes"]["newHorizons"], supported);
+	}
 
 	template<typename Handler>
 	void serialize(Handler & h)
@@ -63,12 +74,20 @@ public:
 		if (h.saving)
 		{
 			JsonNode overrides = getAllOverrides();
+			newHorizonsHeroes::validateReanimateSpecialtySerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
+			newHorizonsHeroes::validateHasteSpecialtySerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_HASTE_SPECIALTIES));
 			h & overrides;
 		}
 		else
 		{
 			JsonNode overrides;
 			h & overrides;
+			newHorizonsHeroes::validateHasteSpecialtySerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_HASTE_SPECIALTIES));
+			newHorizonsHeroes::validateReanimateSpecialtySerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
 			loadOverrides(overrides);
 		}
 	}
