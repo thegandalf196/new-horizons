@@ -796,6 +796,15 @@ int CGTownInstance::getMarketEfficiency() const
 	assert(p);
 
 	int marketCount = p->valOfBonuses(BonusType::MARKETPLACE_ACCESS);
+	const auto hasMerchantPrince = [this](const CGHeroInstance * hero)
+	{
+		return hero && hero->getVisitedTown() == this && hero->getOwner() == getOwner()
+			&& hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.merchantPrince");
+	};
+	// The town receives two virtual Marketplaces, not two per resident holder.
+	// Keep the ordinary Marketplace gate and every consuming offer's own cap.
+	if(hasMerchantPrince(getVisitingHero()) || hasMerchantPrince(getGarrisonHero()))
+		marketCount += 2;
 
 	return marketCount;
 }

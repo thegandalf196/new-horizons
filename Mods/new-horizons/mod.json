@@ -5981,7 +5981,7 @@
 								"requires": "basic",
 								"description": "While this hero is in a town, that town's Marketplace exchange rates behave as if the kingdom owned two additional Marketplaces.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "While this hero is in a town, that town's Marketplace exchange rates behave as if the kingdom owned two additional Marketplaces."
 								}
 							},

@@ -640,6 +640,7 @@ endif()
 
 if(ENABLE_NULLKILLER2_AI)
 	list(APPEND test_SRCS
+		server/NewHorizonsMerchantPrinceTest.cpp
 		nullkiller2/AIUtilityTest.cpp
 		battleAI/NewHorizonsElementalOrbAITest.cpp
 		nullkiller2/Analyzers/HeroManagerTest.cpp

@@ -2,6 +2,24 @@
 
 Updated: 2026-10-09
 
+Accepted Merchant Prince checkpoint: incremental build77224 succeeds. The
+matching test/library pair passes11/11 native cases in3.763s: eight Merchant
+Prince and three adjacent Resource Broker controls, zero failures/errors/skips.
+Real Marketplace construction publishes its bonuses through the authoritative
+build path. Visitor/garrison qualification, non-stacking holders, unrelated
+towns, ordinary caps, Resource Broker composition and actual AI/server trading
+are verified. Registry/static21 and generated-module parity pass. Perks262/310
+(generic183/220,faction79/90),48 planned (37 generic,11 faction); other coverage
+is unchanged. Resident scope is recorded provisionally. Initial7/8 fixture
+failure is retained privately; no production assertion or guard was weakened.
+
+Both reported map-entry/hover crashes are now closed on source8d2dd92c0:
+guarded rendered card release, separate Escape and legal creature-spell hover
+survive, and a fresh silent headless run reaches day6. The ordinary Linux
+launcher selects verified a711d609. Merchant Prince is source/native accepted,
+not yet included in that playable snapshot. Frozen/Shatter actual rendering
+remains unobserved. Prospector and Swift Rebirth are private next candidates.
+
 Accepted First Blood/Slayer checkpoint: linked61073 succeeds; exact matching
 native25/25 in6.290s covers both new perks (11 cases), core map-origin/header
 (3) and Eagle Eye (11), with zero failures/errors/skips. Registry/static21
