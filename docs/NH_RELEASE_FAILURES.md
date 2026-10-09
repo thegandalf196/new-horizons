@@ -7138,3 +7138,40 @@ No credentials, workstation paths, purchaser content or raw research dumps in
 these notes. Keep historical failures even after repair, but label their scope.
 Do not claim the pipeline is future-proof: tests reduce recurrence and catch more
 failures earlier; new dependencies and environments can still reveal defects.
+
+## Elemental Convergence checkpoint — bounded data-schema finding
+
+The22-case magic-v2 data suite reports2 failures and9 errors while the new
+spell is being integrated. The first failure is the pre-existing top-level
+`morale` field rejected by the restrictive magic schema. A separate validation
+of unmodified HEAD configuration/schema confirms this baseline mismatch.
+Do not weaken validation or spend the Phase1 feature loop repairing unrelated
+historical fixtures. Track schema parity in Phase2; the focused perk-data17/17
+and module-generation parity gates pass. Native gameplay acceptance remains
+pending at this checkpoint.
+
+The first24-case native Convergence/terrain run passes17 and fails7 with zero
+skips. Six Water Rebirth fixtures place the corpse at a defender-edge hex where
+the two-hex result cannot fit; production correctly refuses an illegal spawn.
+Move the source through a typed state update to a legal central anchor before
+combat, retaining its original HP basis. The AI fixture's20-Pikeman army chooses
+a beneficial Order rather than Convergence; use the established one-versus-one
+summon decision scenario instead of disabling Orders or forcing a cast. Retain
+the failed primary log/XML privately; repaired native acceptance remains pending.
+
+The first repaired run passes23/24 in7.393s with zero skips: all18 terrain
+Rebirth cases now pass. The short-horizon AI still prefers an Order to slow
+Earth Elementals in the one-versus-one fixture. Exercise a useful fast Air
+summon at100 Spell Power with ordinary attributes and Grass terrain, preserving
+Order competition and deriving expected HP from the production preview.
+This establishes a principal AI use opportunity, not long-horizon optimality.
+Retain the23/24 result and separate runner-copy wrong-directory command failure.
+
+The Air retry still passes23/24, exposing an actual production AI omission:
+SpellTargetsEvaluator enumerates Convergence placements, but BattleEvaluator's
+new-summon value branch recognizes Trolls only, so generic magical-summon
+exclusion drops the Elemental's value. Repair the exact-HP/native-creature-value
+consumer for Convergence's captured terrain result; keep Troll math and other
+casts unchanged. Add separate Earth and Air paid-AI cases, preserving Order
+competition. Focused repaired acceptance remains pending; previous fixture-only
+explanations do not close this production defect.

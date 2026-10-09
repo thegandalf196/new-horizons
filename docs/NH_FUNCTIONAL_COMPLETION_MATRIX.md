@@ -2,6 +2,26 @@
 
 Updated: 2026-10-09
 
+UP072 Elemental Convergence and four terrain-dependent perks are source/native
+verified with production registration. Ten-job builds15278 and40484 exit0;
+final primary native25/25 passes in7.627s, zero skips, independently checked
+against XML. Data17/17, generated-module parity and independent review pass.
+Receipt: build/nh-convergence-terrain-native.yQfVXadf/receipt.md. Actual paid
+Air/Earth AI casts preserve Order competition and match detached projections;
+live/detached terrain Rebirth covers the approved captured battlefield mapping.
+Combat62->63/67, Nature9->10/11; perks241->245/310, generic169->170/220 and
+faction72->75/90. Planned69->65 (generic50, faction15). Nature perks8/2 and
+Elemental Rebirth7/3 are active/planned; Skills31/31, ranks93/93 and Orders8/8
+are unchanged. Earlier candidate and failed-run records remain historical.
+
+Phase2 retains provisional first-round Conjurer Initiative duration under Time
+Stop/Spell Lock, terrain singleton selection and successive Chain appearance
+modifier composition, saved continuation and wider AI placement quality. The
+adjacent gate is39/40 with zero skips: the known preexisting v2/Morale fixture
+fails before exercising its spell and is deferred, not claimed passing. No
+rendered, playable or promotion acceptance follows; normal launcher remains
+5938709. Provisional interpretations are recorded in NH_PROVISIONAL_RULE_REVIEW.
+
 Scoped Obsidian visual follow-up: recruitment and weekly-growth UI now show
 the complete Gargoyle over Academy scenery on promoted5938709. Root inspects
 native captures from a real two-player human scenario; its existing exporter
@@ -25,7 +45,8 @@ Defend-completion evidence. Speed-to-Initiative fallback coupling and between-
 shots Second Wind behavior are already recorded Phase2 boundaries, not new
 implementation targets. These are bounded source audits, not new native runs,
 whole-family certification or additional completion counts. Elemental Convergence
-remains the next high-leverage missing feature pending the terrain ruling.
+was then the next high-leverage missing feature pending the terrain ruling;
+the accepted UP072 checkpoint above supersedes that historical selection.
 
 Playable delivery checkpoint: normal Linux launcher now points to immutable
 5938709/source69004cc23. Actual ordinary Mage/Stone recruitment, Stone growth
@@ -4444,10 +4465,10 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | All three ranks per Skill are active; many registered Skills still lack complete perk progression. |
 | Skill rank effects active | 93/93 | Elemental Rebirth's three ranks now have source/native and owning-side AI evidence. Active status does not certify every wider interaction. |
-| Skill perks active | 241/310 | 69 planned; current registry recount2026-10-09. Generic169/220, faction72/90. Discipline8/10; Armorer9/10; War Machines7/10; Spellcraft6/10; Luck8/10; Diplomacy7/10; Chaos Magic6/10; Necromancy10/10; Learning4/10; Estates6/10; Battlecraft8/10; Logistics8/10; Command7/10; Warcasting9/10. Historian's foundation remains planned and adds no activation count. Active status alone does not certify every mechanic. |
+| Skill perks active | 245/310 | 65 planned; current registry recount2026-10-09. Generic170/220, faction75/90. Discipline8/10; Armorer9/10; War Machines7/10; Spellcraft6/10; Luck8/10; Diplomacy7/10; Chaos Magic6/10; Nature Magic8/10; Necromancy10/10; Learning4/10; Estates6/10; Battlecraft8/10; Logistics8/10; Command7/10; Warcasting9/10. Historian's foundation remains planned and adds no activation count. Active status alone does not certify every mechanic. |
 | Faction Skill ranks active | 27/27 | All nine faction rank foundations are active; their remaining perks and wider integration are separate work. |
-| Faction perks active | 72/90 | 18 planned perks; Divine Mandate has six accepted perks, including Expert Mandate of Heaven and Advanced Purifying Mandate; Elemental Rebirth has four accepted perks with normal Basic-to-Advanced selection and live/detached evidence, including Rebirth Chain. |
-| Canonical combat-spell identities registered | 62/67 | 5 missing/inactive; Confusion is the newest source/native-verified identity. Chaos is 8/11, Light 11/11 and Nature is 9/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
+| Faction perks active | 75/90 | 15 planned perks; Divine Mandate has six accepted perks, including Expert Mandate of Heaven and Advanced Purifying Mandate; Elemental Rebirth has seven accepted perks with live/detached evidence, including Rebirth Chain and the three terrain perks. |
+| Canonical combat-spell identities registered | 63/67 | 4 missing/inactive; Elemental Convergence is the newest source/native-verified identity. Chaos is 8/11, Light 11/11 and Nature is 10/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. UP056's refreshed effect audit verifies Summon Boat existing-only/adjacent placement, Town Portal exhaustion, Dimension Door visibility/radius8/exhaustion/warning and shared1.5x Water Walk/Fly costs. Protected barriers, Water Walk end-day land policy and Town Portal nearest-town/admission scope retain explicit holds. Acquisition count is not an effect-complete count; rendered/playable purchase remains separate. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree. UP-146 adds native-verified independent simultaneous state/effects and action/AI/UI hooks; broader per-Order interaction coverage remains Phase2. |
@@ -4802,7 +4823,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Command | 3/0 | 7/3 | Aggressive/Defensive, Veteran, Combined Arms, Commanding Presence, Battle Plan and Double Command have focused runtime/AI evidence. Iron Will, Crisis Command and Seize Initiative remain planned pending their recorded narrow design rulings. |
 | Light Magic | 3/0 | 9/1 | Sanctuary Keeper's linked Morale lifetime and actual AI cast are native verified; Litany grants distinct Mass Bless, alongside Benediction, Healer, Guardian, Aegis, Purifier, Retributionist and Crusader. Miracle Worker remains planned. |
 | Shadow Magic | 3/0 | 9/1 | Grand Malediction now grants distinct Mass Curse/Sorrow with native cast/forecast evidence, alongside the eight earlier perks. Plaguebearer awaits its normal-limit definition. |
-| Nature Magic | 3/0 | 7/3 | Geomancer's structural/terrain effects and actual AI cast are native verified alongside Venomancer's whole-Base snapshot and independent Toxic Spines. Herbalist, Rootcaller, Beastcaller, Verdant Warden and Verdant Communion active. Mire Shaper, Worldroot and Elemental Conjurer remain planned. |
+| Nature Magic | 3/0 | 8/2 | Geomancer's structural/terrain effects and actual AI cast are native verified alongside Venomancer's whole-Base snapshot and independent Toxic Spines. Herbalist, Rootcaller, Beastcaller, Verdant Warden, Verdant Communion and Elemental Conjurer active. Mire Shaper and Worldroot remain planned. |
 | Havoc Magic | 3/0 | 7/3 | Three perks missing; Mine Layer has focused live/detached placement evidence |
 | Sorcery Magic | 3/0 | 10/0 | Bounded canonical consumer audit2026-10-06 identifies learning/coefficient paths for all three ranks and production consumers for all ten perks, including distinct Mass Slow. No missing principal clause demonstrated; existing focused fixtures were inspected, not rerun as whole-family execution certification. Wider interactions and rendered/playable acceptance remain separate. |
 | Chaos Magic | 3/0 | 6/4 | Confounder joins Frenzied Curse, Mindbreaker, Blinkmaster, Weaver and Paradox Shield with focused source/native evidence recorded above; four perks remain planned. Confusion has authoritative forced activation and paid AI evidence. Base Berserk lifecycle is still partial. |
@@ -4822,7 +4843,7 @@ interactions, and rendered/playable acceptance remain separate.
 | Necromancy | 3/0 | 10/0 | All ten perks are active. UP184/185/186/187/188/189 record accepted category conversion, Master of Bones, casualty-derived XP/Mana, atomic Ossuary fallback and Bone Dragon conversion evidence. Broader save/control/result-UI interactions and playable delivery remain separate. |
 | Bloodrage | 3/0 | 7/3 | War Drums, Fury Unbound, Endless Bloodshed, Unrelenting, Berserker, Blood Scent and Rage Through Pain have focused live/AI evidence and legal progression; First Blood, Slayer and Avatar of Rage remain planned. |
 | Bulwark of the Mire | 3/0 | 9/1 | Nine perks are active in committed source; 53/53 native regressions pass; persistent Poison status builds and passes focused tests; Deep Bulwark and rendered/playable evidence remain open |
-| Elemental Rebirth | 3/0 | 4/6 | Base ranks plus Primal Burst, Greater Essence, Elemental Ward and Rebirth Chain source/native verified. Normal Basic-to-Advanced perk selection, exact HP, magical mitigation, one-per-side Chain quota/replication and owning-side AI are exercised; six perks remain planned. |
+| Elemental Rebirth | 3/0 | 7/3 | Base ranks plus Primal Burst, Greater Essence, Elemental Ward, Rebirth Chain, Elemental Attunement, Adaptive Element and Perfect Convergence source/native verified. Normal perk selection, exact HP, magical mitigation, one-per-side Chain quota/replication, captured terrain and owning-side AI are exercised; Swift Rebirth, Elemental Memory and Phoenix Spark remain planned. |
 
 Ordinary progression requires a perk at the preceding rank before the next Skill
 rank; canonical exceptional external rank advancement remains permitted.

@@ -11,6 +11,7 @@
 #include "StdInc.h"
 #include "ISpellMechanics.h"
 #include "NewHorizonsMagic.h"
+#include "NewHorizonsElementalTerrain.h"
 #include "MagicalDamageReduction.h"
 #include "../networkPacks/PacksForClientBattle.h"
 #include "../battle/NewHorizonsShadowGift.h"
@@ -759,6 +760,15 @@ Mechanics::Mechanics()
 }
 
 Mechanics::~Mechanics() = default;
+
+const Creature * Mechanics::getElementalConvergenceCreature() const
+{
+	const auto * battleInfo = battle() ? battle()->getBattle() : nullptr;
+	if(!battleInfo)
+		return nullptr;
+	const auto creature = newHorizonsElementalTerrain::primaryElemental(*battleInfo);
+	return creature ? creature->toCreature() : nullptr;
+}
 
 int32_t Mechanics::getSummonedCreatureMaxHealth(const Creature * creature, const bool natureSummoned) const
 {

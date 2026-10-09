@@ -68,6 +68,7 @@ using TextReplacementList = std::vector<TextReplacement>;
 
 constexpr std::string_view transfigureMatterJsonKey = "new-horizons:transfigureMatter";
 constexpr std::string_view summonTrollsJsonKey = "new-horizons:summonTrolls";
+constexpr std::string_view elementalConvergenceJsonKey = "new-horizons:elementalConvergence";
 constexpr std::string_view verdantPrisonJsonKey = "new-horizons:verdantPrison";
 constexpr std::string_view hydrasVitalityJsonKey = "new-horizons:hydrasVitality";
 constexpr std::string_view stormOfDaggersJsonKey = "new-horizons:stormOfDaggers";
@@ -435,7 +436,9 @@ static std::string prepareSummonTrollsText(const CSpell * spell, const spells::e
 		const auto unitName = value.unitsDelta == 1
 			? value.unitType->getNameSingularTranslated()
 			: value.unitType->getNamePluralTranslated();
-		details.push_back("temporary Troll stack: + " + std::to_string(value.unitsDelta) + " " + unitName);
+		const std::string stackLabel = spell->getJsonKey() == elementalConvergenceJsonKey
+			? "temporary Elemental stack: + " : "temporary Troll stack: + ";
+		details.push_back(stackLabel + std::to_string(value.unitsDelta) + " " + unitName);
 	}
 
 	if(value.hpDelta > 0)
@@ -2376,7 +2379,8 @@ bool BattleActionsController::isTransfigureMatterSpell(const CSpell * spell)
 
 bool BattleActionsController::isSummonTrollsSpell(const CSpell * spell)
 {
-	return spell && spell->getJsonKey() == summonTrollsJsonKey;
+	return spell && (spell->getJsonKey() == summonTrollsJsonKey
+		|| spell->getJsonKey() == elementalConvergenceJsonKey);
 }
 
 bool BattleActionsController::isVerdantPrisonSpell(const CSpell * spell)
@@ -2527,6 +2531,8 @@ BattleHexArray BattleActionsController::getSummonTrollsTargetHexes(const CSpell 
 	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
 	{
 		const BattleHex hex(index);
+		// Shared spell mechanics resolves Convergence's captured terrain creature
+		// and exact selected placement; do not substitute Troll geometry here.
 		if(hex.isAvailable() && isCastingPossibleHere(spell, nullptr, hex))
 			result.insert(hex);
 	}

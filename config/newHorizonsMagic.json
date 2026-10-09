@@ -356,6 +356,12 @@
 			"level": 2,
 			"costs": [9, 9, 9, 9]
 		},
+		"new-horizons:elementalConvergence": {
+			"schools": ["new-horizons:nature"],
+			"level": 5,
+			"costs": [22, 22, 22, 22],
+			"active": true
+		},
 		"new-horizons:blink": {
 			"schools": ["new-horizons:chaos"],
 			"level": 1,

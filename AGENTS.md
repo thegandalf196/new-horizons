@@ -281,7 +281,7 @@ isolated worktrees so feature work cannot change a frozen test candidate.
 Do not idle implementation workers merely because a crash reproduction,
 artwork revision, build or graphical acceptance is pending. Pause only affected
 workstreams when there is a concrete dependency, foundational failure, unsafe
-ownership overlap, resource constraint or genuine design ambiguity; record the
+ownership overlap or resource constraint; record the
 reason and reassess it at each checkpoint. Never invent filler work to occupy
 slots. User-priority fixes retain integration/delivery precedence, and critical
 crash/corruption findings still require immediate repair.
@@ -289,6 +289,22 @@ Distinguish source implementation, verification, and playable delivery. A source
 edit or build alone does not close a reported visual/runtime defect. Keep resolved
 entries with their evidence. This queue tracks work, not gameplay authority:
 `New Horizons.md` remains canonical and design amendments belong in Pending Changes.
+
+## Provisional gameplay judgments
+
+When a gameplay rule or interaction is ambiguous, use the best reasoned
+judgment and continue implementation instead of waiting for a ruling. The user
+explicitly authorizes provisional decisions. Record each material interpretation
+in `docs/NH_PROVISIONAL_RULE_REVIEW.md`: affected specification/feature, chosen
+behavior, rationale, implementation location, focused evidence and situations
+that deserve a second look. Tell workers about the decision and revisit existing
+design holds under this policy; do not leave the team idle merely for uncertainty.
+Keep approval, implementation, verification and playable delivery distinct.
+Do not silently contradict an explicit settled user decision. If a provisional
+choice amends the authored specification, record it in Pending Changes until
+integrated into the canonical document; the review ledger is not a second
+permanent specification. Crash/corruption, safety, licensing, external authority
+and missing resources remain real blockers, not design choices to guess away.
 
 ## Heroes III UI visual construction
 

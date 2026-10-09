@@ -1107,6 +1107,42 @@
 		"flags": {"negative": true},
 		"targetCondition": {}
 	},
+	"elementalConvergence": {
+		"name": "Elemental Convergence",
+		"type": "combat",
+		"school": {"new-horizons:nature": true},
+		"level": 5,
+		"power": 0,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "LOCATION",
+		"graphics": {
+			"iconBook": "SPELLS.def:0:69",
+			"iconScroll": "SPELLSCR.def:0:69",
+			"iconScenarioBonus": "SPELLBON.def:0:69",
+			"iconEffect": "SPELLINT.def:0:70",
+			"iconImmune": "SPELLINT.def:0:70"
+		},
+		"animation": {"hit": ["C18SPW0"]},
+		"sounds": {"cast": "SUMNELM"},
+		"levels": {
+			"base": {
+				"range": "0",
+				"description": "Choose a legal empty hex to summon the battlefield's Elemental with 250 + 5 x Spell Power total HP. Nature rank strengthens the Spell Power term. Coastal battlefields and Swamp summon Water; Dirt, inland Sand and Wasteland summon Earth. Elemental Conjurer adds 30% total HP and +2 Initiative during the summon round. Elementals retain normal abilities, preserve the exact HP pool and disappear after combat.",
+				"cost": 22,
+				"power": 0,
+				"battleEffects": {
+					"elementalConvergence": {"type": "core:elementalConvergence"}
+				}
+			},
+			"none": {},
+			"basic": {},
+			"advanced": {},
+			"expert": {}
+		},
+		"flags": {"indifferent": true},
+		"targetCondition": {}
+	},
 	"summonTrolls": {
 		"name": "Summon Trolls",
 		"type": "combat",

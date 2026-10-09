@@ -323,6 +323,7 @@ set(lib_MAIN_SRCS
 	spells/CSpell.cpp
 	spells/CSpellHandler.cpp
 	spells/NewHorizonsBlink.cpp
+	spells/NewHorizonsElementalTerrain.cpp
 	spells/NewHorizonsDirectDamage.cpp
 	spells/NewHorizonsFriendlyFire.cpp
 	spells/NewHorizonsMagic.cpp
@@ -876,6 +877,7 @@ set(lib_MAIN_HEADERS
 	spells/CSpell.h
 	spells/CSpellHandler.h
 	spells/NewHorizonsBlink.h
+	spells/NewHorizonsElementalTerrain.h
 	spells/NewHorizonsDirectDamage.h
 	spells/NewHorizonsMagic.h
 	spells/NewHorizonsPurify.h

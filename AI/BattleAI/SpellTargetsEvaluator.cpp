@@ -55,7 +55,8 @@ bool isTransfigureMatter(const Mechanics * spellMechanics)
 bool isCanonicalSummonTrolls(const Mechanics * spellMechanics)
 {
 	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
-	return spell && spell->getJsonKey() == "new-horizons:summonTrolls";
+	return spell && (spell->getJsonKey() == "new-horizons:summonTrolls"
+		|| spell->getJsonKey() == "new-horizons:elementalConvergence");
 }
 
 bool isCanonicalVerdantPrison(const Mechanics * spellMechanics)

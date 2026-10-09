@@ -2,7 +2,7 @@
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
 	"sourceDocument": "docs/design-sources/New Horizons.md",
-	"sourceSha256": "f5fbb3233eac4658fd2e8d54a2aa341f4a8511aca66ba36700c24a176c8d5915",
+	"sourceSha256": "0b6d64aca836ddf22d75e05bfc542e8cfae53fd7b39662d215927e94f01b2440",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -1453,7 +1453,7 @@
 					"requires": "expert",
 					"description": "Elemental Convergence creates 30% more Elemental HP. Elementals summoned by the spell also gain +2 Initiative during their first round on the battlefield.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Elemental Convergence creates 30% more Elemental HP. Elementals summoned by the spell also gain +2 Initiative during their first round on the battlefield."
 					}
 				}
@@ -4003,7 +4003,7 @@
 					"requires": "basic",
 					"description": "A reborn Elemental that matches the current battlefield terrain receives +20% aggregate HP.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "A reborn Elemental that matches the current battlefield terrain receives +20% aggregate HP."
 					}
 				},
@@ -4063,7 +4063,7 @@
 					"requires": "advanced",
 					"description": "Instead of a fully random Elemental, Rebirth selects from Elemental types appropriate to the current battlefield terrain.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Instead of a fully random Elemental, Rebirth selects from Elemental types appropriate to the current battlefield terrain."
 					}
 				},
@@ -4083,7 +4083,7 @@
 					"requires": "expert",
 					"description": "Every Rebirth uses the primary Elemental type associated with the current battlefield terrain by the Elemental Convergence terrain mapping instead of a random Elemental.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Every Rebirth uses the primary Elemental type associated with the current battlefield terrain by the Elemental Convergence terrain mapping instead of a random Elemental."
 					}
 				},

@@ -28,6 +28,7 @@
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/spells/NewHorizonsBlink.h"
+#include "../../lib/spells/NewHorizonsElementalTerrain.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/effects/BattleForm.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
@@ -100,6 +101,11 @@ bool isTransfigureMatter(const CSpell * spell)
 bool isCanonicalSummonTrolls(const CSpell * spell)
 {
 	return spell && spell->getJsonKey() == "new-horizons:summonTrolls";
+}
+
+bool isCanonicalElementalConvergence(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == "new-horizons:elementalConvergence";
 }
 
 bool isCanonicalVerdantPrison(const CSpell * spell)
@@ -5780,6 +5786,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				const bool transfigureMatter = isTransfigureMatter(ps.spell);
 				const bool phantomArmy = isPhantomArmy(ps.spell);
 				const bool summonTrolls = isCanonicalSummonTrolls(ps.spell);
+				const auto convergenceElemental = isCanonicalElementalConvergence(ps.spell)
+					? newHorizonsElementalTerrain::primaryElemental(*state) : std::nullopt;
 				const bool verdantPrison = isCanonicalVerdantPrison(ps.spell);
 				const bool slowFamily = ps.spell
 					&& newHorizonsMagic::spellVariantBase(state->getMagicRules(), ps.spell->getId()) == SpellID::SLOW;
@@ -6015,17 +6023,18 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							* static_cast<float>(unit->unitType()->getAIValue())
 							/ static_cast<float>(maxHealth);
 					}
-					if(summonTrolls && !original && unit->unitType()
-						&& unit->unitType()->getJsonKey() == "core:troll"
+					if(!original && unit->unitType()
+						&& ((summonTrolls && unit->unitType()->getJsonKey() == "core:troll")
+							|| (convergenceElemental && unit->creatureId() == *convergenceElemental))
 						&& unit->isSummoned()
 						&& state->battleGetOwner(unit) == playerID && newHealth > 0)
 					{
 						const auto unitState = unit->acquireState();
 						if(unitState && unitState->natureSummoned)
 						{
-							// Troll stacks are magical summons and are skipped by the generic
+							// These Nature stacks are magical summons and skipped by the generic
 							// health-delta score below.  Value their exact projected HP here,
-							// including the partial health on the final Troll.
+							// including the partial final creature and its native template value.
 							const auto maxHealth = std::max<int64_t>(1, unit->getMaxHealth());
 							damageToHostilesScore += static_cast<float>(newHealth)
 								* static_cast<float>(unit->unitType()->getAIValue())

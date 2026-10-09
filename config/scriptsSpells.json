@@ -397,6 +397,19 @@
 			"additionalProperties" : false
 		}
 	},
+	"elementalConvergence" : {
+		"implements" : "spellEffect",
+		"script" : "spells/elementalConvergence",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {}
+			},
+			"additionalProperties" : false
+		}
+	},
 	"blink" : {
 		"implements" : "spellEffect",
 		"script" : "spells/blink",

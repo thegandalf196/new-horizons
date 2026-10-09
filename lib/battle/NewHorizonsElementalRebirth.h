@@ -36,6 +36,9 @@ struct DLL_LINKAGE ActiveProfile
 	bool greaterEssence = false;
 	bool elementalWard = false;
 	bool rebirthChain = false;
+	bool elementalAttunement = false;
+	bool adaptiveElement = false;
+	bool perfectConvergence = false;
 };
 
 /// Immutable pre-hit facts needed to decide and resolve one destruction reaction.
@@ -127,7 +130,13 @@ DLL_LINKAGE std::vector<CreatureID> legalCandidatePool(
 	const newHorizonsCreatures::CreatureCategoryRules & categoryRules,
 	const AccessibilityInfo & accessibility, BattleHex corpsePosition, BattleSide side);
 
+/// Applies saved terrain-selection perks to the ordinary legal candidate pool.
+DLL_LINKAGE std::vector<CreatureID> legalCandidatePool(const IBattleInfo & battle,
+	const AccessibilityInfo & accessibility, const DeathSnapshot & snapshot);
+
 DLL_LINKAGE int64_t targetHP(const DeathSnapshot & snapshot);
+/// Applies matching Elemental Attunement once to the exact first- or second-generation pool.
+DLL_LINKAGE int64_t targetHP(const DeathSnapshot & snapshot, CreatureID creature, const IBattleInfo & battle);
 /// Source-only hypothetical CStack probe; does not attach a live child or invalidate caches.
 DLL_LINKAGE int32_t effectiveSummonMaxHP(const CArmedInstance * sourceArmy,
 	CreatureID creature, PlayerColor owner, BattleSide side);

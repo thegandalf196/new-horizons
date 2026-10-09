@@ -2613,16 +2613,20 @@ std::optional<uint32_t> HypotheticBattle::projectElementalRebirth(const battle::
 		return {};
 
 	const auto candidates = newHorizonsElementalRebirth::legalCandidatePool(
-		getCreatureCategoryRules(), getAccessibility(), snapshot.corpsePosition, snapshot.side);
+		*this, getAccessibility(), snapshot);
 	if(candidates.empty())
 		return {};
 
 	// This is a private representative outcome for one hypothetical branch. Never draw
 	// from the authoritative game RNG or mutate the live battle's random stream.
-	auto * rng = getServerCallback()->getRNG();
-	if(!rng)
-		return {};
-	const auto candidateIndex = static_cast<size_t>(rng->nextInt(static_cast<int>(candidates.size()) - 1));
+	size_t candidateIndex = 0;
+	if(candidates.size() > 1)
+	{
+		auto * rng = getServerCallback()->getRNG();
+		if(!rng)
+			return {};
+		candidateIndex = static_cast<size_t>(rng->nextInt(static_cast<int>(candidates.size()) - 1));
+	}
 	if(candidateIndex >= candidates.size())
 		return {};
 	const auto creature = candidates[candidateIndex];
@@ -2631,7 +2635,7 @@ std::optional<uint32_t> HypotheticBattle::projectElementalRebirth(const battle::
 	const auto effectiveMaxHP = newHorizonsElementalRebirth::effectiveSummonMaxHP(
 		sourceArmy, creature, owner, snapshot.side);
 	auto descriptor = newHorizonsElementalRebirth::makeSpawnDescriptor(nextUnitId(), creature,
-		snapshot.side, snapshot.corpsePosition, newHorizonsElementalRebirth::targetHP(snapshot),
+		snapshot.side, snapshot.corpsePosition, newHorizonsElementalRebirth::targetHP(snapshot, creature, *this),
 		effectiveMaxHP, snapshot.chain);
 	if(!descriptor)
 		return {};

@@ -17,6 +17,10 @@ RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
     "new-horizons:chaosMagic.confounder",
     "new-horizons:elementalRebirth.rebirthChain",
+    "new-horizons:elementalRebirth.elementalAttunement",
+    "new-horizons:elementalRebirth.adaptiveElement",
+    "new-horizons:elementalRebirth.perfectConvergence",
+    "new-horizons:natureMagic.elementalConjurer",
     "new-horizons:discipline.espritDeCorps",
     "new-horizons:luck.serendipity",
     "new-horizons:battlecraft.preEmptiveStrike",

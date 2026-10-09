@@ -396,6 +396,8 @@ public:
 	/// evaluated with the normal creature/hero bonus and limiter graph without
 	/// attaching a live child to either source node.
 	int32_t getSummonedCreatureMaxHealth(const Creature * creature, bool natureSummoned) const;
+	/// Terrain-selected temporary creature shared with Elemental Rebirth.
+	const Creature * getElementalConvergenceCreature() const;
 
 	virtual bool isSmart() const = 0;
 	virtual bool isMassive() const = 0;

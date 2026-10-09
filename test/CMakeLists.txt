@@ -224,6 +224,8 @@ set(test_SRCS
 		server/battles/NewHorizonsForgetfulnessTest.cpp
 		server/battles/NewHorizonsSoulChainTest.cpp
 		server/battles/NewHorizonsElementalRebirthTest.cpp
+		server/battles/NewHorizonsElementalConvergenceTest.cpp
+		server/battles/NewHorizonsRebirthTerrainTest.cpp
 		server/battles/NewHorizonsRebirthChainTest.cpp
 		server/battles/NewHorizonsChaplainReserveTest.cpp
 		server/battles/NewHorizonsConsecratedCastingTest.cpp
@@ -527,6 +529,7 @@ set(test_HEADERS
 
 		server/battles/BattleTestFixture.h
 		server/battles/HeroCommandFixture.h
+		server/battles/NewHorizonsElementalTerrainFixture.h
 		server/battles/FocusFireFixture.h
 		server/battles/BattleStartSnapshotFixture.h
 

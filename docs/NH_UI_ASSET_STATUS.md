@@ -1,5 +1,12 @@
 # New Horizons UI and asset status register
 
+Elemental Convergence source checkpoint: **Not done** bespoke spell artwork.
+The functional spell uses external original Summon Air Elemental icon/scroll
+frames as an explicit temporary reference, plus an existing summon effect.
+No new bitmap, pack rebuild or Final artwork approval is claimed. Required
+selected-position highlighting and exact HP/type/count readback reuse the
+existing summon UI; runtime/native validation does not prove rendered acceptance.
+
 2026-10-09 Obsidian follow-up: **Provisional** complete original HOLDING subject
 on the packaged Academy backdrop is now verified in actual ordinary recruitment
 and weekly-growth UI on promoted5938709. Existing two-player Academy exporter

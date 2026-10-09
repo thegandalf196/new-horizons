@@ -320,6 +320,8 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		 {"natureSummoned", "Whether the hypothetical stack has Nature-summon provenance."}}, {},
 		"Returns the max health per creature after applying the normal hero and creature bonuses and limiters, "
 		"without adding a unit to the live battle or bonus graph.");
+	R.method<&Mechanics::getElementalConvergenceCreature>("getElementalConvergenceCreature", {},
+		"Returns the elemental selected by the captured battlefield and terrain, or nil for unmapped terrain.");
 	R.method<&Mechanics::getUnitCaster>("getUnitCaster", {},
 		"Returns the unit performing the cast, or nil if cast by a hero.");
 	R.method<&Mechanics::getCasterNameTextID>("getCasterNameTextID", {},

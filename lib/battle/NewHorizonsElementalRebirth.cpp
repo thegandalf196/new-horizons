@@ -16,6 +16,7 @@
 #include "../GameLibrary.h"
 #include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../entities/hero/NewHorizonsPerkRules.h"
+#include "../spells/NewHorizonsElementalTerrain.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../mapObjects/army/CArmedInstance.h"
 #include "../mapObjects/army/CStackBasicDescriptor.h"
@@ -38,6 +39,9 @@ constexpr std::string_view PRIMAL_BURST_ID = "new-horizons:elementalRebirth.prim
 constexpr std::string_view GREATER_ESSENCE_ID = "new-horizons:elementalRebirth.greaterEssence";
 constexpr std::string_view ELEMENTAL_WARD_ID = "new-horizons:elementalRebirth.elementalWard";
 constexpr std::string_view REBIRTH_CHAIN_ID = "new-horizons:elementalRebirth.rebirthChain";
+constexpr std::string_view ELEMENTAL_ATTUNEMENT_ID = "new-horizons:elementalRebirth.elementalAttunement";
+constexpr std::string_view ADAPTIVE_ELEMENT_ID = "new-horizons:elementalRebirth.adaptiveElement";
+constexpr std::string_view PERFECT_CONVERGENCE_ID = "new-horizons:elementalRebirth.perfectConvergence";
 constexpr int GREATER_ESSENCE_HEALTH_PERCENTAGE_POINTS = 15;
 constexpr int ELEMENTAL_WARD_REDUCTION_BASIS_POINTS = 2000;
 
@@ -77,7 +81,9 @@ bool isValidProfile(const ActiveProfile & profile)
 {
 	return profile.rank >= 1 && profile.rank <= 3
 		&& profile.healthPercent == HEALTH_PERCENTAGES[static_cast<size_t>(profile.rank - 1)]
-		&& (profile.rank >= 2 || (!profile.greaterEssence && !profile.elementalWard && !profile.rebirthChain));
+		&& (profile.rank >= 2 || (!profile.greaterEssence && !profile.elementalWard
+			&& !profile.rebirthChain && !profile.adaptiveElement))
+		&& (profile.rank >= 3 || !profile.perfectConvergence);
 }
 }
 
@@ -114,7 +120,10 @@ std::optional<ActiveProfile> activeProfile(const CGHeroInstance * hero)
 		hero->hasActivePerk(std::string(SKILL_ID), std::string(PRIMAL_BURST_ID)),
 		hero->hasActivePerk(std::string(SKILL_ID), std::string(GREATER_ESSENCE_ID)),
 		hero->hasActivePerk(std::string(SKILL_ID), std::string(ELEMENTAL_WARD_ID)),
-		rank >= MasteryLevel::ADVANCED && hero->hasActivePerk(std::string(SKILL_ID), std::string(REBIRTH_CHAIN_ID))};
+		rank >= MasteryLevel::ADVANCED && hero->hasActivePerk(std::string(SKILL_ID), std::string(REBIRTH_CHAIN_ID)),
+		hero->hasActivePerk(std::string(SKILL_ID), std::string(ELEMENTAL_ATTUNEMENT_ID)),
+		rank >= MasteryLevel::ADVANCED && hero->hasActivePerk(std::string(SKILL_ID), std::string(ADAPTIVE_ELEMENT_ID)),
+		rank >= MasteryLevel::EXPERT && hero->hasActivePerk(std::string(SKILL_ID), std::string(PERFECT_CONVERGENCE_ID))};
 }
 
 int64_t primalBurstDamageBudget(int64_t rebornAggregateHP)
@@ -266,7 +275,12 @@ void validateChainConsumption(const IBattleInfo & battle, const ChainConsumption
 	const auto sourceCategory = battle.getCreatureCategoryRules().lookup(source->unitType()->getJsonKey());
 	const auto maximumHP = effectiveSummonMaxHP(battle.getSideArmy(consumption.side), spawn.type,
 		battle.getSidePlayer(consumption.side), consumption.side);
-	const auto health = spawnHealth(std::max<int64_t>(1, source->getRebirthOriginalAggregateHP() / 4), maximumHP);
+	const DeathSnapshot snapshot{source->unitId(), consumption.side, source->getPosition(), 0,
+		*profile, true, source->getRebirthOriginalAggregateHP()};
+	const auto primary = newHorizonsElementalTerrain::primaryElemental(battle);
+	if((profile->adaptiveElement || profile->perfectConvergence) && (!primary || spawn.type != *primary))
+		throw std::runtime_error("Invalid terrain-selected Rebirth Chain output");
+	const auto health = spawnHealth(targetHP(snapshot, spawn.type, battle), maximumHP);
 	if(!category || category->category != newHorizonsCreatures::CreatureCategory::ELITE
 		|| !sourceCategory || sourceCategory->category != newHorizonsCreatures::CreatureCategory::ELITE
 		|| !health || spawn.count != health->count)
@@ -321,6 +335,23 @@ std::vector<CreatureID> legalCandidatePool(const newHorizonsCreatures::CreatureC
 	return result;
 }
 
+std::vector<CreatureID> legalCandidatePool(const IBattleInfo & battle,
+	const AccessibilityInfo & accessibility, const DeathSnapshot & snapshot)
+{
+	if(!isValidProfile(snapshot.profile))
+		return {};
+	auto candidates = legalCandidatePool(battle.getCreatureCategoryRules(), accessibility,
+		snapshot.corpsePosition, snapshot.side);
+	if(!snapshot.profile.adaptiveElement && !snapshot.profile.perfectConvergence)
+		return candidates;
+	// The authored terrain mapping currently names one appropriate result. Do
+	// not invent secondary types or bypass footprint/category legality as fallback.
+	const auto primary = newHorizonsElementalTerrain::primaryElemental(battle);
+	if(!primary || std::find(candidates.begin(), candidates.end(), *primary) == candidates.end())
+		return {};
+	return {*primary};
+}
+
 int64_t targetHP(const DeathSnapshot & snapshot)
 {
 	if(snapshot.chain)
@@ -335,6 +366,22 @@ int64_t targetHP(const DeathSnapshot & snapshot)
 		+ (snapshot.profile.greaterEssence ? GREATER_ESSENCE_HEALTH_PERCENTAGE_POINTS : 0);
 	const auto scaled = (basis / 100) * percent + ((basis % 100) * percent) / 100;
 	return std::max<int64_t>(1, scaled);
+}
+
+int64_t targetHP(const DeathSnapshot & snapshot, CreatureID creature, const IBattleInfo & battle)
+{
+	const auto base = targetHP(snapshot);
+	if(base <= 0 || !snapshot.profile.elementalAttunement)
+		return base;
+	const auto primary = newHorizonsElementalTerrain::primaryElemental(battle);
+	if(!primary || creature != *primary)
+		return base;
+	// floor(120% of the computed pool), without multiplying a large HP value.
+	// Chain uses its captured first-output HP in targetHP above, never current wounds.
+	const auto additional = base / 5;
+	if(base > std::numeric_limits<int64_t>::max() - additional)
+		return 0;
+	return base + additional;
 }
 
 int32_t effectiveSummonMaxHP(const CArmedInstance * sourceArmy,

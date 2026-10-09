@@ -2275,8 +2275,7 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 			continue;
 
 		const auto candidates = newHorizonsElementalRebirth::legalCandidatePool(
-			battleInfo->getCreatureCategoryRules(), battleInfo->getAccessibility(),
-			trigger.snapshot.corpsePosition, trigger.snapshot.side);
+			*battleInfo, battleInfo->getAccessibility(), trigger.snapshot);
 		if(candidates.empty())
 		{
 			logGlobal->warn("Elemental Rebirth has no legal Elite Elemental for corpse hex %d",
@@ -2284,8 +2283,9 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 			continue;
 		}
 
-		const CreatureID creature = *RandomGeneratorUtil::nextItem(candidates, getRandomGenerator());
-		const auto desiredHP = newHorizonsElementalRebirth::targetHP(trigger.snapshot);
+		const CreatureID creature = candidates.size() == 1 ? candidates.front()
+			: *RandomGeneratorUtil::nextItem(candidates, getRandomGenerator());
+		const auto desiredHP = newHorizonsElementalRebirth::targetHP(trigger.snapshot, creature, *battleInfo);
 		const auto effectiveMaxHP = newHorizonsElementalRebirth::effectiveSummonMaxHP(
 			battleInfo->getSideArmy(trigger.snapshot.side), creature,
 			battleInfo->getSidePlayer(trigger.snapshot.side), trigger.snapshot.side);
