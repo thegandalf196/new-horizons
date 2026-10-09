@@ -54,7 +54,8 @@ protected:
 		// Isolate this feature's admission from the separately authored Thant
 		// replacement introduced by a subsequent supported-list boundary.
 		std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(),
-			[](const JsonNode & spell) { return spell.String() == "new-horizons:reanimate"; });
+			[](const JsonNode & spell) { return spell.String() == "new-horizons:reanimate"
+				|| spell.String() == "new-horizons:frailty"; });
 		rules.setOverrideFlag(true);
 		if(historicalList)
 		{
@@ -360,7 +361,8 @@ TEST_F(NewHorizonsHasteSpecialtyTest, HistoricalListsRemainOldWritableAndRawRead
 	JsonNode captured;
 	captured["heroes"]["newHorizons"] = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
 	std::erase_if(captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"]["spells"].Vector(),
-		[](const JsonNode & spell) { return spell.String() == "new-horizons:reanimate"; });
+		[](const JsonNode & spell) { return spell.String() == "new-horizons:reanimate"
+			|| spell.String() == "new-horizons:frailty"; });
 	CMemorySerializer raw;
 	raw.oser & captured; // Simulate old framing carrying a newly supported raw list.
 	raw.iser.version = ESerializationVersion::NEW_HORIZONS_VETERAN_COHESION;

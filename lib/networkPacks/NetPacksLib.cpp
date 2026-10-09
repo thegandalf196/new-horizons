@@ -503,6 +503,11 @@ void BattleHeroOrderStateChanged::visitTyped(ICPackVisitor & visitor)
 	visitor.visitBattleHeroOrderStateChanged(*this);
 }
 
+void BattleDivineMandateRecipientsChanged::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitBattleDivineMandateRecipientsChanged(*this);
+}
+
 void BattleDemonicGatingStateChanged::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitBattleDemonicGatingStateChanged(*this);
@@ -642,6 +647,11 @@ void SetNewHorizonsMusterState::visitTyped(ICPackVisitor & visitor)
 void SetNewHorizonsLearningMentorState::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitSetNewHorizonsLearningMentorState(*this);
+}
+
+void SetNewHorizonsSageGuildVisit::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitSetNewHorizonsSageGuildVisit(*this);
 }
 
 void SetNewHorizonsScholarMeeting::visitTyped(ICPackVisitor & visitor)
@@ -931,6 +941,12 @@ void LobbyStartGame::validateNewHorizonsHasteSpecialtySerialization(bool support
 		initializedGameState->validateNewHorizonsHasteSpecialtySerialization(supported);
 }
 
+void LobbyStartGame::validateNewHorizonsSageSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsSageSerialization(supported);
+}
+
 void LobbyStartGame::validateNewHorizonsScholarSerialization(bool supported) const
 {
 	if(initializedGameState)
@@ -941,6 +957,12 @@ void LobbyStartGame::validateNewHorizonsThantReanimateSerialization(bool support
 {
 	if(initializedGameState)
 		initializedGameState->validateNewHorizonsThantReanimateSerialization(supported);
+}
+
+void LobbyStartGame::validateNewHorizonsFrailtySpecialtySerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsFrailtySpecialtySerialization(supported);
 }
 
 void LobbyStartGame::validateNewHorizonsMagnateSerialization(bool supported) const

@@ -67,6 +67,11 @@ public:
 		newHorizonsHeroes::validateReanimateSpecialtySerialization(
 			getAllOverrides()["heroes"]["newHorizons"], supported);
 	}
+	void validateNewHorizonsFrailtySpecialtySerialization(bool supported) const
+	{
+		newHorizonsHeroes::validateFrailtySpecialtySerialization(
+			getAllOverrides()["heroes"]["newHorizons"], supported);
+	}
 
 	template<typename Handler>
 	void serialize(Handler & h)
@@ -74,6 +79,8 @@ public:
 		if (h.saving)
 		{
 			JsonNode overrides = getAllOverrides();
+			newHorizonsHeroes::validateFrailtySpecialtySerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
 			newHorizonsHeroes::validateReanimateSpecialtySerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
 			newHorizonsHeroes::validateHasteSpecialtySerialization(overrides["heroes"]["newHorizons"],
@@ -88,6 +95,8 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_HASTE_SPECIALTIES));
 			newHorizonsHeroes::validateReanimateSpecialtySerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
+			newHorizonsHeroes::validateFrailtySpecialtySerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
 			loadOverrides(overrides);
 		}
 	}

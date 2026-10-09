@@ -44,6 +44,10 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			legacyMagic ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		// This fixture exercises the preceding Thant boundary, not later replacements.
+		std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(),
+			[](const JsonNode & spell) { return spell.String() == "new-horizons:frailty"; });
+		rules.setOverrideFlag(true);
 		if(!optIn)
 		{
 			std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(),
@@ -280,6 +284,8 @@ TEST_F(NewHorizonsThantReanimateSpecialtyTest, PreviousHasteFormatRejectsRulePay
 	reject(lobby);
 	JsonNode raw;
 	raw["heroes"]["newHorizons"] = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+	std::erase_if(raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"]["spells"].Vector(),
+		[](const JsonNode & spell) { return spell.String() == "new-horizons:frailty"; });
 	CMemorySerializer incoming;
 	incoming.oser & raw;
 	incoming.iser.version = ESerializationVersion::NEW_HORIZONS_HASTE_SPECIALTIES;
@@ -308,6 +314,8 @@ TEST_F(NewHorizonsThantReanimateSpecialtyTest, PreviousHasteFormatStillWritesAnd
 	EXPECT_FALSE(heroBytes.extractBuffer().empty());
 	JsonNode raw;
 	raw["heroes"]["newHorizons"] = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+	std::erase_if(raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"]["spells"].Vector(),
+		[](const JsonNode & spell) { return spell.String() == "new-horizons:frailty"; });
 	std::erase_if(raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"]["spells"].Vector(),
 		[](const JsonNode & spell) { return spell.String() == newHorizonsMagic::SHADOW_REANIMATE_SPELL; });
 	CMemorySerializer incoming;

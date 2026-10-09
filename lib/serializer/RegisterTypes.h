@@ -340,4 +340,6 @@ void registerTypes(Serializer &s)
 	s.template registerType<SetOverwhelmingFormulaState>(297);
 	s.template registerType<SetArmorerDefiantState>(298);
 	s.template registerType<SetNewHorizonsScholarMeeting>(299);
+	s.template registerType<BattleDivineMandateRecipientsChanged>(300);
+	s.template registerType<SetNewHorizonsSageGuildVisit>(301);
 }

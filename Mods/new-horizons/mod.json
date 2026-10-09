@@ -3009,7 +3009,8 @@
 						"core:resurrection",
 						"core:bless",
 						"core:haste",
-						"new-horizons:reanimate"
+						"new-horizons:reanimate",
+						"new-horizons:frailty"
 					]
 				},
 				"skillSpecialties": {
@@ -3404,7 +3405,7 @@
 				"schemaVersion": 1,
 				"rulesetVersion": 2,
 				"sourceDocument": "docs/design-sources/New Horizons.md",
-				"sourceSha256": "d1ab68a1c200921ab14d4716d42d65ed18a4abd393b2210e67e543328abbfc75",
+				"sourceSha256": "c95c5c7c7028a25211a76bb3bf473dc325b18e2bf296a13f8eb88c03ed97ca3a",
 				"maxSkillChoices": 2,
 				"maxPerkChoices": 2,
 				"maxPerksPerSkill": 3,
@@ -5463,10 +5464,10 @@
 								"id": "new-horizons:wisdom.sage",
 								"name": "Sage",
 								"requires": "advanced",
-								"description": "The first time the hero visits each Mage Guild, the guild reveals one additional eligible spell from its available schools and built levels.",
+								"description": "On the hero's first visit to each built Mage Guild, reveal one previously undisplayed eligible spell from the catalog of its saved per-level school labels and built levels, respecting map bans and ordinary learning rules. Choose the highest eligible level, with canonical spellbook order breaking ties. Reveal it globally in a separate additional row without changing ordinary fixed slots or research. The first built-Guild visit is consumed even without the perk or a spellbook; visiting a town with no Guild does not consume it.",
 								"effect": {
-									"status": "planned",
-									"description": "The first time the hero visits each Mage Guild, the guild reveals one additional eligible spell from its available schools and built levels."
+									"status": "active",
+									"description": "On the hero's first visit to each built Mage Guild, reveal one previously undisplayed eligible spell from the catalog of its saved per-level school labels and built levels, respecting map bans and ordinary learning rules. Choose the highest eligible level, with canonical spellbook order breaking ties. Reveal it globally in a separate additional row without changing ordinary fixed slots or research. The first built-Guild visit is consumed even without the perk or a spellbook; visiting a town with no Guild does not consume it."
 								}
 							},
 							{
@@ -6163,10 +6164,10 @@
 								"id": "new-horizons:learning.sage",
 								"name": "Sage",
 								"requires": "expert",
-								"description": "The first time the hero visits each town's Mage Guild, automatically learn the highest-level eligible spell from that guild's built levels and available schools that the hero does not already know. Ties use canonical spellbook order.",
+								"description": "On the hero's first visit to each built Mage Guild, after ordinary Guild teaching and any Wisdom Sage reveal, personally learn the highest-level eligible unknown spell from the catalog of its saved per-level school labels and built levels, including undisplayed spells. Respect map bans and ordinary learning rules; ties use canonical spellbook order. The first built-Guild visit is consumed even without the perk or a spellbook; visiting a town with no Guild does not consume it.",
 								"effect": {
-									"status": "planned",
-									"description": "The first time the hero visits each town's Mage Guild, automatically learn the highest-level eligible spell from that guild's built levels and available schools that the hero does not already know. Ties use canonical spellbook order."
+									"status": "active",
+									"description": "On the hero's first visit to each built Mage Guild, after ordinary Guild teaching and any Wisdom Sage reveal, personally learn the highest-level eligible unknown spell from the catalog of its saved per-level school labels and built levels, including undisplayed spells. Respect map bans and ordinary learning rules; ties use canonical spellbook order. The first built-Guild visit is consumed even without the perk or a spellbook; visiting a town with no Guild does not consume it."
 								}
 							},
 							{
@@ -6369,7 +6370,7 @@
 								"requires": "basic",
 								"description": "If the paired Light Spell and Order both affect the same friendly stack, that stack gains +1 Morale until its next activation.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "If the paired Light Spell and Order both affect the same friendly stack, that stack gains +1 Morale until its next activation."
 								}
 							},
@@ -9658,6 +9659,7 @@
 		"new-horizons.adventure.spellLearning.requires": "Requires ",
 		"new-horizons.adventure.spellLearning.proficiencyIn": " proficiency in ",
 		"new-horizons.adventure.spellLearning.or": " or ",
+		"new-horizons.sage.guildSpells": "Sage — revealed spells",
 		"new-horizons.economy.investor.header": "Investor — this week's daily Gold bonus (before income handicap)",
 		"new-horizons.economy.investor.hero": "%HERO: +%GOLD Gold/day",
 		"new-horizons.economy.investor.help": "Fixed at the start of the week: +50 Gold/day per full 5,000 treasury Gold, up to +250 per hero. Changes to your treasury do not change this week's bonus. Already included in the daily income shown in this popup.",

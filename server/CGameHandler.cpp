@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "../lib/mapObjects/NewHorizonsAcademicStudy.h"
+#include "../lib/mapObjects/NewHorizonsSage.h"
 #include "CGameHandler.h"
 
 #include "CVCMIServer.h"
@@ -982,6 +983,16 @@ void CGameHandler::tick(int millisecondsPassed)
 
 void CGameHandler::giveSpells(const CGTownInstance *t, const CGHeroInstance *h, bool includeAdventureSpells)
 {
+	const bool firstGuildVisit = h->getVisitedTown() == t && newHorizonsSage::firstGuildVisit(*h, *t);
+	const bool learnSageSpell = firstGuildVisit && newHorizonsSage::learningSelected(*h);
+	if(firstGuildVisit)
+	{
+		SetNewHorizonsSageGuildVisit receipt;
+		receipt.hero = h->id;
+		receipt.town = t->id;
+		receipt.revealedSpell = newHorizonsSage::wisdomReveal(*h, *t).value_or(SpellID::NONE);
+		sendAndApply(receipt);
+	}
 	if (!h->hasSpellbook())
 		return; //hero hasn't spellbook
 	const auto & magicRules = gameInfo().getMagicRules();
@@ -1027,6 +1038,9 @@ void CGameHandler::giveSpells(const CGTownInstance *t, const CGHeroInstance *h, 
 	}
 	if (!cs.spells.empty())
 		sendAndApply(cs);
+	if(learnSageSpell)
+		if(const auto spell = newHorizonsSage::selectSpell(*h, *t))
+			changeSpells(h, true, {*spell});
 }
 
 bool CGameHandler::removeObject(const CGObjectInstance * obj, const PlayerColor & initiator)

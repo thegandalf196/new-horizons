@@ -9,6 +9,11 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsDivineMandate.h"
+#include "CBattleInfoCallback.h"
+#include "IBattleState.h"
+#include "NewHorizonsEnchantedCommand.h"
+#include "Unit.h"
+#include "../bonuses/Bonus.h"
 
 #include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../mapObjects/CGHeroInstance.h"
@@ -16,6 +21,72 @@
 
 namespace newHorizonsDivineMandate
 {
+namespace
+{
+bool hasActiveDivineMandate(const CGHeroInstance * hero);
+}
+
+bool hasSharedPurposePerk(const CGHeroInstance * hero)
+{
+	return hasActiveDivineMandate(hero) && hero->hasActivePerk("new-horizons:divineMandate",
+		"new-horizons:divineMandate.sharedPurpose");
+}
+
+std::vector<uint32_t> sharedPurposeFriendlyRecipients(const CBattleInfoCallback & battle,
+	BattleSide side, const std::vector<uint32_t> & recipients, bool includeDead)
+{
+	std::vector<uint32_t> result;
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return result;
+	for(const auto id : recipients)
+	{
+		const auto * unit = battle.battleGetUnitByID(id);
+		if(unit && (includeDead || unit->alive()) && !unit->isGhost() && !unit->isTimeStopped()
+			&& battle.battleGetOwner(unit) == battle.sideToPlayer(side))
+			result.push_back(id);
+	}
+	std::sort(result.begin(), result.end());
+	result.erase(std::unique(result.begin(), result.end()), result.end());
+	return result;
+}
+
+std::vector<uint32_t> sharedPurposeOrderRecipients(const CBattleInfoCallback & battle,
+	BattleSide side, const HeroOrderState & order)
+{
+	return sharedPurposeFriendlyRecipients(battle, side,
+		newHorizonsEnchantedCommand::recipientIds(battle, side, order));
+}
+
+Bonus sharedPurposeMoraleBonus()
+{
+	Bonus bonus(BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION, BonusType::MORALE,
+		BonusSource::SECONDARY_SKILL, 1, BonusSourceID(SecondarySkill(
+			SecondarySkill::decode("new-horizons:divineMandate"))));
+	bonus.stacking = "new-horizons:divineMandate.sharedPurpose";
+	bonus.description.appendRawString("Shared Purpose: +1 Morale until the next Creature Activation");
+	return bonus;
+}
+
+void applySharedPurpose(IBattleState & state, const CBattleInfoCallback & battle,
+	BattleSide side, const std::vector<uint32_t> & recipients)
+{
+	const auto bonus = sharedPurposeMoraleBonus();
+	for(const auto id : sharedPurposeFriendlyRecipients(battle, side, recipients))
+	{
+		const auto * unit = battle.battleGetUnitByID(id);
+		if(!unit->hasBonus(CSelector(isSharedPurposeMoraleBonus)))
+			state.addUnitBonus(id, {bonus});
+	}
+}
+
+bool isSharedPurposeMoraleBonus(const Bonus * bonus)
+{
+	return bonus && bonus->duration == BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION
+		&& bonus->type == BonusType::MORALE && bonus->val == 1
+		&& bonus->source == BonusSource::SECONDARY_SKILL
+		&& bonus->sid == BonusSourceID(SecondarySkill(SecondarySkill::decode("new-horizons:divineMandate")))
+		&& bonus->stacking == "new-horizons:divineMandate.sharedPurpose";
+}
 namespace
 {
 bool hasActiveDivineMandate(const CGHeroInstance * hero)

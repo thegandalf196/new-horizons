@@ -9,6 +9,8 @@
 */
 #include "StdInc.h"
 #include "../../../lib/mapObjects/NewHorizonsAcademicStudy.h"
+#include "../../../lib/mapObjects/NewHorizonsSage.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 #include <limits>
 
 #include "Nullkiller.h"
@@ -669,8 +671,17 @@ float RewardEvaluator::getSkillReward(const CGObjectInstance * target, const CGH
 			return 0;
 		// Same units as an ordinary 1000-XP learning-stone benefit, including
 		// the recipient's actual Learning composition, without capture duplication.
-		return static_cast<float>(newHorizonsLearning::academicStudyExperience(*hero, *town))
+		float reward = static_cast<float>(newHorizonsLearning::academicStudyExperience(*hero, *town))
 			/ (1000.0f * std::sqrt(hero->level));
+		if(newHorizonsSage::firstGuildVisit(*hero, *town))
+			if(const auto spell = newHorizonsSage::selectSpell(*hero, *town))
+			{
+				const bool reveals = newHorizonsSage::wisdomReveal(*hero, *town).has_value();
+				const bool learns = newHorizonsSage::learningSelected(*hero);
+				if(reveals || learns)
+					reward += 0.5f * newHorizonsMagic::spellLevel(hero->getMagicRules(), *spell);
+			}
+		return reward;
 	}
 	case Obj::STAR_AXIS:
 	case Obj::SCHOLAR:

@@ -3642,6 +3642,7 @@ void CMageGuildScreen::updateSpells(ObjectInstanceID tID)
 	spells.clear();
 	emptyScrolls.clear();
 	auroraBorealisScrolls.clear();
+	sageSpellsButton.reset();
 
 	const CGTownInstance * town = GAME->interface()->cb->getTown(townId);
 
@@ -3659,7 +3660,7 @@ void CMageGuildScreen::updateSpells(ObjectInstanceID tID)
 	for(uint32_t i=0; i<town->getTown()->mageLevel; i++)
 	{
 		uint32_t spellCount = town->spellsAtLevel(i+1,false); //spell at level with -1 hmmm?
-		for(uint32_t j=0; j<spellCount; j++)
+		for(uint32_t j=0; j<spellCount && i<positions.size() && j<positions[i].size(); j++)
 		{
 			if (town->hasBuilt(BuildingSubID::AURORA_BOREALIS))
 			{
@@ -3676,6 +3677,18 @@ void CMageGuildScreen::updateSpells(ObjectInstanceID tID)
 		}
 	}
 
+	std::vector<std::shared_ptr<CComponent>> sageComponents;
+	for(int level = 0; level < town->mageGuildLevel(); ++level)
+		for(const auto spell : town->newHorizonsSageRevealedSpells.at(level))
+			sageComponents.push_back(std::make_shared<CComponent>(ComponentType::SPELL, spell));
+	if(!sageComponents.empty())
+	{
+		const auto title = LIBRARY->generaltexth->translate("new-horizons.sage.guildSpells");
+		sageSpellsButton = std::make_shared<CButton>(Point(650, 520),
+			AnimationPath::builtin("settingsWindow/button80"), CButton::tooltip(title),
+			[title, sageComponents](){ GAME->interface()->showInfoDialog(title, sageComponents); });
+		sageSpellsButton->setTextOverlay(title, FONT_SMALL, Colors::WHITE);
+	}
 	redraw();
 }
 

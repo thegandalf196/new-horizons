@@ -352,7 +352,7 @@ public:
 	bool beginProjectedHeroAction(BattleSide side, const ProjectedOrderAllowance & prepared);
 	bool projectAcceptedHeroSpell(BattleSide side, SpellID spell, uint32_t target,
 		bool metamagicFollowup, bool grand, bool counterspellWardActive, bool counterspellNegated,
-		const ProjectedSpellAllowance & prepared);
+		const ProjectedSpellAllowance & prepared, const std::vector<uint32_t> & affectedRecipients = {});
 	bool projectAcceptedHeroOrder(BattleSide side, const ProjectedOrderAllowance & prepared);
 	bool projectAcceptedHeroOrder(BattleSide side, HeroCommand command,
 		const std::vector<uint32_t> & commandTargets, const ProjectedOrderAllowance & prepared);

@@ -12,6 +12,8 @@
 #include "IMarket.h"
 #include "CGDwelling.h"
 #include "NewHorizonsMagnateIncome.h"
+#include "../GameConstants.h"
+#include <array>
 #include "../entities/faction/CFaction.h" // TODO: remove
 #include "../entities/faction/CTown.h" // TODO: remove
 
@@ -81,6 +83,10 @@ public:
 	/// Required school assigned to each visible fixed-school spell. Retained in
 	/// serialized town state so the generated Guild remains deterministic.
 	std::vector<std::vector<SpellSchool>> newHorizonsMageGuildVisibleSpellSchools;
+	/// Additional publicly visible spells, appended after the ordinary prefix.
+	std::array<std::vector<SpellID>, GameConstants::SPELL_LEVELS> newHorizonsSageRevealedSpells;
+	void validateNewHorizonsSageSerialization(bool supported) const;
+	void revealNewHorizonsSageSpell(int level, SpellID spell);
 	std::vector<CCastleEvent> events;
 	std::pair<si32, si32> bonusValue;//var to store town bonuses (rampart = resources from mystic pond, factory = save debts);
 	int32_t spellResearchCounterDay;
@@ -112,6 +118,8 @@ public:
 	{
 		if(h.saving)
 			newHorizonsMagnateIncome.validateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGNATE));
+		if(h.saving)
+			validateNewHorizonsSageSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SAGE_GUILD_VISITS));
 		if(h.saving && ((portalSourceDwellingId == ObjectInstanceID::NONE && portalLastSelectionWeek != -1)
 			|| (portalSourceDwellingId != ObjectInstanceID::NONE && portalLastSelectionWeek < 0)))
 			throw std::runtime_error("Invalid New Horizons Portal source state");
@@ -177,6 +185,13 @@ public:
 			newHorizonsMageGuildVisibleSpells.clear();
 			newHorizonsMageGuildVisibleSpellSchools.clear();
 		}
+
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SAGE_GUILD_VISITS))
+			h & newHorizonsSageRevealedSpells;
+		else if(!h.saving)
+			newHorizonsSageRevealedSpells = {};
+		if(!h.saving)
+			validateNewHorizonsSageSerialization(true);
 
 		if(h.hasFeature(Handler::Version::TOWN_CUSTOM_INITIAL_GARRISON))
 			h & customInitialGarrison;

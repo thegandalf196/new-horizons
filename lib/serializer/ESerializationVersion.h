@@ -211,12 +211,15 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_HASTE_SPECIALTIES, // saved Haste specialty conversion admission
 	NEW_HORIZONS_LEARNING_SCHOLAR, // reciprocal weekly hero meeting receipts
 	NEW_HORIZONS_THANT_REANIMATE, // authored retained-specialty replacement admission
+	NEW_HORIZONS_SHARED_PURPOSE, // original Divine Mandate recipient overlap receipts
+	NEW_HORIZONS_SAGE_GUILD_VISITS, // first Guild visits and globally revealed extra spells
+	NEW_HORIZONS_FRAILTY_SPECIALTIES, // authored Frailty specialty replacement admission
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_THANT_REANIMATE,
+	CURRENT = NEW_HORIZONS_FRAILTY_SPECIALTIES,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_SWIFT_REBIRTH > ESerializationVersion::NEW_HORIZONS_PROSPECTOR,

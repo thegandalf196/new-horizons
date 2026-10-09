@@ -1987,6 +1987,31 @@ struct DLL_LINKAGE SetPortalDwellingSource : public CPackForClient
 };
 
 /// Authoritative weekly Learning Mentor use for one hero.
+struct DLL_LINKAGE SetNewHorizonsSageGuildVisit : public CPackForClient
+{
+	ObjectInstanceID hero = ObjectInstanceID::NONE;
+	ObjectInstanceID town = ObjectInstanceID::NONE;
+	SpellID revealedSpell = SpellID::NONE;
+	void visitTyped(ICPackVisitor & visitor) override;
+	bool hasValidState() const
+	{
+		return hero.hasValue() && town.hasValue() && hero != town
+			&& (revealedSpell == SpellID::NONE || revealedSpell.hasValue());
+	}
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SAGE_GUILD_VISITS))
+			throw std::runtime_error("New Horizons Sage visit requires the new wire format");
+		if(h.saving && !hasValidState())
+			throw std::runtime_error("Invalid New Horizons Sage visit packet");
+		h & hero;
+		h & town;
+		h & revealedSpell;
+		if(!h.saving && !hasValidState())
+			throw std::runtime_error("Invalid New Horizons Sage visit packet");
+	}
+};
+
 struct DLL_LINKAGE SetNewHorizonsScholarMeeting : public CPackForClient
 {
 	ObjectInstanceID first = ObjectInstanceID::NONE;

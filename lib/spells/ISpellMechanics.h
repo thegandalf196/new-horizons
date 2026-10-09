@@ -472,6 +472,8 @@ public:
 		int32_t coefficientBasisPoints) const;
 	int64_t scaleDamageSpellPowerComponentWithCoefficientBasisPoints(int64_t numerator, int32_t divisor,
 		int32_t coefficientBasisPoints, int32_t damageSpecialtyPercent) const;
+	/// Complete per-cast Frailty loss in basis points, before its cumulative cap.
+	int32_t getFrailtyDefenseLossBasisPoints() const;
 	virtual Target canonicalizeTarget(const Target & aim) const = 0;
 
 	//Battle facade

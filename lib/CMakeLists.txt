@@ -210,6 +210,7 @@ set(lib_MAIN_SRCS
 	mapObjects/TownBuildingInstance.cpp
 	mapObjects/CGTownInstance.cpp
 	mapObjects/NewHorizonsAcademicStudy.cpp
+	mapObjects/NewHorizonsSage.cpp
 	mapObjects/Quest.cpp
 	mapObjects/CRewardableObject.cpp
 	mapObjects/FlaggableMapObject.cpp
@@ -730,6 +731,7 @@ set(lib_MAIN_HEADERS
 	mapObjects/TownBuildingInstance.h
 	mapObjects/CGResource.h
 	mapObjects/CGTownInstance.h
+	mapObjects/NewHorizonsSage.h
 	mapObjects/NewHorizonsAcademicStudy.h
 	mapObjects/NewHorizonsMagnateIncome.h
 	mapObjects/Quest.h

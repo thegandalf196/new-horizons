@@ -388,6 +388,9 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 	R.method<&Mechanics::getSpellPowerCoefficientBasisPoints>("getSpellPowerCoefficientBasisPoints", {},
 		"Returns the composed Spellcraft, school-rank and cast-specific Spell Power coefficient in basis points. "
 		"10000 basis points means 100%; legacy profiles and excluded spells use 10000.");
+	R.method<&Mechanics::getFrailtyDefenseLossBasisPoints>("getFrailtyDefenseLossBasisPoints", {},
+		"Returns Frailty's shared per-cast Creature Defense loss in basis points. The specialty scales only "
+		"the Spell Power component, preserving its fixed term, cast cap and Withering Touch addition.");
 	R.method<&Mechanics::getNewHorizonsQuicksandPatchCount>("getNewHorizonsQuicksandPatchCount", {},
 		"Returns the authoritative saved-v3 Quicksand patch count with School, Spellcraft, "
 		"Warcasting, and Empower scaling; returns zero for legacy profiles and other spells.");

@@ -21,6 +21,7 @@
 #include "../../lib/battle/NewHorizonsConfusionControl.h"
 #include "../../lib/battle/NewHorizonsDiscipline.h"
 #include "../../lib/battle/NewHorizonsEnchantedCommand.h"
+#include "../../lib/battle/NewHorizonsDivineMandate.h"
 #include "../../lib/battle/HeroCommand.h"
 #include "../../lib/battle/NewHorizonsBloodrage.h"
 #include "../../lib/battle/NewHorizonsMagicalAbilityDamage.h"
@@ -70,6 +71,7 @@ bool projectedEffect(const Bonus * bonus)
 {
 	return bonus && (bonus->source == BonusSource::SPELL_EFFECT || bonus->source == BonusSource::HERO_COMMAND
 		|| newHorizonsEnchantedCommand::isMoraleBonus(bonus)
+		|| newHorizonsDivineMandate::isSharedPurposeMoraleBonus(bonus)
 		|| newHorizonsSwiftRebirth::isLifecycleMarker(*bonus)
 		|| newHorizonsElementalRebirth::isElementalMemoryBonus(*bonus));
 }
@@ -287,7 +289,8 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 
 	battle::CUnitState::operator=(*Stack);
 	if(newHorizonsFrozen::isFrozen(*this) || newHorizonsSwiftRebirth::lifecycle(*this)
-		|| hasElementalMemory(*this))
+		|| hasElementalMemory(*this)
+		|| hasBonus(CSelector(newHorizonsDivineMandate::isSharedPurposeMoraleBonus)))
 		captureEffects();
 }
 
@@ -312,7 +315,8 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	auto state = Stack->acquireState();
 	battle::CUnitState::operator=(*state);
 	if(newHorizonsFrozen::isFrozen(*this) || newHorizonsSwiftRebirth::lifecycle(*this)
-		|| hasElementalMemory(*this))
+		|| hasElementalMemory(*this)
+		|| hasBonus(CSelector(newHorizonsDivineMandate::isSharedPurposeMoraleBonus)))
 		captureEffects();
 }
 
@@ -568,7 +572,8 @@ void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 	// enter the branch a second time or change its independent activation life.
 	if(std::any_of(bonus.begin(), bonus.end(), [](const Bonus & entry)
 	{
-		return newHorizonsEnchantedCommand::isMoraleBonus(&entry);
+		return newHorizonsEnchantedCommand::isMoraleBonus(&entry)
+			|| newHorizonsDivineMandate::isSharedPurposeMoraleBonus(&entry);
 	}))
 		captureEffects();
 	const auto stampedBonuses = physicalAfflictions::stampApplicationOrder(*this, bonus);
@@ -1786,7 +1791,7 @@ void HypotheticBattle::expireProjectedTimeStops(BattleSide casterSide)
 
 bool HypotheticBattle::projectAcceptedHeroSpell(BattleSide side, SpellID spell, uint32_t target,
 	bool metamagicFollowup, bool grand, bool counterspellWardActive, bool counterspellNegated,
-	const ProjectedSpellAllowance & prepared)
+	const ProjectedSpellAllowance & prepared, const std::vector<uint32_t> & affectedRecipients)
 {
 	const auto & action = prepared.action;
 	if(action.receipt.action != HeroActionAllowanceState::ActionKind::SPELL
@@ -1801,9 +1806,14 @@ bool HypotheticBattle::projectAcceptedHeroSpell(BattleSide side, SpellID spell, 
 	if(action.typedLedger)
 	{
 		auto nextLedger = prepared.allowancesAfter;
-		DivineMandateTransition::applyAcceptedAction(nextLedger, action.receipt,
-			projectedRound, lightSpell, mandateStatus.maximumPairs);
+		const auto recipients = lightSpell && !counterspellNegated
+			&& newHorizonsDivineMandate::hasSharedPurposePerk(getSideHero(side))
+			? newHorizonsDivineMandate::sharedPurposeFriendlyRecipients(*this, side, affectedRecipients)
+			: std::vector<uint32_t>{};
+		const auto overlap = DivineMandateTransition::applyAcceptedAction(nextLedger, action.receipt,
+			projectedRound, lightSpell, mandateStatus.maximumPairs, recipients);
 		heroActionAllowances.at(side) = std::move(nextLedger);
+		newHorizonsDivineMandate::applySharedPurpose(*this, *this, side, overlap);
 		meta.uses = prepared.usesAfter;
 		meta.pending = prepared.pendingAfter;
 		meta.grandUsed = prepared.grandUsedAfter;
@@ -1927,9 +1937,14 @@ bool HypotheticBattle::projectAcceptedHeroOrder(BattleSide side, HeroCommand com
 	if(action.typedLedger)
 	{
 		auto nextLedger = prepared.allowancesAfter;
-		DivineMandateTransition::applyAcceptedAction(nextLedger, action.receipt,
-			projectedRound, false, mandateStatus.maximumPairs);
+		const auto recipients = enchantedOrder
+			&& newHorizonsDivineMandate::hasSharedPurposePerk(getSideHero(side))
+			? newHorizonsDivineMandate::sharedPurposeOrderRecipients(*this, side, *enchantedOrder)
+			: std::vector<uint32_t>{};
+		const auto overlap = DivineMandateTransition::applyAcceptedAction(nextLedger, action.receipt,
+			projectedRound, false, mandateStatus.maximumPairs, recipients);
 		heroActionAllowances.at(side) = std::move(nextLedger);
+		newHorizonsDivineMandate::applySharedPurpose(*this, *this, side, overlap);
 	}
 	if(action.isHeroAction() && newHorizonsWarcasting::enabled(getMagicRules()))
 	{

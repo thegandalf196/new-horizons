@@ -60,6 +60,11 @@ public:
 	{
 		return sides.at(side).heroActionAllowances;
 	}
+	template <typename Handler> void validateSharedPurposeSerialization(Handler & h) const
+	{
+		for(const auto & side : sides)
+			side.heroActionAllowances.validateSharedPurposeSerialization(h);
+	}
 	const DoubleCommandState & getDoubleCommandState(BattleSide side) const override
 	{
 		return sides.at(side).doubleCommandState;
@@ -370,6 +375,7 @@ public:
 	template <typename Handler> void serialize(Handler &h)
 	{
 		validateRoyalStandardSerialization(h);
+		validateSharedPurposeSerialization(h);
 		if(h.saving)
 			validateVeteranCohesionSerialization(h);
 		if(h.saving)

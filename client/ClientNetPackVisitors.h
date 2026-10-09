@@ -38,6 +38,7 @@ public:
 	void visitSetNewHorizonsAdventureSpellUnlock(SetNewHorizonsAdventureSpellUnlock & pack) override;
 	void visitSetMovePoints(SetMovePoints & pack) override;
 	void visitSetResearchedSpells(SetResearchedSpells & pack) override;
+	void visitSetNewHorizonsSageGuildVisit(SetNewHorizonsSageGuildVisit & pack) override;
 	void visitFoWChange(FoWChange & pack) override;
 	void visitChangeStackCount(ChangeStackCount & pack) override;
 	void visitSetStackType(SetStackType & pack) override;

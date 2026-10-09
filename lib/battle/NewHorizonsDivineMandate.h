@@ -12,8 +12,14 @@
 #include "../../Global.h"
 
 #include <cstdint>
+#include <vector>
 
 class CGHeroInstance;
+class CBattleInfoCallback;
+class IBattleState;
+struct Bonus;
+struct HeroOrderState;
+enum class BattleSide : int8_t;
 
 namespace newHorizonsDivineMandate
 {
@@ -33,4 +39,15 @@ DLL_LINKAGE int32_t consecratedCastingBonusPercent(const CGHeroInstance * hero);
 DLL_LINKAGE bool hasPurifyingMandatePerk(const CGHeroInstance * hero);
 /// Captured only for an actual Divine Mandate Order follow-up.
 DLL_LINKAGE bool hasRoyalStandardPerk(const CGHeroInstance * hero);
+DLL_LINKAGE bool hasSharedPurposePerk(const CGHeroInstance * hero);
+/// The original eligible recipients, independent of later Order consumption.
+DLL_LINKAGE std::vector<uint32_t> sharedPurposeOrderRecipients(
+	const CBattleInfoCallback & battle, BattleSide side, const HeroOrderState & order);
+DLL_LINKAGE std::vector<uint32_t> sharedPurposeFriendlyRecipients(
+	const CBattleInfoCallback & battle, BattleSide side, const std::vector<uint32_t> & recipients,
+	bool includeDead = false);
+DLL_LINKAGE Bonus sharedPurposeMoraleBonus();
+DLL_LINKAGE bool isSharedPurposeMoraleBonus(const Bonus * bonus);
+DLL_LINKAGE void applySharedPurpose(IBattleState & state, const CBattleInfoCallback & battle,
+	BattleSide side, const std::vector<uint32_t> & recipients);
 }

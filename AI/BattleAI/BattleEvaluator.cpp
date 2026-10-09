@@ -3469,17 +3469,60 @@ float canonicalOrderBaseHeuristic(const CBattleInfoCallback & battle, BattleSide
 	return 0.0f;
 }
 
+float sharedPurposeMoraleValue(const CBattleInfoCallback & battle,
+	const std::shared_ptr<HypotheticBattle> & preview, BattleSide side, DamageCache & damageCache)
+{
+	float result = 0.0f;
+	const CSelector marker(newHorizonsDivineMandate::isSharedPurposeMoraleBonus);
+	for(const auto * projected : preview->battleGetAllUnits(false))
+	{
+		const auto * original = battle.battleGetUnitByID(projected->unitId());
+		if(!original || !original->alive() || !projected->alive()
+			|| preview->battleGetOwner(projected) != preview->sideToPlayer(side)
+			|| !projected->hasBonus(marker) || original->hasBonus(marker)
+			|| original->unaffectedByMorale() || original->isTimeStopped())
+			continue;
+		auto before = expectedMoraleActivationChange(battle, original);
+		auto after = expectedMoraleActivationChange(*preview, projected);
+		const auto * active = battle.battleActiveUnit();
+		if(!active || active->unitId() != original->unitId())
+		{
+			before = std::min(0.0f, before);
+			after = std::min(0.0f, after);
+		}
+		else
+		{
+			const auto state = original->acquireState();
+			if(state->hadMorale || state->fear || original->waited() || original->defended() || !original->canMove())
+				continue;
+			before = std::max(0.0f, before);
+			after = std::max(0.0f, after);
+		}
+		result += std::max(0.0f, preview->projectMoraleActivationDelta(original, projected, before, after, 1.0f))
+			* expectedTargetActivationValue(projected, damageCache, preview);
+	}
+	return result;
+}
+
 float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide side,
 	HeroCommand command, const std::vector<uint32_t> & targetIds,
 	std::optional<int> focusFireSnapshotPercent, const Environment * environment,
 	DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> realBattle)
 {
-	const auto baseValue = canonicalOrderBaseHeuristic(battle, side, command, targetIds,
+	auto baseValue = canonicalOrderBaseHeuristic(battle, side, command, targetIds,
 		focusFireSnapshotPercent, environment, damageCache, realBattle);
 	// Second Wind starts its extra activation immediately, expiring the grant
 	// without another Morale roll. Preserve that existing action economy.
 	if(command == HeroCommand::SECOND_WIND || !environment || !realBattle || !battle.getBattle())
 		return baseValue;
+	if(newHorizonsDivineMandate::hasSharedPurposePerk(battle.battleGetFightingHero(side)))
+	{
+		auto preview = std::make_shared<HypotheticBattle>(environment, realBattle);
+		const auto allowance = preview->prepareHeroOrderAllowance(side);
+		if(allowance && preview->beginProjectedHeroAction(side, *allowance)
+			&& preview->projectAcceptedHeroOrder(side, command, targetIds, *allowance))
+			baseValue += sharedPurposeMoraleValue(battle, preview, side, damageCache);
+	}
 	const auto prepared = battle.battlePrepareHeroOrderState(side, command, targetIds);
 	const auto * hero = battle.battleGetFightingHero(side);
 	if(!prepared || !newHorizonsEnchantedCommand::eligible(battle.getBattle()->getMagicRules(), hero, *prepared))
@@ -5337,6 +5380,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				HypotheticBattle::ProjectedCounterspellOutcome counterspell;
 				bool counterspellNegated = false;
 				uint32_t targetId = std::numeric_limits<uint32_t>::max();
+				std::vector<uint32_t> sharedPurposeSpellRecipients;
 				size_t verdantPrisonDendroidStackCount = 0;
 
 				if(ps.command == HeroCommand::NONE)
@@ -5378,11 +5422,39 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						continue;
 					}
 				}
+				if(ps.command == HeroCommand::NONE && !counterspellNegated
+					&& newHorizonsDivineMandate::hasSharedPurposePerk(hero)
+					&& isDivineMandateLightSpell(*state, ps.spell->getId()))
+				{
+					auto recipientsTarget = ps.dest;
+					for(auto & destination : recipientsTarget)
+						if(destination.unitValue)
+							destination.unitValue = state->battleGetUnitByID(destination.unitValue->unitId());
+					spells::BattleCast recipientsCast(state.get(), hero, spells::Mode::HERO, ps.spell);
+					recipientsCast.setMetamagicFollowup(ps.metamagicFollowup);
+					recipientsCast.setMetamagicGrand(ps.metamagicGrand);
+					recipientsCast.setCureAffliction(ps.spellCureAffliction);
+					recipientsCast.setCurePhysicalAffliction(ps.spellCurePhysicalAffliction);
+					const auto mechanics = ps.spell->battleMechanics(&recipientsCast);
+					if(isCanonicalPurify(ps.spell))
+					{
+						for(const auto & [unitId, source] : ps.spellPurifyChoices)
+							sharedPurposeSpellRecipients.push_back(static_cast<uint32_t>(unitId));
+						for(const auto unitId : ps.spellPurifyPhysicalTargets)
+							sharedPurposeSpellRecipients.push_back(static_cast<uint32_t>(unitId));
+					}
+					else
+						for(const auto * unit : mechanics->getAffectedStacks(recipientsTarget))
+							if(unit && mechanics->isReceptive(unit))
+								sharedPurposeSpellRecipients.push_back(unit->unitId());
+					sharedPurposeSpellRecipients = newHorizonsDivineMandate::sharedPurposeFriendlyRecipients(
+						*state, side, sharedPurposeSpellRecipients, true);
+				}
 				if(isCounterspell(ps.spell))
 				{
 					if(!state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
 						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-						counterspellNegated, *spellAllowance) || counterspellNegated)
+						counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients) || counterspellNegated)
 						ps.value = std::numeric_limits<float>::lowest();
 					continue;
 				}
@@ -5401,7 +5473,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					if(counterspellNegated
 						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
 							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-							counterspellNegated, *spellAllowance))
+							counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + *ps.spellHandOfFateExpectedValue;
@@ -5421,7 +5493,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					if(counterspellNegated
 						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
 							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-							counterspellNegated, *spellAllowance))
+							counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + *ps.spellBattleFormExpectedValue;
@@ -5438,7 +5510,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					if(counterspellNegated
 						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
 							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-							counterspellNegated, *spellAllowance))
+							counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + *ps.spellConfusionExpectedValue;
@@ -5459,7 +5531,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					if(counterspellNegated
 						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
 							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-							counterspellNegated, *spellAllowance))
+							counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + *ps.spellPuppetMasterExpectedValue;
@@ -5489,7 +5561,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						|| counterspellNegated
 						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
 							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-							counterspellNegated, *spellAllowance))
+							counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + sanctuaryValue * scoreEvaluator.getPositiveEffectMultiplier();
@@ -5567,7 +5639,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					if(!selectionProjected
 						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
 							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-							counterspellNegated, *spellAllowance)
+							counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients)
 						|| counterspellNegated)
 						ps.value = std::numeric_limits<float>::lowest();
 					else
@@ -5581,7 +5653,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				{
 					if(!state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
 						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-						counterspellNegated, *spellAllowance) || counterspellNegated)
+						counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients) || counterspellNegated)
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + ps.spellShadowGiftHeuristicValue;
@@ -5602,7 +5674,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					if(counterspellNegated
 						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
 							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-							counterspellNegated, *spellAllowance))
+							counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + ps.spellPlacementHeuristicValue;
@@ -5623,7 +5695,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					if(counterspellNegated
 						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
 							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-							counterspellNegated, *spellAllowance))
+							counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + ps.spellPlacementHeuristicValue;
@@ -5641,7 +5713,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					// placement heuristic is compared on the shared BattleAI scale.
 					if(!state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
 						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-						counterspellNegated, *spellAllowance) || counterspellNegated)
+						counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients) || counterspellNegated)
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + ps.spellPlacementHeuristicValue;
@@ -5655,7 +5727,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				{
 					if(!state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
 						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-						counterspellNegated, *spellAllowance) || counterspellNegated)
+						counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients) || counterspellNegated)
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + ps.spellNaturePoisonValue;
@@ -5668,7 +5740,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				{
 					if(!state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
 						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-						counterspellNegated, *spellAllowance) || counterspellNegated)
+						counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients) || counterspellNegated)
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + ps.spellSoulChainDelayedValue;
@@ -5775,7 +5847,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					}
 					if(!state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
 						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-						counterspellNegated, *spellAllowance))
+						counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
 					{
 						ps.value = std::numeric_limits<float>::lowest();
 						continue;
@@ -5883,7 +5955,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				}
 
 				float stackActionScore = 0;
-				float damageToHostilesScore = 0;
+				float damageToHostilesScore = sharedPurposeMoraleValue(*battleCallback, state, side, innerCache)
+					* scoreEvaluator.getPositiveEffectMultiplier();
 				float damageToFriendliesScore = 0;
 				float initiativeEffectScore = 0;
 				float projectedDebuffScore = 0;

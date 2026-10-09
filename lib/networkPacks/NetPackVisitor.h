@@ -119,6 +119,7 @@ public:
 	virtual void visitBattleAttack(BattleAttack & pack) {}
 	virtual void visitStartAction(StartAction & pack) {}
 	virtual void visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack) {}
+	virtual void visitBattleDivineMandateRecipientsChanged(BattleDivineMandateRecipientsChanged & pack) {}
 	virtual void visitBattleDemonicGatingStateChanged(BattleDemonicGatingStateChanged & pack) {}
 	virtual void visitBattleAdverseRerollStateChanged(BattleAdverseRerollStateChanged & pack) {}
 	virtual void visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack) {}
@@ -145,6 +146,7 @@ public:
 	virtual void visitSetNewHorizonsMusterState(SetNewHorizonsMusterState & pack) {}
 	virtual void visitSetNewHorizonsLearningMentorState(SetNewHorizonsLearningMentorState & pack) {}
 	virtual void visitSetNewHorizonsScholarMeeting(SetNewHorizonsScholarMeeting & pack) {}
+	virtual void visitSetNewHorizonsSageGuildVisit(SetNewHorizonsSageGuildVisit & pack) {}
 	virtual void visitSetNewHorizonsDiplomacyState(SetNewHorizonsDiplomacyState & pack) {}
 	virtual void visitSetNewHorizonsDemonicReserve(SetNewHorizonsDemonicReserve & pack) {}
 	virtual void visitSetPortalDwellingSource(SetPortalDwellingSource & pack) {}

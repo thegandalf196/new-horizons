@@ -11,6 +11,7 @@
 #include "../callback/Calendar.h"
 #include "../entities/creature/NewHorizonsMusterRules.h"
 #include "GameStatePackVisitor.h"
+#include "../mapObjects/NewHorizonsSage.h"
 #include "../battle/NewHorizonsCombatSkills.h"
 
 #include "CGameState.h"
@@ -18,9 +19,11 @@
 #include "../battle/NewHorizonsArmorer.h"
 #include "../battle/NewHorizonsOffense.h"
 #include "../battle/NewHorizonsWarcasting.h"
+#include "../battle/NewHorizonsDivineMandate.h"
 #include "../bonuses/BonusSelector.h"
 #include "../spells/NewHorizonsMagic.h"
 #include "../spells/NewHorizonsSpellAvailability.h"
+#include "../spells/NewHorizonsPurify.h"
 #include "../pathfinder/NewHorizonsMovement.h"
 #include "TavernHeroesPool.h"
 
@@ -696,6 +699,25 @@ void GameStatePackVisitor::visitSetNewHorizonsLearningMentorState(SetNewHorizons
 	if(!hero)
 		throw std::runtime_error("New Horizons Learning Mentor state references a missing hero");
 	hero->setNewHorizonsLearningMentorState(pack.lastUseWeek, pack.recipientIds);
+}
+
+void GameStatePackVisitor::visitSetNewHorizonsSageGuildVisit(SetNewHorizonsSageGuildVisit & pack)
+{
+	auto * hero = gs.getHero(pack.hero);
+	auto * town = gs.getTown(pack.town);
+	if(!pack.hasValidState() || !hero || !town || hero->getVisitedTown() != town
+		|| !newHorizonsSage::firstGuildVisit(*hero, *town))
+		throw std::runtime_error("Invalid or stale New Horizons Sage Guild visit");
+	hero->validateNewHorizonsSageSerialization(true);
+	town->validateNewHorizonsSageSerialization(true);
+	const auto expected = newHorizonsSage::wisdomReveal(*hero, *town).value_or(SpellID::NONE);
+	if(pack.revealedSpell != expected)
+		throw std::runtime_error("Invalid New Horizons Sage Guild reveal selection");
+	// All semantic checks precede both mutations. A pre-perk/book visit is
+	// recorded too; ordinary town visits before Guild construction are not.
+	if(expected != SpellID::NONE)
+		town->revealNewHorizonsSageSpell(newHorizonsMagic::spellLevel(hero->getMagicRules(), expected), expected);
+	hero->markNewHorizonsSageGuildVisit(town->id);
 }
 
 void GameStatePackVisitor::visitSetNewHorizonsScholarMeeting(SetNewHorizonsScholarMeeting & pack)
@@ -2490,6 +2512,7 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		const bool sharedActionBudget = heroCommands::supportedByRules(
 			commandBattle->getHeroCommandRules(), HeroCommand::CHARGE);
 		std::optional<HeroActionAllowanceState::Receipt> orderReceipt;
+		std::vector<uint32_t> sharedPurposeRecipients;
 		auto nextAllowances = side.heroActionAllowances;
 		if(sharedActionBudget)
 		{
@@ -2513,8 +2536,12 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 				HeroActionAllowanceState::ActionKind::ORDER, commandBattle->getRound(), orderGrantFilter);
 			if(!orderReceipt)
 				throw std::runtime_error("Could not commit accepted Order action allowance");
-			DivineMandateTransition::applyAcceptedAction(nextAllowances, *orderReceipt,
-				commandBattle->getRound(), false, mandate.maximumPairs);
+			const auto * hero = commandBattle->battleGetFightingHero(pack.ba.side);
+			const auto recipients = pack.orderState && newHorizonsDivineMandate::hasSharedPurposePerk(hero)
+				? newHorizonsDivineMandate::sharedPurposeOrderRecipients(*commandBattle, pack.ba.side, *pack.orderState)
+				: std::vector<uint32_t>{};
+			sharedPurposeRecipients = DivineMandateTransition::applyAcceptedAction(nextAllowances, *orderReceipt,
+				commandBattle->getRound(), false, mandate.maximumPairs, recipients);
 		}
 		if(acceptedPreCombatOrderState && !orderReceipt)
 			throw std::runtime_error("Battle Plan Order did not consume its dedicated allowance");
@@ -2583,6 +2610,8 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		{
 			commandBattle->setHeroOrderStates(pack.ba.side, {});
 		}
+		newHorizonsDivineMandate::applySharedPurpose(*commandBattle, *commandBattle, pack.ba.side,
+			sharedPurposeRecipients);
 		return;
 	}
 	CStack *st = gs.getBattle(pack.battleID)->getStack(pack.ba.stackNumber);
@@ -2703,6 +2732,33 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		if(pack.ba.actionType == EActionType::HERO_SPELL)
 			gs.getBattle(pack.battleID)->getSide(pack.ba.side).usedSpellsHistory.push_back(pack.ba.spell);
 	}
+}
+
+void GameStatePackVisitor::visitBattleDivineMandateRecipientsChanged(BattleDivineMandateRecipientsChanged & pack)
+{
+	pack.validateShape();
+	auto * battle = gs.getBattle(pack.battleID);
+	if(!battle || battle->getRound() != pack.originalAction.round
+		|| !newHorizonsDivineMandate::hasSharedPurposePerk(battle->battleGetFightingHero(pack.side)))
+		throw std::runtime_error("Invalid battle for completed Divine Mandate recipient capture");
+	auto & side = battle->getSide(pack.side);
+	if(side.usedSpellsHistory.empty() || side.usedSpellsHistory.back() != newHorizonsPurify::spellID())
+		throw std::runtime_error("Late Divine Mandate capture does not follow accepted Purify");
+	auto next = side.heroActionAllowances;
+	next.validateShape();
+	const auto grant = std::find_if(next.grants.begin(), next.grants.end(), [&pack](const auto & entry)
+	{
+		return entry.id == pack.pendingGrantId;
+	});
+	if(grant == next.grants.end() || grant->source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
+		|| grant->allowance != HeroActionAllowanceState::AllowanceKind::ORDER
+		|| grant->grantedRound != pack.originalAction.round || grant->expiryRound != pack.originalAction.round
+		|| grant->id != next.nextGrantId - 1 || !grant->divineMandateRecipients.empty()
+		|| newHorizonsDivineMandate::sharedPurposeFriendlyRecipients(*battle, pack.side, pack.recipients) != pack.recipients)
+		throw std::runtime_error("Stale or forged completed Divine Mandate recipient capture");
+	grant->divineMandateRecipients = pack.recipients;
+	next.validateShape();
+	side.heroActionAllowances = std::move(next);
 }
 
 void GameStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack)
@@ -2975,8 +3031,12 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 				nextMetamagicGrandUsed, casterSide.metamagicSequenceSpells.size(), spellGrantFilter);
 			if(!transition)
 				throw std::runtime_error("Accepted Hero spell has forged or inconsistent allowance metadata");
+			const auto recipients = isLightSpell && !pack.counterspellNegated
+				&& newHorizonsDivineMandate::hasSharedPurposePerk(hero)
+				? newHorizonsDivineMandate::sharedPurposeFriendlyRecipients(*battle, pack.side, pack.affectedCres, true)
+				: std::vector<uint32_t>{};
 			DivineMandateTransition::applyAcceptedAction(nextAllowances, transition->receipt,
-				battle->getRound(), isLightSpell, mandate.maximumPairs);
+				battle->getRound(), isLightSpell, mandate.maximumPairs, recipients);
 			casterSide.heroActionAllowances = std::move(nextAllowances);
 			casterSide.metamagicUsesConsumed = nextMetamagicUsesConsumed;
 			casterSide.metamagicPendingCount = nextMetamagicPendingCount;

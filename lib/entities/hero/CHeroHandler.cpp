@@ -437,6 +437,11 @@ void CHeroHandler::loadHeroSpecialty(CHero * hero, const JsonNode & node) const
 					&& (hero->getJsonKey() == "core:cyra" || hero->getJsonKey() == "core:brissa"
 						|| hero->getJsonKey() == "core:terek"))
 					hero->nonDamageSpellSpecialtyProducers.push_back({SpellID(spell), prepared, true});
+				else if(values.empty()
+					&& ((spell == SpellID::WEAKNESS && (hero->getJsonKey() == "core:cuthbert"
+						|| hero->getJsonKey() == "core:olema" || hero->getJsonKey() == "core:mirlanda"))
+						|| (spell == SpellID::STONE_SKIN && hero->getJsonKey() == "core:xsi")))
+					hero->nonDamageSpellSpecialtyProducers.push_back({SpellID(spell), prepared, true});
 			}
 		});
 	}

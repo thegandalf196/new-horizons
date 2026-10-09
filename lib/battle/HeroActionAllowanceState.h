@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <limits>
 #include <optional>
 #include <stdexcept>
@@ -63,11 +64,16 @@ struct DLL_LINKAGE HeroActionAllowanceState
 		GrantSource source = GrantSource::OTHER;
 		int32_t grantedRound = -1;
 		int32_t expiryRound = -1;
+		/// Original friendly recipients of the first accepted Divine Mandate action.
+		std::vector<uint32_t> divineMandateRecipients;
 
 		bool operator==(const Grant &) const = default;
 
 		template <typename Handler> void serialize(Handler & h)
 		{
+			if(h.saving && !divineMandateRecipients.empty()
+				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SHARED_PURPOSE))
+				throw std::runtime_error("Cannot discard Divine Mandate recipient receipt");
 			if(h.saving && source == GrantSource::DOUBLE_COMMAND
 				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_COMMAND))
 				throw std::runtime_error("Cannot discard Double Command allowance grant");
@@ -84,12 +90,22 @@ struct DLL_LINKAGE HeroActionAllowanceState
 			h & source;
 			h & grantedRound;
 			h & expiryRound;
+			if(h.hasFeature(Handler::Version::NEW_HORIZONS_SHARED_PURPOSE))
+				h & divineMandateRecipients;
+			else if(!h.saving)
+				divineMandateRecipients.clear();
 			if(!h.saving)
 				validateShape();
 		}
 
 		void validateShape() const
 		{
+			if((!divineMandateRecipients.empty() && source != GrantSource::DIVINE_MANDATE)
+				|| !std::is_sorted(divineMandateRecipients.begin(), divineMandateRecipients.end())
+				|| std::adjacent_find(divineMandateRecipients.begin(), divineMandateRecipients.end()) != divineMandateRecipients.end()
+				|| std::find(divineMandateRecipients.begin(), divineMandateRecipients.end(),
+					HeroOrderState::INVALID_UNIT_ID) != divineMandateRecipients.end())
+				throw std::runtime_error("Invalid Divine Mandate recipient receipt");
 			if(id == 0 || !isValid(allowance) || !isValid(source)
 				|| grantedRound < 0 || expiryRound < grantedRound
 				|| (source == GrantSource::ROUND
@@ -124,6 +140,7 @@ struct DLL_LINKAGE HeroActionAllowanceState
 		AllowanceKind allowance = AllowanceKind::HERO;
 		GrantSource source = GrantSource::OTHER;
 		int32_t round = -1;
+		std::vector<uint32_t> divineMandateRecipients;
 
 		bool operator==(const Receipt &) const = default;
 	};
@@ -239,7 +256,7 @@ struct DLL_LINKAGE HeroActionAllowanceState
 		if(it == grants.end())
 			return {};
 
-		const Receipt receipt{it->id, action, it->allowance, it->source, round};
+		const Receipt receipt{it->id, action, it->allowance, it->source, round, it->divineMandateRecipients};
 		grants.erase(it);
 		return receipt;
 	}
@@ -306,6 +323,7 @@ struct DLL_LINKAGE HeroActionAllowanceState
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		validateSharedPurposeSerialization(h);
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_COMMAND)
 			&& std::any_of(grants.begin(), grants.end(), [](const Grant & grant)
 			{
@@ -349,6 +367,18 @@ struct DLL_LINKAGE HeroActionAllowanceState
 			throw std::runtime_error("Pre-Mandate of Heaven save contains an extended Divine Mandate pair count");
 		if(!h.saving)
 			validateShape();
+	}
+
+	template <typename Handler> void validateSharedPurposeSerialization(Handler & h) const
+	{
+		if(h.saving)
+			validateShape();
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_SHARED_PURPOSE)
+			&& std::any_of(grants.begin(), grants.end(), [](const Grant & grant)
+			{
+				return !grant.divineMandateRecipients.empty();
+			}))
+			throw std::runtime_error("Cannot discard Divine Mandate recipient receipt");
 	}
 
 	uint32_t countDoubleCommandOrderGrants(int32_t round) const
@@ -448,9 +478,9 @@ private:
 /// or completed-pair increment commit together.
 struct DLL_LINKAGE DivineMandateTransition
 {
-	static void applyAcceptedAction(HeroActionAllowanceState & ledger,
+	static std::vector<uint32_t> applyAcceptedAction(HeroActionAllowanceState & ledger,
 		const HeroActionAllowanceState::Receipt & receipt, int32_t round,
-		bool isLightSpell, uint8_t maximumPairs)
+		bool isLightSpell, uint8_t maximumPairs, const std::vector<uint32_t> & recipients = {})
 	{
 		using Ledger = HeroActionAllowanceState;
 		using Action = Ledger::ActionKind;
@@ -463,6 +493,18 @@ struct DLL_LINKAGE DivineMandateTransition
 			throw std::invalid_argument("Invalid Divine Mandate accepted-action context");
 
 		auto next = ledger;
+		std::vector<uint32_t> overlap;
+		if(!std::is_sorted(recipients.begin(), recipients.end())
+			|| std::adjacent_find(recipients.begin(), recipients.end()) != recipients.end()
+			|| std::find(recipients.begin(), recipients.end(), HeroOrderState::INVALID_UNIT_ID) != recipients.end())
+			throw std::runtime_error("Invalid accepted Divine Mandate recipients");
+		if((!receipt.divineMandateRecipients.empty() && receipt.source != Source::DIVINE_MANDATE)
+			|| !std::is_sorted(receipt.divineMandateRecipients.begin(), receipt.divineMandateRecipients.end())
+			|| std::adjacent_find(receipt.divineMandateRecipients.begin(), receipt.divineMandateRecipients.end())
+				!= receipt.divineMandateRecipients.end()
+			|| std::find(receipt.divineMandateRecipients.begin(), receipt.divineMandateRecipients.end(),
+				HeroOrderState::INVALID_UNIT_ID) != receipt.divineMandateRecipients.end())
+			throw std::runtime_error("Invalid consumed Divine Mandate recipients");
 		if(receipt.source == Source::DIVINE_MANDATE)
 		{
 			const bool validSpell = receipt.action == Action::SPELL
@@ -473,6 +515,8 @@ struct DLL_LINKAGE DivineMandateTransition
 				|| next.divineMandateCompletedPairs >= maximumPairs)
 				throw std::runtime_error("Invalid Divine Mandate follow-up receipt");
 			++next.divineMandateCompletedPairs;
+			std::set_intersection(receipt.divineMandateRecipients.begin(), receipt.divineMandateRecipients.end(),
+				recipients.begin(), recipients.end(), std::back_inserter(overlap));
 		}
 		else if(receipt.source == Source::ROUND && receipt.allowance == Allowance::HERO
 			&& next.divineMandateCompletedPairs < maximumPairs)
@@ -485,10 +529,12 @@ struct DLL_LINKAGE DivineMandateTransition
 			{
 				const auto followup = receipt.action == Action::ORDER ? Allowance::SPELL : Allowance::ORDER;
 				next.grantAllowance(followup, Source::DIVINE_MANDATE, round);
+				next.grants.back().divineMandateRecipients = recipients;
 			}
 		}
 		next.validateShape();
 		ledger = std::move(next);
+		return overlap;
 	}
 };
 

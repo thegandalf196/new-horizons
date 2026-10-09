@@ -44,9 +44,10 @@ protected:
 		TinyMapGameTest::mapLoaded(map);
 		JsonNode heroRules(JsonPath::builtin("config/newHorizonsHeroes"));
 		// Test Scholar's older-format admission independently of the later
-		// Thant replacement; retain Haste and all other captured hero rules.
+		// Thant/Frailty replacements; retain Haste and all other captured rules.
 		std::erase_if(heroRules["nonDamageSpellSpecialties"]["spells"].Vector(),
-			[](const JsonNode & spell) { return spell.String() == "new-horizons:reanimate"; });
+			[](const JsonNode & spell) { return spell.String() == "new-horizons:reanimate"
+				|| spell.String() == "new-horizons:frailty"; });
 		heroRules.setOverrideFlag(true);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, heroRules);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));

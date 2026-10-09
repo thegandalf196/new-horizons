@@ -335,6 +335,9 @@ public:
 		newHorizonsMusterUsesThisWeek = std::clamp<int32_t>(usesThisWeek, 0, 2);
 	}
 	int32_t getNewHorizonsLearningMentorLastWeek() const { return newHorizonsLearningMentorLastWeek; }
+	const std::set<ObjectInstanceID> & getNewHorizonsSageGuildVisits() const { return newHorizonsSageGuildVisits; }
+	void markNewHorizonsSageGuildVisit(ObjectInstanceID town);
+	void validateNewHorizonsSageSerialization(bool supported) const;
 	int32_t getNewHorizonsScholarWeek() const { return newHorizonsScholarWeek; }
 	const std::vector<ObjectInstanceID> & getNewHorizonsScholarPartners() const { return newHorizonsScholarPartners; }
 	static bool isValidNewHorizonsScholarState(ObjectInstanceID hero, int32_t week, const std::vector<ObjectInstanceID> & partners);
@@ -610,6 +613,7 @@ private:
 	int32_t newHorizonsLearningMentorLastWeek = -1;
 	int32_t newHorizonsScholarWeek = -1;
 	std::vector<ObjectInstanceID> newHorizonsScholarPartners;
+	std::set<ObjectInstanceID> newHorizonsSageGuildVisits;
 	LearningMentorRecipients newHorizonsLearningMentorRecipients{ObjectInstanceID::NONE, ObjectInstanceID::NONE};
 	int32_t newHorizonsLandSurveyorLastWeek = -1;
 	int32_t newHorizonsProspectorLastWeek = -1;
@@ -646,6 +650,9 @@ public:
 	template <typename Handler> void serialize(Handler &h)
 	{
 		if(h.saving)
+			newHorizonsHeroes::validateFrailtySpecialtySerialization(primaryGrowthRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
+		if(h.saving)
 			newHorizonsHeroes::validateReanimateSpecialtySerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
 		if(h.saving)
@@ -659,6 +666,7 @@ public:
 		if(h.saving)
 		{
 			validateNewHorizonsScholarSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LEARNING_SCHOLAR));
+			validateNewHorizonsSageSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SAGE_GUILD_VISITS));
 			if(!isValidNewHorizonsLearningMentorState(id, newHorizonsLearningMentorLastWeek,
 				newHorizonsLearningMentorRecipients))
 				throw std::runtime_error("Invalid New Horizons Learning Mentor state");
@@ -760,6 +768,8 @@ public:
 			h & lastPrimaryGains;
 			if(!h.saving)
 			{
+				newHorizonsHeroes::validateFrailtySpecialtySerialization(primaryGrowthRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
 				newHorizonsHeroes::validateReanimateSpecialtySerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
 				newHorizonsHeroes::validateHasteSpecialtySerialization(primaryGrowthRules,
@@ -943,6 +953,12 @@ public:
 		}
 		if(!h.saving)
 			validateNewHorizonsScholarSerialization(true);
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SAGE_GUILD_VISITS))
+			h & newHorizonsSageGuildVisits;
+		else if(!h.saving)
+			newHorizonsSageGuildVisits.clear();
+		if(!h.saving)
+			validateNewHorizonsSageSerialization(true);
 
 		if(!h.saving)
 		{

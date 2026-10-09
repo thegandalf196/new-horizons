@@ -1120,11 +1120,12 @@ static bool validatePurifyAction(const CBattleInfoCallback & battle, const Battl
 	return !action.spellPurifyChoices.empty() || clearsPhysicalPoison;
 }
 
-static void applyPurifyAction(CGameHandler & gameHandler, const CBattleInfoCallback & battle,
+static std::vector<uint32_t> applyPurifyAction(CGameHandler & gameHandler, const CBattleInfoCallback & battle,
 	const BattleAction & action, const CGHeroInstance * hero, const bool purifyingMandate)
 {
 	if(action.target.size() != 1 || action.target.front().unitValue != -1000)
-		return;
+		return {};
+	std::set<uint32_t> affectedRecipients;
 
 	const BattleHex center = action.target.front().hexValue;
 	const bool purifier = newHorizonsPurify::hasPurifierPerk(hero);
@@ -1165,6 +1166,14 @@ static void applyPurifyAction(CGameHandler & gameHandler, const CBattleInfoCallb
 		for(auto & [unitId, bonuses] : removalsByUnit)
 			removedEffects.toRemove.emplace_back(static_cast<ui32>(unitId), std::move(bonuses));
 		gameHandler.sendAndApply(removedEffects);
+		for(const auto & [unitId, sourceSpell] : action.spellPurifyChoices)
+		{
+			const auto * unit = battle.battleGetStackByID(unitId, false);
+			if(sourceSpell != newHorizonsPurify::physicalPoisonChoiceID() && unit
+				&& removalsByUnit.contains(unitId)
+				&& newHorizonsPurify::spellEffectGroupBonuses(unit, sourceSpell).empty())
+				affectedRecipients.insert(static_cast<uint32_t>(unitId));
+		}
 
 		BattleLogMessage message;
 		message.battleID = battleId;
@@ -1212,12 +1221,18 @@ static void applyPurifyAction(CGameHandler & gameHandler, const CBattleInfoCallb
 	}
 
 	if(!physicalPoisonUpdates.changedStacks.empty())
+	{
 		gameHandler.sendAndApply(physicalPoisonUpdates);
+		for(const auto & change : physicalPoisonUpdates.changedStacks)
+			if(const auto * unit = battle.battleGetStackByID(change.id, false);
+				unit && unit->physicalPoisonActivationsRemaining == 0)
+				affectedRecipients.insert(change.id);
+	}
 	if(!physicalPoisonLog.lines.empty())
 		gameHandler.sendAndApply(physicalPoisonLog);
 
 	if(!purifyingMandate || magicallyCleansedUnits.empty())
-		return;
+		return {affectedRecipients.begin(), affectedRecipients.end()};
 
 	SetStackEffect removePhysicalAfflictions;
 	removePhysicalAfflictions.battleID = battleId;
@@ -1270,6 +1285,7 @@ static void applyPurifyAction(CGameHandler & gameHandler, const CBattleInfoCallb
 		gameHandler.sendAndApply(updateStoredPhysicalPoisons);
 	if(!physicalAfflictionLog.lines.empty())
 		gameHandler.sendAndApply(physicalAfflictionLog);
+	return {affectedRecipients.begin(), affectedRecipients.end()};
 }
 
 bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)
@@ -1474,9 +1490,65 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 	const auto previousShadowGiftStatuses = shadowGiftRecipient
 		? activeShadowGiftStatusBonuses(*shadowGiftRecipient, s->getId())
 		: std::vector<std::shared_ptr<Bonus>>{};
+	std::optional<HeroActionAllowanceState::Receipt> sharedPurposePurifyAction;
+	if(s->getId() == newHorizonsPurify::spellID() && spellAllowance
+		&& newHorizonsDivineMandate::hasSharedPurposePerk(h))
+	{
+		const auto & ledger = battle.getBattle()->getHeroActionAllowances(ba.side);
+		const auto grant = std::find_if(ledger.grants.begin(), ledger.grants.end(), [&spellAllowance](const auto & entry)
+		{
+			return entry.id == spellAllowance->grantId;
+		});
+		if(grant != ledger.grants.end())
+			sharedPurposePurifyAction = HeroActionAllowanceState::Receipt{grant->id,
+				HeroActionAllowanceState::ActionKind::SPELL, grant->allowance, grant->source,
+				battle.battleGetRound(), grant->divineMandateRecipients};
+	}
 	parameters.cast(gameHandler->spellcastEnvironment(), target);
 	if(!counterspellNegated && s->getId() == newHorizonsPurify::spellID())
-		applyPurifyAction(*gameHandler, battle, ba, h, purifyingMandate);
+	{
+		const auto removed = applyPurifyAction(*gameHandler, battle, ba, h, purifyingMandate);
+		const auto recipients = newHorizonsDivineMandate::sharedPurposeFriendlyRecipients(battle, ba.side, removed);
+		if(sharedPurposePurifyAction && !recipients.empty())
+		{
+			const auto & original = *sharedPurposePurifyAction;
+			const auto & ledger = battle.getBattle()->getHeroActionAllowances(ba.side);
+			if(original.source == HeroActionAllowanceState::GrantSource::ROUND
+				&& original.allowance == HeroActionAllowanceState::AllowanceKind::HERO)
+			{
+				const auto grant = std::find_if(ledger.grants.begin(), ledger.grants.end(), [](const auto & entry)
+				{
+					return entry.source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
+						&& entry.allowance == HeroActionAllowanceState::AllowanceKind::ORDER;
+				});
+				if(grant != ledger.grants.end())
+				{
+					BattleDivineMandateRecipientsChanged capture;
+					capture.battleID = battle.getBattle()->getBattleID();
+					capture.side = ba.side;
+					capture.pendingGrantId = grant->id;
+					capture.originalAction = original;
+					capture.recipients = recipients;
+					gameHandler->sendAndApply(capture);
+				}
+			}
+			else if(original.source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE)
+			{
+				std::vector<uint32_t> overlap;
+				std::set_intersection(original.divineMandateRecipients.begin(), original.divineMandateRecipients.end(),
+					recipients.begin(), recipients.end(), std::back_inserter(overlap));
+				SetStackEffect purpose;
+				purpose.battleID = battle.getBattle()->getBattleID();
+				for(const auto id : overlap)
+					if(const auto * unit = battle.battleGetUnitByID(id);
+						unit && !unit->hasBonus(CSelector(newHorizonsDivineMandate::isSharedPurposeMoraleBonus)))
+						purpose.toAdd.emplace_back(id,
+							std::vector<Bonus>{newHorizonsDivineMandate::sharedPurposeMoraleBonus()});
+				if(!purpose.toAdd.empty())
+					gameHandler->sendAndApply(purpose);
+			}
+		}
+	}
 	if(!counterspellNegated && s->getJsonKey() == newHorizonsShadowGift::SPELL_ID)
 	{
 		// Pay only after the script published the timed status. This keeps the

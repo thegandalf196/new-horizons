@@ -500,6 +500,7 @@ set(test_SRCS
 		server/NewHorizonsEstatesMagnateTest.cpp
 		server/NewHorizonsAcademicStudyTest.cpp
 		server/queries/NewHorizonsScholarTest.cpp
+		server/queries/NewHorizonsSageTest.cpp
 		server/NewHorizonsResourceBrokerTest.cpp
 		server/NewHorizonsLearningMentorTest.cpp
 		server/NewHorizonsLearningMasterTeacherTest.cpp
@@ -586,6 +587,8 @@ if(ENABLE_BATTLE_AI)
 		server/battles/NewHorizonsVanishTest.cpp
 		server/battles/NewHorizonsHasteSpecialtyTest.cpp
 		server/battles/NewHorizonsThantReanimateSpecialtyTest.cpp
+		server/battles/NewHorizonsSharedPurposeTest.cpp
+		server/battles/NewHorizonsFrailtySpecialtyTest.cpp
 		battleAI/HeroCommandAITest.cpp
 		battleAI/NewHorizonsGenieSupportAITest.cpp
 		battleAI/NewHorizonsBeneficialCreatureAITest.cpp

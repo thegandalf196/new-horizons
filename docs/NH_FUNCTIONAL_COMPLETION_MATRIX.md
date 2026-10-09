@@ -2,6 +2,19 @@
 
 Updated: 2026-10-09
 
+Accepted Sage/Shared Purpose/Frailty checkpoint: linked38972 and exact native70790
+pass36/36 in12.229s; adjacent61175 passes12/12 in5.131s, zero failures/errors/
+disabled/skips. Shared Purpose15, both Sage10 and four Frailty specialty11 cases
+raise accepted perks276→279/310 (generic193/220,faction86/90),31 remaining
+(27 generic,4 faction). Combat67/67,Orders8/8,Skills31/31,ranks93/93 unchanged.
+Canonical Sage/Frailty amendments, registry identity/descriptions and module are
+synchronized; static29, independent source review, binary privacy and unchanged
+NHART3138-entry verification pass. Earlier failed fixtures/logs remain private;
+real ordinary-corpse provenance and legal Litany selection preserve all outcomes
+and production rules. Commit/push finalization remains separate. Linux still
+selects snapshot5bedaf198/source3046c1ad9 until a new verified delivery; no new
+rendered or Windows acceptance is claimed. Other private patches earn no credit.
+
 Accepted seven-perk/hero checkpoint: ten-job build25787 links after reviewed
 fixture-only repairs. Exact native88843 passes79/79 in25.252s; adjacent3070
 passes15/15 in6.590s, zero failures/errors/disabled/skips. Scholar8, Historian7,
@@ -13,9 +26,21 @@ review, static38, module parity and binary privacy pass. Prior failing logs/XML
 remain private; legal fixture prerequisites, initialized input state and complete
 occupancy/footprint setup were repaired without changing production rules or
 weakening outcomes. Shared Purpose, both Sage perks and four Frailty hero
-replacements are source-clear private candidates, not accepted. Phoenix Spark
-and Recruiter's Contacts are in private implementation. This new checkpoint is
-not yet a committed/playable delivery; ordinary Linux still selects source6db2f1534.
+replacements are integrated/source-reviewed, with root registrations and three
+activations complete. Static29 and module parity pass; build32684 stops1 at a
+Sage fixture's private building access, repaired with existing public APIs.
+Retry32544 stops1 at Shared Purpose's fixture-only default BattleInfo construction;
+the reviewed initialized callback repair preserves all assertions. Ten-job retry71973
+links0 and binary privacy passes. Exact native6385 passes33/36; adjacent22182
+passes12/12, no errors/skips/crash. Resurrection correctly rejects two synthesized
+summoned-slot targets; Mass Bless lacks legal Litany acquisition. Fixture repair
+and focused revalidation were required. The later checkpoint above accepts
+the repaired three-perk batch.
+Phoenix Spark and Recruiter's Contacts remain private candidates. Source3046c1ad9 is normally
+pushed and remotely confirmed; ordinary Linux now selects snapshot5bedaf198.
+Its fresh isolated silent20s smoke reaches day4 without an observed crash,
+verifies actual executable/library and dummy drivers, and clears owned processes,
+sockets and profile lock. The ordinary launcher verify-only path gate passes.
 No new rendered or Windows acceptance is claimed; NHART bytes are unchanged.
 
 Accepted four-perk checkpoint: incremental layout-only build90928 links after

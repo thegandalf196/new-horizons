@@ -427,6 +427,49 @@ void CGTownInstance::setHouseOfWisdomScrolls(std::vector<SpellID> scrolls)
 	newHorizonsHouseOfWisdomInitialized = true;
 }
 
+void CGTownInstance::validateNewHorizonsSageSerialization(bool supported) const
+{
+	std::set<SpellID> seen;
+	for(size_t row = 0; row < newHorizonsSageRevealedSpells.size(); ++row)
+	{
+		const auto & extra = newHorizonsSageRevealedSpells[row];
+		if(!supported && !extra.empty())
+			throw std::runtime_error("Cannot discard New Horizons Sage Guild reveals");
+		if(extra.empty())
+			continue;
+		if(!id.hasValue() || newHorizonsMageGuildVisibleSpells.size() != GameConstants::SPELL_LEVELS
+			|| spells.size() != GameConstants::SPELL_LEVELS
+			|| newHorizonsMageGuildVisibleSpells[row] < 0)
+			throw std::runtime_error("Invalid New Horizons Sage Guild reveal state");
+		const size_t ordinary = newHorizonsMageGuildVisibleSpells[row];
+		if(ordinary + extra.size() > spells[row].size())
+			throw std::runtime_error("Missing New Horizons Sage Guild revealed spell");
+		for(size_t index = 0; index < extra.size(); ++index)
+			if(!extra[index].hasValue() || static_cast<size_t>(extra[index].getNum()) >= LIBRARY->spellh->objects.size()
+				|| !LIBRARY->spellh->objects.at(extra[index].getNum()) || !seen.insert(extra[index]).second
+				|| spells[row][ordinary + index] != extra[index]
+				|| std::count(spells[row].begin(), spells[row].end(), extra[index]) != 1)
+				throw std::runtime_error("Invalid New Horizons Sage Guild revealed spell");
+	}
+}
+
+void CGTownInstance::revealNewHorizonsSageSpell(int level, SpellID spell)
+{
+	validateNewHorizonsSageSerialization(true);
+	if(level < 1 || level > mageGuildLevel() || !spell.hasValue()
+		|| newHorizonsMageGuildVisibleSpells.size() != GameConstants::SPELL_LEVELS)
+		throw std::runtime_error("Invalid New Horizons Sage Guild reveal");
+	for(const auto & row : spells)
+		if(vstd::contains(row, spell))
+			throw std::runtime_error("Duplicate New Horizons Sage Guild reveal");
+	const size_t row = level - 1;
+	const size_t index = newHorizonsMageGuildVisibleSpells[row] + newHorizonsSageRevealedSpells[row].size();
+	if(index > spells.at(row).size())
+		throw std::runtime_error("Invalid New Horizons Sage Guild prefix");
+	spells[row].insert(spells[row].begin() + index, spell);
+	newHorizonsSageRevealedSpells[row].push_back(spell);
+}
+
 int CGTownInstance::spellsAtLevel(int level, bool checkGuild) const
 {
 	if(level < 1 || level > GameConstants::SPELL_LEVELS)
@@ -435,7 +478,7 @@ int CGTownInstance::spellsAtLevel(int level, bool checkGuild) const
 		return 0;
 	if(newHorizonsMagic::mageGuildGenerationActive(cb->getMagicRules())
 		&& newHorizonsMageGuildVisibleSpells.size() == GameConstants::SPELL_LEVELS)
-		return newHorizonsMageGuildVisibleSpells.at(level - 1);
+		return newHorizonsMageGuildVisibleSpells.at(level - 1) + newHorizonsSageRevealedSpells.at(level - 1).size();
 	int ret = newHorizonsMagic::mageGuildSpellsAtLevel(cb->getMagicRules(), level);
 
 	const bool newHorizonsTowerLibrary = newHorizonsMagic::rulesActive(cb->getMagicRules())

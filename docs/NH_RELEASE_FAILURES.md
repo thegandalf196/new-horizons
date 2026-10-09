@@ -1,5 +1,46 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-09 — Shared Purpose native fixture provenance/access
+
+Linked71973's exact principal run passes33/36; all12 adjacent controls pass.
+Two Resurrection controls created stacks through the generic battle ADD path,
+which correctly gives them summoned-slot provenance and excludes Resurrection.
+Use a real prebattle ordinary army slot for those restoration controls, retaining
+the same position, corpse, actual actions and all restored/overlap assertions.
+The Mass Bless control must select legal Basic Benediction then Advanced Litany;
+adding its spell identity to a book does not bypass the specific variant gate.
+Do not loosen healing eligibility or specialty spell access to repair fixtures.
+The independently reviewed fixture-only patch retains all15 case outcomes.
+Initial log/XML and exact-pair receipt stay private; retry38972/native acceptance
+remain pending. The earlier Light-rank hypothesis was not the Resurrection cause:
+legitimately known ordinary combat spells retain their canonical cast exemption.
+
+### 2026-10-09 — Shared Purpose fixture callback lifetime
+
+Incremental build32544 stops1 because BattleInfo has no default constructor.
+Use an initialized CGameState callback declared before BattleStart, matching
+the accepted Royal fixture, so it outlives the battle object. Preserve every
+receipt, old-format rejection and buffer assertion. The independently reviewed
+fixture repair compiles in retry71973; native acceptance remains pending.
+
+### 2026-10-09 — Sage fixture building API
+
+Ten-job build32684 stops1 at Sage's test fixture, which accessed the private
+town building set. Use existing public addBuilding/removeBuilding, as accepted
+Academic Study controls already do. Keep all Guild-level setup and assertions;
+do not expose the storage or weaken production validation. Resume incrementally
+in the same build directory. No native acceptance follows from this repair alone.
+
+### 2026-10-09 — canonical amendment identity metadata
+
+The next batch's static registry gate detects an inherited mismatch: the accepted
+Thant amendment changed the canonical design bytes, but the registry still
+identified the earlier document hash. Confirmed both through committed sources,
+not an unrelated working-tree edit. Update only the registry's source hash to
+the actual canonical document and regenerate the module; retain the exact-source
+assertion. Registry/hero29 checks then pass. Future canonical amendments must
+update this identity in the same logical change, after the final document edit.
+
 ### 2026-10-09 — Scholar fixture type and public-access admission
 
 Combined ten-job build88029 terminates1 at the Scholar fixture only. Concrete

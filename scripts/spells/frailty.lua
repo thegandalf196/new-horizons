@@ -2,9 +2,6 @@ local Base = require("spells/unitEffect")
 local Script = setmetatable({}, {__index = Base})
 Script.__index = Script
 
-local SHADOW_MAGIC_SKILL = "new-horizons:shadowMagic"
-local WITHERING_TOUCH_PERK = "new-horizons:shadowMagic.witheringTouch"
-
 local DEFENSE_BASE_BONUS_FILTER = {
 	type = "PRIMARY_SKILL",
 	subtype = "defence",
@@ -16,10 +13,6 @@ local DEFENSE_LOSS_BONUS_FILTER = {
 	sourceType = ENUM.BonusSource.spellEffect
 }
 
-local SPELL_POWER_BASIS_POINTS_PER_POINT = 5
-local BASE_DEFENSE_LOSS_BASIS_POINTS = 1000
-local PER_CAST_CAP_BASIS_POINTS = 2000
-local WITHERING_TOUCH_BASIS_POINTS = 500
 local CUMULATIVE_CAP_BASIS_POINTS = 6000
 local BASIS_POINTS_PER_WHOLE = 10000
 
@@ -39,21 +32,9 @@ local function accumulatedBasisPoints(unit, spellKey)
 end
 
 local function perCastBasisPoints(mechanics)
-	-- The fixed 10% is not school-scaled. The shared helper applies the saved
-	-- School/Spellcraft coefficient to the 0.05% per Spell Power term, then this
-	-- cast's Warcasting and Empower bonuses.
-	local powerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
-		math.max(0, mechanics:getEffectPower()) * SPELL_POWER_BASIS_POINTS_PER_POINT,
-		1,
-		mechanics:getSpellPowerCoefficientBasisPoints())
-	local loss = math.min(PER_CAST_CAP_BASIS_POINTS,
-		BASE_DEFENSE_LOSS_BASIS_POINTS + powerTerm)
-
-	local hero = mechanics:getHeroCaster()
-	if hero ~= nil and hero:hasActivePerk(SHADOW_MAGIC_SKILL, WITHERING_TOUCH_PERK) then
-		loss = loss + WITHERING_TOUCH_BASIS_POINTS
-	end
-	return loss
+	-- Shared with detached AI: only the SP term gains the authored specialty.
+	-- Fixed 10%, ordinary 20% cast cap and Withering Touch order are unchanged.
+	return mechanics:getFrailtyDefenseLossBasisPoints()
 end
 
 function Script:apply(mechanics, server, target)

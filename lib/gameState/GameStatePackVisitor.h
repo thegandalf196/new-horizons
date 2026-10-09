@@ -115,6 +115,7 @@ public:
 	void visitSetNewHorizonsMusterState(SetNewHorizonsMusterState & pack) override;
 	void visitSetNewHorizonsLearningMentorState(SetNewHorizonsLearningMentorState & pack) override;
 	void visitSetNewHorizonsScholarMeeting(SetNewHorizonsScholarMeeting & pack) override;
+	void visitSetNewHorizonsSageGuildVisit(SetNewHorizonsSageGuildVisit & pack) override;
 	void visitSetNewHorizonsDiplomacyState(SetNewHorizonsDiplomacyState & pack) override;
 	void visitSetNewHorizonsDemonicReserve(SetNewHorizonsDemonicReserve & pack) override;
 	void visitSetPortalDwellingSource(SetPortalDwellingSource & pack) override;
@@ -136,6 +137,7 @@ public:
 	void visitStartAction(StartAction & pack) override;
 	void visitEndAction(EndAction & pack) override;
 	void visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack) override;
+	void visitBattleDivineMandateRecipientsChanged(BattleDivineMandateRecipientsChanged & pack) override;
 	void visitBattleDemonicGatingStateChanged(BattleDemonicGatingStateChanged & pack) override;
 	void visitBattleAdverseRerollStateChanged(BattleAdverseRerollStateChanged & pack) override;
 	void visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack) override;

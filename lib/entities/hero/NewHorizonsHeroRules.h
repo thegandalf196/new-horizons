@@ -118,6 +118,8 @@ DLL_LINKAGE bool hasHasteSpecialtyRules(const JsonNode & rules);
 DLL_LINKAGE void validateHasteSpecialtySerialization(const JsonNode & rules, bool supported);
 DLL_LINKAGE bool hasReanimateSpecialtyRules(const JsonNode & rules);
 DLL_LINKAGE void validateReanimateSpecialtySerialization(const JsonNode & rules, bool supported);
+DLL_LINKAGE bool hasFrailtySpecialtyRules(const JsonNode & rules);
+DLL_LINKAGE void validateFrailtySpecialtySerialization(const JsonNode & rules, bool supported);
 /// Returns the converted skill specialties captured by this hero. Missing
 /// rules intentionally preserve legacy specialty behavior for older saves.
 DLL_LINKAGE std::optional<SkillSpecialtyRules> skillSpecialtyRules(const JsonNode & resolvedRules);

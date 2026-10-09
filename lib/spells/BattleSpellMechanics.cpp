@@ -1825,6 +1825,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	const uint8_t divineMandatePairsBeforeSpell = mode == Mode::HERO && casterHero && validHeroSide
 		? battle()->battleGetDivineMandateStatus(casterSide).completedPairs : 0;
 	bool spendsHeroAllowance = !sc.metamagicFollowup;
+	std::vector<uint32_t> sharedPurposeFirstRecipients;
 	if(mode == Mode::HERO && validHeroSide && battleRound >= 0
 		&& heroCommands::supportedByRules(battleInfo->getHeroCommandRules(), HeroCommand::CHARGE))
 	{
@@ -1834,6 +1835,14 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 			const auto selection = battle()->battleGetSpellActionAllowance(casterSide, owner->getId());
 			spendsHeroAllowance = selection
 				&& selection->allowance == HeroActionAllowanceState::AllowanceKind::HERO;
+			if(selection && selection->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
+				&& newHorizonsDivineMandate::hasSharedPurposePerk(casterHero))
+			{
+				const auto grant = std::find_if(allowances.grants.begin(), allowances.grants.end(),
+					[&selection](const auto & item) { return item.id == selection->grantId; });
+				if(grant != allowances.grants.end())
+					sharedPurposeFirstRecipients = grant->divineMandateRecipients;
+			}
 		}
 		else
 			spendsHeroAllowance = false;
@@ -1962,6 +1971,24 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	}
 	if(newHorizonsRegeneration && !isCounterspellNegated())
 		applyRegenerationRateSnapshot(&effectRecorder, battle(), affectedUnits, newHorizonsRegenerationRate(*this));
+	// BattleSpellCast spends the typed grant before effects resolve. Publish the
+	// benefit after restoration/cleansing so a valid restored corpse can receive it.
+	if(!sharedPurposeFirstRecipients.empty() && !sc.counterspellNegated)
+	{
+		const auto recipients = newHorizonsDivineMandate::sharedPurposeFriendlyRecipients(
+			*battle(), originalCasterSide, sc.affectedCres);
+		std::vector<uint32_t> overlap;
+		std::set_intersection(sharedPurposeFirstRecipients.begin(), sharedPurposeFirstRecipients.end(),
+			recipients.begin(), recipients.end(), std::back_inserter(overlap));
+		SetStackEffect purpose;
+		purpose.battleID = sc.battleID;
+		for(const auto id : overlap)
+			if(const auto * unit = battle()->battleGetUnitByID(id);
+				unit && !unit->hasBonus(CSelector(newHorizonsDivineMandate::isSharedPurposeMoraleBonus)))
+				purpose.toAdd.emplace_back(id, std::vector<Bonus>{newHorizonsDivineMandate::sharedPurposeMoraleBonus()});
+		if(!purpose.toAdd.empty())
+			server->apply(purpose);
+	}
 	if(logMetamagicFollowup)
 	{
 		struct FollowupTargetOutcome

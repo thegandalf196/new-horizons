@@ -227,6 +227,25 @@ int64_t Mechanics::scaleDamageSpellPowerComponentWithCoefficientBasisPoints(cons
 		coefficientBasisPoints, getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(), damageSpecialtyPercent);
 }
 
+int32_t Mechanics::getFrailtyDefenseLossBasisPoints() const
+{
+	if(getSpellId().toSpell()->getJsonKey() != newHorizonsMagic::SHADOW_FRAILTY_SPELL)
+		return 0;
+	constexpr int32_t BASE_LOSS = 1000;
+	constexpr int32_t POWER_LOSS_PER_POINT = 5;
+	constexpr int32_t PER_CAST_CAP = 2000;
+	constexpr int32_t WITHERING_TOUCH_LOSS = 500;
+	const auto * hero = getHeroCaster();
+	const auto powerLoss = scaleDamageSpellPowerComponentWithCoefficientBasisPoints(
+		static_cast<int64_t>(std::max(0, getEffectPower())) * POWER_LOSS_PER_POINT, 1,
+		getSpellPowerCoefficientBasisPoints(), hero ? hero->getNonDamageSpellSpecialtyBonusPercent(getSpellId()) : 0);
+	const int32_t result = static_cast<int32_t>(std::min<int64_t>(PER_CAST_CAP, BASE_LOSS + powerLoss));
+	if(hero && hero->hasActivePerk(std::string(newHorizonsMagic::SHADOW_MAGIC_SKILL),
+		std::string(newHorizonsMagic::SHADOW_WITHERING_TOUCH_PERK)))
+		return result + WITHERING_TOUCH_LOSS;
+	return result;
+}
+
 int32_t Mechanics::getSchoolRankPowerCoefficientPercent() const
 {
 	const auto * battleCallback = battle();

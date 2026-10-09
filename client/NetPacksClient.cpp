@@ -214,6 +214,12 @@ void ApplyClientNetPackVisitor::visitSetMovePoints(SetMovePoints & pack)
 	callInterfaceIfPresent(cl, h->tempOwner, &IGameEventsReceiver::heroMovePointsChanged, h);
 }
 
+void ApplyClientNetPackVisitor::visitSetNewHorizonsSageGuildVisit(SetNewHorizonsSageGuildVisit & pack)
+{
+	for(const auto & win : ENGINE->windows().findWindows<CMageGuildScreen>())
+		win->updateSpells(pack.town);
+}
+
 void ApplyClientNetPackVisitor::visitSetResearchedSpells(SetResearchedSpells & pack)
 {
 	for(const auto & win : ENGINE->windows().findWindows<CMageGuildScreen>())

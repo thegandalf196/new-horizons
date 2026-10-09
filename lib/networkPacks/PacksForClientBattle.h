@@ -50,6 +50,8 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 	template <typename Handler> void serialize(Handler & h)
 	{
 		if(h.saving && info)
+			info->validateSharedPurposeSerialization(h);
+		if(h.saving && info)
 			info->validateSwiftRebirthSerialization(h);
 		if(h.saving && info)
 			info->validateRoyalStandardSerialization(h);
@@ -1314,6 +1316,53 @@ struct DLL_LINKAGE StartAction : public CPackForClient
 		else if(!h.saving)
 			preCombatOrderState.reset();
 		assert(battleID != BattleID::NONE);
+	}
+};
+
+/// Purify's selected removals complete after its ordinary accepted cast packet.
+/// This fills only the first leg of that exact still-pending Divine Mandate pair.
+struct DLL_LINKAGE BattleDivineMandateRecipientsChanged : public CPackForClient
+{
+	BattleID battleID = BattleID::NONE;
+	BattleSide side = BattleSide::NONE;
+	uint32_t pendingGrantId = 0;
+	HeroActionAllowanceState::Receipt originalAction;
+	std::vector<uint32_t> recipients;
+
+	void validateShape() const
+	{
+		using Ledger = HeroActionAllowanceState;
+		if(battleID == BattleID::NONE || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			|| pendingGrantId == 0 || originalAction.grantId == 0 || originalAction.grantId >= pendingGrantId
+			|| originalAction.action != Ledger::ActionKind::SPELL || originalAction.allowance != Ledger::AllowanceKind::HERO
+			|| originalAction.source != Ledger::GrantSource::ROUND || originalAction.round < 0
+			|| !originalAction.divineMandateRecipients.empty() || recipients.empty()
+			|| !std::is_sorted(recipients.begin(), recipients.end())
+			|| std::adjacent_find(recipients.begin(), recipients.end()) != recipients.end()
+			|| std::find(recipients.begin(), recipients.end(), HeroOrderState::INVALID_UNIT_ID) != recipients.end())
+			throw std::runtime_error("Invalid completed Divine Mandate recipient capture");
+	}
+	void visitTyped(ICPackVisitor & visitor) override;
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SHARED_PURPOSE))
+			throw std::runtime_error("Cannot serialize late Divine Mandate recipient capture in an older format");
+		if(h.saving)
+			validateShape();
+		h & battleID;
+		h & side;
+		h & pendingGrantId;
+		h & originalAction.grantId;
+		h & originalAction.action;
+		h & originalAction.allowance;
+		h & originalAction.source;
+		h & originalAction.round;
+		h & recipients;
+		if(!h.saving)
+		{
+			originalAction.divineMandateRecipients.clear();
+			validateShape();
+		}
 	}
 };
 
