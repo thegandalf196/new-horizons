@@ -2,6 +2,24 @@
 
 Updated: 2026-10-09
 
+Bounded source-selection audit at658dbd804: Fortress conversion defaults retain
+legacy abilities; Wisp PASS_THROUGH/LONG_REACH/9500-basis-point magical reduction,
+retaliation policy and actual AI attacks are present (UP300 prior native gates).
+Cabir elemental modifiers and upgraded surviving-stack Repair have authoritative
+targeting/restoration, ordinary activation/use limits and generic AI healing
+valuation (UP288 prior native gates). Root checks shipped creature configs,
+Repair registration and BattleEvaluator's creature-cast enumeration. No new
+unambiguous missing principal mechanic is established in this scope.
+
+Independent action-foundation audit verifies idempotent resetForRound and its
+BattleInfo::nextRound consumer, authoritative Order target tuples with matching
+AI enumeration, Wait/Defend/retaliation reset paths and existing Second Wind
+Defend-completion evidence. Speed-to-Initiative fallback coupling and between-
+shots Second Wind behavior are already recorded Phase2 boundaries, not new
+implementation targets. These are bounded source audits, not new native runs,
+whole-family certification or additional completion counts. Elemental Convergence
+remains the next high-leverage missing feature pending the terrain ruling.
+
 Playable delivery checkpoint: normal Linux launcher now points to immutable
 5938709/source69004cc23. Actual ordinary Mage/Stone recruitment, Stone growth
 background and Mentor skills2->5/levels1->4/16-Pikeman transfer/back plus title
