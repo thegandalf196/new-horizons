@@ -2,6 +2,22 @@
 
 Updated: 2026-10-09
 
+Fate Dealer is source/native accepted after linked46720. Exact-pair runtime17/17
+passes in5.471s and AI5/5 in1.888s, zero failures/errors/skips. Root checks XML
+and source/private binary/library hashes; receipt:
+build/nh-fate-dealer-native.oy8R/receipt.md. Paid spill selection, duplicate and
+fair-coin draws, current control, recipient defenses/no reroll, unchanged base
+damage, exact weighted forecasts without live RNG, saved-v2 uniform selection
+and actual paid AI with unmodified Orders pass. Initial12/22 pair and diagnostics
+remain private; the real initial-side ownership gap is repaired through an
+explicit current-controller query, not global targeting changes. Coverage
+253->254/310 perks, generic178->179/220, faction75/90 unchanged; planned57->56
+(41 generic,15 faction). Combat66/67, Orders8/8, Skills31/31 and ranks93/93 stay
+unchanged. Data17/17/module parity and independent review pass. Broader control,
+resistance and casualty interactions remain Phase2. No new art, rendered
+acceptance, Windows package or normal-launcher promotion is claimed. Next:
+Reality Warp's missing live atomic exchange, recipient legality, UI and AI.
+
 Accepted Polymorph/Shapeshifter checkpoint: linked64681 exits0; principal25/25
 passes in24.210s, foundations17/17 in1.831s, zero failures/errors/skips. Paid AI
 also passes its isolated probe in3.272s with canonical species and unmodified

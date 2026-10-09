@@ -23,6 +23,8 @@
 namespace
 {
 constexpr auto handOfFateKey = "new-horizons:handOfFate";
+constexpr auto chaosMagicKey = "new-horizons:chaosMagic";
+constexpr auto fateDealerKey = "new-horizons:chaosMagic.fateDealer";
 
 SpellID handOfFateSpell()
 {
@@ -50,6 +52,8 @@ protected:
 	CStack * primary = nullptr;
 	CStack * enemyCollateral = nullptr;
 	const CSpell * spell = nullptr;
+	bool enableFateDealer = false;
+	bool selectFateDealer = true;
 
 	void SetUp() override
 	{
@@ -65,8 +69,19 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		const auto perks = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+		if(enableFateDealer)
+		{
+			const auto & choices = perks["skills"][chaosMagicKey]["perks"].Vector();
+			const auto found = std::find_if(choices.begin(), choices.end(), [](const JsonNode & perk)
+			{
+				return perk["id"].String() == fateDealerKey;
+			});
+			ASSERT_NE(found, choices.end());
+			ASSERT_EQ((*found)["effect"]["status"].String(), "active")
+				<< "Principal Fate Dealer cases must use the shipped active registry unchanged";
+		}
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 	}
 
 	void removeDeployedUnits()
@@ -81,11 +96,29 @@ protected:
 	void prepare(int32_t spellPower = 100, int32_t primaryCount = 1000, bool addEnemyCollateral = false)
 	{
 		startGame();
+		if(enableFateDealer)
+		{
+			const auto chaos = SecondarySkill(SecondarySkill::decode(chaosMagicKey));
+			attackerSideHero->setSecSkillLevel(chaos, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+			attackerSideHero->applyPerkSelection({chaosMagicKey, "new-horizons:chaosMagic.misfortuneWeaver"});
+			attackerSideHero->setSecSkillLevel(chaos, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+			if(selectFateDealer)
+				attackerSideHero->applyPerkSelection({chaosMagicKey, fateDealerKey});
+			ASSERT_EQ(attackerSideHero->hasActivePerk(chaosMagicKey, fateDealerKey), selectFateDealer);
+		}
 		spell = handOfFateSpell().toSpell();
 		ASSERT_NE(spell, nullptr);
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		attackerSideHero->addSpellToSpellbook(spell->getId());
+		const auto powerDivisor = attackerSideHero->getEffectPowerDivisor(spell);
+		ASSERT_EQ(powerDivisor, 10);
+		// The saved formula's coefficient25 / divisor10 already implements the
+		// canonical 2.5 damage per raw Spell Power. Do not rescale the attribute.
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, spellPower, ChangeValueMode::ABSOLUTE);
+		ASSERT_EQ(attackerSideHero->getEffectPower(spell), spellPower);
+		const auto formula = newHorizonsMagic::spellDirectDamage(attackerSideHero->getMagicRules(), handOfFateKey);
+		ASSERT_TRUE(formula.has_value());
+		ASSERT_EQ(formula->powerCoefficient, 25);
 		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
 		setTestSpellPointTotal(attackerSideHero, 1000);
 
@@ -140,6 +173,38 @@ protected:
 		gameHandler->randomizer->setSeed(BattleTestFixture::seed);
 	}
 
+	int seedForFateDealerDraws(const std::vector<CStack *> & candidates,
+		int first, int second, int coin = 0) const
+	{
+		// Independently reproduce the ordinary beforeCast resistance prefix and
+		// the two with-replacement draws; do not infer the result from HP changes.
+		for(int seed = 0; seed < 10'000; ++seed)
+		{
+			CRandomGenerator random(seed);
+			for(const auto * unit : battle()->battleGetAllUnits(false))
+				random.nextInt(0, 99);
+			const auto drawnFirst = random.nextInt(1, static_cast<int>(candidates.size())) - 1;
+			const auto drawnSecond = random.nextInt(1, static_cast<int>(candidates.size())) - 1;
+			if(drawnFirst != first || drawnSecond != second)
+				continue;
+			if(coin != 0 && random.nextInt(1, 2) != coin)
+				continue;
+			return seed;
+		}
+		ADD_FAILURE() << "No seed found for requested Fate Dealer draw sequence";
+		return -1;
+	}
+
+	void castFateDealerWithDraws(const std::vector<CStack *> & candidates,
+		int first, int second, int coin = 0)
+	{
+		const auto seed = seedForFateDealerDraws(candidates, first, second, coin);
+		ASSERT_GE(seed, 0);
+		gameHandler->randomizer->setSeed(seed);
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(
+			BattleID(0), PlayerColor(0), action()));
+	}
+
 	int64_t primaryForecast() const
 	{
 		spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
@@ -183,6 +248,8 @@ TEST_F(NewHorizonsHandOfFateTest, SavedFormulaScalesOnlySpellPowerByChaosAndSpel
 TEST_F(NewHorizonsHandOfFateTest, OverkillUsesActualPrimaryHealthLossForFriendlyCollateralAndForecast)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(100, 100));
+	EXPECT_EQ(newHorizonsMagic::spellDescriptionForHero(attackerSideHero, spell,
+		MasteryLevel::NONE).find("Fate Dealer"), std::string::npos);
 	damageStack(primary, 830);
 	ASSERT_EQ(primary->getAvailableHealth(), 170);
 	const auto primaryBefore = primary->getAvailableHealth();
@@ -350,4 +417,179 @@ TEST_F(NewHorizonsHandOfFateTest, NoOtherSurvivingStackMeansNoCollateralHit)
 	EXPECT_EQ(projectedFriendly->getAvailableHealth(), 0);
 	EXPECT_EQ(primary->getAvailableHealth(), 10000)
 		<< "Detached no-spill verification must not mutate the authoritative battle";
+}
+
+TEST_F(NewHorizonsHandOfFateTest, FateDealerSingletonUsesActualOverkillLossOnlyOnce)
+{
+	enableFateDealer = true;
+	ASSERT_NO_FATAL_FAILURE(prepare(100, 100));
+	const auto help = newHorizonsMagic::spellDescriptionForHero(attackerSideHero, spell,
+		MasteryLevel::ADVANCED);
+	EXPECT_NE(help.find("Fate Dealer"), std::string::npos);
+	EXPECT_NE(help.find("independently with replacement"), std::string::npos);
+	EXPECT_NE(help.find("without a reroll"), std::string::npos);
+	damageStack(primary, 830);
+	const auto friendlyBefore = friendly->getAvailableHealth();
+	ASSERT_NO_FATAL_FAILURE(castFateDealerWithDraws({friendly}, 0, 0, 2));
+	EXPECT_EQ(primary->getAvailableHealth(), 0);
+	EXPECT_EQ(friendlyBefore - friendly->getAvailableHealth(), 85);
+	ASSERT_EQ(server.castsOf(handOfFateSpell()).size(), 1u);
+	EXPECT_EQ(server.castsOf(handOfFateSpell()).front().damage, 255);
+}
+
+TEST_F(NewHorizonsHandOfFateTest, FateDealerMixedDrawsChooseHostileEvenWhenDrawnSecond)
+{
+	enableFateDealer = true;
+	ASSERT_NO_FATAL_FAILURE(prepare(100, 1000, true));
+	const auto primaryBefore = primary->getAvailableHealth();
+	const auto friendlyBefore = friendly->getAvailableHealth();
+	const auto enemyBefore = enemyCollateral->getAvailableHealth();
+	ASSERT_NO_FATAL_FAILURE(castFateDealerWithDraws({friendly, enemyCollateral}, 0, 1));
+	const auto primaryLoss = primaryBefore - primary->getAvailableHealth();
+	EXPECT_GT(primaryLoss, 0);
+	EXPECT_EQ(friendly->getAvailableHealth(), friendlyBefore);
+	EXPECT_EQ(enemyBefore - enemyCollateral->getAvailableHealth(), primaryLoss / 2);
+}
+
+TEST_F(NewHorizonsHandOfFateTest, FateDealerDuplicateFriendlyDrawDoesNotForceAnUndrawnHostile)
+{
+	enableFateDealer = true;
+	ASSERT_NO_FATAL_FAILURE(prepare(100, 1000, true));
+	const auto primaryBefore = primary->getAvailableHealth();
+	const auto friendlyBefore = friendly->getAvailableHealth();
+	const auto enemyBefore = enemyCollateral->getAvailableHealth();
+	ASSERT_NO_FATAL_FAILURE(castFateDealerWithDraws({friendly, enemyCollateral}, 0, 0, 2));
+	EXPECT_EQ(friendlyBefore - friendly->getAvailableHealth(),
+		(primaryBefore - primary->getAvailableHealth()) / 2);
+	EXPECT_EQ(enemyCollateral->getAvailableHealth(), enemyBefore);
+}
+
+TEST_F(NewHorizonsHandOfFateTest, FateDealerSameSideDistinctDrawsUseFairCoin)
+{
+	enableFateDealer = true;
+	ASSERT_NO_FATAL_FAILURE(prepare(100, 1000, true));
+	enemyCollateral->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID()));
+	ASSERT_EQ(battle()->battleGetOwner(enemyCollateral), attackerSideHero->getOwner());
+	const auto primaryBefore = primary->getAvailableHealth();
+	const auto friendlyBefore = friendly->getAvailableHealth();
+	const auto secondBefore = enemyCollateral->getAvailableHealth();
+	ASSERT_NO_FATAL_FAILURE(castFateDealerWithDraws({friendly, enemyCollateral}, 0, 1, 2));
+	EXPECT_EQ(friendly->getAvailableHealth(), friendlyBefore);
+	EXPECT_EQ(secondBefore - enemyCollateral->getAvailableHealth(),
+		(primaryBefore - primary->getAvailableHealth()) / 2);
+}
+
+TEST_F(NewHorizonsHandOfFateTest, FateDealerSameSideFairCoinCanChooseFirstDraw)
+{
+	enableFateDealer = true;
+	ASSERT_NO_FATAL_FAILURE(prepare(100, 1000, true));
+	enemyCollateral->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID()));
+	const auto primaryBefore = primary->getAvailableHealth();
+	const auto friendlyBefore = friendly->getAvailableHealth();
+	const auto secondBefore = enemyCollateral->getAvailableHealth();
+	ASSERT_NO_FATAL_FAILURE(castFateDealerWithDraws({friendly, enemyCollateral}, 0, 1, 1));
+	EXPECT_EQ(friendlyBefore - friendly->getAvailableHealth(),
+		(primaryBefore - primary->getAvailableHealth()) / 2);
+	EXPECT_EQ(enemyCollateral->getAvailableHealth(), secondBefore);
+}
+
+TEST_F(NewHorizonsHandOfFateTest, ActiveButUnselectedFateDealerKeepsSingleUniformDraw)
+{
+	enableFateDealer = true;
+	selectFateDealer = false;
+	ASSERT_NO_FATAL_FAILURE(prepare(100, 1000, true));
+	const auto primaryBefore = primary->getAvailableHealth();
+	const auto friendlyBefore = friendly->getAvailableHealth();
+	const auto enemyBefore = enemyCollateral->getAvailableHealth();
+	// A selected dealer would prefer the second, hostile draw. An unselected
+	// dealer must retain the first uniform draw and never inspect that second.
+	ASSERT_NO_FATAL_FAILURE(castFateDealerWithDraws({friendly, enemyCollateral}, 0, 1));
+	EXPECT_EQ(friendlyBefore - friendly->getAvailableHealth(),
+		(primaryBefore - primary->getAvailableHealth()) / 2);
+	EXPECT_EQ(enemyCollateral->getAvailableHealth(), enemyBefore);
+}
+
+TEST_F(NewHorizonsHandOfFateTest, FateDealerUsesCurrentControlInsteadOfPermanentBattleSide)
+{
+	enableFateDealer = true;
+	ASSERT_NO_FATAL_FAILURE(prepare(100, 1000, true));
+	auto * convertedFriendly = addStack(BattleSide::ATTACKER,
+		creatureByName("core:pikeman"), BattleHex(3, 2), 1000);
+	const auto hypnosis = std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID());
+	enemyCollateral->addNewBonus(hypnosis);
+	convertedFriendly->addNewBonus(hypnosis);
+	ASSERT_EQ(battle()->battleGetOwner(enemyCollateral), attackerSideHero->getOwner());
+	ASSERT_NE(battle()->battleGetOwner(convertedFriendly), attackerSideHero->getOwner());
+	const auto primaryBefore = primary->getAvailableHealth();
+	const auto friendlyBefore = friendly->getAvailableHealth();
+	const auto convertedEnemyBefore = enemyCollateral->getAvailableHealth();
+	const auto convertedFriendlyBefore = convertedFriendly->getAvailableHealth();
+	ASSERT_NO_FATAL_FAILURE(castFateDealerWithDraws(
+		{friendly, enemyCollateral, convertedFriendly}, 1, 2));
+	EXPECT_EQ(friendly->getAvailableHealth(), friendlyBefore);
+	EXPECT_EQ(enemyCollateral->getAvailableHealth(), convertedEnemyBefore);
+	EXPECT_EQ(convertedFriendlyBefore - convertedFriendly->getAvailableHealth(),
+		(primaryBefore - primary->getAvailableHealth()) / 2);
+}
+
+TEST_F(NewHorizonsHandOfFateTest, FateDealerChosenImmuneHostileDoesNotReroll)
+{
+	enableFateDealer = true;
+	ASSERT_NO_FATAL_FAILURE(prepare(100, 1000, true));
+	enemyCollateral->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELL_IMMUNITY, BonusSource::OTHER, 1, BonusSourceID(),
+		BonusSubtypeID(handOfFateSpell())));
+	const auto primaryBefore = primary->getAvailableHealth();
+	const auto friendlyBefore = friendly->getAvailableHealth();
+	const auto enemyBefore = enemyCollateral->getAvailableHealth();
+	ASSERT_NO_FATAL_FAILURE(castFateDealerWithDraws({friendly, enemyCollateral}, 0, 1));
+	EXPECT_EQ(friendly->getAvailableHealth(), friendlyBefore);
+	EXPECT_EQ(enemyCollateral->getAvailableHealth(), enemyBefore);
+	ASSERT_EQ(server.castsOf(handOfFateSpell()).size(), 1u);
+	EXPECT_EQ(server.castsOf(handOfFateSpell()).front().damage,
+		primaryBefore - primary->getAvailableHealth());
+}
+
+TEST_F(NewHorizonsHandOfFateTest, FateDealerChosenResistantHostileDoesNotReroll)
+{
+	enableFateDealer = true;
+	ASSERT_NO_FATAL_FAILURE(prepare(100, 1000, true));
+	enemyCollateral->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MAGIC_RESISTANCE, BonusSource::OTHER, 100, BonusSourceID()));
+	const auto primaryBefore = primary->getAvailableHealth();
+	const auto friendlyBefore = friendly->getAvailableHealth();
+	const auto enemyBefore = enemyCollateral->getAvailableHealth();
+	ASSERT_NO_FATAL_FAILURE(castFateDealerWithDraws({friendly, enemyCollateral}, 0, 1));
+	EXPECT_EQ(friendly->getAvailableHealth(), friendlyBefore);
+	EXPECT_EQ(enemyCollateral->getAvailableHealth(), enemyBefore);
+	ASSERT_EQ(server.castsOf(handOfFateSpell()).size(), 1u);
+	EXPECT_EQ(server.castsOf(handOfFateSpell()).front().damage,
+		primaryBefore - primary->getAvailableHealth());
+}
+
+TEST_F(NewHorizonsHandOfFateTest, FateDealerEmptyPoolLeavesDetachedPrimaryDamageUnchanged)
+{
+	enableFateDealer = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	HandOfFatePredictionEnvironment environment(gameState());
+	HypotheticBattle predicted(&environment, callback);
+	auto projectedFriendly = predicted.getForUpdate(friendly->unitId());
+	int64_t lethalDamage = projectedFriendly->getAvailableHealth();
+	projectedFriendly->damage(lethalDamage);
+	const auto * projectedPrimary = predicted.battleGetUnitByID(primary->unitId());
+	ASSERT_NE(projectedPrimary, nullptr);
+	const auto primaryBefore = projectedPrimary->getAvailableHealth();
+	const auto forecast = primaryForecast();
+	spells::BattleCast cast(&predicted, attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&cast);
+	spells::Target aim;
+	aim.emplace_back(projectedPrimary);
+	mechanics->castEval(predicted.getServerCallback(), aim);
+	EXPECT_EQ(primaryBefore - predicted.battleGetUnitByID(primary->unitId())->getAvailableHealth(), forecast);
+	EXPECT_EQ(projectedFriendly->getAvailableHealth(), 0);
+	EXPECT_EQ(primary->getAvailableHealth(), 10000);
 }

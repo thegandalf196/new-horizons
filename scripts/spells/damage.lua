@@ -6,6 +6,8 @@ Script.__index = Script
 local HAVOC_CONDUCTOR_SKILL = "new-horizons:havocMagic"
 local HAVOC_CONDUCTOR_PERK = "new-horizons:havocMagic.conductor"
 local SOUL_REAPER_SPELL = "new-horizons:soulReaper"
+local CHAOS_MAGIC_SKILL = "new-horizons:chaosMagic"
+local FATE_DEALER_PERK = "new-horizons:chaosMagic.fateDealer"
 local HAND_OF_FATE_COLLATERAL_TEXT = "new-horizons.combat.handOfFate.collateral"
 local HAND_OF_FATE_BLOCKED_TEXT = "new-horizons.combat.handOfFate.blocked"
 
@@ -156,6 +158,24 @@ local function applyHandOfFateCollateral(self, mechanics, server, battle, primar
 	-- Draw before inspecting defenses: immunity or spell resistance cannot
 	-- change who Fate chose, and a rejected hit never causes a reroll.
 	local recipient = candidates[server:rngInt(1, #candidates)]
+	local hero = mechanics:getHeroCaster()
+	if mechanics:usesNewHorizonsMagicV3() and hero
+		and mechanics:getSpell():getJsonKey() == "new-horizons:handOfFate"
+		and hero:hasActivePerk(CHAOS_MAGIC_SKILL, FATE_DEALER_PERK) then
+		-- Two independent uniform draws with replacement. Inspect current
+		-- control, not original battle side; defenses still do not affect draws.
+		local second = candidates[server:rngInt(1, #candidates)]
+		-- Explicit current-control query: ordinary ownerMatches retains its
+		-- existing polarity/original-side semantics for other spell consumers.
+		local firstHostile = not mechanics:currentControllerIsCaster(recipient)
+		local secondHostile = not mechanics:currentControllerIsCaster(second)
+		if firstHostile ~= secondHostile then
+			if not firstHostile then recipient = second end
+		elseif server:rngInt(1, 2) == 2 then
+			-- Equal-side draws use a fair coin even when both identify one stack.
+			recipient = second
+		end
+	end
 	local spillBase = math.floor(actualPrimaryDamage / 2)
 	local recipientName = recipient:getCreature():getNameTextID(recipient:getCount())
 	if not self:isValidTarget(mechanics, recipient)

@@ -1,5 +1,33 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-09 — Fate Dealer pre-build fixture and ruleset parity
+
+Initial review suggested scaling fixture power by the divisor. Native evidence
+disproves that suggestion for this saved formula: coefficient25/divisor10 already
+produces2.5 per raw Spell Power. Keep raw100 and original320/541 assertions;
+verify the actual formula rather than applying a generic scaling assumption.
+Load the shipped active perk registry unchanged rather than inject activation.
+The canonical Hand of Fate AI helper accepts supported older rules too; its
+new two-draw perk weighting must separately require v3, like runtime Lua.
+Preserve older uniform selection. These are pre-build findings, not failed
+native runs or changes to production damage coefficients.
+
+Linked6765 exits0, but exact-pair native runtime10/17 and AI2/5 pass, zero skips.
+Original logs/XML remain in build/nh-fate-dealer-native.oy8R. Swapped-control
+tests reveal a production gap: ordinary ownerMatches uses initial side ownership,
+not current control. Add an explicit Lua current-controller query and use the
+same battleGetOwner/caster-color comparison in Fate Dealer AI; do not alter
+ordinary targeting globally or weaken the controlled H2/F1 assertions. The
+resistance fixture must respect the canonical75% cap and verify the residual25%
+chance; use explicit immunity for a zero-value protected draw slot. A valid v2
+snapshot must retain the required core spell roster, not only Hand of Fate.
+Corrected source is frozen for review/relink; accepted coverage remains unchanged.
+
+Retry46720 exits0 and final native22/22 passes: runtime17 in5.471s, AI5 in1.888s,
+zero failures/errors/skips. Exact XML and source/private hashes are verified;
+initial failed pair is retained separately. The original damage/controlled-side
+assertions pass without weakening; ordinary spell targeting remains unchanged.
+
 ### 2026-10-09 — Polymorph fixture concrete effect packet
 
 Build63872 terminates1 while compiling the lifecycle/protocol fixture:

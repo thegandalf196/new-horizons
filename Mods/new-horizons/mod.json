@@ -3377,7 +3377,7 @@
 				"schemaVersion": 1,
 				"rulesetVersion": 2,
 				"sourceDocument": "docs/design-sources/New Horizons.md",
-				"sourceSha256": "fec0c61c487df023e66c1055ab1342ab5eb39bf0d2f08279ec627239e726258c",
+				"sourceSha256": "c1dbced844ca7464d2b8a99323e60e7d85e6dcc168b9f6eebe1f3d1a27298502",
 				"maxSkillChoices": 2,
 				"maxPerkChoices": 2,
 				"maxPerksPerSkill": 3,
@@ -5192,10 +5192,10 @@
 								"id": "new-horizons:chaosMagic.fateDealer",
 								"name": "Fate Dealer",
 								"requires": "advanced",
-								"description": "Hand of Fate generates two random legal spill targets. If exactly one of them is hostile to the caster, that hostile stack automatically receives the spill damage; otherwise one of the two is selected randomly.",
+								"description": "Hand of Fate independently draws two random legal spill targets with replacement. If exactly one of them is hostile to the caster, that hostile stack automatically receives the spill damage; otherwise a fair coin selects one of the two draws, including duplicates.",
 								"effect": {
-									"status": "planned",
-									"description": "Hand of Fate generates two random legal spill targets. If exactly one of them is hostile to the caster, that hostile stack automatically receives the spill damage; otherwise one of the two is selected randomly."
+									"status": "active",
+									"description": "Hand of Fate independently draws two random legal spill targets with replacement. If exactly one of them is hostile to the caster, that hostile stack automatically receives the spill damage; otherwise a fair coin selects one of the two draws, including duplicates."
 								}
 							},
 							{

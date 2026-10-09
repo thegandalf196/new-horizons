@@ -863,6 +863,17 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 			result += " Shapeshifter draws two forms independently with replacement, keeping the lower whole-stack "
 				"Army Value after exact HP conversion; ties use canonical creature order.";
 	}
+	else if(hero && spell->getJsonKey() == "new-horizons:handOfFate"
+		&& rulesActive(hero->getMagicRules())
+		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		&& spellAllowedBySavedRoster(hero->getMagicRules(), spell->getId())
+		&& hero->hasActivePerk("new-horizons:chaosMagic", "new-horizons:chaosMagic.fateDealer"))
+	{
+		result += " Fate Dealer draws two spill candidates independently with replacement. "
+			"If exactly one is hostile to your current side, it receives the spill; otherwise a fair coin "
+			"chooses between the two draws, including duplicates. The selected recipient's own defenses "
+			"still apply, without a reroll or a second hit.";
+	}
 	else if(hero && spell->getId() == SpellID::FORGETFULNESS
 		&& rulesActive(hero->getMagicRules())
 		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION

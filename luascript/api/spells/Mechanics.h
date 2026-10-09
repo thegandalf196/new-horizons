@@ -29,6 +29,7 @@ namespace scripting::api
 
 		static bool ownerMatchesUnit(const ::spells::Mechanics & m, const battle::Unit & unit);
 		static bool ownerIsSameAsUnit(const ::spells::Mechanics & m, const battle::Unit & unit);
+		static bool currentControllerIsCaster(const ::spells::Mechanics & m, const battle::Unit & unit);
 		static bool isProtectedAreaCenter(const ::spells::Mechanics & m, const battle::Unit & unit, BattleHex centerHex);
 		static const ::spells::Spell * getEffectSpell(const ::spells::Mechanics & m);
 		static bool isNatureSpell(const ::spells::Mechanics & m);

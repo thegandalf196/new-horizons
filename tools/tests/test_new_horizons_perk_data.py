@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
     "new-horizons:chaosMagic.shapeshifter",
+    "new-horizons:chaosMagic.fateDealer",
     "new-horizons:chaosMagic.pandemoniumMaster",
     "new-horizons:logistics.pursuitMarch",
     "new-horizons:natureMagic.worldroot",

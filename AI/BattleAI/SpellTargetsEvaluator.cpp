@@ -2582,7 +2582,7 @@ SpellTargetEvaluator::handOfFateExpectedDamageValue(const Mechanics * spellMecha
 			static_cast<uint64_t>(actualPrimaryDamage), damageCache, battleState) * primaryApplicationChance;
 	}
 
-	// Every living, on-field, non-turret stack remains in the uniform pool,
+	// Every living, on-field, non-turret stack remains in the draw pool,
 	// including stacks that will reject the secondary packet (for example, a
 	// Time Stopped or immune stack).  Rejection contributes zero value but never
 	// changes the probability of another recipient being chosen.
@@ -2597,6 +2597,19 @@ SpellTargetEvaluator::handOfFateExpectedDamageValue(const Mechanics * spellMecha
 	const auto spillRawDamage = actualPrimaryDamage / 2;
 	if(collateralPool.empty() || spillRawDamage <= 0 || primaryApplicationChance <= 0.0f)
 		return result;
+	const auto * hero = spellMechanics->getHeroCaster();
+	const bool fateDealer = spellMechanics->usesNewHorizonsMagicV3() && hero && hero->hasActivePerk(
+		"new-horizons:chaosMagic", "new-horizons:chaosMagic.fateDealer");
+	const auto hostileToCaster = [&](const battle::Unit * recipient)
+	{
+		return spellMechanics->battle()->battleGetOwner(recipient) != spellMechanics->getCasterColor();
+	};
+	const auto hostileCount = std::ranges::count_if(collateralPool, [&](const battle::Unit * recipient)
+	{
+		return hostileToCaster(recipient);
+	});
+	const auto friendlyCount = collateralPool.size() - hostileCount;
+	const double poolSize = static_cast<double>(collateralPool.size());
 
 	float expectedHostileSpillValue = 0.0f;
 	float expectedFriendlySpillValue = 0.0f;
@@ -2627,16 +2640,20 @@ SpellTargetEvaluator::handOfFateExpectedDamageValue(const Mechanics * spellMecha
 		const float recipientValue = AttackPossibility::calculateDamageReduce(nullptr, recipient,
 			static_cast<uint64_t>(actualRecipientDamage), damageCache, battleState)
 			* spellApplicationChance(spellMechanics, recipient);
+		// Selection is relative to the caster, scoring relative to the evaluating
+		// player. They need not be the same perspective on a controlled stack.
+		const double probability = fateDealer
+			? static_cast<double>(hostileToCaster(recipient)
+				? hostileCount + 2 * friendlyCount : friendlyCount) / (poolSize * poolSize)
+			: 1.0 / poolSize;
 		if(battle->battleGetOwner(recipient) == scoringPlayer)
-			expectedFriendlySpillValue += recipientValue;
+			expectedFriendlySpillValue += recipientValue * probability;
 		else
-			expectedHostileSpillValue += recipientValue;
+			expectedHostileSpillValue += recipientValue * probability;
 	}
 
-	const auto primaryHitProbability = primaryApplicationChance
-		/ static_cast<float>(collateralPool.size());
-	result.hostileDamageValue += expectedHostileSpillValue * primaryHitProbability;
-	result.friendlyDamageValue += expectedFriendlySpillValue * primaryHitProbability;
+	result.hostileDamageValue += expectedHostileSpillValue * primaryApplicationChance;
+	result.friendlyDamageValue += expectedFriendlySpillValue * primaryApplicationChance;
 	return result;
 }
 

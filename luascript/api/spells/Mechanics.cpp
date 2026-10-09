@@ -50,6 +50,11 @@ bool MechanicsProxy::ownerIsSameAsUnit(const Mechanics & m, const battle::Unit &
 	return m.ownerMatches(&unit, true);
 }
 
+bool MechanicsProxy::currentControllerIsCaster(const Mechanics & m, const battle::Unit & unit)
+{
+	return m.battle()->battleGetOwner(&unit) == m.getCasterColor();
+}
+
 bool MechanicsProxy::isProtectedAreaCenter(const Mechanics & m, const battle::Unit & unit, BattleHex centerHex)
 {
 	if(!m.usesNewHorizonsMagic() || !centerHex.isValid())
@@ -401,6 +406,9 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 	R.function<&ownerIsSameAsUnit>("ownerIsSameAs",
 		{{"unit", "Unit whose ownership is being compared against the caster's."}}, {},
 		"True if the given unit is owned by the same player as the caster, independent of spell polarity.");
+	R.function<&currentControllerIsCaster>("currentControllerIsCaster",
+		{{"unit", "Unit whose current controller is compared against the caster."}}, {},
+		"Compares current combat control, including control effects, independently of spell polarity and initial battle side.");
 	R.function<&MechanicsProxy::isProtectedAreaCenter>("isProtectedAreaCenter",
 		{{"unit", "Unit whose identity is compared with the original area center."},
 		 {"centerHex", "Original targeted hex used to resolve the area center."}}, {},
