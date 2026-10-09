@@ -49,6 +49,7 @@
 #include "lib/spells/NewHorizonsBlink.h"
 #include "../../lib/spells/NewHorizonsVengefulVines.h"
 #include "../../lib/spells/NewHorizonsNaturesWrath.h"
+#include "../../lib/spells/NewHorizonsPandemonium.h"
 #include "../../lib/spells/OrientedSpellPattern.h"
 #include "../../lib/spells/effects/Effect.h"
 #include "../../lib/spells/Problem.h"
@@ -58,6 +59,7 @@
 #include "../../lib/texts/CGeneralTextHandler.h"
 
 #include <set>
+#include <tuple>
 
 struct TextReplacement
 {
@@ -105,6 +107,8 @@ struct FriendlyFirePreview
 {
 	newHorizonsFriendlyFire::ConfirmationSnapshot snapshot;
 	std::vector<const CStack *> recipients;
+	std::string pandemoniumText;
+	std::vector<std::tuple<uint32_t, int64_t, size_t, int64_t>> pandemoniumState;
 };
 
 std::optional<FriendlyFirePreview> buildFriendlyFirePreview(BattleInterface & owner,
@@ -118,7 +122,8 @@ std::optional<FriendlyFirePreview> buildFriendlyFirePreview(BattleInterface & ow
 	const auto * battleState = battle ? battle->getBattle() : nullptr;
 	const auto * hero = owner.currentHero();
 	const auto * spell = action.spell.toSpell();
-	if(!battle || !battleState || !hero || !spell || !spell->isDamage())
+	if(!battle || !battleState || !hero || !spell
+		|| (!spell->isDamage() && spell->getJsonKey() != newHorizonsPandemonium::SPELL_KEY))
 		return std::nullopt;
 
 	const auto side = battle->battleGetMySide();
@@ -167,6 +172,43 @@ std::optional<FriendlyFirePreview> buildFriendlyFirePreview(BattleInterface & ow
 	for(const auto * stack : result.recipients)
 		if(stack)
 			result.snapshot.friendlyUnitIDs.push_back(stack->unitId());
+	if(newHorizonsPandemonium::enabled(*mechanics))
+	{
+		result.pandemoniumText = LIBRARY->generaltexth->translate(
+			"new-horizons.combat.pandemonium.previewHeader");
+		const auto spellPlaceholder = result.pandemoniumText.find("%SPELL");
+		if(spellPlaceholder != std::string::npos)
+			result.pandemoniumText.replace(spellPlaceholder, 6, spell->getNameTranslated());
+		// Capture all counts before projecting any recipient. Never count cleanup
+		// or the consequences of an earlier stack's destruction as new debuffs.
+		for(const auto & captured : newHorizonsPandemonium::snapshot(*mechanics))
+		{
+			const auto * unit = captured.unit;
+			const auto count = captured.statuses.count();
+			const auto damage = std::min(unit->getAvailableHealth(),
+				newHorizonsPandemonium::damage(*mechanics, unit, count));
+			const auto remaining = unit->getAvailableHealth() - damage;
+			const auto kills = unit->getCount() - (remaining + unit->getMaxHealth() - 1) / unit->getMaxHealth();
+			result.pandemoniumState.emplace_back(unit->unitId(), unit->getAvailableHealth(), count, damage);
+			auto line = LIBRARY->generaltexth->translate("new-horizons.combat.pandemonium.previewRecipient");
+			const auto * stack = dynamic_cast<const CStack *>(unit);
+			const std::vector<std::pair<std::string, std::string>> replacements{
+				{"%SIDE", LIBRARY->generaltexth->translate(mechanics->ownerMatches(unit, true)
+					? "new-horizons.combat.pandemonium.friendly" : "new-horizons.combat.pandemonium.enemy")},
+				{"%STACK", stack ? stack->getName() : std::to_string(unit->unitId())},
+				{"%DEBUFFS", std::to_string(count)}, {"%DAMAGE", std::to_string(damage)},
+				{"%KILLS", std::to_string(kills)}};
+			for(const auto & replacement : replacements)
+			{
+				const auto position = line.find(replacement.first);
+				if(position != std::string::npos)
+					line.replace(position, replacement.first.size(), replacement.second);
+			}
+			result.pandemoniumText += "\n" + line;
+		}
+		result.pandemoniumText += "\n\n" + LIBRARY->generaltexth->translate(
+			"new-horizons.combat.pandemonium.confirm");
+	}
 	return result;
 }
 
@@ -642,14 +684,15 @@ bool BattleActionsController::submitHeroSpellAction(const BattleAction & action)
 		return false;
 
 	const auto preview = buildFriendlyFirePreview(owner, action, castingSession);
-	if(!preview || preview->recipients.empty())
+	if(!preview || (preview->recipients.empty() && preview->pandemoniumText.empty()))
 	{
 		owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), action);
 		return true;
 	}
 
 	const auto snapshot = preview->snapshot;
-	const auto message = friendlyFireConfirmationText(action.spell.toSpell(), preview->recipients);
+	const auto message = preview->pandemoniumText.empty()
+		? friendlyFireConfirmationText(action.spell.toSpell(), preview->recipients) : preview->pandemoniumText;
 	auto gate = std::make_shared<newHorizonsFriendlyFire::ConfirmationGate>(snapshot);
 	std::weak_ptr<int> weakLifetime = friendlyFireCallbackLifetime;
 
@@ -662,7 +705,8 @@ bool BattleActionsController::submitHeroSpellAction(const BattleAction & action)
 	};
 
 	owner.curInt->showYesNoDialog(message,
-		[this, weakLifetime, gate, action, snapshot]()
+		[this, weakLifetime, gate, action, snapshot, pandemoniumState = preview->pandemoniumState,
+			pandemoniumText = preview->pandemoniumText]()
 		{
 			const auto lifetime = weakLifetime.lock();
 			if(!lifetime || !gate->isPending())
@@ -678,7 +722,9 @@ bool BattleActionsController::submitHeroSpellAction(const BattleAction & action)
 			}
 
 			const auto current = buildFriendlyFirePreview(owner, action, castingSession);
-			if(!current || current->recipients.empty() || !gate->confirm(current->snapshot))
+			if(!current || (current->recipients.empty() && current->pandemoniumText.empty())
+				|| current->pandemoniumState != pandemoniumState || current->pandemoniumText != pandemoniumText
+				|| !gate->confirm(current->snapshot))
 			{
 				gate->cancel();
 				if(castingSession == snapshot.castingSession)

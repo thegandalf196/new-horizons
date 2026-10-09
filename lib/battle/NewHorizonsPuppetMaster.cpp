@@ -9,6 +9,7 @@
 #include "StdInc.h"
 
 #include "NewHorizonsPuppetMaster.h"
+#include "NewHorizonsDebuffStatuses.h"
 
 #include "CBattleInfoEssentials.h"
 #include "Unit.h"
@@ -81,6 +82,7 @@ Bonus controlMarker(SpellID spell, PlayerColor caster)
 		BonusSource::SPELL_EFFECT, 1, BonusSourceID(spell));
 	marker.spellCasterOwner = caster;
 	marker.description.appendRawString("Puppet Master");
+	newHorizonsDebuffStatuses::applyProducerMetadata(marker);
 	return marker;
 }
 

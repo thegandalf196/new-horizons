@@ -2,6 +2,30 @@
 
 Updated: 2026-10-09
 
+Pandemonium and Pandemonium Master are source/native accepted after linked3540.
+Principal25/25 passes in5.621s, zero skips/failures; root checks XML and exact
+source/private engine hashes. Receipt: build/nh-pandemonium-native.aatz4JzE/
+receipt.md. Paid whole-battle friendly fire, D0, rational rank/Master scaling,
+normal defenses/resistance, logical producer deduplication, typed legacy
+adapters, immutable snapshots, health/Poison packet and actual AI with Orders
+pass. Data17/17, module parity, privacy and independent source review pass.
+Combat64->65/67; perks249->250/310, generic174->175/220, faction75/90 unchanged;
+planned61->60 (45 generic,15 faction). Orders8/8, Skills31/31 and ranks93/93
+are unchanged. Bespoke art stays Not done; no rendered, NHART or launcher claim.
+Phase2 retains broader cleanup/casualty/control interactions, legacy lookup
+measurement and nonlinear resistance/AI valuation. Next: Mire Shaper and
+Miracle Worker, followed by Polymorph's missing principal paths. Earlier notes
+below describe past candidates, not current blockers.
+
+Pandemonium/Pandemonium Master integration is in progress. Shared pre-cleanup
+debuff snapshots, exact power, normal friendly-fire defenses and detached AI/UI
+consumers are implemented; producer metadata now includes logical family
+identities for mass variants. Runtime-only and historical saved debuffs require
+the shared authored compatibility adapter before activation can be accepted.
+Focused native fixtures and shipped registration are being integrated. Accepted
+counts remain64/67 combat spells and249/310 perks; no rendered or playable
+acceptance, bespoke artwork, NHART change or launcher promotion is implied.
+
 Nature's Wrath, Worldroot and Pursuit March are source/native accepted after
 linked14275. Principal29/29 passes with zero skips: Nature16/16 in4.760s and
 Pursuit13/13 in3.881s. Root checks both XML files and exact engine hashes.

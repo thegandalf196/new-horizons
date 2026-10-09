@@ -63,7 +63,9 @@ function Script:apply(mechanics, server, target)
 			turns = turns,
 			sourceType = ENUM.BonusSource.spellEffect,
 			sourceID = SPELL_KEY,
-			stacking = SPELL_KEY
+			stacking = SPELL_KEY,
+			statusTags = not friendly and {"DEBUFF"} or nil,
+			statusIdentity = not friendly and SPELL_KEY or nil
 		}, false)
 		server:addUnitBonus(battle, unit, {
 			type = "NONE",
@@ -73,6 +75,8 @@ function Script:apply(mechanics, server, target)
 			sourceType = ENUM.BonusSource.spellEffect,
 			sourceID = SPELL_KEY,
 			hidden = true,
+			statusTags = not friendly and {"DEBUFF"} or nil,
+			statusIdentity = not friendly and SPELL_KEY or nil,
 			description = friendly
 				and "Spell Lock: preserve beneficial magic and freeze its duration"
 				or "Spell Lock: preserve hostile magic and freeze its duration"

@@ -1016,6 +1016,19 @@
 						],
 						"active": true
 					},
+					"new-horizons:pandemonium": {
+						"schools": [
+							"new-horizons:chaos"
+						],
+						"level": 5,
+						"costs": [
+							22,
+							22,
+							22,
+							22
+						],
+						"active": true
+					},
 					"new-horizons:blink": {
 						"schools": [
 							"new-horizons:chaos"
@@ -5188,7 +5201,7 @@
 								"requires": "expert",
 								"description": "Pandemonium deals +25% damage per counted debuff.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Pandemonium deals +25% damage per counted debuff."
 								}
 							},
@@ -9541,6 +9554,11 @@
 		"new-horizons.combat.chainLightning.previewHeader": "%SPELL: damage/kills (no resistance assumed)",
 		"new-horizons.combat.naturesWrath.previewHeader": "%SPELL: damage/kills or +HP healing (no resistance assumed)",
 		"new-horizons.combat.naturesWrath.healed": "Nature's Wrath restores %d health to %s.",
+		"new-horizons.combat.pandemonium.previewHeader": "%SPELL: counted debuffs and damage/kills (no resistance assumed)",
+		"new-horizons.combat.pandemonium.previewRecipient": "%SIDE %STACK: D=%DEBUFFS, %DAMAGE/%KILLS",
+		"new-horizons.combat.pandemonium.friendly": "Friendly",
+		"new-horizons.combat.pandemonium.enemy": "Enemy",
+		"new-horizons.combat.pandemonium.confirm": "Cast anyway?",
 		"new-horizons.combat.phantomArmy.preview": "%s (count: %s); Phantom Integrity: %s; landing: %s; hex footprint: %s.",
 		"new-horizons.combat.phantomArmy.noLegalPlacement": "No legal placement for the Phantom stack.",
 		"new-horizons.combat.handOfFate.collateral": "Hand of Fate's spill chooses %s: %d base damage becomes %d after defenses, dealing %d actual damage.",

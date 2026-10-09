@@ -21,6 +21,8 @@
 						"battleLogPlural" : "@core.genrltxt.559",
 						"bonus" : {
 							"notActive" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "core:stoneGaze",
 								"val" : 0,
 								"type" : "NOT_ACTIVE",
 								"subtype" : "spell.stoneGaze",
@@ -30,6 +32,8 @@
 								]
 							},
 							"noRetaliation" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "core:stoneGaze",
 								"val" : 0,
 								"type" : "NO_RETALIATION",
 								"duration" : [
@@ -38,6 +42,8 @@
 								]
 							},
 							"generalDamageReduction" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "core:stoneGaze",
 								"type" : "GENERAL_DAMAGE_REDUCTION",
 								"val" : 50,
 								"duration" : [
@@ -80,12 +86,16 @@
 						"battleLogPlural" : "@core.genrltxt.562",
 						"bonus" : {
 							"poison" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "poison",
 								"val" : 30,
 								"type" : "POISON",
 								"valueType" : "INDEPENDENT_MAX",
 								"duration" : "N_TURNS"
 							},
 							"stackHealth" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "poison",
 								"val" : -10,
 								"type" : "STACK_HEALTH",
 								"valueType" : "PERCENT_TO_ALL",
@@ -165,6 +175,8 @@
 						"battleLogPlural" : "@core.genrltxt.554",
 						"bonus" : {
 							"physicalAffliction" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "core:disease",
 								"type" : "PHYSICAL_AFFLICTION",
 								"val" : 0,
 								"duration" : "N_TURNS",
@@ -172,12 +184,16 @@
 								"addInfo" : { "kind" : "disease" }
 							},
 							"attack" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "core:disease",
 								"val" : -2,
 								"type" : "PRIMARY_SKILL",
 								"subtype" : "attack",
 								"duration" : "N_TURNS"
 							},
 							"defence" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "core:disease",
 								"val" : -2,
 								"type" : "PRIMARY_SKILL",
 								"subtype" : "defence",
@@ -221,6 +237,8 @@
 						"battleLogPlural" : "@core.genrltxt.564",
 						"bonus" : {
 							"notActive" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "core:paralyze",
 								"val" : 0,
 								"type" : "NOT_ACTIVE",
 								"subtype" : "spell.paralyze",
@@ -230,6 +248,8 @@
 								]
 							},
 							"noRetaliation" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "core:paralyze",
 								"val" : 0,
 								"type" : "NO_RETALIATION",
 								"duration" : [
@@ -238,6 +258,8 @@
 								]
 							},
 							"generalAttackReduction" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "core:paralyze",
 								"val" : 75,
 								"type" : "GENERAL_ATTACK_REDUCTION",
 								"duration" : [
@@ -281,6 +303,8 @@
 						"battleLogPlural" : "@core.genrltxt.552",
 						"bonus" : {
 							"stackHealth" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "core:age",
 								"val" : -50,
 								"type" : "STACK_HEALTH",
 								"valueType" : "PERCENT_TO_ALL",
@@ -446,6 +470,8 @@
 						"ignoreImmunity" : true,
 						"bonus" :{
 							"primarySkill" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "core:acidBreath",
 								"val" : -3,
 								"type" : "PRIMARY_SKILL",
 								"subtype" : "defence",

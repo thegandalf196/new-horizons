@@ -325,6 +325,14 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 	R.method<&Mechanics::getNaturesWrathRoute>("getNaturesWrathRoute",
 		{{"first", "Caster-selected first living conductor."}}, {},
 		"Returns the immutable ordered Nature's Wrath route, with stable unit-ID proximity ties.");
+	R.method<&Mechanics::getPandemoniumTargets>("getPandemoniumTargets", {},
+		"Returns every living battlefield stack, including allies, in stable unit-ID order.");
+	R.method<&Mechanics::getPandemoniumDebuffCount>("getPandemoniumDebuffCount",
+		{{"recipient", "Stack whose logical DEBUFF identities are counted."}}, {},
+		"Returns the pre-cleanup cast snapshot count, or a pure current count outside execution.");
+	R.method<&Mechanics::getPandemoniumDamage>("getPandemoniumDamage",
+		{{"recipient", "Friendly or hostile damage recipient."}, {"capturedCount", "Immutable pre-effect debuff count."}}, {},
+		"Returns defense-adjusted Pandemonium damage without drawing resistance.");
 	R.method<&Mechanics::getNaturesWrathHopPower>("getNaturesWrathHopPower",
 		{{"hopIndex", "Zero-based position in the captured route."}}, {},
 		"Returns exact rank- and Worldroot-scaled hop power, floored once after geometric attenuation.");

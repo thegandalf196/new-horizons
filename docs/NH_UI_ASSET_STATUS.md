@@ -1,5 +1,12 @@
 # New Horizons UI and asset status register
 
+Pandemonium source checkpoint: **Not done** bespoke spell artwork. The
+functional registration references external original Armageddon icons, hit
+effect and sound as temporary assets, without extracting or repackaging them.
+Per-recipient debuff counts and damage/kills use the existing confirmation
+dialog; rendered acceptance is pending. No NHART update or artwork approval
+is claimed by the source/native implementation slice.
+
 Nature's Wrath source checkpoint: **Not done** bespoke spell artwork. The
 functional spell temporarily references the player's original Chain Lightning
 icons/effect and sound; no extracted pixels or new pack entries are shipped.

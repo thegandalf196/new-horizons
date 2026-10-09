@@ -113,6 +113,8 @@ function Script:apply(mechanics, server, target)
 			sourceType = ENUM.BonusSource.spellEffect,
 			sourceID = spellKey,
 			stacking = spellKey,
+			statusTags = {"DEBUFF"},
+			statusIdentity = spellKey,
 			addInfo = {
 				mdrPenetration = mechanics:getCapturedMdrPenetration(),
 				primaryUnitId = primary:unitID(),

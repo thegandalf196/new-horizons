@@ -222,7 +222,8 @@ function Script:convertBonuses(mechanics)
 			turns = forgetfulnessDuration,
 			sourceType = "SPELL_EFFECT",
 			sourceID = spellKey,
-			statusTags = {"DEBUFF"}
+			statusTags = {"DEBUFF"},
+			statusIdentity = "core:forgetfulness"
 		}
 	end
 
@@ -234,7 +235,9 @@ function Script:convertBonuses(mechanics)
 			valueType = "INDEPENDENT_MIN",
 			turns = misfortuneDuration,
 			sourceType = "SPELL_EFFECT",
-			sourceID = spellKey
+			sourceID = spellKey,
+			statusTags = {"DEBUFF"},
+			statusIdentity = "core:misfortune"
 		}
 	end
 

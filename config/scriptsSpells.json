@@ -410,6 +410,19 @@
 			"additionalProperties" : false
 		}
 	},
+	"pandemonium" : {
+		"implements" : "spellEffect",
+		"script" : "spells/pandemonium",
+		"patches" : [ ],
+		"schema" : {
+			"properties" : {
+				"type" : {},
+				"indirect" : {},
+				"optional" : {}
+			},
+			"additionalProperties" : false
+		}
+	},
 	"naturesWrath" : {
 		"implements" : "spellEffect",
 		"script" : "spells/naturesWrath",

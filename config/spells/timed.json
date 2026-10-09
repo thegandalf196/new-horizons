@@ -420,6 +420,8 @@
 				"targetModifier":{"smart":true},
 				"effects" : {
 					"alwaysMinimumDamage" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:curse",
 						"val" : 0,
 						"type" : "ALWAYS_MINIMUM_DAMAGE",
 						"valueType" : "INDEPENDENT_MAX",
@@ -430,6 +432,8 @@
 			"advanced":{ 
 				"effects" : {
 					"alwaysMinimumDamage" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:curse",
 						"val" : 1
 					}
 				}
@@ -438,6 +442,8 @@
 				"range" : "X",
 				"effects" : {
 					"alwaysMinimumDamage" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:curse",
 						"val" : 1
 					}
 				}
@@ -577,6 +583,8 @@
 				"targetModifier":{"smart":true},
 				"effects" : {
 					"primarySkill" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:weakness",
 						"type" : "PRIMARY_SKILL",
 						"subtype" : "attack",
 						"val" : -3,
@@ -588,6 +596,8 @@
 			"advanced":{
 				"effects" : {
 					"primarySkill" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:weakness",
 						"val" : -6
 					}
 				}
@@ -596,6 +606,8 @@
 				"range" : "X",
 				"effects" : {
 					"primarySkill" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:weakness",
 						"val" : -6
 					}
 				}
@@ -668,6 +680,8 @@
 				"targetModifier":{"smart":true},
 				"cumulativeEffects" : {
 					"primarySkill" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:disruptingRay",
 						"type" : "PRIMARY_SKILL",
 						"subtype" : "defence",
 						"val" : -3,
@@ -679,6 +693,8 @@
 			"advanced":{
 				"cumulativeEffects" : {
 					"primarySkill" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:disruptingRay",
 						"val" : -4
 					}
 				}
@@ -686,6 +702,8 @@
 			"expert":{
 				"cumulativeEffects" : {
 					"primarySkill" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:disruptingRay",
 						"val" : -5
 					}
 				}
@@ -832,6 +850,8 @@
 				"targetModifier":{"smart":true},
 				"effects" : {
 					"morale" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:sorrow",
 						"type" : "MORALE",
 						"val" : -1,
 						"duration" : "N_TURNS"
@@ -841,6 +861,8 @@
 			"advanced":{
 				"effects" : {
 					"morale" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:sorrow",
 						"val" : -2
 					}
 				}
@@ -849,6 +871,8 @@
 				"range" : "X",
 				"effects" : {
 					"morale" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:sorrow",
 						"val" : -2
 					}
 				}
@@ -938,6 +962,8 @@
 				"targetModifier":{"smart":true},
 				"effects" : {
 					"luck" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:misfortune",
 						"type" : "LUCK",
 						"val" : -1,
 						"duration" : "N_TURNS"
@@ -947,6 +973,8 @@
 			"advanced":{
 				"effects" : {
 					"luck" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:misfortune",
 						"val" : -2
 					}
 				}
@@ -955,6 +983,8 @@
 				"range" : "X",
 				"effects" : {
 					"luck" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:misfortune",
 						"val" : -2
 					}
 				}
@@ -1040,6 +1070,8 @@
 				"targetModifier":{"smart":true},
 				"effects" : {
 					"stacksSpeed" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:slow",
 						"type" : "STACKS_SPEED",
 						"val" : -25,
 						"valueType" : "PERCENT_TO_ALL",
@@ -1050,6 +1082,8 @@
 			"advanced":{
 				"effects" : {
 					"stacksSpeed" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:slow",
 						"val" : -50
 					}
 				}
@@ -1058,6 +1092,8 @@
 				"range" : "X",
 				"effects" : {
 					"stacksSpeed" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:slow",
 						"val" : -50
 					}
 				}
@@ -1153,6 +1189,8 @@
 				"targetModifier":{"smart":true},
 				"effects" : {
 					"inFrenzy" : {
+						"statusTags": ["DEBUFF"],
+						"statusIdentity": "core:frenzy",
 						"type" : "IN_FRENZY",
 						"val" : 100,
 						"duration" : "UNTIL_ATTACK"
@@ -1162,6 +1200,8 @@
 			"advanced":{
 				"effects" : {
 					"inFrenzy" : {
+						"statusTags": ["DEBUFF"],
+						"statusIdentity": "core:frenzy",
 						"val" : 150
 					}
 				}
@@ -1169,6 +1209,8 @@
 			"expert":{
 				"effects" : {
 					"inFrenzy" : {
+						"statusTags": ["DEBUFF"],
+						"statusIdentity": "core:frenzy",
 						"val" : 200
 					}
 				}
@@ -1250,6 +1292,8 @@
 				"targetModifier":{"smart":false},
 				"effects" : {
 					"attacksNearestCreature" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:berserk",
 						"type" : "ATTACKS_NEAREST_CREATURE",
 						"duration" : "UNTIL_OWN_ATTACK"
 					}
@@ -1294,6 +1338,8 @@
 				"targetModifier":{"smart":true},
 				"effects" : {
 					"hypnotized" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:hypnotize",
 						"type" : "HYPNOTIZED",
 						"duration" : "N_TURNS"
 					}
@@ -1302,6 +1348,8 @@
 			"none":{
 				"effects" : {
 					"hypnotized" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:hypnotize",
 						"val" : 0
 					}
 				}
@@ -1309,6 +1357,8 @@
 			"basic":{
 				"effects" : {
 					"hypnotized" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:hypnotize",
 						"val" : 1
 					}
 				}
@@ -1316,6 +1366,8 @@
 			"advanced":{
 				"effects" : {
 					"hypnotized" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:hypnotize",
 						"val" : 2
 					}
 				}
@@ -1323,6 +1375,8 @@
 			"expert":{
 				"effects" : {
 					"hypnotized" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:hypnotize",
 						"val" : 3
 					}
 				}
@@ -1364,6 +1418,8 @@
 				"targetModifier":{"smart":true},
 				"effects" : {
 					"forgetful" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:forgetfulness",
 						"type" : "FORGETFULL",
 						"duration" : "N_TURNS"
 					}
@@ -1372,6 +1428,8 @@
 			"none":{
 				"effects" : {
 					"forgetful" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:forgetfulness",
 						"val" : 50
 					}
 				}
@@ -1379,6 +1437,8 @@
 			"basic":{
 				"effects" : {
 					"forgetful" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:forgetfulness",
 						"val" : 50
 					}
 				}
@@ -1386,6 +1446,8 @@
 			"advanced":{
 				"effects" : {
 					"forgetful" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:forgetfulness",
 						"val" : 100
 					}
 				}
@@ -1394,6 +1456,8 @@
 				"range" : "X",
 				"effects" : {
 					"forgetful" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:forgetfulness",
 						"val" : 100
 					}
 				}
@@ -1431,6 +1495,8 @@
 				"targetModifier":{"smart":true},
 				"effects" : {
 					"notActive" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:blind",
 						"val" : 0,
 						"type" : "NOT_ACTIVE",
 						"subtype" : "blind",
@@ -1440,6 +1506,8 @@
 						]
 					},
 					"generalAttackReduction" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:blind",
 						"type" : "GENERAL_ATTACK_REDUCTION",
 						"duration" : [
 							"UNTIL_AFTER_ATTACK_SEQUENCE",
@@ -1452,6 +1520,8 @@
 			"basic":{
 				"effects" : {
 					"generalAttackReduction" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:blind",
 						"val" : 50
 					}
 				}
@@ -1459,6 +1529,8 @@
 			"advanced":{
 				"effects" : {
 					"generalAttackReduction" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:blind",
 						"val" : 75
 					}
 				}
@@ -1466,6 +1538,8 @@
 			"expert":{
 				"effects" : {
 					"noRetaliation" : {
+						"statusTags" : [ "DEBUFF" ],
+						"statusIdentity" : "core:blind",
 						"val" : 0,
 						"type" : "NO_RETALIATION",
 						"duration" : [

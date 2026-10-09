@@ -31,6 +31,7 @@
 #include "../../lib/spells/NewHorizonsElementalTerrain.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/NewHorizonsNaturesWrath.h"
+#include "../../lib/spells/NewHorizonsPandemonium.h"
 #include "../../lib/spells/effects/BattleForm.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
@@ -6134,10 +6135,13 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						const bool goodEffect = newHealth > oldHealth;
 						const bool naturesWrath = ps.spell
 							&& ps.spell->getJsonKey() == newHorizonsNaturesWrath::SPELL_KEY;
-						if((ps.spellStormOfDaggers || naturesWrath) && !ourUnit && original && !goodEffect)
+						const bool pandemonium = ps.spell
+							&& ps.spell->getJsonKey() == newHorizonsPandemonium::SPELL_KEY;
+						if(original && !goodEffect && (pandemonium
+							|| ((ps.spellStormOfDaggers || naturesWrath) && !ourUnit)))
 						{
-							// The authoritative cast independently resists each hostile
-							// target. castEval uses the shared ranked damage amount but leaves
+							// Pandemonium also permits friendly resistance. castEval uses
+							// shared damage per recipient but leaves
 							// that random roll out, so value its expected hit probability here.
 							const int resistance = std::clamp(original->magicResistance(), 0, 100);
 							dpsReduce *= 1.0f - static_cast<float>(resistance) / 100.0f;

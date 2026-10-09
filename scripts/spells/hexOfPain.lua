@@ -57,6 +57,8 @@ function Script:apply(mechanics, server, target)
 				sourceType = ENUM.BonusSource.spellEffect,
 				sourceID = spellKey,
 				stacking = spellKey,
+				statusTags = {"DEBUFF"},
+				statusIdentity = spellKey,
 				addInfo = {
 					damageSharePercent = DAMAGE_SHARE_PERCENT,
 					casterSide = casterSide

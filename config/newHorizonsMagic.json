@@ -368,6 +368,12 @@
 			"costs": [23, 23, 23, 23],
 			"active": true
 		},
+		"new-horizons:pandemonium": {
+			"schools": ["new-horizons:chaos"],
+			"level": 5,
+			"costs": [22, 22, 22, 22],
+			"active": true
+		},
 		"new-horizons:blink": {
 			"schools": ["new-horizons:chaos"],
 			"level": 1,

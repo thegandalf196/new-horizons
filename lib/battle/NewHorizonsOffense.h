@@ -24,6 +24,8 @@ inline Bonus noQuarterRetaliationBonus()
 	Bonus bonus(BonusDuration::ONE_BATTLE, BonusType::NO_RETALIATION,
 		BonusSource::OTHER, 1, BonusSourceID(BonusCustomSource::newHorizonsNoQuarter));
 	bonus.stacking = NO_QUARTER;
+	bonus.statusTags = {BonusStatusTag::DEBUFF};
+	bonus.statusIdentity = NO_QUARTER;
 	return bonus;
 }
 
@@ -33,6 +35,8 @@ inline Bonus noQuarterMoralePenalty(bool appliedByEnemy = false)
 		BonusSource::OTHER, NO_QUARTER_MORALE_PENALTY,
 		BonusSourceID(BonusCustomSource::newHorizonsNoQuarter));
 	bonus.stacking = NO_QUARTER;
+	bonus.statusTags = {BonusStatusTag::DEBUFF};
+	bonus.statusIdentity = NO_QUARTER;
 	bonus.description.appendRawString("No Quarter");
 	bonus.appliedByEnemy = appliedByEnemy;
 	return bonus;

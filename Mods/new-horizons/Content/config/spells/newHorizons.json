@@ -151,12 +151,16 @@
 						"battleLogPlural" : "@core.genrltxt.562",
 						"bonus" : {
 							"poison" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "poison",
 								"val" : 30,
 								"type" : "POISON",
 								"valueType" : "INDEPENDENT_MAX",
 								"duration" : "N_TURNS"
 							},
 							"stackHealth" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "poison",
 								"val" : -10,
 								"type" : "STACK_HEALTH",
 								"valueType" : "PERCENT_TO_ALL",
@@ -179,12 +183,16 @@
 						"battleLogPlural" : "@core.genrltxt.562",
 						"bonus" : {
 							"poison" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "poison",
 								"val" : 30,
 								"type" : "POISON",
 								"valueType" : "INDEPENDENT_MAX",
 								"duration" : "N_TURNS"
 							},
 							"stackHealth" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "poison",
 								"val" : -10,
 								"type" : "STACK_HEALTH",
 								"valueType" : "PERCENT_TO_ALL",
@@ -207,12 +215,16 @@
 						"battleLogPlural" : "@core.genrltxt.562",
 						"bonus" : {
 							"poison" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "poison",
 								"val" : 30,
 								"type" : "POISON",
 								"valueType" : "INDEPENDENT_MAX",
 								"duration" : "N_TURNS"
 							},
 							"stackHealth" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "poison",
 								"val" : -10,
 								"type" : "STACK_HEALTH",
 								"valueType" : "PERCENT_TO_ALL",
@@ -235,12 +247,16 @@
 						"battleLogPlural" : "@core.genrltxt.562",
 						"bonus" : {
 							"poison" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "poison",
 								"val" : 30,
 								"type" : "POISON",
 								"valueType" : "INDEPENDENT_MAX",
 								"duration" : "N_TURNS"
 							},
 							"stackHealth" : {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "poison",
 								"val" : -10,
 								"type" : "STACK_HEALTH",
 								"valueType" : "PERCENT_TO_ALL",
@@ -450,11 +466,15 @@
 								"duration": "N_TURNS"
 							},
 							"morale": {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "new-horizons:shieldOfChaos",
 								"type": "MORALE",
 								"val": -10,
 								"duration": "N_TURNS"
 							},
 							"luck": {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "new-horizons:shieldOfChaos",
 								"type": "LUCK",
 								"val": -10,
 								"duration": "N_TURNS"
@@ -489,11 +509,15 @@
 								"duration": "N_TURNS"
 							},
 							"morale": {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "new-horizons:shieldOfChaos",
 								"type": "MORALE",
 								"val": -10,
 								"duration": "N_TURNS"
 							},
 							"luck": {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "new-horizons:shieldOfChaos",
 								"type": "LUCK",
 								"val": -10,
 								"duration": "N_TURNS"
@@ -528,11 +552,15 @@
 								"duration": "N_TURNS"
 							},
 							"morale": {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "new-horizons:shieldOfChaos",
 								"type": "MORALE",
 								"val": -10,
 								"duration": "N_TURNS"
 							},
 							"luck": {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "new-horizons:shieldOfChaos",
 								"type": "LUCK",
 								"val": -10,
 								"duration": "N_TURNS"
@@ -567,11 +595,15 @@
 								"duration": "N_TURNS"
 							},
 							"morale": {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "new-horizons:shieldOfChaos",
 								"type": "MORALE",
 								"val": -10,
 								"duration": "N_TURNS"
 							},
 							"luck": {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "new-horizons:shieldOfChaos",
 								"type": "LUCK",
 								"val": -10,
 								"duration": "N_TURNS"
@@ -1143,6 +1175,41 @@
 		"flags": {"indifferent": true},
 		"targetCondition": {}
 	},
+	"pandemonium": {
+		"name": "Pandemonium",
+		"type": "combat",
+		"school": {"new-horizons:chaos": true},
+		"level": 5,
+		"power": 0,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "NO_TARGET",
+		"graphics": {
+			"iconBook": "SPELLS.def:0:26",
+			"iconScroll": "SPELLSCR.def:0:26",
+			"iconScenarioBonus": "SPELLBON.def:0:26",
+			"iconEffect": "SPELLINT.def:0:27",
+			"iconImmune": "SPELLINT.def:0:27"
+		},
+		"animation": {"hit": ["C06SPF0"]},
+		"sounds": {"cast": "ARMGEDN"},
+		"levels": {
+			"base": {
+				"range": "X",
+				"description": "Every living battlefield stack, including allies, suffers Chaos magical damage equal to its number of distinct active debuffs times (20 + 0.25 x Spell Power). Chaos rank strengthens only the Spell Power term. Pandemonium Master increases each whole contribution by 25%. Counts are captured before damage; stacks with no debuffs take no damage. Normal magical defenses and resistance apply.",
+				"cost": 22,
+				"power": 0,
+				"targetModifier": {"smart": false},
+				"battleEffects": {"pandemonium": {"type": "core:pandemonium"}}
+			},
+			"none": {},
+			"basic": {},
+			"advanced": {},
+			"expert": {}
+		},
+		"flags": {"damage": true, "negative": true},
+		"targetCondition": {}
+	},
 	"naturesWrath": {
 		"name": "Nature's Wrath",
 		"type": "combat",
@@ -1243,7 +1310,7 @@
 					"slowingVines": {
 						"type": "timed",
 						"bonus": {
-							"speed": {"type": "STACKS_MOVEMENT_RANGE", "val": -2, "duration": "N_TURNS", "turns": 2}
+							"speed": { "statusTags" : [ "DEBUFF" ], "statusIdentity" : "new-horizons:vengefulVines","type": "STACKS_MOVEMENT_RANGE", "val": -2, "duration": "N_TURNS", "turns": 2}
 						}
 					}
 				}
@@ -1285,6 +1352,8 @@
 						"type": "timed",
 						"bonus": {
 							"root": {
+								"statusTags" : [ "DEBUFF" ],
+								"statusIdentity" : "new-horizons:entangle",
 								"type": "BIND_EFFECT",
 								"val": 0,
 								"duration": "N_TURNS",

@@ -1,5 +1,23 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-09 — Pandemonium fixture typed source ID
+
+Linked build51420 terminates1 at174/482. The new snapshot-cleanup fixture passes
+SpellID::SLOW directly into BonusSourceID, whose variant requires the concrete
+SpellID wrapper. Correct the fixture argument, not the production source-ID
+contract. Shared runtime, status helper and AI objects compile; this is not a
+linked or native pass. The retry also includes four bounded legacy-adapter
+controls requested by independent review. Preserve failed candidate evidence.
+
+The typed fixture correction and four adapter controls compile. Retry3540 exits0
+at310/310 for client and vcmitest; native25 acceptance remains pending. No
+production contract or test expectation was weakened to make compilation pass.
+
+Final native25/25 passes in5.621s with zero skips/failures and exit0. The root
+checks XML and source/private binary hashes; the four added legacy-adapter
+controls pass. Receipt: build/nh-pandemonium-native.aatz4JzE/receipt.md.
+The initial compile failure remains a constructor lesson, not an open blocker.
+
 ### 2026-10-09 — Nature's Wrath bounded integration checkpoint
 
 Source review finds no blocking route, mixed-effect or AI/UI defect. Deferred

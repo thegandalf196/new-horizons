@@ -147,6 +147,8 @@
 				},
 				"effects": {
 					"alwaysMinimumDamage": {
+						"statusTags": ["DEBUFF"],
+						"statusIdentity": "core:curse",
 						"val": 0,
 						"type": "ALWAYS_MINIMUM_DAMAGE",
 						"valueType": "INDEPENDENT_MAX",
@@ -164,6 +166,8 @@
 				},
 				"effects": {
 					"alwaysMinimumDamage": {
+						"statusTags": ["DEBUFF"],
+						"statusIdentity": "core:curse",
 						"val": 0,
 						"type": "ALWAYS_MINIMUM_DAMAGE",
 						"valueType": "INDEPENDENT_MAX",
@@ -181,6 +185,8 @@
 				},
 				"effects": {
 					"alwaysMinimumDamage": {
+						"statusTags": ["DEBUFF"],
+						"statusIdentity": "core:curse",
 						"val": 0,
 						"type": "ALWAYS_MINIMUM_DAMAGE",
 						"valueType": "INDEPENDENT_MAX",
@@ -198,6 +204,8 @@
 				},
 				"effects": {
 					"alwaysMinimumDamage": {
+						"statusTags": ["DEBUFF"],
+						"statusIdentity": "core:curse",
 						"val": 0,
 						"type": "ALWAYS_MINIMUM_DAMAGE",
 						"valueType": "INDEPENDENT_MAX",
@@ -258,6 +266,8 @@
 				},
 				"effects": {
 					"morale": {
+						"statusTags": ["DEBUFF"],
+						"statusIdentity": "core:sorrow",
 						"type": "MORALE",
 						"val": -1,
 						"duration": "N_TURNS"
@@ -274,6 +284,8 @@
 				},
 				"effects": {
 					"morale": {
+						"statusTags": ["DEBUFF"],
+						"statusIdentity": "core:sorrow",
 						"type": "MORALE",
 						"val": -1,
 						"duration": "N_TURNS"
@@ -290,6 +302,8 @@
 				},
 				"effects": {
 					"morale": {
+						"statusTags": ["DEBUFF"],
+						"statusIdentity": "core:sorrow",
 						"type": "MORALE",
 						"val": -1,
 						"duration": "N_TURNS"
@@ -306,6 +320,8 @@
 				},
 				"effects": {
 					"morale": {
+						"statusTags": ["DEBUFF"],
+						"statusIdentity": "core:sorrow",
 						"type": "MORALE",
 						"val": -1,
 						"duration": "N_TURNS"
@@ -487,6 +503,8 @@
 				},
 				"effects": {
 					"stacksSpeed": {
+						"statusTags": ["DEBUFF"],
+						"statusIdentity": "core:slow",
 						"type": "STACKS_SPEED",
 						"val": -25,
 						"valueType": "PERCENT_TO_ALL",
@@ -504,6 +522,8 @@
 				},
 				"effects": {
 					"stacksSpeed": {
+						"statusTags": ["DEBUFF"],
+						"statusIdentity": "core:slow",
 						"type": "STACKS_SPEED",
 						"val": -25,
 						"valueType": "PERCENT_TO_ALL",
@@ -521,6 +541,8 @@
 				},
 				"effects": {
 					"stacksSpeed": {
+						"statusTags": ["DEBUFF"],
+						"statusIdentity": "core:slow",
 						"type": "STACKS_SPEED",
 						"val": -50,
 						"valueType": "PERCENT_TO_ALL",
@@ -538,6 +560,8 @@
 				},
 				"effects": {
 					"stacksSpeed": {
+						"statusTags": ["DEBUFF"],
+						"statusIdentity": "core:slow",
 						"type": "STACKS_SPEED",
 						"val": -50,
 						"valueType": "PERCENT_TO_ALL",

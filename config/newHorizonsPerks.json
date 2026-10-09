@@ -1839,7 +1839,7 @@
 					"requires": "expert",
 					"description": "Pandemonium deals +25% damage per counted debuff.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Pandemonium deals +25% damage per counted debuff."
 					}
 				},

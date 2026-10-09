@@ -115,6 +115,8 @@ function Script:apply(mechanics, server, target)
 			-- unit is stopped, and hero actions can occur between rounds.
 			server:addUnitBonus(battle, unit, {
 				type = "NOT_ACTIVE",
+				statusTags = {"DEBUFF"},
+				statusIdentity = SPELL_KEY,
 				val = 1,
 				duration = ENUM.BonusDuration.oneBattle,
 				sourceType = ENUM.BonusSource.spellEffect,
@@ -124,6 +126,8 @@ function Script:apply(mechanics, server, target)
 			}, true)
 			server:addUnitBonus(battle, unit, {
 				type = "INVINCIBLE",
+				statusTags = {"DEBUFF"},
+				statusIdentity = SPELL_KEY,
 				val = 1,
 				duration = ENUM.BonusDuration.oneBattle,
 				sourceType = ENUM.BonusSource.spellEffect,
@@ -133,6 +137,8 @@ function Script:apply(mechanics, server, target)
 			}, true)
 			server:addUnitBonus(battle, unit, {
 				type = "TIME_STOP",
+				statusTags = {"DEBUFF"},
+				statusIdentity = SPELL_KEY,
 				val = radiusValue,
 				duration = ENUM.BonusDuration.oneBattle,
 				sourceType = ENUM.BonusSource.spellEffect,

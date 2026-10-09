@@ -66,6 +66,7 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsBulwark.cpp
 	battle/NewHorizonsBerserk.cpp
 	battle/NewHorizonsConfusion.cpp
+	battle/NewHorizonsDebuffStatuses.cpp
 	battle/NewHorizonsConfusionResolution.cpp
 	battle/NewHorizonsConfusionControl.cpp
 	battle/NewHorizonsConfusionState.cpp
@@ -325,6 +326,7 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsBlink.cpp
 	spells/NewHorizonsElementalTerrain.cpp
 	spells/NewHorizonsNaturesWrath.cpp
+	spells/NewHorizonsPandemonium.cpp
 	spells/NewHorizonsDirectDamage.cpp
 	spells/NewHorizonsFriendlyFire.cpp
 	spells/NewHorizonsMagic.cpp
@@ -543,6 +545,7 @@ set(lib_MAIN_HEADERS
 	battle/NewHorizonsBulwark.h
 	battle/NewHorizonsBerserk.h
 	battle/NewHorizonsConfusion.h
+	battle/NewHorizonsDebuffStatuses.h
 	battle/NewHorizonsConfusionResolution.h
 	battle/NewHorizonsConfusionControl.h
 	battle/NewHorizonsConfusionState.h
@@ -880,6 +883,7 @@ set(lib_MAIN_HEADERS
 	spells/NewHorizonsBlink.h
 	spells/NewHorizonsElementalTerrain.h
 	spells/NewHorizonsNaturesWrath.h
+	spells/NewHorizonsPandemonium.h
 	spells/NewHorizonsDirectDamage.h
 	spells/NewHorizonsMagic.h
 	spells/NewHorizonsPurify.h

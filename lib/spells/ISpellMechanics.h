@@ -11,6 +11,7 @@
 #pragma once
 
 #include <limits>
+#include <map>
 
 #include <vcmi/spells/Magic.h>
 #include <vcmi/ServerCallback.h>
@@ -401,6 +402,12 @@ public:
 	Target getNaturesWrathRoute(const battle::Unit * first) const;
 	int64_t getNaturesWrathHopPower(int32_t hopIndex) const;
 	int64_t getNaturesWrathDamage(const battle::Unit * recipient, int32_t hopIndex) const;
+	Target getPandemoniumTargets() const;
+	int64_t getPandemoniumDebuffCount(const battle::Unit * recipient) const;
+	int64_t getPandemoniumDamage(const battle::Unit * recipient, int64_t capturedCount) const;
+	/// Transient per-cast counts, captured before effect cleanup or damage.
+	void capturePandemoniumDebuffs();
+	void clearPandemoniumDebuffs();
 
 	virtual bool isSmart() const = 0;
 	virtual bool isMassive() const = 0;
@@ -454,6 +461,10 @@ public:
 
 protected:
 	Mechanics();
+
+private:
+	bool pandemoniumDebuffsCaptured = false;
+	std::map<uint32_t, size_t> pandemoniumDebuffCounts;
 };
 
 class DLL_LINKAGE BaseMechanics : public Mechanics

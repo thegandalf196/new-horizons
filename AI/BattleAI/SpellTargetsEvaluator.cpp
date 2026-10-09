@@ -29,6 +29,7 @@
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/spells/NewHorizonsVengefulVines.h"
 #include "../../lib/spells/NewHorizonsNaturesWrath.h"
+#include "../../lib/spells/NewHorizonsPandemonium.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/CRandomGenerator.h"
@@ -1141,6 +1142,16 @@ std::vector<Target> SpellTargetEvaluator::canonicalSoulChainTargets(Mechanics * 
 
 std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMechanics)
 {
+	if(spellMechanics && spellMechanics->getSpell()
+		&& spellMechanics->getSpell()->getJsonKey() == newHorizonsPandemonium::SPELL_KEY)
+	{
+		if(!newHorizonsPandemonium::enabled(*spellMechanics))
+			return {};
+		detail::ProblemImpl problem;
+		const Target target;
+		return spellMechanics->canBeCastAt(target, problem)
+			? std::vector<Target>{target} : std::vector<Target>{};
+	}
 	if(spellMechanics && spellMechanics->getSpell()
 		&& spellMechanics->getSpell()->getJsonKey() == newHorizonsNaturesWrath::SPELL_KEY)
 	{

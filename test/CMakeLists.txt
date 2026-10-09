@@ -69,6 +69,7 @@ set(test_SRCS
 		battle/CUnitStateTest.cpp
 		battle/CUnitStateMagicTest.cpp
 		battle/PhysicalAfflictionTest.cpp
+		battle/NewHorizonsDebuffStatusesTest.cpp
 		battle/FocusFireStateTest.cpp
 		battle/RelentlessAssaultStateTest.cpp
 		battle/HeroCommandFocusFireRulesTest.cpp
@@ -224,6 +225,7 @@ set(test_SRCS
 		server/battles/NewHorizonsForgetfulnessTest.cpp
 		server/battles/NewHorizonsSoulChainTest.cpp
 		server/battles/NewHorizonsNaturesWrathTest.cpp
+		server/battles/NewHorizonsPandemoniumTest.cpp
 		server/battles/NewHorizonsPursuitMarchTest.cpp
 		server/battles/NewHorizonsElementalRebirthTest.cpp
 		server/battles/NewHorizonsElementalConvergenceTest.cpp
@@ -604,6 +606,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsTimeStopAITest.cpp
 		battleAI/NewHorizonsSpellLockAITest.cpp
 		battleAI/NewHorizonsNaturesWrathAITest.cpp
+		battleAI/NewHorizonsPandemoniumAITest.cpp
 		battleAI/SpellTargetsEvaluatorTest.cpp
 		battleAI/HypotheticCloneTest.cpp
 		battleAI/HypotheticTimedSpellTest.cpp

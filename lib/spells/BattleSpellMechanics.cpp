@@ -17,6 +17,7 @@
 #include "NewHorizonsMagic.h"
 #include "NewHorizonsBlink.h"
 #include "NewHorizonsNaturesWrath.h"
+#include "NewHorizonsPandemonium.h"
 #include "NewHorizonsSorcery.h"
 #include "NewHorizonsVengefulVines.h"
 #include "NewHorizonsOverwhelmingFormula.h"
@@ -1039,6 +1040,9 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	if(owner->getJsonKey() == newHorizonsNaturesWrath::SPELL_KEY
 		&& !newHorizonsNaturesWrath::enabled(*this))
 		return adaptGenericProblem(problem);
+	if(owner->getJsonKey() == newHorizonsPandemonium::SPELL_KEY
+		&& !newHorizonsPandemonium::enabled(*this))
+		return adaptGenericProblem(problem);
 	// Blink's target geometry and School-scaled radius are defined by the saved
 	// v3 snapshot. Do not let a legacy-profile cast spend resources as a no-op.
 	if(isNewHorizonsBlinkSpell(owner) && !usesNewHorizonsMagicV3())
@@ -1657,6 +1661,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	// returns and exceptional exits.
 	const auto clearResistanceContext = vstd::makeScopeGuard([this]()
 	{
+		clearPandemoniumDebuffs();
 		activeResistanceServer = nullptr;
 		activeResistanceRng = nullptr;
 		resistanceRolls.clear();
@@ -1664,6 +1669,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	});
 	resistanceRolls.clear();
 	resistantUnitIds.clear();
+	clearPandemoniumDebuffs();
 	activeResistanceServer = server;
 	activeResistanceRng = server ? server->getRNG() : nullptr;
 
@@ -2377,6 +2383,10 @@ BattleSide BattleSpellMechanics::effectiveCasterSide() const
 
 void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const Target & target)
 {
+	// Countering cleanup and the first damage event may remove a later stack's
+	// debuff source. Capture every count before either can change the battlefield.
+	if(newHorizonsPandemonium::enabled(*this))
+		capturePandemoniumDebuffs();
 	affectedUnits.clear();
 	const bool newHorizonsMassRegeneration = isNewHorizonsMassRegenerationSpell(owner,
 		battle()->getBattle()->getMagicRules());
@@ -2644,6 +2654,11 @@ const battle::Unit * BattleSpellMechanics::getRandomUnit(vstd::RNG & rng, const 
 
 void BattleSpellMechanics::castEval(ServerCallback * server, const Target & target)
 {
+	clearPandemoniumDebuffs();
+	const auto clearPandemoniumSnapshot = vstd::makeScopeGuard([this]()
+	{
+		clearPandemoniumDebuffs();
+	});
 	// Evaluation may prepare the same scripted effects as a real cast, but it
 	// must never spend an authoritative adverse-roll allowance or advance the
 	// combat RNG through wouldResist.
@@ -2685,6 +2700,8 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 	}
 	if(completedHeroProjection)
 		registerOverwhelmingFormulaCast(server);
+	if(newHorizonsPandemonium::enabled(*this))
+		capturePandemoniumDebuffs();
 	Target spellTarget = transformSpellTarget(target);
 
 	effectsToApply = effects->prepare(this, target, spellTarget);
@@ -2927,6 +2944,15 @@ std::vector<AimType> BattleSpellMechanics::getTargetTypes() const
 
 bool BattleSpellMechanics::isReceptive(const battle::Unit * target) const
 {
+	if(target && newHorizonsPandemonium::enabled(*this))
+	{
+		if(isMagicalEffect() && isSpellLocked(target))
+			return false;
+		// Preview and damage adjustment retain all immunity conditions, while
+		// actual casts consume the existing cached resistance roll exactly once.
+		if(const auto * conditions = dynamic_cast<const TargetCondition *>(targetCondition.get()))
+			return conditions->isReceptiveIgnoringMagicResistance(this, target);
+	}
 	if(target && newHorizonsNaturesWrath::enabled(*this))
 	{
 		if(isMagicalEffect() && isSpellLocked(target))

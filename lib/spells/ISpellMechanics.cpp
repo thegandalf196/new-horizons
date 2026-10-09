@@ -13,6 +13,7 @@
 #include "NewHorizonsMagic.h"
 #include "NewHorizonsElementalTerrain.h"
 #include "NewHorizonsNaturesWrath.h"
+#include "NewHorizonsPandemonium.h"
 #include "MagicalDamageReduction.h"
 #include "../networkPacks/PacksForClientBattle.h"
 #include "../battle/NewHorizonsShadowGift.h"
@@ -761,6 +762,46 @@ Mechanics::Mechanics()
 }
 
 Mechanics::~Mechanics() = default;
+
+Target Mechanics::getPandemoniumTargets() const
+{
+	return newHorizonsPandemonium::targets(*this);
+}
+
+int64_t Mechanics::getPandemoniumDebuffCount(const battle::Unit * recipient) const
+{
+	if(!recipient || !newHorizonsPandemonium::enabled(*this))
+		return 0;
+	if(pandemoniumDebuffsCaptured)
+	{
+		const auto found = pandemoniumDebuffCounts.find(recipient->unitId());
+		return found == pandemoniumDebuffCounts.end() ? 0 : static_cast<int64_t>(found->second);
+	}
+	const auto * projected = battle()->battleGetUnitByID(recipient->unitId());
+	return projected ? static_cast<int64_t>(newHorizonsDebuffStatuses::snapshot(*projected).count()) : 0;
+}
+
+int64_t Mechanics::getPandemoniumDamage(const battle::Unit * recipient, int64_t capturedCount) const
+{
+	if(capturedCount < 0)
+		throw std::invalid_argument("Pandemonium count cannot be negative");
+	return newHorizonsPandemonium::damage(*this, recipient, static_cast<size_t>(capturedCount));
+}
+
+void Mechanics::capturePandemoniumDebuffs()
+{
+	std::map<uint32_t, size_t> captured;
+	for(const auto & recipient : newHorizonsPandemonium::snapshot(*this))
+		captured.emplace(recipient.unit->unitId(), recipient.statuses.count());
+	pandemoniumDebuffCounts = std::move(captured);
+	pandemoniumDebuffsCaptured = true;
+}
+
+void Mechanics::clearPandemoniumDebuffs()
+{
+	pandemoniumDebuffCounts.clear();
+	pandemoniumDebuffsCaptured = false;
+}
 
 Target Mechanics::getNaturesWrathRoute(const battle::Unit * first) const
 {
