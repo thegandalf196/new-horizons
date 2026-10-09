@@ -208,7 +208,7 @@
 					"additionalProperties" : false
 				}
 			}, {
-				"if" : { "properties" : { "type" : { "const" : "newHorizonsConfusion" } } },
+				"if" : { "properties" : { "type" : { "enum" : ["newHorizonsConfusion", "core:realityWarp"] } } },
 				"then" : {
 					"properties" : {
 						"type" : {},

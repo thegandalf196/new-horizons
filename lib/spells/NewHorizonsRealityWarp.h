@@ -7,14 +7,23 @@
 
 #include "../bonuses/Bonus.h"
 #include "../constants/EntityIdentifiers.h"
+#include "../battle/BattleEffectExchange.h"
 
 #include <cstdint>
 #include <functional>
 #include <optional>
 #include <vector>
 
+class CBattleInfoCallback;
+
 namespace newHorizonsRealityWarp
 {
+inline constexpr std::string_view SPELL_KEY = "new-horizons:realityWarp";
+struct DLL_LINKAGE ConfusionPayload
+{
+	PlayerColor caster = PlayerColor::CANNOT_DETERMINE;
+	bool confounder = false;
+};
 /// State that accompanies a Regeneration bonus bundle on a particular unit.
 /// It travels with the spell effects without resolving or advancing the effect.
 struct DLL_LINKAGE RegenerationPayload
@@ -47,6 +56,7 @@ struct DLL_LINKAGE EffectBundle
 	std::optional<RegenerationPayload> regeneration;
 	std::optional<GuardianSpiritPayload> guardianSpirit;
 	std::optional<CapacityRegenerationPayload> capacityRegeneration;
+	std::optional<ConfusionPayload> confusion;
 	/// Collection must explicitly opt in only after checking spell/effect identity.
 	bool transferable = false;
 };
@@ -75,4 +85,45 @@ struct DLL_LINKAGE ExchangePlan
 DLL_LINKAGE ExchangePlan planExchange(const std::vector<EffectBundle> & firstBundles, PlayerColor firstOwner,
 	const std::vector<EffectBundle> & secondBundles, PlayerColor secondOwner,
 	const RecipientLegality & recipientAllows);
+
+enum class StayReason : uint8_t
+{
+	MOVED,
+	EXCLUDED_EFFECT,
+	UNKNOWN_SOURCE,
+	MISSING_CAPTURE,
+	UNSUPPORTED_CONDITION,
+	ILLEGAL_RECIPIENT,
+	INVALID_SIDECAR,
+	SIDECAR_CONFLICT,
+	INVALID_LINK
+};
+
+enum class EndpointRejection : uint8_t
+{
+	NONE,
+	INVALID_ENDPOINT,
+	SPELL_LOCKED,
+	TIME_STOPPED,
+	SNAPSHOT_UNAVAILABLE
+};
+
+struct DLL_LINKAGE BundlePreview
+{
+	uint32_t source = 0;
+	uint32_t destination = 0;
+	EffectBundle bundle;
+	StayReason reason = StayReason::EXCLUDED_EFFECT;
+};
+
+struct DLL_LINKAGE PreparedExchange
+{
+	std::optional<battle::BattleEffectExchange> exchange;
+	std::vector<BundlePreview> previews;
+	EndpointRejection rejection = EndpointRejection::NONE;
+};
+
+/// Collect and plan against both original endpoints without casting or RNG.
+/// Empty pairs are valid no-op exchanges; casting admission belongs to callers.
+DLL_LINKAGE PreparedExchange prepareExchange(const CBattleInfoCallback & battle, uint32_t first, uint32_t second);
 }

@@ -339,7 +339,8 @@ enum class BonusValueType : uint8_t
 /// Keep values append-only because they are stored in saves and network packets.
 enum class BonusStatusTag : uint8_t
 {
-	DEBUFF = 0
+	DEBUFF = 0,
+	NON_TRANSFERABLE = 1
 };
 
 enum class BonusNodeType

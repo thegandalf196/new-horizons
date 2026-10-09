@@ -25,6 +25,7 @@
 #include "BattleStacksController.h"
 #include "BattleWindow.h"
 #include "CreatureAnimation.h"
+#include "../../lib/battle/NewHorizonsFrozen.h"
 #include "PurifyWindow.h"
 #include "TemporalFieldWindow.h"
 
@@ -484,22 +485,27 @@ void BattleInterface::installCureAfflictionUI()
 			return false;
 
 		const auto choices = newHorizonsMagic::cureAfflictions(callback->getBattle()->getMagicRules(), initialTarget);
-		if(choices.empty())
+		const bool frozenChoice = newHorizonsFrozen::chancePercent(callback->getBattle()->getMagicRules()) > 0
+			&& initialTarget->alive() && newHorizonsFrozen::isFrozen(*initialTarget);
+		if(choices.empty() && !frozenChoice)
 			return false; // Ordinary healing needs no additional choice.
 
 		std::vector<std::string> names;
 		for(const auto choice : choices)
 			names.push_back(choice.toSpell()->getNameTranslated());
+		if(frozenChoice)
+			names.push_back(LIBRARY->generaltexth->translate("new-horizons.combat.frozen.label"));
 		const auto targetID = initialTarget->unitId();
 		const auto heroID = currentHero()->id;
 		const auto session = actionsController->getCastingSession();
-		auto confirm = [this, pending, localBattleID, targetID, heroID, choices, session](int selected)
+		auto confirm = [this, pending, localBattleID, targetID, heroID, choices, frozenChoice, session](int selected)
 		{
 			if(!actionsController || actionsController->getCastingSession() != session
 				|| !actionsController->heroSpellcastingModeActive() || !makingTurn())
 				return;
 			actionsController->endCastingSpell();
-			if(!curInt || !curInt->cb || selected < 0 || static_cast<size_t>(selected) >= choices.size())
+			if(!curInt || !curInt->cb || selected < 0
+				|| static_cast<size_t>(selected) >= choices.size() + (frozenChoice ? 1 : 0))
 				return;
 			const auto callback = curInt->cb->getBattle(localBattleID);
 			const auto * hero = currentHero();
@@ -510,7 +516,9 @@ void BattleInterface::installCureAfflictionUI()
 			const auto * spell = pending.spell.toSpell();
 			spells::BattleCast preview(callback.get(), hero, spells::Mode::HERO, spell);
 			preview.setMetamagicFollowup(pending.metamagicFollowup);
-			preview.setCureAffliction(choices[selected]);
+			const bool removeFrozen = static_cast<std::size_t>(selected) == choices.size();
+			preview.setCureAffliction(removeFrozen ? SpellID(SpellID::NONE) : choices[selected]);
+			preview.setCurePhysicalAffliction(removeFrozen ? "frozen" : "");
 			auto mechanics = spell->battleMechanics(&preview);
 			spells::detail::ProblemImpl problem;
 			battle::Target targetCheck;
@@ -524,7 +532,8 @@ void BattleInterface::installCureAfflictionUI()
 			BattleAction action = pending;
 			action.target.clear();
 			action.aimToUnit(target);
-			action.spellCureAffliction = choices[selected];
+			action.spellCureAffliction = removeFrozen ? SpellID(SpellID::NONE) : choices[selected];
+			action.spellCurePhysicalAffliction = removeFrozen ? "frozen" : "";
 			curInt->cb->battleMakeSpellAction(localBattleID, action);
 		};
 		auto window = std::make_shared<CObjectListWindow>(names, nullptr, "Cure", "Choose a physical affliction to remove.", confirm);
@@ -1020,6 +1029,15 @@ void BattleInterface::activeStackReasonChanged(uint32_t stackID, BattleUnitTurnR
 		return;
 
 	const auto * activeUnit = battle->battleGetUnitByID(stackID);
+	if(activeUnit && reason == BattleUnitTurnReason::AUTOMATIC_ACTION
+		&& !activeUnit->isTimeStopped() && newHorizonsFrozen::isFrozen(*activeUnit))
+	{
+		auto message = LIBRARY->generaltexth->translate("new-horizons.combat.frozen.forfeit");
+		const auto position = message.find("%creature%");
+		if(position != std::string::npos)
+			message.replace(position, std::string("%creature%").size(), activeUnit->unitType()->getNamePluralTranslated());
+		console->addText(message);
+	}
 	if(!activeUnit || !newHorizonsMagic::rulesActive(battle->getBattle()->getMagicRules()))
 	{
 		queueActivationStatus = {};
@@ -1067,6 +1085,14 @@ void BattleInterface::stacksAreAttacked(std::vector<StackAttackedInfo> attackedI
 
 	for(const StackAttackedInfo & attackedInfo : attackedInfos)
 	{
+		if(attackedInfo.shattered)
+		{
+			auto message = LIBRARY->generaltexth->translate("new-horizons.combat.frozen.shatter");
+			const auto position = message.find("%creature%");
+			if(position != std::string::npos)
+				message.replace(position, std::string("%creature%").size(), attackedInfo.defender->unitType()->getNamePluralTranslated());
+			console->addText(message);
+		}
 		BattleSide side = attackedInfo.defender->unitSide();
 		killedBySide.at(side) += attackedInfo.amountKilled;
 	}

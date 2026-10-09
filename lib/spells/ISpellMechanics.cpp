@@ -406,6 +406,12 @@ static std::shared_ptr<TargetCondition> makeCondition(const CSpell * s)
 class CustomMechanicsFactory : public ISpellMechanicsFactory
 {
 public:
+	RecipientConditionResult checkRecipient(const RecipientConditionContext & context, const battle::Unit * target) const override
+	{
+		if(context.source != spell)
+			return RecipientConditionResult::INVALID_CONTEXT;
+		return targetCondition->checkRecipient(context, target);
+	}
 	std::unique_ptr<Mechanics> create(const IBattleCast * event) const override
 	{
 		auto * ret = new BattleSpellMechanics(event, effects, targetCondition);
@@ -425,7 +431,7 @@ protected:
 		effects->data.at(level) = effects::Effects::loadJson(config, spell->modScope, spell->identifier);
 	}
 private:
-	std::shared_ptr<IReceptiveCheck> targetCondition;
+	std::shared_ptr<TargetCondition> targetCondition;
 };
 
 class ConfigurableMechanicsFactory : public CustomMechanicsFactory
@@ -553,6 +559,11 @@ SpellID BattleCast::getCureAffliction() const
 	return cureAffliction;
 }
 
+std::string BattleCast::getCurePhysicalAffliction() const
+{
+	return curePhysicalAffliction;
+}
+
 bool BattleCast::getForceNonSmartTargeting() const
 {
 	return forceNonSmartTargeting;
@@ -641,6 +652,11 @@ void BattleCast::setOvercharge(BattleCast::Value value)
 void BattleCast::setCureAffliction(SpellID value)
 {
 	cureAffliction = value;
+}
+
+void BattleCast::setCurePhysicalAffliction(std::string value)
+{
+	curePhysicalAffliction = std::move(value);
 }
 
 void BattleCast::setForceNonSmartTargeting(bool value)
@@ -1046,6 +1062,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	}
 	overcharge = event->getOvercharge().value_or(0);
 	cureAffliction = event->getCureAffliction();
+	curePhysicalAffliction = event->getCurePhysicalAffliction();
 	counterspellSide = event->getCounterspellSide();
 	counterspellNegated = event->isCounterspellNegated();
 	counterspellManaSpent = event->getCounterspellManaSpent();
@@ -1793,6 +1810,11 @@ bool BaseMechanics::usesNewHorizonsDispelRules() const
 SpellID BaseMechanics::getCureAffliction() const
 {
 	return cureAffliction;
+}
+
+std::string BaseMechanics::getCurePhysicalAffliction() const
+{
+	return curePhysicalAffliction;
 }
 
 bool BaseMechanics::isMassSlow() const

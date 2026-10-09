@@ -21,6 +21,12 @@
 #include "../../GameEngine.h"
 #include "../../gui/WindowHandler.h"
 #include "../CCreatureWindow.h"
+#include "../NewHorizonsCreatureAbilityHelp.h"
+#include "../../CPlayerInterface.h"
+#include "../../battle/BattleInterface.h"
+#include "../../../lib/callback/CCallback.h"
+#include "../../../lib/battle/CPlayerBattleCallback.h"
+#include "../../../lib/battle/BattleInfo.h"
 
 #include "../../../lib/CCreatureHandler.h"
 #include "../../../lib/CBonusTypeHandler.h"
@@ -295,6 +301,24 @@ std::vector<std::shared_ptr<CIntObject>> buildCreatureContent( // NOSONAR (compl
 		};
 		std::vector<AbilityRow> abilityRows;
 		std::set<std::tuple<int, int, std::string>> seen;
+		// Out-of-game Wiki browsing has no saved profile: omit this optional
+		// rules-dependent row instead of substituting installation defaults.
+		const auto * callback = GAME->interface() ? GAME->interface()->cb.get() : nullptr;
+		const JsonNode * abilityRules = nullptr;
+		if(CPlayerInterface::battleInt)
+		{
+			const auto battleCallback = CPlayerInterface::battleInt->getBattle();
+			if(battleCallback && battleCallback->getBattle())
+				abilityRules = &battleCallback->getBattle()->getMagicRules();
+		}
+		else if(callback)
+			abilityRules = &callback->getMagicRules();
+		const auto freezingTouch = newHorizonsCreatureAbilityHelp::freezingTouch(
+			creature->getJsonKey(), abilityRules,
+			LIBRARY->generaltexth->translate("new-horizons.creature.freezingTouch.compact"),
+			LIBRARY->generaltexth->translate("new-horizons.creature.freezingTouch.help"));
+		if(freezingTouch)
+			abilityRows.push_back(AbilityRow{freezingTouch->details, {}});
 
 		auto bonusList = creature->getBonuses(Selector::all);
 		for(const auto & b : *bonusList)

@@ -39,6 +39,8 @@ public:
 	/// Selects a saved New Horizons Cure affliction by its SPELL_EFFECT source
 	/// identity. NONE means heal-only and is validated against current target state.
 	SpellID spellCureAffliction = SpellID::NONE;
+	/// Explicit physical status choice; no creature-source ID is reinterpreted as a spell.
+	std::string spellCurePhysicalAffliction;
 	/// Player-selected Purify effects. Each pair is (unit ID, source SpellID); SpellID::NONE
 	/// is the named physical-Poison choice sentinel. Other IDs select complete SPELL_EFFECT groups.
 	/// Repeated units are allowed up to the caster's per-stack Spell Power cap.
@@ -118,6 +120,11 @@ public:
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !spellCurePhysicalAffliction.empty()
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN))
+			throw std::runtime_error("Cannot serialize physical Cure selection to an older protocol");
+		if(h.saving && !spellCurePhysicalAffliction.empty() && spellCurePhysicalAffliction != "frozen")
+			throw std::runtime_error("Invalid physical Cure selection");
 		if(h.saving && perfectMoment && !h.hasFeature(Handler::Version::NEW_HORIZONS_PERFECT_MOMENT))
 			throw std::runtime_error("Cannot serialize Perfect Moment to an older protocol");
 		if(h.saving && command == HeroCommand::FOCUS_FIRE
@@ -275,6 +282,12 @@ public:
 			h & spellPurifyChoices;
 		else if(!h.saving)
 			spellPurifyChoices.clear();
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN))
+			h & spellCurePhysicalAffliction;
+		else if(!h.saving)
+			spellCurePhysicalAffliction.clear();
+		if(!h.saving && !spellCurePhysicalAffliction.empty() && spellCurePhysicalAffliction != "frozen")
+			throw std::runtime_error("Invalid physical Cure selection");
 		if(!h.saving && command == HeroCommand::FOCUS_FIRE
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS))
 			throw std::runtime_error("Targeted command requires the new protocol");

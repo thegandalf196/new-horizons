@@ -29,6 +29,7 @@
 #include "LuckSerendipityState.h"
 #include "ArmorerDefiantState.h"
 #include "BattleDeploymentState.h"
+#include "BattleEffectExchange.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
 class ObstacleChanges;
@@ -282,6 +283,14 @@ public:
 	virtual void removeUnit(uint32_t id) = 0;
 
 	virtual void addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus) = 0;
+	virtual battle::BattleEffectSnapshot captureBattleEffects(uint32_t id) const
+	{
+		throw std::runtime_error("Battle state does not support exact spell-effect snapshots");
+	}
+	virtual void exchangeBattleEffects(const battle::BattleEffectExchange & exchange)
+	{
+		throw std::runtime_error("Battle state does not support atomic spell-effect exchange");
+	}
 	virtual void updateUnitBonus(uint32_t id, const std::vector<Bonus> & bonus) = 0;
 	virtual void removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus) = 0;
 

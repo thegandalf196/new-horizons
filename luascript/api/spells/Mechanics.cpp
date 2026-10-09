@@ -22,6 +22,7 @@
 
 #include "../../../lib/battle/CBattleInfoCallback.h"
 #include "../../../lib/battle/IBattleState.h"
+#include "../../../lib/battle/NewHorizonsFrozen.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/NewHorizonsBlink.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
@@ -128,6 +129,14 @@ std::string MechanicsProxy::getCureAfflictionSource(const spells::Mechanics & m)
 {
 	const auto * spell = m.getCureAffliction().toSpell();
 	return spell ? spell->getJsonKey() : std::string();
+}
+
+bool MechanicsProxy::isSelectedCurePhysicalAfflictionTarget(const spells::Mechanics & m, const battle::Unit & unit)
+{
+	return m.isNewHorizonsCure() && m.getCurePhysicalAffliction() == "frozen"
+		&& m.getCureAffliction() == SpellID::NONE && m.battle() && m.battle()->getBattle()
+		&& newHorizonsFrozen::enabled(m.battle()->getBattle()->getMagicRules())
+		&& newHorizonsFrozen::isFrozen(unit);
 }
 
 int32_t MechanicsProxy::getArcaneBreachMarkBasisPoints(const spells::Mechanics & m)
@@ -281,6 +290,11 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"True when this cast uses the explicitly saved New Horizons Resurrection restoration behavior.");
 	R.function<&MechanicsProxy::getCureAfflictionSource>("getCureAfflictionSource", {},
 		"Returns the selected Cure affliction source key, or an empty string for heal-only.");
+	R.method<&Mechanics::getCurePhysicalAffliction>("getCurePhysicalAffliction", {},
+		"Returns the explicitly selected physical Cure kind, or an empty string.");
+	R.function<&MechanicsProxy::isSelectedCurePhysicalAfflictionTarget>("isSelectedCurePhysicalAfflictionTarget",
+		{{"unit", "Exact physical Cure recipient."}}, {},
+		"Tests the selected physical Cure kind against the recipient's typed marker and saved rules.");
 	R.method<&Mechanics::isMassSlow>("isMassSlow", {},
 		"True when this authoritative cast selected the Sorcery Temporal Field Mass Slow mode.");
 	R.method<&Mechanics::getShadowGiftSacrificePercent>("getShadowGiftSacrificePercent", {},

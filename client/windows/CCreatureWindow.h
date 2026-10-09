@@ -61,6 +61,7 @@ class CStackWindow : public CWindowObject
 		std::string description;
 		ImagePath imagePath;
 		BonusSource bonusSource;
+		std::string tooltip;
 	};
 
 	class CWindowSection : public CIntObject
@@ -100,6 +101,7 @@ class CStackWindow : public CWindowObject
 		std::array<std::shared_ptr<CMultiLineLabel>, 2> description;
 		std::array<std::shared_ptr<GraphicalPrimitiveCanvas>, 2> frame;
 		std::array<std::vector<std::shared_ptr<CLabel>>, 2> bonusSource;
+		std::array<std::shared_ptr<LRClickableAreaWText>, 2> abilityHelp;
 	public:
 		BonusLineSection(CStackWindow * owner, size_t lineIndex);
 	};

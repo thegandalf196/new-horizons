@@ -16,6 +16,8 @@
 #include "../texts/MetaString.h"
 #include "../filesystem/ResourcePath.h"
 #include <vcmi/scripting/ApiTags.h>
+#include <algorithm>
+#include <optional>
 #include <stdexcept>
 #include <string_view>
 #include <vector>
@@ -27,6 +29,11 @@ class CSelector;
 class IGameInfoCallback;
 class BonusParameters;
 struct Bonus;
+
+namespace newHorizonsFrozen
+{
+DLL_LINKAGE std::optional<int32_t> markerApplicationRound(const Bonus & bonus);
+}
 
 namespace BonusMigration
 {
@@ -79,7 +86,7 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 	static constexpr size_t MAX_STATUS_IDENTITY_LENGTH = 256;
 	static bool isValidStatusTag(BonusStatusTag tag)
 	{
-		return tag == BonusStatusTag::DEBUFF;
+		return tag == BonusStatusTag::DEBUFF || tag == BonusStatusTag::NON_TRANSFERABLE;
 	}
 	static bool isValidStatusIdentity(std::string_view identity)
 	{
@@ -123,8 +130,17 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 	Bonus(const Bonus & inst, const BonusSourceID & sourceId);
 	Bonus() = default;
 
+	template <typename Handler> void validateFrozenSerialization(Handler & h) const
+	{
+		if(newHorizonsFrozen::markerApplicationRound(*this)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN))
+			throw std::runtime_error("Cannot discard Frozen marker in an older bonus format");
+	}
+
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateFrozenSerialization(h);
 		if(h.saving)
 		{
 			validateConfusionPendingMarker();
@@ -145,6 +161,9 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 		if(h.saving && hasStatusMetadata()
 			&& !h.hasFeature(Handler::Version::BONUS_STATUS_TAGS))
 			throw std::runtime_error("Cannot discard bonus status metadata");
+		if(h.saving && std::find(statusTags.begin(), statusTags.end(), BonusStatusTag::NON_TRANSFERABLE) != statusTags.end()
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_REALITY_WARP_EXCHANGE))
+			throw std::runtime_error("Cannot write non-transferable status tag in an older bonus format");
 		// TIME_STOP is a new serialized bonus type.  Never emit it through an
 		// older handler: doing so would shift/interpret the enum differently in a
 		// legacy reader.  A battle without this marker remains fully loadable by
@@ -233,6 +252,9 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 			h & statusIdentity;
 			if(!h.saving && !hasValidStatusMetadata())
 				throw std::runtime_error("Invalid bonus status metadata");
+			if(!h.saving && std::find(statusTags.begin(), statusTags.end(), BonusStatusTag::NON_TRANSFERABLE) != statusTags.end()
+				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_REALITY_WARP_EXCHANGE))
+				throw std::runtime_error("Unsupported non-transferable status tag in older bonus format");
 		}
 		else if(!h.saving)
 		{
@@ -248,6 +270,7 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 			BonusMigration::migrateCombatAbility(*this);
 		if(!h.saving)
 		{
+			validateFrozenSerialization(h);
 			validateConfusionPendingMarker();
 			if(type == BonusType::CONFUSION_PENDING
 				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CONFUSION_MARKER))

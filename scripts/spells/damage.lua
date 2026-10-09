@@ -194,6 +194,11 @@ local function applyHandOfFateCollateral(self, mechanics, server, battle, primar
 	-- included in the actual loss and must not be applied a second time.
 	local adjustedDamage = mechanics:adjustRecipientDamage(recipient, spillBase)
 	if adjustedDamage <= 0 then
+		-- Receptivity/resistance already succeeded: a fully absorbed immediate
+		-- magical hit still breaks Frozen, just like the primary damage event.
+		if mechanics:getSpell():isMagical() and not self.indirect then
+			server:clearFrozenAfterDirectMagicDamage(battle, recipient)
+		end
 		server:appendLog(battle, {
 			append = { HAND_OF_FATE_BLOCKED_TEXT },
 			replaceStrings = { recipientName },
@@ -203,6 +208,11 @@ local function applyHandOfFateCollateral(self, mechanics, server, battle, primar
 	end
 	local actualDamage, killed = server:damageUnit(battle, recipient, adjustedDamage, self.destroyRemains == true,
 		mechanics:getUnitCaster(), true)
+	-- This immediate secondary spell hit is direct damage, not a redirected
+	-- injury or a damage-over-time tick. It breaks Frozen without Shatter.
+	if mechanics:getSpell():isMagical() and not self.indirect then
+		server:clearFrozenAfterDirectMagicDamage(battle, recipient)
+	end
 	server:appendLog(battle, {
 		append = { HAND_OF_FATE_COLLATERAL_TEXT },
 		replaceStrings = { recipientName },
@@ -243,6 +253,9 @@ function Script:apply(mechanics, server, target)
 			-- intentionally remain unattributed.
 			local dmg, killed = server:damageUnit(
 				battle, unit, amount, self.destroyRemains == true, mechanics:getUnitCaster(), true)
+			if mechanics:getSpell():isMagical() and not self.indirect then
+				server:clearFrozenAfterDirectMagicDamage(battle, unit)
+			end
 			local collateralDamage, collateralKilled = 0, 0
 			if self.handOfFate then
 				collateralDamage, collateralKilled = applyHandOfFateCollateral(

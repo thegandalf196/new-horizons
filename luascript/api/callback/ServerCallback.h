@@ -51,6 +51,8 @@ public:
 	static void appendLog(ServerCallback & object, const IBattleInfoCallback & battle, const LuaMetaString & config);
 	static bool describeChanges(ServerCallback & object);
 	static void removeUnitBonuses(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit & unit, const BonusList & bonusList);
+	static void clearFrozenAfterDirectMagicDamage(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit & unit);
+	static void removeCurePhysicalAffliction(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit & unit, const std::string & kind);
 	static void addUnitBonus(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit & unit, const BonusDescriptor & data, bool cumulative);
 	static void addBattleBonus(ServerCallback & object, const IBattleInfoCallback & battle, const BonusDescriptor & data);
 	static void addObstacle(ServerCallback & object, const IBattleInfoCallback & battle, const SpellObstacleDescriptor & descriptor);

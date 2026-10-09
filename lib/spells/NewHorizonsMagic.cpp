@@ -1199,10 +1199,22 @@ void validateRules(const JsonNode & rules)
 {
 	if(legacy(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting", "spellPoints", "mageGuildGeneration", "physicalDamageReductionCapPercent", "schoolRankPowerCoefficientPercent", "spellcraftEfficiencyPercent", "morale"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting", "spellPoints", "mageGuildGeneration", "physicalDamageReductionCapPercent", "schoolRankPowerCoefficientPercent", "spellcraftEfficiencyPercent", "morale", "creatureAbilities"});
 	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
 	require(integer(rules["rulesetVersion"], RULESET_VERSION, CURRENT_RULESET_VERSION), "rulesetVersion");
 	const int version = rules["rulesetVersion"].Integer();
+	if(rules.Struct().contains("creatureAbilities"))
+	{
+		require(version == CURRENT_RULESET_VERSION, "Creature abilities require magic rules v3");
+		const auto & abilities = rules["creatureAbilities"];
+		require(abilities.isStruct(), "Creature abilities object");
+		fields(abilities, {"rulesetVersion", "freezingTouchChancePercent", "shatterBonusPercent"});
+		require(abilities["rulesetVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
+			&& integer(abilities["rulesetVersion"], 1, 1), "Creature abilities rulesetVersion");
+		for(const auto * key : {"freezingTouchChancePercent", "shatterBonusPercent"})
+			require(abilities[key].getType() == JsonNode::JsonType::DATA_INTEGER
+				&& integer(abilities[key], 0, 100), std::string("Creature abilities ") + key);
+	}
 	if(version == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 		require(hasCanonicalSchoolRankPowerCoefficientPercent(rules), "canonical school-rank Spell Power coefficient factors");
 	else

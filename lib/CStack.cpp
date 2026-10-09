@@ -70,6 +70,7 @@ void CStack::localInit(BattleInfo * battleInfo)
 	const auto restoredConfusionState = confusionState;
 	const int32_t restoredOverwatchReadyRound = battlecraftOverwatchReadyRound;
 	const int32_t restoredOverwatchUsedRound = battlecraftOverwatchUsedRound;
+	const int32_t restoredFrozenAppliedRound = frozenLastAppliedRound();
 
 	exportBonuses();
 	if(base) //stack originating from "real" stack in garrison -> attach to it
@@ -94,6 +95,7 @@ void CStack::localInit(BattleInfo * battleInfo)
 	confusionState = restoredConfusionState;
 	battlecraftOverwatchReadyRound = restoredOverwatchReadyRound;
 	battlecraftOverwatchUsedRound = restoredOverwatchUsedRound;
+	restoreFrozenApplicationRound(restoredFrozenAppliedRound);
 	position = initialPosition;
 }
 

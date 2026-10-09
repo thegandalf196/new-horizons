@@ -115,6 +115,11 @@ void validateMarkerGroup(const GroupKey & key, const std::vector<Bonus> & bonuse
 		result.source = key.source;
 		result.sourceID = key.sourceID;
 		result.applicationOrder = firstMarker->applicationOrder;
+		// Frozen is represented by its marker alone. Creature-source IDs can
+		// coincide with the bearer's intrinsic native bonuses; those are not
+		// part of this physical affliction and must never be cleansed with it.
+		if(result.kind == "frozen")
+			result.effects.clear();
 		return;
 	}
 
@@ -329,7 +334,7 @@ std::optional<MarkerMetadata> markerMetadata(const Bonus & bonus)
 	for(const auto & [key, value] : values)
 	{
 		(void)value;
-		if(key != "kind" && key != "applicationOrder")
+		if(key != "kind" && key != "applicationOrder" && key != "applicationRound")
 			throw std::invalid_argument("PHYSICAL_AFFLICTION marker contains an unknown parameter");
 	}
 	const auto kind = values.find("kind");
@@ -338,6 +343,12 @@ std::optional<MarkerMetadata> markerMetadata(const Bonus & bonus)
 	const std::string & kindValue = kind->second.String();
 	if(kindValue.empty())
 		throw std::invalid_argument("PHYSICAL_AFFLICTION marker kind cannot be empty");
+	if(const auto round = values.find("applicationRound"); round != values.end())
+	{
+		if(kindValue != "frozen" || round->second.getType() != JsonNode::JsonType::DATA_INTEGER
+			|| round->second.Integer() < 0 || round->second.Integer() > std::numeric_limits<int32_t>::max())
+			throw std::invalid_argument("Invalid Frozen physical-affliction application round");
+	}
 
 	int64_t applicationOrder = 0;
 	const auto order = values.find("applicationOrder");
@@ -410,7 +421,15 @@ std::vector<Bonus> removalPlan(const battle::Unit & unit, const Affliction & aff
 	std::vector<Bonus> result;
 	for(const auto & bonus : unitBonuses(unit))
 		if(bonus.source == affliction.source && bonus.sid == affliction.sourceID)
+		{
+			if(affliction.kind == "frozen")
+			{
+				const auto metadata = markerMetadata(bonus);
+				if(!metadata || metadata->kind != "frozen")
+					continue;
+			}
 			result.push_back(bonus);
+		}
 	return result;
 }
 

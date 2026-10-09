@@ -1,4 +1,140 @@
 {
+	"core:airElemental": {
+		"cost": {
+			"gold": 550
+		},
+		"attack": 12,
+		"defense": 10,
+		"damage": {
+			"min": 7,
+			"max": 10
+		},
+		"hitPoints": 45,
+		"speed": 10,
+		"initiative": 14,
+		"growth": 4
+	},
+	"core:stormElemental": {
+		"cost": {
+			"gold": 750
+		},
+		"attack": 13,
+		"defense": 11,
+		"damage": {
+			"min": 8,
+			"max": 11
+		},
+		"hitPoints": 50,
+		"speed": 10,
+		"initiative": 15,
+		"growth": 4,
+		"shots": 16,
+		"abilities": {
+			"noObstaclePenalty": {
+				"type": "NO_WALL_PENALTY"
+			}
+		}
+	},
+	"core:waterElemental": {
+		"cost": {
+			"gold": 550
+		},
+		"attack": 11,
+		"defense": 12,
+		"damage": {
+			"min": 7,
+			"max": 10
+		},
+		"hitPoints": 50,
+		"speed": 6,
+		"initiative": 9,
+		"growth": 4
+	},
+	"core:iceElemental": {
+		"cost": {
+			"gold": 750
+		},
+		"attack": 12,
+		"defense": 14,
+		"damage": {
+			"min": 9,
+			"max": 12
+		},
+		"hitPoints": 60,
+		"speed": 6,
+		"initiative": 10,
+		"growth": 4,
+		"shots": 0,
+		"abilities": {
+			"shooter": null
+		},
+		"graphics": {
+			"missile": null
+		},
+		"sound": {
+			"shoot": null
+		}
+	},
+	"core:fireElemental": {
+		"cost": {
+			"gold": 550
+		},
+		"attack": 14,
+		"defense": 9,
+		"damage": {
+			"min": 9,
+			"max": 12
+		},
+		"hitPoints": 40,
+		"speed": 8,
+		"initiative": 12,
+		"growth": 4
+	},
+	"core:energyElemental": {
+		"cost": {
+			"gold": 750
+		},
+		"attack": 15,
+		"defense": 10,
+		"damage": {
+			"min": 11,
+			"max": 14
+		},
+		"hitPoints": 45,
+		"speed": 10,
+		"initiative": 13,
+		"growth": 4
+	},
+	"core:earthElemental": {
+		"cost": {
+			"gold": 550
+		},
+		"attack": 10,
+		"defense": 14,
+		"damage": {
+			"min": 8,
+			"max": 11
+		},
+		"hitPoints": 55,
+		"speed": 4,
+		"initiative": 6,
+		"growth": 4
+	},
+	"core:magmaElemental": {
+		"cost": {
+			"gold": 750
+		},
+		"attack": 11,
+		"defense": 16,
+		"damage": {
+			"min": 10,
+			"max": 13
+		},
+		"hitPoints": 65,
+		"speed": 5,
+		"initiative": 7,
+		"growth": 4
+	},
 	"core:pixie": {
 		"upgrades": ["core:sprite"]
 	},

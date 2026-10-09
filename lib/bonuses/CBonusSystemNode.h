@@ -138,6 +138,16 @@ public:
 	const TCNodesVector & getParentNodes() const;
 
 	void nodeHasChanged();
+	struct DLL_LINKAGE PreparedLocalBonusReplacement
+	{
+		BonusList exported;
+		BonusList accepted;
+	};
+	/// Stages exact local lists without refresh hooks. Propagated local bonuses
+	/// must retain their existing pointer; changing propagation needs another API.
+	std::unique_ptr<PreparedLocalBonusReplacement> prepareLocalBonusReplacement(
+		const std::vector<std::shared_ptr<Bonus>> & replacement);
+	void commitLocalBonusReplacement(const PreparedLocalBonusReplacement & prepared) noexcept;
 
 	int32_t getTreeVersion() const override;
 

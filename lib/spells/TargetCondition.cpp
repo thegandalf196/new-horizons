@@ -69,7 +69,22 @@ public:
 		return inverted != result;
 	}
 
+	RecipientConditionResult checkRecipient(const RecipientConditionContext & context, const battle::Unit * target) const override
+	{
+		const auto result = checkCaptured(context, target);
+		if(result != RecipientConditionResult::LEGAL && result != RecipientConditionResult::ILLEGAL)
+			return result;
+		return (inverted != (result == RecipientConditionResult::LEGAL))
+			? RecipientConditionResult::LEGAL : RecipientConditionResult::ILLEGAL;
+	}
+	bool supportsRecipientCheck() const override { return true; }
+
 protected:
+	static RecipientConditionResult verdict(bool value)
+	{
+		return value ? RecipientConditionResult::LEGAL : RecipientConditionResult::ILLEGAL;
+	}
+	virtual RecipientConditionResult checkCaptured(const RecipientConditionContext &, const battle::Unit *) const = 0;
 	virtual bool check(const Mechanics * m, const battle::Unit * target) const = 0;
 };
 
@@ -89,6 +104,10 @@ public:
 	}
 
 protected:
+	RecipientConditionResult checkCaptured(const RecipientConditionContext &, const battle::Unit * target) const override
+	{
+		return verdict(check(nullptr, target));
+	}
 	bool check(const Mechanics * m, const battle::Unit * target) const override
 	{
 		if(target->hasBonus(sel)) {
@@ -113,6 +132,10 @@ private:
 class ResistanceCondition : public TargetConditionItemBase
 {
 protected:
+	RecipientConditionResult checkCaptured(const RecipientConditionContext & context, const battle::Unit * target) const override
+	{
+		return verdict(context.source->isPositive() || target->magicResistance() < 100);
+	}
 	bool check(const Mechanics * m, const battle::Unit * target) const override
 	{
 		if(m->isPositiveSpell()) //Always pass on positive
@@ -128,6 +151,10 @@ public:
 	CreatureCondition(const CreatureID & type_): type(type_) {}
 
 protected:
+	RecipientConditionResult checkCaptured(const RecipientConditionContext &, const battle::Unit * target) const override
+	{
+		return verdict(check(nullptr, target));
+	}
 	bool check(const Mechanics * m, const battle::Unit * target) const override
 	{
 		return target->creatureId() == type;
@@ -147,6 +174,17 @@ public:
 	}
 
 protected:
+	RecipientConditionResult checkCaptured(const RecipientConditionContext & context, const battle::Unit * target) const override
+	{
+		if(!context.source->isMagical() || context.spellLevel <= 0)
+			return RecipientConditionResult::LEGAL;
+		const auto immunities = target->getBonusesOfType(BonusType::LEVEL_SPELL_IMMUNITY);
+		const bool absoluteImmunity = std::any_of(immunities->begin(), immunities->end(), [](const auto & bonus)
+		{
+			return bonus->parameters && bonus->parameters->toNumber() == 1;
+		});
+		return verdict(!absoluteImmunity || immunities->totalValue() < context.spellLevel);
+	}
 	bool check(const Mechanics * m, const battle::Unit * target) const override
 	{
 
@@ -182,6 +220,12 @@ public:
 	}
 
 protected:
+	RecipientConditionResult checkCaptured(const RecipientConditionContext & context, const battle::Unit * target) const override
+	{
+		const auto spell = context.source->getId();
+		return verdict(!target->hasAbsoluteImmunity(spell)
+			&& (context.family == spell || !target->hasAbsoluteImmunity(context.family)));
+	}
 	bool check(const Mechanics * m, const battle::Unit * target) const override
 	{
 		const auto spell = m->getSpellId();
@@ -202,6 +246,20 @@ public:
 	}
 
 protected:
+	RecipientConditionResult checkCaptured(const RecipientConditionContext & context, const battle::Unit * target) const override
+	{
+		bool immune = false;
+		const auto * bearer = target->getBonusBearer();
+		if(!context.source->isPositive() && bearer->hasBonusOfType(BonusType::NEGATIVE_EFFECTS_IMMUNITY, BonusSubtypeID(SpellSchool::ANY)))
+			return RecipientConditionResult::LEGAL;
+		context.source->forEachSchool([&](const SpellSchool & school, bool & stop)
+		{
+			immune = bearer->hasBonusOfType(BonusType::SPELL_SCHOOL_IMMUNITY, BonusSubtypeID(school))
+				|| (!context.source->isPositive() && bearer->hasBonusOfType(BonusType::NEGATIVE_EFFECTS_IMMUNITY, BonusSubtypeID(school)));
+			stop = immune;
+		});
+		return verdict(immune);
+	}
 	bool check(const Mechanics * m, const battle::Unit * target) const override
 	{
 		bool elementalImmune = false;
@@ -241,6 +299,13 @@ public:
 	}
 
 protected:
+	RecipientConditionResult checkCaptured(const RecipientConditionContext & context, const battle::Unit * target) const override
+	{
+		if(!context.source->isMagical() || context.spellLevel <= 0)
+			return RecipientConditionResult::LEGAL;
+		const auto immunities = target->getBonusesOfType(BonusType::LEVEL_SPELL_IMMUNITY);
+		return verdict(immunities->empty() || immunities->totalValue() < context.spellLevel);
+	}
 	bool check(const Mechanics * m, const battle::Unit * target) const override
 	{
 		if(!m->isMagicalEffect()) //Always pass on non-magical
@@ -262,6 +327,12 @@ public:
 	}
 
 protected:
+	RecipientConditionResult checkCaptured(const RecipientConditionContext & context, const battle::Unit * target) const override
+	{
+		const auto spell = context.source->getId();
+		return verdict(!target->hasImmunity(spell)
+			&& (context.family == spell || !target->hasImmunity(context.family)));
+	}
 	bool check(const Mechanics * m, const battle::Unit * target) const override
 	{
 		const auto spell = m->getSpellId();
@@ -274,6 +345,12 @@ protected:
 class HealthValueCondition : public TargetConditionItemBase
 {
 protected:
+	RecipientConditionResult checkCaptured(const RecipientConditionContext & context, const battle::Unit * target) const override
+	{
+		if(!context.maximumTargetHealth)
+			return RecipientConditionResult::MISSING_HEALTH_CAPTURE;
+		return verdict(target->getAvailableHealth() <= *context.maximumTargetHealth);
+	}
 	bool check(const Mechanics * m, const battle::Unit * target) const override
 	{
 		//todo: maybe do not resist on passive cast
@@ -298,6 +375,10 @@ public:
 	}
 
 protected:
+	RecipientConditionResult checkCaptured(const RecipientConditionContext &, const battle::Unit * target) const override
+	{
+		return verdict(check(nullptr, target));
+	}
 	bool check(const Mechanics * m, const battle::Unit * target) const override
 	{
 		return target->hasBonus(selector, cachingString);
@@ -312,6 +393,10 @@ private:
 class ReceptiveFeatureCondition : public TargetConditionItemBase
 {
 protected:
+	RecipientConditionResult checkCaptured(const RecipientConditionContext & context, const battle::Unit * target) const override
+	{
+		return verdict(context.source->isPositive() && target->hasBonus(selector, cachingString));
+	}
 	bool check(const Mechanics * m, const battle::Unit * target) const override
 	{
 		return m->isPositiveSpell() && target->hasBonus(selector, cachingString);
@@ -325,6 +410,18 @@ private:
 class ImmunityNegationCondition : public TargetConditionItemBase
 {
 protected:
+	RecipientConditionResult checkCaptured(const RecipientConditionContext & context, const battle::Unit * target) const override
+	{
+		if(!context.source->isMagical())
+			return RecipientConditionResult::ILLEGAL;
+		if(target->hasBonusOfType(BonusType::NEGATE_ALL_NATURAL_IMMUNITIES, BonusCustomSubtype::immunityEnemyHero))
+			return RecipientConditionResult::LEGAL;
+		if(!target->hasBonusOfType(BonusType::NEGATE_ALL_NATURAL_IMMUNITIES, BonusCustomSubtype::immunityBattleWide))
+			return RecipientConditionResult::ILLEGAL;
+		if(!context.originalCasterOpposesRecipient)
+			return RecipientConditionResult::MISSING_CASTER_PROVENANCE;
+		return verdict(*context.originalCasterOpposesRecipient);
+	}
 	bool check(const Mechanics * m, const battle::Unit * target) const override
 	{
 		const bool battleWideNegation = target->hasBonusOfType(BonusType::NEGATE_ALL_NATURAL_IMMUNITIES, BonusCustomSubtype::immunityBattleWide);
@@ -495,6 +592,78 @@ bool TargetCondition::isReceptiveIgnoringMagicResistance(const Mechanics * m, co
 	return check(normal, m, target, true);
 }
 
+RecipientConditionResult TargetCondition::checkRecipient(const RecipientConditionContext & context, const battle::Unit * target) const
+{
+	if(!context.source || !target || context.family.num < 0 || context.spellLevel < 0
+		|| (context.maximumTargetHealth && *context.maximumTargetHealth < 0))
+		return RecipientConditionResult::INVALID_CONTEXT;
+	if(unsupportedRecipientCondition)
+		return RecipientConditionResult::UNSUPPORTED_CONDITION;
+	// Audit structural support globally without evaluating bypassable normal captures.
+	for(const auto * items : {&absolute, &negation, &normal})
+		for(const auto & item : *items)
+			if(!item || !item->supportsRecipientCheck())
+				return RecipientConditionResult::UNSUPPORTED_CONDITION;
+
+	using Evaluated = std::vector<std::pair<const Item *, RecipientConditionResult>>;
+	Evaluated absoluteResults, normalResults;
+	const auto evaluate = [&](const ItemVector & items, Evaluated & results)
+	{
+		for(const auto & item : items)
+		{
+			if(!item)
+				return RecipientConditionResult::UNSUPPORTED_CONDITION;
+			const auto result = item->checkRecipient(context, target);
+			if(result != RecipientConditionResult::LEGAL && result != RecipientConditionResult::ILLEGAL)
+				return result; // An unavailable adapter/capture must not turn true through inversion or negation.
+			if(context.newHorizonsV3 && context.source->getId() == SpellID(SpellID::FORGETFULNESS)
+				&& item->isForgetfulnessShooterRequirement())
+				continue;
+			results.emplace_back(item.get(), result);
+		}
+		return RecipientConditionResult::LEGAL;
+	};
+	const auto matches = [](const Evaluated & results)
+	{
+		bool hasAlternative = false;
+		bool matchedAlternative = false;
+		for(const auto & entry : results)
+		{
+			if(entry.first->isExclusive())
+			{
+				if(entry.second != RecipientConditionResult::LEGAL)
+					return false;
+			}
+			else
+			{
+				hasAlternative = true;
+				matchedAlternative |= entry.second == RecipientConditionResult::LEGAL;
+			}
+		}
+		return !hasAlternative || matchedAlternative;
+	};
+	const auto absoluteResult = evaluate(absolute, absoluteResults);
+	if(absoluteResult != RecipientConditionResult::LEGAL)
+		return absoluteResult;
+	if(!matches(absoluteResults))
+		return RecipientConditionResult::ILLEGAL;
+	std::optional<RecipientConditionResult> unavailableNegation;
+	for(const auto & item : negation)
+	{
+		const auto result = item->checkRecipient(context, target);
+		if(result == RecipientConditionResult::LEGAL)
+			return RecipientConditionResult::LEGAL;
+		if(result != RecipientConditionResult::ILLEGAL && !unavailableNegation)
+			unavailableNegation = result;
+	}
+	if(unavailableNegation)
+		return *unavailableNegation;
+	const auto normalResult = evaluate(normal, normalResults);
+	if(normalResult != RecipientConditionResult::LEGAL)
+		return normalResult;
+	return matches(normalResults) ? RecipientConditionResult::LEGAL : RecipientConditionResult::ILLEGAL;
+}
+
 void TargetCondition::serializeJson(JsonSerializeFormat & handler, const ItemFactory * itemFactory)
 {
 	if(handler.saving)
@@ -506,6 +675,7 @@ void TargetCondition::serializeJson(JsonSerializeFormat & handler, const ItemFac
 	absolute.clear();
 	normal.clear();
 	negation.clear();
+	unsupportedRecipientCondition = false;
 
 	absolute.push_back(itemFactory->createAbsoluteSpell());
 	absolute.push_back(itemFactory->createAbsoluteLevel());
@@ -571,7 +741,11 @@ void TargetCondition::loadConditions(const JsonNode & source, bool exclusive, bo
 		const JsonNode & value = keyValue.second;
 
 		if (!value.isString())
+		{
+			// Preserve ordinary legacy parsing, but never omit an unparsed transfer restriction.
+			unsupportedRecipientCondition = true;
 			continue;
+		}
 
 		if(value.String() == "absolute")
 			isAbsolute = true;
@@ -580,7 +754,10 @@ void TargetCondition::loadConditions(const JsonNode & source, bool exclusive, bo
 		else if(value.isStruct()) //assume conditions have a new struct format
 			isAbsolute = value["absolute"].Bool();
 		else
+		{
+			unsupportedRecipientCondition = true;
 			continue;
+		}
 
 		std::shared_ptr<TargetConditionItem> item;
 		if(value.isStruct())
@@ -606,6 +783,8 @@ void TargetCondition::loadConditions(const JsonNode & source, bool exclusive, bo
 			else
 				normal.push_back(item);
 		}
+		else
+			unsupportedRecipientCondition = true;
 	}
 }
 

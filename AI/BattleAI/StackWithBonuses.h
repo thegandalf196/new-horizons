@@ -125,6 +125,8 @@ public:
 	int32_t getTreeVersion() const override;
 
 	void addUnitBonus(const std::vector<Bonus> & bonus);
+	std::vector<Bonus> localSpellEffects() const;
+	void replaceLocalSpellEffectsExact(const std::vector<Bonus> & replacement);
 	void updateUnitBonus(const std::vector<Bonus> & bonus);
 	void removeUnitBonus(const std::vector<Bonus> & bonus);
 	/// Projects an already selected Purify payload onto this detached state.
@@ -165,6 +167,8 @@ private:
 	// retaining detached projections; it does not make the group an affliction.
 	std::set<std::pair<BonusSource, BonusSourceID>> capturedPhysicalAfflictionGroups;
 	void captureEffects();
+	void captureLocalSpellEffects();
+	std::optional<std::vector<Bonus>> exactLocalSpellEffects;
 	// New hypothetical units own a detached CStack as their creature/army bonus
 	// provenance. Descendant projections retain the projected bearer that they
 	// wrap so origBearer never points into a destroyed hypothetical battle.
@@ -442,6 +446,10 @@ public:
 	/// post-hit aftermath is applied separately once using the captured outcome.
 	bool fortuneStrikeIsCertain(const BattleAttackInfo & attack) const;
 	ProjectedLuckOutcome captureFortuneStrikeOutcome(const BattleAttackInfo & attack) const;
+	/// Deterministic post-hit cleansing only; stochastic Freezing Touch is valued,
+	/// never materialized as a guaranteed marker in a forecast.
+	void projectFrozenShatter(const BattleAttackInfo & attack,
+		const std::vector<std::pair<uint32_t, int64_t>> & hits);
 	void projectFortuneStrike(const BattleAttackInfo & attack,
 		const std::vector<std::pair<uint32_t, int64_t>> & hits,
 		battle::CUnitState * attackerState, bool enemyStackKilled,
@@ -469,6 +477,8 @@ public:
 	void recordBloodrageTransition(const std::shared_ptr<StackWithBonuses> & unit, bool wasAlive);
 
 	void addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus) override;
+	battle::BattleEffectSnapshot captureBattleEffects(uint32_t id) const override;
+	void exchangeBattleEffects(const battle::BattleEffectExchange & exchange) override;
 	void updateUnitBonus(uint32_t id, const std::vector<Bonus> & bonus) override;
 	void removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus) override;
 

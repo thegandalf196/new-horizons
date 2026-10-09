@@ -50,6 +50,8 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 	template <typename Handler> void serialize(Handler & h)
 	{
 		if(h.saving && info)
+			info->validateFrozenSerialization(h);
+		if(h.saving && info)
 			info->validatePerfectFortuneSerialization(h);
 		if(h.saving && info)
 			info->validateLuckSerendipitySerialization(h);
@@ -797,6 +799,7 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 			for(const auto & change : changedStacks)
 			{
 				change.validateOverwatchSerialization(h);
+				change.validateFrozenSerialization(h);
 				change.validateBattleFormSerialization(h);
 				change.validateConfusionSerialization(h);
 			}
@@ -862,6 +865,7 @@ struct BattleStackAttacked
 		CLONE_KILLED = 8,
 		SPELL_EFFECT = 16,
 		GUARDIAN_SPIRIT_EXHAUSTED = 32,
+		SHATTER = 64,
 	};
 	ui32 flags = 0; //uses EFlags (above)
 	SpellID spellID = SpellID::NONE; //only if flag SPELL_EFFECT is set
@@ -893,6 +897,10 @@ struct BattleStackAttacked
 	{
 		return flags & CLONE_KILLED;
 	}
+	bool shattered() const
+	{
+		return flags & SHATTER;
+	}
 	bool isSecondary() const//if stack was not a primary target (receives no spell effects)
 	{
 		return flags & SECONDARY;
@@ -912,11 +920,14 @@ struct BattleStackAttacked
 		if(h.saving)
 		{
 			newState.validateOverwatchSerialization(h);
+			newState.validateFrozenSerialization(h);
 			newState.validateBattleFormSerialization(h);
 			newState.validateConfusionSerialization(h);
 		}
 		if(h.saving)
 			validateArmorerLastStandShape();
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN) && shattered())
+			throw std::runtime_error("Cannot discard Frozen Shatter attack feedback");
 		const auto & followUpPercent = newState.data["state"]["rangedFollowUpDamagePercent"];
 		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_CASUALTY_PROVENANCE)
 			&& newState.hasCasualtyProvenanceState())
@@ -1072,12 +1083,16 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 			for(const auto & change : attackerChanges.changedStacks)
 			{
 				change.validateOverwatchSerialization(h);
+				change.validateFrozenSerialization(h);
 				change.validateBattleFormSerialization(h);
 				change.validateConfusionSerialization(h);
 			}
 			for(const auto & hit : bsa)
 			{
 				hit.newState.validateOverwatchSerialization(h);
+				hit.newState.validateFrozenSerialization(h);
+				if(hit.shattered() && !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN))
+					throw std::runtime_error("Cannot discard Frozen Shatter in an older battle attack format");
 				hit.newState.validateBattleFormSerialization(h);
 				hit.newState.validateConfusionSerialization(h);
 			}
@@ -1542,6 +1557,9 @@ struct DLL_LINKAGE StacksInjured : public CPackForClient
 			for(const auto & hit : stacks)
 			{
 				hit.newState.validateOverwatchSerialization(h);
+				hit.newState.validateFrozenSerialization(h);
+				if(hit.shattered() && !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN))
+					throw std::runtime_error("Cannot discard Frozen Shatter in an older injury format");
 				hit.newState.validateBattleFormSerialization(h);
 				hit.newState.validateConfusionSerialization(h);
 			}

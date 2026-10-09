@@ -358,14 +358,14 @@
 						]
 					},
 					"core:airElemental": {
-						"weeklyBaseGrowth": 5,
+						"weeklyBaseGrowth": 4,
 						"members": [
 							"core:airElemental",
 							"core:stormElemental"
 						]
 					},
 					"core:waterElemental": {
-						"weeklyBaseGrowth": 5,
+						"weeklyBaseGrowth": 4,
 						"members": [
 							"core:waterElemental",
 							"core:iceElemental"
@@ -449,6 +449,13 @@
 							"core:chaosHydra"
 						]
 					},
+					"core:earthElemental": {
+						"weeklyBaseGrowth": 4,
+						"members": [
+							"core:earthElemental",
+							"core:magmaElemental"
+						]
+					},
 					"core:fireElemental": {
 						"weeklyBaseGrowth": 4,
 						"hordeGrowthOverride": 2,
@@ -464,6 +471,11 @@
 			"newHorizons": {
 				"schemaVersion": 1,
 				"rulesetVersion": 3,
+				"creatureAbilities": {
+					"rulesetVersion": 1,
+					"freezingTouchChancePercent": 20,
+					"shatterBonusPercent": 25
+				},
 				"morale": {
 					"rulesetVersion": 1,
 					"minimum": -10,
@@ -1026,6 +1038,19 @@
 							22,
 							22,
 							22
+						],
+						"active": true
+					},
+					"new-horizons:realityWarp": {
+						"schools": [
+							"new-horizons:chaos"
+						],
+						"level": 4,
+						"costs": [
+							15,
+							15,
+							15,
+							15
 						],
 						"active": true
 					},
@@ -3270,10 +3295,10 @@
 						"core:hydra": 650,
 						"core:pixie": 45,
 						"core:sprite": 60,
-						"core:airElemental": 180,
-						"core:waterElemental": 200,
-						"core:fireElemental": 220,
-						"core:earthElemental": 240,
+						"core:airElemental": 250,
+						"core:waterElemental": 250,
+						"core:fireElemental": 250,
+						"core:earthElemental": 250,
 						"core:magicElemental": 320,
 						"core:phoenix": 650,
 						"new-horizons:wisp": 140,
@@ -3377,7 +3402,7 @@
 				"schemaVersion": 1,
 				"rulesetVersion": 2,
 				"sourceDocument": "docs/design-sources/New Horizons.md",
-				"sourceSha256": "c1dbced844ca7464d2b8a99323e60e7d85e6dcc168b9f6eebe1f3d1a27298502",
+				"sourceSha256": "d1ab68a1c200921ab14d4716d42d65ed18a4abd393b2210e67e543328abbfc75",
 				"maxSkillChoices": 2,
 				"maxPerkChoices": 2,
 				"maxPerksPerSkill": 3,
@@ -5204,7 +5229,7 @@
 								"requires": "advanced",
 								"description": "Reality Warp may target any two legal stacks rather than requiring one friendly and one enemy stack.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Reality Warp may target any two legal stacks rather than requiring one friendly and one enemy stack."
 								}
 							},
@@ -9508,6 +9533,13 @@
 		"new-horizons.muster.externalTargetUsed": "Muster already used at this dwelling",
 		"new-horizons.muster.externalRecruiterNote": "Choose one owned external Core dwelling to reinforce.",
 		"new-horizons.muster.noExternalTargets": "No legal Core recruit is available in this external dwelling.",
+		"new-horizons.creature.freezingTouch.compact": "Freezing Touch %chance%%\nShatter +%bonus%%",
+		"new-horizons.creature.freezingTouch.help": "Freezing Touch: each successful melee attack or retaliation has a %chance%% chance, rolled once after damage, to inflict physical Frozen. Frozen prevents retaliation and forfeits the next normal Creature Activation, then thaws. Extra activations cannot thaw it. A subsequent ordinary physical creature attack deals +%bonus%% final damage and Shatters the ice, without retaliation. Direct magical damage breaks the ice without this bonus. Cure clears Frozen; ordinary Dispel does not. Cannot stack or refresh; at most one successful application per recipient per round, even after cleansing.",
+		"new-horizons.combat.frozen.label": "Frozen",
+		"new-horizons.combat.frozen.tooltip": "%label%: physical ice encasement. Cannot retaliate. The next normal Creature Activation is forfeited, then the ice thaws; extra activations cannot thaw it. The next ordinary physical creature attack deals +%bonus%% final damage and Shatters the ice, without retaliation. Direct magical damage breaks the ice without this bonus. Cure removes it; ordinary Dispel does not. Cannot refresh or stack; at most one application per round, even after cleansing.",
+		"new-horizons.combat.frozen.queue": "Frozen: incapacitated. The next normal Creature Activation is forfeited, then thaws. Extra activations do not thaw the ice.",
+		"new-horizons.combat.frozen.forfeit": "%creature% are Frozen: their normal Creature Activation is forfeited and the ice thaws.",
+		"new-horizons.combat.frozen.shatter": "The ice around %creature% Shatters after the physical hit; no retaliation.",
 		"new-horizons.combat.firstAid.permanentRestoration": "Permanently restores %s HP (%s creatures).",
 		"new-horizons.combat.orders.targetRejection.unavailable": "This Order is no longer available.",
 		"new-horizons.combat.orders.targetRejection.targetCount": "Select the required number of stacks.",

@@ -28,7 +28,9 @@ bool isPolymorphMarker(const Bonus * bonus)
 {
 	return bonus && bonus->type == BonusType::NONE && bonus->source == BonusSource::SPELL_EFFECT
 		&& bonus->duration == BonusDuration::ONE_BATTLE && bonus->statusIdentity == "polymorph"
-		&& bonus->statusTags == std::vector<BonusStatusTag>{BonusStatusTag::DEBUFF};
+		&& (bonus->statusTags == std::vector<BonusStatusTag>{BonusStatusTag::DEBUFF}
+			|| bonus->statusTags == std::vector<BonusStatusTag>{BonusStatusTag::DEBUFF, BonusStatusTag::NON_TRANSFERABLE}
+			|| bonus->statusTags == std::vector<BonusStatusTag>{BonusStatusTag::NON_TRANSFERABLE, BonusStatusTag::DEBUFF});
 }
 
 bool battleFormDurationPaused(const Unit & unit)

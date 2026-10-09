@@ -574,7 +574,7 @@
 		},
 		"statusTags" : {
 			"type" : "array",
-			"items" : { "type" : "string", "enum" : [ "DEBUFF" ] },
+			"items" : { "type" : "string", "enum" : [ "DEBUFF", "NON_TRANSFERABLE" ] },
 			"uniqueItems" : true,
 			"description" : "Explicit status-level classifications shared by component bonuses."
 		},

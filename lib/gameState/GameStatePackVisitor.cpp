@@ -3599,6 +3599,12 @@ void BattleStatePackVisitor::visitBattleObstaclesChanged(BattleObstaclesChanged 
 
 void BattleStatePackVisitor::visitSetStackEffect(SetStackEffect & pack)
 {
+	pack.validateExchange();
+	if(pack.exchange)
+	{
+		battleState.exchangeBattleEffects(*pack.exchange);
+		return;
+	}
 	pack.validateConfusionMarkers();
 	const SpellID hydrasVitality(SpellID::decode("new-horizons:hydrasVitality"));
 	const auto hydrasVitalitySource = BonusSourceID(hydrasVitality);

@@ -1154,6 +1154,8 @@ struct StackInfoStatusSnapshot
 	SylvanLuckStackStatus sylvanLuck;
 	BattleFormStatus battleForm;
 	PhysicalPoisonStatus physicalPoison;
+	bool frozen = false;
+	int frozenShatterBonusPercent = 0;
 	TemporaryCreatureStatus temporaryCreatures;
 	EntangleStatus entangle;
 	DivineRetributionProtectionStatus divineRetribution;

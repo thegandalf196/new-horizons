@@ -33,6 +33,11 @@ public:
 	virtual bool isForgetfulnessShooterRequirement() const { return false; }
 
 	virtual bool isExclusive() const = 0;
+	virtual bool supportsRecipientCheck() const { return false; }
+	virtual RecipientConditionResult checkRecipient(const RecipientConditionContext &, const battle::Unit *) const
+	{
+		return RecipientConditionResult::UNSUPPORTED_CONDITION;
+	}
 };
 
 class DLL_LINKAGE TargetConditionItemFactory
@@ -73,11 +78,13 @@ public:
 	/// default Magic Resistance gate. Used by effects such as friendly Blink,
 	/// which are not hostile magical effects despite their spell polarity.
 	bool isReceptiveIgnoringMagicResistance(const Mechanics * m, const battle::Unit * target) const;
+	RecipientConditionResult checkRecipient(const RecipientConditionContext & context, const battle::Unit * target) const;
 
 	void serializeJson(JsonSerializeFormat & handler, const ItemFactory * itemFactory);
 protected:
 
 private:
+	bool unsupportedRecipientCondition = false;
 	bool check(const ItemVector & condition, const Mechanics * m, const battle::Unit * target,
 		bool ignoreMagicResistance = false) const;
 

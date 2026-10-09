@@ -174,6 +174,7 @@ class BattleActionsController
 		int32_t spellOvercharge = 0;
 		bool spellSelectiveDispel = false;
 		SpellID spellCureAffliction = SpellID::NONE;
+		std::string spellCurePhysicalAffliction;
 		bool spellMassSlow = false;
 		int32_t spellShadowGiftSacrificePercent = 0;
 
@@ -215,6 +216,16 @@ class BattleActionsController
 	BattleSide lifeDrainSide = BattleSide::NONE;
 	int32_t lifeDrainRound = -1;
 	ObjectInstanceID lifeDrainHeroID = ObjectInstanceID::NONE;
+	std::vector<uint32_t> realityWarpSelectedUnitIds;
+	BattleID realityWarpBattleID;
+	std::optional<PlayerColor> realityWarpPlayer;
+	BattleSide realityWarpSide = BattleSide::NONE;
+	int32_t realityWarpRound = -1;
+	ObjectInstanceID realityWarpHeroID = ObjectInstanceID::NONE;
+	bool realityWarpSelectionContextIsCurrent() const;
+	bool realityWarpTargetsAreLegal(const std::vector<uint32_t> & ids) const;
+	void updateRealityWarpSelectionStatus(const BattleHex & hoveredHex);
+	void selectRealityWarpTarget(const BattleHex & clickedHex);
 
 	/// Two-click selector state for canonical New Horizons Fire Wall.  The
 	/// first click chooses the line's start; the second click chooses one of
@@ -379,6 +390,8 @@ public:
 	SoulChainSelectionPreview getSoulChainSelectionPreview() const;
 	void confirmSoulChainTargets();
 	void undoSoulChainTarget();
+	bool realityWarpTargetSelectionModeActive() const;
+	void undoRealityWarpTarget();
 	/// Read-only presentation data for the currently hovered saved-v3 Chain Lightning cast.
 	const ChainLightningPreview & getChainLightningPreview() const;
 

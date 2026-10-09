@@ -62,6 +62,7 @@ set(test_SRCS
 		battle/HeroSpellAllowanceTransitionTest.cpp
 		battle/BattleHexTest.cpp
 		battle/BattleFormAccessibilityTest.cpp
+		battle/BattleEffectExchangeTest.cpp
 		battle/NewHorizonsPassThroughRangeTest.cpp
 		battle/NewHorizonsBattleFormHealthTest.cpp
  		battle/CBattleInfoCallbackTest.cpp
@@ -70,6 +71,7 @@ set(test_SRCS
 		battle/CUnitStateMagicTest.cpp
 		battle/PhysicalAfflictionTest.cpp
 		battle/NewHorizonsDebuffStatusesTest.cpp
+		battle/NewHorizonsFrozenTest.cpp
 		battle/FocusFireStateTest.cpp
 		battle/RelentlessAssaultStateTest.cpp
 		battle/HeroCommandFocusFireRulesTest.cpp
@@ -113,6 +115,7 @@ set(test_SRCS
 		client/NewHorizonsConfusionStatusTest.cpp
 		client/NewHorizonsEntangleStatusTest.cpp
 		client/NewHorizonsBattleFormStatusTest.cpp
+		client/NewHorizonsRealityWarpPreviewTest.cpp
 		client/NewHorizonsFlankReadbackTest.cpp
 		client/NewHorizonsHeroMoraleLuckReadbackTest.cpp
 		hero/NewHorizonsLeadershipTest.cpp
@@ -176,7 +179,9 @@ set(test_SRCS
 		spells/NewHorizonsSorceryTest.cpp
 		spells/NewHorizonsRegenerationTest.cpp
 		spells/NewHorizonsRealityWarpPlannerTest.cpp
+		spells/NewHorizonsRealityWarpCollectionTest.cpp
  		spells/TargetConditionTest.cpp
+		spells/TargetConditionTransferTest.cpp
 
 		spells/effects/EffectFixture.cpp
 		spells/effects/BattleFormTest.cpp
@@ -227,6 +232,7 @@ set(test_SRCS
 		server/battles/NewHorizonsNaturesWrathTest.cpp
 		server/battles/NewHorizonsPandemoniumTest.cpp
 		server/battles/NewHorizonsPolymorphLifecycleTest.cpp
+		server/battles/NewHorizonsRealityWarpTest.cpp
 		server/battles/NewHorizonsPursuitMarchTest.cpp
 		server/battles/NewHorizonsElementalRebirthTest.cpp
 		server/battles/NewHorizonsElementalConvergenceTest.cpp
@@ -465,6 +471,7 @@ set(test_SRCS
 		server/battles/NewHorizonsQuicksandTest.cpp
 		server/battles/NewHorizonsFireWallTest.cpp
 		server/battles/NewHorizonsTimeStopTest.cpp
+		server/battles/NewHorizonsFrozenTest.cpp
 		server/battles/NewHorizonsMasteryFixtureExportTest.cpp
 		server/battles/NewHorizonsConvenienceFixtureExportTest.cpp
 		server/battles/NewHorizonsHeroFixtureExportTest.cpp
@@ -608,6 +615,8 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsSpellLockAITest.cpp
 		battleAI/NewHorizonsNaturesWrathAITest.cpp
 		battleAI/NewHorizonsPandemoniumAITest.cpp
+		battleAI/NewHorizonsRealityWarpAITest.cpp
+		battleAI/NewHorizonsFrozenAITest.cpp
 		battleAI/SpellTargetsEvaluatorTest.cpp
 		battleAI/HypotheticCloneTest.cpp
 		battleAI/HypotheticTimedSpellTest.cpp
@@ -670,6 +679,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/NullkillerTest.h
 	)
 	# This fixture follows adventure preparation into the combat AI consumer.
+	list(APPEND test_SRCS nullkiller2/NewHorizonsElementalDwellingPriorityTest.cpp)
 	if(ENABLE_BATTLE_AI)
 		list(APPEND test_SRCS nullkiller2/NewHorizonsDemonicReserveAITest.cpp)
 	endif()

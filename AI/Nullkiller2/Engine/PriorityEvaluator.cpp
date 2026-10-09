@@ -13,6 +13,7 @@
 #include "Nullkiller.h"
 #include "../../../lib/entities/artifact/CArtifact.h"
 #include "../../../lib/entities/ResourceTypeHandler.h"
+#include "../../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
 #include "../../../lib/mapObjects/CGMarket.h"
 #include "../../../lib/mapObjects/CGResource.h"
 #include "../../../lib/mapping/TerrainTile.h"
@@ -1330,7 +1331,22 @@ public:
 
 			if(bi.baseCreatureID == bi.creatureID)
 			{
-				evaluationContext.addNonCriticalStrategicalValue((0.5f + 0.1f * bi.creatureLevel) / (float)bi.prerequisitesCount);
+				int priorityLevel = bi.creatureLevel;
+				const auto * creature = bi.creatureID.toCreature();
+				static constexpr std::array<std::string_view, 8> classicalElementals = {
+					"core:airElemental", "core:stormElemental", "core:waterElemental", "core:iceElemental",
+					"core:fireElemental", "core:energyElemental", "core:earthElemental", "core:magmaElemental"
+				};
+				if(creature && vstd::contains(classicalElementals, creature->getJsonKey()))
+				{
+					const auto category = evaluationContext.evaluator.aiNk->cc->getCreatureCategory(bi.creatureID);
+					if(category && category->category == newHorizonsCreatures::CreatureCategory::ELITE)
+						priorityLevel = static_cast<int>(category->category) + 1;
+				}
+				// Keep the historical level in BuildingInfo for growth-row lookup.
+				// Only this hint uses the equal captured Elite rank; army value,
+				// actual prerequisites, costs and upgrade rewards remain distinct.
+				evaluationContext.addNonCriticalStrategicalValue((0.5f + 0.1f * priorityLevel) / (float)bi.prerequisitesCount);
 				evaluationContext.armyReward += bi.armyStrength * 1.5;
 			}
 			else

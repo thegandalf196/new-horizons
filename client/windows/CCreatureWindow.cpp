@@ -29,6 +29,7 @@
 #include "GUIClasses.h"
 #include "InfoWindows.h"
 #include "NewHorizonsOrderBadgeHelp.h"
+#include "NewHorizonsCreatureAbilityHelp.h"
 #include "../gui/WindowHandler.h"
 #include "../GameEngine.h"
 #include "../GameInstance.h"
@@ -555,6 +556,9 @@ CStackWindow::BonusLineSection::BonusLineSection(CStackWindow * owner, size_t li
 
 			description[leftRight] = std::make_shared<CMultiLineLabel>(Rect(position.x + 60, position.y, 137, 50), FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, bi.description);
 			drawBonusSource(leftRight, Point(position.x - 1, position.y - 1), bi);
+			if(!bi.tooltip.empty())
+				abilityHelp[leftRight] = std::make_shared<LRClickableAreaWText>(
+					Rect(position.x, position.y, 197, 50), bi.tooltip, bi.tooltip);
 		}
 	}
 }
@@ -1355,6 +1359,31 @@ void CStackWindow::keyPressed(EShortcut key)
 
 void CStackWindow::initBonusesList()
 {
+	// Use the unit's own captured battle/world rules. A missing battle context
+	// must not borrow the adventure profile, and a bare preview invents none.
+	const JsonNode * abilityRules = nullptr;
+	if(info->stack)
+	{
+		if(const auto * battleContext = info->stack->getBattle())
+			abilityRules = &battleContext->getMagicRules();
+	}
+	else if(info->stackNode && info->stackNode->cb)
+		abilityRules = &info->stackNode->cb->getMagicRules();
+	else if(GAME->interface() && GAME->interface()->cb)
+		abilityRules = &GAME->interface()->cb->getMagicRules();
+	const auto freezingTouch = newHorizonsCreatureAbilityHelp::freezingTouch(
+		info->creature->getJsonKey(), abilityRules,
+		LIBRARY->generaltexth->translate("new-horizons.creature.freezingTouch.compact"),
+		LIBRARY->generaltexth->translate("new-horizons.creature.freezingTouch.help"));
+	if(freezingTouch)
+	{
+		BonusInfo ability;
+		ability.description = freezingTouch->compact;
+		ability.tooltip = freezingTouch->details;
+		ability.bonusSource = BonusSource::CREATURE_ABILITY;
+		activeBonuses.push_back(std::move(ability));
+	}
+
 	const IBonusBearer * bonusSource = info->stack
 	? static_cast<const IBonusBearer*>(info->stack)  // Use CStack in battle
 	: static_cast<const IBonusBearer*>(info->stackNode);  // Use CStackInstance outside of battle

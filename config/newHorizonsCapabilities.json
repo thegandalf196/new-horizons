@@ -35,7 +35,7 @@
 			"core:troglodyte": 55, "core:harpy": 90, "core:beholder": 140, "core:medusa": 230, "core:minotaur": 330, "core:manticore": 430, "core:redDragon": 650,
 			"core:goblin": 50, "core:goblinWolfRider": 90, "core:orc": 140, "core:ogre": 250, "core:roc": 300, "core:cyclop": 450, "core:behemoth": 650,
 			"core:gnoll": 55, "core:lizardman": 90, "core:serpentFly": 140, "core:basilisk": 230, "core:gorgon": 340, "core:wyvern": 430, "core:hydra": 650,
-			"core:pixie": 45, "core:sprite": 60, "core:airElemental": 180, "core:waterElemental": 200, "core:fireElemental": 220, "core:earthElemental": 240, "core:magicElemental": 320, "core:phoenix": 650,
+			"core:pixie": 45, "core:sprite": 60, "core:airElemental": 250, "core:waterElemental": 250, "core:fireElemental": 250, "core:earthElemental": 250, "core:magicElemental": 320, "core:phoenix": 650,
 			"new-horizons:wisp": 140, "new-horizons:wispUpgrade": 170
 		}
 	},

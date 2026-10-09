@@ -18,9 +18,12 @@
 #include "../../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../../lib/spells/NewHorizonsSorcery.h"
 #include "../../../lib/battle/NewHorizonsBulwark.h"
+#include "../../../lib/battle/NewHorizonsFrozen.h"
+#include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/spells/Problem.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/modding/CModHandler.h"
+#include "../../../lib/CRandomGenerator.h"
 
 namespace
 {
@@ -48,6 +51,8 @@ protected:
 	bool optIntoNewCure = true;
 	bool enableHealerPerkRules = false;
 	int magicVersion = newHorizonsMagic::CURRENT_RULESET_VERSION;
+	bool disableFrozenRules = false;
+	int freezingTouchChance = -1;
 	CStack * target = nullptr;
 	CStack * poisonEnemy = nullptr;
 
@@ -68,6 +73,10 @@ protected:
 				JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		}
 		JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+		if(disableFrozenRules)
+			rules.Struct().erase("creatureAbilities");
+		else if(freezingTouchChance >= 0)
+			rules["creatureAbilities"]["freezingTouchChancePercent"].Integer() = freezingTouchChance;
 		if(magicVersion != newHorizonsMagic::CURRENT_RULESET_VERSION)
 		{
 			rules["rulesetVersion"].Integer() = magicVersion;
@@ -125,6 +134,18 @@ protected:
 		if(healthPenalty)
 			target->addNewBonus(spellEffect(poison, BonusType::STACK_HEALTH, -10,
 				BonusValueType::PERCENT_TO_ALL));
+	}
+
+	void addFrozen(CStack * recipient = nullptr)
+	{
+		auto * frozenTarget = recipient ? recipient : target;
+		SetStackEffect effects;
+		effects.battleID = BattleID(0);
+		effects.toAdd.emplace_back(frozenTarget->unitId(), std::vector<Bonus>{
+			newHorizonsFrozen::marker(BonusSourceID(creatureByName("core:iceElemental")),
+				battle()->getBattle()->getRound())});
+		gameHandler->sendAndApply(effects);
+		ASSERT_TRUE(newHorizonsFrozen::isFrozen(*frozenTarget));
 	}
 
 	void addDisease()
@@ -206,6 +227,225 @@ protected:
 		return stack->physicalPoisonActivationsRemaining < remainingBefore;
 	}
 };
+}
+
+TEST_F(NewHorizonsCureTest, FrozenPhysicalChoiceCleansesFullHealthAndPreservesRecipientStampAndInnateBonus)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_TRUE(newHorizonsFrozen::enabled(battle()->getMagicRules()));
+	ASSERT_NO_FATAL_FAILURE(addFrozen());
+	const auto healthBefore = target->getAvailableHealth();
+	const auto roundBefore = target->frozenLastAppliedRound();
+	const auto ice = creatureByName("core:iceElemental");
+	target->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::STACKS_SPEED,
+		BonusSource::CREATURE_ABILITY, 1, BonusSourceID(ice)));
+	const int manaBefore = attackerSideHero->getManaAvailable();
+	auto action = cureAction(target);
+	action.spellCurePhysicalAffliction = "frozen";
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), attackerSideHero->tempOwner, action));
+	EXPECT_FALSE(newHorizonsFrozen::isFrozen(*target));
+	EXPECT_EQ(target->getAvailableHealth(), healthBefore);
+	EXPECT_EQ(target->frozenLastAppliedRound(), roundBefore);
+	EXPECT_FALSE(newHorizonsFrozen::canApply(*target, roundBefore));
+	EXPECT_TRUE(target->hasBonus(Selector::type()(BonusType::STACKS_SPEED)
+		.And(Selector::source(BonusSource::CREATURE_ABILITY, BonusSourceID(ice)))));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 4);
+	// Exercise the receiver, not only the read-only eligibility predicate: Cure
+	// must not permit another same-round receipt to re-freeze the recipient.
+	EXPECT_THROW(battle()->addUnitBonus(target->unitId(), {
+		newHorizonsFrozen::marker(BonusSourceID(ice), roundBefore)}), std::invalid_argument);
+	EXPECT_FALSE(newHorizonsFrozen::isFrozen(*target));
+	EXPECT_EQ(target->frozenLastAppliedRound(), roundBefore);
+}
+
+TEST_F(NewHorizonsCureTest, FrozenPhysicalChoiceLeavesPoisonAndDiseaseUnchanged)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	addPoison();
+	addDisease();
+	ASSERT_NO_FATAL_FAILURE(addFrozen());
+	auto action = cureAction(target);
+	action.spellCurePhysicalAffliction = "frozen";
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), attackerSideHero->tempOwner, action));
+	EXPECT_FALSE(newHorizonsFrozen::isFrozen(*target));
+	EXPECT_TRUE(hasSource(SpellID::POISON));
+	EXPECT_TRUE(hasSource(SpellID::DISEASE));
+}
+
+TEST_F(NewHorizonsCureTest, FrozenPhysicalChoiceRejectsMissingUnknownAndConflictingSelectionWithoutSpending)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	auto action = cureAction(target);
+	action.spellCurePhysicalAffliction = "frozen";
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), attackerSideHero->tempOwner, action));
+	ASSERT_NO_FATAL_FAILURE(addFrozen());
+	action.spellCurePhysicalAffliction = "stoneGaze";
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), attackerSideHero->tempOwner, action));
+	action.spellCurePhysicalAffliction = "frozen";
+	action.spellCureAffliction = SpellID::POISON;
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), attackerSideHero->tempOwner, action));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_TRUE(newHorizonsFrozen::isFrozen(*target));
+}
+
+TEST_F(NewHorizonsCureTest, FrozenPhysicalChoiceRequiresCapturedCreatureRulesButNotPositiveProcChance)
+{
+	freezingTouchChance = 0;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	EXPECT_EQ(newHorizonsFrozen::chancePercent(battle()->getMagicRules()), 0);
+	ASSERT_NO_FATAL_FAILURE(addFrozen());
+	auto action = cureAction(target);
+	action.spellCurePhysicalAffliction = "frozen";
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), attackerSideHero->tempOwner, action));
+	EXPECT_FALSE(newHorizonsFrozen::isFrozen(*target));
+}
+
+TEST_F(NewHorizonsCureTest, FrozenPhysicalChoiceRejectsAbsentSavedRulesWithoutSpending)
+{
+	disableFrozenRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(addFrozen());
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	auto action = cureAction(target);
+	action.spellCurePhysicalAffliction = "frozen";
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), attackerSideHero->tempOwner, action));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_TRUE(newHorizonsFrozen::isFrozen(*target));
+}
+
+TEST_F(NewHorizonsCureTest, FrozenSurvivesOrdinarySorceryDispel)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	attackerSideHero->addSpellToSpellbook(SpellID::DISPEL);
+	addMagicalConditions();
+	ASSERT_NO_FATAL_FAILURE(addFrozen());
+	auto action = cureAction(target);
+	action.spell = SpellID::DISPEL;
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), attackerSideHero->tempOwner, action));
+	EXPECT_TRUE(newHorizonsFrozen::isFrozen(*target));
+	EXPECT_FALSE(hasSource(SpellID::SLOW));
+}
+
+TEST_F(NewHorizonsCureTest, FrozenDirectMagicArrowBreaksWithoutShatterBonusAndPreservesStamp)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(20, "core:pikeman", 100, 100));
+	attackerSideHero->addSpellToSpellbook(SpellID::MAGIC_ARROW);
+	ASSERT_NO_FATAL_FAILURE(addFrozen(poisonEnemy));
+	const auto roundBefore = poisonEnemy->frozenLastAppliedRound();
+	const auto healthBefore = poisonEnemy->getAvailableHealth();
+	const auto * spell = SpellID(SpellID::MAGIC_ARROW).toSpell();
+	spells::BattleCast parameters(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&parameters);
+	const auto ordinaryDamage = mechanics->adjustEffectValue(poisonEnemy);
+	ASSERT_GT(ordinaryDamage, 0);
+	auto action = cureAction(poisonEnemy);
+	action.spell = SpellID::MAGIC_ARROW;
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), attackerSideHero->tempOwner, action));
+	EXPECT_EQ(healthBefore - poisonEnemy->getAvailableHealth(), ordinaryDamage);
+	EXPECT_FALSE(newHorizonsFrozen::isFrozen(*poisonEnemy));
+	EXPECT_EQ(poisonEnemy->frozenLastAppliedRound(), roundBefore);
+	EXPECT_FALSE(newHorizonsFrozen::canApply(*poisonEnemy, roundBefore));
+}
+
+TEST_F(NewHorizonsCureTest, ZeroDamageMagicArrowStillThawsWithoutShatter)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(20, "core:pikeman", 100, 100));
+	attackerSideHero->addSpellToSpellbook(SpellID::MAGIC_ARROW);
+	// Canonical independent MDR caps at 95%, even for a 100% source. Use
+	// the established final per-creature cap to produce a receptive zero hit.
+	poisonEnemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::DAMAGE_RECEIVED_CAP, BonusSource::OTHER, 1, BonusSourceID()));
+	ASSERT_EQ(poisonEnemy->getMaxHealth() / 100, 0);
+	ASSERT_NO_FATAL_FAILURE(addFrozen(poisonEnemy));
+	const auto healthBefore = poisonEnemy->getAvailableHealth();
+	const auto stamp = poisonEnemy->frozenLastAppliedRound();
+	const auto * spell = SpellID(SpellID::MAGIC_ARROW).toSpell();
+	spells::BattleCast parameters(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	ASSERT_EQ(spell->battleMechanics(&parameters)->adjustEffectValue(poisonEnemy), 0);
+	auto action = cureAction(poisonEnemy);
+	action.spell = SpellID::MAGIC_ARROW;
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), attackerSideHero->tempOwner, action));
+	EXPECT_EQ(poisonEnemy->getAvailableHealth(), healthBefore);
+	EXPECT_FALSE(newHorizonsFrozen::isFrozen(*poisonEnemy));
+	EXPECT_EQ(poisonEnemy->frozenLastAppliedRound(), stamp);
+	ASSERT_EQ(server.castsOf(SpellID(SpellID::MAGIC_ARROW)).size(), 1u);
+	for(const auto & injury : server.injuries)
+		for(const auto & hit : injury.stacks)
+			EXPECT_FALSE(hit.shattered());
+}
+
+TEST_F(NewHorizonsCureTest, HandOfFatePositiveImmediateSpillThawsWithoutShatterOrReroll)
+{
+	// Separate games are required: each paid spell consumes its hero action.
+	// The companion zero-damage case below exercises the same sole candidate.
+	ASSERT_NO_FATAL_FAILURE(prepare(100, "core:pikeman", 1000, 1000));
+	const SpellID hand(SpellID::decode("new-horizons:handOfFate"));
+	ASSERT_TRUE(hand.hasValue());
+	attackerSideHero->addSpellToSpellbook(hand);
+	ASSERT_NO_FATAL_FAILURE(addFrozen(target));
+	const auto stamp = target->frozenLastAppliedRound();
+	const auto friendlyHP = target->getAvailableHealth();
+	const auto enemyHP = poisonEnemy->getAvailableHealth();
+	CRandomGenerator expected(seed);
+	for(size_t recipient = 0; recipient < battle()->battleGetAllUnits(false).size(); ++recipient)
+		expected.nextInt(0, 99);
+	expected.nextInt(1, 1);
+	gameHandler->randomizer->setSeed(seed);
+	auto action = cureAction(poisonEnemy);
+	action.spell = hand;
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), attackerSideHero->tempOwner, action));
+	ASSERT_GT(enemyHP - poisonEnemy->getAvailableHealth(), 0);
+	EXPECT_EQ(friendlyHP - target->getAvailableHealth(), (enemyHP - poisonEnemy->getAvailableHealth()) / 2);
+	EXPECT_FALSE(newHorizonsFrozen::isFrozen(*target));
+	EXPECT_EQ(target->frozenLastAppliedRound(), stamp);
+	EXPECT_EQ(gameHandler->getRandomGenerator().nextInt(), expected.nextInt());
+	ASSERT_EQ(server.castsOf(hand).size(), 1u);
+	ASSERT_FALSE(server.injuries.empty());
+	for(const auto & injury : server.injuries)
+		for(const auto & hit : injury.stacks)
+			EXPECT_FALSE(hit.shattered());
+}
+
+TEST_F(NewHorizonsCureTest, HandOfFateZeroImmediateSpillThawsWithoutShatterOrReroll)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(100, "core:pikeman", 1000, 1000));
+	const SpellID hand(SpellID::decode("new-horizons:handOfFate"));
+	ASSERT_TRUE(hand.hasValue());
+	attackerSideHero->addSpellToSpellbook(hand);
+	// 100% authored MDR still leaves 5% under the canonical 95% cap.
+	// This supported 1% final cap instead floors to zero for a Pikeman.
+	target->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::DAMAGE_RECEIVED_CAP, BonusSource::OTHER, 1, BonusSourceID()));
+	ASSERT_EQ(target->getMaxHealth() / 100, 0);
+	ASSERT_NO_FATAL_FAILURE(addFrozen(target));
+	const auto * spell = hand.toSpell();
+	spells::BattleCast parameters(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&parameters);
+	const auto primaryDamage = mechanics->adjustEffectValue(poisonEnemy);
+	ASSERT_GT(primaryDamage, 0);
+	ASSERT_EQ(mechanics->adjustRecipientDamage(target, primaryDamage / 2), 0);
+	const auto stamp = target->frozenLastAppliedRound();
+	const auto friendlyHP = target->getAvailableHealth();
+	const auto enemyHP = poisonEnemy->getAvailableHealth();
+	CRandomGenerator expected(seed);
+	for(size_t recipient = 0; recipient < battle()->battleGetAllUnits(false).size(); ++recipient)
+		expected.nextInt(0, 99);
+	expected.nextInt(1, 1);
+	gameHandler->randomizer->setSeed(seed);
+	auto action = cureAction(poisonEnemy);
+	action.spell = hand;
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), attackerSideHero->tempOwner, action));
+	EXPECT_GT(enemyHP - poisonEnemy->getAvailableHealth(), 0);
+	EXPECT_EQ(target->getAvailableHealth(), friendlyHP);
+	EXPECT_FALSE(newHorizonsFrozen::isFrozen(*target));
+	EXPECT_EQ(target->frozenLastAppliedRound(), stamp);
+	EXPECT_EQ(gameHandler->getRandomGenerator().nextInt(), expected.nextInt());
+	ASSERT_EQ(server.castsOf(hand).size(), 1u);
+	ASSERT_FALSE(server.injuries.empty());
+	for(const auto & injury : server.injuries)
+		for(const auto & hit : injury.stacks)
+			EXPECT_FALSE(hit.shattered());
 }
 
 TEST_F(NewHorizonsCureTest, CanonicalPoisonIsAvailableAsLevelTwoNatureAtSevenMana)

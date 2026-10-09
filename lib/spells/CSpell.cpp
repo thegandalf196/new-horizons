@@ -760,6 +760,11 @@ std::unique_ptr<spells::Mechanics> CSpell::battleMechanics(const spells::IBattle
 	return mechanics->create(event);
 }
 
+spells::RecipientConditionResult CSpell::checkRecipient(const spells::RecipientConditionContext & context, const battle::Unit * target) const
+{
+	return mechanics ? mechanics->checkRecipient(context, target) : spells::RecipientConditionResult::UNSUPPORTED_CONDITION;
+}
+
 void CSpell::registerIcons(const IconRegistar & cb) const
 {
 	cb(getIndex(), 0, "SPELLS", iconBook);

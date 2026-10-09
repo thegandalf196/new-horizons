@@ -1,6 +1,11 @@
 {
 	"schemaVersion": 1,
 	"rulesetVersion": 3,
+	"creatureAbilities": {
+		"rulesetVersion": 1,
+		"freezingTouchChancePercent": 20,
+		"shatterBonusPercent": 25
+	},
 	"morale": {
 		"rulesetVersion": 1,
 		"minimum": -10,
@@ -372,6 +377,12 @@
 			"schools": ["new-horizons:chaos"],
 			"level": 5,
 			"costs": [22, 22, 22, 22],
+			"active": true
+		},
+		"new-horizons:realityWarp": {
+			"schools": ["new-horizons:chaos"],
+			"level": 4,
+			"costs": [15, 15, 15, 15],
 			"active": true
 		},
 		"new-horizons:polymorph": {

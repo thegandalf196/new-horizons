@@ -133,6 +133,8 @@ public:
 
 	/// Gets the current frame ID within current group.
 	float getCurrentFrame() const;
+	/// Actual current sprite content in battlefield coordinates, not its canvas.
+	Rect currentFrameContentRect(bool facingRight) const;
 
 	/// plays once given type of animation, then resets to idle
 	void playOnce(ECreatureAnimType type);

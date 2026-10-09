@@ -309,6 +309,18 @@ float CreatureAnimation::getCurrentFrame() const
 	return currentFrame;
 }
 
+Rect CreatureAnimation::currentFrameContentRect(bool facingRight) const
+{
+	const auto & animation = facingRight ? forward : reverse;
+	const auto image = animation->getImage(static_cast<std::size_t>(floor(currentFrame)), static_cast<std::size_t>(type));
+	if(!image)
+		return Rect(pos.x, pos.y, 0, 0);
+	auto bounds = image->contentRect();
+	bounds.x += pos.x;
+	bounds.y += pos.y;
+	return bounds;
+}
+
 void CreatureAnimation::playOnce( ECreatureAnimType type )
 {
 	setType(type);

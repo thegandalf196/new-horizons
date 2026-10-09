@@ -11,6 +11,7 @@
 
 #include "Bonus.h"
 #include "BonusSelector.h"
+#include <cassert>
 #include <vcmi/scripting/ApiTags.h>
 
 class DLL_LINKAGE BonusList : public scripting::ApiCopyable<BonusList>
@@ -38,6 +39,18 @@ public:
 	bool empty() const { return bonuses.empty(); }
 	void resize(TInternalContainer::size_type sz, const std::shared_ptr<Bonus> & c = nullptr);
 	TInternalContainer::size_type capacity() const { return bonuses.capacity(); }
+	/// Capacity preparation changes storage only, never the logical bonus list.
+	void reserveForReplacement(size_t count) { bonuses.reserve(count); }
+	/// Caller must pre-reserve. shared_ptr construction/assignment cannot throw.
+	void replacePrepared(const BonusList & prepared) noexcept
+	{
+		if(this == &prepared)
+			return;
+		assert(capacity() >= prepared.size());
+		bonuses.clear();
+		for(const auto & bonus : prepared)
+			bonuses.push_back(bonus);
+	}
 	inline std::shared_ptr<Bonus> &operator[] (TInternalContainer::size_type n) { return bonuses[n]; }
 	inline const std::shared_ptr<Bonus> &operator[] (TInternalContainer::size_type n) const { return bonuses[n]; }
 	std::shared_ptr<Bonus> &back() { return bonuses.back(); }

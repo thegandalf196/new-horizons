@@ -1175,6 +1175,41 @@
 		"flags": {"indifferent": true},
 		"targetCondition": {}
 	},
+	"realityWarp": {
+		"name": "Reality Warp",
+		"type": "combat",
+		"school": {"new-horizons:chaos": true},
+		"level": 4,
+		"power": 0,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "CREATURE",
+		"graphics": {
+			"iconBook": "SPELLS.def:0:65",
+			"iconScroll": "SPELLSCR.def:0:65",
+			"iconScenarioBonus": "SPELLBON.def:0:65",
+			"iconEffect": "SPELLINT.def:0:66",
+			"iconImmune": "SPELLINT.def:0:66"
+		},
+		"animation": {"affect": ["C10SPA0"]},
+		"sounds": {"cast": "CLONE"},
+		"levels": {
+			"base": {
+				"range": "0",
+				"description": "Select one friendly and one enemy stack. Exchange all transferable temporary magical buffs and debuffs, preserving captured strength and remaining duration. Effects illegal for their recipient stay where they are. Orders, intrinsic or permanent effects, equipment, terrain, summoned identity, transformations and explicitly non-transferable effects do not move. Reality Breaker permits any two legal stacks. If a hostile endpoint resists, neither stack exchanges effects.",
+				"cost": 15,
+				"power": 0,
+				"targetModifier": {"smart": false},
+				"battleEffects": {"exchange": {"type": "core:realityWarp"}}
+			},
+			"none": {},
+			"basic": {},
+			"advanced": {},
+			"expert": {}
+		},
+		"flags": {"indifferent": true},
+		"targetCondition": {"noneOf": {"bonus.SIEGE_WEAPON": "absolute"}}
+	},
 	"polymorph": {
 		"name": "Polymorph",
 		"type": "combat",

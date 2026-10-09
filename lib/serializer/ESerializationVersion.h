@@ -199,13 +199,18 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_OVERWATCH, // armed/consumed movement reaction provenance
 	NEW_HORIZONS_PURSUIT_MARCH, // atomic Movement recovery and per-hero daily victory use
 	NEW_HORIZONS_SAFE_BATTLE_FORMS, // JSON battle-form lifetime/pending protocol admission
+	NEW_HORIZONS_REALITY_WARP_EXCHANGE, // atomic exact effect replacement and non-transferable metadata
+	NEW_HORIZONS_FROZEN, // physical Freeze recipient history and Shatter feedback
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_SAFE_BATTLE_FORMS,
+	CURRENT = NEW_HORIZONS_FROZEN,
 };
+
+static_assert(ESerializationVersion::NEW_HORIZONS_REALITY_WARP_EXCHANGE > ESerializationVersion::NEW_HORIZONS_SAFE_BATTLE_FORMS,
+	"Atomic spell-effect exchange must remain append-only");
 
 static_assert(ESerializationVersion::NEW_HORIZONS_SAFE_BATTLE_FORMS > ESerializationVersion::NEW_HORIZONS_PURSUIT_MARCH,
 	"Safe battle-form protocol admission must remain append-only");

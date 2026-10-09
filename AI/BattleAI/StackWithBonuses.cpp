@@ -25,6 +25,7 @@
 #include "../../lib/battle/NewHorizonsBloodrage.h"
 #include "../../lib/battle/NewHorizonsMagicalAbilityDamage.h"
 #include "../../lib/battle/NewHorizonsCreatureAbilitySuppression.h"
+#include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/PhysicalAffliction.h"
 #include "../../lib/battle/TimeStopState.h"
@@ -274,6 +275,8 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	localInit(Owner);
 
 	battle::CUnitState::operator=(*Stack);
+	if(newHorizonsFrozen::isFrozen(*this))
+		captureEffects();
 }
 
 StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle::Unit * Stack)
@@ -296,6 +299,8 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 
 	auto state = Stack->acquireState();
 	battle::CUnitState::operator=(*state);
+	if(newHorizonsFrozen::isFrozen(*this))
+		captureEffects();
 }
 
 StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle::UnitInfo & info)
@@ -533,6 +538,7 @@ void StackWithBonuses::onBattleFormChanged()
 
 void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 {
+	captureLocalSpellEffects();
 	for(const auto & entry : bonus)
 		if(entry.type == BonusType::CONFUSION_PENDING)
 			newHorizonsConfusionControl::validateMarker(entry);
@@ -545,6 +551,7 @@ void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 	}))
 		captureEffects();
 	const auto stampedBonuses = physicalAfflictions::stampApplicationOrder(*this, bonus);
+	const auto frozenApplication = newHorizonsFrozen::prepareApplication(*this, bonus);
 	for(const auto & stamped : stampedBonuses)
 		if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
 			capturedPhysicalAfflictionGroups.emplace(stamped.source, stamped.sid);
@@ -564,17 +571,23 @@ void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 			replacePhysicalAfflictionMarker(*this, stamped);
 		else
 			bonusesToAdd.emplace_back(stamped);
+		if(stamped.source == BonusSource::SPELL_EFFECT)
+			exactLocalSpellEffects->push_back(stamped);
 	}
 	applyGuardianSpiritBonuses(*this, stampedBonuses);
+	if(frozenApplication)
+		commitPreparedFrozenApplication(*frozenApplication);
 	treeVersionLocal++;
 }
 
 void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 {
+	captureLocalSpellEffects();
 	for(const auto & entry : bonus)
 		if(entry.type == BonusType::CONFUSION_PENDING)
 			newHorizonsConfusionControl::validateMarker(entry);
 	const auto stampedBonuses = physicalAfflictions::stampApplicationOrder(*this, bonus);
+	const auto frozenApplication = newHorizonsFrozen::prepareApplication(*this, bonus);
 	// Preserve operation order: a preceding local ADD must be visible to refresh.
 	captureEffects();
 	for(const auto & stamped : stampedBonuses)
@@ -596,8 +609,23 @@ void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 			replacePhysicalAfflictionMarker(*this, stamped);
 		else
 			bonusesToUpdate.emplace_back(stamped);
+		if(stamped.source == BonusSource::SPELL_EFFECT)
+		{
+			bool found = false;
+			for(auto & local : *exactLocalSpellEffects)
+				if(local.source == stamped.source && local.sid == stamped.sid && local.type == stamped.type
+					&& local.subtype == stamped.subtype && local.valType == stamped.valType)
+				{
+					local.turnsRemain = std::max(local.turnsRemain, stamped.turnsRemain);
+					found = true;
+				}
+			if(!found)
+				exactLocalSpellEffects->push_back(stamped);
+		}
 	}
 	applyGuardianSpiritBonuses(*this, stampedBonuses);
+	if(frozenApplication)
+		commitPreparedFrozenApplication(*frozenApplication);
 	treeVersionLocal++;
 }
 
@@ -675,6 +703,7 @@ bool StackWithBonuses::removeFirstPhysicalAffliction()
 
 void StackWithBonuses::removeUnitBonus(const CSelector & selector)
 {
+	captureLocalSpellEffects();
 	const bool timeStopped = isTimeStopped();
 	const CSelector effectiveSelector([&selector, timeStopped](const Bonus * bonus)
 	{
@@ -702,6 +731,7 @@ void StackWithBonuses::removeUnitBonus(const CSelector & selector)
 	vstd::erase_if(bonusesToUpdate, [&](const Bonus & b){return effectiveSelector(&b);});
 	if(projectedEffects)
 		vstd::erase_if(*projectedEffects, [&](const Bonus & b){return effectiveSelector(&b);});
+	vstd::erase_if(*exactLocalSpellEffects, [&](const Bonus & b){return effectiveSelector(&b);});
 	if(projectedUnstackedEffects)
 		vstd::erase_if(*projectedUnstackedEffects, [&](const std::shared_ptr<Bonus> & b)
 		{
@@ -775,6 +805,57 @@ void StackWithBonuses::clearNoQuarterRoundBlocker()
 	}));
 }
 
+std::vector<Bonus> StackWithBonuses::localSpellEffects() const
+{
+	if(exactLocalSpellEffects)
+		return *exactLocalSpellEffects;
+	if(const auto * parent = dynamic_cast<const StackWithBonuses *>(origBearer))
+		return parent->localSpellEffects();
+	const auto * node = dynamic_cast<const CBonusSystemNode *>(origBearer);
+	if(!node)
+		throw std::runtime_error("Detached exact effect capture requires source-local bonus provenance");
+	std::vector<Bonus> result;
+	for(const auto & bonus : node->getExportedBonusList())
+		if(bonus->source == BonusSource::SPELL_EFFECT)
+			result.push_back(*bonus);
+	return result;
+}
+
+void StackWithBonuses::captureLocalSpellEffects()
+{
+	if(!exactLocalSpellEffects)
+		exactLocalSpellEffects = localSpellEffects();
+}
+
+void StackWithBonuses::replaceLocalSpellEffectsExact(const std::vector<Bonus> & replacement)
+{
+	captureLocalSpellEffects();
+	captureEffects();
+	// The raw snapshot includes inherited spell effects. Remove exactly the
+	// source-local multiset, not every effect sharing a spell/source identity.
+	for(const auto & effect : *exactLocalSpellEffects)
+	{
+		const auto found = std::find_if(projectedUnstackedEffects->begin(), projectedUnstackedEffects->end(),
+			[&effect](const auto & bonus) { return battle::exactBattleEffectEqual(*bonus, effect); });
+		if(found == projectedUnstackedEffects->end())
+			throw std::runtime_error("Cannot stage source-local effect in detached raw snapshot");
+		projectedUnstackedEffects->erase(found);
+	}
+	for(const auto & effect : replacement)
+		projectedUnstackedEffects->push_back(std::make_shared<Bonus>(effect));
+	BonusList stacked;
+	for(const auto & bonus : *projectedUnstackedEffects)
+		stacked.push_back(bonus);
+	stacked.stackBonuses();
+	projectedEffects->clear();
+	for(const auto & bonus : stacked)
+		projectedEffects->push_back(*bonus);
+	exactLocalSpellEffects = replacement;
+	damageScoringBonuses.reset();
+	damageScoringUnstackedBonuses.reset();
+	++treeVersionLocal;
+}
+
 void StackWithBonuses::captureEffects()
 {
 	// Resolve refreshes before aging or another mutation. In addition to spell and
@@ -814,6 +895,7 @@ void StackWithBonuses::captureEffects()
 
 void StackWithBonuses::advanceTimedRound()
 {
+	captureLocalSpellEffects();
 	captureEffects();
 	if(isTimeStopped())
 	{
@@ -834,6 +916,7 @@ void StackWithBonuses::advanceTimedRound()
 		});
 	};
 	age(*projectedEffects);
+	age(*exactLocalSpellEffects);
 	if(projectedUnstackedEffects)
 	{
 		// Raw snapshots may contain the same inherited Bonus pointer multiple
@@ -981,6 +1064,12 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 
 	localEnvironment.reset(new HypotheticEnvironment(this, env));
 	serverCallback.reset(new HypotheticServerCallback(this));
+	// The remaining units retain the existing lazy projection policy. Frozen's
+	// next-slot receipt must be a branch snapshot: reading it for the first time
+	// after a parent Shatter/thaw cannot import that later parent's mutation.
+	for(const auto * unit : realBattle->battleGetAllUnits(false))
+		if(newHorizonsFrozen::isFrozen(*unit))
+			getForUpdate(unit->unitId());
 }
 
 bool HypotheticBattle::hasCompletedHeroSpellLevel(BattleSide side, int32_t level) const
@@ -1072,6 +1161,19 @@ ProjectedLuckOutcome HypotheticBattle::captureFortuneStrikeOutcome(const BattleA
 	return ProjectedLuckOutcome::UNKNOWN;
 }
 
+void HypotheticBattle::projectFrozenShatter(const BattleAttackInfo & attack,
+	const std::vector<std::pair<uint32_t, int64_t>> & hits)
+{
+	for(const auto & [id, damage] : hits)
+	{
+		auto target = getForUpdate(id);
+		auto hit = attack;
+		hit.defender = target.get();
+		if(newHorizonsFrozen::qualifiesForShatter(hit, getMagicRules()))
+			target->removeUnitBonus(newHorizonsFrozen::removalPlan(*target));
+	}
+}
+
 void HypotheticBattle::projectFortuneStrike(const BattleAttackInfo & attack,
 	const std::vector<std::pair<uint32_t, int64_t>> & hits,
 	battle::CUnitState * attackerState, bool enemyStackKilled,
@@ -1079,6 +1181,8 @@ void HypotheticBattle::projectFortuneStrike(const BattleAttackInfo & attack,
 	std::optional<bool> capturedPerfectFortune, BattleSide capturedPerfectFortuneSide,
 	BattleSide capturedLuckSerendipitySide, std::optional<bool> capturedLuckSerendipityOrdinaryAttack)
 {
+	if(applyAftermath)
+		projectFrozenShatter(attack, hits);
 	const auto serendipitySide = capturedLuckSerendipitySide == BattleSide::ATTACKER
 		|| capturedLuckSerendipitySide == BattleSide::DEFENDER
 		? capturedLuckSerendipitySide : playerToSide(battleGetActionController(attack.attacker));
@@ -2228,6 +2332,10 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 {
 	activeUnitId = unitId;
 	auto unit = getForUpdate(unitId);
+	const bool frozenNormalSlot = newHorizonsFrozen::forfeitsNormalActivation(*unit, reason);
+	// An extra opportunity cannot spend the normal-slot incapacitation receipt.
+	if(newHorizonsFrozen::isFrozen(*unit) && !frozenNormalSlot)
+		return;
 	if(reason == BattleUnitTurnReason::ACTION_REJECTED
 		|| reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION
 		|| reason == BattleUnitTurnReason::PURSUIT_CONTINUATION)
@@ -2342,6 +2450,11 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 			battleGetOwnerHero(unit.get()), unit.get(), reason));
 
 	unit->afterGetsTurn(reason);
+	if(frozenNormalSlot)
+	{
+		unit->movedThisRound = true;
+		unit->removeUnitBonus(newHorizonsFrozen::removalPlan(*unit));
+	}
 }
 
 void HypotheticBattle::addUnit(uint32_t id, const JsonNode & data)
@@ -2535,6 +2648,54 @@ void HypotheticBattle::recordBloodrageTransition(const std::shared_ptr<StackWith
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		bloodrageDamagePercents[side] = std::min(bloodrageCaps[side],
 			bloodrageDamagePercents[side] + newHorizonsBloodrage::incrementForRank(bloodrageRanks[side]));
+}
+
+battle::BattleEffectSnapshot HypotheticBattle::captureBattleEffects(uint32_t id) const
+{
+	const auto * unit = battleGetUnitByID(id);
+	if(!unit || !unit->alive() || unit->isGhost() || unit->isTurret() || !unit->getPosition().isValid())
+		throw std::runtime_error("Spell-effect exchange endpoint is not a living battlefield stack");
+	battle::BattleEffectSnapshot result;
+	if(const auto * projected = dynamic_cast<const StackWithBonuses *>(unit))
+		result.effects = projected->localSpellEffects();
+	else if(const auto * node = dynamic_cast<const CBonusSystemNode *>(unit))
+	{
+		for(const auto & bonus : node->getExportedBonusList())
+			if(bonus->source == BonusSource::SPELL_EFFECT)
+				result.effects.push_back(*bonus);
+	}
+	else
+		throw std::runtime_error("Exact effect capture requires source-local bonus provenance");
+	const auto * state = dynamic_cast<const battle::CUnitState *>(unit);
+	if(!state)
+		throw std::runtime_error("Exact effect exchange requires a typed unit state");
+	result.sidecars = battle::captureBattleEffectSidecars(*state);
+	result.recipientHealth = state->acquireState()->save()["state"]["health"];
+	result.capacityHealthReferenceMax = state->getCapacityHealthReferenceMax();
+	return result;
+}
+
+void HypotheticBattle::exchangeBattleEffects(const battle::BattleEffectExchange & exchange)
+{
+	exchange.validateShape();
+	for(const auto & endpoint : exchange.endpoints)
+		if(!battle::exactBattleEffectSnapshotEqual(captureBattleEffects(endpoint.id), endpoint.expected))
+			throw std::runtime_error("Stale detached spell-effect exchange endpoint snapshot");
+	auto prepared = stackStates;
+	for(const auto & endpoint : exchange.endpoints)
+	{
+		const auto * original = battleGetUnitByID(endpoint.id);
+		auto replacement = std::make_shared<StackWithBonuses>(this, original);
+		// All mutations affect an unpublished clone. Its source bearer remains
+		// alive through the existing projectedBearer ownership mechanism.
+		auto health = battle::prepareBattleEffectHealth(*replacement, endpoint.expected, endpoint.replacement);
+		replacement->replaceLocalSpellEffectsExact(endpoint.replacement.effects);
+		replacement->commitPreparedCapacityHealth(*health.unit);
+		battle::commitBattleEffectSidecars(*replacement, endpoint.replacement.sidecars);
+		prepared[endpoint.id] = std::move(replacement);
+	}
+	stackStates.swap(prepared);
+	++bonusTreeVersion;
 }
 
 void HypotheticBattle::addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)

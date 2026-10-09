@@ -256,6 +256,7 @@ set(vcmiclientcommon_HEADERS
 	battle/BattleSiegeController.h
 	battle/BattleStacksController.h
 	battle/BattleWindow.h
+	battle/NewHorizonsRealityWarpPreview.h
 	battle/CreatureAnimation.h
 	battle/HeroInfoWindow.h
 	battle/QuickSpellPanel.h
@@ -403,6 +404,7 @@ set(vcmiclientcommon_HEADERS
 	windows/NewHorizonsPerkAvailability.h
 	windows/NewHorizonsBuildingVisitHelp.h
 	windows/NewHorizonsOrderBadgeHelp.h
+	windows/NewHorizonsCreatureAbilityHelp.h
 	windows/SpellPointPresentation.h
 	windows/HeroMasteryWindow.h
 	windows/HeroMasteryDialogState.h

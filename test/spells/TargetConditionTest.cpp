@@ -12,6 +12,7 @@
 #include <vstd/RNG.h>
 
 #include "../../lib/spells/TargetCondition.h"
+#include "../../lib/constants/EntityIdentifiers.h"
 #include "../../lib/serializer/JsonDeserializer.h"
 
 #include "mock/mock_spells_Mechanics.h"
@@ -90,6 +91,11 @@ public:
 protected:
 	void SetUp() override
 	{
+		// Condition checks now consult the source spell for the scoped
+		// Forgetfulness shooter exception. This ordinary spell exercises the
+		// unchanged path; all other Mechanics calls remain StrictMock-checked.
+		EXPECT_CALL(mechanicsMock, getSpellId()).Times(AnyNumber())
+			.WillRepeatedly(Return(SpellID(SpellID::HASTE)));
 	}
 private:
 };

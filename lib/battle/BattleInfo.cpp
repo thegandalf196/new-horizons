@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "BattleInfo.h"
+#include "NewHorizonsFrozen.h"
 #include "BattleForm.h"
 #include "NewHorizonsElementalRebirth.h"
 #include "NewHorizonsBloodrage.h"
@@ -1957,6 +1958,82 @@ void BattleInfo::removeUnit(uint32_t id)
 	expireSeparatedHeroOrderProtect();
 }
 
+battle::BattleEffectSnapshot BattleInfo::captureBattleEffects(uint32_t id) const
+{
+	const auto candidates = getStacksIf([id](const CStack * candidate) { return candidate->unitId() == id; });
+	const auto * stack = candidates.empty() ? nullptr : candidates.front();
+	if(!stack || !stack->alive() || stack->isGhost() || stack->isTurret() || !stack->getPosition().isValid())
+		throw std::runtime_error("Spell-effect exchange endpoint is not a living battlefield stack");
+	battle::BattleEffectSnapshot result;
+	for(const auto & bonus : stack->getExportedBonusList())
+		if(bonus->source == BonusSource::SPELL_EFFECT)
+			result.effects.push_back(*bonus);
+	result.sidecars = battle::captureBattleEffectSidecars(*stack);
+	result.recipientHealth = stack->acquireState()->save()["state"]["health"];
+	result.capacityHealthReferenceMax = stack->getCapacityHealthReferenceMax();
+	return result;
+}
+
+void BattleInfo::exchangeBattleEffects(const battle::BattleEffectExchange & exchange)
+{
+	exchange.validateShape();
+	for(const auto & endpoint : exchange.endpoints)
+		if(!battle::exactBattleEffectSnapshotEqual(captureBattleEffects(endpoint.id), endpoint.expected))
+			throw std::runtime_error("Stale spell-effect exchange endpoint snapshot");
+	struct Prepared
+	{
+		CStack * stack;
+		std::unique_ptr<CBonusSystemNode::PreparedLocalBonusReplacement> bonuses;
+		battle::PreparedBattleEffectHealth health;
+	};
+	std::array<Prepared, 2> prepared;
+	for(size_t index = 0; index < prepared.size(); ++index)
+	{
+		const auto & endpoint = exchange.endpoints[index];
+		auto * stack = getStack(endpoint.id, false);
+		std::vector<std::shared_ptr<Bonus>> replacement;
+		for(const auto & bonus : stack->getExportedBonusList())
+			if(bonus->source != BonusSource::SPELL_EFFECT)
+				replacement.push_back(bonus);
+		std::vector<bool> retained(stack->getExportedBonusList().size(), false);
+		for(const auto & effect : endpoint.replacement.effects)
+		{
+			std::shared_ptr<Bonus> copy;
+			if(effect.propagator)
+			{
+				size_t candidate = 0;
+				for(const auto & original : stack->getExportedBonusList())
+				{
+					if(!retained[candidate] && battle::exactBattleEffectEqual(*original, effect))
+					{
+						retained[candidate] = true;
+						copy = original;
+						break;
+					}
+					++candidate;
+				}
+				if(!copy)
+					throw std::runtime_error("Spell-effect exchange cannot change local propagated effects");
+			}
+			else
+				copy = std::make_shared<Bonus>(effect);
+			replacement.push_back(std::move(copy));
+		}
+		prepared[index].stack = stack;
+		prepared[index].health = battle::prepareBattleEffectHealth(*stack, endpoint.expected, endpoint.replacement);
+		prepared[index].bonuses = stack->prepareLocalBonusReplacement(replacement);
+	}
+	// Everything below is allocation-free. No refresh path can reset duration,
+	// Guardian pool or Confusion history, and the second endpoint cannot fail.
+	for(size_t index = 0; index < prepared.size(); ++index)
+	{
+		auto & entry = prepared[index];
+		entry.stack->commitLocalBonusReplacement(*entry.bonuses);
+		entry.stack->commitPreparedCapacityHealth(*entry.health.unit);
+		battle::commitBattleEffectSidecars(*entry.stack, exchange.endpoints[index].replacement.sidecars);
+	}
+}
+
 void BattleInfo::addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 {
 	for(const auto & entry : bonus)
@@ -1971,8 +2048,11 @@ void BattleInfo::addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 	}
 
 	const auto stampedBonuses = physicalAfflictions::stampApplicationOrder(*sta, bonus);
+	const auto frozenApplication = newHorizonsFrozen::prepareApplication(*sta, bonus);
 	for(const Bonus & b : stampedBonuses)
 		addOrUpdateUnitBonus(sta, b, true);
+	if(frozenApplication)
+		sta->commitPreparedFrozenApplication(*frozenApplication);
 }
 
 void BattleInfo::updateUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
@@ -1989,8 +2069,11 @@ void BattleInfo::updateUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 	}
 
 	const auto stampedBonuses = physicalAfflictions::stampApplicationOrder(*sta, bonus);
+	const auto frozenApplication = newHorizonsFrozen::prepareApplication(*sta, bonus);
 	for(const Bonus & b : stampedBonuses)
 		addOrUpdateUnitBonus(sta, b, false);
+	if(frozenApplication)
+		sta->commitPreparedFrozenApplication(*frozenApplication);
 }
 
 void BattleInfo::removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)

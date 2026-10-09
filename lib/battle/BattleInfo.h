@@ -19,6 +19,7 @@
 
 #include "../callback/GameCallbackHolder.h"
 #include "../bonuses/Bonus.h"
+#include "../CStack.h"
 #include "../bonuses/CBonusSystemNode.h"
 #include "../int3.h"
 #include "../spells/NewHorizonsMagic.h"
@@ -316,8 +317,20 @@ public:
 	// Append new transient snapshot fields to preserve preceding BattleInfo offsets.
 	BattleDeploymentState deploymentState;
 
+	template <typename Handler> void validateFrozenSerialization(Handler & h) const
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN)
+			&& magicRules.isStruct() && magicRules.Struct().count("creatureAbilities") != 0)
+			throw std::runtime_error("Cannot discard captured creature ability rules in an older battle format");
+		for(const auto & stack : stacks)
+			if(stack)
+				stack->validateFrozenSerialization(h);
+	}
+
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateFrozenSerialization(h);
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_CHAIN)
 			&& (sides[BattleSide::ATTACKER].rebirthChainUsed || sides[BattleSide::DEFENDER].rebirthChainUsed))
 			throw std::runtime_error("Cannot discard Rebirth Chain combat use from a battle snapshot");
@@ -1012,6 +1025,8 @@ public:
 	void removeUnit(uint32_t id) override;
 
 	void addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus) override;
+	battle::BattleEffectSnapshot captureBattleEffects(uint32_t id) const override;
+	void exchangeBattleEffects(const battle::BattleEffectExchange & exchange) override;
 	void updateUnitBonus(uint32_t id, const std::vector<Bonus> & bonus) override;
 	void removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus) override;
 

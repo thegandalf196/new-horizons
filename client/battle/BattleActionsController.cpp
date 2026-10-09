@@ -15,6 +15,7 @@
 #include "BattleInterface.h"
 #include "MagicArrowOverchargeWindow.h"
 #include "NewHorizonsBattleStatus.h"
+#include "NewHorizonsRealityWarpPreview.h"
 #include "BattleSiegeController.h"
 #include "BattleStacksController.h"
 #include "BattleWindow.h"
@@ -36,6 +37,7 @@
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
+#include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/GameLibrary.h"
@@ -137,6 +139,7 @@ std::optional<FriendlyFirePreview> buildFriendlyFirePreview(BattleInterface & ow
 	cast.setOvercharge(action.spellOvercharge);
 	cast.setSelectiveDispel(action.spellSelectiveDispel);
 	cast.setCureAffliction(action.spellCureAffliction);
+	cast.setCurePhysicalAffliction(action.spellCurePhysicalAffliction);
 	cast.setMassSlow(action.spellMassSlow);
 	cast.setShadowGiftSacrificePercent(action.spellShadowGiftSacrificePercent);
 	cast.setMetamagicFollowup(action.metamagicFollowup);
@@ -1681,6 +1684,193 @@ void BattleActionsController::undoSoulChainTarget()
 	ENGINE->windows().totalRedraw();
 }
 
+bool BattleActionsController::realityWarpTargetSelectionModeActive() const
+{
+	return heroSpellToCast && heroSpellToCast->spell.toSpell()
+		&& heroSpellToCast->spell.toSpell()->getJsonKey() == newHorizonsRealityWarp::SPELL_KEY;
+}
+
+bool BattleActionsController::realityWarpSelectionContextIsCurrent() const
+{
+	if(!realityWarpTargetSelectionModeActive() || !owner.curInt || !owner.curInt->cb
+		|| CPlayerInterface::battleInt.get() != &owner || owner.getBattleID() != realityWarpBattleID
+		|| !realityWarpPlayer || owner.curInt->cb->getPlayerID() != *realityWarpPlayer
+		|| !owner.getBattle() || !owner.getBattle()->getBattle()
+		|| owner.getBattle()->battleGetMySide() != realityWarpSide
+		|| owner.getBattle()->battleGetRound() != realityWarpRound
+		|| !owner.makingTurn() || owner.curInt->isAutoFightOn || owner.isInTacticsMode())
+		return false;
+	const auto * hero = owner.currentHero();
+	return hero && hero->id == realityWarpHeroID;
+}
+
+bool BattleActionsController::realityWarpTargetsAreLegal(const std::vector<uint32_t> & ids) const
+{
+	if(ids.empty() || ids.size() > 2 || !realityWarpSelectionContextIsCurrent())
+		return false;
+	const auto battle = owner.getBattle();
+	const auto * first = battle->battleGetUnitByID(ids.front());
+	if(!first || !first->alive() || !first->isValidTarget(false) || first->isGhost() || first->isTurret())
+		return false;
+	// The effect requires a complete pair. A prefix is selectable only when
+	// at least one complete pair passes that same production legality check.
+	if(ids.size() == 1)
+	{
+		for(const auto * candidate : battle->battleGetAllUnits(false))
+		{
+			if(candidate->unitId() != first->unitId()
+				&& realityWarpTargetsAreLegal({first->unitId(), candidate->unitId()}))
+				return true;
+		}
+		return false;
+	}
+	if(ids[0] == ids[1])
+		return false;
+	const auto * second = battle->battleGetUnitByID(ids[1]);
+	if(!second)
+		return false;
+	const auto * spell = heroSpellToCast->spell.toSpell();
+	spells::BattleCast cast(battle.get(), owner.currentHero(), spells::Mode::HERO, spell);
+	cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
+	const auto mechanics = spell->battleMechanics(&cast);
+	spells::Target pair;
+	pair.emplace_back(first, first->getPosition());
+	pair.emplace_back(second, second->getPosition());
+	spells::detail::ProblemImpl problem;
+	return mechanics && mechanics->canBeCast(problem) && mechanics->canBeCastAt(pair, problem);
+}
+
+void BattleActionsController::updateRealityWarpSelectionStatus(const BattleHex & hoveredHex)
+{
+	std::string message = "Reality Warp: ";
+	if(!realityWarpSelectionContextIsCurrent())
+		message += "battle context changed; cancel and reopen the spell.";
+	else
+	{
+		message += realityWarpSelectedUnitIds.empty()
+			? "choose a living stack with a legal exchange partner."
+			: "choose a different legal stack to review the complete exchange. Backspace undoes.";
+		message += " Esc cancels.";
+		const auto * hovered = getStackForHex(hoveredHex);
+		if(hovered)
+		{
+			auto candidate = realityWarpSelectedUnitIds;
+			candidate.push_back(hovered->unitId());
+			message += realityWarpTargetsAreLegal(candidate) ? " Click to select." : " This selection is not legal.";
+		}
+	}
+	if(!currentConsoleMsg.empty())
+		ENGINE->statusbar()->clearIfMatching(currentConsoleMsg);
+	ENGINE->statusbar()->write(message);
+	currentConsoleMsg = std::move(message);
+}
+
+void BattleActionsController::undoRealityWarpTarget()
+{
+	if(!realityWarpTargetSelectionModeActive())
+		return;
+	if(!realityWarpSelectionContextIsCurrent())
+	{
+		endCastingSpell();
+		return;
+	}
+	if(!realityWarpSelectedUnitIds.empty())
+		realityWarpSelectedUnitIds.pop_back();
+	updateRealityWarpSelectionStatus(BattleHex::INVALID);
+	owner.windowObject->updateBattleTargetSelectionControls();
+	ENGINE->fakeMouseMove();
+}
+
+void BattleActionsController::selectRealityWarpTarget(const BattleHex & clickedHex)
+{
+	if(!realityWarpSelectionContextIsCurrent())
+	{
+		endCastingSpell();
+		return;
+	}
+	const auto * stack = getStackForHex(clickedHex);
+	if(!stack)
+		return;
+	auto selected = realityWarpSelectedUnitIds;
+	selected.push_back(stack->unitId());
+	if(!realityWarpTargetsAreLegal(selected))
+	{
+		updateRealityWarpSelectionStatus(clickedHex);
+		return;
+	}
+	if(selected.size() == 1)
+	{
+		realityWarpSelectedUnitIds = std::move(selected);
+		updateRealityWarpSelectionStatus(clickedHex);
+		owner.windowObject->updateBattleTargetSelectionControls();
+		ENGINE->fakeMouseMove();
+		return;
+	}
+	const auto prepared = newHorizonsRealityWarp::prepareExchange(*owner.getBattle(), selected[0], selected[1]);
+	if(!prepared.exchange)
+		return;
+	const auto makeText = [this](const auto & exchange)
+	{
+		return newHorizonsRealityWarpPreview::text(exchange, [this](uint32_t id)
+		{
+			const auto * unit = owner.getBattle()->battleGetUnitByID(id);
+			return unit ? unit->unitType()->getNamePluralTranslated() + " (#" + std::to_string(id) + ")" : "Unavailable stack";
+		}, [](SpellID spell)
+		{
+			if(spell.hasValue())
+			{
+				try
+				{
+					if(const auto * definition = spell.toSpell())
+						return definition->getNameTranslated();
+				}
+				catch(const std::exception &)
+				{
+					// Unknown legacy sources stay in place but must still be listed.
+				}
+			}
+			return std::string("Unknown effect");
+		});
+	};
+	const auto previewText = makeText(prepared);
+	const auto expectedSession = castingSession;
+	std::weak_ptr<int> weakLifetime = friendlyFireCallbackLifetime;
+	auto answered = std::make_shared<bool>(false);
+	owner.windowObject->showRealityWarpPreview(previewText,
+		[this, weakLifetime, answered, expectedSession, selected, prepared, previewText, makeText]()
+		{
+			if(!weakLifetime.lock() || *answered)
+				return;
+			*answered = true;
+			if(castingSession != expectedSession)
+				return;
+			if(!realityWarpTargetsAreLegal(selected))
+			{
+				endCastingSpell();
+				return;
+			}
+			const auto current = newHorizonsRealityWarp::prepareExchange(*owner.getBattle(), selected[0], selected[1]);
+			if(!newHorizonsRealityWarpPreview::sameExchange(prepared, current) || makeText(current) != previewText)
+			{
+				updateRealityWarpSelectionStatus(BattleHex::INVALID);
+				return; // Retain the first selection; second click opens a fresh review.
+			}
+			BattleAction action = *heroSpellToCast;
+			action.target.clear();
+			for(const auto id : selected)
+				action.aimToUnit(owner.getBattle()->battleGetUnitByID(id));
+			owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), action);
+			endCastingSpell();
+		}, [this, weakLifetime, answered, expectedSession]()
+		{
+			if(!weakLifetime.lock() || *answered)
+				return;
+			*answered = true;
+			if(castingSession == expectedSession)
+				endCastingSpell();
+		});
+}
+
 bool BattleActionsController::lifeDrainTargetSelectionModeActive() const
 {
 	return heroSpellToCast && isLifeDrainSpell(heroSpellToCast->spell.toSpell());
@@ -2668,6 +2858,7 @@ void BattleActionsController::endCastingSpell()
 	const bool wasStormOfDaggersSelection = stormOfDaggersTargetSelectionModeActive();
 	const bool wasSoulChainSelection = soulChainTargetSelectionModeActive();
 	const bool wasLifeDrainSelection = lifeDrainTargetSelectionModeActive();
+	const bool wasRealityWarpSelection = realityWarpTargetSelectionModeActive();
 	if(heroSpellToCast)
 	{
 		heroSpellToCast.reset();
@@ -2696,6 +2887,11 @@ void BattleActionsController::endCastingSpell()
 	lifeDrainSide = BattleSide::NONE;
 	lifeDrainRound = -1;
 	lifeDrainHeroID = ObjectInstanceID::NONE;
+	realityWarpSelectedUnitIds.clear();
+	realityWarpPlayer.reset();
+	realityWarpSide = BattleSide::NONE;
+	realityWarpRound = -1;
+	realityWarpHeroID = ObjectInstanceID::NONE;
 	fireWallSelectedStart = BattleHex::INVALID;
 	vengefulVinesSelectedHexes.clear();
 	vengefulVinesBattleID = BattleID();
@@ -2704,7 +2900,7 @@ void BattleActionsController::endCastingSpell()
 	vengefulVinesRound = -1;
 	vengefulVinesHeroID = ObjectInstanceID::NONE;
 	if((wasRepeatedPlacement || wasFireWallPlacement || wasVengefulVinesSelection
-		|| wasStormOfDaggersSelection || wasSoulChainSelection || wasLifeDrainSelection)
+		|| wasStormOfDaggersSelection || wasSoulChainSelection || wasLifeDrainSelection || wasRealityWarpSelection)
 		&& !currentConsoleMsg.empty())
 	{
 		ENGINE->statusbar()->clearIfMatching(currentConsoleMsg);
@@ -2952,6 +3148,24 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 	vengefulVinesSide = BattleSide::NONE;
 	vengefulVinesRound = -1;
 	vengefulVinesHeroID = ObjectInstanceID::NONE;
+
+	// A generic two-CREATURE spell is classified as legacy Sacrifice. Warp
+	// selects living identities and must bypass that corpse-first interaction.
+	if(heroSpellToCast->spell.toSpell()->getJsonKey() == newHorizonsRealityWarp::SPELL_KEY)
+	{
+		realityWarpSelectedUnitIds.clear();
+		realityWarpBattleID = owner.getBattleID();
+		realityWarpPlayer = owner.curInt->cb->getPlayerID();
+		realityWarpSide = battle->battleGetMySide();
+		realityWarpRound = battle->battleGetRound();
+		realityWarpHeroID = castingHero->id;
+		possibleActions.clear();
+		owner.windowObject->blockUI(true);
+		owner.windowObject->updateBattleTargetSelectionControls();
+		updateRealityWarpSelectionStatus(BattleHex::INVALID);
+		ENGINE->fakeMouseMove();
+		return;
+	}
 
 	// New Horizons Storm of Daggers selects ordered enemy unit identities. Keep
 	// this separate from the generic one-stack spell selector so every target is
@@ -3327,6 +3541,7 @@ void BattleActionsController::updateChainLightningPreview(PossiblePlayerBattleAc
 		cacheKey.spellOvercharge = heroSpellToCast->spellOvercharge;
 		cacheKey.spellSelectiveDispel = heroSpellToCast->spellSelectiveDispel;
 		cacheKey.spellCureAffliction = heroSpellToCast->spellCureAffliction;
+		cacheKey.spellCurePhysicalAffliction = heroSpellToCast->spellCurePhysicalAffliction;
 		cacheKey.spellMassSlow = heroSpellToCast->spellMassSlow;
 		cacheKey.spellShadowGiftSacrificePercent = heroSpellToCast->spellShadowGiftSacrificePercent;
 	}
@@ -3345,6 +3560,7 @@ void BattleActionsController::updateChainLightningPreview(PossiblePlayerBattleAc
 		cast.setOvercharge(heroSpellToCast->spellOvercharge);
 		cast.setSelectiveDispel(heroSpellToCast->spellSelectiveDispel);
 		cast.setCureAffliction(heroSpellToCast->spellCureAffliction);
+		cast.setCurePhysicalAffliction(heroSpellToCast->spellCurePhysicalAffliction);
 		cast.setMassSlow(heroSpellToCast->spellMassSlow);
 		cast.setShadowGiftSacrificePercent(heroSpellToCast->spellShadowGiftSacrificePercent);
 		cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
@@ -4538,6 +4754,24 @@ PossiblePlayerBattleAction BattleActionsController::selectAction(const BattleHex
 
 void BattleActionsController::onHexHovered(const BattleHex & hoveredHex)
 {
+	if(realityWarpTargetSelectionModeActive())
+	{
+		if(!realityWarpSelectionContextIsCurrent())
+		{
+			endCastingSpell();
+			return;
+		}
+		const auto * stack = getStackForHex(hoveredHex);
+		auto candidate = realityWarpSelectedUnitIds;
+		if(stack)
+			candidate.push_back(stack->unitId());
+		if(stack && realityWarpTargetsAreLegal(candidate))
+			ENGINE->cursor().set(Cursor::Spellcast::SPELL);
+		else
+			ENGINE->cursor().set(Cursor::Combat::BLOCKED);
+		updateRealityWarpSelectionStatus(hoveredHex);
+		return;
+	}
 	if (owner.openingPlaying())
 	{
 		invalidateChainLightningPreview();
@@ -4754,6 +4988,11 @@ void BattleActionsController::onHoverEnded()
 
 void BattleActionsController::onHexLeftClicked(const BattleHex & clickedHex)
 {
+	if(realityWarpTargetSelectionModeActive())
+	{
+		selectRealityWarpTarget(clickedHex);
+		return;
+	}
 	if(repeatedPlacementModeActive())
 	{
 		selectOrUndoRepeatedPlacementHex(clickedHex);
@@ -4905,6 +5144,16 @@ bool BattleActionsController::isCastingPossibleHere(const CSpell * currentSpell,
 		for(const auto affliction : newHorizonsMagic::cureAfflictions(rules, cureTarget))
 		{
 			cast.setCureAffliction(affliction);
+			auto cureMechanics = currentSpell->battleMechanics(&cast);
+			spells::detail::ProblemImpl cureProblem;
+			if(cureMechanics->canBeCastAt(target, cureProblem))
+				return true;
+		}
+		if(cureTarget && newHorizonsFrozen::chancePercent(rules) > 0
+			&& newHorizonsFrozen::isFrozen(*cureTarget))
+		{
+			cast.setCureAffliction(SpellID::NONE);
+			cast.setCurePhysicalAffliction("frozen");
 			auto cureMechanics = currentSpell->battleMechanics(&cast);
 			spells::detail::ProblemImpl cureProblem;
 			if(cureMechanics->canBeCastAt(target, cureProblem))

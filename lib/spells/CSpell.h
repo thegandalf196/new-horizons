@@ -34,6 +34,8 @@ namespace spells
 {
 	class ISpellMechanicsFactory;
 	class IBattleCast;
+	struct RecipientConditionContext;
+	enum class RecipientConditionResult;
 }
 
 class DLL_LINKAGE CSpell : public spells::Spell
@@ -247,6 +249,7 @@ public://internal, for use only by Mechanics classes
 
 	const IAdventureSpellMechanics & getAdventureMechanics() const;
 	std::unique_ptr<spells::Mechanics> battleMechanics(const spells::IBattleCast * event) const;
+	spells::RecipientConditionResult checkRecipient(const spells::RecipientConditionContext & context, const battle::Unit * target) const;
 private:
 	std::vector<int> magicalDamageReductionSourcesBasisPoints(const battle::Unit * affectedCreature,
 		int magicalDamageReductionBasisPoints, int perkMagicalDamageReductionBasisPoints,

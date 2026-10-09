@@ -235,6 +235,9 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN)
+			&& magicRules.isStruct() && magicRules.Struct().count("creatureAbilities") != 0)
+			throw std::runtime_error("Cannot discard captured creature ability rules in an older world format");
 		if(h.saving)
 		{
 			heroCommands::validateRules(heroCommandRules);

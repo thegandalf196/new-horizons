@@ -59,7 +59,9 @@ class StackQueue : public CIntObject
 		std::optional<uint32_t> getBoundUnitID() const;
 	private:
 		std::string extraActivationHelp;
+		std::string frozenHelp;
 		void setExtraActivation(newHorizonsQueueActivationStatus::Origin origin);
+		void drawFrozenBadge(Canvas & canvas) const;
 	};
 
 	static const int QUEUE_SIZE_BIG = 10;

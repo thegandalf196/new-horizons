@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/NewHorizonsFrozen.h"
 #include "BattleEvaluator.h"
 #include "BattleExchangeVariant.h"
 
@@ -15,6 +16,7 @@
 #include "NewHorizonsHexOfPain.h"
 #include "tbb/parallel_for.h"
 #include "SpellTargetsEvaluator.h"
+#include "../../lib/spells/NewHorizonsRealityWarp.h"
 #include "../../lib/CStopWatch.h"
 #include "../../lib/CThreadHelper.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
@@ -1228,6 +1230,8 @@ float projectedRegenerationValue(
 				}
 			}
 
+			const bool forecastForfeits = unit && newHorizonsFrozen::forfeitsNormalActivation(*unit, BattleUnitTurnReason::TURN_QUEUE);
+			const bool baselineForfeits = baselineUnit && newHorizonsFrozen::forfeitsNormalActivation(*baselineUnit, BattleUnitTurnReason::TURN_QUEUE);
 			if(unit && unit->alive())
 				forecast->nextTurn(unit->unitId(), BattleUnitTurnReason::TURN_QUEUE);
 			if(baselineUnit && baselineUnit->alive())
@@ -1237,7 +1241,7 @@ float projectedRegenerationValue(
 				? forecast->battleGetUnitByID(unit->unitId()) : nullptr;
 			const auto * currentBaselineUnit = baselineUnit
 				? baseline->battleGetUnitByID(baselineUnit->unitId()) : nullptr;
-			if(currentForecastUnit && currentForecastUnit->alive())
+			if(!forecastForfeits && currentForecastUnit && currentForecastUnit->alive())
 			{
 				PotentialTargets potentialTargets(currentForecastUnit, forecastDamage, forecast);
 				if(!potentialTargets.possibleAttacks.empty())
@@ -1248,7 +1252,7 @@ float projectedRegenerationValue(
 			}
 			if(currentForecastUnit)
 				forecast->getForUpdate(queuedUnit->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
-			if(currentBaselineUnit && currentBaselineUnit->alive())
+			if(!baselineForfeits && currentBaselineUnit && currentBaselineUnit->alive())
 			{
 				PotentialTargets potentialTargets(currentBaselineUnit, baselineDamage, baseline);
 				if(!potentialTargets.possibleAttacks.empty())
@@ -1322,6 +1326,8 @@ float projectedCapacityRegenerationValue(
 			const int64_t baselineHealthBefore = baselineUnit
 				? static_cast<int64_t>(baselineUnit->getAvailableHealth()) : 0;
 
+			const bool forecastForfeits = unit && newHorizonsFrozen::forfeitsNormalActivation(*unit, BattleUnitTurnReason::TURN_QUEUE);
+			const bool baselineForfeits = baselineUnit && newHorizonsFrozen::forfeitsNormalActivation(*baselineUnit, BattleUnitTurnReason::TURN_QUEUE);
 			if(unit && unit->alive())
 				forecast->nextTurn(unitId, BattleUnitTurnReason::TURN_QUEUE);
 			if(baselineUnit && baselineUnit->alive())
@@ -1351,7 +1357,7 @@ float projectedCapacityRegenerationValue(
 				}
 			}
 
-			if(currentForecastUnit && currentForecastUnit->alive())
+			if(!forecastForfeits && currentForecastUnit && currentForecastUnit->alive())
 			{
 				PotentialTargets potentialTargets(currentForecastUnit, forecastDamage, forecast);
 				if(!potentialTargets.possibleAttacks.empty())
@@ -1362,7 +1368,7 @@ float projectedCapacityRegenerationValue(
 			}
 			if(currentForecastUnit)
 				forecast->getForUpdate(unitId)->removeUnitBonus(Bonus::UntilActivationEnds);
-			if(currentBaselineUnit && currentBaselineUnit->alive())
+			if(!baselineForfeits && currentBaselineUnit && currentBaselineUnit->alive())
 			{
 				PotentialTargets potentialTargets(currentBaselineUnit, baselineDamage, baseline);
 				if(!potentialTargets.possibleAttacks.empty())
@@ -1412,9 +1418,10 @@ float projectedVampirismValue(
 
 				const bool beginsActivation = forecast->battleBeginsActivation(
 					unit, BattleUnitTurnReason::TURN_QUEUE);
+				const bool frozenForfeits = newHorizonsFrozen::forfeitsNormalActivation(*unit, BattleUnitTurnReason::TURN_QUEUE);
 				forecast->nextTurn(unit->unitId(), BattleUnitTurnReason::TURN_QUEUE);
 				unit = forecast->getForUpdate(queuedUnit->unitId()).get();
-				if(beginsActivation && unit->alive())
+				if(!frozenForfeits && beginsActivation && unit->alive())
 				{
 					PotentialTargets potentialTargets(unit, forecastDamage, forecast);
 					if(!potentialTargets.possibleAttacks.empty())
@@ -4756,24 +4763,29 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			&& !newHorizonsMagic::hasDistinctMassSlow(cb->getBattle(battleID)->getBattle()->getMagicRules())
 			&& hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalField")
 			&& !cb->getBattle(battleID)->battleWasTemporalFieldUsed(side);
-		std::vector<SpellID> cureAfflictionChoices{SpellID::NONE};
+		std::vector<std::pair<SpellID, std::string>> cureAfflictionChoices{{SpellID::NONE, {}}};
 		const auto & magicRules = cb->getBattle(battleID)->getBattle()->getMagicRules();
 		if(newHorizonsMagic::cureEnabled(magicRules, spell->getId()))
 		{
 			for(const auto * unit : cb->getBattle(battleID)->battleGetAllUnits(false))
-				for(const auto affliction : newHorizonsMagic::cureAfflictions(magicRules, unit))
-					if(!vstd::contains(cureAfflictionChoices, affliction))
-						cureAfflictionChoices.push_back(affliction);
-			std::sort(cureAfflictionChoices.begin(), cureAfflictionChoices.end(), [](const SpellID & lhs, const SpellID & rhs)
 			{
-				return lhs.getNum() < rhs.getNum();
+				for(const auto affliction : newHorizonsMagic::cureAfflictions(magicRules, unit))
+					if(!vstd::contains(cureAfflictionChoices, std::make_pair(affliction, std::string{})))
+						cureAfflictionChoices.emplace_back(affliction, std::string{});
+				const auto frozenChoice = std::make_pair(SpellID(SpellID::NONE), std::string("frozen"));
+				if(newHorizonsFrozen::isFrozen(*unit) && !vstd::contains(cureAfflictionChoices, frozenChoice))
+					cureAfflictionChoices.push_back(frozenChoice);
+			}
+			std::sort(cureAfflictionChoices.begin(), cureAfflictionChoices.end(), [](const auto & lhs, const auto & rhs)
+			{
+				return std::make_pair(lhs.first.getNum(), lhs.second) < std::make_pair(rhs.first.getNum(), rhs.second);
 			});
 		}
 
 		const std::vector<int32_t> shadowGiftChoices = isCanonicalShadowGift(*cb->getBattle(battleID), spell)
 			? std::vector<int32_t>{10, 20, 30} : std::vector<int32_t>{0};
 		for(const auto shadowGiftSacrificePercent : shadowGiftChoices)
-		for(const auto cureAffliction : cureAfflictionChoices)
+		for(const auto & [cureAffliction, curePhysicalAffliction] : cureAfflictionChoices)
 		for(const bool massSlow : {false, true})
 		{
 			if(massSlow && !canUseTemporalField)
@@ -4786,6 +4798,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				temp.setMetamagicFollowup(metamagicFollowup);
 				temp.setMetamagicGrand(metamagicGrandChoice);
 				temp.setCureAffliction(cureAffliction);
+				temp.setCurePhysicalAffliction(curePhysicalAffliction);
 			temp.setMassSlow(massSlow);
 			temp.setShadowGiftSacrificePercent(shadowGiftSacrificePercent);
 			temp.setSelectiveDispel(selectiveDispel);
@@ -4797,6 +4810,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						candidateCast.setMetamagicFollowup(metamagicFollowup);
 						candidateCast.setMetamagicGrand(metamagicGrandChoice);
 						candidateCast.setCureAffliction(cureAffliction);
+						candidateCast.setCurePhysicalAffliction(curePhysicalAffliction);
 						if(!target.empty() && target.front().unitValue)
 							candidateCast.setMetamagicTargetUnitId(target.front().unitValue->unitId());
 						candidateCast.setOvercharge(overcharge);
@@ -4829,6 +4843,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.spellOvercharge = overcharge;
 						ps.spellSelectiveDispel = selectiveDispel;
 						ps.spellCureAffliction = cureAffliction;
+						ps.spellCurePhysicalAffliction = curePhysicalAffliction;
 						ps.spellMassSlow = massSlow;
 						ps.spellStormOfDaggers = stormOfDaggers;
 						ps.spellShadowGiftSacrificePercent = shadowGiftSacrificePercent;
@@ -5181,7 +5196,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					ourTurnSpan++;
 				}
 
+				const bool frozenForfeits = newHorizonsFrozen::forfeitsNormalActivation(*unit, BattleUnitTurnReason::TURN_QUEUE);
 				state->nextTurn(unit->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+				if(frozenForfeits)
+					continue;
 
 				PotentialTargets potentialTargets(unit, damageCache, state);
 
@@ -5715,6 +5733,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					cast.setOvercharge(ps.spellOvercharge);
 					cast.setSelectiveDispel(ps.spellSelectiveDispel);
 					cast.setCureAffliction(ps.spellCureAffliction);
+					cast.setCurePhysicalAffliction(ps.spellCurePhysicalAffliction);
 					cast.setMassSlow(ps.spellMassSlow);
 					if(counterspell.wardActive)
 						cast.setCounterspell(counterspell.wardSide, counterspellNegated);
@@ -5792,6 +5811,20 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				}
 
 				// Removed sacrifice victims must remain in the health accounting below.
+				if(ps.command == HeroCommand::NONE && ps.spell
+					&& ps.spell->getJsonKey() == newHorizonsRealityWarp::SPELL_KEY)
+				{
+					// castEval above applied the real atomic exchange and the accepted
+					// spell allowance was projected normally. Unchanged HP is not a no-op:
+					// compare the actual before/after bonus-aware tactical branches.
+					const float value = counterspellNegated ? 0.0f
+						: SpellTargetEvaluator::realityWarpExchangeValue(env.get(), battleCallback, state,
+							playerID, ps.dest, hero->getCasterOwner());
+					ps.value = value > 0.0f
+						? baseline + value * scoreEvaluator.getPositiveEffectMultiplier()
+						: std::numeric_limits<float>::lowest();
+					continue;
+				}
 				auto allUnits = state->battleGetUnitsIf([](const battle::Unit * u) -> bool { return !u->isTurret(); });
 				const bool transfigureMatter = isTransfigureMatter(ps.spell);
 				const bool phantomArmy = isPhantomArmy(ps.spell);
@@ -5808,6 +5841,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					{
 						auto original = cb->getBattle(battleID)->battleGetUnitByID(u->unitId());
 						return !original || u->getMovementRange() != original->getMovementRange()
+							|| newHorizonsFrozen::isFrozen(*u) != newHorizonsFrozen::isFrozen(*original)
 							|| (u->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)
 								!= original->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE))
 							|| (slowFamily
@@ -5993,6 +6027,21 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					auto newHealth = unit->getAvailableHealth();
 					auto oldHealth = vstd::find_or(healthOfStack, unit->unitId(), 0); // old health value may not exist for newly summoned units
 					auto original = cb->getBattle(battleID)->battleGetUnitByID(unit->unitId());
+					if(ps.spellCurePhysicalAffliction == "frozen" && original
+						&& newHorizonsFrozen::isFrozen(*original) && !newHorizonsFrozen::isFrozen(*unit)
+						&& state->battleGetActionController(unit) == playerID
+						&& unit->alive() && unit->canMove() && unit->willMove(0))
+					{
+						// A full-HP Cure has no health/stat delta. Recovering another
+						// stack's lost normal action can still be valuable when the active
+						// stack cannot seed an exchange. Use a real legal action's value,
+						// as a lower bound, not an extra sum over the same queued benefit.
+						PotentialTargets recoveredActions(unit, innerCache, state);
+						const float recoveredValue = std::max(0.0f,
+							static_cast<float>(recoveredActions.bestActionValue()));
+						stackActionScore = std::max(stackActionScore, baseline
+							+ recoveredValue * scoreEvaluator.getPositiveEffectMultiplier());
+					}
 					if(ps.spell && original && state->battleGetOwner(unit) != playerID)
 					{
 						if(ps.spell->getId() == SpellID::BERSERK && unit->unitId() == targetId)
@@ -6296,6 +6345,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		spellcast.spellOvercharge = castToPerform.spellOvercharge;
 		spellcast.spellSelectiveDispel = castToPerform.spellSelectiveDispel;
 		spellcast.spellCureAffliction = castToPerform.spellCureAffliction;
+		spellcast.spellCurePhysicalAffliction = castToPerform.spellCurePhysicalAffliction;
 		spellcast.spellPurifyChoices = castToPerform.spellPurifyChoices;
 		spellcast.spellMassSlow = castToPerform.spellMassSlow;
 		spellcast.spellShadowGiftSacrificePercent = castToPerform.spellShadowGiftSacrificePercent;

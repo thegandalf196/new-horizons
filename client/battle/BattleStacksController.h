@@ -8,6 +8,7 @@
  *
  */
 #pragma once
+#include "../../lib/Rect.h"
 
 #include "../../lib/Color.h"
 #include "StackInfoPanelHoverState.h"
@@ -90,6 +91,12 @@ class BattleStacksController
 		std::shared_ptr<IImage> amountBox;
 	};
 	std::map<uint32_t, DisplayedStackSnapshot> displayedStackSnapshot;
+	struct FrozenShatterFeedback
+	{
+		Rect bounds;
+		uint32_t elapsedMilliseconds = 0;
+	};
+	std::map<uint32_t, FrozenShatterFeedback> frozenShatterFeedback;
 
 	/// currently active stack; nullptr - no one
 	const CStack *activeStack;

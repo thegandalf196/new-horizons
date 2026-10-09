@@ -38,6 +38,7 @@
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/BattleHex.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/texts/TextOperations.h"
@@ -49,14 +50,14 @@ static void onAnimationFinished(const CStack *stack, std::weak_ptr<CreatureAnima
 	if(!animation)
 		return;
 
-	if (!stack->isFrozen() && animation->getType() == ECreatureAnimType::FROZEN)
+	if (!stack->isFrozen() && !newHorizonsFrozen::isFrozen(*stack) && animation->getType() == ECreatureAnimType::FROZEN)
 		animation->setType(ECreatureAnimType::HOLDING);
 
 	if (animation->isIdle())
 	{
 		const CCreature *creature = stack->unitType();
 
-		if (stack->isFrozen())
+		if (stack->isFrozen() || newHorizonsFrozen::isFrozen(*stack))
 			animation->setType(ECreatureAnimType::FROZEN);
 		else
 		if (animation->framesInGroup(ECreatureAnimType::MOUSEON) > 0)
@@ -282,7 +283,7 @@ void BattleStacksController::applyStackCreatureFormRefresh(const CStack * stack)
 			? ECreatureAnimType::DEAD_RANGED
 			: ECreatureAnimType::DEAD;
 	}
-	else if(stack->isFrozen())
+	else if(stack->isFrozen() || newHorizonsFrozen::isFrozen(*stack))
 	{
 		animationType = ECreatureAnimType::FROZEN;
 	}
@@ -495,12 +496,61 @@ void BattleStacksController::showStack(Canvas & canvas, const CStack * stack)
 			transparency = static_cast<int>(filter.transparency) * transparency / 255;
 		}
 	}
+	const bool physicallyFrozen = stack->alive() && newHorizonsFrozen::isFrozen(*stack);
+	if(physicallyFrozen)
+		effectColor = ColorRGBA(114, 186, 218, 140);
 
 	stackAnimation[stack->unitId()]->nextFrame(canvas, effectColor, transparency, facingRight(stack)); // do actual blit
+	const auto bounds = stackAnimation[stack->unitId()]->currentFrameContentRect(facingRight(stack));
+	if(physicallyFrozen && bounds.w > 0 && bounds.h > 0)
+	{
+		// A translucent faceted prism follows actual frame content, including
+		// nonstandard custom canvases. No rectangular canvas tint or spell sprite.
+		const int middleX = bounds.x + bounds.w / 2;
+		const int top = bounds.y - 3;
+		const int height = bounds.h + 6;
+		const int radius = bounds.w / 2 + 4;
+		const ColorRGBA ice(120, 193, 225, 40);
+		const ColorRGBA shade(65, 126, 169, 150);
+		const ColorRGBA light(211, 241, 255, 210);
+		for(int row = 0; row < height; ++row)
+		{
+			const int edge = std::min(row, height - row - 1);
+			const int halfWidth = radius * std::min(edge * 4, height) / height;
+			canvas.drawLine(Point(middleX - halfWidth, top + row), Point(middleX + halfWidth, top + row), ice, ice);
+		}
+		const std::array<Point, 6> vertices{{Point(middleX, top), Point(middleX + radius, top + height / 4),
+			Point(middleX + radius, top + height * 3 / 4), Point(middleX, top + height),
+			Point(middleX - radius, top + height * 3 / 4), Point(middleX - radius, top + height / 4)}};
+		for(std::size_t index = 0; index < vertices.size(); ++index)
+			canvas.drawLine(vertices[index], vertices[(index + 1) % vertices.size()], index < 3 ? light : shade, light);
+		canvas.drawLine(vertices[0], vertices[2], light, shade);
+		canvas.drawLine(vertices[2], vertices[4], shade, light);
+		canvas.drawLine(vertices[4], vertices[0], light, shade);
+	}
+	const auto feedback = frozenShatterFeedback.find(stack->unitId());
+	if(feedback != frozenShatterFeedback.end())
+	{
+		const auto & shattered = feedback->second;
+		const auto center = shattered.bounds.center();
+		const int distance = 5 + static_cast<int>(shattered.elapsedMilliseconds) / 14;
+		const ColorRGBA ice(200, 237, 255, static_cast<uint8_t>(255 - shattered.elapsedMilliseconds * 255 / 550));
+		const std::array<Point, 6> directions{{Point(0, -2), Point(2, -1), Point(2, 1), Point(0, 2), Point(-2, 1), Point(-2, -1)}};
+		for(const auto & direction : directions)
+		{
+			const auto shard = center + Point(direction.x * distance, direction.y * distance);
+			canvas.drawLine(shard + Point(-2, -4), shard + Point(3, 0), ice, ice);
+			canvas.drawLine(shard + Point(3, 0), shard + Point(-1, 4), ice, ice);
+			canvas.drawLine(shard + Point(-1, 4), shard + Point(-2, -4), ice, ice);
+		}
+	}
 }
 
 void BattleStacksController::tick(uint32_t msPassed)
 {
+	for(auto & entry : frozenShatterFeedback)
+		entry.second.elapsedMilliseconds += msPassed;
+	std::erase_if(frozenShatterFeedback, [](const auto & entry) { return entry.second.elapsedMilliseconds >= 550; });
 	updateHoveredStacks(msPassed);
 	updateBattleAnimations(msPassed);
 }
@@ -519,6 +569,12 @@ void BattleStacksController::tickFrameBattleAnimations(uint32_t msPassed)
 	{
 		if (stackAnimation.find(stack->unitId()) == stackAnimation.end()) //e.g. for summoned but not yet handled stacks
 			continue;
+		auto & animation = stackAnimation[stack->unitId()];
+		if(stack->alive() && newHorizonsFrozen::isFrozen(*stack) && animation->isIdle())
+			animation->setType(ECreatureAnimType::FROZEN);
+		else if(animation->getType() == ECreatureAnimType::FROZEN
+			&& !stack->isFrozen() && !newHorizonsFrozen::isFrozen(*stack))
+			animation->setType(ECreatureAnimType::HOLDING);
 
 		stackAnimation[stack->unitId()]->incrementFrame(msPassed / 1000.f);
 	}
@@ -677,6 +733,9 @@ void BattleStacksController::stacksAreAttacked(std::vector<StackAttackedInfo> at
 		owner.addToAnimationStage(usedEvent, [this, attackedInfo, useDeathAnim, useDefenceAnim]()
 		{
 			unlockStackAmountBox(attackedInfo.defender->unitId());
+			if(attackedInfo.shattered)
+				frozenShatterFeedback[attackedInfo.defender->unitId()] = {
+					stackAnimation.at(attackedInfo.defender->unitId())->currentFrameContentRect(facingRight(attackedInfo.defender)), 0};
 
 			if (useDeathAnim)
 				addNewAnim(new DeathAnimation(owner, attackedInfo.defender, attackedInfo.indirectAttack));
@@ -1090,7 +1149,7 @@ void BattleStacksController::updateHoveredStacks(uint32_t msPassed)
 			continue;
 
 		stackAnimation[stack->unitId()]->setBorderColor(AnimationControls::getBlueBorder());
-		if (stackAnimation[stack->unitId()]->framesInGroup(ECreatureAnimType::MOUSEON) > 0 && stack->alive() && !stack->isFrozen())
+		if (stackAnimation[stack->unitId()]->framesInGroup(ECreatureAnimType::MOUSEON) > 0 && stack->alive() && !stack->isFrozen() && !newHorizonsFrozen::isFrozen(*stack))
 			stackAnimation[stack->unitId()]->playOnce(ECreatureAnimType::MOUSEON);
 	}
 

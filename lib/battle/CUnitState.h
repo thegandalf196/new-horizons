@@ -123,6 +123,8 @@ public:
 	CHealth(const CHealth & other) = default;
 
 	CHealth & operator=(const CHealth & other);
+	/// Exchanges prestaged ledger contents, never their owning Unit pointers.
+	void swapPreparedContents(CHealth & prepared) noexcept;
 
 	void init();
 	void reset(bool clearUnusableRemains = true);
@@ -374,6 +376,14 @@ public:
 	bool alive() const override;
 	bool isGhost() const override;
 	bool isFrozen() const override;
+	bool isNewHorizonsFrozen() const;
+	int32_t frozenLastAppliedRound() const;
+	/// Restore a validated binary receipt without attempting a new application.
+	void restoreFrozenApplicationRound(int32_t round);
+	/// Record successful application before publishing its physical marker.
+	void recordFrozenApplication(int32_t round);
+	/// Commit only the prevalidated recipient-local application stamp.
+	void commitPreparedFrozenApplication(const CUnitState & prepared) noexcept;
 	bool isValidTarget(bool allowDead = false) const override;
 
 	bool isHypnotized() const override;
@@ -497,6 +507,9 @@ public:
 	void preserveCreatureHealthOnCapacityIncrease();
 	/// Normalize tracked health after a capacity bonus changes or expires.
 	void normalizeCapacityHealth();
+	/// Commit recipient-local capacity projection without allocating or loading
+	/// packet-provided health. All validation occurred on the detached projection.
+	void commitPreparedCapacityHealth(CUnitState & prepared) noexcept;
 	/// Exact aggregate HP the next genuine capacity-regeneration activation would restore.
 	int64_t capacityRegenerationProjectedHeal() const;
 	/// Apply the same projected capacity-regeneration tick and advance its tenths carry.
@@ -523,6 +536,7 @@ private:
 	std::pair<int32_t, int32_t> getMoraleLimits() const override;
 	const IUnitEnvironment * env = nullptr;
 	int32_t activationMovementBonus = 0;
+	int32_t frozenAppliedRound = -1;
 	int64_t phantomInitialIntegrity = 0;
 	int64_t phantomIntegrity = 0;
 	int32_t phantomRoundsRemaining = 0;

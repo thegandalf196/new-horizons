@@ -25,6 +25,7 @@
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsArmorer.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
+#include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 
@@ -332,8 +333,18 @@ bool DamageCache::tracksNightProwler(uint32_t attackerId) const
 	return false;
 }
 
+bool DamageCache::tracksFrozen(uint32_t defenderId) const
+{
+	for(const auto * cache = this; cache; cache = cache->parent)
+		if(cache->frozenTargets.contains(defenderId))
+			return true;
+	return false;
+}
+
 int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)
 {
+	if(newHorizonsFrozen::isFrozen(*defender))
+		frozenTargets.insert(defender->unitId());
 	if(hasRangedMarkEffect(defender, newHorizonsSorcery::ARCANE_BREACH_EFFECT))
 		rangedMarkTargets.insert(defender->unitId());
 	if(defender->hasBonus(CSelector(newHorizonsShroud::isEvasiveShroudProtection)))
@@ -408,7 +419,9 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 		|| tracksNightProwler(attacker->unitId())
 		|| tracksAmbusher(attacker->unitId())
 		|| tracksEvasiveShroud(defender->unitId())
-		|| tracksRangedMarks(defender->unitId()))
+		|| tracksRangedMarks(defender->unitId())
+		|| newHorizonsFrozen::isFrozen(*attacker)
+		|| tracksFrozen(defender->unitId()))
 	{
 		if(!attacker->alive())
 			return 0;
@@ -476,13 +489,13 @@ AttackPossibility::AttackPossibility(const BattleHex & from, const BattleHex & d
 
 float AttackPossibility::damageDiff() const
 {
-	return defenderDamageReduce - attackerDamageReduce - collateralDamageReduce + shootersBlockedDmg;
+	return defenderDamageReduce - attackerDamageReduce - collateralDamageReduce + shootersBlockedDmg + frozenControlValue;
 }
 
 float AttackPossibility::damageDiff(float positiveEffectMultiplier, float negativeEffectMultiplier) const
 {
-	return positiveEffectMultiplier * (defenderDamageReduce + shootersBlockedDmg)
-		- negativeEffectMultiplier * (attackerDamageReduce + collateralDamageReduce);
+	return positiveEffectMultiplier * (defenderDamageReduce + shootersBlockedDmg + std::max(0.0f, frozenControlValue))
+		- negativeEffectMultiplier * (attackerDamageReduce + collateralDamageReduce + std::max(0.0f, -frozenControlValue));
 }
 
 float AttackPossibility::attackValue() const
@@ -762,6 +775,7 @@ AttackPossibility AttackPossibility::evaluate(
 			continue;
 
 		AttackPossibility ap(hex, defHex, attackInfo);
+		std::map<uint32_t, float> freezeRemainingProbability;
 		const auto * raHero = attackerSide == BattleSide::ATTACKER || attackerSide == BattleSide::DEFENDER
 			? state->battleGetFightingHero(attackerSide) : nullptr;
 		const bool canCheckNightProwlerPath = ap.from.isValid()
@@ -795,6 +809,14 @@ AttackPossibility AttackPossibility::evaluate(
 			|| newHorizonsShroud::hasShadowAssault(defenderHero);
 		const bool ordinaryArcheryShooter = newHorizonsArchery::isOrdinaryPhysicalShooter(attacker);
 		const auto currentRound = state->battleGetRound();
+		const auto & frozenRules = state->getBattle()->getMagicRules();
+		const bool projectsFrozen = newHorizonsFrozen::enabled(frozenRules)
+			&& (newHorizonsFrozen::isFreezingTouchAttacker(*attacker, frozenRules)
+				|| newHorizonsFrozen::isFreezingTouchAttacker(*defender, frozenRules)
+				|| std::ranges::any_of(state->battleAliveUnits(), [](const auto * unit)
+				{
+					return newHorizonsFrozen::isFrozen(*unit);
+				}));
 		const auto currentActivationSerial = static_cast<int32_t>(state->getBattle()->getActivationSerial());
 		const auto initialAttackerState = attacker->acquireState();
 		const bool projectsDeadeye = attackInfo.shooting && attackInfo.physicalDamage && !attackInfo.retaliation
@@ -1050,14 +1072,14 @@ AttackPossibility AttackPossibility::evaluate(
 				|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 				|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune || projectsPerfectFortune
 				|| projectsNoEscape || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
-				|| projectsNightProwler || projectsBloodragePain || projectsLastStand || projectsDefiant || projectsLuckSerendipity)
+				|| projectsNightProwler || projectsBloodragePain || projectsLastStand || projectsDefiant || projectsLuckSerendipity || projectsFrozen)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
 	if(projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 			|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune || projectsPerfectFortune
 			|| projectsNoEscape || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
-			|| projectsNightProwler || projectsBloodragePain || projectsLastStand || projectsDefiant || projectsLuckSerendipity)
+			|| projectsNightProwler || projectsBloodragePain || projectsLastStand || projectsDefiant || projectsLuckSerendipity || projectsFrozen)
 			ap.effectPreview = fortunePreview;
 	if(crossesNightProwlerEnemy && fortunePreview)
 		fortunePreview->addUnitBonus(attacker->unitId(), newHorizonsShroud::nightProwlerDamageBonuses());
@@ -1515,6 +1537,13 @@ AttackPossibility AttackPossibility::evaluate(
 				auto victimAttack = ap.attack;
 				victimAttack.attacker = ap.attackerState.get();
 				victimAttack.defender = defenderState.get();
+				const bool frozenBeforeHit = newHorizonsFrozen::isFrozen(*defenderState);
+				const bool shattersFrozen = newHorizonsFrozen::qualifiesForShatter(victimAttack,
+					state->getBattle()->getMagicRules());
+				const bool freezeCanApply = !frozenBeforeHit && !attackInfo.shooting
+					&& attackInfo.physicalDamage && u->unitId() == strikeDefender->unitId()
+					&& newHorizonsFrozen::isFreezingTouchAttacker(*ap.attackerState, state->getBattle()->getMagicRules())
+					&& newHorizonsFrozen::canApply(*defenderState, currentRound);
 				victimAttack.secondaryAttack = u->unitId() != strikeDefender->unitId();
 				victimAttack.relentlessAssaultDamagePercent = relentlessAssaultDamagePercent;
 				victimAttack.protectIntercepted = strike.protectIntercepted
@@ -1592,6 +1621,22 @@ AttackPossibility AttackPossibility::evaluate(
 				defenderState->damage(damageToApply, false,
 					damageProvenance);
 				strike.resolvedHits.emplace_back(u->unitId(), damageToApply);
+				// Keep damage and probabilistic control separate. A forecast never
+				// installs a guaranteed Freeze or spends its application-round stamp.
+				if(defenderState->alive() && (freezeCanApply || shattersFrozen))
+				{
+					const float opportunity = calculateDamageReduce(ap.attackerState.get(), defenderState.get(),
+						defenderState->getAvailableHealth(), damageCache, state);
+					const float chance = newHorizonsFrozen::chancePercent(state->getBattle()->getMagicRules()) / 100.0f;
+					const auto remaining = freezeRemainingProbability.try_emplace(u->unitId(), 1.0f).first;
+					const float probability = chance * remaining->second;
+					if(freezeCanApply)
+						remaining->second *= 1.0f - chance;
+					const float value = shattersFrozen ? -opportunity : probability * opportunity;
+					ap.frozenControlValue += state->battleMatchActionController(attacker, u) ? value : -value;
+				}
+				if(shattersFrozen && fortunePreview)
+					fortunePreview->projectFrozenShatter(victimAttack, {{u->unitId(), damageToApply}});
 				if(lastStand.triggered)
 					applyLastStandDefend(defenderState.get(), victimAttack.retaliation);
 				if(triggersAmbusher)
@@ -1634,7 +1679,7 @@ AttackPossibility AttackPossibility::evaluate(
 				}
 				bool ignoredInnate = false;
 				bool ignoredShroud = false;
-				if(fortunePreview && i == 0 && !attackInfo.shooting && !longReachAttack
+				if(!frozenBeforeHit && fortunePreview && i == 0 && !attackInfo.shooting && !longReachAttack
 					&& u->unitId() == strikeDefender->unitId())
 				{
 					if(counterAttacksBlocked)
@@ -1645,7 +1690,7 @@ AttackPossibility AttackPossibility::evaluate(
 							newHorizonsArmorer::DefiantDenialCause::EXPERT_SHROUD, strike);
 				}
 
-				if(i == 0 && !attackInfo.shooting && !longReachAttack && u->unitId() == strikeDefender->unitId()
+				if(!frozenBeforeHit && i == 0 && !attackInfo.shooting && !longReachAttack && u->unitId() == strikeDefender->unitId()
 					&& retaliatorState->alive() && retaliatorState->ableToRetaliate()
 					&& (!counterAttacksBlocked || (ignoredInnate && !fortunePreview->battleHasMagicalRetaliationBlock(ap.attackerState.get())))
 					&& (!state->battleShroudDeniesRetaliation(victimAttack) || defenderState->hasBonus(firstStrikeSelector) || ignoredShroud)
@@ -2117,7 +2162,14 @@ AttackPossibility AttackPossibility::evaluate(
 						const auto damageReduce = calculateDamageReduce(retaliatorState.get(), targetState.get(),
 							projectedRetaliationDamage.healthLoss, damageCache, state);
 						if(targetState->unitId() == attacker->unitId())
+						{
 							ap.attackerDamageReduce += damageReduce;
+							// Successful Freezing Touch vetoes this counter, but the
+							// deterministic branch still resolves it on the failure path.
+							if(const auto remaining = freezeRemainingProbability.find(retaliation->attackerId);
+								remaining != freezeRemainingProbability.end())
+								ap.frozenControlValue += (1.0f - remaining->second) * damageReduce;
+						}
 						else if(retaliatorState->unitSide() == targetState->unitSide())
 						{
 							if(state->battleMatchOwner(attacker, defender))
@@ -2153,6 +2205,9 @@ AttackPossibility AttackPossibility::evaluate(
 			std::vector<std::pair<uint32_t, int64_t>> retaliationActualHits;
 			for(auto & [targetState, rawDamage] : pendingRetaliationDamage)
 			{
+				const bool counterCanFreeze = retaliation && targetState->unitId() == retaliation->defenderId
+					&& newHorizonsFrozen::isFreezingTouchAttacker(*defenderStates.at(retaliation->attackerId), state->getBattle()->getMagicRules())
+					&& newHorizonsFrozen::canApply(*targetState, currentRound);
 				auto actualDamage = rawDamage;
 				bool consumesBastion = false;
 				bool triggersNoEscape = false;
@@ -2177,6 +2232,16 @@ AttackPossibility AttackPossibility::evaluate(
 				}
 				targetState->damage(actualDamage, false,
 					retaliation ? retaliation->damageProvenance : battle::DamageProvenance::OTHER);
+				if(retaliation && fortunePreview)
+				{
+					const auto retaliatorState = defenderStates.at(retaliation->attackerId);
+					BattleAttackInfo counter(retaliatorState.get(), targetState.get(), 0, false);
+					counter.retaliation = true;
+					fortunePreview->projectFrozenShatter(counter, {{targetState->unitId(), actualDamage}});
+					if(counterCanFreeze && targetState->alive())
+						ap.frozenControlValue -= newHorizonsFrozen::chancePercent(state->getBattle()->getMagicRules()) / 100.0f
+							* calculateDamageReduce(retaliatorState.get(), targetState.get(), targetState->getAvailableHealth(), damageCache, state);
+				}
 				if(retaliation && pendingLastStandDefends.contains(targetState->unitId()))
 					applyLastStandDefend(targetState.get(), retaliation->retaliation);
 				if(triggersAmbusher && retaliation)

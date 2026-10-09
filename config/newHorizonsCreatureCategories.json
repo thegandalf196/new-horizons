@@ -176,11 +176,11 @@
 			"members": ["core:goblinWolfRider", "core:hobgoblinWolfRider"]
 		},
 		"core:airElemental": {
-			"weeklyBaseGrowth": 5,
+			"weeklyBaseGrowth": 4,
 			"members": ["core:airElemental", "core:stormElemental"]
 		},
 		"core:waterElemental": {
-			"weeklyBaseGrowth": 5,
+			"weeklyBaseGrowth": 4,
 			"members": ["core:waterElemental", "core:iceElemental"]
 		},
 		"core:psychicElemental": {
@@ -227,6 +227,10 @@
 		"core:hydra": {
 			"weeklyBaseGrowth": 1,
 			"members": ["core:hydra", "core:chaosHydra"]
+		},
+		"core:earthElemental": {
+			"weeklyBaseGrowth": 4,
+			"members": ["core:earthElemental", "core:magmaElemental"]
 		},
 		"core:fireElemental": {
 			"weeklyBaseGrowth": 4,

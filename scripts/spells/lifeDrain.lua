@@ -139,6 +139,7 @@ function Script:apply(mechanics, server, target)
 	local battle = mechanics:getBattle()
 	local damage, killed = server:damageUnit(
 		battle, enemy, mechanics:adjustEffectValue(enemy), false, mechanics:getUnitCaster(), true)
+	server:clearFrozenAfterDirectMagicDamage(battle, enemy)
 	local healing = math.floor(damage * healPercent(mechanics) / 100)
 	local healedHP = 0
 	if healing > 0 then

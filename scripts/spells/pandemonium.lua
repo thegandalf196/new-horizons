@@ -80,6 +80,7 @@ function Script:apply(mechanics, server, target)
 			local damage, killed = server:damageUnit(battle, entry.unit,
 				mechanics:getPandemoniumDamage(entry.unit, entry.count),
 				false, mechanics:getUnitCaster(), true)
+			server:clearFrozenAfterDirectMagicDamage(battle, entry.unit)
 			if damage > 0 and server:describeChanges() then
 				BattleLog.spellDamage(server, battle, mechanics:getSpell(), entry.unit, damage, killed)
 			end

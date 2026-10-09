@@ -123,6 +123,7 @@ inline PhysicalPoisonStatus makePhysicalPoisonStatus(int64_t baseDamage, int32_t
 enum class StackStatusIconKind
 {
 	BATTLE_FORM,
+	FROZEN,
 	TIME_STOP,
 	CONFUSION,
 	ENTANGLE,
@@ -155,6 +156,7 @@ inline int stackStatusPriority(StackStatusIconKind kind)
 	switch(kind)
 	{
 		case StackStatusIconKind::BATTLE_FORM: return -1;
+		case StackStatusIconKind::FROZEN: return 0;
 		case StackStatusIconKind::TIME_STOP: return 0;
 		case StackStatusIconKind::CONFUSION: return 0;
 		case StackStatusIconKind::ENTANGLE: return 1;
@@ -196,6 +198,9 @@ inline StackStatusDisplayPlan stackStatusDisplayPlan(const std::vector<StackStat
 		if(visibleEntryKinds[left] == StackStatusIconKind::TIME_STOP
 			|| visibleEntryKinds[right] == StackStatusIconKind::TIME_STOP)
 			return visibleEntryKinds[left] == StackStatusIconKind::TIME_STOP;
+		if(visibleEntryKinds[left] == StackStatusIconKind::FROZEN
+			|| visibleEntryKinds[right] == StackStatusIconKind::FROZEN)
+			return visibleEntryKinds[left] == StackStatusIconKind::FROZEN;
 		if(visibleEntryKinds[left] == StackStatusIconKind::DOOM
 			|| visibleEntryKinds[right] == StackStatusIconKind::DOOM)
 			return visibleEntryKinds[left] == StackStatusIconKind::DOOM;
@@ -204,9 +209,11 @@ inline StackStatusDisplayPlan stackStatusDisplayPlan(const std::vector<StackStat
 
 	const bool hasPhysicalPoison = std::find(visibleEntryKinds.begin(), visibleEntryKinds.end(), StackStatusIconKind::PHYSICAL_POISON)
 		!= visibleEntryKinds.end();
+	const bool hasFrozen = std::find(visibleEntryKinds.begin(), visibleEntryKinds.end(), StackStatusIconKind::FROZEN)
+		!= visibleEntryKinds.end();
 	StackStatusDisplayPlan result;
 	result.overflow = totalEffectCount > 3;
-	result.ellipsisUsesSlot = result.overflow && !hasPhysicalPoison;
+	result.ellipsisUsesSlot = result.overflow && !hasPhysicalPoison && !hasFrozen;
 	const std::size_t visibleLimit = result.ellipsisUsesSlot ? 2 : 3;
 	const auto visibleCount = std::min(orderedIndices.size(), visibleLimit);
 	result.visibleEntryIndices.assign(orderedIndices.begin(), orderedIndices.begin() + visibleCount);

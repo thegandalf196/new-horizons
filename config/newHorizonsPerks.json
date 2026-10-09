@@ -2,7 +2,7 @@
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
 	"sourceDocument": "docs/design-sources/New Horizons.md",
-	"sourceSha256": "c1dbced844ca7464d2b8a99323e60e7d85e6dcc168b9f6eebe1f3d1a27298502",
+	"sourceSha256": "d1ab68a1c200921ab14d4716d42d65ed18a4abd393b2210e67e543328abbfc75",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -1829,7 +1829,7 @@
 					"requires": "advanced",
 					"description": "Reality Warp may target any two legal stacks rather than requiring one friendly and one enemy stack.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Reality Warp may target any two legal stacks rather than requiring one friendly and one enemy stack."
 					}
 				},

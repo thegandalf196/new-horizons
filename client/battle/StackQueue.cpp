@@ -31,6 +31,7 @@
 #include "../../lib/CStack.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include "../../lib/texts/TextOperations.h"
@@ -183,6 +184,10 @@ StackQueue::StackBox::StackBox(StackQueue * owner)
 
 void StackQueue::StackBox::setUnit(const battle::Unit * unit, size_t turn, std::optional<ui32> currentTurn, size_t queueIndex)
 {
+	if(isHovered() && !frozenHelp.empty())
+		ENGINE->statusbar()->clearIfMatching(frozenHelp);
+	frozenHelp = unit && unit->alive() && newHorizonsFrozen::isFrozen(*unit)
+		? LIBRARY->generaltexth->translate("new-horizons.combat.frozen.queue") : std::string();
 	if(unit)
 	{
 		boundUnitID = unit->unitId();
@@ -244,6 +249,8 @@ void StackQueue::StackBox::setUnit(const battle::Unit * unit, size_t turn, std::
 		}
 		setExtraActivation(newHorizonsQueueActivationStatus::Origin::NONE);
 	}
+	if(isHovered())
+		hover(true);
 }
 
 void StackQueue::StackBox::setExtraActivation(newHorizonsQueueActivationStatus::Origin origin)
@@ -280,14 +287,31 @@ bool StackQueue::StackBox::isBoundUnitHighlighted() const
 void StackQueue::StackBox::showAll(Canvas & to)
 {
 	CIntObject::showAll(to);
+	drawFrozenBadge(to);
 
 	if(isBoundUnitHighlighted())
 		to.drawBorder(background->pos, Colors::CYAN, 2);
 }
 
+void StackQueue::StackBox::drawFrozenBadge(Canvas & to) const
+{
+	if(!frozenHelp.empty())
+	{
+		const Point center(pos.x + 9, pos.y + pos.h - 18);
+		const ColorRGBA ice(178, 224, 244, 255);
+		to.drawLine(center + Point(0, -8), center + Point(7, 0), ice, ice);
+		to.drawLine(center + Point(7, 0), center + Point(0, 8), ice, ice);
+		to.drawLine(center + Point(0, 8), center + Point(-7, 0), ice, ice);
+		to.drawLine(center + Point(-7, 0), center + Point(0, -8), ice, ice);
+		to.drawText(center, FONT_TINY, ice, ETextAlignment::CENTER, "F");
+	}
+
+}
+
 void StackQueue::StackBox::show(Canvas & to)
 {
 	CIntObject::show(to);
+	drawFrozenBadge(to);
 
 	if(isBoundUnitHighlighted())
 		to.drawBorder(background->pos, Colors::CYAN, 2);
@@ -295,6 +319,14 @@ void StackQueue::StackBox::show(Canvas & to)
 
 void StackQueue::StackBox::hover(bool on)
 {
+	if(!frozenHelp.empty())
+	{
+		if(on)
+			ENGINE->statusbar()->write(frozenHelp);
+		else
+			ENGINE->statusbar()->clearIfMatching(frozenHelp);
+		return;
+	}
 	if(extraActivationHelp.empty())
 		return;
 

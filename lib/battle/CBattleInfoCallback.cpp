@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "CBattleInfoCallback.h"
+#include "NewHorizonsFrozen.h"
 
 #include <vcmi/scripting/Service.h>
 #include <vstd/RNG.h>
@@ -2396,11 +2397,18 @@ void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & turns,
 	{
 		return unit && unit->alive() && unit->isTimeStopped() && !unit->timeStopTurnConsumed();
 	};
+	const auto frozenTurnReady = [](const battle::Unit * unit, int futureTurn)
+	{
+		return unit && unit->alive() && !unit->isTimeStopped()
+			&& newHorizonsFrozen::isFrozen(*unit) && !unit->moved(futureTurn)
+			&& !unit->defended(futureTurn);
+	};
 
 	if(activeUnit)
 	{
 		//its first turn and active unit hasn't taken any action yet - must be placed at the beginning of queue, no matter what
-		if(turn == 0 && (activeUnit->willMove() || stoppedTurnReady(activeUnit)))
+		if(turn == 0 && (activeUnit->willMove() || stoppedTurnReady(activeUnit)
+			|| frozenTurnReady(activeUnit, 0)))
 		{
 			turns.back().push_back(activeUnit);
 			if(turnsIsFull())
@@ -2419,9 +2427,9 @@ void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & turns,
 	});
 
 	// If no unit will be EVER! able to move, battle is over.
-	if(!vstd::contains_if(allUnits, [&stoppedTurnReady](const battle::Unit * unit)
+	if(!vstd::contains_if(allUnits, [&stoppedTurnReady, &frozenTurnReady](const battle::Unit * unit)
 	{
-		return unit->willMove(100000) || stoppedTurnReady(unit);
+		return unit->willMove(100000) || stoppedTurnReady(unit) || frozenTurnReady(unit, 100000);
 	})) //little evil, but 100000 should be enough for all effects to disappear
 	{
 		turns.clear();
@@ -2430,8 +2438,8 @@ void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & turns,
 
 	for(const auto * unit : allUnits)
 	{
-		if((actualTurn == 0 && !unit->willMove() && !stoppedTurnReady(unit)) //we are considering current round and unit won't move
-		|| (actualTurn > 0 && !unit->canMove(turn)) //unit won't be able to move in later rounds
+		if((actualTurn == 0 && !unit->willMove() && !stoppedTurnReady(unit) && !frozenTurnReady(unit, 0)) //we are considering current round and unit won't move
+		|| (actualTurn > 0 && !unit->canMove(turn) && !frozenTurnReady(unit, turn)) //unit won't be able to move in later rounds
 		|| (actualTurn == 0 && unit == activeUnit && !turns.at(0).empty() && unit == turns.front().front())) //it's active unit already added at the beginning of queue
 		{
 			continue;
@@ -3846,6 +3854,9 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	payload.defenseFactorPerPoint = LIBRARY->engineSettings()->getDouble(EGameSettings::COMBAT_DEFENSE_POINT_DAMAGE_FACTOR);
 	payload.defenseFactorCap = LIBRARY->engineSettings()->getDouble(EGameSettings::COMBAT_DEFENSE_POINT_DAMAGE_FACTOR_CAP);
 
+	if(currentBattle && newHorizonsFrozen::qualifiesForShatter(info, currentBattle->getMagicRules()))
+		payload.frozenShatterFinalDamageMultiplier = 100
+			+ newHorizonsFrozen::shatterBonusPercent(currentBattle->getMagicRules());
 	auto result = script->calculate(*this, payload);
 	result.attackerOrderCause = attackerOrderCause;
 	result.defenderOrderCause = defenderOrderCause;

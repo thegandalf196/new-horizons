@@ -2,6 +2,34 @@
 
 Updated: 2026-10-09
 
+Current Phase1 source/native checkpoint: Reality Warp and Reality Breaker are
+accepted after linked6035 and matching73/73 principal native cases (12.290s),
+plus15/15 adjacent target-condition cases (0.310s), zero errors/skips. Captured
+recipient legality, exact live/detached reciprocal exchange, health/casualty
+preservation, paid v3 admission, paired Resistance, complete centered human
+pair hooks and actual paid AI forwarding are implemented. The paid AI consumer
+uses an explicitly legacy-command-disabled profile; unrestricted Order/spell
+competition is not certified. Source review, module parity and exact binary/
+library hashes pass; failed attempts and final receipts remain private.
+Coverage: combat66->67/67; perks254->255/310, generic179->180/220,
+faction75/90 unchanged. Planned56->55 (40 generic,15 faction). Orders8/8,
+Skills31/31 and ranks93/93 unchanged. This completes combat-spell implementation
+coverage, not the whole specification or rendered/playable delivery.
+
+The classical Conflux rebalance and Frozen/Shatter principal native gate also
+pass47/47 (8.691s), including actual Ice attack/retaliation, forfeiture/thaw,
+physical and zero/nonzero magical breaks, Cure versus Dispel, persistent round
+receipts, old-writer guards, detached branch isolation, actual paid AI Cure and
+five parallel-Altar priorities. Eight authored Elite definitions and independent
+dwelling costs/prerequisites pass5/5 data checks. Creature/Wiki innate help uses
+captured configurable percentages and passes4/4 static checks; client links.
+Rendered ice/Shatter/help verification and latest Linux snapshot promotion are
+still pending; package bytes are unchanged. Phase2 retains broader stochastic
+multi-strike forecasts, delayed recovered-action opportunity, legacy immunity
+review and cross-system composition. Next: apply and validate the independent
+Veiled Movement, generic Lucky Recovery and Avatar of Rage source candidates.
+Earlier checkpoints below are historical, not current totals.
+
 Fate Dealer is source/native accepted after linked46720. Exact-pair runtime17/17
 passes in5.471s and AI5/5 in1.888s, zero failures/errors/skips. Root checks XML
 and source/private binary/library hashes; receipt:

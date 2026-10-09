@@ -12,6 +12,7 @@
 #include "CUnitState.h"
 #include "NewHorizonsBloodrage.h"
 #include "NewHorizonsCreatureAbilitySuppression.h"
+#include "NewHorizonsFrozen.h"
 
 #include <vcmi/spells/Spell.h>
 
@@ -339,6 +340,30 @@ CHealth & CHealth::operator=(const CHealth & other)
 	casualtyProvenance = other.casualtyProvenance;
 	casualtyProvenanceInitialized = other.casualtyProvenanceInitialized;
 	return *this;
+}
+
+void CHealth::swapPreparedContents(CHealth & prepared) noexcept
+{
+	using std::swap;
+	swap(firstHPleft, prepared.firstHPleft);
+	swap(fullUnits, prepared.fullUnits);
+	swap(resurrected, prepared.resurrected);
+	swap(unusableRemains, prepared.unusableRemains);
+	swap(temporaryHitPoints, prepared.temporaryHitPoints);
+	swap(shadowGiftMaximumHealthLost, prepared.shadowGiftMaximumHealthLost);
+	swap(capacityHealthTracking, prepared.capacityHealthTracking);
+	swap(capacityHealthMax, prepared.capacityHealthMax);
+	swap(capacityHealthMaxFixed, prepared.capacityHealthMaxFixed);
+	swap(totalHealthOverride, prepared.totalHealthOverride);
+	capacityHealthCohorts.swap(prepared.capacityHealthCohorts);
+	casualtyProvenance.swap(prepared.casualtyProvenance);
+	swap(casualtyProvenanceInitialized, prepared.casualtyProvenanceInitialized);
+}
+
+void CUnitState::commitPreparedCapacityHealth(CUnitState & prepared) noexcept
+{
+	health.swapPreparedContents(prepared.health);
+	capacityHealthReferenceMax = prepared.capacityHealthReferenceMax;
 }
 
 void CHealth::init()
@@ -1361,6 +1386,7 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	phantomInitialIntegrity = other.phantomInitialIntegrity;
 	phantomIntegrity = other.phantomIntegrity;
 	phantomRoundsRemaining = other.phantomRoundsRemaining;
+	frozenAppliedRound = other.frozenAppliedRound;
 	phantomShadowGiftMaximumHealthLost = other.phantomShadowGiftMaximumHealthLost;
 	capacityHealthReferenceMax = other.capacityHealthReferenceMax;
 	battleFormOriginalHealth = other.battleFormOriginalHealth;
@@ -1520,6 +1546,7 @@ bool CUnitState::ableToRetaliate() const
 {
 	return alive()
 		&& !isTimeStopped()
+		&& !isNewHorizonsFrozen()
 		&& counterAttacks.canUse();
 }
 
@@ -1536,6 +1563,35 @@ bool CUnitState::isGhost() const
 bool CUnitState::isFrozen() const
 {
 	return hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::STONE_GAZE))));
+}
+
+bool CUnitState::isNewHorizonsFrozen() const
+{
+	return newHorizonsFrozen::isFrozen(*this);
+}
+
+int32_t CUnitState::frozenLastAppliedRound() const
+{
+	return frozenAppliedRound;
+}
+
+void CUnitState::restoreFrozenApplicationRound(int32_t round)
+{
+	if(round < -1)
+		throw std::invalid_argument("Invalid restored Frozen application round");
+	frozenAppliedRound = round;
+}
+
+void CUnitState::recordFrozenApplication(int32_t round)
+{
+	if(!newHorizonsFrozen::canApply(*this, round))
+		throw std::invalid_argument("Frozen application is not eligible");
+	frozenAppliedRound = round;
+}
+
+void CUnitState::commitPreparedFrozenApplication(const CUnitState & prepared) noexcept
+{
+	frozenAppliedRound = prepared.frozenAppliedRound;
 }
 
 bool CUnitState::isValidTarget(bool allowDead) const
@@ -1556,24 +1612,24 @@ bool CUnitState::hasClone() const
 
 bool CUnitState::canCast() const
 {
-	return newHorizonsCreatureAbilitySuppression::suppressionLevel(*this) == 0
+	return !isNewHorizonsFrozen() && newHorizonsCreatureAbilitySuppression::suppressionLevel(*this) == 0
 		&& casts.canUse(1) && !castSpellThisTurn;//do not check specific cast abilities here
 }
 
 bool CUnitState::isCaster() const
 {
-	return newHorizonsCreatureAbilitySuppression::suppressionLevel(*this) == 0
+	return !isNewHorizonsFrozen() && newHorizonsCreatureAbilitySuppression::suppressionLevel(*this) == 0
 		&& casts.total() > 0;//do not check specific cast abilities here
 }
 
 bool CUnitState::canShootBlocked() const
 {
-	return bonusCache.hasBonus(UnitBonusValuesProxy::HAS_FREE_SHOOTING);
+	return !isNewHorizonsFrozen() && bonusCache.hasBonus(UnitBonusValuesProxy::HAS_FREE_SHOOTING);
 }
 
 bool CUnitState::canShoot() const
 {
-	return newHorizonsCreatureAbilitySuppression::suppressionLevel(*this) == 0
+	return !isNewHorizonsFrozen() && newHorizonsCreatureAbilitySuppression::suppressionLevel(*this) == 0
 		&& shots.canUse(1)
 		&& bonusCache.getBonusValue(UnitBonusValuesProxy::FORGETFULL) < 100; //100% forgetfulness disables shooting
 }
@@ -1974,6 +2030,8 @@ bool CUnitState::canMove(int turn) const
 		return false;
 	if(isTimeStopped())
 		return false;
+	if(isNewHorizonsFrozen())
+		return false;
 
 	if (turn == 0)
 		return !hasBonusOfType(BonusType::NOT_ACTIVE);
@@ -2192,6 +2250,9 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	if(battlecraftPreemptiveStrikeRound < -1)
 		throw std::runtime_error("Invalid Battlecraft Pre-emptive Strike round marker");
 	handler.serializeInt("activationMovementBonus", activationMovementBonus, 0);
+	handler.serializeInt("frozenAppliedRound", frozenAppliedRound, -1);
+	if(frozenAppliedRound < -1)
+		throw std::runtime_error("Invalid Frozen application round");
 	if(activationMovementBonus < 0)
 		throw std::runtime_error("Invalid negative activation movement bonus");
 	handler.serializeInt("defensiveStanceMeleeBonus", defensiveStanceMeleeBonus, 0);
@@ -2315,6 +2376,7 @@ std::pair<int32_t, int32_t> CUnitState::getMoraleLimits() const
 void CUnitState::reset()
 {
 	confusionState = {};
+	frozenAppliedRound = -1;
 	battlecraftOverwatchReadyRound = -1;
 	battlecraftOverwatchUsedRound = -1;
 	cloned = false;
@@ -2431,6 +2493,10 @@ void CUnitState::load(const JsonNode & data)
 {
 	// Check metadata before any existing unit state is changed by deserialization.
 	const auto * incomingState = findJsonField(data, "state");
+	const auto * frozenRound = incomingState ? findJsonField(*incomingState, "frozenAppliedRound") : nullptr;
+	if(frozenRound && (frozenRound->getType() != JsonNode::JsonType::DATA_INTEGER
+		|| frozenRound->Integer() < -1 || frozenRound->Integer() > std::numeric_limits<int32_t>::max()))
+		throw std::runtime_error("Invalid Frozen application round");
 	const auto * pendingForm = incomingState ? findJsonField(*incomingState, "battleFormRestorationPending") : nullptr;
 	if(pendingForm)
 	{

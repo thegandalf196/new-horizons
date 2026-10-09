@@ -10,6 +10,7 @@
 #include "../../lib/bonuses/Limiters.h"
 #include "../../lib/bonuses/Propagators.h"
 #include "../../lib/bonuses/Updaters.h"
+#include "../../lib/battle/BattleForm.h"
 #include "../../lib/json/JsonBonus.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
 #include "../../lib/serializer/CMemorySerializer.h"
@@ -99,6 +100,63 @@ TEST(BonusStatusTagsTest, JsonRoundTripRejectsUnknownDuplicateAndMalformedMetada
 	Bonus invalidIdentity = tagged;
 	invalidIdentity.statusTags.clear();
 	EXPECT_THROW(invalidIdentity.toJsonNode(), std::runtime_error);
+}
+
+TEST(BonusStatusTagsTest, NonTransferableTagRoundTripsAndRejectsDuplicate)
+{
+	Bonus tagged = makeStatusBonus("test.slow.fixed", -4, PlayerColor(0));
+	tagged.statusTags.push_back(BonusStatusTag::NON_TRANSFERABLE);
+	const auto json = tagged.toJsonNode();
+	ASSERT_EQ(json["statusTags"].Vector().size(), 2u);
+	EXPECT_EQ(json["statusTags"][1].String(), "NON_TRANSFERABLE");
+	const auto parsed = JsonUtils::parseBonus(json);
+	ASSERT_NE(parsed, nullptr);
+	expectStatusMetadata(*parsed, tagged);
+	auto duplicate = json;
+	duplicate["statusTags"].Vector().emplace_back("NON_TRANSFERABLE");
+	EXPECT_THROW(JsonUtils::parseBonus(duplicate), std::runtime_error);
+
+	CMemorySerializer writer;
+	writer.oser.version = ESerializationVersion::CURRENT;
+	writer.oser & tagged;
+	CMemorySerializer reader(writer.extractBuffer());
+	reader.iser.version = ESerializationVersion::CURRENT;
+	Bonus restored;
+	reader.iser & restored;
+	expectStatusMetadata(restored, tagged);
+	EXPECT_EQ(restored.turnsRemain, tagged.turnsRemain);
+	EXPECT_EQ(restored.spellCasterOwner, tagged.spellCasterOwner);
+}
+
+TEST(BonusStatusTagsTest, NonTransferableTagRejectsOlderBonusAndPacketBeforePrefix)
+{
+	Bonus tagged = makeStatusBonus("test.slow.fixed", -4, PlayerColor(0));
+	tagged.statusTags.push_back(BonusStatusTag::NON_TRANSFERABLE);
+	CMemorySerializer oldBonus;
+	oldBonus.oser.version = ESerializationVersion::NEW_HORIZONS_SAFE_BATTLE_FORMS;
+	EXPECT_THROW(oldBonus.oser & tagged, std::runtime_error);
+	EXPECT_TRUE(oldBonus.extractBuffer().empty());
+
+	SetStackEffect packet;
+	packet.battleID = BattleID(0);
+	packet.toAdd.emplace_back(17, std::vector<Bonus>{tagged});
+	CMemorySerializer oldPacket;
+	oldPacket.oser.version = ESerializationVersion::NEW_HORIZONS_SAFE_BATTLE_FORMS;
+	EXPECT_THROW(oldPacket.oser & packet, std::runtime_error);
+	EXPECT_TRUE(oldPacket.extractBuffer().empty());
+}
+
+TEST(BonusStatusTagsTest, PolymorphMarkerRecognitionPreservesLegacyAndExplicitNonTransferableForms)
+{
+	Bonus marker = battle::polymorphMarker(SpellID(SpellID::CLONE), PlayerColor(0));
+	ASSERT_EQ(marker.statusTags, std::vector<BonusStatusTag>{BonusStatusTag::DEBUFF});
+	EXPECT_TRUE(battle::isPolymorphMarker(&marker));
+	marker.statusTags.push_back(BonusStatusTag::NON_TRANSFERABLE);
+	EXPECT_TRUE(battle::isPolymorphMarker(&marker));
+	std::reverse(marker.statusTags.begin(), marker.statusTags.end());
+	EXPECT_TRUE(battle::isPolymorphMarker(&marker));
+	marker.statusTags = {BonusStatusTag::NON_TRANSFERABLE};
+	EXPECT_FALSE(battle::isPolymorphMarker(&marker));
 }
 
 TEST(BonusStatusTagsTest, BonusAndStackEffectPacketRoundTripAndRejectLossyDownsave)

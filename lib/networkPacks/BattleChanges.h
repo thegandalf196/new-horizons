@@ -11,6 +11,7 @@
 
 #include "../json/JsonNode.h"
 #include "../battle/CUnitState.h"
+#include <limits>
 
 class BattleChanges
 {
@@ -59,6 +60,19 @@ public:
 	{
 		if(battle::hasOverwatchState(data) && !h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWATCH))
 			throw std::runtime_error("Cannot discard Overwatch state in an older unit update format");
+	}
+
+	template <typename Handler> void validateFrozenSerialization(Handler & h) const
+	{
+		const auto & state = data["state"];
+		if(!state.isStruct() || state.Struct().count("frozenAppliedRound") == 0)
+			return;
+		const auto & round = state["frozenAppliedRound"];
+		if(round.getType() != JsonNode::JsonType::DATA_INTEGER || round.Integer() < -1
+			|| round.Integer() > std::numeric_limits<int32_t>::max())
+			throw std::runtime_error("Invalid Frozen application receipt in unit update");
+		if(round.Integer() != -1 && !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN))
+			throw std::runtime_error("Cannot discard Frozen application receipt in an older unit update format");
 	}
 
 	template <typename Handler> void validateBattleFormSerialization(Handler & h) const
@@ -123,6 +137,8 @@ public:
 	template <typename Handler> void serialize(Handler & h)
 	{
 		if(h.saving)
+			validateFrozenSerialization(h);
+		if(h.saving)
 			validateOverwatchSerialization(h);
 		if(h.saving)
 			validateBattleFormSerialization(h);
@@ -160,6 +176,8 @@ public:
 		h & operation;
 		if(!h.saving)
 			validateOverwatchSerialization(h);
+		if(!h.saving)
+			validateFrozenSerialization(h);
 		if(!h.saving)
 			validateConfusionSerialization(h);
 	}

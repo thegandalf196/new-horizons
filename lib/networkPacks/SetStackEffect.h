@@ -16,6 +16,7 @@
 #include "../bonuses/Bonus.h"
 #include "../battle/NewHorizonsOffense.h"
 #include "../battle/BattleForm.h"
+#include "../battle/BattleEffectExchange.h"
 
 class IBattleState;
 
@@ -25,6 +26,16 @@ struct DLL_LINKAGE SetStackEffect : public CPackForClient
 	std::vector<std::pair<ui32, std::vector<Bonus>>> toAdd;
 	std::vector<std::pair<ui32, std::vector<Bonus>>> toUpdate;
 	std::vector<std::pair<ui32, std::vector<Bonus>>> toRemove;
+	std::optional<battle::BattleEffectExchange> exchange;
+	void validateExchange() const
+	{
+		if(exchange)
+		{
+			if(!toAdd.empty() || !toUpdate.empty() || !toRemove.empty())
+				throw std::runtime_error("Atomic spell-effect exchange cannot mix ordinary effect changes");
+			exchange->validateShape();
+		}
+	}
 
 	void visitTyped(ICPackVisitor & visitor) override;
 	void validateConfusionMarkers() const
@@ -43,6 +54,20 @@ struct DLL_LINKAGE SetStackEffect : public CPackForClient
 	{
 		if(h.saving)
 		{
+			validateExchange();
+			for(const auto * changes : {&toAdd, &toUpdate, &toRemove})
+				for(const auto & entry : *changes)
+					for(const Bonus & bonus : entry.second)
+						bonus.validateFrozenSerialization(h);
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_REALITY_WARP_EXCHANGE))
+				for(const auto * changes : {&toAdd, &toUpdate, &toRemove})
+					for(const auto & entry : *changes)
+						for(const auto & bonus : entry.second)
+							if(std::find(bonus.statusTags.begin(), bonus.statusTags.end(), BonusStatusTag::NON_TRANSFERABLE)
+								!= bonus.statusTags.end())
+								throw std::runtime_error("Cannot discard non-transferable effect metadata in an older packet format");
+			if(exchange && !h.hasFeature(Handler::Version::NEW_HORIZONS_REALITY_WARP_EXCHANGE))
+				throw std::runtime_error("Cannot discard atomic spell-effect exchange in an older packet format");
 			validateConfusionMarkers();
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SAFE_BATTLE_FORMS))
 				for(const auto * changes : {&toAdd, &toUpdate, &toRemove})
@@ -144,6 +169,12 @@ struct DLL_LINKAGE SetStackEffect : public CPackForClient
 		h & toAdd;
 		h & toUpdate;
 		h & toRemove;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_REALITY_WARP_EXCHANGE))
+			h & exchange;
+		else if(!h.saving)
+			exchange.reset();
+		if(!h.saving)
+			validateExchange();
 		if(!h.saving)
 			validateConfusionMarkers();
 		assert(battleID != BattleID::NONE);

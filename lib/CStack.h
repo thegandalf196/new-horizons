@@ -10,6 +10,7 @@
 
 #pragma once
 #include "bonuses/Bonus.h"
+#include "bonuses/BonusList.h"
 #include "bonuses/CBonusSystemNode.h"
 #include "CCreatureHandler.h" //todo: remove
 #include "battle/BattleHex.h"
@@ -119,10 +120,23 @@ public:
 		return this->owner;
 	}
 
+	template <typename Handler> void validateFrozenSerialization(Handler & h) const
+	{
+		if(frozenLastAppliedRound() < -1)
+			throw std::runtime_error("Invalid Frozen application round");
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN) && frozenLastAppliedRound() != -1)
+			throw std::runtime_error("Cannot discard Frozen application receipt in an older stack format");
+		for(const auto & bonus : getExportedBonusList())
+			if(bonus)
+				bonus->validateFrozenSerialization(h);
+	}
+
 	template <typename Handler> void serialize(Handler & h)
 	{
 		//this assumes that stack objects is newly created
 		//CUnitState is not serialized here except for explicit battle-long fields.
+		if(h.saving)
+			validateFrozenSerialization(h);
 		if(h.saving && (battlecraftOverwatchReadyRound < -1 || battlecraftOverwatchUsedRound < -1))
 			throw std::runtime_error("Invalid Overwatch round marker");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWATCH)
@@ -189,6 +203,15 @@ public:
 			battlecraftOverwatchReadyRound = -1;
 			battlecraftOverwatchUsedRound = -1;
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN))
+		{
+			int32_t restoredRound = frozenLastAppliedRound();
+			h & restoredRound;
+			if(!h.saving)
+				restoreFrozenApplicationRound(restoredRound);
+		}
+		else if(!h.saving)
+			restoreFrozenApplicationRound(-1);
 	}
 
 private:

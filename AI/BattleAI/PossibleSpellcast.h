@@ -11,6 +11,7 @@
 #pragma once
 
 #include <optional>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -45,6 +46,7 @@ public:
 	int32_t spellOvercharge = 0;
 	bool spellSelectiveDispel = false;
 	SpellID spellCureAffliction = SpellID::NONE;
+	std::string spellCurePhysicalAffliction;
 	/// Selected source-spell groups for canonical New Horizons Purify. Physical
 	/// Poison is automatic and is tracked separately for detached evaluation.
 	std::vector<std::pair<int32_t, SpellID>> spellPurifyChoices;

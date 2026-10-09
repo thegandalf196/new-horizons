@@ -30,6 +30,7 @@
 #include "../../lib/spells/NewHorizonsVengefulVines.h"
 #include "../../lib/spells/NewHorizonsNaturesWrath.h"
 #include "../../lib/spells/NewHorizonsPandemonium.h"
+#include "../../lib/spells/NewHorizonsRealityWarp.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/CRandomGenerator.h"
@@ -44,6 +45,42 @@ using namespace spells;
 
 namespace
 {
+std::vector<Target> realityWarpTargets(const Mechanics * mechanics)
+{
+	std::vector<Target> result;
+	if(!mechanics || !mechanics->battle() || !mechanics->usesNewHorizonsMagicV3()
+		|| !newHorizonsMagic::spellAllowedByBattleRoster(*mechanics->battle(), mechanics->getSpellId()))
+		return result;
+	const auto * hero = mechanics->getHeroCaster();
+	if(!hero)
+		return result;
+	const bool breaker = hero->hasActivePerk("new-horizons:chaosMagic", "new-horizons:chaosMagic.realityBreaker");
+	const auto * callback = mechanics->battle();
+	const auto units = callback->battleGetAllUnits(false);
+	for(size_t first = 0; first < units.size(); ++first)
+		for(size_t second = first + 1; second < units.size(); ++second)
+		{
+			const auto * one = units[first];
+			const auto * two = units[second];
+			const bool firstFriendly = callback->battleGetOwner(one) == mechanics->getCasterColor();
+			const bool secondFriendly = callback->battleGetOwner(two) == mechanics->getCasterColor();
+			if(!breaker && firstFriendly == secondFriendly)
+				continue;
+			// Complete pairs only: the native effect intentionally rejects prefixes.
+			// Ordinary pairs are friendly-first; a symmetric exchange needs no reverse duplicate.
+			Target target{Destination(!breaker && !firstFriendly ? two : one),
+				Destination(!breaker && !firstFriendly ? one : two)};
+			detail::ProblemImpl problem;
+			if(!mechanics->canBeCastAt(target, problem))
+				continue;
+			const auto prepared = newHorizonsRealityWarp::prepareExchange(*callback, one->unitId(), two->unitId());
+			if(prepared.exchange && std::any_of(prepared.previews.begin(), prepared.previews.end(), [](const auto & preview)
+				{ return preview.reason == newHorizonsRealityWarp::StayReason::MOVED; }))
+				result.push_back(std::move(target));
+		}
+	return result;
+}
+
 // Transfigure Matter is represented as a location-targeted spell by the
 // generic mechanics layer, but only physical battlefield obstacles are legal
 // aims.  Keep this identity check local to the AI until the curated spell
@@ -1142,6 +1179,9 @@ std::vector<Target> SpellTargetEvaluator::canonicalSoulChainTargets(Mechanics * 
 
 std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMechanics)
 {
+	if(spellMechanics && spellMechanics->getSpell()
+		&& spellMechanics->getSpell()->getJsonKey() == newHorizonsRealityWarp::SPELL_KEY)
+		return realityWarpTargets(spellMechanics);
 	if(spellMechanics && spellMechanics->getSpell()
 		&& spellMechanics->getSpell()->getJsonKey() == newHorizonsPandemonium::SPELL_KEY)
 	{
@@ -2655,6 +2695,47 @@ SpellTargetEvaluator::handOfFateExpectedDamageValue(const Mechanics * spellMecha
 	result.hostileDamageValue += expectedHostileSpillValue * primaryApplicationChance;
 	result.friendlyDamageValue += expectedFriendlySpillValue * primaryApplicationChance;
 	return result;
+}
+
+float SpellTargetEvaluator::realityWarpExchangeValue(const Environment * environment,
+	std::shared_ptr<CBattleInfoCallback> before, std::shared_ptr<CBattleInfoCallback> after,
+	PlayerColor scoringPlayer, const Target & selection, PlayerColor caster)
+{
+	if(!environment || !before || !after || selection.size() != 2 || caster == PlayerColor::CANNOT_DETERMINE)
+		return 0.0f;
+	float applicationChance = 1.0f;
+	for(const auto & destination : selection)
+	{
+		const auto * original = destination.unitValue
+			? before->battleGetUnitByID(destination.unitValue->unitId()) : nullptr;
+		if(!original)
+			return 0.0f;
+		if(before->battleGetOwner(original) != caster)
+			applicationChance *= 1.0f - static_cast<float>(std::clamp(original->magicResistance(), 0, 100)) / 100.0f;
+	}
+	const auto pressure = [&](std::shared_ptr<CBattleInfoCallback> source)
+	{
+		auto board = std::make_shared<HypotheticBattle>(environment, std::move(source));
+		// Snapshot every participant before valuing any attack: attacker/defender
+		// references must read this branch's bonuses, never a live stack fallback.
+		const auto originals = board->battleGetAllUnits(false);
+		for(const auto * unit : originals)
+			board->getForUpdate(unit->unitId());
+		DamageCache damage;
+		float value = 0.0f;
+		for(const auto * unit : board->battleGetAllUnits(false))
+		{
+			if(!unit->alive() || !unit->isValidTarget(false) || unit->isTurret()
+				|| (!unit->willMove(0) && !unit->willMove(1)))
+				continue;
+			PotentialTargets attacks(unit, damage, board);
+			const float action = attacks.berserk ? attacks.expectedBerserkActionValue()
+				: attacks.possibleAttacks.empty() ? 0.0f : static_cast<float>(attacks.bestActionValue());
+			value += board->battleGetActionController(unit) == scoringPlayer ? action : -action;
+		}
+		return value;
+	};
+	return (pressure(std::move(after)) - pressure(std::move(before))) * applicationChance;
 }
 
 std::optional<float> SpellTargetEvaluator::confusionExpectedActivationValue(

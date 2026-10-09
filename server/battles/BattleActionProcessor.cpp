@@ -18,6 +18,7 @@
 #include "../../lib/battle/NewHorizonsCreatureAbilitySuppression.h"
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
 #include "../../lib/battle/NewHorizonsEnchantedCommand.h"
+#include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
 #include "../../lib/battle/NewHorizonsShadowGift.h"
@@ -1289,6 +1290,7 @@ bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & 
 	parameters.setOvercharge(ba.spellOvercharge);
 	parameters.setSelectiveDispel(ba.spellSelectiveDispel);
 	parameters.setCureAffliction(ba.spellCureAffliction);
+	parameters.setCurePhysicalAffliction(ba.spellCurePhysicalAffliction);
 	parameters.setMassSlow(ba.spellMassSlow);
 	parameters.setShadowGiftSacrificePercent(ba.spellShadowGiftSacrificePercent);
 	parameters.setMetamagicFollowup(ba.metamagicFollowup);
@@ -1352,6 +1354,7 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 	parameters.setOvercharge(ba.spellOvercharge);
 	parameters.setSelectiveDispel(ba.spellSelectiveDispel);
 	parameters.setCureAffliction(ba.spellCureAffliction);
+	parameters.setCurePhysicalAffliction(ba.spellCurePhysicalAffliction);
 	parameters.setMassSlow(ba.spellMassSlow);
 	parameters.setShadowGiftSacrificePercent(ba.spellShadowGiftSacrificePercent);
 	parameters.setMetamagicFollowup(ba.metamagicFollowup);
@@ -1846,11 +1849,15 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 	static const auto firstStrikeSelector = Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeAll).Or(Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeMelee));
 	const bool firstStrike = openingAttackTarget->hasBonus(firstStrikeSelector) && !openingAttackTarget->hasBonusOfType(BonusType::NOT_ACTIVE);
 
-	for (int i = 0; i < totalAttacks && !armorerLastStandEndedActivation(stack); ++i)
+	for (int i = 0; i < totalAttacks && !armorerLastStandEndedActivation(stack)
+		&& !newHorizonsFrozen::isFrozen(*stack); ++i)
 	{
 		const CStack * attackTarget = resolveAttackTarget();
 		if(!attackTarget)
 			return false;
+		// Shatter removes the marker after damage, but that hit still denies
+		// retaliation. Keep this attack-local receipt, not another saved flag.
+		const bool frozenBeforeHit = newHorizonsFrozen::isFrozen(*attackTarget);
 		//first strike
 		bool firstStrikeBlocked = stack->hasBonusOfType(BonusType::BLOCKS_RETALIATION);
 		if(i == 0 && firstStrike && openingAttackTarget->ableToRetaliate()
@@ -1870,7 +1877,8 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 		}
 
 		//move can cause death, eg. by walking into the moat, first strike can cause death or paralysis/petrification
-		if(stack->alive() && !stack->hasBonusOfType(BonusType::NOT_ACTIVE) && attackTarget->alive())
+		if(stack->alive() && !stack->hasBonusOfType(BonusType::NOT_ACTIVE)
+			&& !newHorizonsFrozen::isFrozen(*stack) && attackTarget->alive())
 		{
 			//no distance travelled on second attack
 			// Pass the originally selected Ward to makeAttack so Protect can
@@ -1899,7 +1907,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 		bool shroudBlocked = battle.battleShroudDeniesRetaliation(
 			BattleAttackInfo(stack, attackTarget, movementResult.distance, false));
 		if(stack->alive() && !stack->isInvincible() && !longWeaponAttack && !longReachAttack
-			&& i == 0 && !firstStrike && attackTarget->ableToRetaliate())
+			&& !frozenBeforeHit && i == 0 && !firstStrike && attackTarget->ableToRetaliate())
 		{
 			const BattleAttackInfo denial(stack, attackTarget, movementResult.distance, false);
 			if(consumeDefiant(*gameHandler, battle, denial, newHorizonsArmorer::DefiantDenialCause::INNATE_BLOCK))
@@ -1915,6 +1923,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 			&& !longReachAttack
 			&& (i == 0 && !firstStrike)
 			&& !shroudBlocked
+			&& !frozenBeforeHit
 			&& attackTarget->ableToRetaliate())
 		{
 			makeAttack(battle, attackTarget, stack, {.targetHex = stack->getPosition(), .first = true,
@@ -4234,7 +4243,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut,
 	RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows)
 {
-	if(!attacker || !attacker->alive() || armorerLastStandEndedActivation(attacker)
+	if(!attacker || !attacker->alive() || newHorizonsFrozen::isFrozen(*attacker) || armorerLastStandEndedActivation(attacker)
 		|| (defender && !defender->alive()))
 		return;
 	std::array<bool, 2> lastStandUsedThisAttack{};
@@ -4273,7 +4282,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		attackCasting(battle, attack.ranged, BonusType::SPELL_BEFORE_ATTACK, attacker, defender);
 
 	// If the attacker or defender is not alive before the attack action, the action should be skipped.
-	if((!attacker->alive()) || armorerLastStandEndedActivation(attacker)
+	if((!attacker->alive()) || newHorizonsFrozen::isFrozen(*attacker) || armorerLastStandEndedActivation(attacker)
 		|| (defender && !defender->alive()))
 		return;
 
@@ -4455,7 +4464,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 
 	// a reaction to the upcoming attack may have killed either side of it - a unit that died before
 	// striking does not strike, and one that died before being hit is not hit again
-	if((!attacker->alive()) || (defender && !defender->alive()))
+	if((!attacker->alive()) || newHorizonsFrozen::isFrozen(*attacker) || (defender && !defender->alive()))
 		return;
 
 	if(relentlessAssault && defender && !attack.counter && !attack.brace && !attack.cleaveFollowup
@@ -4869,7 +4878,50 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 				shadowAssaultTargetCount = defender->getCount();
 		}
 	}
+	SetStackEffect shatter;
+	shatter.battleID = battle.getBattle()->getBattleID();
+	bool primaryResolved = false;
+	const bool primaryFrozenBeforeHit = defender && newHorizonsFrozen::isFrozen(*defender);
+	for(auto & hit : bat.bsa)
+	{
+		// Reflected/indirect injury entries are not this creature's attack.
+		if(hit.attackerID != attacker->unitId())
+			continue;
+		const auto * target = battle.battleGetUnitByID(hit.stackAttacked);
+		if(!target)
+			continue;
+		BattleAttackInfo frozenHit(attacker, target, attack.distance, attack.ranged);
+		frozenHit.physicalDamage = frozenHit.physicalDamage && !bat.spellLike();
+		frozenHit.secondaryAttack = hit.isSecondary();
+		frozenHit.retaliation = counterAttack;
+		if(newHorizonsFrozen::qualifiesForShatter(frozenHit, battle.getBattle()->getMagicRules()))
+		{
+			hit.flags |= BattleStackAttacked::SHATTER;
+			shatter.toRemove.emplace_back(target->unitId(), newHorizonsFrozen::removalPlan(*target));
+		}
+		if(defender && target->unitId() == defender->unitId() && !hit.isSecondary())
+			primaryResolved = frozenHit.physicalDamage;
+	}
+	const bool freezingTouch = primaryResolved && !attack.ranged
+		&& newHorizonsFrozen::isFreezingTouchAttacker(*attacker, battle.getBattle()->getMagicRules());
 	gameHandler->sendAndApply(bat);
+	if(!shatter.toRemove.empty())
+		gameHandler->sendAndApply(shatter);
+	// One roll per resolved primary melee blow/retaliation, after injury and
+	// before the caller considers its defender's retaliation. Cleansing does
+	// not reset the per-round receipt. An already Frozen target cannot refresh
+	// its status through the same blow that Shatters it.
+	const bool freezingTouchRolled = freezingTouch && gameHandler->getRandomGenerator().nextInt(0, 99)
+		< newHorizonsFrozen::chancePercent(battle.getBattle()->getMagicRules());
+	if(freezingTouchRolled && defender && !primaryFrozenBeforeHit
+		&& newHorizonsFrozen::canApply(*defender->acquireState(), battle.battleGetRound()))
+	{
+		SetStackEffect frozen;
+		frozen.battleID = battle.getBattle()->getBattleID();
+		frozen.toAdd.emplace_back(defender->unitId(), std::vector<Bonus>{
+			newHorizonsFrozen::makeFrozenMarker(BonusSourceID(attacker->creatureId()), battle.battleGetRound())});
+		gameHandler->sendAndApply(frozen);
+	}
 	for(const BattleStackAttacked & hit : bat.bsa)
 	{
 		if(hit.armorerLastStandSide == BattleSide::NONE)

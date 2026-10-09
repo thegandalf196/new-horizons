@@ -11,6 +11,7 @@
 
 #include "Effects.h"
 #include "BattleForm.h"
+#include "RealityWarp.h"
 
 #include <vcmi/spells/Caster.h>
 
@@ -852,6 +853,8 @@ Effects::EffectsMap Effects::loadJson(const JsonNode & effectMap, const std::str
 		std::shared_ptr<Effect> effect;
 		if(rawType == "core:battleForm")
 			effect = std::make_shared<BattleFormEffect>();
+		else if(rawType == "core:realityWarp")
+			effect = std::make_shared<RealityWarpEffect>();
 		else if(rawType == "newHorizonsPuppetMaster")
 			effect = std::make_shared<NewHorizonsPuppetMasterEffect>();
 		else if(rawType == "newHorizonsConfusion")

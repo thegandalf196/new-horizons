@@ -39,6 +39,28 @@ class MetaString;
 namespace spells
 {
 class Service;
+class Spell;
+
+/// Immutable provenance of an already-resolved effect. No casting resources or RNG.
+struct DLL_LINKAGE RecipientConditionContext
+{
+	const Spell * const source;
+	const SpellID family;
+	const int32_t spellLevel;
+	const bool newHorizonsV3;
+	const std::optional<bool> originalCasterOpposesRecipient;
+	const std::optional<int64_t> maximumTargetHealth;
+};
+
+enum class RecipientConditionResult
+{
+	LEGAL,
+	ILLEGAL,
+	UNSUPPORTED_CONDITION,
+	MISSING_CASTER_PROVENANCE,
+	MISSING_HEALTH_CAPTURE,
+	INVALID_CONTEXT
+};
 	namespace effects
 	{
 		class Effect;
@@ -112,6 +134,7 @@ public:
 	virtual OptionalValue getOvercharge() const { return std::nullopt; }
 	/// Optional New Horizons Cure source identity; NONE is the heal-only choice.
 	virtual SpellID getCureAffliction() const { return SpellID::NONE; }
+	virtual std::string getCurePhysicalAffliction() const { return {}; }
 	/// Server-side passive effects such as canonical Fire Wall may explicitly
 	/// target either side.  Ordinary casts retain their spell-defined smart
 	/// targeting when this remains false.
@@ -160,6 +183,7 @@ public:
 	OptionalValue getEffectDuration() const override;
 	OptionalValue getOvercharge() const override;
 	SpellID getCureAffliction() const override;
+	std::string getCurePhysicalAffliction() const override;
 	bool getForceNonSmartTargeting() const override;
 	bool getSelectiveDispel() const override;
 	bool getMassSlow() const override;
@@ -182,6 +206,7 @@ public:
 	void setEffectDuration(Value value);
 	void setOvercharge(Value value);
 	void setCureAffliction(SpellID value);
+	void setCurePhysicalAffliction(std::string value);
 	void setForceNonSmartTargeting(bool value);
 	void setSelectiveDispel(bool value);
 	void setMassSlow(bool value);
@@ -221,6 +246,7 @@ private:
 	OptionalValue overcharge;
 	///Optional New Horizons Cure source group selected by the player.
 	SpellID cureAffliction = SpellID::NONE;
+	std::string curePhysicalAffliction;
 	bool forceNonSmartTargeting = false;
 	bool selectiveDispel = false;
 	bool massSlow = false;
@@ -245,6 +271,10 @@ public:
 	virtual ~ISpellMechanicsFactory();
 
 	virtual std::unique_ptr<Mechanics> create(const IBattleCast * event) const = 0;
+	virtual RecipientConditionResult checkRecipient(const RecipientConditionContext &, const battle::Unit *) const
+	{
+		return RecipientConditionResult::UNSUPPORTED_CONDITION;
+	}
 
 	static std::unique_ptr<ISpellMechanicsFactory> get(const CSpell * s);
 
@@ -352,6 +382,7 @@ public:
 	virtual bool isNewHorizonsCure() const { return false; }
 	virtual bool isNewHorizonsResurrection() const { return false; }
 	virtual SpellID getCureAffliction() const { return SpellID::NONE; }
+	virtual std::string getCurePhysicalAffliction() const { return {}; }
 	virtual bool isMassSlow() const { return false; }
 	/// Selected Shadow Gift tier and shared preview calculations. Invalid or
 	/// legacy casts return zero and cannot acquire the saved-v3 mechanic.
@@ -494,6 +525,7 @@ public:
 	IBattleCast::Value64 getEffectValue() const override;
 	IBattleCast::Value getOvercharge() const;
 	SpellID getCureAffliction() const override;
+	std::string getCurePhysicalAffliction() const override;
 	BattleSide getCounterspellSide() const;
 	bool isCounterspellNegated() const;
 	int32_t getCounterspellManaSpent() const;
@@ -587,6 +619,7 @@ private:
 	///Additional mana selected for a spell-specific cast option.
 	IBattleCast::Value overcharge = 0;
 	SpellID cureAffliction = SpellID::NONE;
+	std::string curePhysicalAffliction;
 	BattleSide counterspellSide = BattleSide::NONE;
 	bool counterspellNegated = false;
 	int32_t counterspellManaSpent = 0;

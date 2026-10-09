@@ -9,6 +9,17 @@
 	"properties": {
 		"schemaVersion": {"type": "integer", "enum": [1]},
 		"rulesetVersion": {"type": "integer", "enum": [3]},
+		"creatureAbilities": {
+			"type": "object",
+			"required": ["rulesetVersion", "freezingTouchChancePercent", "shatterBonusPercent"],
+			"additionalProperties": false,
+			"properties": {
+				"rulesetVersion": {"type": "integer", "enum": [1]},
+				"freezingTouchChancePercent": {"type": "integer", "minimum": 0, "maximum": 100},
+				"shatterBonusPercent": {"type": "integer", "minimum": 0, "maximum": 100}
+			},
+			"description": "Captured creature ability rules. Omission disables Freezing Touch and its shatter bonus in older profiles."
+		},
 		"schoolRankPowerCoefficientPercent": {
 			"type": "array",
 			"minItems": 4,

@@ -18,6 +18,7 @@
 #include "NewHorizonsBlink.h"
 #include "NewHorizonsNaturesWrath.h"
 #include "NewHorizonsPandemonium.h"
+#include "NewHorizonsRealityWarp.h"
 #include "NewHorizonsSorcery.h"
 #include "NewHorizonsVengefulVines.h"
 #include "NewHorizonsOverwhelmingFormula.h"
@@ -27,6 +28,7 @@
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/CUnitState.h"
 #include "../battle/NewHorizonsDivineMandate.h"
+#include "../battle/NewHorizonsFrozen.h"
 #include "../battle/NewHorizonsSoulChain.h"
 #include "../battle/NewHorizonsPuppetMaster.h"
 #include "../battle/NewHorizonsWarcasting.h"
@@ -1020,7 +1022,10 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 {
 	// The source selector belongs only to the explicitly enabled Cure action.
 	// Reject stray client metadata on all other spells and legacy snapshots.
-	if(getCureAffliction() != SpellID::NONE && !isNewHorizonsCure())
+	if((getCureAffliction() != SpellID::NONE || !getCurePhysicalAffliction().empty()) && !isNewHorizonsCure())
+		return adaptGenericProblem(problem);
+	if(!getCurePhysicalAffliction().empty()
+		&& (getCurePhysicalAffliction() != "frozen" || getCureAffliction() != SpellID::NONE))
 		return adaptGenericProblem(problem);
 
 	if(mode == Mode::HERO && isMetamagicFollowup()
@@ -1034,6 +1039,9 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 		return adaptGenericProblem(problem);
 
 	if(!newHorizonsMagic::spellAllowedByBattleRoster(*battle(), owner->getId()))
+		return adaptGenericProblem(problem);
+	if(owner->getJsonKey() == newHorizonsRealityWarp::SPELL_KEY
+		&& (mode != Mode::HERO || !getHeroCaster() || !usesNewHorizonsMagicV3()))
 		return adaptGenericProblem(problem);
 	// The mixed route/power contract belongs to saved-v3 rules. A legacy cast
 	// must fail before costs, rather than paying for the Lua guard's empty route.
@@ -1299,7 +1307,8 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 				|| !ownerMatches(unit, true) || !isReceptive(unit))
 				continue;
 
-			if(!newHorizonsMagic::cureAfflictions(rules, unit).empty()
+			if((newHorizonsFrozen::enabled(rules) && newHorizonsFrozen::isFrozen(*unit))
+				|| !newHorizonsMagic::cureAfflictions(rules, unit).empty()
 				|| unit->getSurvivingMissingHealth() > 0)
 				return true;
 		}
@@ -1496,7 +1505,14 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		const auto & rules = battle()->getBattle()->getMagicRules();
 		const auto afflictions = newHorizonsMagic::cureAfflictions(rules, cureTarget);
 		const auto selected = getCureAffliction();
-		if(selected == SpellID::NONE)
+		const auto physical = getCurePhysicalAffliction();
+		if(!physical.empty())
+		{
+			if(physical != "frozen" || selected != SpellID::NONE
+				|| !newHorizonsFrozen::enabled(rules) || !newHorizonsFrozen::isFrozen(*cureTarget))
+				return false;
+		}
+		else if(selected == SpellID::NONE)
 		{
 			if(!afflictions.empty()
 				|| cureTarget->getSurvivingMissingHealth() <= 0)
@@ -2383,6 +2399,8 @@ BattleSide BattleSpellMechanics::effectiveCasterSide() const
 
 void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const Target & target)
 {
+	const bool realityWarp = owner->getJsonKey() == newHorizonsRealityWarp::SPELL_KEY
+		&& usesNewHorizonsMagicV3();
 	// Countering cleanup and the first damage event may remove a later stack's
 	// debuff source. Capture every count before either can change the battlefield.
 	if(newHorizonsPandemonium::enabled(*this))
@@ -2411,12 +2429,18 @@ void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast &
 	// eligible recipient (including chain routing and scripted collateral).
 	resistanceRolls.clear();
 	resistantUnitIds.clear();
-	if((isNegativeSpell() || naturesWrath) && isMagicalEffect())
+	if((isNegativeSpell() || naturesWrath || realityWarp) && isMagicalEffect())
 	{
 		//magic resistance
 		const auto resistanceCandidates = naturesWrath ? wrathConductors : battle()->battleGetAllUnits(false);
 		for(const auto * unit : resistanceCandidates)
 		{
+			if(realityWarp && (battle()->battleGetOwner(unit) == getCasterColor()
+				|| std::ranges::none_of(spellTarget, [unit](const Destination & destination)
+				{
+					return destination.unitValue == unit;
+				})))
+				continue;
 			if(isMagicalEffect() && isSpellLocked(unit))
 			{
 				resistantUnitIds.insert(unit->unitId());
@@ -2459,7 +2483,7 @@ void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast &
 			affectedUnits.push_back(unit);
 	};
 
-	if (!target.empty())
+	if (!target.empty() && !realityWarp)
 	{
 		const battle::Unit * targetedUnit = battle()->battleGetUnitByPos(target.front().hexValue, true);
 		if ((!isMagicalEffect() || !isSpellLocked(targetedUnit)) && isReflected(server, targetedUnit, rng)) {
@@ -2508,6 +2532,10 @@ void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast &
 	// never slide into the primary slot. Resisted secondaries are simply omitted.
 	if(newHorizonsSoulChain && !target.empty() && target.front().unitValue
 		&& vstd::contains(resisted, target.front().unitValue))
+		effectsToApply.clear();
+	// An exchange is indivisible: resistance must never leave a one-endpoint
+	// effect that accidentally mutates only half of the relationship.
+	if(realityWarp && !resisted.empty())
 		effectsToApply.clear();
 
 	for(const auto * unit : resisted)
@@ -2682,6 +2710,8 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 	if(isNewHorizonsStormOfDaggers()
 		&& (!setStormOfDaggersTargetCount(static_cast<int32_t>(target.size()))
 			|| !canBeCastAt(target)))
+		return;
+	if(owner->getJsonKey() == newHorizonsRealityWarp::SPELL_KEY && !canBeCastAt(target))
 		return;
 	const bool completedHeroProjection = server && mode == Mode::HERO
 		&& (casterSide == BattleSide::ATTACKER || casterSide == BattleSide::DEFENDER)
@@ -2870,7 +2900,8 @@ Target BattleSpellMechanics::transformSpellTarget(const Target & aimPoint) const
 
 	if(isNewHorizonsStormOfDaggers()
 		|| isNewHorizonsLifeDrainSpell(owner, battle()->getBattle()->getMagicRules())
-		|| isNewHorizonsSoulChainSpell(owner, battle()->getBattle()->getMagicRules()))
+		|| isNewHorizonsSoulChainSpell(owner, battle()->getBattle()->getMagicRules())
+		|| owner->getJsonKey() == newHorizonsRealityWarp::SPELL_KEY)
 	{
 		spellTarget.reserve(aimPoint.size());
 		for(const auto & selected : aimPoint)
@@ -2944,6 +2975,15 @@ std::vector<AimType> BattleSpellMechanics::getTargetTypes() const
 
 bool BattleSpellMechanics::isReceptive(const battle::Unit * target) const
 {
+	if(target && owner->getJsonKey() == newHorizonsRealityWarp::SPELL_KEY && usesNewHorizonsMagicV3())
+	{
+		if(isMagicalEffect() && isSpellLocked(target))
+			return false;
+		// The paired cast rolls hostile resistance once during beforeCast;
+		// captured-effect recipient checks themselves are deterministic.
+		if(const auto * conditions = dynamic_cast<const TargetCondition *>(targetCondition.get()))
+			return conditions->isReceptiveIgnoringMagicResistance(this, target);
+	}
 	if(target && newHorizonsPandemonium::enabled(*this))
 	{
 		if(isMagicalEffect() && isSpellLocked(target))

@@ -1,4 +1,11 @@
 {
+	"new-horizons.creature.freezingTouch.compact": "Freezing Touch %chance%%\nShatter +%bonus%%",
+	"new-horizons.creature.freezingTouch.help": "Freezing Touch: each successful melee attack or retaliation has a %chance%% chance, rolled once after damage, to inflict physical Frozen. Frozen prevents retaliation and forfeits the next normal Creature Activation, then thaws. Extra activations cannot thaw it. A subsequent ordinary physical creature attack deals +%bonus%% final damage and Shatters the ice, without retaliation. Direct magical damage breaks the ice without this bonus. Cure clears Frozen; ordinary Dispel does not. Cannot stack or refresh; at most one successful application per recipient per round, even after cleansing.",
+	"new-horizons.combat.frozen.label": "Frozen",
+	"new-horizons.combat.frozen.tooltip": "%label%: physical ice encasement. Cannot retaliate. The next normal Creature Activation is forfeited, then the ice thaws; extra activations cannot thaw it. The next ordinary physical creature attack deals +%bonus%% final damage and Shatters the ice, without retaliation. Direct magical damage breaks the ice without this bonus. Cure removes it; ordinary Dispel does not. Cannot refresh or stack; at most one application per round, even after cleansing.",
+	"new-horizons.combat.frozen.queue": "Frozen: incapacitated. The next normal Creature Activation is forfeited, then thaws. Extra activations do not thaw the ice.",
+	"new-horizons.combat.frozen.forfeit": "%creature% are Frozen: their normal Creature Activation is forfeited and the ice thaws.",
+	"new-horizons.combat.frozen.shatter": "The ice around %creature% Shatters after the physical hit; no retaliation.",
 	"new-horizons.combat.firstAid.permanentRestoration": "Permanently restores %s HP (%s creatures).",
 	"new-horizons.combat.orders.targetRejection.unavailable": "This Order is no longer available.",
 	"new-horizons.combat.orders.targetRejection.targetCount": "Select the required number of stacks.",

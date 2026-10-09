@@ -50,6 +50,7 @@ set(lib_MAIN_SRCS
 
 	battle/AccessibilityInfo.cpp
 	battle/BattleForm.cpp
+	battle/BattleEffectExchange.cpp
 	battle/BattleAction.cpp
 	battle/BattleAttackInfo.cpp
 	battle/BattleHex.cpp
@@ -57,6 +58,7 @@ set(lib_MAIN_SRCS
 	battle/HeroCommand.cpp
 	battle/BattleInfo.cpp
 	battle/PhysicalAffliction.cpp
+	battle/NewHorizonsFrozen.cpp
 	battle/TimeStopState.cpp
 	battle/NewHorizonsBloodrage.cpp
 	battle/NewHorizonsDivineMandate.cpp
@@ -360,6 +362,7 @@ set(lib_MAIN_SRCS
 
 	spells/effects/Effect.cpp
 	spells/effects/BattleForm.cpp
+	spells/effects/RealityWarp.cpp
 	spells/effects/Effects.cpp
 	spells/effects/LocationEffect.cpp
 
@@ -511,6 +514,7 @@ set(lib_MAIN_HEADERS
 
 	battle/AccessibilityInfo.h
 	battle/BattleForm.h
+	battle/BattleEffectExchange.h
 	battle/AutocombatPreferences.h
 	battle/BattleAction.h
 	battle/BattleAttackInfo.h
@@ -924,6 +928,7 @@ set(lib_MAIN_HEADERS
 
 	spells/effects/Effect.h
 	spells/effects/BattleForm.h
+	spells/effects/RealityWarp.h
 	spells/effects/Effects.h
 	spells/effects/EffectsFwd.h
 	spells/effects/LocationEffect.h

@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "BattleFlowProcessor.h"
+#include "../../lib/battle/NewHorizonsFrozen.h"
 
 #include "BattleProcessor.h"
 
@@ -1050,7 +1051,8 @@ const CStack * BattleFlowProcessor::getNextStack(const CBattleInfoCallback & bat
 			gameHandler->sendAndApply(bte);
 	}
 
-	if(!next || (!next->willMove() && !(next->isTimeStopped() && !next->timeStopTurnConsumed())))
+	if(!next || (!next->willMove() && !(next->isTimeStopped() && !next->timeStopTurnConsumed())
+		&& !(newHorizonsFrozen::isFrozen(*next) && !next->moved() && !next->defended())))
 		return nullptr;
 
 	return stack;
@@ -1146,6 +1148,8 @@ bool BattleFlowProcessor::tryMakeAutomaticAction(const CBattleInfoCallback & bat
 	{
 		return makeStackDoNothing(battle, next);
 	}
+	if(newHorizonsFrozen::forfeitsNormalActivation(*next, BattleUnitTurnReason::TURN_QUEUE))
+		return makeStackDoNothing(battle, next);
 
 	if(tryActivateMoralePenalty(battle, next))
 		return true;
@@ -2365,6 +2369,44 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 			activateNextStack(battle);
 			return;
 		}
+		if(newHorizonsFrozen::isFrozen(*actedStack))
+		{
+			// A retaliation may freeze the acting stack during its own attack.
+			// That already-spent action is not its next normal forfeited slot.
+			// Only the automatic queue no-op thaws; neither path grants extras.
+			if(ba.actionType != EActionType::WAIT)
+			{
+				// Frozen forfeits an ordinary activation; it does not pause the
+				// existing end-of-activation affliction lifecycle like Time Stop.
+				applyPlagueEndOfActivation(gameHandler, battle, actedStack);
+				if(owner->checkBattleStateChanges(battle))
+					return;
+			}
+			if(ba.actionType == EActionType::NO_ACTION)
+			{
+				SetStackEffect thaw;
+				thaw.battleID = battle.getBattle()->getBattleID();
+				thaw.toRemove.emplace_back(actedStack->unitId(), newHorizonsFrozen::removalPlan(*actedStack));
+				gameHandler->sendAndApply(thaw);
+			}
+			clearQuartermasterActivation(gameHandler, battle, actedStack->unitId());
+			const auto side = battle.playerToSide(battle.battleGetOwner(actedStack));
+			if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+			{
+				const auto secondWind = battle.getBattle()->getHeroOrderState(side, HeroCommand::SECOND_WIND);
+				if(secondWind && secondWind->secondWindActive
+					&& secondWind->primaryTargetUnitId == actedStack->unitId())
+				{
+					if(const auto * state = dynamic_cast<const BattleInfo *>(battle.getBattle()))
+					{
+						if(const_cast<BattleInfo *>(state)->setHeroOrderSecondWindActive(side, false))
+							publishHeroOrderState(battle, side);
+					}
+				}
+			}
+			activateNextStack(battle);
+			return;
+		}
 
 		const auto controllerSide = battle.playerToSide(battle.battleGetOwner(actedStack));
 		if(controllerSide == BattleSide::ATTACKER || controllerSide == BattleSide::DEFENDER)
@@ -2655,6 +2697,29 @@ void BattleFlowProcessor::stackTurnTrigger(const CBattleInfoCallback & battle, c
 void BattleFlowProcessor::setActiveStack(const CBattleInfoCallback & battle, const battle::Unit * stack, BattleUnitTurnReason reason)
 {
 	assert(stack);
+	if(newHorizonsFrozen::isFrozen(*stack) && reason != BattleUnitTurnReason::TURN_QUEUE
+		&& reason != BattleUnitTurnReason::AUTOMATIC_ACTION)
+	{
+		// Earned extras/continuations are unusable, not normal queue forfeitures.
+		// Do not remove Frozen or run any start-of-activation effects here.
+		clearQuartermasterActivation(gameHandler, battle, stack->unitId());
+		const auto side = battle.playerToSide(battle.battleGetOwner(stack));
+		if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+		{
+			const auto secondWind = battle.getBattle()->getHeroOrderState(side, HeroCommand::SECOND_WIND);
+			if(secondWind && secondWind->secondWindActive
+				&& secondWind->primaryTargetUnitId == stack->unitId())
+			{
+				if(const auto * state = dynamic_cast<const BattleInfo *>(battle.getBattle()))
+				{
+					if(const_cast<BattleInfo *>(state)->setHeroOrderSecondWindActive(side, false))
+						publishHeroOrderState(battle, side);
+				}
+			}
+		}
+		activateNextStack(battle);
+		return;
+	}
 
 	BattleSetActiveStack sas;
 	sas.battleID = battle.getBattle()->getBattleID();

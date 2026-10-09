@@ -21,6 +21,146 @@
 				"horde1Upgr": null
 			},
 			"buildings": {
+				"dwellingLvl2": {
+					"requires#override": [
+						"mageGuild1"
+					],
+					"cost#override": {
+						"gold": 2500,
+						"wood": 5,
+						"ore": 5,
+						"mercury": 0,
+						"sulfur": 0,
+						"crystal": 0,
+						"gems": 2
+					}
+				},
+				"dwellingUpLvl2": {
+					"requires#override": [
+						"allOf",
+						[
+							"dwellingLvl2"
+						],
+						[
+							"mageGuild2"
+						]
+					],
+					"cost#override": {
+						"gold": 2500,
+						"wood": 5,
+						"ore": 5,
+						"mercury": 0,
+						"sulfur": 0,
+						"crystal": 0,
+						"gems": 3
+					},
+					"upgrades": "dwellingLvl2"
+				},
+				"dwellingLvl3": {
+					"requires#override": [
+						"mageGuild1"
+					],
+					"cost#override": {
+						"gold": 2500,
+						"wood": 5,
+						"ore": 5,
+						"mercury": 2,
+						"sulfur": 0,
+						"crystal": 0,
+						"gems": 0
+					}
+				},
+				"dwellingUpLvl3": {
+					"requires#override": [
+						"allOf",
+						[
+							"dwellingLvl3"
+						],
+						[
+							"mageGuild2"
+						]
+					],
+					"cost#override": {
+						"gold": 2500,
+						"wood": 5,
+						"ore": 5,
+						"mercury": 3,
+						"sulfur": 0,
+						"crystal": 0,
+						"gems": 0
+					},
+					"upgrades": "dwellingLvl3"
+				},
+				"dwellingLvl4": {
+					"requires#override": [
+						"mageGuild1"
+					],
+					"cost#override": {
+						"gold": 2500,
+						"wood": 5,
+						"ore": 5,
+						"mercury": 0,
+						"sulfur": 2,
+						"crystal": 0,
+						"gems": 0
+					}
+				},
+				"dwellingUpLvl4": {
+					"requires#override": [
+						"allOf",
+						[
+							"dwellingLvl4"
+						],
+						[
+							"mageGuild2"
+						]
+					],
+					"cost#override": {
+						"gold": 2500,
+						"wood": 5,
+						"ore": 5,
+						"mercury": 0,
+						"sulfur": 3,
+						"crystal": 0,
+						"gems": 0
+					},
+					"upgrades": "dwellingLvl4"
+				},
+				"dwellingLvl5": {
+					"requires#override": [
+						"mageGuild1"
+					],
+					"cost#override": {
+						"gold": 2500,
+						"wood": 5,
+						"ore": 5,
+						"mercury": 0,
+						"sulfur": 0,
+						"crystal": 2,
+						"gems": 0
+					}
+				},
+				"dwellingUpLvl5": {
+					"requires#override": [
+						"allOf",
+						[
+							"dwellingLvl5"
+						],
+						[
+							"mageGuild2"
+						]
+					],
+					"cost#override": {
+						"gold": 2500,
+						"wood": 5,
+						"ore": 5,
+						"mercury": 0,
+						"sulfur": 0,
+						"crystal": 3,
+						"gems": 0
+					},
+					"upgrades": "dwellingLvl5"
+				},
 				"dwellingLvl6": {
 					"name": "Altar of Magic",
 					"description": "The Altar of Magic allows you to recruit Wisps, the second Conflux Core creature line.",

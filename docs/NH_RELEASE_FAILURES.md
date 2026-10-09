@@ -1,5 +1,58 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-09 — Focused Frozen/Warp relink evidence
+
+Matched clean pair20712 discovers47 Frozen/Conflux,73 Warp and15 adjacent
+target-condition cases. Results are42/47,69/73 and15/15, with no crashes/skips.
+Snapshot Frozen units and their effects when constructing detached branches:
+lazy first reads after parent thaw must not import the parent's later state.
+Do not fabricate full absorption with100% MDR: its canonical95% cap leaves
+damage; use an established zero-floor damage cap and verify actual mechanics.
+Normalize capacity-health ledgers before an exact serialized baseline.
+Map rule overrides must occur before immutable world capture, during map load.
+Time Stop makes generic target validity false, so test its explicit rejection
+reason first. A valid AI Order can outvalue a spell; isolate the spell consumer
+or accept the Order normally before testing remaining Spell action forwarding.
+Preserve exact state/payment/RNG assertions rather than forcing heuristic wins.
+Bounded repairs await matched relink/native verification.
+
+Final linked6035 gate passes Frozen47/47 in8.691s, Warp73/73 in12.290s and
+adjacent targeting15/15 in0.310s, zero errors/skips. Additional evidence required
+Frozen-presence full-evaluation invalidation and skipping a normally forfeited
+AI queue attack after thaw; a full-HP Cure needs legal recovered-action utility,
+not fabricated wounds. Randomly supplied town dwellings must be removed from
+this four-line fixture before prerequisite analysis. An accepted Order spends
+the shared base Hero Action, so the paid Warp consumer uses an explicitly
+legacy-command-disabled profile rather than granting another action. Exact
+state/payment/RNG controls remain intact; broader forecast horizons are Phase2.
+
+### 2026-10-09 — Cure fixture public spell and random-generator APIs
+
+Retry67214 fails while compiling three newly added Frozen magic-interaction
+fixtures. BattleCast's spell member is private; retain the public CSpell pointer
+used to construct the cast and obtain its mechanics through that pointer.
+GameRandomizer is not an RNG facade with nextInt: use CGameHandler's public
+getRandomGenerator(), which returns the same default generator. Preserve the
+post-cast RNG-position, zero-damage thaw and no-Shatter assertions. These bounded
+test repairs do not change production randomness or establish native acceptance.
+
+### 2026-10-09 — Frozen proc fixtures and battle-long receipt persistence
+
+Initial Frozen native acceptance passes21/22. Zero-chance combat-ability queries
+still initialize unseen army RNG caches from the global RNG. Prime those existing
+caches before assigning the deterministic Freeze seed; keep the real20% proc,
+post-roll RNG, retaliation and round-receipt assertions. Do not change production
+RNG ordering merely to satisfy an uninitialized fixture. Adjacent target-condition
+strict mocks must explicitly provide the valid ordinary source spell ID now read
+by the condition evaluator; do not relax unrelated mock expectations.
+
+The Frozen round receipt must survive Cure/Shatter and binary stack rebinding.
+Serialize it under the new feature version, preserve it through localInit and
+reject older writers before prefix bytes when receipts, Frozen markers, Shatter
+feedback or captured creature rules cannot be represented. Current format must
+preserve state rather than silently discard it. Expanded focused fixtures are
+authored; matching relink/native acceptance remains pending.
+
 ### 2026-10-09 — Warp health snapshot nesting and capacity fixture validity
 
 The clean build succeeds, but initial Warp acceptance passes41/73 with no skips

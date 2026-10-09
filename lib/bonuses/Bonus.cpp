@@ -122,6 +122,9 @@ JsonNode Bonus::toJsonNode() const
 				case BonusStatusTag::DEBUFF:
 					root["statusTags"].Vector().emplace_back("DEBUFF");
 					break;
+				case BonusStatusTag::NON_TRANSFERABLE:
+					root["statusTags"].Vector().emplace_back("NON_TRANSFERABLE");
+					break;
 			}
 		}
 	}

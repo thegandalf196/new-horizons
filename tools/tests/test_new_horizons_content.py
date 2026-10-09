@@ -1203,8 +1203,8 @@ class NewHorizonsContentTest(unittest.TestCase):
             'core:naga': (3, 'core:nagaQueen'),
             'core:skeleton': (18, 'core:skeletonWarrior'),
             'core:goblinWolfRider': (8, 'core:hobgoblinWolfRider'),
-            'core:airElemental': (5, 'core:stormElemental'),
-            'core:waterElemental': (5, 'core:iceElemental'),
+            'core:airElemental': (4, 'core:stormElemental'),
+            'core:waterElemental': (4, 'core:iceElemental'),
             'core:psychicElemental': (3, 'core:magicElemental'),
             'core:firebird': (1, 'core:phoenix'),
         }
@@ -1665,6 +1665,26 @@ class NewHorizonsContentTest(unittest.TestCase):
             self.assertEqual(current['cost'], 23)
             self.assertEqual(current['battleEffects']['timeStop']['type'],
                              'core:timeStop')
+
+    def test_reality_warp_registration_preserves_reciprocal_native_exchange(self):
+        """Content admission only; paid native exchange and AI tests prove execution."""
+        spell = load('Mods/new-horizons/Content/config/spells/newHorizons.json')['realityWarp']
+        self.assertEqual(spell['school'], {'new-horizons:chaos': True})
+        self.assertEqual(spell['level'], 4)
+        self.assertEqual(spell['targetType'], 'CREATURE')
+        self.assertEqual(spell['flags'], {'indifferent': True})
+        self.assertEqual(spell['levels']['base']['cost'], 15)
+        self.assertEqual(spell['levels']['base']['targetModifier'], {'smart': False})
+        self.assertEqual(spell['levels']['base']['battleEffects'], {
+            'exchange': {'type': 'core:realityWarp'},
+        })
+        for rank in ('none', 'basic', 'advanced', 'expert'):
+            self.assertEqual(spell['levels'][rank], {})
+        self.assertEqual(self.rules['spells']['new-horizons:realityWarp'], {
+            'schools': ['new-horizons:chaos'], 'level': 4,
+            'costs': [15, 15, 15, 15], 'active': True,
+        })
+        self.assertNotIn('new-horizons:realityWarp', self.rules['adventureSpells'])
 
     def test_polymorph_registration_is_single_target_and_uses_native_form_effect(self):
         """Content admission only; native lifecycle/AI gates prove execution."""

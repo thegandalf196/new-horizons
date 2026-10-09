@@ -37,6 +37,7 @@
 #include "../../../lib/bonuses/BonusList.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/battle/CUnitState.h"
+#include "../../../lib/battle/NewHorizonsFrozen.h"
 #include "../../../lib/battle/CBattleInfoCallback.h"
 #include "../../../lib/battle/Destination.h"
 #include "../../../lib/battle/SiegeInfo.h"
@@ -104,6 +105,14 @@ void ServerCallbackProxy::registerMethods(MethodRegistrar & R)
 		},
 		{"integer, integer", "Damage actually dealt, and the count of killed creatures."},
 		"Damages the unit, records SPELL damage provenance, and marks the injury with the given spell identity. The caller is responsible for applying the spell's damage modifiers first.");
+	R.function<&ServerCallbackProxy::clearFrozenAfterDirectMagicDamage>("clearFrozenAfterDirectMagicDamage",
+		{{"battle", "Battle containing the resolved direct hit."},
+		 {"unit", "Recipient of the direct magical damage event."}}, {},
+		"Removes only Frozen after resolved direct magical damage, including zero absorbed damage. Never call for DoT, reflection or redirected damage; does not Shatter.");
+	R.function<&ServerCallbackProxy::removeCurePhysicalAffliction>("removeCurePhysicalAffliction",
+		{{"battle", "Battle containing the Cure target."},
+		 {"unit", "Cure recipient."}, {"kind", "Explicit physical Cure selection."}}, {},
+		"Removes the selected physical Frozen marker only, without altering its application-round stamp.");
 	R.function<&ServerCallbackProxy::removeUnit>("removeUnit",
 		{
 			{"battle", "Battle the unit belongs to."},
@@ -434,6 +443,30 @@ void ServerCallbackProxy::removeUnitBonuses(ServerCallback & object, const IBatt
 	sse.battleID = battle.getBattle()->getBattleID();
 	sse.toRemove.emplace_back(unit.unitId(), buffer);
 	object.apply(sse);
+}
+
+void ServerCallbackProxy::clearFrozenAfterDirectMagicDamage(ServerCallback & object,
+	const IBattleInfoCallback & battle, const battle::Unit & unit)
+{
+	if(battle.battleGetUnitByID(unit.unitId()) != &unit)
+		throw std::runtime_error("Frozen removal requires a unit in the given battle");
+	if(!newHorizonsFrozen::enabled(battle.getBattle()->getMagicRules()))
+		return;
+	const auto removed = newHorizonsFrozen::removalPlan(unit);
+	if(removed.empty())
+		return;
+	SetStackEffect change;
+	change.battleID = battle.getBattle()->getBattleID();
+	change.toRemove.emplace_back(unit.unitId(), removed);
+	object.apply(change);
+}
+
+void ServerCallbackProxy::removeCurePhysicalAffliction(ServerCallback & object,
+	const IBattleInfoCallback & battle, const battle::Unit & unit, const std::string & kind)
+{
+	if(kind != "frozen")
+		throw std::invalid_argument("Unsupported physical Cure selection");
+	clearFrozenAfterDirectMagicDamage(object, battle, unit);
 }
 
 void ServerCallbackProxy::addUnitBonus(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit & unit, const BonusDescriptor & data, bool cumulative)

@@ -119,6 +119,7 @@ private:
 	std::set<uint32_t> ambusherAttackers;
 	std::set<std::pair<uint32_t, BattleSide>> shadowAssaultTargetSides;
 	std::set<uint32_t> nightProwlerAttackers;
+	std::set<uint32_t> frozenTargets;
 	DamageCache * parent;
 
 	void buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side);
@@ -127,6 +128,7 @@ private:
 	bool tracksAmbusher(uint32_t attackerId) const;
 	bool tracksShadowAssault(uint32_t defenderId) const;
 	bool tracksNightProwler(uint32_t attackerId) const;
+	bool tracksFrozen(uint32_t defenderId) const;
 
 public:
 	DamageCache() : parent(nullptr) {}
@@ -168,6 +170,8 @@ public:
 	float defenderDamageReduce = 0;
 	float attackerDamageReduce = 0; //usually by counter-attack
 	float collateralDamageReduce = 0; // friendly fire (usually by two-hex attacks)
+	/// Expected lost/gained control, separate from deterministic injury/state.
+	float frozenControlValue = 0;
 	int64_t shootersBlockedDmg = 0;
 	bool defenderDead = false;
 

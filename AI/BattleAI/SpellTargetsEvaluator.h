@@ -40,6 +40,14 @@ public:
 	};
 
 	static std::vector<spells::Target> getViableTargets(spells::Mechanics * spellMechanics);
+	/// Signed change in reachable upcoming activation pressure after the actual
+	/// atomic exchange has been applied to a detached battle. Fresh damage caches
+	/// include transferred attacker bonuses and recipient defensive effects.
+	/// Whole-exchange success probability uses each originally hostile selected
+	/// endpoint's actual capped resistance; friendly endpoints do not roll.
+	static float realityWarpExchangeValue(const Environment * environment,
+		std::shared_ptr<CBattleInfoCallback> before, std::shared_ptr<CBattleInfoCallback> after,
+		PlayerColor scoringPlayer, const spells::Target & selection, PlayerColor caster);
 	/// Enumerates canonical Earthquake's full legal location set without merging
 	/// equal creature footprints. Siege aims are the attackable fortification
 	/// section hexes; field aims retain distinct area centers.

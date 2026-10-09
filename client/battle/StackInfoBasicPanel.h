@@ -35,6 +35,7 @@ private:
 	std::vector<std::shared_ptr<CMultiLineLabel>> labelsMultiline;
 	std::vector<std::shared_ptr<CAnimImage>> icons;
 	std::vector<std::shared_ptr<CPicture>> temporaryCreatureIcons;
+	std::vector<std::shared_ptr<CIntObject>> physicalStatusIcons;
 	std::vector<std::shared_ptr<LRClickableAreaWText>> statusTooltips;
 	std::shared_ptr<CPlayerBattleCallback> battleCallback;
 	newHorizonsBattleStatus::StackInfoStatusSnapshot displayedStatus;

@@ -92,6 +92,51 @@ std::string warcastingIconName(AlternatingHeroActionState::Action action)
 
 }
 
+namespace
+{
+class RealityWarpPreviewWindow final : public CWindowObject
+{
+	std::vector<std::shared_ptr<CIntObject>> widgets;
+public:
+	RealityWarpPreviewWindow(const std::string & text, std::function<void()> confirm,
+		std::function<void()> cancel) : CWindowObject(BORDERED)
+	{
+		pos = Rect(0, 0, 640, 420);
+		center();
+		OBJECT_CONSTRUCTION;
+		widgets.push_back(std::make_shared<CFilledTexture>(ImagePath::builtin("DiBoxBck"), Rect(0, 0, 640, 420)));
+		widgets.push_back(std::make_shared<CLabel>(320, 12, FONT_SMALL,
+			ETextAlignment::TOPCENTER, Colors::YELLOW, "Reality Warp — complete exchange"));
+		widgets.push_back(std::make_shared<CTextBox>(text, Rect(16, 38, 608, 320), 0,
+			FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE));
+		auto yes = std::make_shared<CButton>(Point(224, 376), AnimationPath::builtin("settingsWindow/button80"),
+			CButton::tooltip("Confirm", "Revalidate the complete exchange and cast."), [this, confirm]()
+		{
+			close();
+			confirm();
+		});
+		yes->setTextOverlay("Confirm", FONT_SMALL, Colors::WHITE);
+		yes->assignedKey = EShortcut::GLOBAL_ACCEPT;
+		widgets.push_back(yes);
+		auto no = std::make_shared<CButton>(Point(336, 376), AnimationPath::builtin("settingsWindow/button80"),
+			CButton::tooltip("Cancel", "Cancel Reality Warp without casting."), [this, cancel]()
+		{
+			close();
+			cancel();
+		});
+		no->setTextOverlay("Cancel", FONT_SMALL, Colors::WHITE);
+		no->assignedKey = EShortcut::GLOBAL_CANCEL;
+		widgets.push_back(no);
+	}
+};
+}
+
+void BattleWindow::showRealityWarpPreview(const std::string & text, std::function<void()> confirm,
+	std::function<void()> cancel)
+{
+	ENGINE->windows().pushWindow(std::make_shared<RealityWarpPreviewWindow>(text, std::move(confirm), std::move(cancel)));
+}
+
 class BattleTargetSelectionPanel final : public CIntObject
 {
 	BattleInterface & owner;
@@ -388,7 +433,9 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 	addShortcut(EShortcut::GLOBAL_BACKSPACE, [this](){
 		if(this->owner.actionsController)
 		{
-			if(this->owner.actionsController->vengefulVinesTargetSelectionModeActive())
+			if(this->owner.actionsController->realityWarpTargetSelectionModeActive())
+				this->owner.actionsController->undoRealityWarpTarget();
+			else if(this->owner.actionsController->vengefulVinesTargetSelectionModeActive())
 				this->owner.actionsController->undoVengefulVinesSelection();
 			else if(this->owner.actionsController->stormOfDaggersTargetSelectionModeActive())
 				this->owner.actionsController->undoStormOfDaggersTarget();
@@ -1592,7 +1639,8 @@ void BattleWindow::updateBattleTargetSelectionControls()
 	setShortcutBlocked(EShortcut::GLOBAL_ACCEPT,
 		!ready && !stormCanConfirm && !soulChainCanConfirm);
 	setShortcutBlocked(EShortcut::GLOBAL_BACKSPACE,
-		!canUndo && !vengefulVinesCanUndo && !stormCanUndo && !soulChainCanUndo);
+		!canUndo && !vengefulVinesCanUndo && !stormCanUndo && !soulChainCanUndo
+			&& !(owner.actionsController && owner.actionsController->realityWarpTargetSelectionModeActive()));
 	widget<CButton>("wait")->setEnabled(!rangedFollowUpPending
 		&& !active && !vengefulVinesActive && !stormActive && !soulChainActive);
 	const auto * overwatchStack = owner.stacksController->getActiveStack();

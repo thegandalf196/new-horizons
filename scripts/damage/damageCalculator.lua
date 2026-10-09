@@ -692,6 +692,7 @@ function Script:calculate(battle, info)
 		* bulwarkImmovableMultiplier
 		* armorerBastionMultiplier
 		* counterBatteryMultiplier
+		* ((info.frozenShatterFinalDamageMultiplier or 100) / 100)
 	local stabilizePdrRounding = usesPhysicalDamageReductionStage and physicalDamageReductionMultiplier < 1
 	local damageMin = apply(baseMin, damageFactor, stabilizePdrRounding)
 	local damageMax = apply(baseMax, damageFactor, stabilizePdrRounding)

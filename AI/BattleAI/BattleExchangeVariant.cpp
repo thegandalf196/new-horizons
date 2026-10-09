@@ -20,6 +20,7 @@
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsArmorer.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
+#include "../../lib/battle/NewHorizonsFrozen.h"
 
 #include <tbb/parallel_for.h>
 
@@ -775,6 +776,7 @@ float BattleExchangeVariant::trackAttack(
 	const auto shadowAssaultSide = !evaluateOnly
 		? qualifyingShadowAssaultSide(*hb, projectedAttack) : std::optional<BattleSide>{};
 	const bool nightProwlerPending = hasNightProwlerBonus(attacker.get());
+	const bool frozenBeforeHit = newHorizonsFrozen::isFrozen(*defender);
 	const auto resolveLastStand = [&hb](const BattleAttackInfo & attack,
 		const battle::Unit * target, int64_t incomingDamage)
 	{
@@ -1012,14 +1014,14 @@ float BattleExchangeVariant::trackAttack(
 
 	bool ignoredInnate = false;
 	bool ignoredShroud = false;
-	if(!evaluateOnly && allowRetaliation && !shooting)
+	if(!frozenBeforeHit && !evaluateOnly && allowRetaliation && !shooting)
 	{
 		if(counterAttacksBlocked)
 			ignoredInnate = projectDefiant(*hb, projectedAttack, newHorizonsArmorer::DefiantDenialCause::INNATE_BLOCK);
 		if(!defender->hasBonus(firstStrikeSelector) && hb->battleShroudDeniesRetaliation(projectedAttack))
 			ignoredShroud = projectDefiant(*hb, projectedAttack, newHorizonsArmorer::DefiantDenialCause::EXPERT_SHROUD);
 	}
-	if(!evaluateOnly && allowRetaliation && attacker->alive() && defender->alive()
+	if(!frozenBeforeHit && !evaluateOnly && allowRetaliation && attacker->alive() && defender->alive()
 		&& defender->ableToRetaliate() && !shooting
 		&& (!counterAttacksBlocked || (ignoredInnate && !hb->battleHasMagicalRetaliationBlock(attacker.get())))
 		&& (!hb->battleShroudDeniesRetaliation(projectedAttack) || defender->hasBonus(firstStrikeSelector) || ignoredShroud))
@@ -1678,6 +1680,8 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			// pending Cascade gift.
 			const bool initialChosenUnit = canUseAp
 				&& activeUnit->unitId() == ap.attack.attacker->unitId();
+			const bool frozenForfeits = !initialChosenUnit
+				&& newHorizonsFrozen::forfeitsNormalActivation(*attacker, BattleUnitTurnReason::TURN_QUEUE);
 			if(!initialChosenUnit)
 				exchangeBattle->nextTurn(attacker->unitId(), BattleUnitTurnReason::TURN_QUEUE);
 			bool fortuneActivation = true;
@@ -1689,6 +1693,11 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 					fortuneActivation = false;
 				}
 			};
+			if(frozenForfeits)
+			{
+				finishFortuneActivation();
+				continue;
+			}
 
 			if(isMovingTurm && !shooting
 				&& !vstd::contains(exchangeUnits.enemyUnitsReachingAttacker, attacker->unitId()))

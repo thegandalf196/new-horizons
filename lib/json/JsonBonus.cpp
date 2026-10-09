@@ -978,11 +978,12 @@ bool JsonUtils::parseBonus(const JsonNode &ability, Bonus *b, const TextIdentifi
 		{
 			if(tagNode.getType() != JsonNode::JsonType::DATA_STRING)
 				throw std::runtime_error("Bonus statusTags entries must be strings");
-			if(tagNode.String() != "DEBUFF")
+			if(tagNode.String() != "DEBUFF" && tagNode.String() != "NON_TRANSFERABLE")
 				throw std::runtime_error("Unknown bonus status tag: " + tagNode.String());
-			if(std::find(b->statusTags.begin(), b->statusTags.end(), BonusStatusTag::DEBUFF) != b->statusTags.end())
-				throw std::runtime_error("Duplicate bonus status tag: DEBUFF");
-			b->statusTags.push_back(BonusStatusTag::DEBUFF);
+			const auto tag = tagNode.String() == "DEBUFF" ? BonusStatusTag::DEBUFF : BonusStatusTag::NON_TRANSFERABLE;
+			if(std::find(b->statusTags.begin(), b->statusTags.end(), tag) != b->statusTags.end())
+				throw std::runtime_error("Duplicate bonus status tag: " + tagNode.String());
+			b->statusTags.push_back(tag);
 		}
 	}
 

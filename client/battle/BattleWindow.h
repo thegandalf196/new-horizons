@@ -13,6 +13,7 @@
 #include "../gui/InterfaceObjectConfigurable.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/PossiblePlayerBattleAction.h"
+#include <functional>
 
 class CStack;
 class CGTownInstance;
@@ -171,6 +172,9 @@ public:
 
 	/// Toggle UI to displaying battle log in place of tactics UI
 	void tacticPhaseEnded();
+	/// Viewport-centered, scrollable complete effect-exchange confirmation.
+	void showRealityWarpPreview(const std::string & text, std::function<void()> confirm,
+		std::function<void()> cancel);
 
 	/// Set possible alternative options to fill unit actions panel
 	void setPossibleActions(const std::vector<PossiblePlayerBattleAction> & allActions);

@@ -10,6 +10,11 @@ function Script:getDispelableBonuses(mechanics, unit)
 		return unit:getBonuses({}):filter(function() return false end)
 	end
 	if mechanics:isNewHorizonsCure() then
+		if mechanics:getCurePhysicalAffliction() ~= "" then
+			-- Physical creature-source markers are removed by their typed plan,
+			-- never by treating a creature ID as a spell source.
+			return unit:getBonuses({}):filter(function() return false end)
+		end
 		local selectedAffliction = mechanics:getCureAfflictionSource()
 		-- Cure removes only the explicitly selected physical-affliction source
 		-- group. The shared C++ preflight validates that this ID is present in
@@ -44,6 +49,9 @@ end
 
 function Script:isValidTarget(mechanics, unit)
 	if not unit:isValidTarget(false) then return false end
+	if mechanics:isNewHorizonsCure() and mechanics:getCurePhysicalAffliction() ~= "" then
+		return mechanics:isSelectedCurePhysicalAfflictionTarget(unit)
+	end
 	return self:getDispelableBonuses(mechanics, unit):size() > 0
 end
 
@@ -54,6 +62,9 @@ function Script:apply(mechanics, server, target)
 	for _, dest in ipairs(target) do
 		local unit = dest.unit
 		if unit then
+			if mechanics:isNewHorizonsCure() and mechanics:getCurePhysicalAffliction() ~= "" then
+				server:removeCurePhysicalAffliction(battle, unit, mechanics:getCurePhysicalAffliction())
+			end
 			local bonuses = self:getDispelableBonuses(mechanics, unit)
 			if bonuses:size() > 0 then
 				if positiveOnly and server:describeChanges() then
