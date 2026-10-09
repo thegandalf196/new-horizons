@@ -330,6 +330,7 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsNaturesWrath.cpp
 	spells/NewHorizonsPandemonium.cpp
 	spells/NewHorizonsDirectDamage.cpp
+	spells/NewHorizonsEagleEye.cpp
 	spells/NewHorizonsFriendlyFire.cpp
 	spells/NewHorizonsMagic.cpp
 	spells/NewHorizonsPurify.cpp

@@ -33,6 +33,7 @@
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/entities/hero/NewHorizonsNecromancy.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsEagleEye.h"
 #include "../../lib/pathfinder/NewHorizonsMovement.h"
 
 #include <vcmi/spells/Spell.h>
@@ -948,7 +949,17 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 	if(winnerHero && winnerHasUnitsLeft)
 	{
 		// Eagle Eye handling
-		if(auto eagleEyeLevel = winnerHero->valOfBonuses(BonusType::LEARN_BATTLE_SPELL_LEVEL_LIMIT))
+		if(newHorizonsEagleEye::enabled(winnerHero))
+		{
+			if(const auto spell = newHorizonsEagleEye::selectSpell(winnerHero,
+				(*battle)->getUsedSpells(CBattleInfoEssentials::otherSide(result.winner))))
+			{
+				resultsApplied.learnedSpells.eagleEyeBonus = true;
+				resultsApplied.learnedSpells.hid = finishingBattle->winnerId;
+				resultsApplied.learnedSpells.spells.insert(*spell);
+			}
+		}
+		else if(auto eagleEyeLevel = winnerHero->valOfBonuses(BonusType::LEARN_BATTLE_SPELL_LEVEL_LIMIT))
 		{
 			resultsApplied.learnedSpells.eagleEyeBonus = true;
 			resultsApplied.learnedSpells.learn = 1;
@@ -1082,6 +1093,29 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 	}
 
 	resultsApplied.battleID = battleID;
+	// Capture learning before result cleanup/removal. Retained retreat/surrender
+	// participants use ordinary ChangeSpells, with the same informational receipt.
+	std::vector<ChangeSpells> retainedHeroLearning;
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto * hero = (*battle)->battleGetFightingHero(side);
+		const bool retainedDraw = finishingBattle->isDraw()
+			&& gameHandler->gameInfo().getSettings().getBoolean(EGameSettings::HEROES_RETREAT_ON_WIN_WITHOUT_TROOPS);
+		const bool escapingLoser = !finishingBattle->isDraw() && side != finishingBattle->winnerSide
+			&& (result.result == EBattleResult::ESCAPE || result.result == EBattleResult::SURRENDER);
+		const bool escapingWinner = !finishingBattle->isDraw() && side == finishingBattle->winnerSide
+			&& !winnerHasUnitsLeft;
+		if(!hero || !(retainedDraw || escapingLoser || escapingWinner))
+			continue;
+		if(const auto spell = newHorizonsEagleEye::selectSpell(hero,
+			(*battle)->getUsedSpells(CBattleInfoEssentials::otherSide(side))))
+		{
+			auto & learning = retainedHeroLearning.emplace_back();
+			learning.hid = hero->id;
+			learning.eagleEyeBonus = true;
+			learning.spells.insert(*spell);
+		}
+	}
 	resultsApplied.victor = finishingBattle->victor;
 	resultsApplied.loser = finishingBattle->loser;
 	// Capture this specific reward before the result pack also removes temporary
@@ -1107,6 +1141,8 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 	}
 	//BattleResultsApplied does not end the battle, it only applies most of its consequences
 	gameHandler->sendAndApply(resultsApplied);
+	for(auto & learning : retainedHeroLearning)
+		gameHandler->sendAndApply(learning);
 	if(!metamagicRewards.lines.empty())
 		gameHandler->sendAndApply(metamagicRewards);
 	// Mana Conservation is ordinary Normal-pool recovery. Apply it only after

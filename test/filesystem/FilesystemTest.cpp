@@ -13,6 +13,8 @@
 #include "../../lib/filesystem/CFilesystemLoader.h"
 #include "../../lib/filesystem/ResourcePath.h"
 
+#include <boost/filesystem/fstream.hpp>
+
 namespace test
 {
 
@@ -51,6 +53,26 @@ TEST_F(FilesystemTest, RemovesResourceAndUpdatesIndex)
 	EXPECT_TRUE(loader.removeResource(resource));
 	EXPECT_FALSE(loader.existsResource(resource));
 	EXPECT_FALSE(boost::filesystem::exists(getDirectory() / "example.txt"));
+}
+
+TEST_F(FilesystemTest, GeneratedMapCreatedAfterInitializationIsRefreshable)
+{
+	const auto mapsDirectory = getDirectory() / "Maps";
+	CFilesystemLoader loader("MAPS/", mapsDirectory);
+	const ResourcePath resource("Maps/BattleOnlyMode.vmap");
+	ASSERT_FALSE(boost::filesystem::exists(mapsDirectory));
+	ASSERT_FALSE(loader.existsResource(resource));
+
+	// Mimic saveMap's direct filesystem write, not loader.createResource.
+	ASSERT_TRUE(boost::filesystem::create_directory(mapsDirectory));
+	const auto mapPath = mapsDirectory / "BattleOnlyMode.vmap";
+	boost::filesystem::ofstream map(mapPath);
+	map << "synthetic map";
+	map.close();
+	ASSERT_FALSE(loader.existsResource(resource));
+	loader.updateFilteredFiles([](const std::string &) { return true; });
+	ASSERT_TRUE(loader.existsResource(resource));
+	EXPECT_EQ(loader.getResourceName(resource), mapPath);
 }
 
 }

@@ -201,10 +201,12 @@ if [[ -e $profile ]]; then
 	while IFS= read -r -d '' path; do
 		fail "Unexpected symlink in writable profile: $path"
 	done < <(find "$profile" -type l -print0)
-	# No inherited filesystem trees. Saves are the only permitted user-data entry.
+	# No inherited filesystem trees. Only saves and locally generated maps are
+	# permitted; neither may redirect writes into the purchaser's installation.
 	if [[ -d $profile/data/vcmi ]]; then
 		while IFS= read -r -d '' path; do
-			[[ ${path##*/} == Saves ]] || fail 'Unexpected user data (including optional Mods); use a fresh NH profile.'
+			[[ (${path##*/} == Saves || ${path##*/} == Maps) && -d $path && ! -L $path ]] \
+				|| fail 'Unexpected user data (including optional Mods); use a fresh NH profile.'
 		done < <(find "$profile/data/vcmi" -mindepth 1 -maxdepth 1 -print0)
 	fi
 fi

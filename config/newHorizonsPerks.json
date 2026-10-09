@@ -2693,7 +2693,7 @@
 					"requires": "basic",
 					"description": "After combat, automatically learn the highest-level Level 1-3 spell cast by the enemy hero during that combat that this hero does not know and could legally learn. If several qualify at the same highest level, learn the one cast earliest in the combat.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "After combat, automatically learn the highest-level Level 1-3 spell cast by the enemy hero during that combat that this hero does not know and could legally learn. If several qualify at the same highest level, learn the one cast earliest in the combat."
 					}
 				},

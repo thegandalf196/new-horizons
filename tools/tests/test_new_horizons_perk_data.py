@@ -96,6 +96,7 @@ ACTIVE_PERKS = {
     "new-horizons:learning.masterTeacher",
     "new-horizons:learning.quickStudy",
     "new-horizons:learning.fieldStudy",
+    "new-horizons:learning.eagleEye",
     "new-horizons:chaosMagic.paradoxShield",
     "new-horizons:wisdom.meditation",
     "new-horizons:wisdom.manaConservation",

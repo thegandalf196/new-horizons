@@ -196,15 +196,20 @@ void CResourceHandler::initialize()
 
 	auto savesLoader = std::make_unique<CFilesystemLoader>("SAVES/", VCMIDirs::get().userSavePath());
 	auto configLoader = std::make_unique<CFilesystemLoader>("CONFIG/", VCMIDirs::get().userConfigPath());
+	// Generated maps may be created after initialization (Battle Only mode).
+	// Keep a refreshable local loader even when the directory does not yet exist.
+	auto mapsLoader = std::make_unique<CFilesystemLoader>("MAPS/", VCMIDirs::get().userDataPath() / "Maps");
 
 	globalResourceHandler.rootLoader = std::make_unique<CFilesystemList>();
 	knownLoaders["root"] = globalResourceHandler.rootLoader.get();
 	knownLoaders["saves"] = savesLoader.get();
 	knownLoaders["config"] = configLoader.get();
+	knownLoaders["maps"] = mapsLoader.get();
 
 	auto localFS = std::make_unique<CFilesystemList>();
 	localFS->addLoader(std::move(savesLoader), true);
 	localFS->addLoader(std::move(configLoader), true);
+	localFS->addLoader(std::move(mapsLoader), true);
 
 	addFilesystem("root", "initial", createInitial());
 	addFilesystem("root", "data", std::make_unique<CFilesystemList>());

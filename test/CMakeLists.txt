@@ -500,6 +500,7 @@ set(test_SRCS
 		server/NewHorizonsLearningMentorTest.cpp
 		server/NewHorizonsLearningMasterTeacherTest.cpp
 		server/NewHorizonsLearningFieldStudyTest.cpp
+		server/battles/NewHorizonsEagleEyeTest.cpp
 		server/NewHorizonsAstrologyTest.cpp
 		server/NewHorizonsCastleGateTest.cpp
 		server/NewHorizonsLeadershipAdmissionTest.cpp

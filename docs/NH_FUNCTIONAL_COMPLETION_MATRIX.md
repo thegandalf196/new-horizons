@@ -2,6 +2,26 @@
 
 Updated: 2026-10-09
 
+Accepted Eagle Eye checkpoint:linked11731 succeeds;11 perk cases plus the late-
+generated-map case pass12/12 in3.546s, with5/5 adjacent filesystem/Field Study
+controls in1.383s, zero errors/skips. Data17/17,module parity, shell isolation
+and independent review pass; copied test/library hashes and XML are checked.
+Coverage:perks259/310,generic182/220,faction77/90,planned51 (38 generic,13
+faction). Combat67/67,Orders8/8,Skills31/31,ranks93/93 unchanged. Enemy hero-cast
+history, highest eligible Level1–3/earliest tie, actual winner/retreat/surrender,
+legacy receipt, creature-cast exclusion and defeated-hero removal are verified.
+Retained participant scope stays provisional; draw/troopless/save interactions
+remain Phase2. Initial10/11 evidence preserves the fixture's incorrect Level2
+school expectation, corrected using genuinely school-gated Level3 Inferno.
+
+A guarded Battle-only start exposed a separate generated-map mount crash.
+The dedicated refreshable local Maps loader and safe private-profile allowance
+are source/native verified, without purchaser-map writes or optional Mods.
+Actual rendered Battle-only recheck remains required; Frozen/help observation
+is not claimed. Ordinary Linux remains the verifiedb3cd snapshot until a new
+committed candidate passes its delivery gates. First Blood/Slayer's reviewed
+private candidate is next, not accepted coverage. Older checkpoints follow.
+
 Accepted three-perk checkpoint:Veiled Movement,generic Lucky Recovery and
 Avatar of Rage pass30/30 principal native cases in11.512s after linked71404,
 with8/8 adjacent Sylvan/Bloodrage controls in2.459s on the identical engine.

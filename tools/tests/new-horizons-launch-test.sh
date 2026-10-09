@@ -113,6 +113,10 @@ if [[ -n ${LIFETIME_SIGNAL:-} ]]; then
 fi
 printf 'stub only\n' >> "$STUB_RECEIPT"
 printf 'save placeholder\n' > "$XDG_DATA_HOME/vcmi/Saves/stub-save"
+# Mimic Battle Only's late-generated user map, never write purchaser Maps.
+mkdir -p -- "$XDG_DATA_HOME/vcmi/Maps"
+printf 'synthetic generated map\n' > "$XDG_DATA_HOME/vcmi/Maps/BattleOnlyMode.vmap"
+[[ ! -e Maps/BattleOnlyMode.vmap ]]
 exit "${STUB_EXIT:-0}"
 STUB
 chmod +x -- "$engine/vcmiclient"
@@ -212,11 +216,26 @@ bash "$launcher" "${args[@]}" --verify-only > "$tmp/output"
 bash "$launcher" "${args[@]}" > "$tmp/output"
 [[ $(wc -l < "$STUB_RECEIPT") == 1 ]]
 [[ -e $profile/data/vcmi/Saves/stub-save ]]
+[[ $(< "$profile/data/vcmi/Maps/BattleOnlyMode.vmap") == 'synthetic generated map' ]]
 [[ -z $(find "$profile" -maxdepth 1 -name 'runtime.*' -print) ]]
 bash "$launcher" "${args[@]}" --verify-only > "$tmp/output"
 [[ $(wc -l < "$STUB_RECEIPT") == 1 ]]
 bash "$launcher" "${args[@]}" > "$tmp/output"
 [[ $(wc -l < "$STUB_RECEIPT") == 2 ]]
+# Generated Maps is an explicit directory allowance, not another mod/cache root
+# or permission to follow a link into the purchaser's read-only Maps directory.
+mkdir -- "$profile/data/vcmi/Mods"
+expect_fail "${args[@]}" --verify-only
+rmdir -- "$profile/data/vcmi/Mods"
+mv -- "$profile/data/vcmi/Maps" "$profile/generated-maps-preserved"
+ln -s -- "$assets/MAPS" "$profile/data/vcmi/Maps"
+expect_fail "${args[@]}" --verify-only
+rm -- "$profile/data/vcmi/Maps"
+touch -- "$profile/data/vcmi/Maps"
+expect_fail "${args[@]}" --verify-only
+rm -- "$profile/data/vcmi/Maps"
+mv -- "$profile/generated-maps-preserved" "$profile/data/vcmi/Maps"
+bash "$launcher" "${args[@]}" --verify-only > "$tmp/output"
 status=0
 expectedMap="$tmp/Smoke Map.h3m"
 EXPECTED_TESTMAP="$expectedMap" STUB_EXIT=17 bash "$launcher" "${args[@]}" --resources "$engine" -- --testmap "$expectedMap" --disable-video > "$tmp/output" || status=$?
