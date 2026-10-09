@@ -19,6 +19,7 @@
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/BattleForm.h"
 #include "../../lib/bonuses/Limiters.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/mapObjects/army/CStackInstance.h"
@@ -26,6 +27,8 @@
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/spells/effects/BattleForm.h"
 
 namespace
@@ -211,6 +214,7 @@ protected:
 	std::shared_ptr<BattleFormAITestCallback> callback;
 	CStack * active = nullptr;
 	CStack * target = nullptr;
+	bool fullCommandRules = false;
 
 	void SetUp() override
 	{
@@ -226,24 +230,80 @@ protected:
 		JsonNode commandRules = combatRules["combat"]["heroCommands"];
 		// Keep the real Hero Action/Order allowance path active while isolating the
 		// battle-form cast from independent command-scoring heuristics.
-		for(auto & command : commandRules["commands"].Struct())
-			for(auto & effect : command.second["effects"].Struct())
-			{
-				effect.second["base"].Float() = 0;
-				effect.second["attack"].Float() = 0;
-				effect.second["defense"].Float() = 0;
-			}
+		if(!fullCommandRules)
+		{
+			for(auto & command : commandRules["commands"].Struct())
+				for(auto & effect : command.second["effects"].Struct())
+				{
+					effect.second["base"].Float() = 0;
+					effect.second["attack"].Float() = 0;
+					effect.second["defense"].Float() = 0;
+				}
+		}
 		heroCommands::validateRules(commandRules);
 		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, commandRules);
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 	}
 
-	CStack * prepareBattleStack()
+	void preparePolymorph(bool shapeshifter = false, bool delayedEnemy = false, bool rangedThreat = false)
+	{
+		fullCommandRules = true;
+		startGame();
+		const SpellID spell(SpellID::decode("new-horizons:polymorph"));
+		ASSERT_TRUE(spell.hasValue());
+		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+		attackerSideHero->removeAllSpells();
+		attackerSideHero->addSpellToSpellbook(spell);
+		setTestSpellPointTotal(attackerSideHero, 1000);
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+		const SecondarySkill chaos(SecondarySkill::decode("new-horizons:chaosMagic"));
+		attackerSideHero->setSecSkillLevel(chaos, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+		if(shapeshifter)
+		{
+			attackerSideHero->applyPerkSelection({"new-horizons:chaosMagic", "new-horizons:chaosMagic.misfortuneWeaver"});
+			attackerSideHero->applyPerkSelection({"new-horizons:chaosMagic", "new-horizons:chaosMagic.shapeshifter"});
+			ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:chaosMagic", "new-horizons:chaosMagic.shapeshifter"));
+		}
+		startBattle();
+		BattleUnitsChanged remove;
+		remove.battleID = BattleID(0);
+		for(const auto * unit : battle()->battleGetAllUnits(false))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+		gameHandler->sendAndApply(remove);
+		active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex - 1), 2000);
+		target = rangedThreat
+			? addStack(BattleSide::DEFENDER, creatureByName("core:powerLich"), BattleHex(14, 5), 1000)
+			: addStack(BattleSide::DEFENDER, creatureByName("core:archangel"), BattleHex(rightHex), 100);
+		ASSERT_NE(active, nullptr);
+		ASSERT_NE(target, nullptr);
+		Bonus immobilized;
+		immobilized.type = BonusType::STACKS_SPEED;
+		immobilized.duration = BonusDuration::ONE_BATTLE;
+		immobilized.val = -static_cast<int32_t>(active->getMovementRange());
+		active->addNewBonus(std::make_shared<Bonus>(immobilized));
+		beginCombat();
+		if(delayedEnemy)
+		{
+			ASSERT_EQ(battle()->battleActiveUnit(), target);
+			ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
+				battle()->sideToPlayer(target->unitSide()), BattleAction::makeWait(target)));
+			ASSERT_EQ(battle()->battleActiveUnit(), active);
+			ASSERT_TRUE(target->waited());
+			ASSERT_TRUE(target->willMove(0));
+		}
+		else
+			ASSERT_TRUE(advanceUntilNextActivation(active));
+		callback = std::make_shared<BattleFormAITestCallback>();
+		callback->onBattleStarted(battle());
+		environment = std::make_shared<BattleFormEnvironment>(gameState());
+	}
+
+	CStack * prepareBattleStack(const std::string & species = "core:ogre")
 	{
 		startGame();
 		startBattle();
-		auto * stack = addStack(BattleSide::ATTACKER, creatureByName("core:ogre"), BattleHex(leftHex), 12);
+		auto * stack = addStack(BattleSide::ATTACKER, creatureByName(species), BattleHex(leftHex), 12);
 		auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:orc"), BattleHex(rightHex + 5), 10);
 		if(!stack || !enemy)
 			return nullptr;
@@ -543,4 +603,190 @@ TEST_F(NewHorizonsBattleFormAITest, ExpectedValueUsesSignedMeanOfFullPoolAndEval
 			return candidate.creature == target->unitType()->getId();
 		})) << "The temporarily injected effect must resolve to a member of the shared runtime pool";
 	});
+}
+
+TEST_F(NewHorizonsBattleFormAITest, ShapeshifterWeightsExactlyMatchTwoIndependentDrawsAndSignedForecast)
+{
+	ASSERT_NO_FATAL_FAILURE(preparePolymorph(true));
+	const SpellID spell(SpellID::decode("new-horizons:polymorph"));
+	const auto board = callback->getBattle(BattleID(0));
+	spells::BattleCast cast(board.get(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	const auto mechanics = spell.toSpell()->battleMechanics(&cast);
+	const auto * effect = mechanics->findEffect<spells::effects::BattleFormEffect>();
+	ASSERT_NE(effect, nullptr);
+	const auto forms = effect->formsForTarget(mechanics.get(), target);
+	const auto weighted = effect->weightedFormsForTarget(mechanics.get(), target);
+	ASSERT_GT(forms.size(), 1u);
+	ASSERT_EQ(weighted.size(), forms.size());
+	std::map<CreatureID, int64_t> values;
+	std::map<CreatureID, uint64_t> expectedWeights;
+	for(const auto & form : forms)
+	{
+		auto outcome = std::make_shared<HypotheticBattle>(environment.get(), board);
+		const auto converted = outcome->getForUpdate(target->unitId());
+		converted->beginBattleForm(form.creature, effect->getDuration());
+		values[form.creature] = static_cast<int64_t>(converted->getCount()) * form.creature.toCreature()->getAIValue();
+	}
+	for(const auto & first : forms)
+		for(const auto & second : forms)
+		{
+			const auto firstKey = std::pair(values.at(first.creature), first.creature);
+			const auto secondKey = std::pair(values.at(second.creature), second.creature);
+			++expectedWeights[firstKey <= secondKey ? first.creature : second.creature];
+		}
+	const auto baseline = projectedOffensivePressure(environment.get(), board, target->unitId(), effect->getDuration(), nullptr);
+	double expectedScore = 0;
+	uint64_t totalWeight = 0;
+	for(const auto & outcome : weighted)
+	{
+		EXPECT_EQ(outcome.weight, expectedWeights.at(outcome.form.creature));
+		EXPECT_EQ(outcome.totalWeight, forms.size() * forms.size());
+		totalWeight += outcome.weight;
+		const auto pressure = projectedOffensivePressure(environment.get(), board,
+			target->unitId(), effect->getDuration(), &outcome.form);
+		expectedScore += (baseline - pressure) * static_cast<double>(outcome.weight) / outcome.totalWeight;
+	}
+	EXPECT_EQ(totalWeight, forms.size() * forms.size());
+	const auto liveState = target->save();
+	RandomStateArchive rngBefore;
+	auto * rng = dynamic_cast<CRandomGenerator *>(&gameHandler->getRandomGenerator());
+	ASSERT_NE(rng, nullptr);
+	rng->serialize(rngBefore);
+	const auto actual = SpellTargetEvaluator::battleFormExpectedOffensiveValue(mechanics.get(), effect,
+		{spells::Destination(target)}, environment.get(), board);
+	ASSERT_TRUE(actual);
+	expectedScore *= 1.0 - static_cast<double>(target->magicResistance()) / 100.0;
+	EXPECT_NEAR(*actual, expectedScore, 0.02);
+	EXPECT_EQ(target->save(), liveState);
+	RandomStateArchive rngAfter;
+	rng->serialize(rngAfter);
+	EXPECT_EQ(rngAfter.state, rngBefore.state);
+}
+
+TEST_F(NewHorizonsBattleFormAITest, RegisteredPolymorphActualPaidAICompetesWithUnmodifiedOrders)
+{
+	ASSERT_NO_FATAL_FAILURE(preparePolymorph(true, true, true));
+	const SpellID spell(SpellID::decode("new-horizons:polymorph"));
+	ASSERT_TRUE(target->waited());
+	ASSERT_TRUE(target->willMove(0));
+	const auto board = callback->getBattle(BattleID(0));
+	spells::BattleCast forecastCast(board.get(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	const auto forecastMechanics = spell.toSpell()->battleMechanics(&forecastCast);
+	const auto * effect = forecastMechanics->findEffect<spells::effects::BattleFormEffect>();
+	ASSERT_NE(effect, nullptr);
+	const auto forecast = SpellTargetEvaluator::battleFormExpectedOffensiveValue(forecastMechanics.get(), effect,
+		{spells::Destination(target)}, environment.get(), board);
+	ASSERT_TRUE(forecast);
+	ASSERT_GT(*forecast, 0.0f) << "The lawful delayed enemy activation must offer a beneficial form forecast";
+	const auto liveState = target->save();
+	const auto mana = attackerSideHero->getManaAvailable();
+	RandomStateArchive rngBefore;
+	auto * rng = dynamic_cast<CRandomGenerator *>(&gameHandler->getRandomGenerator());
+	ASSERT_NE(rng, nullptr);
+	rng->serialize(rngBefore);
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto action = callback->submitted.front();
+	ASSERT_EQ(action.actionType, EActionType::HERO_SPELL)
+		<< "selected command=" << static_cast<int>(action.command)
+		<< ", spell=" << action.spell.getNum() << ", Polymorph forecast value=" << *forecast;
+	ASSERT_EQ(action.spell, spell);
+	EXPECT_EQ(target->save(), liveState);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	RandomStateArchive rngAfter;
+	rng->serialize(rngAfter);
+	EXPECT_EQ(rngAfter.state, rngBefore.state);
+	const auto hp = target->getAvailableHealth();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(mana - attackerSideHero->getManaAvailable(), 12);
+	EXPECT_TRUE(target->hasBattleForm());
+	EXPECT_EQ(target->getAvailableHealth(), hp);
+	EXPECT_TRUE(target->hasBonus(CSelector(battle::isPolymorphMarker)));
+}
+
+TEST_F(NewHorizonsBattleFormAITest, DetachedRoundClockPausesForTimeStopAndFinalSpellLockRound)
+{
+	auto * stack = prepareBattleStack();
+	ASSERT_NE(stack, nullptr);
+	const auto liveState = stack->save();
+	auto branch = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto unit = branch->getForUpdate(stack->unitId());
+	unit->beginBattleForm(creatureByName("core:ogreMage"), 2);
+	const SpellID polymorph(SpellID::decode("new-horizons:polymorph"));
+	const auto marker = battle::polymorphMarker(polymorph, PlayerColor(0));
+	branch->addUnitBonus(unit->unitId(), {marker});
+	Bonus stop(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
+	branch->addUnitBonus(unit->unitId(), {stop});
+	branch->nextRound();
+	EXPECT_EQ(unit->getBattleFormRoundsRemaining(), 2);
+	branch->removeUnitBonus(unit->unitId(), {marker});
+	EXPECT_TRUE(unit->hasBattleForm());
+	EXPECT_TRUE(unit->hasBonus(CSelector(battle::isPolymorphMarker)));
+	branch->removeUnitBonus(unit->unitId(), {stop});
+	const SpellID lock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
+	Bonus resistance(BonusDuration::N_TURNS, BonusType::MAGIC_RESISTANCE, BonusSource::SPELL_EFFECT, 100, BonusSourceID(lock));
+	resistance.turnsRemain = 1;
+	Bonus preserve(BonusDuration::N_TURNS, BonusType::NONE, BonusSource::SPELL_EFFECT, -1, BonusSourceID(lock));
+	preserve.turnsRemain = 1;
+	branch->addUnitBonus(unit->unitId(), {resistance, preserve});
+	branch->nextRound();
+	EXPECT_EQ(unit->getBattleFormRoundsRemaining(), 2) << "Capture Spell Lock before aging its last round";
+	branch->nextRound();
+	EXPECT_EQ(unit->getBattleFormRoundsRemaining(), 1);
+	branch->nextRound();
+	EXPECT_FALSE(unit->hasBattleForm());
+	EXPECT_FALSE(unit->hasBonus(CSelector(battle::isPolymorphMarker)));
+	EXPECT_EQ(unit->unitType()->getId(), stack->unitType()->getId());
+	EXPECT_EQ(stack->save(), liveState);
+}
+
+TEST_F(NewHorizonsBattleFormAITest, DetachedNoSpaceExpiryAndDispelKeepMarkerUntilLegalReturn)
+{
+	auto * stack = prepareBattleStack("core:boneDragon");
+	ASSERT_NE(stack, nullptr);
+	const auto liveState = stack->save();
+	auto branch = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto unit = branch->getForUpdate(stack->unitId());
+	unit->beginBattleForm(creatureByName("core:peasant"), 1);
+	const SpellID polymorph(SpellID::decode("new-horizons:polymorph"));
+	const auto marker = battle::polymorphMarker(polymorph, PlayerColor(0));
+	branch->addUnitBonus(unit->unitId(), {marker});
+	std::vector<uint32_t> blockers;
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		const BattleHex hex(index);
+		if(!hex.isAvailable() || branch->battleGetUnitByPos(hex, false))
+			continue;
+		battle::UnitInfo info;
+		info.id = branch->battleNextUnitId();
+		info.type = creatureByName("core:pikeman");
+		info.count = 1;
+		info.side = BattleSide::ATTACKER;
+		info.position = hex;
+		JsonNode data;
+		info.save(data);
+		branch->addUnit(info.id, data);
+		blockers.push_back(info.id);
+	}
+	const auto hp = unit->getAvailableHealth();
+	const auto position = unit->getPosition();
+	branch->nextRound();
+	EXPECT_TRUE(unit->hasBattleForm());
+	EXPECT_TRUE(unit->isBattleFormRestorationPending());
+	EXPECT_TRUE(unit->hasBonus(CSelector(battle::isPolymorphMarker)));
+	branch->removeUnitBonus(unit->unitId(), {marker});
+	EXPECT_TRUE(unit->hasBattleForm());
+	EXPECT_TRUE(unit->hasBonus(CSelector(battle::isPolymorphMarker)));
+	EXPECT_EQ(unit->getAvailableHealth(), hp);
+	EXPECT_EQ(unit->getPosition(), position);
+	for(const auto id : blockers)
+		branch->removeUnit(id);
+	branch->nextRound();
+	EXPECT_FALSE(unit->hasBattleForm());
+	EXPECT_FALSE(unit->isBattleFormRestorationPending());
+	EXPECT_FALSE(unit->hasBonus(CSelector(battle::isPolymorphMarker)));
+	EXPECT_EQ(unit->getAvailableHealth(), hp);
+	EXPECT_EQ(stack->save(), liveState);
 }

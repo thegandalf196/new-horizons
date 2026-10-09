@@ -77,3 +77,42 @@ TEST(NewHorizonsBattleFormStatusTest, BattleFormUsesAPrioritizedCompactStatusSlo
 	EXPECT_EQ(plan.visibleEntryIndices[0], 2);
 	EXPECT_EQ(plan.visibleEntryIndices[1], 1);
 }
+
+TEST(NewHorizonsBattleFormStatusTest, HeldRestorationIsDistinctFromTheOrdinaryFinalRound)
+{
+	const auto finalRound = activeForm(8, 3, 1);
+	const auto held = makeBattleFormStatus(true, 8, 3, 1, 487,
+		"Silver Pegasus", "Battle Dwarf", true);
+	ASSERT_TRUE(held.active());
+	EXPECT_NE(held, finalRound);
+	EXPECT_FALSE(finalRound.restorationPending);
+	EXPECT_TRUE(held.restorationPending);
+	EXPECT_EQ(battleFormDurationLabel(finalRound), "1");
+	EXPECT_EQ(battleFormDurationLabel(held), "...");
+	EXPECT_NE(battleFormTooltip(finalRound).find("1 round remaining"), std::string::npos);
+	EXPECT_EQ(battleFormTooltip(finalRound).find("Restoration pending"), std::string::npos);
+	const auto tooltip = battleFormTooltip(held);
+	EXPECT_NE(tooltip.find("Restoration pending"), std::string::npos);
+	EXPECT_NE(tooltip.find("no legal landing footprint"), std::string::npos);
+	EXPECT_EQ(tooltip.find("1 round remaining"), std::string::npos);
+	EXPECT_NE(tooltip.find("487 HP"), std::string::npos);
+	EXPECT_NE(tooltip.find("owner and battle-side allegiance are unchanged"), std::string::npos);
+}
+
+TEST(NewHorizonsBattleFormStatusTest, PendingAndRestoredSnapshotsInvalidateTheDisplayedStatus)
+{
+	StackInfoStatusSnapshot ordinary;
+	ordinary.battleForm = activeForm(8, 3, 1);
+	StackInfoStatusSnapshot pending = ordinary;
+	pending.battleForm.restorationPending = true;
+	EXPECT_NE(ordinary, pending);
+	StackInfoStatusSnapshot restored;
+	restored.battleForm = makeBattleFormStatus(false, 3, 3, 0, 487,
+		"Battle Dwarf", "Battle Dwarf", false);
+	EXPECT_NE(pending, restored);
+	EXPECT_FALSE(restored.battleForm.active());
+	EXPECT_TRUE(battleFormDurationLabel(restored.battleForm).empty());
+	EXPECT_TRUE(battleFormTooltip(restored.battleForm).empty());
+	EXPECT_EQ(makeBattleFormStatus(false, 8, 3, 1, 487,
+		"Silver Pegasus", "Battle Dwarf", true), BattleFormStatus{});
+}

@@ -11,6 +11,7 @@
 #include "StackWithBonuses.h"
 #include "NewHorizonsHexOfPain.h"
 #include "../../lib/battle/BattleInfo.h"
+#include "../../lib/battle/BattleForm.h"
 #include "../../lib/battle/BattleAttackInfo.h"
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
@@ -677,7 +678,8 @@ void StackWithBonuses::removeUnitBonus(const CSelector & selector)
 	const bool timeStopped = isTimeStopped();
 	const CSelector effectiveSelector([&selector, timeStopped](const Bonus * bonus)
 	{
-		return selector(bonus) && !(timeStopped && bonus && bonus->type == BonusType::CONFUSION_PENDING);
+		return selector(bonus) && !(timeStopped && bonus
+			&& (bonus->type == BonusType::CONFUSION_PENDING || battle::isPolymorphMarker(bonus)));
 	});
 	const auto confusionMarkers = getBonuses(Selector::type()(BonusType::CONFUSION_PENDING));
 	const bool removesConfusion = std::ranges::any_of(*confusionMarkers, [&](const auto & marker)
@@ -2171,13 +2173,19 @@ void HypotheticBattle::nextRound()
 		meta.sequence.clear();
 	}
 	std::vector<uint32_t> pendingRemoval;
+	std::vector<uint32_t> pendingFormRestoration;
 	for(const auto * unit : getUnitsIf([](const battle::Unit *) { return true; }))
 	{
 		auto forUpdate = getForUpdate(unit->unitId());
+		// Capture pauses before timed bonuses age, matching the live round hook.
+		const bool formPaused = battle::battleFormDurationPaused(*forUpdate);
+		if(!firstRound && !formPaused && forUpdate->hasBattleForm()
+			&& forUpdate->getBattleFormRoundsRemaining() <= 1)
+			pendingFormRestoration.push_back(unit->unitId());
 		forUpdate->clearNoQuarterRoundBlocker();
 		if(!firstRound && !forUpdate->isTimeStopped())
 			forUpdate->advanceTimedRound();
-		forUpdate->afterNewRound(firstRound);
+		forUpdate->afterNewRound(firstRound, true, formPaused);
 		if(forUpdate->ghostPending)
 			pendingRemoval.push_back(unit->unitId());
 	}
@@ -2185,6 +2193,17 @@ void HypotheticBattle::nextRound()
 	// also releases originals whose clones lost their duration marker.
 	for(const auto id : pendingRemoval)
 		removeUnit(id);
+	std::ranges::sort(pendingFormRestoration);
+	for(const auto id : pendingFormRestoration)
+	{
+		const auto unit = getForUpdate(id);
+		if(!unit->hasBattleForm() || unit->isGhost())
+			continue;
+		// Each successful return can occupy a new footprint. Recompute from the
+		// updated branch before restoring the next canonical-ID recipient.
+		if(battle::endBattleFormAtNearestLegalPosition(*unit, getAccessibility(unit.get())))
+			unit->removeUnitBonus(CSelector(battle::isPolymorphMarker));
+	}
 	// Unlike opening unit enchantments, obstacle timers tick on every round
 	// transition. Authoritative BattleFlowProcessor then removes zero timers.
 	for(auto & obstacle : projectedObstacles)
@@ -2532,7 +2551,25 @@ void HypotheticBattle::updateUnitBonus(uint32_t id, const std::vector<Bonus> & b
 
 void HypotheticBattle::removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 {
-	getForUpdate(id)->removeUnitBonus(bonus);
+	const auto unit = getForUpdate(id);
+	const auto markers = unit->getBonuses(CSelector(battle::isPolymorphMarker));
+	const bool removesForm = std::ranges::any_of(bonus, [&markers](const Bonus & entry)
+	{
+		return battle::isPolymorphMarker(&entry) && std::ranges::any_of(*markers, [&entry](const auto & installed)
+		{
+			return installed->sid == entry.sid && installed->val == entry.val;
+		});
+	});
+	if(removesForm && unit->hasBattleForm()
+		&& (unit->isTimeStopped()
+			|| !battle::endBattleFormAtNearestLegalPosition(*unit, getAccessibility(unit.get()))))
+	{
+		auto removable = bonus;
+		vstd::erase_if(removable, [](const Bonus & entry) { return battle::isPolymorphMarker(&entry); });
+		unit->removeUnitBonus(removable);
+	}
+	else
+		unit->removeUnitBonus(bonus);
 	bonusTreeVersion++;
 }
 

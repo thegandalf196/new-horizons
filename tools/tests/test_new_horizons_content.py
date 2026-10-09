@@ -1666,6 +1666,31 @@ class NewHorizonsContentTest(unittest.TestCase):
             self.assertEqual(current['battleEffects']['timeStop']['type'],
                              'core:timeStop')
 
+    def test_polymorph_registration_is_single_target_and_uses_native_form_effect(self):
+        """Content admission only; native lifecycle/AI gates prove execution."""
+        content = load('Mods/new-horizons/Content/config/spells/newHorizons.json')
+        spell = content['polymorph']
+        self.assertEqual(spell['school'], {'new-horizons:chaos': True})
+        self.assertEqual(spell['level'], 3)
+        self.assertEqual(spell['targetType'], 'CREATURE')
+        self.assertEqual(spell['flags'], {'negative': True})
+        base = spell['levels']['base']
+        self.assertEqual(base['cost'], 12)
+        self.assertEqual(base['range'], '0')
+        self.assertEqual(base['targetModifier'], {'smart': True})
+        self.assertEqual(base['battleEffects'], {
+            'polymorph': {'type': 'core:battleForm', 'duration': 2},
+        })
+        for rank in ('none', 'basic', 'advanced', 'expert'):
+            self.assertEqual(spell['levels'][rank], {})
+        self.assertIn('restoration remains pending', base['description'])
+        self.assertIn('separate Integrity', base['description'])
+        self.assertEqual(self.rules['spells']['new-horizons:polymorph'], {
+            'schools': ['new-horizons:chaos'], 'level': 3,
+            'costs': [12, 12, 12, 12], 'active': True,
+        })
+        self.assertNotIn('new-horizons:polymorph', self.rules['adventureSpells'])
+
     def test_sorcery_effect_foundation_scripts_are_registered_without_clone_reuse(self):
         """Registration is a schema/content check, not proof of authoritative runtime behavior."""
         scripts = load('config/scriptsSpells.json')

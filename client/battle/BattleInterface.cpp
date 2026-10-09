@@ -1452,6 +1452,11 @@ void BattleInterface::spellCast(const BattleSpellCast * sc)
 
 void BattleInterface::battleStacksEffectsSet(const SetStackEffect & sse)
 {
+	// Removing a form's marker (including ordinary Dispel) can restore the
+	// effective creature and relocate its footprint in this state packet.
+	// Reuse the staged refresh so spell animations retain their current body
+	// until AFTER_HIT, then load the authoritative form at its new landing.
+	stacksController->refreshAllStackCreatureForms();
 	if(stacksController->getActiveStack() != nullptr)
 		fieldController->redrawBackgroundWithHexes();
 }

@@ -419,6 +419,8 @@ public:
 	bool hasBattleForm() const;
 	/// Remaining form lifetime; zero after reversion. Time Stop pauses this value.
 	int32_t getBattleFormRoundsRemaining() const { return battleFormRoundsRemaining; }
+	bool isBattleFormRestorationPending() const { return battleFormRestorationPending; }
+	void deferBattleFormRestoration();
 	/// Effective battle creature, falling back to the stable source species.
 	CreatureID battleFormCreature() const;
 	/// Original source creature identity, retained after form expiry.
@@ -484,7 +486,7 @@ public:
 	/// Record the authoritative Wait action and arm Battlecraft's one-shot bonus.
 	void afterWait();
 
-	void afterNewRound(bool isFirstRound = false);
+	void afterNewRound(bool isFirstRound = false, bool deferBattleFormRestoration = false, bool pauseBattleForm = false);
 
 	void afterGetsTurn(BattleUnitTurnReason reason);
 
@@ -530,6 +532,7 @@ private:
 	CreatureID battleFormCreatureId = CreatureID(-1);
 	CreatureID battleFormOriginalCreatureId = CreatureID(-1);
 	int32_t battleFormRoundsRemaining = 0;
+	bool battleFormRestorationPending = false;
 	int32_t battleFormOriginalMaxHealth = 0;
 	int32_t battleFormOriginalCount = 0;
 	int32_t battleFormInitiativeSnapshot = 0;

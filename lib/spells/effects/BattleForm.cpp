@@ -12,18 +12,24 @@
 #include "BattleForm.h"
 
 #include "../ISpellMechanics.h"
+#include "../CSpell.h"
 
 #include "../../battle/AccessibilityInfo.h"
 #include "../../battle/CBattleInfoCallback.h"
 #include "../../battle/CUnitState.h"
 #include "../../battle/Unit.h"
+#include "../../battle/BattleForm.h"
+#include "../../CCreatureHandler.h"
+#include "../../mapObjects/CGHeroInstance.h"
 #include "../../entities/creature/NewHorizonsCreatureCategoryRules.h"
 #include "../../networkPacks/PacksForClientBattle.h"
+#include "../../networkPacks/SetStackEffect.h"
 #include "../../json/JsonNode.h"
 
 #include <vstd/RNG.h>
 
 #include <cmath>
+#include <algorithm>
 #include <limits>
 #include <optional>
 #include <stdexcept>
@@ -50,11 +56,6 @@ bool isBasicTarget(const Mechanics * mechanics, const battle::Unit * unit)
 	return mechanics->isReceptive(unit);
 }
 
-bool isUnsupportedPhantomProfile(const battle::Unit * unit)
-{
-	return unit && unit->getPhantomInitialIntegrity() > 0;
-}
-
 CreatureForms getForms(const Mechanics * mechanics, const battle::Unit * unit)
 {
 	CreatureForms result;
@@ -76,13 +77,6 @@ CreatureForms getForms(const Mechanics * mechanics, const battle::Unit * unit)
 			result.push_back(creature);
 	});
 	return result;
-}
-
-void addUnsupportedProfileProblem(Problem & problem)
-{
-	MetaString message;
-	message.appendRawString("Battle-form spells cannot currently affect Phantom Army stacks.");
-	problem.add(std::move(message), Problem::NORMAL);
 }
 
 void addNoLegalPlacementProblem(Problem & problem)
@@ -169,7 +163,7 @@ bool BattleFormEffect::hasLegalPlacementForEveryForm(const Mechanics * mechanics
 std::vector<BattleFormEffect::BattleFormCandidate> BattleFormEffect::formsForTarget(
 	const Mechanics * mechanics, const battle::Unit * unit) const
 {
-	if(!isBasicTarget(mechanics, unit) || isUnsupportedPhantomProfile(unit))
+	if(!isBasicTarget(mechanics, unit))
 		return {};
 
 	const auto forms = getForms(mechanics, unit);
@@ -209,22 +203,64 @@ std::vector<BattleFormEffect::BattleFormCandidate> BattleFormEffect::formsForTar
 	return result;
 }
 
+bool BattleFormEffect::usesShapeshifter(const Mechanics * mechanics) const
+{
+	const auto * hero = mechanics ? mechanics->getHeroCaster() : nullptr;
+	const auto * spell = mechanics ? mechanics->getSpell() : nullptr;
+	return hero && spell && spell->getJsonKey() == "new-horizons:polymorph"
+		&& mechanics->usesNewHorizonsMagicV3()
+		&& hero->hasActivePerk("new-horizons:chaosMagic", "new-horizons:chaosMagic.shapeshifter");
+}
+
+std::vector<BattleFormEffect::WeightedBattleFormCandidate> BattleFormEffect::weightedFormsForTarget(
+	const Mechanics * mechanics, const battle::Unit * unit) const
+{
+	const auto forms = formsForTarget(mechanics, unit);
+	std::vector<WeightedBattleFormCandidate> result;
+	if(forms.empty())
+		return result;
+	const uint64_t count = forms.size();
+	if(count > std::numeric_limits<uint32_t>::max())
+		throw std::overflow_error("Battle-form pool exceeds exact outcome-weight range");
+	const bool shapeshifter = usesShapeshifter(mechanics);
+	for(const auto & form : forms)
+		result.push_back({form, 1, shapeshifter ? count * count : count});
+	if(!shapeshifter)
+		return result;
+
+	std::vector<std::pair<uint64_t, size_t>> ranked;
+	for(size_t index = 0; index < forms.size(); ++index)
+	{
+		auto state = unit->acquireState();
+		if(!state)
+			return {};
+		state->beginBattleForm(forms[index].creature, duration);
+		const uint64_t armyValue = static_cast<uint64_t>(std::max(0, forms[index].creature.toCreature()->getAIValue()))
+			* static_cast<uint64_t>(state->getCount());
+		ranked.emplace_back(armyValue, index);
+	}
+	std::ranges::sort(ranked, [&forms](const auto & first, const auto & second)
+	{
+		return first.first < second.first || (first.first == second.first
+			&& forms[first.second].creature < forms[second.second].creature);
+	});
+	// Two IID uniform draws with replacement: rank i wins (2*(N-i)-1)
+	// ordered pairs. Preserve the original canonical pool's draw ordering.
+	for(size_t rank = 0; rank < ranked.size(); ++rank)
+		result[ranked[rank].second].weight = 2 * (count - rank) - 1;
+	return result;
+}
+
 bool BattleFormEffect::applicableGeneral(Problem & problem, const Mechanics * mechanics) const
 {
 	if(!mechanics || !mechanics->battle())
 		return false;
 
-	bool unsupportedProfile = false;
 	bool noLegalPlacement = false;
 	for(const auto * unit : mechanics->battle()->battleGetAllUnits(false))
 	{
 		if(!isBasicTarget(mechanics, unit))
 			continue;
-		if(isUnsupportedPhantomProfile(unit))
-		{
-			unsupportedProfile = true;
-			continue;
-		}
 		if(!hasUsableForms(mechanics, unit))
 			continue;
 		if(!hasLegalPlacementForEveryForm(mechanics, unit))
@@ -237,8 +273,6 @@ bool BattleFormEffect::applicableGeneral(Problem & problem, const Mechanics * me
 
 	if(noLegalPlacement)
 		addNoLegalPlacementProblem(problem);
-	else if(unsupportedProfile)
-		addUnsupportedProfileProblem(problem);
 	else
 		mechanics->adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
 	return false;
@@ -246,7 +280,6 @@ bool BattleFormEffect::applicableGeneral(Problem & problem, const Mechanics * me
 
 bool BattleFormEffect::applicableTarget(Problem & problem, const Mechanics * mechanics, const Target & target) const
 {
-	bool unsupportedProfile = false;
 	bool noLegalPlacement = false;
 	bool noUsableForms = false;
 	for(const auto & destination : target)
@@ -254,11 +287,6 @@ bool BattleFormEffect::applicableTarget(Problem & problem, const Mechanics * mec
 		const auto * unit = destination.unitValue;
 		if(!isBasicTarget(mechanics, unit))
 			continue;
-		if(isUnsupportedPhantomProfile(unit))
-		{
-			unsupportedProfile = true;
-			continue;
-		}
 		if(!hasUsableForms(mechanics, unit))
 		{
 			noUsableForms = true;
@@ -274,8 +302,6 @@ bool BattleFormEffect::applicableTarget(Problem & problem, const Mechanics * mec
 
 	if(noLegalPlacement)
 		addNoLegalPlacementProblem(problem);
-	else if(unsupportedProfile)
-		addUnsupportedProfileProblem(problem);
 	else if(noUsableForms)
 		mechanics->adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
 	return false;
@@ -296,18 +322,23 @@ void BattleFormEffect::apply(ServerCallback * server, const Mechanics * mechanic
 	for(const auto & destination : target)
 	{
 		const auto * unit = destination.unitValue;
-		auto candidates = formsForTarget(mechanics, unit);
+		auto candidates = weightedFormsForTarget(mechanics, unit);
 		if(candidates.empty())
 			continue;
 
-		const auto & selectedCandidate = *RandomGeneratorUtil::nextItem(candidates, *rng);
+		const auto * selected = &*RandomGeneratorUtil::nextItem(candidates, *rng);
+		if(usesShapeshifter(mechanics))
+		{
+			const auto * second = &*RandomGeneratorUtil::nextItem(candidates, *rng);
+			if(second->weight > selected->weight)
+				selected = second;
+		}
+		const auto & selectedCandidate = selected->form;
 
 		auto state = unit->acquireState();
-		if(!state || state->getPhantomInitialIntegrity() > 0 || !state->alive())
+		if(!state || !state->alive())
 		{
-			// Phantom Army remains a temporary profile gap. Keep a late guard so
-			// an accepted cast cannot throw if its target became unavailable.
-			server->complain("Battle-form effect cannot currently apply to Phantom Army or dead stacks");
+			server->complain("Battle-form effect cannot apply to a dead or unavailable stack");
 			continue;
 		}
 
@@ -328,6 +359,17 @@ void BattleFormEffect::apply(ServerCallback * server, const Mechanics * mechanic
 		update.data = state->save();
 		changed.changedStacks.push_back(std::move(update));
 		server->apply(changed);
+		// The marker is battle-long; typed form lifetime owns removal, including
+		// blocked expiry. Generic N_TURNS aging must never orphan a held form.
+		const auto * spell = mechanics->getSpell();
+		if(spell && spell->getJsonKey() == "new-horizons:polymorph")
+		{
+			SetStackEffect marker;
+			marker.battleID = mechanics->getBattleID();
+			marker.toUpdate.emplace_back(unit->unitId(), std::vector<Bonus>{
+				battle::polymorphMarker(mechanics->getSpellId(), mechanics->getCasterColor())});
+			server->apply(marker);
+		}
 	}
 }
 

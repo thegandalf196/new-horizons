@@ -797,6 +797,7 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 			for(const auto & change : changedStacks)
 			{
 				change.validateOverwatchSerialization(h);
+				change.validateBattleFormSerialization(h);
 				change.validateConfusionSerialization(h);
 			}
 		}
@@ -911,6 +912,7 @@ struct BattleStackAttacked
 		if(h.saving)
 		{
 			newState.validateOverwatchSerialization(h);
+			newState.validateBattleFormSerialization(h);
 			newState.validateConfusionSerialization(h);
 		}
 		if(h.saving)
@@ -1070,11 +1072,13 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 			for(const auto & change : attackerChanges.changedStacks)
 			{
 				change.validateOverwatchSerialization(h);
+				change.validateBattleFormSerialization(h);
 				change.validateConfusionSerialization(h);
 			}
 			for(const auto & hit : bsa)
 			{
 				hit.newState.validateOverwatchSerialization(h);
+				hit.newState.validateBattleFormSerialization(h);
 				hit.newState.validateConfusionSerialization(h);
 			}
 		}
@@ -1538,6 +1542,7 @@ struct DLL_LINKAGE StacksInjured : public CPackForClient
 			for(const auto & hit : stacks)
 			{
 				hit.newState.validateOverwatchSerialization(h);
+				hit.newState.validateBattleFormSerialization(h);
 				hit.newState.validateConfusionSerialization(h);
 			}
 		}

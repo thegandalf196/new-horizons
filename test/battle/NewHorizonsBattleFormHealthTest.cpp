@@ -398,10 +398,14 @@ TEST(NewHorizonsBattleFormHealthTest, ImpossibleReversionDoesNotMutateTheStack)
 	live.setPosition(BattleHex(8, 5));
 	auto state = live.acquireState();
 	state->beginBattleForm(replacement, 2);
-	const auto before = state->save();
+	auto before = state->save();
 	AccessibilityInfo field;
 	field.fill(EAccessibility::OBSTACLE);
 	EXPECT_FALSE(battle::endBattleFormAtNearestLegalPosition(*state, field));
+	EXPECT_TRUE(state->isBattleFormRestorationPending());
+	EXPECT_EQ(state->getBattleFormRoundsRemaining(), 1);
+	before["state"]["battleFormRestorationPending"].Bool() = true;
+	before["state"]["battleFormRoundsRemaining"].Integer() = 1;
 	EXPECT_EQ(state->save(), before);
 }
 

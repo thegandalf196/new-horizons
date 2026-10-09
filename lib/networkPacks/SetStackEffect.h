@@ -15,6 +15,7 @@
 
 #include "../bonuses/Bonus.h"
 #include "../battle/NewHorizonsOffense.h"
+#include "../battle/BattleForm.h"
 
 class IBattleState;
 
@@ -43,6 +44,12 @@ struct DLL_LINKAGE SetStackEffect : public CPackForClient
 		if(h.saving)
 		{
 			validateConfusionMarkers();
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SAFE_BATTLE_FORMS))
+				for(const auto * changes : {&toAdd, &toUpdate, &toRemove})
+					for(const auto & entry : *changes)
+						for(const Bonus & bonus : entry.second)
+							if(battle::isPolymorphMarker(&bonus))
+								throw std::runtime_error("Cannot discard Polymorph marker in an older stack-effect format");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_CONFUSION_MARKER))
 			{
 				for(const auto * changes : {&toAdd, &toUpdate, &toRemove})

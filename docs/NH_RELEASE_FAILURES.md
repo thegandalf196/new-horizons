@@ -1,5 +1,67 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-09 — Polymorph fixture concrete effect packet
+
+Build63872 terminates1 while compiling the lifecycle/protocol fixture:
+SetStackEffect is only forward-declared. Include its defining header directly
+at the test consumer so construction, serialization and sendAndApply see the
+concrete packet type. No production API or assertion changes. The tester's
+one-include correction is frozen; serialized retry41913 runs at ten jobs with
+381 remaining steps. Linked/native acceptance remains pending.
+
+Retry41913 exits0 at379/379 and links both new-horizons and vcmitest. The
+explicit effect-packet include resolves the fixture compile failure without
+changing assertions. Exact-pair principal25 and adjacent17 native acceptance
+is now assigned; successful linking alone does not close the runtime gate.
+
+First principal25 native run executes all25:21 pass,4 fail, zero skips/errors,
+22.669s. Original principal.xml/log remain in the private runner. Two failures
+reject the fixture's ordinary Dispel cast; one current packet roundtrip compares
+minimal JSON against existing serializer-inserted null fields; one paid AI case
+chooses an Order rather than Polymorph. Owners diagnose without weakening
+mechanics or removing competitors. The packet correction must retain exact
+authored field values/types while comparing the actual serialized payload.
+Independent adjacent17 passes17/17 in1.830s on the same exact pair. No accepted
+coverage or playable promotion follows from partial principal acceptance.
+
+Read-only diagnosis: prepare(true) starts with the faster defender Griffin
+active; attacker's Dispel is rejected before mechanics by action-controller
+validation. Repair the scenario with a real defender Defend, then assert
+attacker control and paid Dispel. The protocol mismatch is pre-existing mutable
+serialization inserting two null state fields; compare the serialized payload
+and separately preserve authored fields/types. The paid AI scenario previously
+made Archangels Defend, removing their current-round projected activation while
+Orders retain immediate value for the large friendly army. A legal enemy Wait
+keeps the delayed activation; assert this and positive forecast without changing
+production scoring or disabling Orders. Focused rerun remains pending.
+
+The test-only corrections freeze and independent bounded review reports no
+blocker. Serialized relink4333 runs seven steps at ten jobs. Preserve the first
+pair and failed principal receipt; corrected native25 and adjacent17 remain
+pending the terminal new pair.
+
+Relink4333 exits0. Retry principal24/25 passes in22.664s, adjacent17/17 in1.830s,
+zero errors/skips. Both paid Dispel scenarios and packet roundtrip pass. The
+remaining paid-AI scenario has negative forecast -523.600159 before selection;
+legally retaining an enemy activation does not make random same-tier conversion
+beneficial. Investigate a useful canonical-creature scenario, not scorer changes
+or removed unfavorable outcomes. Native gate remains incomplete; preserve all
+original/retry evidence and unchanged library identity.
+
+### 2026-10-09 — Safe-form round wrapper forwarding
+
+Polymorph build27221 terminates1 at13/822. Isolated66259 confirms CStack's
+one-argument afterNewRound hides the new CUnitState overload used by BattleInfo.
+Update the derived wrapper to forward deferred-restoration and captured-pause
+arguments while retaining its existing round hooks; do not bypass the wrapper
+with a qualified base call. Check derived callers when changing a shared state
+method. No linked or native acceptance is claimed; serialized retry follows
+the runtime owner's frozen correction.
+
+CStack header/implementation now forward all three arguments and retain their
+existing Guardian Spirit/round hooks. Serialized retry63872 is live with806
+scheduled steps at ten jobs. No linked/native pass follows from this source fix.
+
 ### 2026-10-09 — Quicksand fixture concrete spell declaration
 
 Build52816 terminates1 at623/779: the new Quicksand help assertion passes a

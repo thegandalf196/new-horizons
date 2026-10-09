@@ -226,6 +226,7 @@ set(test_SRCS
 		server/battles/NewHorizonsSoulChainTest.cpp
 		server/battles/NewHorizonsNaturesWrathTest.cpp
 		server/battles/NewHorizonsPandemoniumTest.cpp
+		server/battles/NewHorizonsPolymorphLifecycleTest.cpp
 		server/battles/NewHorizonsPursuitMarchTest.cpp
 		server/battles/NewHorizonsElementalRebirthTest.cpp
 		server/battles/NewHorizonsElementalConvergenceTest.cpp

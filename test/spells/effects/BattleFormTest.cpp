@@ -268,7 +268,7 @@ TEST_F(BattleFormEffectCastTest, UsesUniformCapturedCategoryPoolAndRelocatesWith
 	EXPECT_EQ(transformed->save()["state"]["battleFormRoundsRemaining"].Integer(), 2);
 }
 
-TEST_F(BattleFormEffectCastTest, KeepsPhantomArmyInTargetFlowAndRejectsItExplicitly)
+TEST_F(BattleFormEffectCastTest, KeepsPhantomArmyInTargetFlowAndPreservesBodyHealthAndIntegrity)
 {
 	prepareBattle();
 	ASSERT_NE(target, nullptr);
@@ -279,6 +279,7 @@ TEST_F(BattleFormEffectCastTest, KeepsPhantomArmyInTargetFlowAndRejectsItExplici
 	ON_CALL(mechanics, isReceptive(_)).WillByDefault(Return(true));
 	ON_CALL(mechanics, isSmart()).WillByDefault(Return(false));
 	ON_CALL(mechanics, isNegativeSpell()).WillByDefault(Return(true));
+	ON_CALL(mechanics, getBattleID()).WillByDefault(Return(BattleID(0)));
 
 	spells::effects::BattleFormEffect effect;
 	effect.init(battleFormEffectConfig(true));
@@ -288,17 +289,23 @@ TEST_F(BattleFormEffectCastTest, KeepsPhantomArmyInTargetFlowAndRejectsItExplici
 	saveState(this->target, [](battle::CUnitState & state)
 	{
 		state.summoned = true;
-		state.initializePhantomProfile(state.getAvailableHealth(), 2);
+		state.initializePhantomProfile(50, 2);
 	});
 
 	spells::detail::ProblemImpl problem;
 	const auto filtered = effect.filterTarget(&mechanics, target);
-	ASSERT_EQ(filtered.size(), 1u) << "Phantom Army target must reach applicability for an explicit rejection";
-	EXPECT_FALSE(effect.applicableTarget(problem, &mechanics, filtered));
+	ASSERT_EQ(filtered.size(), 1u);
+	ASSERT_TRUE(effect.applicableTarget(problem, &mechanics, filtered));
 	std::vector<std::string> messages;
 	problem.getAll(messages);
-	ASSERT_EQ(messages.size(), 1u);
-	EXPECT_NE(messages.front().find("cannot currently affect Phantom Army stacks"), std::string::npos);
+	EXPECT_TRUE(messages.empty());
+	const auto bodyHP = this->target->health.getCreatureHealthAvailable();
+	ASSERT_GT(bodyHP, this->target->getPhantomIntegrity());
+	effect.apply(gameHandler->spellcastEnvironment(), &mechanics, filtered);
+	EXPECT_TRUE(this->target->hasBattleForm());
+	EXPECT_EQ(this->target->getPhantomIntegrity(), 50);
+	EXPECT_EQ(this->target->health.getCreatureHealthAvailable(), bodyHP);
+	EXPECT_EQ(this->target->getCount(), (bodyHP + this->target->getMaxHealth() - 1) / this->target->getMaxHealth());
 }
 
 TEST_F(BattleFormEffectCastTest, AppliesThroughBattleStatePacketToARealClone)

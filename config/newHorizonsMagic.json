@@ -374,6 +374,12 @@
 			"costs": [22, 22, 22, 22],
 			"active": true
 		},
+		"new-horizons:polymorph": {
+			"schools": ["new-horizons:chaos"],
+			"level": 3,
+			"costs": [12, 12, 12, 12],
+			"active": true
+		},
 		"new-horizons:blink": {
 			"schools": ["new-horizons:chaos"],
 			"level": 1,

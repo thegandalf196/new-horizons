@@ -58,7 +58,7 @@ public:
 	std::string nodeName() const override;
 
 	void localInit(BattleInfo * battleInfo);
-	void afterNewRound(bool isFirstRound = false);
+	void afterNewRound(bool isFirstRound = false, bool deferBattleFormRestoration = false, bool pauseBattleForm = false);
 	bool acceptsBonus(const Bonus & bonus) const override;
 	TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr = {}) const override;
 	TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override;

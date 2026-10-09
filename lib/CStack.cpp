@@ -97,9 +97,9 @@ void CStack::localInit(BattleInfo * battleInfo)
 	position = initialPosition;
 }
 
-void CStack::afterNewRound(bool isFirstRound)
+void CStack::afterNewRound(bool isFirstRound, bool deferBattleFormRestoration, bool pauseBattleForm)
 {
-	battle::CUnitState::afterNewRound(isFirstRound);
+	battle::CUnitState::afterNewRound(isFirstRound, deferBattleFormRestoration, pauseBattleForm);
 	const auto guardianSpiritBonuses = getBonuses(Selector::type()(BonusType::GUARDIAN_SPIRIT));
 	if(!guardianSpiritBonuses || guardianSpiritBonuses->empty())
 	{

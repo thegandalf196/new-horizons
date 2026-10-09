@@ -2,6 +2,61 @@
 
 Updated: 2026-10-09
 
+Accepted Polymorph/Shapeshifter checkpoint: linked64681 exits0; principal25/25
+passes in24.210s, foundations17/17 in1.831s, zero failures/errors/skips. Paid AI
+also passes its isolated probe in3.272s with canonical species and unmodified
+Orders. Root checks XML and source/private engine SHA256. Receipt:
+build/nh-polymorph-native.WSrQen7z/receipt.md. Combat65->66/67, perks252->253/310,
+generic177->178/220 and faction75/90 unchanged; planned58->57 (42 generic,
+15 faction). Orders8/8, Skills31/31 and ranks93/93 unchanged. Earlier in-progress
+notes below are historical. Source/native acceptance is not rendered approval,
+new NHART artwork or normal-launcher promotion. Binary form snapshots retain
+their explicit rejection; broad interactions/obstacle ordering remain Phase2.
+Next: Fate Dealer's existing spill producer and Reality Warp's missing live
+atomic exchange, UI and AI paths.
+
+Current linked gate: retry41913 runs at ten jobs after terminal63872 exposed a
+missing concrete SetStackEffect include in the new lifecycle fixture. The
+tester corrected only that include; the fixture now compiles. Principal25 and
+adjacent17 native acceptance still await the terminal exact pair. Accepted
+totals remain65/67 combat and252/310 perks. Detached restoration currently
+precedes obstacle aging whereas live restoration follows it; retain this
+expiring-obstacle landing interaction for Phase2 parity review, not as proof of
+full cross-system acceptance. No launcher, artwork or rendered promotion.
+
+Independent bounded review finds no blocker in the include correction or
+principal25/foundation17 assertion contracts. It narrows the obstacle concern:
+aging decrements TTL without changing blocked geometry, and both scans still
+precede removal of expired obstacles. No current unsafe-landing divergence is
+demonstrated; ordering harmonization and focused coverage remain Phase2.
+
+Linked41913 exits0. First exact-pair principal gate21/25 passes, four failures,
+zero skips/errors in22.669s; adjacent foundations17/17 pass in1.830s. Repairs
+are scoped to lawful turn setup, exact serialized JSON roundtrip comparison,
+and a meaningful paid-AI scenario with Orders retained. Production weighted
+mean, Phantom, expiry/no-space and old-writer guards pass their focused cases;
+full principal acceptance is still pending. Accepted totals remain65/67 combat
+and252/310 perks; no source commit or playable promotion of this slice yet.
+
+Polymorph and Shapeshifter production integration is in progress: registered
+single-enemy native form effect, safe round/Dispel restoration, Phantom body
+support, shared two-draw outcome weights, detached AI and explicit pending UI
+are frozen for focused compile acceptance. Reviewer additionally requires
+older-writer active-form/marker rejection and raw pending-JSON type validation;
+these bounded compatibility guards are being implemented before the build.
+Principal draft gates: lifecycle10, AI6 and status6, plus existing focused form
+foundations. Data17/17 and new registration1/1 pass; no native proof yet.
+Accepted totals stay65/67 combat and252/310 perks. Borrowed original Clone icon
+and hypnosis effect are temporary external references, not bespoke art complete.
+No NHART, rendered acceptance or playable-launcher promotion is claimed.
+
+All Polymorph source owners are frozen for serialized build27221 at ten jobs,
+822 steps. Compatibility guards are now implemented and reviewed with no
+blocker. Exact focused gate is25 principal plus17 form foundations; private
+runner WSrQen7z awaits the terminal binary/library pair. Accepted totals remain
+unchanged until linked/native evidence is checked. No broad integration suite
+is required for each bounded feature; deferred interactions remain Phase2.
+
 Mire Shaper and Miracle Worker are source/native accepted after linked50268
 and fixture-only relink74808. Final24/24 passes, zero skips/failures/errors:
 Mire10/10 in2.587s and Miracle14/14 in5.580s. Root checks XML and matching

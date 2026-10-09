@@ -848,6 +848,21 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 			result += " Misfortune Weaver subtracts another ten percentage points from the probability "
 				"multiplier, retaining the 25% floor.";
 	}
+	else if(hero && spell->getJsonKey() == "new-horizons:polymorph"
+		&& rulesActive(hero->getMagicRules())
+		&& spellAllowedBySavedRoster(hero->getMagicRules(), spell->getId()))
+	{
+		result = "Target one enemy stack. Transform it into a random creature of the same tier "
+			"from any faction for two rounds. Preserve current aggregate HP, allegiance and Initiative position. "
+			"Use the new body's statistics, abilities and attack type; relocate to the nearest legal position if required. "
+			"Expiry or Dispel restores surviving HP to the original body. If no original footprint can fit anywhere, "
+			"keep the current form, HP and position with restoration pending, and retry at later round boundaries. "
+			"Phantom Army's offensive body transforms while its separate Integrity is unchanged. "
+			"School rank never makes this a mass spell.";
+		if(hero->hasActivePerk("new-horizons:chaosMagic", "new-horizons:chaosMagic.shapeshifter"))
+			result += " Shapeshifter draws two forms independently with replacement, keeping the lower whole-stack "
+				"Army Value after exact HP conversion; ties use canonical creature order.";
+	}
 	else if(hero && spell->getId() == SpellID::FORGETFULNESS
 		&& rulesActive(hero->getMagicRules())
 		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION

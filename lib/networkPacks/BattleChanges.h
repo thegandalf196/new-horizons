@@ -61,6 +61,24 @@ public:
 			throw std::runtime_error("Cannot discard Overwatch state in an older unit update format");
 	}
 
+	template <typename Handler> void validateBattleFormSerialization(Handler & h) const
+	{
+		const auto & state = data["state"];
+		const auto activeCreature = [](const JsonNode & creature)
+		{
+			return (creature.isString() && !creature.String().empty())
+				|| (creature.isNumber() && creature.Integer() >= 0);
+		};
+		const auto & rounds = state["battleFormRoundsRemaining"];
+		const auto & pending = state["battleFormRestorationPending"];
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SAFE_BATTLE_FORMS)
+			&& (activeCreature(state["battleFormCreature"])
+				|| activeCreature(state["battleFormOriginalCreature"])
+				|| (rounds.isNumber() && rounds.Integer() != 0)
+				|| (pending.getType() == JsonNode::JsonType::DATA_BOOL && pending.Bool())))
+			throw std::runtime_error("Cannot discard battle-form state in an older unit update format");
+	}
+
 	bool hasNoQuarterMoraleState() const
 	{
 		const auto & remaining = data["state"]["noQuarterMoraleActivationsRemaining"];
@@ -106,6 +124,8 @@ public:
 	{
 		if(h.saving)
 			validateOverwatchSerialization(h);
+		if(h.saving)
+			validateBattleFormSerialization(h);
 		if(h.saving)
 			validateConfusionSerialization(h);
 		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_CASUALTY_PROVENANCE)

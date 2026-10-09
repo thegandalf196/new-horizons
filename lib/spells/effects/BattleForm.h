@@ -15,6 +15,7 @@
 #include "../../battle/BattleHex.h"
 
 #include <vector>
+#include <cstdint>
 
 namespace spells
 {
@@ -35,8 +36,16 @@ public:
 		CreatureID creature;
 		BattleHex landing;
 	};
+	struct DLL_LINKAGE WeightedBattleFormCandidate
+	{
+		BattleFormCandidate form;
+		uint64_t weight = 1;
+		uint64_t totalWeight = 1;
+	};
 
 	std::vector<BattleFormCandidate> formsForTarget(const Mechanics * mechanics, const battle::Unit * unit) const;
+	std::vector<WeightedBattleFormCandidate> weightedFormsForTarget(const Mechanics * mechanics, const battle::Unit * unit) const;
+	bool usesShapeshifter(const Mechanics * mechanics) const;
 	int32_t getDuration() const { return duration; }
 
 	void adjustAffectedHexes(BattleHexArray & hexes, const Mechanics * mechanics, const Target & spellTarget) const override;

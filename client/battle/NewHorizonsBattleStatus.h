@@ -931,10 +931,11 @@ struct BattleFormStatus
 	int64_t aggregateCreatureHealth = 0;
 	std::string currentCreatureName;
 	std::string originalCreatureName;
+	bool restorationPending = false;
 
 	bool active() const
 	{
-		return transformed && remainingRounds > 0;
+		return transformed && (remainingRounds > 0 || restorationPending);
 	}
 
 	bool operator==(const BattleFormStatus &) const = default;
@@ -942,13 +943,20 @@ struct BattleFormStatus
 
 inline BattleFormStatus makeBattleFormStatus(bool transformed, int32_t currentCreature,
 	int32_t originalCreature, int32_t remainingRounds, int64_t aggregateCreatureHealth,
-	std::string currentCreatureName, std::string originalCreatureName)
+	std::string currentCreatureName, std::string originalCreatureName, bool restorationPending = false)
 {
-	if(!transformed || remainingRounds <= 0)
+	if(!transformed || (remainingRounds <= 0 && !restorationPending))
 		return {};
 
 	return {true, currentCreature, originalCreature, remainingRounds, aggregateCreatureHealth,
-		std::move(currentCreatureName), std::move(originalCreatureName)};
+		std::move(currentCreatureName), std::move(originalCreatureName), restorationPending};
+}
+
+inline std::string battleFormDurationLabel(const BattleFormStatus & status)
+{
+	if(!status.active())
+		return {};
+	return status.restorationPending ? "..." : std::to_string(status.remainingRounds);
 }
 
 inline std::string battleFormTooltip(const BattleFormStatus & status)
@@ -961,7 +969,10 @@ inline std::string battleFormTooltip(const BattleFormStatus & status)
 	result += "\nCurrent aggregate creature HP: " + std::to_string(status.aggregateCreatureHealth)
 		+ " HP. Form changes preserve this exact surviving creature-HP total.";
 	result += "\nTemporary HP is tracked separately. The stack's owner and battle-side allegiance are unchanged.";
-	result += "\nRemaining: " + roundsRemaining(status.remainingRounds) + ".";
+	if(status.restorationPending)
+		result += "\nRestoration pending: the original creature has no legal landing footprint. The current form remains until restoration can fit; this is not an additional round of spell duration.";
+	else
+		result += "\nRemaining: " + roundsRemaining(status.remainingRounds) + ".";
 	return result;
 }
 

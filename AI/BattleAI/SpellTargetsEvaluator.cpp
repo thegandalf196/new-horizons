@@ -2726,7 +2726,7 @@ std::optional<float> SpellTargetEvaluator::battleFormExpectedOffensiveValue(
 	if(!spellMechanics->canBeCastAt(target, problem))
 		return std::nullopt;
 
-	const auto forms = battleFormEffect->formsForTarget(spellMechanics, originalTarget);
+	const auto forms = battleFormEffect->weightedFormsForTarget(spellMechanics, originalTarget);
 	if(forms.empty())
 		return std::nullopt;
 
@@ -2780,8 +2780,8 @@ std::optional<float> SpellTargetEvaluator::battleFormExpectedOffensiveValue(
 		auto projectedTarget = projectedBattle->getForUpdate(unitId);
 		try
 		{
-			projectedTarget->beginBattleForm(candidate.creature, battleFormEffect->getDuration());
-			projectedTarget->setPosition(candidate.landing);
+			projectedTarget->beginBattleForm(candidate.form.creature, battleFormEffect->getDuration());
+			projectedTarget->setPosition(candidate.form.landing);
 		}
 		catch(const std::exception &)
 		{
@@ -2792,11 +2792,12 @@ std::optional<float> SpellTargetEvaluator::battleFormExpectedOffensiveValue(
 		const float candidatePressure = offensivePressure(projectedBattle, projectedDamage);
 		// Preserve both weakening rewards and strengthening penalties. In
 		// particular, do not clamp an unfavorable random form before averaging.
-		signedPressureReduction += static_cast<double>(baselinePressure - candidatePressure);
+		signedPressureReduction += static_cast<double>(baselinePressure - candidatePressure)
+			* static_cast<double>(candidate.weight) / static_cast<double>(candidate.totalWeight);
 	}
 
 	const auto applicationChance = spellApplicationChance(spellMechanics, originalTarget);
-	return static_cast<float>(signedPressureReduction / static_cast<double>(forms.size())) * applicationChance;
+	return static_cast<float>(signedPressureReduction) * applicationChance;
 }
 
 std::vector<Target> SpellTargetEvaluator::creaturePairTargets(const spells::Mechanics * spellMechanics)

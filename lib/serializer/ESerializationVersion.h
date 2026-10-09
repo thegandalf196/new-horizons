@@ -198,13 +198,17 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_REBIRTH_CHAIN, // once-per-side secondary Elemental Rebirth history
 	NEW_HORIZONS_OVERWATCH, // armed/consumed movement reaction provenance
 	NEW_HORIZONS_PURSUIT_MARCH, // atomic Movement recovery and per-hero daily victory use
+	NEW_HORIZONS_SAFE_BATTLE_FORMS, // JSON battle-form lifetime/pending protocol admission
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_PURSUIT_MARCH,
+	CURRENT = NEW_HORIZONS_SAFE_BATTLE_FORMS,
 };
+
+static_assert(ESerializationVersion::NEW_HORIZONS_SAFE_BATTLE_FORMS > ESerializationVersion::NEW_HORIZONS_PURSUIT_MARCH,
+	"Safe battle-form protocol admission must remain append-only");
 
 static_assert(ESerializationVersion::NEW_HORIZONS_PURSUIT_MARCH > ESerializationVersion::NEW_HORIZONS_OVERWATCH,
 	"Pursuit March history must remain append-only");

@@ -1367,6 +1367,7 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	battleFormCreatureId = other.battleFormCreatureId;
 	battleFormOriginalCreatureId = other.battleFormOriginalCreatureId;
 	battleFormRoundsRemaining = other.battleFormRoundsRemaining;
+	battleFormRestorationPending = other.battleFormRestorationPending;
 	battleFormOriginalMaxHealth = other.battleFormOriginalMaxHealth;
 	battleFormOriginalCount = other.battleFormOriginalCount;
 	battleFormInitiativeSnapshot = other.battleFormInitiativeSnapshot;
@@ -1756,6 +1757,7 @@ bool CUnitState::hasBattleFormState() const
 		|| battleFormOriginalCreatureId.hasValue()
 		|| battleFormOriginalHealth.isBattleFormProvenance()
 		|| battleFormRoundsRemaining != 0
+		|| battleFormRestorationPending
 		|| battleFormOriginalMaxHealth != 0
 		|| battleFormOriginalCount != 0;
 }
@@ -1764,7 +1766,7 @@ void CUnitState::beginBattleForm(const CreatureID creature, const int32_t rounds
 {
 	if(rounds <= 0 || !creature.hasValue() || creature.toEntity(LIBRARY) == nullptr)
 		throw std::invalid_argument("Invalid battle-form target or duration");
-	if(phantomInitialIntegrity > 0 || !alive())
+	if(!alive())
 		throw std::logic_error("This unit cannot receive a battle form");
 
 	const CreatureID previousForm = battleFormCreature();
@@ -1789,6 +1791,7 @@ void CUnitState::beginBattleForm(const CreatureID creature, const int32_t rounds
 
 	battleFormCreatureId = creature;
 	battleFormRoundsRemaining = rounds;
+	battleFormRestorationPending = false;
 	battleFormInitiativeSnapshot = currentInitiative;
 	battleFormInitiativeSnapshotActive = true;
 	capacityHealthReferenceMax = 0;
@@ -1812,11 +1815,13 @@ void CUnitState::endBattleForm()
 
 	const CreatureID activeCreature = battleFormCreatureId;
 	const int32_t activeRoundsRemaining = battleFormRoundsRemaining;
+	const bool activeRestorationPending = battleFormRestorationPending;
 	const int32_t activeInitiativeSnapshot = battleFormInitiativeSnapshot;
 	const bool activeInitiativeSnapshotEnabled = battleFormInitiativeSnapshotActive;
 	const int64_t temporaryHitPoints = health.getTemporaryHitPoints();
 	battleFormCreatureId = CreatureID(-1);
 	battleFormRoundsRemaining = 0;
+	battleFormRestorationPending = false;
 	battleFormInitiativeSnapshot = 0;
 	battleFormInitiativeSnapshotActive = false;
 	onBattleFormChanged();
@@ -1828,6 +1833,7 @@ void CUnitState::endBattleForm()
 	{
 		battleFormCreatureId = activeCreature;
 		battleFormRoundsRemaining = activeRoundsRemaining;
+		battleFormRestorationPending = activeRestorationPending;
 		battleFormInitiativeSnapshot = activeInitiativeSnapshot;
 		battleFormInitiativeSnapshotActive = activeInitiativeSnapshotEnabled;
 		onBattleFormChanged();
@@ -1842,6 +1848,14 @@ void CUnitState::endBattleForm()
 	battleFormOriginalCount = 0;
 	battleFormOriginalCapacityHealthReferenceMax = 0;
 	battleFormOriginalCapacityRegenerationRemainderTenths = 0;
+}
+
+void CUnitState::deferBattleFormRestoration()
+{
+	if(!hasBattleForm())
+		return;
+	battleFormRoundsRemaining = 1;
+	battleFormRestorationPending = true;
 }
 
 void CUnitState::onBattleFormChanged()
@@ -2230,6 +2244,7 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeId("battleFormCreature", battleFormCreatureId, CreatureID(-1));
 	handler.serializeId("battleFormOriginalCreature", battleFormOriginalCreatureId, CreatureID(-1));
 	handler.serializeInt("battleFormRoundsRemaining", battleFormRoundsRemaining, 0);
+	handler.serializeBool("battleFormRestorationPending", battleFormRestorationPending, false);
 	handler.serializeInt("battleFormOriginalMaxHealth", battleFormOriginalMaxHealth, 0);
 	handler.serializeInt("battleFormOriginalCount", battleFormOriginalCount, 0);
 	handler.serializeInt("battleFormInitiativeSnapshot", battleFormInitiativeSnapshot, 0);
@@ -2251,7 +2266,8 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 		throw std::runtime_error("Invalid battle-form metadata");
 	if(hasBattleForm())
 	{
-		if(!battleFormOriginalCreatureId.hasValue()
+		if((battleFormRestorationPending && battleFormRoundsRemaining != 1)
+			|| !battleFormOriginalCreatureId.hasValue()
 			|| battleFormOriginalMaxHealth <= 0 || battleFormOriginalCount != unitBaseAmount()
 			|| !battleFormOriginalHealth.isBattleFormProvenance()
 			|| battleFormOriginalHealth.getTemporaryHitPoints() != 0
@@ -2261,6 +2277,7 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 			throw std::runtime_error("Invalid active battle-form health state");
 	}
 	else if(battleFormCreatureId.hasValue() || battleFormRoundsRemaining != 0
+		|| battleFormRestorationPending
 		|| battleFormInitiativeSnapshotActive
 		|| battleFormOriginalMaxHealth != 0 || battleFormOriginalCount != 0
 		|| battleFormOriginalCapacityHealthReferenceMax != 0
@@ -2350,6 +2367,7 @@ void CUnitState::reset()
 	battleFormCreatureId = CreatureID(-1);
 	battleFormOriginalCreatureId = CreatureID(-1);
 	battleFormRoundsRemaining = 0;
+	battleFormRestorationPending = false;
 	battleFormOriginalMaxHealth = 0;
 	battleFormOriginalCount = 0;
 	battleFormInitiativeSnapshot = 0;
@@ -2412,6 +2430,24 @@ JsonNode CUnitState::save()
 void CUnitState::load(const JsonNode & data)
 {
 	// Check metadata before any existing unit state is changed by deserialization.
+	const auto * incomingState = findJsonField(data, "state");
+	const auto * pendingForm = incomingState ? findJsonField(*incomingState, "battleFormRestorationPending") : nullptr;
+	if(pendingForm)
+	{
+		if(pendingForm->getType() != JsonNode::JsonType::DATA_BOOL)
+			throw std::runtime_error("Battle-form restoration pending must be a boolean");
+		if(pendingForm->Bool())
+		{
+			const auto * rounds = findJsonField(*incomingState, "battleFormRoundsRemaining");
+			const auto * creature = findJsonField(*incomingState, "battleFormCreature");
+			if(!rounds || rounds->getType() != JsonNode::JsonType::DATA_INTEGER || rounds->Integer() != 1
+				|| !creature || !creature->isString() || creature->String().empty())
+				throw std::runtime_error("Pending battle-form restoration requires an active held form");
+			const CreatureID form(CreatureID::decode(creature->String()));
+			if(!form.hasValue() || form.toEntity(LIBRARY) == nullptr)
+				throw std::runtime_error("Pending battle-form restoration requires a valid creature form");
+		}
+	}
 	hasOverwatchState(data);
 	const auto incomingConfusion = confusionStateFromUnitJson(data);
 	//TODO: use instance resolver
@@ -2445,7 +2481,8 @@ void CUnitState::load(const JsonNode & data)
 		|| (phantomInitialIntegrity == 0 && (phantomIntegrity != 0 || phantomRoundsRemaining != 0))
 		|| (phantomInitialIntegrity > 0 && (!summoned || natureSummoned || cloned))
 		|| (phantomInitialIntegrity > 0 && ((phantomIntegrity > 0
-			&& (phantomRoundsRemaining == 0 || !alive() || health.getCount() != unitBaseAmount()))
+			&& (phantomRoundsRemaining == 0 || !alive()
+				|| (!hasBattleForm() && health.getCount() != unitBaseAmount())))
 			|| (phantomIntegrity == 0 && (phantomRoundsRemaining != 0 || alive())))))
 		throw std::runtime_error("Invalid saved Phantom Army profile");
 }
@@ -2524,6 +2561,9 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 		phantomIntegrity -= amount;
 		if(phantomIntegrity == 0)
 		{
+			// Integrity is independent of the copied offensive body. Clear that
+			// body's form provenance before its normal terminal health reset.
+			endBattleForm();
 			phantomRoundsRemaining = 0;
 			health.reset();
 			ghostPending = true;
@@ -2777,7 +2817,7 @@ void CUnitState::afterWait()
 	waitedThisTurn = true;
 }
 
-void CUnitState::afterNewRound(bool isFirstRound)
+void CUnitState::afterNewRound(bool isFirstRound, bool deferBattleFormRestoration, bool pauseBattleForm)
 {
 	battlecraftOverwatchReadyRound = -1;
 	battlecraftOverwatchUsedRound = -1;
@@ -2786,10 +2826,13 @@ void CUnitState::afterNewRound(bool isFirstRound)
 		// The preserved initiative only represents the remainder of the round
 		// in which the form was cast. Stasis pauses form lifetime, not the round.
 		battleFormInitiativeSnapshotActive = false;
-		if(!isTimeStopped())
+		if(!isTimeStopped() && !pauseBattleForm)
 		{
 			if(battleFormRoundsRemaining <= 1)
-				endBattleForm();
+			{
+				if(!deferBattleFormRestoration)
+					endBattleForm();
+			}
 			else
 				--battleFormRoundsRemaining;
 		}

@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "BattleInfo.h"
+#include "BattleForm.h"
 #include "NewHorizonsElementalRebirth.h"
 #include "NewHorizonsBloodrage.h"
 #include "NewHorizonsBattlecraft.h"
@@ -1469,8 +1470,12 @@ void BattleInfo::nextRound()
 	// tick, so a cast made after the target already acted still receives all three
 	// scheduled ticks instead of expiring at the next round boundary.
 	const auto roundTimedEffects = CSelector(Bonus::NTurns).And(plagueMarker.Not());
+	std::vector<uint32_t> expiringBattleForms;
 	for(auto & s : stacks)
 	{
+		const bool formPaused = s->hasBattleForm() && battle::battleFormDurationPaused(*s);
+		if(!isFirstRound && s->hasBattleForm() && s->getBattleFormRoundsRemaining() <= 1 && !formPaused)
+			expiringBattleForms.push_back(s->unitId());
 		// new turn effects
 		if(!isFirstRound && !s->isTimeStopped())
 		{
@@ -1487,11 +1492,22 @@ void BattleInfo::nextRound()
 				s->reduceBonusDurations(roundTimedEffects);
 		}
 
-		s->afterNewRound(isFirstRound);
+		s->afterNewRound(isFirstRound, true, formPaused);
 	}
-
 	for(auto & obst : obstacles)
 		obst->battleTurnPassed();
+	// All duration/death hooks complete before restoring footprints. Each ID
+	// sees a fresh board, including earlier relocations, never a shared stale scan.
+	std::ranges::sort(expiringBattleForms);
+	for(const auto id : expiringBattleForms)
+	{
+		auto * stack = getStack(id, false);
+		if(stack && battle::endBattleFormAtNearestLegalPosition(*stack, getAccessibility(stack)))
+			stack->removeBonusesRecursive(CSelector(battle::isPolymorphMarker));
+	}
+	for(auto & stack : stacks)
+		if(!stack->hasBattleForm())
+			stack->removeBonusesRecursive(CSelector(battle::isPolymorphMarker));
 }
 
 void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
@@ -1997,6 +2013,17 @@ void BattleInfo::removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 		{
 			logNetwork->warn("Ignoring effect removal from Time Stop unit %d", id);
 			continue;
+		}
+		if(battle::isPolymorphMarker(&one) && sta->hasBattleForm())
+		{
+			const auto markers = sta->getBonuses(CSelector([&one](const Bonus * candidate)
+			{
+				return battle::isPolymorphMarker(candidate) && candidate->sid == one.sid
+					&& candidate->val == one.val;
+			}));
+			if(markers && !markers->empty()
+				&& !battle::endBattleFormAtNearestLegalPosition(*sta, getAccessibility(sta)))
+				continue; // Retain both marker and form until a legal round boundary.
 		}
 
 		auto selector = [one](const Bonus * b)

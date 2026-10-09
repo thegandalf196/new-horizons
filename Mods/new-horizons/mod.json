@@ -1029,6 +1029,19 @@
 						],
 						"active": true
 					},
+					"new-horizons:polymorph": {
+						"schools": [
+							"new-horizons:chaos"
+						],
+						"level": 3,
+						"costs": [
+							12,
+							12,
+							12,
+							12
+						],
+						"active": true
+					},
 					"new-horizons:blink": {
 						"schools": [
 							"new-horizons:chaos"
@@ -3364,7 +3377,7 @@
 				"schemaVersion": 1,
 				"rulesetVersion": 2,
 				"sourceDocument": "docs/design-sources/New Horizons.md",
-				"sourceSha256": "0b6d64aca836ddf22d75e05bfc542e8cfae53fd7b39662d215927e94f01b2440",
+				"sourceSha256": "fec0c61c487df023e66c1055ab1342ab5eb39bf0d2f08279ec627239e726258c",
 				"maxSkillChoices": 2,
 				"maxPerkChoices": 2,
 				"maxPerksPerSkill": 3,
@@ -5169,10 +5182,10 @@
 								"id": "new-horizons:chaosMagic.shapeshifter",
 								"name": "Shapeshifter",
 								"requires": "advanced",
-								"description": "Polymorph generates two random same-tier forms and automatically applies the form with the lower Army Value. Ties use canonical creature order.",
+								"description": "Polymorph independently draws two random same-tier forms with replacement and automatically applies the form with the lower Army Value of the whole transformed stack, using its exact HP-converted creature count. Ties use canonical creature order.",
 								"effect": {
-									"status": "planned",
-									"description": "Polymorph generates two random same-tier forms and automatically applies the form with the lower Army Value. Ties use canonical creature order."
+									"status": "active",
+									"description": "Polymorph independently draws two random same-tier forms with replacement and automatically applies the form with the lower Army Value of the whole transformed stack, using its exact HP-converted creature count. Ties use canonical creature order."
 								}
 							},
 							{

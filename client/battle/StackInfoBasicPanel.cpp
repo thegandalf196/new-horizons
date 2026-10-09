@@ -383,7 +383,7 @@ newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
 				currentCreature.getNum(), originalCreature.getNum(), stack->getBattleFormRoundsRemaining(),
 				stack->health.getCreatureHealthAvailable(),
 				currentCreature.toCreature()->getNamePluralTranslated(),
-				originalCreature.toCreature()->getNamePluralTranslated());
+				originalCreature.toCreature()->getNamePluralTranslated(), stack->isBattleFormRestorationPending());
 		}
 		result.temporaryCreatures = newHorizonsBattleStatus::makeTemporaryCreatureStatus(
 			stack->health.getResurrected());
@@ -899,7 +899,8 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("CPRSMALL"),
 				originalCreature.toCreature()->getIconIndex(), 0, slotX + 8, slotY + 2));
 			labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY,
-				ETextAlignment::BOTTOMRIGHT, Colors::YELLOW, std::to_string(battleForm.remainingRounds)));
+				ETextAlignment::BOTTOMRIGHT, Colors::YELLOW,
+				newHorizonsBattleStatus::battleFormDurationLabel(battleForm)));
 			const auto tooltip = newHorizonsBattleStatus::battleFormTooltip(battleForm);
 			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
 			++printed;
