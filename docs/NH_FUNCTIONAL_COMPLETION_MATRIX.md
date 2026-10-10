@@ -2,6 +2,17 @@
 
 Updated: 2026-10-10
 
+New ordinary encyclopedia evidence: the selected immutable Linux delivery shows
+Serena's default Wizard profile with5/5/45/45, capped13 /3–5 /2–3 army,
+Basic Learning/Eagle Eye, Basic Metamagic and Dispel. Root independently views
+the actual top/lower captures. The base Golem display is correctly Stone Golem
+despite its historically reversed internal ironGolem identifier. Normal Quit
+and bounded owned cleanup succeed; no supervisor signal, zero WARN/ERROR and
+full snapshot parity. Earlier Quit100/<130 route targets are missed explicitly,
+so strict whole-route timing is not accepted. Optional empty-book presentation
+and required Frozen feedback remain unobserved. The failed unmarked-profile
+preparation is retained separately, not relabelled as successful execution.
+
 Current bounded exit reconciliation: independent source/specification reviews
 map principal consumers for required UI, action/activation, Leadership, Siege,
 Luck/Morale, towns/economy, artifacts/specialties and spell/Order/perk minimum AI.
