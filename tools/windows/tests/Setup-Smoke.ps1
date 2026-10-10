@@ -177,7 +177,10 @@ function Start-Process { throw 'SMOKE: client launch is forbidden.' }
     $activeA = Get-TreeFingerprint $content
     $markerTime = (Get-Item -LiteralPath $marker).LastWriteTimeUtc.Ticks
 
-    $heldSaveRoot = Join-Path $privateData 'held-new-saves'
+    # PowerShell 5.1 New-Item -Target expands wildcard characters. Keep the
+    # junction target in the plain owned fixture root; the link itself still
+    # exercises the original adversarial profile path, including [x].
+    $heldSaveRoot = Join-Path $fixture 'held-new-saves'
     $newSaveRoot = Join-Path $privateData 'new-horizons'
     Move-Item -LiteralPath $newSaveRoot -Destination $heldSaveRoot
     Write-FixtureFile $newSaveRoot 'SAVE ROOT COLLISION'
@@ -185,6 +188,9 @@ function Start-Process { throw 'SMOKE: client launch is forbidden.' }
     Assert-Check ($result.code -ne 0 -and $result.output.Contains('save path must be an ordinary directory')) 'file collision rejects new save root'
     Remove-Item -LiteralPath $newSaveRoot -Force
     $null = New-Item -ItemType Junction -Path $newSaveRoot -Target $heldSaveRoot
+    $saveLink = Get-Item -LiteralPath $newSaveRoot -Force
+    Assert-Check (($saveLink.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) 'save-root fixture is an actual junction'
+    Assert-Check ((Get-FileHash -LiteralPath (Join-Path $newSaveRoot 'Saves\retain.vcgm1')).Hash -ceq $saveHash) 'junction target resolves to the retained save bytes'
     $result = Invoke-Setup
     Assert-Check ($result.code -ne 0 -and $result.output.Contains('Linked folders/files are not supported')) 'linked new save root rejects setup'
     [IO.Directory]::Delete($newSaveRoot)
