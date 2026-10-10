@@ -77,8 +77,11 @@ capability-rule failure, or battle hero access-check spam. Set
   directory is linked. Original assets are not copied, patched, chmodded or deleted.
 - `lib/filesystem/Filesystem.cpp` mounts these asset directories as non-writable
   loaders. Its writable local saves/config loaders use profile-specific XDG roots:
-  `data/vcmi/Saves`, `config/vcmi`, and `cache/vcmi`. The original installation is
+  `data/new-horizons/Saves`, `config/vcmi`, and `cache/vcmi`. The original installation is
   never the user-data root. Profile overlap with inputs is rejected.
+  Earlier `data/vcmi/Saves` files remain untouched. With the game closed, copy
+  their save files to the new directory without overwriting conflicting names;
+  retain the originals until the copied games load successfully.
 - `lib/CConfigHandler.cpp` loads/writes local settings; `ModsPresetState` in
   `lib/modding/ModManager.cpp` initializes a fresh preset with `vcmi` plus implicit
   `core`. We retain that mechanism and the essential resources, not optional user

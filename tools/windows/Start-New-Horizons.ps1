@@ -192,7 +192,19 @@ try {
     $dirs = [IO.File]::ReadAllText((Join-Path $packageRoot 'config\dirs.json'), [Text.Encoding]::UTF8) | ConvertFrom-Json
     $expected = @{
         userDataPath = 'content'; userConfigPath = 'config'; userCachePath = 'cache'
-        userLogsPath = 'logs'; userSavePath = 'Saves'
+        userLogsPath = 'logs'
+    }
+    $saveRoot = Get-SafeChildPath $localData 'new-horizons'
+    $savePath = Get-SafeChildPath $saveRoot 'Saves'
+    if ($dirs.userSavePath -cne '%LOCALAPPDATA%\new-horizons\Saves') {
+        throw 'Unexpected userSavePath in config\dirs.json. Restore that file from this release.'
+    }
+    Assert-PlainPath $saveRoot
+    Assert-PlainPath $savePath
+    foreach ($directory in @($saveRoot, $savePath)) {
+        if ((Test-Path -LiteralPath $directory) -and -not (Test-Path -LiteralPath $directory -PathType Container)) {
+            throw 'New Horizons save path must be an ordinary directory.'
+        }
     }
     foreach ($key in $expected.Keys) {
         $value = '%LOCALAPPDATA%\HeroesIII-NewHorizons\' + $expected[$key]
@@ -211,9 +223,10 @@ try {
     } catch {
         throw "NH profile is busy or not writable: $profileRoot. Close other New Horizons sessions, check free space and your user-folder permissions, then retry without elevation."
     }
-    foreach ($folder in @('config', 'cache', 'logs', 'Saves')) {
+    foreach ($folder in @('config', 'cache', 'logs')) {
         $null = [IO.Directory]::CreateDirectory((Join-Path $profileRoot $folder))
     }
+    $null = [IO.Directory]::CreateDirectory($savePath)
 
     $ready = $false
     try {
@@ -303,7 +316,7 @@ try {
         Write-Host 'Verified private assets are ready. No game was started.'
         exit 0
     }
-    Write-Host "Starting New Horizons. Saves and logs: $profileRoot"
+    Write-Host "Starting New Horizons. Saves: $savePath; logs: $profileRoot\logs"
     # No shell-evaluated selected path and no administrator verb. Hold profile lock until exit.
     $game = Start-Process -FilePath $client -WorkingDirectory $packageRoot -PassThru -Wait
     $game.Refresh()

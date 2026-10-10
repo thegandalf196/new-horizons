@@ -53,6 +53,7 @@ set(test_SRCS
  		JsonComparer.cpp
 		json/GeneratedImageRecipesTest.cpp
 		json/GrayscalePngPaletteTest.cpp
+		json/NewHorizonsSaveDirectoryTest.cpp
 		server/battles/NewHorizonsGuildSpellHelpTest.cpp
 
 		battle/AutocombatPreferencesTest.cpp

@@ -36,7 +36,7 @@ Mp3, plus room for saves/cache. Reselection needs another full copy while the
 existing content remains available. Large installations can require several
 GiB. Copying and SHA-256 verification can take several minutes.
 
-All runtime data is isolated below:
+Original assets, settings, cache and logs remain isolated below:
   %LOCALAPPDATA%\HeroesIII-NewHorizons\
 
 Paste that line into File Explorer's address bar to find:
@@ -44,7 +44,14 @@ Paste that line into File Explorer's address bar to find:
   config\                                  New Horizons settings
   cache\                                   generated/extracted resources
   logs\                                    diagnostics
-  Saves\                                   New Horizons saves
+
+New saves use a separate New Horizons directory:
+  %LOCALAPPDATA%\new-horizons\Saves
+
+Earlier %LOCALAPPDATA%\HeroesIII-NewHorizons\Saves files are not moved or
+deleted. To continue an old game, close the game and copy its save files
+(including same-name companion files) into the new directory. Do not overwrite
+conflicting names. Retain originals until the copied game loads successfully.
 
 The package's config\dirs.json supplies ALL five path overrides. Do not remove
 it or point userDataPath at your original installation: the engine can write

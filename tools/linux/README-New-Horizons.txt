@@ -27,6 +27,11 @@ external; do not extract artwork into the package as a fallback.
 The first launch creates a private managed profile for settings and saves. Reuse
 that profile for later launches; an existing unmanaged profile is refused. Keep
 profiles outside both the extracted package and the original installation.
+Saves are stored in <profile>/data/new-horizons/Saves. Earlier releases used
+<profile>/data/vcmi/Saves; those files are not moved or deleted. To continue an
+old game, close the game and copy its save files (including same-name companion
+files) into the new directory. Do not overwrite conflicting names. Retain the
+originals until the copied game loads successfully.
 Saved gameplay contexts retain their captured rules rather than silently adopting
 new defaults. Consult the release notes for version-specific compatibility,
 acceptance evidence and known limitations. Numerical balance remains provisional;

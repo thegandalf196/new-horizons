@@ -3,5 +3,5 @@
 	"userConfigPath": "%LOCALAPPDATA%\\HeroesIII-NewHorizons\\config",
 	"userCachePath": "%LOCALAPPDATA%\\HeroesIII-NewHorizons\\cache",
 	"userLogsPath": "%LOCALAPPDATA%\\HeroesIII-NewHorizons\\logs",
-	"userSavePath": "%LOCALAPPDATA%\\HeroesIII-NewHorizons\\Saves"
+	"userSavePath": "%LOCALAPPDATA%\\new-horizons\\Saves"
 }

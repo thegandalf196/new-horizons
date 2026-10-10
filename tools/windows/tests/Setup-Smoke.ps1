@@ -161,10 +161,14 @@ function Start-Process { throw 'SMOKE: client launch is forbidden.' }
     $result = Invoke-Setup -Source $sourceA
     Assert-Check ($result.code -eq 0) "first synthetic import exits zero: $($result.output)"
     Assert-Check (Test-Path -LiteralPath $marker -PathType Leaf) 'completed import marker exists'
-    foreach ($folder in @('config', 'cache', 'logs', 'Saves', 'content')) {
+    foreach ($folder in @('config', 'cache', 'logs', 'content')) {
         Assert-Check (Test-Path -LiteralPath (Join-Path $profile $folder) -PathType Container) "private $folder exists"
     }
-    $save = Join-Path $profile 'Saves\retain.vcgm1'
+    $saveFolder = Join-Path $privateData 'new-horizons\Saves'
+    Assert-Check (Test-Path -LiteralPath $saveFolder -PathType Container) 'new save destination exists'
+    $save = Join-Path $saveFolder 'retain.vcgm1'
+    $legacySave = Join-Path $profile 'Saves\retain.vcgm1'
+    Write-FixtureFile $legacySave 'LEGACY SAVE SENTINEL'
     $settings = Join-Path $profile 'config\settings.json'
     Write-FixtureFile $save 'SYNTHETIC SAVE SENTINEL'
     Write-FixtureFile $settings '{"syntheticSentinel":true}'
@@ -172,6 +176,20 @@ function Start-Process { throw 'SMOKE: client launch is forbidden.' }
     $settingsHash = (Get-FileHash -LiteralPath $settings).Hash
     $activeA = Get-TreeFingerprint $content
     $markerTime = (Get-Item -LiteralPath $marker).LastWriteTimeUtc.Ticks
+
+    $heldSaveRoot = Join-Path $privateData 'held-new-saves'
+    $newSaveRoot = Join-Path $privateData 'new-horizons'
+    Move-Item -LiteralPath $newSaveRoot -Destination $heldSaveRoot
+    Write-FixtureFile $newSaveRoot 'SAVE ROOT COLLISION'
+    $result = Invoke-Setup
+    Assert-Check ($result.code -ne 0 -and $result.output.Contains('save path must be an ordinary directory')) 'file collision rejects new save root'
+    Remove-Item -LiteralPath $newSaveRoot -Force
+    $null = New-Item -ItemType Junction -Path $newSaveRoot -Target $heldSaveRoot
+    $result = Invoke-Setup
+    Assert-Check ($result.code -ne 0 -and $result.output.Contains('Linked folders/files are not supported')) 'linked new save root rejects setup'
+    [IO.Directory]::Delete($newSaveRoot)
+    Move-Item -LiteralPath $heldSaveRoot -Destination $newSaveRoot
+    Assert-Check ((Get-FileHash -LiteralPath $save).Hash -ceq $saveHash) 'save-root rejection preserves new saves'
 
     $result = Invoke-Setup
     Assert-Check ($result.code -eq 0) "repeat readiness succeeds without picker: $($result.output)"
@@ -227,6 +245,7 @@ function Start-Process { throw 'SMOKE: client launch is forbidden.' }
     Assert-Check ((Get-TreeFingerprint $content) -ceq $activeB) 'readiness rejection did not otherwise mutate active content'
 
     Assert-Check ((Get-FileHash -LiteralPath $save).Hash -ceq $saveHash) 'reselection and repeat preserve Saves'
+    Assert-Check ([IO.File]::ReadAllText($legacySave) -ceq 'LEGACY SAVE SENTINEL') 'legacy Saves remain untouched'
     Assert-Check ((Get-FileHash -LiteralPath $settings).Hash -ceq $settingsHash) 'reselection and repeat preserve settings'
     Assert-Check ((Get-TreeFingerprint $sourceA) -ceq $sourceAHash) 'source A hashes unchanged'
     Assert-Check ((Get-TreeFingerprint $sourceB) -ceq $sourceBHash) 'source B hashes unchanged'

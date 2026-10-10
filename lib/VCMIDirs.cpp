@@ -156,7 +156,7 @@ bfs::path VCMIDirsWIN32::getDefaultUserDataPath() const
 {
 	wchar_t profileDir[MAX_PATH];
 	if (SHGetSpecialFolderPathW(nullptr, profileDir, CSIDL_MYDOCUMENTS, FALSE) != FALSE)
-		return bfs::path(profileDir) / "My Games" / "vcmi";
+		return bfs::path(profileDir) / "My Games" / "new-horizons";
 	return bfs::path(".");
 }
 
@@ -481,6 +481,7 @@ public:
 	bfs::path userDataPath() const override;
 	bfs::path userCachePath() const override;
 	bfs::path userConfigPath() const override;
+	bfs::path userSavePath() const override;
 
 	std::vector<bfs::path> dataPaths() const override;
 
@@ -497,6 +498,17 @@ bfs::path VCMIDirsXDG::userDataPath() const
 		return bfs::path(homeDir) / ".local" / "share" / "vcmi";
 	else
 		return ".";
+}
+bfs::path VCMIDirsXDG::userSavePath() const
+{
+	// Keep engine data/config/cache namespaces unchanged; only saves belong here.
+	const char * homeDir;
+	if((homeDir = getenv("XDG_DATA_HOME")))
+		return bfs::path(homeDir) / "new-horizons" / "Saves";
+	else if((homeDir = getenv("HOME")))
+		return bfs::path(homeDir) / ".local" / "share" / "new-horizons" / "Saves";
+	else
+		return bfs::path(".") / "new-horizons" / "Saves";
 }
 bfs::path VCMIDirsXDG::userCachePath() const
 {

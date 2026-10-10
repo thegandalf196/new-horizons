@@ -209,13 +209,22 @@ if [[ -e $profile ]]; then
 				|| fail 'Unexpected user data (including optional Mods); use a fresh NH profile.'
 		done < <(find "$profile/data/vcmi" -mindepth 1 -maxdepth 1 -print0)
 	fi
+	if [[ -e $profile/data/new-horizons && ! -d $profile/data/new-horizons ]]; then
+		fail 'New Horizons save root must be a directory.'
+	fi
+	if [[ -d $profile/data/new-horizons ]]; then
+		while IFS= read -r -d '' path; do
+			[[ ${path##*/} == Saves && -d $path && ! -L $path ]] \
+				|| fail 'Unexpected New Horizons save data; use a fresh NH profile.'
+		done < <(find "$profile/data/new-horizons" -mindepth 1 -maxdepth 1 -print0)
+	fi
 fi
 printf 'Client: %s\nEngine resources: %s\nOriginal installation: %s\nNH profile: %s\n' "$client" "$resources" "$assets" "$profile"
 if $verify; then
 	printf '%s\n' 'Path checks passed; no files created and no client executed. Asset completeness and gameplay remain unverified.'
 	exit 0
 fi
-mkdir -p -- "$profile/data/vcmi/Saves" "$profile/config/vcmi" "$profile/cache"
+mkdir -p -- "$profile/data/new-horizons/Saves" "$profile/config/vcmi" "$profile/cache"
 if ! $lockHeld; then
 	exec 9> "$profile/.nh-lock"
 	flock -n 9 || fail 'This NH profile is already in use.'

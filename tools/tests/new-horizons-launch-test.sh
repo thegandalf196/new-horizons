@@ -54,7 +54,7 @@ mkdir -p -- "$engine/config" "$engine/scripts/damage" "$engine/Mods/vcmi" \
 touch -- "$engine/config/filesystem.json" "$engine/scripts/damage/damageCalculator.lua" \
 	"$engine/Mods/vcmi/mod.json" "$engine/libvcmi.so" \
 	"$assets/dAtA/H3BITMAP.LOD" "$assets/dAtA/h3sprite.lod"
-cat > "$engine/vcmiclient" <<'STUB'
+cat > "$engine/new-horizons" <<'STUB'
 #!/usr/bin/env bash
 set -euo pipefail
 [[ $# -ge 1 && $1 == --nointro ]]
@@ -84,7 +84,7 @@ fi
 [[ $LD_LIBRARY_PATH == "$EXPECTED_ENGINE" ]]
 [[ -z ${LD_PRELOAD+x} && -z ${LD_AUDIT+x} ]]
 [[ ! -e $XDG_DATA_HOME/vcmi/Mods ]]
-[[ -d $XDG_DATA_HOME/vcmi/Saves ]]
+[[ -d $XDG_DATA_HOME/new-horizons/Saves ]]
 # Mounting a root mod does not activate it in VCMI's fresh default preset.
 preset="$XDG_CONFIG_HOME/vcmi/modSettings.json"
 [[ -f $preset ]]
@@ -112,14 +112,14 @@ if [[ -n ${LIFETIME_SIGNAL:-} ]]; then
 	exit "${LIFETIME_EXIT:-23}"
 fi
 printf 'stub only\n' >> "$STUB_RECEIPT"
-printf 'save placeholder\n' > "$XDG_DATA_HOME/vcmi/Saves/stub-save"
+printf 'save placeholder\n' > "$XDG_DATA_HOME/new-horizons/Saves/stub-save"
 # Mimic Battle Only's late-generated user map, never write purchaser Maps.
 mkdir -p -- "$XDG_DATA_HOME/vcmi/Maps"
 printf 'synthetic generated map\n' > "$XDG_DATA_HOME/vcmi/Maps/BattleOnlyMode.vmap"
 [[ ! -e Maps/BattleOnlyMode.vmap ]]
 exit "${STUB_EXIT:-0}"
 STUB
-chmod +x -- "$engine/vcmiclient"
+chmod +x -- "$engine/new-horizons"
 # A packaged entry point must not inherit the developer launcher's build path.
 cp -- "$launcher" "$engine/new-horizons-launch.sh"
 cp -- "$(dirname -- "$launcher")/Play-New-Horizons.sh" "$engine/Play-New-Horizons.sh"
@@ -129,7 +129,7 @@ export EXPECTED_ENGINE="$engine" EXPECTED_ASSETS="$assets" EXPECTED_PROFILE="$pr
 export STUB_RECEIPT="$tmp/stub-receipt"
 export XDG_DATA_HOME="$tmp/inherited" XDG_CONFIG_HOME="$tmp/inherited" XDG_CACHE_HOME="$tmp/inherited"
 export XDG_DATA_DIRS="$tmp/inherited"
-args=(--client "$engine/vcmiclient" --assets "$assets" --profile "$profile")
+args=(--client "$engine/new-horizons" --assets "$assets" --profile "$profile")
 expect_fail() {
 	if bash "$launcher" "$@" > "$tmp/output" 2>&1; then
 		printf 'Expected rejection: %s\n' "$*" >&2; exit 1
@@ -215,7 +215,18 @@ bash "$launcher" "${args[@]}" --verify-only > "$tmp/output"
 # Exercise the launch plumbing exclusively with the synthetic shell stub above.
 bash "$launcher" "${args[@]}" > "$tmp/output"
 [[ $(wc -l < "$STUB_RECEIPT") == 1 ]]
-[[ -e $profile/data/vcmi/Saves/stub-save ]]
+[[ -e $profile/data/new-horizons/Saves/stub-save ]]
+touch -- "$profile/data/new-horizons/unexpected"
+expect_fail "${args[@]}" --verify-only
+rm -- "$profile/data/new-horizons/unexpected"
+mv -- "$profile/data/new-horizons/Saves" "$profile/new-saves-preserved"
+ln -s -- "$profile/new-saves-preserved" "$profile/data/new-horizons/Saves"
+expect_fail "${args[@]}" --verify-only
+rm -- "$profile/data/new-horizons/Saves"
+touch -- "$profile/data/new-horizons/Saves"
+expect_fail "${args[@]}" --verify-only
+rm -- "$profile/data/new-horizons/Saves"
+mv -- "$profile/new-saves-preserved" "$profile/data/new-horizons/Saves"
 [[ $(< "$profile/data/vcmi/Maps/BattleOnlyMode.vmap") == 'synthetic generated map' ]]
 [[ -z $(find "$profile" -maxdepth 1 -name 'runtime.*' -print) ]]
 bash "$launcher" "${args[@]}" --verify-only > "$tmp/output"
@@ -254,6 +265,7 @@ mv -- "$tmp/commands.json" "$engine/config/newHorizonsCombat.json"
 export EXPECTED_COMMANDS=1
 printf '{"activePreset":"unwanted","presets":{"unwanted":{"mods":["unwanted"]}}}\n' > "$profile/config/vcmi/modSettings.json"
 printf 'settings sentinel\n' > "$profile/config/vcmi/settings.json"
+mkdir -p -- "$profile/data/vcmi/Saves"
 printf 'legacy save sentinel\n' > "$profile/data/vcmi/Saves/existing-save"
 presetBefore=$(cksum < "$profile/config/vcmi/modSettings.json")
 bash "$launcher" "${args[@]}" --verify-only > "$tmp/output"
@@ -272,7 +284,7 @@ exercise_signal_lifecycle TERM 1 127
 # reclaimed after locking; a lookalike with unexpected contents is still refused.
 stale=$profile/runtime.A1b2C3d4
 mkdir -- "$stale" "$stale/Mods"
-ln -s -- "$engine/vcmiclient" "$stale/vcmiclient"
+ln -s -- "$engine/new-horizons" "$stale/vcmiclient"
 ln -s -- "$engine/libvcmi.so" "$stale/libvcmi.so"
 ln -s -- "$engine/config" "$stale/config"
 ln -s -- "$engine/scripts" "$stale/scripts"
@@ -282,7 +294,7 @@ ln -s -- "$assets/dAtA" "$stale/Data"
 ln -s -- "$assets/MAPS" "$stale/Maps"
 ln -s -- "$assets/mp3" "$stale/Mp3"
 # Neither dual client aliases nor unexpected hidden files are safe to reclaim.
-ln -s -- "$engine/vcmiclient" "$stale/new-horizons"
+ln -s -- "$engine/new-horizons" "$stale/new-horizons"
 expect_fail "${args[@]}"
 [[ -L $stale/vcmiclient && -L $stale/new-horizons ]]
 rm -- "$stale/new-horizons"
@@ -295,7 +307,7 @@ bash "$launcher" "${args[@]}" > "$tmp/output"
 [[ ! -e $stale ]]
 # The current branded layout is reclaimed with the same exact-target contract.
 mkdir -- "$stale" "$stale/Mods"
-ln -s -- "$engine/vcmiclient" "$stale/new-horizons"
+ln -s -- "$engine/new-horizons" "$stale/new-horizons"
 ln -s -- "$engine/libvcmi.so" "$stale/libvcmi.so"
 ln -s -- "$engine/config" "$stale/config"
 ln -s -- "$engine/scripts" "$stale/scripts"
