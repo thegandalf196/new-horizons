@@ -2,6 +2,39 @@
 
 Updated: 2026-10-10
 
+Accepted current checkpoint: seven perks increase295→302/310, generic212/220
+and faction90/90. Eight generic perks remain: Rapid Response, Heroic Spirit,
+Seize Initiative, Crisis Command, Mercenary Captain, Loyal Mercenaries,
+Legendary Reputation and Opportunist. Orders8/8, combat spells67/67,
+Skills31/31 and ranks93/93 are unchanged.
+
+Unyielding, Deep Bulwark, Demolitionist, Meteorologist, Cataclysm, Precise Casting
+and Plaguebearer pass principal62163:53/53 in20.778s. Frozen server controls6991
+pass4/4 in2.817s, zero failures/errors/skips/disabled. Both-target20964 and binary
+privacy81257 pass; root independently checks XML totals, exact binary/resource
+receipts and registry302. Data34/module/instruction/whitespace checks pass.
+Preserved failed runs led to captured numeric typing, missing bonus metadata,
+detached post-damage pointer and legal round-fixture repairs; no assertion was
+weakened. Physical displacement immunity is implemented for the explicit typed
+physical cause; no unspecified normal physical-push producer is invented.
+The38 hero profiles have separate complete234-case evidence below. Ordinary
+launcher, NHART and Windows/rendered acceptance are unchanged by source credit.
+
+Phase2 deferrals from this batch: multi-marker raw Plague scans currently return
+on the first valid extended marker, so later malformed entries need a full-scan
+validation pass; broader Life Drain/Nature's Wrath/Pandemonium interaction runs
+remain unexecuted. The exact single-marker rejection and multi-target Frozen
+damage paths are covered by the passing focused gate, not that broader matrix.
+
+The38 fresh-default hero-development profiles now pass their complete focused
+234-case gate as two exact disjoint117-case partitions (67.290s and66.493s),
+zero failures/errors/skips/disabled. Root checks both XML totals and unchanged
+privacy-cleared binary pair. The earlier120-second234 run times out and is
+retained as partial evidence, not counted as a pass. This is profile source/native
+coverage, not144 mechanical redesigns, additional biographies/armies, rendered
+acceptance or launcher delivery. The seven-perk51 gate still fails15 cases;
+accepted perk totals remain295/310 pending the bounded production/fixture fixes.
+
 Accepted current checkpoint: Iron Will and Reactive Weave increase perks from
 293 to295/310 (generic206/220, faction89/90);15 remain,14 generic and1 faction.
 The Inteus/Halon and Coronius spell-start replacements and nearest-only Town
@@ -22,15 +55,32 @@ proof are retained. The separate58-case batch passes55 and exposes three
 fixture failures; its accepted perk count does not advance pending repair/retest.
 Town Portal rendered/playable delivery remains separate from this native gate.
 
-Current non-perk source audit confirms six additional Version1.0 gaps against
-the canonical detailed rules: Castle Lighthouse departure benefits; Glyphs of
-Fear's adventure-radius Morale penalty; converted Mana-regeneration artifact
-tiers; nearest-only Town Portal at every mastery; legal land ending for Water
-Walk; and explicit protected-barrier enforcement for Fly/Dimension Door.
-These are missing execution paths, not merely unverified integration matrices.
-Town Portal, Lighthouse and Mana artifacts have independent private implementation
-assignments. The remaining three need bounded ownership after those checkpoints.
-No acceptance credit is granted by these assignments or private source review.
+The non-perk audit originally identified six missing Version1.0 execution paths.
+Nearest-only Town Portal is now accepted above; five remain unaccepted: Castle
+Lighthouse departure benefits; Glyphs of Fear's adventure-radius Morale penalty;
+converted Mana-regeneration artifact tiers; legal land ending for Water Walk;
+and explicit protected-barrier enforcement for Fly/Dimension Door. Reviewed
+private candidates exist for Lighthouse and the Mana/Glyphs union. Water Walk's
+save-envelope repairs have independent review, and typed barrier implementation
+is underway. These assignments/private source changes do not establish native
+acceptance or rendered delivery.
+
+The next seven-perk/38-profile composite is source-integrated with55 exact
+result hashes verified. Independent review clears its small missing-validator
+include and obsolete Deep Bulwark status-test correction; data34/module parity
+pass. Retry36245 stops on a missing concrete BattleLayout fixture header;
+diagnostic32279 confirms it. The include-only repair retains all12 Plaguebearer
+case bodies and compiles in ten-job retry35274, which links both targets. Binary
+privacy95269 passes with no findings; data34 passes in0.876s. Separate51-perk
+and234-profile discovery/principal gates are delegated on the exact linked pair;
+accepted295/310 is unchanged pending their actual native results.
+
+Actual seven-perk discovery matches51 expected cases, but principal73131 passes
+36/51 in20.579s, with15 assertion/marker failures and no crash. Four Precise
+detached predictions, Hold the Line admission, one Havoc detached prediction
+and nine Plague marker/reader failures require bounded diagnosis. Preserve this
+failed evidence; no perk increment is accepted. The independent234 profile
+discovery matches exactly; principal72997 is running on the same verified pair.
 
 The current Iron Will/Reactive Weave and three starting-spell successors are
 source-integrated, with a separate nearest-only Town Portal correction shared

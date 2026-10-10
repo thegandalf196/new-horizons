@@ -69,6 +69,8 @@ DLL_LINKAGE bool clearPhysicalPoison(battle::CUnitState * state);
 /// Enumerates all eligible friendly stacks in radius 2 of center for UI/AI use.
 /// Physical Poison is a selectable base effect regardless of Purifier; the perk bonus is reported
 /// separately. Each double-wide unit is included once if either occupied hex is in range.
+/// The current side hero's Precise Casting excludes the entire friendly center stack;
+/// authoritative validation/apply, human picker and AI all consume this same list.
 DLL_LINKAGE std::vector<EligibleStack> eligibleStacks(const CBattleInfoCallback & battle,
 	BattleSide casterSide, const BattleHex & center, int32_t spellPower, bool purifierPerk);
 }

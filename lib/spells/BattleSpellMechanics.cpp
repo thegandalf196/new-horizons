@@ -2553,6 +2553,9 @@ void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast &
 		const auto resistanceCandidates = naturesWrath ? wrathConductors : battle()->battleGetAllUnits(false);
 		for(const auto * unit : resistanceCandidates)
 		{
+			if(!target.empty() && newHorizonsMagic::isProtectedAreaCenter(*battle(), getHeroCaster(),
+				getSpellId(), *unit, target.front().hexValue, getCasterSide(), true))
+				continue;
 			if(realityWarp && (battle()->battleGetOwner(unit) == getCasterColor()
 				|| std::ranges::none_of(spellTarget, [unit](const Destination & destination)
 				{

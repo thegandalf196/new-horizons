@@ -12,6 +12,7 @@
 
 #include "../json/JsonNode.h"
 #include "../battle/CUnitState.h"
+#include "../battle/NewHorizonsPlague.h"
 #include <limits>
 
 class BattleChanges
@@ -69,6 +70,12 @@ public:
 			throw std::runtime_error("Cannot discard Overwatch state in an older unit update format");
 	}
 
+	template <typename Handler> void validatePlagueSerialization(Handler & h) const
+	{
+		if(newHorizonsPlague::containsExtendedPropagation(data)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER))
+			throw std::runtime_error("Cannot discard captured Plague unit propagation limit");
+	}
 	template <typename Handler> void validateTrainingSerialization(Handler & h) const
 	{
 		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING)
@@ -157,6 +164,7 @@ public:
 			validateVeteranCohesionSerialization(h);
 		if(h.saving)
 			validateTrainingSerialization(h);
+		if(h.saving) validatePlagueSerialization(h);
 		if(h.saving)
 			validateFrozenSerialization(h);
 		if(h.saving)
@@ -194,6 +202,7 @@ public:
 		h & id;
 		h & healthDelta;
 		h & data;
+		if(!h.saving) validatePlagueSerialization(h);
 		h & operation;
 		if(!h.saving)
 			validateVeteranCohesionSerialization(h);

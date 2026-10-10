@@ -22,6 +22,7 @@
 #include "ReducedExtraActivationState.h"
 #include "ArmorerDefiantState.h"
 #include "NewHorizonsWarMachines.h"
+#include "BattleDisplacementCause.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 #include "../spells/SpellCostBreakdown.h"
 
@@ -254,6 +255,11 @@ public:
 	/// Ordinary Protect allows one; an active Shield Master perk allows two.
 	int battleHeroOrderProtectInterceptionLimit(BattleSide side) const;
 	/// Returns true only for an eligible unit still occupying its unbroken Hold anchor.
+	/// Deterministic current-controller protection; animation and hostility do not classify the cause.
+	bool battleIsForcedDisplacementImmune(const battle::Unit * unit, BattleDisplacementCause cause) const;
+	/// One endpoint, complete ordinary footprint and protection, without state mutation or RNG.
+	bool battleCanForciblyDisplace(const battle::Unit * unit, const BattleHex & destination,
+		BattleDisplacementCause cause) const;
 	bool battleIsHoldTheLineRecipient(const HeroOrderState & state, const battle::Unit * unit) const;
 	/// Saved Iron Discipline reduction for an anchored, unbroken Hold recipient.
 	int battleGetHoldTheLineMagicalReductionBasisPoints(const battle::Unit * unit) const;

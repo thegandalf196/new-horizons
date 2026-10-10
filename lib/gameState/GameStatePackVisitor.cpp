@@ -2262,7 +2262,10 @@ void GameStatePackVisitor::visitBattleResultAccepted(BattleResultAccepted & pack
 
 void GameStatePackVisitor::visitBattleStackMoved(BattleStackMoved & pack)
 {
-	BattleStatePackVisitor battleVisitor(*gs.getBattle(pack.battleID));
+	auto * battle = gs.getBattle(pack.battleID);
+	if(!battle)
+		throw std::runtime_error("BattleStackMoved references a missing battle");
+	BattleStatePackVisitor battleVisitor(*battle);
 	pack.visitTyped(battleVisitor);
 }
 
@@ -3663,6 +3666,17 @@ void GameStatePackVisitor::visitSetRewardableConfiguration(SetRewardableConfigur
 
 void BattleStatePackVisitor::visitBattleStackMoved(BattleStackMoved & pack)
 {
+	pack.validateDisplacementShape();
+	if(pack.tilesToMove.empty())
+		throw std::runtime_error("Movement has no endpoint");
+	if(pack.displacementCause != BattleDisplacementCause::NONE)
+	{
+		const auto * callback = dynamic_cast<const CBattleInfoCallback *>(&battleState);
+		if(pack.battleID != battleState.getBattleID() || !callback
+			|| !callback->battleCanForciblyDisplace(callback->battleGetUnitByID(pack.stack),
+				pack.tilesToMove.back(), pack.displacementCause))
+			throw std::runtime_error("Forced displacement failed complete recipient/endpoint admission");
+	}
 	battleState.moveUnit(pack.stack, pack.tilesToMove.back());
 }
 

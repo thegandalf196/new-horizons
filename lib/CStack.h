@@ -145,6 +145,11 @@ public:
 			throw std::runtime_error("Cannot discard Veteran Cohesion receipt in an older stack format");
 	}
 
+	template <typename Handler> void validatePlagueSerialization(Handler & h) const
+	{
+		for(const auto & bonus : getExportedBonusList())
+			if(bonus) bonus->validatePlagueSerialization(h);
+	}
 	template <typename Handler> void validateTrainingSerialization(Handler & h) const
 	{
 		if(base)
@@ -159,6 +164,7 @@ public:
 	{
 		if(h.saving)
 			validateTrainingSerialization(h);
+		if(h.saving) validatePlagueSerialization(h);
 		//this assumes that stack objects is newly created
 		//CUnitState is not serialized here except for explicit battle-long fields.
 		if(h.saving)

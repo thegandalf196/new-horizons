@@ -43,6 +43,23 @@
 #include "../../lib/spells/CSpell.h"
 #include <vstd/RNG.h>
 
+bool BattleProcessor::tryForcedDisplacement(const BattleID & battleID, uint32_t unitId,
+	const BattleHex & destination, BattleDisplacementCause cause)
+{
+	auto * battle = gameHandler->gameState().getBattle(battleID);
+	const auto * unit = battle ? battle->battleGetUnitByID(unitId) : nullptr;
+	if(!battle || !battle->battleCanForciblyDisplace(unit, destination, cause))
+		return false;
+	BattleStackMoved movement;
+	movement.battleID = battleID;
+	movement.stack = unitId;
+	movement.tilesToMove.insert(destination);
+	movement.displacementCause = cause;
+	movement.teleporting = true; // Instant presentation does not classify gameplay provenance.
+	gameHandler->sendAndApply(movement);
+	return true;
+}
+
 BattleProcessor::BattleProcessor(CGameHandler * gameHandler)
 	: gameHandler(gameHandler)
 	, actionsProcessor(std::make_unique<BattleActionProcessor>(this, gameHandler))

@@ -18,6 +18,7 @@
 
 #include "../battle/HeroCommand.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../battle/NewHorizonsPlague.h"
 
 #include "../bonuses/CBonusSystemNode.h"
 #include "../callback/CNonConstInfoCallback.h"
@@ -236,6 +237,7 @@ public:
 	void validateNewHorizonsProspectorSerialization(bool supported) const;
 	void validateNewHorizonsScholarSerialization(bool supported) const;
 	void validateNewHorizonsRecruitersContactsSerialization(bool supported) const;
+	void validatePlagueRulesSerialization(bool supported) const;
 	void validateRecruitmentTrainingSerialization(bool supported) const;
 	void validateExtendSpellSerialization(bool supported) const;
 	void validateNewHorizonsSageSerialization(bool supported) const;
@@ -252,6 +254,7 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving) validatePlagueRulesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
 		if(h.saving)
 			validateRecruitmentTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING));
 		if(h.saving)
@@ -342,7 +345,11 @@ public:
 		{
 			h & magicRules;
 			if(!h.saving)
+			{
+				newHorizonsPlague::validateRuleSerialization(magicRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
 				newHorizonsMagic::validateRules(magicRules);
+			}
 		}
 		else if(!h.saving)
 			magicRules = JsonNode();

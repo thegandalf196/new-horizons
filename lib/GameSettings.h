@@ -12,6 +12,7 @@
 #include "IGameSettings.h"
 #include "json/JsonNode.h"
 #include "entities/hero/NewHorizonsHeroRules.h"
+#include "battle/NewHorizonsPlague.h"
 #include <optional>
 
 class DLL_LINKAGE GameSettings final : public IGameSettings, boost::noncopyable
@@ -109,12 +110,19 @@ public:
 			getAllOverrides()["heroes"]["newHorizons"], supported);
 	}
 
+	void validatePlagueRulesSerialization(bool supported) const
+	{
+		newHorizonsPlague::validateRuleSerialization(getAllOverrides()["magic"]["newHorizons"], supported);
+	}
+
 	template<typename Handler>
 	void serialize(Handler & h)
 	{
 		if (h.saving)
 		{
 			JsonNode overrides = getAllOverrides();
+			newHorizonsPlague::validateRuleSerialization(overrides["magic"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
 			newHorizonsHeroes::validateStartingDevelopmentSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
 			newHorizonsHeroes::validateRemainingStartSerialization(overrides["heroes"]["newHorizons"],
@@ -157,6 +165,8 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_DEFENSIVE_START_SPECIALTIES));
 			newHorizonsHeroes::validateOffensiveStartSpecialtySerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES));
+			newHorizonsPlague::validateRuleSerialization(overrides["magic"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
 			loadOverrides(overrides);
 		}
 	}

@@ -957,6 +957,12 @@ void LobbyStartGame::validateNewHorizonsHasteSpecialtySerialization(bool support
 		initializedGameState->validateNewHorizonsHasteSpecialtySerialization(supported);
 }
 
+void LobbyStartGame::validatePlagueRulesSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validatePlagueRulesSerialization(supported);
+}
+
 void LobbyStartGame::validateRecruitmentTrainingSerialization(bool supported) const
 {
 	if(initializedGameState)

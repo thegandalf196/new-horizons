@@ -54,10 +54,20 @@ local function obstacleIntersects(obstacle, affected)
 	return false
 end
 
-local function ordinaryObstacleTargets(battle, affected, allBattlefield)
+local function ordinaryObstacleTargets(mechanics, affected, allBattlefield)
 	local result = {}
+	local battle = mechanics:getBattle()
+	local removeMagical = mechanics:destroysNewHorizonsHavocMagicalObstacles()
 	for _, obstacle in ipairs(battle:getAllObstacles()) do
-		if obstacle:getObstacleType() == ENUM.ObstacleType.usual
+		local ordinary = obstacle:getObstacleType() == ENUM.ObstacleType.usual
+		if removeMagical and obstacle:getObstacleType() == ENUM.ObstacleType.spellCreated then
+			-- Classify the creator, not the trigger: Tower moat mines share
+			-- Land Mine's trigger but are created by a creature-ability spell.
+			local creator = obstacle:getSpell()
+			ordinary = creator and creator:isCombat() and not creator:isSpecial()
+				and not creator:isCreatureAbility()
+		end
+		if ordinary
 			and (allBattlefield or obstacleIntersects(obstacle, affected)) then
 			table.insert(result, obstacle)
 		end
@@ -84,9 +94,8 @@ local function fortificationTargets(mechanics, affected, allBattlefield)
 end
 
 local function structuralTargets(mechanics, target, allBattlefield)
-	local battle = mechanics:getBattle()
 	local affected = affectedHexSet(target)
-	return ordinaryObstacleTargets(battle, affected, allBattlefield),
+	return ordinaryObstacleTargets(mechanics, affected, allBattlefield),
 		fortificationTargets(mechanics, affected, allBattlefield)
 end
 
@@ -189,7 +198,7 @@ function Script:apply(mechanics, server, target)
 		local spellName = allBattlefield and "Armageddon" or "Meteor Shower"
 		server:appendLog(battle, {
 			appendRaw = {string.format(
-				"%s destroyed %d ordinary battlefield obstacle(s) and dealt %d structural damage across %d fortification section(s).",
+				"%s destroyed %d ordinary physical or magical battlefield obstacle(s) and dealt %d structural damage across %d fortification section(s).",
 				spellName, removedObstacles, totalStructuralDamage, damagedSections)}
 		})
 	end

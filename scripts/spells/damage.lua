@@ -193,11 +193,13 @@ local function applyHandOfFateCollateral(self, mechanics, server, battle, primar
 	-- defenses apply here; the primary's caster-side damage bonuses are already
 	-- included in the actual loss and must not be applied a second time.
 	local adjustedDamage = mechanics:adjustRecipientDamage(recipient, spillBase)
+	local recipientID = recipient:unitID()
 	if adjustedDamage <= 0 then
 		-- Receptivity/resistance already succeeded: a fully absorbed immediate
 		-- magical hit still breaks Frozen, just like the primary damage event.
 		if mechanics:getSpell():isMagical() and not self.indirect then
-			server:clearFrozenAfterDirectMagicDamage(battle, recipient)
+			local current = battle:getUnitByID(recipientID)
+			if current then server:clearFrozenAfterDirectMagicDamage(battle, current) end
 		end
 		server:appendLog(battle, {
 			append = { HAND_OF_FATE_BLOCKED_TEXT },
@@ -211,7 +213,8 @@ local function applyHandOfFateCollateral(self, mechanics, server, battle, primar
 	-- This immediate secondary spell hit is direct damage, not a redirected
 	-- injury or a damage-over-time tick. It breaks Frozen without Shatter.
 	if mechanics:getSpell():isMagical() and not self.indirect then
-		server:clearFrozenAfterDirectMagicDamage(battle, recipient)
+		local current = battle:getUnitByID(recipientID)
+		if current then server:clearFrozenAfterDirectMagicDamage(battle, current) end
 	end
 	server:appendLog(battle, {
 		append = { HAND_OF_FATE_COLLATERAL_TEXT },
@@ -247,6 +250,7 @@ function Script:apply(mechanics, server, target)
 	for i, dest in ipairs(target) do
 		local unit = dest.unit
 		if unit and unit:isAlive() then
+			local unitID = unit:unitID()
 			local amount = self:damageForTarget(i - 1, mechanics, unit)
 			local soulReaperBaseline = describe and damageBeforeSoulReaperExecution(mechanics, unit) or nil
 			-- Creature casts expose their battle Unit; hero and environmental casts return nil and
@@ -254,7 +258,8 @@ function Script:apply(mechanics, server, target)
 			local dmg, killed = server:damageUnit(
 				battle, unit, amount, self.destroyRemains == true, mechanics:getUnitCaster(), true)
 			if mechanics:getSpell():isMagical() and not self.indirect then
-				server:clearFrozenAfterDirectMagicDamage(battle, unit)
+				local current = battle:getUnitByID(unitID)
+				if current then server:clearFrozenAfterDirectMagicDamage(battle, current) end
 			end
 			local collateralDamage, collateralKilled = 0, 0
 			if self.handOfFate then

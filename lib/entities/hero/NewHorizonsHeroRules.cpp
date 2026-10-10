@@ -298,7 +298,7 @@ void validateStartingSkills(const JsonNode & startingSkills, bool requireMigrati
 				const auto skillID = resolve(SecondarySkill::entityType(), name);
 				require(SecondarySkill::encode(skillID) == name && name.starts_with("new-horizons:")
 					&& skills.insert(skillID).second, "canonical unique New Horizons starting skill");
-				require(integer(skill["rank"], MasteryLevel::BASIC, MasteryLevel::ADVANCED), "starting skill rank");
+				require(integer(skill["rank"], MasteryLevel::BASIC, MasteryLevel::EXPERT), "starting skill rank");
 			}
 			require(profile["startingPerks"].isVector() && profile["startingPerks"].Vector().size() == 1,
 				"one explicit starting Basic perk");
@@ -676,11 +676,15 @@ std::optional<StartingDevelopmentProfile> startingDevelopmentProfile(
 		const auto rank = static_cast<ui8>(entry["rank"].Integer());
 		if(skill == *ownFaction)
 		{
-			require(rank == MasteryLevel::BASIC, "Basic starting faction skill");
+			// Explicit captured profiles preserve their authored faction mastery.
+			// This does not grant a rank to heroes without a selected profile.
+			require(rank >= MasteryLevel::BASIC && rank <= MasteryLevel::EXPERT,
+				"authored starting faction rank");
 			hasFaction = true;
 		}
 		else
 		{
+			require(rank <= MasteryLevel::ADVANCED, "Basic or Advanced generic starting parent");
 			const auto weight = skillOfferWeight(rules, skill);
 			require(weight && *weight > 0 && !isExcludedSkill(rules, skill)
 				&& !isFactionSkill(rules, skill), "class-legal generic starting parent");

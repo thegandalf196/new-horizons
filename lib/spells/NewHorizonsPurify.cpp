@@ -202,6 +202,8 @@ std::vector<EligibleStack> eligibleStacks(const CBattleInfoCallback & battle, co
 	{
 		if(!unit || !unit->alive() || unit->isGhost()
 			|| battle.playerToSide(battle.battleGetOwner(unit)) != casterSide
+			|| newHorizonsMagic::isProtectedAreaCenter(battle, state->getSideHero(casterSide),
+				spellID(), *unit, center, casterSide)
 			|| !unitTouchesArea(*unit, center))
 			continue;
 

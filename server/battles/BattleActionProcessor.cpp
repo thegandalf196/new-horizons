@@ -1131,12 +1131,17 @@ static std::vector<uint32_t> applyPurifyAction(CGameHandler & gameHandler, const
 	const bool purifier = newHorizonsPurify::hasPurifierPerk(hero);
 	const auto eligible = newHorizonsPurify::eligibleStacks(battle, action.side, center,
 		hero ? hero->getPrimSkillLevel(PrimarySkill::SPELL_POWER) : 0, purifier);
+	std::set<int32_t> eligibleUnitIds;
+	for(const auto & stack : eligible)
+		eligibleUnitIds.insert(stack.unitId);
 
 	std::map<int32_t, std::vector<Bonus>> removalsByUnit;
 	std::set<int32_t> magicallyCleansedUnits;
 	std::set<int32_t> manuallySelectedPhysicalPoison;
 	for(const auto & [unitId, sourceSpell] : action.spellPurifyChoices)
 	{
+		if(!eligibleUnitIds.contains(unitId))
+			continue; // Recheck the shared center filter before any effect-group mutation.
 		if(sourceSpell == newHorizonsPurify::physicalPoisonChoiceID())
 		{
 			manuallySelectedPhysicalPoison.insert(unitId);

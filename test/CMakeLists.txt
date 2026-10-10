@@ -407,6 +407,7 @@ set(test_SRCS
 		server/battles/NewHorizonsSpellwardTest.cpp
 		server/battles/NewHorizonsCounterpressureTest.cpp
 		server/battles/NewHorizonsPreciseCastingTest.cpp
+		server/battles/NewHorizonsForcedDisplacementTest.cpp
 		battleAI/NewHorizonsPreciseCastingAITest.cpp
 		server/battles/NewHorizonsStormOfDaggersTest.cpp
 		server/battles/NewHorizonsSanctuaryTest.cpp
@@ -602,6 +603,8 @@ if(ENABLE_BATTLE_AI)
 		server/battles/NewHorizonsRecruitmentTrainingTest.cpp
 		server/battles/NewHorizonsDivineDisciplineTest.cpp
 		server/battles/NewHorizonsCrownAndAltarTest.cpp
+		server/battles/NewHorizonsHavocPerksTest.cpp
+		server/battles/NewHorizonsPlaguebearerTest.cpp
 		server/battles/NewHorizonsIronWillTest.cpp
 		server/battles/NewHorizonsReactiveWeaveTest.cpp
 		server/battles/NewHorizonsHalonMetamagicTest.cpp

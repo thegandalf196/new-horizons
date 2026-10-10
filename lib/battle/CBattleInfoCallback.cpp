@@ -1902,6 +1902,43 @@ int CBattleInfoCallback::battleHeroOrderProtectInterceptionLimit(BattleSide side
 		: newHorizonsShieldMaster::ORDINARY_PROTECT_INTERCEPTION_LIMIT;
 }
 
+bool CBattleInfoCallback::battleIsForcedDisplacementImmune(const battle::Unit * unit,
+	BattleDisplacementCause cause) const
+{
+	if(cause != BattleDisplacementCause::NON_MAGICAL || !getBattle() || !unit
+		|| !unit->alive() || unit->isGhost()
+		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(unit))
+		return false;
+	const auto * hero = battleGetOwnerHero(unit);
+	if(!hero)
+		return false;
+	const auto side = playerToSide(battleGetOwner(unit));
+	const auto hold = battleGetHeroOrderState(side, HeroCommand::HOLD_THE_LINE);
+	const bool effectiveHold = hold && battleIsHoldTheLineRecipient(*hold, unit);
+	if(hero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.unyielding")
+		&& (unit->defended() || effectiveHold))
+		return true;
+	// This is the same ordinary Defending recipient gate and positive ranked
+	// Bulwark benefit as the physical damage payload, not merely a selected perk.
+	return unit->defended() && newHorizonsBulwark::rank(hero) > 0
+		&& newHorizonsBulwark::hasDeepBulwark(hero);
+}
+
+bool CBattleInfoCallback::battleCanForciblyDisplace(const battle::Unit * unit,
+	const BattleHex & destination, BattleDisplacementCause cause) const
+{
+	if(!getBattle() || !validBattleDisplacementCause(cause) || cause == BattleDisplacementCause::NONE
+		|| !unit || !unit->alive() || unit->isGhost() || unit->isTimeStopped()
+		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(unit)
+		|| !destination.isValid() || destination == unit->getPosition()
+		|| battleGetUnitByID(unit->unitId()) != unit || battleIsForcedDisplacementImmune(unit, cause))
+		return false;
+	// Own occupied cells may be reused; every destination body cell, walls,
+	// side columns and reserved gate arrivals still use the actual board rules.
+	return getAccessibility(unit).accessibleForMovementEndpoint(destination,
+		unit->doubleWide(), unit->unitSide());
+}
+
 bool CBattleInfoCallback::battleIsHoldTheLineRecipient(const HeroOrderState & state,
 	const battle::Unit * unit) const
 {

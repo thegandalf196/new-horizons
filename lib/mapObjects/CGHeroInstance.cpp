@@ -1006,7 +1006,9 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	// snapshot marks its resolved rules as captured (or leaves them empty for a
 	// legacy hero); never reinterpret that saved roster against newly-installed
 	// module defaults when initHero is called again.
-	if(creationInitialization && newHorizonsHeroes::usesRules(primaryGrowthRules))
+	// A validated explicit profile already contains its class-legal parents and
+	// own faction rank. Legacy replacement must not erase its authored Wisdom.
+	if(creationInitialization && !startingDevelopment && newHorizonsHeroes::usesRules(primaryGrowthRules))
 	{
 		secSkills = newHorizonsHeroes::migrateStartingSkills(primaryGrowthRules, getFactionID(), secSkills);
 		secSkills = newHorizonsHeroes::applyStartingFactionSkill(primaryGrowthRules,

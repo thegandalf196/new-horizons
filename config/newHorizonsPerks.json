@@ -225,7 +225,7 @@
 					"requires": "advanced",
 					"description": "Friendly stacks that are Defending or affected by Hold the Line! cannot be forcibly displaced by non-magical effects.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Friendly stacks that are Defending or affected by Hold the Line! cannot be forcibly displaced by non-magical effects."
 					}
 				},
@@ -1271,7 +1271,7 @@
 					"requires": "advanced",
 					"description": "Plague may propagate one additional time beyond its normal limit.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Plague may propagate one additional time beyond its normal limit."
 					}
 				},
@@ -1525,7 +1525,7 @@
 					"requires": "basic",
 					"description": "Havoc spells deal +50% damage to destructible obstacles and fortifications when they can affect them.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Havoc spells deal +50% damage to destructible obstacles and fortifications when they can affect them."
 					}
 				},
@@ -1555,7 +1555,7 @@
 					"requires": "advanced",
 					"description": "Meteor Shower deals +25% damage to battlefield objects and fortifications inside its impact area.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Meteor Shower deals +25% damage to battlefield objects and fortifications inside its impact area."
 					}
 				},
@@ -1575,7 +1575,7 @@
 					"requires": "expert",
 					"description": "Armageddon receives +20% to its Spell Power-derived damage component and destroys ordinary magical obstacles as well as physical ones.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Armageddon receives +20% to its Spell Power-derived damage component and destroys ordinary magical obstacles as well as physical ones."
 					}
 				},
@@ -1941,7 +1941,7 @@
 					"requires": "advanced",
 					"description": "When a conventional area spell with a selected central hex is centered on a hex occupied by a friendly stack, that stack is excluded from the spell's effect. Spells explicitly defined as indiscriminate, such as Armageddon, cannot benefit.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "When a conventional area spell with a selected central hex is centered on a hex occupied by a friendly stack, that stack is excluded from the spell's effect. Spells explicitly defined as indiscriminate, such as Armageddon, cannot benefit."
 					}
 				},
@@ -3911,7 +3911,7 @@
 					"requires": "advanced",
 					"description": "A stack currently benefiting from Bulwark cannot be forcibly displaced by non-magical effects.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "A stack currently benefiting from Bulwark cannot be forcibly displaced by non-magical effects."
 					}
 				},

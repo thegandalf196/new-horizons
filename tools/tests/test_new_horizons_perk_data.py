@@ -15,6 +15,13 @@ from jsonschema import Draft4Validator
 ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
+    "new-horizons:shadowMagic.plaguebearer",
+    "new-horizons:armorer.unyielding",
+    "new-horizons:bulwarkOfTheMire.deepBulwark",
+    "new-horizons:havocMagic.demolitionist",
+    "new-horizons:havocMagic.meteorologist",
+    "new-horizons:havocMagic.cataclysm",
+    "new-horizons:spellcraft.preciseCasting",
     "new-horizons:command.ironWill",
     "new-horizons:warcasting.reactiveWeave",
     "new-horizons:recruitment.drillSergeant",
@@ -566,7 +573,7 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
                 self.assertEqual(perks[perk_id]["requires"], rank)
                 self.assertEqual(perks[perk_id]["effect"]["status"], "active")
 
-    def test_six_implemented_bulwark_perks_are_active_and_deep_bulwark_stays_planned(self):
+    def test_seven_implemented_bulwark_perks_including_deep_bulwark_are_active(self):
         skill = self.rules["skills"]["new-horizons:bulwarkOfTheMire"]
         perks = {perk["id"]: perk for perk in skill["perks"]}
         canonical = {
@@ -589,7 +596,7 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
                 self.assertEqual(perks[perk_id]["effect"]["status"], "active")
         deep_bulwark = perks["new-horizons:bulwarkOfTheMire.deepBulwark"]
         self.assertEqual(deep_bulwark["requires"], "advanced")
-        self.assertEqual(deep_bulwark["effect"]["status"], "planned")
+        self.assertEqual(deep_bulwark["effect"]["status"], "active")
 
     def test_perk_definitions_match_source_document(self):
         source_tables = source_perk_tables(ROOT / self.rules["sourceDocument"])

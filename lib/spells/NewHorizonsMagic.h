@@ -18,6 +18,7 @@
 #include "../json/JsonNode.h"
 #include "../constants/EntityIdentifiers.h"
 #include "NewHorizonsDirectDamage.h"
+#include "../battle/BattleSide.h"
 
 class CGHeroInstance;
 class CBattleInfoCallback;
@@ -99,6 +100,9 @@ inline constexpr std::string_view HAVOC_STORMCALLER = "new-horizons:havocMagic.s
 inline constexpr std::string_view HAVOC_MAGIC_SKILL = "new-horizons:havocMagic";
 inline constexpr std::string_view HAVOC_PYROMANCER = "new-horizons:havocMagic.pyromancer";
 inline constexpr std::string_view HAVOC_CRYOMANCER = "new-horizons:havocMagic.cryomancer";
+inline constexpr std::string_view HAVOC_DEMOLITIONIST = "new-horizons:havocMagic.demolitionist";
+inline constexpr std::string_view HAVOC_METEOROLOGIST = "new-horizons:havocMagic.meteorologist";
+inline constexpr std::string_view HAVOC_CATACLYSM = "new-horizons:havocMagic.cataclysm";
 inline constexpr std::string_view HAVOC_CONDUCTOR = "new-horizons:havocMagic.conductor";
 inline constexpr std::string_view HAVOC_ANNIHILATOR = "new-horizons:havocMagic.annihilator";
 constexpr int HAVOC_PYROMANCER_DAMAGE_BONUS_PERCENT = 15;
@@ -107,6 +111,12 @@ inline constexpr std::string_view LIGHT_MAGIC_SKILL = "new-horizons:lightMagic";
 inline constexpr std::string_view LIGHT_BENEDICTION = "new-horizons:lightMagic.benediction";
 inline constexpr std::string_view SPELLCRAFT_SKILL = "new-horizons:spellcraft";
 inline constexpr std::string_view SPELLCRAFT_ARCANE_FOCUS = "new-horizons:spellcraft.arcaneFocus";
+inline constexpr std::string_view SPELLCRAFT_PRECISE_CASTING = "new-horizons:spellcraft.preciseCasting";
+/// Entire current-friendly center stack, not an individual occupied hex.
+/// Controlled Blast keeps its three-spell damage scope; Precise Casting adds Frost Ring and Purify.
+DLL_LINKAGE bool isProtectedAreaCenter(const CBattleInfoCallback & callback, const CGHeroInstance * hero,
+	SpellID spell, const battle::Unit & unit, const BattleHex & center, BattleSide casterSide,
+	bool preciseCastingOnly = false);
 inline constexpr std::string_view SPELLCRAFT_GRAND_FORMULA = "new-horizons:spellcraft.grandFormula";
 inline constexpr std::string_view SPELLCRAFT_COUNTERPRESSURE = "new-horizons:spellcraft.counterpressure";
 constexpr int SPELLCRAFT_COUNTERPRESSURE_BONUS_PERCENT = 20;
@@ -283,6 +293,10 @@ DLL_LINKAGE bool earthquakeRulesEnabled(const JsonNode & rules, SpellID spell);
 DLL_LINKAGE bool havocStructuresEnabled(const JsonNode & rules, SpellID spell);
 /// Returns the configured raw-spell-damage percentage for fortifications, or zero when disabled.
 DLL_LINKAGE int32_t havocFortificationDamagePercent(const JsonNode & rules, SpellID spell);
+DLL_LINKAGE int havocStructuralPerkBonusPercent(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell);
+/// Single final floor of raw damage * structural fraction * additive perk category.
+DLL_LINKAGE int32_t scaleHavocStructuralDamage(int64_t rawDamage, int structuralPercent, int perkBonusPercent);
+DLL_LINKAGE bool havocDestroysOrdinaryMagicalObstacles(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell);
 /// Call only after checking explicit event overrides (including zero) and legacy
 /// nonzero caster overrides. This accessor does not choose override precedence.
 DLL_LINKAGE std::optional<int64_t> directDamageValue(const JsonNode & rules, const std::string & scopedIdentity,

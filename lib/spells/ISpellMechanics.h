@@ -351,6 +351,7 @@ public:
 	virtual IBattleCast::Value getEffectPower() const = 0;
 	/// Serializable cast-local MDR contributors for delayed spell markers.
 	virtual JsonNode getCapturedMdrPenetration() const;
+	virtual int32_t getPlaguePropagationLimit() const { return 1; }
 	virtual int32_t getEffectPowerDivisor() const { return 1; }
 	/// Effective saved-rules school-rank coefficient for this spell and caster.
 	int32_t getSchoolRankPowerCoefficientPercent() const;
@@ -379,6 +380,7 @@ public:
 	bool usesNewHorizonsHavocStructures() const;
 	/// Exact coefficient-aware structural damage to fortifications, capped to packet range.
 	int32_t getNewHorizonsHavocStructuralDamage() const;
+	bool destroysNewHorizonsHavocMagicalObstacles() const;
 	/// New Horizons Land Mine's authoritative selected-hex count, or zero
 	/// outside the New Horizons Land Mine profile. Pre-v3 snapshots retain raw
 	/// Spell Power; v3 uses the composed saved coefficient.
@@ -566,6 +568,7 @@ public:
 	bool isMetamagicFollowup() const override;
 	bool isMetamagicGrand() const;
 	JsonNode getCapturedMdrPenetration() const override;
+	int32_t getPlaguePropagationLimit() const override;
 	uint32_t getMetamagicTargetUnitId() const;
 	int32_t getMetamagicManaRefund() const;
 	bool usesNewHorizonsMagic() const override;

@@ -37,6 +37,7 @@ public:
 
 	static int getAvailableHex(lua_State * L);
 	static int getUnitsIf(lua_State * L);
+	static int getUnitByID(lua_State * L);
 	static bool isAccessibleForUnit(const IBattleInfoCallback & object, const battle::Unit & unit, BattleHex hex);
 	static bool isAccessibleForNewUnit(const IBattleInfoCallback & object, BattleHex hex, const Creature & creature, BattleSide side);
 	static int getFieldWidth(const IBattleInfoCallback & object);

@@ -1,5 +1,47 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-10 — Generated numeric markers and projected post-damage identities
+
+The added Frozen parity fixture initially queries its historical round through
+the generic Unit interface, which does not expose that state getter. A checked
+cast to the existing CUnitState interface preserves the same round assertion
+and fails explicitly if the projection lacks the required concrete state.
+
+The first51-case gate passes36 and fails15. LuaStack exports Lua numbers as
+floating-point JsonNodes; captured Plague counters must accept finite whole
+numbers within range, while authored raw configuration remains integer-only.
+Two diagnostic cases expose a separate missing bonus metadata registration:
+COMBAT_EVENT_TRIGGER exports an empty type string, so JSON marker guards cannot
+recognize it. Register its hidden metadata instead of teaching validators to
+accept ambiguous empty identities. Preserve the failed diagnostic evidence.
+
+Lazy detached battle injuries can replace a unit object. Post-damage scripts
+must resolve that unit's stable ID in the supplied current battle before Frozen
+cleanup; retain the cleanup helper's battle-membership identity check. Passing
+the pre-injury object aborts Lua processing after its first recipient and can
+silently drop later damage and structural effects. Round-dependent Order tests
+must finish the fixture tactics phase before attempting a paid Order, rather
+than treating a manually selected active stack as a started combat round.
+
+### 2026-10-10 — Fixture factory calls require their concrete declaration
+
+Retry36245 stops during test compilation. Diagnostic32279 isolates the
+Plaguebearer serialization fixture's BattleLayout factory call: its forward
+declaration cannot expose createDefaultLayout. Include BattleLayout.h directly
+in that translation unit, retaining all12 test bodies and assertions. This is
+a compile correction, not native acceptance or a production-rule change.
+
+### 2026-10-10 — Include serializer validator declarations and retire obsolete status controls
+
+The seven-perk batch adds calls to the Plague rule validator in BattleInfo's
+serialization template. Include its existing declaration header directly;
+namespace visibility from another helper is not a declaration of the new API.
+Static activation checks must update both the global whitelist and focused
+family expectations. Deep Bulwark's old planned-only assertion is superseded
+by its reviewed implementation, but its exact identity and Advanced rank remain
+asserted. The reviewed two-file correction passes all34 data checks; native
+and complete linkage acceptance remain separate.
+
 ### 2026-10-10 — Native fixtures must exercise legal actions and targeted corruption
 
 The first58-case run passes55 and fails three fixtures. A melee helper attacks

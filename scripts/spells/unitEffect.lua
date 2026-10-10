@@ -108,10 +108,12 @@ function Script:transformByRange(mechanics, aimPoint, spellTarget)
 	end
 
 	local function mainFilter(unit)
+		-- Exclude the entire protected center stack before receptivity/resistance
+		-- and target-count consumers, including both hexes of a double-wide unit.
+		if isProtectedCenter(unit) then return false end
 		if not self:isValidTarget(mechanics, unit) then return false end
 		if not self:isReceptive(mechanics, unit) then return false end
 		if mechanics:isSmart() and not mechanics:ownerMatches(unit) then return false end
-		if isProtectedCenter(unit) then return false end
 		return true
 	end
 

@@ -185,6 +185,12 @@
 					"description": "Whether heroes may cast and acquire this common spell. Omission defaults to true for compatibility with older saved-v3 profiles; this does not disable creature or world-effect behavior."
 				},
 				"directDamage": {"$ref": "#/definitions/directDamage"},
+				"propagationLimit": {
+					"type": "integer",
+					"minimum": 1,
+					"maximum": 2147483646,
+					"description": "Optional saved-v3 Plague recipients per processed tick. Only new-horizons:plague may use this field; omission preserves the ordinary limit of one. Captured infections retain their original effective limit."
+				},
 				"cureAfflictions": {
 					"description": "Optional explicit opt-in for the New Horizons Cure behavior. When present, Cure can remove one listed spell-effect source group from a single friendly living target; omission preserves legacy Cure behavior in older saved snapshots.",
 					"type": "array",

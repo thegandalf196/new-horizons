@@ -14,6 +14,7 @@
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/battle/BattleHexArray.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
+#include "../../../lib/battle/NewHorizonsFrozen.h"
 #include "../../../lib/entities/hero/NewHorizonsPerkState.h"
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
@@ -23,6 +24,13 @@
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/NewHorizonsPurify.h"
+#include "../../../lib/spells/BattleSpellMechanics.h"
+#include "../../../lib/ObstacleHandler.h"
+#include "../../../lib/battle/CObstacleInstance.h"
+#include "../../../lib/networkPacks/SetStackEffect.h"
+#include "../../mock/mock_ServerCallback.h"
+#include "../../mock/mock_vstd_RNG.h"
 #include "../../../lib/spells/Problem.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
@@ -47,20 +55,6 @@ constexpr auto preciseCastingPerkId = "new-horizons:spellcraft.preciseCasting";
 SpellID spellNamed(const std::string & name)
 {
 	return SpellID(SpellID::decode(name));
-}
-
-bool setPerkStatus(JsonNode & rules, std::string_view perkId, std::string_view status)
-{
-	auto & perks = rules["skills"][spellcraftSkillId]["perks"].Vector();
-	const auto found = std::find_if(perks.begin(), perks.end(), [perkId](const JsonNode & perk)
-	{
-		return perk["id"].String() == perkId;
-	});
-	if(found == perks.end())
-		return false;
-
-	(*found)["effect"]["status"].String() = status;
-	return true;
 }
 
 class PreciseCastingPredictionEnvironment final : public Environment
@@ -97,9 +91,6 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 
 		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
-		// This registry entry is still planned globally; activate only the saved-profile test fixture.
-		if(!setPerkStatus(perkRules, preciseCastingPerkId, "active"))
-			throw std::runtime_error("Missing Precise Casting from the New Horizons perk registry");
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
 	}
 
@@ -291,6 +282,71 @@ TEST_F(NewHorizonsPreciseCastingTest, AcceptedFireballExcludesOnlyItsFriendlyCen
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - attackerSideHero->getSpellCost(spell));
 }
 
+TEST_F(NewHorizonsPreciseCastingTest, DetachedMultiTargetDamageThawsCurrentUnitsAndMatchesPaidLiveCast)
+{
+	prepare("core:fireball");
+	const BattleHex centerHex(8, 5);
+	auto * center = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), centerHex, 1000);
+	ASSERT_NE(center, nullptr);
+	const auto adjacent = adjacentHexesOutsideCenter(center, centerHex);
+	ASSERT_EQ(adjacent.size(), 2u);
+	auto * ally = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), adjacent[0], 1000);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), adjacent[1], 1000);
+	ASSERT_NE(ally, nullptr);
+	ASSERT_NE(enemy, nullptr);
+	beginScenarioCombat();
+	ASSERT_TRUE(newHorizonsFrozen::enabled(battle()->getMagicRules()));
+	const auto round = battle()->getRound();
+	SetStackEffect frozen;
+	frozen.battleID = BattleID(0);
+	for(const auto * recipient : {ally, enemy})
+		frozen.toAdd.emplace_back(recipient->unitId(), std::vector<Bonus>{
+			newHorizonsFrozen::marker(BonusSourceID(creatureByName("core:iceElemental")), round)});
+	gameHandler->sendAndApply(frozen);
+	const auto allyHP = ally->getAvailableHealth();
+	const auto enemyHP = enemy->getAvailableHealth();
+	const auto mana = attackerSideHero->getManaAvailable();
+	ASSERT_TRUE(newHorizonsFrozen::isFrozen(*ally));
+	ASSERT_TRUE(newHorizonsFrozen::isFrozen(*enemy));
+
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), attackerSideHero->getOwner());
+	PreciseCastingPredictionEnvironment environment(gameState());
+	HypotheticBattle predicted(&environment, callback);
+	spells::BattleCast cast(&predicted, attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&cast);
+	spells::detail::ProblemImpl problem;
+	const spells::Target aim{spells::Destination(centerHex)};
+	ASSERT_TRUE(mechanics->canBeCast(problem));
+	ASSERT_TRUE(mechanics->canBeCastAt(aim, problem));
+	mechanics->castEval(predicted.getServerCallback(), aim);
+	for(const auto * original : {ally, enemy})
+	{
+		const auto * projected = predicted.battleGetUnitByID(original->unitId());
+		ASSERT_NE(projected, nullptr);
+		EXPECT_NE(projected, original);
+		EXPECT_EQ(original->getAvailableHealth() - projected->getAvailableHealth(), 25);
+		EXPECT_FALSE(newHorizonsFrozen::isFrozen(*projected));
+		const auto * projectedState = dynamic_cast<const battle::CUnitState *>(projected);
+		ASSERT_NE(projectedState, nullptr);
+		EXPECT_EQ(projectedState->frozenLastAppliedRound(), round);
+		EXPECT_TRUE(newHorizonsFrozen::isFrozen(*original));
+	}
+	EXPECT_EQ(ally->getAvailableHealth(), allyHP);
+	EXPECT_EQ(enemy->getAvailableHealth(), enemyHP);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(predicted.battleGetUnitByID(center->unitId())->getAvailableHealth(), center->getAvailableHealth());
+
+	ASSERT_TRUE(castAtHex(centerHex));
+	for(const auto * original : {ally, enemy})
+	{
+		const auto * projected = predicted.battleGetUnitByID(original->unitId());
+		EXPECT_EQ(original->getAvailableHealth(), projected->getAvailableHealth());
+		EXPECT_FALSE(newHorizonsFrozen::isFrozen(*original));
+		EXPECT_EQ(original->frozenLastAppliedRound(), round);
+	}
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - attackerSideHero->getSpellCost(spell));
+}
+
 TEST_F(NewHorizonsPreciseCastingTest, ActivePreciseCastingHasNoEffectUntilTheAdvancedPerkIsSelected)
 {
 	prepare("core:fireball", false);
@@ -369,4 +425,212 @@ TEST_F(NewHorizonsPreciseCastingTest, ArmageddonRemainsIndiscriminateWithPrecise
 	ASSERT_TRUE(castGlobalSpell());
 	EXPECT_EQ(friendlyBefore - friendly->getAvailableHealth(), 150);
 	EXPECT_EQ(enemyBefore - enemy->getAvailableHealth(), 150);
+}
+
+TEST_F(NewHorizonsPreciseCastingTest, InfernoPreservesFriendlyCenterButAffectsOrdinaryAdjacentRecipients)
+{
+	prepare("core:inferno");
+	const BattleHex aim(8, 5);
+	auto * center = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), aim, 1000);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(8, 4), 1000);
+	beginScenarioCombat();
+	const auto centerHP = center->getAvailableHealth();
+	const auto enemyHP = enemy->getAvailableHealth();
+	const auto forecast = detachedDamageAt(aim);
+	EXPECT_EQ(forecast.at(center->unitId()), 0);
+	EXPECT_GT(forecast.at(enemy->unitId()), 0);
+	ASSERT_TRUE(castAtHex(aim));
+	EXPECT_EQ(center->getAvailableHealth(), centerHP);
+	EXPECT_EQ(enemyHP - enemy->getAvailableHealth(), forecast.at(enemy->unitId()));
+}
+
+TEST_F(NewHorizonsPreciseCastingTest, FrostRingExcludesEntireFriendlyDoubleWideCenterIncludingTail)
+{
+	prepare("core:frostRing");
+	auto * center = addStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(8, 5), 1000);
+	const auto aim = center->getPosition();
+	const auto adjacent = adjacentHexesOutsideCenter(center, aim);
+	ASSERT_EQ(adjacent.size(), 2u);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), adjacent[0], 1000);
+	beginScenarioCombat();
+	spells::BattleCast event(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&event);
+	ASSERT_TRUE(mechanics->rangeInHexes(aim).contains(center->getHexes()[1]));
+	EXPECT_EQ(mechanics->getTargetedStackCount({spells::Destination(aim)}), 1u);
+	const auto before = center->getAvailableHealth();
+	const auto forecast = detachedDamageAt(aim);
+	EXPECT_EQ(forecast.at(center->unitId()), 0);
+	EXPECT_GT(forecast.at(enemy->unitId()), 0);
+	ASSERT_TRUE(castAtHex(aim));
+	EXPECT_EQ(center->getAvailableHealth(), before);
+}
+
+TEST_F(NewHorizonsPreciseCastingTest, UnselectedFrostRingStillHasItsOrdinaryTailEffect)
+{
+	prepare("core:frostRing", false);
+	auto * center = addStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(8, 5), 1000);
+	const auto adjacent = adjacentHexesOutsideCenter(center, center->getPosition());
+	addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), adjacent[0], 1000);
+	beginScenarioCombat();
+	const auto before = center->getAvailableHealth();
+	const auto forecast = detachedDamageAt(center->getPosition());
+	EXPECT_GT(forecast.at(center->unitId()), 0);
+	ASSERT_TRUE(castAtHex(center->getPosition()));
+	EXPECT_EQ(before - center->getAvailableHealth(), forecast.at(center->unitId()));
+}
+
+TEST_F(NewHorizonsPreciseCastingTest, ProtectedMeteorCenterDoesNotEraseStructuralHexMetadata)
+{
+	prepare("core:meteorShower");
+	const BattleHex aim(8, 5);
+	auto * center = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), aim, 1000);
+	addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 5), 1000);
+	auto obstacle = std::make_shared<CObstacleInstance>();
+	LIBRARY->obstacles()->forEach([&](const ObstacleInfo * value, bool & stop)
+	{
+		if(value->getJsonKey() == "core:0") { obstacle->ID = value->getIndex(); stop = true; }
+	});
+	obstacle->uniqueID = 700;
+	obstacle->pos = BattleHex(9, 5);
+	obstacle->obstacleType = CObstacleInstance::USUAL;
+	battle()->obstacles.push_back(obstacle);
+	beginScenarioCombat();
+	const auto before = center->getAvailableHealth();
+	ASSERT_TRUE(castAtHex(aim));
+	EXPECT_EQ(center->getAvailableHealth(), before);
+	EXPECT_FALSE(vstd::contains_if(battle()->obstacles, [](const auto & value) { return value->uniqueID == 700; }));
+}
+
+TEST_F(NewHorizonsPreciseCastingTest, ProtectedCenterIsExcludedBeforeResistanceDrawCountAndAffectedHistory)
+{
+	prepare("core:fireball");
+	const BattleHex aim(8, 5);
+	auto * center = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), aim, 1000);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(8, 4), 1000);
+	beginScenarioCombat();
+	spells::BattleCast event(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&event);
+	EXPECT_EQ(mechanics->getTargetedStackCount({spells::Destination(aim)}), 1u);
+	testing::StrictMock<vstd::RNGMock> random;
+	testing::NiceMock<ServerCallbackMock> server;
+	ON_CALL(server, getRNG()).WillByDefault(testing::Return(&random));
+	EXPECT_CALL(random, nextInt(0, 99)).Times(1).WillOnce(testing::Return(99));
+	bool receiptSeen = false;
+	ON_CALL(server, apply(testing::Matcher<CPackForClient &>(testing::_))).WillByDefault([&](CPackForClient & packet)
+	{
+		if(const auto * cast = dynamic_cast<const BattleSpellCast *>(&packet))
+		{
+			receiptSeen = true;
+			EXPECT_FALSE(vstd::contains(cast->affectedCres, center->unitId()));
+			EXPECT_TRUE(vstd::contains(cast->affectedCres, enemy->unitId()));
+		}
+	});
+	mechanics->cast(&server, {spells::Destination(aim)});
+	EXPECT_TRUE(receiptSeen);
+}
+
+TEST_F(NewHorizonsPreciseCastingTest, PurifyPickerAIAndPaidValidationExcludeCenterStackAndRejectForgedChoiceWithoutCharge)
+{
+	prepare("new-horizons:purify");
+	auto * center = addStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(8, 5), 1000);
+	const auto aim = center->getHexes()[1];
+	const auto adjacent = adjacentHexesOutsideCenter(center, aim);
+	auto * ally = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), adjacent[0], 1000);
+	addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 0), 1000);
+	for(auto * unit : {center, ally})
+	{
+		auto slow = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
+			BonusSource::SPELL_EFFECT, -2, BonusSourceID(SpellID(SpellID::SLOW)));
+		slow->turnsRemain = 3;
+		unit->addNewBonus(slow);
+	}
+	beginScenarioCombat();
+	const auto eligible = newHorizonsPurify::eligibleStacks(*battle(), BattleSide::ATTACKER, aim, 0, false);
+	ASSERT_EQ(eligible.size(), 1u);
+	EXPECT_EQ(eligible.front().unitId, ally->unitId());
+	PreciseCastingPredictionEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), attackerSideHero->getOwner());
+	HypotheticBattle projected(&environment, callback);
+	const auto detached = newHorizonsPurify::eligibleStacks(projected, BattleSide::ATTACKER, aim, 0, false);
+	ASSERT_EQ(detached.size(), 1u);
+	EXPECT_EQ(detached.front().unitId, ally->unitId());
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = spell->getId();
+	action.aimToHex(aim);
+	action.spellPurifyChoices = {{static_cast<int32_t>(center->unitId()), SpellID(SpellID::SLOW)}};
+	const auto mana = attackerSideHero->getManaAvailable();
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
+	action.spellPurifyChoices = {{static_cast<int32_t>(ally->unitId()), SpellID(SpellID::SLOW)}};
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(mana - attackerSideHero->getManaAvailable(), 15);
+	EXPECT_TRUE(newHorizonsPurify::spellEffectGroupBonuses(ally, SpellID(SpellID::SLOW)).empty());
+	EXPECT_EQ(newHorizonsPurify::spellEffectGroupBonuses(center, SpellID(SpellID::SLOW)).size(), 1u);
+}
+
+TEST_F(NewHorizonsPreciseCastingTest, PurifierAutomaticPhysicalRemovalAlsoRespectsProtectedCenter)
+{
+	prepare("new-horizons:purify");
+	const auto light = SecondarySkill(SecondarySkill::decode("new-horizons:lightMagic"));
+	attackerSideHero->setSecSkillLevel(light, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:lightMagic", "new-horizons:lightMagic.healer"});
+	attackerSideHero->setSecSkillLevel(light, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:lightMagic", "new-horizons:lightMagic.purifier"});
+	auto * center = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(8, 5), 1000);
+	auto * ally = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(8, 4), 1000);
+	addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 0), 1000);
+	for(auto * unit : {center, ally})
+	{
+		unit->physicalPoisonBaseDamage = 20;
+		unit->physicalPoisonActivationsRemaining = 3;
+		unit->physicalPoisonSourceStackId = 17;
+	}
+	beginScenarioCombat();
+	ASSERT_TRUE(castAtHex(center->getPosition()));
+	EXPECT_TRUE(newHorizonsPurify::hasPhysicalPoison(center));
+	EXPECT_FALSE(newHorizonsPurify::hasPhysicalPoison(ally));
+}
+
+TEST_F(NewHorizonsPreciseCastingTest, SharedScopeExcludesHostileCenterAndAllNonConventionalShapes)
+{
+	prepare("core:fireball");
+	auto * center = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(8, 5), 1000);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 5), 1000);
+	for(const auto * key : {"core:fireball", "core:inferno", "core:meteorShower", "core:frostRing", "new-horizons:purify"})
+		EXPECT_TRUE(newHorizonsMagic::isProtectedAreaCenter(*battle(), attackerSideHero, spellNamed(key),
+			*center, center->getPosition(), BattleSide::ATTACKER));
+	EXPECT_FALSE(newHorizonsMagic::isProtectedAreaCenter(*battle(), attackerSideHero, spell->getId(),
+		*enemy, enemy->getPosition(), BattleSide::ATTACKER));
+	for(const auto * key : {"core:armageddon", "core:chainLightning", "core:earthquake", "new-horizons:timeStop", "new-horizons:vengefulVines", "new-horizons:elementalConvergence"})
+		EXPECT_FALSE(newHorizonsMagic::isProtectedAreaCenter(*battle(), attackerSideHero, spellNamed(key),
+			*center, center->getPosition(), BattleSide::ATTACKER));
+}
+
+TEST_F(NewHorizonsPreciseCastingTest, ControlledBlastOnlyKeepsThreeSpellScopeAndOriginalEagerResistanceDraws)
+{
+	prepare("core:fireball", false);
+	const auto havoc = SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic"));
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:havocMagic", "new-horizons:havocMagic.pyromancer"});
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:havocMagic", "new-horizons:havocMagic.controlledBlast"});
+	const BattleHex aim(8, 5);
+	auto * center = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), aim, 1000);
+	addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(8, 4), 1000);
+	beginScenarioCombat();
+	EXPECT_TRUE(newHorizonsMagic::isProtectedAreaCenter(*battle(), attackerSideHero, spell->getId(), *center, aim, BattleSide::ATTACKER));
+	EXPECT_FALSE(newHorizonsMagic::isProtectedAreaCenter(*battle(), attackerSideHero, spell->getId(), *center, aim, BattleSide::ATTACKER, true));
+	for(const auto * key : {"core:frostRing", "new-horizons:purify"})
+		EXPECT_FALSE(newHorizonsMagic::isProtectedAreaCenter(*battle(), attackerSideHero, spellNamed(key), *center, aim, BattleSide::ATTACKER));
+	spells::BattleCast event(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&event);
+	EXPECT_EQ(mechanics->getTargetedStackCount({spells::Destination(aim)}), 1u);
+	testing::StrictMock<vstd::RNGMock> random;
+	testing::NiceMock<ServerCallbackMock> server;
+	ON_CALL(server, getRNG()).WillByDefault(testing::Return(&random));
+	EXPECT_CALL(random, nextInt(0, 99)).Times(2).WillRepeatedly(testing::Return(99));
+	mechanics->cast(&server, {spells::Destination(aim)});
 }

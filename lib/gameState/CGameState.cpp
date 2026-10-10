@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../battle/NewHorizonsPlague.h"
 #include "CGameState.h"
 #include "../spells/NewHorizonsSpellAvailability.h"
 
@@ -2016,6 +2017,13 @@ void CGameState::validateNewHorizonsOffensiveStartSpecialtySerialization(bool su
 	newHorizonsHeroes::validateOffensiveStartSpecialtySerialization(heroDevelopmentRules, supported);
 	if(map)
 		map->validateNewHorizonsOffensiveStartSpecialtySerialization(supported);
+}
+
+void CGameState::validatePlagueRulesSerialization(bool supported) const
+{
+	newHorizonsPlague::validateRuleSerialization(magicRules, supported);
+	if(map)
+		map->validatePlagueRulesSerialization(supported);
 }
 
 void CGameState::validateNewHorizonsStartingDevelopmentSerialization(bool supported) const

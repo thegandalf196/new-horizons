@@ -1203,6 +1203,12 @@ void CMap::validateNewHorizonsOffensiveStartSpecialtySerialization(bool supporte
 			newHorizonsHeroes::validateOffensiveStartSpecialtySerialization(hero->getPrimaryGrowthRules(), supported);
 }
 
+void CMap::validatePlagueRulesSerialization(bool supported) const
+{
+	if(gameSettings)
+		gameSettings->validatePlagueRulesSerialization(supported);
+}
+
 void CMap::validateNewHorizonsStartingDevelopmentSerialization(bool supported) const
 {
 	if(gameSettings)

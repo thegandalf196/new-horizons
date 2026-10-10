@@ -2374,13 +2374,19 @@ float SpellTargetEvaluator::plagueDelayedDamageValue(const Mechanics * spellMech
 			return newHorizonsPlague::isSpreadRecipientReceptive(
 				*battleCallback, casterSide, recipient);
 		};
-		const auto spreadTargetId = newHorizonsPlague::selectNextSpreadTarget(
-			*battleCallback, liveTarget, acceptsSpread);
-		if(spreadTargetId)
+		std::set<uint32_t> projectedInfections;
+		for(int32_t recipient = 0; recipient < spellMechanics->getPlaguePropagationLimit(); ++recipient)
 		{
-			const auto * spreadTarget = battleCallback->battleGetUnitByID(*spreadTargetId);
-			if(spreadTarget)
-				totalValue += signedValue(spreadTarget, projectedTicksValue(spreadTarget));
+			const auto spreadTargetId = newHorizonsPlague::selectNextSpreadTarget(
+				*battleCallback, liveTarget, acceptsSpread, projectedInfections);
+			if(!spreadTargetId) break;
+			projectedInfections.insert(*spreadTargetId);
+			if(spreadTargetId)
+			{
+				const auto * spreadTarget = battleCallback->battleGetUnitByID(*spreadTargetId);
+				if(spreadTarget)
+					totalValue += signedValue(spreadTarget, projectedTicksValue(spreadTarget));
+			}
 		}
 	}
 

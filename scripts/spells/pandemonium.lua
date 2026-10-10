@@ -77,10 +77,12 @@ function Script:apply(mechanics, server, target)
 	local recipients = capturedRecipients(mechanics, target)
 	for _, entry in ipairs(recipients) do
 		if entry.count > 0 and eligible(self, mechanics, entry.unit) then
+			local unitID = entry.unit:unitID()
 			local damage, killed = server:damageUnit(battle, entry.unit,
 				mechanics:getPandemoniumDamage(entry.unit, entry.count),
 				false, mechanics:getUnitCaster(), true)
-			server:clearFrozenAfterDirectMagicDamage(battle, entry.unit)
+			local current = battle:getUnitByID(unitID)
+			if current then server:clearFrozenAfterDirectMagicDamage(battle, current) end
 			if damage > 0 and server:describeChanges() then
 				BattleLog.spellDamage(server, battle, mechanics:getSpell(), entry.unit, damage, killed)
 			end

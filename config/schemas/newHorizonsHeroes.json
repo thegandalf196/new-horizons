@@ -188,7 +188,7 @@
 						"type": "object", "additionalProperties": false, "required": ["skill", "rank"],
 						"properties": {
 							"skill": {"type": "string", "pattern": "^new-horizons:[A-Za-z][A-Za-z0-9]*$"},
-							"rank": {"type": "integer", "minimum": 1, "maximum": 2}
+							"rank": {"type": "integer", "minimum": 1, "maximum": 3}
 						}
 					}
 				},

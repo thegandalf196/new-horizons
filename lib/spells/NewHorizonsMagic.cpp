@@ -1360,7 +1360,15 @@ void validateRules(const JsonNode & rules)
 		else if(version < SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "ordinaryAcquisition"});
 		else
-			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "ordinaryAcquisition", "heroAccess", "variant", "earthquake", "structures", "restoration"});
+			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "ordinaryAcquisition", "heroAccess", "variant", "earthquake", "structures", "restoration", "propagationLimit"});
+		if(data.Struct().contains("propagationLimit"))
+		{
+			require(name == "new-horizons:plague" && version == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
+				"propagationLimit requires the saved-v3 Plague row");
+			require(data["propagationLimit"].getType() == JsonNode::JsonType::DATA_INTEGER
+				&& integer(data["propagationLimit"], 1, std::numeric_limits<int32_t>::max() - 1),
+				"positive Plague propagation limit with room for its perk increment");
+		}
 		if(data.Struct().contains("structures"))
 		{
 			require(name == "core:meteorShower" || name == "core:armageddon",
@@ -1633,6 +1641,41 @@ int32_t havocFortificationDamagePercent(const JsonNode & rules, const SpellID sp
 	if(!definition)
 		return 0;
 	return static_cast<int32_t>(rules["spells"][definition->getJsonKey()]["structures"]["fortificationDamagePercent"].Integer());
+}
+
+int havocStructuralPerkBonusPercent(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell)
+{
+	if(!hero || !havocStructuresEnabled(rules, spell))
+		return 0;
+	const auto rank = hero->getPerkSkillRank(std::string(HAVOC_MAGIC_SKILL));
+	int result = 0;
+	if(rank >= MasteryLevel::BASIC && hero->hasActivePerk(std::string(HAVOC_MAGIC_SKILL), std::string(HAVOC_DEMOLITIONIST)))
+		result += 50;
+	if(spell == SpellID(SpellID::METEOR_SHOWER) && rank >= MasteryLevel::ADVANCED
+		&& hero->hasActivePerk(std::string(HAVOC_MAGIC_SKILL), std::string(HAVOC_METEOROLOGIST)))
+		result += 25;
+	return result;
+}
+
+int32_t scaleHavocStructuralDamage(int64_t rawDamage, int structuralPercent, int perkBonusPercent)
+{
+	if(structuralPercent < 0 || structuralPercent > 10000 || perkBonusPercent < 0 || perkBonusPercent > 75)
+		throw std::invalid_argument("Invalid Havoc structural scaling");
+	if(rawDamage <= 0 || structuralPercent == 0)
+		return 0;
+	constexpr int64_t DENOMINATOR = 10000;
+	constexpr int64_t MAX_DAMAGE = std::numeric_limits<ui16>::max();
+	const int64_t factor = int64_t(structuralPercent) * (100 + perkBonusPercent);
+	if(rawDamage > MAX_DAMAGE * DENOMINATOR / factor)
+		return static_cast<int32_t>(MAX_DAMAGE);
+	return static_cast<int32_t>(rawDamage * factor / DENOMINATOR);
+}
+
+bool havocDestroysOrdinaryMagicalObstacles(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell)
+{
+	return hero && spell == SpellID(SpellID::ARMAGEDDON) && havocStructuresEnabled(rules, spell)
+		&& hero->getPerkSkillRank(std::string(HAVOC_MAGIC_SKILL)) >= MasteryLevel::EXPERT
+		&& hero->hasActivePerk(std::string(HAVOC_MAGIC_SKILL), std::string(HAVOC_CATACLYSM));
 }
 
 int schoolRankPowerCoefficientPercent(const JsonNode & rules, int schoolRank)
@@ -2366,6 +2409,10 @@ int spellPowerDamagePerkBonusPercent(const JsonNode & rules, const CGHeroInstanc
 		return 0;
 
 	const auto & spellKey = spell->getJsonKey();
+	if(spellKey == "core:armageddon"
+		&& hero->getPerkSkillRank(std::string(HAVOC_MAGIC_SKILL)) >= MasteryLevel::EXPERT
+		&& hero->hasActivePerk(std::string(HAVOC_MAGIC_SKILL), std::string(HAVOC_CATACLYSM)))
+		return 20;
 	if((spellKey == "core:fireball" || spellKey == "core:fireWall" || spellKey == "core:inferno")
 		&& hero->hasActivePerk(std::string(HAVOC_MAGIC_SKILL), std::string(HAVOC_PYROMANCER)))
 		return HAVOC_PYROMANCER_DAMAGE_BONUS_PERCENT;
@@ -2373,6 +2420,31 @@ int spellPowerDamagePerkBonusPercent(const JsonNode & rules, const CGHeroInstanc
 		&& hero->hasActivePerk(std::string(HAVOC_MAGIC_SKILL), std::string(HAVOC_CRYOMANCER)))
 		return HAVOC_CRYOMANCER_DAMAGE_BONUS_PERCENT;
 	return 0;
+}
+
+bool isProtectedAreaCenter(const CBattleInfoCallback & callback, const CGHeroInstance * hero,
+	SpellID spell, const battle::Unit & unit, const BattleHex & center, BattleSide casterSide,
+	bool preciseCastingOnly)
+{
+	const auto * state = callback.getBattle();
+	if(!state || !rulesActive(state->getMagicRules()) || !hero || !center.isAvailable()
+		|| (casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER))
+		return false;
+	const auto * definition = spell.toSpell();
+	if(!definition)
+		return false;
+	const auto & key = definition->getJsonKey();
+	const bool blastSpell = key == "core:fireball" || key == "core:inferno" || key == "core:meteorShower";
+	const bool preciseSpell = blastSpell || key == "core:frostRing" || key == "new-horizons:purify";
+	const bool controlledBlast = !preciseCastingOnly && blastSpell && hero->hasActivePerk(std::string(HAVOC_MAGIC_SKILL),
+		"new-horizons:havocMagic.controlledBlast");
+	const bool preciseCasting = preciseSpell && hero->hasActivePerk(std::string(SPELLCRAFT_SKILL),
+		std::string(SPELLCRAFT_PRECISE_CASTING));
+	if(!controlledBlast && !preciseCasting)
+		return false;
+	const auto * centerUnit = callback.battleGetUnitByPos(center, true);
+	return centerUnit && centerUnit->unitId() == unit.unitId()
+		&& callback.playerToSide(callback.battleGetOwner(centerUnit)) == casterSide;
 }
 
 bool hasStormcallerPerk(const CGHeroInstance * hero, const spells::Spell * spell)

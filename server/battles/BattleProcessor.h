@@ -13,6 +13,7 @@
 #include "../../lib/constants/EntityIdentifiers.h"
 #include "../../lib/constants/Enumerations.h"
 #include "../../lib/battle/BattleSide.h"
+#include "../../lib/battle/BattleDisplacementCause.h"
 #include <functional>
 #include <optional>
 
@@ -25,6 +26,7 @@ class CBattleInfoCallback;
 struct BattleResult;
 struct BattleLayout;
 class BattleID;
+class BattleHex;
 
 namespace battle
 {
@@ -84,6 +86,11 @@ public:
 	/// a single final redraw. Deterministic and non-adverse results never spend it.
 	bool resolveAdverseCombatRoll(const BattleID & battleID, BattleSide affectedSide,
 		bool stochastic, bool adverseOnTrue, const std::function<bool()> & draw);
+
+	/// Generic authoritative forced relocation. No normal attacker is invented;
+	/// successful movement uses the same validated live/detached packet consumer.
+	bool tryForcedDisplacement(const BattleID & battleID, uint32_t unitId,
+		const BattleHex & destination, BattleDisplacementCause cause);
 
 	/// Processing of incoming battle action netpack
 	bool makePlayerBattleAction(const BattleID & battleID, PlayerColor player, const BattleAction & ba);

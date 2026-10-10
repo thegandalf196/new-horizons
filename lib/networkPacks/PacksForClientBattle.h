@@ -19,6 +19,7 @@
 #include "BattleChanges.h"
 #include "PacksForClient.h"
 #include "../battle/BattleAction.h"
+#include "../battle/BattleDisplacementCause.h"
 #include "../battle/AdverseCombatRerollState.h"
 #include "../battle/MoraleSuppressionState.h"
 #include "../battle/ReducedExtraActivationState.h"
@@ -59,6 +60,7 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 			trainingEntry.validateSerialization(h);
 		if(h.saving && info)
 			info->validateTrainingSerialization(h);
+		if(h.saving && info) info->validatePlagueSerialization(h);
 		if(h.saving && info)
 			info->validateMetamagicCapacitySerialization(h);
 		if(h.saving && info)
@@ -821,16 +823,39 @@ struct DLL_LINKAGE BattleStackMoved : public CPackForClient, public scripting::A
 	BattleHexArray tilesToMove;
 	int distance = 0;
 	bool teleporting = false;
+	BattleDisplacementCause displacementCause = BattleDisplacementCause::NONE;
 	
+	void validateDisplacementShape() const
+	{
+		if(!validBattleDisplacementCause(displacementCause))
+			throw std::runtime_error("Unknown forced displacement cause");
+		if(displacementCause != BattleDisplacementCause::NONE
+			&& (battleID == BattleID::NONE || tilesToMove.size() != 1 || distance != 0))
+			throw std::runtime_error("Forced displacement requires one endpoint and no walking distance");
+	}
+
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+		{
+			validateDisplacementShape();
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_FORCED_DISPLACEMENT)
+				&& displacementCause != BattleDisplacementCause::NONE)
+				throw std::runtime_error("Forced displacement provenance requires the new save format");
+		}
 		h & battleID;
 		h & stack;
 		h & tilesToMove;
 		h & distance;
 		h & teleporting;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_FORCED_DISPLACEMENT))
+			h & displacementCause;
+		else if(!h.saving)
+			displacementCause = BattleDisplacementCause::NONE;
+		if(!h.saving)
+			validateDisplacementShape();
 		assert(battleID != BattleID::NONE);
 	}
 };
@@ -889,6 +914,7 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 				change.validateOverwatchSerialization(h);
 				change.validateVeteranCohesionSerialization(h);
 				change.validateTrainingSerialization(h);
+				change.validatePlagueSerialization(h);
 				change.validateFrozenSerialization(h);
 				change.validateBattleFormSerialization(h);
 				change.validateConfusionSerialization(h);
@@ -1019,6 +1045,7 @@ struct BattleStackAttacked
 			newState.validateOverwatchSerialization(h);
 			newState.validateVeteranCohesionSerialization(h);
 			newState.validateTrainingSerialization(h);
+			newState.validatePlagueSerialization(h);
 			newState.validateFrozenSerialization(h);
 			newState.validateBattleFormSerialization(h);
 			newState.validateConfusionSerialization(h);
@@ -1184,6 +1211,7 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 				change.validateOverwatchSerialization(h);
 				change.validateVeteranCohesionSerialization(h);
 				change.validateTrainingSerialization(h);
+				change.validatePlagueSerialization(h);
 				change.validateFrozenSerialization(h);
 				change.validateBattleFormSerialization(h);
 				change.validateConfusionSerialization(h);
@@ -1193,6 +1221,7 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 				hit.newState.validateOverwatchSerialization(h);
 				hit.newState.validateVeteranCohesionSerialization(h);
 				hit.newState.validateTrainingSerialization(h);
+				hit.newState.validatePlagueSerialization(h);
 				hit.newState.validateFrozenSerialization(h);
 				if(hit.shattered() && !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN))
 					throw std::runtime_error("Cannot discard Frozen Shatter in an older battle attack format");
@@ -1751,6 +1780,7 @@ struct DLL_LINKAGE StacksInjured : public CPackForClient
 				hit.newState.validateOverwatchSerialization(h);
 				hit.newState.validateVeteranCohesionSerialization(h);
 				hit.newState.validateTrainingSerialization(h);
+				hit.newState.validatePlagueSerialization(h);
 				hit.newState.validateFrozenSerialization(h);
 				if(hit.shattered() && !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN))
 					throw std::runtime_error("Cannot discard Frozen Shatter in an older injury format");

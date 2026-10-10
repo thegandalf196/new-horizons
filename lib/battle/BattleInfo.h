@@ -17,6 +17,7 @@
 #include "NewHorizonsOffense.h"
 #include "NewHorizonsBloodrage.h"
 #include "NewHorizonsDiscipline.h"
+#include "NewHorizonsPlague.h"
 
 #include "../callback/GameCallbackHolder.h"
 #include "../bonuses/Bonus.h"
@@ -379,6 +380,13 @@ public:
 	BattleDeploymentState deploymentState;
 	newHorizonsTraining::Batch trainingEntrySnapshot;
 
+	template <typename Handler> void validatePlagueSerialization(Handler & h) const
+	{
+		newHorizonsPlague::validateRuleSerialization(magicRules,
+			h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
+		for(const auto & stack : stacks)
+			if(stack) stack->validatePlagueSerialization(h);
+	}
 	template <typename Handler> void validateTrainingSerialization(Handler & h) const
 	{
 		trainingEntrySnapshot.validateSerialization(h);
@@ -466,6 +474,7 @@ public:
 			validateBloodrageDeathPerksSerialization(h);
 		if(h.saving)
 			validateTrainingSerialization(h);
+		if(h.saving) validatePlagueSerialization(h);
 		if(h.saving)
 			validateFrozenSerialization(h);
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_CHAIN)
@@ -811,7 +820,11 @@ public:
 		{
 			h & magicRules;
 			if(!h.saving)
+			{
+				newHorizonsPlague::validateRuleSerialization(magicRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
 				newHorizonsMagic::validateRules(magicRules);
+			}
 		}
 		else if(!h.saving)
 			magicRules = JsonNode();

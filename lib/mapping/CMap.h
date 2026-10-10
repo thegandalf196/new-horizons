@@ -210,6 +210,7 @@ public:
 	void validateNewHorizonsStartingDevelopmentSerialization(bool supported) const;
 	void validateNewHorizonsRemainingStartSerialization(bool supported) const;
 	void validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const;
+	void validatePlagueRulesSerialization(bool supported) const;
 
 	CGObjectInstance * getObject(ObjectInstanceID obj);
 	const CGObjectInstance * getObject(ObjectInstanceID obj) const;
@@ -331,6 +332,8 @@ public:
 	template <typename Handler>
 	void serialize(Handler &h)
 	{
+		if(h.saving)
+			validatePlagueRulesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
 		if(h.saving)
 			validateRecruitmentTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING));
 		if(h.saving)

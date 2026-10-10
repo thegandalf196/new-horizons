@@ -2023,52 +2023,59 @@ void applyPlagueEndOfActivation(CGameHandler * gameHandler, const CBattleInfoCal
 	tickLog.lines.push_back(std::move(tickLine));
 	gameHandler->sendAndApply(tickLog);
 
-	// Canonical order is damage, then one deterministic spread attempt. A lethal
+	// Damage precedes each tick's captured propagation allowance. A lethal
 	// final tick still propagates before its source status is discarded.
-	const auto spreadTargetId = newHorizonsPlague::selectNextSpreadTarget(battle, stack,
-		[&battle, casterSide](const battle::Unit * candidate)
-		{
-			return newHorizonsPlague::isSpreadRecipientReceptive(battle, casterSide, candidate);
-		});
-	if(spreadTargetId)
+	const auto propagationLimit = newHorizonsPlague::capturedPropagationLimit(*marker);
+	for(int32_t recipient = 0; recipient < propagationLimit; ++recipient)
 	{
-		const auto * spreadTarget = battle.battleGetUnitByID(*spreadTargetId);
-		if(spreadTarget)
-		{
-			Bonus infection(*marker);
-			infection.turnsRemain = 3;
-			const auto infectionRound = battle.battleGetRound();
-			if(infection.parameters)
+		const auto spreadTargetId = newHorizonsPlague::selectNextSpreadTarget(battle, stack,
+			[&battle, casterSide](const battle::Unit * candidate)
 			{
-				try
+				return newHorizonsPlague::isSpreadRecipientReceptive(battle, casterSide, candidate);
+			});
+		if(!spreadTargetId) break;
+		if(spreadTargetId)
+		{
+			const auto * spreadTarget = battle.battleGetUnitByID(*spreadTargetId);
+			if(spreadTarget)
+			{
+				Bonus infection(*marker);
+				infection.turnsRemain = 3;
+				const auto infectionRound = battle.battleGetRound();
+				if(infection.parameters)
 				{
-					JsonNode spreadParameters = infection.parameters->toCustom<JsonNode>();
-					spreadParameters["spreadAttempts"].Integer() = 0;
-					spreadParameters["lastProcessedRound"].Integer() = infectionRound - 1;
-					infection.parameters = std::make_shared<BonusParameters>(spreadParameters);
+					try
+					{
+						JsonNode spreadParameters = infection.parameters->toCustom<JsonNode>();
+						spreadParameters["spreadAttempts"].Integer() = 0;
+						spreadParameters["lastProcessedRound"].Integer() = infectionRound - 1;
+						infection.parameters = std::make_shared<BonusParameters>(spreadParameters);
+					}
+					catch(const std::exception &)
+					{
+						// Keep inherited parameters when loading a malformed legacy marker.
+					}
 				}
-				catch(const std::exception &)
-				{
-					// Keep inherited parameters when loading a malformed legacy marker.
-				}
+				SetStackEffect addInfection;
+				addInfection.battleID = battle.getBattle()->getBattleID();
+				addInfection.toAdd.emplace_back(spreadTarget->unitId(), std::vector<Bonus>{infection});
+				gameHandler->sendAndApply(addInfection);
+				if(!newHorizonsPlague::hasPlague(battle.battleGetUnitByID(*spreadTargetId)))
+					break; // Advance only after the authoritative infection is present.
+
+				BattleLogMessage spreadLog;
+				spreadLog.battleID = battle.getBattle()->getBattleID();
+				MetaString spreadLine;
+				spreadLine.appendRawString(casterSide == spreadTarget->unitSide()
+					? "Plague spreads to a friendly stack, %s."
+					: "Plague spreads to an enemy stack, %s.");
+				spreadTarget->addNameReplacement(spreadLine, spreadTarget->getCount());
+				spreadLog.lines.push_back(std::move(spreadLine));
+				gameHandler->sendAndApply(spreadLog);
 			}
-			SetStackEffect addInfection;
-			addInfection.battleID = battle.getBattle()->getBattleID();
-			addInfection.toAdd.emplace_back(spreadTarget->unitId(), std::vector<Bonus>{infection});
-			gameHandler->sendAndApply(addInfection);
-
-			BattleLogMessage spreadLog;
-			spreadLog.battleID = battle.getBattle()->getBattleID();
-			MetaString spreadLine;
-			spreadLine.appendRawString(casterSide == spreadTarget->unitSide()
-				? "Plague spreads to a friendly stack, %s."
-				: "Plague spreads to an enemy stack, %s.");
-			spreadTarget->addNameReplacement(spreadLine, spreadTarget->getCount());
-			spreadLog.lines.push_back(std::move(spreadLine));
-			gameHandler->sendAndApply(spreadLog);
 		}
-	}
 
+	}
 	SetStackEffect statusUpdate;
 	statusUpdate.battleID = battle.getBattle()->getBattleID();
 	if(stack->alive() && marker->turnsRemain > 1)

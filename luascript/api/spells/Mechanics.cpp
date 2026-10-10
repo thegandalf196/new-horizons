@@ -69,37 +69,9 @@ bool MechanicsProxy::currentControllerIsCaster(const Mechanics & m, const battle
 
 bool MechanicsProxy::isProtectedAreaCenter(const Mechanics & m, const battle::Unit & unit, BattleHex centerHex)
 {
-	if(!m.usesNewHorizonsMagic() || !centerHex.isValid())
-		return false;
-
-	const auto * spell = m.getSpell();
-	if(!spell)
-		return false;
-
-	const auto & spellKey = spell->getJsonKey();
-	if(spellKey != "core:fireball" && spellKey != "core:inferno" && spellKey != "core:meteorShower")
-		return false;
-
-	const auto * hero = m.getHeroCaster();
-	if(!hero)
-		return false;
-	const bool hasControlledBlast = hero->hasActivePerk(
-		"new-horizons:havocMagic", "new-horizons:havocMagic.controlledBlast");
-	const bool hasPreciseCasting = hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
-		"new-horizons:spellcraft.preciseCasting");
-	if(!hasControlledBlast && !hasPreciseCasting)
-		return false;
-
-	const auto * battle = m.battle();
-	if(!battle)
-		return false;
-
-	const auto * centerUnit = battle->battleGetUnitByPos(centerHex, true);
-	if(!centerUnit || centerUnit->unitId() != unit.unitId())
-		return false;
-
-	const auto controllingSide = battle->playerToSide(battle->battleGetOwner(centerUnit));
-	return controllingSide == m.getCasterSide();
+	const auto * callback = m.battle();
+	return callback && newHorizonsMagic::isProtectedAreaCenter(*callback, m.getHeroCaster(),
+		m.getSpellId(), unit, centerHex, m.getCasterSide());
 }
 
 const ::spells::Spell * MechanicsProxy::getEffectSpell(const Mechanics & m)
@@ -339,6 +311,8 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"True only when saved-v3 rules enable Meteor Shower or Armageddon structural effects.");
 	R.method<&Mechanics::getNewHorizonsHavocStructuralDamage>("getNewHorizonsHavocStructuralDamage", {},
 		"Returns the coefficient-aware fortification damage for Meteor Shower or Armageddon, capped to the authoritative packet range.");
+	R.method<&Mechanics::destroysNewHorizonsHavocMagicalObstacles>("destroysNewHorizonsHavocMagicalObstacles", {},
+		"True for selected Cataclysm Armageddon in saved-v3 structural rules; never includes ability-created moats.");
 	R.method<&Mechanics::usesNewHorizonsQuicksandSelectedPlacement>("usesNewHorizonsQuicksandSelectedPlacement", {},
 		"True when the saved battle rules enable exact caster-selected Quicksand placement.");
 	R.method<&Mechanics::usesNewHorizonsMultiplicativeMDR>("usesNewHorizonsMultiplicativeMDR", {},
@@ -347,6 +321,8 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"True when the authoritative saved spell-school mapping classifies this cast as Nature.");
 	R.method<&Mechanics::getEffectValue>("getEffectValue", {},
 		"Returns the computed effect value (e.g. damage / health amount).");
+	R.method<&Mechanics::getPlaguePropagationLimit>("getPlaguePropagationLimit", {},
+		"Returns the saved normal per-tick Plague propagation limit plus the actual caster's selected Plaguebearer increment.");
 	R.method<&Mechanics::getCapturedMdrPenetration>("getCapturedMdrPenetration", {},
 		"Returns cast-local penetration contributors and an optional Focused Pairing stack ID for delayed markers.");
 	R.method<&Mechanics::getCasterColor>("getCasterColor", {},
@@ -461,7 +437,7 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 	R.function<&MechanicsProxy::isProtectedAreaCenter>("isProtectedAreaCenter",
 		{{"unit", "Unit whose identity is compared with the original area center."},
 		 {"centerHex", "Original targeted hex used to resolve the area center."}}, {},
-		"True when active New Horizons Controlled Blast or Precise Casting rules exclude this friendly center unit from Fireball, Inferno, or Meteor Shower.");
+		"True for the protected friendly center stack: Controlled Blast covers Fireball/Inferno/Meteor Shower; Precise Casting also covers Frost Ring/Purify.");
 	R.function<&MechanicsProxy::getEffectSpell>("getEffectSpell", {},
 		"Returns the saved-rules spell family used for effect formulas and source grouping. The actual cast Spell remains available from getSpell().");
 	R.method<&Mechanics::getSpell>("getSpell", {},

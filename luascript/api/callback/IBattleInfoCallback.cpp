@@ -30,6 +30,8 @@
 #include "../../../lib/battle/CObstacleInstance.h"
 #include "../../../lib/BattleFieldHandler.h"
 #include "../../../lib/mapObjects/CGTownInstance.h"
+#include <cmath>
+#include <limits>
 
 namespace scripting::api
 {
@@ -120,6 +122,10 @@ void IBattleInfoCallbackProxy::registerMethods(MethodRegistrar & R)
 			{"onlyAlive", "Pass true to skip dead-but-resurrectable stacks."}
 		}, {},
 		"Returns the unit covering the given hex, or nil.");
+	R.cfunction<&IBattleInfoCallbackProxy::getUnitByID>("getUnitByID",
+		{{"id", "integer", "Stable nonnegative uint32 unit identifier."}},
+		{"Unit?", "Current unit in this battle, including a dead stack; nil if entirely removed."},
+		"Resolves the current battle-owned unit after an authoritative update or detached projection.");
 	R.function<&IBattleInfoCallbackProxy::getAllObstacles>("getAllObstacles", {},
 		"Returns all obstacles on the battlefield.");
 	R.function<&IBattleInfoCallbackProxy::getObstaclesOnPos>("getObstaclesOnPos",
@@ -243,6 +249,24 @@ BattleSide IBattleInfoCallbackProxy::getControllingSide(const IBattleInfoCallbac
 const battle::Unit * IBattleInfoCallbackProxy::getUnitByPos(const IBattleInfoCallback & object, BattleHex hex, bool onlyAlive)
 {
 	return object.battleGetUnitByPos(hex, onlyAlive);
+}
+
+int IBattleInfoCallbackProxy::getUnitByID(lua_State * L)
+{
+	LuaStack S(L);
+	const IBattleInfoCallback * object;
+	S.getNonNull(1, object);
+	// Keep this query strict without changing the shared integer converter.
+	if(lua_gettop(L) != 2 || lua_type(L, 2) != LUA_TNUMBER)
+		throw LuaApiException("getUnitByID requires one numeric unit identifier");
+	const auto id = lua_tonumber(L, 2);
+	if(!std::isfinite(id) || id < 0 || id > std::numeric_limits<uint32_t>::max()
+		|| std::floor(id) != id)
+		throw LuaApiException("getUnitByID requires a nonnegative uint32 unit identifier");
+	const auto * unit = object->battleGetUnitByID(static_cast<uint32_t>(id));
+	S.clear();
+	S.push(unit);
+	return 1;
 }
 
 std::vector<std::shared_ptr<const CObstacleInstance>> IBattleInfoCallbackProxy::getAllObstacles(const IBattleInfoCallback & object)

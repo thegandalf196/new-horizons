@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "CCreatureWindow.h"
+#include "../../lib/battle/BattleDisplacementCause.h"
 #include "../../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
 #include "wiki/WikiWindow.h"
 #include "CStackExperienceDetailsWindow.h"
@@ -904,8 +905,14 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 					WikiWindow::Style::BROWN,
 					WikiEntryKey{WikiCategory::CREATURE, cre->getJsonKey()});
 		}, [&]{
-			if(!parent->info->creature->getDescriptionTranslated().empty())
-				CRClickPopup::createAndPush(parent->info->creature->getDescriptionTranslated());
+			std::string description = parent->info->creature->getDescriptionTranslated();
+			const auto * unit = parent->info->stack;
+			const auto * battle = unit ? unit->getBattle() : nullptr;
+			if(battle && battle->battleIsForcedDisplacementImmune(unit, BattleDisplacementCause::NON_MAGICAL))
+				description += "\n\nActive displacement protection: non-magical forced moves are blocked. "
+					"Magical relocation is unaffected.";
+			if(!description.empty())
+				CRClickPopup::createAndPush(description);
 		});
 	}
 

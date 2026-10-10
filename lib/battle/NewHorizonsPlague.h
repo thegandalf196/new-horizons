@@ -8,12 +8,14 @@
 #include <cstdint>
 #include <functional>
 #include <optional>
+#include <set>
 #include <string_view>
 
 #include "BattleSide.h"
 
 class CBattleInfoCallback;
 class JsonNode;
+struct Bonus;
 
 namespace battle
 {
@@ -23,6 +25,12 @@ class Unit;
 namespace newHorizonsPlague
 {
 constexpr std::string_view SPELL_ID = "new-horizons:plague";
+inline constexpr auto SKILL = "new-horizons:shadowMagic";
+inline constexpr auto PLAGUEBEARER = "new-horizons:shadowMagic.plaguebearer";
+DLL_LINKAGE int32_t normalPropagationLimit(const JsonNode & rules);
+DLL_LINKAGE void validateRuleSerialization(const JsonNode & rules, bool supported);
+DLL_LINKAGE int32_t capturedPropagationLimit(const Bonus & marker);
+DLL_LINKAGE bool containsExtendedPropagation(const JsonNode & node);
 constexpr int SPELL_POWER_COEFFICIENT_BASIS_POINTS = 10'000;
 
 /// True when this stack currently carries the dispellable magical Plague marker.
@@ -37,7 +45,8 @@ DLL_LINKAGE bool hasPlague(const battle::Unit * unit);
 DLL_LINKAGE std::optional<uint32_t> selectNextSpreadTarget(
 	const CBattleInfoCallback & battle,
 	const battle::Unit * afflicted,
-	const std::function<bool(const battle::Unit *)> & recipientAllowed = {});
+	const std::function<bool(const battle::Unit *)> & recipientAllowed = {},
+	const std::set<uint32_t> & excluded = {});
 
 /// Applies Plague's ordinary negative magical-immunity/reception checks for a
 /// prospective spread recipient (including invincibility, spell/school/level

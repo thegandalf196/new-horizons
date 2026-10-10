@@ -47,6 +47,7 @@ protected:
 	bool optIn = true;
 	bool legacyMagic = false;
 	bool presetBook = false;
+	bool fortressDevelopment = false;
 	bool aenainOptIn = true;
 	bool aenainFalseFlag = false;
 	SpellID presetSpell = SpellID::WEAKNESS;
@@ -65,7 +66,8 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			legacyMagic ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
-		rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
+		if(!fortressDevelopment)
+			rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 		rules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
 		rules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
 		if(aenainFalseFlag)
@@ -210,6 +212,27 @@ protected:
 TEST_F(NewHorizonsFrailtySpecialtyTest, CuthbertDefaultStartAndPaidDefenseLoss) { expectNamedStart("core:cuthbert", SpellID::WEAKNESS); }
 TEST_F(NewHorizonsFrailtySpecialtyTest, OlemaDefaultStartAndPaidDefenseLoss) { expectNamedStart("core:olema", SpellID::WEAKNESS); }
 TEST_F(NewHorizonsFrailtySpecialtyTest, MirlandaDefaultStartAndPaidDefenseLoss) { expectNamedStart("core:mirlanda", SpellID::WEAKNESS); }
+
+TEST_F(NewHorizonsFrailtySpecialtyTest, MirlandaApprovedDefaultWitheringTouchForecastAndPaidLoss)
+{
+	fortressDevelopment = true;
+	ASSERT_NO_FATAL_FAILURE(prepare("core:mirlanda", 50));
+	ASSERT_EQ(attackerSideHero->getPerkSkillRank("new-horizons:bulwarkOfTheMire"), MasteryLevel::ADVANCED);
+	ASSERT_EQ(attackerSideHero->getPerkSkillRank("new-horizons:shadowMagic"), MasteryLevel::BASIC);
+	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:shadowMagic", "new-horizons:shadowMagic.witheringTouch"));
+	ASSERT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(frailty()), 20);
+	ASSERT_TRUE(attackerSideHero->spellbookContainsSpell(frailty()));
+	ASSERT_NO_FATAL_FAILURE(combat());
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, frailty().toSpell());
+	const auto mechanics = frailty().toSpell()->battleMechanics(&cast);
+	EXPECT_EQ(mechanics->getSpellPowerCoefficientBasisPoints(), 11500);
+	// floor(50 * 5 * 1.15 * 1.20) + fixed1000 + Withering500.
+	EXPECT_EQ(mechanics->getFrailtyDefenseLossBasisPoints(), 1845);
+	const auto mana = attackerSideHero->getManaAvailable();
+	ASSERT_TRUE(paidCast());
+	EXPECT_EQ(mana - attackerSideHero->getManaAvailable(), 8);
+	expectMarker(target, 1845);
+}
 TEST_F(NewHorizonsFrailtySpecialtyTest, XsiDefaultStartAndPaidDefenseLoss) { expectNamedStart("core:xsi", SpellID::STONE_SKIN); }
 
 TEST_F(NewHorizonsFrailtySpecialtyTest, AenainDefaultStartAndPaidDefenseLoss)

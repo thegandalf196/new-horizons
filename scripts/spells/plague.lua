@@ -59,6 +59,7 @@ function Script:apply(mechanics, server, target)
 					mdrPenetration = mechanics:getCapturedMdrPenetration(),
 					casterSide = casterSide,
 					spreadAttempts = 0,
+					propagationLimit = mechanics:getPlaguePropagationLimit(),
 					lastProcessedRound = mechanics:getBattleRound() - 1,
 					sourceUnitId = sourceUnitId
 				},

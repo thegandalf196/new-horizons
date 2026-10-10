@@ -30,6 +30,10 @@ class IGameInfoCallback;
 class BonusParameters;
 struct Bonus;
 
+namespace newHorizonsPlague
+{
+DLL_LINKAGE int32_t capturedPropagationLimit(const Bonus & marker);
+}
 namespace newHorizonsFrozen
 {
 DLL_LINKAGE std::optional<int32_t> markerApplicationRound(const Bonus & bonus);
@@ -161,6 +165,13 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 			throw std::runtime_error("Cannot discard recruitment training bonus");
 	}
 
+	template <typename Handler> void validatePlagueSerialization(Handler & h) const
+	{
+		const auto limit = newHorizonsPlague::capturedPropagationLimit(*this);
+		if(limit > 1 && !h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER))
+			throw std::runtime_error("Cannot discard captured Plague propagation limit");
+	}
+
 	template <typename Handler> void validateSwiftRebirthSerialization(Handler & h) const
 	{
 		if(newHorizonsSwiftRebirth::isLifecycleMarker(*this)
@@ -171,7 +182,10 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 	template <typename Handler> void serialize(Handler &h)
 	{
 		if(h.saving)
+		{
 			validateTrainingSerialization(h);
+			validatePlagueSerialization(h);
+		}
 		if(h.saving)
 			validateSwiftRebirthSerialization(h);
 		if(h.saving)
@@ -308,6 +322,7 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 			validateFrozenSerialization(h);
 			validateSwiftRebirthSerialization(h);
 			validateTrainingSerialization(h);
+			validatePlagueSerialization(h);
 			validateConfusionPendingMarker();
 			if(type == BonusType::CONFUSION_PENDING
 				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CONFUSION_MARKER))

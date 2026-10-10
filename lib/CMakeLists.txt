@@ -526,6 +526,7 @@ set(lib_MAIN_HEADERS
 	battle/BattleEffectExchange.h
 	battle/AutocombatPreferences.h
 	battle/BattleAction.h
+	battle/BattleDisplacementCause.h
 	battle/BattleAttackInfo.h
 	battle/BattleHex.h
 	battle/BattleHexArray.h

@@ -137,9 +137,11 @@ function Script:apply(mechanics, server, target)
 	local enemy = target[1].unit
 	local friendly = target[2].unit
 	local battle = mechanics:getBattle()
+	local enemyID = enemy:unitID()
 	local damage, killed = server:damageUnit(
 		battle, enemy, mechanics:adjustEffectValue(enemy), false, mechanics:getUnitCaster(), true)
-	server:clearFrozenAfterDirectMagicDamage(battle, enemy)
+	local current = battle:getUnitByID(enemyID)
+	if current then server:clearFrozenAfterDirectMagicDamage(battle, current) end
 	local healing = math.floor(damage * healPercent(mechanics) / 100)
 	local healedHP = 0
 	if healing > 0 then

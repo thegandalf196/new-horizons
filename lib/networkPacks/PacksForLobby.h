@@ -142,6 +142,7 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 	void validateNewHorizonsProspectorSerialization(bool supported) const;
 	void validateNewHorizonsScholarSerialization(bool supported) const;
 	void validateNewHorizonsRecruitersContactsSerialization(bool supported) const;
+	void validatePlagueRulesSerialization(bool supported) const;
 	void validateRecruitmentTrainingSerialization(bool supported) const;
 	void validateExtendSpellSerialization(bool supported) const;
 	void validateNewHorizonsSageSerialization(bool supported) const;
@@ -158,6 +159,7 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving) validatePlagueRulesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
 		if(h.saving)
 			validateRecruitmentTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING));
 		if(h.saving)

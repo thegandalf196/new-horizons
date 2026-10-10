@@ -1,4 +1,9 @@
 {
+	"COMBAT_EVENT_TRIGGER":
+	{
+		"hidden": true
+	},
+
 	"ARTIFACT_GROWING":
 	{
 		"blockDescriptionPropagation": true

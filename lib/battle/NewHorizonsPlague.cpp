@@ -16,10 +16,27 @@
 #include "../spells/CSpell.h"
 #include "../spells/ISpellMechanics.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../bonuses/BonusParameters.h"
+#include <cmath>
+#include <limits>
 #include "../spells/MagicalDamageReduction.h"
 
 namespace
 {
+int32_t capturedIntegralLimit(const JsonNode & value)
+{
+	// LuaStack stores Lua-generated JSON numbers as DATA_FLOAT. Captured
+	// markers accept only exactly integral, finite numbers within their range;
+	// the authored raw-rule parser deliberately remains integer-only.
+	if(!value.isNumber())
+		throw std::runtime_error("Invalid captured Plague propagation limit");
+	const auto number = value.Float();
+	if(!std::isfinite(number) || number < 1 || number > std::numeric_limits<int32_t>::max()
+		|| std::floor(number) != number)
+		throw std::runtime_error("Invalid captured Plague propagation limit");
+	return static_cast<int32_t>(number);
+}
+
 SpellID plagueSpellId()
 {
 	static const SpellID value(SpellID::decode(std::string(newHorizonsPlague::SPELL_ID)));
@@ -34,6 +51,62 @@ const CSpell * plagueSpell()
 
 namespace newHorizonsPlague
 {
+int32_t normalPropagationLimit(const JsonNode & rules)
+{
+	const auto & row = rules["spells"][std::string(SPELL_ID)];
+	if(!row.isStruct() || !row.Struct().contains("propagationLimit"))
+		return 1;
+	const auto & value = row["propagationLimit"];
+	if(value.getType() != JsonNode::JsonType::DATA_INTEGER || value.Integer() < 1
+		|| value.Integer() >= std::numeric_limits<int32_t>::max())
+		throw std::runtime_error("Invalid saved Plague propagation limit");
+	return static_cast<int32_t>(value.Integer());
+}
+
+void validateRuleSerialization(const JsonNode & rules, bool supported)
+{
+	const auto & row = rules["spells"][std::string(SPELL_ID)];
+	if(!row.isStruct() || !row.Struct().contains("propagationLimit"))
+		return;
+	if(!supported)
+		throw std::runtime_error("Cannot discard saved Plague propagation rules");
+	normalPropagationLimit(rules);
+}
+
+int32_t capturedPropagationLimit(const Bonus & marker)
+{
+	if(marker.type != BonusType::COMBAT_EVENT_TRIGGER || marker.source != BonusSource::SPELL_EFFECT
+		|| marker.sid.toString() != SPELL_ID || !marker.parameters)
+		return 1;
+	const auto parameters = marker.parameters->toJsonNode();
+	if(!parameters.isStruct() || !parameters.Struct().contains("propagationLimit"))
+		return 1; // Legacy markers retain the old one-recipient rule.
+	return capturedIntegralLimit(parameters["propagationLimit"]);
+}
+
+bool containsExtendedPropagation(const JsonNode & node)
+{
+	if(node.isStruct())
+	{
+		if(node["type"].isString() && node["type"].String() == "COMBAT_EVENT_TRIGGER"
+			&& node["sourceType"].isString() && node["sourceType"].String() == "SPELL_EFFECT"
+			&& node["sourceID"].isString() && node["sourceID"].String() == SPELL_ID)
+		{
+			const auto & parameters = node["addInfo"];
+			if(parameters.isStruct() && parameters.Struct().contains("propagationLimit"))
+			{
+				if(capturedIntegralLimit(parameters["propagationLimit"]) > 1) return true;
+			}
+		}
+		for(const auto & [key, child] : node.Struct())
+			if(containsExtendedPropagation(child)) return true;
+	}
+	else if(node.isVector())
+		for(const auto & child : node.Vector())
+			if(containsExtendedPropagation(child)) return true;
+	return false;
+}
+
 bool hasPlague(const battle::Unit * unit)
 {
 	if(!unit)
@@ -45,7 +118,8 @@ bool hasPlague(const battle::Unit * unit)
 }
 
 std::optional<uint32_t> selectNextSpreadTarget(const CBattleInfoCallback & battle,
-	const battle::Unit * afflicted, const std::function<bool(const battle::Unit *)> & recipientAllowed)
+	const battle::Unit * afflicted, const std::function<bool(const battle::Unit *)> & recipientAllowed,
+	const std::set<uint32_t> & excluded)
 {
 	if(!afflicted)
 		return std::nullopt;
@@ -64,7 +138,7 @@ std::optional<uint32_t> selectNextSpreadTarget(const CBattleInfoCallback & battl
 		if(!hex.isValid())
 			continue;
 		const auto * candidate = battle.battleGetUnitByPos(hex, true);
-		if(!candidate || !candidate->alive() || candidate == afflicted || hasPlague(candidate))
+		if(!candidate || !candidate->alive() || candidate == afflicted || hasPlague(candidate) || excluded.count(candidate->unitId()))
 			continue;
 		if(recipientAllowed && !recipientAllowed(candidate))
 			continue;

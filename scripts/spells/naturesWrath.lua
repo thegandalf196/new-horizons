@@ -112,9 +112,11 @@ function Script:apply(mechanics, server, target)
 					})
 				end
 			else
+				local unitID = unit:unitID()
 				local damage, killed = server:damageUnit(battle, unit,
 					mechanics:getNaturesWrathDamage(unit, index - 1), false, mechanics:getUnitCaster(), true)
-				server:clearFrozenAfterDirectMagicDamage(battle, unit)
+				local current = battle:getUnitByID(unitID)
+				if current then server:clearFrozenAfterDirectMagicDamage(battle, current) end
 				if damage > 0 and server:describeChanges() then
 					BattleLog.spellDamage(server, battle, mechanics:getSpell(), unit, damage, killed)
 				end
