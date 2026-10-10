@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "../../lib/mapObjects/NewHorizonsAcademicStudy.h"
+#include "../../lib/mapObjects/NewHorizonsRecruitersContacts.h"
 #include "AIUtility.h"
 #include "AIGateway.h"
 #include "Goals/Goals.h"
@@ -726,21 +727,37 @@ bool shouldVisit(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGO
 		return true; //we don't have this quest yet
 	}
 	case Obj::CREATURE_GENERATOR1:
+	case Obj::CREATURE_GENERATOR4:
 	{
+		const auto * d = dynamic_cast<const CGDwelling *>(obj);
+		const auto calendar = aiNk->cc->getCalendar();
+		const int week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+		const auto contacts = d ? newHorizonsRecruitment::recruitersContactsAward(*hero, *d, week) : std::nullopt;
+		// Preserve the ordinary multi-row dwelling policy when Contacts cannot fire.
+		if(obj->ID == Obj::CREATURE_GENERATOR4 && !contacts)
+		{
+			if(d && relations != PlayerRelations::ENEMIES
+				&& std::ranges::all_of(d->creatures, [](const auto & row) { return row.first == 0; }))
+				return false;
+			break;
+		}
+
 		if(relations == PlayerRelations::ENEMIES)
 			return true; //flag just in case
 
 		if(relations == PlayerRelations::ALLIES)
 			return false;
 
-		const CGDwelling * d = dynamic_cast<const CGDwelling *>(obj);
+		if(!d)
+			return false;
 		auto duplicatingSlotsCount = getDuplicatingSlots(hero);
 
-		for(auto level : d->creatures)
+		for(size_t row = 0; row < d->creatures.size(); ++row)
 		{
+			const auto & level = d->creatures[row];
 			for(auto c : level.second)
 			{
-				if(level.first
+				if((level.first || (contacts && contacts->row == row))
 					&& (hero->getSlotFor(CreatureID(c)) != SlotID() || duplicatingSlotsCount > 0)
 					&& aiNk->cc->getResourceAmount().canAfford(c.toCreature()->getFullRecruitCost()))
 				{

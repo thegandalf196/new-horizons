@@ -2,6 +2,53 @@
 
 Updated: 2026-10-09
 
+Accepted Contacts/Phoenix/Arcane/Aenain checkpoint: incremental14567 links at
+ten jobs; privacy9212 passes. Exact retry2 principal34618 passes42/42 in13.975s
+and adjacent26046 passes23/23 in8.785s, zero failures/errors/disabled/skips.
+Contacts9, minimum AI3, Phoenix10, Aenain9 and Arcane Memory11 establish the
+principal paths in the42-case filter. Accepted perks
+279→282/310: generic195/220,faction87/90,28 remaining (25 generic,3 faction).
+Combat67/67,Orders8/8,Skills31/31,ranks93/93 unchanged. Canonical four amendments,
+registry identity/descriptions and module are synchronized; static29 and
+unchanged3138-entry NHART verification pass. Failed logs remain private and
+production rules/assertions were preserved. Final-resource30700 passes42/42
+in13.962s with unchanged binary pair and verified resource parity/cleanup.
+Commit and playable delivery are pending; ordinary Linux still selects verified
+source58af. The previous
+unaccepted checkpoint below records the path to this acceptance.
+
+Current unaccepted source batch: Contacts, Phoenix Spark and Arcane Memory are
+integrated with Aenain's captured Frailty replacement. Independent source/global
+review, static29 and module parity pass; ten-job retry39970 links successfully
+after the bounded registered-Phoenix lookup correction. Binary privacy13213
+passes with no findings. Principal89762 passes35/42 in14.035s; adjacent36801
+passes23/23 on the exact pair, with failures preserved privately. Retired-spell
+positive-control and invalid dwelling-type/subtype fixture issues are diagnosed;
+Phoenix legal-footprint/output diagnosis identifies invalid edge placement in
+the fixture, not a production placement defect. Reviewed fixture-only repairs
+link56665; privacy95096 passes. Exact retry62860 passes40/42, including Phoenix10,
+and adjacent55315 passes23/23. Two remaining fixture preconditions (school gate
+and visitable anchor) are being corrected. Accepted counts below are unchanged.
+Training v2 is
+independently source-clear with20 authored unrun cases after client invalidation
+and creature-ID preflight repairs. War Machines v2 is source-clear with16
+authored unrun cases. Joint v3 repairs Cross packet placement and the defensive
+producer lambda; its53 cases are authored/unrun. Halon capacity10, offensive
+replacements12 and eight-start profiles16 are source-clear privately. A104-path
+combined next-batch union is prepared, not imported or accepted. Iron Will and
+Reactive Weave proceed under recorded provisional contracts. None is
+playable-delivery or native-acceptance evidence.
+
+Legacy audit distinguishes empty removed-spell defaults from usable acquisition
+leaks. Current rules filter the audited defaults and reject ordinary acquisition;
+map-prescribed books and captured legacy contexts are deliberately preserved.
+Halon's selected replacement Skills/specialty exist, but Expert capacity is capped
+away and requires the authored rank/capacity repair. Loynis/Zubin replacements
+are authored provisionally and source-reviewed privately. Eight identified
+faction-only retired-development starts have reviewed bounded profiles awaiting
+integration/native evidence. Inteus/Coronius still need authored replacements;
+these gaps are not included in the perk fraction or biography-override count.
+
 Accepted Sage/Shared Purpose/Frailty checkpoint: linked38972 and exact native70790
 pass36/36 in12.229s; adjacent61175 passes12/12 in5.131s, zero failures/errors/
 disabled/skips. Shared Purpose15, both Sage10 and four Frailty specialty11 cases
@@ -11,9 +58,13 @@ Canonical Sage/Frailty amendments, registry identity/descriptions and module are
 synchronized; static29, independent source review, binary privacy and unchanged
 NHART3138-entry verification pass. Earlier failed fixtures/logs remain private;
 real ordinary-corpse provenance and legal Litany selection preserve all outcomes
-and production rules. Commit/push finalization remains separate. Linux still
-selects snapshot5bedaf198/source3046c1ad9 until a new verified delivery; no new
-rendered or Windows acceptance is claimed. Other private patches earn no credit.
+and production rules. Final-resource81781 passes36/36 in12.379s. Source58af4428f
+is normally pushed and remotely confirmed. Committed packed803-file staging,
+metadata link, privacy and fresh silent20s headless day2 smoke verify actual
+client/library/drivers and cleanup. Normal Linux selects snapshot2275da866 and
+its verify-only gate passes. The624 schema diagnostics exactly match the prior
+accepted smoke; no new rendered or Windows acceptance is claimed. Other private
+patches earn no credit.
 
 Accepted seven-perk/hero checkpoint: ten-job build25787 links after reviewed
 fixture-only repairs. Exact native88843 passes79/79 in25.252s; adjacent3070

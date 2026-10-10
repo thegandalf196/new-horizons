@@ -139,6 +139,19 @@ public:
 		return sides.at(side).rebirthChainUsed;
 	}
 	void setRebirthChainUsed(BattleSide side, bool used) override;
+	bool getPhoenixSparkUsed(BattleSide side) const override
+	{
+		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			throw std::runtime_error("Invalid Phoenix Spark side");
+		return sides.at(side).phoenixSparkUsed;
+	}
+	void setPhoenixSparkUsed(BattleSide side, bool used) override;
+	template <typename Handler> void validatePhoenixSparkSerialization(Handler & h) const
+	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_PHOENIX_SPARK)
+			&& (sides[BattleSide::ATTACKER].phoenixSparkUsed || sides[BattleSide::DEFENDER].phoenixSparkUsed))
+			throw std::runtime_error("Cannot discard Phoenix Spark combat use from an older battle format");
+	}
 	LuckSerendipityState getLuckSerendipityState(BattleSide side) const override
 	{
 		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
@@ -378,6 +391,8 @@ public:
 		validateSharedPurposeSerialization(h);
 		if(h.saving)
 			validateVeteranCohesionSerialization(h);
+		if(h.saving)
+			validatePhoenixSparkSerialization(h);
 		if(h.saving)
 			validateSwiftRebirthSerialization(h);
 		if(h.saving)

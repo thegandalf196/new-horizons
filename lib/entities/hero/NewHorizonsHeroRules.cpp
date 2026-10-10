@@ -114,12 +114,20 @@ void validateOptionalDamageSpellSpecialtyRules(const JsonNode & rules)
 
 void validateNonDamageSpellSpecialtyRules(const JsonNode & rules)
 {
-	fields(rules, {"version", "componentPercent", "spells"});
+	fields(rules, {"version", "componentPercent", "spells", "aenainFrailtyReplacement"});
+	const auto & aenain = rules["aenainFrailtyReplacement"];
+	require(!rules.Struct().contains("aenainFrailtyReplacement") || aenain.isBool(),
+		"Aenain Frailty replacement flag");
 	require(integer(rules["version"], 1, 1), "non-damage-spell specialty version");
 	require(integer(rules["componentPercent"], 20, 20), "non-damage-spell specialty component percentage");
 	const auto & spells = rules["spells"];
 	require(spells.isVector() && !spells.Vector().empty() && spells.Vector().size() <= 6,
 		"version 1 non-damage spell specialties must list one to six supported spells");
+	if(aenain.isBool() && aenain.Bool())
+		require(std::ranges::any_of(spells.Vector(), [](const JsonNode & spell)
+		{
+			return spell.isString() && spell.String() == "new-horizons:frailty";
+		}), "Aenain replacement requires Frailty specialty rules");
 	std::set<int> seen;
 	for(const auto & spell : spells.Vector())
 	{
@@ -528,6 +536,13 @@ void validateFrailtySpecialtySerialization(const JsonNode & rules, bool supporte
 {
 	if(!supported && hasFrailtySpecialtyRules(rules))
 		throw std::runtime_error("Frailty specialty rules require the new save format");
+}
+
+void validateAenainFrailtySpecialtySerialization(const JsonNode & rules, bool supported)
+{
+	const auto & specialties = rules["nonDamageSpellSpecialties"];
+	if(!supported && specialties.isStruct() && specialties.Struct().contains("aenainFrailtyReplacement"))
+		throw std::runtime_error("Aenain Frailty specialty rules require the new save format");
 }
 
 std::optional<NonDamageSpellSpecialtyRules> nonDamageSpellSpecialtyRules(const JsonNode & resolvedRules)

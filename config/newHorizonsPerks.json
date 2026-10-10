@@ -2,7 +2,7 @@
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
 	"sourceDocument": "docs/design-sources/New Horizons.md",
-	"sourceSha256": "c95c5c7c7028a25211a76bb3bf473dc325b18e2bf296a13f8eb88c03ed97ca3a",
+	"sourceSha256": "17925cdfcca6d79815ff2ff31e1a28580b637de8ada500be37a8a6dd1f710726",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -893,10 +893,10 @@
 					"id": "new-horizons:recruitment.recruiterSContacts",
 					"name": "Recruiter's Contacts",
 					"requires": "advanced",
-					"description": "Once per week when visiting an owned external dwelling with an empty recruitment pool, immediately add one normal week of growth to that pool.",
+					"description": "Once per week on visiting an external dwelling already owned at entry, replenish its first empty stored recruitment row with positive normal weekly growth, in stored order, using that dwelling's ordinary growth modifiers. Base and upgraded forms share the row. Consume the hero's weekly use only on a successful positive grant; capture during this visit, zero growth, no eligible row or a failed receipt does not consume it.",
 					"effect": {
-						"status": "planned",
-						"description": "Once per week when visiting an owned external dwelling with an empty recruitment pool, immediately add one normal week of growth to that pool."
+						"status": "active",
+						"description": "Once per week on visiting an external dwelling already owned at entry, replenish its first empty stored recruitment row with positive normal weekly growth, in stored order, using that dwelling's ordinary growth modifiers. Base and upgraded forms share the row. Consume the hero's weekly use only on a successful positive grant; capture during this visit, zero growth, no eligible row or a failed receipt does not consume it."
 					}
 				},
 				{
@@ -2041,10 +2041,10 @@
 					"id": "new-horizons:wisdom.arcaneMemory",
 					"name": "Arcane Memory",
 					"requires": "basic",
-					"description": "When the hero casts a spell from a scroll, that spell is permanently learned if the hero meets the corresponding School Skill requirement for its level.",
+					"description": "After a genuine scroll-sourced cast successfully completes, permanently learn the spell only if captured ordinary acquisition rules and its School requirement permit it. Current paid Adventure Guild unlocks are not bypassed; captured older rules retain their ordinary behavior. Book or Tome sources take priority over scrolls, and reusable scrolls over charged artifacts. Rejected, canceled or pending casts and unused carried scrolls do not teach; reusable scrolls remain reusable.",
 					"effect": {
-						"status": "planned",
-						"description": "When the hero casts a spell from a scroll, that spell is permanently learned if the hero meets the corresponding School Skill requirement for its level."
+						"status": "active",
+						"description": "After a genuine scroll-sourced cast successfully completes, permanently learn the spell only if captured ordinary acquisition rules and its School requirement permit it. Current paid Adventure Guild unlocks are not bypassed; captured older rules retain their ordinary behavior. Book or Tome sources take priority over scrolls, and reusable scrolls over charged artifacts. Rejected, canceled or pending casts and unused carried scrolls do not teach; reusable scrolls remain reusable."
 					}
 				},
 				{
@@ -4091,10 +4091,10 @@
 					"id": "new-horizons:elementalRebirth.phoenixSpark",
 					"name": "Phoenix Spark",
 					"requires": "expert",
-					"description": "Once per combat, when the first friendly Champion stack is destroyed, Elemental Rebirth automatically summons a temporary Phoenix instead of an Elite Elemental, with aggregate HP equal to 25% of the destroyed Champion stack's maximum aggregate HP.",
+					"description": "Once per combat, the first eligible original friendly Champion stack destroyed triggers a temporary Phoenix instead of an Elite Elemental, with aggregate HP equal to 25% of its battle-start maximum aggregate HP. This replaces the ordinary Rebirth and Greater Essence percentage. Consume the use before placement, even if placement fails. Applicable Ward, Primal Burst, Elemental Memory and Swift Rebirth traits remain; Elite terrain matching and recursive Rebirth or Rebirth Chain do not apply. Native Phoenix creature rebirth remains separate.",
 					"effect": {
-						"status": "planned",
-						"description": "Once per combat, when the first friendly Champion stack is destroyed, Elemental Rebirth automatically summons a temporary Phoenix instead of an Elite Elemental, with aggregate HP equal to 25% of the destroyed Champion stack's maximum aggregate HP."
+						"status": "active",
+						"description": "Once per combat, the first eligible original friendly Champion stack destroyed triggers a temporary Phoenix instead of an Elite Elemental, with aggregate HP equal to 25% of its battle-start maximum aggregate HP. This replaces the ordinary Rebirth and Greater Essence percentage. Consume the use before placement, even if placement fails. Applicable Ward, Primal Burst, Elemental Memory and Swift Rebirth traits remain; Elite terrain matching and recursive Rebirth or Rebirth Chain do not apply. Native Phoenix creature rebirth remains separate."
 					}
 				}
 			]

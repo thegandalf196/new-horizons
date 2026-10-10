@@ -9,6 +9,7 @@
 */
 #include "StdInc.h"
 #include "../../../lib/mapObjects/NewHorizonsAcademicStudy.h"
+#include "../../../lib/mapObjects/NewHorizonsRecruitersContacts.h"
 #include "../../../lib/mapObjects/NewHorizonsSage.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include <limits>
@@ -278,7 +279,23 @@ uint64_t RewardEvaluator::getArmyReward(
 	case Obj::CREATURE_GENERATOR2:
 	case Obj::CREATURE_GENERATOR3:
 	case Obj::CREATURE_GENERATOR4:
-		return getDwellingArmyValue(aiNk->cc.get(), target, checkGold);
+	{
+		uint64_t reward = getDwellingArmyValue(aiNk->cc.get(), target, checkGold);
+		const auto * dwelling = dynamic_cast<const CGDwelling *>(target);
+		if(hero && dwelling)
+		{
+			const auto calendar = aiNk->cc->getCalendar();
+			const int week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+			if(const auto award = newHorizonsRecruitment::recruitersContactsAward(*hero, *dwelling, week))
+			{
+				const auto creature = dwelling->creatures.at(award->row).second.back().toCreature();
+				const bool free = creature->getLevel() == 1;
+				if(free || !checkGold || aiNk->cc->getResourceAmount().canAfford(creature->getFullRecruitCost() * award->amount))
+					reward += static_cast<uint64_t>(creature->getAIValue()) * award->amount;
+			}
+		}
+		return reward;
+	}
 	case Obj::SPELL_SCROLL:
 		return evaluateSpellScrollArmyValue(dynamic_cast<const CGArtifact *>(target)->getArtifactInstance()->getScrollSpellID(), hero);
 	case Obj::ARTIFACT:

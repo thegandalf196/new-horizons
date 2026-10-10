@@ -10,6 +10,8 @@
 
 #include "StdInc.h"
 #include "CGDwelling.h"
+#include "../GameLibrary.h"
+#include "../CCreatureHandler.h"
 #include "../callback/IGameInfoCallback.h"
 #include "../callback/IGameEventCallback.h"
 #include "../callback/IGameRandomizer.h"
@@ -20,6 +22,7 @@
 #include "../mapObjectConstructors/CObjectClassesHandler.h"
 #include "../mapObjectConstructors/DwellingInstanceConstructor.h"
 #include "CGHeroInstance.h"
+#include "NewHorizonsRecruitersContacts.h"
 #include "CGTownInstance.h"
 #include "../entities/creature/NewHorizonsMusterRules.h"
 #include "../networkPacks/StackLocation.h"
@@ -217,6 +220,24 @@ void CGDwelling::setPropertyDer(ObjProperty what, ObjPropertyID identifier)
 
 void CGDwelling::onHeroVisit(IGameEventCallback & gameEvents, const CGHeroInstance * h) const
 {
+	const auto calendar = cb->getCalendar();
+	const int week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+	// Ownership must qualify at entry, before this visit can capture the object.
+	if(const auto award = newHorizonsRecruitment::recruitersContactsAward(*h, *this, week))
+	{
+		SetAvailableCreatures stock;
+		stock.tid = id;
+		stock.creatures = creatures;
+		stock.creatures.at(award->row).first = award->amount;
+		stock.recruitersContacts = SetAvailableCreatures::RecruitersContactsReceipt{h->id, week, award->row, award->amount};
+		gameEvents.sendAndApply(stock);
+		InfoWindow notification;
+		notification.type = EInfoWindowMode::AUTO;
+		notification.player = h->getOwner();
+		notification.text.appendTextID("new-horizons.recruitment.recruitersContacts.granted");
+		notification.components.emplace_back(ComponentType::CREATURE, creatures.at(award->row).second.front(), award->amount);
+		gameEvents.sendAndApply(notification);
+	}
 	if(ID == Obj::REFUGEE_CAMP)
 	{
 		ChangeObjectVisitors cow;
@@ -305,6 +326,23 @@ void CGDwelling::onHeroVisit(IGameEventCallback & gameEvents, const CGHeroInstan
 	gameEvents.showBlockingDialog(this, &bd);
 }
 
+int64_t CGDwelling::normalWeeklyGrowth(size_t row) const
+{
+	if(!cb || row >= creatures.size() || creatures[row].second.empty())
+		return 0;
+	const auto creature = creatures[row].second.front();
+	if(!creature.hasValue() || static_cast<size_t>(creature.getNum()) >= LIBRARY->creh->objects.size())
+		return 0;
+	const auto * definition = creature.toCreature();
+	if(!definition)
+		return 0;
+	const int base = cb->getCreatureBaseGrowth(creature);
+	// Preserve ordinary external growth's existing integer-percent semantics.
+	return static_cast<int64_t>(base) * (1 + definition->valOfBonuses(BonusType::CREATURE_GROWTH_PERCENT) / 100)
+		+ definition->valOfBonuses(BonusType::CREATURE_GROWTH,
+			BonusCustomSubtype::creatureLevel(definition->getLevel()));
+}
+
 void CGDwelling::newTurn(IGameEventCallback & gameEvents, IGameRandomizer & gameRandomizer) const
 {
 	if(cb->getCalendar().getDayOfWeek() != 1) //not first day of week
@@ -340,9 +378,7 @@ void CGDwelling::newTurn(IGameEventCallback & gameEvents, IGameRandomizer & game
 			else
 				creaturesAccumulate = cb->getSettings().getBoolean(EGameSettings::DWELLINGS_ACCUMULATE_WHEN_NEUTRAL);
 
-			const CCreature * cre =creatures[i].second[0].toCreature();
-			const int baseGrowth = cb->getCreatureBaseGrowth(cre->getId());
-			TQuantity amount = baseGrowth * (1 + cre->valOfBonuses(BonusType::CREATURE_GROWTH_PERCENT)/100) + cre->valOfBonuses(BonusType::CREATURE_GROWTH, BonusCustomSubtype::creatureLevel(cre->getLevel()));
+			TQuantity amount = normalWeeklyGrowth(i);
 			if (creaturesAccumulate && ID != Obj::REFUGEE_CAMP) //camp should not try to accumulate different kinds of creatures
 				sac.creatures[i].first += amount;
 			else

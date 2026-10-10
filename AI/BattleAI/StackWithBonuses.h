@@ -386,6 +386,8 @@ public:
 	void applyArmorerLastStandDefend(uint32_t unitId);
 	bool getRebirthChainUsed(BattleSide side) const override;
 	void setRebirthChainUsed(BattleSide side, bool used) override;
+	bool getPhoenixSparkUsed(BattleSide side) const override;
+	void setPhoenixSparkUsed(BattleSide side, bool used) override;
 	int32_t getBloodrageDamagePercent(BattleSide side) const override;
 	int32_t getBloodrageCapPercent(BattleSide side) const override;
 	int32_t getBloodrageSpeedBonus(BattleSide side) const override;
@@ -548,6 +550,7 @@ private:
 	/// Branch-local once-per-combat consumption for Armorer's first qualifying Last Stand.
 	BattleSideArray<bool> armorerLastStandUsedStates;
 	BattleSideArray<bool> rebirthChainUsedStates;
+	BattleSideArray<bool> phoenixSparkUsedStates;
 	BattleSideArray<ArmorerDefiantState> armorerDefiantStates;
 	BattleSideArray<std::uint8_t> completedHeroSpellLevelMasks;
 	BattleSideArray<bool> counterspellArmedStates;

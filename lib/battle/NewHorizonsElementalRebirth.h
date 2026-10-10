@@ -41,6 +41,7 @@ struct DLL_LINKAGE ActiveProfile
 	bool perfectConvergence = false;
 	bool swiftRebirth = false;
 	bool elementalMemory = false;
+	bool phoenixSpark = false;
 };
 
 /// Immutable pre-hit facts needed to decide and resolve one destruction reaction.
@@ -55,7 +56,27 @@ struct DLL_LINKAGE DeathSnapshot
 	int64_t rebirthOriginalAggregateHP = 0;
 	int32_t positiveMoraleModifier = 0;
 	int32_t positiveLuckModifier = 0;
+	bool phoenixSpark = false;
 };
+
+/// First eligible Champion death is spent before placement, including a blocked footprint.
+struct DLL_LINKAGE PhoenixSparkConsumption
+{
+	BattleSide side = BattleSide::NONE;
+	uint32_t sourceUnitId = std::numeric_limits<uint32_t>::max();
+	void validateShape() const;
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(h.saving)
+			validateShape();
+		h & side;
+		h & sourceUnitId;
+		if(!h.saving)
+			validateShape();
+	}
+};
+DLL_LINKAGE void validatePhoenixSparkConsumption(const IBattleInfo & battle,
+	const PhoenixSparkConsumption & consumption);
 
 /// Atomic provenance for one second-generation ADD and its side-owned combat token.
 struct DLL_LINKAGE ChainConsumption
@@ -123,7 +144,8 @@ DLL_LINKAGE bool isEligibleSource(const battle::Unit & unit);
 
 /// Captures the source identity, current corpse hex, frozen battle-start HP basis and active rank.
 DLL_LINKAGE std::optional<DeathSnapshot> captureDeathSource(
-	const battle::Unit & unit, const CGHeroInstance * hero, bool chainUsed = false);
+	const battle::Unit & unit, const CGHeroInstance * hero, bool chainUsed = false,
+	const newHorizonsCreatures::CreatureCategoryRules * categoryRules = nullptr, bool phoenixSparkUsed = false);
 
 /// Revalidates a captured source after applying the hit. A native Rebirth survivor and clone
 /// death are rejected even if the triggering hit packet reported a lethal amount.

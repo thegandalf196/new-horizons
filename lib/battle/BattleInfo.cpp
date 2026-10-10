@@ -1704,6 +1704,15 @@ void BattleInfo::setRebirthChainUsed(BattleSide side, bool used)
 	sides.at(side).rebirthChainUsed = used;
 }
 
+void BattleInfo::setPhoenixSparkUsed(BattleSide side, bool used)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::runtime_error("Invalid Phoenix Spark side");
+	if(!used && sides.at(side).phoenixSparkUsed)
+		throw std::runtime_error("Cannot restore a spent Phoenix Spark combat use");
+	sides.at(side).phoenixSparkUsed = used;
+}
+
 bool BattleInfo::hasRebirthOutputOriginalHPState() const
 {
 	return std::ranges::any_of(stacks, [](const auto & stack)

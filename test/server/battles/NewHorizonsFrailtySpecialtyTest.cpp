@@ -47,6 +47,9 @@ protected:
 	bool optIn = true;
 	bool legacyMagic = false;
 	bool presetBook = false;
+	bool aenainOptIn = true;
+	bool aenainFalseFlag = false;
+	SpellID presetSpell = SpellID::WEAKNESS;
 	CStack * friendly = nullptr;
 	CStack * target = nullptr;
 
@@ -62,6 +65,16 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			legacyMagic ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		if(aenainFalseFlag)
+		{
+			rules["nonDamageSpellSpecialties"]["aenainFrailtyReplacement"].Bool() = false;
+			rules.setOverrideFlag(true);
+		}
+		if(!aenainOptIn || !optIn)
+		{
+			rules["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
+			rules.setOverrideFlag(true);
+		}
 		if(!optIn)
 		{
 			std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(),
@@ -80,7 +93,7 @@ protected:
 			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode(actor)), PlayerColor(0))
 			.heroGarrison({{archer, 100}});
 		if(presetBook)
-			builder.heroSpells({SpellID::WEAKNESS});
+			builder.heroSpells({presetSpell});
 		builder.hero({7, 7, 0}, HeroTypeID(HeroTypeID::decode("core:aislinn")), PlayerColor(1))
 			.heroGarrison({{archer, 100}});
 		startWithMap(std::move(builder));
@@ -185,6 +198,158 @@ TEST_F(NewHorizonsFrailtySpecialtyTest, CuthbertDefaultStartAndPaidDefenseLoss) 
 TEST_F(NewHorizonsFrailtySpecialtyTest, OlemaDefaultStartAndPaidDefenseLoss) { expectNamedStart("core:olema", SpellID::WEAKNESS); }
 TEST_F(NewHorizonsFrailtySpecialtyTest, MirlandaDefaultStartAndPaidDefenseLoss) { expectNamedStart("core:mirlanda", SpellID::WEAKNESS); }
 TEST_F(NewHorizonsFrailtySpecialtyTest, XsiDefaultStartAndPaidDefenseLoss) { expectNamedStart("core:xsi", SpellID::STONE_SKIN); }
+
+TEST_F(NewHorizonsFrailtySpecialtyTest, AenainDefaultStartAndPaidDefenseLoss)
+{
+	expectNamedStart("core:aenain", SpellID::DISRUPTING_RAY);
+	const auto & producers = attackerSideHero->getHeroType()->nonDamageSpellSpecialtyProducers;
+	ASSERT_EQ(producers.size(), 1u);
+	ASSERT_NE(producers.front().bonus->parameters, nullptr);
+	ASSERT_TRUE(producers.front().bonus->parameters->isVector());
+	EXPECT_EQ(producers.front().bonus->parameters->toVector(), (std::vector<int32_t>{-2}));
+}
+
+TEST_F(NewHorizonsFrailtySpecialtyTest, AenainMapPresetBookIsNotRewritten)
+{
+	presetBook = true;
+	presetSpell = SpellID::DISRUPTING_RAY;
+	ASSERT_NO_FATAL_FAILURE(prepare("core:aenain"));
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(SpellID::DISRUPTING_RAY));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(frailty()));
+	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(frailty()), 20);
+}
+
+TEST_F(NewHorizonsFrailtySpecialtyTest, AenainFixedTermFloorAndPaidCumulativeCapsRemainUnchanged)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare("core:aenain"));
+	ASSERT_NO_FATAL_FAILURE(combat());
+	for(const auto power : {0, 7, 100, 2000})
+	{
+		setPower(power);
+		spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, frailty().toSpell());
+		EXPECT_EQ(frailty().toSpell()->battleMechanics(&cast)->getFrailtyDefenseLossBasisPoints(),
+			std::min(2000, 1000 + 5 * power * 120 / 100));
+	}
+	for(int number = 1; number <= 4; ++number)
+	{
+		if(number > 1)
+		{
+			BattleNextRound next;
+			next.battleID = BattleID(0);
+			gameHandler->sendAndApply(next);
+		}
+		ASSERT_TRUE(paidCast());
+		expectMarker(target, std::min(6000, 2000 * number));
+	}
+}
+
+TEST_F(NewHorizonsFrailtySpecialtyTest, AenainLegacyKeepsOriginalInscriptionAndProducer)
+{
+	legacyMagic = true;
+	ASSERT_NO_FATAL_FAILURE(prepare("core:aenain"));
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(SpellID::DISRUPTING_RAY));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(frailty()));
+	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(frailty()), 0);
+	expectOriginalProducer();
+	const auto & producer = attackerSideHero->getHeroType()->nonDamageSpellSpecialtyProducers.front();
+	ASSERT_NE(producer.bonus->parameters, nullptr);
+	ASSERT_TRUE(producer.bonus->parameters->isVector());
+	EXPECT_EQ(producer.bonus->parameters->toVector(), (std::vector<int32_t>{-2}));
+}
+
+TEST_F(NewHorizonsFrailtySpecialtyTest, AenainFlagValidationRejectsMalformedOrMissingFrailtyOptIn)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+	rules["nonDamageSpellSpecialties"]["aenainFrailtyReplacement"].Integer() = 1;
+	EXPECT_THROW(newHorizonsHeroes::nonDamageSpellSpecialtyRules(rules), std::runtime_error);
+	rules["nonDamageSpellSpecialties"]["aenainFrailtyReplacement"] = JsonNode();
+	EXPECT_THROW(newHorizonsHeroes::nonDamageSpellSpecialtyRules(rules), std::runtime_error);
+	rules["nonDamageSpellSpecialties"]["aenainFrailtyReplacement"].Bool() = true;
+	std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(), [](const JsonNode & spell)
+	{
+		return spell.String() == newHorizonsMagic::SHADOW_FRAILTY_SPELL;
+	});
+	EXPECT_THROW(newHorizonsHeroes::nonDamageSpellSpecialtyRules(rules), std::runtime_error);
+}
+
+TEST_F(NewHorizonsFrailtySpecialtyTest, AenainAbsentFlagKeepsFourHeroContextAndPreviousWriter)
+{
+	aenainOptIn = false;
+	ASSERT_NO_FATAL_FAILURE(prepare("core:aenain"));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(frailty()));
+	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(frailty()), 0);
+	expectOriginalProducer();
+	CMemorySerializer bytes;
+	bytes.oser.version = ESerializationVersion::NEW_HORIZONS_FRAILTY_SPECIALTIES;
+	EXPECT_NO_THROW(attackerSideHero->serialize(bytes.oser));
+	EXPECT_FALSE(bytes.extractBuffer().empty());
+	attackerSideHero->addSpellToSpellbook(frailty());
+	ASSERT_NO_FATAL_FAILURE(combat());
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, frailty().toSpell());
+	EXPECT_EQ(frailty().toSpell()->battleMechanics(&cast)->getFrailtyDefenseLossBasisPoints(), 1500);
+}
+
+TEST_F(NewHorizonsFrailtySpecialtyTest, AenainRoundtripAndPrePrefixVersionAdmission)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare("core:aenain"));
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(gameState()->saveToMemory());
+	const auto * loaded = restored.getHero(attackerSideHero->id);
+	ASSERT_NE(loaded, nullptr);
+	EXPECT_TRUE(loaded->spellbookContainsSpell(frailty()));
+	EXPECT_EQ(loaded->getNonDamageSpellSpecialtyBonusPercent(frailty()), 20);
+	const auto reject = [](auto & value)
+	{
+		CMemorySerializer bytes;
+		bytes.oser.version = ESerializationVersion::NEW_HORIZONS_FRAILTY_SPECIALTIES;
+		EXPECT_THROW(value.serialize(bytes.oser), std::runtime_error);
+		EXPECT_TRUE(bytes.extractBuffer().empty());
+	};
+	reject(*attackerSideHero);
+	reject(gameState()->getMap());
+	reject(*gameState());
+	LobbyStartGame lobby;
+	lobby.initializedStartInfo = std::make_shared<StartInfo>(*gameState()->getStartInfo());
+	lobby.initializedGameState = gameState();
+	reject(lobby);
+	JsonNode raw;
+	raw["heroes"]["newHorizons"] = attackerSideHero->getPrimaryGrowthRules();
+	CMemorySerializer incoming;
+	incoming.oser & raw;
+	incoming.iser.version = ESerializationVersion::NEW_HORIZONS_FRAILTY_SPECIALTIES;
+	GameSettings decoded;
+	EXPECT_THROW(decoded.serialize(incoming.iser), std::runtime_error);
+}
+
+TEST_F(NewHorizonsFrailtySpecialtyTest, AenainExplicitFalseKeyRejectsPreviousFormatBeforePrefix)
+{
+	aenainFalseFlag = true;
+	ASSERT_NO_FATAL_FAILURE(prepare("core:aenain"));
+	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(frailty()), 0);
+	expectOriginalProducer();
+	const auto reject = [](auto & value)
+	{
+		CMemorySerializer bytes;
+		bytes.oser.version = ESerializationVersion::NEW_HORIZONS_FRAILTY_SPECIALTIES;
+		EXPECT_THROW(value.serialize(bytes.oser), std::runtime_error);
+		EXPECT_TRUE(bytes.extractBuffer().empty());
+	};
+	reject(*attackerSideHero);
+	reject(gameState()->getMap());
+	reject(*gameState());
+	LobbyStartGame lobby;
+	lobby.initializedStartInfo = std::make_shared<StartInfo>(*gameState()->getStartInfo());
+	lobby.initializedGameState = gameState();
+	reject(lobby);
+	JsonNode raw;
+	raw["heroes"]["newHorizons"] = attackerSideHero->getPrimaryGrowthRules();
+	CMemorySerializer incoming;
+	incoming.oser & raw;
+	incoming.iser.version = ESerializationVersion::NEW_HORIZONS_FRAILTY_SPECIALTIES;
+	GameSettings decoded;
+	EXPECT_THROW(decoded.serialize(incoming.iser), std::runtime_error);
+}
 
 TEST_F(NewHorizonsFrailtySpecialtyTest, FixedTermRankRationalFloorAndCastCapAreUnchanged)
 {
@@ -306,6 +471,30 @@ TEST_F(NewHorizonsFrailtySpecialtyTest, CurrentOptOutPreservesProducerAndPreviou
 }
 
 #ifdef ENABLE_BATTLE_AI
+TEST_F(NewHorizonsFrailtySpecialtyTest, AenainDetachedAICastMatchesPaidResolutionWithoutLiveMutation)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare("core:aenain"));
+	ASSERT_NO_FATAL_FAILURE(combat());
+	FrailtyPredictionEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor::SPECTATOR);
+	HypotheticBattle projected(&environment, callback);
+	const auto before = target->getDefense(false);
+	const auto mana = attackerSideHero->getManaAvailable();
+	spells::BattleCast cast(&projected, attackerSideHero, spells::Mode::HERO, frailty().toSpell());
+	const auto mechanics = frailty().toSpell()->battleMechanics(&cast);
+	spells::Target aim{spells::Destination(projected.battleGetUnitByID(target->unitId()))};
+	ASSERT_TRUE(mechanics->canBeCastAt(aim));
+	EXPECT_EQ(mechanics->getFrailtyDefenseLossBasisPoints(), 1600);
+	mechanics->castEval(projected.getServerCallback(), aim);
+	expectMarker(projected.battleGetUnitByID(target->unitId()), 1600);
+	EXPECT_EQ(target->getDefense(false), before);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	ASSERT_TRUE(paidCast());
+	expectMarker(target, 1600);
+	EXPECT_EQ(target->getDefense(false), projected.battleGetUnitByID(target->unitId())->getDefense(false));
+	EXPECT_EQ(mana - attackerSideHero->getManaAvailable(), 8);
+}
+
 TEST_F(NewHorizonsFrailtySpecialtyTest, DetachedAICastUsesSameSpecializedLossWithoutChangingLiveState)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());

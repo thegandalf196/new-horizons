@@ -1107,6 +1107,16 @@ void CMap::validateNewHorizonsSageSerialization(bool supported) const
 			hero->validateNewHorizonsSageSerialization(supported);
 }
 
+void CMap::validateNewHorizonsRecruitersContactsSerialization(bool supported) const
+{
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			hero->validateNewHorizonsRecruitersContactsSerialization(supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			hero->validateNewHorizonsRecruitersContactsSerialization(supported);
+}
+
 void CMap::validateNewHorizonsScholarSerialization(bool supported) const
 {
 	// Match existing hero-receipt preflight coverage: actual serialized objects
@@ -1141,6 +1151,18 @@ void CMap::validateNewHorizonsFrailtySpecialtySerialization(bool supported) cons
 	for(const auto & hero : heroesPool)
 		if(hero)
 			newHorizonsHeroes::validateFrailtySpecialtySerialization(hero->getPrimaryGrowthRules(), supported);
+}
+
+void CMap::validateNewHorizonsAenainFrailtySpecialtySerialization(bool supported) const
+{
+	if(gameSettings)
+		gameSettings->validateNewHorizonsAenainFrailtySpecialtySerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsHeroes::validateAenainFrailtySpecialtySerialization(hero->getPrimaryGrowthRules(), supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			newHorizonsHeroes::validateAenainFrailtySpecialtySerialization(hero->getPrimaryGrowthRules(), supported);
 }
 
 void CMap::validateNewHorizonsMagnateSerialization(bool supported) const

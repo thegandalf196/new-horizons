@@ -43,6 +43,7 @@ protected:
 	{
 		TinyMapGameTest::mapLoaded(map);
 		JsonNode heroRules(JsonPath::builtin("config/newHorizonsHeroes"));
+		heroRules["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
 		// Isolate Sage's prior-format controls from the later independent opt-in.
 		auto & specialties = heroRules["nonDamageSpellSpecialties"]["spells"].Vector();
 		std::erase_if(specialties, [](const JsonNode & spell)

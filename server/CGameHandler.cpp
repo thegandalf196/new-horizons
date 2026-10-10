@@ -2281,7 +2281,8 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 				continue;
 			const auto * hero = battleInfo->getSideHero(unit->unitSide());
 			const auto snapshot = newHorizonsElementalRebirth::captureDeathSource(*unit, hero,
-				battleInfo->getRebirthChainUsed(unit->unitSide()));
+				battleInfo->getRebirthChainUsed(unit->unitSide()), &battleInfo->getCreatureCategoryRules(),
+				battleInfo->getPhoenixSparkUsed(unit->unitSide()));
 			if(snapshot)
 				elementalRebirthTriggers.try_emplace(unit->unitId(), ElementalRebirthTrigger{battleID, *snapshot});
 		}
@@ -2373,30 +2374,41 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 	}
 	for(const auto & [unitId, trigger] : elementalRebirthTriggers)
 	{
+		auto snapshot = trigger.snapshot;
 		const auto * battleInfo = gameState().getBattle(trigger.battleID);
 		const auto * unit = battleInfo ? battleInfo->battleGetUnitByID(unitId) : nullptr;
-		if(!battleInfo || !newHorizonsElementalRebirth::stillEligibleDeath(unit, trigger.snapshot,
-			true, false, false, battleInfo->getRebirthChainUsed(trigger.snapshot.side)))
+		if(!battleInfo || !newHorizonsElementalRebirth::stillEligibleDeath(unit, snapshot,
+			true, false, false, battleInfo->getRebirthChainUsed(snapshot.side)))
 			continue;
 
+		// First qualifying destruction spends Spark even if the Phoenix footprint
+		// is blocked. Other deaths in this batch retain ordinary Rebirth.
+		snapshot.phoenixSpark = snapshot.phoenixSpark && !battleInfo->getPhoenixSparkUsed(snapshot.side);
+		if(snapshot.phoenixSpark)
+		{
+			BattleUnitsChanged receipt;
+			receipt.battleID = trigger.battleID;
+			receipt.phoenixSparkConsumption = newHorizonsElementalRebirth::PhoenixSparkConsumption{snapshot.side, unitId};
+			sendAndApply(receipt);
+		}
 		const auto candidates = newHorizonsElementalRebirth::legalCandidatePool(
-			*battleInfo, battleInfo->getAccessibility(), trigger.snapshot);
+			*battleInfo, battleInfo->getAccessibility(), snapshot);
 		if(candidates.empty())
 		{
 			logGlobal->warn("Elemental Rebirth has no legal Elite Elemental for corpse hex %d",
-				trigger.snapshot.corpsePosition.toInt());
+				snapshot.corpsePosition.toInt());
 			continue;
 		}
 
 		const CreatureID creature = candidates.size() == 1 ? candidates.front()
 			: *RandomGeneratorUtil::nextItem(candidates, getRandomGenerator());
-		const auto desiredHP = newHorizonsElementalRebirth::targetHP(trigger.snapshot, creature, *battleInfo);
+		const auto desiredHP = newHorizonsElementalRebirth::targetHP(snapshot, creature, *battleInfo);
 		const auto effectiveMaxHP = newHorizonsElementalRebirth::effectiveSummonMaxHP(
-			battleInfo->getSideArmy(trigger.snapshot.side), creature,
-			battleInfo->getSidePlayer(trigger.snapshot.side), trigger.snapshot.side);
+			battleInfo->getSideArmy(snapshot.side), creature,
+			battleInfo->getSidePlayer(snapshot.side), snapshot.side);
 		auto spawn = newHorizonsElementalRebirth::makeSpawnDescriptor(
-			battleInfo->battleNextUnitId(), creature, trigger.snapshot.side, trigger.snapshot.corpsePosition,
-			desiredHP, effectiveMaxHP, trigger.snapshot.chain);
+			battleInfo->battleNextUnitId(), creature, snapshot.side, snapshot.corpsePosition,
+			desiredHP, effectiveMaxHP, snapshot.chain);
 		if(!spawn)
 		{
 			logGlobal->error("Elemental Rebirth could not represent %lld HP for creature id %d",
@@ -2408,9 +2420,9 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 		add.battleID = trigger.battleID;
 		auto & addedUnit = add.changedStacks.emplace_back(spawn->unit.id, UnitChanges::EOperation::ADD);
 		spawn->unit.save(addedUnit.data);
-		if(trigger.snapshot.chain)
+		if(snapshot.chain)
 			add.rebirthChainConsumption = newHorizonsElementalRebirth::ChainConsumption{
-				trigger.snapshot.side, trigger.snapshot.unitId, spawn->unit.id};
+				snapshot.side, snapshot.unitId, spawn->unit.id};
 		sendAndApply(add);
 
 		const auto * reborn = gameState().getBattle(trigger.battleID)->battleGetUnitByID(spawn->unit.id);
@@ -2424,14 +2436,14 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 			BattleUnitsChanged remove;
 			remove.battleID = trigger.battleID;
 			remove.changedStacks.emplace_back(spawn->unit.id, UnitChanges::EOperation::REMOVE);
-			if(trigger.snapshot.chain)
+			if(snapshot.chain)
 				remove.rebirthChainConsumption = newHorizonsElementalRebirth::ChainConsumption{
-					trigger.snapshot.side, trigger.snapshot.unitId, spawn->unit.id, true};
+					snapshot.side, snapshot.unitId, spawn->unit.id, true};
 			sendAndApply(remove);
 			continue;
 		}
 
-		if(const auto ward = newHorizonsElementalRebirth::elementalWardBonus(trigger.snapshot.profile))
+		if(const auto ward = newHorizonsElementalRebirth::elementalWardBonus(snapshot.profile))
 		{
 			SetStackEffect applyWard;
 			applyWard.battleID = trigger.battleID;
@@ -2447,13 +2459,13 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 			state->damage(wound);
 			if(state->getAvailableHealth() != spawn->health.targetAggregateHP)
 			{
-				if(trigger.snapshot.chain)
+				if(snapshot.chain)
 				{
 					BattleUnitsChanged rollback;
 					rollback.battleID = trigger.battleID;
 					rollback.changedStacks.emplace_back(spawn->unit.id, UnitChanges::EOperation::REMOVE);
 					rollback.rebirthChainConsumption = newHorizonsElementalRebirth::ChainConsumption{
-						trigger.snapshot.side, trigger.snapshot.unitId, spawn->unit.id, true};
+						snapshot.side, snapshot.unitId, spawn->unit.id, true};
 					sendAndApply(rollback);
 				}
 				throw std::runtime_error("Elemental Rebirth failed to apply its exact aggregate HP target");
@@ -2468,7 +2480,7 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 			sendAndApply(damaged);
 		}
 
-		if(trigger.snapshot.profile.swiftRebirth)
+		if(snapshot.profile.swiftRebirth)
 		{
 			SetStackEffect swift;
 			swift.battleID = trigger.battleID;
@@ -2476,7 +2488,7 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 				newHorizonsSwiftRebirth::marker(battleInfo->getRound())});
 			sendAndApply(swift);
 		}
-		const auto memory = newHorizonsElementalRebirth::elementalMemoryBonuses(trigger.snapshot, *reborn);
+		const auto memory = newHorizonsElementalRebirth::elementalMemoryBonuses(snapshot, *reborn);
 		if(!memory.empty())
 		{
 			SetStackEffect inherited;
@@ -2487,21 +2499,22 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 
 		BattleLogMessage log;
 		log.battleID = trigger.battleID;
-		MetaString line = MetaString::createFromRawString(trigger.snapshot.chain ? "Rebirth Chain summons " : "Elemental Rebirth summons ");
+		MetaString line = MetaString::createFromRawString(snapshot.phoenixSpark ? "Phoenix Spark summons "
+			: snapshot.chain ? "Rebirth Chain summons " : "Elemental Rebirth summons ");
 		line.appendNumber(spawn->health.count);
 		line.appendRawString(" ");
 		line.appendName(creature, spawn->health.count);
 		line.appendRawString(" with ");
 		line.appendNumber(spawn->health.targetAggregateHP);
 		line.appendRawString(" HP at the fallen stack's position.");
-		if(trigger.snapshot.profile.greaterEssence)
+		if(snapshot.profile.greaterEssence && !snapshot.phoenixSpark)
 			line.appendRawString(" Greater Essence increases its rebirth health.");
-		if(trigger.snapshot.profile.elementalWard)
+		if(snapshot.profile.elementalWard)
 			line.appendRawString(" Elemental Ward protects it from magical damage.");
 		log.lines.push_back(std::move(line));
 		sendAndApply(log);
 
-		if(trigger.snapshot.profile.primalBurst)
+		if(snapshot.profile.primalBurst)
 		{
 			const auto * updatedBattle = gameState().getBattle(trigger.battleID);
 			const auto * burstSource = updatedBattle

@@ -44,6 +44,7 @@ constexpr std::string_view ELEMENTAL_ATTUNEMENT_ID = "new-horizons:elementalRebi
 constexpr std::string_view ADAPTIVE_ELEMENT_ID = "new-horizons:elementalRebirth.adaptiveElement";
 constexpr std::string_view PERFECT_CONVERGENCE_ID = "new-horizons:elementalRebirth.perfectConvergence";
 constexpr std::string_view ELEMENTAL_MEMORY_ID = "new-horizons:elementalRebirth.elementalMemory";
+constexpr std::string_view PHOENIX_SPARK_ID = "new-horizons:elementalRebirth.phoenixSpark";
 constexpr int GREATER_ESSENCE_HEALTH_PERCENTAGE_POINTS = 15;
 constexpr int ELEMENTAL_WARD_REDUCTION_BASIS_POINTS = 2000;
 
@@ -85,7 +86,7 @@ bool isValidProfile(const ActiveProfile & profile)
 		&& profile.healthPercent == HEALTH_PERCENTAGES[static_cast<size_t>(profile.rank - 1)]
 		&& (profile.rank >= 2 || (!profile.greaterEssence && !profile.elementalWard
 			&& !profile.rebirthChain && !profile.adaptiveElement))
-		&& (profile.rank >= 3 || !profile.perfectConvergence);
+		&& (profile.rank >= 3 || (!profile.perfectConvergence && !profile.phoenixSpark));
 }
 
 DeathSnapshot withElementalMemory(DeathSnapshot snapshot, const battle::Unit & unit)
@@ -139,7 +140,8 @@ std::optional<ActiveProfile> activeProfile(const CGHeroInstance * hero)
 		rank >= MasteryLevel::ADVANCED && hero->hasActivePerk(std::string(SKILL_ID), std::string(ADAPTIVE_ELEMENT_ID)),
 		rank >= MasteryLevel::EXPERT && hero->hasActivePerk(std::string(SKILL_ID), std::string(PERFECT_CONVERGENCE_ID)),
 		hero->hasActivePerk(std::string(SKILL_ID), "new-horizons:elementalRebirth.swiftRebirth"),
-		hero->hasActivePerk(std::string(SKILL_ID), std::string(ELEMENTAL_MEMORY_ID))};
+		hero->hasActivePerk(std::string(SKILL_ID), std::string(ELEMENTAL_MEMORY_ID)),
+		rank >= MasteryLevel::EXPERT && hero->hasActivePerk(std::string(SKILL_ID), std::string(PHOENIX_SPARK_ID))};
 }
 
 int64_t primalBurstDamageBudget(int64_t rebornAggregateHP)
@@ -255,7 +257,7 @@ std::vector<Bonus> elementalMemoryBonuses(const DeathSnapshot & snapshot, const 
 }
 
 std::optional<DeathSnapshot> captureDeathSource(const battle::Unit & unit, const CGHeroInstance * hero,
-	bool chainUsed)
+	bool chainUsed, const newHorizonsCreatures::CreatureCategoryRules * categoryRules, bool phoenixSparkUsed)
 {
 	const auto profile = activeProfile(hero);
 	if(!profile)
@@ -272,7 +274,40 @@ std::optional<DeathSnapshot> captureDeathSource(const battle::Unit & unit, const
 	if(basis <= 0)
 		return std::nullopt;
 
-	return withElementalMemory(DeathSnapshot{unit.unitId(), unit.unitSide(), unit.getPosition(), basis, *profile}, unit);
+	auto snapshot = withElementalMemory(DeathSnapshot{unit.unitId(), unit.unitSide(), unit.getPosition(), basis, *profile}, unit);
+	const auto category = categoryRules ? categoryRules->lookup(unit.unitType()->getJsonKey()) : std::nullopt;
+	snapshot.phoenixSpark = profile->phoenixSpark && !phoenixSparkUsed && !unit.isHypnotized()
+		&& !unit.isTimeStopped() && category
+		&& category->category == newHorizonsCreatures::CreatureCategory::CHAMPION;
+	return snapshot;
+}
+
+void PhoenixSparkConsumption::validateShape() const
+{
+	if((side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| sourceUnitId == std::numeric_limits<uint32_t>::max())
+		throw std::runtime_error("Invalid Phoenix Spark death provenance");
+}
+
+void validatePhoenixSparkConsumption(const IBattleInfo & battle, const PhoenixSparkConsumption & consumption)
+{
+	consumption.validateShape();
+	const auto profile = activeProfile(battle.getSideHero(consumption.side));
+	const auto sources = battle.getUnitsIf([&](const battle::Unit * unit)
+	{
+		return unit && unit->unitId() == consumption.sourceUnitId;
+	});
+	if(!profile || !profile->phoenixSpark || battle.getPhoenixSparkUsed(consumption.side) || sources.size() != 1)
+		throw std::runtime_error("Unavailable Phoenix Spark death receipt");
+	const auto * source = sources.front();
+	const auto category = source->unitType()
+		? battle.getCreatureCategoryRules().lookup(source->unitType()->getJsonKey()) : std::nullopt;
+	const DeathSnapshot snapshot{source->unitId(), consumption.side, source->getPosition(),
+		source->getBattleStartMaximumAggregateHP(), *profile};
+	if(source->isHypnotized() || source->isTimeStopped()
+		|| !category || category->category != newHorizonsCreatures::CreatureCategory::CHAMPION
+		|| !stillEligibleDeath(source, snapshot, true, false, false))
+		throw std::runtime_error("Invalid Phoenix Spark original Champion death");
 }
 
 bool stillEligibleDeath(const battle::Unit * postHitUnit, const DeathSnapshot & snapshot,
@@ -402,6 +437,17 @@ std::vector<CreatureID> legalCandidatePool(const IBattleInfo & battle,
 {
 	if(!isValidProfile(snapshot.profile))
 		return {};
+	if(snapshot.phoenixSpark)
+	{
+		const CreatureID phoenix(CreatureID::decode("core:phoenix"));
+		const auto * creature = phoenix.toCreature();
+		const auto category = creature ? battle.getCreatureCategoryRules().lookup(creature->getJsonKey()) : std::nullopt;
+		if(snapshot.chain || !snapshot.profile.phoenixSpark || !category
+			|| category->category != newHorizonsCreatures::CreatureCategory::CHAMPION
+			|| !accessibility.accessible(snapshot.corpsePosition, creature->isDoubleWide(), snapshot.side))
+			return {};
+		return {phoenix};
+	}
 	auto candidates = legalCandidatePool(battle.getCreatureCategoryRules(), accessibility,
 		snapshot.corpsePosition, snapshot.side);
 	if(!snapshot.profile.adaptiveElement && !snapshot.profile.perfectConvergence)
@@ -416,6 +462,10 @@ std::vector<CreatureID> legalCandidatePool(const IBattleInfo & battle,
 
 int64_t targetHP(const DeathSnapshot & snapshot)
 {
+	if(snapshot.phoenixSpark)
+		return !snapshot.chain && isValidProfile(snapshot.profile) && snapshot.profile.phoenixSpark
+			&& snapshot.battleStartMaximumAggregateHP > 0
+			? std::max<int64_t>(1, snapshot.battleStartMaximumAggregateHP / 4) : 0;
 	if(snapshot.chain)
 		return isValidProfile(snapshot.profile) && snapshot.profile.rebirthChain && snapshot.rebirthOriginalAggregateHP > 0
 			? std::max<int64_t>(1, snapshot.rebirthOriginalAggregateHP / 4) : 0;

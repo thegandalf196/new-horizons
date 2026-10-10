@@ -25,6 +25,7 @@
 #include "../../../lib/networkPacks/ArtifactLocation.h"
 #include "../../../lib/pathfinder/TurnInfo.h"
 #include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/spells/Problem.h"
@@ -151,12 +152,7 @@ class NewHorizonsMagicStateTest : public HeroCommandFixture
 protected:
 	static constexpr auto WISDOM_SKILL = "new-horizons:wisdom";
 	static constexpr auto ARCANE_MEMORY = "new-horizons:wisdom.arcaneMemory";
-	enum class ArcaneMemoryFixtureMode
-	{
-		ProductionStatus,
-		ActiveForTest
-	};
-	ArcaneMemoryFixtureMode arcaneMemoryFixtureMode = ArcaneMemoryFixtureMode::ProductionStatus;
+	bool historicalFlyWithoutUnlockPrice = false;
 	bool useMagic = true;
 	int magicVersion = newHorizonsMagic::CURRENT_RULESET_VERSION;
 	bool captureOldHavocSpellSchools = false;
@@ -193,21 +189,11 @@ protected:
 				}
 			}
 		}
+		if(historicalFlyWithoutUnlockPrice)
+			rules["adventureSpells"]["core:fly"].Struct().erase("unlockCost");
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
-
-		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
-		if(arcaneMemoryFixtureMode == ArcaneMemoryFixtureMode::ActiveForTest)
-		{
-			for(auto & perk : perkRules["skills"][WISDOM_SKILL]["perks"].Vector())
-			{
-				if(perk["id"].String() == ARCANE_MEMORY)
-				{
-					perk["effect"]["status"].String() = "active";
-					break;
-				}
-			}
-		}
-		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perkRules);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
 
 	void startGameWithWizard(bool withGuildTown = false)
@@ -241,14 +227,8 @@ protected:
 		return SecondarySkill(decoded);
 	}
 
-	void activateArcaneMemoryForTest()
-	{
-		arcaneMemoryFixtureMode = ArcaneMemoryFixtureMode::ActiveForTest;
-	}
-
 	void prepareWizardWithArcaneMemory(bool withGuildTown = false)
 	{
-		activateArcaneMemoryForTest();
 		startGameWithWizard(withGuildTown);
 		attackerSideHero->setSecSkillLevel(wisdomSkill(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 		attackerSideHero->applyPerkSelection({WISDOM_SKILL, ARCANE_MEMORY});
@@ -1228,7 +1208,6 @@ TEST_F(NewHorizonsMagicStateTest, LegacyExpertSummonBoatStillCreatesConfiguredBo
 
 TEST_F(NewHorizonsMagicStateTest, WizardCanChooseArcaneMemoryFromTheBasicWisdomOffer)
 {
-	activateArcaneMemoryForTest();
 	startGameWithWizard();
 	for(int index = 0; index < LIBRARY->skillh->size(); ++index)
 		attackerSideHero->setSecSkillLevel(SecondarySkill(index), MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
@@ -1257,9 +1236,8 @@ TEST_F(NewHorizonsMagicStateTest, WizardCanChooseArcaneMemoryFromTheBasicWisdomO
 	EXPECT_TRUE(attackerSideHero->hasActivePerk(WISDOM_SKILL, ARCANE_MEMORY));
 }
 
-TEST_F(NewHorizonsMagicStateTest, PlannedArcaneMemoryIsNotOfferedOrActivatable)
+TEST_F(NewHorizonsMagicStateTest, ShippedArcaneMemoryRegistryIsActiveAndSavedWithoutInjection)
 {
-	arcaneMemoryFixtureMode = ArcaneMemoryFixtureMode::ProductionStatus;
 	startGameWithWizard();
 	attackerSideHero->setSecSkillLevel(wisdomSkill(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 
@@ -1269,22 +1247,9 @@ TEST_F(NewHorizonsMagicStateTest, PlannedArcaneMemoryIsNotOfferedOrActivatable)
 		return perk["id"].String() == ARCANE_MEMORY;
 	});
 	ASSERT_NE(arcaneMemory, savedPerks.end());
-	EXPECT_EQ((*arcaneMemory)["effect"]["status"].String(), "planned");
-
-	const auto rankLookup = [this](const std::string & skillId)
-	{
-		return attackerSideHero->getPerkSkillRank(skillId);
-	};
-	for(uint64_t offerSeed = 0; offerSeed < 128; ++offerSeed)
-	{
-		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, offerSeed);
-		EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
-		{
-			return candidate.selection.perkId == ARCANE_MEMORY;
-		}));
-	}
-	EXPECT_THROW(attackerSideHero->applyPerkSelection({WISDOM_SKILL, ARCANE_MEMORY}), std::runtime_error);
-	EXPECT_FALSE(attackerSideHero->hasActivePerk(WISDOM_SKILL, ARCANE_MEMORY));
+	EXPECT_EQ((*arcaneMemory)["effect"]["status"].String(), "active");
+	ASSERT_NO_THROW(attackerSideHero->applyPerkSelection({WISDOM_SKILL, ARCANE_MEMORY}));
+	EXPECT_TRUE(attackerSideHero->hasActivePerk(WISDOM_SKILL, ARCANE_MEMORY));
 }
 
 TEST_F(NewHorizonsMagicStateTest, AcceptedCombatScrollCastLearnsAndPersistsWithoutConsuming)
@@ -1305,6 +1270,9 @@ TEST_F(NewHorizonsMagicStateTest, AcceptedCombatScrollCastLearnsAndPersistsWitho
 
 	EXPECT_TRUE(attackerSideHero->hasScroll(magicArrow, false));
 	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(magicArrow));
+	gameHandler->removeArtifact(ArtifactLocation(attackerSideHero->id, ArtifactPosition::MISC1));
+	EXPECT_FALSE(attackerSideHero->hasScroll(magicArrow, false));
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(magicArrow));
 	const auto saved = gameState()->saveToMemory();
 	auto restored = std::make_shared<CGameState>();
 	restored->preInit(LIBRARY);
@@ -1312,7 +1280,7 @@ TEST_F(NewHorizonsMagicStateTest, AcceptedCombatScrollCastLearnsAndPersistsWitho
 	const auto * restoredHero = restored->getHero(attackerSideHero->id);
 	ASSERT_NE(restoredHero, nullptr);
 	EXPECT_TRUE(restoredHero->spellbookContainsSpell(magicArrow));
-	EXPECT_TRUE(restoredHero->hasScroll(magicArrow, false));
+	EXPECT_FALSE(restoredHero->hasScroll(magicArrow, false));
 }
 
 TEST_F(NewHorizonsMagicStateTest, SpellbookSourceTakesPriorityOverMatchingScroll)
@@ -1388,32 +1356,78 @@ TEST_F(NewHorizonsMagicStateTest, EquippedTomeSourceTakesPriorityOverMatchingScr
 TEST_F(NewHorizonsMagicStateTest, CombatScrollDoesNotBypassSchoolRequirement)
 {
 	prepareWizardWithArcaneMemory();
-	const SpellID hypnotize(SpellID::HYPNOTIZE);
+	const SpellID handOfFate(SpellID::decode("new-horizons:handOfFate"));
+	ASSERT_GE(handOfFate.getNum(), 0);
+	ASSERT_EQ(newHorizonsMagic::requiredSchoolRank(attackerSideHero->getMagicRules(), handOfFate), MasteryLevel::BASIC);
+	ASSERT_TRUE(newHorizonsMagic::spellAllowedByHeroRoster(attackerSideHero->getMagicRules(), handOfFate));
+	ASSERT_TRUE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(attackerSideHero->getMagicRules(), handOfFate));
 	const auto chaosSkillId = SecondarySkill::decode("new-horizons:chaosMagic");
 	ASSERT_GE(chaosSkillId, 0);
 	EXPECT_EQ(attackerSideHero->getSecSkillLevel(SecondarySkill(chaosSkillId)), MasteryLevel::NONE);
-	ASSERT_FALSE(attackerSideHero->canLearnSpell(hypnotize.toSpell()));
-	ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, hypnotize, ArtifactPosition::MISC1));
+	ASSERT_FALSE(attackerSideHero->canLearnSpell(handOfFate.toSpell()));
+	ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, handOfFate, ArtifactPosition::MISC1));
 
 	startBattle();
 	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(rightHex), 1);
 	ASSERT_NE(target, nullptr);
 	beginCombat();
-	EXPECT_FALSE(attackerSideHero->canCastThisSpell(hypnotize.toSpell()));
+	EXPECT_FALSE(attackerSideHero->canCastThisSpell(handOfFate.toSpell()));
 	const auto manaBefore = attackerSideHero->getManaAvailable();
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
-		heroSpellAction(hypnotize, target)));
+		heroSpellAction(handOfFate, target)));
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
-	EXPECT_TRUE(attackerSideHero->hasScroll(hypnotize, false));
-	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(hypnotize));
+	EXPECT_TRUE(attackerSideHero->hasScroll(handOfFate, false));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(handOfFate));
 
-	// With the required School rank supplied, this covers the map-roster canLearnSpell gate.
-	// Direct injection of a retired spell source is deferred to the broader Phase 2 matrix.
+	// Hand of Fate is current ordinary level3 Chaos, requiring Basic (levels1/2 permit NONE).
+	// With the required School rank supplied, preserve the positive/map-ban acquisition controls.
 	attackerSideHero->setSecSkillLevel(SecondarySkill(chaosSkillId), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-	EXPECT_TRUE(attackerSideHero->canLearnSpell(hypnotize.toSpell()));
-	ASSERT_TRUE(gameState()->getMap().allowedSpells.count(hypnotize));
-	gameState()->getMap().allowedSpells.erase(hypnotize);
-	EXPECT_FALSE(attackerSideHero->canLearnSpell(hypnotize.toSpell()));
+	EXPECT_TRUE(attackerSideHero->canLearnSpell(handOfFate.toSpell()));
+	ASSERT_TRUE(gameState()->getMap().allowedSpells.count(handOfFate));
+	gameState()->getMap().allowedSpells.erase(handOfFate);
+	EXPECT_FALSE(attackerSideHero->canLearnSpell(handOfFate.toSpell()));
+}
+
+TEST_F(NewHorizonsMagicStateTest, ImplosionScrollNeedsActualSorceryRankBeforeAcceptedLearning)
+{
+	prepareWizardWithArcaneMemory();
+	const SpellID implosion(SpellID::IMPLOSION);
+	const SecondarySkill sorcery(SecondarySkill::decode("new-horizons:sorceryMagic"));
+	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	gameHandler->changeSpells(attackerSideHero, false, {implosion});
+	ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, implosion, ArtifactPosition::MISC1));
+	ASSERT_FALSE(attackerSideHero->canLearnSpell(implosion.toSpell()));
+	startBattle();
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(rightHex), 1000);
+	ASSERT_NE(target, nullptr);
+	beginCombat();
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), heroSpellAction(implosion, target)));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(implosion));
+	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(attackerSideHero->canLearnSpell(implosion.toSpell()));
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), heroSpellAction(implosion, target)));
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(implosion));
+	EXPECT_TRUE(attackerSideHero->hasScroll(implosion, false));
+}
+
+TEST_F(NewHorizonsMagicStateTest, HistoricalNoPriceAdventureScrollRetainsOrdinaryLearningAdmission)
+{
+	historicalFlyWithoutUnlockPrice = true;
+	prepareWizardWithArcaneMemory();
+	const SpellID fly(SpellID::FLY);
+	gameHandler->changeSpells(attackerSideHero, false, {fly});
+	ASSERT_TRUE(attackerSideHero->canLearnSpell(fly.toSpell()));
+	ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, fly, ArtifactPosition::MISC1));
+	auto * environment = installCountingSpellEnvironment();
+	AdventureSpellCastParameters parameters;
+	parameters.caster = attackerSideHero;
+	parameters.pos = int3();
+	(void)fly.toSpell()->adventureCast(environment, parameters);
+	EXPECT_EQ(environment->completed, 1);
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(fly));
+	EXPECT_TRUE(attackerSideHero->hasScroll(fly, false));
 }
 
 TEST_F(NewHorizonsMagicStateTest, AcceptedAdventureScrollCastSettlesFromCompletedEffect)
@@ -1439,6 +1453,8 @@ TEST_F(NewHorizonsMagicStateTest, AcceptedAdventureScrollCastSettlesFromComplete
 	EXPECT_TRUE(attackerSideHero->hasScroll(fly, false));
 	EXPECT_EQ(environment->prepared, 1);
 	EXPECT_EQ(environment->completed, 1);
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(fly));
+	EXPECT_FALSE(attackerSideHero->canLearnSpell(fly.toSpell()));
 }
 
 TEST_F(NewHorizonsMagicStateTest, DimensionDoorRejectedWithoutMovementLeavesScrollUntouched)
@@ -1589,7 +1605,7 @@ TEST_F(NewHorizonsMagicStateTest, TownPortalQueryCancelThenGuildVisitRetainsTheO
 		BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
 	attackerSideHero->setMovementPoints(1500);
 	ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, townPortal, ArtifactPosition::MISC1));
-	ASSERT_TRUE(attackerSideHero->canLearnSpell(townPortal.toSpell()));
+	ASSERT_FALSE(attackerSideHero->canLearnSpell(townPortal.toSpell()));
 	auto * environment = installCountingSpellEnvironment();
 
 	auto castForTownChoice = [&]()
@@ -1650,6 +1666,10 @@ TEST_F(NewHorizonsMagicStateTest, TownPortalQueryCancelThenGuildVisitRetainsTheO
 	EXPECT_LT(attackerSideHero->movementPointsRemaining(), movementBefore);
 	EXPECT_TRUE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
 	EXPECT_TRUE(attackerSideHero->hasScroll(townPortal, false));
+	// Accepted teleportation visits this already paid/unlocked Guild. The
+	// inscription is ordinary Guild teaching, not Arcane Memory admission.
+	ASSERT_EQ(attackerSideHero->getVisitedTown(), destination);
+	ASSERT_TRUE(destination->hasNewHorizonsAdventureSpellUnlocked(3));
 	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(townPortal));
 	EXPECT_FALSE(attackerSideHero->canLearnSpell(townPortal.toSpell()));
 	EXPECT_EQ(environment->prepared, 2);

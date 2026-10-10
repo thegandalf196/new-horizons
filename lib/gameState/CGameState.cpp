@@ -1950,6 +1950,12 @@ void CGameState::validateNewHorizonsSageSerialization(bool supported) const
 		map->validateNewHorizonsSageSerialization(supported);
 }
 
+void CGameState::validateNewHorizonsRecruitersContactsSerialization(bool supported) const
+{
+	if(map)
+		map->validateNewHorizonsRecruitersContactsSerialization(supported);
+}
+
 void CGameState::validateNewHorizonsScholarSerialization(bool supported) const
 {
 	if(map)
@@ -1968,6 +1974,13 @@ void CGameState::validateNewHorizonsFrailtySpecialtySerialization(bool supported
 	newHorizonsHeroes::validateFrailtySpecialtySerialization(heroDevelopmentRules, supported);
 	if(map)
 		map->validateNewHorizonsFrailtySpecialtySerialization(supported);
+}
+
+void CGameState::validateNewHorizonsAenainFrailtySpecialtySerialization(bool supported) const
+{
+	newHorizonsHeroes::validateAenainFrailtySpecialtySerialization(heroDevelopmentRules, supported);
+	if(map)
+		map->validateNewHorizonsAenainFrailtySpecialtySerialization(supported);
 }
 
 void CGameState::validateNewHorizonsMagnateSerialization(bool supported) const

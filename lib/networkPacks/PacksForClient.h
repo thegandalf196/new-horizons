@@ -894,15 +894,55 @@ struct DLL_LINKAGE RazeStructures : public CPackForClient
 
 struct DLL_LINKAGE SetAvailableCreatures : public CPackForClient
 {
+	struct DLL_LINKAGE RecruitersContactsReceipt
+	{
+		ObjectInstanceID hero = ObjectInstanceID::NONE;
+		int32_t week = -1;
+		uint32_t row = 0;
+		uint32_t amount = 0;
+		template <typename Handler> void serialize(Handler & h)
+		{
+			h & hero;
+			h & week;
+			h & row;
+			h & amount;
+		}
+	};
 	ObjectInstanceID tid;
 	std::vector<std::pair<ui32, std::vector<CreatureID> > > creatures;
+	std::optional<RecruitersContactsReceipt> recruitersContacts;
+
+	void validateRecruitersContactsSerialization(bool supported) const
+	{
+		if(!recruitersContacts)
+			return;
+		const auto & receipt = *recruitersContacts;
+		if(!supported)
+			throw std::runtime_error("Cannot discard New Horizons Recruiter's Contacts stock receipt");
+		if(!tid.hasValue() || !receipt.hero.hasValue() || receipt.hero == tid || receipt.week < 0
+			|| receipt.amount == 0 || receipt.amount > static_cast<uint32_t>(std::numeric_limits<int32_t>::max())
+			|| receipt.row >= creatures.size() || creatures[receipt.row].first != receipt.amount
+			|| creatures[receipt.row].second.empty())
+			throw std::runtime_error("Invalid New Horizons Recruiter's Contacts stock receipt");
+		for(const auto creature : creatures[receipt.row].second)
+			if(!creature.hasValue())
+				throw std::runtime_error("Invalid New Horizons Recruiter's Contacts creature alternatives");
+	}
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+			validateRecruitersContactsSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITERS_CONTACTS));
 		h & tid;
 		h & creatures;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITERS_CONTACTS))
+			h & recruitersContacts;
+		else if(!h.saving)
+			recruitersContacts.reset();
+		if(!h.saving)
+			validateRecruitersContactsSerialization(true);
 	}
 };
 
@@ -1416,6 +1456,13 @@ struct DLL_LINKAGE NewTurn : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+			for(const auto & stock : availableCreatures)
+			{
+				stock.validateRecruitersContactsSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITERS_CONTACTS));
+				if(stock.recruitersContacts)
+					throw std::runtime_error("Recruiter's Contacts requires a direct dwelling visit stock grant");
+			}
 		static constexpr int32_t goldPerInvestorStep = 50;
 		static constexpr int32_t maximumInvestorDailyGold = 250;
 		if(h.saving)

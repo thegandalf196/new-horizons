@@ -58,6 +58,8 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info)
 			info->validateVeteranCohesionSerialization(h);
 		if(h.saving && info)
+			info->validatePhoenixSparkSerialization(h);
+		if(h.saving && info)
 			info->validateBloodrageDeathPerksSerialization(h);
 		if(h.saving && info)
 			info->validateFrozenSerialization(h);
@@ -775,6 +777,16 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 	BattleID battleID = BattleID::NONE;
 	std::vector<UnitChanges> changedStacks;
 	std::optional<newHorizonsElementalRebirth::ChainConsumption> rebirthChainConsumption;
+	std::optional<newHorizonsElementalRebirth::PhoenixSparkConsumption> phoenixSparkConsumption;
+
+	void validatePhoenixSparkShape() const
+	{
+		if(!phoenixSparkConsumption)
+			return;
+		phoenixSparkConsumption->validateShape();
+		if(battleID == BattleID::NONE || !changedStacks.empty() || rebirthChainConsumption)
+			throw std::runtime_error("Phoenix Spark receipt must precede its separate summon operation");
+	}
 
 	void validateRebirthChainShape() const
 	{
@@ -804,6 +816,9 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 		if(h.saving)
 		{
 			validateRebirthChainShape();
+			validatePhoenixSparkShape();
+			if(phoenixSparkConsumption && !h.hasFeature(Handler::Version::NEW_HORIZONS_PHOENIX_SPARK))
+				throw std::runtime_error("Cannot discard Phoenix Spark death receipt from an older packet");
 			if(rebirthChainConsumption && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_CHAIN))
 				throw std::runtime_error("Cannot discard Rebirth Chain consumption from an older packet");
 			for(const auto & change : changedStacks)
@@ -856,8 +871,15 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 			h & rebirthChainConsumption;
 		else if(!h.saving)
 			rebirthChainConsumption.reset();
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PHOENIX_SPARK))
+			h & phoenixSparkConsumption;
+		else if(!h.saving)
+			phoenixSparkConsumption.reset();
 		if(!h.saving)
+		{
 			validateRebirthChainShape();
+			validatePhoenixSparkShape();
+		}
 		assert(battleID != BattleID::NONE);
 	}
 };

@@ -11,6 +11,7 @@
 #include "../callback/Calendar.h"
 #include "../entities/creature/NewHorizonsMusterRules.h"
 #include "GameStatePackVisitor.h"
+#include "../mapObjects/NewHorizonsRecruitersContacts.h"
 #include "../mapObjects/NewHorizonsSage.h"
 #include "../battle/NewHorizonsCombatSkills.h"
 
@@ -1214,6 +1215,25 @@ void GameStatePackVisitor::visitRazeStructures(RazeStructures & pack)
 void GameStatePackVisitor::visitSetAvailableCreatures(SetAvailableCreatures & pack)
 {
 	auto * dw = dynamic_cast<CGDwelling *>(gs.getObjInstance(pack.tid));
+	if(pack.recruitersContacts)
+	{
+		pack.validateRecruitersContactsSerialization(true);
+		const auto & receipt = *pack.recruitersContacts;
+		auto * hero = gs.getHero(receipt.hero);
+		const auto calendar = gs.getCalendar();
+		const int week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+		if(!dw || !hero || receipt.week != week)
+			throw std::runtime_error("Invalid or stale New Horizons Recruiter's Contacts stock grant");
+		const auto expected = newHorizonsRecruitment::recruitersContactsAward(*hero, *dw, week);
+		if(!expected || expected->row != receipt.row || expected->amount != receipt.amount)
+			throw std::runtime_error("Invalid New Horizons Recruiter's Contacts row or growth");
+		auto expectedStock = dw->creatures;
+		expectedStock.at(expected->row).first = expected->amount;
+		if(pack.creatures != expectedStock)
+			throw std::runtime_error("New Horizons Recruiter's Contacts may change only its selected empty row");
+		// Complete payload prevalidation precedes the marker and stock mutation.
+		hero->markNewHorizonsRecruitersContactsUsed(week);
+	}
 	assert(dw);
 	dw->creatures = pack.creatures;
 }
@@ -1768,6 +1788,9 @@ void GameStatePackVisitor::visitSetNewHorizonsAdventureSpellUnlock(SetNewHorizon
 
 void GameStatePackVisitor::visitNewTurn(NewTurn & pack)
 {
+	for(const auto & stock : pack.availableCreatures)
+		if(stock.recruitersContacts)
+			throw std::runtime_error("Recruiter's Contacts is not a week-start stock grant");
 	// Validate the entire award set before changing the day or any recipient.
 	for(const auto & [townID, snapshot] : pack.newHorizonsMagnateTownIncome)
 	{
@@ -3772,6 +3795,13 @@ void BattleStatePackVisitor::visitStacksInjured(StacksInjured & pack)
 void BattleStatePackVisitor::visitBattleUnitsChanged(BattleUnitsChanged & pack)
 {
 	pack.validateRebirthChainShape();
+	pack.validatePhoenixSparkShape();
+	if(pack.phoenixSparkConsumption)
+	{
+		newHorizonsElementalRebirth::validatePhoenixSparkConsumption(battleState, *pack.phoenixSparkConsumption);
+		battleState.setPhoenixSparkUsed(pack.phoenixSparkConsumption->side, true);
+		return;
+	}
 	if(pack.rebirthChainConsumption)
 	{
 		if(pack.rebirthChainConsumption->rollback)

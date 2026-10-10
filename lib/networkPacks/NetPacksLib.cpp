@@ -947,6 +947,12 @@ void LobbyStartGame::validateNewHorizonsSageSerialization(bool supported) const
 		initializedGameState->validateNewHorizonsSageSerialization(supported);
 }
 
+void LobbyStartGame::validateNewHorizonsRecruitersContactsSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsRecruitersContactsSerialization(supported);
+}
+
 void LobbyStartGame::validateNewHorizonsScholarSerialization(bool supported) const
 {
 	if(initializedGameState)
@@ -963,6 +969,12 @@ void LobbyStartGame::validateNewHorizonsFrailtySpecialtySerialization(bool suppo
 {
 	if(initializedGameState)
 		initializedGameState->validateNewHorizonsFrailtySpecialtySerialization(supported);
+}
+
+void LobbyStartGame::validateNewHorizonsAenainFrailtySpecialtySerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsAenainFrailtySpecialtySerialization(supported);
 }
 
 void LobbyStartGame::validateNewHorizonsMagnateSerialization(bool supported) const

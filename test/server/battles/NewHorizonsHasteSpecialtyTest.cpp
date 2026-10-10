@@ -51,6 +51,7 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		rules["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
 		// Isolate this feature's admission from the separately authored Thant
 		// replacement introduced by a subsequent supported-list boundary.
 		std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(),
@@ -310,13 +311,15 @@ TEST_F(NewHorizonsHasteSpecialtyTest, PreviousVeteranWriterRejectsBeforeHeroMapW
 	lobby.initializedGameState = gameState();
 	reject(lobby);
 	GameSettings settings;
+	JsonNode authoredRules(JsonPath::builtin("config/newHorizonsHeroes"));
+	authoredRules["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
 	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS,
-		JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
+		authoredRules);
 	reject(settings);
 	// A map with no instantiated heroes still carries its raw authored profile.
 	CMap emptyMap(gameState().get());
 	emptyMap.overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
-		JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
+		authoredRules);
 	reject(emptyMap);
 }
 
@@ -360,6 +363,7 @@ TEST_F(NewHorizonsHasteSpecialtyTest, HistoricalListsRemainOldWritableAndRawRead
 	ordinaryOldWriter(lobby);
 	JsonNode captured;
 	captured["heroes"]["newHorizons"] = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+	captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
 	std::erase_if(captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"]["spells"].Vector(),
 		[](const JsonNode & spell) { return spell.String() == "new-horizons:reanimate"
 			|| spell.String() == "new-horizons:frailty"; });

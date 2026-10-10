@@ -214,12 +214,15 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_SHARED_PURPOSE, // original Divine Mandate recipient overlap receipts
 	NEW_HORIZONS_SAGE_GUILD_VISITS, // first Guild visits and globally revealed extra spells
 	NEW_HORIZONS_FRAILTY_SPECIALTIES, // authored Frailty specialty replacement admission
+	NEW_HORIZONS_AENAIN_FRAILTY_SPECIALTY, // captured Aenain replacement admission
+	NEW_HORIZONS_PHOENIX_SPARK, // once-combat Champion rebirth receipt
+	NEW_HORIZONS_RECRUITERS_CONTACTS, // hero weekly external dwelling refresh receipt
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_FRAILTY_SPECIALTIES,
+	CURRENT = NEW_HORIZONS_RECRUITERS_CONTACTS,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_SWIFT_REBIRTH > ESerializationVersion::NEW_HORIZONS_PROSPECTOR,

@@ -1072,6 +1072,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 		battlecraftMasteryAwardRounds[side] = realBattle->getBattle()->getBattlecraftMasteryAwardRound(side);
 		armorerLastStandUsedStates[side] = realBattle->getBattle()->armorerLastStandUsed(side);
 		rebirthChainUsedStates[side] = realBattle->getBattle()->getRebirthChainUsed(side);
+		phoenixSparkUsedStates[side] = realBattle->getBattle()->getPhoenixSparkUsed(side);
 		armorerDefiantStates[side] = realBattle->getBattle()->getArmorerDefiantState(side);
 		warcastingStates[side] = realBattle->getBattle()->getWarcastingState(side);
 		heroActionAllowances[side] = realBattle->getBattle()->getHeroActionAllowances(side);
@@ -2280,6 +2281,22 @@ void HypotheticBattle::setRebirthChainUsed(BattleSide side, bool used)
 	rebirthChainUsedStates.at(side) = used;
 }
 
+bool HypotheticBattle::getPhoenixSparkUsed(BattleSide side) const
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::invalid_argument("Invalid hypothetical Phoenix Spark side");
+	return phoenixSparkUsedStates.at(side);
+}
+
+void HypotheticBattle::setPhoenixSparkUsed(BattleSide side, bool used)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::invalid_argument("Invalid hypothetical Phoenix Spark side");
+	if(!used && phoenixSparkUsedStates.at(side))
+		throw std::invalid_argument("Cannot restore a spent hypothetical Phoenix Spark use");
+	phoenixSparkUsedStates.at(side) = used;
+}
+
 int32_t HypotheticBattle::getBloodrageDamagePercent(BattleSide side) const
 {
 	return bloodrageDamagePercents.at(side);
@@ -2950,7 +2967,8 @@ std::optional<newHorizonsElementalRebirth::DeathSnapshot> HypotheticBattle::capt
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return {};
 	return newHorizonsElementalRebirth::captureDeathSource(
-		unit, battleGetFightingHero(side), getRebirthChainUsed(side));
+		unit, battleGetFightingHero(side), getRebirthChainUsed(side),
+		&getCreatureCategoryRules(), getPhoenixSparkUsed(side));
 }
 
 bool HypotheticBattle::hasReadyNativeRebirth(const battle::Unit * unit) const
@@ -2962,14 +2980,23 @@ bool HypotheticBattle::hasReadyNativeRebirth(const battle::Unit * unit) const
 }
 
 std::optional<uint32_t> HypotheticBattle::projectElementalRebirth(const battle::Unit * postHitUnit,
-	const newHorizonsElementalRebirth::DeathSnapshot & snapshot, const bool hitKilled,
+	const newHorizonsElementalRebirth::DeathSnapshot & captured, const bool hitKilled,
 	const bool cloneKilled, const bool nativeRebirth)
 {
+	auto snapshot = captured;
 	if(!newHorizonsElementalRebirth::stillEligibleDeath(
 		postHitUnit, snapshot, hitKilled, cloneKilled, nativeRebirth,
 		getRebirthChainUsed(snapshot.side)))
 		return {};
 
+	snapshot.phoenixSpark = snapshot.phoenixSpark && !getPhoenixSparkUsed(snapshot.side);
+	if(snapshot.phoenixSpark)
+	{
+		BattleUnitsChanged receipt;
+		receipt.battleID = getBattleID();
+		receipt.phoenixSparkConsumption = newHorizonsElementalRebirth::PhoenixSparkConsumption{snapshot.side, snapshot.unitId};
+		getServerCallback()->apply(receipt);
+	}
 	const auto candidates = newHorizonsElementalRebirth::legalCandidatePool(
 		*this, getAccessibility(), snapshot);
 	if(candidates.empty())

@@ -181,6 +181,7 @@ public:
 	virtual int32_t getMetamagicUsesConsumed(BattleSide side) const { return 0; }
 	virtual bool getMetamagicGrandUsed(BattleSide side) const { return false; }
 	virtual bool getRebirthChainUsed(BattleSide side) const { (void)side; return false; }
+	virtual bool getPhoenixSparkUsed(BattleSide side) const { (void)side; return false; }
 	virtual bool getMetamagicFormulaReserveUsed(BattleSide side) const { return false; }
 	virtual bool getMetamagicCountersequenceArmed(BattleSide side) const { return false; }
 	virtual SpellID getMetamagicFirstSpell(BattleSide side) const { return SpellID(); }
@@ -335,6 +336,7 @@ public:
 	virtual void setOverwhelmingFormulaState(BattleSide, const OverwhelmingFormulaState &) {}
 	virtual void setPerfectFortuneState(BattleSide, const PerfectFortuneState &) {}
 	virtual void setRebirthChainUsed(BattleSide, bool) {}
+	virtual void setPhoenixSparkUsed(BattleSide, bool) {}
 	virtual void setLuckSerendipityState(BattleSide, const LuckSerendipityState &) {}
 	virtual void setArmorerDefiantState(BattleSide, const ArmorerDefiantState &) {}
 	/// Applies the accepted first Wait/Defend Battlefield Mastery award.

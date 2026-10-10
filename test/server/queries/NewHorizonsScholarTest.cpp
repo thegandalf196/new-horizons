@@ -43,6 +43,7 @@ protected:
 	{
 		TinyMapGameTest::mapLoaded(map);
 		JsonNode heroRules(JsonPath::builtin("config/newHorizonsHeroes"));
+		heroRules["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
 		// Test Scholar's older-format admission independently of the later
 		// Thant/Frailty replacements; retain Haste and all other captured rules.
 		std::erase_if(heroRules["nonDamageSpellSpecialties"]["spells"].Vector(),

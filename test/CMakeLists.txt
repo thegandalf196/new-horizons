@@ -501,6 +501,7 @@ set(test_SRCS
 		server/NewHorizonsAcademicStudyTest.cpp
 		server/queries/NewHorizonsScholarTest.cpp
 		server/queries/NewHorizonsSageTest.cpp
+		server/queries/NewHorizonsRecruitersContactsTest.cpp
 		server/NewHorizonsResourceBrokerTest.cpp
 		server/NewHorizonsLearningMentorTest.cpp
 		server/NewHorizonsLearningMasterTeacherTest.cpp
@@ -580,6 +581,7 @@ if(ENABLE_BATTLE_AI)
 		server/battles/NewHorizonsBloodrageDeathPerksTest.cpp
 		server/battles/NewHorizonsSwiftRebirthTest.cpp
 		server/battles/NewHorizonsElementalMemoryTest.cpp
+		server/battles/NewHorizonsPhoenixSparkTest.cpp
 		server/battles/NewHorizonsVeteranCohesionTest.cpp
 		server/battles/NewHorizonsRoyalStandardTest.cpp
 		server/battles/NewHorizonsDeepFlankTest.cpp
@@ -659,6 +661,7 @@ if(ENABLE_NULLKILLER2_AI)
 		server/NewHorizonsMerchantPrinceTest.cpp
 		nullkiller2/NewHorizonsProspectorAITest.cpp
 		nullkiller2/NewHorizonsAcademicStudyAITest.cpp
+		nullkiller2/NewHorizonsRecruitersContactsAITest.cpp
 		server/queries/NewHorizonsHistorianRewardTest.cpp
 		server/queries/NewHorizonsArchivistTest.cpp
 		nullkiller2/AIUtilityTest.cpp

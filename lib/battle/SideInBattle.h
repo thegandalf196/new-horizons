@@ -209,6 +209,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	ArmorerDefiantState armorerDefiant;
 	LuckSerendipityState luckSerendipity;
 	bool rebirthChainUsed = false;
+	bool phoenixSparkUsed = false;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);
@@ -384,6 +385,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		for(const auto & order : orderStates)
 			order.validateRoyalStandardSerialization(h);
 		heroActionAllowances.validateSharedPurposeSerialization(h);
+		if(h.saving && phoenixSparkUsed && !h.hasFeature(Handler::Version::NEW_HORIZONS_PHOENIX_SPARK))
+			throw std::runtime_error("Cannot discard Phoenix Spark combat use from an older side format");
 		if(h.saving && rebirthChainUsed && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_CHAIN))
 			throw std::runtime_error("Cannot discard Rebirth Chain combat use");
 		if(h.saving)
@@ -746,6 +749,10 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			h & rebirthChainUsed;
 		else if(!h.saving)
 			rebirthChainUsed = false;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PHOENIX_SPARK))
+			h & phoenixSparkUsed;
+		else if(!h.saving)
+			phoenixSparkUsed = false;
 		if(!h.saving)
 		{
 			validateDoubleCommandState();

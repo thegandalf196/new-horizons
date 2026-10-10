@@ -106,6 +106,7 @@
 			"required": ["version", "componentPercent", "spells"],
 			"additionalProperties": false,
 			"properties": {
+				"aenainFrailtyReplacement": {"type": "boolean", "description": "Absent or false preserves captured pre-Aenain Frailty contexts."},
 				"version": {"type": "integer", "enum": [1]},
 				"componentPercent": {"type": "integer", "enum": [20]},
 				"spells": {

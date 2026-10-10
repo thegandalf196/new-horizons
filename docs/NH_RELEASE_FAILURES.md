@@ -1,5 +1,50 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-09 — focused fixture registration, footprint and declarations
+
+The first42-case batch passes35; adjacent23 passes completely. Original
+single-wide Champions on the defender edge cannot admit a double-wide Phoenix
+at their corpse anchor. Move the same ordinary strategic fixture stacks inward,
+prove their identity and legal footprints, and keep failed-placement controls.
+Do not change production placement to make this positive fixture succeed.
+Retired Hypnotize is not an ordinary school-learning positive control. A current
+level1 replacement also cannot establish a missing-School rejection because
+rank-zero learning is valid; inspect the actual level gate before selecting it.
+Multi-row planner fixtures require a registered type/subtype and matching
+template, not only an ID mutation. setType is protected; source review must
+verify access declarations, not assume public use from another call site. The
+existing spell-availability predicates require their concrete declaration header.
+Relink14111 fails at these fixture APIs; reviewed corrections link56665.
+Retry62860 passes40/42 and all10 Phoenix cases; adjacent55315 passes23/23.
+Preserve the visitable offset, not merely the template corner offset, when
+replacing a fixture template. Original logs/XML remain private and immutable;
+production access, placement and all outcome assertions remain unchanged.
+
+### 2026-10-09 — private joint-patch semantic placement
+
+Independent review of the private Spellcraft/Divine/defensive union found Cross
+receipt serialization in BattleAttack rather than BattleSpellCast. Moving the
+unchanged block to the actual owner is mandatory; simply removing it would lose
+transported cast history. Actual nonempty before/after packet roundtrips and old
+reader resets now guard that seam. A subsequent producer audit found a defensive
+fixed-additive specialty branch in the percentage lambda, where its captured
+values variable does not exist. Repair the actual producer boundary privately
+before import; reviewed standalone inputs do not establish a manual union's
+compile correctness. Preserve old-format isolation and all behavioral assertions.
+These candidates are separate from the frozen Contacts/Phoenix native build.
+
+### 2026-10-09 — Phoenix registered identity and Contacts concrete types
+
+Batch42 build10372 stops at a nonexistent CreatureID::PHOENIX enum. Use the
+registered core:phoenix decode path, matching this helper's existing Elemental
+lookups; retain the exact creature assertions in every fixture. Independent
+review clears the bounded replacement. Contacts full-graph fixtures require
+concrete CGHeroInstance and GameSettings before serialization template includes;
+the private preflight caught that omission before compilation. Neither correction
+changes mechanics, state admission or assertions. Same-directory ten-job retry
+39970 links successfully and binary privacy passes; exact-pair native results
+remain pending, so no acceptance follows from these repairs alone.
+
 ### 2026-10-09 — Shared Purpose native fixture provenance/access
 
 Linked71973's exact principal run passes33/36; all12 adjacent controls pass.

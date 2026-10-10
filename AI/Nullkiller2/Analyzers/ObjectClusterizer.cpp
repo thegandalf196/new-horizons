@@ -9,6 +9,10 @@
 */
 #include "StdInc.h"
 #include "../../../lib/mapObjects/NewHorizonsAcademicStudy.h"
+#include "../../../lib/mapObjects/NewHorizonsRecruitersContacts.h"
+#include "../../../lib/mapObjects/CGDwelling.h"
+#include "../../../lib/entities/creature/NewHorizonsMusterRules.h"
+#include "../../../lib/callback/Calendar.h"
 #include "ObjectClusterizer.h"
 #include "../Goals/ExecuteHeroChain.h"
 #include "../AIGateway.h"
@@ -310,7 +314,17 @@ bool ObjectClusterizer::shouldVisitObject(const CGObjectInstance * obj) const
 		{
 			return hero->getOwner() == aiNk->playerID && shouldVisit(aiNk, hero, obj);
 		});
-	if(!academicVisit && !prospectorVisit && ((obj->ID != Obj::CREATURE_GENERATOR1 && vstd::contains(aiNk->memory->alreadyVisited, obj->id))
+	const auto calendar = aiNk->cc->getCalendar();
+	const int week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+	const auto * dwelling = dynamic_cast<const CGDwelling *>(obj);
+	const bool contactsVisit = dwelling && obj->getOwner() == aiNk->playerID
+		&& std::ranges::any_of(heroes, [this, obj, dwelling, week](const CGHeroInstance * hero)
+		{
+			return hero->getOwner() == aiNk->playerID
+				&& newHorizonsRecruitment::recruitersContactsAward(*hero, *dwelling, week)
+				&& shouldVisit(aiNk, hero, obj);
+		});
+	if(!academicVisit && !prospectorVisit && !contactsVisit && ((obj->ID != Obj::CREATURE_GENERATOR1 && vstd::contains(aiNk->memory->alreadyVisited, obj->id))
 		|| obj->wasVisited(aiNk->playerID)))
 	{
 		return false;
@@ -318,7 +332,7 @@ bool ObjectClusterizer::shouldVisitObject(const CGObjectInstance * obj) const
 
 	auto playerRelations = aiNk->cc->getPlayerRelations(aiNk->playerID, obj->tempOwner);
 
-	if(!academicVisit && !prospectorVisit && playerRelations != PlayerRelations::ENEMIES && !isWeeklyRevisitable(aiNk->playerID, obj))
+	if(!academicVisit && !prospectorVisit && !contactsVisit && playerRelations != PlayerRelations::ENEMIES && !isWeeklyRevisitable(aiNk->playerID, obj))
 	{
 		return false;
 	}

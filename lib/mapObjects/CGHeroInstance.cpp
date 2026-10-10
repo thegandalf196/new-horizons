@@ -83,7 +83,10 @@ std::optional<SpellID> authoredNonDamageSpellReplacement(const CGHeroInstance & 
 	const bool thant = key == "core:thant" && source == SpellID::ANIMATE_DEAD;
 	const bool frailty = (source == SpellID::WEAKNESS
 		&& (key == "core:cuthbert" || key == "core:olema" || key == "core:mirlanda"))
-		|| (source == SpellID::STONE_SKIN && key == "core:xsi");
+		|| (source == SpellID::STONE_SKIN && key == "core:xsi")
+		|| (source == SpellID::DISRUPTING_RAY && key == "core:aenain"
+			&& hero.getPrimaryGrowthRules()["nonDamageSpellSpecialties"]["aenainFrailtyReplacement"].isBool()
+			&& hero.getPrimaryGrowthRules()["nonDamageSpellSpecialties"]["aenainFrailtyReplacement"].Bool());
 	if(!thant && !frailty)
 		return std::nullopt;
 	const auto rules = newHorizonsHeroes::nonDamageSpellSpecialtyRules(hero.getPrimaryGrowthRules());
@@ -1768,6 +1771,22 @@ void CGHeroInstance::markNewHorizonsSageGuildVisit(ObjectInstanceID town)
 	if(!town.hasValue() || town == id || newHorizonsSageGuildVisits.contains(town))
 		throw std::runtime_error("Invalid or repeated New Horizons Sage Guild visit");
 	newHorizonsSageGuildVisits.insert(town);
+}
+
+void CGHeroInstance::validateNewHorizonsRecruitersContactsSerialization(bool supported) const
+{
+	if(newHorizonsRecruitersContactsLastWeek < -1 || (newHorizonsRecruitersContactsLastWeek >= 0 && !id.hasValue()))
+		throw std::runtime_error("Invalid New Horizons Recruiter's Contacts week");
+	if(!supported && newHorizonsRecruitersContactsLastWeek != -1)
+		throw std::runtime_error("Cannot discard New Horizons Recruiter's Contacts use");
+}
+
+void CGHeroInstance::markNewHorizonsRecruitersContactsUsed(int32_t week)
+{
+	validateNewHorizonsRecruitersContactsSerialization(true);
+	if(week < 0 || week <= newHorizonsRecruitersContactsLastWeek)
+		throw std::runtime_error("Invalid or repeated New Horizons Recruiter's Contacts use");
+	newHorizonsRecruitersContactsLastWeek = week;
 }
 
 bool CGHeroInstance::canLearnSpellFromAcquiredScroll(SpellID spell) const

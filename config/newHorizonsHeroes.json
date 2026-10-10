@@ -71,6 +71,7 @@
 	},
 	"nonDamageSpellSpecialties": {
 		"version": 1,
+		"aenainFrailtyReplacement": true,
 		"componentPercent": 20,
 		"spells": ["core:cure", "core:resurrection", "core:bless", "core:haste", "new-horizons:reanimate", "new-horizons:frailty"]
 	},

@@ -335,6 +335,9 @@ public:
 		newHorizonsMusterUsesThisWeek = std::clamp<int32_t>(usesThisWeek, 0, 2);
 	}
 	int32_t getNewHorizonsLearningMentorLastWeek() const { return newHorizonsLearningMentorLastWeek; }
+	int32_t getNewHorizonsRecruitersContactsLastWeek() const { return newHorizonsRecruitersContactsLastWeek; }
+	void markNewHorizonsRecruitersContactsUsed(int32_t week);
+	void validateNewHorizonsRecruitersContactsSerialization(bool supported) const;
 	const std::set<ObjectInstanceID> & getNewHorizonsSageGuildVisits() const { return newHorizonsSageGuildVisits; }
 	void markNewHorizonsSageGuildVisit(ObjectInstanceID town);
 	void validateNewHorizonsSageSerialization(bool supported) const;
@@ -613,6 +616,7 @@ private:
 	int32_t newHorizonsLearningMentorLastWeek = -1;
 	int32_t newHorizonsScholarWeek = -1;
 	std::vector<ObjectInstanceID> newHorizonsScholarPartners;
+	int32_t newHorizonsRecruitersContactsLastWeek = -1;
 	std::set<ObjectInstanceID> newHorizonsSageGuildVisits;
 	LearningMentorRecipients newHorizonsLearningMentorRecipients{ObjectInstanceID::NONE, ObjectInstanceID::NONE};
 	int32_t newHorizonsLandSurveyorLastWeek = -1;
@@ -653,6 +657,9 @@ public:
 			newHorizonsHeroes::validateFrailtySpecialtySerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
 		if(h.saving)
+			newHorizonsHeroes::validateAenainFrailtySpecialtySerialization(primaryGrowthRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_AENAIN_FRAILTY_SPECIALTY));
+		if(h.saving)
 			newHorizonsHeroes::validateReanimateSpecialtySerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
 		if(h.saving)
@@ -666,6 +673,7 @@ public:
 		if(h.saving)
 		{
 			validateNewHorizonsScholarSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LEARNING_SCHOLAR));
+			validateNewHorizonsRecruitersContactsSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITERS_CONTACTS));
 			validateNewHorizonsSageSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SAGE_GUILD_VISITS));
 			if(!isValidNewHorizonsLearningMentorState(id, newHorizonsLearningMentorLastWeek,
 				newHorizonsLearningMentorRecipients))
@@ -770,6 +778,8 @@ public:
 			{
 				newHorizonsHeroes::validateFrailtySpecialtySerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
+				newHorizonsHeroes::validateAenainFrailtySpecialtySerialization(primaryGrowthRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_AENAIN_FRAILTY_SPECIALTY));
 				newHorizonsHeroes::validateReanimateSpecialtySerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
 				newHorizonsHeroes::validateHasteSpecialtySerialization(primaryGrowthRules,
@@ -953,6 +963,12 @@ public:
 		}
 		if(!h.saving)
 			validateNewHorizonsScholarSerialization(true);
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITERS_CONTACTS))
+			h & newHorizonsRecruitersContactsLastWeek;
+		else if(!h.saving)
+			newHorizonsRecruitersContactsLastWeek = -1;
+		if(!h.saving)
+			validateNewHorizonsRecruitersContactsSerialization(true);
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SAGE_GUILD_VISITS))
 			h & newHorizonsSageGuildVisits;
 		else if(!h.saving)
