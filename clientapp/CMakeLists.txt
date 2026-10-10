@@ -71,7 +71,7 @@ target_include_directories(vcmiclient
 if(WIN32)
 	set(VCMI_FILE_DESCRIPTION "New Horizons")
 	set(VCMI_ORIGINAL_FILENAME "new-horizons.exe")
-	set(VCMI_ICON_RESOURCE "IDI_ICON1 ICON \"${CMAKE_CURRENT_SOURCE_DIR}/icons/vcmi.ico\"")
+	set(VCMI_ICON_RESOURCE "IDI_ICON1 ICON \"${CMAKE_CURRENT_SOURCE_DIR}/icons/new-horizons.ico\"")
 	set(client_VERSIONINFO_RC "${CMAKE_CURRENT_BINARY_DIR}/VCMI_client_versioninfo.rc")
 	# Product metadata only: do not rename the upstream project or shared library.
 	function(configure_new_horizons_version_info)
@@ -148,17 +148,13 @@ endif()
 
 #install icons and desktop file on Linux
 if(NOT WIN32 AND NOT APPLE AND NOT ANDROID)
-	foreach(iconSize 16 22 32 48 64 128 256 512 1024 2048)
-		install(FILES "icons/vcmiclient.${iconSize}x${iconSize}.png"
+	foreach(iconSize 16 22 32 48 64 128 256 512 1024)
+		install(FILES "icons/new-horizons.${iconSize}x${iconSize}.png"
 			DESTINATION "share/icons/hicolor/${iconSize}x${iconSize}/apps"
-			RENAME vcmiclient.png
+			RENAME new-horizons.png
 		)
 	endforeach()
 
-	install(FILES icons/vcmiclient.svg
-		DESTINATION share/icons/hicolor/scalable/apps
-		RENAME vcmiclient.svg
-	)
 	install(FILES icons/vcmiclient.desktop
 		DESTINATION share/applications
 		RENAME new-horizons.desktop

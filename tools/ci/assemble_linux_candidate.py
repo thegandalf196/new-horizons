@@ -24,10 +24,18 @@ from stage_linux_client import verify_candidate
 
 
 TREES = ('config', 'scripts', 'Mods/vcmi', 'Mods/new-horizons')
+PLATFORM_FILES = {
+    f'share/icons/hicolor/{size}x{size}/apps/new-horizons.png':
+    f'clientapp/icons/new-horizons.{size}x{size}.png'
+    for size in (16, 22, 32, 48, 64, 128, 256, 512, 1024)
+}
+PLATFORM_FILES['share/applications/new-horizons.desktop'] = 'clientapp/icons/vcmiclient.desktop'
+PLATFORM_PROVENANCE = 'Mods/new-horizons/notices/provenance/platform-icon-provenance.json'
 NOTICES = {
     'Mods/new-horizons/notices/NHART_FORMAT.md': 'docs/NHART_FORMAT.md',
     'Mods/new-horizons/notices/NHART_DELIVERY.md': 'docs/NHART_DELIVERY.md',
     'Mods/new-horizons/notices/sorcery-art/LICENSE': 'assets/new-horizons/sorcery-art/LICENSE',
+    PLATFORM_PROVENANCE: 'assets/new-horizons/platform-icon-provenance.json',
 }
 for family in ('', 'academy', 'magic-assets', 'Mage Guilds', 'creatures/wisp/handoff-v3',
                'creatures/cabir-master', 'creatures/cabir-master/v3', 'creatures/cabir/v3',
@@ -89,6 +97,12 @@ def assemble(install, engine_source, source_commit, source_repository, manifest,
     files = {'new-horizons': client, 'libvcmi.so': library}
     for tree in TREES:
         files.update(checked_tree_files(resources / tree, tree))
+    # OS application icons are the documented pre-NHART platform exception.
+    # Never copy other installed share/icons, applications, profiles or artwork.
+    for name in PLATFORM_FILES:
+        path = install / name
+        regular(path)
+        files[name] = path
     if any(name not in files for name in (*REQUIRED_FILES, *NOTICES)):
         raise RuntimeError('Missing required curated resource or notice')
     before = {name: digest(path) for name, path in files.items()}
@@ -119,12 +133,12 @@ def assemble(install, engine_source, source_commit, source_repository, manifest,
                     if member.isfile() and any(name.startswith(tree + '/') for tree in TREES)
                     and name != 'config/newHorizonsMagicAssets.json'
                     and not re.match(r'Mods/new-horizons/(Images|Content/(sprites|data))(/|$)', name)}
-        if set(files) - {'new-horizons', 'libvcmi.so'} != expected | NOTICES.keys():
+        if set(files) - {'new-horizons', 'libvcmi.so'} != expected | NOTICES.keys() | PLATFORM_FILES.keys():
             raise RuntimeError('Installed curated inventory differs from source/CMake notice mapping')
         for name, path in files.items():
             if name in ('new-horizons', 'libvcmi.so'):
                 continue
-            origin = NOTICES.get(name, name)
+            origin = NOTICES.get(name, PLATFORM_FILES.get(name, name))
             # Current source exporters include NHART_* (not excluded NH_*).
             # Only historical archives lacking those two members need Git.
             data = (source_notice(source_repository, source_commit, origin)
@@ -132,6 +146,15 @@ def assemble(install, engine_source, source_commit, source_repository, manifest,
                     and origin not in source_files else source_bytes(origin))
             if path.read_bytes() != data:
                 raise RuntimeError('Installed bytes differ from source: ' + name)
+        try:
+            platform_outputs = json.loads(source_bytes(NOTICES[PLATFORM_PROVENANCE]))['outputs']
+        except (ValueError, KeyError, TypeError) as error:
+            raise RuntimeError('Invalid platform icon provenance') from error
+        if not isinstance(platform_outputs, dict):
+            raise RuntimeError('Invalid platform icon provenance outputs')
+        for name, origin in PLATFORM_FILES.items():
+            if origin.endswith('.png') and platform_outputs.get(origin) != before[name]:
+                raise RuntimeError('Platform icon hash differs from provenance: ' + name)
         additions = {name: source_bytes(origin) for name, origin in {
             'new-horizons-launch.sh': 'tools/new-horizons-launch.sh',
             'license.txt': 'license.txt', 'AUTHORS.h': 'AUTHORS.h'}.items()}
@@ -157,6 +180,8 @@ def assemble(install, engine_source, source_commit, source_repository, manifest,
                 'source_archive_sha256': archive_digest,
                 'binaries': {name: before[name] for name in ('new-horizons', 'libvcmi.so')},
                 'runtime_art_manifest_sha256': manifest_digest, 'art_verification': art,
+                'platform_icon_files': {name: before[name] for name in PLATFORM_FILES},
+                'platform_icon_provenance_sha256': before[PLATFORM_PROVENANCE],
                 'scope': 'Raw public Linux candidate; resource correspondence checked; separate BUILD-PROVENANCE, dependency/license and runtime acceptance required'}
     (output / 'BUILD-IDENTITY.json').write_text(json.dumps(identity, indent=2, sort_keys=True) + '\n')
     paths = sorted(p for p in output.rglob('*') if p.is_file())

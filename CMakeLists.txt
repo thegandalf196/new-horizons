@@ -948,6 +948,8 @@ else()
 			install(FILES "assets/new-horizons/${NH_NOTICE_FAMILY}/README.md"
 				DESTINATION "${DATA_DIR}/Mods/new-horizons/notices/provenance/${NH_NOTICE_FAMILY}")
 		endforeach()
+		install(FILES assets/new-horizons/platform-icon-provenance.json
+			DESTINATION ${DATA_DIR}/Mods/new-horizons/notices/provenance)
 		install(FILES assets/new-horizons/sorcery-art/LICENSE
 			DESTINATION ${DATA_DIR}/Mods/new-horizons/notices/sorcery-art)
 	endif()

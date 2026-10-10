@@ -63,6 +63,19 @@ class AssembleLinuxCandidateTest(unittest.TestCase):
             path.write_bytes(data)
             self.notice_data[origin] = data
             self.source_data[origin] = data
+        platform_outputs = {}
+        for name, origin in assembler.PLATFORM_FILES.items():
+            data = ('Synthetic platform file ' + origin).encode()
+            path = self.install / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+            self.source_data[origin] = data
+            if origin.endswith('.png'):
+                platform_outputs[origin] = hashlib.sha256(data).hexdigest()
+        provenance = json.dumps({'outputs': platform_outputs}).encode()
+        origin = assembler.NOTICES[assembler.PLATFORM_PROVENANCE]
+        self.source_data[origin] = self.notice_data[origin] = provenance
+        (self.resources / assembler.PLATFORM_PROVENANCE).write_bytes(provenance)
         # Only ELF identity bytes are synthetic; no loader/decode acceptance claimed.
         header = b'\x7fELF\x02\x01' + b'\x00' * 12 + b'\x3e\x00'
         for name in ('bin/new-horizons', 'lib/libvcmi.so'):
@@ -121,7 +134,9 @@ class AssembleLinuxCandidateTest(unittest.TestCase):
 
     def test_noncurated_installed_assets_profiles_and_tools_are_not_copied(self):
         for name in ('share/vcmi/Maps/private.h3m', 'share/vcmi/Data/H3bitmap.lod',
-                     'profile/settings.json', 'bin/vcmibuilder', 'share/vcmi/Mods/demo/mod.json'):
+                     'profile/settings.json', 'bin/vcmibuilder', 'share/vcmi/Mods/demo/mod.json',
+                     'share/icons/hicolor/256x256/apps/vcmiclient.png',
+                     'share/applications/unrelated.desktop', 'share/icons/private-master.png'):
             path = self.install / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(b'Never shipped')
@@ -129,6 +144,79 @@ class AssembleLinuxCandidateTest(unittest.TestCase):
         self.assertFalse(any(p.name in ('private.h3m', 'H3bitmap.lod', 'settings.json', 'vcmibuilder')
                              for p in self.output.rglob('*')))
         self.assertFalse((self.output / 'Mods/demo').exists())
+        self.assertFalse((self.output / 'share/icons/hicolor/256x256/apps/vcmiclient.png').exists())
+        self.assertFalse((self.output / 'share/applications/unrelated.desktop').exists())
+        self.assertFalse((self.output / 'share/icons/private-master.png').exists())
+
+    def test_exact_platform_files_and_notice_are_source_bound_and_stage_checked(self):
+        result = self.assemble()
+        self.assertEqual(len(assembler.PLATFORM_FILES), 10)
+        self.assertEqual(set(result['platform_icon_files']), set(assembler.PLATFORM_FILES))
+        for name, origin in assembler.PLATFORM_FILES.items():
+            self.assertEqual((self.output / name).read_bytes(), self.source_data[origin])
+            self.assertEqual(result['platform_icon_files'][name], assembler.digest(self.output / name))
+        notice = self.output / assembler.PLATFORM_PROVENANCE
+        self.assertEqual(notice.read_bytes(), self.source_data[assembler.NOTICES[assembler.PLATFORM_PROVENANCE]])
+        self.assertEqual(result['platform_icon_provenance_sha256'], assembler.digest(notice))
+        self.assertEqual(verify_candidate(self.output), result)
+        self.assertEqual(self.before, self.inventory(self.install))
+
+    def test_missing_platform_icon_or_desktop_refused_before_output(self):
+        for name in (next(iter(assembler.PLATFORM_FILES)), 'share/applications/new-horizons.desktop'):
+            with self.subTest(path=name):
+                path = self.install / name
+                original = path.read_bytes()
+                path.unlink()
+                self.rejected('Required regular input missing')
+                path.write_bytes(original)
+
+    def test_platform_source_and_provenance_hash_mismatch_refused(self):
+        name, origin = next(iter(assembler.PLATFORM_FILES.items()))
+        path = self.install / name
+        original = path.read_bytes()
+        path.write_bytes(b'Changed installed icon')
+        self.rejected('Installed bytes differ from source')
+        path.write_bytes(original)
+        notice_origin = assembler.NOTICES[assembler.PLATFORM_PROVENANCE]
+        record = json.loads(self.source_data[notice_origin])
+        record['outputs'][origin] = '0' * 64
+        altered = json.dumps(record).encode()
+        self.source_data[notice_origin] = altered
+        (self.resources / assembler.PLATFORM_PROVENANCE).write_bytes(altered)
+        self.refresh_source()
+        self.rejected('Platform icon hash differs from provenance')
+
+    def test_missing_source_platform_file_refused(self):
+        origin = next(iter(assembler.PLATFORM_FILES.values()))
+        del self.source_data[origin]
+        self.refresh_source()
+        self.rejected('Missing regular source archive member')
+
+    def test_platform_files_remain_in_manifest_against_postassembly_tampering(self):
+        self.assemble()
+        path = self.output / next(iter(assembler.PLATFORM_FILES))
+        path.chmod(0o644)
+        path.write_bytes(b'Altered after source admission')
+        with self.assertRaisesRegex(RuntimeError, 'checksum mismatch'):
+            verify_candidate(self.output)
+
+    def test_shared_notice_install_route_matches_both_packaging_platforms(self):
+        repository = Path(__file__).resolve().parents[2]
+        text = (repository / 'CMakeLists.txt').read_text()
+        self.assertIn('install(FILES assets/new-horizons/platform-icon-provenance.json\n'
+                      '\t\t\tDESTINATION ${DATA_DIR}/Mods/new-horizons/notices/provenance)', text)
+        self.assertEqual(assembler.NOTICES[assembler.PLATFORM_PROVENANCE],
+                         'assets/new-horizons/platform-icon-provenance.json')
+
+    def test_windows_curated_staging_retains_same_platform_notice_without_loose_master(self):
+        from package_new_horizons_windows import stage_engine_resources
+        package = self.root / 'windows-resource-stage'
+        package.mkdir()
+        stage_engine_resources(self.resources, package, json.loads(self.manifest.read_text()))
+        self.assertEqual((package / assembler.PLATFORM_PROVENANCE).read_bytes(),
+                         self.source_data[assembler.NOTICES[assembler.PLATFORM_PROVENANCE]])
+        self.assertFalse((package / 'share/icons').exists())
+        self.assertFalse((package / 'clientapp/icons').exists())
 
     def test_existing_output_refused_without_change(self):
         self.output.mkdir()

@@ -7,6 +7,13 @@ vcmi_resolve_sdl3_target(sdl3Image SDL3_image::SDL3_image SDL3_image::SDL3_image
 vcmi_resolve_sdl3_target(sdl3Mixer SDL3_mixer::SDL3_mixer SDL3_mixer::SDL3_mixer-static sdl_mixer::sdl_mixer)
 vcmi_resolve_sdl3_target(sdl3Ttf   SDL3_ttf::SDL3_ttf     SDL3_ttf::SDL3_ttf-static     sdl_ttf::sdl_ttf)
 
+option(ENABLE_NH_SDL3_MASK_REGRESSION "Build the surface-only selected-mask decoder regression" OFF)
+if(ENABLE_NH_SDL3_MASK_REGRESSION)
+	add_executable(nhSdl3GrayscaleMaskRuntimeTest ../client/tests/Sdl3GrayscaleMaskRuntimeTest.cpp)
+	target_link_libraries(nhSdl3GrayscaleMaskRuntimeTest PRIVATE ${SDL3_CORE_TARGET} ${sdl3Image})
+	vcmi_set_output_dir(nhSdl3GrayscaleMaskRuntimeTest "")
+endif()
+
 set(vcmisdl3_SRCS
 	events/NotificationHandler.cpp
 	events/InputHandler.cpp

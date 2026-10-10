@@ -8,6 +8,7 @@
  *
  */
 #pragma once
+#include <atomic>
 #include "../../lib/battle/ReachabilityInfo.h"
 #include "../../lib/callback/CGameInterface.h"
 #include "PossibleSpellcast.h"
@@ -50,6 +51,10 @@ struct CurrentOffensivePotential
 
 class CBattleAI : public CBattleGameInterface
 {
+	struct TimingState;
+	class TimingScope;
+	std::atomic<std::shared_ptr<TimingState>> timingState;
+
 	BattleSide side;
 	std::shared_ptr<CBattleCallback> cb;
 	std::shared_ptr<Environment> env;
@@ -61,6 +66,21 @@ class CBattleAI : public CBattleGameInterface
 	std::unique_ptr<TacticsHandler> tacticsHandler;
 
 public:
+	/// Diagnostic callback wall time only; not CPU time or authoritative action latency.
+	struct TimingSummary
+	{
+		uint64_t battleWallMicroseconds = 0;
+		uint64_t activeStackCalls = 0;
+		uint64_t activeStackTotalMicroseconds = 0;
+		uint64_t activeStackMaxMicroseconds = 0;
+		uint32_t roundsObserved = 0;
+		uint32_t activeStackInFlight = 0;
+		bool finished = false;
+		bool reported = false;
+	};
+
+	std::optional<TimingSummary> getTimingSummary() const;
+
 	CBattleAI();
 	~CBattleAI();
 
@@ -84,6 +104,8 @@ public:
 		const CStack * source);
 
 	void battleStart(const BattleID & battleID, const CCreatureSet * army1, const CCreatureSet * army2, int3 tile, const CGHeroInstance * hero1, const CGHeroInstance * hero2, BattleSide side, bool replayAllowed) override;
+	void battleEnd(const BattleID & battleID, const BattleResult * result, QueryID queryID) override;
+	void battleNewRound(const BattleID & battleID) override;
 	void actionFinished(const BattleID & battleID, const BattleAction & action) override;
 	//void actionStarted(const BattleAction &action) override;//occurs BEFORE every action taken by any stack or by the hero
 	//void battleAttack(const BattleAttack *ba) override; //called when stack is performing attack

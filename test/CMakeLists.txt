@@ -52,6 +52,7 @@ set(test_SRCS
  		CVcmiTestConfig.cpp
  		JsonComparer.cpp
 		json/GeneratedImageRecipesTest.cpp
+		json/GrayscalePngPaletteTest.cpp
 		server/battles/NewHorizonsGuildSpellHelpTest.cpp
 
 		battle/AutocombatPreferencesTest.cpp
@@ -689,6 +690,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsPandemoniumAITest.cpp
 		battleAI/NewHorizonsRealityWarpAITest.cpp
 		battleAI/NewHorizonsFrozenAITest.cpp
+		battle/NewHorizonsBattleAITimingTest.cpp
 		battleAI/SpellTargetsEvaluatorTest.cpp
 		battleAI/HypotheticCloneTest.cpp
 		battleAI/HypotheticTimedSpellTest.cpp

@@ -660,6 +660,16 @@ void OptionsTab::SelectionWindow::genContentHeroes()
 		if(type->heroClass->faction != selectedFaction)
 			continue;
 
+		heroes.push_back(elem);
+	}
+	// Group by the resolved class, not the hero's historical numeric roster slot.
+	// Retain the allowed roster order inside each class.
+	std::stable_sort(heroes.begin(), heroes.end(), [](HeroTypeID left, HeroTypeID right)
+	{
+		return left.toHeroType()->heroClass->getId() < right.toHeroType()->heroClass->getId();
+	});
+	for(const auto & elem : heroes)
+	{
 		int x = i % elementsPerLine;
 		int y = (i / elementsPerLine) - (slider ? slider->getValue() : 0);
 
@@ -668,7 +678,6 @@ void OptionsTab::SelectionWindow::genContentHeroes()
 
 		CPlayerSettingsHelper helper = CPlayerSettingsHelper(set, SelType::HERO);
 
-		heroes.push_back(elem);
 		i++;
 
 		if(y < 0 || y > (pos.h / (ICON_BIG_HEIGHT-1)) - 1)
@@ -758,7 +767,7 @@ void OptionsTab::SelectionWindow::setElement(int elem, bool doApply)
 			set.hero = HeroTypeID::RANDOM;
 		}
 
-		if(doApply && unusableHeroes.count(heroes[elem]))
+		if(doApply && unusableHeroes.count(set.hero))
 			return;
 
 		if(set.hero != HeroTypeID::NONE)

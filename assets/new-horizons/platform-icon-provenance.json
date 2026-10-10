@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "asset": "New Horizons platform application icon",
+  "origin": "User-supplied ChatGPT-created artwork, authorized for the New Horizons executable and desktop icon",
+  "authoringMaster": {
+    "storage": "Private external authoring storage; not committed",
+    "sha256": "93e8d0ebe18e60d88db214fe81b400ed7a2d1e85ac3ae27850e7e5079435d89d",
+    "format": "PNG",
+    "mode": "RGB",
+    "width": 1254,
+    "height": 1254
+  },
+  "conversion": {
+    "method": "Full-frame Pillow Lanczos resizing and PNG/ICO encoding only",
+    "cropping": false,
+    "redesign": false,
+    "backgroundRemoval": false,
+    "upscaling": false,
+    "pngSizes": [16, 22, 32, 48, 64, 128, 256, 512, 1024],
+    "icoSizes": [16, 24, 32, 48, 64, 128, 256]
+  },
+  "distribution": {
+    "loosePlatformException": "Executable resources and OS desktop icon lookup precede the engine/NHART mount, so these platform outputs are intentionally distributed outside NewHorizons.nhart",
+    "scope": "Windows desktop executable and Linux desktop integration; mobile/upstream icons remain unchanged",
+    "rights": "User-authorized use of the supplied artwork; no additional CC0 dedication or third-party rights claim is inferred",
+    "engineAttribution": "VCMI engine licensing and attribution remain unchanged"
+  },
+  "bindings": {
+    "windowsResource": "clientapp/CMakeLists.txt: VCMI_ICON_RESOURCE / IDI_ICON1",
+    "linuxDesktop": "clientapp/icons/vcmiclient.desktop: Icon=new-horizons",
+    "linuxInstall": "share/icons/hicolor/<size>x<size>/apps/new-horizons.png"
+  },
+  "outputs": {
+    "clientapp/icons/new-horizons.16x16.png": "0101e36dfc1bffeacc25ae365d8a124b93c833835d270aade98072af3f8e921a",
+    "clientapp/icons/new-horizons.22x22.png": "96eadb40d6559964fa002547adce30a4d85daed32c8ee0b9058d7520e67ee027",
+    "clientapp/icons/new-horizons.32x32.png": "8e17350cc048e8b67d8247571586ad5b5fb0494f8b0c2bb7286a757da0786172",
+    "clientapp/icons/new-horizons.48x48.png": "56bed7f54c26f2d21bbcdef1ae25a9f3176de2087a18b022f4a58f4e9a0aa6df",
+    "clientapp/icons/new-horizons.64x64.png": "9b5ac509ef3b402666213298314cd876d64185ee48b9ae1b8203094e8c3b71a2",
+    "clientapp/icons/new-horizons.128x128.png": "033f1b923b550a9f76b0f04d52c39f48585c31a77e719489141cc919dfc6738d",
+    "clientapp/icons/new-horizons.256x256.png": "92b173bd4ab0e4e8940b521e4f66ccf8279c45c64a9b9c17f8922d9902251f96",
+    "clientapp/icons/new-horizons.512x512.png": "228fb5d901c8f94baa57865863499d5b76c5d3e3565c55048ccf3386b0bc1524",
+    "clientapp/icons/new-horizons.1024x1024.png": "0149ec60bfdae58e22d65d1debb752c8a2d29e244c159274dfd6dbbdc8777417",
+    "clientapp/icons/new-horizons.ico": "7cf9dc4f0c4909e20755f0157bfe89cbffb31ff186cc60aff459a9900aaccff5"
+  },
+  "verificationBoundary": "Focused file/format/binding checks do not establish built PE resources or rendered OS shell acceptance"
+}

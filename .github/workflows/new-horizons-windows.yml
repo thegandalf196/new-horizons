@@ -269,6 +269,7 @@ jobs:
         run: >-
           cmake --preset new-horizons-windows-x64
           -DENABLE_CCACHE=ON
+          -DENABLE_NH_SDL3_MASK_REGRESSION=ON
           -DCMAKE_C_COMPILER_LAUNCHER=sccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
 
@@ -301,11 +302,26 @@ jobs:
 
       - name: Compile Windows x64 client
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
-        run: cmake --build build/new-horizons-windows-x64 --target vcmiclient --parallel 4
+        run: cmake --build build/new-horizons-windows-x64 --target vcmiclient nhSdl3GrayscaleMaskRuntimeTest --parallel 4
 
       - name: Stage upstream runtime and resources
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
         run: cmake --install build/new-horizons-windows-x64
+
+      - name: Verify selected masks with shipping SDL3_image (surface only)
+        if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
+        run: |
+          set -euo pipefail
+          python tools/ci/prepare_sdl3_mask_regression.py \
+            --pack build/new-horizons-windows-x64/install/Mods/new-horizons/NewHorizons.nhart \
+            --manifest assets/new-horizons/runtime-art-manifest.json \
+            --output build/new-horizons-windows-x64/sdl3-mask-fixtures
+          test_exe=build/new-horizons-windows-x64/install/nhSdl3GrayscaleMaskRuntimeTest.exe
+          cp build/new-horizons-windows-x64/bin/nhSdl3GrayscaleMaskRuntimeTest.exe "$test_exe"
+          trap 'rm -f "$test_exe"' EXIT
+          export SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy SDL_VIDEO_DRIVER=dummy SDL_AUDIO_DRIVER=dummy
+          unset DISPLAY WAYLAND_DISPLAY
+          "$test_exe" build/new-horizons-windows-x64/sdl3-mask-fixtures
 
       - name: Package client, recursive PE closure, licenses and corresponding sources
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}

@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Unit tests for the fail-closed, private-display launch wrapper."""
 import importlib.util
+import hashlib
 import json
 import os
 from pathlib import Path
 import socket
+import struct
 from types import SimpleNamespace
 import tempfile
 import unittest
@@ -77,6 +79,7 @@ class PrivateLaunchTest(unittest.TestCase):
             BOOT_ID_PATH=self.boot_id_path,
             DISPLAY_SOCKET=self.display_socket,
             LAUNCHER=self.launcher,
+            WINE_INSTALL_ROOT=self.root / "usr",
         )
         return stack
 
@@ -266,6 +269,205 @@ class PrivateLaunchTest(unittest.TestCase):
         self.assertEqual(passed[marker + 1], map_name)
         self.assertFalse(run.call_args.kwargs.get("shell", False))
         self.assertFalse((self.root / "should-not-exist.h3m").exists())
+
+    def _wine_args(self):
+        executable = self.root / "nhSdl3GrayscaleMaskRuntimeTest.exe"
+        image = bytearray(128)
+        image[:2] = b"MZ"
+        struct.pack_into("<I", image, 60, 64)
+        image[64:68] = b"PE\0\0"
+        struct.pack_into("<H", image, 68, 0x8664)
+        struct.pack_into("<H", image, 86, 2)
+        executable.write_bytes(image)
+        fixtures = self.root / "masks"
+        fixtures.mkdir()
+        manifest = {}
+        for name in ("archMage", "genie", "giant", "gremlin", "ironGolem", "mage",
+                     "masterGenie", "masterGremlin", "nagaQueen", "naga", "stoneGolem", "titan"):
+            filename = f"NH_academy_{name}_portrait_mask.png"
+            (fixtures / filename).write_bytes(name.encode())
+            manifest[filename] = hashlib.sha256(name.encode()).hexdigest()
+        receipt = self.root / "fixture-manifest.json"
+        receipt.write_text(json.dumps(manifest))
+        dll_manifest = {}
+        for name in ("SDL3.dll", "SDL3_image.dll", "libpng16.dll", "zlib1.dll",
+                     "vcruntime140.dll", "vcruntime140_1.dll"):
+            (self.root / name).write_bytes(name.encode())
+            dll_manifest[name] = hashlib.sha256(name.encode()).hexdigest()
+        dll_receipt = self.root / "dll-manifest.json"
+        dll_receipt.write_text(json.dumps(dll_manifest))
+        run_root = self.root / "wine-run"
+        run_root.mkdir(mode=0o700)
+        return ["--guard", str(self.guard), "--wine-surface-test", str(executable),
+                "--wine-test-sha256", hashlib.sha256(image).hexdigest(),
+                "--wine-sha256", "0" * 64, "--wine-binary", "/usr/lib/wine/wine64",
+                "--wine-fixtures", str(fixtures),
+                "--wine-fixture-manifest", str(receipt),
+                "--wine-fixture-manifest-sha256", hashlib.sha256(receipt.read_bytes()).hexdigest(),
+                "--wine-dll-manifest", str(dll_receipt),
+                "--wine-dll-manifest-sha256", hashlib.sha256(dll_receipt.read_bytes()).hexdigest(),
+                "--wine-run-root", str(run_root)]
+
+    def _wine_pin(self):
+        original = HELPER._pinned_file
+        wine = self.root / "usr" / "wine64"
+        wine.parent.mkdir(exist_ok=True)
+        wine.write_bytes(b"\x7fELFsynthetic")
+        wine.chmod(0o755)
+        server = wine.parent / "wineserver"
+        server.write_bytes(b"synthetic")
+        server.chmod(0o755)
+        return mock.patch.object(HELPER, "_pinned_file", side_effect=lambda path, digest:
+                                 wine if path == Path("/usr/lib/wine/wine64")
+                                 else original(path, digest))
+
+    def test_wine_dry_run_pins_exact_pe_and_twelve_fixtures_without_spawn(self):
+        args = self._wine_args()
+        with self._patch_boundaries(), self._wine_pin(), mock.patch.object(HELPER.subprocess, "Popen") as spawn:
+            self.assertEqual(HELPER.main([*args, "--verify-only"]), 0)
+        spawn.assert_not_called()
+
+    def test_wine_refuses_reused_prefix_arbitrary_args_and_wrong_pe_hash(self):
+        args = self._wine_args()
+        cases = [args + ["--", "--anything"],
+                 ["incorrect" if value == args[args.index("--wine-test-sha256") + 1] else value
+                  for value in args], args + ["--snapshot", str(self.snapshot)]]
+        with self._patch_boundaries(), self._wine_pin(), mock.patch.object(HELPER.subprocess, "Popen") as spawn:
+            for case in cases:
+                with self.assertRaises(SystemExit) as rejected:
+                    HELPER.main(case)
+                self.assertEqual(rejected.exception.code, 2)
+            (self.root / "wine-run" / "prefix").mkdir()
+            with self.assertRaises(SystemExit):
+                HELPER.main(args)
+        spawn.assert_not_called()
+
+    def test_wine_rejects_changed_extra_or_symlink_fixture(self):
+        args = self._wine_args()
+        path = self.root / "masks" / "NH_academy_genie_portrait_mask.png"
+        path.write_bytes(b"changed")
+        with self._patch_boundaries(), self._wine_pin(), mock.patch.object(HELPER.subprocess, "Popen") as spawn:
+            with self.assertRaises(SystemExit):
+                HELPER.main(args)
+        spawn.assert_not_called()
+
+    def test_wine_actual_child_environment_is_private_and_cleanup_is_prefix_scoped(self):
+        args = self._wine_args()
+        child = mock.Mock(pid=9021)
+        child.wait.return_value = 0
+        child.poll.return_value = 0
+        def spawn(command, **kwargs):
+            environment = kwargs["env"]
+            self.assertEqual(kwargs["start_new_session"], True)
+            self.assertNotIn("PULSE_SERVER", environment)
+            self.assertNotIn("PIPEWIRE_REMOTE", environment)
+            self.assertNotIn("WAYLAND_DISPLAY", environment)
+            for name in ("SDL_VIDEODRIVER", "SDL_VIDEO_DRIVER", "SDL_AUDIODRIVER", "SDL_AUDIO_DRIVER"):
+                self.assertEqual(environment[name], "dummy")
+            self.assertEqual(environment["WINEDLLOVERRIDES"],
+                             "SDL3,SDL3_image=n;libpng16,zlib1,vcruntime140,vcruntime140_1=n,b;mscoree,mshtml=")
+            process = self.proc_root / str(child.pid)
+            process.mkdir()
+            (process / "environ").write_bytes(b"\0".join(
+                key.encode() + b"=" + value.encode() for key, value in environment.items()) + b"\0")
+            (process / "exe").symlink_to(command[0])
+            (process / "stat").write_text("9021 (stopped) " + " ".join(["T"] + ["0"] * 18 + ["3456"]))
+            (self.root / "wine-run" / "pe-environment-proof.txt").write_bytes(b"WINE_PRIVATE_ENV_VERIFIED\n")
+            return child
+        with self._patch_boundaries(), self._wine_pin(), \
+                mock.patch.object(HELPER.subprocess, "Popen", side_effect=spawn), \
+                mock.patch.object(HELPER.os, "kill") as resume, \
+                mock.patch.object(HELPER.subprocess, "run", return_value=mock.Mock(returncode=0)) as cleanup:
+            self.assertEqual(HELPER.main(args), 0)
+        self.assertEqual([call.args[0][-1] for call in cleanup.call_args_list], ["-k", "-w"])
+        for call in cleanup.call_args_list:
+            self.assertEqual(call.kwargs["env"]["WINEPREFIX"], str(self.root / "wine-run" / "prefix"))
+        proof = json.loads((self.root / "wine-run" / "wine-proof.json").read_text())
+        self.assertTrue(proof["verified_environment"])
+        self.assertTrue(proof["reaped"])
+        self.assertTrue(proof["verified_windows_environment"])
+        resume.assert_called_once_with(child.pid, HELPER.signal.SIGCONT)
+
+    def _cleanup_failure_run(self, *, race=False, server_timeout=False, wait_status=0,
+                             child_timeout=True, write_marker=True, bad_environment=False,
+                             stopped=True, stop_timeout=False,
+                             marker_payload=b"WINE_PRIVATE_ENV_VERIFIED\n"):
+        args = self._wine_args()
+        child = mock.Mock(pid=9022)
+        child.wait.side_effect = ([HELPER.subprocess.TimeoutExpired("wine", 90), 0]
+                                  if child_timeout else [0])
+        child.poll.side_effect = [None, 0] if child_timeout else None
+        child.poll.return_value = 0
+        if stop_timeout:
+            child.poll.side_effect = [None, None, 0]
+        def spawned(command, **kwargs):
+            process = self.proc_root / str(child.pid)
+            process.mkdir()
+            environment = kwargs["env"].copy()
+            if bad_environment:
+                environment["SDL_AUDIO_DRIVER"] = "pulseaudio"
+            (process / "environ").write_bytes(b"\0".join(
+                key.encode() + b"=" + value.encode() for key, value in environment.items()) + b"\0")
+            (process / "exe").symlink_to(command[0])
+            (process / "stat").write_text("9022 (stopped) " + " ".join(["T" if stopped else "S"] + ["0"] * 18 + ["3457"]))
+            if not child_timeout and write_marker:
+                (self.root / "wine-run" / "pe-environment-proof.txt").write_bytes(marker_payload)
+            return child
+        def cleaned(command, **kwargs):
+            if command[-1] == "-k" and server_timeout:
+                raise HELPER.subprocess.TimeoutExpired("wineserver -k", 10)
+            return mock.Mock(returncode=wait_status if command[-1] == "-w" else 0)
+        with self._patch_boundaries(), self._wine_pin(), \
+                mock.patch.object(HELPER.subprocess, "Popen", side_effect=spawned), \
+                mock.patch.object(HELPER.subprocess, "run", side_effect=cleaned) as cleanup, \
+                mock.patch.object(HELPER.os, "kill"), \
+                mock.patch.object(HELPER.time, "monotonic", side_effect=[0, 6] if stop_timeout else None), \
+                mock.patch.object(HELPER.os, "killpg", side_effect=ProcessLookupError() if race else None):
+            with self.assertRaises(SystemExit) as rejected:
+                HELPER.main(args)
+            self.assertEqual(rejected.exception.code, 2)
+        self.assertEqual([call.args[0][-1] for call in cleanup.call_args_list], ["-k", "-w"])
+        return json.loads((self.root / "wine-run" / "wine-proof.json").read_text())
+
+    def test_wine_timeout_exit_race_still_reaps_and_cleans_prefix(self):
+        proof = self._cleanup_failure_run(race=True)
+        self.assertTrue(proof["reaped"])
+        self.assertEqual(proof["server_cleanup"], {"-k": 0, "-w": 0})
+
+    def test_wine_server_timeout_still_attempts_wait_and_records_failure(self):
+        proof = self._cleanup_failure_run(server_timeout=True)
+        self.assertTrue(proof["cleanup_errors"])
+        self.assertEqual(proof["server_cleanup"]["-w"], 0)
+
+    def test_wine_nonzero_server_wait_cannot_report_success(self):
+        proof = self._cleanup_failure_run(wait_status=7, child_timeout=False)
+        self.assertEqual(proof["returncode"], 0)
+        self.assertTrue(proof["cleanup_errors"])
+        self.assertEqual(proof["server_cleanup"]["-w"], 7)
+
+    def test_wine_child_success_without_actual_windows_environment_proof_is_rejected(self):
+        proof = self._cleanup_failure_run(child_timeout=False, write_marker=False)
+        self.assertEqual(proof["returncode"], 0)
+        self.assertIn("did not prove", proof["original_error"]["message"])
+
+    def test_wine_stopped_actual_audio_environment_remains_fail_closed(self):
+        proof = self._cleanup_failure_run(child_timeout=False, bad_environment=True)
+        self.assertEqual(proof["environment_mismatches"], ["SDL_AUDIO_DRIVER"])
+        self.assertFalse(proof["verified_environment"])
+
+    def test_wine_must_reach_trusted_stop_before_environment_acceptance(self):
+        proof = self._cleanup_failure_run(child_timeout=False, stopped=False)
+        self.assertIn("pre-exec stop", proof["original_error"]["message"])
+        self.assertFalse(proof["verified_environment"])
+
+    def test_wine_trusted_stop_has_a_five_second_bound(self):
+        proof = self._cleanup_failure_run(child_timeout=False, stopped=False, stop_timeout=True)
+        self.assertIn("five seconds", proof["original_error"]["message"])
+        self.assertTrue(proof["reaped"])
+
+    def test_wine_wrong_windows_environment_marker_cannot_report_success(self):
+        proof = self._cleanup_failure_run(child_timeout=False, marker_payload=b"wrong\n")
+        self.assertIn("did not prove", proof["original_error"]["message"])
 
 
 if __name__ == "__main__":

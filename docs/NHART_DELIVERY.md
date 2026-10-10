@@ -27,6 +27,14 @@ retains the package, tools, manifests and records. Calling an export reference,
 development-only or superseded is not permission to publish it as a loose image.
 This includes deliberate original-based modifications and finished composites.
 
+The supplied application icon has a specific platform-bootstrap exception:
+`clientapp/icons/new-horizons.ico` is embedded in the Windows executable, and
+the nine `new-horizons.<size>x<size>.png` derivatives serve Linux desktop lookup
+before the engine mounts NHART. Their hashes, conversion and authorization are
+recorded in `assets/new-horizons/platform-icon-provenance.json`, retained with
+the package notices. The source master and review previews remain local; this
+exception does not permit loose runtime-art collections.
+
 Before removing tracked artwork, preserve and SHA256-verify recoverable copies
 outside the repository. Keep the local input root explicitly configurable; do
 not depend on a particular workstation path. Pulling an artwork-removal commit

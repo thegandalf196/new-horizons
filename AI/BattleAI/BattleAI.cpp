@@ -37,8 +37,109 @@
                               // CUnitState should be private and CStack should be removed completely
 #include "../../lib/logging/VisualLogger.h"
 
+#include <atomic>
+#include <chrono>
+#include <mutex>
+
 #define LOGL(text) print(text)
 #define LOGFL(text, formattingEl) print(boost::str(boost::format(text) % formattingEl))
+
+struct CBattleAI::TimingState
+{
+	using Clock = std::chrono::steady_clock;
+	const BattleID battleID;
+	const PlayerColor player;
+	const Clock::time_point started = Clock::now();
+	std::optional<Clock::time_point> ended;
+	std::mutex mutex;
+	TimingSummary summary;
+	int32_t lastObservedRound = -1;
+
+	TimingState(BattleID battleID, PlayerColor player) : battleID(battleID), player(player) {}
+
+	TimingSummary snapshotLocked() const
+	{
+		auto result = summary;
+		result.battleWallMicroseconds = std::chrono::duration_cast<std::chrono::microseconds>(
+			ended.value_or(Clock::now()) - started).count();
+		return result;
+	}
+
+	std::optional<TimingSummary> reportLocked()
+	{
+		if(!summary.finished || summary.activeStackInFlight != 0 || summary.reported)
+			return std::nullopt;
+		summary.reported = true;
+		return snapshotLocked();
+	}
+
+	void log(const std::optional<TimingSummary> & result) const
+	{
+		if(!result)
+			return;
+		logAi->info("PERFORMANCE: BattleAI callback wall battle=%d player=%s battle_us=%llu calls=%llu total_us=%llu max_us=%llu rounds_observed=%u",
+			battleID.getNum(), player.toString(),
+			static_cast<unsigned long long>(result->battleWallMicroseconds),
+			static_cast<unsigned long long>(result->activeStackCalls),
+			static_cast<unsigned long long>(result->activeStackTotalMicroseconds),
+			static_cast<unsigned long long>(result->activeStackMaxMicroseconds), result->roundsObserved);
+	}
+};
+
+class CBattleAI::TimingScope
+{
+	std::shared_ptr<TimingState> state;
+	TimingState::Clock::time_point started = TimingState::Clock::now();
+public:
+	TimingScope(std::shared_ptr<TimingState> current, const BattleID & battleID) : state(std::move(current))
+	{
+		if(!state || state->battleID != battleID)
+		{
+			state.reset();
+			return;
+		}
+		bool accepted = false;
+		{
+			std::lock_guard lock(state->mutex);
+			if(!state->summary.finished)
+			{
+				++state->summary.activeStackCalls;
+				++state->summary.activeStackInFlight;
+				accepted = true;
+			}
+		}
+		if(!accepted)
+			state.reset();
+	}
+
+	~TimingScope()
+	{
+		if(!state)
+			return;
+		const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
+			TimingState::Clock::now() - started).count();
+		std::optional<TimingSummary> report;
+		{
+			std::lock_guard lock(state->mutex);
+			state->summary.activeStackTotalMicroseconds += elapsed;
+			state->summary.activeStackMaxMicroseconds = std::max(
+				state->summary.activeStackMaxMicroseconds, static_cast<uint64_t>(elapsed));
+			--state->summary.activeStackInFlight;
+			report = state->reportLocked();
+		}
+		// No CBattleAI pointer: battleEnd may have destroyed the AI during submission.
+		state->log(report);
+	}
+};
+
+std::optional<CBattleAI::TimingSummary> CBattleAI::getTimingSummary() const
+{
+	const auto current = timingState.load();
+	if(!current)
+		return std::nullopt;
+	std::lock_guard lock(current->mutex);
+	return current->snapshotLocked();
+}
 
 CBattleAI::CBattleAI()
 	: side(BattleSide::NONE),
@@ -378,6 +479,7 @@ BattleAction CBattleAI::choosePursuitMovement(const std::shared_ptr<CBattleInfoC
 
 void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 {
+	TimingScope timing(timingState.load(), battleID);
 	LOG_TRACE_PARAMS(logAi, "stack: %s", stack->nodeName());
 	const auto battleCallback = cb->getBattle(battleID);
 	const auto hasMandatoryOrder = [&]()
@@ -752,10 +854,43 @@ BattleAction CBattleAI::useCatapult(const BattleID & battleID, const CStack * st
 
 void CBattleAI::battleStart(const BattleID & battleID, const CCreatureSet *army1, const CCreatureSet *army2, int3 tile, const CGHeroInstance *hero1, const CGHeroInstance *hero2, BattleSide Side, bool replayAllowed)
 {
+	timingState.store(std::make_shared<TimingState>(battleID, playerID));
 	LOG_TRACE(logAi);
 	side = Side;
 	auto tacticsSettings = TacticsHandler::Settings{.enabled = autobattlePreferences.enableTacticsUsage};
 	tacticsHandler = std::make_unique<TacticsHandler>(cb, battleID, tacticsSettings);
+}
+
+void CBattleAI::battleEnd(const BattleID & battleID, const BattleResult * result, QueryID queryID)
+{
+	const auto current = timingState.load();
+	if(!current || current->battleID != battleID)
+		return;
+	std::optional<TimingSummary> report;
+	{
+		std::lock_guard lock(current->mutex);
+		if(current->summary.finished)
+			return;
+		current->ended = TimingState::Clock::now();
+		current->summary.finished = true;
+		report = current->reportLocked();
+	}
+	current->log(report);
+}
+
+void CBattleAI::battleNewRound(const BattleID & battleID)
+{
+	const auto current = timingState.load();
+	const auto battle = cb->getBattle(battleID);
+	if(!current || current->battleID != battleID || !battle)
+		return;
+	const auto round = battle->battleGetRound();
+	std::lock_guard lock(current->mutex);
+	if(!current->summary.finished && round >= 0 && round != current->lastObservedRound)
+	{
+		current->lastObservedRound = round;
+		++current->summary.roundsObserved;
+	}
 }
 
 void CBattleAI::print(const std::string &text) const

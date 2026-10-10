@@ -11,6 +11,7 @@
 #include "render/CBitmapHandler.h"
 
 #include "SDL_Extensions.h"
+#include "GrayscalePngPalette.h"
 
 #include "lib/ExceptionsCommon.h"
 #include "lib/filesystem/Filesystem.h"
@@ -142,6 +143,21 @@ SDL_Surface * BitmapHandler::loadBitmapFromDir(const ImagePath & path)
 			SDL_Palette * palette = CSDL_Ext::getPalette(ret);
 			if (palette)
 			{
+				// Preserve exact grayscale samples before palette transparency or
+				// sprite-presentation processing. Other decoder outputs are unchanged.
+				if(ret->format == SDL_PIXELFORMAT_INDEX8 && palette->ncolors == 256)
+				{
+					std::array<grayscalePngPalette::Color, 256> colors;
+					for(size_t i = 0; i < colors.size(); ++i)
+						colors[i] = {palette->colors[i].r, palette->colors[i].g, palette->colors[i].b, palette->colors[i].a};
+					if(grayscalePngPalette::repair({readFile.first.get(), static_cast<size_t>(readFile.second)}, colors))
+					{
+						std::array<SDL_Color, 256> repaired;
+						for(size_t i = 0; i < repaired.size(); ++i)
+							repaired[i] = {colors[i][0], colors[i][1], colors[i][2], colors[i][3]};
+						SDL_SetPaletteColors(palette, repaired.data(), 0, static_cast<int>(repaired.size()));
+					}
+				}
 				// SDL3_image leaves paletted png's indexed and stores their tRNS transparency as palette
 				// alpha, while SDL2_image expanded those to RGBA - do that here to keep one code path.
 				bool paletteHasTransparency = false;
