@@ -1265,6 +1265,7 @@ bool BattleActionsController::stormOfDaggersTargetHexIsLegal(const BattleHex & h
 
 StormOfDaggersSelectionPreview BattleActionsController::getStormOfDaggersSelectionPreview() const
 {
+	stormOfDaggersRenderPreview.reset();
 	StormOfDaggersSelectionPreview result;
 	result.selectedTargetCount = static_cast<int32_t>(stormOfDaggersSelectedUnitIds.size());
 	result.maximumTargetCount = stormOfDaggersMaximumTargets;
@@ -1353,7 +1354,32 @@ StormOfDaggersSelectionPreview BattleActionsController::getStormOfDaggersSelecti
 		result.status = "Selection is ready. Confirm to cast or add another enemy stack.";
 	else
 		result.status = "A selected stack is no longer legal. Undo or cancel.";
+	if(result.canConfirm && result.poolAvailable)
+		stormOfDaggersRenderPreview = result;
 	return result;
+}
+
+const StormOfDaggersSelectionPreview * BattleActionsController::getStormOfDaggersRenderPreview() const
+{
+	if(!stormOfDaggersRenderPreview || !stormOfDaggersSelectionContextIsCurrent()
+		|| stormOfDaggersRenderPreview->targets.size() != stormOfDaggersSelectedUnitIds.size())
+	{
+		stormOfDaggersRenderPreview.reset();
+		return nullptr;
+	}
+	const auto battle = owner.getBattle();
+	for(size_t index = 0; index < stormOfDaggersSelectedUnitIds.size(); ++index)
+	{
+		const auto unitId = stormOfDaggersSelectedUnitIds[index];
+		const auto * unit = battle->battleGetUnitByID(unitId);
+		if(stormOfDaggersRenderPreview->targets[index].unitId != unitId
+			|| !unit || !unit->alive() || unit->unitSide() != battle->otherSide(stormOfDaggersSide))
+		{
+			stormOfDaggersRenderPreview.reset();
+			return nullptr;
+		}
+	}
+	return &*stormOfDaggersRenderPreview;
 }
 
 void BattleActionsController::updateStormOfDaggersSelectionStatus(const BattleHex & hoveredHex)
@@ -1403,7 +1429,10 @@ void BattleActionsController::selectStormOfDaggersTarget(const BattleHex & click
 
 	const auto * target = getStackForHex(clickedHex);
 	if(target && stormOfDaggersTargetIsLegal(target->unitId()))
+	{
+		stormOfDaggersRenderPreview.reset();
 		stormOfDaggersSelectedUnitIds.push_back(target->unitId());
+	}
 
 	if(owner.windowObject)
 		owner.windowObject->updateBattleTargetSelectionControls();
@@ -1447,6 +1476,7 @@ void BattleActionsController::undoStormOfDaggersTarget()
 		return;
 
 	stormOfDaggersSelectedUnitIds.pop_back();
+	stormOfDaggersRenderPreview.reset();
 	if(owner.windowObject)
 		owner.windowObject->updateBattleTargetSelectionControls();
 	updateStormOfDaggersSelectionStatus(BattleHex::INVALID);
@@ -2873,6 +2903,7 @@ void BattleActionsController::endCastingSpell()
 	monsterSpellTargets.clear();
 	repeatedPlacementSelectedHexes.clear();
 	stormOfDaggersSelectedUnitIds.clear();
+	stormOfDaggersRenderPreview.reset();
 	stormOfDaggersPlayer.reset();
 	stormOfDaggersSide = BattleSide::NONE;
 	stormOfDaggersRound = -1;
@@ -3175,6 +3206,7 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 	if(isStormOfDaggersSpell(heroSpellToCast->spell.toSpell()))
 	{
 		stormOfDaggersSelectedUnitIds.clear();
+		stormOfDaggersRenderPreview.reset();
 		stormOfDaggersBattleID = owner.getBattleID();
 		stormOfDaggersPlayer = owner.curInt->cb->getPlayerID();
 		stormOfDaggersSide = battle->battleGetMySide();

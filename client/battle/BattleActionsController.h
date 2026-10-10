@@ -196,6 +196,8 @@ class BattleActionsController
 	/// presentation-only selection; all identities and full-vector legality are
 	/// checked again before the ordinary hero spell request is sent.
 	std::vector<uint32_t> stormOfDaggersSelectedUnitIds;
+	/// Latest completed panel/status forecast; renderers must not evaluate spells.
+	mutable std::optional<StormOfDaggersSelectionPreview> stormOfDaggersRenderPreview;
 	BattleID stormOfDaggersBattleID;
 	std::optional<PlayerColor> stormOfDaggersPlayer;
 	BattleSide stormOfDaggersSide = BattleSide::NONE;
@@ -380,6 +382,7 @@ public:
 	int stormOfDaggersSelectionOrder(uint32_t unitId) const;
 	bool stormOfDaggersTargetHexIsLegal(const BattleHex & hex) const;
 	StormOfDaggersSelectionPreview getStormOfDaggersSelectionPreview() const;
+	const StormOfDaggersSelectionPreview * getStormOfDaggersRenderPreview() const;
 	void confirmStormOfDaggersTargets();
 	void undoStormOfDaggersTarget();
 	/// Soul Chain selects an ordered primary followed by up to two secondary IDs.

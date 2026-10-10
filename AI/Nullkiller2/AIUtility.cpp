@@ -14,6 +14,7 @@
 #include "AIUtility.h"
 #include "AIGateway.h"
 #include "Goals/Goals.h"
+#include "Helpers/NewHorizonsMuster.h"
 
 #include "../../lib/UnlockGuard.h"
 #include "../../lib/CConfigHandler.h"
@@ -21,6 +22,7 @@
 #include "../../lib/callback/Calendar.h"
 #include "../../lib/entities/artifact/CArtifact.h"
 #include "../../lib/entities/hero/CHero.h"
+#include "../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../../lib/entities/creature/NewHorizonsMusterRules.h"
 #include "../../lib/entities/ResourceTypeHandler.h"
 #include "../../lib/mapObjects/MapObjects.h"
@@ -683,7 +685,7 @@ float teachingMeetingReward(const Nullkiller * aiNk, const CGHeroInstance * trav
 		|| aiNk->cc->getPlayerRelations(traveler->getOwner(), partner->getOwner()) == PlayerRelations::ENEMIES)
 		return 0;
 	const auto calendar = aiNk->cc->getCalendar();
-	const auto week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+	const auto week = ::newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
 	float reward = 0;
 	if(traveler->canExchangeNewHorizonsScholarWith(*partner, week))
 	{
@@ -706,6 +708,40 @@ float teachingMeetingReward(const Nullkiller * aiNk, const CGHeroInstance * trav
 }
 
 // todo: move to obj manager
+uint64_t externalMusterArmyReward(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGDwelling * dwelling)
+{
+	if(!hero || !dwelling || hero->getOwner() != aiNk->playerID
+		|| dwelling->getOwner() != aiNk->playerID)
+		return 0;
+	const auto calendar = aiNk->cc->getCalendar();
+	const int week = ::newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+	::newHorizonsMuster::PerkModifiers modifiers;
+	modifiers.masterRecruiter = hero->hasActivePerk(std::string(::newHorizonsMuster::RECRUITMENT_SKILL),
+		std::string(::newHorizonsMuster::MASTER_RECRUITER_PERK));
+	if(hero->getNewHorizonsMusterUsesThisWeek(week) >= ::newHorizonsMuster::maximumUsesPerWeek(modifiers)
+		|| dwelling->getNewHorizonsMusterLastWeek() == week || aiNk->aiGw->hasPendingMuster(dwelling))
+		return 0;
+	const auto candidate = newHorizonsMuster::chooseExternalCandidate(*dwelling, *aiNk->cc,
+		hero->getPerkSkillRank(std::string(::newHorizonsMuster::RECRUITMENT_SKILL)),
+		hero->hasActivePerk(std::string(::newHorizonsMuster::RECRUITMENT_SKILL),
+			std::string(::newHorizonsMuster::EXTERNAL_RECRUITER_PERK)));
+	if(!candidate)
+		return 0;
+	auto slot = newHorizonsHeroes::recruitmentSlot(hero, candidate->creature, candidate->amount);
+	if(!slot.validSlot())
+		slot = newHorizonsHeroes::recruitmentSlot(hero, candidate->creature, 1);
+	if(!slot.validSlot())
+		return 0;
+	int amount = candidate->amount;
+	if(const auto capacity = hero->getLeadershipSlotCapacity(candidate->creature))
+	{
+		const int current = hero->hasStackAtSlot(slot) ? hero->getStackCount(slot) : 0;
+		amount = std::min(amount, std::max(0, capacity->maximum - current));
+	}
+	amount = std::min(amount, aiNk->cc->getResourceAmount() / dwelling->getRecruitmentCost(candidate->creature));
+	return static_cast<uint64_t>(std::max(0, amount)) * candidate->creature.toCreature()->getAIValue();
+}
+
 bool shouldVisit(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGObjectInstance * obj)
 {
 	auto relations = aiNk->cc->getPlayerRelations(obj->tempOwner, hero->tempOwner);
@@ -718,7 +754,7 @@ bool shouldVisit(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGO
 		{
 			const auto * mine = dynamic_cast<const CGMine *>(obj);
 			const auto calendar = aiNk->cc->getCalendar();
-			const int week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+			const int week = ::newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
 			return mine && mine->prospectorQuantity() > 0
 				&& hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.prospector")
 				&& !hero->hasUsedNewHorizonsProspector(week);
@@ -770,8 +806,10 @@ bool shouldVisit(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGO
 	case Obj::CREATURE_GENERATOR4:
 	{
 		const auto * d = dynamic_cast<const CGDwelling *>(obj);
+		if(externalMusterArmyReward(aiNk, hero, d) > 0)
+			return true;
 		const auto calendar = aiNk->cc->getCalendar();
-		const int week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+		const int week = ::newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
 		const auto contacts = d ? newHorizonsRecruitment::recruitersContactsAward(*hero, *d, week) : std::nullopt;
 		// Preserve the ordinary multi-row dwelling policy when Contacts cannot fire.
 		if(obj->ID == Obj::CREATURE_GENERATOR4 && !contacts)

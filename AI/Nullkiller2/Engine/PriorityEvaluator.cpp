@@ -283,6 +283,8 @@ uint64_t RewardEvaluator::getArmyReward(
 		uint64_t reward = getDwellingArmyValue(aiNk->cc.get(), target, checkGold);
 		const auto * dwelling = dynamic_cast<const CGDwelling *>(target);
 		if(hero && dwelling)
+			reward += externalMusterArmyReward(aiNk, hero, dwelling);
+		if(hero && dwelling)
 		{
 			const auto calendar = aiNk->cc->getCalendar();
 			const int week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());

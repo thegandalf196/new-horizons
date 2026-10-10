@@ -2,6 +2,34 @@
 
 Updated: 2026-10-10
 
+Accepted feedback checkpoint: external Muster7/7 after fixture-only observer
+repair plus retained Hold5/5 establish12 distinct cases across runs. Both-target
+5553 and privacy45889 pass. Actual background rendering establishes paid Hold
+single/double-wide anchors and movement break; root inspects native captures.
+Storm rendered damage labels remain unobserved due the test setup disabling its
+spellbook. Hold expiry/control rendering and Frozen feedback remain separate
+unverified gates, not accepted by native evidence. NHART/launcher are unchanged.
+Town Muster AI planning/ordinary entry is source-reviewed privately and next;
+registry counts do not change and complete Phase1 exit remains unproven.
+
+Current feedback checkpoint: both-target86520 and privacy96253 pass; actual
+native12 passes11/12, with all Hold anchor5 cases passing. External Muster's
+one failing fixture observes the wrong replicated-event hook, not an absent
+dwelling dialog. A source-reviewed observer-only repair retains the real
+query/window/Muster/recruit chain and all seven cases; incremental5553 links
+and privacy45889 passes. Seven-case retry and Storm/Hold rendered acceptance
+remain pending. Ordinary-town Muster deliberate planning/entry remains another
+demonstrated principal AI omission, not covered by the external-dwelling work.
+
+Published accepted checkpoint:9ed7cb4d5, verified remote/identity. Windows
+run38043534263 is in progress, not platform/playable acceptance. The next three
+principal omissions are source-implemented after independent review: external
+Muster visit planning, Storm selected-target projected HP labels and Hold anchor
+footprints. Twelve focused cases are registered but unrun. Rendering reads the
+existing completed Storm forecast without adding per-frame spell evaluation;
+Hold reads effective current-controller receipts without mutating state.
+Native and rendered acceptance remain pending; registry totals are unchanged.
+
 Accepted current checkpoint: Second Wind direct creature casts/readiness and
 deliberate Scholar/Mentor/Master Teacher meetings have principal evidence.
 Corrected native-v2 passes11/11 (teaching7, retained towns4); unchanged-production

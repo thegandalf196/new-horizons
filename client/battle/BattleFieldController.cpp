@@ -22,6 +22,7 @@
 #include "BattleStacksController.h"
 #include "BattleWindow.h"
 #include "NewHorizonsProtectLink.h"
+#include "NewHorizonsHoldAnchor.h"
 #include "../../lib/battle/NewHorizonsBattlecraft.h"
 
 #include "../CPlayerInterface.h"
@@ -35,6 +36,7 @@
 #include "render/Colors.h"
 #include "render/EFont.h"
 #include "render/IImage.h"
+#include "../render/IFont.h"
 #include "render/IRenderHandler.h"
 #include "render/IScreenHandler.h"
 #include "../gui/TextAlignment.h"
@@ -42,6 +44,7 @@
 #include "../../lib/BattleFieldHandler.h"
 #include "../../lib/CConfigHandler.h"
 #include "../../lib/CStack.h"
+#include "../../lib/texts/TextOperations.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/Problem.h"
@@ -306,15 +309,82 @@ void BattleFieldController::renderBattlefield(Canvas & canvas)
 	Canvas clippedCanvas(canvas, renderPos);
 
 	showBackground(clippedCanvas);
+	showHoldTheLineAnchors(clippedCanvas);
 	showProtectLinks(clippedCanvas);
 
 	BattleRenderer renderer(owner);
 
 	renderer.execute(clippedCanvas);
+	// The panel/status refresh owns forecasts. Rendering reads its completed
+	// snapshot only, without recalculating damage or changing selected targets.
+	const auto * stormPreview = owner.actionsController
+		? owner.actionsController->getStormOfDaggersRenderPreview() : nullptr;
+	if(stormPreview)
+	{
+		const auto battle = owner.getBattle();
+		const auto font = ENGINE->renderHandler().loadFont(EFonts::FONT_TINY);
+		for(const auto & target : stormPreview->targets)
+		{
+			const auto * unit = battle->battleGetUnitByID(target.unitId);
+			if(!unit || !target.projectedDamage || !unit->getPosition().isValid())
+				continue;
+			// Keep the existing upper-left ordinal. One compact estimate sits
+			// below it on the head hex, including for a double-wide creature.
+			// Metric notation matches stack counts; the panel retains exact HP.
+			const auto text = "~" + TextOperations::formatMetric(*target.projectedDamage, 3);
+			const auto hexRect = hexPositionLocal(unit->getPosition());
+			const int width = static_cast<int>(font->getStringWidth(text)) + 6;
+			const Rect badge(std::clamp(hexRect.center().x - width / 2, 0, pos.w - width),
+				std::clamp(hexRect.y + 24, 0, pos.h - 13), width, 13);
+			clippedCanvas.drawColor(badge, ColorRGBA(32, 20, 12, 245));
+			clippedCanvas.drawBorder(badge, ColorRGBA(220, 184, 105, 255));
+			clippedCanvas.drawText(badge.center(), EFonts::FONT_TINY, Colors::YELLOW,
+				ETextAlignment::CENTER, text);
+		}
+	}
 	showChainLightningPreviewNumbers(clippedCanvas);
 	showDemonicGateReservations(clippedCanvas);
 
 	owner.projectilesController->render(clippedCanvas);
+}
+
+void BattleFieldController::showHoldTheLineAnchors(Canvas & canvas)
+{
+	const auto battle = owner.getBattle();
+	if(!battle)
+		return;
+
+	// A narrow inset follows the native hex dimensions; creatures, Protect links
+	// and later targeting layers remain above this position marker.
+	const ColorRGBA shadow(54, 39, 21, 210);
+	const ColorRGBA amber(220, 177, 91, 224);
+	const auto outline = [&](BattleHex hex)
+	{
+		if(!hex.isAvailable())
+			return;
+		const auto bounds = hexPositionLocal(hex);
+		const int inset = 4;
+		const std::array<Point, 6> corners = {{
+			Point(bounds.x + bounds.w / 2, bounds.y + inset),
+			Point(bounds.x + bounds.w - inset, bounds.y + bounds.h / 4),
+			Point(bounds.x + bounds.w - inset, bounds.y + 3 * bounds.h / 4),
+			Point(bounds.x + bounds.w / 2, bounds.y + bounds.h - inset),
+			Point(bounds.x + inset, bounds.y + 3 * bounds.h / 4),
+			Point(bounds.x + inset, bounds.y + bounds.h / 4)
+		}};
+		for(size_t index = 0; index < corners.size(); ++index)
+		{
+			const auto & from = corners[index];
+			const auto & to = corners[(index + 1) % corners.size()];
+			canvas.drawLine(from + Point(1, 1), to + Point(1, 1), shadow, shadow);
+			canvas.drawLine(from, to, amber, amber);
+		}
+	};
+	for(const auto & anchor : newHorizonsHoldAnchor::activeAnchors(*battle))
+	{
+		outline(anchor.head);
+		outline(anchor.rear);
+	}
 }
 
 void BattleFieldController::showProtectLinks(Canvas & canvas)

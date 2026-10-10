@@ -244,6 +244,7 @@ set(vcmiclientcommon_HEADERS
 	battle/NewHorizonsBattleStatus.h
 	battle/NewHorizonsQueueActivationStatus.h
 	battle/NewHorizonsProtectLink.h
+	battle/NewHorizonsHoldAnchor.h
 	battle/StackInfoPanelHoverState.h
 	battle/StackInfoStatusPresentation.h
 	battle/BattleInterface.h

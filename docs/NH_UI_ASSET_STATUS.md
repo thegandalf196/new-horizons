@@ -1,5 +1,23 @@
 # New Horizons UI and asset status register
 
+2026-10-10 feedback validation: **Provisional**. Both targets compile; Hold
+anchor native5/5 passes. Root inspects actual silent background captures of paid
+single/double-wide footprints and contour removal after movement. Expiry/control
+rendering remains unverified. Storm labels compile but are not rendered-accepted:
+the bounded probe disabled its spellbook during setup. No correctness failure
+is inferred from that precondition. No Final approval, NHART change or ordinary
+launcher promotion is claimed.
+
+2026-10-10 required battlefield feedback source checkpoint: **Provisional**.
+Storm of Daggers retains its existing numbered selections and adds compact
+projected-HP labels from the completed panel/status forecast, with no new
+per-render damage simulation. Hold the Line marks eligible issue-time head/rear
+anchor footprints below creatures and Protect links. These are code-drawn UI
+changes, not new raster artwork or NHART entries. Independent source review
+passes; compilation, focused native controls and native-resolution rendered
+readability/overlap/Undo/expiry/control checks remain pending. No Final approval
+or playable-launcher promotion is claimed.
+
 Pandemonium source checkpoint: **Not done** bespoke spell artwork. The
 functional registration references external original Armageddon icons, hit
 effect and sound as temporary assets, without extracting or repackaging them.
