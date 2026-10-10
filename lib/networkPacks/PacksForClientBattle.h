@@ -25,6 +25,7 @@
 #include "../battle/NewHorizonsBattlecraft.h"
 #include "../battle/NewHorizonsElementalRebirth.h"
 #include "../battle/BattleInfo.h"
+#include "../spells/NewHorizonsCrossSchoolFormula.h"
 #include "../battle/BattleDeploymentState.h"
 #include "../battle/BattleHexArray.h"
 #include "../battle/BattleUnitTurnReason.h"
@@ -44,11 +45,22 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 {
 	BattleID battleID = BattleID::NONE;
 	std::unique_ptr<BattleInfo> info;
+	newHorizonsTraining::Batch trainingEntry;
+	bool trainingReplay = false;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && trainingReplay && (!info || info->trainingEntrySnapshot.empty()
+			|| !trainingEntry.empty() || !h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING)))
+			throw std::runtime_error("Invalid training replay snapshot");
+		if(h.saving)
+			trainingEntry.validateSerialization(h);
+		if(h.saving && info)
+			info->validateTrainingSerialization(h);
+		if(h.saving && info)
+			info->validateMetamagicCapacitySerialization(h);
 		if(h.saving && info)
 			info->validateSharedPurposeSerialization(h);
 		if(h.saving && info)
@@ -76,7 +88,10 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 				throw std::runtime_error("Cannot discard Confusion pending state or history from BattleStart");
 		}
 		if(h.saving && info)
+		{
 			info->validateSpellResponseStates();
+			info->validateCrossSchoolFormulaSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_CROSS_SCHOOL_FORMULA));
+		}
 		if(h.saving && info)
 		{
 			info->validateOverwhelmingFormulaStates();
@@ -158,8 +173,15 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_ARMORER_LAST_STAND)
 			&& info->hasArmorerLastStandState())
 			throw std::runtime_error("Cannot discard Armorer Last Stand state from BattleStart");
+		if(h.saving && info)
+			info->validateExtendSpellSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SPELLCRAFT_TARGET_DURATION));
 		h & battleID;
 		h & info;
+		h & trainingEntry;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING))
+			h & trainingReplay;
+		else if(!h.saving)
+			trainingReplay = false;
 		assert(battleID != BattleID::NONE);
 	}
 };
@@ -825,6 +847,7 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 			{
 				change.validateOverwatchSerialization(h);
 				change.validateVeteranCohesionSerialization(h);
+				change.validateTrainingSerialization(h);
 				change.validateFrozenSerialization(h);
 				change.validateBattleFormSerialization(h);
 				change.validateConfusionSerialization(h);
@@ -954,6 +977,7 @@ struct BattleStackAttacked
 		{
 			newState.validateOverwatchSerialization(h);
 			newState.validateVeteranCohesionSerialization(h);
+			newState.validateTrainingSerialization(h);
 			newState.validateFrozenSerialization(h);
 			newState.validateBattleFormSerialization(h);
 			newState.validateConfusionSerialization(h);
@@ -1118,6 +1142,7 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 			{
 				change.validateOverwatchSerialization(h);
 				change.validateVeteranCohesionSerialization(h);
+				change.validateTrainingSerialization(h);
 				change.validateFrozenSerialization(h);
 				change.validateBattleFormSerialization(h);
 				change.validateConfusionSerialization(h);
@@ -1126,6 +1151,7 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 			{
 				hit.newState.validateOverwatchSerialization(h);
 				hit.newState.validateVeteranCohesionSerialization(h);
+				hit.newState.validateTrainingSerialization(h);
 				hit.newState.validateFrozenSerialization(h);
 				if(hit.shattered() && !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN))
 					throw std::runtime_error("Cannot discard Frozen Shatter in an older battle attack format");
@@ -1543,12 +1569,14 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 	si32 casterStack = -1; // -1 if not cated by creature, >=0 caster stack ID
 	bool castByHero = true; //if true - spell has been cast by hero, otherwise by a creature
 	bool temporalFieldCast = false; // consumes the saved once-per-combat Sorcery Mass Slow budget
+	bool extendedSpell = false;
 	BattleSide counterspellSide = BattleSide::NONE; // ward side consumed or collapsed while this hero spell was attempted
 	bool counterspellNegated = false; // the ward had enough mana and suppressed this spell's effects
 	bool metamagicFollowup = false; // this spell spends a Metamagic Spell Action without recursively granting another
 	bool metamagicGrand = false; // authoritative automatic Grand activation on this accepted follow-up
 	uint32_t metamagicTargetUnitId = std::numeric_limits<uint32_t>::max(); // primary target used by sequence perks
 	int32_t metamagicManaRefund = 0; // Formula Reserve refund published with the final additional cast
+	std::optional<newHorizonsCrossSchoolFormula::Receipt> crossSchoolFormula;
 	int32_t paidHeroManaCost = 0; // gross cost paid by the hero for this accepted cast
 	int32_t paidCounterspellManaCost = 0; // ward cost paid by counterspellSide for this accepted cast
 
@@ -1556,6 +1584,19 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && extendedSpell && !h.hasFeature(Handler::Version::NEW_HORIZONS_SPELLCRAFT_TARGET_DURATION))
+			throw std::runtime_error("Cannot discard Extend Spell cast receipt");
+		if(h.saving && extendedSpell && (!activeCast || !castByHero
+			|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)))
+			throw std::runtime_error("Invalid Extend Spell cast receipt");
+		if(h.saving && crossSchoolFormula)
+		{
+			crossSchoolFormula->validate();
+			if(!activeCast || !castByHero || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+				|| crossSchoolFormula->after.spell != spellID
+				|| !h.hasFeature(Handler::Version::NEW_HORIZONS_CROSS_SCHOOL_FORMULA))
+				throw std::runtime_error("Invalid or unsupported Cross-School Formula cast receipt");
+		}
 		if(h.saving && temporalFieldCast && !h.hasFeature(Handler::Version::NEW_HORIZONS_TEMPORAL_FIELD))
 			throw std::runtime_error("Cannot serialize Temporal Field cast to an older protocol");
 		if(h.saving && (counterspellSide != BattleSide::NONE || counterspellNegated)
@@ -1613,7 +1654,7 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 		if(h.hasFeature(Handler::Version::BATTLE_HERO_MANA_EXPENDITURE))
 		{
 			h & paidHeroManaCost;
-			h & paidCounterspellManaCost;
+		h & paidCounterspellManaCost;
 			if(!h.saving && (paidHeroManaCost < 0 || paidCounterspellManaCost < 0
 				|| (paidHeroManaCost > 0 && (!castByHero || !activeCast
 					|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)))
@@ -1629,6 +1670,26 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 			paidHeroManaCost = 0;
 			paidCounterspellManaCost = 0;
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SPELLCRAFT_TARGET_DURATION))
+			h & extendedSpell;
+		else if(!h.saving)
+			extendedSpell = false;
+		if(extendedSpell && (!activeCast || !castByHero
+			|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)))
+			throw std::runtime_error("Invalid Extend Spell cast receipt");
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CROSS_SCHOOL_FORMULA))
+		{
+			h & crossSchoolFormula;
+			if(!h.saving && crossSchoolFormula)
+			{
+				crossSchoolFormula->validate();
+				if(!activeCast || !castByHero || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+					|| crossSchoolFormula->after.spell != spellID)
+					throw std::runtime_error("Invalid saved Cross-School Formula cast receipt");
+			}
+		}
+		else if(!h.saving)
+			crossSchoolFormula.reset();
 		assert(battleID != BattleID::NONE);
 	}
 };
@@ -1648,6 +1709,7 @@ struct DLL_LINKAGE StacksInjured : public CPackForClient
 			{
 				hit.newState.validateOverwatchSerialization(h);
 				hit.newState.validateVeteranCohesionSerialization(h);
+				hit.newState.validateTrainingSerialization(h);
 				hit.newState.validateFrozenSerialization(h);
 				if(hit.shattered() && !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN))
 					throw std::runtime_error("Cannot discard Frozen Shatter in an older injury format");
@@ -1684,10 +1746,13 @@ struct DLL_LINKAGE BattleResultsApplied : public CPackForClient
 	std::vector<DischargeArtifact> dischargingArtifacts;
 	CStackBasicDescriptor raisedStack;
 	newHorizonsNecromancy::NecromancyResult necromancy;
+	newHorizonsTraining::Batch trainingCompletion;
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+			trainingCompletion.validateSerialization(h);
 		if(h.saving && !necromancy.isLordOfDeadSummaryValid())
 			throw std::runtime_error("Invalid Necromancy Lord of the Dead summary");
 		if(h.saving && necromancy.hasLordOfDeadSummary()
@@ -1724,6 +1789,7 @@ struct DLL_LINKAGE BattleResultsApplied : public CPackForClient
 		h & growingArtifacts;
 		h & dischargingArtifacts;
 		h & raisedStack;
+		h & trainingCompletion;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY))
 			h & necromancy;
 		else if(!h.saving)
@@ -1762,6 +1828,40 @@ struct DLL_LINKAGE BattleObstaclesChanged : public CPackForClient
 		h & battleID;
 		h & change;
 		assert(battleID != BattleID::NONE);
+	}
+};
+
+/// Surviving structural repair only. Neither casualty restoration nor rebuilding.
+struct DLL_LINKAGE BattleStructureRepaired : public CPackForClient
+{
+	BattleID battleID = BattleID::NONE;
+	EWallPart part = EWallPart::INVALID;
+	uint32_t healerID = 0;
+	int32_t expectedHP = 0;
+	int32_t replacementHP = 0;
+
+	void validateShape() const
+	{
+		const auto maximum = SiegeInfo::maximumStructuralHP(part);
+		if(battleID == BattleID::NONE || maximum <= 0 || expectedHP <= 0
+			|| expectedHP >= maximum || replacementHP <= expectedHP || replacementHP > maximum)
+			throw std::runtime_error("Invalid surviving fortification repair");
+	}
+
+	void visitTyped(ICPackVisitor & visitor) override;
+	template<typename Handler> void serialize(Handler & h)
+	{
+		// Root assigns the feature and fresh wire ID at integration.
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_WAR_MACHINES_REPAIR))
+			throw std::runtime_error("Fortification repair requires its serialization feature");
+		if(h.saving)
+			validateShape();
+		h & battleID;
+		h & part;
+		h & healerID;
+		h & expectedHP;
+		h & replacementHP;
+		validateShape();
 	}
 };
 

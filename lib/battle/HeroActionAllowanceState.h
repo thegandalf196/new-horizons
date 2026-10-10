@@ -17,6 +17,7 @@
 #include <optional>
 #include <stdexcept>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -877,14 +878,16 @@ struct DLL_LINKAGE HeroSpellAllowanceTransition
 		uint8_t & metamagicUsesConsumed,
 		uint8_t & metamagicPendingCount,
 		bool & metamagicGrandUsed,
-		size_t sequenceSpellCount)
+		size_t sequenceSpellCount,
+		uint8_t metamagicCapacity = 0)
 	{
 		return commitAcceptedCast(ledger, selectionGrantId, round, metamagicFollowup, grand,
 			metamagicRank, grandPerkEnabled, metamagicUsesConsumed, metamagicPendingCount,
-			metamagicGrandUsed, sequenceSpellCount, [](const HeroActionAllowanceState::Grant &) { return true; });
+			metamagicGrandUsed, sequenceSpellCount, [](const HeroActionAllowanceState::Grant &) { return true; }, metamagicCapacity);
 	}
 
 	template <typename GrantPredicate>
+		requires std::is_invocable_r_v<bool, GrantPredicate, const HeroActionAllowanceState::Grant &>
 	static std::optional<Result> commitAcceptedCast(
 		HeroActionAllowanceState & ledger,
 		uint32_t selectionGrantId,
@@ -897,15 +900,20 @@ struct DLL_LINKAGE HeroSpellAllowanceTransition
 		uint8_t & metamagicPendingCount,
 		bool & metamagicGrandUsed,
 		size_t sequenceSpellCount,
-		const GrantPredicate & grantPredicate)
+		const GrantPredicate & grantPredicate,
+		uint8_t metamagicCapacity = 0)
 	{
 		using Ledger = HeroActionAllowanceState;
 		using Allowance = Ledger::AllowanceKind;
 		using Source = Ledger::GrantSource;
 		using Action = Ledger::ActionKind;
 
-		if(round < 0 || round != ledger.currentRound || metamagicRank > 3
-			|| metamagicUsesConsumed > 3 || metamagicPendingCount > 1)
+		// Existing ordinary callers retain rank-as-capacity. New callers pass the
+		// independent capacity; Grand continues to inspect actual mastery only.
+		const uint8_t capacity = metamagicCapacity == 0 ? metamagicRank : metamagicCapacity;
+		if(round < 0 || round != ledger.currentRound || metamagicRank > 3 || capacity > 4
+			|| capacity < metamagicRank || (metamagicRank == 0 && capacity != 0)
+			|| metamagicUsesConsumed > capacity || metamagicPendingCount > 1)
 			return {};
 
 		const auto outstandingMetaGrants = countPendingMetamagicGrants(ledger, round);
@@ -937,7 +945,7 @@ struct DLL_LINKAGE HeroSpellAllowanceTransition
 		{
 			if(metaSource)
 			{
-				if(metamagicPendingCount != 1 || sequenceSpellCount != 1 || metamagicUsesConsumed >= metamagicRank)
+				if(metamagicPendingCount != 1 || sequenceSpellCount != 1 || metamagicUsesConsumed >= capacity)
 					return {};
 			}
 			else if(grandSource)
@@ -966,7 +974,7 @@ struct DLL_LINKAGE HeroSpellAllowanceTransition
 		{
 			// A base-Hero-paid cast reserves (but does not charge) one use until its
 			// optional Spell Action is accepted. An outstanding token cannot recurse.
-			if(metamagicRank > nextUsesConsumed)
+			if(capacity > nextUsesConsumed)
 			{
 				result.grantedGrantIds.push_back(nextLedger.grantAllowance(
 					Allowance::SPELL, Source::METAMAGIC, round));

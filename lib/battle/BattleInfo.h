@@ -109,6 +109,31 @@ public:
 			return empty;
 		return sides.at(side).reducedExtraActivation;
 	}
+	int32_t getExtendSpellLastRound(BattleSide side) const override { return sides.at(side).extendSpellLastRound; }
+	void consumeExtendSpell(BattleSide side) override;
+	void validateExtendSpellSerialization(bool supported) const
+	{
+		for(const auto & stack : stacks)
+			if(stack && stack->getPhantomRoundsRemaining() > 3)
+				throw std::runtime_error("Binary battle descriptors cannot preserve extended Phantom lifetime");
+		for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			const int32_t used = getExtendSpellLastRound(side);
+			if(used < -1 || used > round || (!supported && used >= 0))
+				throw std::runtime_error("Invalid or unsupported Extend Spell history");
+		}
+	}
+	const newHorizonsCrossSchoolFormula::State & getCrossSchoolFormulaState(BattleSide side) const override
+	{
+		static const newHorizonsCrossSchoolFormula::State empty;
+		return side == BattleSide::ATTACKER || side == BattleSide::DEFENDER ? sides.at(side).crossSchoolFormula : empty;
+	}
+	void setCrossSchoolFormulaState(BattleSide side, const newHorizonsCrossSchoolFormula::State & state) override;
+	void validateCrossSchoolFormulaSerialization(bool supported) const
+	{
+		for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			newHorizonsCrossSchoolFormula::validateState(*this, getCrossSchoolFormulaState(side), supported);
+	}
 	const SpellResponseState & getSpellResponseState(BattleSide side) const override
 	{
 		static const SpellResponseState empty;
@@ -343,6 +368,22 @@ public:
 	LuckRollRules luckRollRules;
 	// Append new transient snapshot fields to preserve preceding BattleInfo offsets.
 	BattleDeploymentState deploymentState;
+	newHorizonsTraining::Batch trainingEntrySnapshot;
+
+	template <typename Handler> void validateTrainingSerialization(Handler & h) const
+	{
+		trainingEntrySnapshot.validateSerialization(h);
+		for(const auto & stack : stacks)
+			if(stack)
+				stack->validateTrainingSerialization(h);
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			if(const auto * army = battleGetArmyObject(side))
+				army->validateTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING));
+			if(const auto * hero = getSideHero(side))
+				hero->validateRecruitmentTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING));
+		}
+	}
 
 	template <typename Handler> void validateFrozenSerialization(Handler & h) const
 	{
@@ -385,8 +426,24 @@ public:
 		}
 	}
 
+	template <typename Handler> void validateMetamagicCapacitySerialization(Handler & h) const
+	{
+		for(const auto sideID : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			const auto & side = sides.at(sideID);
+			side.validateMetamagicCapacitySerialization(h);
+			const int capacity = newHorizonsMagic::metamagicCapacity(getSideHero(sideID));
+			if(side.metamagicUsesConsumed > capacity
+				|| (side.metamagicPendingCount != 0 && side.metamagicSequenceSpells.size() == 1
+					&& side.metamagicUsesConsumed >= capacity))
+				throw std::runtime_error("Saved Metamagic consumption/reservation exceeds actual hero capacity");
+		}
+	}
+
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateMetamagicCapacitySerialization(h);
 		validateRoyalStandardSerialization(h);
 		validateSharedPurposeSerialization(h);
 		if(h.saving)
@@ -397,6 +454,8 @@ public:
 			validateSwiftRebirthSerialization(h);
 		if(h.saving)
 			validateBloodrageDeathPerksSerialization(h);
+		if(h.saving)
+			validateTrainingSerialization(h);
 		if(h.saving)
 			validateFrozenSerialization(h);
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_CHAIN)
@@ -414,6 +473,8 @@ public:
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_CONFUSION_STATE) && hasConfusionState())
 				throw std::runtime_error("Cannot discard Confusion pending state or history from a battle snapshot");
 			validateSpellResponseStates();
+			validateExtendSpellSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SPELLCRAFT_TARGET_DURATION));
+			validateCrossSchoolFormulaSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_CROSS_SCHOOL_FORMULA));
 			validateOverwhelmingFormulaStates();
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWHELMING_FORMULA) && hasOverwhelmingFormulaState())
 				throw std::runtime_error("Cannot discard Overwhelming Formula state in an older battle format");
@@ -686,6 +747,7 @@ public:
 				side.bloodragePainIncrement = 0;
 		}
 		h & round;
+		h & trainingEntrySnapshot;
 		if(!h.saving)
 			validateLuckSerendipitySerialization(h);
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_FIRE_WALL))
@@ -745,6 +807,7 @@ public:
 
 		if(!h.saving)
 		{
+			validateMetamagicCapacitySerialization(h);
 			const bool usesSharedActionBudget = heroCommands::supportedByRules(heroCommandRules, HeroCommand::CHARGE);
 			for(const auto sideId : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 			{
@@ -964,7 +1027,9 @@ public:
 			validateConfusionStates();
 			validateDefiantSerialization(h);
 			validateSpellResponseStates();
+			validateCrossSchoolFormulaSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_CROSS_SCHOOL_FORMULA));
 			validateOverwhelmingFormulaStates();
+			validateExtendSpellSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SPELLCRAFT_TARGET_DURATION));
 			// Reject null/ambiguous unit references before postDeserialize dereferences
 			// units and resolves their army bindings. Validation does not need those bindings.
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS))

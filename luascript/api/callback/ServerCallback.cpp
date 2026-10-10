@@ -566,6 +566,11 @@ void ServerCallbackProxy::catapultAttack(ServerCallback & object, const IBattleI
 	ca.damageDealt = static_cast<ui8>(std::clamp(damageDealt, 0, 255));
 	ca.structuralDamage = structuralDamage;
 
+	BreachmakerPreview overflow;
+	if(structuralDamage > 0 && attacker)
+		if(const auto * concreteBattle = dynamic_cast<const CBattleInfoCallback *>(&battle))
+			overflow = concreteBattle->battleGetBreachmakerPreview(attacker, attackedPart, structuralDamage);
+
 	ca.killedTowerShooter = -1;
 	if(attackedPart == EWallPart::KEEP || attackedPart == EWallPart::BOTTOM_TOWER || attackedPart == EWallPart::UPPER_TOWER)
 	{
@@ -584,6 +589,12 @@ void ServerCallbackProxy::catapultAttack(ServerCallback & object, const IBattleI
 	}
 
 	object.apply(ca);
+	if(overflow.damage > 0)
+	{
+		// Absolute carry is already based on the final primary damage; this
+		// path neither re-enters Catapult scaling nor creates another carry.
+		damageFortification(object, battle, overflow.part, overflow.damage);
+	}
 }
 
 void ServerCallbackProxy::damageFortification(ServerCallback & object, const IBattleInfoCallback & battle, EWallPart attackedPart, int32_t absoluteDamage)

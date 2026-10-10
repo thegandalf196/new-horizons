@@ -445,6 +445,12 @@ void CHeroHandler::loadHeroSpecialty(CHero * hero, const JsonNode & node) const
 				else if(hero->getJsonKey() == "core:aenain" && spell == SpellID::DISRUPTING_RAY
 					&& values == std::vector<int32_t>{-2})
 					hero->nonDamageSpellSpecialtyProducers.push_back({SpellID(spell), prepared, true});
+				else if(spell == SpellID::STONE_SKIN && values.empty()
+					&& (hero->getJsonKey() == "core:merist" || hero->getJsonKey() == "core:labetha"))
+					hero->nonDamageSpellSpecialtyProducers.push_back({SpellID(spell), prepared, true});
+				else if(values.empty() && ((spell == SpellID::PRAYER && hero->getJsonKey() == "core:loynis")
+					|| (spell == SpellID::PRECISION && hero->getJsonKey() == "core:zubin")))
+					hero->nonDamageSpellSpecialtyProducers.push_back({SpellID(spell), prepared, true});
 			}
 		});
 	}

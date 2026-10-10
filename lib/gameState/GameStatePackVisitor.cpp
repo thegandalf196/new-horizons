@@ -12,6 +12,8 @@
 #include "../entities/creature/NewHorizonsMusterRules.h"
 #include "GameStatePackVisitor.h"
 #include "../mapObjects/NewHorizonsRecruitersContacts.h"
+#include "../spells/NewHorizonsCrossSchoolFormula.h"
+#include "../spells/NewHorizonsSpellcraft.h"
 #include "../mapObjects/NewHorizonsSage.h"
 #include "../battle/NewHorizonsCombatSkills.h"
 
@@ -152,7 +154,12 @@ bool hasSameHeroOrderIssuance(const HeroOrderState & previous, const HeroOrderSt
 		&& previous.warcastingBonusPercent == next.warcastingBonusPercent
 		&& previous.sacredCommandEfficiencyBonusPercent == next.sacredCommandEfficiencyBonusPercent
 		&& previous.knightlySequenceEfficiencyBonusPercent == next.knightlySequenceEfficiencyBonusPercent
-		&& previous.holdMagicalReductionBasisPoints == next.holdMagicalReductionBasisPoints;
+		&& previous.holdMagicalReductionBasisPoints == next.holdMagicalReductionBasisPoints
+		&& previous.royalStandardRecipientUnitIds == next.royalStandardRecipientUnitIds
+		&& previous.divineDisciplineRecipientUnitIds == next.divineDisciplineRecipientUnitIds
+		&& previous.crownAndAltarRecipientUnitIds == next.crownAndAltarRecipientUnitIds
+		&& previous.crownAndAltarFocusFirePercent == next.crownAndAltarFocusFirePercent
+		&& previous.crownAndAltarHoldReductionBasisPoints == next.crownAndAltarHoldReductionBasisPoints;
 }
 
 void validateHeroOrderStateMutation(const IBattleInfo & battle, BattleSide side,
@@ -179,7 +186,12 @@ void validateHeroOrderStateMutation(const IBattleInfo & battle, BattleSide side,
 			return std::includes(nextProgress.begin(), nextProgress.end(),
 				previousProgress.begin(), previousProgress.end());
 		};
-		if(!preservesProgress(after.consumedUnitIds, before.consumedUnitIds)
+		for(const auto id : after.divineDisciplineCompletedUnitIds)
+			if(!std::binary_search(before.divineDisciplineCompletedUnitIds.begin(), before.divineDisciplineCompletedUnitIds.end(), id)
+				&& (battle.getRound() <= after.issuedRound || battle.getActiveStackID() != static_cast<int32_t>(id)))
+				throw std::runtime_error("Divine Discipline completion is not the active carried recipient");
+		if(!preservesProgress(after.divineDisciplineCompletedUnitIds, before.divineDisciplineCompletedUnitIds)
+			|| !preservesProgress(after.consumedUnitIds, before.consumedUnitIds)
 			|| !preservesProgress(after.braceTriggeredUnitIds, before.braceTriggeredUnitIds)
 			|| !preservesProgress(after.holdBrokenUnitIds, before.holdBrokenUnitIds)
 			|| after.protectInterceptionsConsumed < before.protectInterceptionsConsumed
@@ -1359,6 +1371,24 @@ void GameStatePackVisitor::visitNewArtifact(NewArtifact & pack)
 	pa.visit(*this);
 }
 
+void GameStatePackVisitor::visitRecruitTrainedStack(RecruitTrainedStack & pack)
+{
+	const auto * hero = gs.getHero(pack.change.army);
+	if(!hero || pack.change.recruitedCount <= 0)
+		throw std::runtime_error("Invalid direct recruitment training owner/count");
+	newHorizonsTraining::Batch batch;
+	batch.stacks.push_back(pack.change);
+	newHorizonsTraining::validateBatch(gs, batch);
+	const auto expected = newHorizonsTraining::afterRecruitment(*hero, pack.change.creature,
+		gs.getCalendar().getCurrentDay(), pack.change.previous);
+	if(expected != pack.change.next)
+		throw std::runtime_error("Invalid direct recruitment training provenance");
+	if(const auto capacity = hero->getLeadershipSlotCapacity(pack.change.creature);
+		capacity && static_cast<int64_t>(pack.change.expectedCount) + pack.change.recruitedCount > capacity->maximum)
+		throw std::runtime_error("Direct training recruitment exceeds Leadership");
+	newHorizonsTraining::applyValidatedBatch(gs, batch);
+}
+
 void GameStatePackVisitor::visitChangeStackCount(ChangeStackCount & pack)
 {
 	auto * srcObj = gs.getArmyInstance(pack.army);
@@ -1399,6 +1429,19 @@ void GameStatePackVisitor::visitSwapStacks(SwapStacks & pack)
 	if(!dstObj)
 		throw std::runtime_error("SwapStacks: invalid army object " + std::to_string(pack.dstArmy.getNum()) + ", possible game state corruption.");
 
+	if(srcObj != dstObj)
+	{
+		for(const auto & location : {std::make_pair(srcObj, pack.srcSlot), std::make_pair(dstObj, pack.dstSlot)})
+		{
+			auto * stack = location.first->getStackPtr(location.second);
+			if(stack)
+			{
+				auto receipt = stack->getTrainingReceipt();
+				receipt.crossedArmyBoundary();
+				stack->setTrainingReceipt(receipt);
+			}
+		}
+	}
 	auto s1 = srcObj->detachStack(pack.srcSlot);
 	auto s2 = dstObj->detachStack(pack.dstSlot);
 
@@ -1430,6 +1473,15 @@ void GameStatePackVisitor::visitRebalanceStacks(RebalanceStacks & pack)
 	[[maybe_unused]] const CCreature * srcType = srcObj->getCreature(src.slot);
 	const CCreature * dstType = dstObj->getCreature(dst.slot);
 	TQuantity srcCount = srcObj->getStackCount(src.slot);
+
+	const auto clearMovedTraining = [srcObj, dstObj](CStackInstance & stack)
+	{
+		if(srcObj == dstObj)
+			return;
+		auto receipt = stack.getTrainingReceipt();
+		receipt.crossedArmyBoundary();
+		stack.setTrainingReceipt(receipt);
+	};
 
 	if(srcCount == pack.count) //moving whole stack
 	{
@@ -1475,17 +1527,20 @@ void GameStatePackVisitor::visitRebalanceStacks(RebalanceStacks & pack)
 			}
 
 			auto movedStack = srcObj->detachStack(src.slot);
+			clearMovedTraining(*movedStack);
 			dstObj->joinStack(dst.slot, std::move(movedStack));
 		}
 		else
 		{
 			auto movedStack = srcObj->detachStack(src.slot);
+			clearMovedTraining(*movedStack);
 			dstObj->putStack(dst.slot, std::move(movedStack));
 		}
 	}
 	else
 	{
 		auto movedStack = srcObj->splitStack(src.slot, pack.count);
+		clearMovedTraining(*movedStack);
 		if(dstType) //stack at dest -> rebalance
 		{
 			assert(dstType == srcType);
@@ -2013,6 +2068,28 @@ void GameStatePackVisitor::visitBattleStart(BattleStart & pack)
 	spellPointBonusGraphChanged = true;
 	if(!pack.info)
 		throw std::runtime_error("Missing BattleStart state");
+	newHorizonsTraining::validateBatch(gs, pack.trainingEntry);
+	const auto calendar = gs.getCalendar();
+	const auto expectedEntry = newHorizonsTraining::captureEntry(*pack.info,
+		calendar.getCurrentDay(), newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek()));
+	if(pack.trainingReplay)
+	{
+		if(!pack.trainingEntry.empty() || pack.info->trainingEntrySnapshot.empty())
+			throw std::runtime_error("Invalid recruitment training replay");
+		newHorizonsTraining::Batch consumed = pack.info->trainingEntrySnapshot;
+		for(auto & change : consumed.stacks)
+			change.previous = change.next;
+		for(auto & change : consumed.weeks)
+		{
+			const auto * hero = gs.getHero(change.hero);
+			if(!hero || hero->getTrainingDrillLastWeek() != change.next)
+				throw std::runtime_error("Training replay has an unconsumed weekly receipt");
+		}
+		consumed.weeks.clear();
+		newHorizonsTraining::validateBatch(gs, consumed);
+	}
+	else if(expectedEntry != pack.trainingEntry || pack.info->trainingEntrySnapshot != pack.trainingEntry)
+		throw std::runtime_error("BattleStart has invalid recruitment training entry");
 	// Internal connections can deliver packets without binary deserialization,
 	// so validate both sides before localInit attaches armies or either hero is
 	// mutated from its saved pool snapshot.
@@ -2036,6 +2113,7 @@ void GameStatePackVisitor::visitBattleStart(BattleStart & pack)
 	pack.info->validatePreCombatOrderStructure();
 	assert(pack.battleID == gs.nextBattleID);
 
+	newHorizonsTraining::applyValidatedBatch(gs, pack.trainingEntry);
 	pack.info->battleID = gs.nextBattleID;
 	pack.info->localInit();
 	// The stack descriptors omit CUnitState. Only now are alive/ghost/controller
@@ -2428,9 +2506,9 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		const auto existingOrders = battleContext->getHeroOrderStates(pack.ba.side);
 		if(pack.preserveOtherOrders != !existingOrders.empty())
 			throw std::runtime_error("Canonical Order StartAction has an invalid preserve-existing-orders mode");
-		if(pack.preserveOtherOrders && std::ranges::any_of(existingOrders, [&pack](const HeroOrderState & order)
+		if(pack.preserveOtherOrders && std::ranges::any_of(existingOrders, [&pack, battleContext](const HeroOrderState & order)
 			{
-				return order.command == pack.ba.command;
+				return order.command == pack.ba.command && order.issuedRound == battleContext->getRound();
 			}))
 			throw std::runtime_error("Canonical Order StartAction cannot duplicate an active Order");
 
@@ -2560,7 +2638,7 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 			if(!orderReceipt)
 				throw std::runtime_error("Could not commit accepted Order action allowance");
 			const auto * hero = commandBattle->battleGetFightingHero(pack.ba.side);
-			const auto recipients = pack.orderState && newHorizonsDivineMandate::hasSharedPurposePerk(hero)
+			const auto recipients = pack.orderState && newHorizonsDivineMandate::needsRecipientCapture(hero)
 				? newHorizonsDivineMandate::sharedPurposeOrderRecipients(*commandBattle, pack.ba.side, *pack.orderState)
 				: std::vector<uint32_t>{};
 			sharedPurposeRecipients = DivineMandateTransition::applyAcceptedAction(nextAllowances, *orderReceipt,
@@ -2762,7 +2840,7 @@ void GameStatePackVisitor::visitBattleDivineMandateRecipientsChanged(BattleDivin
 	pack.validateShape();
 	auto * battle = gs.getBattle(pack.battleID);
 	if(!battle || battle->getRound() != pack.originalAction.round
-		|| !newHorizonsDivineMandate::hasSharedPurposePerk(battle->battleGetFightingHero(pack.side)))
+		|| !newHorizonsDivineMandate::needsRecipientCapture(battle->battleGetFightingHero(pack.side)))
 		throw std::runtime_error("Invalid battle for completed Divine Mandate recipient capture");
 	auto & side = battle->getSide(pack.side);
 	if(side.usedSpellsHistory.empty() || side.usedSpellsHistory.back() != newHorizonsPurify::spellID())
@@ -2804,7 +2882,8 @@ void GameStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderState
 		for(const auto & order : *pack.states)
 		{
 			order.validateShape();
-			if(order.issuedRound != battle->getRound()
+			if((order.issuedRound != battle->getRound() && order.divineDisciplineRecipientUnitIds.empty())
+				|| order.issuedRound > battle->getRound()
 				|| !heroCommands::supportedByRules(battle->getHeroCommandRules(), order.command))
 				throw std::runtime_error("Canonical Hero Order state update does not match battle context");
 		}
@@ -2991,6 +3070,28 @@ void GameStatePackVisitor::visitSetBattlecraftMasteryAward(SetBattlecraftMastery
 
 void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 {
+	if(pack.extendedSpell && (!pack.activeCast || !pack.castByHero
+		|| (pack.side != BattleSide::ATTACKER && pack.side != BattleSide::DEFENDER)))
+		throw std::runtime_error("Invalid Extend Spell cast receipt");
+	if(pack.castByHero && pack.activeCast
+		&& (pack.side == BattleSide::ATTACKER || pack.side == BattleSide::DEFENDER))
+	{
+		const auto * battle = gs.getBattle(pack.battleID);
+		const auto * hero = battle ? battle->getSideHero(pack.side) : nullptr;
+		const auto * spell = pack.spellID.toSpell();
+		if(!battle || !hero || !spell || pack.extendedSpell != newHorizonsSpellcraft::extendAvailable(
+			*battle, pack.side, *spell, hero->getEffectLevel(spell)))
+			throw std::runtime_error("Stale or forged Extend Spell cast receipt");
+	}
+	if(pack.crossSchoolFormula && (!pack.activeCast || !pack.castByHero
+		|| (pack.side != BattleSide::ATTACKER && pack.side != BattleSide::DEFENDER)))
+		throw std::runtime_error("Invalid Cross-School Formula cast owner");
+	if(pack.activeCast && pack.castByHero && (pack.side == BattleSide::ATTACKER || pack.side == BattleSide::DEFENDER))
+	{
+		const auto * battle = gs.getBattle(pack.battleID);
+		if(!battle || pack.crossSchoolFormula != newHorizonsCrossSchoolFormula::acceptedReceipt(*battle, pack.side, pack.spellID))
+			throw std::runtime_error("Stale or forged Cross-School Formula cast receipt");
+	}
 	if(pack.paidHeroManaCost < 0 || pack.paidCounterspellManaCost < 0
 		|| (pack.paidHeroManaCost > 0 && (!pack.castByHero || !pack.activeCast
 			|| (pack.side != BattleSide::ATTACKER && pack.side != BattleSide::DEFENDER)))
@@ -3012,6 +3113,11 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 			throw std::runtime_error("Accepted hero Mana expenditure has no fighting hero");
 		if(pack.paidCounterspellManaCost > 0 && !battle->battleGetFightingHero(pack.counterspellSide))
 			throw std::runtime_error("Accepted Counterspell Mana expenditure has no fighting hero");
+		const int actualMetamagicCapacity = newHorizonsMagic::metamagicCapacity(hero);
+		if(casterSide.metamagicUsesConsumed > actualMetamagicCapacity
+			|| (casterSide.metamagicPendingCount != 0 && casterSide.metamagicSequenceSpells.size() == 1
+				&& casterSide.metamagicUsesConsumed >= actualMetamagicCapacity))
+			throw std::runtime_error("Metamagic consumption/reservation exceeds actual fighting hero capacity");
 		const bool sharedActionBudget = heroCommands::supportedByRules(
 			battle->getHeroCommandRules(), HeroCommand::CHARGE);
 		const auto lightSchoolNumber = SpellSchool::decode("new-horizons:light");
@@ -3051,11 +3157,12 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 				static_cast<uint8_t>(hero ? newHorizonsMagic::metamagicRank(hero) : 0),
 				hero && newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND),
 				nextMetamagicUsesConsumed, nextMetamagicPendingCount,
-				nextMetamagicGrandUsed, casterSide.metamagicSequenceSpells.size(), spellGrantFilter);
+				nextMetamagicGrandUsed, casterSide.metamagicSequenceSpells.size(), spellGrantFilter,
+				static_cast<uint8_t>(newHorizonsMagic::metamagicCapacity(hero)));
 			if(!transition)
 				throw std::runtime_error("Accepted Hero spell has forged or inconsistent allowance metadata");
 			const auto recipients = isLightSpell && !pack.counterspellNegated
-				&& newHorizonsDivineMandate::hasSharedPurposePerk(hero)
+				&& newHorizonsDivineMandate::needsRecipientCapture(hero)
 				? newHorizonsDivineMandate::sharedPurposeFriendlyRecipients(*battle, pack.side, pack.affectedCres, true)
 				: std::vector<uint32_t>{};
 			DivineMandateTransition::applyAcceptedAction(nextAllowances, transition->receipt,
@@ -3084,6 +3191,8 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 		}
 		if(pack.temporalFieldCast)
 			casterSide.temporalFieldUsed = true;
+		if(pack.extendedSpell)
+			battle->consumeExtendSpell(pack.side);
 		if(pack.counterspellSide == BattleSide::ATTACKER || pack.counterspellSide == BattleSide::DEFENDER)
 		{
 			battle->getSide(pack.counterspellSide).counterspellArmed = false;
@@ -3147,8 +3256,8 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 			}
 			else if(casterSide.metamagicSequenceSpells.size() == 1)
 			{
-				const int rank = hero ? newHorizonsMagic::metamagicRank(hero) : 0;
-				if(!hero || rank <= casterSide.metamagicUsesConsumed)
+				const int capacity = newHorizonsMagic::metamagicCapacity(hero);
+				if(!hero || capacity <= casterSide.metamagicUsesConsumed)
 					throw std::runtime_error("Metamagic use was not available when follow-up was accepted");
 				++casterSide.metamagicUsesConsumed;
 			}
@@ -3159,8 +3268,8 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 		}
 		else if(hero)
 		{
-			const int rank = newHorizonsMagic::metamagicRank(hero);
-			if(rank > casterSide.metamagicUsesConsumed && rank > 0)
+			const int capacity = newHorizonsMagic::metamagicCapacity(hero);
+			if(capacity > casterSide.metamagicUsesConsumed && capacity > 0)
 			{
 				casterSide.metamagicPendingCount = 1;
 				casterSide.metamagicFirstSpell = pack.spellID;
@@ -3192,6 +3301,8 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 		addManaSpent(casterSide, pack.paidHeroManaCost);
 		if(pack.paidCounterspellManaCost > 0)
 			addManaSpent(battle->getSide(pack.counterspellSide), pack.paidCounterspellManaCost);
+		if(pack.crossSchoolFormula)
+			battle->setCrossSchoolFormulaState(pack.side, pack.crossSchoolFormula->after);
 		// This marker is set only after every accepted-cast validation above has
 		// succeeded; creature casts and rejected hero requests never consume it.
 		casterSide.heroSpellCastCompleted = true;
@@ -3312,6 +3423,17 @@ void GameStatePackVisitor::visitBattleResultsApplied(BattleResultsApplied & pack
 	auto * battle = gs.getBattle(pack.battleID);
 	if(!battle)
 		throw std::runtime_error("BattleResultsApplied references a missing battle");
+	newHorizonsTraining::validateBatch(gs, pack.trainingCompletion);
+	std::set<ObjectInstanceID> retainedTrainingHeroes;
+	for(const auto & change : pack.trainingCompletion.stacks)
+	{
+		if(change.recruitedCount != 0)
+			throw std::runtime_error("Battle completion cannot recruit troops");
+		retainedTrainingHeroes.insert(change.army);
+	}
+	if(!pack.trainingCompletion.weeks.empty()
+		|| newHorizonsTraining::captureCompletion(*battle, retainedTrainingHeroes) != pack.trainingCompletion)
+		throw std::runtime_error("Invalid Field Instructor completion transaction");
 	for(const auto sideID : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		applyFormulaReserveClosureReward(*battle, sideID);
@@ -3372,6 +3494,7 @@ void GameStatePackVisitor::visitBattleResultsApplied(BattleResultsApplied & pack
 		}
 	}
 
+	newHorizonsTraining::applyValidatedBatch(gs, pack.trainingCompletion);
 	// Release heroes from the battle - all battle consequences have been
 	// applied. Any subsequent RemoveObject for one of these heroes is the
 	// expected post-battle cleanup (BattleResultProcessor::battleFinalize).
@@ -3403,6 +3526,15 @@ void GameStatePackVisitor::visitCatapultAttack(CatapultAttack & pack)
 {
 	BattleStatePackVisitor battleVisitor(*gs.getBattle(pack.battleID));
 	pack.visitTyped(battleVisitor);
+}
+
+void GameStatePackVisitor::visitBattleStructureRepaired(BattleStructureRepaired & pack)
+{
+	auto * battle = gs.getBattle(pack.battleID);
+	if(!battle)
+		throw std::runtime_error("Fortification repair targets an unknown battle");
+	BattleStatePackVisitor visitor(*battle);
+	pack.visitTyped(visitor);
 }
 
 void GameStatePackVisitor::visitBattleSetStackProperty(BattleSetStackProperty & pack)
@@ -3539,7 +3671,8 @@ void BattleStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderSta
 	for(const auto & order : *pack.states)
 	{
 		order.validateShape();
-		if(order.issuedRound != battleState.getRound()
+		if((order.issuedRound != battleState.getRound() && order.divineDisciplineRecipientUnitIds.empty())
+				|| order.issuedRound > battleState.getRound()
 			|| !heroCommands::supportedByRules(battleState.getHeroCommandRules(), order.command))
 			throw std::runtime_error("Canonical Hero Order state update does not match battle context");
 	}
@@ -3707,6 +3840,22 @@ void BattleStatePackVisitor::visitCatapultAttack(CatapultAttack & pack)
 
 	if(pack.killedTowerShooter != -1)
 		battleState.removeUnit(pack.killedTowerShooter);
+}
+
+void BattleStatePackVisitor::visitBattleStructureRepaired(BattleStructureRepaired & pack)
+{
+	pack.validateShape();
+	const auto * callback = dynamic_cast<const CBattleInfoCallback *>(&battleState);
+	if(!callback || pack.battleID != battleState.getBattleID()
+		|| battleState.getActiveStackID() < 0
+		|| static_cast<uint32_t>(battleState.getActiveStackID()) != pack.healerID)
+		throw std::runtime_error("Fortification repair requires its matching battle");
+	const auto * healer = callback->battleGetUnitByID(pack.healerID);
+	const auto preview = callback->battleGetFirstAidStructureRepairPreview(healer, pack.part);
+	if(preview.part != pack.part || preview.expectedHP != pack.expectedHP
+		|| preview.replacementHP != pack.replacementHP)
+		throw std::runtime_error("Stale or unauthorized fortification repair");
+	battleState.setWallStructuralHP(pack.part, pack.replacementHP);
 }
 
 void BattleStatePackVisitor::visitBattleObstaclesChanged(BattleObstaclesChanged & pack)

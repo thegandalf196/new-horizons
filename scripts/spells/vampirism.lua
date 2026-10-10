@@ -94,7 +94,7 @@ function Script:apply(mechanics, server, target)
 		subtype = VAMPIRISM_STATUS,
 		val = healBasisPoints(mechanics),
 		duration = ENUM.BonusDuration.nTurns,
-		turns = STATUS_DURATION_ROUNDS,
+		turns = STATUS_DURATION_ROUNDS + mechanics:getExtendSpellBonusRounds(),
 		sourceType = ENUM.BonusSource.spellEffect,
 		sourceID = spellKey,
 		stacking = spellKey,

@@ -80,6 +80,13 @@ std::optional<SpellID> authoredNonDamageSpellReplacement(const CGHeroInstance & 
 	if(!hero.getHeroType())
 		return std::nullopt;
 	const auto & key = hero.getHeroType()->getJsonKey();
+	const auto & defensiveFlag = hero.getPrimaryGrowthRules()["nonDamageSpellSpecialties"]["defensiveStartReplacements"];
+	const bool defensive = source == SpellID::STONE_SKIN && defensiveFlag.isBool() && defensiveFlag.Bool()
+		&& (key == "core:merist" || key == "core:labetha");
+	const auto & offensiveFlag = hero.getPrimaryGrowthRules()["nonDamageSpellSpecialties"]["offensiveStartReplacements"];
+	const bool offensive = offensiveFlag.isBool() && offensiveFlag.Bool()
+		&& ((source == SpellID::PRAYER && key == "core:loynis")
+			|| (source == SpellID::PRECISION && key == "core:zubin"));
 	const bool thant = key == "core:thant" && source == SpellID::ANIMATE_DEAD;
 	const bool frailty = (source == SpellID::WEAKNESS
 		&& (key == "core:cuthbert" || key == "core:olema" || key == "core:mirlanda"))
@@ -87,13 +94,25 @@ std::optional<SpellID> authoredNonDamageSpellReplacement(const CGHeroInstance & 
 		|| (source == SpellID::DISRUPTING_RAY && key == "core:aenain"
 			&& hero.getPrimaryGrowthRules()["nonDamageSpellSpecialties"]["aenainFrailtyReplacement"].isBool()
 			&& hero.getPrimaryGrowthRules()["nonDamageSpellSpecialties"]["aenainFrailtyReplacement"].Bool());
-	if(!thant && !frailty)
+	if(!thant && !frailty && !defensive && !offensive)
 		return std::nullopt;
 	const auto rules = newHorizonsHeroes::nonDamageSpellSpecialtyRules(hero.getPrimaryGrowthRules());
 	if(rules)
 		for(const auto spell : rules->spells)
 			if((thant && newHorizonsMagic::reanimateEnabled(hero.getMagicRules(), spell))
 				|| (frailty && spell.toSpell()->getJsonKey() == newHorizonsMagic::SHADOW_FRAILTY_SPELL
+					&& newHorizonsMagic::rulesActive(hero.getMagicRules())
+					&& hero.getMagicRules()["rulesetVersion"].Integer()
+						>= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+					&& newHorizonsMagic::spellAllowedByHeroRoster(hero.getMagicRules(), spell))
+				|| (defensive && spell.toSpell()->getJsonKey()
+					== (key == "core:merist" ? "new-horizons:hydrasVitality" : "new-horizons:guardianSpirit")
+					&& newHorizonsMagic::rulesActive(hero.getMagicRules())
+					&& hero.getMagicRules()["rulesetVersion"].Integer()
+						>= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+					&& newHorizonsMagic::spellAllowedByHeroRoster(hero.getMagicRules(), spell))
+				|| (offensive && spell.toSpell()->getJsonKey()
+					== (key == "core:loynis" ? "new-horizons:crusade" : "new-horizons:focusMagic")
 					&& newHorizonsMagic::rulesActive(hero.getMagicRules())
 					&& hero.getMagicRules()["rulesetVersion"].Integer()
 						>= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
@@ -677,6 +696,10 @@ std::string CGHeroInstance::getSpecialtyDescriptionTranslated() const
 					description.appendRawString("% to its Spell Power-derived duration component. Its Speed bonus is unchanged.");
 				else if(target.toSpell()->getJsonKey() == newHorizonsMagic::SHADOW_FRAILTY_SPELL)
 					description.appendRawString("% to its Spell Power-derived Creature Defense loss component. Its fixed term and caps are unchanged.");
+				else if(target.toSpell()->getJsonKey() == "new-horizons:hydrasVitality")
+					description.appendRawString("% to its Spell Power-derived maximum-HP increase. Its fixed term, cap and regeneration rate are unchanged.");
+				else if(target.toSpell()->getJsonKey() == "new-horizons:guardianSpirit")
+					description.appendRawString("% to its Spell Power-derived protective HP component. Its fixed term and duration are unchanged.");
 				else
 					description.appendRawString("% to its Spell Power-derived healing component.");
 				return description.toString(LIBRARY->generaltexth.get());
@@ -921,8 +944,12 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	}
 	const bool defaultSecondarySkills = secSkills.size() == 1
 		&& secSkills[0] == std::pair<SecondarySkill,ui8>(SecondarySkill::NONE, -1);
+	const auto startingDevelopment = creationInitialization && defaultSecondarySkills
+		? newHorizonsHeroes::startingDevelopmentProfile(primaryGrowthRules, perkState,
+			getHeroTypeID(), getHeroClass()->getId())
+		: std::nullopt;
 	if(defaultSecondarySkills) //set secondary skills to default
-		secSkills = getHeroType()->secSkillsInit;
+		secSkills = startingDevelopment ? startingDevelopment->skills : getHeroType()->secSkillsInit;
 	// New Horizons starting migration is a creation rule. A binary/crossover
 	// snapshot marks its resolved rules as captured (or leaves them empty for a
 	// legacy hero); never reinterpret that saved roster against newly-installed
@@ -972,6 +999,13 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	// repeated when loading a saved hero or when legacy rules are active.
 	if(creationInitialization && newHorizonsHeroes::usesPerkRules(perkState.rules))
 	{
+		if(startingDevelopment)
+		{
+			auto proposed = perkState;
+			for(const auto & selection : startingDevelopment->perks)
+				proposed.select(selection.skillId, selection.perkId, getPerkSkillRank(selection.skillId));
+			perkState = std::move(proposed);
+		}
 		for(const auto & selection : getHeroType()->startingPerks)
 		{
 			const int rank = getPerkSkillRank(selection.skillId);
@@ -1076,7 +1110,13 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 				// zero prevents the legacy tier fallback without changing the
 				// shared prototype or marker-free historical producers.
 				if(producer->spell == SpellID::HASTE
-					|| target.toSpell()->getJsonKey() == newHorizonsMagic::SHADOW_FRAILTY_SPELL)
+					|| target.toSpell()->getJsonKey() == newHorizonsMagic::SHADOW_FRAILTY_SPELL
+					|| target.toSpell()->getJsonKey() == "new-horizons:hydrasVitality"
+					|| target.toSpell()->getJsonKey() == "new-horizons:guardianSpirit"
+					|| (producer->spell == SpellID::PRAYER && heroType->getJsonKey() == "core:loynis"
+						&& target.toSpell()->getJsonKey() == "new-horizons:crusade")
+					|| (producer->spell == SpellID::PRECISION && heroType->getJsonKey() == "core:zubin"
+						&& target.toSpell()->getJsonKey() == "new-horizons:focusMagic"))
 					converted->parameters = std::make_shared<BonusParameters>(std::vector<int32_t>{0});
 				addNewBonus(converted);
 				continue;
@@ -3142,6 +3182,15 @@ void CGHeroInstance::updateFrom(const JsonNode & data)
 
 void CGHeroInstance::serializeCommonOptions(JsonSerializeFormat & handler)
 {
+	if(!handler.saving)
+	{
+		const auto & week = handler.getCurrent()["reinforcementDrillLastWeek"];
+		if(!week.isNull() && (week.getType() != JsonNode::JsonType::DATA_INTEGER
+			|| week.Integer() < -1 || week.Integer() > std::numeric_limits<int32_t>::max()))
+			throw std::runtime_error("Invalid Reinforcement Drill JSON use week");
+	}
+	handler.serializeInt("reinforcementDrillLastWeek", trainingDrillLastWeek, -1);
+	setTrainingDrillLastWeek(trainingDrillLastWeek);
 	handler.serializeString("biography", biographyCustomTextId);
 	handler.serializeInt("experience", exp, 0);
 

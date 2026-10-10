@@ -33,6 +33,7 @@ class CStack;
 
 enum class BattleSide : int8_t;
 enum class EGateState : int8_t;
+enum class EWallPart : int8_t;
 
 class DLL_LINKAGE IBattleEventsReceiver
 {
@@ -57,5 +58,6 @@ public:
 	virtual void battleUnitsChanged(const BattleID & battleID, const std::vector<UnitChanges> & units){};
 	virtual void battleObstaclesChanged(const BattleID & battleID, const ObstacleChanges & obstacle){};
 	virtual void battleCatapultAttacked(const BattleID & battleID, const CatapultAttack & ca){}; //called when catapult makes an attack
+	virtual void battleStructureRepaired(const BattleID & battleID, EWallPart part){};
 	virtual void battleGateStateChanged(const BattleID & battleID, const EGateState state){};
 };

@@ -11,6 +11,7 @@
 #include "../lib/mapObjects/NewHorizonsAcademicStudy.h"
 #include "../lib/mapObjects/NewHorizonsSage.h"
 #include "CGameHandler.h"
+#include "../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
 
 #include "CVCMIServer.h"
 #include "TurnTimerHandler.h"
@@ -3826,6 +3827,32 @@ bool CGameHandler::selectPortalDwelling(ObjectInstanceID townId, ObjectInstanceI
 	return true;
 }
 
+bool CGameHandler::recruitToSlot(const StackLocation & location, const CCreature * creature, TQuantity count)
+{
+	const auto * hero = dynamic_cast<const CGHeroInstance *>(gameInfo().getObj(location.army));
+	if(!hero)
+		return addToSlot(location, creature, count);
+	if(!creature || count <= 0 || !location.slot.validSlot())
+		return false;
+	const auto * stack = hero->getStackPtr(location.slot);
+	if(stack && stack->getCreatureID() != creature->getId())
+		return false;
+	const int64_t total = (stack ? stack->getCount() : 0) + static_cast<int64_t>(count);
+	if(total > std::numeric_limits<int32_t>::max()
+		|| !validateLeadershipStack(hero, creature->getId(), total, "recruit"))
+		return false;
+	const auto previous = stack ? stack->getTrainingReceipt() : newHorizonsTraining::Receipt{};
+	const auto next = newHorizonsTraining::afterRecruitment(*hero, creature->getId(),
+		gameInfo().getCalendar().getCurrentDay(), previous);
+	if(previous.empty() && next.empty())
+		return addToSlot(location, creature, count);
+	RecruitTrainedStack pack;
+	pack.change = {hero->id, location.slot, creature->getId(), stack ? stack->getCount() : 0,
+		count, previous, next};
+	sendAndApply(pack);
+	return true;
+}
+
 bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dstid, CreatureID crid, int32_t cram,
 	int32_t fromLvl, PlayerColor player, ObjectInstanceID portalTownId)
 {
@@ -3956,7 +3983,8 @@ bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst
 	}
 	else
 	{
-		addToSlot(StackLocation(army->id, slot), c, cram);
+		if(!recruitToSlot(StackLocation(army->id, slot), c, cram))
+			throw std::runtime_error("Prevalidated direct recruitment was rejected");
 	}
 	return true;
 }

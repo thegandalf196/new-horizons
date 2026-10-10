@@ -72,8 +72,10 @@
 	"nonDamageSpellSpecialties": {
 		"version": 1,
 		"aenainFrailtyReplacement": true,
+		"defensiveStartReplacements": true,
+		"offensiveStartReplacements": true,
 		"componentPercent": 20,
-		"spells": ["core:cure", "core:resurrection", "core:bless", "core:haste", "new-horizons:reanimate", "new-horizons:frailty"]
+		"spells": ["core:cure", "core:resurrection", "core:bless", "core:haste", "new-horizons:reanimate", "new-horizons:frailty", "new-horizons:hydrasVitality", "new-horizons:guardianSpirit", "new-horizons:crusade", "new-horizons:focusMagic"]
 	},
 	"skillSpecialties": {
 		"version": 1,
@@ -81,6 +83,16 @@
 		"skills": ["core:logistics", "core:armorer", "core:offence", "core:archery", "core:estates"]
 	},
 	"startingSkills": {
+		"startingDevelopmentProfiles": {
+		"core:clancy": {"skills": [{"skill": "new-horizons:logistics", "rank": 1}, {"skill": "new-horizons:sylvanLuck", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.pathfinding"}]},
+		"core:piquedram": {"skills": [{"skill": "new-horizons:logistics", "rank": 1}, {"skill": "new-horizons:metamagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.scouting"}]},
+		"core:thane": {"skills": [{"skill": "new-horizons:learning", "rank": 2}, {"skill": "new-horizons:metamagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.scholar"}]},
+		"core:torosar": {"skills": [{"skill": "new-horizons:warMachines", "rank": 1}, {"skill": "new-horizons:metamagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warMachines", "perk": "new-horizons:warMachines.masterGunner"}]},
+		"core:iona": {"skills": [{"skill": "new-horizons:learning", "rank": 1}, {"skill": "new-horizons:metamagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.scholar"}]},
+		"core:fiona": {"skills": [{"skill": "new-horizons:logistics", "rank": 2}, {"skill": "new-horizons:demonicGating", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.scouting"}]},
+		"core:ignatius": {"skills": [{"skill": "new-horizons:battlecraft", "rank": 1}, {"skill": "new-horizons:demonicGating", "rank": 1}], "startingPerks": [{"skill": "new-horizons:battlecraft", "perk": "new-horizons:battlecraft.tactics"}]},
+		"core:lacus": {"skills": [{"skill": "new-horizons:battlecraft", "rank": 2}, {"skill": "new-horizons:elementalRebirth", "rank": 1}], "startingPerks": [{"skill": "new-horizons:battlecraft", "perk": "new-horizons:battlecraft.tactics"}]}
+		},
 		"factionSkills": {
 			"core:castle": "new-horizons:divineMandate",
 			"core:rampart": "new-horizons:sylvanLuck",

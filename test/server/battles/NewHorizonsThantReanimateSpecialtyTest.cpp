@@ -44,7 +44,15 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			legacyMagic ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 		rules["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
+		rules["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
+		rules["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");
+		std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(), [](const JsonNode & spell)
+		{
+			return spell.String() == "new-horizons:hydrasVitality" || spell.String() == "new-horizons:guardianSpirit"
+				|| spell.String() == "new-horizons:crusade" || spell.String() == "new-horizons:focusMagic";
+		});
 		// This fixture exercises the preceding Thant boundary, not later replacements.
 		std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(),
 			[](const JsonNode & spell) { return spell.String() == "new-horizons:frailty"; });
@@ -285,7 +293,15 @@ TEST_F(NewHorizonsThantReanimateSpecialtyTest, PreviousHasteFormatRejectsRulePay
 	reject(lobby);
 	JsonNode raw;
 	raw["heroes"]["newHorizons"] = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+	raw["heroes"]["newHorizons"]["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 	raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
+	raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
+	raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");
+	std::erase_if(raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"]["spells"].Vector(), [](const JsonNode & spell)
+	{
+		return spell.String() == "new-horizons:hydrasVitality" || spell.String() == "new-horizons:guardianSpirit"
+				|| spell.String() == "new-horizons:crusade" || spell.String() == "new-horizons:focusMagic";
+	});
 	std::erase_if(raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"]["spells"].Vector(),
 		[](const JsonNode & spell) { return spell.String() == "new-horizons:frailty"; });
 	CMemorySerializer incoming;
@@ -316,7 +332,15 @@ TEST_F(NewHorizonsThantReanimateSpecialtyTest, PreviousHasteFormatStillWritesAnd
 	EXPECT_FALSE(heroBytes.extractBuffer().empty());
 	JsonNode raw;
 	raw["heroes"]["newHorizons"] = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+	raw["heroes"]["newHorizons"]["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 	raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
+	raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
+	raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");
+	std::erase_if(raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"]["spells"].Vector(), [](const JsonNode & spell)
+	{
+		return spell.String() == "new-horizons:hydrasVitality" || spell.String() == "new-horizons:guardianSpirit"
+				|| spell.String() == "new-horizons:crusade" || spell.String() == "new-horizons:focusMagic";
+	});
 	std::erase_if(raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"]["spells"].Vector(),
 		[](const JsonNode & spell) { return spell.String() == "new-horizons:frailty"; });
 	std::erase_if(raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"]["spells"].Vector(),

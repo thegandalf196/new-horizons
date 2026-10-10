@@ -194,6 +194,7 @@ protected: // Call-ins from server, should not be called directly, but only via 
 	void battleUnitsChanged(const BattleID & battleID, const std::vector<UnitChanges> & units) override;
 	void battleObstaclesChanged(const BattleID & battleID, const ObstacleChanges & obstacle) override;
 	void battleCatapultAttacked(const BattleID & battleID, const CatapultAttack & ca) override; //called when catapult makes an attack
+	void battleStructureRepaired(const BattleID & battleID, EWallPart part) override;
 	void battleGateStateChanged(const BattleID & battleID, const EGateState state) override;
 	void yourTacticPhase(const BattleID & battleID, int distance) override;
 	std::optional<BattleAction> makeSurrenderRetreatDecision(const BattleID & battleID, const BattleStateInfoForRetreat & battleState) override;

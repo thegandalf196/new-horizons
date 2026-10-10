@@ -342,4 +342,6 @@ void registerTypes(Serializer &s)
 	s.template registerType<SetNewHorizonsScholarMeeting>(299);
 	s.template registerType<BattleDivineMandateRecipientsChanged>(300);
 	s.template registerType<SetNewHorizonsSageGuildVisit>(301);
+	s.template registerType<RecruitTrainedStack>(302);
+	s.template registerType<BattleStructureRepaired>(303);
 }

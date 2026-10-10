@@ -420,6 +420,7 @@ public:
 	int64_t getShadowGiftMaximumHealthLost() const override;
 	int64_t getPhantomIntegrity() const override;
 	int64_t getPhantomInitialIntegrity() const override;
+	int32_t getPhantomRoundsRemaining() const { return phantomRoundsRemaining; }
 	int64_t getGuardianSpiritHitPoints() const override;
 	int32_t getGuardianSpiritRoundsRemaining() const override;
 	int32_t magicResistance() const override;

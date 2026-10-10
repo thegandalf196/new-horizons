@@ -78,17 +78,25 @@ function Script:apply(mechanics, server, target)
 		end
 	else
 		local desired = battle:hexToWallPart(target[1].hex)
+		local locked = mechanics:hasPrecisionBombardment()
 		for _ = 1, N do
+			if locked and not battle:isWallPartAttackable(desired) then break end
 			local actual
 			if battle:isWallPartAttackable(desired)
 			   and server:rngInt(0, 99) < self:hitChance(desired) then
 				actual = desired
+			elseif locked then
+				-- Keep the ordinary quality roll, but never redirect a miss.
+				self:randomDamage(server)
+				server:catapultAttack(battle, attacker, desired, 0)
 			else
 				local pool = self:potentialTargets(battle, false, false)
 				if #pool == 0 then break end
 				actual = pool[server:rngInt(1, #pool)]
 			end
-			server:catapultAttack(battle, attacker, actual, self:randomDamage(server))
+			if actual then
+				server:catapultAttack(battle, attacker, actual, self:randomDamage(server))
+			end
 		end
 	end
 end

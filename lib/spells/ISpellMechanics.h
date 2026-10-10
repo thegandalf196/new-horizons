@@ -129,6 +129,8 @@ public:
 
 	virtual OptionalValue getEffectPower() const = 0;
 	virtual OptionalValue getEffectDuration() const = 0;
+	virtual bool isConcentrated() const { return false; }
+	virtual bool hasSpellcraftTargetSnapshot() const { return false; }
 	/// Additional mana selected for a spell-specific cast option.  The default
 	/// keeps old callers and non-Sorcery spells unchanged.
 	virtual OptionalValue getOvercharge() const { return std::nullopt; }
@@ -181,6 +183,10 @@ public:
 
 	OptionalValue getEffectPower() const override;
 	OptionalValue getEffectDuration() const override;
+	bool isConcentrated() const override { return concentration; }
+	bool hasSpellcraftTargetSnapshot() const override { return concentrationClassified; }
+	/// One unboosted deterministic target pass precedes final numerical construction.
+	std::unique_ptr<Mechanics> mechanicsForTarget(const Target & target) const;
 	OptionalValue getOvercharge() const override;
 	SpellID getCureAffliction() const override;
 	std::string getCurePhysicalAffliction() const override;
@@ -239,6 +245,9 @@ private:
 	OptionalValue effectPower;
 	///actual spell-power affecting effect duration
 	OptionalValue effectDuration;
+
+	bool concentration = false;
+	bool concentrationClassified = false;
 
 	///for Archangel-like casting
 	OptionalValue64 effectValue;
@@ -313,6 +322,9 @@ public:
 
 	virtual BattleHexArray rangeInHexes(const BattleHex & centralHex) const = 0;
 	virtual std::vector<const CStack *> getAffectedStacks(const Target & target) const = 0;
+	virtual size_t getTargetedStackCount(const Target &) const { return 0; }
+	virtual bool isCountingSpellTargets() const { return false; }
+	virtual int64_t getTargetAwareEffectValue(const battle::Unit *) const { return getEffectValue(); }
 
 	virtual bool canBeCast(Problem & problem) const = 0;
 	virtual bool canBeCastAt(const Target & target) const = 0;
@@ -344,6 +356,13 @@ public:
 	int32_t getSchoolRankPowerCoefficientPercent() const;
 	/// Effective saved-rules School × Spellcraft coefficient, in basis points.
 	int32_t getSpellPowerCoefficientBasisPoints() const;
+	/// Recipient-specific second-action Crown multiplier, captured before payment.
+	virtual int32_t getCrownAndAltarBonusPercent(const battle::Unit * target) const { return 0; }
+	int64_t scaleRecipientSpellPowerComponent(int64_t numerator, int64_t divisor, const battle::Unit * target) const;
+	/// Composes the recipient modifier and an SP-only specialty before the component floor.
+	int64_t scaleRecipientSpellPowerComponentWithSpecialty(int64_t numerator, int64_t divisor,
+		const battle::Unit * target, int32_t specialtyPercent) const;
+	virtual IBattleCast::Value64 getRecipientEffectValue(const battle::Unit * target) const { return getEffectValue(); }
 	/// Arcane Focus percentage snapshotted for this hero-cast context. Non-hero
 	/// casts and casts after a completed hero spell return zero.
 	virtual int32_t getArcaneFocusBonusPercent() const { return 0; }
@@ -378,6 +397,7 @@ public:
 	virtual IBattleCast::Value getEffectDuration() const = 0;
 	/// Applies cast-specific modifiers to a script-supplied fixed duration.
 	virtual IBattleCast::Value adjustEffectDuration(IBattleCast::Value baseDuration) const { return baseDuration; }
+	virtual int32_t getExtendSpellBonusRounds() const { return 0; }
 	virtual bool isSelectiveDispel() const { return false; }
 	virtual bool isNewHorizonsCure() const { return false; }
 	virtual bool isNewHorizonsResurrection() const { return false; }
@@ -474,6 +494,8 @@ public:
 		int32_t coefficientBasisPoints, int32_t damageSpecialtyPercent) const;
 	/// Complete per-cast Frailty loss in basis points, before its cumulative cap.
 	int32_t getFrailtyDefenseLossBasisPoints() const;
+	/// Guardian Spirit pool after SP-only modifiers, Healer and whole-pool Guardian.
+	int64_t getGuardianSpiritHitPoints(const battle::Unit * target = nullptr) const;
 	virtual Target canonicalizeTarget(const Target & aim) const = 0;
 
 	//Battle facade
@@ -524,6 +546,7 @@ public:
 	int32_t getCastSpellPowerComponentBonusPercent() const override;
 	IBattleCast::Value getEffectDuration() const override;
 	IBattleCast::Value adjustEffectDuration(IBattleCast::Value baseDuration) const override;
+	int32_t getExtendSpellBonusRounds() const override { return extendSpellEligible ? 1 : 0; }
 	IBattleCast::Value64 getEffectValue() const override;
 	IBattleCast::Value getOvercharge() const;
 	SpellID getCureAffliction() const override;
@@ -567,6 +590,8 @@ public:
 
 	int64_t adjustEffectValue(const battle::Unit * target) const override;
 	int64_t adjustEffectValueBeforeExecution(const battle::Unit * target) const override;
+	int32_t getCrownAndAltarBonusPercent(const battle::Unit * target) const override;
+	IBattleCast::Value64 getRecipientEffectValue(const battle::Unit * target) const override;
 	int64_t applySpellBonus(int64_t value, const battle::Unit * target) const override;
 	int64_t applySpecificSpellBonus(int64_t value) const override;
 	int64_t calculateRawEffectValue(int32_t basePowerMultiplier, int32_t levelPowerMultiplier) const override;
@@ -606,8 +631,12 @@ private:
 	int32_t warcastingBonusPercent = 0;
 	/// First-cast Arcane Focus captured before BattleSpellCast marks completion.
 	int32_t arcaneFocusBonusPercent = 0;
+	int32_t crossSchoolFormulaBonusPercent = 0;
+	int32_t concentrationBonusPercent = 0;
+	bool extendSpellEligible = false;
 	/// Consecrated Casting's Spell Power component bonus captured for this cast.
 	int32_t consecratedCastingBonusPercent = 0;
+	std::vector<uint32_t> crownAndAltarRecipientUnitIds;
 	/// Counterpressure's ready response captured before this hero cast consumes it.
 	int32_t counterpressureBonusPercent = 0;
 	/// Grand Formula's 150% component multiplier, or 100% when unavailable.
@@ -617,6 +646,7 @@ private:
 
 	///raw damage/heal amount
 	IBattleCast::Value64 effectValue;
+	bool effectValueWasOverridden = false;
 	int32_t stormOfDaggersTargetCount = 0;
 	///Additional mana selected for a spell-specific cast option.
 	IBattleCast::Value overcharge = 0;

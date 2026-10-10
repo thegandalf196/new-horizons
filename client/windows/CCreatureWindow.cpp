@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "CCreatureWindow.h"
+#include "../../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
 #include "wiki/WikiWindow.h"
 #include "CStackExperienceDetailsWindow.h"
 
@@ -489,6 +490,46 @@ CStackWindow::OrderIndicatorsSection::OrderIndicatorsSection(CStackWindow * owne
 		labels.push_back(std::make_shared<CLabel>(x + 24, y + 47, FONT_TINY, ETextAlignment::BOTTOMCENTER,
 			Colors::YELLOW, indicator.label));
 	}
+}
+
+CStackWindow::TrainingSection::TrainingSection(CStackWindow * owner, int yOffset)
+	: CWindowSection(owner, {}, yOffset)
+{
+	OBJECT_CONSTRUCTION;
+	pos.w = owner->pos.w;
+	const CStackInstance * strategic = owner->info->stack ? owner->info->stack->base : owner->info->stackNode;
+	if(!strategic)
+		return;
+	const auto & receipt = strategic->getTrainingReceipt();
+	std::vector<std::string> lines;
+	const int day = GAME->interface()->cb->getCalendar().getCurrentDay();
+	if(receipt.drillDeadline >= day)
+		lines.push_back("Drill Sergeant: first-combat +1 Morale pending through day " + std::to_string(receipt.drillDeadline) + ".");
+	else if(receipt.drillDeadline >= 0)
+		lines.push_back("Drill Sergeant: first-combat training window expired.");
+	if(receipt.fieldTrained)
+		lines.push_back("Field Instructor: trained; +1 Creature Attack active while in the recruiter's army.");
+	else if(receipt.fieldPending)
+		lines.push_back("Field Instructor: first completed combat under this recruiter pending.");
+	if(receipt.reinforcementPending)
+		lines.push_back("Reinforcement Drill: pending; first eligible original slot gets +2 Initiative in round 1, once weekly.");
+	if(owner->info->stack && owner->info->stack->hasBonus(CSelector([](const Bonus * bonus)
+		{ return bonus->stacking == "new-horizons:drillSergeant"; })))
+		lines.push_back("Drill Sergeant: +1 Morale for this combat; first-combat receipt consumed.");
+	if(owner->info->stack && owner->info->stack->hasBonus(CSelector([](const Bonus * bonus)
+		{ return bonus->stacking == "new-horizons:reinforcementDrill"; })))
+		lines.push_back("Reinforcement Drill: +2 Initiative during round 1; weekly receipt consumed.");
+	pos.h = static_cast<int>(lines.size()) * 30;
+	for(size_t index = 0; index < lines.size(); ++index)
+	{
+		auto background = std::make_shared<CPicture>(ImagePath::builtin("stackWindow/bonus-effects"),
+			0, static_cast<int>(index) * 30);
+		background->scaleTo(Point(pos.w, 30));
+		backgrounds.push_back(background);
+	}
+	for(size_t index = 0; index < lines.size(); ++index)
+		labels.push_back(std::make_shared<CMultiLineLabel>(Rect(6, static_cast<int>(index) * 30 + 2, pos.w - 12, 27),
+			FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, lines[index]));
 }
 
 CStackWindow::BonusLineSection::BonusLineSection(CStackWindow * owner, size_t lineIndex)
@@ -1560,6 +1601,13 @@ void CStackWindow::initSections()
 	pos.w = mainSection->pos.w;
 	pos.h += mainSection->pos.h;
 
+	const auto * trainingStack = info->stack ? info->stack->base : info->stackNode;
+	if(trainingStack && (!trainingStack->getTrainingReceipt().empty()
+		|| (info->stack && info->stack->hasBonus(CSelector(newHorizonsTraining::isTrainingBonus)))))
+	{
+		trainingSection = std::make_shared<TrainingSection>(this, pos.h);
+		pos.h += trainingSection->pos.h;
+	}
 	if(info->stack) // in battle
 	{
 		activeSpellsSection = std::make_shared<ActiveSpellsSection>(this, pos.h);

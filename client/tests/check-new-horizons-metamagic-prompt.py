@@ -141,7 +141,7 @@ assert "if(skillRank <= 0)" in refresh
 assert "switch(skill->getCombatStatusProvider())" in refresh
 assert "case CSkill::CombatStatusProvider::METAMAGIC_USES:" in refresh
 assert "case CSkill::CombatStatusProvider::BLOODRAGE_DAMAGE:" in refresh
-assert "newHorizonsMagic::metamagicRank(hero)" in refresh
+assert "newHorizonsMagic::metamagicCapacity(hero)" in refresh
 assert "if(total <= 0)" in refresh
 assert "battleCallback->battleMetamagicUsesConsumed(side)" in refresh
 assert "std::clamp(battleCallback->battleMetamagicUsesConsumed(side), 0, total)" in refresh

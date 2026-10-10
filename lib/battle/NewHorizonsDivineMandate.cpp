@@ -26,6 +26,58 @@ namespace
 bool hasActiveDivineMandate(const CGHeroInstance * hero);
 }
 
+bool hasDivineDisciplinePerk(const CGHeroInstance * hero)
+{
+	return hasActiveDivineMandate(hero) && hero->hasActivePerk("new-horizons:divineMandate",
+		"new-horizons:divineMandate.divineDiscipline");
+}
+
+bool completeDisciplineOrders(std::vector<HeroOrderState> & orders, int32_t round, uint32_t unitId)
+{
+	bool changed = false;
+	for(auto & order : orders)
+		changed = order.completeDisciplineActivation(unitId, round) || changed;
+	return changed;
+}
+
+void completeDisciplineActivation(IBattleState & state, uint32_t unitId)
+{
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		auto orders = state.getHeroOrderStates(side);
+		if(completeDisciplineOrders(orders, state.getRound(), unitId))
+			state.setHeroOrderStates(side, orders);
+	}
+}
+
+bool hasCrownAndAltarPerk(const CGHeroInstance * hero)
+{
+	return hasActiveDivineMandate(hero) && hero->hasActivePerk("new-horizons:divineMandate",
+		"new-horizons:divineMandate.crownAndAltar");
+}
+
+bool needsRecipientCapture(const CGHeroInstance * hero)
+{
+	return hasSharedPurposePerk(hero) || hasCrownAndAltarPerk(hero);
+}
+
+JsonNode crownOrderFormula(const JsonNode & formula, bool eligible)
+{
+	auto result = formula;
+	if(eligible)
+	{
+		result["attack"].Float() *= 1.2;
+		result["defense"].Float() *= 1.2;
+	}
+	return result;
+}
+
+int32_t crownSecondWindPercent(const CGHeroInstance & hero, const HeroOrderState & order, uint32_t unitId)
+{
+	return heroCommands::secondWindPercent(hero, order.warcastingBonusPercent,
+		order.divineMandateEfficiencyBonusPercent(), order.crownAndAltarAppliesTo(unitId));
+}
+
 bool hasSharedPurposePerk(const CGHeroInstance * hero)
 {
 	return hasActiveDivineMandate(hero) && hero->hasActivePerk("new-horizons:divineMandate",
@@ -70,6 +122,8 @@ Bonus sharedPurposeMoraleBonus()
 void applySharedPurpose(IBattleState & state, const CBattleInfoCallback & battle,
 	BattleSide side, const std::vector<uint32_t> & recipients)
 {
+	if(!hasSharedPurposePerk(battle.battleGetFightingHero(side)))
+		return;
 	const auto bonus = sharedPurposeMoraleBonus();
 	for(const auto id : sharedPurposeFriendlyRecipients(battle, side, recipients))
 	{

@@ -300,6 +300,19 @@ public:
 	void resetNewHorizonsAdventureSpellCastToday() { newHorizonsAdventureSpellState.castToday = false; }
 	bool hasUsedNewHorizonsCastleGateToday(int32_t day) const { return newHorizonsCastleGateLastUseDay == day; }
 	void markNewHorizonsCastleGateUsed(int32_t day) { newHorizonsCastleGateLastUseDay = day; }
+	int32_t getTrainingDrillLastWeek() const { return trainingDrillLastWeek; }
+	void setTrainingDrillLastWeek(int32_t week)
+	{
+		if(week < -1)
+			throw std::runtime_error("Invalid Reinforcement Drill use week");
+		trainingDrillLastWeek = week;
+	}
+	void validateRecruitmentTrainingSerialization(bool supported) const
+	{
+		CCreatureSet::validateTrainingSerialization(supported);
+		if(trainingDrillLastWeek < -1 || (!supported && trainingDrillLastWeek != -1))
+			throw std::runtime_error("Cannot discard Reinforcement Drill use week");
+	}
 	int32_t getNewHorizonsPursuitMarchLastUseDay() const { return newHorizonsPursuitMarchLastUseDay; }
 	bool hasUsedNewHorizonsPursuitMarchToday(int32_t day) const { return newHorizonsPursuitMarchLastUseDay == day; }
 	void setNewHorizonsPursuitMarchLastUseDay(int32_t day)
@@ -609,6 +622,7 @@ private:
 	newHorizonsMagic::AdventureSpellState newHorizonsAdventureSpellState;
 	int32_t newHorizonsCastleGateLastUseDay = -1;
 	int32_t newHorizonsPursuitMarchLastUseDay = -1;
+	int32_t trainingDrillLastWeek = -1;
 	int32_t newHorizonsForcedMarchLastUseDay = -1;
 	int32_t newHorizonsForcedMarchPenaltyDay = -1;
 	int32_t newHorizonsMusterLastWeek = -1;
@@ -654,11 +668,22 @@ public:
 	template <typename Handler> void serialize(Handler &h)
 	{
 		if(h.saving)
+			validateRecruitmentTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING));
+		if(h.saving)
 			newHorizonsHeroes::validateFrailtySpecialtySerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
 		if(h.saving)
 			newHorizonsHeroes::validateAenainFrailtySpecialtySerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_AENAIN_FRAILTY_SPECIALTY));
+		if(h.saving)
+			newHorizonsHeroes::validateDefensiveStartSpecialtySerialization(primaryGrowthRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_DEFENSIVE_START_SPECIALTIES));
+		if(h.saving)
+			newHorizonsHeroes::validateOffensiveStartSpecialtySerialization(primaryGrowthRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES));
+		if(h.saving)
+			newHorizonsHeroes::validateStartingDevelopmentSerialization(primaryGrowthRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
 		if(h.saving)
 			newHorizonsHeroes::validateReanimateSpecialtySerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
@@ -776,10 +801,16 @@ public:
 			h & lastPrimaryGains;
 			if(!h.saving)
 			{
+				newHorizonsHeroes::validateStartingDevelopmentSerialization(primaryGrowthRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
 				newHorizonsHeroes::validateFrailtySpecialtySerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
 				newHorizonsHeroes::validateAenainFrailtySpecialtySerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_AENAIN_FRAILTY_SPECIALTY));
+				newHorizonsHeroes::validateDefensiveStartSpecialtySerialization(primaryGrowthRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_DEFENSIVE_START_SPECIALTIES));
+				newHorizonsHeroes::validateOffensiveStartSpecialtySerialization(primaryGrowthRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES));
 				newHorizonsHeroes::validateReanimateSpecialtySerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
 				newHorizonsHeroes::validateHasteSpecialtySerialization(primaryGrowthRules,
@@ -944,6 +975,12 @@ public:
 			newHorizonsLearningMentorRecipients))
 			throw std::runtime_error("Invalid New Horizons Learning Mentor state");
 
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING))
+			h & trainingDrillLastWeek;
+		else if(!h.saving)
+			trainingDrillLastWeek = -1;
+		if(!h.saving)
+			setTrainingDrillLastWeek(trainingDrillLastWeek);
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PURSUIT_MARCH))
 			h & newHorizonsPursuitMarchLastUseDay;
 		else if(!h.saving)

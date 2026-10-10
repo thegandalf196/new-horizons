@@ -24,7 +24,7 @@ end
 -- reserved first by Resurrection. Use the ordinary survivor-only heal probe
 -- so capacity/Battle Form health obeys the same rules as real healing.
 local function healingAmount(mechanics, unit)
-	local amount = mechanics:applySpellBonus(mechanics:getEffectValue(), unit)
+	local amount = mechanics:applySpellBonus(mechanics:getRecipientEffectValue(unit), unit)
 	if not mechanics:isNewHorizonsResurrection() then return amount end
 	local hero = mechanics:getHeroCaster()
 	if hero == nil or not hero:hasActivePerk("new-horizons:lightMagic", "new-horizons:lightMagic.miracleWorker") then

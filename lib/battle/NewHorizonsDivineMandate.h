@@ -10,6 +10,7 @@
 #pragma once
 
 #include "../../Global.h"
+#include "../json/JsonNode.h"
 
 #include <cstdint>
 #include <vector>
@@ -39,6 +40,13 @@ DLL_LINKAGE int32_t consecratedCastingBonusPercent(const CGHeroInstance * hero);
 DLL_LINKAGE bool hasPurifyingMandatePerk(const CGHeroInstance * hero);
 /// Captured only for an actual Divine Mandate Order follow-up.
 DLL_LINKAGE bool hasRoyalStandardPerk(const CGHeroInstance * hero);
+DLL_LINKAGE bool hasDivineDisciplinePerk(const CGHeroInstance * hero);
+DLL_LINKAGE bool completeDisciplineOrders(std::vector<HeroOrderState> & orders, int32_t round, uint32_t unitId);
+DLL_LINKAGE void completeDisciplineActivation(IBattleState & state, uint32_t unitId);
+DLL_LINKAGE bool hasCrownAndAltarPerk(const CGHeroInstance * hero);
+DLL_LINKAGE bool needsRecipientCapture(const CGHeroInstance * hero);
+DLL_LINKAGE JsonNode crownOrderFormula(const JsonNode & formula, bool eligible);
+DLL_LINKAGE int32_t crownSecondWindPercent(const CGHeroInstance & hero, const HeroOrderState & order, uint32_t unitId);
 DLL_LINKAGE bool hasSharedPurposePerk(const CGHeroInstance * hero);
 /// The original eligible recipients, independent of later Order consumption.
 DLL_LINKAGE std::vector<uint32_t> sharedPurposeOrderRecipients(

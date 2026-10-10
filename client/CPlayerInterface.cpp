@@ -25,6 +25,7 @@
 #include "battle/BattleFieldController.h"
 #include "battle/BattleInterface.h"
 #include "battle/BattleResultWindow.h"
+#include "battle/BattleSiegeController.h"
 #include "battle/BattleWindow.h"
 
 #include "events/InputHandler.h"
@@ -801,6 +802,14 @@ void CPlayerInterface::battleCatapultAttacked(const BattleID & battleID, const C
 	BATTLE_EVENT_POSSIBLE_RETURN;
 
 	battleInt->stackIsCatapulting(ca);
+}
+
+void CPlayerInterface::battleStructureRepaired(const BattleID & battleID, EWallPart part)
+{
+	EVENT_HANDLER_CALLED_BY_CLIENT;
+	BATTLE_EVENT_POSSIBLE_RETURN;
+	if(battleInt->siegeController)
+		battleInt->siegeController->refreshWallPiece(part);
 }
 
 void CPlayerInterface::battleNewRound(const BattleID & battleID) //called at the beginning of each turn, round=-1 is the tactic phase, round=0 is the first "normal" turn

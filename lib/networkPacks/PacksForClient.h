@@ -10,6 +10,7 @@
 #pragma once
 #include "../entities/hero/NewHorizonsMasteryRules.h"
 #include "../entities/hero/NewHorizonsPerkState.h"
+#include "../entities/creature/NewHorizonsRecruitmentTraining.h"
 
 #include "ArtifactLocation.h"
 #include "Component.h"
@@ -1078,6 +1079,24 @@ struct DLL_LINKAGE SetNewHorizonsAdventureSpellUnlock : public CPackForClient
 
 struct DLL_LINKAGE CGarrisonOperationPack : CPackForClient
 {
+};
+
+/// Direct recruitment publishes count and provenance as one validated change.
+struct DLL_LINKAGE RecruitTrainedStack : CGarrisonOperationPack
+{
+	newHorizonsTraining::StackChange change;
+	void visitTyped(ICPackVisitor & visitor) override;
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(h.saving)
+		{
+			change.validate();
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING))
+				throw std::runtime_error("Direct training recruitment requires the new packet format");
+		}
+		h & change;
+		change.validate();
+	}
 };
 
 struct DLL_LINKAGE ChangeStackCount : CGarrisonOperationPack

@@ -43,7 +43,15 @@ protected:
 	{
 		TinyMapGameTest::mapLoaded(map);
 		JsonNode heroRules(JsonPath::builtin("config/newHorizonsHeroes"));
+		heroRules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 		heroRules["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
+		heroRules["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
+		heroRules["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");
+		std::erase_if(heroRules["nonDamageSpellSpecialties"]["spells"].Vector(), [](const JsonNode & spell)
+		{
+			return spell.String() == "new-horizons:hydrasVitality" || spell.String() == "new-horizons:guardianSpirit"
+				|| spell.String() == "new-horizons:crusade" || spell.String() == "new-horizons:focusMagic";
+		});
 		// Test Scholar's older-format admission independently of the later
 		// Thant/Frailty replacements; retain Haste and all other captured rules.
 		std::erase_if(heroRules["nonDamageSpellSpecialties"]["spells"].Vector(),

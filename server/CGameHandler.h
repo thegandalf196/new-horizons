@@ -255,6 +255,7 @@ public:
 	bool buyHouseOfWisdomScroll(const IMarket *m, const CGHeroInstance *h, SpellID spell);
 	bool garrisonSwap(ObjectInstanceID tid);
 	bool upgradeCreature( ObjectInstanceID objid, SlotID pos, CreatureID upgID );
+	bool recruitToSlot(const StackLocation & slot, const CCreature * creature, TQuantity count) override;
 	bool recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst, CreatureID crid, int32_t cram, int32_t level,
 		PlayerColor player, ObjectInstanceID portalTownId = ObjectInstanceID::NONE);
 	bool selectPortalDwelling(ObjectInstanceID townId, ObjectInstanceID sourceDwellingId, PlayerColor player);

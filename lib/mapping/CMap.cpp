@@ -1093,6 +1093,20 @@ void CMap::validateNewHorizonsHasteSpecialtySerialization(bool supported) const
 			newHorizonsHeroes::validateHasteSpecialtySerialization(hero->getPrimaryGrowthRules(), supported);
 }
 
+void CMap::validateRecruitmentTrainingSerialization(bool supported) const
+{
+	for(const auto & object : objects)
+	{
+		if(const auto * army = dynamic_cast<const CArmedInstance *>(object.get()))
+			army->validateTrainingSerialization(supported);
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			hero->validateRecruitmentTrainingSerialization(supported);
+	}
+	for(const auto & hero : heroesPool)
+		if(hero)
+			hero->validateRecruitmentTrainingSerialization(supported);
+}
+
 void CMap::validateNewHorizonsSageSerialization(bool supported) const
 {
 	for(const auto & object : objects)
@@ -1163,6 +1177,42 @@ void CMap::validateNewHorizonsAenainFrailtySpecialtySerialization(bool supported
 	for(const auto & hero : heroesPool)
 		if(hero)
 			newHorizonsHeroes::validateAenainFrailtySpecialtySerialization(hero->getPrimaryGrowthRules(), supported);
+}
+
+void CMap::validateNewHorizonsDefensiveStartSpecialtySerialization(bool supported) const
+{
+	if(gameSettings)
+		gameSettings->validateNewHorizonsDefensiveStartSpecialtySerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsHeroes::validateDefensiveStartSpecialtySerialization(hero->getPrimaryGrowthRules(), supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			newHorizonsHeroes::validateDefensiveStartSpecialtySerialization(hero->getPrimaryGrowthRules(), supported);
+}
+
+void CMap::validateNewHorizonsOffensiveStartSpecialtySerialization(bool supported) const
+{
+	if(gameSettings)
+		gameSettings->validateNewHorizonsOffensiveStartSpecialtySerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsHeroes::validateOffensiveStartSpecialtySerialization(hero->getPrimaryGrowthRules(), supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			newHorizonsHeroes::validateOffensiveStartSpecialtySerialization(hero->getPrimaryGrowthRules(), supported);
+}
+
+void CMap::validateNewHorizonsStartingDevelopmentSerialization(bool supported) const
+{
+	if(gameSettings)
+		gameSettings->validateNewHorizonsStartingDevelopmentSerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsHeroes::validateStartingDevelopmentSerialization(hero->getPrimaryGrowthRules(), supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			newHorizonsHeroes::validateStartingDevelopmentSerialization(hero->getPrimaryGrowthRules(), supported);
 }
 
 void CMap::validateNewHorizonsMagnateSerialization(bool supported) const

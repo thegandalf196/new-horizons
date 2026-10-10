@@ -65,6 +65,7 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			legacyMagic ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 		if(aenainFalseFlag)
 		{
 			rules["nonDamageSpellSpecialties"]["aenainFrailtyReplacement"].Bool() = false;
@@ -75,6 +76,16 @@ protected:
 			rules["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
 			rules.setOverrideFlag(true);
 		}
+		// This fixture exercises the earlier captured Frailty/Aenain profile,
+		// not the separately versioned defensive-start replacement batch.
+		rules["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
+		rules["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");
+		std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(), [](const JsonNode & spell)
+		{
+			return spell.String() == "new-horizons:hydrasVitality" || spell.String() == "new-horizons:guardianSpirit"
+				|| spell.String() == "new-horizons:crusade" || spell.String() == "new-horizons:focusMagic";
+		});
+		rules.setOverrideFlag(true);
 		if(!optIn)
 		{
 			std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(),
@@ -443,6 +454,7 @@ TEST_F(NewHorizonsFrailtySpecialtyTest, CurrentWorldRoundtripAndPreviousFormatOu
 	reject(lobby);
 	JsonNode raw;
 	raw["heroes"]["newHorizons"] = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+	raw["heroes"]["newHorizons"]["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 	CMemorySerializer incoming;
 	incoming.oser & raw;
 	incoming.iser.version = ESerializationVersion::NEW_HORIZONS_THANT_REANIMATE;

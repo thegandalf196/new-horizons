@@ -252,6 +252,26 @@ workers with follow-up tasks before claiming a lower worker limit. Completed
 threads may remain allocated. Do not exceed the configured worker capacity or
 interrupt unrelated user tasks to reclaim capacity.
 
+### Automatic delegation checkpoints
+
+Worker scheduling is the root's responsibility; do not wait for the user to
+request delegation or remind the root that workers have finished. At the start
+of each continuation, on every worker completion or failure, and whenever a
+build/test becomes running, terminal or blocked, inspect the actual team and
+current priority/coverage backlog. Before the next substantial root-only task,
+assign eligible independent work to available workers with concrete ownership
+and acceptance criteria. Reuse completed threads through `followup_task`;
+sending a message or writing an assignment in notes does not start an idle
+worker. Confirm assignments against live agent status.
+
+A running build, test or priority repair is not by itself a reason to idle
+independent implementation workers. Keep frozen candidate sources unchanged:
+use private patches or isolated worktrees for parallel changes. If an available
+worker cannot safely advance a real task, record the specific dependency,
+ownership conflict or resource constraint in the priority queue and reassess it
+at the next checkpoint. Do not invent filler tasks, duplicate work, overrun the
+configured worker capacity or confuse completed threads with running workers.
+
 Maintain specialist assignments for skills/perks, spells, hero redesigns,
 legacy-content access auditing, background playtesting, and independent review.
 Actual service capacity may be lower than authorization; rotate roles and report

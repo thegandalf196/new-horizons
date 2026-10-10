@@ -95,6 +95,14 @@ class CStackWindow : public CWindowObject
 		OrderIndicatorsSection(CStackWindow * owner, int yOffset);
 	};
 
+	class TrainingSection : public CWindowSection
+	{
+		std::vector<std::shared_ptr<CPicture>> backgrounds;
+		std::vector<std::shared_ptr<CMultiLineLabel>> labels;
+	public:
+		TrainingSection(CStackWindow * owner, int yOffset);
+	};
+
 	class BonusLineSection : public CWindowSection
 	{
 		std::array<std::shared_ptr<CPicture>, 2> icon;
@@ -202,6 +210,7 @@ class CStackWindow : public CWindowObject
 	std::map<size_t, std::shared_ptr<CButton>> switchButtons;
 
 	std::shared_ptr<CWindowSection> mainSection;
+	std::shared_ptr<CWindowSection> trainingSection;
 	std::shared_ptr<CWindowSection> activeSpellsSection;
 	std::shared_ptr<CWindowSection> orderIndicatorsSection;
 	std::shared_ptr<CWindowSection> commanderMainSection;

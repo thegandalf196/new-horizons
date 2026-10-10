@@ -141,9 +141,18 @@ public:
 	/// require presence of any unit other than requested (or more units than requested)
 	bool hasUnits(const std::vector<CStackBasicDescriptor> & units, bool requireLastStack = true) const;
 
+	void validateTrainingSerialization(bool supported) const
+	{
+		for(const auto & [slot, stack] : stacks)
+			if(stack)
+				stack->validateTrainingSerialization(supported);
+	}
+
 	template<typename Handler>
 	void serialize(Handler & h)
 	{
+		if(h.saving)
+			validateTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING));
 		h & stacks;
 		h & formation;
 	}

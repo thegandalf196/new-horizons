@@ -65,6 +65,10 @@ public:
 	{
 		return subject->getBattle()->hasCompletedHeroSpellLevel(side, level);
 	}
+	const newHorizonsCrossSchoolFormula::State & getCrossSchoolFormulaState(BattleSide side) const override
+	{
+		return subject->getBattle()->getCrossSchoolFormulaState(side);
+	}
 	const AlternatingHeroActionState & getWarcastingState(BattleSide side) const override
 	{
 		return subject->getBattle()->getWarcastingState(side);

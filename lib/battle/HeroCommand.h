@@ -115,9 +115,50 @@ struct DLL_LINKAGE HeroOrderState
 	int32_t knightlySequenceEfficiencyBonusPercent = 0;
 	/// Original friendly recipients: scheduled expiry, not benefit consumption.
 	std::vector<uint32_t> royalStandardRecipientUnitIds;
+	/// Original Divine follow-up recipients and monotonic completed carry activations.
+	std::vector<uint32_t> divineDisciplineRecipientUnitIds;
+	std::vector<uint32_t> divineDisciplineCompletedUnitIds;
+	/// Frozen first-action intersection for this second Order only.
+	std::vector<uint32_t> crownAndAltarRecipientUnitIds;
+	int32_t crownAndAltarFocusFirePercent = 0;
+	uint16_t crownAndAltarHoldReductionBasisPoints = 0;
+
+	bool crownAndAltarAppliesTo(uint32_t unitId) const
+	{
+		return std::binary_search(crownAndAltarRecipientUnitIds.begin(), crownAndAltarRecipientUnitIds.end(), unitId);
+	}
+
+	bool scheduledFor(uint32_t unitId, int32_t currentRound) const
+	{
+		return currentRound == issuedRound || (currentRound > issuedRound
+			&& std::binary_search(divineDisciplineRecipientUnitIds.begin(), divineDisciplineRecipientUnitIds.end(), unitId)
+			&& !std::binary_search(divineDisciplineCompletedUnitIds.begin(), divineDisciplineCompletedUnitIds.end(), unitId));
+	}
+
+	bool hasScheduledRecipients(int32_t currentRound) const
+	{
+		return currentRound == issuedRound || (currentRound > issuedRound
+			&& divineDisciplineCompletedUnitIds.size() < divineDisciplineRecipientUnitIds.size());
+	}
+
+	bool completeDisciplineActivation(uint32_t unitId, int32_t currentRound)
+	{
+		if(currentRound <= issuedRound || !scheduledFor(unitId, currentRound))
+			return false;
+		divineDisciplineCompletedUnitIds.insert(std::lower_bound(divineDisciplineCompletedUnitIds.begin(),
+			divineDisciplineCompletedUnitIds.end(), unitId), unitId);
+		return true;
+	}
 
 	template <typename Handler> void validateRoyalStandardSerialization(Handler & h) const
 	{
+		if(h.saving && (!crownAndAltarRecipientUnitIds.empty() || crownAndAltarFocusFirePercent != 0
+			|| crownAndAltarHoldReductionBasisPoints != 0)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CROWN_AND_ALTAR))
+			throw std::runtime_error("Cannot discard Crown and Altar recipient components");
+		if(h.saving && (!divineDisciplineRecipientUnitIds.empty() || !divineDisciplineCompletedUnitIds.empty())
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_DIVINE_DISCIPLINE))
+			throw std::runtime_error("Cannot discard Divine Discipline Order lifetime");
 		if(h.saving && !royalStandardRecipientUnitIds.empty()
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_ROYAL_STANDARD))
 			throw std::runtime_error("Cannot discard Royal Standard Order recipients");
@@ -148,7 +189,7 @@ struct DLL_LINKAGE HeroOrderState
 
 	bool isHoldTheLineRecipient(uint32_t unitId, int16_t position, int32_t currentRound) const
 	{
-		if(command != HeroCommand::HOLD_THE_LINE || issuedRound != currentRound
+		if(command != HeroCommand::HOLD_THE_LINE || !scheduledFor(unitId, currentRound)
 			|| containsHoldBroken(unitId))
 			return false;
 		const auto * anchor = anchorFor(unitId);
@@ -184,6 +225,26 @@ struct DLL_LINKAGE HeroOrderState
 
 	void validateShape() const
 	{
+		const auto validIds = [](const auto & ids)
+		{
+			return std::is_sorted(ids.begin(), ids.end())
+				&& std::adjacent_find(ids.begin(), ids.end()) == ids.end()
+				&& std::all_of(ids.begin(), ids.end(), [](uint32_t id)
+					{ return id <= static_cast<uint32_t>(std::numeric_limits<int32_t>::max()); });
+		};
+		if(!validIds(crownAndAltarRecipientUnitIds) || crownAndAltarFocusFirePercent < 0
+			|| crownAndAltarFocusFirePercent > 200
+			|| crownAndAltarHoldReductionBasisPoints > MAX_HOLD_MAGICAL_REDUCTION_BASIS_POINTS
+			|| crownAndAltarHoldReductionBasisPoints % BASIS_POINTS_PER_PHYSICAL_PERCENT != 0
+			|| (crownAndAltarFocusFirePercent != 0 && command != HeroCommand::FOCUS_FIRE)
+			|| (crownAndAltarHoldReductionBasisPoints != 0 && command != HeroCommand::HOLD_THE_LINE)
+			|| (crownAndAltarRecipientUnitIds.empty()
+				&& (crownAndAltarFocusFirePercent != 0 || crownAndAltarHoldReductionBasisPoints != 0)))
+			throw std::runtime_error("Invalid Crown and Altar recipient components");
+		if(!validIds(divineDisciplineRecipientUnitIds) || !validIds(divineDisciplineCompletedUnitIds)
+			|| !std::includes(divineDisciplineRecipientUnitIds.begin(), divineDisciplineRecipientUnitIds.end(),
+				divineDisciplineCompletedUnitIds.begin(), divineDisciplineCompletedUnitIds.end()))
+			throw std::runtime_error("Invalid Divine Discipline recipient lifetime");
 		const auto maxWireId = static_cast<uint32_t>(std::numeric_limits<int32_t>::max());
 		if(!std::is_sorted(royalStandardRecipientUnitIds.begin(), royalStandardRecipientUnitIds.end())
 			|| std::adjacent_find(royalStandardRecipientUnitIds.begin(), royalStandardRecipientUnitIds.end())
@@ -299,6 +360,28 @@ struct DLL_LINKAGE HeroOrderState
 			h & knightlySequenceEfficiencyBonusPercent;
 		else if(!h.saving)
 			knightlySequenceEfficiencyBonusPercent = 0;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CROWN_AND_ALTAR))
+		{
+			h & crownAndAltarRecipientUnitIds;
+			h & crownAndAltarFocusFirePercent;
+			h & crownAndAltarHoldReductionBasisPoints;
+		}
+		else if(!h.saving)
+		{
+			crownAndAltarRecipientUnitIds.clear();
+			crownAndAltarFocusFirePercent = 0;
+			crownAndAltarHoldReductionBasisPoints = 0;
+		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_DIVINE_DISCIPLINE))
+		{
+			h & divineDisciplineRecipientUnitIds;
+			h & divineDisciplineCompletedUnitIds;
+		}
+		else if(!h.saving)
+		{
+			divineDisciplineRecipientUnitIds.clear();
+			divineDisciplineCompletedUnitIds.clear();
+		}
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_ROYAL_STANDARD))
 			h & royalStandardRecipientUnitIds;
 		else if(!h.saving)
@@ -372,6 +455,8 @@ DLL_LINKAGE int secondWindPercent(const CGHeroInstance & hero);
 /// part; its base 50% damage component remains flat.
 DLL_LINKAGE int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent,
 	int divineMandateEfficiencyBonusPercent);
+DLL_LINKAGE int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent,
+	int divineMandateEfficiencyBonusPercent, bool crownAndAltar);
 DLL_LINKAGE int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent);
 /// True when the hero currently has the active Expert Command Double Command perk.
 DLL_LINKAGE bool hasDoubleCommand(const CGHeroInstance * hero);

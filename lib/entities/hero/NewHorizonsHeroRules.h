@@ -11,6 +11,7 @@
 
 #include "NewHorizonsPrimaryProfile.h"
 #include "NewHorizonsPrimaryGrowth.h"
+#include "NewHorizonsPerkState.h"
 #include <functional>
 #include <optional>
 #include <utility>
@@ -121,6 +122,18 @@ DLL_LINKAGE void validateReanimateSpecialtySerialization(const JsonNode & rules,
 DLL_LINKAGE bool hasFrailtySpecialtyRules(const JsonNode & rules);
 DLL_LINKAGE void validateFrailtySpecialtySerialization(const JsonNode & rules, bool supported);
 DLL_LINKAGE void validateAenainFrailtySpecialtySerialization(const JsonNode & rules, bool supported);
+DLL_LINKAGE void validateDefensiveStartSpecialtySerialization(const JsonNode & rules, bool supported);
+DLL_LINKAGE void validateOffensiveStartSpecialtySerialization(const JsonNode & rules, bool supported);
+struct DLL_LINKAGE StartingDevelopmentProfile
+{
+	std::vector<std::pair<SecondarySkill, ui8>> skills;
+	std::vector<PerkSelection> perks;
+};
+/// Exact captured default-start profile. Validates class, parent and active
+/// Basic perk admission before callers change a hero's skills or selections.
+DLL_LINKAGE std::optional<StartingDevelopmentProfile> startingDevelopmentProfile(
+	const JsonNode & rules, const PerkState & perks, HeroTypeID hero, HeroClassID heroClass);
+DLL_LINKAGE void validateStartingDevelopmentSerialization(const JsonNode & rules, bool supported);
 /// Returns the converted skill specialties captured by this hero. Missing
 /// rules intentionally preserve legacy specialty behavior for older saves.
 DLL_LINKAGE std::optional<SkillSpecialtyRules> skillSpecialtyRules(const JsonNode & resolvedRules);

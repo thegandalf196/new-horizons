@@ -4113,6 +4113,16 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 		case PossiblePlayerBattleAction::HEAL:
 		{
 			const auto * healer = owner.stacksController->getActiveStack();
+			const auto repair = owner.getBattle()->battleGetFirstAidStructureRepairPreview(
+				healer, owner.getBattle()->battleHexToWallPart(targetHex));
+			if(repair.repairedHP() > 0)
+			{
+				auto text = MetaString::createFromTextID("new-horizons.combat.firstAid.structureRepair");
+				text.replaceRawString(std::to_string(repair.repairedHP()));
+				text.replaceRawString(std::to_string(repair.replacementHP));
+				text.replaceRawString(std::to_string(SiegeInfo::maximumStructuralHP(repair.part)));
+				return text.toString(&GAME->translator());
+			}
 			spells::effects::SpellEffectValue value = {};
 			// HEAL is also offered to ordinary HEALER creatures, whose existing
 			// targeting and prediction must not inherit Tent-only perk rules.
@@ -4153,9 +4163,19 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 			const auto rawDamage = std::max<int32_t>(0,
 				battle->battleGetCatapultStructuralDamage(catapult, 1));
 			const auto predictedDamage = std::min(wallHp, rawDamage);
-			return "Catapult on a normal hit: " + formatPlural(predictedDamage,
+			auto text = "Catapult on a normal hit: " + formatPlural(predictedDamage,
 				"vcmi.battleWindow.damageEstimation.damage")
 				+ " structural HP damage; wall currently has " + std::to_string(wallHp) + " HP.";
+			const auto overflow = battle->battleGetBreachmakerPreview(catapult, wallPart, rawDamage);
+			if(overflow.damage > 0)
+			{
+				auto carryText = MetaString::createFromTextID("new-horizons.combat.catapult.breachmaker");
+				carryText.replaceRawString(std::to_string(std::min(overflow.damage, battle->getWallStructuralHP(overflow.part))));
+				text += " " + carryText.toString(&GAME->translator());
+			}
+			if(battle->battleHasWarMachinesPerk(catapult, "new-horizons:warMachines.precisionBombardment"))
+				text += " " + LIBRARY->generaltexth->translate("new-horizons.combat.catapult.precisionBombardment");
+			return text;
 		}
 
 		case PossiblePlayerBattleAction::CREATURE_INFO:
@@ -4421,9 +4441,12 @@ bool BattleActionsController::actionIsLegal(PossiblePlayerBattleAction action, c
 
 		case PossiblePlayerBattleAction::HEAL:
 		{
+			const auto * healer = owner.stacksController->getActiveStack();
+			if(owner.getBattle()->battleGetFirstAidStructureRepairPreview(
+				healer, owner.getBattle()->battleHexToWallPart(targetHex)).repairedHP() > 0)
+				return true;
 			if(!targetStack || !targetStackOwned)
 				return false;
-			const auto * healer = owner.stacksController->getActiveStack();
 			if(healer && healer->isFirstAidTent())
 				return owner.getBattle()->battleCanHealWithFirstAidTent(healer, targetStack);
 			return targetStack->canBeHealed();
@@ -4893,7 +4916,8 @@ void BattleActionsController::onHexHovered(const BattleHex & hoveredHex)
 
 	std::string newConsoleMsg;
 
-	if (actionIsLegal(action, hoveredHex))
+	const bool legalAction = actionIsLegal(action, hoveredHex);
+	if (legalAction)
 	{
 		actionSetCursor(action, hoveredHex);
 		updateChainLightningPreview(action, hoveredHex);
@@ -4906,7 +4930,10 @@ void BattleActionsController::onHexHovered(const BattleHex & hoveredHex)
 		newConsoleMsg = actionGetStatusMessageBlocked(action, hoveredHex);
 	}
 
-	if (owner.siegeController && owner.siegeController->isTowerHex(hoveredHex))
+	const bool towerRepair = legalAction && action.get() == PossiblePlayerBattleAction::HEAL
+		&& owner.getBattle()->battleGetFirstAidStructureRepairPreview(
+			owner.stacksController->getActiveStack(), owner.getBattle()->battleHexToWallPart(hoveredHex)).repairedHP() > 0;
+	if (owner.siegeController && owner.siegeController->isTowerHex(hoveredHex) && !towerRepair)
 	{
 		ENGINE->cursor().set(Cursor::Combat::QUERY); // question cursor over a siege tower
 		newConsoleMsg = LIBRARY->generaltexth->translate("core.genrltxt.156"); // "View arrow tower info."

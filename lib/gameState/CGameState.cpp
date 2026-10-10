@@ -1289,11 +1289,12 @@ BattleField CGameState::battleGetBattlefieldType(int3 tile, vstd::RNG & randomGe
 
 	const TerrainTile &t = map->getTile(tile);
 
-	ObjectInstanceID topObjectID = t.visitableObjects.front();
-	const CGObjectInstance * topObject = getObjInstance(topObjectID);
-	if(topObject && topObject->getBattlefield() != BattleField::NONE)
+	if(!t.visitableObjects.empty())
 	{
-		return topObject->getBattlefield();
+		ObjectInstanceID topObjectID = t.visitableObjects.front();
+		const CGObjectInstance * topObject = getObjInstance(topObjectID);
+		if(topObject && topObject->getBattlefield() != BattleField::NONE)
+			return topObject->getBattlefield();
 	}
 
 	for(auto & obj : map->getObjects<CGTerrainPatch>())
@@ -1931,6 +1932,13 @@ CArtifactInstance * CGameState::createArtifact(const ArtifactID & artID, const S
 	return map->createArtifact(artID, spellId);
 }
 
+void CGameState::validateCrossSchoolFormulaSerialization(bool supported) const
+{
+	for(const auto & battle : currentBattles)
+		if(battle)
+			battle->validateCrossSchoolFormulaSerialization(supported);
+}
+
 void CGameState::validateNewHorizonsProspectorSerialization(bool supported) const
 {
 	if(map)
@@ -1944,6 +1952,12 @@ void CGameState::validateNewHorizonsHasteSpecialtySerialization(bool supported) 
 		map->validateNewHorizonsHasteSpecialtySerialization(supported);
 }
 
+void CGameState::validateRecruitmentTrainingSerialization(bool supported) const
+{
+	if(map)
+		map->validateRecruitmentTrainingSerialization(supported);
+}
+
 void CGameState::validateNewHorizonsSageSerialization(bool supported) const
 {
 	if(map)
@@ -1954,6 +1968,13 @@ void CGameState::validateNewHorizonsRecruitersContactsSerialization(bool support
 {
 	if(map)
 		map->validateNewHorizonsRecruitersContactsSerialization(supported);
+}
+
+void CGameState::validateExtendSpellSerialization(bool supported) const
+{
+	for(const auto & battle : currentBattles)
+		if(battle)
+			battle->validateExtendSpellSerialization(supported);
 }
 
 void CGameState::validateNewHorizonsScholarSerialization(bool supported) const
@@ -1981,6 +2002,27 @@ void CGameState::validateNewHorizonsAenainFrailtySpecialtySerialization(bool sup
 	newHorizonsHeroes::validateAenainFrailtySpecialtySerialization(heroDevelopmentRules, supported);
 	if(map)
 		map->validateNewHorizonsAenainFrailtySpecialtySerialization(supported);
+}
+
+void CGameState::validateNewHorizonsDefensiveStartSpecialtySerialization(bool supported) const
+{
+	newHorizonsHeroes::validateDefensiveStartSpecialtySerialization(heroDevelopmentRules, supported);
+	if(map)
+		map->validateNewHorizonsDefensiveStartSpecialtySerialization(supported);
+}
+
+void CGameState::validateNewHorizonsOffensiveStartSpecialtySerialization(bool supported) const
+{
+	newHorizonsHeroes::validateOffensiveStartSpecialtySerialization(heroDevelopmentRules, supported);
+	if(map)
+		map->validateNewHorizonsOffensiveStartSpecialtySerialization(supported);
+}
+
+void CGameState::validateNewHorizonsStartingDevelopmentSerialization(bool supported) const
+{
+	newHorizonsHeroes::validateStartingDevelopmentSerialization(heroDevelopmentRules, supported);
+	if(map)
+		map->validateNewHorizonsStartingDevelopmentSerialization(supported);
 }
 
 void CGameState::validateNewHorizonsMagnateSerialization(bool supported) const

@@ -468,6 +468,27 @@ void BattleSiegeController::stackIsCatapulting(const CatapultAttack & ca)
 	}
 }
 
+void BattleSiegeController::refreshWallPiece(EWallPart part)
+{
+	if(part == EWallPart::INVALID || part == EWallPart::PARTS_COUNT)
+		return;
+	const auto visual = static_cast<EWallVisual::EWallVisual>(
+		static_cast<int>(part) + EWallVisual::DESTRUCTIBLE_FIRST);
+	auto state = owner.getBattle()->battleGetWallState(part);
+	// Canonical HP uses INTACT above half health; the original Castle art
+	// numbers its fully intact wall as REINFORCED. Restore that native pose.
+	if(owner.getBattle()->getWallStructuralHP(part) == SiegeInfo::maximumStructuralHP(part))
+		state = static_cast<EWallState>(town->fortificationsLevel().wallsHealth);
+	if(visual == EWallVisual::GATE)
+	{
+		// A surviving gate retains its current open/closed pose.
+		applyGateState(owner.getBattle()->battleGetGateState());
+		return;
+	}
+	wallPieceImages[visual] = ENGINE->renderHandler().loadImage(
+		getWallPieceImageName(visual, state), EImageBlitMode::COLORKEY);
+}
+
 const CGTownInstance *BattleSiegeController::getSiegedTown() const
 {
 	return town;

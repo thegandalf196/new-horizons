@@ -8,7 +8,10 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsDivineMandate.h"
 #include "BattleInfo.h"
+#include "../entities/creature/NewHorizonsRecruitmentTraining.h"
+#include "../entities/creature/NewHorizonsMusterRules.h"
 #include "NewHorizonsFrozen.h"
 #include "NewHorizonsSwiftRebirth.h"
 #include "BattleForm.h"
@@ -159,6 +162,22 @@ void BattleInfo::setArmorerDefiantState(BattleSide side, const ArmorerDefiantSta
 	if(state.lastConsumedRound > round || state.lastConsumedRound < sides.at(side).armorerDefiant.lastConsumedRound)
 		throw std::runtime_error("Defiant consumption history cannot be rewound or set in the future");
 	sides.at(side).armorerDefiant = state;
+}
+
+void BattleInfo::consumeExtendSpell(BattleSide side)
+{
+	if((side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| round < 0 || getExtendSpellLastRound(side) >= round)
+		throw std::runtime_error("Invalid or repeated Extend Spell consumption");
+	sides.at(side).extendSpellLastRound = round;
+}
+
+void BattleInfo::setCrossSchoolFormulaState(BattleSide side, const newHorizonsCrossSchoolFormula::State & state)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::runtime_error("Invalid Cross-School Formula side");
+	newHorizonsCrossSchoolFormula::validateState(*this, state);
+	sides.at(side).crossSchoolFormula = state;
 }
 
 void BattleInfo::setSpellResponseState(BattleSide side, const SpellResponseState & state)
@@ -413,7 +432,8 @@ bool BattleInfo::breakHeroOrderHold(uint32_t unitId)
 bool BattleInfo::interceptHeroOrderProtect(BattleSide side)
 {
 	auto * state = sides.at(side).findOrder(HeroCommand::PROTECT);
-	if(!state || state->issuedRound != getRound()
+	if(!state || !state->scheduledFor(state->secondaryTargetUnitId, getRound())
+		|| !state->scheduledFor(state->primaryTargetUnitId, getRound())
 		|| state->protectInterceptionsConsumed >= battleHeroOrderProtectInterceptionLimit(side)
 		|| state->protectBroken)
 		return false;
@@ -1131,6 +1151,10 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 		}
 	}
 
+	currentBattle->trainingEntrySnapshot = newHorizonsTraining::captureEntry(*currentBattle, currentDay,
+		newHorizonsMuster::absoluteWeek(currentDay, cb->getCalendar().getDaysInWeek()));
+	newHorizonsTraining::addEntryBonuses(*currentBattle, currentDay,
+		newHorizonsMuster::absoluteWeek(currentDay, cb->getCalendar().getDaysInWeek()));
 	return currentBattle;
 }
 
@@ -1455,9 +1479,12 @@ void BattleInfo::nextRound()
 		sides.at(i).castSpellsCount = 0;
 		sides.at(i).moraleSuppression.nextRound();
 		sides.at(i).heroCommandUsed = false;
-		sides.at(i).activeOrder = HeroCommand::NONE;
-		sides.at(i).orderStates.clear();
-		sides.at(i).focusFire.reset();
+		std::erase_if(sides.at(i).orderStates, [this](const HeroOrderState & order)
+			{ return !order.hasScheduledRecipients(round + 1); });
+		sides.at(i).activeOrder = sides.at(i).orderStates.empty()
+			? HeroCommand::NONE : sides.at(i).orderStates.back().command;
+		if(!sides.at(i).findOrder(HeroCommand::FOCUS_FIRE))
+			sides.at(i).focusFire.reset();
 		// Unspent round-long Metamagic Spell grants expire below; the per-combat
 		// Metamagic and Grand/Formula budgets remain.
 		sides.at(i).clearMetamagicSequence();
@@ -2511,17 +2538,38 @@ void BattleInfo::validateFocusFireStates() const
 			|| (state.activeOrder != HeroCommand::NONE
 				&& (heroCommands::isDoctrine(state.activeOrder)
 					|| !heroCommands::supportedByRules(heroCommandRules, state.activeOrder)
-					|| !state.heroCommandUsed || legacySpellHistoryBlocksOrder)))
+					|| ((state.heroCommandUsed || state.orderStates.empty()
+						|| state.orderStates.back().issuedRound == round)
+						&& (!state.heroCommandUsed || legacySpellHistoryBlocksOrder)))))
 			throw std::runtime_error("Invalid New Horizons saved command state");
 		if(!state.orderStates.empty())
 		{
 			if(!canonicalOrderRules
 				|| state.orderStates.back().command != state.activeOrder
-				|| !state.heroCommandUsed || legacySpellHistoryBlocksOrder)
+				|| (state.orderStates.back().issuedRound == round
+					&& (!state.heroCommandUsed || legacySpellHistoryBlocksOrder)))
 				throw std::runtime_error("Invalid New Horizons canonical Order context");
 			for(const auto & order : state.orderStates)
 			{
-				if(order.issuedRound != round
+				if(!order.crownAndAltarRecipientUnitIds.empty())
+				{
+					if(!newHorizonsDivineMandate::hasCrownAndAltarPerk(getSideHero(side)))
+						throw std::runtime_error("Invalid Crown and Altar captured Order context");
+					for(const auto id : order.crownAndAltarRecipientUnitIds)
+						if(!battleGetUnitByID(id))
+							throw std::runtime_error("Crown and Altar references a missing recipient");
+				}
+				if(!order.divineDisciplineRecipientUnitIds.empty())
+				{
+					if(!newHorizonsDivineMandate::hasDivineDisciplinePerk(getSideHero(side))
+						|| (order.issuedRound == round && !order.divineDisciplineCompletedUnitIds.empty()))
+						throw std::runtime_error("Invalid Divine Discipline captured Order context");
+					for(const auto id : order.divineDisciplineRecipientUnitIds)
+						if(!battleGetUnitByID(id))
+							throw std::runtime_error("Divine Discipline references a missing recipient");
+				}
+				if((order.issuedRound != round && order.divineDisciplineRecipientUnitIds.empty())
+					|| order.issuedRound > round
 					|| !heroCommands::supportedByRules(heroCommandRules, order.command))
 					throw std::runtime_error("Invalid New Horizons canonical Order context");
 				if(order.primaryTargetUnitId != HeroOrderState::INVALID_UNIT_ID
@@ -2547,7 +2595,8 @@ void BattleInfo::validateFocusFireStates() const
 		const auto & mark = *state.focusFire;
 		mark.validateShape();
 		if(!heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE)
-			|| !getSideHero(side) || !state.heroCommandUsed || legacySpellHistoryBlocksOrder || mark.issuedRound != round
+			|| !getSideHero(side) || !state.findOrder(HeroCommand::FOCUS_FIRE)
+			|| mark.issuedRound != state.findOrder(HeroCommand::FOCUS_FIRE)->issuedRound
 			|| !battleGetUnitByID(mark.targetUnitId))
 			throw std::runtime_error("Invalid New Horizons Focus Fire battle context");
 		for(auto id : mark.recipientUnitIds)

@@ -234,7 +234,8 @@ std::vector<BattleFormEffect::WeightedBattleFormCandidate> BattleFormEffect::wei
 		auto state = unit->acquireState();
 		if(!state)
 			return {};
-		state->beginBattleForm(forms[index].creature, duration);
+		state->beginBattleForm(forms[index].creature, duration + std::min(mechanics->getExtendSpellBonusRounds(),
+			std::numeric_limits<int32_t>::max() - duration));
 		const uint64_t armyValue = static_cast<uint64_t>(std::max(0, forms[index].creature.toCreature()->getAIValue()))
 			* static_cast<uint64_t>(state->getCount());
 		ranked.emplace_back(armyValue, index);
@@ -344,7 +345,8 @@ void BattleFormEffect::apply(ServerCallback * server, const Mechanics * mechanic
 
 		try
 		{
-			state->beginBattleForm(selectedCandidate.creature, duration);
+			state->beginBattleForm(selectedCandidate.creature, duration + std::min(mechanics->getExtendSpellBonusRounds(),
+				std::numeric_limits<int32_t>::max() - duration));
 			state->setPosition(selectedCandidate.landing);
 		}
 		catch(const std::exception & error)

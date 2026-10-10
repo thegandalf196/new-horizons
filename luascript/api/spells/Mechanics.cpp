@@ -29,6 +29,7 @@
 #include "../../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../../lib/spells/NewHorizonsSorcery.h"
 #include "../../../lib/battle/Unit.h"
+#include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/spells/Problem.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/GameLibrary.h"
@@ -40,6 +41,16 @@
 namespace scripting::api
 {
 using ::spells::Mechanics;
+
+bool MechanicsProxy::hasPrecisionBombardment(const Mechanics & m)
+{
+	const auto * machine = m.getUnitCaster();
+	const auto * callback = dynamic_cast<const CBattleInfoCallback *>(m.battle());
+	return callback && machine && machine->unitType() && machine->isCatapult()
+		&& m.usesNewHorizonsMagicV3()
+		&& callback->playerToSide(callback->battleGetActionController(machine)) == BattleSide::ATTACKER
+		&& callback->battleHasWarMachinesPerk(machine, "new-horizons:warMachines.precisionBombardment");
+}
 
 bool MechanicsProxy::ownerMatchesUnit(const Mechanics & m, const battle::Unit & unit)
 {
@@ -147,9 +158,15 @@ int32_t MechanicsProxy::getArcaneBreachMarkBasisPoints(const spells::Mechanics &
 	// before the final per-mark cap.
 	const auto effectPower = m.getEffectPower();
 	arcaneBreachMarkBasisPoints(effectPower);
-	const auto component = m.scaleSpellPowerComponentWithCoefficientBasisPoints(
+	// Focus Magic captures its own first-shot penetration. Other Arcane Breach
+	// mark producers retain the ordinary formula, including post-hit marks.
+	const auto * hero = m.getHeroCaster();
+	const int specialty = hero && m.usesNewHorizonsMagicV3()
+		&& m.getSpellId().toSpell()->getJsonKey() == FOCUS_MAGIC_SPELL
+		? hero->getNonDamageSpellSpecialtyBonusPercent(m.getSpellId()) : 0;
+	const auto component = m.scaleDamageSpellPowerComponentWithCoefficientBasisPoints(
 		static_cast<int64_t>(effectPower) * ARCANE_BREACH_POWER_BASIS_POINTS,
-		1, m.getSpellPowerCoefficientBasisPoints());
+		1, m.getSpellPowerCoefficientBasisPoints(), specialty);
 	return static_cast<int32_t>(std::min<int64_t>(ARCANE_BREACH_CAP_BASIS_POINTS,
 		ARCANE_BREACH_BASE_BASIS_POINTS + component));
 }
@@ -260,6 +277,8 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 	R.method<&Mechanics::getStormOfDaggersTotalDamage>("getStormOfDaggersTotalDamage",
 		{{"selectedTargetCount", "Number of distinct enemy stacks selected, from one to five."}}, {},
 		"Returns the rounded raw Storm of Daggers total before target-specific resistance or mitigation.");
+	R.method<&Mechanics::getExtendSpellBonusRounds>("getExtendSpellBonusRounds", {},
+		"Returns this cast's snapshotted Extend Spell round bonus without changing other duration modifiers.");
 	R.method<&Mechanics::getEffectDuration>("getEffectDuration", {},
 		"Returns the effect duration in turns.");
 	R.function<&MechanicsProxy::getVariantPowerPercent>("getVariantPowerPercent", {},
@@ -307,6 +326,8 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"True when the battle uses a saved New Horizons magic-rules snapshot.");
 	R.method<&Mechanics::usesNewHorizonsMagicV3>("usesNewHorizonsMagicV3", {},
 		"True when the battle uses a saved New Horizons magic-rules v3 snapshot.");
+	R.function<&MechanicsProxy::hasPrecisionBombardment>("hasPrecisionBombardment", {},
+		"True only for the controlled hero Catapult with saved Precision Bombardment.");
 	R.method<&Mechanics::usesNewHorizonsEarthquake>("usesNewHorizonsEarthquake", {},
 		"True only when the saved-v3 Earthquake row explicitly enables its selected-area and field rules.");
 	R.method<&Mechanics::getNewHorizonsEarthquakeParameter>("getNewHorizonsEarthquakeParameter",
@@ -388,9 +409,20 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 	R.method<&Mechanics::getSpellPowerCoefficientBasisPoints>("getSpellPowerCoefficientBasisPoints", {},
 		"Returns the composed Spellcraft, school-rank and cast-specific Spell Power coefficient in basis points. "
 		"10000 basis points means 100%; legacy profiles and excluded spells use 10000.");
+	R.method<&Mechanics::scaleRecipientSpellPowerComponent>("scaleRecipientSpellPowerComponent",
+		{{"numerator", "Rating-derived numerator."}, {"divisor", "Rating component divisor."},
+			{"target", "Recipient of the second Divine Mandate action."}}, {},
+		"Folds captured Crown and Altar into the component ratio before final truncation; fixed components stay outside.");
+	R.method<&Mechanics::getRecipientEffectValue>("getRecipientEffectValue",
+		{{"target", "Healing recipient."}}, {},
+		"Returns recipient-specific healing with Crown and Altar scaling only the Spell Power component, never fixed healing.");
 	R.method<&Mechanics::getFrailtyDefenseLossBasisPoints>("getFrailtyDefenseLossBasisPoints", {},
 		"Returns Frailty's shared per-cast Creature Defense loss in basis points. The specialty scales only "
 		"the Spell Power component, preserving its fixed term, cast cap and Withering Touch addition.");
+	R.method<&Mechanics::getGuardianSpiritHitPoints>("getGuardianSpiritHitPoints",
+		{{"target", "Recipient whose captured Crown and Altar component applies."}}, {},
+		"Returns the shared Guardian Spirit protective pool with SP-only specialty and Healer modifiers, "
+		"then its fixed base and whole-pool Guardian modifier.");
 	R.method<&Mechanics::getNewHorizonsQuicksandPatchCount>("getNewHorizonsQuicksandPatchCount", {},
 		"Returns the authoritative saved-v3 Quicksand patch count with School, Spellcraft, "
 		"Warcasting, and Empower scaling; returns zero for legacy profiles and other spells.");

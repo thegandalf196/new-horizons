@@ -28,6 +28,7 @@ namespace scripting::api
 		static void registerMethods(MethodRegistrar & R);
 
 		static bool ownerMatchesUnit(const ::spells::Mechanics & m, const battle::Unit & unit);
+		static bool hasPrecisionBombardment(const ::spells::Mechanics & m);
 		static bool ownerIsSameAsUnit(const ::spells::Mechanics & m, const battle::Unit & unit);
 		static bool currentControllerIsCaster(const ::spells::Mechanics & m, const battle::Unit & unit);
 		static bool isProtectedAreaCenter(const ::spells::Mechanics & m, const battle::Unit & unit, BattleHex centerHex);

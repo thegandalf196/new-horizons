@@ -567,7 +567,7 @@ void CGDwelling::heroAcceptsCreatures(IGameEventCallback & gameEvents, const CGH
 
 				gameEvents.showInfoDialog(&iw);
 				gameEvents.sendAndApply(sac);
-				gameEvents.addToSlot(StackLocation(h->id, slot), crs, acceptedCount);
+				gameEvents.recruitToSlot(StackLocation(h->id, slot), crs, acceptedCount);
 			}
 		}
 		else //there no creatures

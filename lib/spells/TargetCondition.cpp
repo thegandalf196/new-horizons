@@ -353,11 +353,13 @@ protected:
 	}
 	bool check(const Mechanics * m, const battle::Unit * target) const override
 	{
+		if(m->isCountingSpellTargets())
+			return true; // Only power-derived health ceilings are ignored in the intended-target pass.
 		//todo: maybe do not resist on passive cast
 		//TODO: what with other creatures casting hypnotize, Faerie Dragons style?
 		int64_t subjectHealth = target->getAvailableHealth();
 		//apply 'damage' bonus for hypnotize, including hero specialty
-		auto maxHealth = m->applySpellBonus(m->getEffectValue(), target);
+		auto maxHealth = m->applySpellBonus(m->getTargetAwareEffectValue(target), target);
 		return subjectHealth <= maxHealth;
 	}
 };

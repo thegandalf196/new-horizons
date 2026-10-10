@@ -479,6 +479,12 @@ int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent)
 int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent,
 	int divineMandateEfficiencyBonusPercent)
 {
+	return secondWindPercent(hero, warcastingBonusPercent, divineMandateEfficiencyBonusPercent, false);
+}
+
+int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent,
+	int divineMandateEfficiencyBonusPercent, bool crownAndAltar)
+{
 	int64_t leadership = 0;
 	if(const auto capacity = hero.getLeadershipCapacity())
 		leadership = capacity->capacity;
@@ -487,7 +493,7 @@ int secondWindPercent(const CGHeroInstance & hero, int warcastingBonusPercent,
 	const int efficiency = efficiencyPercent(hero) + std::clamp(warcastingBonusPercent, 0, 100)
 		+ std::clamp(divineMandateEfficiencyBonusPercent, 0, 15)
 		+ veteranCommanderBonus;
-	const double leadershipComponent = 0.015 * static_cast<double>(leadership) * efficiency / 100.0;
+	const double leadershipComponent = 0.015 * static_cast<double>(leadership) * efficiency / 100.0 * (crownAndAltar ? 1.2 : 1.0);
 	return std::clamp(50 + static_cast<int>(std::lround(leadershipComponent)), 0, 100);
 }
 

@@ -457,7 +457,10 @@ DLL_LINKAGE int counterspellCost(int listedCost, bool countermage, bool counters
 /// Saved-rules-backed Metamagic identity and perk helpers.  These are kept in
 /// the shared magic layer so server, client previews, and BattleAI use exactly
 /// the same rank/perk gates.
+/// Current-rules learned mastery; legacy contexts retain their prior effective rank.
 DLL_LINKAGE int metamagicRank(const CGHeroInstance * hero);
+/// Current rules: learned mastery plus at most one additional use; legacy unchanged.
+DLL_LINKAGE int metamagicCapacity(const CGHeroInstance * hero);
 DLL_LINKAGE bool hasMetamagicPerk(const CGHeroInstance * hero, std::string_view perkId);
 /// Saved-v3 Pyromancer / Cryomancer coefficient bonus for their canonical
 /// combat damage spells. Returns 15 or 20 only for an active selected perk;

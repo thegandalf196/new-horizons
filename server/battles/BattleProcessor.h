@@ -8,6 +8,7 @@
  *
  */
 #pragma once
+#include "../../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
 
 #include "../../lib/constants/EntityIdentifiers.h"
 #include "../../lib/constants/Enumerations.h"
@@ -55,7 +56,8 @@ class BattleProcessor : boost::noncopyable
 	bool checkBattleStateChanges(const CBattleInfoCallback & battle);
 	BattleID setupBattle(int3 tile, BattleSideArray<const CArmedInstance *> armies,
 		BattleSideArray<const CGHeroInstance *> heroes, const BattleLayout & layout, const CGTownInstance *town,
-		std::optional<BattleSideArray<int32_t>> preservedFirstRoundMoraleModifiers = std::nullopt);
+		std::optional<BattleSideArray<int32_t>> preservedFirstRoundMoraleModifiers = std::nullopt,
+		std::optional<newHorizonsTraining::Batch> preservedTraining = std::nullopt);
 
 	bool makeAutomaticBattleAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	void expireStackActivationBonuses(const BattleID & battleID, const BattleAction & action);
@@ -71,7 +73,8 @@ public:
 	void startBattle(const CArmedInstance *army1, const CArmedInstance *army2, int3 tile,
 		const CGHeroInstance *hero1, const CGHeroInstance *hero2, const BattleLayout & layout,
 		const CGTownInstance *town, bool restarted = false,
-		std::optional<BattleSideArray<int32_t>> preservedFirstRoundMoraleModifiers = std::nullopt);
+		std::optional<BattleSideArray<int32_t>> preservedFirstRoundMoraleModifiers = std::nullopt,
+		std::optional<newHorizonsTraining::Batch> preservedTraining = std::nullopt);
 	/// Starts battle between two armies (which can also be heroes) at position of 2nd object
 	void startBattle(const CArmedInstance *army1, const CArmedInstance *army2);
 	/// Restart ongoing battle and end previous battle

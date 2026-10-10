@@ -193,6 +193,28 @@ ImagePath CStackInstance::bonusToGraphics(const std::shared_ptr<Bonus> & bonus) 
 	return LIBRARY->getBth()->bonusToGraphics(bonus);
 }
 
+void CStackInstance::setTrainingReceipt(const newHorizonsTraining::Receipt & receipt)
+{
+	receipt.validate();
+	trainingReceipt = receipt;
+	removeBonuses(CSelector([](const Bonus * bonus)
+	{
+		return bonus->source == BonusSource::SECONDARY_SKILL
+			&& bonus->stacking == "new-horizons:fieldInstructor";
+	}));
+	if(receipt.fieldTrained)
+	{
+		auto bonus = std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::PRIMARY_SKILL, BonusSource::SECONDARY_SKILL, 1,
+			BonusSourceID(SecondarySkill(SecondarySkill::decode(newHorizonsTraining::SKILL))),
+			BonusSubtypeID(PrimarySkill::ATTACK));
+		bonus->stacking = "new-horizons:fieldInstructor";
+		bonus->description.appendRawString("Field Instructor: +1 Creature Attack (trained).");
+		addNewBonus(bonus);
+	}
+	nodeHasChanged();
+}
+
 CArmedInstance * CStackInstance::getArmy()
 {
 	return armyInstance;
@@ -336,8 +358,38 @@ void CStackInstance::removeArtifact(const ArtifactPosition & pos)
 
 void CStackInstance::serializeJson(JsonSerializeFormat & handler)
 {
+	if(!handler.saving)
+	{
+		const auto & node = handler.getCurrent()["training"];
+		if(!node.isNull() && !node.isStruct())
+			throw std::runtime_error("Invalid training JSON object");
+		for(const auto key : {"drillDeadline", "recruiter"})
+		{
+			const auto & value = node[key];
+			if(!value.isNull() && (value.getType() != JsonNode::JsonType::DATA_INTEGER
+				|| value.Integer() < -1 || value.Integer() > std::numeric_limits<int32_t>::max()))
+				throw std::runtime_error("Invalid training JSON integer");
+		}
+		for(const auto key : {"fieldPending", "fieldTrained", "reinforcementPending"})
+			if(!node[key].isNull() && node[key].getType() != JsonNode::JsonType::DATA_BOOL)
+				throw std::runtime_error("Invalid training JSON boolean");
+	}
 	//todo: artifacts
 	CStackBasicDescriptor::serializeJson(handler); //must be first
+	{
+		auto training = handler.enterStruct("training");
+		auto receipt = handler.saving ? trainingReceipt : newHorizonsTraining::Receipt{};
+		int32_t recruiter = receipt.residentRecruiter.getNum();
+		handler.serializeInt("drillDeadline", receipt.drillDeadline, -1);
+		handler.serializeInt("recruiter", recruiter, -1);
+		handler.serializeBool("fieldPending", receipt.fieldPending, false);
+		handler.serializeBool("fieldTrained", receipt.fieldTrained, false);
+		handler.serializeBool("reinforcementPending", receipt.reinforcementPending, false);
+		receipt.residentRecruiter = ObjectInstanceID(recruiter);
+		receipt.validate();
+		if(!handler.saving)
+			setTrainingReceipt(receipt);
+	}
 
 	if(handler.saving)
 	{

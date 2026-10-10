@@ -2,6 +2,76 @@
 
 Updated: 2026-10-09
 
+Accepted eleven-perk checkpoint: incremental9350 and privacy80564 pass.
+Principal36894 passes128/128 in43.678s; adjacent13551 passes15/15 in6.823s.
+Both XMLs have zero failures/errors/skips. Exact binary/resource parity and
+actual isolated-child driver/profile proof are retained privately. Canonical
+and registry wording are synchronized; generated-module validation passes.
+This establishes focused source acceptance, not rendered or playable delivery.
+
+The accepted delta is282→293/310: generic195→204/220,
+faction87→89/90;17 remain (16 generic,1 faction). Training3, War Machines3,
+Spellcraft3 and Divine2 are the only eleven retired perk rows. War Machines,
+Recruitment and Divine Mandate reach10/10; Spellcraft reaches9/10, with
+Precise Casting still unaccepted. Orders8/8, combat spells67/67, Skills31/31
+and ranks93/93 remain unchanged. Hero profiles, capacity/specialty repairs
+and biography decisions do not add perk counts.
+
+Preserve all failed evidence and deferred Phase2/3 interactions.
+The typed Training export normalization, legacy Extend duration classifier,
+empty-tile battlefield fallback and next-round carried-Order replacement
+have source review; compilation and passing subfilters alone are not the gate.
+
+Historical failed v5 checkpoint (retained; not final acceptance):
+
+Fresh v5 principal83705 completes128 cases:127 pass,1 fails in43.876s, zero
+errors. The sole failure is next-round reissue of a carried Divine Discipline
+Order rejected as an active duplicate. Replay, Cross and Spellcraft subfilters
+pass. A bounded production guard correction is being diagnosed; adjacent15
+has not run. Accepted totals remain282/310 until the full gate passes.
+
+Reviewed empty-tile production guard and faithful replay/native-terrain/real
+player/legal perk fixtures link in6899; privacy19604, static perk17 and module
+parity pass. Fresh v5 principal count is128 because Healer/Guardian now have
+separate legal controls. Guarded native acceptance is underway; counts below
+remain conditional until principal and adjacent evidence is complete.
+
+Fresh v4 gates: Cross1 and Spellcraft10 pass on the reviewed fixture repair;
+principal96189 stops with Training replay SIGSEGV after81 passes/3 failures
+and no XML. Adjacent retry remains stopped. The crash and bounded fixture
+preconditions are under diagnosis; the full batch is not accepted.
+
+Hero default-development audit finds39 current faction-only defaults, or38
+after the reviewed but unaccepted Voy candidate. The exact roster is retained
+in the user queue. Four Fortress profiles have provisional authoring and private
+implementation assignments; the remaining34 require bounded authored choices.
+This does not change accepted coverage. The144 biography decisions (52 reviewed
+overrides,92 deliberate inheritances) are not144 completed mechanical redesigns.
+
+Latest bounded checkpoint: Cross73446 passes1/1; Spellcraft2547 passes9/10.
+The sole remaining detached forecast failure is traced to a player-less test
+callback, not missing consumption hooks. A reviewed real-attacker callback and
+positive admission/Extend prerequisites preserve the original outcome assertions.
+Incremental6839 is running before fresh named native gates. Accepted282/310,
+canonical source and ordinary playable selection remain unchanged.
+
+Historical source-integration checkpoint: reviewed union7b900000 is integrated with110
+result hashes matching. Eleven perks plus capacity/hero-profile corrections
+have production code and independently reviewed root registration/data
+finalization. Static29 and module parity pass; incremental54039/93588 links
+test and production after the Training duplicate-export repair. Privacy43193
+passes. Training79803 passes1/1 and setup92086 passes29/29. Principal17709
+then crashes after35 completed passes and6 Spellcraft failures, with no final
+XML; adjacent retry is stopped. GDB identifies the fixture's absent populated
+BattleStart reader callback; that repair is imported. Extend Spell's legacy
+timed-effect omission is source-repaired with exact decoder fallback precedence.
+The area count control relocates the unintended adjacent friendly recipient;
+detached controls use real-player callbacks and retain receipt/isolation checks.
+The earlier exact-pair adjacent15 passed separately. Preserve all failed evidence
+and assertions; no full-batch acceptance follows from the passing subfilters.
+Accepted coverage stays282/310 and the ordinary
+launcher stays on verified95f4; do not count the source import as acceptance.
+
 Accepted Contacts/Phoenix/Arcane/Aenain checkpoint: incremental14567 links at
 ten jobs; privacy9212 passes. Exact retry2 principal34618 passes42/42 in13.975s
 and adjacent26046 passes23/23 in8.785s, zero failures/errors/disabled/skips.
@@ -13,8 +83,11 @@ registry identity/descriptions and module are synchronized; static29 and
 unchanged3138-entry NHART verification pass. Failed logs remain private and
 production rules/assertions were preserved. Final-resource30700 passes42/42
 in13.962s with unchanged binary pair and verified resource parity/cleanup.
-Commit and playable delivery are pending; ordinary Linux still selects verified
-source58af. The previous
+Source95f4ec089 is normally pushed and remote-confirmed. Committed packed803-file
+staging, metadata relink and privacy pass; ordinary Linux selects snapshotc44f2d301
+after a silent20s headless smoke reaches day4 and proves exact binary/drivers and
+cleanup. Its624 schema diagnostics match the previous accepted smoke; launcher
+verify-only passes. No new rendered/Windows acceptance is claimed. The previous
 unaccepted checkpoint below records the path to this acceptance.
 
 Current unaccepted source batch: Contacts, Phoenix Spark and Arcane Memory are

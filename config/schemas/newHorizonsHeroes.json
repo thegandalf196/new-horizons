@@ -109,10 +109,12 @@
 				"aenainFrailtyReplacement": {"type": "boolean", "description": "Absent or false preserves captured pre-Aenain Frailty contexts."},
 				"version": {"type": "integer", "enum": [1]},
 				"componentPercent": {"type": "integer", "enum": [20]},
+				"defensiveStartReplacements": {"type": "boolean", "description": "Absent or false preserves pre-replacement Merist and Labetha specialty identities."},
+				"offensiveStartReplacements": {"type": "boolean", "description": "Absent or false preserves pre-replacement Loynis and Zubin specialty identities."},
 				"spells": {
-					"type": "array", "minItems": 1, "maxItems": 6,
+					"type": "array", "minItems": 1, "maxItems": 10,
 					"uniqueItems": true,
-					"items": {"type": "string", "enum": ["core:cure", "core:resurrection", "core:bless", "core:haste", "new-horizons:reanimate", "new-horizons:frailty"]}
+					"items": {"type": "string", "enum": ["core:cure", "core:resurrection", "core:bless", "core:haste", "new-horizons:reanimate", "new-horizons:frailty", "new-horizons:hydrasVitality", "new-horizons:guardianSpirit", "new-horizons:crusade", "new-horizons:focusMagic"]}
 				}
 			}
 		},
@@ -144,6 +146,11 @@
 					"type": "object",
 					"additionalProperties": {"type": "string", "minLength": 1}
 				},
+				"startingDevelopmentProfiles": {
+					"description": "Optional captured profiles for fresh heroes using default Secondary Skills. Absent retains existing migration; explicit map rosters and saved/crossover heroes do not apply these profiles.",
+					"type": "object",
+					"additionalProperties": {"$ref": "#/definitions/startingDevelopmentProfile"}
+				},
 				"legacySkillMigrations": {
 					"type": "object",
 					"minProperties": 1,
@@ -164,6 +171,33 @@
 					"properties": {
 						"replacePosition": {"type": "string", "enum": ["second"]},
 						"singleSkillFallback": {"type": "string", "enum": ["append", "replaceFirst"]}
+					}
+				}
+			}
+		},
+		"startingDevelopmentProfile": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["skills", "startingPerks"],
+			"properties": {
+				"skills": {
+					"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true,
+					"items": {
+						"type": "object", "additionalProperties": false, "required": ["skill", "rank"],
+						"properties": {
+							"skill": {"type": "string", "pattern": "^new-horizons:[A-Za-z][A-Za-z0-9]*$"},
+							"rank": {"type": "integer", "minimum": 1, "maximum": 2}
+						}
+					}
+				},
+				"startingPerks": {
+					"type": "array", "minItems": 1, "maxItems": 1,
+					"items": {
+						"type": "object", "additionalProperties": false, "required": ["skill", "perk"],
+						"properties": {
+							"skill": {"type": "string", "pattern": "^new-horizons:[A-Za-z][A-Za-z0-9]*$"},
+							"perk": {"type": "string", "pattern": "^new-horizons:[A-Za-z][A-Za-z0-9]*\\.[A-Za-z][A-Za-z0-9]*$"}
+						}
 					}
 				}
 			}

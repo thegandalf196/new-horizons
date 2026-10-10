@@ -155,6 +155,7 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsPrimaryScale.cpp
 	entities/creature/NewHorizonsCreatureCategoryRules.cpp
 	entities/creature/NewHorizonsCreatureCategories.cpp
+	entities/creature/NewHorizonsRecruitmentTraining.cpp
 	entities/hero/NewHorizonsHeroRules.cpp
 	entities/hero/NewHorizonsLeadership.cpp
 	entities/hero/NewHorizonsCapabilityRules.cpp
@@ -344,6 +345,8 @@ set(lib_MAIN_SRCS
 	spells/MagicalDamageReduction.cpp
 	spells/NewHorizonsSorcery.cpp
 	spells/NewHorizonsSpellAvailability.cpp
+	spells/NewHorizonsSpellcraft.cpp
+	spells/NewHorizonsCrossSchoolFormula.cpp
 	spells/ExternalCaster.cpp
 	spells/ISpellMechanics.cpp
 	spells/ObstacleCasterProxy.cpp
@@ -540,6 +543,7 @@ set(lib_MAIN_HEADERS
 	battle/SpellResponseState.h
 	battle/TimeStopState.h
 	battle/NewHorizonsWarcasting.h
+	battle/NewHorizonsWarMachines.h
 	battle/OverwhelmingFormulaState.h
 	spells/NewHorizonsOverwhelmingFormula.h
 	spells/NewHorizonsOverwhelmingFormula.cpp
@@ -669,6 +673,7 @@ set(lib_MAIN_HEADERS
 	entities/hero/SpellPointState.h
 	entities/creature/NewHorizonsCreatureCategoryRules.h
 	entities/creature/NewHorizonsMusterRules.h
+	entities/creature/NewHorizonsRecruitmentTraining.h
 	entities/hero/NewHorizonsHeroRules.h
 	entities/hero/NewHorizonsLeadership.h
 	entities/hero/NewHorizonsCapabilityRules.h
@@ -908,6 +913,8 @@ set(lib_MAIN_HEADERS
 	spells/MagicalDamageReduction.h
 	spells/NewHorizonsSorcery.h
 	spells/NewHorizonsSpellAvailability.h
+	spells/NewHorizonsSpellcraft.h
+	spells/NewHorizonsCrossSchoolFormula.h
 	spells/ExternalCaster.h
 	spells/ISpellMechanics.h
 	spells/ObstacleCasterProxy.h

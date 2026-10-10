@@ -9,6 +9,8 @@
  */
 #include "StdInc.h"
 #include "BattleProcessor.h"
+#include "../../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
+#include "../../lib/entities/creature/NewHorizonsMusterRules.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 
 #include "BattleActionProcessor.h"
@@ -98,6 +100,7 @@ void BattleProcessor::restartBattle(const BattleID & battleID, const CArmedInsta
 								const CGHeroInstance *hero1, const CGHeroInstance *hero2, const BattleLayout & layout, const CGTownInstance *town)
 {
 	auto battle = gameHandler->gameState().getBattle(battleID);
+	const auto preservedTraining = battle->trainingEntrySnapshot;
 	BattleSideArray<int32_t> preservedFirstRoundMoraleModifiers{};
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		preservedFirstRoundMoraleModifiers[side] = battle->getSide(side).firstRoundMoraleModifier;
@@ -130,13 +133,14 @@ void BattleProcessor::restartBattle(const BattleID & battleID, const CArmedInsta
 	gameHandler->sendAndApply(bc);
 
 	startBattle(army1, army2, tile, hero1, hero2, layout, town, true,
-		preservedFirstRoundMoraleModifiers);
+		preservedFirstRoundMoraleModifiers, preservedTraining);
 }
 
 void BattleProcessor::startBattle(const CArmedInstance *army1, const CArmedInstance *army2, int3 tile,
 								const CGHeroInstance *hero1, const CGHeroInstance *hero2, const BattleLayout & layout,
 								const CGTownInstance *town, bool restarted,
-								std::optional<BattleSideArray<int32_t>> preservedFirstRoundMoraleModifiers)
+								std::optional<BattleSideArray<int32_t>> preservedFirstRoundMoraleModifiers,
+	std::optional<newHorizonsTraining::Batch> preservedTraining)
 {
 	assert(gameHandler->gameState().getBattle(army1->getOwner()) == nullptr);
 	assert(gameHandler->gameState().getBattle(army2->getOwner()) == nullptr);
@@ -145,7 +149,7 @@ void BattleProcessor::startBattle(const CArmedInstance *army1, const CArmedInsta
 	BattleSideArray<const CGHeroInstance*>heroes{hero1, hero2};
 
 	auto battleID = setupBattle(tile, armies, heroes, layout, town,
-		preservedFirstRoundMoraleModifiers); //initializes stacks, places creatures on battlefield, blocks and informs player interfaces
+		preservedFirstRoundMoraleModifiers, preservedTraining); //initializes stacks, places creatures on battlefield, blocks and informs player interfaces
 
 	const auto * battle = gameHandler->gameState().getBattle(battleID);
 	assert(battle);
@@ -236,7 +240,8 @@ void BattleProcessor::startBattle(const CArmedInstance *army1, const CArmedInsta
 
 BattleID BattleProcessor::setupBattle(int3 tile, BattleSideArray<const CArmedInstance *> armies,
 	BattleSideArray<const CGHeroInstance *> heroes, const BattleLayout & layout, const CGTownInstance *town,
-	std::optional<BattleSideArray<int32_t>> preservedFirstRoundMoraleModifiers)
+	std::optional<BattleSideArray<int32_t>> preservedFirstRoundMoraleModifiers,
+	std::optional<newHorizonsTraining::Batch> preservedTraining)
 {
 	const auto & t = *gameHandler->gameInfo().getTile(tile);
 	TerrainId terrain = t.getTerrainID();
@@ -281,6 +286,16 @@ BattleID BattleProcessor::setupBattle(int3 tile, BattleSideArray<const CArmedIns
 	//send info about battles
 	BattleStart bs;
 	bs.info = BattleInfo::setupBattle(&gameHandler->gameInfo(), tile, terrain, battlefieldType, armies, heroes, layout, town);
+	const auto trainingCalendar = gameHandler->gameInfo().getCalendar();
+	if(preservedTraining && !preservedTraining->empty())
+	{
+		bs.info->trainingEntrySnapshot = *preservedTraining;
+		bs.trainingReplay = true;
+		newHorizonsTraining::addEntryBonuses(*bs.info, trainingCalendar.getCurrentDay(),
+			newHorizonsMuster::absoluteWeek(trainingCalendar.getCurrentDay(), trainingCalendar.getDaysInWeek()));
+	}
+	else
+		bs.trainingEntry = bs.info->trainingEntrySnapshot;
 	if(preservedFirstRoundMoraleModifiers)
 	{
 		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})

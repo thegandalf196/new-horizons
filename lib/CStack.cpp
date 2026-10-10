@@ -21,6 +21,7 @@
 #include "battle/NewHorizonsOffense.h"
 #include "battle/NewHorizonsElementalRebirth.h"
 #include "battle/NewHorizonsDiscipline.h"
+#include "entities/creature/NewHorizonsRecruitmentTraining.h"
 #include "spells/NewHorizonsMagic.h"
 #include "GameLibrary.h"
 #include "networkPacks/PacksForClientBattle.h"
@@ -74,6 +75,18 @@ void CStack::localInit(BattleInfo * battleInfo)
 	const int32_t restoredOverwatchUsedRound = battlecraftOverwatchUsedRound;
 	const int32_t restoredFrozenAppliedRound = frozenLastAppliedRound();
 
+	// Battle setup already exports training bonuses for its preview. A direct
+	// BattleStart (or a decoded descriptor) must not export the same pointer
+	// twice: expiry would otherwise remove only one accepted occurrence.
+	std::vector<std::shared_ptr<Bonus>> trainingBonuses;
+	for(const auto & bonus : getExportedBonusList())
+		if(newHorizonsTraining::isTrainingBonus(bonus.get()))
+			trainingBonuses.push_back(bonus);
+	for(const auto & bonus : trainingBonuses)
+	{
+		removeBonus(bonus);
+		getExportedBonusList().push_back(bonus);
+	}
 	exportBonuses();
 	if(base) //stack originating from "real" stack in garrison -> attach to it
 	{

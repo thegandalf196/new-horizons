@@ -49,6 +49,9 @@ public:
 
 	/// Returns list of affected stack using currently configured target
 	std::vector<const CStack *> getAffectedStacks(const Target & target) const override final;
+	size_t getTargetedStackCount(const Target & target) const override final;
+	bool isCountingSpellTargets() const override { return countingSpellTargets; }
+	int64_t getTargetAwareEffectValue(const battle::Unit * target) const override;
 
 	/// Returns list of target types that can be targeted by spell
 	std::vector<AimType> getTargetTypes() const override final;
@@ -78,6 +81,8 @@ private:
 		bool resolved = false;
 	};
 
+	std::optional<BattleCast> eventSnapshot;
+	mutable bool countingSpellTargets = false;
 	std::shared_ptr<effects::Effects> effects;
 	std::shared_ptr<IReceptiveCheck> targetCondition;
 

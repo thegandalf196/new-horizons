@@ -1674,7 +1674,8 @@ int spellPowerCoefficientPercent(const JsonNode & rules, const CGHeroInstance * 
 int spellPowerCoefficientBasisPoints(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell,
 	const int additionalSpellPowerComponentPercent)
 {
-	if(additionalSpellPowerComponentPercent < 0 || additionalSpellPowerComponentPercent > 100)
+	// Legal first-cast/faction/response/concentration products can exceed +100%.
+	if(additionalSpellPowerComponentPercent < 0 || additionalSpellPowerComponentPercent > 200)
 		throw std::invalid_argument("Invalid additional Spell Power component percentage");
 
 	if(!hero || legacy(rules) || !rules.isStruct()
@@ -2328,9 +2329,22 @@ int metamagicRank(const CGHeroInstance * hero)
 {
 	if(!hero)
 		return 0;
-	const int skillRank = hero->getPerkSkillRank(std::string(METAMAGIC_SKILL));
-	const int rankBonus = hero->valOfBonuses(BonusType::METAMAGIC_USES_PER_COMBAT);
-	return std::clamp(std::max(skillRank, rankBonus), 0, 3);
+	const int learnedRank = hero->getPerkSkillRank(std::string(METAMAGIC_SKILL));
+	if(!rulesActive(hero->getMagicRules()))
+		return std::clamp(std::max(learnedRank, hero->valOfBonuses(BonusType::METAMAGIC_USES_PER_COMBAT)), 0, 3);
+	return std::clamp(learnedRank, 0, 3);
+}
+
+int metamagicCapacity(const CGHeroInstance * hero)
+{
+	const int rank = metamagicRank(hero);
+	if(!hero || !rulesActive(hero->getMagicRules()))
+		return rank;
+	if(rank == 0)
+		return 0;
+	// Skill bonuses already supply1/2/3; Halon's additive specialty supplies
+	// one more. Capacity is not a synthetic fourth mastery or bonus-only Skill.
+	return std::clamp(std::max(rank, hero->valOfBonuses(BonusType::METAMAGIC_USES_PER_COMBAT)), rank, rank + 1);
 }
 
 bool hasMetamagicPerk(const CGHeroInstance * hero, std::string_view perkId)

@@ -1,5 +1,179 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-09 — Carried Orders are replaceable in a later round
+
+The v5 principal batch completes127/128 but StartAction rejects the remaining
+Divine Discipline reissue. The shared availability callback already permits
+reissuing an older carried Order, and both live and detached state setters
+replace by command identity. Align the duplicate guard with that contract:
+same command and current issuing round remains rejected; an older carried
+snapshot may be replaced after the ordinary snapshot/action checks. Keep the
+existing same-round rejection test alongside actual next-round replacement.
+
+### 2026-10-09 — Legal empty battlefield tiles and forecast callback ownership
+
+The Training replay fixture passed an arbitrary empty tile to restartBattle.
+The actual backtrace exposed an unconditional visitableObjects.front() in
+battlefield selection. Guard object lookup on emptiness and preserve the
+existing terrain-patch/coastal/terrain fallback; the replay fixture should also
+reuse its original battle location. Validate both paths independently.
+
+Detached Spellcraft and Cross-School fixtures created CBattleCallback with no
+player, then called onBattleStarted, which requires a concrete player. This
+caused cast admission to fail before effect evaluation. Use the actual battle
+side's player and assert positive admission before testing forecast receipts;
+do not weaken production cast legality or add duplicate receipt recording.
+
+Healer and Guardian occupy the same Basic Light perk tier. A fixture cannot
+select both merely because its Skill is Expert. Test their separate legal
+paths instead of relaxing the canonical one-perk-per-tier rule. Strategic
+Attack is also not a complete battle baseline: native terrain supplies its
+own Attack bonus and must remain distinct from Field Instructor.
+
+### 2026-10-09 — Extend Spell must recognize actual legacy timed effects
+
+Five principal failures share an eligibility omission: the runtime mechanics
+factory converts legacy effects into timed bonuses, while Extend Spell only
+scanned modern battleEffects. Mirror the actual factory's global selector and
+selected-level effects-else-cumulative fallback; recognize the N_TURNS flag
+without treating permanent or action-bound effects as round temporary. Paid,
+countered, detached and receipt controls must execute against actual Haste.
+The remaining Concentration failure uses adjacent ally/enemy stacks inside
+Fireball's unsmart radius: move the ally's whole footprint out of the actual
+range before testing one recipient, retaining the two-recipient exclusion.
+Custom modern numeric/vector duration classification remains a Phase2 finding;
+the shipped modern branch's prior string behavior is unchanged by this repair.
+
+### 2026-10-09 — populated BattleStart fixture needs reader context
+
+The principal filter crashes at the populated BattleStart roundtrip after its
+empty-info control succeeds. A bounded isolated GDB run identifies
+SideInBattle::getHero during deserialization: the fixture has not assigned its
+BinaryDeserializer game callback. Set the existing game-state callback before
+reading, as other actual battle descriptor fixtures do. Preserve all roundtrip
+assertions; do not introduce a null-callback fallback into production entity
+resolution. A debugger diagnosis is not a repaired native acceptance result.
+
+### 2026-10-09 — duplicate training export prevents round-one expiry
+
+The first corrected native retry also exposes duplicate fixture startup:
+authoritative BattleProcessor::startBattle already calls onBattleStarted, while
+the fixture then synthesizes a new tactics phase through beginCombat. This
+advances to round2 before inspecting the opening bonus. Use the server startup
+once and end only genuinely pending tactics through the public action path;
+do not weaken the round1 assertion or restore the orphan bonus to make it pass.
+
+The29-case native gate identifies a real lifecycle defect: training entry bonuses
+are exported during setup for preview, then exported again by CStack::localInit.
+The same pointer appears twice in accepted bonuses; expiry removes only one,
+leaving an orphan +2 Initiative. Normalize only typed local training markers
+before the existing initialization export, preserving descriptors and preview
+semantics. Regression controls must check exact marker count and absence after
+the round boundary, using battle-native rather than strategic Initiative.
+Do not explain persistent +2 away as the legitimate native-terrain +1.
+
+The other failures demonstrate fixture contract mistakes: Riposte includes
+shooters; attribute-only amplification has no effect at zero Attack; lazy AI
+forecasts are not snapshots across later live mutations; removed towers remain
+addressable as ghosts; the registered Catapult ability is Catapult Shot.
+Repair setup/timing/identity while retaining positive and negative outcomes.
+Source corrections still require compile and native verification.
+
+### 2026-10-09 — lower-tier prerequisite controls in Crown and Training
+
+After Field Workshop exposes its occupied tier, inspect the same prerequisite
+pattern, not a broader integration matrix. Crown skips Advanced before its
+Expert perk; both controls now select scenario-inert Purifying Mandate first.
+Two Reinforcement controls intentionally lack Drill Sergeant but still need a
+Basic perk: select Volunteer Network, whose Muster-only benefit is inactive in
+those scenarios. Keep the true no-perk control unchanged. Every outcome assertion
+and production rule remains intact; independent source review passes. The first
+bounded principal run times out without XML, while adjacent15 passes completely.
+Rebuild only changed translation units, validate the29 affected setup cases,
+then repeat the127 principal filter on the new verified pair.
+
+### 2026-10-09 — Field Workshop acquisition tier in native fixture
+
+The exact linked-pair principal run reaches War Machines and cannot offer Field
+Workshop. The fixture selected Battlefield Medic in its Advanced slot, then
+searched for Advanced Field Workshop after setting the Skill to Expert; no RNG
+seed can repair an occupied tier. Choose Field Workshop directly at Advanced
+and retain Expert Skill rank for the original Siege-scaled output. No outcome
+assertion requires Battlefield Medic. Preserve the failed bounded run and check
+the corrected War Machines filter first before repeating the whole127-case
+principal filter. Do not loosen production selection/rank rules or spend time
+expanding the seed search. The15 adjacent controls are separate evidence.
+
+### 2026-10-09 — fixture signed damage and concrete transaction types
+
+Incremental46045 compiles the prior three fixture repairs, then stops at Crown
+and Training fixture declarations. Unit::damage mutates an int64_t reference;
+use its signed input type while preserving maxHealth-1. Training needs concrete
+AObjectTypeHandler, BattleLayout and StackLocation headers before their uses.
+The independently reviewed two-file correction preserves every case/assertion
+and actual transaction. Continue in the same build tree rather than starting
+another candidate or weakening the protocol tests. Failed output remains private.
+
+### 2026-10-09 — private wrapper boundary and neutral admission provenance
+
+Independent source review catches a Precise Casting patch deleting its adjacent
+Lua getEffectSpell declaration and setup. Restore the complete neighboring
+function, not only the new wrapper. Private source review also reproduces a
+Mercenary authority hole through public ArrangeStacks: unrelated same-creature
+troops can enter an empty neutral slot and return while the offered stack is
+untouched. Object/type/global-budget checks do not prove offered-cohort origin.
+Bind actual qualifying intake to the offered source, preserving authorized
+destination merge semantics and partial transfers. Preserve the earlier private
+candidates; require focused negative controls and repaired review before import.
+Neither failure changes the frozen live native candidate.
+
+### 2026-10-09 — battle fixture API and Lua declaration prerequisites
+
+Retry27418 confirms three fixture translation-unit failures after production
+links. BattleNextRound carries a battle ID; its visitor increments the round.
+CMemorySerializer exposes separate writer/reader versions, not setVersion;
+set both explicitly when testing an old-format roundtrip. Battle stacks own
+unique pointers, and detached simulations require the callback's battle subject,
+not a raw BattleInfo pointer. The actual Lua ServerCallbackProxy test needs
+LuaStdInc before its proxy header; the public callback header alone would remove
+the tested production entry point. Preserve all assertions and real callbacks.
+The narrow fixture repair is frozen for independent review and an incremental
+build; these source corrections alone do not establish native acceptance.
+
+### 2026-10-09 — concrete quest state and public restored hero lookup
+
+Retry38381 links production but stops at Starting's snapshot fixture: getUsedHero
+is private, and QuestInfo is only forward-declared by the snapshot helper.
+The exact failed-object log confirms both roots. Include the concrete QuestInfo
+definition and use CMap's public mutable hero lookup, explicitly asserting the
+restored type and instance IDs before retaining both profile assertions and
+saved reinitialization. Do not expose private APIs or remove world roundtrips.
+
+### 2026-10-09 — Spellcraft roster declaration ownership
+
+Retry78649 compiles the hero resolver repair but stops in Spellcraft's roster
+admission call. spellAllowedBySavedRoster belongs to NewHorizonsSpellAvailability.h,
+not NewHorizonsMagic.h. Include its existing declaration rather than adding a
+duplicate API or bypassing roster validation. Failed output is preserved
+privately; the next incremental build and focused duration tests remain required.
+
+### 2026-10-09 — hero class interface versus concrete definition
+
+Retry98011 compiles Training, then stops because HeroClass service getById
+returns the public interface, not CHeroClass's faction field. Use the existing
+typed HeroClassID resolver in starting-profile validation, keeping null, faction
+and class-weight checks. Preserve the failed log privately. Fixture world
+roundtrips also require concrete snapshot declarations before serialization
+templates; review that include order before the next combined retry.
+
+### 2026-10-09 — const recruitment transaction preflight
+
+The eleven-perk build41452 stops at Training's const validation path calling
+the mutable getArmyInstance callback. Resolve the object through the existing
+const getObj callback and checked const armed-instance cast instead. Do not
+cast away constness or change transaction admission. Same-directory retry and
+focused transaction tests are required before acceptance.
+
 ### 2026-10-09 — focused fixture registration, footprint and declarations
 
 The first42-case batch passes35; adjacent23 passes completely. Original

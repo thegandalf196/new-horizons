@@ -545,7 +545,7 @@ public:
 
 			Bonus curse(BonusDuration::N_TURNS, BonusType::ALWAYS_MINIMUM_DAMAGE, BonusSource::SPELL_EFFECT,
 				0, BonusSourceID(family));
-			curse.turnsRemain = *duration;
+			curse.turnsRemain = *duration + mechanics->getExtendSpellBonusRounds();
 			curse.description.appendRawString("Shadow's Curse");
 
 			SetStackEffect effects;
@@ -672,7 +672,7 @@ public:
 
 			Bonus morale(BonusDuration::N_TURNS, BonusType::MORALE, BonusSource::SPELL_EFFECT,
 				-*penalty, BonusSourceID(family));
-			morale.turnsRemain = *duration;
+			morale.turnsRemain = *duration + mechanics->getExtendSpellBonusRounds();
 			morale.description.appendRawString("Shadow's Sorrow");
 
 			SetStackEffect effects;

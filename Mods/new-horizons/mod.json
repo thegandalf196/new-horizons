@@ -3004,6 +3004,8 @@
 				"nonDamageSpellSpecialties": {
 					"version": 1,
 					"aenainFrailtyReplacement": true,
+					"defensiveStartReplacements": true,
+					"offensiveStartReplacements": true,
 					"componentPercent": 20,
 					"spells": [
 						"core:cure",
@@ -3011,7 +3013,11 @@
 						"core:bless",
 						"core:haste",
 						"new-horizons:reanimate",
-						"new-horizons:frailty"
+						"new-horizons:frailty",
+						"new-horizons:hydrasVitality",
+						"new-horizons:guardianSpirit",
+						"new-horizons:crusade",
+						"new-horizons:focusMagic"
 					]
 				},
 				"skillSpecialties": {
@@ -3026,6 +3032,152 @@
 					]
 				},
 				"startingSkills": {
+					"startingDevelopmentProfiles": {
+						"core:clancy": {
+							"skills": [
+								{
+									"skill": "new-horizons:logistics",
+									"rank": 1
+								},
+								{
+									"skill": "new-horizons:sylvanLuck",
+									"rank": 1
+								}
+							],
+							"startingPerks": [
+								{
+									"skill": "new-horizons:logistics",
+									"perk": "new-horizons:logistics.pathfinding"
+								}
+							]
+						},
+						"core:piquedram": {
+							"skills": [
+								{
+									"skill": "new-horizons:logistics",
+									"rank": 1
+								},
+								{
+									"skill": "new-horizons:metamagic",
+									"rank": 1
+								}
+							],
+							"startingPerks": [
+								{
+									"skill": "new-horizons:logistics",
+									"perk": "new-horizons:logistics.scouting"
+								}
+							]
+						},
+						"core:thane": {
+							"skills": [
+								{
+									"skill": "new-horizons:learning",
+									"rank": 2
+								},
+								{
+									"skill": "new-horizons:metamagic",
+									"rank": 1
+								}
+							],
+							"startingPerks": [
+								{
+									"skill": "new-horizons:learning",
+									"perk": "new-horizons:learning.scholar"
+								}
+							]
+						},
+						"core:torosar": {
+							"skills": [
+								{
+									"skill": "new-horizons:warMachines",
+									"rank": 1
+								},
+								{
+									"skill": "new-horizons:metamagic",
+									"rank": 1
+								}
+							],
+							"startingPerks": [
+								{
+									"skill": "new-horizons:warMachines",
+									"perk": "new-horizons:warMachines.masterGunner"
+								}
+							]
+						},
+						"core:iona": {
+							"skills": [
+								{
+									"skill": "new-horizons:learning",
+									"rank": 1
+								},
+								{
+									"skill": "new-horizons:metamagic",
+									"rank": 1
+								}
+							],
+							"startingPerks": [
+								{
+									"skill": "new-horizons:learning",
+									"perk": "new-horizons:learning.scholar"
+								}
+							]
+						},
+						"core:fiona": {
+							"skills": [
+								{
+									"skill": "new-horizons:logistics",
+									"rank": 2
+								},
+								{
+									"skill": "new-horizons:demonicGating",
+									"rank": 1
+								}
+							],
+							"startingPerks": [
+								{
+									"skill": "new-horizons:logistics",
+									"perk": "new-horizons:logistics.scouting"
+								}
+							]
+						},
+						"core:ignatius": {
+							"skills": [
+								{
+									"skill": "new-horizons:battlecraft",
+									"rank": 1
+								},
+								{
+									"skill": "new-horizons:demonicGating",
+									"rank": 1
+								}
+							],
+							"startingPerks": [
+								{
+									"skill": "new-horizons:battlecraft",
+									"perk": "new-horizons:battlecraft.tactics"
+								}
+							]
+						},
+						"core:lacus": {
+							"skills": [
+								{
+									"skill": "new-horizons:battlecraft",
+									"rank": 2
+								},
+								{
+									"skill": "new-horizons:elementalRebirth",
+									"rank": 1
+								}
+							],
+							"startingPerks": [
+								{
+									"skill": "new-horizons:battlecraft",
+									"perk": "new-horizons:battlecraft.tactics"
+								}
+							]
+						}
+					},
 					"factionSkills": {
 						"core:castle": "new-horizons:divineMandate",
 						"core:rampart": "new-horizons:sylvanLuck",
@@ -3406,7 +3558,7 @@
 				"schemaVersion": 1,
 				"rulesetVersion": 2,
 				"sourceDocument": "docs/design-sources/New Horizons.md",
-				"sourceSha256": "17925cdfcca6d79815ff2ff31e1a28580b637de8ada500be37a8a6dd1f710726",
+				"sourceSha256": "9cd2037e1cf7d4df14c6e4024b89fc9ad25a1b41c46e73b4b49204f586decf5a",
 				"maxSkillChoices": 2,
 				"maxPerkChoices": 2,
 				"maxPerksPerSkill": 3,
@@ -3983,10 +4135,10 @@
 								"id": "new-horizons:warMachines.precisionBombardment",
 								"name": "Precision Bombardment",
 								"requires": "basic",
-								"description": "The Catapult may target a specific wall section, gate, or defensive tower.",
+								"description": "The Catapult may target a specific wall section, gate, or defensive tower. An accuracy miss deals no damage instead of redirecting to another part; remaining shots stop once the selected part is destroyed. Accuracy and damage-quality rolls are unchanged.",
 								"effect": {
-									"status": "planned",
-									"description": "The Catapult may target a specific wall section, gate, or defensive tower."
+									"status": "active",
+									"description": "The Catapult may target a specific wall section, gate, or defensive tower. An accuracy miss deals no damage instead of redirecting to another part; remaining shots stop once the selected part is destroyed. Accuracy and damage-quality rolls are unchanged."
 								}
 							},
 							{
@@ -4023,10 +4175,10 @@
 								"id": "new-horizons:warMachines.breachmaker",
 								"name": "Breachmaker",
 								"requires": "advanced",
-								"description": "When a Catapult attack destroys a wall or gate section, 50% of excess structural damage automatically carries into the adjacent fortification section with the lowest current structural HP. Ties use fixed fortification order.",
+								"description": "When a hero-controlled Catapult strike destroys a wall or gate section, half of excess final structural damage, rounded down, carries once into the surviving adjacent outer-line fortification section with the lowest positive current structural HP. Ties use fixed fortification order. No recursive overflow or second Siege scaling occurs.",
 								"effect": {
-									"status": "planned",
-									"description": "When a Catapult attack destroys a wall or gate section, 50% of excess structural damage automatically carries into the adjacent fortification section with the lowest current structural HP. Ties use fixed fortification order."
+									"status": "active",
+									"description": "When a hero-controlled Catapult strike destroys a wall or gate section, half of excess final structural damage, rounded down, carries once into the surviving adjacent outer-line fortification section with the lowest positive current structural HP. Ties use fixed fortification order. No recursive overflow or second Siege scaling occurs."
 								}
 							},
 							{
@@ -4043,10 +4195,10 @@
 								"id": "new-horizons:warMachines.fieldWorkshop",
 								"name": "Field Workshop",
 								"requires": "advanced",
-								"description": "The First Aid Tent may target allied war machines or friendly fortifications, repairing them using its normal Siege-scaled healing value.",
+								"description": "The First Aid Tent may repair surviving damaged allied war machines or friendly defended-town fortifications using its full normal Siege-scaled healing value, capped by missing HP. It does not restore fallen machines or rebuild destroyed structures. Normal troop healing remains unchanged.",
 								"effect": {
-									"status": "planned",
-									"description": "The First Aid Tent may target allied war machines or friendly fortifications, repairing them using its normal Siege-scaled healing value."
+									"status": "active",
+									"description": "The First Aid Tent may repair surviving damaged allied war machines or friendly defended-town fortifications using its full normal Siege-scaled healing value, capped by missing HP. It does not restore fallen machines or rebuild destroyed structures. Normal troop healing remains unchanged."
 								}
 							},
 							{
@@ -4257,10 +4409,10 @@
 								"id": "new-horizons:recruitment.drillSergeant",
 								"name": "Drill Sergeant",
 								"requires": "basic",
-								"description": "Core and Elite creatures recruited directly by this hero gain +1 Morale during the first combat they fight within the next 7 days.",
+								"description": "Core and Elite creatures recruited directly by this hero gain +1 Morale during their first actual combat from recruitment day through day+6 inclusive. Eligibility is consumed at that combat even if immunity or a cap prevents the benefit.",
 								"effect": {
-									"status": "planned",
-									"description": "Core and Elite creatures recruited directly by this hero gain +1 Morale during the first combat they fight within the next 7 days."
+									"status": "active",
+									"description": "Core and Elite creatures recruited directly by this hero gain +1 Morale during their first actual combat from recruitment day through day+6 inclusive. Eligibility is consumed at that combat even if immunity or a cap prevents the benefit."
 								}
 							},
 							{
@@ -4287,10 +4439,10 @@
 								"id": "new-horizons:recruitment.fieldInstructor",
 								"name": "Field Instructor",
 								"requires": "advanced",
-								"description": "Core and Elite creatures recruited directly by this hero gain +1 Creature Attack after they complete their first combat under this hero. The bonus lasts while they remain in this hero's army.",
+								"description": "Surviving original Core and Elite troops recruited directly by this hero gain +1 Creature Attack after completing their first combat under the recruiter, including retained retreat or surrender armies. The bonus lasts only while they remain continuously in that hero's army.",
 								"effect": {
-									"status": "planned",
-									"description": "Core and Elite creatures recruited directly by this hero gain +1 Creature Attack after they complete their first combat under this hero. The bonus lasts while they remain in this hero's army."
+									"status": "active",
+									"description": "Surviving original Core and Elite troops recruited directly by this hero gain +1 Creature Attack after completing their first combat under the recruiter, including retained retreat or surrender armies. The bonus lasts only while they remain continuously in that hero's army."
 								}
 							},
 							{
@@ -4307,10 +4459,10 @@
 								"id": "new-horizons:recruitment.reinforcementDrill",
 								"name": "Reinforcement Drill",
 								"requires": "advanced",
-								"description": "The first newly recruited stack to enter combat under this hero each week gains +2 Initiative during round 1.",
+								"description": "Once per hero per week, the lowest original army slot among eligible newly recruited stacks entering combat under the recruiter gains +2 flat Initiative during round 1 only. Champions qualify; accepted battle entry consumes the use.",
 								"effect": {
-									"status": "planned",
-									"description": "The first newly recruited stack to enter combat under this hero each week gains +2 Initiative during round 1."
+									"status": "active",
+									"description": "Once per hero per week, the lowest original army slot among eligible newly recruited stacks entering combat under the recruiter gains +2 flat Initiative during round 1 only. Champions qualify; accepted battle entry consumes the use."
 								}
 							},
 							{
@@ -5293,10 +5445,10 @@
 								"id": "new-horizons:spellcraft.crossSchoolFormula",
 								"name": "Cross-School Formula",
 								"requires": "basic",
-								"description": "After casting a spell from one school, the next spell cast from a different school before the end of the next round receives +10% to its Spell Power-derived numerical component.",
+								"description": "After an accepted combat spell cast by the hero, the next accepted cast in the same or next round receives +10% to its Spell Power-derived numerical component if the two spells' saved school-membership sets are nonempty and disjoint. Each accepted cast becomes the new previous spell.",
 								"effect": {
-									"status": "planned",
-									"description": "After casting a spell from one school, the next spell cast from a different school before the end of the next round receives +10% to its Spell Power-derived numerical component."
+									"status": "active",
+									"description": "After an accepted combat spell cast by the hero, the next accepted cast in the same or next round receives +10% to its Spell Power-derived numerical component if the two spells' saved school-membership sets are nonempty and disjoint. Each accepted cast becomes the new previous spell."
 								}
 							},
 							{
@@ -5313,10 +5465,10 @@
 								"id": "new-horizons:spellcraft.concentration",
 								"name": "Concentration",
 								"requires": "basic",
-								"description": "A spell that targets exactly one stack receives +15% to its Spell Power-derived numerical component.",
+								"description": "A hero combat spell with exactly one unique prospective stack recipient receives +15% to its Spell Power-derived numerical component. Count recipients before resistance rolls or random additional-target draws, not only stacks that ultimately receive an effect.",
 								"effect": {
-									"status": "planned",
-									"description": "A spell that targets exactly one stack receives +15% to its Spell Power-derived numerical component."
+									"status": "active",
+									"description": "A hero combat spell with exactly one unique prospective stack recipient receives +15% to its Spell Power-derived numerical component. Count recipients before resistance rolls or random additional-target draws, not only stacks that ultimately receive an effect."
 								}
 							},
 							{
@@ -5333,10 +5485,10 @@
 								"id": "new-horizons:spellcraft.extendSpell",
 								"name": "Extend Spell",
 								"requires": "advanced",
-								"description": "Once per round, the first temporary spell cast by the hero lasts 1 additional round.",
+								"description": "Once per round, the first accepted hero combat spell with a positive round-based temporary lifetime lasts 1 additional round. Permanent, combat-long and action-bound effects do not qualify.",
 								"effect": {
-									"status": "planned",
-									"description": "Once per round, the first temporary spell cast by the hero lasts 1 additional round."
+									"status": "active",
+									"description": "Once per round, the first accepted hero combat spell with a positive round-based temporary lifetime lasts 1 additional round. Permanent, combat-long and action-bound effects do not qualify."
 								}
 							},
 							{
@@ -6389,10 +6541,10 @@
 								"id": "new-horizons:divineMandate.divineDiscipline",
 								"name": "Divine Discipline",
 								"requires": "advanced",
-								"description": "An Order issued through Divine Mandate that would normally end at the end of the round remains on affected friendly stacks through their next Creature Activation.",
+								"description": "An Order issued through Divine Mandate that would normally end at round end remains separately on its original affected friendly recipients through their first genuine completed Creature Activation after the issuing round. Wait and same-activation continuations do not consume this carry.",
 								"effect": {
-									"status": "planned",
-									"description": "An Order issued through Divine Mandate that would normally end at the end of the round remains on affected friendly stacks through their next Creature Activation."
+									"status": "active",
+									"description": "An Order issued through Divine Mandate that would normally end at round end remains separately on its original affected friendly recipients through their first genuine completed Creature Activation after the issuing round. Wait and same-activation continuations do not consume this carry."
 								}
 							},
 							{
@@ -6441,7 +6593,7 @@
 								"requires": "expert",
 								"description": "The second action of a Divine Mandate pair automatically gains +20% to its rating-derived numerical components on each friendly stack also affected by the first action. This applies in either Spell-then-Order or Order-then-Spell order. It requires no extra button or target-preselection step and does not retroactively change the first action.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The second action of a Divine Mandate pair automatically gains +20% to its rating-derived numerical components on each friendly stack also affected by the first action. This applies in either Spell-then-Order or Order-then-Spell order. It requires no extra button or target-preselection step and does not retroactively change the first action."
 								}
 							}
@@ -9545,6 +9697,9 @@
 		"new-horizons.combat.frozen.forfeit": "%creature% are Frozen: their normal Creature Activation is forfeited and the ice thaws.",
 		"new-horizons.combat.frozen.shatter": "The ice around %creature% Shatters after the physical hit; no retaliation.",
 		"new-horizons.combat.firstAid.permanentRestoration": "Permanently restores %s HP (%s creatures).",
+		"new-horizons.combat.firstAid.structureRepair": "Repair %s structural HP (%s/%s HP).",
+		"new-horizons.combat.catapult.breachmaker": "Breachmaker carries %s HP damage into the adjacent weakest section.",
+		"new-horizons.combat.catapult.precisionBombardment": "Misses do no damage; subsequent shots stop when this part is destroyed.",
 		"new-horizons.combat.orders.targetRejection.unavailable": "This Order is no longer available.",
 		"new-horizons.combat.orders.targetRejection.targetCount": "Select the required number of stacks.",
 		"new-horizons.combat.orders.targetRejection.noStack": "Select a stack.",

@@ -24,6 +24,7 @@
 #include "AlternatingHeroActionState.h"
 #include "RelentlessAssaultState.h"
 #include "SpellResponseState.h"
+#include "../spells/NewHorizonsCrossSchoolFormula.h"
 #include "OverwhelmingFormulaState.h"
 #include "PerfectFortuneState.h"
 #include "LuckSerendipityState.h"
@@ -167,11 +168,17 @@ public:
 	}
 	virtual std::optional<FocusFireState> getFocusFireState(BattleSide side) const { return {}; }
 	virtual bool hasCompletedHeroSpellCast(BattleSide side) const { (void)side; return false; }
+	virtual int32_t getExtendSpellLastRound(BattleSide) const { return -1; }
 	virtual bool hasCompletedHeroSpellLevel(BattleSide side, int32_t level) const
 	{
 		(void)side;
 		(void)level;
 		return false;
+	}
+	virtual const newHorizonsCrossSchoolFormula::State & getCrossSchoolFormulaState(BattleSide side) const
+	{
+		static const newHorizonsCrossSchoolFormula::State empty;
+		return empty;
 	}
 	virtual int32_t getCastSpells(BattleSide side) const = 0;
 	virtual int32_t getEnchanterCounter(BattleSide side) const = 0;
@@ -332,7 +339,12 @@ public:
 	virtual void setAdverseCombatRerollState(BattleSide, const AdverseCombatRerollState &) {}
 	virtual void setMoraleSuppressionState(BattleSide, const MoraleSuppressionState &) {}
 	virtual void setReducedExtraActivationState(BattleSide, const ReducedExtraActivationState &) {}
+	virtual void setCrossSchoolFormulaState(BattleSide, const newHorizonsCrossSchoolFormula::State &)
+	{
+		throw std::runtime_error("Battle state cannot record Cross-School Formula");
+	}
 	virtual void setSpellResponseState(BattleSide, const SpellResponseState &) {}
+	virtual void consumeExtendSpell(BattleSide) { throw std::runtime_error("Battle state cannot consume Extend Spell"); }
 	virtual void setOverwhelmingFormulaState(BattleSide, const OverwhelmingFormulaState &) {}
 	virtual void setPerfectFortuneState(BattleSide, const PerfectFortuneState &) {}
 	virtual void setRebirthChainUsed(BattleSide, bool) {}

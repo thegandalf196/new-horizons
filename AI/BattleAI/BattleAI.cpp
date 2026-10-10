@@ -186,12 +186,29 @@ BattleAction CBattleAI::useHealingTent(const BattleID & battleID, const CStack *
 		const auto candidate = std::pair{rank, target};
 		if(!bestControllerTarget || candidate.first > bestControllerTarget->first)
 			bestControllerTarget = candidate;
-		if(surgeon && preview.survivorHealedHP > 0 && physicalAfflictions::first(*target)
+		if(surgeon && !battle->battleCanRepairWarMachine(stack, target)
+			&& preview.survivorHealedHP > 0 && physicalAfflictions::first(*target)
 			&& (!bestAfflictionTarget || candidate.first > bestAfflictionTarget->first))
 			bestAfflictionTarget = candidate;
 	}
 
 	const auto selected = bestAfflictionTarget ? bestAfflictionTarget : bestControllerTarget;
+	FirstAidStructureRepairPreview structure;
+	for(int i = 0; i < static_cast<int>(EWallPart::PARTS_COUNT); ++i)
+	{
+		const auto candidate = battle->battleGetFirstAidStructureRepairPreview(stack, static_cast<EWallPart>(i));
+		if(candidate.repairedHP() > structure.repairedHP())
+			structure = candidate;
+	}
+	if(structure.repairedHP() > 0 && (!selected || structure.repairedHP() > selected->first.first))
+	{
+		BattleAction repair;
+		repair.actionType = EActionType::STACK_HEAL;
+		repair.side = currentControllerSide;
+		repair.stackNumber = stack->unitId();
+		repair.aimToHex(battle->wallPartToBattleHex(structure.part));
+		return repair;
+	}
 	if(!selected)
 		return defend();
 	return makeActionForUnitSide(BattleAction::makeHeal(stack, selected->second));
@@ -695,8 +712,11 @@ BattleAction CBattleAI::useCatapult(const BattleID & battleID, const CStack * st
 				continue;
 
 			const auto wallHp = std::max<int32_t>(0, battle->getWallStructuralHP(wallPart));
-			const auto predictedDamage = wallHp > 0 && structuralOutput > 0
+			auto predictedDamage = wallHp > 0 && structuralOutput > 0
 				? std::min(wallHp, structuralOutput) : 0;
+			const auto overflow = battle->battleGetBreachmakerPreview(stack, wallPart, structuralOutput);
+			if(overflow.damage > 0)
+				predictedDamage += std::min(overflow.damage, battle->getWallStructuralHP(overflow.part));
 			if(!targetHex.isValid() || predictedDamage > bestDamage)
 			{
 				targetHex = candidateHex;

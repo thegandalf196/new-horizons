@@ -36,7 +36,7 @@ function Script:apply(mechanics, server, target)
 				subtype = COMBAT_EVENT,
 				val = damageBonusBasisPoints,
 				duration = ENUM.BonusDuration.nTurns,
-				turns = DURATION_TURNS,
+				turns = DURATION_TURNS + mechanics:getExtendSpellBonusRounds(),
 				sourceType = ENUM.BonusSource.spellEffect,
 				sourceID = spellKey,
 				stacking = spellKey,

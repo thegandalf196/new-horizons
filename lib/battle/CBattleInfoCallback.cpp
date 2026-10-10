@@ -215,6 +215,60 @@ int64_t CBattleInfoCallback::battleGetFirstAidHealingOutput(const battle::Unit *
 		battleGetActivationOutputPercent(healer));
 }
 
+bool CBattleInfoCallback::battleHasWarMachinesPerk(
+	const battle::Unit * machine, const std::string & perk) const
+{
+	if(!getBattle() || !machine || !machine->alive() || machine->isTimeStopped() || machine->isFrozen())
+		return false;
+	const auto * hero = battleGetOwnerHero(machine);
+	return hero && hero->getCapabilityRules()["rulesetVersion"].Integer() >= 3
+		&& battleGetActionController(machine) == hero->getOwner()
+		&& hero->hasActivePerk("new-horizons:warMachines", perk);
+}
+
+bool CBattleInfoCallback::battleCanRepairWarMachine(
+	const battle::Unit * healer, const battle::Unit * target) const
+{
+	return healer && healer->isFirstAidTent() && target && target->alive()
+		&& target->isValidTarget() && !target->isTurret()
+		&& (target->isBallista() || target->isCatapult() || target->isFirstAidTent() || target->isAmmoCart())
+		&& battleMatchActionController(healer, target, true)
+		&& target->getFirstHPleft() < target->getMaxHealth()
+		&& battleGetFirstAidHealingOutput(healer) > 0
+		&& battleHasWarMachinesPerk(healer, "new-horizons:warMachines.fieldWorkshop");
+}
+
+FirstAidStructureRepairPreview CBattleInfoCallback::battleGetFirstAidStructureRepairPreview(
+	const battle::Unit * healer, EWallPart part) const
+{
+	FirstAidStructureRepairPreview result;
+	if(!healer || !healer->isFirstAidTent() || !battleGetDefendedTown()
+		|| playerToSide(battleGetActionController(healer)) != BattleSide::DEFENDER
+		|| !battleHasWarMachinesPerk(healer, "new-horizons:warMachines.fieldWorkshop")
+		|| !isWallPartAttackable(part))
+		return result;
+	const auto hp = getWallStructuralHP(part);
+	const auto maximum = SiegeInfo::maximumStructuralHP(part);
+	const auto output = battleGetFirstAidHealingOutput(healer);
+	if(hp <= 0 || hp >= maximum || output <= 0)
+		return result;
+	result.part = part;
+	result.expectedHP = hp;
+	result.replacementHP = hp + static_cast<int32_t>(std::min<int64_t>(maximum - hp, output));
+	return result;
+}
+
+BreachmakerPreview CBattleInfoCallback::battleGetBreachmakerPreview(
+	const battle::Unit * attacker, EWallPart part, int32_t finalDamage) const
+{
+	if(!attacker || !attacker->unitType() || !attacker->isCatapult()
+		|| playerToSide(battleGetActionController(attacker)) != BattleSide::ATTACKER
+		|| !battleHasWarMachinesPerk(attacker, "new-horizons:warMachines.breachmaker"))
+		return {};
+	return newHorizonsWarMachines::overflow(part, getWallStructuralHP(part), finalDamage,
+		[this](EWallPart adjacent) { return isWallPartAttackable(adjacent) ? getWallStructuralHP(adjacent) : 0; });
+}
+
 int64_t CBattleInfoCallback::battleGetBattlefieldMedicRestorationBudget(
 	const battle::Unit * healer, const battle::Unit * target) const
 {
@@ -241,7 +295,7 @@ FirstAidHealingPreview CBattleInfoCallback::battleGetFirstAidHealingPreview(
 	FirstAidHealingPreview result;
 	if(!getBattle() || !healer || !healer->isFirstAidTent() || !healer->alive()
 		|| !target || !target->alive() || !target->isValidTarget()
-		|| target->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| (target->hasBonusOfType(BonusType::SIEGE_WEAPON) && !battleCanRepairWarMachine(healer, target))
 		|| !battleMatchActionController(healer, target, true))
 		return result;
 
@@ -262,6 +316,9 @@ bool CBattleInfoCallback::battleCanHealWithFirstAidTent(
 	if(!healer || !healer->isFirstAidTent() || !target
 		|| !battleMatchActionController(healer, target, true))
 		return false;
+
+	if(battleCanRepairWarMachine(healer, target))
+		return true;
 
 	// Preserve ordinary Tent admission; only Medic introduces casualty-only recipients.
 	const auto * stack = dynamic_cast<const CStack *>(target);
@@ -1255,7 +1312,7 @@ bool CBattleInfoCallback::battleOrderBenefitAppliesTo(const HeroOrderState & sta
 		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		|| !heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
 		|| !heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), state.command)
-		|| state.issuedRound != battleGetRound()
+		|| !state.scheduledFor(unit->unitId(), battleGetRound())
 		|| battleGetOwner(unit) != sideToPlayer(side)
 		|| unit->isTurret() || unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
 		|| unit->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER)
@@ -1387,7 +1444,7 @@ BattleMoraleInfo CBattleInfoCallback::battleGetMoraleInfo(const battle::Unit * u
 			const auto orders = battleGetHeroOrderStates(side);
 			if(std::ranges::any_of(orders, [this, unit](const HeroOrderState & order)
 			{
-				return order.issuedRound == battleGetRound()
+				return order.scheduledFor(unit->unitId(), battleGetRound())
 					&& std::binary_search(order.royalStandardRecipientUnitIds.begin(),
 						order.royalStandardRecipientUnitIds.end(), unit->unitId());
 			}))
@@ -1648,7 +1705,9 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderStateIm
 	{
 		if(allowance && allowance->allowance == HeroActionAllowanceState::AllowanceKind::ORDER
 			&& allowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
-			&& newHorizonsDivineMandate::hasRoyalStandardPerk(hero))
+			&& (newHorizonsDivineMandate::hasRoyalStandardPerk(hero)
+				|| newHorizonsDivineMandate::hasDivineDisciplinePerk(hero)
+				|| newHorizonsDivineMandate::hasCrownAndAltarPerk(hero)))
 		{
 			for(const auto * unit : battleAliveUnits())
 			{
@@ -1680,6 +1739,33 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderStateIm
 					result.royalStandardRecipientUnitIds.push_back(unit->unitId());
 			}
 			std::sort(result.royalStandardRecipientUnitIds.begin(), result.royalStandardRecipientUnitIds.end());
+			if(newHorizonsDivineMandate::hasCrownAndAltarPerk(hero))
+			{
+				const auto & ledger = getBattle()->getHeroActionAllowances(side);
+				const auto grant = std::find_if(ledger.grants.begin(), ledger.grants.end(),
+					[&allowance](const auto & entry) { return entry.id == allowance->grantId; });
+				if(grant != ledger.grants.end())
+					std::set_intersection(result.royalStandardRecipientUnitIds.begin(), result.royalStandardRecipientUnitIds.end(),
+						grant->divineMandateRecipients.begin(), grant->divineMandateRecipients.end(),
+						std::back_inserter(result.crownAndAltarRecipientUnitIds));
+				if(!result.crownAndAltarRecipientUnitIds.empty())
+				{
+					if(command == HeroCommand::FOCUS_FIRE)
+						result.crownAndAltarFocusFirePercent = heroCommands::coefficient(
+							newHorizonsDivineMandate::crownOrderFormula((*rules)["effects"]["rangedDamagePercent"], true),
+							*hero, result.warcastingBonusPercent, result.divineMandateEfficiencyBonusPercent());
+					if(command == HeroCommand::HOLD_THE_LINE && result.holdMagicalReductionBasisPoints != 0)
+						result.crownAndAltarHoldReductionBasisPoints = static_cast<uint16_t>(std::clamp(
+							heroCommands::coefficient(newHorizonsDivineMandate::crownOrderFormula(
+								(*rules)["effects"]["damageReductionPercent"], true), *hero,
+								result.warcastingBonusPercent, result.divineMandateEfficiencyBonusPercent()), 0, 100)
+							* newHorizonsIronDiscipline::BASIS_POINTS_PER_PHYSICAL_PERCENT);
+				}
+			}
+			if(command != HeroCommand::SECOND_WIND && newHorizonsDivineMandate::hasDivineDisciplinePerk(hero))
+				result.divineDisciplineRecipientUnitIds = result.royalStandardRecipientUnitIds;
+			if(!newHorizonsDivineMandate::hasRoyalStandardPerk(hero))
+				result.royalStandardRecipientUnitIds.clear();
 		}
 		result.validateShape();
 		return result;
@@ -1787,7 +1873,8 @@ const battle::Unit * CBattleInfoCallback::battleResolveHeroOrderTarget(const bat
 		return defender;
 	const auto side = playerToSide(battleGetOwner(defender));
 	const auto state = battleGetHeroOrderState(side, HeroCommand::PROTECT);
-	if(!state || state->issuedRound != battleGetRound()
+	if(!state || !state->scheduledFor(defender->unitId(), battleGetRound())
+		|| !state->scheduledFor(state->primaryTargetUnitId, battleGetRound())
 		|| state->protectInterceptionsConsumed >= battleHeroOrderProtectInterceptionLimit(side)
 		|| state->protectBroken || state->secondaryTargetUnitId != defender->unitId())
 		return defender;
@@ -1828,7 +1915,8 @@ int CBattleInfoCallback::battleGetHoldTheLineMagicalReductionBasisPoints(const b
 		return 0;
 	const auto state = battleGetHeroOrderState(side, HeroCommand::HOLD_THE_LINE);
 	return state && battleIsHoldTheLineRecipient(*state, unit)
-		? state->holdMagicalReductionBasisPoints : 0;
+		? (state->crownAndAltarAppliesTo(unit->unitId())
+			? state->crownAndAltarHoldReductionBasisPoints : state->holdMagicalReductionBasisPoints) : 0;
 }
 
 bool CBattleInfoCallback::battleUsesNewHorizonsMultiplicativeMDR() const
@@ -1870,7 +1958,7 @@ bool CBattleInfoCallback::battleCanTriggerHeroOrderBrace(const battle::Unit * at
 		return false;
 	const auto side = playerToSide(battleGetOwner(defender));
 	const auto state = battleGetHeroOrderState(side, HeroCommand::BRACE);
-	return state && state->issuedRound == battleGetRound()
+	return state && state->scheduledFor(defender->unitId(), battleGetRound())
 		&& !attacker->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)
 		&& !defender->isTurret() && !defender->hasBonusOfType(BonusType::SIEGE_WEAPON);
 }
@@ -1907,7 +1995,7 @@ int CBattleInfoCallback::battleHeroOrderFlankMeleeDamagePercent(const BattleAtta
 	if(!hero)
 		return 0;
 	const auto state = battleGetHeroOrderState(attackerSide, HeroCommand::FLANK);
-	if(!state || state->issuedRound != battleGetRound()
+	if(!state || !state->scheduledFor(attacker->unitId(), battleGetRound())
 		|| state->primaryTargetUnitId != attack.defender->unitId())
 		return 0;
 	const auto * flank = state->flankFor(attack.defender->unitId());
@@ -1922,10 +2010,16 @@ int CBattleInfoCallback::battleHeroOrderFlankMeleeDamagePercent(const BattleAtta
 		++distinctSides;
 	const int additionalSides = std::max(0, distinctSides - 1);
 	const auto & formula = currentBattle->getHeroCommandRules()["commands"]["flank"]["effects"]["meleeDamagePercent"];
-	const int baseDamagePercent = heroCommands::coefficient(formula, *hero,
+	const int baseDamagePercent = heroCommands::coefficient(newHorizonsDivineMandate::crownOrderFormula(formula,
+		state->crownAndAltarAppliesTo(attacker->unitId())), *hero,
 		state->warcastingBonusPercent, state->divineMandateEfficiencyBonusPercent());
-	const int additionalSidePercent = battleHeroOrderFlankAdditionalSidePercent(attackerSide,
-		state->warcastingBonusPercent, state->divineMandateEfficiencyBonusPercent());
+	const int additionalSidePercent = state->crownAndAltarAppliesTo(attacker->unitId())
+		&& !hero->hasActivePerk("new-horizons:offense", "new-horizons:offense.encirclement")
+		? heroCommands::coefficient(newHorizonsDivineMandate::crownOrderFormula(
+			currentBattle->getHeroCommandRules()["commands"]["flank"]["effects"]["additionalSidePercent"], true),
+			*hero, state->warcastingBonusPercent, state->divineMandateEfficiencyBonusPercent())
+		: battleHeroOrderFlankAdditionalSidePercent(attackerSide,
+			state->warcastingBonusPercent, state->divineMandateEfficiencyBonusPercent());
 	return baseDamagePercent + additionalSides * additionalSidePercent;
 }
 
@@ -1954,7 +2048,8 @@ int CBattleInfoCallback::battleHeroOrderFlankAdditionalSidePercent(BattleSide si
 bool CBattleInfoCallback::battleIsFocusFireTargetActive(BattleSide side) const
 {
 	const auto mark = battleGetFocusFireState(side);
-	if(!mark || mark->issuedRound != battleGetRound())
+	const auto order = battleGetHeroOrderState(side, HeroCommand::FOCUS_FIRE);
+	if(!mark || !order || !order->hasScheduledRecipients(battleGetRound()))
 		return false;
 	const auto * target = battleGetUnitByID(mark->targetUnitId);
 	return target && target->alive() && !target->isGhost() && battleGetOwner(target) != sideToPlayer(side);
@@ -1970,7 +2065,8 @@ bool CBattleInfoCallback::battleIsTargetedRangedCommand(const battle::Unit * att
 	if(!battleIsFocusFireRecipient(attacker, side))
 		return false;
 	const auto mark = battleGetFocusFireState(side);
-	return mark && mark->issuedRound == battleGetRound() && mark->targetUnitId == defender->unitId()
+	const auto order = battleGetHeroOrderState(side, HeroCommand::FOCUS_FIRE);
+	return mark && order && order->scheduledFor(attacker->unitId(), battleGetRound()) && mark->targetUnitId == defender->unitId()
 		&& std::binary_search(mark->recipientUnitIds.begin(), mark->recipientUnitIds.end(), attacker->unitId());
 }
 
@@ -1981,7 +2077,9 @@ int CBattleInfoCallback::battleTargetedRangedCommandPercent(const battle::Unit *
 		return 0;
 	const auto side = playerToSide(battleGetOwner(attacker));
 	const auto mark = battleGetFocusFireState(side);
-	return mark->rangedDamagePercent;
+	const auto order = battleGetHeroOrderState(side, HeroCommand::FOCUS_FIRE);
+	return order && order->crownAndAltarAppliesTo(attacker->unitId())
+		? order->crownAndAltarFocusFirePercent : mark->rangedDamagePercent;
 }
 
 ESpellCastProblem CBattleInfoCallback::battleCanCastSpell(const spells::Caster * caster, spells::Mode mode) const
@@ -3794,9 +3892,10 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		const auto attackerStates = battleGetHeroOrderStates(attackerSide);
 		const auto defenderStates = battleGetHeroOrderStates(defenderSide);
 		const auto coefficientFor = [](const JsonNode & formula, const CGHeroInstance * hero,
-			const HeroOrderState * orderState)
+			const HeroOrderState * orderState, uint32_t recipient)
 		{
-			return hero ? heroCommands::coefficient(formula, *hero,
+			return hero ? heroCommands::coefficient(newHorizonsDivineMandate::crownOrderFormula(formula,
+				orderState && orderState->crownAndAltarAppliesTo(recipient)), *hero,
 				orderState ? orderState->warcastingBonusPercent : 0,
 				orderState ? orderState->divineMandateEfficiencyBonusPercent() : 0) : 0;
 		};
@@ -3820,7 +3919,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		};
 		for(const auto & attackerState : attackerStates)
 		{
-			if(attackerState.issuedRound != battleGetRound() || !attack)
+			if(!attackerState.scheduledFor(info.attacker->unitId(), battleGetRound()) || !attack)
 				continue;
 			switch(attackerState.command)
 			{
@@ -3833,12 +3932,13 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 					&& battleIsFocusFireTargetActive(attackerSide))
 				{
 					const auto mark = battleGetFocusFireState(attackerSide);
-					if(mark && mark->issuedRound == battleGetRound()
+					if(mark && attackerState.scheduledFor(info.attacker->unitId(), battleGetRound())
 						&& mark->targetUnitId == info.defender->unitId()
 						&& std::binary_search(mark->recipientUnitIds.begin(), mark->recipientUnitIds.end(), info.attacker->unitId()))
 					{
 						const auto combinedArmsDamagePercent = heroCommands::combinedArmsFocusFirePercent(
-							mark->rangedDamagePercent, *attack);
+							(attackerState.crownAndAltarAppliesTo(info.attacker->unitId())
+								? attackerState.crownAndAltarFocusFirePercent : mark->rangedDamagePercent), *attack);
 						payload.combinedArmsDamagePercent += combinedArmsDamagePercent;
 						if(combinedArmsDamagePercent > 0)
 							recordAttackerCause(HeroCommand::FOCUS_FIRE);
@@ -3849,7 +3949,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				if(eligibleOrderUnit(info.attacker) && !info.shooting && !info.secondaryAttack && info.chargeDistance >= 3
 					&& !attackerState.containsConsumed(info.attacker->unitId()))
 				{
-					const int orderDamagePercent = coefficientFor(rules["charge"]["effects"]["meleeDamagePercent"], attack, &attackerState)
+					const int orderDamagePercent = coefficientFor(rules["charge"]["effects"]["meleeDamagePercent"], attack, &attackerState, info.attacker->unitId())
 						+ 2 * (info.chargeDistance - 3);
 					payload.heroOrderDamagePercent += orderDamagePercent;
 					if(orderDamagePercent > 0)
@@ -3862,7 +3962,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			case HeroCommand::RIPOSTE:
 				if(eligibleOrderUnit(info.attacker) && info.retaliation && !info.shooting)
 				{
-					const int orderDamagePercent = coefficientFor(rules["riposte"]["effects"]["retaliationDamagePercent"], attack, &attackerState);
+					const int orderDamagePercent = coefficientFor(rules["riposte"]["effects"]["retaliationDamagePercent"], attack, &attackerState, info.attacker->unitId());
 					payload.heroOrderDamagePercent += orderDamagePercent;
 					if(orderDamagePercent > 0)
 						recordAttackerCause(HeroCommand::RIPOSTE);
@@ -3872,7 +3972,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				if(eligibleOrderUnit(info.attacker) && info.bracePreemptive && !info.shooting)
 				{
 					const int orderMultiplier = newHorizonsCombatSkills::bracePreemptivePercent(
-						coefficientFor(rules["brace"]["effects"]["preemptiveDamagePercent"], attack, &attackerState), attack);
+						coefficientFor(rules["brace"]["effects"]["preemptiveDamagePercent"], attack, &attackerState, info.attacker->unitId()), attack);
 					payload.heroOrderFinalDamageMultipliers.push_back(orderMultiplier);
 					if(payload.heroOrderFinalDamageMultiplier == 100)
 						payload.heroOrderFinalDamageMultiplier = orderMultiplier;
@@ -3896,7 +3996,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 						&& attackerState.flankFor(info.defender->unitId()))
 					{
 						const auto combinedArmsDamagePercent = heroCommands::combinedArmsFlankPercent(
-							rules["flank"]["effects"]["meleeDamagePercent"], *attack,
+							newHorizonsDivineMandate::crownOrderFormula(rules["flank"]["effects"]["meleeDamagePercent"],
+								attackerState.crownAndAltarAppliesTo(info.attacker->unitId())), *attack,
 							attackerState.warcastingBonusPercent,
 							attackerState.divineMandateEfficiencyBonusPercent());
 						payload.combinedArmsDamagePercent += combinedArmsDamagePercent;
@@ -3908,9 +4009,8 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			case HeroCommand::SECOND_WIND:
 				if(attackerState.secondWindActive && attackerState.primaryTargetUnitId == info.attacker->unitId())
 				{
-					const int orderMultiplier = heroCommands::secondWindPercent(
-						*attack, attackerState.warcastingBonusPercent,
-						attackerState.divineMandateEfficiencyBonusPercent());
+					const int orderMultiplier = newHorizonsDivineMandate::crownSecondWindPercent(
+						*attack, attackerState, info.attacker->unitId());
 					if(orderMultiplier < 100)
 					{
 						payload.heroOrderFinalDamageMultipliers.push_back(orderMultiplier);
@@ -3926,7 +4026,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 		}
 		for(const auto & defenderState : defenderStates)
 		{
-			if(defenderState.issuedRound != battleGetRound() || !defend
+			if(!defenderState.scheduledFor(info.defender->unitId(), battleGetRound()) || !defend
 				|| !eligibleOrderUnit(info.defender) || !info.physicalDamage)
 				continue;
 			int orderDamageReductionPercent = 0;
@@ -3934,16 +4034,16 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			{
 			case HeroCommand::RIPOSTE:
 				if(!info.shooting)
-					orderDamageReductionPercent = coefficientFor(rules["riposte"]["effects"]["meleeDamageReductionPercent"], defend, &defenderState);
+					orderDamageReductionPercent = coefficientFor(rules["riposte"]["effects"]["meleeDamageReductionPercent"], defend, &defenderState, info.defender->unitId());
 				break;
 			case HeroCommand::HOLD_THE_LINE:
 				if(battleIsHoldTheLineRecipient(defenderState, info.defender))
-					orderDamageReductionPercent = coefficientFor(rules["holdTheLine"]["effects"]["damageReductionPercent"], defend, &defenderState);
+					orderDamageReductionPercent = coefficientFor(rules["holdTheLine"]["effects"]["damageReductionPercent"], defend, &defenderState, info.defender->unitId());
 				break;
 			case HeroCommand::PROTECT:
 				if(!info.shooting && info.protectIntercepted
 					&& defenderState.primaryTargetUnitId == info.defender->unitId())
-					orderDamageReductionPercent = coefficientFor(rules["protect"]["effects"]["interceptedDamageReductionPercent"], defend, &defenderState);
+					orderDamageReductionPercent = coefficientFor(rules["protect"]["effects"]["interceptedDamageReductionPercent"], defend, &defenderState, info.defender->unitId());
 				break;
 			default:
 				break;
@@ -4088,6 +4188,7 @@ SpellEffectValUptr CBattleInfoCallback::getSpellEffectValue(
 	if(hoveredUnit)
 		aim.emplace_back(spells::Destination(hoveredUnit));
 
+	mech = params.mechanicsForTarget(aim);
 	const spells::Target spellTarget = mech->canonicalizeTarget(aim);
 
 	mech->forEachEffect([&](const spells::effects::Effect &e){

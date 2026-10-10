@@ -297,6 +297,11 @@ void NewArtifact::visitTyped(ICPackVisitor & visitor)
 	visitor.visitNewArtifact(*this);
 }
 
+void RecruitTrainedStack::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitRecruitTrainedStack(*this);
+}
+
 void ChangeStackCount::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitChangeStackCount(*this);
@@ -929,6 +934,12 @@ void LobbyRestartGame::visitTyped(ICPackVisitor & visitor)
 	visitor.visitLobbyRestartGame(*this);
 }
 
+void LobbyStartGame::validateCrossSchoolFormulaSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateCrossSchoolFormulaSerialization(supported);
+}
+
 void LobbyStartGame::validateNewHorizonsProspectorSerialization(bool supported) const
 {
 	if(initializedGameState)
@@ -941,6 +952,12 @@ void LobbyStartGame::validateNewHorizonsHasteSpecialtySerialization(bool support
 		initializedGameState->validateNewHorizonsHasteSpecialtySerialization(supported);
 }
 
+void LobbyStartGame::validateRecruitmentTrainingSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateRecruitmentTrainingSerialization(supported);
+}
+
 void LobbyStartGame::validateNewHorizonsSageSerialization(bool supported) const
 {
 	if(initializedGameState)
@@ -951,6 +968,12 @@ void LobbyStartGame::validateNewHorizonsRecruitersContactsSerialization(bool sup
 {
 	if(initializedGameState)
 		initializedGameState->validateNewHorizonsRecruitersContactsSerialization(supported);
+}
+
+void LobbyStartGame::validateExtendSpellSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateExtendSpellSerialization(supported);
 }
 
 void LobbyStartGame::validateNewHorizonsScholarSerialization(bool supported) const
@@ -975,6 +998,24 @@ void LobbyStartGame::validateNewHorizonsAenainFrailtySpecialtySerialization(bool
 {
 	if(initializedGameState)
 		initializedGameState->validateNewHorizonsAenainFrailtySpecialtySerialization(supported);
+}
+
+void LobbyStartGame::validateNewHorizonsDefensiveStartSpecialtySerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsDefensiveStartSpecialtySerialization(supported);
+}
+
+void LobbyStartGame::validateNewHorizonsOffensiveStartSpecialtySerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsOffensiveStartSpecialtySerialization(supported);
+}
+
+void LobbyStartGame::validateNewHorizonsStartingDevelopmentSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsStartingDevelopmentSerialization(supported);
 }
 
 void LobbyStartGame::validateNewHorizonsMagnateSerialization(bool supported) const
@@ -1086,6 +1127,11 @@ void LobbySetDifficulty::visitTyped(ICPackVisitor & visitor)
 void LobbyForceSetPlayer::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitLobbyForceSetPlayer(*this);
+}
+
+void BattleStructureRepaired::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitBattleStructureRepaired(*this);
 }
 
 void LobbyShowMessage::visitTyped(ICPackVisitor & visitor)

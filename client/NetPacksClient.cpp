@@ -270,6 +270,11 @@ static void dispatchGarrisonChange(CClient & cl, ObjectInstanceID army1, ObjectI
 	}
 }
 
+void ApplyClientNetPackVisitor::visitRecruitTrainedStack(RecruitTrainedStack & pack)
+{
+	dispatchGarrisonChange(cl, pack.change.army, ObjectInstanceID::NONE);
+}
+
 void ApplyClientNetPackVisitor::visitChangeStackCount(ChangeStackCount & pack)
 {
 	dispatchGarrisonChange(cl, pack.army, ObjectInstanceID());
@@ -1018,6 +1023,12 @@ void ApplyClientNetPackVisitor::visitCatapultAttack(CatapultAttack & pack)
 {
 	//inform interfaces about catapult attack
 	callBattleInterfaceIfPresentForBothSides(cl, pack.battleID, &IBattleEventsReceiver::battleCatapultAttacked, pack.battleID, pack);
+}
+
+void ApplyClientNetPackVisitor::visitBattleStructureRepaired(BattleStructureRepaired & pack)
+{
+	callBattleInterfaceIfPresentForBothSides(cl, pack.battleID,
+		&IBattleEventsReceiver::battleStructureRepaired, pack.battleID, pack.part);
 }
 
 void ApplyClientNetPackVisitor::visitEndAction(EndAction & pack)

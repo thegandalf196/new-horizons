@@ -1251,7 +1251,10 @@ float projectedRegenerationValue(
 						forecast->battleGetUnitByID(queuedUnit->unitId()));
 			}
 			if(currentForecastUnit)
+				{
 				forecast->getForUpdate(queuedUnit->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
+				newHorizonsDivineMandate::completeDisciplineActivation(*forecast, queuedUnit->unitId());
+			}
 			if(!baselineForfeits && currentBaselineUnit && currentBaselineUnit->alive())
 			{
 				PotentialTargets potentialTargets(currentBaselineUnit, baselineDamage, baseline);
@@ -1262,7 +1265,10 @@ float projectedRegenerationValue(
 						baseline->battleGetUnitByID(queuedUnit->unitId()));
 			}
 			if(currentBaselineUnit)
+				{
 				baseline->getForUpdate(queuedUnit->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
+				newHorizonsDivineMandate::completeDisciplineActivation(*baseline, queuedUnit->unitId());
+			}
 		}
 	}
 
@@ -1367,7 +1373,10 @@ float projectedCapacityRegenerationValue(
 						forecast->battleGetUnitByID(unitId));
 			}
 			if(currentForecastUnit)
+				{
 				forecast->getForUpdate(unitId)->removeUnitBonus(Bonus::UntilActivationEnds);
+				newHorizonsDivineMandate::completeDisciplineActivation(*forecast, unitId);
+			}
 			if(!baselineForfeits && currentBaselineUnit && currentBaselineUnit->alive())
 			{
 				PotentialTargets potentialTargets(currentBaselineUnit, baselineDamage, baseline);
@@ -1378,7 +1387,10 @@ float projectedCapacityRegenerationValue(
 						baseline->battleGetUnitByID(unitId));
 			}
 			if(currentBaselineUnit)
+				{
 				baseline->getForUpdate(unitId)->removeUnitBonus(Bonus::UntilActivationEnds);
+				newHorizonsDivineMandate::completeDisciplineActivation(*baseline, unitId);
+			}
 		}
 	}
 	return score;
@@ -1447,7 +1459,10 @@ float projectedVampirismValue(
 							forecast->battleGetUnitByID(queuedUnit->unitId()));
 				}
 
+				{
 				forecast->getForUpdate(queuedUnit->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
+				newHorizonsDivineMandate::completeDisciplineActivation(*forecast, queuedUnit->unitId());
+			}
 			}
 		}
 		return value;
@@ -3513,7 +3528,45 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 		focusFireSnapshotPercent, environment, damageCache, realBattle);
 	// Second Wind starts its extra activation immediately, expiring the grant
 	// without another Morale roll. Preserve that existing action economy.
-	if(command == HeroCommand::SECOND_WIND || !environment || !realBattle || !battle.getBattle())
+	if(!environment || !realBattle || !battle.getBattle())
+		return baseValue;
+	const auto crownOrder = battle.battlePrepareHeroOrderState(side, command, targetIds);
+	if(crownOrder && !crownOrder->crownAndAltarRecipientUnitIds.empty())
+	{
+		auto boosted = std::make_shared<HypotheticBattle>(environment, realBattle);
+		auto ordinary = std::make_shared<HypotheticBattle>(environment, realBattle);
+		auto boostedOrder = *crownOrder;
+		auto ordinaryOrder = *crownOrder;
+		ordinaryOrder.crownAndAltarRecipientUnitIds.clear();
+		ordinaryOrder.crownAndAltarFocusFirePercent = 0;
+		ordinaryOrder.crownAndAltarHoldReductionBasisPoints = 0;
+		if(command == HeroCommand::SECOND_WIND)
+			boostedOrder.secondWindActive = ordinaryOrder.secondWindActive = true;
+		boosted->setHeroOrderState(side, boostedOrder);
+		ordinary->setHeroOrderState(side, ordinaryOrder);
+		if(command == HeroCommand::FOCUS_FIRE)
+		{
+			const auto mark = battle.battlePrepareFocusFireState(side, targetIds.front());
+			if(mark)
+			{
+				boosted->setFocusFireState(side, *mark);
+				ordinary->setFocusFireState(side, *mark);
+			}
+		}
+		DamageCache boostedDamage;
+		DamageCache ordinaryDamage;
+		boostedDamage.buildDamageCache(boosted, side);
+		ordinaryDamage.buildDamageCache(ordinary, side);
+		for(const auto id : crownOrder->crownAndAltarRecipientUnitIds)
+		{
+			const auto * boostedUnit = boosted->battleGetUnitByID(id);
+			const auto * ordinaryUnit = ordinary->battleGetUnitByID(id);
+			baseValue += std::max(0.0f,
+				expectedTargetActivationValue(boostedUnit, boostedDamage, boosted)
+					- expectedTargetActivationValue(ordinaryUnit, ordinaryDamage, ordinary));
+		}
+	}
+	if(command == HeroCommand::SECOND_WIND)
 		return baseValue;
 	if(newHorizonsDivineMandate::hasSharedPurposePerk(battle.battleGetFightingHero(side)))
 	{
@@ -5290,6 +5343,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						state->battleGetUnitByID(unit->unitId()));
 				state->getForUpdate(unit->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
 				state->completeSwiftNormalActivation(unit->unitId());
+				newHorizonsDivineMandate::completeDisciplineActivation(*state, unit->unitId());
 			}
 
 			firstRound = false;
@@ -5423,7 +5477,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					}
 				}
 				if(ps.command == HeroCommand::NONE && !counterspellNegated
-					&& newHorizonsDivineMandate::hasSharedPurposePerk(hero)
+					&& newHorizonsDivineMandate::needsRecipientCapture(hero)
 					&& isDivineMandateLightSpell(*state, ps.spell->getId()))
 				{
 					auto recipientsTarget = ps.dest;

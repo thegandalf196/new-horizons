@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "BattleResultProcessor.h"
+#include "../../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
 #include "battle/BattleInfo.h"
 
 #include "../CGameHandler.h"
@@ -1139,6 +1140,19 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 		line.appendRawString(" Normal Spell Points as the Metamagic sequence ends with combat.");
 		metamagicRewards.lines.push_back(std::move(line));
 	}
+	std::set<ObjectInstanceID> retainedTrainingHeroes;
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto * hero = (*battle)->battleGetFightingHero(side);
+		const bool retainedDraw = finishingBattle->isDraw()
+			&& gameHandler->gameInfo().getSettings().getBoolean(EGameSettings::HEROES_RETREAT_ON_WIN_WITHOUT_TROOPS);
+		const bool retainedWinner = !finishingBattle->isDraw() && side == finishingBattle->winnerSide;
+		const bool retainedEscape = !finishingBattle->isDraw() && side != finishingBattle->winnerSide
+			&& (result.result == EBattleResult::ESCAPE || result.result == EBattleResult::SURRENDER);
+		if(hero && (retainedDraw || retainedWinner || retainedEscape))
+			retainedTrainingHeroes.insert(hero->id);
+	}
+	resultsApplied.trainingCompletion = newHorizonsTraining::captureCompletion(**battle, retainedTrainingHeroes);
 	//BattleResultsApplied does not end the battle, it only applies most of its consequences
 	gameHandler->sendAndApply(resultsApplied);
 	for(auto & learning : retainedHeroLearning)

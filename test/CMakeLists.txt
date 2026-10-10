@@ -144,6 +144,7 @@ set(test_SRCS
 		map/MapComparer.cpp
 		map/MapScriptTest.cpp
 		map/TinyH3MBuilderTest.cpp
+		map/NewHorizonsStartingDevelopmentTest.cpp
 
 		quest/QuestTest.cpp
 		quest/QuestAssertions.cpp
@@ -285,6 +286,11 @@ set(test_SRCS
 		server/battles/CounterspellPerkTest.cpp
 		server/battles/TransfigureMatterPerkTest.cpp
 		server/battles/NewHorizonsMagicStateTest.cpp
+		server/battles/NewHorizonsWarMachinesPerksTest.cpp
+		server/battles/NewHorizonsSpellcraftTargetDurationTest.cpp
+		server/battles/NewHorizonsCrossSchoolFormulaTest.cpp
+		server/battles/NewHorizonsDefensiveSpecialtyTest.cpp
+		server/battles/NewHorizonsOffensiveSpecialtyTest.cpp
 		server/battles/NewHorizonsMagicFixtureExportTest.cpp
 		server/battles/NewHorizonsMetamagicUIFixtureExportTest.cpp
 		server/battles/NewHorizonsBloodrageUIFixtureExportTest.cpp
@@ -591,6 +597,10 @@ if(ENABLE_BATTLE_AI)
 		server/battles/NewHorizonsThantReanimateSpecialtyTest.cpp
 		server/battles/NewHorizonsSharedPurposeTest.cpp
 		server/battles/NewHorizonsFrailtySpecialtyTest.cpp
+		server/battles/NewHorizonsRecruitmentTrainingTest.cpp
+		server/battles/NewHorizonsDivineDisciplineTest.cpp
+		server/battles/NewHorizonsCrownAndAltarTest.cpp
+		server/battles/NewHorizonsHalonMetamagicTest.cpp
 		battleAI/HeroCommandAITest.cpp
 		battleAI/NewHorizonsGenieSupportAITest.cpp
 		battleAI/NewHorizonsBeneficialCreatureAITest.cpp

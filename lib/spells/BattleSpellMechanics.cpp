@@ -10,11 +10,13 @@
 #include "StdInc.h"
 
 #include "BattleSpellMechanics.h"
+#include "NewHorizonsSpellcraft.h"
 
 #include "Problem.h"
 #include "CSpell.h"
 #include "NewHorizonsSpellAvailability.h"
 #include "NewHorizonsMagic.h"
+#include "NewHorizonsCrossSchoolFormula.h"
 #include "NewHorizonsBlink.h"
 #include "NewHorizonsNaturesWrath.h"
 #include "NewHorizonsPandemonium.h"
@@ -942,6 +944,8 @@ BattleSpellMechanics::BattleSpellMechanics(const IBattleCast * event,
 										   std::shared_ptr<effects::Effects> effects_,
 										   std::shared_ptr<IReceptiveCheck> targetCondition_):
 	BaseMechanics(event),
+	eventSnapshot(dynamic_cast<const BattleCast *>(event)
+		? std::make_optional(*dynamic_cast<const BattleCast *>(event)) : std::nullopt),
 	effects(std::move(effects_)),
 	targetCondition(std::move(targetCondition_))
 {}
@@ -1669,8 +1673,45 @@ std::vector<const CStack *> BattleSpellMechanics::getAffectedStacks(const Target
 	return res;
 }
 
+int64_t BattleSpellMechanics::getTargetAwareEffectValue(const battle::Unit * target) const
+{
+	if(!target || !eventSnapshot || eventSnapshot->hasSpellcraftTargetSnapshot())
+		return getEffectValue();
+	return eventSnapshot->mechanicsForTarget({Destination(target)})->getEffectValue();
+}
+
+size_t BattleSpellMechanics::getTargetedStackCount(const Target & target) const
+{
+	const bool previous = countingSpellTargets;
+	countingSpellTargets = true;
+	const auto restore = vstd::makeScopeGuard([this, previous]() { countingSpellTargets = previous; });
+	const auto spellTarget = transformSpellTarget(target);
+	std::set<uint32_t> ids;
+	effects->forEachEffect(getEffectLevel(), [this, &target, &spellTarget, &ids](const effects::Effect * effect, bool &)
+	{
+		for(const auto & destination : effect->transformTarget(this, target, spellTarget))
+			if(destination.unitValue)
+				ids.insert(destination.unitValue->unitId());
+	});
+	// Hand of Fate targets a random additional living stack even when that
+	// stack's defenses later negate its spill. Count that before any draw.
+	if(owner->getJsonKey() == "new-horizons:handOfFate" && ids.size() == 1)
+		for(const auto * unit : battle()->battleGetAllUnits(false))
+			if(unit->alive() && unit->getPosition().isValid() && !unit->isTurret() && !ids.contains(unit->unitId()))
+				return 2;
+	return ids.size();
+}
+
 void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 {
+	if(eventSnapshot && !eventSnapshot->hasSpellcraftTargetSnapshot()
+		&& mode == Mode::HERO && getHeroCaster()
+		&& getHeroCaster()->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
+			std::string(newHorizonsSpellcraft::CONCENTRATION)))
+	{
+		eventSnapshot->mechanicsForTarget(target)->cast(server, target);
+		return;
+	}
 	// wouldResist may be called from script target preparation or from a
 	// secondary-hit consumer while an authoritative cast is running. Keep its
 	// callback and RNG access strictly inside this cast, including all early
@@ -1748,6 +1789,8 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	sc.metamagicTargetUnitId = (!target.empty() && target.front().unitValue)
 		? target.front().unitValue->unitId() : std::numeric_limits<uint32_t>::max();
 	sc.metamagicManaRefund = getMetamagicManaRefund();
+	sc.extendedSpell = sc.castByHero
+		&& newHorizonsSpellcraft::extendAvailable(*battle()->getBattle(), casterSide, *owner, getEffectLevel());
 
 	sc.activeCast = false;
 	sc.temporalFieldCast = isMassSlow();
@@ -1814,6 +1857,8 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	// Capture this before beforeCast can turn a successful Magic Mirror redirect
 	// into Mode::MAGIC_MIRROR. The reflected effect is not a second enemy hero cast.
 	const bool originalHeroCast = sc.activeCast && sc.castByHero && casterHero && validHeroSide;
+	if(originalHeroCast && casterHero == battleInfo->getSideHero(casterSide))
+		sc.crossSchoolFormula = newHorizonsCrossSchoolFormula::acceptedReceipt(*battleInfo, casterSide, getSpellId());
 	const BattleSide originalCasterSide = casterSide;
 	SpellResponseState spellResponseAfterCast;
 	bool consumeSpellResponse = false;
@@ -2526,6 +2571,7 @@ void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast &
 	if(newHorizonsMassRegeneration)
 		filterMassRegenerationTargets(effectsToApply);
 
+
 	auto unitTargets = collectTargets();
 
 	//process them
@@ -2709,6 +2755,14 @@ const battle::Unit * BattleSpellMechanics::getRandomUnit(vstd::RNG & rng, const 
 
 void BattleSpellMechanics::castEval(ServerCallback * server, const Target & target)
 {
+	if(eventSnapshot && !eventSnapshot->hasSpellcraftTargetSnapshot()
+		&& mode == Mode::HERO && getHeroCaster()
+		&& getHeroCaster()->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
+			std::string(newHorizonsSpellcraft::CONCENTRATION)))
+	{
+		eventSnapshot->mechanicsForTarget(target)->castEval(server, target);
+		return;
+	}
 	clearPandemoniumDebuffs();
 	const auto clearPandemoniumSnapshot = vstd::makeScopeGuard([this]()
 	{
@@ -2756,7 +2810,12 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 		consumeProjectedResponse = projectedResponseAfterCast.consumeAt(projectedRound);
 	}
 	if(completedHeroProjection)
+	{
 		registerOverwhelmingFormulaCast(server);
+		if(projectedHeroCaster == projectedBattleInfo->getSideHero(projectedCasterSide))
+			if(const auto receipt = newHorizonsCrossSchoolFormula::acceptedReceipt(*projectedBattleInfo, projectedCasterSide, getSpellId()))
+				server->recordCrossSchoolFormulaCast(projectedCasterSide, *receipt);
+	}
 	if(newHorizonsPandemonium::enabled(*this))
 		capturePandemoniumDebuffs();
 	Target spellTarget = transformSpellTarget(target);
@@ -2766,6 +2825,9 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 	if(newHorizonsMassRegeneration)
 		filterMassRegenerationTargets(effectsToApply);
 
+	if(completedHeroProjection
+		&& newHorizonsSpellcraft::extendAvailable(*projectedBattleInfo, projectedCasterSide, *owner, getEffectLevel()))
+		server->recordExtendSpellCast(projectedCasterSide);
 	auto unitTargets = collectTargets();
 
 	auto selector = std::bind(&BattleSpellMechanics::counteringSelector, this, _1);

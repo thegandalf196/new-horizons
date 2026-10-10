@@ -77,6 +77,8 @@ public:
 	template<typename Handler>
 	void serialize(Handler & h)
 	{
+		if(h.saving)
+			validateTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING));
 		h & static_cast<CGObjectInstance &>(*this);
 		h & static_cast<CBonusSystemNode &>(*this);
 		h & static_cast<CCreatureSet &>(*this);

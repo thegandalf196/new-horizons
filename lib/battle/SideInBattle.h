@@ -31,6 +31,7 @@
 #include "HeroActionAllowanceState.h"
 #include "RelentlessAssaultState.h"
 #include "SpellResponseState.h"
+#include "../spells/NewHorizonsCrossSchoolFormula.h"
 #include "OverwhelmingFormulaState.h"
 #include "PerfectFortuneState.h"
 #include "LuckSerendipityState.h"
@@ -198,6 +199,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	int32_t firstRoundMoraleModifier = 0;
 	// Counterpressure's side-owned, round-bounded next-spell response.
 	SpellResponseState spellResponseState;
+	int32_t extendSpellLastRound = -1;
 	// Round in which Battlefield Mastery awarded its first eligible Wait/Defend.
 	// BattleInfo owns the append-only binary representation.
 	int32_t battlecraftMasteryAwardRound = -1;
@@ -210,6 +212,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	LuckSerendipityState luckSerendipity;
 	bool rebirthChainUsed = false;
 	bool phoenixSparkUsed = false;
+	newHorizonsCrossSchoolFormula::State crossSchoolFormula;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);
@@ -380,8 +383,22 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	const CArmedInstance * getArmy() const;
 	const CGHeroInstance * getHero() const;
 
+	template <typename Handler> void validateMetamagicCapacitySerialization(Handler & h) const
+	{
+		const uint8_t maximum = h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC_CAPACITY) ? 4 : 3;
+		if(metamagicUsesConsumed > maximum)
+			throw std::runtime_error("Metamagic consumption is not representable in this side format");
+		// A pending Grand continuation has two sequence spells, unlike the
+		// fourth-use reservation made by a new base Hero spell.
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC_CAPACITY)
+			&& metamagicUsesConsumed == 3 && metamagicPendingCount != 0 && metamagicSequenceSpells.size() == 1)
+			throw std::runtime_error("Cannot discard pending fourth Metamagic use");
+	}
+
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateMetamagicCapacitySerialization(h);
 		for(const auto & order : orderStates)
 			order.validateRoyalStandardSerialization(h);
 		heroActionAllowances.validateSharedPurposeSerialization(h);
@@ -391,6 +408,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			throw std::runtime_error("Cannot discard Rebirth Chain combat use");
 		if(h.saving)
 			armorerDefiant.validateSerialization(h);
+		if(h.saving)
+			crossSchoolFormula.validateSerialization(h);
 		if(h.saving)
 			perfectFortune.validateSerialization(h);
 		if(h.saving)
@@ -407,6 +426,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		if(h.saving && firstRoundMoraleModifier != 0
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_FORCED_MARCH))
 			throw std::runtime_error("Cannot discard first-round battle Morale modifier");
+		if(h.saving && (extendSpellLastRound < -1
+			|| (extendSpellLastRound >= 0 && !h.hasFeature(Handler::Version::NEW_HORIZONS_SPELLCRAFT_TARGET_DURATION))))
+			throw std::runtime_error("Invalid or unsupported Extend Spell receipt");
 		if(h.saving && spellResponseState.hasState()
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SPELL_RESPONSE))
 			throw std::runtime_error("Cannot discard Spell Response state in an older battle format");
@@ -531,7 +553,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			h & metamagicFirstTargetUnitId;
 			h & metamagicSequenceSpells;
 			h & metamagicFirstCounterspellNegated;
-			if(!h.saving && (metamagicUsesConsumed > 3 || metamagicPendingCount > 2
+			if(!h.saving)
+				validateMetamagicCapacitySerialization(h);
+			if(!h.saving && (metamagicPendingCount > 2
 				|| metamagicSequenceSpells.size() > 3
 				|| (metamagicPendingCount != 0 && (!metamagicFirstSpell.hasValue() || metamagicSequenceSpells.empty()))
 				|| (metamagicPendingCount == 0 && (!metamagicSequenceSpells.empty() || metamagicFirstSpell.hasValue()))))
@@ -742,6 +766,14 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			h & overwhelmingFormulaState;
 		else if(!h.saving)
 			overwhelmingFormulaState = {};
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SPELLCRAFT_TARGET_DURATION))
+		{
+			h & extendSpellLastRound;
+			if(!h.saving && extendSpellLastRound < -1)
+				throw std::runtime_error("Invalid Extend Spell receipt");
+		}
+		else if(!h.saving)
+			extendSpellLastRound = -1;
 		h & perfectFortune;
 		h & armorerDefiant;
 		h & luckSerendipity;
@@ -758,6 +790,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			validateDoubleCommandState();
 			validatePreCombatOrderState();
 		}
+		h & crossSchoolFormula;
 	}
 
 	void clearMetamagicSequence()

@@ -40,6 +40,7 @@ public:
 	void visitSetResearchedSpells(SetResearchedSpells & pack) override;
 	void visitSetNewHorizonsSageGuildVisit(SetNewHorizonsSageGuildVisit & pack) override;
 	void visitFoWChange(FoWChange & pack) override;
+	void visitRecruitTrainedStack(RecruitTrainedStack & pack) override;
 	void visitChangeStackCount(ChangeStackCount & pack) override;
 	void visitSetStackType(SetStackType & pack) override;
 	void visitEraseStack(EraseStack & pack) override;
@@ -96,6 +97,7 @@ public:
 	void visitBattleUnitsChanged(BattleUnitsChanged & pack) override;
 	void visitBattleObstaclesChanged(BattleObstaclesChanged & pack) override;
 	void visitCatapultAttack(CatapultAttack & pack) override;
+	void visitBattleStructureRepaired(BattleStructureRepaired & pack) override;
 	void visitEndAction(EndAction & pack) override;
 	void visitPackageApplied(PackageApplied & pack) override;
 	void visitQueryResolved(QueryResolved & pack) override;

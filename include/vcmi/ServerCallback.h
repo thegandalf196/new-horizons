@@ -20,6 +20,8 @@ namespace vstd
 	class RNG;
 }
 
+namespace newHorizonsCrossSchoolFormula { struct Receipt; }
+
 namespace battle
 {
 	class Unit;
@@ -77,7 +79,10 @@ public:
 	virtual void apply(CatapultAttack & pack) = 0;
 
 	/// Records a completed hero spell in a detached projection; live callbacks do not mutate battle state.
+	virtual void recordCrossSchoolFormulaCast(BattleSide, const newHorizonsCrossSchoolFormula::Receipt &) {}
 	virtual void recordCompletedHeroSpellCast(BattleSide side) { (void)side; }
+	/// Detached accepted-cast receipt; live state is changed only by BattleSpellCast.
+	virtual void recordExtendSpellCast(BattleSide) {}
 	/// Records the saved level of a completed hero spell in a detached projection.
 	/// The default preserves older callbacks while remaining a no-op for live state.
 	virtual void recordCompletedHeroSpellCast(BattleSide side, int32_t spellLevel)

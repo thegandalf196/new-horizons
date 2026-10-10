@@ -10,6 +10,7 @@
 #pragma once
 
 #include "CStackBasicDescriptor.h"
+#include "../../entities/creature/NewHorizonsRecruitmentTraining.h"
 
 #include "CCreatureHandler.h"
 #include "bonuses/BonusCache.h"
@@ -44,6 +45,7 @@ class DLL_LINKAGE CStackInstance : public CBonusSystemNode, public CStackBasicDe
 		return cb;
 	}
 
+	newHorizonsTraining::Receipt trainingReceipt;
 	TExpType totalExperience; //commander needs same amount of exp as hero
 public:
 	struct RandomStackInfo
@@ -54,6 +56,20 @@ public:
 	// helper variable used during loading map, when object (hero or town) have creatures that must have same alignment.
 	std::optional<RandomStackInfo> randomStack;
 
+	const newHorizonsTraining::Receipt & getTrainingReceipt() const { return trainingReceipt; }
+	void setTrainingReceipt(const newHorizonsTraining::Receipt & receipt);
+	void validateTrainingSerialization(bool supported) const
+	{
+		trainingReceipt.validate();
+		if(!supported && !trainingReceipt.empty())
+			throw std::runtime_error("Cannot discard strategic stack training");
+		if(!supported)
+			for(const auto & bonus : getExportedBonusList())
+				if(bonus->stacking == "new-horizons:fieldInstructor"
+					|| bonus->stacking == "new-horizons:drillSergeant"
+					|| bonus->stacking == "new-horizons:reinforcementDrill")
+					throw std::runtime_error("Cannot discard strategic training bonus");
+	}
 	CArmedInstance * getArmy();
 	const CArmedInstance * getArmy() const; //stack must be part of some army, army must be part of some object
 	void setArmy(CArmedInstance * ArmyObj);
@@ -65,6 +81,12 @@ public:
 	template<typename Handler>
 	void serialize(Handler & h)
 	{
+		if(h.saving)
+		{
+			validateTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING));
+			for(const auto & bonus : getExportedBonusList())
+				bonus->validateTrainingSerialization(h);
+		}
 		h & static_cast<CBonusSystemNode &>(*this);
 		h & static_cast<CStackBasicDescriptor &>(*this);
 		h & static_cast<CArtifactSet &>(*this);
@@ -73,6 +95,9 @@ public:
 		h & dummyID;
 
 		h & totalExperience;
+		h & trainingReceipt;
+		if(!h.saving)
+			setTrainingReceipt(trainingReceipt);
 	}
 
 	void serializeJson(JsonSerializeFormat & handler);

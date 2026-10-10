@@ -69,12 +69,14 @@ public:
 	virtual void visitHeroRecruited(HeroRecruited & pack) {}
 	virtual void visitGiveHero(GiveHero & pack) {}
 	virtual void visitCatapultAttack(CatapultAttack & pack) {}
+	virtual void visitBattleStructureRepaired(BattleStructureRepaired & pack) {}
 	virtual void visitOpenWindow(OpenWindow & pack) {}
 	virtual void visitNewObject(NewObject & pack) {}
 	virtual void visitSetAvailableArtifacts(SetAvailableArtifacts & pack) {}
 	virtual void visitSetHouseOfWisdomScrolls(SetHouseOfWisdomScrolls & pack) {}
 	virtual void visitSetNewHorizonsAdventureSpellUnlock(SetNewHorizonsAdventureSpellUnlock & pack) {}
 	virtual void visitNewArtifact(NewArtifact & pack) {}
+	virtual void visitRecruitTrainedStack(RecruitTrainedStack & pack) {}
 	virtual void visitChangeStackCount(ChangeStackCount & pack) {}
 	virtual void visitSetStackType(SetStackType & pack) {}
 	virtual void visitEraseStack(EraseStack & pack) {}

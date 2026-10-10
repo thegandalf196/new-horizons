@@ -232,22 +232,38 @@ public:
 	/// Replaces contents of this gamestate with a snapshot made by saveToMemory().
 	/// Identity of this object is preserved, so all shared_ptr's to it stay valid.
 	void loadFromMemory(std::vector<std::byte> data);
+	void validateCrossSchoolFormulaSerialization(bool supported) const;
 	void validateNewHorizonsProspectorSerialization(bool supported) const;
 	void validateNewHorizonsScholarSerialization(bool supported) const;
 	void validateNewHorizonsRecruitersContactsSerialization(bool supported) const;
+	void validateRecruitmentTrainingSerialization(bool supported) const;
+	void validateExtendSpellSerialization(bool supported) const;
 	void validateNewHorizonsSageSerialization(bool supported) const;
 	void validateNewHorizonsMagnateSerialization(bool supported) const;
 	void validateNewHorizonsHasteSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsThantReanimateSerialization(bool supported) const;
 	void validateNewHorizonsFrailtySpecialtySerialization(bool supported) const;
 	void validateNewHorizonsAenainFrailtySpecialtySerialization(bool supported) const;
+	void validateNewHorizonsDefensiveStartSpecialtySerialization(bool supported) const;
+	void validateNewHorizonsOffensiveStartSpecialtySerialization(bool supported) const;
+	void validateNewHorizonsStartingDevelopmentSerialization(bool supported) const;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
 		if(h.saving)
+			validateRecruitmentTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING));
+		if(h.saving)
 			validateNewHorizonsFrailtySpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
 		if(h.saving)
 			validateNewHorizonsAenainFrailtySpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_AENAIN_FRAILTY_SPECIALTY));
+		if(h.saving)
+			validateNewHorizonsDefensiveStartSpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFENSIVE_START_SPECIALTIES));
+		if(h.saving)
+			validateNewHorizonsOffensiveStartSpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES));
+		if(h.saving)
+			validateCrossSchoolFormulaSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_CROSS_SCHOOL_FORMULA));
+		if(h.saving)
+			validateNewHorizonsStartingDevelopmentSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
 		if(h.saving)
 			validateNewHorizonsThantReanimateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
 		if(h.saving)
@@ -260,6 +276,8 @@ public:
 			validateNewHorizonsScholarSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LEARNING_SCHOLAR));
 		if(h.saving)
 			validateNewHorizonsRecruitersContactsSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITERS_CONTACTS));
+		if(h.saving)
+			validateExtendSpellSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SPELLCRAFT_TARGET_DURATION));
 		if(h.saving)
 			validateNewHorizonsSageSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SAGE_GUILD_VISITS));
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN)
@@ -327,11 +345,18 @@ public:
 		{
 			h & heroDevelopmentRules;
 			if(!h.saving)
+				newHorizonsHeroes::validateStartingDevelopmentSerialization(heroDevelopmentRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
+			if(!h.saving)
 			{
 				newHorizonsHeroes::validateFrailtySpecialtySerialization(heroDevelopmentRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
 				newHorizonsHeroes::validateAenainFrailtySpecialtySerialization(heroDevelopmentRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_AENAIN_FRAILTY_SPECIALTY));
+				newHorizonsHeroes::validateDefensiveStartSpecialtySerialization(heroDevelopmentRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_DEFENSIVE_START_SPECIALTIES));
+				newHorizonsHeroes::validateOffensiveStartSpecialtySerialization(heroDevelopmentRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES));
 				newHorizonsHeroes::validateReanimateSpecialtySerialization(heroDevelopmentRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
 				newHorizonsHeroes::validateHasteSpecialtySerialization(heroDevelopmentRules,

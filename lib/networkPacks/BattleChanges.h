@@ -8,6 +8,7 @@
  *
  */
 #pragma once
+#include "../entities/creature/NewHorizonsRecruitmentTraining.h"
 
 #include "../json/JsonNode.h"
 #include "../battle/CUnitState.h"
@@ -68,6 +69,13 @@ public:
 			throw std::runtime_error("Cannot discard Overwatch state in an older unit update format");
 	}
 
+	template <typename Handler> void validateTrainingSerialization(Handler & h) const
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING)
+			&& newHorizonsTraining::containsTrainingBonus(data))
+			throw std::runtime_error("Cannot discard training bonus in an older unit update");
+	}
+
 	template <typename Handler> void validateFrozenSerialization(Handler & h) const
 	{
 		const auto & state = data["state"];
@@ -89,6 +97,9 @@ public:
 			return (creature.isString() && !creature.String().empty())
 				|| (creature.isNumber() && creature.Integer() >= 0);
 		};
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SPELLCRAFT_TARGET_DURATION)
+			&& state["phantomRoundsRemaining"].isNumber() && state["phantomRoundsRemaining"].Integer() > 3)
+			throw std::runtime_error("Cannot discard extended Phantom lifetime in an older unit update");
 		const auto & rounds = state["battleFormRoundsRemaining"];
 		const auto & pending = state["battleFormRestorationPending"];
 		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SAFE_BATTLE_FORMS)
@@ -145,6 +156,8 @@ public:
 		if(h.saving)
 			validateVeteranCohesionSerialization(h);
 		if(h.saving)
+			validateTrainingSerialization(h);
+		if(h.saving)
 			validateFrozenSerialization(h);
 		if(h.saving)
 			validateOverwatchSerialization(h);
@@ -188,6 +201,8 @@ public:
 			validateOverwatchSerialization(h);
 		if(!h.saving)
 			validateFrozenSerialization(h);
+		if(!h.saving)
+			validateBattleFormSerialization(h);
 		if(!h.saving)
 			validateConfusionSerialization(h);
 	}

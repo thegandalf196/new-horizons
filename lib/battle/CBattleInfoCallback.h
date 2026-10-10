@@ -21,6 +21,7 @@
 #include "BattleUnitTurnReason.h"
 #include "ReducedExtraActivationState.h"
 #include "ArmorerDefiantState.h"
+#include "NewHorizonsWarMachines.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 #include "../spells/SpellCostBreakdown.h"
 
@@ -132,6 +133,12 @@ public:
 	int32_t battleGetActivationOutputPercent(const battle::Unit * unit) const;
 	/// First Aid Tent raw healing after activation output modifiers, before target HP caps.
 	int64_t battleGetFirstAidHealingOutput(const battle::Unit * healer) const;
+	bool battleHasWarMachinesPerk(const battle::Unit * machine, const std::string & perk) const;
+	bool battleCanRepairWarMachine(const battle::Unit * healer, const battle::Unit * target) const;
+	FirstAidStructureRepairPreview battleGetFirstAidStructureRepairPreview(
+		const battle::Unit * healer, EWallPart part) const;
+	BreachmakerPreview battleGetBreachmakerPreview(const battle::Unit * attacker,
+		EWallPart part, int32_t finalDamage) const;
 	bool battleCanHealWithFirstAidTent(const battle::Unit * healer, const battle::Unit * target) const;
 	int64_t battleGetBattlefieldMedicRestorationBudget(const battle::Unit * healer, const battle::Unit * target) const;
 	FirstAidHealingPreview battleGetFirstAidHealingPreview(const battle::Unit * healer, const battle::Unit * target) const;

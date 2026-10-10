@@ -976,7 +976,7 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 			{
 				case CSkill::CombatStatusProvider::METAMAGIC_USES:
 				{
-					const int total = newHorizonsMagic::metamagicRank(hero);
+					const int total = newHorizonsMagic::metamagicCapacity(hero);
 					if(total <= 0)
 						continue;
 					const int consumed = std::clamp(battleCallback->battleMetamagicUsesConsumed(side), 0, total);

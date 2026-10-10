@@ -103,6 +103,7 @@ public:
 	/// swaps the gate to its final sprite for the given state; called by the bridge transition animation
 	void applyGateState(const EGateState state);
 	void stackIsCatapulting(const CatapultAttack & ca);
+	void refreshWallPiece(EWallPart part);
 
 	/// call-ins from other battle controllers
 	void showAbsoluteObstacles(Canvas & canvas);

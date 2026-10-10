@@ -239,7 +239,15 @@ public:
 	void setDeploymentState(const BattleDeploymentState & state) override;
 	const ReducedExtraActivationState & getReducedExtraActivationState(BattleSide side) const override;
 	void setReducedExtraActivationState(BattleSide side, const ReducedExtraActivationState & state) override;
+	const newHorizonsCrossSchoolFormula::State & getCrossSchoolFormulaState(BattleSide side) const override
+	{
+		static const newHorizonsCrossSchoolFormula::State empty;
+		return side == BattleSide::ATTACKER || side == BattleSide::DEFENDER ? crossSchoolFormulaStates.at(side) : empty;
+	}
+	void setCrossSchoolFormulaState(BattleSide side, const newHorizonsCrossSchoolFormula::State & state) override;
 	const SpellResponseState & getSpellResponseState(BattleSide side) const override;
+	int32_t getExtendSpellLastRound(BattleSide side) const override { return extendSpellRounds.at(side); }
+	void consumeExtendSpell(BattleSide side) override;
 	void setSpellResponseState(BattleSide side, const SpellResponseState & state) override;
 	const OverwhelmingFormulaState & getOverwhelmingFormulaState(BattleSide side) const override;
 	void setOverwhelmingFormulaState(BattleSide side, const OverwhelmingFormulaState & state) override;
@@ -570,7 +578,9 @@ private:
 	void finishProjectedHeroAction(BattleSide side, const ProjectedOrderAllowance & prepared);
 	std::map<BattleSide, std::optional<FocusFireState>> focusFireStates;
 	BattleSideArray<RelentlessAssaultState> relentlessAssaultStates;
+	BattleSideArray<newHorizonsCrossSchoolFormula::State> crossSchoolFormulaStates;
 	BattleSideArray<SpellResponseState> spellResponseStates;
+	BattleSideArray<int32_t> extendSpellRounds;
 	BattleSideArray<OverwhelmingFormulaState> overwhelmingFormulaStates;
 	BattleSideArray<int32_t> bloodrageRanks;
 	BattleSideArray<int32_t> bloodrageDamagePercents;
@@ -595,7 +605,9 @@ private:
 
 		void complain(const std::string & problem) override;
 		bool describeChanges() const override;
+		void recordCrossSchoolFormulaCast(BattleSide side, const newHorizonsCrossSchoolFormula::Receipt & receipt) override;
 		void recordCompletedHeroSpellCast(BattleSide side) override;
+		void recordExtendSpellCast(BattleSide side) override { owner->consumeExtendSpell(side); }
 		void recordCompletedHeroSpellCast(BattleSide side, int32_t spellLevel) override;
 
 		vstd::RNG * getRNG() override;

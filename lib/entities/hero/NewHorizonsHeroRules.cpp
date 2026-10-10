@@ -114,32 +114,54 @@ void validateOptionalDamageSpellSpecialtyRules(const JsonNode & rules)
 
 void validateNonDamageSpellSpecialtyRules(const JsonNode & rules)
 {
-	fields(rules, {"version", "componentPercent", "spells", "aenainFrailtyReplacement"});
+	fields(rules, {"version", "componentPercent", "spells", "aenainFrailtyReplacement", "defensiveStartReplacements", "offensiveStartReplacements"});
 	const auto & aenain = rules["aenainFrailtyReplacement"];
 	require(!rules.Struct().contains("aenainFrailtyReplacement") || aenain.isBool(),
 		"Aenain Frailty replacement flag");
+	const auto & defensive = rules["defensiveStartReplacements"];
+	require(!rules.Struct().contains("defensiveStartReplacements") || defensive.isBool(),
+		"defensive starting specialty replacement flag");
+	const auto & offensive = rules["offensiveStartReplacements"];
+	require(!rules.Struct().contains("offensiveStartReplacements") || offensive.isBool(),
+		"offensive starting specialty replacement flag");
 	require(integer(rules["version"], 1, 1), "non-damage-spell specialty version");
 	require(integer(rules["componentPercent"], 20, 20), "non-damage-spell specialty component percentage");
 	const auto & spells = rules["spells"];
-	require(spells.isVector() && !spells.Vector().empty() && spells.Vector().size() <= 6,
-		"version 1 non-damage spell specialties must list one to six supported spells");
+	require(spells.isVector() && !spells.Vector().empty() && spells.Vector().size() <= 10,
+		"version 1 non-damage spell specialties must list one to ten supported spells");
 	if(aenain.isBool() && aenain.Bool())
 		require(std::ranges::any_of(spells.Vector(), [](const JsonNode & spell)
 		{
 			return spell.isString() && spell.String() == "new-horizons:frailty";
 		}), "Aenain replacement requires Frailty specialty rules");
+	if(defensive.isBool() && defensive.Bool())
+		for(const auto key : {"new-horizons:hydrasVitality", "new-horizons:guardianSpirit"})
+			require(std::ranges::any_of(spells.Vector(), [key](const JsonNode & spell)
+			{
+				return spell.isString() && spell.String() == key;
+			}), "defensive replacements require both authored spell specialty identities");
+	if(offensive.isBool() && offensive.Bool())
+		for(const auto key : {"new-horizons:crusade", "new-horizons:focusMagic"})
+			require(std::ranges::any_of(spells.Vector(), [key](const JsonNode & spell)
+			{
+				return spell.isString() && spell.String() == key;
+			}), "offensive replacements require both authored spell specialty identities");
 	std::set<int> seen;
 	for(const auto & spell : spells.Vector())
 	{
 		require(spell.isString()
 			&& (spell.String() == "core:cure" || spell.String() == "core:resurrection"
 				|| spell.String() == "core:bless" || spell.String() == "core:haste"
-				|| spell.String() == "new-horizons:reanimate" || spell.String() == "new-horizons:frailty"),
+				|| spell.String() == "new-horizons:reanimate" || spell.String() == "new-horizons:frailty"
+				|| spell.String() == "new-horizons:hydrasVitality" || spell.String() == "new-horizons:guardianSpirit"
+				|| spell.String() == "new-horizons:crusade" || spell.String() == "new-horizons:focusMagic"),
 			"Unsupported version 1 non-damage spell specialty");
 		const int spellId = resolve("spell", spell.String());
 		require(spellId == SpellID::CURE || spellId == SpellID::RESURRECTION
 			|| spellId == SpellID::BLESS || spellId == SpellID::HASTE
-			|| spell.String() == "new-horizons:reanimate" || spell.String() == "new-horizons:frailty",
+			|| spell.String() == "new-horizons:reanimate" || spell.String() == "new-horizons:frailty"
+			|| spell.String() == "new-horizons:hydrasVitality" || spell.String() == "new-horizons:guardianSpirit"
+			|| spell.String() == "new-horizons:crusade" || spell.String() == "new-horizons:focusMagic",
 			"unknown version 1 non-damage spell specialty");
 		require(seen.insert(spellId).second, "duplicate version 1 non-damage spell specialty");
 	}
@@ -243,7 +265,40 @@ void validateStartingSkills(const JsonNode & startingSkills, bool requireMigrati
 	if(startingSkills.isNull())
 		return;
 
-	fields(startingSkills, {"factionSkills", "legacyAliases", "legacySkillMigrations", "magic", "might"});
+	fields(startingSkills, {"factionSkills", "legacyAliases", "legacySkillMigrations", "magic", "might", "startingDevelopmentProfiles"});
+	if(startingSkills.Struct().contains("startingDevelopmentProfiles"))
+	{
+		const auto & profiles = startingSkills["startingDevelopmentProfiles"];
+		require(profiles.isStruct(), "starting development profiles object");
+		std::set<int> heroes;
+		for(const auto & [hero, profile] : profiles.Struct())
+		{
+			const auto id = resolve(HeroTypeID::entityType(), hero);
+			require(HeroTypeID::encode(id) == hero && heroes.insert(id).second, "canonical unique starting hero");
+			fields(profile, {"skills", "startingPerks"});
+			require(profile["skills"].isVector() && profile["skills"].Vector().size() == 2,
+				"exactly two explicit starting skills");
+			std::set<int> skills;
+			for(const auto & skill : profile["skills"].Vector())
+			{
+				fields(skill, {"skill", "rank"});
+				require(skill["skill"].isString(), "starting skill identifier");
+				const auto name = skill["skill"].String();
+				const auto skillID = resolve(SecondarySkill::entityType(), name);
+				require(SecondarySkill::encode(skillID) == name && name.starts_with("new-horizons:")
+					&& skills.insert(skillID).second, "canonical unique New Horizons starting skill");
+				require(integer(skill["rank"], MasteryLevel::BASIC, MasteryLevel::ADVANCED), "starting skill rank");
+			}
+			require(profile["startingPerks"].isVector() && profile["startingPerks"].Vector().size() == 1,
+				"one explicit starting Basic perk");
+			const auto & perk = profile["startingPerks"].Vector().front();
+			fields(perk, {"skill", "perk"});
+			require(perk["skill"].isString() && perk["perk"].isString(), "starting perk identifiers");
+			const auto parent = resolve(SecondarySkill::entityType(), perk["skill"].String());
+			require(skills.contains(parent) && perk["perk"].String().starts_with(perk["skill"].String() + "."),
+				"starting perk parent installed");
+		}
+	}
 	const auto & factionSkills = startingSkills["factionSkills"];
 	require(factionSkills.isStruct() && !factionSkills.Struct().empty(), "faction starting skills");
 	std::set<int> uniqueFactionSkills;
@@ -543,6 +598,96 @@ void validateAenainFrailtySpecialtySerialization(const JsonNode & rules, bool su
 	const auto & specialties = rules["nonDamageSpellSpecialties"];
 	if(!supported && specialties.isStruct() && specialties.Struct().contains("aenainFrailtyReplacement"))
 		throw std::runtime_error("Aenain Frailty specialty rules require the new save format");
+}
+
+void validateDefensiveStartSpecialtySerialization(const JsonNode & rules, bool supported)
+{
+	const auto & specialties = rules["nonDamageSpellSpecialties"];
+	const auto & spells = specialties["spells"];
+	const bool hasNewSpell = spells.isVector() && std::ranges::any_of(spells.Vector(), [](const JsonNode & spell)
+	{
+		return spell.isString() && (spell.String() == "new-horizons:hydrasVitality"
+			|| spell.String() == "new-horizons:guardianSpirit");
+	});
+	if(!supported && ((specialties.isStruct() && specialties.Struct().contains("defensiveStartReplacements")) || hasNewSpell))
+		throw std::runtime_error("Defensive starting specialty rules require the new save format");
+}
+
+void validateOffensiveStartSpecialtySerialization(const JsonNode & rules, bool supported)
+{
+	const auto & specialties = rules["nonDamageSpellSpecialties"];
+	const auto & spells = specialties["spells"];
+	const bool hasNewSpell = spells.isVector() && std::ranges::any_of(spells.Vector(), [](const JsonNode & spell)
+	{
+		return spell.isString() && (spell.String() == "new-horizons:crusade"
+			|| spell.String() == "new-horizons:focusMagic");
+	});
+	if(!supported && ((specialties.isStruct() && specialties.Struct().contains("offensiveStartReplacements")) || hasNewSpell))
+		throw std::runtime_error("Offensive starting specialty rules require the new save format");
+}
+
+void validateStartingDevelopmentSerialization(const JsonNode & rules, bool supported)
+{
+	const auto & starts = rules["startingSkills"];
+	if(!supported && starts.isStruct() && starts.Struct().contains("startingDevelopmentProfiles"))
+		throw std::runtime_error("Starting development profiles require the new save format");
+}
+
+std::optional<StartingDevelopmentProfile> startingDevelopmentProfile(
+	const JsonNode & rules, const PerkState & perkState, HeroTypeID hero, HeroClassID heroClass)
+{
+	if(!usesRules(rules) || !rules["startingSkills"].isStruct())
+		return std::nullopt;
+	const auto & starts = rules["startingSkills"];
+	if(!starts.Struct().contains("startingDevelopmentProfiles"))
+		return std::nullopt;
+	validateStartingSkills(starts, false);
+	const auto & profiles = starts["startingDevelopmentProfiles"].Struct();
+	const auto found = profiles.find(HeroTypeID::encode(hero.getNum()));
+	if(found == profiles.end())
+		return std::nullopt;
+	const auto * definition = heroClass.toHeroClass();
+	require(definition != nullptr, "starting hero class");
+	const auto ownFaction = factionSkill(rules, definition->faction);
+	require(ownFaction.has_value() && usesSkillOfferWeights(rules), "captured starting faction and class weights");
+	StartingDevelopmentProfile result;
+	bool hasFaction = false;
+	for(const auto & entry : found->second["skills"].Vector())
+	{
+		const SecondarySkill skill(SecondarySkill::decode(entry["skill"].String()));
+		const auto rank = static_cast<ui8>(entry["rank"].Integer());
+		if(skill == *ownFaction)
+		{
+			require(rank == MasteryLevel::BASIC, "Basic starting faction skill");
+			hasFaction = true;
+		}
+		else
+		{
+			const auto weight = skillOfferWeight(rules, skill);
+			require(weight && *weight > 0 && !isExcludedSkill(rules, skill)
+				&& !isFactionSkill(rules, skill), "class-legal generic starting parent");
+		}
+		result.skills.emplace_back(skill, rank);
+	}
+	require(hasFaction, "own starting faction skill");
+	auto proposed = perkState;
+	for(const auto & entry : found->second["startingPerks"].Vector())
+	{
+		const auto parent = entry["skill"].String();
+		const auto perk = entry["perk"].String();
+		const SecondarySkill parentID(SecondarySkill::decode(parent));
+		const auto installed = std::ranges::find_if(result.skills, [parentID](const auto & skill)
+		{
+			return skill.first == parentID;
+		});
+		const auto selected = perkDefinition(perkState.rules, parent, perk);
+		require(installed != result.skills.end() && parentID != *ownFaction && selected
+			&& selected->requiredRank == "basic" && selected->effect["status"].String() == "active",
+			"active Basic starting perk of installed generic parent");
+		proposed.select(parent, perk, installed->second); // Validate tier/cap/duplicate invariants on a copy.
+		result.perks.push_back({parent, perk});
+	}
+	return result;
 }
 
 std::optional<NonDamageSpellSpecialtyRules> nonDamageSpellSpecialtyRules(const JsonNode & resolvedRules)

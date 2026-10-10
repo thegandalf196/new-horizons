@@ -28,6 +28,7 @@
 #include "../../lib/battle/NewHorizonsCreatureAbilitySuppression.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsSwiftRebirth.h"
+#include "../../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/PhysicalAffliction.h"
 #include "../../lib/battle/TimeStopState.h"
@@ -72,6 +73,7 @@ bool projectedEffect(const Bonus * bonus)
 	return bonus && (bonus->source == BonusSource::SPELL_EFFECT || bonus->source == BonusSource::HERO_COMMAND
 		|| newHorizonsEnchantedCommand::isMoraleBonus(bonus)
 		|| newHorizonsDivineMandate::isSharedPurposeMoraleBonus(bonus)
+		|| newHorizonsTraining::isTrainingBonus(bonus)
 		|| newHorizonsSwiftRebirth::isLifecycleMarker(*bonus)
 		|| newHorizonsElementalRebirth::isElementalMemoryBonus(*bonus));
 }
@@ -290,7 +292,8 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	battle::CUnitState::operator=(*Stack);
 	if(newHorizonsFrozen::isFrozen(*this) || newHorizonsSwiftRebirth::lifecycle(*this)
 		|| hasElementalMemory(*this)
-		|| hasBonus(CSelector(newHorizonsDivineMandate::isSharedPurposeMoraleBonus)))
+		|| hasBonus(CSelector(newHorizonsDivineMandate::isSharedPurposeMoraleBonus))
+		|| hasBonus(CSelector(newHorizonsTraining::isTrainingBonus)))
 		captureEffects();
 }
 
@@ -316,7 +319,8 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	battle::CUnitState::operator=(*state);
 	if(newHorizonsFrozen::isFrozen(*this) || newHorizonsSwiftRebirth::lifecycle(*this)
 		|| hasElementalMemory(*this)
-		|| hasBonus(CSelector(newHorizonsDivineMandate::isSharedPurposeMoraleBonus)))
+		|| hasBonus(CSelector(newHorizonsDivineMandate::isSharedPurposeMoraleBonus))
+		|| hasBonus(CSelector(newHorizonsTraining::isTrainingBonus)))
 		captureEffects();
 }
 
@@ -1065,7 +1069,9 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		reducedExtraActivationStates[side] = realBattle->getBattle()->getReducedExtraActivationState(side);
+		crossSchoolFormulaStates[side] = realBattle->getBattle()->getCrossSchoolFormulaState(side);
 		spellResponseStates[side] = realBattle->getBattle()->getSpellResponseState(side);
+		extendSpellRounds[side] = realBattle->getBattle()->getExtendSpellLastRound(side);
 		overwhelmingFormulaStates[side] = realBattle->getBattle()->getOverwhelmingFormulaState(side);
 		heroOrderStates[side] = realBattle->getBattle()->getHeroOrderStates(side);
 		relentlessAssaultStates[side] = realBattle->getBattle()->getRelentlessAssaultState(side);
@@ -1415,12 +1421,28 @@ const ReducedExtraActivationState & HypotheticBattle::getReducedExtraActivationS
 	return reducedExtraActivationStates.at(side);
 }
 
+void HypotheticBattle::consumeExtendSpell(BattleSide side)
+{
+	if((side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| getRound() < 0 || getExtendSpellLastRound(side) >= getRound())
+		throw std::runtime_error("Invalid or repeated projected Extend Spell consumption");
+	extendSpellRounds.at(side) = getRound();
+}
+
 const SpellResponseState & HypotheticBattle::getSpellResponseState(BattleSide side) const
 {
 	static const SpellResponseState empty;
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return empty;
 	return spellResponseStates.at(side);
+}
+
+void HypotheticBattle::setCrossSchoolFormulaState(BattleSide side, const newHorizonsCrossSchoolFormula::State & state)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::runtime_error("Invalid detached Cross-School Formula side");
+	newHorizonsCrossSchoolFormula::validateState(*this, state);
+	crossSchoolFormulaStates.at(side) = state;
 }
 
 void HypotheticBattle::setSpellResponseState(BattleSide side, const SpellResponseState & state)
@@ -1615,7 +1637,8 @@ std::optional<HypotheticBattle::ProjectedSpellAllowance> HypotheticBattle::prepa
 			projectedRound, metamagicFollowup, grand,
 			hero ? newHorizonsMagic::metamagicRank(hero) : 0,
 			hero && newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND),
-			meta.uses, meta.pending, meta.grandUsed, meta.sequence.size(), grantFilter);
+			meta.uses, meta.pending, meta.grandUsed, meta.sequence.size(), grantFilter,
+			newHorizonsMagic::metamagicCapacity(hero));
 		if(!transition)
 			return {};
 
@@ -1808,7 +1831,7 @@ bool HypotheticBattle::projectAcceptedHeroSpell(BattleSide side, SpellID spell, 
 	{
 		auto nextLedger = prepared.allowancesAfter;
 		const auto recipients = lightSpell && !counterspellNegated
-			&& newHorizonsDivineMandate::hasSharedPurposePerk(getSideHero(side))
+			&& newHorizonsDivineMandate::needsRecipientCapture(getSideHero(side))
 			? newHorizonsDivineMandate::sharedPurposeFriendlyRecipients(*this, side, affectedRecipients)
 			: std::vector<uint32_t>{};
 		const auto overlap = DivineMandateTransition::applyAcceptedAction(nextLedger, action.receipt,
@@ -1939,7 +1962,7 @@ bool HypotheticBattle::projectAcceptedHeroOrder(BattleSide side, HeroCommand com
 	{
 		auto nextLedger = prepared.allowancesAfter;
 		const auto recipients = enchantedOrder
-			&& newHorizonsDivineMandate::hasSharedPurposePerk(getSideHero(side))
+			&& newHorizonsDivineMandate::needsRecipientCapture(getSideHero(side))
 			? newHorizonsDivineMandate::sharedPurposeOrderRecipients(*this, side, *enchantedOrder)
 			: std::vector<uint32_t>{};
 		const auto overlap = DivineMandateTransition::applyAcceptedAction(nextLedger, action.receipt,
@@ -2104,7 +2127,8 @@ bool HypotheticBattle::consumeHeroOrderProtectInterception(uint32_t wardUnitId, 
 		return false;
 	const auto side = ward->unitSide();
 	auto state = battleGetHeroOrderState(side, HeroCommand::PROTECT);
-	if(!state || state->issuedRound != battleGetRound()
+	if(!state || !state->scheduledFor(wardUnitId, battleGetRound())
+		|| !state->scheduledFor(protectorUnitId, battleGetRound())
 		|| state->secondaryTargetUnitId != wardUnitId || state->primaryTargetUnitId != protectorUnitId
 		|| state->protectBroken
 		|| state->protectInterceptionsConsumed >= battleHeroOrderProtectInterceptionLimit(side))
@@ -2348,10 +2372,12 @@ void HypotheticBattle::nextRound()
 		fortuneStates[side].nextRound();
 		luckSerendipityStates[side].nextRound(projectedRound + 1);
 		moraleSuppressionStates[side].nextRound();
-		heroOrderStates[side].clear();
+		std::erase_if(heroOrderStates[side], [this](const HeroOrderState & order)
+			{ return !order.hasScheduledRecipients(projectedRound + 1); });
 	}
 	for(auto & [side, state] : focusFireStates)
-		state.reset();
+		if(!getHeroOrderState(side, HeroCommand::FOCUS_FIRE))
+			state.reset();
 	++bonusTreeVersion;
 	// BattleInfo grants opening effects their full duration in round one.
 	const bool firstRound = projectedRound == 0;
@@ -2450,7 +2476,10 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	const bool frozenNormalSlot = newHorizonsFrozen::forfeitsNormalActivation(*unit, reason);
 	if(frozenNormalSlot || (unit->isTimeStopped()
 		&& (reason == BattleUnitTurnReason::TURN_QUEUE || reason == BattleUnitTurnReason::AUTOMATIC_ACTION)))
+	{
 		completeSwiftNormalActivation(unitId);
+		newHorizonsDivineMandate::completeDisciplineActivation(*this, unitId);
+	}
 	// An extra opportunity cannot spend the normal-slot incapacitation receipt.
 	if(newHorizonsFrozen::isFrozen(*unit) && !frozenNormalSlot)
 		return;
@@ -3320,6 +3349,14 @@ void HypotheticBattle::HypotheticServerCallback::complain(const std::string & pr
 bool HypotheticBattle::HypotheticServerCallback::describeChanges() const
 {
 	return false;
+}
+
+void HypotheticBattle::HypotheticServerCallback::recordCrossSchoolFormulaCast(
+	BattleSide side, const newHorizonsCrossSchoolFormula::Receipt & receipt)
+{
+	if(newHorizonsCrossSchoolFormula::acceptedReceipt(*owner, side, receipt.after.spell) != receipt)
+		throw std::runtime_error("Stale detached Cross-School Formula receipt");
+	owner->setCrossSchoolFormulaState(side, receipt.after);
 }
 
 void HypotheticBattle::HypotheticServerCallback::recordCompletedHeroSpellCast(BattleSide side)

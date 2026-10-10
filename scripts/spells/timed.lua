@@ -200,6 +200,8 @@ function Script:convertBonuses(mechanics)
 			nb.turns = shieldOfChaosDuration
 		elseif not nb.turns or nb.turns == 0 then
 			nb.turns = duration
+		elseif nb.duration == "N_TURNS" or nb.duration == ENUM.BonusDuration.nTurns then
+			nb.turns = nb.turns + mechanics:getExtendSpellBonusRounds()
 		end
 
 		nb.sourceType = "SPELL_EFFECT"
@@ -343,7 +345,7 @@ function Script:applyHeroSpecialty(mechanics, buffer, unit)
 	self:applyFixedValueEnchant(mechanics, hero, buffer, tier, spellKey)
 end
 
-function Script:scaleAegisPowerTerm(mechanics, numerator, divisor, coefficientBasisPoints)
+function Script:scaleAegisPowerTerm(mechanics, numerator, divisor, unit)
 	local hero = mechanics:getHeroCaster()
 	if hero and hero:hasActivePerk(LIGHT_MAGIC_SKILL, AEGIS_PERK) then
 		-- Fold Aegis into the ratio before the shared scaler's final floor so
@@ -351,16 +353,15 @@ function Script:scaleAegisPowerTerm(mechanics, numerator, divisor, coefficientBa
 		numerator = numerator * 120
 		divisor = divisor * 100
 	end
-	return mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
-		numerator, divisor, coefficientBasisPoints)
+	return mechanics:scaleRecipientSpellPowerComponent(numerator, divisor, unit)
 end
 
-function Script:applyHolyArmorPower(mechanics, buffer, spellKey)
+function Script:applyHolyArmorPower(mechanics, buffer, spellKey, unit)
 	if spellKey ~= HOLY_ARMOR_SPELL then return end
 
 	local spellPowerTerm = self:scaleAegisPowerTerm(mechanics,
 		mechanics:getEffectPower(), HOLY_ARMOR_SPELL_POWER_DIVISOR,
-		mechanics:getSpellPowerCoefficientBasisPoints())
+		unit)
 
 	for _, nb in pairs(buffer) do
 		if nb.type == "SPELL_DAMAGE_REDUCTION" then
@@ -373,12 +374,12 @@ function Script:applyHolyArmorPower(mechanics, buffer, spellKey)
 	end
 end
 
-function Script:applyHeavenlyGalePower(mechanics, buffer, spellKey)
+function Script:applyHeavenlyGalePower(mechanics, buffer, spellKey, unit)
 	if spellKey ~= HEAVENLY_GALE_SPELL then return end
 
 	local spellPowerTerm = self:scaleAegisPowerTerm(mechanics,
 		HEAVENLY_GALE_SPELL_POWER_COEFFICIENT_BASIS_POINTS * mechanics:getEffectPower(), 1,
-		mechanics:getSpellPowerCoefficientBasisPoints())
+		unit)
 	local reduction = math.min(HEAVENLY_GALE_MAX_REDUCTION_BASIS_POINTS,
 		HEAVENLY_GALE_BASE_REDUCTION_BASIS_POINTS + spellPowerTerm)
 
@@ -414,20 +415,9 @@ function Script:applyShieldOfChaosPower(mechanics, buffer, spellKey)
 	end
 end
 
-function Script:applyGuardianSpiritPower(mechanics, buffer, spellKey)
+function Script:applyGuardianSpiritPower(mechanics, buffer, spellKey, unit)
 	if spellKey ~= GUARDIAN_SPIRIT_SPELL then return end
-
-	local powerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
-		2 * mechanics:getEffectPower(), 1,
-		mechanics:getSpellPowerCoefficientBasisPoints())
-	local hero = mechanics:getHeroCaster()
-	if hero and hero:hasActivePerk(LIGHT_MAGIC_SKILL, HEALER_PERK) then
-		powerTerm = math.floor(powerTerm * 120 / 100)
-	end
-	local pool = 50 + powerTerm
-	if hero and hero:hasActivePerk(LIGHT_MAGIC_SKILL, GUARDIAN_PERK) then
-		pool = math.floor(pool * 125 / 100)
-	end
+	local pool = mechanics:getGuardianSpiritHitPoints(unit)
 	for _, nb in pairs(buffer) do
 		if nb.type == "GUARDIAN_SPIRIT" then
 			-- The timed marker carries the initial pool through SetStackEffect;
@@ -437,13 +427,13 @@ function Script:applyGuardianSpiritPower(mechanics, buffer, spellKey)
 	end
 end
 
-function Script:applyDivineRetributionPower(mechanics, buffer, spellKey)
+function Script:applyDivineRetributionPower(mechanics, buffer, spellKey, unit)
 	if spellKey ~= DIVINE_RETRIBUTION_SPELL then return end
 
-	local spellPowerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
+	local spellPowerTerm = mechanics:scaleRecipientSpellPowerComponent(
 		DIVINE_RETRIBUTION_POWER_NUMERATOR * math.max(0, mechanics:getEffectPower()),
 		DIVINE_RETRIBUTION_POWER_DIVISOR,
-		mechanics:getSpellPowerCoefficientBasisPoints())
+		unit)
 	local cap = DIVINE_RETRIBUTION_BASE_DAMAGE + spellPowerTerm
 	local hero = mechanics:getHeroCaster()
 	local retributionistPercent = hero
@@ -460,18 +450,17 @@ function Script:applyDivineRetributionPower(mechanics, buffer, spellKey)
 	end
 end
 
-function Script:applyCrusadePower(mechanics, buffer, spellKey)
+function Script:applyCrusadePower(mechanics, buffer, spellKey, unit)
 	if spellKey ~= CRUSADE_SPELL or not mechanics:usesNewHorizonsMagicV3() then return end
 
 	local spellPower = math.max(0, mechanics:getEffectPower())
-	local coefficient = mechanics:getSpellPowerCoefficientBasisPoints()
-	local attributePowerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
-		spellPower, CRUSADE_ATTRIBUTE_POWER_DIVISOR, coefficient)
-	local initiativePowerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
-		spellPower, CRUSADE_INITIATIVE_POWER_DIVISOR, coefficient)
-	local reductionPowerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
+	local attributePowerTerm = mechanics:scaleRecipientSpellPowerComponent(
+		spellPower, CRUSADE_ATTRIBUTE_POWER_DIVISOR, unit)
+	local initiativePowerTerm = mechanics:scaleRecipientSpellPowerComponent(
+		spellPower, CRUSADE_INITIATIVE_POWER_DIVISOR, unit)
+	local reductionPowerTerm = mechanics:scaleRecipientSpellPowerComponent(
 		CRUSADE_REDUCTION_POWER_BASIS_POINTS_NUMERATOR * spellPower,
-		CRUSADE_REDUCTION_POWER_DIVISOR, coefficient)
+		CRUSADE_REDUCTION_POWER_DIVISOR, unit)
 	local attackAndDefense = math.min(6, CRUSADE_BASE_ATTRIBUTE_BONUS + attributePowerTerm)
 	local initiative = math.min(3, CRUSADE_BASE_INITIATIVE_BONUS + initiativePowerTerm)
 	local reduction = math.min(CRUSADE_MAX_REDUCTION_BASIS_POINTS,
@@ -629,12 +618,12 @@ function Script:apply(mechanics, server, target)
 		end
 
 		self:applyHeroSpecialty(mechanics, buffer, unit)
-		self:applyHolyArmorPower(mechanics, buffer, spellKey)
-		self:applyHeavenlyGalePower(mechanics, buffer, spellKey)
+		self:applyHolyArmorPower(mechanics, buffer, spellKey, unit)
+		self:applyHeavenlyGalePower(mechanics, buffer, spellKey, unit)
 		self:applyShieldOfChaosPower(mechanics, buffer, spellKey)
-		self:applyGuardianSpiritPower(mechanics, buffer, spellKey)
-		self:applyDivineRetributionPower(mechanics, buffer, spellKey)
-		self:applyCrusadePower(mechanics, buffer, spellKey)
+		self:applyGuardianSpiritPower(mechanics, buffer, spellKey, unit)
+		self:applyDivineRetributionPower(mechanics, buffer, spellKey, unit)
+		self:applyCrusadePower(mechanics, buffer, spellKey, unit)
 		self:applyTemporalFieldScale(mechanics, buffer, spellKey)
 
 		if describe then

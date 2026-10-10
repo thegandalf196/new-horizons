@@ -206,13 +206,14 @@ Use `researcher` for:
 
 Run independent tasks in parallel.
 
-For this repository, the user authorizes up to six concurrent subagents,
+For this repository, the user authorizes up to ten concurrent subagents,
 excluding the root. Reviewers, testers and explorers share this capacity with
 implementation workers; they are not additional slots. Use independent work
-with bounded file ownership, not filler tasks to occupy all six slots.
+with bounded file ownership, not filler tasks to occupy all ten slots.
 
-The local Codex setting is `[agents].max_concurrent_threads_per_session = 6`.
-Do not increase it beyond the user's six-worker authorization. If a fresh spawn
+The local Codex setting is `[agents].max_concurrent_threads_per_session = 10`.
+Do not increase it beyond the user's ten-worker authorization. A running session
+may retain a lower service-enforced capacity despite the local setting. If a fresh spawn
 fails, inspect the team and reuse a completed agent with `followup_task` when
 appropriate: completed threads may still occupy allocated slots. Report the
 actual service error, and distinguish configured capacity from observed running

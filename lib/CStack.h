@@ -145,8 +145,20 @@ public:
 			throw std::runtime_error("Cannot discard Veteran Cohesion receipt in an older stack format");
 	}
 
+	template <typename Handler> void validateTrainingSerialization(Handler & h) const
+	{
+		if(base)
+			base->validateTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING));
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING))
+			for(const auto & bonus : getExportedBonusList())
+				if(newHorizonsTraining::isTrainingBonus(bonus.get()))
+					throw std::runtime_error("Cannot discard captured training combat bonus");
+	}
+
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+			validateTrainingSerialization(h);
 		//this assumes that stack objects is newly created
 		//CUnitState is not serialized here except for explicit battle-long fields.
 		if(h.saving)
@@ -162,6 +174,8 @@ public:
 			throw std::runtime_error("Cannot discard Overwatch state in an older format");
 		if(h.saving)
 			confusionState.validateSerialization(h);
+		if(h.saving && getPhantomRoundsRemaining() > 3)
+			throw std::runtime_error("Binary stack descriptors cannot preserve extended Phantom lifetime");
 		if(h.saving && hasCasualtyProvenanceState())
 			throw std::runtime_error("Cannot save magical casualty provenance without its health state");
 		if(h.saving && !newHorizonsBloodrage::isValidPersonalIncrement(personalBloodrageIncrement))

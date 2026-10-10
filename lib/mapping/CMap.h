@@ -198,12 +198,16 @@ public:
 	void validateNewHorizonsProspectorSerialization(bool supported) const;
 	void validateNewHorizonsScholarSerialization(bool supported) const;
 	void validateNewHorizonsRecruitersContactsSerialization(bool supported) const;
+	void validateRecruitmentTrainingSerialization(bool supported) const;
 	void validateNewHorizonsSageSerialization(bool supported) const;
 	void validateNewHorizonsMagnateSerialization(bool supported) const;
 	void validateNewHorizonsHasteSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsThantReanimateSerialization(bool supported) const;
 	void validateNewHorizonsFrailtySpecialtySerialization(bool supported) const;
 	void validateNewHorizonsAenainFrailtySpecialtySerialization(bool supported) const;
+	void validateNewHorizonsDefensiveStartSpecialtySerialization(bool supported) const;
+	void validateNewHorizonsOffensiveStartSpecialtySerialization(bool supported) const;
+	void validateNewHorizonsStartingDevelopmentSerialization(bool supported) const;
 
 	CGObjectInstance * getObject(ObjectInstanceID obj);
 	const CGObjectInstance * getObject(ObjectInstanceID obj) const;
@@ -326,9 +330,17 @@ public:
 	void serialize(Handler &h)
 	{
 		if(h.saving)
+			validateRecruitmentTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING));
+		if(h.saving)
 			validateNewHorizonsFrailtySpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
 		if(h.saving)
 			validateNewHorizonsAenainFrailtySpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_AENAIN_FRAILTY_SPECIALTY));
+		if(h.saving)
+			validateNewHorizonsDefensiveStartSpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFENSIVE_START_SPECIALTIES));
+		if(h.saving)
+			validateNewHorizonsOffensiveStartSpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES));
+		if(h.saving)
+			validateNewHorizonsStartingDevelopmentSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
 		if(h.saving)
 			validateNewHorizonsThantReanimateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
 		if(h.saving)

@@ -142,6 +142,25 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 			throw std::runtime_error("Cannot discard Frozen marker in an older bonus format");
 	}
 
+	template <typename Handler> void validateTrainingSerialization(Handler & h) const
+	{
+		const bool field = stacking == "new-horizons:fieldInstructor";
+		const bool drill = stacking == "new-horizons:drillSergeant";
+		const bool reinforcement = stacking == "new-horizons:reinforcementDrill";
+		if(!field && !drill && !reinforcement)
+			return;
+		if(source != BonusSource::SECONDARY_SKILL || sid.toString() != "new-horizons:recruitment"
+			|| val != (reinforcement ? 2 : 1) || valType != BonusValueType::ADDITIVE_VALUE
+			|| (field && (type != BonusType::PRIMARY_SKILL || subtype != BonusSubtypeID(PrimarySkill::ATTACK)
+				|| duration != BonusDuration::PERMANENT))
+			|| (drill && (type != BonusType::MORALE || duration != BonusDuration::ONE_BATTLE))
+			|| (reinforcement && (type != BonusType::STACKS_INITIATIVE_FLAT
+				|| duration != BonusDuration::N_TURNS || turnsRemain < 0 || turnsRemain > 1)))
+			throw std::runtime_error("Invalid typed recruitment training bonus");
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING))
+			throw std::runtime_error("Cannot discard recruitment training bonus");
+	}
+
 	template <typename Handler> void validateSwiftRebirthSerialization(Handler & h) const
 	{
 		if(newHorizonsSwiftRebirth::isLifecycleMarker(*this)
@@ -151,6 +170,8 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateTrainingSerialization(h);
 		if(h.saving)
 			validateSwiftRebirthSerialization(h);
 		if(h.saving)
@@ -286,6 +307,7 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 		{
 			validateFrozenSerialization(h);
 			validateSwiftRebirthSerialization(h);
+			validateTrainingSerialization(h);
 			validateConfusionPendingMarker();
 			if(type == BonusType::CONFUSION_PENDING
 				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CONFUSION_MARKER))

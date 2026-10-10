@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BattleFlowProcessor.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
+#include "../../lib/battle/NewHorizonsDivineMandate.h"
 #include "../../lib/battle/NewHorizonsSwiftRebirth.h"
 
 #include "BattleProcessor.h"
@@ -1822,7 +1823,14 @@ bool BattleFlowProcessor::tryMakeAutomaticActionOfFirstAidTent(const CBattleInfo
 			return battle.battleCanHealWithFirstAidTent(next, s);
 		});
 
-		if (possibleStacks.empty())
+		std::vector<EWallPart> repairableParts;
+		for(int i = 0; i < static_cast<int>(EWallPart::PARTS_COUNT); ++i)
+		{
+			const auto part = static_cast<EWallPart>(i);
+			if(battle.battleGetFirstAidStructureRepairPreview(next, part).repairedHP() > 0)
+				repairableParts.push_back(part);
+		}
+		if (possibleStacks.empty() && repairableParts.empty())
 		{
 			makeStackDoNothing(battle, next);
 			return true;
@@ -1835,6 +1843,16 @@ bool BattleFlowProcessor::tryMakeAutomaticActionOfFirstAidTent(const CBattleInfo
 				curOwner->valOfBonuses(BonusType::MANUAL_CONTROL, BonusSubtypeID(CreatureID(CreatureID::FIRST_AID_TENT)))));
 		if (!manualControl)
 		{
+			if(possibleStacks.empty())
+			{
+				BattleAction repair;
+				repair.actionType = EActionType::STACK_HEAL;
+				repair.side = next->unitSide();
+				repair.stackNumber = next->unitId();
+				repair.aimToHex(battle.wallPartToBattleHex(repairableParts.front()));
+				makeAutomaticAction(battle, next, repair);
+				return true;
+			}
 			RandomGeneratorUtil::randomShuffle(possibleStacks, gameHandler->getRandomGenerator());
 			const CStack * toBeHealed = possibleStacks.front();
 
@@ -2091,6 +2109,23 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 {
 	const auto * actedStack = battle.battleGetStackByID(ba.stackNumber, false);
 	const auto * activeStack = battle.battleActiveUnit();
+	const auto completeDiscipline = [this, &battle](const battle::Unit * unit)
+	{
+		if(!unit)
+			return;
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			auto states = battle.getBattle()->getHeroOrderStates(side);
+			if(!newHorizonsDivineMandate::completeDisciplineOrders(states, battle.battleGetRound(), unit->unitId()))
+				continue;
+			BattleHeroOrderStateChanged update;
+			update.battleID = battle.getBattle()->getBattleID();
+			update.side = side;
+			update.states = states;
+			update.state = states.empty() ? std::optional<HeroOrderState>() : states.back();
+			gameHandler->sendAndApply(update);
+		}
+	};
 	const auto startReducedExtraActivation = [this, &battle](const battle::Unit * unit)
 	{
 		if(!spendQuartermasterAllowance(gameHandler, battle, unit))
@@ -2106,11 +2141,12 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 			activateNextStack(battle);
 		return true;
 	};
-	const auto completeAcceptedActivation = [this, &battle, &ba, &startReducedExtraActivation](const battle::Unit * unit)
+	const auto completeAcceptedActivation = [this, &battle, &ba, &startReducedExtraActivation, &completeDiscipline](const battle::Unit * unit)
 	{
 		if(!unit || ba.actionType == EActionType::WAIT)
 			return false;
 		publishSwiftLifecycle(gameHandler, battle, unit, true);
+		completeDiscipline(unit);
 		if(quartermasterActiveSide(battle, unit->unitId()))
 		{
 			clearQuartermasterActivation(gameHandler, battle, unit->unitId());
@@ -2390,7 +2426,10 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 		// accepted action still spends Swift's normal slot if its retaliation
 		// or end effects incapacitated the actor before reaching this boundary.
 		if(ba.actionType != EActionType::WAIT)
+		{
 			publishSwiftLifecycle(gameHandler, battle, actedStack, true);
+			completeDiscipline(actedStack);
+		}
 
 		if(actedStack->isTimeStopped())
 		{

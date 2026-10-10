@@ -1492,7 +1492,7 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 		: std::vector<std::shared_ptr<Bonus>>{};
 	std::optional<HeroActionAllowanceState::Receipt> sharedPurposePurifyAction;
 	if(s->getId() == newHorizonsPurify::spellID() && spellAllowance
-		&& newHorizonsDivineMandate::hasSharedPurposePerk(h))
+		&& newHorizonsDivineMandate::needsRecipientCapture(h))
 	{
 		const auto & ledger = battle.getBattle()->getHeroActionAllowances(ba.side);
 		const auto grant = std::find_if(ledger.grants.begin(), ledger.grants.end(), [&spellAllowance](const auto & entry)
@@ -1532,7 +1532,8 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 					gameHandler->sendAndApply(capture);
 				}
 			}
-			else if(original.source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE)
+			else if(original.source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
+				&& newHorizonsDivineMandate::hasSharedPurposePerk(h))
 			{
 				std::vector<uint32_t> overlap;
 				std::set_intersection(original.divineMandateRecipients.begin(), original.divineMandateRecipients.end(),
@@ -2558,11 +2559,43 @@ bool BattleActionProcessor::doHealAction(const CBattleInfoCallback & battle, con
 	const battle::Unit * destStack = nullptr;
 	std::shared_ptr<const Bonus> healerAbility = stack->getFirstBonus(Selector::type()(BonusType::HEALER));
 
+	// Structural tower aim must precede the shooter occupying the same hex.
+	const auto repair = battle.battleGetFirstAidStructureRepairPreview(stack,
+		battle.battleHexToWallPart(target.front().hexValue));
+	if(repair.repairedHP() > 0)
+	{
+		BattleStructureRepaired changed;
+		changed.battleID = battle.getBattle()->getBattleID();
+		changed.part = repair.part;
+		changed.healerID = stack->unitId();
+		changed.expectedHP = repair.expectedHP;
+		changed.replacementHP = repair.replacementHP;
+		gameHandler->sendAndApply(changed);
+		return true;
+	}
+
 	if(target.at(0).unitValue)
 		destStack = target.at(0).unitValue;
 	else
 		destStack = battle.battleGetUnitByPos(target.at(0).hexValue);
 	const auto * destCreatureStack = dynamic_cast<const CStack *>(destStack);
+
+	if(battle.battleCanRepairWarMachine(stack, destStack))
+	{
+		auto state = destStack->acquireState();
+		auto output = battle.battleGetFirstAidHealingOutput(stack);
+		const auto healed = state->heal(output, EHealLevel::HEAL, EHealPower::PERMANENT);
+		if(healed.healedHealthPoints <= 0)
+			return false;
+		BattleUnitsChanged changed;
+		changed.battleID = battle.getBattle()->getBattleID();
+		UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
+		update.data = state->save();
+		update.healthDelta = healed.healedHealthPoints;
+		changed.changedStacks.push_back(std::move(update));
+		gameHandler->sendAndApply(changed);
+		return true; // Repair never enters Medic or Surgeon cleanup.
+	}
 
 	if(stack == nullptr || destStack == nullptr || !healerAbility || !healerAbility->subtype.hasValue())
 	{

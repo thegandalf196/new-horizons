@@ -43,7 +43,15 @@ protected:
 	{
 		TinyMapGameTest::mapLoaded(map);
 		JsonNode heroRules(JsonPath::builtin("config/newHorizonsHeroes"));
+		heroRules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 		heroRules["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
+		heroRules["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
+		heroRules["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");
+		std::erase_if(heroRules["nonDamageSpellSpecialties"]["spells"].Vector(), [](const JsonNode & spell)
+		{
+			return spell.String() == "new-horizons:hydrasVitality" || spell.String() == "new-horizons:guardianSpirit"
+				|| spell.String() == "new-horizons:crusade" || spell.String() == "new-horizons:focusMagic";
+		});
 		// Isolate Sage's prior-format controls from the later independent opt-in.
 		auto & specialties = heroRules["nonDamageSpellSpecialties"]["spells"].Vector();
 		std::erase_if(specialties, [](const JsonNode & spell)
