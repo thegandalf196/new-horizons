@@ -2,6 +2,14 @@
 
 Updated: 2026-10-10
 
+AI clustering now checks a remembered object's visitable-anchor visibility before
+requesting its top object. The partial-footprint warning oracle and all five
+existing Sage planner cases pass6/6 in an actual isolated native run; fresh binary
+privacy, source/resource parity and owned cleanup pass. Exact attribution of the
+reported coordinate and wider adventure fog cases remain unverified. A separate
+cheat/open-map graph null-dereference seam is deferred; no ordinary-session
+crash is demonstrated and no privileged visibility workaround is introduced.
+
 Current ordinary Guild principal presentation is observed on the selected
 post-commit1b8398361 immutable Linux snapshot: unknown Inferno, Meteor Shower
 and Armageddon show Basic, Advanced and Expert Havoc requirements in actual

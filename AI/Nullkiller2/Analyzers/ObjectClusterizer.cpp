@@ -365,6 +365,10 @@ bool ObjectClusterizer::shouldVisitObject(const CGObjectInstance * obj) const
 	//it may be hero visiting this obj
 	//we don't try visiting object on which allied or owned hero stands
 	// -> it will just trigger exchange windows and AI will be confused that obj behind doesn't get visited
+	// Memory may retain an object with a visible footprint but a hidden visitable tile.
+	if(!aiNk->cc->isVisible(pos))
+		return false;
+
 	const CGObjectInstance * topObj = aiNk->cc->getTopObj(pos);
 
 	if(!topObj)

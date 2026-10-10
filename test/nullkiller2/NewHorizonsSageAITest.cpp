@@ -12,6 +12,7 @@
 #include "lib/GameSettings.h"
 #include "lib/CPlayerState.h"
 #include "lib/callback/CCallback.h"
+#include "lib/logging/CLogger.h"
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/mapObjects/CGTownInstance.h"
 #include "lib/mapObjects/NewHorizonsAcademicStudy.h"
@@ -25,6 +26,23 @@
 namespace
 {
 const PlayerColor PLAYER(0);
+class PartialTownVisibilityLogTarget final : public ILogTarget
+{
+public:
+	PartialTownVisibilityLogTarget(int3 tile, std::weak_ptr<std::atomic_size_t> warningCount)
+		: tile(std::move(tile)), warningCount(std::move(warningCount))
+	{
+	}
+	void write(const LogRecord & record) override
+	{
+		const auto counter = warningCount.lock();
+		if(counter && record.message.find(tile.toString() + " is not visible!") != std::string::npos)
+			counter->fetch_add(1);
+	}
+private:
+	int3 tile;
+	std::weak_ptr<std::atomic_size_t> warningCount;
+};
 SpellID named(const char * key) { return SpellID(SpellID::decode(key)); }
 SecondarySkill skill(const char * key) { return SecondarySkill(SecondarySkill::decode(key)); }
 
@@ -72,7 +90,9 @@ protected:
 			current->setSecSkillLevel(skill("new-horizons:wisdom"), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 			current->setSecSkillLevel(skill("new-horizons:sorceryMagic"), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 			if(!current->hasSpellbook())
+			{
 				ASSERT_TRUE(handler.giveHeroNewArtifact(current, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK));
+			}
 			handler.changeSpells(current, false, current->getSpellsInSpellbook());
 		}
 		for(int tier = 1; tier <= 4; ++tier)
@@ -146,6 +166,43 @@ TEST_F(NewHorizonsSageAITest, WisdomSageWithoutAcademicAlsoReachesThePlanner)
 	EXPECT_TRUE(NK2AI::shouldVisit(gateway->nullkiller.get(), hero, town));
 	const auto available = candidates();
 	EXPECT_NE(std::ranges::find(available, town), available.end());
+}
+
+TEST_F(NewHorizonsSageAITest, RememberedPartialTownFootprintDoesNotQueryHiddenVisitableTile)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(select(true));
+	const auto visible = candidates();
+	ASSERT_NE(std::ranges::find(visible, town), visible.end());
+	const auto anchor = town->visitablePos();
+	const auto footprint = town->getBlockedPos();
+	ASSERT_TRUE(std::ranges::any_of(footprint, [anchor](const int3 & tile) { return tile != anchor; }));
+	auto * team = gameState()->getPlayerTeam(PLAYER);
+	ASSERT_NE(team, nullptr);
+	team->fogOfWarMap[anchor] = 0;
+	ASSERT_FALSE(gateway->nullkiller->cc->isVisible(anchor));
+	ASSERT_TRUE(std::ranges::any_of(footprint, [&](const int3 & tile)
+	{
+		return tile != anchor && gateway->nullkiller->cc->isVisible(tile);
+	}));
+	ASSERT_EQ(gateway->nullkiller->cc->getObj(town->id, false), town);
+	ASSERT_TRUE(newHorizonsSage::hasVisitReward(*hero, *town));
+	auto warningCount = std::make_shared<std::atomic_size_t>(0);
+	CLogger::getGlobalLogger()->addTarget(
+		std::make_unique<PartialTownVisibilityLogTarget>(anchor, warningCount));
+	EXPECT_TRUE(gateway->nullkiller->cc->getVisitableObjs(anchor).empty());
+	ASSERT_EQ(warningCount->load(), 2u); // Calibrate both denied tile/query messages.
+	warningCount->store(0);
+	// Do not update paths here: only the clusterizer's remembered-object query is measured.
+	gateway->nullkiller->objectClusterizer->reset();
+	gateway->nullkiller->objectClusterizer->clusterize();
+	const auto partial = gateway->nullkiller->objectClusterizer->getNearbyObjects();
+	EXPECT_EQ(warningCount->load(), 0u);
+	EXPECT_EQ(std::ranges::find(partial, town), partial.end());
+	EXPECT_TRUE(gateway->nullkiller->objectClusterizer->getFarObjects().empty());
+	team->fogOfWarMap[anchor] = 1;
+	const auto restored = candidates();
+	EXPECT_NE(std::ranges::find(restored, town), restored.end());
 }
 
 TEST_F(NewHorizonsSageAITest, UnselectedOrEmptyCatalogDoesNotPermitBlanketTownRevisits)
