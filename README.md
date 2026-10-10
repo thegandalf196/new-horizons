@@ -180,4 +180,4 @@ I hope you have as much fun playing this as I had creating it.
 
 New Horizons is developed by gandalf196 on the [VCMI engine](https://github.com/vcmi/vcmi). Engine licensing is retained in [license.txt](https://github.com/thegandalf196/new-horizons/blob/main/license.txt), with contributor credits in [AUTHORS.h](https://github.com/thegandalf196/new-horizons/blob/main/AUTHORS.h). Upstream technical documentation remains in [docs/Readme.md](https://github.com/thegandalf196/new-horizons/blob/main/docs/Readme.md).
 
-Selected artwork delivery and provenance are recorded in [NHART_DELIVERY.md](https://github.com/thegandalf196/new-horizons/blob/main/docs/NHART_DELIVERY.md). Original Heroes III Complete game assets are required separately and are not included. A public release is pending.
+Selected artwork delivery and provenance are recorded in [NHART_DELIVERY.md](https://github.com/thegandalf196/new-horizons/blob/main/docs/NHART_DELIVERY.md). Original Heroes III Complete game assets are required separately and are not included. The source code is public; the upcoming 0.85 release with matching Windows and Linux downloads is still being prepared.
