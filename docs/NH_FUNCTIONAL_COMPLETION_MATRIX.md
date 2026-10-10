@@ -2,11 +2,37 @@
 
 Updated: 2026-10-10
 
+Current bounded exit reconciliation: independent source/specification reviews
+map principal consumers for required UI, action/activation, Leadership, Siege,
+Luck/Morale, towns/economy, artifacts/specialties and spell/Order/perk minimum AI.
+No additional absent principal function is demonstrated by those slices. This
+is not a new category-wide native or rendered certification. A fresh registry
+recount confirms31 Skills,93 active ranks and310 active perks; the existing
+perk-data suite passes17/17 after correcting a failed test-module discovery
+command. The planned-perk hold index is retired as historical navigation.
+Frozen presentation/interaction evidence and the complete phase-exit assessment
+remain open; broad compound-state and strategic AI evidence stays in Phase2.
+The next manual probe fails its fixture setup before combat: the consumer reads
+persistentStorage rather than ordinary settings. No Frozen evidence is added.
+Reviewed per-event input flushing passes eight synthetic controls; the actual
+failed-setup client quits0 and completes owned cleanup/parity by113.289seconds.
+Corrected pre-launch fixture preparation is pending, not a repeated mechanic run.
+The corrected fixture and ordinary Replay route subsequently reach the actual
+manual full-army battlefield. No own primary melee or Frozen proc is observed;
+only two enemy attacks and Ice retaliations occur. Required Frozen visual and
+preview gates remain open. All owned processes are reaped and immutable parity
+passes; display/cleanup deadlines and the120s principal target are missed and
+retained as execution limitations, not accepted lifecycle evidence.
+
 Product version metadata now uses the requested development identifier0.85.0,
 not a completion percentage. Local scenario setup reuses the ordinary loading
 background selector instead of bypassing the existing New Horizons title art.
-Independent source review, build and ten offline checks pass; current playable pointer
-still selects the earlier0.15.0 candidate until changed-build acceptance.
+Independent source review, build and ten offline checks pass. Actual native-size
+menu and brief local scenario transition show0.85.0 and New Horizons branding;
+the standard launcher now selects that exact verified candidate. Snapshot/art
+parity and owned silent cleanup pass. Supervised stop is not graceful-exit proof.
+The final input missed its planned cutoff on the already-stopped private display;
+exact display-cleanup timing is unrecorded. Strict whole-run timing is not claimed.
 
 Shared starting-hero projection source is imported and independently reviewed.
 Both affected previews consume effective configuration and independent map
@@ -20,8 +46,10 @@ before world-map assignment, also unsafe for standalone preview map loading.
 A reviewed callback-free slot-presence repair passes the changed case1/1 and
 the unchanged full gate16/16 with actual completed XMLs, no failures/errors/skips.
 Fresh privacy, resource parity and owned silent cleanup pass; the earlier crash
-is retained. Ordinary rendered/playable acceptance remains open. No hero identity
-or perk count is added.
+is retained. Serena's ordinary Starting Hero popup now shows effective primaries,
+Skills, book/spell and Leadership-capped starting army on the selected build.
+The narrow perk-name label clips; encyclopedia and empty-book rendering remain
+unobserved. No hero identity or perk count is added.
 
 Frozen ordinary graphical evidence is partial: native-size blue tint/queue
 marker and actual Ice melee Shatter without retaliation are observed on the
