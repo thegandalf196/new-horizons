@@ -91,9 +91,13 @@ def package(engine, images, manifest, approved_digest, source, platform, output,
     if expected != {n: h for n, h in before.items() if n != sums}:
         raise ValueError('Engine inventory/checksum mismatch')
     binaries = {n: h for n, h in before.items()
-                if n in ('vcmiclient', 'libvcmi.so') or n.lower().endswith(('.dll', '.exe'))}
-    if not binaries or (platform == 'linux' and not {'vcmiclient', 'libvcmi.so'} <= binaries.keys()):
+                if n in ('new-horizons', 'vcmiclient', 'libvcmi.so') or n.lower().endswith(('.dll', '.exe'))}
+    if not binaries:
         raise ValueError('Missing engine binaries')
+    if platform == 'linux':
+        clients = {'new-horizons', 'vcmiclient'} & binaries.keys()
+        if len(clients) != 1 or 'libvcmi.so' not in binaries:
+            raise ValueError('Missing or ambiguous Linux client identity')
     if platform == 'windows':
         client_name = 'new-horizons.exe'
         if legacy_frozen_client_source is not None:

@@ -38,6 +38,58 @@ class PrivatePreviewTest(unittest.TestCase):
     def run_package(self, name='out'):
         return recipe.package(self.engine, self.images, self.manifest, self.pin, 'test-source', 'linux', self.root / name)
 
+    def refresh_linux_checksums(self):
+        (self.engine / 'SHA256SUMS').write_text(''.join(
+            h + '  ' + n + '\n' for n, h in recipe.inventory(self.engine).items()
+            if n != 'SHA256SUMS'))
+
+    def test_current_linux_name_is_preserved_in_inventory_and_archive(self):
+        (self.engine / 'vcmiclient').rename(self.engine / 'new-horizons')
+        self.refresh_linux_checksums()
+        before = recipe.inventory(self.engine)
+        result = self.run_package()
+        stage = self.root / 'out/New-Horizons-Private-Preview'
+        self.assertEqual(result['engine_binaries']['new-horizons'], before['new-horizons'])
+        self.assertNotIn('vcmiclient', result['engine_binaries'])
+        self.assertEqual(recipe.digest(stage / 'new-horizons'), before['new-horizons'])
+        self.assertEqual(recipe.digest(stage / 'libvcmi.so'), before['libvcmi.so'])
+        self.assertFalse((stage / 'vcmiclient').exists())
+        self.assertEqual(before, recipe.inventory(self.engine))
+        with recipe.tarfile.open(self.root / 'out' / result['archive']) as archive:
+            self.assertIn(stage.name + '/new-horizons', archive.getnames())
+            self.assertNotIn(stage.name + '/vcmiclient', archive.getnames())
+
+    def test_ambiguous_linux_clients_rejected_before_output(self):
+        (self.engine / 'new-horizons').write_bytes(b'Other client fixture')
+        self.refresh_linux_checksums()
+        before = recipe.inventory(self.engine)
+        with self.assertRaisesRegex(ValueError, 'ambiguous Linux client identity'):
+            self.run_package()
+        self.assertFalse((self.root / 'out').exists())
+        self.assertEqual(before, recipe.inventory(self.engine))
+
+    def test_current_linux_client_still_requires_matching_library(self):
+        (self.engine / 'vcmiclient').rename(self.engine / 'new-horizons')
+        (self.engine / 'libvcmi.so').unlink()
+        self.refresh_linux_checksums()
+        with self.assertRaisesRegex(ValueError, 'Linux client identity'):
+            self.run_package()
+        self.assertFalse((self.root / 'out').exists())
+
+    def test_current_linux_client_checksum_tampering_is_rejected(self):
+        (self.engine / 'vcmiclient').rename(self.engine / 'new-horizons')
+        self.refresh_linux_checksums()
+        (self.engine / 'new-horizons').write_bytes(b'Tampered client fixture')
+        with self.assertRaisesRegex(ValueError, 'inventory/checksum mismatch'):
+            self.run_package()
+        self.assertFalse((self.root / 'out').exists())
+
+    def test_nhart_engine_remains_ineligible_for_historical_overlay(self):
+        (self.engine / 'Mods/new-horizons/NewHorizons.nhart').write_bytes(b'Synthetic marker')
+        with self.assertRaisesRegex(ValueError, 'cannot overlay an NHART engine'):
+            self.run_package()
+        self.assertFalse((self.root / 'out').exists())
+
     def test_missing_launcher_rejected_before_output(self):
         (self.engine / 'Play-New-Horizons.sh').unlink()
         with self.assertRaisesRegex(ValueError, 'Missing required launcher'):

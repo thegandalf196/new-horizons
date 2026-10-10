@@ -4,4 +4,4 @@
 set -euo pipefail
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 exec bash "$root/new-horizons-launch.sh" \
-	--client "$root/vcmiclient" --resources "$root" "$@"
+	--client "$root/new-horizons" --resources "$root" "$@"

@@ -1,7 +1,7 @@
 LINUX SOURCE AND RELINKING
 
 The engine source companion contains the exact Git revision recorded in
-BUILD-IDENTITY.json and all four pinned submodule contents. It excludes private build data,
+BUILD-IDENTITY.json and all pinned submodule contents. It excludes private build data,
 purchaser assets and profiles. No original game assets are needed to compile.
 A separate packaging/tooling source companion covers the package entry point and
 notices. Consult BUILD-IDENTITY.json for the actual binaries and companion hashes.
@@ -26,17 +26,22 @@ Configure:
     '-DCMAKE_CXX_FLAGS=-ffile-prefix-map=/tmp/nh-linux-source=. -ffile-prefix-map=/tmp/nh-linux-build=./build'
   cmake --build /tmp/nh-linux-build --target vcmiclient --parallel 2
 
+vcmiclient is the CMake target name, not the shipped filename. This target produces
+bin/new-horizons and its matching libvcmi.so; do not rename it to vcmiclient.
+
 Stage to a NEW owned directory, not /usr:
   cmake --install /tmp/nh-linux-build --prefix /path/to/new/staging-directory
 
 These are generic rebuild aliases. BUILD-PROVENANCE.json retains the actual
 candidate's configure options, including its specific source/build prefix maps.
 
-For the curated flat package retain only vcmiclient, its matching libvcmi.so,
+For the curated flat package retain only new-horizons, its matching libvcmi.so,
 config, scripts, Mods/vcmi and Mods/new-horizons, plus the launcher, notices and
 identity/source records. Do not copy the installed optional demo, builder tools,
 purchaser assets or personal files. Recheck ELF imports, $ORIGIN, privacy and all
 hashes after installation; build-tree success alone is insufficient.
+Preserve Mods/new-horizons/NewHorizons.nhart and all installed New Horizons
+notices. Ordinary builds use the committed package, not loose authoring inputs.
 
 The exact glibc sources/patches are provided for the nonshared/startup boundary;
 Boost/oneTBB and the other API-header source distributions are also included.
