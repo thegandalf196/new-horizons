@@ -111,7 +111,7 @@
 			"type": "button",
 			"position": {"x": 490, "y": 306},
 			"image": "SOSAVE.DEF",
-			"imageOrder": [1, 0, 2, 3],
+			"imageOrder": [1, 0, 1, 1],
 			"help": "core.help.322",
 			"callback": "saveGame",
 			"hotkey": "settingsSaveGame"

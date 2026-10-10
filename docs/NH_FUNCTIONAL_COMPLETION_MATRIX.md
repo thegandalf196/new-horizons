@@ -2,6 +2,19 @@
 
 Updated: 2026-10-10
 
+Actual initialized empty-book presentation is now observed separately: Aine's
+worn physical Spellbook opens empty Combat and Adventure pages without a filter
+or a No Spellbook rejection. Root views the native card/pages; normal Quit,
+bounded silent cleanup, zero WARN/ERROR and immutable parity pass. This closes
+the omitted empty-book UI witness, not casting or a full gameplay journey.
+Frozen presentation remains the next required principal evidence gap.
+The subsequent video probe adds no Frozen evidence: no legal attack forecast,
+zero own hits and no status application. Readiness/Quit targets are missed,
+while supervised reap/cleanup and capture bounds pass. Independent receipt
+review confirms this incomplete result. The Save-button frame diagnostic is
+separate from combat correctness; its Save-only frame repair passes three
+focused controls. Rendered delivery of that repair remains pending.
+
 New ordinary encyclopedia evidence: the selected immutable Linux delivery shows
 Serena's default Wizard profile with5/5/45/45, capped13 /3–5 /2–3 army,
 Basic Learning/Eagle Eye, Basic Metamagic and Dispel. Root independently views
@@ -9,8 +22,9 @@ the actual top/lower captures. The base Golem display is correctly Stone Golem
 despite its historically reversed internal ironGolem identifier. Normal Quit
 and bounded owned cleanup succeed; no supervisor signal, zero WARN/ERROR and
 full snapshot parity. Earlier Quit100/<130 route targets are missed explicitly,
-so strict whole-route timing is not accepted. Optional empty-book presentation
-and required Frozen feedback remain unobserved. The failed unmarked-profile
+so strict whole-route timing is not accepted. The later separate empty-book
+witness is recorded above; required Frozen feedback remains open. The failed
+unmarked-profile
 preparation is retained separately, not relabelled as successful execution.
 
 Current bounded exit reconciliation: independent source/specification reviews
