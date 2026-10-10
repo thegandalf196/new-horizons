@@ -113,6 +113,40 @@ class LinuxPlayableSnapshotTest(unittest.TestCase):
             self.freeze_candidate()
         self.assertFalse(list(self.store.glob('snapshot-*')))
 
+    def test_selected_packed_magic_config_is_authoritative_over_build_linked_copy(self):
+        config = self.source / 'config/newHorizonsMagicAssets.json'
+        config.write_text(json.dumps({'casting': {}, 'guildBooks': {'tower': {'image': 'selected.png'}}}))
+        self.activate_nhart(['Mods/new-horizons/Images/icon.png', 'config/newHorizonsMagicAssets.json'])
+        selected_pack = self.pack.read_bytes()
+        # The linked checkout can retain an older authoring fragment, like the
+        # real build's config link; the selected packed supporting file wins.
+        config.write_text(json.dumps({'casting': {}}))
+        candidate = self.freeze_candidate()
+        self.assertFalse((candidate / 'config/newHorizonsMagicAssets.json').exists())
+        self.assertEqual((candidate / snapshot_tools.RUNTIME_ART_PACK).read_bytes(), selected_pack)
+        self.assertEqual(json.loads(config.read_text()), {'casting': {}})
+        verify_snapshot(candidate)
+
+    def test_unpacked_magic_config_is_not_silently_excluded(self):
+        self.activate_nhart()
+        config = self.source / 'config/newHorizonsMagicAssets.json'
+        config.write_text(json.dumps({'casting': {'ordinary': True}}))
+        candidate = self.freeze_candidate()
+        self.assertEqual((candidate / 'config/newHorizonsMagicAssets.json').read_bytes(), config.read_bytes())
+        verify_snapshot(candidate)
+
+    def test_selected_magic_config_exclusion_requires_verified_pack_and_manifest(self):
+        config = self.source / 'config/newHorizonsMagicAssets.json'
+        config.write_text('{}')
+        self.activate_nhart(['Mods/new-horizons/Images/icon.png', 'config/newHorizonsMagicAssets.json'])
+        config.write_text('{"stale": true}')
+        data = bytearray(self.pack.read_bytes())
+        data[snapshot_tools.nhart.HEADER.size] ^= 1
+        self.pack.write_bytes(data)
+        with self.assertRaises(snapshot_tools.nhart.NHArtError):
+            self.freeze_candidate()
+        self.assertFalse(list(self.store.glob('snapshot-*')))
+
     def test_nhart_corruption_rejected_before_freeze(self):
         self.activate_nhart()
         data = bytearray(self.pack.read_bytes())

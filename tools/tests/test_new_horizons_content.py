@@ -721,6 +721,7 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(spell['targetType'], 'CREATURE')
         self.assertFalse(spell['flags'].get('positive', False))
         self.assertFalse(spell['flags'].get('negative', False))
+        self.assertTrue(spell['flags'].get('indifferent', False))
         for level in spell['levels'].values():
             self.assertEqual(level['range'], '0')
             self.assertFalse(level['targetModifier']['smart'])

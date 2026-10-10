@@ -616,7 +616,7 @@
 				}
 			}
 		},
-		"flags": {},
+		"flags": {"indifferent": true},
 		"targetCondition": {}
 	},
 	"handOfFate" : {

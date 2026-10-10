@@ -39,7 +39,7 @@ class ElementalOrbDataTest(unittest.TestCase):
             "core:fireWall": "fire", "core:inferno": "fire",
             "core:iceBolt": "water", "core:frostRing": "water",
             "core:lightningBolt": "air", "core:chainLightning": "air",
-            "new-horizons:masterChainLightning": "air", "core:meteorShower": "earth",
+            "masterChainLightning": "air", "core:meteorShower": "earth",
             "core:landMineTrigger": "fire", "core:fireWallTrigger": "fire",
         }
         self.assertEqual(data, {key: {"damageElement": value} for key, value in expected.items()})
@@ -52,6 +52,25 @@ class ElementalOrbDataTest(unittest.TestCase):
         module = json.loads((ROOT / "Mods/new-horizons/mod.json").read_text())
         self.assertIn("config/artifacts/elementalOrbs.json", module["artifacts"])
         self.assertIn("config/spells/elementalDamageTags.json", module["spells"])
+
+    def test_local_chain_tag_merges_after_definition_without_changing_its_effects(self):
+        module = json.loads((ROOT / "Mods/new-horizons/mod.json").read_text())
+        self.assertLess(module["spells"].index("config/spells/newHorizons.json"),
+                        module["spells"].index("config/spells/elementalDamageTags.json"))
+        text = (CONTENT / "config/spells/newHorizons.json").read_text()
+        text = re.sub(r'("(?:\\.|[^"\\])*")|//[^\n]*|/\*.*?\*/',
+                      lambda match: match.group(1) or "", text, flags=re.S)
+        text = re.sub(r'("(?:\\.|[^"\\])*")|,(?=\s*[}\]])',
+                      lambda match: match.group(1) or "", text)
+        definitions = json.loads(text)
+        tags = json.loads((CONTENT / "config/spells/elementalDamageTags.json").read_text())
+        self.assertNotIn("new-horizons:masterChainLightning", tags)
+        original = definitions["masterChainLightning"]
+        self.assertNotIn("damageElement", original)
+        merged = dict(original, **tags["masterChainLightning"])
+        self.assertEqual(merged["damageElement"], "air")
+        self.assertEqual({key: value for key, value in merged.items() if key != "damageElement"},
+                         original)
 
     def test_element_schema_is_explicit_and_rejects_schools(self):
         text = (ROOT / "config/schemas/spell.json").read_text()

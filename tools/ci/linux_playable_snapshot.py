@@ -113,6 +113,18 @@ def source_payload(client, resources):
     if missing:
         fail("Candidate is missing required curated resources: " + ", ".join(missing))
     if uses_nhart(files):
+        if RUNTIME_ART_PACK in files:
+            packed = nhart.verify(files[RUNTIME_ART_PACK])
+            expected = nhart.validate_manifest(nhart.read_json(ART_MANIFEST.read_bytes()))
+            if packed['manifest'] != expected:
+                fail('Runtime art pack differs from expected source manifest')
+            # Match CMake's explicit install exclusion: this supporting config is
+            # selected inside NHART (including the Guild bindings), not a loose
+            # gameplay override. Never exclude arbitrary packed art before its
+            # existing mismatched/duplicate-source validation.
+            if any(entry['source'] == 'config/newHorizonsMagicAssets.json'
+                   for entry in packed['manifest']['entries']):
+                files.pop('config/newHorizonsMagicAssets.json', None)
         # Development builds intentionally have top-level resource directory links.
         # Verify a regular private view, without relaxing final-install link guards.
         with tempfile.TemporaryDirectory(prefix='nhart-source-check-') as temporary:

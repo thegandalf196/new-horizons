@@ -29,7 +29,7 @@
 	"core:chainLightning": {
 		"damageElement": "air"
 	},
-	"new-horizons:masterChainLightning": {
+	"masterChainLightning": {
 		"damageElement": "air"
 	},
 	"core:meteorShower": {
