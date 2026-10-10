@@ -1698,9 +1698,24 @@ int32_t BaseMechanics::getDirectCreatureActivationDamagePercent() const
 		return 100;
 	const auto * unit = getUnitCaster();
 	if(!newHorizonsCombatSkills::isOrdinaryCreatureAttacker(unit)
-		|| !callback->battleIsMoraleExtraActivation(unit))
+		|| !callback->battleActiveUnit()
+		|| callback->battleActiveUnit()->unitId() != unit->unitId())
 		return 100;
-	return callback->getBattle()->getMoraleExtraDamagePercent();
+	if(callback->battleIsMoraleExtraActivation(unit))
+		return callback->getBattle()->getMoraleExtraDamagePercent();
+	if(!heroCommands::isCanonicalRules(callback->getBattle()->getHeroCommandRules()))
+		return 100;
+	const auto side = callback->playerToSide(callback->battleGetOwner(unit));
+	const auto order = callback->battleGetHeroOrderState(side, HeroCommand::SECOND_WIND);
+	const auto * hero = callback->battleGetOwnerHero(unit);
+	if(!hero || !order || !order->secondWindActive
+		|| order->primaryTargetUnitId != unit->unitId()
+		|| !order->scheduledFor(unit->unitId(), callback->battleGetRound()))
+		return 100;
+	// Second Wind and earned Morale are separate genuine origins: the live
+	// activation transition clears Morale when beginning Second Wind, and the
+	// completion transition spends Second Wind before any earned Morale check.
+	return newHorizonsDivineMandate::crownSecondWindPercent(*hero, *order, unit->unitId());
 }
 
 int64_t Mechanics::adjustRecipientDamage(const battle::Unit * target, int64_t rawDamage) const

@@ -475,7 +475,7 @@ public:
 	virtual bool isMagicalEffect() const = 0;
 
 	virtual int64_t adjustEffectValue(const battle::Unit * target) const = 0;
-	/// Only explicit creature-active casts can inherit the current Morale activation output.
+	/// Only creature-active direct damage inherits Morale or an active Second Wind output.
 	virtual int32_t getDirectCreatureActivationDamagePercent() const { return 100; }
 	/// Final HP-only adjustment; callers must exclude indirect damage effects.
 	int64_t adjustDirectCreatureActivationDamage(int64_t damage) const;

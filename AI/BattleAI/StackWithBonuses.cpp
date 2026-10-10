@@ -2668,6 +2668,8 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	}
 	if(newActivation)
 	{
+		if(reason == BattleUnitTurnReason::HERO_COMMAND)
+			unit->castSpellThisTurn = false; // Match the actual armed Second Wind activation, not ordinary Orders.
 		// Match the authoritative activation boundary: a rescued unit stops only
 		// this activation, and its temporary Last Stand state expires when it
 		// genuinely receives another one.

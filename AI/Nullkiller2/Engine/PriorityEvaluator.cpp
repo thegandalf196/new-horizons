@@ -753,16 +753,7 @@ float RewardEvaluator::getSkillReward(const CGObjectInstance * target, const CGH
 		const auto * other = dynamic_cast<const CGHeroInstance *>(target);
 		if(aiNk->cc->getPlayerRelations(target->tempOwner, aiNk->playerID) == PlayerRelations::ENEMIES)
 			return enemyHeroEliminationSkillRewardRatio * other->level;
-		const auto & calendar = aiNk->cc->getCalendar();
-		const auto week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
-		if(!hero->canExchangeNewHorizonsScholarWith(*other, week))
-			return 0;
-		float value = 0;
-		if(const auto incoming = other->getNewHorizonsScholarSpellFor(*hero))
-			value += hero->getSpellLevel(incoming->toSpell()) * 0.5f;
-		if(const auto outgoing = hero->getNewHorizonsScholarSpellFor(*other))
-			value += other->getSpellLevel(outgoing->toSpell()) * 0.25f;
-		return value;
+		return teachingMeetingReward(aiNk, hero, other);
 	}
 
 	default:

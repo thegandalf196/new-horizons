@@ -2,6 +2,36 @@
 
 Updated: 2026-10-10
 
+Accepted current checkpoint: Second Wind direct creature casts/readiness and
+deliberate Scholar/Mentor/Master Teacher meetings have principal evidence.
+Corrected native-v2 passes11/11 (teaching7, retained towns4); unchanged-production
+native-v1 Second Wind9 and adjacent Morale9 give29 distinct passing cases,
+not one fresh29 run. Root opens all four XMLs. Fixture repairs preserve exact
+single-actor/no-reinforcement witnesses and authenticate the second siege's real
+battle ID; no production changes were made to fit the failures. Both-target17025
+and binary privacy90972 pass. Wider AI planning, status composition and rendered
+acceptance remain separate. Next missing lanes: external Muster AI admission,
+Storm per-target battlefield damage readback and Hold anchor-position marking.
+
+Current principal checkpoint: reviewed Second Wind creature-cast output/readiness
+and deliberate teaching AI paths are imported and build successfully. Actual
+native-v1 passes27/29: Second Wind9/9 and adjacent Morale9/9; teaching6/7 and
+retained town3/4 await two narrow fixture repairs. No crashes, timeouts, errors
+or skips; exact-pair privacy, isolation, cleanup and resource parity pass.
+This is not complete batch acceptance or published playable delivery. The next
+demonstrated omissions are empty eligible external-dwelling Muster AI planning
+and Storm of Daggers projected damage beside its existing battlefield selection
+numbers. Registry totals do not change. Full Phase1 exit remains unproven.
+
+Published principal checkpoint:edf980b00 (remote and identity verified).
+Requirement-level exit audit finds two additional Phase1 gaps despite active
+registry counts: Second Wind reduces ordinary attacks but not an explicitly
+activated creature damage spell; Scholar/Mentor teaching receipts work, but NK2
+does not deliberately plan useful spell/XP-only allied-hero meetings. Independent
+private implementation lanes are assigned. Existing human exchange/passive
+receipts and ordinary Second Wind attacks are not substitutes for those paths.
+Full Phase1 exit remains unproven; do not transition on registration totals.
+
 Accepted Luck/Morale checkpoint: actual native-v4 passes27/27 (Morale18,
 scalar capture9), zero errors/skips/crashes/timeouts. Both-target93769 and
 binary privacy54854 pass; root opens the actual receipt and XMLs. Final test
@@ -5270,13 +5300,13 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | All three ranks and complete ten-perk pools are active; accepted303-distinct-case checkpoint and earlier focused gates establish principal paths. Wider integration remains Phase2. |
 | Skill rank effects active | 93/93 | Elemental Rebirth's three ranks now have source/native and owning-side AI evidence. Active status does not certify every wider interaction. |
-| Skill perks active | 310/310 | 0 planned; current registry recount: generic220/220 and faction90/90. Accepted303-distinct-case checkpoint and earlier focused gates establish principal paths, not blanket interaction/rendered certification. The separate final-Luck/Morale batch now has43 distinct passing focused cases; wider integration remains Phase2. |
+| Skill perks active | 310/310 | 0 planned; current registry recount: generic220/220 and faction90/90. Deliberate teaching AI meetings now pass7/7; empty external Muster AI planning remains missing. These bounded gates do not establish blanket functional certification. Wider integration remains Phase2. |
 | Faction Skill ranks active | 27/27 | All nine faction rank foundations and ten-perk pools are active; wider faction integration and rendered/playable acceptance remain separate. |
 | Faction perks active | 90/90 | 0 planned. Principal paths have accepted focused evidence; this count does not certify all cross-faction, save/resume or rendered interactions. |
 | Canonical combat-spell identities registered | 67/67 | All canonical school-roster identities have principal paths. Accepted303 checkpoint plus later116-distinct-case spell/Sage evidence cover bounded repairs; identity coverage is not blanket spell-interaction, rendered or release certification. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have validated acquisition, saved town state, client controls and minimum AI paths. Accepted303-distinct-case checkpoint includes Adventure71 evidence closing nearest-only Town Portal, Water Walk legal-land day ending and protected Fly/Dimension Door barriers. Dynamic invalidation, compound routes and rendered/playable acceptance remain Phase2. |
-| Orders registered | 8/8 | Config and `HeroCommand::isActive` agree. UP-146 adds native-verified independent simultaneous state/effects and action/AI/UI hooks; broader per-Order interaction coverage remains Phase2. |
+| Orders registered | 8/8 | Config and `HeroCommand::isActive` agree. UP-146 adds native-verified independent simultaneous state/effects and action/AI/UI hooks. Second Wind active creature-spell output/readiness now passes9/9 with adjacent Morale9/9. Hold anchor-position marking remains required UI work; broader per-Order interactions remain Phase2. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; UP021 ordinary/radial transfer principal paths pass13 focused native cases. Broader and rendered/playable acceptance remain pending. |
 | Creature base-line Leadership requirements | 66/66 | Data coverage includes Wisp and Greater Wisp; individual creature mechanics and wider Leadership composition require separate evidence. |
 | Creature category forms | 128/128 | 52 Core,58 Elite,18 Champion are registered, including Wisp/Greater Wisp; this is category data coverage, not creature-ability certification. |
@@ -5316,7 +5346,7 @@ not newly implemented or individually certified content.
 
 | Faction / canonical row | Status and evidence | Remaining boundary |
 |---|---|---|
-| Castle Brotherhood of the Sword | Native: unique-building training +100 permanent Leadership per hero/building, repeat denial and save | Retained defending +2 Morale scope unverified |
+| Castle Brotherhood of the Sword | Native: unique-building training +100 permanent Leadership per hero/building, repeat denial and save; retained defending +2 Morale with attacker negative control | Broader siege interactions deferred |
 | Castle Stables | Native: UP201 resident day-start movement, expiry and reacquisition | Wider movement composition Phase2 |
 | Castle Lighthouse | Native: captured town-departure embarkation waiver and +20% sea Movement for the day; accepted303-distinct-case checkpoint above includes the Adventure71 gate | Wider departure/ownership/movement composition and rendered/playable delivery remain Phase2; not certification of all37 building rows |
 | Castle Griffin Bastion | Baseline: core horde growth consumer | Row-specific runtime acceptance absent; numbers deferred |
@@ -5334,7 +5364,7 @@ not newly implemented or individually certified content.
 | Inferno Birthing Pool / Cages | Baseline: core growth consumers | Row-specific runtime acceptance absent; numbers deferred |
 | Necropolis Necromancy Amplifier | Native: UP198 visit/refresh/expiry/save and raise consumer | Wider raised-army composition Phase2 |
 | Necropolis Skeleton Transformer | Native: UP197 pooled HP/shared preview/atomic admission;21 conversion cases plus13 capability cases pass; bounded strict-gain AI request | Rendered Transformer UI, in-flight selection lock and autonomous AI visit sequencing remain separate; source not yet promoted |
-| Necropolis Cover of Darkness | Baseline: hide/reveal consumer; visible-only Dimension Door has separate coverage | Actual Cover re-shrouding acceptance absent |
+| Necropolis Cover of Darkness | Native: actual new-day enemy re-shrouding, owner/allied/outside-radius controls; visible-only Dimension Door has separate coverage | Broader visibility interactions deferred |
 | Necropolis Unearthed Graves / growth | Baseline: horde source map | Whole-family runtime acceptance absent |
 | Dungeon Astral Nexus | Native: repeat ordinary Normal refill and save via unique-building training | Buffer composition unverified; no weekly gate intended |
 | Dungeon Battle Scholar Academy | Native: UP199 remaining-next-level XP25%, preview, real visit and save | Wider advancement composition Phase2 |
@@ -5343,7 +5373,7 @@ not newly implemented or individually certified content.
 | Stronghold Hall of Valhalla | Native: actual visit grants permanent Attack5 per hero/building, save | Wider permanent-stat composition Phase2 |
 | Stronghold Ballista Yard | Native: UP024 machine shop pricing and weekly Siege20 refresh without stacking | Rendered shop acceptance separate |
 | Stronghold Freelancer's Guild | Baseline: creature/resource market consumer | Row-specific runtime acceptance absent |
-| Stronghold Escape Tunnel | Baseline: BATTLE_CAN_FLEE and battle consumer | Row-specific runtime acceptance absent |
+| Stronghold Escape Tunnel | Native: rejected siege retreat without Tunnel, accepted defender Escape with Tunnel; Shackles prohibition retained | Broader retreat/recruit/save interactions deferred |
 | Stronghold Mess Hall / growth | Baseline: core horde consumers | Row-specific runtime acceptance absent; numbers deferred |
 | Fortress Blood Obelisk | Native: UP202 siege Attack20 and weekly next-combat physical10%, save and cleanup | Wider Order/damage composition Phase2 |
 | Fortress Glyphs of Fear | Native: siege Defense20 and cleanup plus dynamic eight-tile enemy Morale aura and detached location parity; accepted303-distinct-case checkpoint above includes the Adventure71 gate | Wider aura overlap/control/movement composition and rendered/live-refresh acceptance remain Phase2 |

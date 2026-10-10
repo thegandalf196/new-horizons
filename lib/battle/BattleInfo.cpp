@@ -1676,6 +1676,8 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	}
 	if(newActivation)
 	{
+		if(reason == BattleUnitTurnReason::HERO_COMMAND)
+			st->castSpellThisTurn = false; // Only the armed Second Wind target begins a new activation here.
 		seizeInitiative.begin(unitId, reason == BattleUnitTurnReason::TURN_QUEUE
 			|| reason == BattleUnitTurnReason::AUTOMATIC_ACTION);
 		// Last Stand ends the current activation without removing the surviving

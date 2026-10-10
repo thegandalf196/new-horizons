@@ -230,6 +230,8 @@ set(test_SRCS
 		server/battles/NewHorizonsMoraleActivationTest.cpp
 		server/battles/NewHorizonsMoraleActivationProtocolTest.cpp
 		server/battles/NewHorizonsMoraleCreatureSpellTest.cpp
+		server/battles/NewHorizonsSecondWindCreatureSpellTest.cpp
+		server/battles/NewHorizonsRetainedTownMechanicsTest.cpp
 		server/battles/DeathStareTest.cpp
 		server/battles/DestructionTest.cpp
 		server/battles/EnchantedTest.cpp
@@ -738,6 +740,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/NewHorizonsMarketSelectionAITest.cpp
 		nullkiller2/NewHorizonsLearningMentorAITest.cpp
 		nullkiller2/NewHorizonsLearningMasterTeacherAITest.cpp
+		nullkiller2/NewHorizonsTeachingMeetingAITest.cpp
 		nullkiller2/Helpers/TinyH3MDimensionDoorExplorationTest.cpp
 		nullkiller2/Pathfinding/AIPathNodePoolTest.cpp
 		nullkiller2/Pathfinding/ArmyLossTest.cpp

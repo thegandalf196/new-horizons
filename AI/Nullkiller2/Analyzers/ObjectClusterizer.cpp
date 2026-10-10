@@ -302,6 +302,11 @@ bool ObjectClusterizer::shouldVisitObject(const CGObjectInstance * obj) const
 
 	// Mine revisits are hero-specific rewards, not globally weekly objects.
 	const auto heroes = aiNk->cc->getHeroesInfo();
+	const bool teachingVisit = obj->ID == Obj::HERO
+		&& std::ranges::any_of(heroes, [this, obj](const CGHeroInstance * hero)
+		{
+			return teachingMeetingReward(aiNk, hero, dynamic_cast<const CGHeroInstance *>(obj)) > 0;
+		});
 	const bool academicVisit = obj->ID == Obj::TOWN
 		&& std::ranges::any_of(heroes, [this, obj](const CGHeroInstance * hero)
 		{
@@ -332,7 +337,7 @@ bool ObjectClusterizer::shouldVisitObject(const CGObjectInstance * obj) const
 				&& newHorizonsRecruitment::recruitersContactsAward(*hero, *dwelling, week)
 				&& shouldVisit(aiNk, hero, obj);
 		});
-	if(!academicVisit && !sageVisit && !prospectorVisit && !contactsVisit && ((obj->ID != Obj::CREATURE_GENERATOR1 && vstd::contains(aiNk->memory->alreadyVisited, obj->id))
+	if(!teachingVisit && !academicVisit && !sageVisit && !prospectorVisit && !contactsVisit && ((obj->ID != Obj::CREATURE_GENERATOR1 && vstd::contains(aiNk->memory->alreadyVisited, obj->id))
 		|| obj->wasVisited(aiNk->playerID)))
 	{
 		return false;
@@ -340,7 +345,7 @@ bool ObjectClusterizer::shouldVisitObject(const CGObjectInstance * obj) const
 
 	auto playerRelations = aiNk->cc->getPlayerRelations(aiNk->playerID, obj->tempOwner);
 
-	if(!academicVisit && !sageVisit && !prospectorVisit && !contactsVisit && playerRelations != PlayerRelations::ENEMIES && !isWeeklyRevisitable(aiNk->playerID, obj))
+	if(!teachingVisit && !academicVisit && !sageVisit && !prospectorVisit && !contactsVisit && playerRelations != PlayerRelations::ENEMIES && !isWeeklyRevisitable(aiNk->playerID, obj))
 	{
 		return false;
 	}
@@ -354,7 +359,7 @@ bool ObjectClusterizer::shouldVisitObject(const CGObjectInstance * obj) const
 		return false; // partly visible obj but its visitable pos is not visible.
 
 	if(topObj->ID == Obj::HERO && aiNk->cc->getPlayerRelations(aiNk->playerID, topObj->tempOwner) != PlayerRelations::ENEMIES)
-		return false;
+		return topObj == obj && teachingVisit;
 	else
 		return true; //all of the following is met
 }

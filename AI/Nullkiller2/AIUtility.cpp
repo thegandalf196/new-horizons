@@ -677,6 +677,34 @@ int getDuplicatingSlots(const CArmedInstance * army)
 	return duplicatingSlots;
 }
 
+float teachingMeetingReward(const Nullkiller * aiNk, const CGHeroInstance * traveler, const CGHeroInstance * partner)
+{
+	if(!traveler || !partner || traveler == partner || traveler->getOwner() != aiNk->playerID
+		|| aiNk->cc->getPlayerRelations(traveler->getOwner(), partner->getOwner()) == PlayerRelations::ENEMIES)
+		return 0;
+	const auto calendar = aiNk->cc->getCalendar();
+	const auto week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+	float reward = 0;
+	if(traveler->canExchangeNewHorizonsScholarWith(*partner, week))
+	{
+		if(const auto incoming = partner->getNewHorizonsScholarSpellFor(*traveler))
+			reward += traveler->getSpellLevel(incoming->toSpell()) * 0.5f;
+		if(const auto outgoing = traveler->getNewHorizonsScholarSpellFor(*partner))
+			reward += partner->getSpellLevel(outgoing->toSpell()) * 0.25f;
+	}
+	const auto mentorReward = [week](const CGHeroInstance & mentor, const CGHeroInstance & recipient)
+	{
+		if(!mentor.canGrantNewHorizonsLearningMentorTo(recipient, week))
+			return 0.0f;
+		const auto experience = recipient.calculateXp(mentor.getNewHorizonsLearningMentorExperiencePerLevel() * mentor.level);
+		// A bounded knowledge reward, not an army-transfer incentive.
+		return std::min(2.0f, static_cast<float>(experience) / 1000.0f);
+	};
+	reward += mentorReward(*traveler, *partner);
+	reward += mentorReward(*partner, *traveler);
+	return reward;
+}
+
 // todo: move to obj manager
 bool shouldVisit(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGObjectInstance * obj)
 {
@@ -704,8 +732,9 @@ bool shouldVisit(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGO
 				|| newHorizonsSage::hasVisitReward(*hero, *town));
 		}
 		return true;
-	case Obj::HERO: //never visit our heroes at random
-		return relations == PlayerRelations::ENEMIES; //do not visit our towns at random
+	case Obj::HERO:
+		return relations == PlayerRelations::ENEMIES
+			|| teachingMeetingReward(aiNk, hero, dynamic_cast<const CGHeroInstance *>(obj)) > 0;
 
 	case Obj::BORDER_GATE:
 	{

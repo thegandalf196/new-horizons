@@ -83,6 +83,8 @@ Goals::TGoalVec CaptureObjectsBehavior::getVisitGoals(
 	std::unordered_map<const CGHeroInstance *, const AIPath *> bestEnemyTownPathsByHero;
 	std::vector<TSubgoal> waysToVisitObj;
 	const bool isEnemyTown = isEnemyTownCaptureTarget(objToVisit, nullkiller);
+	const bool teachingMeeting = objToVisit && objToVisit->ID == Obj::HERO
+		&& nullkiller->cc->getPlayerRelations(nullkiller->playerID, objToVisit->getOwner()) != PlayerRelations::ENEMIES;
 
 	for(const auto & path : paths)
 	{
@@ -101,6 +103,10 @@ Goals::TGoalVec CaptureObjectsBehavior::getVisitGoals(
 		}
 
 		const auto * hero = path.targetHero;
+		// Even explicitly requested capture goals must not force an empty allied meeting.
+		if(teachingMeeting && teachingMeetingReward(nullkiller, hero,
+			dynamic_cast<const CGHeroInstance *>(objToVisit)) <= 0)
+			continue;
 		const auto danger = path.getTotalDanger();
 		if (hero->getOwner() != nullkiller->playerID)
 			continue;
@@ -135,7 +141,7 @@ Goals::TGoalVec CaptureObjectsBehavior::getVisitGoals(
 			{
 				Composition composition;
 
-				composition.addNext(ExecuteHeroChain(path, objToVisit));
+				composition.addNext(ExecuteHeroChain(path, objToVisit, teachingMeeting));
 				composition.addNext(subGoal);
 
 				tasks[tasks.size() - 1] = sptr(composition);
@@ -176,7 +182,7 @@ Goals::TGoalVec CaptureObjectsBehavior::getVisitGoals(
 				continue;
 			}
 
-			auto sharedPtr = sptr(ExecuteHeroChain(path, objToVisit));
+			auto sharedPtr = sptr(ExecuteHeroChain(path, objToVisit, teachingMeeting));
 
 			waysToVisitObj.push_back(sharedPtr);
 			tasks[tasks.size() - 1] = sharedPtr;

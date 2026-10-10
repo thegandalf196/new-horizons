@@ -80,8 +80,8 @@ bool executeSpecialAction(
 }
 }
 
-ExecuteHeroChain::ExecuteHeroChain(const AIPath & path, const CGObjectInstance * obj)
-	:ElementarGoal(Goals::EXECUTE_HERO_CHAIN), chainPath(path), closestWayRatio(1)
+ExecuteHeroChain::ExecuteHeroChain(const AIPath & path, const CGObjectInstance * obj, bool teachingMeeting)
+	:ElementarGoal(Goals::EXECUTE_HERO_CHAIN), chainPath(path), teachingMeeting(teachingMeeting), closestWayRatio(1)
 {
 	hero = path.targetHero;
 	tile = path.targetTile();
@@ -106,6 +106,7 @@ ExecuteHeroChain::ExecuteHeroChain(const AIPath & path, const CGObjectInstance *
 bool ExecuteHeroChain::operator==(const ExecuteHeroChain & other) const
 {
 	return tile == other.tile 
+		&& teachingMeeting == other.teachingMeeting
 		&& chainPath.targetHero == other.chainPath.targetHero
 		&& chainPath.nodes.size() == other.chainPath.nodes.size()
 		&& chainPath.chainMask == other.chainPath.chainMask;
@@ -160,6 +161,15 @@ const CGHeroInstance * ExecuteHeroChain::getBlockedInitialRoute(const Nullkiller
 
 void ExecuteHeroChain::accept(AIGateway * aiGw)
 {
+	if(teachingMeeting)
+	{
+		if(!HeroPtr(chainPath.targetHero, aiGw->cc.get()).isVerified())
+			throw cannotFulfillGoalException("Teaching traveler is no longer available");
+		const auto * partner = dynamic_cast<const CGHeroInstance *>(aiGw->cc->getObj(ObjectInstanceID(objid), false));
+		if(!partner || partner->visitablePos() != tile
+			|| teachingMeetingReward(aiGw->nullkiller.get(), chainPath.targetHero, partner) <= 0)
+			throw cannotFulfillGoalException("Teaching meeting is no longer useful or its partner moved");
+	}
 	logAi->debug("Executing hero chain towards %s. Path %s", targetName, chainPath.toString());
 
 	aiGw->nullkiller->setActive(chainPath.targetHero, tile);
