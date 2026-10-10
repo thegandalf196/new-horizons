@@ -392,6 +392,13 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 	R.method<&Mechanics::getRecipientEffectValue>("getRecipientEffectValue",
 		{{"target", "Healing recipient."}}, {},
 		"Returns recipient-specific healing with Crown and Altar scaling only the Spell Power component, never fixed healing.");
+	R.method<&Mechanics::getHexOfPainFlatDamage>("getHexOfPainFlatDamage", {},
+		"Returns the initial Hex flat term after shared Spell Power modifiers; trigger damage share is unchanged.");
+	R.method<&Mechanics::getPlagueTickDamage>("getPlagueTickDamage", {},
+		"Returns the initial Plague snapshot; later ticks and children reuse this value.");
+	R.method<&Mechanics::getPhantomArmyIntegrity>("getPhantomArmyIntegrity",
+		{{"source", "Source whose current aggregate HP supplies the Integrity basis."}}, {},
+		"Scales only the Spell Power fraction, caps the base pool, then applies Illusionist and floors once.");
 	R.method<&Mechanics::getFrailtyDefenseLossBasisPoints>("getFrailtyDefenseLossBasisPoints", {},
 		"Returns Frailty's shared per-cast Creature Defense loss in basis points. The specialty scales only "
 		"the Spell Power component, preserving its fixed term, cast cap and Withering Touch addition.");

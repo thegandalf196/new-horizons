@@ -114,6 +114,7 @@ public:
 	virtual void visitBattleNextRound(BattleNextRound & pack) {}
 	virtual void visitBattleDeploymentPhaseChanged(BattleDeploymentPhaseChanged & pack) {}
 	virtual void visitBattleSetActiveStack(BattleSetActiveStack & pack) {}
+	virtual void visitBattleCrisisCommandChanged(BattleCrisisCommandChanged & pack) {}
 	virtual void visitBattleResult(BattleResult & pack) {}
 	virtual void visitBattleLogMessage(BattleLogMessage & pack) {}
 	virtual void visitBattleStackMoved(BattleStackMoved & pack) {}
@@ -125,6 +126,7 @@ public:
 	virtual void visitBattleDemonicGatingStateChanged(BattleDemonicGatingStateChanged & pack) {}
 	virtual void visitBattleAdverseRerollStateChanged(BattleAdverseRerollStateChanged & pack) {}
 	virtual void visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack) {}
+	virtual void visitBattleRapidResponseStateChanged(BattleRapidResponseStateChanged & pack) {}
 	virtual void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) {}
 	virtual void visitSetReactiveWeaveState(SetReactiveWeaveState & pack) {}
 	virtual void visitSetSpellResponseState(SetSpellResponseState & pack) {}
@@ -132,6 +134,7 @@ public:
 	virtual void visitSetOverwhelmingFormulaState(SetOverwhelmingFormulaState & pack) {}
 	virtual void visitSetBattlecraftMasteryAward(SetBattlecraftMasteryAward & pack) {}
 	virtual void visitEndAction(EndAction & pack) {}
+	virtual void visitBattleNormalActivationCompleted(BattleNormalActivationCompleted & pack) {}
 	virtual void visitBattleSpellCast(BattleSpellCast & pack) {}
 	virtual void visitSetStackEffect(SetStackEffect & pack) {}
 	virtual void visitStacksInjured(StacksInjured & pack) {}

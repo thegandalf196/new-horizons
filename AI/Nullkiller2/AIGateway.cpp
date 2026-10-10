@@ -954,14 +954,14 @@ void AIGateway::showBlockingDialog(const std::string & text, const std::vector<C
 						&& forecast.joiningAmount > 0
 						&& forecast.joiningAmount <= std::numeric_limits<int32_t>::max()
 						&& *offeredCreatureCount == forecast.joiningAmount;
-					const bool goldMatchesForecast = validGoldComponent && (forecast.authoredFree
+					const bool goldMatchesForecast = validGoldComponent && (forecast.authoredFree || forecast.legendaryReputation
 						? (!offeredGoldCost || *offeredGoldCost == 0)
 						: offeredGoldCost && forecast.normalGoldCostValid
 							&& forecast.normalGoldCostFitsAction
 							&& forecast.normalGoldCost >= 0
 							&& *offeredGoldCost == forecast.normalGoldCost);
 
-					const int64_t requiredGold = forecast.authoredFree ? 0 : forecast.normalGoldCost;
+					const int64_t requiredGold = forecast.goldCost();
 					const bool canAfford = goldMatchesForecast && requiredGold >= 0
 						&& cc->getResourceAmount()[EGameResID::GOLD] >= requiredGold;
 

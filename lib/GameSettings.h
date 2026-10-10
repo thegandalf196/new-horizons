@@ -10,9 +10,14 @@
 #pragma once
 
 #include "IGameSettings.h"
+#include "pathfinder/NewHorizonsLighthouse.h"
 #include "json/JsonNode.h"
 #include "entities/hero/NewHorizonsHeroRules.h"
+#include "spells/NewHorizonsMagic.h"
+#include "entities/hero/NewHorizonsCapabilityRules.h"
 #include "battle/NewHorizonsPlague.h"
+#include "entities/hero/NewHorizonsPerkRules.h"
+#include "pathfinder/NewHorizonsProtectedMobility.h"
 #include <optional>
 
 class DLL_LINKAGE GameSettings final : public IGameSettings, boost::noncopyable
@@ -41,6 +46,10 @@ class DLL_LINKAGE GameSettings final : public IGameSettings, boost::noncopyable
 	JsonNode getAllOverrides() const;
 
 public:
+	void validateProtectedAdventureMobilitySerialization(bool supported) const
+	{
+		newHorizonsProtectedMobility::validateRulesSerialization(getAllOverrides()["magic"]["newHorizons"], supported);
+	}
 	GameSettings();
 	~GameSettings();
 
@@ -92,16 +101,54 @@ public:
 			getAllOverrides()["heroes"]["newHorizons"], supported);
 	}
 
+	void validateNewHorizonsRemainingSpellSpecialtySerialization(bool supported) const
+	{
+		newHorizonsHeroes::validateRemainingSpellSpecialtySerialization(
+			getAllOverrides()["heroes"]["newHorizons"], supported);
+	}
+
+	void validateNewHorizonsArtifactManaRegenerationSerialization(bool supported) const
+	{
+		newHorizonsHeroes::validateArtifactManaRegenerationSerialization(
+			getAllOverrides()["heroes"]["newHorizonsCapabilities"], supported);
+	}
+
+	void validateNewHorizonsGlyphsOfFearSerialization(bool supported) const
+	{
+		newHorizonsHeroes::validateGlyphsOfFearSerialization(
+			getAllOverrides()["heroes"]["newHorizonsCapabilities"], supported);
+	}
+
+	void validateNewHorizonsLighthouseSerialization(bool supported) const
+	{
+		newHorizonsLighthouse::validateRulesSerialization(
+			getAllOverrides()["heroes"]["newHorizons"], supported);
+	}
+
 	void validateNewHorizonsStartingDevelopmentSerialization(bool supported) const
 	{
 		newHorizonsHeroes::validateStartingDevelopmentSerialization(
 			getAllOverrides()["heroes"]["newHorizons"], supported);
+	}
+	void validateNavigationStartSerialization(bool supported) const
+	{
+		newHorizonsHeroes::validateNavigationStartSerialization(getAllOverrides()["heroes"]["newHorizons"], supported);
+	}
+
+	void validateDefaultCreatureLineSerialization(bool supported) const
+	{
+		newHorizonsHeroes::validateDefaultCreatureLineSerialization(getAllOverrides()["heroes"]["newHorizons"], supported);
 	}
 
 	void validateNewHorizonsRemainingStartSerialization(bool supported) const
 	{
 		newHorizonsHeroes::validateRemainingStartSerialization(
 			getAllOverrides()["heroes"]["newHorizons"], supported);
+	}
+
+	void validateNewHorizonsWaterWalkDayEndSerialization(bool supported) const
+	{
+		newHorizonsMagic::validateWaterWalkDayEndSerialization(getAllOverrides()["magic"]["newHorizons"], supported);
 	}
 
 	void validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const
@@ -115,16 +162,43 @@ public:
 		newHorizonsPlague::validateRuleSerialization(getAllOverrides()["magic"]["newHorizons"], supported);
 	}
 
+	void validateCrisisCommandSerialization(bool supported) const
+	{
+		newHorizonsHeroes::validateCrisisCommandProfileSerialization(
+			getAllOverrides()["heroes"]["newHorizonsPerks"], supported);
+	}
+
+	void validateNewHorizonsStartingBookSerialization(bool supported) const
+	{
+		newHorizonsHeroes::validateStartingBookSerialization(
+			getAllOverrides()["heroes"]["newHorizons"], supported);
+	}
+
 	template<typename Handler>
 	void serialize(Handler & h)
 	{
 		if (h.saving)
 		{
 			JsonNode overrides = getAllOverrides();
+			newHorizonsHeroes::validateNavigationStartSerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NAVIGATION_START_REPLACEMENTS));
+			newHorizonsHeroes::validateDefaultCreatureLineSerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
+			newHorizonsProtectedMobility::validateRulesSerialization(overrides["magic"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
+			newHorizonsMagic::validateWaterWalkDayEndSerialization(overrides["magic"]["newHorizons"], h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END));
+			newHorizonsHeroes::validateArtifactManaRegenerationSerialization(overrides["heroes"]["newHorizonsCapabilities"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_ARTIFACT_MANA_REGENERATION));
+			newHorizonsHeroes::validateGlyphsOfFearSerialization(overrides["heroes"]["newHorizonsCapabilities"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_GLYPHS_OF_FEAR_AURA));
 			newHorizonsPlague::validateRuleSerialization(overrides["magic"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
+			newHorizonsHeroes::validateCrisisCommandProfileSerialization(overrides["heroes"]["newHorizonsPerks"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
 			newHorizonsHeroes::validateStartingDevelopmentSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
+			newHorizonsHeroes::validateStartingBookSerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_BOOK_REPLACEMENTS));
 			newHorizonsHeroes::validateRemainingStartSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
 			newHorizonsHeroes::validateCoroniusHolyWrathSerialization(overrides["heroes"]["newHorizons"],
@@ -139,6 +213,10 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_DEFENSIVE_START_SPECIALTIES));
 			newHorizonsHeroes::validateOffensiveStartSpecialtySerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES));
+			newHorizonsHeroes::validateRemainingSpellSpecialtySerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPELL_SPECIALTIES));
+			newHorizonsLighthouse::validateRulesSerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
 			newHorizonsHeroes::validateHasteSpecialtySerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_HASTE_SPECIALTIES));
 			h & overrides;
@@ -147,8 +225,23 @@ public:
 		{
 			JsonNode overrides;
 			h & overrides;
+			newHorizonsHeroes::validateDefaultCreatureLineSerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
+			newHorizonsHeroes::validateCrisisCommandProfileSerialization(overrides["heroes"]["newHorizonsPerks"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
+			newHorizonsHeroes::validateNavigationStartSerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NAVIGATION_START_REPLACEMENTS));
+			newHorizonsProtectedMobility::validateRulesSerialization(overrides["magic"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
+			newHorizonsMagic::validateWaterWalkDayEndSerialization(overrides["magic"]["newHorizons"], h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END));
+			newHorizonsHeroes::validateArtifactManaRegenerationSerialization(overrides["heroes"]["newHorizonsCapabilities"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_ARTIFACT_MANA_REGENERATION));
+			newHorizonsHeroes::validateGlyphsOfFearSerialization(overrides["heroes"]["newHorizonsCapabilities"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_GLYPHS_OF_FEAR_AURA));
 			newHorizonsHeroes::validateStartingDevelopmentSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
+			newHorizonsHeroes::validateStartingBookSerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_BOOK_REPLACEMENTS));
 			newHorizonsHeroes::validateRemainingStartSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
 			newHorizonsHeroes::validateCoroniusHolyWrathSerialization(overrides["heroes"]["newHorizons"],
@@ -165,6 +258,10 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_DEFENSIVE_START_SPECIALTIES));
 			newHorizonsHeroes::validateOffensiveStartSpecialtySerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES));
+			newHorizonsHeroes::validateRemainingSpellSpecialtySerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPELL_SPECIALTIES));
+			newHorizonsLighthouse::validateRulesSerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
 			newHorizonsPlague::validateRuleSerialization(overrides["magic"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
 			loadOverrides(overrides);

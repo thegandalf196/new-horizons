@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "../pathfinder/NewHorizonsProtectedMobility.h"
+#include "../pathfinder/NewHorizonsLighthouse.h"
 #include "../battle/NewHorizonsPlague.h"
 #include "CGameState.h"
 #include "../spells/NewHorizonsSpellAvailability.h"
@@ -1933,6 +1935,13 @@ CArtifactInstance * CGameState::createArtifact(const ArtifactID & artID, const S
 	return map->createArtifact(artID, spellId);
 }
 
+void CGameState::validateOpportunistSerialization(bool supported) const
+{
+	for(const auto & battle : currentBattles)
+		if(battle)
+			battle->validateOpportunistSerialization(supported);
+}
+
 void CGameState::validateCrossSchoolFormulaSerialization(bool supported) const
 {
 	for(const auto & battle : currentBattles)
@@ -1953,16 +1962,22 @@ void CGameState::validateNewHorizonsHasteSpecialtySerialization(bool supported) 
 		map->validateNewHorizonsHasteSpecialtySerialization(supported);
 }
 
-void CGameState::validateRecruitmentTrainingSerialization(bool supported) const
+void CGameState::validateRecruitmentTrainingSerialization(bool supported, bool cohortsSupported) const
 {
 	if(map)
-		map->validateRecruitmentTrainingSerialization(supported);
+		map->validateRecruitmentTrainingSerialization(supported, cohortsSupported);
 }
 
 void CGameState::validateNewHorizonsSageSerialization(bool supported) const
 {
 	if(map)
 		map->validateNewHorizonsSageSerialization(supported);
+}
+
+void CGameState::validateNewHorizonsLegendaryReputationSerialization(bool supported) const
+{
+	if(map)
+		map->validateNewHorizonsLegendaryReputationSerialization(supported, getCalendar().getMonth());
 }
 
 void CGameState::validateNewHorizonsRecruitersContactsSerialization(bool supported) const
@@ -1982,6 +1997,13 @@ void CGameState::validateNewHorizonsScholarSerialization(bool supported) const
 {
 	if(map)
 		map->validateNewHorizonsScholarSerialization(supported);
+}
+
+void CGameState::validateProtectedAdventureMobilitySerialization(bool supported) const
+{
+	newHorizonsProtectedMobility::validateRulesSerialization(magicRules, supported);
+	if(map)
+		map->validateProtectedAdventureMobilitySerialization(supported, &magicRules);
 }
 
 void CGameState::validateNewHorizonsThantReanimateSerialization(bool supported) const
@@ -2026,6 +2048,34 @@ void CGameState::validatePlagueRulesSerialization(bool supported) const
 		map->validatePlagueRulesSerialization(supported);
 }
 
+void CGameState::validateNewHorizonsRemainingSpellSpecialtySerialization(bool supported) const
+{
+	newHorizonsHeroes::validateRemainingSpellSpecialtySerialization(heroDevelopmentRules, supported);
+	if(map)
+		map->validateNewHorizonsRemainingSpellSpecialtySerialization(supported);
+}
+
+void CGameState::validateNewHorizonsArtifactManaRegenerationSerialization(bool supported) const
+{
+	newHorizonsHeroes::validateArtifactManaRegenerationSerialization(heroCapabilityRules, supported);
+	if(map)
+		map->validateNewHorizonsArtifactManaRegenerationSerialization(supported);
+}
+
+void CGameState::validateNewHorizonsGlyphsOfFearSerialization(bool supported) const
+{
+	newHorizonsHeroes::validateGlyphsOfFearSerialization(heroCapabilityRules, supported);
+	if(map)
+		map->validateNewHorizonsGlyphsOfFearSerialization(supported);
+}
+
+void CGameState::validateNewHorizonsLighthouseSerialization(bool supported) const
+{
+	newHorizonsLighthouse::validateRulesSerialization(heroDevelopmentRules, supported);
+	if(map)
+		map->validateNewHorizonsLighthouseSerialization(supported);
+}
+
 void CGameState::validateNewHorizonsStartingDevelopmentSerialization(bool supported) const
 {
 	newHorizonsHeroes::validateStartingDevelopmentSerialization(heroDevelopmentRules, supported);
@@ -2040,11 +2090,44 @@ void CGameState::validateNewHorizonsRemainingStartSerialization(bool supported) 
 		map->validateNewHorizonsRemainingStartSerialization(supported);
 }
 
+void CGameState::validateNewHorizonsWaterWalkDayEndSerialization(bool supported) const
+{
+	newHorizonsMagic::validateWaterWalkDayEndSerialization(magicRules, supported);
+	if(map)
+		map->validateNewHorizonsWaterWalkDayEndSerialization(supported);
+}
+
 void CGameState::validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const
 {
 	newHorizonsHeroes::validateCoroniusHolyWrathSerialization(heroDevelopmentRules, supported);
 	if(map)
 		map->validateNewHorizonsCoroniusHolyWrathSerialization(supported);
+}
+
+void CGameState::validateCrisisCommandSerialization(bool supported) const
+{
+	newHorizonsHeroes::validateCrisisCommandProfileSerialization(heroPerkRules, supported);
+	if(map) map->validateCrisisCommandSerialization(supported);
+}
+
+void CGameState::validateNewHorizonsStartingBookSerialization(bool supported) const
+{
+	newHorizonsHeroes::validateStartingBookSerialization(heroDevelopmentRules, supported);
+	if(map)
+		map->validateNewHorizonsStartingBookSerialization(supported);
+}
+
+void CGameState::validateNavigationStartSerialization(bool supported) const
+{
+	newHorizonsHeroes::validateNavigationStartSerialization(heroDevelopmentRules, supported);
+	if(map) map->validateNavigationStartSerialization(supported);
+}
+
+void CGameState::validateDefaultCreatureLineSerialization(bool supported) const
+{
+	if(scenarioOps) scenarioOps->validateDefaultCreatureLineSerialization(supported);
+	newHorizonsHeroes::validateDefaultCreatureLineSerialization(heroDevelopmentRules, supported);
+	if(map) map->validateDefaultCreatureLineSerialization(supported);
 }
 
 void CGameState::validateNewHorizonsMagnateSerialization(bool supported) const

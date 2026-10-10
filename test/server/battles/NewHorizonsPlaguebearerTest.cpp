@@ -555,6 +555,8 @@ TEST_F(NewHorizonsPlaguebearerTest, RawRuleReaderRejectsOldPresenceAndMalformedC
 {
 	JsonNode raw;
 	raw["magic"]["newHorizons"] = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+	// Keep the old reader control attributable to Plague, not a later capture.
+	raw["magic"]["newHorizons"].Struct().erase("protectedAdventureBarriers");
 	raw["magic"]["newHorizons"]["spells"][std::string(PLAGUE_KEY)]["propagationLimit"].Integer() = 1;
 	CMemorySerializer old;
 	old.oser & raw;

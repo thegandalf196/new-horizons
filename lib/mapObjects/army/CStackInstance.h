@@ -58,9 +58,15 @@ public:
 
 	const newHorizonsTraining::Receipt & getTrainingReceipt() const { return trainingReceipt; }
 	void setTrainingReceipt(const newHorizonsTraining::Receipt & receipt);
-	void validateTrainingSerialization(bool supported) const
+	void validateTrainingSerialization(bool supported, bool cohortsSupported = true) const
 	{
 		trainingReceipt.validate();
+		if(!cohortsSupported && !trainingReceipt.mercenaryOrigins.empty())
+			throw std::runtime_error("Cannot discard strategic Diplomacy cohorts");
+		if(!cohortsSupported)
+			for(const auto & bonus : getExportedBonusList())
+				if(newHorizonsTraining::isMercenaryBonus(bonus.get()))
+					throw std::runtime_error("Cannot discard strategic Mercenary Captain bonus");
 		if(!supported && !trainingReceipt.empty())
 			throw std::runtime_error("Cannot discard strategic stack training");
 		if(!supported)
@@ -83,7 +89,7 @@ public:
 	{
 		if(h.saving)
 		{
-			validateTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING));
+			validateTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING), h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_COHORTS));
 			for(const auto & bonus : getExportedBonusList())
 				bonus->validateTrainingSerialization(h);
 		}

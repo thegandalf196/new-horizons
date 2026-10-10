@@ -115,6 +115,8 @@ DLL_LINKAGE std::optional<DamageSpellSpecialtyRules> damageSpellSpecialtyRules(c
 /// Missing rules intentionally preserve legacy specialty behavior for older saves.
 DLL_LINKAGE std::optional<NonDamageSpellSpecialtyRules> nonDamageSpellSpecialtyRules(const JsonNode & resolvedRules);
 /// Checks the captured raw supported list without consulting installed defaults.
+DLL_LINKAGE bool usesRemainingSpellSpecialties(const JsonNode & rules);
+DLL_LINKAGE void validateRemainingSpellSpecialtySerialization(const JsonNode & rules, bool supported);
 DLL_LINKAGE bool hasHasteSpecialtyRules(const JsonNode & rules);
 DLL_LINKAGE void validateHasteSpecialtySerialization(const JsonNode & rules, bool supported);
 DLL_LINKAGE bool hasReanimateSpecialtyRules(const JsonNode & rules);
@@ -134,6 +136,13 @@ struct DLL_LINKAGE StartingDevelopmentProfile
 DLL_LINKAGE std::optional<StartingDevelopmentProfile> startingDevelopmentProfile(
 	const JsonNode & rules, const PerkState & perks, HeroTypeID hero, HeroClassID heroClass);
 DLL_LINKAGE void validateStartingDevelopmentSerialization(const JsonNode & rules, bool supported);
+DLL_LINKAGE bool usesNavigationStartReplacement(const JsonNode & rules);
+DLL_LINKAGE void validateNavigationStartSerialization(const JsonNode & rules, bool supported);
+DLL_LINKAGE void validateDefaultCreatureLineSerialization(const JsonNode & rules, bool supported);
+DLL_LINKAGE std::optional<CreatureID> defaultCreatureLineTarget(const JsonNode & rules, HeroTypeID hero);
+DLL_LINKAGE void validateStartingBookSerialization(const JsonNode & rules, bool supported);
+DLL_LINKAGE std::optional<SpellID> startingBookReplacement(
+	const JsonNode & rules, const JsonNode & magicRules, HeroTypeID hero, SpellID original);
 DLL_LINKAGE void validateRemainingStartSerialization(const JsonNode & rules, bool supported);
 DLL_LINKAGE void validateCoroniusHolyWrathSerialization(const JsonNode & rules, bool supported);
 /// Returns the converted skill specialties captured by this hero. Missing

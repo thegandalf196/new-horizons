@@ -496,6 +496,9 @@ public:
 		int32_t coefficientBasisPoints, int32_t damageSpecialtyPercent) const;
 	/// Complete per-cast Frailty loss in basis points, before its cumulative cap.
 	int32_t getFrailtyDefenseLossBasisPoints() const;
+	int64_t getHexOfPainFlatDamage() const;
+	int64_t getPlagueTickDamage() const;
+	int64_t getPhantomArmyIntegrity(const battle::Unit * source) const;
 	/// Guardian Spirit pool after SP-only modifiers, Healer and whole-pool Guardian.
 	int64_t getGuardianSpiritHitPoints(const battle::Unit * target = nullptr) const;
 	virtual Target canonicalizeTarget(const Target & aim) const = 0;

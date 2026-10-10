@@ -148,6 +148,16 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 
 	template <typename Handler> void validateTrainingSerialization(Handler & h) const
 	{
+		if(stacking == "new-horizons:mercenaryCaptain")
+		{
+			if(source != BonusSource::SECONDARY_SKILL || sid.toString() != "new-horizons:diplomacy"
+				|| type != BonusType::MORALE || val != 1 || valType != BonusValueType::ADDITIVE_VALUE
+				|| duration != BonusDuration::ONE_BATTLE)
+				throw std::runtime_error("Invalid typed Mercenary Captain bonus");
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_COHORTS))
+				throw std::runtime_error("Cannot discard Mercenary Captain bonus");
+			return;
+		}
 		const bool field = stacking == "new-horizons:fieldInstructor";
 		const bool drill = stacking == "new-horizons:drillSergeant";
 		const bool reinforcement = stacking == "new-horizons:reinforcementDrill";

@@ -19,6 +19,8 @@
 #include "../../networkPacks/PacksForClient.h"
 #include "../CSpell.h"
 #include "../NewHorizonsMagic.h"
+#include "../../pathfinder/NewHorizonsProtectedMobility.h"
+#include "../../gameState/CGameState.h"
 
 namespace
 {
@@ -33,6 +35,10 @@ bool isLegalNewHorizonsDestination(const IGameInfoCallback * cb, const spells::C
 
 	if(!cb->isVisibleFor(destination, caster->getCasterOwner()))
 		return false;
+	if(const auto * hero = caster->getHeroCaster())
+		if(newHorizonsProtectedMobility::enabled(hero->getMagicRules())
+			&& !newHorizonsProtectedMobility::segmentClear(*hero, cb->gameState().getMap(), source, destination))
+			return false;
 
 	const TerrainTile * dest = cb->getTileUnchecked(destination);
 	const TerrainTile * curr = cb->getTileUnchecked(source);

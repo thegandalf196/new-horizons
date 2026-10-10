@@ -85,6 +85,8 @@ DLL_LINKAGE bool usesPerkRules(const JsonNode & rules);
 /// semantics and are accepted; an active registry must match the canonical
 /// schema's cardinalities and preserve every scoped identity.
 DLL_LINKAGE void validatePerkRules(const JsonNode & rules);
+DLL_LINKAGE bool crisisCommandProfileActive(const JsonNode & rules);
+DLL_LINKAGE void validateCrisisCommandProfileSerialization(const JsonNode & rules, bool supported);
 
 /// Parse one saved skill from a validated registry.  The returned value owns
 /// copies of all data and therefore remains stable if the source is changed.

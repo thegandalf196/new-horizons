@@ -5,18 +5,9 @@ Script.__index = Script
 local SPELL_ID = "new-horizons:plague"
 local STATUS_TRIGGER = "core:plagueStatus"
 local STATUS_DURATION = 3
-local BASE_DAMAGE = 25
-local POWER_NUMERATOR = 8
-local POWER_DENOMINATOR = 10
-local BASIS_POINTS_PER_WHOLE = 10000
 
 local function rawTickDamage(mechanics)
-	-- getEffectPower is raw New Horizons Spell Power (including the Inferno
-	-- defending-siege +20); do not divide by the hero primary-growth powerDivisor.
-	local rawSpellPower = math.max(0, mechanics:getEffectPower())
-	local coefficient = mechanics:getSpellPowerCoefficientBasisPoints()
-	return BASE_DAMAGE + math.floor(POWER_NUMERATOR * rawSpellPower * coefficient
-		/ (POWER_DENOMINATOR * BASIS_POINTS_PER_WHOLE))
+	return mechanics:getPlagueTickDamage()
 end
 
 function Script:apply(mechanics, server, target)

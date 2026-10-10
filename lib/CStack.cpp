@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "CStack.h"
+#include <tuple>
 
 #include <vstd/RNG.h>
 
@@ -69,10 +70,16 @@ void CStack::localInit(BattleInfo * battleInfo)
 	battle = battleInfo;
 	assert(typeID.hasValue());
 	const int32_t restoredPersonalBloodrageIncrement = personalBloodrageIncrement;
+	const auto restoredQueueFlags = std::make_tuple(waiting, waitedThisTurn, movedThisRound,
+		defending, hadMorale, battlecraftWaitBonusUsed, battlecraftWaitMasteryDoubled);
 	const bool restoredVeteranCohesion = veteranCohesionEarned;
 	const auto restoredConfusionState = confusionState;
 	const int32_t restoredOverwatchReadyRound = battlecraftOverwatchReadyRound;
 	const int32_t restoredOverwatchUsedRound = battlecraftOverwatchUsedRound;
+	const bool restoredHeroicSpirit = heroicSpiritRetaliation;
+	const bool restoredHeroicSpiritPending = heroicSpiritMoralePending;
+	const int32_t restoredPostAttackMovement = pursuitMovementRemaining;
+	const bool restoredLuckyOwnAttackSequence = luckyOwnAttackSequence;
 	const int32_t restoredFrozenAppliedRound = frozenLastAppliedRound();
 
 	// Battle setup already exports training bonuses for its preview. A direct
@@ -104,6 +111,8 @@ void CStack::localInit(BattleInfo * battleInfo)
 	CUnitState::localInit(this); //it causes execution of the CStack::isOnNativeTerrain where nativeTerrain will be considered
 	// CUnitState::localInit resets ordinary per-battle transient state; preserve
 	// the one personal increment explicitly carried by this binary stack snapshot.
+	std::tie(waiting, waitedThisTurn, movedThisRound, defending, hadMorale,
+		battlecraftWaitBonusUsed, battlecraftWaitMasteryDoubled) = restoredQueueFlags;
 	personalBloodrageIncrement = restoredPersonalBloodrageIncrement;
 	veteranCohesionEarned = restoredVeteranCohesion;
 	// Binary stack descriptors carry pending Confusion and target history too;
@@ -111,7 +120,11 @@ void CStack::localInit(BattleInfo * battleInfo)
 	confusionState = restoredConfusionState;
 	battlecraftOverwatchReadyRound = restoredOverwatchReadyRound;
 	battlecraftOverwatchUsedRound = restoredOverwatchUsedRound;
+	heroicSpiritRetaliation = restoredHeroicSpirit;
+	heroicSpiritMoralePending = restoredHeroicSpiritPending;
 	restoreFrozenApplicationRound(restoredFrozenAppliedRound);
+	luckyOwnAttackSequence = restoredLuckyOwnAttackSequence;
+	pursuitMovementRemaining = restoredPostAttackMovement;
 	position = initialPosition;
 }
 

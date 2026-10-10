@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "NodeStorage.h"
+#include "NewHorizonsProtectedMobility.h"
 
 #include "CPathfinder.h"
 #include "PathfinderUtil.h"
@@ -110,7 +111,7 @@ std::vector<CGPathNode *> NodeStorage::calculateTeleportations(
 
 	for(auto & neighbour : accessibleExits)
 	{
-		auto * node = getNode(neighbour, source.node->layer);
+		auto * node = getNode(neighbour, newHorizonsProtectedMobility::displacementLayer(*out.hero, source.node->layer));
 
 		if(!node->coord.isValid())
 		{
@@ -140,7 +141,7 @@ void NodeStorage::resetTile(const int3 & tile, const EPathfindingLayer & layer, 
 
 std::vector<CGPathNode *> NodeStorage::getInitialNodes()
 {
-	auto * initialNode = getNode(out.hpos, out.hero->inBoat() ? out.hero->getBoat()->layer : EPathfindingLayer::LAND);
+	auto * initialNode = getNode(out.hpos, out.hero->inBoat() ? out.hero->getBoat()->layer : out.hero->getProtectedAdventureFlightLayer());
 
 	initialNode->turns = 0;
 	initialNode->moveRemains = out.hero->movementPointsRemaining();
@@ -162,4 +163,5 @@ void NodeStorage::commit(CDestinationNodeInfo & destination, const PathNodeInfo 
 	destination.node->turns = destination.turn;
 	destination.node->theNodeBefore = source.node;
 	destination.node->action = destination.action;
+	destination.node->lighthouseDepartureTurn = destination.lighthouseDeparture ? destination.turn : -1;
 }

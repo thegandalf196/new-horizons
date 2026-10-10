@@ -154,6 +154,7 @@ public:
 	bool eraseStack(const StackLocation &sl, bool forceRemoval = false) override;
 	bool swapStacks(const StackLocation &sl1, const StackLocation &sl2) override;
 	bool addToSlot(const StackLocation &sl, const CCreature *c, TQuantity count) override;
+	bool validateNeutralDiplomacyOffer(const CGCreature * source, const CGHeroInstance * hero, int64_t quotedGold) override;
 	void tryJoiningArmy(const CArmedInstance *src, const CArmedInstance *dst, bool removeObjWhenFinished, bool allowMerging) override;
 	bool moveStack(const StackLocation &src, const StackLocation &dst, TQuantity count = -1) override;
 

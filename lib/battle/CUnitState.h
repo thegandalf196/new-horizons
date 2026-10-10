@@ -243,12 +243,18 @@ public:
 	/// A ranged follow-up damage multiplier, persisted until used or declined.
 	/// Zero means no pending shot; values from 1 to 100 are valid percentages.
 	int32_t rangedFollowUpDamagePercent = 0;
+	/// Positive Luck earned by this actor's own still-open attack sequence.
+	/// Master Gunner holds it across the separately selected second shot.
+	bool luckyOwnAttackSequence = false;
 	/// Round in which this stack last used Archery's once-per-round Counterfire.
 	int32_t archeryCounterfireRound = -1;
 	/// Accepted Wait arms Overwatch until the next genuine activation. Usage is
 	/// independent of Counterfire and survives readiness expiry within a round.
 	int32_t battlecraftOverwatchReadyRound = -1;
 	int32_t battlecraftOverwatchUsedRound = -1;
+	/// Nonstacking derived retaliation: excludes the granting Morale activation.
+	bool heroicSpiritRetaliation = false;
+	bool heroicSpiritMoralePending = false;
 	/// Round in which this stack first spent Deadeye on an ordinary ranged shot.
 	int32_t archeryDeadeyeRound = -1;
 	/// Global activation serial in which this stack first triggered Suppression.
@@ -578,6 +584,7 @@ DLL_LINKAGE bool hasCasualtyProvenanceState(const JsonNode & unitSnapshot);
 /// Validates raw Overwatch round markers without modifying a unit. Missing
 /// legacy fields mean inactive; noninteger/out-of-range markers are rejected.
 DLL_LINKAGE bool hasOverwatchState(const JsonNode & unitSnapshot);
+DLL_LINKAGE bool hasHeroicSpiritState(const JsonNode & unitSnapshot);
 
 class DLL_LINKAGE CUnitStateDetached final : public CUnitState
 {

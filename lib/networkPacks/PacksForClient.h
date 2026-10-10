@@ -8,7 +8,9 @@
  *
  */
 #pragma once
+#include "../pathfinder/NewHorizonsLighthouse.h"
 #include "../entities/hero/NewHorizonsMasteryRules.h"
+#include "../entities/hero/NewHorizonsLegendaryReputation.h"
 #include "../entities/hero/NewHorizonsPerkState.h"
 #include "../entities/creature/NewHorizonsRecruitmentTraining.h"
 
@@ -21,6 +23,7 @@
 #include "ObjProperty.h"
 
 #include "../ResourceSet.h"
+#include "../pathfinder/NewHorizonsProtectedMobility.h"
 #include "../mapObjects/NewHorizonsMagnateIncome.h"
 #include "../TurnTimerInfo.h"
 #include "../bonuses/Bonus.h"
@@ -38,6 +41,7 @@
 #include <vcmi/scripting/ApiTags.h>
 
 #include <stdexcept>
+#include <algorithm>
 
 class CClient;
 class CGameHandler;
@@ -827,6 +831,29 @@ struct DLL_LINKAGE TryMoveHero : public CPackForClient
 	FowTilesType fowRevealed;
 	/// If hero moves on guarded tile, this field will be set to visitable pos of attacked wandering monster
 	int3 attackedFrom;
+	std::optional<newHorizonsLighthouse::DepartureReceipt> lighthouseDeparture;
+	std::optional<newHorizonsProtectedMobility::FlightReceipt> protectedFlight;
+	void validateProtectedFlightSerialization(bool supported) const
+	{
+		if(!protectedFlight)
+			return;
+		protectedFlight->validate();
+		if(!supported || result != SUCCESS || !id.hasValue() || id.getNum() < 0
+			|| start == end || start.z != end.z || !start.areNeighbours(end))
+			throw std::runtime_error("Invalid or unsupported protected flight movement packet");
+	}
+
+	void validateLighthouseDeparture() const
+	{
+		if(!lighthouseDeparture)
+			return;
+		lighthouseDeparture->validate();
+		const int64_t dx = static_cast<int64_t>(end.x) - start.x;
+		const int64_t dy = static_cast<int64_t>(end.y) - start.y;
+		if(!id.hasValue() || result != EMBARK || start == end || start.z != end.z
+			|| dx < -1 || dx > 1 || dy < -1 || dy > 1)
+			throw std::runtime_error("Lighthouse receipt requires an identified one-step embark");
+	}
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
@@ -837,6 +864,16 @@ struct DLL_LINKAGE TryMoveHero : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+		{
+			validateProtectedFlightSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
+		}
+		if(h.saving && lighthouseDeparture)
+		{
+			validateLighthouseDeparture();
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE))
+				throw std::runtime_error("Castle Lighthouse departure requires a valid embark and new save format");
+		}
 		h & id;
 		h & result;
 		h & start;
@@ -844,6 +881,22 @@ struct DLL_LINKAGE TryMoveHero : public CPackForClient
 		h & movePoints;
 		h & fowRevealed;
 		h & attackedFrom;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE))
+		{
+			h & lighthouseDeparture;
+			if(!h.saving)
+				validateLighthouseDeparture();
+		}
+		else if(!h.saving)
+			lighthouseDeparture.reset();
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS))
+		{
+			h & protectedFlight;
+			if(!h.saving)
+				validateProtectedFlightSerialization(true);
+		}
+		else if(!h.saving)
+			protectedFlight.reset();
 
 		std::string fow;
 		for (const auto & tile : fowRevealed)
@@ -1154,14 +1207,57 @@ struct DLL_LINKAGE SwapStacks : CGarrisonOperationPack
 	SlotID srcSlot;
 	SlotID dstSlot;
 
+	std::optional<newHorizonsDiplomacy::LegendaryAdmission> legendaryAdmission;
+
+	void validateLegendaryAdmission() const
+	{
+		if(!legendaryAdmission) return;
+		legendaryAdmission->validate();
+		const auto & receipt = *legendaryAdmission;
+		if(!((srcArmy == receipt.source && srcSlot == receipt.sourceSlot && dstArmy == receipt.hero)
+				|| (dstArmy == receipt.source && dstSlot == receipt.sourceSlot && srcArmy == receipt.hero)))
+			throw std::runtime_error("Legendary Reputation receipt has mismatched transaction endpoints");
+	}
+
+	/// Accepted neutral admission: only the incoming moved portion gets origin.
+	ObjectInstanceID diplomacyRecruiter = ObjectInstanceID::NONE;
 	void visitTyped(ICPackVisitor & visitor) override;
+	template <typename Handler> void validateMercenarySerialization(Handler & h) const
+	{
+		if(diplomacyRecruiter.getNum() < -1 || (diplomacyRecruiter.hasValue()
+			&& diplomacyRecruiter != srcArmy && diplomacyRecruiter != dstArmy))
+			throw std::runtime_error("Invalid Diplomacy admission packet origin");
+		if(diplomacyRecruiter.hasValue() && !h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_COHORTS))
+			throw std::runtime_error("Cannot discard Diplomacy admission origin");
+	}
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+		{
+			validateLegendaryAdmission();
+			if(legendaryAdmission)
+			{
+				legendaryAdmission->validate();
+				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_LEGENDARY_REPUTATION))
+					throw std::runtime_error("Cannot discard Legendary Reputation admission receipt");
+			}
+		}
+		if(h.saving) validateMercenarySerialization(h);
 		h & srcArmy;
 		h & dstArmy;
 		h & srcSlot;
 		h & dstSlot;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_LEGENDARY_REPUTATION))
+			h & legendaryAdmission;
+		else if(!h.saving)
+			legendaryAdmission.reset();
+		if(!h.saving)
+			validateLegendaryAdmission();
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_COHORTS))
+			h & diplomacyRecruiter;
+		else if(!h.saving) diplomacyRecruiter = ObjectInstanceID::NONE;
+		if(!h.saving) validateMercenarySerialization(h);
 	}
 };
 
@@ -1193,15 +1289,57 @@ struct DLL_LINKAGE RebalanceStacks : CGarrisonOperationPack
 
 	TQuantity count;
 
+	std::optional<newHorizonsDiplomacy::LegendaryAdmission> legendaryAdmission;
+
+	void validateLegendaryAdmission() const
+	{
+		if(!legendaryAdmission) return;
+		legendaryAdmission->validate();
+		const auto & receipt = *legendaryAdmission;
+		if(srcArmy != receipt.source || srcSlot != receipt.sourceSlot || dstArmy != receipt.hero || count <= 0)
+			throw std::runtime_error("Legendary Reputation receipt has mismatched transaction endpoints");
+	}
+
+	/// Accepted neutral admission: only the incoming moved portion gets origin.
+	ObjectInstanceID diplomacyRecruiter = ObjectInstanceID::NONE;
 	void visitTyped(ICPackVisitor & visitor) override;
+	template <typename Handler> void validateMercenarySerialization(Handler & h) const
+	{
+		if(diplomacyRecruiter.getNum() < -1 || (diplomacyRecruiter.hasValue()
+			&& diplomacyRecruiter != srcArmy && diplomacyRecruiter != dstArmy))
+			throw std::runtime_error("Invalid Diplomacy admission packet origin");
+		if(diplomacyRecruiter.hasValue() && !h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_COHORTS))
+			throw std::runtime_error("Cannot discard Diplomacy admission origin");
+	}
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+		{
+			validateLegendaryAdmission();
+			if(legendaryAdmission)
+			{
+				legendaryAdmission->validate();
+				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_LEGENDARY_REPUTATION))
+					throw std::runtime_error("Cannot discard Legendary Reputation admission receipt");
+			}
+		}
+		if(h.saving) validateMercenarySerialization(h);
 		h & srcArmy;
 		h & dstArmy;
 		h & srcSlot;
 		h & dstSlot;
 		h & count;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_LEGENDARY_REPUTATION))
+			h & legendaryAdmission;
+		else if(!h.saving)
+			legendaryAdmission.reset();
+		if(!h.saving)
+			validateLegendaryAdmission();
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_COHORTS))
+			h & diplomacyRecruiter;
+		else if(!h.saving) diplomacyRecruiter = ObjectInstanceID::NONE;
+		if(!h.saving) validateMercenarySerialization(h);
 	}
 };
 
@@ -1209,12 +1347,50 @@ struct DLL_LINKAGE BulkRebalanceStacks : CGarrisonOperationPack
 {
 	std::vector<RebalanceStacks> moves;
 
+	std::optional<newHorizonsDiplomacy::LegendaryAdmission> legendaryAdmission;
+
+	void validateLegendaryAdmission() const
+	{
+		for(const auto & move : moves)
+			if(move.legendaryAdmission)
+				throw std::runtime_error("Nested Legendary Reputation receipt");
+		if(!legendaryAdmission) return;
+		legendaryAdmission->validate();
+		const auto & receipt = *legendaryAdmission;
+		if(!std::ranges::any_of(moves, [&receipt](const auto & move)
+			{
+				return move.srcArmy == receipt.source && move.dstArmy == receipt.hero && move.count > 0;
+			}))
+			throw std::runtime_error("Legendary Reputation receipt has mismatched transaction endpoints");
+	}
+
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	template <typename Handler>
 	void serialize(Handler & h)
 	{
+		if(h.saving)
+		{
+			validateLegendaryAdmission();
+			if(legendaryAdmission)
+			{
+				legendaryAdmission->validate();
+				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_LEGENDARY_REPUTATION))
+					throw std::runtime_error("Cannot discard Legendary Reputation admission receipt");
+			}
+			for(const auto & move : moves)
+				if(move.legendaryAdmission)
+					throw std::runtime_error("Legendary Reputation receipt belongs to the whole bulk admission");
+		}
+		if(h.saving)
+			for(const auto & move : moves) move.validateMercenarySerialization(h);
 		h & moves;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_LEGENDARY_REPUTATION))
+			h & legendaryAdmission;
+		else if(!h.saving)
+			legendaryAdmission.reset();
+		if(!h.saving)
+			validateLegendaryAdmission();
 	}
 };
 

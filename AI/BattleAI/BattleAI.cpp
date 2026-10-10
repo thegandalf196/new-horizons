@@ -382,7 +382,8 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 	const auto battleCallback = cb->getBattle(battleID);
 	const auto hasMandatoryOrder = [&]()
 	{
-		return battleCallback->battleHasPendingDoubleCommand(side)
+		return battleCallback->getBattle()->getCrisisCommandState().choice()
+			|| battleCallback->battleHasPendingDoubleCommand(side)
 			|| battleCallback->battleHasPendingPreCombatOrder(side);
 	};
 	if(hasMandatoryOrder())
@@ -398,6 +399,13 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 			return;
 		if(hasMandatoryOrder())
 		{
+			if(battleCallback->getBattle()->getCrisisCommandState().choice())
+			{
+				auto decline = BattleAction::makeNoAction(stack);
+				decline.side = side;
+				cb->battleMakeUnitAction(battleID, decline);
+				return;
+			}
 			// Never substitute a creature action while the authority still has an
 			// unresolved mandatory Order window.
 			logAi->error("BattleAI could not resolve a pending mandatory Hero Order");

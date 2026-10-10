@@ -3,6 +3,7 @@
  * License: GNU General Public License v2 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../NewHorizonsHistoricalAdventurePolicyTestUtils.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/GameSettings.h"
@@ -47,6 +48,13 @@ protected:
 		rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 		rules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
 		rules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
+		rules["startingSkills"].Struct().erase("startingBookReplacements");
+		rules.Struct().erase("remainingSpellSpecialtyReplacements");
+		rules["skillSpecialties"].Struct().erase("navigationStartReplacements");
+		rules.Struct().erase("defaultCreatureLineReplacements");
+		std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(),
+			[](const JsonNode & value) { return value.String() == "new-horizons:phantomArmy"; });
+		rules.Struct().erase("lighthouseDeparture");
 		rules["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
 		rules["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
 		rules["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");
@@ -68,6 +76,7 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		isolateHistoricalAdventurePolicies(*loaded);
 	}
 	void prepare(const std::string & actor = "core:thant", int rawSpellPower = 67)
 	{
@@ -298,6 +307,13 @@ TEST_F(NewHorizonsThantReanimateSpecialtyTest, PreviousHasteFormatRejectsRulePay
 	raw["heroes"]["newHorizons"]["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 	raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
 	raw["heroes"]["newHorizons"]["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
+	raw["heroes"]["newHorizons"]["startingSkills"].Struct().erase("startingBookReplacements");
+	raw["heroes"]["newHorizons"].Struct().erase("remainingSpellSpecialtyReplacements");
+	raw["heroes"]["newHorizons"]["skillSpecialties"].Struct().erase("navigationStartReplacements");
+	raw["heroes"]["newHorizons"].Struct().erase("defaultCreatureLineReplacements");
+	std::erase_if(raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"]["spells"].Vector(),
+		[](const JsonNode & value) { return value.String() == "new-horizons:phantomArmy"; });
+	raw["heroes"]["newHorizons"].Struct().erase("lighthouseDeparture");
 	raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
 	raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
 	raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");
@@ -339,6 +355,13 @@ TEST_F(NewHorizonsThantReanimateSpecialtyTest, PreviousHasteFormatStillWritesAnd
 	raw["heroes"]["newHorizons"]["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 	raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
 	raw["heroes"]["newHorizons"]["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
+	raw["heroes"]["newHorizons"]["startingSkills"].Struct().erase("startingBookReplacements");
+	raw["heroes"]["newHorizons"].Struct().erase("remainingSpellSpecialtyReplacements");
+	raw["heroes"]["newHorizons"]["skillSpecialties"].Struct().erase("navigationStartReplacements");
+	raw["heroes"]["newHorizons"].Struct().erase("defaultCreatureLineReplacements");
+	std::erase_if(raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"]["spells"].Vector(),
+		[](const JsonNode & value) { return value.String() == "new-horizons:phantomArmy"; });
+	raw["heroes"]["newHorizons"].Struct().erase("lighthouseDeparture");
 	raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
 	raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
 	raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");

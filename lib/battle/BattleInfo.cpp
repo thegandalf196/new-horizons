@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsHeroicSpirit.h"
 #include "NewHorizonsDivineMandate.h"
 #include "NewHorizonsIronWill.h"
 #include "BattleInfo.h"
@@ -146,6 +147,14 @@ void BattleInfo::setMoraleSuppressionState(BattleSide side, const MoraleSuppress
 {
 	state.validate();
 	sides.at(side).moraleSuppression = state;
+}
+
+void BattleInfo::setRapidResponseState(BattleSide side, const RapidResponseState & state)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::invalid_argument("Invalid Rapid Response side");
+	state.validateShape();
+	sides.at(side).rapidResponse = state;
 }
 
 void BattleInfo::setReducedExtraActivationState(BattleSide side, const ReducedExtraActivationState & state)
@@ -703,6 +712,8 @@ void BattleInfo::localInit()
 	exportBonuses();
 	for(auto & stack : stacks)
 		stack->captureBattleStartMaximumAggregateHP();
+	// Decoding admitted descriptor references only; live anchor health is now initialized.
+	crisisCommand.validate(*this);
 }
 
 
@@ -828,6 +839,8 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 				"new-horizons:discipline", "new-horizons:discipline.rally");
 			currentBattle->sides[i].moraleSuppression.roundEnabled = heroes[i]->hasActivePerk(
 				"new-horizons:discipline", "new-horizons:discipline.unbreakable");
+			currentBattle->sides[i].rapidResponse.enabled = heroes[i]->hasActivePerk(
+				"new-horizons:battlecraft", std::string(newHorizonsRapidResponse::PERK_KEY));
 			currentBattle->sides[i].reducedExtraActivation.enabled = heroes[i]->hasActivePerk(
 				"new-horizons:warMachines", "new-horizons:warMachines.quartermaster");
 			auto & fortune = currentBattle->sides[i].sylvanLuck;
@@ -858,6 +871,11 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 	currentBattle->terrainType = terrain;
 	currentBattle->battlefieldType = battlefieldType;
 	currentBattle->round = 0;
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		currentBattle->seizeInitiative.sides.at(static_cast<size_t>(side)).enabled = heroes[side]
+			&& heroes[side]->hasActivePerk(std::string(newHorizonsSeizeInitiative::SKILL_KEY),
+				std::string(newHorizonsSeizeInitiative::PERK_KEY));
+	currentBattle->seizeInitiative.nextRound(0);
 	currentBattle->activeStack = -1;
 	currentBattle->replayAllowed = false;
 	if (town)
@@ -1498,6 +1516,7 @@ void BattleInfo::nextRound()
 	}
 	for(auto i : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
+		sides.at(i).rapidResponse.clearPending();
 		auto extraActivation = sides.at(i).reducedExtraActivation;
 		extraActivation.activeUnitId = ReducedExtraActivationState::INVALID_UNIT_ID;
 		extraActivation.outputPercent = 100;
@@ -1522,6 +1541,7 @@ void BattleInfo::nextRound()
 	// are applied, so skip the decrement here to grant them their full configured duration
 	bool isFirstRound = round == 0;
 	round += 1;
+	seizeInitiative.nextRound(round);
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		auto & spellResponse = sides.at(side).spellResponseState;
@@ -1579,9 +1599,18 @@ void BattleInfo::nextRound()
 			stack->removeBonusesRecursive(CSelector(battle::isPolymorphMarker));
 }
 
+void BattleInfo::validateCrisisCommandProfiles(bool supported) const
+{
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		if(const auto * hero = getSideHero(side))
+			newHorizonsCrisisCommand::validateProfileSerialization(hero->getPerkState().rules, supported);
+}
+
 void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 {
 	activeStack = unitId;
+	if(reason == BattleUnitTurnReason::CRISIS_ORDER || reason == BattleUnitTurnReason::CRISIS_RESUME)
+		return;
 	if(reason == BattleUnitTurnReason::ACTION_REJECTED
 		|| reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION
 		|| reason == BattleUnitTurnReason::PURSUIT_CONTINUATION
@@ -1591,6 +1620,7 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	CStack * st = getStack(activeStack);
 	if(battleBeginsActivation(st, reason))
 	{
+		newHorizonsHeroicSpirit::beginActivation(*st, reason);
 		st->removeBonusesRecursive(CSelector(Bonus::UntilNextCreatureActivation));
 
 		// Second Wind is a genuine activation too, but must not broaden the
@@ -1637,6 +1667,8 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	}
 	if(newActivation)
 	{
+		seizeInitiative.begin(unitId, reason == BattleUnitTurnReason::TURN_QUEUE
+			|| reason == BattleUnitTurnReason::AUTOMATIC_ACTION);
 		// Last Stand ends the current activation without removing the surviving
 		// stack. Keep the marker through all continuations, and clear it only
 		// when the stack actually receives a new activation.
@@ -1644,6 +1676,7 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 		st->armorerLastStandDefending = false;
 		st->pursuitMovementRemaining = 0;
 		st->cleaveUsedThisActivation = false;
+		st->luckyOwnAttackSequence = false;
 		st->setRangedFollowUpDamagePercent(0);
 		const auto side = playerToSide(battleGetOwner(st));
 		const bool ordinaryCreature = st->alive() && !st->isGhost() && !st->isTurret()
@@ -2697,6 +2730,26 @@ void BattleInfo::postDeserialize()
 	for (const auto & unit : stacks)
 		unit->postDeserialize(getSideArmy(unit->unitSide()));
 
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto & response = sides.at(side).rapidResponse;
+		response.validateShape();
+		const auto * hero = getSideHero(side);
+		if(response.enabled && (!hero || !hero->hasActivePerk("new-horizons:battlecraft",
+			std::string(newHorizonsRapidResponse::PERK_KEY))))
+			throw std::runtime_error("Restored Rapid Response side lacks its captured capability");
+		if(response.lastUsedRound > round || (response.pending() && response.pendingRound != round))
+			throw std::runtime_error("Restored Rapid Response round differs from battle round");
+		if(response.pending())
+		{
+			const auto count = std::count_if(stacks.begin(), stacks.end(), [&response](const auto & unit)
+			{
+				return unit && unit->unitId() == response.pendingUnitId;
+			});
+			if(count != 1)
+				throw std::runtime_error("Missing or ambiguous restored Rapid Response recipient");
+		}
+	}
 	std::set<uint32_t> activeQuartermasterUnits;
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
@@ -2710,6 +2763,13 @@ void BattleInfo::postDeserialize()
 			throw std::runtime_error("Invalid restored reduced extra activation identity");
 	}
 
+	for(const auto & unit : stacks)
+		if(unit && unit->luckyOwnAttackSequence
+			&& (!unit->isBallista() || unit->rangedFollowUpDamagePercent <= 0
+				|| getActiveStackID() < 0 || unit->unitId() != static_cast<uint32_t>(getActiveStackID())))
+			throw std::runtime_error("Held lucky attack requires its active pending ranged sequence");
+
+	validateOpportunistSerialization(true);
 	uint32_t pendingFollowUps = 0;
 	for(const auto & unit : stacks)
 	{
@@ -2746,6 +2806,26 @@ bool BattleInfo::hasReserveMovementState() const
 	{
 		return stack && stack->getActivationMovementBonus() != 0;
 	});
+}
+
+void BattleInfo::validateOpportunistSerialization(bool supported) const
+{
+	for(const auto & stack : stacks)
+	{
+		if(stack && (stack->pursuitMovementRemaining < 0
+			|| (stack->pursuitMovementRemaining > 0
+				&& (!supported || getActiveStackID() < 0
+					|| stack->unitId() != static_cast<uint32_t>(getActiveStackID())))))
+			throw std::runtime_error("Cannot discard or accept invalid post-attack movement state");
+		if(stack && stack->luckyOwnAttackSequence)
+		{
+			if(!supported)
+				throw std::runtime_error("Cannot discard an earned own lucky attack sequence");
+			if(!stack->isBallista() || stack->rangedFollowUpDamagePercent <= 0
+				|| getActiveStackID() < 0 || stack->unitId() != static_cast<uint32_t>(getActiveStackID()))
+				throw std::runtime_error("Held lucky attack requires its active pending ranged sequence");
+		}
+	}
 }
 
 bool BattleInfo::hasRangedFollowUpState() const

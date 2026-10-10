@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/NewHorizonsHeroicSpirit.h"
 #include "StackWithBonuses.h"
 #include "NewHorizonsHexOfPain.h"
 #include "../../lib/battle/BattleInfo.h"
@@ -1033,6 +1034,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	env(ENV),
 	bonusTreeVersion(1)
 {
+	crisisCommand = realBattle->getBattle()->getCrisisCommandState();
 	if(const auto * parent = dynamic_cast<const HypotheticBattle *>(realBattle.get()))
 	{
 		elementalRebirthSpawnUnitIds = parent->elementalRebirthSpawnUnitIds;
@@ -1044,6 +1046,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	auto activeUnit = realBattle->battleActiveUnit();
 	activeUnitId = activeUnit ? activeUnit->unitId() : -1;
 	projectedRound = realBattle->battleGetRound();
+	seizeInitiative = realBattle->getBattle()->getSeizeInitiativeState();
 	deploymentState = realBattle->getBattle()->getDeploymentState();
 	fortuneRollRules = realBattle->getBattle()->getLuckRollRules();
 	if(const auto * concreteBattle = dynamic_cast<const BattleInfo *>(realBattle->getBattle()))
@@ -1068,6 +1071,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	nextId = 0x00F00000;
 	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
+		rapidResponseStates[side] = realBattle->getBattle()->getRapidResponseState(side);
 		reducedExtraActivationStates[side] = realBattle->getBattle()->getReducedExtraActivationState(side);
 		crossSchoolFormulaStates[side] = realBattle->getBattle()->getCrossSchoolFormulaState(side);
 		spellResponseStates[side] = realBattle->getBattle()->getSpellResponseState(side);
@@ -1489,6 +1493,33 @@ void HypotheticBattle::setOverwhelmingFormulaState(BattleSide side, const Overwh
 	overwhelmingFormulaStates.at(side) = state;
 }
 
+const RapidResponseState & HypotheticBattle::getRapidResponseState(BattleSide side) const
+{
+	static const RapidResponseState empty;
+	return side == BattleSide::ATTACKER || side == BattleSide::DEFENDER ? rapidResponseStates.at(side) : empty;
+}
+
+void HypotheticBattle::setRapidResponseState(BattleSide side, const RapidResponseState & state)
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		throw std::invalid_argument("Invalid detached Rapid Response side");
+	state.validateShape();
+	rapidResponseStates.at(side) = state;
+}
+
+void HypotheticBattle::completeRapidResponseActivation(uint32_t unitId, bool syntheticStoppedSlot)
+{
+	const auto * unit = battleGetUnitByID(unitId);
+	if(!unit || syntheticStoppedSlot)
+		return;
+	const auto side = playerToSide(battleGetOwner(unit));
+	if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+	{
+		const auto responding = side == BattleSide::ATTACKER ? BattleSide::DEFENDER : BattleSide::ATTACKER;
+		setRapidResponseState(responding, newHorizonsRapidResponse::capture(*this, responding));
+	}
+}
+
 void HypotheticBattle::setReducedExtraActivationState(BattleSide side,
 	const ReducedExtraActivationState & state)
 {
@@ -1596,6 +1627,7 @@ const HeroActionAllowanceState & HypotheticBattle::getHeroActionAllowances(Battl
 std::optional<HypotheticBattle::ProjectedSpellAllowance> HypotheticBattle::prepareHeroSpellAllowance(
 	BattleSide side, SpellID spell, bool metamagicFollowup, bool grand) const
 {
+	if(crisisCommand.choice()) return {};
 	const auto & ledger = heroActionAllowances.at(side);
 	if(ledger.currentRound < 0)
 	{
@@ -1695,7 +1727,9 @@ std::optional<HypotheticBattle::ProjectedOrderAllowance> HypotheticBattle::prepa
 		auto nextLedger = ledger;
 		if(nextLedger.currentRound != projectedRound)
 			return {};
-		const auto selection = nextLedger.eligibleAllowance(HeroActionAllowanceState::ActionKind::ORDER, projectedRound);
+		const auto crisisFilter = [this, side](const HeroActionAllowanceState::Grant & grant)
+			{ return crisisCommand.allowsGrant(side, grant); };
+		const auto selection = nextLedger.eligibleAllowance(HeroActionAllowanceState::ActionKind::ORDER, projectedRound, crisisFilter);
 		if(!selection)
 			return {};
 		if(selection->allowance == HeroActionAllowanceState::AllowanceKind::HERO
@@ -1704,7 +1738,7 @@ std::optional<HypotheticBattle::ProjectedOrderAllowance> HypotheticBattle::prepa
 			&& heroCommands::hasDoubleCommand(battleGetFightingHero(side)))
 			return {};
 		const auto receipt = nextLedger.consumeAllowance(selection->grantId,
-			HeroActionAllowanceState::ActionKind::ORDER, projectedRound);
+			HeroActionAllowanceState::ActionKind::ORDER, projectedRound, crisisFilter);
 		if(!receipt)
 			return {};
 		return ProjectedOrderAllowance{{side, *receipt, true, projectedActionEpochs.at(side)},
@@ -1915,6 +1949,10 @@ bool HypotheticBattle::projectAcceptedHeroOrder(BattleSide side, HeroCommand com
 	const std::vector<uint32_t> & commandTargets, const ProjectedOrderAllowance & prepared)
 {
 	const auto & action = prepared.action;
+	const bool crisisOrder = crisisCommand.choice();
+	if(crisisOrder && (crisisCommand.chooser() != side
+		|| action.receipt.source != HeroActionAllowanceState::GrantSource::CRISIS_COMMAND
+		|| action.receipt.grantId != crisisCommand.returns.back().grant)) return false;
 	if(action.receipt.action != HeroActionAllowanceState::ActionKind::ORDER
 		|| !isCurrentPreparedOrderAction(side, prepared, true))
 		return false;
@@ -1981,6 +2019,8 @@ bool HypotheticBattle::projectAcceptedHeroOrder(BattleSide side, HeroCommand com
 		heroActionAllowances.at(side) = std::move(nextLedger);
 		newHorizonsDivineMandate::applySharedPurpose(*this, *this, side, overlap);
 	}
+	if(projectingCommand && action.isHeroAction())
+		setSeizeInitiativeState(newHorizonsSeizeInitiative::capturePaidOrder(*this, side));
 	if(action.isHeroAction() && newHorizonsWarcasting::enabled(getMagicRules()))
 	{
 		const auto * hero = getSideHero(side);
@@ -2035,6 +2075,17 @@ bool HypotheticBattle::projectAcceptedHeroOrder(BattleSide side, HeroCommand com
 			unit->addUnitBonus(std::vector<Bonus>{newHorizonsEnchantedCommand::moraleBonus()});
 	}
 	finishProjectedHeroAction(side, prepared);
+	if(crisisOrder)
+	{
+		if(command == HeroCommand::SECOND_WIND)
+			crisisCommand.returns.back().phase = newHorizonsCrisisCommand::Phase::GRANTED_EXTRA;
+		else
+		{
+			auto returned = crisisCommand;
+			returned.returns.pop_back();
+			setCrisisCommandState(returned);
+		}
+	}
 	return true;
 }
 
@@ -2383,6 +2434,7 @@ void HypotheticBattle::nextRound()
 		fortuneStates[side].nextRound();
 		luckSerendipityStates[side].nextRound(projectedRound + 1);
 		moraleSuppressionStates[side].nextRound();
+		rapidResponseStates[side].clearPending();
 		std::erase_if(heroOrderStates[side], [this](const HeroOrderState & order)
 			{ return !order.hasScheduledRecipients(projectedRound + 1); });
 	}
@@ -2393,6 +2445,7 @@ void HypotheticBattle::nextRound()
 	// BattleInfo grants opening effects their full duration in round one.
 	const bool firstRound = projectedRound == 0;
 	++projectedRound;
+	seizeInitiative.nextRound(projectedRound);
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		auto & spellResponse = spellResponseStates.at(side);
@@ -2460,8 +2513,25 @@ void HypotheticBattle::nextRound()
 	obstacleChanges |= previousSize != projectedObstacles.size();
 }
 
+bool HypotheticBattle::projectEarnedMoraleActivation(uint32_t unitId)
+{
+	auto unit = getForUpdate(unitId);
+	if(!unit || !unit->alive() || !unit->canMove() || unit->hadMorale || unit->defending
+		|| unit->waited() || unit->fear || battleGetMorale(unit.get()) <= 0
+		|| newHorizonsSwiftRebirth::blocksAdditionalActivation(*unit, getRound()))
+		return false;
+	newHorizonsHeroicSpirit::grantEarnedMorale(*unit, battleGetOwnerHero(unit.get()));
+	nextTurn(unitId, BattleUnitTurnReason::MORALE);
+	return true;
+}
+
 void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 {
+	if(reason == BattleUnitTurnReason::CRISIS_ORDER || reason == BattleUnitTurnReason::CRISIS_RESUME)
+	{
+		activeUnitId = static_cast<int32_t>(unitId);
+		return;
+	}
 	auto unit = getForUpdate(unitId);
 	bool extra = reason == BattleUnitTurnReason::MORALE
 		|| reason == BattleUnitTurnReason::REDUCED_EXTRA_ACTIVATION;
@@ -2478,12 +2548,23 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 		return;
 	if(reason == BattleUnitTurnReason::TURN_QUEUE || reason == BattleUnitTurnReason::AUTOMATIC_ACTION)
 	{
+		seizeInitiative.begin(unitId, true);
 		if(newHorizonsSwiftRebirth::normalActivationCompleted(*unit, getRound()))
 			return;
 		if(const auto next = newHorizonsSwiftRebirth::reserveNormalActivationPlan(*unit, getRound()))
 			updateUnitBonus(unitId, {*next});
 	}
+	if(reason == BattleUnitTurnReason::TURN_QUEUE)
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			if(newHorizonsRapidResponse::pendingWaiter(*this, side) == unit.get())
+				setRapidResponseState(side, newHorizonsRapidResponse::resolve(*this, side, true));
+			else if(getRapidResponseState(side).pending() && !newHorizonsRapidResponse::pendingWaiter(*this, side))
+				setRapidResponseState(side, newHorizonsRapidResponse::resolve(*this, side, false));
+		}
 	activeUnitId = unitId;
+	if(extra)
+		seizeInitiative.begin(unitId, false);
 	const bool frozenNormalSlot = newHorizonsFrozen::forfeitsNormalActivation(*unit, reason);
 	if(frozenNormalSlot || (unit->isTimeStopped()
 		&& (reason == BattleUnitTurnReason::TURN_QUEUE || reason == BattleUnitTurnReason::AUTOMATIC_ACTION)))
@@ -2498,10 +2579,12 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 		return;
 	if(reason == BattleUnitTurnReason::ACTION_REJECTED
 		|| reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION
-		|| reason == BattleUnitTurnReason::PURSUIT_CONTINUATION)
+		|| reason == BattleUnitTurnReason::PURSUIT_CONTINUATION
+		|| reason == BattleUnitTurnReason::RANGED_ATTACK_CONTINUATION)
 		return;
 	if(battleBeginsActivation(unit.get(), reason))
 	{
+		newHorizonsHeroicSpirit::beginActivation(*unit, reason);
 		unit->removeUnitBonus(CSelector(Bonus::UntilNextCreatureActivation));
 
 		// STACK_GETS_TURN is deliberately not globally broadened for HERO_COMMAND
@@ -2587,6 +2670,7 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 		unit->armorerLastStandDefending = false;
 		unit->pursuitMovementRemaining = 0;
 		unit->cleaveUsedThisActivation = false;
+		unit->luckyOwnAttackSequence = false;
 		const auto side = playerToSide(battleGetOwner(unit.get()));
 		const bool ordinaryCreature = unit->alive() && !unit->isGhost() && !unit->isTurret()
 			&& !unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
@@ -3198,8 +3282,8 @@ std::vector<SpellID> HypotheticBattle::getUsedSpells(BattleSide side) const
 
 int3 HypotheticBattle::getLocation() const
 {
-	// TODO
-	return int3(-1, -1, -1);
+	// Projection changes battle units, not the captured adventure location.
+	return subject->getBattle()->getLocation();
 }
 
 BattleLayout HypotheticBattle::getLayout() const

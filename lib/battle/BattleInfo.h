@@ -25,6 +25,7 @@
 #include "../bonuses/CBonusSystemNode.h"
 #include "../int3.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../pathfinder/NewHorizonsProtectedMobility.h"
 #include "../spells/NewHorizonsSorcery.h"
 
 class CStack;
@@ -39,8 +40,10 @@ class DLL_LINKAGE BattleInfo : public CBonusSystemNode, public CBattleInfoCallba
 	std::unique_ptr<BattleLayout> layout;
 	si32 round;
 	si32 activationSerial = 0;
+	SeizeInitiativeState seizeInitiative;
 	JsonNode heroCommandRules;
 	JsonNode magicRules;
+	newHorizonsCrisisCommand::State crisisCommand;
 	newHorizonsCreatures::CreatureCategoryRules creatureCategoryRules;
 
 	void postDeserialize();
@@ -50,8 +53,41 @@ class DLL_LINKAGE BattleInfo : public CBonusSystemNode, public CBattleInfoCallba
 	std::map<uint32_t, int32_t> collectRangedFollowUps() const;
 	void restoreRangedFollowUps(const std::map<uint32_t, int32_t> & followUps);
 public:
+	const SeizeInitiativeState & getSeizeInitiativeState() const override { return seizeInitiative; }
+	void setSeizeInitiativeState(const SeizeInitiativeState & state) override
+	{
+		newHorizonsSeizeInitiative::validateReferences(*this, state);
+		seizeInitiative = state;
+	}
+	template <typename Handler> void validateSeizeInitiativeSerialization(Handler & h) const
+	{
+		seizeInitiative.validateSerialization(h);
+		newHorizonsSeizeInitiative::validateReferences(*this, seizeInitiative);
+	}
 	const JsonNode & getHeroCommandRules() const override { return heroCommandRules; }
 	const JsonNode & getMagicRules() const override { return magicRules; }
+	const newHorizonsCrisisCommand::State & getCrisisCommandState() const override { return crisisCommand; }
+	void setCrisisCommandState(const newHorizonsCrisisCommand::State & state) override
+	{
+		state.validate(*this);
+		const auto seize = state.seizeContextAfterTransition(crisisCommand, seizeInitiative);
+		const bool returning = state.returns.size() < crisisCommand.returns.size();
+		const auto originalActor = returning ? crisisCommand.returns.back().originalActor : activeStack;
+		crisisCommand = state;
+		seizeInitiative = seize;
+		if(returning) activeStack = originalActor;
+	}
+	void validateCrisisCommandProfiles(bool supported) const;
+	template<typename Handler> void validateCrisisCommandSerialization(Handler & h) const
+	{
+		if(h.saving)
+		{
+			crisisCommand.validate(*this);
+			if(crisisCommand.meaningful() && !h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND))
+				throw std::runtime_error("Cannot discard Crisis Command battle suspension");
+			validateCrisisCommandProfiles(h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
+		}
+	}
 	const AlternatingHeroActionState & getWarcastingState(BattleSide side) const override;
 	const RelentlessAssaultState & getRelentlessAssaultState(BattleSide side) const override
 	{
@@ -112,6 +148,28 @@ public:
 		return sides.at(side).moraleSuppression;
 	}
 	void setMoraleSuppressionState(BattleSide side, const MoraleSuppressionState & state) override;
+	const RapidResponseState & getRapidResponseState(BattleSide side) const override
+	{
+		static const RapidResponseState empty;
+		return side == BattleSide::ATTACKER || side == BattleSide::DEFENDER ? sides.at(side).rapidResponse : empty;
+	}
+	void setRapidResponseState(BattleSide side, const RapidResponseState & state) override;
+	template <typename Handler> void validateRapidResponseSerialization(Handler & h) const
+	{
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			sides.at(side).rapidResponse.validateSerialization(h);
+			const auto & state = sides.at(side).rapidResponse;
+			if(state.lastUsedRound > round || (state.pending() && state.pendingRound != round))
+				throw std::runtime_error("Rapid Response receipt differs from current round");
+			if(state.pending() && std::count_if(stacks.begin(), stacks.end(), [&state](const auto & unit)
+				{ return unit && unit->unitId() == state.pendingUnitId; }) != 1)
+				throw std::runtime_error("Missing or ambiguous Rapid Response recipient");
+		}
+		for(const auto & unit : stacks)
+			if(unit)
+				unit->validateRapidResponseSerialization(h);
+	}
 	const ReducedExtraActivationState & getReducedExtraActivationState(BattleSide side) const override
 	{
 		static const ReducedExtraActivationState empty;
@@ -143,6 +201,10 @@ public:
 	{
 		for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 			newHorizonsCrossSchoolFormula::validateState(*this, getCrossSchoolFormulaState(side), supported);
+	}
+	void validateProtectedAdventureMobilitySerialization(bool supported) const
+	{
+		newHorizonsProtectedMobility::validateRulesSerialization(magicRules, supported);
 	}
 	const SpellResponseState & getSpellResponseState(BattleSide side) const override
 	{
@@ -396,10 +458,16 @@ public:
 		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		{
 			if(const auto * army = battleGetArmyObject(side))
-				army->validateTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING));
+				army->validateTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING), h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_COHORTS));
 			if(const auto * hero = getSideHero(side))
-				hero->validateRecruitmentTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING));
+				hero->validateRecruitmentTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING), h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_COHORTS));
 		}
+	}
+
+	void validateOpportunistSerialization(bool supported) const;
+	template <typename Handler> void validateOpportunistSerialization(Handler & h) const
+	{
+		validateOpportunistSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_OPPORTUNIST));
 	}
 
 	template <typename Handler> void validateFrozenSerialization(Handler & h) const
@@ -410,6 +478,13 @@ public:
 		for(const auto & stack : stacks)
 			if(stack)
 				stack->validateFrozenSerialization(h);
+	}
+
+	template <typename Handler> void validateHeroicSpiritSerialization(Handler & h) const
+	{
+		for(const auto & stack : stacks)
+			if(stack)
+				stack->validateHeroicSpiritSerialization(h);
 	}
 
 	template <typename Handler> void validateSwiftRebirthSerialization(Handler & h) const
@@ -459,6 +534,17 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		validateCrisisCommandSerialization(h);
+		if(h.saving)
+			validateSeizeInitiativeSerialization(h);
+		if(h.saving)
+			validateRapidResponseSerialization(h);
+		if(h.saving)
+			validateHeroicSpiritSerialization(h);
+		if(h.saving)
+			validateProtectedAdventureMobilitySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
+		if(h.saving)
+			newHorizonsMagic::validateWaterWalkDayEndSerialization(magicRules, h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END));
 		if(h.saving)
 			validateMetamagicCapacitySerialization(h);
 		validateRoyalStandardSerialization(h);
@@ -475,6 +561,8 @@ public:
 		if(h.saving)
 			validateTrainingSerialization(h);
 		if(h.saving) validatePlagueSerialization(h);
+		if(h.saving)
+			validateOpportunistSerialization(h);
 		if(h.saving)
 			validateFrozenSerialization(h);
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_CHAIN)
@@ -775,6 +863,7 @@ public:
 		else if(!h.saving)
 			activationSerial = 0;
 		h & activeStack;
+		h & crisisCommand;
 		h & townID;
 		h & tile;
 		h & stacks;
@@ -820,7 +909,10 @@ public:
 		{
 			h & magicRules;
 			if(!h.saving)
+				validateProtectedAdventureMobilitySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
+			if(!h.saving)
 			{
+				newHorizonsMagic::validateWaterWalkDayEndSerialization(magicRules, h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END));
 				newHorizonsPlague::validateRuleSerialization(magicRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
 				newHorizonsMagic::validateRules(magicRules);
@@ -1046,8 +1138,10 @@ public:
 			sides[BattleSide::DEFENDER].armorerLastStandUsed = false;
 		}
 
+		h & seizeInitiative;
 		if(!h.saving)
 		{
+			validateSeizeInitiativeSerialization(h);
 			validateConfusionStates();
 			validateDefiantSerialization(h);
 			validateReactiveWeaveStates();
@@ -1061,7 +1155,9 @@ public:
 				normalizeLegacyHeroCommandState();
 			validateFocusFireStates();
 			validateRelentlessAssaultStates();
+			crisisCommand.validateSerializedReferences(*this);
 			postDeserialize();
+			validateCrisisCommandProfiles(h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
 			validateBattlecraftMasteryState();
 			validateDoubleCommandStructure();
 			validatePreCombatOrderStructure();

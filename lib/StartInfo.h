@@ -131,6 +131,7 @@ enum class EStartMode : int32_t
 struct DLL_LINKAGE StartInfo : public Serializeable
 {
 	EStartMode mode;
+	void validateDefaultCreatureLineSerialization(bool supported) const;
 	ui8 difficulty; //0=easy; 4=impossible
 
 	using TPlayerInfos = std::map<PlayerColor, PlayerSettings>;
@@ -163,6 +164,8 @@ struct DLL_LINKAGE StartInfo : public Serializeable
 	template <typename Handler>
 	void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateDefaultCreatureLineSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
 		h & mode;
 		h & difficulty;
 		h & playerInfos;
@@ -174,6 +177,8 @@ struct DLL_LINKAGE StartInfo : public Serializeable
 		h & mapname;
 		h & mapGenOptions;
 		h & campState;
+		if(!h.saving)
+			validateDefaultCreatureLineSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
 		if(h.hasFeature(Handler::Version::GAME_SESSION_DIRECTORY))
 			h & saveDirectory;
 		else if(!h.saving)
@@ -215,6 +220,8 @@ struct DLL_LINKAGE LobbyState
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && si)
+			si->validateDefaultCreatureLineSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
 		h & si;
 		h & mi;
 		h & playerNames;

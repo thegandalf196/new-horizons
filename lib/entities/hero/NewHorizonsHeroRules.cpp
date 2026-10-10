@@ -11,11 +11,17 @@
 #include "NewHorizonsHeroRules.h"
 #include "CHeroClassHandler.h"
 #include "CHeroClass.h"
+#include "CHeroHandler.h"
+#include "../../spells/CSpellHandler.h"
+#include "../../spells/CSpell.h"
+#include "../../spells/NewHorizonsMagic.h"
+#include "../../spells/NewHorizonsSpellAvailability.h"
 #include "../../GameLibrary.h"
 #include "../../modding/IdentifierStorage.h"
 #include "../../modding/ModScope.h"
 #include <cmath>
 #include "../../callback/IGameInfoCallback.h"
+#include "../../pathfinder/NewHorizonsLighthouse.h"
 
 const JsonNode & IGameInfoCallback::getHeroDevelopmentRules() const
 {
@@ -133,8 +139,8 @@ void validateNonDamageSpellSpecialtyRules(const JsonNode & rules)
 	require(integer(rules["version"], 1, 1), "non-damage-spell specialty version");
 	require(integer(rules["componentPercent"], 20, 20), "non-damage-spell specialty component percentage");
 	const auto & spells = rules["spells"];
-	require(spells.isVector() && !spells.Vector().empty() && spells.Vector().size() <= 10,
-		"version 1 non-damage spell specialties must list one to ten supported spells");
+	require(spells.isVector() && !spells.Vector().empty() && spells.Vector().size() <= 11,
+		"version 1 non-damage spell specialties must list one to eleven supported spells");
 	if(aenain.isBool() && aenain.Bool())
 		require(std::ranges::any_of(spells.Vector(), [](const JsonNode & spell)
 		{
@@ -165,14 +171,14 @@ void validateNonDamageSpellSpecialtyRules(const JsonNode & rules)
 				|| spell.String() == "core:bless" || spell.String() == "core:haste"
 				|| spell.String() == "new-horizons:reanimate" || spell.String() == "new-horizons:frailty"
 				|| spell.String() == "new-horizons:hydrasVitality" || spell.String() == "new-horizons:guardianSpirit"
-				|| spell.String() == "new-horizons:crusade" || spell.String() == "new-horizons:focusMagic"),
+				|| spell.String() == "new-horizons:crusade" || (spell.String() == "new-horizons:focusMagic" || spell.String() == "new-horizons:phantomArmy")),
 			"Unsupported version 1 non-damage spell specialty");
 		const int spellId = resolve("spell", spell.String());
 		require(spellId == SpellID::CURE || spellId == SpellID::RESURRECTION
 			|| spellId == SpellID::BLESS || spellId == SpellID::HASTE
 			|| spell.String() == "new-horizons:reanimate" || spell.String() == "new-horizons:frailty"
 			|| spell.String() == "new-horizons:hydrasVitality" || spell.String() == "new-horizons:guardianSpirit"
-			|| spell.String() == "new-horizons:crusade" || spell.String() == "new-horizons:focusMagic",
+			|| spell.String() == "new-horizons:crusade" || (spell.String() == "new-horizons:focusMagic" || spell.String() == "new-horizons:phantomArmy"),
 			"unknown version 1 non-damage spell specialty");
 		require(seen.insert(spellId).second, "duplicate version 1 non-damage spell specialty");
 	}
@@ -189,7 +195,9 @@ void validateOptionalNonDamageSpellSpecialtyRules(const JsonNode & rules)
 
 void validateSkillSpecialtyRules(const JsonNode & rules)
 {
-	fields(rules, {"version", "coreBonusPercent", "skills"});
+	fields(rules, {"version", "coreBonusPercent", "skills", "navigationStartReplacements"});
+	if(rules.Struct().contains("navigationStartReplacements"))
+		require(rules["navigationStartReplacements"].isBool(), "navigation starting replacement Boolean");
 	require(integer(rules["version"], 1, 1), "skill specialty version");
 	require(integer(rules["coreBonusPercent"], 20, 20), "skill specialty core bonus percentage");
 	const auto & skills = rules["skills"];
@@ -210,6 +218,8 @@ void validateSkillSpecialtyRules(const JsonNode & rules)
 			"unknown version 1 skill specialty");
 		require(seen.insert(skillId).second, "duplicate version 1 skill specialty");
 	}
+	if(rules.Struct().contains("navigationStartReplacements") && rules["navigationStartReplacements"].Bool())
+		require(seen.contains(SecondarySkill::LOGISTICS), "Navigation successor requires the Logistics core specialty");
 }
 
 void validateOptionalSkillSpecialtyRules(const JsonNode & rules)
@@ -271,12 +281,73 @@ void validateSkillOfferWeights(const JsonNode & offerWeights, bool requireAllCla
 					"missing skill offer table for " + heroClass->getJsonKey());
 }
 
+struct StartingBookRow
+{
+	std::string_view hero;
+	std::string_view from;
+	std::string_view to;
+};
+constexpr std::array<StartingBookRow, 22> startingBooks{{
+	{"core:rion", "core:stoneSkin", "new-horizons:guardianSpirit"},
+	{"core:aeris", "core:protectAir", "new-horizons:holyArmor"},
+	{"core:piquedram", "core:shield", "core:slow"},
+	{"core:neela", "core:shield", "core:slow"},
+	{"core:theodorus", "core:shield", "core:slow"},
+	{"core:ayden", "core:viewEarth", "new-horizons:confusion"},
+	{"core:axsis", "core:protectAir", "core:forgetfulness"},
+	{"core:zydar", "core:stoneSkin", "new-horizons:blink"},
+	{"core:vokial", "core:stoneSkin", "new-horizons:lifeDrain"},
+	{"core:galthran", "core:shield", "core:slow"},
+	{"core:nimbus", "core:shield", "core:dispel"},
+	{"core:nagash", "core:protectAir", "core:dispel"},
+	{"core:jaegar", "core:shield", "core:curse"},
+	{"core:malekith", "core:bloodlust", "new-horizons:shadowGift"},
+	{"core:sephinroth", "core:protectAir", "core:curse"},
+	{"core:gird", "core:bloodlust", "new-horizons:vengefulVines"},
+	{"core:dessa", "core:stoneSkin", "new-horizons:regeneration"},
+	{"core:oris", "core:protectAir", "core:forgetfulness"},
+	{"core:saurug", "core:bloodlust", "new-horizons:vengefulVines"},
+	{"core:verdish", "core:protectFire", "new-horizons:regeneration"},
+	{"core:styg", "core:shield", "new-horizons:entangle"},
+	{"core:tiva", "core:stoneSkin", "new-horizons:regeneration"}
+}};
+
+void validateStartingBooks(const JsonNode & table)
+{
+	require(table.isStruct() && table.Struct().size() == startingBooks.size(), "complete starting book replacement table");
+	std::set<int> seen;
+	for(const auto & [hero, row] : table.Struct())
+	{
+		const auto expected = std::find_if(startingBooks.begin(), startingBooks.end(),
+			[&hero](const StartingBookRow & entry) { return entry.hero == hero; });
+		require(expected != startingBooks.end(), "authored starting book hero");
+		const int id = resolve(HeroTypeID::entityType(), hero);
+		require(HeroTypeID::encode(id) == hero && seen.insert(id).second
+			&& static_cast<size_t>(id) < LIBRARY->heroh->objects.size()
+			&& LIBRARY->heroh->objects[id] && !LIBRARY->heroh->objects[id]->special,
+			"installed unique standard starting book hero");
+		fields(row, {"from", "to"});
+		require(row["from"].isString() && row["to"].isString()
+			&& row["from"].String() == expected->from && row["to"].String() == expected->to,
+			"exact authored starting book successor");
+		const SpellID from(resolve(SpellID::entityType(), row["from"].String()));
+		const SpellID to(resolve(SpellID::entityType(), row["to"].String()));
+		require(LIBRARY->heroh->objects[id]->spells.contains(from), "exact prototype starting inscription");
+		require(static_cast<size_t>(to.getNum()) < LIBRARY->spellh->objects.size()
+			&& LIBRARY->spellh->objects[to.getNum()]
+			&& to.toSpell()->isCommonHeroSpell() && to.toSpell()->isCombat(),
+			"installed ordinary combat starting successor");
+	}
+}
+
 void validateStartingSkills(const JsonNode & startingSkills, bool requireMigrationTable)
 {
 	if(startingSkills.isNull())
 		return;
 
-	fields(startingSkills, {"factionSkills", "legacyAliases", "legacySkillMigrations", "magic", "might", "startingDevelopmentProfiles"});
+	fields(startingSkills, {"factionSkills", "legacyAliases", "legacySkillMigrations", "magic", "might", "startingDevelopmentProfiles", "startingBookReplacements"});
+	if(startingSkills.Struct().contains("startingBookReplacements"))
+		validateStartingBooks(startingSkills["startingBookReplacements"]);
 	if(startingSkills.Struct().contains("startingDevelopmentProfiles"))
 	{
 		const auto & profiles = startingSkills["startingDevelopmentProfiles"];
@@ -441,12 +512,17 @@ void validateHeroRules(const JsonNode & rules, bool requireAllClasses)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements"});
+	newHorizonsLighthouse::validateRulesSerialization(rules, true);
 	validateCommon(rules);
 	validateOptionalCreatureLineSpecialtyRules(rules);
 	validateOptionalDamageSpellSpecialtyRules(rules);
 	validateOptionalNonDamageSpellSpecialtyRules(rules);
 	validateOptionalSkillSpecialtyRules(rules);
+	validateRemainingSpellSpecialtySerialization(rules, true);
+	validateDefaultCreatureLineSerialization(rules, true);
+	if(rules.Struct().contains("defaultCreatureLineReplacements"))
+		require(creatureLineSpecialtyRules(rules).has_value(), "default successor needs creature-line coefficients");
 	validateExcludedSkills(rules["excludedSkills"]);
 	validateSkillOfferWeights(rules["skillOfferWeights"], requireAllClasses);
 	validateStartingSkills(rules["startingSkills"], requireAllClasses);
@@ -475,12 +551,17 @@ void validateResolvedHeroRules(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "creatureLineSpecialtyTarget"});
+	newHorizonsLighthouse::validateRulesSerialization(rules, true);
 	validateCommon(rules);
 	validateOptionalCreatureLineSpecialtyRules(rules);
 	validateOptionalDamageSpellSpecialtyRules(rules);
 	validateOptionalNonDamageSpellSpecialtyRules(rules);
 	validateOptionalSkillSpecialtyRules(rules);
+	validateRemainingSpellSpecialtySerialization(rules, true);
+	validateDefaultCreatureLineSerialization(rules, true);
+	if(rules.Struct().contains("defaultCreatureLineReplacements"))
+		require(creatureLineSpecialtyRules(rules).has_value(), "default successor needs creature-line coefficients");
 	validateExcludedSkills(rules["excludedSkills"]);
 	if(!rules["skillOfferWeights"].isNull())
 		validateSkillOfferWeightRow(rules["skillOfferWeights"]);
@@ -495,14 +576,20 @@ JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 	JsonNode result;
 	for(const auto * key : {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "extraGrowth"})
 		result[key] = rules[key];
+	if(rules.Struct().contains("defaultCreatureLineReplacements"))
+		result["defaultCreatureLineReplacements"] = rules["defaultCreatureLineReplacements"];
 	if(rules.Struct().contains("creatureLineSpecialties"))
 		result["creatureLineSpecialties"] = rules["creatureLineSpecialties"];
 	if(rules.Struct().contains("damageSpellSpecialties"))
 		result["damageSpellSpecialties"] = rules["damageSpellSpecialties"];
 	if(rules.Struct().contains("nonDamageSpellSpecialties"))
 		result["nonDamageSpellSpecialties"] = rules["nonDamageSpellSpecialties"];
+	if(rules.Struct().contains("remainingSpellSpecialtyReplacements"))
+		result["remainingSpellSpecialtyReplacements"] = rules["remainingSpellSpecialtyReplacements"];
 	if(rules.Struct().contains("skillSpecialties"))
 		result["skillSpecialties"] = rules["skillSpecialties"];
+	if(rules.Struct().contains("lighthouseDeparture"))
+		result["lighthouseDeparture"] = rules["lighthouseDeparture"];
 	if(rules["skillOfferWeights"].isStruct())
 		result["skillOfferWeights"] = rules["skillOfferWeights"][HeroClassID::encode(heroClass.getNum())];
 	if(rules["excludedSkills"].isVector())
@@ -631,10 +718,83 @@ void validateOffensiveStartSpecialtySerialization(const JsonNode & rules, bool s
 	const bool hasNewSpell = spells.isVector() && std::ranges::any_of(spells.Vector(), [](const JsonNode & spell)
 	{
 		return spell.isString() && (spell.String() == "new-horizons:crusade"
-			|| spell.String() == "new-horizons:focusMagic");
+			|| (spell.String() == "new-horizons:focusMagic" || spell.String() == "new-horizons:phantomArmy"));
 	});
 	if(!supported && ((specialties.isStruct() && specialties.Struct().contains("offensiveStartReplacements")) || hasNewSpell))
 		throw std::runtime_error("Offensive starting specialty rules require the new save format");
+}
+
+bool usesRemainingSpellSpecialties(const JsonNode & rules)
+{
+	return usesRules(rules) && rules["remainingSpellSpecialtyReplacements"].isBool()
+		&& rules["remainingSpellSpecialtyReplacements"].Bool();
+}
+
+void validateRemainingSpellSpecialtySerialization(const JsonNode & rules, bool supported)
+{
+	const bool present = rules.isStruct() && rules.Struct().contains("remainingSpellSpecialtyReplacements");
+	const auto & spells = rules["nonDamageSpellSpecialties"]["spells"];
+	const bool phantom = spells.isVector() && std::ranges::any_of(spells.Vector(), [](const JsonNode & spell)
+	{
+		return spell.isString() && spell.String() == "new-horizons:phantomArmy";
+	});
+	if(!supported && (present || phantom))
+		throw std::runtime_error("Remaining spell specialties require the new save format");
+	if(present)
+	{
+		require(rules["remainingSpellSpecialtyReplacements"].isBool(), "remaining spell specialty opt-in boolean");
+		if(rules["remainingSpellSpecialtyReplacements"].Bool())
+		{
+			require(rules["damageSpellSpecialties"].isStruct(), "remaining damage specialty rules");
+			validateDamageSpellSpecialtyRules(rules["damageSpellSpecialties"]);
+			require(rules["nonDamageSpellSpecialties"].isStruct() && phantom, "remaining Phantom specialty rules");
+			validateNonDamageSpellSpecialtyRules(rules["nonDamageSpellSpecialties"]);
+			for(const auto * identity : {"core:bless", "core:haste", "new-horizons:phantomArmy"})
+				require(std::ranges::any_of(spells.Vector(), [identity](const JsonNode & spell)
+					{ return spell.isString() && spell.String() == identity; }),
+					"remaining duration and Integrity specialty identities");
+		}
+	}
+}
+
+void validateStartingBookSerialization(const JsonNode & rules, bool supported)
+{
+	const auto & starts = rules["startingSkills"];
+	if(!supported && starts.isStruct() && starts.Struct().contains("startingBookReplacements"))
+		throw std::runtime_error("Starting book replacements require the new save format");
+	if(starts.isStruct() && starts.Struct().contains("startingBookReplacements"))
+		validateStartingBooks(starts["startingBookReplacements"]);
+}
+
+std::optional<SpellID> startingBookReplacement(
+	const JsonNode & rules, const JsonNode & magicRules, HeroTypeID hero, SpellID original)
+{
+	if(!usesRules(rules) || !rules["startingSkills"].isStruct()
+		|| !rules["startingSkills"].Struct().contains("startingBookReplacements"))
+		return std::nullopt;
+	const auto & table = rules["startingSkills"]["startingBookReplacements"];
+	validateStartingBooks(table);
+	require(newHorizonsMagic::rulesActive(magicRules), "starting books require current magic roster");
+	// Validate every row against the captured world, not mutable module defaults.
+	for(const auto & [key, row] : table.Struct())
+	{
+		const auto * prototype = HeroTypeID(resolve(HeroTypeID::entityType(), key)).toHeroType();
+		const SpellID target(resolve(SpellID::entityType(), row["to"].String()));
+		require(newHorizonsMagic::spellAllowedByHeroRoster(magicRules, target)
+			&& newHorizonsMagic::spellAvailableForOrdinaryAcquisition(magicRules, target),
+			"ordinary captured starting spell roster");
+		const auto preferred = newHorizonsMagic::preferredSchools(magicRules, prototype->heroClass->faction);
+		const auto schools = newHorizonsMagic::spellSchools(magicRules, target);
+		require(std::any_of(schools.begin(), schools.end(),
+			[&preferred](SpellSchool school) { return vstd::contains(preferred, school); }),
+			"preferred starting spell school");
+	}
+	if(hero == HeroTypeID::NONE)
+		return std::nullopt;
+	const auto found = table.Struct().find(HeroTypeID::encode(hero.getNum()));
+	if(found == table.Struct().end() || SpellID::decode(found->second["from"].String()) != original.getNum())
+		return std::nullopt;
+	return SpellID(resolve(SpellID::entityType(), found->second["to"].String()));
 }
 
 void validateStartingDevelopmentSerialization(const JsonNode & rules, bool supported)
@@ -651,6 +811,60 @@ void validateCoroniusHolyWrathSerialization(const JsonNode & rules, bool support
 		throw std::runtime_error("Coronius Holy Wrath replacement rules require the new save format");
 }
 
+bool usesNavigationStartReplacement(const JsonNode & rules)
+{
+	if(!usesRules(rules) || !rules["skillSpecialties"].isStruct())
+		return false;
+	const auto & specialties = rules["skillSpecialties"];
+	validateSkillSpecialtyRules(specialties);
+	return specialties.Struct().contains("navigationStartReplacements")
+		&& specialties["navigationStartReplacements"].Bool();
+}
+
+void validateDefaultCreatureLineSerialization(const JsonNode & rules, bool supported)
+{
+	if(!rules.isStruct())
+		return;
+	const bool table = rules.Struct().contains("defaultCreatureLineReplacements");
+	const bool target = rules.Struct().contains("creatureLineSpecialtyTarget");
+	if(!supported && (table || target))
+		throw std::runtime_error("Default creature-line successor requires the new save format");
+	if(table)
+	{
+		const auto & replacements = rules["defaultCreatureLineReplacements"];
+		fields(replacements, {"core:pasis", "core:monere"});
+		require(replacements.Struct().size() == 2, "both default Wisp specialties required");
+		for(const auto * hero : {"core:pasis", "core:monere"})
+			require(replacements[hero].isString() && replacements[hero].String() == "new-horizons:wisp", "exact default Wisp target");
+	}
+	if(target)
+	{
+		require(table, "captured target needs its authored replacement table");
+		require(rules["creatureLineSpecialtyTarget"].isString()
+			&& rules["creatureLineSpecialtyTarget"].String() == "new-horizons:wisp", "captured Wisp target");
+	}
+}
+
+std::optional<CreatureID> defaultCreatureLineTarget(const JsonNode & rules, HeroTypeID hero)
+{
+	validateDefaultCreatureLineSerialization(rules, true);
+	if(!rules.isStruct() || !rules.Struct().contains("defaultCreatureLineReplacements"))
+		return std::nullopt;
+	require(creatureLineSpecialtyRules(rules).has_value(), "default successor needs creature-line coefficients");
+	const auto & table = rules["defaultCreatureLineReplacements"].Struct();
+	const auto found = table.find(HeroTypeID::encode(hero.getNum()));
+	if(found == table.end())
+		return std::nullopt;
+	return CreatureID(resolve(CreatureID::entityType(), found->second.String()));
+}
+
+void validateNavigationStartSerialization(const JsonNode & rules, bool supported)
+{
+	const auto & specialties = rules["skillSpecialties"];
+	if(!supported && specialties.isStruct() && specialties.Struct().contains("navigationStartReplacements"))
+		throw std::runtime_error("Navigation successor profile requires the new save format");
+}
+
 std::optional<StartingDevelopmentProfile> startingDevelopmentProfile(
 	const JsonNode & rules, const PerkState & perkState, HeroTypeID hero, HeroClassID heroClass)
 {
@@ -663,6 +877,9 @@ std::optional<StartingDevelopmentProfile> startingDevelopmentProfile(
 	const auto & profiles = starts["startingDevelopmentProfiles"].Struct();
 	const auto found = profiles.find(HeroTypeID::encode(hero.getNum()));
 	if(found == profiles.end())
+		return std::nullopt;
+	if((HeroTypeID::encode(hero.getNum()) == "core:sylvia" || HeroTypeID::encode(hero.getNum()) == "core:voy")
+		&& !usesNavigationStartReplacement(rules))
 		return std::nullopt;
 	const auto * definition = heroClass.toHeroClass();
 	require(definition != nullptr, "starting hero class");

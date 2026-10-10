@@ -1,4 +1,5 @@
 {
+	"new-horizons.lighthouse.departure.help": "Embarking from this owned Castle's port costs no embarkation movement penalty. The departing hero gains +%PERCENT%% sea movement for that day only.",
 	"new-horizons.sage.guildSpells": "Sage — revealed spells",
 	"new-horizons.economy.investor.header": "Investor — this week's daily Gold bonus (before income handicap)",
 	"new-horizons.economy.investor.hero": "%HERO: +%GOLD Gold/day",

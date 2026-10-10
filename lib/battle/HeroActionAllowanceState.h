@@ -55,7 +55,8 @@ struct DLL_LINKAGE HeroActionAllowanceState
 		OTHER,
 		DOUBLE_COMMAND,
 		BATTLE_PLAN,
-		DIVINE_MANDATE
+		DIVINE_MANDATE,
+		CRISIS_COMMAND
 	};
 
 	struct DLL_LINKAGE Grant
@@ -72,6 +73,8 @@ struct DLL_LINKAGE HeroActionAllowanceState
 
 		template <typename Handler> void serialize(Handler & h)
 		{
+			if(source == GrantSource::CRISIS_COMMAND && !h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND))
+				throw std::runtime_error("Crisis Command allowance requires its save format");
 			if(h.saving && !divineMandateRecipients.empty()
 				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SHARED_PURPOSE))
 				throw std::runtime_error("Cannot discard Divine Mandate recipient receipt");
@@ -89,6 +92,8 @@ struct DLL_LINKAGE HeroActionAllowanceState
 			h & id;
 			h & allowance;
 			h & source;
+			if(source == GrantSource::CRISIS_COMMAND && !h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND))
+				throw std::runtime_error("Old-format raw allowance contains Crisis Command");
 			h & grantedRound;
 			h & expiryRound;
 			if(h.hasFeature(Handler::Version::NEW_HORIZONS_SHARED_PURPOSE))
@@ -114,6 +119,8 @@ struct DLL_LINKAGE HeroActionAllowanceState
 				|| ((source == GrantSource::METAMAGIC || source == GrantSource::METAMAGIC_GRAND)
 					&& allowance != AllowanceKind::SPELL)
 				|| (source == GrantSource::DOUBLE_COMMAND
+					&& (allowance != AllowanceKind::ORDER || expiryRound != grantedRound))
+				|| (source == GrantSource::CRISIS_COMMAND
 					&& (allowance != AllowanceKind::ORDER || expiryRound != grantedRound))
 				|| (source == GrantSource::BATTLE_PLAN
 					&& (allowance != AllowanceKind::ORDER || grantedRound != 1 || expiryRound != 1))
@@ -324,6 +331,10 @@ struct DLL_LINKAGE HeroActionAllowanceState
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND)
+			&& std::any_of(grants.begin(), grants.end(), [](const Grant & grant)
+			{ return grant.source == GrantSource::CRISIS_COMMAND; }))
+			throw std::runtime_error("Cannot discard Crisis Command allowance ledger");
 		validateSharedPurposeSerialization(h);
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_COMMAND)
 			&& std::any_of(grants.begin(), grants.end(), [](const Grant & grant)
@@ -432,7 +443,7 @@ private:
 			|| value == GrantSource::METAMAGIC_GRAND || value == GrantSource::PERK
 			|| value == GrantSource::ARTIFACT || value == GrantSource::OTHER
 			|| value == GrantSource::DOUBLE_COMMAND || value == GrantSource::BATTLE_PLAN
-			|| value == GrantSource::DIVINE_MANDATE;
+			|| value == GrantSource::DIVINE_MANDATE || value == GrantSource::CRISIS_COMMAND;
 	}
 
 	static bool canPay(AllowanceKind allowance, ActionKind action)

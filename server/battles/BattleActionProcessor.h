@@ -147,6 +147,8 @@ class BattleActionProcessor : boost::noncopyable
 		const CStack * attacker, const CStack * primaryTarget) const;
 	void resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker,
 		RainOfArrowsAction & action);
+	void finalizeOpportunistSequence(const CBattleInfoCallback & battle,
+		const CStack * stack, int remainingMovement, bool allowMovement = true) const;
 	void setPursuitMovementRemaining(const CBattleInfoCallback & battle, const CStack * stack, int32_t remaining) const;
 	void setCleaveUsed(const CBattleInfoCallback & battle, const CStack * stack) const;
 
@@ -196,7 +198,7 @@ class BattleActionProcessor : boost::noncopyable
 	bool applyDefendStance(const CBattleInfoCallback & battle, const CStack * stack, bool voluntary);
 	bool doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation);
 	bool doWalkAndSpellcastAction(const CBattleInfoCallback & battle, const BattleAction & ba);
-	bool doShootAction(const CBattleInfoCallback & battle, const BattleAction & ba);
+	bool doShootAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation);
 	bool doCatapultAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doUnitSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doHealAction(const CBattleInfoCallback & battle, const BattleAction & ba);

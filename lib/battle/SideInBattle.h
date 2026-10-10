@@ -27,6 +27,7 @@
 #include "AdverseCombatRerollState.h"
 #include "MoraleSuppressionState.h"
 #include "ReducedExtraActivationState.h"
+#include "NewHorizonsRapidResponse.h"
 #include "AlternatingHeroActionState.h"
 #include "HeroActionAllowanceState.h"
 #include "RelentlessAssaultState.h"
@@ -213,6 +214,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	bool rebirthChainUsed = false;
 	bool phoenixSparkUsed = false;
 	newHorizonsCrossSchoolFormula::State crossSchoolFormula;
+	RapidResponseState rapidResponse;
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);
@@ -397,6 +399,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			rapidResponse.validateSerialization(h);
 		if(h.saving)
 			validateMetamagicCapacitySerialization(h);
 		for(const auto & order : orderStates)
@@ -704,6 +708,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		h & adverseCombatReroll;
 		h & moraleSuppression;
 		h & reducedExtraActivation;
+		h & rapidResponse;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS))
 		{
 			std::vector<HeroOrderState> serializedOrders;

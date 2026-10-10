@@ -53,6 +53,15 @@ public:
 		return battle::hasConfusionState(data);
 	}
 
+	template <typename Handler> void validateOpportunistSerialization(Handler & h) const
+	{
+		const auto & marker = data["state"]["luckyOwnAttackSequence"];
+		if(!marker.isNull() && !marker.isBool())
+			throw std::runtime_error("Own lucky attack sequence must be a boolean");
+		if(marker.isBool() && marker.Bool() && !h.hasFeature(Handler::Version::NEW_HORIZONS_OPPORTUNIST))
+			throw std::runtime_error("Cannot discard an earned own lucky attack sequence");
+	}
+
 	template <typename Handler> void validateConfusionSerialization(Handler & h) const
 	{
 		battle::confusionStateFromUnitJson(data).validateSerialization(h);
@@ -66,6 +75,8 @@ public:
 
 	template <typename Handler> void validateOverwatchSerialization(Handler & h) const
 	{
+		if(battle::hasHeroicSpiritState(data) && !h.hasFeature(Handler::Version::NEW_HORIZONS_HEROIC_SPIRIT))
+			throw std::runtime_error("Cannot discard Heroic Spirit receipt in an older unit update");
 		if(battle::hasOverwatchState(data) && !h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWATCH))
 			throw std::runtime_error("Cannot discard Overwatch state in an older unit update format");
 	}
@@ -78,6 +89,9 @@ public:
 	}
 	template <typename Handler> void validateTrainingSerialization(Handler & h) const
 	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_COHORTS)
+			&& newHorizonsTraining::containsMercenaryBonus(data))
+			throw std::runtime_error("Cannot discard Mercenary Captain unit bonus");
 		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING)
 			&& newHorizonsTraining::containsTrainingBonus(data))
 			throw std::runtime_error("Cannot discard training bonus in an older unit update");
@@ -173,6 +187,8 @@ public:
 			validateBattleFormSerialization(h);
 		if(h.saving)
 			validateConfusionSerialization(h);
+		if(h.saving)
+			validateOpportunistSerialization(h);
 		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_CASUALTY_PROVENANCE)
 			&& hasCasualtyProvenanceState())
 			throw std::runtime_error("Cannot discard casualty provenance in an older unit update format");
@@ -214,6 +230,8 @@ public:
 			validateBattleFormSerialization(h);
 		if(!h.saving)
 			validateConfusionSerialization(h);
+		if(!h.saving)
+			validateOpportunistSerialization(h);
 	}
 };
 

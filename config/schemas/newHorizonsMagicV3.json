@@ -9,6 +9,10 @@
 	"properties": {
 		"schemaVersion": {"type": "integer", "enum": [1]},
 		"rulesetVersion": {"type": "integer", "enum": [3]},
+		"protectedAdventureBarriers": {
+			"type": "boolean",
+			"description": "Opt in to authored Fly/Dimension Door barriers and accepted flight source-layer receipts. Absence preserves earlier profiles."
+		},
 		"creatureAbilities": {
 			"type": "object",
 			"required": ["rulesetVersion", "freezingTouchChancePercent", "shatterBonusPercent"],

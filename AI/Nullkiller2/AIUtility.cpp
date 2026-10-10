@@ -603,15 +603,24 @@ int64_t getArtifactScoreForHero(const CGHeroInstance * hero, const CArtifactInst
 	if (type->getId() == ArtifactID::SPELLBOOK)
 		return 0;
 
+	const auto scoreForHero = [hero](const std::shared_ptr<Bonus> & bonus)
+	{
+		if(bonus->type == BonusType::MANA_REGENERATION && bonus->source == BonusSource::ARTIFACT
+			&& bonus->valType == BonusValueType::BASE_NUMBER)
+			if(const auto recovery = newHorizonsHeroes::capabilityArtifactManaRegeneration(
+				hero->getCapabilityRules(), bonus->sid.as<ArtifactID>(), hero->manaLimit()))
+				return static_cast<int64_t>(*recovery) * 500;
+		return static_cast<int64_t>(getArtifactBonusScore(bonus));
+	};
 	for (const auto & bonus : type->getExportedBonusList())
-		totalScore += getArtifactBonusRelevance(hero, bonus) * getArtifactBonusScore(bonus);
+		totalScore += getArtifactBonusRelevance(hero, bonus) * scoreForHero(bonus);
 
 	if (type->hasParts())
 	{
 		for (const auto & part : type->getConstituents())
 		{
 			for (const auto & bonus : part->getExportedBonusList())
-				totalScore += getArtifactBonusRelevance(hero, bonus) * getArtifactBonusScore(bonus);
+				totalScore += getArtifactBonusRelevance(hero, bonus) * scoreForHero(bonus);
 		}
 	}
 

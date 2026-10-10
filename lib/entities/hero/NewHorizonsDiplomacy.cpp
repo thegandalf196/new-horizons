@@ -108,6 +108,8 @@ Forecast resolveForecast(const ForecastInput & input)
 		&& meetsArmyValueThreshold(result.heroArmyValue, result.creatureArmyValue,
 			result.thresholdPercent, result.commonCause, result.recruitmentPact);
 	result.willing = result.authoredFree || withinThreshold;
+	result.legendaryReputation = withinThreshold && result.skillRank == 3
+		&& !result.authoredFree && result.normalGoldCost > 0 && input.legendaryReputation;
 	return result;
 }
 }

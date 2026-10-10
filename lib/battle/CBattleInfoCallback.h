@@ -313,7 +313,7 @@ public:
 	///returns all alive units from particular side excluding turrets
 	battle::Units battleAliveUnits(BattleSide side) const;
 
-	void battleGetTurnOrder(std::vector<battle::Units> & out, const size_t maxUnits, const int maxTurns, const int turn = 0, BattleSide lastMoved = BattleSide::NONE) const;
+	void battleGetTurnOrder(std::vector<battle::Units> & out, const size_t maxUnits, const int maxTurns, const int turn = 0, BattleSide lastMoved = BattleSide::NONE, bool includeRapidResponse = true, bool includeSeizeInitiative = true) const;
 
 	///returns reachable hexes (valid movement destinations), DOES contain stack current position (lite version)
 	BattleHexArray battleGetAvailableHexes(const battle::Unit * unit, bool obtainMovementRange) const;

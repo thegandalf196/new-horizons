@@ -886,12 +886,14 @@ void ApplyClientNetPackVisitor::visitBattleSetActiveStack(BattleSetActiveStack &
 	callBattleInterfaceIfPresentForBothSides(cl, pack.battleID, &IBattleEventsReceiver::battleActiveStackReasonChanged,
 		pack.battleID, pack.stack, pack.reason);
 
-	if(pack.reason == BattleUnitTurnReason::AUTOMATIC_ACTION)
+	if(pack.reason == BattleUnitTurnReason::AUTOMATIC_ACTION || pack.reason == BattleUnitTurnReason::CRISIS_RESUME)
 		return;
 
 	const auto * battle = gs.getBattle(pack.battleID);
 	const CStack * activated = battle->battleGetStackByID(pack.stack);
-	const auto playerToCall = battle->battleGetActionController(activated);
+	const auto & crisis = battle->getCrisisCommandState();
+	const auto playerToCall = crisis.choice()
+		? battle->sideToPlayer(crisis.chooser()) : battle->battleGetActionController(activated);
 
 	cl.startPlayerBattleAction(pack.battleID, playerToCall);
 }

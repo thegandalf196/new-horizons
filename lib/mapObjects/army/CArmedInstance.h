@@ -19,6 +19,7 @@
 
 #include <vcmi/Entity.h>
 
+class CGHeroInstance;
 class BattleInfo;
 class CGameState;
 class JsonSerializeFormat;
@@ -42,6 +43,7 @@ public:
 
 	void randomizeArmy(FactionID type);
 	virtual void updateMoraleBonusFromArmy();
+	virtual const CGHeroInstance * moraleCommander() const;
 
 	void armyChanged() override;
 	CArmedInstance * getArmy() final
@@ -78,7 +80,7 @@ public:
 	void serialize(Handler & h)
 	{
 		if(h.saving)
-			validateTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING));
+			validateTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING), h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_COHORTS));
 		h & static_cast<CGObjectInstance &>(*this);
 		h & static_cast<CBonusSystemNode &>(*this);
 		h & static_cast<CCreatureSet &>(*this);

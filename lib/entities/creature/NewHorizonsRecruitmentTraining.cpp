@@ -17,6 +17,27 @@
 
 namespace newHorizonsTraining
 {
+bool containsMercenaryBonus(const JsonNode & node)
+{
+	if(node.isStruct())
+	{
+		if(node["stacking"].isString() && node["stacking"].String() == MERCENARY_BONUS)
+			return true;
+		for(const auto & [key, child] : node.Struct())
+			if(containsMercenaryBonus(child)) return true;
+	}
+	else if(node.isVector())
+		for(const auto & child : node.Vector())
+			if(containsMercenaryBonus(child)) return true;
+	return false;
+}
+bool isMercenaryBonus(const Bonus * bonus)
+{
+	return bonus && bonus->source == BonusSource::SECONDARY_SKILL && bonus->sid.toString() == DIPLOMACY
+		&& bonus->stacking == MERCENARY_BONUS && bonus->type == BonusType::MORALE && bonus->val == 1
+		&& bonus->valType == BonusValueType::ADDITIVE_VALUE && bonus->duration == BonusDuration::ONE_BATTLE;
+}
+
 bool containsTrainingBonus(const JsonNode & node)
 {
 	if(node.isStruct())
@@ -39,6 +60,7 @@ bool containsTrainingBonus(const JsonNode & node)
 
 bool isTrainingBonus(const Bonus * bonus)
 {
+	if(isMercenaryBonus(bonus)) return true;
 	if(!bonus || bonus->source != BonusSource::SECONDARY_SKILL || bonus->sid.toString() != SKILL
 		|| bonus->valType != BonusValueType::ADDITIVE_VALUE)
 		return false;
@@ -73,7 +95,7 @@ Batch captureEntry(const BattleInfo & battle, int32_t day, int32_t week)
 			const auto & previous = stack->getTrainingReceipt();
 			const bool reinforcement = reinforcementAvailable && previous.reinforcementPending
 				&& previous.residentRecruiter == hero->id;
-			const auto next = afterBattleEntry(previous, day, reinforcement);
+			const auto next = afterBattleEntry(previous, day, reinforcement, hero ? hero->id : ObjectInstanceID::NONE);
 			if(next != previous)
 				batch.stacks.push_back({army->id, slot, stack->getCreatureID(),
 					stack->getCount(), 0, previous, next});
@@ -114,6 +136,14 @@ void addEntryBonuses(BattleInfo & battle, int32_t day, int32_t week)
 			bonus->stacking = stacking;
 			unit->addNewBonus(bonus);
 		};
+		const auto * hero = battle.getSideHero(unit->unitSide());
+		if(hero && receipt.recruitedBy(hero->id, true) && hero->hasActivePerk(DIPLOMACY, MERCENARY_CAPTAIN))
+		{
+			auto bonus = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::MORALE,
+				BonusSource::SECONDARY_SKILL, 1, BonusSourceID(SecondarySkill(SecondarySkill::decode(DIPLOMACY))));
+			bonus->stacking = MERCENARY_BONUS;
+			unit->addNewBonus(bonus);
+		}
 		if(receipt.drillDeadline >= day)
 			add(BonusType::MORALE, 1, "new-horizons:drillSergeant", false);
 		const auto found = std::find_if(batch.stacks.begin(), batch.stacks.end(), [unit](const auto & change)
@@ -228,12 +258,15 @@ Receipt afterRecruitment(const CGHeroInstance & hero, CreatureID creature,
 	result.validate();
 	return result;
 }
-Receipt afterBattleEntry(const Receipt & previous, int32_t day, bool reinforcement)
+Receipt afterBattleEntry(const Receipt & previous, int32_t day, bool reinforcement, ObjectInstanceID commandingHero)
 {
 	previous.validate();
 	if(day < 0)
 		throw std::runtime_error("Invalid battle entry day");
 	Receipt result = previous;
+	for(auto & origin : result.mercenaryOrigins)
+		if(origin.hero == commandingHero && origin.combatsRemaining > 0)
+			--origin.combatsRemaining;
 	// Immunity/caps never defer consumption at actual combat entry.
 	result.drillDeadline = -1;
 	if(reinforcement)

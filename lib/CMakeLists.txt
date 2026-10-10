@@ -62,6 +62,11 @@ set(lib_MAIN_SRCS
 	battle/TimeStopState.cpp
 	battle/NewHorizonsBloodrage.cpp
 	battle/NewHorizonsDivineMandate.cpp
+	battle/NewHorizonsRapidResponse.cpp
+	battle/NewHorizonsHeroicSpirit.cpp
+	battle/NewHorizonsSeizeInitiative.cpp
+	battle/NewHorizonsOpportunist.cpp
+	battle/NewHorizonsCrisisCommand.cpp
 	battle/NewHorizonsIronWill.cpp
 	battle/NewHorizonsElementalRebirth.cpp
 	battle/NewHorizonsSwiftRebirth.cpp
@@ -167,6 +172,7 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsPerkState.cpp
 	entities/hero/NewHorizonsNecromancy.cpp
 	entities/hero/NewHorizonsDiplomacy.cpp
+	entities/hero/NewHorizonsLegendaryReputation.cpp
 	entities/ResourceTypeHandler.cpp
 
 	events/ApplyDamage.cpp
@@ -205,6 +211,7 @@ set(lib_MAIN_SRCS
 	mapObjects/CGCreature.cpp
 	mapObjects/CGDwelling.cpp
 	mapObjects/CGHeroInstance.cpp
+	mapObjects/NewHorizonsGlyphsOfFear.cpp
 	mapObjects/CGMarket.cpp
 	mapObjects/CGObjectInstance.cpp
 	mapObjects/CGPandoraBox.cpp
@@ -268,6 +275,8 @@ set(lib_MAIN_SRCS
 	pathfinder/PathfindingRules.cpp
 	pathfinder/TurnInfo.cpp
 	pathfinder/NewHorizonsMovement.cpp
+	pathfinder/NewHorizonsProtectedMobility.cpp
+	pathfinder/NewHorizonsLighthouse.cpp
 
 	rewardable/Configuration.cpp
 	rewardable/Info.cpp
@@ -554,6 +563,11 @@ set(lib_MAIN_HEADERS
 	battle/PhysicalAffliction.h
 	battle/NewHorizonsBloodrage.h
 	battle/NewHorizonsDivineMandate.h
+	battle/NewHorizonsRapidResponse.h
+	battle/NewHorizonsHeroicSpirit.h
+	battle/NewHorizonsSeizeInitiative.h
+	battle/NewHorizonsOpportunist.h
+	battle/NewHorizonsCrisisCommand.h
 	battle/NewHorizonsIronWill.h
 	battle/NewHorizonsElementalRebirth.h
 	battle/NewHorizonsSwiftRebirth.h
@@ -687,6 +701,7 @@ set(lib_MAIN_HEADERS
 	entities/hero/NewHorizonsPerkState.h
 	entities/hero/NewHorizonsNecromancy.h
 	entities/hero/NewHorizonsDiplomacy.h
+	entities/hero/NewHorizonsLegendaryReputation.h
 	entities/ResourceTypeHandler.h
 
 	events/ApplyDamage.h
@@ -734,6 +749,7 @@ set(lib_MAIN_HEADERS
 	mapObjects/CGCreature.h
 	mapObjects/CGDwelling.h
 	mapObjects/CGHeroInstance.h
+	mapObjects/NewHorizonsGlyphsOfFear.h
 	mapObjects/CGMarket.h
 	mapObjects/CGObjectInstance.h
 	mapObjects/CGPandoraBox.h
@@ -829,6 +845,8 @@ set(lib_MAIN_HEADERS
 	pathfinder/PathfindingRules.h
 	pathfinder/TurnInfo.h
 	pathfinder/NewHorizonsMovement.h
+	pathfinder/NewHorizonsProtectedMobility.h
+	pathfinder/NewHorizonsLighthouse.h
 
 	rewardable/Configuration.h
 	rewardable/Info.h

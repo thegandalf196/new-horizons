@@ -19,11 +19,13 @@
 #include "AdverseCombatRerollState.h"
 #include "MoraleSuppressionState.h"
 #include "ReducedExtraActivationState.h"
+#include "NewHorizonsRapidResponse.h"
 #include "SylvanLuckState.h"
 #include "HeroActionAllowanceState.h"
 #include "AlternatingHeroActionState.h"
 #include "RelentlessAssaultState.h"
 #include "SpellResponseState.h"
+#include "NewHorizonsSeizeInitiative.h"
 #include "../spells/NewHorizonsCrossSchoolFormula.h"
 #include "OverwhelmingFormulaState.h"
 #include "PerfectFortuneState.h"
@@ -31,6 +33,7 @@
 #include "ArmorerDefiantState.h"
 #include "BattleDeploymentState.h"
 #include "BattleEffectExchange.h"
+#include "NewHorizonsCrisisCommand.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 
 class ObstacleChanges;
@@ -71,6 +74,11 @@ public:
 	virtual const scripting::Pool & getScriptContextPool() const = 0;
 
 	virtual int32_t getActiveStackID() const = 0;
+	virtual const SeizeInitiativeState & getSeizeInitiativeState() const
+	{
+		static const SeizeInitiativeState empty;
+		return empty;
+	}
 
 	virtual TStacks getStacksIf(const TStackFilter & predicate) const = 0;
 
@@ -100,6 +108,11 @@ public:
 
 	virtual const JsonNode & getHeroCommandRules() const;
 	virtual const JsonNode & getMagicRules() const;
+	virtual const newHorizonsCrisisCommand::State & getCrisisCommandState() const
+	{
+		static const newHorizonsCrisisCommand::State empty;
+		return empty;
+	}
 	virtual const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const;
 	virtual bool getHeroCommandUsed(BattleSide side) const { return false; }
 	virtual const HeroActionAllowanceState & getHeroActionAllowances(BattleSide side) const
@@ -212,6 +225,12 @@ public:
 	virtual ArmorerDefiantState getArmorerDefiantState(BattleSide side) const { (void)side; return {}; }
 	virtual AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const { (void)side; return {}; }
 	virtual MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const { (void)side; return {}; }
+	virtual const RapidResponseState & getRapidResponseState(BattleSide side) const
+	{
+		(void)side;
+		static const RapidResponseState empty;
+		return empty;
+	}
 	virtual const ReducedExtraActivationState & getReducedExtraActivationState(BattleSide side) const
 	{
 		(void)side;
@@ -274,6 +293,7 @@ class DLL_LINKAGE IBattleState : public IBattleInfo
 public:
 	virtual void nextRound() = 0;
 	virtual void nextTurn(uint32_t unitId, BattleUnitTurnReason reason) = 0;
+	virtual void setSeizeInitiativeState(const SeizeInitiativeState &) {}
 	virtual void setPreCombatOrderState(BattleSide side, const PreCombatOrderState & state)
 	{
 		(void)side;
@@ -338,7 +358,12 @@ public:
 	virtual void recordRelentlessAssaultAttack(BattleSide, uint32_t) {}
 	virtual void setAdverseCombatRerollState(BattleSide, const AdverseCombatRerollState &) {}
 	virtual void setMoraleSuppressionState(BattleSide, const MoraleSuppressionState &) {}
+	virtual void setRapidResponseState(BattleSide, const RapidResponseState &) {}
 	virtual void setReducedExtraActivationState(BattleSide, const ReducedExtraActivationState &) {}
+	virtual void setCrisisCommandState(const newHorizonsCrisisCommand::State &)
+	{
+		throw std::runtime_error("Battle does not support Crisis Command suspension");
+	}
 	virtual void setCrossSchoolFormulaState(BattleSide, const newHorizonsCrossSchoolFormula::State &)
 	{
 		throw std::runtime_error("Battle state cannot record Cross-School Formula");

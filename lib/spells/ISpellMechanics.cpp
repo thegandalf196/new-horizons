@@ -11,6 +11,7 @@
 #include "StdInc.h"
 #include "ISpellMechanics.h"
 #include "NewHorizonsMagic.h"
+#include "NewHorizonsSorcery.h"
 #include "NewHorizonsCrossSchoolFormula.h"
 #include "NewHorizonsElementalTerrain.h"
 #include "NewHorizonsNaturesWrath.h"
@@ -228,6 +229,41 @@ int64_t Mechanics::scaleDamageSpellPowerComponentWithCoefficientBasisPoints(cons
 {
 	return spells::scaleSpellPowerComponentWithCoefficientBasisPoints(numerator, divisor,
 		coefficientBasisPoints, getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(), damageSpecialtyPercent);
+}
+
+int64_t Mechanics::getHexOfPainFlatDamage() const
+{
+	if(getSpellId().toSpell()->getJsonKey() != "new-horizons:hexOfPain")
+		return 0;
+	const auto * hero = getHeroCaster();
+	return newHorizonsMagic::hexOfPainFlatDamage(getEffectPower(), getSpellPowerCoefficientBasisPoints(),
+		getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(),
+		hero ? hero->getDamageSpellSpecialtyBonusPercent(getSpellId()) : 0,
+		usesNewHorizonsMagicV3() && hero
+			&& hero->hasActivePerk("new-horizons:shadowMagic", "new-horizons:shadowMagic.painweaver"));
+}
+
+int64_t Mechanics::getPlagueTickDamage() const
+{
+	if(getSpellId().toSpell()->getJsonKey() != "new-horizons:plague")
+		return 0;
+	const auto * hero = getHeroCaster();
+	// Preserve Plague's authored initial snapshot: coefficient, not an extra
+	// Warcasting/Empower application. Children reuse this exact captured value.
+	return newHorizonsMagic::plagueTickDamage(getEffectPower(), getSpellPowerCoefficientBasisPoints(),
+		hero ? hero->getDamageSpellSpecialtyBonusPercent(getSpellId()) : 0);
+}
+
+int64_t Mechanics::getPhantomArmyIntegrity(const battle::Unit * source) const
+{
+	if(!source || getSpellId().toSpell()->getJsonKey() != "new-horizons:phantomArmy")
+		return 0;
+	const auto * hero = getHeroCaster();
+	return std::max<int64_t>(1, newHorizonsSorcery::phantomArmyIntegrityWithModifiers(
+		source->getAvailableHealth(), std::max(0, getEffectPower()),
+		hero && hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.illusionist"),
+		getSpellPowerCoefficientBasisPoints(), getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(),
+		hero ? hero->getNonDamageSpellSpecialtyBonusPercent(getSpellId()) : 0));
 }
 
 int32_t Mechanics::getFrailtyDefenseLossBasisPoints() const

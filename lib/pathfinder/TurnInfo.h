@@ -60,6 +60,7 @@ private:
 	int moveCostBaseValue;
 	int movePointsLimitLand;
 	int movePointsLimitWater;
+	int lighthouseSeaMovePoints = 0;
 	int movePointsLimitAir;
 
 	bool waterWalkingTest;
@@ -83,6 +84,7 @@ public:
 	int getMovementCostBase() const;
 	int getMovePointsLimitLand() const;
 	int getMovePointsLimitWater() const;
+	int getLighthouseSeaMovePoints() const { return lighthouseSeaMovePoints; }
 	int getMovePointsLimitAir() const;
 	bool usesNewHorizonsMovement() const;
 	bool hasNewHorizonsPathfinding() const { return newHorizonsPathfinding; }

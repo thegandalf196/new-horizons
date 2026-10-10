@@ -10,6 +10,19 @@
 			"required": ["schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "extraGrowth"],
 			"additionalProperties": false,
 			"properties": {
+				"lighthouseDeparture": {
+					"type": "object", "additionalProperties": false,
+					"required": ["enabled", "seaMovementPercent"],
+					"properties": {"enabled": {"type": "boolean"}, "seaMovementPercent": {"type": "integer", "minimum": 1, "maximum": 100}}
+				},
+				"defaultCreatureLineReplacements": {
+					"type": "object", "additionalProperties": false,
+					"required": ["core:pasis", "core:monere"],
+					"properties": {
+						"core:pasis": {"enum": ["new-horizons:wisp"]},
+						"core:monere": {"enum": ["new-horizons:wisp"]}
+					}
+				},
 				"schemaVersion": {"type": "integer", "enum": [1]},
 				"rulesetVersion": {"type": "integer", "enum": [1]},
 				"powerDivisor": {"type": "integer", "minimum": 1, "maximum": 1000},
@@ -37,7 +50,8 @@
 				"creatureLineSpecialties": {"$ref": "#/definitions/creatureLineSpecialties"},
 				"damageSpellSpecialties": {"$ref": "#/definitions/damageSpellSpecialties"},
 				"nonDamageSpellSpecialties": {"$ref": "#/definitions/nonDamageSpellSpecialties"},
-				"skillSpecialties": {"$ref": "#/definitions/skillSpecialties"}
+				"skillSpecialties": {"$ref": "#/definitions/skillSpecialties"},
+				"remainingSpellSpecialtyReplacements": {"type": "boolean", "description": "Captured six authored spell-specialty successors. Absence or false preserves original producers; any key presence requires its serialization feature."}
 			}
 		}
 	],
@@ -114,9 +128,9 @@
 				"offensiveStartReplacements": {"type": "boolean", "description": "Absent or false preserves pre-replacement Loynis and Zubin specialty identities."},
 				"remainingStartReplacements": {"type": "boolean", "description": "Absent or false preserves pre-replacement Inteus and Halon starting inscriptions."},
 				"spells": {
-					"type": "array", "minItems": 1, "maxItems": 10,
+					"type": "array", "minItems": 1, "maxItems": 11,
 					"uniqueItems": true,
-					"items": {"type": "string", "enum": ["core:cure", "core:resurrection", "core:bless", "core:haste", "new-horizons:reanimate", "new-horizons:frailty", "new-horizons:hydrasVitality", "new-horizons:guardianSpirit", "new-horizons:crusade", "new-horizons:focusMagic"]}
+					"items": {"type": "string", "enum": ["core:cure", "core:resurrection", "core:bless", "core:haste", "new-horizons:reanimate", "new-horizons:frailty", "new-horizons:hydrasVitality", "new-horizons:guardianSpirit", "new-horizons:crusade", "new-horizons:focusMagic", "new-horizons:phantomArmy"]}
 				}
 			}
 		},
@@ -125,6 +139,7 @@
 			"required": ["version", "coreBonusPercent", "skills"],
 			"additionalProperties": false,
 			"properties": {
+				"navigationStartReplacements": {"type": "boolean", "description": "Captured Sylvia and Voy exact Navigation producer conversion, independent of DEFAULT-only development profiles."},
 				"version": {"type": "integer", "enum": [1]},
 				"coreBonusPercent": {"type": "integer", "enum": [20]},
 				"skills": {
@@ -139,6 +154,14 @@
 			"additionalProperties": false,
 			"required": ["factionSkills", "legacyAliases", "magic", "might"],
 			"properties": {
+				"startingBookReplacements": {
+					"description": "Complete authored 22-row default-only book replacement table. Canonical hero/source/target identities and ordinary captured roster admission are checked by the shared runtime validator.",
+					"type": "object", "minProperties": 22, "maxProperties": 22,
+					"additionalProperties": {
+						"type": "object", "additionalProperties": false, "required": ["from", "to"],
+						"properties": {"from": {"type": "string", "pattern": "^[^:]+:[^:]+$"}, "to": {"type": "string", "pattern": "^[^:]+:[^:]+$"}}
+					}
+				},
 				"factionSkills": {
 					"type": "object",
 					"minProperties": 1,

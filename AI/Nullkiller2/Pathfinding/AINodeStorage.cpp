@@ -8,6 +8,7 @@
 *
 */
 #include "StdInc.h"
+#include "../../../lib/pathfinder/NewHorizonsProtectedMobility.h"
 #include "AINodeStorage.h"
 
 #include "../../../lib/CPlayerState.h"
@@ -343,13 +344,24 @@ std::vector<CGPathNode *> AINodeStorage::getInitialNodes()
 void AINodeStorage::prepareDestination(CDestinationNodeInfo & destination, const PathNodeInfo & source)
 {
 	auto * node = static_cast<AIPathNode *>(destination.node);
-	const auto flags = dayFlagsForTurn(getAINode(source.node), destination.turn);
+	auto flags = dayFlagsForTurn(getAINode(source.node), destination.turn);
+	if(destination.lighthouseDeparture)
+		flags = static_cast<DayFlags>(flags | DayFlags::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE);
 	if(newHorizonsDailyOpportunityFlags(flags) == newHorizonsDailyOpportunityFlags(node->dayFlags))
 		return;
 
 	const auto canonicalNode = getOrCreateNode(node->coord, node->layer, node->actor, flags);
 	if(canonicalNode)
+	{
 		destination.node = canonicalNode.value();
+		if(destination.lighthouseDeparture && canonicalNode.value() != node)
+		{
+			if(destination.node->locked || !destination.isBetterWay())
+				destination.blocked = true;
+			else
+				canonicalNode.value()->specialAction = node->specialAction;
+		}
+	}
 	else if(node->action == EPathNodeAction::UNKNOWN && node->turns == 0xFF && !node->locked)
 		// The provisional candidate may occupy the final bucket slot. Only an
 		// unused slot can safely change its daily-state identity in place.
@@ -364,6 +376,8 @@ void AINodeStorage::commit(CDestinationNodeInfo & destination, const PathNodeInf
 	auto * dstNode = static_cast<AIPathNode *>(destination.node);
 	const auto pendingSpecialAction = dstNode->specialAction;
 	DayFlags destinationDayFlags = dayFlagsForTurn(srcNode, destination.turn);
+	if(destination.lighthouseDeparture)
+		destinationDayFlags = static_cast<DayFlags>(destinationDayFlags | DayFlags::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE);
 	if(pendingSpecialAction && pendingSpecialAction->usesNewHorizonsAdventureSpellOpportunity())
 		destinationDayFlags = static_cast<DayFlags>(destinationDayFlags | DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST);
 	if(pendingSpecialAction && pendingSpecialAction->usesNewHorizonsCastleGateOpportunity())
@@ -404,6 +418,8 @@ void AINodeStorage::commit(CDestinationNodeInfo & destination, const PathNodeInf
 	updateAINode(dstNode, [&](AIPathNode * dstNode)
 	{
 		commit(dstNode, srcNode, destination.action, destination.turn, destination.movementLeft, destination.cost);
+		dstNode->dayFlags = destinationDayFlags;
+		dstNode->lighthouseDepartureTurn = destination.lighthouseDeparture ? destination.turn : -1;
 
 		// regular pathfinder can not go directly through whirlpool
 		bool isWhirlpoolTeleport = destination.nodeObject
@@ -493,6 +509,7 @@ void AINodeStorage::commit(
 	}
 
 	destination->dayFlags = destination->turns == source->turns ? source->dayFlags : DayFlags::NONE;
+	destination->lighthouseDepartureTurn = source->lighthouseDepartureTurn == turn ? turn : -1;
 }
 
 void AINodeStorage::calculateNeighbours(
@@ -1264,7 +1281,8 @@ void AINodeStorage::calculateObjectTeleportations(
 
 		std::optional<AIPathNode *> node = getOrCreateNode(
 			neighbour,
-			source.node->layer,
+			srcNode->actor->hero ? newHorizonsProtectedMobility::displacementLayer(*srcNode->actor->hero, source.node->layer)
+				: source.node->layer,
 			srcNode->actor,
 			destinationDayFlags);
 		if(!node)
@@ -1490,7 +1508,9 @@ void AINodeStorage::addDimensionDoorTeleportation(
 	DayFlags destinationDayFlags = dayFlagsForTurn(srcNode, plan.plannedSourceTurn);
 	if(plan.usesNewHorizonsAdventureSpellOpportunity)
 		destinationDayFlags = static_cast<DayFlags>(destinationDayFlags | DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST);
-	auto nodeOptional = getOrCreateNode(destination, source.node->layer, landing.destinationActor, destinationDayFlags);
+	auto nodeOptional = getOrCreateNode(destination,
+		newHorizonsProtectedMobility::displacementLayer(*srcNode->actor->hero, source.node->layer),
+		landing.destinationActor, destinationDayFlags);
 	if(!nodeOptional)
 	{
 #if NK2AI_PATHFINDER_TRACE_LEVEL >= 1

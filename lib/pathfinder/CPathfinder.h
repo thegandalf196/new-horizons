@@ -98,7 +98,7 @@ public:
 	void updateTurnInfo(const int turn = 0);
 	bool isLayerAvailable(const EPathfindingLayer & layer) const;
 	const TurnInfo * getTurnInfo() const;
-	int getMaxMovePoints(const EPathfindingLayer & layer) const;
+	int getMaxMovePoints(const EPathfindingLayer & layer, bool projectedLighthouse = false) const;
 
 	TeleporterTilesVector getCastleGates(const PathNodeInfo & source) const;
 	bool isAllowedTeleportEntrance(const CGTeleport * obj) const;
@@ -137,9 +137,17 @@ public:
 		const int remainingMovePoints = -1,
 		const bool checkLast = true) const;
 
-	int movementPointsAfterEmbark(int movement, int basicCost, bool disembark) const;
+	int movementPointsAfterEmbark(int movement, int basicCost, bool disembark, bool projectedLighthouse = false) const;
 	bool passOneTurnLimitCheck(const PathNodeInfo & source) const;
 
 	int getGuardiansCount(int3 tile) const;
 	bool isTileBlockedByHole(const int3 & tile) const;
+
+	/// Read-only reserve check: ordinary visible, unguarded land reachable today.
+	/// Uses this helper's captured day/cost context; never casts or advances a day.
+	bool hasSameDayLandEscape(const int3 & source, int remainingMovement) const;
 };
+
+/// Historical worlds without the captured policy, and embarked heroes, are exempt.
+DLL_LINKAGE bool isWaterWalkDayEndLegal(const IGameInfoCallback & gameInfo, const CGHeroInstance & hero);
+DLL_LINKAGE bool areOwnedWaterWalkHeroesDayEndLegal(const IGameInfoCallback & gameInfo, PlayerColor owner);

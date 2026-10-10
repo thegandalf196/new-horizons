@@ -19,6 +19,7 @@
 #include "../mapObjects/CGHeroInstance.h"
 #include "../mapObjects/MiscObjects.h"
 #include "NewHorizonsMovement.h"
+#include "NewHorizonsLighthouse.h"
 
 #include <array>
 #include <cstdint>
@@ -135,7 +136,7 @@ NewHorizonsMovementModifiers getNewHorizonsMovementModifiers(
 	// values and must retain those semantics.
 	for(const auto & bonus : *bonuses)
 	{
-		if(!daySelector(bonus.get()))
+		if((hero && newHorizonsLighthouse::departurePercent(*hero) && newHorizonsLighthouse::isLegacyCastleBonus(*bonus)) || !daySelector(bonus.get()))
 			continue;
 
 		switch(bonus->valType)
@@ -155,7 +156,7 @@ NewHorizonsMovementModifiers getNewHorizonsMovementModifiers(
 
 	for(const auto & bonus : *bonuses)
 	{
-		if(!daySelector(bonus.get()))
+		if((hero && newHorizonsLighthouse::departurePercent(*hero) && newHorizonsLighthouse::isLegacyCastleBonus(*bonus)) || !daySelector(bonus.get()))
 			continue;
 		if(bonus->valType != BonusValueType::INDEPENDENT_MIN
 			&& bonus->valType != BonusValueType::INDEPENDENT_MAX)
@@ -465,6 +466,14 @@ TurnInfo::TurnInfo(TurnInfoCache * sharedCache, const CGHeroInstance * target, i
 				landModifiers.percentageToBase, landModifiers.percentageToAll, landModifiers.additive),
 			landModifiers);
 		movePointsLimitWater = applyNewHorizonsMovementBounds(
+			newHorizonsMovement::maximumDailyMovement(
+				saturatingAdd(newHorizonsMovement::BASE_DAILY_MOVEMENT, waterModifiers.base),
+				waterModifiers.percentageToBase, waterModifiers.percentageToAll, waterModifiers.additive),
+			waterModifiers);
+		if(!newHorizonsLighthouse::hasDepartureBonus(*target, Turn))
+			waterModifiers.percentageToBase = saturatingAdd(waterModifiers.percentageToBase,
+				newHorizonsLighthouse::departurePercent(*target));
+		lighthouseSeaMovePoints = applyNewHorizonsMovementBounds(
 			newHorizonsMovement::maximumDailyMovement(
 				saturatingAdd(newHorizonsMovement::BASE_DAILY_MOVEMENT, waterModifiers.base),
 				waterModifiers.percentageToBase, waterModifiers.percentageToAll, waterModifiers.additive),

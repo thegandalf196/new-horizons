@@ -18,6 +18,19 @@
 
 namespace newHorizonsHeroes
 {
+bool crisisCommandProfileActive(const JsonNode & rules)
+{
+	validatePerkRules(rules);
+	const auto definition = perkDefinition(rules, "new-horizons:command", "new-horizons:command.crisisCommand");
+	return definition && definition->effect["status"].String() == "active";
+}
+
+void validateCrisisCommandProfileSerialization(const JsonNode & rules, bool supported)
+{
+	if(crisisCommandProfileActive(rules) && !supported)
+		throw std::runtime_error("Cannot serialize active Crisis Command profile to an older format");
+}
+
 namespace
 {
 void require(bool valid, const std::string & detail)

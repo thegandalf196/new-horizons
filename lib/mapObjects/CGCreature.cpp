@@ -70,16 +70,18 @@ void appendEnvoyDiplomacyInformation(MetaString & text,
 	}
 	if(forecast.commonCause)
 		text.appendRawString("\nCommon Cause counts same-faction neutral troops at half Army Value.");
+	if(forecast.legendaryReputation)
+		text.appendRawString("\nLegendary Reputation waives this offer's Gold once this calendar month, only upon actual troop admission.");
 	if(forecast.recruitmentPact)
 		text.appendRawString("\nRecruitment Pact treats this stack as having 15% lower Army Value for joining.");
 	if(!forecast.eligible)
 		text.appendRawString("\nThis neutral stack is not eligible to join through Diplomacy.");
 
 	text.appendRawString("\nGold required if it joins: ");
-	if(forecast.authoredFree)
+	if(forecast.authoredFree || forecast.legendaryReputation)
 		text.appendRawString("0");
 	else if(forecast.normalGoldCostValid)
-		text.appendRawString(std::to_string(forecast.normalGoldCost));
+		text.appendRawString(std::to_string(forecast.goldCost()));
 	else
 		text.appendRawString("unavailable");
 	text.appendRawString(" Gold.");
@@ -96,6 +98,8 @@ void appendNewHorizonsDiplomacyNotes(MetaString & text,
 		if(forecast.commonCause)
 			text.appendRawString(" Common Cause counts same-faction neutral troops at half Army Value.");
 	}
+	if(forecast.legendaryReputation)
+		text.appendRawString("\nLegendary Reputation waives this offer's Gold once this calendar month, only upon actual troop admission.");
 	if(forecast.recruitmentPact)
 		text.appendRawString("\nRecruitment Pact treats this stack as having 15% lower Army Value for joining.");
 	if(!forecast.eligible)
@@ -201,7 +205,7 @@ MetaString CGCreature::getPopupText(const CGHeroInstance * hero) const
 		const auto forecast = getNewHorizonsDiplomacyForecast(*hero);
 		int decision = takenAction(hero, true);
 
-		if(forecast.usesNewHorizonsRules && forecast.willing && !forecast.authoredFree)
+		if(forecast.usesNewHorizonsRules && forecast.willing && !forecast.authoredFree && !forecast.legendaryReputation)
 		{
 			ms.appendTextID("core.genrltxt.244");
 			ms.replaceNumber(static_cast<int32_t>(forecast.normalGoldCost));
@@ -370,7 +374,7 @@ void CGCreature::onHeroVisit(IGameEventCallback & gameEvents, const CGHeroInstan
 		BlockingDialog ynd(true, false);
 		ynd.player = h->tempOwner;
 		ynd.components.emplace_back(ComponentType::CREATURE, getCreatureID(), forecast.joiningAmount);
-		if(forecast.authoredFree)
+		if(forecast.authoredFree || forecast.legendaryReputation)
 		{
 			ynd.text.appendTextID("core.advevent.86");
 			ynd.text.replaceName(getCreatureID(), forecast.joiningAmount);
@@ -452,6 +456,7 @@ newHorizonsDiplomacy::Forecast CGCreature::getNewHorizonsDiplomacyForecast(const
 	input.grandDiplomat = hero.hasActivePerk(newHorizonsDiplomacy::SKILL_ID,
 		newHorizonsDiplomacy::GRAND_DIPLOMAT_ID);
 	input.recruitmentPact = hero.hasNewHorizonsRecruitmentPact(cb->getCalendar().getCurrentDay());
+	input.legendaryReputation = hero.canUseNewHorizonsLegendaryReputation(cb->getCalendar().getMonth());
 	input.heroArmyValue = hero.getArmyStrength();
 	input.joiningAmount = getStackCount(SlotID(0));
 	input.encounterEligible = diplomacyEligible
@@ -679,7 +684,7 @@ int CGCreature::takenAction(const CGHeroInstance *h, bool allowJoin) const
 	{
 		if(allowJoin && forecast.willing)
 		{
-			if(forecast.authoredFree || forecast.normalGoldCost == 0)
+			if(forecast.goldCost() == 0)
 				return JOIN_FOR_FREE;
 			if(forecast.normalGoldCostFitsAction)
 				return static_cast<int>(forecast.normalGoldCost);
@@ -752,11 +757,16 @@ void CGCreature::joinDecision(IGameEventCallback & gameEvents, const CGHeroInsta
 	}
 	else //accepted
 	{
+		if(!gameEvents.validateNeutralDiplomacyOffer(this, h, cost))
+		{
+			showExpiredDiplomacyOffer(gameEvents, h);
+			return;
+		}
 		int64_t requiredGold = cost;
 		int64_t joiningAmount = getJoiningAmount();
 		if(forecast.usesNewHorizonsRules)
 		{
-			const int64_t expectedGold = forecast.authoredFree ? 0 : forecast.normalGoldCost;
+			const int64_t expectedGold = forecast.goldCost();
 			if(refusedJoining || !forecast.willing
 				|| (!forecast.authoredFree && !forecast.normalGoldCostFitsAction)
 				|| cost != expectedGold)
@@ -902,6 +912,11 @@ void CGCreature::blockingDialogAnswered(IGameEventCallback & gameEvents, const C
 	const bool neutralContact = tempOwner == PlayerColor::NEUTRAL || tempOwner == PlayerColor::UNFLAGGABLE;
 	const bool pactResponse = !refusedJoining && neutralContact && forecast.usesNewHorizonsRules
 		&& hero->hasNewHorizonsRecruitmentPact(cb->getCalendar().getCurrentDay());
+	if(answer && !gameEvents.validateNeutralDiplomacyOffer(this, hero, forecast.goldCost()))
+	{
+		showExpiredDiplomacyOffer(gameEvents, hero);
+		return;
+	}
 	auto action = takenAction(hero, !refusedJoining);
 	if(forecast.usesNewHorizonsRules)
 	{
@@ -920,7 +935,7 @@ void CGCreature::blockingDialogAnswered(IGameEventCallback & gameEvents, const C
 			return;
 		}
 
-		const int64_t expectedGold = forecast.authoredFree ? 0 : forecast.normalGoldCost;
+		const int64_t expectedGold = forecast.goldCost();
 		if(refusedJoining || !forecast.willing
 			|| (!forecast.authoredFree && !forecast.normalGoldCostFitsAction)
 			|| action != expectedGold)

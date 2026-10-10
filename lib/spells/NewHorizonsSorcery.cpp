@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsSorcery.h"
+#include "ISpellMechanics.h"
 
 #include <algorithm>
 #include <array>
@@ -64,6 +65,38 @@ int64_t phantomArmyIntegrity(int64_t sourceCurrentHealth, int32_t spellPower, bo
 	const int64_t whole = sourceCurrentHealth / denominator;
 	const int64_t remainder = sourceCurrentHealth % denominator;
 	return whole * numerator + remainder * numerator / denominator;
+}
+
+int64_t phantomArmyIntegrityWithModifiers(int64_t sourceCurrentHealth, int32_t spellPower,
+	bool illusionist, int32_t coefficientBasisPoints, int32_t warcastingPercent, int32_t empowerPercent,
+	int32_t specialtyPercent)
+{
+	validateSpellPower(spellPower);
+	if(sourceCurrentHealth < 0)
+		throw std::invalid_argument("Phantom Army source health cannot be negative");
+	constexpr int64_t precision = 10000;
+	const int64_t power = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
+		15LL * spellPower * precision, 1, coefficientBasisPoints, warcastingPercent, empowerPercent, specialtyPercent);
+	const int64_t fractions = PHANTOM_ARMY_BASE_INTEGRITY_PERCENT * 100LL * precision
+		+ std::min<int64_t>((PHANTOM_ARMY_INTEGRITY_CAP_PERCENT - PHANTOM_ARMY_BASE_INTEGRITY_PERCENT)
+			* 100LL * precision, power);
+	const int64_t numerator = fractions * (illusionist ? 125 : 100);
+	constexpr int64_t denominator = 1000000 * precision;
+	// Binary long division keeps remainder products bounded, preserves fractional
+	// basis points, and floors once after the cap and independent Illusionist.
+	int64_t quotient = 0;
+	int64_t remainder = 0;
+	const int64_t value = sourceCurrentHealth % denominator;
+	for(int64_t bit = int64_t{1} << 32; bit > 0; bit /= 2)
+	{
+		quotient *= 2;
+		remainder *= 2;
+		if((numerator & bit) != 0)
+			remainder += value;
+		quotient += remainder / denominator;
+		remainder %= denominator;
+	}
+	return sourceCurrentHealth / denominator * numerator + quotient;
 }
 
 int phantomArmyDamageTakenPercent(bool magical)

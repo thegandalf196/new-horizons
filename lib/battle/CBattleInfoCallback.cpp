@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "CBattleInfoCallback.h"
+#include "../mapObjects/NewHorizonsGlyphsOfFear.h"
 #include "NewHorizonsFrozen.h"
 #include "NewHorizonsSwiftRebirth.h"
 
@@ -489,6 +490,9 @@ HeroCommand CBattleInfoCallback::battleGetActiveOrder(BattleSide side) const
 
 bool CBattleInfoCallback::battleHeroCommandCommonAvailable(BattleSide side, HeroCommand command) const
 {
+	if(getBattle() && getBattle()->getCrisisCommandState().choice()
+		&& side != getBattle()->getCrisisCommandState().chooser())
+		return false;
 	if(!getBattle() || !heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), command)
 		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
 		return false;
@@ -775,6 +779,8 @@ int CBattleInfoCallback::battleBloodragePainIncrement(const battle::Unit * unit)
 
 bool CBattleInfoCallback::battleBeginsActivation(const battle::Unit * unit, BattleUnitTurnReason reason) const
 {
+	if(reason == BattleUnitTurnReason::CRISIS_ORDER || reason == BattleUnitTurnReason::CRISIS_RESUME)
+		return false;
 	if(!unit || unit->isTimeStopped() || reason == BattleUnitTurnReason::ACTION_REJECTED
 		|| reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION
 		|| reason == BattleUnitTurnReason::PURSUIT_CONTINUATION
@@ -1428,6 +1434,8 @@ BattleMoraleInfo CBattleInfoCallback::battleGetMoraleInfo(const battle::Unit * u
 		}
 	}
 	result.standardBearerBonus = additionalMorale;
+	const auto glyphsBonuses = newHorizonsGlyphsOfFear::moraleBonuses(hero, getBattle()->getLocation());
+	const int32_t glyphsMorale = glyphsBonuses->totalValue();
 
 	const auto applyMoraleFloor = [this, unit, hero, &result](int morale)
 	{
@@ -1463,12 +1471,12 @@ BattleMoraleInfo CBattleInfoCallback::battleGetMoraleInfo(const battle::Unit * u
 	const bool espritDeCorps = newHorizonsDiscipline::hasEspritDeCorps(hero);
 	if(!steadfast && !espritDeCorps)
 	{
-		if(additionalMorale == 0 && firstRoundMoraleModifier == 0)
+		if(additionalMorale == 0 && firstRoundMoraleModifier == 0 && glyphsMorale == 0)
 			result.effective = applyMoraleFloor(unit->moraleVal());
 		else
 		{
 			const auto totalAdditionalMorale = static_cast<int64_t>(additionalMorale)
-				+ static_cast<int64_t>(firstRoundMoraleModifier);
+				+ static_cast<int64_t>(firstRoundMoraleModifier) + glyphsMorale;
 			const auto boundedAdditionalMorale = static_cast<int32_t>(std::clamp<int64_t>(totalAdditionalMorale,
 				std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
 			result.effective = applyMoraleFloor(unit->moraleValWithBonus(boundedAdditionalMorale));
@@ -1482,7 +1490,8 @@ BattleMoraleInfo CBattleInfoCallback::battleGetMoraleInfo(const battle::Unit * u
 		- currentMoraleBonuses->totalValue();
 	result.espritDeCorpsAdjustment = static_cast<int32_t>(std::clamp<int64_t>(compositionDelta,
 		std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
-	const auto moraleBonuses = newHorizonsDiscipline::espritDeCorpsMoraleBonuses(hero, *unit, false);
+	const auto moraleBonuses = newHorizonsGlyphsOfFear::appendMoraleBonuses(
+		newHorizonsDiscipline::espritDeCorpsMoraleBonuses(hero, *unit, false), hero, getBattle()->getLocation());
 	BonusList adjustedMoraleBonuses;
 	std::unordered_map<const Bonus *, std::shared_ptr<Bonus>> adjustedByOriginal;
 	const PlayerColor targetAuraOwner = unit->unitOwner() == PlayerColor::UNFLAGGABLE
@@ -1509,7 +1518,7 @@ BattleMoraleInfo CBattleInfoCallback::battleGetMoraleInfo(const battle::Unit * u
 
 	const int64_t moraleDelta = static_cast<int64_t>(adjustedMoraleBonuses.totalValue())
 		- static_cast<int64_t>(currentMoraleBonuses->totalValue());
-	result.steadfastAdjustment = static_cast<int32_t>(std::clamp<int64_t>(moraleDelta - compositionDelta,
+	result.steadfastAdjustment = static_cast<int32_t>(std::clamp<int64_t>(moraleDelta - compositionDelta - glyphsMorale,
 		std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
 	const int64_t totalAdditionalMorale = moraleDelta + additionalMorale + firstRoundMoraleModifier;
 	const auto boundedAdditionalMorale = static_cast<int32_t>(std::clamp<int64_t>(totalAdditionalMorale,
@@ -2615,9 +2624,42 @@ static const battle::Unit * takeOneUnit(battle::Units & allUnits, const int turn
 	return returnedUnit;
 }
 
-void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & turns, const size_t maxUnits, const int maxTurns, const int turn, BattleSide sideThatLastMoved) const
+void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & turns, const size_t maxUnits, const int maxTurns, const int turn, BattleSide sideThatLastMoved, bool includeRapidResponse, bool includeSeizeInitiative) const
 {
 	RETURN_IF_NOT_BATTLE();
+	if((maxUnits != 0 || maxTurns != 0) && includeSeizeInitiative && turn <= 0 && getBattle()->getSeizeInitiativeState().enabled())
+	{
+		std::vector<battle::Units> original;
+		battleGetTurnOrder(original, 0, 1, turn, sideThatLastMoved, includeRapidResponse, false);
+		if(original.empty())
+			return;
+		newHorizonsSeizeInitiative::reorder(*this, original.front(), turn == 0);
+		// The authoritative next-stack router consumes Rapid before the ordinary
+		// queue. Retain that priority after Seize's friendly-slot permutation.
+		if(includeRapidResponse)
+		{
+			auto & queue = original.front();
+			size_t insertion = !queue.empty() && queue.front() == battleActiveUnit() ? 1 : 0;
+			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			{
+				const auto * pending = newHorizonsRapidResponse::pendingWaiter(*this, side);
+				if(!pending || pending == battleActiveUnit())
+					continue;
+				const auto found = std::find(queue.begin(), queue.end(), pending);
+				if(found == queue.end())
+					continue;
+				queue.erase(found);
+				queue.insert(queue.begin() + insertion, pending);
+				++insertion;
+			}
+		}
+		if(maxUnits && original.front().size() > maxUnits)
+			original.front().resize(maxUnits);
+		turns.push_back(std::move(original.front()));
+		if((!maxUnits || turns.back().size() < maxUnits) && (maxTurns == 0 || turns.size() < maxTurns))
+			battleGetTurnOrder(turns, maxUnits, maxTurns, 1, sideThatLastMoved, includeRapidResponse, false);
+		return;
+	}
 
 	if(maxUnits == 0 && maxTurns == 0)
 	{
@@ -2709,6 +2751,21 @@ void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & turns,
 		phases[unitPhase].push_back(unit);
 	}
 
+	if(actualTurn == 0 && includeRapidResponse)
+	{
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			const auto * pending = newHorizonsRapidResponse::pendingWaiter(*this, side);
+			if(!pending || std::find(turns.back().begin(), turns.back().end(), pending) != turns.back().end())
+				continue;
+			for(auto & phaseUnits : phases)
+				vstd::erase_if(phaseUnits, [pending](const battle::Unit * unit) { return unit == pending; });
+			turns.back().push_back(pending);
+			if(turnsIsFull())
+				return;
+		}
+	}
+
 	if(actualTurn == 0)
 	{
 		battle::Units swift;
@@ -2765,7 +2822,7 @@ void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & turns,
 		sideThatLastMoved = BattleSide::ATTACKER;
 
 	if(!turnsIsFull() && (maxTurns == 0 || turns.size() < maxTurns))
-		battleGetTurnOrder(turns, maxUnits, maxTurns, actualTurn + 1, sideThatLastMoved);
+		battleGetTurnOrder(turns, maxUnits, maxTurns, actualTurn + 1, sideThatLastMoved, includeRapidResponse, includeSeizeInitiative);
 }
 
 BattleHexArray CBattleInfoCallback::battleGetAvailableHexes(const battle::Unit * unit, bool obtainMovementRange) const

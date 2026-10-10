@@ -12,6 +12,7 @@
 
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/GameSettings.h"
+#include "../../../lib/CCreatureHandler.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/bonuses/Limiters.h"
 #include "../../../lib/entities/hero/CHero.h"
@@ -21,6 +22,11 @@
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/networkPacks/PacksForClient.h"
+#include "../../../lib/spells/CSpellHandler.h"
+#include "FullGameSnapshotTypes.h"
+#include "../../../lib/callback/GameRandomizer.h"
+#include "../../../lib/campaign/CampaignState.h"
+#include "../../../lib/mapping/CMapInfo.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 
 #include <array>
@@ -29,6 +35,11 @@
 #include <string>
 #include <string_view>
 #include <tuple>
+#include <type_traits>
+#ifdef ENABLE_BATTLE_AI
+#include "../../../AI/BattleAI/StackWithBonuses.h"
+#include "../../../lib/battle/CPlayerBattleCallback.h"
+#endif
 
 namespace
 {
@@ -108,6 +119,9 @@ protected:
 	{
 		HeroCommandFixture::mapLoaded(loaded);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		// Accepted UP304 fixtures intentionally retain the historical Psychic target.
+		rules.Struct().erase("defaultCreatureLineReplacements");
+		rules.setOverrideFlag(true);
 		if(omitCreatureLineRules)
 		{
 			rules.Struct().erase("creatureLineSpecialties");
@@ -653,3 +667,458 @@ TEST_F(NewHorizonsCreatureSpecialtyTest, MissingSavedCreatureLineRulesRetainLega
 		EXPECT_TRUE(std::any_of(valeska->getExportedBonusList().begin(), valeska->getExportedBonusList().end(),
 			[&legacyBonus](const auto & bonus) { return bonus == legacyBonus; }));
 }
+
+class NewHorizonsWispSpecialtyTest : public NewHorizonsCreatureSpecialtyTest
+{
+protected:
+	bool absent = false;
+	bool legacy = false;
+	bool preset = false;
+	void mapLoaded(CMap * loaded) override
+	{
+		NewHorizonsCreatureSpecialtyTest::mapLoaded(loaded);
+		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		ASSERT_EQ(rules["defaultCreatureLineReplacements"]["core:pasis"].String(), "new-horizons:wisp");
+		ASSERT_EQ(rules["defaultCreatureLineReplacements"]["core:monere"].String(), "new-horizons:wisp");
+		if(absent) rules.Struct().erase("defaultCreatureLineReplacements");
+		if(legacy) rules = JsonNode();
+		rules.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
+		if(legacy)
+		{
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+		}
+	}
+	void prepare()
+	{
+		const std::vector<std::pair<CreatureID, uint16_t>> army = {
+			{creature("new-horizons:wisp"), 1}, {creature("new-horizons:wispUpgrade"), 1},
+			{creature("core:psychicElemental"), 1}, {creature("core:magicElemental"), 1},
+			{creature("core:airElemental"), 1}};
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder.size(36, false).playerActive(PlayerColor(0)).playerActive(PlayerColor(1));
+		for(const auto & [name, position, owner] : std::array{
+			std::tuple{"core:pasis", int3(5, 5, 0), PlayerColor(0)},
+			std::tuple{"core:monere", int3(6, 5, 0), PlayerColor(0)},
+			std::tuple{"core:solmyr", int3(7, 7, 0), PlayerColor(1)}})
+		{
+			builder.hero(position, HeroTypeID(HeroTypeID::decode(name)), owner)
+				.heroExperience(0).heroGarrison({{creature("core:pikeman"), 1}});
+			if(preset && owner == PlayerColor(0))
+				builder.heroSecondarySkills({{SecondarySkill::LOGISTICS, MasteryLevel::BASIC}});
+		}
+		startWithMap(std::move(builder));
+		// SOD can encode only stock creature IDs; install resolved module creatures
+		// through the ordinary runtime army API after the authored hero is loaded.
+		for(auto * hero : {pasis(), monere(), control()})
+		{
+			ASSERT_NE(hero, nullptr);
+			hero->clearSlots();
+			for(size_t index = 0; index < army.size(); ++index)
+			{
+				ASSERT_TRUE(hero->setCreature(SlotID(static_cast<int>(index)), army[index].first, army[index].second));
+				const auto * stack = hero->getStackPtr(SlotID(static_cast<int>(index)));
+				ASSERT_NE(stack, nullptr);
+				ASSERT_EQ(stack->getCreatureID(), army[index].first);
+				ASSERT_EQ(stack->getCount(), army[index].second);
+			}
+		}
+		// Initialize the same real recording server/handler as BattleTestFixture,
+		// without its makeNeutral step, which would erase the specialties under test.
+		server.gameState = gameState();
+		gameHandler = std::make_shared<CGameHandler>(server, gameState());
+		gameHandler->randomizer->setSeed(seed);
+	}
+	CGHeroInstance * pasis() { return findHeroAt({5, 5, 0}); }
+	CGHeroInstance * monere() { return findHeroAt({6, 5, 0}); }
+	CGHeroInstance * control() { return findHeroAt({7, 7, 0}); }
+	void expectLine(CGHeroInstance & hero, CGHeroInstance & reference, bool wisp, bool oldMode = false)
+	{
+		const int attribute = oldMode ? 3 : std::min<ui32>(6, hero.level / 5);
+		// Original-mode stacks include their native hero primary attributes;
+		// retain those real heroes and account for that unrelated contribution.
+		const int primaryAttack = oldMode ? hero.getPrimSkillLevel(PrimarySkill::ATTACK)
+			- reference.getPrimSkillLevel(PrimarySkill::ATTACK) : 0;
+		const int primaryDefense = oldMode ? hero.getPrimSkillLevel(PrimarySkill::DEFENSE)
+			- reference.getPrimSkillLevel(PrimarySkill::DEFENSE) : 0;
+		for(int slot = 0; slot < 5; ++slot)
+		{
+			const bool selected = wisp ? slot < 2 : slot == 2 || slot == 3;
+			expectStackDelta(hero.getStackPtr(SlotID(slot)), reference.getStackPtr(SlotID(slot)),
+				selected && !oldMode ? 1 : 0, selected && !oldMode ? 1 : 0,
+				(selected ? attribute : 0) + primaryAttack, (selected ? attribute : 0) + primaryDefense);
+		}
+	}
+};
+
+TEST_F(NewHorizonsWispSpecialtyTest, FreshDefaultsBothEnrollRealWispAndUpgradeNotPsychicAliases)
+{
+	prepare();
+	for(auto * hero : {pasis(), monere()})
+	{
+		ASSERT_NE(hero, nullptr);
+		EXPECT_EQ(hero->getCreatureLineSpecialtyTarget(), creature("new-horizons:wisp"));
+		EXPECT_EQ(hero->getPrimaryGrowthRules()["creatureLineSpecialtyTarget"].String(), "new-horizons:wisp");
+		expectLine(*hero, *control(), true);
+		EXPECT_EQ(specialtyMarkerCount(*hero), 4u);
+		EXPECT_EQ(specialtyMarkers(*hero).size(), 4u);
+	}
+}
+
+TEST_F(NewHorizonsWispSpecialtyTest, ExplicitMapDevelopmentPreservesAcceptedPsychicTarget)
+{
+	preset = true;
+	prepare();
+	for(auto * hero : {pasis(), monere()})
+	{
+		EXPECT_EQ(hero->getCreatureLineSpecialtyTarget(), creature("core:psychicElemental"));
+		EXPECT_FALSE(hero->getPrimaryGrowthRules().Struct().contains("creatureLineSpecialtyTarget"));
+		// Explicit map development prevents the default hero profile/specialty
+		// replacement, but still uses the captured creation-time skill migration.
+		EXPECT_EQ(hero->secSkills, (std::vector<std::pair<SecondarySkill, ui8>>{
+			{SecondarySkill(SecondarySkill::decode("new-horizons:logistics")), MasteryLevel::BASIC},
+			{SecondarySkill(SecondarySkill::decode("new-horizons:elementalRebirth")), MasteryLevel::BASIC}}));
+		expectLine(*hero, *control(), false);
+	}
+}
+
+TEST_F(NewHorizonsWispSpecialtyTest, AbsentCapturedOptInPreservesPsychicAndNeverRecapturesOnInit)
+{
+	absent = true;
+	prepare();
+	GameRandomizer randomizer(*gameState());
+	for(auto * hero : {pasis(), monere()})
+	{
+		ASSERT_NO_THROW(hero->initHero(randomizer));
+		EXPECT_EQ(hero->getCreatureLineSpecialtyTarget(), creature("core:psychicElemental"));
+		EXPECT_FALSE(hero->getPrimaryGrowthRules().Struct().contains("creatureLineSpecialtyTarget"));
+		expectLine(*hero, *control(), false);
+		EXPECT_EQ(specialtyMarkerCount(*hero), 4u);
+	}
+}
+
+TEST_F(NewHorizonsWispSpecialtyTest, OriginalModeKeepsNativeFixedPsychicBonusesAndPrototype)
+{
+	legacy = true;
+	prepare();
+	for(auto * hero : {pasis(), monere()})
+	{
+		EXPECT_EQ(hero->getCreatureLineSpecialtyTarget(), creature("core:psychicElemental"));
+		expectLine(*hero, *control(), false, true);
+		EXPECT_TRUE(specialtyMarkers(*hero).empty());
+	}
+}
+
+TEST_F(NewHorizonsWispSpecialtyTest, RealLevelUpRefreshUsesCapturedWispTargetAndUnchangedCap)
+{
+	prepare();
+	for(int level = 1; level <= 35; ++level)
+	{
+		for(auto * hero : {pasis(), monere()})
+		{
+			ASSERT_EQ(hero->level, level);
+			expectLine(*hero, *control(), true);
+			EXPECT_EQ(specialtyMarkerCount(*hero), 4u);
+		}
+		if(level < 35)
+			for(auto * hero : {pasis(), monere(), control()}) applyLevelUp(*gameState(), *hero);
+	}
+}
+
+TEST_F(NewHorizonsWispSpecialtyTest, WorldReplayAndRepeatedInitRetainTargetWithoutDuplicateMarkers)
+{
+	prepare();
+	for(int level = 1; level < 5; ++level)
+		for(auto * hero : {pasis(), monere(), control()}) applyLevelUp(*gameState(), *hero);
+	CMemorySerializer memory;
+	ASSERT_NO_THROW(memory.oser & *gameState());
+	CGameState restored;
+	memory.iser.cb = &restored;
+	memory.iser.loadingGamestate = true;
+	ASSERT_NO_THROW(memory.iser & restored);
+	auto * reference = restored.getHero(control()->id);
+	ASSERT_NE(reference, nullptr);
+	GameRandomizer randomizer(restored);
+	for(auto * original : {pasis(), monere()})
+	{
+		auto * loaded = restored.getHero(original->id);
+		ASSERT_NE(loaded, nullptr);
+		ASSERT_NO_THROW(loaded->initHero(randomizer));
+		ASSERT_NO_THROW(loaded->initHero(randomizer));
+		EXPECT_EQ(loaded->getCreatureLineSpecialtyTarget(), creature("new-horizons:wisp"));
+		EXPECT_EQ(specialtyMarkers(*loaded), specialtyMarkers(*original));
+		EXPECT_EQ(specialtyMarkerCount(*loaded), 4u);
+		expectLine(*loaded, *reference, true);
+	}
+}
+
+TEST_F(NewHorizonsWispSpecialtyTest, DescriptionAndLocalMarkersFollowActualTargetWhilePrototypesStayPsychic)
+{
+	prepare();
+	for(auto * hero : {pasis(), monere()})
+	{
+		EXPECT_EQ(hero->getHeroType()->creatureLineSpecialtyAlias->creature, creature("core:psychicElemental"));
+		ASSERT_EQ(hero->getHeroType()->creatureLineSpecialtyAlias->bonuses.size(), 2u);
+		for(const auto & bonus : hero->getHeroType()->creatureLineSpecialtyAlias->bonuses)
+			EXPECT_EQ(bonus->val, 3);
+		EXPECT_NE(hero->getSpecialtyDescriptionTranslated().find(creature("new-horizons:wisp").toCreature()->getNamePluralTranslated()), std::string::npos);
+		for(const auto & marker : specialtyMarkers(*hero))
+			EXPECT_NE(marker.find(std::to_string(creature("new-horizons:wisp").getNum())), std::string::npos);
+	}
+}
+
+TEST_F(NewHorizonsWispSpecialtyTest, AllActualOuterWritersRejectNewTargetBeforeAnyPrefix)
+{
+	prepare();
+	LobbyStartGame lobby;
+	lobby.initializedStartInfo = std::make_shared<StartInfo>(*gameState()->getStartInfo());
+	lobby.initializedGameState = gameState();
+	for(int kind = 0; kind < 4; ++kind)
+	{
+		CMemorySerializer memory;
+		memory.oser.version = ESerializationVersion::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS;
+		if(kind == 0) EXPECT_THROW(memory.oser & *pasis(), std::runtime_error);
+		if(kind == 1) EXPECT_THROW(memory.oser & *map(), std::runtime_error);
+		if(kind == 2) EXPECT_THROW(memory.oser & *gameState(), std::runtime_error);
+		if(kind == 3) EXPECT_THROW(memory.oser & lobby, std::runtime_error);
+		EXPECT_TRUE(memory.extractBuffer().empty());
+	}
+}
+
+TEST_F(NewHorizonsWispSpecialtyTest, MalformedTableAndCapturedTargetRejectWithoutChangingPrototype)
+{
+	prepare();
+	const auto original = pasis()->getHeroType()->creatureLineSpecialtyAlias->creature;
+	for(const auto invalid : {JsonNode(), JsonNode(false), JsonNode(1), JsonNode("new-horizons:wisp")})
+	{
+		auto rules = pasis()->getPrimaryGrowthRules();
+		rules["defaultCreatureLineReplacements"] = invalid;
+		EXPECT_THROW(newHorizonsHeroes::validateDefaultCreatureLineSerialization(rules, true), std::runtime_error);
+		EXPECT_THROW(newHorizonsHeroes::validateDefaultCreatureLineSerialization(rules, false), std::runtime_error);
+	}
+	auto rules = pasis()->getPrimaryGrowthRules();
+	rules["defaultCreatureLineReplacements"].Struct().erase("core:monere");
+	EXPECT_THROW(newHorizonsHeroes::validateDefaultCreatureLineSerialization(rules, true), std::runtime_error);
+	rules = pasis()->getPrimaryGrowthRules();
+	rules["creatureLineSpecialtyTarget"].String() = "core:psychicElemental";
+	EXPECT_THROW(newHorizonsHeroes::validateDefaultCreatureLineSerialization(rules, true), std::runtime_error);
+	EXPECT_EQ(pasis()->getHeroType()->creatureLineSpecialtyAlias->creature, original);
+	auto stale = std::make_shared<Bonus>();
+	stale->type = BonusType::STACKS_SPEED;
+	stale->source = BonusSource::HERO_SPECIAL;
+	stale->sid = BonusSourceID(pasis()->getHeroTypeID());
+	stale->stacking = std::string(SPECIALTY_MARKER_PREFIX) + std::to_string(pasis()->getHeroTypeID().getNum())
+		+ ":" + std::to_string(original.getNum()) + ":speed";
+	pasis()->addNewBonus(stale);
+	CMemorySerializer invalidSnapshot;
+	EXPECT_THROW(invalidSnapshot.oser & *pasis(), std::runtime_error);
+	EXPECT_TRUE(invalidSnapshot.extractBuffer().empty());
+}
+
+TEST_F(NewHorizonsWispSpecialtyTest, RawOldReaderRejectsPresenceAndAbsentPreviousContextRemainsWritable)
+{
+	JsonNode raw;
+	raw["heroes"]["newHorizons"]["defaultCreatureLineReplacements"]["core:pasis"].String() = "new-horizons:wisp";
+	raw["heroes"]["newHorizons"]["defaultCreatureLineReplacements"]["core:monere"].String() = "new-horizons:wisp";
+	const auto previous = ESerializationVersion::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS;
+	GameSettings authored;
+	authored.loadOverrides(raw);
+	CMemorySerializer currentRaw;
+	ASSERT_NO_THROW(currentRaw.oser & authored);
+	JsonNode emitted;
+	ASSERT_NO_THROW(currentRaw.iser & emitted);
+	// The ordinary writer materializes these absent null guard branches in its
+	// local override copy; compare their exact wire shape, not an invented rule.
+	JsonNode expected = raw;
+	expected["heroes"]["newHorizonsCapabilities"] = JsonNode();
+	expected["heroes"]["newHorizonsPerks"] = JsonNode();
+	expected["magic"]["newHorizons"] = JsonNode();
+	EXPECT_EQ(emitted, expected);
+	CMemorySerializer oldWriter;
+	oldWriter.oser.version = previous;
+	EXPECT_THROW(oldWriter.oser & authored, std::runtime_error);
+	EXPECT_TRUE(oldWriter.extractBuffer().empty());
+	CMemorySerializer forged;
+	forged.oser.version = previous;
+	forged.iser.version = previous;
+	forged.oser & raw;
+	GameSettings untouched;
+	EXPECT_THROW(untouched.serialize(forged.iser), std::runtime_error);
+	CMemorySerializer current;
+	ASSERT_NO_THROW(current.oser & untouched);
+	JsonNode unchanged;
+	ASSERT_NO_THROW(current.iser & unchanged);
+	EXPECT_TRUE(unchanged["heroes"]["newHorizons"].isNull());
+	absent = true;
+	prepare();
+	CMemorySerializer old;
+	old.oser.version = previous;
+	ASSERT_NO_THROW(old.oser & *pasis());
+	EXPECT_FALSE(old.extractBuffer().empty());
+}
+
+TEST_F(NewHorizonsWispSpecialtyTest, PublicCrossoverReplayPreservesCapturedTargetAndAcceptedAbsentTarget)
+{
+	prepare();
+	CampaignState campaign{};
+	GameRandomizer randomizer(*gameState());
+	for(auto * hero : {pasis(), monere()})
+	{
+		const auto node = campaign.crossoverSerialize(hero);
+		ASSERT_EQ(node["primaryGrowthRules"]["creatureLineSpecialtyTarget"].String(), "new-horizons:wisp");
+		auto loaded = campaign.crossoverDeserialize(node, map());
+		ASSERT_NE(loaded, nullptr);
+		ASSERT_NO_THROW(loaded->initHero(randomizer));
+		EXPECT_EQ(loaded->getCreatureLineSpecialtyTarget(), creature("new-horizons:wisp"));
+		EXPECT_EQ(specialtyMarkerCount(*loaded), 4u);
+		auto preceding = node;
+		preceding["primaryGrowthRules"].Struct().erase("creatureLineSpecialtyTarget");
+		preceding["primaryGrowthRules"].Struct().erase("defaultCreatureLineReplacements");
+		auto old = campaign.crossoverDeserialize(preceding, map());
+		ASSERT_NE(old, nullptr);
+		ASSERT_NO_THROW(old->initHero(randomizer));
+		EXPECT_EQ(old->getCreatureLineSpecialtyTarget(), creature("core:psychicElemental"));
+		EXPECT_EQ(specialtyMarkerCount(*old), 4u);
+	}
+}
+
+namespace
+{
+// Typed binary fixture authoring: inject captured JSON into the existing public
+// serialization format, without exposing private campaign pools to production.
+struct CrossoverPoolWriter
+{
+	using Version = ESerializationVersion;
+	CMemorySerializer & bytes;
+	JsonNode hero;
+	bool global = false;
+	bool saving = true;
+	bool hasFeature(Version feature) const { return bytes.oser.hasFeature(feature); }
+	template<typename T> CrossoverPoolWriter & operator&(T & value)
+	{
+		if constexpr(std::is_same_v<T, std::map<CampaignScenarioID, std::vector<JsonNode>>>)
+		{
+			auto pool = value;
+			if(!global) pool[CampaignScenarioID(0)] = {hero};
+			bytes.oser & pool;
+		}
+		else if constexpr(std::is_same_v<T, std::map<HeroTypeID, JsonNode>>)
+		{
+			auto pool = value;
+			if(global) pool[HeroTypeID(HeroTypeID::decode("core:pasis"))] = hero;
+			bytes.oser & pool;
+		}
+		else bytes.oser & value;
+		return *this;
+	}
+};
+}
+
+TEST_F(NewHorizonsWispSpecialtyTest, ActualCampaignPoolsAndStartLobbyEnvelopesRejectBeforePrefix)
+{
+	prepare();
+	const auto previous = ESerializationVersion::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS;
+	for(bool global : {false, true})
+	{
+		CampaignState empty{};
+		CMemorySerializer seeded;
+		CrossoverPoolWriter writer{seeded, empty.crossoverSerialize(pasis()), global};
+		empty.serialize(writer);
+		auto captured = std::make_shared<CampaignState>();
+		ASSERT_NO_THROW(seeded.iser & *captured);
+		EXPECT_NO_THROW(captured->validateDefaultCreatureLineSerialization(true));
+		EXPECT_THROW(captured->validateDefaultCreatureLineSerialization(false), std::runtime_error);
+		StartInfo start;
+		start.campState = captured;
+		LobbyState lobby;
+		lobby.si = std::make_shared<StartInfo>(start);
+		LobbyStartGame starting;
+		starting.initializedStartInfo = std::make_shared<StartInfo>(start);
+		for(int kind = 0; kind < 4; ++kind)
+		{
+			CMemorySerializer old;
+			old.oser.version = previous;
+			if(kind == 0) EXPECT_THROW(old.oser & *captured, std::runtime_error);
+			if(kind == 1) EXPECT_THROW(old.oser & start, std::runtime_error);
+			if(kind == 2) EXPECT_THROW(old.oser & lobby, std::runtime_error);
+			if(kind == 3) EXPECT_THROW(old.oser & starting, std::runtime_error);
+			EXPECT_TRUE(old.extractBuffer().empty());
+		}
+		CMemorySerializer legacy;
+		legacy.oser.version = previous;
+		legacy.iser.version = previous;
+		CrossoverPoolWriter forged{legacy, empty.crossoverSerialize(pasis()), global};
+		empty.serialize(forged);
+		CampaignState rejected{};
+		EXPECT_THROW(legacy.iser & rejected, std::runtime_error);
+	}
+}
+
+TEST_F(NewHorizonsWispSpecialtyTest, WorldPreflightAlsoSeesCrossoverOnlyTargetWithAbsentMapPolicy)
+{
+	absent = true;
+	prepare();
+	ASSERT_FALSE(gameState()->getHeroDevelopmentRules().Struct().contains("defaultCreatureLineReplacements"));
+	ASSERT_FALSE(pasis()->getPrimaryGrowthRules().Struct().contains("creatureLineSpecialtyTarget"));
+	CampaignState empty{};
+	auto node = empty.crossoverSerialize(pasis());
+	const JsonNode installed(JsonPath::builtin("config/newHorizonsHeroes"));
+	node["primaryGrowthRules"]["defaultCreatureLineReplacements"] = installed["defaultCreatureLineReplacements"];
+	node["primaryGrowthRules"]["creatureLineSpecialtyTarget"].String() = "new-horizons:wisp";
+	CMemorySerializer seeded;
+	CrossoverPoolWriter writer{seeded, node, false};
+	empty.serialize(writer);
+	auto captured = std::make_shared<CampaignState>();
+	ASSERT_NO_THROW(seeded.iser & *captured);
+	gameState()->getStartInfo()->campState = captured;
+	CMemorySerializer old;
+	old.oser.version = ESerializationVersion::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS;
+	EXPECT_THROW(old.oser & *gameState(), std::runtime_error);
+	EXPECT_TRUE(old.extractBuffer().empty());
+}
+
+#ifdef ENABLE_BATTLE_AI
+namespace
+{
+class WispPredictionEnvironment final : public Environment
+{
+	std::shared_ptr<CGameState> state;
+public:
+	explicit WispPredictionEnvironment(std::shared_ptr<CGameState> value) : state(std::move(value)) {}
+	const Services * services() const override { return LIBRARY; }
+	const BattleCb * battle(const BattleID & id) const override { return state->getBattle(id); }
+	const GameCb * game() const override { return state.get(); }
+};
+}
+
+TEST_F(NewHorizonsWispSpecialtyTest, DetachedBattleAIInheritsRealWispStatsWithoutChangingLiveArmy)
+{
+	prepare();
+	for(int level = 1; level < 5; ++level)
+		for(auto * hero : {pasis(), control()}) applyLevelUp(*gameState(), *hero);
+	attackerSideHero = pasis();
+	defenderSideHero = control();
+	startBattle();
+	WispPredictionEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor::SPECTATOR);
+	HypotheticBattle projected(&environment, callback);
+	const auto before = specialtyMarkers(*pasis());
+	int enrolled = 0;
+	for(const auto & live : battle()->stacks)
+	{
+		const auto * copy = projected.battleGetUnitByID(live->unitId());
+		ASSERT_NE(copy, nullptr);
+		EXPECT_EQ(copy->getAttack(false), live->getAttack(false));
+		EXPECT_EQ(copy->getDefense(false), live->getDefense(false));
+		EXPECT_EQ(copy->getMovementRange(), live->getMovementRange());
+		EXPECT_EQ(copy->getInitiative(), live->getInitiative());
+		if(live->unitSide() == BattleSide::ATTACKER
+			&& (live->creatureId() == creature("new-horizons:wisp") || live->creatureId() == creature("new-horizons:wispUpgrade")))
+			++enrolled;
+	}
+	EXPECT_EQ(enrolled, 2);
+	EXPECT_EQ(specialtyMarkers(*pasis()), before);
+	expectLine(*pasis(), *control(), true);
+}
+#endif

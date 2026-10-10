@@ -3,6 +3,7 @@
  * License: GNU General Public License v2 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../NewHorizonsHistoricalAdventurePolicyTestUtils.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/GameSettings.h"
@@ -69,6 +70,13 @@ protected:
 			// This control captures the preceding profile, not Coronius's later
 			// optional specialty whose key cannot be written to that format.
 			rules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
+			rules["startingSkills"].Struct().erase("startingBookReplacements");
+			rules.Struct().erase("remainingSpellSpecialtyReplacements");
+			rules["skillSpecialties"].Struct().erase("navigationStartReplacements");
+			rules.Struct().erase("defaultCreatureLineReplacements");
+			std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(),
+				[](const JsonNode & value) { return value.String() == "new-horizons:phantomArmy"; });
+			rules.Struct().erase("lighthouseDeparture");
 		}
 		if(explicitFalse)
 			rules["nonDamageSpellSpecialties"]["remainingStartReplacements"].Bool() = false;
@@ -76,6 +84,8 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		if(absent)
+			isolateHistoricalAdventurePolicies(*loaded);
 	}
 	void prepare()
 	{

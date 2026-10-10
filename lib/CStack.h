@@ -58,6 +58,16 @@ public:
 
 	std::string nodeName() const override;
 
+	// Only the ordinary/delayed queue flags, not a second unit health/state serializer.
+	template <typename Handler> void validateRapidResponseSerialization(Handler & h) const
+	{
+		if((waiting && (!waitedThisTurn || defending)) || (battlecraftWaitMasteryDoubled && !waitedThisTurn))
+			throw std::runtime_error("Invalid delayed-activation queue flags");
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RAPID_RESPONSE)
+			&& (waiting || waitedThisTurn || movedThisRound || defending || hadMorale
+				|| battlecraftWaitBonusUsed || battlecraftWaitMasteryDoubled))
+			throw std::runtime_error("Cannot discard existing delayed-activation queue flags");
+	}
 	void localInit(BattleInfo * battleInfo);
 	void afterNewRound(bool isFirstRound = false, bool deferBattleFormRestoration = false, bool pauseBattleForm = false);
 	bool acceptsBonus(const Bonus & bonus) const override;
@@ -132,6 +142,14 @@ public:
 				bonus->validateFrozenSerialization(h);
 	}
 
+	template <typename Handler> void validateHeroicSpiritSerialization(Handler & h) const
+	{
+		if(heroicSpiritMoralePending && !heroicSpiritRetaliation)
+			throw std::runtime_error("Invalid pending Heroic Spirit receipt");
+		if(h.saving && heroicSpiritRetaliation && !h.hasFeature(Handler::Version::NEW_HORIZONS_HEROIC_SPIRIT))
+			throw std::runtime_error("Cannot discard Heroic Spirit retaliation in an older stack");
+	}
+
 	template <typename Handler> void validateSwiftRebirthSerialization(Handler & h) const
 	{
 		for(const auto & bonus : getExportedBonusList())
@@ -152,19 +170,35 @@ public:
 	}
 	template <typename Handler> void validateTrainingSerialization(Handler & h) const
 	{
+		for(const auto & bonus : getExportedBonusList())
+			bonus->validateTrainingSerialization(h);
 		if(base)
-			base->validateTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING));
+			base->validateTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING), h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_COHORTS));
 		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING))
 			for(const auto & bonus : getExportedBonusList())
 				if(newHorizonsTraining::isTrainingBonus(bonus.get()))
 					throw std::runtime_error("Cannot discard captured training combat bonus");
 	}
 
+	template <typename Handler> void validateOpportunistSerialization(Handler & h) const
+	{
+		if(pursuitMovementRemaining < 0)
+			throw std::runtime_error("Invalid post-attack movement allowance");
+		if((luckyOwnAttackSequence || pursuitMovementRemaining > 0)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_OPPORTUNIST))
+			throw std::runtime_error("Cannot discard an earned own lucky attack sequence");
+	}
+
 	template <typename Handler> void serialize(Handler & h)
 	{
+		validateHeroicSpiritSerialization(h);
+		if(h.saving)
+			validateOpportunistSerialization(h);
 		if(h.saving)
 			validateTrainingSerialization(h);
 		if(h.saving) validatePlagueSerialization(h);
+		if(h.saving)
+			validateRapidResponseSerialization(h);
 		//this assumes that stack objects is newly created
 		//CUnitState is not serialized here except for explicit battle-long fields.
 		if(h.saving)
@@ -204,6 +238,35 @@ public:
 		h & slot;
 		h & side;
 		h & initialPosition;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_RAPID_RESPONSE))
+		{
+			h & waiting;
+			h & waitedThisTurn;
+			h & movedThisRound;
+			h & defending;
+			h & hadMorale;
+			h & battlecraftWaitBonusUsed;
+			h & battlecraftWaitMasteryDoubled;
+			if(!h.saving)
+				validateRapidResponseSerialization(h);
+		}
+		else if(!h.saving)
+		{
+			waiting = waitedThisTurn = movedThisRound = defending = hadMorale = false;
+			battlecraftWaitBonusUsed = battlecraftWaitMasteryDoubled = false;
+		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_OPPORTUNIST))
+		{
+			h & luckyOwnAttackSequence;
+			h & pursuitMovementRemaining;
+			if(pursuitMovementRemaining < 0)
+				throw std::runtime_error("Invalid saved post-attack movement allowance");
+		}
+		else if(!h.saving)
+		{
+			luckyOwnAttackSequence = false;
+			pursuitMovementRemaining = 0;
+		}
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_RAGE_THROUGH_PAIN))
 		{
 			h & personalBloodrageIncrement;
@@ -254,6 +317,18 @@ public:
 			h & veteranCohesionEarned;
 		else if(!h.saving)
 			veteranCohesionEarned = false;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_HEROIC_SPIRIT))
+		{
+			h & heroicSpiritRetaliation;
+			h & heroicSpiritMoralePending;
+			if(heroicSpiritMoralePending && !heroicSpiritRetaliation)
+				throw std::runtime_error("Invalid saved pending Heroic Spirit receipt");
+		}
+		else if(!h.saving)
+		{
+			heroicSpiritRetaliation = false;
+			heroicSpiritMoralePending = false;
+		}
 	}
 
 private:

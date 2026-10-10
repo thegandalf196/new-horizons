@@ -8,8 +8,18 @@
  *
  */
 #include "StdInc.h"
+#include "../battle/NewHorizonsHeroicSpirit.h"
+#include "../mapObjects/CGCreature.h"
+#include "../entities/hero/NewHorizonsDiplomacy.h"
+#include "../pathfinder/NewHorizonsProtectedMobility.h"
+#include "../TerrainHandler.h"
+#include "../pathfinder/NewHorizonsLighthouse.h"
+#include "../pathfinder/CPathfinder.h"
+#include "../pathfinder/PathfinderOptions.h"
+#include "../pathfinder/TurnInfo.h"
 #include "../callback/Calendar.h"
 #include "../entities/creature/NewHorizonsMusterRules.h"
+#include "../entities/hero/NewHorizonsLegendaryReputation.h"
 #include "GameStatePackVisitor.h"
 #include "../mapObjects/NewHorizonsRecruitersContacts.h"
 #include "../spells/NewHorizonsCrossSchoolFormula.h"
@@ -370,6 +380,33 @@ std::set<uint32_t> bloodrageDeathCandidates(BattleInfo & battle, const std::vect
 			result.insert(update.stackAttacked);
 	}
 	return result;
+}
+
+std::vector<newHorizonsCrisisCommand::DeathReceipt> crisisDeathCandidates(
+	BattleInfo & battle, const std::vector<BattleStackAttacked> & updates)
+{
+	std::vector<newHorizonsCrisisCommand::DeathReceipt> result;
+	for(const auto & update : updates)
+	{
+		const auto * unit = battle.getStack(update.stackAttacked, false);
+		// Rebirth is already restored in the prepared hit state. Clone and
+		// summoned destruction still qualify. Capture control before cleanup.
+		if(!unit || (!update.killed() && !update.cloneKilled()) || update.willRebirth()) continue;
+		const auto side = battle.playerToSide(battle.battleGetActionController(unit));
+		if((side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+			&& newHorizonsCrisisCommand::eligible(battle.getSideHero(side)))
+			result.push_back({side, unit->unitId()});
+	}
+	return result;
+}
+
+void recordCrisisDeaths(BattleInfo & battle, const std::vector<newHorizonsCrisisCommand::DeathReceipt> & deaths)
+{
+	auto state = battle.getCrisisCommandState();
+	for(const auto & receipt : deaths)
+		if(const auto * unit = battle.getStack(receipt.unit, false); unit && !unit->alive())
+			state.capture(receipt.side, receipt.unit);
+	battle.setCrisisCommandState(state);
 }
 
 void recordBloodrageDeaths(BattleInfo & battle, const std::set<uint32_t> & candidates)
@@ -876,6 +913,8 @@ void GameStatePackVisitor::visitChangeObjPos(ChangeObjPos & pack)
 		return;
 	}
 	gs.getMap().moveObject(pack.objid, pack.nPos + obj->getVisitableOffset());
+	if(auto * hero = dynamic_cast<CGHeroInstance *>(obj))
+		hero->setProtectedAdventureFlightLayer(EPathfindingLayer::LAND);
 }
 
 void GameStatePackVisitor::visitChangeObjectVisitors(ChangeObjectVisitors & pack)
@@ -1026,6 +1065,7 @@ void GameStatePackVisitor::visitRemoveObject(RemoveObject & pack)
 
 		auto beatenHero = dynamic_cast<CGHeroInstance*>(obj);
 		assert(beatenHero);
+		beatenHero->setProtectedAdventureFlightLayer(EPathfindingLayer::LAND);
 
 		vstd::erase_if(beatenHero->artifactsInBackpack, [](const ArtSlotInfo& asi)
 		{
@@ -1143,9 +1183,62 @@ void GameStatePackVisitor::visitTryMoveHero(TryMoveHero & pack)
 		return;
 	}
 
+	pack.validateProtectedFlightSerialization(true);
+	if(pack.protectedFlight)
+	{
+		const auto & receipt = *pack.protectedFlight;
+		const auto destination = h->convertToVisitablePos(pack.end);
+		if(!gs.getMap().isInTheMap(h->convertToVisitablePos(pack.start)) || !gs.getMap().isInTheMap(destination))
+			throw std::runtime_error("Off-map protected adventure flight receipt");
+		const auto & tile = gs.getMap().getTile(destination);
+		const auto info = h->getTurnInfo(0);
+		const bool legalSurface = receipt.destination == EPathfindingLayer::AIR ? info->hasFlyingMovement()
+			: receipt.destination == EPathfindingLayer::WATER ? tile.isWater() && info->hasWaterWalking() && !tile.blocked()
+			: tile.isLand() && !(tile.blocked() && !tile.visitable());
+		const PathfinderOptions options(gs);
+		CPathfinderHelper helper(gs, h, options);
+		const auto cost = helper.getMovementCost(h->visitablePos(), destination, receipt.destination, h->movementPointsRemaining());
+		if(h->pos != pack.start || h->inBoat() || !newHorizonsProtectedMobility::enabled(h->getMagicRules())
+			|| h->getProtectedAdventureFlightLayer() != receipt.source
+			|| !legalSurface || !tile.getTerrain()->isPassable() || h->movementPointsRemaining() < cost
+			|| pack.movePoints != h->movementPointsRemaining() - cost
+			|| !newHorizonsProtectedMobility::segmentClear(*h, gs.getMap(),
+				h->convertToVisitablePos(pack.start), h->convertToVisitablePos(pack.end)))
+			throw std::runtime_error("Stale or illegal protected adventure flight receipt");
+	}
+	else if(pack.result == TryMoveHero::SUCCESS && pack.start != pack.end
+		&& newHorizonsProtectedMobility::enabled(h->getMagicRules())
+		&& h->getProtectedAdventureFlightLayer() == EPathfindingLayer::AIR)
+		throw std::runtime_error("Missing protected flight landing receipt");
+	const CGTownInstance * lighthouseTown = nullptr;
+	if(pack.lighthouseDeparture)
+	{
+		pack.validateLighthouseDeparture();
+		const int3 source = h->convertToVisitablePos(pack.start);
+		const int3 destination = h->convertToVisitablePos(pack.end);
+		if(pack.result != TryMoveHero::EMBARK || h->inBoat() || pack.start != h->anchorPos()
+			|| source.z != destination.z || std::abs(source.x - destination.x) > 1
+			|| std::abs(source.y - destination.y) > 1 || source == destination
+			|| gs.getMap().getTile(source).isWater()
+			|| pack.lighthouseDeparture->day != gs.getCalendar().getCurrentDay())
+			throw std::runtime_error("Stale or invalid Lighthouse departure");
+		lighthouseTown = newHorizonsLighthouse::departureTown(*h, h->convertToVisitablePos(pack.end));
+		if(!lighthouseTown || lighthouseTown->id != pack.lighthouseDeparture->town)
+			throw std::runtime_error("Lighthouse departure no longer matches the owned port");
+		const PathfinderOptions options(gs);
+		CPathfinderHelper helper(gs, h, options);
+		helper.updateTurnInfo(0);
+		const int cost = helper.getMovementCost(h->visitablePos(), h->convertToVisitablePos(pack.end),
+			EPathfindingLayer::SAIL, h->movementPointsRemaining());
+		if(cost < 0 || static_cast<int>(h->movementPointsRemaining()) < cost
+			|| pack.movePoints != newHorizonsLighthouse::movementAfterDeparture(h->movementPointsRemaining(), cost, *helper.getTurnInfo()))
+			throw std::runtime_error("Lighthouse departure movement does not match the accepted transition");
+	}
 	const TerrainTile & fromTile = gs.getMap().getTile(h->convertToVisitablePos(pack.start));
 	const TerrainTile & destTile = gs.getMap().getTile(h->convertToVisitablePos(pack.end));
 
+	if(lighthouseTown && !newHorizonsLighthouse::hasDepartureBonus(*h))
+		h->addNewBonus(std::make_shared<Bonus>(newHorizonsLighthouse::departureBonus(*lighthouseTown, *h)));
 	h->setMovementPoints(pack.movePoints);
 
 	if((pack.result == TryMoveHero::SUCCESS || pack.result == TryMoveHero::BLOCKING_VISIT || pack.result == TryMoveHero::EMBARK || pack.result == TryMoveHero::DISEMBARK) && pack.start != pack.end)
@@ -1181,6 +1274,9 @@ void GameStatePackVisitor::visitTryMoveHero(TryMoveHero & pack)
 	{
 		gs.getMap().hideObject(h);
 		h->setAnchorPos(pack.end);
+		h->setProtectedAdventureFlightLayer(pack.protectedFlight
+			&& pack.protectedFlight->destination == EPathfindingLayer::AIR
+			? EPathfindingLayer::AIR : EPathfindingLayer::LAND);
 		if(auto * b = h->getBoat())
 			b->setAnchorPos(pack.end);
 		gs.getMap().showObject(h);
@@ -1275,13 +1371,17 @@ void GameStatePackVisitor::visitSetHeroesInTown(SetHeroesInTown & pack)
 		gs.getMap().showObject(v);
 
 	if(g)
+	{
+		g->setProtectedAdventureFlightLayer(EPathfindingLayer::LAND);
 		gs.getMap().hideObject(g);
+	}
 }
 
 void GameStatePackVisitor::visitHeroRecruited(HeroRecruited & pack)
 {
 	spellPointBonusGraphChanged = true;
 	auto h = gs.heroesPool->takeHeroFromPool(pack.hid);
+	h->setProtectedAdventureFlightLayer(EPathfindingLayer::LAND);
 	CGTownInstance *t = gs.getTown(pack.tid);
 	PlayerState *p = gs.getPlayerState(pack.player);
 
@@ -1319,6 +1419,7 @@ void GameStatePackVisitor::visitGiveHero(GiveHero & pack)
 {
 	spellPointBonusGraphChanged = true;
 	CGHeroInstance *h = gs.getHero(pack.id);
+	h->setProtectedAdventureFlightLayer(EPathfindingLayer::LAND);
 
 	if (pack.boatId.hasValue())
 	{
@@ -1422,6 +1523,7 @@ void GameStatePackVisitor::visitEraseStack(EraseStack & pack)
 
 void GameStatePackVisitor::visitSwapStacks(SwapStacks & pack)
 {
+	const auto admission = newHorizonsDiplomacy::prepareGarrisonAdmission(gs, pack);
 	auto * srcObj = gs.getArmyInstance(pack.srcArmy);
 	if(!srcObj)
 		throw std::runtime_error("SwapStacks: invalid army object " + std::to_string(pack.srcArmy.getNum()) + ", possible game state corruption.");
@@ -1430,6 +1532,7 @@ void GameStatePackVisitor::visitSwapStacks(SwapStacks & pack)
 	if(!dstObj)
 		throw std::runtime_error("SwapStacks: invalid army object " + std::to_string(pack.dstArmy.getNum()) + ", possible game state corruption.");
 
+	admission.commit();
 	if(srcObj != dstObj)
 	{
 		for(const auto & location : {std::make_pair(srcObj, pack.srcSlot), std::make_pair(dstObj, pack.dstSlot)})
@@ -1439,6 +1542,8 @@ void GameStatePackVisitor::visitSwapStacks(SwapStacks & pack)
 			{
 				auto receipt = stack->getTrainingReceipt();
 				receipt.crossedArmyBoundary();
+				if(pack.diplomacyRecruiter.hasValue() && location.first->id != pack.diplomacyRecruiter)
+					receipt.admittedThroughDiplomacy(pack.diplomacyRecruiter);
 				stack->setTrainingReceipt(receipt);
 			}
 		}
@@ -1460,6 +1565,13 @@ void GameStatePackVisitor::visitInsertNewStack(InsertNewStack & pack)
 
 void GameStatePackVisitor::visitRebalanceStacks(RebalanceStacks & pack)
 {
+	const auto admission = newHorizonsDiplomacy::prepareGarrisonAdmission(gs, pack);
+	admission.commit();
+	applyPrevalidatedRebalanceStacks(pack);
+}
+
+void GameStatePackVisitor::applyPrevalidatedRebalanceStacks(RebalanceStacks & pack)
+{
 	auto * srcObj = gs.getArmyInstance(pack.srcArmy);
 	if(!srcObj)
 		throw std::runtime_error("RebalanceStacks: invalid army object " + std::to_string(pack.srcArmy.getNum()) + ", possible game state corruption.");
@@ -1475,12 +1587,13 @@ void GameStatePackVisitor::visitRebalanceStacks(RebalanceStacks & pack)
 	const CCreature * dstType = dstObj->getCreature(dst.slot);
 	TQuantity srcCount = srcObj->getStackCount(src.slot);
 
-	const auto clearMovedTraining = [srcObj, dstObj](CStackInstance & stack)
+	const auto clearMovedTraining = [srcObj, dstObj, &pack](CStackInstance & stack)
 	{
 		if(srcObj == dstObj)
 			return;
 		auto receipt = stack.getTrainingReceipt();
 		receipt.crossedArmyBoundary();
+		if(pack.diplomacyRecruiter.hasValue()) receipt.admittedThroughDiplomacy(pack.diplomacyRecruiter);
 		stack.setTrainingReceipt(receipt);
 	};
 
@@ -1560,8 +1673,12 @@ void GameStatePackVisitor::visitRebalanceStacks(RebalanceStacks & pack)
 
 void GameStatePackVisitor::visitBulkRebalanceStacks(BulkRebalanceStacks & pack)
 {
+	// Every child (including its projected Training receipt) is checked before
+	// publishing either the monthly receipt or the first troop mutation.
+	const auto admission = newHorizonsDiplomacy::prepareGarrisonAdmission(gs, pack);
+	admission.commit();
 	for(auto & move : pack.moves)
-		move.visit(*this);
+		applyPrevalidatedRebalanceStacks(move);
 }
 
 void GameStatePackVisitor::visitGrowUpArtifact(GrowUpArtifact & pack)
@@ -1905,6 +2022,12 @@ void GameStatePackVisitor::visitNewTurn(NewTurn & pack)
 
 	for(auto & movePack : pack.heroesMovement)
 		movePack.visit(*this);
+	// Day-end flight already requires an ordinary legal surface. A new day is
+	// not another AIR step; daily Fly expiry must not turn subsequent walking
+	// into a remembered flight landing.
+	for(const auto & movePack : pack.heroesMovement)
+		if(auto * hero = gs.getHero(movePack.hid))
+			hero->setProtectedAdventureFlightLayer(EPathfindingLayer::LAND);
 
 	gs.heroesPool->onNewDay(pack.day > 1);
 
@@ -2198,9 +2321,51 @@ void GameStatePackVisitor::visitBattleSetActiveStack(BattleSetActiveStack & pack
 	gs.getBattle(pack.battleID)->nextTurn(pack.stack, pack.reason);
 }
 
+void GameStatePackVisitor::visitBattleCrisisCommandChanged(BattleCrisisCommandChanged & pack)
+{
+	pack.validateShape();
+	auto * battle = gs.getBattle(pack.battleID);
+	if(!battle) throw std::runtime_error("Crisis Command transition has no battle");
+	const auto & previous = battle->getCrisisCommandState();
+	pack.state.validateTransitionFrom(previous);
+	if(pack.allowances)
+	{
+		auto expected = battle->getHeroActionAllowances(pack.allowanceSide);
+		if(pack.state.returns.size() > previous.returns.size())
+		{
+			const auto & frame = pack.state.returns.back();
+			if(frame.responder != pack.allowanceSide || frame.grant != expected.grantAllowance(
+				HeroActionAllowanceState::AllowanceKind::ORDER, HeroActionAllowanceState::GrantSource::CRISIS_COMMAND, frame.round))
+				throw std::runtime_error("Crisis Command has an invalid opening grant");
+		}
+		else if(pack.state.returns.size() < previous.returns.size())
+		{
+			const auto & frame = previous.returns.back();
+			if(frame.responder != pack.allowanceSide) throw std::runtime_error("Invalid Crisis Command return side");
+			std::erase_if(expected.grants, [&frame](const auto & grant) { return grant.id == frame.grant; });
+		}
+		else throw std::runtime_error("Crisis Command phase transition cannot rewrite allowances");
+		if(expected != *pack.allowances) throw std::runtime_error("Crisis Command changed unrelated action allowances");
+	}
+	else if(pack.state.returns.size() != previous.returns.size())
+		throw std::runtime_error("Crisis Command window transition is missing its allowance update");
+	if(pack.allowances) pack.allowances->validateShape();
+	pack.state.seizeContextAfterTransition(previous, battle->getSeizeInitiativeState());
+	pack.state.validate(*battle, pack.allowanceSide, pack.allowances ? &*pack.allowances : nullptr);
+	if(pack.allowances)
+		battle->getSide(pack.allowanceSide).heroActionAllowances = *pack.allowances;
+	battle->setCrisisCommandState(pack.state);
+}
+
 void GameStatePackVisitor::visitBattleTriggerEffect(BattleTriggerEffect & pack)
 {
-	CStack * st = gs.getBattle(pack.battleID)->getStack(pack.stackID);
+	auto * battle = gs.getBattle(pack.battleID);
+	CStack * st = battle ? battle->getStack(pack.stackID) : nullptr;
+	if(pack.heroicSpiritGrant && (!battle || !st || pack.effect != BonusType::MORALE
+		|| pack.val <= 0 || st->defending || st->waited() || st->fear || !st->canMove()
+		|| battle->battleGetMorale(st) <= 0
+		|| !newHorizonsHeroicSpirit::canGrantEarnedMorale(*st, battle->battleGetOwnerHero(st))))
+		throw std::runtime_error("Invalid authoritative Heroic Spirit grant");
 	assert(st);
 	switch(pack.effect)
 	{
@@ -2234,7 +2399,10 @@ void GameStatePackVisitor::visitBattleTriggerEffect(BattleTriggerEffect & pack)
 			break;
 		}
 		case BonusType::ENCHANTER:
+			break;
 		case BonusType::MORALE:
+			if(pack.heroicSpiritGrant)
+				newHorizonsHeroicSpirit::grantEarnedMorale(*st, battle->battleGetOwnerHero(st));
 			break;
 		case BonusType::FEARFUL:
 			st->fear = true;
@@ -2301,6 +2469,7 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 	if(pack.chainGateTriggered && !chainGateKillQualifies(*battle, pack.stackAttacking, pack.bsa))
 		throw std::runtime_error("Invalid Chain Gate attack trigger");
 	const auto bloodrageCandidates = bloodrageDeathCandidates(*battle, pack.bsa);
+	const auto crisisCandidates = crisisDeathCandidates(*battle, pack.bsa);
 	CStack * attacker = battle->getStack(pack.stackAttacking);
 	assert(attacker);
 	std::array<bool, 2> lastStandSidesToConsume{};
@@ -2398,6 +2567,7 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 	if(pack.relentlessAssaultState)
 		battle->setRelentlessAssaultState(pack.relentlessAssaultSide, *pack.relentlessAssaultState);
 	recordBloodrageDeaths(*battle, bloodrageCandidates);
+	recordCrisisDeaths(*battle, crisisCandidates);
 	refreshBloodrageLivingUnits(*battle, pack.bsa);
 	if(pack.chainGateTriggered)
 		battle->armChainGate(battle->gatedDemonicStackSide(pack.stackAttacking));
@@ -2421,6 +2591,17 @@ void GameStatePackVisitor::visitEndAction(EndAction & pack)
 		for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 			battle->getSide(side).sylvanLuck.endActivation();
 	}
+}
+
+void GameStatePackVisitor::visitBattleNormalActivationCompleted(BattleNormalActivationCompleted & pack)
+{
+	auto * battle = gs.getBattle(pack.battleID);
+	if(!battle || !pack.expected.enabled() || pack.expected.active != pack.unitId
+		|| battle->getSeizeInitiativeState() != pack.expected)
+		throw std::runtime_error("Stale normal activation completion receipt");
+	auto next = pack.expected;
+	next.complete(pack.unitId);
+	battle->setSeizeInitiativeState(next);
 }
 
 void GameStatePackVisitor::visitStartAction(StartAction & pack)
@@ -2624,10 +2805,10 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 			const auto mandate = commandBattle->battleGetDivineMandateStatus(pack.ba.side);
 			const bool mandateAvailable = mandate.active
 				&& mandate.completedPairs < mandate.maximumPairs;
-			const auto orderGrantFilter = [mandateAvailable](const HeroActionAllowanceState::Grant & grant)
+			const auto orderGrantFilter = [mandateAvailable, commandBattle, &pack](const HeroActionAllowanceState::Grant & grant)
 			{
-				return grant.source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
-					|| mandateAvailable;
+				return commandBattle->getCrisisCommandState().allowsGrant(pack.ba.side, grant)
+					&& (grant.source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE || mandateAvailable);
 			};
 			const auto selected = nextAllowances.eligibleAllowance(
 				HeroActionAllowanceState::ActionKind::ORDER, commandBattle->getRound(), orderGrantFilter);
@@ -2696,6 +2877,8 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		// Preserve the legacy action-history marker for save validators and
 		// presentation. Shared-budget availability is derived only from the
 		// receipt-backed ledger above.
+		if(spendsHeroAction && canonicalOrder)
+			commandBattle->setSeizeInitiativeState(newHorizonsSeizeInitiative::capturePaidOrder(*commandBattle, pack.ba.side));
 		side.heroCommandUsed = true;
 		if(nextWarcastingState)
 			side.warcastingState = *nextWarcastingState;
@@ -3027,6 +3210,15 @@ void GameStatePackVisitor::visitBattleMoraleSuppressionStateChanged(BattleMorale
 	battle->setMoraleSuppressionState(pack.side, pack.state);
 }
 
+void GameStatePackVisitor::visitBattleRapidResponseStateChanged(BattleRapidResponseStateChanged & pack)
+{
+	auto * battle = gs.getBattle(pack.battleID);
+	if(!battle)
+		throw std::runtime_error("Missing battle for Rapid Response queue update");
+	pack.validateAgainst(*battle);
+	battle->setRapidResponseState(pack.side, pack.state);
+}
+
 void GameStatePackVisitor::visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack)
 {
 	auto * battle = gs.getBattle(pack.battleID);
@@ -3337,6 +3529,7 @@ void GameStatePackVisitor::visitStacksInjured(StacksInjured & pack)
 		if(chainGateKillQualifies(*battle, hit.attackerID, pack.stacks))
 			chainGateSides.insert(battle->gatedDemonicStackSide(hit.attackerID));
 	const auto bloodrageCandidates = bloodrageDeathCandidates(*battle, pack.stacks);
+	const auto crisisCandidates = crisisDeathCandidates(*battle, pack.stacks);
 	BattleStatePackVisitor battleVisitor(*battle);
 	for (auto attackInfo : pack.stacks)
 	{
@@ -3349,6 +3542,7 @@ void GameStatePackVisitor::visitStacksInjured(StacksInjured & pack)
 		removeExhaustedGuardianSpirit(*battle, hit);
 	recordBloodrageDeaths(*battle, bloodrageCandidates);
 	refreshBloodrageLivingUnits(*battle, pack.stacks);
+	recordCrisisDeaths(*battle, crisisCandidates);
 	for(const auto side : chainGateSides)
 		battle->armChainGate(side);
 }
@@ -3356,6 +3550,17 @@ void GameStatePackVisitor::visitStacksInjured(StacksInjured & pack)
 void GameStatePackVisitor::visitBattleUnitsChanged(BattleUnitsChanged & pack)
 {
 	auto * battle = gs.getBattle(pack.battleID);
+	std::vector<newHorizonsCrisisCommand::DeathReceipt> crisisCandidates;
+	for(const auto & change : pack.changedStacks)
+	{
+		const auto * unit = battle->getStack(change.id, false);
+		if(change.operation != BattleChanges::EOperation::UPDATE || !unit || !unit->alive()
+			|| change.healthDelta >= 0) continue;
+		const auto side = battle->playerToSide(battle->battleGetActionController(unit));
+		if((side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+			&& newHorizonsCrisisCommand::eligible(battle->getSideHero(side)))
+			crisisCandidates.push_back({side, change.id});
+	}
 	std::set<uint32_t> removed;
 	for(const auto & change : pack.changedStacks)
 	{
@@ -3367,6 +3572,7 @@ void GameStatePackVisitor::visitBattleUnitsChanged(BattleUnitsChanged & pack)
 	BattleStatePackVisitor battleVisitor(*battle);
 	pack.visitTyped(battleVisitor);
 	recordBloodrageDeaths(*battle, removed);
+	recordCrisisDeaths(*battle, crisisCandidates);
 	for(const auto & change : pack.changedStacks)
 	{
 		const auto * unit = battle->getStack(change.id, false);
@@ -3774,6 +3980,16 @@ void BattleStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderSta
 		battleState.setPreCombatOrderState(pack.side, *pack.preCombatOrderState);
 }
 
+void BattleStatePackVisitor::visitBattleNormalActivationCompleted(BattleNormalActivationCompleted & pack)
+{
+	if(pack.battleID != battleState.getBattleID() || !pack.expected.enabled() || pack.expected.active != pack.unitId
+		|| battleState.getSeizeInitiativeState() != pack.expected)
+		throw std::runtime_error("Stale projected normal activation completion receipt");
+	auto next = pack.expected;
+	next.complete(pack.unitId);
+	battleState.setSeizeInitiativeState(next);
+}
+
 void BattleStatePackVisitor::visitBattleDeploymentPhaseChanged(BattleDeploymentPhaseChanged & pack)
 {
 	if(pack.battleID != battleState.getBattleID())
@@ -3801,6 +4017,15 @@ void BattleStatePackVisitor::visitBattleMoraleSuppressionStateChanged(BattleMora
 	pack.validateShape();
 	pack.validateTransitionFrom(battleState.getMoraleSuppressionState(pack.side));
 	battleState.setMoraleSuppressionState(pack.side, pack.state);
+}
+
+void BattleStatePackVisitor::visitBattleRapidResponseStateChanged(BattleRapidResponseStateChanged & pack)
+{
+	const auto * battle = dynamic_cast<const CBattleInfoCallback *>(&battleState);
+	if(!battle)
+		throw std::runtime_error("Rapid Response requires a shared battle callback");
+	pack.validateAgainst(*battle);
+	battleState.setRapidResponseState(pack.side, pack.state);
 }
 
 void BattleStatePackVisitor::visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack)

@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "BattleActionProcessor.h"
+#include "../../lib/battle/NewHorizonsOpportunist.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/battle/NewHorizonsArmorer.h"
 #include "../../lib/battle/NewHorizonsBattlecraft.h"
@@ -987,6 +988,8 @@ bool BattleActionProcessor::doEmptyAction(const CBattleInfoCallback & battle, co
 			publishRangedFollowUpState(battle, *gameHandler, stack, 0);
 			logRangedFollowUp(battle, *gameHandler, stack,
 				"%s declines the Master Gunner follow-up shot.");
+			finalizeOpportunistSequence(battle, stack, stack->getMovementRange(0));
+			return true; // Declining the shot may expose the earned movement-only tail.
 		}
 	}
 	if(const auto * stack = battle.battleGetStackByID(ba.stackNumber, false);
@@ -1897,6 +1900,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 		removeBonuses(battle, stack, attackerBonusesToRemove);
 		removeBonuses(battle, destinationStack, defenderBonusesToRemove);
 		resolveRainOfArrows(battle, stack, rainOfArrows);
+		finalizeOpportunistSequence(battle, stack, std::max(0, beforeAttackSpeed - movementSpent), allowPursuitContinuation);
 		return true;
 	}
 
@@ -2057,17 +2061,23 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 	const int vanishAllowance = vanishKill && resolvedAttacker && !newHorizonsFrozen::isFrozen(*resolvedAttacker)
 		&& !armorerLastStandEndedActivation(resolvedAttacker)
 		? newHorizonsShroud::vanishMovementAllowance(resolvedAttacker->getMovementRange(0)) : 0;
-	const int movementAllowance = std::max(pursuitAllowance, vanishAllowance);
+	const int opportunistAllowance = allowPursuitContinuation && resolvedAttacker
+		? newHorizonsOpportunist::movementAllowance(battle, resolvedAttacker, remainingMovement) : 0;
+	const int movementAllowance = std::max({pursuitAllowance, vanishAllowance, opportunistAllowance});
+	if(resolvedAttacker && resolvedAttacker->luckyOwnAttackSequence)
+		finalizeOpportunistSequence(battle, resolvedAttacker, remainingMovement, allowPursuitContinuation);
 	if(allowPursuitContinuation && movementAllowance > 0
 		&& resolvedAttacker && resolvedAttacker->alive()
-		&& resolvedAttacker->canMove() && !resolvedAttacker->isTimeStopped())
+		&& resolvedAttacker->canMove() && !resolvedAttacker->isTimeStopped()
+		&& !armorerLastStandEndedActivation(resolvedAttacker)
+		&& !newHorizonsFrozen::isFrozen(*resolvedAttacker))
 	{
 		setPursuitMovementRemaining(battle, resolvedAttacker, movementAllowance);
 
 		BattleLogMessage message;
 		message.battleID = battle.getBattle()->getBattleID();
 		MetaString line;
-		line.appendRawString(vanishAllowance > 0
+		line.appendRawString(opportunistAllowance > 0 ? "%s trigger post-attack movement and may move up to " : vanishAllowance > 0
 			? (pursuitAllowance > 0 ? "%s trigger Pursuit and Vanish and may move up to "
 				: "%s trigger Vanish and may move up to ")
 			: "%s trigger Pursuit and may move up to ");
@@ -2079,6 +2089,24 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 	}
 
 	return true;
+}
+
+void BattleActionProcessor::finalizeOpportunistSequence(const CBattleInfoCallback & battle,
+	const CStack * stack, int remainingMovement, bool allowMovement) const
+{
+	if(!stack || !stack->luckyOwnAttackSequence)
+		return;
+	const int allowance = allowMovement
+		? newHorizonsOpportunist::movementAllowance(battle, stack, remainingMovement) : 0;
+	auto state = stack->acquireState();
+	state->luckyOwnAttackSequence = false;
+	state->pursuitMovementRemaining = std::max(state->pursuitMovementRemaining, allowance);
+	BattleUnitsChanged changed;
+	changed.battleID = battle.getBattle()->getBattleID();
+	UnitChanges update(stack->unitId(), UnitChanges::EOperation::UPDATE);
+	update.data = state->save();
+	changed.changedStacks.push_back(std::move(update));
+	gameHandler->sendAndApply(changed);
 }
 
 void BattleActionProcessor::setPursuitMovementRemaining(const CBattleInfoCallback & battle,
@@ -2262,7 +2290,8 @@ void BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & batt
 	gameHandler->sendAndApply(message);
 }
 
-bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, const BattleAction & ba)
+bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, const BattleAction & ba,
+	bool allowPursuitContinuation)
 {
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
 	const bool pendingFollowUp = battle.battleHasPendingRangedFollowUp(stack);
@@ -2336,6 +2365,7 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 		removeBonuses(battle, stack, attackerBonusesToRemove);
 		removeBonuses(battle, destinationStack, defenderBonusesToRemove);
 		resolveRainOfArrows(battle, stack, rainOfArrows);
+		finalizeOpportunistSequence(battle, stack, stack->getMovementRange(0), allowPursuitContinuation);
 		return true;
 	}
 	// A ranged attack, including a valid area shot, is an offensive action.
@@ -2411,6 +2441,8 @@ bool BattleActionProcessor::doShootAction(const CBattleInfoCallback & battle, co
 		logRangedFollowUp(battle, *gameHandler, stack,
 			"The Master Gunner grants %s one 60% follow-up shot.");
 	}
+	if(!allowPursuitContinuation || !battle.battleHasPendingRangedFollowUp(stack))
+		finalizeOpportunistSequence(battle, stack, stack->getMovementRange(0), allowPursuitContinuation);
 
 	return true;
 }
@@ -2868,7 +2900,7 @@ bool BattleActionProcessor::dispatchBattleAction(const CBattleInfoCallback & bat
 		case EActionType::WALK_AND_CAST:
 			return doWalkAndSpellcastAction(battle, ba);
 		case EActionType::SHOOT:
-			return doShootAction(battle, ba);
+			return doShootAction(battle, ba, allowPursuitContinuation);
 		case EActionType::CATAPULT:
 			return doCatapultAction(battle, ba);
 		case EActionType::MONSTER_SPELL:
@@ -3539,7 +3571,8 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		const bool rangedFollowUpStillPending = updatedStack && !activationEndedByLastStand && updatedStack->isBallista()
 			&& updatedStack->rangedFollowUpDamagePercent > 0;
 		const bool pursuitContinuation = masterGateActivationContinuationOut && result
-			&& effectiveAction.actionType == EActionType::WALK_AND_ATTACK
+			&& (effectiveAction.actionType == EActionType::WALK_AND_ATTACK
+				|| effectiveAction.actionType == EActionType::SHOOT || effectiveAction.actionType == EActionType::NO_ACTION)
 			&& updatedStack && !activationEndedByLastStand && updatedStack->pursuitMovementRemaining > 0;
 		EndAction endAction;
 		endAction.battleID = battle.getBattle()->getBattleID();
@@ -4751,6 +4784,11 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	const auto currentActivationSerial = battle.getBattle()->getActivationSerial();
 	const int currentRound = battle.battleGetRound();
 	const auto * attackerHero = battle.battleGetOwnerHero(attacker);
+	if(bat.lucky() && !bat.spellLike() && !attack.counter && !attack.retaliation
+		&& !attack.archeryCounterfire && !attack.battlecraftOverwatch && !attack.brace
+		&& !attack.bulwarkPreemptive && battle.battleActiveUnit() == attacker
+		&& newHorizonsOpportunist::hasPerk(battle, attacker))
+		attackerState->luckyOwnAttackSequence = true;
 	const bool ordinaryPhysicalShot = attack.ranged && !attack.brace
 		&& !attack.cleaveFollowup && !bat.spellLike()
 		&& newHorizonsArchery::isOrdinaryPhysicalShooter(attacker);
@@ -5940,6 +5978,19 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 		{
 			gameHandler->complain("No active unit in battle!");
 			return false;
+		}
+		const auto & crisis = battle.getBattle()->getCrisisCommandState();
+		if(crisis.choice())
+		{
+			if(ba.actionType != EActionType::HERO_COMMAND || ba.side != crisis.chooser()
+				|| player != battle.sideToPlayer(crisis.chooser())
+				|| active->unitId() != crisis.returns.back().anchor)
+			{
+				gameHandler->complain("Crisis Command permits only its defending hero's free Order or decline");
+				return false;
+			}
+			if(effectiveActionOut) *effectiveActionOut = ba;
+			return makeBattleActionImpl(battle, ba, masterGateActivationContinuationOut);
 		}
 		// A completed battle may remain loaded while result queries are resolved.
 		// Never publish StartAction for the dead stack left in its active slot.

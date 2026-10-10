@@ -34,6 +34,8 @@ private:
 	std::set<ObjectInstanceID> spellPointHeroes;
 	bool spellPointBonusGraphChanged = false;
 
+	void applyPrevalidatedRebalanceStacks(RebalanceStacks & pack);
+
 public:
 	/// Reconcile once after the complete packet, never during a bulk equipment swap.
 	void reconcileSpellPointCapacity();
@@ -96,6 +98,7 @@ public:
 	void visitCommanderLevelUp(CommanderLevelUp & pack) override;
 	void visitBattleStart(BattleStart & pack) override;
 	void visitBattleSetActiveStack(BattleSetActiveStack & pack) override;
+	void visitBattleCrisisCommandChanged(BattleCrisisCommandChanged & pack) override;
 	void visitBattleTriggerEffect(BattleTriggerEffect & pack) override;
 	void visitBattleAttack(BattleAttack & pack) override;
 	void visitBattleSpellCast(BattleSpellCast & pack) override;
@@ -138,11 +141,13 @@ public:
 	void visitDaysWithoutTown(DaysWithoutTown & pack) override;
 	void visitStartAction(StartAction & pack) override;
 	void visitEndAction(EndAction & pack) override;
+	void visitBattleNormalActivationCompleted(BattleNormalActivationCompleted & pack) override;
 	void visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack) override;
 	void visitBattleDivineMandateRecipientsChanged(BattleDivineMandateRecipientsChanged & pack) override;
 	void visitBattleDemonicGatingStateChanged(BattleDemonicGatingStateChanged & pack) override;
 	void visitBattleAdverseRerollStateChanged(BattleAdverseRerollStateChanged & pack) override;
 	void visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack) override;
+	void visitBattleRapidResponseStateChanged(BattleRapidResponseStateChanged & pack) override;
 	void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) override;
 	void visitSetReactiveWeaveState(SetReactiveWeaveState & pack) override;
 	void visitSetSpellResponseState(SetSpellResponseState & pack) override;
@@ -164,6 +169,7 @@ class DLL_LINKAGE BattleStatePackVisitor final : public ICPackVisitor
 {
 	IBattleState & battleState;
 public:
+	void visitBattleNormalActivationCompleted(BattleNormalActivationCompleted & pack) override;
 	BattleStatePackVisitor(IBattleState & battleState)
 		:battleState(battleState)
 	{}
@@ -179,6 +185,7 @@ public:
 	void visitBattleDeploymentPhaseChanged(BattleDeploymentPhaseChanged & pack) override;
 	void visitBattleAdverseRerollStateChanged(BattleAdverseRerollStateChanged & pack) override;
 	void visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack) override;
+	void visitBattleRapidResponseStateChanged(BattleRapidResponseStateChanged & pack) override;
 	void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) override;
 	void visitSetReactiveWeaveState(SetReactiveWeaveState & pack) override;
 	void visitSetSpellResponseState(SetSpellResponseState & pack) override;

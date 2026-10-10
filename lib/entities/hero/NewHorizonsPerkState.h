@@ -90,7 +90,11 @@ public:
 	{
 		if(h.saving)
 			validate();
+		if(h.saving)
+			validateCrisisCommandProfileSerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
 		h & rules;
+		if(!h.saving)
+			validateCrisisCommandProfileSerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
 		h & selected;
 		if(!h.saving)
 		{

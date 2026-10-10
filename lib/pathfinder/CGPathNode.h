@@ -75,6 +75,8 @@ struct DLL_LINKAGE CGPathNode
 	EPathNodeAction action;
 	bool locked;
 	uint32_t generation = 0;
+	// Search-local departure day; never a persisted gameplay receipt.
+	int lighthouseDepartureTurn = -1;
 
 	CGPathNode()
 		: coord(-1),
@@ -88,6 +90,7 @@ struct DLL_LINKAGE CGPathNode
 	void reset()
 	{
 		locked = false;
+		lighthouseDepartureTurn = -1;
 		accessible = EPathAccessibility::NOT_SET;
 		moveRemains = 0;
 		cost = std::numeric_limits<float>::max();
@@ -270,6 +273,7 @@ struct DLL_LINKAGE CDestinationNodeInfo : public PathNodeInfo
 	float cost; //same as CGPathNode::cost
 	bool blocked;
 	bool isGuardianTile;
+	bool lighthouseDeparture = false;
 
 	CDestinationNodeInfo();
 

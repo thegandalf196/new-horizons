@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsMagic.h"
+#include "../pathfinder/NewHorizonsProtectedMobility.h"
 #include "ISpellMechanics.h"
 
 #include "../ResourceSet.h"
@@ -269,6 +270,26 @@ std::string fixedPointFromScaledValue(int64_t scaledValue, int decimalPlaces)
 		fractionalText.pop_back();
 	return std::to_string(whole) + "." + fractionalText;
 }
+}
+
+void validateWaterWalkDayEndSerialization(const JsonNode & rules, bool supported)
+{
+	const auto & row = rules["adventureSpells"]["core:waterWalk"];
+	if(!row.isStruct() || !row.Struct().contains("requireLegalDayEnd"))
+		return;
+	if(!supported)
+		throw std::runtime_error("Water Walk day-end policy requires the new save format");
+	if(!row["requireLegalDayEnd"].isBool())
+		throw std::runtime_error("Water Walk requireLegalDayEnd must be boolean");
+}
+
+bool requiresWaterWalkLegalDayEnd(const JsonNode & rules)
+{
+	validateWaterWalkDayEndSerialization(rules, true);
+	return rulesActive(rules)
+		&& rules["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		&& rules["adventureSpells"]["core:waterWalk"]["requireLegalDayEnd"].isBool()
+		&& rules["adventureSpells"]["core:waterWalk"]["requireLegalDayEnd"].Bool();
 }
 
 bool rulesActive(const JsonNode & rules)
@@ -598,6 +619,20 @@ int64_t soulReaperDamageAfterExecution(const int64_t effectiveMaximumHP,
 	if(remainingHP <= effectiveMaximumHP / 10)
 		return currentHP;
 	return postMitigationDamage;
+}
+
+int64_t hexOfPainFlatDamage(int32_t spellPower, int32_t coefficientBasisPoints,
+	int32_t warcastingPercent, int32_t empowerPercent, int32_t specialtyPercent, bool painweaver)
+{
+	const int coefficient = painweaver ? coefficientBasisPoints * 120 / 100 : coefficientBasisPoints;
+	return 15 + spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
+		7LL * std::max(0, spellPower), 10, coefficient, warcastingPercent, empowerPercent, specialtyPercent);
+}
+
+int64_t plagueTickDamage(int32_t spellPower, int32_t coefficientBasisPoints, int32_t specialtyPercent)
+{
+	return 25 + spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
+		8LL * std::max(0, spellPower), 10, coefficientBasisPoints, 0, 0, specialtyPercent);
 }
 
 bool hasReanimatorPerk(const CGHeroInstance * hero)
@@ -1157,6 +1192,33 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 	const bool cureCoefficient = cureEnabled(hero->getMagicRules(), spell->getId());
 	const bool transfigureCoefficient = spell->getJsonKey() == "new-horizons:transfigureMatter";
 	const bool phantomCoefficient = spell->getJsonKey() == "new-horizons:phantomArmy";
+	const auto rawPower = std::max(0, hero->getEffectPower(spell));
+	if(phantomCoefficient)
+		result += "\nCurrent ordinary Integrity per 10,000 source current HP: "
+			+ std::to_string(newHorizonsSorcery::phantomArmyIntegrityWithModifiers(10000, rawPower,
+				hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.illusionist"),
+				coefficientBasisPoints, 0, empowerSpellBonusPercent(savedMagicRules, hero, spell->getId()),
+				hero->getNonDamageSpellSpecialtyBonusPercent(spell->getId())))
+			+ " (before battle-only Warcasting; real HP floors only after the capped fraction and Illusionist).";
+	if(spell->getJsonKey() == "new-horizons:hexOfPain")
+		result += "\nCurrent ordinary captured flat damage: "
+			+ std::to_string(hexOfPainFlatDamage(rawPower, coefficientBasisPoints, 0,
+				empowerSpellBonusPercent(savedMagicRules, hero, spell->getId()),
+				hero->getDamageSpellSpecialtyBonusPercent(spell->getId()),
+				hasSavedSchoolRankCoefficient && hero->hasActivePerk("new-horizons:shadowMagic", "new-horizons:shadowMagic.painweaver")))
+			+ " (before battle-only Warcasting). Each trigger adds the unchanged 10% damage share.";
+	if(spell->getJsonKey() == "new-horizons:plague")
+		result += "\nCurrent captured raw tick damage: "
+			+ std::to_string(plagueTickDamage(rawPower, coefficientBasisPoints,
+				hero->getDamageSpellSpecialtyBonusPercent(spell->getId())))
+			+ ". Later ticks and child infections reuse this snapshot.";
+	if(phantomCoefficient && hero->getNonDamageSpellSpecialtyBonusPercent(spell->getId()) > 0)
+		result += "\nAstral specialty: +20% to the Spell Power-derived Integrity fraction before the 40% base cap; "
+			"the fixed 20%, Illusionist multiplier and duration are unchanged.";
+	if((spell->getJsonKey() == "new-horizons:hexOfPain" || spell->getJsonKey() == "new-horizons:plague")
+		&& hero->getDamageSpellSpecialtyBonusPercent(spell->getId()) > 0)
+		result += "\nSpecialty: +15% to the initial Spell Power-derived flat damage only; "
+			"the fixed term and subsequent damage-share/spread snapshot are unchanged.";
 	const auto formula = spellDirectDamage(hero->getMagicRules(), spell->getJsonKey());
 	const bool damageCoefficient = spell->isDamage()
 		&& (spell->getBasePower() != 0 || (formula && formula->powerCoefficient != 0));
@@ -1217,7 +1279,8 @@ void validateRules(const JsonNode & rules)
 {
 	if(legacy(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting", "spellPoints", "mageGuildGeneration", "physicalDamageReductionCapPercent", "schoolRankPowerCoefficientPercent", "spellcraftEfficiencyPercent", "morale", "creatureAbilities"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting", "spellPoints", "mageGuildGeneration", "physicalDamageReductionCapPercent", "schoolRankPowerCoefficientPercent", "spellcraftEfficiencyPercent", "morale", "creatureAbilities", "protectedAdventureBarriers"});
+	newHorizonsProtectedMobility::validateRulesSerialization(rules, true);
 	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
 	require(integer(rules["rulesetVersion"], RULESET_VERSION, CURRENT_RULESET_VERSION), "rulesetVersion");
 	const int version = rules["rulesetVersion"].Integer();
@@ -1330,7 +1393,13 @@ void validateRules(const JsonNode & rules)
 		{
 			const auto found = rules["adventureSpells"].Struct().find(std::string(expected.identity));
 			require(found != rules["adventureSpells"].Struct().end(), "missing adventure spell " + std::string(expected.identity));
-			fields(found->second, {"guildLevel", "cost", "unlockCost"});
+			if(expected.identity == "core:waterWalk")
+			{
+				fields(found->second, {"guildLevel", "cost", "unlockCost", "requireLegalDayEnd"});
+				validateWaterWalkDayEndSerialization(rules, true);
+			}
+			else
+				fields(found->second, {"guildLevel", "cost", "unlockCost"});
 			require(integer(found->second["guildLevel"], 1, 5) && found->second["guildLevel"].Integer() == expected.guildLevel, "adventure guild level");
 			require(integer(found->second["cost"], 0, 1000000) && found->second["cost"].Integer() == expected.cost, "adventure spell cost");
 			if(!found->second["unlockCost"].isNull())

@@ -57,6 +57,11 @@ public:
 
 	const JsonNode & getHeroCommandRules() const override { return subject->getBattle()->getHeroCommandRules(); }
 	const JsonNode & getMagicRules() const override { return subject->getBattle()->getMagicRules(); }
+	const SeizeInitiativeState & getSeizeInitiativeState() const override { return subject->getBattle()->getSeizeInitiativeState(); }
+	const newHorizonsCrisisCommand::State & getCrisisCommandState() const override
+	{
+		return subject->getBattle()->getCrisisCommandState();
+	}
 	bool hasCompletedHeroSpellCast(BattleSide side) const override
 	{
 		return subject->getBattle()->hasCompletedHeroSpellCast(side);
@@ -154,6 +159,10 @@ public:
 	MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const override
 	{
 		return subject->getBattle()->getMoraleSuppressionState(side);
+	}
+	const RapidResponseState & getRapidResponseState(BattleSide side) const override
+	{
+		return subject->getBattle()->getRapidResponseState(side);
 	}
 	const ReducedExtraActivationState & getReducedExtraActivationState(BattleSide side) const override
 	{

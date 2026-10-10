@@ -2,6 +2,106 @@
 
 Updated: 2026-10-10
 
+Accepted implementation checkpoint: all final eight perks have reviewed
+production/data/UI/minimum-AI paths and passing focused evidence. Coverage is
+31/31 Skills,93/93 ranks,310/310 perks (220 generic,90 faction),8/8 Orders,
+67/67 combat spells and5/5 Adventure spell identities. The five remaining
+Adventure execution gaps, starting-book/specialty/Navigation replacements and
+Pasis/Monere Wisp successors also pass their bounded gates.
+
+Native-v4 passes288 cases outside Opportunist; its15-case Opportunist slice
+is superseded by native-v5's15/15 in10.671s. This covers303 distinct focused
+cases on unchanged production library0856816c and identical resources, not
+one fresh303-case run. Both-target build88287 and privacy3625 pass; final test
+c6217ec3 is verified. Earlier failures remain retained. No rendered, Windows,
+campaign, full-match, broad-integration or launcher-delivery claim is made.
+The independent nineteen-category audit supports principal implementation
+coverage; formal Phase1 exit reconciliation remains separate from this batch.
+
+Latest native-v3 checkpoint:292/303 pass,11 fail, no crashes/timeouts.
+Wisp14/14, hero replacements90/90 and Legendary wire2/2 pass. Perks117/126
+and Adventure69/71 still require the reviewed repairs and a fresh linked run.
+The missing detached battle location is corrected in source, restoring dynamic
+Glyphs of Fear forecast parity without storing an aura on simulated units.
+Accepted totals remain302/310 until terminal verification; earlier checkpoints
+below are historical and do not supersede this result.
+
+Final bounded hero-source audit matches all144 identities:52 reviewed biography
+overrides/92 deliberate inheritances,48 authored development profiles (8+38+2),
+and all31 formerly filtered starting books (22+6+3). Pasis/Monere's exact
+two-row Wisp successor is present. All144 workbook army rows remain TBD;
+no invented quantities or additional96 profiles are credited. Canonical
+authoring boundaries and unchanged Leadership-safe army generation control.
+This is source coverage, not native, rendered or campaign acceptance.
+
+Repair checkpoint: Wisp-v2 is crash-free13/14; its explicit-map skill assertion
+still fails. Legendary wire2/2 passes. Reviewed Mana lifetime/idempotence,
+Crisis decode/runtime admission, Opportunist positive-Luck projection and
+Adventure fixture repairs are imported, not yet compiled/rerun. Added controls
+raise the focused authored inventory to303; accepted coverage stays302/310.
+
+Actual native results supersede the pending execution records below:
+final perks81/124, heroes66/90 and Adventure54/70 pass;83 failures total.
+Wisp records6 passes/7 failures then SIGSEGV in its detached-AI fixture;
+Legendary2 is held pending crash repair. Four source-reviewed fixture repairs
+are imported, not yet rerun. Production Mana lifetime/idempotence, Crisis
+snapshot admission and Opportunist AI receipt repairs remain required.
+Accepted coverage is still302/310; no Phase1 exit or publication is claimed.
+
+Current linkage checkpoint: client/test86801 exits0 after the additional
+authoritative Lighthouse ownership fixture correction. Binary privacy22737
+passes with no findings. Exact linked pair is assigned to the sole isolated
+tester for actual discovery and separate124/90/70/14/2 native gates. Accepted
+coverage remains302/310 until terminal results are independently verified.
+
+Independent bounded exit-evidence audit finds no additional unassigned principal
+Version1.0 feature across the required system categories. This is conditional:
+current client/test linkage, binary privacy, exact runner parity and all300
+focused cases remain required. Existing accepted evidence plus successful gates
+would support an implementation-coverage transition, not blanket graphical,
+Windows, whole-match/campaign, autonomous-AI-quality or release certification.
+Required UI producers exist; executed UI breadth is the weakest recorded proof
+and stays explicitly separate from source/native implementation credit.
+
+Current checkpoint supersedes the earlier live-build records below: retry74735
+terminates exit1 and exposes eight bounded compile repairs. All are independently
+reviewed, imported and reverse-patch verified. Data34, module parity and whitespace
+checks pass. Retry62717 is the live ten-job incremental build. The two new full-range
+and malformed Legendary wire tests raise authored inventory298→300; original
+124/90/70/14 gates and assertions remain intact. Native execution, accepted-count
+advancement and publication are still pending successful linkage/privacy/handoff.
+
+Current build checkpoint: retry74735 is compiling with at most ten jobs after
+the previous handle disappeared and no compiler remained. Keep-going compilation
+identifies unsupported unsigned64 Legendary Admission serialization; a scoped
+repair is assigned privately. All298 test inventories are independently
+revalidated against the current source, but remain unexecuted. Accepted302/310
+does not change. The bounded current-specification audit finds no additional
+unassigned principal mechanic outside these mapped candidates; that is not
+Phase1 completion or rendered/platform acceptance.
+
+The complete candidate is now source-integrated, including Pasis/Monere's
+fresh-default Wisp-line successors. Independent additive review and209 exact
+result hashes pass; data34/module/instruction/whitespace checks pass. The
+ten-job incremental client/test build61144 is live. Its298 focused cases are
+authored only (124 perks,90 hero replacements,70 Adventure,14 Wisp specialties);
+accepted totals below do not advance before their actual linked native gates.
+
+Current implementation candidate, not accepted coverage: the final eight perks
+and hero book/specialty/Navigation replacements are imported after independent
+source review, followed by the five Adventure gaps and captured Lighthouse help.
+All202 effective result hashes and module parity pass. The candidate has284
+authored, unrun focused cases; no compiled/native or playable credit is inferred.
+Pasis/Monere's fresh-default Wisp successor has a source-cleared private v2,
+including the corrected save-epoch placement and campaign crossover guards;
+its additive integration and14 native cases remain pending.
+
+Phase2 fixture-attribution finding from the Adventure composition: the older
+Plague raw-reader rejection control removes Protected but retains Water Walk's
+future legal-day-end policy, so its exception may precede the intended Plague
+guard. Direct strict Plague controls remain; the combined candidate does not
+claim that this older fixture isolates the Plague rejection cause.
+
 Accepted current checkpoint: seven perks increase295→302/310, generic212/220
 and faction90/90. Eight generic perks remain: Rapid Response, Heroic Spirit,
 Seize Initiative, Crisis Command, Mercenary Captain, Loyal Mercenaries,
@@ -5173,8 +5273,8 @@ no whole-family completion fraction is inferred.
 |---|---|---|
 | Primary Attribute specialty: legacy flat1 becomes5 | UP226's bounded audit found no eligible built-in flat hero-stat source; Fiur/Ignissa/Thunar/Erdamon entries are creature-limited | Requires an authored eligible producer, not conversion of creature stats into hero stats; no completion credit. |
 | Creature-line: Speed1/Initiative1, Attack/Defense per5 levels capped6 | UP216: actual alias line/upgrades/thresholds/cache/save/legacy, native85455 7/7; UP304 connects eleven fixed packages, linked26469/native20930 29/29 with canonical/legacy/save/prototype controls | Dragon-wide Mutare membership remains unresolved; prototype-only descriptions, broader mod/combat composition and playable verification remain Phase2; source/native evidence is not rendered acceptance. |
-| Damage spell: SP component15% | UP217: nine surviving heroes/eight effects; native23804 11/11 includes actual Ciele/Deemer/Luna casts and stored Fire Wall trigger | Explicit replacement specialties remain untouched; broader detached execution, proxy/modifier composition and prototype tooltips remain Phase2. |
-| Non-damage spell: SP component20%, otherwise duration1 | UP224: Uland/Cure, Alamar/Jeddite/Resurrection and Adela/Bless component conversion accepted, including actual casts/forecasts and historical lists | Haste access and inactive Weakness/Animate Dead aliases retain their recorded blockers; not full-family completion. Bless has a numerical SP duration term, so its fallback duration1 does not apply. |
+| Damage spell: SP component15% | UP217: nine surviving heroes/eight effects; native23804 11/11 includes actual Ciele/Deemer/Luna casts and stored Fire Wall trigger; current named starting-book/specialty replacements pass the bounded native-v3 hero90 gate | Broader detached execution, proxy/modifier composition and prototype tooltips remain Phase2; bounded replacements do not certify the whole family. |
+| Non-damage spell: SP component20%, otherwise duration1 | UP224: Uland/Cure, Alamar/Jeddite/Resurrection and Adela/Bless conversion; named Haste, Frailty and Re-animate replacements now have source and bounded native-v3 hero90 evidence | Legacy/prototype preservation remains explicit; broader rendered/campaign and family-wide interactions remain Phase2. Bless has a numerical SP duration term, so its fallback duration1 does not apply. |
 | Skill: core numerical contribution20%, not perks | UP218/219/221/222/223: surviving Logistics, Armorer, Offense, Archery and Estates aliases, real ranks/core/perk controls/save/legacy | UP228 confirms five old Sorcery aliases were intentionally replaced; do not restore them. Broader composition and prototype tooltips remain Phase2. |
 | Resource: retain legacy daily quantity | Bounded producer audit2026-10-05:13 surviving sources, nine Gold350/day and four rare-resource1/day; unchanged HERO_SPECIAL provenance and shared dailyIncome/server receipt path | No concrete conversion gap found. Estates scaling is SECONDARY_SKILL-only and excludes these producers. Source/config evidence is not13-hero runtime acceptance or whole-family certification. |
 
@@ -5257,6 +5357,50 @@ advance to the next item; rendered/playable and broad interaction evidence
 remain separately tracked rather than silently assumed.
 
 ## Skills and perks baseline
+
+### Current accepted registry snapshot — 2026-10-10
+
+Derived from `config/newHorizonsPerks.json` and the reviewed, linked candidate:
+31 Skills,93 active ranks and310 accepted active perks. The final eight now
+have passing principal evidence (native-v4 plus the focused Opportunist-v5
+repair), not merely registration. This is not whole-family integration
+certification; the accepted evidence and Phase2 deferrals remain controlling.
+
+| Skill | Active ranks | Accepted active perks | Remaining perks |
+|---|---:|---:|---|
+| Offense | 3 / 3 | 10 / 10 | None |
+| Armorer | 3 / 3 | 10 / 10 | None |
+| Archery | 3 / 3 | 10 / 10 | None |
+| Battlecraft | 3 / 3 | 10 / 10 | None |
+| War Machines | 3 / 3 | 10 / 10 | None |
+| Discipline | 3 / 3 | 10 / 10 | None |
+| Recruitment | 3 / 3 | 10 / 10 | None |
+| Command | 3 / 3 | 10 / 10 | None |
+| Light Magic | 3 / 3 | 10 / 10 | None |
+| Shadow Magic | 3 / 3 | 10 / 10 | None |
+| Nature Magic | 3 / 3 | 10 / 10 | None |
+| Havoc Magic | 3 / 3 | 10 / 10 | None |
+| Sorcery Magic | 3 / 3 | 10 / 10 | None |
+| Chaos Magic | 3 / 3 | 10 / 10 | None |
+| Spellcraft | 3 / 3 | 10 / 10 | None |
+| Wisdom | 3 / 3 | 10 / 10 | None |
+| Warcasting | 3 / 3 | 10 / 10 | None |
+| Logistics | 3 / 3 | 10 / 10 | None |
+| Diplomacy | 3 / 3 | 10 / 10 | None |
+| Estates | 3 / 3 | 10 / 10 | None |
+| Learning | 3 / 3 | 10 / 10 | None |
+| Luck | 3 / 3 | 10 / 10 | None |
+| Divine Mandate | 3 / 3 | 10 / 10 | None |
+| Sylvan Luck | 3 / 3 | 10 / 10 | None |
+| Metamagic | 3 / 3 | 10 / 10 | None |
+| Shroud of Malassa | 3 / 3 | 10 / 10 | None |
+| Demonic Gating | 3 / 3 | 10 / 10 | None |
+| Necromancy | 3 / 3 | 10 / 10 | None |
+| Bloodrage | 3 / 3 | 10 / 10 | None |
+| Bulwark of the Mire | 3 / 3 | 10 / 10 | None |
+| Elemental Rebirth | 3 / 3 | 10 / 10 | None |
+
+### Historical implementation trace
 
 Historical baseline and implementation trace follow. Registration at that time was
 31 Skills,87 active/6 planned ranks and214 active/96 planned perks, verified
@@ -5369,7 +5513,10 @@ regression each pass 1/1. Earlier runs that skipped every case under stale
 presets are not counted. Hero-source kill attribution, broader save/dispel
 interactions, and rendered/playable acceptance remain separate.
 
-| Skill | Active/planned ranks | Active/planned perks | Immediate state |
+The following table preserves earlier checkpoints, not current missing-feature
+counts. Use the current accepted snapshot above and later acceptance entries.
+
+| Skill | Historical active/planned ranks | Historical active/planned perks | Historical state |
 |---|---:|---:|---|
 | Offense | 3/0 | 10/0 | Bounded consumer audit found Breakthrough omitted explicit Battlecraft/Bulwark Defend reductions. UP231 repairs those channels with8/8 focused cases, accepted melee and equivalent-view detached parity. Broader mundane-state taxonomy and stale earlier-tier fixture repairs remain deferred; active registration is not whole-family certification. |
 | Armorer | 3/0 | 9/1 | Defiant joins Last Stand, Bastion, Formation Fighting and Veteran with focused live/detached evidence. UP136 verifies one side-shared nonmagical denial exemption per round, complete No Quarter exemption and ordinary/magical legality, active native10/10. Unyielding lacks a nonmagical displacement producer. |

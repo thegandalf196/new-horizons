@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsProtectedMobility.h"
+#include "../gameState/CGameState.h"
 #include "PathfindingRules.h"
 
 #include "CGPathNode.h"
@@ -15,11 +17,13 @@
 #include "INodeStorage.h"
 #include "PathfinderOptions.h"
 #include "TurnInfo.h"
+#include "NewHorizonsLighthouse.h"
 
 #include "../mapObjects/CGHeroInstance.h"
 #include "../mapObjects/MiscObjects.h"
 #include "../mapObjects/Quest.h"
 #include "../mapping/TerrainTile.h"
+#include "../spells/NewHorizonsMagic.h"
 
 void MovementPreparationRule::process(
 	const PathNodeInfo & source,
@@ -28,7 +32,8 @@ void MovementPreparationRule::process(
 	CPathfinderHelper * pathfinderHelper) const
 {
 	pathfinderHelper->updateTurnInfo(destination.turn);
-	const int currentLimit = pathfinderHelper->getMaxMovePoints(source.node->layer);
+	const int currentLimit = pathfinderHelper->getMaxMovePoints(source.node->layer,
+		source.node->lighthouseDepartureTurn == destination.turn);
 	if(currentLimit <= 0 || destination.turn > pathfinderConfig->options.turnLimit)
 	{
 		destination.blocked = true;
@@ -70,7 +75,12 @@ void MovementCostRule::process(
 	const float currentCost = destination.cost;
 	const int currentTurnsUsed = destination.turn;
 	const int currentMovePointsLeft = destination.movementLeft;
-	const int sourceLayerMaxMovePoints = pathfinderHelper->getMaxMovePoints(source.node->layer);
+	const bool sourceDeparture = source.node->lighthouseDepartureTurn == destination.turn;
+	const bool newDeparture = destination.action == EPathNodeAction::EMBARK
+		&& destination.node->layer == EPathfindingLayer::SAIL
+		&& newHorizonsLighthouse::departureTown(*pathfinderHelper->hero, destination.coord, false);
+	destination.lighthouseDeparture = sourceDeparture || newDeparture;
+	const int sourceLayerMaxMovePoints = pathfinderHelper->getMaxMovePoints(source.node->layer, sourceDeparture);
 
 	int moveCostPoints = pathfinderHelper->getMovementCost(source, destination, currentMovePointsLeft);
 	float destinationCost = currentCost;
@@ -90,9 +100,13 @@ void MovementCostRule::process(
 		// FREE_SHIP_BOARDING bonus only remove additional penalty
 		// land <-> sail transition still cost movement points as normal movement
 
-		const int movementPointsAfterEmbark = pathfinderHelper->movementPointsAfterEmbark(destMovePointsLeft, moveCostPoints, (destination.action == EPathNodeAction::DISEMBARK));
+		const int movementPointsAfterEmbark = newDeparture
+			? newHorizonsLighthouse::movementAfterDeparture(destMovePointsLeft, moveCostPoints, *pathfinderHelper->getTurnInfo())
+			: pathfinderHelper->movementPointsAfterEmbark(destMovePointsLeft, moveCostPoints,
+				destination.action == EPathNodeAction::DISEMBARK, sourceDeparture);
 
-		const int destinationLayerMaxMovePoints = pathfinderHelper->getMaxMovePoints(destination.node->layer);
+		const int destinationLayerMaxMovePoints = pathfinderHelper->getMaxMovePoints(destination.node->layer,
+			destination.lighthouseDeparture);
 		const float costBeforeConversion = static_cast<float>(destMovePointsLeft) / sourceLayerMaxMovePoints;
 		const float costAfterConversion = static_cast<float>(movementPointsAfterEmbark) / destinationLayerMaxMovePoints;
 		const float costDelta = costBeforeConversion - costAfterConversion;
@@ -109,12 +123,34 @@ void MovementCostRule::process(
 		destinationCost += static_cast<float>(moveCostPoints) / sourceLayerMaxMovePoints;
 	}
 
+	// This is shared by ordinary pathing and Nullkiller's movement cost rule.
+	// The reserve search itself has no spell/battle/teleport/day-rollover edges.
+	if(destination.node->layer == EPathfindingLayer::WATER
+		&& !pathfinderHelper->hero->inBoat()
+		&& newHorizonsMagic::requiresWaterWalkLegalDayEnd(pathfinderHelper->hero->getMagicRules())
+		&& !pathfinderHelper->hasSameDayLandEscape(destination.coord, destMovePointsLeft))
+	{
+		destination.blocked = true;
+		return;
+	}
+
 	// pathfinder / priority queue does not supports negative costs
 	assert(destinationCost >= currentCost);
 
 	destination.cost = destinationCost;
 	destination.turn = destTurnsUsed;
 	destination.movementLeft = destMovePointsLeft;
+	if(newDeparture)
+	{
+		// Select the prospective daily-state bucket before the better-route
+		// comparison, not after discarding a route against a different state.
+		pathfinderConfig->nodeStorage->prepareDestination(destination, source);
+		if(destination.blocked || destination.node->locked)
+		{
+			destination.blocked = true;
+			return;
+		}
+	}
 
 	if(destination.isBetterWay() &&
 		((source.node->turns == destTurnsUsed && destMovePointsLeft) || pathfinderHelper->passOneTurnLimitCheck(source)))
@@ -347,6 +383,12 @@ PathfinderBlockingRule::BlockingReason MovementToDestinationRule::getBlockingRea
 {
 
 	if(destination.node->accessible == EPathAccessibility::BLOCKED)
+		return BlockingReason::DESTINATION_BLOCKED;
+	if(pathfinderHelper->hero && !pathfinderHelper->hero->inBoat()
+		&& newHorizonsProtectedMobility::enabled(pathfinderHelper->hero->getMagicRules())
+		&& (source.node->layer == EPathfindingLayer::AIR || destination.node->layer == EPathfindingLayer::AIR)
+		&& !newHorizonsProtectedMobility::segmentClear(*pathfinderHelper->hero,
+			pathfinderHelper->hero->cb->gameState().getMap(), source.coord, destination.coord))
 		return BlockingReason::DESTINATION_BLOCKED;
 
 	switch(destination.node->layer.toEnum())

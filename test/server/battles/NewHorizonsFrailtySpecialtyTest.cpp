@@ -3,6 +3,7 @@
  * License: GNU General Public License v2 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../NewHorizonsHistoricalAdventurePolicyTestUtils.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/GameSettings.h"
@@ -70,6 +71,13 @@ protected:
 			rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 		rules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
 		rules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
+		rules["startingSkills"].Struct().erase("startingBookReplacements");
+		rules.Struct().erase("remainingSpellSpecialtyReplacements");
+		rules["skillSpecialties"].Struct().erase("navigationStartReplacements");
+		rules.Struct().erase("defaultCreatureLineReplacements");
+		std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(),
+			[](const JsonNode & value) { return value.String() == "new-horizons:phantomArmy"; });
+		rules.Struct().erase("lighthouseDeparture");
 		if(aenainFalseFlag)
 		{
 			rules["nonDamageSpellSpecialties"]["aenainFrailtyReplacement"].Bool() = false;
@@ -99,6 +107,7 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		isolateHistoricalAdventurePolicies(*loaded);
 	}
 	void prepare(const std::string & actor = "core:cuthbert", int spellPower = 100)
 	{
@@ -482,6 +491,13 @@ TEST_F(NewHorizonsFrailtySpecialtyTest, CurrentWorldRoundtripAndPreviousFormatOu
 	raw["heroes"]["newHorizons"]["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 	raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
 	raw["heroes"]["newHorizons"]["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
+	raw["heroes"]["newHorizons"]["startingSkills"].Struct().erase("startingBookReplacements");
+	raw["heroes"]["newHorizons"].Struct().erase("remainingSpellSpecialtyReplacements");
+	raw["heroes"]["newHorizons"]["skillSpecialties"].Struct().erase("navigationStartReplacements");
+	raw["heroes"]["newHorizons"].Struct().erase("defaultCreatureLineReplacements");
+	std::erase_if(raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"]["spells"].Vector(),
+		[](const JsonNode & value) { return value.String() == "new-horizons:phantomArmy"; });
+	raw["heroes"]["newHorizons"].Struct().erase("lighthouseDeparture");
 	CMemorySerializer incoming;
 	incoming.oser & raw;
 	incoming.iser.version = ESerializationVersion::NEW_HORIZONS_THANT_REANIMATE;

@@ -1,6 +1,7 @@
 {
 	"schemaVersion": 1,
 	"rulesetVersion": 3,
+	"protectedAdventureBarriers": true,
 	"creatureAbilities": {
 		"rulesetVersion": 1,
 		"freezingTouchChancePercent": 20,
@@ -47,6 +48,7 @@
 			}
 		},
 		"core:waterWalk": {
+			"requireLegalDayEnd": true,
 			"guildLevel": 2,
 			"cost": 30,
 			"unlockCost": {

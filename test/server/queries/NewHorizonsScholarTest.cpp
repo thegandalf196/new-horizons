@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later
  */
 #include "StdInc.h"
+#include "../../NewHorizonsHistoricalAdventurePolicyTestUtils.h"
 #include "../../mock/GameHandlerTestServer.h"
 #include "../../mock/TinyH3MBuilder.h"
 #include "../../mock/TinyMapGameTest.h"
@@ -46,6 +47,13 @@ protected:
 		heroRules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 		heroRules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
 		heroRules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
+		heroRules["startingSkills"].Struct().erase("startingBookReplacements");
+		heroRules.Struct().erase("remainingSpellSpecialtyReplacements");
+		heroRules["skillSpecialties"].Struct().erase("navigationStartReplacements");
+		heroRules.Struct().erase("defaultCreatureLineReplacements");
+		std::erase_if(heroRules["nonDamageSpellSpecialties"]["spells"].Vector(),
+			[](const JsonNode & value) { return value.String() == "new-horizons:phantomArmy"; });
+		heroRules.Struct().erase("lighthouseDeparture");
 		heroRules["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
 		heroRules["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
 		heroRules["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");
@@ -64,6 +72,7 @@ protected:
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		isolateHistoricalAdventurePolicies(*map);
 	}
 	void prepare()
 	{

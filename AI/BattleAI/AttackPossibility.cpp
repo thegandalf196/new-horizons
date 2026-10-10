@@ -9,6 +9,8 @@
  */
 #include "StdInc.h"
 #include "AttackPossibility.h"
+#include "../../lib/battle/NewHorizonsOpportunist.h"
+#include "../../lib/battle/ReachabilityInfo.h"
 #include "NewHorizonsHexOfPain.h"
 #include "../../lib/CStack.h" // TODO: remove
 #include "../../lib/CSkillHandler.h"
@@ -1076,7 +1078,9 @@ AttackPossibility AttackPossibility::evaluate(
 		};
 		const bool projectsLastStand = (eligibleForLastStandMainAttack || eligibleForLastStandRetaliation)
 			&& std::ranges::any_of(state->battleAliveUnits(), canPotentiallyTriggerLastStand);
-		if(ap.perfectMoment || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
+		const bool projectsOpportunist = ap.attack.physicalDamage && !ap.attack.retaliation
+			&& newHorizonsOpportunist::hasPerk(*state, attacker);
+		if(ap.perfectMoment || projectsOpportunist || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 				|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 				|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune || projectsPerfectFortune
 				|| projectsNoEscape || projectsVanish || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
@@ -1224,8 +1228,11 @@ AttackPossibility AttackPossibility::evaluate(
 		const bool serendipityEnabled = (receipt.luckSerendipitySide == BattleSide::ATTACKER
 			|| receipt.luckSerendipitySide == BattleSide::DEFENDER)
 			&& fortunePreview->getLuckSerendipityState(receipt.luckSerendipitySide).enabled;
+		const bool opportunistTrigger = !attack.retaliation && !attack.secondaryAttack
+			&& attack.physicalDamage && outcome == ProjectedLuckOutcome::POSITIVE
+			&& newHorizonsOpportunist::hasPerk(*fortunePreview, attack.attacker);
 		if(!receipt.perfectFortune && !certainNegative && !gamblerAvailable && !chainAvailable
-			&& !knownPositiveChainTrigger && !serendipityEnabled)
+			&& !knownPositiveChainTrigger && !serendipityEnabled && !opportunistTrigger)
 			return false;
 
 		// Capture Luck before one-strike bonuses are consumed, then update only
@@ -2393,6 +2400,39 @@ AttackPossibility AttackPossibility::evaluate(
 			const Bonus slow(BonusDuration::ONE_BATTLE, BonusType::STACKS_SPEED,
 				BonusSource::OTHER, -2, BonusSourceID(SecondarySkill(bulwarkSkillId)));
 			fortunePreview->addUnitBonus(ap.attackerState->unitId(), {slow});
+		}
+		// Only resolved own strikes can earn the movement tail. Forecasting does
+		// not roll live RNG or treat an expected damage multiplier as a trigger.
+		if(ap.attack.physicalDamage && !ap.attack.retaliation && newHorizonsOpportunist::hasPerk(*state, attacker)
+			&& (ap.attackerState->luckyOwnAttackSequence || std::ranges::any_of(ap.fortuneStrikes, [attacker](const auto & strike)
+			{
+				return strike.attackerId == attacker->unitId() && !strike.retaliation
+					&& strike.resolvedLuck == ProjectedLuckOutcome::POSITIVE;
+			})))
+		{
+			ap.attackerState->luckyOwnAttackSequence = true;
+			const auto * sourceState = dynamic_cast<const battle::CUnitState *>(attacker);
+			const auto * controllerHero = state->battleGetFightingHero(
+				state->playerToSide(state->battleGetActionController(attacker)));
+			const bool firstMasterGunnerShot = ap.attack.shooting && attacker->isBallista()
+				&& sourceState && sourceState->rangedFollowUpDamagePercent == 0
+				&& controllerHero && controllerHero->hasActivePerk(
+					"new-horizons:warMachines", "new-horizons:warMachines.masterGunner");
+			int movementSpent = ap.attack.chargeDistance;
+			if(ap.from.isAvailable() && ap.from != attacker->getPosition())
+			{
+				const auto reachability = state->getReachability(attacker);
+				const auto cost = reachability.distances[ap.from.toInt()];
+				movementSpent = cost < ReachabilityInfo::INFINITE_DIST ? static_cast<int>(cost)
+					: static_cast<int>(attacker->getMovementRange(0));
+			}
+			const int remaining = std::max(0, static_cast<int>(attacker->getMovementRange(0)) - movementSpent);
+			const int allowance = firstMasterGunnerShot ? 0 : newHorizonsOpportunist::movementAllowance(*state, ap.attackerState.get(), remaining);
+			ap.attackerState->pursuitMovementRemaining = std::max(ap.attackerState->pursuitMovementRemaining, allowance);
+			// A first Master Gunner shot is not the end of its accepted sequence.
+			// Keep the copied receipt until the second request or decline completes it.
+			if(!firstMasterGunnerShot)
+				ap.attackerState->luckyOwnAttackSequence = false;
 		}
 		if(vanishKill && ap.attackerState->alive() && ap.attackerState->canMove()
 			&& !ap.attackerState->isTimeStopped() && !newHorizonsFrozen::isFrozen(*ap.attackerState)

@@ -10,6 +10,7 @@
 #pragma once
 
 #include "CQuery.h"
+#include "../../lib/GameConstants.h"
 
 class CGTownInstance;
 
@@ -39,6 +40,21 @@ public:
 	/// Server-only accepted encounter context; no benefit until actual troop intake.
 	bool trackingNeutralRecruitment = false;
 	bool admittedNeutralRecruitment = false;
+	/// Captured only when a real payable offer was quoted as free.
+	bool legendaryOfferCaptured = false;
+	int32_t legendaryOfferMonth = -1;
+	int32_t legendaryOfferPreviousMonth = -1;
+	CreatureID legendaryOfferCreature;
+	SlotID legendaryOfferSlot = SlotID(-1);
+	TQuantity legendaryOfferQuantity = 0;
+	int64_t legendaryOfferNormalGold = 0;
+	uint64_t legendaryOfferArmyValue = 0;
+	bool legendaryOfferRecruitmentPact = false;
+	bool legendaryOfferAccepted = false;
+	bool legendaryOfferAdmitted = false;
+	CreatureID acceptedNeutralCreature = CreatureID::NONE;
+	TQuantity acceptedNeutralRemaining = 0;
+	SlotID acceptedNeutralSlot = SlotID(-1);
 
 	MapObjectVisitQuery(CGameHandler * owner, const CGObjectInstance * Obj, const CGHeroInstance * Hero);
 

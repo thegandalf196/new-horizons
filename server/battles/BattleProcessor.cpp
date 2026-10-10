@@ -446,6 +446,9 @@ bool BattleProcessor::makePlayerBattleAction(const BattleID & battleID, PlayerCo
 		return false;
 
 	const auto activeStackID = battle->getActiveStackID();
+	if(battle->getCrisisCommandState().choice() && ba.actionType == EActionType::NO_ACTION
+		&& flowProcessor->declineCrisisCommand(*battle, player, ba))
+		return true;
 	BattleAction effectiveAction = ba;
 	bool masterGateActivationContinuation = false;
 	bool result = actionsProcessor->makePlayerBattleAction(*battle, player, ba, &effectiveAction,
@@ -480,7 +483,8 @@ bool BattleProcessor::makePlayerBattleAction(const BattleID & battleID, PlayerCo
 	const bool rangedAttackContinuation = result && updatedBattle && rangedFollowUpStack
 		&& updatedBattle->battleCanTakeRangedFollowUp(rangedFollowUpStack);
 	const bool pursuitActivationContinuation = result
-		&& effectiveAction.actionType == EActionType::WALK_AND_ATTACK
+		&& (effectiveAction.actionType == EActionType::WALK_AND_ATTACK
+			|| effectiveAction.actionType == EActionType::SHOOT || effectiveAction.actionType == EActionType::NO_ACTION)
 		&& updatedStack && updatedStack->pursuitMovementRemaining > 0;
 	if(!masterGateActivationContinuation && !pursuitActivationContinuation && !rangedAttackContinuation)
 		expireStackActivationBonuses(battleID, effectiveAction);

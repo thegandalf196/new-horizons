@@ -1,57 +1,200 @@
 {
 	"schemaVersion": 1,
 	"rulesetVersion": 4,
-	"skeletonTransformer": {"aggregateHealthPercent": 50},
+	"skeletonTransformer": {
+		"aggregateHealthPercent": 50
+	},
 	"classProfiles": {
-		"core:knight": {"base": 1025, "perLevel": 55},
-		"core:cleric": {"base": 725, "perLevel": 35},
-		"core:ranger": {"base": 950, "perLevel": 50},
-		"core:druid": {"base": 650, "perLevel": 30},
-		"core:alchemist": {"base": 875, "perLevel": 45},
-		"core:wizard": {"base": 650, "perLevel": 30},
-		"core:demoniac": {"base": 1025, "perLevel": 55},
-		"core:heretic": {"base": 725, "perLevel": 35},
-		"core:deathknight": {"base": 950, "perLevel": 50},
-		"core:necromancer": {"base": 725, "perLevel": 35},
-		"core:overlord": {"base": 1025, "perLevel": 55},
-		"core:warlock": {"base": 725, "perLevel": 35},
-		"core:barbarian": {"base": 1100, "perLevel": 60},
-		"core:battlemage": {"base": 875, "perLevel": 45},
-		"core:beastmaster": {"base": 1100, "perLevel": 60},
-		"core:witch": {"base": 725, "perLevel": 35},
-		"core:planeswalker": {"base": 875, "perLevel": 45},
-		"core:elementalist": {"base": 650, "perLevel": 30}
+		"core:knight": {
+			"base": 1025,
+			"perLevel": 55
+		},
+		"core:cleric": {
+			"base": 725,
+			"perLevel": 35
+		},
+		"core:ranger": {
+			"base": 950,
+			"perLevel": 50
+		},
+		"core:druid": {
+			"base": 650,
+			"perLevel": 30
+		},
+		"core:alchemist": {
+			"base": 875,
+			"perLevel": 45
+		},
+		"core:wizard": {
+			"base": 650,
+			"perLevel": 30
+		},
+		"core:demoniac": {
+			"base": 1025,
+			"perLevel": 55
+		},
+		"core:heretic": {
+			"base": 725,
+			"perLevel": 35
+		},
+		"core:deathknight": {
+			"base": 950,
+			"perLevel": 50
+		},
+		"core:necromancer": {
+			"base": 725,
+			"perLevel": 35
+		},
+		"core:overlord": {
+			"base": 1025,
+			"perLevel": 55
+		},
+		"core:warlock": {
+			"base": 725,
+			"perLevel": 35
+		},
+		"core:barbarian": {
+			"base": 1100,
+			"perLevel": 60
+		},
+		"core:battlemage": {
+			"base": 875,
+			"perLevel": 45
+		},
+		"core:beastmaster": {
+			"base": 1100,
+			"perLevel": 60
+		},
+		"core:witch": {
+			"base": 725,
+			"perLevel": 35
+		},
+		"core:planeswalker": {
+			"base": 875,
+			"perLevel": 45
+		},
+		"core:elementalist": {
+			"base": 650,
+			"perLevel": 30
+		}
 	},
 	"leadership": {
 		"globalScalePercent": 100,
 		"upgradeMultiplierPercent": 120,
 		"upgradeRounding": 10,
 		"creatureRequirements": {
-			"core:pikeman": 60, "core:archer": 90, "core:swordsman": 150, "core:griffin": 220, "core:monk": 320, "core:cavalier": 450, "core:angel": 650,
-			"core:centaur": 60, "core:dwarf": 90, "core:woodElf": 140, "core:pegasus": 210, "core:dendroidGuard": 280, "core:unicorn": 420, "core:greenDragon": 650,
-			"core:gremlin": 50, "core:stoneGargoyle": 80, "core:ironGolem": 140, "core:mage": 300, "core:genie": 240, "core:naga": 450, "core:giant": 650,
-			"core:imp": 50, "core:gog": 90, "core:hellHound": 150, "core:demon": 220, "core:pitFiend": 320, "core:efreet": 430, "core:devil": 650,
-			"core:skeleton": 45, "core:walkingDead": 80, "core:wight": 130, "core:vampire": 230, "core:lich": 330, "core:blackKnight": 470, "core:boneDragon": 650,
-			"core:troglodyte": 55, "core:harpy": 90, "core:beholder": 140, "core:medusa": 230, "core:minotaur": 330, "core:manticore": 430, "core:redDragon": 650,
-			"core:goblin": 50, "core:goblinWolfRider": 90, "core:orc": 140, "core:ogre": 250, "core:roc": 300, "core:cyclop": 450, "core:behemoth": 650,
-			"core:gnoll": 55, "core:lizardman": 90, "core:serpentFly": 140, "core:basilisk": 230, "core:gorgon": 340, "core:wyvern": 430, "core:hydra": 650,
-			"core:pixie": 45, "core:sprite": 60, "core:airElemental": 250, "core:waterElemental": 250, "core:fireElemental": 250, "core:earthElemental": 250, "core:magicElemental": 320, "core:phoenix": 650,
-			"new-horizons:wisp": 140, "new-horizons:wispUpgrade": 170
+			"core:pikeman": 60,
+			"core:archer": 90,
+			"core:swordsman": 150,
+			"core:griffin": 220,
+			"core:monk": 320,
+			"core:cavalier": 450,
+			"core:angel": 650,
+			"core:centaur": 60,
+			"core:dwarf": 90,
+			"core:woodElf": 140,
+			"core:pegasus": 210,
+			"core:dendroidGuard": 280,
+			"core:unicorn": 420,
+			"core:greenDragon": 650,
+			"core:gremlin": 50,
+			"core:stoneGargoyle": 80,
+			"core:ironGolem": 140,
+			"core:mage": 300,
+			"core:genie": 240,
+			"core:naga": 450,
+			"core:giant": 650,
+			"core:imp": 50,
+			"core:gog": 90,
+			"core:hellHound": 150,
+			"core:demon": 220,
+			"core:pitFiend": 320,
+			"core:efreet": 430,
+			"core:devil": 650,
+			"core:skeleton": 45,
+			"core:walkingDead": 80,
+			"core:wight": 130,
+			"core:vampire": 230,
+			"core:lich": 330,
+			"core:blackKnight": 470,
+			"core:boneDragon": 650,
+			"core:troglodyte": 55,
+			"core:harpy": 90,
+			"core:beholder": 140,
+			"core:medusa": 230,
+			"core:minotaur": 330,
+			"core:manticore": 430,
+			"core:redDragon": 650,
+			"core:goblin": 50,
+			"core:goblinWolfRider": 90,
+			"core:orc": 140,
+			"core:ogre": 250,
+			"core:roc": 300,
+			"core:cyclop": 450,
+			"core:behemoth": 650,
+			"core:gnoll": 55,
+			"core:lizardman": 90,
+			"core:serpentFly": 140,
+			"core:basilisk": 230,
+			"core:gorgon": 340,
+			"core:wyvern": 430,
+			"core:hydra": 650,
+			"core:pixie": 45,
+			"core:sprite": 60,
+			"core:airElemental": 250,
+			"core:waterElemental": 250,
+			"core:fireElemental": 250,
+			"core:earthElemental": 250,
+			"core:magicElemental": 320,
+			"core:phoenix": 650,
+			"new-horizons:wisp": 140,
+			"new-horizons:wispUpgrade": 170
 		}
 	},
 	"siege": {
-		"ballistaDamageMultiplier": [1, 2, 3, 4],
-		"siegeRating": [0, 20, 40, 60],
+		"ballistaDamageMultiplier": [
+			1,
+			2,
+			3,
+			4
+		],
+		"siegeRating": [
+			0,
+			20,
+			40,
+			60
+		],
 		"outputs": {
-			"ballistaDamage": {"base": 50, "siegeCoefficientHalf": 4},
-			"catapultStructuralDamage": {"base": 100, "siegeCoefficientHalf": 6},
-			"firstAidHealing": {"base": 75, "siegeCoefficientHalf": 6},
-			"defensiveTowerDamage": {"base": 60, "siegeCoefficientHalf": 3}
+			"ballistaDamage": {
+				"base": 50,
+				"siegeCoefficientHalf": 4
+			},
+			"catapultStructuralDamage": {
+				"base": 100,
+				"siegeCoefficientHalf": 6
+			},
+			"firstAidHealing": {
+				"base": 75,
+				"siegeCoefficientHalf": 6
+			},
+			"defensiveTowerDamage": {
+				"base": 60,
+				"siegeCoefficientHalf": 3
+			}
 		},
-		"directControlChance": [0, 100, 100, 100]
+		"directControlChance": [
+			0,
+			100,
+			100,
+			100
+		]
 	},
 	"warMachineShop": {
-		"inventory": ["core:ballista", "core:ammoCart", "core:firstAidTent"],
+		"inventory": [
+			"core:ballista",
+			"core:ammoCart",
+			"core:firstAidTent"
+		],
 		"discountPercent": 75,
 		"roundingGold": 50,
 		"favoredMachineByFaction": {
@@ -65,5 +208,23 @@
 			"core:necropolis": "core:firstAidTent",
 			"core:fortress": "core:firstAidTent"
 		}
+	},
+	"artifactManaRegeneration": {
+		"core:charmOfMana": {
+			"minimum": 5,
+			"percent": 5
+		},
+		"core:talismanOfMana": {
+			"minimum": 10,
+			"percent": 10
+		},
+		"core:mysticOrbOfMana": {
+			"minimum": 15,
+			"percent": 15
+		}
+	},
+	"glyphsOfFearAura": {
+		"radius": 8,
+		"morale": -1
 	}
 }

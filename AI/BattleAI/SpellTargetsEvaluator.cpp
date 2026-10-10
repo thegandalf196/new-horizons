@@ -2312,9 +2312,7 @@ float SpellTargetEvaluator::plagueDelayedDamageValue(const Mechanics * spellMech
 	// getEffectPower() is the captured raw cast Spell Power. The hero's separate
 	// effect-power divisor is for legacy effect formulas and must not reduce
 	// Plague's canonical raw-SP term.
-	const auto rawDamage = newHorizonsPlague::rawTickDamage(
-		std::max(0, spellMechanics->getEffectPower()),
-		spellMechanics->getSpellPowerCoefficientBasisPoints());
+	const auto rawDamage = spellMechanics->getPlagueTickDamage();
 	if(rawDamage <= 0)
 		return 0.0f;
 

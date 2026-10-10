@@ -12,6 +12,7 @@
 
 #include "CArmedInstance.h"
 #include "../CGHeroInstance.h"
+#include "../NewHorizonsGlyphsOfFear.h"
 #include "../CGTownInstance.h"
 #include "../../battle/NewHorizonsDiscipline.h"
 
@@ -65,7 +66,8 @@ TConstBonusListPtr CStackInstance::getMoraleBonuses() const
 	if(!hero)
 		if(const auto * town = dynamic_cast<const CGTownInstance *>(getArmy()))
 			hero = town->getGarrisonHero();
-	return newHorizonsDiscipline::espritDeCorpsMoraleBonuses(hero, *this);
+	return newHorizonsGlyphsOfFear::appendMoraleBonuses(
+		newHorizonsDiscipline::espritDeCorpsMoraleBonuses(hero, *this), hero);
 }
 
 CCreature::CreatureQuantityId CStackInstance::getQuantityID() const
@@ -363,6 +365,23 @@ void CStackInstance::serializeJson(JsonSerializeFormat & handler)
 		const auto & node = handler.getCurrent()["training"];
 		if(!node.isNull() && !node.isStruct())
 			throw std::runtime_error("Invalid training JSON object");
+		const auto & origins = node["mercenaryOrigins"];
+		if(!origins.isNull() && !origins.isVector())
+			throw std::runtime_error("Invalid Diplomacy cohort JSON array");
+		ObjectInstanceID previous = ObjectInstanceID::NONE;
+		if(origins.isVector())
+			for(const auto & origin : origins.Vector())
+			{
+				if(!origin.isStruct() || origin["hero"].getType() != JsonNode::JsonType::DATA_INTEGER
+					|| origin["hero"].Integer() < 0 || origin["hero"].Integer() > std::numeric_limits<int32_t>::max()
+					|| origin["combatsRemaining"].getType() != JsonNode::JsonType::DATA_INTEGER
+					|| origin["combatsRemaining"].Integer() < 0 || origin["combatsRemaining"].Integer() > 3)
+					throw std::runtime_error("Invalid Diplomacy cohort JSON origin");
+				const ObjectInstanceID hero(static_cast<int32_t>(origin["hero"].Integer()));
+				if(hero <= previous)
+					throw std::runtime_error("Duplicate or unordered Diplomacy cohort JSON origin");
+				previous = hero;
+			}
 		for(const auto key : {"drillDeadline", "recruiter"})
 		{
 			const auto & value = node[key];
@@ -385,6 +404,18 @@ void CStackInstance::serializeJson(JsonSerializeFormat & handler)
 		handler.serializeBool("fieldPending", receipt.fieldPending, false);
 		handler.serializeBool("fieldTrained", receipt.fieldTrained, false);
 		handler.serializeBool("reinforcementPending", receipt.reinforcementPending, false);
+		{
+			auto origins = handler.enterArray("mercenaryOrigins");
+			origins.serializeStruct<newHorizonsTraining::MercenaryOrigin>(receipt.mercenaryOrigins,
+				[](JsonSerializeFormat & h, newHorizonsTraining::MercenaryOrigin & origin)
+				{
+					int32_t hero = origin.hero.getNum();
+					h.serializeInt("hero", hero);
+					h.serializeInt("combatsRemaining", origin.combatsRemaining);
+					origin.hero = ObjectInstanceID(hero);
+					origin.validate();
+				});
+		}
 		receipt.residentRecruiter = ObjectInstanceID(recruiter);
 		receipt.validate();
 		if(!handler.saving)

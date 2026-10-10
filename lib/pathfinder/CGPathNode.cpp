@@ -201,6 +201,7 @@ void CDestinationNodeInfo::setNode(const IGameInfoCallback & gameInfo, CGPathNod
 
 	blocked = false;
 	action = EPathNodeAction::UNKNOWN;
+	lighthouseDeparture = false;
 }
 
 bool CDestinationNodeInfo::isBetterWay() const

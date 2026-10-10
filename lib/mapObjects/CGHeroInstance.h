@@ -10,6 +10,7 @@
 #pragma once
 
 #include "../entities/hero/NewHorizonsHeroRules.h"
+#include "../pathfinder/NewHorizonsLighthouse.h"
 #include "../entities/hero/NewHorizonsCapabilityRules.h"
 #include "../entities/hero/NewHorizonsMasteryState.h"
 #include "../entities/hero/NewHorizonsPerkState.h"
@@ -72,6 +73,7 @@ public:
 	using ScriptingApiName = CGHeroInstance;
 
 private:
+	EPathfindingLayer protectedAdventureFlightLayer = EPathfindingLayer::LAND;
 	// We serialize heroes into JSON for crossover
 	friend class CampaignState;
 	friend class CMapLoaderH3M;
@@ -103,6 +105,8 @@ private:
 		bool ignoreSchoolProficiency, bool logWarnings, bool allowAdventureGuildUnlock) const;
 
 public:
+	CreatureID getCreatureLineSpecialtyTarget() const;
+	void validateDefaultCreatureLineSerialization(bool supported) const;
 	//////////////////////////////////////////////////////////////////////////
 	//format:   123
 	//          8 4
@@ -240,6 +244,9 @@ public:
 	si32 getManaNewTurn(bool completedDay = true, std::optional<int> previousMovementLimit = std::nullopt) const;
 	int getCurrentLuck(int stack=-1, bool town=false) const;
 	const JsonNode & getMagicRules() const;
+	EPathfindingLayer getProtectedAdventureFlightLayer() const { return protectedAdventureFlightLayer; }
+	void setProtectedAdventureFlightLayer(EPathfindingLayer layer);
+	void validateProtectedAdventureMobilitySerialization(bool supported) const;
 	std::vector<SpellSchool> getSpellSchools(const spells::Spell * spell) const;
 	int getSpellLevel(const spells::Spell * spell) const;
 	int32_t getListedSpellCost(const spells::Spell * sp) const;
@@ -307,9 +314,9 @@ public:
 			throw std::runtime_error("Invalid Reinforcement Drill use week");
 		trainingDrillLastWeek = week;
 	}
-	void validateRecruitmentTrainingSerialization(bool supported) const
+	void validateRecruitmentTrainingSerialization(bool supported, bool cohortsSupported = true) const
 	{
-		CCreatureSet::validateTrainingSerialization(supported);
+		CCreatureSet::validateTrainingSerialization(supported, cohortsSupported);
 		if(trainingDrillLastWeek < -1 || (!supported && trainingDrillLastWeek != -1))
 			throw std::runtime_error("Cannot discard Reinforcement Drill use week");
 	}
@@ -348,6 +355,10 @@ public:
 		newHorizonsMusterUsesThisWeek = std::clamp<int32_t>(usesThisWeek, 0, 2);
 	}
 	int32_t getNewHorizonsLearningMentorLastWeek() const { return newHorizonsLearningMentorLastWeek; }
+	int32_t getNewHorizonsLegendaryReputationLastMonth() const { return newHorizonsLegendaryReputationLastMonth; }
+	bool canUseNewHorizonsLegendaryReputation(int32_t month) const;
+	void markNewHorizonsLegendaryReputationUsed(int32_t month);
+	void validateNewHorizonsLegendaryReputationSerialization(bool supported, int32_t currentMonth = -1) const;
 	int32_t getNewHorizonsRecruitersContactsLastWeek() const { return newHorizonsRecruitersContactsLastWeek; }
 	void markNewHorizonsRecruitersContactsUsed(int32_t week);
 	void validateNewHorizonsRecruitersContactsSerialization(bool supported) const;
@@ -470,7 +481,8 @@ public:
 	//cached version is much faster, TurnInfo construction is costly
 	int movementPointsLimitCached(const EPathfindingLayer & layer, const TurnInfo * ti) const;
 
-	int movementPointsAfterEmbark(int MPsBefore, int basicCost, bool disembark, const TurnInfo * ti) const;
+	int movementPointsAfterEmbark(int MPsBefore, int basicCost, bool disembark, const TurnInfo * ti,
+		bool projectedLighthouse = false) const;
 
 	std::unique_ptr<TurnInfo> getTurnInfo(int days, const CCreatureSet * projectedArmy = nullptr) const;
 
@@ -631,6 +643,7 @@ private:
 	int32_t newHorizonsScholarWeek = -1;
 	std::vector<ObjectInstanceID> newHorizonsScholarPartners;
 	int32_t newHorizonsRecruitersContactsLastWeek = -1;
+	int32_t newHorizonsLegendaryReputationLastMonth = -1;
 	std::set<ObjectInstanceID> newHorizonsSageGuildVisits;
 	LearningMentorRecipients newHorizonsLearningMentorRecipients{ObjectInstanceID::NONE, ObjectInstanceID::NONE};
 	int32_t newHorizonsLandSurveyorLastWeek = -1;
@@ -668,10 +681,18 @@ public:
 	template <typename Handler> void serialize(Handler &h)
 	{
 		if(h.saving)
-			validateRecruitmentTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING));
+			newHorizonsMagic::validateWaterWalkDayEndSerialization(getMagicRules(),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END));
+		if(h.saving)
+			validateProtectedAdventureMobilitySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
+		if(h.saving)
+			validateRecruitmentTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING), h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_COHORTS));
 		if(h.saving)
 			newHorizonsHeroes::validateFrailtySpecialtySerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
+		if(h.saving)
+			newHorizonsHeroes::validateCrisisCommandProfileSerialization(perkState.rules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
 		if(h.saving)
 			newHorizonsHeroes::validateAenainFrailtySpecialtySerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_AENAIN_FRAILTY_SPECIALTY));
@@ -682,6 +703,23 @@ public:
 			newHorizonsHeroes::validateOffensiveStartSpecialtySerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES));
 		if(h.saving)
+			newHorizonsHeroes::validateNavigationStartSerialization(primaryGrowthRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NAVIGATION_START_REPLACEMENTS));
+		if(h.saving)
+			validateDefaultCreatureLineSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
+		if(h.saving)
+			newHorizonsHeroes::validateRemainingSpellSpecialtySerialization(primaryGrowthRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPELL_SPECIALTIES));
+		if(h.saving)
+			newHorizonsHeroes::validateArtifactManaRegenerationSerialization(capabilityRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_ARTIFACT_MANA_REGENERATION));
+		if(h.saving)
+			newHorizonsHeroes::validateGlyphsOfFearSerialization(capabilityRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_GLYPHS_OF_FEAR_AURA));
+		if(h.saving)
+			newHorizonsLighthouse::validateRulesSerialization(primaryGrowthRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
+		if(h.saving)
 			newHorizonsHeroes::validateStartingDevelopmentSerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
 		if(h.saving)
@@ -690,6 +728,9 @@ public:
 		if(h.saving)
 			newHorizonsHeroes::validateCoroniusHolyWrathSerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_CORONIUS_HOLY_WRATH));
+		if(h.saving)
+			newHorizonsHeroes::validateStartingBookSerialization(primaryGrowthRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_BOOK_REPLACEMENTS));
 		if(h.saving)
 			newHorizonsHeroes::validateReanimateSpecialtySerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
@@ -705,6 +746,7 @@ public:
 		{
 			validateNewHorizonsScholarSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LEARNING_SCHOLAR));
 			validateNewHorizonsRecruitersContactsSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITERS_CONTACTS));
+			validateNewHorizonsLegendaryReputationSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LEGENDARY_REPUTATION));
 			validateNewHorizonsSageSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SAGE_GUILD_VISITS));
 			if(!isValidNewHorizonsLearningMentorState(id, newHorizonsLearningMentorLastWeek,
 				newHorizonsLearningMentorRecipients))
@@ -807,8 +849,13 @@ public:
 			h & lastPrimaryGains;
 			if(!h.saving)
 			{
+				newHorizonsHeroes::validateNavigationStartSerialization(primaryGrowthRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_NAVIGATION_START_REPLACEMENTS));
+				validateDefaultCreatureLineSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
 				newHorizonsHeroes::validateStartingDevelopmentSerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
+				newHorizonsHeroes::validateStartingBookSerialization(primaryGrowthRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_BOOK_REPLACEMENTS));
 				newHorizonsHeroes::validateCoroniusHolyWrathSerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_CORONIUS_HOLY_WRATH));
 				newHorizonsHeroes::validateFrailtySpecialtySerialization(primaryGrowthRules,
@@ -819,6 +866,10 @@ public:
 					h.hasFeature(Handler::Version::NEW_HORIZONS_DEFENSIVE_START_SPECIALTIES));
 				newHorizonsHeroes::validateOffensiveStartSpecialtySerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES));
+				newHorizonsHeroes::validateRemainingSpellSpecialtySerialization(primaryGrowthRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPELL_SPECIALTIES));
+				newHorizonsLighthouse::validateRulesSerialization(primaryGrowthRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
 				newHorizonsHeroes::validateRemainingStartSerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
 				newHorizonsHeroes::validateReanimateSpecialtySerialization(primaryGrowthRules,
@@ -838,7 +889,13 @@ public:
 		{
 			h & capabilityRules;
 			if(!h.saving)
+			{
+				newHorizonsHeroes::validateArtifactManaRegenerationSerialization(capabilityRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_ARTIFACT_MANA_REGENERATION));
+				newHorizonsHeroes::validateGlyphsOfFearSerialization(capabilityRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_GLYPHS_OF_FEAR_AURA));
 				newHorizonsHeroes::validateResolvedCapabilityRules(capabilityRules);
+			}
 		}
 		else if(!h.saving)
 			capabilityRules = JsonNode();
@@ -1010,6 +1067,13 @@ public:
 		}
 		if(!h.saving)
 			validateNewHorizonsScholarSerialization(true);
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_LEGENDARY_REPUTATION))
+			h & newHorizonsLegendaryReputationLastMonth;
+		else if(!h.saving)
+			newHorizonsLegendaryReputationLastMonth = -1;
+		if(!h.saving)
+			validateNewHorizonsLegendaryReputationSerialization(true);
+
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITERS_CONTACTS))
 			h & newHorizonsRecruitersContactsLastWeek;
 		else if(!h.saving)
@@ -1032,5 +1096,11 @@ public:
 		}
 		if(!h.saving && h.loadingGamestate)
 			attachCommanderToArmy();
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS))
+			h & protectedAdventureFlightLayer;
+		else if(!h.saving)
+			protectedAdventureFlightLayer = EPathfindingLayer::LAND;
+		if(!h.saving)
+			validateProtectedAdventureMobilitySerialization(true);
 	}
 };

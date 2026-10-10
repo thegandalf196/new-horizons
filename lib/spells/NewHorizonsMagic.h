@@ -37,6 +37,8 @@ class Spell;
 
 namespace newHorizonsMagic
 {
+DLL_LINKAGE bool requiresWaterWalkLegalDayEnd(const JsonNode & rules);
+DLL_LINKAGE void validateWaterWalkDayEndSerialization(const JsonNode & rules, bool supported);
 constexpr int RULESET_VERSION = 1;
 constexpr int DIRECT_DAMAGE_RULESET_VERSION = 2;
 constexpr int SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION = 3;
@@ -286,6 +288,10 @@ DLL_LINKAGE std::string spellDescriptionForHero(const CGHeroInstance * hero,
 	const spells::Spell * spell, int schoolLevel);
 /// Read only the supplied saved roster using the spell's canonical scoped key.
 /// Absent snapshots/rows/formulas return null; no installed definition fallback.
+DLL_LINKAGE int64_t hexOfPainFlatDamage(int32_t spellPower, int32_t coefficientBasisPoints,
+	int32_t warcastingPercent, int32_t empowerPercent, int32_t specialtyPercent, bool painweaver);
+DLL_LINKAGE int64_t plagueTickDamage(int32_t spellPower, int32_t coefficientBasisPoints,
+	int32_t specialtyPercent);
 DLL_LINKAGE std::optional<DirectDamageFormula> spellDirectDamage(const JsonNode & rules, const std::string & scopedIdentity);
 /// Explicit saved-v3 opt-in to selected-section and field Earthquake behavior.
 DLL_LINKAGE bool earthquakeRulesEnabled(const JsonNode & rules, SpellID spell);

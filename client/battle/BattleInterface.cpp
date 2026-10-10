@@ -1209,6 +1209,9 @@ void BattleInterface::giveCommand(EActionType action, const std::vector<BattleHe
 
 void BattleInterface::sendCommand(BattleAction command, const CStack * actor)
 {
+	const auto & crisis = getBattle()->getBattle()->getCrisisCommandState();
+	if(crisis.choice() && command.actionType != EActionType::HERO_COMMAND
+		&& command.actionType != EActionType::NO_ACTION) return;
 	if(isDeploymentPhase())
 	{
 		// The deployment window permits only the active human's movement
@@ -1601,7 +1604,8 @@ void BattleInterface::presentPendingHeroOrderChoice()
 		|| actionsController->heroSpellcastingModeActive())
 		return;
 	const auto callback = getBattle();
-	if((!callback->battleHasPendingDoubleCommand(callback->battleGetMySide())
+	if((!callback->getBattle()->getCrisisCommandState().choice()
+		&& !callback->battleHasPendingDoubleCommand(callback->battleGetMySide())
 		&& !callback->battleHasPendingPreCombatOrder(callback->battleGetMySide()))
 		|| !ENGINE->windows().findWindows<BattleHeroActionWindow>().empty())
 		return;

@@ -270,6 +270,7 @@ class DLL_LINKAGE CampaignState : public Campaign
 
 public:
 	CampaignState() = default;
+	void validateDefaultCreatureLineSerialization(bool supported) const;
 
 	/// Copies persist-flagged script variables of the given map into the campaign state.
 	void savePersistentVariables(const CMap & map);
@@ -351,9 +352,13 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateDefaultCreatureLineSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
 		h & static_cast<Campaign&>(*this);
 		h & scenarioHeroPool;
 		h & globalHeroPool;
+		if(!h.saving)
+			validateDefaultCreatureLineSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
 		h & mapPieces;
 		h & mapsConquered;
 		h & currentMap;

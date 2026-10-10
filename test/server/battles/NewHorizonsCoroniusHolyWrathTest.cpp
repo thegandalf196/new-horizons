@@ -3,6 +3,7 @@
  * License: GNU General Public License v2 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../NewHorizonsHistoricalAdventurePolicyTestUtils.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/GameSettings.h"
@@ -58,13 +59,24 @@ protected:
 		HeroCommandFixture::mapLoaded(loaded);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 		if(absent)
+		{
 			rules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
+			rules.Struct().erase("lighthouseDeparture");
+			rules["startingSkills"].Struct().erase("startingBookReplacements");
+			rules.Struct().erase("remainingSpellSpecialtyReplacements");
+			rules["skillSpecialties"].Struct().erase("navigationStartReplacements");
+			rules.Struct().erase("defaultCreatureLineReplacements");
+			std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(),
+				[](const JsonNode & value) { return value.String() == "new-horizons:phantomArmy"; });
+		}
 		if(disabled)
 			rules["damageSpellSpecialties"]["coroniusHolyWrathReplacement"].Bool() = false;
 		rules.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			legacy ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		if(absent)
+			isolateHistoricalAdventurePolicies(*loaded);
 	}
 	void prepare()
 	{

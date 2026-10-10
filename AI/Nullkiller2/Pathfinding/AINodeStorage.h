@@ -44,13 +44,15 @@ enum DayFlags : ui8
 	FLY_CAST = 1,
 	WATER_WALK_CAST = 2,
 	NEW_HORIZONS_ADVENTURE_SPELL_CAST = 4,
-	NEW_HORIZONS_CASTLE_GATE_USED = 8
+	NEW_HORIZONS_CASTLE_GATE_USED = 8,
+	NEW_HORIZONS_LIGHTHOUSE_DEPARTURE = 16
 };
 
 inline DayFlags newHorizonsDailyOpportunityFlags(const DayFlags flags)
 {
 	constexpr ui8 trackedFlags = static_cast<ui8>(DayFlags::NEW_HORIZONS_ADVENTURE_SPELL_CAST)
-		| static_cast<ui8>(DayFlags::NEW_HORIZONS_CASTLE_GATE_USED);
+		| static_cast<ui8>(DayFlags::NEW_HORIZONS_CASTLE_GATE_USED)
+		| static_cast<ui8>(DayFlags::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE);
 	return static_cast<DayFlags>(static_cast<ui8>(flags) & trackedFlags);
 }
 

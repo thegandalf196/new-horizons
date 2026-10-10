@@ -11,6 +11,7 @@
 #include "StdInc.h"
 #include "MapFormatJson.h"
 #include "../IGameSettings.h"
+#include "../pathfinder/NewHorizonsProtectedMobility.h"
 
 #include "../filesystem/CInputStream.h"
 #include "../filesystem/COutputStream.h"
@@ -241,7 +242,8 @@ namespace TerrainDetail
 
 ///CMapFormatJson
 const int CMapFormatJson::VERSION_MAJOR_WITH_MAGIC_OVERRIDE = 4;
-const int CMapFormatJson::VERSION_MAJOR = VERSION_MAJOR_WITH_MAGIC_OVERRIDE;
+const int CMapFormatJson::VERSION_MAJOR_WITH_PROTECTED_MOBILITY = 5;
+const int CMapFormatJson::VERSION_MAJOR = VERSION_MAJOR_WITH_PROTECTED_MOBILITY;
 const int CMapFormatJson::VERSION_MAJOR_WITHOUT_MAGIC_OVERRIDE = 3;
 const int CMapFormatJson::VERSION_MINOR = 0;
 
@@ -994,6 +996,19 @@ void CMapLoaderJson::readHeader(const bool complete)
 	}
 
 	// Load translations BEFORE deserializing header so that header.name etc. can be translated
+	if(header.Struct().contains("protectedAdventureMobilityTiles"))
+	{
+		auto tiles = newHorizonsProtectedMobility::readTiles(header["protectedAdventureMobilityTiles"],
+			mapHeader->width, mapHeader->height, mapHeader->levels());
+		if(!tiles.empty() && fileVersionMajor < VERSION_MAJOR_WITH_PROTECTED_MOBILITY)
+			throw std::runtime_error("Protected adventure mobility tiles require map format version 5");
+		if(complete)
+			map->setProtectedAdventureMobilityTiles(std::move(tiles));
+	}
+	else if(complete)
+		map->setProtectedAdventureMobilityTiles({});
+
+	// Load translations BEFORE deserializing header so that header.name etc. can be translated
 	readTranslations();
 
 	serializeHeader(handler);
@@ -1417,6 +1432,12 @@ void CMapSaverJson::writeHeader()
 
 	const auto magicOverride = map->getMagicOverride();
 	header["versionMajor"].Float() = magicOverride ? VERSION_MAJOR_WITH_MAGIC_OVERRIDE : VERSION_MAJOR_WITHOUT_MAGIC_OVERRIDE;
+	if(!map->getProtectedAdventureMobilityTiles().empty())
+	{
+		map->validateProtectedAdventureMobilitySerialization(true);
+		header["versionMajor"].Float() = VERSION_MAJOR_WITH_PROTECTED_MOBILITY;
+		header["protectedAdventureMobilityTiles"] = newHorizonsProtectedMobility::writeTiles(map->getProtectedAdventureMobilityTiles());
+	}
 	if(magicOverride)
 		header["newHorizonsMagic"] = *magicOverride;
 	header["versionMinor"].Float() = VERSION_MINOR;

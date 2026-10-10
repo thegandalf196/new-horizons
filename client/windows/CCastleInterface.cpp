@@ -85,6 +85,14 @@
 #include <limits>
 #include <utility>
 
+static std::string currentBuildingDescription(const CBuilding & building)
+{
+	const auto & callback = GAME->interface()->cb;
+	const auto description = newHorizonsBuildingVisitHelp::lighthouseDescription(
+		building.getUniqueTypeID(), callback->getHeroDevelopmentRules(), callback->getHeroCapabilityRules());
+	return description.empty() ? building.getDescriptionTranslated() : description.toString(&GAME->translator());
+}
+
 static std::optional<newHorizonsCreatures::CreatureCategoryView> currentCreatureCategory(const CCreature * creature)
 {
 	if(!creature || !GAME || !GAME->interface() || !GAME->interface()->cb)
@@ -881,7 +889,7 @@ void CBuildingRect::showPopupWindow(const Point & cursorPosition)
 	const CBuilding *bld = town->getTown()->buildings.at(bid).get();
 	if (!bid.isDwelling())
 	{
-		std::string description = bld->getDescriptionTranslated();
+		std::string description = currentBuildingDescription(*bld);
 		const auto visitStatus = getNewHorizonsBuildingVisitStatus(town, bid);
 		if(!visitStatus.empty())
 			description += "\n\n" + visitStatus.toString(&GAME->translator());
@@ -1737,7 +1745,7 @@ void CCastleBuildings::enterBlacksmith(BuildingID building, ArtifactID artifactI
 void CCastleBuildings::enterBuilding(BuildingID building)
 {
 	std::vector<std::shared_ptr<CComponent>> comps(1, std::make_shared<CComponent>(ComponentType::BUILDING, BuildingTypeUniqueID(town->getFactionID(), building)));
-	GAME->interface()->showInfoDialog( town->getTown()->buildings.find(building)->second->getDescriptionTranslated(), comps);
+	GAME->interface()->showInfoDialog(currentBuildingDescription(*town->getTown()->buildings.find(building)->second), comps);
 }
 
 void CCastleBuildings::enterCastleGate(BuildingID building)
@@ -2325,7 +2333,7 @@ void CTownInfo::showPopupWindow(const Point & cursorPosition)
 	if(building)
 	{
 		auto c =  std::make_shared<CComponent>(ComponentType::BUILDING, BuildingTypeUniqueID(building->town->faction->getId(), building->bid));
-		CRClickPopup::createAndPush(CInfoWindow::genText(building->getNameTranslated(), building->getDescriptionTranslated()), c);
+		CRClickPopup::createAndPush(CInfoWindow::genText(building->getNameTranslated(), currentBuildingDescription(*building)), c);
 	}
 }
 
@@ -2951,7 +2959,7 @@ CBuildWindow::CBuildWindow(const CGTownInstance *Town, const CBuilding * Buildin
 	nameString.replaceTextID(building->getNameTextID());
 
 	name = std::make_shared<CLabel>(197, 30, FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, nameString.toString(&GAME->translator()));
-	description = std::make_shared<CTextBox>(building->getDescriptionTranslated(), Rect(33, 135, 329, 67), 0, FONT_MEDIUM, ETextAlignment::CENTER);
+	description = std::make_shared<CTextBox>(currentBuildingDescription(*building), Rect(33, 135, 329, 67), 0, FONT_MEDIUM, ETextAlignment::CENTER);
 	stateText = std::make_shared<CTextBox>(getTextForState(state), Rect(33, 216, 329, 67), 0, FONT_SMALL, ETextAlignment::CENTER);
 
 	//Create components for all required resources

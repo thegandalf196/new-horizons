@@ -130,9 +130,34 @@ void validateWarMachineShop(const JsonNode & node)
 	}
 }
 
+void validateArtifactManaRegeneration(const JsonNode & node)
+{
+	fields(node, {"core:charmOfMana", "core:talismanOfMana", "core:mysticOrbOfMana"});
+	require(node.Struct().size() == 3, "three Mana regeneration artifact tiers required");
+	std::set<int> seen;
+	for(const auto & [key, tier] : node.Struct())
+	{
+		require(seen.insert(resolveArtifact(key).getNum()).second, "duplicate Mana regeneration artifact");
+		fields(tier, {"minimum", "percent"});
+		require(integer(tier["minimum"], 0, std::numeric_limits<int>::max()), "Mana regeneration minimum");
+		require(integer(tier["percent"], 0, std::numeric_limits<int>::max()), "Mana regeneration percent");
+	}
+}
+
+void validateGlyphsOfFearAura(const JsonNode & node)
+{
+	fields(node, {"radius", "morale"});
+	require(integer(node["radius"], 0, std::numeric_limits<int>::max()), "Glyphs of Fear radius");
+	require(integer(node["morale"], -1000, -1), "Glyphs of Fear hostile Morale");
+}
+
 void common(const JsonNode & rules)
 {
 	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
+	if(rules.Struct().contains("artifactManaRegeneration"))
+		validateArtifactManaRegeneration(rules["artifactManaRegeneration"]);
+	if(rules.Struct().contains("glyphsOfFearAura"))
+		validateGlyphsOfFearAura(rules["glyphsOfFearAura"]);
 	require(integer(rules["rulesetVersion"], 1, CAPABILITY_RULESET_VERSION), "rulesetVersion");
 	if(!rules["skeletonTransformer"].isNull())
 	{
@@ -205,7 +230,7 @@ void validateCapabilityRules(const JsonNode & rules, bool requireAllClasses)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "classProfiles", "leadership", "siege", "warMachineShop", "skeletonTransformer"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "classProfiles", "leadership", "siege", "warMachineShop", "skeletonTransformer", "artifactManaRegeneration", "glyphsOfFearAura"});
 	common(rules);
 	require(rules["classProfiles"].isStruct() && !rules["classProfiles"].Struct().empty(), "class profiles");
 	std::set<int> seen;
@@ -224,7 +249,7 @@ void validateResolvedCapabilityRules(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "profile", "leadership", "siege", "warMachineShop", "skeletonTransformer"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "profile", "leadership", "siege", "warMachineShop", "skeletonTransformer", "artifactManaRegeneration", "glyphsOfFearAura"});
 	common(rules);
 	profile(rules["profile"]);
 }
@@ -241,6 +266,10 @@ JsonNode resolveCapabilityRules(const JsonNode & rules, HeroClassID heroClass)
 		result["warMachineShop"] = rules["warMachineShop"];
 	if(!rules["skeletonTransformer"].isNull())
 		result["skeletonTransformer"] = rules["skeletonTransformer"];
+	if(rules.Struct().contains("artifactManaRegeneration"))
+		result["artifactManaRegeneration"] = rules["artifactManaRegeneration"];
+	if(rules.Struct().contains("glyphsOfFearAura"))
+		result["glyphsOfFearAura"] = rules["glyphsOfFearAura"];
 	for(const auto & [key, value] : rules["classProfiles"].Struct())
 		if(resolveClass(key) == heroClass.getNum())
 			result["profile"] = value;
@@ -257,6 +286,47 @@ std::optional<int> capabilitySkeletonTransformerHealthPercent(const JsonNode & r
 	else
 		validateResolvedCapabilityRules(rules);
 	return static_cast<int>(rules["skeletonTransformer"]["aggregateHealthPercent"].Integer());
+}
+
+void validateArtifactManaRegenerationSerialization(const JsonNode & rules, bool supported)
+{
+	if(!rules.isStruct() || !rules.Struct().contains("artifactManaRegeneration"))
+		return;
+	require(supported, "Mana regeneration artifact tiers require a supported format");
+	validateArtifactManaRegeneration(rules["artifactManaRegeneration"]);
+}
+
+std::optional<int> capabilityArtifactManaRegeneration(
+	const JsonNode & rules, ArtifactID artifact, int maximumMana)
+{
+	if(!usesRules(rules) || !rules.Struct().contains("artifactManaRegeneration"))
+		return std::nullopt;
+	validateArtifactManaRegeneration(rules["artifactManaRegeneration"]);
+	for(const auto & [key, tier] : rules["artifactManaRegeneration"].Struct())
+		if(resolveArtifact(key) == artifact)
+		{
+			const int64_t percentage = static_cast<int64_t>(std::max(0, maximumMana)) * tier["percent"].Integer() / 100;
+			return static_cast<int>(std::min<int64_t>(std::numeric_limits<int>::max(),
+				std::max<int64_t>(tier["minimum"].Integer(), percentage)));
+		}
+	return std::nullopt;
+}
+
+void validateGlyphsOfFearSerialization(const JsonNode & rules, bool supported)
+{
+	if(!rules.isStruct() || !rules.Struct().contains("glyphsOfFearAura"))
+		return;
+	require(supported, "Glyphs of Fear aura requires a supported format");
+	validateGlyphsOfFearAura(rules["glyphsOfFearAura"]);
+}
+
+std::optional<GlyphsOfFearAura> capabilityGlyphsOfFearAura(const JsonNode & rules)
+{
+	if(!usesRules(rules) || !rules.Struct().contains("glyphsOfFearAura"))
+		return std::nullopt;
+	validateGlyphsOfFearAura(rules["glyphsOfFearAura"]);
+	return GlyphsOfFearAura{static_cast<int>(rules["glyphsOfFearAura"]["radius"].Integer()),
+		static_cast<int>(rules["glyphsOfFearAura"]["morale"].Integer())};
 }
 
 LeadershipCapacity capabilityLeadership(const JsonNode & rules, int level, int leadershipRank, uint64_t used)

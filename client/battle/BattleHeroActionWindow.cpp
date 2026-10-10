@@ -5,6 +5,7 @@
 #include "StdInc.h"
 #include "BattleHeroActionWindow.h"
 #include "../../lib/CCreatureHandler.h"
+#include "../../lib/CStack.h"
 #include "../../lib/battle/Unit.h"
 #include "BattleInterface.h"
 #include "BattleWindow.h"
@@ -69,6 +70,7 @@ std::string orderAllowanceSourceName(HeroActionAllowanceState::GrantSource sourc
 		case HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND: return "Double Command";
 		case HeroActionAllowanceState::GrantSource::BATTLE_PLAN: return "Battle Plan";
 		case HeroActionAllowanceState::GrantSource::DIVINE_MANDATE: return "Divine Mandate";
+		case HeroActionAllowanceState::GrantSource::CRISIS_COMMAND: return "Crisis Command";
 	}
 	return "Additional ability";
 }
@@ -341,6 +343,17 @@ void BattleHeroActionWindow::cancelSelection()
 	if(auto owner = currentBattle())
 	{
 		const auto callback = owner->getBattle();
+		const auto & crisis = callback->getBattle()->getCrisisCommandState();
+		if(crisis.choice())
+		{
+			const auto * anchor = callback->battleGetStackByID(crisis.returns.back().anchor);
+			if(!anchor) return;
+			auto decline = BattleAction::makeNoAction(anchor);
+			decline.side = crisis.chooser();
+			close();
+			owner->sendCommand(decline, anchor);
+			return;
+		}
 		if(callback->battleHasPendingDoubleCommand(callback->battleGetMySide())
 			|| callback->battleHasPendingPreCombatOrder(callback->battleGetMySide()))
 			return;
@@ -402,9 +415,10 @@ void BattleHeroActionWindow::refresh()
 		owner->getBattle()->battleGetMySide());
 	const bool pendingPreCombatOrder = owner && owner->getBattle()->battleHasPendingPreCombatOrder(
 		owner->getBattle()->battleGetMySide());
-	const bool pendingOrder = pendingDoubleCommand || pendingPreCombatOrder;
+	const bool pendingCrisis = owner && owner->getBattle()->getBattle()->getCrisisCommandState().choice();
+	const bool pendingOrder = pendingDoubleCommand || pendingPreCombatOrder || pendingCrisis;
 	if(cancel)
-		cancel->block(pendingOrder);
+		cancel->block(pendingOrder && !pendingCrisis);
 	if(!owner)
 	{
 		if(spellButton)
@@ -450,7 +464,7 @@ void BattleHeroActionWindow::refresh()
 	const bool canSpell = spellButton && hero
 		&& (spellProblem == ESpellCastProblem::OK || spellProblem == ESpellCastProblem::CASTS_PER_TURN_LIMIT);
 	if(spellButton)
-		spellButton->block(!canAct || !canSpell);
+		spellButton->block(!canAct || !canSpell || pendingCrisis);
 	const auto actionCounts = callback->battleUsesHeroCommands()
 		? callback->battleHeroActionAllowanceCounts(side)
 		: HeroActionAllowanceState::Counts{};
@@ -634,7 +648,9 @@ void BattleHeroActionWindow::refresh()
 		else
 			availability = anyCommand ? "Order available" : "No Order currently available";
 	}
-	std::string stateText = pendingPreCombatOrder
+	std::string stateText = pendingCrisis
+		? "Crisis Command: choose one free Order now, or Cancel to decline"
+		: pendingPreCombatOrder
 		? "Battle Plan: choose a free opening Order now"
 		: pendingDoubleCommand
 		? "Double Command: choose a different Order now"

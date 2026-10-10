@@ -53,11 +53,18 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && info)
+			newHorizonsMagic::validateWaterWalkDayEndSerialization(info->getMagicRules(),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END));
+		if(h.saving && info)
+			info->validateProtectedAdventureMobilitySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
 		if(h.saving && trainingReplay && (!info || info->trainingEntrySnapshot.empty()
 			|| !trainingEntry.empty() || !h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING)))
 			throw std::runtime_error("Invalid training replay snapshot");
 		if(h.saving)
 			trainingEntry.validateSerialization(h);
+		if(h.saving && info)
+			info->validateRapidResponseSerialization(h);
 		if(h.saving && info)
 			info->validateTrainingSerialization(h);
 		if(h.saving && info) info->validatePlagueSerialization(h);
@@ -67,6 +74,10 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 			info->validateSharedPurposeSerialization(h);
 		if(h.saving && info)
 			info->validateReactiveWeaveSerialization(h);
+		if(h.saving && info)
+			info->validateSeizeInitiativeSerialization(h);
+		if(h.saving && info)
+			info->validateCrisisCommandSerialization(h);
 		if(h.saving && info)
 			info->validateSwiftRebirthSerialization(h);
 		if(h.saving && info)
@@ -79,6 +90,8 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 			info->validateBloodrageDeathPerksSerialization(h);
 		if(h.saving && info)
 			info->validateFrozenSerialization(h);
+		if(h.saving && info)
+			info->validateHeroicSpiritSerialization(h);
 		if(h.saving && info)
 			info->validatePerfectFortuneSerialization(h);
 		if(h.saving && info)
@@ -148,6 +161,8 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info && !h.hasFeature(Handler::Version::BATTLE_INITIAL_DEPLOYMENT_ORDER)
 			&& info->getDeploymentState().hasNonDefaultInitialOrder())
 			throw std::runtime_error("Cannot discard initial deployment order from BattleStart");
+		if(h.saving && info)
+			info->validateOpportunistSerialization(h);
 		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_RANGED_FOLLOW_UP)
 			&& info->hasRangedFollowUpState())
 			throw std::runtime_error("Cannot discard ranged follow-up battle start state");
@@ -366,6 +381,42 @@ struct DLL_LINKAGE BattleMoraleSuppressionStateChanged : public CPackForClient
 		h & side;
 		h & state;
 		validateShape();
+	}
+};
+
+/// Compare-and-apply a captured queue transition, never a request for a new activation.
+struct DLL_LINKAGE BattleRapidResponseStateChanged : public CPackForClient
+{
+	BattleID battleID = BattleID::NONE;
+	BattleSide side = BattleSide::NONE;
+	RapidResponseState expected;
+	RapidResponseState state;
+	enum class Transition : uint8_t { CAPTURE, CONSUME, CLEAR };
+	Transition transition = Transition::CAPTURE;
+	void visitTyped(ICPackVisitor & visitor) override;
+	void validateAgainst(const CBattleInfoCallback & battle) const;
+	template <typename Handler> void serialize(Handler & h)
+	{
+		expected.validateShape();
+		state.validateShape();
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RAPID_RESPONSE)
+			|| (h.saving && (battleID == BattleID::NONE
+				|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+				|| transition > Transition::CLEAR)))
+			throw std::runtime_error("Invalid or unsupported Rapid Response update");
+		h & battleID;
+		h & side;
+		h & expected;
+		h & state;
+		h & transition;
+		if(!h.saving)
+		{
+			expected.validateShape();
+			state.validateShape();
+			if(battleID == BattleID::NONE || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+				|| transition > Transition::CLEAR)
+				throw std::runtime_error("Invalid saved Rapid Response update");
+		}
 	}
 };
 
@@ -632,6 +683,33 @@ struct DLL_LINKAGE SetBattlecraftMasteryAward : public CPackForClient
 	}
 };
 
+/// Authority-authored suspension/return receipt and its exact dedicated grant.
+struct DLL_LINKAGE BattleCrisisCommandChanged : public CPackForClient
+{
+	BattleID battleID = BattleID::NONE;
+	newHorizonsCrisisCommand::State state;
+	BattleSide allowanceSide = BattleSide::NONE;
+	std::optional<HeroActionAllowanceState> allowances;
+	void visitTyped(ICPackVisitor & visitor) override;
+	void validateShape() const
+	{
+		if(battleID == BattleID::NONE || (allowances.has_value()
+			!= (allowanceSide == BattleSide::ATTACKER || allowanceSide == BattleSide::DEFENDER))
+			|| (!allowances && allowanceSide != BattleSide::NONE))
+			throw std::runtime_error("Invalid Crisis Command packet");
+		state.validateShape();
+		if(allowances) allowances->validateShape();
+	}
+	template<typename Handler> void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND))
+			throw std::runtime_error("Crisis Command transition requires its protocol");
+		if(h.saving) validateShape();
+		h & battleID; h & state; h & allowanceSide; h & allowances;
+		validateShape();
+	}
+};
+
 struct DLL_LINKAGE BattleSetActiveStack : public CPackForClient
 {
 	BattleID battleID = BattleID::NONE;
@@ -642,6 +720,9 @@ struct DLL_LINKAGE BattleSetActiveStack : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && (reason == BattleUnitTurnReason::CRISIS_ORDER || reason == BattleUnitTurnReason::CRISIS_RESUME)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND))
+			throw std::runtime_error("Crisis Command anchor requires its protocol");
 		if(h.saving && reason == BattleUnitTurnReason::PURSUIT_CONTINUATION
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_PURSUIT))
 			throw std::runtime_error("Can not serialize a Pursuit continuation to an older format");
@@ -654,6 +735,9 @@ struct DLL_LINKAGE BattleSetActiveStack : public CPackForClient
 		h & battleID;
 		h & stack;
 		h & reason;
+		if((reason == BattleUnitTurnReason::CRISIS_ORDER || reason == BattleUnitTurnReason::CRISIS_RESUME)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND))
+			throw std::runtime_error("Old-format raw activation contains Crisis Command");
 		assert(battleID != BattleID::NONE);
 	}
 };
@@ -918,6 +1002,7 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 				change.validateFrozenSerialization(h);
 				change.validateBattleFormSerialization(h);
 				change.validateConfusionSerialization(h);
+				change.validateOpportunistSerialization(h);
 			}
 		}
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_REBIRTH_OUTPUT_ORIGINAL_HP)
@@ -1049,6 +1134,7 @@ struct BattleStackAttacked
 			newState.validateFrozenSerialization(h);
 			newState.validateBattleFormSerialization(h);
 			newState.validateConfusionSerialization(h);
+			newState.validateOpportunistSerialization(h);
 		}
 		if(h.saving)
 			validateArmorerLastStandShape();
@@ -1215,6 +1301,7 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 				change.validateFrozenSerialization(h);
 				change.validateBattleFormSerialization(h);
 				change.validateConfusionSerialization(h);
+				change.validateOpportunistSerialization(h);
 			}
 			for(const auto & hit : bsa)
 			{
@@ -1227,6 +1314,7 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 					throw std::runtime_error("Cannot discard Frozen Shatter in an older battle attack format");
 				hit.newState.validateBattleFormSerialization(h);
 				hit.newState.validateConfusionSerialization(h);
+				hit.newState.validateOpportunistSerialization(h);
 			}
 		}
 		if(h.saving)
@@ -1608,6 +1696,30 @@ struct DLL_LINKAGE BattleHeroOrderStateChanged : public CPackForClient
 	}
 };
 
+/// Compare/apply a genuine completed activation; normal-slot provenance is
+/// independent of moved flags subsequently reset by earned extra activations.
+struct DLL_LINKAGE BattleNormalActivationCompleted : public CPackForClient
+{
+	BattleID battleID = BattleID::NONE;
+	uint32_t unitId = SeizeInitiativeState::NO_UNIT;
+	SeizeInitiativeState expected;
+	void visitTyped(ICPackVisitor & visitor) override;
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SEIZE_INITIATIVE))
+			throw std::runtime_error("Normal activation receipt requires Seize Initiative format");
+		if(h.saving)
+		{
+			expected.validateShape();
+			if(!expected.enabled() || expected.active != unitId || unitId == SeizeInitiativeState::NO_UNIT)
+				throw std::runtime_error("Invalid normal activation completion receipt");
+		}
+		h & battleID; h & unitId; h & expected;
+		if(!h.saving && (!expected.enabled() || expected.active != unitId || unitId == SeizeInitiativeState::NO_UNIT))
+			throw std::runtime_error("Invalid normal activation completion receipt");
+	}
+};
+
 struct DLL_LINKAGE EndAction : public CPackForClient
 {
 	void visitTyped(ICPackVisitor & visitor) override;
@@ -1786,6 +1898,7 @@ struct DLL_LINKAGE StacksInjured : public CPackForClient
 					throw std::runtime_error("Cannot discard Frozen Shatter in an older injury format");
 				hit.newState.validateBattleFormSerialization(h);
 				hit.newState.validateConfusionSerialization(h);
+				hit.newState.validateOpportunistSerialization(h);
 			}
 		}
 		if(h.saving && !h.hasFeature(Handler::Version::BATTLE_CASUALTY_PROVENANCE)
@@ -1999,14 +2112,31 @@ struct DLL_LINKAGE BattleTriggerEffect : public CPackForClient
 	BonusType effect = BonusType::NONE;
 	int val = 0;
 	int additionalInfo = 0;
+	bool heroicSpiritGrant = false;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && heroicSpiritGrant)
+		{
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_HEROIC_SPIRIT))
+				throw std::runtime_error("Heroic Spirit grant requires current serialization");
+			if(effect != BonusType::MORALE || val <= 0 || stackID < 0 || battleID == BattleID::NONE)
+				throw std::runtime_error("Invalid Heroic Spirit grant packet");
+		}
 		h & battleID;
 		h & stackID;
 		h & effect;
 		h & val;
 		h & additionalInfo;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_HEROIC_SPIRIT))
+		{
+			h & heroicSpiritGrant;
+			if(heroicSpiritGrant && (effect != BonusType::MORALE || val <= 0
+				|| stackID < 0 || battleID == BattleID::NONE))
+				throw std::runtime_error("Invalid Heroic Spirit grant packet");
+		}
+		else if(!h.saving)
+			heroicSpiritGrant = false;
 		assert(battleID != BattleID::NONE);
 	}
 

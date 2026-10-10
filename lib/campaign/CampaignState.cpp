@@ -325,6 +325,15 @@ std::shared_ptr<CMapInfo> CampaignState::getMapInfo(CampaignScenarioID scenarioI
 	return mapInfo;
 }
 
+void CampaignState::validateDefaultCreatureLineSerialization(bool supported) const
+{
+	for(const auto & [scenario, pool] : scenarioHeroPool)
+		for(const auto & hero : pool)
+			newHorizonsHeroes::validateDefaultCreatureLineSerialization(hero["primaryGrowthRules"], supported);
+	for(const auto & [id, hero] : globalHeroPool)
+		newHorizonsHeroes::validateDefaultCreatureLineSerialization(hero["primaryGrowthRules"], supported);
+}
+
 JsonNode CampaignState::crossoverSerialize(CGHeroInstance * hero) const
 {
 	JsonNode node;
@@ -351,6 +360,7 @@ std::shared_ptr<CGHeroInstance> CampaignState::crossoverDeserialize(const JsonNo
 	hero->serializeJsonOptions(handler);
 	hero->primaryGrowthRules = node["primaryGrowthRules"];
 	newHorizonsHeroes::validateResolvedHeroRules(hero->primaryGrowthRules);
+	hero->validateDefaultCreatureLineSerialization(true);
 	hero->primaryGrowthCaptured = true; // Old crossover snapshots remain legacy too.
 	hero->capabilityRules = node["capabilityRules"];
 	newHorizonsHeroes::validateResolvedCapabilityRules(hero->capabilityRules);

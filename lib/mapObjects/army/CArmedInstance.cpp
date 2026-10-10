@@ -12,6 +12,7 @@
 #include "CArmedInstance.h"
 
 #include "CStackInstance.h"
+#include "../CGHeroInstance.h"
 
 #include "../../CPlayerState.h"
 #include "../../entities/faction/CTown.h"
@@ -60,6 +61,11 @@ bool CArmedInstance::canMixAlignment(EAlignment alignment) const
 	return hasBonusOfType(BonusType::ALIGNMENT_MIX, BonusCustomSubtype::alignment(alignment));
 }
 
+const CGHeroInstance * CArmedInstance::moraleCommander() const
+{
+	return dynamic_cast<const CGHeroInstance *>(this);
+}
+
 void CArmedInstance::updateMoraleBonusFromArmy()
 {
 	if(!validTypes(false)) //object not randomized, don't bother
@@ -74,6 +80,9 @@ void CArmedInstance::updateMoraleBonusFromArmy()
 
 	//number of alignments and presence of undead
 	std::set<FactionID> factions;
+	std::set<FactionID> ordinaryFactions;
+	const auto * commander = moraleCommander();
+	const bool loyal = commander && commander->hasActivePerk(newHorizonsTraining::DIPLOMACY, newHorizonsTraining::LOYAL_MERCENARIES);
 	bool hasUndead = false;
 
 	for(const auto & slot : Slots())
@@ -81,6 +90,8 @@ void CArmedInstance::updateMoraleBonusFromArmy()
 		const auto * creature = slot.second->getCreatureID().toEntity(LIBRARY);
 
 		factions.insert(creature->getFactionID());
+		if(!loyal || !slot.second->getTrainingReceipt().recruitedBy(commander->id))
+			ordinaryFactions.insert(creature->getFactionID());
 
 		// Check for undead flag instead of faction (undead mummies are neutral)
 		if(!hasUndead)
@@ -105,6 +116,16 @@ void CArmedInstance::updateMoraleBonusFromArmy()
 			factionsInArmy -= mixableFactions - 1;
 	}
 
+	// Loyal Mercenaries relieves only a negative faction-mix contribution.
+	// The original faction set remains authoritative for genuine unity.
+	size_t ordinaryCount = ordinaryFactions.size();
+	if(alignmentMix.hasBonus())
+	{
+		size_t mixable = 0;
+		for(const auto faction : ordinaryFactions)
+			if(canMixAlignment(LIBRARY->factions()->getById(faction)->getAlignment())) ++mixable;
+		if(mixable > 0) ordinaryCount -= mixable - 1;
+	}
 	MetaString bonusDescription;
 
 	if(factionsInArmy == 1)
@@ -115,6 +136,8 @@ void CArmedInstance::updateMoraleBonusFromArmy()
 	else if(!factions.empty()) // no bonus from empty garrison
 	{
 		b->val = 2 - static_cast<si32>(factionsInArmy);
+		if(loyal && b->val < 0)
+			b->val = std::min<si32>(0, 2 - static_cast<si32>(ordinaryCount));
 		bonusDescription.appendTextID("core.arraytxt.114"); //Troops of %d alignments %d
 		bonusDescription.replaceNumber(factionsInArmy);
 	}

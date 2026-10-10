@@ -3,6 +3,7 @@
  * License: GNU General Public License v2 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../NewHorizonsHistoricalAdventurePolicyTestUtils.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/GameSettings.h"
@@ -54,6 +55,13 @@ protected:
 		rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 		rules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
 		rules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
+		rules["startingSkills"].Struct().erase("startingBookReplacements");
+		rules.Struct().erase("remainingSpellSpecialtyReplacements");
+		rules["skillSpecialties"].Struct().erase("navigationStartReplacements");
+		rules.Struct().erase("defaultCreatureLineReplacements");
+		std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(),
+			[](const JsonNode & value) { return value.String() == "new-horizons:phantomArmy"; });
+		rules.Struct().erase("lighthouseDeparture");
 		rules["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
 		rules["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
 		rules["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");
@@ -75,6 +83,7 @@ protected:
 			rules.setOverrideFlag(true);
 		}
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
+		isolateHistoricalAdventurePolicies(*loaded);
 	}
 	void prepare(const std::string & specialist = "core:cyra", int rawSpellPower = 67)
 	{
@@ -325,6 +334,13 @@ TEST_F(NewHorizonsHasteSpecialtyTest, PreviousVeteranWriterRejectsBeforeHeroMapW
 	authoredRules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 	authoredRules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
 	authoredRules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
+	authoredRules["startingSkills"].Struct().erase("startingBookReplacements");
+	authoredRules.Struct().erase("remainingSpellSpecialtyReplacements");
+	authoredRules["skillSpecialties"].Struct().erase("navigationStartReplacements");
+	authoredRules.Struct().erase("defaultCreatureLineReplacements");
+	std::erase_if(authoredRules["nonDamageSpellSpecialties"]["spells"].Vector(),
+		[](const JsonNode & value) { return value.String() == "new-horizons:phantomArmy"; });
+	authoredRules.Struct().erase("lighthouseDeparture");
 	authoredRules["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
 	authoredRules["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
 	authoredRules["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");
@@ -386,6 +402,13 @@ TEST_F(NewHorizonsHasteSpecialtyTest, HistoricalListsRemainOldWritableAndRawRead
 	captured["heroes"]["newHorizons"]["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 	captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
 	captured["heroes"]["newHorizons"]["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
+	captured["heroes"]["newHorizons"]["startingSkills"].Struct().erase("startingBookReplacements");
+	captured["heroes"]["newHorizons"].Struct().erase("remainingSpellSpecialtyReplacements");
+	captured["heroes"]["newHorizons"]["skillSpecialties"].Struct().erase("navigationStartReplacements");
+	captured["heroes"]["newHorizons"].Struct().erase("defaultCreatureLineReplacements");
+	std::erase_if(captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"]["spells"].Vector(),
+		[](const JsonNode & value) { return value.String() == "new-horizons:phantomArmy"; });
+	captured["heroes"]["newHorizons"].Struct().erase("lighthouseDeparture");
 	captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
 	captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
 	captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");

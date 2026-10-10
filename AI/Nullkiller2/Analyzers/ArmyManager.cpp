@@ -18,6 +18,7 @@
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/TerrainHandler.h"
 #include "../../../lib/battle/NewHorizonsDiscipline.h"
+#include "../../../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
 
 namespace NK2AI
 {
@@ -173,10 +174,12 @@ std::vector<SlotInfo>::iterator ArmyManager::getBestUnitForScout(std::vector<Slo
 
 class TemporaryArmy : public CArmedInstance
 {
+	const CGHeroInstance * commander;
 public:
+	const CGHeroInstance * moraleCommander() const override { return commander; }
 	void armyChanged() override {}
-	TemporaryArmy()
-		:CArmedInstance(nullptr, BonusNodeType::UNKNOWN, true)
+	explicit TemporaryArmy(const CGHeroInstance * hero = nullptr)
+		:CArmedInstance(nullptr, BonusNodeType::UNKNOWN, true), commander(hero)
 	{
 	}
 };
@@ -215,7 +218,7 @@ std::vector<SlotInfo> ArmyManager::getBestArmy(const IBonusBearer * armyCarrier,
 	std::set<FactionID> allowedFactions;
 	std::vector<SlotInfo> resultingArmy;
 	uint64_t armyValue = 0;
-	TemporaryArmy newArmyInstance;
+	TemporaryArmy newArmyInstance(receiverHero);
 
 	const auto & badMoraleChance = cpsic->getSettings().getVector(EGameSettings::COMBAT_BAD_MORALE_CHANCE);
 	const auto & highMoraleChance = cpsic->getSettings().getVector(EGameSettings::COMBAT_GOOD_MORALE_CHANCE);
@@ -243,6 +246,16 @@ std::vector<SlotInfo> ArmyManager::getBestArmy(const IBonusBearer * armyCarrier,
 				if(slotID.validSlot())
 				{
 					newArmyInstance.setCreature(slotID, slot.creature->getId(), slot.count);
+					auto receipt = newArmyInstance.getStackPtr(slotID)->getTrainingReceipt();
+					for(const auto * army : {target, source})
+						for(const auto & [oldSlot, original] : army->Slots())
+							if(original->getCreatureID() == slot.creature->getId())
+							{
+								newHorizonsTraining::Receipt origins;
+								origins.mercenaryOrigins = original->getTrainingReceipt().mercenaryOrigins;
+								receipt.merge(origins);
+							}
+					newArmyInstance.getStackPtr(slotID)->setTrainingReceipt(receipt);
 					newArmy.push_back(slot);
 				}
 			}
@@ -254,7 +267,9 @@ std::vector<SlotInfo> ArmyManager::getBestArmy(const IBonusBearer * armyCarrier,
 		{
 			const auto compositionAdjustment = newHorizonsDiscipline::espritDeCorpsMoraleAdjustment(
 				receiverHero, *slot.second);
-			auto morale = slot.second->moraleValWithBonus(compositionAdjustment);
+			auto morale = slot.second->moraleValWithBonus(compositionAdjustment + (receiverHero
+				&& receiverHero->hasActivePerk(newHorizonsTraining::DIPLOMACY, newHorizonsTraining::MERCENARY_CAPTAIN)
+				&& slot.second->getTrainingReceipt().recruitedBy(receiverHero->id, true) ? 1 : 0));
 			auto multiplier = 1.0f;
 
 			if(morale < 0 && !badMoraleChance.empty())

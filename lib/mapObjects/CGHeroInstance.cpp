@@ -9,9 +9,12 @@
  */
 
 #include "StdInc.h"
+#include "../pathfinder/NewHorizonsProtectedMobility.h"
 #include "../pathfinder/NewHorizonsMovement.h"
 #include "../battle/HeroCommand.h"
 #include "CGHeroInstance.h"
+#include "../entities/hero/NewHorizonsDiplomacy.h"
+#include "NewHorizonsGlyphsOfFear.h"
 
 #include <vcmi/ServerCallback.h>
 #include <vcmi/spells/Spell.h>
@@ -37,6 +40,7 @@
 #include "../CCreatureHandler.h"
 #include "../bonuses/BonusCustomTypes.h"
 #include "../bonuses/Limiters.h"
+#include "../bonuses/Updaters.h"
 #include "../mapping/CMap.h"
 #include "../StartInfo.h"
 #include "../GameSettings.h"
@@ -74,6 +78,37 @@ namespace
 {
 constexpr int32_t bootsOfLevitationWaterWalkCost = 20;
 constexpr int32_t angelWingsFlyCost = 40;
+
+bool matchesConfiguredHeroBonus(const Bonus & installed, const Bonus & configured)
+{
+	// Only local rows with this exact producer and type are candidates. In
+	// particular, do not serialize or replace unrelated primary-skill rows.
+	if(installed.source != configured.source || installed.sid != configured.sid
+		|| installed.duration != configured.duration || installed.type != configured.type
+		|| installed.customIconPath != configured.customIconPath || installed.bonusOwner != configured.bonusOwner)
+		return false;
+	if(static_cast<bool>(installed.propagationUpdater) != static_cast<bool>(configured.propagationUpdater)
+		|| (installed.propagationUpdater
+			&& installed.propagationUpdater->toJsonNode() != configured.propagationUpdater->toJsonNode()))
+		return false;
+	return installed.toJsonNode() == configured.toJsonNode();
+}
+
+std::optional<SpellID> authoredRemainingSpellReplacement(const CGHeroInstance & hero, SpellID source)
+{
+	if(!hero.getHeroType() || !newHorizonsHeroes::usesRemainingSpellSpecialties(hero.getPrimaryGrowthRules())
+		|| !newHorizonsMagic::rulesActive(hero.getMagicRules())
+		|| hero.getMagicRules()["rulesetVersion"].Integer()
+			< newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+		return std::nullopt;
+	for(const auto & producer : hero.getHeroType()->spellSpecialtySuccessorProducers)
+		if(producer.source == source)
+			for(const auto & spell : LIBRARY->spellh->objects)
+				if(spell && spell->getJsonKey() == producer.target
+					&& newHorizonsMagic::spellAllowedByHeroRoster(hero.getMagicRules(), spell->getId()))
+					return spell->getId();
+	return std::nullopt;
+}
 
 std::optional<SpellID> authoredDamageSpellReplacement(const CGHeroInstance & hero, SpellID source)
 {
@@ -677,7 +712,7 @@ std::string CGHeroInstance::getSpecialtyDescriptionTranslated() const
 	const auto & localBonuses = getExportedBonusList();
 	if(rules && heroType->creatureLineSpecialtyAlias)
 	{
-		const CreatureID creature = heroType->creatureLineSpecialtyAlias->creature;
+		const CreatureID creature = getCreatureLineSpecialtyTarget();
 		const std::array<std::string, 4> markers = {
 			creatureLineSpecialtyMarker(heroType->getId(), creature, "speed"),
 			creatureLineSpecialtyMarker(heroType->getId(), creature, "initiative"),
@@ -710,6 +745,24 @@ std::string CGHeroInstance::getSpecialtyDescriptionTranslated() const
 			return description.toString(LIBRARY->generaltexth.get());
 		}
 	}
+
+	for(const auto & producer : heroType->spellSpecialtySuccessorProducers)
+		if(const auto target = authoredRemainingSpellReplacement(*this, producer.source))
+		{
+			const int percent = producer.damage ? getDamageSpellSpecialtyBonusPercent(*target)
+				: getNonDamageSpellSpecialtyBonusPercent(*target);
+			if(percent > 0)
+			{
+				MetaString description;
+				description.appendName(*target);
+				description.appendRawString(" gains +");
+				description.appendNumber(percent);
+				description.appendRawString(producer.damage
+					? "% to its initial Spell Power-derived damage component. Fixed terms and later triggers are unchanged."
+					: "% to its Spell Power-derived duration or Integrity component. Fixed terms and caps are unchanged.");
+				return description.toString(LIBRARY->generaltexth.get());
+			}
+		}
 
 	if(const auto damageRules = newHorizonsHeroes::damageSpellSpecialtyRules(primaryGrowthRules))
 		for(const auto & producer : heroType->damageSpellSpecialtyProducers)
@@ -751,6 +804,11 @@ std::string CGHeroInstance::getSpecialtyDescriptionTranslated() const
 				return description.toString(LIBRARY->generaltexth.get());
 			}
 		}
+
+	if(const auto rules = newHorizonsHeroes::skillSpecialtyRules(primaryGrowthRules))
+		if(heroType->navigationSpecialtyProducer
+			&& getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::LOGISTICS)) > 0)
+			return "Logistics's core Movement effect is increased by +20%. Navigation's sea bonus and embark cost, and other perks, are unchanged.";
 
 	if(const auto rules = newHorizonsHeroes::skillSpecialtyRules(primaryGrowthRules))
 		if(heroType->secondarySkillSpecialtyAlias
@@ -804,6 +862,9 @@ int CGHeroInstance::getSkillSpecialtyCoreBonusPercent(SecondarySkill skill) cons
 	const auto rules = newHorizonsHeroes::skillSpecialtyRules(primaryGrowthRules);
 	const CHero * heroType = getHeroType();
 	if(!rules || !heroType || std::ranges::find(rules->skills, skill) == rules->skills.end())
+		return 0;
+	if(heroType->navigationSpecialtyProducer
+		&& !newHorizonsHeroes::usesNavigationStartReplacement(primaryGrowthRules))
 		return 0;
 
 	const std::string marker = skillSpecialtyMarker(heroType->getId(), skill);
@@ -901,6 +962,8 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 {
 	assert(validTypes(true));
 	const bool creationInitialization = !isFake && !primaryGrowthCaptured;
+	if(creationInitialization)
+		protectedAdventureFlightLayer = EPathfindingLayer::LAND;
 	if(!isFake && !masteryRulesCaptured)
 	{
 		masteryState.rules = cb->getHeroMasteryRules();
@@ -941,7 +1004,20 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 		for(const auto & spellID : getHeroType()->spells)
 		{
 			if(creationInitialization)
+				if(const auto replacement = newHorizonsHeroes::startingBookReplacement(
+					primaryGrowthRules, getMagicRules(), getHeroTypeID(), spellID))
+				{
+					spells.insert(*replacement);
+					continue;
+				}
+			if(creationInitialization)
 				if(const auto replacement = authoredDamageSpellReplacement(*this, spellID))
+				{
+					spells.insert(*replacement);
+					continue;
+				}
+			if(creationInitialization)
+				if(const auto replacement = authoredRemainingSpellReplacement(*this, spellID))
 				{
 					spells.insert(*replacement);
 					continue;
@@ -996,6 +1072,9 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	}
 	const bool defaultSecondarySkills = secSkills.size() == 1
 		&& secSkills[0] == std::pair<SecondarySkill,ui8>(SecondarySkill::NONE, -1);
+	if(creationInitialization && defaultSecondarySkills)
+		if(const auto target = newHorizonsHeroes::defaultCreatureLineTarget(primaryGrowthRules, getHeroTypeID()))
+			primaryGrowthRules["creatureLineSpecialtyTarget"].String() = CreatureID::encode(target->getNum());
 	const auto startingDevelopment = creationInitialization && defaultSecondarySkills
 		? newHorizonsHeroes::startingDevelopmentProfile(primaryGrowthRules, perkState,
 			getHeroTypeID(), getHeroClass()->getId())
@@ -1016,6 +1095,16 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	}
 	const CHero * heroType = getHeroType();
 	const auto skillSpecialties = newHorizonsHeroes::skillSpecialtyRules(primaryGrowthRules);
+	const bool hasNavigationSpecialty = skillSpecialties && heroType->navigationSpecialtyProducer
+		&& newHorizonsHeroes::usesNavigationStartReplacement(primaryGrowthRules)
+		&& std::ranges::find(skillSpecialties->skills, SecondarySkill(SecondarySkill::LOGISTICS)) != skillSpecialties->skills.end();
+	if(creationInitialization && hasNavigationSpecialty)
+	{
+		// Specialty conversion is a fresh captured rule, independently of a
+		// map's explicit development. Without Logistics there is no core
+		// Movement component to increase; never auto-grant that map hero a parent.
+		addNewBonus(makeSkillSpecialtyMarker(heroType->getId(), SecondarySkill(SecondarySkill::LOGISTICS)));
+	}
 	const bool hasSupportedSkillSpecialty = skillSpecialties.has_value()
 		&& heroType->secondarySkillSpecialtyAlias
 		&& std::ranges::find(skillSpecialties->skills, heroType->secondarySkillSpecialtyAlias->skill)
@@ -1094,13 +1183,27 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	// e.g. MANA_PER_KNOWLEDGE_PERCENTAGE for correct preview and initial state after recruit	for(const auto & ob : LIBRARY->modh->heroBaseBonuses)
 	// or MOVEMENT to compute initial movement before recruiting is finished
 	const JsonNode & baseBonuses = cb->getSettings().getValue(EGameSettings::BONUSES_PER_HERO);
+	std::vector<const Bonus *> matchedBaseBonuses;
 	for(const auto & b : baseBonuses.Struct())
 	{
 		auto bonus = JsonUtils::parseBonus(b.second);
 		bonus->source = BonusSource::HERO_BASE_SKILL;
 		bonus->sid = BonusSourceID(id);
 		bonus->duration = BonusDuration::PERMANENT;
-		addNewBonus(bonus);
+		const auto & localBonuses = getExportedBonusList();
+		const auto existing = std::find_if(localBonuses.begin(), localBonuses.end(), [&](const auto & candidate)
+		{
+			return candidate && !vstd::contains(matchedBaseBonuses, candidate.get())
+				&& matchesConfiguredHeroBonus(*candidate, *bonus);
+		});
+		if(existing != localBonuses.end())
+			matchedBaseBonuses.push_back(existing->get());
+		else
+		{
+			// Match each configured row once, preserving deliberate duplicate rows.
+			matchedBaseBonuses.push_back(bonus.get());
+			addNewBonus(bonus);
+		}
 	}
 
 	if (cb->getSettings().getBoolean(EGameSettings::MODULE_COMMANDERS) && !commander && getHeroClass()->commander.hasValue())
@@ -1120,10 +1223,50 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 		&& getSkillSpecialtyCoreBonusPercent(heroType->secondarySkillSpecialtyAlias->skill) > 0;
 	for(const std::shared_ptr<Bonus> & b : heroType->specialty)
 	{
+		if(hasNavigationSpecialty && b == heroType->navigationSpecialtyProducer
+			&& getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::LOGISTICS)) > 0)
+		{
+			// GROWS_WITH_LEVEL replaces val outright, so zero val alone would
+			// retain the retired sea-Movement bonus. Suppress only this local copy.
+			auto converted = std::make_shared<Bonus>(*b);
+			converted->val = 0;
+			converted->updater.reset();
+			converted->stacking = "new-horizons:navigation-specialty-inert:" + std::to_string(heroType->getId().getNum());
+			if(std::ranges::none_of(getExportedBonusList(), [&converted](const auto & local)
+				{ return local && local->stacking == converted->stacking; }))
+				addNewBonus(converted);
+			continue;
+		}
 		if(convertsCreatureLineSpecialty
 			&& std::ranges::find(heroType->creatureLineSpecialtyAlias->bonuses, b)
 				!= heroType->creatureLineSpecialtyAlias->bonuses.end())
 			continue;
+		const auto successor = std::ranges::find_if(heroType->spellSpecialtySuccessorProducers,
+			[&b](const auto & producer) { return producer.bonus == b; });
+		if(successor != heroType->spellSpecialtySuccessorProducers.end())
+			if(const auto target = authoredRemainingSpellReplacement(*this, successor->source))
+			{
+				const std::string marker = successor->damage
+					? damageSpellSpecialtyMarker(heroType->getId(), *target)
+					: nonDamageSpellSpecialtyMarker(heroType->getId(), *target);
+				// Saved/reinitialized instances retain their captured local marker;
+				// this opt-in never reinterprets an already-created legacy hero.
+				if(creationInitialization)
+				{
+					auto converted = std::make_shared<Bonus>(*b);
+					// A marker is not a zero-valued legacy enchant: a fixed-value
+					// enchant with value zero would still overwrite later Fortune.
+					converted->type = BonusType::NONE;
+					converted->val = 0;
+					converted->parameters = std::make_shared<BonusParameters>(std::vector<int32_t>{0});
+					converted->stacking = marker;
+					addNewBonus(converted);
+					continue;
+				}
+				if(std::ranges::any_of(getExportedBonusList(), [&marker](const auto & existing)
+					{ return existing->stacking == marker; }))
+					continue;
+			}
 		if(convertsDamageSpellSpecialty)
 		{
 			const auto producer = std::ranges::find_if(heroType->damageSpellSpecialtyProducers,
@@ -1879,6 +2022,31 @@ void CGHeroInstance::markNewHorizonsSageGuildVisit(ObjectInstanceID town)
 	newHorizonsSageGuildVisits.insert(town);
 }
 
+bool CGHeroInstance::canUseNewHorizonsLegendaryReputation(int32_t month) const
+{
+	return id.hasValue() && month >= 1 && newHorizonsLegendaryReputationLastMonth < month
+		&& hasActivePerk(newHorizonsDiplomacy::SKILL_ID, newHorizonsDiplomacy::LEGENDARY_REPUTATION_ID);
+}
+
+void CGHeroInstance::validateNewHorizonsLegendaryReputationSerialization(bool supported, int32_t currentMonth) const
+{
+	if(newHorizonsLegendaryReputationLastMonth < -1 || newHorizonsLegendaryReputationLastMonth == 0
+		|| (newHorizonsLegendaryReputationLastMonth > 0 && !id.hasValue()))
+		throw std::runtime_error("Invalid New Horizons Legendary Reputation month");
+	if(currentMonth >= 1 && newHorizonsLegendaryReputationLastMonth > currentMonth)
+		throw std::runtime_error("New Horizons Legendary Reputation month is in the future");
+	if(!supported && newHorizonsLegendaryReputationLastMonth != -1)
+		throw std::runtime_error("Cannot discard New Horizons Legendary Reputation use");
+}
+
+void CGHeroInstance::markNewHorizonsLegendaryReputationUsed(int32_t month)
+{
+	validateNewHorizonsLegendaryReputationSerialization(true);
+	if(!canUseNewHorizonsLegendaryReputation(month))
+		throw std::runtime_error("Invalid or repeated New Horizons Legendary Reputation use");
+	newHorizonsLegendaryReputationLastMonth = month;
+}
+
 void CGHeroInstance::validateNewHorizonsRecruitersContactsSerialization(bool supported) const
 {
 	if(newHorizonsRecruitersContactsLastWeek < -1 || (newHorizonsRecruitersContactsLastWeek >= 0 && !id.hasValue()))
@@ -2093,7 +2261,22 @@ si32 CGHeroInstance::manaRegain() const
 {
 	int percentageRegeneration = valOfBonuses(BonusType::MANA_PERCENTAGE_REGENERATION);
 	const int64_t regeneratedByPercentage = static_cast<int64_t>(manaLimit()) * percentageRegeneration / 100;
-	const int64_t regeneratedByValue = valOfBonuses(BonusType::MANA_REGENERATION);
+	// Keep the graph's eligibility and duplicate/stacking rules, without changing
+	// shared artifact definitions. Sum converted tiers widely before final clamp.
+	BonusList otherRecovery;
+	int64_t artifactRecovery = 0;
+	const auto recoveryBonuses = getAllBonuses(Selector::type()(BonusType::MANA_REGENERATION));
+	for(const auto & bonus : *recoveryBonuses)
+	{
+		const auto replacement = bonus->source == BonusSource::ARTIFACT && bonus->valType == BonusValueType::BASE_NUMBER
+			? newHorizonsHeroes::capabilityArtifactManaRegeneration(capabilityRules, bonus->sid.as<ArtifactID>(), manaLimit())
+			: std::nullopt;
+		if(replacement)
+			artifactRecovery += *replacement;
+		else
+			otherRecovery.push_back(bonus);
+	}
+	const int64_t regeneratedByValue = artifactRecovery + otherRecovery.totalValue();
 	int64_t regeneration = std::max(regeneratedByValue, regeneratedByPercentage);
 	if(hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.mysticism"))
 		regeneration = std::max(regeneration, std::max<int64_t>(5, static_cast<int64_t>(manaLimit()) / 10));
@@ -2174,6 +2357,23 @@ const JsonNode & CGHeroInstance::getMagicRules() const
 	return cb ? cb->getMagicRules() : legacy;
 }
 
+void CGHeroInstance::setProtectedAdventureFlightLayer(EPathfindingLayer layer)
+{
+	if(layer != EPathfindingLayer::LAND && layer != EPathfindingLayer::AIR)
+		throw std::runtime_error("Invalid protected adventure flight layer");
+	protectedAdventureFlightLayer = layer;
+}
+
+void CGHeroInstance::validateProtectedAdventureMobilitySerialization(bool supported) const
+{
+	if(protectedAdventureFlightLayer != EPathfindingLayer::LAND && protectedAdventureFlightLayer != EPathfindingLayer::AIR)
+		throw std::runtime_error("Invalid protected adventure flight layer");
+	if(protectedAdventureFlightLayer == EPathfindingLayer::AIR && inBoat())
+		throw std::runtime_error("A boat cannot carry an on-foot flight receipt");
+	if(!supported && protectedAdventureFlightLayer != EPathfindingLayer::LAND)
+		throw std::runtime_error("Protected adventure flight state requires a new save format");
+}
+
 std::pair<int32_t, int32_t> CGHeroInstance::getMoraleLimits() const
 {
 	if(const auto limits = newHorizonsMagic::moraleLimits(getMagicRules()))
@@ -2183,7 +2383,8 @@ std::pair<int32_t, int32_t> CGHeroInstance::getMoraleLimits() const
 
 TConstBonusListPtr CGHeroInstance::getMoraleBonuses() const
 {
-	return newHorizonsDiscipline::espritDeCorpsMoraleBonuses(this, *this);
+	return newHorizonsGlyphsOfFear::appendMoraleBonuses(
+		newHorizonsDiscipline::espritDeCorpsMoraleBonuses(this, *this), this);
 }
 
 std::vector<SpellSchool> CGHeroInstance::getSpellSchools(const spells::Spell * spell) const
@@ -2715,7 +2916,8 @@ CBonusSystemNode & CGHeroInstance::whereShouldBeAttached(CGameState & gs)
 		return CArmedInstance::whereShouldBeAttached(gs);
 }
 
-int CGHeroInstance::movementPointsAfterEmbark(int MPsBefore, int basicCost, bool disembark, const TurnInfo * ti) const
+int CGHeroInstance::movementPointsAfterEmbark(int MPsBefore, int basicCost, bool disembark, const TurnInfo * ti,
+	bool projectedLighthouse) const
 {
 	if(!ti->hasFreeShipBoarding() && !ti->hasNewHorizonsNavigation()
 		&& !ti->hasNewHorizonsRapidEmbarkation())
@@ -2728,6 +2930,13 @@ int CGHeroInstance::movementPointsAfterEmbark(int MPsBefore, int basicCost, bool
 
 	int mp1 = ti->getMaxMovePoints(disembark ? EPathfindingLayer::LAND : boatLayer);
 	int mp2 = ti->getMaxMovePoints(disembark ? boatLayer : EPathfindingLayer::LAND);
+	if(projectedLighthouse && boatLayer == EPathfindingLayer::SAIL)
+	{
+		if(disembark)
+			mp2 = ti->getLighthouseSeaMovePoints();
+		else
+			mp1 = ti->getLighthouseSeaMovePoints();
+	}
 	if(ti->hasNewHorizonsRapidEmbarkation() && !ti->hasFreeShipBoarding())
 	{
 		// The perk specifies a final cost. Navigation does not halve it again;
@@ -3012,6 +3221,8 @@ void CGHeroInstance::applyPerkSelection(const newHorizonsHeroes::PerkSelection &
 		if(luckSkillIndex >= 0)
 			updateSkillBonus(SecondarySkill(luckSkillIndex), getPerkSkillRank(selection.skillId));
 	}
+	if(selection.perkId == newHorizonsTraining::LOYAL_MERCENARIES)
+		armyChanged();
 	// Perks can affect derived capacity without adding a bonus node.
 	spellPointCapacityRevision.reset();
 }
@@ -3091,6 +3302,39 @@ void CGHeroInstance::levelUp(const std::array<int, GameConstants::PRIMARY_SKILLS
 	nodeHasChanged();
 }
 
+void CGHeroInstance::validateDefaultCreatureLineSerialization(bool supported) const
+{
+	newHorizonsHeroes::validateDefaultCreatureLineSerialization(primaryGrowthRules, supported);
+	if(primaryGrowthRules.isStruct() && primaryGrowthRules.Struct().contains("creatureLineSpecialtyTarget"))
+	{
+		const auto target = newHorizonsHeroes::defaultCreatureLineTarget(primaryGrowthRules, getHeroTypeID());
+		if(!target || !getHeroType()->creatureLineSpecialtyAlias
+			|| getHeroType()->creatureLineSpecialtyAlias->creature != CreatureID(CreatureID::PSYCHIC_ELEMENTAL))
+			throw std::runtime_error("Captured Wisp specialty belongs only to the exact native Psychic producer");
+		const auto original = getHeroType()->creatureLineSpecialtyAlias->creature;
+		const std::array<std::string, 4> staleMarkers = {
+			creatureLineSpecialtyMarker(getHeroTypeID(), original, "speed"),
+			creatureLineSpecialtyMarker(getHeroTypeID(), original, "initiative"),
+			creatureLineSpecialtyMarker(getHeroTypeID(), original, "attack"),
+			creatureLineSpecialtyMarker(getHeroTypeID(), original, "defense")
+		};
+		if(std::ranges::any_of(getExportedBonusList(), [&staleMarkers](const auto & bonus)
+		{
+			return bonus && std::ranges::find(staleMarkers, bonus->stacking) != staleMarkers.end();
+		}))
+			throw std::runtime_error("Captured Wisp specialty cannot retain Psychic target markers");
+	}
+}
+
+CreatureID CGHeroInstance::getCreatureLineSpecialtyTarget() const
+{
+	validateDefaultCreatureLineSerialization(true);
+	if(primaryGrowthRules.isStruct() && primaryGrowthRules.Struct().contains("creatureLineSpecialtyTarget"))
+		return *newHorizonsHeroes::defaultCreatureLineTarget(primaryGrowthRules, getHeroTypeID());
+	const auto * hero = getHeroType();
+	return hero && hero->creatureLineSpecialtyAlias ? hero->creatureLineSpecialtyAlias->creature : CreatureID();
+}
+
 void CGHeroInstance::refreshCreatureLineSpecialtyBonuses(bool createIfMissing)
 {
 	const auto rules = newHorizonsHeroes::creatureLineSpecialtyRules(primaryGrowthRules);
@@ -3098,7 +3342,7 @@ void CGHeroInstance::refreshCreatureLineSpecialtyBonuses(bool createIfMissing)
 	if(!rules || !heroType || !heroType->creatureLineSpecialtyAlias)
 		return;
 
-	const CreatureID creature = heroType->creatureLineSpecialtyAlias->creature;
+	const CreatureID creature = getCreatureLineSpecialtyTarget();
 	const std::array<std::string, 4> markers = {
 		creatureLineSpecialtyMarker(heroType->getId(), creature, "speed"),
 		creatureLineSpecialtyMarker(heroType->getId(), creature, "initiative"),
@@ -3403,6 +3647,8 @@ void CGHeroInstance::serializeCommonOptions(JsonSerializeFormat & handler)
 
 void CGHeroInstance::serializeJsonOptions(JsonSerializeFormat & handler)
 {
+	if(!handler.saving)
+		protectedAdventureFlightLayer = EPathfindingLayer::LAND;
 	serializeCommonOptions(handler);
 
 	serializeJsonOwner(handler);

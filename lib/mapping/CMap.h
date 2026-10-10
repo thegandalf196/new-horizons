@@ -11,6 +11,7 @@
 #pragma once
 
 #include "CMapEvent.h"
+#include "../pathfinder/NewHorizonsLighthouse.h"
 #include "CMapHeader.h"
 #include "TerrainTile.h"
 #include "MapTilesStorage.h"
@@ -196,9 +197,14 @@ public:
 	std::vector<HeroTypeID> getHeroesInPool() const;
 	/// Validate all serialized hero receipts before an enclosing writer's prefix.
 	void validateNewHorizonsProspectorSerialization(bool supported) const;
+	const std::vector<int3> & getProtectedAdventureMobilityTiles() const;
+	/// Authoring-only immutable scenario metadata; canonicalize before installation.
+	void setProtectedAdventureMobilityTiles(std::vector<int3> tiles);
+	void validateProtectedAdventureMobilitySerialization(bool supported, const JsonNode * capturedRules = nullptr) const;
 	void validateNewHorizonsScholarSerialization(bool supported) const;
 	void validateNewHorizonsRecruitersContactsSerialization(bool supported) const;
-	void validateRecruitmentTrainingSerialization(bool supported) const;
+	void validateNewHorizonsLegendaryReputationSerialization(bool supported, int32_t currentMonth = -1) const;
+	void validateRecruitmentTrainingSerialization(bool supported, bool cohortsSupported = true) const;
 	void validateNewHorizonsSageSerialization(bool supported) const;
 	void validateNewHorizonsMagnateSerialization(bool supported) const;
 	void validateNewHorizonsHasteSpecialtySerialization(bool supported) const;
@@ -207,10 +213,19 @@ public:
 	void validateNewHorizonsAenainFrailtySpecialtySerialization(bool supported) const;
 	void validateNewHorizonsDefensiveStartSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsOffensiveStartSpecialtySerialization(bool supported) const;
+	void validateNewHorizonsRemainingSpellSpecialtySerialization(bool supported) const;
+	void validateNewHorizonsLighthouseSerialization(bool supported) const;
+	void validateNewHorizonsArtifactManaRegenerationSerialization(bool supported) const;
+	void validateNewHorizonsGlyphsOfFearSerialization(bool supported) const;
 	void validateNewHorizonsStartingDevelopmentSerialization(bool supported) const;
+	void validateNavigationStartSerialization(bool supported) const;
+	void validateDefaultCreatureLineSerialization(bool supported) const;
+	void validateNewHorizonsStartingBookSerialization(bool supported) const;
 	void validateNewHorizonsRemainingStartSerialization(bool supported) const;
+	void validateNewHorizonsWaterWalkDayEndSerialization(bool supported) const;
 	void validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const;
 	void validatePlagueRulesSerialization(bool supported) const;
+	void validateCrisisCommandSerialization(bool supported) const;
 
 	CGObjectInstance * getObject(ObjectInstanceID obj);
 	const CGObjectInstance * getObject(ObjectInstanceID obj) const;
@@ -322,6 +337,7 @@ public:
 	static bool compareObjectBlitOrder(const CGObjectInstance * a, const CGObjectInstance * b);
 
 private:
+	std::vector<int3> protectedAdventureMobilityTiles;
 
 	/// a 3-dimensional array of terrain tiles
 	MapTilesStorage<TerrainTile> terrain;
@@ -332,10 +348,13 @@ public:
 	template <typename Handler>
 	void serialize(Handler &h)
 	{
+		if(h.saving) validateCrisisCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
+		if(h.saving)
+			validateProtectedAdventureMobilitySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
 		if(h.saving)
 			validatePlagueRulesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
 		if(h.saving)
-			validateRecruitmentTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING));
+			validateRecruitmentTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING), h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_COHORTS));
 		if(h.saving)
 			validateNewHorizonsFrailtySpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
 		if(h.saving)
@@ -345,11 +364,27 @@ public:
 		if(h.saving)
 			validateNewHorizonsOffensiveStartSpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES));
 		if(h.saving)
+			validateNewHorizonsRemainingSpellSpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPELL_SPECIALTIES));
+		if(h.saving)
+			validateNewHorizonsArtifactManaRegenerationSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_ARTIFACT_MANA_REGENERATION));
+		if(h.saving)
+			validateNewHorizonsGlyphsOfFearSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_GLYPHS_OF_FEAR_AURA));
+		if(h.saving)
+			validateNewHorizonsLighthouseSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
+		if(h.saving)
 			validateNewHorizonsStartingDevelopmentSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
 		if(h.saving)
 			validateNewHorizonsRemainingStartSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
 		if(h.saving)
+			validateNewHorizonsWaterWalkDayEndSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END));
+		if(h.saving)
 			validateNewHorizonsCoroniusHolyWrathSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_CORONIUS_HOLY_WRATH));
+		if(h.saving)
+			validateNewHorizonsStartingBookSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_BOOK_REPLACEMENTS));
+		if(h.saving)
+			validateNavigationStartSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NAVIGATION_START_REPLACEMENTS));
+		if(h.saving)
+			validateDefaultCreatureLineSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
 		if(h.saving)
 			validateNewHorizonsThantReanimateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
 		if(h.saving)
@@ -362,6 +397,8 @@ public:
 			validateNewHorizonsScholarSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LEARNING_SCHOLAR));
 		if(h.saving)
 			validateNewHorizonsRecruitersContactsSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITERS_CONTACTS));
+		if(h.saving)
+			validateNewHorizonsLegendaryReputationSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LEGENDARY_REPUTATION));
 		if(h.saving)
 			validateNewHorizonsSageSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SAGE_GUILD_VISITS));
 		h & static_cast<CMapHeader&>(*this);
@@ -408,6 +445,14 @@ public:
 			h & scriptVariableDefinitions;
 			h & scriptSource;
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS))
+		{
+			h & protectedAdventureMobilityTiles;
+			if(!h.saving)
+				validateProtectedAdventureMobilitySerialization(true);
+		}
+		else if(!h.saving)
+			protectedAdventureMobilityTiles.clear();
 	}
 };
 

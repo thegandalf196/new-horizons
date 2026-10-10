@@ -3,6 +3,7 @@
  * License: GNU General Public License v2 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../NewHorizonsHistoricalAdventurePolicyTestUtils.h"
 #include "../mock/TinyMapGameTest.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/GameSettings.h"
@@ -129,6 +130,13 @@ protected:
 		{
 			rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 			rules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
+			rules["startingSkills"].Struct().erase("startingBookReplacements");
+			rules.Struct().erase("remainingSpellSpecialtyReplacements");
+			rules["skillSpecialties"].Struct().erase("navigationStartReplacements");
+			rules.Struct().erase("defaultCreatureLineReplacements");
+			std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(),
+				[](const JsonNode & value) { return value.String() == "new-horizons:phantomArmy"; });
+			rules.Struct().erase("lighthouseDeparture");
 			// This control captures the preceding profile, not a later optional
 			// default-book feature whose key is deliberately not down-writable.
 			rules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
@@ -141,6 +149,8 @@ protected:
 			legacy ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		if(legacy)
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+		if(absent)
+			isolateHistoricalAdventurePolicies(*loaded);
 	}
 	void prepare(const ExpectedStart & value = starts[0])
 	{
@@ -697,6 +707,13 @@ TEST_F(NewHorizonsStartingDevelopmentTest, KeyPresenceAdmissionDistinguishesAbse
 	JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 	rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 	rules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
+	rules["startingSkills"].Struct().erase("startingBookReplacements");
+	rules.Struct().erase("remainingSpellSpecialtyReplacements");
+	rules["skillSpecialties"].Struct().erase("navigationStartReplacements");
+	rules.Struct().erase("defaultCreatureLineReplacements");
+	std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(),
+		[](const JsonNode & value) { return value.String() == "new-horizons:phantomArmy"; });
+	rules.Struct().erase("lighthouseDeparture");
 	EXPECT_NO_THROW(newHorizonsHeroes::validateStartingDevelopmentSerialization(rules, false));
 	rules["startingSkills"]["startingDevelopmentProfiles"].Struct();
 	EXPECT_THROW(newHorizonsHeroes::validateStartingDevelopmentSerialization(rules, false), std::runtime_error);

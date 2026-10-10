@@ -210,7 +210,15 @@ struct ProjectedOverwatchHit
 
 class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironment
 {
+	SeizeInitiativeState seizeInitiative;
 public:
+	const SeizeInitiativeState & getSeizeInitiativeState() const override { return seizeInitiative; }
+	void setSeizeInitiativeState(const SeizeInitiativeState & state) override
+	{
+		newHorizonsSeizeInitiative::validateReferences(*this, state);
+		seizeInitiative = state;
+	}
+	void completeSeizeInitiativeActivation(uint32_t unitId) { seizeInitiative.complete(unitId); }
 	std::map<uint32_t, std::shared_ptr<StackWithBonuses>> stackStates;
 
 	const Environment * env;
@@ -237,6 +245,10 @@ public:
 	BattleSide getTacticsSide() const override;
 	const BattleDeploymentState & getDeploymentState() const override { return deploymentState; }
 	void setDeploymentState(const BattleDeploymentState & state) override;
+	const RapidResponseState & getRapidResponseState(BattleSide side) const override;
+	void setRapidResponseState(BattleSide side, const RapidResponseState & state) override;
+	/// Forecast a real completion, not Wait/continuations. Caller retains earned extras ahead of queue.
+	void completeRapidResponseActivation(uint32_t unitId, bool syntheticStoppedSlot = false);
 	const ReducedExtraActivationState & getReducedExtraActivationState(BattleSide side) const override;
 	void setReducedExtraActivationState(BattleSide side, const ReducedExtraActivationState & state) override;
 	const newHorizonsCrossSchoolFormula::State & getCrossSchoolFormulaState(BattleSide side) const override
@@ -267,6 +279,17 @@ public:
 	bool consumeHeroOrderProtectInterception(uint32_t wardUnitId, uint32_t protectorUnitId);
 	const AlternatingHeroActionState & getWarcastingState(BattleSide side) const override;
 	const HeroActionAllowanceState & getHeroActionAllowances(BattleSide side) const override;
+	const newHorizonsCrisisCommand::State & getCrisisCommandState() const override { return crisisCommand; }
+	void setCrisisCommandState(const newHorizonsCrisisCommand::State & state) override
+	{
+		state.validate(*this);
+		const auto seize = state.seizeContextAfterTransition(crisisCommand, seizeInitiative);
+		const bool returning = state.returns.size() < crisisCommand.returns.size();
+		const auto originalActor = returning ? crisisCommand.returns.back().originalActor : activeUnitId;
+		crisisCommand = state;
+		seizeInitiative = seize;
+		if(returning) activeUnitId = originalActor;
+	}
 	const DoubleCommandState & getDoubleCommandState(BattleSide side) const override
 	{
 		return doubleCommandStates.at(side);
@@ -481,6 +504,8 @@ public:
 
 	void nextRound() override;
 	void nextTurn(uint32_t unitId, BattleUnitTurnReason reason) override;
+	/// Explicit accepted positive-Morale projection, not an RNG or reason-based grant.
+	bool projectEarnedMoraleActivation(uint32_t unitId);
 
 	void addUnit(uint32_t id, const JsonNode & data) override;
 	void updateUnit(uint32_t id, const JsonNode & data, int64_t healthDelta) override;
@@ -541,11 +566,13 @@ public:
 
 private:
 	/// IDs created by this branch's Elemental Rebirth projection; never serialized.
+	newHorizonsCrisisCommand::State crisisCommand;
 	std::set<uint32_t> elementalRebirthSpawnUnitIds;
 	/// Actual magical HP losses from the accepted projected Primal Burst batches.
 	/// Pre-hit snapshots are owned so branch copies don't borrow mutable/live units.
 	std::vector<ProjectedPrimalBurstHit> projectedPrimalBurstHits;
 	BattleDeploymentState deploymentState;
+	BattleSideArray<RapidResponseState> rapidResponseStates;
 	BattleSideArray<ReducedExtraActivationState> reducedExtraActivationStates;
 	/// Newest Order is last; updates by command preserve this issuance order.
 	BattleSideArray<std::vector<HeroOrderState>> heroOrderStates;

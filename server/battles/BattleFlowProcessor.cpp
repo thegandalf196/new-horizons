@@ -12,6 +12,7 @@
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
 #include "../../lib/battle/NewHorizonsSwiftRebirth.h"
+#include "../../lib/battle/NewHorizonsHeroicSpirit.h"
 
 #include "BattleProcessor.h"
 
@@ -54,6 +55,22 @@
 
 namespace
 {
+	void publishRapidResponse(CGameHandler * handler, const CBattleInfoCallback & battle,
+		BattleSide side, BattleRapidResponseStateChanged::Transition transition)
+	{
+		BattleRapidResponseStateChanged update;
+		update.battleID = battle.getBattle()->getBattleID();
+		update.side = side;
+		update.expected = battle.getBattle()->getRapidResponseState(side);
+		update.transition = transition;
+		update.state = transition == BattleRapidResponseStateChanged::Transition::CAPTURE
+			? newHorizonsRapidResponse::capture(battle, side)
+			: newHorizonsRapidResponse::resolve(battle, side,
+				transition == BattleRapidResponseStateChanged::Transition::CONSUME);
+		if(update.state != update.expected)
+			handler->sendAndApply(update);
+	}
+
 	void publishSwiftLifecycle(CGameHandler * gameHandler, const CBattleInfoCallback & battle,
 		const battle::Unit * unit, bool completed)
 	{
@@ -1040,6 +1057,11 @@ void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle
 
 const CStack * BattleFlowProcessor::getNextStack(const CBattleInfoCallback & battle)
 {
+	// This is reached only after immediate extra/continuation routing has drained.
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		if(battle.getBattle()->getRapidResponseState(side).pending()
+			&& !newHorizonsRapidResponse::pendingWaiter(battle, side))
+			publishRapidResponse(gameHandler, battle, side, BattleRapidResponseStateChanged::Transition::CLEAR);
 	std::vector<battle::Units> q;
 	battle.battleGetTurnOrder(q, 1, 0, -1); //todo: get rid of "turn -1"
 
@@ -1050,6 +1072,9 @@ const CStack * BattleFlowProcessor::getNextStack(const CBattleInfoCallback & bat
 		return nullptr;
 
 	const auto * next = q.front().front();
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		if(newHorizonsRapidResponse::pendingWaiter(battle, side) == next)
+			publishRapidResponse(gameHandler, battle, side, BattleRapidResponseStateChanged::Transition::CONSUME);
 	const auto * stack = dynamic_cast<const CStack *>(next);
 
 	// regeneration takes place before everything else but only during first turn attempt in each round
@@ -1090,6 +1115,13 @@ void BattleFlowProcessor::activateNextStack(const CBattleInfoCallback & battle)
 		// battle has ended
 		if (owner->checkBattleStateChanges(battle))
 			return;
+		if(battle.getBattle()->getCrisisCommandState().choice()) return;
+		if(tryStartCrisisCommand(battle)) return;
+		if(!battle.getBattle()->getCrisisCommandState().returns.empty())
+		{
+			resumeCrisisCommand(battle);
+			return;
+		}
 
 		const CStack * next = getNextStack(battle);
 
@@ -1892,6 +1924,8 @@ bool BattleFlowProcessor::rollGoodMorale(const CBattleInfoCallback & battle, con
 			bte.effect = BonusType::MORALE;
 			bte.val = 1;
 			bte.additionalInfo = 0;
+			bte.heroicSpiritGrant = newHorizonsHeroicSpirit::canGrantEarnedMorale(*next,
+				battle.battleGetOwnerHero(next));
 			gameHandler->sendAndApply(bte); //play animation
 
 			if(const auto * hero = battle.battleGetOwnerHero(next);
@@ -2111,11 +2145,114 @@ void applyPlagueEndOfActivation(CGameHandler * gameHandler, const CBattleInfoCal
 }
 }
 
+bool BattleFlowProcessor::tryStartCrisisCommand(const CBattleInfoCallback & battle,
+	const BattleAction * completed, bool masterGate, bool pursuit, bool ranged)
+{
+	if(battle.battleGetRound() < 1 || battle.battleTacticDist()
+		|| battle.getBattle()->getCrisisCommandState().choice()) return false;
+	while(!battle.getBattle()->getCrisisCommandState().pending.empty())
+	{
+		auto next = battle.getBattle()->getCrisisCommandState();
+		const auto receipt = next.pending.front();
+		next.pending.erase(next.pending.begin());
+		const auto * chooserAnchor = newHorizonsCrisisCommand::anchor(battle, receipt.side);
+		BattleCrisisCommandChanged update;
+		update.battleID = battle.getBattle()->getBattleID();
+		if(!chooserAnchor || !newHorizonsCrisisCommand::eligible(battle.battleGetFightingHero(receipt.side)))
+		{
+			update.state = next;
+			gameHandler->sendAndApply(update);
+			continue;
+		}
+		auto ledger = battle.getBattle()->getHeroActionAllowances(receipt.side);
+		newHorizonsCrisisCommand::ReturnFrame frame;
+		frame.responder = receipt.side;
+		frame.anchor = chooserAnchor->unitId();
+		frame.round = battle.battleGetRound();
+		frame.originalActor = battle.getBattle()->getActiveStackID();
+		const auto & seize = battle.getBattle()->getSeizeInitiativeState();
+		frame.suspendedSeizeActive = seize.active;
+		frame.suspendedSeizeActiveNormal = seize.activeNormal;
+		frame.grant = ledger.grantAllowance(HeroActionAllowanceState::AllowanceKind::ORDER,
+			HeroActionAllowanceState::GrantSource::CRISIS_COMMAND, frame.round);
+		if(completed)
+		{
+			frame.kind = newHorizonsCrisisCommand::ReturnKind::ACTION;
+			frame.action = *completed;
+			frame.masterGate = masterGate; frame.pursuit = pursuit; frame.ranged = ranged;
+		}
+		next.returns.push_back(frame);
+		update.state = next;
+		update.allowanceSide = receipt.side;
+		update.allowances = ledger;
+		gameHandler->sendAndApply(update);
+		BattleSetActiveStack activate;
+		activate.battleID = update.battleID;
+		activate.stack = frame.anchor;
+		activate.reason = BattleUnitTurnReason::CRISIS_ORDER;
+		gameHandler->sendAndApply(activate);
+		const bool anyOrder = std::any_of(heroCommands::CANONICAL_COMMANDS.begin(),
+			heroCommands::CANONICAL_COMMANDS.end(), [&battle, &receipt](HeroCommand command)
+			{ return battle.battleCanUseHeroCommand(receipt.side, command) || battle.battleCanBeginHeroCommand(receipt.side, command); });
+		if(!anyOrder) resumeCrisisCommand(battle);
+		return true;
+	}
+	return false;
+}
+
+void BattleFlowProcessor::resumeCrisisCommand(const CBattleInfoCallback & battle)
+{
+	auto next = battle.getBattle()->getCrisisCommandState();
+	if(next.returns.empty()) throw std::runtime_error("No Crisis Command return frame");
+	const auto frame = next.returns.back();
+	next.returns.pop_back();
+	auto ledger = battle.getBattle()->getHeroActionAllowances(frame.responder);
+	std::erase_if(ledger.grants, [&frame](const auto & grant)
+		{ return grant.id == frame.grant && grant.source == HeroActionAllowanceState::GrantSource::CRISIS_COMMAND; });
+	BattleCrisisCommandChanged update;
+	update.battleID = battle.getBattle()->getBattleID();
+	update.state = next;
+	update.allowanceSide = frame.responder;
+	update.allowances = ledger;
+	gameHandler->sendAndApply(update);
+	BattleSetActiveStack restore;
+	restore.battleID = update.battleID;
+	restore.stack = static_cast<uint32_t>(frame.originalActor);
+	restore.reason = BattleUnitTurnReason::CRISIS_RESUME;
+	gameHandler->sendAndApply(restore);
+	if(frame.kind == newHorizonsCrisisCommand::ReturnKind::ACTION)
+		onActionMade(battle, frame.action, frame.masterGate, frame.pursuit, frame.ranged);
+	else
+		activateNextStack(battle);
+}
+
+bool BattleFlowProcessor::declineCrisisCommand(const CBattleInfoCallback & battle,
+	PlayerColor player, const BattleAction & action)
+{
+	const auto & state = battle.getBattle()->getCrisisCommandState();
+	if(!state.choice() || action.actionType != EActionType::NO_ACTION
+		|| action.side != state.chooser() || player != battle.sideToPlayer(state.chooser())
+		|| action.stackNumber != state.returns.back().anchor) return false;
+	resumeCrisisCommand(battle);
+	return true;
+}
+
 void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const BattleAction &ba,
 	bool masterGateActivationContinuation, bool pursuitActivationContinuation, bool rangedAttackContinuation)
 {
 	const auto * actedStack = battle.battleGetStackByID(ba.stackNumber, false);
 	const auto * activeStack = battle.battleActiveUnit();
+	const auto completeSeize = [this, &battle, &ba](const battle::Unit * unit)
+	{
+		const auto & state = battle.getBattle()->getSeizeInitiativeState();
+		if(!unit || ba.actionType == EActionType::WAIT || !state.enabled() || state.active != unit->unitId())
+			return;
+		BattleNormalActivationCompleted update;
+		update.battleID = battle.getBattle()->getBattleID();
+		update.unitId = unit->unitId();
+		update.expected = state;
+		gameHandler->sendAndApply(update);
+	};
 	const auto completeDiscipline = [this, &battle, &ba](const battle::Unit * unit)
 	{
 		if(!unit)
@@ -2149,11 +2286,24 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 			activateNextStack(battle);
 		return true;
 	};
-	const auto completeAcceptedActivation = [this, &battle, &ba, &startReducedExtraActivation, &completeDiscipline](const battle::Unit * unit)
+	const auto captureRapidResponse = [this, &battle, &ba](const battle::Unit * unit)
+	{
+		if(!unit || ba.actionType == EActionType::WAIT
+			|| (ba.actionType == EActionType::NO_ACTION && unit->isTimeStopped()))
+			return;
+		const auto actingSide = battle.playerToSide(battle.battleGetOwner(unit));
+		if(actingSide == BattleSide::ATTACKER || actingSide == BattleSide::DEFENDER)
+			publishRapidResponse(gameHandler, battle, actingSide == BattleSide::ATTACKER
+				? BattleSide::DEFENDER : BattleSide::ATTACKER,
+				BattleRapidResponseStateChanged::Transition::CAPTURE);
+	};
+	const auto completeAcceptedActivation = [this, &battle, &ba, &startReducedExtraActivation, &completeDiscipline, &captureRapidResponse, &completeSeize](const battle::Unit * unit)
 	{
 		if(!unit || ba.actionType == EActionType::WAIT)
 			return false;
+		captureRapidResponse(unit);
 		publishSwiftLifecycle(gameHandler, battle, unit, true);
+		completeSeize(unit);
 		completeDiscipline(unit);
 		if(quartermasterActiveSide(battle, unit->unitId()))
 		{
@@ -2195,6 +2345,26 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 
 	// check whether action has ended the battle
 	if(owner->checkBattleStateChanges(battle))
+		return;
+	const auto & crisis = battle.getBattle()->getCrisisCommandState();
+	if(crisis.choice())
+	{
+		if(ba.actionType != EActionType::HERO_COMMAND || ba.side != crisis.chooser())
+			throw std::runtime_error("Crisis Command accepted an unrelated action");
+		if(ba.command != HeroCommand::SECOND_WIND)
+		{
+			resumeCrisisCommand(battle);
+			return;
+		}
+		auto next = crisis;
+		next.returns.back().phase = newHorizonsCrisisCommand::Phase::GRANTED_EXTRA;
+		BattleCrisisCommandChanged update;
+		update.battleID = battle.getBattle()->getBattleID();
+		update.state = next;
+		gameHandler->sendAndApply(update);
+	}
+	else if(tryStartCrisisCommand(battle, &ba, masterGateActivationContinuation,
+		pursuitActivationContinuation, rangedAttackContinuation))
 		return;
 
 	// Redeployment uses the ordinary deployment WALK action. The action processor
@@ -2332,6 +2502,8 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 			{
 				auto state = activeStack->acquireState();
 				state->setRangedFollowUpDamagePercent(0);
+		state->luckyOwnAttackSequence = false;
+				state->luckyOwnAttackSequence = false;
 				BattleUnitsChanged update;
 				update.battleID = battle.getBattle()->getBattleID();
 				UnitChanges change(activeStack->unitId(), UnitChanges::EOperation::UPDATE);
@@ -2435,7 +2607,9 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 		// or end effects incapacitated the actor before reaching this boundary.
 		if(ba.actionType != EActionType::WAIT)
 		{
+			captureRapidResponse(actedStack);
 			publishSwiftLifecycle(gameHandler, battle, actedStack, true);
+			completeSeize(actedStack);
 			completeDiscipline(actedStack);
 		}
 

@@ -516,6 +516,12 @@ CStackWindow::TrainingSection::TrainingSection(CStackWindow * owner, int yOffset
 		lines.push_back("Drill Sergeant: first-combat +1 Morale pending through day " + std::to_string(receipt.drillDeadline) + ".");
 	else if(receipt.drillDeadline >= 0)
 		lines.push_back("Drill Sergeant: first-combat training window expired.");
+	for(const auto & origin : receipt.mercenaryOrigins)
+		lines.push_back("Diplomacy cohort: original recruiter #" + std::to_string(origin.hero.getNum())
+			+ "; Captain allowance " + std::to_string(origin.combatsRemaining)
+			+ "/3 combats. Loyal provenance persists; benefits require that recruiter.");
+	if(owner->info->stack && owner->info->stack->hasBonus(CSelector(newHorizonsTraining::isMercenaryBonus)))
+		lines.push_back("Mercenary Captain: +1 Morale this combat; one allowance consumed.");
 	if(receipt.fieldTrained)
 		lines.push_back("Field Instructor: trained; +1 Creature Attack active while in the recruiter's army.");
 	else if(receipt.fieldPending)

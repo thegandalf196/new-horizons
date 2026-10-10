@@ -233,13 +233,32 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_CORONIUS_HOLY_WRATH,
 	NEW_HORIZONS_FORCED_DISPLACEMENT, // explicit relocation cause for conditional physical immunities
 	NEW_HORIZONS_PLAGUEBEARER, // captured Plague propagation limits and optional saved rules
+	NEW_HORIZONS_RAPID_RESPONSE,
+	NEW_HORIZONS_HEROIC_SPIRIT,
+	NEW_HORIZONS_SEIZE_INITIATIVE,
+	NEW_HORIZONS_DIPLOMACY_COHORTS,
+	NEW_HORIZONS_LEGENDARY_REPUTATION,
+	NEW_HORIZONS_OPPORTUNIST,
+	NEW_HORIZONS_CRISIS_COMMAND,
+	NEW_HORIZONS_STARTING_BOOK_REPLACEMENTS, // captured exact default-only hero book table
+	NEW_HORIZONS_REMAINING_SPELL_SPECIALTIES, // captured six spell successors and Phantom specialty identity
+	NEW_HORIZONS_NAVIGATION_START_REPLACEMENTS, // captured Navigation successor profiles and exact native producer conversion
+	NEW_HORIZONS_ARTIFACT_MANA_REGENERATION, // captured optional exact Mana artifact regeneration tiers
+	NEW_HORIZONS_GLYPHS_OF_FEAR_AURA, // captured optional query-only Fortress aura
+	NEW_HORIZONS_LIGHTHOUSE_DEPARTURE, // captured owned Castle departure policy and movement receipt
+	NEW_HORIZONS_WATER_WALK_DAY_END, // captured same-day legal-land reserve enforcement
+	NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS, // authored barriers and accepted flight source layer
+	NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS, // captured fresh-default Pasis/Monere Wisp targets
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_PLAGUEBEARER,
+	CURRENT = NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS,
 };
+
+static_assert(ESerializationVersion::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS > ESerializationVersion::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS,
+	"Fresh-default creature-line successors must remain append-only before release aliases");
 
 static_assert(ESerializationVersion::NEW_HORIZONS_SWIFT_REBIRTH > ESerializationVersion::NEW_HORIZONS_PROSPECTOR,
 	"Swift Rebirth lifecycle must remain append-only after Prospector");

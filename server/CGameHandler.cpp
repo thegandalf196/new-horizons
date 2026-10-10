@@ -8,9 +8,12 @@
  *
  */
 #include "StdInc.h"
+#include "../lib/pathfinder/NewHorizonsProtectedMobility.h"
+#include "../lib/pathfinder/NewHorizonsLighthouse.h"
 #include "../lib/mapObjects/NewHorizonsAcademicStudy.h"
 #include "../lib/mapObjects/NewHorizonsSage.h"
 #include "CGameHandler.h"
+#include "../lib/entities/hero/NewHorizonsLegendaryReputation.h"
 #include "../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
 
 #include "CVCMIServer.h"
@@ -1220,6 +1223,11 @@ bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, EMovementMode moveme
 	}
 
 	const bool usesMovementCost = movementMode == EMovementMode::STANDARD || embarking || disembarking;
+	const bool protectedFlightMove = requiresLayer && !h->inBoat()
+		&& newHorizonsProtectedMobility::enabled(h->getMagicRules())
+		&& (layer == EPathfindingLayer::AIR || h->getProtectedAdventureFlightLayer() == EPathfindingLayer::AIR);
+	if(protectedFlightMove && !newHorizonsProtectedMobility::segmentClear(*h, gameState().getMap(), h->visitablePos(), hmpos))
+		return complainRet("Flight cannot cross a protected adventure barrier!");
 	const int cost = usesMovementCost
 		? pathfinderHelper->getMovementCost(h->visitablePos(), hmpos, layer, h->movementPointsRemaining())
 		: 0;
@@ -1273,6 +1281,12 @@ bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, EMovementMode moveme
 	if (transit && !canFly && !(canWalkOnSea && t.isWater()) && !CGTeleport::isTeleport(objectToVisit))
 		return complainRet("Hero cannot transit over this tile!");
 
+	if(movementMode == EMovementMode::STANDARD && movingOntoWater
+		&& layer == EPathfindingLayer::WATER && !h->inBoat() && !embarking
+		&& newHorizonsMagic::requiresWaterWalkLegalDayEnd(h->getMagicRules())
+		&& !pathfinderHelper->hasSameDayLandEscape(hmpos, h->movementPointsRemaining() - cost))
+		return complainRet("Water Walk requires enough Movement to return to legal land today!");
+
 	//several generic blocks of code
 
 	// should be called if hero changes tile but before applying TryMoveHero package
@@ -1299,6 +1313,10 @@ bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, EMovementMode moveme
 			tmh.attackedFrom = guardPos;
 
 		tmh.result = result;
+		if(result == TryMoveHero::SUCCESS && protectedFlightMove)
+			tmh.protectedFlight = newHorizonsProtectedMobility::FlightReceipt{h->getProtectedAdventureFlightLayer(), layer};
+		else
+			tmh.protectedFlight.reset();
 		const int movementPointsBeforeMove = h->movementPointsRemaining();
 		sendAndApply(tmh);
 
@@ -1391,7 +1409,14 @@ bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, EMovementMode moveme
 
 	if (!transit && embarking)
 	{
-		tmh.movePoints = h->movementPointsAfterEmbark(h->movementPointsRemaining(), cost, false, ti);
+		if(const auto * town = newHorizonsLighthouse::departureTown(*h, hmpos))
+		{
+			tmh.lighthouseDeparture = newHorizonsLighthouse::DepartureReceipt{
+				town->id, gameInfo().getCalendar().getCurrentDay()};
+			tmh.movePoints = newHorizonsLighthouse::movementAfterDeparture(h->movementPointsRemaining(), cost, *ti);
+		}
+		else
+			tmh.movePoints = h->movementPointsAfterEmbark(h->movementPointsRemaining(), cost, false, ti);
 		return doMove(TryMoveHero::EMBARK, IGNORE_GUARDS, DONT_VISIT_DEST, LEAVING_TILE);
 		// In H3 embark ignore guards
 	}
@@ -1546,6 +1571,31 @@ void CGameHandler::setOwner(const CGObjectInstance * obj, const PlayerColor owne
 
 void CGameHandler::showBlockingDialog(const IObjectInterface * caller, BlockingDialog *iw)
 {
+	if(const auto * source = dynamic_cast<const CGCreature *>(caller))
+	{
+		for(const auto & query : queries->allQueries())
+		{
+			auto * visit = queries->queryAs<MapObjectVisitQuery>(query);
+			const auto * hero = visit ? gameState().getHero(visit->visitingHero) : nullptr;
+			if(!visit || visit->visitedObject != source->id || !hero || hero->tempOwner != iw->player
+				|| visit->legendaryOfferCaptured)
+				continue;
+			visit->legendaryOfferCaptured = true;
+			const auto forecast = source->getNewHorizonsDiplomacyForecast(*hero);
+			if(forecast.legendaryReputation)
+			{
+				visit->legendaryOfferMonth = gameInfo().getCalendar().getMonth();
+				visit->legendaryOfferPreviousMonth = hero->getNewHorizonsLegendaryReputationLastMonth();
+				visit->legendaryOfferCreature = source->getCreatureID();
+				visit->legendaryOfferSlot = SlotID(0);
+				visit->legendaryOfferQuantity = forecast.joiningAmount;
+				visit->legendaryOfferNormalGold = forecast.normalGoldCost;
+				visit->legendaryOfferArmyValue = forecast.creatureArmyValue;
+				visit->legendaryOfferRecruitmentPact = forecast.recruitmentPact;
+			}
+			break;
+		}
+	}
 	auto dialogQuery = std::make_shared<CBlockingDialogQuery>(this, caller, *iw);
 	queries->addQuery(dialogQuery);
 	iw->queryID = dialogQuery->queryID;
@@ -2665,13 +2715,167 @@ void CGameHandler::sendQueryResolved(QueryID queryID)
 
 void CGameHandler::sendAndApply(CGarrisonOperationPack & pack)
 {
-	std::vector<QueryPtr> recruitingVisits;
+	// Both receipts are authority-owned; reject every caller-supplied top-level
+	// or nested witness before preparing either accepted-query projection.
+	std::optional<newHorizonsDiplomacy::LegendaryAdmission> * receipt = nullptr;
+	const auto rejectCallerReceipt = [](const auto & operation)
+	{
+		if(operation.diplomacyRecruiter != ObjectInstanceID::NONE || operation.legendaryAdmission)
+			throw std::runtime_error("Diplomacy admission receipts must originate from their accepted query");
+	};
+	if(auto * move = dynamic_cast<RebalanceStacks *>(&pack))
+	{
+		rejectCallerReceipt(*move);
+		receipt = &move->legendaryAdmission;
+	}
+	else if(auto * moves = dynamic_cast<BulkRebalanceStacks *>(&pack))
+	{
+		if(moves->legendaryAdmission)
+			throw std::runtime_error("Caller supplied a Legendary admission receipt");
+		for(const auto & move : moves->moves) rejectCallerReceipt(move);
+		receipt = &moves->legendaryAdmission;
+	}
+	else if(auto * swap = dynamic_cast<SwapStacks *>(&pack))
+	{
+		rejectCallerReceipt(*swap);
+		receipt = &swap->legendaryAdmission;
+	}
+
+	struct LegendaryChange { MapObjectVisitQuery * visit; SlotID slot; bool admitted; };
+	std::vector<LegendaryChange> legendaryChanges;
 	for(const auto & query : queries->allQueries())
 	{
 		auto * visit = queries->queryAs<MapObjectVisitQuery>(query);
-		if(!visit || !visit->trackingNeutralRecruitment || visit->admittedNeutralRecruitment)
+		if(!visit || !visit->legendaryOfferAccepted || visit->legendaryOfferAdmitted)
+			continue;
+		const auto * source = dynamic_cast<const CGCreature *>(gameInfo().getObjInstance(visit->visitedObject));
+		if(!source) throw std::runtime_error("Missing Legendary offer source");
+		SlotID offeredSlot = visit->legendaryOfferSlot;
+		std::map<SlotID, TQuantity> projected;
+		for(const auto & [slot, stack] : source->Slots()) projected[slot] = stack->getCount();
+		bool admitted = false;
+		const auto projectMove = [&](const RebalanceStacks & move)
+		{
+			if(move.srcArmy == source->id)
+			{
+				if(move.srcSlot == offeredSlot)
+				{
+					if(move.dstArmy == visit->visitingHero && move.count > 0) admitted = true;
+					if(move.dstArmy == source->id)
+					{
+						if(move.count != projected[move.srcSlot])
+							throw std::runtime_error("Cannot split the accepted Legendary cohort internally");
+						offeredSlot = move.dstSlot;
+					}
+				}
+				projected[move.srcSlot] -= move.count;
+			}
+			if(move.dstArmy == source->id) projected[move.dstSlot] += move.count;
+		};
+		if(const auto * move = dynamic_cast<const RebalanceStacks *>(&pack)) projectMove(*move);
+		else if(const auto * moves = dynamic_cast<const BulkRebalanceStacks *>(&pack))
+			for(const auto & move : moves->moves) projectMove(move);
+		else if(const auto * swap = dynamic_cast<const SwapStacks *>(&pack))
+		{
+			if(swap->srcArmy == source->id && swap->dstArmy == source->id)
+			{
+				if(offeredSlot == swap->srcSlot) offeredSlot = swap->dstSlot;
+				else if(offeredSlot == swap->dstSlot) offeredSlot = swap->srcSlot;
+			}
+			else if(swap->srcArmy == source->id && swap->srcSlot == offeredSlot
+				&& swap->dstArmy == visit->visitingHero && projected[offeredSlot] > 0) admitted = true;
+			else if(swap->dstArmy == source->id && swap->dstSlot == offeredSlot
+				&& swap->srcArmy == visit->visitingHero && projected[offeredSlot] > 0) admitted = true;
+		}
+		if(admitted)
+		{
+			if(!receipt || *receipt) throw std::runtime_error("Ambiguous Legendary admission transaction");
+			*receipt = newHorizonsDiplomacy::LegendaryAdmission{
+				visit->visitingHero, visit->visitedObject, visit->legendaryOfferSlot,
+				visit->legendaryOfferCreature, visit->legendaryOfferMonth, visit->legendaryOfferPreviousMonth,
+				visit->legendaryOfferQuantity, source->getStackCount(visit->legendaryOfferSlot),
+				visit->legendaryOfferNormalGold, visit->legendaryOfferArmyValue, visit->legendaryOfferRecruitmentPact};
+		}
+		legendaryChanges.push_back({visit, offeredSlot, admitted});
+	}
+	std::vector<QueryPtr> recruitingVisits;
+	struct AcceptedCohortChange
+	{
+		MapObjectVisitQuery * visit;
+		TQuantity admitted;
+		SlotID offeredSlot;
+	};
+	std::vector<AcceptedCohortChange> cohortChanges;
+	for(const auto & query : queries->allQueries())
+	{
+		auto * visit = queries->queryAs<MapObjectVisitQuery>(query);
+		if(!visit || !visit->trackingNeutralRecruitment)
 			continue;
 
+		const auto * neutral = dynamic_cast<const CGCreature *>(gameInfo().getObjInstance(visit->visitedObject));
+		if(!neutral)
+			continue;
+		SlotID offeredSlot = visit->acceptedNeutralSlot;
+		TQuantity admitted = 0;
+		std::map<SlotID, TQuantity> projectedNeutral;
+		for(const auto & [slot, stack] : neutral->Slots())
+			projectedNeutral[slot] = stack->getCount();
+		const auto markAdmission = [this, visit, &offeredSlot, &admitted](
+			ObjectInstanceID sourceID, SlotID sourceSlot, ObjectInstanceID destinationID,
+			TQuantity count, ObjectInstanceID & origin)
+		{
+			if(sourceID != visit->visitedObject || sourceSlot != offeredSlot
+				|| destinationID != visit->visitingHero || count <= 0
+				|| admitted >= visit->acceptedNeutralRemaining)
+				return;
+			const auto * hero = gameState().getHero(destinationID);
+			if(!hero || !newHorizonsDiplomacy::usesNewHorizonsRules(hero->getPerkState().rules))
+				return;
+			origin = hero->id;
+			admitted += std::min<TQuantity>(count, visit->acceptedNeutralRemaining - admitted);
+		};
+		const auto projectMove = [visit, &offeredSlot, &projectedNeutral, &markAdmission](RebalanceStacks & move)
+		{
+			markAdmission(move.srcArmy, move.srcSlot, move.dstArmy, move.count, move.diplomacyRecruiter);
+			if(move.srcArmy == visit->visitedObject)
+			{
+				const auto before = projectedNeutral[move.srcSlot];
+				if(move.srcSlot == offeredSlot && move.dstArmy == visit->visitedObject)
+				{
+					// Public neutral split requests are ownership-rejected. Whole
+					// swaps/merges may relocate the offered cohort without resetting it.
+					if(move.count != before)
+						throw std::runtime_error("Cannot split an accepted neutral cohort internally");
+					offeredSlot = move.dstSlot;
+				}
+				projectedNeutral[move.srcSlot] -= move.count;
+			}
+			if(move.dstArmy == visit->visitedObject)
+				projectedNeutral[move.dstSlot] += move.count;
+		};
+		if(auto * move = dynamic_cast<RebalanceStacks *>(&pack))
+			projectMove(*move);
+		else if(auto * moves = dynamic_cast<BulkRebalanceStacks *>(&pack))
+			for(auto & move : moves->moves)
+				projectMove(move);
+		else if(auto * swap = dynamic_cast<SwapStacks *>(&pack))
+		{
+			if(swap->srcArmy == visit->visitedObject && swap->dstArmy == visit->visitedObject)
+			{
+				if(offeredSlot == swap->srcSlot)
+					offeredSlot = swap->dstSlot;
+				else if(offeredSlot == swap->dstSlot)
+					offeredSlot = swap->srcSlot;
+				std::swap(projectedNeutral[swap->srcSlot], projectedNeutral[swap->dstSlot]);
+			}
+			else if(swap->srcArmy == visit->visitedObject)
+				markAdmission(swap->srcArmy, swap->srcSlot, swap->dstArmy,
+					projectedNeutral[swap->srcSlot], swap->diplomacyRecruiter);
+			else if(swap->dstArmy == visit->visitedObject)
+				markAdmission(swap->dstArmy, swap->dstSlot, swap->srcArmy,
+					projectedNeutral[swap->dstSlot], swap->diplomacyRecruiter);
+		}
+		cohortChanges.push_back({visit, admitted, offeredSlot});
 		const auto isRecruitmentMove = [visit](const RebalanceStacks & move)
 		{
 			return move.srcArmy == visit->visitedObject && move.dstArmy == visit->visitingHero && move.count > 0;
@@ -2692,10 +2896,20 @@ void CGameHandler::sendAndApply(CGarrisonOperationPack & pack)
 					receivesTroops = source->getStackCount(swap->dstSlot) > 0;
 			}
 		}
-		if(receivesTroops)
+		if(receivesTroops && !visit->admittedNeutralRecruitment)
 			recruitingVisits.push_back(query);
 	}
 	sendAndApply(static_cast<CPackForClient &>(pack));
+	for(const auto & change : legendaryChanges)
+	{
+		change.visit->legendaryOfferSlot = change.slot;
+		if(change.admitted) change.visit->legendaryOfferAdmitted = true;
+	}
+	for(const auto & change : cohortChanges)
+	{
+		change.visit->acceptedNeutralRemaining -= change.admitted;
+		change.visit->acceptedNeutralSlot = change.offeredSlot;
+	}
 	for(const auto & query : recruitingVisits)
 		queries->queryAs<MapObjectVisitQuery>(query)->admittedNeutralRecruitment = true;
 	checkVictoryLossConditionsForAll();
@@ -5921,20 +6135,64 @@ bool CGameHandler::addToSlot(const StackLocation &sl, const CCreature *c, TQuant
 	return true;
 }
 
+bool CGameHandler::validateNeutralDiplomacyOffer(const CGCreature * source,
+	const CGHeroInstance * hero, int64_t quotedGold)
+{
+	if(!source || !hero)
+		return false;
+	const auto forecast = source->getNewHorizonsDiplomacyForecast(*hero);
+	for(const auto & query : queries->allQueries())
+	{
+		auto * visit = queries->queryAs<MapObjectVisitQuery>(query);
+		if(!visit || visit->visitedObject != source->id || visit->visitingHero != hero->id)
+			continue;
+		if(!visit->legendaryOfferCaptured || visit->legendaryOfferMonth < 1)
+			return !forecast.legendaryReputation;
+		const bool valid = quotedGold == 0 && forecast.legendaryReputation
+			&& visit->legendaryOfferMonth == gameInfo().getCalendar().getMonth()
+			&& visit->legendaryOfferPreviousMonth == hero->getNewHorizonsLegendaryReputationLastMonth()
+			&& visit->legendaryOfferCreature == source->getCreatureID()
+			&& visit->legendaryOfferQuantity == source->getStackCount(SlotID(0))
+			&& visit->legendaryOfferNormalGold == forecast.normalGoldCost
+			&& visit->legendaryOfferArmyValue == forecast.creatureArmyValue
+			&& visit->legendaryOfferRecruitmentPact == forecast.recruitmentPact;
+		if(valid) visit->legendaryOfferAccepted = true;
+		return valid;
+	}
+	return !forecast.legendaryReputation;
+}
+
 void CGameHandler::tryJoiningArmy(const CArmedInstance *src, const CArmedInstance *dst, bool removeObjWhenFinished, bool allowMerging)
 {
 	if (removeObjWhenFinished)
 		removeAfterVisit(src->id);
 	const bool acceptedNeutralOffer = removeObjWhenFinished && dynamic_cast<const CGCreature *>(src);
 	const auto * recruitingHero = dynamic_cast<const CGHeroInstance *>(dst);
+	if(acceptedNeutralOffer && recruitingHero)
+	{
+		for(const auto & query : queries->allQueries())
+		{
+			const auto * visit = queries->queryAs<MapObjectVisitQuery>(query);
+			if(visit && visit->visitedObject == src->id && visit->visitingHero == dst->id
+				&& visit->legendaryOfferMonth >= 1 && !visit->legendaryOfferAccepted)
+				throw std::runtime_error("Legendary joining offer was not accepted through its validated response");
+		}
+	}
 	if(removeObjWhenFinished && dynamic_cast<const CGCreature *>(src) && recruitingHero
-		&& recruitingHero->hasActivePerk(newHorizonsDiplomacy::SKILL_ID, newHorizonsDiplomacy::RECRUITMENT_PACT_ID))
+		&& newHorizonsDiplomacy::usesNewHorizonsRules(recruitingHero->getPerkState().rules))
 	{
 		for(const auto & query : queries->allQueries())
 		{
 			auto * visit = queries->queryAs<MapObjectVisitQuery>(query);
 			if(visit && visit->visitedObject == src->id && visit->visitingHero == dst->id)
 			{
+				if(!visit->trackingNeutralRecruitment)
+				{
+					const auto * source = src->getStackPtr(SlotID(0));
+					visit->acceptedNeutralCreature = source ? source->getCreatureID() : CreatureID::NONE;
+					visit->acceptedNeutralRemaining = src->getStackCount(SlotID(0));
+					visit->acceptedNeutralSlot = SlotID(0);
+				}
 				visit->trackingNeutralRecruitment = true;
 				break;
 			}

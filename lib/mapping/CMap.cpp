@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../pathfinder/NewHorizonsLighthouse.h"
 #include "CMap.h"
 
 #include "CMapEditManager.h"
@@ -23,6 +24,7 @@
 #include "../RiverHandler.h"
 #include "../RoadHandler.h"
 #include "../TerrainHandler.h"
+#include "../pathfinder/NewHorizonsProtectedMobility.h"
 
 #include "../bonuses/Limiters.h"
 #include "../callback/IGameInfoCallback.h"
@@ -1081,6 +1083,40 @@ void CMap::validateNewHorizonsProspectorSerialization(bool supported) const
 		validate(hero.get());
 }
 
+const std::vector<int3> & CMap::getProtectedAdventureMobilityTiles() const
+{
+	return protectedAdventureMobilityTiles;
+}
+
+void CMap::setProtectedAdventureMobilityTiles(std::vector<int3> tiles)
+{
+	std::sort(tiles.begin(), tiles.end());
+	newHorizonsProtectedMobility::validateTiles(tiles, width, height, levels());
+	protectedAdventureMobilityTiles = std::move(tiles);
+}
+
+void CMap::validateProtectedAdventureMobilitySerialization(bool supported, const JsonNode * capturedRules) const
+{
+	newHorizonsProtectedMobility::validateTiles(protectedAdventureMobilityTiles, width, height, levels());
+	if(!supported && !protectedAdventureMobilityTiles.empty())
+		throw std::runtime_error("Protected adventure mobility metadata requires a new save format");
+	if(gameSettings)
+		gameSettings->validateProtectedAdventureMobilitySerialization(supported);
+	const auto validate = [supported, capturedRules](const CGHeroInstance * hero)
+	{
+		if(!hero)
+			return;
+		hero->validateProtectedAdventureMobilitySerialization(supported);
+		if(capturedRules && !newHorizonsProtectedMobility::enabled(*capturedRules)
+			&& hero->getProtectedAdventureFlightLayer() != EPathfindingLayer::LAND)
+			throw std::runtime_error("Flight receipt requires captured protected adventure rules");
+	};
+	for(const auto & object : objects)
+		validate(dynamic_cast<const CGHeroInstance *>(object.get()));
+	for(const auto & hero : heroesPool)
+		validate(hero.get());
+}
+
 void CMap::validateNewHorizonsHasteSpecialtySerialization(bool supported) const
 {
 	if(gameSettings)
@@ -1093,18 +1129,18 @@ void CMap::validateNewHorizonsHasteSpecialtySerialization(bool supported) const
 			newHorizonsHeroes::validateHasteSpecialtySerialization(hero->getPrimaryGrowthRules(), supported);
 }
 
-void CMap::validateRecruitmentTrainingSerialization(bool supported) const
+void CMap::validateRecruitmentTrainingSerialization(bool supported, bool cohortsSupported) const
 {
 	for(const auto & object : objects)
 	{
 		if(const auto * army = dynamic_cast<const CArmedInstance *>(object.get()))
-			army->validateTrainingSerialization(supported);
+			army->validateTrainingSerialization(supported, cohortsSupported);
 		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
-			hero->validateRecruitmentTrainingSerialization(supported);
+			hero->validateRecruitmentTrainingSerialization(supported, cohortsSupported);
 	}
 	for(const auto & hero : heroesPool)
 		if(hero)
-			hero->validateRecruitmentTrainingSerialization(supported);
+			hero->validateRecruitmentTrainingSerialization(supported, cohortsSupported);
 }
 
 void CMap::validateNewHorizonsSageSerialization(bool supported) const
@@ -1119,6 +1155,16 @@ void CMap::validateNewHorizonsSageSerialization(bool supported) const
 	for(const auto & hero : heroesPool)
 		if(hero)
 			hero->validateNewHorizonsSageSerialization(supported);
+}
+
+void CMap::validateNewHorizonsLegendaryReputationSerialization(bool supported, int32_t currentMonth) const
+{
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			hero->validateNewHorizonsLegendaryReputationSerialization(supported, currentMonth);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			hero->validateNewHorizonsLegendaryReputationSerialization(supported, currentMonth);
 }
 
 void CMap::validateNewHorizonsRecruitersContactsSerialization(bool supported) const
@@ -1209,6 +1255,54 @@ void CMap::validatePlagueRulesSerialization(bool supported) const
 		gameSettings->validatePlagueRulesSerialization(supported);
 }
 
+void CMap::validateNewHorizonsRemainingSpellSpecialtySerialization(bool supported) const
+{
+	if(gameSettings)
+		gameSettings->validateNewHorizonsRemainingSpellSpecialtySerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsHeroes::validateRemainingSpellSpecialtySerialization(hero->getPrimaryGrowthRules(), supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			newHorizonsHeroes::validateRemainingSpellSpecialtySerialization(hero->getPrimaryGrowthRules(), supported);
+}
+
+void CMap::validateNewHorizonsArtifactManaRegenerationSerialization(bool supported) const
+{
+	if(gameSettings)
+		gameSettings->validateNewHorizonsArtifactManaRegenerationSerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsHeroes::validateArtifactManaRegenerationSerialization(hero->getCapabilityRules(), supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			newHorizonsHeroes::validateArtifactManaRegenerationSerialization(hero->getCapabilityRules(), supported);
+}
+
+void CMap::validateNewHorizonsGlyphsOfFearSerialization(bool supported) const
+{
+	if(gameSettings)
+		gameSettings->validateNewHorizonsGlyphsOfFearSerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsHeroes::validateGlyphsOfFearSerialization(hero->getCapabilityRules(), supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			newHorizonsHeroes::validateGlyphsOfFearSerialization(hero->getCapabilityRules(), supported);
+}
+
+void CMap::validateNewHorizonsLighthouseSerialization(bool supported) const
+{
+	if(gameSettings)
+		gameSettings->validateNewHorizonsLighthouseSerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsLighthouse::validateRulesSerialization(hero->getPrimaryGrowthRules(), supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			newHorizonsLighthouse::validateRulesSerialization(hero->getPrimaryGrowthRules(), supported);
+}
+
 void CMap::validateNewHorizonsStartingDevelopmentSerialization(bool supported) const
 {
 	if(gameSettings)
@@ -1233,6 +1327,20 @@ void CMap::validateNewHorizonsRemainingStartSerialization(bool supported) const
 			newHorizonsHeroes::validateRemainingStartSerialization(hero->getPrimaryGrowthRules(), supported);
 }
 
+void CMap::validateNewHorizonsWaterWalkDayEndSerialization(bool supported) const
+{
+	if(gameSettings)
+		gameSettings->validateNewHorizonsWaterWalkDayEndSerialization(supported);
+	// Hero writers delegate magic rules to their captured callback/world (or
+	// battle), which may differ from this map's raw override collection.
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsMagic::validateWaterWalkDayEndSerialization(hero->getMagicRules(), supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			newHorizonsMagic::validateWaterWalkDayEndSerialization(hero->getMagicRules(), supported);
+}
+
 void CMap::validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const
 {
 	if(gameSettings)
@@ -1243,6 +1351,48 @@ void CMap::validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) con
 	for(const auto & hero : heroesPool)
 		if(hero)
 			newHorizonsHeroes::validateCoroniusHolyWrathSerialization(hero->getPrimaryGrowthRules(), supported);
+}
+
+void CMap::validateCrisisCommandSerialization(bool supported) const
+{
+	if(gameSettings) gameSettings->validateCrisisCommandSerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsHeroes::validateCrisisCommandProfileSerialization(hero->getPerkState().rules, supported);
+	for(const auto & hero : heroesPool)
+		if(hero) newHorizonsHeroes::validateCrisisCommandProfileSerialization(hero->getPerkState().rules, supported);
+}
+
+void CMap::validateNewHorizonsStartingBookSerialization(bool supported) const
+{
+	if(gameSettings)
+		gameSettings->validateNewHorizonsStartingBookSerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsHeroes::validateStartingBookSerialization(hero->getPrimaryGrowthRules(), supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			newHorizonsHeroes::validateStartingBookSerialization(hero->getPrimaryGrowthRules(), supported);
+}
+
+void CMap::validateNavigationStartSerialization(bool supported) const
+{
+	if(gameSettings) gameSettings->validateNavigationStartSerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsHeroes::validateNavigationStartSerialization(hero->getPrimaryGrowthRules(), supported);
+	for(const auto & hero : heroesPool)
+		if(hero) newHorizonsHeroes::validateNavigationStartSerialization(hero->getPrimaryGrowthRules(), supported);
+}
+
+void CMap::validateDefaultCreatureLineSerialization(bool supported) const
+{
+	if(gameSettings) gameSettings->validateDefaultCreatureLineSerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			hero->validateDefaultCreatureLineSerialization(supported);
+	for(const auto & hero : heroesPool)
+		if(hero) hero->validateDefaultCreatureLineSerialization(supported);
 }
 
 void CMap::validateNewHorizonsMagnateSerialization(bool supported) const

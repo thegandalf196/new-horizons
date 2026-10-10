@@ -83,6 +83,25 @@ bool exactAdelaBlessSpecialtyBonus(const CHero * hero, const std::string & name,
 		&& limiter["bonusSourceType"].isString() && limiter["bonusSourceType"].String() == "SPELL_EFFECT"
 		&& limiter["bonusSourceID"].isString() && limiter["bonusSourceID"].String() == "bless";
 }
+
+bool exactNavigationSpecialtyBonus(const CHero * hero, const std::string & name, const JsonNode & definition)
+{
+	if(!hero || (hero->getJsonKey() != "core:sylvia" && hero->getJsonKey() != "core:voy")
+		|| name != "navigationSpecialty" || !definition.isStruct() || definition.Struct().size() != 4
+		|| !definition["type"].isString() || definition["type"].String() != "MOVEMENT"
+		|| !definition["subtype"].isString() || definition["subtype"].String() != "heroMovementSea")
+		return false;
+	const auto & updater = definition["updater"];
+	const auto & limiter = definition["limiters"];
+	return updater.isStruct() && updater.Struct().size() == 3
+		&& updater["type"].isString() && updater["type"].String() == "GROWS_WITH_LEVEL"
+		&& updater["valPer20"].isNumber() && updater["valPer20"].Float() == 1500
+		&& updater["stepSize"].isNumber() && updater["stepSize"].Float() == 1
+		&& limiter.isStruct() && limiter.Struct().size() == 3
+		&& limiter["type"].isString() && limiter["type"].String() == "HAS_ANOTHER_BONUS_LIMITER"
+		&& limiter["bonusSourceType"].isString() && limiter["bonusSourceType"].String() == "SECONDARY_SKILL"
+		&& limiter["bonusSourceID"].isString() && limiter["bonusSourceID"].String() == "navigation";
+}
 }
 
 CHeroHandler::~CHeroHandler() = default;
@@ -409,6 +428,10 @@ void CHeroHandler::loadHeroSpecialty(CHero * hero, const JsonNode & node) const
 			{
 				auto prepared = prepSpec(bonus);
 				hero->specialty.push_back(prepared);
+				if(val == 0 && hero->getJsonKey() == "core:astral" && spell == SpellID::HYPNOTIZE)
+					hero->spellSpecialtySuccessorProducers.push_back({SpellID(spell), "new-horizons:phantomArmy", false, prepared});
+				if(val == 0 && hero->getJsonKey() == "core:septienna" && spell == SpellID::DEATH_RIPPLE)
+					hero->spellSpecialtySuccessorProducers.push_back({SpellID(spell), "new-horizons:plague", true, prepared});
 				if(const auto family = damageSpellSpecialtyTarget(SpellID(spell)))
 					hero->damageSpellSpecialtyProducers.push_back({*family, prepared, true});
 				if(const auto family = nonDamageSpellSpecialtyTarget(SpellID(spell)))
@@ -433,6 +456,10 @@ void CHeroHandler::loadHeroSpecialty(CHero * hero, const JsonNode & node) const
 			{
 				auto prepared = prepSpec(bonus);
 				hero->specialty.push_back(prepared);
+				if(values.empty() && hero->getJsonKey() == "core:ash" && spell == SpellID::BLOODLUST)
+					hero->spellSpecialtySuccessorProducers.push_back({SpellID(spell), "core:fireball", true, prepared});
+				if(values.empty() && hero->getJsonKey() == "core:darkstorn" && spell == SpellID::STONE_SKIN)
+					hero->spellSpecialtySuccessorProducers.push_back({SpellID(spell), "new-horizons:hexOfPain", true, prepared});
 				if(spell == SpellID::HASTE && values.empty()
 					&& (hero->getJsonKey() == "core:cyra" || hero->getJsonKey() == "core:brissa"
 						|| hero->getJsonKey() == "core:terek"))
@@ -470,8 +497,18 @@ void CHeroHandler::loadHeroSpecialty(CHero * hero, const JsonNode & node) const
 			hero->specialty.push_back(prepared);
 			if(creatureLineBonusNames.contains(keyValue.first))
 				creatureLineBonuses.push_back(prepared);
+			const auto & definition = keyValue.second;
+			if(keyValue.first == "fortune" && definition.isStruct() && definition.Struct().size() == 3
+				&& definition["type"].isString() && definition["type"].String() == "SPECIAL_FIXED_VALUE_ENCHANT"
+				&& definition["subtype"].isString() && definition["subtype"].String() == "fortune"
+				&& definition["addInfo"].isNumber() && definition["addInfo"].Float() == 3
+				&& (hero->getJsonKey() == "core:melodia" || hero->getJsonKey() == "core:daremyth"))
+				hero->spellSpecialtySuccessorProducers.push_back({SpellID(SpellID::FORTUNE),
+					hero->getJsonKey() == "core:melodia" ? "core:bless" : "core:haste", false, prepared});
 			if(exactAdelaBlessSpecialtyBonus(hero, keyValue.first, keyValue.second))
 				hero->nonDamageSpellSpecialtyProducers.push_back({SpellID(SpellID::BLESS), prepared, true});
+			if(exactNavigationSpecialtyBonus(hero, keyValue.first, keyValue.second))
+				hero->navigationSpecialtyProducer = prepared;
 
 			const JsonNode subtype = keyValue.second["subtype"];
 			if(!subtype.isString())

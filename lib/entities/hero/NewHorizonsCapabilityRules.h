@@ -76,4 +76,16 @@ DLL_LINKAGE std::optional<int> capabilityWarMachineShopPrice(
 	const JsonNode & rules, FactionID faction, ArtifactID artifact, int ordinaryPrice);
 /// Explicit saved opt-in; absent markers retain legacy count-based conversion.
 DLL_LINKAGE std::optional<int> capabilitySkeletonTransformerHealthPercent(const JsonNode & rules);
+/// Optional captured per-artifact daily recovery; absence retains legacy bonuses.
+DLL_LINKAGE std::optional<int> capabilityArtifactManaRegeneration(
+	const JsonNode & rules, ArtifactID artifact, int maximumMana);
+/// Presence is a representation change even when configured values equal legacy.
+DLL_LINKAGE void validateArtifactManaRegenerationSerialization(const JsonNode & rules, bool supported);
+struct DLL_LINKAGE GlyphsOfFearAura
+{
+	int radius = 0;
+	int morale = 0;
+};
+DLL_LINKAGE std::optional<GlyphsOfFearAura> capabilityGlyphsOfFearAura(const JsonNode & rules);
+DLL_LINKAGE void validateGlyphsOfFearSerialization(const JsonNode & rules, bool supported);
 }

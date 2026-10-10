@@ -135,6 +135,7 @@ set(test_SRCS
 		hero/NewHorizonsHeroRulesFixture.h
 		game/MovementCostTest.cpp
 		game/NewHorizonsLogisticsMovementPerksTest.cpp
+		game/NewHorizonsProtectedMobilityTest.cpp
 
 		json/JsonTests.cpp
 
@@ -145,6 +146,13 @@ set(test_SRCS
 		map/MapScriptTest.cpp
 		map/TinyH3MBuilderTest.cpp
 		map/NewHorizonsStartingDevelopmentTest.cpp
+		map/NewHorizonsNavigationSuccessorTest.cpp
+		server/NewHorizonsStartingBookReplacementTest.cpp
+		server/battles/NewHorizonsRemainingSpellSpecialtyTest.cpp
+		NewHorizonsHistoricalAdventurePolicyTestUtils.h
+		game/NewHorizonsLighthouseDepartureFixture.h
+		game/NewHorizonsLighthouseDepartureTest.cpp
+		server/queries/NewHorizonsWaterWalkDayEndTest.cpp
 
 		quest/QuestTest.cpp
 		quest/QuestAssertions.cpp
@@ -359,6 +367,9 @@ set(test_SRCS
 		server/battles/NewHorizonsBattlecraftTest.cpp
 		server/battles/NewHorizonsBattlecraftPreemptiveStrikeTest.cpp
 		server/battles/NewHorizonsOverwatchTest.cpp
+		server/battles/NewHorizonsRapidResponseTest.cpp
+		server/battles/NewHorizonsSeizeInitiativeTest.cpp
+	server/battles/NewHorizonsCrisisCommandTest.cpp
 		server/battles/NewHorizonsBattlecraftDefendLifetimeTest.cpp
 		server/battles/NewHorizonsBattlefieldMasteryTest.cpp
 		server/battles/NewHorizonsLastStandTest.cpp
@@ -500,6 +511,8 @@ set(test_SRCS
 		server/queries/NewHorizonsMagicUniversityTest.cpp
 		server/queries/NewHorizonsAdventureSpellUnlockTest.cpp
 		server/queries/NewHorizonsTownPortalMovementTest.cpp
+		server/queries/NewHorizonsManaRegenerationArtifactTest.cpp
+		server/queries/NewHorizonsGlyphsOfFearTest.cpp
 		server/NewHorizonsEconomyTest.cpp
 		server/NewHorizonsEstatesFinancierTest.cpp
 		server/NewHorizonsEstatesInvestorTest.cpp
@@ -522,6 +535,8 @@ set(test_SRCS
 		server/NewHorizonsBattleFormResultTest.cpp
 		server/NewHorizonsRecruitmentMusterTest.cpp
 		server/NewHorizonsDiplomacyTest.cpp
+		server/NewHorizonsLegendaryReputationTest.cpp
+		server/NewHorizonsMercenaryAdmissionTest.cpp
 		server/NewHorizonsPortalSummoningTest.cpp
 		server/NewHorizonsDemonicReserveTest.cpp
 		server/RandomArtifactPoolExclusionsTest.cpp
@@ -606,6 +621,9 @@ if(ENABLE_BATTLE_AI)
 		server/battles/NewHorizonsHavocPerksTest.cpp
 		server/battles/NewHorizonsPlaguebearerTest.cpp
 		server/battles/NewHorizonsIronWillTest.cpp
+		server/battles/NewHorizonsHeroicSpiritTest.cpp
+		server/battles/NewHorizonsMercenaryCombatTest.cpp
+		server/battles/NewHorizonsOpportunistTest.cpp
 		server/battles/NewHorizonsReactiveWeaveTest.cpp
 		server/battles/NewHorizonsHalonMetamagicTest.cpp
 		battleAI/HeroCommandAITest.cpp
@@ -693,6 +711,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/Engine/PriorityEvaluatorTest.cpp
 		nullkiller2/Engine/TaskFailureTest.cpp
 		nullkiller2/Engine/NewHorizonsLogisticsMovementAITest.cpp
+		nullkiller2/Engine/NewHorizonsLighthouseDepartureAITest.cpp
 		nullkiller2/Engine/NewHorizonsForcedMarchAITest.cpp
 		nullkiller2/Goals/BuyArmyTest.cpp
 		nullkiller2/NewHorizonsPortalRecruitmentTest.cpp

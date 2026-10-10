@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "BattleExchangeVariant.h"
+#include "../../lib/battle/NewHorizonsOpportunist.h"
 #include "BattleEvaluator.h"
 #include "NewHorizonsHexOfPain.h"
 #include "../../lib/CStack.h"
@@ -606,6 +607,10 @@ float BattleExchangeVariant::trackAttack(
 		unitToUpdate->physicalPoisonSourceStackId = affectedUnit->physicalPoisonSourceStackId;
 		unitToUpdate->guardianSpiritHitPoints = affectedUnit->guardianSpiritHitPoints;
 		unitToUpdate->guardianSpiritRoundsRemaining = affectedUnit->guardianSpiritRoundsRemaining;
+		unitToUpdate->luckyOwnAttackSequence = affectedUnit->luckyOwnAttackSequence;
+		if(unitToUpdate->unitId() == attacker->unitId()
+			&& newHorizonsOpportunist::hasPerk(*hb, unitToUpdate.get()))
+			unitToUpdate->pursuitMovementRemaining = affectedUnit->pursuitMovementRemaining;
 		unitToUpdate->rangedFollowUpDamagePercent = affectedUnit->rangedFollowUpDamagePercent;
 		// The forecasted continuation is one accepted shot. Consume its copied
 		// allowance here so this detached branch cannot price another reduced

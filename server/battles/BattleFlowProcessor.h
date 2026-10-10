@@ -11,6 +11,7 @@
 
 #include "../../lib/battle/BattleSide.h"
 #include "../../lib/battle/BattleUnitTurnReason.h"
+#include "../../lib/constants/EntityIdentifiers.h"
 
 class CStack;
 class BattleHex;
@@ -50,6 +51,9 @@ class BattleFlowProcessor : boost::noncopyable
 	void activateNextStack(const CBattleInfoCallback & battle);
 	void startNextRound(const CBattleInfoCallback & battle, bool isFirstRound);
 	bool tryStartPreCombatOrder(const CBattleInfoCallback & battle);
+	bool tryStartCrisisCommand(const CBattleInfoCallback & battle, const BattleAction * completed = nullptr,
+		bool masterGate = false, bool pursuit = false, bool ranged = false);
+	void resumeCrisisCommand(const CBattleInfoCallback & battle);
 	void resolveDemonicGates(const CBattleInfoCallback & battle, bool endOfRoundPhase);
 
 	void removeObstacle(const CBattleInfoCallback & battle, const CObstacleInstance & obstacle);
@@ -64,6 +68,7 @@ class BattleFlowProcessor : boost::noncopyable
 	bool makeAutomaticAction(const CBattleInfoCallback & battle, const CStack * stack, const BattleAction & ba); //used when action is taken by stack without volition of player (eg. unguided catapult attack)
 
 public:
+	bool declineCrisisCommand(const CBattleInfoCallback & battle, PlayerColor player, const BattleAction & action);
 	explicit BattleFlowProcessor(BattleProcessor * owner, CGameHandler * newGameHandler);
 
 	void onBattleStarted(const CBattleInfoCallback & battle);

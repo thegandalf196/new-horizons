@@ -30,6 +30,7 @@ struct StackLocation;
 class CStackBasicDescriptor;
 class ResourceSet;
 class CGHeroInstance;
+class CGCreature;
 class CArmedInstance;
 class CGTownInstance;
 class CCreatureSet;
@@ -102,6 +103,9 @@ public:
 	{
 		return addToSlot(slot, creature, count);
 	}
+	/// Original neutral offer remains bound to the authoritative visit query.
+	/// Ordinary callbacks without Legendary offers preserve their existing behavior.
+	virtual bool validateNeutralDiplomacyOffer(const CGCreature *, const CGHeroInstance *, int64_t) { return true; }
 	virtual void tryJoiningArmy(const CArmedInstance *src, const CArmedInstance *dst, bool removeObjWhenFinished, bool allowMerging) =0; //merges army from src do dst or opens a garrison window
 	virtual bool moveStack(const StackLocation &src, const StackLocation &dst, TQuantity count) = 0;
 

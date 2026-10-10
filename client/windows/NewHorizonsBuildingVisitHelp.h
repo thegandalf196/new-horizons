@@ -10,12 +10,30 @@
 #include <cstdint>
 
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../lib/mapObjects/TownBuildingInstance.h"
+#include "../../lib/pathfinder/NewHorizonsLighthouse.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/texts/MetaString.h"
 
 namespace newHorizonsBuildingVisitHelp
 {
+/// Empty means preserve the authored legacy description, including its +500 bonus.
+inline MetaString lighthouseDescription(BuildingTypeUniqueID building,
+	const JsonNode & heroRules, const JsonNode & capabilityRules)
+{
+	if(building.getFaction() != FactionID::CASTLE || building.getBuilding() != BuildingID::SPECIAL_1
+		|| !newHorizonsHeroes::usesRules(capabilityRules))
+		return {};
+	newHorizonsLighthouse::validateRulesSerialization(heroRules, true);
+	if(!heroRules.isStruct() || !heroRules.Struct().contains("lighthouseDeparture")
+		|| !heroRules["lighthouseDeparture"]["enabled"].Bool())
+		return {};
+	auto description = MetaString::createFromTextID("new-horizons.lighthouse.departure.help");
+	description.replaceTokenNumber("%PERCENT%", heroRules["lighthouseDeparture"]["seaMovementPercent"].Integer());
+	return description;
+}
+
 /// Returns authored town-rewardable state text without changing town or hero state.
 inline MetaString heroVisitStatus(const TownRewardableBuildingInstance & building, const CGHeroInstance * hero)
 {

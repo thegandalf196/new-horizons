@@ -471,6 +471,7 @@
 			"newHorizons": {
 				"schemaVersion": 1,
 				"rulesetVersion": 3,
+				"protectedAdventureBarriers": true,
 				"creatureAbilities": {
 					"rulesetVersion": 1,
 					"freezingTouchChancePercent": 20,
@@ -555,6 +556,7 @@
 						}
 					},
 					"core:waterWalk": {
+						"requireLegalDayEnd": true,
 						"guildLevel": 2,
 						"cost": 30,
 						"unlockCost": {
@@ -2044,6 +2046,14 @@
 		"heroes": {
 			"newHorizons": {
 				"schemaVersion": 1,
+				"lighthouseDeparture": {
+					"enabled": true,
+					"seaMovementPercent": 20
+				},
+				"defaultCreatureLineReplacements": {
+					"core:pasis": "new-horizons:wisp",
+					"core:monere": "new-horizons:wisp"
+				},
 				"rulesetVersion": 1,
 				"powerDivisor": 10,
 				"maxPrimary": 10000,
@@ -3002,6 +3012,7 @@
 					"coroniusHolyWrathReplacement": true,
 					"componentPercent": 15
 				},
+				"remainingSpellSpecialtyReplacements": true,
 				"nonDamageSpellSpecialties": {
 					"version": 1,
 					"aenainFrailtyReplacement": true,
@@ -3019,10 +3030,12 @@
 						"new-horizons:hydrasVitality",
 						"new-horizons:guardianSpirit",
 						"new-horizons:crusade",
-						"new-horizons:focusMagic"
+						"new-horizons:focusMagic",
+						"new-horizons:phantomArmy"
 					]
 				},
 				"skillSpecialties": {
+					"navigationStartReplacements": true,
 					"version": 1,
 					"coreBonusPercent": 20,
 					"skills": [
@@ -3034,7 +3047,133 @@
 					]
 				},
 				"startingSkills": {
+					"startingBookReplacements": {
+						"core:rion": {
+							"from": "core:stoneSkin",
+							"to": "new-horizons:guardianSpirit"
+						},
+						"core:aeris": {
+							"from": "core:protectAir",
+							"to": "new-horizons:holyArmor"
+						},
+						"core:piquedram": {
+							"from": "core:shield",
+							"to": "core:slow"
+						},
+						"core:neela": {
+							"from": "core:shield",
+							"to": "core:slow"
+						},
+						"core:theodorus": {
+							"from": "core:shield",
+							"to": "core:slow"
+						},
+						"core:ayden": {
+							"from": "core:viewEarth",
+							"to": "new-horizons:confusion"
+						},
+						"core:axsis": {
+							"from": "core:protectAir",
+							"to": "core:forgetfulness"
+						},
+						"core:zydar": {
+							"from": "core:stoneSkin",
+							"to": "new-horizons:blink"
+						},
+						"core:vokial": {
+							"from": "core:stoneSkin",
+							"to": "new-horizons:lifeDrain"
+						},
+						"core:galthran": {
+							"from": "core:shield",
+							"to": "core:slow"
+						},
+						"core:nimbus": {
+							"from": "core:shield",
+							"to": "core:dispel"
+						},
+						"core:nagash": {
+							"from": "core:protectAir",
+							"to": "core:dispel"
+						},
+						"core:jaegar": {
+							"from": "core:shield",
+							"to": "core:curse"
+						},
+						"core:malekith": {
+							"from": "core:bloodlust",
+							"to": "new-horizons:shadowGift"
+						},
+						"core:sephinroth": {
+							"from": "core:protectAir",
+							"to": "core:curse"
+						},
+						"core:gird": {
+							"from": "core:bloodlust",
+							"to": "new-horizons:vengefulVines"
+						},
+						"core:dessa": {
+							"from": "core:stoneSkin",
+							"to": "new-horizons:regeneration"
+						},
+						"core:oris": {
+							"from": "core:protectAir",
+							"to": "core:forgetfulness"
+						},
+						"core:saurug": {
+							"from": "core:bloodlust",
+							"to": "new-horizons:vengefulVines"
+						},
+						"core:verdish": {
+							"from": "core:protectFire",
+							"to": "new-horizons:regeneration"
+						},
+						"core:styg": {
+							"from": "core:shield",
+							"to": "new-horizons:entangle"
+						},
+						"core:tiva": {
+							"from": "core:stoneSkin",
+							"to": "new-horizons:regeneration"
+						}
+					},
 					"startingDevelopmentProfiles": {
+						"core:sylvia": {
+							"skills": [
+								{
+									"skill": "new-horizons:logistics",
+									"rank": 1
+								},
+								{
+									"skill": "new-horizons:divineMandate",
+									"rank": 1
+								}
+							],
+							"startingPerks": [
+								{
+									"skill": "new-horizons:logistics",
+									"perk": "new-horizons:logistics.navigation"
+								}
+							]
+						},
+						"core:voy": {
+							"skills": [
+								{
+									"skill": "new-horizons:logistics",
+									"rank": 1
+								},
+								{
+									"skill": "new-horizons:bulwarkOfTheMire",
+									"rank": 1
+								}
+							],
+							"startingPerks": [
+								{
+									"skill": "new-horizons:logistics",
+									"perk": "new-horizons:logistics.navigation"
+								}
+							]
+						},
 						"core:terek": {
 							"skills": [
 								{
@@ -4204,6 +4343,24 @@
 						"core:necropolis": "core:firstAidTent",
 						"core:fortress": "core:firstAidTent"
 					}
+				},
+				"artifactManaRegeneration": {
+					"core:charmOfMana": {
+						"minimum": 5,
+						"percent": 5
+					},
+					"core:talismanOfMana": {
+						"minimum": 10,
+						"percent": 10
+					},
+					"core:mysticOrbOfMana": {
+						"minimum": 15,
+						"percent": 15
+					}
+				},
+				"glyphsOfFearAura": {
+					"radius": 8,
+					"morale": -1
 				}
 			},
 			"newHorizonsMasteries": {
@@ -4751,7 +4908,7 @@
 								"requires": "advanced",
 								"description": "Once per round after an enemy Creature Activation ends, if friendly stacks are still Waiting, the waiting friendly stack scheduled latest in the current initiative order automatically takes its delayed activation next.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Once per round after an enemy Creature Activation ends, if friendly stacks are still Waiting, the waiting friendly stack scheduled latest in the current initiative order automatically takes its delayed activation next."
 								}
 							},
@@ -5035,7 +5192,7 @@
 								"requires": "expert",
 								"description": "When positive Morale triggers, the affected stack gains one additional retaliation until its next activation.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "When positive Morale triggers, the affected stack gains one additional retaliation until its next activation."
 								}
 							}
@@ -5279,7 +5436,7 @@
 								"requires": "advanced",
 								"description": "Once per combat, when a friendly stack is completely destroyed, immediately issue one Order without consuming the Hero Action.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Once per combat, when a friendly stack is completely destroyed, immediately issue one Order without consuming the Hero Action."
 								}
 							},
@@ -5299,7 +5456,7 @@
 								"requires": "expert",
 								"description": "The first time each combat the hero uses the Hero Action to issue an Order, the friendly stack scheduled latest in the current initiative order among those that have not completed their normal Creature Activation becomes the next friendly stack to activate after the current activation ends.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "The first time each combat the hero uses the Hero Action to issue an Order, the friendly stack scheduled latest in the current initiative order among those that have not completed their normal Creature Activation becomes the next friendly stack to activate after the current activation ends."
 								}
 							}
@@ -6691,7 +6848,7 @@
 								"requires": "basic",
 								"description": "Creatures recruited through Diplomacy gain +1 Morale for their first three combats under this hero.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Creatures recruited through Diplomacy gain +1 Morale for their first three combats under this hero."
 								}
 							},
@@ -6721,7 +6878,7 @@
 								"requires": "advanced",
 								"description": "Creatures recruited through Diplomacy do not contribute to mixed-faction Morale penalties while commanded by this hero.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Creatures recruited through Diplomacy do not contribute to mixed-faction Morale penalties while commanded by this hero."
 								}
 							},
@@ -6751,7 +6908,7 @@
 								"requires": "expert",
 								"description": "Once per calendar month, the first eligible neutral stack that qualifies to join through Diplomacy joins without a gold payment.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Once per calendar month, the first eligible neutral stack that qualifies to join through Diplomacy joins without a gold payment."
 								}
 							}
@@ -7057,7 +7214,7 @@
 								"requires": "basic",
 								"description": "After a positive Luck trigger on an attack, the stack's Creature Activation remains open for movement only, allowing up to 2 hexes of movement using its remaining movement. It gains no additional attack.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "After a positive Luck trigger on an attack, the stack's Creature Activation remains open for movement only, allowing up to 2 hexes of movement using its remaining movement. It gains no additional attack."
 								}
 							},
@@ -8374,7 +8531,8 @@
 		"config/artifacts/scaledAttributesAndMovement.json",
 		"config/artifacts/speedAndInitiative.json",
 		"config/artifacts/elementalOrbs.json",
-		"config/artifacts/adventureMovementCasts.json"
+		"config/artifacts/adventureMovementCasts.json",
+		"config/artifacts/manaRegeneration.json"
 	],
 	"factions": [
 		"config/factions/uniqueBuildings.json",
@@ -10503,6 +10661,7 @@
 		"new-horizons.adventure.spellLearning.requires": "Requires ",
 		"new-horizons.adventure.spellLearning.proficiencyIn": " proficiency in ",
 		"new-horizons.adventure.spellLearning.or": " or ",
+		"new-horizons.lighthouse.departure.help": "Embarking from this owned Castle's port costs no embarkation movement penalty. The departing hero gains +%PERCENT%% sea movement for that day only.",
 		"new-horizons.sage.guildSpells": "Sage — revealed spells",
 		"new-horizons.economy.investor.header": "Investor — this week's daily Gold bonus (before income handicap)",
 		"new-horizons.economy.investor.hero": "%HERO: +%GOLD Gold/day",

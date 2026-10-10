@@ -153,6 +153,29 @@ bool hasOverwatchState(const JsonNode & unitSnapshot)
 	return present;
 }
 
+bool hasHeroicSpiritState(const JsonNode & unitSnapshot)
+{
+	const auto * state = findJsonField(unitSnapshot, "state");
+	if(!state)
+		return false;
+	if(!state->isStruct())
+		throw std::runtime_error("Invalid Heroic Spirit unit state");
+	bool available = false;
+	bool pending = false;
+	for(const auto * name : {"heroicSpiritRetaliation", "heroicSpiritMoralePending"})
+	{
+		const auto * value = findJsonField(*state, name);
+		if(!value)
+			continue;
+		if(value->getType() != JsonNode::JsonType::DATA_BOOL)
+			throw std::runtime_error("Heroic Spirit receipt must be a boolean");
+		(name == std::string("heroicSpiritRetaliation") ? available : pending) = value->Bool();
+	}
+	if(pending && !available)
+		throw std::runtime_error("Pending Heroic Spirit Morale requires its retaliation receipt");
+	return available;
+}
+
 bool hasVeteranCohesionState(const JsonNode & unitSnapshot)
 {
 	const auto * state = findJsonField(unitSnapshot, "state");
@@ -285,7 +308,9 @@ int32_t CRetaliations::total() const
 	if(noRetaliation.hasBonus())
 		return 0;
 
-	const auto additionalRetaliations = env ? env->unitAdditionalRetaliations(owner) : 0;
+	const auto * personalState = dynamic_cast<const CUnitState *>(owner);
+	const int64_t additionalRetaliations = static_cast<int64_t>(env ? env->unitAdditionalRetaliations(owner) : 0)
+		+ (personalState && personalState->heroicSpiritRetaliation ? 1 : 0);
 	if(newHorizonsCreatureAbilitySuppression::suppressionLevel(*owner) >= 2)
 	{
 		// The ordinary bonus cache normally preserves a larger observed cap for
@@ -1360,6 +1385,7 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	pursuitMovementRemaining = other.pursuitMovementRemaining;
 	cleaveUsedThisActivation = other.cleaveUsedThisActivation;
 	rangedFollowUpDamagePercent = other.rangedFollowUpDamagePercent;
+	luckyOwnAttackSequence = other.luckyOwnAttackSequence;
 	archeryCounterfireRound = other.archeryCounterfireRound;
 	archeryDeadeyeRound = other.archeryDeadeyeRound;
 	archerySuppressionActivationSerial = other.archerySuppressionActivationSerial;
@@ -1381,6 +1407,8 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	battlecraftWaitBonusUsed = other.battlecraftWaitBonusUsed;
 	battlecraftOverwatchReadyRound = other.battlecraftOverwatchReadyRound;
 	battlecraftOverwatchUsedRound = other.battlecraftOverwatchUsedRound;
+	heroicSpiritRetaliation = other.heroicSpiritRetaliation;
+	heroicSpiritMoralePending = other.heroicSpiritMoralePending;
 	battlecraftWaitMasteryDoubled = other.battlecraftWaitMasteryDoubled;
 	battlecraftPreemptiveStrikeRound = other.battlecraftPreemptiveStrikeRound;
 	defensiveStanceMeleeBonus = other.defensiveStanceMeleeBonus;
@@ -2208,6 +2236,8 @@ std::shared_ptr<CUnitState> CUnitState::acquireState() const
 
 void CUnitState::serializeJson(JsonSerializeFormat & handler)
 {
+	if(heroicSpiritMoralePending && !heroicSpiritRetaliation)
+		throw std::runtime_error("Invalid pending Heroic Spirit receipt");
 	JsonNode confusion;
 	if(handler.saving)
 		confusion = confusionState.toJson();
@@ -2219,6 +2249,8 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeBool("drainedMana", drainedMana);
 	handler.serializeBool("fear", fear);
 	handler.serializeBool("hadMorale", hadMorale);
+	handler.serializeBool("heroicSpiritRetaliation", heroicSpiritRetaliation);
+	handler.serializeBool("heroicSpiritMoralePending", heroicSpiritMoralePending);
 	handler.serializeBool("castSpellThisTurn", castSpellThisTurn);
 	handler.serializeBool("ghost", ghost);
 	handler.serializeBool("ghostPending", ghostPending);
@@ -2226,6 +2258,7 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeInt("pursuitMovementRemaining", pursuitMovementRemaining, 0);
 	if(pursuitMovementRemaining < 0)
 		throw std::runtime_error("Invalid negative Pursuit movement allowance");
+	handler.serializeBool("luckyOwnAttackSequence", luckyOwnAttackSequence);
 	handler.serializeBool("cleaveUsedThisActivation", cleaveUsedThisActivation);
 	handler.serializeInt("rangedFollowUpDamagePercent", rangedFollowUpDamagePercent, 0);
 	if(rangedFollowUpDamagePercent < 0 || rangedFollowUpDamagePercent > 100)
@@ -2393,6 +2426,8 @@ std::pair<int32_t, int32_t> CUnitState::getMoraleLimits() const
 
 void CUnitState::reset()
 {
+	heroicSpiritRetaliation = false;
+	heroicSpiritMoralePending = false;
 	confusionState = {};
 	frozenAppliedRound = -1;
 	battlecraftOverwatchReadyRound = -1;
@@ -2411,6 +2446,7 @@ void CUnitState::reset()
 	movedThisRound = false;
 	timeStopTurnConsumedFlag = false;
 	rangedFollowUpDamagePercent = 0;
+	luckyOwnAttackSequence = false;
 	regenerationRateMillionths = 0;
 	regenerationPendingMicroHealth = 0;
 	noQuarterMoraleActivationsRemaining = 0;
@@ -2516,6 +2552,9 @@ void CUnitState::load(const JsonNode & data)
 	const bool retainedVeteranCohesion = veteranCohesionEarned || incomingVeteranCohesion;
 	// Check metadata before any existing unit state is changed by deserialization.
 	const auto * incomingState = findJsonField(data, "state");
+	const auto * luckySequence = incomingState ? findJsonField(*incomingState, "luckyOwnAttackSequence") : nullptr;
+	if(luckySequence && !luckySequence->isBool())
+		throw std::runtime_error("Own lucky attack sequence must be a boolean");
 	const auto * frozenRound = incomingState ? findJsonField(*incomingState, "frozenAppliedRound") : nullptr;
 	if(frozenRound && (frozenRound->getType() != JsonNode::JsonType::DATA_INTEGER
 		|| frozenRound->Integer() < -1 || frozenRound->Integer() > std::numeric_limits<int32_t>::max()))
@@ -2538,6 +2577,7 @@ void CUnitState::load(const JsonNode & data)
 		}
 	}
 	hasOverwatchState(data);
+	hasHeroicSpiritState(data);
 	const auto incomingConfusion = confusionStateFromUnitJson(data);
 	//TODO: use instance resolver
 	const auto & savedPainIncrement = data["state"]["personalBloodrageIncrement"];
@@ -2713,6 +2753,10 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 	if(!alive())
 	{
 		rangedFollowUpDamagePercent = 0;
+		heroicSpiritRetaliation = false;
+		heroicSpiritMoralePending = false;
+		luckyOwnAttackSequence = false;
+		pursuitMovementRemaining = 0;
 		veteranPhysicalDamageSinceActivation = 0;
 		guardianSpiritHitPoints = 0;
 		guardianSpiritRoundsRemaining = 0;
@@ -2957,6 +3001,7 @@ void CUnitState::afterNewRound(bool isFirstRound, bool deferBattleFormRestoratio
 	pursuitMovementRemaining = 0;
 	cleaveUsedThisActivation = false;
 	rangedFollowUpDamagePercent = 0;
+	luckyOwnAttackSequence = false;
 	archeryCounterfireRound = -1;
 	hadMorale = false;
 	castSpellThisTurn = false;
@@ -2997,12 +3042,15 @@ void CUnitState::afterGetsTurn(BattleUnitTurnReason reason)
 
 void CUnitState::makeGhost()
 {
+	heroicSpiritRetaliation = false;
+	heroicSpiritMoralePending = false;
 	battlecraftOverwatchReadyRound = -1;
 	endBattleForm();
 	activationMovementBonus = 0;
 	pursuitMovementRemaining = 0;
 	cleaveUsedThisActivation = false;
 	rangedFollowUpDamagePercent = 0;
+	luckyOwnAttackSequence = false;
 	battlecraftWaitMasteryDoubled = false;
 	battlecraftDefendMasteryDoubled = false;
 	armorerLastStandEndedActivation = false;
@@ -3020,9 +3068,12 @@ void CUnitState::makeGhost()
 
 void CUnitState::onRemoved()
 {
+	heroicSpiritRetaliation = false;
+	heroicSpiritMoralePending = false;
 	endBattleForm();
 	activationMovementBonus = 0;
 	rangedFollowUpDamagePercent = 0;
+	luckyOwnAttackSequence = false;
 	armorerLastStandEndedActivation = false;
 	armorerLastStandDefending = false;
 	battlecraftWaitMasteryDoubled = false;

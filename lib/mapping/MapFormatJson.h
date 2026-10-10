@@ -37,6 +37,7 @@ public:
 	static const int VERSION_MAJOR;
 	static const int VERSION_MAJOR_WITHOUT_MAGIC_OVERRIDE;
 	static const int VERSION_MAJOR_WITH_MAGIC_OVERRIDE;
+	static const int VERSION_MAJOR_WITH_PROTECTED_MOBILITY;
 	static const int VERSION_MINOR;
 
 	static const std::string HEADER_FILE_NAME;

@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../pathfinder/NewHorizonsLighthouse.h"
 #include "PacksForClient.h"
 #include "PacksForClientBattle.h"
 #include "PacksForServer.h"
@@ -473,6 +474,11 @@ void BattleSetActiveStack::visitTyped(ICPackVisitor & visitor)
 	visitor.visitBattleSetActiveStack(*this);
 }
 
+void BattleCrisisCommandChanged::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitBattleCrisisCommandChanged(*this);
+}
+
 void BattleResult::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitBattleResult(*this);
@@ -528,6 +534,35 @@ void BattleMoraleSuppressionStateChanged::visitTyped(ICPackVisitor & visitor)
 	visitor.visitBattleMoraleSuppressionStateChanged(*this);
 }
 
+void BattleRapidResponseStateChanged::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitBattleRapidResponseStateChanged(*this);
+}
+
+void BattleRapidResponseStateChanged::validateAgainst(const CBattleInfoCallback & battle) const
+{
+	if(battleID != battle.getBattle()->getBattleID()
+		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| expected != battle.getBattle()->getRapidResponseState(side))
+		throw std::runtime_error("Stale Rapid Response queue transition");
+	expected.validateShape();
+	state.validateShape();
+	RapidResponseState planned;
+	switch(transition)
+	{
+		case Transition::CAPTURE: planned = newHorizonsRapidResponse::capture(battle, side); break;
+		case Transition::CONSUME: planned = newHorizonsRapidResponse::resolve(battle, side, true); break;
+		case Transition::CLEAR:
+			if(newHorizonsRapidResponse::pendingWaiter(battle, side))
+				throw std::runtime_error("Cannot discard a valid pending Rapid Response waiter");
+			planned = newHorizonsRapidResponse::resolve(battle, side, false);
+			break;
+		default: throw std::runtime_error("Invalid Rapid Response transition");
+	}
+	if(state != planned)
+		throw std::runtime_error("Rapid Response update differs from shared queue plan");
+}
+
 void BattleReducedExtraActivationStateChanged::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitBattleReducedExtraActivationStateChanged(*this);
@@ -577,6 +612,11 @@ void SetBattlecraftMasteryAward::visitTyped(ICPackVisitor & visitor)
 void EndAction::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitEndAction(*this);
+}
+
+void BattleNormalActivationCompleted::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitBattleNormalActivationCompleted(*this);
 }
 
 void BattleSpellCast::visitTyped(ICPackVisitor & visitor)
@@ -939,6 +979,12 @@ void LobbyRestartGame::visitTyped(ICPackVisitor & visitor)
 	visitor.visitLobbyRestartGame(*this);
 }
 
+void LobbyStartGame::validateOpportunistSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateOpportunistSerialization(supported);
+}
+
 void LobbyStartGame::validateCrossSchoolFormulaSerialization(bool supported) const
 {
 	if(initializedGameState)
@@ -963,16 +1009,22 @@ void LobbyStartGame::validatePlagueRulesSerialization(bool supported) const
 		initializedGameState->validatePlagueRulesSerialization(supported);
 }
 
-void LobbyStartGame::validateRecruitmentTrainingSerialization(bool supported) const
+void LobbyStartGame::validateRecruitmentTrainingSerialization(bool supported, bool cohortsSupported) const
 {
 	if(initializedGameState)
-		initializedGameState->validateRecruitmentTrainingSerialization(supported);
+		initializedGameState->validateRecruitmentTrainingSerialization(supported, cohortsSupported);
 }
 
 void LobbyStartGame::validateNewHorizonsSageSerialization(bool supported) const
 {
 	if(initializedGameState)
 		initializedGameState->validateNewHorizonsSageSerialization(supported);
+}
+
+void LobbyStartGame::validateNewHorizonsLegendaryReputationSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsLegendaryReputationSerialization(supported);
 }
 
 void LobbyStartGame::validateNewHorizonsRecruitersContactsSerialization(bool supported) const
@@ -991,6 +1043,12 @@ void LobbyStartGame::validateNewHorizonsScholarSerialization(bool supported) con
 {
 	if(initializedGameState)
 		initializedGameState->validateNewHorizonsScholarSerialization(supported);
+}
+
+void LobbyStartGame::validateProtectedAdventureMobilitySerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateProtectedAdventureMobilitySerialization(supported);
 }
 
 void LobbyStartGame::validateNewHorizonsThantReanimateSerialization(bool supported) const
@@ -1023,6 +1081,30 @@ void LobbyStartGame::validateNewHorizonsOffensiveStartSpecialtySerialization(boo
 		initializedGameState->validateNewHorizonsOffensiveStartSpecialtySerialization(supported);
 }
 
+void LobbyStartGame::validateNewHorizonsRemainingSpellSpecialtySerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsRemainingSpellSpecialtySerialization(supported);
+}
+
+void LobbyStartGame::validateNewHorizonsArtifactManaRegenerationSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsArtifactManaRegenerationSerialization(supported);
+}
+
+void LobbyStartGame::validateNewHorizonsGlyphsOfFearSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsGlyphsOfFearSerialization(supported);
+}
+
+void LobbyStartGame::validateNewHorizonsLighthouseSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsLighthouseSerialization(supported);
+}
+
 void LobbyStartGame::validateNewHorizonsStartingDevelopmentSerialization(bool supported) const
 {
 	if(initializedGameState)
@@ -1035,10 +1117,38 @@ void LobbyStartGame::validateNewHorizonsRemainingStartSerialization(bool support
 		initializedGameState->validateNewHorizonsRemainingStartSerialization(supported);
 }
 
+void LobbyStartGame::validateNewHorizonsWaterWalkDayEndSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsWaterWalkDayEndSerialization(supported);
+}
+
 void LobbyStartGame::validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const
 {
 	if(initializedGameState)
 		initializedGameState->validateNewHorizonsCoroniusHolyWrathSerialization(supported);
+}
+
+void LobbyStartGame::validateCrisisCommandSerialization(bool supported) const
+{
+	if(initializedGameState) initializedGameState->validateCrisisCommandSerialization(supported);
+}
+
+void LobbyStartGame::validateNewHorizonsStartingBookSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsStartingBookSerialization(supported);
+}
+
+void LobbyStartGame::validateNavigationStartSerialization(bool supported) const
+{
+	if(initializedGameState) initializedGameState->validateNavigationStartSerialization(supported);
+}
+
+void LobbyStartGame::validateDefaultCreatureLineSerialization(bool supported) const
+{
+	if(initializedStartInfo) initializedStartInfo->validateDefaultCreatureLineSerialization(supported);
+	if(initializedGameState) initializedGameState->validateDefaultCreatureLineSerialization(supported);
 }
 
 void LobbyStartGame::validateNewHorizonsMagnateSerialization(bool supported) const

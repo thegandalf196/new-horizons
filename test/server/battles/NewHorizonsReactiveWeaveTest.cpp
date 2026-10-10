@@ -79,12 +79,18 @@ class NewHorizonsReactiveWeaveTest : public HeroCommandFixture
 protected:
 	CStack * casterUnit = nullptr;
 	CStack * recipient = nullptr;
+	bool historicalAdventurePolicies = false;
 
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
 		auto rules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
 		rules["warcasting"] = JsonNode(true);
+		if(historicalAdventurePolicies)
+		{
+			rules.Struct().erase("protectedAdventureBarriers");
+			rules["adventureSpells"]["core:waterWalk"].Struct().erase("requireLegalDayEnd");
+		}
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
 	}
 
@@ -351,6 +357,8 @@ TEST(NewHorizonsReactiveWeaveProtocol, CurrentRoundTripAndLegacyDefault)
 
 TEST_F(NewHorizonsReactiveWeaveTest, OlderWritersRejectBeforeStateSideBattleAndPacketPrefixes)
 {
+	// This compatibility control predates the independent barrier capture.
+	historicalAdventurePolicies = true;
 	prepare();
 	CMemorySerializer ordinary;
 	ordinary.oser.version = static_cast<ESerializationVersion>(

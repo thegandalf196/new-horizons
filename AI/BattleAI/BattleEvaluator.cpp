@@ -4690,7 +4690,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	const auto battleView = cb->getBattle(battleID);
 	const bool mandatoryDoubleCommand = battleView->battleHasPendingDoubleCommand(side);
 	const bool mandatoryPreCombatOrder = battleView->battleHasPendingPreCombatOrder(side);
-	const bool mandatoryOrder = mandatoryDoubleCommand || mandatoryPreCombatOrder;
+	const bool mandatoryOrder = mandatoryDoubleCommand || mandatoryPreCombatOrder
+		|| battleView->getBattle()->getCrisisCommandState().choice();
 	auto hero = battleView->battleGetMyHero();
 	if(!hero)
 		return false;
@@ -5257,8 +5258,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 		{
 			if(!firstRound)
 				state->nextRound();
-			for(auto queuedUnit : round)
+			auto remainingQueue = round;
+			for(size_t queueIndex = 0; queueIndex < remainingQueue.size(); ++queueIndex)
 			{
+				const auto * queuedUnit = remainingQueue[queueIndex];
 				const auto * unit = state->battleGetUnitByID(queuedUnit->unitId());
 				if(!unit)
 					continue;
@@ -5293,9 +5296,16 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				}
 
 				const bool frozenForfeits = newHorizonsFrozen::forfeitsNormalActivation(*unit, BattleUnitTurnReason::TURN_QUEUE);
+				const bool syntheticStoppedSlot = unit->isTimeStopped();
 				state->nextTurn(unit->unitId(), BattleUnitTurnReason::TURN_QUEUE);
 				if(frozenForfeits)
+				{
+					state->completeSeizeInitiativeActivation(unit->unitId());
+					battle::Units remaining(remainingQueue.begin() + queueIndex + 1, remainingQueue.end());
+					newHorizonsSeizeInitiative::reorder(*state, remaining, false);
+					std::copy(remaining.begin(), remaining.end(), remainingQueue.begin() + queueIndex + 1);
 					continue;
+				}
 
 				PotentialTargets potentialTargets(unit, damageCache, state);
 
@@ -5344,6 +5354,37 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				state->getForUpdate(unit->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
 				state->completeSwiftNormalActivation(unit->unitId());
 				newHorizonsDivineMandate::completeDisciplineActivation(*state, unit->unitId());
+				state->completeSeizeInitiativeActivation(unit->unitId());
+				if(state->getSeizeInitiativeState().enabled())
+				{
+					battle::Units remaining(remainingQueue.begin() + queueIndex + 1, remainingQueue.end());
+					newHorizonsSeizeInitiative::reorder(*state, remaining, false);
+					std::copy(remaining.begin(), remaining.end(), remainingQueue.begin() + queueIndex + 1);
+				}
+				if(state->getRapidResponseState(BattleSide::ATTACKER).enabled
+					|| state->getRapidResponseState(BattleSide::DEFENDER).enabled)
+				{
+					// Completed ordinary actions only: move an existing remaining
+					// slot without manufacturing or simulating an earned extra chain.
+					auto completed = state->getForUpdate(unit->unitId());
+					completed->movedThisRound = true;
+					completed->waiting = false;
+					state->resetActiveUnit();
+					state->completeRapidResponseActivation(unit->unitId(), syntheticStoppedSlot);
+					for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+					{
+						const auto * pending = newHorizonsRapidResponse::pendingWaiter(*state, side);
+						if(!pending)
+							continue;
+						const auto begin = remainingQueue.begin() + queueIndex + 1;
+						const auto found = std::find_if(begin, remainingQueue.end(), [pending](const auto * queued)
+						{
+							return queued->unitId() == pending->unitId();
+						});
+						if(found != remainingQueue.end())
+							std::rotate(begin, found, std::next(found));
+					}
+				}
 			}
 
 			firstRound = false;

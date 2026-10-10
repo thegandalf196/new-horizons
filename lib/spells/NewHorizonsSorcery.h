@@ -63,6 +63,9 @@ DLL_LINKAGE int32_t phantomArmyIntegrityBasisPoints(int32_t spellPower, bool ill
 
 /// Returns the integral Phantom Army health pool.  Rounding is down after the
 /// percentage is applied, matching the engine's integer health accounting.
+DLL_LINKAGE int64_t phantomArmyIntegrityWithModifiers(int64_t sourceCurrentHealth, int32_t spellPower,
+	bool illusionist, int32_t coefficientBasisPoints, int32_t warcastingPercent, int32_t empowerPercent,
+	int32_t specialtyPercent);
 DLL_LINKAGE int64_t phantomArmyIntegrity(int64_t sourceCurrentHealth, int32_t spellPower,
 	bool illusionist = false);
 

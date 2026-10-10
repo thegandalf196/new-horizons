@@ -1,0 +1,17 @@
+{
+	"core:charmOfMana": {
+		"text": {
+			"description": "While equipped, recovers the greater of 5 Spell Points or 5% of maximum Spell Points each day."
+		}
+	},
+	"core:talismanOfMana": {
+		"text": {
+			"description": "While equipped, recovers the greater of 10 Spell Points or 10% of maximum Spell Points each day."
+		}
+	},
+	"core:mysticOrbOfMana": {
+		"text": {
+			"description": "While equipped, recovers the greater of 15 Spell Points or 15% of maximum Spell Points each day."
+		}
+	}
+}

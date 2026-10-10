@@ -23,6 +23,12 @@
 #include "modding/ModIncompatibility.h"
 #include "serializer/JsonSerializeFormat.h"
 
+void StartInfo::validateDefaultCreatureLineSerialization(bool supported) const
+{
+	if(campState)
+		campState->validateDefaultCreatureLineSerialization(supported);
+}
+
 PlayerSettings::PlayerSettings()
 	: bonus(PlayerStartingBonus::RANDOM), color(0), compOnly(false)
 {

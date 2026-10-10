@@ -6,6 +6,15 @@
 	"required" : [ "victoryIconIndex", "victoryString", "defeatIconIndex", "defeatString" ],
 	"additionalProperties" : false,
 	"properties" : {
+		"protectedAdventureMobilityTiles" : {
+			"type" : "array",
+			"uniqueItems" : true,
+			"items" : {
+				"type" : "array", "minItems" : 3, "maxItems" : 3,
+				"items" : {"type" : "integer", "minimum" : 0}
+			},
+			"description" : "Explicit protected Fly/Dimension Door cells. Nonempty archive metadata requires vmap major5; bounds are validated against map levels."
+		},
 		"victoryIconIndex" : {
 			"type" : "number"
 		},

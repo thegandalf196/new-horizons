@@ -48,6 +48,97 @@
 				]
 			}],
 			"properties": {
+				"artifactManaRegeneration": {
+					"type": "object",
+					"required": [
+						"core:charmOfMana",
+						"core:talismanOfMana",
+						"core:mysticOrbOfMana"
+					],
+					"additionalProperties": false,
+					"properties": {
+						"core:charmOfMana": {
+							"type": "object",
+							"required": [
+								"minimum",
+								"percent"
+							],
+							"additionalProperties": false,
+							"properties": {
+								"minimum": {
+									"type": "integer",
+									"minimum": 0,
+									"maximum": 2147483647
+								},
+								"percent": {
+									"type": "integer",
+									"minimum": 0,
+									"maximum": 2147483647
+								}
+							}
+						},
+						"core:talismanOfMana": {
+							"type": "object",
+							"required": [
+								"minimum",
+								"percent"
+							],
+							"additionalProperties": false,
+							"properties": {
+								"minimum": {
+									"type": "integer",
+									"minimum": 0,
+									"maximum": 2147483647
+								},
+								"percent": {
+									"type": "integer",
+									"minimum": 0,
+									"maximum": 2147483647
+								}
+							}
+						},
+						"core:mysticOrbOfMana": {
+							"type": "object",
+							"required": [
+								"minimum",
+								"percent"
+							],
+							"additionalProperties": false,
+							"properties": {
+								"minimum": {
+									"type": "integer",
+									"minimum": 0,
+									"maximum": 2147483647
+								},
+								"percent": {
+									"type": "integer",
+									"minimum": 0,
+									"maximum": 2147483647
+								}
+							}
+						}
+					}
+				},
+				"glyphsOfFearAura": {
+					"type": "object",
+					"required": [
+						"radius",
+						"morale"
+					],
+					"additionalProperties": false,
+					"properties": {
+						"radius": {
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 2147483647
+						},
+						"morale": {
+							"type": "integer",
+							"minimum": -1000,
+							"maximum": -1
+						}
+					}
+				},
 				"skeletonTransformer": {
 					"type": "object",
 					"required": ["aggregateHealthPercent"],

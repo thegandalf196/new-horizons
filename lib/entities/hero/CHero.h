@@ -68,6 +68,8 @@ public:
 		std::vector<std::shared_ptr<Bonus>> bonuses;
 	};
 	std::optional<SecondarySkillSpecialtyAlias> secondarySkillSpecialtyAlias;
+	/// Exact original Sylvia/Voy named Navigation producer; never a global alias.
+	std::shared_ptr<Bonus> navigationSpecialtyProducer;
 	/// Exact prototype entries produced by eligible spell-specialty sources.
 	/// New Horizons converts only these pointers on fresh hero copies.
 	struct SpellSpecialtyProducer
@@ -79,6 +81,15 @@ public:
 	using DamageSpellSpecialtyProducer = SpellSpecialtyProducer;
 	std::vector<SpellSpecialtyProducer> damageSpellSpecialtyProducers;
 	std::vector<SpellSpecialtyProducer> nonDamageSpellSpecialtyProducers;
+	/// Exact native producers eligible for fresh, opt-in successor conversion.
+	struct DLL_LINKAGE SpellSpecialtySuccessorProducer
+	{
+		SpellID source;
+		std::string target;
+		bool damage;
+		std::shared_ptr<Bonus> bonus;
+	};
+	std::vector<SpellSpecialtySuccessorProducer> spellSpecialtySuccessorProducers;
 	std::set<SpellID> spells;
 	/// New Horizons-only perk selections authored on a hero prototype. These
 	/// are applied once when a fresh hero instance is created.

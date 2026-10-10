@@ -1,5 +1,10 @@
 {
 	"schemaVersion": 1,
+	"lighthouseDeparture": {"enabled": true, "seaMovementPercent": 20},
+	"defaultCreatureLineReplacements": {
+		"core:pasis": "new-horizons:wisp",
+		"core:monere": "new-horizons:wisp"
+	},
 	"rulesetVersion": 1,
 	"powerDivisor": 10,
 	"maxPrimary": 10000,
@@ -70,6 +75,7 @@
 		"coroniusHolyWrathReplacement": true,
 		"componentPercent": 15
 	},
+	"remainingSpellSpecialtyReplacements": true,
 	"nonDamageSpellSpecialties": {
 		"version": 1,
 		"aenainFrailtyReplacement": true,
@@ -77,15 +83,42 @@
 		"offensiveStartReplacements": true,
 		"remainingStartReplacements": true,
 		"componentPercent": 20,
-		"spells": ["core:cure", "core:resurrection", "core:bless", "core:haste", "new-horizons:reanimate", "new-horizons:frailty", "new-horizons:hydrasVitality", "new-horizons:guardianSpirit", "new-horizons:crusade", "new-horizons:focusMagic"]
+		"spells": ["core:cure", "core:resurrection", "core:bless", "core:haste", "new-horizons:reanimate", "new-horizons:frailty", "new-horizons:hydrasVitality", "new-horizons:guardianSpirit", "new-horizons:crusade", "new-horizons:focusMagic", "new-horizons:phantomArmy"]
 	},
 	"skillSpecialties": {
+		"navigationStartReplacements": true,
 		"version": 1,
 		"coreBonusPercent": 20,
 		"skills": ["core:logistics", "core:armorer", "core:offence", "core:archery", "core:estates"]
 	},
 	"startingSkills": {
+		"startingBookReplacements": {
+			"core:rion": {"from": "core:stoneSkin", "to": "new-horizons:guardianSpirit"},
+			"core:aeris": {"from": "core:protectAir", "to": "new-horizons:holyArmor"},
+			"core:piquedram": {"from": "core:shield", "to": "core:slow"},
+			"core:neela": {"from": "core:shield", "to": "core:slow"},
+			"core:theodorus": {"from": "core:shield", "to": "core:slow"},
+			"core:ayden": {"from": "core:viewEarth", "to": "new-horizons:confusion"},
+			"core:axsis": {"from": "core:protectAir", "to": "core:forgetfulness"},
+			"core:zydar": {"from": "core:stoneSkin", "to": "new-horizons:blink"},
+			"core:vokial": {"from": "core:stoneSkin", "to": "new-horizons:lifeDrain"},
+			"core:galthran": {"from": "core:shield", "to": "core:slow"},
+			"core:nimbus": {"from": "core:shield", "to": "core:dispel"},
+			"core:nagash": {"from": "core:protectAir", "to": "core:dispel"},
+			"core:jaegar": {"from": "core:shield", "to": "core:curse"},
+			"core:malekith": {"from": "core:bloodlust", "to": "new-horizons:shadowGift"},
+			"core:sephinroth": {"from": "core:protectAir", "to": "core:curse"},
+			"core:gird": {"from": "core:bloodlust", "to": "new-horizons:vengefulVines"},
+			"core:dessa": {"from": "core:stoneSkin", "to": "new-horizons:regeneration"},
+			"core:oris": {"from": "core:protectAir", "to": "core:forgetfulness"},
+			"core:saurug": {"from": "core:bloodlust", "to": "new-horizons:vengefulVines"},
+			"core:verdish": {"from": "core:protectFire", "to": "new-horizons:regeneration"},
+			"core:styg": {"from": "core:shield", "to": "new-horizons:entangle"},
+			"core:tiva": {"from": "core:stoneSkin", "to": "new-horizons:regeneration"}
+		},
 		"startingDevelopmentProfiles": {
+			"core:sylvia": {"skills": [{"skill": "new-horizons:logistics", "rank": 1}, {"skill": "new-horizons:divineMandate", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.navigation"}]},
+			"core:voy": {"skills": [{"skill": "new-horizons:logistics", "rank": 1}, {"skill": "new-horizons:bulwarkOfTheMire", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.navigation"}]},
 		"core:terek": {"skills": [{"skill": "new-horizons:battlecraft", "rank": 1}, {"skill": "new-horizons:bloodrage", "rank": 1}], "startingPerks": [{"skill": "new-horizons:battlecraft", "perk": "new-horizons:battlecraft.tactics"}]},
 		"core:oris": {"skills": [{"skill": "new-horizons:learning", "rank": 1}, {"skill": "new-horizons:bloodrage", "rank": 1}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.eagleEye"}]},
 		"core:saurug": {"skills": [{"skill": "new-horizons:estates", "rank": 1}, {"skill": "new-horizons:bloodrage", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.prospector"}]},

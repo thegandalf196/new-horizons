@@ -191,6 +191,7 @@ bool CBattleInfoEssentials::battleCanUseMetamagicFollowup(BattleSide side) const
 std::optional<HeroActionAllowanceState::Selection> CBattleInfoEssentials::battleGetSpellActionAllowance(
 	BattleSide side, SpellID spell) const
 {
+	if(getBattle() && getBattle()->getCrisisCommandState().choice()) return {};
 	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		|| !heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), HeroCommand::CHARGE))
 		return {};
@@ -222,9 +223,10 @@ std::optional<HeroActionAllowanceState::Selection> CBattleInfoEssentials::battle
 	const auto mandate = battleGetDivineMandateStatus(side);
 	const bool mandateAvailable = mandate.active && mandate.completedPairs < mandate.maximumPairs;
 	return allowances.eligibleAllowance(HeroActionAllowanceState::ActionKind::ORDER, round,
-		[mandateAvailable](const HeroActionAllowanceState::Grant & grant)
+		[this, side, mandateAvailable](const HeroActionAllowanceState::Grant & grant)
 		{
-			return grant.source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE || mandateAvailable;
+			return getBattle()->getCrisisCommandState().allowsGrant(side, grant)
+				&& (grant.source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE || mandateAvailable);
 		});
 }
 

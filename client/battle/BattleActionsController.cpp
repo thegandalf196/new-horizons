@@ -2997,6 +2997,8 @@ void BattleActionsController::enterCreatureCastingMode()
 
 std::vector<PossiblePlayerBattleAction> BattleActionsController::getPossibleActionsForStack(const CStack *stack) const
 {
+	if(owner.getBattle()->getBattle()->getCrisisCommandState().choice())
+		return {PossiblePlayerBattleAction::HERO_INFO, PossiblePlayerBattleAction::CREATURE_INFO};
 	BattleClientInterfaceData data; //hard to get rid of these things so for now they're required data to pass
 
 	for(const auto & spell : creatureSpells)

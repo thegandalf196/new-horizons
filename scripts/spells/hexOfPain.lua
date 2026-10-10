@@ -4,32 +4,11 @@ Script.__index = Script
 
 local COMBAT_EVENT = "core:hexOfPain"
 local DURATION_TURNS = 3
-local BASE_DAMAGE = 15
-local POWER_NUMERATOR = 7
-local POWER_DIVISOR = 10
 local DAMAGE_SHARE_PERCENT = 10
-local SHADOW_MAGIC_SKILL = "new-horizons:shadowMagic"
-local PAINWEAVER_PERK = "new-horizons:shadowMagic.painweaver"
-
-local function spellPowerCoefficientBasisPoints(mechanics)
-	local coefficient = mechanics:getSpellPowerCoefficientBasisPoints()
-	if not mechanics:usesNewHorizonsMagicV3() then return coefficient end
-
-	local hero = mechanics:getHeroCaster()
-	if hero and hero:hasActivePerk(SHADOW_MAGIC_SKILL, PAINWEAVER_PERK) then
-		return math.floor(coefficient * 120 / 100)
-	end
-	return coefficient
-end
-
 function Script:apply(mechanics, server, target)
 	local battle = mechanics:getBattle()
 	local spellKey = mechanics:getSpell():getJsonKey()
-	local spellPower = math.max(0, mechanics:getEffectPower())
-	local powerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
-		POWER_NUMERATOR * spellPower, POWER_DIVISOR,
-		spellPowerCoefficientBasisPoints(mechanics))
-	local flatDamage = BASE_DAMAGE + powerTerm
+	local flatDamage = mechanics:getHexOfPainFlatDamage()
 	local duration = mechanics:adjustEffectDuration(DURATION_TURNS)
 	local casterSide = mechanics:getCasterSide()
 

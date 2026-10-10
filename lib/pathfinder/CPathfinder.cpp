@@ -8,12 +8,15 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsProtectedMobility.h"
 #include "CPathfinder.h"
 
 #include "INodeStorage.h"
 #include "PathfinderOptions.h"
 #include "PathfindingRules.h"
 #include "TurnInfo.h"
+#include "PathfinderUtil.h"
+#include "NewHorizonsLighthouse.h"
 #include "NewHorizonsMovement.h"
 
 #include "../IGameSettings.h"
@@ -28,6 +31,90 @@
 #include "../spells/CSpellHandler.h"
 #include "../spells/ISpellMechanics.h"
 #include "../spells/NewHorizonsMagic.h"
+
+bool CPathfinderHelper::hasSameDayLandEscape(const int3 & source, int remainingMovement) const
+{
+	if(remainingMovement < 0 || !gameInfo.isInTheMap(source) || isHeroPatrolLocked())
+		return false;
+	const auto * team = gameInfo.getPlayerTeam(owner);
+	if(!team)
+		return false;
+
+	// Highest remaining Movement wins. No state mutation, spell edges, boat
+	// transitions, combat, visits or new-day edges are admitted into this search.
+	std::multimap<int, int3> pending;
+	std::map<int3, int> best;
+	pending.emplace(remainingMovement, source);
+	best.emplace(source, remainingMovement);
+	while(!pending.empty())
+	{
+		auto next = std::prev(pending.end());
+		const auto [movement, position] = *next;
+		pending.erase(next);
+		if(best.at(position) != movement)
+			continue;
+		const auto * sourceTile = gameInfo.getTile(position);
+		NeighbourTilesVector neighbours;
+		getNeighbours(*sourceTile, position, neighbours, false);
+		for(const auto & destination : neighbours)
+		{
+			const auto * tile = gameInfo.getTile(destination);
+			if(!tile || !tile->getTerrain()->isPassable()
+				|| !isPatrolMovementAllowed(destination)
+				|| !canMoveBetween(position, destination)
+				|| isTileBlockedByHole(destination)
+				|| !gameInfo.getGuardingCreatures(destination, hero).empty())
+				continue;
+			// The hero still occupies its original source while this prospective
+			// step is checked. That footprint will be vacated, not an encounter.
+			const auto onlyThisHero = [this](const auto & objects)
+			{
+				return std::all_of(objects.begin(), objects.end(), [this](auto id) { return id == hero->id; });
+			};
+			const bool vacatedSource = destination == hero->visitablePos()
+				&& onlyThisHero(tile->blockingObjects) && onlyThisHero(tile->visitableObjects)
+				&& gameInfo.isVisibleFor(destination, owner);
+			const auto accessibility = tile->isWater()
+				? PathfinderUtil::evaluateAccessibility<EPathfindingLayer::WATER>(destination, *tile, team->fogOfWarMap, owner, gameInfo, hero)
+				: PathfinderUtil::evaluateAccessibility<EPathfindingLayer::LAND>(destination, *tile, team->fogOfWarMap, owner, gameInfo, hero);
+			if(!vacatedSource && (accessibility != EPathAccessibility::ACCESSIBLE || tile->visitable()))
+				continue;
+			const auto layer = tile->isWater() ? EPathfindingLayer::WATER : EPathfindingLayer::LAND;
+			const int cost = getMovementCost(position, destination, layer, movement, false,
+				sourceTile, tile, EPathfindingLayer::WATER);
+			if(cost <= 0 || cost > movement)
+				continue;
+			if(tile->isLand())
+				return true;
+			const int left = movement - cost;
+			const auto known = best.find(destination);
+			if(known == best.end() || left > known->second)
+			{
+				best[destination] = left;
+				pending.emplace(left, destination);
+			}
+		}
+	}
+	return false;
+}
+
+bool isWaterWalkDayEndLegal(const IGameInfoCallback & gameInfo, const CGHeroInstance & hero)
+{
+	if(hero.inBoat() || !newHorizonsMagic::requiresWaterWalkLegalDayEnd(hero.getMagicRules()))
+		return true;
+	const auto * tile = gameInfo.getTile(hero.visitablePos());
+	return tile && tile->isLand();
+}
+
+bool areOwnedWaterWalkHeroesDayEndLegal(const IGameInfoCallback & gameInfo, PlayerColor owner)
+{
+	const auto * player = gameInfo.getPlayerState(owner);
+	if(!player)
+		return false;
+	const auto heroes = player->getHeroes();
+	return std::all_of(heroes.begin(), heroes.end(),
+		[&gameInfo](const auto * hero) { return isWaterWalkDayEndLegal(gameInfo, *hero); });
+}
 
 bool CPathfinderHelper::canMoveFromNode(const PathNodeInfo & source) const
 {
@@ -507,9 +594,9 @@ bool CPathfinderHelper::addTeleportWhirlpool(const CGWhirlpool * obj) const
 	return options.useTeleportWhirlpool && (whirlpoolProtection || options.forceUseTeleportWhirlpool) && obj;
 }
 
-int CPathfinderHelper::movementPointsAfterEmbark(int movement, int basicCost, bool disembark) const
+int CPathfinderHelper::movementPointsAfterEmbark(int movement, int basicCost, bool disembark, bool projectedLighthouse) const
 {
-	return hero->movementPointsAfterEmbark(movement, basicCost, disembark, getTurnInfo());
+	return hero->movementPointsAfterEmbark(movement, basicCost, disembark, getTurnInfo(), projectedLighthouse);
 }
 
 bool CPathfinderHelper::passOneTurnLimitCheck(const PathNodeInfo & source) const
@@ -620,9 +707,10 @@ const TurnInfo * CPathfinderHelper::getTurnInfo() const
 	return turnsInfo[turn].get();
 }
 
-int CPathfinderHelper::getMaxMovePoints(const EPathfindingLayer & layer) const
+int CPathfinderHelper::getMaxMovePoints(const EPathfindingLayer & layer, bool projectedLighthouse) const
 {
-	return turnsInfo[turn]->getMaxMovePoints(layer);
+	return projectedLighthouse && layer == EPathfindingLayer::SAIL
+		? turnsInfo[turn]->getLighthouseSeaMovePoints() : turnsInfo[turn]->getMaxMovePoints(layer);
 }
 
 void CPathfinderHelper::getNeighbours(
@@ -679,6 +767,11 @@ int CPathfinderHelper::getMovementCost(
 	const int remainingMovePoints,
 	const bool checkLast) const
 {
+	const auto * ti = getTurnInfo();
+	if(src.node->lighthouseDepartureTurn == turn
+		&& src.node->layer == EPathfindingLayer::SAIL && dst.node->layer == EPathfindingLayer::LAND
+		&& ti->hasNewHorizonsRapidEmbarkation() && !ti->hasFreeShipBoarding())
+		return newHorizonsMovement::rapidEmbarkationCost(ti->getLighthouseSeaMovePoints());
 	return getMovementCost(
 		src.coord,
 		dst.coord,
@@ -716,7 +809,7 @@ int CPathfinderHelper::getMovementCost(
 
 	const bool usesNewHorizonsMovement = ti->usesNewHorizonsMovement();
 	const auto sourceLayer = srcLayer == EPathfindingLayer::AUTO
-		? (hero->inBoat() ? hero->getBoat()->layer : EPathfindingLayer::LAND) : srcLayer;
+		? (hero->inBoat() ? hero->getBoat()->layer : hero->getProtectedAdventureFlightLayer()) : srcLayer;
 	const bool sourceSailing = sourceLayer == EPathfindingLayer::SAIL;
 	// Coast-visitable blocking objects (for example Shipwrecks) use a SAIL
 	// destination node, but the hero remains on shore. Do not price that
@@ -768,7 +861,8 @@ int CPathfinderHelper::getMovementCost(
 	const bool isWaterWalkLanding = usesNewHorizonsMovement && !sourceSailing && dstLayer == EPathfindingLayer::LAND
 		&& !hero->inBoat() && srcTile->isWater();
 	const bool isFlightLanding = usesNewHorizonsMovement && !sourceSailing && dstLayer == EPathfindingLayer::LAND && !hero->inBoat()
-		&& sourceHasUnwalkableObject(*srcTile);
+		&& (sourceHasUnwalkableObject(*srcTile)
+			|| (newHorizonsProtectedMobility::enabled(hero->getMagicRules()) && sourceLayer == EPathfindingLayer::AIR));
 	const bool isSpecialTravel = usesNewHorizonsMovement && !hero->inBoat()
 		&& (dstLayer == EPathfindingLayer::AIR || dstLayer == EPathfindingLayer::WATER
 			|| isWaterWalkLanding || isFlightLanding);
@@ -849,7 +943,8 @@ int CPathfinderHelper::getMovementCost(
 		}
 		if(embarking || disembarking)
 		{
-			if(ti->hasNewHorizonsRapidEmbarkation() && !ti->hasFreeShipBoarding())
+			if(ti->hasNewHorizonsRapidEmbarkation() && !ti->hasFreeShipBoarding()
+				&& !(embarking && newHorizonsLighthouse::departureTown(*hero, dst, false)))
 				movementCost = newHorizonsMovement::rapidEmbarkationCost(ti->getMaxMovePoints(sourceLayer));
 			else if(ti->hasNewHorizonsNavigation())
 				movementCost = movementCost / 2 + movementCost % 2;

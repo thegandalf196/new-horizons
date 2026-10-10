@@ -36,5 +36,9 @@ enum class BattleUnitTurnReason : int8_t
 	/// This does not begin a new activation or expire activation-scoped state.
 	RANGED_ATTACK_CONTINUATION,
 	/// Quartermaster grants a genuine second activation with reduced output.
-	REDUCED_EXTRA_ACTIVATION
+	REDUCED_EXTRA_ACTIVATION,
+	/// Input-only anchor for an off-turn Crisis Order, not a creature activation.
+	CRISIS_ORDER,
+	/// Restores a completed action's actor without input or activation lifecycles.
+	CRISIS_RESUME
 };
