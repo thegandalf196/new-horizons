@@ -477,6 +477,8 @@ public:
 	virtual int64_t adjustEffectValue(const battle::Unit * target) const = 0;
 	/// Only creature-active direct damage inherits Morale or an active Second Wind output.
 	virtual int32_t getDirectCreatureActivationDamagePercent() const { return 100; }
+	/// Exact producer-scoped multiplier, independent of Morale/Second Wind output.
+	virtual int32_t getInspirationalLeaderCreatureDamagePercent() const { return 100; }
 	/// Final HP-only adjustment; callers must exclude indirect damage effects.
 	int64_t adjustDirectCreatureActivationDamage(int64_t damage) const;
 	/// Applies only recipient damage modifiers to an already resolved raw hit.
@@ -603,6 +605,7 @@ public:
 
 	int64_t adjustEffectValue(const battle::Unit * target) const override;
 	int32_t getDirectCreatureActivationDamagePercent() const override;
+	int32_t getInspirationalLeaderCreatureDamagePercent() const override;
 	int64_t adjustEffectValueBeforeExecution(const battle::Unit * target) const override;
 	int32_t getCrownAndAltarBonusPercent(const battle::Unit * target) const override;
 	IBattleCast::Value64 getRecipientEffectValue(const battle::Unit * target) const override;

@@ -1519,6 +1519,107 @@ TEST_P(NewHorizonsHavocDamagePerkTest, ScalesOnlySpellPowerDamageAndMatchesAccep
 	EXPECT_EQ(before - damageTarget->getAvailableHealth(), expectedDamage);
 }
 
+class NewHorizonsStormcallerComponentTest : public NewHorizonsDirectDamageMechanicsTest
+{
+protected:
+	void verifyComponent(int32_t rawSpellPower, int64_t expectedDamage)
+	{
+		forceRealHeroScale = true;
+		usePerks = true;
+		fixtureActivePerkIds = {stormcallerPerkKey};
+		authoredRules = savedV3Formula();
+		selectedSpellKey = "core:lightningBolt";
+		prepare();
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, rawSpellPower, ChangeValueMode::ABSOLUTE);
+		const auto havoc = SecondarySkill(SecondarySkill::decode(havocMagicKey));
+		const auto spellcraft = SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft"));
+		ASSERT_TRUE(havoc.hasValue());
+		ASSERT_TRUE(spellcraft.hasValue());
+		attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->setSecSkillLevel(spellcraft, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+		ASSERT_EQ(attackerSideHero->getEffectPower(spell), rawSpellPower);
+		ASSERT_EQ(attackerSideHero->getEffectPowerDivisor(spell), 10);
+		ASSERT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(
+			battle()->getMagicRules(), attackerSideHero, spell->getId()), 11500);
+		ASSERT_FALSE(attackerSideHero->hasActivePerk(havocMagicKey, stormcallerPerkKey));
+		const int64_t ordinaryDamage = 20 + 15LL * rawSpellPower * 115 / (10 * 100);
+		EXPECT_EQ(spell->calculateDamage(attackerSideHero), ordinaryDamage);
+
+		attackerSideHero->applyPerkSelection({havocMagicKey, stormcallerPerkKey});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(havocMagicKey, stormcallerPerkKey));
+		// Independent rational oracle: the fixed20 is outside BOTH multipliers.
+		ASSERT_EQ(expectedDamage, 20 + 15LL * rawSpellPower * 115 * 115 / (10 * 100 * 100));
+		EXPECT_EQ(spell->calculateDamage(attackerSideHero), expectedDamage);
+		for(const auto * identity : {"core:lightningBolt", "core:chainLightning", "new-horizons:masterChainLightning"})
+		{
+			const auto id = SpellID(SpellID::decode(identity));
+			ASSERT_TRUE(id.hasValue()) << identity;
+			EXPECT_EQ(newHorizonsMagic::spellPowerDamagePerkBonusPercent(
+				battle()->getMagicRules(), attackerSideHero, id.toSpell()), 15) << identity;
+		}
+		EXPECT_EQ(newHorizonsMagic::spellPowerDamagePerkBonusPercent(
+			battle()->getMagicRules(), attackerSideHero, SpellID(SpellID::decode(arrowKey)).toSpell()), 0);
+		for(const int version : {newHorizonsMagic::RULESET_VERSION, newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION})
+		{
+			auto olderRules = battle()->getMagicRules();
+			olderRules["rulesetVersion"].Integer() = version;
+			EXPECT_EQ(newHorizonsMagic::spellPowerDamagePerkBonusPercent(olderRules, attackerSideHero, spell), 0)
+				<< "The new component path does not replace pre-v3 raw-power behavior";
+		}
+
+		const auto before = target->getAvailableHealth();
+		const auto manaBefore = attackerSideHero->getManaAvailable();
+		ASSERT_EQ(battle()->battleGetOwner(battle()->battleActiveUnit()), PlayerColor(0));
+		spells::Target destination{spells::Destination(target)};
+		spells::BattleCast liveCast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+		auto mechanics = spell->battleMechanics(&liveCast);
+		spells::detail::ProblemImpl liveProblem;
+		ASSERT_TRUE(mechanics->canBeCast(liveProblem));
+		ASSERT_TRUE(mechanics->canBeCastAt(destination));
+		EXPECT_EQ(mechanics->getEffectPower(), rawSpellPower) << "No early raw-SP floor";
+		EXPECT_EQ(mechanics->getEffectValue(), expectedDamage);
+
+		auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+		DamageEnvironment environment(gameState(), nullptr);
+		HypotheticBattle predicted(&environment, callback);
+		auto * projectedTarget = predicted.battleGetUnitByID(target->unitId());
+		ASSERT_NE(projectedTarget, nullptr);
+		spells::Target projectedDestination{spells::Destination(projectedTarget)};
+		spells::BattleCast preview(&predicted, attackerSideHero, spells::Mode::HERO, spell);
+		auto projectedMechanics = spell->battleMechanics(&preview);
+		spells::detail::ProblemImpl projectedProblem;
+		ASSERT_TRUE(projectedMechanics->canBeCast(projectedProblem));
+		ASSERT_TRUE(projectedMechanics->canBeCastAt(projectedDestination));
+		projectedMechanics->castEval(predicted.getServerCallback(), projectedDestination);
+		projectedTarget = predicted.battleGetUnitByID(target->unitId());
+		ASSERT_NE(projectedTarget, nullptr);
+		EXPECT_EQ(before - projectedTarget->getAvailableHealth(), expectedDamage);
+		EXPECT_EQ(target->getAvailableHealth(), before);
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+
+		BattleAction action;
+		action.actionType = EActionType::HERO_SPELL;
+		action.side = BattleSide::ATTACKER;
+		action.spell = spell->getId();
+		action.aimToUnit(target);
+		ASSERT_EQ(attackerSideHero->getSpellCost(spell), 5);
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+		EXPECT_EQ(before - target->getAvailableHealth(), expectedDamage);
+		EXPECT_EQ(target->getAvailableHealth(), projectedTarget->getAvailableHealth());
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 5);
+	}
+};
+
+TEST_F(NewHorizonsStormcallerComponentTest, NondivisibleRawPowerUsesOneComponentFloorInPaidCastAndDetachedPreview)
+{
+	ASSERT_NO_FATAL_FAILURE(verifyComponent(23, 65));
+}
+
+TEST_F(NewHorizonsStormcallerComponentTest, ZeroPowerRetainsTheFixedBaseInPaidCastAndDetachedPreview)
+{
+	ASSERT_NO_FATAL_FAILURE(verifyComponent(0, 20));
+}
+
 TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeUsesTheSamePredictionAndAuthoritativeManaPath)
 {
 	forceRealHeroScale = true;

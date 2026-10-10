@@ -818,6 +818,13 @@ AttackPossibility AttackPossibility::evaluate(
 		const bool ordinaryArcheryShooter = newHorizonsArchery::isOrdinaryPhysicalShooter(attacker);
 		const auto currentRound = state->battleGetRound();
 		const auto & frozenRules = state->getBattle()->getMagicRules();
+		const bool elementalPrimaryCounterfire = attackInfo.shooting
+			&& !attackInfo.secondaryAttack && !attackInfo.bracePreemptive
+			&& attackInfo.preemptiveDamagePercent <= 0
+			&& attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
+			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attacker)
+			&& newHorizonsMagic::rulesActive(frozenRules)
+			&& frozenRules["rulesetVersion"].Integer() >= 3;
 		const bool projectsFrozen = newHorizonsFrozen::enabled(frozenRules)
 			&& (newHorizonsFrozen::isFreezingTouchAttacker(*attacker, frozenRules)
 				|| newHorizonsFrozen::isFreezingTouchAttacker(*defender, frozenRules)
@@ -994,10 +1001,13 @@ AttackPossibility AttackPossibility::evaluate(
 			potentialRetaliation.shooting && defender->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
 		const bool projectsBastionOnRetaliation = physicalCreatureRetaliation
 			&& hasBastionTarget(retaliatedUnits);
-		const bool projectsBastionOnCounterfire = attackInfo.shooting && physicalCreatureAttack
+		const bool projectsBastionOnCounterfire = attackInfo.shooting
+			&& (physicalCreatureAttack || elementalPrimaryCounterfire)
 			&& state->battleHasBastionProtection(attacker)
-			&& std::ranges::any_of(defenderUnits, [&state, attacker, currentRound](const battle::Unit * counterShooter)
+			&& std::ranges::any_of(defenderUnits, [&state, attacker, defender, currentRound, elementalPrimaryCounterfire](const battle::Unit * counterShooter)
 			{
+				if(elementalPrimaryCounterfire && counterShooter->unitId() != defender->unitId())
+					return false;
 				const auto counterShooterState = counterShooter->acquireState();
 				const auto * counterHero = state->battleGetFightingHero(counterShooter->unitSide());
 				if(!counterShooterState || !newHorizonsArchery::canUseCounterfire(counterHero, counterShooter)
@@ -1883,14 +1893,16 @@ AttackPossibility AttackPossibility::evaluate(
 					projectedAttack, strike.resolvedHits, strike.attackIndex);
 				scoreHexPain(preHexState.get(), painDamage);
 			}
-			// Counterfire is an immediate, once-per-round answer to physical creature
+			// Counterfire answers physical shots and current ordinary elemental primary
 			// ranged damage. Include it in the exchange value so the AI does not price
 			// a shot as if the marked shooter could not return fire.
-			if(attackInfo.shooting && attackInfo.physicalDamage && !attackInfo.retaliation
+			if(attackInfo.shooting && (attackInfo.physicalDamage || elementalPrimaryCounterfire) && !attackInfo.retaliation
 				&& ap.attackerState->alive())
 			{
 				for(const auto & [hitUnitId, damageDealt] : strike.resolvedHits)
 				{
+					if(elementalPrimaryCounterfire && hitUnitId != defender->unitId())
+						continue;
 					if(damageDealt <= 0)
 						continue;
 					auto stateIt = defenderStates.find(hitUnitId);

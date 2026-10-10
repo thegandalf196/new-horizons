@@ -23,6 +23,7 @@
 #include "Colors.h"
 
 #include "../../lib/filesystem/Filesystem.h"
+#include "../../lib/filesystem/GeneratedImageRecipes.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/IGameSettings.h"
 #include "../../lib/json/JsonNode.h"
@@ -77,16 +78,18 @@ void AssetGenerator::initialize()
 	{
 		return createAcademyCreaturePortrait(31, "NH_academy_masterGremlin_portrait_mask.png");
 	};
-	imageFiles[ImagePath::builtin("NH_academy_stoneGargoyle_icon_large.png")] = [this]()
+	for(const auto & recipe : generatedImageRecipes::creaturePortraits())
 	{
-		return createCreatureFramePortrait(AnimationPath::builtin("CGARGO"), static_cast<size_t>(ECreatureAnimType::HOLDING), 0,
-			ImagePath::builtin("NH_academy_creature_portrait_backdrop.png"), Point(58, 64), 2);
-	};
-	imageFiles[ImagePath::builtin("NH_academy_obsidianGargoyle_icon_large.png")] = [this]()
-	{
-		return createCreatureFramePortrait(AnimationPath::builtin("COGARG"), static_cast<size_t>(ECreatureAnimType::HOLDING), 0,
-			ImagePath::builtin("NH_academy_creature_portrait_backdrop.png"), Point(58, 64), 2);
-	};
+		imageFiles[ImagePath::builtin(std::string(recipe.output))] = [this, recipe]()
+		{
+			const auto backdrop = ImagePath::builtin(std::string(recipe.backdrop));
+			if(recipe.sourceType == EResType::ANIMATION)
+				return createCreatureFramePortrait(AnimationPath::builtin(std::string(recipe.source)),
+					static_cast<size_t>(ECreatureAnimType::HOLDING), 0, backdrop, Point(58, 64), 2);
+			return createCreatureImagePortrait(ImagePath::builtin(std::string(recipe.source)),
+				Rect(178, 174, 36, 49), backdrop, Point(58, 64), 2);
+		};
+	}
 	imageFiles[ImagePath::builtin("NH_academy_ironGolem_icon_large.png")] = [this]()
 	{
 		return createAcademyCreaturePortrait(34, "NH_academy_ironGolem_portrait_mask.png");
@@ -98,11 +101,6 @@ void AssetGenerator::initialize()
 	imageFiles[ImagePath::builtin("NH_academy_mage_icon_large.png")] = [this]()
 	{
 		return createAcademyCreaturePortrait(36, "NH_academy_mage_portrait_mask.png");
-	};
-	imageFiles[ImagePath::builtin("NH_academy_mageHolding_icon_large.png")] = [this]()
-	{
-		return createCreatureImagePortrait(ImagePath::builtin("magi-vcmi-complete/battle/magi/idle/000.png"),
-			Rect(178, 174, 36, 49), ImagePath::builtin("NH_academy_creature_portrait_backdrop.png"), Point(58, 64), 2);
 	};
 	imageFiles[ImagePath::builtin("NH_academy_archMage_icon_large.png")] = [this]()
 	{
@@ -296,18 +294,17 @@ std::shared_ptr<ISharedImage> AssetGenerator::generateImage(const ImagePath & im
 
 bool AssetGenerator::preferGeneratedImage(const ImagePath & image) const
 {
+	if(generatedImageRecipes::findCreaturePortrait(image.getOriginalName()))
+		return true;
 	return image == ImagePath::builtin("NH_academy_fort_large_built.png")
 		|| image == ImagePath::builtin("NH_academy_fort_small_built.png")
 		|| image == ImagePath::builtin("NH_academy_village_large_built.png")
 		|| image == ImagePath::builtin("NH_academy_village_small_built.png")
 		|| image == ImagePath::builtin("NH_academy_gremlin_icon_large.png")
 		|| image == ImagePath::builtin("NH_academy_masterGremlin_icon_large.png")
-		|| image == ImagePath::builtin("NH_academy_stoneGargoyle_icon_large.png")
-		|| image == ImagePath::builtin("NH_academy_obsidianGargoyle_icon_large.png")
 		|| image == ImagePath::builtin("NH_academy_ironGolem_icon_large.png")
 		|| image == ImagePath::builtin("NH_academy_stoneGolem_icon_large.png")
 		|| image == ImagePath::builtin("NH_academy_mage_icon_large.png")
-		|| image == ImagePath::builtin("NH_academy_mageHolding_icon_large.png")
 		|| image == ImagePath::builtin("NH_academy_archMage_icon_large.png")
 		|| image == ImagePath::builtin("NH_academy_genie_icon_large.png")
 		|| image == ImagePath::builtin("NH_academy_masterGenie_icon_large.png")

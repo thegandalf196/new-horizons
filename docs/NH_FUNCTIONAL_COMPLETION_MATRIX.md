@@ -2,6 +2,96 @@
 
 Updated: 2026-10-10
 
+Current accepted focused follow-ups: neutral planner2/2 (v7) exercises an
+autonomously selected destination, authenticated movement, paid blocking join,
+Leadership-safe intake and negative affordability/inactive controls. Generated
+portrait recipes8/8 (v7) exercise exact identities, required typed sources,
+scoped lookup and actual headless validator admission. Startup schema5/5 (v8)
+passes after giving its synthetic missing sound the ordinary builtin scope;
+real pattern validation and null shooting-sound support remain strict. Root
+reads XMLs and guarded cleanup/parity receipts; all final cases have no skips,
+errors, crashes or timeouts. These are distinct focused runs, not a freshly
+rerun full suite. Actual packaged startup-warning clearance remains required
+before the next ordinary launcher promotion; no rendered claim follows from
+headless portrait validation. NHART bytes remain unchanged.
+
+Latest focused rerun: Blood Scent9/9 and Counterfire8/8 pass after strictly
+fixture-only corrections. Combined v6 is18/19, with neutral1/2 still failing
+its autonomous destination witness. Actual scoring diagnostics prove reward160
+and Gold cost120 arrive correctly, but its enemy-threat context is uninitialized:
+the fixture omits the normal public danger-map update. Repair that setup rather
+than disabling the danger guard or forcing a goal. Root reads all three XMLs
+and cleanup/parity receipt; no errors, skips, crashes or timeouts. Earlier v5
+failures below remain history. Six corrected mechanic slices now have principal
+native evidence (DR, Blood, Stormcaller, Counterfire, Inspirational, Deep Flank);
+ordinary playable delivery and required Frozen rendering remain separate.
+Startup schema repairs implement actual pattern checks and admit intentional
+null shooting sounds; five authored native cases remain unrun.
+
+Newest actual65 batch:54/65 PASS, no crash/timeout/skip. DR22/22, Stormcaller2/2,
+Inspirational Leader7/7 and Deep Flank15/15 pass, including their newly covered
+ordinary elemental/direct-creature paths. Blood7/9 and Counterfire0/8 have
+fixture preconditions still blocking acceptance; neutral1/2 proves its new
+reward/cost valuation but not a positive autonomous goal. Those failures remain
+open with bounded repairs/diagnosis. Latest ordinary launcher report separately
+exposes an old selected executable and incompatible schema/resource resolution;
+native source checks do not establish playable delivery. Earlier checkpoints
+below retain their historical evidence, not current pending status.
+
+Latest evidence supersedes the pending checkpoints below: actual hero9/9 covers
+all144 exact starting profiles, all144 Leadership-safe original-composition
+armies, map-authored/save/legacy boundaries and strict cross-source overlap
+controls. Divine Retribution22/22 and Stormcaller2/2 pass actual native gates.
+Blood7/9 retains two fixture failures; neutral1 fails its positive autonomous
+planner choice. Aggregate40/43 has no crash/timeout/skip. Independently reviewed
+Counterfire and Inspirational corrections are imported and their first build
+passes. Deep Flank's ordinary elemental primary scope, neutral-join reward/cost
+valuation and two Blood fixtures are now imported; their incremental build and
+combined65-case focused execution remain pending. No new acceptance is inferred.
+Required Frozen rendering remains unobserved; no Phase1 exit or launcher
+promotion is claimed. Earlier entries below retain the failed-run history.
+
+Defining-clause source mapping now covers all31 Skill pools:93 ranks and310
+perks. Registration totals alone are not functional acceptance. The final
+Shroud/Bulwark/War Machines audit mapped30 perks and9 ranks and identified the
+Deep Flank elemental-primary omission; other rows retain their specific native,
+UI, AI and save evidence limits. Independent audits likewise exposed the
+Counterfire and Inspirational scope gaps now being corrected. These counts
+describe audit coverage, not310 fully verified mechanics or Phase1 completion.
+
+Phase2 findings retained from independent source review: Counterfire's existing
+AI owner-side resolution under temporary control, and copied Crossfire history
+after an elemental incoming shot followed by a physical reaction; Inspirational
+HERO_SPECIAL bonuses borrowed across later parent-expiry projection; Deep Flank
+contact loss from splash/control; and neutral-join route danger/displacement
+economic breadth. These do not erase the current principal-path corrections or
+substitute for their65 actual tests. No general damage-taxonomy rewrite is made.
+
+Latest native24 run is not accepted: hero1, neutral1 and all13 DR server setup
+cases fail with the same duplicate-perk exception; all9 DR AI cases pass,
+including the corrected detached witness. Root reads XML and final cleanup/parity
+receipt. Solmyr's existing prototype and new explicit profile both select the
+same Stormcaller perk; a reviewed creation-only exact cross-source merge is
+pending. Preserve strict conflicting/duplicate-tier validation. Hero144 data
+checks do not substitute for this failed principal initialization path.
+
+Current hero coverage:144/144 starting-development profiles integrated,
+96 exact workbook additions and48 retained settled profiles. Two focused data
+cases and exact module-generation check pass; the actual144-hero initialization
+case awaits native execution. All144 biography decisions remain52 selected
+rewrites and92 intentional original inheritances. User-approved provisional
+starting armies reuse existing original-range sampling/per-slot Leadership
+clamping;144 dispositions and four boundary witnesses are prepared privately,
+not yet accepted. No new species, class, specialty or save epoch is implied.
+
+Actual DR focused run is21/22 (13/13 server,8/9 AI). Independent review identifies
+the sole failure as a fixture borrowing its live recipient rather than owning a
+detached state. The corrected fixture materializes that state and adds pointer
+identity assertions while retaining all payout/independence checks. Both-target
+rebuild and binary privacy pass; the corrected22 rerun is pending. This does not
+erase the original failure. Neutral planner's diagnostic-only rerun is also
+pending; required Frozen rendering remains unobserved.
+
 Verified popup crash repair: exact f7d818/a2f35 background candidate survives
 bare Ice/Golem right-click/release and real combat inspection. Root reads the
 receipt and native captures; combat Initiative10, Leadership300, Elite and

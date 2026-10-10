@@ -1190,13 +1190,26 @@ bool CBattleInfoCallback::battleIsShroudFlankingAttack(const BattleAttackInfo & 
 double CBattleInfoCallback::battleDeepFlankDamagePercent(const BattleAttackInfo & attack) const
 {
 	if(!getBattle() || !attack.attacker || !attack.defender || !attack.shooting
-		|| !attack.physicalDamage || attack.secondaryAttack
-		|| !newHorizonsArchery::isOrdinaryPhysicalShooter(attack.attacker)
+		|| attack.secondaryAttack
 		|| !attack.attacker->alive() || attack.attacker->isGhost()
 		|| !attack.defender->alive() || attack.defender->isGhost()
 		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attack.defender)
 		|| attack.defender->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
 		|| battleGetOwner(attack.attacker) == battleGetOwner(attack.defender))
+		return 0.0;
+	const auto & rules = getBattle()->getMagicRules();
+	const bool physicalShot = attack.physicalDamage
+		&& newHorizonsArchery::isOrdinaryPhysicalShooter(attack.attacker);
+	// Current Shroud applies to ordinary primary shots, including elemental shots.
+	// Historical contexts retain physical-only eligibility; collateral never qualifies.
+	const bool elementalShot = !attack.physicalDamage
+		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attack.attacker)
+		&& attack.attacker->unitSlot() != SlotID::WAR_MACHINES_SLOT
+		&& attack.attacker->isShooter()
+		&& attack.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
+		&& newHorizonsMagic::rulesActive(rules)
+		&& rules["rulesetVersion"].Integer() == newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
+	if(!physicalShot && !elementalShot)
 		return 0.0;
 	const auto * hero = battleGetOwnerHero(attack.attacker);
 	if(!newHorizonsShroud::hasDeepFlank(hero))
@@ -3913,9 +3926,21 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			}
 		}
 	}
+	// Bloodrage scales ordinary primary elemental shots as well as physical
+	// attacks. Actual casts use spell mechanics, never this attack payload.
+	// Preserve historical pre-v3/absent contexts and existing physical paths.
+	const auto & bloodrageRules = getBattle()->getMagicRules();
+	const bool elementalBloodrageAttack = !info.secondaryAttack && info.shooting
+		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.attacker)
+		&& info.attacker->unitSlot() != SlotID::WAR_MACHINES_SLOT
+		&& info.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
+		&& newHorizonsMagic::rulesActive(bloodrageRules)
+		&& bloodrageRules["rulesetVersion"].Integer()
+			== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
+	if(info.physicalDamage || elementalBloodrageAttack)
+		payload.bloodrageDamagePercent = battleGetBloodrageDamagePercent(info.attacker, info.defender);
 	if(info.physicalDamage)
 	{
-		payload.bloodrageDamagePercent = battleGetBloodrageDamagePercent(info.attacker, info.defender);
 		if(info.defender && newHorizonsCombatSkills::isPhysicalCreatureAttack(info.attacker, info.physicalDamage)
 			&& battleGetOwner(info.attacker) != battleGetOwner(info.defender)
 			&& newHorizonsBloodrage::hasAvatarOfRage(battleGetOwnerHero(info.attacker)))
@@ -3968,7 +3993,6 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			payload.meleeDefenseIgnorePercent += newHorizonsShroud::shadowAssaultDefenseIgnorePercent(
 				attackerHero, info.defender, playerToSide(battleGetOwner(info.attacker)));
 		}
-		payload.shroudDeepFlankDamagePercent = battleDeepFlankDamagePercent(info);
 		if(info.defender && info.defender->defended() && ordinaryCreatureAttack
 			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.defender)
 			&& (!info.shooting || !info.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)))
@@ -4003,6 +4027,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			}
 		}
 	}
+	payload.shroudDeepFlankDamagePercent = battleDeepFlankDamagePercent(info);
 	if(info.preemptiveDamagePercent > 0)
 		payload.preemptiveDamageMultiplier = info.preemptiveDamagePercent;
 	if(info.cleaveDamagePercent > 0)

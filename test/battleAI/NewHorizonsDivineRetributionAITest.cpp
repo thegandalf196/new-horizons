@@ -17,6 +17,7 @@
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsDivineRetribution.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
 
 namespace
@@ -35,12 +36,19 @@ JsonNode savedV2MagicRulesWithCurrentSpellRoster()
 	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules.Struct().erase("spellcraftEfficiencyPercent");
+	// Derive an actual historical v2 snapshot, not v3 data with a relabelled version.
+	for(const auto * key : {"morale", "creatureAbilities", "protectedAdventureBarriers"})
+		rules.Struct().erase(key);
 	for(auto & [name, spell] : rules["spells"].Struct())
 	{
 		(void)name;
 		spell.Struct().erase("selectedPlacement");
 		spell.Struct().erase("earthquake");
 		spell.Struct().erase("structures");
+		for(const auto * key : {"heroAccess", "restoration", "propagationLimit", "implosion",
+			"ignoreInterveningBarriers", "temporaryMagicalEffectsOnly", "schoolRankDurations",
+			"burnGroundedFlyers"})
+			spell.Struct().erase(key);
 		if(spell.Struct().contains("variant"))
 		{
 			spell.Struct().erase("variant");
@@ -262,11 +270,12 @@ TEST_F(NewHorizonsDivineRetributionAITest,
 		<< "BattleAI must score the detached marker projection without applying it to live state";
 }
 
-TEST_F(NewHorizonsDivineRetributionAITest, DoesNotCastAgainstSpellLikeProjectileThreat)
+TEST_F(NewHorizonsDivineRetributionAITest, ChoosesRetributionAgainstOrdinaryMagogProjectileThreat)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(ThreatKind::SPELL_LIKE_SHOOTER));
-	EXPECT_FALSE(attemptDivineRetribution());
-	EXPECT_TRUE(callback->submitted.empty());
+	EXPECT_TRUE(attemptDivineRetribution());
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	EXPECT_EQ(callback->submitted.front().spell, divineRetributionSpell());
 }
 
 TEST_F(NewHorizonsDivineRetributionAITest, DoesNotRefreshAnEqualFullProtectionEffect)
@@ -316,9 +325,78 @@ TEST_F(NewHorizonsDivineRetributionAITest, ValuesTheProjectedRetributionistParam
 		["retributionistPercent"].Integer(), 120);
 }
 
+TEST_F(NewHorizonsDivineRetributionAITest, MdrCapIsPreservedAndZeroReceivedDamageCapRemovesReactiveCastingValue)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(ThreatKind::MELEE));
+	enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::OTHER, 100,
+		BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+	EXPECT_EQ(newHorizonsDivineRetribution::recipientDamage(*battle(), enemy, 150), 7)
+		<< "The authored aggregate MDR cap remains 95%, not immunity";
+	ASSERT_LT(enemy->getMaxHealth(), 100);
+	enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::DAMAGE_RECEIVED_CAP, BonusSource::OTHER, 1, BonusSourceID()));
+	EXPECT_EQ(newHorizonsDivineRetribution::recipientDamage(*battle(), enemy, 150), 0);
+	EXPECT_FALSE(attemptDivineRetribution());
+	EXPECT_TRUE(callback->submitted.empty());
+}
+
+TEST_F(NewHorizonsDivineRetributionAITest, RecipientDamageCapDoesNotTurnRawUpgradeIntoMarginalReactiveValue)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(ThreatKind::PHYSICAL_SHOOTER, true, false, true));
+	enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::DAMAGE_RECEIVED_CAP, BonusSource::OTHER, 1, BonusSourceID()));
+	const auto before = newHorizonsDivineRetribution::recipientDamage(*battle(), enemy, 150);
+	const auto after = newHorizonsDivineRetribution::recipientDamage(*battle(), enemy, 224);
+	ASSERT_GT(before, 0);
+	ASSERT_EQ(before, after);
+	EXPECT_FALSE(attemptDivineRetribution());
+	EXPECT_TRUE(callback->submitted.empty());
+}
+
+TEST_F(NewHorizonsDivineRetributionAITest, DetachedRecipientReductionMatchesPaidAIAndLivePayoutWithoutMutation)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(ThreatKind::MELEE));
+	enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::OTHER, 50,
+		BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+	const auto healthBefore = enemy->getAvailableHealth();
+	auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const battle::Unit * projectedEnemy = projected->getForUpdate(enemy->unitId()).get();
+	ASSERT_NE(projectedEnemy, nullptr);
+	ASSERT_NE(projectedEnemy, enemy);
+	ASSERT_EQ(projected->battleGetUnitByID(enemy->unitId()), projectedEnemy);
+	EXPECT_EQ(newHorizonsDivineRetribution::recipientDamage(*projected, projectedEnemy, 150), 75);
+	EXPECT_EQ(newHorizonsDivineRetribution::recipientDamage(*battle(), enemy, 150), 75);
+	EXPECT_EQ(enemy->getAvailableHealth(), healthBefore);
+	EXPECT_EQ(projectedEnemy->getAvailableHealth(), healthBefore);
+	ASSERT_TRUE(attemptDivineRetribution());
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		callback->submitted.front()));
+	EXPECT_LT(attackerSideHero->getManaAvailable(), manaBefore);
+	const auto protectedHealth = protectedStack->getAvailableHealth();
+	blockRetaliation(enemy);
+	ASSERT_TRUE(attack(enemy, protectedStack->getPosition()));
+	const auto actualLoss = protectedHealth - protectedStack->getAvailableHealth();
+	ASSERT_GT(actualLoss, 0);
+	const auto expectedPayout = newHorizonsDivineRetribution::recipientDamage(*projected,
+		projectedEnemy, std::min<int64_t>(actualLoss * 30 / 100, divineRetributionRawCap));
+	const auto beforePayout = enemy->getAvailableHealth();
+	endRound();
+	EXPECT_EQ(beforePayout - enemy->getAvailableHealth(), expectedPayout);
+	EXPECT_EQ(projectedEnemy->getAvailableHealth(), healthBefore);
+}
+
 TEST_F(NewHorizonsDivineRetributionAITest, DoesNotLeakIntoSavedV2EvenWhenItsRosterContainsTheNewSpell)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(ThreatKind::PHYSICAL_SHOOTER, false, true));
+	enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::OTHER, 50,
+		BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+	EXPECT_EQ(newHorizonsDivineRetribution::recipientDamage(*battle(), enemy, 150), 150)
+		<< "A captured pre-v3 context retains its historical raw delayed amount";
 	ASSERT_EQ(battle()->getMagicRules()["rulesetVersion"].Integer(),
 		newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION);
 	ASSERT_TRUE(newHorizonsMagic::spellAllowedBySavedRoster(

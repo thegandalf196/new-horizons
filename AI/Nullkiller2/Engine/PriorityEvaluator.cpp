@@ -20,6 +20,7 @@
 #include "../../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
 #include "../../../lib/entities/creature/NewHorizonsMusterRules.h"
 #include "../../../lib/mapObjects/CGMarket.h"
+#include "../../../lib/mapObjects/CGCreature.h"
 #include "../../../lib/mapObjects/CGResource.h"
 #include "../../../lib/mapping/TerrainTile.h"
 #include "../../../lib/rewardable/Interface.h"
@@ -259,6 +260,41 @@ static uint64_t evaluateArtifactArmyValue(const CArtifact * art)
 	return getPotentialArtifactScore(art);
 }
 
+static std::optional<std::pair<uint64_t, int>> neutralJoinValue(
+	const Nullkiller * aiNk, const CGObjectInstance * target,
+	const CGHeroInstance * hero, const CCreatureSet * army)
+{
+	const auto * neutral = dynamic_cast<const CGCreature *>(target);
+	if(!neutral || !hero || !army || hero->getOwner() != aiNk->playerID)
+		return std::nullopt;
+	const auto forecast = neutral->getNewHorizonsDiplomacyForecast(*hero);
+	const int64_t cost = forecast.goldCost();
+	if(!forecast.usesNewHorizonsRules || !forecast.eligible || !forecast.willing
+		|| forecast.joiningAmount <= 0 || !forecast.normalGoldCostValid
+		|| (!forecast.authoredFree && !forecast.normalGoldCostFitsAction)
+		|| cost < 0 || cost > std::numeric_limits<int>::max()
+		|| aiNk->cc->getResourceAmount()[EGameResID::GOLD] < cost)
+		return std::nullopt;
+	const auto * tile = aiNk->cc->getTile(neutral->visitablePos());
+	if(!tile)
+		return std::nullopt;
+	// Use the same Leadership/slot projection as the actual join decision.
+	const auto planned = aiNk->armyManager->getBestArmy(hero, army, neutral, tile->getTerrainID());
+	int64_t currentCount = 0;
+	for(const auto & [slot, stack] : army->Slots())
+		if(stack->getCreatureID() == neutral->getCreatureID())
+			currentCount += stack->getCount();
+	int64_t plannedCount = 0;
+	for(const auto & stack : planned)
+		if(stack.creature && stack.creature->getId() == neutral->getCreatureID())
+			plannedCount += stack.count;
+	if(plannedCount <= currentCount)
+		return std::nullopt;
+	return std::pair<uint64_t, int>{
+		static_cast<uint64_t>(plannedCount - currentCount) * neutral->getCreature()->getAIValue(),
+		static_cast<int>(cost)};
+}
+
 uint64_t RewardEvaluator::getArmyReward(
 	const CGObjectInstance * target,
 	const CGHeroInstance * hero,
@@ -272,6 +308,11 @@ uint64_t RewardEvaluator::getArmyReward(
 
 	switch(target->ID)
 	{
+	case Obj::MONSTER:
+	{
+		const auto join = neutralJoinValue(aiNk, target, hero, army);
+		return join ? join->first : 0;
+	}
 	case Obj::HILL_FORT:
 		return aiNk->armyManager->calculateCreaturesUpgrade(
 			army, target, aiNk->cc->getResourceAmount(), hero).upgradeValue;
@@ -408,6 +449,11 @@ int RewardEvaluator::getGoldCost(const CGObjectInstance * target, const CGHeroIn
 
 	switch(target->ID)
 	{
+	case Obj::MONSTER:
+	{
+		const auto join = neutralJoinValue(aiNk, target, hero, army);
+		return join ? join->second : 0;
+	}
 	case Obj::HILL_FORT:
 		return aiNk->armyManager->calculateCreaturesUpgrade(
 			army, target, aiNk->cc->getResourceAmount(), hero).upgradeCost[EGameResID::GOLD];

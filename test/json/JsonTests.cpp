@@ -1,6 +1,81 @@
 #include "StdInc.h"
 #include "../../lib/json/JsonNode.h"
 #include "../../lib/json/JsonUtils.h"
+#include "../../lib/json/JsonValidator.h"
+#include "../../lib/json/JsonBonus.h"
+#include "../../lib/bonuses/Bonus.h"
+#include "../../lib/modding/ModScope.h"
+
+TEST(JsonSchemaStartupTest, PatternSearchAndAnchorsRemainDistinct)
+{
+	JsonValidator validator;
+	JsonNode schema;
+	schema["type"].String() = "string";
+	schema["pattern"].String() = "[A-Z]+";
+	EXPECT_TRUE(validator.check(schema, JsonNode("before ABC after")).empty());
+	EXPECT_FALSE(validator.check(schema, JsonNode("lowercase")).empty());
+	schema["pattern"].String() = "^[A-Z]+$";
+	EXPECT_FALSE(validator.check(schema, JsonNode("before ABC after")).empty());
+	EXPECT_TRUE(validator.check(schema, JsonNode("ABC")).empty());
+}
+
+TEST(JsonSchemaStartupTest, MalformedPatternIsReportedWithoutThrowing)
+{
+	JsonValidator validator;
+	JsonNode schema;
+	schema["pattern"].String() = "[";
+	EXPECT_NE(validator.check(schema, JsonNode("status")).find("Invalid regular expression"), std::string::npos);
+	schema["pattern"] = JsonNode(1);
+	EXPECT_NE(validator.check(schema, JsonNode("status")).find("must be a string"), std::string::npos);
+}
+
+TEST(JsonSchemaStartupTest, AuthoredBonusIdentityPatternRejectsControlCharacters)
+{
+	JsonValidator validator;
+	const auto schema = JsonUtils::getSchema("vcmi:bonusInstance")["properties"]["statusIdentity"];
+	EXPECT_TRUE(validator.check(schema, JsonNode("core:curse")).empty());
+	EXPECT_TRUE(validator.check(schema, JsonNode("")).empty());
+	for(const char control : { '\0', '\n', '\x1f', '\x7f' })
+	{
+		const std::string identity = std::string("core:") + control + "curse";
+		EXPECT_FALSE(validator.check(schema, JsonNode(identity)).empty());
+	}
+	EXPECT_FALSE(validator.check(schema, JsonNode(std::string(257, 'x'))).empty());
+}
+
+TEST(JsonSchemaStartupTest, NullShootSoundClearsInheritedMeleeSoundWithoutAcceptingBadValues)
+{
+	JsonValidator validator;
+	const auto schema = JsonUtils::getSchema("vcmi:creature")["properties"]["sound"]["properties"]["shoot"];
+	EXPECT_TRUE(validator.check(schema, JsonNode()).empty());
+	EXPECT_FALSE(validator.check(schema, JsonNode(12)).empty());
+	EXPECT_FALSE(validator.check(schema, JsonNode(true)).empty());
+	// A string still has to name a real sound resource; the null branch cannot hide it.
+	JsonNode missingSound("missing-schema-test-sound-87c336.wav");
+	missingSound.setModScope(ModScope::scopeBuiltin());
+	EXPECT_FALSE(validator.check(schema, missingSound).empty());
+}
+
+TEST(JsonSchemaStartupTest, TaggedBonusValidatesAndStillUsesStrictBonusParser)
+{
+	JsonNode bonus;
+	bonus["type"].String() = "STACKS_SPEED";
+	bonus["val"].Integer() = -1;
+	bonus["duration"].String() = "N_TURNS";
+	bonus["turns"].Integer() = 2;
+	bonus["statusTags"].Vector().emplace_back("DEBUFF");
+	bonus["statusIdentity"].String() = "core:slow";
+	JsonValidator validator;
+	EXPECT_TRUE(validator.check("vcmi:bonusInstance", bonus).empty());
+	const auto parsed = JsonUtils::parseBonus(bonus);
+	ASSERT_NE(parsed, nullptr);
+	EXPECT_EQ(parsed->statusIdentity, "core:slow");
+	EXPECT_EQ(parsed->statusTags, std::vector<BonusStatusTag>{ BonusStatusTag::DEBUFF });
+
+	bonus["statusIdentity"].String() = "core:\nslow";
+	EXPECT_FALSE(validator.check("vcmi:bonusInstance", bonus).empty());
+	EXPECT_THROW(JsonUtils::parseBonus(bonus), std::runtime_error);
+}
 
 TEST(JsonTest, conflictDetectionTestNoConflict)
 {

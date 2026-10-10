@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "BattleTestFixture.h"
+#include "../../NewHorizonsHistoricalAdventurePolicyTestUtils.h"
 
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../lib/GameConstants.h"
@@ -21,6 +22,9 @@
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/serializer/ESerializationVersion.h"
 #include "../../../server/CGameHandler.h"
+#include "../../../server/battles/BattleProcessor.h"
+#include "../../../lib/spells/ISpellMechanics.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 
 namespace
 {
@@ -40,6 +44,7 @@ public:
 class NewHorizonsBloodScentTest : public BattleTestFixture
 {
 protected:
+	bool absentMagicRules = false;
 	void SetUp() override
 	{
 		BattleTestFixture::SetUp();
@@ -50,6 +55,16 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		BattleTestFixture::mapLoaded(loaded);
+		if(absentMagicRules)
+		{
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+			// The current book table requires current magic. Isolate only that future
+			// metadata, retaining every other captured hero profile and rule.
+			JsonNode heroRules(JsonPath::builtin("config/newHorizonsHeroes"));
+			heroRules["startingSkills"].Struct().erase("startingBookReplacements");
+			heroRules.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, std::move(heroRules));
+		}
 		JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
 		int activated = 0;
 		for(auto & perk : rules["skills"][std::string(BLOODRAGE_SKILL)]["perks"].Vector())
@@ -139,9 +154,18 @@ protected:
 		NewHorizonsBloodScentTest::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, JsonNode());
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
-		auto magicRules = LIBRARY->settingsHandler->getValue(EGameSettings::MAGIC_NEW_HORIZONS);
-		magicRules["warcasting"] = JsonNode(false);
-		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
+		// This record predates independent combat-policy and spell-clause captures.
+		// Blood Scent is resolved from the selected perk, not the magic profile.
+		loaded->overrideGameSetting(EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK, JsonNode(false));
+		loaded->overrideGameSetting(EGameSettings::COMBAT_MORALE_EXTRA_DAMAGE_PERCENT, JsonNode(100));
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+		auto perks = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+		for(auto & perk : perks["skills"]["new-horizons:command"]["perks"].Vector())
+			if(perk["id"].String() == "new-horizons:command.crisisCommand")
+				perk["effect"]["status"].String() = "planned";
+		perks.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perks));
+		isolateHistoricalAdventurePolicies(*loaded);
 	}
 };
 }
@@ -164,8 +188,25 @@ TEST_F(NewHorizonsBloodScentTest, LegalBasicOfferUsesStrictHalfHealthAndCapsOnly
 	setAvailableHealth(evenTarget, 4);
 	EXPECT_EQ(battle()->battleGetBloodrageDamagePercent(attacker, evenTarget), 5);
 
-	auto * oddTarget = addStack(BattleSide::DEFENDER, creatureByName("core:griffin"), BattleHex(11, 7), 1);
+	// An explicit odd-HP fixture, independent of current creature balance values.
+	auto * oddTarget = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(11, 7), 1);
+	oddTarget->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::STACK_HEALTH, BonusSource::OTHER, 15, BonusSourceID()));
 	ASSERT_EQ(oddTarget->getTotalHealth(), 25);
+	// A maximum-HP bonus does not heal the existing10HP creature. Fill the
+	// synthetic maximum through the ordinary health API and authoritative packet.
+	auto fullOddState = oddTarget->acquireState();
+	int64_t healing = 25;
+	const auto healed = fullOddState->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT).healedHealthPoints;
+	ASSERT_EQ(healed, 15);
+	BattleUnitsChanged filled;
+	filled.battleID = BattleID(0);
+	UnitChanges filledHealth(oddTarget->unitId(), UnitChanges::EOperation::UPDATE);
+	filledHealth.data = fullOddState->save();
+	filledHealth.healthDelta = healed;
+	filled.changedStacks.push_back(std::move(filledHealth));
+	gameHandler->sendAndApply(filled);
+	ASSERT_EQ(oddTarget->getAvailableHealth(), 25);
 	setAvailableHealth(oddTarget, 13);
 	EXPECT_EQ(battle()->battleGetBloodrageDamagePercent(attacker, oddTarget), 0)
 		<< "For odd maximum HP, ceil(maximum / 2) remains outside the strict threshold";
@@ -329,6 +370,9 @@ TEST_F(NewHorizonsBloodScentLegacySerializationTest, CurrentRoundTripPreservesIn
 	startGame();
 	selectBloodScent(attackerSideHero);
 	startBattle();
+	ASSERT_FALSE(battle()->getLuckRollRules().finalDirectPhysicalMultiplier);
+	ASSERT_EQ(battle()->getMoraleExtraDamagePercent(), 100);
+	ASSERT_TRUE(battle()->getMagicRules().isNull());
 	ASSERT_EQ(battle()->getBloodrageLowHealthIncrement(BattleSide::ATTACKER), 5);
 
 	const auto restored = CMemorySerializer::deepCopy(*battle(), gameState().get());
@@ -336,11 +380,25 @@ TEST_F(NewHorizonsBloodScentLegacySerializationTest, CurrentRoundTripPreservesIn
 	EXPECT_EQ(restored->getBloodrageLowHealthIncrement(BattleSide::ATTACKER), 5);
 	EXPECT_EQ(restored->getBloodrageLowHealthIncrement(BattleSide::DEFENDER), 0);
 
+	// Actual battles now unconditionally capture the later Army Value metadata.
+	// An old-format control must explicitly represent its historical absence,
+	// without dropping the selected Blood Scent receipt under test.
+	auto historicalContext = CMemorySerializer::deepCopy(*battle(), gameState().get());
+	ASSERT_NE(historicalContext, nullptr);
+	ASSERT_TRUE(historicalContext->hasInitialArmyValueState());
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		historicalContext->getSide(side).initialArmyValue.reset();
+		historicalContext->getSide(side).initialArmyIsWandering = false;
+	}
+	ASSERT_FALSE(historicalContext->hasInitialArmyValueState());
+	ASSERT_EQ(historicalContext->getBloodrageLowHealthIncrement(BattleSide::ATTACKER), 5);
+
 	CMemorySerializer rejected;
 	rejected.oser.version = ESerializationVersion::NEW_HORIZONS_BLOODRAGE_THRESHOLD_BONUSES;
 	try
 	{
-		rejected.oser & *battle();
+		rejected.oser & *historicalContext;
 		FAIL() << "A writer before Blood Scent support must not drop an enabled snapshot increment";
 	}
 	catch(const std::runtime_error & error)
@@ -351,7 +409,7 @@ TEST_F(NewHorizonsBloodScentLegacySerializationTest, CurrentRoundTripPreservesIn
 
 	// Create a genuine pre-feature record: the increment was not present, even
 	// though the attached hero has Blood Scent in the current game state.
-	auto legacySource = CMemorySerializer::deepCopy(*battle(), gameState().get());
+	auto legacySource = CMemorySerializer::deepCopy(*historicalContext, gameState().get());
 	ASSERT_NE(legacySource, nullptr);
 	legacySource->getSide(BattleSide::ATTACKER).bloodrageLowHealthIncrement = 0;
 	legacySource->getSide(BattleSide::DEFENDER).bloodrageLowHealthIncrement = 0;
@@ -367,4 +425,138 @@ TEST_F(NewHorizonsBloodScentLegacySerializationTest, CurrentRoundTripPreservesIn
 	reader.iser & legacyRestored;
 	EXPECT_EQ(legacyRestored.getBloodrageLowHealthIncrement(BattleSide::ATTACKER), 0);
 	EXPECT_EQ(legacyRestored.getBloodrageLowHealthIncrement(BattleSide::DEFENDER), 0);
+}
+
+TEST_F(NewHorizonsBloodScentTest, OrdinaryMagogShotUsesRankAndStrictHalfPremiumInLiveAndDetachedDamage)
+{
+	startGame();
+	ASSERT_NO_FATAL_FAILURE(selectBloodScent(attackerSideHero));
+	startBattle();
+	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:magog"), BattleHex(3, 5), 100);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 5), 1000);
+	forceMaximumDamage(source);
+	ASSERT_TRUE(source->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
+	ASSERT_TRUE(battle()->battleCanShoot(source, target->getPosition()));
+	BattleAttackInfo shot(source, target, 0, true);
+	ASSERT_FALSE(shot.physicalDamage);
+	ASSERT_TRUE(newHorizonsMagic::rulesActive(battle()->getMagicRules()));
+	ASSERT_EQ(battle()->getMagicRules()["rulesetVersion"].Integer(),
+		newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION);
+	ASSERT_NO_FATAL_FAILURE(setAvailableHealth(target, target->getTotalHealth() / 2));
+	const auto noRage = battle()->calculateDmgRange(shot).damage;
+	battle()->getSide(BattleSide::ATTACKER).bloodrageDamagePercent = 10;
+	const auto rankOnly = battle()->calculateDmgRange(shot).damage;
+	EXPECT_GT(rankOnly.max, noRage.max);
+	EXPECT_EQ(battle()->battleGetBloodrageDamagePercent(source, target), 10);
+	ASSERT_NO_FATAL_FAILURE(setAvailableHealth(target, target->getAvailableHealth() - 1));
+	EXPECT_EQ(battle()->battleGetBloodrageDamagePercent(source, target), 15);
+	const auto boosted = battle()->calculateDmgRange(shot).damage;
+	const auto reference = persistentBloodrageReference(shot, BattleSide::ATTACKER);
+	EXPECT_EQ(boosted.min, reference.min);
+	EXPECT_EQ(boosted.max, reference.max);
+	EXPECT_GT(boosted.max, rankOnly.max);
+	ASSERT_LT(boosted.max, target->getAvailableHealth());
+
+	BloodScentEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	auto model = std::make_shared<HypotheticBattle>(&environment, callback);
+	const auto projectedSource = model->getForUpdate(source->unitId());
+	const auto projectedTarget = model->getForUpdate(target->unitId());
+	ASSERT_NE(static_cast<const battle::Unit *>(projectedSource.get()),
+		static_cast<const battle::Unit *>(source));
+	ASSERT_NE(static_cast<const battle::Unit *>(projectedTarget.get()),
+		static_cast<const battle::Unit *>(target));
+	ASSERT_EQ(model->battleGetUnitByID(source->unitId()), projectedSource.get());
+	ASSERT_EQ(model->battleGetUnitByID(target->unitId()), projectedTarget.get());
+	const auto forecast = model->calculateDmgRange(BattleAttackInfo(
+		model->battleGetUnitByID(source->unitId()), model->battleGetUnitByID(target->unitId()), 0, true)).damage;
+	EXPECT_EQ(forecast.min, boosted.min);
+	EXPECT_EQ(forecast.max, boosted.max);
+	const auto targetHealth = target->getAvailableHealth();
+	beginCombat();
+	battle()->activeStack = source->unitId();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeShotAttack(source, target)));
+	EXPECT_EQ(targetHealth - target->getAvailableHealth(), boosted.max);
+	EXPECT_EQ(model->battleGetUnitByID(target->unitId())->getAvailableHealth(), targetHealth);
+	EXPECT_EQ(battle()->getBloodrageDamagePercent(BattleSide::ATTACKER), 10);
+}
+
+TEST_F(NewHorizonsBloodScentTest, ElementalCollateralRetainsHistoricalDamage)
+{
+	startGame();
+	ASSERT_NO_FATAL_FAILURE(selectBloodScent(attackerSideHero));
+	startBattle();
+	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:lich"), BattleHex(3, 5), 100);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 5), 1000);
+	ASSERT_NO_FATAL_FAILURE(setAvailableHealth(target, target->getTotalHealth() / 2 - 1));
+	BattleAttackInfo collateral(source, target, 0, true);
+	ASSERT_FALSE(collateral.physicalDamage);
+	collateral.secondaryAttack = true;
+	const auto zero = battle()->calculateDmgRange(collateral).damage;
+	battle()->getSide(BattleSide::ATTACKER).bloodrageDamagePercent = 10;
+	const auto withRage = battle()->calculateDmgRange(collateral).damage;
+	EXPECT_EQ(withRage.min, zero.min);
+	EXPECT_EQ(withRage.max, zero.max);
+	EXPECT_EQ(battle()->getBloodrageDamagePercent(BattleSide::ATTACKER), 10);
+}
+
+TEST_F(NewHorizonsBloodScentTest, AbsentCapturedPolicyRetainsHistoricalElementalPrimaryDamage)
+{
+	absentMagicRules = true;
+	startGame();
+	ASSERT_NO_FATAL_FAILURE(selectBloodScent(attackerSideHero));
+	startBattle();
+	ASSERT_TRUE(battle()->getMagicRules().isNull());
+	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:lich"), BattleHex(3, 5), 100);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 5), 1000);
+	ASSERT_NO_FATAL_FAILURE(setAvailableHealth(target, target->getTotalHealth() / 2 - 1));
+	BattleAttackInfo primary(source, target, 0, true);
+	ASSERT_FALSE(primary.physicalDamage);
+	battle()->getSide(BattleSide::ATTACKER).bloodrageDamagePercent = 10;
+	const auto historical = battle()->calculateDmgRange(primary).damage;
+	battle()->getSide(BattleSide::ATTACKER).bloodrageDamagePercent = 0;
+	const auto historicalZero = battle()->calculateDmgRange(primary).damage;
+	EXPECT_EQ(historical.min, historicalZero.min);
+	EXPECT_EQ(historical.max, historicalZero.max);
+	EXPECT_EQ(battle()->getBloodrageDamagePercent(BattleSide::ATTACKER), 0);
+}
+
+TEST_F(NewHorizonsBloodScentTest, ActualActiveCreatureCastDoesNotReceiveRankOrBloodScentPremium)
+{
+	startGame();
+	ASSERT_NO_FATAL_FAILURE(selectBloodScent(attackerSideHero));
+	startBattle();
+	auto * first = addStack(BattleSide::ATTACKER, creatureByName("core:magog"), BattleHex(3, 5), 10);
+	auto * second = addStack(BattleSide::ATTACKER, creatureByName("core:magog"), BattleHex(3, 7), 10);
+	auto * firstTarget = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 5), 1000);
+	auto * secondTarget = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 7), 1000);
+	for(auto * target : {firstTarget, secondTarget})
+	{
+		ASSERT_NO_FATAL_FAILURE(setAvailableHealth(target, target->getTotalHealth() / 2 - 1));
+	}
+	for(auto * caster : {first, second})
+	{
+		caster->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::SPELLCASTER, BonusSource::CREATURE_ABILITY, 1, BonusSourceID(),
+			BonusSubtypeID(SpellID(SpellID::MAGIC_ARROW))));
+		caster->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::CASTS, BonusSource::CREATURE_ABILITY, 1, BonusSourceID()));
+		ASSERT_TRUE(caster->canCast());
+	}
+	beginCombat();
+	const auto before = firstTarget->getAvailableHealth();
+	battle()->activeStack = first->unitId();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeCreatureSpellcast(first, spells::Target{spells::Destination(firstTarget)}, SpellID::MAGIC_ARROW)));
+	const auto baselineLoss = before - firstTarget->getAvailableHealth();
+	ASSERT_GT(baselineLoss, 0);
+	battle()->getSide(BattleSide::ATTACKER).bloodrageDamagePercent = 20;
+	EXPECT_EQ(battle()->battleGetBloodrageDamagePercent(second, secondTarget), 20);
+	const auto secondBefore = secondTarget->getAvailableHealth();
+	battle()->activeStack = second->unitId();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeCreatureSpellcast(second, spells::Target{spells::Destination(secondTarget)}, SpellID::MAGIC_ARROW)));
+	EXPECT_EQ(secondBefore - secondTarget->getAvailableHealth(), baselineLoss);
+	EXPECT_EQ(battle()->getBloodrageDamagePercent(BattleSide::ATTACKER), 20);
 }

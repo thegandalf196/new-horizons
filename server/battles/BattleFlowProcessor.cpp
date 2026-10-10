@@ -46,6 +46,7 @@
 #include "../../lib/spells/BonusCaster.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsDivineRetribution.h"
 #include "../../lib/spells/NewHorizonsOverwhelmingFormula.h"
 #include "../../lib/spells/ObstacleCasterProxy.h"
 #include "../../lib/spells/CSpell.h"
@@ -793,7 +794,7 @@ void BattleFlowProcessor::resolveDivineRetribution(const CBattleInfoCallback & b
 			const auto protectedId = static_cast<uint32_t>(protectedUnitId);
 			hit.attackerID = protectedId;
 			hit.stackAttacked = stack->unitId();
-			hit.damageAmount = payout;
+			hit.damageAmount = newHorizonsDivineRetribution::recipientDamage(battle, stack, payout);
 			hit.flags = BattleStackAttacked::SPELL_EFFECT;
 			hit.spellID = spell;
 			CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), stack->acquireState(),
@@ -1941,6 +1942,9 @@ bool BattleFlowProcessor::rollGoodMorale(const CBattleInfoCallback & battle, con
 					BonusType::PERCENTAGE_DAMAGE_BOOST, BonusSource::HERO_SPECIAL, 10,
 					BonusSourceID(hero->id), BonusSubtypeID(BonusCustomSubtype::damageTypeMelee));
 				meleeDamage.description.appendRawString("New Horizons: Inspirational Leader");
+				// Stable provenance admits only this producer to active-creature spell damage.
+				// Older captured bonuses without it retain their previous attack-only behavior.
+				meleeDamage.stacking = "new-horizons:discipline.inspirationalLeader";
 				Bonus rangedDamage(meleeDamage);
 				rangedDamage.subtype = BonusCustomSubtype::damageTypeRanged;
 

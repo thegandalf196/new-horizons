@@ -327,7 +327,13 @@
 				"startMoving" : { "type" : "string", "format" : "soundFile" },
 				"endMoving" :   { "type" : "string", "format" : "soundFile" },
 				"move" :        { "type" : "string", "format" : "soundFile" },
-				"shoot" :       { "type" : "string", "format" : "soundFile" },
+				"shoot" : {
+					"description" : "A null value explicitly clears an inherited shooting sound for a melee creature.",
+					"anyOf" : [
+						{ "type" : "null" },
+						{ "type" : "string", "format" : "soundFile" }
+					]
+				},
 				"wince" :       { "type" : "string", "format" : "soundFile" }
 			}
 		},

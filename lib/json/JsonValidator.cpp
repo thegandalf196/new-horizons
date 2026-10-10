@@ -13,8 +13,11 @@
 
 #include "JsonUtils.h"
 
+#include <regex>
+
 #include "../GameLibrary.h"
 #include "../filesystem/Filesystem.h"
+#include "../filesystem/GeneratedImageRecipes.h"
 #include "../modding/ModScope.h"
 #include "../modding/CModHandler.h"
 #include "../texts/TextOperations.h"
@@ -56,6 +59,25 @@ static std::string notImplementedCheck(JsonValidator & validator,
 								const JsonNode & data)
 {
 	return "Not implemented entry in schema";
+}
+
+static std::string patternCheck(JsonValidator & validator, const JsonNode & baseSchema, const JsonNode & schema, const JsonNode & data)
+{
+	if(!schema.isString())
+		return validator.makeErrorMessage("Pattern in schema must be a string");
+
+	try
+	{
+		const std::regex expression(schema.String(), std::regex::ECMAScript | std::regex::optimize);
+		// JSON Schema patterns match anywhere unless the expression supplies anchors.
+		if(std::regex_search(data.String(), expression))
+			return "";
+		return validator.makeErrorMessage("String does not match schema pattern: " + schema.String());
+	}
+	catch(const std::regex_error &)
+	{
+		return validator.makeErrorMessage("Invalid regular expression in schema: " + schema.String());
+	}
 }
 
 static std::string schemaListCheck(JsonValidator & validator,
@@ -532,6 +554,11 @@ static std::string imageFile(const JsonNode & node)
 {
 	TEST_FILE(node.getModScope(), "Data/", node.String(), EResType::IMAGE);
 	TEST_FILE(node.getModScope(), "Sprites/", node.String(), EResType::IMAGE);
+	if(generatedImageRecipes::hasPhysicalDependencies(node.String(), [&](const ResourcePath & dependency)
+	{
+		return testFilePresence(node.getModScope(), dependency);
+	}))
+		return "";
 	if (node.String().find(':') != std::string::npos)
 		return testAnimation(node.String().substr(0, node.String().find(':')), node.getModScope());
 	return "Image file \"" + node.String() + "\" was not found";
@@ -595,7 +622,7 @@ JsonValidator::TValidatorMap createStringFields()
 	ret["maxLength"] = maxLengthCheck;
 	ret["minLength"] = minLengthCheck;
 
-	ret["pattern"] = notImplementedCheck;
+	ret["pattern"] = patternCheck;
 	return ret;
 }
 

@@ -2609,6 +2609,8 @@ int spellPowerDamagePerkBonusPercent(const JsonNode & rules, const CGHeroInstanc
 	if((spellKey == "core:iceBolt" || spellKey == "core:frostRing")
 		&& hero->hasActivePerk(std::string(HAVOC_MAGIC_SKILL), std::string(HAVOC_CRYOMANCER)))
 		return HAVOC_CRYOMANCER_DAMAGE_BONUS_PERCENT;
+	if(hasStormcallerPerk(hero, spell))
+		return 15;
 	return 0;
 }
 

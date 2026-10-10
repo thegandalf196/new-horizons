@@ -13,6 +13,7 @@ set(lib_SRCS
 	filesystem/CZipLoader.cpp
 	filesystem/CZipSaver.cpp
 	filesystem/FileInfo.cpp
+	filesystem/GeneratedImageRecipes.cpp
 	filesystem/Filesystem.cpp
 	filesystem/MinizipExtensions.cpp
 	filesystem/ResourcePath.cpp
@@ -343,6 +344,7 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsBlink.cpp
 	spells/NewHorizonsElementalTerrain.cpp
 	spells/NewHorizonsNaturesWrath.cpp
+	spells/NewHorizonsDivineRetribution.cpp
 	spells/NewHorizonsPandemonium.cpp
 	spells/NewHorizonsDirectDamage.cpp
 	spells/NewHorizonsEagleEye.cpp
@@ -455,6 +457,7 @@ set(lib_HEADERS
 	filesystem/ISimpleResourceLoader.h
 	filesystem/MinizipExtensions.h
 	filesystem/ResourcePath.h
+	filesystem/GeneratedImageRecipes.h
 
 	json/JsonFormatException.h
 	json/JsonNode.h
@@ -924,6 +927,7 @@ set(lib_MAIN_HEADERS
 	spells/NewHorizonsBlink.h
 	spells/NewHorizonsElementalTerrain.h
 	spells/NewHorizonsNaturesWrath.h
+	spells/NewHorizonsDivineRetribution.h
 	spells/NewHorizonsPandemonium.h
 	spells/NewHorizonsDirectDamage.h
 	spells/NewHorizonsMagic.h

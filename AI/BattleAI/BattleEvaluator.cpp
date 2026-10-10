@@ -33,6 +33,7 @@
 #include "../../lib/spells/NewHorizonsElementalTerrain.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/NewHorizonsNaturesWrath.h"
+#include "../../lib/spells/NewHorizonsDivineRetribution.h"
 #include "../../lib/spells/NewHorizonsPandemonium.h"
 #include "../../lib/spells/effects/BattleForm.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
@@ -2774,8 +2775,8 @@ float divineRetributionDamageValue(const battle::Unit * target, uint64_t damage,
 		static_cast<long double>(std::numeric_limits<float>::max())));
 }
 
-/// Estimate the marginal delayed Holy response from visible physical creature
-/// attackers. Siege weapons, towers, spell-like shots, and hidden hero spellbooks
+/// Estimate the marginal delayed Holy response from visible ordinary creature
+/// attackers. Siege weapons, towers, active creature casts and hidden hero spellbooks
 /// are deliberately excluded. Each stack contributes its strongest legal
 /// melee or ranged attack once per round, with a bounded second-round forecast.
 float divineRetributionThreatValue(const battle::Unit * liveTarget,
@@ -2846,17 +2847,14 @@ float divineRetributionThreatValue(const battle::Unit * liveTarget,
 						std::max(0, attackerState->shots.available() - currentShots));
 				}
 
-			int beforeResponse = 0;
-			int afterResponse = 0;
+			int64_t beforeResponse = 0;
+			int64_t afterResponse = 0;
 			for(const bool shooting : {false, true})
 			{
 				if((shooting && !canShootTarget) || (!shooting && !canMeleeTarget))
 					continue;
 
 				const BattleAttackInfo attack(attacker, liveTarget, 0, shooting);
-				if(!attack.physicalDamage)
-					continue;
-
 				const auto estimate = liveBattle.battleEstimateDamage(attack);
 				const auto perAttackDamage = static_cast<long double>(std::max<int64_t>(0,
 					estimate.damage.min + estimate.damage.max)) / 2.0L;
@@ -2873,9 +2871,11 @@ float divineRetributionThreatValue(const battle::Unit * liveTarget,
 					static_cast<long double>(liveTarget->getAvailableHealth()),
 					perAttackDamage * static_cast<long double>(attackCount));
 				beforeResponse = std::max(beforeResponse,
-					divineRetributionDamage(before, actualDamage, roundOffset));
+					newHorizonsDivineRetribution::recipientDamage(liveBattle, attacker,
+						divineRetributionDamage(before, actualDamage, roundOffset)));
 				afterResponse = std::max(afterResponse,
-					divineRetributionDamage(after, actualDamage, roundOffset));
+					newHorizonsDivineRetribution::recipientDamage(*projectedBattle, projectedAttacker,
+						divineRetributionDamage(after, actualDamage, roundOffset)));
 			}
 
 			if(afterResponse <= beforeResponse)

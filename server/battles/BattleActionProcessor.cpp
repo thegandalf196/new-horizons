@@ -5505,17 +5505,23 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	// alive: a reflecting ability answers a lethal blow while dying, so each reaction decides for itself
 	runEventTriggers(battle, reactions, payload);
 
-	// Counterfire is a once-per-round ranged reaction to physical creature damage. Process
+	// Historical contexts answer physical shots. Current rules also answer ordinary
+	// elemental primary shots, not their magical collateral or actual spell casts. Process
 	// every actually damaged stack (including secondary targets) only after the original
 	// attack's primary damage and event reactions have resolved. Stamp before each response;
 	// the counter flag is the recursion guard, so a Counterfire shot cannot provoke another.
+	const auto & counterfireRules = battle.getBattle()->getMagicRules();
+	const bool elementalPrimaryCounterfire = newHorizonsMagic::rulesActive(counterfireRules)
+		&& counterfireRules["rulesetVersion"].Integer() >= 3;
 	if(attacker && attack.ranged && !attack.counter && !attack.brace && !attack.cleaveFollowup
-		&& !bat.spellLike() && attacker->alive()
+		&& (!bat.spellLike() || elementalPrimaryCounterfire) && attacker->alive()
 		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attacker))
 	{
 		std::set<uint32_t> counterfireTargets;
 		for(const auto & hit : bat.bsa)
 		{
+			if(bat.spellLike() && (!defender || hit.stackAttacked != defender->unitId()))
+				continue;
 			if(hit.damageAmount <= 0 || !counterfireTargets.insert(hit.stackAttacked).second || !attacker->alive())
 				continue;
 
@@ -5829,7 +5835,13 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 				: battle::DamageProvenance::OTHER;
 		CStack::prepareAttacked(bsa, gameHandler->getRandomGenerator(), defenderState,
 			false, false, damageProvenance); //calculate casualties
-		if(physicalCreatureAttack && attackerState->unitSide() != def->unitSide())
+		// Ordinary primary melee/ranged hits qualify even when their damage is
+		// magical (e.g. Magog shots). Actual creature casts use a separate path.
+		// Preserve existing physical secondary behavior without widening magical
+		// collateral judgment until that interaction is separately authored.
+		const bool retributionAttack = physicalCreatureAttack
+			|| (!secondary && newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attackerState.get()));
+		if(retributionAttack && attackerState->unitSide() != def->unitSide())
 			recordDivineRetributionDamage(battle, *gameHandler, attackerState.get(), def, bsa.damageAmount);
 		range.guardianSpiritAbsorbedDamage = std::max<int64_t>(
 			0, guardianSpiritBefore - defenderState->guardianSpiritHitPoints);

@@ -18,8 +18,14 @@
 #include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/NewHorizonsDivineRetribution.h"
+#include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
+
+#include <array>
+#include <utility>
 
 namespace
 {
@@ -55,7 +61,8 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 	}
 
-	void prepare(int32_t attackerCount = 4, int32_t protectedCount = 1000, int32_t spellPower = 100)
+	void prepare(int32_t attackerCount = 4, int32_t protectedCount = 1000, int32_t spellPower = 100,
+		bool magogThreat = false)
 	{
 		startGame();
 		const auto spell = divineRetributionSpell();
@@ -70,7 +77,9 @@ protected:
 		removeDeployedUnits();
 		friendlyAnchor = addStack(BattleSide::ATTACKER, creatureByName("core:phoenix"), BattleHex(3, 5), 1);
 		protectedStack = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(leftHex), protectedCount);
-		enemyAttacker = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), attackerCount);
+		enemyAttacker = addStack(BattleSide::DEFENDER,
+			creatureByName(magogThreat ? "core:magog" : "core:angel"),
+			magogThreat ? BattleHex(12, 5) : BattleHex(rightHex), attackerCount);
 		blockRetaliation(enemyAttacker);
 		forceMaximumDamage(enemyAttacker);
 		beginCombat();
@@ -280,6 +289,109 @@ TEST_F(NewHorizonsDivineRetributionTest, RetributionistScalesTheFinalCappedPayou
 	endRound();
 	EXPECT_EQ(enemyHealthBefore - enemyAttacker->getAvailableHealth(), 224)
 		<< "The 120% perk applies after the 187 raw cap is reached";
+}
+
+TEST_F(NewHorizonsDivineRetributionTest, DelayedHolyPayoutUsesRecipientReductionWithoutReducingProtectedDamage)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(16));
+	enemyAttacker->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::OTHER, 50,
+		BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+	ASSERT_TRUE(castRetribution());
+	const auto protectedHealth = protectedStack->getAvailableHealth();
+	ASSERT_TRUE(attack(enemyAttacker, protectedStack->getPosition()));
+	EXPECT_EQ(protectedHealth - protectedStack->getAvailableHealth(), 800);
+	EXPECT_EQ(newHorizonsDivineRetribution::recipientDamage(*battle(), enemyAttacker, 150), 75);
+	const auto enemyHealth = enemyAttacker->getAvailableHealth();
+	endRound();
+	EXPECT_EQ(enemyHealth - enemyAttacker->getAvailableHealth(), 75);
+	EXPECT_TRUE(judgmentBonuses()->empty());
+}
+
+TEST_F(NewHorizonsDivineRetributionTest, HolyArmorAndCrusadeRecipientSourcesMultiplyBeforeDelayedHpLoss)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(16));
+	for(const auto & [key, value] : std::array<std::pair<const char *, int>, 2>{
+		std::pair{"new-horizons:holyArmor", 5000}, std::pair{"new-horizons:crusade", 2000}})
+	{
+		auto reduction = std::make_shared<Bonus>(BonusDuration::N_TURNS,
+			BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS, BonusSource::SPELL_EFFECT,
+			value, BonusSourceID(SpellID(SpellID::decode(key))), BonusSubtypeID(SpellSchool::ANY));
+		reduction->turnsRemain = 3;
+		enemyAttacker->addNewBonus(reduction);
+	}
+	ASSERT_TRUE(castRetribution());
+	ASSERT_TRUE(attack(enemyAttacker, protectedStack->getPosition()));
+	EXPECT_EQ(newHorizonsDivineRetribution::recipientDamage(*battle(), enemyAttacker, 150), 60);
+	const auto enemyHealth = enemyAttacker->getAvailableHealth();
+	endRound();
+	EXPECT_EQ(enemyHealth - enemyAttacker->getAvailableHealth(), 60);
+}
+
+TEST_F(NewHorizonsDivineRetributionTest, RetributionistScalesRawCapBeforeRecipientReductionAndDamageReceivedCap)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(16));
+	ASSERT_NO_FATAL_FAILURE(selectAdvancedRetributionist());
+	enemyAttacker->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::OTHER, 50,
+		BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+	enemyAttacker->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::DAMAGE_RECEIVED_CAP, BonusSource::OTHER, 10, BonusSourceID()));
+	ASSERT_TRUE(castRetribution());
+	ASSERT_EQ(protectionBonuses()->front()->val, 187);
+	ASSERT_TRUE(attack(enemyAttacker, protectedStack->getPosition()));
+	const auto expected = enemyAttacker->getMaxHealth() / 10;
+	ASSERT_LT(expected, 112);
+	EXPECT_EQ(newHorizonsDivineRetribution::recipientDamage(*battle(), enemyAttacker, 224), expected);
+	const auto enemyHealth = enemyAttacker->getAvailableHealth();
+	endRound();
+	EXPECT_EQ(enemyHealth - enemyAttacker->getAvailableHealth(), expected);
+}
+
+TEST_F(NewHorizonsDivineRetributionTest, OrdinaryMagogPrimaryShotBuildsJudgmentAndPaysAfterRecipientDefense)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(100, 1000, 100, true));
+	ASSERT_TRUE(enemyAttacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
+	ASSERT_TRUE(battle()->battleCanShoot(enemyAttacker, protectedStack->getPosition()));
+	enemyAttacker->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::OTHER, 50,
+		BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+	ASSERT_TRUE(castRetribution());
+	const auto protectedHealth = protectedStack->getAvailableHealth();
+	battle()->activeStack = enemyAttacker->unitId();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1),
+		BattleAction::makeShotAttack(enemyAttacker, protectedStack)));
+	const auto actualLoss = protectedHealth - protectedStack->getAvailableHealth();
+	ASSERT_GT(actualLoss, 0);
+	ASSERT_EQ(judgmentBonuses()->size(), 1u);
+	const auto expected = newHorizonsDivineRetribution::recipientDamage(*battle(), enemyAttacker,
+		std::min<int64_t>(actualLoss * 30 / 100, 150));
+	ASSERT_GT(expected, 0);
+	const auto enemyHealth = enemyAttacker->getAvailableHealth();
+	endRound();
+	EXPECT_EQ(enemyHealth - enemyAttacker->getAvailableHealth(), expected);
+}
+
+TEST_F(NewHorizonsDivineRetributionTest, ActualActiveCreatureDamageSpellDoesNotBuildJudgment)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	enemyAttacker->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELLCASTER, BonusSource::CREATURE_ABILITY, 1, BonusSourceID(),
+		BonusSubtypeID(SpellID(SpellID::MAGIC_ARROW))));
+	enemyAttacker->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::CASTS, BonusSource::CREATURE_ABILITY, 1, BonusSourceID()));
+	ASSERT_TRUE(enemyAttacker->canCast());
+	ASSERT_TRUE(castRetribution());
+	const auto protectedHealth = protectedStack->getAvailableHealth();
+	battle()->activeStack = enemyAttacker->unitId();
+	const spells::Target target{spells::Destination(protectedStack)};
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1),
+		BattleAction::makeCreatureSpellcast(enemyAttacker, target, SpellID::MAGIC_ARROW)));
+	EXPECT_LT(protectedStack->getAvailableHealth(), protectedHealth);
+	EXPECT_TRUE(judgmentBonuses()->empty());
+	const auto enemyHealth = enemyAttacker->getAvailableHealth();
+	endRound();
+	EXPECT_EQ(enemyAttacker->getAvailableHealth(), enemyHealth);
 }
 
 TEST_F(NewHorizonsDivineRetributionTest, PendingJudgmentPaysAfterTheProtectedStackDies)

@@ -51,6 +51,7 @@ set(test_SRCS
  		CMemoryBufferTest.cpp
  		CVcmiTestConfig.cpp
  		JsonComparer.cpp
+		json/GeneratedImageRecipesTest.cpp
 
 		battle/AutocombatPreferencesTest.cpp
 		battle/AlternatingHeroActionStateTest.cpp
@@ -487,6 +488,8 @@ set(test_SRCS
 		server/battles/NewHorizonsSteadfastTest.cpp
 		server/battles/NewHorizonsCommandingPresenceTest.cpp
 		server/battles/NewHorizonsBloodScentTest.cpp
+		server/battles/NewHorizonsElementalCounterfireTest.cpp
+		server/battles/NewHorizonsInspirationalCreatureSpellTest.cpp
 		server/battles/NewHorizonsRageThroughPainTest.cpp
 		server/battles/NewHorizonsHoldFastTest.cpp
 		server/battles/NewHorizonsFearlessTest.cpp
@@ -744,6 +747,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/NewHorizonsTeachingMeetingAITest.cpp
 		nullkiller2/NewHorizonsExternalMusterAITest.cpp
 		nullkiller2/NewHorizonsTownMusterAITest.cpp
+		nullkiller2/NewHorizonsNeutralDiplomacyPlannerTest.cpp
 		nullkiller2/Helpers/TinyH3MDimensionDoorExplorationTest.cpp
 		nullkiller2/Pathfinding/AIPathNodePoolTest.cpp
 		nullkiller2/Pathfinding/ArmyLossTest.cpp

@@ -1256,7 +1256,10 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		if(powerBonus > 0)
 			effectPower = effectPower * (100 + powerBonus) / 100;
 	}
-	if(newHorizonsMagic::hasStormcallerPerk(dynamic_cast<const CGHeroInstance *>(caster), owner))
+	// Saved pre-v3 casts retain their historical raw-power conversion. The
+	// v3 damage-component path composes Stormcaller before the final floor.
+	if(!usesNewHorizonsMagicV3()
+		&& newHorizonsMagic::hasStormcallerPerk(dynamic_cast<const CGHeroInstance *>(caster), owner))
 		effectPower = effectPower * 115 / 100;
 	{
 		const auto value = event->getEffectValue();
@@ -1685,8 +1688,37 @@ int64_t Mechanics::adjustDirectCreatureActivationDamage(const int64_t damage) co
 	if(damage <= 0)
 		return 0;
 	const int percent = std::clamp(getDirectCreatureActivationDamagePercent(), 1, 100);
-	// Divide first to retain exact int64 HP without overflowing a damage * percent product.
-	return (damage / 100) * percent + (damage % 100) * percent / 100;
+	const int inspiration = getInspirationalLeaderCreatureDamagePercent();
+	const int64_t factor = int64_t(percent) * inspiration;
+	// Combine both final-output factors before a single floor, without damage*factor overflow.
+	constexpr int64_t denominator = 10000;
+	const int64_t remainder = (damage % denominator) * factor / denominator;
+	const int64_t quotient = damage / denominator;
+	if(quotient > (std::numeric_limits<int64_t>::max() - remainder) / factor)
+		return std::numeric_limits<int64_t>::max();
+	return quotient * factor + remainder;
+}
+
+int32_t BaseMechanics::getInspirationalLeaderCreatureDamagePercent() const
+{
+	if(mode != Mode::CREATURE_ACTIVE || !caster || caster->getHeroCaster())
+		return 100;
+	const auto * callback = battle();
+	if(!callback || !callback->getBattle())
+		return 100;
+	const auto * unit = getUnitCaster();
+	if(!newHorizonsCombatSkills::isOrdinaryCreatureAttacker(unit)
+		|| !callback->battleActiveUnit()
+		|| callback->battleActiveUnit()->unitId() != unit->unitId())
+		return 100;
+	const auto bonuses = unit->getBonuses(Selector::typeSubtype(BonusType::PERCENTAGE_DAMAGE_BOOST,
+		BonusSubtypeID(BonusCustomSubtype::damageTypeMelee)));
+	for(const auto & bonus : *bonuses)
+		if(bonus->stacking == "new-horizons:discipline.inspirationalLeader"
+			&& bonus->source == BonusSource::HERO_SPECIAL
+			&& bonus->duration == BonusDuration::STACK_ACTIVATION && bonus->val == 10)
+			return 110;
+	return 100;
 }
 
 int32_t BaseMechanics::getDirectCreatureActivationDamagePercent() const
