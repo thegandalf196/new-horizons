@@ -1215,6 +1215,30 @@ void CMap::validateNewHorizonsStartingDevelopmentSerialization(bool supported) c
 			newHorizonsHeroes::validateStartingDevelopmentSerialization(hero->getPrimaryGrowthRules(), supported);
 }
 
+void CMap::validateNewHorizonsRemainingStartSerialization(bool supported) const
+{
+	if(gameSettings)
+		gameSettings->validateNewHorizonsRemainingStartSerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsHeroes::validateRemainingStartSerialization(hero->getPrimaryGrowthRules(), supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			newHorizonsHeroes::validateRemainingStartSerialization(hero->getPrimaryGrowthRules(), supported);
+}
+
+void CMap::validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const
+{
+	if(gameSettings)
+		gameSettings->validateNewHorizonsCoroniusHolyWrathSerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsHeroes::validateCoroniusHolyWrathSerialization(hero->getPrimaryGrowthRules(), supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			newHorizonsHeroes::validateCoroniusHolyWrathSerialization(hero->getPrimaryGrowthRules(), supported);
+}
+
 void CMap::validateNewHorizonsMagnateSerialization(bool supported) const
 {
 	for(const auto & object : objects)
@@ -1374,4 +1398,3 @@ void CMap::deserializeHeroPool(const std::vector<std::shared_ptr<CGHeroInstance>
 		if (hero)
 			heroesPool.at(hero->getHeroTypeID().getNum()) = hero;
 }
-

@@ -62,6 +62,7 @@ set(lib_MAIN_SRCS
 	battle/TimeStopState.cpp
 	battle/NewHorizonsBloodrage.cpp
 	battle/NewHorizonsDivineMandate.cpp
+	battle/NewHorizonsIronWill.cpp
 	battle/NewHorizonsElementalRebirth.cpp
 	battle/NewHorizonsSwiftRebirth.cpp
 	battle/NewHorizonsMagicalAbilityDamage.cpp
@@ -552,6 +553,7 @@ set(lib_MAIN_HEADERS
 	battle/PhysicalAffliction.h
 	battle/NewHorizonsBloodrage.h
 	battle/NewHorizonsDivineMandate.h
+	battle/NewHorizonsIronWill.h
 	battle/NewHorizonsElementalRebirth.h
 	battle/NewHorizonsSwiftRebirth.h
 	battle/NewHorizonsMagicalAbilityDamage.h

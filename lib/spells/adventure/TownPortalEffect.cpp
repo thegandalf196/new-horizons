@@ -35,11 +35,43 @@ bool TownPortalEffect::shouldOfferTownInDialog(const CGTownInstance * town) cons
 	return town->getVisitingHero() == nullptr;
 }
 
+bool TownPortalEffect::usesNearestControlledTown(const CGHeroInstance * hero) const
+{
+	return hero && owner && owner->id == SpellID(SpellID::TOWN_PORTAL)
+		&& newHorizonsMagic::isAdventureSpell(hero->getMagicRules(), owner->id);
+}
+
+bool TownPortalEffect::townSelectionAllowed(const CGHeroInstance * hero) const
+{
+	return allowTownSelection && !usesNearestControlledTown(hero);
+}
+
+std::string TownPortalEffect::getTargetingHintTextId(const spells::Caster * caster) const
+{
+	return caster && usesNearestControlledTown(caster->getHeroCaster())
+		? "new-horizons.adventure.townPortal.targetingHint" : std::string{};
+}
+
+std::vector<const CGTownInstance *> TownPortalEffect::getControlledTowns(const IGameInfoCallback & callback, const CGHeroInstance * hero) const
+{
+	if(!hero)
+		return {};
+	const auto * player = callback.getPlayerState(hero->getOwner());
+	return player ? player->getTowns() : std::vector<const CGTownInstance *>{};
+}
+
+std::vector<const CGTownInstance *> TownPortalEffect::getPlayerTeamTowns(SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters) const
+{
+	const auto * hero = parameters.caster->getHeroCaster();
+	if(usesNearestControlledTown(hero))
+		return getControlledTowns(*env->getCb(), hero);
+	return TownRelatedAdventureSpellEffect::getPlayerTeamTowns(env, parameters);
+}
+
 int TownPortalEffect::getMovementPointsTaken(const CGHeroInstance * hero, int remainingMovement) const
 {
 	const int nonnegativeRemaining = std::max(0, remainingMovement);
-	if(hero && owner && owner->id == SpellID(SpellID::TOWN_PORTAL)
-		&& newHorizonsMagic::isAdventureSpell(hero->getMagicRules(), owner->id))
+	if(usesNearestControlledTown(hero))
 		return nonnegativeRemaining;
 
 	return std::min(nonnegativeRemaining, std::max(0, movementPointsTaken));
@@ -75,7 +107,7 @@ ESpellCastResult TownPortalEffect::applyAdventureEffects(SpellCastEnvironment * 
 		return ESpellCastResult::ERROR;
 	}
 
-	if(!allowTownSelection)
+	if(!townSelectionAllowed(parameters.caster->getHeroCaster()))
 	{
 		std::vector<const CGTownInstance *> pool = getPlayerTeamTowns(env, parameters);
 		destination = findNearestTown(parameters, pool);
@@ -171,7 +203,7 @@ void TownPortalEffect::endCast(SpellCastEnvironment * env, const AdventureSpellC
 {
 	const CGTownInstance * destination = nullptr;
 
-	if(!allowTownSelection)
+	if(!townSelectionAllowed(parameters.caster->getHeroCaster()))
 	{
 		std::vector<const CGTownInstance *> pool = getPlayerTeamTowns(env, parameters);
 		destination = findNearestTown(parameters, pool);

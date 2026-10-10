@@ -64,6 +64,8 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info)
 			info->validateSharedPurposeSerialization(h);
 		if(h.saving && info)
+			info->validateReactiveWeaveSerialization(h);
+		if(h.saving && info)
 			info->validateSwiftRebirthSerialization(h);
 		if(h.saving && info)
 			info->validateRoyalStandardSerialization(h);
@@ -449,6 +451,45 @@ struct DLL_LINKAGE SetArmorerDefiantState : public CPackForClient
 
 /// Replicates a side's bounded response window after an accepted enemy spell or
 /// consumes it after that side accepts a hero spell.
+/// Published only after an accepted enemy Hero spell changed captured recipients.
+struct DLL_LINKAGE SetReactiveWeaveState : public CPackForClient
+{
+	BattleID battleID = BattleID::NONE;
+	BattleSide side = BattleSide::NONE;
+	BattleSide casterSide = BattleSide::NONE;
+	int32_t round = -1;
+	int32_t empowerment = 0;
+	std::vector<uint32_t> recipients;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+	void validateShape() const
+	{
+		if(battleID == BattleID::NONE || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+			|| (casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
+			|| side == casterSide || round < 0 || round == std::numeric_limits<int32_t>::max()
+			|| empowerment <= 0 || recipients.empty()
+			|| recipients.back() == std::numeric_limits<uint32_t>::max()
+			|| !std::is_sorted(recipients.begin(), recipients.end())
+			|| std::adjacent_find(recipients.begin(), recipients.end()) != recipients.end())
+			throw std::runtime_error("Invalid Reactive Weave receipt");
+	}
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_REACTIVE_WEAVE))
+			throw std::runtime_error("Reactive Weave receipt requires its protocol version");
+		if(h.saving)
+			validateShape();
+		h & battleID;
+		h & side;
+		h & casterSide;
+		h & round;
+		h & empowerment;
+		h & recipients;
+		validateShape();
+	}
+};
+
 struct DLL_LINKAGE SetSpellResponseState : public CPackForClient
 {
 	BattleID battleID = BattleID::NONE;

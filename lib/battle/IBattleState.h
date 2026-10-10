@@ -343,6 +343,10 @@ public:
 	{
 		throw std::runtime_error("Battle state cannot record Cross-School Formula");
 	}
+	virtual void armReactiveWeave(BattleSide, int32_t, int32_t)
+	{
+		throw std::runtime_error("Reactive Weave state is unsupported by this battle");
+	}
 	virtual void setSpellResponseState(BattleSide, const SpellResponseState &) {}
 	virtual void consumeExtendSpell(BattleSide) { throw std::runtime_error("Battle state cannot consume Extend Spell"); }
 	virtual void setOverwhelmingFormulaState(BattleSide, const OverwhelmingFormulaState &) {}

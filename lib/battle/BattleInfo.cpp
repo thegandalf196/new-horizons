@@ -9,9 +9,11 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsDivineMandate.h"
+#include "NewHorizonsIronWill.h"
 #include "BattleInfo.h"
 #include "../entities/creature/NewHorizonsRecruitmentTraining.h"
 #include "../entities/creature/NewHorizonsMusterRules.h"
+#include "NewHorizonsWarcasting.h"
 #include "NewHorizonsFrozen.h"
 #include "NewHorizonsSwiftRebirth.h"
 #include "BattleForm.h"
@@ -178,6 +180,32 @@ void BattleInfo::setCrossSchoolFormulaState(BattleSide side, const newHorizonsCr
 		throw std::runtime_error("Invalid Cross-School Formula side");
 	newHorizonsCrossSchoolFormula::validateState(*this, state);
 	sides.at(side).crossSchoolFormula = state;
+}
+
+void BattleInfo::validateReactiveWeaveStates() const
+{
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		// Validate stored bytes even when the public accessor masks an inactive profile.
+		const auto & state = sides.at(side).warcastingState;
+		state.validateShape();
+		if(state.reactiveEmpowermentPercent != 0
+			&& (!newHorizonsWarcasting::enabled(getMagicRules())
+				|| state.reactiveEmpowermentPercent != newHorizonsWarcasting::reactiveEmpowerment(getSideHero(side))
+				|| static_cast<int64_t>(state.reactiveExpiryRound) > static_cast<int64_t>(getRound()) + 1))
+			throw std::runtime_error("Reactive Weave saved readiness has invalid capability or expiry");
+	}
+}
+
+void BattleInfo::armReactiveWeave(BattleSide side, int32_t receiptRound, int32_t empowerment)
+{
+	if((side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| receiptRound != getRound() || !newHorizonsWarcasting::enabled(getMagicRules())
+		|| empowerment <= 0 || empowerment != newHorizonsWarcasting::reactiveEmpowerment(getSideHero(side)))
+		throw std::runtime_error("Reactive Weave receipt does not match the captured hero capability");
+	auto next = sides.at(side).warcastingState;
+	next.armReactive(receiptRound, empowerment);
+	sides.at(side).warcastingState = std::move(next);
 }
 
 void BattleInfo::setSpellResponseState(BattleSide side, const SpellResponseState & state)
@@ -2561,7 +2589,8 @@ void BattleInfo::validateFocusFireStates() const
 				}
 				if(!order.divineDisciplineRecipientUnitIds.empty())
 				{
-					if(!newHorizonsDivineMandate::hasDivineDisciplinePerk(getSideHero(side))
+					if((order.ironWillLifetime ? !newHorizonsIronWill::hasPerk(getSideHero(side))
+						: !newHorizonsDivineMandate::hasDivineDisciplinePerk(getSideHero(side)))
 						|| (order.issuedRound == round && !order.divineDisciplineCompletedUnitIds.empty()))
 						throw std::runtime_error("Invalid Divine Discipline captured Order context");
 					for(const auto id : order.divineDisciplineRecipientUnitIds)

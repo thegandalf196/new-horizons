@@ -67,6 +67,7 @@
 	},
 	"damageSpellSpecialties": {
 		"version": 1,
+		"coroniusHolyWrathReplacement": true,
 		"componentPercent": 15
 	},
 	"nonDamageSpellSpecialties": {
@@ -74,6 +75,7 @@
 		"aenainFrailtyReplacement": true,
 		"defensiveStartReplacements": true,
 		"offensiveStartReplacements": true,
+		"remainingStartReplacements": true,
 		"componentPercent": 20,
 		"spells": ["core:cure", "core:resurrection", "core:bless", "core:haste", "new-horizons:reanimate", "new-horizons:frailty", "new-horizons:hydrasVitality", "new-horizons:guardianSpirit", "new-horizons:crusade", "new-horizons:focusMagic"]
 	},

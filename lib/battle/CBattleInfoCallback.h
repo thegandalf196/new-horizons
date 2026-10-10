@@ -156,6 +156,8 @@ public:
 	bool battleUsesHeroCommands() const;
 	bool battleCanUseHeroCommand(BattleSide side, HeroCommand command) const;
 	bool battleCanBeginHeroCommand(BattleSide side, HeroCommand command) const;
+	/// Living controlled shooter eligibility shared by Focus Fire and issuance recipient snapshots.
+	bool battleIsFocusFireRecipient(const battle::Unit * unit, BattleSide side) const;
 	/// Shared real/hypothetical ammunition policy, including the off-field bank artifact.
 	bool battleUnitHasAmmoCart(const battle::Unit * unit) const;
 	/// Effective spell resistance, including allied aura and the saved New Horizons cap.
@@ -477,7 +479,6 @@ protected:
 	int32_t calculateBattleSpellCost(const spells::Spell * sp, const CGHeroInstance * caster,
 		int32_t listedCostMultiplier, bool metamagicFollowup, SpellCostBreakdown * breakdown) const;
 	bool battleHeroCommandCommonAvailable(BattleSide side, HeroCommand command) const;
-	bool battleIsFocusFireRecipient(const battle::Unit * unit, BattleSide side) const;
 	ReachabilityInfo getFlyingReachability(const ReachabilityInfo::Parameters & params) const;
 	ReachabilityInfo makeBFS(const AccessibilityInfo & accessibility, const ReachabilityInfo::Parameters & params) const;
 	bool isInObstacle(const BattleHex & hex, const BattleHexArray & obstacles, const ReachabilityInfo::Parameters & params) const;

@@ -471,6 +471,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		}
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE) && hasChainGateState())
 			throw std::runtime_error("Cannot discard Chain Gate battle state");
+		warcastingState.validateReactiveSerialization(h);
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_WARCASTING)
 			&& warcastingState != AlternatingHeroActionState{})
 			throw std::runtime_error("Cannot discard Warcasting battle state");

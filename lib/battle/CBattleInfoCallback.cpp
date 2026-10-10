@@ -31,6 +31,7 @@
 #include "NewHorizonsCreatureAbilitySuppression.h"
 #include "NewHorizonsDiscipline.h"
 #include "NewHorizonsDivineMandate.h"
+#include "NewHorizonsIronWill.h"
 #include "NewHorizonsPuppetMaster.h"
 #include "IGameSettings.h"
 #include "PossiblePlayerBattleAction.h"
@@ -1766,6 +1767,12 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderStateIm
 				result.divineDisciplineRecipientUnitIds = result.royalStandardRecipientUnitIds;
 			if(!newHorizonsDivineMandate::hasRoyalStandardPerk(hero))
 				result.royalStandardRecipientUnitIds.clear();
+		}
+		const auto ironRecipients = newHorizonsIronWill::recipients(*this, side, result);
+		if(!ironRecipients.empty())
+		{
+			result.ironWillLifetime = true;
+			result.divineDisciplineRecipientUnitIds = ironRecipients;
 		}
 		result.validateShape();
 		return result;

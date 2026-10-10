@@ -48,6 +48,7 @@
 	"new-horizons.hero.morale.minimum": "Minimum Morale: %VALUE%.",
 	"new-horizons.hero.luck.maximum": "Maximum Luck limit: %VALUE%.",
 	"new-horizons.combat.orderBadge.sourceExpiry": "Issued by the %SOURCE% hero. Expires at the end of round %ROUND%; its benefit may end earlier when used or broken.",
+	"new-horizons.combat.orderBadge.carriedExpiry": "%SOURCE% Order, issued round %ROUND%: retains its benefit until this recipient's next completed or forfeited Creature Activation, unless used or broken first.",
 	"new-horizons.combat.orderBadge.attacker": "attacking",
 	"new-horizons.combat.orderBadge.defender": "defending",
 	"new-horizons.spellCost.row": "SP %d -> %d",

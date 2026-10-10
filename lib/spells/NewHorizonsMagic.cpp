@@ -20,6 +20,7 @@
 #include "CSpellHandler.h"
 #include "../constants/StringConstants.h"
 #include "../GameLibrary.h"
+#include "../texts/CGeneralTextHandler.h"
 #include "../modding/IdentifierStorage.h"
 #include "../modding/ModScope.h"
 #include "../callback/IGameInfoCallback.h"
@@ -796,7 +797,10 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		return {};
 
 	std::string result = spell->getDescriptionTranslated(schoolLevel);
-	if(hero && earthquakeRulesEnabled(hero->getMagicRules(), spell->getId()))
+	if(hero && spell->getId() == SpellID(SpellID::TOWN_PORTAL)
+		&& isAdventureSpell(hero->getMagicRules(), spell->getId()))
+		result = LIBRARY->generaltexth->translate("new-horizons.adventure.townPortal.targetingHint");
+	else if(hero && earthquakeRulesEnabled(hero->getMagicRules(), spell->getId()))
 	{
 		const bool geomancer = hero->hasActivePerk("new-horizons:natureMagic", "new-horizons:natureMagic.geomancer");
 		const auto & parameters = hero->getMagicRules()["spells"]["core:earthquake"]["earthquake"];

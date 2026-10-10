@@ -63,6 +63,8 @@ protected:
 			legacyMagic ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 		rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
+		rules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
+		rules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
 		rules["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");
 		std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(), [](const JsonNode & spell)
 		{

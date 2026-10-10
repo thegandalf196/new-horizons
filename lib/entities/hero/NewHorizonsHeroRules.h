@@ -134,6 +134,8 @@ struct DLL_LINKAGE StartingDevelopmentProfile
 DLL_LINKAGE std::optional<StartingDevelopmentProfile> startingDevelopmentProfile(
 	const JsonNode & rules, const PerkState & perks, HeroTypeID hero, HeroClassID heroClass);
 DLL_LINKAGE void validateStartingDevelopmentSerialization(const JsonNode & rules, bool supported);
+DLL_LINKAGE void validateRemainingStartSerialization(const JsonNode & rules, bool supported);
+DLL_LINKAGE void validateCoroniusHolyWrathSerialization(const JsonNode & rules, bool supported);
 /// Returns the converted skill specialties captured by this hero. Missing
 /// rules intentionally preserve legacy specialty behavior for older saves.
 DLL_LINKAGE std::optional<SkillSpecialtyRules> skillSpecialtyRules(const JsonNode & resolvedRules);

@@ -247,6 +247,8 @@ public:
 	void validateNewHorizonsDefensiveStartSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsOffensiveStartSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsStartingDevelopmentSerialization(bool supported) const;
+	void validateNewHorizonsRemainingStartSerialization(bool supported) const;
+	void validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
@@ -261,9 +263,13 @@ public:
 		if(h.saving)
 			validateNewHorizonsOffensiveStartSpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES));
 		if(h.saving)
+			validateNewHorizonsRemainingStartSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
+		if(h.saving)
 			validateCrossSchoolFormulaSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_CROSS_SCHOOL_FORMULA));
 		if(h.saving)
 			validateNewHorizonsStartingDevelopmentSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
+		if(h.saving)
+			validateNewHorizonsCoroniusHolyWrathSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_CORONIUS_HOLY_WRATH));
 		if(h.saving)
 			validateNewHorizonsThantReanimateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
 		if(h.saving)
@@ -348,6 +354,9 @@ public:
 				newHorizonsHeroes::validateStartingDevelopmentSerialization(heroDevelopmentRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
 			if(!h.saving)
+				newHorizonsHeroes::validateCoroniusHolyWrathSerialization(heroDevelopmentRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_CORONIUS_HOLY_WRATH));
+			if(!h.saving)
 			{
 				newHorizonsHeroes::validateFrailtySpecialtySerialization(heroDevelopmentRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
@@ -357,6 +366,8 @@ public:
 					h.hasFeature(Handler::Version::NEW_HORIZONS_DEFENSIVE_START_SPECIALTIES));
 				newHorizonsHeroes::validateOffensiveStartSpecialtySerialization(heroDevelopmentRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES));
+				newHorizonsHeroes::validateRemainingStartSerialization(heroDevelopmentRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
 				newHorizonsHeroes::validateReanimateSpecialtySerialization(heroDevelopmentRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
 				newHorizonsHeroes::validateHasteSpecialtySerialization(heroDevelopmentRules,

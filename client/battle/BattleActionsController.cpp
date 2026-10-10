@@ -3897,7 +3897,7 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 				const auto battle = owner.getBattle();
 				const auto side = battle->battleGetMySide();
 				const auto activeFlank = battle->battleGetHeroOrderState(side, HeroCommand::FLANK);
-				if(activeFlank && activeFlank->issuedRound == owner.getBattle()->battleGetRound()
+				if(activeFlank && attacker && battle->battleOrderBenefitAppliesTo(*activeFlank, side, attacker)
 					&& activeFlank->primaryTargetUnitId == targetStack->unitId()
 					&& attacker && attacker->alive() && !attacker->isGhost()
 					&& battle->playerToSide(battle->battleGetOwner(attacker)) == side

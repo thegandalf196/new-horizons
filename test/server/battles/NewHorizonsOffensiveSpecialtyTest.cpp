@@ -69,6 +69,10 @@ protected:
 			legacyMagic ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 		rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
+		rules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
+		// This suite's old-format controls represent the earlier Loynis/Zubin
+		// profile, not the subsequently-authored Inteus/Halon feature.
+		rules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
 		if(!optIn)
 		{
 			rules["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");

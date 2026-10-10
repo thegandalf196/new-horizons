@@ -118,6 +118,8 @@ struct DLL_LINKAGE HeroOrderState
 	/// Original Divine follow-up recipients and monotonic completed carry activations.
 	std::vector<uint32_t> divineDisciplineRecipientUnitIds;
 	std::vector<uint32_t> divineDisciplineCompletedUnitIds;
+	/// The shared carry ledger was captured by Iron Will, not a Divine allowance.
+	bool ironWillLifetime = false;
 	/// Frozen first-action intersection for this second Order only.
 	std::vector<uint32_t> crownAndAltarRecipientUnitIds;
 	int32_t crownAndAltarFocusFirePercent = 0;
@@ -152,6 +154,8 @@ struct DLL_LINKAGE HeroOrderState
 
 	template <typename Handler> void validateRoyalStandardSerialization(Handler & h) const
 	{
+		if(h.saving && ironWillLifetime && !h.hasFeature(Handler::Version::NEW_HORIZONS_IRON_WILL))
+			throw std::runtime_error("Cannot discard Iron Will Order lifetime");
 		if(h.saving && (!crownAndAltarRecipientUnitIds.empty() || crownAndAltarFocusFirePercent != 0
 			|| crownAndAltarHoldReductionBasisPoints != 0)
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CROWN_AND_ALTAR))
@@ -225,6 +229,8 @@ struct DLL_LINKAGE HeroOrderState
 
 	void validateShape() const
 	{
+		if(ironWillLifetime && (command == HeroCommand::SECOND_WIND || divineDisciplineRecipientUnitIds.empty()))
+			throw std::runtime_error("Invalid Iron Will Order carry");
 		const auto validIds = [](const auto & ids)
 		{
 			return std::is_sorted(ids.begin(), ids.end())
@@ -386,6 +392,10 @@ struct DLL_LINKAGE HeroOrderState
 			h & royalStandardRecipientUnitIds;
 		else if(!h.saving)
 			royalStandardRecipientUnitIds.clear();
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_IRON_WILL))
+			h & ironWillLifetime;
+		else if(!h.saving)
+			ironWillLifetime = false;
 		if(!h.saving)
 			validateShape();
 	}

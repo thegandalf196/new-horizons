@@ -66,6 +66,8 @@ protected:
 			legacyMagic ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 		rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
+		rules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
+		rules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
 		if(aenainFalseFlag)
 		{
 			rules["nonDamageSpellSpecialties"]["aenainFrailtyReplacement"].Bool() = false;
@@ -455,6 +457,8 @@ TEST_F(NewHorizonsFrailtySpecialtyTest, CurrentWorldRoundtripAndPreviousFormatOu
 	JsonNode raw;
 	raw["heroes"]["newHorizons"] = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
 	raw["heroes"]["newHorizons"]["startingSkills"].Struct().erase("startingDevelopmentProfiles");
+	raw["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
+	raw["heroes"]["newHorizons"]["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
 	CMemorySerializer incoming;
 	incoming.oser & raw;
 	incoming.iser.version = ESerializationVersion::NEW_HORIZONS_THANT_REANIMATE;

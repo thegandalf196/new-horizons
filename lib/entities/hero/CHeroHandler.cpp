@@ -437,6 +437,9 @@ void CHeroHandler::loadHeroSpecialty(CHero * hero, const JsonNode & node) const
 					&& (hero->getJsonKey() == "core:cyra" || hero->getJsonKey() == "core:brissa"
 						|| hero->getJsonKey() == "core:terek"))
 					hero->nonDamageSpellSpecialtyProducers.push_back({SpellID(spell), prepared, true});
+				else if(hero->getJsonKey() == "core:coronius" && spell == SpellID::SLAYER
+					&& values == std::vector<int32_t>{4, 3, 2, 1, 0, 0, 0})
+					hero->damageSpellSpecialtyProducers.push_back({SpellID(spell), prepared, true});
 				else if(values.empty()
 					&& ((spell == SpellID::WEAKNESS && (hero->getJsonKey() == "core:cuthbert"
 						|| hero->getJsonKey() == "core:olema" || hero->getJsonKey() == "core:mirlanda"))
@@ -449,7 +452,8 @@ void CHeroHandler::loadHeroSpecialty(CHero * hero, const JsonNode & node) const
 					&& (hero->getJsonKey() == "core:merist" || hero->getJsonKey() == "core:labetha"))
 					hero->nonDamageSpellSpecialtyProducers.push_back({SpellID(spell), prepared, true});
 				else if(values.empty() && ((spell == SpellID::PRAYER && hero->getJsonKey() == "core:loynis")
-					|| (spell == SpellID::PRECISION && hero->getJsonKey() == "core:zubin")))
+					|| (spell == SpellID::PRECISION && hero->getJsonKey() == "core:zubin")
+					|| (spell == SpellID::BLOODLUST && hero->getJsonKey() == "core:inteus")))
 					hero->nonDamageSpellSpecialtyProducers.push_back({SpellID(spell), prepared, true});
 			}
 		});

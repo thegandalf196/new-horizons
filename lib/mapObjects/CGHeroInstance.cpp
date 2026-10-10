@@ -75,11 +75,49 @@ namespace
 constexpr int32_t bootsOfLevitationWaterWalkCost = 20;
 constexpr int32_t angelWingsFlyCost = 40;
 
+std::optional<SpellID> authoredDamageSpellReplacement(const CGHeroInstance & hero, SpellID source)
+{
+	if(source != SpellID::SLAYER || !hero.getHeroType()
+		|| hero.getHeroType()->getJsonKey() != "core:coronius")
+		return std::nullopt;
+	const auto & producers = hero.getHeroType()->damageSpellSpecialtyProducers;
+	if(!std::ranges::any_of(producers, [source](const auto & producer)
+	{
+		return producer.spell == source && producer.bonus && producer.supported;
+	}))
+		return std::nullopt;
+	const auto & flag = hero.getPrimaryGrowthRules()["damageSpellSpecialties"]["coroniusHolyWrathReplacement"];
+	if(!flag.isBool() || !flag.Bool()
+		|| !newHorizonsHeroes::damageSpellSpecialtyRules(hero.getPrimaryGrowthRules())
+		|| !newHorizonsMagic::rulesActive(hero.getMagicRules())
+		|| hero.getMagicRules()["rulesetVersion"].Integer()
+			< newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+		return std::nullopt;
+	const SpellID target(SpellID::decode("new-horizons:holyWrath"));
+	if(target.hasValue() && newHorizonsMagic::spellAllowedByHeroRoster(hero.getMagicRules(), target))
+		return target;
+	return std::nullopt;
+}
+
 std::optional<SpellID> authoredNonDamageSpellReplacement(const CGHeroInstance & hero, SpellID source)
 {
 	if(!hero.getHeroType())
 		return std::nullopt;
 	const auto & key = hero.getHeroType()->getJsonKey();
+	const auto & remainingFlag = hero.getPrimaryGrowthRules()["nonDamageSpellSpecialties"]["remainingStartReplacements"];
+	const bool remaining = remainingFlag.isBool() && remainingFlag.Bool();
+	// Halon's replacement is an inscription only. Do not add Guardian Spirit
+	// to a specialty producer or fabricate a second specialty for this hero.
+	if(remaining && key == "core:halon" && source == SpellID::STONE_SKIN
+		&& newHorizonsMagic::rulesActive(hero.getMagicRules())
+		&& hero.getMagicRules()["rulesetVersion"].Integer()
+			>= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+	{
+		const SpellID guardian(SpellID::decode("new-horizons:guardianSpirit"));
+		if(newHorizonsMagic::spellAllowedByHeroRoster(hero.getMagicRules(), guardian))
+			return guardian;
+	}
+	const bool inteus = remaining && key == "core:inteus" && source == SpellID::BLOODLUST;
 	const auto & defensiveFlag = hero.getPrimaryGrowthRules()["nonDamageSpellSpecialties"]["defensiveStartReplacements"];
 	const bool defensive = source == SpellID::STONE_SKIN && defensiveFlag.isBool() && defensiveFlag.Bool()
 		&& (key == "core:merist" || key == "core:labetha");
@@ -94,7 +132,7 @@ std::optional<SpellID> authoredNonDamageSpellReplacement(const CGHeroInstance & 
 		|| (source == SpellID::DISRUPTING_RAY && key == "core:aenain"
 			&& hero.getPrimaryGrowthRules()["nonDamageSpellSpecialties"]["aenainFrailtyReplacement"].isBool()
 			&& hero.getPrimaryGrowthRules()["nonDamageSpellSpecialties"]["aenainFrailtyReplacement"].Bool());
-	if(!thant && !frailty && !defensive && !offensive)
+	if(!thant && !frailty && !defensive && !offensive && !inteus)
 		return std::nullopt;
 	const auto rules = newHorizonsHeroes::nonDamageSpellSpecialtyRules(hero.getPrimaryGrowthRules());
 	if(rules)
@@ -107,6 +145,11 @@ std::optional<SpellID> authoredNonDamageSpellReplacement(const CGHeroInstance & 
 					&& newHorizonsMagic::spellAllowedByHeroRoster(hero.getMagicRules(), spell))
 				|| (defensive && spell.toSpell()->getJsonKey()
 					== (key == "core:merist" ? "new-horizons:hydrasVitality" : "new-horizons:guardianSpirit")
+					&& newHorizonsMagic::rulesActive(hero.getMagicRules())
+					&& hero.getMagicRules()["rulesetVersion"].Integer()
+						>= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+					&& newHorizonsMagic::spellAllowedByHeroRoster(hero.getMagicRules(), spell))
+				|| (inteus && spell.toSpell()->getJsonKey() == "new-horizons:crusade"
 					&& newHorizonsMagic::rulesActive(hero.getMagicRules())
 					&& hero.getMagicRules()["rulesetVersion"].Integer()
 						>= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
@@ -670,10 +713,11 @@ std::string CGHeroInstance::getSpecialtyDescriptionTranslated() const
 
 	if(const auto damageRules = newHorizonsHeroes::damageSpellSpecialtyRules(primaryGrowthRules))
 		for(const auto & producer : heroType->damageSpellSpecialtyProducers)
-			if(getDamageSpellSpecialtyBonusPercent(producer.spell) > 0)
+			if(const auto target = authoredDamageSpellReplacement(*this, producer.spell).value_or(producer.spell);
+				getDamageSpellSpecialtyBonusPercent(target) > 0)
 			{
 				MetaString description;
-				description.appendName(producer.spell);
+				description.appendName(target);
 				description.appendRawString(" gains +");
 				description.appendNumber(damageRules->componentPercent);
 				description.appendRawString("% to its Spell Power-derived damage component.");
@@ -700,6 +744,8 @@ std::string CGHeroInstance::getSpecialtyDescriptionTranslated() const
 					description.appendRawString("% to its Spell Power-derived maximum-HP increase. Its fixed term, cap and regeneration rate are unchanged.");
 				else if(target.toSpell()->getJsonKey() == "new-horizons:guardianSpirit")
 					description.appendRawString("% to its Spell Power-derived protective HP component. Its fixed term and duration are unchanged.");
+				else if(target.toSpell()->getJsonKey() == "new-horizons:crusade")
+					description.appendRawString("% to its Spell Power-derived Attack, Defense, Initiative and Magical Damage Reduction components. Its fixed terms, caps and duration are unchanged.");
 				else
 					description.appendRawString("% to its Spell Power-derived healing component.");
 				return description.toString(LIBRARY->generaltexth.get());
@@ -895,6 +941,12 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 		for(const auto & spellID : getHeroType()->spells)
 		{
 			if(creationInitialization)
+				if(const auto replacement = authoredDamageSpellReplacement(*this, spellID))
+				{
+					spells.insert(*replacement);
+					continue;
+				}
+			if(creationInitialization)
 				if(const auto replacement = authoredNonDamageSpellReplacement(*this, spellID))
 				{
 					spells.insert(*replacement);
@@ -1077,13 +1129,23 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 				{
 					return candidate.bonus == b;
 				});
-			if(producer != heroType->damageSpellSpecialtyProducers.end())
+			const auto replacement = producer != heroType->damageSpellSpecialtyProducers.end()
+				? authoredDamageSpellReplacement(*this, producer->spell) : std::nullopt;
+			if(producer != heroType->damageSpellSpecialtyProducers.end()
+				&& (producer->spell != SpellID::SLAYER || replacement))
 			{
 				if(!producer->supported)
 					throw std::runtime_error("New Horizons cannot convert a damage-spell specialty with limiters, updaters, propagation, or a non-base value type");
 				auto converted = std::make_shared<Bonus>(*b);
 				converted->val = 0;
-				converted->stacking = damageSpellSpecialtyMarker(heroType->getId(), producer->spell);
+				const auto target = replacement.value_or(producer->spell);
+				converted->stacking = damageSpellSpecialtyMarker(heroType->getId(), target);
+				if(replacement)
+				{
+					converted->type = BonusType::SPECIFIC_SPELL_DAMAGE;
+					converted->subtype = BonusSubtypeID(target);
+					converted->parameters.reset();
+				}
 				addNewBonus(converted);
 				continue;
 			}
@@ -1114,6 +1176,8 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 					|| target.toSpell()->getJsonKey() == "new-horizons:hydrasVitality"
 					|| target.toSpell()->getJsonKey() == "new-horizons:guardianSpirit"
 					|| (producer->spell == SpellID::PRAYER && heroType->getJsonKey() == "core:loynis"
+						&& target.toSpell()->getJsonKey() == "new-horizons:crusade")
+					|| (producer->spell == SpellID::BLOODLUST && heroType->getJsonKey() == "core:inteus"
 						&& target.toSpell()->getJsonKey() == "new-horizons:crusade")
 					|| (producer->spell == SpellID::PRECISION && heroType->getJsonKey() == "core:zubin"
 						&& target.toSpell()->getJsonKey() == "new-horizons:focusMagic"))

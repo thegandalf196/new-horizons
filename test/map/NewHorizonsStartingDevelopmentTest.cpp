@@ -55,7 +55,13 @@ protected:
 		TinyMapGameTest::mapLoaded(loaded);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 		if(absent)
+		{
 			rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
+			rules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
+			// This control captures the preceding profile, not a later optional
+			// default-book feature whose key is deliberately not down-writable.
+			rules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
+		}
 		if(legacy)
 			rules = JsonNode();
 		rules.setOverrideFlag(true);
@@ -216,6 +222,7 @@ TEST_F(NewHorizonsStartingDevelopmentTest, KeyPresenceAdmissionDistinguishesAbse
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 	rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
+	rules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
 	EXPECT_NO_THROW(newHorizonsHeroes::validateStartingDevelopmentSerialization(rules, false));
 	rules["startingSkills"]["startingDevelopmentProfiles"].Struct();
 	EXPECT_THROW(newHorizonsHeroes::validateStartingDevelopmentSerialization(rules, false), std::runtime_error);

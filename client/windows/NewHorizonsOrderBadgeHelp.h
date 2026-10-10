@@ -19,10 +19,12 @@ inline MetaString sourceAndExpiry(const HeroOrderState & state, BattleSide side,
 {
 	if(state.command == HeroCommand::NONE
 		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		|| state.issuedRound <= 0 || currentRound != state.issuedRound)
+		|| state.issuedRound <= 0 || !state.hasScheduledRecipients(currentRound))
 		return {};
 
-	MetaString result = MetaString::createFromTextID("new-horizons.combat.orderBadge.sourceExpiry");
+	MetaString result = MetaString::createFromTextID(currentRound == state.issuedRound
+		? "new-horizons.combat.orderBadge.sourceExpiry"
+		: "new-horizons.combat.orderBadge.carriedExpiry");
 	result.replaceTokenTextID("%SOURCE%", side == BattleSide::ATTACKER
 		? "new-horizons.combat.orderBadge.attacker"
 		: "new-horizons.combat.orderBadge.defender");

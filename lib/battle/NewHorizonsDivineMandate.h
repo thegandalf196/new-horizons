@@ -41,8 +41,8 @@ DLL_LINKAGE bool hasPurifyingMandatePerk(const CGHeroInstance * hero);
 /// Captured only for an actual Divine Mandate Order follow-up.
 DLL_LINKAGE bool hasRoyalStandardPerk(const CGHeroInstance * hero);
 DLL_LINKAGE bool hasDivineDisciplinePerk(const CGHeroInstance * hero);
-DLL_LINKAGE bool completeDisciplineOrders(std::vector<HeroOrderState> & orders, int32_t round, uint32_t unitId);
-DLL_LINKAGE void completeDisciplineActivation(IBattleState & state, uint32_t unitId);
+DLL_LINKAGE bool completeDisciplineOrders(std::vector<HeroOrderState> & orders, int32_t round, uint32_t unitId, bool genuineActivation = true);
+DLL_LINKAGE void completeDisciplineActivation(IBattleState & state, uint32_t unitId, bool genuineActivation = true);
 DLL_LINKAGE bool hasCrownAndAltarPerk(const CGHeroInstance * hero);
 DLL_LINKAGE bool needsRecipientCapture(const CGHeroInstance * hero);
 DLL_LINKAGE JsonNode crownOrderFormula(const JsonNode & formula, bool eligible);

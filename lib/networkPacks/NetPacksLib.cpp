@@ -554,6 +554,11 @@ void SetArmorerDefiantState::validateAgainst(const CBattleInfoCallback & battle)
 		throw std::runtime_error("Defiant consumption has no eligible enemy denial");
 }
 
+void SetReactiveWeaveState::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitSetReactiveWeaveState(*this);
+}
+
 void SetSpellResponseState::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitSetSpellResponseState(*this);
@@ -1016,6 +1021,18 @@ void LobbyStartGame::validateNewHorizonsStartingDevelopmentSerialization(bool su
 {
 	if(initializedGameState)
 		initializedGameState->validateNewHorizonsStartingDevelopmentSerialization(supported);
+}
+
+void LobbyStartGame::validateNewHorizonsRemainingStartSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsRemainingStartSerialization(supported);
+}
+
+void LobbyStartGame::validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsCoroniusHolyWrathSerialization(supported);
 }
 
 void LobbyStartGame::validateNewHorizonsMagnateSerialization(bool supported) const

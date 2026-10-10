@@ -291,6 +291,8 @@ set(test_SRCS
 		server/battles/NewHorizonsCrossSchoolFormulaTest.cpp
 		server/battles/NewHorizonsDefensiveSpecialtyTest.cpp
 		server/battles/NewHorizonsOffensiveSpecialtyTest.cpp
+		server/battles/NewHorizonsRemainingStartTest.cpp
+		server/battles/NewHorizonsCoroniusHolyWrathTest.cpp
 		server/battles/NewHorizonsMagicFixtureExportTest.cpp
 		server/battles/NewHorizonsMetamagicUIFixtureExportTest.cpp
 		server/battles/NewHorizonsBloodrageUIFixtureExportTest.cpp
@@ -600,6 +602,8 @@ if(ENABLE_BATTLE_AI)
 		server/battles/NewHorizonsRecruitmentTrainingTest.cpp
 		server/battles/NewHorizonsDivineDisciplineTest.cpp
 		server/battles/NewHorizonsCrownAndAltarTest.cpp
+		server/battles/NewHorizonsIronWillTest.cpp
+		server/battles/NewHorizonsReactiveWeaveTest.cpp
 		server/battles/NewHorizonsHalonMetamagicTest.cpp
 		battleAI/HeroCommandAITest.cpp
 		battleAI/NewHorizonsGenieSupportAITest.cpp

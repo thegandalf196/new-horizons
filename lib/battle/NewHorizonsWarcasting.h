@@ -52,6 +52,12 @@ inline int empowerment(const CGHeroInstance * hero, AlternatingHeroActionState::
 	return result;
 }
 
+inline int reactiveEmpowerment(const CGHeroInstance * hero)
+{
+	return hero && hero->hasActivePerk("new-horizons:warcasting", "new-horizons:warcasting.reactiveWeave")
+		? empowerment(hero, AlternatingHeroActionState::Action::SPELL) / 2 : 0;
+}
+
 inline int readinessLifetimeRounds(const CGHeroInstance * hero)
 {
 	// Tactical Weaving extends the readiness armed by the accepted action through

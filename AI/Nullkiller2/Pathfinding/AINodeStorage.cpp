@@ -1552,7 +1552,7 @@ struct TownPortalFinder
 	{
 		townPortalEffect = townPortal->getAdventureMechanics().getEffectAs<TownPortalEffect>(hero);
 		movementNeeded = townPortalEffect->getMovementPointsRequired();
-		townSelectionAllowed = townPortalEffect->townSelectionAllowed();
+		townSelectionAllowed = townPortalEffect->townSelectionAllowed(hero);
 	}
 
 	bool actorCanCastTownPortal()
@@ -1579,10 +1579,7 @@ struct TownPortalFinder
 
 			if(!townSelectionAllowed)
 			{
-				const CGTownInstance * nearestTown = *vstd::minElementByFun(targetTowns, [&](const CGTownInstance * t) -> int
-				{
-					return node->coord.dist2dSQ(t->visitablePos());
-				});
+				const CGTownInstance * nearestTown = townPortalEffect->findNearestTown(node->coord, targetTowns);
 
 				if(targetTown != nearestTown)
 					continue;
@@ -1676,13 +1673,17 @@ void AINodeStorage::calculateTownPortal(
 		if (!townPortalEffect)
 			continue;
 
-		TownPortalFinder townPortalFinder(actor, initialNodes, towns, this, spell->id);
+		const auto candidateTowns = townPortalEffect->usesNearestControlledTown(actor->hero)
+			? townPortalEffect->getControlledTowns(*aiNk->cc, actor->hero) : towns;
+		TownPortalFinder townPortalFinder(actor, initialNodes, candidateTowns, this, spell->id);
 
 		if(!townPortalFinder.actorCanCastTownPortal())
 			continue;
 
-		for(const CGTownInstance * targetTown : towns)
+		for(const CGTownInstance * targetTown : candidateTowns)
 		{
+			if(townPortalEffect->usesNearestControlledTown(actor->hero) && targetTown->getVisitingHero())
+				continue;
 			if(targetTown->getVisitingHero()
 				&& targetTown->getUpperArmy()->stacksCount()
 				&& maskMap.find(targetTown->getVisitingHero()) != maskMap.end())

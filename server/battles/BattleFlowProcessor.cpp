@@ -2109,14 +2109,15 @@ void BattleFlowProcessor::onActionMade(const CBattleInfoCallback & battle, const
 {
 	const auto * actedStack = battle.battleGetStackByID(ba.stackNumber, false);
 	const auto * activeStack = battle.battleActiveUnit();
-	const auto completeDiscipline = [this, &battle](const battle::Unit * unit)
+	const auto completeDiscipline = [this, &battle, &ba](const battle::Unit * unit)
 	{
 		if(!unit)
 			return;
 		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		{
 			auto states = battle.getBattle()->getHeroOrderStates(side);
-			if(!newHorizonsDivineMandate::completeDisciplineOrders(states, battle.battleGetRound(), unit->unitId()))
+			if(!newHorizonsDivineMandate::completeDisciplineOrders(states, battle.battleGetRound(), unit->unitId(),
+				ba.actionType != EActionType::NO_ACTION || !unit->isTimeStopped()))
 				continue;
 			BattleHeroOrderStateChanged update;
 			update.battleID = battle.getBattle()->getBattleID();

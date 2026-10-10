@@ -251,6 +251,10 @@ public:
 		, effectSpellId(effectSpellId)
 		, captureArmyChanges(captureArmyChanges)
 	{
+		if(captureArmyChanges)
+			for(const auto * unit : battle.getBattle()->getUnitsIf([](const battle::Unit *) { return true; }))
+				if(unit)
+					initialControllers.emplace(unit->unitId(), battle.playerToSide(battle.battleGetOwner(unit)));
 	}
 
 	void complain(const std::string & problem) override { delegate.complain(problem); }
@@ -334,6 +338,17 @@ public:
 		}
 		return result;
 	}
+	std::vector<uint32_t> reactiveRecipients(BattleSide side) const
+	{
+		std::set<uint32_t> result;
+		if(const auto found = reactiveArmyChanges.find(side); found != reactiveArmyChanges.end())
+			result = found->second;
+		for(const auto & [id, before] : initialArmyStates)
+			if(before.exists && before.controllerSide == side && !sameArmyBonuses(before, armySnapshot(id)))
+				result.insert(id);
+		return {result.begin(), result.end()};
+	}
+
 	bool touchedStackEffects() const { return stackEffectsTouched; }
 	bool changedArmy(BattleSide side) const
 	{
@@ -406,12 +421,15 @@ private:
 	bool stackEffectsTouched = false;
 	bool captureArmyChanges;
 	std::set<BattleSide> actualArmyChanges;
+	std::map<BattleSide, std::set<uint32_t>> reactiveArmyChanges;
+	std::map<uint32_t, BattleSide> initialControllers;
 
 	struct ArmySnapshot
 	{
 		uint32_t unitId;
 		bool exists = false;
 		BattleSide side = BattleSide::NONE;
+		BattleSide controllerSide = BattleSide::NONE;
 		CreatureID creature;
 		BattleHex position;
 		int32_t count = 0;
@@ -432,6 +450,8 @@ private:
 			return result;
 		result.exists = true;
 		result.side = unit->unitSide();
+		if(const auto found = initialControllers.find(unitId); found != initialControllers.end())
+			result.controllerSide = found->second;
 		result.creature = unit->creatureId();
 		result.position = unit->getPosition();
 		result.count = unit->getCount();
@@ -487,6 +507,8 @@ private:
 			&& before.count == after.count && before.health == after.health
 			&& before.state == after.state)
 			return;
+		if(before.exists)
+			reactiveArmyChanges[before.controllerSide].insert(before.unitId);
 		// Sticky per applied packet: a later reversal does not erase an actual
 		// effect of this cast. Retain the old side even if the unit was removed.
 		if(before.exists)
@@ -800,6 +822,28 @@ private:
 		capture(pack.toUpdate);
 	}
 };
+
+void publishReactiveWeave(ServerCallback & server, const IBattleInfo & battle,
+	const EffectPacketRecorder & recorder, BattleSide casterSide, int32_t round)
+{
+	if(!newHorizonsWarcasting::enabled(battle.getMagicRules()))
+		return;
+	const auto victimSide = casterSide == BattleSide::ATTACKER ? BattleSide::DEFENDER : BattleSide::ATTACKER;
+	const auto empowerment = newHorizonsWarcasting::reactiveEmpowerment(battle.getSideHero(victimSide));
+	if(empowerment <= 0)
+		return;
+	const auto recipients = recorder.reactiveRecipients(victimSide);
+	if(recipients.empty())
+		return;
+	SetReactiveWeaveState receipt;
+	receipt.battleID = battle.getBattleID();
+	receipt.side = victimSide;
+	receipt.casterSide = casterSide;
+	receipt.round = round;
+	receipt.empowerment = empowerment;
+	receipt.recipients = recipients;
+	server.apply(receipt);
+}
 
 bool hasCounterpressureEffect(const EffectPacketRecorder & recorder, BattleSide victimSide)
 {
@@ -1942,7 +1986,8 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	EffectPacketRecorder effectRecorder(*server, *battle(), *this, effectCasterOwner,
 		acceptedSpellId, effectSpellId,
 		originalHeroCast && !sc.counterspellNegated && battleRound >= 0
-			&& hasCounterpressurePerk(battleInfo->getSideHero(battle()->otherSide(originalCasterSide))));
+			&& (hasCounterpressurePerk(battleInfo->getSideHero(battle()->otherSide(originalCasterSide)))
+				|| newHorizonsWarcasting::reactiveEmpowerment(battleInfo->getSideHero(battle()->otherSide(originalCasterSide))) > 0));
 	if(!isCounterspellNegated())
 		doRemoveEffects(&effectRecorder, affectedUnits, std::bind(&BattleSpellMechanics::counteringSelector, this, _1));
 
@@ -2436,6 +2481,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 
 	if(originalHeroCast && !sc.counterspellNegated && battleRound >= 0)
 	{
+		publishReactiveWeave(*server, *battleInfo, effectRecorder, originalCasterSide, battleRound);
 		const auto victimSide = battle()->otherSide(originalCasterSide);
 		if(hasCounterpressureEffect(effectRecorder, victimSide))
 		{
@@ -2846,7 +2892,8 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 		effectRecorder.emplace(*server, *battle(), *this, effectCasterOwner,
 			acceptedSpellId, effectSpellId,
 			projectedOriginalHeroCast && !isCounterspellNegated()
-				&& hasCounterpressurePerk(projectedBattleInfo->getSideHero(battle()->otherSide(projectedCasterSide))));
+				&& (hasCounterpressurePerk(projectedBattleInfo->getSideHero(battle()->otherSide(projectedCasterSide)))
+					|| newHorizonsWarcasting::reactiveEmpowerment(projectedBattleInfo->getSideHero(battle()->otherSide(projectedCasterSide))) > 0));
 		effectServer = &*effectRecorder;
 	}
 
@@ -2872,6 +2919,7 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 
 		if(projectedOriginalHeroCast && !isCounterspellNegated() && effectRecorder)
 		{
+			publishReactiveWeave(*server, *projectedBattleInfo, *effectRecorder, projectedCasterSide, projectedRound);
 			const auto victimSide = battle()->otherSide(projectedCasterSide);
 			if(hasCounterpressureEffect(*effectRecorder, victimSide))
 			{

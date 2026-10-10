@@ -1445,6 +1445,17 @@ void HypotheticBattle::setCrossSchoolFormulaState(BattleSide side, const newHori
 	crossSchoolFormulaStates.at(side) = state;
 }
 
+void HypotheticBattle::armReactiveWeave(BattleSide side, int32_t receiptRound, int32_t empowerment)
+{
+	if((side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| receiptRound != getRound() || !newHorizonsWarcasting::enabled(getMagicRules())
+		|| empowerment <= 0 || empowerment != newHorizonsWarcasting::reactiveEmpowerment(getSideHero(side)))
+		throw std::runtime_error("Reactive Weave receipt does not match the captured hero capability");
+	auto next = warcastingStates.at(side);
+	next.armReactive(receiptRound, empowerment);
+	warcastingStates.at(side) = std::move(next);
+}
+
 void HypotheticBattle::setSpellResponseState(BattleSide side, const SpellResponseState & state)
 {
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
@@ -2477,8 +2488,10 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	if(frozenNormalSlot || (unit->isTimeStopped()
 		&& (reason == BattleUnitTurnReason::TURN_QUEUE || reason == BattleUnitTurnReason::AUTOMATIC_ACTION)))
 	{
-		completeSwiftNormalActivation(unitId);
-		newHorizonsDivineMandate::completeDisciplineActivation(*this, unitId);
+		const auto next = newHorizonsSwiftRebirth::completeNormalActivationPlan(*unit, getRound());
+		if(next)
+			updateUnitBonus(unitId, {*next});
+		newHorizonsDivineMandate::completeDisciplineActivation(*this, unitId, frozenNormalSlot);
 	}
 	// An extra opportunity cannot spend the normal-slot incapacitation receipt.
 	if(newHorizonsFrozen::isFrozen(*unit) && !frozenNormalSlot)
@@ -3336,6 +3349,9 @@ HypotheticBattle::HypotheticServerCallback::HypotheticServerCallback(HypotheticB
 
 void HypotheticBattle::completeSwiftNormalActivation(uint32_t unitId)
 {
+	// Forecast consumers call this only at a completed activation boundary,
+	// never for Wait/continuations; stasis passes use the separate nextTurn path.
+	newHorizonsDivineMandate::completeDisciplineActivation(*this, unitId);
 	const auto unit = getForUpdate(unitId);
 	if(const auto next = newHorizonsSwiftRebirth::completeNormalActivationPlan(*unit, getRound()))
 		updateUnitBonus(unitId, {*next});
@@ -3428,7 +3444,8 @@ bool HypotheticBattle::HypotheticServerCallback::resolveAdverseCombatRoll(const 
 
 void HypotheticBattle::HypotheticServerCallback::apply(CPackForClient & pack)
 {
-	if(dynamic_cast<SetSpellResponseState *>(&pack) || dynamic_cast<SetOverwhelmingFormulaState *>(&pack))
+	if(dynamic_cast<SetReactiveWeaveState *>(&pack) || dynamic_cast<SetSpellResponseState *>(&pack)
+		|| dynamic_cast<SetOverwhelmingFormulaState *>(&pack))
 	{
 		BattleStatePackVisitor visitor(*owner);
 		pack.visit(visitor);

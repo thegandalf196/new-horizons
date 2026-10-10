@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <limits>
@@ -28,6 +29,9 @@ struct DLL_LINKAGE AlternatingHeroActionState
 	Action nextEligibleAction = Action::NONE;
 	int32_t empowermentPercent = 0;
 	int32_t expiryRound = 0;
+	/// Independent enemy-spell reaction; never participates in accepted-action history.
+	int32_t reactiveEmpowermentPercent = 0;
+	int32_t reactiveExpiryRound = 0;
 	int32_t lastManaRecoveryRound = -1;
 	bool hasConsumedBonus = false;
 	/// Right-aligned history of the last three ordinary accepted Hero Actions.
@@ -42,9 +46,41 @@ struct DLL_LINKAGE AlternatingHeroActionState
 		if(currentRound < 0)
 			return 0;
 
-		if(action == nextEligibleAction && action != Action::NONE && currentRound <= expiryRound)
-			return empowermentPercent;
-		return 0;
+		const auto ordinary = action == nextEligibleAction && action != Action::NONE
+			&& currentRound <= expiryRound ? empowermentPercent : 0;
+		const auto reactive = action == Action::ORDER && currentRound <= reactiveExpiryRound
+			? reactiveEmpowermentPercent : 0;
+		return std::max(ordinary, reactive);
+	}
+
+	int32_t readinessExpiryFor(Action action, int32_t currentRound) const
+	{
+		const auto chosen = bonusFor(action, currentRound);
+		if(chosen <= 0)
+			return 0;
+		int32_t expiry = action == nextEligibleAction && empowermentPercent == chosen
+			&& currentRound <= expiryRound ? expiryRound : 0;
+		if(action == Action::ORDER && reactiveEmpowermentPercent == chosen && currentRound <= reactiveExpiryRound)
+			expiry = std::max(expiry, reactiveExpiryRound);
+		return expiry;
+	}
+
+	void armReactive(int32_t currentRound, int32_t empowerment)
+	{
+		validateShape();
+		if(currentRound < 0 || currentRound == std::numeric_limits<int32_t>::max() || empowerment <= 0)
+			throw std::invalid_argument("Invalid Reactive Weave readiness");
+		reactiveEmpowermentPercent = empowerment;
+		reactiveExpiryRound = currentRound + 1;
+	}
+
+	template <typename Handler> void validateReactiveSerialization(Handler & h) const
+	{
+		if(h.saving)
+			validateShape();
+		if(h.saving && reactiveEmpowermentPercent != 0
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_REACTIVE_WEAVE))
+			throw std::runtime_error("Cannot discard Reactive Weave readiness");
 	}
 
 	/// Records an accepted ordinary spell or order and returns its consumed prior bonus.
@@ -63,6 +99,11 @@ struct DLL_LINKAGE AlternatingHeroActionState
 		recordRecentAction(action);
 
 		const auto consumedEmpowerment = bonusFor(action, currentRound);
+		if(action == Action::ORDER)
+		{
+			reactiveEmpowermentPercent = 0;
+			reactiveExpiryRound = 0;
+		}
 		if(consumedEmpowerment > 0)
 			hasConsumedBonus = true;
 		if(empowerment == 0)
@@ -88,6 +129,11 @@ struct DLL_LINKAGE AlternatingHeroActionState
 		auto result = *this;
 		if(result.nextEligibleAction != Action::NONE && currentRound > result.expiryRound)
 			result.clearReadiness();
+		if(result.reactiveEmpowermentPercent != 0 && currentRound > result.reactiveExpiryRound)
+		{
+			result.reactiveEmpowermentPercent = 0;
+			result.reactiveExpiryRound = 0;
+		}
 		return result;
 	}
 
@@ -141,12 +187,15 @@ struct DLL_LINKAGE AlternatingHeroActionState
 			if(action != Action::NONE)
 				foundRecentAction = true;
 		}
-		if(!validAction || (!inactiveShape && !activeShape) || lastManaRecoveryRound < -1 || !validRecentActions)
+		const bool reactiveShape = (reactiveEmpowermentPercent == 0 && reactiveExpiryRound == 0)
+			|| (reactiveEmpowermentPercent > 0 && reactiveExpiryRound >= 0);
+		if(!reactiveShape || !validAction || (!inactiveShape && !activeShape) || lastManaRecoveryRound < -1 || !validRecentActions)
 			throw std::runtime_error("Invalid alternating hero action state shape");
 	}
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		validateReactiveSerialization(h);
 		if(h.saving)
 		{
 			validateShape();
@@ -173,6 +222,16 @@ struct DLL_LINKAGE AlternatingHeroActionState
 			h & recentActions;
 		else if(!h.saving)
 			recentActions.fill(Action::NONE);
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_REACTIVE_WEAVE))
+		{
+			h & reactiveEmpowermentPercent;
+			h & reactiveExpiryRound;
+		}
+		else if(!h.saving)
+		{
+			reactiveEmpowermentPercent = 0;
+			reactiveExpiryRound = 0;
+		}
 		if(!h.saving)
 			validateShape();
 	}

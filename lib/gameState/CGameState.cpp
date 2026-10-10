@@ -2025,6 +2025,20 @@ void CGameState::validateNewHorizonsStartingDevelopmentSerialization(bool suppor
 		map->validateNewHorizonsStartingDevelopmentSerialization(supported);
 }
 
+void CGameState::validateNewHorizonsRemainingStartSerialization(bool supported) const
+{
+	newHorizonsHeroes::validateRemainingStartSerialization(heroDevelopmentRules, supported);
+	if(map)
+		map->validateNewHorizonsRemainingStartSerialization(supported);
+}
+
+void CGameState::validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const
+{
+	newHorizonsHeroes::validateCoroniusHolyWrathSerialization(heroDevelopmentRules, supported);
+	if(map)
+		map->validateNewHorizonsCoroniusHolyWrathSerialization(supported);
+}
+
 void CGameState::validateNewHorizonsMagnateSerialization(bool supported) const
 {
 	if(map)

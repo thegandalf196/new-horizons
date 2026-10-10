@@ -52,6 +52,8 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 		rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
+		rules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
+		rules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
 		rules["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
 		rules["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
 		rules["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");
@@ -321,6 +323,8 @@ TEST_F(NewHorizonsHasteSpecialtyTest, PreviousVeteranWriterRejectsBeforeHeroMapW
 	GameSettings settings;
 	JsonNode authoredRules(JsonPath::builtin("config/newHorizonsHeroes"));
 	authoredRules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
+	authoredRules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
+	authoredRules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
 	authoredRules["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
 	authoredRules["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
 	authoredRules["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");
@@ -380,6 +384,8 @@ TEST_F(NewHorizonsHasteSpecialtyTest, HistoricalListsRemainOldWritableAndRawRead
 	JsonNode captured;
 	captured["heroes"]["newHorizons"] = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
 	captured["heroes"]["newHorizons"]["startingSkills"].Struct().erase("startingDevelopmentProfiles");
+	captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
+	captured["heroes"]["newHorizons"]["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
 	captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
 	captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
 	captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");

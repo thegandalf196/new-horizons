@@ -156,6 +156,7 @@ bool hasSameHeroOrderIssuance(const HeroOrderState & previous, const HeroOrderSt
 		&& previous.knightlySequenceEfficiencyBonusPercent == next.knightlySequenceEfficiencyBonusPercent
 		&& previous.holdMagicalReductionBasisPoints == next.holdMagicalReductionBasisPoints
 		&& previous.royalStandardRecipientUnitIds == next.royalStandardRecipientUnitIds
+		&& previous.ironWillLifetime == next.ironWillLifetime
 		&& previous.divineDisciplineRecipientUnitIds == next.divineDisciplineRecipientUnitIds
 		&& previous.crownAndAltarRecipientUnitIds == next.crownAndAltarRecipientUnitIds
 		&& previous.crownAndAltarFocusFirePercent == next.crownAndAltarFocusFirePercent
@@ -3041,6 +3042,15 @@ void GameStatePackVisitor::visitSetArmorerDefiantState(SetArmorerDefiantState & 
 	battle->setArmorerDefiantState(pack.side, pack.state);
 }
 
+void GameStatePackVisitor::visitSetReactiveWeaveState(SetReactiveWeaveState & pack)
+{
+	auto * battle = gs.getBattle(pack.battleID);
+	if(!battle)
+		throw std::runtime_error("Missing battle for Reactive Weave");
+	BattleStatePackVisitor visitor(*battle);
+	pack.visitTyped(visitor);
+}
+
 void GameStatePackVisitor::visitSetSpellResponseState(SetSpellResponseState & pack)
 {
 	auto * battle = gs.getBattle(pack.battleID);
@@ -3794,6 +3804,18 @@ void BattleStatePackVisitor::visitSetArmorerDefiantState(SetArmorerDefiantState 
 		throw std::runtime_error("Defiant consumption requires a shared battle callback");
 	pack.validateAgainst(*battle);
 	battleState.setArmorerDefiantState(pack.side, pack.state);
+}
+
+void BattleStatePackVisitor::visitSetReactiveWeaveState(SetReactiveWeaveState & pack)
+{
+	pack.validateShape();
+	if(pack.battleID != battleState.getBattleID() || pack.round != battleState.getRound()
+		|| !battleState.getSideHero(pack.casterSide)
+		|| !battleState.hasCompletedHeroSpellCast(pack.casterSide))
+		throw std::runtime_error("Reactive Weave receipt has invalid cast provenance");
+	// Recipient IDs identify the actual application. Ownership was captured before
+	// effects: control-changing spells must not reinterpret it after application.
+	battleState.armReactiveWeave(pack.side, pack.round, pack.empowerment);
 }
 
 void BattleStatePackVisitor::visitSetSpellResponseState(SetSpellResponseState & pack)

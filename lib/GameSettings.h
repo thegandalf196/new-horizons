@@ -97,6 +97,18 @@ public:
 			getAllOverrides()["heroes"]["newHorizons"], supported);
 	}
 
+	void validateNewHorizonsRemainingStartSerialization(bool supported) const
+	{
+		newHorizonsHeroes::validateRemainingStartSerialization(
+			getAllOverrides()["heroes"]["newHorizons"], supported);
+	}
+
+	void validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const
+	{
+		newHorizonsHeroes::validateCoroniusHolyWrathSerialization(
+			getAllOverrides()["heroes"]["newHorizons"], supported);
+	}
+
 	template<typename Handler>
 	void serialize(Handler & h)
 	{
@@ -105,6 +117,10 @@ public:
 			JsonNode overrides = getAllOverrides();
 			newHorizonsHeroes::validateStartingDevelopmentSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
+			newHorizonsHeroes::validateRemainingStartSerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
+			newHorizonsHeroes::validateCoroniusHolyWrathSerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_CORONIUS_HOLY_WRATH));
 			newHorizonsHeroes::validateFrailtySpecialtySerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
 			newHorizonsHeroes::validateAenainFrailtySpecialtySerialization(overrides["heroes"]["newHorizons"],
@@ -125,6 +141,10 @@ public:
 			h & overrides;
 			newHorizonsHeroes::validateStartingDevelopmentSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
+			newHorizonsHeroes::validateRemainingStartSerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
+			newHorizonsHeroes::validateCoroniusHolyWrathSerialization(overrides["heroes"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_CORONIUS_HOLY_WRATH));
 			newHorizonsHeroes::validateHasteSpecialtySerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_HASTE_SPECIALTIES));
 			newHorizonsHeroes::validateReanimateSpecialtySerialization(overrides["heroes"]["newHorizons"],

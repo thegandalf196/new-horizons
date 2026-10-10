@@ -97,6 +97,7 @@
 			"required": ["version", "componentPercent"],
 			"additionalProperties": false,
 			"properties": {
+				"coroniusHolyWrathReplacement": {"type": "boolean", "description": "Absent or false preserves captured pre-Coronius Slayer specialty contexts."},
 				"version": {"type": "integer", "enum": [1]},
 				"componentPercent": {"type": "integer", "enum": [15]}
 			}
@@ -111,6 +112,7 @@
 				"componentPercent": {"type": "integer", "enum": [20]},
 				"defensiveStartReplacements": {"type": "boolean", "description": "Absent or false preserves pre-replacement Merist and Labetha specialty identities."},
 				"offensiveStartReplacements": {"type": "boolean", "description": "Absent or false preserves pre-replacement Loynis and Zubin specialty identities."},
+				"remainingStartReplacements": {"type": "boolean", "description": "Absent or false preserves pre-replacement Inteus and Halon starting inscriptions."},
 				"spells": {
 					"type": "array", "minItems": 1, "maxItems": 10,
 					"uniqueItems": true,

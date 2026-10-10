@@ -344,4 +344,5 @@ void registerTypes(Serializer &s)
 	s.template registerType<SetNewHorizonsSageGuildVisit>(301);
 	s.template registerType<RecruitTrainedStack>(302);
 	s.template registerType<BattleStructureRepaired>(303);
+	s.template registerType<SetReactiveWeaveState>(304);
 }

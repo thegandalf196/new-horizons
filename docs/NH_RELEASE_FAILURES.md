@@ -1,5 +1,44 @@
 # New Horizons — release failures and regression lessons
 
+### 2026-10-10 — Native fixtures must exercise legal actions and targeted corruption
+
+The first58-case run passes55 and fails three fixtures. A melee helper attacks
+from the current tile and cannot demonstrate Charge movement against a distant
+enemy; use an available reachable endpoint, whole-footprint melee legality and
+an actual accepted moving attack of at least three hexes. Preserve the spent
+receipt and next-round non-revival assertions. A faster enemy may own the first
+activation; progress through accepted Defend actions before a paid hero cast,
+without forging the active slot or changing the target classification/damage.
+Malformed readers must not use mutable JSON indexing to probe absent keys:
+that inserts nulls into unrelated rules and triggers the wrong validator. Check
+object membership before corruption and retain the precise rejection assertion.
+The reviewed fixture-only repair passes the original58 plus adjacent15; no
+production validation is relaxed. Failed evidence remains private and retained.
+
+### 2026-10-09 — Concrete enum headers and shared read-only eligibility
+
+The next perk batch's first build fails because the Iron Will header does not
+declare BattleSide and its shared recipient helper calls a protected Focus Fire
+query. Include the concrete BattleSide header and expose only that existing
+read-only query beside the public command queries. Do not duplicate eligibility
+logic or broaden the protected section. The repaired object compiles during the
+ten-job retry; complete linkage and native acceptance remain pending.
+
+Town Portal's localized tooltip also requires the concrete GeneralTextHandler
+header, not only GameLibrary's forward declaration. The failed compiler gate
+identifies that missing include; add it without changing the description or
+selection policy. Keep build failure distinct from passing static checks.
+
+The Town Portal tie-order fixture must build a vector of const town pointers
+for the shared read-only resolver; a vector of mutable pointers cannot bind to
+that container type. Keep the equal-distance and reversed-pool assertions and
+avoid adding a production overload solely for the fixture.
+
+Private source review also catches adjacent serializer-guard composition losing
+a saving-only condition and a detached cast using the defender's visibility for
+an attacker spell. Restore each writer guard independently and require actual
+caster visibility plus positive target-aware admission in forecast fixtures.
+
 ### 2026-10-09 — Carried Orders are replaceable in a later round
 
 The v5 principal batch completes127/128 but StartAction rejects the remaining

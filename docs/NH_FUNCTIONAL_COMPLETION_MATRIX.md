@@ -1,6 +1,50 @@
 # New Horizons functional completion matrix
 
-Updated: 2026-10-09
+Updated: 2026-10-10
+
+Accepted current checkpoint: Iron Will and Reactive Weave increase perks from
+293 to295/310 (generic206/220, faction89/90);15 remain,14 generic and1 faction.
+The Inteus/Halon and Coronius spell-start replacements and nearest-only Town
+Portal are also accepted source/native paths, not additional perks. Orders8/8,
+combat spells67/67, Skills31/31 and ranks93/93 remain unchanged.
+Incremental58848 links both targets; privacy99801 has no findings. Principal95141
+passes58/58 in20.911s and adjacent89325 passes15/15 in6.866s, zero failures,
+errors/skips/disabled. Independent Town Portal62745 passes14/14. Root verifies
+all three XML totals and the exact test/library pair. Data34 and module/badge
+checks pass. Failed first-run evidence is preserved below; no ordinary-launcher,
+rendered or Windows acceptance is implied by this source checkpoint.
+
+Nearest-only Town Portal passes the independently scoped14-case native gate
+on the fully linked/privacy-cleared candidate: eight actual query cases, four
+rank controls and two Nullkiller2 controls, zero failures/errors/skips,5.281s.
+Exact runner/resource parity and actual four-dummy-driver/private-profile child
+proof are retained. The separate58-case batch passes55 and exposes three
+fixture failures; its accepted perk count does not advance pending repair/retest.
+Town Portal rendered/playable delivery remains separate from this native gate.
+
+Current non-perk source audit confirms six additional Version1.0 gaps against
+the canonical detailed rules: Castle Lighthouse departure benefits; Glyphs of
+Fear's adventure-radius Morale penalty; converted Mana-regeneration artifact
+tiers; nearest-only Town Portal at every mastery; legal land ending for Water
+Walk; and explicit protected-barrier enforcement for Fly/Dimension Door.
+These are missing execution paths, not merely unverified integration matrices.
+Town Portal, Lighthouse and Mana artifacts have independent private implementation
+assignments. The remaining three need bounded ownership after those checkpoints.
+No acceptance credit is granted by these assignments or private source review.
+
+The current Iron Will/Reactive Weave and three starting-spell successors are
+source-integrated, with a separate nearest-only Town Portal correction shared
+with AI. Engine library linkage succeeds during build21726; client/test linkage
+and principal58 plus Town Portal14 native execution are still pending. Data34,
+module parity and Order badge checks pass. Accepted perk totals below remain
+unchanged until the mechanic gate succeeds.
+
+The audited39 faction-only default-start omissions now have private candidates:
+Voy's Navigation replacement plus38 explicit profiles across eight factions.
+The complete38-profile chain has independent source review and234 authored,
+unrun cases. Current-tree reconciliation is assigned separately; preserve
+newer successor flags and old-format fixture controls. This is preparation for
+that specific audit, not144 completed hero redesigns or authored starting armies.
 
 Accepted eleven-perk checkpoint: incremental9350 and privacy80564 pass.
 Principal36894 passes128/128 in43.678s; adjacent13551 passes15/15 in6.823s.

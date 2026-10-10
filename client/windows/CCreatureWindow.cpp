@@ -381,7 +381,7 @@ std::vector<OrderIndicator> activeOrderIndicators(const CStack * stack)
 	for(const auto & order : battle->battleGetHeroOrderStates(side))
 	{
 		const auto * state = &order;
-		if(state->issuedRound != battle->battleGetRound())
+		if(!state->hasScheduledRecipients(battle->battleGetRound()))
 			continue;
 
 		const bool own = battle->playerToSide(battle->battleGetOwner(stack)) == side;
@@ -426,7 +426,7 @@ std::vector<OrderIndicator> activeOrderIndicators(const CStack * stack)
 					const int used = state->protectInterceptionsConsumed;
 					suffix = "ward " + std::to_string(used) + "/" + std::to_string(limit);
 					detail = "Protect interceptions: " + std::to_string(used) + "/" + std::to_string(limit)
-						+ " used; " + std::to_string(std::max(0, limit - used)) + " remaining this round.";
+							+ " used; " + std::to_string(std::max(0, limit - used)) + " remaining for this Order.";
 				}
 			}
 			break;
@@ -449,6 +449,14 @@ std::vector<OrderIndicator> activeOrderIndicators(const CStack * stack)
 		default:
 			break;
 		}
+
+		if(own)
+			applies = applies && battle->battleOrderBenefitAppliesTo(*state, side, stack);
+		else if(applies)
+			applies = vstd::contains_if(battle->battleAliveUnits(), [&](const battle::Unit * recipient)
+			{
+				return battle->battleOrderBenefitAppliesTo(*state, side, recipient);
+			});
 
 		if(applies)
 		{

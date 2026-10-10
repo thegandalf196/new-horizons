@@ -126,6 +126,7 @@ public:
 	virtual void visitBattleAdverseRerollStateChanged(BattleAdverseRerollStateChanged & pack) {}
 	virtual void visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack) {}
 	virtual void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) {}
+	virtual void visitSetReactiveWeaveState(SetReactiveWeaveState & pack) {}
 	virtual void visitSetSpellResponseState(SetSpellResponseState & pack) {}
 	virtual void visitSetArmorerDefiantState(SetArmorerDefiantState & pack) {}
 	virtual void visitSetOverwhelmingFormulaState(SetOverwhelmingFormulaState & pack) {}

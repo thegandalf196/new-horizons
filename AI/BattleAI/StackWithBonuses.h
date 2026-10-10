@@ -248,6 +248,7 @@ public:
 	const SpellResponseState & getSpellResponseState(BattleSide side) const override;
 	int32_t getExtendSpellLastRound(BattleSide side) const override { return extendSpellRounds.at(side); }
 	void consumeExtendSpell(BattleSide side) override;
+	void armReactiveWeave(BattleSide side, int32_t round, int32_t empowerment) override;
 	void setSpellResponseState(BattleSide side, const SpellResponseState & state) override;
 	const OverwhelmingFormulaState & getOverwhelmingFormulaState(BattleSide side) const override;
 	void setOverwhelmingFormulaState(BattleSide side, const OverwhelmingFormulaState & state) override;

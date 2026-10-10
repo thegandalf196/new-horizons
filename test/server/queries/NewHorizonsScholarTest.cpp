@@ -44,6 +44,8 @@ protected:
 		TinyMapGameTest::mapLoaded(map);
 		JsonNode heroRules(JsonPath::builtin("config/newHorizonsHeroes"));
 		heroRules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
+		heroRules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
+		heroRules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
 		heroRules["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
 		heroRules["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
 		heroRules["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");

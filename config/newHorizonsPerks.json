@@ -987,7 +987,7 @@
 					"requires": "basic",
 					"description": "Friendly stacks affected by an Order that normally expires at the end of the round retain that Order through their next Creature Activation.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "Friendly stacks affected by an Order that normally expires at the end of the round retain that Order through their next Creature Activation."
 					}
 				},
@@ -2225,7 +2225,7 @@
 					"requires": "advanced",
 					"description": "After an enemy hero casts a spell that affects your army, your next Order before the end of the next round receives half your normal Spell-to-Order Warcasting bonus.",
 					"effect": {
-						"status": "planned",
+						"status": "active",
 						"description": "After an enemy hero casts a spell that affects your army, your next Order before the end of the next round receives half your normal Spell-to-Order Warcasting bonus."
 					}
 				},

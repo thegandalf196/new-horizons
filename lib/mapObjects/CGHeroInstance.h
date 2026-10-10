@@ -685,6 +685,12 @@ public:
 			newHorizonsHeroes::validateStartingDevelopmentSerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
 		if(h.saving)
+			newHorizonsHeroes::validateRemainingStartSerialization(primaryGrowthRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
+		if(h.saving)
+			newHorizonsHeroes::validateCoroniusHolyWrathSerialization(primaryGrowthRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_CORONIUS_HOLY_WRATH));
+		if(h.saving)
 			newHorizonsHeroes::validateReanimateSpecialtySerialization(primaryGrowthRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
 		if(h.saving)
@@ -803,6 +809,8 @@ public:
 			{
 				newHorizonsHeroes::validateStartingDevelopmentSerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
+				newHorizonsHeroes::validateCoroniusHolyWrathSerialization(primaryGrowthRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_CORONIUS_HOLY_WRATH));
 				newHorizonsHeroes::validateFrailtySpecialtySerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
 				newHorizonsHeroes::validateAenainFrailtySpecialtySerialization(primaryGrowthRules,
@@ -811,6 +819,8 @@ public:
 					h.hasFeature(Handler::Version::NEW_HORIZONS_DEFENSIVE_START_SPECIALTIES));
 				newHorizonsHeroes::validateOffensiveStartSpecialtySerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES));
+				newHorizonsHeroes::validateRemainingStartSerialization(primaryGrowthRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
 				newHorizonsHeroes::validateReanimateSpecialtySerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
 				newHorizonsHeroes::validateHasteSpecialtySerialization(primaryGrowthRules,

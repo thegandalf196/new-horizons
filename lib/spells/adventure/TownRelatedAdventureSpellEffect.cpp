@@ -47,12 +47,20 @@ const CGTownInstance * TownRelatedAdventureSpellEffect::findNearestTown(const Ad
 	if(pool.empty() || !parameters.caster->getHeroCaster())
 		return nullptr;
 
+	return findNearestTown(parameters.caster->getHeroCaster()->visitablePos(), pool);
+}
+
+const CGTownInstance * TownRelatedAdventureSpellEffect::findNearestTown(const int3 & origin, const std::vector<const CGTownInstance *> & pool)
+{
+	if(pool.empty())
+		return nullptr;
+
 	auto nearest = pool.cbegin();
-	si32 distance = (*nearest)->visitablePos().dist2dSQ(parameters.caster->getHeroCaster()->visitablePos());
+	si32 distance = (*nearest)->visitablePos().dist2dSQ(origin);
 
 	for(auto iter = nearest + 1; iter != pool.cend(); ++iter)
 	{
-		si32 currentDistance = (*iter)->visitablePos().dist2dSQ(parameters.caster->getHeroCaster()->visitablePos());
+		si32 currentDistance = (*iter)->visitablePos().dist2dSQ(origin);
 
 		if(currentDistance < distance)
 		{
@@ -107,7 +115,7 @@ ESpellCastResult TownRelatedAdventureSpellEffect::beginCast(SpellCastEnvironment
 	if(towns.empty())
 		return onNoTownToSelect(env, parameters);
 
-	if(!parameters.pos.isValid() && allowTownSelection)
+	if(!parameters.pos.isValid() && townSelectionAllowed(parameters.caster->getHeroCaster()))
 	{
 		std::vector<ObjectInstanceID> offeredTownIDs;
 		offeredTownIDs.reserve(towns.size());

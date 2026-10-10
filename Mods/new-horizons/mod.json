@@ -2999,6 +2999,7 @@
 				},
 				"damageSpellSpecialties": {
 					"version": 1,
+					"coroniusHolyWrathReplacement": true,
 					"componentPercent": 15
 				},
 				"nonDamageSpellSpecialties": {
@@ -3006,6 +3007,7 @@
 					"aenainFrailtyReplacement": true,
 					"defensiveStartReplacements": true,
 					"offensiveStartReplacements": true,
+					"remainingStartReplacements": true,
 					"componentPercent": 20,
 					"spells": [
 						"core:cure",
@@ -4543,7 +4545,7 @@
 								"requires": "basic",
 								"description": "Friendly stacks affected by an Order that normally expires at the end of the round retain that Order through their next Creature Activation.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "Friendly stacks affected by an Order that normally expires at the end of the round retain that Order through their next Creature Activation."
 								}
 							},
@@ -5781,7 +5783,7 @@
 								"requires": "advanced",
 								"description": "After an enemy hero casts a spell that affects your army, your next Order before the end of the next round receives half your normal Spell-to-Order Warcasting bonus.",
 								"effect": {
-									"status": "planned",
+									"status": "active",
 									"description": "After an enemy hero casts a spell that affects your army, your next Order before the end of the next round receives half your normal Spell-to-Order Warcasting bonus."
 								}
 							},
@@ -9738,6 +9740,7 @@
 		"new-horizons.hero.morale.minimum": "Minimum Morale: %VALUE%.",
 		"new-horizons.hero.luck.maximum": "Maximum Luck limit: %VALUE%.",
 		"new-horizons.combat.orderBadge.sourceExpiry": "Issued by the %SOURCE% hero. Expires at the end of round %ROUND%; its benefit may end earlier when used or broken.",
+		"new-horizons.combat.orderBadge.carriedExpiry": "%SOURCE% Order, issued round %ROUND%: retains its benefit until this recipient's next completed or forfeited Creature Activation, unless used or broken first.",
 		"new-horizons.combat.orderBadge.attacker": "attacking",
 		"new-horizons.combat.orderBadge.defender": "defending",
 		"new-horizons.spellCost.row": "SP %d -> %d",
@@ -9808,6 +9811,7 @@
 		"new-horizons.combat.queueExtraMorale": "Extra activation: positive Morale.",
 		"new-horizons.combat.queueExtraQuartermaster": "Extra activation: Quartermaster. Reduced activation output applies.",
 		"new-horizons.combat.queueExtraSecondWind": "Extra activation: Second Wind.",
+		"new-horizons.adventure.townPortal.targetingHint": "Town Portal returns to the nearest controlled town; the destination cannot be chosen. Casting spends all remaining Movement.",
 		"new-horizons.adventure.dimensionDoor.targetingHint": "Choose a destination. Casting Dimension Door spends all remaining Movement.",
 		"new-horizons.adventure.spellbook.dailyAvailable": "Adventure Spell: available today",
 		"new-horizons.adventure.spellbook.dailyUsed": "Adventure Spell: used today",

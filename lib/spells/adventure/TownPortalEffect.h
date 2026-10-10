@@ -14,6 +14,7 @@
 
 class CGTownInstance;
 class CGHeroInstance;
+class IGameInfoCallback;
 
 class DLL_LINKAGE TownPortalEffect final : public spells::adventure::TownRelatedAdventureSpellEffect
 {
@@ -25,9 +26,13 @@ public:
 
 	int getMovementPointsRequired() const { return movementPointsRequired; }
 	int getMovementPointsTaken(const CGHeroInstance * hero, int remainingMovement) const;
-	bool townSelectionAllowed() const { return allowTownSelection; }
+	bool usesNearestControlledTown(const CGHeroInstance * hero) const;
+	bool townSelectionAllowed(const CGHeroInstance * hero = nullptr) const override;
+	std::vector<const CGTownInstance *> getControlledTowns(const IGameInfoCallback & callback, const CGHeroInstance * hero) const;
+	std::string getTargetingHintTextId(const spells::Caster * caster) const override;
 
 private:
+	std::vector<const CGTownInstance *> getPlayerTeamTowns(SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters) const override;
 	bool shouldOfferTownInDialog(const CGTownInstance * town) const override;
 	void configureDialogTitleAndDescription(MetaString & title, MetaString & description) const override;
 	ESpellCastResult beginCastExtraChecks(SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters, const std::vector<const CGTownInstance *> & towns) const override;

@@ -60,6 +60,15 @@ public:
 	{
 		return sides.at(side).heroActionAllowances;
 	}
+	void validateReactiveWeaveStates() const;
+	template <typename Handler> void validateReactiveWeaveSerialization(Handler & h) const
+	{
+		if(h.saving)
+			validateReactiveWeaveStates();
+		for(const auto & side : sides)
+			side.warcastingState.validateReactiveSerialization(h);
+	}
+
 	template <typename Handler> void validateSharedPurposeSerialization(Handler & h) const
 	{
 		for(const auto & side : sides)
@@ -445,6 +454,7 @@ public:
 		if(h.saving)
 			validateMetamagicCapacitySerialization(h);
 		validateRoyalStandardSerialization(h);
+		validateReactiveWeaveSerialization(h);
 		validateSharedPurposeSerialization(h);
 		if(h.saving)
 			validateVeteranCohesionSerialization(h);
@@ -472,6 +482,7 @@ public:
 			validateConfusionStates();
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_CONFUSION_STATE) && hasConfusionState())
 				throw std::runtime_error("Cannot discard Confusion pending state or history from a battle snapshot");
+			validateReactiveWeaveStates();
 			validateSpellResponseStates();
 			validateExtendSpellSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SPELLCRAFT_TARGET_DURATION));
 			validateCrossSchoolFormulaSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_CROSS_SCHOOL_FORMULA));
@@ -1026,6 +1037,7 @@ public:
 		{
 			validateConfusionStates();
 			validateDefiantSerialization(h);
+			validateReactiveWeaveStates();
 			validateSpellResponseStates();
 			validateCrossSchoolFormulaSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_CROSS_SCHOOL_FORMULA));
 			validateOverwhelmingFormulaStates();
@@ -1177,6 +1189,7 @@ public:
 	void setHeroOrderState(BattleSide side, const std::optional<HeroOrderState> & state) override;
 	void setDoubleCommandState(BattleSide side, const DoubleCommandState & state) override;
 	void setPreCombatOrderState(BattleSide side, const PreCombatOrderState & state) override;
+	void armReactiveWeave(BattleSide side, int32_t round, int32_t empowerment) override;
 	void setSpellResponseState(BattleSide side, const SpellResponseState & state) override;
 	void awardBattlecraftMastery(BattleSide side, uint32_t unitId, int32_t awardRound,
 		BattlecraftMasteryAction action) override;

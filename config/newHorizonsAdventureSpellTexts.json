@@ -1,4 +1,5 @@
 {
+	"new-horizons.adventure.townPortal.targetingHint": "Town Portal returns to the nearest controlled town; the destination cannot be chosen. Casting spends all remaining Movement.",
 	"new-horizons.adventure.dimensionDoor.targetingHint": "Choose a destination. Casting Dimension Door spends all remaining Movement.",
 	"new-horizons.adventure.spellbook.dailyAvailable": "Adventure Spell: available today",
 	"new-horizons.adventure.spellbook.dailyUsed": "Adventure Spell: used today",

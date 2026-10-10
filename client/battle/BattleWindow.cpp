@@ -78,7 +78,8 @@ constexpr int outsideStackInfoPanelExtent = 37 + 286;
 
 bool hasActiveWarcasting(const AlternatingHeroActionState & state, int round)
 {
-	return state.bonusFor(state.nextEligibleAction, round) > 0;
+	return state.bonusFor(AlternatingHeroActionState::Action::SPELL, round) > 0
+		|| state.bonusFor(AlternatingHeroActionState::Action::ORDER, round) > 0;
 }
 
 std::string warcastingIconName(AlternatingHeroActionState::Action action)
@@ -936,9 +937,10 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 	const auto & warcasting = battle->getWarcastingState(side);
 	const auto round = battle->getRound();
 	const auto * visibleHero = battleCallback->battleGetFightingHero(side);
-	if(hasActiveWarcasting(warcasting, round))
+	for(const auto action : {AlternatingHeroActionState::Action::SPELL, AlternatingHeroActionState::Action::ORDER})
 	{
-		const auto action = warcasting.nextEligibleAction;
+		if(!hasActiveWarcasting(warcasting, round) || warcasting.bonusFor(action, round) <= 0)
+			continue;
 		// Only apply hero-specific Master Synthesis when this client can see the
 		// fighting hero. Readiness itself remains a public saved battle state.
 		const auto empowerment = visibleHero
@@ -956,7 +958,9 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 			: "+" + std::to_string(empowerment) + " percentage points";
 		const auto tooltip = CInfoWindow::genText("Warcasting",
 			std::string("Next eligible action: ") + actionName + ". It gains " + amountDescription + " " + actionEffect
-			+ " Available through round " + std::to_string(warcasting.expiryRound) + " (inclusive).");
+			+ " Available through round " + std::to_string(warcasting.readinessExpiryFor(action, round)) + " (inclusive)."
+			+ (warcasting.reactiveEmpowermentPercent > 0
+				? " Reactive Weave is independent: the stronger bonus applies, without addition; both Order candidates are consumed." : ""));
 		entries.push_back({warcastingIconName(action), actionName, amount, tooltip});
 	}
 

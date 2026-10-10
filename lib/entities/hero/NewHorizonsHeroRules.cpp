@@ -98,7 +98,10 @@ void validateOptionalCreatureLineSpecialtyRules(const JsonNode & rules)
 
 void validateDamageSpellSpecialtyRules(const JsonNode & rules)
 {
-	fields(rules, {"version", "componentPercent"});
+	fields(rules, {"version", "componentPercent", "coroniusHolyWrathReplacement"});
+	const auto & replacement = rules["coroniusHolyWrathReplacement"];
+	require(!rules.Struct().contains("coroniusHolyWrathReplacement") || replacement.isBool(),
+		"Coronius Holy Wrath replacement flag");
 	require(integer(rules["version"], 1, 1), "damage-spell specialty version");
 	require(integer(rules["componentPercent"], 15, 15), "damage-spell specialty component percentage");
 }
@@ -114,10 +117,13 @@ void validateOptionalDamageSpellSpecialtyRules(const JsonNode & rules)
 
 void validateNonDamageSpellSpecialtyRules(const JsonNode & rules)
 {
-	fields(rules, {"version", "componentPercent", "spells", "aenainFrailtyReplacement", "defensiveStartReplacements", "offensiveStartReplacements"});
+	fields(rules, {"version", "componentPercent", "spells", "aenainFrailtyReplacement", "defensiveStartReplacements", "offensiveStartReplacements", "remainingStartReplacements"});
 	const auto & aenain = rules["aenainFrailtyReplacement"];
 	require(!rules.Struct().contains("aenainFrailtyReplacement") || aenain.isBool(),
 		"Aenain Frailty replacement flag");
+	const auto & remaining = rules["remainingStartReplacements"];
+	require(!rules.Struct().contains("remainingStartReplacements") || remaining.isBool(),
+		"remaining starting inscription replacement flag");
 	const auto & defensive = rules["defensiveStartReplacements"];
 	require(!rules.Struct().contains("defensiveStartReplacements") || defensive.isBool(),
 		"defensive starting specialty replacement flag");
@@ -134,6 +140,11 @@ void validateNonDamageSpellSpecialtyRules(const JsonNode & rules)
 		{
 			return spell.isString() && spell.String() == "new-horizons:frailty";
 		}), "Aenain replacement requires Frailty specialty rules");
+	if(remaining.isBool() && remaining.Bool())
+		require(std::ranges::any_of(spells.Vector(), [](const JsonNode & spell)
+		{
+			return spell.isString() && spell.String() == "new-horizons:crusade";
+		}), "Inteus replacement requires Crusade specialty identity");
 	if(defensive.isBool() && defensive.Bool())
 		for(const auto key : {"new-horizons:hydrasVitality", "new-horizons:guardianSpirit"})
 			require(std::ranges::any_of(spells.Vector(), [key](const JsonNode & spell)
@@ -633,6 +644,13 @@ void validateStartingDevelopmentSerialization(const JsonNode & rules, bool suppo
 		throw std::runtime_error("Starting development profiles require the new save format");
 }
 
+void validateCoroniusHolyWrathSerialization(const JsonNode & rules, bool supported)
+{
+	const auto & specialties = rules["damageSpellSpecialties"];
+	if(!supported && specialties.isStruct() && specialties.Struct().contains("coroniusHolyWrathReplacement"))
+		throw std::runtime_error("Coronius Holy Wrath replacement rules require the new save format");
+}
+
 std::optional<StartingDevelopmentProfile> startingDevelopmentProfile(
 	const JsonNode & rules, const PerkState & perkState, HeroTypeID hero, HeroClassID heroClass)
 {
@@ -688,6 +706,13 @@ std::optional<StartingDevelopmentProfile> startingDevelopmentProfile(
 		result.perks.push_back({parent, perk});
 	}
 	return result;
+}
+
+void validateRemainingStartSerialization(const JsonNode & rules, bool supported)
+{
+	const auto & specialties = rules["nonDamageSpellSpecialties"];
+	if(!supported && specialties.isStruct() && specialties.Struct().contains("remainingStartReplacements"))
+		throw std::runtime_error("Remaining starting inscriptions require the new save format");
 }
 
 std::optional<NonDamageSpellSpecialtyRules> nonDamageSpellSpecialtyRules(const JsonNode & resolvedRules)

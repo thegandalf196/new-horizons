@@ -32,20 +32,21 @@ bool hasDivineDisciplinePerk(const CGHeroInstance * hero)
 		"new-horizons:divineMandate.divineDiscipline");
 }
 
-bool completeDisciplineOrders(std::vector<HeroOrderState> & orders, int32_t round, uint32_t unitId)
+bool completeDisciplineOrders(std::vector<HeroOrderState> & orders, int32_t round, uint32_t unitId, bool genuineActivation)
 {
 	bool changed = false;
 	for(auto & order : orders)
-		changed = order.completeDisciplineActivation(unitId, round) || changed;
+		if(!order.ironWillLifetime || genuineActivation)
+			changed = order.completeDisciplineActivation(unitId, round) || changed;
 	return changed;
 }
 
-void completeDisciplineActivation(IBattleState & state, uint32_t unitId)
+void completeDisciplineActivation(IBattleState & state, uint32_t unitId, bool genuineActivation)
 {
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		auto orders = state.getHeroOrderStates(side);
-		if(completeDisciplineOrders(orders, state.getRound(), unitId))
+		if(completeDisciplineOrders(orders, state.getRound(), unitId, genuineActivation))
 			state.setHeroOrderStates(side, orders);
 	}
 }

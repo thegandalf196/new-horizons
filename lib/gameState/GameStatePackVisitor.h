@@ -144,6 +144,7 @@ public:
 	void visitBattleAdverseRerollStateChanged(BattleAdverseRerollStateChanged & pack) override;
 	void visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack) override;
 	void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) override;
+	void visitSetReactiveWeaveState(SetReactiveWeaveState & pack) override;
 	void visitSetSpellResponseState(SetSpellResponseState & pack) override;
 	void visitSetArmorerDefiantState(SetArmorerDefiantState & pack) override;
 	void visitSetOverwhelmingFormulaState(SetOverwhelmingFormulaState & pack) override;
@@ -179,6 +180,7 @@ public:
 	void visitBattleAdverseRerollStateChanged(BattleAdverseRerollStateChanged & pack) override;
 	void visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack) override;
 	void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) override;
+	void visitSetReactiveWeaveState(SetReactiveWeaveState & pack) override;
 	void visitSetSpellResponseState(SetSpellResponseState & pack) override;
 	void visitSetArmorerDefiantState(SetArmorerDefiantState & pack) override;
 	void visitSetOverwhelmingFormulaState(SetOverwhelmingFormulaState & pack) override;
