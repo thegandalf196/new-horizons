@@ -74,9 +74,202 @@ CANONICAL_CLASS_NAMES = {
 }
 
 
+# Authored workbook packages added after the first 48 settled profiles.
+# Troops, books, biographies and specialty riders are outside this table.
+WORKBOOK_REMAINING_STARTS = {
+    'core:orrin': 'archery.targetCaller',
+    'core:valeska': 'archery.pointBlankShot',
+    'core:edric': 'armorer.countercharge',
+    'core:lordHaart': 'estates.taxCollector',
+    'core:sorsha': 'offense.executioner',
+    'core:christian': 'warMachines.masterGunner',
+    'core:tyris': 'battlecraft.tactics',
+    'core:adela': 'lightMagic.benediction',
+    'core:cuthbert': 'spellcraft.spellPenetration',
+    'core:loynis': 'lightMagic.benediction',
+    'core:rion': 'warMachines.surgeon',
+    'core:mephala': 'armorer.pavise',
+    'core:ufretin': 'warcasting.spellward',
+    'core:jenova': 'estates.landSurveyor',
+    'core:ryland': 'diplomacy.negotiator',
+    'core:ivor': 'archery.targetCaller',
+    'core:kyrre': 'logistics.scouting',
+    'core:uland': 'lightMagic.healer',
+    'core:gem': 'warMachines.surgeon',
+    'core:melodia': 'luck.fortuneSFavor',
+    'core:alagar': 'havocMagic.cryomancer',
+    'core:josephine': 'armorer.pavise',
+    'core:neela': 'armorer.ironDiscipline',
+    'core:fafner': 'warcasting.spellward',
+    'core:halon': 'warcasting.battleMeditation',
+    'core:rissa': 'estates.prospector',
+    'core:theodorus': 'learning.mentor',
+    'core:solmyr': 'havocMagic.stormcaller',
+    'core:cyra': 'sorceryMagic.temporalist',
+    'core:rashka': 'offense.shockAssault',
+    'core:marius': 'armorer.ironDiscipline',
+    'core:octavia': 'estates.taxCollector',
+    'core:calh': 'archery.targetCaller',
+    'core:pyre': 'warMachines.masterGunner',
+    'core:nymus': 'offense.executioner',
+    'core:olema': 'spellcraft.concentration',
+    'core:calid': 'estates.prospector',
+    'core:xarfax': 'havocMagic.pyromancer',
+    'core:zydar': 'spellcraft.spellPenetration',
+    'core:vokial': 'offense.executioner',
+    'core:moandor': 'archery.targetCaller',
+    'core:tamika': 'offense.shockAssault',
+    'core:clavius': 'estates.taxCollector',
+    'core:galthran': 'offense.executioner',
+    'core:aislinn': 'spellcraft.concentration',
+    'core:sandro': 'spellcraft.spellPenetration',
+    'core:xsi': 'shadowMagic.witheringTouch',
+    'core:lorelei': 'logistics.scouting',
+    'core:arlach': 'warMachines.masterGunner',
+    'core:dace': 'offense.shockAssault',
+    'core:ajit': 'warcasting.spellward',
+    'core:damacon': 'estates.taxCollector',
+    'core:gunnar': 'logistics.scouting',
+    'core:synca': 'recruitment.drillSergeant',
+    'core:shakti': 'offense.executioner',
+    'core:malekith': 'spellcraft.spellPenetration',
+    'core:darkstorn': 'wisdom.intelligence',
+    'core:yog': 'warMachines.precisionBombardment',
+    'core:gurnisson': 'warMachines.masterGunner',
+    'core:jabarkas': 'archery.targetCaller',
+    'core:shiva': 'logistics.scouting',
+    'core:gretchin': 'logistics.pathfinding',
+    'core:krellion': 'discipline.steadfast',
+    'core:cragHack': 'offense.shockAssault',
+    'core:tyraxor': 'battlecraft.tactics',
+    'core:gird': 'spellcraft.arcaneFocus',
+    'core:vey': 'discipline.inspirationalLeader',
+    'core:dessa': 'logistics.pathfinding',
+    'core:zubin': 'archery.targetCaller',
+    'core:gundula': 'offense.executioner',
+    'core:bron': 'armorer.countercharge',
+    'core:drakon': 'discipline.steadfast',
+    'core:wystan': 'archery.targetCaller',
+    'core:tazar': 'armorer.pavise',
+    'core:alkin': 'offense.executioner',
+    'core:korbac': 'logistics.pathfinding',
+    'core:gerwulf': 'warMachines.masterGunner',
+    'core:broghild': 'logistics.scouting',
+    'core:verdish': 'warMachines.surgeon',
+    'core:merist': 'natureMagic.herbalist',
+    'core:styg': 'spellcraft.spellPenetration',
+    'core:pasis': 'offense.executioner',
+    'core:thunar': 'armorer.pavise',
+    'core:ignissa': 'offense.shockAssault',
+    'core:monere': 'logistics.scouting',
+    'core:erdamon': 'armorer.countercharge',
+    'core:fiur': 'offense.executioner',
+    'core:kalt': 'discipline.steadfast',
+    'core:luna': 'havocMagic.pyromancer',
+    'core:brissa': 'natureMagic.rootcaller',
+    'core:ciele': 'havocMagic.stormcaller',
+    'core:labetha': 'natureMagic.rootcaller',
+    'core:inteus': 'havocMagic.pyromancer',
+    'core:aenain': 'natureMagic.rootcaller',
+    'core:gelare': 'estates.merchantPrince',
+    'core:grindan': 'estates.prospector',
+}
+
+# These settled profiles intentionally take precedence over workbook differences.
+ACCEPTED_STARTS = {
+    'core:sylvia': ('logistics.navigation', 1, 'divineMandate', 1),
+    'core:adelaide': ('havocMagic.cryomancer', 1, 'divineMandate', 2),
+    'core:ingham': ('wisdom.mysticism', 1, 'divineMandate', 1),
+    'core:sanya': ('learning.eagleEye', 1, 'divineMandate', 1),
+    'core:caitlin': ('wisdom.intelligence', 1, 'divineMandate', 1),
+    'core:thorgrim': ('warcasting.spellward', 2, 'sylvanLuck', 1),
+    'core:clancy': ('logistics.pathfinding', 1, 'sylvanLuck', 1),
+    'core:coronius': ('spellcraft.concentration', 1, 'sylvanLuck', 1),
+    'core:elleshar': ('wisdom.intelligence', 1, 'sylvanLuck', 1),
+    'core:malcom': ('learning.eagleEye', 1, 'sylvanLuck', 1),
+    'core:aeris': ('logistics.scouting', 1, 'sylvanLuck', 1),
+    'core:piquedram': ('logistics.scouting', 1, 'metamagic', 1),
+    'core:torosar': ('warMachines.masterGunner', 1, 'metamagic', 1),
+    'core:iona': ('learning.scholar', 1, 'metamagic', 1),
+    'core:astral': ('spellcraft.concentration', 1, 'metamagic', 2),
+    'core:serena': ('learning.eagleEye', 1, 'metamagic', 1),
+    'core:daremyth': ('luck.secondChance', 1, 'metamagic', 1),
+    'core:aine': ('estates.taxCollector', 1, 'metamagic', 1),
+    'core:thane': ('learning.scholar', 2, 'metamagic', 1),
+    'core:fiona': ('logistics.scouting', 2, 'demonicGating', 1),
+    'core:ignatius': ('battlecraft.tactics', 1, 'demonicGating', 1),
+    'core:ayden': ('wisdom.intelligence', 1, 'demonicGating', 1),
+    'core:xyron': ('havocMagic.pyromancer', 1, 'demonicGating', 1),
+    'core:axsis': ('wisdom.mysticism', 1, 'demonicGating', 1),
+    'core:ash': ('chaosMagic.frenziedCurse', 1, 'demonicGating', 1),
+    'core:straker': ('warcasting.spellward', 1, 'necromancy', 1),
+    'core:charna': ('battlecraft.tactics', 1, 'necromancy', 1),
+    'core:isra': ('learning.historian', 1, 'necromancy', 2),
+    'core:septienna': ('spellcraft.arcaneFocus', 1, 'necromancy', 1),
+    'core:nimbus': ('learning.eagleEye', 1, 'necromancy', 1),
+    'core:thant': ('wisdom.mysticism', 1, 'necromancy', 1),
+    'core:vidomina': ('learning.scholar', 1, 'necromancy', 2),
+    'core:nagash': ('estates.taxCollector', 1, 'necromancy', 1),
+    'core:alamar': ('shadowMagic.bloodDrinker', 1, 'shroudOfMalassa', 1),
+    'core:jaegar': ('wisdom.mysticism', 1, 'shroudOfMalassa', 1),
+    'core:jeddite': ('spellcraft.concentration', 1, 'shroudOfMalassa', 2),
+    'core:geon': ('learning.eagleEye', 1, 'shroudOfMalassa', 1),
+    'core:deemer': ('logistics.scouting', 2, 'shroudOfMalassa', 1),
+    'core:sephinroth': ('estates.prospector', 1, 'shroudOfMalassa', 1),
+    'core:terek': ('battlecraft.tactics', 1, 'bloodrage', 1),
+    'core:oris': ('learning.eagleEye', 1, 'bloodrage', 1),
+    'core:saurug': ('estates.prospector', 1, 'bloodrage', 1),
+    'core:mirlanda': ('shadowMagic.witheringTouch', 1, 'bulwarkOfTheMire', 2),
+    'core:rosic': ('wisdom.mysticism', 1, 'bulwarkOfTheMire', 1),
+    'core:voy': ('logistics.navigation', 1, 'bulwarkOfTheMire', 1),
+    'core:andra': ('wisdom.intelligence', 1, 'bulwarkOfTheMire', 1),
+    'core:tiva': ('learning.eagleEye', 1, 'bulwarkOfTheMire', 1),
+    'core:lacus': ('battlecraft.tactics', 2, 'elementalRebirth', 1),
+}
+
 class HeroDataTest(unittest.TestCase):
     def setUp(self):
         self.rules = json.loads((ROOT / 'config/newHorizonsHeroes.json').read_text())
+
+    def test_all_144_starting_packages_are_exact_and_class_legal(self):
+        profiles = self.rules['startingSkills']['startingDevelopmentProfiles']
+        registry = json.loads((ROOT / 'config/newHorizonsPerks.json').read_text())['skills']
+        faction_skills = self.rules['startingSkills']['factionSkills']
+        self.assertEqual(len(WORKBOOK_REMAINING_STARTS), 96)
+        self.assertEqual(len(ACCEPTED_STARTS), 48)
+        self.assertEqual(set(profiles), set(WORKBOOK_REMAINING_STARTS) | set(ACCEPTED_STARTS))
+        for faction in ('castle', 'rampart', 'tower', 'inferno', 'necropolis',
+                        'dungeon', 'stronghold', 'fortress', 'conflux'):
+            roster = json.loads((ROOT / f'config/heroes/{faction}.json').read_text())
+            own = faction_skills['core:' + faction]
+            for hero, definition in roster.items():
+                hero = 'core:' + hero
+                with self.subTest(hero=hero):
+                    profile = profiles[hero]
+                    if hero in WORKBOOK_REMAINING_STARTS:
+                        perk = WORKBOOK_REMAINING_STARTS[hero]
+                        generic_rank = faction_rank = 1
+                        expected_faction = own
+                    else:
+                        perk, generic_rank, settled_faction, faction_rank = ACCEPTED_STARTS[hero]
+                        expected_faction = 'new-horizons:' + settled_faction
+                    parent = 'new-horizons:' + perk.split('.')[0]
+                    expected_perk = 'new-horizons:' + perk
+                    self.assertEqual({row['skill']: row['rank'] for row in profile['skills']},
+                                     {parent: generic_rank, expected_faction: faction_rank})
+                    self.assertEqual(expected_faction, own)
+                    self.assertEqual(len(profile['skills']), 2)
+                    self.assertEqual(profile['startingPerks'],
+                                     [{'skill': parent, 'perk': expected_perk}])
+                    self.assertGreater(self.rules['skillOfferWeights']['core:' + definition['class']][parent], 0)
+                    authored = next(row for row in registry[parent]['perks'] if row['id'] == expected_perk)
+                    self.assertEqual(authored['requires'], 'basic')
+                    self.assertEqual(authored['effect']['status'], 'active')
+
+    def test_generated_module_captures_all_144_packages_exactly(self):
+        module = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())
+        self.assertEqual(module['settings']['heroes']['newHorizons']['startingSkills'],
+                         self.rules['startingSkills'])
 
     def test_legacy_starting_skill_migration_table_is_canonical_and_honest(self):
         self.assertEqual(self.rules['startingSkills']['legacySkillMigrations'], {

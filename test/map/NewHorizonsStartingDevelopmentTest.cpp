@@ -6,6 +6,7 @@
 #include "../NewHorizonsHistoricalAdventurePolicyTestUtils.h"
 #include "../mock/TinyMapGameTest.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/CCreatureHandler.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/gameState/QuestInfo.h"
 #include "../../lib/spells/CSpellHandler.h"
@@ -187,6 +188,44 @@ protected:
 		EXPECT_EQ(hero.getHeroClass(), hero.getHeroType()->heroClass);
 	}
 };
+
+TEST_F(NewHorizonsStartingDevelopmentTest, All144ShippedProfilesInitializeExactActivePackages)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+	const auto & profiles = rules["startingSkills"]["startingDevelopmentProfiles"].Struct();
+	ASSERT_EQ(profiles.size(), 144);
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(72).playerActive(PlayerColor(0));
+	size_t index = 0;
+	for(const auto & [hero, profile] : profiles)
+	{
+		builder.hero({5 + static_cast<int>(index % 12) * 5,
+			5 + static_cast<int>(index / 12) * 5, 0},
+			HeroTypeID(HeroTypeID::decode(hero)), PlayerColor(0)).heroExperience(0);
+		++index;
+	}
+	startWithMap(std::move(builder));
+	for(const auto & [hero, profile] : profiles)
+	{
+		SCOPED_TRACE(hero);
+		const auto * initialized = gameState()->getMap().getHero(HeroTypeID(HeroTypeID::decode(hero)));
+		ASSERT_NE(initialized, nullptr);
+		ASSERT_EQ(initialized->secSkills.size(), 2);
+		for(const auto & skill : profile["skills"].Vector())
+			EXPECT_EQ(initialized->getPerkSkillRank(skill["skill"].String()), skill["rank"].Integer());
+		const auto & perk = profile["startingPerks"].Vector().front();
+		EXPECT_EQ(initialized->getPerkState().selected,
+			(std::vector<newHorizonsHeroes::PerkSelection>{{perk["skill"].String(), perk["perk"].String()}}));
+		const auto projected = initialized->getPerkState().project([initialized](const std::string & skill)
+		{
+			return initialized->getPerkSkillRank(skill);
+		});
+		ASSERT_EQ(projected.size(), 1);
+		EXPECT_TRUE(projected.front().enabled);
+		EXPECT_EQ(projected.front().requiredRank, MasteryLevel::BASIC);
+		EXPECT_EQ(initialized->getHeroClass(), initialized->getHeroType()->heroClass);
+	}
+}
 
 class ApprovedEightStarts : public NewHorizonsStartingDevelopmentTest,
 	public ::testing::WithParamInterface<ExpectedStart> {};
@@ -731,5 +770,343 @@ TEST_F(NewHorizonsStartingDevelopmentTest, AbsentCollectionRemainsWritableInPrev
 		static_cast<int>(ESerializationVersion::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES) - 1);
 	EXPECT_NO_THROW(actor()->serialize(bytes.oser));
 	EXPECT_FALSE(bytes.extractBuffer().empty());
+}
+
+// Provisional starting armies reuse the original sampled ranges and existing
+// per-slot clamp. No new army table, species alias or saved initialization rule.
+class NewHorizonsStartingArmyTest : public NewHorizonsStartingDevelopmentTest
+{
+protected:
+	bool legacyCapabilities = false;
+	void mapLoaded(CMap * loaded) override
+	{
+		NewHorizonsStartingDevelopmentTest::mapLoaded(loaded);
+		JsonNode chances;
+		for(int slot = 0; slot < 3; ++slot)
+			chances.Vector().emplace_back(100);
+		loaded->overrideGameSetting(EGameSettings::HEROES_STARTING_STACKS_CHANCES, chances);
+		if(legacyCapabilities)
+		{
+			JsonNode empty;
+			empty.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, empty);
+		}
+	}
+};
+
+TEST_F(NewHorizonsStartingArmyTest, All144DefaultArmiesRetainCompositionAndLeadershipSafeSampledRanges)
+{
+	const std::array<const char *, 144> heroes{{
+		"core:orrin",
+		"core:valeska",
+		"core:edric",
+		"core:sylvia",
+		"core:lordHaart",
+		"core:sorsha",
+		"core:christian",
+		"core:tyris",
+		"core:adela",
+		"core:cuthbert",
+		"core:adelaide",
+		"core:ingham",
+		"core:sanya",
+		"core:loynis",
+		"core:caitlin",
+		"core:rion",
+		"core:mephala",
+		"core:ufretin",
+		"core:jenova",
+		"core:ryland",
+		"core:thorgrim",
+		"core:ivor",
+		"core:clancy",
+		"core:kyrre",
+		"core:coronius",
+		"core:uland",
+		"core:elleshar",
+		"core:gem",
+		"core:malcom",
+		"core:melodia",
+		"core:alagar",
+		"core:aeris",
+		"core:piquedram",
+		"core:josephine",
+		"core:neela",
+		"core:torosar",
+		"core:fafner",
+		"core:halon",
+		"core:iona",
+		"core:rissa",
+		"core:astral",
+		"core:serena",
+		"core:daremyth",
+		"core:theodorus",
+		"core:solmyr",
+		"core:cyra",
+		"core:aine",
+		"core:thane",
+		"core:fiona",
+		"core:rashka",
+		"core:marius",
+		"core:ignatius",
+		"core:octavia",
+		"core:calh",
+		"core:pyre",
+		"core:nymus",
+		"core:ayden",
+		"core:xyron",
+		"core:axsis",
+		"core:olema",
+		"core:calid",
+		"core:ash",
+		"core:xarfax",
+		"core:zydar",
+		"core:straker",
+		"core:vokial",
+		"core:moandor",
+		"core:charna",
+		"core:tamika",
+		"core:isra",
+		"core:clavius",
+		"core:galthran",
+		"core:septienna",
+		"core:aislinn",
+		"core:sandro",
+		"core:nimbus",
+		"core:thant",
+		"core:xsi",
+		"core:vidomina",
+		"core:nagash",
+		"core:lorelei",
+		"core:arlach",
+		"core:dace",
+		"core:ajit",
+		"core:damacon",
+		"core:gunnar",
+		"core:synca",
+		"core:shakti",
+		"core:alamar",
+		"core:jaegar",
+		"core:malekith",
+		"core:jeddite",
+		"core:geon",
+		"core:deemer",
+		"core:sephinroth",
+		"core:darkstorn",
+		"core:yog",
+		"core:gurnisson",
+		"core:jabarkas",
+		"core:shiva",
+		"core:gretchin",
+		"core:krellion",
+		"core:cragHack",
+		"core:tyraxor",
+		"core:gird",
+		"core:vey",
+		"core:dessa",
+		"core:terek",
+		"core:zubin",
+		"core:gundula",
+		"core:oris",
+		"core:saurug",
+		"core:bron",
+		"core:drakon",
+		"core:wystan",
+		"core:tazar",
+		"core:alkin",
+		"core:korbac",
+		"core:gerwulf",
+		"core:broghild",
+		"core:mirlanda",
+		"core:rosic",
+		"core:voy",
+		"core:verdish",
+		"core:merist",
+		"core:styg",
+		"core:andra",
+		"core:tiva",
+		"core:pasis",
+		"core:thunar",
+		"core:ignissa",
+		"core:lacus",
+		"core:monere",
+		"core:erdamon",
+		"core:fiur",
+		"core:kalt",
+		"core:luna",
+		"core:brissa",
+		"core:ciele",
+		"core:labetha",
+		"core:inteus",
+		"core:aenain",
+		"core:gelare",
+		"core:grindan",
+	}};
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(72).playerActive(PlayerColor(0));
+	for(size_t index = 0; index < heroes.size(); ++index)
+		builder.hero({5 + static_cast<int>(index % 12) * 5,
+			5 + static_cast<int>(index / 12) * 5, 0},
+			HeroTypeID(HeroTypeID::decode(heroes[index])), PlayerColor(0)).heroExperience(0);
+	startWithMap(std::move(builder));
+	for(const auto * hero : heroes)
+	{
+		SCOPED_TRACE(hero);
+		const auto * initialized = gameState()->getMap().getHero(HeroTypeID(HeroTypeID::decode(hero)));
+		ASSERT_NE(initialized, nullptr);
+		ASSERT_EQ(initialized->level, 1);
+		ASSERT_FALSE(initialized->Slots().empty());
+		int ordinarySlot = 0;
+		for(const auto & original : initialized->getHeroType()->initialArmy)
+		{
+			const auto * creature = original.creature.toCreature();
+			ASSERT_NE(creature, nullptr);
+			if(creature->warMachine != ArtifactID::NONE)
+			{
+				EXPECT_TRUE(initialized->hasArt(creature->warMachine));
+				continue;
+			}
+			const auto capacity = initialized->getLeadershipSlotCapacity(original.creature);
+			ASSERT_TRUE(capacity);
+			ASSERT_GT(capacity->maximum, 0);
+			const SlotID slot(ordinarySlot++);
+			EXPECT_EQ(initialized->getCreature(slot), creature);
+			EXPECT_GE(initialized->getStackCount(slot),
+				std::min<int>(original.minAmount, capacity->maximum));
+			EXPECT_LE(initialized->getStackCount(slot),
+				std::min<int>(original.maxAmount, capacity->maximum));
+			EXPECT_LE(initialized->getStackCount(slot), capacity->maximum);
+		}
+		EXPECT_EQ(initialized->stacksCount(), ordinarySlot);
+	}
+}
+
+TEST_F(NewHorizonsStartingArmyTest, ExplicitMapArmyAndReinitializationAreNotClampedOrResampled)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36).playerActive(PlayerColor(0))
+		.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:orrin")), PlayerColor(0))
+		.heroExperience(0).heroGarrison({{CreatureID(CreatureID::decode("core:pikeman")), 123}});
+	startWithMap(std::move(builder));
+	ASSERT_NE(actor(), nullptr);
+	const auto capacity = actor()->getLeadershipSlotCapacity(CreatureID(CreatureID::decode("core:pikeman")));
+	ASSERT_TRUE(capacity);
+	ASSERT_LT(capacity->maximum, 123);
+	EXPECT_EQ(actor()->getStackCount(SlotID(0)), 123);
+	GameRandomizer randomizer(*gameState());
+	ASSERT_NO_THROW(actor()->initHero(randomizer));
+	EXPECT_EQ(actor()->getStackCount(SlotID(0)), 123);
+	EXPECT_EQ(actor()->stacksCount(), 1);
+}
+
+TEST_F(NewHorizonsStartingArmyTest, WorldRoundtripRetainsSampledArmyWithoutResampling)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36).playerActive(PlayerColor(0))
+		.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:orrin")), PlayerColor(0)).heroExperience(0);
+	startWithMap(std::move(builder));
+	ASSERT_NE(actor(), nullptr);
+	std::vector<std::pair<CreatureID, int>> saved;
+	for(int slot = 0; slot < actor()->stacksCount(); ++slot)
+		saved.emplace_back(actor()->getCreature(SlotID(slot))->getId(), actor()->getStackCount(SlotID(slot)));
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(gameState()->saveToMemory());
+	auto * loaded = restored.getMap().getHero(actor()->getHeroTypeID());
+	ASSERT_NE(loaded, nullptr);
+	GameRandomizer randomizer(restored);
+	ASSERT_NO_THROW(loaded->initHero(randomizer));
+	ASSERT_EQ(loaded->stacksCount(), saved.size());
+	for(size_t slot = 0; slot < saved.size(); ++slot)
+	{
+		EXPECT_EQ(loaded->getCreature(SlotID(slot))->getId(), saved[slot].first);
+		EXPECT_EQ(loaded->getStackCount(SlotID(slot)), saved[slot].second);
+	}
+}
+
+TEST_F(NewHorizonsStartingArmyTest, CapturedLegacyAbsenceRetainsOriginalUnclampedRanges)
+{
+	legacyCapabilities = true;
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36).playerActive(PlayerColor(0))
+		.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:rissa")), PlayerColor(0)).heroExperience(0);
+	startWithMap(std::move(builder));
+	ASSERT_NE(actor(), nullptr);
+	ASSERT_EQ(actor()->getHeroType()->initialArmy.front().creature, CreatureID(CreatureID::decode("core:gremlin")));
+	EXPECT_FALSE(actor()->getLeadershipSlotCapacity(CreatureID(CreatureID::decode("core:gremlin"))));
+	EXPECT_GE(actor()->getStackCount(SlotID(0)), 30);
+	EXPECT_LE(actor()->getStackCount(SlotID(0)), 40);
+}
+
+class NewHorizonsStartingPerkOverlapTest : public NewHorizonsStartingDevelopmentTest
+{
+protected:
+	const ExpectedStart solmyr{"core:solmyr", "new-horizons:havocMagic", 1,
+		"new-horizons:havocMagic.stormcaller", "new-horizons:metamagic"};
+	bool conflictingProfile = false;
+	void mapLoaded(CMap * loaded) override
+	{
+		NewHorizonsStartingDevelopmentTest::mapLoaded(loaded);
+		if(conflictingProfile)
+		{
+			JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+			rules["startingSkills"]["startingDevelopmentProfiles"]["core:solmyr"]
+				["startingPerks"].Vector().front()["perk"].String() = "new-horizons:havocMagic.cryomancer";
+			rules.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
+		}
+	}
+};
+
+TEST_F(NewHorizonsStartingPerkOverlapTest, ExactDefaultProfileAndPrototypeSelectOnceAndKeepDuplicateValidation)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(solmyr));
+	ASSERT_EQ(actor()->getHeroType()->startingPerks,
+		(std::vector<newHorizonsHeroes::PerkSelection>{{solmyr.parent, solmyr.perk}}));
+	expectStart(solmyr, *actor());
+	EXPECT_THROW(actor()->applyPerkSelection({solmyr.parent, solmyr.perk}), std::runtime_error);
+	EXPECT_EQ(actor()->getPerkState().selected.size(), 1);
+	GameRandomizer randomizer(*gameState());
+	ASSERT_NO_THROW(actor()->initHero(randomizer));
+	expectStart(solmyr, *actor());
+}
+
+TEST_F(NewHorizonsStartingPerkOverlapTest, PresetParentsAndBookRetainPrototypeOnlySelection)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36).playerActive(PlayerColor(0))
+		.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode(solmyr.hero)), PlayerColor(0)).heroExperience(0)
+		.heroSecondarySkills({
+			{SecondarySkill(SecondarySkill::decode(solmyr.parent)), MasteryLevel::ADVANCED},
+			{SecondarySkill(SecondarySkill::decode(solmyr.faction)), MasteryLevel::BASIC}})
+		.heroSpells({SpellID(SpellID::MAGIC_ARROW)});
+	startWithMap(std::move(builder));
+	ASSERT_NE(actor(), nullptr);
+	const ExpectedStart expected{solmyr.hero, solmyr.parent, MasteryLevel::ADVANCED, solmyr.perk, solmyr.faction};
+	expectStart(expected, *actor());
+	EXPECT_TRUE(actor()->spellbookContainsSpell(SpellID(SpellID::MAGIC_ARROW)));
+	EXPECT_EQ(actor()->getPerkState().selected.size(), 1);
+}
+
+TEST_F(NewHorizonsStartingPerkOverlapTest, AbsentCapturedProfilePreservesOriginalPrototypeSelection)
+{
+	absent = true;
+	ASSERT_NO_FATAL_FAILURE(prepare(solmyr));
+	expectStart(solmyr, *actor());
+	EXPECT_EQ(actor()->getPerkState().selected.size(), 1);
+}
+
+TEST_F(NewHorizonsStartingPerkOverlapTest, ConflictingDifferentBasicPerkStillRejects)
+{
+	conflictingProfile = true;
+	try
+	{
+		prepare(solmyr);
+		FAIL() << "Different Basic perks from profile and prototype must not silently replace each other";
+	}
+	catch(const std::runtime_error & error)
+	{
+		EXPECT_STREQ(error.what(), "New Horizons perk tier already occupied for skill");
+	}
 }
 }

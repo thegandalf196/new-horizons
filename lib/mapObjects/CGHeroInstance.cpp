@@ -1149,11 +1149,23 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 				proposed.select(selection.skillId, selection.perkId, getPerkSkillRank(selection.skillId));
 			perkState = std::move(proposed);
 		}
+		// A captured default profile and the original prototype can author the
+		// same starting perk. Merge that exact overlap once, not arbitrary saved
+		// selections or conflicting perks. Consume matches so duplicate entries
+		// in either individual source still reach the normal strict validation.
+		auto unmatchedProfilePerks = startingDevelopment
+			? startingDevelopment->perks : std::vector<newHorizonsHeroes::PerkSelection>{};
 		for(const auto & selection : getHeroType()->startingPerks)
 		{
 			const int rank = getPerkSkillRank(selection.skillId);
 			if(rank <= 0)
 				throw std::runtime_error("New Horizons hero starting perk requires missing skill " + selection.skillId);
+			const auto overlap = std::ranges::find(unmatchedProfilePerks, selection);
+			if(overlap != unmatchedProfilePerks.end())
+			{
+				unmatchedProfilePerks.erase(overlap);
+				continue;
+			}
 			perkState.select(selection.skillId, selection.perkId, rank);
 		}
 	}
