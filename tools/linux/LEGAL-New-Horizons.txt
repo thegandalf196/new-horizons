@@ -17,8 +17,9 @@ Bundling any additional implementation requires a fresh source/license audit.
 The compiler/header/linker inventory explicitly records startup objects and
 libgcc.a, libc_nonshared.a and libdl.a. A linker search entry is not proof that all
 archive members were incorporated; the recorded libdl.a is empty. Exact glibc
-2.43-2ubuntu2.3 sources and Debian patches accompany the application source/build
-instructions for the nonshared/startup boundary and rebuilding/relinking.
+sources and Debian patches, at the version recorded in DEPENDENCY-INVENTORY.json,
+accompany the application source/build instructions for the nonshared/startup
+boundary and rebuilding/relinking.
 
 GCC runtime components and the 386 of 394 recorded GCC 15 headers carrying RLE
 text are assessed under the retained Runtime Library Exception 3.1, conditional

@@ -2,13 +2,34 @@
 
 Updated: 2026-10-10
 
+Runtime finding and repair: a separate ordinary probe verifies the full
+Frozen tooltip, natural primary proc, scheduled automatic NO_ACTION and normal
+Quit. It does not verify thaw. Independent review finds the same stack forfeits
+twice without another attack or a removal packet: automatic actions bypass the
+onActionMade thaw branch. The client's "ice thaws" text precedes actual removal
+and is not an authoritative result. The initial thaw interpretation is withdrawn;
+the preserved corrected receipt and source trace establish the defect. A narrow
+ordinary-queue repair and actual-flow regression were required before release or
+Phase1 exit. Later tinted frames are consistent with the retained status.
+The repaired production path now thaws after the accepted ordinary automatic
+skip, preserving its round receipt and Plague's once-per-round clock. A live
+battle-identity guard prevents reuse after synchronous computer-battle finish.
+Both targets build and binary privacy passes;46/46 focused native cases pass
+with zero failures/errors/skips, including genuine automatic thaw/next-action,
+Time Stop, lethal/nonlethal Plague and computer-battle finalization. Prior failure
+evidence is preserved; only the lethal test fixture's power changed, not balance.
+This is source/native correctness, not repaired-candidate visual or release
+acceptance. The native harness has fully private HOME/XDG, dummy drivers and no
+GUI; its engine is statically linked. Independent review verifies the exact XML,
+source/binary/resource hashes and actual child isolation/cleanup.
+
 New bounded ordinary Frozen evidence: natural Ice retaliation applies Freeze;
 native captures show persistent blue-grey tint, readable thin prism and cyan
 Initiative marker. Actual manual Shatter preview gives12–17 damage/no retaliation;
 the physical hit deals14, reports Shatter, and clears the surviving receiver's
 color/marker. Root and independent review confirm these scoped observations.
-Tooltip, scheduled activation forfeiture/thaw and shard-animation evidence remain
-open. The video ended at its filesize cap before Shatter; a misnamed popup
+The later probe above closes full-tooltip and scheduled-forfeiture evidence,
+not thaw or shard animation. This earlier video ended before Shatter; a misnamed popup
 capture contains no popup. Normal Quit was missed, while supervised cleanup,
 capture caps, ERROR0 and all807 immutable hashes pass. No Phase1 exit is claimed.
 

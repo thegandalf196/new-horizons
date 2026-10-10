@@ -56,6 +56,8 @@
 
 namespace
 {
+	void applyPlagueEndOfActivation(CGameHandler * gameHandler, const CBattleInfoCallback & battle, const CStack * stack);
+
 	void publishRapidResponse(CGameHandler * handler, const CBattleInfoCallback & battle,
 		BattleSide side, BattleRapidResponseStateChanged::Transition transition)
 	{
@@ -1104,6 +1106,8 @@ const CStack * BattleFlowProcessor::getNextStack(const CBattleInfoCallback & bat
 
 void BattleFlowProcessor::activateNextStack(const CBattleInfoCallback & battle)
 {
+	const auto battleID = battle.getBattle()->getBattleID();
+	const auto * originalBattle = gameHandler->gameState().getBattle(battleID);
 	// Find next stack that requires manual control
 	for (;;)
 	{
@@ -1179,7 +1183,12 @@ void BattleFlowProcessor::activateNextStack(const CBattleInfoCallback & battle)
 
 		gameHandler->turnTimerHandler->onBattleNextStack(battle.getBattle()->getBattleID(), *next);
 
-		if (!tryMakeAutomaticAction(battle, next))
+		const bool automaticAction = tryMakeAutomaticAction(battle, next);
+		// An automatic affliction tick may synchronously finalize an AI battle.
+		// Do not touch the callback or stack after its authoritative owner is gone.
+		if(gameHandler->gameState().getBattle(battleID) != originalBattle)
+			return;
+		if (!automaticAction)
 		{
 			if(next->alive()) {
 				setActiveStack(battle, next, BattleUnitTurnReason::TURN_QUEUE);
@@ -1203,7 +1212,35 @@ bool BattleFlowProcessor::tryMakeAutomaticAction(const CBattleInfoCallback & bat
 	if(newHorizonsFrozen::forfeitsNormalActivation(*next, BattleUnitTurnReason::TURN_QUEUE))
 	{
 		publishSwiftLifecycle(gameHandler, battle, next, true);
-		return makeStackDoNothing(battle, next);
+		const auto battleID = battle.getBattle()->getBattleID();
+		const auto unitID = next->unitId();
+		const auto frozen = newHorizonsFrozen::removalPlan(*next);
+		const bool accepted = makeStackDoNothing(battle, next);
+		// Automatic actions return to activateNextStack's loop, not onActionMade.
+		// Finish this normal forfeiture here without recursively advancing the
+		// queue or granting any morale/Order/extra activation after the thaw.
+		const auto * currentBattle = gameHandler->gameState().getBattle(battleID);
+		const auto * current = currentBattle ? currentBattle->battleGetStackByID(unitID, false) : nullptr;
+		if(accepted && current && current->alive() && !current->isGhost() && !current->isTimeStopped()
+			&& newHorizonsFrozen::isFrozen(*current) && !frozen.empty())
+		{
+			// Unlike Time Stop, Frozen still completes its affliction clock.
+			// A lethal tick can end the battle or retire this unit before thaw.
+			applyPlagueEndOfActivation(gameHandler, *currentBattle, current);
+			if(owner->checkBattleStateChanges(*currentBattle))
+				return accepted;
+			currentBattle = gameHandler->gameState().getBattle(battleID);
+			current = currentBattle ? currentBattle->battleGetStackByID(unitID, false) : nullptr;
+			if(current && current->alive() && !current->isGhost() && !current->isTimeStopped()
+				&& newHorizonsFrozen::isFrozen(*current))
+			{
+				SetStackEffect thaw;
+				thaw.battleID = battleID;
+				thaw.toRemove.emplace_back(unitID, frozen);
+				gameHandler->sendAndApply(thaw);
+			}
+		}
+		return accepted;
 	}
 
 	if(tryActivateMoralePenalty(battle, next))
