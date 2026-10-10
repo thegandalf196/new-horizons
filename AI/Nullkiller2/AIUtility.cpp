@@ -742,6 +742,56 @@ uint64_t externalMusterArmyReward(const Nullkiller * aiNk, const CGHeroInstance 
 	return static_cast<uint64_t>(std::max(0, amount)) * candidate->creature.toCreature()->getAIValue();
 }
 
+uint64_t townMusterArmyReward(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGTownInstance * town)
+{
+	if(!hero || !town || hero->getOwner() != aiNk->playerID || town->getOwner() != aiNk->playerID
+		|| (town->getVisitingHero() && town->getVisitingHero() != hero))
+		return 0;
+	const auto calendar = aiNk->cc->getCalendar();
+	const int week = ::newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+	const auto selected = [hero](std::string_view perk)
+	{
+		return hero->hasActivePerk(std::string(::newHorizonsMuster::RECRUITMENT_SKILL), std::string(perk));
+	};
+	::newHorizonsMuster::PerkModifiers modifiers;
+	modifiers.volunteerNetwork = selected(::newHorizonsMuster::VOLUNTEER_NETWORK_PERK);
+	modifiers.eliteDraft = selected(::newHorizonsMuster::ELITE_DRAFT_PERK);
+	modifiers.championsCall = selected(::newHorizonsMuster::CHAMPIONS_CALL_PERK);
+	modifiers.masterRecruiter = selected(::newHorizonsMuster::MASTER_RECRUITER_PERK);
+	if(hero->getNewHorizonsMusterUsesThisWeek(week) >= ::newHorizonsMuster::maximumUsesPerWeek(modifiers)
+		|| town->getNewHorizonsMusterLastWeek() == week || aiNk->aiGw->hasPendingMuster(town))
+		return 0;
+	const auto candidate = newHorizonsMuster::chooseTownCandidate(*town, *aiNk->cc,
+		hero->getPerkSkillRank(std::string(::newHorizonsMuster::RECRUITMENT_SKILL)), modifiers, hero,
+		selected(::newHorizonsMuster::BROAD_MUSTER_PERK));
+	if(!candidate)
+		return 0;
+	auto resources = aiNk->cc->getResourceAmount();
+	const auto recruitableValue = [hero, town, &resources](CreatureID creature, int amount) -> uint64_t
+	{
+		auto slot = newHorizonsHeroes::recruitmentSlot(hero, creature, amount);
+		if(!slot.validSlot())
+			slot = newHorizonsHeroes::recruitmentSlot(hero, creature, 1);
+		if(!slot.validSlot())
+			return 0;
+		if(const auto capacity = hero->getLeadershipSlotCapacity(creature))
+		{
+			const int current = hero->hasStackAtSlot(slot) ? hero->getStackCount(slot) : 0;
+			amount = std::min(amount, std::max(0, capacity->maximum - current));
+		}
+		const auto cost = town->getRecruitmentCost(creature);
+		amount = std::max(0, std::min(amount, resources / cost));
+		resources -= cost * amount;
+		return static_cast<uint64_t>(amount) * creature.toCreature()->getAIValue();
+	};
+	if(candidate->isSplit())
+	{
+		const auto firstValue = recruitableValue(candidate->creature, candidate->firstAmount);
+		return firstValue + recruitableValue(candidate->secondCreature, candidate->secondAmount);
+	}
+	return recruitableValue(candidate->creature, candidate->amount);
+}
+
 bool shouldVisit(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGObjectInstance * obj)
 {
 	auto relations = aiNk->cc->getPlayerRelations(obj->tempOwner, hero->tempOwner);
@@ -765,7 +815,8 @@ bool shouldVisit(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGO
 		{
 			const auto * town = dynamic_cast<const CGTownInstance *>(obj);
 			return town && (newHorizonsLearning::academicStudyExperience(*hero, *town) > 0
-				|| newHorizonsSage::hasVisitReward(*hero, *town));
+				|| newHorizonsSage::hasVisitReward(*hero, *town)
+				|| townMusterArmyReward(aiNk, hero, town) > 0);
 		}
 		return true;
 	case Obj::HERO:

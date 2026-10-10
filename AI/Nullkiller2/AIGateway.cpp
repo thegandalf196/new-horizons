@@ -1333,6 +1333,8 @@ void AIGateway::performObjectInteraction(const CGObjectInstance * obj, HeroPtr h
 		if(heroPtr->getVisitedTown()) //we are inside, not just attacking
 		{
 			const auto * visitedTown = heroPtr->getVisitedTown();
+			if(townMusterArmyReward(nullkiller.get(), heroPtr.get(), visitedTown) > 0)
+				tryMusterCreatures(heroPtr.get(), visitedTown);
 
 			static constexpr BuildingID arcaneReservoir = BuildingID::SPECIAL_4;
 			if(newHorizonsMagic::rulesActive(cc->getMagicRules())

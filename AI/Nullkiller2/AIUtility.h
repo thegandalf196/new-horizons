@@ -219,6 +219,7 @@ uint64_t timeElapsed(std::chrono::time_point<std::chrono::high_resolution_clock>
 bool shouldVisit(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGObjectInstance * obj);
 float teachingMeetingReward(const Nullkiller * aiNk, const CGHeroInstance * traveler, const CGHeroInstance * partner);
 uint64_t externalMusterArmyReward(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGDwelling * dwelling);
+uint64_t townMusterArmyReward(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGTownInstance * town);
 int getDuplicatingSlots(const CArmedInstance * army);
 
 template <class T>

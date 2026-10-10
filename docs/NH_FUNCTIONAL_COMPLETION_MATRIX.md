@@ -2,6 +2,21 @@
 
 Updated: 2026-10-10
 
+Town Muster principal execution passes6/6 actual native cases after the private
+owner-call fixture repair. Root opens the XML: zero failures/errors/skips and
+disabled cases. Both-target93434 links; privacy6976 has zero findings. Ordinary
+planned movement submits a real weekly Muster request on town entry, including
+Broad Muster's exact split and one-use receipt. Affordability, Leadership,
+ownership, spent/pending uses and rank/perk amounts have focused evidence.
+Wider portfolio/occupancy/scheduler composition remains Phase2. Registry totals,
+NHART and ordinary launcher are unchanged; complete Phase1 exit is unproven.
+
+Published feedback batch:ce958acd4, independently verified remote and identity.
+Town Muster's deliberate planning and ordinary-entry request are now imported
+after source review, with six focused cases registered. Both-target38018 is
+building; native acceptance remains pending. This extends the existing weekly
+Muster mechanic rather than adding new perk identities or changing rules.
+
 Accepted feedback checkpoint: external Muster7/7 after fixture-only observer
 repair plus retained Hold5/5 establish12 distinct cases across runs. Both-target
 5553 and privacy45889 pass. Actual background rendering establishes paid Hold
@@ -5328,13 +5343,13 @@ without a defensible item-level denominator remain explicitly uncounted.
 |---|---:|---|
 | Skills registered | 31/31 | All three ranks and complete ten-perk pools are active; accepted303-distinct-case checkpoint and earlier focused gates establish principal paths. Wider integration remains Phase2. |
 | Skill rank effects active | 93/93 | Elemental Rebirth's three ranks now have source/native and owning-side AI evidence. Active status does not certify every wider interaction. |
-| Skill perks active | 310/310 | 0 planned; current registry recount: generic220/220 and faction90/90. Deliberate teaching AI meetings now pass7/7; empty external Muster AI planning remains missing. These bounded gates do not establish blanket functional certification. Wider integration remains Phase2. |
+| Skill perks active | 310/310 | 0 planned; current registry recount: generic220/220 and faction90/90. Deliberate teaching meetings pass7/7, empty external Muster AI planning passes7/7 and ordinary-town Muster planning/entry passes6/6. These bounded gates do not establish blanket functional certification. Wider integration remains Phase2. |
 | Faction Skill ranks active | 27/27 | All nine faction rank foundations and ten-perk pools are active; wider faction integration and rendered/playable acceptance remain separate. |
 | Faction perks active | 90/90 | 0 planned. Principal paths have accepted focused evidence; this count does not certify all cross-faction, save/resume or rendered interactions. |
 | Canonical combat-spell identities registered | 67/67 | All canonical school-roster identities have principal paths. Accepted303 checkpoint plus later116-distinct-case spell/Sage evidence cover bounded repairs; identity coverage is not blanket spell-interaction, rendered or release certification. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
 | Adventure spells with ordinary acquisition | 5/5 | All five have validated acquisition, saved town state, client controls and minimum AI paths. Accepted303-distinct-case checkpoint includes Adventure71 evidence closing nearest-only Town Portal, Water Walk legal-land day ending and protected Fly/Dimension Door barriers. Dynamic invalidation, compound routes and rendered/playable acceptance remain Phase2. |
-| Orders registered | 8/8 | Config and `HeroCommand::isActive` agree. UP-146 adds native-verified independent simultaneous state/effects and action/AI/UI hooks. Second Wind active creature-spell output/readiness now passes9/9 with adjacent Morale9/9. Hold anchor-position marking remains required UI work; broader per-Order interactions remain Phase2. |
+| Orders registered | 8/8 | Config and `HeroCommand::isActive` agree. UP-146 adds native-verified independent simultaneous state/effects and action/AI/UI hooks. Second Wind active creature-spell output/readiness passes9/9 with adjacent Morale9/9. Hold anchor marking passes5/5 native cases plus actual paid footprints/movement rendering; expiry/control visuals remain unverified. Broader per-Order interactions remain Phase2. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; UP021 ordinary/radial transfer principal paths pass13 focused native cases. Broader and rendered/playable acceptance remain pending. |
 | Creature base-line Leadership requirements | 66/66 | Data coverage includes Wisp and Greater Wisp; individual creature mechanics and wider Leadership composition require separate evidence. |
 | Creature category forms | 128/128 | 52 Core,58 Elite,18 Champion are registered, including Wisp/Greater Wisp; this is category data coverage, not creature-ability certification. |

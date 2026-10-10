@@ -743,6 +743,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/NewHorizonsLearningMasterTeacherAITest.cpp
 		nullkiller2/NewHorizonsTeachingMeetingAITest.cpp
 		nullkiller2/NewHorizonsExternalMusterAITest.cpp
+		nullkiller2/NewHorizonsTownMusterAITest.cpp
 		nullkiller2/Helpers/TinyH3MDimensionDoorExplorationTest.cpp
 		nullkiller2/Pathfinding/AIPathNodePoolTest.cpp
 		nullkiller2/Pathfinding/ArmyLossTest.cpp

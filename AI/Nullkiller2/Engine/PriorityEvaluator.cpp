@@ -275,6 +275,8 @@ uint64_t RewardEvaluator::getArmyReward(
 	case Obj::HILL_FORT:
 		return aiNk->armyManager->calculateCreaturesUpgrade(
 			army, target, aiNk->cc->getResourceAmount(), hero).upgradeValue;
+	case Obj::TOWN:
+		return townMusterArmyReward(aiNk, hero, dynamic_cast<const CGTownInstance *>(target));
 	case Obj::CREATURE_GENERATOR1:
 	case Obj::CREATURE_GENERATOR2:
 	case Obj::CREATURE_GENERATOR3:
