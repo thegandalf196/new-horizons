@@ -52,6 +52,7 @@ set(test_SRCS
  		CVcmiTestConfig.cpp
  		JsonComparer.cpp
 		json/GeneratedImageRecipesTest.cpp
+		server/battles/NewHorizonsGuildSpellHelpTest.cpp
 
 		battle/AutocombatPreferencesTest.cpp
 		battle/AlternatingHeroActionStateTest.cpp

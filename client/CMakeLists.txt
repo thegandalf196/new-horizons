@@ -404,6 +404,7 @@ set(vcmiclientcommon_HEADERS
 	windows/NewHorizonsPerkHelp.h
 	windows/NewHorizonsPerkAvailability.h
 	windows/NewHorizonsBuildingVisitHelp.h
+	windows/NewHorizonsGuildSpellHelp.h
 	windows/NewHorizonsOrderBadgeHelp.h
 	windows/NewHorizonsCreatureAbilityHelp.h
 	windows/SpellPointPresentation.h

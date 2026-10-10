@@ -17,6 +17,7 @@
 #include "QuickRecruitmentWindow.h"
 #include "CCreatureWindow.h"
 #include "NewHorizonsBuildingVisitHelp.h"
+#include "NewHorizonsGuildSpellHelp.h"
 #include "NewHorizonsCreatureCategoryUI.h"
 
 #include "../CPlayerInterface.h"
@@ -91,6 +92,23 @@ static std::string currentBuildingDescription(const CBuilding & building)
 	const auto description = newHorizonsBuildingVisitHelp::lighthouseDescription(
 		building.getUniqueTypeID(), callback->getHeroDevelopmentRules(), callback->getHeroCapabilityRules());
 	return description.empty() ? building.getDescriptionTranslated() : description.toString(&GAME->translator());
+}
+
+static MetaString currentGuildSpellRequirement(ObjectInstanceID townId, const CSpell * spell)
+{
+	const auto & callback = GAME->interface()->cb;
+	const auto * town = callback->getTown(townId);
+	return newHorizonsGuildSpellHelp::acquisitionRequirement(callback->getMagicRules(),
+		spell, town ? town->getVisitingHero() : nullptr);
+}
+
+static std::string currentGuildSpellDescription(ObjectInstanceID townId, const CSpell * spell)
+{
+	auto description = spell->getDescriptionTranslated(0);
+	const auto requirement = currentGuildSpellRequirement(townId, spell);
+	if(!requirement.empty())
+		description += "\n\n" + requirement.toString(&GAME->translator());
+	return description;
 }
 
 static std::optional<newHorizonsCreatures::CreatureCategoryView> currentCreatureCategory(const CCreature * creature)
@@ -3694,7 +3712,23 @@ void CMageGuildScreen::updateSpells(ObjectInstanceID tID)
 		const auto title = LIBRARY->generaltexth->translate("new-horizons.sage.guildSpells");
 		sageSpellsButton = std::make_shared<CButton>(Point(650, 520),
 			AnimationPath::builtin("settingsWindow/button80"), CButton::tooltip(title),
-			[title, sageComponents](){ GAME->interface()->showInfoDialog(title, sageComponents); });
+			[title, townId = townId]()
+			{
+				const auto * currentTown = GAME->interface()->cb->getTown(townId);
+				if(!currentTown)
+					return;
+				std::vector<std::shared_ptr<CComponent>> components;
+				for(int level = 0; level < currentTown->mageGuildLevel(); ++level)
+					for(const auto spell : currentTown->newHorizonsSageRevealedSpells.at(level))
+					{
+						Component component(ComponentType::SPELL, spell);
+						const auto requirement = currentGuildSpellRequirement(townId, spell.toSpell());
+						if(!requirement.empty())
+							component.helpReason = requirement;
+						components.push_back(std::make_shared<CComponent>(component));
+					}
+				GAME->interface()->showInfoDialog(title, components);
+			});
 		sageSpellsButton->setTextOverlay(title, FONT_SMALL, Colors::WHITE);
 	}
 	redraw();
@@ -3977,18 +4011,24 @@ void CMageGuildScreen::Scroll::clickPressed(const Point & cursorPosition)
 		ENGINE->windows().pushWindow(temp);
 	}
 	else
-		GAME->interface()->showInfoDialog(spell->getDescriptionTranslated(0), std::make_shared<CComponent>(ComponentType::SPELL, spell->id));
+		GAME->interface()->showInfoDialog(currentGuildSpellDescription(townId, spell), std::make_shared<CComponent>(ComponentType::SPELL, spell->id));
 }
 
 void CMageGuildScreen::Scroll::showPopupWindow(const Point & cursorPosition)
 {
-	CRClickPopup::createAndPush(spell->getDescriptionTranslated(0), std::make_shared<CComponent>(ComponentType::SPELL, spell->id));
+	CRClickPopup::createAndPush(currentGuildSpellDescription(townId, spell), std::make_shared<CComponent>(ComponentType::SPELL, spell->id));
 }
 
 void CMageGuildScreen::Scroll::hover(bool on)
 {
 	if(on)
-		ENGINE->statusbar()->write(spell->getNameTranslated());
+	{
+		auto text = spell->getNameTranslated();
+		const auto requirement = currentGuildSpellRequirement(townId, spell);
+		if(!requirement.empty())
+			text += " - " + requirement.toString(&GAME->translator());
+		ENGINE->statusbar()->write(text);
+	}
 	else
 		ENGINE->statusbar()->clear();
 

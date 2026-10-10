@@ -2,6 +2,24 @@
 
 Updated: 2026-10-10
 
+Guild School-acquisition help: ordinary scroll click/right-click/hover and Sage
+overflow components now read the current town visitor, captured rules and actual
+learning status. Unknown Levels3/4/5 display required School rank; known spells
+are not presented as casting-locked. Missing-book/map-ban restrictions are not
+mislabelled, multiple Schools remain alternatives, and absent visitors receive
+generic requirements. Acquisition/research and artwork are unchanged. Actual
+native8/8 passes after correcting seven School-as-Skill fixture identifiers,
+with every original assertion retained. Initial3/8 failure evidence is retained;
+client/test builds and binary privacy pass. Native-size Guild/Sage interaction
+remains unobserved, and translated status-bar clipping is deferred to Phase2.
+
+Actual immutable installed-resource startup now has zero WARN/ERROR entries
+through ordinary Quit, without logging suppression. Mage and both Gargoyle
+selectors/right-click popups render at1280x800. Owned silent-display cleanup and
+complete snapshot hash parity pass. This clears the reported startup diagnostics,
+not combat/town/adventure portrait breadth or required Frozen feedback. The
+ordinary launcher still selects the earlier delivery; package bytes are unchanged.
+
 Current accepted focused follow-ups: neutral planner2/2 (v7) exercises an
 autonomously selected destination, authenticated movement, paid blocking join,
 Leadership-safe intake and negative affordability/inactive controls. Generated
