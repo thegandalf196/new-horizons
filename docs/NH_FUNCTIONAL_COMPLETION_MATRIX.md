@@ -2,6 +2,16 @@
 
 Updated: 2026-10-10
 
+New bounded ordinary Frozen evidence: natural Ice retaliation applies Freeze;
+native captures show persistent blue-grey tint, readable thin prism and cyan
+Initiative marker. Actual manual Shatter preview gives12–17 damage/no retaliation;
+the physical hit deals14, reports Shatter, and clears the surviving receiver's
+color/marker. Root and independent review confirm these scoped observations.
+Tooltip, scheduled activation forfeiture/thaw and shard-animation evidence remain
+open. The video ended at its filesize cap before Shatter; a misnamed popup
+capture contains no popup. Normal Quit was missed, while supervised cleanup,
+capture caps, ERROR0 and all807 immutable hashes pass. No Phase1 exit is claimed.
+
 Actual initialized empty-book presentation is now observed separately: Aine's
 worn physical Spellbook opens empty Combat and Adventure pages without a filter
 or a No Spellbook rejection. Root views the native card/pages; normal Quit,

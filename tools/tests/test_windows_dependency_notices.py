@@ -187,5 +187,43 @@ class DependencyNoticesTest(unittest.TestCase):
                          ["-cc", "core.sources:download_cache=" + str(source_cache)])
 
 
+class WindowsSourceArchiveTest(unittest.TestCase):
+    def test_install_required_nhart_docs_are_exported_but_private_docs_and_deploy_key_are_not(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / 'repository'
+            root.mkdir()
+            public_docs = {
+                'docs/NHART_FORMAT.md': b'Public NHART format fixture\n',
+                'docs/NHART_DELIVERY.md': b'Public NHART delivery fixture\n',
+            }
+            private_files = (
+                'docs/NH_USER_PRIORITY_QUEUE.md',
+                'docs/NH_FUNCTIONAL_COMPLETION_MATRIX.md',
+                'CI/deploy_rsa.enc',
+            )
+            for name, content in public_docs.items():
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(content)
+            for name in private_files:
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b'Excluded synthetic fixture\n')
+            subprocess.run(['git', 'init', '-q', str(root)], check=True,
+                           capture_output=True)
+            subprocess.run(['git', '-C', str(root), 'add', '.'], check=True,
+                           capture_output=True)
+            (root / 'untracked.txt').write_bytes(b'Not corresponding source\n')
+            revision = 'synthetic-clean-source'
+            output = Path(temporary) / 'source.tar.gz'
+            excluded = packager.source_archive(root, output, revision)
+            self.assertEqual(excluded, sorted(private_files))
+            prefix = 'new-horizons-' + revision + '/'
+            with tarfile.open(output) as archive:
+                self.assertEqual(set(archive.getnames()), {prefix + name for name in public_docs})
+                for name, content in public_docs.items():
+                    self.assertEqual(archive.extractfile(prefix + name).read(), content)
+
+
 if __name__ == "__main__":
     unittest.main()

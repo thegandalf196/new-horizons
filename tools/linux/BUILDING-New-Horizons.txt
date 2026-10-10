@@ -6,6 +6,26 @@ purchaser assets and profiles. No original game assets are needed to compile.
 A separate packaging/tooling source companion covers the package entry point and
 notices. Consult BUILD-IDENTITY.json for the actual binaries and companion hashes.
 
+For maintainers assembling a release from an exact checkout, first create the
+matching engine source companion with tools/ci/git_source_snapshot.py. Then:
+  python3 tools/ci/assemble_linux_candidate.py \
+    --install /path/to/new/staging-directory \
+    --engine-source /path/to/matching-engine-source.tar.gz \
+    --source-commit FULL_40_CHARACTER_COMMIT \
+    --source-repository . \
+    --manifest assets/new-horizons/runtime-art-manifest.json \
+    --output /path/to/new/raw-candidate
+
+This checks the installed resource bytes, NHART mounts and required notices
+against the source companion and creates BUILD-IDENTITY.json and SHA256SUMS.
+It does not compile, extract artwork, prove every compiled source input, or
+replace dependency/license audits and rendered acceptance. Current source
+companions contain both NHART notice documents; only older companions lacking
+them use the explicit source repository's exact-commit notice fallback.
+Use tools/ci/stage_linux_client.py --help for final staging with independently
+verified source, provider, header, ELF and build-provenance evidence. Neither
+assembler is permission to publish an unverified candidate.
+
 Build platform: Ubuntu 26.04 x86-64, ordinary GCC/G++ 15.2.0, C++20, CMake/Ninja.
 Install suitable build tools and the development providers recorded in the header
 inventory: Boost, SDL2/image/mixer/ttf, LuaJIT, oneTBB, minizip/zlib, squish and the

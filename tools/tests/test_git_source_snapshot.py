@@ -69,6 +69,39 @@ class GitSourceSnapshotTest(unittest.TestCase):
             self.assertEqual(archive.extractfile('new-horizons-' + revision + '/dependency/dep.cpp').read(), b'pinned dependency')
         self.assertEqual((child / 'dep.cpp').read_text(), 'later dependency')
 
+    def test_install_required_nhart_docs_use_pinned_bytes_while_private_docs_stay_excluded(self):
+        public_docs = {
+            'docs/NHART_FORMAT.md': b'Committed public NHART format fixture\n',
+            'docs/NHART_DELIVERY.md': b'Committed public NHART delivery fixture\n',
+        }
+        private_files = (
+            'docs/NH_USER_PRIORITY_QUEUE.md',
+            'docs/NH_FUNCTIONAL_COMPLETION_MATRIX.md',
+            'CI/deploy_rsa.enc',
+        )
+        for name, content in public_docs.items():
+            path = self.root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(content)
+        for name in private_files:
+            path = self.root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b'Excluded synthetic fixture\n')
+        revision = self.commit(self.root)
+        for name in public_docs:
+            (self.root / name).write_bytes(b'Uncommitted future documentation\n')
+        output = self.base / 'install-source.tar.gz'
+        result = source_snapshot(self.root, revision, output)
+        self.assertEqual(result['excluded'], sorted(private_files))
+        self.assertEqual(result['source_entries'], len(public_docs))
+        prefix = 'new-horizons-' + revision + '/'
+        with tarfile.open(output) as archive:
+            self.assertEqual(set(archive.getnames()), {prefix + name for name in public_docs})
+            for name, content in public_docs.items():
+                self.assertEqual(archive.extractfile(prefix + name).read(), content)
+        for name in public_docs:
+            self.assertEqual((self.root / name).read_bytes(), b'Uncommitted future documentation\n')
+
     def test_uninitialized_submodule_requires_pinned_bare_cache(self):
         dependency = self.base / 'external'
         dependency.mkdir()
