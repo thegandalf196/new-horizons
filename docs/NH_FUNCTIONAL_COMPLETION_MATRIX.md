@@ -2,6 +2,13 @@
 
 Updated: 2026-10-10
 
+Current phase: **Phase 2 — Stabilization and Integration**. The root adopted
+the [Phase 1 exit audit](NH_PHASE1_EXIT_AUDIT.md) after independent clause/evidence
+reconciliation and the repaired Frozen principal path. The source-pinned 0.85
+Windows/Linux preview is published; actual public player downloads match their
+accepted hashes. Earlier pending/withdrawn entries below remain historical.
+Counts are implementation accounting, not blanket integration certification.
+
 Runtime finding and repair: a separate ordinary probe verifies the full
 Frozen tooltip, natural primary proc, scheduled automatic NO_ACTION and normal
 Quit. It does not verify thaw. Independent review finds the same stack forfeits

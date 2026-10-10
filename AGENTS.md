@@ -397,7 +397,10 @@ integration, and phase transitions.
 Do not optimize for the goals of a later phase while the current phase remains
 incomplete.
 
-Current phase: PHASE 1 — IMPLEMENTATION COVERAGE
+Current phase: PHASE 2 — STABILIZATION AND INTEGRATION
+
+Phase 1 exit decision and evidence: `docs/NH_PHASE1_EXIT_AUDIT.md`.
+The published 0.85 experimental preview is not a Version 1.0 release candidate.
 
 The governing priorities are:
 
