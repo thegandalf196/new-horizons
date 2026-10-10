@@ -42,6 +42,8 @@ void BonusProxy::registerMethods(MethodRegistrar & R)
 		"silently absent while shooting, and the other way round.");
 	R.function<&BonusProxy::getDuration>("getDuration", {},
 		"Returns the list of duration flags currently set on the bonus.");
+	R.function<&BonusProxy::isTemporary>("isTemporary", {},
+		"True when the bonus has a nonzero lifetime and no permanent duration flag.");
 	R.function<&BonusProxy::getValType>("getValType", {},
 		"Returns how the value combines with other bonuses (additive, percent, base number, ...).");
 	R.function<&BonusProxy::getStacking>("getStacking", {},
@@ -72,6 +74,7 @@ BonusValueType  BonusProxy::getValType(const Bonus & b) { return b.valType; }
 std::string BonusProxy::getStacking(const Bonus & b)   { return b.stacking; }
 si16        BonusProxy::getTurnsRemain(const Bonus & b) { return b.turnsRemain; }
 bool        BonusProxy::isHidden(const Bonus & b)      { return b.hidden; }
+bool        BonusProxy::isTemporary(const Bonus & b)   { return b.duration != 0 && !(b.duration & BonusDuration::PERMANENT); }
 si32        BonusProxy::getParametersAsNumber(const Bonus & b) { return b.parameters ? b.parameters->toNumber() : 0; }
 
 std::vector<int32_t> BonusProxy::getParametersAsVector(const Bonus & b)

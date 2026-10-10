@@ -2,6 +2,92 @@
 
 Updated: 2026-10-10
 
+Accepted spell/Sage checkpoint:116 distinct focused cases pass across the
+unchanged production/resources: corrected native-v3 contributes71, native-v4
+Sage old-writer retry1/1 in4.978s, prior unaffected native-v2 contributes44.
+This is not one fresh116-case run. It establishes principal implementation
+paths for canonical Implosion/pull, unrestricted legal Teleport, temporary
+magical Dispel, ranked Purify count, Curse/Mass Curse duration, grounded-flyer
+Fire Wall and Sage minimum-AI visit admission, plus captured save guards.
+Both-target58651, binary privacy34567, seven schema checks, module parity,
+added-line portability and independent source review pass. Final test73a76e966 /
+library80fdd188 are verified. Spell identity totals stay67/67; this closes
+mechanic gaps, not new identities. Final Luck and75% Morale-extra repairs
+remain the next mapped Phase1 requirements. No rendered/platform or playable
+launcher promotion is claimed.
+
+Corrected spell/Sage native-v3:71/72 pass. Purify23/23, Implosion19/19 and
+Curse15/15 pass their focused principal/shared/compatibility gates. Sage14/15
+includes all five minimum-AI cases; its sole old-writer fixture still contains
+a newer Crisis Command profile and is assigned a test-only correction.
+All four actual XMLs have zero crashes/errors/skips/disabled cases. Previous
+Teleport8/8, Dispel6/6, Fire Wall14/14 and save guards16/16 remain separate
+unchanged-production evidence. This is not one fresh116-case run or rendered
+acceptance. Seven schema checks, module parity, both-target linkage, binary
+privacy and independent integrated-source review pass; publication remains
+pending the final fixture retry. Luck/Morale principal repairs remain private.
+
+Current spell/Sage native checkpoint:96/116 pass,20 fail, zero crashes/timeouts,
+errors/skips. Teleport8/8, Dispel6/6, Fire Wall14/14 and save-clause guards16/16
+pass their principal/shared/compatibility gates. Sage10/15 (all five new AI cases
+pass), Purify21/23, Implosion15/19 and Curse6/15 remain under bounded repair;
+these failed slices prevent a complete spell/AI coverage claim. Root opens all
+eight XMLs and confirms exact-pair/resource/isolation/cleanup evidence.
+The seven supporting schema checks also pass. This is focused native evidence,
+not rendered acceptance, a broad integration pass or a published playable build.
+
+Integrated spell/Sage source batch has independent union review clearance;
+the five optional captured clauses and append-only save epoch are registered.
+Dispel help distinguishes physical Poison and absent-policy legacy text.
+Compile54643 exposed two missing Implosion includes, corrected without changing
+mechanics. Ten-job incremental retry67698 is live;116 focused authored cases
+across eight gates await actual linkage/discovery/execution. No native coverage
+advance or new published commit is inferred from source review.
+
+Two further canonical principal gaps are confirmed: positive Luck currently
+adds its premium alongside other raising modifiers instead of multiplying final
+direct physical damage, and ordinary positive-Morale extra attacks currently
+lack the required75% physical-output scaling. Private workers own both repairs.
+They require explicit battle capture, precise activation provenance and legacy
+world absence compatibility; neither is deferred numerical tuning or covered
+by the completed Skill/perk registration counts. Phase1 remains open.
+
+Focused static checks: module regeneration/parity and canonical Implosion /
+Earthquake School assignments pass. Two selected historical content checks fail
+on stale expectations: the module hero list omits the already published fixed
+creature-specialty patch, and the common-spell inventory omits twelve already
+published new/explicit Mass identities. Both mismatched inputs are independently
+confirmed in published12fca2063, not introduced by this batch. Record their
+fixture reconciliation for Phase2; do not remove content to satisfy stale lists.
+
+Sage AI and Purify coefficient repairs are source-reviewed/imported, not yet
+native-accepted. Sage adds five authored cases; Purify's focused inventory is
+23 cases including new rank thresholds and strengthened paid/detached controls.
+Exact reverse-patch, module parity, whitespace and one focused roster check
+pass. These static gates do not close the outstanding mechanic/AI gaps.
+
+Detailed spell audit confirms missing clauses in Implosion, Teleport, ordinary
+Dispel, Purify and Fire Wall, plus the newly authored Curse/Mass Curse duration
+progression. Combat spell identity coverage remains67/67, but complete
+principal-mechanic coverage is unproven until these repairs pass. Independent
+workers own bounded repairs. School-rank benefits for fixed/binary spells require
+individual authored benefits or explicit justified exceptions; they are not
+silently covered by the registration count.
+
+Minimum-AI correction: Sage has a working human reward and strategic value
+score, but friendly-town visit admission/cluster filters omit Sage-only heroes.
+Its minimum-AI path is partial until a focused hero-specific eligibility repair
+passes. This is not deferred tactical quality. Perk principal coverage310/310
+does not imply every AI admission path is complete.
+
+Phase1 exit audit correction: Implosion's detailed current-Health damage and
+radius3 deterministic pull are not implemented by the published legacy generic
+damage binding. Its school/identity registration must not count as completed
+mechanics. Combat spell identity coverage remains67/67; complete principal
+mechanic coverage is at most66/67 pending the rest of the exit audit. A bounded
+implementation is assigned. The310/310 perk checkpoint is unaffected; no
+Phase1 transition is authorized by the earlier bounded no-gap conclusion.
+
 Accepted implementation checkpoint: all final eight perks have reviewed
 production/data/UI/minimum-AI paths and passing focused evidence. Coverage is
 31/31 Skills,93/93 ranks,310/310 perks (220 generic,90 faction),8/8 Orders,

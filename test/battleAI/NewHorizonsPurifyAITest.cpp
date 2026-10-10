@@ -60,6 +60,10 @@ JsonNode savedV2MagicRules()
 	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules.Struct().erase("spellcraftEfficiencyPercent");
+	// A historical v2 capture must not contain later v3-only policies.
+	for(const auto * key : {"protectedAdventureBarriers", "creatureAbilities", "morale"})
+		rules.Struct().erase(key);
+	rules["adventureSpells"]["core:waterWalk"].Struct().erase("requireLegalDayEnd");
 	for(auto & [name, spell] : rules["spells"].Struct())
 	{
 		(void)name;
@@ -68,6 +72,9 @@ JsonNode savedV2MagicRules()
 		spell.Struct().erase("earthquake");
 		spell.Struct().erase("structures");
 		spell.Struct().erase("restoration");
+		for(const auto * key : {"propagationLimit", "implosion", "ignoreInterveningBarriers",
+			"temporaryMagicalEffectsOnly", "schoolRankDurations", "burnGroundedFlyers"})
+			spell.Struct().erase(key);
 		if(spell.Struct().contains("variant"))
 		{
 			spell.Struct().erase("variant");
@@ -280,6 +287,9 @@ protected:
 TEST_F(NewHorizonsPurifyAITest, SelectsBestAreaAndProjectsOnlyChosenGroupsWithoutMutatingTheBattle)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareCaster(true));
+	// Advanced Light reaches two groups at SP100, below the unranked SP120 threshold.
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	ASSERT_EQ(newHorizonsPurify::maximumSpellEffectChoices(battle()->getMagicRules(), attackerSideHero, 100), 2);
 	removeInitialStacks();
 	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(1, 5), 1);
 	auto * firstAlly = addStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(5, 5), 5);
@@ -390,6 +400,8 @@ TEST_F(NewHorizonsPurifyAITest, SelectsBestAreaAndProjectsOnlyChosenGroupsWithou
 		ASSERT_TRUE(choiceCaps.contains(unitId));
 		EXPECT_LE(count, static_cast<size_t>(choiceCaps.at(unitId)));
 	}
+	EXPECT_EQ(selectedPerStack[static_cast<int32_t>(firstAlly->unitId())], 2u)
+		<< "Advanced School rank must let the useful AI plan cleanse two groups below SP120";
 
 	// Exercise the same detached unit projection used during AI ranking. The live
 	// state remains untouched until the authoritative action is submitted.
@@ -424,7 +436,9 @@ TEST_F(NewHorizonsPurifyAITest, SelectsBestAreaAndProjectsOnlyChosenGroupsWithou
 	EXPECT_TRUE(hasSpellEffect(firstAlly, SpellID::HASTE));
 	EXPECT_TRUE(newHorizonsPurify::hasPhysicalPoison(firstAlly));
 
+	const auto manaBefore = attackerSideHero->getManaAvailable();
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - 15);
 	for(const auto & [unitId, source] : action.spellPurifyChoices)
 	{
 		const auto * unit = battle()->battleGetUnitByID(static_cast<uint32_t>(unitId));

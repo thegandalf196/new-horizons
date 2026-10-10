@@ -38,6 +38,7 @@ public:
 	static BonusSource getSource(const Bonus & b);
 	static BonusLimitEffect getEffectRange(const Bonus & b);
 	static std::vector<BonusDuration::BonusDuration> getDuration(const Bonus & b);
+	static bool isTemporary(const Bonus & b);
 	static BonusValueType getValType(const Bonus & b);
 	static std::string getStacking(const Bonus & b);
 	static si16 getTurnsRemain(const Bonus & b);

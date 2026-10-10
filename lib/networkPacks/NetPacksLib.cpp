@@ -1123,6 +1123,12 @@ void LobbyStartGame::validateNewHorizonsWaterWalkDayEndSerialization(bool suppor
 		initializedGameState->validateNewHorizonsWaterWalkDayEndSerialization(supported);
 }
 
+void LobbyStartGame::validateCanonicalSpellClausesSerialization(bool supported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateCanonicalSpellClausesSerialization(supported);
+}
+
 void LobbyStartGame::validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const
 {
 	if(initializedGameState)

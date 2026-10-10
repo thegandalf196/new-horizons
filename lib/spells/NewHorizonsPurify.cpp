@@ -94,13 +94,21 @@ bool hasPurifierPerk(const CGHeroInstance * hero)
 	return hero && hero->hasActivePerk(std::string(LIGHT_MAGIC_SKILL), std::string(PURIFIER_PERK));
 }
 
-int maximumSpellEffectChoices(const int32_t spellPower)
+int maximumSpellEffectChoices(const int32_t spellPower, const int coefficientPercent)
 {
-	if(spellPower < 0)
-		throw std::invalid_argument("Purify Spell Power cannot be negative");
+	if(spellPower < 0 || coefficientPercent < 0 || coefficientPercent > 1000)
+		throw std::invalid_argument("Invalid Purify Spell Power or School coefficient");
 
-	return std::min(MAX_SPELL_EFFECT_CHOICES,
-		1 + spellPower / SPELL_POWER_FOR_SECOND_CHOICE);
+	const int64_t powerTerm = static_cast<int64_t>(spellPower) * coefficientPercent
+		/ (100 * SPELL_POWER_FOR_SECOND_CHOICE);
+	return 1 + static_cast<int>(std::min<int64_t>(MAX_SPELL_EFFECT_CHOICES - 1, powerTerm));
+}
+
+int maximumSpellEffectChoices(const JsonNode & magicRules, const CGHeroInstance * hero,
+	const int32_t spellPower)
+{
+	return maximumSpellEffectChoices(spellPower,
+		newHorizonsMagic::spellPowerCoefficientPercent(magicRules, hero, spellID()));
 }
 
 std::vector<SpellID> eligibleSpellEffectGroups(const JsonNode & magicRules, const battle::Unit * unit)
@@ -197,7 +205,8 @@ std::vector<EligibleStack> eligibleStacks(const CBattleInfoCallback & battle, co
 		|| (casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER))
 		return result;
 
-	const int cap = maximumSpellEffectChoices(spellPower);
+	const int cap = maximumSpellEffectChoices(state->getMagicRules(),
+		state->getSideHero(casterSide), spellPower);
 	for(const auto * unit : battle.battleGetAllUnits(false))
 	{
 		if(!unit || !unit->alive() || unit->isGhost()

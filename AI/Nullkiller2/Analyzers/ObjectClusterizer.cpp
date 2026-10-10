@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "../../../lib/mapObjects/NewHorizonsAcademicStudy.h"
 #include "../../../lib/mapObjects/NewHorizonsRecruitersContacts.h"
+#include "../../../lib/mapObjects/NewHorizonsSage.h"
 #include "../../../lib/mapObjects/CGDwelling.h"
 #include "../../../lib/entities/creature/NewHorizonsMusterRules.h"
 #include "../../../lib/callback/Calendar.h"
@@ -308,6 +309,13 @@ bool ObjectClusterizer::shouldVisitObject(const CGObjectInstance * obj) const
 			return town && hero->getOwner() == aiNk->playerID
 				&& newHorizonsLearning::academicStudyExperience(*hero, *town) > 0;
 		});
+	const bool sageVisit = obj->ID == Obj::TOWN
+		&& std::ranges::any_of(heroes, [this, obj](const CGHeroInstance * hero)
+		{
+			const auto * town = dynamic_cast<const CGTownInstance *>(obj);
+			return town && hero->getOwner() == aiNk->playerID
+				&& newHorizonsSage::hasVisitReward(*hero, *town);
+		});
 	const bool prospectorVisit = (obj->ID == Obj::MINE || obj->ID == Obj::ABANDONED_MINE)
 		&& obj->getOwner() == aiNk->playerID
 		&& std::ranges::any_of(heroes, [this, obj](const CGHeroInstance * hero)
@@ -324,7 +332,7 @@ bool ObjectClusterizer::shouldVisitObject(const CGObjectInstance * obj) const
 				&& newHorizonsRecruitment::recruitersContactsAward(*hero, *dwelling, week)
 				&& shouldVisit(aiNk, hero, obj);
 		});
-	if(!academicVisit && !prospectorVisit && !contactsVisit && ((obj->ID != Obj::CREATURE_GENERATOR1 && vstd::contains(aiNk->memory->alreadyVisited, obj->id))
+	if(!academicVisit && !sageVisit && !prospectorVisit && !contactsVisit && ((obj->ID != Obj::CREATURE_GENERATOR1 && vstd::contains(aiNk->memory->alreadyVisited, obj->id))
 		|| obj->wasVisited(aiNk->playerID)))
 	{
 		return false;
@@ -332,7 +340,7 @@ bool ObjectClusterizer::shouldVisitObject(const CGObjectInstance * obj) const
 
 	auto playerRelations = aiNk->cc->getPlayerRelations(aiNk->playerID, obj->tempOwner);
 
-	if(!academicVisit && !prospectorVisit && !contactsVisit && playerRelations != PlayerRelations::ENEMIES && !isWeeklyRevisitable(aiNk->playerID, obj))
+	if(!academicVisit && !sageVisit && !prospectorVisit && !contactsVisit && playerRelations != PlayerRelations::ENEMIES && !isWeeklyRevisitable(aiNk->playerID, obj))
 	{
 		return false;
 	}

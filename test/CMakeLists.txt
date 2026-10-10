@@ -382,6 +382,9 @@ set(test_SRCS
 		server/battles/NewHorizonsBastionTest.cpp
 		server/battles/NewHorizonsPhantomArmyTest.cpp
 		server/battles/NewHorizonsCureTest.cpp
+		server/battles/NewHorizonsCanonicalSpellClausesSerializationTest.cpp
+		server/battles/NewHorizonsImplosionTest.cpp
+		server/battles/NewHorizonsTemporaryMagicDispelTest.cpp
 		server/battles/NewHorizonsSorrowTest.cpp
 		server/battles/NewHorizonsMassShadowTest.cpp
 		server/battles/NewHorizonsMassBlessTest.cpp
@@ -639,6 +642,8 @@ if(ENABLE_BATTLE_AI)
 		battleAI/DamageReductionControlTest.cpp
 		battleAI/FocusFireAITest.cpp
 		battleAI/NewHorizonsMagicAITest.cpp
+		battleAI/NewHorizonsImplosionAITest.cpp
+		server/battles/NewHorizonsTeleportFreedomTest.cpp
 		battleAI/NewHorizonsForgetfulnessAITest.cpp
 		battleAI/NewHorizonsHolyWrathAITest.cpp
 		battleAI/NewHorizonsHandOfFateAITest.cpp
@@ -696,6 +701,7 @@ if(ENABLE_NULLKILLER2_AI)
 		server/NewHorizonsMerchantPrinceTest.cpp
 		nullkiller2/NewHorizonsProspectorAITest.cpp
 		nullkiller2/NewHorizonsAcademicStudyAITest.cpp
+		nullkiller2/NewHorizonsSageAITest.cpp
 		nullkiller2/NewHorizonsRecruitersContactsAITest.cpp
 		server/queries/NewHorizonsHistorianRewardTest.cpp
 		server/queries/NewHorizonsArchivistTest.cpp

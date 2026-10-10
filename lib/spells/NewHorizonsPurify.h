@@ -52,8 +52,12 @@ DLL_LINKAGE SpellID physicalPoisonChoiceID();
 DLL_LINKAGE bool enabled(const JsonNode & magicRules, SpellID spell);
 /// True only when the hero has the registered Purifier perk.
 DLL_LINKAGE bool hasPurifierPerk(const CGHeroInstance * hero);
-/// Per-stack choice count: 1 below 120 Spell Power, 2 at 120 or above.
-DLL_LINKAGE int maximumSpellEffectChoices(int32_t spellPower);
+/// Scale only the SP/120 term before flooring; preserve the fixed one and cap two.
+/// The default coefficient retains the ordinary/legacy threshold.
+DLL_LINKAGE int maximumSpellEffectChoices(int32_t spellPower, int coefficientPercent = 100);
+/// Uses captured School-rank rules, never installed defaults or Spellcraft/perk coefficients.
+DLL_LINKAGE int maximumSpellEffectChoices(const JsonNode & magicRules,
+	const CGHeroInstance * hero, int32_t spellPower);
 /// Enumerates sorted, unique source spell IDs for eligible temporary negative combat spell groups.
 DLL_LINKAGE std::vector<SpellID> eligibleSpellEffectGroups(const JsonNode & magicRules,
 	const battle::Unit * unit);

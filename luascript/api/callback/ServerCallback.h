@@ -23,7 +23,7 @@
 struct CObstacleInstance;
 
 namespace battle { class Unit; class UnitInfo; class Destination; }
-namespace spells { class Spell; }
+namespace spells { class Spell; class Mechanics; }
 
 namespace scripting::api
 {
@@ -47,6 +47,8 @@ public:
 	static const battle::Unit * addUnit(ServerCallback & object, const IBattleInfoCallback & battle, const battle::UnitInfo & info);
 	static void removeUnit(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit & unit);
 	static void removeObstacle(ServerCallback & object, const IBattleInfoCallback & battle, std::shared_ptr<const CObstacleInstance> obstacle);
+	static void applyImplosionPull(ServerCallback & object, const IBattleInfoCallback & battle,
+		const spells::Mechanics & mechanics, uint32_t primaryID, BattleHex origin);
 	static void moveUnit(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit & unit, BattleHex destination, bool isTeleport);
 	static void appendLog(ServerCallback & object, const IBattleInfoCallback & battle, const LuaMetaString & config);
 	static bool describeChanges(ServerCallback & object);

@@ -534,6 +534,9 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			newHorizonsMagic::validateCanonicalSpellClausesSerialization(magicRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
 		validateCrisisCommandSerialization(h);
 		if(h.saving)
 			validateSeizeInitiativeSerialization(h);
@@ -908,6 +911,9 @@ public:
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGIC))
 		{
 			h & magicRules;
+			if(!h.saving)
+				newHorizonsMagic::validateCanonicalSpellClausesSerialization(magicRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
 			if(!h.saving)
 				validateProtectedAdventureMobilitySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
 			if(!h.saving)

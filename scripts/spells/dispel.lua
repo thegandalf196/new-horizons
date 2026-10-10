@@ -35,6 +35,10 @@ function Script:getDispelableBonuses(mechanics, unit)
 		if not sourceSpell then return false end
 		if sourceSpell:isPersistent() then return false end
 		if sourceSpell:isAdventure()  then return false end
+		if mechanics:usesNewHorizonsTemporaryMagicDispel()
+			and (not sourceSpell:isMagical() or not bonus:isTemporary()) then
+			return false
+		end
 		if selective then
 			if friendly and sourceSpell:isNegative() then return true end
 			if not friendly and sourceSpell:isPositive() then return true end

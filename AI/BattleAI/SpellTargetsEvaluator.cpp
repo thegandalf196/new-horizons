@@ -25,6 +25,7 @@
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/effects/BattleForm.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsFireWall.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/spells/NewHorizonsVengefulVines.h"
@@ -605,20 +606,20 @@ struct LandMineHexScore
 	std::vector<uint32_t> adjacentEnemies;
 };
 
-bool isGroundHostile(const Mechanics * spellMechanics, const battle::Unit * unit)
+bool isGroundHostile(const Mechanics * spellMechanics, const battle::Unit * unit, bool includeFlyers = false)
 {
 	if(!unit || !unit->alive() || unit->isGhost() || !unit->isValidTarget() || unit->isTurret())
 		return false;
-	if(unit->hasBonusOfType(BonusType::FLYING))
+	if(!includeFlyers && unit->hasBonusOfType(BonusType::FLYING))
 		return false;
 	return spellMechanics->battle()->battleGetOwner(unit) != spellMechanics->getCasterColor();
 }
 
-bool isGroundAlly(const Mechanics * spellMechanics, const battle::Unit * unit)
+bool isGroundAlly(const Mechanics * spellMechanics, const battle::Unit * unit, bool includeFlyers = false)
 {
 	if(!unit || !unit->alive() || unit->isGhost() || !unit->isValidTarget() || unit->isTurret())
 		return false;
-	if(unit->hasBonusOfType(BonusType::FLYING))
+	if(!includeFlyers && unit->hasBonusOfType(BonusType::FLYING))
 		return false;
 	return spellMechanics->battle()->battleGetOwner(unit) == spellMechanics->getCasterColor();
 }
@@ -629,9 +630,9 @@ uint64_t landMineDamagePotential(const Mechanics * spellMechanics, const battle:
 	return std::min<uint64_t>(static_cast<uint64_t>(adjustedDamage), enemy->getAvailableHealth());
 }
 
-bool isLandMineAffectable(const Mechanics * spellMechanics, const battle::Unit * enemy)
+bool isLandMineAffectable(const Mechanics * spellMechanics, const battle::Unit * enemy, bool includeFlyers = false)
 {
-	if(!isGroundHostile(spellMechanics, enemy)
+	if(!isGroundHostile(spellMechanics, enemy, includeFlyers)
 		|| !spellMechanics->isReceptive(enemy)
 		|| enemy->hasImmunity(spellMechanics->getSpellId())
 		|| enemy->hasAbsoluteImmunity(spellMechanics->getSpellId())
@@ -642,20 +643,20 @@ bool isLandMineAffectable(const Mechanics * spellMechanics, const battle::Unit *
 	return resistance < 100 && landMineDamagePotential(spellMechanics, enemy) > 0;
 }
 
-std::vector<const battle::Unit *> landMineEnemies(const Mechanics * spellMechanics)
+std::vector<const battle::Unit *> landMineEnemies(const Mechanics * spellMechanics, bool includeFlyers = false)
 {
 	std::vector<const battle::Unit *> result;
 	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
-		if(isLandMineAffectable(spellMechanics, unit))
+		if(isLandMineAffectable(spellMechanics, unit, includeFlyers))
 			result.push_back(unit);
 	return result;
 }
 
-std::vector<const battle::Unit *> landMineAllies(const Mechanics * spellMechanics)
+std::vector<const battle::Unit *> landMineAllies(const Mechanics * spellMechanics, bool includeFlyers = false)
 {
 	std::vector<const battle::Unit *> result;
 	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
-		if(isGroundAlly(spellMechanics, unit))
+		if(isGroundAlly(spellMechanics, unit, includeFlyers))
 			result.push_back(unit);
 	return result;
 }
@@ -2054,8 +2055,12 @@ float SpellTargetEvaluator::fireWallPlacementValue(const Mechanics * spellMechan
 			const_cast<CBattleInfoCallback *>(battle), [](CBattleInfoCallback *) {});
 	}
 
-	const auto enemies = landMineEnemies(spellMechanics);
-	const auto allies = landMineAllies(spellMechanics);
+	// Flying stacks can choose an unsafe landing or start a later activation
+	// in the wall. This policy must not admit them into Land Mine valuation.
+	const bool includeFlyers = newHorizonsFireWall::groundedFlyersBurn(
+		spellMechanics->battle()->getBattle()->getMagicRules());
+	const auto enemies = landMineEnemies(spellMechanics, includeFlyers);
+	const auto allies = landMineAllies(spellMechanics, includeFlyers);
 	if(enemies.empty())
 		return 0.0f;
 

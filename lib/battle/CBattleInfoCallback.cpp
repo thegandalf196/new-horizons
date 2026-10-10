@@ -45,6 +45,7 @@
 #include "../scripting/ScriptService.h"
 #include "../spells/ObstacleCasterProxy.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../spells/NewHorizonsFireWall.h"
 #include "../spells/NewHorizonsSorcery.h"
 #include "../spells/ISpellMechanics.h"
 #include "../spells/Problem.h"
@@ -4489,11 +4490,14 @@ bool CBattleInfoCallback::handleObstacleTriggersForUnit(SpellCastEnvironment & s
 bool CBattleInfoCallback::handleObstacleTriggersForUnitAtPositions(SpellCastEnvironment & spellEnv,
 	const battle::Unit & unit, const BattleHexArray & positions, const BattleHexArray & passed) const
 {
-	return handleObstacleTriggersForUnitWithObstacles(spellEnv, unit, getAffectedObstaclesAtPositions(&unit, positions, passed));
+	// Crossed footprints are transit positions, not committed landings. The
+	// normal flying movement path calls the grounded helper only at its end.
+	return handleObstacleTriggersForUnitWithObstacles(spellEnv, unit,
+		getAffectedObstaclesAtPositions(&unit, positions, passed), unit.hasBonusOfType(BonusType::FLYING));
 }
 
 bool CBattleInfoCallback::handleObstacleTriggersForUnitWithObstacles(SpellCastEnvironment & spellEnv,
-	const battle::Unit & unit, const std::vector<std::shared_ptr<const CObstacleInstance>> & obstacles) const
+	const battle::Unit & unit, const std::vector<std::shared_ptr<const CObstacleInstance>> & obstacles, bool airborneTransit) const
 {
 	if(!unit.alive() || unit.isTimeStopped())
 		return false;
@@ -4519,7 +4523,9 @@ bool CBattleInfoCallback::handleObstacleTriggersForUnitWithObstacles(SpellCastEn
 				&& (unit.hasBonusOfType(BonusType::FLYING)
 					|| battleGetOwner(&unit) == getBattle()->getSidePlayer(spellObstacle->casterSide)))
 				continue;
-			if(canonicalFireWall && (unit.hasBonusOfType(BonusType::FLYING) || alreadyTriggeredThisActivation))
+			const bool flyingImmune = unit.hasBonusOfType(BonusType::FLYING)
+				&& (airborneTransit || !newHorizonsFireWall::groundedFlyersBurn(getBattle()->getMagicRules()));
+			if(canonicalFireWall && (flyingImmune || alreadyTriggeredThisActivation))
 				continue;
 
 			auto revealObstacles = [&](const SpellCreatedObstacle & spellObstacle) -> void

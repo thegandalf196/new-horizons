@@ -79,4 +79,11 @@ bool learningSelected(const CGHeroInstance & hero)
 {
 	return hero.hasActivePerk("new-horizons:learning", "new-horizons:learning.sage");
 }
+
+bool hasVisitReward(const CGHeroInstance & hero, const CGTownInstance & town)
+{
+	return firstGuildVisit(hero, town)
+		&& (wisdomReveal(hero, town).has_value()
+			|| (learningSelected(hero) && selectSpell(hero, town).has_value()));
+}
 }

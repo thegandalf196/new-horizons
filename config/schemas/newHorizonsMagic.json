@@ -177,8 +177,7 @@
 							"maximum": 1000
 						}
 					}
-				},
-				"morale": {"$ref": "#/definitions/morale"}
+				}
 			},
 			"dependencies": {
 				"schemaVersion": [

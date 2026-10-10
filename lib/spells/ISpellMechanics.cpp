@@ -11,6 +11,7 @@
 #include "StdInc.h"
 #include "ISpellMechanics.h"
 #include "NewHorizonsMagic.h"
+#include "NewHorizonsImplosion.h"
 #include "NewHorizonsSorcery.h"
 #include "NewHorizonsCrossSchoolFormula.h"
 #include "NewHorizonsElementalTerrain.h"
@@ -1767,6 +1768,10 @@ int64_t BaseMechanics::adjustEffectValueImpl(const battle::Unit * target, const 
 	if(target && battleState)
 	{
 		const auto & magicRules = battleState->getMagicRules();
+		if(const auto implosion = newHorizonsImplosion::rulesFor(magicRules, owner->getId()))
+			rawDamage = newHorizonsImplosion::damage(*implosion, target->getAvailableHealth(),
+				std::max(0, getEffectPower()), getSpellPowerCoefficientBasisPoints(),
+				getWarcastingBonusPercent(), getEmpowerSpellBonusPercent());
 		if(const auto missingHealthDamage = newHorizonsMagic::soulReaperMissingHealthDamage(
 			magicRules, owner->getId(), target->getShadowGiftMaximumHealth(), target->getAvailableHealth()))
 		{
@@ -2007,6 +2012,12 @@ bool BaseMechanics::usesNewHorizonsDispelRules() const
 {
 	return owner->getId() == SpellID::DISPEL && cb && cb->getBattle()
 		&& newHorizonsMagic::dispelUsesNewHorizonsRules(cb->getBattle()->getMagicRules());
+}
+
+bool BaseMechanics::usesNewHorizonsTemporaryMagicDispel() const
+{
+	return owner->getId() == SpellID::DISPEL && cb && cb->getBattle()
+		&& newHorizonsMagic::dispelRemovesTemporaryMagicalEffectsOnly(cb->getBattle()->getMagicRules());
 }
 
 SpellID BaseMechanics::getCureAffliction() const

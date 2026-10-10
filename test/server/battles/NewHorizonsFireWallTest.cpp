@@ -12,6 +12,7 @@
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/spells/ObstacleCasterProxy.h"
+#include "../../../lib/spells/NewHorizonsFireWall.h"
 
 #include <algorithm>
 #include <stdexcept>
@@ -42,11 +43,14 @@ bool setPerkActive(JsonNode & rules, std::string_view skillId, std::string_view 
 class NewHorizonsFireWallRuntimeTest : public HeroCommandFixture
 {
 protected:
+	bool omitGroundedFlyerPolicy = false;
 	void mapLoaded(CMap * map) override
 	{
 		HeroCommandFixture::mapLoaded(map);
-		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		JsonNode magicRules(JsonPath::builtin("config/newHorizonsMagic"));
+		if(omitGroundedFlyerPolicy)
+			magicRules["spells"]["core:fireWall"].Struct().erase("burnGroundedFlyers");
+		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, testHeroRules());
 		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
 		if(!setPerkActive(perkRules, havocMagicSkillId, pyromancerPerkId)
@@ -151,6 +155,21 @@ TEST(NewHorizonsFireWallTest, TriggerProxyUsesTheCastTimeSnapshotExactly)
 	EXPECT_EQ(proxy.getEffectValue(nullptr), 83);
 }
 
+TEST(NewHorizonsFireWallTest, GroundedFlyerPolicyIsCapturedBooleanAndAbsentOrFalseRetainsLegacy)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	ASSERT_TRUE(newHorizonsFireWall::groundedFlyersBurn(rules));
+	rules["spells"]["core:fireWall"]["burnGroundedFlyers"].Bool() = false;
+	EXPECT_FALSE(newHorizonsFireWall::groundedFlyersBurn(rules));
+	rules["spells"]["core:fireWall"].Struct().erase("burnGroundedFlyers");
+	EXPECT_FALSE(newHorizonsFireWall::groundedFlyersBurn(rules));
+	rules["spells"]["core:fireWall"]["burnGroundedFlyers"].String() = "true";
+	EXPECT_FALSE(newHorizonsFireWall::groundedFlyersBurn(rules));
+	rules["spells"]["core:fireWall"]["burnGroundedFlyers"].Bool() = true;
+	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
+	EXPECT_FALSE(newHorizonsFireWall::groundedFlyersBurn(rules));
+}
+
 TEST_F(NewHorizonsFireWallRuntimeTest, ServerBuildsThreeHexLineAndRejectsInvalidPlacements)
 {
 	prepareFireWall();
@@ -222,7 +241,7 @@ TEST_F(NewHorizonsFireWallRuntimeTest, ServerRejectsMissingDirectionBoundaryAndO
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 }
 
-TEST_F(NewHorizonsFireWallRuntimeTest, GroundFriendAndFoeTriggerOncePerActivationAndFlyingUnitsDoNot)
+TEST_F(NewHorizonsFireWallRuntimeTest, GroundFriendAndFoeTriggerOnceAndFlyersOnlyBurnWhenGrounded)
 {
 	prepareFireWall();
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
@@ -258,9 +277,89 @@ TEST_F(NewHorizonsFireWallRuntimeTest, GroundFriendAndFoeTriggerOncePerActivatio
 	flying->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::FLYING,
 		BonusSource::OTHER, 0, BonusSourceID()));
 	const auto flyingBefore = flying->getAvailableHealth();
-	ASSERT_TRUE(battle()->handleObstacleTriggersForUnit(*gameHandler->spellEnv, *flying));
+	ASSERT_TRUE(newHorizonsFireWall::groundedFlyersBurn(battle()->getMagicRules()));
+	// Airborne crossed-footprint callbacks do not burn or spend the wall's
+	// activation receipt. Landing/activation uses the grounded callback below.
+	ASSERT_TRUE(battle()->handleObstacleTriggersForUnitAtPositions(*gameHandler->spellEnv, *flying, {BattleHex(72)}));
 	EXPECT_EQ(flying->getAvailableHealth(), flyingBefore);
+	const auto * currentWall = dynamic_cast<const SpellCreatedObstacle *>(battle()->obstacles.front().get());
+	ASSERT_NE(currentWall, nullptr);
+	EXPECT_NE(currentWall->lastTriggerUnit, static_cast<si32>(flying->unitId()));
+	ASSERT_TRUE(battle()->handleObstacleTriggersForUnit(*gameHandler->spellEnv, *flying));
+	EXPECT_EQ(flyingBefore - flying->getAvailableHealth(), 83);
+	const auto afterLanding = flying->getAvailableHealth();
+	ASSERT_TRUE(battle()->handleObstacleTriggersForUnit(*gameHandler->spellEnv, *flying));
+	EXPECT_EQ(flying->getAvailableHealth(), afterLanding);
 	EXPECT_EQ(battle()->obstacles.size(), 1u);
+}
+
+TEST_F(NewHorizonsFireWallRuntimeTest, FlyingMovementCrossesFlameWithoutDamageButLandingBurns)
+{
+	prepareFireWall();
+	ASSERT_TRUE(newHorizonsFireWall::groundedFlyersBurn(battle()->getMagicRules()));
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		fireWallAction(BattleHex(70), BattleHex::RIGHT)));
+	auto * flying = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(69), 100);
+	flying->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::FLYING,
+		BonusSource::OTHER, 0, BonusSourceID()));
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = flying->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	const auto health = flying->getAvailableHealth();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeMove(flying, BattleHex(73))));
+	EXPECT_EQ(flying->getPosition(), BattleHex(73));
+	EXPECT_EQ(flying->getAvailableHealth(), health);
+	// An independent fresh flyer now lands instead of crossing the flame.
+	auto * landing = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(69), 100);
+	landing->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::FLYING,
+		BonusSource::OTHER, 0, BonusSourceID()));
+	activate.stack = landing->unitId();
+	gameHandler->sendAndApply(activate);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeMove(landing, BattleHex(72))));
+	EXPECT_EQ(landing->getPosition(), BattleHex(72));
+	EXPECT_EQ(health - landing->getAvailableHealth(), 83);
+}
+
+TEST_F(NewHorizonsFireWallRuntimeTest, ActualNormalActivationBurnsGroundedFlyerOnce)
+{
+	prepareFireWall();
+	ASSERT_TRUE(newHorizonsFireWall::groundedFlyersBurn(battle()->getMagicRules()));
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		fireWallAction(BattleHex(70), BattleHex::RIGHT)));
+	auto * flying = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(70), 100);
+	flying->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::FLYING,
+		BonusSource::OTHER, 0, BonusSourceID()));
+	flying->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACKS_INITIATIVE_FLAT,
+		BonusSource::OTHER, 1000, BonusSourceID()));
+	// Defer the new stack to the next round, where the real flow activates it.
+	flying->movedThisRound = true;
+	const auto health = flying->getAvailableHealth();
+	endRound();
+	ASSERT_EQ(battle()->battleActiveUnit()->unitId(), flying->unitId());
+	EXPECT_EQ(health - flying->getAvailableHealth(), 83);
+	const auto afterActivation = flying->getAvailableHealth();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeDefend(flying)));
+	EXPECT_EQ(flying->getAvailableHealth(), afterActivation);
+}
+
+TEST_F(NewHorizonsFireWallRuntimeTest, CapturedAbsentPolicyRetainsGroundedFlyerImmunity)
+{
+	omitGroundedFlyerPolicy = true;
+	prepareFireWall();
+	ASSERT_FALSE(newHorizonsFireWall::groundedFlyersBurn(battle()->getMagicRules()));
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		fireWallAction(BattleHex(70), BattleHex::RIGHT)));
+	auto * flying = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(70), 100);
+	flying->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::FLYING,
+		BonusSource::OTHER, 0, BonusSourceID()));
+	const auto health = flying->getAvailableHealth();
+	ASSERT_TRUE(battle()->handleObstacleTriggersForUnit(*gameHandler->spellEnv, *flying));
+	EXPECT_EQ(flying->getAvailableHealth(), health);
 }
 
 TEST_F(NewHorizonsFireWallRuntimeTest, SpellContinuationsKeepTheSameActivationToken)

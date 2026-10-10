@@ -68,6 +68,10 @@ protected:
 			rules["rulesetVersion"].Integer() = magicVersion;
 			rules.Struct().erase("schoolRankPowerCoefficientPercent");
 			rules.Struct().erase("spellcraftEfficiencyPercent");
+			// A historical v2 capture must not contain later v3-only policies.
+			for(const auto * key : {"protectedAdventureBarriers", "creatureAbilities", "morale"})
+				rules.Struct().erase(key);
+			rules["adventureSpells"]["core:waterWalk"].Struct().erase("requireLegalDayEnd");
 			rules["spells"]["core:quicksand"].Struct().erase("selectedPlacement");
 			rules["spells"]["core:earthquake"].Struct().erase("earthquake");
 			for(auto & [identity, row] : rules["spells"].Struct())
@@ -76,6 +80,9 @@ protected:
 				row.Struct().erase("heroAccess");
 				row.Struct().erase("restoration");
 				row.Struct().erase("structures");
+				for(const auto * key : {"selectedPlacement", "earthquake", "propagationLimit", "implosion",
+					"ignoreInterveningBarriers", "temporaryMagicalEffectsOnly", "schoolRankDurations", "burnGroundedFlyers"})
+					row.Struct().erase(key);
 				if(row.Struct().contains("variant"))
 				{
 					row.Struct().erase("variant");
@@ -269,6 +276,76 @@ TEST_F(NewHorizonsPurifyTest, SavedV2RulesDoNotEnablePurify)
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), 100);
 	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
 }
+
+TEST(NewHorizonsPurifyHelpersTest, SchoolCoefficientFloorsOnlyThePowerTermAndPreservesCap)
+{
+	for(const auto & [coefficient, threshold] : std::array<std::pair<int, int>, 4>{{
+		{100, 120}, {115, 105}, {130, 93}, {145, 83}}})
+	{
+		SCOPED_TRACE(coefficient);
+		EXPECT_EQ(newHorizonsPurify::maximumSpellEffectChoices(threshold - 1, coefficient), 1);
+		EXPECT_EQ(newHorizonsPurify::maximumSpellEffectChoices(threshold, coefficient), 2);
+		EXPECT_EQ(newHorizonsPurify::maximumSpellEffectChoices(0, coefficient), 1);
+		EXPECT_EQ(newHorizonsPurify::maximumSpellEffectChoices(INT32_MAX, coefficient), 2);
+	}
+	EXPECT_THROW(newHorizonsPurify::maximumSpellEffectChoices(-1), std::invalid_argument);
+	EXPECT_THROW(newHorizonsPurify::maximumSpellEffectChoices(100, -1), std::invalid_argument);
+	EXPECT_THROW(newHorizonsPurify::maximumSpellEffectChoices(100, 1001), std::invalid_argument);
+}
+
+TEST_F(NewHorizonsPurifyTest, CapturedOlderRulesKeepUnmodifiedCountDespiteCurrentExpertHero)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(100));
+	const auto light = SecondarySkill(SecondarySkill::decode(lightMagicSkill));
+	attackerSideHero->setSecSkillLevel(light, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(newHorizonsPurify::maximumSpellEffectChoices(battle()->getMagicRules(), attackerSideHero, 100), 2);
+	for(const int version : {1, 2})
+	{
+		JsonNode historical = battle()->getMagicRules();
+		historical["rulesetVersion"].Integer() = version;
+		historical.Struct().erase("schoolRankPowerCoefficientPercent");
+		EXPECT_EQ(newHorizonsPurify::maximumSpellEffectChoices(historical, attackerSideHero, 100), 1);
+		EXPECT_EQ(newHorizonsPurify::maximumSpellEffectChoices(historical, attackerSideHero, 120), 2);
+	}
+	attackerSideHero->setSecSkillLevel(light, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(newHorizonsPurify::maximumSpellEffectChoices(battle()->getMagicRules(), attackerSideHero, 100), 1);
+}
+
+class NewHorizonsPurifySchoolRankTest : public NewHorizonsPurifyTest,
+	public ::testing::WithParamInterface<std::pair<int, int>>
+{};
+
+TEST_P(NewHorizonsPurifySchoolRankTest, PaidTwoGroupCleanseUsesCapturedRankAndRejectsBelowThreshold)
+{
+	const auto [rank, threshold] = GetParam();
+	ASSERT_NO_FATAL_FAILURE(prepare(threshold - 1));
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(lightMagicSkill)),
+		rank, ChangeValueMode::ABSOLUTE);
+	addSourceGroup(friendly, SpellID(SpellID::CURSE));
+	addSourceGroup(friendly, SpellID(SpellID::SLOW));
+	const std::vector<std::pair<int32_t, SpellID>> choices{{static_cast<int32_t>(friendly->unitId()), SpellID(SpellID::CURSE)},
+		{static_cast<int32_t>(friendly->unitId()), SpellID(SpellID::SLOW)}};
+	const auto mana = attackerSideHero->getManaAvailable();
+	EXPECT_FALSE(cast(choices));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
+	EXPECT_TRUE(hasEffect(friendly, SpellID(SpellID::CURSE)));
+	EXPECT_TRUE(hasEffect(friendly, SpellID(SpellID::SLOW)));
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, threshold, ChangeValueMode::ABSOLUTE);
+	const auto preview = newHorizonsPurify::eligibleStacks(*battle(), BattleSide::ATTACKER,
+		BattleHex(3, 5), threshold, false);
+	ASSERT_EQ(preview.size(), 1u);
+	EXPECT_EQ(preview.front().maximumSpellEffectChoices, 2);
+	ASSERT_TRUE(cast(choices));
+	EXPECT_FALSE(hasEffect(friendly, SpellID(SpellID::CURSE)));
+	EXPECT_FALSE(hasEffect(friendly, SpellID(SpellID::SLOW)));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 15);
+	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 1);
+}
+
+INSTANTIATE_TEST_SUITE_P(CapturedRanks, NewHorizonsPurifySchoolRankTest,
+	::testing::Values(std::pair<int, int>{MasteryLevel::BASIC, 105},
+		std::pair<int, int>{MasteryLevel::ADVANCED, 93}, std::pair<int, int>{MasteryLevel::EXPERT, 83}));
 
 TEST_F(NewHorizonsPurifyTest, SelectionIsRadiusLimitedAndRemovesOneCompleteSourceGroup)
 {

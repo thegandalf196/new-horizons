@@ -32,6 +32,7 @@ namespace scripting::api
 		static bool ownerIsSameAsUnit(const ::spells::Mechanics & m, const battle::Unit & unit);
 		static bool currentControllerIsCaster(const ::spells::Mechanics & m, const battle::Unit & unit);
 		static bool isProtectedAreaCenter(const ::spells::Mechanics & m, const battle::Unit & unit, BattleHex centerHex);
+	static bool ignoresTeleportInterveningBarriers(const ::spells::Mechanics & m);
 		static const ::spells::Spell * getEffectSpell(const ::spells::Mechanics & m);
 		static bool isNatureSpell(const ::spells::Mechanics & m);
 		static std::string getPluralFormTextID(const ::spells::Mechanics & m, const std::string & baseTextID, int32_t count);

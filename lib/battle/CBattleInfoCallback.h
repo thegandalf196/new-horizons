@@ -492,5 +492,5 @@ protected:
 	std::vector<std::shared_ptr<const CObstacleInstance>> getAffectedObstaclesAtPositions(
 		const battle::Unit * unit, const BattleHexArray & positions, const BattleHexArray & passed) const;
 	bool handleObstacleTriggersForUnitWithObstacles(SpellCastEnvironment & spellEnv, const battle::Unit & unit,
-		const std::vector<std::shared_ptr<const CObstacleInstance>> & obstacles) const;
+		const std::vector<std::shared_ptr<const CObstacleInstance>> & obstacles, bool airborneTransit = false) const;
 };

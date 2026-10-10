@@ -167,11 +167,14 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 	void validateNewHorizonsStartingBookSerialization(bool supported) const;
 	void validateNewHorizonsRemainingStartSerialization(bool supported) const;
 	void validateNewHorizonsWaterWalkDayEndSerialization(bool supported) const;
+	void validateCanonicalSpellClausesSerialization(bool supported) const;
 	void validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const;
 	void validateCrisisCommandSerialization(bool supported) const;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateCanonicalSpellClausesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
 		if(h.saving) validatePlagueRulesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
 		if(h.saving)
 			validateProtectedAdventureMobilitySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
@@ -234,6 +237,8 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 			h.loadingGamestate = true;
 		h & initializedStartInfo;
 		h & initializedGameState;
+		if(!h.saving)
+			validateCanonicalSpellClausesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
 		if (!h.saving)
 			h.loadingGamestate = false;
 	}

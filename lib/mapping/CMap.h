@@ -223,6 +223,7 @@ public:
 	void validateNewHorizonsStartingBookSerialization(bool supported) const;
 	void validateNewHorizonsRemainingStartSerialization(bool supported) const;
 	void validateNewHorizonsWaterWalkDayEndSerialization(bool supported) const;
+	void validateCanonicalSpellClausesSerialization(bool supported) const;
 	void validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const;
 	void validatePlagueRulesSerialization(bool supported) const;
 	void validateCrisisCommandSerialization(bool supported) const;
@@ -348,6 +349,8 @@ public:
 	template <typename Handler>
 	void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateCanonicalSpellClausesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
 		if(h.saving) validateCrisisCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
 		if(h.saving)
 			validateProtectedAdventureMobilitySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));

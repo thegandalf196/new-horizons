@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsMagic.h"
+#include "NewHorizonsImplosion.h"
 #include "../pathfinder/NewHorizonsProtectedMobility.h"
 #include "ISpellMechanics.h"
 
@@ -89,6 +90,15 @@ int CBattleInfoCallback::battleGetSpellLevel(SpellID spell) const
 
 namespace newHorizonsMagic
 {
+void validateImplosionSerialization(const JsonNode & rules, bool supported)
+{
+	if(!newHorizonsImplosion::hasRules(rules))
+		return;
+	if(!supported)
+		throw std::runtime_error("New Horizons Implosion requires the current save format");
+	newHorizonsImplosion::validate(rules);
+}
+
 namespace
 {
 void require(bool condition, const std::string & message)
@@ -690,7 +700,19 @@ std::optional<int> curseDurationRounds(const JsonNode & rules, const CGHeroInsta
 {
 	if(!curseRulesEnabled(rules, spell))
 		return std::nullopt;
-	return CURSE_BASE_DURATION_ROUNDS + (hasMaledictionPerk(hero) ? 1 : 0);
+	int duration = CURSE_BASE_DURATION_ROUNDS;
+	const auto & row = rules["spells"]["core:curse"];
+	if(row.Struct().contains("schoolRankDurations"))
+	{
+		validateCurseDurationSerialization(rules, true);
+		int rank = MasteryLevel::NONE;
+		if(hero)
+			for(const auto schoolSkill : spellSchoolSkills(rules, spell))
+				rank = std::max(rank, static_cast<int>(hero->getSecSkillLevel(schoolSkill)));
+		require(rank >= MasteryLevel::NONE && rank <= MasteryLevel::EXPERT, "Curse School rank");
+		duration = static_cast<int>(row["schoolRankDurations"].Vector().at(static_cast<size_t>(rank)).Integer());
+	}
+	return duration + (hasMaledictionPerk(hero) ? 1 : 0);
 }
 
 std::optional<int> sorrowDurationRounds(const JsonNode & rules, const CGHeroInstance * hero, const SpellID spell)
@@ -940,6 +962,18 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		if(hero->hasActivePerk("new-horizons:chaosMagic", "new-horizons:chaosMagic.mindbreaker"))
 			result += " Mindbreaker also suppresses intrinsic passive offensive abilities for this duration.";
 	}
+	else if(hero && newHorizonsImplosion::rulesFor(hero->getMagicRules(), spell->getId()))
+	{
+		const auto profile = *newHorizonsImplosion::rulesFor(hero->getMagicRules(), spell->getId());
+		result = "Deals min(" + std::to_string(profile.maximumBasisPoints / 100.0)
+			+ "%, " + std::to_string(profile.baseBasisPoints / 100.0)
+			+ "% + " + std::to_string(profile.powerBasisPointsPerSpellPower / 100.0)
+			+ "% x scaled Spell Power) of the target's current aggregate Health before magical defenses. "
+			"School rank scales only the Spell Power term, not the base or cap. "
+			"After resolved damage, other living stacks within " + std::to_string(profile.pullRadius)
+			+ " hexes are pulled one legal hex closer. Closest stacks move first, then clockwise from northeast. "
+			"The primary target stays in place; this magical displacement causes no retaliation.";
+	}
 	else if(hero && physicalPoisonEnabled(hero->getMagicRules(), spell->getId()))
 	{
 		result = "Target one enemy living stack. It suffers physical Poison damage on its next three activations: "
@@ -957,8 +991,10 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 	else if(hero && spell->getId() == SpellID::DISPEL
 		&& dispelUsesNewHorizonsRules(hero->getMagicRules()))
 	{
-		result = "Target one friendly or enemy stack. Removes all temporary magical buffs and debuffs. "
-			"Does not remove Orders, innate creature states, poison, terrain, or summoned creatures. "
+		result = dispelRemovesTemporaryMagicalEffectsOnly(hero->getMagicRules())
+			? "Target one friendly or enemy stack. Removes all temporary magical buffs and debuffs. "
+			: "Target one friendly or enemy stack. Removes dispellable spell effects. ";
+		result += "Does not remove Orders, innate creature states, physical poison, terrain, or summoned creatures. "
 			"Sorcery rank does not make Dispel affect multiple stacks.";
 	}
 	else if(hero && spell->getId() == SpellID::CHAIN_LIGHTNING
@@ -977,7 +1013,9 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 		result = std::string(mass ? "Targets every eligible enemy stack for " : "Targets one enemy stack for ") + std::to_string(duration)
 			+ (duration == 1 ? " round. " : " rounds. ")
 			+ "It always rolls the minimum value of its normal creature damage range and changes no other statistic.";
-		if(duration > CURSE_BASE_DURATION_ROUNDS)
+		if(hero->getMagicRules()["spells"]["core:curse"].Struct().contains("schoolRankDurations"))
+			result += " School rank sets the base duration to 3/4/4/5 rounds at no rank/Basic/Advanced/Expert; it does not grant Mass Curse.";
+		if(hasMaledictionPerk(hero))
 			result += " Malediction extends the duration by one round.";
 		if(mass)
 			result += " Granted by Grand Malediction; costs three times Curse before Mana reductions.";
@@ -1275,6 +1313,83 @@ std::string spellDescriptionForHero(const CGHeroInstance * hero, const spells::S
 	return result;
 }
 
+namespace
+{
+void validateCapturedBooleanClause(const JsonNode & rules, bool supported,
+	std::string_view identity, std::string_view field)
+{
+	if(!rules["spells"].isStruct())
+		return;
+	for(const auto & [name, row] : rules["spells"].Struct())
+	{
+		if(!row.isStruct() || !row.Struct().contains(std::string(field)))
+			continue;
+		if(!supported)
+			throw std::runtime_error("Captured spell clause requires the current save format");
+		require(name == identity && rulesActive(rules)
+			&& rules["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+			&& row[std::string(field)].isBool(), "typed canonical spell clause " + std::string(field));
+	}
+}
+}
+
+void validateTeleportBarrierSerialization(const JsonNode & rules, bool supported)
+{
+	validateCapturedBooleanClause(rules, supported, "core:teleport", "ignoreInterveningBarriers");
+}
+
+void validateTemporaryMagicDispelSerialization(const JsonNode & rules, bool supported)
+{
+	validateCapturedBooleanClause(rules, supported, "core:dispel", "temporaryMagicalEffectsOnly");
+}
+
+bool dispelRemovesTemporaryMagicalEffectsOnly(const JsonNode & rules)
+{
+	const auto & row = rules["spells"]["core:dispel"];
+	return dispelUsesNewHorizonsRules(rules) && row.isStruct()
+		&& row["temporaryMagicalEffectsOnly"].isBool() && row["temporaryMagicalEffectsOnly"].Bool();
+}
+
+void validateCurseDurationSerialization(const JsonNode & rules, bool supported)
+{
+	if(!rules["spells"].isStruct())
+		return;
+	for(const auto & [name, row] : rules["spells"].Struct())
+	{
+		if(!row.isStruct() || !row.Struct().contains("schoolRankDurations"))
+			continue;
+		if(!supported)
+			throw std::runtime_error("Captured Curse durations require the current save format");
+		require(name == "core:curse" && rulesActive(rules)
+			&& rules["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
+			"canonical Curse duration profile");
+		const auto & table = row["schoolRankDurations"];
+		constexpr std::array<int, 4> expected{3, 4, 4, 5};
+		require(table.isVector() && table.Vector().size() == expected.size(), "four Curse rank durations");
+		for(size_t index = 0; index < expected.size(); ++index)
+			require(table.Vector()[index].getType() == JsonNode::JsonType::DATA_INTEGER
+				&& table.Vector()[index].Integer() == expected[index], "authored Curse rank duration");
+	}
+}
+
+void validateCanonicalSpellClausesSerialization(const JsonNode & rules, bool supported)
+{
+	if(rules["spells"].isStruct())
+		for(const auto & [name, row] : rules["spells"].Struct())
+		{
+			if(!row.isStruct() || !row.Struct().contains("implosion"))
+				continue;
+			if(!supported)
+				throw std::runtime_error("Captured Implosion requires the current save format");
+			require(name == "core:implosion", "canonical Implosion profile");
+		}
+	validateImplosionSerialization(rules, supported);
+	validateTeleportBarrierSerialization(rules, supported);
+	validateTemporaryMagicDispelSerialization(rules, supported);
+	validateCurseDurationSerialization(rules, supported);
+	validateCapturedBooleanClause(rules, supported, "core:fireWall", "burnGroundedFlyers");
+}
+
 void validateRules(const JsonNode & rules)
 {
 	if(legacy(rules))
@@ -1421,6 +1536,7 @@ void validateRules(const JsonNode & rules)
 		}
 	}
 	require(rules["spells"].isStruct(), "spell mappings required");
+	validateCanonicalSpellClausesSerialization(rules, true);
 	std::set<int> mapped;
 	for(const auto & [name, data] : rules["spells"].Struct())
 	{
@@ -1429,7 +1545,12 @@ void validateRules(const JsonNode & rules)
 		else if(version < SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "ordinaryAcquisition"});
 		else
-			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "ordinaryAcquisition", "heroAccess", "variant", "earthquake", "structures", "restoration", "propagationLimit"});
+			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "ordinaryAcquisition", "heroAccess", "variant", "earthquake", "structures", "restoration", "propagationLimit", "implosion", "ignoreInterveningBarriers", "temporaryMagicalEffectsOnly", "schoolRankDurations", "burnGroundedFlyers"});
+		if(data.Struct().contains("implosion"))
+		{
+			require(name == "core:implosion", "Implosion profile requires its canonical spell row");
+			newHorizonsImplosion::validate(rules);
+		}
 		if(data.Struct().contains("propagationLimit"))
 		{
 			require(name == "new-horizons:plague" && version == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,

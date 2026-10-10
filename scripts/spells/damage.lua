@@ -251,6 +251,7 @@ function Script:apply(mechanics, server, target)
 		local unit = dest.unit
 		if unit and unit:isAlive() then
 			local unitID = unit:unitID()
+			local origin = unit:getPosition()
 			local amount = self:damageForTarget(i - 1, mechanics, unit)
 			local soulReaperBaseline = describe and damageBeforeSoulReaperExecution(mechanics, unit) or nil
 			-- Creature casts expose their battle Unit; hero and environmental casts return nil and
@@ -260,6 +261,7 @@ function Script:apply(mechanics, server, target)
 			if mechanics:getSpell():isMagical() and not self.indirect then
 				local current = battle:getUnitByID(unitID)
 				if current then server:clearFrozenAfterDirectMagicDamage(battle, current) end
+				server:applyImplosionPull(battle, mechanics, unitID, origin)
 			end
 			local collateralDamage, collateralKilled = 0, 0
 			if self.handOfFate then

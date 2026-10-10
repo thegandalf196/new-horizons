@@ -74,6 +74,16 @@ bool MechanicsProxy::isProtectedAreaCenter(const Mechanics & m, const battle::Un
 		m.getSpellId(), unit, centerHex, m.getCasterSide());
 }
 
+bool MechanicsProxy::ignoresTeleportInterveningBarriers(const Mechanics & m)
+{
+	const auto * callback = m.battle();
+	const auto * battleState = callback ? callback->getBattle() : nullptr;
+	if(!battleState || m.getSpellId() != SpellID(SpellID::TELEPORT) || !m.usesNewHorizonsMagicV3())
+		return false;
+	const auto & flag = battleState->getMagicRules()["spells"]["core:teleport"]["ignoreInterveningBarriers"];
+	return flag.isBool() && flag.Bool();
+}
+
 const ::spells::Spell * MechanicsProxy::getEffectSpell(const Mechanics & m)
 {
 	const auto * castSpell = m.getSpell();
@@ -298,6 +308,8 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"True when the battle uses a saved New Horizons magic-rules snapshot.");
 	R.method<&Mechanics::usesNewHorizonsMagicV3>("usesNewHorizonsMagicV3", {},
 		"True when the battle uses a saved New Horizons magic-rules v3 snapshot.");
+	R.method<&Mechanics::usesNewHorizonsTemporaryMagicDispel>("usesNewHorizonsTemporaryMagicDispel", {},
+		"True only for ordinary Dispel's saved temporary-magical-effects policy.");
 	R.function<&MechanicsProxy::hasPrecisionBombardment>("hasPrecisionBombardment", {},
 		"True only for the controlled hero Catapult with saved Precision Bombardment.");
 	R.method<&Mechanics::usesNewHorizonsEarthquake>("usesNewHorizonsEarthquake", {},
@@ -447,6 +459,8 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"True for the protected friendly center stack: Controlled Blast covers Fireball/Inferno/Meteor Shower; Precise Casting also covers Frost Ring/Purify.");
 	R.function<&MechanicsProxy::getEffectSpell>("getEffectSpell", {},
 		"Returns the saved-rules spell family used for effect formulas and source grouping. The actual cast Spell remains available from getSpell().");
+	R.function<&MechanicsProxy::ignoresTeleportInterveningBarriers>("ignoresTeleportInterveningBarriers", {},
+		"True only when captured Teleport rules allow crossing intervening battlefield barriers; destination legality remains unchanged.");
 	R.method<&Mechanics::getSpell>("getSpell", {},
 		"Returns the Spell being cast.");
 	R.method<&Mechanics::adjustEffectValue>("adjustEffectValue",

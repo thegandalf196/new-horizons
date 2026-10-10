@@ -54,6 +54,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 	template <typename Handler> void serialize(Handler & h)
 	{
 		if(h.saving && info)
+			newHorizonsMagic::validateCanonicalSpellClausesSerialization(info->getMagicRules(),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
+		if(h.saving && info)
 			newHorizonsMagic::validateWaterWalkDayEndSerialization(info->getMagicRules(),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END));
 		if(h.saving && info)
@@ -196,6 +199,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 			info->validateExtendSpellSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SPELLCRAFT_TARGET_DURATION));
 		h & battleID;
 		h & info;
+		if(!h.saving && info)
+			newHorizonsMagic::validateCanonicalSpellClausesSerialization(info->getMagicRules(),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
 		h & trainingEntry;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING))
 			h & trainingReplay;

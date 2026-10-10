@@ -19,4 +19,6 @@ DLL_LINKAGE std::vector<SpellID> candidates(const CGHeroInstance & hero, const C
 DLL_LINKAGE std::optional<SpellID> selectSpell(const CGHeroInstance & hero, const CGTownInstance & town);
 DLL_LINKAGE std::optional<SpellID> wisdomReveal(const CGHeroInstance & hero, const CGTownInstance & town);
 DLL_LINKAGE bool learningSelected(const CGHeroInstance & hero);
+/// Whether this hero's first Guild visit has a real selected Sage reward.
+DLL_LINKAGE bool hasVisitReward(const CGHeroInstance & hero, const CGTownInstance & town);
 }

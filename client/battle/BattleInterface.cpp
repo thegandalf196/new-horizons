@@ -571,7 +571,8 @@ void BattleInterface::installPurifyUI()
 
 		const bool purifierPerk = newHorizonsPurify::hasPurifierPerk(hero);
 		const int32_t spellPower = hero->getEffectPower(spell);
-		const int32_t maximumChoices = newHorizonsPurify::maximumSpellEffectChoices(spellPower);
+		const int32_t maximumChoices = newHorizonsPurify::maximumSpellEffectChoices(
+			callback->getBattle()->getMagicRules(), hero, spellPower);
 		const BattleSide casterSide = callback->battleGetMySide();
 		const auto eligibleStacks = newHorizonsPurify::eligibleStacks(
 			*callback, casterSide, center, spellPower, purifierPerk);

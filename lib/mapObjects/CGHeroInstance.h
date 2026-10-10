@@ -681,6 +681,9 @@ public:
 	template <typename Handler> void serialize(Handler &h)
 	{
 		if(h.saving)
+			newHorizonsMagic::validateCanonicalSpellClausesSerialization(getMagicRules(),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
+		if(h.saving)
 			newHorizonsMagic::validateWaterWalkDayEndSerialization(getMagicRules(),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END));
 		if(h.saving)

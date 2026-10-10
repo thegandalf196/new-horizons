@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "../../lib/mapObjects/NewHorizonsAcademicStudy.h"
 #include "../../lib/mapObjects/NewHorizonsRecruitersContacts.h"
+#include "../../lib/mapObjects/NewHorizonsSage.h"
 #include "AIUtility.h"
 #include "AIGateway.h"
 #include "Goals/Goals.h"
@@ -699,7 +700,8 @@ bool shouldVisit(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGO
 		if(relations != PlayerRelations::ENEMIES)
 		{
 			const auto * town = dynamic_cast<const CGTownInstance *>(obj);
-			return town && newHorizonsLearning::academicStudyExperience(*hero, *town) > 0;
+			return town && (newHorizonsLearning::academicStudyExperience(*hero, *town) > 0
+				|| newHorizonsSage::hasVisitReward(*hero, *town));
 		}
 		return true;
 	case Obj::HERO: //never visit our heroes at random

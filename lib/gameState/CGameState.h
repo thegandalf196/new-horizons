@@ -263,11 +263,14 @@ public:
 	void validateNewHorizonsStartingBookSerialization(bool supported) const;
 	void validateNewHorizonsRemainingStartSerialization(bool supported) const;
 	void validateNewHorizonsWaterWalkDayEndSerialization(bool supported) const;
+	void validateCanonicalSpellClausesSerialization(bool supported) const;
 	void validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const;
 	void validateCrisisCommandSerialization(bool supported) const;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateCanonicalSpellClausesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
 		if(h.saving) validatePlagueRulesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
 		if(h.saving) validateCrisisCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
 		if(h.saving)
@@ -383,6 +386,9 @@ public:
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGIC))
 		{
 			h & magicRules;
+			if(!h.saving)
+				newHorizonsMagic::validateCanonicalSpellClausesSerialization(magicRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
 			if(!h.saving)
 			{
 				newHorizonsMagic::validateWaterWalkDayEndSerialization(magicRules, h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END));

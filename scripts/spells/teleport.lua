@@ -33,7 +33,8 @@ function Script:applicableTarget(mechanics, problem, target)
 		return false
 	end
 
-	if mechanics:getBattle():hasPenaltyOnLine(fromHex, toHex, not self.isWallPassable, not self.isMoatPassable) then
+	if not mechanics:ignoresTeleportInterveningBarriers()
+		and mechanics:getBattle():hasPenaltyOnLine(fromHex, toHex, not self.isWallPassable, not self.isMoatPassable) then
 		problem:addStandard(mechanics, ENUM.SpellCastProblem.wrongSpellTarget)
 		return false
 	end

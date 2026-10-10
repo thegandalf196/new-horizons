@@ -9,6 +9,10 @@
 	"properties": {
 		"schemaVersion": {"type": "integer", "enum": [1]},
 		"rulesetVersion": {"type": "integer", "enum": [3]},
+		"morale": {
+			"$ref": "vcmi:newHorizonsMagic#/definitions/morale",
+			"description": "Optional captured v3 Morale curve. Absence retains earlier profiles. Runtime additionally checks every chance is no greater than the captured diceSize."
+		},
 		"protectedAdventureBarriers": {
 			"type": "boolean",
 			"description": "Opt in to authored Fly/Dimension Door barriers and accepted flight source-layer receipts. Absence preserves earlier profiles."
@@ -108,7 +112,7 @@
 			"required": ["core:summonBoat", "core:waterWalk", "core:townPortal", "core:fly", "core:dimensionDoor"],
 			"properties": {
 				"core:summonBoat": {"$ref": "vcmi:newHorizonsMagic#/definitions/adventureSpell"},
-				"core:waterWalk": {"$ref": "vcmi:newHorizonsMagic#/definitions/adventureSpell"},
+				"core:waterWalk": {"$ref": "vcmi:newHorizonsMagic#/definitions/waterWalkAdventureSpell"},
 				"core:townPortal": {"$ref": "vcmi:newHorizonsMagic#/definitions/adventureSpell"},
 				"core:fly": {"$ref": "vcmi:newHorizonsMagic#/definitions/adventureSpell"},
 				"core:dimensionDoor": {"$ref": "vcmi:newHorizonsMagic#/definitions/adventureSpell"}
@@ -189,6 +193,40 @@
 					"description": "Whether heroes may cast and acquire this common spell. Omission defaults to true for compatibility with older saved-v3 profiles; this does not disable creature or world-effect behavior."
 				},
 				"directDamage": {"$ref": "#/definitions/directDamage"},
+				"ignoreInterveningBarriers": {
+					"type": "boolean",
+					"not": {"type": "null"},
+					"description": "Optional exact Teleport policy; true bypasses intervening barriers only, preserving endpoint legality. Absence retains saved legacy rank restrictions."
+				},
+				"burnGroundedFlyers": {
+					"type": "boolean",
+					"not": {"type": "null"},
+					"description": "Optional exact Fire Wall policy: flyers landing or beginning an activation in flame burn; airborne transit remains exempt."
+				},
+				"temporaryMagicalEffectsOnly": {
+					"type": "boolean",
+					"not": {"type": "null"},
+					"description": "Optional exact Dispel policy restricting removal to temporary magical spell effects."
+				},
+				"schoolRankDurations": {
+					"type": "array",
+					"minItems": 4,
+					"maxItems": 4,
+					"items": {"type": "integer", "not": {"type": "null"}, "minimum": 1},
+					"description": "Optional exact Curse duration table for None/Basic/Advanced/Expert; runtime validation checks the authored values and family."
+				},
+				"implosion": {
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["baseBasisPoints", "powerBasisPointsPerSpellPower", "maximumBasisPoints", "pullRadius", "pullDistance"],
+					"properties": {
+						"baseBasisPoints": {"type": "integer", "not": {"type": "null"}, "minimum": 0, "maximum": 10000},
+						"powerBasisPointsPerSpellPower": {"type": "integer", "not": {"type": "null"}, "minimum": 1, "maximum": 10000},
+						"maximumBasisPoints": {"type": "integer", "not": {"type": "null"}, "minimum": 0, "maximum": 10000},
+						"pullRadius": {"type": "integer", "not": {"type": "null"}, "minimum": 1, "maximum": 11},
+						"pullDistance": {"type": "integer", "not": {"type": "null"}, "enum": [1]}
+					}
+				},
 				"propagationLimit": {
 					"type": "integer",
 					"minimum": 1,

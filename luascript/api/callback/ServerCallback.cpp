@@ -45,6 +45,8 @@
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/spells/CSpellHandler.h"
 #include "../../../lib/spells/ISpellMechanics.h"
+#include "../../../lib/spells/NewHorizonsImplosion.h"
+#include "../spells/Mechanics.h"
 #include "../../../lib/texts/MetaString.h"
 #include "../../../lib/constants/EntityIdentifiers.h"
 #include "modding/IdentifierStorage.h"
@@ -125,6 +127,12 @@ void ServerCallbackProxy::registerMethods(MethodRegistrar & R)
 			{"obstacle", "Obstacle to remove."}
 		}, {},
 		"Removes the given obstacle from the battlefield.");
+	R.function<&ServerCallbackProxy::applyImplosionPull>("applyImplosionPull",
+		{{"battle", "Battle receiving the resolved damage effect."},
+		 {"mechanics", "Original damage cast mechanics."},
+		 {"primaryID", "Primary unit ID captured before damage."},
+		 {"origin", "Primary position captured before damage."}}, {},
+		"Applies saved Implosion's deterministic magical pull after resolved primary damage, including rounded zero damage.");
 	R.function<&ServerCallbackProxy::moveUnit>("moveUnit",
 		{
 			{"battle",      "Battle in which the unit is moved."},
@@ -644,6 +652,39 @@ int ServerCallbackProxy::rngInt(ServerCallback & object, int low, int high)
 int ServerCallbackProxy::rngBinomial(ServerCallback & object, int trials, double chance)
 {
 	return object.getRNG()->nextBinomialInt(trials, chance);
+}
+
+void ServerCallbackProxy::applyImplosionPull(ServerCallback & object, const IBattleInfoCallback & battle,
+	const spells::Mechanics & mechanics, uint32_t primaryID, BattleHex origin)
+{
+	if(!battle.getBattle() || !mechanics.battle()
+		|| mechanics.battle()->getBattle() != battle.getBattle() || !origin.isAvailable())
+		return;
+	const auto profile = newHorizonsImplosion::rulesFor(battle.getBattle()->getMagicRules(), mechanics.getSpellId());
+	if(!profile)
+		return;
+	// Borrow the actual callback: both live and detached states implement this
+	// shared interface, and each packet undergoes the same endpoint preflight.
+	const auto * callback = dynamic_cast<const CBattleInfoCallback *>(&battle);
+	if(!callback)
+		throw std::runtime_error("Implosion requires a shared battle callback");
+	for(const auto id : newHorizonsImplosion::pullOrder(*callback, primaryID, origin, profile->pullRadius))
+	{
+		const auto * unit = battle.battleGetUnitByID(id);
+		if(!unit)
+			continue;
+		const auto destination = newHorizonsImplosion::pullDestination(*callback, *unit, origin);
+		if(!destination)
+			continue;
+		BattleStackMoved move;
+		move.battleID = battle.getBattle()->getBattleID();
+		move.stack = id;
+		move.distance = 0;
+		move.teleporting = true;
+		move.displacementCause = BattleDisplacementCause::MAGICAL;
+		move.tilesToMove.insert(*destination);
+		object.apply(move);
+	}
 }
 
 void ServerCallbackProxy::moveUnit(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit & unit, BattleHex destination, bool isTeleport)

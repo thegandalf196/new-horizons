@@ -1341,6 +1341,18 @@ void CMap::validateNewHorizonsWaterWalkDayEndSerialization(bool supported) const
 			newHorizonsMagic::validateWaterWalkDayEndSerialization(hero->getMagicRules(), supported);
 }
 
+void CMap::validateCanonicalSpellClausesSerialization(bool supported) const
+{
+	if(gameSettings)
+		gameSettings->validateCanonicalSpellClausesSerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsMagic::validateCanonicalSpellClausesSerialization(hero->getMagicRules(), supported);
+	for(const auto & hero : heroesPool)
+		if(hero)
+			newHorizonsMagic::validateCanonicalSpellClausesSerialization(hero->getMagicRules(), supported);
+}
+
 void CMap::validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const
 {
 	if(gameSettings)

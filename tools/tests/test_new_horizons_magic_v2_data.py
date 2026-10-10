@@ -62,12 +62,20 @@ class MagicV2DataTest(unittest.TestCase):
         self.rules['rulesetVersion'] = 2
         self.rules.pop('schoolRankPowerCoefficientPercent')
         self.rules.pop('spellcraftEfficiencyPercent')
+        # v2 is an earlier captured profile, not current v3 with a new version.
+        for key in ('morale', 'creatureAbilities', 'protectedAdventureBarriers'):
+            self.rules.pop(key, None)
+        self.rules['adventureSpells']['core:waterWalk'].pop('requireLegalDayEnd', None)
         self.rules['spells']['core:quicksand'].pop('selectedPlacement')
         self.rules['spells']['core:earthquake'].pop('earthquake')
         for row in self.rules['spells'].values():
             row.pop('structures', None)
             row.pop('heroAccess', None)
             row.pop('restoration', None)
+            for key in ('implosion', 'ignoreInterveningBarriers',
+                        'temporaryMagicalEffectsOnly', 'schoolRankDurations',
+                        'burnGroundedFlyers'):
+                row.pop(key, None)
         self.rules['spells'] = {key: row for key, row in self.rules['spells'].items()
                                 if 'variant' not in row}
         self.old_rules = legacy_rules(self.rules)
@@ -350,6 +358,101 @@ class MagicV2DataTest(unittest.TestCase):
                 changed = copy.deepcopy(self.v3_rules)
                 changed['schoolRankPowerCoefficientPercent'] = invalid
                 self.assertFalse(v3_validator.is_valid(changed))
+
+    def test_v3_morale_is_optional_and_current_captured_profile_validates(self):
+        validator = Draft4Validator(self.v3, registry=self.registry)
+        validator.validate(self.v3_rules)
+        self.assertEqual(self.v3_rules['morale']['minimum'], -10)
+        self.assertEqual(self.v3_rules['morale']['maximum'], 10)
+        absent = copy.deepcopy(self.v3_rules)
+        absent.pop('morale')
+        validator.validate(absent)
+        for version, rules, older in ((1, self.old_rules, self.old_validator),
+                                      (2, self.rules, self.validator)):
+            with self.subTest(version=version):
+                changed = copy.deepcopy(rules)
+                changed['morale'] = copy.deepcopy(self.v3_rules['morale'])
+                self.assertFalse(older.is_valid(changed))
+
+    def test_v3_morale_requires_every_typed_field_and_no_extras(self):
+        validator = Draft4Validator(self.v3, registry=self.registry)
+        for missing in self.v3_rules['morale']:
+            with self.subTest(missing=missing):
+                changed = copy.deepcopy(self.v3_rules)
+                changed['morale'].pop(missing)
+                self.assertFalse(validator.is_valid(changed))
+        for invalid in (None, False, [], 'morale', {}):
+            with self.subTest(invalid=repr(invalid)):
+                changed = copy.deepcopy(self.v3_rules)
+                changed['morale'] = invalid
+                self.assertFalse(validator.is_valid(changed))
+        changed = copy.deepcopy(self.v3_rules)
+        changed['morale']['unexpected'] = 1
+        self.assertFalse(validator.is_valid(changed))
+        for field, values in {
+                'rulesetVersion': (0, 2, '1', True, None, 1.0),
+                'minimum': (-11, -9, '-10', False, None, -10.0),
+                'maximum': (9, 11, '10', True, None, 10.0),
+                'diceSize': (0, 46341, '100', True, None, 100.0)}.items():
+            for value in values:
+                with self.subTest(field=field, invalid=repr(value)):
+                    changed = copy.deepcopy(self.v3_rules)
+                    changed['morale'][field] = value
+                    self.assertFalse(validator.is_valid(changed))
+
+    def test_v3_morale_curves_have_ten_bounded_integer_entries(self):
+        validator = Draft4Validator(self.v3, registry=self.registry)
+        for field in ('goodChance', 'badChance'):
+            for value in (None, {}, False, [], [0] * 9, [0] * 11):
+                with self.subTest(field=field, invalid=repr(value)):
+                    changed = copy.deepcopy(self.v3_rules)
+                    changed['morale'][field] = value
+                    self.assertFalse(validator.is_valid(changed))
+            for value in (-1, 46341, 0.5, 3.0, '3', True, None):
+                with self.subTest(field=field, entry=repr(value)):
+                    changed = copy.deepcopy(self.v3_rules)
+                    changed['morale'][field][4] = value
+                    self.assertFalse(validator.is_valid(changed))
+            for boundary in (0, 46340):
+                changed = copy.deepcopy(self.v3_rules)
+                changed['morale']['diceSize'] = 46340
+                changed['morale'][field] = [boundary] * 10
+                validator.validate(changed)
+
+    def test_v2_fixture_erases_only_future_spell_clause_keys(self):
+        self.assertNotIn('morale', self.rules)
+        for spell, key in (('core:implosion', 'implosion'),
+                           ('core:teleport', 'ignoreInterveningBarriers'),
+                           ('core:dispel', 'temporaryMagicalEffectsOnly'),
+                           ('core:curse', 'schoolRankDurations'),
+                           ('core:fireWall', 'burnGroundedFlyers')):
+            with self.subTest(spell=spell):
+                self.assertNotIn(key, self.rules['spells'][spell])
+                self.assertEqual(self.rules['spells'][spell]['schools'],
+                                 self.v3_rules['spells'][spell]['schools'])
+                self.assertEqual(self.rules['spells'][spell]['costs'],
+                                 self.v3_rules['spells'][spell]['costs'])
+
+    def test_v3_water_walk_uses_existing_strict_day_end_schema(self):
+        validator = Draft4Validator(self.v3, registry=self.registry)
+        self.assertEqual(self.v3['properties']['adventureSpells']['properties']
+                         ['core:waterWalk']['$ref'],
+                         'vcmi:newHorizonsMagic#/definitions/waterWalkAdventureSpell')
+        validator.validate(self.v3_rules)
+        for value in (False, True):
+            changed = copy.deepcopy(self.v3_rules)
+            changed['adventureSpells']['core:waterWalk']['requireLegalDayEnd'] = value
+            validator.validate(changed)
+        absent = copy.deepcopy(self.v3_rules)
+        absent['adventureSpells']['core:waterWalk'].pop('requireLegalDayEnd')
+        validator.validate(absent)
+        for value in (None, 1, {}, 'true'):
+            changed = copy.deepcopy(self.v3_rules)
+            changed['adventureSpells']['core:waterWalk']['requireLegalDayEnd'] = value
+            self.assertFalse(validator.is_valid(changed))
+        changed = copy.deepcopy(self.v3_rules)
+        changed['adventureSpells']['core:waterWalk']['unexpected'] = True
+        self.assertFalse(validator.is_valid(changed))
 
     def test_v1_stays_strict_and_v2_is_not_an_empty_context(self):
         self.old_validator.validate({})

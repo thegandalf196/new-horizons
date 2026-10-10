@@ -20,6 +20,7 @@
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/spells/NewHorizonsSpellAvailability.h"
+#include "../../../lib/spells/Problem.h"
 #include <vcmi/Environment.h>
 
 #include <memory>
@@ -57,13 +58,25 @@ JsonNode olderMagicSnapshotWithoutMassVariants()
 	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules.Struct().erase("spellcraftEfficiencyPercent");
+	for(const auto * key : {"protectedAdventureBarriers", "creatureAbilities", "morale"})
+		rules.Struct().erase(key);
+	rules["spells"]["core:curse"].Struct().erase("schoolRankDurations");
+	rules["spells"]["core:implosion"].Struct().erase("implosion");
+	rules["spells"]["core:teleport"].Struct().erase("ignoreInterveningBarriers");
+	rules["spells"]["core:dispel"].Struct().erase("temporaryMagicalEffectsOnly");
+	rules["spells"]["core:fireWall"].Struct().erase("burnGroundedFlyers");
 	for(auto & [identity, row] : rules["spells"].Struct())
 	{
 		(void)identity;
 		if(row.isStruct())
+		{
 			row.Struct().erase("selectedPlacement");
 			row.Struct().erase("earthquake");
 			row.Struct().erase("structures");
+			row.Struct().erase("heroAccess");
+			row.Struct().erase("restoration");
+			row.Struct().erase("propagationLimit");
+		}
 	}
 	for(auto it = rules["spells"].Struct().begin(); it != rules["spells"].Struct().end();)
 	{
@@ -72,6 +85,7 @@ JsonNode olderMagicSnapshotWithoutMassVariants()
 		else
 			++it;
 	}
+	newHorizonsMagic::validateRules(rules);
 	return rules;
 }
 
@@ -94,6 +108,7 @@ class NewHorizonsMassShadowTest : public HeroCommandFixture
 {
 protected:
 	bool oldSnapshot = false;
+	bool rankedCurseDuration = false;
 	CStack * friendly = nullptr;
 	CStack * firstEnemy = nullptr;
 	CStack * secondEnemy = nullptr;
@@ -121,6 +136,16 @@ protected:
 			magicRules["spells"][massCurseKey]["active"] = JsonNode(true);
 			magicRules["spells"][massSorrowKey]["active"] = JsonNode(true);
 		}
+		// Original cases deliberately exercise the historical absent-table profile.
+		if(rankedCurseDuration)
+		{
+			JsonNode table;
+			for(const int duration : {3, 4, 4, 5})
+				table.Vector().push_back(JsonNode(duration));
+			magicRules["spells"]["core:curse"]["schoolRankDurations"] = table;
+		}
+		else
+			magicRules["spells"]["core:curse"].Struct().erase("schoolRankDurations");
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
 
 		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
@@ -194,6 +219,22 @@ protected:
 			massImmuneEnemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 				BonusType::SPELL_IMMUNITY, BonusSource::OTHER, 1, BonusSourceID(), BonusSubtypeID(spell)));
 		beginCombat();
+		// Resolve the actual initial controller through accepted ordinary actions;
+		// species/order ties must not decide whether Player0's paid cast is legal.
+		for(int action = 0; action < 8; ++action)
+		{
+			const auto * active = battle()->battleActiveUnit();
+			ASSERT_NE(active, nullptr);
+			const auto controller = battle()->battleGetActionController(active);
+			if(controller == PlayerColor(0))
+				break;
+			ASSERT_EQ(active->unitSide(), BattleSide::DEFENDER);
+			ASSERT_EQ(controller, PlayerColor(1));
+			ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), controller,
+				BattleAction::makeDefend(active)));
+		}
+		ASSERT_EQ(battle()->battleActiveUnit(), friendly);
+		ASSERT_EQ(battle()->battleGetActionController(friendly), PlayerColor(0));
 	}
 
 	spells::Target massAim() const
@@ -203,6 +244,25 @@ protected:
 
 	bool castSpell(SpellID spell, const CStack * selectedTarget = nullptr)
 	{
+		const auto * active = battle()->battleActiveUnit();
+		if(!active)
+		{
+			ADD_FAILURE() << "No active unit before paid cast";
+			return false;
+		}
+		spells::BattleCast parameters(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+		auto mechanics = spell.toSpell()->battleMechanics(&parameters);
+		spells::detail::ProblemImpl problem;
+		const bool legalCast = mechanics->canBeCast(problem);
+		const spells::Target aim = selectedTarget
+			? spells::Target{spells::Destination(selectedTarget, selectedTarget->getPosition())} : massAim();
+		const bool legalTarget = mechanics->canBeCastAt(aim);
+		SCOPED_TRACE(::testing::Message() << "paid spell=" << spell.getNum()
+			<< " active=" << active->unitId() << " side=" << static_cast<int>(active->unitSide())
+			<< " controller=" << battle()->battleGetActionController(active).getNum()
+			<< " canBeCast=" << legalCast << " canBeCastAt=" << legalTarget);
+		EXPECT_EQ(active->unitSide(), BattleSide::ATTACKER);
+		EXPECT_EQ(battle()->battleGetActionController(active), PlayerColor(0));
 		BattleAction action;
 		action.actionType = EActionType::HERO_SPELL;
 		action.side = BattleSide::ATTACKER;
@@ -211,7 +271,10 @@ protected:
 			action.aimToUnit(selectedTarget);
 		else
 			action.aimToHex(BattleHex::INVALID);
-		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
+		const bool accepted = gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
+		if(!accepted && legalCast && legalTarget)
+			ADD_FAILURE() << "Public paid cast rejected despite positive mechanics admission";
+		return accepted;
 	}
 
 	const Bonus * effect(const battle::Unit * unit, SpellID family, BonusType type) const
@@ -308,6 +371,96 @@ protected:
 		}
 	}
 };
+
+class NewHorizonsCurseSchoolDurationTest : public NewHorizonsMassShadowTest,
+	public ::testing::WithParamInterface<std::pair<int, int>>
+{};
+
+TEST_P(NewHorizonsCurseSchoolDurationTest, RegisteredSingleCastMatchesDetachedDurationWithoutAdditionalTargets)
+{
+	rankedCurseDuration = true;
+	const auto [rank, expected] = GetParam();
+	ASSERT_NO_FATAL_FAILURE(prepareHero(false, rank));
+	ASSERT_NO_FATAL_FAILURE(prepareBattle());
+	const auto description = newHorizonsMagic::spellDescriptionForHero(
+		attackerSideHero, SpellID(SpellID::CURSE).toSpell(), rank);
+	EXPECT_NE(description.find("3/4/4/5"), std::string::npos);
+	EXPECT_EQ(description.find("Malediction extends"), std::string::npos);
+	EXPECT_FALSE(attackerSideHero->canCastThisSpell(massCurseSpell().toSpell()));
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	MassShadowPredictionEnvironment environment(gameState());
+	HypotheticBattle projected(&environment, callback);
+	spells::BattleCast preview(&projected, attackerSideHero, spells::Mode::HERO, SpellID(SpellID::CURSE).toSpell());
+	auto mechanics = SpellID(SpellID::CURSE).toSpell()->battleMechanics(&preview);
+	ASSERT_FALSE(mechanics->isMassive());
+	mechanics->castEval(projected.getServerCallback(), {spells::Destination(firstEnemy, firstEnemy->getPosition())});
+	const auto * forecast = effect(projected.battleGetUnitByID(firstEnemy->unitId()), SpellID::CURSE,
+		BonusType::ALWAYS_MINIMUM_DAMAGE);
+	ASSERT_NE(forecast, nullptr);
+	EXPECT_EQ(forecast->turnsRemain, expected);
+	EXPECT_EQ(forecast->val, 0);
+	EXPECT_EQ(effect(firstEnemy, SpellID::CURSE, BonusType::ALWAYS_MINIMUM_DAMAGE), nullptr);
+	EXPECT_EQ(effect(projected.battleGetUnitByID(secondEnemy->unitId()), SpellID::CURSE,
+		BonusType::ALWAYS_MINIMUM_DAMAGE), nullptr);
+	const auto mana = attackerSideHero->getManaAvailable();
+	const auto cost = battle()->battleGetSpellCost(SpellID(SpellID::CURSE).toSpell(), attackerSideHero);
+	ASSERT_TRUE(castSpell(SpellID::CURSE, firstEnemy));
+	const auto * actual = effect(firstEnemy, SpellID::CURSE, BonusType::ALWAYS_MINIMUM_DAMAGE);
+	ASSERT_NE(actual, nullptr);
+	EXPECT_EQ(actual->turnsRemain, expected);
+	EXPECT_EQ(actual->val, 0);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - cost);
+	EXPECT_EQ(effect(secondEnemy, SpellID::CURSE, BonusType::ALWAYS_MINIMUM_DAMAGE), nullptr);
+}
+
+INSTANTIATE_TEST_SUITE_P(CapturedRanks, NewHorizonsCurseSchoolDurationTest,
+	::testing::Values(std::pair<int, int>{MasteryLevel::NONE, 3}, std::pair<int, int>{MasteryLevel::BASIC, 4},
+		std::pair<int, int>{MasteryLevel::ADVANCED, 4}, std::pair<int, int>{MasteryLevel::EXPERT, 5}));
+
+TEST_F(NewHorizonsMassShadowTest, OptedInMassCurseAddsMaledictionAfterExpertDurationAndPreservesCosts)
+{
+	rankedCurseDuration = true;
+	ASSERT_NO_FATAL_FAILURE(prepareHero(true, MasteryLevel::EXPERT, 100, MasteryLevel::EXPERT));
+	ASSERT_NO_FATAL_FAILURE(prepareBattle());
+	expectDetachedAndAcceptedMassEffect(massCurseSpell(), SpellID::CURSE,
+		BonusType::ALWAYS_MINIMUM_DAMAGE, 0, 6, 9,
+		newHorizonsMagic::wisdomAdjustedCost(9, 1, MasteryLevel::EXPERT));
+}
+
+TEST_F(NewHorizonsMassShadowTest, AbsentDurationTableRetainsFixedBaseAtEveryRank)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareHero(false));
+	const auto & rules = attackerSideHero->getMagicRules();
+	ASSERT_FALSE(rules["spells"]["core:curse"].Struct().contains("schoolRankDurations"));
+	for(const int rank : {MasteryLevel::NONE, MasteryLevel::BASIC, MasteryLevel::ADVANCED, MasteryLevel::EXPERT})
+	{
+		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(shadowSkillKey)), rank,
+			ChangeValueMode::ABSOLUTE);
+		EXPECT_EQ(newHorizonsMagic::curseDurationRounds(rules, attackerSideHero, SpellID::CURSE), 3);
+	}
+}
+
+TEST_F(NewHorizonsMassShadowTest, DurationTableRejectsMalformedValuesBeforeAdmission)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareHero(false));
+	const auto original = attackerSideHero->getMagicRules();
+	for(const int length : {0, 3, 5})
+	{
+		JsonNode malformed = original;
+		auto & table = malformed["spells"]["core:curse"]["schoolRankDurations"];
+		table.Vector().assign(length, JsonNode(3));
+		EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
+	}
+	for(const JsonNode invalid : {JsonNode(-1), JsonNode(0), JsonNode(true), JsonNode("4"), JsonNode()})
+	{
+		JsonNode malformed = original;
+		auto & table = malformed["spells"]["core:curse"]["schoolRankDurations"];
+		for(const int duration : {3, 4, 4, 5})
+			table.Vector().push_back(JsonNode(duration));
+		table.Vector()[1] = invalid;
+		EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
+	}
+}
 
 TEST_F(NewHorizonsMassShadowTest, GrandMaledictionIsAnExpertOfferAndAddsThenLosesBothVirtualSpellSources)
 {

@@ -249,13 +249,17 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_WATER_WALK_DAY_END, // captured same-day legal-land reserve enforcement
 	NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS, // authored barriers and accepted flight source layer
 	NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS, // captured fresh-default Pasis/Monere Wisp targets
+	NEW_HORIZONS_IMPLOSION, // captured canonical Implosion, Teleport and Dispel clauses
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS,
+	CURRENT = NEW_HORIZONS_IMPLOSION,
 };
+
+static_assert(ESerializationVersion::NEW_HORIZONS_IMPLOSION > ESerializationVersion::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS,
+	"Canonical spell clauses must remain append-only before release aliases");
 
 static_assert(ESerializationVersion::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS > ESerializationVersion::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS,
 	"Fresh-default creature-line successors must remain append-only before release aliases");

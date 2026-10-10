@@ -151,6 +151,11 @@ public:
 		newHorizonsMagic::validateWaterWalkDayEndSerialization(getAllOverrides()["magic"]["newHorizons"], supported);
 	}
 
+	void validateCanonicalSpellClausesSerialization(bool supported) const
+	{
+		newHorizonsMagic::validateCanonicalSpellClausesSerialization(getAllOverrides()["magic"]["newHorizons"], supported);
+	}
+
 	void validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const
 	{
 		newHorizonsHeroes::validateCoroniusHolyWrathSerialization(
@@ -180,6 +185,8 @@ public:
 		if (h.saving)
 		{
 			JsonNode overrides = getAllOverrides();
+			newHorizonsMagic::validateCanonicalSpellClausesSerialization(overrides["magic"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
 			newHorizonsHeroes::validateNavigationStartSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NAVIGATION_START_REPLACEMENTS));
 			newHorizonsHeroes::validateDefaultCreatureLineSerialization(overrides["heroes"]["newHorizons"],
@@ -225,6 +232,8 @@ public:
 		{
 			JsonNode overrides;
 			h & overrides;
+			newHorizonsMagic::validateCanonicalSpellClausesSerialization(overrides["magic"]["newHorizons"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
 			newHorizonsHeroes::validateDefaultCreatureLineSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
 			newHorizonsHeroes::validateCrisisCommandProfileSerialization(overrides["heroes"]["newHorizonsPerks"],

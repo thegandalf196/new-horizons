@@ -2097,6 +2097,13 @@ void CGameState::validateNewHorizonsWaterWalkDayEndSerialization(bool supported)
 		map->validateNewHorizonsWaterWalkDayEndSerialization(supported);
 }
 
+void CGameState::validateCanonicalSpellClausesSerialization(bool supported) const
+{
+	newHorizonsMagic::validateCanonicalSpellClausesSerialization(magicRules, supported);
+	if(map)
+		map->validateCanonicalSpellClausesSerialization(supported);
+}
+
 void CGameState::validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const
 {
 	newHorizonsHeroes::validateCoroniusHolyWrathSerialization(heroDevelopmentRules, supported);

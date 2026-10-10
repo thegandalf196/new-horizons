@@ -34,6 +34,7 @@ class NewHorizonsSageTest : public TinyMapGameTest
 protected:
 	CGHeroInstance * hero = nullptr;
 	CGTownInstance * town = nullptr;
+	bool isolateFutureCrisisProfile = false;
 	void SetUp() override
 	{
 		TinyMapGameTest::SetUp();
@@ -71,12 +72,27 @@ protected:
 		heroRules.setOverrideFlag(true);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, heroRules);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
-		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
-		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
+		if(isolateFutureCrisisProfile)
+			for(auto & perk : perkRules["skills"]["new-horizons:command"]["perks"].Vector())
+				if(perk["id"].String() == "new-horizons:command.crisisCommand")
+					perk["effect"]["status"].String() = "planned";
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perkRules);
+		JsonNode magicRules(JsonPath::builtin("config/newHorizonsMagic"));
+		// Sage's old-positive writer control predates these independent clauses;
+		// preserve the current spell catalog/levels but isolate absent opt-ins.
+		for(const auto & [spell, field] : std::array<std::pair<const char *, const char *>, 5>{{
+			{"core:implosion", "implosion"}, {"core:teleport", "ignoreInterveningBarriers"},
+			{"core:dispel", "temporaryMagicalEffectsOnly"}, {"core:curse", "schoolRankDurations"},
+			{"core:fireWall", "burnGroundedFlyers"}}})
+			magicRules["spells"][spell].Struct().erase(field);
+		magicRules.setOverrideFlag(true);
+		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
 		isolateHistoricalAdventurePolicies(*map);
 	}
-	void prepare(int guildLevel = 1, bool book = true)
+	void prepare(int guildLevel = 1, bool book = true, bool historicalWriterProfile = false)
 	{
+		isolateFutureCrisisProfile = historicalWriterProfile;
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder.size(36, false).playerActive(PLAYER).playerActive(PlayerColor(1))
 			.hero({5, 5, 0}, HeroTypeID(0), PLAYER)
@@ -179,10 +195,10 @@ TEST_F(NewHorizonsSageTest, WisdomRevealsGloballyAndOtherVisitorsLearnThePersist
 	GameHandlerTestServer server(gameState(), PLAYER);
 	CGameHandler handler(server, gameState());
 	visit(handler);
-	EXPECT_EQ(town->newHorizonsSageRevealedSpells[0], (std::vector<SpellID>{named("core:haste")}));
+	EXPECT_EQ(town->newHorizonsSageRevealedSpells[0], (std::vector<SpellID>{named("core:dispel")}));
 	EXPECT_EQ(town->spellsAtLevel(1, true), 2);
-	EXPECT_EQ(town->spells[0].back(), named("core:haste"));
-	EXPECT_TRUE(hero->spellbookContainsSpell(named("core:haste")));
+	EXPECT_EQ(town->spells[0].back(), named("core:dispel"));
+	EXPECT_TRUE(hero->spellbookContainsSpell(named("core:dispel")));
 	EXPECT_EQ(town->newHorizonsMageGuildVisibleSpells, ordinaryCounts);
 	EXPECT_EQ(town->newHorizonsMageGuildVisibleSpellSchools, ordinarySchools);
 	const auto researchCount = town->spellResearchCounterDay;
@@ -193,7 +209,7 @@ TEST_F(NewHorizonsSageTest, WisdomRevealsGloballyAndOtherVisitorsLearnThePersist
 	town->setVisitingHero(nullptr);
 	hero->setVisitedTown(nullptr, false);
 	handler.heroVisitCastle(town, other);
-	EXPECT_TRUE(other->spellbookContainsSpell(named("core:haste")));
+	EXPECT_TRUE(other->spellbookContainsSpell(named("core:dispel")));
 	EXPECT_EQ(town->spellResearchCounterDay, researchCount);
 }
 
@@ -227,11 +243,11 @@ TEST_F(NewHorizonsSageTest, DifferentWisdomHoldersPublishDistinctExtrasButEachHe
 	town->setVisitingHero(nullptr);
 	handler.heroVisitCastle(town, other);
 	EXPECT_EQ(town->newHorizonsSageRevealedSpells[3], (std::vector<SpellID>{named("core:implosion")}));
-	EXPECT_EQ(town->newHorizonsSageRevealedSpells[1], (std::vector<SpellID>{named("core:dispel")}));
+	EXPECT_EQ(town->newHorizonsSageRevealedSpells[0], (std::vector<SpellID>{named("core:dispel")}));
 	EXPECT_TRUE(other->spellbookContainsSpell(named("core:implosion")));
 	EXPECT_TRUE(other->spellbookContainsSpell(named("core:dispel")));
 	handler.heroVisitCastle(town, other);
-	EXPECT_TRUE(town->newHorizonsSageRevealedSpells[0].empty());
+	EXPECT_EQ(town->newHorizonsSageRevealedSpells[0], (std::vector<SpellID>{named("core:dispel")}));
 	EXPECT_FALSE(other->spellbookContainsSpell(named("core:haste")));
 }
 
@@ -275,7 +291,11 @@ TEST_F(NewHorizonsSageTest, CapturedSchoolLabelsMapBansBuiltLevelsAndHeroEligibi
 	select(true, true);
 	map()->allowedSpells.erase(named("core:implosion"));
 	EXPECT_EQ(newHorizonsSage::selectSpell(*hero, *town), named("core:dispel"));
-	town->newHorizonsMageGuildVisibleSpellSchools[1].clear();
+	// Dispel and Haste now share the authored level-1 Sorcery bucket.
+	town->newHorizonsMageGuildVisibleSpellSchools[0].clear();
+	EXPECT_TRUE(newHorizonsSage::candidates(*hero, *town).empty());
+	town->newHorizonsMageGuildVisibleSpellSchools[0] = {sorcery()};
+	map()->allowedSpells.erase(named("core:dispel"));
 	EXPECT_EQ(newHorizonsSage::selectSpell(*hero, *town), named("core:haste"));
 	map()->allowedSpells.erase(named("core:haste"));
 	EXPECT_TRUE(newHorizonsSage::candidates(*hero, *town).empty());
@@ -327,11 +347,11 @@ TEST_F(NewHorizonsSageTest, TypedVisitRejectsStaleOrWrongRevealAtomicallyAndCurr
 	SetNewHorizonsSageGuildVisit receipt;
 	receipt.hero = hero->id;
 	receipt.town = town->id;
-	receipt.revealedSpell = named("core:dispel");
+	receipt.revealedSpell = named("core:haste");
 	EXPECT_THROW(handler.sendAndApply(receipt), std::runtime_error);
 	EXPECT_TRUE(hero->getNewHorizonsSageGuildVisits().empty());
 	EXPECT_TRUE(town->newHorizonsSageRevealedSpells[0].empty());
-	receipt.revealedSpell = named("core:haste");
+	receipt.revealedSpell = named("core:dispel");
 	CMemorySerializer current;
 	current.oser & receipt;
 	SetNewHorizonsSageGuildVisit restored;
@@ -346,7 +366,9 @@ TEST_F(NewHorizonsSageTest, TypedVisitRejectsStaleOrWrongRevealAtomicallyAndCurr
 
 TEST_F(NewHorizonsSageTest, SaveGuardsRejectMeaningfulHeroTownAndOffMapReceiptsBeforeEveryPrefix)
 {
-	prepare();
+	// An active Crisis profile itself is later-format metadata, even unselected.
+	// Only this synthetic Sage predecessor-format control captures it as planned.
+	prepare(1, true, true);
 	isolatedCatalog();
 	select(true, false);
 	LobbyStartGame lobby;

@@ -2,7 +2,7 @@
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
 	"sourceDocument": "docs/design-sources/New Horizons.md",
-	"sourceSha256": "9cd2037e1cf7d4df14c6e4024b89fc9ad25a1b41c46e73b4b49204f586decf5a",
+	"sourceSha256": "4f25bcf4229afb7d25163359ada5ae6b409b407d8fb761300d0889904d9ef509",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,

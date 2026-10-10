@@ -553,7 +553,8 @@
 				4,
 				3,
 				3
-			]
+			],
+			"schoolRankDurations": [3, 4, 4, 5]
 		},
 		"new-horizons:massCurse": {
 			"schools": ["new-horizons:shadow"],
@@ -613,13 +614,14 @@
 			"schools": [
 				"new-horizons:sorcery"
 			],
-			"level": 2,
+			"level": 1,
 			"costs": [
-				8,
-				8,
-				6,
-				6
-			]
+				4,
+				4,
+				4,
+				4
+			],
+			"temporaryMagicalEffectsOnly": true
 		},
 		"core:disruptingRay": {
 			"schools": [
@@ -700,7 +702,8 @@
 			"directDamage": {
 				"base": 40,
 				"powerCoefficient": 10
-			}
+			},
+			"burnGroundedFlyers": true
 		},
 		"core:fireball": {
 			"schools": [
@@ -819,7 +822,14 @@
 				16,
 				13,
 				13
-			]
+			],
+			"implosion": {
+				"baseBasisPoints": 1200,
+				"powerBasisPointsPerSpellPower": 10,
+				"maximumBasisPoints": 3000,
+				"pullRadius": 3,
+				"pullDistance": 1
+			}
 		},
 		"core:inferno": {
 			"schools": [
@@ -1115,13 +1125,14 @@
 			"schools": [
 				"new-horizons:sorcery"
 			],
-			"level": 2,
+			"level": 3,
 			"costs": [
-				8,
-				8,
-				6,
-				6
-			]
+				12,
+				12,
+				12,
+				12
+			],
+			"ignoreInterveningBarriers": true
 		},
 		"new-horizons:spellLock": {
 			"schools": [

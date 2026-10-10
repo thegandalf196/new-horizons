@@ -37,6 +37,7 @@ class Spell;
 
 namespace newHorizonsMagic
 {
+DLL_LINKAGE void validateImplosionSerialization(const JsonNode & rules, bool supported);
 DLL_LINKAGE bool requiresWaterWalkLegalDayEnd(const JsonNode & rules);
 DLL_LINKAGE void validateWaterWalkDayEndSerialization(const JsonNode & rules, bool supported);
 constexpr int RULESET_VERSION = 1;
@@ -497,4 +498,9 @@ DLL_LINKAGE bool hasAnnihilatorPerk(const CGHeroInstance * hero, const spells::S
 DLL_LINKAGE int factionSpellWeight(const JsonNode & rules, FactionID faction, SpellID spell);
 DLL_LINKAGE SecondarySkill replacementSkill(const JsonNode & rules, SecondarySkill skill);
 DLL_LINKAGE bool skillAllowed(const JsonNode & rules, SecondarySkill skill, const std::set<SecondarySkill> & mapAllowed);
+DLL_LINKAGE bool dispelRemovesTemporaryMagicalEffectsOnly(const JsonNode & rules);
+DLL_LINKAGE void validateTeleportBarrierSerialization(const JsonNode & rules, bool supported);
+DLL_LINKAGE void validateTemporaryMagicDispelSerialization(const JsonNode & rules, bool supported);
+DLL_LINKAGE void validateCurseDurationSerialization(const JsonNode & rules, bool supported);
+DLL_LINKAGE void validateCanonicalSpellClausesSerialization(const JsonNode & rules, bool supported);
 }
