@@ -25,7 +25,7 @@ def verified_github_ci_provenance():
     if (os.environ.get('GITHUB_ACTIONS') != 'true'
             or os.environ.get('RUNNER_ENVIRONMENT') != 'github-hosted'
             or os.environ.get('RUNNER_OS') != 'Windows'
-            or os.environ.get('GITHUB_REPOSITORY') != 'thegandalf196/vcmi'
+            or os.environ.get('GITHUB_REPOSITORY') != 'thegandalf196/new-horizons'
             or os.environ.get('NH_VERIFIED_CONAN_CACHE_SHA256') != cache
             or not re.fullmatch(r'[0-9]+', os.environ.get('GITHUB_RUN_ID', ''))
             or not re.fullmatch(r'[0-9a-f]{40}', os.environ.get('GITHUB_SHA', ''))):

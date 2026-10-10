@@ -3,7 +3,7 @@ name: New Horizons Windows notice preflight
 on:
   workflow_dispatch:
   push:
-    branches: [definitive-mvp]
+    branches: [main]
     paths: [.github/workflows/new-horizons-windows-notices.yml]
 
 permissions:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   notices:
-    if: github.repository == 'thegandalf196/vcmi' && github.ref == 'refs/heads/definitive-mvp'
+    if: github.repository == 'thegandalf196/new-horizons' && github.ref == 'refs/heads/main'
     runs-on: windows-2025-vs2026
     timeout-minutes: 15
     steps:

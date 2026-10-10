@@ -103,6 +103,11 @@ Use new-project sessions rooted here with these instructions, not old Reconstruc
 
 ## Git
 
-Initial branch: definitive-mvp, based on upstream develop bc0fc2a9f83c9caf0d90575e38ad4b7008b2764a. Legacy develop and experimental branches are preserved.
+Current branch: `main`, in https://github.com/thegandalf196/new-horizons.
+The user authorized renaming the former definitive-mvp branch without rewriting
+its history, changing the default to main and removing the other inventoried
+public branches after verified private preservation. The original baseline was
+upstream develop bc0fc2a9f83c9caf0d90575e38ad4b7008b2764a. The unique older
+spellcast tooling is privately preserved, not merged into current gameplay.
 
-Commit tested coherent changes and push definitive-mvp to origin https://github.com/thegandalf196/vcmi.git. Use author AND committer thegandalf196 <thegandalf196@users.noreply.github.com>. Scan staged diffs for credentials, personal data, assets and generated files. No force pushes, experimental-branch changes or default-branch changes. Source commits do not imply playable acceptance.
+Commit tested coherent changes and push main to origin. Use author AND committer thegandalf196 <thegandalf196@users.noreply.github.com>. Scan staged diffs for credentials, personal data, assets and generated files. No force pushes, further branch deletion or default-branch changes without separate authorization. Source commits do not imply playable acceptance.

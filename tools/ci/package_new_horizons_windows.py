@@ -649,7 +649,7 @@ def main():
         write_json(package / "BUILD-IDENTITY.json", {
             "project": "Heroes III: New Horizons", "source_commit": revision,
             "client_executable": "new-horizons.exe",
-            "source_repository": "https://github.com/thegandalf196/vcmi",
+            "source_repository": "https://github.com/thegandalf196/new-horizons",
             "source_archive": source_name, "source_archive_sha256": sha256(args.output_dir / source_name),
             "source_exclusions": excluded,
             "build_provenance": build_provenance(install.parent),
@@ -670,7 +670,7 @@ def main():
         })
         (package / "SOURCE-NOTICE.txt").write_text(
             "Heroes III: New Horizons is a VCMI-derived GPL-covered fork. Preserve license.txt and AUTHORS.h.\n"
-            f"Exact source: https://github.com/thegandalf196/vcmi/tree/{revision}\n"
+            f"Exact source: https://github.com/thegandalf196/new-horizons/tree/{revision}\n"
             f"Corresponding fork source and submodules accompany this ZIP as {source_name}.\n"
             "Third-party references, license texts and upstream homepages are in DEPENDENCIES.json and licenses/.\n"
             f"Dependency sources and exact Conan recipes/patches accompany this ZIP as {dependency_source_name}.\n"

@@ -66,10 +66,15 @@ class BinaryPrivacyTest(unittest.TestCase):
 
     def test_exact_hosted_context_requires_every_provenance_field(self):
         env = {'GITHUB_ACTIONS': 'true', 'RUNNER_ENVIRONMENT': 'github-hosted', 'RUNNER_OS': 'Windows',
-               'GITHUB_REPOSITORY': 'thegandalf196/vcmi', 'GITHUB_RUN_ID': '123456', 'GITHUB_SHA': 'a' * 40,
+               'GITHUB_REPOSITORY': 'thegandalf196/new-horizons', 'GITHUB_RUN_ID': '123456', 'GITHUB_SHA': 'a' * 40,
                'NH_VERIFIED_CONAN_CACHE_SHA256': '6772d2e9f0a730329a195edce895a863d9115c4bba43101a9a6df3fefe6cfe43'}
         with patch.dict('os.environ', env, clear=True):
             self.assertEqual(verified_github_ci_provenance()['run_id'], '123456')
+        for repository in ('thegandalf196/vcmi', 'vcmi/vcmi', 'someone/new-horizons'):
+            with self.subTest(repository=repository):
+                wrong_repository = dict(env, GITHUB_REPOSITORY=repository)
+                with patch.dict('os.environ', wrong_repository, clear=True):
+                    self.assertIsNone(verified_github_ci_provenance())
         for missing in env:
             partial = dict(env)
             del partial[missing]

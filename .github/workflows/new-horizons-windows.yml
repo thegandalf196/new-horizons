@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   build:
-    if: github.repository == 'thegandalf196/vcmi' && github.ref == 'refs/heads/definitive-mvp'
+    if: github.repository == 'thegandalf196/new-horizons' && github.ref == 'refs/heads/main'
     runs-on: windows-2025-vs2026
     timeout-minutes: 180
     env:

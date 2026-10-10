@@ -256,7 +256,7 @@ def main():
         'project': 'Heroes III: New Horizons', 'source_commit': revision,
         'client_executable': client_name, 'legacy_client_source_commit': args.legacy_frozen_client_source,
         'packaging_source_commit': packaging_commit, 'source_companions': identities,
-        'source_repository': 'https://github.com/thegandalf196/vcmi',
+        'source_repository': 'https://github.com/thegandalf196/new-horizons',
         'compiler': 'Local MinGW-w64 GNU C++13 POSIX/SEH; NOT MSVC or Windows82 cache',
         'build_provenance': provenance, 'execution_identity': build,
         'platform': 'Windows x64', 'configuration': 'Release', 'render_backend': 'SDL3',
