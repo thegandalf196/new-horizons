@@ -466,6 +466,9 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 	R.method<&Mechanics::adjustEffectValue>("adjustEffectValue",
 		{{"target", "Unit against which per-target adjustments are computed."}}, {},
 		"Applies all per-target adjustments to the raw effect value.");
+	R.method<&Mechanics::adjustDirectCreatureActivationDamage>("adjustDirectCreatureActivationDamage",
+		{{"damage", "Final direct damage HP after mitigation and effect-specific scaling."}}, {},
+		"Applies only the active ordinary creature's captured Morale output. Never call for indirect damage or healing.");
 	R.method<&Mechanics::adjustRecipientDamage>("adjustRecipientDamage",
 		{{"target", "Recipient of an already resolved raw hit."},
 		 {"rawDamage", "Damage before this recipient's own modifiers."}}, {},

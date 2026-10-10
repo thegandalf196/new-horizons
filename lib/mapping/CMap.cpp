@@ -959,6 +959,21 @@ void CMap::overrideGameSettings(const JsonNode & input)
 	return gameSettings->loadOverrides(input);
 }
 
+void CMap::captureCombatScalarSettings()
+{
+	JsonNode snapshot;
+	snapshot["combat"]["newHorizonsFinalLuck"] = gameSettings->getValue(EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK);
+	snapshot["combat"]["moraleExtraDamagePercent"] = gameSettings->getValue(EGameSettings::COMBAT_MORALE_EXTRA_DAMAGE_PERCENT);
+	GameSettings::validateCombatScalarOverrides(snapshot, true, true);
+	gameSettings->loadOverrides(snapshot);
+}
+
+void CMap::validateCombatScalarSerialization(bool finalLuckSupported, bool moraleSupported) const
+{
+	if(gameSettings)
+		gameSettings->validateCombatScalarSerialization(finalLuckSupported, moraleSupported);
+}
+
 CArtifactInstance * CMap::createScroll(const SpellID & spellId)
 {
 	return createArtifact(ArtifactID::SPELL_SCROLL, spellId);

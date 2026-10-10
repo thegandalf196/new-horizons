@@ -407,6 +407,7 @@ public:
 
 	int32_t getActiveStackID() const override;
 	int32_t getRound() const override;
+	int32_t getMoraleExtraDamagePercent() const override { return subject->getBattle()->getMoraleExtraDamagePercent(); }
 	int32_t getBattlecraftMasteryAwardRound(BattleSide side) const override;
 	void awardBattlecraftMastery(BattleSide side, uint32_t unitId, int32_t round,
 		BattlecraftMasteryAction action) override;

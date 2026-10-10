@@ -224,6 +224,7 @@ public:
 	void validateNewHorizonsRemainingStartSerialization(bool supported) const;
 	void validateNewHorizonsWaterWalkDayEndSerialization(bool supported) const;
 	void validateCanonicalSpellClausesSerialization(bool supported) const;
+	void validateCombatScalarSerialization(bool finalLuckSupported, bool moraleSupported) const;
 	void validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const;
 	void validatePlagueRulesSerialization(bool supported) const;
 	void validateCrisisCommandSerialization(bool supported) const;
@@ -329,6 +330,7 @@ public:
 	std::vector<ArtifactID> townMerchantArtifacts;
 
 	void overrideGameSettings(const JsonNode & input);
+	void captureCombatScalarSettings();
 	void overrideGameSetting(EGameSettings option, const JsonNode & input);
 	const IGameSettings & getSettings() const;
 	/// Copied authored magic override: absent and explicit null are distinct.
@@ -349,6 +351,9 @@ public:
 	template <typename Handler>
 	void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateCombatScalarSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE));
 		if(h.saving)
 			validateCanonicalSpellClausesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
 		if(h.saving) validateCrisisCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));

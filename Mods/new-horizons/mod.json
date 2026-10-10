@@ -12,6 +12,8 @@
 	"keepDisabled": false,
 	"settings": {
 		"combat": {
+			"newHorizonsFinalLuck": true,
+			"moraleExtraDamagePercent": 75,
 			"goodLuckChance": [
 				4,
 				8,

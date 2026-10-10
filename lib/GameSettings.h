@@ -44,8 +44,11 @@ class DLL_LINKAGE GameSettings final : public IGameSettings, boost::noncopyable
 
 	// converts all existing overrides into a single json node for serialization
 	JsonNode getAllOverrides() const;
+	void loadSavedOverrides(const JsonNode & input);
 
 public:
+	static void validateCombatScalarOverrides(const JsonNode & input, bool finalLuckSupported, bool moraleSupported);
+	void validateCombatScalarSerialization(bool finalLuckSupported, bool moraleSupported) const;
 	void validateProtectedAdventureMobilitySerialization(bool supported) const
 	{
 		newHorizonsProtectedMobility::validateRulesSerialization(getAllOverrides()["magic"]["newHorizons"], supported);
@@ -185,6 +188,9 @@ public:
 		if (h.saving)
 		{
 			JsonNode overrides = getAllOverrides();
+			validateCombatScalarOverrides(overrides,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE));
 			newHorizonsMagic::validateCanonicalSpellClausesSerialization(overrides["magic"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
 			newHorizonsHeroes::validateNavigationStartSerialization(overrides["heroes"]["newHorizons"],
@@ -232,6 +238,9 @@ public:
 		{
 			JsonNode overrides;
 			h & overrides;
+			validateCombatScalarOverrides(overrides,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE));
 			newHorizonsMagic::validateCanonicalSpellClausesSerialization(overrides["magic"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
 			newHorizonsHeroes::validateDefaultCreatureLineSerialization(overrides["heroes"]["newHorizons"],
@@ -273,7 +282,7 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
 			newHorizonsPlague::validateRuleSerialization(overrides["magic"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
-			loadOverrides(overrides);
+			loadSavedOverrides(overrides);
 		}
 	}
 };

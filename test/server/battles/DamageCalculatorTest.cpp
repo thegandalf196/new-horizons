@@ -22,6 +22,8 @@
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/modding/IdentifierStorage.h"
 #include "../../../lib/modding/ModScope.h"
+#include "../../../lib/spells/CSpellHandler.h"
+#include "../../../lib/serializer/CMemorySerializer.h"
 
 namespace
 {
@@ -85,9 +87,12 @@ public:
 	void SetUp() override
 	{
 		BattleTestFixture::SetUp();
+		// Existing factor cases intentionally retain historical additive Luck.
+		overrideSettingBeforeInit(EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK, finalLuckPolicy());
 		startGame();
 		startBattle();
 	}
+	virtual bool finalLuckPolicy() const { return false; }
 
 	CStack * attacker(const std::string & creature, int32_t count = stackSize, const BattleHex & hex = BattleHex(attackerHex))
 	{
@@ -138,6 +143,155 @@ public:
 class DamageCalculatorTest : public DamageCalculatorTestBase
 {
 };
+
+class NewHorizonsFinalLuckDamageTest : public DamageCalculatorTestBase
+{
+public:
+	bool finalLuckPolicy() const override { return true; }
+};
+
+class NewHorizonsFinalLuckActualTest : public NewHorizonsFinalLuckDamageTest
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		TinyMapGameTest::mapLoaded(loaded);
+		JsonNode chance;
+		for(int index = 0; index < 10; ++index)
+			chance.Vector().emplace_back(100);
+		loaded->overrideGameSetting(EGameSettings::COMBAT_GOOD_LUCK_CHANCE, chance);
+		loaded->overrideGameSetting(EGameSettings::COMBAT_LUCK_DICE_SIZE, JsonNode(100));
+	}
+};
+
+TEST_F(NewHorizonsFinalLuckActualTest, AcceptedPhysicalAttackUsesFinalMultiplierWithoutChangingTarget)
+{
+	auto * from = attacker(angel);
+	auto * to = defender(angel, 1000);
+	grant(from, BonusType::LUCK, 1);
+	grant(from, BonusType::PERCENTAGE_DAMAGE_BOOST, 50,
+		BonusSubtypeID(BonusCustomSubtype::damageTypeMelee));
+	blockRetaliation(from);
+	const auto before = to->getAvailableHealth();
+	beginCombat();
+	ASSERT_EQ(battle()->battleActiveUnit(), from);
+	ASSERT_TRUE(attack(from, to->getPosition()));
+	ASSERT_FALSE(server.attacks.empty());
+	EXPECT_TRUE(server.attacks.front().lucky());
+	EXPECT_FALSE(server.attacks.front().unlucky());
+	EXPECT_EQ(before - to->getAvailableHealth(), 15000);
+}
+
+TEST_F(NewHorizonsFinalLuckDamageTest, PositiveLuckDoublesFinalRaisedPhysicalDamageAndExpectedValue)
+{
+	auto * from = attacker(angel);
+	auto * to = defender(angel);
+	grant(from, BonusType::PERCENTAGE_DAMAGE_BOOST, 50,
+		BonusSubtypeID(BonusCustomSubtype::damageTypeMelee));
+	BattleAttackInfo info(from, to, 0, false);
+	ASSERT_TRUE(battle()->getBattle()->getLuckRollRules().finalDirectPhysicalMultiplier);
+	EXPECT_EQ(battle()->calculateDmgRange(info).damage.min, 7500);
+	info.luckyStrike = true;
+	EXPECT_EQ(battle()->calculateDmgRange(info).damage.min, 15000);
+	info.luckyStrike = false;
+	grant(from, BonusType::LUCK, 10);
+	EXPECT_EQ(battle()->battleExpectedLuckDamage(info), 10500);
+}
+
+TEST_F(NewHorizonsFinalLuckDamageTest, SylvanFactorsMultiplyTheWholeRaisedDamage)
+{
+	auto * from = attacker(angel);
+	auto * to = defender(angel);
+	grant(from, BonusType::PERCENTAGE_DAMAGE_BOOST, 50,
+		BonusSubtypeID(BonusCustomSubtype::damageTypeMelee));
+	BattleAttackInfo info(from, to, 0, false);
+	info.luckyStrike = true;
+	for(const auto & [rank, damage] : std::array<std::pair<int, int64_t>, 3>{{
+		{basic, 16875}, {advanced, 19500}, {expert, 22500}}})
+	{
+		setSkill(attackerSideHero, "new-horizons:sylvanLuck", rank);
+		EXPECT_EQ(battle()->calculateDmgRange(info).damage.min, damage);
+	}
+}
+
+TEST_F(NewHorizonsFinalLuckDamageTest, NegativeLuckAndRetaliationKeepTheirAuthoritativePhysicalSemantics)
+{
+	auto * from = attacker(angel);
+	auto * to = defender(angel);
+	grant(from, BonusType::PERCENTAGE_DAMAGE_BOOST, 50,
+		BonusSubtypeID(BonusCustomSubtype::damageTypeMelee));
+	BattleAttackInfo info(from, to, 0, false);
+	info.unluckyStrike = true;
+	EXPECT_EQ(battle()->calculateDmgRange(info).damage.min, 3750);
+	info.unluckyStrike = false;
+	info.luckyStrike = true;
+	info.retaliation = true;
+	EXPECT_EQ(battle()->calculateDmgRange(info).damage.min, 15000);
+}
+
+TEST_F(DamageCalculatorTest, HistoricalProfileKeepsAdditiveLuckyRaising)
+{
+	auto * from = attacker(angel);
+	auto * to = defender(angel);
+	grant(from, BonusType::PERCENTAGE_DAMAGE_BOOST, 50,
+		BonusSubtypeID(BonusCustomSubtype::damageTypeMelee));
+	BattleAttackInfo info(from, to, 0, false);
+	ASSERT_FALSE(battle()->getBattle()->getLuckRollRules().finalDirectPhysicalMultiplier);
+	info.luckyStrike = true;
+	EXPECT_EQ(battle()->calculateDmgRange(info).damage.min, 12500);
+}
+
+TEST_F(NewHorizonsFinalLuckDamageTest, MagicalDamageAndWarMachinesDoNotGainLuck)
+{
+	auto * from = attacker(angel);
+	auto * to = defender(angel);
+	grant(from, BonusType::LUCK, 10);
+	BattleAttackInfo magical(from, to, 0, false);
+	magical.physicalDamage = false;
+	const auto ordinaryMagical = battle()->calculateDmgRange(magical).damage;
+	magical.luckyStrike = true;
+	EXPECT_EQ(battle()->calculateDmgRange(magical).damage.min, ordinaryMagical.min);
+	magical.luckyStrike = false;
+	magical.unluckyStrike = true;
+	EXPECT_EQ(battle()->calculateDmgRange(magical).damage.min, ordinaryMagical.min);
+	grant(from, BonusType::SIEGE_WEAPON, 1);
+	EXPECT_EQ(battle()->battleGetAttackLuck(from, to, false), 0);
+	BattleAttackInfo machine(from, to, 0, false);
+	const auto ordinaryMachine = battle()->calculateDmgRange(machine).damage;
+	machine.luckyStrike = true;
+	EXPECT_EQ(battle()->calculateDmgRange(machine).damage.min, ordinaryMachine.min);
+}
+
+TEST_F(NewHorizonsFinalLuckDamageTest, SavedPolicyRoundTripsAndOldWriterRejectsBeforePrefix)
+{
+	const auto previous = static_cast<ESerializationVersion>(
+		static_cast<int>(ESerializationVersion::NEW_HORIZONS_FINAL_LUCK) - 1);
+	const auto rules = battle()->getBattle()->getLuckRollRules();
+	ASSERT_TRUE(rules.finalDirectPhysicalMultiplier);
+	CMemorySerializer current;
+	ASSERT_NO_THROW(current.oser & rules);
+	LuckRollRules restored;
+	ASSERT_NO_THROW(current.iser & restored);
+	EXPECT_EQ(restored, rules);
+	CMemorySerializer old;
+	old.oser.version = previous;
+	EXPECT_THROW(old.oser & rules, std::runtime_error);
+	EXPECT_TRUE(old.extractBuffer().empty());
+	CMemorySerializer oldBattle;
+	oldBattle.oser.version = previous;
+	EXPECT_THROW(oldBattle.oser & *battle(), std::runtime_error);
+	EXPECT_TRUE(oldBattle.extractBuffer().empty());
+	auto historical = rules;
+	historical.finalDirectPhysicalMultiplier = false;
+	CMemorySerializer compatible;
+	compatible.oser.version = previous;
+	compatible.iser.version = previous;
+	ASSERT_NO_THROW(compatible.oser & historical);
+	LuckRollRules restoredHistorical;
+	restoredHistorical.finalDirectPhysicalMultiplier = true;
+	ASSERT_NO_THROW(compatible.iser & restoredHistorical);
+	EXPECT_EQ(restoredHistorical, historical);
+}
 
 class LegacyForgetfulnessDamageTest : public DamageCalculatorTestBase
 {

@@ -1123,8 +1123,12 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	// The remaining units retain the existing lazy projection policy. Frozen's
 	// next-slot receipt must be a branch snapshot: reading it for the first time
 	// after a parent Shatter/thaw cannot import that later parent's mutation.
+	// Likewise, capture current Morale origin before the parent can advance.
 	for(const auto * unit : realBattle->battleGetAllUnits(false))
-		if(newHorizonsFrozen::isFrozen(*unit))
+		if(unit->unitId() == static_cast<uint32_t>(activeUnitId)
+			|| newHorizonsFrozen::isFrozen(*unit)
+			|| (dynamic_cast<const battle::CUnitState *>(unit)
+				&& dynamic_cast<const battle::CUnitState *>(unit)->moraleExtraActivation))
 			getForUpdate(unit->unitId());
 }
 
@@ -2584,6 +2588,7 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 		return;
 	if(battleBeginsActivation(unit.get(), reason))
 	{
+		unit->moraleExtraActivation = getMoraleExtraDamagePercent() != 100 && reason == BattleUnitTurnReason::MORALE;
 		newHorizonsHeroicSpirit::beginActivation(*unit, reason);
 		unit->removeUnitBonus(CSelector(Bonus::UntilNextCreatureActivation));
 

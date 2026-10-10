@@ -142,6 +142,14 @@ public:
 				bonus->validateFrozenSerialization(h);
 	}
 
+	template <typename Handler> void validateMoraleActivationSerialization(Handler & h) const
+	{
+		if(moraleExtraActivation && !hadMorale)
+			throw std::runtime_error("Morale activation provenance requires its earned receipt");
+		if(h.saving && moraleExtraActivation && !h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE))
+			throw std::runtime_error("Cannot discard current Morale activation provenance");
+	}
+
 	template <typename Handler> void validateHeroicSpiritSerialization(Handler & h) const
 	{
 		if(heroicSpiritMoralePending && !heroicSpiritRetaliation)
@@ -191,6 +199,7 @@ public:
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving) validateMoraleActivationSerialization(h);
 		validateHeroicSpiritSerialization(h);
 		if(h.saving)
 			validateOpportunistSerialization(h);
@@ -317,6 +326,11 @@ public:
 			h & veteranCohesionEarned;
 		else if(!h.saving)
 			veteranCohesionEarned = false;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE))
+			h & moraleExtraActivation;
+		else if(!h.saving)
+			moraleExtraActivation = false;
+		if(!h.saving) validateMoraleActivationSerialization(h);
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_HEROIC_SPIRIT))
 		{
 			h & heroicSpiritRetaliation;

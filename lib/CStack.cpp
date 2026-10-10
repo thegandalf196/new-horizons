@@ -76,6 +76,7 @@ void CStack::localInit(BattleInfo * battleInfo)
 	const auto restoredConfusionState = confusionState;
 	const int32_t restoredOverwatchReadyRound = battlecraftOverwatchReadyRound;
 	const int32_t restoredOverwatchUsedRound = battlecraftOverwatchUsedRound;
+	const bool restoredMoraleExtraActivation = moraleExtraActivation;
 	const bool restoredHeroicSpirit = heroicSpiritRetaliation;
 	const bool restoredHeroicSpiritPending = heroicSpiritMoralePending;
 	const int32_t restoredPostAttackMovement = pursuitMovementRemaining;
@@ -120,6 +121,7 @@ void CStack::localInit(BattleInfo * battleInfo)
 	confusionState = restoredConfusionState;
 	battlecraftOverwatchReadyRound = restoredOverwatchReadyRound;
 	battlecraftOverwatchUsedRound = restoredOverwatchUsedRound;
+	moraleExtraActivation = restoredMoraleExtraActivation;
 	heroicSpiritRetaliation = restoredHeroicSpirit;
 	heroicSpiritMoralePending = restoredHeroicSpiritPending;
 	restoreFrozenApplicationRound(restoredFrozenAppliedRound);

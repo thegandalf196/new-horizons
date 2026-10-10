@@ -53,6 +53,13 @@ public:
 		return battle::hasConfusionState(data);
 	}
 
+	template <typename Handler> void validateMoraleActivationSerialization(Handler & h) const
+	{
+		if(battle::hasMoraleActivationState(data)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE))
+			throw std::runtime_error("Cannot discard current Morale activation provenance");
+	}
+
 	template <typename Handler> void validateOpportunistSerialization(Handler & h) const
 	{
 		const auto & marker = data["state"]["luckyOwnAttackSequence"];
@@ -174,6 +181,7 @@ public:
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving) validateMoraleActivationSerialization(h);
 		if(h.saving)
 			validateVeteranCohesionSerialization(h);
 		if(h.saving)
@@ -218,6 +226,7 @@ public:
 		h & id;
 		h & healthDelta;
 		h & data;
+		if(!h.saving) validateMoraleActivationSerialization(h);
 		if(!h.saving) validatePlagueSerialization(h);
 		h & operation;
 		if(!h.saving)

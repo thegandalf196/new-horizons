@@ -475,6 +475,10 @@ public:
 	virtual bool isMagicalEffect() const = 0;
 
 	virtual int64_t adjustEffectValue(const battle::Unit * target) const = 0;
+	/// Only explicit creature-active casts can inherit the current Morale activation output.
+	virtual int32_t getDirectCreatureActivationDamagePercent() const { return 100; }
+	/// Final HP-only adjustment; callers must exclude indirect damage effects.
+	int64_t adjustDirectCreatureActivationDamage(int64_t damage) const;
 	/// Applies only recipient damage modifiers to an already resolved raw hit.
 	/// Does not repeat the caster's power, offensive bonuses, or execution rules.
 	int64_t adjustRecipientDamage(const battle::Unit * target, int64_t rawDamage) const;
@@ -598,6 +602,7 @@ public:
 	bool isMagicalEffect() const override;
 
 	int64_t adjustEffectValue(const battle::Unit * target) const override;
+	int32_t getDirectCreatureActivationDamagePercent() const override;
 	int64_t adjustEffectValueBeforeExecution(const battle::Unit * target) const override;
 	int32_t getCrownAndAltarBonusPercent(const battle::Unit * target) const override;
 	IBattleCast::Value64 getRecipientEffectValue(const battle::Unit * target) const override;

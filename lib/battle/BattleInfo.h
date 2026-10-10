@@ -40,6 +40,7 @@ class DLL_LINKAGE BattleInfo : public CBonusSystemNode, public CBattleInfoCallba
 	std::unique_ptr<BattleLayout> layout;
 	si32 round;
 	si32 activationSerial = 0;
+	int32_t moraleExtraDamagePercent = 100;
 	SeizeInitiativeState seizeInitiative;
 	JsonNode heroCommandRules;
 	JsonNode magicRules;
@@ -154,6 +155,22 @@ public:
 		return side == BattleSide::ATTACKER || side == BattleSide::DEFENDER ? sides.at(side).rapidResponse : empty;
 	}
 	void setRapidResponseState(BattleSide side, const RapidResponseState & state) override;
+	template <typename Handler> void validateMoraleActivationSerialization(Handler & h) const
+	{
+		if(moraleExtraDamagePercent < 1 || moraleExtraDamagePercent > 100)
+			throw std::runtime_error("Invalid captured Morale direct damage percentage");
+		if(h.saving && moraleExtraDamagePercent != 100
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE))
+			throw std::runtime_error("Cannot discard captured Morale activation damage rules");
+		for(const auto & unit : stacks)
+			if(unit)
+			{
+				unit->validateMoraleActivationSerialization(h);
+				if(unit->moraleExtraActivation && moraleExtraDamagePercent == 100)
+					throw std::runtime_error("Morale activation provenance requires captured damage rules");
+			}
+	}
+
 	template <typename Handler> void validateRapidResponseSerialization(Handler & h) const
 	{
 		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
@@ -534,6 +551,9 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && luckRollRules.finalDirectPhysicalMultiplier
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK))
+			throw std::runtime_error("Cannot discard captured final physical Luck policy");
 		if(h.saving)
 			newHorizonsMagic::validateCanonicalSpellClausesSerialization(magicRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
@@ -542,6 +562,7 @@ public:
 			validateSeizeInitiativeSerialization(h);
 		if(h.saving)
 			validateRapidResponseSerialization(h);
+		if(h.saving) validateMoraleActivationSerialization(h);
 		if(h.saving)
 			validateHeroicSpiritSerialization(h);
 		if(h.saving)
@@ -908,6 +929,10 @@ public:
 			heroCommandRules = JsonNode();
 		}
 
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE))
+			h & moraleExtraDamagePercent;
+		else if(!h.saving)
+			moraleExtraDamagePercent = 100;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGIC))
 		{
 			h & magicRules;
@@ -1162,6 +1187,7 @@ public:
 			validateFocusFireStates();
 			validateRelentlessAssaultStates();
 			crisisCommand.validateSerializedReferences(*this);
+			validateMoraleActivationSerialization(h);
 			postDeserialize();
 			validateCrisisCommandProfiles(h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
 			validateBattlecraftMasteryState();
@@ -1226,6 +1252,7 @@ public:
 	}
 	int32_t getRound() const override;
 	int32_t getActivationSerial() const override { return activationSerial; }
+	int32_t getMoraleExtraDamagePercent() const override { return moraleExtraDamagePercent; }
 
 	const CGTownInstance * getDefendedTown() const override;
 	EWallState getWallState(EWallPart partOfWall) const override;

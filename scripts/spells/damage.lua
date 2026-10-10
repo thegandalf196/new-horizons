@@ -122,6 +122,11 @@ function Script:damageForTarget(targetIndex, mechanics, unit)
 			base = math.floor(multiplier * base)
 		end
 	end
+	-- Morale modifies final direct HP, not spell power, buffs, healing or passive procs.
+	-- Sharing this seam with getHealthChange keeps detached evaluation and previews identical.
+	if not self.indirect then
+		base = mechanics:adjustDirectCreatureActivationDamage(base)
+	end
 	return base
 end
 

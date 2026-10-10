@@ -286,6 +286,7 @@ public:
 	/// activation, so per-activation obstacle effects can be guarded without
 	/// touching unit state.
 	virtual int32_t getActivationSerial() const { return 0; }
+	virtual int32_t getMoraleExtraDamagePercent() const { return 100; }
 };
 
 class DLL_LINKAGE IBattleState : public IBattleInfo

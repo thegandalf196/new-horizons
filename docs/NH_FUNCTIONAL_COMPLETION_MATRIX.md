@@ -2,6 +2,67 @@
 
 Updated: 2026-10-10
 
+Accepted Luck/Morale checkpoint: actual native-v4 passes27/27 (Morale18,
+scalar capture9), zero errors/skips/crashes/timeouts. Both-target93769 and
+binary privacy54854 pass; root opens the actual receipt and XMLs. Final test
+b1948abfd0 / unchanged production library02d717013a are verified, with isolated
+child execution, cleanup and resource parity. Unaffected native-v3 Luck7 and
+active-creature-spell9 results give43 distinct passing cases across the runs,
+not one fresh43 execution. Principal final-Luck, earned-Morale direct damage,
+detached evaluation and saved-world capture/compatibility paths are accepted.
+Broader interactions, rendered/platform acceptance and playable delivery remain
+separate; Phase1 exit still requires requirement-level evidence auditing.
+
+Actual Luck/Morale native-v3:39/43, no crashes/timeouts/errors/skips/disabled.
+Luck7/7 and active creature spells9/9 pass. Morale16/18 and scalar capture7/9
+need four reviewed test-only repairs: identifier overload, exact serialized
+optional-null payload and an independent single-final-floor damage oracle.
+No production changes are made to fit these failures. Both-target retry93769
+is live;27 affected cases remain pending. Root independently opens the XMLs.
+This is focused principal-path evidence, not complete batch acceptance yet.
+
+Current Luck/Morale linkage checkpoint: both-target84880 succeeds after narrow
+test-only include, shared-ownership and public-accessor corrections. Binary
+privacy1925 has zero findings; test71b2a14552 / library02d717013a are frozen.
+Module parity and13 scalar schema controls pass. Sole isolated native testing
+is authorized for actual discovery plus43 cases; results remain pending.
+No new accepted coverage, publication or rendered/platform claim yet.
+
+Build43083 links the production engine library but remains live in keep-going
+compilation. The scalar-world test reveals a missing complete QuestInfo include;
+its narrow repair is prepared privately and must wait for terminal build state.
+Native acceptance remains pending. The current summary table now reflects actual
+registry counts rather than older checkpoints; that is a ledger correction,
+not additional implementation or test credit.
+
+Luck/Morale source integration is now complete for the mapped principal gaps:
+ordinary physical/magical attacks and active creature direct-damage spells use
+precise earned-Morale origin; final Luck remains physical-only. Independent
+source review and exact reverse-patch checks pass. Both-target build43083 is
+live at ten jobs;43 focused cases are registered but not executed. Coverage
+acceptance awaits actual linkage/discovery/native results. Bounded exit audits
+do not establish additional missing principal mechanics, while full mid-combat
+save/resume certification and intermittent AI Leadership attribution remain
+explicit stabilization limits. No phase transition or release acceptance yet.
+
+Current source checkpoint: Luck/Morale unionv2 is imported, including magical
+ordinary creature shots. It has34 authored focused cases. The additional
+active-creature spell path has nine authored cases pending final review/import;
+it applies the same direct-damage rule without changing hero spells, healing or
+indirect damage. The next focused native gate is43 cases with BattleAI enabled.
+Build, actual discovery and execution remain pending; do not count this source
+checkpoint as accepted coverage. Principal-path exit auditing continues
+separately from Phase2 interaction/rendered/playtest evidence.
+
+Published spell/Sage checkpoint:ad3cf055e matches the remote. Its full Windows
+run38037250855 is in progress; no new platform/package acceptance is inferred.
+Final Luck/Morale private union has integration clearance, but a confirmed
+Morale fidelity correction remains before import: ordinary magical creature
+shots such as Magog must receive the authored75% direct-damage output too.
+Luck remains explicitly physical-only. Focused current-table reconciliation
+updates Lighthouse, Glyphs and Mana recovery from their already accepted
+evidence; it is not another native run or broader category certification.
+
 Accepted spell/Sage checkpoint:116 distinct focused cases pass across the
 unchanged production/resources: corrected native-v3 contributes71, native-v4
 Sage old-writer retry1/1 in4.978s, prior unaffected native-v2 contributes44.
@@ -5207,21 +5268,21 @@ without a defensible item-level denominator remain explicitly uncounted.
 
 | Specification area | Current coverage | Principal remaining work |
 |---|---:|---|
-| Skills registered | 31/31 | All three ranks per Skill are active; many registered Skills still lack complete perk progression. |
+| Skills registered | 31/31 | All three ranks and complete ten-perk pools are active; accepted303-distinct-case checkpoint and earlier focused gates establish principal paths. Wider integration remains Phase2. |
 | Skill rank effects active | 93/93 | Elemental Rebirth's three ranks now have source/native and owning-side AI evidence. Active status does not certify every wider interaction. |
-| Skill perks active | 247/310 | 63 planned; current registry recount2026-10-09. Generic172/220, faction75/90. Discipline8/10; Armorer9/10; War Machines7/10; Spellcraft6/10; Luck8/10; Diplomacy7/10; Chaos Magic6/10; Nature Magic8/10; Necromancy10/10; Learning4/10; Estates6/10; Battlecraft9/10; Logistics9/10; Command7/10; Warcasting9/10. Historian's foundation remains planned and adds no activation count. Active status alone does not certify every mechanic. |
-| Faction Skill ranks active | 27/27 | All nine faction rank foundations are active; their remaining perks and wider integration are separate work. |
-| Faction perks active | 75/90 | 15 planned perks; Divine Mandate has six accepted perks, including Expert Mandate of Heaven and Advanced Purifying Mandate; Elemental Rebirth has seven accepted perks with live/detached evidence, including Rebirth Chain and the three terrain perks. |
-| Canonical combat-spell identities registered | 63/67 | 4 missing/inactive; Elemental Convergence is the newest source/native-verified identity. Chaos is 8/11, Light 11/11 and Nature is 10/11 by identity, not blanket mechanic certification. Rendered/playable delivery remains separate. |
+| Skill perks active | 310/310 | 0 planned; current registry recount: generic220/220 and faction90/90. Accepted303-distinct-case checkpoint and earlier focused gates establish principal paths, not blanket interaction/rendered certification. The separate final-Luck/Morale batch now has43 distinct passing focused cases; wider integration remains Phase2. |
+| Faction Skill ranks active | 27/27 | All nine faction rank foundations and ten-perk pools are active; wider faction integration and rendered/playable acceptance remain separate. |
+| Faction perks active | 90/90 | 0 planned. Principal paths have accepted focused evidence; this count does not certify all cross-faction, save/resume or rendered interactions. |
+| Canonical combat-spell identities registered | 67/67 | All canonical school-roster identities have principal paths. Accepted303 checkpoint plus later116-distinct-case spell/Sage evidence cover bounded repairs; identity coverage is not blanket spell-interaction, rendered or release certification. |
 | Distinct perk-granted Mass spell entries | 5/5 | Mass Curse/Sorrow, Bless, Regeneration and Slow have focused native evidence. Slow uses its separate permanent virtual grant, 60% family magnitude and ordinary action transport. These five variants are additional to the 67 school-roster identities; rendered/playable acceptance remains separate. |
-| Adventure spells with ordinary acquisition | 5/5 | All five have a validated town unlock/purchase path, saved town state, visitor learning, client purchase UI, and AI purchasing. UP056's refreshed effect audit verifies Summon Boat existing-only/adjacent placement, Town Portal exhaustion, Dimension Door visibility/radius8/exhaustion/warning and shared1.5x Water Walk/Fly costs. Protected barriers, Water Walk end-day land policy and Town Portal nearest-town/admission scope retain explicit holds. Acquisition count is not an effect-complete count; rendered/playable purchase remains separate. |
+| Adventure spells with ordinary acquisition | 5/5 | All five have validated acquisition, saved town state, client controls and minimum AI paths. Accepted303-distinct-case checkpoint includes Adventure71 evidence closing nearest-only Town Portal, Water Walk legal-land day ending and protected Fly/Dimension Door barriers. Dynamic invalidation, compound routes and rendered/playable acceptance remain Phase2. |
 | Orders registered | 8/8 | Config and `HeroCommand::isActive` agree. UP-146 adds native-verified independent simultaneous state/effects and action/AI/UI hooks; broader per-Order interaction coverage remains Phase2. |
 | Hero-class Leadership profiles | 18/18 | Capability data exists; UP021 ordinary/radial transfer principal paths pass13 focused native cases. Broader and rendered/playable acceptance remain pending. |
-| Creature base-line Leadership requirements | 64/64 | Data coverage only; individual creature mechanics remain unaudited. |
-| Creature category forms | 126/126 | 50 Core, 58 Elite, 18 Champion are registered; this is not creature-ability coverage. |
+| Creature base-line Leadership requirements | 66/66 | Data coverage includes Wisp and Greater Wisp; individual creature mechanics and wider Leadership composition require separate evidence. |
+| Creature category forms | 128/128 | 52 Core,58 Elite,18 Champion are registered, including Wisp/Greater Wisp; this is category data coverage, not creature-ability certification. |
 | Siege output formula families | 4/4 | Ballista, Catapult, Tent and defensive tower outputs have data; universal Blacksmith access and Ballista Yard's weekly Siege effect are implemented with focused native tests. Rendered/playable acceptance remains open. |
-| Recruitment perks active | 6/10 | Four planned; external, solo town and split town Muster have server and AI paths. |
-| Diplomacy ranks/perks active | 3/3 ranks, 7/10 perks | Deterministic joining, Envoy, Peacemaker, Tribute and Recruitment Pact pass focused verification, including versioned state; three perks remain missing. |
+| Recruitment perks active | 10/10 | 0 planned; Muster and training/replenishment principal server/UI/minimum-AI paths have accepted focused evidence, including the eleven-perk128-case checkpoint. Broad transfer/battle-result/save interactions remain Phase2. |
+| Diplomacy ranks/perks active | 3/3 ranks,10/10 perks | Deterministic joining and all ten perks have accepted principal paths, including Mercenary Captain, Loyal Mercenaries and Legendary Reputation in the final303 checkpoint. Compound negotiation/transfer/provenance and full-match AI quality remain Phase2. |
 
 UP108 acceptance2026-10-04: three Divine Mandate ranks have both accepted
 Light Spell/Order pair directions,1/2/3 completed-pair limits, unused round
@@ -5257,7 +5318,7 @@ not newly implemented or individually certified content.
 |---|---|---|
 | Castle Brotherhood of the Sword | Native: unique-building training +100 permanent Leadership per hero/building, repeat denial and save | Retained defending +2 Morale scope unverified |
 | Castle Stables | Native: UP201 resident day-start movement, expiry and reacquisition | Wider movement composition Phase2 |
-| Castle Lighthouse | Missing: UP201 | Town-departure waiver and repeated-day benefit scope unresolved; legacy sea500 is not the new rule |
+| Castle Lighthouse | Native: captured town-departure embarkation waiver and +20% sea Movement for the day; accepted303-distinct-case checkpoint above includes the Adventure71 gate | Wider departure/ownership/movement composition and rendered/playable delivery remain Phase2; not certification of all37 building rows |
 | Castle Griffin Bastion | Baseline: core horde growth consumer | Row-specific runtime acceptance absent; numbers deferred |
 | Rampart Treasury | Native: NewHorizonsEconomyTest, capped10% independently per Treasury | Wider economy composition Phase2 |
 | Rampart Mystic Pond | Native: exactly two precious resources, saved result and legacy control | Rendered weekly feedback unverified |
@@ -5285,7 +5346,7 @@ not newly implemented or individually certified content.
 | Stronghold Escape Tunnel | Baseline: BATTLE_CAN_FLEE and battle consumer | Row-specific runtime acceptance absent |
 | Stronghold Mess Hall / growth | Baseline: core horde consumers | Row-specific runtime acceptance absent; numbers deferred |
 | Fortress Blood Obelisk | Native: UP202 siege Attack20 and weekly next-combat physical10%, save and cleanup | Wider Order/damage composition Phase2 |
-| Fortress Glyphs of Fear | Partial: UP200 native siege Defense20 and cleanup | Eight-tile enemy Morale aura missing; geometry/overlap scope unresolved |
+| Fortress Glyphs of Fear | Native: siege Defense20 and cleanup plus dynamic eight-tile enemy Morale aura and detached location parity; accepted303-distinct-case checkpoint above includes the Adventure71 gate | Wider aura overlap/control/movement composition and rendered/live-refresh acceptance remain Phase2 |
 | Fortress Captain's Quarters / growth | Baseline: core growth consumers | Row-specific runtime acceptance absent; numbers deferred |
 | Fortress Shipyard | Baseline: town/generic boat consumer | Row-specific runtime acceptance absent |
 | Conflux House of Wisdom | Native: six distinct saved scroll offers, price1000×level, acquisition validation | Rendered scroll-art acceptance separate |
@@ -5383,7 +5444,7 @@ one conversion awaits a design ruling.
 | Flat land Movement ÷10 | UP204: overlay, inventory and native71900 | Broad composition/rendered descriptions remain separate. |
 | Flat sea Movement ÷10 | UP204: Ocean Guidance and Sea Captain's Hat native cases | Broad composition/rendered descriptions remain separate. |
 | Speed also grants Initiative | UP206: real equipped/removal and explicit/fallback Initiative; native26470 | Projected creature-form limiter reevaluation is Phase2. |
-| Mana-regeneration tiers | UP207: mapped, no conversion overlay/native acceptance | Blocked on independently additive item maxima versus aggregate-before-max. |
+| Mana-regeneration tiers | Native: captured independently additive per-item max(5,5%)/max(10,10%)/max(15,15%) daily recovery with lifetime/idempotence controls; accepted303-distinct-case checkpoint above includes the Adventure71 gate | Broader combined-artifact/equipment/save interactions and rendered/playable delivery remain Phase2; not whole-family artifact certification |
 | Resistance retained; total cap75% | UP214: equipment, innate/aura, seeded rolls, projections and legacy; native39842 | Projected untouched-recipient aura adjacency is Phase2. |
 | Elemental Orbs +25% final magical damage | UP210: explicit tags, shared scaler, actual equipment/casts/projections; native71275 | Broad proxy/spell composition and strategic valuation are Phase2. |
 | Resource / Gold income unchanged | Core GENERATE_RESOURCE producers retained | Family-wide preservation/economy acceptance not established. |

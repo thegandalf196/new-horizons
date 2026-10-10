@@ -210,6 +210,26 @@ int32_t CBattleInfoCallback::battleGetActivationOutputPercent(const battle::Unit
 	return 100;
 }
 
+bool CBattleInfoCallback::battleIsMoraleExtraActivation(const battle::Unit * unit) const
+{
+	const auto * state = dynamic_cast<const battle::CUnitState *>(unit);
+	return state && getBattle() && getBattle()->getMoraleExtraDamagePercent() != 100
+		&& battleActiveUnit() && battleActiveUnit()->unitId() == unit->unitId()
+		&& state->moraleExtraActivation;
+}
+
+int32_t CBattleInfoCallback::battleGetDirectActivationOutputPercent(const BattleAttackInfo & info) const
+{
+	const int ordinaryOutput = battleGetActivationOutputPercent(info.attacker);
+	// Spell-like creature shots are magical, but still ordinary direct attacks.
+	// This attack-only payload is not used for healing or generic spell damage.
+	if(info.retaliation || info.bracePreemptive
+		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.attacker)
+		|| !battleIsMoraleExtraActivation(info.attacker))
+		return ordinaryOutput;
+	return ordinaryOutput * getBattle()->getMoraleExtraDamagePercent() / 100;
+}
+
 int64_t CBattleInfoCallback::battleGetFirstAidHealingOutput(const battle::Unit * healer) const
 {
 	if(!healer || !healer->isFirstAidTent())
@@ -961,6 +981,10 @@ int CBattleInfoCallback::battleGetAttackLuck(const battle::Unit * attacker, cons
 	bool shooting, bool includeChanceOnlySerendipity) const
 {
 	if(!attacker || !getBattle())
+		return 0;
+	if(getBattle()->getLuckRollRules().finalDirectPhysicalMultiplier
+		&& !newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attacker,
+			!(shooting && attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK))))
 		return 0;
 	const auto rules = battleLuckRules(*getBattle());
 	const int maximum = static_cast<int>(rules.goodChance.size());
@@ -3776,7 +3800,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	payload.chargeDistance = info.chargeDistance;
 	payload.shooting = info.shooting;
 	payload.physicalDamage = info.physicalDamage;
-	payload.activationOutputPercent = battleGetActivationOutputPercent(info.attacker);
+	payload.activationOutputPercent = battleGetDirectActivationOutputPercent(info);
 	payload.archeryRangedDamageMultiplierPercent = info.archeryRangedDamageMultiplierPercent;
 	if(info.shooting && info.physicalDamage && info.attacker && info.attacker->isBallista())
 		payload.rangedFollowUpDamagePercent = battleGetRangedFollowUpDamagePercent(info.attacker);
@@ -4159,7 +4183,10 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 			}
 		}
 	}
-	payload.luckyStrike = info.luckyStrike;
+	const bool finalLuckPolicy = getBattle()->getLuckRollRules().finalDirectPhysicalMultiplier;
+	const bool luckEligible = newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(info.attacker, info.physicalDamage);
+	payload.luckyStrike = info.luckyStrike && (!finalLuckPolicy || luckEligible);
+	payload.newHorizonsFinalLuck = finalLuckPolicy && luckEligible;
 	if(info.physicalDamage && info.shooting && info.luckyStrike
 		&& newHorizonsArchery::isOrdinaryPhysicalShooter(info.attacker))
 	{
@@ -4171,7 +4198,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 				payload.luckyRangedDefenseIgnorePercent += LUCKY_AIM_DEFENSE_IGNORE_PERCENT;
 		}
 	}
-	payload.unluckyStrike = info.unluckyStrike;
+	payload.unluckyStrike = info.unluckyStrike && (!finalLuckPolicy || luckEligible);
 	payload.deathBlow = info.deathBlow;
 	payload.doubleDamage = info.doubleDamage;
 	if(info.attacker->hasBonusOfType(BonusType::SIEGE_WEAPON))

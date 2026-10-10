@@ -20,6 +20,7 @@
 #include "MagicalDamageReduction.h"
 #include "../networkPacks/PacksForClientBattle.h"
 #include "../battle/NewHorizonsShadowGift.h"
+#include "../battle/NewHorizonsCombatSkills.h"
 #include "../battle/NewHorizonsPlague.h"
 #include "NewHorizonsSpellAvailability.h"
 
@@ -1677,6 +1678,29 @@ JsonNode BaseMechanics::getCapturedMdrPenetration() const
 		result["focusedPenetrationPercent"].Integer() = 20;
 	}
 	return result;
+}
+
+int64_t Mechanics::adjustDirectCreatureActivationDamage(const int64_t damage) const
+{
+	if(damage <= 0)
+		return 0;
+	const int percent = std::clamp(getDirectCreatureActivationDamagePercent(), 1, 100);
+	// Divide first to retain exact int64 HP without overflowing a damage * percent product.
+	return (damage / 100) * percent + (damage % 100) * percent / 100;
+}
+
+int32_t BaseMechanics::getDirectCreatureActivationDamagePercent() const
+{
+	if(mode != Mode::CREATURE_ACTIVE || !caster || caster->getHeroCaster())
+		return 100;
+	const auto * callback = battle();
+	if(!callback || !callback->getBattle())
+		return 100;
+	const auto * unit = getUnitCaster();
+	if(!newHorizonsCombatSkills::isOrdinaryCreatureAttacker(unit)
+		|| !callback->battleIsMoraleExtraActivation(unit))
+		return 100;
+	return callback->getBattle()->getMoraleExtraDamagePercent();
 }
 
 int64_t Mechanics::adjustRecipientDamage(const battle::Unit * target, int64_t rawDamage) const

@@ -132,6 +132,8 @@ public:
 	ReducedExtraActivationState battleGetReducedExtraActivationState(BattleSide side) const;
 	/// Output percentage for the unit currently carrying a reduced activation identity.
 	int32_t battleGetActivationOutputPercent(const battle::Unit * unit) const;
+	bool battleIsMoraleExtraActivation(const battle::Unit * unit) const;
+	int32_t battleGetDirectActivationOutputPercent(const BattleAttackInfo & info) const;
 	/// First Aid Tent raw healing after activation output modifiers, before target HP caps.
 	int64_t battleGetFirstAidHealingOutput(const battle::Unit * healer) const;
 	bool battleHasWarMachinesPerk(const battle::Unit * machine, const std::string & perk) const;

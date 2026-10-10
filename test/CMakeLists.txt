@@ -100,6 +100,7 @@ set(test_SRCS
 
 		game/BattleSpellCastTest.cpp
 		game/GameSettingsTest.cpp
+		game/NewHorizonsCombatScalarCaptureTest.cpp
 		game/HeroRecruitmentTest.cpp
 		game/HeroSecondarySkillsTest.cpp
 		creatures/NewHorizonsCreatureCategoryRulesTest.cpp
@@ -226,6 +227,9 @@ set(test_SRCS
 		server/battles/BattleTestFixture.cpp
 		server/battles/CombatEventTriggerTest.cpp
 		server/battles/DamageCalculatorTest.cpp
+		server/battles/NewHorizonsMoraleActivationTest.cpp
+		server/battles/NewHorizonsMoraleActivationProtocolTest.cpp
+		server/battles/NewHorizonsMoraleCreatureSpellTest.cpp
 		server/battles/DeathStareTest.cpp
 		server/battles/DestructionTest.cpp
 		server/battles/EnchantedTest.cpp

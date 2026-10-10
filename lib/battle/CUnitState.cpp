@@ -153,6 +153,23 @@ bool hasOverwatchState(const JsonNode & unitSnapshot)
 	return present;
 }
 
+bool hasMoraleActivationState(const JsonNode & unitSnapshot)
+{
+	const auto * state = findJsonField(unitSnapshot, "state");
+	if(state && !state->isStruct())
+		throw std::runtime_error("Invalid Morale activation unit state");
+	const auto * marker = state ? findJsonField(*state, "moraleExtraActivation") : nullptr;
+	if(marker && !marker->isBool())
+		throw std::runtime_error("Morale activation provenance must be a boolean");
+	if(marker && marker->Bool())
+	{
+		const auto * earned = findJsonField(*state, "hadMorale");
+		if(!earned || !earned->isBool() || !earned->Bool())
+			throw std::runtime_error("Morale activation provenance requires its earned receipt");
+	}
+	return marker && marker->Bool();
+}
+
 bool hasHeroicSpiritState(const JsonNode & unitSnapshot)
 {
 	const auto * state = findJsonField(unitSnapshot, "state");
@@ -1377,6 +1394,7 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	drainedMana = other.drainedMana;
 	fear = other.fear;
 	hadMorale = other.hadMorale;
+	moraleExtraActivation = other.moraleExtraActivation;
 	castSpellThisTurn = other.castSpellThisTurn;
 	ghost = other.ghost;
 	ghostPending = other.ghostPending;
@@ -2249,6 +2267,7 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeBool("drainedMana", drainedMana);
 	handler.serializeBool("fear", fear);
 	handler.serializeBool("hadMorale", hadMorale);
+	handler.serializeBool("moraleExtraActivation", moraleExtraActivation);
 	handler.serializeBool("heroicSpiritRetaliation", heroicSpiritRetaliation);
 	handler.serializeBool("heroicSpiritMoralePending", heroicSpiritMoralePending);
 	handler.serializeBool("castSpellThisTurn", castSpellThisTurn);
@@ -2440,6 +2459,7 @@ void CUnitState::reset()
 	drainedMana = false;
 	fear = false;
 	hadMorale = false;
+	moraleExtraActivation = false;
 	castSpellThisTurn = false;
 	ghost = false;
 	ghostPending = false;
@@ -2578,6 +2598,7 @@ void CUnitState::load(const JsonNode & data)
 	}
 	hasOverwatchState(data);
 	hasHeroicSpiritState(data);
+	hasMoraleActivationState(data);
 	const auto incomingConfusion = confusionStateFromUnitJson(data);
 	//TODO: use instance resolver
 	const auto & savedPainIncrement = data["state"]["personalBloodrageIncrement"];
@@ -2960,6 +2981,7 @@ void CUnitState::afterWait()
 
 void CUnitState::afterNewRound(bool isFirstRound, bool deferBattleFormRestoration, bool pauseBattleForm)
 {
+	moraleExtraActivation = false;
 	battlecraftOverwatchReadyRound = -1;
 	battlecraftOverwatchUsedRound = -1;
 	if(!isFirstRound && hasBattleForm())
@@ -3042,6 +3064,7 @@ void CUnitState::afterGetsTurn(BattleUnitTurnReason reason)
 
 void CUnitState::makeGhost()
 {
+	moraleExtraActivation = false;
 	heroicSpiritRetaliation = false;
 	heroicSpiritMoralePending = false;
 	battlecraftOverwatchReadyRound = -1;

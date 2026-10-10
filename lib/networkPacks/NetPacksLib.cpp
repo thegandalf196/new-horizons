@@ -1129,6 +1129,12 @@ void LobbyStartGame::validateCanonicalSpellClausesSerialization(bool supported) 
 		initializedGameState->validateCanonicalSpellClausesSerialization(supported);
 }
 
+void LobbyStartGame::validateCombatScalarSerialization(bool finalLuckSupported, bool moraleSupported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateCombatScalarSerialization(finalLuckSupported, moraleSupported);
+}
+
 void LobbyStartGame::validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const
 {
 	if(initializedGameState)

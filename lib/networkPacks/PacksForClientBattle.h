@@ -53,6 +53,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && info && info->getLuckRollRules().finalDirectPhysicalMultiplier
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK))
+			throw std::runtime_error("Cannot discard captured final physical Luck policy from BattleStart");
 		if(h.saving && info)
 			newHorizonsMagic::validateCanonicalSpellClausesSerialization(info->getMagicRules(),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
@@ -93,6 +96,8 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 			info->validateBloodrageDeathPerksSerialization(h);
 		if(h.saving && info)
 			info->validateFrozenSerialization(h);
+		if(h.saving && info)
+			info->validateMoraleActivationSerialization(h);
 		if(h.saving && info)
 			info->validateHeroicSpiritSerialization(h);
 		if(h.saving && info)
@@ -199,6 +204,7 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 			info->validateExtendSpellSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SPELLCRAFT_TARGET_DURATION));
 		h & battleID;
 		h & info;
+		if(!h.saving && info) info->validateMoraleActivationSerialization(h);
 		if(!h.saving && info)
 			newHorizonsMagic::validateCanonicalSpellClausesSerialization(info->getMagicRules(),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION));
@@ -1008,6 +1014,7 @@ struct DLL_LINKAGE BattleUnitsChanged : public CPackForClient, public scripting:
 				change.validateFrozenSerialization(h);
 				change.validateBattleFormSerialization(h);
 				change.validateConfusionSerialization(h);
+				change.validateMoraleActivationSerialization(h);
 				change.validateOpportunistSerialization(h);
 			}
 		}
@@ -1140,6 +1147,7 @@ struct BattleStackAttacked
 			newState.validateFrozenSerialization(h);
 			newState.validateBattleFormSerialization(h);
 			newState.validateConfusionSerialization(h);
+			newState.validateMoraleActivationSerialization(h);
 			newState.validateOpportunistSerialization(h);
 		}
 		if(h.saving)
@@ -1307,6 +1315,7 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 				change.validateFrozenSerialization(h);
 				change.validateBattleFormSerialization(h);
 				change.validateConfusionSerialization(h);
+				change.validateMoraleActivationSerialization(h);
 				change.validateOpportunistSerialization(h);
 			}
 			for(const auto & hit : bsa)
@@ -1320,6 +1329,7 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 					throw std::runtime_error("Cannot discard Frozen Shatter in an older battle attack format");
 				hit.newState.validateBattleFormSerialization(h);
 				hit.newState.validateConfusionSerialization(h);
+				hit.newState.validateMoraleActivationSerialization(h);
 				hit.newState.validateOpportunistSerialization(h);
 			}
 		}
@@ -1904,6 +1914,7 @@ struct DLL_LINKAGE StacksInjured : public CPackForClient
 					throw std::runtime_error("Cannot discard Frozen Shatter in an older injury format");
 				hit.newState.validateBattleFormSerialization(h);
 				hit.newState.validateConfusionSerialization(h);
+				hit.newState.validateMoraleActivationSerialization(h);
 				hit.newState.validateOpportunistSerialization(h);
 			}
 		}

@@ -803,10 +803,18 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 {
 	CMP_stack cmpst;
 	auto currentBattle = std::make_unique<BattleInfo>(cb, layout);
+	const int64_t moraleOutput = cb->getSettings().getInteger(EGameSettings::COMBAT_MORALE_EXTRA_DAMAGE_PERCENT);
+	if(moraleOutput < 1 || moraleOutput > 100)
+		throw std::runtime_error("Invalid Morale activation damage percentage");
+	currentBattle->moraleExtraDamagePercent = static_cast<int32_t>(moraleOutput);
 	currentBattle->luckRollRules.goodChance = cb->getSettings().getVector(EGameSettings::COMBAT_GOOD_LUCK_CHANCE);
 	currentBattle->luckRollRules.badChance = cb->getSettings().getVector(EGameSettings::COMBAT_BAD_LUCK_CHANCE);
 	currentBattle->luckRollRules.diceSize = cb->getSettings().getInteger(EGameSettings::COMBAT_LUCK_DICE_SIZE);
 	currentBattle->luckRollRules.affectsAllTargets = cb->getSettings().getBoolean(EGameSettings::COMBAT_LUCKY_STRIKE_AFFECTS_ALL_TARGETS);
+	const auto & finalLuck = cb->getSettings().getValue(EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK);
+	if(!finalLuck.isNull() && !finalLuck.isBool())
+		throw std::runtime_error("Final physical Luck policy must be boolean");
+	currentBattle->luckRollRules.finalDirectPhysicalMultiplier = finalLuck.isBool() && finalLuck.Bool();
 	const auto currentDay = cb->getCalendar().getCurrentDay();
 
 	for(auto i : { BattleSide::LEFT_SIDE, BattleSide::RIGHT_SIDE})
@@ -1620,6 +1628,7 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	CStack * st = getStack(activeStack);
 	if(battleBeginsActivation(st, reason))
 	{
+		st->moraleExtraActivation = moraleExtraDamagePercent != 100 && reason == BattleUnitTurnReason::MORALE;
 		newHorizonsHeroicSpirit::beginActivation(*st, reason);
 		st->removeBonusesRecursive(CSelector(Bonus::UntilNextCreatureActivation));
 

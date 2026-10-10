@@ -132,6 +132,8 @@
 				"luckDiceSize" :                  { "type" : "number" },
 				"luckBias" :                      { "type" : "number" },
 				"luckyStrikeAffectsAllTargets" :  { "type" : "boolean" },
+				"newHorizonsFinalLuck" :         { "type" : "boolean" },
+				"moraleExtraDamagePercent" :    { "type" : "integer", "minimum" : 1, "maximum" : 100 },
 				"backpackSize" :                { "type" : "number" },
 				"attackPointDamageFactor" :     { "type" : "number" },
 				"attackPointDamageFactorCap" :  { "type" : "number" },

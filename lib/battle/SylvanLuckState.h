@@ -19,13 +19,21 @@ struct DLL_LINKAGE LuckRollRules
 	std::vector<int> badChance;
 	int diceSize = 0;
 	bool affectsAllTargets = false;
+	bool finalDirectPhysicalMultiplier = false;
 	bool operator==(const LuckRollRules &) const = default;
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && finalDirectPhysicalMultiplier
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK))
+			throw std::runtime_error("Cannot discard final physical Luck policy");
 		h & goodChance;
 		h & badChance;
 		h & diceSize;
 		h & affectsAllTargets;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK))
+			h & finalDirectPhysicalMultiplier;
+		else if(!h.saving)
+			finalDirectPhysicalMultiplier = false;
 		if(!h.saving && diceSize < 0)
 			throw std::runtime_error("Invalid Luck chance curve");
 	}

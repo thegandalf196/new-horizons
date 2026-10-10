@@ -439,6 +439,9 @@ end
 
 function Script:getLuckFactor(info)
 	if not info.luckyStrike then return 0 end
+	-- Captured New Horizons policy moves positive Luck out of the ordinary
+	-- additive attack premiums. Historical profiles retain their old formula.
+	if info.newHorizonsFinalLuck then return 0 end
 	return 1.0 + getBonusValueOfType(info.attacker, info.attackerBonuses, "LUCKY_STRIKE_DAMAGE_PERCENTAGE") / 100
 end
 
@@ -652,6 +655,11 @@ function Script:calculate(battle, info)
 	local archeryRangedMultiplier = math.max(0, (info.archeryRangedDamageMultiplierPercent or 100) / 100)
 	local rangedFollowUpMultiplier = math.max(0, (info.rangedFollowUpDamagePercent or 100) / 100)
 	local activationOutputMultiplier = math.max(0, (info.activationOutputPercent or 100) / 100)
+	local finalLuckMultiplier = 1.0
+	if info.newHorizonsFinalLuck and info.luckyStrike then
+		finalLuckMultiplier = 2.0
+			+ getBonusValueOfType(info.attacker, info.attackerBonuses, "LUCKY_STRIKE_DAMAGE_PERCENTAGE") / 100
+	end
 	local phantomDamageMultiplier = self:getPhantomDamageMultiplier(info)
 	local bulwarkImmovableMultiplier = math.max(0, (info.bulwarkImmovableFinalDamageMultiplier or 100) / 100)
 	local armorerBastionMultiplier = math.max(0, (info.armorerBastionFinalDamageMultiplier or 100) / 100)
@@ -694,6 +702,7 @@ function Script:calculate(battle, info)
 		* armorerBastionMultiplier
 		* counterBatteryMultiplier
 		* ((info.frozenShatterFinalDamageMultiplier or 100) / 100)
+		* finalLuckMultiplier
 	local stabilizePdrRounding = usesPhysicalDamageReductionStage and physicalDamageReductionMultiplier < 1
 	local damageMin = apply(baseMin, damageFactor, stabilizePdrRounding)
 	local damageMax = apply(baseMax, damageFactor, stabilizePdrRounding)
@@ -705,7 +714,7 @@ function Script:calculate(battle, info)
 		kills = { min = killsMin, max = killsMax },
 		-- what the blow would have been worth had the target no defences at all, which is what an
 		-- ability reflecting a strike works from
-		damageBeforeDefense = { min = apply(baseMin, raising * heroOrderMultiplier * preemptiveDamageMultiplier * cleaveMultiplier * rangedFollowUpMultiplier * activationOutputMultiplier), max = apply(baseMax, raising * heroOrderMultiplier * preemptiveDamageMultiplier * cleaveMultiplier * rangedFollowUpMultiplier * activationOutputMultiplier) }
+		damageBeforeDefense = { min = apply(baseMin, raising * heroOrderMultiplier * preemptiveDamageMultiplier * cleaveMultiplier * rangedFollowUpMultiplier * activationOutputMultiplier * finalLuckMultiplier), max = apply(baseMax, raising * heroOrderMultiplier * preemptiveDamageMultiplier * cleaveMultiplier * rangedFollowUpMultiplier * activationOutputMultiplier * finalLuckMultiplier) }
 	}
 end
 

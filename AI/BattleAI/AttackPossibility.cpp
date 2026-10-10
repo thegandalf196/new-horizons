@@ -383,7 +383,8 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	});
 	const bool hasGamblerPenalty = attacker->hasBonus(gamblerPenaltySelector);
 	const bool hasRangedFollowUp = shooting && hasPendingRangedFollowUp(attacker);
-	const bool hasReducedExtraActivation = hb->battleGetActivationOutputPercent(attacker) < 100;
+	const bool hasReducedExtraActivation = hb->battleGetActivationOutputPercent(attacker) < 100
+		|| hb->battleIsMoraleExtraActivation(attacker);
 	const auto * battleInfo = hb->getBattle();
 	const bool hasBloodragePain = attacker->getPersonalBloodrageIncrement() > 0
 		|| (battleInfo

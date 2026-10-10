@@ -60,6 +60,8 @@ const std::vector<GameSettings::SettingOption> GameSettings::settingProperties =
 		{EGameSettings::COMBAT_BAD_LUCK_CHANCE,                           "combat",    "badLuckChance"                        },
 		{EGameSettings::COMBAT_LUCK_DICE_SIZE,                            "combat",    "luckDiceSize"                         },
 		{EGameSettings::COMBAT_LUCK_BIAS,                                 "combat",    "luckBias"                             },
+		{EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK,                    "combat",    "newHorizonsFinalLuck"                  },
+		{EGameSettings::COMBAT_MORALE_EXTRA_DAMAGE_PERCENT,               "combat",    "moraleExtraDamagePercent"             },
 		{EGameSettings::COMBAT_LUCKY_STRIKE_AFFECTS_ALL_TARGETS,          "combat",    "luckyStrikeAffectsAllTargets"         },
 		{EGameSettings::COMBAT_HERO_COMMANDS,                             "combat",    "heroCommands"                        },
 		{EGameSettings::MAGIC_NEW_HORIZONS,                              "magic",     "newHorizons"                         },
@@ -175,8 +177,55 @@ void GameSettings::loadBase(const JsonNode & input)
 	actualSettings = baseSettings;
 }
 
+void GameSettings::validateCombatScalarOverrides(const JsonNode & input, bool finalLuckSupported, bool moraleSupported)
+{
+	if(!input.isNull() && !input.isStruct())
+		throw std::runtime_error("Saved settings must be an object");
+	const auto & combat = input["combat"];
+	if(!combat.isNull() && !combat.isStruct())
+		throw std::runtime_error("Saved combat settings must be an object");
+	if(combat.Struct().contains("newHorizonsFinalLuck"))
+	{
+		const auto & value = combat["newHorizonsFinalLuck"];
+		if(!value.isBool())
+			throw std::runtime_error("Saved final Luck policy must be boolean");
+		if(!finalLuckSupported && value.Bool())
+			throw std::runtime_error("Final Luck policy requires the new save format");
+	}
+	if(combat.Struct().contains("moraleExtraDamagePercent"))
+	{
+		const auto & value = combat["moraleExtraDamagePercent"];
+		if(value.getType() != JsonNode::JsonType::DATA_INTEGER || value.Integer() < 1 || value.Integer() > 100)
+			throw std::runtime_error("Saved Morale extra damage percentage must be an integer in [1,100]");
+		if(!moraleSupported && value.Integer() != 100)
+			throw std::runtime_error("Reduced Morale damage requires the new save format");
+	}
+}
+
+void GameSettings::validateCombatScalarSerialization(bool finalLuckSupported, bool moraleSupported) const
+{
+	validateCombatScalarOverrides(getAllOverrides(), finalLuckSupported, moraleSupported);
+}
+
+void GameSettings::loadSavedOverrides(const JsonNode & input)
+{
+	JsonNode saved = input;
+	// Only binary save loading normalizes absence. Fresh map/RMG overrides
+	// inherit installed defaults until fresh world initialization captures them.
+	// Do this even for current-format absence, so resaving cannot opt a legacy
+	// profile into mechanics that were never captured by that game.
+	if(!saved["combat"].Struct().contains("newHorizonsFinalLuck"))
+		saved["combat"]["newHorizonsFinalLuck"].Bool() = false;
+	if(!saved["combat"].Struct().contains("moraleExtraDamagePercent"))
+		saved["combat"]["moraleExtraDamagePercent"].Integer() = 100;
+	loadOverrides(saved);
+}
+
 void GameSettings::loadOverrides(const JsonNode & input)
 {
+	// Validate the two new scalar rows together before any option is changed.
+	// This is admission only; absence normalization remains binary-load-only.
+	validateCombatScalarOverrides(input, true, true);
 	for(const auto & option : settingProperties)
 	{
 		const JsonNode & optionValue = input[option.group][option.key];
@@ -190,6 +239,14 @@ void GameSettings::loadOverrides(const JsonNode & input)
 
 void GameSettings::addOverride(EGameSettings option, const JsonNode & input)
 {
+	if(option == EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK
+		|| option == EGameSettings::COMBAT_MORALE_EXTRA_DAMAGE_PERCENT)
+	{
+		JsonNode scalar;
+		scalar["combat"][option == EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK
+			? "newHorizonsFinalLuck" : "moraleExtraDamagePercent"] = input;
+		validateCombatScalarOverrides(scalar, true, true);
+	}
 	size_t index = static_cast<size_t>(option);
 
 	overridenSettings[index] = input;
@@ -220,6 +277,7 @@ const JsonNode & GameSettings::getValue(EGameSettings option) const
 
 	assert(option == EGameSettings::MAGIC_NEW_HORIZONS
 		|| option == EGameSettings::COMBAT_HERO_COMMANDS
+		|| option == EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK
 		|| option == EGameSettings::HEROES_NEW_HORIZONS_PERKS
 		|| option == EGameSettings::ARTIFACTS_RANDOM_POOL_EXCLUSIONS
 		|| !actualSettings.at(index).isNull());

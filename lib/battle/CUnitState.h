@@ -226,6 +226,9 @@ public:
 	bool drainedMana;
 	bool fear;
 	bool hadMorale;
+	/// Origin of this unit\'s current genuine activation, not its round-long Morale history.
+	/// Only the captured current combat rule arms this; continuations preserve it.
+	bool moraleExtraActivation = false;
 	bool castSpellThisTurn;
 	bool ghost;
 	bool ghostPending;
@@ -584,6 +587,7 @@ DLL_LINKAGE bool hasCasualtyProvenanceState(const JsonNode & unitSnapshot);
 /// Validates raw Overwatch round markers without modifying a unit. Missing
 /// legacy fields mean inactive; noninteger/out-of-range markers are rejected.
 DLL_LINKAGE bool hasOverwatchState(const JsonNode & unitSnapshot);
+DLL_LINKAGE bool hasMoraleActivationState(const JsonNode & unitSnapshot);
 DLL_LINKAGE bool hasHeroicSpiritState(const JsonNode & unitSnapshot);
 
 class DLL_LINKAGE CUnitStateDetached final : public CUnitState

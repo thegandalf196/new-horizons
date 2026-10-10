@@ -46,6 +46,7 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	/// Heavenly Gale's independent ranged physical reduction in basis points (10000 = 100%).
 	int heavenlyGaleDamageReductionBasisPoints = 0;
 	bool luckyStrike = false;
+	bool newHorizonsFinalLuck = false;
 	bool unluckyStrike = false;
 	bool deathBlow = false;
 	bool doubleDamage = false;
@@ -265,6 +266,7 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 		s("activationOutputPercent", activationOutputPercent,
 			"Final multiplicative percentage for a reduced-effectiveness activation; 100 is neutral.");
 		s("luckyStrike", luckyStrike, "Whether luck struck.");
+		s("newHorizonsFinalLuck", newHorizonsFinalLuck, "Captured final direct physical creature Luck multiplier.");
 		s("unluckyStrike", unluckyStrike, "Whether bad luck struck.");
 		s("deathBlow", deathBlow, "Whether a death blow was rolled.");
 		s("doubleDamage", doubleDamage, "Whether the attack is a doubled one, as a ballista may roll.");

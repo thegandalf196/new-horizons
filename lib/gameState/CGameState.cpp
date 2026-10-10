@@ -265,6 +265,9 @@ void CGameState::init(const IMapService * mapService, StartInfo * si, IGameRando
 	// it can only bind handlers by instance name, not inspect object contents
 	mapEventDispatcher = LIBRARY->scripts()->createMapScriptDispatcher(*this, true);
 	heroCommandRules = getSettings().getValue(EGameSettings::COMBAT_HERO_COMMANDS);
+	// Fresh worlds freeze effective scalar rules; binary load has a separate
+	// absent-row normalization in GameSettings::serialize.
+	map->captureCombatScalarSettings();
 	heroCommands::validateRules(heroCommandRules);
 	magicRules = getSettings().getValue(EGameSettings::MAGIC_NEW_HORIZONS);
 	newHorizonsMagic::validateRules(magicRules);
@@ -2102,6 +2105,12 @@ void CGameState::validateCanonicalSpellClausesSerialization(bool supported) cons
 	newHorizonsMagic::validateCanonicalSpellClausesSerialization(magicRules, supported);
 	if(map)
 		map->validateCanonicalSpellClausesSerialization(supported);
+}
+
+void CGameState::validateCombatScalarSerialization(bool finalLuckSupported, bool moraleSupported) const
+{
+	if(map)
+		map->validateCombatScalarSerialization(finalLuckSupported, moraleSupported);
 }
 
 void CGameState::validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const
