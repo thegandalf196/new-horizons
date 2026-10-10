@@ -1606,10 +1606,14 @@ void CStackWindow::initSections()
 {
 	OBJECT_CONSTRUCTION;
 
-	bool showArt = GAME->interface() && GAME->interface()->cb->getSettings().getBoolean(EGameSettings::MODULE_STACK_ARTIFACT) && info->commander == nullptr && info->stackNode;
-	bool showExp = ((GAME->interface() && GAME->interface()->cb->getSettings().getBoolean(EGameSettings::MODULE_STACK_EXPERIENCE)) || info->commander != nullptr) && info->stackNode;
+	const auto * playerInterface = GAME->interface();
+	const auto * callback = playerInterface ? playerInterface->cb.get() : nullptr;
+	bool showArt = callback && callback->getSettings().getBoolean(EGameSettings::MODULE_STACK_ARTIFACT) && info->commander == nullptr && info->stackNode;
+	bool showExp = ((callback && callback->getSettings().getBoolean(EGameSettings::MODULE_STACK_EXPERIENCE)) || info->commander != nullptr) && info->stackNode;
 
-	const auto & capabilityRules = GAME->interface()->cb->getHeroCapabilityRules();
+	// Pregame creature previews have no player callback or captured hero rules.
+	const JsonNode noCapabilityRules;
+	const auto & capabilityRules = callback ? callback->getHeroCapabilityRules() : noCapabilityRules;
 	const bool showNewHorizonsStats = newHorizonsHeroes::usesRules(capabilityRules)
 		&& capabilityRules["rulesetVersion"].Integer() >= 2;
 	const bool showLeadership = info->owner

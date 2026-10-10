@@ -2,6 +2,88 @@
 
 Updated: 2026-10-10
 
+Verified popup crash repair: exact f7d818/a2f35 background candidate survives
+bare Ice/Golem right-click/release and real combat inspection. Root reads the
+receipt and native captures; combat Initiative10, Leadership300, Elite and
+Freezing Touch20%/Shatter25% remain visible. Owned cleanup and immutable
+package/resource parity pass. Frozen rendering itself is still unobserved: one
+positive melee hit without a proc precedes the600s timeout, not a normal exit or
+mechanic-failure verdict. No unchanged retry or ordinary launcher promotion.
+
+Divine Retribution's reviewed shared recipient mitigation and ordinary magical
+primary-attack admission are imported. Actual compile exposes one missing
+declaration include and three Bonus source-ID arguments; minimal repairs leave
+the mechanics and assertions intact. Both-target43320 links; fresh privacy and
+the22 focused cases await execution. Old-marker trigger compatibility, magical
+collateral and delayed caster lineage remain explicit Phase2 limits.
+
+Hero migration now explicitly includes the remaining96 authored default
+Skill/perk packages, preserving current48 settled exceptions. The user also
+approves provisional original-composition, Leadership-safe starting armies;
+all144 authored replacement quantity rows were TBD, not already specified.
+No new profiles or quantities are accepted until actual import/validation.
+Existing biographies already have144 review decisions:52 rewrites and92
+deliberate inheritances under the only-if-better instruction, not92 missing
+biography decisions.
+
+The neutral-join planner witness is compiled after correcting its nonexistent
+creature-header include. Build52144 and binary privacy26366 pass. Actual isolated
+native execution discovers exactly one case and fails0/1: eligibility, price and
+Leadership preconditions pass, but no matching positive generated goal is found
+before movement. Root reads the XML/receipt; there is no crash, timeout, error or
+skip. Planner/path/score diagnosis remains open; this is neither AI acceptance
+nor sufficient proof of a production omission. The original failure is retained.
+
+Independent clause audit maps all eight Orders and shared action/activation,
+Speed/Initiative, per-slot Leadership and Siege/War Machine requirements to
+current production, required UI and minimum AI consumers. It adds no fresh
+family-wide native or rendered acceptance. The full31-pool perk exit ledger is
+still being reconciled; registry310/310 does not replace clause-level evidence.
+
+Current defining-clause audit identifies Divine Retribution's recipient magical
+mitigation as a principal Phase1 gap: its Holy payout and AI valuation bypass
+the recipient-defense pipeline. Canonical magical-damage rules contain no bypass
+exception. The earlier Phase2 label below does not authorize this core defect.
+A shared recipient-adjustment correction and focused server/AI controls are
+assigned privately; no implementation or passing test is claimed yet.
+
+Pregame popup null-context repair is imported after independent source review.
+Both-target80426 links; fresh binary privacy39570 passes with zero findings.
+Actual matched popup regression and Frozen feedback still await the designated
+silent tester. Windows preflight38047828625 succeeds for published1d6bc72b6;
+that is dependency/source preflight, not a full Windows build or gameplay.
+
+Bounded audits map all detailed Havoc11/Chaos11 and four ten-perk pools
+(Luck/Learning/Recruitment/Diplomacy) to principal production consumers. These
+are clause-to-source audits with explicitly bounded retained evidence, not fresh
+22-spell/40-perk execution or whole-game certification. Deliberate neutral-join
+destination planning needs a focused witness before any missing-AI claim.
+
+Systematic private source/evidence ledgers now enumerate all67 detailed base
+combat spells and five explicitly granted Mass variants, not just registration
+samples. Light/Nature adds the concrete Divine Retribution gap above; other
+mapped producers do not imply fresh native or rendered family certification.
+Independent non-spell review maps37 grouped unique-building rows, ten artifact
+framework families and six specialty families with retained-baseline and
+conditional-source exceptions kept explicit. No additional principal omission
+is demonstrated in that scope; unauthored replacement armies are not invented.
+
+Deferred Phase2 defect: Plague's independent activation-end countdown bypasses
+Spell Lock's preserved-duration pause. Its ordinary damage/spread and Spell
+Lock's ordinary filtering exist; the missing lifetime adapter is recorded, not
+hidden by the spell totals. Future focused control must keep the locked Plague
+tick but pause its remaining duration, then resume after the seal expires.
+
+New principal crash found by the Frozen acceptance setup: a bare creature popup
+before gameplay unconditionally dereferences the absent player interface while
+building its capability stats. Guarded debugger reproduction identifies
+CStackWindow::initSections through the ordinary BattleOnly right-click path;
+root reads the stack and independent source review confirms the fault. The
+private minimal null-context repair is assigned; compile and actual popup
+acceptance remain pending. FIELD's no-defender-hero Begin restriction is a
+separate test precondition, not a Frozen defect. Frozen rendering remains wholly
+unobserved; both stopped probes preserve evidence and clean up owned processes.
+
 Corrected selector principal rendered path is observed on matchedde365844 client
 and90c602 library. Root inspects centered visible zero/one-target panels and
 three-target exact readback/badges, mouse Undo3→2 with recalculation, Cancel
@@ -6019,8 +6101,10 @@ mirror check pass, and independent review's blocking refresh finding was
 repaired with a focused recast test. Purpose-made Provisional 44/32/30 art is
 bound. This is source/native evidence, not rendered or playable acceptance.
 Phase 2 retains full save/load and Dispel round-trips, area/secondary-attack
-classification, Holy mitigation and AI valuation under mixed threats, and
+classification, AI valuation under mixed threats, and
 unusual shield or repeated-hit packet interactions.
+Correction: recipient Holy-damage mitigation is a principal Phase1 gap, not an
+authorized bypass or deferred breadth check; see the current audit above.
 
 Purify is now the saved-v3 Level-4 Light, 15-Mana battlefield-area cleanse.
 After selecting a center hex, the player chooses up to
