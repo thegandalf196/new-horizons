@@ -236,6 +236,18 @@ Major dependencies (managed by Conan):
 
 # Codex project instructions
 
+## Public identity and privacy
+
+Refer to the project owner publicly only as `gandalf196` or `thegandalf196`.
+Do not publish personal names, workstation usernames, absolute personal paths,
+private contact details or identifying metadata in tracked files, commit/tag
+messages, packages, logs, screenshots or reports. Resolve portable home-relative
+paths at runtime and retain raw privacy findings and recovery materials locally.
+Check generated artifacts and Git author/committer identity before publication;
+use the owner's alias and GitHub noreply address for project commits. Preserve
+legitimate third-party attribution and license notices. Do not claim historical
+GitHub views, external copies or unexamined artifacts have been erased.
+
 For complex coding tasks, use the `astra-orchestrator` skill when its trigger conditions match.
 
 The root agent owns architecture, decomposition, integration, and final verification.
