@@ -307,9 +307,16 @@ Before removing an old build tree, verify recoverable preservation of unique
 material and check worktree, launcher and live-process references. Build with
 at most ten jobs unless the user explicitly changes that limit.
 
-Read `docs/NH_USER_PRIORITY_QUEUE.md` before choosing or resuming work, including
-after context compaction or an automatic goal continuation. Immediately record
-new user-assigned tasks there, with concrete requirements and acceptance evidence.
+Maintain user-assigned tasks and coordination notes in a configured private task
+queue outside the repository and disposable build trees. Read that queue before
+choosing or resuming work, including after context compaction or an automatic
+goal continuation. Record requirements, blockers and acceptance evidence there.
+Do not commit conversation-derived task notes, chat transcripts, private input
+locations or raw execution receipts. If the private queue location is unavailable,
+request its configured location rather than creating a tracked fallback.
+`docs/NH_USER_PRIORITY_QUEUE.md` is a historical record, not a destination for new
+coordination notes. Public specifications and concise, sanitized technical
+documentation remain separate maintained project records.
 Resolve its open tasks before returning to the ordinary implementation backlog;
 do not silently substitute another workstream or drop an item from memory.
 If blocked, record the blocker and work on another unblocked queue item. Ask for
