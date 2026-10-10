@@ -4,7 +4,7 @@ on:
     types: [published]
 jobs:
   notify_repos:
-    if: ${{ !github.event.release.prerelease }}
+    if: ${{ github.repository == 'vcmi/vcmi' && !github.event.release.prerelease }}
     runs-on: ubuntu-latest
     steps:
       - name: Repository Dispatch only for releases
