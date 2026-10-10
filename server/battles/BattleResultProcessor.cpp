@@ -621,11 +621,13 @@ void BattleResultProcessor::endBattleConfirm(const CBattleInfoCallback & battle)
 			{
 				const auto * stack = battle.battleGetStackByID(gated.unitId, false);
 				auto originalFormState = stack ? acquireOriginalFormState(*stack) : nullptr;
+				if(stack && !originalFormState)
+					originalFormState = stack->acquireState();
+				// Temporary restorations do not become permanent reserve troops.
+				// Both survivor return and Endless Legion use this detached view.
 				if(originalFormState)
 					originalFormState->health.takeResurrected();
 				const battle::CUnitState * resultState = originalFormState.get();
-				if(!resultState)
-					resultState = stack;
 				const TQuantity survivors = resultState && resultState->alive() ? resultState->getCount() : 0;
 				if(survivors > 0)
 					reserve[gated.creature] += survivors;

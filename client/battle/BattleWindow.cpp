@@ -361,7 +361,7 @@ public:
 	}
 
 	void update() { refresh(); }
-	void show(Canvas & to) override { if(active) CIntObject::show(to); }
+	void show(Canvas & to) override { if(active) CIntObject::showAll(to); }
 	void showAll(Canvas & to) override { if(active) CIntObject::showAll(to); }
 };
 
@@ -527,6 +527,9 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 		tacticPhaseEnded();
 
 	addUsedEvents(LCLICK | KEYBOARD);
+	// Later battlefield/queue children must not paint over the targeting controls.
+	battleTargetSelectionPanel->center();
+	moveChildForeground(battleTargetSelectionPanel.get());
 }
 
 void BattleWindow::createQueue()
@@ -1745,6 +1748,8 @@ void BattleWindow::onScreenResize()
 		hideStickyHeroWindows();
 		showStickyHeroWindows();
 	}
+	battleTargetSelectionPanel->center();
+	moveChildForeground(battleTargetSelectionPanel.get());
 }
 
 void BattleWindow::close()

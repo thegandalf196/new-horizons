@@ -1,5 +1,28 @@
 # New Horizons UI and asset status register
 
+2026-10-10 corrected selector: **Provisional**, principal rendering and mouse
+controls observed on the matched corrected client. Root inspects sustained
+centered heading/readback/buttons, three ordered target badges including same
+names/double-wide, mouse Undo recalculation, Cancel without spend and paid
+Confirm with panel/badge removal. Five-target layout, resize and other shared
+consumers remain unobserved. Earlier failed captures remain private evidence;
+no new raster artwork, Final approval, NHART update or launcher promotion.
+
+2026-10-10 matched panel probe: **Provisional**, functional visibility defect
+still open. Root inspects actual new-client0/5 and1/5 captures after the first
+centering/foreground repair: badges/status appear, panel text/material/buttons
+do not. Stop and correct the redraw lifecycle; mouse acceptance remains unproven.
+Cleanup and immutable snapshot parity pass. No new artwork, Final approval,
+NHART change or ordinary launcher promotion is claimed.
+
+2026-10-10 Storm retry: **Provisional**. Root inspects actual three-target
+ordinal/~HP labels, identical-name and double-wide targets, Undo recalculation,
+Cancel clearing without spend and a paid cast. The dedicated readback strip
+and buttons are not visible in the captured selection state; this is a separate
+runtime UI defect under diagnosis, not accepted by source presence. Five-target
+rendering remains unobserved. Native-resolution captures remain private;
+no new raster artwork, Final approval, package update or launcher promotion.
+
 2026-10-10 feedback validation: **Provisional**. Both targets compile; Hold
 anchor native5/5 passes. Root inspects actual silent background captures of paid
 single/double-wide footprints and contour removal after movement. Expiry/control

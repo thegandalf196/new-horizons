@@ -14,12 +14,19 @@
 #include "../../../lib/modding/ModScope.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/networkPacks/PacksForClientBattle.h"
+#include "../../../lib/networkPacks/PacksForClient.h"
+#include "../../../lib/callback/GameRandomizer.h"
+#include "../../../lib/gameState/CGameState.h"
+#include "../../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
+#include "../../../server/queries/BattleQueries.h"
+#include "../../../server/queries/QueriesProcessor.h"
 #include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/networkPacks/StackLocation.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/battle/CObstacleInstance.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 
 #include <tuple>
 
@@ -1794,4 +1801,318 @@ TEST(NewHorizonsDemonicGatingWire, ChainGateStateAndAttackMarkerRoundTripOnlyOnN
 	oldMasterGateSnapshot.oser.version = ESerializationVersion::NEW_HORIZONS_MAGE_GUILD_SLOTS;
 	EXPECT_THROW(oldMasterGateSnapshot.oser & usedMasterGateSnapshot, std::runtime_error);
 	EXPECT_TRUE(oldMasterGateSnapshot.extractBuffer().empty());
+}
+
+namespace
+{
+class EndlessLegionResultServer : public RecordingGameServer
+{
+public:
+	std::vector<SetNewHorizonsDemonicReserve> reserveReceipts;
+	std::optional<uint32_t> watchedUnit;
+	ObjectInstanceID watchedOwner = ObjectInstanceID::NONE;
+	int64_t healthAtReservePublication = -1;
+	int32_t countAtReservePublication = -1;
+	int32_t temporaryCountAtReservePublication = -1;
+	void applyPack(CPackForClient & pack) override
+	{
+		if(const auto * receipt = dynamic_cast<const SetNewHorizonsDemonicReserve *>(&pack))
+		{
+			reserveReceipts.push_back(*receipt);
+			if(watchedUnit && receipt->heroId == watchedOwner)
+				if(const auto * activeBattle = gameState->getBattle(BattleID(0)))
+					if(const auto * unit = activeBattle->battleGetStackByID(*watchedUnit, false))
+					{
+						healthAtReservePublication = unit->getAvailableHealth();
+						countAtReservePublication = unit->getCount();
+						temporaryCountAtReservePublication = unit->health.getResurrected();
+					}
+		}
+		RecordingGameServer::applyPack(pack);
+	}
+};
+
+class NewHorizonsEndlessLegionResultTest : public NewHorizonsDemonicGatingTest
+{
+protected:
+	EndlessLegionResultServer resultServer;
+	CreatureID reserveCreature;
+	ObjectInstanceID ownerId;
+	CStack * gated = nullptr;
+
+	void SetUp() override
+	{
+		// Parameterized preparation below must precede the battle's reserve snapshot.
+		BattleTestFixture::SetUp();
+		ASSERT_TRUE(vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			<< "Principal result witness requires the active New Horizons module";
+	}
+
+	void prepareResult(const std::string & creature, bool gate = true)
+	{
+		startGame();
+		resultServer.gameState = gameState();
+		gameHandler = std::make_shared<CGameHandler>(resultServer, gameState());
+		gameHandler->randomizer->setSeed(seed);
+		ownerId = attackerSideHero->id;
+		reserveCreature = creatureByName(creature);
+		const auto imp = creatureByName("core:imp");
+		ASSERT_TRUE(gameHandler->changeStackType(StackLocation(ownerId, SlotID(0)), imp.toCreature()));
+		ASSERT_TRUE(gameHandler->changeStackCount(StackLocation(ownerId, SlotID(0)), 12,
+			ChangeValueMode::ABSOLUTE));
+		const SecondarySkill skill(SecondarySkill::decode("new-horizons:demonicGating"));
+		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({"new-horizons:demonicGating", "new-horizons:demonicGating.wideGate"});
+		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({"new-horizons:demonicGating", "new-horizons:demonicGating.mobileGate"});
+		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({"new-horizons:demonicGating", "new-horizons:demonicGating.endlessLegion"});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:demonicGating",
+			"new-horizons:demonicGating.endlessLegion"));
+		attackerSideHero->setDemonicReserve({{reserveCreature, 12}});
+		startBattle();
+		beginCombat();
+		ASSERT_EQ(battle()->getSide(BattleSide::ATTACKER).demonicReserve.at(reserveCreature), 12);
+		if(!gate)
+			return;
+
+		for(int actions = 0; actions < 16 && battle()->battleActiveUnit()
+			&& battle()->battleActiveUnit()->unitSide() != BattleSide::ATTACKER; ++actions)
+		{
+			const auto * active = battle()->battleActiveUnit();
+			ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
+				battle()->battleGetActionController(active), BattleAction::makeDefend(active)));
+		}
+		const auto * source = battle()->battleActiveUnit();
+		ASSERT_NE(source, nullptr);
+		ASSERT_EQ(source->unitSide(), BattleSide::ATTACKER);
+		BattleHex destination;
+		const auto accessibility = battle()->getAccessibility();
+		for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+		{
+			const BattleHex candidate(index);
+			if(candidate.isAvailable() && BattleHex::getDistance(source->getPosition(), candidate) <= 3
+				&& accessibility.accessible(candidate, reserveCreature.toCreature()->isDoubleWide(),
+					BattleSide::ATTACKER))
+			{
+				destination = candidate;
+				break;
+			}
+		}
+		ASSERT_TRUE(destination.isAvailable());
+		BattleAction action;
+		action.actionType = EActionType::DEMONIC_GATING;
+		action.side = BattleSide::ATTACKER;
+		action.stackNumber = source->unitId();
+		action.gatingCreature = reserveCreature;
+		action.aimToHex(destination);
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+		endRound();
+		const auto & receipts = battle()->getSide(BattleSide::ATTACKER).gatedDemonicStacks;
+		ASSERT_EQ(receipts.size(), 1u);
+		ASSERT_EQ(receipts.front().initialCount, 12);
+		ASSERT_EQ(receipts.front().creature, reserveCreature);
+		gated = battle()->getStack(receipts.front().unitId, false);
+		ASSERT_NE(gated, nullptr);
+		ASSERT_EQ(gated->getCount(), 12);
+	}
+
+	void loseSeven(CStack * unit)
+	{
+		ASSERT_NE(unit, nullptr);
+		ASSERT_EQ(unit->getCount(), 12);
+		auto state = unit->acquireState();
+		int64_t damage = 7 * static_cast<int64_t>(unit->getMaxHealth());
+		const auto before = unit->getAvailableHealth();
+		state->damage(damage);
+		UnitChanges change(unit->unitId(), UnitChanges::EOperation::UPDATE);
+		change.data = state->save();
+		change.healthDelta = -damage;
+		BattleUnitsChanged changes;
+		changes.battleID = BattleID(0);
+		changes.changedStacks.push_back(std::move(change));
+		gameHandler->sendAndApply(changes);
+		ASSERT_EQ(unit->getCount(), 5);
+		ASSERT_EQ(before - unit->getAvailableHealth(), damage);
+	}
+
+	void acceptResult(const std::shared_ptr<CBattleQuery> & query, BattleSide winner)
+	{
+		ASSERT_TRUE(query->result);
+		ASSERT_EQ(query->result->winner, winner);
+		for(const auto player : {PlayerColor(0), PlayerColor(1)})
+		{
+			const auto dialog = gameHandler->queries->topQuery(player);
+			if(dialog && dialog->getType() == QueryType::BattleDialog)
+				ASSERT_TRUE(gameHandler->queryReply(dialog->queryID, 0, player));
+		}
+	}
+
+	void finishWinner(BattleSide winner)
+	{
+		const auto query = std::make_shared<CBattleQuery>(gameHandler.get(), battle());
+		gameHandler->queries->addQuery(query);
+		// Public deterministic result entry, not a claim of normal combat-victory AI.
+		gameHandler->battles->cheatBattleVictory(battle()->sideToPlayer(winner));
+		ASSERT_NO_FATAL_FAILURE(acceptResult(query, winner));
+	}
+
+	SetNewHorizonsDemonicReserve receipt() const
+	{
+		const auto found = std::ranges::find(resultServer.reserveReceipts, ownerId,
+			&SetNewHorizonsDemonicReserve::heroId);
+		EXPECT_NE(found, resultServer.reserveReceipts.end());
+		return found == resultServer.reserveReceipts.end() ? SetNewHorizonsDemonicReserve{} : *found;
+	}
+
+	void expectReserve(TQuantity expected) const
+	{
+		const auto published = receipt();
+		ASSERT_EQ(published.heroId, ownerId);
+		const auto found = published.reserve.find(reserveCreature);
+		EXPECT_EQ(found == published.reserve.end() ? 0 : found->second, expected);
+	}
+};
+}
+
+TEST_F(NewHorizonsEndlessLegionResultTest, VictoriousGatedCorePublishesHalfCasualtiesAndSavedReserveReceipt)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareResult("core:imp"));
+	ASSERT_EQ(battle()->battleGetCreatureCategory(reserveCreature)->category,
+		newHorizonsCreatures::CreatureCategory::CORE);
+	ASSERT_NO_FATAL_FAILURE(loseSeven(gated));
+	ASSERT_NO_FATAL_FAILURE(finishWinner(BattleSide::ATTACKER));
+	ASSERT_NO_FATAL_FAILURE(expectReserve(8)); // Five survivors plus floor(seven / two).
+	EXPECT_EQ(attackerSideHero->getDemonicReserve().at(reserveCreature), 8);
+	const auto published = receipt();
+	auto outgoing = published;
+	CMemorySerializer current;
+	current.oser.version = ESerializationVersion::CURRENT;
+	current.iser.version = ESerializationVersion::CURRENT;
+	ASSERT_NO_THROW(current.oser & outgoing);
+	SetNewHorizonsDemonicReserve restored;
+	ASSERT_NO_THROW(current.iser & restored);
+	EXPECT_EQ(restored.heroId, published.heroId);
+	EXPECT_EQ(restored.reserve, published.reserve);
+	CMemorySerializer old;
+	old.oser.version = ESerializationVersion::NEW_HORIZONS_MUSTER_PERKS;
+	EXPECT_THROW(old.oser & outgoing, std::runtime_error);
+	EXPECT_TRUE(old.extractBuffer().empty());
+}
+
+TEST_F(NewHorizonsEndlessLegionResultTest, VictoriousGatedEliteRestoresOnlyItsCapturedCasualties)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareResult("core:demon"));
+	ASSERT_EQ(battle()->battleGetCreatureCategory(reserveCreature)->category,
+		newHorizonsCreatures::CreatureCategory::ELITE);
+	ASSERT_NO_FATAL_FAILURE(loseSeven(gated));
+	ASSERT_NO_FATAL_FAILURE(finishWinner(BattleSide::ATTACKER));
+	ASSERT_NO_FATAL_FAILURE(expectReserve(8));
+	EXPECT_EQ(attackerSideHero->getDemonicReserve().at(reserveCreature), 8);
+}
+
+TEST_F(NewHorizonsEndlessLegionResultTest, VictoriousGatedChampionReturnsSurvivorsWithoutRestoration)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareResult("core:devil"));
+	ASSERT_EQ(battle()->battleGetCreatureCategory(reserveCreature)->category,
+		newHorizonsCreatures::CreatureCategory::CHAMPION);
+	ASSERT_NO_FATAL_FAILURE(loseSeven(gated));
+	ASSERT_NO_FATAL_FAILURE(finishWinner(BattleSide::ATTACKER));
+	ASSERT_NO_FATAL_FAILURE(expectReserve(5));
+	EXPECT_EQ(attackerSideHero->getDemonicReserve().at(reserveCreature), 5);
+}
+
+TEST_F(NewHorizonsEndlessLegionResultTest, VictoryDoesNotConvertOrdinaryArmyCasualtiesIntoReserve)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareResult("core:imp", false));
+	CStack * original = nullptr;
+	for(const auto & stack : battle()->stacks)
+		if(stack->unitSide() == BattleSide::ATTACKER && stack->base
+			&& stack->unitSlot() == SlotID(0))
+			original = stack.get();
+	ASSERT_NE(original, nullptr);
+	ASSERT_TRUE(battle()->getSide(BattleSide::ATTACKER).gatedDemonicStacks.empty());
+	ASSERT_NO_FATAL_FAILURE(loseSeven(original));
+	ASSERT_NO_FATAL_FAILURE(finishWinner(BattleSide::ATTACKER));
+	ASSERT_NO_FATAL_FAILURE(expectReserve(12)); // Uncommitted reserve only.
+	EXPECT_EQ(attackerSideHero->getDemonicReserve().at(reserveCreature), 12);
+}
+
+TEST_F(NewHorizonsEndlessLegionResultTest, DefeatPublishesNoEndlessLegionRestoration)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareResult("core:imp"));
+	ASSERT_NO_FATAL_FAILURE(loseSeven(gated));
+	ASSERT_NO_FATAL_FAILURE(finishWinner(BattleSide::DEFENDER));
+	ASSERT_NO_FATAL_FAILURE(expectReserve(0)); // Defeat also destroys the five survivors.
+}
+
+TEST_F(NewHorizonsEndlessLegionResultTest, AcceptedMutualArmageddonDrawPublishesNoRestoration)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareResult("core:imp"));
+	if(!attackerSideHero->hasSpellbook())
+		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	attackerSideHero->addSpellToSpellbook(SpellID(SpellID::ARMAGEDDON));
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100000, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+	for(int actions = 0; actions < 16 && battle()->battleActiveUnit()
+		&& battle()->battleActiveUnit()->unitSide() != BattleSide::ATTACKER; ++actions)
+	{
+		const auto * active = battle()->battleActiveUnit();
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
+			battle()->battleGetActionController(active), BattleAction::makeDefend(active)));
+	}
+	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+	ASSERT_EQ(battle()->battleActiveUnit()->unitSide(), BattleSide::ATTACKER);
+	const auto query = std::make_shared<CBattleQuery>(gameHandler.get(), battle());
+	gameHandler->queries->addQuery(query);
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = SpellID(SpellID::ARMAGEDDON);
+	action.aimToHex(BattleHex::INVALID);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	ASSERT_NO_FATAL_FAILURE(acceptResult(query, BattleSide::NONE));
+	ASSERT_NO_FATAL_FAILURE(expectReserve(0));
+}
+
+TEST_F(NewHorizonsEndlessLegionResultTest, TemporaryReanimateTroopsDisappearBeforeReserveSurvivorsAndHalfLossAward)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareResult("core:imp"));
+	ASSERT_NO_FATAL_FAILURE(loseSeven(gated));
+	if(!attackerSideHero->hasSpellbook())
+		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	const SpellID reanimate(SpellID::decode(std::string(newHorizonsMagic::SHADOW_REANIMATE_SPELL)));
+	ASSERT_TRUE(reanimate.hasValue());
+	attackerSideHero->addSpellToSpellbook(reanimate);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 1000, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 1000);
+	for(int actions = 0; actions < 16 && battle()->battleActiveUnit()
+		&& battle()->battleActiveUnit()->unitSide() != BattleSide::ATTACKER; ++actions)
+	{
+		const auto * active = battle()->battleActiveUnit();
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
+			battle()->battleGetActionController(active), BattleAction::makeDefend(active)));
+	}
+	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+	ASSERT_EQ(battle()->battleActiveUnit()->unitSide(), BattleSide::ATTACKER);
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	BattleAction restore;
+	restore.actionType = EActionType::HERO_SPELL;
+	restore.side = BattleSide::ATTACKER;
+	restore.spell = reanimate;
+	restore.aimToUnit(gated);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), restore));
+	EXPECT_LT(attackerSideHero->getManaAvailable(), manaBefore);
+	ASSERT_EQ(gated->getCount(), 12);
+	ASSERT_EQ(gated->health.getResurrected(), 7);
+	const auto temporaryHealth = gated->getAvailableHealth();
+	resultServer.watchedUnit = gated->unitId();
+	resultServer.watchedOwner = ownerId;
+	ASSERT_NO_FATAL_FAILURE(finishWinner(BattleSide::ATTACKER));
+	ASSERT_NO_FATAL_FAILURE(expectReserve(8)); // Five permanent survivors + three restored casualties.
+	EXPECT_EQ(attackerSideHero->getDemonicReserve().at(reserveCreature), 8);
+	// Accounting did not strip the live stack before the normal battle teardown.
+	EXPECT_EQ(resultServer.healthAtReservePublication, temporaryHealth);
+	EXPECT_EQ(resultServer.countAtReservePublication, 12);
+	EXPECT_EQ(resultServer.temporaryCountAtReservePublication, 7);
 }

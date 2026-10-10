@@ -2,6 +2,66 @@
 
 Updated: 2026-10-10
 
+Corrected selector principal rendered path is observed on matchedde365844 client
+and90c602 library. Root inspects centered visible zero/one-target panels and
+three-target exact readback/badges, mouse Undo3→2 with recalculation, Cancel
+without Mana/action spend, and mouse Confirm with Mana100→92, action spent,
+99 damage/6 kills and panel removal. Identical-name and double-wide targets are
+included. Root reads the final owned-cleanup and exact snapshot/package parity
+receipt; both pass. Five-target layout, resize and other shared consumers remain unobserved;
+this is not full UI integration or Final artwork approval. Reserve7/7 evidence,
+registry totals, NHART and ordinary launcher are unchanged. Frozen's required
+rendered status/encasement/Shatter/forfeit feedback remains the next open gate.
+
+The reviewed selector repaint correction is imported and both-target32859 links;
+privacy53433 reports zero findings. Ordinary frames now paint the existing static
+children through showAll, after the battlefield, without per-frame forecasts.
+The exact test/library pair is unchanged, so native reserve7/7 remains valid.
+New matched panel/mouse rendering is pending. Windows38043534263 succeeds for
+earlier9ed7cb4d5 source only; no current-batch platform/playable claim follows.
+
+The matched11abb/90c602 rendered probe disproves panel acceptance after the first
+centering/foreground fix: actual Storm0/5 and1/5 captures have working badges and
+status but no visible panel. Root inspects both captures. The stopped probe has
+owned cleanup and unchanged snapshot/NHART parity. Required panel/mouse feedback
+remains incomplete; redraw-lifecycle diagnosis is assigned. This finding does
+not invalidate the independently passing reserve7/7 gate below.
+
+Actual Endless Legion result gate passes7/7 in5.193s after both-target52381
+and fresh privacy20561 pass. Root reads the native XML and receipt: no failures,
+errors, skips or disabled cases; exact pair/resources and cleanup pass. Core and
+Elite casualty restoration, Champion/ordinary exclusions, defeat/draw and
+accepted temporary Reanimate cleanup now have actual result-processor witnesses.
+The detached cleanup preserves live battle health. This closes the demonstrated
+principal reserve invariant, not all Gating interactions. Matched panel/mouse
+rendering remains pending; registry counts, NHART and launcher are unchanged.
+
+Reviewed gated-result cleanup and required targeting-panel paint-order repair are
+imported; both-target52381 is building. Seven focused actual result cases include
+victory Core/Elite, Champion/ordinary exclusion, defeat/draw and accepted Reanimate
+cleanup without live mutation. The shared readback strip now draws after the
+battlefield and recenters after queue creation/resize. Native and matched rendered
+acceptance remain pending; no registry-count or package change is implied.
+
+New principal correctness gap: gated reserve result accounting retains temporary
+revivals for ordinary stacks because only replacement-form projections run
+takeResurrected. Gated units skip ordinary strategic-army cleanup, and Reanimate
+legally targets them. This can permanently retain one-battle creatures and
+miscompute Endless Legion casualties. Root confirms the producer/cleanup seam;
+a narrow private fix and seven actual result witnesses are assigned. Source
+registration of all ten Gating perks does not certify this result invariant.
+
+Phase1 exit remains unproven after publishedabec47cc3. Bounded current-source
+audits verify selected biography/config equality and real specialty consumers,
+not144 individually redesigned heroes:52 authored biography overrides ship,
+92 inherit,48 profiles are authored and all144 replacement army rows remain TBD.
+War-machine shops/healing/repair/catapult/Quartermaster/Counter-Battery have
+principal consumers in the inspected lane; no new absent function is identified.
+Endless Legion's victory result producer exists but its focused evidence remains
+arithmetic-only; a real-result witness is being prepared. Required Storm/Frozen
+rendered feedback is still unverified. None of these limited audits establishes
+blanket Phase1 completion or full-match AI/platform acceptance.
+
 Town Muster principal execution passes6/6 actual native cases after the private
 owner-call fixture repair. Root opens the XML: zero failures/errors/skips and
 disabled cases. Both-target93434 links; privacy6976 has zero findings. Ordinary
@@ -6186,9 +6246,10 @@ Speed/Initiative reduction.
    module-reconfigure blocker was cleared before the 2026-09-29 Linux target
    links; retain the focused perk-data evidence and do not infer rendered or
    playable acceptance from the build.
-3. **Bulwark of the Mire:** nine perks are active; Deep Bulwark remains planned
-   because the required nonmagical forced-displacement producer is absent.
-   Existing focused native checks do not close its rendered/playable evidence.
+3. **Bulwark of the Mire:** all ten perks are active. Deep Bulwark has accepted
+   focused evidence in the seven-perk53-case gate for the explicit typed physical
+   displacement cause; no unspecified ordinary physical-push producer is invented.
+   Rendered/playable and broader interaction evidence remain separate.
 
 Next slices are selected by dependency leverage: remove progression deadlocks,
 reuse generic infrastructure across multiple requirements, and never activate a
