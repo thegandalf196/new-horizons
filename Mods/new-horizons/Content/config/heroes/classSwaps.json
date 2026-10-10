@@ -1,0 +1,8 @@
+{
+	"core:halon": {
+		"class": "core:alchemist"
+	},
+	"core:thane": {
+		"class": "core:wizard"
+	}
+}

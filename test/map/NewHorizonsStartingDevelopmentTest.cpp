@@ -956,6 +956,30 @@ TEST_F(NewHorizonsStartingArmyTest, All144DefaultArmiesRetainCompositionAndLeade
 		ASSERT_NE(initialized, nullptr);
 		ASSERT_EQ(initialized->level, 1);
 		ASSERT_FALSE(initialized->Slots().empty());
+		if(std::string_view(hero) == "core:halon" || std::string_view(hero) == "core:thane")
+		{
+			const bool halon = std::string_view(hero) == "core:halon";
+			EXPECT_EQ(initialized->getHeroClassID(), HeroClassID(HeroClassID::decode(
+				halon ? "core:alchemist" : "core:wizard")));
+			const std::array<int, 4> expected = halon
+				? std::array<int, 4>{30, 20, 20, 30}
+				: std::array<int, 4>{5, 5, 45, 45};
+			const std::array<PrimarySkill, 4> attributes = {
+				PrimarySkill::ATTACK, PrimarySkill::DEFENSE,
+				PrimarySkill::SPELL_POWER, PrimarySkill::KNOWLEDGE};
+			for(size_t index = 0; index < attributes.size(); ++index)
+				EXPECT_EQ(initialized->getPrimSkillLevel(attributes[index]), expected[index]);
+			const auto leadership = initialized->getLeadershipCapacity();
+			ASSERT_TRUE(leadership);
+			EXPECT_EQ(leadership->capacity, halon ? 875 : 650);
+			const auto firstSlot = initialized->getLeadershipSlotCapacity(
+				CreatureID(CreatureID::decode("core:gremlin")));
+			ASSERT_TRUE(firstSlot);
+			EXPECT_EQ(firstSlot->maximum, halon ? 17 : 13);
+			EXPECT_EQ(initialized->getCreature(SlotID(0))->getId(),
+				CreatureID(CreatureID::decode("core:gremlin")));
+			EXPECT_EQ(initialized->getStackCount(SlotID(0)), firstSlot->maximum);
+		}
 		int ordinarySlot = 0;
 		for(const auto & original : initialized->getHeroType()->initialArmy)
 		{

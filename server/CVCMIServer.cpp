@@ -108,14 +108,13 @@ uint16_t CVCMIServer::startAcceptingIncomingConnections(bool listenForConnection
 {
 	networkServer = networkHandler->createServerTCP(*this);
 
-	port
-		? logNetwork->info("Port %d will be used", port)
-		: logNetwork->info("Randomly assigned port will be used");
-
-	// config port may be 0 => srvport will contain the OS-assigned port value
-
 	if (listenForConnections)
 	{
+		port
+			? logNetwork->info("Port %d will be used", port)
+			: logNetwork->info("Randomly assigned port will be used");
+
+		// config port may be 0 => srvport will contain the OS-assigned port value
 		auto srvport = networkServer->start(port);
 		// Internal single-player sessions must not open a UDP discovery socket.
 		startDiscoveryListener();
@@ -123,7 +122,10 @@ uint16_t CVCMIServer::startAcceptingIncomingConnections(bool listenForConnection
 		return srvport;
 	}
 	else
+	{
+		logNetwork->info("Using internal connection; not listening for network connections");
 		return 0;
+	}
 }
 
 void CVCMIServer::onNewConnection(const std::shared_ptr<INetworkConnection> & connection)

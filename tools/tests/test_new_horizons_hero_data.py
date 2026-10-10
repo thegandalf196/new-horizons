@@ -261,7 +261,9 @@ class HeroDataTest(unittest.TestCase):
                     self.assertEqual(len(profile['skills']), 2)
                     self.assertEqual(profile['startingPerks'],
                                      [{'skill': parent, 'perk': expected_perk}])
-                    self.assertGreater(self.rules['skillOfferWeights']['core:' + definition['class']][parent], 0)
+                    class_swaps = json.loads((ROOT / 'Mods/new-horizons/Content/config/heroes/classSwaps.json').read_text())
+                    effective_class = class_swaps.get(hero, {}).get('class', 'core:' + definition['class'])
+                    self.assertGreater(self.rules['skillOfferWeights'][effective_class][parent], 0)
                     authored = next(row for row in registry[parent]['perks'] if row['id'] == expected_perk)
                     self.assertEqual(authored['requires'], 'basic')
                     self.assertEqual(authored['effect']['status'], 'active')
@@ -270,6 +272,38 @@ class HeroDataTest(unittest.TestCase):
         module = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())
         self.assertEqual(module['settings']['heroes']['newHorizons']['startingSkills'],
                          self.rules['startingSkills'])
+
+    def test_thane_halon_class_swap_is_exact_and_new_horizons_only(self):
+        module = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())
+        swaps = json.loads((ROOT / 'Mods/new-horizons/Content/config/heroes/classSwaps.json').read_text())
+        self.assertEqual(swaps, {
+            'core:halon': {'class': 'core:alchemist'},
+            'core:thane': {'class': 'core:wizard'},
+        })
+        self.assertEqual(module['heroes'].count('config/heroes/classSwaps.json'), 1)
+        legacy = json.loads((ROOT / 'config/heroes/tower.json').read_text())
+        self.assertEqual(legacy['halon']['class'], 'wizard')
+        self.assertEqual(legacy['thane']['class'], 'alchemist')
+        # A class-only override preserves every other prototype field.
+        for scoped, override in swaps.items():
+            prototype = legacy[scoped.split(':')[1]]
+            effective = dict(prototype, **override)
+            self.assertEqual({key: value for key, value in effective.items() if key != 'class'},
+                             {key: value for key, value in prototype.items() if key != 'class'})
+
+    def test_swapped_classes_use_existing_primary_and_army_capacity_profiles(self):
+        capabilities = json.loads((ROOT / 'config/newHorizonsCapabilities.json').read_text())
+        swaps = json.loads((ROOT / 'Mods/new-horizons/Content/config/heroes/classSwaps.json').read_text())
+        for hero, primary, leadership, caps in (
+                ('core:halon', [30, 20, 20, 30], 875, [17, 10, 6]),
+                ('core:thane', [5, 5, 45, 45], 650, [13, 8, 4])):
+            with self.subTest(hero=hero):
+                class_id = swaps[hero]['class']
+                self.assertEqual(self.rules['classProfiles'][class_id]['starting'], primary)
+                self.assertEqual(capabilities['classProfiles'][class_id]['base'], leadership)
+                requirements = capabilities['leadership']['creatureRequirements']
+                self.assertEqual([leadership // requirements[creature] for creature in
+                                  ('core:gremlin', 'core:stoneGargoyle', 'core:ironGolem')], caps)
 
     def test_legacy_starting_skill_migration_table_is_canonical_and_honest(self):
         self.assertEqual(self.rules['startingSkills']['legacySkillMigrations'], {

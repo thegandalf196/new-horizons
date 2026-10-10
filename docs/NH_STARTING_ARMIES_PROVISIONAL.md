@@ -53,7 +53,7 @@ Every ordinary first slot has a positive minimum and positive capacity, so norma
 | core:neela | core:alchemist: 875 | core:gremlin 30–40 · core:stoneGargoyle 3–5 · core:ironGolem 2–3 | core:gremlin 17–17 (cap 17) · core:stoneGargoyle 3–5 (cap 10) · core:ironGolem 2–3 (cap 6) |
 | core:torosar | core:alchemist: 875 | core:gremlin 30–40 · core:ironGolem 2–3 · Ballista | core:gremlin 17–17 (cap 17) · core:ironGolem 2–3 (cap 6) · Ballista |
 | core:fafner | core:alchemist: 875 | core:gremlin 30–40 · core:stoneGargoyle 3–5 · core:ironGolem 2–3 | core:gremlin 17–17 (cap 17) · core:stoneGargoyle 3–5 (cap 10) · core:ironGolem 2–3 (cap 6) |
-| core:halon | core:wizard: 650 | core:gremlin 30–40 · core:stoneGargoyle 3–5 · core:ironGolem 2–3 | core:gremlin 13–13 (cap 13) · core:stoneGargoyle 3–5 (cap 8) · core:ironGolem 2–3 (cap 4) |
+| core:halon | core:alchemist: 875 | core:gremlin 30–40 · core:stoneGargoyle 3–5 · core:ironGolem 2–3 | core:gremlin 17–17 (cap 17) · core:stoneGargoyle 3–5 (cap 10) · core:ironGolem 2–3 (cap 6) |
 | core:iona | core:alchemist: 875 | core:gremlin 30–40 · core:stoneGargoyle 3–5 · core:ironGolem 2–3 | core:gremlin 17–17 (cap 17) · core:stoneGargoyle 3–5 (cap 10) · core:ironGolem 2–3 (cap 6) |
 | core:rissa | core:alchemist: 875 | core:gremlin 30–40 · core:stoneGargoyle 3–5 · core:ironGolem 2–3 | core:gremlin 17–17 (cap 17) · core:stoneGargoyle 3–5 (cap 10) · core:ironGolem 2–3 (cap 6) |
 | core:astral | core:wizard: 650 | core:gremlin 30–40 · core:stoneGargoyle 3–5 · core:ironGolem 2–3 | core:gremlin 13–13 (cap 13) · core:stoneGargoyle 3–5 (cap 8) · core:ironGolem 2–3 (cap 4) |
@@ -63,7 +63,7 @@ Every ordinary first slot has a positive minimum and positive capacity, so norma
 | core:solmyr | core:wizard: 650 | core:gremlin 30–40 · core:stoneGargoyle 3–5 · core:ironGolem 2–3 | core:gremlin 13–13 (cap 13) · core:stoneGargoyle 3–5 (cap 8) · core:ironGolem 2–3 (cap 4) |
 | core:cyra | core:wizard: 650 | core:gremlin 30–40 · core:stoneGargoyle 3–5 · core:ironGolem 2–3 | core:gremlin 13–13 (cap 13) · core:stoneGargoyle 3–5 (cap 8) · core:ironGolem 2–3 (cap 4) |
 | core:aine | core:wizard: 650 | core:gremlin 30–40 · core:stoneGargoyle 3–5 · core:ironGolem 2–3 | core:gremlin 13–13 (cap 13) · core:stoneGargoyle 3–5 (cap 8) · core:ironGolem 2–3 (cap 4) |
-| core:thane | core:alchemist: 875 | core:gremlin 30–40 · core:stoneGargoyle 3–5 · core:ironGolem 2–3 | core:gremlin 17–17 (cap 17) · core:stoneGargoyle 3–5 (cap 10) · core:ironGolem 2–3 (cap 6) |
+| core:thane | core:wizard: 650 | core:gremlin 30–40 · core:stoneGargoyle 3–5 · core:ironGolem 2–3 | core:gremlin 13–13 (cap 13) · core:stoneGargoyle 3–5 (cap 8) · core:ironGolem 2–3 (cap 4) |
 | core:fiona | core:demoniac: 1025 | core:imp 15–25 · core:hellHound 3–4 · core:hellHound 3–4 | core:imp 15–20 (cap 20) · core:hellHound 3–4 (cap 6) · core:hellHound 3–4 (cap 6) |
 | core:rashka | core:demoniac: 1025 | core:imp 15–25 · core:gog 4–7 · core:hellHound 3–4 | core:imp 15–20 (cap 20) · core:gog 4–7 (cap 11) · core:hellHound 3–4 (cap 6) |
 | core:marius | core:demoniac: 1025 | core:imp 15–25 · core:gog 4–7 · core:hellHound 3–4 | core:imp 15–20 (cap 20) · core:gog 4–7 (cap 11) · core:hellHound 3–4 (cap 6) |

@@ -2,6 +2,30 @@
 
 Updated: 2026-10-10
 
+Current ordinary Guild principal presentation is observed on the selected
+post-commit1b8398361 immutable Linux snapshot: unknown Inferno, Meteor Shower
+and Armageddon show Basic, Advanced and Expert Havoc requirements in actual
+popups/status bars; known Focus Magic, Implosion and Time Stop show no acquisition
+lock. Aine's ordinary visitor/book/no-School state is observed. Normal Quit exits0,
+owned silent-display cleanup and complete snapshot parity pass. Three private
+fixture instance-name diagnostics are retained, not suppressed. Sage overflow,
+no-visitor presentation and Frozen feedback remain unobserved. The standard
+Linux launcher now selects that tested candidate; prior delivery statements
+below are historical checkpoints.
+
+New user reproduction exposes a principal UI projection gap: map-selection
+Starting Hero and the encyclopedia read legacy prototypes for primary values,
+Skills, books and raw army ranges while displaying modified specialty text.
+Shared effective-profile projection is in progress; existing144 initialized
+profile acceptance does not prove these UI consumers. The requested Halon to
+Battle Mage / Thane to Wizard swap is imported as a New Horizons-only class
+patch; four focused data checks and module generation pass. Actual starting-army
+suite4/4 passes, including all144 ordinary initialization with exact swapped
+class/primary/Leadership/first-stack controls and retained map/reinit/save/legacy
+boundaries. Initial missing isolated test-mod preset failure is retained; the
+corrected setup changes no production assertions. Changed playable delivery and
+popup/encyclopedia rendering remain pending.
+
 Guild School-acquisition help: ordinary scroll click/right-click/hover and Sage
 overflow components now read the current town visitor, captured rules and actual
 learning status. Unknown Levels3/4/5 display required School rank; known spells

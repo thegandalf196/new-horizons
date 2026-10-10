@@ -106,6 +106,7 @@ def main():
         'config/heroes/fafner.json',
         'config/heroes/halon.json',
         'config/heroes/solmyr.json',
+        'config/heroes/classSwaps.json',
     ]
     faction_patch_files = [
         'config/factions/uniqueBuildings.json',

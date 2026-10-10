@@ -10270,7 +10270,8 @@
 		"config/heroes/biographies.json",
 		"config/heroes/fafner.json",
 		"config/heroes/halon.json",
-		"config/heroes/solmyr.json"
+		"config/heroes/solmyr.json",
+		"config/heroes/classSwaps.json"
 	],
 	"artifacts": [
 		"config/artifacts/spellbindersHat.json",
