@@ -771,7 +771,7 @@ CSimpleJoinScreen::CSimpleJoinScreen(bool host, const std::string & server, ui16
 	if(host && server.empty() && GAME->server().loadMode != ELoadMode::MULTI)
 	{
 		// Keep the existing connection/cancel lifecycle without exposing a join dialog.
-		background = std::make_shared<CPicture>(ImagePath::builtin("loadbar"));
+		background = std::make_shared<CPicture>(CLoadingScreen::getBackground());
 		pos = background->center();
 		buttonCancel = std::make_shared<CButton>(Point(pos.w - 80, pos.h - 60),
 			AnimationPath::builtin("MUBCANC.DEF"), LIBRARY->generaltexth->zelp[561],

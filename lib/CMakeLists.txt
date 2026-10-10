@@ -164,6 +164,7 @@ set(lib_MAIN_SRCS
 	entities/creature/NewHorizonsCreatureCategories.cpp
 	entities/creature/NewHorizonsRecruitmentTraining.cpp
 	entities/hero/NewHorizonsHeroRules.cpp
+	entities/hero/HeroStartingProjection.cpp
 	entities/hero/NewHorizonsLeadership.cpp
 	entities/hero/NewHorizonsCapabilityRules.cpp
 	entities/hero/NewHorizonsMasteryRules.cpp
@@ -696,6 +697,7 @@ set(lib_MAIN_HEADERS
 	entities/creature/NewHorizonsMusterRules.h
 	entities/creature/NewHorizonsRecruitmentTraining.h
 	entities/hero/NewHorizonsHeroRules.h
+	entities/hero/HeroStartingProjection.h
 	entities/hero/NewHorizonsLeadership.h
 	entities/hero/NewHorizonsCapabilityRules.h
 	entities/hero/NewHorizonsMasteryRules.h

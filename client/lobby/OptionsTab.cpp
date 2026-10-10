@@ -767,7 +767,8 @@ void OptionsTab::SelectionWindow::setElement(int elem, bool doApply)
 			{
 				CPlayerSettingsHelper helper = CPlayerSettingsHelper(set, SelType::HERO);
 				if(settings["general"]["enableUiEnhancements"].Bool() && helper.playerSettings.hero.isValid() && helper.playerSettings.heroNameTextId.empty())
-					ENGINE->windows().createAndPushWindow<CHeroOverview>(helper.playerSettings.hero);
+					ENGINE->windows().createAndPushWindow<CHeroOverview>(helper.playerSettings.hero,
+						heroStartingPreview(helper.playerSettings.hero, SEL->getMapInfo(), helper.playerSettings.color));
 				else
 					ENGINE->windows().createAndPushWindow<CPlayerOptionTooltipBox>(helper);
 			}
@@ -964,7 +965,8 @@ void OptionsTab::SelectedBox::showPopupWindow(const Point & cursorPosition)
 		return;
 
 	if(settings["general"]["enableUiEnhancements"].Bool() && CPlayerSettingsHelper::selectionType == HERO && playerSettings.hero.isValid() && playerSettings.heroNameTextId.empty())
-		ENGINE->windows().createAndPushWindow<CHeroOverview>(playerSettings.hero);
+		ENGINE->windows().createAndPushWindow<CHeroOverview>(playerSettings.hero,
+			heroStartingPreview(playerSettings.hero, SEL->getMapInfo(), playerSettings.color));
 	else
 		ENGINE->windows().createAndPushWindow<CPlayerOptionTooltipBox>(*this);
 }

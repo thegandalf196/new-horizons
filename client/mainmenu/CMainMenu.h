@@ -221,9 +221,9 @@ class CLoadingScreen : virtual public CWindowObject, virtual public Load::Progre
 	std::shared_ptr<CPicture> loadFrame;
 	std::vector<std::shared_ptr<CAnimImage>> progressBlocks;
 
-	ImagePath getBackground();
-
 public:	
+	static ImagePath getBackground();
+
 	CLoadingScreen();
 	CLoadingScreen(ImagePath background);
 	~CLoadingScreen();

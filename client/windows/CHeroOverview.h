@@ -10,6 +10,7 @@
 #pragma once
 
 #include "CWindowObject.h"
+#include "HeroStartingPreview.h"
 
 class CLabel;
 class CMultiLineLabel;
@@ -20,10 +21,12 @@ class CTextBox;
 class TransparentFilledRectangle;
 class SimpleLine;
 class CSecSkillPlace;
+class LRClickableAreaWText;
 
 class CHeroOverview : public CWindowObject
 {
-	const HeroTypeID & hero;
+	const HeroTypeID hero;
+	HeroStartingPreview starting;
 	int heroIdx;
 
     const int yOffset = 35;
@@ -63,10 +66,12 @@ class CHeroOverview : public CWindowObject
     std::shared_ptr<CLabel> labelSecSkillTitle;
     std::vector<std::shared_ptr<CSecSkillPlace>> secSkills;
     std::vector<std::shared_ptr<CLabel>> labelSecSkillsNames;
+    std::vector<std::shared_ptr<LRClickableAreaWText>> startingSkillHelp;
 
     void genBackground();
     void genControls();
 
 public:
     CHeroOverview(const HeroTypeID & h);
+    CHeroOverview(const HeroTypeID & h, HeroStartingPreview preview);
 };

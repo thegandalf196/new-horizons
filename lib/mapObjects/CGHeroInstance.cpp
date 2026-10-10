@@ -13,6 +13,7 @@
 #include "../pathfinder/NewHorizonsMovement.h"
 #include "../battle/HeroCommand.h"
 #include "CGHeroInstance.h"
+#include "../entities/hero/HeroStartingProjection.h"
 #include "../entities/hero/NewHorizonsDiplomacy.h"
 #include "NewHorizonsGlyphsOfFear.h"
 
@@ -96,107 +97,23 @@ bool matchesConfiguredHeroBonus(const Bonus & installed, const Bonus & configure
 
 std::optional<SpellID> authoredRemainingSpellReplacement(const CGHeroInstance & hero, SpellID source)
 {
-	if(!hero.getHeroType() || !newHorizonsHeroes::usesRemainingSpellSpecialties(hero.getPrimaryGrowthRules())
-		|| !newHorizonsMagic::rulesActive(hero.getMagicRules())
-		|| hero.getMagicRules()["rulesetVersion"].Integer()
-			< newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+	if(!hero.getHeroType())
 		return std::nullopt;
-	for(const auto & producer : hero.getHeroType()->spellSpecialtySuccessorProducers)
-		if(producer.source == source)
-			for(const auto & spell : LIBRARY->spellh->objects)
-				if(spell && spell->getJsonKey() == producer.target
-					&& newHorizonsMagic::spellAllowedByHeroRoster(hero.getMagicRules(), spell->getId()))
-					return spell->getId();
-	return std::nullopt;
+	return newHorizonsHeroes::authoredRemainingSpellReplacement(*hero.getHeroType(), hero.getPrimaryGrowthRules(), hero.getMagicRules(), source);
 }
 
 std::optional<SpellID> authoredDamageSpellReplacement(const CGHeroInstance & hero, SpellID source)
 {
-	if(source != SpellID::SLAYER || !hero.getHeroType()
-		|| hero.getHeroType()->getJsonKey() != "core:coronius")
+	if(!hero.getHeroType())
 		return std::nullopt;
-	const auto & producers = hero.getHeroType()->damageSpellSpecialtyProducers;
-	if(!std::ranges::any_of(producers, [source](const auto & producer)
-	{
-		return producer.spell == source && producer.bonus && producer.supported;
-	}))
-		return std::nullopt;
-	const auto & flag = hero.getPrimaryGrowthRules()["damageSpellSpecialties"]["coroniusHolyWrathReplacement"];
-	if(!flag.isBool() || !flag.Bool()
-		|| !newHorizonsHeroes::damageSpellSpecialtyRules(hero.getPrimaryGrowthRules())
-		|| !newHorizonsMagic::rulesActive(hero.getMagicRules())
-		|| hero.getMagicRules()["rulesetVersion"].Integer()
-			< newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
-		return std::nullopt;
-	const SpellID target(SpellID::decode("new-horizons:holyWrath"));
-	if(target.hasValue() && newHorizonsMagic::spellAllowedByHeroRoster(hero.getMagicRules(), target))
-		return target;
-	return std::nullopt;
+	return newHorizonsHeroes::authoredDamageSpellReplacement(*hero.getHeroType(), hero.getPrimaryGrowthRules(), hero.getMagicRules(), source);
 }
 
 std::optional<SpellID> authoredNonDamageSpellReplacement(const CGHeroInstance & hero, SpellID source)
 {
 	if(!hero.getHeroType())
 		return std::nullopt;
-	const auto & key = hero.getHeroType()->getJsonKey();
-	const auto & remainingFlag = hero.getPrimaryGrowthRules()["nonDamageSpellSpecialties"]["remainingStartReplacements"];
-	const bool remaining = remainingFlag.isBool() && remainingFlag.Bool();
-	// Halon's replacement is an inscription only. Do not add Guardian Spirit
-	// to a specialty producer or fabricate a second specialty for this hero.
-	if(remaining && key == "core:halon" && source == SpellID::STONE_SKIN
-		&& newHorizonsMagic::rulesActive(hero.getMagicRules())
-		&& hero.getMagicRules()["rulesetVersion"].Integer()
-			>= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
-	{
-		const SpellID guardian(SpellID::decode("new-horizons:guardianSpirit"));
-		if(newHorizonsMagic::spellAllowedByHeroRoster(hero.getMagicRules(), guardian))
-			return guardian;
-	}
-	const bool inteus = remaining && key == "core:inteus" && source == SpellID::BLOODLUST;
-	const auto & defensiveFlag = hero.getPrimaryGrowthRules()["nonDamageSpellSpecialties"]["defensiveStartReplacements"];
-	const bool defensive = source == SpellID::STONE_SKIN && defensiveFlag.isBool() && defensiveFlag.Bool()
-		&& (key == "core:merist" || key == "core:labetha");
-	const auto & offensiveFlag = hero.getPrimaryGrowthRules()["nonDamageSpellSpecialties"]["offensiveStartReplacements"];
-	const bool offensive = offensiveFlag.isBool() && offensiveFlag.Bool()
-		&& ((source == SpellID::PRAYER && key == "core:loynis")
-			|| (source == SpellID::PRECISION && key == "core:zubin"));
-	const bool thant = key == "core:thant" && source == SpellID::ANIMATE_DEAD;
-	const bool frailty = (source == SpellID::WEAKNESS
-		&& (key == "core:cuthbert" || key == "core:olema" || key == "core:mirlanda"))
-		|| (source == SpellID::STONE_SKIN && key == "core:xsi")
-		|| (source == SpellID::DISRUPTING_RAY && key == "core:aenain"
-			&& hero.getPrimaryGrowthRules()["nonDamageSpellSpecialties"]["aenainFrailtyReplacement"].isBool()
-			&& hero.getPrimaryGrowthRules()["nonDamageSpellSpecialties"]["aenainFrailtyReplacement"].Bool());
-	if(!thant && !frailty && !defensive && !offensive && !inteus)
-		return std::nullopt;
-	const auto rules = newHorizonsHeroes::nonDamageSpellSpecialtyRules(hero.getPrimaryGrowthRules());
-	if(rules)
-		for(const auto spell : rules->spells)
-			if((thant && newHorizonsMagic::reanimateEnabled(hero.getMagicRules(), spell))
-				|| (frailty && spell.toSpell()->getJsonKey() == newHorizonsMagic::SHADOW_FRAILTY_SPELL
-					&& newHorizonsMagic::rulesActive(hero.getMagicRules())
-					&& hero.getMagicRules()["rulesetVersion"].Integer()
-						>= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
-					&& newHorizonsMagic::spellAllowedByHeroRoster(hero.getMagicRules(), spell))
-				|| (defensive && spell.toSpell()->getJsonKey()
-					== (key == "core:merist" ? "new-horizons:hydrasVitality" : "new-horizons:guardianSpirit")
-					&& newHorizonsMagic::rulesActive(hero.getMagicRules())
-					&& hero.getMagicRules()["rulesetVersion"].Integer()
-						>= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
-					&& newHorizonsMagic::spellAllowedByHeroRoster(hero.getMagicRules(), spell))
-				|| (inteus && spell.toSpell()->getJsonKey() == "new-horizons:crusade"
-					&& newHorizonsMagic::rulesActive(hero.getMagicRules())
-					&& hero.getMagicRules()["rulesetVersion"].Integer()
-						>= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
-					&& newHorizonsMagic::spellAllowedByHeroRoster(hero.getMagicRules(), spell))
-				|| (offensive && spell.toSpell()->getJsonKey()
-					== (key == "core:loynis" ? "new-horizons:crusade" : "new-horizons:focusMagic")
-					&& newHorizonsMagic::rulesActive(hero.getMagicRules())
-					&& hero.getMagicRules()["rulesetVersion"].Integer()
-						>= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
-					&& newHorizonsMagic::spellAllowedByHeroRoster(hero.getMagicRules(), spell)))
-				return spell;
-	return std::nullopt;
+	return newHorizonsHeroes::authoredNonDamageSpellReplacement(*hero.getHeroType(), hero.getPrimaryGrowthRules(), hero.getMagicRules(), source);
 }
 
 std::string creatureLineSpecialtyMarker(HeroTypeID heroType, CreatureID creature, std::string_view stat)
@@ -607,8 +524,7 @@ std::optional<newHorizonsHeroes::LeadershipSlotCapacity> CGHeroInstance::getLead
 	auto result = newHorizonsHeroes::capabilityLeadershipSlot(capabilityRules, level, creature);
 	if(result)
 	{
-		result->leadership += std::max(0, valOfBonuses(BonusType::LEADERSHIP));
-		result->maximum = result->leadership / result->requirement;
+		newHorizonsHeroes::applyStartingLeadershipBonus(*result, valOfBonuses(BonusType::LEADERSHIP));
 	}
 	return result;
 }
@@ -1004,26 +920,8 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 		for(const auto & spellID : getHeroType()->spells)
 		{
 			if(creationInitialization)
-				if(const auto replacement = newHorizonsHeroes::startingBookReplacement(
-					primaryGrowthRules, getMagicRules(), getHeroTypeID(), spellID))
-				{
-					spells.insert(*replacement);
-					continue;
-				}
-			if(creationInitialization)
-				if(const auto replacement = authoredDamageSpellReplacement(*this, spellID))
-				{
-					spells.insert(*replacement);
-					continue;
-				}
-			if(creationInitialization)
-				if(const auto replacement = authoredRemainingSpellReplacement(*this, spellID))
-				{
-					spells.insert(*replacement);
-					continue;
-				}
-			if(creationInitialization)
-				if(const auto replacement = authoredNonDamageSpellReplacement(*this, spellID))
+				if(const auto replacement = newHorizonsHeroes::startingHeroSpellReplacement(
+					*getHeroType(), primaryGrowthRules, getMagicRules(), spellID))
 				{
 					spells.insert(*replacement);
 					continue;
@@ -1142,32 +1040,9 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	// repeated when loading a saved hero or when legacy rules are active.
 	if(creationInitialization && newHorizonsHeroes::usesPerkRules(perkState.rules))
 	{
-		if(startingDevelopment)
-		{
-			auto proposed = perkState;
-			for(const auto & selection : startingDevelopment->perks)
-				proposed.select(selection.skillId, selection.perkId, getPerkSkillRank(selection.skillId));
-			perkState = std::move(proposed);
-		}
-		// A captured default profile and the original prototype can author the
-		// same starting perk. Merge that exact overlap once, not arbitrary saved
-		// selections or conflicting perks. Consume matches so duplicate entries
-		// in either individual source still reach the normal strict validation.
-		auto unmatchedProfilePerks = startingDevelopment
-			? startingDevelopment->perks : std::vector<newHorizonsHeroes::PerkSelection>{};
-		for(const auto & selection : getHeroType()->startingPerks)
-		{
-			const int rank = getPerkSkillRank(selection.skillId);
-			if(rank <= 0)
-				throw std::runtime_error("New Horizons hero starting perk requires missing skill " + selection.skillId);
-			const auto overlap = std::ranges::find(unmatchedProfilePerks, selection);
-			if(overlap != unmatchedProfilePerks.end())
-			{
-				unmatchedProfilePerks.erase(overlap);
-				continue;
-			}
-			perkState.select(selection.skillId, selection.perkId, rank);
-		}
+		newHorizonsHeroes::selectStartingHeroPerks(perkState,
+			startingDevelopment ? startingDevelopment->perks : std::vector<newHorizonsHeroes::PerkSelection>{},
+			getHeroType()->startingPerks, [this](const std::string & skill){ return getPerkSkillRank(skill); });
 	}
 
 	setFormation(EArmyFormation::LOOSE);
@@ -1423,7 +1298,7 @@ void CGHeroInstance::initArmy(vstd::RNG & rand, IArmyDescriptor * dst)
 				{
 					logGlobal->debug("Clamping starting army of hero %s from %d to %d %s for Leadership %d",
 						getNameTextID(), count, capacity->maximum, creature->getJsonKey(), capacity->leadership);
-					count = capacity->maximum;
+					count = newHorizonsHeroes::clampStartingArmyCount(count, capacity->maximum);
 				}
 			}
 			dst->setCreature(SlotID(stackNo-warMachinesGiven), stack.creature, count);
@@ -3814,15 +3689,26 @@ const IOwnableObject * CGHeroInstance::asOwnable() const
 	return this;
 }
 
-int CGHeroInstance::getBasePrimarySkillValue(PrimarySkill which) const
+const std::set<SpellID> & CGHeroInstance::getRawStartingSpellIds() const
+{
+	return spells;
+}
+
+int CGHeroInstance::getRawBasePrimarySkillValue(PrimarySkill which) const
 {
 	std::string cachingStr = "CGHeroInstance::getBasePrimarySkillValue" + std::to_string(which.getNum());
 	auto selector = Selector::typeSubtype(BonusType::PRIMARY_SKILL, BonusSubtypeID(which)).And(Selector::sourceType()(BonusSource::HERO_BASE_SKILL));
+	return valOfBonuses(selector, cachingStr);
+}
+
+int CGHeroInstance::getBasePrimarySkillValue(PrimarySkill which) const
+{
+	const auto rawValue = getRawBasePrimarySkillValue(which);
 	if(usesPrimaryGrowth())
-		return std::clamp(valOfBonuses(selector, cachingStr), 0, static_cast<int>(primaryGrowthRules["maxPrimary"].Integer()));
+		return std::clamp(rawValue, 0, static_cast<int>(primaryGrowthRules["maxPrimary"].Integer()));
 	auto minSkillValue = LIBRARY->engineSettings()->getVectorValue(EGameSettings::HEROES_MINIMAL_PRIMARY_SKILLS, which.getNum());
 	auto maxSkillValue = LIBRARY->engineSettings()->getVectorValue(EGameSettings::HEROES_MAXIMAL_PRIMARY_SKILLS, which.getNum());
-	return std::clamp(valOfBonuses(selector, cachingStr), minSkillValue, std::max(minSkillValue, maxSkillValue));
+	return std::clamp(rawValue, minSkillValue, std::max(minSkillValue, maxSkillValue));
 }
 
 ArtifactID CGHeroInstance::getReplacedWarMachine(ArtifactID artifactID) const

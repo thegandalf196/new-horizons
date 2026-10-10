@@ -20,6 +20,7 @@
 #include "../../GameEngine.h"
 #include "../../gui/WindowHandler.h"
 #include "../CHeroOverview.h"
+#include "../HeroStartingPreview.h"
 #include "../CCreatureWindow.h"
 
 #include "../../../lib/GameLibrary.h"
@@ -62,6 +63,8 @@ std::vector<std::shared_ptr<CIntObject>> buildHeroContent(
 {
 	std::vector<std::shared_ptr<CIntObject>> widgets;
 	if(!hero) return widgets;
+	const auto starting = heroStartingPreview(hero->getId(), nullptr, PlayerColor::NEUTRAL, mapHero);
+	const auto & effective = starting.values;
 
 	OBJECT_CONSTRUCTION_TARGETED(viewport.content());
 	const Rect clipRect = viewport.clipRect();
@@ -182,8 +185,7 @@ std::vector<std::shared_ptr<CIntObject>> buildHeroContent(
 				MARGIN + CELL_L, ry + CELL_T,
 				FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
 				psNames[i]));
-			const int val = (i < (int)hero->heroClass->primarySkillInitial.size())
-				? hero->heroClass->primarySkillInitial[i] : 0;
+			const int val = effective.primary[i];
 			widgets.push_back(std::make_shared<CLabel>(
 				MARGIN + colLbl + CELL_L, ry + CELL_T,
 				FONT_SMALL, ETextAlignment::TOPLEFT, valCol,
@@ -240,18 +242,19 @@ std::vector<std::shared_ptr<CIntObject>> buildHeroContent(
 	}
 
 	// ── 5. Starting army table ───────────────────────────────────────────
-	if(!hero->initialArmy.empty())
+	if(!effective.army.empty())
 	{
 		curY += 16;
 		widgets.push_back(std::make_shared<CLabel>(
 			W / 2, curY,
 			FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW,
-			LIBRARY->generaltexth->translate("vcmi.heroOverview.startingArmy")));
+			LIBRARY->generaltexth->translate("vcmi.heroOverview.startingArmy")
+				+ (starting.defaultProfile ? " (default starting profile)" : "")));
 		curY += 20;
 
 		struct ArmyRow { const CCreature * cr; ui32 minAmt; ui32 maxAmt; };
 		std::vector<ArmyRow> armyRows;
-		for(const auto & stack : hero->initialArmy)
+		for(const auto & stack : effective.army)
 		{
 			if(stack.creature.getNum() < 0 || stack.creature.getNum() >= (int)LIBRARY->creh->objects.size())
 				continue;
@@ -335,7 +338,7 @@ std::vector<std::shared_ptr<CIntObject>> buildHeroContent(
 		}
 
 		// Additional war machines from hero's starting army
-		for(const auto & stack : hero->initialArmy)
+		for(const auto & stack : effective.army)
 		{
 			if(stack.creature.getNum() < 0 || stack.creature.getNum() >= (int)LIBRARY->creh->objects.size())
 				continue;
@@ -392,7 +395,7 @@ std::vector<std::shared_ptr<CIntObject>> buildHeroContent(
 	}
 
 	// ── 6. Secondary skills ──────────────────────────────────────────────
-	if(!hero->secSkillsInit.empty())
+	if(!effective.skills.empty())
 	{
 		curY += 16;
 		widgets.push_back(std::make_shared<CLabel>(
@@ -407,7 +410,7 @@ std::vector<std::shared_ptr<CIntObject>> buildHeroContent(
 		const std::vector<int> cols = { iconW, nameW, 80 };
 		const int headerH = 16;
 		const int rowH    = 36;
-		const int n       = static_cast<int>(hero->secSkillsInit.size());
+		const int n       = static_cast<int>(effective.skills.size());
 
 		widgets.push_back(std::make_shared<WikiTableGrid>(MARGIN, curY, tableW, cols,
 			headerH, rowH, n, blueStyle));
@@ -421,7 +424,7 @@ std::vector<std::shared_ptr<CIntObject>> buildHeroContent(
 			LIBRARY->generaltexth->translate("vcmi.wiki.hero.column.level")));
 		curY += headerH;
 
-		for(const auto & [skillId, level] : hero->secSkillsInit)
+		for(const auto & [skillId, level] : effective.skills)
 		{
 			if(skillId.getNum() < 0 || skillId.getNum() >= (int)LIBRARY->skillh->objects.size())
 				{ curY += rowH; continue; }
@@ -435,7 +438,8 @@ std::vector<std::shared_ptr<CIntObject>> buildHeroContent(
 			widgets.push_back(std::make_shared<CLabel>(
 				MARGIN + iconW + CELL_L, curY + rowH / 2 - 5,
 				FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
-				sk->getNameTranslated()));
+				sk->getNameTranslated()
+					+ (startingSkillPerkNames(starting, skillId).empty() ? "" : " (" + startingSkillPerkNames(starting, skillId) + ")")));
 			const std::string lvlStr = (level >= 1 && level <= 3)
 				? GAME->translator().translate("core.skilllev", level - 1)
 				: std::to_string(level);
@@ -445,11 +449,13 @@ std::vector<std::shared_ptr<CIntObject>> buildHeroContent(
 
 			const CSkill * skPtr = sk.get();
 			const int skLvl = level;
+			const auto startingPerks = startingSkillPerkNames(starting, skillId);
 			widgets.push_back(std::make_shared<WikiClickable>(
 				Rect(MARGIN, curY, tableW, rowH),
 				nullptr,
-				[skPtr, skLvl](){
-					CRClickPopup::createAndPush(skPtr->getDescriptionTranslated(skLvl));
+				[skPtr, skLvl, startingPerks](){
+					CRClickPopup::createAndPush(skPtr->getDescriptionTranslated(skLvl)
+						+ (startingPerks.empty() ? "" : "\n" + startingPerks));
 				},
 				blueStyle, clipRect));
 			curY += rowH;
@@ -466,7 +472,7 @@ std::vector<std::shared_ptr<CIntObject>> buildHeroContent(
 			LIBRARY->generaltexth->translate("vcmi.heroOverview.spells")));
 		curY += 20;
 
-		if(!hero->haveSpellBook)
+		if(!effective.spellBook)
 		{
 			const int tableW = W - MARGIN * 2;
 			const int rowH   = 28;
@@ -480,7 +486,7 @@ std::vector<std::shared_ptr<CIntObject>> buildHeroContent(
 		else
 		{
 			std::vector<const CSpell *> validSpells;
-			for(const SpellID & sid : hero->spells)
+			for(const SpellID & sid : effective.spells)
 			{
 				if(sid.getNum() < 0 || sid.getNum() >= (int)LIBRARY->spellh->objects.size()) continue;
 				const auto & sp = LIBRARY->spellh->objects[sid.getNum()];

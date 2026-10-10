@@ -500,6 +500,10 @@ public:
 	TExpType calculateXp(TExpType exp) const; //apply learning skill
 	TExpType calculateXp(TExpType exp, int32_t additionalPercent) const;
 	int getBasePrimarySkillValue(PrimarySkill which) const; //the value of a base-skill without items or temporary bonuses
+	/// Authored base value before captured-policy bounds, for read-only map previews.
+	int getRawBasePrimarySkillValue(PrimarySkill which) const;
+	/// Durable inscribed IDs, including map loader sentinels; no derived grants.
+	const std::set<SpellID> & getRawStartingSpellIds() const;
 
 	CStackBasicDescriptor calculateNecromancy (const BattleResult &battleResult) const;
 	EDiggingStatus diggingStatus() const;

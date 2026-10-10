@@ -22,6 +22,7 @@
 #include "../widgets/Images.h"
 #include "../widgets/TextControls.h"
 #include "../widgets/GraphicalPrimitiveCanvas.h"
+#include "../widgets/MiscWidgets.h"
 #include "events/InputHandler.h"
 
 #include "../../lib/IGameSettings.h"
@@ -35,7 +36,12 @@
 
 
 CHeroOverview::CHeroOverview(const HeroTypeID & h)
-	: CWindowObject(BORDERED | RCLICK_POPUP), hero { h }
+	: CHeroOverview(h, heroStartingPreview(h))
+{
+}
+
+CHeroOverview::CHeroOverview(const HeroTypeID & h, HeroStartingPreview preview)
+	: CWindowObject(BORDERED | RCLICK_POPUP), hero { h }, starting(std::move(preview))
 {
 	OBJECT_CONSTRUCTION;
 
@@ -59,7 +65,8 @@ void CHeroOverview::genControls()
 {
 	Rect r = Rect();
 
-	labelTitle = std::make_shared<CLabel>(pos.w / 2 + 8, 21, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, LIBRARY->generaltexth->allTexts[77]);
+	labelTitle = std::make_shared<CLabel>(pos.w / 2 + 8, 21, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW,
+		LIBRARY->generaltexth->allTexts[77] + (starting.defaultProfile ? " (default starting profile)" : ""));
 
 	// hero image
 	r = Rect(borderOffset, borderOffset + yOffset, 58, 64);
@@ -96,7 +103,7 @@ void CHeroOverview::genControls()
 	for(int i = 0; i < 4; i++)
 	{
 		r = Rect((284 / 4) * i + 42, r.y, r.w, r.h);
-		labelSkillFooter.push_back(std::make_shared<CLabel>(r.x, r.y + 10, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, std::to_string((*LIBRARY->heroh)[heroIdx]->heroClass->primarySkillInitial[i])));
+		labelSkillFooter.push_back(std::make_shared<CLabel>(r.x, r.y + 10, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, std::to_string(starting.values.primary[i])));
 	}
 
 	// hero biography
@@ -133,7 +140,7 @@ void CHeroOverview::genControls()
 	r = Rect(302, 3 * borderOffset + yOffset + 62, 292, 32);
 	backgroundRectangles.push_back(std::make_shared<TransparentFilledRectangle>(r.resize(1), rectangleColor, borderColor));
 
-	auto stacksCountChances = LIBRARY->engineSettings()->getVector(EGameSettings::HEROES_STARTING_STACKS_CHANCES);
+	const auto & stacksCountChances = starting.stackChances;
 
 	// army
 	int space = (260 - 7 * 32) / 6;
@@ -144,7 +151,7 @@ void CHeroOverview::genControls()
 	}
 	int i = 0;
 	int iStack = 0;
-	for(auto & army : (*LIBRARY->heroh)[heroIdx]->initialArmy)
+	for(auto & army : starting.values.army)
 	{
 		if(army.creature.hasValue() && army.creature.toCreature()->warMachine == ArtifactID::NONE)
 		{
@@ -171,7 +178,7 @@ void CHeroOverview::genControls()
 	}
 	i = 0;
 	iStack = 0;
-	for(auto & army : (*LIBRARY->heroh)[heroIdx]->initialArmy)
+	for(auto & army : starting.values.army)
 	{
 		if(i == 0)
 		{
@@ -211,12 +218,20 @@ void CHeroOverview::genControls()
 		backgroundRectangles.push_back(std::make_shared<TransparentFilledRectangle>(r.resize(1), rectangleColor, borderColor));
 	}
 	i = 0;
-	for(auto & skill : (*LIBRARY->heroh)[heroIdx]->secSkillsInit)
+	for(auto & skill : starting.values.skills)
 	{
 		secSkills.push_back(std::make_shared<CSecSkillPlace>(Point(302, 7 * borderOffset + yOffset + 186 + i * (32 + borderOffset)),
 															 CSecSkillPlace::ImageSize::SMALL, skill.first, skill.second));
-		labelSecSkillsNames.push_back(std::make_shared<CLabel>(334 + 2 * borderOffset, 8 * borderOffset + yOffset + 186 + i * (32 + borderOffset) - 5, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, GAME->translator().translate("core.skilllev", skill.second - 1), 90));
-		labelSecSkillsNames.push_back(std::make_shared<CLabel>(334 + 2 * borderOffset, 8 * borderOffset + yOffset + 186 + i * (32 + borderOffset) + 10, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, (*LIBRARY->skillh)[skill.first]->getNameTranslated(), 90));
+		labelSecSkillsNames.push_back(std::make_shared<CLabel>(334 + 2 * borderOffset, 8 * borderOffset + yOffset + 186 + i * (32 + borderOffset) - 5, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
+			GAME->translator().translate("core.skilllev", skill.second - 1)
+			+ (startingSkillPerkNames(starting, skill.first).empty() ? "" : " / " + startingSkillPerkNames(starting, skill.first)), 90));
+		labelSecSkillsNames.push_back(std::make_shared<CLabel>(334 + 2 * borderOffset, 8 * borderOffset + yOffset + 186 + i * (32 + borderOffset) + 10, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
+			(*LIBRARY->skillh)[skill.first]->getNameTranslated(), 90));
+		const auto perkNames = startingSkillPerkNames(starting, skill.first);
+		const auto help = (*LIBRARY->skillh)[skill.first]->getDescriptionTranslated(skill.second)
+			+ (perkNames.empty() ? "" : "\n" + perkNames);
+		startingSkillHelp.push_back(std::make_shared<LRClickableAreaWText>(
+			Rect(302, 7 * borderOffset + yOffset + 186 + i * (32 + borderOffset), 140, 32), help, help));
 		i++;
 	}
 
@@ -228,17 +243,13 @@ void CHeroOverview::genControls()
 		r = Rect(r.x + 32 + borderOffset, r.y, (292 / 2) - 32 - 3 * borderOffset, r.h);
 		backgroundRectangles.push_back(std::make_shared<TransparentFilledRectangle>(r.resize(1), rectangleColor, borderColor));
 	}
-	i = 0;
-	for(auto & spell : (*LIBRARY->heroh)[heroIdx]->spells)
+	// Book presence is independent of whether any spells were inscribed.
+	if(starting.values.spellBook)
+		imageSpells.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("ARTIFACT"), 0, Rect(302 + (292 / 2) + 2 * borderOffset, 7 * borderOffset + yOffset + 186, 32, 32), 0));
+	// Preserve the existing reserved book row and all spell-row positions.
+	i = 1;
+	for(auto & spell : starting.values.spells)
 	{
-		if(i == 0)
-		{
-			if((*LIBRARY->heroh)[heroIdx]->haveSpellBook)
-			{
-				imageSpells.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("ARTIFACT"), 0, Rect(302 + (292 / 2) + 2 * borderOffset, 7 * borderOffset + yOffset + 186 + i * (32 + borderOffset), 32, 32), 0));
-			}
-			i++;
-		}
 
 		imageSpells.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SPELLBON"), (*LIBRARY->spellh)[spell]->getIconIndex(), Rect(302 + (292 / 2) + 2 * borderOffset, 7 * borderOffset + yOffset + 186 + i * (32 + borderOffset), 32, 32), 0));
 		Rect labelPos(302 + (292 / 2) + 2 * borderOffset + 32 + borderOffset + 5, 7 * borderOffset + yOffset + 186 + i * (32 + borderOffset), (292 / 2) - 32 - 3 * borderOffset - 10, 32);

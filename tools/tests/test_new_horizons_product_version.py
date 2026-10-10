@@ -62,6 +62,19 @@ class ProductVersionTests(unittest.TestCase):
         self.assertIn('"New Horizons " + CMainMenuConfig::get().getProductVersion()', MENU_SOURCE)
         self.assertNotRegex(MENU_SOURCE + MENU_HEADER, r'0\.14\.0')
 
+    def test_local_connection_uses_the_configured_loading_background(self):
+        local_branch = MENU_SOURCE.split(
+            'if(host && server.empty() && GAME->server().loadMode != ELoadMode::MULTI)', 1
+        )[1].split('if(!ENGINE->isRoeData())', 1)[0]
+        self.assertIn('std::make_shared<CPicture>(CLoadingScreen::getBackground())', local_branch)
+        self.assertNotIn('ImagePath::builtin("loadbar")', local_branch)
+        self.assertIn('startConnection();', local_branch)
+        self.assertIn('EShortcut::GLOBAL_CANCEL', local_branch)
+        loading_header = MENU_HEADER.split('class CLoadingScreen :', 1)[1]
+        self.assertIn('static ImagePath getBackground();', loading_header.split('public:', 1)[1])
+        loading_selector = MENU_SOURCE.split('ImagePath CLoadingScreen::getBackground()', 1)[1]
+        self.assertIn('CMainMenuConfig::get().getConfig()["loading"]', loading_selector)
+
     def test_menu_label_uses_native_style_and_background_bounded_placement(self):
         compact_source = re.sub(r'\s+', '', MENU_SOURCE)
         self.assertIn('std::shared_ptr<CLabel> versionLabel;', MENU_HEADER)

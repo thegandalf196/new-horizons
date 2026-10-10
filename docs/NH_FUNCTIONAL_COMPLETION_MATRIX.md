@@ -2,6 +2,34 @@
 
 Updated: 2026-10-10
 
+Product version metadata now uses the requested development identifier0.85.0,
+not a completion percentage. Local scenario setup reuses the ordinary loading
+background selector instead of bypassing the existing New Horizons title art.
+Independent source review, build and ten offline checks pass; current playable pointer
+still selects the earlier0.15.0 candidate until changed-build acceptance.
+
+Shared starting-hero projection source is imported and independently reviewed.
+Both affected previews consume effective configuration and independent map
+overrides; runtime book/perk/clamp helpers are shared rather than copied. Raw
+authored attributes and physical Spellbook handling have explicit regressions,
+and an empty book now renders independently of spell count. Eight new native
+cases are authored; compilation passes. The actual16-case native gate reports15
+OK before the loader-time physical-book case crashes with SIGSEGV; no final XML
+or native acceptance. Diagnosis identifies callback-dependent artifact lookup
+before world-map assignment, also unsafe for standalone preview map loading.
+A reviewed callback-free slot-presence repair passes the changed case1/1 and
+the unchanged full gate16/16 with actual completed XMLs, no failures/errors/skips.
+Fresh privacy, resource parity and owned silent cleanup pass; the earlier crash
+is retained. Ordinary rendered/playable acceptance remains open. No hero identity
+or perk count is added.
+
+Frozen ordinary graphical evidence is partial: native-size blue tint/queue
+marker and actual Ice melee Shatter without retaliation are observed on the
+unchanged selected candidate. Readable prism/shards, scheduled forfeiture,
+tooltip and manual preview remain unobserved. Shutdown/capture-count overruns
+are retained as test-execution limitations, not hidden as a clean acceptance.
+Owned cleanup and full candidate parity pass; no repeated unchanged probe.
+
 AI clustering now checks a remembered object's visitable-anchor visibility before
 requesting its top object. The partial-footprint warning oracle and all five
 existing Sage planner cases pass6/6 in an actual isolated native run; fresh binary

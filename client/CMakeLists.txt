@@ -151,6 +151,7 @@ set(vcmiclientcommon_SRCS
 	windows/CStackExperienceDetailsWindow.cpp
 	windows/CExchangeWindow.cpp
 	windows/CHeroOverview.cpp
+	windows/HeroStartingPreview.cpp
 	windows/CHeroWindow.cpp
 	windows/HeroGrowthWindow.cpp
 	windows/HeroSkillOddsWindow.cpp
@@ -396,6 +397,7 @@ set(vcmiclientcommon_HEADERS
 	windows/CExchangeWindow.h
 	windows/ExchangeSecondarySkillSlots.h
 	windows/CHeroOverview.h
+	windows/HeroStartingPreview.h
 	windows/CHeroWindow.h
 	windows/HeroGrowthWindow.h
 	windows/HeroSkillOddsWindow.h

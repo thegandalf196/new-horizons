@@ -13,6 +13,7 @@
 #include "../../lib/entities/hero/CHero.h"
 #include "../../lib/entities/hero/CHeroClass.h"
 #include "../../lib/entities/hero/NewHorizonsHeroRules.h"
+#include "../../lib/entities/hero/HeroStartingProjection.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/networkPacks/PacksForLobby.h"
@@ -1133,4 +1134,208 @@ TEST_F(NewHorizonsStartingPerkOverlapTest, ConflictingDifferentBasicPerkStillRej
 		EXPECT_STREQ(error.what(), "New Horizons perk tier already occupied for skill");
 	}
 }
+}
+
+namespace
+{
+newHorizonsHeroes::StartingHeroContext capturedStartingContext(const CGHeroInstance & hero)
+{
+	auto result = newHorizonsHeroes::startingHeroContext(*LIBRARY->engineSettings());
+	result.development = hero.getPrimaryGrowthRules();
+	result.capabilities = hero.getCapabilityRules();
+	result.perks = hero.getPerkState().rules;
+	result.magic = hero.getMagicRules();
+	result.resolved = true;
+	return result;
+}
+}
+
+TEST_F(NewHorizonsStartingDevelopmentTest, StartingProjectionSerenaMatchesRealInitialization)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(towerStarts[1]));
+	const auto & hero = *actor();
+	const auto view = newHorizonsHeroes::projectStartingHero(*hero.getHeroType(), capturedStartingContext(hero));
+	for(size_t i = 0; i < view.primary.size(); ++i)
+		EXPECT_EQ(view.primary[i], hero.getBasePrimarySkillValue(static_cast<PrimarySkill>(i)));
+	EXPECT_EQ(view.skills, hero.secSkills);
+	EXPECT_EQ(view.perks, hero.getPerkState().selected);
+	EXPECT_EQ(view.spells, hero.getRawStartingSpellIds());
+	EXPECT_EQ(view.primary, (std::array<int, 4>{5, 5, 45, 45}));
+	EXPECT_EQ(view.army.front().creature, hero.getHeroType()->initialArmy.front().creature);
+	EXPECT_EQ(view.army.front().minAmount, 13);
+	EXPECT_EQ(view.army.front().maxAmount, 13);
+	for(const auto & [slot, stack] : hero.Slots())
+	{
+		const auto & row = view.army.at(slot.getNum());
+		EXPECT_EQ(stack->getCreatureID(), row.creature);
+		EXPECT_GE(stack->getCount(), row.minAmount);
+		EXPECT_LE(stack->getCount(), row.maxAmount);
+	}
+}
+
+TEST_F(NewHorizonsStartingDevelopmentTest, StartingProjectionAll144MatchesActualRanksPerksAndBooks)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+	const auto & profiles = rules["startingSkills"]["startingDevelopmentProfiles"].Struct();
+	ASSERT_EQ(profiles.size(), 144);
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(72).playerActive(PlayerColor(0));
+	size_t index = 0;
+	for(const auto & [key, profile] : profiles)
+	{
+		builder.hero({5 + static_cast<int>(index % 12) * 5, 5 + static_cast<int>(index / 12) * 5, 0},
+			HeroTypeID(HeroTypeID::decode(key)), PlayerColor(0)).heroExperience(0);
+		++index;
+	}
+	startWithMap(std::move(builder));
+	for(const auto & [key, profile] : profiles)
+	{
+		SCOPED_TRACE(key);
+		const auto * hero = gameState()->getMap().getHero(HeroTypeID(HeroTypeID::decode(key)));
+		ASSERT_NE(hero, nullptr);
+		const auto view = newHorizonsHeroes::projectStartingHero(*hero->getHeroType(), capturedStartingContext(*hero));
+		EXPECT_EQ(view.skills, hero->secSkills);
+		EXPECT_EQ(view.perks, hero->getPerkState().selected);
+		EXPECT_EQ(view.spells, hero->getRawStartingSpellIds());
+		for(size_t i = 0; i < view.primary.size(); ++i)
+			EXPECT_EQ(view.primary[i], hero->getBasePrimarySkillValue(static_cast<PrimarySkill>(i)));
+	}
+}
+
+TEST_F(NewHorizonsStartingDevelopmentTest, StartingProjectionIndependentPresetFieldsPreserveActualMapBook)
+{
+	explicitSkills = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto & hero = *actor();
+	newHorizonsHeroes::StartingHeroOverrides authored;
+	authored.skills = std::vector<std::pair<SecondarySkill, ui8>>{{SecondarySkill::OFFENCE, MasteryLevel::ADVANCED}};
+	authored.spells = std::set<SpellID>{SpellID::MAGIC_ARROW};
+	authored.primary = std::array<int, 4>{7, 9, 11, 13};
+	authored.army = std::vector<CHero::InitialArmyStack>{{999, 999, CreatureID(CreatureID::decode("core:gremlin"))}};
+	const auto view = newHorizonsHeroes::projectStartingHero(*hero.getHeroType(), capturedStartingContext(hero), authored);
+	EXPECT_EQ(view.skills, hero.secSkills);
+	EXPECT_EQ(view.perks, hero.getPerkState().selected);
+	EXPECT_EQ(view.spells, hero.getRawStartingSpellIds());
+	EXPECT_EQ(view.primary, *authored.primary);
+	EXPECT_EQ(view.army.front().minAmount, 999);
+	EXPECT_EQ(view.army.front().maxAmount, 999);
+	// A book override alone must not suppress a default development profile.
+	authored.skills.reset();
+	const auto independent = newHorizonsHeroes::projectStartingHero(*hero.getHeroType(), capturedStartingContext(hero), authored);
+	EXPECT_EQ(independent.spells, *authored.spells);
+	EXPECT_EQ(independent.skills.size(), 2);
+	EXPECT_EQ(independent.perks.size(), 1);
+}
+
+TEST_F(NewHorizonsStartingDevelopmentTest, StartingProjectionEmptyCapturedPolicyNeverBackfillsInstalledDefaults)
+{
+	legacy = true;
+	ASSERT_NO_FATAL_FAILURE(prepare(towerStarts[1]));
+	const auto & hero = *actor();
+	auto context = capturedStartingContext(hero);
+	context.capabilities = JsonNode();
+	const auto view = newHorizonsHeroes::projectStartingHero(*hero.getHeroType(), context);
+	EXPECT_EQ(view.skills, hero.getHeroType()->secSkillsInit);
+	EXPECT_EQ(view.spells, hero.getHeroType()->spells);
+	EXPECT_TRUE(view.perks.empty());
+	for(size_t i = 0; i < view.primary.size(); ++i)
+		EXPECT_EQ(view.primary[i], hero.getHeroClass()->primarySkillInitial[i]);
+	EXPECT_EQ(view.army.front().minAmount, hero.getHeroType()->initialArmy.front().minAmount);
+	EXPECT_EQ(view.army.front().maxAmount, hero.getHeroType()->initialArmy.front().maxAmount);
+}
+
+TEST_F(NewHorizonsStartingDevelopmentTest, StartingProjectionSolmyrExactOverlapStillSelectsOnce)
+{
+	ExpectedStart solmyr{"core:solmyr", "new-horizons:havocMagic", 1,
+		"new-horizons:havocMagic.stormcaller", "new-horizons:metamagic"};
+	ASSERT_NO_FATAL_FAILURE(prepare(solmyr));
+	const auto & hero = *actor();
+	const auto view = newHorizonsHeroes::projectStartingHero(*hero.getHeroType(), capturedStartingContext(hero));
+	EXPECT_EQ(view.perks, hero.getPerkState().selected);
+	EXPECT_EQ(std::ranges::count(view.perks,
+		newHorizonsHeroes::PerkSelection{"new-horizons:havocMagic", "new-horizons:havocMagic.stormcaller"}), 1);
+}
+
+TEST_F(NewHorizonsStartingDevelopmentTest, StartingProjectionConflictingPerkRejectsWithoutMutatingInput)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(towerStarts[1]));
+	auto state = actor()->getPerkState();
+	state.selected.clear();
+	const auto before = state.toJson();
+	EXPECT_THROW(newHorizonsHeroes::selectStartingHeroPerks(state,
+		{{"new-horizons:learning", "new-horizons:learning.eagleEye"}},
+		{{"new-horizons:learning", "new-horizons:learning.scholar"}},
+		[](const std::string &){ return 1; }), std::runtime_error);
+	EXPECT_EQ(state.toJson(), before);
+}
+
+namespace
+{
+class NewHorizonsStartingProjectionAuthoredTest : public NewHorizonsStartingDevelopmentTest
+{
+protected:
+	bool authoredBookWithoutSentinel = false;
+	std::optional<newHorizonsHeroes::StartingHeroProjection> beforeInitialization;
+	std::optional<newHorizonsHeroes::StartingHeroOverrides> authored;
+	void mapLoaded(CMap * loaded) override
+	{
+		NewHorizonsStartingDevelopmentTest::mapLoaded(loaded);
+		for(const auto & object : loaded->objects)
+			if(auto * hero = dynamic_cast<CGHeroInstance *>(object.get());
+				hero && hero->anchorPos() == int3(5, 5, 0))
+			{
+				if(authoredBookWithoutSentinel)
+				{
+					// H3M adds this sentinel for all authored equipment. Model
+					// the supported independent book/artifact input through the
+					// public loader-time API, never private inventory access.
+					hero->removeSpellFromSpellbook(SpellID(SpellID::SPELLBOOK_PRESET));
+					ASSERT_FALSE(hero->getRawStartingSpellIds().contains(SpellID::SPELLBOOK_PRESET));
+					const auto * bookSlot = hero->getSlot(ArtifactPosition::SPELLBOOK);
+					ASSERT_NE(bookSlot, nullptr);
+					ASSERT_FALSE(bookSlot->locked);
+					ASSERT_TRUE(bookSlot->getID().hasValue());
+					ASSERT_FALSE(hero->getHeroType()->haveSpellBook);
+				}
+				authored = newHorizonsHeroes::authoredStartingHeroOverrides(*hero);
+				beforeInitialization = newHorizonsHeroes::projectStartingHero(*hero->getHeroType(),
+					newHorizonsHeroes::startingHeroContext(loaded->getSettings()), *authored);
+				return;
+			}
+	}
+};
+}
+
+TEST_F(NewHorizonsStartingProjectionAuthoredTest, StartingProjectionRawAuthoredPrimaryPreservesZeroAndAbove99)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36).playerActive(PlayerColor(0))
+		.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:serena")), PlayerColor(0))
+		.heroExperience(0).heroPrimary(7, 9, 120, 0);
+	startWithMap(std::move(builder));
+	ASSERT_TRUE(authored && authored->primary && beforeInitialization);
+	EXPECT_EQ(*authored->primary, (std::array<int, 4>{7, 9, 120, 0}));
+	EXPECT_EQ(beforeInitialization->primary, *authored->primary);
+	for(size_t i = 0; i < beforeInitialization->primary.size(); ++i)
+		EXPECT_EQ(beforeInitialization->primary[i], actor()->getBasePrimarySkillValue(static_cast<PrimarySkill>(i)));
+	EXPECT_EQ(actor()->getBasePrimarySkillValue(PrimarySkill::SPELL_POWER), 120);
+	EXPECT_EQ(actor()->getBasePrimarySkillValue(PrimarySkill::KNOWLEDGE), 0);
+}
+
+TEST_F(NewHorizonsStartingProjectionAuthoredTest, StartingProjectionExistingPhysicalBookWithoutPresetIsRetained)
+{
+	authoredBookWithoutSentinel = true;
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36).playerActive(PlayerColor(0))
+		.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:orrin")), PlayerColor(0))
+		.heroExperience(0).heroEquipped({{ArtifactPosition::SPELLBOOK, ArtifactID::SPELLBOOK}});
+	startWithMap(std::move(builder));
+	ASSERT_TRUE(authored && beforeInitialization);
+	ASSERT_TRUE(authored->spellBook.has_value());
+	EXPECT_TRUE(*authored->spellBook);
+	EXPECT_TRUE(beforeInitialization->spellBook);
+	EXPECT_TRUE(actor()->hasSpellbook());
+	EXPECT_EQ(beforeInitialization->skills, actor()->secSkills);
+	EXPECT_EQ(beforeInitialization->perks, actor()->getPerkState().selected);
+	EXPECT_EQ(beforeInitialization->spells, actor()->getRawStartingSpellIds());
 }
