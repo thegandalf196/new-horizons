@@ -152,4 +152,8 @@ if(ENABLE_NH_PREVIEW_SURFACE_REGRESSION)
 	add_executable(nhCreaturePreviewSurfaceRuntimeTest ../client/tests/CreaturePreviewPaletteRuntimeTest.cpp)
 	target_link_libraries(nhCreaturePreviewSurfaceRuntimeTest PRIVATE vcmisdl3 vcmiclientcommon vcmi)
 	vcmi_set_output_dir(nhCreaturePreviewSurfaceRuntimeTest "")
+
+	add_executable(nhImageOptimizerRuntimeTest ../client/tests/SDLImageOptimizerRuntimeTest.cpp)
+	target_link_libraries(nhImageOptimizerRuntimeTest PRIVATE vcmisdl3 vcmiclientcommon vcmi)
+	vcmi_set_output_dir(nhImageOptimizerRuntimeTest "")
 endif()

@@ -91,6 +91,33 @@ establishes removal of duplicate loading for those observed frames, not an FPS
 gain or a Windows fix. Individual crop timings did not establish a speedup;
 preview poses, scheduling and operating-system cache state were not controlled.
 
+### SDL3 crop preparation regression
+
+The nonindexed crop scan has a direct alpha-byte path for packed 32-bit formats
+with an exact eight-bit, byte-aligned alpha channel. It respects row pitch and
+host byte order. Other formats keep the generic decoder; indexed images still
+retain every nonzero index regardless of its current palette alpha. Crop copying,
+virtual geometry and surface ownership are unchanged.
+
+The same opt-in CMake option also builds `nhImageOptimizerRuntimeTest`:
+
+```sh
+cmake --build build/new-horizons-linux --target nhImageOptimizerRuntimeTest --parallel 4
+env -u DISPLAY -u WAYLAND_DISPLAY SDL_AUDIODRIVER=dummy SDL_AUDIO_DRIVER=dummy \
+  SDL_VIDEODRIVER=dummy SDL_VIDEO_DRIVER=dummy \
+  build/new-horizons-linux/bin/nhImageOptimizerRuntimeTest --benchmark
+```
+
+As with the preview test, its configured SDL dependency libraries must be
+available to the dynamic loader. No video/audio initialization or artwork inputs
+are required. The test compares the actual optimizer with the former generic
+scan/crop implementation, including padded rows, weak alpha, output bytes,
+palettes, color keys, geometry and reference ownership. The optional finite
+benchmark times both complete optimizers on identical synthetic inputs;
+allocation and crop blitting are included, fixture creation is excluded.
+These CPU-surface results do not establish actual Fort frame times, Windows
+performance, GPU costs or cold operating-system file-cache behavior.
+
 1. Transport: serialization, queue delay, dispatch/execution, response delay and
    total round-trip cost. Separate transport-only measurements from gameplay work.
 2. Input: OS injection/event receipt, command submission, authoritative application,
