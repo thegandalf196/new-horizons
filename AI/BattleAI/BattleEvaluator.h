@@ -48,7 +48,21 @@ class DLL_EXPORT BattleEvaluator
 	static int creatureAbilitySpellLevel(const CStack * caster, const CSpell * spell, int abilityLevel);
 
 public:
-	BattleAction selectStackAction(const CStack * stack);
+	/// Optional call-local wall diagnostics. Not gameplay state and never serialized.
+	struct DLL_LINKAGE SelectionTiming
+	{
+		struct DLL_LINKAGE StageTiming
+		{
+			uint64_t calls = 0;
+			uint64_t totalMicroseconds = 0;
+		};
+		StageTiming creatureSpell;
+		StageTiming movementSearch;
+		/// Counts measured call sites, not the number of candidate exchanges.
+		StageTiming targetExchange;
+	};
+
+	BattleAction selectStackAction(const CStack * stack, SelectionTiming * timing = nullptr);
 	bool attemptCastingSpell(const CStack * stack, bool allowSpells = true);
 	bool canCastSpell();
 	std::optional<PossibleSpellcast> findBestCreatureSpell(const CStack * stack);

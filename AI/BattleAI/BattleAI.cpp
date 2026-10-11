@@ -80,6 +80,9 @@ struct CBattleAI::TimingState
 			return;
 		logAi->info("PERFORMANCE: BattleAI callback wall battle=%d player=%s battle_us=%llu calls=%llu total_us=%llu max_us=%llu rounds_observed=%u"
 			" evaluator_construct_calls=%llu evaluator_construct_us=%llu stack_select_calls=%llu stack_select_us=%llu"
+			" select_creature_spell_calls=%llu select_creature_spell_us=%llu"
+			" select_movement_search_calls=%llu select_movement_search_us=%llu"
+			" select_target_exchange_calls=%llu select_target_exchange_us=%llu select_remainder_us=%llu"
 			" hero_action_including_submit_calls=%llu hero_action_including_submit_us=%llu"
 			" direct_unit_submit_calls=%llu direct_unit_submit_us=%llu unclassified_us=%llu",
 			battleID.getNum(), player.toString(),
@@ -91,6 +94,13 @@ struct CBattleAI::TimingState
 			static_cast<unsigned long long>(result->evaluatorConstruction.totalMicroseconds),
 			static_cast<unsigned long long>(result->stackActionSelection.calls),
 			static_cast<unsigned long long>(result->stackActionSelection.totalMicroseconds),
+			static_cast<unsigned long long>(result->selectionCreatureSpell.calls),
+			static_cast<unsigned long long>(result->selectionCreatureSpell.totalMicroseconds),
+			static_cast<unsigned long long>(result->selectionMovementSearch.calls),
+			static_cast<unsigned long long>(result->selectionMovementSearch.totalMicroseconds),
+			static_cast<unsigned long long>(result->selectionTargetExchange.calls),
+			static_cast<unsigned long long>(result->selectionTargetExchange.totalMicroseconds),
+			static_cast<unsigned long long>(result->selectionRemainderMicroseconds),
 			static_cast<unsigned long long>(result->heroAction.calls),
 			static_cast<unsigned long long>(result->heroAction.totalMicroseconds),
 			static_cast<unsigned long long>(result->directUnitSubmission.calls),
@@ -104,6 +114,7 @@ class CBattleAI::TimingScope
 	std::shared_ptr<TimingState> state;
 	TimingState::Clock::time_point started = TimingState::Clock::now();
 	TimingSummary stageTotals;
+	BattleEvaluator::SelectionTiming selectionTotals;
 
 	class StageScope
 	{
@@ -119,6 +130,11 @@ class CBattleAI::TimingScope
 		}
 	};
 public:
+	BattleEvaluator::SelectionTiming * selectionSink()
+	{
+		return state ? &selectionTotals : nullptr;
+	}
+
 	/// The measured regions are non-nested within this callback. Stage data is
 	/// local until callback exit, including when submission destroys the AI owner.
 	template<typename Callable>
@@ -177,6 +193,19 @@ public:
 				aggregate.totalMicroseconds += local.totalMicroseconds;
 				classifiedMicroseconds += local.totalMicroseconds;
 			}
+			const auto accumulateSelection = [](StageTiming & aggregate,
+				const BattleEvaluator::SelectionTiming::StageTiming & local)
+			{
+				aggregate.calls += local.calls;
+				aggregate.totalMicroseconds += local.totalMicroseconds;
+			};
+			accumulateSelection(state->summary.selectionCreatureSpell, selectionTotals.creatureSpell);
+			accumulateSelection(state->summary.selectionMovementSearch, selectionTotals.movementSearch);
+			accumulateSelection(state->summary.selectionTargetExchange, selectionTotals.targetExchange);
+			const uint64_t selectionClassifiedMicroseconds = selectionTotals.creatureSpell.totalMicroseconds
+				+ selectionTotals.movementSearch.totalMicroseconds + selectionTotals.targetExchange.totalMicroseconds;
+			state->summary.selectionRemainderMicroseconds += stageTotals.stackActionSelection.totalMicroseconds
+				- selectionClassifiedMicroseconds;
 			state->summary.unclassifiedMicroseconds += static_cast<uint64_t>(elapsed) - classifiedMicroseconds;
 			state->summary.activeStackTotalMicroseconds += elapsed;
 			state->summary.activeStackMaxMicroseconds = std::max(
@@ -673,7 +702,7 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 
 	result = timing.measure(&TimingSummary::stackActionSelection, [&]
 	{
-		return evaluator.selectStackAction(stack);
+		return evaluator.selectStackAction(stack, timing.selectionSink());
 	});
 
 	if((autobattlePreferences.enableSpellsUsage || cb->getBattle(battleID)->battleUsesHeroCommands()) && evaluator.canCastSpell())
