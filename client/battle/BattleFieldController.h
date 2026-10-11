@@ -9,7 +9,7 @@
  */
 #pragma once
 
-#include "../../lib/battle/BattleHexArray.h"
+#include "BattleFieldReachability.h"
 #include "../../lib/Point.h"
 #include "../gui/CIntObject.h"
 
@@ -66,7 +66,8 @@ class BattleFieldController : public CIntObject
 	BattleHex hoveredHex;
 
 	/// hexes to which the currently active stack can move (for double-wide units only the head is considered)
-	BattleHexArray availableHexes;
+	mutable BattleFieldReachability reachability;
+	const BattleHexArray & getAvailableHexes() const;
 
 	/// Expensive Teleport destination prediction is rebuilt only on selection,
 	/// spell-session/bonus changes or the existing battlefield refresh path.

@@ -541,7 +541,17 @@ void BattleFieldController::redrawBackgroundWithHexes()
 	// Only marks the background stale - callers are netpack handlers on the network thread,
 	// which must not take the GL context away from the rendering thread.
 	backgroundNeedsRebuild = true;
+	reachability.invalidate();
 	teleportPreviewNeedsRefresh = true;
+}
+
+const BattleHexArray & BattleFieldController::getAvailableHexes() const
+{
+	const auto * activeStack = owner.stacksController->getActiveStack();
+	return reachability.get(activeStack, [this, activeStack]
+	{
+		return owner.getBattle()->battleGetAvailableHexes(activeStack, false);
+	});
 }
 
 void BattleFieldController::rebuildBackgroundWithHexes()
@@ -550,10 +560,7 @@ void BattleFieldController::rebuildBackgroundWithHexes()
 	ensureBackgroundCanvas();
 
 	const CStack *activeStack = owner.stacksController->getActiveStack();
-	if(activeStack)
-		availableHexes = owner.getBattle()->battleGetAvailableHexes(activeStack, false);
-	else
-		availableHexes.clear();
+	const auto & availableHexes = getAvailableHexes();
 
 	// prepare background graphic with hexes and shaded hexes
 	backgroundWithHexes->draw(background, Point(0,0));
@@ -724,6 +731,7 @@ BattleHexArray BattleFieldController::getHighlightedHexesForMovementTarget()
 	if(!stack)
 		return {};
 
+	const auto & availableHexes = getAvailableHexes();
 	auto hoveredStack = owner.getBattle()->battleGetStackByPos(hoveredHex, false);
 
 	bool canReach = owner.getBattle()->battleCanAttackHex(availableHexes, stack, hoveredHex);
@@ -1231,6 +1239,7 @@ BattleHex::EDir BattleFieldController::selectAttackDirection(const BattleHex & m
 {
 	auto attacker = owner.stacksController->getActiveStack();
 	assert(attacker);
+	const auto & availableHexes = getAvailableHexes();
 
 	// When the target is pointed at through the battle queue there is no meaningful mouse
 	// position on the battlefield to derive an approach direction from, so the raw cursor

@@ -1004,11 +1004,13 @@ void BattleInterface::redrawBattlefield()
 void BattleInterface::stackReset(const CStack * stack)
 {
 	stacksController->stackReset(stack);
+	fieldController->redrawBackgroundWithHexes();
 }
 
 void BattleInterface::stackAdded(const CStack * stack)
 {
 	stacksController->stackAdded(stack, false);
+	fieldController->redrawBackgroundWithHexes();
 }
 
 void BattleInterface::stackRemoved(uint32_t stackID)

@@ -65,6 +65,7 @@ set(test_SRCS
 		battle/HeroActionAllowanceStateTest.cpp
 		battle/HeroSpellAllowanceTransitionTest.cpp
 		battle/BattleHexTest.cpp
+		battle/BattleFieldReachabilityTest.cpp
 		battle/BattleFormAccessibilityTest.cpp
 		battle/BattleEffectExchangeTest.cpp
 		battle/NewHorizonsPassThroughRangeTest.cpp
