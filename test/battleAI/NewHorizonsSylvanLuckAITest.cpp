@@ -69,7 +69,7 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
 
-	void prepareRecovery(bool sylvan = false)
+	void prepareRecovery(bool sylvan = false, bool opposingSerendipity = false)
 	{
 		startGame();
 		const std::string skillKey(newHorizonsCombatSkills::LUCK_SKILL_ID);
@@ -86,6 +86,16 @@ protected:
 			attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(sylvanSkill)),
 				MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 			attackerSideHero->applyPerkSelection({sylvanSkill, "new-horizons:sylvanLuck.luckyRecovery"});
+		}
+		if(opposingSerendipity)
+		{
+			// Recovery and Serendipity share the Advanced Luck tier. Select
+			// Serendipity on the other hero instead of inventing an enabled token.
+			defenderSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+			defenderSideHero->applyPerkSelection({skillKey, "new-horizons:luck.fortuneSFavor"});
+			defenderSideHero->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+			defenderSideHero->applyPerkSelection({skillKey, "new-horizons:luck.serendipity"});
+			ASSERT_TRUE(defenderSideHero->hasActivePerk(skillKey, "new-horizons:luck.serendipity"));
 		}
 		startBattle();
 		beginCombat();
@@ -215,6 +225,80 @@ TEST_F(NewHorizonsSylvanLuckAITest, CertainStrikeCommitsRecoveryAndSharedCascade
 	EXPECT_EQ(child.battleGetAttackLuck(child.getForUpdate(source->unitId()).get(),
 		child.getForUpdate(target->unitId()).get(), false), 4);
 	EXPECT_TRUE(model->getSylvanLuckState(BattleSide::ATTACKER).cascadingPending);
+}
+
+TEST_F(NewHorizonsGenericLuckyRecoveryAITest, CapturedLuckAndPerfectFortuneOverrideCurrentFallback)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareRecovery(false, true));
+	SylvanEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	auto parent = std::make_shared<HypotheticBattle>(&environment, callback);
+	for(const bool capturedPerfect : {false, true})
+	{
+		auto model = std::make_shared<HypotheticBattle>(&environment, parent);
+		PerfectFortuneState perfect;
+		perfect.enabled = true;
+		model->setPerfectFortuneState(BattleSide::ATTACKER, perfect);
+		const auto serendipity = model->getLuckSerendipityState(BattleSide::DEFENDER);
+		ASSERT_TRUE(serendipity.enabled);
+		ASSERT_EQ(serendipity.round, model->battleGetRound());
+		ASSERT_FALSE(serendipity.currentRoundPositiveLuck);
+		auto striker = model->getForUpdate(source->unitId());
+		auto target = model->getForUpdate(victim->unitId());
+		BattleAttackInfo attack(striker.get(), target.get(), 0, false);
+		// Replay carries pre-hit eligibility even if the current attack no
+		// longer qualifies; conversely, captured false must not consume a token.
+		attack.secondaryAttack = capturedPerfect;
+		ASSERT_EQ(model->battleCanTriggerPerfectFortune(attack), !capturedPerfect);
+		if(!capturedPerfect)
+		{
+			ASSERT_EQ(model->captureFortuneStrikeOutcome(attack), ProjectedLuckOutcome::POSITIVE);
+		}
+		const auto health = striker->getAvailableHealth();
+		model->projectFortuneStrike(attack, {{target->unitId(), 200}}, striker.get(), false,
+			ProjectedLuckOutcome::UNKNOWN, true, capturedPerfect, BattleSide::ATTACKER,
+			BattleSide::DEFENDER);
+		EXPECT_EQ(model->getPerfectFortuneState(BattleSide::ATTACKER).used, capturedPerfect);
+		// A selected replay may carry a pre-hit controller distinct from the
+		// present allegiance. UNKNOWN stays unknown on that captured side.
+		EXPECT_FALSE(model->getLuckSerendipityState(BattleSide::DEFENDER).currentRoundPositiveLuck);
+		EXPECT_EQ(model->getLuckSerendipityState(BattleSide::DEFENDER).firstAttackUsed, !capturedPerfect);
+		EXPECT_EQ(striker->getAvailableHealth(), health + (capturedPerfect ? 20 : 0));
+	}
+	EXPECT_EQ(parent->getForUpdate(source->unitId())->getAvailableHealth(), source->getAvailableHealth());
+	EXPECT_FALSE(parent->getPerfectFortuneState(BattleSide::ATTACKER).used);
+}
+
+TEST_F(NewHorizonsGenericLuckyRecoveryAITest, AbsentSnapshotsMatchExplicitlyCapturedFallback)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareRecovery());
+	SylvanEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	auto parent = std::make_shared<HypotheticBattle>(&environment, callback);
+	for(const bool enabled : {false, true})
+	{
+		auto fallback = std::make_shared<HypotheticBattle>(&environment, parent);
+		auto captured = std::make_shared<HypotheticBattle>(&environment, parent);
+		PerfectFortuneState perfect;
+		perfect.enabled = enabled;
+		fallback->setPerfectFortuneState(BattleSide::ATTACKER, perfect);
+		captured->setPerfectFortuneState(BattleSide::ATTACKER, perfect);
+		auto fallbackSource = fallback->getForUpdate(source->unitId());
+		auto capturedSource = captured->getForUpdate(source->unitId());
+		BattleAttackInfo fallbackAttack(fallbackSource.get(), fallback->getForUpdate(victim->unitId()).get(), 0, false);
+		BattleAttackInfo capturedAttack(capturedSource.get(), captured->getForUpdate(victim->unitId()).get(), 0, false);
+		const auto outcome = captured->captureFortuneStrikeOutcome(capturedAttack);
+		const auto eligibility = captured->battleCanTriggerPerfectFortune(capturedAttack);
+		fallback->projectFortuneStrike(fallbackAttack, {{victim->unitId(), 200}}, fallbackSource.get(), false);
+		captured->projectFortuneStrike(capturedAttack, {{victim->unitId(), 200}}, capturedSource.get(), false,
+			outcome, true, eligibility, BattleSide::ATTACKER);
+		EXPECT_EQ(fallbackSource->getAvailableHealth(), capturedSource->getAvailableHealth());
+		EXPECT_EQ(fallback->getPerfectFortuneState(BattleSide::ATTACKER),
+			captured->getPerfectFortuneState(BattleSide::ATTACKER));
+		EXPECT_EQ(fallback->getLuckSerendipityState(BattleSide::ATTACKER),
+			captured->getLuckSerendipityState(BattleSide::ATTACKER));
+	}
+	EXPECT_EQ(parent->getForUpdate(source->unitId())->getAvailableHealth(), source->getAvailableHealth());
 }
 
 TEST_F(NewHorizonsSylvanLuckAITest, MasterGateContinuationPreservesProjectedActivationState)

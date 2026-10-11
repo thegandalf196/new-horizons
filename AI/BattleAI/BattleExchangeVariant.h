@@ -101,7 +101,9 @@ public:
 		DamageCache & damageCache,
 		std::shared_ptr<HypotheticBattle> hb,
 		bool evaluateOnly = false,
-		bool allowRetaliation = true);
+		bool allowRetaliation = true,
+		// Probe-only hint: share solely within one immutable target-selection batch.
+		std::optional<bool> * readyOverwatch = nullptr);
 
 	const BattleScore & getScore() const { return dpsScore; }
 	/// Complete an already applied action and score only its newly finalized Plague injury.

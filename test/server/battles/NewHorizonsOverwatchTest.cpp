@@ -82,6 +82,7 @@ protected:
 	bool selectVeiledMovement = false;
 	bool attackerOverwatch = false;
 	bool legacyPerkRules = false;
+	bool counterfireStartingProfile = false;
 
 	void SetUp() override
 	{
@@ -94,6 +95,33 @@ protected:
 	{
 		HeroCommandFixture::mapLoaded(loaded);
 		const JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+		if(legacyPerkRules || counterfireStartingProfile)
+		{
+			JsonNode heroes(JsonPath::builtin("config/newHorizonsHeroes"));
+			if(legacyPerkRules)
+			{
+				// A pre-perk captured context cannot retain profiles that require
+				// registered starting perks. Keep its other hero/command rules.
+				heroes["startingSkills"].Struct().erase("startingDevelopmentProfiles");
+				heroes.setOverrideFlag(true); // Replace, so installed defaults cannot restore the omitted profiles.
+			}
+			else
+			{
+				// Orrin ordinarily starts with Basic Target Caller. Author this
+				// scenario's sole Basic perk before init, never add a second tier.
+				auto & starts = heroes["startingSkills"]["startingDevelopmentProfiles"]["core:orrin"]["startingPerks"].Vector();
+				ASSERT_EQ(starts.size(), 1u);
+				ASSERT_EQ(starts.front()["skill"].String(), "new-horizons:archery");
+				ASSERT_EQ(starts.front()["perk"].String(), "new-horizons:archery.targetCaller");
+				starts.front()["perk"] = JsonNode("new-horizons:archery.counterfire");
+			}
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, heroes);
+			if(legacyPerkRules)
+			{
+				ASSERT_FALSE(loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS)
+					["startingSkills"].Struct().contains("startingDevelopmentProfiles"));
+			}
+		}
 		if(legacyPerkRules)
 		{
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
@@ -125,6 +153,7 @@ protected:
 	void prepare(bool selected = true, int moverCount = 1000, int shooterCount = 100,
 		bool counterfireMover = false)
 	{
+		counterfireStartingProfile = counterfireMover;
 		startGame();
 		const SecondarySkill skill(SecondarySkill::decode(skillKey));
 		ASSERT_GE(skill.getNum(), 0);
@@ -168,8 +197,8 @@ protected:
 			const SecondarySkill archery(SecondarySkill::decode("new-horizons:archery"));
 			ASSERT_GE(archery.getNum(), 0);
 			attackerSideHero->setSecSkillLevel(archery, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-			attackerSideHero->applyPerkSelection({"new-horizons:archery", "new-horizons:archery.counterfire"});
 			ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:archery", "new-horizons:archery.counterfire"));
+			ASSERT_FALSE(attackerSideHero->hasActivePerk("new-horizons:archery", "new-horizons:archery.targetCaller"));
 		}
 		beforeBattle = gameState()->saveToMemory();
 		startBattle();
@@ -605,4 +634,113 @@ TEST_F(NewHorizonsOverwatchTest, LethalAttackForecastHasNoOutgoingStrikeAndSelec
 	EXPECT_EQ(replay->battleGetUnitByID(intendedTarget->unitId())->getAvailableHealth(), targetHealth);
 	EXPECT_TRUE(mover->alive());
 	EXPECT_EQ(shooter->shots.available(), ammo);
+}
+
+TEST_F(NewHorizonsOverwatchTest, ProbeBatchMatchesFreshScoresTargetsAndActionsBeforeAndAfterReaction)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto * first = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(6, 5), 1000);
+	auto * second = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(6, 6), 1000);
+	ASSERT_NE(first, nullptr);
+	ASSERT_NE(second, nullptr);
+	ASSERT_TRUE(wait(shooter));
+	OverwatchEnvironment environment(gameState());
+	auto callback = std::make_shared<OverwatchCallback>();
+	callback->onBattleStarted(battle());
+	auto parent = std::make_shared<HypotheticBattle>(&environment, callback->getBattle(BattleID(0)));
+	auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
+	auto model = std::make_shared<HypotheticBattle>(&environment, parent);
+	const auto liveShooter = shooter->acquireState()->save();
+	const auto liveMover = mover->acquireState()->save();
+	const auto parentShooter = parent->getForUpdate(shooter->unitId())->acquireState()->save();
+	const auto siblingShooter = sibling->getForUpdate(shooter->unitId())->acquireState()->save();
+	DamageCache cache;
+	cache.buildDamageCache(model, BattleSide::ATTACKER);
+	const BattleAttackInfo incoming(model->battleGetUnitByID(mover->unitId()),
+		model->battleGetUnitByID(first->unitId()), 0, false);
+	const auto reactionProbe = AttackPossibility::evaluate(incoming, BattleHex(5, 5), cache, model);
+	ASSERT_EQ(reactionProbe.overwatchHits.size(), 1u);
+	const std::array<uint32_t, 2> candidates{first->unitId(), second->unitId()};
+	for(int phase = 0; phase < 2; ++phase)
+	{
+		SCOPED_TRACE(phase);
+		EXPECT_EQ(model->battleOverwatchReady(model->battleGetUnitByID(shooter->unitId())), phase == 0);
+		std::vector<JsonNode> before;
+		for(const auto * unit : model->battleAliveUnits())
+			before.push_back(model->getForUpdate(unit->unitId())->acquireState()->save());
+		BattleExchangeVariant fresh, cached;
+		std::optional<bool> ready;
+		std::array<float, 2> freshScores, cachedScores;
+		for(size_t index = 0; index < candidates.size(); ++index)
+		{
+			auto actor = model->getForUpdate(mover->unitId());
+			auto target = model->getForUpdate(candidates[index]);
+			freshScores[index] = fresh.trackAttack(actor, target, false, true, cache, model, true);
+			cachedScores[index] = cached.trackAttack(actor, target, false, true, cache, model, true, true, &ready);
+			EXPECT_EQ(freshScores[index], cachedScores[index]);
+		}
+		ASSERT_TRUE(ready.has_value());
+		EXPECT_EQ(*ready, phase == 0);
+		EXPECT_EQ(fresh.getScore().ourDamageReduce, cached.getScore().ourDamageReduce);
+		EXPECT_EQ(fresh.getScore().enemyDamageReduce, cached.getScore().enemyDamageReduce);
+		// Preserve production's strict-greater comparator and first-candidate tie.
+		const size_t freshBest = freshScores[1] > freshScores[0] ? 1 : 0;
+		const size_t cachedBest = cachedScores[1] > cachedScores[0] ? 1 : 0;
+		EXPECT_EQ(candidates[freshBest], candidates[cachedBest]);
+		const auto freshAction = BattleAction::makeMeleeAttack(model->battleGetUnitByID(mover->unitId()),
+			model->battleGetUnitByID(candidates[freshBest]), BattleHex(5, 5));
+		const auto cachedAction = BattleAction::makeMeleeAttack(model->battleGetUnitByID(mover->unitId()),
+			model->battleGetUnitByID(candidates[cachedBest]), BattleHex(5, 5));
+		EXPECT_EQ(freshAction.toString(), cachedAction.toString());
+		std::vector<JsonNode> after;
+		for(const auto * unit : model->battleAliveUnits())
+			after.push_back(model->getForUpdate(unit->unitId())->acquireState()->save());
+		EXPECT_EQ(before, after) << "Speculative probes must not spend ammo/readiness or injure their parent";
+		if(phase == 0)
+		{
+			const auto hits = model->projectVoluntaryMovement(mover->unitId(), BattleHex(4, 5));
+			ASSERT_EQ(hits.size(), 1u);
+			EXPECT_EQ(model->getForUpdate(shooter->unitId())->shots.available(), shooter->shots.available() - 1);
+		}
+	}
+	EXPECT_EQ(parent->getForUpdate(shooter->unitId())->acquireState()->save(), parentShooter);
+	EXPECT_EQ(sibling->getForUpdate(shooter->unitId())->acquireState()->save(), siblingShooter);
+	EXPECT_EQ(shooter->acquireState()->save(), liveShooter);
+	EXPECT_EQ(mover->acquireState()->save(), liveMover);
+}
+
+TEST_F(NewHorizonsOverwatchTest, ProbeHintIsLazyForShootingAndIgnoredByAppliedAttacks)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(true, 1000, 100, true));
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(6, 5), 1000);
+	ASSERT_NE(target, nullptr);
+	ASSERT_TRUE(wait(shooter));
+	OverwatchEnvironment environment(gameState());
+	auto callback = std::make_shared<OverwatchCallback>();
+	callback->onBattleStarted(battle());
+	auto parent = std::make_shared<HypotheticBattle>(&environment, callback->getBattle(BattleID(0)));
+	DamageCache cache;
+	cache.buildDamageCache(parent, BattleSide::ATTACKER);
+	std::optional<bool> hint;
+	BattleExchangeVariant probe;
+	probe.trackAttack(parent->getForUpdate(mover->unitId()), parent->getForUpdate(target->unitId()),
+		true, true, cache, parent, true, true, &hint);
+	EXPECT_FALSE(hint.has_value());
+	probe.trackAttack(parent->getForUpdate(mover->unitId()), parent->getForUpdate(target->unitId()),
+		false, true, cache, parent, true, false, &hint);
+	EXPECT_FALSE(hint.has_value());
+	auto fresh = std::make_shared<HypotheticBattle>(&environment, parent);
+	auto withHint = std::make_shared<HypotheticBattle>(&environment, parent);
+	BattleExchangeVariant freshExchange, hintedExchange;
+	hint = false; // An applied hit must ignore even a stale probe hint.
+	const auto freshScore = freshExchange.trackAttack(fresh->getForUpdate(mover->unitId()),
+		fresh->getForUpdate(target->unitId()), false, true, cache, fresh);
+	const auto hintedScore = hintedExchange.trackAttack(withHint->getForUpdate(mover->unitId()),
+		withHint->getForUpdate(target->unitId()), false, true, cache, withHint, false, true, &hint);
+	EXPECT_EQ(freshScore, hintedScore);
+	EXPECT_EQ(fresh->getForUpdate(shooter->unitId())->shots.available(), shooter->shots.available() - 1);
+	for(const auto * unit : fresh->battleAliveUnits())
+		EXPECT_EQ(fresh->getForUpdate(unit->unitId())->acquireState()->save(),
+			withHint->getForUpdate(unit->unitId())->acquireState()->save());
+	EXPECT_TRUE(parent->battleOverwatchReady(parent->battleGetUnitByID(shooter->unitId())));
 }
