@@ -16,6 +16,7 @@
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
+#include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/mapping/MapDifficulty.h"
@@ -1332,6 +1333,75 @@ TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, GenericUpdateFallbackHasStable
 	EXPECT_EQ(values(records(*childActor)), values(restored));
 	for(const auto & unit : {original, childActor, grandActor})
 		EXPECT_EQ(unit->save(), state);
+}
+
+TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, RepeatedCaptureKeepsRetainedSpellAndMarkedGroupViewsIndependent)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto shared = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
+		BonusSource::SPELL_EFFECT, 3, BonusSourceID(SpellID(SpellID::HASTE)));
+	shared->turnsRemain = 2;
+	ordinary->addNewBonus(shared);
+	attackerSideHero->addNewBonus(shared); // One source identity in two raw DAG paths.
+	const BonusSourceID group(BonusCustomSource(1701));
+	ordinary->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACKS_SPEED,
+		BonusSource::OTHER, -1, group));
+	Bonus marker(BonusDuration::PERMANENT, BonusType::PHYSICAL_AFFLICTION, BonusSource::OTHER, 0, group);
+	JsonNode metadata;
+	metadata["kind"].String() = "bleeding";
+	metadata["applicationOrder"].Integer() = 1;
+	marker.parameters = std::make_shared<BonusParameters>(metadata);
+	ordinary->addNewBonus(std::make_shared<Bonus>(marker));
+	const CSelector selected([group](const Bonus * bonus)
+	{
+		return (bonus->source == BonusSource::SPELL_EFFECT && bonus->sid == BonusSourceID(SpellID(SpellID::HASTE)))
+			|| (bonus->source == BonusSource::OTHER && bonus->sid == group);
+	});
+	const auto spell = Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::HASTE)));
+	const auto liveState = ordinary->acquireState()->save();
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	const auto original = parent->getForUpdate(ordinary->unitId());
+	const auto stacked = original->getAllBonuses(selected);
+	const auto raw = original->getUnstackedBonuses(selected);
+	ASSERT_EQ(stacked->size(), 3u);
+	ASSERT_EQ(raw->size(), 4u);
+	const auto stackedValues = values(stacked);
+	const auto rawValues = values(raw);
+	const auto parentVersion = original->getTreeVersion();
+	auto child = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	const auto actor = child->getForUpdate(ordinary->unitId());
+	const auto other = sibling->getForUpdate(ordinary->unitId());
+	const auto childVersion = actor->getTreeVersion();
+	const auto siblingVersion = other->getTreeVersion();
+	std::vector<TConstBonusListPtr> retainedStacked{actor->getAllBonuses(selected)};
+	std::vector<TConstBonusListPtr> retainedRaw{actor->getUnstackedBonuses(selected)};
+	for(unsigned iteration = 1; iteration <= 3; ++iteration)
+	{
+		actor->removeUnitBonus(CSelector([](const Bonus *) { return false; }));
+		retainedStacked.push_back(actor->getAllBonuses(selected));
+		retainedRaw.push_back(actor->getUnstackedBonuses(selected));
+		for(const auto & owner : retainedStacked)
+			EXPECT_EQ(values(owner), stackedValues);
+		for(const auto & owner : retainedRaw)
+			EXPECT_EQ(values(owner), rawValues);
+		const auto aliases = actor->getUnstackedBonuses(spell);
+		ASSERT_EQ(aliases->size(), 2u);
+		EXPECT_EQ((*aliases)[0].get(), (*aliases)[1].get());
+		EXPECT_EQ((*aliases)[0]->turnsRemain, 2);
+		EXPECT_EQ(actor->getTreeVersion(), childVersion + iteration);
+		EXPECT_EQ(values(original->getAllBonuses(selected)), stackedValues);
+		EXPECT_EQ(values(original->getUnstackedBonuses(selected)), rawValues);
+		EXPECT_EQ(values(other->getAllBonuses(selected)), stackedValues);
+		EXPECT_EQ(values(other->getUnstackedBonuses(selected)), rawValues);
+		EXPECT_EQ(original->getTreeVersion(), parentVersion);
+		EXPECT_EQ(other->getTreeVersion(), siblingVersion);
+		EXPECT_EQ(actor->save(), liveState);
+	}
+	EXPECT_EQ(values(stacked), stackedValues);
+	EXPECT_EQ(values(raw), rawValues);
+	EXPECT_EQ(shared->turnsRemain, 2);
+	EXPECT_EQ(ordinary->acquireState()->save(), liveState);
 }
 
 // Equal creature counts/HP, not equal action economy or geometry: splitting the
