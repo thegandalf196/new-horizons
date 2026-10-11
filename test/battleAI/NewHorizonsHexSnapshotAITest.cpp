@@ -11,10 +11,26 @@
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/battle/NewHorizonsOffense.h"
 #include <vcmi/Environment.h>
 
 namespace
 {
+// A local virtual hook measures this actor's snapshots without a global counter
+// or any change to the production forecast/state ownership contract.
+class SnapshotCountingStack final : public StackWithBonuses
+{
+public:
+	mutable unsigned snapshotCalls = 0;
+	SnapshotCountingStack(const HypotheticBattle * owner, const battle::CUnitState * source)
+		: StackWithBonuses(owner, source) {}
+	std::shared_ptr<battle::CUnitState> acquireState() const override
+	{
+		++snapshotCalls;
+		return StackWithBonuses::acquireState();
+	}
+};
+
 class HexSnapshotEnvironment final : public Environment
 {
 	std::shared_ptr<CGameState> state;
@@ -34,9 +50,11 @@ protected:
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, testHeroRules());
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
 
-	void checkMainAttack(bool withHex, bool evaluateOnly)
+	void checkMainAttack(bool withHex, bool evaluateOnly, bool shooting = false, bool withCleave = false)
 	{
 		ASSERT_TRUE(vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE));
 		startGame();
@@ -46,14 +64,25 @@ protected:
 		giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		defenderSideHero->addSpellToSpellbook(spell);
 		setTestSpellPointTotal(defenderSideHero, 1000);
+		if(withCleave)
+		{
+			const SecondarySkill offense(SecondarySkill::decode(newHorizonsOffense::SKILL));
+			attackerSideHero->setSecSkillLevel(offense, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+			attackerSideHero->applyPerkSelection({newHorizonsOffense::SKILL, "new-horizons:offense.shockAssault"});
+			attackerSideHero->setSecSkillLevel(offense, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+			attackerSideHero->applyPerkSelection({newHorizonsOffense::SKILL, newHorizonsOffense::CLEAVE});
+			ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::CLEAVE));
+		}
 		startBattle();
 		BattleUnitsChanged remove;
 		remove.battleID = BattleID(0);
 		for(const auto * unit : battle()->battleGetAllUnits(false))
 			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
 		gameHandler->sendAndApply(remove);
-		auto * actor = addStack(BattleSide::ATTACKER, creatureByName("core:peasant"), BattleHex(7, 5), 1000);
-		auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(8, 5), 10000);
+		auto * actor = addStack(BattleSide::ATTACKER, creatureByName(shooting ? "core:archer" : "core:peasant"), BattleHex(7, 5), 1000);
+		auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(shooting ? 12 : 8, 5), withCleave ? 1 : 10000);
+		CStack * cleaveTarget = withCleave
+			? addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(9, 5), 10000) : nullptr;
 		ASSERT_NE(actor, nullptr);
 		ASSERT_NE(target, nullptr);
 		blockRetaliation(actor);
@@ -73,7 +102,9 @@ protected:
 			std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0)));
 		auto child = std::make_shared<HypotheticBattle>(&environment, parent);
 		auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
-		auto source = child->getForUpdate(actor->unitId());
+		auto ownedSource = child->getForUpdate(actor->unitId());
+		auto countedSource = std::make_shared<SnapshotCountingStack>(child.get(), ownedSource.get());
+		std::shared_ptr<StackWithBonuses> source = evaluateOnly ? countedSource : ownedSource;
 		auto victim = child->getForUpdate(target->unitId());
 		auto siblingSource = sibling->getForUpdate(actor->unitId());
 		auto siblingTarget = sibling->getForUpdate(target->unitId());
@@ -87,8 +118,28 @@ protected:
 		cache.buildDamageCache(child, BattleSide::ATTACKER);
 		const auto damage = cache.getDamage(source.get(), victim.get(), child);
 		ASSERT_GT(damage, 0);
-		ASSERT_LT(damage, targetHP);
+		if(withCleave)
+			ASSERT_GE(damage, targetHP);
+		else
+			ASSERT_LT(damage, targetHP);
 		const auto enemyValue = AttackPossibility::calculateDamageReduce(source.get(), victim.get(), damage, cache, child);
+		float cleaveValue = 0;
+		JsonNode cleaveState;
+		if(withCleave)
+		{
+			ASSERT_TRUE(child->battleCanTriggerCleave(source.get()));
+			const auto * selected = child->battleSelectCleaveTarget(source.get(), victim.get());
+			ASSERT_NE(selected, nullptr);
+			ASSERT_EQ(selected->unitId(), cleaveTarget->unitId());
+			auto afterAttack = source->acquireState();
+			afterAttack->afterAttack(false, false, true);
+			BattleAttackInfo cleaveAttack(afterAttack.get(), cleaveTarget, 0, false);
+			cleaveAttack.cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
+			const auto cleaveDamage = child->battleExpectedLuckDamage(cleaveAttack);
+			cleaveValue = AttackPossibility::calculateDamageReduce(afterAttack.get(), cleaveTarget, cleaveDamage, cache, child);
+			ASSERT_GT(cleaveValue, 0);
+			cleaveState = cleaveTarget->save();
+		}
 		int64_t hexDamage = 0;
 		float ownValue = 0;
 		if(withHex)
@@ -104,13 +155,15 @@ protected:
 			// Independent pre-trigger scoring state: the ordinary strike has finished,
 			// but reactive Hex damage has not reduced the attacker's health yet.
 			auto beforeHex = source->acquireState();
-			beforeHex->afterAttack(false, false, true);
+			beforeHex->afterAttack(shooting, false, true);
 			ownValue = AttackPossibility::calculateDamageReduce(nullptr, beforeHex.get(), hexDamage, cache, child);
 			ASSERT_GT(ownValue, 0);
 		}
 		BattleExchangeVariant exchange;
-		const auto score = exchange.trackAttack(source, victim, false, true, cache, child, evaluateOnly, false);
-		EXPECT_FLOAT_EQ(score, enemyValue - ownValue);
+		countedSource->snapshotCalls = 0;
+		const auto score = exchange.trackAttack(source, victim, shooting, true, cache, child, evaluateOnly, false);
+		EXPECT_FLOAT_EQ(score, enemyValue + cleaveValue - ownValue);
+		EXPECT_EQ(countedSource->snapshotCalls, evaluateOnly && (withHex || withCleave) ? 1u : 0u);
 		EXPECT_FLOAT_EQ(exchange.getScore().ourDamageReduce, ownValue);
 		EXPECT_FLOAT_EQ(exchange.getScore().enemyDamageReduce, evaluateOnly ? 0 : enemyValue);
 		EXPECT_EQ(source->getAvailableHealth(), actorHP - (evaluateOnly ? 0 : hexDamage));
@@ -129,6 +182,10 @@ protected:
 		EXPECT_EQ(parent->battleGetUnitByID(target->unitId())->getAvailableHealth(), targetHP);
 		EXPECT_EQ(siblingSource->getAvailableHealth(), actorHP);
 		EXPECT_EQ(siblingTarget->getAvailableHealth(), targetHP);
+		if(withCleave)
+		{
+			EXPECT_EQ(cleaveTarget->save(), cleaveState);
+		}
 	}
 };
 }
@@ -151,4 +208,19 @@ TEST_F(NewHorizonsHexSnapshotAITest, ActiveHexProbeUsesPreTriggerSnapshotWithout
 TEST_F(NewHorizonsHexSnapshotAITest, ActiveHexAppliedAttackRetainsExactDamageAndPreTriggerScoring)
 {
 	checkMainAttack(true, false);
+}
+
+TEST_F(NewHorizonsHexSnapshotAITest, NoHexRangedProbePreservesExactScoreWithoutSnapshot)
+{
+	checkMainAttack(false, true, true);
+}
+
+TEST_F(NewHorizonsHexSnapshotAITest, ActiveHexRangedProbeKeepsPostShotSnapshotAndExactScore)
+{
+	checkMainAttack(true, true, true);
+}
+
+TEST_F(NewHorizonsHexSnapshotAITest, MeleeCleaveProbeKeepsPostAttackSnapshotAndExactSecondaryScore)
+{
+	checkMainAttack(false, true, false, true);
 }
