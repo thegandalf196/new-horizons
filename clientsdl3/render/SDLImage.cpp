@@ -46,17 +46,38 @@ bool renderLoadTimingsEnabled()
 	return requested && logGlobal->isDebugEnabled();
 }
 
-// Per-TU cap: at most 1024 event records, plus one overflow notice.
+unsigned int parseRenderLoadTimingLimit(const char * value)
+{
+	constexpr unsigned int defaultLimit = 1024;
+	constexpr unsigned int maximumLimit = 16384;
+	if(!value || !*value)
+		return defaultLimit;
+	unsigned int limit = 0;
+	for(const char * current = value; *current; ++current)
+	{
+		if(*current < '0' || *current > '9')
+			return defaultLimit;
+		const auto digit = static_cast<unsigned int>(*current - '0');
+		if(limit > (maximumLimit - digit) / 10)
+			return defaultLimit;
+		limit = limit * 10 + digit;
+	}
+	return limit ? limit : defaultLimit;
+}
+
+// Per-TU bounded cap, plus one overflow notice. Disabled diagnostics do not
+// parse the limit, increment counters or read the timing clock.
 // The counter retains the total attempted events, including dropped records.
 bool reserveRenderLoadTiming()
 {
 	if(!renderLoadTimingsEnabled())
 		return false;
+	static const unsigned int limit = parseRenderLoadTimingLimit(std::getenv("NH_RENDER_LOAD_TIMING_LIMIT"));
 	static std::atomic<uint64_t> attempts{0};
 	const auto index = attempts.fetch_add(1, std::memory_order_relaxed);
-	if(index == 1024)
-		logGlobal->debug("NH_RENDER_LOAD_TIMING cap=1024 reached; subsequent events counted but not timed");
-	return index < 1024;
+	if(index == limit)
+		logGlobal->debug("NH_RENDER_LOAD_TIMING tu=SDLImage cap=%u reached; subsequent events counted but not timed", limit);
+	return index < limit;
 }
 
 using RenderLoadClock = std::chrono::steady_clock;
