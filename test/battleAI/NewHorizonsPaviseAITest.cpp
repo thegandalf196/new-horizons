@@ -63,7 +63,10 @@ protected:
 		startBattle();
 		beginCombat();
 		activeStack = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 20);
-		auto * shooter = addStack(BattleSide::DEFENDER, creatureByName("core:titan"), BattleHex(12, 5), 100);
+		// Paired immobile controls need a nonlethal shot: 100 Titans kill all
+		// Pikemen even with Pavise, leaving zero prevented HP after the cap.
+		auto * shooter = addStack(BattleSide::DEFENDER, creatureByName("core:titan"),
+			BattleHex(12, 5), immobilize ? 1 : 100);
 		ASSERT_NE(activeStack, nullptr);
 		ASSERT_NE(shooter, nullptr);
 
@@ -82,11 +85,42 @@ protected:
 			immobilized.val = -activeStack->getMovementRange();
 			activeStack->addNewBonus(std::make_shared<Bonus>(immobilized));
 			ASSERT_EQ(activeStack->getMovementRange(), 0);
+			// Isolate a ranged threat: a mobile Titan can instead close to melee,
+			// where Pavise does not protect and the mode comparison picks that hit.
+			immobilized.val = -shooter->getMovementRange();
+			shooter->addNewBonus(std::make_shared<Bonus>(immobilized));
+			ASSERT_EQ(shooter->getMovementRange(), 0);
+			ASSERT_TRUE(battle()->battleCanShoot(shooter, activeStack->getPosition()));
+			ASSERT_TRUE(battle()->meleeAttackHexes(shooter, activeStack, shooter->getPosition()).empty());
+			for(const auto & position : battle()->battleGetAvailableHexes(shooter, false))
+			{
+				ASSERT_TRUE(battle()->meleeAttackHexes(shooter, activeStack, position).empty());
+			}
 		}
 		battle()->activeStack = activeStack->unitId();
 		callback = std::make_shared<PaviseCallback>();
 		callback->onBattleStarted(battle());
 		environment = std::make_shared<PaviseEnvironment>(gameState());
+		if(immobilize)
+		{
+			auto baseline = std::make_shared<HypotheticBattle>(environment.get(),
+				std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0)));
+			auto defended = std::make_shared<HypotheticBattle>(environment.get(), baseline);
+			auto projected = defended->getForUpdate(activeStack->unitId());
+			projected->defending = true;
+			projected->addUnitBonus(std::vector<Bonus>{Bonus(BonusDuration::STACK_GETS_TURN,
+				BonusType::UNIT_DEFENDING, BonusSource::OTHER, 0, BonusSourceID())});
+			const auto before = baseline->battleEstimateDamage(BattleAttackInfo(shooter, activeStack, 0, true)).damage;
+			const auto after = defended->battleEstimateDamage(BattleAttackInfo(
+				defended->battleGetUnitByID(shooter->unitId()), projected.get(), 0, true)).damage;
+			ASSERT_LT(before.max, activeStack->getAvailableHealth());
+			ASSERT_LT(after.max, activeStack->getAvailableHealth());
+			if(pavise)
+			{
+				ASSERT_GT((before.min + before.max) / 2 - (after.min + after.max) / 2,
+					std::max<int64_t>(1, activeStack->getAvailableHealth() / 20));
+			}
+		}
 	}
 
 	BattleAction choose(CStack * active)

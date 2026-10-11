@@ -1,5 +1,25 @@
 # New Horizons performance experiment — measured results
 
+## Completed-activation forecast checkpoint (2026-10-11)
+
+Defend, ordinary movement and activation-consuming creature casts now include
+their detached Plague completion. Health-valued actions use signed finalized
+health losses; the beneficial zero-health spell fallback uses the corresponding
+future-damage scale. Free casts and Wait do not complete an activation, and
+Time Stop rejects creature-cast forecasts before resolving the spell.
+
+Nineteen focused completion cases passed, followed by fourteen adjacent combat
+cases with unchanged production sources. These cover principal completion,
+movement interruption, buff selection, status and isolation paths, not exhaustive
+combat integration or native Windows gameplay. The ranged Pavise fixture now
+explicitly requires survivable shots and no reachable melee; its original
+action assertions and mobile control remain. Earlier failed runs were retained
+and diagnosed rather than waived. Temporary diagnostic output was removed.
+
+This is a forecast-correctness checkpoint, not a measured turn-time improvement.
+Automatic Fear/Morale forfeiture, broader status combinations and complete
+forecast equivalence remain separate integration work.
+
 ## Matched Hex snapshot guard comparison (2026-10-11)
 
 Four bounded Linux replays used the same Normal-difficulty save, settings,

@@ -12,6 +12,7 @@
 #include "PossibleSpellcast.h"
 #include "PotentialTargets.h"
 #include "BattleExchangeVariant.h"
+#include <utility>
 
 class CSpell;
 class CBattleCallback;
@@ -46,6 +47,8 @@ class DLL_EXPORT BattleEvaluator
 	float beneficialCreatureOutcomeValue(const CStack * caster, const battle::Unit * recipient,
 		const CSpell * spell, int spellLevel, float baselinePressure) const;
 	static int creatureAbilitySpellLevel(const CStack * caster, const CSpell * spell, int abilityLevel);
+	/// Leaves cast-only admission/value in ps; returns HP and future-DPS completion values.
+	std::pair<float, float> evaluateCreatureCastBeforeCompletion(const CStack * stack, PossibleSpellcast & ps);
 
 public:
 	/// Optional call-local wall diagnostics. Not gameplay state and never serialized.
@@ -73,7 +76,7 @@ public:
 	float beneficialCreatureSpellOutcomeValue(const CStack * caster, const battle::Unit * recipient,
 		const CSpell * spell) const;
 	BattleAction goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets,
-		BattleMovementTiming * timing = nullptr);
+		BattleMovementTiming * timing = nullptr, std::pair<float, float> * movementCompletionValue = nullptr);
 	std::vector<BattleHex> getBrokenWallMoatHexes() const;
 	bool hasWorkingTowers() const;
 	void evaluateCreatureSpellcast(const CStack * stack, PossibleSpellcast & ps); //for offensive damaging spells only
@@ -96,7 +99,17 @@ public:
 	/// Saved-profile candidate gate shared by Doom discovery and focused AI tests.
 	static bool canonicalDoomAvailableInSavedRules(const JsonNode & magicRules, const CSpell * spell);
 	void print(const std::string & text) const;
-	BattleAction moveOrAttack(const CStack * stack, const BattleHex & hex, const PotentialTargets & targets);
+	BattleAction moveOrAttack(const CStack * stack, const BattleHex & hex, const PotentialTargets & targets,
+		std::pair<float, float> * movementCompletionValue = nullptr);
+	struct DLL_LINKAGE MovementCompletionProjection
+	{
+		std::shared_ptr<HypotheticBattle> battle;
+		std::pair<float, float> value{};
+		bool arrivedAlive = false;
+	};
+	/// Explicit ordinary MOVE only; clones the parent and scores its real completion receipts.
+	static MovementCompletionProjection projectOrdinaryMoveCompletion(const Environment * environment,
+		const std::shared_ptr<HypotheticBattle> & parent, const BattleAction & action, PlayerColor perspective);
 
 	BattleEvaluator(
 		std::shared_ptr<Environment> env,
