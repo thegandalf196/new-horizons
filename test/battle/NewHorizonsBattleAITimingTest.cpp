@@ -34,17 +34,30 @@ class TimingCallback final : public CBattleCallback
 {
 public:
 	std::vector<BattleAction> actions;
+	std::vector<BattleAction> heroActions;
+	unsigned retreatDecisionCalls = 0;
+	bool acceptHeroActions = false;
 	std::function<void()> onSubmit;
 	TimingCallback() : CBattleCallback(PlayerColor(0), nullptr) {}
+	std::optional<BattleAction> makeSurrenderRetreatDecision(const BattleID &,
+		const BattleStateInfoForRetreat &) override
+	{
+		++retreatDecisionCalls;
+		return std::nullopt;
+	}
 	void battleMakeUnitAction(const BattleID &, const BattleAction & action) override
 	{
 		actions.push_back(action);
 		if(onSubmit)
 			onSubmit();
 	}
-	void battleMakeSpellAction(const BattleID &, const BattleAction &) override
+	void battleMakeSpellAction(const BattleID &, const BattleAction & action) override
 	{
-		throw std::runtime_error("Unexpected Hero Action in timing-only healing-tent fixture");
+		if(!acceptHeroActions)
+			throw std::runtime_error("Unexpected Hero Action in timing-only healing-tent fixture");
+		heroActions.push_back(action);
+		if(onSubmit)
+			onSubmit();
 	}
 };
 }
@@ -53,14 +66,21 @@ class NewHorizonsBattleAITimingTest : public HeroCommandFixture
 {
 protected:
 	CStack * tent = nullptr;
+	CStack * ordinary = nullptr;
 	std::shared_ptr<TimingEnvironment> environment;
 	std::shared_ptr<TimingCallback> callback;
 	std::unique_ptr<CBattleAI> ai;
 
-	void prepare()
+	void prepare(bool spellbook = false)
 	{
 		useCommands = false;
 		startGame();
+		if(spellbook)
+		{
+			giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+			attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
+			setTestSpellPointTotal(attackerSideHero, 100);
+		}
 		startBattle();
 		BattleUnitsChanged remove;
 		remove.battleID = BattleID(0);
@@ -68,7 +88,7 @@ protected:
 			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
 		gameHandler->sendAndApply(remove);
 		tent = addStack(BattleSide::ATTACKER, creatureByName("core:firstAidTent"), BattleHex(2, 2), 1);
-		addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(5, 5), 100);
+		ordinary = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(5, 5), 100);
 		addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(13, 5), 100);
 		beginCombat();
 		ASSERT_TRUE(tent->isFirstAidTent());
@@ -91,6 +111,15 @@ protected:
 	CBattleAI::TimingSummary summary() const
 	{
 		return ai->getTimingSummary().value();
+	}
+
+	void expectStageClosure(const CBattleAI::TimingSummary & timing) const
+	{
+		const uint64_t classified = timing.evaluatorConstruction.totalMicroseconds
+			+ timing.stackActionSelection.totalMicroseconds + timing.heroAction.totalMicroseconds
+			+ timing.directUnitSubmission.totalMicroseconds;
+		EXPECT_LE(classified, timing.activeStackTotalMicroseconds);
+		EXPECT_EQ(classified + timing.unclassifiedMicroseconds, timing.activeStackTotalMicroseconds);
 	}
 };
 
@@ -117,6 +146,11 @@ TEST_F(NewHorizonsBattleAITimingTest, HealingTentEarlyReturnCountsOnceAndPreserv
 	EXPECT_FALSE(timing.finished);
 	EXPECT_FALSE(timing.reported);
 	EXPECT_FALSE(callback->waitTillRealize);
+	EXPECT_EQ(timing.evaluatorConstruction.calls, 0u);
+	EXPECT_EQ(timing.stackActionSelection.calls, 0u);
+	EXPECT_EQ(timing.heroAction.calls, 0u);
+	EXPECT_EQ(timing.directUnitSubmission.calls, 1u);
+	expectStageClosure(timing);
 }
 
 TEST_F(NewHorizonsBattleAITimingTest, ThrowingSubmissionStillClosesExactlyOneCallbackScope)
@@ -129,6 +163,8 @@ TEST_F(NewHorizonsBattleAITimingTest, ThrowingSubmissionStillClosesExactlyOneCal
 	EXPECT_EQ(timing.activeStackCalls, 1u);
 	EXPECT_EQ(timing.activeStackInFlight, 0u);
 	EXPECT_EQ(timing.activeStackTotalMicroseconds, timing.activeStackMaxMicroseconds);
+	EXPECT_EQ(timing.directUnitSubmission.calls, 1u);
+	expectStageClosure(timing);
 }
 
 TEST_F(NewHorizonsBattleAITimingTest, BattleEndDefersSummaryUntilInFlightCallbackReturnsAndDoesNotRepeat)
@@ -140,6 +176,7 @@ TEST_F(NewHorizonsBattleAITimingTest, BattleEndDefersSummaryUntilInFlightCallbac
 		EXPECT_TRUE(summary().finished);
 		EXPECT_FALSE(summary().reported);
 		EXPECT_EQ(summary().activeStackInFlight, 1u);
+		EXPECT_EQ(summary().directUnitSubmission.calls, 0u);
 	};
 	ai->activeStack(BattleID(0), tent);
 	const auto timing = summary();
@@ -147,9 +184,13 @@ TEST_F(NewHorizonsBattleAITimingTest, BattleEndDefersSummaryUntilInFlightCallbac
 	EXPECT_TRUE(timing.reported);
 	EXPECT_EQ(timing.activeStackCalls, 1u);
 	EXPECT_EQ(timing.activeStackInFlight, 0u);
+	EXPECT_EQ(timing.directUnitSubmission.calls, 1u);
+	expectStageClosure(timing);
 	ai->battleEnd(BattleID(0), nullptr, QueryID(-1));
 	EXPECT_EQ(summary().battleWallMicroseconds, timing.battleWallMicroseconds);
 	EXPECT_EQ(summary().activeStackTotalMicroseconds, timing.activeStackTotalMicroseconds);
+	EXPECT_EQ(summary().directUnitSubmission.calls, timing.directUnitSubmission.calls);
+	EXPECT_EQ(summary().directUnitSubmission.totalMicroseconds, timing.directUnitSubmission.totalMicroseconds);
 }
 
 TEST_F(NewHorizonsBattleAITimingTest, ResetKeepsOldInFlightScopeOutOfNewBattleCounters)
@@ -165,10 +206,15 @@ TEST_F(NewHorizonsBattleAITimingTest, ResetKeepsOldInFlightScopeOutOfNewBattleCo
 	EXPECT_EQ(summary().activeStackCalls, 0u);
 	EXPECT_EQ(summary().activeStackInFlight, 0u);
 	EXPECT_EQ(summary().activeStackTotalMicroseconds, 0u);
+	EXPECT_EQ(summary().directUnitSubmission.calls, 0u);
+	EXPECT_EQ(summary().directUnitSubmission.totalMicroseconds, 0u);
+	EXPECT_EQ(summary().unclassifiedMicroseconds, 0u);
 	EXPECT_FALSE(summary().finished);
 	callback->onSubmit = {};
 	ai->activeStack(BattleID(0), tent);
 	EXPECT_EQ(summary().activeStackCalls, 1u);
+	EXPECT_EQ(summary().directUnitSubmission.calls, 1u);
+	expectStageClosure(summary());
 }
 
 TEST_F(NewHorizonsBattleAITimingTest, EndingCallbackCanDestroyOwnerWithoutInvalidatingTimingScope)
@@ -178,6 +224,7 @@ TEST_F(NewHorizonsBattleAITimingTest, EndingCallbackCanDestroyOwnerWithoutInvali
 	{
 		ai->battleEnd(BattleID(0), nullptr, QueryID(-1));
 		EXPECT_EQ(summary().activeStackInFlight, 1u);
+		EXPECT_EQ(summary().directUnitSubmission.calls, 0u);
 		ai.reset();
 	};
 	auto * activeAI = ai.get();
@@ -198,4 +245,44 @@ TEST_F(NewHorizonsBattleAITimingTest, ObservedRoundNotificationsAreDistinctAndRe
 	startTiming();
 	EXPECT_EQ(summary().roundsObserved, 0u);
 	EXPECT_EQ(summary().activeStackCalls, 0u);
+}
+
+TEST_F(NewHorizonsBattleAITimingTest, OrdinaryCallbackClassifiesConstructionSelectionAndDirectSubmission)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ai->autobattlePreferences.enableSpellsUsage = false;
+	ASSERT_FALSE(battle()->battleUsesHeroCommands());
+	ai->activeStack(BattleID(0), ordinary);
+	ASSERT_EQ(callback->actions.size(), 1u);
+	EXPECT_EQ(callback->actions.front().stackNumber, ordinary->unitId());
+	EXPECT_EQ(callback->retreatDecisionCalls, 1u);
+	const auto timing = summary();
+	EXPECT_EQ(timing.activeStackCalls, 1u);
+	EXPECT_EQ(timing.evaluatorConstruction.calls, 1u);
+	EXPECT_EQ(timing.stackActionSelection.calls, 1u);
+	EXPECT_EQ(timing.heroAction.calls, 0u);
+	EXPECT_EQ(timing.directUnitSubmission.calls, 1u);
+	EXPECT_FALSE(callback->waitTillRealize);
+	expectStageClosure(timing);
+}
+
+TEST_F(NewHorizonsBattleAITimingTest, HeroActionStageIncludesInternalSubmissionWithoutDoubleCounting)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(true));
+	callback->acceptHeroActions = true;
+	ASSERT_EQ(battle()->battleCanCastSpell(attackerSideHero, spells::Mode::HERO), ESpellCastProblem::OK);
+	ai->activeStack(BattleID(0), ordinary);
+	ASSERT_EQ(callback->heroActions.size(), 1u);
+	ASSERT_TRUE(callback->actions.empty());
+	EXPECT_EQ(callback->retreatDecisionCalls, 0u);
+	const auto timing = summary();
+	EXPECT_EQ(timing.activeStackCalls, 1u);
+	EXPECT_EQ(timing.evaluatorConstruction.calls, 1u);
+	EXPECT_EQ(timing.stackActionSelection.calls, 1u);
+	EXPECT_EQ(timing.heroAction.calls, 1u);
+	// Hero submissions occur inside the measured attempt and are not counted
+	// a second time in the separately measured direct unit submission stage.
+	EXPECT_EQ(timing.directUnitSubmission.calls, callback->actions.size());
+	EXPECT_FALSE(callback->waitTillRealize);
+	expectStageClosure(timing);
 }

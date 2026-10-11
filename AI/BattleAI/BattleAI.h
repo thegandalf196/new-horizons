@@ -66,6 +66,12 @@ class CBattleAI : public CBattleGameInterface
 	std::unique_ptr<TacticsHandler> tacticsHandler;
 
 public:
+	struct StageTiming
+	{
+		uint64_t calls = 0;
+		uint64_t totalMicroseconds = 0;
+	};
+
 	/// Diagnostic callback wall time only; not CPU time or authoritative action latency.
 	struct TimingSummary
 	{
@@ -73,6 +79,12 @@ public:
 		uint64_t activeStackCalls = 0;
 		uint64_t activeStackTotalMicroseconds = 0;
 		uint64_t activeStackMaxMicroseconds = 0;
+		StageTiming evaluatorConstruction;
+		StageTiming stackActionSelection;
+		/// Includes Hero Action evaluation and any submission performed inside it.
+		StageTiming heroAction;
+		StageTiming directUnitSubmission;
+		uint64_t unclassifiedMicroseconds = 0;
 		uint32_t roundsObserved = 0;
 		uint32_t activeStackInFlight = 0;
 		bool finished = false;

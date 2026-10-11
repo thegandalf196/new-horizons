@@ -40,6 +40,7 @@
 #include <atomic>
 #include <chrono>
 #include <mutex>
+#include <utility>
 
 #define LOGL(text) print(text)
 #define LOGFL(text, formattingEl) print(boost::str(boost::format(text) % formattingEl))
@@ -77,12 +78,24 @@ struct CBattleAI::TimingState
 	{
 		if(!result)
 			return;
-		logAi->info("PERFORMANCE: BattleAI callback wall battle=%d player=%s battle_us=%llu calls=%llu total_us=%llu max_us=%llu rounds_observed=%u",
+		logAi->info("PERFORMANCE: BattleAI callback wall battle=%d player=%s battle_us=%llu calls=%llu total_us=%llu max_us=%llu rounds_observed=%u"
+			" evaluator_construct_calls=%llu evaluator_construct_us=%llu stack_select_calls=%llu stack_select_us=%llu"
+			" hero_action_including_submit_calls=%llu hero_action_including_submit_us=%llu"
+			" direct_unit_submit_calls=%llu direct_unit_submit_us=%llu unclassified_us=%llu",
 			battleID.getNum(), player.toString(),
 			static_cast<unsigned long long>(result->battleWallMicroseconds),
 			static_cast<unsigned long long>(result->activeStackCalls),
 			static_cast<unsigned long long>(result->activeStackTotalMicroseconds),
-			static_cast<unsigned long long>(result->activeStackMaxMicroseconds), result->roundsObserved);
+			static_cast<unsigned long long>(result->activeStackMaxMicroseconds), result->roundsObserved,
+			static_cast<unsigned long long>(result->evaluatorConstruction.calls),
+			static_cast<unsigned long long>(result->evaluatorConstruction.totalMicroseconds),
+			static_cast<unsigned long long>(result->stackActionSelection.calls),
+			static_cast<unsigned long long>(result->stackActionSelection.totalMicroseconds),
+			static_cast<unsigned long long>(result->heroAction.calls),
+			static_cast<unsigned long long>(result->heroAction.totalMicroseconds),
+			static_cast<unsigned long long>(result->directUnitSubmission.calls),
+			static_cast<unsigned long long>(result->directUnitSubmission.totalMicroseconds),
+			static_cast<unsigned long long>(result->unclassifiedMicroseconds));
 	}
 };
 
@@ -90,7 +103,40 @@ class CBattleAI::TimingScope
 {
 	std::shared_ptr<TimingState> state;
 	TimingState::Clock::time_point started = TimingState::Clock::now();
+	TimingSummary stageTotals;
+
+	class StageScope
+	{
+		StageTiming & timing;
+		TimingState::Clock::time_point started = TimingState::Clock::now();
+	public:
+		explicit StageScope(StageTiming & timing) : timing(timing) {}
+		~StageScope()
+		{
+			++timing.calls;
+			timing.totalMicroseconds += std::chrono::duration_cast<std::chrono::microseconds>(
+				TimingState::Clock::now() - started).count();
+		}
+	};
 public:
+	/// The measured regions are non-nested within this callback. Stage data is
+	/// local until callback exit, including when submission destroys the AI owner.
+	template<typename Callable>
+	decltype(auto) measure(StageTiming TimingSummary::* stage, Callable && action)
+	{
+		StageScope measurement(stageTotals.*stage);
+		return std::forward<Callable>(action)();
+	}
+
+	void submitUnitAction(std::shared_ptr<CBattleCallback> callback,
+		const BattleID & battleID, const BattleAction & action)
+	{
+		measure(&TimingSummary::directUnitSubmission, [&]
+		{
+			callback->battleMakeUnitAction(battleID, action);
+		});
+	}
+
 	TimingScope(std::shared_ptr<TimingState> current, const BattleID & battleID) : state(std::move(current))
 	{
 		if(!state || state->battleID != battleID)
@@ -121,6 +167,17 @@ public:
 		std::optional<TimingSummary> report;
 		{
 			std::lock_guard lock(state->mutex);
+			uint64_t classifiedMicroseconds = 0;
+			for(auto stage : {&TimingSummary::evaluatorConstruction, &TimingSummary::stackActionSelection,
+				&TimingSummary::heroAction, &TimingSummary::directUnitSubmission})
+			{
+				const auto & local = stageTotals.*stage;
+				auto & aggregate = state->summary.*stage;
+				aggregate.calls += local.calls;
+				aggregate.totalMicroseconds += local.totalMicroseconds;
+				classifiedMicroseconds += local.totalMicroseconds;
+			}
+			state->summary.unclassifiedMicroseconds += static_cast<uint64_t>(elapsed) - classifiedMicroseconds;
 			state->summary.activeStackTotalMicroseconds += elapsed;
 			state->summary.activeStackMaxMicroseconds = std::max(
 				state->summary.activeStackMaxMicroseconds, static_cast<uint64_t>(elapsed));
@@ -493,11 +550,16 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 		// Mandatory opening/continuation Orders precede every creature action,
 		// including the special siege, gating, and healing-tent paths below. The
 		// evaluator keeps legal choices even when their ordinary heuristic is nonpositive.
-		BattleEvaluator evaluator(
-			env, cb, stack, playerID, battleID, side,
-			getStrengthRatio(battleCallback, side),
-			getSimulationTurnsCount(env->game()->getStartInfo()));
-		if(evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage))
+		auto evaluator = timing.measure(&TimingSummary::evaluatorConstruction, [&]
+		{
+			return BattleEvaluator(env, cb, stack, playerID, battleID, side,
+				getStrengthRatio(battleCallback, side),
+				getSimulationTurnsCount(env->game()->getStartInfo()));
+		});
+		if(timing.measure(&TimingSummary::heroAction, [&]
+		{
+			return evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage);
+		}))
 			return;
 		if(hasMandatoryOrder())
 		{
@@ -505,7 +567,7 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 			{
 				auto decline = BattleAction::makeNoAction(stack);
 				decline.side = side;
-				cb->battleMakeUnitAction(battleID, decline);
+				timing.submitUnitAction(cb, battleID, decline);
 				return;
 			}
 			// Never substitute a creature action while the authority still has an
@@ -538,11 +600,16 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 		if(battleCallback->battleGetMyHero()
 			&& (autobattlePreferences.enableSpellsUsage || battleCallback->battleUsesHeroCommands()))
 		{
-			BattleEvaluator evaluator(
-				env, cb, stack, playerID, battleID, side,
-				getStrengthRatio(battleCallback, side),
-				getSimulationTurnsCount(env->game()->getStartInfo()));
-			if(evaluator.canCastSpell() && evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage))
+			auto evaluator = timing.measure(&TimingSummary::evaluatorConstruction, [&]
+			{
+				return BattleEvaluator(env, cb, stack, playerID, battleID, side,
+					getStrengthRatio(battleCallback, side),
+					getSimulationTurnsCount(env->game()->getStartInfo()));
+			});
+			if(evaluator.canCastSpell() && timing.measure(&TimingSummary::heroAction, [&]
+			{
+				return evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage);
+			}))
 				return;
 		}
 
@@ -550,7 +617,7 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 		// The AI callback is dispatched for the action controller, while every
 		// creature-action packet continues to identify the stack's physical side.
 		pass.side = stack->unitSide();
-		cb->battleMakeUnitAction(battleID, pass);
+		timing.submitUnitAction(cb, battleID, pass);
 		return;
 	}
 
@@ -560,31 +627,36 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 		if(battleCallback->battleGetMyHero()
 			&& (autobattlePreferences.enableSpellsUsage || battleCallback->battleUsesHeroCommands()))
 		{
-			BattleEvaluator evaluator(
-				env, cb, stack, playerID, battleID, side,
-				getStrengthRatio(battleCallback, side),
-				getSimulationTurnsCount(env->game()->getStartInfo()));
+			auto evaluator = timing.measure(&TimingSummary::evaluatorConstruction, [&]
+			{
+				return BattleEvaluator(env, cb, stack, playerID, battleID, side,
+					getStrengthRatio(battleCallback, side),
+					getSimulationTurnsCount(env->game()->getStartInfo()));
+			});
 			if(evaluator.canCastSpell()
-				&& evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage))
+				&& timing.measure(&TimingSummary::heroAction, [&]
+				{
+					return evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage);
+				}))
 				return;
 		}
-		cb->battleMakeUnitAction(battleID, choosePursuitMovement(battleCallback, stack));
+		timing.submitUnitAction(cb, battleID, choosePursuitMovement(battleCallback, stack));
 		return;
 	}
 
 	if(stack->isCatapult())
 	{
-		cb->battleMakeUnitAction(battleID, useCatapult(battleID, stack));
+		timing.submitUnitAction(cb, battleID, useCatapult(battleID, stack));
 		return;
 	}
 	if(auto gating = chooseDemonicGate(cb->getBattle(battleID), stack, side))
 	{
-		cb->battleMakeUnitAction(battleID, *gating);
+		timing.submitUnitAction(cb, battleID, *gating);
 		return;
 	}
 	if(stack->hasBonusOfType(BonusType::SIEGE_WEAPON) && stack->hasBonusOfType(BonusType::HEALER))
 	{
-		cb->battleMakeUnitAction(battleID, useHealingTent(battleID, stack));
+		timing.submitUnitAction(cb, battleID, useHealingTent(battleID, stack));
 		return;
 	}
 
@@ -592,16 +664,24 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 	logAi->trace("Build evaluator and targets");
 #endif
 
-	BattleEvaluator evaluator(
-		env, cb, stack, playerID, battleID, side,
-		getStrengthRatio(cb->getBattle(battleID), side),
-		getSimulationTurnsCount(env->game()->getStartInfo()));
+	auto evaluator = timing.measure(&TimingSummary::evaluatorConstruction, [&]
+	{
+		return BattleEvaluator(env, cb, stack, playerID, battleID, side,
+			getStrengthRatio(cb->getBattle(battleID), side),
+			getSimulationTurnsCount(env->game()->getStartInfo()));
+	});
 
-	result = evaluator.selectStackAction(stack);
+	result = timing.measure(&TimingSummary::stackActionSelection, [&]
+	{
+		return evaluator.selectStackAction(stack);
+	});
 
 	if((autobattlePreferences.enableSpellsUsage || cb->getBattle(battleID)->battleUsesHeroCommands()) && evaluator.canCastSpell())
 	{
-		auto spelCasted = evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage);
+		auto spelCasted = timing.measure(&TimingSummary::heroAction, [&]
+		{
+			return evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage);
+		});
 
 		if(spelCasted)
 			return;
@@ -646,12 +726,12 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 		if(bestTarget)
 		{
 			BattleAction followUp = BattleAction::makeShotAttack(stack, bestTarget);
-			cb->battleMakeUnitAction(battleID, followUp);
+			timing.submitUnitAction(cb, battleID, followUp);
 			return;
 		}
 
 		BattleAction pass = BattleAction::makeNoAction(stack);
-		cb->battleMakeUnitAction(battleID, pass);
+		timing.submitUnitAction(cb, battleID, pass);
 		return;
 	}
 
@@ -659,7 +739,7 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 
 	if(auto action = considerFleeingOrSurrendering(battleID))
 	{
-		cb->battleMakeUnitAction(battleID, *action);
+		timing.submitUnitAction(cb, battleID, *action);
 		return;
 	}
 
@@ -681,7 +761,7 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 
 	logAi->trace("BattleAI decision made in %lld", timeElapsed(start));
 
-	cb->battleMakeUnitAction(battleID, result);
+	timing.submitUnitAction(cb, battleID, result);
 }
 
 bool CBattleAI::shouldUseCreatureCatapult(CBattleInfoCallback & battle,
