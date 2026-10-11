@@ -829,6 +829,8 @@ endif()
 add_subdirectory_with_folder("3rdparty" "${googleTest_Dir}" "${CMAKE_CURRENT_BINARY_DIR}/googletest" EXCLUDE_FROM_ALL)
 
 add_executable(vcmitest ${test_SRCS} ${test_HEADERS} ${mock_HEADERS})
+add_executable(nhProjectileFlightLifecycleTest ../client/tests/ProjectileFlightLifecycleTest.cpp)
+add_test(NAME nhProjectileFlightLifecycleTest COMMAND nhProjectileFlightLifecycleTest)
 if(ENABLE_NULLKILLER2_AI)
 	# Nullkiller tests use internal AI symbols, so embed AI objects in vcmitest
 	# instead of linking the facade and loading a second copy of lib globals.

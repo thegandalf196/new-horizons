@@ -2,7 +2,9 @@
 """Focused config checks for both ranged Cabir creature definitions."""
 
 import json
+import hashlib
 from pathlib import Path
+import sys
 import unittest
 
 
@@ -12,6 +14,11 @@ CORE_DUNGEON = ROOT / "config/creatures/dungeon.json"
 CORE_CONFLUX = ROOT / "config/creatures/conflux.json"
 MODULE_TOWER = ROOT / "Mods/new-horizons/Content/config/creatures/tower.json"
 CABIR_REPAIR = ROOT / "Mods/new-horizons/Content/config/spells/cabirRepair.json"
+ART_PACK = ROOT / "Mods/new-horizons/NewHorizons.nhart"
+ART_MANIFEST = ROOT / "assets/new-horizons/runtime-art-manifest.json"
+
+sys.path.insert(0, str(ROOT / "tools"))
+import nhart
 
 
 def _strip_jsonc_comments(source: str) -> str:
@@ -71,21 +78,44 @@ class CabirRangedConfigTest(unittest.TestCase):
             "core:gremlin": _deep_merge(cls.core["gremlin"], cls.module["core:gremlin"]),
             "core:masterGremlin": _deep_merge(cls.core["masterGremlin"], cls.module["core:masterGremlin"]),
         }
+        verified = nhart.verify(ART_PACK, ART_MANIFEST)
+        cls.packed_resources = {row["resource"]: row for row in verified["entries"]}
+        cls.selected_resources = {row["resource"]: row for row in verified["manifest"]["entries"]}
+
+    def packed_payload(self, resource):
+        self.assertIn(resource, self.selected_resources)
+        row = self.packed_resources[resource]
+        selected = self.selected_resources[resource]
+        with ART_PACK.open("rb") as stream:
+            stream.seek(row["offset"])
+            payload = stream.read(row["size"])
+        self.assertEqual(len(payload), selected["size"])
+        self.assertGreater(len(payload), 0)
+        self.assertEqual(hashlib.sha256(payload).hexdigest(), selected["sha256"])
+        self.assertEqual(row["sha256"], selected["sha256"])
+        return payload
+
+    def assert_packed_frames(self, descriptor, frames):
+        self.assertTrue(frames)
+        for frame in frames:
+            payload = self.packed_payload("SPRITES/" + descriptor["basepath"] + frame)
+            self.assertTrue(payload.startswith(b"\x89PNG\r\n\x1a\n"))
+            self.assertGreater(len(payload), 8)
 
     def test_both_cabir_forms_have_normal_shooter_ammunition_and_missile(self):
         expected_missile = self.creatures["core:masterGremlin"]["graphics"]["missile"]
-        self.assertEqual(expected_missile["projectile"], "CPRGOGX.DEF")
-        self.assertEqual(expected_missile["attackClimaxFrame"], 3)
+        self.assertEqual(expected_missile["projectile"], "NH_CabirHandoffFireball.def")
+        self.assertEqual(expected_missile["attackClimaxFrame"], 4)
         self.assertEqual(expected_missile["frameAngles"], [90, 72, 45, 27, 0, -27, -45, -72, -90])
         self.assertEqual(
             expected_missile["offset"],
             {
-                "upperX": 28,
-                "upperY": -45,
-                "middleX": 40,
-                "middleY": -34,
-                "lowerX": 31,
-                "lowerY": -18,
+                "upperX": 26,
+                "upperY": -48,
+                "middleX": 33,
+                "middleY": -42,
+                "lowerX": 33,
+                "lowerY": -28,
             },
         )
 
@@ -95,6 +125,19 @@ class CabirRangedConfigTest(unittest.TestCase):
                 self.assertEqual(creature["abilities"]["shooter"]["type"], "SHOOTER")
                 self.assertEqual(creature["graphics"]["missile"], expected_missile)
                 self.assertNotIn("noMeleePenalty", creature["abilities"])
+                projectile = json.loads(self.packed_payload(
+                    "SPRITES/" + Path(creature["graphics"]["missile"]["projectile"]).with_suffix(".json").name))
+                self.assertEqual([(image["group"], image["frame"]) for image in projectile["images"]],
+                                 [(0, frame) for frame in range(len(expected_missile["frameAngles"]))])
+                self.assert_packed_frames(projectile, [image["file"] for image in projectile["images"]])
+                battle = json.loads(self.packed_payload(
+                    "SPRITES/" + Path(creature["graphics"]["animation"]).with_suffix(".json").name))
+                groups = {sequence["group"]: sequence["frames"] for sequence in battle["sequences"]}
+                # BattleConstants.h: SHOOT_UP/FRONT/DOWN. Climax must resolve
+                # an actual selected frame for each directional shooting pose.
+                for group in (14, 15, 16):
+                    self.assertGreater(len(groups[group]), expected_missile["attackClimaxFrame"])
+                    self.assert_packed_frames(battle, groups[group])
 
     def test_cabir_elemental_defenses_and_master_repair_are_preserved(self):
         expected_resistances = {

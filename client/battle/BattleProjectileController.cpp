@@ -53,9 +53,10 @@ void ProjectileMissile::show(Canvas & canvas)
 
 	if(image)
 	{
+		const float visibleProgress = visibility.visibleProgress(progress);
 		Point pos {
-			vstd::lerp(from.x, dest.x, progress) - image->width() / 2,
-			vstd::lerp(from.y, dest.y, progress) - image->height() / 2,
+			vstd::lerp(from.x, dest.x, visibleProgress) - image->width() / 2,
+			vstd::lerp(from.y, dest.y, visibleProgress) - image->height() / 2,
 		};
 
 		canvas.draw(image, pos);
@@ -95,7 +96,7 @@ void ProjectileCatapult::show(Canvas & canvas)
 
 	if(image)
 	{
-		int posX = vstd::lerp(from.x, dest.x, progress);
+		int posX = vstd::lerp(from.x, dest.x, visibility.visibleProgress(progress));
 		int posY = calculateCatapultParabolaY(from, dest, posX);
 		Point pos(posX, posY);
 
@@ -243,7 +244,11 @@ void BattleProjectileController::render(Canvas & canvas)
 	for ( auto projectile: projectiles)
 	{
 		if ( projectile->playing )
+		{
 			projectile->show(canvas);
+			// Missing artwork must not leave an immortal projectile either.
+			projectile->visibility.onRenderAttempt();
+		}
 	}
 }
 
@@ -256,7 +261,7 @@ void BattleProjectileController::tick(uint32_t msPassed)
 	}
 
 	vstd::erase_if(projectiles, [&](const std::shared_ptr<ProjectileBase> & projectile){
-		return projectile->progress > 1.0f;
+		return projectile->playing && projectile->visibility.canRemove(projectile->progress);
 	});
 }
 
@@ -318,6 +323,7 @@ int BattleProjectileController::computeProjectileFrameID( Point from, Point dest
 void BattleProjectileController::createCatapultProjectile(const CStack * shooter, Point from, Point dest)
 {
 	auto catapultProjectile       = new ProjectileCatapult();
+	catapultProjectile->visibility.protectFirstRender();
 
 	catapultProjectile->animation = getProjectileImage(shooter);
 	catapultProjectile->progress  = 0;
@@ -352,6 +358,7 @@ void BattleProjectileController::createProjectile(const CStack * shooter, Point 
 	else if (stackUsesMissileProjectile(shooter))
 	{
 		auto missileProjectile = new ProjectileMissile();
+		missileProjectile->visibility.protectFirstRender();
 		projectile.reset(missileProjectile);
 
 		missileProjectile->animation = getProjectileImage(shooter);
@@ -380,6 +387,7 @@ void BattleProjectileController::createSpellProjectile(const CStack * shooter, P
 	if(!animToDisplay.empty())
 	{
 		auto projectile = new ProjectileAnimatedMissile();
+		projectile->visibility.protectFirstRender();
 
 		projectile->animation     = createProjectileImage(animToDisplay);
 		projectile->frameProgress = 0;

@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include "ProjectileFlightLifecycle.h"
+
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/Point.h"
 #include "../../lib/filesystem/ResourcePath.h"
@@ -34,6 +36,7 @@ struct ProjectileBase
 	float speed;    // how much progress is gained per second
 	int shooterID;  // ID of shooter stack
 	bool playing;   // if set to true, projectile animation is playing, e.g. flying to target
+	ProjectileFlightLifecycle visibility;
 };
 
 /// Projectile for most shooters - render pre-selected frame moving in straight line from origin to destination
