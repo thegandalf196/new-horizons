@@ -831,6 +831,24 @@ add_subdirectory_with_folder("3rdparty" "${googleTest_Dir}" "${CMAKE_CURRENT_BIN
 add_executable(vcmitest ${test_SRCS} ${test_HEADERS} ${mock_HEADERS})
 add_executable(nhProjectileFlightLifecycleTest ../client/tests/ProjectileFlightLifecycleTest.cpp)
 add_test(NAME nhProjectileFlightLifecycleTest COMMAND nhProjectileFlightLifecycleTest)
+add_executable(nhReleaseUpdatePolicyTest
+	../client/tests/ReleaseUpdatePolicyTest.cpp
+	../client/mainmenu/ReleaseUpdatePolicy.cpp)
+target_link_libraries(nhReleaseUpdatePolicyTest PRIVATE vcmi)
+set_target_properties(nhReleaseUpdatePolicyTest PROPERTIES
+	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+add_test(NAME nhReleaseUpdatePolicyTest COMMAND nhReleaseUpdatePolicyTest)
+add_executable(nhReleaseUpdateTransportProbe
+	../client/tests/ReleaseUpdateTransportProbe.cpp
+	../client/mainmenu/ReleaseUpdateTransport.cpp)
+if(WIN32)
+	target_link_libraries(nhReleaseUpdateTransportProbe PRIVATE winhttp)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	find_package(CURL REQUIRED)
+	target_link_libraries(nhReleaseUpdateTransportProbe PRIVATE CURL::libcurl)
+endif()
+# The default test is offline. A maintainer may explicitly opt in with --live.
+add_test(NAME nhReleaseUpdateTransportCancelled COMMAND nhReleaseUpdateTransportProbe)
 if(ENABLE_NULLKILLER2_AI)
 	# Nullkiller tests use internal AI symbols, so embed AI objects in vcmitest
 	# instead of linking the facade and loading a second copy of lib globals.

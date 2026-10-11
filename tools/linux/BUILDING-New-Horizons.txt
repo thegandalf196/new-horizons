@@ -28,7 +28,7 @@ assembler is permission to publish an unverified candidate.
 
 Build platform: Ubuntu 26.04 x86-64, ordinary GCC/G++ 15.2.0, C++20, CMake/Ninja.
 Install suitable build tools and the development providers recorded in the header
-inventory: Boost, SDL2/image/mixer/ttf, LuaJIT, oneTBB, minizip/zlib, squish and the
+inventory: Boost, SDL2/image/mixer/ttf, LuaJIT, oneTBB, minizip/zlib, squish, libcurl and the
 FFmpeg codec/format/util/swscale/swresample development packages. Their exact
 observed versions/source records accompany the package. No proprietary compiler
 IR/plugin or LTO step was used in the recorded application build.

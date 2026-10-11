@@ -53,6 +53,10 @@
 				"enableDiscordRichPresence"
 			],
 			"properties" : {
+				"updateChecks" : {
+					"type" : "boolean",
+					"default" : true
+				},
 				"playerName" : {
 					"type" : "string",
 					"default" : "Player"

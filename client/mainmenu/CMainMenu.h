@@ -15,6 +15,7 @@
 #include "../../lib/network/NetworkInterface.h"
 
 class CampaignState;
+namespace releaseUpdates { class ReleaseUpdateController; }
 
 class CTextInput;
 class CGStatusBar;
@@ -58,6 +59,7 @@ public:
 	void activate() override;
 	void show(Canvas & to) override;
 	void keyPressed(EShortcut key) override;
+	void tick(uint32_t msPassed) override;
 
 	void switchToTab(size_t index);
 	void switchToTab(std::string name);
@@ -168,6 +170,7 @@ private:
 /// Handles background screen, loads graphics for victory/loss condition and random town or hero selection
 class CMainMenu final : public CIntObject, public std::enable_shared_from_this<CMainMenu>
 {
+	std::unique_ptr<releaseUpdates::ReleaseUpdateController> releaseUpdateController;
 	std::shared_ptr<CFilledTexture> backgroundAroundMenu;
 
 	std::vector<VideoPath> videoPlayList;
@@ -192,6 +195,7 @@ public:
 
 	void playIntroVideos();
 	void playMusic();
+	void pollReleaseUpdate();
 };
 
 /// Simple window to enter the server's address.

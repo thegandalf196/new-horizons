@@ -124,6 +124,7 @@ public:
 
 	/// Calls provided functor in main thread on next execution frame
 	void dispatchMainThread(const std::function<void()> & functor);
+	bool openExternalURL(const std::string & url);
 
 	/// Returns current position of cursor, in VCMI logical screen coordinates
 	const Point & getCursorPosition() const;

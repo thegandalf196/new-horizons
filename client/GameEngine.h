@@ -142,6 +142,9 @@ public:
 
 	/// Calls provided functor in main thread on next execution frame
 	void dispatchMainThread(const std::function<void()> & functor);
+
+	/// Opens an explicitly selected external page using the platform browser.
+	bool openExternalURL(const std::string & url);
 };
 
 extern std::unique_ptr<GameEngine> ENGINE; //global gui handler

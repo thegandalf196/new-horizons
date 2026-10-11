@@ -278,6 +278,11 @@ void GameEngine::dispatchMainThread(const std::function<void()> & functor)
 	inputHandlerInstance->dispatchMainThread(functor);
 }
 
+bool GameEngine::openExternalURL(const std::string & url)
+{
+	return inputHandlerInstance->openExternalURL(url);
+}
+
 IScreenHandler & GameEngine::screenHandler()
 {
 	return *screenHandlerInstance;

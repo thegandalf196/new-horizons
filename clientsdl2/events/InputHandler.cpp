@@ -36,6 +36,12 @@
 #include <SDL_timer.h>
 #include <SDL_clipboard.h>
 #include <SDL_power.h>
+#include <SDL_misc.h>
+
+bool InputHandler::openExternalURL(const std::string & url)
+{
+	return SDL_OpenURL(url.c_str()) == 0;
+}
 
 InputHandler::InputHandler()
 	: enableMouse(settings["input"]["enableMouse"].Bool())

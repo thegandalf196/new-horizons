@@ -67,6 +67,9 @@ set(vcmiclientcommon_SRCS
 
 	mainmenu/CCampaignScreen.cpp
 	mainmenu/CMainMenu.cpp
+	mainmenu/ReleaseUpdatePolicy.cpp
+	mainmenu/ReleaseUpdateTransport.cpp
+	mainmenu/ReleaseUpdateController.cpp
 	mainmenu/CPrologEpilogVideo.cpp
 	mainmenu/CreditsScreen.cpp
 	mainmenu/CHighScoreScreen.cpp
@@ -295,6 +298,9 @@ set(vcmiclientcommon_HEADERS
 
 	mainmenu/CCampaignScreen.h
 	mainmenu/CMainMenu.h
+	mainmenu/ReleaseUpdatePolicy.h
+	mainmenu/ReleaseUpdateTransport.h
+	mainmenu/ReleaseUpdateController.h
 	mainmenu/CPrologEpilogVideo.h
 	mainmenu/CreditsScreen.h
 	mainmenu/CHighScoreScreen.h
@@ -502,6 +508,14 @@ elseif(IOS)
 endif()
 
 target_link_libraries(vcmiclientcommon PRIVATE vcmiservercommon)
+
+# Public release checks use the platform HTTPS implementation, never a shell.
+if(WIN32)
+	target_link_libraries(vcmiclientcommon PRIVATE winhttp)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	find_package(CURL REQUIRED)
+	target_link_libraries(vcmiclientcommon PRIVATE CURL::libcurl)
+endif()
 
 target_link_libraries(vcmiclientcommon PUBLIC
 		vcmi ${VCMI_MEDIA_BACKEND}

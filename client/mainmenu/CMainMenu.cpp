@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "CMainMenu.h"
+#include "ReleaseUpdateController.h"
 
 #include "../../lib/network/NetworkDiscovery.h"
 #include "CCampaignScreen.h"
@@ -72,7 +73,7 @@ CMenuScreen::CMenuScreen(const JsonNode & configNode)
 	: CWindowObject(BORDERED), config(configNode)
 {
 	OBJECT_CONSTRUCTION;
-	addUsedEvents(KEYBOARD);
+	addUsedEvents(KEYBOARD | TIME);
 
 	const auto& bgConfig = config["background"];
 	if (bgConfig.isVector())
@@ -381,6 +382,34 @@ CMainMenu::CMainMenu()
 }
 
 CMainMenu::~CMainMenu() = default;
+
+void CMenuScreen::tick(uint32_t)
+{
+	GAME->mainmenu()->pollReleaseUpdate();
+}
+
+void CMainMenu::pollReleaseUpdate()
+{
+	// No modal prompt over gameplay, scenario selection, intro video or another dialog.
+	if(ENGINE->windows().topWindow<CMenuScreen>() != menu)
+		return;
+	const auto & enabled = settings["general"]["updateChecks"];
+	if(enabled.isBool() && !enabled.Bool())
+		return;
+	if(!releaseUpdateController)
+		releaseUpdateController = std::make_unique<releaseUpdates::ReleaseUpdateController>(
+			CMainMenuConfig::get().getProductVersion(), true);
+	if(auto offer = releaseUpdateController->takeOffer())
+	{
+		const std::string message = "New Horizons " + offer->version
+			+ " is available. Open the official release page?\n\n"
+			"Nothing will be downloaded or installed automatically.";
+		CInfoWindow::showYesNoDialog(message, {}, [page = offer->releasePage]()
+		{
+			ENGINE->openExternalURL(page);
+		}, []() {});
+	}
+}
 
 void CMainMenu::playIntroVideos()
 {

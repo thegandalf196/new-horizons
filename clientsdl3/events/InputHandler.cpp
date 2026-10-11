@@ -33,6 +33,12 @@
 #include "lib/CConfigHandler.h"
 
 #include <SDL3/SDL_events.h>
+#include <SDL3/SDL_misc.h>
+
+bool InputHandler::openExternalURL(const std::string & url)
+{
+	return SDL_OpenURL(url.c_str());
+}
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_clipboard.h>
