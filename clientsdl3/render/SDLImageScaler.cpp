@@ -16,6 +16,7 @@
 #include "xBRZ/xbrz.h"
 
 #include <tbb/parallel_for.h>
+#include <SDL3/SDL_endian.h>
 #include <SDL3/SDL_surface.h>
 
 
@@ -119,20 +120,54 @@ void SDLImageOptimizer::optimizeSurface(SDL_Surface * formatSourceSurface)
 		// hoisted out of the loop, resolving the format for every pixel is not free
 		const SDL_PixelFormatDetails * format = CSDL_Ext::getFormat(surf);
 
-		for (int y = 0; y < surf->h; ++y)
+		// For packed 32-bit pixels with an exact alpha byte, nonzero alpha is
+		// equivalent to SDL_GetRGBA's result. Avoid generic pixel/format lookup
+		// for each pixel, without assuming tightly packed rows or byte order.
+		const bool hasAlphaByte = format
+			&& SDL_ISPIXELFORMAT_PACKED(surf->format)
+			&& SDL_PIXELTYPE(surf->format) == SDL_PIXELTYPE_PACKED32
+			&& format->bits_per_pixel == 32 && format->bytes_per_pixel == 4
+			&& format->Abits == 8 && format->Ashift <= 24 && format->Ashift % 8 == 0
+			&& format->Amask == (uint32_t{0xff} << format->Ashift);
+		if (hasAlphaByte)
 		{
-			for (int x = 0; x < surf->w; ++x)
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+			const int alphaOffset = 3 - format->Ashift / 8;
+#else
+			const int alphaOffset = format->Ashift / 8;
+#endif
+			for (int y = 0; y < surf->h; ++y)
 			{
-				uint8_t alpha;
-				SDL_GetRGBA(CSDL_Ext::getPixel(surf, x, y), format, nullptr, nullptr, nullptr, nullptr, &alpha);
-
-				if (alpha != SDL_ALPHA_TRANSPARENT)
+				const uint8_t * row = static_cast<const uint8_t *>(surf->pixels) + y * surf->pitch;
+				for (int x = 0; x < surf->w; ++x)
 				{
-					// opaque
-					top = std::min(top, y);
-					left = std::min(left, x);
-					right = std::max(right, x);
-					bottom = std::max(bottom, y);
+					if (row[x * 4 + alphaOffset] != SDL_ALPHA_TRANSPARENT)
+					{
+						top = std::min(top, y);
+						left = std::min(left, x);
+						right = std::max(right, x);
+						bottom = std::max(bottom, y);
+					}
+				}
+			}
+		}
+		else
+		{
+			for (int y = 0; y < surf->h; ++y)
+			{
+				for (int x = 0; x < surf->w; ++x)
+				{
+					uint8_t alpha;
+					SDL_GetRGBA(CSDL_Ext::getPixel(surf, x, y), format, nullptr, nullptr, nullptr, nullptr, &alpha);
+
+					if (alpha != SDL_ALPHA_TRANSPARENT)
+					{
+						// opaque
+						top = std::min(top, y);
+						left = std::min(left, x);
+						right = std::max(right, x);
+						bottom = std::max(bottom, y);
+					}
 				}
 			}
 		}
