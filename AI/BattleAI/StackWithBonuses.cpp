@@ -795,17 +795,29 @@ bool StackWithBonuses::removeFirstPhysicalAffliction()
 
 void StackWithBonuses::removeUnitBonus(const CSelector & selector)
 {
-	removeUnitBonusImpl(selector, true);
+	removeUnitBonus(selector, nullptr);
+}
+
+void StackWithBonuses::removeUnitBonus(const CSelector & selector,
+	HypotheticLifecycleTiming::EffectWorkTiming * timing)
+{
+	removeUnitBonusImpl(selector, true, timing);
 }
 
 void StackWithBonuses::removeGamblerLuckPenalty()
 {
-	// This exact Luck/Secondary Skill predicate cannot affect Confusion,
-	// Guardian Spirit or Polymorph control state.
-	removeUnitBonusImpl(CSelector(newHorizonsCombatSkills::isGamblerLuckPenalty), false);
+	removeGamblerLuckPenalty(nullptr);
 }
 
-void StackWithBonuses::removeUnitBonusImpl(const CSelector & selector, bool mayAffectControlState)
+void StackWithBonuses::removeGamblerLuckPenalty(HypotheticLifecycleTiming::EffectWorkTiming * timing)
+{
+	// This exact Luck/Secondary Skill predicate cannot affect Confusion,
+	// Guardian Spirit or Polymorph control state.
+	removeUnitBonusImpl(CSelector(newHorizonsCombatSkills::isGamblerLuckPenalty), false, timing);
+}
+
+void StackWithBonuses::removeUnitBonusImpl(const CSelector & selector, bool mayAffectControlState,
+	HypotheticLifecycleTiming::EffectWorkTiming * timing)
 {
 	captureLocalSpellEffects();
 	const bool timeStopped = mayAffectControlState && isTimeStopped();
@@ -830,8 +842,13 @@ void StackWithBonuses::removeUnitBonusImpl(const CSelector & selector, bool mayA
 
 	// Parent models materialize fresh bonus pointers. Capture effect values before
 	// suppressing them, including non-timed spells and legacy battle-long effects.
-	captureEffects();
-	TConstBonusListPtr toRemove = origBearer->getBonuses(effectiveSelector);
+	captureEffects(timing);
+	TConstBonusListPtr toRemove;
+	{
+		LifecycleTimingScope measurement(timing ? &timing->selectiveRemovalQuery : nullptr);
+		toRemove = origBearer->getBonuses(effectiveSelector);
+	}
+	LifecycleTimingScope mutation(timing ? &timing->removalMutation : nullptr);
 
 	for(auto b : *toRemove)
 		bonusesToRemove.insert(b);
@@ -967,11 +984,25 @@ void StackWithBonuses::replaceLocalSpellEffectsExact(const std::vector<Bonus> & 
 
 void StackWithBonuses::captureEffects()
 {
+	captureEffects(nullptr);
+}
+
+void StackWithBonuses::captureEffects(HypotheticLifecycleTiming::EffectWorkTiming * timing)
+{
 	// Resolve refreshes before aging or another mutation. In addition to spell and
 	// command effects, explicitly marked affliction groups may use non-spell
 	// sources; capture only those exact source/sid groups, not unrelated stats.
-	const auto effects = getAllBonuses(Selector::all);
-	const auto unstackedEffects = getUnstackedBonuses(Selector::all);
+	TConstBonusListPtr effects;
+	{
+		LifecycleTimingScope measurement(timing ? &timing->stackedQuery : nullptr);
+		effects = getAllBonuses(Selector::all);
+	}
+	TConstBonusListPtr unstackedEffects;
+	{
+		LifecycleTimingScope measurement(timing ? &timing->rawQuery : nullptr);
+		unstackedEffects = getUnstackedBonuses(Selector::all);
+	}
+	LifecycleTimingScope materialization(timing ? &timing->snapshotMaterialization : nullptr);
 	if(projectedEffects)
 		projectedEffects->clear();
 	else
@@ -1010,8 +1041,13 @@ void StackWithBonuses::captureEffects()
 
 void StackWithBonuses::advanceTimedRound()
 {
+	advanceTimedRound(nullptr);
+}
+
+void StackWithBonuses::advanceTimedRound(HypotheticLifecycleTiming::EffectWorkTiming * timing)
+{
 	captureLocalSpellEffects();
-	captureEffects();
+	captureEffects(timing);
 	if(isTimeStopped())
 	{
 		// Time Stop takes the projected unit outside the round clock.  Keep the
@@ -1020,6 +1056,7 @@ void StackWithBonuses::advanceTimedRound()
 		++treeVersionLocal;
 		return;
 	}
+	LifecycleTimingScope aging(timing ? &timing->roundAging : nullptr);
 	// Read the seal and polarity before its own final round expires. These
 	// immutable values apply equally to stacked, source-local and raw aliases.
 	const auto preservedPolarity = newHorizonsSorcery::spellLockPreservesBeneficial(*this);
@@ -2578,7 +2615,7 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 		if(!firstRound && !forUpdate->isTimeStopped())
 		{
 			LifecycleTimingScope measurement(timing ? &timing->roundTimedUpdates : nullptr);
-			forUpdate->advanceTimedRound();
+			forUpdate->advanceTimedRound(timing ? &timing->roundTimedWork : nullptr);
 		}
 		forUpdate->afterNewRound(firstRound, true, formPaused);
 		if(forUpdate->ghostPending)
@@ -2714,7 +2751,8 @@ void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason
 		newHorizonsHeroicSpirit::beginActivation(*unit, reason);
 		{
 			LifecycleTimingScope measurement(timing ? &timing->activationExpiryRemoval : nullptr);
-			unit->removeUnitBonus(CSelector(Bonus::UntilNextCreatureActivation));
+			unit->removeUnitBonus(CSelector(Bonus::UntilNextCreatureActivation),
+				timing ? &timing->activationExpiryWork : nullptr);
 		}
 
 		// STACK_GETS_TURN is deliberately not globally broadened for HERO_COMMAND
@@ -2722,7 +2760,7 @@ void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason
 		// including Second Wind, without expiring unrelated bonuses early.
 		{
 			LifecycleTimingScope measurement(timing ? &timing->activationGamblerRemoval : nullptr);
-			unit->removeGamblerLuckPenalty();
+			unit->removeGamblerLuckPenalty(timing ? &timing->activationGamblerWork : nullptr);
 		}
 
 		const auto activationSide = playerToSide(battleGetOwner(unit.get()));
