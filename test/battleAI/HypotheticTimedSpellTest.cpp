@@ -368,7 +368,6 @@ TEST_F(HypotheticTimedSpellTest, CleanNestedQueryRetainsSnapshotsAcrossAuthorita
 {
 	ASSERT_NO_FATAL_FAILURE(prepareTimedBattle());
 	const auto hasteBonus = std::make_shared<Bonus>(haste(2));
-	unit->addNewBonus(hasteBonus);
 
 	const auto spellEffects = Selector::sourceTypeSel(BonusSource::SPELL_EFFECT);
 	const auto hasteSelector = Selector::source(BonusSource::SPELL_EFFECT,
@@ -386,6 +385,7 @@ TEST_F(HypotheticTimedSpellTest, CleanNestedQueryRetainsSnapshotsAcrossAuthorita
 		HypotheticBattle child(environment.get(), parent);
 		const auto projected = child.getForUpdate(unit->unitId());
 
+		unit->addNewBonus(hasteBonus);
 		initial = projected->getAllBonuses(spellEffects, cachingStr);
 		ASSERT_EQ(initial->size(), 1u);
 		ASSERT_TRUE(initial->getFirst(hasteSelector));

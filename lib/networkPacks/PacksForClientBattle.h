@@ -191,6 +191,10 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_NO_QUARTER)
 			&& info->hasNoQuarterState())
 			throw std::runtime_error("Cannot discard No Quarter battle start state");
+		if(h.saving && info)
+			info->validateNoQuarterLifetimeSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT));
+		if(h.saving && info)
+			info->validateVeteranDamageHistorySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT));
 		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_SPELL_RESPONSE)
 			&& info->hasSpellResponseState())
 			throw std::runtime_error("Cannot discard Spell Response state from BattleStart");

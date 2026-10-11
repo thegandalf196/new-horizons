@@ -265,8 +265,17 @@ TEST_F(NewHorizonsArmorerVeteranTest, UnitUpdateCarriesHistoryAndOlderWritersCan
 	EXPECT_TRUE(oldWriter.extractBuffer().empty());
 
 	CMemorySerializer battleWriter;
-	battleWriter.oser.version = ESerializationVersion::CURRENT;
+	battleWriter.oser.version = static_cast<ESerializationVersion>(
+		static_cast<int>(ESerializationVersion::NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT) - 1);
 	EXPECT_THROW(battleWriter.oser & *battle(), std::runtime_error)
-		<< "Binary battle snapshots must fail closed while UnitChanges is the only state carrier";
+		<< "Older binary battle snapshots must still fail closed before discarding damage history";
 	EXPECT_TRUE(battleWriter.extractBuffer().empty());
+
+	const auto restoredBattle = CMemorySerializer::deepCopy(*battle(), gameState().get());
+	ASSERT_NE(restoredBattle, nullptr);
+	const auto restored = std::find_if(restoredBattle->stacks.begin(), restoredBattle->stacks.end(),
+		[stack](const auto & candidate) { return candidate && candidate->unitId() == stack->unitId(); });
+	ASSERT_NE(restored, restoredBattle->stacks.end());
+	EXPECT_EQ((*restored)->veteranPhysicalDamageSinceActivation, 37);
+	EXPECT_EQ(stack->veteranPhysicalDamageSinceActivation, 37);
 }

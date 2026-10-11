@@ -7,6 +7,8 @@
 #include "HeroCommandFixture.h"
 
 #include "../../../lib/GameSettings.h"
+#include "../../../lib/CRandomGenerator.h"
+#include "../../../lib/battle/NewHorizonsConfusionResolution.h"
 #include "../../../lib/battle/NewHorizonsPlague.h"
 #include "../../../lib/spells/MagicalDamageReduction.h"
 #include "../../../lib/bonuses/Bonus.h"
@@ -36,11 +38,12 @@ JsonNode certainMorale()
 class NewHorizonsPlagueTest : public HeroCommandFixture
 {
 protected:
+	bool guaranteedBadMorale = false;
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
-		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
-			GTEST_SKIP() << "Requires the New Horizons content module";
+		ASSERT_TRUE(vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			<< "Requires the New Horizons content module";
 	}
 
 	void mapLoaded(CMap * map) override
@@ -50,6 +53,8 @@ protected:
 		// Current saved rules take precedence over the legacy combat curve.
 		// Pin only successful Morale for these activation-lifecycle witnesses.
 		magicRules["morale"]["goodChance"] = certainMorale();
+		if(guaranteedBadMorale)
+			magicRules["morale"]["badChance"] = certainMorale();
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
@@ -507,4 +512,99 @@ TEST_F(NewHorizonsPlagueTest, IndependentMagicalReductionSourcesComposeMultiplic
 		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::OTHER, 50, BonusSourceID(),
 		BonusSubtypeID(SpellSchool::ANY)));
 	EXPECT_EQ(newHorizonsPlague::adjustedTickDamage(*battle(), BattleSide::ATTACKER, afflicted, 105), 26);
+}
+
+TEST_F(NewHorizonsPlagueTest, ActualConfusionAutomaticAttackCompletesOnePlagueTick)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(true));
+	ASSERT_TRUE(vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE));
+	// Keep a real attacker alive even if Confusion kills its adjacent victim.
+	ASSERT_NE(addStack(BattleSide::ATTACKER, creatureByName("core:peasant"), BattleHex(3, 5), 1000), nullptr);
+	blockRetaliation(afflicted);
+	ASSERT_TRUE(castOn(attackerSideHero, plagueSpell(), afflicted));
+	const auto confusion = SpellID(SpellID::decode("new-horizons:confusion"));
+	ASSERT_TRUE(confusion.hasValue());
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:chaosMagic")),
+		MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->addSpellToSpellbook(confusion);
+	advanceRound();
+	ASSERT_TRUE(castOn(attackerSideHero, confusion, afflicted));
+	ASSERT_TRUE(afflicted->confusionState.pending);
+	ASSERT_NE(plagueStatus(afflicted), nullptr);
+	const auto outcomes = newHorizonsConfusion::enumerateOutcomes(*battle(), afflicted,
+		afflicted->confusionState.previousResolved, afflicted->confusionState.pendingConfounder);
+	int attackSeed = -1;
+	for(int candidate = 1; candidate <= 256 && attackSeed < 0; ++candidate)
+	{
+		CRandomGenerator probe(candidate);
+		const auto & outcome = newHorizonsConfusion::selectOutcome(outcomes, probe.nextDouble(1.0));
+		if(outcome.behavior == battle::ConfusionBehavior::ATTACK
+			&& outcome.action.type == EActionType::WALK_AND_ATTACK)
+			attackSeed = candidate;
+	}
+	ASSERT_GE(attackSeed, 0);
+	auto * random = dynamic_cast<CRandomGenerator *>(&gameHandler->getRandomGenerator());
+	ASSERT_NE(random, nullptr);
+	const auto firstInjury = server.injuries.size();
+	const auto firstAttack = server.attacks.size();
+	const auto completedRound = battle()->battleGetRound();
+	// No forced history/action setter: answer ordinary queue entries until the
+	// actual pending Confusion producer chooses and executes its legal attack.
+	for(int count = 0; count < 16 && afflicted->confusionState.pending; ++count)
+	{
+		const auto * active = battle()->battleActiveUnit();
+		ASSERT_NE(active, nullptr);
+		ASSERT_NE(active, afflicted);
+		random->setSeed(attackSeed);
+		ASSERT_TRUE(issue(active, BattleAction::makeDefend(active)));
+	}
+	ASSERT_FALSE(afflicted->confusionState.pending);
+	ASSERT_EQ(afflicted->confusionState.previousResolved, battle::ConfusionBehavior::ATTACK);
+	ASSERT_TRUE(std::ranges::any_of(server.attacks.begin() + firstAttack, server.attacks.end(),
+		[this](const auto & attack) { return attack.stackAttacking == afflicted->unitId(); }));
+	const auto marker = plagueStatus(afflicted);
+	ASSERT_NE(marker, nullptr);
+	EXPECT_EQ(marker->turnsRemain, 2);
+	EXPECT_EQ(marker->parameters->toCustom<JsonNode>()["lastProcessedRound"].Integer(), completedRound);
+	EXPECT_EQ(damageTo(afflicted->unitId(), firstInjury), expectedLegalCastDamage());
+	EXPECT_FALSE(battle()->battleIsFinished().has_value());
+}
+
+TEST_F(NewHorizonsPlagueTest, ActualBadMoraleNormalSlotForfeitureCompletesPlagueTick)
+{
+	guaranteedBadMorale = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_TRUE(vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE));
+	afflicted->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::MORALE, BonusSource::OTHER, -10, BonusSourceID()));
+	ASSERT_LT(battle()->battleGetMorale(afflicted), 0);
+	ASSERT_TRUE(castOn(attackerSideHero, plagueSpell(), afflicted));
+	const auto firstInjury = server.injuries.size();
+	const auto completedRound = battle()->battleGetRound();
+	const auto forfeited = [this]()
+	{
+		return std::ranges::count_if(server.startedActions, [this](const auto & started)
+		{
+			return started.ba.stackNumber == afflicted->unitId()
+				&& started.ba.actionType == EActionType::BAD_MORALE;
+		});
+	};
+	for(int count = 0; count < 16 && forfeited() == 0; ++count)
+	{
+		const auto * active = battle()->battleActiveUnit();
+		ASSERT_NE(active, nullptr);
+		ASSERT_NE(active, afflicted);
+		ASSERT_TRUE(issue(active, BattleAction::makeDefend(active)));
+	}
+	ASSERT_EQ(forfeited(), 1);
+	const auto marker = plagueStatus(afflicted);
+	ASSERT_NE(marker, nullptr);
+	EXPECT_EQ(marker->turnsRemain, 2);
+	EXPECT_EQ(marker->parameters->toCustom<JsonNode>()["lastProcessedRound"].Integer(), completedRound);
+	EXPECT_EQ(damageTo(afflicted->unitId(), firstInjury), expectedLegalCastDamage());
+	// Forfeiting the final normal slot immediately starts the next round,
+	// whose bookkeeping resets moved; it must not leave the stack consumed.
+	EXPECT_EQ(battle()->battleGetRound(), completedRound + 1);
+	EXPECT_FALSE(afflicted->moved());
+	EXPECT_EQ(battle()->battleActiveUnit(), attacker);
 }

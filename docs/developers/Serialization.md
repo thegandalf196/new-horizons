@@ -1,5 +1,28 @@
 # Serialization
 
+## Combat activation snapshot state
+
+`NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT` appends two existing combat receipts:
+
+- `CStack` stores Veteran's signed 64-bit physical-damage accumulator. Negative
+  values are invalid; older readers initialize absent history to zero. Writers
+  targeting older formats reject nonzero history before emitting a stack prefix.
+- `BattleInfo` stores a bounded No Quarter lifetime sidecar keyed by unit ID.
+  Entries must be unique, reference existing units and contain one or two remaining
+  activations. Each entry must match exactly one No Quarter Morale penalty.
+  Decode validates the whole sidecar before assigning counters. A legacy penalty
+  without an unambiguous lifetime is rejected rather than inventing a duration.
+  Codec validation reads serialized local markers, not the searchable bonus
+  graph, which need not be bound yet in an in-memory or BattleStart descriptor.
+
+`BattleInfo` and `BattleStart` perform the same unsupported-state checks before
+their own prefixes. Stack rebinding preserves both restored receipts.
+
+This extends combat descriptors, not the ordinary midcombat-save contract.
+Binary stack descriptors still do not carry ordinary current health; existing
+authoritative unit-state JSON remains its carrier. Normal combat saves remain
+blocked, and this change does not establish complete battle resume support.
+
 ## Optional component help reason (spell-acquisition feedback)
 
 `COMPONENT_HELP_REASON` appends `Component::helpReason`, an optional localized

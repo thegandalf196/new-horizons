@@ -86,10 +86,11 @@ form the baseline. Full post-run verification confirms all 1,026 files unchanged
 Separately isolated shard-animation capture and latest Save-button rendering
 remain unverified presentation breadth.
 
-## Published preview and playable delivery
+## Historical preview delivery (withdrawn)
 
-[v0.85.0](https://github.com/thegandalf196/new-horizons/releases/tag/v0.85.0)
-is published as an experimental prerelease, pinned to the reviewed source above.
+`v0.85.0` was published as an experimental prerelease, pinned to the reviewed source above.
+That release and tag have subsequently been withdrawn; this section records the
+original delivery evidence, not an available download or acceptance of newer builds.
 The Windows build run
 [38078142472](https://github.com/thegandalf196/new-horizons/actions/runs/38078142472)
 completed successfully. Both actual public player downloads were streamed and
@@ -109,9 +110,10 @@ bytes/modes. These checks are not an independent full rebuild or legal certifica
 Both packages retain the unchanged selected NHART: 3,137 selected resources,
 both mounts, no loose-art fallback. Package SHA-256:
 `1a91c08b1efa146af5d8f7df0d8a99a5739c94e280fedb13e8fd4d11ae555fc8`.
-Original Heroes III Complete data remains external. The usual local Linux
-launcher selects the accepted runtime bytes; its 807 curated runtime files match
-the final stage, without treating omitted release notices as runtime resources.
+Original Heroes III Complete data remains external. At that delivery checkpoint,
+the usual local Linux launcher selected the accepted runtime bytes; its 807 curated
+runtime files matched the final stage, without treating omitted release notices
+as runtime resources.
 
 Linux targets Ubuntu 26.04 system libraries; other distributions are unverified.
 Windows compilation, setup smoke, ZIP CRC, 1,070 payload checksums, 26 AMD64 PE
@@ -125,7 +127,7 @@ The authoritative Plague/Spell Lock activation-end countdown adapter now passes
 eleven focused native Plague tests. Hostile seals preserve Plague and pause its
 countdown while damage and spreading continue; friendly seals cleanse it. A
 neutral-spell targeting predicate had incorrectly classified hostile casts as
-friendly; the runtime now uses the same current-controller alignment as the AI.
+friendly; the runtime now uses the established spell-mechanics alignment policy.
 Three consumed-slot serialization tests and fourteen Time Stop tests also pass.
 These native tests embed the engine; they do not certify the shipped shared-library
 boundary or rendered presentation. The eight existing Spell Lock cases now pass
@@ -135,9 +137,16 @@ round transition, and the AI mock supplies the matching spell identity. The
 combined serialization, Time Stop, Plague and Spell Lock gate passes all thirty-six
 cases without skips. Earlier failing results remain recorded privately; this
 fixture repair does not bypass production action validation.
-Automatic-action Plague completion and detached AI damage/spread parity remain
-separate unresolved work. Controlled-target cleansing transitions require focused
-coverage; the ordinary friendly/hostile casts do not establish that interaction.
+The subsequent shared completion adapter passes 39 focused native cases on the
+current candidate: automatic Confusion and Bad Morale completion, detached
+attack/Frozen completion, captured mitigation, lethal propagation and isolated
+Spell Lock clocks. No Quarter/Veteran snapshot and adjacent Frozen/Time Stop/
+timed-effect gates pass 29 and 44 cases respectively, without skips. Local
+serialized-marker validation works before bonus-graph rebinding; earlier failing
+results are retained. These are static-engine tests, not shipped-library or
+whole-game save/resume certification. Defend/creature-cast and explicit movement
+forecast completion remain separate work. Controlled-target cleansing transitions
+still require execution; ordinary friendly/hostile casts do not prove them.
 
 Other recorded interaction risks include composite percentage rounding,
 Counterfire/Crossfire ownership provenance, Inspirational aura expiry, Deep Flank

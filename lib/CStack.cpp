@@ -83,6 +83,8 @@ void CStack::localInit(BattleInfo * battleInfo)
 	const bool restoredLuckyOwnAttackSequence = luckyOwnAttackSequence;
 	const int32_t restoredFrozenAppliedRound = frozenLastAppliedRound();
 	const bool restoredTimeStopTurnConsumed = timeStopTurnConsumedFlag;
+	const int64_t restoredVeteranDamageHistory = veteranPhysicalDamageSinceActivation;
+	const int32_t restoredNoQuarterLifetime = noQuarterMoraleActivationsRemaining;
 
 	// Battle setup already exports training bonuses for its preview. A direct
 	// BattleStart (or a decoded descriptor) must not export the same pointer
@@ -127,6 +129,8 @@ void CStack::localInit(BattleInfo * battleInfo)
 	heroicSpiritMoralePending = restoredHeroicSpiritPending;
 	restoreFrozenApplicationRound(restoredFrozenAppliedRound);
 	timeStopTurnConsumedFlag = restoredTimeStopTurnConsumed;
+	veteranPhysicalDamageSinceActivation = restoredVeteranDamageHistory;
+	noQuarterMoraleActivationsRemaining = restoredNoQuarterLifetime;
 	luckyOwnAttackSequence = restoredLuckyOwnAttackSequence;
 	pursuitMovementRemaining = restoredPostAttackMovement;
 	position = initialPosition;

@@ -5369,9 +5369,23 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 				const bool frozenForfeits = newHorizonsFrozen::forfeitsNormalActivation(*unit, BattleUnitTurnReason::TURN_QUEUE);
 				const bool syntheticStoppedSlot = unit->isTimeStopped();
-				state->nextTurn(unit->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+				if(frozenForfeits)
+					state->nextTurnPreservingFrozenForfeit(unit->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+				else
+					state->nextTurn(unit->unitId(), BattleUnitTurnReason::TURN_QUEUE);
 				if(frozenForfeits)
 				{
+					const auto frozen = newHorizonsFrozen::removalPlan(*unit);
+					state->getForUpdate(unit->unitId())->removeUnitBonus(CSelector([](const Bonus * bonus)
+					{
+						return Bonus::UntilActivationEnds(bonus) && !newHorizonsOffense::isNoQuarterMoralePenalty(bonus);
+					}));
+					state->getForUpdate(unit->unitId())->consumeNoQuarterActivation();
+					newHorizonsPlague::completeActivation(*state, *state->getServerCallback(), unit->unitId());
+					const auto current = state->getForUpdate(unit->unitId());
+					if(current->alive() && !current->isGhost() && !current->isTimeStopped()
+						&& newHorizonsFrozen::isFrozen(*current))
+						current->removeUnitBonus(frozen);
 					state->completeSeizeInitiativeActivation(unit->unitId());
 					battle::Units remaining(remainingQueue.begin() + queueIndex + 1, remainingQueue.end());
 					newHorizonsSeizeInitiative::reorder(*state, remaining, false);
@@ -5423,7 +5437,17 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				if(potentialTargets.berserk)
 					expireCompletedProjectedBerserkActivation(*state,
 						state->battleGetUnitByID(unit->unitId()));
-				state->getForUpdate(unit->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
+				if(!syntheticStoppedSlot)
+					state->getForUpdate(unit->unitId())->removeUnitBonus(CSelector([](const Bonus * bonus)
+					{
+						return Bonus::UntilActivationEnds(bonus) && !newHorizonsOffense::isNoQuarterMoralePenalty(bonus);
+					}));
+				// No-target movement is not a modeled completed action here.
+				const auto completed = state->getForUpdate(unit->unitId());
+				if(!potentialTargets.possibleAttacks.empty() && !syntheticStoppedSlot
+					&& !completed->isTimeStopped() && completed->pursuitMovementRemaining == 0
+					&& !state->battleHasPendingRangedFollowUp(completed.get()))
+					newHorizonsPlague::completeActivation(*state, *state->getServerCallback(), unit->unitId());
 				state->completeSwiftNormalActivation(unit->unitId());
 				newHorizonsDivineMandate::completeDisciplineActivation(*state, unit->unitId());
 				state->completeSeizeInitiativeActivation(unit->unitId());

@@ -672,3 +672,168 @@ TEST_F(NewHorizonsExchangeReadParityTest, FrozenNoQuarterControllerAndFocusFireF
 {
 	ASSERT_NO_FATAL_FAILURE(expectUnusedReadParity(true));
 }
+
+class NewHorizonsExchangeTimingTest : public NewHorizonsBattleAITimingTest
+{
+protected:
+	void expectExchangeClosure(const BattleMovementTiming & timing) const
+	{
+		const auto & exchange = timing.findMoveExchangeDetails;
+		const uint64_t classified = exchange.membership.totalMicroseconds
+			+ exchange.projectionSetup.totalMicroseconds + exchange.targetProbes.totalMicroseconds
+			+ exchange.appliedAttacks.totalMicroseconds;
+		EXPECT_LE(classified, exchange.body.totalMicroseconds);
+		EXPECT_EQ(classified + exchange.remainderMicroseconds, exchange.body.totalMicroseconds);
+		for(const auto * stage : {&exchange.membership, &exchange.projectionSetup,
+			&exchange.targetProbes, &exchange.appliedAttacks})
+			EXPECT_LE(stage->totalMicroseconds, exchange.body.totalMicroseconds);
+		EXPECT_LE(exchange.body.totalMicroseconds, timing.findMoveExchange.totalMicroseconds);
+		EXPECT_LE(timing.findMoveExchange.totalMicroseconds, timing.findMove.totalMicroseconds);
+		EXPECT_EQ(exchange.body.calls, timing.findMoveExchange.calls);
+		EXPECT_LE(exchange.membership.calls, exchange.body.calls);
+		EXPECT_LE(exchange.projectionSetup.calls, exchange.membership.calls);
+	}
+
+	void forecastMove(const std::shared_ptr<HypotheticBattle> & model,
+		BattleMovementTiming * timing, MoveTarget & result)
+	{
+		const auto * actor = model->battleGetUnitByID(ordinary->unitId());
+		ASSERT_NE(actor, nullptr);
+		DamageCache cache;
+		cache.buildDamageCache(model, BattleSide::ATTACKER);
+		PotentialTargets targets(actor, cache, model);
+		ASSERT_FALSE(targets.unreachableEnemies.empty());
+		BattleExchangeEvaluator evaluator(callback->getBattle(BattleID(0)), environment, 1.0f, 2);
+		evaluator.updateReachabilityMap(model);
+		result = evaluator.findMoveTowardsUnreachable(actor, targets, cache, model, timing);
+	}
+};
+
+TEST_F(NewHorizonsExchangeTimingTest, NonemptyNormalMovementPartitionsExchangeAndMatchesNullSink)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	// Real mixed participants exercise both future target probes and applied
+	// resolution; every exchange retains Normal's two-round forecast.
+	addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(3, 3), 50);
+	addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(9, 5), 50);
+	addStack(BattleSide::DEFENDER, creatureByName("core:archer"), BattleHex(12, 7), 50);
+	addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(13, 3), 50);
+	auto parent = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	std::map<uint32_t, JsonNode> parentBefore;
+	std::map<uint32_t, JsonNode> liveBefore;
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+	{
+		const auto snapshot = unit->acquireState();
+		liveBefore.emplace(unit->unitId(), snapshot->save());
+		parentBefore.emplace(unit->unitId(), parent->getForUpdate(unit->unitId())->save());
+	}
+	auto control = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	auto measured = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	for(const auto & [id, snapshot] : parentBefore)
+	{
+		control->getForUpdate(id);
+		measured->getForUpdate(id);
+	}
+	MoveTarget expected;
+	ASSERT_NO_FATAL_FAILURE(forecastMove(control, nullptr, expected));
+	BattleMovementTiming timing;
+	MoveTarget actual;
+	ASSERT_NO_FATAL_FAILURE(forecastMove(measured, &timing, actual));
+	ASSERT_NE(actual.score, EvaluationResult::INEFFECTIVE_SCORE);
+	ASSERT_TRUE(std::isfinite(actual.score));
+	EXPECT_EQ(std::bit_cast<uint32_t>(actual.score), std::bit_cast<uint32_t>(expected.score));
+	EXPECT_EQ(actual.positions.toVector(), expected.positions.toVector());
+	EXPECT_EQ(actual.turnsToReach, expected.turnsToReach);
+	ASSERT_EQ(actual.cachedAttack.has_value(), expected.cachedAttack.has_value());
+	if(actual.cachedAttack)
+	{
+		EXPECT_EQ(actual.cachedAttack->attack.attacker->unitId(), expected.cachedAttack->attack.attacker->unitId());
+		EXPECT_EQ(actual.cachedAttack->attack.defender->unitId(), expected.cachedAttack->attack.defender->unitId());
+		EXPECT_EQ(actual.cachedAttack->attack.shooting, expected.cachedAttack->attack.shooting);
+		EXPECT_EQ(actual.cachedAttack->from, expected.cachedAttack->from);
+		EXPECT_EQ(actual.cachedAttack->dest, expected.cachedAttack->dest);
+	}
+	ASSERT_EQ(timing.findMove.calls, 1u);
+	ASSERT_GT(timing.findMoveExchange.calls, 0u);
+	ASSERT_GT(timing.findMoveExchangeDetails.projectionSetup.calls, 0u);
+	ASSERT_GT(timing.findMoveExchangeDetails.targetProbes.calls, 0u);
+	ASSERT_GT(timing.findMoveExchangeDetails.appliedAttacks.calls, 0u);
+	EXPECT_EQ(timing.findMoveExchangeDetails.membership.calls, timing.findMoveExchangeDetails.body.calls);
+	EXPECT_EQ(timing.findMoveExchangeDetails.projectionSetup.calls, timing.findMoveExchangeDetails.body.calls);
+	expectExchangeClosure(timing);
+	for(const auto & [id, snapshot] : parentBefore)
+	{
+		EXPECT_EQ(parent->getForUpdate(id)->save(), snapshot);
+		EXPECT_EQ(control->getForUpdate(id)->save(), snapshot);
+		EXPECT_EQ(measured->getForUpdate(id)->save(), snapshot);
+	}
+	for(const auto & [id, snapshot] : liveBefore)
+	{
+		const auto current = battle()->battleGetUnitByID(id)->acquireState();
+		EXPECT_EQ(current->save(), snapshot);
+	}
+	EXPECT_TRUE(callback->actions.empty());
+	EXPECT_TRUE(callback->heroActions.empty());
+}
+
+TEST_F(NewHorizonsExchangeTimingTest, AdjacentTargetsReturnBeforeExchangeAndKeepBucketsZero)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	auto model = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	DamageCache cache;
+	cache.buildDamageCache(model, BattleSide::ATTACKER);
+	PotentialTargets targets(ordinary, cache, model);
+	ASSERT_TRUE(targets.unreachableEnemies.empty());
+	BattleExchangeEvaluator evaluator(callback->getBattle(BattleID(0)), environment, 1.0f, 2);
+	const auto expected = evaluator.findMoveTowardsUnreachable(ordinary, targets, cache, model, nullptr);
+	BattleMovementTiming timing;
+	const auto actual = evaluator.findMoveTowardsUnreachable(ordinary, targets, cache, model, &timing);
+	EXPECT_EQ(std::bit_cast<uint32_t>(actual.score), std::bit_cast<uint32_t>(expected.score));
+	EXPECT_EQ(actual.positions.toVector(), expected.positions.toVector());
+	EXPECT_EQ(actual.turnsToReach, expected.turnsToReach);
+	EXPECT_FALSE(actual.cachedAttack.has_value());
+	EXPECT_FALSE(expected.cachedAttack.has_value());
+	EXPECT_TRUE(actual.positions.empty());
+	EXPECT_EQ(timing.goTowards.calls, 0u);
+	EXPECT_EQ(timing.findMove.calls, 1u);
+	EXPECT_EQ(timing.findMoveExchange.calls, 0u);
+	const auto & exchange = timing.findMoveExchangeDetails;
+	for(const auto * stage : {&exchange.body, &exchange.membership, &exchange.projectionSetup,
+		&exchange.targetProbes, &exchange.appliedAttacks})
+	{
+		EXPECT_EQ(stage->calls, 0u);
+		EXPECT_EQ(stage->totalMicroseconds, 0u);
+	}
+	EXPECT_EQ(exchange.remainderMicroseconds, 0u);
+	expectExchangeClosure(timing);
+	EXPECT_TRUE(callback->actions.empty());
+}
+
+TEST_F(NewHorizonsExchangeTimingTest, ThrowingSubmissionRetainsRealExchangeCountsAndClosedNestedSummary)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ai->autobattlePreferences.enableSpellsUsage = false;
+	callback->onSubmit = [] { throw std::runtime_error("Expected exchange diagnostic submission failure"); };
+	EXPECT_THROW(ai->activeStack(BattleID(0), ordinary), std::runtime_error);
+	ASSERT_EQ(callback->actions.size(), 1u);
+	EXPECT_EQ(callback->retreatDecisionCalls, 1u);
+	const auto timing = summary();
+	EXPECT_EQ(timing.activeStackInFlight, 0u);
+	ASSERT_GT(timing.movementFindMoveExchangeSubset.calls, 0u);
+	EXPECT_EQ(timing.movementExchangeBody.calls, timing.movementFindMoveExchangeSubset.calls);
+	ASSERT_GT(timing.movementExchangeProjectionSetup.calls, 0u);
+	const uint64_t classified = timing.movementExchangeMembership.totalMicroseconds
+		+ timing.movementExchangeProjectionSetup.totalMicroseconds
+		+ timing.movementExchangeTargetProbes.totalMicroseconds
+		+ timing.movementExchangeAppliedAttacks.totalMicroseconds;
+	EXPECT_LE(classified, timing.movementExchangeBody.totalMicroseconds);
+	EXPECT_EQ(classified + timing.movementExchangeRemainderMicroseconds,
+		timing.movementExchangeBody.totalMicroseconds);
+	for(const auto * stage : {&timing.movementExchangeMembership, &timing.movementExchangeProjectionSetup,
+		&timing.movementExchangeTargetProbes, &timing.movementExchangeAppliedAttacks})
+		EXPECT_LE(stage->totalMicroseconds, timing.movementExchangeBody.totalMicroseconds);
+	EXPECT_LE(timing.movementExchangeBody.totalMicroseconds, timing.movementFindMoveExchangeSubset.totalMicroseconds);
+	EXPECT_LE(timing.movementFindMoveExchangeSubset.totalMicroseconds, timing.movementFindMove.totalMicroseconds);
+	EXPECT_EQ(timing.directUnitSubmission.calls, 1u);
+	expectStageClosure(timing);
+}

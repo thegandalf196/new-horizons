@@ -170,6 +170,14 @@ public:
 				bonus->validateSwiftRebirthSerialization(h);
 	}
 
+	void validateVeteranDamageHistorySerialization(bool supported) const
+	{
+		if(veteranPhysicalDamageSinceActivation < 0)
+			throw std::runtime_error("Invalid negative Veteran damage accumulator");
+		if(!supported && veteranPhysicalDamageSinceActivation != 0)
+			throw std::runtime_error("Cannot discard Veteran damage history in an older stack format");
+	}
+
 	template <typename Handler> void validateVeteranCohesionSerialization(Handler & h) const
 	{
 		if(veteranCohesionEarned && !h.hasFeature(Handler::Version::NEW_HORIZONS_VETERAN_COHESION))
@@ -204,6 +212,8 @@ public:
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+			validateVeteranDamageHistorySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT));
 		if(h.saving)
 			validateTimeStopSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT));
 		if(h.saving) validateMoraleActivationSerialization(h);
@@ -354,6 +364,12 @@ public:
 			h & timeStopTurnConsumedFlag;
 		else if(!h.saving)
 			timeStopTurnConsumedFlag = false;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT))
+			h & veteranPhysicalDamageSinceActivation;
+		else if(!h.saving)
+			veteranPhysicalDamageSinceActivation = 0;
+		if(!h.saving)
+			validateVeteranDamageHistorySerialization(true);
 	}
 
 private:

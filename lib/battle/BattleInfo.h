@@ -52,6 +52,8 @@ class DLL_LINKAGE BattleInfo : public CBonusSystemNode, public CBattleInfoCallba
 	std::map<uint32_t, int32_t> collectReserveMovementBonuses() const;
 	void restoreReserveMovementBonuses(const std::map<uint32_t, int32_t> & bonuses);
 	std::map<uint32_t, int32_t> collectRangedFollowUps() const;
+	std::map<uint32_t, int32_t> collectNoQuarterLifetimes() const;
+	void restoreNoQuarterLifetimes(const std::map<uint32_t, int32_t> & lifetimes);
 	void restoreRangedFollowUps(const std::map<uint32_t, int32_t> & followUps);
 public:
 	const SeizeInitiativeState & getSeizeInitiativeState() const override { return seizeInitiative; }
@@ -325,6 +327,8 @@ public:
 	bool hasRangedFollowUpState() const;
 	bool hasBattleFormState() const;
 	bool hasVeteranDamageHistory() const;
+	void validateNoQuarterLifetimeSerialization(bool supported) const;
+	void validateVeteranDamageHistorySerialization(bool supported) const;
 	bool hasReserveMovementState() const;
 	bool hasCleaveState() const;
 	bool hasNoQuarterState() const;
@@ -558,6 +562,10 @@ public:
 	template <typename Handler> void serialize(Handler &h)
 	{
 		if(h.saving)
+			validateNoQuarterLifetimeSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT));
+		if(h.saving)
+			validateVeteranDamageHistorySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT));
+		if(h.saving)
 			validateTimeStopSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT));
 		if(h.saving && luckRollRules.finalDirectPhysicalMultiplier
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK))
@@ -717,8 +725,6 @@ public:
 			// binary battle snapshot until that broader contract is implemented.
 			if(hasBattleFormState())
 				throw std::runtime_error("Cannot discard battle creature form state in a binary battle snapshot");
-			if(hasVeteranDamageHistory())
-				throw std::runtime_error("Cannot discard Veteran damage history in a binary battle snapshot");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_RESERVE) && hasReserveMovementState())
 				throw std::runtime_error("Cannot discard Battlecraft Reserve movement state in an older format");
 			if(heroCommands::supportedByRules(heroCommandRules, HeroCommand::CHARGE)
@@ -1178,6 +1184,43 @@ public:
 		}
 
 		h & seizeInitiative;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT))
+		{
+			std::map<uint32_t, int32_t> lifetimes;
+			if(h.saving)
+				lifetimes = collectNoQuarterLifetimes();
+			uint32_t count = static_cast<uint32_t>(lifetimes.size());
+			h & count;
+			if(count > stacks.size())
+				throw std::runtime_error("No Quarter lifetime count exceeds battle units");
+			if(h.saving)
+			{
+				for(const auto & entry : lifetimes)
+				{
+					uint32_t id = entry.first;
+					int32_t remaining = entry.second;
+					h & id;
+					h & remaining;
+				}
+			}
+			else
+			{
+				for(uint32_t index = 0; index < count; ++index)
+				{
+					uint32_t id = 0;
+					int32_t remaining = 0;
+					h & id;
+					h & remaining;
+					if(remaining < 1 || remaining > 2 || !lifetimes.emplace(id, remaining).second)
+						throw std::runtime_error("Invalid or duplicate No Quarter lifetime");
+				}
+				restoreNoQuarterLifetimes(lifetimes);
+			}
+		}
+		else if(!h.saving)
+		{
+			restoreNoQuarterLifetimes({});
+		}
 		if(!h.saving)
 		{
 			validateSeizeInitiativeSerialization(h);

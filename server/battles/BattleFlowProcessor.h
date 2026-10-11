@@ -73,6 +73,8 @@ public:
 
 	void onBattleStarted(const CBattleInfoCallback & battle);
 	void onTacticsEnded(const CBattleInfoCallback & battle);
+	/// End afflictions only; automatic queue routing remains with its caller.
+	void onAutomaticUnitActionCompleted(const BattleID & battleID, const BattleAction & action);
 	void onActionMade(const CBattleInfoCallback & battle, const BattleAction & ba,
 		bool masterGateActivationContinuation = false, bool pursuitActivationContinuation = false,
 		bool rangedAttackContinuation = false);
