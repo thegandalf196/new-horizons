@@ -1246,7 +1246,8 @@ EvaluationResult BattleExchangeEvaluator::findBestTarget(
 	PotentialTargets & targets,
 	DamageCache & damageCache,
 	std::shared_ptr<HypotheticBattle> hb,
-	bool siegeDefense)
+	bool siegeDefense,
+	BattleBestTargetTiming * timing)
 {
 	EvaluationResult result(targets.bestAction());
 
@@ -1267,7 +1268,12 @@ EvaluationResult BattleExchangeEvaluator::findBestTarget(
 			if (siegeDefense && !hb->battleIsInsideWalls(ap.from))
 				continue;
 
-			float score = evaluateExchange(ap, 0, targets, damageCache, hbWaited);
+			float score;
+			{
+				MovementExchangeScope measurement(timing ? &timing->waitedExchange : nullptr);
+				score = evaluateExchange(ap, 0, targets, damageCache, hbWaited,
+					timing ? &timing->waitedDetails : nullptr);
+			}
 
 			if(score > result.score)
 			{
@@ -1302,7 +1308,12 @@ EvaluationResult BattleExchangeEvaluator::findBestTarget(
 		if (siegeDefense && !hb->battleIsInsideWalls(ap.from))
 			continue;
 
-		float score = evaluateExchange(ap, 0, targets, damageCache, hb);
+		float score;
+		{
+			MovementExchangeScope measurement(timing ? &timing->normalExchange : nullptr);
+			score = evaluateExchange(ap, 0, targets, damageCache, hb,
+				timing ? &timing->normalDetails : nullptr);
+		}
 		bool sameScoreButWaited = vstd::isAlmostEqual(score, result.score) && result.wait;
 
 		if(score > result.score || sameScoreButWaited)
@@ -1683,9 +1694,10 @@ float BattleExchangeEvaluator::evaluateExchange(
 	uint8_t turn,
 	PotentialTargets & targets,
 	DamageCache & damageCache,
-	std::shared_ptr<HypotheticBattle> hb) const
+	std::shared_ptr<HypotheticBattle> hb,
+	BattleMovementTiming::ExchangeTiming * timing) const
 {
-	BattleScore score = calculateExchange(ap, turn, targets, damageCache, hb);
+	BattleScore score = calculateExchange(ap, turn, targets, damageCache, hb, {}, timing);
 
 #if BATTLE_TRACE_LEVEL >= 1
 	logAi->trace(

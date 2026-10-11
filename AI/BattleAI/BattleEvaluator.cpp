@@ -4463,7 +4463,8 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack, SelectionT
 
 		auto evaluationResult = measureSelectionStage(timing ? &timing->bestTarget : nullptr, [&]()
 		{
-			return scoreEvaluator.findBestTarget(stack, *targets, damageCache, hb, siegeDefense);
+			return scoreEvaluator.findBestTarget(stack, *targets, damageCache, hb, siegeDefense,
+				timing ? &timing->bestTargetDetails : nullptr);
 		}, timing ? &timing->targetExchange : nullptr);
 		auto & bestAttack = evaluationResult.bestAttack;
 

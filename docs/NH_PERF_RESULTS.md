@@ -12,7 +12,26 @@ All twenty-two focused timing cases passed, including action/state equivalence,
 partition closure, ordinary battle-end/reset and defensive-stance attribution.
 The build and binary privacy check passed. This validates instrumentation, not
 actual siege execution, native Windows gameplay or a turn-time improvement.
-The saved-game replay with these counters remains pending.
+One subsequent Linux replay of a supplied Normal-difficulty save recorded
+Blue/Tan turns of 114/9,743 ms. The combat lasted 9.672 seconds; the two sides'
+callback totals were 6.510/3.120 seconds. Combined movement search accounted
+for 5.328 seconds and best-target selection for 3.993 seconds (21 consumer
+calls). Siege-defense and defensive-stance consumers were not used. All seven
+reported timing partitions closed, and the game quit normally. This is one
+observation, not a matched speedup comparison or a Windows measurement.
+
+The observed timing, trace and cleanup were independently checked, including
+the complete unchanged 808-file runtime inventory. Full graphical execution
+acceptance remains withheld: the input helper checked identity/isolation per
+event but did not repeat the required actual audio-driver/mapped-library proof
+at every event. Correcting that helper cannot retrospectively close the gap.
+The next diagnostic separates Wait-first and ordinary best-target exchanges,
+using the existing exchange-body timing rather than changing the AI search.
+All 24 focused native cases passed, including exact timed/untimed score and
+state parity, both candidate branches and already-waited admission. Source,
+binaries and test resources were unchanged during the run; the build and
+binary privacy check passed. New counters have not yet been exercised in a
+saved-game replay, and no speedup is established.
 
 ## Completed-activation forecast checkpoint (2026-10-11)
 
