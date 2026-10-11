@@ -97,7 +97,7 @@ class AssembleLinuxCandidateTest(unittest.TestCase):
         return {p.relative_to(root).as_posix(): assembler.digest(p)
                 for p in root.rglob('*') if p.is_file()}
 
-    def refresh_source(self):
+    def refresh_source(self, root_members=()):
         for path in self.resources.rglob('*'):
             if path.is_file() and not path.is_symlink():
                 name = path.relative_to(self.resources).as_posix()
@@ -105,6 +105,8 @@ class AssembleLinuxCandidateTest(unittest.TestCase):
                     self.source_data[name] = path.read_bytes()
         self.source_data['assets/new-horizons/runtime-art-manifest.json'] = self.manifest.read_bytes()
         with tarfile.open(self.source, 'w:gz') as archive:
+            for member in root_members:
+                archive.addfile(member)
             for name, data in self.source_data.items():
                 member = tarfile.TarInfo('new-horizons-' + self.commit + '/' + name)
                 member.size = len(data)
@@ -278,6 +280,46 @@ class AssembleLinuxCandidateTest(unittest.TestCase):
         path = self.install / 'lib/libvcmi.so'
         path.write_bytes(path.read_bytes().replace(b'a' * 40, self.commit.encode()))
         self.rejected('source archive root')
+
+    def test_standard_git_root_directory_is_accepted(self):
+        name = 'new-horizons-' + self.commit
+        member = tarfile.TarInfo(name + '/')
+        member.type = tarfile.DIRTYPE
+        self.refresh_source((member,))
+        with tarfile.open(self.source, 'r:gz') as archive:
+            self.assertEqual(archive.getmembers()[0].name, name)
+        result = self.assemble()
+        self.assertEqual(verify_candidate(self.output), result)
+        self.assertEqual(self.before, self.inventory(self.install))
+
+    def test_exact_root_nondirectory_is_refused(self):
+        for kind in (tarfile.REGTYPE, tarfile.SYMTYPE, tarfile.LNKTYPE):
+            with self.subTest(type=kind):
+                member = tarfile.TarInfo('new-horizons-' + self.commit)
+                member.type = kind
+                if kind in (tarfile.SYMTYPE, tarfile.LNKTYPE):
+                    member.linkname = 'foreign-root'
+                self.refresh_source((member,))
+                self.rejected('root must be a directory')
+
+    def test_duplicate_exact_root_directory_is_refused(self):
+        member = tarfile.TarInfo('new-horizons-' + self.commit + '/')
+        member.type = tarfile.DIRTYPE
+        self.refresh_source((member, member))
+        self.rejected('Duplicate source archive member')
+
+    def test_duplicate_payload_member_is_still_refused(self):
+        member = tarfile.TarInfo('new-horizons-' + self.commit + '/license.txt')
+        self.refresh_source((member,))
+        self.rejected('Duplicate source archive member')
+
+    def test_foreign_and_traversal_root_directories_are_refused(self):
+        for name in ('foreign-root/', 'new-horizons-' + self.commit + '/../'):
+            with self.subTest(name=name):
+                member = tarfile.TarInfo(name)
+                member.type = tarfile.DIRTYPE
+                self.refresh_source((member,))
+                self.rejected('Unsafe or wrong source archive root')
 
     def test_source_resource_mismatch_refused(self):
         (self.resources / 'config/newHorizonsCombat.json').write_bytes(b'{"changed":true}')
