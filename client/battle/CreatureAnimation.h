@@ -18,6 +18,14 @@ class CIntObject;
 class CreatureAnimation;
 class Canvas;
 
+// Shared opt-in budget; records describe CPU draw attempts, not presents.
+namespace BattleAnimationTiming
+{
+	bool enabled();
+	bool reserve();
+	long long steadyMicroseconds();
+}
+
 /// Namespace for some common controls of animations
 namespace AnimationControls
 {

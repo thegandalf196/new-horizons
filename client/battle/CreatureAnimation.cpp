@@ -20,6 +20,69 @@
 #include "render/Colors.h"
 #include "render/IRenderHandler.h"
 
+#include <atomic>
+#include <chrono>
+#include <cstdlib>
+#include <string_view>
+
+namespace
+{
+unsigned int animationTimingLimit(const char * value)
+{
+	constexpr unsigned int maximum = 16384;
+	if(!value || !*value)
+		return 1024;
+	unsigned int result = 0;
+	for(const char * current = value; *current; ++current)
+	{
+		if(*current < '0' || *current > '9')
+			return 1024;
+		const auto digit = static_cast<unsigned int>(*current - '0');
+		if(result > (maximum - digit) / 10)
+			return 1024;
+		result = result * 10 + digit;
+	}
+	return result ? result : 1024;
+}
+
+std::string animationResourceLabel(const std::string & value)
+{
+	if(value.find("..") != std::string::npos || value.find(':') != std::string::npos
+		|| value.find_first_of("\r\n\t") != std::string::npos
+		|| (!value.empty() && (value.front() == '/' || value.front() == '\\')))
+		return "<non-resource>";
+	return value;
+}
+}
+
+bool BattleAnimationTiming::enabled()
+{
+	static const bool requested = []
+	{
+		const char * value = std::getenv("NH_RENDER_LOAD_TIMINGS");
+		return value && std::string_view(value) == "1";
+	}();
+	return requested && logGlobal->isDebugEnabled();
+}
+
+bool BattleAnimationTiming::reserve()
+{
+	if(!enabled())
+		return false;
+	static const unsigned int limit = animationTimingLimit(std::getenv("NH_RENDER_LOAD_TIMING_LIMIT"));
+	static std::atomic<uint64_t> attempts{0};
+	const auto index = attempts.fetch_add(1, std::memory_order_relaxed);
+	if(index == limit)
+		logGlobal->debug("NH_RENDER_LOAD_TIMING tu=BattleAnimation cap=%u reached; subsequent events counted but not timed", limit);
+	return index < limit;
+}
+
+long long BattleAnimationTiming::steadyMicroseconds()
+{
+	return std::chrono::duration_cast<std::chrono::microseconds>(
+		std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+
 static const ColorRGBA creatureBlueBorder = { 0, 255, 255, 255 };
 static const ColorRGBA creatureGoldBorder = { 255, 255, 0, 255 };
 static const ColorRGBA creatureNoBorder  =  { 0, 0, 0, 0 };
@@ -263,12 +326,21 @@ void CreatureAnimation::endAnimation()
 
 bool CreatureAnimation::incrementFrame(float timePassed)
 {
+	const bool trace = BattleAnimationTiming::enabled() && !isIdle() && !isDead() && type != ECreatureAnimType::FROZEN
+		&& BattleAnimationTiming::reserve();
+	const float previousFrame = trace ? currentFrame : 0.f;
 	elapsedTime += timePassed;
 	currentFrame += timePassed * speed;
 	if (animationEnd >= 0)
 		currentFrame = std::min(currentFrame, animationEnd);
 
 	const auto framesNumber = framesInGroup(type);
+	if(trace)
+		logGlobal->debug("NH_RENDER_LOAD_TIMING stage=animationAdvance animation=%p resource=%s steady_us=%lld dt_ms=%.3f group=%d before=%.3f advanced=%.3f frameSteps=%d frames=%d completes=%d speed=%.3f",
+			static_cast<void *>(this), animationResourceLabel(name.getOriginalName()), BattleAnimationTiming::steadyMicroseconds(),
+			timePassed * 1000., static_cast<int>(type), previousFrame, currentFrame,
+			static_cast<int>(std::floor(currentFrame) - std::floor(previousFrame)), framesNumber,
+			framesNumber <= 0 || currentFrame >= float(framesNumber), speed);
 
 	if(framesNumber <= 0)
 	{
@@ -341,6 +413,9 @@ static ColorRGBA genBorderColor(ui8 alpha, const ColorRGBA & base)
 
 void CreatureAnimation::nextFrame(Canvas & canvas, const ColorRGBA & effectColor, uint8_t transparency, bool facingRight)
 {
+	const bool trace = BattleAnimationTiming::enabled() && !isIdle() && !isDead() && type != ECreatureAnimType::FROZEN
+		&& BattleAnimationTiming::reserve();
+	const auto started = trace ? BattleAnimationTiming::steadyMicroseconds() : 0;
 	size_t frame = static_cast<size_t>(floor(currentFrame));
 
 	std::shared_ptr<IImage> image;
@@ -361,6 +436,13 @@ void CreatureAnimation::nextFrame(Canvas & canvas, const ColorRGBA & effectColor
 		image->setAlpha(transparency);
 
 		canvas.draw(image, pos.topLeft(), Rect(0, 0, pos.w, pos.h));
+	}
+	if(trace)
+	{
+		const auto returned = BattleAnimationTiming::steadyMicroseconds();
+		logGlobal->debug("NH_RENDER_LOAD_TIMING stage=animationDrawReturn animation=%p resource=%s steady_us=%lld group=%d frame=%llu imageAvailable=%d facingRight=%d us=%lld",
+			static_cast<void *>(this), animationResourceLabel(name.getOriginalName()), returned,
+			static_cast<int>(type), static_cast<unsigned long long>(frame), image != nullptr, facingRight, returned - started);
 	}
 }
 
