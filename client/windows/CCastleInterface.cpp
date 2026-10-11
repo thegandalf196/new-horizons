@@ -2720,12 +2720,30 @@ void CCastleInterface::recreateIcons()
 	bool compactCreatureInfo = useCompactCreatureBox();
 	bool useAvailableCreaturesForLabel = useAvailableAmountAsCreatureLabel();
 
-	for(size_t i=0; i<4; i++)
-		creainfo.push_back(std::make_shared<CCreaInfo>(Point(14 + 55 * (int)i, 459), town, (int)i, compactCreatureInfo, useAvailableCreaturesForLabel));
+	std::array<int, 8> displayLevels = {0, 1, 2, 3, 4, 5, 6, 7};
+	if(hasCompleteCreatureCategoryContext(town))
+	{
+		std::array<int, 8> categoryRanks;
+		categoryRanks.fill(3); // Keep empty extra boxes after the three creature categories.
+		for(ui32 level = 0; level < fortCreatureCount(town); ++level)
+		{
+			const auto category = currentCreatureCategory(creatureAtDwellingLevel(town, static_cast<int>(level)));
+			categoryRanks[level] = creatureCategoryRank(category);
+		}
+		std::stable_sort(displayLevels.begin(), displayLevels.end(), [&categoryRanks](int left, int right)
+		{
+			return categoryRanks[left] < categoryRanks[right];
+		});
+	}
 
-
-	for(size_t i=0; i<4; i++)
-		creainfo.push_back(std::make_shared<CCreaInfo>(Point(14 + 55 * (int)i, 507), town, (int)i + 4, compactCreatureInfo, useAvailableCreaturesForLabel));
+	for(size_t displayIndex = 0; displayIndex < displayLevels.size(); ++displayIndex)
+	{
+		const Point position(14 + 55 * static_cast<int>(displayIndex % 4),
+			459 + 48 * static_cast<int>(displayIndex / 4));
+		// The display permutation must never change the dwelling used by clicks or growth updates.
+		creainfo.push_back(std::make_shared<CCreaInfo>(position, town, displayLevels[displayIndex],
+			compactCreatureInfo, useAvailableCreaturesForLabel));
+	}
 }
 
 void CCastleInterface::keyPressed(EShortcut key)

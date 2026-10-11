@@ -834,8 +834,8 @@
     {
       "resource": "SPRITES/Wisp.json",
       "source": "Mods/new-horizons/Content/sprites/Wisp.json",
-      "size": 8052,
-      "sha256": "8284c44c77eeb1c9484ec2dbbed70476c728a040abb1e16a2cccd1dee2a80ec9",
+      "size": 9172,
+      "sha256": "ce9319f6018eecd2178bbfacc2f23e7a3a3f8e998e9c71572e9a7da30d56e7ea",
       "family": "wisps-and-projectiles",
       "origin": "selected-authored-runtime-export",
       "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
@@ -864,8 +864,8 @@
     {
       "resource": "SPRITES/WispUpgrade.json",
       "source": "Mods/new-horizons/Content/sprites/WispUpgrade.json",
-      "size": 8059,
-      "sha256": "8a51eb6926d298ec1e8870a2224f1af28b307dc709f89990d67cbc9476d60bc0",
+      "size": 9179,
+      "sha256": "22fa6eec536d6896ca52b711abc7dd7b1d8a8267a85f831372098cbbd226d209",
       "family": "wisps-and-projectiles",
       "origin": "selected-authored-runtime-export",
       "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
